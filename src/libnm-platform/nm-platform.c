@@ -3656,6 +3656,41 @@ nm_platform_ip6_address_delete(NMPlatform *self, int ifindex, struct in6_addr ad
     return klass->ip6_address_delete(self, ifindex, address, plen);
 }
 
+const NMPObject *
+nm_platform_ip_address_get(NMPlatform                                 *self,
+                           int                                         addr_family,
+                           int                                         ifindex,
+                           gconstpointer /* (NMPlatformIPAddress *) */ needle)
+{
+    const NMPlatformIPXAddress *addr;
+    NMPObject                   obj_id;
+    const NMPObject            *obj;
+
+    nm_assert(NM_IS_PLATFORM(self));
+    nm_assert_addr_family(addr_family);
+    nm_assert(needle);
+
+    addr = needle;
+
+    if (ifindex <= 0) {
+        /* We allow the caller to override the ifindex. */
+        ifindex = addr->ax.ifindex;
+    }
+
+    if (NM_IS_IPv4(addr_family)) {
+        nmp_object_stackinit_id_ip4_address(&obj_id,
+                                            ifindex,
+                                            addr->a4.address,
+                                            addr->a4.plen,
+                                            addr->a4.peer_address);
+    } else
+        nmp_object_stackinit_id_ip6_address(&obj_id, ifindex, &addr->a6.address);
+
+    obj = nmp_cache_lookup_obj(nm_platform_get_cache(self), &obj_id);
+    nm_assert(!obj || nmp_object_is_visible(obj));
+    return obj;
+}
+
 const NMPlatformIP4Address *
 nm_platform_ip4_address_get(NMPlatform *self,
                             int         ifindex,
