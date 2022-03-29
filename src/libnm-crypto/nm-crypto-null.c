@@ -9,7 +9,6 @@
 #include "nm-crypto-impl.h"
 
 #include "libnm-glib-aux/nm-secret-utils.h"
-#include "nm-errors.h"
 
 /*****************************************************************************/
 
@@ -17,8 +16,8 @@ gboolean
 _nm_crypto_init(GError **error)
 {
     g_set_error(error,
-                NM_CRYPTO_ERROR,
-                NM_CRYPTO_ERROR_FAILED,
+                _NM_CRYPTO_ERROR,
+                _NM_CRYPTO_ERROR_FAILED,
                 _("Compiled without crypto support."));
     return FALSE;
 }
@@ -35,8 +34,8 @@ _nmtst_crypto_decrypt(NMCryptoCipherType cipher,
                       GError           **error)
 {
     g_set_error(error,
-                NM_CRYPTO_ERROR,
-                NM_CRYPTO_ERROR_FAILED,
+                _NM_CRYPTO_ERROR,
+                _NM_CRYPTO_ERROR_FAILED,
                 _("Compiled without crypto support."));
     return NULL;
 }
@@ -53,8 +52,8 @@ _nmtst_crypto_encrypt(NMCryptoCipherType cipher,
                       GError           **error)
 {
     g_set_error(error,
-                NM_CRYPTO_ERROR,
-                NM_CRYPTO_ERROR_FAILED,
+                _NM_CRYPTO_ERROR,
+                _NM_CRYPTO_ERROR_FAILED,
                 _("Compiled without crypto support."));
     return NULL;
 }
@@ -63,8 +62,8 @@ gboolean
 _nm_crypto_verify_x509(const guint8 *data, gsize len, GError **error)
 {
     g_set_error(error,
-                NM_CRYPTO_ERROR,
-                NM_CRYPTO_ERROR_FAILED,
+                _NM_CRYPTO_ERROR,
+                _NM_CRYPTO_ERROR_FAILED,
                 _("Compiled without crypto support."));
     return FALSE;
 }
@@ -73,8 +72,8 @@ gboolean
 _nm_crypto_verify_pkcs12(const guint8 *data, gsize data_len, const char *password, GError **error)
 {
     g_set_error(error,
-                NM_CRYPTO_ERROR,
-                NM_CRYPTO_ERROR_FAILED,
+                _NM_CRYPTO_ERROR,
+                _NM_CRYPTO_ERROR_FAILED,
                 _("Compiled without crypto support."));
     return FALSE;
 }
@@ -87,8 +86,8 @@ _nm_crypto_verify_pkcs8(const guint8 *data,
                         GError      **error)
 {
     g_set_error(error,
-                NM_CRYPTO_ERROR,
-                NM_CRYPTO_ERROR_FAILED,
+                _NM_CRYPTO_ERROR,
+                _NM_CRYPTO_ERROR_FAILED,
                 _("Compiled without crypto support."));
     return FALSE;
 }
@@ -97,8 +96,8 @@ gboolean
 _nm_crypto_randomize(void *buffer, gsize buffer_len, GError **error)
 {
     g_set_error(error,
-                NM_CRYPTO_ERROR,
-                NM_CRYPTO_ERROR_FAILED,
+                _NM_CRYPTO_ERROR,
+                _NM_CRYPTO_ERROR_FAILED,
                 _("Compiled without crypto support."));
     return FALSE;
 }

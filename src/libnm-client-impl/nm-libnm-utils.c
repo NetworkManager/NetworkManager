@@ -10,7 +10,9 @@
 
 #include "libnm-glib-aux/nm-time-utils.h"
 #include "libnm-core-aux-intern/nm-common-macros.h"
+#include "libnm-crypto/nm-crypto.h"
 #include "nm-object.h"
+#include "nm-utils.h"
 
 /*****************************************************************************/
 
@@ -913,4 +915,59 @@ nm_utils_print(int output_mode, const char *msg)
         g_printerr("%s", msg);
     else
         g_return_if_reached();
+}
+
+/*****************************************************************************/
+
+/**
+ * nm_utils_file_is_certificate:
+ * @filename: name of the file to test
+ *
+ * Tests if @filename has a valid extension for an X.509 certificate file
+ * (".cer", ".crt", ".der", or ".pem"), and contains a certificate in a format
+ * recognized by NetworkManager.
+ *
+ * Returns: %TRUE if the file is a certificate, %FALSE if it is not
+ **/
+gboolean
+nm_utils_file_is_certificate(const char *filename)
+{
+    g_return_val_if_fail(filename != NULL, FALSE);
+
+    return nm_crypto_utils_file_is_certificate(filename);
+}
+
+/**
+ * nm_utils_file_is_private_key:
+ * @filename: name of the file to test
+ * @out_encrypted: (out): on return, whether the file is encrypted
+ *
+ * Tests if @filename has a valid extension for an X.509 private key file
+ * (".der", ".key", ".pem", or ".p12"), and contains a private key in a format
+ * recognized by NetworkManager.
+ *
+ * Returns: %TRUE if the file is a private key, %FALSE if it is not
+ **/
+gboolean
+nm_utils_file_is_private_key(const char *filename, gboolean *out_encrypted)
+{
+    g_return_val_if_fail(filename != NULL, FALSE);
+
+    return nm_crypto_utils_file_is_private_key(filename, out_encrypted);
+}
+
+/**
+ * nm_utils_file_is_pkcs12:
+ * @filename: name of the file to test
+ *
+ * Tests if @filename is a PKCS#<!-- -->12 file.
+ *
+ * Returns: %TRUE if the file is PKCS#<!-- -->12, %FALSE if it is not
+ **/
+gboolean
+nm_utils_file_is_pkcs12(const char *filename)
+{
+    g_return_val_if_fail(filename != NULL, FALSE);
+
+    return nm_crypto_is_pkcs12_file(filename, NULL);
 }

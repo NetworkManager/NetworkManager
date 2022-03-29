@@ -4851,6 +4851,27 @@ nm_utils_bin2hexstr_full(gconstpointer addr,
     return out0;
 }
 
+char *
+_nm_utils_bin2hexstr(gconstpointer src, gsize len, int final_len)
+{
+    char *result;
+    gsize buflen = (len * 2) + 1;
+
+    nm_assert(src);
+    nm_assert(len > 0 && (buflen - 1) / 2 == len);
+    nm_assert(final_len < 0 || (gsize) final_len < buflen);
+
+    result = g_malloc(buflen);
+
+    nm_utils_bin2hexstr_full(src, len, '\0', FALSE, result);
+
+    /* Cut converted key off at the correct length for this cipher type */
+    if (final_len >= 0 && (gsize) final_len < buflen)
+        result[final_len] = '\0';
+
+    return result;
+}
+
 guint8 *
 nm_utils_hexstr2bin_full(const char *hexstr,
                          gboolean    allow_0x_prefix,

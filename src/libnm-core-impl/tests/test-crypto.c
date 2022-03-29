@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "nm-crypto-impl.h"
+#include "libnm-crypto/nm-crypto-impl.h"
 #include "nm-utils.h"
 #include "nm-errors.h"
 #include "libnm-core-intern/nm-core-internal.h"
@@ -92,7 +92,7 @@ test_cert(gconstpointer test_data)
     nmtst_assert_success(success, error);
     g_assert_cmpint(format, ==, NM_CRYPTO_FILE_FORMAT_X509);
 
-    g_assert(nm_utils_file_is_certificate(path));
+    g_assert(nm_crypto_utils_file_is_certificate(path));
 }
 
 static void
@@ -106,7 +106,7 @@ test_load_private_key(const char *path,
     gs_unref_bytes GBytes *array        = NULL;
     GError                *error        = NULL;
 
-    g_assert(nm_utils_file_is_private_key(path, &is_encrypted));
+    g_assert(nm_crypto_utils_file_is_private_key(path, &is_encrypted));
     g_assert(is_encrypted);
 
     array = nmtst_crypto_decrypt_openssl_private_key(path, password, &key_type, &error);
@@ -146,7 +146,7 @@ test_load_pkcs12(const char *path, const char *password, int expected_error)
     gboolean           is_encrypted = FALSE;
     GError            *error        = NULL;
 
-    g_assert(nm_utils_file_is_private_key(path, NULL));
+    g_assert(nm_crypto_utils_file_is_private_key(path, NULL));
 
     format = nm_crypto_verify_private_key(path, password, &is_encrypted, &error);
     if (expected_error != -1) {
@@ -167,7 +167,7 @@ test_load_pkcs12_no_password(const char *path)
     gboolean           is_encrypted = FALSE;
     GError            *error        = NULL;
 
-    g_assert(nm_utils_file_is_private_key(path, NULL));
+    g_assert(nm_crypto_utils_file_is_private_key(path, NULL));
 
     /* We should still get a valid returned crypto file format */
     format = nm_crypto_verify_private_key(path, NULL, &is_encrypted, &error);
@@ -201,7 +201,7 @@ test_load_pkcs8(const char *path, const char *password, int expected_error)
     gboolean           is_encrypted = FALSE;
     GError            *error        = NULL;
 
-    g_assert(nm_utils_file_is_private_key(path, NULL));
+    g_assert(nm_crypto_utils_file_is_private_key(path, NULL));
 
     format = nm_crypto_verify_private_key(path, password, &is_encrypted, &error);
     if (expected_error != -1) {
@@ -285,7 +285,7 @@ test_key_decrypted(gconstpointer test_data)
 
     path = g_build_filename(TEST_CERT_DIR, file, NULL);
 
-    g_assert(nm_utils_file_is_private_key(path, &is_encrypted));
+    g_assert(nm_crypto_utils_file_is_private_key(path, &is_encrypted));
     g_assert(!is_encrypted);
 
     g_free(path);
@@ -399,6 +399,23 @@ test_md5(void)
     }
 }
 
+/*****************************************************************************/
+
+static void
+test_crypto_error(void)
+{
+    G_STATIC_ASSERT(NM_CRYPTO_ERROR_FAILED == _NM_CRYPTO_ERROR_FAILED);
+    G_STATIC_ASSERT(NM_CRYPTO_ERROR_INVALID_DATA == _NM_CRYPTO_ERROR_INVALID_DATA);
+    G_STATIC_ASSERT(NM_CRYPTO_ERROR_INVALID_PASSWORD == _NM_CRYPTO_ERROR_INVALID_PASSWORD);
+    G_STATIC_ASSERT(NM_CRYPTO_ERROR_UNKNOWN_CIPHER == _NM_CRYPTO_ERROR_UNKNOWN_CIPHER);
+    G_STATIC_ASSERT(NM_CRYPTO_ERROR_DECRYPTION_FAILED == _NM_CRYPTO_ERROR_DECRYPTION_FAILED);
+    G_STATIC_ASSERT(NM_CRYPTO_ERROR_ENCRYPTION_FAILED == _NM_CRYPTO_ERROR_ENCRYPTION_FAILED);
+
+    g_assert_cmpint(NM_CRYPTO_ERROR, ==, _NM_CRYPTO_ERROR);
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE();
 
 int
@@ -448,6 +465,7 @@ main(int argc, char **argv)
     g_test_add_data_func("/libnm/crypto/PKCS#8", "pkcs8-enc-key.pem, 1234567890", test_pkcs8);
 
     g_test_add_func("/libnm/crypto/md5", test_md5);
+    g_test_add_func("/libnm/crypto/error", test_crypto_error);
 
     ret = g_test_run();
 

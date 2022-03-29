@@ -286,4 +286,8 @@ nm_secret_mem_try_realloc_take(gpointer m_old, gboolean do_bzero_mem, gsize cur_
 
 /*****************************************************************************/
 
+gboolean nm_utils_read_crypto_file(const char *filename, NMSecretPtr *out_contents, GError **error);
+
+GBytes *nm_utils_read_crypto_file_to_bytes(const char *filename, GError **error);
+
 #endif /* __NM_SECRET_UTILS_H__ */

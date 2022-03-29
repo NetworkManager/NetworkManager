@@ -393,4 +393,20 @@ typedef struct {
 
 #define NM_BOND_PORT_QUEUE_ID_DEF 0
 
+/*****************************************************************************/
+
+/* NM_CRYPTO_ERROR is part of public API in libnm (implemented in libnm-core).
+ * We also want to use it without libnm-core. So this "_" variant is the internal
+ * version, with numerically same values -- to be used without libnm-base. */
+
+#define _NM_CRYPTO_ERROR_FAILED            0
+#define _NM_CRYPTO_ERROR_INVALID_DATA      1
+#define _NM_CRYPTO_ERROR_INVALID_PASSWORD  2
+#define _NM_CRYPTO_ERROR_UNKNOWN_CIPHER    3
+#define _NM_CRYPTO_ERROR_DECRYPTION_FAILED 4
+#define _NM_CRYPTO_ERROR_ENCRYPTION_FAILED 5
+
+#define _NM_CRYPTO_ERROR _nm_crypto_error_quark()
+GQuark _nm_crypto_error_quark(void);
+
 #endif /* __NM_LIBNM_BASE_H__ */

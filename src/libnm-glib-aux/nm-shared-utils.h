@@ -2710,6 +2710,8 @@ char *nm_utils_bin2hexstr_full(gconstpointer addr,
                                gboolean      upper_case,
                                char         *out);
 
+char *_nm_utils_bin2hexstr(gconstpointer src, gsize len, int final_len);
+
 #define nm_utils_bin2hexstr_a(addr, length, delimiter, upper_case, str_to_free)               \
     ({                                                                                        \
         gconstpointer _addr        = (addr);                                                  \

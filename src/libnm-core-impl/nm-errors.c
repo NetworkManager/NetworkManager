@@ -12,11 +12,23 @@
 
 NM_CACHED_QUARK_FCN("nm-agent-manager-error-quark", nm_agent_manager_error_quark);
 NM_CACHED_QUARK_FCN("nm-connection-error-quark", nm_connection_error_quark);
-NM_CACHED_QUARK_FCN("nm-crypto-error-quark", nm_crypto_error_quark);
 NM_CACHED_QUARK_FCN("nm-device-error-quark", nm_device_error_quark);
 NM_CACHED_QUARK_FCN("nm-secret-agent-error-quark", nm_secret_agent_error_quark);
 NM_CACHED_QUARK_FCN("nm-settings-error-quark", nm_settings_error_quark);
 NM_CACHED_QUARK_FCN("nm-vpn-plugin-error-quark", nm_vpn_plugin_error_quark);
+
+GQuark
+nm_crypto_error_quark(void)
+{
+    G_STATIC_ASSERT(NM_CRYPTO_ERROR_FAILED == _NM_CRYPTO_ERROR_FAILED);
+    G_STATIC_ASSERT(NM_CRYPTO_ERROR_INVALID_DATA == _NM_CRYPTO_ERROR_INVALID_DATA);
+    G_STATIC_ASSERT(NM_CRYPTO_ERROR_INVALID_PASSWORD == _NM_CRYPTO_ERROR_INVALID_PASSWORD);
+    G_STATIC_ASSERT(NM_CRYPTO_ERROR_UNKNOWN_CIPHER == _NM_CRYPTO_ERROR_UNKNOWN_CIPHER);
+    G_STATIC_ASSERT(NM_CRYPTO_ERROR_DECRYPTION_FAILED == _NM_CRYPTO_ERROR_DECRYPTION_FAILED);
+    G_STATIC_ASSERT(NM_CRYPTO_ERROR_ENCRYPTION_FAILED == _NM_CRYPTO_ERROR_ENCRYPTION_FAILED);
+
+    return _nm_crypto_error_quark();
+}
 
 static void
 register_error_domain(GQuark domain, const char *interface, GType enum_type)

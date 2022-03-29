@@ -27,7 +27,6 @@
 #include "libnm-core-aux-intern/nm-common-macros.h"
 #include "nm-utils-private.h"
 #include "nm-setting-private.h"
-#include "nm-crypto.h"
 #include "nm-setting-bond.h"
 #include "nm-setting-bond-port.h"
 #include "nm-setting-bridge.h"
@@ -3083,94 +3082,6 @@ nm_utils_uuid_generate(void)
 
 /*****************************************************************************/
 
-static gboolean
-file_has_extension(const char *filename, const char *extensions[])
-{
-    const char *ext;
-    gsize       i;
-
-    ext = strrchr(filename, '.');
-    if (!ext)
-        return FALSE;
-
-    for (i = 0; extensions[i]; i++) {
-        if (!g_ascii_strcasecmp(ext, extensions[i]))
-            return TRUE;
-    }
-
-    return FALSE;
-}
-
-/**
- * nm_utils_file_is_certificate:
- * @filename: name of the file to test
- *
- * Tests if @filename has a valid extension for an X.509 certificate file
- * (".cer", ".crt", ".der", or ".pem"), and contains a certificate in a format
- * recognized by NetworkManager.
- *
- * Returns: %TRUE if the file is a certificate, %FALSE if it is not
- **/
-gboolean
-nm_utils_file_is_certificate(const char *filename)
-{
-    const char        *extensions[] = {".der", ".pem", ".crt", ".cer", NULL};
-    NMCryptoFileFormat file_format;
-
-    g_return_val_if_fail(filename != NULL, FALSE);
-
-    if (!file_has_extension(filename, extensions))
-        return FALSE;
-
-    if (!nm_crypto_load_and_verify_certificate(filename, &file_format, NULL, NULL))
-        return FALSE;
-    return file_format = NM_CRYPTO_FILE_FORMAT_X509;
-}
-
-/**
- * nm_utils_file_is_private_key:
- * @filename: name of the file to test
- * @out_encrypted: (out): on return, whether the file is encrypted
- *
- * Tests if @filename has a valid extension for an X.509 private key file
- * (".der", ".key", ".pem", or ".p12"), and contains a private key in a format
- * recognized by NetworkManager.
- *
- * Returns: %TRUE if the file is a private key, %FALSE if it is not
- **/
-gboolean
-nm_utils_file_is_private_key(const char *filename, gboolean *out_encrypted)
-{
-    const char *extensions[] = {".der", ".pem", ".p12", ".key", NULL};
-
-    g_return_val_if_fail(filename != NULL, FALSE);
-
-    NM_SET_OUT(out_encrypted, FALSE);
-    if (!file_has_extension(filename, extensions))
-        return FALSE;
-
-    return nm_crypto_verify_private_key(filename, NULL, out_encrypted, NULL)
-           != NM_CRYPTO_FILE_FORMAT_UNKNOWN;
-}
-
-/**
- * nm_utils_file_is_pkcs12:
- * @filename: name of the file to test
- *
- * Tests if @filename is a PKCS#<!-- -->12 file.
- *
- * Returns: %TRUE if the file is PKCS#<!-- -->12, %FALSE if it is not
- **/
-gboolean
-nm_utils_file_is_pkcs12(const char *filename)
-{
-    g_return_val_if_fail(filename != NULL, FALSE);
-
-    return nm_crypto_is_pkcs12_file(filename, NULL);
-}
-
-/*****************************************************************************/
-
 gboolean
 _nm_utils_check_file(const char               *filename,
                      gint64                    check_owner,
@@ -3795,22 +3706,13 @@ nm_utils_hwaddr_aton(const char *asc, gpointer buffer, gsize length)
 char *
 nm_utils_bin2hexstr(gconstpointer src, gsize len, int final_len)
 {
-    char *result;
     gsize buflen = (len * 2) + 1;
 
     g_return_val_if_fail(src != NULL, NULL);
     g_return_val_if_fail(len > 0 && (buflen - 1) / 2 == len, NULL);
     g_return_val_if_fail(final_len < 0 || (gsize) final_len < buflen, NULL);
 
-    result = g_malloc(buflen);
-
-    nm_utils_bin2hexstr_full(src, len, '\0', FALSE, result);
-
-    /* Cut converted key off at the correct length for this cipher type */
-    if (final_len >= 0 && (gsize) final_len < buflen)
-        result[final_len] = '\0';
-
-    return result;
+    return _nm_utils_bin2hexstr(src, len, final_len);
 }
 
 /**
