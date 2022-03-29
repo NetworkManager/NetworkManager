@@ -3941,14 +3941,9 @@ ip6_address_scope_cmp(gconstpointer p_a, gconstpointer p_b, gpointer increasing)
  * @self: platform instance
  * @addr_family: the address family AF_INET or AF_INET6.
  * @ifindex: Interface index
- * @known_addresses: List of addresses. The list will be modified and only
- *   addresses that were successfully added will be kept in the list.
- *   That means, expired addresses and addresses that could not be added
- *   will be dropped.
- *   Hence, the input argument @known_addresses is also an output argument
- *   telling which addresses were successfully added.
- *   Addresses are removed by unrefing the instance via nmp_object_unref()
- *   and leaving a NULL tombstone.
+ * @known_addresses: List of addresses. The list will be modified and
+ *   expired addresses will be cleared (by calling nmp_object_unref()
+ *   on the array element).
  * @addresses_prune: (allow-none): the list of addresses to delete.
  *   If platform has such an address configured, it will be deleted
  *   at the beginning of the sync. Note that the array will be modified
@@ -3975,6 +3970,7 @@ nm_platform_ip_address_sync(NMPlatform *self,
     gs_unref_hashtable GHashTable *known_addresses_idx = NULL;
     gs_unref_ptrarray GPtrArray   *plat_addresses      = NULL;
     GHashTable                    *known_subnets       = NULL;
+    gboolean                       success;
     guint                          i_plat;
     guint                          i_know;
     guint                          i;
@@ -4145,7 +4141,7 @@ nm_platform_ip_address_sync(NMPlatform *self,
                                        ip6_address_scope_cmp,
                                        GINT_TO_POINTER(FALSE));
 
-            known_addresses_len = known_addresses ? known_addresses->len : 0;
+            known_addresses_len = nm_g_ptr_array_len(known_addresses);
 
             /* First, check that existing addresses have a matching plen as the ones
              * we are about to configure (@known_addresses). If not, delete them. */
@@ -4246,6 +4242,8 @@ next_plat:;
     if (IS_IPv4)
         ip4_addr_subnets_destroy_index(known_subnets, known_addresses);
 
+    success = TRUE;
+
     /* Add missing addresses. New addresses are added by kernel with top
      * priority.
      */
@@ -4281,9 +4279,8 @@ next_plat:;
                     lifetime,
                     preferred,
                     IFA_F_NOPREFIXROUTE,
-                    known_address->a4.label)) {
-                /* ignore error, for unclear reasons. */
-            }
+                    known_address->a4.label))
+                success = FALSE;
         } else {
             if (!nm_platform_ip6_address_add(self,
                                              ifindex,
@@ -4293,11 +4290,11 @@ next_plat:;
                                              lifetime,
                                              preferred,
                                              IFA_F_NOPREFIXROUTE | known_address->a6.n_ifa_flags))
-                return FALSE;
+                success = FALSE;
         }
     }
 
-    return TRUE;
+    return success;
 }
 
 gboolean
