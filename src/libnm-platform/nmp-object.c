@@ -1523,20 +1523,21 @@ nmp_object_id_cmp(const NMPObject *obj1, const NMPObject *obj2)
 
 _vt_cmd_plobj_id_cmp(link, NMPlatformLink, { NM_CMP_FIELD(obj1, obj2, ifindex); });
 
-_vt_cmd_plobj_id_cmp(ip4_address, NMPlatformIP4Address, {
-    NM_CMP_FIELD(obj1, obj2, ifindex);
-    NM_CMP_FIELD(obj1, obj2, plen);
-    NM_CMP_FIELD(obj1, obj2, address);
-    /* for IPv4 addresses, you can add the same local address with differing peer-address
-     * (IFA_ADDRESS), provided that their net-part differs. */
-    NM_CMP_DIRECT_IN4ADDR_SAME_PREFIX(obj1->peer_address, obj2->peer_address, obj1->plen);
-});
+static int
+_vt_cmd_plobj_id_cmp_ip4_address(const NMPlatformObject *obj1, const NMPlatformObject *obj2)
+{
+    return nm_platform_ip4_address_cmp((const NMPlatformIP4Address *) obj1,
+                                       (const NMPlatformIP4Address *) obj2,
+                                       NM_PLATFORM_IP_ADDRESS_CMP_TYPE_ID);
+}
 
-_vt_cmd_plobj_id_cmp(ip6_address, NMPlatformIP6Address, {
-    NM_CMP_FIELD(obj1, obj2, ifindex);
-    /* for IPv6 addresses, the prefix length is not part of the primary identifier. */
-    NM_CMP_FIELD_IN6ADDR(obj1, obj2, address);
-});
+static int
+_vt_cmd_plobj_id_cmp_ip6_address(const NMPlatformObject *obj1, const NMPlatformObject *obj2)
+{
+    return nm_platform_ip6_address_cmp((const NMPlatformIP6Address *) obj1,
+                                       (const NMPlatformIP6Address *) obj2,
+                                       NM_PLATFORM_IP_ADDRESS_CMP_TYPE_ID);
+}
 
 _vt_cmd_plobj_id_cmp(qdisc, NMPlatformQdisc, {
     NM_CMP_FIELD(obj1, obj2, ifindex);
@@ -1551,24 +1552,24 @@ _vt_cmd_plobj_id_cmp(tfilter, NMPlatformTfilter, {
 static int
 _vt_cmd_plobj_id_cmp_ip4_route(const NMPlatformObject *obj1, const NMPlatformObject *obj2)
 {
-    return nm_platform_ip4_route_cmp((NMPlatformIP4Route *) obj1,
-                                     (NMPlatformIP4Route *) obj2,
+    return nm_platform_ip4_route_cmp((const NMPlatformIP4Route *) obj1,
+                                     (const NMPlatformIP4Route *) obj2,
                                      NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID);
 }
 
 static int
 _vt_cmd_plobj_id_cmp_ip6_route(const NMPlatformObject *obj1, const NMPlatformObject *obj2)
 {
-    return nm_platform_ip6_route_cmp((NMPlatformIP6Route *) obj1,
-                                     (NMPlatformIP6Route *) obj2,
+    return nm_platform_ip6_route_cmp((const NMPlatformIP6Route *) obj1,
+                                     (const NMPlatformIP6Route *) obj2,
                                      NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID);
 }
 
 static int
 _vt_cmd_plobj_id_cmp_routing_rule(const NMPlatformObject *obj1, const NMPlatformObject *obj2)
 {
-    return nm_platform_routing_rule_cmp((NMPlatformRoutingRule *) obj1,
-                                        (NMPlatformRoutingRule *) obj2,
+    return nm_platform_routing_rule_cmp((const NMPlatformRoutingRule *) obj1,
+                                        (const NMPlatformRoutingRule *) obj2,
                                         NM_PLATFORM_ROUTING_RULE_CMP_TYPE_ID);
 }
 
@@ -3158,28 +3159,29 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
             .cmd_plobj_to_string_id   = _vt_cmd_plobj_to_string_id_ip4_address,
             .cmd_plobj_to_string      = (CmdPlobjToStringFunc) nm_platform_ip4_address_to_string,
             .cmd_plobj_hash_update = (CmdPlobjHashUpdateFunc) nm_platform_ip4_address_hash_update,
-            .cmd_plobj_cmp         = (CmdPlobjCmpFunc) nm_platform_ip4_address_cmp,
+            .cmd_plobj_cmp         = (CmdPlobjCmpFunc) nm_platform_ip4_address_cmp_full,
         },
-    [NMP_OBJECT_TYPE_IP6_ADDRESS
-        - 1] = {.parent                   = DEDUP_MULTI_OBJ_CLASS_INIT(),
-                .obj_type                 = NMP_OBJECT_TYPE_IP6_ADDRESS,
-                .sizeof_data              = sizeof(NMPObjectIP6Address),
-                .sizeof_public            = sizeof(NMPlatformIP6Address),
-                .obj_type_name            = "ip6-address",
-                .addr_family              = AF_INET6,
-                .rtm_gettype              = RTM_GETADDR,
-                .signal_type_id           = NM_PLATFORM_SIGNAL_ID_IP6_ADDRESS,
-                .signal_type              = NM_PLATFORM_SIGNAL_IP6_ADDRESS_CHANGED,
-                .supported_cache_ids      = _supported_cache_ids_ipx_address,
-                .cmd_obj_is_alive         = _vt_cmd_obj_is_alive_ipx_address,
-                .cmd_plobj_id_copy        = _vt_cmd_plobj_id_copy_ip6_address,
-                .cmd_plobj_id_cmp         = _vt_cmd_plobj_id_cmp_ip6_address,
-                .cmd_plobj_id_hash_update = _vt_cmd_plobj_id_hash_update_ip6_address,
-                .cmd_plobj_to_string_id   = _vt_cmd_plobj_to_string_id_ip6_address,
-                .cmd_plobj_to_string = (CmdPlobjToStringFunc) nm_platform_ip6_address_to_string,
-                .cmd_plobj_hash_update =
-                    (CmdPlobjHashUpdateFunc) nm_platform_ip6_address_hash_update,
-                .cmd_plobj_cmp = (CmdPlobjCmpFunc) nm_platform_ip6_address_cmp},
+    [NMP_OBJECT_TYPE_IP6_ADDRESS - 1] =
+        {
+            .parent                   = DEDUP_MULTI_OBJ_CLASS_INIT(),
+            .obj_type                 = NMP_OBJECT_TYPE_IP6_ADDRESS,
+            .sizeof_data              = sizeof(NMPObjectIP6Address),
+            .sizeof_public            = sizeof(NMPlatformIP6Address),
+            .obj_type_name            = "ip6-address",
+            .addr_family              = AF_INET6,
+            .rtm_gettype              = RTM_GETADDR,
+            .signal_type_id           = NM_PLATFORM_SIGNAL_ID_IP6_ADDRESS,
+            .signal_type              = NM_PLATFORM_SIGNAL_IP6_ADDRESS_CHANGED,
+            .supported_cache_ids      = _supported_cache_ids_ipx_address,
+            .cmd_obj_is_alive         = _vt_cmd_obj_is_alive_ipx_address,
+            .cmd_plobj_id_copy        = _vt_cmd_plobj_id_copy_ip6_address,
+            .cmd_plobj_id_cmp         = _vt_cmd_plobj_id_cmp_ip6_address,
+            .cmd_plobj_id_hash_update = _vt_cmd_plobj_id_hash_update_ip6_address,
+            .cmd_plobj_to_string_id   = _vt_cmd_plobj_to_string_id_ip6_address,
+            .cmd_plobj_to_string      = (CmdPlobjToStringFunc) nm_platform_ip6_address_to_string,
+            .cmd_plobj_hash_update = (CmdPlobjHashUpdateFunc) nm_platform_ip6_address_hash_update,
+            .cmd_plobj_cmp         = (CmdPlobjCmpFunc) nm_platform_ip6_address_cmp_full,
+        },
     [NMP_OBJECT_TYPE_IP4_ROUTE - 1] =
         {
             .parent                   = DEDUP_MULTI_OBJ_CLASS_INIT(),

@@ -7895,6 +7895,25 @@ _address_pretty_sort_get_prio_6(const struct in6_addr *addr)
     return 6;
 }
 
+static int
+_address_cmp_expiry(const NMPlatformIPAddress *a, const NMPlatformIPAddress *b)
+{
+    guint32 lifetime_a;
+    guint32 lifetime_b;
+    guint32 preferred_a;
+    guint32 preferred_b;
+    gint32  now = 0;
+
+    lifetime_a =
+        nmp_utils_lifetime_get(a->timestamp, a->lifetime, a->preferred, &now, &preferred_a);
+    lifetime_b =
+        nmp_utils_lifetime_get(b->timestamp, b->lifetime, b->preferred, &now, &preferred_b);
+
+    NM_CMP_DIRECT(lifetime_a, lifetime_b);
+    NM_CMP_DIRECT(preferred_a, preferred_b);
+    return 0;
+}
+
 int
 nm_platform_ip6_address_pretty_sort_cmp(const NMPlatformIP6Address *a1,
                                         const NMPlatformIP6Address *a2,
@@ -7974,26 +7993,55 @@ nm_platform_ip4_address_hash_update(const NMPlatformIP4Address *obj, NMHashState
 }
 
 int
-nm_platform_ip4_address_cmp(const NMPlatformIP4Address *a, const NMPlatformIP4Address *b)
+nm_platform_ip4_address_cmp(const NMPlatformIP4Address *a,
+                            const NMPlatformIP4Address *b,
+                            NMPlatformIPAddressCmpType  cmp_type)
 {
     NM_CMP_SELF(a, b);
+
     NM_CMP_FIELD(a, b, ifindex);
-    NM_CMP_FIELD(a, b, address);
     NM_CMP_FIELD(a, b, plen);
-    NM_CMP_FIELD(a, b, peer_address);
-    NM_CMP_FIELD_UNSAFE(a, b, use_ip4_broadcast_address);
-    if (a->use_ip4_broadcast_address)
-        NM_CMP_FIELD(a, b, broadcast_address);
-    NM_CMP_FIELD(a, b, addr_source);
-    NM_CMP_FIELD(a, b, timestamp);
-    NM_CMP_FIELD(a, b, lifetime);
-    NM_CMP_FIELD(a, b, preferred);
-    NM_CMP_FIELD(a, b, n_ifa_flags);
-    NM_CMP_FIELD_STR(a, b, label);
-    NM_CMP_FIELD_UNSAFE(a, b, a_acd_not_ready);
-    NM_CMP_FIELD_UNSAFE(a, b, a_assume_config_once);
-    NM_CMP_FIELD_UNSAFE(a, b, a_force_commit);
-    return 0;
+    NM_CMP_FIELD(a, b, address);
+
+    switch (cmp_type) {
+    case NM_PLATFORM_IP_ADDRESS_CMP_TYPE_ID:
+        /* for IPv4 addresses, you can add the same local address with differing peer-address
+         * (IFA_ADDRESS), provided that their net-part differs. */
+        NM_CMP_DIRECT_IN4ADDR_SAME_PREFIX(a->peer_address, b->peer_address, a->plen);
+        return 0;
+    case NM_PLATFORM_IP_ADDRESS_CMP_TYPE_SEMANTICALLY:
+    case NM_PLATFORM_IP_ADDRESS_CMP_TYPE_FULL:
+        NM_CMP_FIELD(a, b, peer_address);
+        NM_CMP_FIELD_STR(a, b, label);
+        if (cmp_type == NM_PLATFORM_IP_ADDRESS_CMP_TYPE_SEMANTICALLY) {
+            NM_CMP_RETURN(_address_cmp_expiry((const NMPlatformIPAddress *) a,
+                                              (const NMPlatformIPAddress *) b));
+
+            /* Most flags are set by kernel. We only compare the ones that
+             * NetworkManager actively sets.
+             *
+             * NM actively only sets IFA_F_NOPREFIXROUTE (and IFA_F_MANAGETEMPADDR for IPv6),
+             * where nm_platform_ip_address_sync() always sets IFA_F_NOPREFIXROUTE.
+             * There are thus no flags to compare for IPv4. */
+
+            NM_CMP_DIRECT(nm_platform_ip4_broadcast_address_from_addr(a),
+                          nm_platform_ip4_broadcast_address_from_addr(b));
+        } else {
+            NM_CMP_FIELD(a, b, timestamp);
+            NM_CMP_FIELD(a, b, lifetime);
+            NM_CMP_FIELD(a, b, preferred);
+            NM_CMP_FIELD(a, b, n_ifa_flags);
+            NM_CMP_FIELD(a, b, addr_source);
+            NM_CMP_FIELD_UNSAFE(a, b, use_ip4_broadcast_address);
+            if (a->use_ip4_broadcast_address)
+                NM_CMP_FIELD(a, b, broadcast_address);
+            NM_CMP_FIELD_UNSAFE(a, b, a_acd_not_ready);
+            NM_CMP_FIELD_UNSAFE(a, b, a_assume_config_once);
+            NM_CMP_FIELD_UNSAFE(a, b, a_force_commit);
+        }
+        return 0;
+    }
+    return nm_assert_unreachable_val(0);
 }
 
 void
@@ -8014,25 +8062,51 @@ nm_platform_ip6_address_hash_update(const NMPlatformIP6Address *obj, NMHashState
 }
 
 int
-nm_platform_ip6_address_cmp(const NMPlatformIP6Address *a, const NMPlatformIP6Address *b)
+nm_platform_ip6_address_cmp(const NMPlatformIP6Address *a,
+                            const NMPlatformIP6Address *b,
+                            NMPlatformIPAddressCmpType  cmp_type)
 {
     const struct in6_addr *p_a, *p_b;
 
     NM_CMP_SELF(a, b);
+
     NM_CMP_FIELD(a, b, ifindex);
-    NM_CMP_FIELD_MEMCMP(a, b, address);
-    NM_CMP_FIELD(a, b, plen);
-    p_a = nm_platform_ip6_address_get_peer(a);
-    p_b = nm_platform_ip6_address_get_peer(b);
-    NM_CMP_DIRECT_MEMCMP(p_a, p_b, sizeof(*p_a));
-    NM_CMP_FIELD(a, b, addr_source);
-    NM_CMP_FIELD(a, b, timestamp);
-    NM_CMP_FIELD(a, b, lifetime);
-    NM_CMP_FIELD(a, b, preferred);
-    NM_CMP_FIELD(a, b, n_ifa_flags);
-    NM_CMP_FIELD_UNSAFE(a, b, a_assume_config_once);
-    NM_CMP_FIELD_UNSAFE(a, b, a_force_commit);
-    return 0;
+    NM_CMP_FIELD_IN6ADDR(a, b, address);
+
+    switch (cmp_type) {
+    case NM_PLATFORM_IP_ADDRESS_CMP_TYPE_ID:
+        /* for IPv6 addresses, the prefix length is not part of the primary identifier. */
+        return 0;
+    case NM_PLATFORM_IP_ADDRESS_CMP_TYPE_SEMANTICALLY:
+    case NM_PLATFORM_IP_ADDRESS_CMP_TYPE_FULL:
+        NM_CMP_FIELD(a, b, plen);
+        p_a = nm_platform_ip6_address_get_peer(a);
+        p_b = nm_platform_ip6_address_get_peer(b);
+        NM_CMP_DIRECT_MEMCMP(p_a, p_b, sizeof(*p_a));
+        if (cmp_type == NM_PLATFORM_IP_ADDRESS_CMP_TYPE_SEMANTICALLY) {
+            NM_CMP_RETURN(_address_cmp_expiry((const NMPlatformIPAddress *) a,
+                                              (const NMPlatformIPAddress *) b));
+
+            /* Most flags are set by kernel. We only compare the ones that
+             * NetworkManager actively sets.
+             *
+             * NM actively only sets IFA_F_NOPREFIXROUTE and IFA_F_MANAGETEMPADDR,
+             * where nm_platform_ip_address_sync() always sets IFA_F_NOPREFIXROUTE.
+             * We thus only care about IFA_F_MANAGETEMPADDR. */
+            NM_CMP_DIRECT(a->n_ifa_flags & IFA_F_MANAGETEMPADDR,
+                          b->n_ifa_flags & IFA_F_MANAGETEMPADDR);
+        } else {
+            NM_CMP_FIELD(a, b, timestamp);
+            NM_CMP_FIELD(a, b, lifetime);
+            NM_CMP_FIELD(a, b, preferred);
+            NM_CMP_FIELD(a, b, n_ifa_flags);
+            NM_CMP_FIELD(a, b, addr_source);
+            NM_CMP_FIELD_UNSAFE(a, b, a_assume_config_once);
+            NM_CMP_FIELD_UNSAFE(a, b, a_force_commit);
+        }
+        return 0;
+    }
+    return nm_assert_unreachable_val(0);
 }
 
 void
@@ -8987,6 +9061,37 @@ nm_platform_netns_push(NMPlatform *self, NMPNetns **netns)
 }
 
 /*****************************************************************************/
+
+const _NMPlatformVTableAddressUnion nm_platform_vtable_address = {
+    .v4 =
+        {
+            .is_ip4         = TRUE,
+            .obj_type       = NMP_OBJECT_TYPE_IP4_ADDRESS,
+            .addr_family    = AF_INET,
+            .sizeof_address = sizeof(NMPlatformIP4Address),
+            .address_cmp =
+                (int (*)(const NMPlatformIPXAddress *a,
+                         const NMPlatformIPXAddress *b,
+                         NMPlatformIPAddressCmpType  cmp_type)) nm_platform_ip4_address_cmp,
+            .address_to_string = (const char *(*) (const NMPlatformIPXAddress *address,
+                                                   char                       *buf,
+                                                   gsize len)) nm_platform_ip4_address_to_string,
+        },
+    .v6 =
+        {
+            .is_ip4         = FALSE,
+            .obj_type       = NMP_OBJECT_TYPE_IP6_ADDRESS,
+            .addr_family    = AF_INET6,
+            .sizeof_address = sizeof(NMPlatformIP6Address),
+            .address_cmp =
+                (int (*)(const NMPlatformIPXAddress *a,
+                         const NMPlatformIPXAddress *b,
+                         NMPlatformIPAddressCmpType  cmp_type)) nm_platform_ip6_address_cmp,
+            .address_to_string = (const char *(*) (const NMPlatformIPXAddress *address,
+                                                   char                       *buf,
+                                                   gsize len)) nm_platform_ip6_address_to_string,
+        },
+};
 
 const _NMPlatformVTableRouteUnion nm_platform_vtable_route = {
     .v4 =
