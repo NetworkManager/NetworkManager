@@ -1297,4 +1297,22 @@ typedef enum {
     NM_CLIENT_PERMISSION_RESULT_NO
 } NMClientPermissionResult;
 
+/**
+ * NMRadioFlags:
+ * @NM_RADIO_FLAG_NONE: an alias for numeric zero, no flags set.
+ * @NM_RADIO_FLAG_WLAN_AVAILABLE: A Wireless LAN device or rfkill switch
+ *   is detected in the system.
+ * @NM_RADIO_FLAG_WWAN_AVAILABLE: A Wireless WAN device or rfkill switch
+ *   is detected in the system.
+ *
+ * Flags related to radio interfaces.
+ *
+ * Since: 1.38
+ */
+typedef enum /*< flags >*/ {
+    NM_RADIO_FLAG_NONE           = 0,
+    NM_RADIO_FLAG_WLAN_AVAILABLE = 0x1,
+    NM_RADIO_FLAG_WWAN_AVAILABLE = 0x2,
+} NMRadioFlags;
+
 #endif /* __NM_DBUS_INTERFACE_H__ */

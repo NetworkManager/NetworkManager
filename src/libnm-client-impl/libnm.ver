@@ -1821,3 +1821,9 @@ libnm_1_36_0 {
 global:
 	nm_setting_ovs_dpdk_get_n_rxq;
 } libnm_1_34_0;
+
+libnm_1_38_0 {
+global:
+	nm_client_get_radio_flags;
+	nm_radio_flags_get_type;
+} libnm_1_36_0;
