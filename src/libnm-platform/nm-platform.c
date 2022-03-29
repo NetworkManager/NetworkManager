@@ -4284,6 +4284,7 @@ next_plat:;
      * priority.
      */
     for (i_know = 0; i_know < known_addresses->len; i_know++) {
+        const NMPObject            *plat_obj;
         const NMPObject            *known_obj;
         const NMPlatformIPXAddress *known_address;
         guint32                     lifetime;
@@ -4303,6 +4304,23 @@ next_plat:;
                                           &now,
                                           &preferred);
         nm_assert(lifetime > 0);
+
+        plat_obj = nm_platform_ip_address_get(self, addr_family, ifindex, known_address);
+        if (plat_obj
+            && nm_platform_vtable_address.vx[IS_IPv4].address_cmp(
+                   known_address,
+                   NMP_OBJECT_CAST_IPX_ADDRESS(plat_obj),
+                   NM_PLATFORM_IP_ADDRESS_CMP_TYPE_SEMANTICALLY)
+                   == 0) {
+            char sbuf[sizeof(_nm_utils_to_string_buffer)];
+
+            /* The object is already added. Skip update. */
+            _LOG3t(
+                "address: skip updating IPv%c address: %s",
+                nm_utils_addr_family_to_char(addr_family),
+                nmp_object_to_string(known_obj, NMP_OBJECT_TO_STRING_PUBLIC, sbuf, sizeof(sbuf)));
+            continue;
+        }
 
         if (IS_IPv4) {
             if (!nm_platform_ip4_address_add(
