@@ -385,6 +385,16 @@
     <property name="WimaxHardwareEnabled" type="b" access="read"/>
 
     <!--
+        RadioFlags:
+        @since: 1.38
+
+        Flags related to radio devices. See <link
+        linkend="NMRadioFlags">NMRadioFlags</link> for the list of flags
+        supported.
+    -->
+    <property name="RadioFlags" type="u" access="read"/>
+
+    <!--
         ActiveConnections:
 
         List of active connection object paths.
