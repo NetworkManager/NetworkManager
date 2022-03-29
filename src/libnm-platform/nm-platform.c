@@ -4313,18 +4313,18 @@ next_plat:;
      * priority.
      */
     for (i_know = 0; i_know < known_addresses->len; i_know++) {
+        const NMPObject            *known_obj;
         const NMPlatformIPXAddress *known_address;
-        const NMPObject            *o;
         guint32                     lifetime;
         guint32                     preferred;
 
-        o = known_addresses->pdata[i_know];
-        if (!o)
+        known_obj = known_addresses->pdata[i_know];
+        if (!known_obj)
             continue;
 
-        nm_assert(NMP_OBJECT_GET_TYPE(o) == NMP_OBJECT_TYPE_IP_ADDRESS(IS_IPv4));
+        nm_assert(NMP_OBJECT_GET_TYPE(known_obj) == NMP_OBJECT_TYPE_IP_ADDRESS(IS_IPv4));
 
-        known_address = NMP_OBJECT_CAST_IPX_ADDRESS(o);
+        known_address = NMP_OBJECT_CAST_IPX_ADDRESS(known_obj);
 
         lifetime = nmp_utils_lifetime_get(known_address->ax.timestamp,
                                           known_address->ax.lifetime,
