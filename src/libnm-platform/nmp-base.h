@@ -110,7 +110,7 @@ typedef struct _NMPlatformIP6Route       NMPlatformIP6Route;
 typedef struct _NMPlatformLink           NMPlatformLink;
 typedef struct _NMPObject                NMPObject;
 
-typedef enum {
+typedef enum _nm_packed {
     NMP_OBJECT_TYPE_UNKNOWN,
     NMP_OBJECT_TYPE_LINK,
 
