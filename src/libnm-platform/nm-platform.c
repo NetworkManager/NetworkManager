@@ -3678,14 +3678,13 @@ _addr_array_clean_expired(int          addr_family,
         if (!nmp_utils_lifetime_get(a->timestamp, a->lifetime, a->preferred, cached_now, NULL))
             goto clear_and_next;
 
-        if (idx) {
-            if (G_UNLIKELY(!*idx)) {
-                *idx = g_hash_table_new((GHashFunc) nmp_object_id_hash,
-                                        (GEqualFunc) nmp_object_id_equal);
-            }
-            if (!g_hash_table_add(*idx, (gpointer) NMP_OBJECT_UP_CAST(a)))
-                nm_assert_not_reached();
+        if (G_UNLIKELY(!*idx)) {
+            *idx =
+                g_hash_table_new((GHashFunc) nmp_object_id_hash, (GEqualFunc) nmp_object_id_equal);
         }
+        if (!g_hash_table_add(*idx, (gpointer) NMP_OBJECT_UP_CAST(a)))
+            nm_assert_not_reached();
+
         any_addrs = TRUE;
         continue;
 
