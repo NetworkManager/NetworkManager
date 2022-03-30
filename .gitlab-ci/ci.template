@@ -148,9 +148,10 @@ variables:
   stage: test
   script:
     - env
-    - .gitlab-ci/run-test.sh 2>&1 | tee /tmp/nm-test.log
-  after_script:
+    - r=0
+    - .gitlab-ci/run-test.sh 2>&1 | tee /tmp/nm-test.log || r=$?
     - mv /tmp/nm-test.log .
+    - exit $r
   dependencies: []
 
 
