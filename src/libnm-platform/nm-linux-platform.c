@@ -6342,6 +6342,7 @@ cache_prune_one_type(NMPlatform *platform, const NMPLookup *lookup)
 
     nm_dedup_multi_iter_init(&iter, nmp_cache_lookup(cache, lookup));
     while (nm_dedup_multi_iter_next(&iter)) {
+        char                     sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
         const NMDedupMultiEntry *main_entry;
 
         /* we only track the dirty flag for the OBJECT-TYPE index. That means,
@@ -6353,7 +6354,7 @@ cache_prune_one_type(NMPlatform *platform, const NMPLookup *lookup)
         obj = main_entry->obj;
 
         _LOGt("cache-prune: prune %s",
-              nmp_object_to_string(obj, NMP_OBJECT_TO_STRING_ALL, NULL, 0));
+              nmp_object_to_string(obj, NMP_OBJECT_TO_STRING_ALL, sbuf, sizeof(sbuf)));
 
         {
             nm_auto_nmpobj const NMPObject *obj_old = NULL;
@@ -7026,6 +7027,7 @@ event_seq_check(NMPlatform             *platform,
 static void
 event_valid_msg(NMPlatform *platform, struct nl_msg *msg, gboolean handle_events)
 {
+    char                      sbuf1[NM_UTILS_TO_STRING_BUFFER_SIZE];
     NMLinuxPlatformPrivate   *priv;
     nm_auto_nmpobj NMPObject *obj = NULL;
     NMPCacheOpsType           cache_op;
@@ -7082,8 +7084,8 @@ event_valid_msg(NMPlatform *platform, struct nl_msg *msg, gboolean handle_events
           is_dump ? ", in-dump" : "",
           nmp_object_to_string(obj,
                                is_del ? NMP_OBJECT_TO_STRING_ID : NMP_OBJECT_TO_STRING_PUBLIC,
-                               NULL,
-                               0));
+                               sbuf1,
+                               sizeof(sbuf1)));
 
     while (TRUE) {
         nm_auto_nmpobj const NMPObject *obj_old = NULL;
@@ -7309,6 +7311,7 @@ do_add_addrroute(NMPlatform      *platform,
                  struct nl_msg   *nlmsg,
                  gboolean         suppress_netlink_failure)
 {
+    char                    sbuf1[NM_UTILS_TO_STRING_BUFFER_SIZE];
     WaitForNlResponseResult seq_result = WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN;
     gs_free char           *errmsg     = NULL;
     int                     nle;
@@ -7331,7 +7334,7 @@ do_add_addrroute(NMPlatform      *platform,
     if (nle < 0) {
         _LOGE("do-add-%s[%s]: failure sending netlink request \"%s\" (%d)",
               NMP_OBJECT_GET_CLASS(obj_id)->obj_type_name,
-              nmp_object_to_string(obj_id, NMP_OBJECT_TO_STRING_ID, NULL, 0),
+              nmp_object_to_string(obj_id, NMP_OBJECT_TO_STRING_ID, sbuf1, sizeof(sbuf1)),
               nm_strerror(nle),
               -nle);
         return -NME_PL_NETLINK;
@@ -7347,7 +7350,7 @@ do_add_addrroute(NMPlatform      *platform,
                : LOGL_WARN,
            "do-add-%s[%s]: %s",
            NMP_OBJECT_GET_CLASS(obj_id)->obj_type_name,
-           nmp_object_to_string(obj_id, NMP_OBJECT_TO_STRING_ID, NULL, 0),
+           nmp_object_to_string(obj_id, NMP_OBJECT_TO_STRING_ID, sbuf1, sizeof(sbuf1)),
            wait_for_nl_response_to_string(seq_result, errmsg, s_buf, sizeof(s_buf)));
 
     if (NMP_OBJECT_GET_TYPE(obj_id) == NMP_OBJECT_TYPE_IP6_ADDRESS) {
@@ -7368,6 +7371,7 @@ do_add_addrroute(NMPlatform      *platform,
 static gboolean
 do_delete_object(NMPlatform *platform, const NMPObject *obj_id, struct nl_msg *nlmsg)
 {
+    char                    sbuf1[NM_UTILS_TO_STRING_BUFFER_SIZE];
     WaitForNlResponseResult seq_result = WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN;
     gs_free char           *errmsg     = NULL;
     int                     nle;
@@ -7386,7 +7390,7 @@ do_delete_object(NMPlatform *platform, const NMPObject *obj_id, struct nl_msg *n
     if (nle < 0) {
         _LOGE("do-delete-%s[%s]: failure sending netlink request \"%s\" (%d)",
               NMP_OBJECT_GET_CLASS(obj_id)->obj_type_name,
-              nmp_object_to_string(obj_id, NMP_OBJECT_TO_STRING_ID, NULL, 0),
+              nmp_object_to_string(obj_id, NMP_OBJECT_TO_STRING_ID, sbuf1, sizeof(sbuf1)),
               nm_strerror(nle),
               -nle);
         return FALSE;
@@ -7418,7 +7422,7 @@ do_delete_object(NMPlatform *platform, const NMPObject *obj_id, struct nl_msg *n
     _NMLOG(success ? LOGL_DEBUG : LOGL_WARN,
            "do-delete-%s[%s]: %s%s",
            NMP_OBJECT_GET_CLASS(obj_id)->obj_type_name,
-           nmp_object_to_string(obj_id, NMP_OBJECT_TO_STRING_ID, NULL, 0),
+           nmp_object_to_string(obj_id, NMP_OBJECT_TO_STRING_ID, sbuf1, sizeof(sbuf1)),
            wait_for_nl_response_to_string(seq_result, errmsg, s_buf, sizeof(s_buf)),
            log_detail);
 
