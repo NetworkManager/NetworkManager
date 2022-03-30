@@ -6329,7 +6329,8 @@ device_recheck_slave_status(NMDevice *self, const NMPlatformLink *plink)
     plink_master            = nm_platform_link_get(nm_device_get_platform(self), plink->master);
     plink_master_keep_alive = nmp_object_ref(NMP_OBJECT_UP_CAST(plink_master));
 
-    if (master == NULL && plink_master && nm_streq0(plink_master->name, "ovs-system")
+    if (master == NULL && plink_master
+        && NM_IN_STRSET(plink_master->name, "ovs-system", "ovs-netdev")
         && plink_master->type == NM_LINK_TYPE_OPENVSWITCH) {
         _LOGD(LOGD_DEVICE, "the device claimed by openvswitch");
         goto out;

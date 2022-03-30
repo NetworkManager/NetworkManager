@@ -2792,7 +2792,7 @@ get_existing_connection(NMManager *self, NMDevice *device, gboolean *out_generat
         int master_ifindex = nm_platform_link_get_master(priv->platform, ifindex);
 
         /* Check that the master is activating before assuming a
-         * slave connection. However, ignore ovs-system master as
+         * slave connection. However, ignore ovs-system/ovs-netdev master as
          * we never manage it.
          */
         if (master_ifindex
