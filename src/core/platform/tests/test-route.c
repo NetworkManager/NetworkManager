@@ -1535,6 +1535,7 @@ _rule_fuzzy_equal(const NMPObject *obj, const NMPObject *obj_comp, int op_type)
 static void
 test_rule(gconstpointer test_data)
 {
+    char                         sbuf1[NM_UTILS_TO_STRING_BUFFER_SIZE];
     const int                    TEST_IDX     = GPOINTER_TO_INT(test_data);
     const gboolean               TEST_SYNC    = (TEST_IDX == 4);
     gs_unref_ptrarray GPtrArray *objs         = NULL;
@@ -1763,7 +1764,7 @@ again:
 
                 g_print(">>> failing... errno=%d, rule=%s\n",
                         r,
-                        nmp_object_to_string(obj, NMP_OBJECT_TO_STRING_ALL, NULL, 0));
+                        nmp_object_to_string(obj, NMP_OBJECT_TO_STRING_ALL, sbuf1, sizeof(sbuf1)));
 
                 nmp_lookup_init_obj_type(&lookup, NMP_OBJECT_TYPE_ROUTING_RULE);
                 head_entry = nm_platform_lookup(platform, &lookup);
@@ -1775,9 +1776,10 @@ again:
                         && NMP_OBJECT_CAST_ROUTING_RULE(o)->priority
                                == NMP_OBJECT_CAST_ROUTING_RULE(obj)->priority)
                         ch = '*';
-                    g_print(">>> existing rule: %c %s\n",
-                            ch,
-                            nmp_object_to_string(o, NMP_OBJECT_TO_STRING_ALL, NULL, 0));
+                    g_print(
+                        ">>> existing rule: %c %s\n",
+                        ch,
+                        nmp_object_to_string(o, NMP_OBJECT_TO_STRING_ALL, sbuf1, sizeof(sbuf1)));
                 }
 
                 nmtstp_run_command_check("ip rule");
@@ -1836,11 +1838,14 @@ again:
 
                 if (!_rule_fuzzy_equal(obj, objs->pdata[k], RTM_DELRULE)) {
                     g_print(">>> failing...\n");
-                    g_print(">>> no fuzzy match between: %s\n",
-                            nmp_object_to_string(obj, NMP_OBJECT_TO_STRING_ALL, NULL, 0));
                     g_print(
-                        ">>>                    and: %s\n",
-                        nmp_object_to_string(objs->pdata[k], NMP_OBJECT_TO_STRING_ALL, NULL, 0));
+                        ">>> no fuzzy match between: %s\n",
+                        nmp_object_to_string(obj, NMP_OBJECT_TO_STRING_ALL, sbuf1, sizeof(sbuf1)));
+                    g_print(">>>                    and: %s\n",
+                            nmp_object_to_string(objs->pdata[k],
+                                                 NMP_OBJECT_TO_STRING_ALL,
+                                                 sbuf1,
+                                                 sizeof(sbuf1)));
                     g_assert_not_reached();
                 }
 
