@@ -1047,7 +1047,9 @@ int _nm_utils_ascii_str_to_bool(const char *str, int default_value);
 
 /*****************************************************************************/
 
-extern _nm_thread_local char _nm_utils_to_string_buffer[2096];
+#define NM_UTILS_TO_STRING_BUFFER_SIZE 2096
+
+extern _nm_thread_local char _nm_utils_to_string_buffer[NM_UTILS_TO_STRING_BUFFER_SIZE];
 
 void     nm_utils_to_string_buffer_init(char **buf, gsize *len);
 gboolean nm_utils_to_string_buffer_init_null(gconstpointer obj, char **buf, gsize *len);
