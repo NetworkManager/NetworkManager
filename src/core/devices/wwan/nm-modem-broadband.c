@@ -957,7 +957,7 @@ stage3_ip_config_start(NMModem *modem, int addr_family, NMModemIPMethod ip_metho
     const int                               IS_IPv4 = NM_IS_IPv4(addr_family);
     NMModemBroadband                       *self    = NM_MODEM_BROADBAND(modem);
     nm_auto_unref_l3cd_init NML3ConfigData *l3cd    = NULL;
-    char                                    sbuf[sizeof(_nm_utils_to_string_buffer)];
+    char                                    sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
     gs_free_error GError                   *error = NULL;
     const char                             *data_port;
     const char                             *address_string;
