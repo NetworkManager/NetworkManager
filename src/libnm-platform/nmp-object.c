@@ -889,7 +889,7 @@ nmp_object_to_string(const NMPObject      *obj,
                      gsize                 buf_size)
 {
     const NMPClass *klass;
-    char            buf2[sizeof(_nm_utils_to_string_buffer)];
+    char            buf2[NM_UTILS_TO_STRING_BUFFER_SIZE];
 
     if (!nm_utils_to_string_buffer_init_null(obj, &buf, &buf_size))
         return buf;
@@ -980,7 +980,7 @@ _vt_cmd_obj_to_string_lnk_vlan(const NMPObject      *obj,
                                gsize                 buf_size)
 {
     const NMPClass *klass;
-    char            buf2[sizeof(_nm_utils_to_string_buffer)];
+    char            buf2[NM_UTILS_TO_STRING_BUFFER_SIZE];
     char           *b;
     gsize           l;
 
@@ -1044,7 +1044,7 @@ _vt_cmd_obj_to_string_lnk_wireguard(const NMPObject      *obj,
                                     gsize                 buf_size)
 {
     const NMPClass *klass;
-    char            buf2[sizeof(_nm_utils_to_string_buffer)];
+    char            buf2[NM_UTILS_TO_STRING_BUFFER_SIZE];
     char           *b;
     guint           i;
 

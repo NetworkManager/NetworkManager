@@ -4033,7 +4033,7 @@ nm_platform_ip_address_sync(NMPlatform *self,
 
     /* Disabled. Enable this for printf debugging. */
     if (EXTRA_LOGGING) {
-        char sbuf[sizeof(_nm_utils_to_string_buffer)];
+        char sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
         char sbuf1[50];
 
         _LOG3T("IPv%c address sync on %d (%u addresses, %u to prune)",
@@ -4114,7 +4114,7 @@ nm_platform_ip_address_sync(NMPlatform *self,
 
     if (EXTRA_LOGGING && plat_addresses) {
         for (i = 0; i < plat_addresses->len; i++) {
-            char sbuf[sizeof(_nm_utils_to_string_buffer)];
+            char sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
             char sbuf1[50];
 
             _LOG3T("  platform#%u: %s%s",
@@ -4376,7 +4376,7 @@ next_plat:;
                    NMP_OBJECT_CAST_IPX_ADDRESS(plat_obj),
                    NM_PLATFORM_IP_ADDRESS_CMP_TYPE_SEMANTICALLY)
                    == 0) {
-            char sbuf[sizeof(_nm_utils_to_string_buffer)];
+            char sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
 
             /* The object is already added. Skip update. */
             _LOG3t(
@@ -4726,8 +4726,8 @@ nm_platform_ip_route_sync(NMPlatform *self,
     guint                          i;
     int                            i_type;
     gboolean                       success = TRUE;
-    char                           sbuf1[sizeof(_nm_utils_to_string_buffer)];
-    char                           sbuf2[sizeof(_nm_utils_to_string_buffer)];
+    char                           sbuf1[NM_UTILS_TO_STRING_BUFFER_SIZE];
+    char                           sbuf2[NM_UTILS_TO_STRING_BUFFER_SIZE];
 
     nm_assert(NM_IS_PLATFORM(self));
     nm_assert(ifindex > 0);
@@ -5074,7 +5074,7 @@ nm_platform_ip_route_normalize(int addr_family, NMPlatformIPRoute *route)
 static int
 _ip_route_add(NMPlatform *self, NMPNlmFlags flags, int addr_family, gconstpointer route)
 {
-    char sbuf[sizeof(_nm_utils_to_string_buffer)];
+    char sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
     int  ifindex;
 
     _CHECK_SELF(self, klass, FALSE);

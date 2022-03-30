@@ -6393,8 +6393,8 @@ cache_on_change(NMPlatform      *platform,
                 const NMPObject *obj_new)
 {
     const NMPClass *klass;
-    char            str_buf[sizeof(_nm_utils_to_string_buffer)];
-    char            str_buf2[sizeof(_nm_utils_to_string_buffer)];
+    char            str_buf[NM_UTILS_TO_STRING_BUFFER_SIZE];
+    char            str_buf2[NM_UTILS_TO_STRING_BUFFER_SIZE];
     NMPCache       *cache = nm_platform_get_cache(platform);
 
     ASSERT_nmp_cache_ops(cache, cache_op, obj_old, obj_new);
