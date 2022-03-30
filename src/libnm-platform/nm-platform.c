@@ -1873,12 +1873,14 @@ nm_platform_link_set_sriov_vfs(NMPlatform *self, int ifindex, const NMPlatformVF
 
     g_return_val_if_fail(ifindex > 0, FALSE);
 
-    _LOG3D("link: setting VFs");
-    for (i = 0; vfs[i]; i++) {
-        char                sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
-        const NMPlatformVF *vf = vfs[i];
+    if (_LOGD_ENABLED()) {
+        _LOG3D("link: setting VFs");
+        for (i = 0; vfs[i]; i++) {
+            char                sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
+            const NMPlatformVF *vf = vfs[i];
 
-        _LOG3D("link:   VF %s", nm_platform_vf_to_string(vf, sbuf, sizeof(sbuf)));
+            _LOG3D("link:   VF %s", nm_platform_vf_to_string(vf, sbuf, sizeof(sbuf)));
+        }
     }
 
     return klass->link_set_sriov_vfs(self, ifindex, vfs);
@@ -1895,16 +1897,18 @@ nm_platform_link_set_bridge_vlans(NMPlatform                        *self,
 
     g_return_val_if_fail(ifindex > 0, FALSE);
 
-    _LOG3D("link: %s bridge VLANs on %s",
-           vlans ? "setting" : "clearing",
-           on_master ? "master" : "self");
-    if (vlans) {
-        for (i = 0; vlans[i]; i++) {
-            char                        sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
-            const NMPlatformBridgeVlan *vlan = vlans[i];
+    if (_LOGD_ENABLED()) {
+        _LOG3D("link: %s bridge VLANs on %s",
+               vlans ? "setting" : "clearing",
+               on_master ? "master" : "self");
+        if (vlans) {
+            for (i = 0; vlans[i]; i++) {
+                char                        sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
+                const NMPlatformBridgeVlan *vlan = vlans[i];
 
-            _LOG3D("link:   bridge VLAN %s",
-                   nm_platform_bridge_vlan_to_string(vlan, sbuf, sizeof(sbuf)));
+                _LOG3D("link:   bridge VLAN %s",
+                       nm_platform_bridge_vlan_to_string(vlan, sbuf, sizeof(sbuf)));
+            }
         }
     }
 
