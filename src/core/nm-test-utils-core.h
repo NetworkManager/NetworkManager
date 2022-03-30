@@ -211,7 +211,7 @@ nmtst_platform_ip4_routes_equal(const NMPlatformIP4Route *a,
 
     for (i = 0; i < len; i++) {
         if (nm_platform_ip4_route_cmp_full(&a[i], &b[i]) != 0) {
-            char buf[sizeof(_nm_utils_to_string_buffer)];
+            char buf[NM_UTILS_TO_STRING_BUFFER_SIZE];
 
             g_error("Error comparing IPv4 route[%lu]: %s vs %s",
                     (unsigned long) i,
@@ -280,7 +280,7 @@ nmtst_platform_ip6_routes_equal(const NMPlatformIP6Route *a,
 
     for (i = 0; i < len; i++) {
         if (nm_platform_ip6_route_cmp_full(&a[i], &b[i]) != 0) {
-            char buf[sizeof(_nm_utils_to_string_buffer)];
+            char buf[NM_UTILS_TO_STRING_BUFFER_SIZE];
 
             g_error("Error comparing IPv6 route[%lu]: %s vs %s",
                     (unsigned long) i,
