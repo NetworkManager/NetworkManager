@@ -871,6 +871,11 @@ nm_utils_to_string_buffer_init(char **buf, gsize *len)
     if (!*buf) {
         *buf = _nm_utils_to_string_buffer;
         *len = NM_UTILS_TO_STRING_BUFFER_SIZE;
+
+        /* We no longer want to support callers to omit the buffer
+         * and fallback to the global buffer. Callers should be fixed
+         * to always provide a valid buffer. */
+        g_return_if_reached();
     }
 }
 
