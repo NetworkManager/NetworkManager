@@ -300,6 +300,7 @@ process_classful_routes(const char     *iface,
     }
 
     for (s = searches; *s; s += 2) {
+        char               sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
         NMPlatformIP4Route route;
         guint32            rt_addr, rt_route;
 
@@ -342,7 +343,7 @@ process_classful_routes(const char     *iface,
         _LOG2I(LOGD_DHCP,
                iface,
                "  static route %s",
-               nm_platform_ip4_route_to_string(&route, NULL, 0));
+               nm_platform_ip4_route_to_string(&route, sbuf, sizeof(sbuf)));
     }
 }
 
