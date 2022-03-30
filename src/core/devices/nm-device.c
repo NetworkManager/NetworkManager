@@ -10448,7 +10448,7 @@ void
 nm_device_use_ip6_subnet(NMDevice *self, const NMPlatformIP6Address *subnet)
 {
     nm_auto_unref_l3cd_init NML3ConfigData *l3cd = NULL;
-    char                                    sbuf[sizeof(_nm_utils_to_string_buffer)];
+    char                                    sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
     NMPlatformIP6Address                    address;
 
     l3cd = nm_device_create_l3_config_data(self, NM_IP_CONFIG_SOURCE_SHARED);
