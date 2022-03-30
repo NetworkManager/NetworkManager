@@ -542,6 +542,12 @@ create_device(NMDeviceFactory      *factory,
                                           NM_SETTING_TUN_SETTING_NAME),
                          NULL);
 
+    /* OpenvSwitch will create a tun device named ovs-netdev when the datapath selected is netdev */
+    if (nm_streq0(iface, "ovs-netdev")) {
+        *out_ignore = TRUE;
+        return NULL;
+    }
+
     return g_object_new(NM_TYPE_DEVICE_TUN,
                         NM_DEVICE_IFACE,
                         iface,
