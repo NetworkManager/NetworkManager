@@ -67,9 +67,12 @@ dm_watch_cb(GPid pid, int status, gpointer user_data)
     guint                    err;
 
     if (WIFEXITED(status)) {
+        char sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
+
         err = WEXITSTATUS(status);
         if (err != 0) {
-            _LOGW("dnsmasq exited with error: %s", nm_utils_dnsmasq_status_to_string(err, NULL, 0));
+            _LOGW("dnsmasq exited with error: %s",
+                  nm_utils_dnsmasq_status_to_string(err, sbuf, sizeof(sbuf)));
         }
     } else if (WIFSTOPPED(status)) {
         _LOGW("dnsmasq stopped unexpectedly with signal %d", WSTOPSIG(status));
