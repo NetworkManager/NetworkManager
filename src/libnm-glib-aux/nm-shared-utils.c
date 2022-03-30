@@ -870,7 +870,7 @@ nm_utils_to_string_buffer_init(char **buf, gsize *len)
 {
     if (!*buf) {
         *buf = _nm_utils_to_string_buffer;
-        *len = sizeof(_nm_utils_to_string_buffer);
+        *len = NM_UTILS_TO_STRING_BUFFER_SIZE;
     }
 }
 
