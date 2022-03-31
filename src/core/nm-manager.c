@@ -7802,29 +7802,6 @@ auth_mgr_changed(NMAuthManager *auth_manager, gpointer user_data)
 
 /*****************************************************************************/
 
-static gboolean
-periodic_update_active_connection_timestamps(gpointer user_data)
-{
-    NMManager          *manager = NM_MANAGER(user_data);
-    NMManagerPrivate   *priv    = NM_MANAGER_GET_PRIVATE(manager);
-    NMActiveConnection *ac;
-    gboolean            has_time = FALSE;
-    guint64             t        = 0;
-
-    c_list_for_each_entry (ac, &priv->active_connections_lst_head, active_connections_lst) {
-        if (nm_active_connection_get_state(ac) != NM_ACTIVE_CONNECTION_STATE_ACTIVATED)
-            continue;
-
-        if (!has_time) {
-            t        = time(NULL);
-            has_time = TRUE;
-        }
-        nm_settings_connection_update_timestamp(nm_active_connection_get_settings_connection(ac),
-                                                t);
-    }
-    return G_SOURCE_CONTINUE;
-}
-
 void
 nm_manager_unblock_failed_ovs_interfaces(NMManager *self)
 {
@@ -8057,12 +8034,6 @@ nm_manager_init(NMManager *self)
     } else {
         _LOGW(LOGD_CORE, "failed to monitor kernel firmware directory '%s'.", KERNEL_FIRMWARE_DIR);
     }
-
-    /* Update timestamps in active connections */
-    priv->timestamp_update_id =
-        g_timeout_add_seconds(300,
-                              (GSourceFunc) periodic_update_active_connection_timestamps,
-                              self);
 
     priv->metered       = NM_METERED_UNKNOWN;
     priv->sleep_devices = g_hash_table_new(nm_direct_hash, NULL);
