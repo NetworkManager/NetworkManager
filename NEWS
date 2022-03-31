@@ -9,6 +9,10 @@ the later release.
 USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 
 * Add support for route type "throw".
+* Static IPv6 addresses from "ipv6.addresses" are now preferred over
+  addresses from DHCPv6, which are preferred over addresses from autoconf.
+  This affects IPv6 source address selection, if the rules from
+  RFC 6724, section 5 don't give a exhaustive match.
 * Wi-Fi hotspots will use a (stable) random channel number unless one is
   chosen manually.
 * Don't use unsupported SAE/WPA3 mode for AP mode.
