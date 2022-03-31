@@ -3762,8 +3762,8 @@ clear_and_next:
 static gboolean
 ip4_addr_subnets_is_plain_address(const GPtrArray *addresses, gconstpointer needle)
 {
-    return needle >= (gconstpointer) &addresses->pdata[0]
-           && needle < (gconstpointer) &addresses->pdata[addresses->len];
+    return nm_ptr_to_uintptr(needle) >= nm_ptr_to_uintptr(&addresses->pdata[0])
+           && nm_ptr_to_uintptr(needle) < nm_ptr_to_uintptr(&addresses->pdata[addresses->len]);
 }
 
 static const NMPObject **
