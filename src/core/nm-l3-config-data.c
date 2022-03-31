@@ -2769,7 +2769,7 @@ _init_from_connection_ip(NML3ConfigData *self, int addr_family, NMConnection *co
 
     nroutes = nm_setting_ip_config_get_num_routes(s_ip);
     for (i = 0; i < nroutes; i++) {
-        NMIPRoute         *s_route;
+        NMIPRoute         *s_route = nm_setting_ip_config_get_route(s_ip, i);
         NMPlatformIPXRoute r;
         NMIPAddr           network_bin;
         NMIPAddr           next_hop_bin;
@@ -2777,12 +2777,6 @@ _init_from_connection_ip(NML3ConfigData *self, int addr_family, NMConnection *co
         guint32            metric;
         gboolean           metric_any;
         guint              plen;
-        guint              i_idx;
-
-        /* Routes in ipv6.addresses are in reversed priority order. */
-        i_idx = IS_IPv4 ? i : (nroutes - i - 1);
-
-        s_route = nm_setting_ip_config_get_route(s_ip, i_idx);
 
         nm_assert(nm_ip_route_get_family(s_route) == addr_family);
 
