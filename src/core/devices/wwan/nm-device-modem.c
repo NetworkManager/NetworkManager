@@ -181,8 +181,10 @@ modem_new_config(NMModem                  *modem,
         return;
     }
 
-    if (!IS_IPv4)
+    if (!IS_IPv4) {
         priv->iid = iid ? *iid : ((NMUtilsIPv6IfaceId) NM_UTILS_IPV6_IFACE_ID_INIT);
+        nm_device_sysctl_ip_conf_set(device, AF_INET6, "disable_ipv6", "0");
+    }
 
     if (do_auto) {
         if (IS_IPv4)
