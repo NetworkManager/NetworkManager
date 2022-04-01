@@ -49,6 +49,7 @@ typedef enum {
     NM_SUPPL_CAP_TYPE_WFD,
     NM_SUPPL_CAP_TYPE_SUITEB192,
     NM_SUPPL_CAP_TYPE_WEP,
+    NM_SUPPL_CAP_TYPE_BIP,
     /* Note: if you're adding a capability here, log its presence at the
      * bottom of _dbus_get_capabilities_cb(). */
     _NM_SUPPL_CAP_TYPE_NUM,
@@ -79,6 +80,7 @@ typedef enum {
     _NM_SUPPL_CAP_MASK_DEFINE(SAE),
     _NM_SUPPL_CAP_MASK_DEFINE(SHA384),
     _NM_SUPPL_CAP_MASK_DEFINE(WEP),
+    _NM_SUPPL_CAP_MASK_DEFINE(BIP),
 #undef _NM_SUPPL_CAP_MASK_DEFINE
 } NMSupplCapMask;
 
