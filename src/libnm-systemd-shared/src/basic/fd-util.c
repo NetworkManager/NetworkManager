@@ -3,6 +3,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <linux/btrfs.h>
+#include <linux/fs.h>
 #include <linux/magic.h>
 #include <sys/ioctl.h>
 #include <sys/resource.h>
@@ -17,6 +18,7 @@
 #include "io-util.h"
 #include "macro.h"
 #include "missing_fcntl.h"
+#include "missing_fs.h"
 #include "missing_syscall.h"
 #include "parse-util.h"
 #include "path-util.h"
@@ -417,14 +419,11 @@ int same_fd(int a, int b) {
         assert(a >= 0);
         assert(b >= 0);
 
-        /* Compares two file descriptors. Note that semantics are
-         * quite different depending on whether we have kcmp() or we
-         * don't. If we have kcmp() this will only return true for
-         * dup()ed file descriptors, but not otherwise. If we don't
-         * have kcmp() this will also return true for two fds of the same
-         * file, created by separate open() calls. Since we use this
-         * call mostly for filtering out duplicates in the fd store
-         * this difference hopefully doesn't matter too much. */
+        /* Compares two file descriptors. Note that semantics are quite different depending on whether we
+         * have kcmp() or we don't. If we have kcmp() this will only return true for dup()ed file
+         * descriptors, but not otherwise. If we don't have kcmp() this will also return true for two fds of
+         * the same file, created by separate open() calls. Since we use this call mostly for filtering out
+         * duplicates in the fd store this difference hopefully doesn't matter too much. */
 
         if (a == b)
                 return true;
@@ -436,7 +435,7 @@ int same_fd(int a, int b) {
                 return true;
         if (r > 0)
                 return false;
-        if (!IN_SET(errno, ENOSYS, EACCES, EPERM))
+        if (!ERRNO_IS_NOT_SUPPORTED(errno) && !ERRNO_IS_PRIVILEGE(errno))
                 return -errno;
 
         /* We don't have kcmp(), use fstat() instead. */
@@ -446,23 +445,17 @@ int same_fd(int a, int b) {
         if (fstat(b, &stb) < 0)
                 return -errno;
 
-        if ((sta.st_mode & S_IFMT) != (stb.st_mode & S_IFMT))
+        if (!stat_inode_same(&sta, &stb))
                 return false;
 
-        /* We consider all device fds different, since two device fds
-         * might refer to quite different device contexts even though
-         * they share the same inode and backing dev_t. */
+        /* We consider all device fds different, since two device fds might refer to quite different device
+         * contexts even though they share the same inode and backing dev_t. */
 
         if (S_ISCHR(sta.st_mode) || S_ISBLK(sta.st_mode))
                 return false;
 
-        if (sta.st_dev != stb.st_dev || sta.st_ino != stb.st_ino)
-                return false;
-
-        /* The fds refer to the same inode on disk, let's also check
-         * if they have the same fd flags. This is useful to
-         * distinguish the read and write side of a pipe created with
-         * pipe(). */
+        /* The fds refer to the same inode on disk, let's also check if they have the same fd flags. This is
+         * useful to distinguish the read and write side of a pipe created with pipe(). */
         fa = fcntl(a, F_GETFL);
         if (fa < 0)
                 return -errno;
@@ -796,4 +789,25 @@ int btrfs_defrag_fd(int fd) {
                 return r;
 
         return RET_NERRNO(ioctl(fd, BTRFS_IOC_DEFRAG, NULL));
+}
+
+int fd_get_diskseq(int fd, uint64_t *ret) {
+        uint64_t diskseq;
+
+        assert(fd >= 0);
+        assert(ret);
+
+        if (ioctl(fd, BLKGETDISKSEQ, &diskseq) < 0) {
+                /* Note that the kernel is weird: non-existing ioctls currently return EINVAL
+                 * rather than ENOTTY on loopback block devices. They should fix that in the kernel,
+                 * but in the meantime we accept both here. */
+                if (!ERRNO_IS_NOT_SUPPORTED(errno) && errno != EINVAL)
+                        return -errno;
+
+                return -EOPNOTSUPP;
+        }
+
+        *ret = diskseq;
+
+        return 0;
 }

@@ -81,8 +81,8 @@ enum {
         SD_DHCP6_OPTION_SUBSCRIBER_ID              = 38,  /* RFC 4580 */
         SD_DHCP6_OPTION_CLIENT_FQDN                = 39,  /* RFC 4704 */
         SD_DHCP6_OPTION_PANA_AGENT                 = 40,  /* RFC 5192 */
-        SD_DHCP6_OPTION_NEW_POSIX_TIMEZONE         = 41,  /* RFC 4833 */
-        SD_DHCP6_OPTION_NEW_TZDB_TIMEZONE          = 42,  /* RFC 4833 */
+        SD_DHCP6_OPTION_POSIX_TIMEZONE             = 41,  /* RFC 4833 */
+        SD_DHCP6_OPTION_TZDB_TIMEZONE              = 42,  /* RFC 4833 */
         SD_DHCP6_OPTION_ERO                        = 43,  /* RFC 4994 */
         SD_DHCP6_OPTION_LQ_QUERY                   = 44,  /* RFC 5007 */
         SD_DHCP6_OPTION_CLIENT_DATA                = 45,  /* RFC 5007 */
@@ -251,7 +251,7 @@ int sd_dhcp6_client_set_request_vendor_class(
 int sd_dhcp6_client_set_prefix_delegation_hint(
                 sd_dhcp6_client *client,
                 uint8_t prefixlen,
-                const struct in6_addr *pd_address);
+                const struct in6_addr *pd_prefix);
 int sd_dhcp6_client_get_prefix_delegation(sd_dhcp6_client *client,
                                           int *delegation);
 int sd_dhcp6_client_set_prefix_delegation(sd_dhcp6_client *client,
@@ -260,8 +260,6 @@ int sd_dhcp6_client_get_address_request(sd_dhcp6_client *client,
                                         int *request);
 int sd_dhcp6_client_set_address_request(sd_dhcp6_client *client,
                                         int request);
-int sd_dhcp6_client_set_transaction_id(sd_dhcp6_client *client,
-                                       uint32_t transaction_id);
 int sd_dhcp6_client_add_vendor_option(sd_dhcp6_client *client,
                                       sd_dhcp6_option *v);
 

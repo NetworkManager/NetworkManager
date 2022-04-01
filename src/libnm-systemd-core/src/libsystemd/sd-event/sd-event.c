@@ -1920,7 +1920,6 @@ static int event_make_inode_data(
 static uint32_t inode_data_determine_mask(struct inode_data *d) {
         bool excl_unlink = true;
         uint32_t combined = 0;
-        sd_event_source *s;
 
         assert(d);
 
@@ -3458,9 +3457,7 @@ static int event_inotify_data_process(sd_event *e, struct inotify_data *d) {
                         /* The queue overran, let's pass this event to all event sources connected to this inotify
                          * object */
 
-                        HASHMAP_FOREACH(inode_data, d->inodes) {
-                                sd_event_source *s;
-
+                        HASHMAP_FOREACH(inode_data, d->inodes)
                                 LIST_FOREACH(inotify.by_inode_data, s, inode_data->event_sources) {
 
                                         if (event_source_is_offline(s))
@@ -3470,10 +3467,8 @@ static int event_inotify_data_process(sd_event *e, struct inotify_data *d) {
                                         if (r < 0)
                                                 return r;
                                 }
-                        }
                 } else {
                         struct inode_data *inode_data;
-                        sd_event_source *s;
 
                         /* Find the inode object for this watch descriptor. If IN_IGNORED is set we also remove it from
                          * our watch descriptor table. */
@@ -3521,7 +3516,6 @@ static int event_inotify_data_process(sd_event *e, struct inotify_data *d) {
 }
 
 static int process_inotify(sd_event *e) {
-        struct inotify_data *d;
         int r, done = 0;
 
         assert(e);
@@ -3906,6 +3900,7 @@ static int epoll_wait_usec(
         int msec;
 #if 0
         static bool epoll_pwait2_absent = false;
+        int r;
 
         /* A wrapper that uses epoll_pwait2() if available, and falls back to epoll_wait() if not.
          *
@@ -3914,12 +3909,10 @@ static int epoll_wait_usec(
          * https://github.com/systemd/systemd/issues/19052. */
 
         if (!epoll_pwait2_absent && timeout != USEC_INFINITY) {
-                struct timespec ts;
-
                 r = epoll_pwait2(fd,
                                  events,
                                  maxevents,
-                                 timespec_store(&ts, timeout),
+                                 TIMESPEC_STORE(timeout),
                                  NULL);
                 if (r >= 0)
                         return r;
@@ -4318,12 +4311,6 @@ _public_ int sd_event_now(sd_event *e, clockid_t clock, uint64_t *usec) {
         assert_return(!event_pid_changed(e), -ECHILD);
 
         if (!TRIPLE_TIMESTAMP_HAS_CLOCK(clock))
-                return -EOPNOTSUPP;
-
-        /* Generate a clean error in case CLOCK_BOOTTIME is not available. Note that don't use clock_supported() here,
-         * for a reason: there are systems where CLOCK_BOOTTIME is supported, but CLOCK_BOOTTIME_ALARM is not, but for
-         * the purpose of getting the time this doesn't matter. */
-        if (IN_SET(clock, CLOCK_BOOTTIME, CLOCK_BOOTTIME_ALARM) && !clock_boottime_supported())
                 return -EOPNOTSUPP;
 
         if (!triple_timestamp_is_set(&e->timestamp)) {

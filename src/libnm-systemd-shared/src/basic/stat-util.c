@@ -127,17 +127,22 @@ bool null_or_empty(struct stat *st) {
         return false;
 }
 
-int null_or_empty_path(const char *fn) {
+int null_or_empty_path_with_root(const char *fn, const char *root) {
         struct stat st;
+        int r;
 
         assert(fn);
 
-        /* If we have the path, let's do an easy text comparison first. */
-        if (path_equal(fn, "/dev/null"))
+        /* A symlink to /dev/null or an empty file?
+         * When looking under root_dir, we can't expect /dev/ to be mounted,
+         * so let's see if the path is a (possibly dangling) symlink to /dev/null. */
+
+        if (path_equal_ptr(path_startswith(fn, root ?: "/"), "dev/null"))
                 return true;
 
-        if (stat(fn, &st) < 0)
-                return -errno;
+        r = chase_symlinks_and_stat(fn, root, CHASE_PREFIX_ROOT, NULL, &st, NULL);
+        if (r < 0)
+                return r;
 
         return null_or_empty(&st);
 }
@@ -185,8 +190,7 @@ int files_same(const char *filea, const char *fileb, int flags) {
         if (fstatat(AT_FDCWD, fileb, &b, flags) < 0)
                 return -errno;
 
-        return a.st_dev == b.st_dev &&
-               a.st_ino == b.st_ino;
+        return stat_inode_same(&a, &b);
 }
 
 bool is_fs_type(const struct statfs *s, statfs_f_type_t magic_value) {
@@ -247,6 +251,15 @@ int path_is_temporary_fs(const char *path) {
                 return -errno;
 
         return is_temporary_fs(&s);
+}
+
+int path_is_network_fs(const char *path) {
+        struct statfs s;
+
+        if (statfs(path, &s) < 0)
+                return -errno;
+
+        return is_network_fs(&s);
 }
 
 int stat_verify_regular(const struct stat *st) {
@@ -408,6 +421,18 @@ int proc_mounted(void) {
         return r;
 }
 
+bool stat_inode_same(const struct stat *a, const struct stat *b) {
+
+        /* Returns if the specified stat structure references the same (though possibly modified) inode. Does
+         * a thorough check, comparing inode nr, backing device and if the inode is still of the same type. */
+
+        return a && b &&
+                (a->st_mode & S_IFMT) != 0 && /* We use the check for .st_mode if the structure was ever initialized */
+                ((a->st_mode ^ b->st_mode) & S_IFMT) == 0 &&  /* same inode type */
+                a->st_dev == b->st_dev &&
+                a->st_ino == b->st_ino;
+}
+
 bool stat_inode_unmodified(const struct stat *a, const struct stat *b) {
 
         /* Returns if the specified stat structures reference the same, unmodified inode. This check tries to
@@ -419,14 +444,10 @@ bool stat_inode_unmodified(const struct stat *a, const struct stat *b) {
          * about contents of the file. The purpose here is to detect file contents changes, and nothing
          * else. */
 
-        return a && b &&
-                (a->st_mode & S_IFMT) != 0 && /* We use the check for .st_mode if the structure was ever initialized */
-                ((a->st_mode ^ b->st_mode) & S_IFMT) == 0 &&  /* same inode type */
+        return stat_inode_same(a, b) &&
                 a->st_mtim.tv_sec == b->st_mtim.tv_sec &&
                 a->st_mtim.tv_nsec == b->st_mtim.tv_nsec &&
                 (!S_ISREG(a->st_mode) || a->st_size == b->st_size) && /* if regular file, compare file size */
-                a->st_dev == b->st_dev &&
-                a->st_ino == b->st_ino &&
                 (!(S_ISCHR(a->st_mode) || S_ISBLK(a->st_mode)) || a->st_rdev == b->st_rdev); /* if device node, also compare major/minor, because we can */
 }
 
