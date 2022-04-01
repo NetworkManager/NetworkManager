@@ -154,6 +154,7 @@ static gboolean
 lease_parse_address(NDhcp4ClientLease *lease,
                     NML3ConfigData    *l3cd,
                     GHashTable        *options,
+                    in_addr_t         *out_address,
                     GError           **error)
 {
     struct in_addr a_address;
@@ -268,6 +269,8 @@ lease_parse_address(NDhcp4ClientLease *lease,
                                         .preferred    = a_lifetime,
                                     }));
 
+    NM_SET_OUT(out_address, a_address.s_addr);
+
     return TRUE;
 }
 
@@ -326,6 +329,7 @@ lease_parse_address_list(NDhcp4ClientLease       *lease,
 static void
 lease_parse_routes(NDhcp4ClientLease *lease,
                    NML3ConfigData    *l3cd,
+                   in_addr_t          lease_address,
                    GHashTable        *options,
                    NMStrBuf          *sbuf)
 {
@@ -373,10 +377,11 @@ lease_parse_routes(NDhcp4ClientLease *lease,
 
             nm_l3_config_data_add_route_4(l3cd,
                                           &((const NMPlatformIP4Route){
+                                              .rt_source     = NM_IP_CONFIG_SOURCE_DHCP,
                                               .network       = dest,
                                               .plen          = plen,
                                               .gateway       = gateway,
-                                              .rt_source     = NM_IP_CONFIG_SOURCE_DHCP,
+                                              .pref_src      = lease_address,
                                               .table_any     = TRUE,
                                               .table_coerced = 0,
                                               .metric_any    = TRUE,
@@ -416,10 +421,11 @@ lease_parse_routes(NDhcp4ClientLease *lease,
 
             nm_l3_config_data_add_route_4(l3cd,
                                           &((const NMPlatformIP4Route){
+                                              .rt_source     = NM_IP_CONFIG_SOURCE_DHCP,
                                               .network       = dest,
                                               .plen          = plen,
                                               .gateway       = gateway,
-                                              .rt_source     = NM_IP_CONFIG_SOURCE_DHCP,
+                                              .pref_src      = lease_address,
                                               .table_any     = TRUE,
                                               .table_coerced = 0,
                                               .metric_any    = TRUE,
@@ -464,6 +470,7 @@ lease_parse_routes(NDhcp4ClientLease *lease,
                                           &((const NMPlatformIP4Route){
                                               .rt_source     = NM_IP_CONFIG_SOURCE_DHCP,
                                               .gateway       = gateway,
+                                              .pref_src      = lease_address,
                                               .table_any     = TRUE,
                                               .table_coerced = 0,
                                               .metric_any    = TRUE,
@@ -547,6 +554,7 @@ lease_to_ip4_config(NMDedupMultiIndex *multi_idx,
     const char                             *v_str;
     guint16                                 v_u16;
     in_addr_t                               v_inaddr;
+    in_addr_t                               lease_address;
     struct in_addr                          v_inaddr_s;
     int                                     r;
 
@@ -556,7 +564,7 @@ lease_to_ip4_config(NMDedupMultiIndex *multi_idx,
 
     options = nm_dhcp_option_create_options_dict();
 
-    if (!lease_parse_address(lease, l3cd, options, error))
+    if (!lease_parse_address(lease, l3cd, options, &lease_address, error))
         return NULL;
 
     r = n_dhcp4_client_lease_get_server_identifier(lease, &v_inaddr_s);
@@ -575,7 +583,7 @@ lease_to_ip4_config(NMDedupMultiIndex *multi_idx,
                                           v_inaddr);
     }
 
-    lease_parse_routes(lease, l3cd, options, &sbuf);
+    lease_parse_routes(lease, l3cd, lease_address, options, &sbuf);
 
     lease_parse_address_list(lease, l3cd, NM_DHCP_OPTION_DHCP4_DOMAIN_NAME_SERVER, options, &sbuf);
 
