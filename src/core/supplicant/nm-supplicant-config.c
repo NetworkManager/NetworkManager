@@ -880,6 +880,7 @@ nm_supplicant_config_add_setting_wireless_security(NMSupplicantConfig *         
             break;
         }
     } else if (nm_streq(key_mgmt, "sae")) {
+        g_string_append(key_mgmt_conf, "sae");
         if (_get_capability(priv, NM_SUPPL_CAP_TYPE_FT))
             g_string_append(key_mgmt_conf, " ft-sae");
     } else if (nm_streq(key_mgmt, "wpa-eap-suite-b-192")) {
