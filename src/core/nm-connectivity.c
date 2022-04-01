@@ -626,44 +626,51 @@ _timeout_cb(gpointer user_data)
 static int
 easy_debug_cb(CURL *handle, curl_infotype type, char *data, size_t size, void *userptr)
 {
-    NMConnectivityCheckHandle *cb_data = userptr;
-    const char                *escaped = NULL;
-    gs_free char              *to_free = NULL;
+    NMConnectivityCheckHandle *cb_data      = userptr;
+    gs_free char              *data_escaped = NULL;
+    const char                *msg;
+    gboolean                   print_data = FALSE;
 
     switch (type) {
     case CURLINFO_TEXT:
-        escaped = nm_utils_buf_utf8safe_escape((char *) data,
-                                               size,
-                                               NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL,
-                                               &to_free);
-        _LOG2T("libcurl: == Info: %s", escaped ?: "");
-    /* fall-through */
-    default: /* in case a new one is introduced to shock us */
-        return 0;
-
+        print_data = TRUE;
+        msg        = "== Info: ";
+        break;
     case CURLINFO_DATA_OUT:
-        _LOG2T("libcurl => Send data");
-        return 0;
+        msg = "=> Send data";
+        break;
     case CURLINFO_SSL_DATA_OUT:
-        _LOG2T("libcurl => Send SSL data");
-        return 0;
+        msg = "=> Send SSL data";
+        break;
     case CURLINFO_HEADER_IN:
-        _LOG2T("libcurl <= Recv header");
-        return 0;
+        msg = "<= Recv header";
+        break;
     case CURLINFO_DATA_IN:
-        _LOG2T("libcurl <= Recv data");
-        return 0;
+        msg = "<= Recv data";
+        break;
     case CURLINFO_SSL_DATA_IN:
-        _LOG2T("libcurl <= Recv SSL data");
-        return 0;
+        msg = "<= Recv SSL data";
+        break;
     case CURLINFO_HEADER_OUT:
-        escaped = nm_utils_buf_utf8safe_escape((char *) data,
-                                               size,
-                                               NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL,
-                                               &to_free);
-        _LOG2T("libcurl => Send header: %s", escaped ?: "");
+        print_data = TRUE;
+        msg        = "=> Send header: ";
+        return 0;
+    default:
         return 0;
     }
+
+    _LOG2T("libcurl %s%s%s%s",
+           msg,
+           NM_PRINT_FMT_QUOTED(print_data,
+                               "[",
+                               (data_escaped = nm_utils_buf_utf8safe_escape_cp(
+                                    data,
+                                    size,
+                                    NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL))
+                                   ?: "",
+                               "]",
+                               ""));
+    return 0;
 }
 #endif
 
