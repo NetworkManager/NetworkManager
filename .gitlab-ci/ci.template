@@ -220,7 +220,7 @@ check-tree:
     - "{{pages_build.name}}:{{pages_build.version}}@container-prep"
   stage: test
   script:
-    - date '+%Y%m%d-%H%M%S'; black --check . examples/python/gi/nm-wg-set
+    - date '+%Y%m%d-%H%M%S'; contrib/scripts/nm-python-black-format.sh --check
     - date '+%Y%m%d-%H%M%S'; git ls-files -z -- 'po/*.po' | xargs -0 -n1 msgfmt -vc
     - date '+%Y%m%d-%H%M%S'; contrib/scripts/nm-code-format.sh -n
     - date '+%Y%m%d-%H%M%S'; ci-fairy generate-template && git diff --exit-code

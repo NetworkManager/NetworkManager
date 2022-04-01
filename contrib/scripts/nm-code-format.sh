@@ -52,7 +52,6 @@ usage() {
     printf "Usage: %s [OPTION]... [FILE]...\n" "$(basename "$0")"
     printf "Reformat source files using NetworkManager's code-style.\n\n"
     printf "If no file is given the script runs on the whole codebase.\n"
-    printf "If no flag is given no file is touch but errors are reported.\n\n"
     printf "OPTIONS:\n"
     printf "    -i                 Reformat files (this is the default)\n"
     printf "    -n|--dry-run       Only check the files (contrary to \"-i\")\n"

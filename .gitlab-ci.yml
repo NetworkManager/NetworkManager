@@ -47,11 +47,11 @@ variables:
   #
   # This is done by running `ci-fairy generate-template` and possibly bump
   # ".default_tag".
-  FEDORA_TAG:  '2022-03-15.0-a017895d3124'
-  UBUNTU_TAG:  '2022-03-15.0-0d592fa70bc5'
-  DEBIAN_TAG:  '2022-03-15.0-0d592fa70bc5'
-  CENTOS_TAG:  '2022-03-15.0-a017895d3124'
-  ALPINE_TAG:  '2022-03-15.0-65bef47ff3ce'
+  FEDORA_TAG:  '2022-03-15.0-7b3d39bfc5ca'
+  UBUNTU_TAG:  '2022-03-15.0-2cd0d40675ab'
+  DEBIAN_TAG:  '2022-03-15.0-2cd0d40675ab'
+  CENTOS_TAG:  '2022-03-15.0-7b3d39bfc5ca'
+  ALPINE_TAG:  '2022-03-15.0-17672b94a192'
 
   FEDORA_EXEC: 'bash .gitlab-ci/fedora-install.sh'
   UBUNTU_EXEC: 'bash .gitlab-ci/debian-install.sh'
@@ -980,7 +980,7 @@ check-tree:
     - "fedora:35@container-prep"
   stage: test
   script:
-    - date '+%Y%m%d-%H%M%S'; black --check . examples/python/gi/nm-wg-set
+    - date '+%Y%m%d-%H%M%S'; contrib/scripts/nm-python-black-format.sh --check
     - date '+%Y%m%d-%H%M%S'; git ls-files -z -- 'po/*.po' | xargs -0 -n1 msgfmt -vc
     - date '+%Y%m%d-%H%M%S'; contrib/scripts/nm-code-format.sh -n
     - date '+%Y%m%d-%H%M%S'; ci-fairy generate-template && git diff --exit-code
