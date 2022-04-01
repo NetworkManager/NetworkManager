@@ -684,11 +684,13 @@ _idle_cb(gpointer user_data)
 
 #if WITH_CONCHECK
 static void
-do_curl_request(NMConnectivityCheckHandle *cb_data)
+do_curl_request(NMConnectivityCheckHandle *cb_data, const char *hosts)
 {
     CURLM *mhandle;
     CURL  *ehandle;
     long   resolve;
+
+    _LOG2T("set curl resolve list to '%s'", hosts);
 
     mhandle = curl_multi_init();
     if (!mhandle) {
@@ -702,6 +704,8 @@ do_curl_request(NMConnectivityCheckHandle *cb_data)
         cb_data_complete(cb_data, NM_CONNECTIVITY_ERROR, "curl error");
         return;
     }
+
+    cb_data->concheck.hosts = curl_slist_append(NULL, hosts);
 
     cb_data->concheck.curl_mhandle    = mhandle;
     cb_data->concheck.curl_ehandle    = ehandle;
@@ -749,6 +753,92 @@ do_curl_request(NMConnectivityCheckHandle *cb_data)
 }
 
 static void
+do_resolve_request_cb(GObject *source_object, GAsyncResult *res, gpointer user_data)
+{
+    nm_auto_str_buf NMStrBuf   strbuf_hosts = NM_STR_BUF_INIT(0, FALSE);
+    gs_free_error GError      *resolv_error = NULL;
+    GList                     *list;
+    GList                     *iter;
+    NMConnectivityCheckHandle *cb_data;
+
+    list = g_resolver_lookup_by_name_finish(G_RESOLVER(source_object), res, &resolv_error);
+
+    if (nm_utils_error_is_cancelled(resolv_error))
+        return;
+
+    cb_data = user_data;
+
+    nm_assert(cb_data);
+    nm_assert(NM_IS_CONNECTIVITY(cb_data->self));
+
+    if (resolv_error) {
+        _LOG2D("failure to resolve name: %s", resolv_error->message);
+        cb_data_complete(cb_data, NM_CONNECTIVITY_LIMITED, "resolve-error");
+        return;
+    }
+
+    for (iter = list; iter; iter = iter->next) {
+        GInetAddress *a = iter->data;
+        char          str_addr[NM_UTILS_INET_ADDRSTRLEN];
+        int           addr_family;
+
+        switch (g_inet_address_get_family(a)) {
+        case G_SOCKET_FAMILY_IPV4:
+            addr_family = AF_INET;
+            break;
+        case G_SOCKET_FAMILY_IPV6:
+            addr_family = AF_INET6;
+            break;
+        default:
+            addr_family = AF_UNSPEC;
+            break;
+        }
+        if (cb_data->addr_family != AF_UNSPEC && cb_data->addr_family != addr_family)
+            continue;
+
+        if (strbuf_hosts.len == 0) {
+            nm_str_buf_append_printf(&strbuf_hosts,
+                                     "%s:%s:",
+                                     cb_data->concheck.con_config->host,
+                                     cb_data->concheck.con_config->port ?: "80");
+        } else
+            nm_str_buf_append_c(&strbuf_hosts, ',');
+
+        nm_str_buf_append(&strbuf_hosts,
+                          nm_utils_inet_ntop(addr_family, g_inet_address_to_bytes(a), str_addr));
+    }
+
+    g_list_free_full(list, g_object_unref);
+
+    if (strbuf_hosts.len == 0) {
+        _LOG2D("system resolved returned no usable IPv%c addresses",
+               nm_utils_addr_family_to_char(cb_data->addr_family));
+        cb_data_complete(cb_data, NM_CONNECTIVITY_LIMITED, "resolve-error");
+        return;
+    }
+
+    do_curl_request(cb_data, nm_str_buf_get_str(&strbuf_hosts));
+}
+
+static void
+do_resolve_request(NMConnectivityCheckHandle *cb_data)
+{
+    gs_unref_object GResolver *resolver = NULL;
+
+    _LOG2D("start request to '%s' (try resolving '%s' using system resolver)",
+           cb_data->concheck.con_config->uri,
+           cb_data->concheck.con_config->host);
+
+    resolver = g_resolver_get_default();
+
+    g_resolver_lookup_by_name_async(resolver,
+                                    cb_data->concheck.con_config->host,
+                                    cb_data->concheck.resolve_cancellable,
+                                    do_resolve_request_cb,
+                                    cb_data);
+}
+
+static void
 resolve_cb(GObject *object, GAsyncResult *res, gpointer user_data)
 {
     NMConnectivityCheckHandle *cb_data;
@@ -763,7 +853,7 @@ resolve_cb(GObject *object, GAsyncResult *res, gpointer user_data)
     nm_auto_str_buf NMStrBuf   strbuf_hosts = NM_STR_BUF_INIT(0, FALSE);
 
     result = g_dbus_connection_call_finish(G_DBUS_CONNECTION(object), res, &error);
-    if (g_error_matches(error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+    if (nm_utils_error_is_cancelled(error))
         return;
 
     cb_data = user_data;
@@ -771,9 +861,9 @@ resolve_cb(GObject *object, GAsyncResult *res, gpointer user_data)
     g_clear_object(&cb_data->concheck.resolve_cancellable);
 
     if (!result) {
-        /* Never mind. Just let do curl do its own resolving. */
+        /* Never mind. Fallback to the system resolved. */
         _LOG2D("can't resolve a name via systemd-resolved: %s", error->message);
-        do_curl_request(cb_data);
+        do_resolve_request(cb_data);
         return;
     }
 
@@ -807,14 +897,14 @@ resolve_cb(GObject *object, GAsyncResult *res, gpointer user_data)
 
         nm_str_buf_append(&strbuf_hosts, nm_utils_inet_ntop(addr_family, address_buf, str_addr));
     }
-    if (strbuf_hosts.len > 0) {
-        const char *s = nm_str_buf_get_str(&strbuf_hosts);
-
-        cb_data->concheck.hosts = curl_slist_append(NULL, s);
-        _LOG2T("set curl resolve list to '%s'", s);
+    if (strbuf_hosts.len == 0) {
+        _LOG2D("systemd-resolve returned no usable IPv%c addresses",
+               nm_utils_addr_family_to_char(cb_data->addr_family));
+        cb_data_complete(cb_data, NM_CONNECTIVITY_LIMITED, "resolve-error");
+        return;
     }
 
-    do_curl_request(cb_data);
+    do_curl_request(cb_data, nm_str_buf_get_str(&strbuf_hosts));
 }
 #endif
 
@@ -940,6 +1030,8 @@ nm_connectivity_check_start(NMConnectivity             *self,
             }
         }
 
+        cb_data->concheck.resolve_cancellable = g_cancellable_new();
+
         /* note that we pick up support for systemd-resolved right away when we need it.
          * We don't need to remember the setting, because we can (cheaply) check anew
          * on each request.
@@ -975,8 +1067,6 @@ nm_connectivity_check_start(NMConnectivity             *self,
                 return cb_data;
             }
 
-            cb_data->concheck.resolve_cancellable = g_cancellable_new();
-
             g_dbus_connection_call(dbus_connection,
                                    "org.freedesktop.resolve1",
                                    "/org/freedesktop/resolve1",
@@ -997,9 +1087,7 @@ nm_connectivity_check_start(NMConnectivity             *self,
                    cb_data->concheck.con_config->uri,
                    cb_data->concheck.con_config->host);
         } else {
-            _LOG2D("start request to '%s' (systemd-resolved not available)",
-                   cb_data->concheck.con_config->uri);
-            do_curl_request(cb_data);
+            do_resolve_request(cb_data);
         }
 
         return cb_data;
