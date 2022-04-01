@@ -950,20 +950,6 @@ nm_utils_flags2str(const NMUtilsFlags2StrDesc *descs,
 
 /*****************************************************************************/
 
-/**
- * _nm_utils_ip4_prefix_to_netmask:
- * @prefix: a CIDR prefix
- *
- * Returns: the netmask represented by the prefix, in network byte order
- **/
-guint32
-_nm_utils_ip4_prefix_to_netmask(guint32 prefix)
-{
-    return prefix < 32 ? ~htonl(0xFFFFFFFFu >> prefix) : 0xFFFFFFFFu;
-}
-
-/*****************************************************************************/
-
 guint32
 _nm_utils_ip4_get_default_prefix0(in_addr_t ip)
 {
@@ -6318,18 +6304,6 @@ nm_utils_ipx_address_clear_host_address(int family, gpointer dst, gconstpointer 
         g_return_val_if_reached(NULL);
     }
     return dst;
-}
-
-/* nm_utils_ip4_address_clear_host_address:
- * @addr: source ip6 address
- * @plen: prefix length of network
- *
- * returns: the input address, with the host address set to 0.
- */
-in_addr_t
-nm_utils_ip4_address_clear_host_address(in_addr_t addr, guint8 plen)
-{
-    return addr & _nm_utils_ip4_prefix_to_netmask(plen);
 }
 
 /* nm_utils_ip6_address_clear_host_address:
