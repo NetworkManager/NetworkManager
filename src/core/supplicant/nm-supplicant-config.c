@@ -854,7 +854,24 @@ nm_supplicant_config_add_setting_wireless_security(NMSupplicantConfig           
             g_string_append(key_mgmt_conf, " WPA-PSK-SHA256");
         if (_get_capability(priv, NM_SUPPL_CAP_TYPE_FT))
             g_string_append(key_mgmt_conf, " FT-PSK");
-        if (_get_capability(priv, NM_SUPPL_CAP_TYPE_SAE)) {
+
+        /* For NM "key-mgmt=wpa-psk" doesn't strictly mean WPA1/wPA2 only,
+         * but also allows WPA3 (SAE), so that existing connections can
+         * benefit from the improved security when the AP gets upgraded.
+         *
+         * According to WPA3_Specification_v3.0 section 2.3, when operating
+         * in WPA3-Personal transition mode a STA:
+         *
+         * - should allow AKM suite selector: 00-0F-AC:6 (WPA-PSK-SHA256) to
+         *   be selected for an association;
+         * - shall negotiate PMF when associating to an AP using SAE.
+         *
+         * Those conditions are met when the interface has capabilities
+         * SAE, PMF, BIP.
+         */
+        if (_get_capability(priv, NM_SUPPL_CAP_TYPE_SAE)
+            && _get_capability(priv, NM_SUPPL_CAP_TYPE_PMF)
+            && _get_capability(priv, NM_SUPPL_CAP_TYPE_BIP)) {
             g_string_append(key_mgmt_conf, " SAE");
             if (_get_capability(priv, NM_SUPPL_CAP_TYPE_FT))
                 g_string_append(key_mgmt_conf, " FT-SAE");
