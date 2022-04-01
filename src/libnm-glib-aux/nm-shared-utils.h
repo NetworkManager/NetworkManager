@@ -389,13 +389,36 @@ gboolean nm_utils_get_ipv6_interface_identifier(NMLinkType          link_type,
 
 /*****************************************************************************/
 
-in_addr_t _nm_utils_ip4_prefix_to_netmask(guint32 prefix);
-guint32   _nm_utils_ip4_get_default_prefix0(in_addr_t ip);
-guint32   _nm_utils_ip4_get_default_prefix(in_addr_t ip);
+/**
+ * _nm_utils_ip4_prefix_to_netmask:
+ * @prefix: a CIDR prefix
+ *
+ * Returns: the netmask represented by the prefix, in network byte order
+ **/
+static inline in_addr_t
+_nm_utils_ip4_prefix_to_netmask(guint32 prefix)
+{
+    return prefix < 32 ? ~htonl(0xFFFFFFFFu >> prefix) : 0xFFFFFFFFu;
+}
+
+guint32 _nm_utils_ip4_get_default_prefix0(in_addr_t ip);
+guint32 _nm_utils_ip4_get_default_prefix(in_addr_t ip);
 
 gconstpointer
 nm_utils_ipx_address_clear_host_address(int family, gpointer dst, gconstpointer src, guint8 plen);
-in_addr_t              nm_utils_ip4_address_clear_host_address(in_addr_t addr, guint8 plen);
+
+/* nm_utils_ip4_address_clear_host_address:
+ * @addr: source ip6 address
+ * @plen: prefix length of network
+ *
+ * returns: the input address, with the host address set to 0.
+ */
+static inline in_addr_t
+nm_utils_ip4_address_clear_host_address(in_addr_t addr, guint8 plen)
+{
+    return addr & _nm_utils_ip4_prefix_to_netmask(plen);
+}
+
 const struct in6_addr *nm_utils_ip6_address_clear_host_address(struct in6_addr       *dst,
                                                                const struct in6_addr *src,
                                                                guint8                 plen);
