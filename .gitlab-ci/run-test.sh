@@ -21,12 +21,6 @@ meson --version
 ! command -v yum  &>/dev/null || yum list installed
 ! command -v apk  &>/dev/null || apk -v info
 
-# The formatting depends on the version of python black.
-# We have a dedicated test that checks our formatting, which
-# uses the right version. We should disable the check during
-# `make check`.
-export NMTST_SKIP_PYTHON_BLACK=1
-
 # We have a unit test that check that `ci-fairy generate-template`
 # is equal to our .gitlab-ci.yml file. However, on gitlab-ci we
 # also have a dedicate test for the same thing. We don't need
