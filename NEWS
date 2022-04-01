@@ -36,6 +36,8 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 * nmcli: add connection migrate command to move a profile to a specified
   settings plugin. This allows to convert profiles in the deprecated ifcfg-rh
   format to keyfile.
+* Set "src" attribute for routes from DHCPv4 to the leased address. This
+  helps with source address selection.
 * Updated translations.
 * Various bugfixes and internal improvements.
 
