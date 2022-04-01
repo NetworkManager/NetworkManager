@@ -8,7 +8,7 @@
 # Thomas Haller <thaller@redhat.com>, 2017. #zanata
 msgid ""
 msgstr ""
-"Project-Id-Version: NetworkManager\n"
+"Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2022-03-31 19:45+0200\n"
 "PO-Revision-Date: 2022-03-31 20:12+0200\n"
