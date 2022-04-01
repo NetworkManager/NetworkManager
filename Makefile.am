@@ -5679,12 +5679,6 @@ CLEANFILES += \
 
 include Makefile.examples
 
-if WITH_PYTHON_BLACK
-check-python-black:
-	test "$$NMTST_SKIP_PYTHON_BLACK" == 1 || $(BLACK) --check $(top_srcdir) $(top_srcdir)/examples/python/gi/nm-wg-set
-check_local += check-python-black
-endif
-
 ###############################################################################
 
 check-tree:
