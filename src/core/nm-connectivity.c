@@ -623,6 +623,25 @@ _timeout_cb(gpointer user_data)
     return G_SOURCE_REMOVE;
 }
 
+static gboolean
+easy_debug_enabled(void)
+{
+    static int enabled = 0;
+    int        e;
+
+    /* libcurl debug logging can be useful, but is very verbose.
+     * Only enable it when we have a certain environment variable set. */
+
+again:
+    e = g_atomic_int_get(&enabled);
+    if (G_UNLIKELY(e == 0)) {
+        e = _nm_utils_ascii_str_to_bool(g_getenv("NM_LOG_CONCHECK"), FALSE) ? 1 : -1;
+        if (G_UNLIKELY(!g_atomic_int_compare_and_exchange(&enabled, 0, e)))
+            goto again;
+    }
+    return e >= 0;
+}
+
 static int
 easy_debug_cb(CURL *handle, curl_infotype type, char *data, size_t size, void *userptr)
 {
@@ -750,7 +769,7 @@ do_curl_request(NMConnectivityCheckHandle *cb_data, const char *hosts)
     curl_easy_setopt(ehandle, CURLOPT_RESOLVE, cb_data->concheck.hosts);
     curl_easy_setopt(ehandle, CURLOPT_IPRESOLVE, resolve);
     curl_easy_setopt(ehandle, CURLOPT_PROTOCOLS, CURLPROTO_HTTP | CURLPROTO_HTTPS);
-    if (_LOGT_ENABLED()) {
+    if (_LOGT_ENABLED() && easy_debug_enabled()) {
         curl_easy_setopt(ehandle, CURLOPT_DEBUGFUNCTION, easy_debug_cb);
         curl_easy_setopt(ehandle, CURLOPT_DEBUGDATA, cb_data);
         curl_easy_setopt(ehandle, CURLOPT_VERBOSE, 1L);
