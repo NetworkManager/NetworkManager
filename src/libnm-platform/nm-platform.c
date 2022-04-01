@@ -7980,8 +7980,8 @@ nm_platform_ip4_address_pretty_sort_cmp(const NMPlatformIP4Address *a1,
      * subnet (and thus also the primary/secondary role) is
      * preserved.
      */
-    n1 = a1->address & _nm_utils_ip4_prefix_to_netmask(a1->plen);
-    n2 = a2->address & _nm_utils_ip4_prefix_to_netmask(a2->plen);
+    n1 = nm_utils_ip4_address_clear_host_address(a1->address, a1->plen);
+    n2 = nm_utils_ip4_address_clear_host_address(a2->address, a2->plen);
     NM_CMP_DIRECT_MEMCMP(&n1, &n2, sizeof(guint32));
     return 0;
 }
