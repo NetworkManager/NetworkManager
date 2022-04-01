@@ -389,6 +389,10 @@ gboolean nm_utils_get_ipv6_interface_identifier(NMLinkType          link_type,
 
 /*****************************************************************************/
 
+in_addr_t _nm_utils_ip4_prefix_to_netmask(guint32 prefix);
+guint32   _nm_utils_ip4_get_default_prefix0(in_addr_t ip);
+guint32   _nm_utils_ip4_get_default_prefix(in_addr_t ip);
+
 gconstpointer
 nm_utils_ipx_address_clear_host_address(int family, gpointer dst, gconstpointer src, guint8 plen);
 in_addr_t              nm_utils_ip4_address_clear_host_address(in_addr_t addr, guint8 plen);
@@ -407,6 +411,20 @@ nm_utils_ip4_address_same_prefix_cmp(in_addr_t addr_a, in_addr_t addr_b, guint8 
 int nm_utils_ip6_address_same_prefix_cmp(const struct in6_addr *addr_a,
                                          const struct in6_addr *addr_b,
                                          guint8                 plen);
+
+static inline gboolean
+nm_utils_ip4_address_same_prefix(in_addr_t addr_a, in_addr_t addr_b, guint8 plen)
+{
+    return nm_utils_ip4_address_same_prefix_cmp(addr_a, addr_b, plen) == 0;
+}
+
+static inline gboolean
+nm_utils_ip6_address_same_prefix(const struct in6_addr *addr_a,
+                                 const struct in6_addr *addr_b,
+                                 guint8                 plen)
+{
+    return nm_utils_ip6_address_same_prefix_cmp(addr_a, addr_b, plen) == 0;
+}
 
 static inline int
 nm_utils_ip_address_same_prefix_cmp(int           addr_family,
@@ -428,20 +446,6 @@ nm_utils_ip_address_same_prefix_cmp(int           addr_family,
 }
 
 static inline gboolean
-nm_utils_ip4_address_same_prefix(in_addr_t addr_a, in_addr_t addr_b, guint8 plen)
-{
-    return nm_utils_ip4_address_same_prefix_cmp(addr_a, addr_b, plen) == 0;
-}
-
-static inline gboolean
-nm_utils_ip6_address_same_prefix(const struct in6_addr *addr_a,
-                                 const struct in6_addr *addr_b,
-                                 guint8                 plen)
-{
-    return nm_utils_ip6_address_same_prefix_cmp(addr_a, addr_b, plen) == 0;
-}
-
-static inline gboolean
 nm_utils_ip_address_same_prefix(int           addr_family,
                                 gconstpointer addr_a,
                                 gconstpointer addr_b,
@@ -455,6 +459,10 @@ nm_utils_ip_address_same_prefix(int           addr_family,
 
 #define NM_CMP_DIRECT_IN6ADDR_SAME_PREFIX(a, b, plen) \
     NM_CMP_RETURN(nm_utils_ip6_address_same_prefix_cmp((a), (b), (plen)))
+
+/*****************************************************************************/
+
+gboolean nm_utils_ip_is_site_local(int addr_family, const void *address);
 
 /*****************************************************************************/
 
@@ -971,24 +979,6 @@ nm_utils_escaped_tokens_options_escape_val(const char *val, char **out_to_free)
         nm_assert(_len == _len0);                              \
     }                                                          \
     G_STMT_END
-
-/*****************************************************************************/
-
-guint32 _nm_utils_ip4_prefix_to_netmask(guint32 prefix);
-guint32 _nm_utils_ip4_get_default_prefix0(in_addr_t ip);
-guint32 _nm_utils_ip4_get_default_prefix(in_addr_t ip);
-
-gconstpointer
-nm_utils_ipx_address_clear_host_address(int family, gpointer dst, gconstpointer src, guint8 plen);
-in_addr_t              nm_utils_ip4_address_clear_host_address(in_addr_t addr, guint8 plen);
-const struct in6_addr *nm_utils_ip6_address_clear_host_address(struct in6_addr       *dst,
-                                                               const struct in6_addr *src,
-                                                               guint8                 plen);
-int                    nm_utils_ip6_address_same_prefix_cmp(const struct in6_addr *addr_a,
-                                                            const struct in6_addr *addr_b,
-                                                            guint8                 plen);
-
-gboolean nm_utils_ip_is_site_local(int addr_family, const void *address);
 
 /*****************************************************************************/
 
