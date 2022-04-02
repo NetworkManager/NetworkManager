@@ -3969,7 +3969,6 @@ nm_platform_ip_address_sync(NMPlatform *self,
     NMPLookup                      lookup;
     gs_unref_hashtable GHashTable *known_addresses_idx = NULL;
     gs_unref_ptrarray GPtrArray   *plat_addresses      = NULL;
-    GHashTable                    *known_subnets       = NULL;
     gboolean                       success;
     guint                          i_plat;
     guint                          i_know;
@@ -4031,9 +4030,10 @@ nm_platform_ip_address_sync(NMPlatform *self,
     if (nm_g_ptr_array_len(plat_addresses) > 0) {
         /* Delete addresses that interfere with our intended order. */
         if (IS_IPv4) {
+            GHashTable   *known_subnets        = NULL;
+            GHashTable   *plat_subnets;
             gs_free bool *plat_handled_to_free = NULL;
             bool         *plat_handled         = NULL;
-            GHashTable   *plat_subnets;
 
             /* For IPv4, we only consider it a conflict for addresses in the same
              * subnet. That's where kernel will assign a primary/secondary flag.
@@ -4129,6 +4129,7 @@ nm_platform_ip_address_sync(NMPlatform *self,
                 }
             }
             ip4_addr_subnets_destroy_index(plat_subnets, plat_addresses);
+            ip4_addr_subnets_destroy_index(known_subnets, known_addresses);
         } else {
             guint        known_addresses_len;
             IP6AddrScope cur_scope;
@@ -4238,9 +4239,6 @@ next_plat:;
 
     if (!known_addresses)
         return TRUE;
-
-    if (IS_IPv4)
-        ip4_addr_subnets_destroy_index(known_subnets, known_addresses);
 
     success = TRUE;
 
