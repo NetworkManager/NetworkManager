@@ -3733,6 +3733,30 @@ ip4_addr_subnets_destroy_index(GHashTable *subnets, const GPtrArray *addresses)
     g_hash_table_unref(subnets);
 }
 
+static guint
+_ip4_addr_subnets_hash(gconstpointer ptr)
+{
+    const NMPlatformIP4Address *addr = NMP_OBJECT_CAST_IP4_ADDRESS(ptr);
+    NMHashState                 h;
+
+    nm_hash_init(&h, 3282159733);
+    nm_hash_update_vals(&h,
+                        addr->plen,
+                        nm_utils_ip4_address_clear_host_address(addr->address, addr->plen));
+    return nm_hash_complete(&h);
+}
+
+static gboolean
+_ip4_addr_subnets_equal(gconstpointer p_a, gconstpointer p_b)
+{
+    const NMPlatformIP4Address *a = NMP_OBJECT_CAST_IP4_ADDRESS(p_a);
+    const NMPlatformIP4Address *b = NMP_OBJECT_CAST_IP4_ADDRESS(p_b);
+
+    return a->plen == b->plen
+           && (nm_utils_ip4_address_clear_host_address(a->address, a->plen)
+               == nm_utils_ip4_address_clear_host_address(b->address, b->plen));
+}
+
 static GHashTable *
 ip4_addr_subnets_build_index(const GPtrArray *addresses,
                              gboolean         consider_flags,
@@ -3743,34 +3767,35 @@ ip4_addr_subnets_build_index(const GPtrArray *addresses,
 
     nm_assert(addresses && addresses->len);
 
-    subnets = g_hash_table_new(nm_direct_hash, NULL);
+    subnets = g_hash_table_new(_ip4_addr_subnets_hash, _ip4_addr_subnets_equal);
 
     /* Build a hash table of all addresses per subnet */
     for (i = 0; i < addresses->len; i++) {
+        const NMPObject           **p_obj;
+        const NMPObject            *obj;
         const NMPlatformIP4Address *address;
-        gpointer                    p_address;
         GPtrArray                  *addr_list;
-        guint32                     net;
         int                         position;
         gpointer                    p;
 
         if (!addresses->pdata[i])
             continue;
 
-        p_address = &addresses->pdata[i];
-        address   = NMP_OBJECT_CAST_IP4_ADDRESS(addresses->pdata[i]);
+        p_obj = (const NMPObject **) &addresses->pdata[i];
+        obj   = *p_obj;
 
-        net = address->address & _nm_utils_ip4_prefix_to_netmask(address->plen);
-        if (!g_hash_table_lookup_extended(subnets, GUINT_TO_POINTER(net), NULL, &p)) {
-            g_hash_table_insert(subnets, GUINT_TO_POINTER(net), p_address);
+        if (!g_hash_table_lookup_extended(subnets, obj, NULL, &p)) {
+            g_hash_table_insert(subnets, (gpointer) obj, p_obj);
             continue;
         }
         nm_assert(p);
 
+        address = NMP_OBJECT_CAST_IP4_ADDRESS(obj);
+
         if (full_index) {
             if (ip4_addr_subnets_is_plain_address(addresses, p)) {
                 addr_list = g_ptr_array_new();
-                g_hash_table_insert(subnets, GUINT_TO_POINTER(net), addr_list);
+                g_hash_table_insert(subnets, (gpointer) obj, addr_list);
                 g_ptr_array_add(addr_list, p);
             } else
                 addr_list = p;
@@ -3779,13 +3804,13 @@ ip4_addr_subnets_build_index(const GPtrArray *addresses,
                 position = -1; /* append */
             else
                 position = 0; /* prepend */
-            g_ptr_array_insert(addr_list, position, p_address);
+            g_ptr_array_insert(addr_list, position, p_obj);
         } else {
             /* we only care about the primary. No need to track the secondaries
              * as a GPtrArray. */
             nm_assert(ip4_addr_subnets_is_plain_address(addresses, p));
             if (consider_flags && !NM_FLAGS_HAS(address->n_ifa_flags, IFA_F_SECONDARY)) {
-                g_hash_table_insert(subnets, GUINT_TO_POINTER(net), p_address);
+                g_hash_table_insert(subnets, (gpointer) obj, p_obj);
             }
         }
     }
@@ -3811,16 +3836,11 @@ ip4_addr_subnets_is_secondary(const NMPObject  *address,
                               const GPtrArray  *addresses,
                               const GPtrArray **out_addr_list)
 {
-    const NMPlatformIP4Address *a;
-    const GPtrArray            *addr_list;
-    gconstpointer               p;
-    guint32                     net;
-    const NMPObject           **o;
+    const GPtrArray  *addr_list;
+    gconstpointer     p;
+    const NMPObject **o;
 
-    a = NMP_OBJECT_CAST_IP4_ADDRESS(address);
-
-    net = a->address & _nm_utils_ip4_prefix_to_netmask(a->plen);
-    p   = g_hash_table_lookup(subnets, GUINT_TO_POINTER(net));
+    p = g_hash_table_lookup(subnets, address);
     nm_assert(p);
     if (!ip4_addr_subnets_is_plain_address(addresses, p)) {
         addr_list = p;
@@ -3966,7 +3986,7 @@ nm_platform_ip_address_sync(NMPlatform *self,
     if (nm_g_ptr_array_len(plat_addresses) > 0) {
         /* Delete addresses that interfere with our intended order. */
         if (IS_IPv4) {
-            GHashTable   *known_subnets        = NULL;
+            GHashTable   *known_subnets = NULL;
             GHashTable   *plat_subnets;
             gs_free bool *plat_handled_to_free = NULL;
             bool         *plat_handled         = NULL;
