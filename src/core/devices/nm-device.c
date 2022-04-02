@@ -4724,7 +4724,7 @@ nm_device_get_ip_iface_identifier(NMDevice           *self,
                                   gboolean           *out_is_token)
 {
     NMSettingIP6Config *s_ip6;
-    const char         *token = NULL;
+    const char         *token;
 
     g_return_val_if_fail(NM_IS_DEVICE(self), FALSE);
 
@@ -4736,13 +4736,12 @@ nm_device_get_ip_iface_identifier(NMDevice           *self,
         g_return_val_if_fail(s_ip6, FALSE);
 
         token = nm_setting_ip6_config_get_token(s_ip6);
-        if (token)
+        if (token) {
             NM_SET_OUT(out_is_token, TRUE);
+            return nm_utils_ipv6_interface_identifier_get_from_token(iid, token);
+        }
     }
-    if (token)
-        return nm_utils_ipv6_interface_identifier_get_from_token(iid, token);
-    else
-        return NM_DEVICE_GET_CLASS(self)->get_ip_iface_identifier(self, iid);
+    return NM_DEVICE_GET_CLASS(self)->get_ip_iface_identifier(self, iid);
 }
 
 const char *
