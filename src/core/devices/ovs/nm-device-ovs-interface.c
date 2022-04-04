@@ -13,6 +13,7 @@
 #include "devices/nm-device-private.h"
 #include "nm-active-connection.h"
 #include "nm-setting-connection.h"
+#include "nm-setting-ovs-bridge.h"
 #include "nm-setting-ovs-interface.h"
 #include "nm-setting-ovs-port.h"
 
@@ -24,6 +25,7 @@
 typedef struct {
     NMOvsdb *ovsdb;
     bool     waiting_for_interface : 1;
+    GSource *link_check;
 } NMDeviceOvsInterfacePrivate;
 
 struct _NMDeviceOvsInterface {
@@ -34,6 +36,11 @@ struct _NMDeviceOvsInterface {
 struct _NMDeviceOvsInterfaceClass {
     NMDeviceClass parent;
 };
+
+typedef struct {
+    NMDevice *device;
+    int       ifindex;
+} NMDeviceOvsInterfaceCheck;
 
 G_DEFINE_TYPE(NMDeviceOvsInterface, nm_device_ovs_interface, NM_TYPE_DEVICE)
 
@@ -199,15 +206,81 @@ ready_for_ip_config(NMDevice *device)
     return nm_device_get_ip_ifindex(device) > 0;
 }
 
+static gboolean
+_set_ip_ifindex_tun(gpointer user_data)
+{
+    NMDeviceOvsInterfaceCheck   *cb_data = user_data;
+    NMDevice                    *device  = cb_data->device;
+    NMDeviceOvsInterface        *self    = NM_DEVICE_OVS_INTERFACE(device);
+    NMDeviceOvsInterfacePrivate *priv    = NM_DEVICE_OVS_INTERFACE_GET_PRIVATE(self);
+
+    priv->waiting_for_interface = FALSE;
+    nm_device_set_ip_ifindex(device, cb_data->ifindex);
+
+    nm_device_devip_set_state(device, AF_INET, NM_DEVICE_IP_STATE_PENDING, NULL);
+    nm_device_devip_set_state(device, AF_INET6, NM_DEVICE_IP_STATE_PENDING, NULL);
+    nm_device_activate_schedule_stage3_ip_config(device, FALSE);
+
+    g_free(cb_data);
+
+    return G_SOURCE_REMOVE;
+}
+
+static void
+_netdev_tun_link_cb(NMPlatform     *platform,
+                    int             obj_type_i,
+                    int             ifindex,
+                    NMPlatformLink *pllink,
+                    int             change_type_i,
+                    NMDevice       *device)
+{
+    const NMPlatformSignalChangeType change_type = change_type_i;
+    NMDeviceOvsInterfaceCheck       *cb_data     = NULL;
+
+    if (change_type == NM_PLATFORM_SIGNAL_ADDED) {
+        if (pllink->type == NM_LINK_TYPE_TUN
+            && nm_streq0(pllink->name, nm_device_get_iface(device))) {
+            g_signal_handlers_disconnect_by_func(platform, _netdev_tun_link_cb, device);
+            cb_data          = g_slice_new0(NMDeviceOvsInterfaceCheck);
+            cb_data->device  = device;
+            cb_data->ifindex = ifindex;
+
+            nm_g_idle_add(_set_ip_ifindex_tun, cb_data);
+        }
+    }
+}
+
 static void
 act_stage3_ip_config(NMDevice *device, int addr_family)
 {
-    NMDeviceOvsInterface        *self = NM_DEVICE_OVS_INTERFACE(device);
-    NMDeviceOvsInterfacePrivate *priv = NM_DEVICE_OVS_INTERFACE_GET_PRIVATE(self);
+    NMActiveConnection          *controller_act = NULL;
+    NMSettingOvsBridge          *s_ovs_bridge   = NULL;
+    NMDeviceOvsInterface        *self           = NM_DEVICE_OVS_INTERFACE(device);
+    NMDeviceOvsInterfacePrivate *priv           = NM_DEVICE_OVS_INTERFACE_GET_PRIVATE(self);
 
     if (!_is_internal_interface(device)) {
         nm_device_devip_set_state(device, addr_family, NM_DEVICE_IP_STATE_READY, NULL);
         return;
+    }
+
+    /* When the ovs-bridge controller is using netdev datapath, the interface
+     * link created is a tun device instead of a ovs-interface. NetworkManager must
+     * detect the creation of the tun link and attach the ifindex to the
+     * ovs-interface device. */
+    controller_act = NM_ACTIVE_CONNECTION(nm_device_get_act_request(device));
+    if (controller_act && nm_device_get_ip_ifindex(device) <= 0) {
+        controller_act =
+            nm_active_connection_get_master(nm_active_connection_get_master(controller_act));
+
+        if (controller_act)
+            s_ovs_bridge = nm_connection_get_setting_ovs_bridge(
+                nm_active_connection_get_applied_connection(controller_act));
+        if (s_ovs_bridge
+            && nm_streq0(nm_setting_ovs_bridge_get_datapath_type(s_ovs_bridge), "netdev"))
+            g_signal_connect(nm_device_get_platform(device),
+                             NM_PLATFORM_SIGNAL_LINK_CHANGED,
+                             G_CALLBACK(_netdev_tun_link_cb),
+                             self);
     }
 
     /* FIXME(l3cfg): we should create the IP ifindex before stage3 start.
@@ -245,6 +318,8 @@ deactivate(NMDevice *device)
     NMDeviceOvsInterfacePrivate *priv = NM_DEVICE_OVS_INTERFACE_GET_PRIVATE(self);
 
     priv->waiting_for_interface = FALSE;
+    if (priv->link_check)
+        nm_clear_g_source_inst(&priv->link_check);
 }
 
 typedef struct {
@@ -359,6 +434,9 @@ deactivate_async(NMDevice                  *device,
         nm_utils_invoke_on_idle(cancellable, deactivate_cb_on_idle, data);
         return;
     }
+
+    if (priv->link_check)
+        nm_clear_g_source_inst(&priv->link_check);
 
     if (priv->waiting_for_interface) {
         /* At this point we have issued an INSERT and a DELETE
