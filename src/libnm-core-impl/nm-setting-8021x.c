@@ -2929,11 +2929,18 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
     }
 
     if (!NM_IN_STRSET(priv->phase1_peapver, NULL, "0", "1")) {
-        g_set_error(error,
-                    NM_CONNECTION_ERROR,
-                    NM_CONNECTION_ERROR_INVALID_PROPERTY,
-                    _("'%s' is not a valid value for the property"),
-                    priv->phase1_peapver);
+        if (priv->phase1_peapver) {
+            g_set_error(error,
+                        NM_CONNECTION_ERROR,
+                        NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                        _("'%s' is not a valid value for the property"),
+                        priv->phase1_peapver);
+        } else {
+            g_set_error(error,
+                        NM_CONNECTION_ERROR,
+                        NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                        _("property is empty"));
+        }
         g_prefix_error(error,
                        "%s.%s: ",
                        NM_SETTING_802_1X_SETTING_NAME,
@@ -2942,11 +2949,18 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
     }
 
     if (!NM_IN_STRSET(priv->phase1_peaplabel, NULL, "0", "1")) {
-        g_set_error(error,
-                    NM_CONNECTION_ERROR,
-                    NM_CONNECTION_ERROR_INVALID_PROPERTY,
-                    _("'%s' is not a valid value for the property"),
-                    priv->phase1_peaplabel);
+        if (priv->phase1_peaplabel) {
+            g_set_error(error,
+                        NM_CONNECTION_ERROR,
+                        NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                        _("'%s' is not a valid value for the property"),
+                        priv->phase1_peaplabel);
+        } else {
+            g_set_error(error,
+                        NM_CONNECTION_ERROR,
+                        NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                        _("property is empty"));
+        }
         g_prefix_error(error,
                        "%s.%s: ",
                        NM_SETTING_802_1X_SETTING_NAME,
@@ -2955,11 +2969,18 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
     }
 
     if (!NM_IN_STRSET(priv->phase1_fast_provisioning, NULL, "0", "1", "2", "3")) {
-        g_set_error(error,
-                    NM_CONNECTION_ERROR,
-                    NM_CONNECTION_ERROR_INVALID_PROPERTY,
-                    _("'%s' is not a valid value for the property"),
-                    priv->phase1_fast_provisioning);
+        if (priv->phase1_fast_provisioning) {
+            g_set_error(error,
+                        NM_CONNECTION_ERROR,
+                        NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                        _("'%s' is not a valid value for the property"),
+                        priv->phase1_fast_provisioning);
+        } else {
+            g_set_error(error,
+                        NM_CONNECTION_ERROR,
+                        NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                        _("property is empty"));
+        }
         g_prefix_error(error,
                        "%s.%s: ",
                        NM_SETTING_802_1X_SETTING_NAME,
@@ -2989,11 +3010,18 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
                       "otp",
                       "md5",
                       "tls")) {
-        g_set_error(error,
-                    NM_CONNECTION_ERROR,
-                    NM_CONNECTION_ERROR_INVALID_PROPERTY,
-                    _("'%s' is not a valid value for the property"),
-                    priv->phase2_auth);
+        if (priv->phase2_auth) {
+            g_set_error(error,
+                        NM_CONNECTION_ERROR,
+                        NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                        _("'%s' is not a valid value for the property"),
+                        priv->phase2_auth);
+        } else {
+            g_set_error(error,
+                        NM_CONNECTION_ERROR,
+                        NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                        _("property is empty"));
+        }
         g_prefix_error(error,
                        "%s.%s: ",
                        NM_SETTING_802_1X_SETTING_NAME,
@@ -3002,11 +3030,18 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
     }
 
     if (!NM_IN_STRSET(priv->phase2_autheap, NULL, "md5", "mschapv2", "otp", "gtc", "tls")) {
-        g_set_error(error,
-                    NM_CONNECTION_ERROR,
-                    NM_CONNECTION_ERROR_INVALID_PROPERTY,
-                    _("'%s' is not a valid value for the property"),
-                    priv->phase2_autheap);
+        if (priv->phase2_autheap) {
+            g_set_error(error,
+                        NM_CONNECTION_ERROR,
+                        NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                        _("'%s' is not a valid value for the property"),
+                        priv->phase2_autheap);
+        } else {
+            g_set_error(error,
+                        NM_CONNECTION_ERROR,
+                        NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                        _("property is empty"));
+        }
         g_prefix_error(error,
                        "%s.%s: ",
                        NM_SETTING_802_1X_SETTING_NAME,
