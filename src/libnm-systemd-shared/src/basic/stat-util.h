@@ -31,8 +31,12 @@ static inline int dir_is_populated(const char *path) {
 }
 
 bool null_or_empty(struct stat *st) _pure_;
-int null_or_empty_path(const char *fn);
+int null_or_empty_path_with_root(const char *fn, const char *root);
 int null_or_empty_fd(int fd);
+
+static inline int null_or_empty_path(const char *fn) {
+        return null_or_empty_path_with_root(fn, NULL);
+}
 
 int path_is_read_only_fs(const char *path);
 
@@ -53,6 +57,7 @@ int fd_is_temporary_fs(int fd);
 int fd_is_network_fs(int fd);
 
 int path_is_temporary_fs(const char *path);
+int path_is_network_fs(const char *path);
 
 /* Because statfs.t_type can be int on some architectures, we have to cast
  * the const magic to the type, otherwise the compiler warns about
@@ -91,6 +96,7 @@ int device_path_parse_major_minor(const char *path, mode_t *ret_mode, dev_t *ret
 
 int proc_mounted(void);
 
+bool stat_inode_same(const struct stat *a, const struct stat *b);
 bool stat_inode_unmodified(const struct stat *a, const struct stat *b);
 
 int statx_fallback(int dfd, const char *path, int flags, unsigned mask, struct statx *sx);
@@ -113,3 +119,9 @@ int statx_fallback(int dfd, const char *path, int flags, unsigned mask, struct s
                 struct new_statx nsx;           \
         } var
 #endif
+
+static inline bool devid_set_and_equal(dev_t a, dev_t b) {
+        /* Returns true if a and b definitely refer to the same device. If either is zero, this means "don't
+         * know" and we'll return false */
+        return a == b && a != 0;
+}

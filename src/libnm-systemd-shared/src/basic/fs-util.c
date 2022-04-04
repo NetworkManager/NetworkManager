@@ -123,7 +123,6 @@ int readlinkat_malloc(int fd, const char *p, char **ret) {
         size_t l = PATH_MAX;
 
         assert(p);
-        assert(ret);
 
         for (;;) {
                 _cleanup_free_ char *c = NULL;
@@ -139,7 +138,10 @@ int readlinkat_malloc(int fd, const char *p, char **ret) {
 
                 if ((size_t) n < l) {
                         c[n] = 0;
-                        *ret = TAKE_PTR(c);
+
+                        if (ret)
+                                *ret = TAKE_PTR(c);
+
                         return 0;
                 }
 
@@ -576,7 +578,6 @@ int get_files_in_directory(const char *path, char ***list) {
 #endif /* NM_IGNORED */
 
 static int getenv_tmp_dir(const char **ret_path) {
-        const char *n;
         int r, ret = 0;
 
         assert(ret_path);
@@ -866,8 +867,7 @@ int conservative_renameat(
         if (fstat(new_fd, &new_stat) < 0)
                 goto do_rename;
 
-        if (new_stat.st_ino == old_stat.st_ino &&
-            new_stat.st_dev == old_stat.st_dev)
+        if (stat_inode_same(&new_stat, &old_stat))
                 goto is_same;
 
         if (old_stat.st_mode != new_stat.st_mode ||
@@ -1093,4 +1093,51 @@ int open_mkdir_at(int dirfd, const char *path, int flags, mode_t mode) {
         }
 
         return TAKE_FD(fd);
+}
+
+int openat_report_new(int dirfd, const char *pathname, int flags, mode_t mode, bool *ret_newly_created) {
+        unsigned attempts = 7;
+        int fd;
+
+        /* Just like openat(), but adds one thing: optionally returns whether we created the file anew or if
+         * it already existed before. This is only relevant if O_CREAT is set without O_EXCL, and thus will
+         * shortcut to openat() otherwise */
+
+        if (!ret_newly_created)
+                return RET_NERRNO(openat(dirfd, pathname, flags, mode));
+
+        if (!FLAGS_SET(flags, O_CREAT) || FLAGS_SET(flags, O_EXCL)) {
+                fd = openat(dirfd, pathname, flags, mode);
+                if (fd < 0)
+                        return -errno;
+
+                *ret_newly_created = FLAGS_SET(flags, O_CREAT);
+                return fd;
+        }
+
+        for (;;) {
+                /* First, attempt to open without O_CREAT/O_EXCL, i.e. open existing file */
+                fd = openat(dirfd, pathname, flags & ~(O_CREAT | O_EXCL), mode);
+                if (fd >= 0) {
+                        *ret_newly_created = false;
+                        return fd;
+                }
+                if (errno != ENOENT)
+                        return -errno;
+
+                /* So the file didn't exist yet, hence create it with O_CREAT/O_EXCL. */
+                fd = openat(dirfd, pathname, flags | O_CREAT | O_EXCL, mode);
+                if (fd >= 0) {
+                        *ret_newly_created = true;
+                        return fd;
+                }
+                if (errno != EEXIST)
+                        return -errno;
+
+                /* Hmm, so now we got EEXIST? So it apparently exists now? If so, let's try to open again
+                 * without the two flags. But let's not spin forever, hence put a limit on things */
+
+                if (--attempts == 0) /* Give up eventually, somebody is playing with us */
+                        return -EEXIST;
+        }
 }

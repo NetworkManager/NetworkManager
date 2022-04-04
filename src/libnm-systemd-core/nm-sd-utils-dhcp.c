@@ -13,8 +13,7 @@
 int
 nm_sd_dhcp_lease_get_private_options(sd_dhcp_lease *lease, nm_sd_dhcp_option **out_options)
 {
-    struct sd_dhcp_raw_option *raw_option;
-    int                        cnt = 0;
+    int cnt = 0;
 
     g_return_val_if_fail(lease, -EINVAL);
     g_return_val_if_fail(out_options, -EINVAL);
