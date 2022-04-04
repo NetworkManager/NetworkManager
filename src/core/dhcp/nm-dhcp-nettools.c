@@ -343,6 +343,17 @@ lease_parse_routes(NDhcp4ClientLease *lease,
     int           r;
     guint         i;
 
+    /* Routes can be in option 33 (static-route), 121 (classless-static-route) and 249 (a non-standard classless-static-route).
+     * Option 249 (Microsoft Classless Static Route), is described here:
+     * https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-dhcpe/f9c19c79-1c7f-4746-b555-0c0fc523f3f9
+     *
+     * We will anyway parse all these 3 options and add them to the "options" hash (as distinct entries).
+     * We will however also parse one of the options into the "l3cd" for configuring routing.
+     * Thereby we prefer 121 over 249 over 33.
+     *
+     * Preferring 121 over 33 is defined by RFC 3443.
+     * Preferring 121 over 249 over 33 is made up as it makes sense (the MS docs are not very clear).
+     */
     for (i = 0; i < 2; i++) {
         const guint8 option_code = (i == 0) ? NM_DHCP_OPTION_DHCP4_CLASSLESS_STATIC_ROUTE
                                             : NM_DHCP_OPTION_DHCP4_PRIVATE_CLASSLESS_STATIC_ROUTE;
