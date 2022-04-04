@@ -464,6 +464,14 @@ write_8021x_setting(NMConnection *connection,
     }
     svSetValueStr(ifcfg, "IEEE_8021X_FAST_PROVISIONING", value);
 
+    auth_flags = nm_setting_802_1x_get_phase1_auth_flags(s_8021x);
+    if (auth_flags != NM_SETTING_802_1X_AUTH_FLAGS_NONE) {
+        svSetValueEnum(ifcfg,
+                       "IEEE_8021X_PHASE1_AUTH_FLAGS",
+                       nm_setting_802_1x_auth_flags_get_type(),
+                       auth_flags);
+    }
+
     /* Phase2 auth methods */
     phase2_auth = g_string_new(NULL);
 
@@ -482,14 +490,6 @@ write_8021x_setting(NMConnection *connection,
         tmp = g_ascii_strup(value, -1);
         g_string_append_printf(phase2_auth, "EAP-%s", tmp);
         g_free(tmp);
-    }
-
-    auth_flags = nm_setting_802_1x_get_phase1_auth_flags(s_8021x);
-    if (auth_flags != NM_SETTING_802_1X_AUTH_FLAGS_NONE) {
-        svSetValueEnum(ifcfg,
-                       "IEEE_8021X_PHASE1_AUTH_FLAGS",
-                       nm_setting_802_1x_auth_flags_get_type(),
-                       auth_flags);
     }
 
     svSetValueStr(ifcfg,
