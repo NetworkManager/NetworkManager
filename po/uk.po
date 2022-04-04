@@ -8,9 +8,10 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
-"Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-03-30 23:46+0200\n"
-"PO-Revision-Date: 2022-03-21 18:30+0200\n"
+"Report-Msgid-Bugs-To: https://gitlab.freedesktop.org/NetworkManager/NetworkMan"
+"ager/issues\n"
+"POT-Creation-Date: 2022-03-31 15:26+0000\n"
+"PO-Revision-Date: 2022-04-04 11:36+0300\n"
 "Last-Translator: Yuri Chornoivan <yurchor@ukr.net>\n"
 "Language-Team: Ukrainian <kde-i18n-uk@kde.org>\n"
 "Language: uk\n"
@@ -1444,9 +1445,9 @@ msgid "peer '%s' is invalid: %s"
 msgstr "вузол «%s» є некоректним: %s"
 
 #: ../src/libnm-core-impl/nm-keyfile.c:4235
-#, fuzzy, c-format
+#, c-format
 msgid "unsupported option \"%s.%s\" of variant type %s"
-msgstr "непідтримуваний атрибут «%s» типу «%s»"
+msgstr "непідтримуваний параметр «%s.%s» типу варіанта %s"
 
 #: ../src/libnm-core-impl/nm-setting-6lowpan.c:78
 #: ../src/libnm-core-impl/nm-setting-veth.c:81
@@ -11595,7 +11596,7 @@ msgstr ""
 "\n"
 
 #: ../src/nmcli/connections.c:1232
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Usage: nmcli connection delete { ARGUMENTS | help }\n"
 "\n"
@@ -11609,8 +11610,8 @@ msgstr ""
 "\n"
 "ПАРАМЕТРИ := [id | uuid | path] <ідентифікатор>\n"
 "\n"
-"Вилучити профіль з'єднання.\n"
-"Профіль можна вказати за допомогою назви, UUID або шляху D-Bus.\n"
+"Вилучити профілі з'єднання.\n"
+"Профілі можна вказати за допомогою назв, UUID або шляху D-Bus.\n"
 "\n"
 
 #: ../src/nmcli/connections.c:1243
@@ -11717,7 +11718,7 @@ msgstr ""
 "\n"
 
 #: ../src/nmcli/connections.c:1300
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Usage: nmcli connection migrate { ARGUMENTS | help }\n"
 "\n"
@@ -11727,12 +11728,12 @@ msgid ""
 "such as \"keyfile\" (default) or \"ifcfg-rh\".\n"
 "\n"
 msgstr ""
-"Користування: nmcli connection delete { ПАРАМЕТРИ | help }\n"
+"Користування: nmcli connection migrate { АРГУМЕНТИ | help }\n"
 "\n"
-"ПАРАМЕТРИ := [id | uuid | path] <ідентифікатор>\n"
+"АРГУМЕНТИ := [--plugin <додаток>] [id | uuid | path] <ідентифікатор>, ...\n"
 "\n"
-"Вилучити профіль з'єднання.\n"
-"Профіль можна вказати за допомогою назви, UUID або шляху D-Bus.\n"
+"Перенести профілі з'єднання на інший додаток параметрів,\n"
+"зокрема «keyfile» (типовий) або «ifcfg-rh».\n"
 "\n"
 
 #: ../src/nmcli/connections.c:1391
@@ -13100,29 +13101,28 @@ msgid "Error: failed to read temporary file '%s': %s."
 msgstr "Помилка: не вдалося прочитати тимчасовий файл «%s»: %s."
 
 #: ../src/nmcli/connections.c:9671
-#, fuzzy, c-format
+#, c-format
 msgid "Error: not all connections migrated."
-msgstr "Помилка: вилучено не усі з'єднання."
+msgstr "Помилка: перенесено не усі з'єднання."
 
 #: ../src/nmcli/connections.c:9672
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Connection migration failed: %s\n"
-msgstr "Помилка: не вдалося активувати з'єднання: %s"
+msgstr "Помилка: не вдалося перенести з'єднання: %s\n"
 
 #: ../src/nmcli/connections.c:9676
-#, fuzzy, c-format
+#, c-format
 msgid "Connection '%s' (%s) successfully migrated.\n"
-msgstr "Запис з'єднання «%s» (%s) успішно оновлено.\n"
+msgstr "Запис з'єднання «%s» (%s) успішно перенесено.\n"
 
 #: ../src/nmcli/connections.c:9708
-#, fuzzy
 msgid "'--plugin' argument is missing"
-msgstr "пропущено аргумент «--order»"
+msgstr "пропущено аргумент до --plugin"
 
 #: ../src/nmcli/connections.c:9804
-#, fuzzy, c-format
+#, c-format
 msgid "Error: cannot migrate unknown connection(s): %s."
-msgstr "Помилка: не можна вилучати невідомі з'єднання: %s."
+msgstr "Помилка: не вдалося перенести невідомі з'єднання: %s."
 
 #. define some prompts
 #: ../src/nmcli/devices.c:28
@@ -14023,9 +14023,8 @@ msgid "started"
 msgstr "запущено"
 
 #: ../src/nmcli/general.c:150 ../src/nmcli/general.c:161
-#, fuzzy
 msgid "missing"
-msgstr "пропущено fw"
+msgstr "пропущено"
 
 #: ../src/nmcli/general.c:181
 msgid "enabled"
@@ -15828,7 +15827,3 @@ msgstr "Не вдалося обробити ПАРАМЕТРИ"
 #, c-format
 msgid "Could not contact NetworkManager: %s.\n"
 msgstr "Не вдалося зв'язатися із NetworkManager: %s.\n"
-
-#, c-format
-#~ msgid "the profile is not valid: %s"
-#~ msgstr "профіль є некоректним: %s"
