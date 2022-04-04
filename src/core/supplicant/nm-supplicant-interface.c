@@ -1225,8 +1225,10 @@ parse_capabilities(NMSupplicantInterface *self, GVariant *capabilities)
     const guint32                 old_max_scan_ssids   = priv->max_scan_ssids;
     gboolean                      have_ft              = FALSE;
     gboolean                      have_sae             = FALSE;
+    gboolean                      have_bip             = FALSE;
     gint32                        max_scan_ssids;
     const char                  **array;
+    guint                         i;
 
     nm_assert(capabilities && g_variant_is_of_type(capabilities, G_VARIANT_TYPE_VARDICT));
 
@@ -1236,12 +1238,28 @@ parse_capabilities(NMSupplicantInterface *self, GVariant *capabilities)
         g_free(array);
     }
 
+    if (g_variant_lookup(capabilities, "GroupMgmt", "^a&s", &array)) {
+        for (i = 0; array[i]; i++) {
+            if (NM_IN_STRSET(array[i],
+                             "aes-128-cmac",
+                             "bip-gmac-128",
+                             "bip-gmac-256",
+                             "bip-cmac-256")) {
+                have_bip = TRUE;
+                break;
+            }
+        }
+    }
+
     priv->iface_capabilities = NM_SUPPL_CAP_MASK_SET(priv->iface_capabilities,
                                                      NM_SUPPL_CAP_TYPE_FT,
                                                      have_ft ? NM_TERNARY_TRUE : NM_TERNARY_FALSE);
     priv->iface_capabilities = NM_SUPPL_CAP_MASK_SET(priv->iface_capabilities,
                                                      NM_SUPPL_CAP_TYPE_SAE,
                                                      have_sae ? NM_TERNARY_TRUE : NM_TERNARY_FALSE);
+    priv->iface_capabilities = NM_SUPPL_CAP_MASK_SET(priv->iface_capabilities,
+                                                     NM_SUPPL_CAP_TYPE_BIP,
+                                                     have_bip ? NM_TERNARY_TRUE : NM_TERNARY_FALSE);
 
     if (g_variant_lookup(capabilities, "Modes", "^a&s", &array)) {
         /* Setting p2p_capable might toggle _prop_p2p_available_get(). However,
@@ -1317,10 +1335,12 @@ _starting_check_ready(NMSupplicantInterface *self)
           " AP%c"
           " FT%c"
           " SAE%c"
+          " BIP%c"
           "",
           NM_SUPPL_CAP_TO_CHAR(priv->iface_capabilities, NM_SUPPL_CAP_TYPE_AP),
           NM_SUPPL_CAP_TO_CHAR(priv->iface_capabilities, NM_SUPPL_CAP_TYPE_FT),
-          NM_SUPPL_CAP_TO_CHAR(priv->iface_capabilities, NM_SUPPL_CAP_TYPE_SAE));
+          NM_SUPPL_CAP_TO_CHAR(priv->iface_capabilities, NM_SUPPL_CAP_TYPE_SAE),
+          NM_SUPPL_CAP_TO_CHAR(priv->iface_capabilities, NM_SUPPL_CAP_TYPE_BIP));
 
     /* Other global properties are set in constructed() because they don't
      * depend on interface capabilities. */
@@ -1362,6 +1382,7 @@ _get_capability(NMSupplicantInterfacePrivate *priv, NMSupplCapType type)
         }
         break;
     case NM_SUPPL_CAP_TYPE_SAE:
+    case NM_SUPPL_CAP_TYPE_BIP:
         nm_assert(NM_SUPPL_CAP_MASK_GET(priv->global_capabilities, type) == NM_TERNARY_DEFAULT);
         value = NM_SUPPL_CAP_MASK_GET(priv->iface_capabilities, type);
         break;
@@ -1395,10 +1416,13 @@ nm_supplicant_interface_get_capabilities(NMSupplicantInterface *self)
     caps = NM_SUPPL_CAP_MASK_SET(caps,
                                  NM_SUPPL_CAP_TYPE_SAE,
                                  _get_capability(priv, NM_SUPPL_CAP_TYPE_SAE));
+    caps = NM_SUPPL_CAP_MASK_SET(caps,
+                                 NM_SUPPL_CAP_TYPE_BIP,
+                                 _get_capability(priv, NM_SUPPL_CAP_TYPE_BIP));
 
     nm_assert(!NM_FLAGS_ANY(priv->iface_capabilities,
                             ~(NM_SUPPL_CAP_MASK_T_AP_MASK | NM_SUPPL_CAP_MASK_T_FT_MASK
-                              | NM_SUPPL_CAP_MASK_T_SAE_MASK)));
+                              | NM_SUPPL_CAP_MASK_T_SAE_MASK | NM_SUPPL_CAP_MASK_T_BIP_MASK)));
 
 #if NM_MORE_ASSERTS > 10
     {
