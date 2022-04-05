@@ -29,13 +29,6 @@ fi
 
 OLD_IFS="$IFS"
 
-IFS=$'\n'
-FILES=( $(git ls-tree --name-only -r HEAD | grep '\.py$') )
-IFS="$OLD_IFS"
-FILES+=(
-    "examples/python/gi/nm-wg-set"
-)
-
 usage() {
     printf "Usage: %s [OPTION]...\n" "$(basename "$0")"
     printf "Reformat python source files using python black.\n\n"
@@ -76,6 +69,13 @@ while (( $# )); do
             ;;
     esac
 done
+
+IFS=$'\n'
+FILES=()
+FILES+=( $(git ls-tree --name-only -r HEAD | grep '\.py$') )
+FILES+=( $(git grep -l '#!.*\<p[y]thon3\?\>') )
+FILES=( $(printf "%s\n" "${FILES[@]}" | sort -u) )
+IFS="$OLD_IFS"
 
 if [ $SHOW_FILENAMES = 1 ]; then
     printf '%s\n' "${FILES[@]}"
