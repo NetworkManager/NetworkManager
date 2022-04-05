@@ -6320,9 +6320,10 @@ nm_utils_ip6_address_same_prefix_cmp(const struct in6_addr *addr_a,
     int    nbytes;
     guint8 va, vb, m;
 
-    if (plen >= 128)
+    if (plen >= 128) {
+        nm_assert(plen == 128);
         NM_CMP_DIRECT_MEMCMP(addr_a, addr_b, sizeof(struct in6_addr));
-    else {
+    } else {
         nbytes = plen / 8;
         if (nbytes)
             NM_CMP_DIRECT_MEMCMP(addr_a, addr_b, nbytes);

@@ -398,6 +398,7 @@ gboolean nm_utils_get_ipv6_interface_identifier(NMLinkType          link_type,
 static inline in_addr_t
 _nm_utils_ip4_prefix_to_netmask(guint32 prefix)
 {
+    nm_assert(prefix <= 32);
     return prefix < 32 ? ~htonl(0xFFFFFFFFu >> prefix) : 0xFFFFFFFFu;
 }
 
@@ -455,8 +456,6 @@ nm_utils_ip_address_same_prefix_cmp(int           addr_family,
                                     gconstpointer addr_b,
                                     guint8        plen)
 {
-    nm_assert_addr_family(addr_family);
-
     NM_CMP_SELF(addr_a, addr_b);
 
     if (NM_IS_IPv4(addr_family)) {
