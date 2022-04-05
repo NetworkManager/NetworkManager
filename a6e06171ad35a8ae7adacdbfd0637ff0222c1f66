@@ -1,0 +1,3 @@
+This patch was wrong.
+
+Ignore-Fixes: d17a0a090555 ('supplicant: allow fast transition for WPA-PSK and WPA-EAP')
