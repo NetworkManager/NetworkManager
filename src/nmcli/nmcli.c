@@ -761,15 +761,15 @@ process_command_line(NmCli *nmc, int argc, char **argv_orig)
 
         if (argc == 1 && nmc->complete) {
             nmc_complete_strings(argv[0],
+                                 "--overview",
                                  "--terse",
                                  "--pretty",
                                  "--mode",
-                                 "--overview",
                                  "--colors",
                                  "--escape",
                                  "--fields",
-                                 "--nocheck",
                                  "--get-values",
+                                 "--nocheck",
                                  "--wait",
                                  "--version",
                                  "--help");
