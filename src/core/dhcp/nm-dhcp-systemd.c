@@ -81,16 +81,19 @@ lease_to_ip4_config(NMDedupMultiIndex *multi_idx,
     const struct in_addr                   *addr_list;
     char                                    addr_str[NM_UTILS_INET_ADDRSTRLEN];
     const char                             *s;
-    nm_auto_free_gstring GString           *str            = NULL;
-    nm_auto_free sd_dhcp_route            **routes         = NULL;
-    const char *const                      *search_domains = NULL;
+    nm_auto_free_gstring GString           *str              = NULL;
+    nm_auto_free sd_dhcp_route            **routes_static    = NULL;
+    nm_auto_free sd_dhcp_route            **routes_classless = NULL;
+    const char *const                      *search_domains   = NULL;
     guint16                                 mtu;
-    int                                     i, num;
+    int                                     i;
+    int                                     num;
+    int                                     is_classless;
+    int                                     n_routes_static;
+    int                                     n_routes_classless;
     const void                             *data;
     gsize                                   data_len;
     gboolean                                has_router_from_classless = FALSE;
-    gboolean                                has_classless_route       = FALSE;
-    gboolean                                has_static_route          = FALSE;
     const gint32                            ts      = nm_utils_get_monotonic_timestamp_sec();
     gint64                                  ts_time = time(NULL);
     struct in_addr                          a_address;
@@ -226,43 +229,26 @@ lease_to_ip4_config(NMDedupMultiIndex *multi_idx,
         nm_dhcp_option_add_option(options, AF_INET, NM_DHCP_OPTION_DHCP4_HOST_NAME, s);
     }
 
-    num = sd_dhcp_lease_get_routes(lease, &routes);
-    if (num > 0) {
-        nm_auto_free_gstring GString *str_classless               = NULL;
-        nm_auto_free_gstring GString *str_static                  = NULL;
-        guint32                       default_route_metric_offset = 0;
+    n_routes_static    = sd_dhcp_lease_get_static_routes(lease, &routes_static);
+    n_routes_classless = sd_dhcp_lease_get_classless_routes(lease, &routes_classless);
+    for (is_classless = 1; is_classless >= 0; is_classless--) {
+        int                   n_routes = (is_classless ? n_routes_classless : n_routes_static);
+        sd_dhcp_route *const *routes   = (is_classless ? routes_classless : routes_static);
+        guint32               default_route_metric_offset = 0;
 
-        for (i = 0; i < num; i++) {
-            switch (sd_dhcp_route_get_option(routes[i])) {
-            case NM_DHCP_OPTION_DHCP4_CLASSLESS_STATIC_ROUTE:
-                has_classless_route = TRUE;
-                break;
-            case NM_DHCP_OPTION_DHCP4_STATIC_ROUTE:
-                has_static_route = TRUE;
-                break;
-            }
-        }
+        if (n_routes <= 0)
+            continue;
 
-        if (has_classless_route)
-            str_classless = g_string_sized_new(30);
-        if (has_static_route)
-            str_static = g_string_sized_new(30);
+        nm_gstring_prepare(&str);
 
-        for (i = 0; i < num; i++) {
+        for (i = 0; i < n_routes; i++) {
             char           network_net_str[NM_UTILS_INET_ADDRSTRLEN];
             char           gateway_str[NM_UTILS_INET_ADDRSTRLEN];
             guint8         r_plen;
             struct in_addr r_network;
             struct in_addr r_gateway;
             in_addr_t      network_net;
-            int            option;
             guint32        m;
-
-            option = sd_dhcp_route_get_option(routes[i]);
-            if (!NM_IN_SET(option,
-                           NM_DHCP_OPTION_DHCP4_CLASSLESS_STATIC_ROUTE,
-                           NM_DHCP_OPTION_DHCP4_STATIC_ROUTE))
-                continue;
 
             if (sd_dhcp_route_get_destination(routes[i], &r_network) < 0)
                 continue;
@@ -275,31 +261,28 @@ lease_to_ip4_config(NMDedupMultiIndex *multi_idx,
             _nm_utils_inet4_ntop(network_net, network_net_str);
             _nm_utils_inet4_ntop(r_gateway.s_addr, gateway_str);
 
-            g_string_append_printf(
-                nm_gstring_add_space_delimiter(option == NM_DHCP_OPTION_DHCP4_CLASSLESS_STATIC_ROUTE
-                                                   ? str_classless
-                                                   : str_static),
-                "%s/%d %s",
-                network_net_str,
-                (int) r_plen,
-                gateway_str);
+            g_string_append_printf(nm_gstring_add_space_delimiter(str),
+                                   "%s/%d %s",
+                                   network_net_str,
+                                   (int) r_plen,
+                                   gateway_str);
 
-            if (option == NM_DHCP_OPTION_DHCP4_STATIC_ROUTE && has_classless_route) {
+            if (!is_classless && n_routes_classless > 0) {
                 /* RFC 3443: if the DHCP server returns both a Classless Static Routes
                  * option and a Static Routes option, the DHCP client MUST ignore the
                  * Static Routes option. */
                 continue;
             }
 
-            if (r_plen == 0 && option == NM_DHCP_OPTION_DHCP4_STATIC_ROUTE) {
-                /* for option 33 (static route), RFC 2132 says:
-                 *
-                 * The default route (0.0.0.0) is an illegal destination for a static
-                 * route. */
-                continue;
-            }
-
             if (r_plen == 0) {
+                if (!is_classless) {
+                    /* for option 33 (static route), RFC 2132 says:
+                     *
+                     * The default route (0.0.0.0) is an illegal destination for a static
+                     * route. */
+                    continue;
+                }
+
                 /* if there are multiple default routes, we add them with differing
                  * metrics. */
                 m                         = default_route_metric_offset++;
@@ -320,16 +303,13 @@ lease_to_ip4_config(NMDedupMultiIndex *multi_idx,
                                           }));
         }
 
-        if (str_classless && str_classless->len > 0)
+        if (str->len > 0) {
             nm_dhcp_option_add_option(options,
                                       AF_INET,
-                                      NM_DHCP_OPTION_DHCP4_CLASSLESS_STATIC_ROUTE,
-                                      str_classless->str);
-        if (str_static && str_static->len > 0)
-            nm_dhcp_option_add_option(options,
-                                      AF_INET,
-                                      NM_DHCP_OPTION_DHCP4_STATIC_ROUTE,
-                                      str_static->str);
+                                      is_classless ? NM_DHCP_OPTION_DHCP4_CLASSLESS_STATIC_ROUTE
+                                                   : NM_DHCP_OPTION_DHCP4_STATIC_ROUTE,
+                                      str->str);
+        }
     }
 
     num = sd_dhcp_lease_get_router(lease, &a_router);

@@ -10,6 +10,7 @@ libnm_systemd_core = static_library(
     'src/libsystemd-network/dhcp-packet.c',
     'src/libsystemd-network/dhcp6-network.c',
     'src/libsystemd-network/dhcp6-option.c',
+    'src/libsystemd-network/dhcp6-protocol.c',
     'src/libsystemd-network/lldp-neighbor.c',
     'src/libsystemd-network/lldp-network.c',
     'src/libsystemd-network/network-common.c',

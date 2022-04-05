@@ -2359,6 +2359,8 @@ src_libnm_systemd_core_libnm_systemd_core_la_SOURCES = \
 	src/libnm-systemd-core/src/libsystemd-network/dhcp6-lease-internal.h \
 	src/libnm-systemd-core/src/libsystemd-network/dhcp6-network.c \
 	src/libnm-systemd-core/src/libsystemd-network/dhcp6-option.c \
+	src/libnm-systemd-core/src/libsystemd-network/dhcp6-option.h \
+	src/libnm-systemd-core/src/libsystemd-network/dhcp6-protocol.c \
 	src/libnm-systemd-core/src/libsystemd-network/dhcp6-protocol.h \
 	src/libnm-systemd-core/src/libsystemd-network/lldp-neighbor.c \
 	src/libnm-systemd-core/src/libsystemd-network/lldp-neighbor.h \

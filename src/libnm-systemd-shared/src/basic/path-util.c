@@ -66,7 +66,7 @@ char *path_make_absolute(const char *p, const char *prefix) {
 }
 
 int safe_getcwd(char **ret) {
-        char *cwd;
+        _cleanup_free_ char *cwd = NULL;
 
         cwd = get_current_dir_name();
         if (!cwd)
@@ -74,12 +74,12 @@ int safe_getcwd(char **ret) {
 
         /* Let's make sure the directory is really absolute, to protect us from the logic behind
          * CVE-2018-1000001 */
-        if (cwd[0] != '/') {
-                free(cwd);
+        if (cwd[0] != '/')
                 return -ENOMEDIUM;
-        }
 
-        *ret = cwd;
+        if (ret)
+                *ret = TAKE_PTR(cwd);
+
         return 0;
 }
 
@@ -205,9 +205,9 @@ int path_make_relative(const char *from, const char *to, char **ret) {
 }
 
 char* path_startswith_strv(const char *p, char **set) {
-        char **s, *t;
-
         STRV_FOREACH(s, set) {
+                char *t;
+
                 t = path_startswith(p, *s);
                 if (t)
                         return t;
@@ -217,7 +217,6 @@ char* path_startswith_strv(const char *p, char **set) {
 }
 
 int path_strv_make_absolute_cwd(char **l) {
-        char **s;
         int r;
 
         /* Goes through every item in the string list and makes it
@@ -239,7 +238,6 @@ int path_strv_make_absolute_cwd(char **l) {
 }
 
 char **path_strv_resolve(char **l, const char *root) {
-        char **s;
         unsigned k = 0;
         bool enomem = false;
         int r;
@@ -707,12 +705,12 @@ int find_executable_full(const char *name, const char *root, char **exec_search_
                 p = DEFAULT_PATH;
 
         if (exec_search_path) {
-                char **element;
-
                 STRV_FOREACH(element, exec_search_path) {
                         _cleanup_free_ char *full_path = NULL;
+
                         if (!path_is_absolute(*element))
                                 continue;
+
                         full_path = path_join(*element, name);
                         if (!full_path)
                                 return -ENOMEM;
@@ -761,7 +759,6 @@ int find_executable_full(const char *name, const char *root, char **exec_search_
 
 bool paths_check_timestamp(const char* const* paths, usec_t *timestamp, bool update) {
         bool changed = false, originally_unset;
-        const char* const* i;
 
         assert(timestamp);
 
@@ -940,8 +937,9 @@ int path_find_first_component(const char **p, bool accept_dot_dot, const char **
 
 static const char *skip_slash_or_dot_backward(const char *path, const char *q) {
         assert(path);
+        assert(!q || q >= path);
 
-        for (; q >= path; q--) {
+        for (; q; q = PTR_SUB1(q, path)) {
                 if (*q == '/')
                         continue;
                 if (q > path && strneq(q - 1, "/.", 2))
@@ -1006,7 +1004,7 @@ int path_find_last_component(const char *path, bool accept_dot_dot, const char *
                 q = path + strlen(path) - 1;
 
         q = skip_slash_or_dot_backward(path, q);
-        if ((q < path) || /* the root directory */
+        if (!q || /* the root directory */
             (q == path && *q == '.')) { /* path is "." or "./" */
                 if (next)
                         *next = path;
@@ -1017,10 +1015,10 @@ int path_find_last_component(const char *path, bool accept_dot_dot, const char *
 
         last_end = q + 1;
 
-        while (q >= path && *q != '/')
-                q--;
+        while (q && *q != '/')
+                q = PTR_SUB1(q, path);
 
-        last_begin = q + 1;
+        last_begin = q ? q + 1 : path;
         len = last_end - last_begin;
 
         if (len > NAME_MAX)
@@ -1030,10 +1028,7 @@ int path_find_last_component(const char *path, bool accept_dot_dot, const char *
 
         if (next) {
                 q = skip_slash_or_dot_backward(path, q);
-                if (q < path)
-                        *next = path;
-                else
-                        *next = q + 1;
+                *next = q ? q + 1 : path;
         }
 
         if (ret)
@@ -1249,9 +1244,10 @@ bool hidden_or_backup_file(const char *filename) {
         assert(filename);
 
         if (filename[0] == '.' ||
-            streq(filename, "lost+found") ||
-            streq(filename, "aquota.user") ||
-            streq(filename, "aquota.group") ||
+            STR_IN_SET(filename,
+                       "lost+found",
+                       "aquota.user",
+                       "aquota.group") ||
             endswith(filename, "~"))
                 return true;
 
@@ -1348,7 +1344,7 @@ int systemd_installation_has_version(const char *root, unsigned minimal_version)
 
                 _cleanup_strv_free_ char **names = NULL;
                 _cleanup_free_ char *path = NULL;
-                char *c, **name;
+                char *c;
 
                 path = path_join(root, pattern);
                 if (!path)
@@ -1422,8 +1418,6 @@ bool empty_or_root(const char *path) {
 }
 
 bool path_strv_contains(char **l, const char *path) {
-        char **i;
-
         STRV_FOREACH(i, l)
                 if (path_equal(*i, path))
                         return true;
@@ -1432,10 +1426,9 @@ bool path_strv_contains(char **l, const char *path) {
 }
 
 bool prefixed_path_strv_contains(char **l, const char *path) {
-        char **i, *j;
-
         STRV_FOREACH(i, l) {
-                j = *i;
+                const char *j = *i;
+
                 if (*j == '-')
                         j++;
                 if (*j == '+')
