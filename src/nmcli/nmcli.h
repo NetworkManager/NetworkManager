@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * Copyright (C) 2010 - 2018 Red Hat, Inc.
+ * Copyright (C) 2010 - 2022 Red Hat, Inc.
  */
 
 #ifndef NMC_NMCLI_H
@@ -135,6 +135,8 @@ typedef struct _NmCli {
 
     bool nowait_flag : 1;    /* '--nowait' option; used for passing to callbacks */
     bool mode_specified : 1; /* Whether tabular/multiline mode was specified via '--mode' option */
+    bool offline : 1;        /* Communicate the connection data over stdin/stdout
+                              * instead of talking to the daemon. */
     bool ask : 1;            /* Ask for missing parameters: option '--ask' */
     bool complete : 1;       /* Autocomplete the command line */
     bool editor_status_line : 1;       /* Whether to display status line in connection editor */
@@ -148,6 +150,8 @@ typedef struct _NmCli {
     char *required_fields; /* Required fields in output: '--fields' option */
 
     char *palette_buffer; /* Buffer with sequences for terminal-colors.d(5)-based coloring. */
+
+    GPtrArray *offline_connections;
 } NmCli;
 
 extern const NmCli *const nm_cli_global_readline;
@@ -181,8 +185,15 @@ typedef struct _NMCCommand {
     const char *cmd;
     void (*func)(const struct _NMCCommand *cmd, NmCli *nmc, int argc, const char *const *argv);
     void (*usage)(void);
-    bool needs_client : 1;
-    bool needs_nm_running : 1;
+
+    bool needs_client : 1;       /* Ensure a client instance is there before calling
+                                  * the handler (unless --offline has been given). */
+    bool needs_nm_running : 1;   /* Client instance exists *and* the service is
+                                  * actually present on the bus. */
+    bool supports_offline : 1;   /* Run the handler without a client even if the
+                                  * comand usually requires one if --offline option was used. */
+    bool needs_offline_conn : 1; /* With --online, read in a keyfile from
+                                  * standard input before dispatching the handler. */
 } NMCCommand;
 
 void nmc_command_func_agent(const NMCCommand *cmd, NmCli *nmc, int argc, const char *const *argv);
