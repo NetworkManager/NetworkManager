@@ -22,11 +22,17 @@
 
 /*****************************************************************************/
 
+enum _NMBtCbState {
+    _NM_BT_CB_STATE_NONE    = 0, /* Registration not done    */
+    _NM_BT_CB_STATE_WAIT    = 1, /* Waiting for the callback */
+    _NM_BT_CB_STATE_SUCCESS = 2, /* Callback succeeded       */
+};
+
 struct _NMDeviceBridge {
     NMDevice      parent;
     GCancellable *bt_cancellable;
     bool          vlan_configured : 1;
-    bool          bt_registered : 1;
+    unsigned      bt_cb_state : 2;
 };
 
 struct _NMDeviceBridgeClass {
@@ -76,7 +82,8 @@ check_connection_available(NMDevice                      *device,
         if (!nm_bt_vtable_network_server->is_available(
                 nm_bt_vtable_network_server,
                 bdaddr,
-                (self->bt_cancellable || self->bt_registered) ? device : NULL)) {
+                (self->bt_cancellable || self->bt_cb_state != _NM_BT_CB_STATE_NONE) ? device
+                                                                                    : NULL)) {
             if (bdaddr)
                 nm_utils_error_set(error,
                                    NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
@@ -835,6 +842,7 @@ _bt_register_bridge_cb(GError *error, gpointer user_data)
         return;
     }
 
+    self->bt_cb_state = _NM_BT_CB_STATE_SUCCESS;
     nm_device_activate_schedule_stage2_device_config(NM_DEVICE(self), FALSE);
 }
 
@@ -846,12 +854,12 @@ _nm_device_bridge_notify_unregister_bt_nap(NMDevice *device, const char *reason)
     _LOGD(LOGD_DEVICE,
           "bluetooth NAP server unregistered from bridge: %s%s",
           reason,
-          self->bt_registered ? "" : " (was no longer registered)");
+          self->bt_cb_state != _NM_BT_CB_STATE_NONE ? "" : " (was no longer registered)");
 
     nm_clear_g_cancellable(&self->bt_cancellable);
 
-    if (self->bt_registered) {
-        self->bt_registered = FALSE;
+    if (self->bt_cb_state != _NM_BT_CB_STATE_NONE) {
+        self->bt_cb_state = _NM_BT_CB_STATE_NONE;
         nm_device_state_changed(device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_BT_FAILED);
     }
 }
@@ -879,8 +887,11 @@ act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
     if (self->bt_cancellable)
         return NM_ACT_STAGE_RETURN_POSTPONE;
 
-    if (self->bt_registered)
+    if (self->bt_cb_state == _NM_BT_CB_STATE_WAIT)
         return NM_ACT_STAGE_RETURN_POSTPONE;
+
+    if (self->bt_cb_state == _NM_BT_CB_STATE_SUCCESS)
+        return NM_ACT_STAGE_RETURN_SUCCESS;
 
     self->bt_cancellable = g_cancellable_new();
     if (!nm_bt_vtable_network_server->register_bridge(nm_bt_vtable_network_server,
@@ -895,7 +906,7 @@ act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
         return NM_ACT_STAGE_RETURN_FAILURE;
     }
 
-    self->bt_registered = TRUE;
+    self->bt_cb_state = _NM_BT_CB_STATE_WAIT;
     return NM_ACT_STAGE_RETURN_POSTPONE;
 }
 
@@ -906,14 +917,14 @@ deactivate(NMDevice *device)
 
     _LOGD(LOGD_DEVICE,
           "deactivate bridge%s",
-          self->bt_registered ? " (registered as NAP bluetooth device)" : "");
+          self->bt_cb_state != _NM_BT_CB_STATE_NONE ? " (registered as NAP bluetooth device)" : "");
 
     self->vlan_configured = FALSE;
 
     nm_clear_g_cancellable(&self->bt_cancellable);
 
-    if (self->bt_registered) {
-        self->bt_registered = FALSE;
+    if (self->bt_cb_state != _NM_BT_CB_STATE_NONE) {
+        self->bt_cb_state = _NM_BT_CB_STATE_NONE;
         nm_bt_vtable_network_server->unregister_bridge(nm_bt_vtable_network_server, device);
     }
 }
