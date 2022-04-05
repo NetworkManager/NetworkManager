@@ -6282,7 +6282,7 @@ _nm_utils_ssid_to_string_gbytes(GBytes *ssid)
 /*****************************************************************************/
 
 gconstpointer
-nm_utils_ipx_address_clear_host_address(int family, gpointer dst, gconstpointer src, guint8 plen)
+nm_utils_ipx_address_clear_host_address(int family, gpointer dst, gconstpointer src, guint32 plen)
 {
     g_return_val_if_fail(dst, NULL);
 
@@ -6308,7 +6308,8 @@ nm_utils_ipx_address_clear_host_address(int family, gpointer dst, gconstpointer 
 
 /* nm_utils_ip6_address_clear_host_address:
  * @dst: destination output buffer, will contain the network part of the @src address
- * @src: source ip6 address
+ * @src: source ip6 address. If NULL, this does an in-place update of @dst.
+ *   Also, @src and @dst are allowed to be the same pointers.
  * @plen: prefix length of network
  *
  * Note: this function is self assignment safe, to update @src inplace, set both
@@ -6317,7 +6318,7 @@ nm_utils_ipx_address_clear_host_address(int family, gpointer dst, gconstpointer 
 const struct in6_addr *
 nm_utils_ip6_address_clear_host_address(struct in6_addr       *dst,
                                         const struct in6_addr *src,
-                                        guint8                 plen)
+                                        guint32                plen)
 {
     g_return_val_if_fail(plen <= 128, NULL);
     g_return_val_if_fail(dst, NULL);
@@ -6346,7 +6347,7 @@ nm_utils_ip6_address_clear_host_address(struct in6_addr       *dst,
 int
 nm_utils_ip6_address_same_prefix_cmp(const struct in6_addr *addr_a,
                                      const struct in6_addr *addr_b,
-                                     guint8                 plen)
+                                     guint32                plen)
 {
     int    nbytes;
     guint8 va, vb, m;
