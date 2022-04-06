@@ -44,6 +44,15 @@ def _keys_to_dict(itr):
 
 
 @memoize
+def git_ref_exists_plain(ref):
+    try:
+        subprocess.check_output(["git", "show-ref", "-q", "--verify", str(ref)])
+    except subprocess.CalledProcessError:
+        return False
+    return True
+
+
+@memoize
 def git_ref_exists(ref):
     try:
         out = subprocess.check_output(
@@ -244,6 +253,11 @@ if __name__ == "__main__":
     ref_head = git_ref_exists(ref_head0)
     if not ref_head:
         die('Ref "%s" does not exist' % (ref_head0))
+
+    if not git_ref_exists_plain("refs/notes/bugs"):
+        die(
+            "Notes refs/notes/bugs not found. Read CONTRIBUTING.md file for how to setup the notes"
+        )
 
     ref_upstreams = []
     if len(sys.argv) <= 2:
