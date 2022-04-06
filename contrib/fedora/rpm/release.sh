@@ -548,9 +548,13 @@ done
 
 do_command git push "$ORIGIN" "${BRANCHES[@]}" || die "failed to to push branches ${BRANCHES[@]} to $ORIGIN"
 
+FAIL=0
 for r in "${RELEASE_FILES[@]}"; do
-    do_command ssh master.gnome.org ftpadmin install --unattended "$r" || die "ftpadmin install failed"
+    do_command ssh master.gnome.org ftpadmin install --unattended "$r" || FAIL=1
 done
+if [ "$FAIL" = 1 ]; then
+    die "ftpadmin install failed. This was the last step. Invoke the command manually"
+fi
 
 CLEANUP_CHECKOUT_BRANCH=
 if [ "$DRY_RUN" = 0 ]; then
