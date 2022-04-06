@@ -90,7 +90,7 @@ if [[ "$FEDPKG" == "" ]]; then
         FEDPKG=rhpkg
     elif [[ "$URL" = *'gitlab.com'*'redhat/centos-stream'* ]]; then
         FEDPKG=centpkg
-    elif [[ "$URL" = *'pkgs.fedoraproject.org/'* ]]; then
+    elif [[ "$URL" = *'pkgs.fedoraproject.org/'* || "$URL" = *'src.fedoraproject.org/'* ]]; then
         FEDPKG=fedpkg
     else
         die "not inside dist-git repository? Check out a branch that has the dist-git remote tracking branch >>$PWD<<"
