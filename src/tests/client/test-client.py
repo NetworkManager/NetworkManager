@@ -854,9 +854,6 @@ class TestNmcli(NmTestBase):
             self.fail("invalid language %s" % (lang))
 
         env = {}
-        if extra_env is not None:
-            for k, v in extra_env.items():
-                env[k] = v
         for k in ["LD_LIBRARY_PATH", "DBUS_SESSION_BUS_ADDRESS"]:
             val = os.environ.get(k, None)
             if val is not None:
@@ -873,6 +870,9 @@ class TestNmcli(NmTestBase):
         env["NM_TEST_CALLING_NUM"] = str(calling_num)
         if fatal_warnings is _DEFAULT_ARG or fatal_warnings:
             env["G_DEBUG"] = "fatal-warnings"
+        if extra_env is not None:
+            for k, v in extra_env.items():
+                env[k] = v
 
         args = [conf.get(ENV_NM_TEST_CLIENT_NMCLI_PATH)] + list(args)
 
