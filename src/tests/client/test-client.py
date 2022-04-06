@@ -203,6 +203,14 @@ class Util:
         return isinstance(s, t)
 
     @staticmethod
+    def is_regex_pattern(s):
+        if Util.python_has_version(3):
+            t = re.Pattern
+        else:
+            t = re._pattern_type
+        return isinstance(s, t)
+
+    @staticmethod
     def memoize_nullary(nullary_func):
         result = []
 
@@ -347,12 +355,21 @@ class Util:
                 v_search = replace[0]()
             except TypeError:
                 v_search = replace[0]
+
+            v_replace = replace[1]
+            v_replace = v_replace.encode("utf-8")
+
+            if Util.is_regex_pattern(v_search):
+                text2 = []
+                for t in text:
+                    text2.append(v_search.sub(v_replace, t))
+                text = text2
+                continue
+
             assert v_search is None or Util.is_string(v_search)
             if not v_search:
                 continue
-            v_replace = replace[1]
             v_search = v_search.encode("utf-8")
-            v_replace = v_replace.encode("utf-8")
             text2 = []
             for t in text:
                 if isinstance(t, tuple):
