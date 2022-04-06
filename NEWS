@@ -10,14 +10,10 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 
 * Wi-Fi hotspots will use a (stable) random channel number unless one is
   chosen manually.
-* libnm: add new dummy crypto backend "null" that does nothing.
+* Add new dummy crypto backend "null" that does nothing. We need a
+  crypto library for handling certificates for 802.1x profiles.
 * Veth devices with name "eth*" are now managed by default via the
   udev rule. This is to support managing the network in LXD containers.
-* When the list of plugins is not specified via "main.plugins" in
-  NetworkManager.conf and no build-time default is set with
-  "--with-config-plugins-default" configure argument, now all known
-  plugins found in the plugin directory are loaded (and the built-in
-  "keyfile" plugin is preferred over others).
 * The hostname received from DHCP is now shortened to the first dot
   (or to 64 characters, whatever comes first) if it's too long.
 * As the insecure WEP encryption for Wi-Fi network is phased out,
@@ -28,13 +24,31 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   without WEP support.
 * NetworkManager will no longer advertise frequencies as supported when
   they're disallowed in configured regulatory domain.
-* Fixed a couple of regressions in PPPoE support in NetworkManager-1.36.
-* DHCP client behavior is now more robust in misconfigured networks
-  where rogue DHCP servers NAK requests that would be serviced by
-  legitimate servers.
 * Fix connectivity checks in case the check endpoint address resolves to
   multiple addresses.
+* Workaround libcurl blocking NetworkManager while resolving DNS names.
 * Updated translations.
+
+The following changes were backported to 1.36.x releases between 1.36.0
+and 1.36.4 are also present in NetworkManager-1.38:
+
+- 1.36.4
+* The internal DHCPv4 client now discards NAKs packets coming
+  from servers different from the one that sent the offer.
+* Fixed a couple of regressions in PPPoE support since 1.36.0.
+* Fix potential libnm crash when the client object initialization gets
+  canceled.
+* Other various fixes and improvements.
+
+- 1.36.2
+* When the list of plugins is not specified via "main.plugins" in
+  NetworkManager.conf and no build-time default is set with
+  "--with-config-plugins-default" configure argument, now all known
+  plugins found in the plugin directory are loaded (and the built-in
+  "keyfile" plugin is preferred over others).
+* Preserve external ports during checkpoint rollback
+* Fix removal of ovsdb entry when an OVS interface goes away
+* Fix DNS configuration for WWAN connections
 
 =============================================
 NetworkManager-1.36
