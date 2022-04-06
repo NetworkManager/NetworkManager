@@ -1,0 +1,1 @@
+Fixes: 7af61e2aa00e ('device: make device stage2 reentrant for NMDeviceBridge')
