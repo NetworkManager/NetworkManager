@@ -1642,6 +1642,66 @@ _normalize_gsm_auto_config(NMConnection *self)
 }
 
 static gboolean
+_normalize_802_1x_empty_strings(NMConnection *self)
+{
+    NMSetting8021x *s_8021x;
+    gboolean        changed = FALSE;
+
+    s_8021x = _connection_get_setting_by_meta_type(NM_CONNECTION_GET_PRIVATE(self),
+                                                   NM_META_SETTING_TYPE_802_1X);
+    if (!s_8021x)
+        return FALSE;
+
+#define _norm_8021x(s_8021x, getter, prop_name, p_changed)       \
+    G_STMT_START                                                 \
+    {                                                            \
+        NMSetting8021x *_s_8021x   = (s_8021x);                  \
+        gboolean       *_p_changed = (p_changed);                \
+        const char     *_v;                                      \
+                                                                 \
+        _v = getter(_s_8021x);                                   \
+        if (_v && _v[0] == '\0') {                               \
+            g_object_set(_s_8021x, "" prop_name "", NULL, NULL); \
+            *(_p_changed) = TRUE;                                \
+        }                                                        \
+    }                                                            \
+    G_STMT_END
+
+    _norm_8021x(s_8021x, nm_setting_802_1x_get_identity, NM_SETTING_802_1X_IDENTITY, &changed);
+    _norm_8021x(s_8021x,
+                nm_setting_802_1x_get_anonymous_identity,
+                NM_SETTING_802_1X_ANONYMOUS_IDENTITY,
+                &changed);
+    _norm_8021x(s_8021x, nm_setting_802_1x_get_pac_file, NM_SETTING_802_1X_PAC_FILE, &changed);
+    _norm_8021x(s_8021x,
+                nm_setting_802_1x_get_subject_match,
+                NM_SETTING_802_1X_SUBJECT_MATCH,
+                &changed);
+    _norm_8021x(s_8021x,
+                nm_setting_802_1x_get_phase2_subject_match,
+                NM_SETTING_802_1X_PHASE2_SUBJECT_MATCH,
+                &changed);
+    _norm_8021x(s_8021x,
+                nm_setting_802_1x_get_domain_suffix_match,
+                NM_SETTING_802_1X_DOMAIN_SUFFIX_MATCH,
+                &changed);
+    _norm_8021x(s_8021x,
+                nm_setting_802_1x_get_phase2_domain_suffix_match,
+                NM_SETTING_802_1X_PHASE2_DOMAIN_SUFFIX_MATCH,
+                &changed);
+    _norm_8021x(s_8021x,
+                nm_setting_802_1x_get_domain_match,
+                NM_SETTING_802_1X_DOMAIN_MATCH,
+                &changed);
+    _norm_8021x(s_8021x,
+                nm_setting_802_1x_get_phase2_domain_match,
+                NM_SETTING_802_1X_PHASE2_DOMAIN_MATCH,
+                &changed);
+
+    return changed;
+}
+
+static gboolean
 _normalize_required_settings(NMConnection *self)
 {
     NMSettingBluetooth *s_bt = nm_connection_get_setting_bluetooth(self);
@@ -1952,6 +2012,7 @@ _connection_normalize(NMConnection *connection,
     was_modified |= _normalize_bridge_vlan_order(connection);
     was_modified |= _normalize_bridge_port_vlan_order(connection);
     was_modified |= _normalize_gsm_auto_config(connection);
+    was_modified |= _normalize_802_1x_empty_strings(connection);
 
     was_modified = !!was_modified;
 
