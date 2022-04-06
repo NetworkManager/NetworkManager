@@ -1695,6 +1695,97 @@ class TestNmcli(NmTestBase):
                 replace_cmd=replace_uuids,
             )
 
+    @nm_test_no_dbus
+    def test_offline(self):
+
+        # Make sure we're not using D-Bus
+        no_dbus_env = {
+            "DBUS_SYSTEM_BUS_ADDRESS": "very:invalid",
+            "DBUS_SESSION_BUS_ADDRESS": "very:invalid",
+        }
+
+        # This check just makes sure the above works and the
+        # "nmcli g" command indeed fails talking to D-Bus
+        self.call_nmcli(
+            ["g"],
+            extra_env=no_dbus_env,
+        )
+
+        replace_uuids = [
+            (
+                re.compile(b"uuid=.*"),
+                "uuid=UUID-WAS-HERE-BUT-IS-NO-MORE-SADLY",
+            )
+        ]
+
+        self.call_nmcli(
+            ["--offline", "c", "add", "type", "ethernet"],
+            extra_env=no_dbus_env,
+            replace_stdout=replace_uuids,
+        )
+
+        self.call_nmcli(
+            ["--offline", "c", "show"],
+            extra_env=no_dbus_env,
+        )
+
+        self.call_nmcli(
+            ["--offline", "g"],
+            extra_env=no_dbus_env,
+        )
+
+        self.call_nmcli(
+            ["--offline"],
+            extra_env=no_dbus_env,
+        )
+
+        self.call_nmcli(
+            [
+                "--offline",
+                "c",
+                "add",
+                "type",
+                "wifi",
+                "ssid",
+                "lala",
+                "802-1x.eap",
+                "pwd",
+                "802-1x.identity",
+                "foo",
+                "802-1x.password",
+                "bar",
+            ],
+            extra_env=no_dbus_env,
+            replace_stdout=replace_uuids,
+        )
+
+        self.call_nmcli(
+            [
+                "--offline",
+                "c",
+                "add",
+                "type",
+                "wifi",
+                "ssid",
+                "lala",
+                "802-1x.eap",
+                "pwd",
+                "802-1x.identity",
+                "foo",
+                "802-1x.password",
+                "bar",
+                "802-1x.password-flags",
+                "agent-owned",
+            ],
+            extra_env=no_dbus_env,
+            replace_stdout=replace_uuids,
+        )
+
+        self.call_nmcli(
+            ["--complete-args", "--offline", "conn", "modify", "ipv6.ad"],
+            extra_env=no_dbus_env,
+        )
+
 
 ###############################################################################
 

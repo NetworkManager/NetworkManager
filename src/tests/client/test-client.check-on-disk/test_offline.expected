@@ -1,0 +1,137 @@
+size: 258
+location: src/tests/client/test-client.py:test_offline()/1
+cmd: $NMCLI g
+lang: C
+returncode: 1
+stderr: 136 bytes
+>>>
+Error: Could not create NMClient object: Key/Value pair 0, ?invalid?, in address element ?very:invalid? does not contain an equal sign.
+
+<<<
+size: 319
+location: src/tests/client/test-client.py:test_offline()/2
+cmd: $NMCLI --offline c add type ethernet
+lang: C
+returncode: 0
+stdout: 169 bytes
+>>>
+[connection]
+id=ethernet
+uuid=UUID-WAS-HERE-BUT-IS-NO-MORE-SADLY
+type=ethernet
+
+[ethernet]
+
+[ipv4]
+method=auto
+
+[ipv6]
+addr-gen-mode=stable-privacy
+method=auto
+
+[proxy]
+
+<<<
+size: 183
+location: src/tests/client/test-client.py:test_offline()/3
+cmd: $NMCLI --offline c show
+lang: C
+returncode: 2
+stderr: 47 bytes
+>>>
+Error: command doesn't support --offline mode.
+
+<<<
+size: 178
+location: src/tests/client/test-client.py:test_offline()/4
+cmd: $NMCLI --offline g
+lang: C
+returncode: 2
+stderr: 47 bytes
+>>>
+Error: command doesn't support --offline mode.
+
+<<<
+size: 176
+location: src/tests/client/test-client.py:test_offline()/5
+cmd: $NMCLI --offline
+lang: C
+returncode: 2
+stderr: 47 bytes
+>>>
+Error: command doesn't support --offline mode.
+
+<<<
+size: 443
+location: src/tests/client/test-client.py:test_offline()/6
+cmd: $NMCLI --offline c add type wifi ssid lala 802-1x.eap pwd 802-1x.identity foo 802-1x.password bar
+lang: C
+returncode: 0
+stdout: 232 bytes
+>>>
+[connection]
+id=wifi
+uuid=UUID-WAS-HERE-BUT-IS-NO-MORE-SADLY
+type=wifi
+
+[wifi]
+mode=infrastructure
+ssid=lala
+
+[802-1x]
+eap=pwd;
+identity=foo
+password=bar
+
+[ipv4]
+method=auto
+
+[ipv6]
+addr-gen-mode=stable-privacy
+method=auto
+
+[proxy]
+
+<<<
+size: 481
+location: src/tests/client/test-client.py:test_offline()/7
+cmd: $NMCLI --offline c add type wifi ssid lala 802-1x.eap pwd 802-1x.identity foo 802-1x.password bar 802-1x.password-flags agent-owned
+lang: C
+returncode: 0
+stdout: 236 bytes
+>>>
+[connection]
+id=wifi
+uuid=UUID-WAS-HERE-BUT-IS-NO-MORE-SADLY
+type=wifi
+
+[wifi]
+mode=infrastructure
+ssid=lala
+
+[802-1x]
+eap=pwd;
+identity=foo
+password-flags=1
+
+[ipv4]
+method=auto
+
+[ipv6]
+addr-gen-mode=stable-privacy
+method=auto
+
+[proxy]
+
+<<<
+size: 199
+location: src/tests/client/test-client.py:test_offline()/8
+cmd: $NMCLI --complete-args --offline conn modify ipv6.ad
+lang: C
+returncode: 0
+stdout: 34 bytes
+>>>
+ipv6.addresses
+ipv6.addr-gen-mode
+
+<<<
