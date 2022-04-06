@@ -397,7 +397,9 @@ write_8021x_setting(NMConnection *connection,
     if (wired)
         svSetValueStr(ifcfg, "KEY_MGMT", "IEEE8021X");
 
-    /* EAP method */
+    /* EAP method
+     *
+     * FIXME(ifcfg-full-cycle): persist all values of eap-method. */
     if (nm_setting_802_1x_get_num_eap_methods(s_8021x)) {
         value = nm_setting_802_1x_get_eap_method(s_8021x, 0);
         if (value)
@@ -455,10 +457,20 @@ write_8021x_setting(NMConnection *connection,
             value = "allow-auth";
         else if (strcmp(value, "3") == 0)
             value = "allow-unauth allow-auth";
-        else
+        else {
+            /* FIXME(ifcfg-full-cycle): does not handle the value "0". */
             value = NULL;
+        }
     }
     svSetValueStr(ifcfg, "IEEE_8021X_FAST_PROVISIONING", value);
+
+    auth_flags = nm_setting_802_1x_get_phase1_auth_flags(s_8021x);
+    if (auth_flags != NM_SETTING_802_1X_AUTH_FLAGS_NONE) {
+        svSetValueEnum(ifcfg,
+                       "IEEE_8021X_PHASE1_AUTH_FLAGS",
+                       nm_setting_802_1x_auth_flags_get_type(),
+                       auth_flags);
+    }
 
     /* Phase2 auth methods */
     phase2_auth = g_string_new(NULL);
@@ -480,14 +492,6 @@ write_8021x_setting(NMConnection *connection,
         g_free(tmp);
     }
 
-    auth_flags = nm_setting_802_1x_get_phase1_auth_flags(s_8021x);
-    if (auth_flags != NM_SETTING_802_1X_AUTH_FLAGS_NONE) {
-        svSetValueEnum(ifcfg,
-                       "IEEE_8021X_PHASE1_AUTH_FLAGS",
-                       nm_setting_802_1x_auth_flags_get_type(),
-                       auth_flags);
-    }
-
     svSetValueStr(ifcfg,
                   "IEEE_8021X_INNER_AUTH_METHODS",
                   phase2_auth->len ? phase2_auth->str : NULL);
@@ -503,6 +507,8 @@ write_8021x_setting(NMConnection *connection,
     str = g_string_new(NULL);
     num = nm_setting_802_1x_get_num_altsubject_matches(s_8021x);
     for (i = 0; i < num; i++) {
+        /* FIXME(ifcfg-full-cycle): this cannot handle values with spaces, which
+         * are not rejected by nm_connection_verify(). */
         if (i > 0)
             g_string_append_c(str, ' ');
         match = nm_setting_802_1x_get_altsubject_match(s_8021x, i);
@@ -515,6 +521,8 @@ write_8021x_setting(NMConnection *connection,
     str = g_string_new(NULL);
     num = nm_setting_802_1x_get_num_phase2_altsubject_matches(s_8021x);
     for (i = 0; i < num; i++) {
+        /* FIXME(ifcfg-full-cycle): this cannot handle values with spaces, which
+         * are not rejected by nm_connection_verify(). */
         if (i > 0)
             g_string_append_c(str, ' ');
         match = nm_setting_802_1x_get_phase2_altsubject_match(s_8021x, i);
