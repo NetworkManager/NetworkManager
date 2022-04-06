@@ -8,10 +8,20 @@ subject to change and not guaranteed to be compatible with
 the later release.
 USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 
+* Add support for route type "throw".
 * Wi-Fi hotspots will use a (stable) random channel number unless one is
   chosen manually.
-* Add new dummy crypto backend "null" that does nothing. We need a
-  crypto library for handling certificates for 802.1x profiles.
+* NetworkManager will no longer advertise frequencies as supported when
+  they're disallowed in configured regulatory domain.
+* Attempt to connect to WEP-encrypted Wi-Fi network will now fail
+  gracefully with a recent version of wpa_supplicant when built
+  without WEP support. As long as wpa_supplicant supports WEP,
+  NetworkManager will continue to work.
+* Disable WPA3 transition mode for wifi.key-mgmt=wpa-psk if the NIC
+  does not support PMF. This is known to cause problems in some setups. It
+  is still possible to explicitly configure wifi.key-mgmt=sae for WPA3.
+* Add new dummy crypto backend "null" that does nothing. NetworkManager
+  uses the crypto library when handling certificates for 802.1x profiles.
 * Veth devices with name "eth*" are now managed by default via the
   udev rule. This is to support managing the network in LXD containers.
 * The hostname received from DHCP is now shortened to the first dot
@@ -19,15 +29,15 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 * As the insecure WEP encryption for Wi-Fi network is phased out,
   nmcli now discourages its use when activating or modifying a
   profile.
-* Attempt to connect to WEP-encrypted Wi-Fi network will now fail
-  gracefully with a recent version of wpa_supplicant when built
-  without WEP support.
-* NetworkManager will no longer advertise frequencies as supported when
-  they're disallowed in configured regulatory domain.
 * Fix connectivity checks in case the check endpoint address resolves to
   multiple addresses.
 * Workaround libcurl blocking NetworkManager while resolving DNS names.
+* nmcli: indicate missing Wi-Fi hardware when showing rfkill setting.
+* nmcli: add connection migrate command to move a profile to a specified
+  settings plugin. This allows to convert profiles in the deprecated ifcfg-rh
+  format to keyfile.
 * Updated translations.
+* Various bugfixes and internal improvements.
 
 The following changes were backported to 1.36.x releases between 1.36.0
 and 1.36.4 are also present in NetworkManager-1.38:
