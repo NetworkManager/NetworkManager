@@ -84,23 +84,26 @@ typedef struct _NmcMetaGenericInfo NmcMetaGenericInfo;
 
 struct _NmcOutputField {
     const NMMetaAbstractInfo *info;
-    int                       width; /* Width in screen columns */
-    void       *value; /* Value of current field - char* or char** (NULL-terminated array) */
-    gboolean    value_is_array; /* Whether value is char** instead of char* */
-    gboolean    free_value;     /* Whether to free the value */
-    NmcOfFlags  flags;          /* Flags - whether and how to print values/field names/headers */
-    NMMetaColor color;          /* Use this color to print value */
+
+    int   width;              /* Width in screen columns */
+    void *value;              /* Value of current field - char* or
+                                     * char** (NULL-terminated array) */
+    bool  value_is_array : 1; /* Whether value is char** instead of char* */
+    bool  free_value : 1;     /* Whether to free the value */
+
+    NmcOfFlags  flags; /* Flags - whether and how to print values/field names/headers */
+    NMMetaColor color; /* Use this color to print value */
 };
 
 typedef struct _NmcConfig {
-    NMCPrintOutput print_output;     /* Output mode */
-    bool           use_colors;       /* Whether to use colors for output: option '--color' */
-    bool           multiline_output; /* Multiline output instead of default tabular */
-    bool           escape_values;    /* Whether to escape ':' and '\' in terse tabular mode */
-    bool           in_editor;        /* Whether running the editor - nmcli con edit' */
-    bool
-        show_secrets; /* Whether to display secrets (both input and output): option '--show-secrets' */
-    bool            overview; /* Overview mode (hide default values) */
+    NMCPrintOutput  print_output;         /* Output mode */
+    bool            use_colors;           /* Whether to use colors for output: option '--color' */
+    bool            multiline_output : 1; /* Multiline output instead of default tabular */
+    bool            escape_values : 1;    /* Whether to escape ':' and '\' in terse tabular mode */
+    bool            in_editor : 1;        /* Whether running the editor - nmcli con edit' */
+    bool            show_secrets : 1;     /* Whether to display secrets (both input
+                                           * and output): option '--show-secrets' */
+    bool            overview : 1;         /* Overview mode (hide default values) */
     NmcColorPalette palette;
 } NmcConfig;
 
@@ -128,19 +131,21 @@ typedef struct _NmCli {
     GHashTable               *pwds_hash;    /* Hash table with passwords in passwd-file */
     struct _NMPolkitListener *pk_listener;  /* polkit agent listener */
 
-    int      should_wait;    /* Semaphore indicating whether nmcli should not end or not yet */
-    gboolean nowait_flag;    /* '--nowait' option; used for passing to callbacks */
-    gboolean mode_specified; /* Whether tabular/multiline mode was specified via '--mode' option */
+    int should_wait; /* Semaphore indicating whether nmcli should not end or not yet */
+
+    bool nowait_flag : 1;    /* '--nowait' option; used for passing to callbacks */
+    bool mode_specified : 1; /* Whether tabular/multiline mode was specified via '--mode' option */
+    bool ask : 1;            /* Ask for missing parameters: option '--ask' */
+    bool complete : 1;       /* Autocomplete the command line */
+    bool editor_status_line : 1;       /* Whether to display status line in connection editor */
+    bool editor_save_confirmation : 1; /* Whether to ask for confirmation on
+                                        * saving connections with 'autoconnect=yes' */
+
     union {
         const NmcConfig nmc_config;
         NmcConfig       nmc_config_mutable;
     };
-    char    *required_fields;    /* Required fields in output: '--fields' option */
-    gboolean ask;                /* Ask for missing parameters: option '--ask' */
-    gboolean complete;           /* Autocomplete the command line */
-    gboolean editor_status_line; /* Whether to display status line in connection editor */
-    gboolean
-        editor_save_confirmation; /* Whether to ask for confirmation on saving connections with 'autoconnect=yes' */
+    char *required_fields; /* Required fields in output: '--fields' option */
 
     char *palette_buffer; /* Buffer with sequences for terminal-colors.d(5)-based coloring. */
 } NmCli;
@@ -176,8 +181,8 @@ typedef struct _NMCCommand {
     const char *cmd;
     void (*func)(const struct _NMCCommand *cmd, NmCli *nmc, int argc, const char *const *argv);
     void (*usage)(void);
-    bool needs_client;
-    bool needs_nm_running;
+    bool needs_client : 1;
+    bool needs_nm_running : 1;
 } NMCCommand;
 
 void nmc_command_func_agent(const NMCCommand *cmd, NmCli *nmc, int argc, const char *const *argv);
