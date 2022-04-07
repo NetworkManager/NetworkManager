@@ -1849,7 +1849,7 @@ src_libnm_client_impl_NM_1_0_gir_INCLUDES = Gio-2.0
 src_libnm_client_impl_NM_1_0_gir_PACKAGES = gio-2.0
 src_libnm_client_impl_NM_1_0_gir_EXPORT_PACKAGES = libnm
 src_libnm_client_impl_NM_1_0_gir_CFLAGS = \
-	$(src_libnm_client_impl_libnm_la_CPPFLAGS) \
+	$(filter-out -DGLIB_VERSION_%, $(src_libnm_client_impl_libnm_la_CPPFLAGS)) \
 	-DNETWORKMANAGER_COMPILATION \
 	$(NULL)
 src_libnm_client_impl_NM_1_0_gir_LIBS = src/libnm-client-impl/libnm.la
