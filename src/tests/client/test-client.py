@@ -674,7 +674,13 @@ class AsyncProcess:
 
 
 class NmTestBase(unittest.TestCase):
-    pass
+    def __init__(self, *args, **kwargs):
+        self._calling_num = {}
+        self._skip_test_for_l10n_diff = []
+        self._async_jobs = []
+        self._results = []
+        self.srv = None
+        return unittest.TestCase.__init__(self, *args, **kwargs)
 
 
 MAX_JOBS = 15
@@ -1029,20 +1035,13 @@ class TestNmcli(NmTestBase):
     def async_wait(self):
         return self.async_start(wait_all=True)
 
-    def _nm_test_pre(self):
-        self._calling_num = {}
-        self._skip_test_for_l10n_diff = []
-        self._async_jobs = []
-        self._results = []
-
-        self.srv = NMStubServer(self._testMethodName)
-
     def _nm_test_post(self):
 
         self.async_wait()
 
-        self.srv.shutdown()
-        self.srv = None
+        if self.srv is not None:
+            self.srv.shutdown()
+            self.srv = None
 
         self._calling_num = None
 
@@ -1147,7 +1146,14 @@ class TestNmcli(NmTestBase):
 
     def nm_test(func):
         def f(self):
-            self._nm_test_pre()
+            self.srv = NMStubServer(self._testMethodName)
+            func(self)
+            self._nm_test_post()
+
+        return f
+
+    def nm_test_no_dbus(func):
+        def f(self):
             func(self)
             self._nm_test_post()
 
