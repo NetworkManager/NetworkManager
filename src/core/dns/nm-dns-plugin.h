@@ -19,8 +19,11 @@
 #define NM_DNS_PLUGIN_GET_CLASS(obj) \
     (G_TYPE_INSTANCE_GET_CLASS((obj), NM_TYPE_DNS_PLUGIN, NMDnsPluginClass))
 
+struct _NMDnsPluginPrivate;
+
 typedef struct {
-    GObject parent;
+    GObject                     parent;
+    struct _NMDnsPluginPrivate *_priv;
 } NMDnsPlugin;
 
 typedef struct {

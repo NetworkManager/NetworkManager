@@ -18,10 +18,7 @@
 /*****************************************************************************/
 
 typedef struct _NMDnsPluginPrivate {
-    GPid  pid;
-    guint watch_id;
-    char *progname;
-    char *pidfile;
+    int _dummy;
 } NMDnsPluginPrivate;
 
 G_DEFINE_ABSTRACT_TYPE(NMDnsPlugin, nm_dns_plugin, G_TYPE_OBJECT)
@@ -110,9 +107,19 @@ nm_dns_plugin_stop(NMDnsPlugin *self)
 static void
 nm_dns_plugin_init(NMDnsPlugin *self)
 {
+    NMDnsPluginPrivate *priv;
+
+    priv = G_TYPE_INSTANCE_GET_PRIVATE(self, NM_TYPE_DNS_PLUGIN, NMDnsPluginPrivate);
+
+    self->_priv = priv;
+
     nm_shutdown_wait_obj_register_object(self, "dns-plugin");
 }
 
 static void
-nm_dns_plugin_class_init(NMDnsPluginClass *plugin_class)
-{}
+nm_dns_plugin_class_init(NMDnsPluginClass *klass)
+{
+    GObjectClass *object_class = G_OBJECT_CLASS(klass);
+
+    g_type_class_add_private(object_class, sizeof(NMDnsPluginPrivate));
+}
