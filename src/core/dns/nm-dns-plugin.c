@@ -106,7 +106,9 @@ nm_dns_plugin_stop(NMDnsPlugin *self)
 
 static void
 nm_dns_plugin_init(NMDnsPlugin *self)
-{}
+{
+    nm_shutdown_wait_obj_register_object(self, "dns-plugin");
+}
 
 static void
 nm_dns_plugin_class_init(NMDnsPluginClass *plugin_class)
