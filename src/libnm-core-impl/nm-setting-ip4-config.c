@@ -38,14 +38,16 @@
 
 NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_DHCP_CLIENT_ID,
                                   PROP_DHCP_FQDN,
-                                  PROP_DHCP_VENDOR_CLASS_IDENTIFIER, );
+                                  PROP_DHCP_VENDOR_CLASS_IDENTIFIER,
+                                  PROP_LINK_LOCAL, );
 
 typedef struct {
     NMSettingIPConfigPrivate parent;
 
-    char *dhcp_client_id;
-    char *dhcp_fqdn;
-    char *dhcp_vendor_class_identifier;
+    char  *dhcp_client_id;
+    char  *dhcp_fqdn;
+    char  *dhcp_vendor_class_identifier;
+    gint32 link_local;
 } NMSettingIP4ConfigPrivate;
 
 /**
@@ -125,6 +127,25 @@ nm_setting_ip4_config_get_dhcp_vendor_class_identifier(NMSettingIP4Config *setti
     g_return_val_if_fail(NM_IS_SETTING_IP4_CONFIG(setting), NULL);
 
     return NM_SETTING_IP4_CONFIG_GET_PRIVATE(setting)->dhcp_vendor_class_identifier;
+}
+
+/**
+ * nm_setting_ip4_config_get_link_local:
+ * @setting: the #NMSettingIP4Config
+ *
+ * Returns the value contained in the #NMSettingIP4Config:link_local
+ * property.
+ *
+ * Returns: the link-local configuration
+ *
+ * Since: 1.40
+ **/
+NMSettingIP4LinkLocal
+nm_setting_ip4_config_get_link_local(NMSettingIP4Config *setting)
+{
+    g_return_val_if_fail(NM_IS_SETTING_IP4_CONFIG(setting), NM_SETTING_IP4_LL_NONE);
+
+    return NM_SETTING_IP4_CONFIG_GET_PRIVATE(setting)->link_local;
 }
 
 static gboolean
@@ -215,6 +236,45 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
                        "%s.%s: ",
                        NM_SETTING_IP4_CONFIG_SETTING_NAME,
                        NM_SETTING_IP_CONFIG_METHOD);
+        return FALSE;
+    }
+
+    if (!NM_IN_SET(priv->link_local,
+                   NM_SETTING_IP4_LL_NONE,
+                   NM_SETTING_IP4_LL_DISABLED,
+                   NM_SETTING_IP4_LL_ENABLED)) {
+        g_set_error(error,
+                    NM_CONNECTION_ERROR,
+                    NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                    _("property is invalid"));
+        g_prefix_error(error,
+                       "%s.%s: ",
+                       NM_SETTING_IP4_CONFIG_SETTING_NAME,
+                       NM_SETTING_IP4_CONFIG_LINK_LOCAL);
+        return FALSE;
+    }
+    if (priv->link_local == NM_SETTING_IP4_LL_ENABLED
+        && nm_streq(method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED)) {
+        g_set_error_literal(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                            _("cannot enable ipv4.link-local with ipv4.method=disabled"));
+        g_prefix_error(error,
+                       "%s.%s: ",
+                       NM_SETTING_IP4_CONFIG_SETTING_NAME,
+                       NM_SETTING_IP4_CONFIG_LINK_LOCAL);
+        return FALSE;
+    }
+    if (priv->link_local == NM_SETTING_IP4_LL_DISABLED
+        && nm_streq(method, NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL)) {
+        g_set_error_literal(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                            _("cannot disable ipv4.link-local with ipv4.method=link-local"));
+        g_prefix_error(error,
+                       "%s.%s: ",
+                       NM_SETTING_IP4_CONFIG_SETTING_NAME,
+                       NM_SETTING_IP4_CONFIG_LINK_LOCAL);
         return FALSE;
     }
 
@@ -853,6 +913,27 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
                                               NM_SETTING_PARAM_NONE,
                                               NMSettingIP4ConfigPrivate,
                                               dhcp_vendor_class_identifier);
+
+    /**
+     * NMSettingIP4Config:link-local:
+     *
+     * Enable and disable the IPv4 link-local configuration independently of the
+     * ipv4.method configuration. This allows a link-local address (169.254.x.y/16)
+     * to be obtained in addition to other addresses, such as those manually
+     * configured or obtained from a DHCP server.
+     *
+     * Since 1.40
+     */
+    _nm_setting_property_define_direct_int32(properties_override,
+                                             obj_properties,
+                                             NM_SETTING_IP4_CONFIG_LINK_LOCAL,
+                                             PROP_LINK_LOCAL,
+                                             G_MININT32,
+                                             G_MAXINT32,
+                                             NM_SETTING_IP4_LL_NONE,
+                                             NM_SETTING_PARAM_NONE,
+                                             NMSettingIP4ConfigPrivate,
+                                             link_local);
 
     /* IP4-specific property overrides */
 

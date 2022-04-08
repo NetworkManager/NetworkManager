@@ -696,6 +696,8 @@
                   description="Timeout in milliseconds used to check for the presence of duplicate IP addresses on the network.  If an address conflict is detected, the activation will fail.  A zero value means that no duplicate address detection is performed, -1 means the default value (either configuration ipvx.dad-timeout override or zero).  A value greater than zero is a timeout in milliseconds. The property is currently implemented only for IPv4." />
         <property name="dhcp-vendor-class-identifier"
                   description="The Vendor Class Identifier DHCP option (60). Special characters in the data string may be escaped using C-style escapes, nevertheless this property cannot contain nul bytes. If the per-profile value is unspecified (the default), a global connection default gets consulted. If still unspecified, the DHCP option is not sent to the server. Since 1.28" />
+        <property name="link-local"
+                  description="Enable and disable the IPv4 link-local configuration independently of the ipv4.method configuration. This allows a link-local address (169.254.x.y/16) to be obtained in addition to other addresses, such as those manually configured or obtained from a DHCP server. Since 1.40" />
         <property name="dhcp-reject-servers"
                   description="Array of servers from which DHCP offers must be rejected. This property is useful to avoid getting a lease from misconfigured or rogue servers. For DHCPv4, each element must be an IPv4 address, optionally followed by a slash and a prefix length (e.g. &quot;192.168.122.0/24&quot;). This property is currently not implemented for DHCPv6." />
     </setting>

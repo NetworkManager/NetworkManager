@@ -1510,6 +1510,20 @@ _prop_get_connection_lldp(NMDevice *self)
     return lldp == NM_SETTING_CONNECTION_LLDP_ENABLE_RX;
 }
 
+static NMSettingIP4LinkLocal
+_prop_get_ipv4_link_local(NMDevice *self)
+{
+    NMSettingIP4Config   *s_ip4;
+    NMSettingIP4LinkLocal link_local;
+
+    s_ip4 = nm_device_get_applied_setting(self, NM_TYPE_SETTING_IP4_CONFIG);
+    if (!s_ip4)
+        return NM_SETTING_IP4_LL_DISABLED;
+
+    link_local = nm_setting_ip4_config_get_link_local(s_ip4);
+    return link_local;
+}
+
 static guint32
 _prop_get_ipv4_dad_timeout(NMDevice *self)
 {
@@ -11706,11 +11720,14 @@ activate_stage3_ip_config_for_addr_family(NMDevice *self, int addr_family, const
         goto out_devip;
 
     if (IS_IPv4) {
+        if (_prop_get_ipv4_link_local(self) == NM_SETTING_IP4_LL_ENABLED)
+            _dev_ipll4_start(self);
+
         if (nm_streq(method, NM_SETTING_IP4_CONFIG_METHOD_AUTO))
             _dev_ipdhcpx_start(self, AF_INET);
-        else if (nm_streq(method, NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL))
-            _dev_ipll4_start(self);
-        else if (nm_streq(method, NM_SETTING_IP4_CONFIG_METHOD_SHARED))
+        else if (nm_streq(method, NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL)) {
+            /* pass */
+        } else if (nm_streq(method, NM_SETTING_IP4_CONFIG_METHOD_SHARED))
             _dev_ipshared4_start(self);
         else if (nm_streq(method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED))
             priv->ip_data_x[IS_IPv4].is_disabled = TRUE;
