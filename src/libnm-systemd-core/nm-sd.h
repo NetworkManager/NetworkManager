@@ -6,7 +6,7 @@
 #ifndef __NM_SD_H__
 #define __NM_SD_H__
 
-#include "src/systemd/sd-dhcp-client.h"
+#include "src/systemd/sd-dhcp-lease.h"
 #include "src/systemd/sd-dhcp6-client.h"
 #include "src/systemd/sd-lldp-rx.h"
 

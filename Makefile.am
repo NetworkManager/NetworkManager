@@ -2333,8 +2333,6 @@ src_libnm_systemd_core_libnm_systemd_core_la_SOURCES = \
 	src/libnm-systemd-core/nm-sd-utils-core.h \
 	src/libnm-systemd-core/nm-sd.c \
 	src/libnm-systemd-core/nm-sd.h \
-	src/libnm-systemd-core/nm-sd-utils-dhcp.h \
-	src/libnm-systemd-core/nm-sd-utils-dhcp.c \
 	src/libnm-systemd-core/sd-adapt-core/condition.h \
 	src/libnm-systemd-core/sd-adapt-core/conf-parser.h \
 	src/libnm-systemd-core/sd-adapt-core/device-util.h \
