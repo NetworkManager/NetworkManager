@@ -884,8 +884,6 @@ systemd_resolved_resolve_cb(GObject *object, GAsyncResult *res, gpointer user_da
 
     cb_data = user_data;
 
-    g_clear_object(&cb_data->concheck.resolve_cancellable);
-
     if (!result) {
         /* Never mind. Fallback to the system resolver. */
         _LOG2D("can't resolve a name via systemd-resolved: %s", error->message);
