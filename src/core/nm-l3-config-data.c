@@ -349,7 +349,7 @@ nm_l3_config_data_log(const NML3ConfigData *self,
                       NMLogLevel            log_level,
                       NMLogDomain           log_domain)
 {
-    char  sbuf[sizeof(_nm_utils_to_string_buffer)];
+    char  sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
     char  sbuf_addr[NM_UTILS_INET_ADDRSTRLEN];
     int   IS_IPv4;
     guint i;

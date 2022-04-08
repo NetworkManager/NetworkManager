@@ -95,6 +95,14 @@ typedef enum {
 } NMPNlmFlags;
 
 typedef enum {
+    NM_PLATFORM_IP_ADDRESS_CMP_TYPE_ID,
+
+    NM_PLATFORM_IP_ADDRESS_CMP_TYPE_SEMANTICALLY,
+
+    NM_PLATFORM_IP_ADDRESS_CMP_TYPE_FULL,
+} NMPlatformIPAddressCmpType;
+
+typedef enum {
     /* compare fields which kernel considers as similar routes.
      * It is a looser comparisong then NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID
      * and means that `ip route add` would fail to add two routes
@@ -776,10 +784,31 @@ typedef struct {
 #undef __NMPlatformObjWithIfindex_COMMON
 
 typedef struct {
-    gboolean      is_ip4;
+    bool          is_ip4;
     NMPObjectType obj_type;
-    int           addr_family;
-    gsize         sizeof_route;
+    gint8         addr_family;
+    guint8        sizeof_address;
+    int (*address_cmp)(const NMPlatformIPXAddress *a,
+                       const NMPlatformIPXAddress *b,
+                       NMPlatformIPAddressCmpType  cmp_type);
+    const char *(*address_to_string)(const NMPlatformIPXAddress *address, char *buf, gsize len);
+} NMPlatformVTableAddress;
+
+typedef union {
+    struct {
+        NMPlatformVTableAddress v6;
+        NMPlatformVTableAddress v4;
+    };
+    NMPlatformVTableAddress vx[2];
+} _NMPlatformVTableAddressUnion;
+
+extern const _NMPlatformVTableAddressUnion nm_platform_vtable_address;
+
+typedef struct {
+    bool          is_ip4;
+    gint8         addr_family;
+    guint8        sizeof_route;
+    NMPObjectType obj_type;
     int (*route_cmp)(const NMPlatformIPXRoute *a,
                      const NMPlatformIPXRoute *b,
                      NMPlatformIPRouteCmpType  cmp_type);
@@ -2070,6 +2099,11 @@ gboolean nm_platform_wpan_set_channel(NMPlatform *self, int ifindex, guint8 page
 void nm_platform_ip4_address_set_addr(NMPlatformIP4Address *addr, in_addr_t address, guint8 plen);
 const struct in6_addr *nm_platform_ip6_address_get_peer(const NMPlatformIP6Address *addr);
 
+const NMPObject *nm_platform_ip_address_get(NMPlatform                                 *self,
+                                            int                                         addr_family,
+                                            int                                         ifindex,
+                                            gconstpointer /* (NMPlatformIPAddress *) */ needle);
+
 const NMPlatformIP4Address *nm_platform_ip4_address_get(NMPlatform *self,
                                                         int         ifindex,
                                                         in_addr_t   address,
@@ -2128,6 +2162,29 @@ gboolean nm_platform_ip4_address_delete(NMPlatform *self,
                                         in_addr_t   peer_address);
 gboolean
 nm_platform_ip6_address_delete(NMPlatform *self, int ifindex, struct in6_addr address, guint8 plen);
+
+static inline gboolean
+nm_platform_ip_address_delete(NMPlatform                                       *self,
+                              int                                               addr_family,
+                              int                                               ifindex,
+                              gconstpointer /* (const NMPlatformIPAddress *) */ addr)
+{
+    if (NM_IS_IPv4(addr_family)) {
+        const NMPlatformIP4Address *a = addr;
+
+        if (ifindex <= 0)
+            ifindex = a->ifindex;
+
+        return nm_platform_ip4_address_delete(self, ifindex, a->address, a->plen, a->peer_address);
+    } else {
+        const NMPlatformIP6Address *a = addr;
+
+        if (ifindex <= 0)
+            ifindex = a->ifindex;
+
+        return nm_platform_ip6_address_delete(self, ifindex, a->address, a->plen);
+    }
+}
 
 gboolean nm_platform_ip_address_sync(NMPlatform *self,
                                      int         addr_family,
@@ -2320,8 +2377,24 @@ int nm_platform_lnk_vlan_cmp(const NMPlatformLnkVlan *a, const NMPlatformLnkVlan
 int nm_platform_lnk_vrf_cmp(const NMPlatformLnkVrf *a, const NMPlatformLnkVrf *b);
 int nm_platform_lnk_vxlan_cmp(const NMPlatformLnkVxlan *a, const NMPlatformLnkVxlan *b);
 int nm_platform_lnk_wireguard_cmp(const NMPlatformLnkWireGuard *a, const NMPlatformLnkWireGuard *b);
-int nm_platform_ip4_address_cmp(const NMPlatformIP4Address *a, const NMPlatformIP4Address *b);
-int nm_platform_ip6_address_cmp(const NMPlatformIP6Address *a, const NMPlatformIP6Address *b);
+int nm_platform_ip4_address_cmp(const NMPlatformIP4Address *a,
+                                const NMPlatformIP4Address *b,
+                                NMPlatformIPAddressCmpType  cmp_type);
+int nm_platform_ip6_address_cmp(const NMPlatformIP6Address *a,
+                                const NMPlatformIP6Address *b,
+                                NMPlatformIPAddressCmpType  cmp_type);
+
+static inline int
+nm_platform_ip4_address_cmp_full(const NMPlatformIP4Address *a, const NMPlatformIP4Address *b)
+{
+    return nm_platform_ip4_address_cmp(a, b, NM_PLATFORM_IP_ADDRESS_CMP_TYPE_FULL);
+}
+
+static inline int
+nm_platform_ip6_address_cmp_full(const NMPlatformIP6Address *a, const NMPlatformIP6Address *b)
+{
+    return nm_platform_ip6_address_cmp(a, b, NM_PLATFORM_IP_ADDRESS_CMP_TYPE_FULL);
+}
 
 int nm_platform_ip4_address_pretty_sort_cmp(const NMPlatformIP4Address *a1,
                                             const NMPlatformIP4Address *a2);

@@ -389,15 +389,43 @@ gboolean nm_utils_get_ipv6_interface_identifier(NMLinkType          link_type,
 
 /*****************************************************************************/
 
+/**
+ * _nm_utils_ip4_prefix_to_netmask:
+ * @prefix: a CIDR prefix
+ *
+ * Returns: the netmask represented by the prefix, in network byte order
+ **/
+static inline in_addr_t
+_nm_utils_ip4_prefix_to_netmask(guint32 prefix)
+{
+    nm_assert(prefix <= 32);
+    return prefix < 32 ? ~htonl(0xFFFFFFFFu >> prefix) : 0xFFFFFFFFu;
+}
+
+guint32 _nm_utils_ip4_get_default_prefix0(in_addr_t ip);
+guint32 _nm_utils_ip4_get_default_prefix(in_addr_t ip);
+
 gconstpointer
-nm_utils_ipx_address_clear_host_address(int family, gpointer dst, gconstpointer src, guint8 plen);
-in_addr_t              nm_utils_ip4_address_clear_host_address(in_addr_t addr, guint8 plen);
+nm_utils_ipx_address_clear_host_address(int family, gpointer dst, gconstpointer src, guint32 plen);
+
+/* nm_utils_ip4_address_clear_host_address:
+ * @addr: source ip6 address
+ * @plen: prefix length of network
+ *
+ * returns: the input address, with the host address set to 0.
+ */
+static inline in_addr_t
+nm_utils_ip4_address_clear_host_address(in_addr_t addr, guint32 plen)
+{
+    return addr & _nm_utils_ip4_prefix_to_netmask(plen);
+}
+
 const struct in6_addr *nm_utils_ip6_address_clear_host_address(struct in6_addr       *dst,
                                                                const struct in6_addr *src,
-                                                               guint8                 plen);
+                                                               guint32                plen);
 
 static inline int
-nm_utils_ip4_address_same_prefix_cmp(in_addr_t addr_a, in_addr_t addr_b, guint8 plen)
+nm_utils_ip4_address_same_prefix_cmp(in_addr_t addr_a, in_addr_t addr_b, guint32 plen)
 {
     NM_CMP_DIRECT(htonl(nm_utils_ip4_address_clear_host_address(addr_a, plen)),
                   htonl(nm_utils_ip4_address_clear_host_address(addr_b, plen)));
@@ -406,29 +434,10 @@ nm_utils_ip4_address_same_prefix_cmp(in_addr_t addr_a, in_addr_t addr_b, guint8 
 
 int nm_utils_ip6_address_same_prefix_cmp(const struct in6_addr *addr_a,
                                          const struct in6_addr *addr_b,
-                                         guint8                 plen);
-
-static inline int
-nm_utils_ip_address_same_prefix_cmp(int           addr_family,
-                                    gconstpointer addr_a,
-                                    gconstpointer addr_b,
-                                    guint8        plen)
-{
-    nm_assert_addr_family(addr_family);
-
-    NM_CMP_SELF(addr_a, addr_b);
-
-    if (NM_IS_IPv4(addr_family)) {
-        return nm_utils_ip4_address_same_prefix_cmp(*((const in_addr_t *) addr_a),
-                                                    *((const in_addr_t *) addr_b),
-                                                    plen);
-    }
-
-    return nm_utils_ip6_address_same_prefix_cmp(addr_a, addr_b, plen);
-}
+                                         guint32                plen);
 
 static inline gboolean
-nm_utils_ip4_address_same_prefix(in_addr_t addr_a, in_addr_t addr_b, guint8 plen)
+nm_utils_ip4_address_same_prefix(in_addr_t addr_a, in_addr_t addr_b, guint32 plen)
 {
     return nm_utils_ip4_address_same_prefix_cmp(addr_a, addr_b, plen) == 0;
 }
@@ -439,6 +448,23 @@ nm_utils_ip6_address_same_prefix(const struct in6_addr *addr_a,
                                  guint8                 plen)
 {
     return nm_utils_ip6_address_same_prefix_cmp(addr_a, addr_b, plen) == 0;
+}
+
+static inline int
+nm_utils_ip_address_same_prefix_cmp(int           addr_family,
+                                    gconstpointer addr_a,
+                                    gconstpointer addr_b,
+                                    guint8        plen)
+{
+    NM_CMP_SELF(addr_a, addr_b);
+
+    if (NM_IS_IPv4(addr_family)) {
+        return nm_utils_ip4_address_same_prefix_cmp(*((const in_addr_t *) addr_a),
+                                                    *((const in_addr_t *) addr_b),
+                                                    plen);
+    }
+
+    return nm_utils_ip6_address_same_prefix_cmp(addr_a, addr_b, plen);
 }
 
 static inline gboolean
@@ -455,6 +481,10 @@ nm_utils_ip_address_same_prefix(int           addr_family,
 
 #define NM_CMP_DIRECT_IN6ADDR_SAME_PREFIX(a, b, plen) \
     NM_CMP_RETURN(nm_utils_ip6_address_same_prefix_cmp((a), (b), (plen)))
+
+/*****************************************************************************/
+
+gboolean nm_utils_ip_is_site_local(int addr_family, const void *address);
 
 /*****************************************************************************/
 
@@ -974,24 +1004,6 @@ nm_utils_escaped_tokens_options_escape_val(const char *val, char **out_to_free)
 
 /*****************************************************************************/
 
-guint32 _nm_utils_ip4_prefix_to_netmask(guint32 prefix);
-guint32 _nm_utils_ip4_get_default_prefix0(in_addr_t ip);
-guint32 _nm_utils_ip4_get_default_prefix(in_addr_t ip);
-
-gconstpointer
-nm_utils_ipx_address_clear_host_address(int family, gpointer dst, gconstpointer src, guint8 plen);
-in_addr_t              nm_utils_ip4_address_clear_host_address(in_addr_t addr, guint8 plen);
-const struct in6_addr *nm_utils_ip6_address_clear_host_address(struct in6_addr       *dst,
-                                                               const struct in6_addr *src,
-                                                               guint8                 plen);
-int                    nm_utils_ip6_address_same_prefix_cmp(const struct in6_addr *addr_a,
-                                                            const struct in6_addr *addr_b,
-                                                            guint8                 plen);
-
-gboolean nm_utils_ip_is_site_local(int addr_family, const void *address);
-
-/*****************************************************************************/
-
 gboolean nm_utils_parse_inaddr_bin_full(int         addr_family,
                                         gboolean    accept_legacy,
                                         const char *text,
@@ -1047,7 +1059,9 @@ int _nm_utils_ascii_str_to_bool(const char *str, int default_value);
 
 /*****************************************************************************/
 
-extern _nm_thread_local char _nm_utils_to_string_buffer[2096];
+#define NM_UTILS_TO_STRING_BUFFER_SIZE 2096
+
+extern _nm_thread_local char _nm_utils_to_string_buffer[NM_UTILS_TO_STRING_BUFFER_SIZE];
 
 void     nm_utils_to_string_buffer_init(char **buf, gsize *len);
 gboolean nm_utils_to_string_buffer_init_null(gconstpointer obj, char **buf, gsize *len);
