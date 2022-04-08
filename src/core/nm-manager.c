@@ -146,6 +146,7 @@ typedef struct {
     NMPlatform *platform;
 
     NMDnsManager *dns_mgr;
+    gulong        dns_mgr_update_pending_signal_id;
 
     GArray *capabilities;
 
@@ -348,6 +349,9 @@ static NMActiveConnection *_new_active_connection(NMManager             *self,
                                                   GError               **error);
 
 static void policy_activating_ac_changed(GObject *object, GParamSpec *pspec, gpointer user_data);
+
+static void device_has_pending_action_changed(NMDevice *device, GParamSpec *pspec, NMManager *self);
+static void check_if_startup_complete(NMManager *self);
 
 static gboolean find_master(NMManager             *self,
                             NMConnection          *connection,
@@ -1604,7 +1608,11 @@ manager_device_state_changed(NMDevice           *device,
         nm_settings_device_added(priv->settings, device);
 }
 
-static void device_has_pending_action_changed(NMDevice *device, GParamSpec *pspec, NMManager *self);
+static void
+_dns_mgr_update_pending_cb(NMDevice *device, GParamSpec *pspec, NMManager *self)
+{
+    check_if_startup_complete(self);
+}
 
 static void
 check_if_startup_complete(NMManager *self)
@@ -1618,6 +1626,20 @@ check_if_startup_complete(NMManager *self)
 
     if (!priv->devices_inited)
         return;
+
+    if (nm_dns_manager_get_update_pending(nm_manager_get_dns_manager(self))) {
+        if (priv->dns_mgr_update_pending_signal_id == 0) {
+            priv->dns_mgr_update_pending_signal_id =
+                g_signal_connect(nm_manager_get_dns_manager(self),
+                                 "notify::" NM_DNS_MANAGER_UPDATE_PENDING,
+                                 G_CALLBACK(_dns_mgr_update_pending_cb),
+                                 self);
+        }
+        return;
+    }
+
+    nm_clear_g_signal_handler(nm_manager_get_dns_manager(self),
+                              &priv->dns_mgr_update_pending_signal_id);
 
     c_list_for_each_entry (device, &priv->devices_lst_head, devices_lst) {
         reason = nm_device_has_pending_action_reason(device);
@@ -8275,6 +8297,7 @@ dispose(GObject *object)
         g_clear_object(&priv->concheck_mgr);
     }
 
+    nm_clear_g_signal_handler(priv->dns_mgr, &priv->dns_mgr_update_pending_signal_id);
     g_clear_object(&priv->dns_mgr);
 
     if (priv->auth_mgr) {
