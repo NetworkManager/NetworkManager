@@ -239,7 +239,7 @@ _nmtstp_platform_ip_addresses_assert(const char        *filename,
             }
         }
         if ((IS_IPv4 ? force_exact_4 : force_exact_6) && nm_g_ptr_array_len(plat_addrs) > 0) {
-            char sbuf[sizeof(_nm_utils_to_string_buffer)];
+            char sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
 
             g_error("%s:%d: %u IPv%c addresses found on ifindex %d that should not be there (one "
                     "is %s)",
