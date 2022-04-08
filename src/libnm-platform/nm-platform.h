@@ -2094,6 +2094,11 @@ gboolean nm_platform_wpan_set_channel(NMPlatform *self, int ifindex, guint8 page
 void nm_platform_ip4_address_set_addr(NMPlatformIP4Address *addr, in_addr_t address, guint8 plen);
 const struct in6_addr *nm_platform_ip6_address_get_peer(const NMPlatformIP6Address *addr);
 
+const NMPObject *nm_platform_ip_address_get(NMPlatform                                 *self,
+                                            int                                         addr_family,
+                                            int                                         ifindex,
+                                            gconstpointer /* (NMPlatformIPAddress *) */ needle);
+
 const NMPlatformIP4Address *nm_platform_ip4_address_get(NMPlatform *self,
                                                         int         ifindex,
                                                         in_addr_t   address,

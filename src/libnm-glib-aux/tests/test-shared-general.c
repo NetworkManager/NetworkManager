@@ -283,9 +283,6 @@ test_nm_utils_ip4_prefix_to_netmask(void)
     g_assert_cmpint(_nm_utils_ip4_prefix_to_netmask(32),
                     ==,
                     nmtst_inet4_from_string("255.255.255.255"));
-    g_assert_cmpint(_nm_utils_ip4_prefix_to_netmask(33),
-                    ==,
-                    nmtst_inet4_from_string("255.255.255.255"));
 }
 
 /*****************************************************************************/

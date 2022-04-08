@@ -211,12 +211,13 @@ nmtst_platform_ip4_routes_equal(const NMPlatformIP4Route *a,
 
     for (i = 0; i < len; i++) {
         if (nm_platform_ip4_route_cmp_full(&a[i], &b[i]) != 0) {
-            char buf[sizeof(_nm_utils_to_string_buffer)];
+            char buf1[NM_UTILS_TO_STRING_BUFFER_SIZE];
+            char buf2[NM_UTILS_TO_STRING_BUFFER_SIZE];
 
             g_error("Error comparing IPv4 route[%lu]: %s vs %s",
                     (unsigned long) i,
-                    nm_platform_ip4_route_to_string(&a[i], NULL, 0),
-                    nm_platform_ip4_route_to_string(&b[i], buf, sizeof(buf)));
+                    nm_platform_ip4_route_to_string(&a[i], buf1, sizeof(buf1)),
+                    nm_platform_ip4_route_to_string(&b[i], buf2, sizeof(buf2)));
             g_assert_not_reached();
         }
     }
@@ -280,12 +281,13 @@ nmtst_platform_ip6_routes_equal(const NMPlatformIP6Route *a,
 
     for (i = 0; i < len; i++) {
         if (nm_platform_ip6_route_cmp_full(&a[i], &b[i]) != 0) {
-            char buf[sizeof(_nm_utils_to_string_buffer)];
+            char buf1[NM_UTILS_TO_STRING_BUFFER_SIZE];
+            char buf2[NM_UTILS_TO_STRING_BUFFER_SIZE];
 
             g_error("Error comparing IPv6 route[%lu]: %s vs %s",
                     (unsigned long) i,
-                    nm_platform_ip6_route_to_string(&a[i], NULL, 0),
-                    nm_platform_ip6_route_to_string(&b[i], buf, sizeof(buf)));
+                    nm_platform_ip6_route_to_string(&a[i], buf1, sizeof(buf1)),
+                    nm_platform_ip6_route_to_string(&b[i], buf2, sizeof(buf2)));
             g_assert_not_reached();
         }
     }
