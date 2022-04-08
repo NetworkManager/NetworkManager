@@ -137,28 +137,23 @@ NM_DEFINE_SINGLETON_GETTER(NMDnsManager, nm_dns_manager_get, NM_TYPE_DNS_MANAGER
 
 #define _NMLOG_PREFIX_NAME "dns-mgr"
 #define _NMLOG_DOMAIN      LOGD_DNS
-#define _NMLOG(level, ...)                                           \
-    G_STMT_START                                                     \
-    {                                                                \
-        const NMLogLevel __level = (level);                          \
-                                                                     \
-        if (nm_logging_enabled(__level, _NMLOG_DOMAIN)) {            \
-            char                      __prefix[20];                  \
-            const NMDnsManager *const __self = (self);               \
-                                                                     \
-            _nm_log(__level,                                         \
-                    _NMLOG_DOMAIN,                                   \
-                    0,                                               \
-                    NULL,                                            \
-                    NULL,                                            \
-                    "%s%s: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__),     \
-                    _NMLOG_PREFIX_NAME,                              \
-                    ((!__self || __self == singleton_instance)       \
-                         ? ""                                        \
-                         : nm_sprintf_buf(__prefix, "[%p]", __self)) \
-                        _NM_UTILS_MACRO_REST(__VA_ARGS__));          \
-        }                                                            \
-    }                                                                \
+#define _NMLOG(level, ...)                                                 \
+    G_STMT_START                                                           \
+    {                                                                      \
+        const NMLogLevel __level = (level);                                \
+                                                                           \
+        if (nm_logging_enabled(__level, _NMLOG_DOMAIN)) {                  \
+            _nm_unused const NMDnsManager *const __self = (self);          \
+                                                                           \
+            _nm_log(__level,                                               \
+                    _NMLOG_DOMAIN,                                         \
+                    0,                                                     \
+                    NULL,                                                  \
+                    NULL,                                                  \
+                    "%s: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__),             \
+                    _NMLOG_PREFIX_NAME _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
+        }                                                                  \
+    }                                                                      \
     G_STMT_END
 
 /*****************************************************************************/
