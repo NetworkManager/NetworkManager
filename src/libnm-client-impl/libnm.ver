@@ -1827,3 +1827,8 @@ global:
 	nm_client_get_radio_flags;
 	nm_radio_flags_get_type;
 } libnm_1_36_0;
+
+libnm_1_40_0 {
+global:
+	nm_setting_ip4_link_local_get_type;
+} libnm_1_38_0;

@@ -32,6 +32,7 @@ G_BEGIN_DECLS
 #define NM_SETTING_IP4_CONFIG_DHCP_CLIENT_ID               "dhcp-client-id"
 #define NM_SETTING_IP4_CONFIG_DHCP_FQDN                    "dhcp-fqdn"
 #define NM_SETTING_IP4_CONFIG_DHCP_VENDOR_CLASS_IDENTIFIER "dhcp-vendor-class-identifier"
+#define NM_SETTING_IP4_CONFIG_LINK_LOCAL                   "link-local"
 
 /**
  * NM_SETTING_IP4_CONFIG_METHOD_AUTO:
@@ -77,6 +78,28 @@ G_BEGIN_DECLS
  */
 #define NM_SETTING_IP4_CONFIG_METHOD_DISABLED "disabled"
 
+/**
+ * NMSettingIP4LinkLocal:
+ * @NM_SETTING_IP4_LL_DEFAULT: Allow fallback to a globally configured default. If unspecified,
+ *   fallback to "auto". Note that if "ipv4.method" is "disabled", this always implies link-local
+ *   addresses disabled too.
+ * @NM_SETTING_IP4_LL_AUTO: Special value which enables LL if "ipv4.method" is set to
+ *   "link-local".
+ * @NM_SETTING_IP4_LL_DISABLED: Disable IPv4 link-local protocol.
+ * @NM_SETTING_IP4_LL_ENABLED: Enable the IPv4 link-local protocol regardless what other protocols
+ * such as DHCP or manually assigned IP addresses might be active.
+ *
+ * #NMSettingIP4LinkLocal values indicate whether IPv4 link-local address protocol should be enabled.
+ *
+ * Since: 1.40
+ */
+typedef enum {
+    NM_SETTING_IP4_LL_DEFAULT  = 0,
+    NM_SETTING_IP4_LL_AUTO     = 1,
+    NM_SETTING_IP4_LL_DISABLED = 2,
+    NM_SETTING_IP4_LL_ENABLED  = 3,
+} NMSettingIP4LinkLocal;
+
 typedef struct _NMSettingIP4ConfigClass NMSettingIP4ConfigClass;
 
 GType nm_setting_ip4_config_get_type(void);
@@ -89,6 +112,9 @@ const char *nm_setting_ip4_config_get_dhcp_fqdn(NMSettingIP4Config *setting);
 
 NM_AVAILABLE_IN_1_28
 const char *nm_setting_ip4_config_get_dhcp_vendor_class_identifier(NMSettingIP4Config *setting);
+
+NM_AVAILABLE_IN_1_40
+NMSettingIP4LinkLocal nm_setting_ip4_config_get_link_local(NMSettingIP4Config *setting);
 
 G_END_DECLS
 
