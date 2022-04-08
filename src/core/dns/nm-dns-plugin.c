@@ -32,26 +32,29 @@ G_DEFINE_ABSTRACT_TYPE(NMDnsPlugin, nm_dns_plugin, G_TYPE_OBJECT)
 
 #define _NMLOG_PREFIX_NAME "dns-plugin"
 #define _NMLOG_DOMAIN      LOGD_DNS
-#define _NMLOG(level, ...)                                                    \
-    G_STMT_START                                                              \
-    {                                                                         \
-        const NMLogLevel __level = (level);                                   \
-                                                                              \
-        if (nm_logging_enabled(__level, _NMLOG_DOMAIN)) {                     \
-            char                     __prefix[20];                            \
-            const NMDnsPlugin *const __self = (self);                         \
-                                                                              \
-            _nm_log(__level,                                                  \
-                    _NMLOG_DOMAIN,                                            \
-                    0,                                                        \
-                    NULL,                                                     \
-                    NULL,                                                     \
-                    "%s%s: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__),              \
-                    _NMLOG_PREFIX_NAME,                                       \
-                    (!__self ? "" : nm_sprintf_buf(__prefix, "[%p]", __self)) \
-                        _NM_UTILS_MACRO_REST(__VA_ARGS__));                   \
-        }                                                                     \
-    }                                                                         \
+#define _NMLOG(level, ...)                                                                      \
+    G_STMT_START                                                                                \
+    {                                                                                           \
+        const NMLogLevel __level = (level);                                                     \
+                                                                                                \
+        if (nm_logging_enabled(__level, _NMLOG_DOMAIN)) {                                       \
+            char                     __prefix[20];                                              \
+            const NMDnsPlugin *const __self = (self);                                           \
+                                                                                                \
+            _nm_log(__level,                                                                    \
+                    _NMLOG_DOMAIN,                                                              \
+                    0,                                                                          \
+                    NULL,                                                                       \
+                    NULL,                                                                       \
+                    "%s%s: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__),                                \
+                    _NMLOG_PREFIX_NAME,                                                         \
+                    (!__self ? ""                                                               \
+                             : nm_sprintf_buf(__prefix,                                         \
+                                              "[" NM_HASH_OBFUSCATE_PTR_FMT "]",                \
+                                              NM_HASH_OBFUSCATE_PTR(                            \
+                                                  __self))) _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
+        }                                                                                       \
+    }                                                                                           \
     G_STMT_END
 
 /*****************************************************************************/
