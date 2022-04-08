@@ -4029,7 +4029,7 @@ nm_platform_ip_address_sync(NMPlatform *self,
     gint32                         now     = 0;
     const int                      IS_IPv4 = NM_IS_IPv4(addr_family);
     NMPLookup                      lookup;
-    const gboolean                 EXTRA_LOGGING       = FALSE;
+    const gboolean                 EXTRA_LOGGING       = !FALSE;
     gs_unref_hashtable GHashTable *known_addresses_idx = NULL;
     gs_unref_ptrarray GPtrArray   *plat_addresses      = NULL;
     gboolean                       success;
@@ -4260,8 +4260,19 @@ nm_platform_ip_address_sync(NMPlatform *self,
             for (i_plat = 0; i_plat < plat_addresses->len; i_plat++) {
                 const NMPObject *plat_obj = plat_addresses->pdata[i_plat];
                 const NMPObject *known_obj;
+                char             sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
+
+                _LOG3T(
+                    "  visit1-plat-address#%u: %s",
+                    i_plat,
+                    nmp_object_to_string(plat_obj, NMP_OBJECT_TO_STRING_ALL, sbuf, sizeof(sbuf)));
 
                 known_obj = nm_g_hash_table_lookup(known_addresses_idx, plat_obj);
+
+                _LOG3T(
+                    "  has-known-obj: %s",
+                    nmp_object_to_string(known_obj, NMP_OBJECT_TO_STRING_ALL, sbuf, sizeof(sbuf)));
+
                 if (!known_obj) {
                     /* We don't know this address. It was added externally. Keep it configured.
                      * We also don't want to delete the address below, so mark it as handled
@@ -4304,6 +4315,14 @@ nm_platform_ip_address_sync(NMPlatform *self,
                 const NMPlatformIP6Address *plat_addr =
                     NMP_OBJECT_CAST_IP6_ADDRESS(plat_addresses->pdata[--i_plat]);
                 IP6AddrScope plat_scope;
+                char         sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
+
+                _LOG3T("  visit2-plat-address#%u: %s",
+                       i_plat,
+                       nmp_object_to_string(NMP_OBJECT_UP_CAST(plat_addr),
+                                            NMP_OBJECT_TO_STRING_ALL,
+                                            sbuf,
+                                            sizeof(sbuf)));
 
                 if (!plat_addr)
                     continue;
@@ -4321,6 +4340,13 @@ nm_platform_ip_address_sync(NMPlatform *self,
                         const NMPlatformIP6Address *know_addr =
                             NMP_OBJECT_CAST_IP6_ADDRESS(known_addresses->pdata[i_know]);
                         IP6AddrScope know_scope;
+
+                        _LOG3T("  cmp-know-address#%u: %s",
+                               i_know,
+                               nmp_object_to_string(NMP_OBJECT_UP_CAST(know_addr),
+                                                    NMP_OBJECT_TO_STRING_ALL,
+                                                    sbuf,
+                                                    sizeof(sbuf)));
 
                         if (!know_addr)
                             continue;
