@@ -799,7 +799,7 @@ nmp_object_new_link(int ifindex)
 
 /*****************************************************************************/
 
-static void
+static NMPObject *
 _nmp_object_stackinit_from_class(NMPObject *obj, const NMPClass *klass)
 {
     nm_assert(obj);
@@ -812,25 +812,13 @@ _nmp_object_stackinit_from_class(NMPObject *obj, const NMPClass *klass)
                 ._ref_count = NM_OBJ_REF_COUNT_STACKINIT,
             },
     };
+    return obj;
 }
 
 static NMPObject *
 _nmp_object_stackinit_from_type(NMPObject *obj, NMPObjectType obj_type)
 {
-    const NMPClass *klass;
-
-    nm_assert(obj);
-    klass = nmp_class_from_type(obj_type);
-    nm_assert(klass);
-
-    *obj = (NMPObject){
-        .parent =
-            {
-                .klass      = (const NMDedupMultiObjClass *) klass,
-                ._ref_count = NM_OBJ_REF_COUNT_STACKINIT,
-            },
-    };
-    return obj;
+    return _nmp_object_stackinit_from_class(obj, nmp_class_from_type(obj_type));
 }
 
 const NMPObject *
@@ -901,7 +889,7 @@ nmp_object_to_string(const NMPObject      *obj,
                      gsize                 buf_size)
 {
     const NMPClass *klass;
-    char            buf2[sizeof(_nm_utils_to_string_buffer)];
+    char            buf2[NM_UTILS_TO_STRING_BUFFER_SIZE];
 
     if (!nm_utils_to_string_buffer_init_null(obj, &buf, &buf_size))
         return buf;
@@ -992,7 +980,7 @@ _vt_cmd_obj_to_string_lnk_vlan(const NMPObject      *obj,
                                gsize                 buf_size)
 {
     const NMPClass *klass;
-    char            buf2[sizeof(_nm_utils_to_string_buffer)];
+    char            buf2[NM_UTILS_TO_STRING_BUFFER_SIZE];
     char           *b;
     gsize           l;
 
@@ -1056,7 +1044,7 @@ _vt_cmd_obj_to_string_lnk_wireguard(const NMPObject      *obj,
                                     gsize                 buf_size)
 {
     const NMPClass *klass;
-    char            buf2[sizeof(_nm_utils_to_string_buffer)];
+    char            buf2[NM_UTILS_TO_STRING_BUFFER_SIZE];
     char           *b;
     guint           i;
 

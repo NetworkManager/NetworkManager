@@ -584,7 +584,7 @@ _l3_config_notify_data_to_string(const NML3ConfigNotifyData *notify_data,
 void
 _nm_l3cfg_emit_signal_notify(NML3Cfg *self, const NML3ConfigNotifyData *notify_data)
 {
-    char sbuf[sizeof(_nm_utils_to_string_buffer)];
+    char sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
 
     nm_assert(notify_data);
     nm_assert(_NM_INT_NOT_NEGATIVE(notify_data->notify_type));
@@ -876,7 +876,7 @@ _obj_state_data_update(ObjStateData *obj_state, const NMPObject *obj)
 static void
 _obj_states_externally_removed_track(NML3Cfg *self, const NMPObject *obj, gboolean in_platform)
 {
-    char          sbuf[sizeof(_nm_utils_to_string_buffer)];
+    char          sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
     ObjStateData *obj_state;
 
     nm_assert(NM_IS_L3CFG(self));
@@ -937,7 +937,7 @@ _obj_states_update_all(NML3Cfg *self)
         NMP_OBJECT_TYPE_IP4_ROUTE,
         NMP_OBJECT_TYPE_IP6_ROUTE,
     };
-    char          sbuf[sizeof(_nm_utils_to_string_buffer)];
+    char          sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
     ObjStateData *obj_state;
     int           i;
     gboolean      any_dirty = FALSE;
@@ -1028,7 +1028,7 @@ typedef struct {
 static gboolean
 _obj_states_sync_filter(NML3Cfg *self, const NMPObject *obj, NML3CfgCommitType commit_type)
 {
-    char          sbuf[sizeof(_nm_utils_to_string_buffer)];
+    char          sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
     NMPObjectType obj_type;
     ObjStateData *obj_state;
 
@@ -1139,7 +1139,7 @@ _obj_state_zombie_lst_get_prune_lists(NML3Cfg    *self,
     const int           IS_IPv4          = NM_IS_IPv4(addr_family);
     const NMPObjectType obj_type_route   = NMP_OBJECT_TYPE_IP_ROUTE(IS_IPv4);
     const NMPObjectType obj_type_address = NMP_OBJECT_TYPE_IP_ADDRESS(IS_IPv4);
-    char                sbuf[sizeof(_nm_utils_to_string_buffer)];
+    char                sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
     ObjStateData       *obj_state;
     ObjStateData       *obj_state_safe;
 
@@ -1185,7 +1185,7 @@ _obj_state_zombie_lst_get_prune_lists(NML3Cfg    *self,
 static void
 _obj_state_zombie_lst_prune_all(NML3Cfg *self, int addr_family)
 {
-    char          sbuf[sizeof(_nm_utils_to_string_buffer)];
+    char          sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
     ObjStateData *obj_state;
     ObjStateData *obj_state_safe;
 
@@ -3838,7 +3838,7 @@ _routes_temporary_not_available_update(NML3Cfg   *self,
 
     for (i = 0; i < routes_temporary_not_available_arr->len; i++) {
         const NMPObject *o = routes_temporary_not_available_arr->pdata[i];
-        char             sbuf[sizeof(_nm_utils_to_string_buffer)];
+        char             sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
 
         nm_assert(NMP_OBJECT_GET_TYPE(o) == NMP_OBJECT_TYPE_IP_ROUTE(NM_IS_IPv4(addr_family)));
 

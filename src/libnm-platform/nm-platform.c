@@ -1873,11 +1873,14 @@ nm_platform_link_set_sriov_vfs(NMPlatform *self, int ifindex, const NMPlatformVF
 
     g_return_val_if_fail(ifindex > 0, FALSE);
 
-    _LOG3D("link: setting VFs");
-    for (i = 0; vfs[i]; i++) {
-        const NMPlatformVF *vf = vfs[i];
+    if (_LOGD_ENABLED()) {
+        _LOG3D("link: setting VFs");
+        for (i = 0; vfs[i]; i++) {
+            char                sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
+            const NMPlatformVF *vf = vfs[i];
 
-        _LOG3D("link:   VF %s", nm_platform_vf_to_string(vf, NULL, 0));
+            _LOG3D("link:   VF %s", nm_platform_vf_to_string(vf, sbuf, sizeof(sbuf)));
+        }
     }
 
     return klass->link_set_sriov_vfs(self, ifindex, vfs);
@@ -1894,14 +1897,18 @@ nm_platform_link_set_bridge_vlans(NMPlatform                        *self,
 
     g_return_val_if_fail(ifindex > 0, FALSE);
 
-    _LOG3D("link: %s bridge VLANs on %s",
-           vlans ? "setting" : "clearing",
-           on_master ? "master" : "self");
-    if (vlans) {
-        for (i = 0; vlans[i]; i++) {
-            const NMPlatformBridgeVlan *vlan = vlans[i];
+    if (_LOGD_ENABLED()) {
+        _LOG3D("link: %s bridge VLANs on %s",
+               vlans ? "setting" : "clearing",
+               on_master ? "master" : "self");
+        if (vlans) {
+            for (i = 0; vlans[i]; i++) {
+                char                        sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
+                const NMPlatformBridgeVlan *vlan = vlans[i];
 
-            _LOG3D("link:   bridge VLAN %s", nm_platform_bridge_vlan_to_string(vlan, NULL, 0));
+                _LOG3D("link:   bridge VLAN %s",
+                       nm_platform_bridge_vlan_to_string(vlan, sbuf, sizeof(sbuf)));
+            }
         }
     }
 
@@ -3543,6 +3550,7 @@ nm_platform_ip4_address_add(NMPlatform *self,
                          FALSE);
 
     if (_LOGD_ENABLED()) {
+        char                 sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
         NMPlatformIP4Address addr;
 
         addr = (NMPlatformIP4Address){
@@ -3561,7 +3569,7 @@ nm_platform_ip4_address_add(NMPlatform *self,
             g_strlcpy(addr.label, label, sizeof(addr.label));
 
         _LOG3D("address: adding or updating IPv4 address: %s",
-               nm_platform_ip4_address_to_string(&addr, NULL, 0));
+               nm_platform_ip4_address_to_string(&addr, sbuf, sizeof(sbuf)));
     }
     return klass->ip4_address_add(self,
                                   ifindex,
@@ -3593,6 +3601,7 @@ nm_platform_ip6_address_add(NMPlatform     *self,
     g_return_val_if_fail(preferred <= lifetime, FALSE);
 
     if (_LOGD_ENABLED()) {
+        char                 sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
         NMPlatformIP6Address addr = {0};
 
         addr.ifindex      = ifindex;
@@ -3605,7 +3614,7 @@ nm_platform_ip6_address_add(NMPlatform     *self,
         addr.n_ifa_flags  = flags;
 
         _LOG3D("address: adding or updating IPv6 address: %s",
-               nm_platform_ip6_address_to_string(&addr, NULL, 0));
+               nm_platform_ip6_address_to_string(&addr, sbuf, sizeof(sbuf)));
     }
     return klass
         ->ip6_address_add(self, ifindex, address, plen, peer_address, lifetime, preferred, flags);
@@ -3654,6 +3663,41 @@ nm_platform_ip6_address_delete(NMPlatform *self, int ifindex, struct in6_addr ad
            plen,
            _to_string_dev(self, ifindex, str_dev, sizeof(str_dev)));
     return klass->ip6_address_delete(self, ifindex, address, plen);
+}
+
+const NMPObject *
+nm_platform_ip_address_get(NMPlatform                                 *self,
+                           int                                         addr_family,
+                           int                                         ifindex,
+                           gconstpointer /* (NMPlatformIPAddress *) */ needle)
+{
+    const NMPlatformIPXAddress *addr;
+    NMPObject                   obj_id;
+    const NMPObject            *obj;
+
+    nm_assert(NM_IS_PLATFORM(self));
+    nm_assert_addr_family(addr_family);
+    nm_assert(needle);
+
+    addr = needle;
+
+    if (ifindex <= 0) {
+        /* We allow the caller to override the ifindex. */
+        ifindex = addr->ax.ifindex;
+    }
+
+    if (NM_IS_IPv4(addr_family)) {
+        nmp_object_stackinit_id_ip4_address(&obj_id,
+                                            ifindex,
+                                            addr->a4.address,
+                                            addr->a4.plen,
+                                            addr->a4.peer_address);
+    } else
+        nmp_object_stackinit_id_ip6_address(&obj_id, ifindex, &addr->a6.address);
+
+    obj = nmp_cache_lookup_obj(nm_platform_get_cache(self), &obj_id);
+    nm_assert(!obj || nmp_object_is_visible(obj));
+    return obj;
 }
 
 const NMPlatformIP4Address *
@@ -3742,14 +3786,13 @@ _addr_array_clean_expired(int          addr_family,
         if (!nmp_utils_lifetime_get(a->timestamp, a->lifetime, a->preferred, cached_now, NULL))
             goto clear_and_next;
 
-        if (idx) {
-            if (G_UNLIKELY(!*idx)) {
-                *idx = g_hash_table_new((GHashFunc) nmp_object_id_hash,
-                                        (GEqualFunc) nmp_object_id_equal);
-            }
-            if (!g_hash_table_add(*idx, (gpointer) NMP_OBJECT_UP_CAST(a)))
-                nm_assert_not_reached();
+        if (G_UNLIKELY(!*idx)) {
+            *idx =
+                g_hash_table_new((GHashFunc) nmp_object_id_hash, (GEqualFunc) nmp_object_id_equal);
         }
+        if (!g_hash_table_add(*idx, (gpointer) NMP_OBJECT_UP_CAST(a)))
+            nm_assert_not_reached();
+
         any_addrs = TRUE;
         continue;
 
@@ -3942,19 +3985,17 @@ ip6_address_scope(const NMPlatformIP6Address *a)
 }
 
 static int
-ip6_address_scope_cmp(gconstpointer p_a, gconstpointer p_b, gpointer increasing)
+ip6_address_scope_cmp_ascending(gconstpointer p_a, gconstpointer p_b, gpointer unused)
 {
-    const NMPlatformIP6Address *a;
-    const NMPlatformIP6Address *b;
-
-    if (!increasing)
-        NM_SWAP(&p_a, &p_b);
-
-    a = NMP_OBJECT_CAST_IP6_ADDRESS(*(const NMPObject *const *) p_a);
-    b = NMP_OBJECT_CAST_IP6_ADDRESS(*(const NMPObject *const *) p_b);
-
-    NM_CMP_DIRECT(ip6_address_scope(a), ip6_address_scope(b));
+    NM_CMP_DIRECT(ip6_address_scope(NMP_OBJECT_CAST_IP6_ADDRESS(*(const NMPObject *const *) p_a)),
+                  ip6_address_scope(NMP_OBJECT_CAST_IP6_ADDRESS(*(const NMPObject *const *) p_b)));
     return 0;
+}
+
+static int
+ip6_address_scope_cmp_descending(gconstpointer p_a, gconstpointer p_b, gpointer unused)
+{
+    return ip6_address_scope_cmp_ascending(p_b, p_a, NULL);
 }
 
 /**
@@ -3988,6 +4029,7 @@ nm_platform_ip_address_sync(NMPlatform *self,
     gint32                         now     = 0;
     const int                      IS_IPv4 = NM_IS_IPv4(addr_family);
     NMPLookup                      lookup;
+    const gboolean                 EXTRA_LOGGING       = FALSE;
     gs_unref_hashtable GHashTable *known_addresses_idx = NULL;
     gs_unref_ptrarray GPtrArray   *plat_addresses      = NULL;
     gboolean                       success;
@@ -3998,6 +4040,39 @@ nm_platform_ip_address_sync(NMPlatform *self,
 
     _CHECK_SELF(self, klass, FALSE);
 
+    /* Disabled. Enable this for printf debugging. */
+    if (EXTRA_LOGGING) {
+        char sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
+        char sbuf1[50];
+
+        _LOG3T("IPv%c address sync on %d (%u addresses, %u to prune)",
+               nm_utils_addr_family_to_char(addr_family),
+               ifindex,
+               nm_g_ptr_array_len(known_addresses),
+               nm_g_ptr_array_len(addresses_prune));
+        for (i = 0; known_addresses && i < known_addresses->len; i++) {
+            _LOG3T("  address#%u: %s%s",
+                   i,
+                   nmp_object_to_string(known_addresses->pdata[i],
+                                        NMP_OBJECT_TO_STRING_ALL,
+                                        sbuf,
+                                        sizeof(sbuf)),
+                   IS_IPv4 ? ""
+                           : nm_sprintf_buf(sbuf1,
+                                            " (scope %d)",
+                                            (int) ip6_address_scope(NMP_OBJECT_CAST_IP6_ADDRESS(
+                                                known_addresses->pdata[i]))));
+        }
+        for (i = 0; addresses_prune && i < addresses_prune->len; i++) {
+            _LOG3T("  prune  #%u: %s",
+                   i,
+                   nmp_object_to_string(addresses_prune->pdata[i],
+                                        NMP_OBJECT_TO_STRING_ALL,
+                                        sbuf,
+                                        sizeof(sbuf)));
+        }
+    }
+
     /* @known_addresses (IPv4) are in decreasing priority order (highest priority addresses first).
      * @known_addresses (IPv6) are in increasing priority order (highest priority addresses last) (we will sort them by scope next). */
 
@@ -4007,9 +4082,7 @@ nm_platform_ip_address_sync(NMPlatform *self,
      * unnecessary change the order of addresses with different scopes. */
     if (!IS_IPv4) {
         if (known_addresses)
-            g_ptr_array_sort_with_data(known_addresses,
-                                       ip6_address_scope_cmp,
-                                       GINT_TO_POINTER(TRUE));
+            g_ptr_array_sort_with_data(known_addresses, ip6_address_scope_cmp_ascending, NULL);
     }
 
     if (!_addr_array_clean_expired(addr_family,
@@ -4047,6 +4120,25 @@ nm_platform_ip_address_sync(NMPlatform *self,
         nmp_lookup_init_object(&lookup, NMP_OBJECT_TYPE_IP_ADDRESS(IS_IPv4), ifindex),
         NULL,
         NULL);
+
+    if (EXTRA_LOGGING && plat_addresses) {
+        for (i = 0; i < plat_addresses->len; i++) {
+            char sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
+            char sbuf1[50];
+
+            _LOG3T("  platform#%u: %s%s",
+                   i,
+                   nmp_object_to_string(plat_addresses->pdata[i],
+                                        NMP_OBJECT_TO_STRING_ALL,
+                                        sbuf,
+                                        sizeof(sbuf)),
+                   IS_IPv4 ? ""
+                           : nm_sprintf_buf(sbuf1,
+                                            " (scope %d)",
+                                            (int) ip6_address_scope(NMP_OBJECT_CAST_IP6_ADDRESS(
+                                                plat_addresses->pdata[i]))));
+        }
+    }
 
     if (nm_g_ptr_array_len(plat_addresses) > 0) {
         /* Delete addresses that interfere with our intended order. */
@@ -4159,9 +4251,7 @@ nm_platform_ip_address_sync(NMPlatform *self,
             /* For IPv6, we only compare addresses per-scope. Addresses in different
              * scopes don't have a defined order. */
 
-            g_ptr_array_sort_with_data(plat_addresses,
-                                       ip6_address_scope_cmp,
-                                       GINT_TO_POINTER(FALSE));
+            g_ptr_array_sort_with_data(plat_addresses, ip6_address_scope_cmp_descending, NULL);
 
             known_addresses_len = nm_g_ptr_array_len(known_addresses);
 
@@ -4267,18 +4357,19 @@ next_plat:;
      * priority.
      */
     for (i_know = 0; i_know < known_addresses->len; i_know++) {
+        const NMPObject            *plat_obj;
+        const NMPObject            *known_obj;
         const NMPlatformIPXAddress *known_address;
-        const NMPObject            *o;
         guint32                     lifetime;
         guint32                     preferred;
 
-        o = known_addresses->pdata[i_know];
-        if (!o)
+        known_obj = known_addresses->pdata[i_know];
+        if (!known_obj)
             continue;
 
-        nm_assert(NMP_OBJECT_GET_TYPE(o) == NMP_OBJECT_TYPE_IP_ADDRESS(IS_IPv4));
+        nm_assert(NMP_OBJECT_GET_TYPE(known_obj) == NMP_OBJECT_TYPE_IP_ADDRESS(IS_IPv4));
 
-        known_address = NMP_OBJECT_CAST_IPX_ADDRESS(o);
+        known_address = NMP_OBJECT_CAST_IPX_ADDRESS(known_obj);
 
         lifetime = nmp_utils_lifetime_get(known_address->ax.timestamp,
                                           known_address->ax.lifetime,
@@ -4286,6 +4377,23 @@ next_plat:;
                                           &now,
                                           &preferred);
         nm_assert(lifetime > 0);
+
+        plat_obj = nm_platform_ip_address_get(self, addr_family, ifindex, known_address);
+        if (plat_obj
+            && nm_platform_vtable_address.vx[IS_IPv4].address_cmp(
+                   known_address,
+                   NMP_OBJECT_CAST_IPX_ADDRESS(plat_obj),
+                   NM_PLATFORM_IP_ADDRESS_CMP_TYPE_SEMANTICALLY)
+                   == 0) {
+            char sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
+
+            /* The object is already added. Skip update. */
+            _LOG3t(
+                "address: skip updating IPv%c address: %s",
+                nm_utils_addr_family_to_char(addr_family),
+                nmp_object_to_string(known_obj, NMP_OBJECT_TO_STRING_PUBLIC, sbuf, sizeof(sbuf)));
+            continue;
+        }
 
         if (IS_IPv4) {
             if (!nm_platform_ip4_address_add(
@@ -4379,7 +4487,7 @@ nm_platform_ip_address_get_prune_list(NMPlatform *self,
     const int                    IS_IPv4 = NM_IS_IPv4(addr_family);
     const NMDedupMultiHeadEntry *head_entry;
     NMPLookup                    lookup;
-    GPtrArray                   *result;
+    GPtrArray                   *result = NULL;
     CList                       *iter;
 
     nmp_lookup_init_object(&lookup, NMP_OBJECT_TYPE_IP_ADDRESS(NM_IS_IPv4(addr_family)), ifindex);
@@ -4388,8 +4496,6 @@ nm_platform_ip_address_get_prune_list(NMPlatform *self,
 
     if (!head_entry)
         return NULL;
-
-    result = g_ptr_array_new_full(head_entry->len, (GDestroyNotify) nmp_object_unref);
 
     c_list_for_each (iter, &head_entry->lst_entries_head) {
         const NMPObject *obj = c_list_entry(iter, NMDedupMultiEntry, lst_entries)->obj;
@@ -4400,13 +4506,12 @@ nm_platform_ip_address_get_prune_list(NMPlatform *self,
                 continue;
         }
 
+        if (!result)
+            result = g_ptr_array_new_full(head_entry->len, (GDestroyNotify) nmp_object_unref);
+
         g_ptr_array_add(result, (gpointer) nmp_object_ref(obj));
     }
 
-    if (result->len == 0) {
-        g_ptr_array_unref(result);
-        return NULL;
-    }
     return result;
 }
 
@@ -4417,7 +4522,7 @@ nm_platform_ip_route_get_prune_list(NMPlatform            *self,
                                     NMIPRouteTableSyncMode route_table_sync)
 {
     NMPLookup                    lookup;
-    GPtrArray                   *routes_prune;
+    GPtrArray                   *routes_prune = NULL;
     const NMDedupMultiHeadEntry *head_entry;
     CList                       *iter;
     NMPlatformIP4Route           rt_local4;
@@ -4448,8 +4553,6 @@ nm_platform_ip_route_get_prune_list(NMPlatform            *self,
     rt_local4.plen = 0;
     rt_local6.plen = 0;
     rt_mcast6.plen = 0;
-
-    routes_prune = g_ptr_array_new_full(head_entry->len, (GDestroyNotify) nm_dedup_multi_obj_unref);
 
     c_list_for_each (iter, &head_entry->lst_entries_head) {
         const NMPObject          *obj = c_list_entry(iter, NMDedupMultiEntry, lst_entries)->obj;
@@ -4588,13 +4691,14 @@ nm_platform_ip_route_get_prune_list(NMPlatform            *self,
             break;
         }
 
+        if (!routes_prune) {
+            routes_prune =
+                g_ptr_array_new_full(head_entry->len, (GDestroyNotify) nm_dedup_multi_obj_unref);
+        }
+
         g_ptr_array_add(routes_prune, (gpointer) nmp_object_ref(obj));
     }
 
-    if (routes_prune->len == 0) {
-        g_ptr_array_unref(routes_prune);
-        return NULL;
-    }
     return routes_prune;
 }
 
@@ -4631,8 +4735,8 @@ nm_platform_ip_route_sync(NMPlatform *self,
     guint                          i;
     int                            i_type;
     gboolean                       success = TRUE;
-    char                           sbuf1[sizeof(_nm_utils_to_string_buffer)];
-    char                           sbuf2[sizeof(_nm_utils_to_string_buffer)];
+    char                           sbuf1[NM_UTILS_TO_STRING_BUFFER_SIZE];
+    char                           sbuf2[NM_UTILS_TO_STRING_BUFFER_SIZE];
 
     nm_assert(NM_IS_PLATFORM(self));
     nm_assert(ifindex > 0);
@@ -4979,7 +5083,7 @@ nm_platform_ip_route_normalize(int addr_family, NMPlatformIPRoute *route)
 static int
 _ip_route_add(NMPlatform *self, NMPNlmFlags flags, int addr_family, gconstpointer route)
 {
-    char sbuf[sizeof(_nm_utils_to_string_buffer)];
+    char sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
     int  ifindex;
 
     _CHECK_SELF(self, klass, FALSE);
@@ -5031,7 +5135,8 @@ nm_platform_ip6_route_add(NMPlatform *self, NMPNlmFlags flags, const NMPlatformI
 gboolean
 nm_platform_object_delete(NMPlatform *self, const NMPObject *obj)
 {
-    int ifindex;
+    char sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
+    int  ifindex;
 
     _CHECK_SELF(self, klass, FALSE);
 
@@ -5039,7 +5144,7 @@ nm_platform_object_delete(NMPlatform *self, const NMPObject *obj)
     case NMP_OBJECT_TYPE_ROUTING_RULE:
         _LOGD("%s: delete %s",
               NMP_OBJECT_GET_CLASS(obj)->obj_type_name,
-              nmp_object_to_string(obj, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
+              nmp_object_to_string(obj, NMP_OBJECT_TO_STRING_PUBLIC, sbuf, sizeof(sbuf)));
         break;
     case NMP_OBJECT_TYPE_IP4_ROUTE:
     case NMP_OBJECT_TYPE_IP6_ROUTE:
@@ -5048,7 +5153,7 @@ nm_platform_object_delete(NMPlatform *self, const NMPObject *obj)
         ifindex = NMP_OBJECT_CAST_OBJ_WITH_IFINDEX(obj)->ifindex;
         _LOG3D("%s: delete %s",
                NMP_OBJECT_GET_CLASS(obj)->obj_type_name,
-               nmp_object_to_string(obj, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
+               nmp_object_to_string(obj, NMP_OBJECT_TO_STRING_PUBLIC, sbuf, sizeof(sbuf)));
         break;
     default:
         g_return_val_if_reached(FALSE);
@@ -5066,6 +5171,7 @@ nm_platform_ip_route_get(NMPlatform   *self,
                          int           oif_ifindex,
                          NMPObject   **out_route)
 {
+    char                      sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
     nm_auto_nmpobj NMPObject *route = NULL;
     int                       result;
     char                      buf[NM_UTILS_INET_ADDRSTRLEN];
@@ -5102,7 +5208,7 @@ nm_platform_ip_route_get(NMPlatform   *self,
         _LOGD("route: get IPv%c route for: %s succeeded: %s",
               nm_utils_addr_family_to_char(addr_family),
               inet_ntop(addr_family, address, buf, sizeof(buf)),
-              nmp_object_to_string(route, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
+              nmp_object_to_string(route, NMP_OBJECT_TO_STRING_PUBLIC, sbuf, sizeof(sbuf)));
         NM_SET_OUT(out_route, g_steal_pointer(&route));
     }
     return result;
@@ -5129,6 +5235,7 @@ _ip4_dev_route_blacklist_timeout_ms_marked(gint64 timeout_msec)
 static gboolean
 _ip4_dev_route_blacklist_check_cb(gpointer user_data)
 {
+    char               sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
     NMPlatform        *self = user_data;
     NMPlatformPrivate *priv = NM_PLATFORM_GET_PRIVATE(self);
     GHashTableIter     iter;
@@ -5159,7 +5266,7 @@ again:
             continue;
 
         _LOGT("ip4-dev-route: delete %s",
-              nmp_object_to_string(p_obj, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
+              nmp_object_to_string(p_obj, NMP_OBJECT_TO_STRING_PUBLIC, sbuf, sizeof(sbuf)));
         nm_platform_object_delete(self, p_obj);
         goto again;
     }
@@ -5222,6 +5329,7 @@ _ip4_dev_route_blacklist_notify_route(NMPlatform *self, const NMPObject *obj)
 static gboolean
 _ip4_dev_route_blacklist_gc_timeout_handle(gpointer user_data)
 {
+    char               sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
     NMPlatform        *self = user_data;
     NMPlatformPrivate *priv = NM_PLATFORM_GET_PRIVATE(self);
     GHashTableIter     iter;
@@ -5237,7 +5345,7 @@ _ip4_dev_route_blacklist_gc_timeout_handle(gpointer user_data)
     while (g_hash_table_iter_next(&iter, (gpointer *) &p_obj, (gpointer *) &p_timeout_ms)) {
         if (now_ms > _ip4_dev_route_blacklist_timeout_ms_get(*p_timeout_ms)) {
             _LOGT("ip4-dev-route: cleanup %s",
-                  nmp_object_to_string(p_obj, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
+                  nmp_object_to_string(p_obj, NMP_OBJECT_TO_STRING_PUBLIC, sbuf, sizeof(sbuf)));
             g_hash_table_iter_remove(&iter);
         }
     }
@@ -5297,6 +5405,7 @@ nm_platform_ip4_dev_route_blacklist_set(NMPlatform *self,
                                         int         ifindex,
                                         GPtrArray  *ip4_dev_route_blacklist)
 {
+    char               sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
     NMPlatformPrivate *priv;
     GHashTableIter     iter;
     const NMPObject   *p_obj;
@@ -5352,14 +5461,17 @@ nm_platform_ip4_dev_route_blacklist_set(NMPlatform *self,
                 if (nmp_object_equal(p_obj, o)) {
                     /* un-expire and reuse the entry. */
                     _LOGT("ip4-dev-route: register %s (update)",
-                          nmp_object_to_string(p_obj, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
+                          nmp_object_to_string(p_obj,
+                                               NMP_OBJECT_TO_STRING_PUBLIC,
+                                               sbuf,
+                                               sizeof(sbuf)));
                     *p_timeout_ms = timeout_msec_val;
                     continue;
                 }
             }
 
             _LOGT("ip4-dev-route: register %s",
-                  nmp_object_to_string(o, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
+                  nmp_object_to_string(o, NMP_OBJECT_TO_STRING_PUBLIC, sbuf, sizeof(sbuf)));
             p_timeout_ms  = g_slice_new(gint64);
             *p_timeout_ms = timeout_msec_val;
             g_hash_table_replace(priv->ip4_dev_route_blacklist_hash,
@@ -5381,12 +5493,13 @@ nm_platform_routing_rule_add(NMPlatform                  *self,
                              NMPNlmFlags                  flags,
                              const NMPlatformRoutingRule *routing_rule)
 {
+    char sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
     _CHECK_SELF(self, klass, -NME_BUG);
 
     g_return_val_if_fail(routing_rule, -NME_BUG);
 
     _LOGD("routing-rule: adding or updating: %s",
-          nm_platform_routing_rule_to_string(routing_rule, NULL, 0));
+          nm_platform_routing_rule_to_string(routing_rule, sbuf, sizeof(sbuf)));
     return klass->routing_rule_add(self, flags, routing_rule);
 }
 
@@ -5395,13 +5508,15 @@ nm_platform_routing_rule_add(NMPlatform                  *self,
 int
 nm_platform_qdisc_add(NMPlatform *self, NMPNlmFlags flags, const NMPlatformQdisc *qdisc)
 {
-    int ifindex = qdisc->ifindex;
+    char sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
+    int  ifindex = qdisc->ifindex;
     _CHECK_SELF(self, klass, -NME_BUG);
 
     /* Note: @qdisc must not be copied or kept alive because the lifetime of qdisc.kind
      * is undefined. */
 
-    _LOG3D("adding or updating a qdisc: %s", nm_platform_qdisc_to_string(qdisc, NULL, 0));
+    _LOG3D("adding or updating a qdisc: %s",
+           nm_platform_qdisc_to_string(qdisc, sbuf, sizeof(sbuf)));
     return klass->qdisc_add(self, flags, qdisc);
 }
 
@@ -5419,13 +5534,15 @@ nm_platform_qdisc_delete(NMPlatform *self, int ifindex, guint32 parent, gboolean
 int
 nm_platform_tfilter_add(NMPlatform *self, NMPNlmFlags flags, const NMPlatformTfilter *tfilter)
 {
-    int ifindex = tfilter->ifindex;
+    char sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
+    int  ifindex = tfilter->ifindex;
     _CHECK_SELF(self, klass, -NME_BUG);
 
     /* Note: @tfilter must not be copied or kept alive because the lifetime of tfilter.kind
      * and tfilter.action.kind is undefined. */
 
-    _LOG3D("adding or updating a tfilter: %s", nm_platform_tfilter_to_string(tfilter, NULL, 0));
+    _LOG3D("adding or updating a tfilter: %s",
+           nm_platform_tfilter_to_string(tfilter, sbuf, sizeof(sbuf)));
     return klass->tfilter_add(self, flags, tfilter);
 }
 
@@ -7863,8 +7980,8 @@ nm_platform_ip4_address_pretty_sort_cmp(const NMPlatformIP4Address *a1,
      * subnet (and thus also the primary/secondary role) is
      * preserved.
      */
-    n1 = a1->address & _nm_utils_ip4_prefix_to_netmask(a1->plen);
-    n2 = a2->address & _nm_utils_ip4_prefix_to_netmask(a2->plen);
+    n1 = nm_utils_ip4_address_clear_host_address(a1->address, a1->plen);
+    n2 = nm_utils_ip4_address_clear_host_address(a2->address, a2->plen);
     NM_CMP_DIRECT_MEMCMP(&n1, &n2, sizeof(guint32));
     return 0;
 }
@@ -8832,9 +8949,11 @@ log_link(NMPlatform                *self,
          NMPlatformSignalChangeType change_type,
          gpointer                   user_data)
 {
+    char sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
+
     _LOG3D("signal: link %7s: %s",
            nm_platform_signal_change_type_to_string(change_type),
-           nm_platform_link_to_string(device, NULL, 0));
+           nm_platform_link_to_string(device, sbuf, sizeof(sbuf)));
 }
 
 static void
@@ -8845,9 +8964,11 @@ log_ip4_address(NMPlatform                *self,
                 NMPlatformSignalChangeType change_type,
                 gpointer                   user_data)
 {
+    char sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
+
     _LOG3D("signal: address 4 %7s: %s",
            nm_platform_signal_change_type_to_string(change_type),
-           nm_platform_ip4_address_to_string(address, NULL, 0));
+           nm_platform_ip4_address_to_string(address, sbuf, sizeof(sbuf)));
 }
 
 static void
@@ -8858,9 +8979,11 @@ log_ip6_address(NMPlatform                *self,
                 NMPlatformSignalChangeType change_type,
                 gpointer                   user_data)
 {
+    char sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
+
     _LOG3D("signal: address 6 %7s: %s",
            nm_platform_signal_change_type_to_string(change_type),
-           nm_platform_ip6_address_to_string(address, NULL, 0));
+           nm_platform_ip6_address_to_string(address, sbuf, sizeof(sbuf)));
 }
 
 static void
@@ -8871,9 +8994,11 @@ log_ip4_route(NMPlatform                *self,
               NMPlatformSignalChangeType change_type,
               gpointer                   user_data)
 {
+    char sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
+
     _LOG3D("signal: route   4 %7s: %s",
            nm_platform_signal_change_type_to_string(change_type),
-           nm_platform_ip4_route_to_string(route, NULL, 0));
+           nm_platform_ip4_route_to_string(route, sbuf, sizeof(sbuf)));
 }
 
 static void
@@ -8884,9 +9009,11 @@ log_ip6_route(NMPlatform                *self,
               NMPlatformSignalChangeType change_type,
               gpointer                   user_data)
 {
+    char sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
+
     _LOG3D("signal: route   6 %7s: %s",
            nm_platform_signal_change_type_to_string(change_type),
-           nm_platform_ip6_route_to_string(route, NULL, 0));
+           nm_platform_ip6_route_to_string(route, sbuf, sizeof(sbuf)));
 }
 
 static void
@@ -8897,10 +9024,12 @@ log_routing_rule(NMPlatform                *self,
                  NMPlatformSignalChangeType change_type,
                  gpointer                   user_data)
 {
+    char sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
+
     /* routing rules don't have an ifindex. We probably should refactor the signals that are emitted for platform changes. */
     _LOG3D("signal: rt-rule %7s: %s",
            nm_platform_signal_change_type_to_string(change_type),
-           nm_platform_routing_rule_to_string(routing_rule, NULL, 0));
+           nm_platform_routing_rule_to_string(routing_rule, sbuf, sizeof(sbuf)));
 }
 
 static void
@@ -8911,9 +9040,11 @@ log_qdisc(NMPlatform                *self,
           NMPlatformSignalChangeType change_type,
           gpointer                   user_data)
 {
+    char sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
+
     _LOG3D("signal: qdisc %7s: %s",
            nm_platform_signal_change_type_to_string(change_type),
-           nm_platform_qdisc_to_string(qdisc, NULL, 0));
+           nm_platform_qdisc_to_string(qdisc, sbuf, sizeof(sbuf)));
 }
 
 static void
@@ -8924,9 +9055,11 @@ log_tfilter(NMPlatform                *self,
             NMPlatformSignalChangeType change_type,
             gpointer                   user_data)
 {
+    char sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
+
     _LOG3D("signal: tfilter %7s: %s",
            nm_platform_signal_change_type_to_string(change_type),
-           nm_platform_tfilter_to_string(tfilter, NULL, 0));
+           nm_platform_tfilter_to_string(tfilter, sbuf, sizeof(sbuf)));
 }
 
 /*****************************************************************************/
@@ -8937,6 +9070,7 @@ nm_platform_cache_update_emit_signal(NMPlatform      *self,
                                      const NMPObject *obj_old,
                                      const NMPObject *obj_new)
 {
+    char             sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
     gboolean         visible_new;
     gboolean         visible_old;
     const NMPObject *o;
@@ -8999,7 +9133,7 @@ nm_platform_cache_update_emit_signal(NMPlatform      *self,
     _LOG3t("emit signal %s %s: %s",
            klass->signal_type,
            nm_platform_signal_change_type_to_string((NMPlatformSignalChangeType) cache_op),
-           nmp_object_to_string(o, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
+           nmp_object_to_string(o, NMP_OBJECT_TO_STRING_PUBLIC, sbuf, sizeof(sbuf)));
 
     nmp_object_ref(o);
     g_signal_emit(self,
