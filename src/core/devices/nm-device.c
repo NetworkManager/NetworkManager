@@ -1510,6 +1510,53 @@ _prop_get_connection_lldp(NMDevice *self)
     return lldp == NM_SETTING_CONNECTION_LLDP_ENABLE_RX;
 }
 
+static NMSettingIP4LinkLocal
+_prop_get_ipv4_link_local(NMDevice *self)
+{
+    NMSettingIP4Config   *s_ip4;
+    NMSettingIP4LinkLocal link_local;
+
+    s_ip4 = nm_device_get_applied_setting(self, NM_TYPE_SETTING_IP4_CONFIG);
+    if (!s_ip4)
+        return NM_SETTING_IP4_LL_DISABLED;
+
+    link_local = nm_setting_ip4_config_get_link_local(s_ip4);
+
+    if (link_local == NM_SETTING_IP4_LL_DEFAULT) {
+        /* For connections without a ipv4.link-local property configured the global configuration
+           might defines the default value for ipv4.link-local. */
+        link_local = nm_config_data_get_connection_default_int64(NM_CONFIG_GET_DATA,
+                                                                 NM_CON_DEFAULT("ipv4.link-local"),
+                                                                 self,
+                                                                 NM_SETTING_IP4_LL_AUTO,
+                                                                 NM_SETTING_IP4_LL_ENABLED,
+                                                                 NM_SETTING_IP4_LL_DEFAULT);
+        if (link_local == NM_SETTING_IP4_LL_DEFAULT) {
+            /* If there is no global configuration for ipv4.link-local assume auto */
+            link_local = NM_SETTING_IP4_LL_AUTO;
+        } else if (link_local == NM_SETTING_IP4_LL_ENABLED
+                   && nm_streq(nm_setting_ip_config_get_method((NMSettingIPConfig *) s_ip4),
+                               NM_SETTING_IP4_CONFIG_METHOD_DISABLED)) {
+            /* ipv4.method=disabled has higher priority than the global ipv4.link-local=enabled */
+            link_local = NM_SETTING_IP4_LL_DISABLED;
+        } else if (link_local == NM_SETTING_IP4_LL_DISABLED
+                   && nm_streq(nm_setting_ip_config_get_method((NMSettingIPConfig *) s_ip4),
+                               NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL)) {
+            /* ipv4.method=link-local has higher priority than the global ipv4.link-local=disabled */
+            link_local = NM_SETTING_IP4_LL_ENABLED;
+        }
+    }
+
+    if (link_local == NM_SETTING_IP4_LL_AUTO) {
+        link_local = nm_streq(nm_setting_ip_config_get_method((NMSettingIPConfig *) s_ip4),
+                              NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL)
+                         ? NM_SETTING_IP4_LL_ENABLED
+                         : NM_SETTING_IP4_LL_DISABLED;
+    }
+
+    return link_local;
+}
+
 static guint32
 _prop_get_ipv4_dad_timeout(NMDevice *self)
 {
@@ -11699,11 +11746,14 @@ activate_stage3_ip_config_for_addr_family(NMDevice *self, int addr_family, const
         goto out_devip;
 
     if (IS_IPv4) {
+        if (_prop_get_ipv4_link_local(self) == NM_SETTING_IP4_LL_ENABLED)
+            _dev_ipll4_start(self);
+
         if (nm_streq(method, NM_SETTING_IP4_CONFIG_METHOD_AUTO))
             _dev_ipdhcpx_start(self, AF_INET);
-        else if (nm_streq(method, NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL))
-            _dev_ipll4_start(self);
-        else if (nm_streq(method, NM_SETTING_IP4_CONFIG_METHOD_SHARED))
+        else if (nm_streq(method, NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL)) {
+            /* pass */
+        } else if (nm_streq(method, NM_SETTING_IP4_CONFIG_METHOD_SHARED))
             _dev_ipshared4_start(self);
         else if (nm_streq(method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED))
             priv->ip_data_x[IS_IPv4].is_disabled = TRUE;
