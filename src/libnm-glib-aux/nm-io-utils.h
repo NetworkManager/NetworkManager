@@ -77,4 +77,15 @@ int nm_io_sockaddr_un_set(struct sockaddr_un *ret, NMOptionBool is_abstract, con
 
 int nm_sd_notify(const char *state);
 
+/*****************************************************************************/
+
+int nm_parse_env_file_full(
+    const char *contents,
+    int (*push)(unsigned line, const char *key, const char *value, void *userdata),
+    void *userdata);
+
+int nm_parse_env_filev(const char *contents, va_list ap);
+int nm_parse_env_file_sentinel(const char *contents, ...) G_GNUC_NULL_TERMINATED;
+#define nm_parse_env_file(contents, ...) nm_parse_env_file_sentinel((contents), __VA_ARGS__, NULL)
+
 #endif /* __NM_IO_UTILS_H__ */
