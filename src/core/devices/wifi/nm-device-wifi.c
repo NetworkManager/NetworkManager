@@ -2936,14 +2936,16 @@ build_supplicant_config(NMDeviceWifi *self,
         }
 
         s_8021x = nm_connection_get_setting_802_1x(connection);
-        if (!nm_supplicant_config_add_setting_wireless_security(config,
-                                                                s_wireless_sec,
-                                                                s_8021x,
-                                                                con_uuid,
-                                                                mtu,
-                                                                pmf,
-                                                                fils,
-                                                                error)) {
+        if (!nm_supplicant_config_add_setting_wireless_security(
+                config,
+                s_wireless_sec,
+                s_8021x,
+                con_uuid,
+                nm_setting_wireless_get_mode(s_wireless),
+                mtu,
+                pmf,
+                fils,
+                error)) {
             g_prefix_error(error, "802-11-wireless-security: ");
             goto error;
         }
