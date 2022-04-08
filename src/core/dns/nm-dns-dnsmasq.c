@@ -678,14 +678,14 @@ typedef struct {
 
     char *name_owner;
 
+    GSource *main_timeout_source;
+    GSource *burst_retry_timeout_source;
+
     gint64 burst_start_at;
 
     GPid process_pid;
 
     guint name_owner_changed_id;
-    guint main_timeout_id;
-
-    guint burst_retry_timeout_id;
 
     guint8 burst_count;
 
@@ -928,14 +928,14 @@ _main_cleanup(NMDnsDnsmasq *self, gboolean emit_failed)
 
     nm_clear_g_dbus_connection_signal(priv->dbus_connection, &priv->name_owner_changed_id);
 
-    nm_clear_g_source(&priv->main_timeout_id);
+    nm_clear_g_source_inst(&priv->main_timeout_source);
     nm_clear_g_cancellable(&priv->update_cancellable);
 
     /* cancelling the main_cancellable will also cause _gl_pid_spawn*() to terminate the
      * process in the background. */
     nm_clear_g_cancellable(&priv->main_cancellable);
 
-    if (!priv->is_stopped && priv->burst_retry_timeout_id == 0) {
+    if (!priv->is_stopped && !priv->burst_retry_timeout_source) {
         start_dnsmasq(self, FALSE, NULL);
         send_dnsmasq_update(self);
     }
@@ -961,7 +961,7 @@ name_owner_changed(NMDnsDnsmasq *self, const char *name_owner)
     }
 
     _LOGT("D-Bus name for dnsmasq got owner %s", name_owner);
-    nm_clear_g_source(&priv->main_timeout_id);
+    nm_clear_g_source_inst(&priv->main_timeout_source);
     send_dnsmasq_update(self);
 }
 
@@ -1047,11 +1047,11 @@ _burst_retry_timeout_cb(gpointer user_data)
     NMDnsDnsmasq        *self = user_data;
     NMDnsDnsmasqPrivate *priv = NM_DNS_DNSMASQ_GET_PRIVATE(self);
 
-    priv->burst_retry_timeout_id = 0;
+    nm_clear_g_source_inst(&priv->burst_retry_timeout_source);
 
     start_dnsmasq(self, TRUE, NULL);
     send_dnsmasq_update(self);
-    return G_SOURCE_REMOVE;
+    return G_SOURCE_CONTINUE;
 }
 
 static gboolean
@@ -1090,29 +1090,29 @@ start_dnsmasq(NMDnsDnsmasq *self, gboolean force_start, GError **error)
         || priv->burst_start_at + RATELIMIT_INTERVAL_MSEC <= now) {
         priv->burst_start_at = now;
         priv->burst_count    = 1;
-        nm_clear_g_source(&priv->burst_retry_timeout_id);
+        nm_clear_g_source_inst(&priv->burst_retry_timeout_source);
         _LOGT("rate-limit: start burst interval of %d seconds %s",
               RATELIMIT_INTERVAL_MSEC / 1000,
               force_start ? " (force)" : "");
     } else if (priv->burst_count < RATELIMIT_BURST) {
-        nm_assert(priv->burst_retry_timeout_id == 0);
+        nm_assert(!priv->burst_retry_timeout_source);
         priv->burst_count++;
         _LOGT("rate-limit: %u try within burst interval of %d seconds",
               (guint) priv->burst_count,
               RATELIMIT_INTERVAL_MSEC / 1000);
     } else {
-        if (priv->burst_retry_timeout_id == 0) {
+        if (!priv->burst_retry_timeout_source) {
             _LOGW("dnsmasq dies and gets respawned too quickly. Back off. Something is very wrong");
-            priv->burst_retry_timeout_id =
-                g_timeout_add_seconds((2 * RATELIMIT_INTERVAL_MSEC) / 1000,
-                                      _burst_retry_timeout_cb,
-                                      self);
+            priv->burst_retry_timeout_source =
+                nm_g_timeout_add_seconds_source((2 * RATELIMIT_INTERVAL_MSEC) / 1000,
+                                                _burst_retry_timeout_cb,
+                                                self);
         } else
             _LOGT("rate-limit: currently rate-limited from restart");
         return TRUE;
     }
 
-    priv->main_timeout_id = g_timeout_add(10000, spawn_timeout_cb, self);
+    priv->main_timeout_source = nm_g_timeout_add_source(10000, spawn_timeout_cb, self);
 
     priv->main_cancellable = g_cancellable_new();
 
@@ -1151,7 +1151,7 @@ stop(NMDnsPlugin *plugin)
 
     priv->is_stopped     = TRUE;
     priv->burst_start_at = 0;
-    nm_clear_g_source(&priv->burst_retry_timeout_id);
+    nm_clear_g_source_inst(&priv->burst_retry_timeout_source);
 
     /* Cancelling the cancellable will also terminate the
      * process (in the background). */
@@ -1178,7 +1178,7 @@ dispose(GObject *object)
 
     priv->is_stopped = TRUE;
 
-    nm_clear_g_source(&priv->burst_retry_timeout_id);
+    nm_clear_g_source_inst(&priv->burst_retry_timeout_source);
 
     _main_cleanup(self, FALSE);
 
