@@ -1,12 +1,17 @@
 =============================================
-NetworkManager-1.38
-Overview of changes since NetworkManager-1.36
+NetworkManager-1.40
+Overview of changes since NetworkManager-1.38
 =============================================
 
 This is a snapshot of NetworkManager development. The API is
 subject to change and not guaranteed to be compatible with
 the later release.
 USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
+
+=============================================
+NetworkManager-1.38
+Overview of changes since NetworkManager-1.36
+=============================================
 
 * Add support for route type "throw".
 * Wi-Fi hotspots will use a (stable) random channel number unless one is
