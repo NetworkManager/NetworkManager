@@ -20,6 +20,7 @@
 #include "devices/nm-device-factory.h"
 #include "devices/nm-device-generic.h"
 #include "devices/nm-device.h"
+#include "dns/nm-dns-manager.h"
 #include "dhcp/nm-dhcp-manager.h"
 #include "libnm-core-aux-intern/nm-common-macros.h"
 #include "libnm-core-intern/nm-core-internal.h"
@@ -143,6 +144,8 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMManager,
 
 typedef struct {
     NMPlatform *platform;
+
+    NMDnsManager *dns_mgr;
 
     GArray *capabilities;
 
@@ -7790,6 +7793,28 @@ impl_manager_checkpoint_adjust_rollback_timeout(NMDBusObject                    
 
 /*****************************************************************************/
 
+NMDnsManager *
+nm_manager_get_dns_manager(NMManager *self)
+{
+    NMManagerPrivate *priv;
+
+    g_return_val_if_fail(NM_IS_MANAGER(self), NULL);
+
+    priv = NM_MANAGER_GET_PRIVATE(self);
+
+    if (G_UNLIKELY(!priv->dns_mgr)) {
+        /* Initialize lazily on first use.
+         *
+         * But keep a reference. This is to ensure proper lifetimes between
+         * singleton instances (i.e. nm_dns_manager_get() outlives NMManager). */
+        priv->dns_mgr = g_object_ref(nm_dns_manager_get());
+    }
+
+    return priv->dns_mgr;
+}
+
+/*****************************************************************************/
+
 static void
 auth_mgr_changed(NMAuthManager *auth_manager, gpointer user_data)
 {
@@ -8249,6 +8274,8 @@ dispose(GObject *object)
                                              self);
         g_clear_object(&priv->concheck_mgr);
     }
+
+    g_clear_object(&priv->dns_mgr);
 
     if (priv->auth_mgr) {
         g_signal_handlers_disconnect_by_func(priv->auth_mgr, G_CALLBACK(auth_mgr_changed), self);
