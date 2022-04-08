@@ -691,6 +691,10 @@ typedef struct {
 
     bool is_stopped : 1;
 
+    bool set_server_ex_args_dirty : 1;
+
+    bool update_pending : 1;
+
 } NMDnsDnsmasqPrivate;
 
 struct _NMDnsDnsmasq {
@@ -704,7 +708,8 @@ struct _NMDnsDnsmasqClass {
 
 G_DEFINE_TYPE(NMDnsDnsmasq, nm_dns_dnsmasq, NM_TYPE_DNS_PLUGIN)
 
-#define NM_DNS_DNSMASQ_GET_PRIVATE(self) _NM_GET_PRIVATE(self, NMDnsDnsmasq, NM_IS_DNS_DNSMASQ)
+#define NM_DNS_DNSMASQ_GET_PRIVATE(self) \
+    _NM_GET_PRIVATE(self, NMDnsDnsmasq, NM_IS_DNS_DNSMASQ, NMDnsPlugin)
 
 /*****************************************************************************/
 
@@ -714,6 +719,55 @@ G_DEFINE_TYPE(NMDnsDnsmasq, nm_dns_dnsmasq, NM_TYPE_DNS_PLUGIN)
 /*****************************************************************************/
 
 static gboolean start_dnsmasq(NMDnsDnsmasq *self, gboolean force_start, GError **error);
+
+/*****************************************************************************/
+
+static gboolean
+_update_pending_detect(NMDnsDnsmasq *self)
+{
+    NMDnsDnsmasqPrivate *priv = NM_DNS_DNSMASQ_GET_PRIVATE(self);
+
+    if (priv->is_stopped)
+        return FALSE;
+    if (priv->main_timeout_source) {
+        /* we are waiting for dnsmasq to start. */
+        return TRUE;
+    }
+    if (priv->update_cancellable) {
+        /* An update is in progress. Busy. */
+        return TRUE;
+    }
+    if (priv->set_server_ex_args_dirty) {
+        /* the args just changed and were not yet sent. Busy. */
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
+static void
+_update_pending_maybe_changed(NMDnsDnsmasq *self)
+{
+    NMDnsDnsmasqPrivate *priv = NM_DNS_DNSMASQ_GET_PRIVATE(self);
+    gboolean             update_pending;
+
+    update_pending = _update_pending_detect(self);
+    if (priv->update_pending == update_pending)
+        return;
+
+    priv->update_pending = update_pending;
+    _nm_dns_plugin_update_pending_maybe_changed(NM_DNS_PLUGIN(self));
+}
+
+static gboolean
+get_update_pending(NMDnsPlugin *plugin)
+{
+    NMDnsDnsmasq        *self = NM_DNS_DNSMASQ(plugin);
+    NMDnsDnsmasqPrivate *priv = NM_DNS_DNSMASQ_GET_PRIVATE(self);
+
+    nm_assert(priv->update_pending == _update_pending_detect(self));
+    return priv->update_pending;
+}
 
 /*****************************************************************************/
 
@@ -871,6 +925,7 @@ static void
 dnsmasq_update_done(GObject *source_object, GAsyncResult *res, gpointer user_data)
 {
     NMDnsDnsmasq              *self;
+    NMDnsDnsmasqPrivate       *priv;
     gs_free_error GError      *error    = NULL;
     gs_unref_variant GVariant *response = NULL;
 
@@ -880,10 +935,16 @@ dnsmasq_update_done(GObject *source_object, GAsyncResult *res, gpointer user_dat
         return;
 
     self = user_data;
+    priv = NM_DNS_DNSMASQ_GET_PRIVATE(self);
+
+    nm_clear_g_cancellable(&priv->update_cancellable);
+
     if (!response)
         _LOGW("dnsmasq update failed: %s", error->message);
     else
         _LOGD("dnsmasq update successful");
+
+    _update_pending_maybe_changed(self);
 }
 
 static void
@@ -899,6 +960,8 @@ send_dnsmasq_update(NMDnsDnsmasq *self)
     nm_clear_g_cancellable(&priv->update_cancellable);
     priv->update_cancellable = g_cancellable_new();
 
+    priv->set_server_ex_args_dirty = FALSE;
+
     g_dbus_connection_call(priv->dbus_connection,
                            priv->name_owner,
                            DNSMASQ_DBUS_PATH,
@@ -911,6 +974,8 @@ send_dnsmasq_update(NMDnsDnsmasq *self)
                            priv->update_cancellable,
                            dnsmasq_update_done,
                            self);
+
+    _update_pending_maybe_changed(self);
 }
 
 /*****************************************************************************/
@@ -939,6 +1004,8 @@ _main_cleanup(NMDnsDnsmasq *self, gboolean emit_failed)
         start_dnsmasq(self, FALSE, NULL);
         send_dnsmasq_update(self);
     }
+
+    _update_pending_maybe_changed(self);
 }
 
 static void
@@ -963,6 +1030,8 @@ name_owner_changed(NMDnsDnsmasq *self, const char *name_owner)
     _LOGT("D-Bus name for dnsmasq got owner %s", name_owner);
     nm_clear_g_source_inst(&priv->main_timeout_source);
     send_dnsmasq_update(self);
+
+    _update_pending_maybe_changed(self);
 }
 
 static void
@@ -1117,6 +1186,8 @@ start_dnsmasq(NMDnsDnsmasq *self, gboolean force_start, GError **error)
     priv->main_cancellable = g_cancellable_new();
 
     _gl_pid_spawn(dm_binary, priv->main_cancellable, spawn_notify, self);
+
+    _update_pending_maybe_changed(self);
     return TRUE;
 }
 
@@ -1136,8 +1207,11 @@ update(NMDnsPlugin             *plugin,
     nm_clear_pointer(&priv->set_server_ex_args, g_variant_unref);
     priv->set_server_ex_args =
         g_variant_ref_sink(create_update_args(self, global_config, ip_data_lst_head, hostdomain));
+    priv->set_server_ex_args_dirty = TRUE;
 
     send_dnsmasq_update(self);
+
+    _update_pending_maybe_changed(self);
     return TRUE;
 }
 
@@ -1156,6 +1230,8 @@ stop(NMDnsPlugin *plugin)
     /* Cancelling the cancellable will also terminate the
      * process (in the background). */
     _main_cleanup(self, FALSE);
+
+    _update_pending_maybe_changed(self);
 }
 
 /*****************************************************************************/
@@ -1197,8 +1273,9 @@ nm_dns_dnsmasq_class_init(NMDnsDnsmasqClass *dns_class)
 
     object_class->dispose = dispose;
 
-    plugin_class->plugin_name = "dnsmasq";
-    plugin_class->is_caching  = TRUE;
-    plugin_class->stop        = stop;
-    plugin_class->update      = update;
+    plugin_class->plugin_name        = "dnsmasq";
+    plugin_class->is_caching         = TRUE;
+    plugin_class->stop               = stop;
+    plugin_class->update             = update;
+    plugin_class->get_update_pending = get_update_pending;
 }
