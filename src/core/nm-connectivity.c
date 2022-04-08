@@ -885,8 +885,17 @@ systemd_resolved_resolve_cb(GObject *object, GAsyncResult *res, gpointer user_da
     cb_data = user_data;
 
     if (!result) {
-        /* Never mind. Fallback to the system resolver. */
+        gs_free char *dbus_error = NULL;
+
         _LOG2D("can't resolve a name via systemd-resolved: %s", error->message);
+
+        dbus_error = g_dbus_error_get_remote_error(error);
+        if (nm_streq0(dbus_error, "org.freedesktop.resolve1.NoNameServers")) {
+            cb_data_complete(cb_data, NM_CONNECTIVITY_LIMITED, "resolve-error");
+            return;
+        }
+
+        /* Never mind. Fallback to the system resolver. */
         system_resolver_resolve(cb_data);
         return;
     }
