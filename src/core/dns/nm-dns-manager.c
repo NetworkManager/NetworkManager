@@ -2122,6 +2122,19 @@ _clear_plugin(NMDnsManager *self)
     return FALSE;
 }
 
+static gboolean
+_clear_sd_resolved_plugin(NMDnsManager *self)
+{
+    NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE(self);
+
+    if (priv->sd_resolve_plugin) {
+        nm_dns_plugin_stop(priv->sd_resolve_plugin);
+        g_clear_object(&priv->sd_resolve_plugin);
+        return TRUE;
+    }
+    return FALSE;
+}
+
 static NMDnsManagerResolvConfManager
 _check_resconf_immutable(NMDnsManagerResolvConfManager rc_manager)
 {
@@ -2354,7 +2367,7 @@ again:
             priv->sd_resolve_plugin  = nm_dns_systemd_resolved_new();
             systemd_resolved_changed = TRUE;
         }
-    } else if (nm_clear_g_object(&priv->sd_resolve_plugin))
+    } else if (_clear_sd_resolved_plugin(self))
         systemd_resolved_changed = TRUE;
 
     g_object_freeze_notify(G_OBJECT(self));
@@ -2636,7 +2649,7 @@ dispose(GObject *object)
     if (priv->config)
         g_signal_handlers_disconnect_by_func(priv->config, config_changed_cb, self);
 
-    g_clear_object(&priv->sd_resolve_plugin);
+    _clear_sd_resolved_plugin(self);
     _clear_plugin(self);
 
     c_list_for_each_entry_safe (ip_data, ip_data_safe, &priv->ip_data_lst_head, ip_data_lst)
