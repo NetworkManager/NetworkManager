@@ -397,14 +397,17 @@ nmp_route_manager_track(NMPRouteManager *self,
     _track_data_assert(track_data, TRUE);
 
     if (changed) {
-        _LOGD("track [" NM_HASH_OBFUSCATE_PTR_FMT ",%s%u] %s \"%s\"",
-              NM_HASH_OBFUSCATE_PTR(track_data->user_tag),
-              (track_data->track_priority_val == 0
-                   ? ""
-                   : (track_data->track_priority_present ? "+" : "-")),
-              (guint) track_data->track_priority_val,
-              NMP_OBJECT_GET_CLASS(track_data->obj)->obj_type_name,
-              nmp_object_to_string(track_data->obj, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
+        char sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
+
+        _LOGD(
+            "track [" NM_HASH_OBFUSCATE_PTR_FMT ",%s%u] %s \"%s\"",
+            NM_HASH_OBFUSCATE_PTR(track_data->user_tag),
+            (track_data->track_priority_val == 0
+                 ? ""
+                 : (track_data->track_priority_present ? "+" : "-")),
+            (guint) track_data->track_priority_val,
+            NMP_OBJECT_GET_CLASS(track_data->obj)->obj_type_name,
+            nmp_object_to_string(track_data->obj, NMP_OBJECT_TO_STRING_PUBLIC, sbuf, sizeof(sbuf)));
     }
 
     return changed || changed_untrack;
@@ -416,6 +419,7 @@ _track_data_untrack(NMPRouteManager *self,
                     gboolean         remove_user_tag_data,
                     gboolean         make_owned_by_us)
 {
+    char          sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
     TrackObjData *obj_data;
 
     nm_assert(NMP_IS_ROUTE_MANAGER(self));
@@ -426,7 +430,7 @@ _track_data_untrack(NMPRouteManager *self,
     _LOGD("untrack [" NM_HASH_OBFUSCATE_PTR_FMT "] %s \"%s\"",
           NM_HASH_OBFUSCATE_PTR(track_data->user_tag),
           NMP_OBJECT_GET_CLASS(track_data->obj)->obj_type_name,
-          nmp_object_to_string(track_data->obj, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
+          nmp_object_to_string(track_data->obj, NMP_OBJECT_TO_STRING_PUBLIC, sbuf, sizeof(sbuf)));
 
 #if NM_MORE_ASSERTS
     {
@@ -552,6 +556,7 @@ nmp_route_manager_untrack_all(NMPRouteManager *self,
 void
 nmp_route_manager_sync(NMPRouteManager *self, NMPObjectType obj_type, gboolean keep_deleted)
 {
+    char                         sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
     const NMDedupMultiHeadEntry *pl_head_entry;
     NMDedupMultiIter             pl_iter;
     const NMPObject             *plobj;
@@ -608,7 +613,7 @@ nmp_route_manager_sync(NMPRouteManager *self, NMPObjectType obj_type, gboolean k
             if (keep_deleted) {
                 _LOGD("forget/leak object added by us: %s \"%s\"",
                       NMP_OBJECT_GET_CLASS(plobj)->obj_type_name,
-                      nmp_object_to_string(plobj, NMP_OBJECT_TO_STRING_PUBLIC, NULL, 0));
+                      nmp_object_to_string(plobj, NMP_OBJECT_TO_STRING_PUBLIC, sbuf, sizeof(sbuf)));
                 continue;
             }
 

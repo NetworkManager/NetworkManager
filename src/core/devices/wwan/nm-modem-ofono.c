@@ -734,7 +734,7 @@ handle_settings(GVariant *v_dict, gpointer user_data)
 {
     NMModemOfono        *self = NM_MODEM_OFONO(user_data);
     NMModemOfonoPrivate *priv = NM_MODEM_OFONO_GET_PRIVATE(self);
-    char                 sbuf[sizeof(_nm_utils_to_string_buffer)];
+    char                 sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
     NMPlatformIP4Address address;
     gboolean             ret = FALSE;
     const char          *interface;
