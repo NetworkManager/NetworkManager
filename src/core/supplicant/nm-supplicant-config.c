@@ -877,10 +877,21 @@ nm_supplicant_config_add_setting_wireless_security(NMSupplicantConfig           
          *
          * Those conditions are met when the interface has capabilities
          * SAE, PMF, BIP.
+         *
+         * According to WPA3_Specification_v3.0 section 2.3, when operating
+         * in WPA3-Personal transition mode an AP:
+         *
+         * - shall set MFPC to 1, MFPR to 0.
+         *
+         * Therefore, do not operate in WPA3-Personal transition mode when PMF
+         * is set to disabled. This also provides a way to be compatible with
+         * some devices that are not fully compatible with WPA3-Personal
+         * transition mode.
          */
         if (_get_capability(priv, NM_SUPPL_CAP_TYPE_SAE)
             && _get_capability(priv, NM_SUPPL_CAP_TYPE_PMF)
-            && _get_capability(priv, NM_SUPPL_CAP_TYPE_BIP)) {
+            && _get_capability(priv, NM_SUPPL_CAP_TYPE_BIP)
+            && (!is_ap || pmf != NM_SETTING_WIRELESS_SECURITY_PMF_DISABLE)) {
             g_string_append(key_mgmt_conf, " SAE");
             if (!is_ap && _get_capability(priv, NM_SUPPL_CAP_TYPE_FT))
                 g_string_append(key_mgmt_conf, " FT-SAE");
