@@ -144,7 +144,9 @@ _test_unbase64char(char ch, gboolean maybe_invalid)
         g_assert(!maybe_invalid);
         g_assert_cmpint(r, <, 0);
         g_assert_cmpint(nm_sd_utils_unbase64char(ch, TRUE), ==, G_MAXINT);
+        g_assert_cmpint(nm_unbase64char(ch), ==, -ERANGE);
     } else {
+        g_assert_cmpint(nm_unbase64char(ch), ==, r);
         g_assert_cmpint(r, ==, nm_sd_utils_unbase64char(ch, TRUE));
         if (r >= 0)
             g_assert_cmpint(r, <=, 255);
