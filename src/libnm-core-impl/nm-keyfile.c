@@ -21,7 +21,6 @@
 #include "libnm-glib-aux/nm-uuid.h"
 #include "libnm-glib-aux/nm-str-buf.h"
 #include "libnm-glib-aux/nm-secret-utils.h"
-#include "libnm-systemd-shared/nm-sd-utils-shared.h"
 #include "libnm-core-aux-intern/nm-common-macros.h"
 #include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 #include "libnm-core-intern/nm-core-internal.h"
@@ -4062,7 +4061,7 @@ _write_setting_wireguard(NMSetting *setting, KeyfileWriterInfo *info)
 
         public_key = nm_wireguard_peer_get_public_key(peer);
         if (!public_key || !public_key[0]
-            || !NM_STRCHAR_ALL(public_key, ch, nm_sd_utils_unbase64char(ch, TRUE) >= 0)) {
+            || !NM_STRCHAR_ALL(public_key, ch, nm_unbase64char(ch) != -EINVAL)) {
             /* invalid peer. Skip it */
             continue;
         }
