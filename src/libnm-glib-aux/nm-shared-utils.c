@@ -6720,35 +6720,23 @@ nm_g_main_context_can_acquire(GMainContext *context)
 int
 nm_unbase64char(char c)
 {
-    unsigned offset;
-
     /* copied from systemd's unbase64char():
      * https://github.com/systemd/systemd/blob/688efe7703328c5a0251fafac55757b8864a9f9a/src/basic/hexdecoct.c#L539 */
 
-    if (c >= 'A' && c <= 'Z')
+    switch (c) {
+    case 'A' ... 'Z':
         return c - 'A';
-
-    offset = 'Z' - 'A' + 1;
-
-    if (c >= 'a' && c <= 'z')
-        return c - 'a' + offset;
-
-    offset += 'z' - 'a' + 1;
-
-    if (c >= '0' && c <= '9')
-        return c - '0' + offset;
-
-    offset += '9' - '0' + 1;
-
-    if (c == '+')
-        return offset;
-
-    offset++;
-
-    if (c == '/')
-        return offset;
-
-    return -EINVAL;
+    case 'a' ... 'z':
+        return (c - 'a') + ('Z' - 'A' + 1);
+    case '0' ... '9':
+        return (c - '0') + (('Z' - 'A' + 1) + ('z' - 'a' + 1));
+    case '+':
+        return ('Z' - 'A' + 1) + ('z' - 'a' + 1) + ('9' - '0' + 1);
+    case '/':
+        return ('Z' - 'A' + 1) + ('z' - 'a' + 1) + ('9' - '0' + 1) + 1;
+    default:
+        return -EINVAL;
+    }
 }
 
 #define WHITESPACE " \t\n\r"
