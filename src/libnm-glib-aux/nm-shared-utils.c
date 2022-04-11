@@ -6734,6 +6734,10 @@ nm_unbase64char(char c)
         return ('Z' - 'A' + 1) + ('z' - 'a' + 1) + ('9' - '0' + 1);
     case '/':
         return ('Z' - 'A' + 1) + ('z' - 'a' + 1) + ('9' - '0' + 1) + 1;
+    case '=':
+        /* The padding is a different kind of base64 character. Return
+         * a special error code for it. */
+        return -ERANGE;
     default:
         return -EINVAL;
     }

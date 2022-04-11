@@ -1593,7 +1593,7 @@ test_unbase64char(void)
     g_assert_cmpint(nm_unbase64char('9'), ==, 61);
     g_assert_cmpint(nm_unbase64char('+'), ==, 62);
     g_assert_cmpint(nm_unbase64char('/'), ==, 63);
-    g_assert_cmpint(nm_unbase64char('='), ==, -EINVAL);
+    g_assert_cmpint(nm_unbase64char('='), ==, -ERANGE);
     g_assert_cmpint(nm_unbase64char('\0'), ==, -EINVAL);
     g_assert_cmpint(nm_unbase64char('\1'), ==, -EINVAL);
     g_assert_cmpint(nm_unbase64char('\x7F'), ==, -EINVAL);
@@ -1606,7 +1606,10 @@ test_unbase64char(void)
         base64 = nm_unbase64char((char) i);
 
         if (base64 < 0) {
-            g_assert_cmpint(base64, ==, -EINVAL);
+            if (((char) i) == '=')
+                g_assert_cmpint(base64, ==, -ERANGE);
+            else
+                g_assert_cmpint(base64, ==, -EINVAL);
             base64 = -1;
         }
 
