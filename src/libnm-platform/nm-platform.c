@@ -4391,7 +4391,7 @@ next_plat:;
             char sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
 
             /* The object is already added. Skip update. */
-            _LOG3t(
+            _LOG3T(
                 "address: skip updating IPv%c address: %s",
                 nm_utils_addr_family_to_char(addr_family),
                 nmp_object_to_string(known_obj, NMP_OBJECT_TO_STRING_PUBLIC, sbuf, sizeof(sbuf)));
