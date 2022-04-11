@@ -6743,15 +6743,13 @@ nm_unbase64char(char c)
     }
 }
 
-#define WHITESPACE " \t\n\r"
-
 static int
 unbase64_next(const char **p, size_t *l)
 {
     int ret;
 
-    assert(p);
-    assert(l);
+    nm_assert(p);
+    nm_assert(l);
 
     /* copied from systemd's unbase64_next():
      * https://github.com/systemd/systemd/blob/688efe7703328c5a0251fafac55757b8864a9f9a/src/basic/hexdecoct.c#L709 */
@@ -6763,32 +6761,34 @@ unbase64_next(const char **p, size_t *l)
         if (*l == 0)
             return -EPIPE;
 
-        if (!strchr(WHITESPACE, **p))
+        if (!nm_ascii_is_whitespace(**p))
             break;
 
         /* Skip leading whitespace */
-        (*p)++, (*l)--;
+        (*p)++;
+        (*l)--;
     }
 
-    if (**p == '=')
-        ret = INT_MAX; /* return padding as INT_MAX */
-    else {
-        ret = nm_unbase64char(**p);
-        if (ret < 0)
+    ret = nm_unbase64char(**p);
+    if (ret < 0) {
+        nm_assert(NM_IN_SET(ret, -EINVAL, -ERANGE));
+        if (ret != -ERANGE)
             return ret;
     }
 
     for (;;) {
-        (*p)++, (*l)--;
+        (*p)++;
+        (*l)--;
 
         if (*l == 0)
             break;
-        if (!strchr(WHITESPACE, **p))
+        if (!nm_ascii_is_whitespace(**p))
             break;
 
         /* Skip following whitespace */
     }
 
+    nm_assert(ret == -ERANGE || ret >= 0);
     return ret;
 }
 
@@ -6822,9 +6822,9 @@ nm_unbase64mem_full(const char *p, gsize l, gboolean secure, guint8 **ret, gsize
     /* copied from systemd's unbase64mem_full():
      * https://github.com/systemd/systemd/blob/688efe7703328c5a0251fafac55757b8864a9f9a/src/basic/hexdecoct.c#L751 */
 
-    assert(p || l == 0);
+    nm_assert(p || l == 0);
 
-    if (l == SIZE_MAX)
+    if (l == G_MAXSIZE)
         l = strlen(p);
 
     /* A group of four input bytes needs three output bytes, in case of padding we need to add two or three extra
@@ -6834,46 +6834,53 @@ nm_unbase64mem_full(const char *p, gsize l, gboolean secure, guint8 **ret, gsize
     buf = g_malloc(len + 1);
 
     for (x = p, z = buf;;) {
-        int a, b, c, d; /* a == 00XXXXXX; b == 00YYYYYY; c == 00ZZZZZZ; d == 00WWWWWW */
+        int a; /* a == 00XXXXXX */
+        int b; /* b == 00YYYYYY */
+        int c; /* c == 00ZZZZZZ */
+        int d; /* d == 00WWWWWW */
 
         a = unbase64_next(&x, &l);
-        if (a == -EPIPE) /* End of string */
-            break;
         if (a < 0) {
+            if (a == -EPIPE) /* End of string */
+                break;
+            if (a == -ERANGE) { /* Padding is not allowed at the beginning of a 4ch block */
+                r = -EINVAL;
+                goto on_failure;
+            }
             r = a;
-            goto on_failure;
-        }
-        if (a == INT_MAX) { /* Padding is not allowed at the beginning of a 4ch block */
-            r = -EINVAL;
             goto on_failure;
         }
 
         b = unbase64_next(&x, &l);
         if (b < 0) {
+            if (b == -ERANGE) {
+                /* Padding is not allowed at the second character of a 4ch block either */
+                r = -EINVAL;
+                goto on_failure;
+            }
             r = b;
-            goto on_failure;
-        }
-        if (b
-            == INT_MAX) { /* Padding is not allowed at the second character of a 4ch block either */
-            r = -EINVAL;
             goto on_failure;
         }
 
         c = unbase64_next(&x, &l);
         if (c < 0) {
-            r = c;
-            goto on_failure;
+            if (c != -ERANGE) {
+                r = c;
+                goto on_failure;
+            }
         }
 
         d = unbase64_next(&x, &l);
         if (d < 0) {
-            r = d;
-            goto on_failure;
+            if (d != -ERANGE) {
+                r = d;
+                goto on_failure;
+            }
         }
 
-        if (c == INT_MAX) { /* Padding at the third character */
+        if (c == -ERANGE) { /* Padding at the third character */
 
-            if (d != INT_MAX) { /* If the third character is padding, the fourth must be too */
+            if (d != -ERANGE) { /* If the third character is padding, the fourth must be too */
                 r = -EINVAL;
                 goto on_failure;
             }
@@ -6893,7 +6900,7 @@ nm_unbase64mem_full(const char *p, gsize l, gboolean secure, guint8 **ret, gsize
             break;
         }
 
-        if (d == INT_MAX) {
+        if (d == -ERANGE) {
             /* c == 00ZZZZ00 */
             if (c & 3) {
                 r = -EINVAL;
@@ -6915,18 +6922,14 @@ nm_unbase64mem_full(const char *p, gsize l, gboolean secure, guint8 **ret, gsize
         *(z++) = (uint8_t) c << 6 | (uint8_t) d;      /* ZZWWWWWW */
     }
 
-    *z = 0;
+    *z = '\0';
 
-    if (ret_size)
-        *ret_size = (size_t) (z - buf);
-    if (ret)
-        *ret = g_steal_pointer(&buf);
-
+    NM_SET_OUT(ret_size, (gsize) (z - buf));
+    NM_SET_OUT(ret, g_steal_pointer(&buf));
     return 0;
 
 on_failure:
     if (secure)
         nm_explicit_bzero(buf, len);
-
     return r;
 }
