@@ -1556,6 +1556,179 @@ test_parse_env_file(void)
 
 /*****************************************************************************/
 
+static void
+test_unbase64char(void)
+{
+    static const int expected[128] = {
+        [0] = -1,   [1] = -1,   [2] = -1,   [3] = -1,   [4] = -1,   [5] = -1,   [6] = -1,
+        [7] = -1,   [8] = -1,   [9] = -1,   [10] = -1,  [11] = -1,  [12] = -1,  [13] = -1,
+        [14] = -1,  [15] = -1,  [16] = -1,  [17] = -1,  [18] = -1,  [19] = -1,  [20] = -1,
+        [21] = -1,  [22] = -1,  [23] = -1,  [24] = -1,  [25] = -1,  [26] = -1,  [27] = -1,
+        [28] = -1,  [29] = -1,  [30] = -1,  [31] = -1,  [32] = -1,  [33] = -1,  [34] = -1,
+        [35] = -1,  [36] = -1,  [37] = -1,  [38] = -1,  [39] = -1,  [40] = -1,  [41] = -1,
+        [42] = -1,  ['+'] = 62, [44] = -1,  [45] = -1,  [46] = -1,  ['/'] = 63, ['0'] = 52,
+        ['1'] = 53, ['2'] = 54, ['3'] = 55, ['4'] = 56, ['5'] = 57, ['6'] = 58, ['7'] = 59,
+        ['8'] = 60, ['9'] = 61, [58] = -1,  [59] = -1,  [60] = -1,  [61] = -1,  [62] = -1,
+        [63] = -1,  [64] = -1,  ['A'] = 0,  ['B'] = 1,  ['C'] = 2,  ['D'] = 3,  ['E'] = 4,
+        ['F'] = 5,  ['G'] = 6,  ['H'] = 7,  ['I'] = 8,  ['J'] = 9,  ['K'] = 10, ['L'] = 11,
+        ['M'] = 12, ['N'] = 13, ['O'] = 14, ['P'] = 15, ['Q'] = 16, ['R'] = 17, ['S'] = 18,
+        ['T'] = 19, ['U'] = 20, ['V'] = 21, ['W'] = 22, ['X'] = 23, ['Y'] = 24, ['Z'] = 25,
+        [91] = -1,  [92] = -1,  [93] = -1,  [94] = -1,  [95] = -1,  [96] = -1,  ['a'] = 26,
+        ['b'] = 27, ['c'] = 28, ['d'] = 29, ['e'] = 30, ['f'] = 31, ['g'] = 32, ['h'] = 33,
+        ['i'] = 34, ['j'] = 35, ['k'] = 36, ['l'] = 37, ['m'] = 38, ['n'] = 39, ['o'] = 40,
+        ['p'] = 41, ['q'] = 42, ['r'] = 43, ['s'] = 44, ['t'] = 45, ['u'] = 46, ['v'] = 47,
+        ['w'] = 48, ['x'] = 49, ['y'] = 50, ['z'] = 51, [123] = -1, [124] = -1, [125] = -1,
+        [126] = -1, [127] = -1,
+    };
+    int i;
+
+    /* Copied from systemd's TEST(unbase64char)
+     * https://github.com/systemd/systemd/blob/688efe7703328c5a0251fafac55757b8864a9f9a/src/test/test-hexdecoct.c#L44 */
+
+    g_assert_cmpint(nm_unbase64char('A'), ==, 0);
+    g_assert_cmpint(nm_unbase64char('Z'), ==, 25);
+    g_assert_cmpint(nm_unbase64char('a'), ==, 26);
+    g_assert_cmpint(nm_unbase64char('z'), ==, 51);
+    g_assert_cmpint(nm_unbase64char('0'), ==, 52);
+    g_assert_cmpint(nm_unbase64char('9'), ==, 61);
+    g_assert_cmpint(nm_unbase64char('+'), ==, 62);
+    g_assert_cmpint(nm_unbase64char('/'), ==, 63);
+    g_assert_cmpint(nm_unbase64char('='), ==, -EINVAL);
+    g_assert_cmpint(nm_unbase64char('\0'), ==, -EINVAL);
+    g_assert_cmpint(nm_unbase64char('\1'), ==, -EINVAL);
+    g_assert_cmpint(nm_unbase64char('\x7F'), ==, -EINVAL);
+    g_assert_cmpint(nm_unbase64char('\x80'), ==, -EINVAL);
+    g_assert_cmpint(nm_unbase64char('\xFF'), ==, -EINVAL);
+
+    for (i = 0; i < 256; i++) {
+        int base64;
+
+        base64 = nm_unbase64char((char) i);
+
+        if (base64 < 0) {
+            g_assert_cmpint(base64, ==, -EINVAL);
+            base64 = -1;
+        }
+
+        if (i >= G_N_ELEMENTS(expected)) {
+            g_assert_cmpint(base64, ==, -1);
+            continue;
+        }
+        g_assert_cmpint(base64, ==, expected[i]);
+    }
+}
+
+/*****************************************************************************/
+
+static void
+test_unbase64mem1(void)
+{
+    nm_auto_str_buf NMStrBuf encoded_wrapped = NM_STR_BUF_INIT(400, FALSE);
+    uint8_t                  data[4096];
+    int                      i_run;
+
+    /* Copied from systemd's TEST(base64mem_linebreak)
+     * https://github.com/systemd/systemd/blob/688efe7703328c5a0251fafac55757b8864a9f9a/src/test/test-hexdecoct.c#L280 */
+
+    for (i_run = 0; i_run < 20; i_run++) {
+        gs_free char   *encoded = NULL;
+        gs_free guint8 *decoded = NULL;
+        gsize           decoded_size;
+        guint64         n;
+        guint64         m;
+        guint64         i;
+        guint64         j;
+        gssize          l;
+        int             r;
+
+        /* Try a bunch of differently sized blobs */
+        n = nmtst_get_rand_uint64() % sizeof(data);
+        nmtst_rand_buf(NULL, data, n);
+
+        /* Break at various different columns */
+        m = 1 + (nmtst_get_rand_uint64() % (n + 5));
+
+        encoded = g_base64_encode(data, n);
+        g_assert(encoded);
+        l = strlen(encoded);
+
+        nm_str_buf_reset(&encoded_wrapped);
+        for (i = 0, j = 0; i < l; i++, j++) {
+            if (j == m) {
+                nm_str_buf_append_c(&encoded_wrapped, '\n');
+                j = 0;
+            }
+            nm_str_buf_append_c(&encoded_wrapped, encoded[i]);
+        }
+
+        g_assert_cmpint(strlen(nm_str_buf_get_str(&encoded_wrapped)), ==, encoded_wrapped.len);
+
+        r = nm_unbase64mem_full(nm_str_buf_get_str(&encoded_wrapped),
+                                nmtst_get_rand_bool() ? SIZE_MAX : encoded_wrapped.len,
+                                nmtst_get_rand_bool(),
+                                &decoded,
+                                &decoded_size);
+        g_assert_cmpint(r, >=, 0);
+        g_assert_cmpmem(data, n, decoded, decoded_size);
+
+        for (j = 0; j < encoded_wrapped.len; j++)
+            g_assert((nm_str_buf_get_str(&encoded_wrapped)[j] == '\n') == (j % (m + 1) == m));
+    }
+}
+
+/*****************************************************************************/
+
+static void
+_assert_unbase64mem(const char *input, const char *output, int ret)
+{
+    gs_free guint8 *buffer = NULL;
+    gsize           size   = 0;
+    int             r;
+
+    r = nm_unbase64mem_full(input, SIZE_MAX, nmtst_get_rand_bool(), &buffer, &size);
+    g_assert_cmpint(r, ==, ret);
+
+    if (ret >= 0) {
+        g_assert_cmpmem(buffer, size, output, strlen(output));
+        g_assert_cmpint(((const char *) buffer)[size], ==, '\0');
+    } else {
+        g_assert(!buffer);
+        g_assert_cmpint(size, ==, 0);
+    }
+}
+
+static void
+test_unbase64mem2(void)
+{
+    /* Copied from systemd's TEST(unbase64mem)
+     * https://github.com/systemd/systemd/blob/688efe7703328c5a0251fafac55757b8864a9f9a/src/test/test-hexdecoct.c#L324 */
+
+    _assert_unbase64mem("", "", 0);
+    _assert_unbase64mem("Zg==", "f", 0);
+    _assert_unbase64mem("Zm8=", "fo", 0);
+    _assert_unbase64mem("Zm9v", "foo", 0);
+    _assert_unbase64mem("Zm9vYg==", "foob", 0);
+    _assert_unbase64mem("Zm9vYmE=", "fooba", 0);
+    _assert_unbase64mem("Zm9vYmFy", "foobar", 0);
+
+    _assert_unbase64mem(" ", "", 0);
+    _assert_unbase64mem(" \n\r ", "", 0);
+    _assert_unbase64mem("    Zg\n==       ", "f", 0);
+    _assert_unbase64mem(" Zm 8=\r", "fo", 0);
+    _assert_unbase64mem("  Zm9\n\r\r\nv   ", "foo", 0);
+    _assert_unbase64mem(" Z m9vYg==\n\r", "foob", 0);
+    _assert_unbase64mem(" Zm 9vYmE=   ", "fooba", 0);
+    _assert_unbase64mem("   Z m9v    YmFy   ", "foobar", 0);
+
+    _assert_unbase64mem("A", NULL, -EPIPE);
+    _assert_unbase64mem("A====", NULL, -EINVAL);
+    _assert_unbase64mem("AAB==", NULL, -EINVAL);
+    _assert_unbase64mem(" A A A B = ", NULL, -EINVAL);
+    _assert_unbase64mem(" Z m 8 = q u u x ", NULL, -ENAMETOOLONG);
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE();
 
 int
@@ -1590,6 +1763,9 @@ main(int argc, char **argv)
     g_test_add_func("/general/test_nm_g_source_sentinel", test_nm_g_source_sentinel);
     g_test_add_func("/general/test_nm_ascii", test_nm_ascii);
     g_test_add_func("/general/test_parse_env_file", test_parse_env_file);
+    g_test_add_func("/general/test_unbase64char", test_unbase64char);
+    g_test_add_func("/general/test_unbase64mem1", test_unbase64mem1);
+    g_test_add_func("/general/test_unbase64mem2", test_unbase64mem2);
 
     return g_test_run();
 }

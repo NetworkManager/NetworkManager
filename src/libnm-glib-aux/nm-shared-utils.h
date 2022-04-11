@@ -3308,4 +3308,9 @@ gboolean nm_utils_validate_hostname(const char *hostname);
 
 void nm_utils_thread_local_register_destroy(gpointer tls_data, GDestroyNotify destroy_notify);
 
+/*****************************************************************************/
+
+int nm_unbase64char(char c);
+int nm_unbase64mem_full(const char *p, gsize l, gboolean secure, guint8 **ret, gsize *ret_size);
+
 #endif /* __NM_SHARED_UTILS_H__ */

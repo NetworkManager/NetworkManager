@@ -6714,3 +6714,227 @@ nm_g_main_context_can_acquire(GMainContext *context)
     g_main_context_release(context);
     return TRUE;
 }
+
+/*****************************************************************************/
+
+int
+nm_unbase64char(char c)
+{
+    unsigned offset;
+
+    /* copied from systemd's unbase64char():
+     * https://github.com/systemd/systemd/blob/688efe7703328c5a0251fafac55757b8864a9f9a/src/basic/hexdecoct.c#L539 */
+
+    if (c >= 'A' && c <= 'Z')
+        return c - 'A';
+
+    offset = 'Z' - 'A' + 1;
+
+    if (c >= 'a' && c <= 'z')
+        return c - 'a' + offset;
+
+    offset += 'z' - 'a' + 1;
+
+    if (c >= '0' && c <= '9')
+        return c - '0' + offset;
+
+    offset += '9' - '0' + 1;
+
+    if (c == '+')
+        return offset;
+
+    offset++;
+
+    if (c == '/')
+        return offset;
+
+    return -EINVAL;
+}
+
+#define WHITESPACE " \t\n\r"
+
+static int
+unbase64_next(const char **p, size_t *l)
+{
+    int ret;
+
+    assert(p);
+    assert(l);
+
+    /* copied from systemd's unbase64_next():
+     * https://github.com/systemd/systemd/blob/688efe7703328c5a0251fafac55757b8864a9f9a/src/basic/hexdecoct.c#L709 */
+
+    /* Find the next non-whitespace character, and decode it. If we find padding, we return it as INT_MAX. We
+     * greedily skip all preceding and all following whitespace. */
+
+    for (;;) {
+        if (*l == 0)
+            return -EPIPE;
+
+        if (!strchr(WHITESPACE, **p))
+            break;
+
+        /* Skip leading whitespace */
+        (*p)++, (*l)--;
+    }
+
+    if (**p == '=')
+        ret = INT_MAX; /* return padding as INT_MAX */
+    else {
+        ret = nm_unbase64char(**p);
+        if (ret < 0)
+            return ret;
+    }
+
+    for (;;) {
+        (*p)++, (*l)--;
+
+        if (*l == 0)
+            break;
+        if (!strchr(WHITESPACE, **p))
+            break;
+
+        /* Skip following whitespace */
+    }
+
+    return ret;
+}
+
+/**
+ * nm_unbase64mem_full:
+ * @p: a valid base64 string. Whitespace is ignored, but invalid encodings
+ *   will cause the function to fail.
+ * @l: the length of @p. @p is not treated as NUL terminated string but
+ *   merely as a buffer of ascii characters.
+ * @secure: whether the temporary memory will be cleared to avoid leaving
+ *   secrets in memory (see also nm_explicit_bzero()).
+ * @mem: (transfer full): the decoded buffer on success.
+ * @len: the length of @mem on success.
+ *
+ * glib provides g_base64_decode(), but that does not report any errors
+ * from invalid encodings. Expose systemd's implementation which does
+ * reject invalid inputs.
+ *
+ * Returns: a non-negative code on success. Invalid encoding let the
+ *   function fail.
+ */
+int
+nm_unbase64mem_full(const char *p, gsize l, gboolean secure, guint8 **ret, gsize *ret_size)
+{
+    gs_free uint8_t *buf = NULL;
+    const char      *x;
+    guint8          *z;
+    gsize            len;
+    int              r;
+
+    /* copied from systemd's unbase64mem_full():
+     * https://github.com/systemd/systemd/blob/688efe7703328c5a0251fafac55757b8864a9f9a/src/basic/hexdecoct.c#L751 */
+
+    assert(p || l == 0);
+
+    if (l == SIZE_MAX)
+        l = strlen(p);
+
+    /* A group of four input bytes needs three output bytes, in case of padding we need to add two or three extra
+     * bytes. Note that this calculation is an upper boundary, as we ignore whitespace while decoding */
+    len = (l / 4) * 3 + (l % 4 != 0 ? (l % 4) - 1 : 0);
+
+    buf = g_malloc(len + 1);
+
+    for (x = p, z = buf;;) {
+        int a, b, c, d; /* a == 00XXXXXX; b == 00YYYYYY; c == 00ZZZZZZ; d == 00WWWWWW */
+
+        a = unbase64_next(&x, &l);
+        if (a == -EPIPE) /* End of string */
+            break;
+        if (a < 0) {
+            r = a;
+            goto on_failure;
+        }
+        if (a == INT_MAX) { /* Padding is not allowed at the beginning of a 4ch block */
+            r = -EINVAL;
+            goto on_failure;
+        }
+
+        b = unbase64_next(&x, &l);
+        if (b < 0) {
+            r = b;
+            goto on_failure;
+        }
+        if (b
+            == INT_MAX) { /* Padding is not allowed at the second character of a 4ch block either */
+            r = -EINVAL;
+            goto on_failure;
+        }
+
+        c = unbase64_next(&x, &l);
+        if (c < 0) {
+            r = c;
+            goto on_failure;
+        }
+
+        d = unbase64_next(&x, &l);
+        if (d < 0) {
+            r = d;
+            goto on_failure;
+        }
+
+        if (c == INT_MAX) { /* Padding at the third character */
+
+            if (d != INT_MAX) { /* If the third character is padding, the fourth must be too */
+                r = -EINVAL;
+                goto on_failure;
+            }
+
+            /* b == 00YY0000 */
+            if (b & 15) {
+                r = -EINVAL;
+                goto on_failure;
+            }
+
+            if (l > 0) { /* Trailing rubbish? */
+                r = -ENAMETOOLONG;
+                goto on_failure;
+            }
+
+            *(z++) = (uint8_t) a << 2 | (uint8_t) (b >> 4); /* XXXXXXYY */
+            break;
+        }
+
+        if (d == INT_MAX) {
+            /* c == 00ZZZZ00 */
+            if (c & 3) {
+                r = -EINVAL;
+                goto on_failure;
+            }
+
+            if (l > 0) { /* Trailing rubbish? */
+                r = -ENAMETOOLONG;
+                goto on_failure;
+            }
+
+            *(z++) = (uint8_t) a << 2 | (uint8_t) b >> 4; /* XXXXXXYY */
+            *(z++) = (uint8_t) b << 4 | (uint8_t) c >> 2; /* YYYYZZZZ */
+            break;
+        }
+
+        *(z++) = (uint8_t) a << 2 | (uint8_t) b >> 4; /* XXXXXXYY */
+        *(z++) = (uint8_t) b << 4 | (uint8_t) c >> 2; /* YYYYZZZZ */
+        *(z++) = (uint8_t) c << 6 | (uint8_t) d;      /* ZZWWWWWW */
+    }
+
+    *z = 0;
+
+    if (ret_size)
+        *ret_size = (size_t) (z - buf);
+    if (ret)
+        *ret = g_steal_pointer(&buf);
+
+    return 0;
+
+on_failure:
+    if (secure)
+        nm_explicit_bzero(buf, len);
+
+    return r;
+}
