@@ -42,38 +42,6 @@ nm_sd_utils_path_startswith(const char *path, const char *prefix)
 /*****************************************************************************/
 
 int
-nm_sd_utils_unbase64char(char ch, gboolean accept_padding_equal)
-{
-    if (ch == '=' && accept_padding_equal)
-        return G_MAXINT;
-    return unbase64char(ch);
-}
-
-/**
- * nm_sd_utils_unbase64mem:
- * @p: a valid base64 string. Whitespace is ignored, but invalid encodings
- *   will cause the function to fail.
- * @l: the length of @p. @p is not treated as NUL terminated string but
- *   merely as a buffer of ascii characters.
- * @secure: whether the temporary memory will be cleared to avoid leaving
- *   secrets in memory (see also nm_explicit_bzero()).
- * @mem: (transfer full): the decoded buffer on success.
- * @len: the length of @mem on success.
- *
- * glib provides g_base64_decode(), but that does not report any errors
- * from invalid encodings. Expose systemd's implementation which does
- * reject invalid inputs.
- *
- * Returns: a non-negative code on success. Invalid encoding let the
- *   function fail.
- */
-int
-nm_sd_utils_unbase64mem(const char *p, size_t l, gboolean secure, guint8 **mem, size_t *len)
-{
-    return unbase64mem_full(p, l, secure, (void **) mem, len);
-}
-
-int
 nm_sd_dns_name_to_wire_format(const char *domain, guint8 *buffer, size_t len, gboolean canonical)
 {
     return dns_name_to_wire_format(domain, buffer, len, canonical);

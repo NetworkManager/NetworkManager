@@ -133,108 +133,6 @@ test_path_equal(void)
 
 /*****************************************************************************/
 
-static void
-_test_unbase64char(char ch, gboolean maybe_invalid)
-{
-    int r;
-
-    r = nm_sd_utils_unbase64char(ch, FALSE);
-
-    if (ch == '=') {
-        g_assert(!maybe_invalid);
-        g_assert_cmpint(r, <, 0);
-        g_assert_cmpint(nm_sd_utils_unbase64char(ch, TRUE), ==, G_MAXINT);
-        g_assert_cmpint(nm_unbase64char(ch), ==, -ERANGE);
-    } else {
-        g_assert_cmpint(nm_unbase64char(ch), ==, r);
-        g_assert_cmpint(r, ==, nm_sd_utils_unbase64char(ch, TRUE));
-        if (r >= 0)
-            g_assert_cmpint(r, <=, 255);
-        if (!maybe_invalid)
-            g_assert_cmpint(r, >=, 0);
-    }
-}
-
-static void
-_test_unbase64mem_mem(const char *base64, const guint8 *expected_arr, gsize expected_len)
-{
-    gs_free char        *expected_base64 = NULL;
-    int                  r;
-    nm_auto_free guint8 *exp2_arr = NULL;
-    nm_auto_free guint8 *exp3_arr = NULL;
-    gsize                exp2_len;
-    gsize                exp3_len;
-    gsize                i;
-
-    expected_base64 = g_base64_encode(expected_arr, expected_len);
-
-    for (i = 0; expected_base64[i]; i++)
-        _test_unbase64char(expected_base64[i], FALSE);
-
-    r = nm_sd_utils_unbase64mem(expected_base64,
-                                strlen(expected_base64),
-                                TRUE,
-                                &exp2_arr,
-                                &exp2_len);
-    g_assert_cmpint(r, ==, 0);
-    g_assert_cmpmem(expected_arr, expected_len, exp2_arr, exp2_len);
-
-    if (!nm_streq(base64, expected_base64)) {
-        r = nm_sd_utils_unbase64mem(base64, strlen(base64), TRUE, &exp3_arr, &exp3_len);
-        g_assert_cmpint(r, ==, 0);
-        g_assert_cmpmem(expected_arr, expected_len, exp3_arr, exp3_len);
-    }
-}
-
-#define _test_unbase64mem(base64, expected_str) \
-    _test_unbase64mem_mem(base64, (const guint8 *) "" expected_str "", NM_STRLEN(expected_str))
-
-static void
-_test_unbase64mem_inval(const char *base64)
-{
-    gs_free guint8 *exp_arr = NULL;
-    gsize           exp_len = 0;
-    int             r;
-
-    r = nm_sd_utils_unbase64mem(base64, strlen(base64), TRUE, &exp_arr, &exp_len);
-    g_assert_cmpint(r, <, 0);
-    g_assert(!exp_arr);
-    g_assert(exp_len == 0);
-}
-
-static void
-test_nm_sd_utils_unbase64mem(void)
-{
-    gs_free char *rnd_base64 = NULL;
-    guint8        rnd_buf[30];
-    guint         i, rnd_len;
-
-    _test_unbase64mem("", "");
-    _test_unbase64mem("  ", "");
-    _test_unbase64mem(" Y Q == ", "a");
-    _test_unbase64mem(" Y   WJjZGV mZ 2g = ", "abcdefgh");
-    _test_unbase64mem_inval(" Y   %WJjZGV mZ 2g = ");
-    _test_unbase64mem_inval(" Y   %WJjZGV mZ 2g = a");
-    _test_unbase64mem("YQ==", "a");
-    _test_unbase64mem_inval("YQ==a");
-
-    rnd_len = nmtst_get_rand_uint32() % sizeof(rnd_buf);
-    for (i = 0; i < rnd_len; i++)
-        rnd_buf[i] = nmtst_get_rand_uint32() % 256;
-    rnd_base64 = g_base64_encode(rnd_buf, rnd_len);
-    _test_unbase64mem_mem(rnd_base64, rnd_buf, rnd_len);
-
-    _test_unbase64char('=', FALSE);
-    for (i = 0; i < 10; i++) {
-        char ch = nmtst_get_rand_uint32() % 256;
-
-        if (ch != '=')
-            _test_unbase64char(ch, TRUE);
-    }
-}
-
-/*****************************************************************************/
-
 NMTST_DEFINE();
 
 int
@@ -245,7 +143,6 @@ main(int argc, char **argv)
     g_test_add_func("/systemd/lldp/create", test_lldp_create);
     g_test_add_func("/systemd/sd-event", test_sd_event);
     g_test_add_func("/systemd/test_path_equal", test_path_equal);
-    g_test_add_func("/systemd/test_nm_sd_utils_unbase64mem", test_nm_sd_utils_unbase64mem);
 
     return g_test_run();
 }
