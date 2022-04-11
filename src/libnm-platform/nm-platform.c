@@ -4125,6 +4125,9 @@ nm_platform_ip_address_sync(NMPlatform *self,
         }
     }
 
+    /* ensure we have the platform cache up to date. */
+    nm_platform_process_events(self);
+
     /* @plat_addresses for IPv6 must be sorted in decreasing priority order (highest priority addresses first).
      * IPv4 are probably unsorted or sorted with lowest priority first, but their order doesn't matter because
      * we check the "secondary" flag. */
