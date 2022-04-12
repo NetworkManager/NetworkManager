@@ -30,7 +30,6 @@
 #include "libnm-glib-aux/nm-secret-utils.h"
 #include "libnm-glib-aux/nm-time-utils.h"
 #include "libnm-glib-aux/nm-str-buf.h"
-#include "libnm-systemd-shared/nm-sd-utils-shared.h"
 #include "nm-utils.h"
 #include "libnm-core-intern/nm-core-internal.h"
 #include "nm-setting-connection.h"
@@ -5239,7 +5238,7 @@ nm_utils_shorten_hostname(const char *hostname, char **shortened)
     nm_assert(hostname);
     nm_assert(shortened);
 
-    if (nm_sd_hostname_is_valid(hostname, FALSE)) {
+    if (nm_hostname_is_valid(hostname, FALSE)) {
         *shortened = NULL;
         return TRUE;
     }
@@ -5253,7 +5252,7 @@ nm_utils_shorten_hostname(const char *hostname, char **shortened)
 
     s = g_strndup(hostname, l);
 
-    if (!nm_sd_hostname_is_valid(s, FALSE)) {
+    if (!nm_hostname_is_valid(s, FALSE)) {
         *shortened = NULL;
         return FALSE;
     }

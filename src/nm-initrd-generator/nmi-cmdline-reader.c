@@ -12,7 +12,6 @@
 #include "libnm-log-core/nm-logging.h"
 #include "libnm-core-intern/nm-core-internal.h"
 #include "nm-initrd-generator.h"
-#include "libnm-systemd-shared/nm-sd-utils-shared.h"
 
 /*****************************************************************************/
 
@@ -586,7 +585,7 @@ reader_parse_ip(Reader *reader, const char *sysfs_dir, char *argument)
             }
         }
 
-        if (client_hostname && !nm_sd_hostname_is_valid(client_hostname, FALSE))
+        if (client_hostname && !nm_hostname_is_valid(client_hostname, FALSE))
             client_hostname = NULL;
 
         if (client_hostname) {
