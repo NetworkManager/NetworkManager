@@ -7175,3 +7175,86 @@ nm_path_simplify(char *path)
     *f = '\0';
     return path;
 }
+
+/*****************************************************************************/
+
+static gboolean
+valid_ldh_char(char c)
+{
+    /* "LDH" → "Letters, digits, hyphens", as per RFC 5890, Section 2.3.1 */
+
+    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '-';
+}
+
+/**
+ * nm_hostname_is_valid:
+ * @s: the hostname to check.
+ * @trailing_dot: Accept trailing dot on multi-label names.
+ *
+ * Return: %TRUE if valid.
+ */
+gboolean
+nm_hostname_is_valid(const char *s, gboolean trailing_dot)
+{
+    unsigned    n_dots = 0;
+    const char *p;
+    gboolean    dot;
+    gboolean    hyphen;
+
+    /* Copied from systemd's hostname_is_valid()
+     * https://github.com/systemd/systemd/blob/bc85f8b51d962597360e982811e674c126850f56/src/basic/hostname-util.c#L85 */
+
+    /* Check if s looks like a valid hostname or FQDN. This does not do full DNS validation, but only
+     * checks if the name is composed of allowed characters and the length is not above the maximum
+     * allowed by Linux (c.f. dns_name_is_valid()). A trailing dot is allowed if
+     * VALID_HOSTNAME_TRAILING_DOT flag is set and at least two components are present in the name. Note
+     * that due to the restricted charset and length this call is substantially more conservative than
+     * dns_name_is_valid(). Doesn't accept empty hostnames, hostnames with leading dots, and hostnames
+     * with multiple dots in a sequence. Doesn't allow hyphens at the beginning or end of label. */
+
+    if (nm_str_is_empty(s))
+        return FALSE;
+
+    if (nm_streq(s, ".host")) {
+        /* Used by the container logic to denote the "root container".
+         * Systemd's hostname_is_valid() would accept that iff VALID_HOSTNAME_DOT_HOST flag
+         * is set. We don't. */
+        return FALSE;
+    }
+
+    for (p = s, dot = hyphen = TRUE; *p; p++)
+        if (*p == '.') {
+            if (dot || hyphen)
+                return FALSE;
+
+            dot    = TRUE;
+            hyphen = FALSE;
+            n_dots++;
+
+        } else if (*p == '-') {
+            if (dot)
+                return FALSE;
+
+            dot    = FALSE;
+            hyphen = TRUE;
+
+        } else {
+            if (!valid_ldh_char(*p))
+                return FALSE;
+
+            dot    = FALSE;
+            hyphen = FALSE;
+        }
+
+    if (dot && (n_dots < 2 || !trailing_dot))
+        return FALSE;
+    if (hyphen)
+        return FALSE;
+
+    /* Note that HOST_NAME_MAX is 64 on Linux, but DNS allows domain names up to
+     * 255 characters */
+    if (p - s > HOST_NAME_MAX)
+        return FALSE;
+
+    return TRUE;
+}
