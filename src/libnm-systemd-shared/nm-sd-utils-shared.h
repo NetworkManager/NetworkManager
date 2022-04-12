@@ -11,8 +11,7 @@
 int
 nm_sd_dns_name_to_wire_format(const char *domain, guint8 *buffer, size_t len, gboolean canonical);
 
-int      nm_sd_dns_name_is_valid(const char *s);
-gboolean nm_sd_hostname_is_valid(const char *s, bool allow_trailing_dot);
+int nm_sd_dns_name_is_valid(const char *s);
 
 char *nm_sd_dns_name_normalize(const char *s);
 
