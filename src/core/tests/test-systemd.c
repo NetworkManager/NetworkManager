@@ -98,41 +98,6 @@ test_sd_event(void)
 
 /*****************************************************************************/
 
-static void
-test_path_equal(void)
-{
-#define _path_equal_check(path, expected)                \
-    G_STMT_START                                         \
-    {                                                    \
-        const char   *_path0    = (path);                \
-        const char   *_expected = (expected);            \
-        gs_free char *_path     = g_strdup(_path0);      \
-        const char   *_path_result;                      \
-                                                         \
-        _path_result = nm_sd_utils_path_simplify(_path); \
-        g_assert(_path_result == _path);                 \
-        g_assert_cmpstr(_path, ==, _expected);           \
-    }                                                    \
-    G_STMT_END
-
-    _path_equal_check("", "");
-    _path_equal_check(".", ".");
-    _path_equal_check("..", "..");
-    _path_equal_check("/..", "/..");
-    _path_equal_check("//..", "/..");
-    _path_equal_check("/.", "/");
-    _path_equal_check("./", ".");
-    _path_equal_check("./.", ".");
-    _path_equal_check(".///.", ".");
-    _path_equal_check(".///./", ".");
-    _path_equal_check(".////", ".");
-    _path_equal_check("//..//foo/", "/../foo");
-    _path_equal_check("///foo//./bar/.", "/foo/bar");
-    _path_equal_check(".//./foo//./bar/.", "foo/bar");
-}
-
-/*****************************************************************************/
-
 NMTST_DEFINE();
 
 int
@@ -142,7 +107,6 @@ main(int argc, char **argv)
 
     g_test_add_func("/systemd/lldp/create", test_lldp_create);
     g_test_add_func("/systemd/sd-event", test_sd_event);
-    g_test_add_func("/systemd/test_path_equal", test_path_equal);
 
     return g_test_run();
 }
