@@ -30,7 +30,6 @@
 #include "libnm-platform/nm-linux-platform.h"
 #include "libnm-platform/nm-platform-utils.h"
 #include "nm-auth-utils.h"
-#include "libnm-systemd-shared/nm-sd-utils-shared.h"
 
 /*****************************************************************************/
 
@@ -1155,7 +1154,7 @@ nm_utils_file_is_in_path(const char *abs_filename, const char *abs_path)
     g_return_val_if_fail(abs_filename && abs_filename[0] == '/', NULL);
     g_return_val_if_fail(abs_path && abs_path[0] == '/', NULL);
 
-    path = nm_sd_utils_path_startswith(abs_filename, abs_path);
+    path = nm_path_startswith(abs_filename, abs_path);
     if (!path)
         return NULL;
 
