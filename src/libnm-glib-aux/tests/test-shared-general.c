@@ -1796,6 +1796,311 @@ test_unbase64mem3(void)
 
 /*****************************************************************************/
 
+static void
+assert_path_compare(const char *a, const char *b, int expected)
+{
+    int r;
+
+    g_assert(NM_IN_SET(expected, -1, 0, 1));
+
+    g_assert_cmpint(nm_path_compare(a, a), ==, 0);
+    g_assert_cmpint(nm_path_compare(b, b), ==, 0);
+
+    r = nm_path_compare(a, b);
+    g_assert_cmpint(r, ==, expected);
+    r = nm_path_compare(b, a);
+    g_assert_cmpint(r, ==, -expected);
+
+    g_assert(nm_path_equal(a, a) == 1);
+    g_assert(nm_path_equal(b, b) == 1);
+    g_assert(nm_path_equal(a, b) == (expected == 0));
+    g_assert(nm_path_equal(b, a) == (expected == 0));
+}
+
+static void
+test_path_compare(void)
+{
+    /* Copied from systemd.
+     * https://github.com/systemd/systemd/blob/bc85f8b51d962597360e982811e674c126850f56/src/test/test-path-util.c#L126 */
+
+    assert_path_compare("/goo", "/goo", 0);
+    assert_path_compare("/goo", "/goo", 0);
+    assert_path_compare("//goo", "/goo", 0);
+    assert_path_compare("//goo/////", "/goo", 0);
+    assert_path_compare("goo/////", "goo", 0);
+    assert_path_compare("/goo/boo", "/goo//boo", 0);
+    assert_path_compare("//goo/boo", "/goo/boo//", 0);
+    assert_path_compare("//goo/././//./boo//././//", "/goo/boo//.", 0);
+    assert_path_compare("/.", "//.///", 0);
+    assert_path_compare("/x", "x/", 1);
+    assert_path_compare("x/", "/", -1);
+    assert_path_compare("/x/./y", "x/y", 1);
+    assert_path_compare("/x/./y", "/x/y", 0);
+    assert_path_compare("/x/./././y", "/x/y/././.", 0);
+    assert_path_compare("./x/./././y", "./x/y/././.", 0);
+    assert_path_compare(".", "./.", 0);
+    assert_path_compare(".", "././.", 0);
+    assert_path_compare("./..", ".", 1);
+    assert_path_compare("x/.y", "x/y", -1);
+    assert_path_compare("foo", "/foo", -1);
+    assert_path_compare("/foo", "/foo/bar", -1);
+    assert_path_compare("/foo/aaa", "/foo/b", -1);
+    assert_path_compare("/foo/aaa", "/foo/b/a", -1);
+    assert_path_compare("/foo/a", "/foo/aaa", -1);
+    assert_path_compare("/foo/a/b", "/foo/aaa", -1);
+}
+
+/*****************************************************************************/
+
+static void
+test_path_equal(void)
+{
+#define _path_equal_check(path, expected)           \
+    G_STMT_START                                    \
+    {                                               \
+        const char   *_path0    = (path);           \
+        const char   *_expected = (expected);       \
+        gs_free char *_path     = g_strdup(_path0); \
+        const char   *_path_result;                 \
+                                                    \
+        _path_result = nm_path_simplify(_path);     \
+        g_assert(_path_result == _path);            \
+        g_assert_cmpstr(_path, ==, _expected);      \
+    }                                               \
+    G_STMT_END
+
+    _path_equal_check("", "");
+    _path_equal_check(".", ".");
+    _path_equal_check("..", "..");
+    _path_equal_check("/..", "/..");
+    _path_equal_check("//..", "/..");
+    _path_equal_check("/.", "/");
+    _path_equal_check("./", ".");
+    _path_equal_check("./.", ".");
+    _path_equal_check(".///.", ".");
+    _path_equal_check(".///./", ".");
+    _path_equal_check(".////", ".");
+    _path_equal_check("//..//foo/", "/../foo");
+    _path_equal_check("///foo//./bar/.", "/foo/bar");
+    _path_equal_check(".//./foo//./bar/.", "foo/bar");
+}
+
+/*****************************************************************************/
+
+static void
+assert_path_find_first_component(const char        *path,
+                                 gboolean           accept_dot_dot,
+                                 const char *const *expected,
+                                 int                ret)
+{
+    const char *p;
+
+    for (p = path;;) {
+        const char *e;
+        int         r;
+
+        r = nm_path_find_first_component(&p, accept_dot_dot, &e);
+        if (r <= 0) {
+            if (r == 0) {
+                if (path)
+                    g_assert(p == path + strlen(path));
+                else
+                    g_assert(!p);
+                g_assert(!e);
+            }
+            g_assert(r == ret);
+            g_assert(!expected || !*expected);
+            return;
+        }
+
+        g_assert(e);
+        g_assert(strcspn(e, "/") == (size_t) r);
+        g_assert(strlen(*expected) == (size_t) r);
+        g_assert(strncmp(e, *expected++, r) == 0);
+    }
+}
+
+static void
+test_path_find_first_component(void)
+{
+    gs_free char *hoge = NULL;
+    char          foo[NAME_MAX * 2];
+
+    /* Copied from systemd.
+     * https://github.com/systemd/systemd/blob/bc85f8b51d962597360e982811e674c126850f56/src/test/test-path-util.c#L631 */
+
+    assert_path_find_first_component(NULL, false, NULL, 0);
+    assert_path_find_first_component("", false, NULL, 0);
+    assert_path_find_first_component("/", false, NULL, 0);
+    assert_path_find_first_component(".", false, NULL, 0);
+    assert_path_find_first_component("./", false, NULL, 0);
+    assert_path_find_first_component("./.", false, NULL, 0);
+    assert_path_find_first_component("..", false, NULL, -EINVAL);
+    assert_path_find_first_component("/..", false, NULL, -EINVAL);
+    assert_path_find_first_component("./..", false, NULL, -EINVAL);
+    assert_path_find_first_component("////./././//.", false, NULL, 0);
+    assert_path_find_first_component("a/b/c", false, NM_MAKE_STRV("a", "b", "c"), 0);
+    assert_path_find_first_component("././//.///aa/bbb//./ccc",
+                                     false,
+                                     NM_MAKE_STRV("aa", "bbb", "ccc"),
+                                     0);
+    assert_path_find_first_component("././//.///aa/.../../bbb//./ccc/.",
+                                     false,
+                                     NM_MAKE_STRV("aa", "..."),
+                                     -EINVAL);
+    assert_path_find_first_component("//./aaa///.//./.bbb/..///c.//d.dd///..eeee/.",
+                                     false,
+                                     NM_MAKE_STRV("aaa", ".bbb"),
+                                     -EINVAL);
+    assert_path_find_first_component("a/foo./b", false, NM_MAKE_STRV("a", "foo.", "b"), 0);
+
+    assert_path_find_first_component(NULL, true, NULL, 0);
+    assert_path_find_first_component("", true, NULL, 0);
+    assert_path_find_first_component("/", true, NULL, 0);
+    assert_path_find_first_component(".", true, NULL, 0);
+    assert_path_find_first_component("./", true, NULL, 0);
+    assert_path_find_first_component("./.", true, NULL, 0);
+    assert_path_find_first_component("..", true, NM_MAKE_STRV(".."), 0);
+    assert_path_find_first_component("/..", true, NM_MAKE_STRV(".."), 0);
+    assert_path_find_first_component("./..", true, NM_MAKE_STRV(".."), 0);
+    assert_path_find_first_component("////./././//.", true, NULL, 0);
+    assert_path_find_first_component("a/b/c", true, NM_MAKE_STRV("a", "b", "c"), 0);
+    assert_path_find_first_component("././//.///aa/bbb//./ccc",
+                                     true,
+                                     NM_MAKE_STRV("aa", "bbb", "ccc"),
+                                     0);
+    assert_path_find_first_component("././//.///aa/.../../bbb//./ccc/.",
+                                     true,
+                                     NM_MAKE_STRV("aa", "...", "..", "bbb", "ccc"),
+                                     0);
+    assert_path_find_first_component("//./aaa///.//./.bbb/..///c.//d.dd///..eeee/.",
+                                     true,
+                                     NM_MAKE_STRV("aaa", ".bbb", "..", "c.", "d.dd", "..eeee"),
+                                     0);
+    assert_path_find_first_component("a/foo./b", true, NM_MAKE_STRV("a", "foo.", "b"), 0);
+
+    memset(foo, 'a', sizeof(foo) - 1);
+    foo[sizeof(foo) - 1] = '\0';
+
+    assert_path_find_first_component(foo, false, NULL, -EINVAL);
+    assert_path_find_first_component(foo, true, NULL, -EINVAL);
+
+    hoge = g_strjoin("", "a/b/c/", foo, "//d/e/.//f/", NULL);
+    g_assert(hoge);
+
+    assert_path_find_first_component(hoge, false, NM_MAKE_STRV("a", "b", "c"), -EINVAL);
+    assert_path_find_first_component(hoge, true, NM_MAKE_STRV("a", "b", "c"), -EINVAL);
+}
+
+/*****************************************************************************/
+
+static void
+assert_path_startswith(const char *path,
+                       const char *prefix,
+                       const char *skipped,
+                       const char *expected)
+{
+    const char *p;
+
+    p = nm_path_startswith(path, prefix);
+    g_assert_cmpstr(p, ==, expected);
+    if (p) {
+        gs_free char *q = NULL;
+
+        g_assert(skipped);
+        q = g_strjoin("", skipped, p, NULL);
+        g_assert_cmpstr(q, ==, path);
+        g_assert(p == path + strlen(skipped));
+    } else
+        g_assert(!skipped);
+}
+
+static void
+test_path_startswith(void)
+{
+    assert_path_startswith("/foo/bar/barfoo/", "/foo", "/foo/", "bar/barfoo/");
+    assert_path_startswith("/foo/bar/barfoo/", "/foo/", "/foo/", "bar/barfoo/");
+    assert_path_startswith("/foo/bar/barfoo/", "/", "/", "foo/bar/barfoo/");
+    assert_path_startswith("/foo/bar/barfoo/", "////", "/", "foo/bar/barfoo/");
+    assert_path_startswith("/foo/bar/barfoo/", "/foo//bar/////barfoo///", "/foo/bar/barfoo/", "");
+    assert_path_startswith("/foo/bar/barfoo/", "/foo/bar/barfoo////", "/foo/bar/barfoo/", "");
+    assert_path_startswith("/foo/bar/barfoo/", "/foo/bar///barfoo/", "/foo/bar/barfoo/", "");
+    assert_path_startswith("/foo/bar/barfoo/", "/foo////bar/barfoo/", "/foo/bar/barfoo/", "");
+    assert_path_startswith("/foo/bar/barfoo/", "////foo/bar/barfoo/", "/foo/bar/barfoo/", "");
+    assert_path_startswith("/foo/bar/barfoo/", "/foo/bar/barfoo", "/foo/bar/barfoo/", "");
+
+    assert_path_startswith("/foo/bar/barfoo/", "/foo/bar/barfooa/", NULL, NULL);
+    assert_path_startswith("/foo/bar/barfoo/", "/foo/bar/barfooa", NULL, NULL);
+    assert_path_startswith("/foo/bar/barfoo/", "", NULL, NULL);
+    assert_path_startswith("/foo/bar/barfoo/", "/bar/foo", NULL, NULL);
+    assert_path_startswith("/foo/bar/barfoo/", "/f/b/b/", NULL, NULL);
+    assert_path_startswith("/foo/bar/barfoo/", "/foo/bar/barfo", NULL, NULL);
+    assert_path_startswith("/foo/bar/barfoo/", "/foo/bar/bar", NULL, NULL);
+    assert_path_startswith("/foo/bar/barfoo/", "/fo", NULL, NULL);
+}
+
+/*****************************************************************************/
+
+static void
+assert_path_simplify(const char *in, const char *out)
+{
+    gs_free char *p = NULL;
+
+    g_assert(in);
+    p = g_strdup(in);
+    nm_path_simplify(p);
+    g_assert_cmpstr(p, ==, out);
+}
+
+static void
+test_path_simplify(void)
+{
+    gs_free char *hoge     = NULL;
+    gs_free char *hoge_out = NULL;
+    char          foo[NAME_MAX * 2];
+
+    assert_path_simplify("", "");
+    assert_path_simplify("aaa/bbb////ccc", "aaa/bbb/ccc");
+    assert_path_simplify("//aaa/.////ccc", "/aaa/ccc");
+    assert_path_simplify("///", "/");
+    assert_path_simplify("///.//", "/");
+    assert_path_simplify("///.//.///", "/");
+    assert_path_simplify("////.././///../.", "/../..");
+    assert_path_simplify(".", ".");
+    assert_path_simplify("./", ".");
+    assert_path_simplify(".///.//./.", ".");
+    assert_path_simplify(".///.//././/", ".");
+    assert_path_simplify("//./aaa///.//./.bbb/..///c.//d.dd///..eeee/.",
+                         "/aaa/.bbb/../c./d.dd/..eeee");
+    assert_path_simplify("//./aaa///.//./.bbb/..///c.//d.dd///..eeee/..",
+                         "/aaa/.bbb/../c./d.dd/..eeee/..");
+    assert_path_simplify(".//./aaa///.//./.bbb/..///c.//d.dd///..eeee/..",
+                         "aaa/.bbb/../c./d.dd/..eeee/..");
+    assert_path_simplify("..//./aaa///.//./.bbb/..///c.//d.dd///..eeee/..",
+                         "../aaa/.bbb/../c./d.dd/..eeee/..");
+
+    memset(foo, 'a', sizeof(foo) - 1);
+    foo[sizeof(foo) - 1] = '\0';
+
+    assert_path_simplify(foo, foo);
+
+    hoge = g_strjoin("", "/", foo, NULL);
+    g_assert(hoge);
+    assert_path_simplify(hoge, hoge);
+    nm_clear_g_free(&hoge);
+
+    hoge =
+        g_strjoin("", "a////.//././//./b///././/./c/////././//./", foo, "//.//////d/e/.//f/", NULL);
+    g_assert(hoge);
+
+    hoge_out = g_strjoin("", "a/b/c/", foo, "//.//////d/e/.//f/", NULL);
+    g_assert(hoge_out);
+
+    assert_path_simplify(hoge, hoge_out);
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE();
 
 int
@@ -1834,6 +2139,11 @@ main(int argc, char **argv)
     g_test_add_func("/general/test_unbase64mem1", test_unbase64mem1);
     g_test_add_func("/general/test_unbase64mem2", test_unbase64mem2);
     g_test_add_func("/general/test_unbase64mem3", test_unbase64mem3);
+    g_test_add_func("/general/test_path_compare", test_path_compare);
+    g_test_add_func("/general/test_path_equal", test_path_equal);
+    g_test_add_func("/general/test_path_find_first_component", test_path_find_first_component);
+    g_test_add_func("/general/test_path_startswith", test_path_startswith);
+    g_test_add_func("/general/test_path_simplify", test_path_simplify);
 
     return g_test_run();
 }

@@ -3313,4 +3313,37 @@ void nm_utils_thread_local_register_destroy(gpointer tls_data, GDestroyNotify de
 int nm_unbase64char(char c);
 int nm_unbase64mem_full(const char *p, gsize l, gboolean secure, guint8 **ret, gsize *ret_size);
 
+/*****************************************************************************/
+
+static inline gboolean
+nm_path_is_absolute(const char *p)
+{
+    /* Copied from systemd's path_is_absolute()
+     * https://github.com/systemd/systemd/blob/bc85f8b51d962597360e982811e674c126850f56/src/basic/path-util.h#L50 */
+
+    nm_assert(p);
+    return p[0] == '/';
+}
+
+int nm_path_find_first_component(const char **p, gboolean accept_dot_dot, const char **ret);
+
+int nm_path_compare(const char *a, const char *b);
+
+static inline gboolean
+nm_path_equal(const char *a, const char *b)
+{
+    return nm_path_compare(a, b) == 0;
+}
+
+char *nm_path_simplify(char *path);
+
+char *
+nm_path_startswith_full(const char *path, const char *prefix, gboolean accept_dot_dot) _nm_pure;
+
+static inline char *
+nm_path_startswith(const char *path, const char *prefix)
+{
+    return nm_path_startswith_full(path, prefix, TRUE);
+}
+
 #endif /* __NM_SHARED_UTILS_H__ */
