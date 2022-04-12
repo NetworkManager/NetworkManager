@@ -35,7 +35,6 @@
 #include "nm-dns-dnsmasq.h"
 #include "nm-dns-plugin.h"
 #include "nm-dns-systemd-resolved.h"
-#include "nm-dns-unbound.h"
 #include "nm-ip-config.h"
 #include "nm-l3-config-data.h"
 #include "nm-manager.h"
@@ -2379,16 +2378,14 @@ again:
             priv->plugin   = nm_dns_dnsmasq_new();
             plugin_changed = TRUE;
         }
-    } else if (nm_streq0(mode, "unbound")) {
-        if (force_reload_plugin || !NM_IS_DNS_UNBOUND(priv->plugin)) {
-            _clear_plugin(self);
-            priv->plugin   = nm_dns_unbound_new();
-            plugin_changed = TRUE;
-        }
     } else {
         if (!NM_IN_STRSET(mode, "none", "default")) {
-            if (mode)
-                _LOGW("init: unknown dns mode '%s'", mode);
+            if (mode) {
+                if (nm_streq(mode, "unbound"))
+                    _LOGW("init: ns mode 'unbound' was removed. Update your configuration");
+                else
+                    _LOGW("init: unknown dns mode '%s'", mode);
+            }
             mode = "default";
         }
         if (_clear_plugin(self))
