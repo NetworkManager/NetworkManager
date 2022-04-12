@@ -2329,8 +2329,6 @@ src_libnm_systemd_core_libnm_systemd_core_la_libadd = \
 
 src_libnm_systemd_core_libnm_systemd_core_la_SOURCES = \
 	src/libnm-systemd-core/nm-default-systemd-core.h \
-	src/libnm-systemd-core/nm-sd-utils-core.c \
-	src/libnm-systemd-core/nm-sd-utils-core.h \
 	src/libnm-systemd-core/nm-sd.c \
 	src/libnm-systemd-core/nm-sd.h \
 	src/libnm-systemd-core/nm-sd-utils-dhcp.h \
