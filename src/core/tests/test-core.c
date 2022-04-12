@@ -15,7 +15,6 @@
 #include "NetworkManagerUtils.h"
 #include "libnm-core-intern/nm-core-internal.h"
 #include "nm-core-utils.h"
-#include "libnm-systemd-core/nm-sd-utils-core.h"
 
 #include "dns/nm-dns-manager.h"
 #include "nm-connectivity.h"
@@ -2314,7 +2313,6 @@ test_dns_create_resolv_conf(void)
 static void
 test_machine_id_read(void)
 {
-    NMUuid        machine_id_sd;
     const NMUuid *machine_id;
     char          machine_id_str[33];
     gpointer      logstate;
@@ -2346,27 +2344,6 @@ test_machine_id_read(void)
              == machine_id_str);
     g_assert(strlen(machine_id_str) == 32);
     g_assert_cmpstr(machine_id_str, ==, nm_utils_machine_id_str());
-
-    /* double check with systemd's implementation... */
-    if (!nm_sd_utils_id128_get_machine(&machine_id_sd)) {
-        /* if systemd failed to read /etc/machine-id, the file likely
-         * is invalid. Our machine-id is fake, and we have nothing to
-         * compare against. */
-
-        if (g_file_test(LOCALSTATEDIR "/lib/dbus/machine-id", G_FILE_TEST_EXISTS)) {
-            /* Hm. So systemd failed to read /etc/machine-id, but we may have the one from D-Bus.
-             * With LOCALSTATEDIR"/lib/dbus/machine-id", we don't really know whether we
-             * parsed that file. Assume we don't know and skip the test on this system. */
-            g_assert(!nm_utils_machine_id_is_fake());
-            return;
-        }
-
-        /* OK, in this case, our function should have generated a random machine ID. */
-        g_assert(nm_utils_machine_id_is_fake());
-    } else {
-        g_assert(!nm_utils_machine_id_is_fake());
-        g_assert_cmpmem(&machine_id_sd, sizeof(NMUuid), machine_id, 16);
-    }
 }
 
 /*****************************************************************************/
