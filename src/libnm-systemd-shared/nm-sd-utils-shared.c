@@ -21,26 +21,6 @@ const bool mempool_use_allowed = true;
 
 /*****************************************************************************/
 
-gboolean
-nm_sd_utils_path_equal(const char *a, const char *b)
-{
-    return path_equal(a, b);
-}
-
-char *
-nm_sd_utils_path_simplify(char *path)
-{
-    return path_simplify(path);
-}
-
-const char *
-nm_sd_utils_path_startswith(const char *path, const char *prefix)
-{
-    return path_startswith(path, prefix);
-}
-
-/*****************************************************************************/
-
 int
 nm_sd_dns_name_to_wire_format(const char *domain, guint8 *buffer, size_t len, gboolean canonical)
 {
