@@ -6933,3 +6933,245 @@ on_failure:
         nm_explicit_bzero(buf, len);
     return r;
 }
+
+/*****************************************************************************/
+
+static const char *
+skip_slash_or_dot(const char *p)
+{
+    for (; !nm_str_is_empty(p);) {
+        if (p[0] == '/') {
+            p += 1;
+            continue;
+        }
+        if (p[0] == '.' && p[1] == '/') {
+            p += 2;
+            continue;
+        }
+        break;
+    }
+    return p;
+}
+
+int
+nm_path_find_first_component(const char **p, gboolean accept_dot_dot, const char **ret)
+{
+    const char *q, *first, *end_first, *next;
+    size_t      len;
+
+    /* Copied from systemd's path_compare()
+     * https://github.com/systemd/systemd/blob/bc85f8b51d962597360e982811e674c126850f56/src/basic/path-util.c#L809 */
+
+    nm_assert(p);
+
+    /* When a path is input, then returns the pointer to the first component and its length, and
+     * move the input pointer to the next component or nul. This skips both over any '/'
+     * immediately *before* and *after* the first component before returning.
+     *
+     * Examples
+     *   Input:  p: "//.//aaa///bbbbb/cc"
+     *   Output: p: "bbbbb///cc"
+     *           ret: "aaa///bbbbb/cc"
+     *           return value: 3 (== strlen("aaa"))
+     *
+     *   Input:  p: "aaa//"
+     *   Output: p: (pointer to NUL)
+     *           ret: "aaa//"
+     *           return value: 3 (== strlen("aaa"))
+     *
+     *   Input:  p: "/", ".", ""
+     *   Output: p: (pointer to NUL)
+     *           ret: NULL
+     *           return value: 0
+     *
+     *   Input:  p: NULL
+     *   Output: p: NULL
+     *           ret: NULL
+     *           return value: 0
+     *
+     *   Input:  p: "(too long component)"
+     *   Output: return value: -EINVAL
+     *
+     *   (when accept_dot_dot is false)
+     *   Input:  p: "//..//aaa///bbbbb/cc"
+     *   Output: return value: -EINVAL
+     */
+
+    q = *p;
+
+    first = skip_slash_or_dot(q);
+    if (nm_str_is_empty(first)) {
+        *p = first;
+        if (ret)
+            *ret = NULL;
+        return 0;
+    }
+    if (nm_streq(first, ".")) {
+        *p = first + 1;
+        if (ret)
+            *ret = NULL;
+        return 0;
+    }
+
+    end_first = strchrnul(first, '/');
+    len       = end_first - first;
+
+    if (len > NAME_MAX)
+        return -EINVAL;
+    if (!accept_dot_dot && len == 2 && first[0] == '.' && first[1] == '.')
+        return -EINVAL;
+
+    next = skip_slash_or_dot(end_first);
+
+    *p = next + (nm_streq(next, ".") ? 1 : 0);
+    if (ret)
+        *ret = first;
+    return len;
+}
+
+int
+nm_path_compare(const char *a, const char *b)
+{
+    /* Copied from systemd's path_compare()
+     * https://github.com/systemd/systemd/blob/bc85f8b51d962597360e982811e674c126850f56/src/basic/path-util.c#L415 */
+
+    /* Order NULL before non-NULL */
+    NM_CMP_SELF(a, b);
+
+    /* A relative path and an absolute path must not compare as equal.
+     * Which one is sorted before the other does not really matter.
+     * Here a relative path is ordered before an absolute path. */
+    NM_CMP_DIRECT(nm_path_is_absolute(a), nm_path_is_absolute(b));
+
+    for (;;) {
+        const char *aa, *bb;
+        int         j, k;
+
+        j = nm_path_find_first_component(&a, TRUE, &aa);
+        k = nm_path_find_first_component(&b, TRUE, &bb);
+
+        if (j < 0 || k < 0) {
+            /* When one of paths is invalid, order invalid path after valid one. */
+            NM_CMP_DIRECT(j < 0, k < 0);
+
+            /* fallback to use strcmp() if both paths are invalid. */
+            NM_CMP_DIRECT_STRCMP(a, b);
+            return 0;
+        }
+
+        /* Order prefixes first: "/foo" before "/foo/bar" */
+        if (j == 0) {
+            if (k == 0)
+                return 0;
+            return -1;
+        }
+        if (k == 0)
+            return 1;
+
+        /* Alphabetical sort: "/foo/aaa" before "/foo/b" */
+        NM_CMP_DIRECT_MEMCMP(aa, bb, NM_MIN(j, k));
+
+        /* Sort "/foo/a" before "/foo/aaa" */
+        NM_CMP_DIRECT(j, k);
+    }
+}
+
+char *
+nm_path_startswith_full(const char *path, const char *prefix, gboolean accept_dot_dot)
+{
+    /* Copied from systemd's path_startswith_full()
+     * https://github.com/systemd/systemd/blob/bc85f8b51d962597360e982811e674c126850f56/src/basic/path-util.c#L375 */
+
+    nm_assert(path);
+    nm_assert(prefix);
+
+    /* Returns a pointer to the start of the first component after the parts matched by
+     * the prefix, iff
+     * - both paths are absolute or both paths are relative,
+     * and
+     * - each component in prefix in turn matches a component in path at the same position.
+     * An empty string will be returned when the prefix and path are equivalent.
+     *
+     * Returns NULL otherwise.
+     */
+
+    if ((path[0] == '/') != (prefix[0] == '/'))
+        return NULL;
+
+    for (;;) {
+        const char *p, *q;
+        int         r, k;
+
+        r = nm_path_find_first_component(&path, accept_dot_dot, &p);
+        if (r < 0)
+            return NULL;
+
+        k = nm_path_find_first_component(&prefix, accept_dot_dot, &q);
+        if (k < 0)
+            return NULL;
+
+        if (k == 0)
+            return (char *) (p ?: path);
+
+        if (r != k)
+            return NULL;
+
+        if (strncmp(p, q, r) != 0)
+            return NULL;
+    }
+}
+
+char *
+nm_path_simplify(char *path)
+{
+    bool  add_slash = false;
+    char *f         = path;
+    int   r;
+
+    /* Copied from systemd's path_simplify()
+     * https://github.com/systemd/systemd/blob/bc85f8b51d962597360e982811e674c126850f56/src/basic/path-util.c#L325 */
+
+    nm_assert(path);
+
+    /* Removes redundant inner and trailing slashes. Also removes unnecessary dots.
+     * Modifies the passed string in-place.
+     *
+     * ///foo//./bar/.   becomes /foo/bar
+     * .//./foo//./bar/. becomes foo/bar
+     */
+
+    if (path[0] == '\0')
+        return path;
+
+    if (nm_path_is_absolute(path))
+        f++;
+
+    for (const char *p = f;;) {
+        const char *e;
+
+        r = nm_path_find_first_component(&p, TRUE, &e);
+        if (r == 0)
+            break;
+
+        if (add_slash)
+            *f++ = '/';
+
+        if (r < 0) {
+            /* if path is invalid, then refuse to simplify remaining part. */
+            memmove(f, p, strlen(p) + 1);
+            return path;
+        }
+
+        memmove(f, e, r);
+        f += r;
+
+        add_slash = TRUE;
+    }
+
+    /* Special rule, if we stripped everything, we need a "." for the current directory. */
+    if (f == path)
+        *f++ = '.';
+
+    *f = '\0';
+    return path;
+}
