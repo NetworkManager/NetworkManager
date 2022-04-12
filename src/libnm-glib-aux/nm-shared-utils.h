@@ -3346,4 +3346,8 @@ nm_path_startswith(const char *path, const char *prefix)
     return nm_path_startswith_full(path, prefix, TRUE);
 }
 
+/*****************************************************************************/
+
+gboolean nm_hostname_is_valid(const char *s, gboolean trailing_dot);
+
 #endif /* __NM_SHARED_UTILS_H__ */

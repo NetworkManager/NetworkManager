@@ -2101,6 +2101,55 @@ test_path_simplify(void)
 
 /*****************************************************************************/
 
+static void
+test_hostname_is_valid(void)
+{
+    g_assert(nm_hostname_is_valid("foobar", FALSE));
+    g_assert(nm_hostname_is_valid("foobar.com", FALSE));
+    g_assert(!nm_hostname_is_valid("foobar.com.", FALSE));
+    g_assert(nm_hostname_is_valid("fooBAR", FALSE));
+    g_assert(nm_hostname_is_valid("fooBAR.com", FALSE));
+    g_assert(!nm_hostname_is_valid("fooBAR.", FALSE));
+    g_assert(!nm_hostname_is_valid("fooBAR.com.", FALSE));
+    g_assert(!nm_hostname_is_valid("fööbar", FALSE));
+    g_assert(!nm_hostname_is_valid("", FALSE));
+    g_assert(!nm_hostname_is_valid(".", FALSE));
+    g_assert(!nm_hostname_is_valid("..", FALSE));
+    g_assert(!nm_hostname_is_valid("foobar.", FALSE));
+    g_assert(!nm_hostname_is_valid(".foobar", FALSE));
+    g_assert(!nm_hostname_is_valid("foo..bar", FALSE));
+    g_assert(!nm_hostname_is_valid("foo.bar..", FALSE));
+    g_assert(
+        !nm_hostname_is_valid("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                              "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+                              FALSE));
+    g_assert(!nm_hostname_is_valid(
+        "au-xph5-rvgrdsb5hcxc-47et3a5vvkrc-server-wyoz4elpdpe3.openstack.local",
+        FALSE));
+
+    g_assert(nm_hostname_is_valid("foobar", TRUE));
+    g_assert(nm_hostname_is_valid("foobar.com", TRUE));
+    g_assert(nm_hostname_is_valid("foobar.com.", TRUE));
+    g_assert(nm_hostname_is_valid("fooBAR", TRUE));
+    g_assert(nm_hostname_is_valid("fooBAR.com", TRUE));
+    g_assert(!nm_hostname_is_valid("fooBAR.", TRUE));
+    g_assert(nm_hostname_is_valid("fooBAR.com.", TRUE));
+    g_assert(!nm_hostname_is_valid("fööbar", TRUE));
+    g_assert(!nm_hostname_is_valid("", TRUE));
+    g_assert(!nm_hostname_is_valid(".", TRUE));
+    g_assert(!nm_hostname_is_valid("..", TRUE));
+    g_assert(!nm_hostname_is_valid("foobar.", TRUE));
+    g_assert(!nm_hostname_is_valid(".foobar", TRUE));
+    g_assert(!nm_hostname_is_valid("foo..bar", TRUE));
+    g_assert(!nm_hostname_is_valid("foo.bar..", TRUE));
+    g_assert(
+        !nm_hostname_is_valid("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                              "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+                              TRUE));
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE();
 
 int
@@ -2144,6 +2193,7 @@ main(int argc, char **argv)
     g_test_add_func("/general/test_path_find_first_component", test_path_find_first_component);
     g_test_add_func("/general/test_path_startswith", test_path_startswith);
     g_test_add_func("/general/test_path_simplify", test_path_simplify);
+    g_test_add_func("/general/test_hostname_is_valid", test_hostname_is_valid);
 
     return g_test_run();
 }
