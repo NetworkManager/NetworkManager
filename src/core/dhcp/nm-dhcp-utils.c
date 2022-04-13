@@ -820,26 +820,6 @@ nm_dhcp_utils_get_leasefile_path(int         addr_family,
     return FALSE;
 }
 
-char *
-nm_dhcp_utils_get_dhcp6_event_id(GHashTable *lease)
-{
-    const char *start;
-    const char *iaid;
-
-    if (!lease)
-        return NULL;
-
-    iaid = g_hash_table_lookup(lease, "iaid");
-    if (!iaid)
-        return NULL;
-
-    start = g_hash_table_lookup(lease, "life_starts");
-    if (!start)
-        return NULL;
-
-    return g_strdup_printf("%s|%s", iaid, start);
-}
-
 gboolean
 nm_dhcp_utils_merge_new_dhcp6_lease(const NML3ConfigData  *l3cd_old,
                                     const NML3ConfigData  *l3cd_new,
