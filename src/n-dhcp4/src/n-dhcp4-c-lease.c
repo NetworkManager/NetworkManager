@@ -251,7 +251,7 @@ _c_public_ void n_dhcp4_client_lease_get_lifetime(NDhcp4ClientLease *lease, uint
  *
  * Return: 0 on success,
  *         N_DHCP4_E_UNSET if the lease doesn't contain a server-identifier, or
- *         N_DCHP4_E_INTERNAL if the server-identifier is not valid.
+ *         N_DHCP4_E_INTERNAL if the server-identifier is not valid.
  */
 _c_public_ int n_dhcp4_client_lease_get_server_identifier(NDhcp4ClientLease *lease, struct in_addr *addr) {
         uint8_t *data;
@@ -279,25 +279,25 @@ _c_public_ int n_dhcp4_client_lease_get_server_identifier(NDhcp4ClientLease *lea
  *
  * Return: 0 on success,
  *         N_DHCP4_E_UNSET if the lease does not contain a file name, or
- *         N_DCHP4_E_INTERNAL if the file name is invalid.
+ *         N_DHCP4_E_INTERNAL if the file name is invalid.
  */
 _c_public_ int n_dhcp4_client_lease_get_file(NDhcp4ClientLease *lease, const char **file) {
         NDhcp4Message *message;
 
         if (lease->message->options[N_DHCP4_OPTION_OVERLOAD].size > 0
             && ((*lease->message->options[N_DHCP4_OPTION_OVERLOAD].value) & N_DHCP4_OVERLOAD_FILE)) {
-            /* The field is overloaded to contain other options */
-            return N_DHCP4_E_UNSET;
+                /* The field is overloaded to contain other options */
+                return N_DHCP4_E_UNSET;
         }
 
         message = &lease->message->message;
 
         if (message->file[0] == '\0')
-            return N_DHCP4_E_UNSET;
+                return N_DHCP4_E_UNSET;
 
         if (!memchr(message->file, '\0', sizeof(message->file))) {
-            /* The field is NULL-terminated (RFC 2131 section 2) */
-            return N_DHCP4_E_INTERNAL;
+                /* The field is NULL-terminated (RFC 2131 section 2) */
+                return N_DHCP4_E_INTERNAL;
         }
 
         *file = (const char *) message->file;
@@ -316,7 +316,7 @@ _c_public_ int n_dhcp4_client_lease_get_file(NDhcp4ClientLease *lease, const cha
  * be queried, and only options that were explicitly requested can be queried.
  *
  * Return: 0 on success,
- *         N_DCHP4_E_INTERNAL if an invalid option is queried,
+ *         N_DHCP4_E_INTERNAL if an invalid option is queried,
  *         N_DHCP4_E_UNSET if the lease did not contain the option, or
  *         a negative error code on failure.
  */

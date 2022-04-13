@@ -35,6 +35,7 @@ global:
         n_dhcp4_client_lease_unref;
         n_dhcp4_client_lease_get_yiaddr;
         n_dhcp4_client_lease_get_siaddr;
+        n_dhcp4_client_lease_get_basetime;
         n_dhcp4_client_lease_get_lifetime;
         n_dhcp4_client_lease_get_server_identifier;
         n_dhcp4_client_lease_get_file;
