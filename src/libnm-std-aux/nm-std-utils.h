@@ -30,6 +30,7 @@
 #define NM_UTILS_GET_NEXT_REALLOC_SIZE_40   ((size_t) 40)
 #define NM_UTILS_GET_NEXT_REALLOC_SIZE_104  ((size_t) 104)
 #define NM_UTILS_GET_NEXT_REALLOC_SIZE_232  ((size_t) 232)
+#define NM_UTILS_GET_NEXT_REALLOC_SIZE_488  ((size_t) 488)
 #define NM_UTILS_GET_NEXT_REALLOC_SIZE_1000 ((size_t) 1000)
 
 size_t nm_utils_get_next_realloc_size(bool true_realloc, size_t requested);
