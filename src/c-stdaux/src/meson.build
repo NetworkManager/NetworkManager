@@ -13,10 +13,10 @@ if not meson.is_subproject()
         install_headers('c-stdaux.h')
 
         mod_pkgconfig.generate(
-                version: meson.project_version(),
-                name: 'libcstdaux',
-                filebase: 'libcstdaux',
                 description: project_description,
+                filebase: 'libcstdaux-'+major,
+                name: 'libcstdaux',
+                version: meson.project_version(),
         )
 endif
 
