@@ -277,7 +277,10 @@ ip4_process_classless_routes(const char     *iface,
 }
 
 static void
-process_classful_routes(const char *iface, GHashTable *options, NML3ConfigData *l3cd)
+process_classful_routes(const char     *iface,
+                        GHashTable     *options,
+                        NML3ConfigData *l3cd,
+                        in_addr_t       address)
 {
     gs_free const char **searches = NULL;
     const char         **s;
@@ -325,6 +328,7 @@ process_classful_routes(const char *iface, GHashTable *options, NML3ConfigData *
             route.plen = 32;
         }
         route.gateway       = rt_route;
+        route.pref_src      = address;
         route.rt_source     = NM_IP_CONFIG_SOURCE_DHCP;
         route.table_any     = TRUE;
         route.table_coerced = 0;
@@ -427,7 +431,7 @@ nm_dhcp_utils_ip4_config_from_options(NMDedupMultiIndex *multi_idx,
      * the 'static_routes' option.
      */
     if (!ip4_process_classless_routes(iface, options, l3cd, address.address, &gateway))
-        process_classful_routes(iface, options, l3cd);
+        process_classful_routes(iface, options, l3cd, address.address);
 
     if (gateway) {
         _LOG2I(LOGD_DHCP4, iface, "  gateway %s", _nm_utils_inet4_ntop(gateway, sbuf));
@@ -457,6 +461,7 @@ nm_dhcp_utils_ip4_config_from_options(NMDedupMultiIndex *multi_idx,
         const NMPlatformIP4Route r = {
             .rt_source     = NM_IP_CONFIG_SOURCE_DHCP,
             .gateway       = gateway,
+            .pref_src      = address.address,
             .table_any     = TRUE,
             .table_coerced = 0,
             .metric_any    = TRUE,
