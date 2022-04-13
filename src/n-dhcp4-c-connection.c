@@ -1146,16 +1146,21 @@ int n_dhcp4_c_connection_dispatch_timer(NDhcp4CConnection *connection,
 int n_dhcp4_c_connection_dispatch_io(NDhcp4CConnection *connection,
                                      NDhcp4Incoming **messagep) {
         _c_cleanup_(n_dhcp4_incoming_freep) NDhcp4Incoming *message = NULL;
+        _c_cleanup_(c_freep) uint8_t *buffer = NULL;
         char serv_addr[INET_ADDRSTRLEN];
         char client_addr[INET_ADDRSTRLEN];
         uint8_t type = 0;
         int r;
 
+        buffer = malloc(UINT16_MAX);
+        if (!buffer)
+                return -ENOMEM;
+
         switch (connection->state) {
         case N_DHCP4_C_CONNECTION_STATE_PACKET:
                 r = n_dhcp4_c_socket_packet_recv(connection->fd_packet,
-                                                 connection->scratch_buffer,
-                                                 sizeof(connection->scratch_buffer),
+                                                 buffer,
+                                                 UINT16_MAX,
                                                  &message);
                 if (!r)
                         break;
@@ -1164,8 +1169,8 @@ int n_dhcp4_c_connection_dispatch_io(NDhcp4CConnection *connection,
                 return N_DHCP4_E_AGAIN;
         case N_DHCP4_C_CONNECTION_STATE_DRAINING:
                 r = n_dhcp4_c_socket_packet_recv(connection->fd_packet,
-                                                 connection->scratch_buffer,
-                                                 sizeof(connection->scratch_buffer),
+                                                 buffer,
+                                                 UINT16_MAX,
                                                  &message);
                 if (!r)
                         break;
@@ -1187,8 +1192,8 @@ int n_dhcp4_c_connection_dispatch_io(NDhcp4CConnection *connection,
                 /* fall-through */
         case N_DHCP4_C_CONNECTION_STATE_UDP:
                 r = n_dhcp4_c_socket_udp_recv(connection->fd_udp,
-                                              connection->scratch_buffer,
-                                              sizeof(connection->scratch_buffer),
+                                              buffer,
+                                              UINT16_MAX,
                                               &message);
                 if (!r)
                         break;
