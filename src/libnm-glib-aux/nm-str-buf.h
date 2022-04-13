@@ -399,6 +399,29 @@ nm_str_buf_get_str(NMStrBuf *strbuf)
     return strbuf->_priv_str;
 }
 
+/**
+ * nm_str_buf_get_str_unsafe:
+ * @strbuf: the buffer
+ *
+ * Usually, NMStrBuf is used to construct NUL terminated strings. But
+ * while constructing the buffer (nm_str_buf_append*()), it does
+ * not NUL terminate the buffer yet. Only nm_str_buf_get_str()
+ * and nm_str_buf_finalize() ensure that the returned string is
+ * actually NUL terminated.
+ *
+ * NMStrBuf can also be used for binary data, or you might not
+ * require the NUL termination. In that case, nm_str_buf_get_str_unsafe()
+ * will give you the pointer, but you must not rely on it being NUL
+ * terminated. This is the "unsafe" part of it.
+ *
+ * The returned string is of course initialized up to length "strbuf->len"
+ * and allocated with "strbuf->allocated" bytes.
+ *
+ * If currently no buffer is allocated, %NULL is returned.
+ *
+ * Returns: (transfer none): very similar to nm_str_buf_get_str(),
+ *   except that the result is no guaranteed to be NUL terminated.
+ */
 static inline char *
 nm_str_buf_get_str_unsafe(NMStrBuf *strbuf)
 {
