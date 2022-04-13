@@ -887,12 +887,15 @@ dhcp4_event_cb(int fd, GIOCondition condition, gpointer user_data)
 
     r = n_dhcp4_client_dispatch(priv->client);
     if (r < 0) {
-        /* FIXME: if any operation (e.g. send()) fails during the
+        /* If any operation (e.g. send()) fails during the
          * dispatch, n-dhcp4 returns an error without arming timers
          * or progressing state, so the only reasonable thing to do
          * is to move to failed state so that the client will be
-         * restarted. Ideally n-dhcp4 should retry failed operations
-         * a predefined number of times (possibly infinite).
+         * restarted.
+         *
+         * That means, n_dhcp4_client_dispatch() must not fail if it can
+         * somehow workaround the problem. A failure is really fatal
+         * and the client needs to be restarted.
          */
         _LOGE("error %d dispatching events", r);
         nm_clear_g_source_inst(&priv->event_source);
