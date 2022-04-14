@@ -8,6 +8,9 @@ subject to change and not guaranteed to be compatible with
 the later release.
 USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 
+* Drop unused, internal systemd DHCPv4 client. This is long
+  replaced by nettools' n-dhcp4 implementation.
+
 =============================================
 NetworkManager-1.38
 Overview of changes since NetworkManager-1.36

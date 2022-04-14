@@ -2333,8 +2333,6 @@ src_libnm_systemd_core_libnm_systemd_core_la_SOURCES = \
 	src/libnm-systemd-core/nm-sd-utils-core.h \
 	src/libnm-systemd-core/nm-sd.c \
 	src/libnm-systemd-core/nm-sd.h \
-	src/libnm-systemd-core/nm-sd-utils-dhcp.h \
-	src/libnm-systemd-core/nm-sd-utils-dhcp.c \
 	src/libnm-systemd-core/sd-adapt-core/condition.h \
 	src/libnm-systemd-core/sd-adapt-core/conf-parser.h \
 	src/libnm-systemd-core/sd-adapt-core/device-util.h \
@@ -2345,16 +2343,8 @@ src_libnm_systemd_core_libnm_systemd_core_la_SOURCES = \
 	src/libnm-systemd-core/sd-adapt-core/sd-daemon.h \
 	src/libnm-systemd-core/sd-adapt-core/sd-device.h \
 	src/libnm-systemd-core/sd-adapt-core/udev-util.h \
-	src/libnm-systemd-core/src/libsystemd-network/arp-util.c \
-	src/libnm-systemd-core/src/libsystemd-network/arp-util.h \
 	src/libnm-systemd-core/src/libsystemd-network/dhcp-identifier.c \
 	src/libnm-systemd-core/src/libsystemd-network/dhcp-identifier.h \
-	src/libnm-systemd-core/src/libsystemd-network/dhcp-internal.h \
-	src/libnm-systemd-core/src/libsystemd-network/dhcp-lease-internal.h \
-	src/libnm-systemd-core/src/libsystemd-network/dhcp-network.c \
-	src/libnm-systemd-core/src/libsystemd-network/dhcp-option.c \
-	src/libnm-systemd-core/src/libsystemd-network/dhcp-packet.c \
-	src/libnm-systemd-core/src/libsystemd-network/dhcp-protocol.h \
 	src/libnm-systemd-core/src/libsystemd-network/dhcp6-internal.h \
 	src/libnm-systemd-core/src/libsystemd-network/dhcp6-lease-internal.h \
 	src/libnm-systemd-core/src/libsystemd-network/dhcp6-network.c \
@@ -2369,10 +2359,6 @@ src_libnm_systemd_core_libnm_systemd_core_la_SOURCES = \
 	src/libnm-systemd-core/src/libsystemd-network/lldp-rx-internal.h \
 	src/libnm-systemd-core/src/libsystemd-network/network-common.c \
 	src/libnm-systemd-core/src/libsystemd-network/network-common.h \
-	src/libnm-systemd-core/src/libsystemd-network/network-internal.c \
-	src/libnm-systemd-core/src/libsystemd-network/network-internal.h \
-	src/libnm-systemd-core/src/libsystemd-network/sd-dhcp-client.c \
-	src/libnm-systemd-core/src/libsystemd-network/sd-dhcp-lease.c \
 	src/libnm-systemd-core/src/libsystemd-network/sd-dhcp6-client.c \
 	src/libnm-systemd-core/src/libsystemd-network/sd-dhcp6-lease.c \
 	src/libnm-systemd-core/src/libsystemd-network/sd-lldp-rx.c \
@@ -2384,9 +2370,6 @@ src_libnm_systemd_core_libnm_systemd_core_la_SOURCES = \
 	src/libnm-systemd-core/src/libsystemd/sd-id128/id128-util.h \
 	src/libnm-systemd-core/src/libsystemd/sd-id128/sd-id128.c \
 	src/libnm-systemd-core/src/systemd/_sd-common.h \
-	src/libnm-systemd-core/src/systemd/sd-dhcp-client.h \
-	src/libnm-systemd-core/src/systemd/sd-dhcp-lease.h \
-	src/libnm-systemd-core/src/systemd/sd-dhcp-option.h \
 	src/libnm-systemd-core/src/systemd/sd-dhcp6-client.h \
 	src/libnm-systemd-core/src/systemd/sd-dhcp6-lease.h \
 	src/libnm-systemd-core/src/systemd/sd-dhcp6-option.h \

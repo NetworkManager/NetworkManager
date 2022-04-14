@@ -723,3 +723,288 @@ nm_sd_notify(const char *state)
 
     return 0;
 }
+
+/*****************************************************************************/
+
+#define SHELL_NEED_ESCAPE "\"\\`$"
+
+int
+nm_parse_env_file_full(
+    const char *contents,
+    int (*push)(unsigned line, const char *key, const char *value, void *userdata),
+    void *userdata)
+{
+    gsize                    last_value_whitespace = G_MAXSIZE;
+    gsize                    last_key_whitespace   = G_MAXSIZE;
+    nm_auto_str_buf NMStrBuf key                   = NM_STR_BUF_INIT(0, FALSE);
+    nm_auto_str_buf NMStrBuf value                 = NM_STR_BUF_INIT(0, FALSE);
+    unsigned                 line                  = 1;
+    int                      r;
+    enum {
+        PRE_KEY,
+        KEY,
+        PRE_VALUE,
+        VALUE,
+        VALUE_ESCAPE,
+        SINGLE_QUOTE_VALUE,
+        DOUBLE_QUOTE_VALUE,
+        DOUBLE_QUOTE_VALUE_ESCAPE,
+        COMMENT,
+        COMMENT_ESCAPE
+    } state = PRE_KEY;
+
+    /* Copied and adjusted from systemd's parse_env_file_internal().
+     * https://github.com/systemd/systemd/blob/6247128902ca71ee2ad406cf69af04ea389d3d27/src/basic/env-file.c#L15 */
+
+    nm_assert(push);
+
+    if (!contents)
+        return -ENOENT;
+
+    for (const char *p = contents; *p; p++) {
+        char c = *p;
+
+        switch (state) {
+        case PRE_KEY:
+            if (NM_IN_SET(c, '#', ';'))
+                state = COMMENT;
+            else if (!nm_ascii_is_whitespace(c)) {
+                state               = KEY;
+                last_key_whitespace = G_MAXSIZE;
+                nm_str_buf_append_c(&key, c);
+            }
+            break;
+
+        case KEY:
+            if (nm_ascii_is_newline(c)) {
+                state = PRE_KEY;
+                line++;
+                nm_str_buf_reset(&key);
+            } else if (c == '=') {
+                state                 = PRE_VALUE;
+                last_value_whitespace = G_MAXSIZE;
+            } else {
+                if (!nm_ascii_is_whitespace(c))
+                    last_key_whitespace = G_MAXSIZE;
+                else if (last_key_whitespace == G_MAXSIZE)
+                    last_key_whitespace = key.len;
+                nm_str_buf_append_c(&key, c);
+            }
+            break;
+
+        case PRE_VALUE:
+            if (nm_ascii_is_newline(c)) {
+                state = PRE_KEY;
+                line++;
+
+                /* strip trailing whitespace from key */
+                if (last_key_whitespace != G_MAXSIZE)
+                    nm_str_buf_get_str_unsafe(&key)[last_key_whitespace] = 0;
+
+                r = push(line,
+                         nm_str_buf_get_str(&key),
+                         nm_str_buf_get_str(&value) ?: "",
+                         userdata);
+                if (r < 0)
+                    return r;
+
+                nm_str_buf_reset(&key);
+                nm_str_buf_reset(&value);
+            } else if (c == '\'')
+                state = SINGLE_QUOTE_VALUE;
+            else if (c == '"')
+                state = DOUBLE_QUOTE_VALUE;
+            else if (c == '\\')
+                state = VALUE_ESCAPE;
+            else if (!nm_ascii_is_whitespace(c)) {
+                state = VALUE;
+                nm_str_buf_append_c(&value, c);
+            }
+
+            break;
+
+        case VALUE:
+            if (nm_ascii_is_newline(c)) {
+                state = PRE_KEY;
+                line++;
+
+                /* Chomp off trailing whitespace from value */
+                if (last_value_whitespace != G_MAXSIZE)
+                    nm_str_buf_get_str_unsafe(&value)[last_value_whitespace] = 0;
+
+                /* strip trailing whitespace from key */
+                if (last_key_whitespace != G_MAXSIZE)
+                    nm_str_buf_get_str_unsafe(&key)[last_key_whitespace] = 0;
+
+                r = push(line,
+                         nm_str_buf_get_str(&key),
+                         nm_str_buf_get_str(&value) ?: "",
+                         userdata);
+                if (r < 0)
+                    return r;
+
+                nm_str_buf_reset(&key);
+                nm_str_buf_reset(&value);
+            } else if (c == '\\') {
+                state                 = VALUE_ESCAPE;
+                last_value_whitespace = G_MAXSIZE;
+            } else {
+                if (!nm_ascii_is_whitespace(c))
+                    last_value_whitespace = G_MAXSIZE;
+                else if (last_value_whitespace == G_MAXSIZE)
+                    last_value_whitespace = value.len;
+                nm_str_buf_append_c(&value, c);
+            }
+            break;
+
+        case VALUE_ESCAPE:
+            state = VALUE;
+            if (!nm_ascii_is_newline(c)) {
+                /* Escaped newlines we eat up entirely */
+                nm_str_buf_append_c(&value, c);
+            }
+            break;
+
+        case SINGLE_QUOTE_VALUE:
+            if (c == '\'')
+                state = PRE_VALUE;
+            else
+                nm_str_buf_append_c(&value, c);
+            break;
+
+        case DOUBLE_QUOTE_VALUE:
+            if (c == '"')
+                state = PRE_VALUE;
+            else if (c == '\\')
+                state = DOUBLE_QUOTE_VALUE_ESCAPE;
+            else
+                nm_str_buf_append_c(&value, c);
+            break;
+
+        case DOUBLE_QUOTE_VALUE_ESCAPE:
+            state = DOUBLE_QUOTE_VALUE;
+            if (strchr(SHELL_NEED_ESCAPE, c)) {
+                /* If this is a char that needs escaping, just unescape it. */
+                nm_str_buf_append_c(&value, c);
+            } else if (c != '\n') {
+                /* If other char than what needs escaping, keep the "\" in place, like the
+                 * real shell does. */
+                nm_str_buf_append_c(&value, '\\', c);
+            }
+            /* Escaped newlines (aka "continuation lines") are eaten up entirely */
+            break;
+
+        case COMMENT:
+            if (c == '\\')
+                state = COMMENT_ESCAPE;
+            else if (nm_ascii_is_newline(c)) {
+                state = PRE_KEY;
+                line++;
+            }
+            break;
+
+        case COMMENT_ESCAPE:
+            state = COMMENT;
+            break;
+        }
+    }
+
+    if (NM_IN_SET(state,
+                  PRE_VALUE,
+                  VALUE,
+                  VALUE_ESCAPE,
+                  SINGLE_QUOTE_VALUE,
+                  DOUBLE_QUOTE_VALUE,
+                  DOUBLE_QUOTE_VALUE_ESCAPE)) {
+        if (state == VALUE)
+            if (last_value_whitespace != G_MAXSIZE)
+                nm_str_buf_get_str_unsafe(&value)[last_value_whitespace] = 0;
+
+        /* strip trailing whitespace from key */
+        if (last_key_whitespace != G_MAXSIZE)
+            nm_str_buf_get_str_unsafe(&key)[last_key_whitespace] = 0;
+
+        r = push(line, nm_str_buf_get_str(&key), nm_str_buf_get_str(&value) ?: "", userdata);
+        if (r < 0)
+            return r;
+    }
+
+    return 0;
+}
+
+/*****************************************************************************/
+
+static int
+check_utf8ness_and_warn(const char *key, const char *value)
+{
+    /* Taken from systemd's check_utf8ness_and_warn()
+     * https://github.com/systemd/systemd/blob/6247128902ca71ee2ad406cf69af04ea389d3d27/src/basic/env-file.c#L273 */
+
+    if (!g_utf8_validate(key, -1, NULL))
+        return -EINVAL;
+
+    if (!g_utf8_validate(value, -1, NULL))
+        return -EINVAL;
+
+    return 0;
+}
+
+static int
+parse_env_file_push(unsigned line, const char *key, const char *value, void *userdata)
+{
+    const char *k;
+    va_list    *ap = userdata;
+    va_list     aq;
+    int         r;
+
+    r = check_utf8ness_and_warn(key, value);
+    if (r < 0)
+        return r;
+
+    va_copy(aq, *ap);
+
+    while ((k = va_arg(aq, const char *))) {
+        char **v;
+
+        v = va_arg(aq, char **);
+        if (nm_streq(key, k)) {
+            va_end(aq);
+            g_free(*v);
+            *v = g_strdup(value);
+            return 1;
+        }
+    }
+
+    va_end(aq);
+    return 0;
+}
+
+int
+nm_parse_env_filev(const char *contents, va_list ap)
+{
+    va_list aq;
+    int     r;
+
+    /* Copied from systemd's parse_env_filev().
+     * https://github.com/systemd/systemd/blob/6247128902ca71ee2ad406cf69af04ea389d3d27/src/basic/env-file.c#L333 */
+
+    va_copy(aq, ap);
+    r = nm_parse_env_file_full(contents, parse_env_file_push, &aq);
+    va_end(aq);
+    return r;
+}
+
+int
+nm_parse_env_file_sentinel(const char *contents, ...)
+{
+    va_list ap;
+    int     r;
+
+    /* Copied from systemd's parse_env_file_sentinel().
+     * https://github.com/systemd/systemd/blob/6247128902ca71ee2ad406cf69af04ea389d3d27/src/basic/env-file.c#L347 */
+
+    va_start(ap, contents);
+    r = nm_parse_env_filev(contents, ap);
+    va_end(ap);
+    return r;
+}
