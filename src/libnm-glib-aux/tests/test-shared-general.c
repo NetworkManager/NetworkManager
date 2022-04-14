@@ -10,6 +10,7 @@
 #include "libnm-glib-aux/nm-str-buf.h"
 #include "libnm-glib-aux/nm-time-utils.h"
 #include "libnm-glib-aux/nm-ref-string.h"
+#include "libnm-glib-aux/nm-io-utils.h"
 
 #include "libnm-glib-aux/nm-test-utils.h"
 
@@ -1420,6 +1421,141 @@ test_nm_ascii(void)
 
 /*****************************************************************************/
 
+static int
+_env_file_push_cb(unsigned line, const char *key, const char *value, void *user_data)
+{
+    char ***strv = user_data;
+    char   *s_line;
+    gsize   key_l;
+    gsize   strv_l;
+    gsize   i;
+
+    g_assert(strv);
+    g_assert(key);
+    g_assert(key[0]);
+    g_assert(!strchr(key, '='));
+    g_assert(value);
+
+    key_l = strlen(key);
+
+    s_line = g_strconcat(key, "=", value, NULL);
+
+    strv_l = 0;
+    if (*strv) {
+        const char *s;
+
+        for (i = 0; (s = (*strv)[i]); i++) {
+            if (g_str_has_prefix(s, key) && s[key_l] == '=') {
+                g_free((*strv)[i]);
+                (*strv)[i] = s_line;
+                return 0;
+            }
+        }
+        strv_l = i;
+    }
+
+    *strv               = g_realloc(*strv, sizeof(char *) * (strv_l + 2));
+    (*strv)[strv_l]     = s_line;
+    (*strv)[strv_l + 1] = NULL;
+
+    return 0;
+}
+
+static void
+test_parse_env_file(void)
+{
+    gs_strfreev char **data = NULL;
+    gs_free char      *arg1 = NULL;
+    gs_free char      *arg2 = NULL;
+    int                r;
+
+#define env_file_1                  \
+    "a=a\n"                         \
+    "a=b\n"                         \
+    "a=b\n"                         \
+    "a=a\n"                         \
+    "b=b\\\n"                       \
+    "c\n"                           \
+    "d= d\\\n"                      \
+    "e  \\\n"                       \
+    "f  \n"                         \
+    "g=g\\ \n"                      \
+    "h= ąęół\\ śćńźżµ \n" \
+    "i=i\\"
+    r = nm_parse_env_file_full(env_file_1, _env_file_push_cb, &data);
+    g_assert_cmpint(r, ==, 0);
+    nmtst_assert_strv(data, "a=a", "b=bc", "d=de  f", "g=g ", "h=ąęół śćńźżµ", "i=i");
+    nm_clear_pointer(&data, g_strfreev);
+
+    r = nm_parse_env_file(env_file_1, "a", &arg1);
+    g_assert_cmpint(r, ==, 0);
+    g_assert_cmpstr(arg1, ==, "a");
+    nm_clear_g_free(&arg1);
+
+    r = nm_parse_env_file(env_file_1, "a", &arg1, "d", &arg2);
+    g_assert_cmpint(r, ==, 0);
+    g_assert_cmpstr(arg1, ==, "a");
+    g_assert_cmpstr(arg2, ==, "de  f");
+    nm_clear_g_free(&arg1);
+    nm_clear_g_free(&arg2);
+
+#define env_file_2 "a=a\\\n"
+    r = nm_parse_env_file_full(env_file_2, _env_file_push_cb, &data);
+    g_assert_cmpint(r, ==, 0);
+    nmtst_assert_strv(data, "a=a");
+    nm_clear_pointer(&data, g_strfreev);
+
+#define env_file_3                                              \
+    "#SPAMD_ARGS=\"-d --socketpath=/var/lib/bulwark/spamd \\\n" \
+    "#--nouser-config                                     \\\n" \
+    "normal=line                                          \\\n" \
+    ";normal=ignored                                      \\\n" \
+    "normal_ignored                                       \\\n" \
+    "normal ignored                                       \\\n"
+    r = nm_parse_env_file_full(env_file_3, _env_file_push_cb, &data);
+    g_assert_cmpint(r, ==, 0);
+    g_assert(!data);
+
+#define env_file_4                          \
+    "# Generated\n"                         \
+    "\n"                                    \
+    "HWMON_MODULES=\"coretemp f71882fg\"\n" \
+    "\n"                                    \
+    "# For compatibility reasons\n"         \
+    "\n"                                    \
+    "MODULE_0=coretemp\n"                   \
+    "MODULE_1=f71882fg"
+    r = nm_parse_env_file_full(env_file_4, _env_file_push_cb, &data);
+    g_assert_cmpint(r, ==, 0);
+    nmtst_assert_strv(data,
+                      "HWMON_MODULES=coretemp f71882fg",
+                      "MODULE_0=coretemp",
+                      "MODULE_1=f71882fg");
+    nm_clear_pointer(&data, g_strfreev);
+
+#define env_file_5 \
+    "a=\n"         \
+    "b="
+    r = nm_parse_env_file_full(env_file_5, _env_file_push_cb, &data);
+    g_assert_cmpint(r, ==, 0);
+    nmtst_assert_strv(data, "a=", "b=");
+    nm_clear_pointer(&data, g_strfreev);
+
+#define env_file_6                \
+    "a=\\ \\n \\t \\x \\y \\' \n" \
+    "b= \\$'                  \n" \
+    "c= ' \\n\\t\\$\\`\\\\\n"     \
+    "'   \n"                      \
+    "d= \" \\n\\t\\$\\`\\\\\n"    \
+    "\"   \n"
+    r = nm_parse_env_file_full(env_file_6, _env_file_push_cb, &data);
+    g_assert_cmpint(r, ==, 0);
+    nmtst_assert_strv(data, "a= n t x y '", "b=$'", "c= \\n\\t\\$\\`\\\\\n", "d= \\n\\t$`\\\n");
+    nm_clear_pointer(&data, g_strfreev);
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE();
 
 int
@@ -1453,6 +1589,7 @@ main(int argc, char **argv)
     g_test_add_func("/general/test_utils_hashtable_cmp", test_utils_hashtable_cmp);
     g_test_add_func("/general/test_nm_g_source_sentinel", test_nm_g_source_sentinel);
     g_test_add_func("/general/test_nm_ascii", test_nm_ascii);
+    g_test_add_func("/general/test_parse_env_file", test_parse_env_file);
 
     return g_test_run();
 }

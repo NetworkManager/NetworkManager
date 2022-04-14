@@ -3,20 +3,13 @@
 libnm_systemd_core = static_library(
   'nm-systemd-core',
   sources: files(
-    'src/libsystemd-network/arp-util.c',
     'src/libsystemd-network/dhcp-identifier.c',
-    'src/libsystemd-network/dhcp-network.c',
-    'src/libsystemd-network/dhcp-option.c',
-    'src/libsystemd-network/dhcp-packet.c',
     'src/libsystemd-network/dhcp6-network.c',
     'src/libsystemd-network/dhcp6-option.c',
     'src/libsystemd-network/dhcp6-protocol.c',
     'src/libsystemd-network/lldp-neighbor.c',
     'src/libsystemd-network/lldp-network.c',
     'src/libsystemd-network/network-common.c',
-    'src/libsystemd-network/network-internal.c',
-    'src/libsystemd-network/sd-dhcp-client.c',
-    'src/libsystemd-network/sd-dhcp-lease.c',
     'src/libsystemd-network/sd-dhcp6-client.c',
     'src/libsystemd-network/sd-dhcp6-lease.c',
     'src/libsystemd-network/sd-lldp-rx.c',
@@ -26,7 +19,6 @@ libnm_systemd_core = static_library(
     'src/libsystemd/sd-id128/sd-id128.c',
     'nm-sd.c',
     'nm-sd-utils-core.c',
-    'nm-sd-utils-dhcp.c',
     'sd-adapt-core/nm-sd-adapt-core.c',
   ),
   include_directories: [

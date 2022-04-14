@@ -1053,6 +1053,24 @@ nm_g_variant_equal(GVariant *a, GVariant *b)
  * the kernel command line. */
 #define NM_ASCII_WHITESPACES " \n\t\r"
 
+static inline gboolean
+nm_ascii_is_whitespace(char ch)
+{
+    /* Checks whether @ch is in NM_ASCII_WHITESPACES.
+     * Similar to g_ascii_isspace(), however this one does not accept '\f'.
+     * This is the same as systemd's strchr(WHITESPACE, ch). */
+    return NM_IN_SET(ch, ' ', '\n', '\t', '\r');
+}
+
+#define NM_ASCII_NEWLINE "\n\r"
+
+static inline gboolean
+nm_ascii_is_newline(char ch)
+{
+    /* This is the same as systemd's (!!strchr(NEWLINE, ch)). */
+    return NM_IN_SET(ch, '\n', '\t');
+}
+
 #define nm_str_skip_leading_spaces(str)                          \
     ({                                                           \
         typeof(*(str))              *_str_sls        = (str);    \

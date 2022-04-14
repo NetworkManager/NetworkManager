@@ -13,27 +13,6 @@
 /*****************************************************************************/
 
 static void
-test_dhcp_create(void)
-{
-    sd_dhcp_client *client4 = NULL;
-    int             r;
-
-    r = sd_dhcp_client_new(&client4, FALSE);
-    g_assert(r == 0);
-    g_assert(client4);
-
-    if (/* never true */ client4 == (gpointer) &r) {
-        /* we don't want to call this, but ensure that the linker
-         * includes all these symbols. */
-        sd_dhcp_client_start(client4);
-    }
-
-    sd_dhcp_client_unref(client4);
-}
-
-/*****************************************************************************/
-
-static void
 test_lldp_create(void)
 {
     sd_lldp_rx *lldp = NULL;
@@ -261,7 +240,6 @@ main(int argc, char **argv)
 {
     nmtst_init(&argc, &argv, TRUE);
 
-    g_test_add_func("/systemd/dhcp/create", test_dhcp_create);
     g_test_add_func("/systemd/lldp/create", test_lldp_create);
     g_test_add_func("/systemd/sd-event", test_sd_event);
     g_test_add_func("/systemd/test_path_equal", test_path_equal);
