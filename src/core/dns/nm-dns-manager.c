@@ -56,6 +56,8 @@
 #define HAS_NETCONFIG 1
 #endif
 
+#define UPDATE_PENDING_UNBLOCK_TIMEOUT_MSEC 5000
+
 /*****************************************************************************/
 
 typedef enum { SR_SUCCESS, SR_NOTFOUND, SR_ERROR } SpawnResult;
@@ -91,6 +93,11 @@ typedef struct {
 
     CList     ip_data_lst_head;
     GVariant *config_variant;
+
+    /* A DNS plugin should not be marked as pending indefinitely.
+     * We are only blocked if "update_pending" is TRUE and we have
+     * "update_pending_unblock" timer ticking. */
+    GSource *update_pending_unblock;
 
     bool ip_data_lst_need_sort : 1;
 
@@ -222,6 +229,25 @@ _update_pending_detect(NMDnsManager *self)
     return FALSE;
 }
 
+static gboolean
+_update_pending_unblock_cb(gpointer user_data)
+{
+    NMDnsManager        *self = user_data;
+    NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE(self);
+
+    nm_assert(priv->update_pending);
+    nm_assert(priv->update_pending_unblock);
+    nm_assert(_update_pending_detect(self));
+
+    nm_clear_g_source_inst(&priv->update_pending_unblock);
+
+    _LOGW(
+        "update-pending changed: DNS plugin did not become ready again. Assume something is wrong");
+
+    _notify(self, PROP_UPDATE_PENDING);
+    return G_SOURCE_CONTINUE;
+}
+
 static void
 _update_pending_maybe_changed(NMDnsManager *self)
 {
@@ -231,6 +257,14 @@ _update_pending_maybe_changed(NMDnsManager *self)
     update_pending = _update_pending_detect(self);
     if (priv->update_pending == update_pending)
         return;
+
+    if (update_pending) {
+        nm_assert(!priv->update_pending_unblock);
+        priv->update_pending_unblock = nm_g_timeout_add_source(UPDATE_PENDING_UNBLOCK_TIMEOUT_MSEC,
+                                                               _update_pending_unblock_cb,
+                                                               self);
+    } else
+        nm_clear_g_source_inst(&priv->update_pending_unblock);
 
     priv->update_pending = update_pending;
     _LOGD("update-pending changed: %spending", update_pending ? "" : "not ");
@@ -252,7 +286,12 @@ nm_dns_manager_get_update_pending(NMDnsManager *self)
 
     priv = NM_DNS_MANAGER_GET_PRIVATE(self);
     nm_assert(priv->update_pending == _update_pending_detect(self));
-    return priv->update_pending;
+    nm_assert(priv->update_pending || !priv->update_pending_unblock);
+
+    /* update-pending can only be TRUE for a certain time (before we assume
+     * something is really wrong with the plugin). That is, as long as
+     * update_pending_unblock is ticking. */
+    return !!priv->update_pending_unblock;
 }
 
 /*****************************************************************************/
@@ -2726,6 +2765,8 @@ dispose(GObject *object)
 
     _clear_sd_resolved_plugin(self);
     _clear_plugin(self);
+
+    nm_clear_g_source_inst(&priv->update_pending_unblock);
 
     c_list_for_each_entry_safe (ip_data, ip_data_safe, &priv->ip_data_lst_head, ip_data_lst)
         _dns_config_ip_data_free(ip_data);
