@@ -1977,6 +1977,7 @@ typedef struct {
         NMUtilsNamedEntry named_entry;
         const char       *name;
         char             *name_mutable;
+        gpointer          name_ptr;
     };
     union {
         const char *value_str;
@@ -1990,14 +1991,28 @@ typedef struct {
         .name = (n), .value_ptr = (v)   \
     }
 
-NMUtilsNamedValue *
-nm_utils_named_values_from_strdict_full(GHashTable         *hash,
-                                        guint              *out_len,
-                                        GCompareDataFunc    compare_func,
-                                        gpointer            user_data,
-                                        NMUtilsNamedValue  *provided_buffer,
-                                        guint               provided_buffer_len,
-                                        NMUtilsNamedValue **out_allocated_buffer);
+NMUtilsNamedValue *nm_utils_hash_to_array_full(GHashTable         *hash,
+                                               guint              *out_len,
+                                               GCompareDataFunc    compare_func,
+                                               gpointer            user_data,
+                                               NMUtilsNamedValue  *provided_buffer,
+                                               guint               provided_buffer_len,
+                                               NMUtilsNamedValue **out_allocated_buffer);
+
+#define nm_utils_named_values_from_strdict_full(hash,                 \
+                                                out_len,              \
+                                                compare_func,         \
+                                                user_data,            \
+                                                provided_buffer,      \
+                                                provided_buffer_len,  \
+                                                out_allocated_buffer) \
+    nm_utils_hash_to_array_full((hash),                               \
+                                (out_len),                            \
+                                (compare_func),                       \
+                                (user_data),                          \
+                                (provided_buffer),                    \
+                                (provided_buffer_len),                \
+                                (out_allocated_buffer))
 
 #define nm_utils_named_values_from_strdict(hash, out_len, array, out_allocated_buffer) \
     nm_utils_named_values_from_strdict_full((hash),                                    \
@@ -2037,6 +2052,29 @@ gpointer *nm_utils_hash_values_to_array(GHashTable      *hash,
                                         GCompareDataFunc compare_func,
                                         gpointer         user_data,
                                         guint           *out_len);
+
+static inline NMUtilsNamedValue *
+nm_utils_hash_to_array(GHashTable      *hash,
+                       GCompareDataFunc compare_func,
+                       gpointer         user_data,
+                       guint           *out_len)
+{
+    return nm_utils_hash_to_array_full(hash, out_len, compare_func, user_data, NULL, 0, NULL);
+}
+
+#define nm_utils_hash_to_array_with_buffer(hash,                 \
+                                           out_len,              \
+                                           compare_func,         \
+                                           user_data,            \
+                                           array,                \
+                                           out_allocated_buffer) \
+    nm_utils_hash_to_array_full((hash),                          \
+                                (out_len),                       \
+                                (compare_func),                  \
+                                (user_data),                     \
+                                (array),                         \
+                                G_N_ELEMENTS(array),             \
+                                (out_allocated_buffer))
 
 static inline const char **
 nm_strdict_get_keys(const GHashTable *hash, gboolean sorted, guint *out_length)

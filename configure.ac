@@ -1006,18 +1006,6 @@ fi
 AC_DEFINE_UNQUOTED(DNSMASQ_PATH, "$DNSMASQ_PATH", [Define to path of dnsmasq binary])
 AC_SUBST(DNSMASQ_PATH)
 
-# dnssec-trigger-script path
-AC_ARG_WITH(dnssec_trigger,
-            AS_HELP_STRING([--with-dnssec-trigger=/path/to/dnssec-trigger-script], [path to unbound dnssec-trigger-script]))
-if test "x${with_dnssec_trigger}" = x; then
-	AC_PATH_PROG(DNSSEC_TRIGGER_PATH, dnssec-trigger-script, /usr/libexec/dnssec-trigger-script,
-	             /usr/local/libexec:/usr/local/lib:/usr/local/lib/dnssec-trigger:/usr/libexec:/usr/lib:/usr/lib/dnssec-trigger)
-else
-	DNSSEC_TRIGGER_PATH="$with_dnssec_trigger"
-fi
-AC_DEFINE_UNQUOTED(DNSSEC_TRIGGER_PATH, "$DNSSEC_TRIGGER_PATH", [Define to path of unbound dnssec-trigger-script])
-AC_SUBST(DNSSEC_TRIGGER_PATH)
-
 # system CA certificates path
 AC_ARG_WITH(system-ca-path,
             AS_HELP_STRING([--with-system-ca-path=/path/to/ssl/certs], [path to system CA certificates]))

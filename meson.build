@@ -683,18 +683,11 @@ endforeach
 
 # external misc tools paths
 default_paths = ['/sbin', '/usr/sbin']
-dnssec_ts_paths = ['/usr/local/libexec',
-                   '/usr/local/lib',
-                   '/usr/local/lib/dnssec-trigger',
-                   '/usr/libexec',
-                   '/usr/lib',
-                   '/usr/lib/dnssec-trigger']
 
 # 0: cmdline option, 1: paths, 2: fallback
-progs = [['iptables',       default_paths,   '/usr/sbin/iptables'],
-         ['nft',            default_paths,   '/usr/sbin/nft'],
-         ['dnsmasq',        default_paths,   ''],
-         ['dnssec_trigger', dnssec_ts_paths, join_paths(nm_libexecdir, 'dnssec-trigger-script') ],
+progs = [['iptables', default_paths, '/usr/sbin/iptables'],
+         ['nft',      default_paths, '/usr/sbin/nft'],
+         ['dnsmasq',  default_paths, ''],
         ]
 
 foreach prog : progs
