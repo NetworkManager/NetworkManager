@@ -2530,8 +2530,6 @@ src_core_libNetworkManager_la_SOURCES = \
 	src/core/dns/nm-dns-dnsmasq.h \
 	src/core/dns/nm-dns-systemd-resolved.c \
 	src/core/dns/nm-dns-systemd-resolved.h \
-	src/core/dns/nm-dns-unbound.c \
-	src/core/dns/nm-dns-unbound.h \
 	\
 	src/core/dnsmasq/nm-dnsmasq-manager.c \
 	src/core/dnsmasq/nm-dnsmasq-manager.h \

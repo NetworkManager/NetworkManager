@@ -604,6 +604,7 @@ typedef struct _NMDevicePrivate {
             const NMDeviceIPState state;
             NMDeviceIPState       state_;
         };
+        gulong dnsmgr_update_pending_signal_id;
     } ip_data;
 
     union {
@@ -2930,6 +2931,13 @@ _add_capabilities(NMDevice *self, NMDeviceCapabilities capabilities)
 /*****************************************************************************/
 
 static void
+_dev_ip_state_dnsmgr_update_pending_changed(NMDnsManager *dnsmgr, GParamSpec *pspec, NMDevice *self)
+{
+    _dev_ip_state_check(self, AF_INET);
+    _dev_ip_state_check(self, AF_INET6);
+}
+
+static void
 _dev_ip_state_req_timeout_cancel(NMDevice *self, int addr_family)
 {
     NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
@@ -3319,6 +3327,27 @@ got_ip_state:
             combinedip_state = NM_DEVICE_IP_STATE_PENDING;
         else
             combinedip_state = priv->ip_data.state;
+    }
+
+    if (combinedip_state == NM_DEVICE_IP_STATE_READY
+        && priv->ip_data.state <= NM_DEVICE_IP_STATE_PENDING
+        && nm_dns_manager_get_update_pending(nm_manager_get_dns_manager(priv->manager))) {
+        /* We would be ready, but a DNS update is pending. That prevents us from getting fully ready. */
+        if (priv->ip_data.dnsmgr_update_pending_signal_id == 0) {
+            priv->ip_data.dnsmgr_update_pending_signal_id =
+                g_signal_connect(nm_manager_get_dns_manager(priv->manager),
+                                 "notify::" NM_DNS_MANAGER_UPDATE_PENDING,
+                                 G_CALLBACK(_dev_ip_state_dnsmgr_update_pending_changed),
+                                 self);
+            _LOGT_ip(AF_UNSPEC,
+                     "check-state: (combined) state: wait for DNS before becoming ready");
+        }
+        combinedip_state = NM_DEVICE_IP_STATE_PENDING;
+    }
+    if (combinedip_state != NM_DEVICE_IP_STATE_PENDING
+        && priv->ip_data.dnsmgr_update_pending_signal_id != 0) {
+        nm_clear_g_signal_handler(nm_manager_get_dns_manager(priv->manager),
+                                  &priv->ip_data.dnsmgr_update_pending_signal_id);
     }
 
     _LOGT_ip(AF_UNSPEC,
@@ -12329,7 +12358,8 @@ delete_on_deactivate_check_and_schedule(NMDevice *self)
 static void
 _cleanup_ip_pre(NMDevice *self, int addr_family, CleanupType cleanup_type, gboolean from_reapply)
 {
-    const int IS_IPv4 = NM_IS_IPv4(addr_family);
+    const int        IS_IPv4 = NM_IS_IPv4(addr_family);
+    NMDevicePrivate *priv    = NM_DEVICE_GET_PRIVATE(self);
 
     _dev_ipsharedx_cleanup(self, addr_family);
 
@@ -12344,6 +12374,9 @@ _cleanup_ip_pre(NMDevice *self, int addr_family, CleanupType cleanup_type, gbool
     _dev_ipllx_cleanup(self, addr_family);
 
     _dev_ipmanual_cleanup(self);
+
+    nm_clear_g_signal_handler(nm_manager_get_dns_manager(priv->manager),
+                              &priv->ip_data.dnsmgr_update_pending_signal_id);
 
     _dev_ip_state_cleanup(self, AF_UNSPEC, from_reapply);
     _dev_ip_state_cleanup(self, addr_family, from_reapply);

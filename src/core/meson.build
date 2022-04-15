@@ -123,7 +123,6 @@ libNetworkManager = static_library(
     'dns/nm-dns-manager.c',
     'dns/nm-dns-plugin.c',
     'dns/nm-dns-systemd-resolved.c',
-    'dns/nm-dns-unbound.c',
     'dnsmasq/nm-dnsmasq-manager.c',
     'dnsmasq/nm-dnsmasq-utils.c',
     'ppp/nm-ppp-manager-call.c',
