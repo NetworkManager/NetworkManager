@@ -70,7 +70,7 @@ git_remote_add_gnome() {
 }
 
 git_remote_add_github() {
-    git remote add "${2-origin}" "git://github.com/$1.git"
+    git remote add "${2-origin}" "https://github.com/$1.git"
     git remote 'set-url' --push "${2-origin}" "git@github.com:$1.git"
 }
 
