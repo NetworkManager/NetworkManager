@@ -319,15 +319,24 @@ MAKEREPO_GIT_IGNORE_LAST="makerepo.gitignore.last-$CURRENT_BRANCH"
 
 get_local_mirror() {
     local URL="$1"
+    local DIRNAME
+    local FULLNAME
 
     if [[ -z "$URL" ]]; then
         return
     fi
 
-    local DIRNAME="$(echo $URL.git | sed -e 's#^.*/\([^/]\+\)$#\1#' -e 's/\(.*\)\.git$/\1/')"
-    local FULLNAME="$srcdir/.git/.makerepo-${DIRNAME}.git"
-
     [[ -n "$NO_REMOTE" ]] && return
+
+    DIRNAME="${URL##*/}"
+    DIRNAME="${DIRNAME%.git}"
+    FULLNAME="$srcdir/.git/.makerepo-${DIRNAME}.git"
+
+    if [ ! -d "$FULLNAME" ] && [ -d "$FULLNAME.git" ]; then
+        # due to a bug, old versions of the script might have created "*.git.git/" directories.
+        # rename.
+        mv "$FULLNAME.git" "$FULLNAME"
+    fi
 
     if [[ ! -d "$FULLNAME" ]]; then
         if [[ -f "$FULLNAME" ]]; then
