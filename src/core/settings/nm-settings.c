@@ -389,14 +389,14 @@ typedef struct {
     gint64      startup_complete_start_timestamp_msec;
     GHashTable *startup_complete_idx;
     CList       startup_complete_scd_lst_head;
-    guint       startup_complete_timeout_id;
+    GSource    *startup_complete_timeout_source;
+
+    GSource *kf_db_flush_idle_source_timestamps;
+    GSource *kf_db_flush_idle_source_seen_bssids;
 
     guint connections_len;
 
     guint connections_generation;
-
-    guint kf_db_flush_idle_id_timestamps;
-    guint kf_db_flush_idle_id_seen_bssids;
 
     bool kf_db_pruned_timestamps;
     bool kf_db_pruned_seen_bssid;
@@ -541,9 +541,9 @@ _startup_complete_timeout_cb(gpointer user_data)
     NMSettings        *self = user_data;
     NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE(self);
 
-    priv->startup_complete_timeout_id = 0;
+    nm_clear_g_source_inst(&priv->startup_complete_timeout_source);
     _startup_complete_check(self, 0);
-    return G_SOURCE_REMOVE;
+    return G_SOURCE_CONTINUE;
 }
 
 static void
@@ -567,7 +567,7 @@ _startup_complete_check(NMSettings *self, gint64 now_msec)
         return;
     }
 
-    nm_clear_g_source(&priv->startup_complete_timeout_id);
+    nm_clear_g_source_inst(&priv->startup_complete_timeout_source);
 
     if (c_list_is_empty(&priv->startup_complete_scd_lst_head))
         goto ready;
@@ -609,8 +609,10 @@ next_with_ready:
 
         timeout_msec = priv->startup_complete_start_timestamp_msec + scd_not_ready->timeout_msec
                        - nm_utils_get_monotonic_timestamp_msec();
-        priv->startup_complete_timeout_id =
-            g_timeout_add(NM_CLAMP(0, timeout_msec, 60000), _startup_complete_timeout_cb, self);
+        priv->startup_complete_timeout_source =
+            nm_g_timeout_add_source(NM_CLAMP(0, timeout_msec, 60000),
+                                    _startup_complete_timeout_cb,
+                                    self);
         _LOGT("startup-complete: wait for suitable device for connection \"%s\" (%s) which has "
               "\"connection.wait-device-timeout\" set",
               nm_settings_connection_get_id(scd_not_ready->sett_conn),
@@ -637,7 +639,7 @@ ready:
     _LOGT("startup-complete: ready, no more profiles to wait for");
     priv->startup_complete_start_timestamp_msec = 0;
     nm_assert(!priv->startup_complete_idx);
-    nm_assert(priv->startup_complete_timeout_id == 0);
+    nm_assert(!priv->startup_complete_timeout_source);
     _notify(self, PROP_STARTUP_COMPLETE);
 }
 
@@ -3842,13 +3844,13 @@ _kf_db_got_dirty_flush(NMSettings *self, gboolean is_timestamps)
     NMKeyFileDB       *kf_db;
 
     if (is_timestamps) {
-        prefix                               = "timestamps";
-        kf_db                                = priv->kf_db_timestamps;
-        priv->kf_db_flush_idle_id_timestamps = 0;
+        prefix = "timestamps";
+        kf_db  = priv->kf_db_timestamps;
+        nm_clear_g_source_inst(&priv->kf_db_flush_idle_source_timestamps);
     } else {
-        prefix                                = "seen-bssids";
-        kf_db                                 = priv->kf_db_seen_bssids;
-        priv->kf_db_flush_idle_id_seen_bssids = 0;
+        prefix = "seen-bssids";
+        kf_db  = priv->kf_db_seen_bssids;
+        nm_clear_g_source_inst(&priv->kf_db_flush_idle_source_seen_bssids);
     }
 
     if (nm_key_file_db_is_dirty(kf_db))
@@ -3859,7 +3861,7 @@ _kf_db_got_dirty_flush(NMSettings *self, gboolean is_timestamps)
               nm_key_file_db_get_filename(kf_db));
     }
 
-    return G_SOURCE_REMOVE;
+    return G_SOURCE_CONTINUE;
 }
 
 static gboolean
@@ -3880,26 +3882,27 @@ _kf_db_got_dirty_fcn(NMKeyFileDB *kf_db, gpointer user_data)
     NMSettings        *self = user_data;
     NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE(self);
     GSourceFunc        idle_func;
-    guint             *p_id;
+    GSource          **p_source;
     const char        *prefix;
 
     if (priv->kf_db_timestamps == kf_db) {
         prefix    = "timestamps";
-        p_id      = &priv->kf_db_flush_idle_id_timestamps;
+        p_source  = &priv->kf_db_flush_idle_source_timestamps;
         idle_func = _kf_db_got_dirty_flush_timestamps_cb;
     } else if (priv->kf_db_seen_bssids == kf_db) {
         prefix    = "seen-bssids";
-        p_id      = &priv->kf_db_flush_idle_id_seen_bssids;
+        p_source  = &priv->kf_db_flush_idle_source_seen_bssids;
         idle_func = _kf_db_got_dirty_flush_seen_bssids_cb;
     } else {
         nm_assert_not_reached();
         return;
     }
 
-    if (*p_id != 0)
+    if (*p_source)
         return;
     _LOGT("[%s-keyfile]: schedule flushing changes to disk", prefix);
-    *p_id = g_idle_add_full(G_PRIORITY_LOW, idle_func, self, NULL);
+    *p_source =
+        nm_g_source_attach(nm_g_idle_source_new(G_PRIORITY_LOW, idle_func, self, NULL), NULL);
 }
 
 void
@@ -4100,7 +4103,7 @@ dispose(GObject *object)
     nm_assert(c_list_is_empty(&priv->sce_dirty_lst_head));
     nm_assert(g_hash_table_size(priv->sce_idx) == 0);
 
-    nm_clear_g_source(&priv->startup_complete_timeout_id);
+    nm_clear_g_source_inst(&priv->startup_complete_timeout_source);
     nm_clear_pointer(&priv->startup_complete_idx, g_hash_table_destroy);
     nm_assert(c_list_is_empty(&priv->startup_complete_scd_lst_head));
 
@@ -4154,8 +4157,8 @@ finalize(GObject *object)
 
     g_clear_object(&priv->agent_mgr);
 
-    nm_clear_g_source(&priv->kf_db_flush_idle_id_timestamps);
-    nm_clear_g_source(&priv->kf_db_flush_idle_id_seen_bssids);
+    nm_clear_g_source_inst(&priv->kf_db_flush_idle_source_timestamps);
+    nm_clear_g_source_inst(&priv->kf_db_flush_idle_source_seen_bssids);
     _kf_db_to_file(self, TRUE, FALSE);
     _kf_db_to_file(self, FALSE, FALSE);
     nm_key_file_db_destroy(priv->kf_db_timestamps);
