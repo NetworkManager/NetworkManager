@@ -203,6 +203,14 @@ class Util:
         return isinstance(s, t)
 
     @staticmethod
+    def is_regex_pattern(s):
+        if Util.python_has_version(3):
+            t = re.Pattern
+        else:
+            t = re._pattern_type
+        return isinstance(s, t)
+
+    @staticmethod
     def memoize_nullary(nullary_func):
         result = []
 
@@ -347,12 +355,21 @@ class Util:
                 v_search = replace[0]()
             except TypeError:
                 v_search = replace[0]
+
+            v_replace = replace[1]
+            v_replace = v_replace.encode("utf-8")
+
+            if Util.is_regex_pattern(v_search):
+                text2 = []
+                for t in text:
+                    text2.append(v_search.sub(v_replace, t))
+                text = text2
+                continue
+
             assert v_search is None or Util.is_string(v_search)
             if not v_search:
                 continue
-            v_replace = replace[1]
             v_search = v_search.encode("utf-8")
-            v_replace = v_replace.encode("utf-8")
             text2 = []
             for t in text:
                 if isinstance(t, tuple):
@@ -657,7 +674,13 @@ class AsyncProcess:
 
 
 class NmTestBase(unittest.TestCase):
-    pass
+    def __init__(self, *args, **kwargs):
+        self._calling_num = {}
+        self._skip_test_for_l10n_diff = []
+        self._async_jobs = []
+        self._results = []
+        self.srv = None
+        return unittest.TestCase.__init__(self, *args, **kwargs)
 
 
 MAX_JOBS = 15
@@ -837,9 +860,6 @@ class TestNmcli(NmTestBase):
             self.fail("invalid language %s" % (lang))
 
         env = {}
-        if extra_env is not None:
-            for k, v in extra_env.items():
-                env[k] = v
         for k in ["LD_LIBRARY_PATH", "DBUS_SESSION_BUS_ADDRESS"]:
             val = os.environ.get(k, None)
             if val is not None:
@@ -856,6 +876,9 @@ class TestNmcli(NmTestBase):
         env["NM_TEST_CALLING_NUM"] = str(calling_num)
         if fatal_warnings is _DEFAULT_ARG or fatal_warnings:
             env["G_DEBUG"] = "fatal-warnings"
+        if extra_env is not None:
+            for k, v in extra_env.items():
+                env[k] = v
 
         args = [conf.get(ENV_NM_TEST_CLIENT_NMCLI_PATH)] + list(args)
 
@@ -1012,20 +1035,13 @@ class TestNmcli(NmTestBase):
     def async_wait(self):
         return self.async_start(wait_all=True)
 
-    def _nm_test_pre(self):
-        self._calling_num = {}
-        self._skip_test_for_l10n_diff = []
-        self._async_jobs = []
-        self._results = []
-
-        self.srv = NMStubServer(self._testMethodName)
-
     def _nm_test_post(self):
 
         self.async_wait()
 
-        self.srv.shutdown()
-        self.srv = None
+        if self.srv is not None:
+            self.srv.shutdown()
+            self.srv = None
 
         self._calling_num = None
 
@@ -1130,7 +1146,14 @@ class TestNmcli(NmTestBase):
 
     def nm_test(func):
         def f(self):
-            self._nm_test_pre()
+            self.srv = NMStubServer(self._testMethodName)
+            func(self)
+            self._nm_test_post()
+
+        return f
+
+    def nm_test_no_dbus(func):
+        def f(self):
             func(self)
             self._nm_test_post()
 
@@ -1671,6 +1694,97 @@ class TestNmcli(NmTestBase):
                 replace_stdout=replace_uuids,
                 replace_cmd=replace_uuids,
             )
+
+    @nm_test_no_dbus
+    def test_offline(self):
+
+        # Make sure we're not using D-Bus
+        no_dbus_env = {
+            "DBUS_SYSTEM_BUS_ADDRESS": "very:invalid",
+            "DBUS_SESSION_BUS_ADDRESS": "very:invalid",
+        }
+
+        # This check just makes sure the above works and the
+        # "nmcli g" command indeed fails talking to D-Bus
+        self.call_nmcli(
+            ["g"],
+            extra_env=no_dbus_env,
+        )
+
+        replace_uuids = [
+            (
+                re.compile(b"uuid=.*"),
+                "uuid=UUID-WAS-HERE-BUT-IS-NO-MORE-SADLY",
+            )
+        ]
+
+        self.call_nmcli(
+            ["--offline", "c", "add", "type", "ethernet"],
+            extra_env=no_dbus_env,
+            replace_stdout=replace_uuids,
+        )
+
+        self.call_nmcli(
+            ["--offline", "c", "show"],
+            extra_env=no_dbus_env,
+        )
+
+        self.call_nmcli(
+            ["--offline", "g"],
+            extra_env=no_dbus_env,
+        )
+
+        self.call_nmcli(
+            ["--offline"],
+            extra_env=no_dbus_env,
+        )
+
+        self.call_nmcli(
+            [
+                "--offline",
+                "c",
+                "add",
+                "type",
+                "wifi",
+                "ssid",
+                "lala",
+                "802-1x.eap",
+                "pwd",
+                "802-1x.identity",
+                "foo",
+                "802-1x.password",
+                "bar",
+            ],
+            extra_env=no_dbus_env,
+            replace_stdout=replace_uuids,
+        )
+
+        self.call_nmcli(
+            [
+                "--offline",
+                "c",
+                "add",
+                "type",
+                "wifi",
+                "ssid",
+                "lala",
+                "802-1x.eap",
+                "pwd",
+                "802-1x.identity",
+                "foo",
+                "802-1x.password",
+                "bar",
+                "802-1x.password-flags",
+                "agent-owned",
+            ],
+            extra_env=no_dbus_env,
+            replace_stdout=replace_uuids,
+        )
+
+        self.call_nmcli(
+            ["--complete-args", "--offline", "conn", "modify", "ipv6.ad"],
+            extra_env=no_dbus_env,
+        )
 
 
 ###############################################################################

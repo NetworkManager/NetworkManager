@@ -316,6 +316,23 @@
 
       <varlistentry>
         <term><group choice='plain'>
+          <arg choice='plain'><option>--offline</option></arg>
+        </group></term>
+
+        <listitem>
+          <para>Work without a daemon. Makes <command>connection add</command> and
+          <command>connection modify</command> commands accept and produce connection
+          data via standard input/output. Ordinarily, nmcli would communicate with
+          the NetworkManager service.</para>
+
+          <para>The connection data format (keyfile) is described in
+          <citerefentry><refentrytitle>nm-settings-keyfile</refentrytitle><manvolnum>5</manvolnum></citerefentry>
+          manual.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><group choice='plain'>
           <arg choice='plain'><option>-v</option></arg>
           <arg choice='plain'><option>--version</option></arg>
         </group></term>
@@ -928,7 +945,7 @@
             <arg choice='plain'><option>uuid</option></arg>
             <arg choice='plain'><option>path</option></arg>
           </group>
-          <arg choice='plain'><replaceable>ID</replaceable></arg>
+          <arg><replaceable>ID</replaceable></arg>
           <arg rep='repeat' choice='plain'>
             <group choice='req'>
               <arg choice='plain'><replaceable>option</replaceable> <replaceable>value</replaceable></arg>
@@ -962,7 +979,14 @@
 
           <para>The connection is identified by its name, UUID or D-Bus path. If
           <replaceable>ID</replaceable> is ambiguous, a keyword <option>id</option>,
-          <option>uuid</option> or <option>path</option> can be used.</para>
+          <option>uuid</option> or <option>path</option> can be used.
+          The <replaceable>ID</replaceable> is not used with the global
+          <option>--offline</option> option.</para>
+
+          <para>When the global <option>--offline</option> is used, the
+          command reads the connection from the standard input and prints the
+          modified connection to standard output instead of making the
+          the NetworkManager daemon act upon specified connection.</para>
         </listitem>
       </varlistentry>
 
@@ -1096,6 +1120,10 @@
               </listitem>
             </varlistentry>
           </variablelist>
+
+          <para>When the global <option>--offline</option> is used, the
+          command prints the resulting connection to standard output instead of
+          actually adding the connection via the NetworkManager daemon.</para>
         </listitem>
       </varlistentry>
 
