@@ -1172,13 +1172,6 @@ _l3_config_data_add_obj(NMDedupMultiIndex      *multi_idx,
                     modified                                 = TRUE;
                 }
 
-                /* OR assume_config_once flag */
-                if (obj_new->ip_address.a_assume_config_once
-                    && !obj_old->ip_address.a_assume_config_once) {
-                    obj_new = nmp_object_stackinit_obj(&obj_new_stackinit, obj_new);
-                    obj_new_stackinit.ip_address.a_assume_config_once = TRUE;
-                    modified                                          = TRUE;
-                }
                 break;
             case NMP_OBJECT_TYPE_IP4_ROUTE:
             case NMP_OBJECT_TYPE_IP6_ROUTE:
@@ -1189,13 +1182,6 @@ _l3_config_data_add_obj(NMDedupMultiIndex      *multi_idx,
                     modified                             = TRUE;
                 }
 
-                /* OR assume_config_once flag */
-                if (obj_new->ip_route.r_assume_config_once
-                    && !obj_old->ip_route.r_assume_config_once) {
-                    obj_new = nmp_object_stackinit_obj(&obj_new_stackinit, obj_new);
-                    obj_new_stackinit.ip_route.r_assume_config_once = TRUE;
-                    modified                                        = TRUE;
-                }
                 break;
             default:
                 nm_assert_not_reached();
@@ -3056,9 +3042,8 @@ nm_l3_config_data_merge(NML3ConfigData       *self,
             const NMPlatformIPAddress *a_src = NMP_OBJECT_CAST_IP_ADDRESS(obj);
             NMPlatformIPXAddress       a;
             NML3ConfigMergeHookResult  hook_result = {
-                 .ip4acd_not_ready   = NM_OPTION_BOOL_DEFAULT,
-                 .assume_config_once = NM_OPTION_BOOL_DEFAULT,
-                 .force_commit       = NM_OPTION_BOOL_DEFAULT,
+                 .ip4acd_not_ready = NM_OPTION_BOOL_DEFAULT,
+                 .force_commit     = NM_OPTION_BOOL_DEFAULT,
             };
 
 #define _ensure_a()                                       \
@@ -3091,12 +3076,6 @@ nm_l3_config_data_merge(NML3ConfigData       *self,
                 a.a4.a_acd_not_ready = (!!hook_result.ip4acd_not_ready);
             }
 
-            if (hook_result.assume_config_once != NM_OPTION_BOOL_DEFAULT
-                && (!!hook_result.assume_config_once) != a_src->a_assume_config_once) {
-                _ensure_a();
-                a.ax.a_assume_config_once = (!!hook_result.assume_config_once);
-            }
-
             if (hook_result.force_commit != NM_OPTION_BOOL_DEFAULT
                 && (!!hook_result.force_commit) != a_src->a_force_commit) {
                 _ensure_a();
@@ -3121,9 +3100,8 @@ nm_l3_config_data_merge(NML3ConfigData       *self,
                 const NMPlatformIPRoute  *r_src = NMP_OBJECT_CAST_IP_ROUTE(obj);
                 NMPlatformIPXRoute        r;
                 NML3ConfigMergeHookResult hook_result = {
-                    .ip4acd_not_ready   = NM_OPTION_BOOL_DEFAULT,
-                    .assume_config_once = NM_OPTION_BOOL_DEFAULT,
-                    .force_commit       = NM_OPTION_BOOL_DEFAULT,
+                    .ip4acd_not_ready = NM_OPTION_BOOL_DEFAULT,
+                    .force_commit     = NM_OPTION_BOOL_DEFAULT,
                 };
 
 #define _ensure_r()                                     \
@@ -3147,12 +3125,6 @@ nm_l3_config_data_merge(NML3ConfigData       *self,
                 if (r_src->ifindex != self->ifindex) {
                     _ensure_r();
                     r.rx.ifindex = self->ifindex;
-                }
-
-                if (hook_result.assume_config_once != NM_OPTION_BOOL_DEFAULT
-                    && (!!hook_result.assume_config_once) != r_src->r_assume_config_once) {
-                    _ensure_r();
-                    r.rx.r_assume_config_once = (!!hook_result.assume_config_once);
                 }
 
                 if (hook_result.force_commit != NM_OPTION_BOOL_DEFAULT

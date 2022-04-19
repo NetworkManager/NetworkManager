@@ -330,9 +330,7 @@ typedef enum {
                                                                                              \
     /* Meta flags not honored by NMPlatform (netlink code). Instead, they can be
      * used by the upper layers which use NMPlatformIPRoute to track addresses that
-     * should be configured. */             \
-    /* Whether the address is should be configured once during assume. */                    \
-    bool a_assume_config_once : 1;                                                           \
+     * should be configured. */                                                              \
     bool a_force_commit : 1;                                                                 \
                                                                                              \
     guint8 plen;                                                                             \
@@ -476,12 +474,9 @@ typedef union {
      * This field overrides "table_coerced" field. If "table_any" is true, then
      * the "table_coerced" field is ignored (unlike for the metric). */            \
     bool table_any : 1;                                                                   \
-                                                                                          \
     /* Meta flags not honored by NMPlatform (netlink code). Instead, they can be
      * used by the upper layers which use NMPlatformIPRoute to track routes that
-     * should be configured. */          \
-    /* Whether the route is should be configured once during assume. */                   \
-    bool r_assume_config_once : 1;                                                        \
+     * should be configured. */                                                           \
     /* Whether the route should be committed even if it was removed externally. */        \
     bool r_force_commit : 1;                                                              \
                                                                                           \
