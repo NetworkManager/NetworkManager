@@ -249,6 +249,8 @@ RUN dnf install -y \\
     mlocate \\
     mobile-broadband-provider-info-devel \\
     newt-devel \\
+    nispor \\
+    nmstate \\
     nss-devel \\
     polkit-devel \\
     ppp \\
