@@ -398,10 +398,7 @@ _lladdr_handle_changed(NML3IPv6LL *self)
      * NML3IPv4LL, where we use NM_L3_CONFIG_MERGE_FLAGS_ONLY_FOR_ACD. The difference
      * is that for IPv6 we let kernel do DAD, so we need to actually configure the
      * address. For IPv4, we can run ACD without configuring anything in kernel,
-     * and let the user decide how to proceed.
-     *
-     * Also in this case, we use the most graceful commit-type (NM_L3_CFG_COMMIT_TYPE_ASSUME),
-     * but for that to work, we also need NM_L3CFG_CONFIG_FLAGS_ASSUME_CONFIG_ONCE flag. */
+     * and let the user decide how to proceed. */
 
     l3cd = nm_l3_ipv6ll_get_l3cd(self);
 
@@ -421,7 +418,7 @@ _lladdr_handle_changed(NML3IPv6LL *self)
                                 NM_DNS_PRIORITY_DEFAULT_NORMAL,
                                 NM_L3_ACD_DEFEND_TYPE_ALWAYS,
                                 0,
-                                NM_L3CFG_CONFIG_FLAGS_ASSUME_CONFIG_ONCE,
+                                NM_L3CFG_CONFIG_FLAGS_NONE,
                                 NM_L3_CONFIG_MERGE_FLAGS_NONE))
             changed = TRUE;
     } else {
@@ -430,7 +427,7 @@ _lladdr_handle_changed(NML3IPv6LL *self)
     }
 
     self->l3cfg_commit_handle = nm_l3cfg_commit_type_register(self->l3cfg,
-                                                              l3cd ? NM_L3_CFG_COMMIT_TYPE_ASSUME
+                                                              l3cd ? NM_L3_CFG_COMMIT_TYPE_UPDATE
                                                                    : NM_L3_CFG_COMMIT_TYPE_NONE,
                                                               self->l3cfg_commit_handle,
                                                               "ipv6ll");

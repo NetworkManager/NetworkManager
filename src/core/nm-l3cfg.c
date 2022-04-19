@@ -363,7 +363,6 @@ static NM_UTILS_ENUM2STR_DEFINE(_l3_cfg_commit_type_to_string,
                                 NML3CfgCommitType,
                                 NM_UTILS_ENUM2STR(NM_L3_CFG_COMMIT_TYPE_AUTO, "auto"),
                                 NM_UTILS_ENUM2STR(NM_L3_CFG_COMMIT_TYPE_NONE, "none"),
-                                NM_UTILS_ENUM2STR(NM_L3_CFG_COMMIT_TYPE_ASSUME, "assume"),
                                 NM_UTILS_ENUM2STR(NM_L3_CFG_COMMIT_TYPE_UPDATE, "update"),
                                 NM_UTILS_ENUM2STR(NM_L3_CFG_COMMIT_TYPE_REAPPLY, "reapply"), );
 
@@ -768,14 +767,6 @@ _nm_n_acd_data_probe_new(NML3Cfg *self, in_addr_t addr, guint32 timeout_msec, gp
     }                                                                                             \
     G_STMT_END
 
-static gboolean
-_obj_state_data_get_assume_config_once(const ObjStateData *obj_state)
-{
-    nm_assert_obj_state(NULL, obj_state);
-
-    return nmp_object_get_assume_config_once(obj_state->obj);
-}
-
 static ObjStateData *
 _obj_state_data_new(const NMPObject *obj, const NMPObject *plobj)
 {
@@ -1054,10 +1045,6 @@ _obj_states_sync_filter(NML3Cfg *self, const NMPObject *obj, NML3CfgCommitType c
     nm_assert(c_list_is_empty(&obj_state->os_zombie_lst));
 
     if (!obj_state->os_nm_configured) {
-        if (commit_type == NM_L3_CFG_COMMIT_TYPE_ASSUME
-            && !_obj_state_data_get_assume_config_once(obj_state))
-            return FALSE;
-
         obj_state->os_nm_configured = TRUE;
 
         _LOGD("obj-state: configure-first-time: %s",
@@ -3086,7 +3073,6 @@ nm_l3cfg_commit_on_idle_schedule(NML3Cfg *self, NML3CfgCommitType commit_type)
     nm_assert(NM_IS_L3CFG(self));
     nm_assert(NM_IN_SET(commit_type,
                         NM_L3_CFG_COMMIT_TYPE_AUTO,
-                        NM_L3_CFG_COMMIT_TYPE_ASSUME,
                         NM_L3_CFG_COMMIT_TYPE_UPDATE,
                         NM_L3_CFG_COMMIT_TYPE_REAPPLY));
 
@@ -3501,7 +3487,6 @@ out_clear:
 typedef struct {
     NML3Cfg      *self;
     gconstpointer tag;
-    bool          assume_config_once;
     bool          to_commit;
     bool          force_commit_once;
 } L3ConfigMergeHookAddObjData;
@@ -3521,11 +3506,9 @@ _l3_hook_add_obj_cb(const NML3ConfigData      *l3cd,
     nm_assert(obj);
     nm_assert(hook_result);
     nm_assert(hook_result->ip4acd_not_ready == NM_OPTION_BOOL_DEFAULT);
-    nm_assert(hook_result->assume_config_once == NM_OPTION_BOOL_DEFAULT);
     nm_assert(hook_result->force_commit == NM_OPTION_BOOL_DEFAULT);
 
-    hook_result->assume_config_once = hook_data->assume_config_once;
-    hook_result->force_commit       = hook_data->force_commit_once;
+    hook_result->force_commit = hook_data->force_commit_once;
 
     switch (NMP_OBJECT_GET_TYPE(obj)) {
     case NMP_OBJECT_TYPE_IP4_ADDRESS:
@@ -3681,9 +3664,7 @@ _l3cfg_update_combined_config(NML3Cfg               *self,
             if (NM_FLAGS_HAS(l3cd_data->config_flags, NM_L3CFG_CONFIG_FLAGS_ONLY_FOR_ACD))
                 continue;
 
-            hook_data.tag = l3cd_data->tag_confdata;
-            hook_data.assume_config_once =
-                NM_FLAGS_HAS(l3cd_data->config_flags, NM_L3CFG_CONFIG_FLAGS_ASSUME_CONFIG_ONCE);
+            hook_data.tag               = l3cd_data->tag_confdata;
             hook_data.force_commit_once = l3cd_data->force_commit_once;
 
             nm_l3_config_data_merge(l3cd,
@@ -4210,8 +4191,7 @@ _l3_commit_one(NML3Cfg              *self,
     nm_assert(NM_IN_SET(commit_type,
                         NM_L3_CFG_COMMIT_TYPE_NONE,
                         NM_L3_CFG_COMMIT_TYPE_REAPPLY,
-                        NM_L3_CFG_COMMIT_TYPE_UPDATE,
-                        NM_L3_CFG_COMMIT_TYPE_ASSUME));
+                        NM_L3_CFG_COMMIT_TYPE_UPDATE));
     nm_assert_addr_family(addr_family);
 
     _LOGT("committing IPv%c configuration (%s)",
@@ -4297,7 +4277,6 @@ _l3_commit(NML3Cfg *self, NML3CfgCommitType commit_type, gboolean is_idle)
     nm_assert(NM_IN_SET(commit_type,
                         NM_L3_CFG_COMMIT_TYPE_NONE,
                         NM_L3_CFG_COMMIT_TYPE_AUTO,
-                        NM_L3_CFG_COMMIT_TYPE_ASSUME,
                         NM_L3_CFG_COMMIT_TYPE_UPDATE,
                         NM_L3_CFG_COMMIT_TYPE_REAPPLY));
     nm_assert(self->priv.p->commit_reentrant_count == 0);
@@ -4421,10 +4400,7 @@ nm_l3cfg_commit_type_register(NML3Cfg                 *self,
     char                     buf[64];
 
     nm_assert(NM_IS_L3CFG(self));
-    nm_assert(NM_IN_SET(commit_type,
-                        NM_L3_CFG_COMMIT_TYPE_NONE,
-                        NM_L3_CFG_COMMIT_TYPE_ASSUME,
-                        NM_L3_CFG_COMMIT_TYPE_UPDATE));
+    nm_assert(NM_IN_SET(commit_type, NM_L3_CFG_COMMIT_TYPE_NONE, NM_L3_CFG_COMMIT_TYPE_UPDATE));
 
     /* It would be easy (and maybe convenient) to allow that @existing_handle
      * can currently be registered on another NML3Cfg instance. But then we couldn't
