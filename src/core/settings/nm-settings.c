@@ -557,6 +557,8 @@ _startup_complete_check(NMSettings *self, gint64 now_msec)
         return;
     }
 
+    nm_clear_g_source(&priv->startup_complete_timeout_id);
+
     if (c_list_is_empty(&priv->startup_complete_scd_lst_head))
         goto ready;
 
@@ -591,8 +593,6 @@ next_with_ready:
         nm_c_list_move_tail(&ready_lst, &scd->scd_lst);
     }
     c_list_splice(&priv->startup_complete_scd_lst_head, &ready_lst);
-
-    nm_clear_g_source(&priv->startup_complete_timeout_id);
 
     if (scd_not_ready) {
         gint64 timeout_msec;
