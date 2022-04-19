@@ -10,6 +10,9 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 
 * Drop unused, internal systemd DHCPv4 client. This is long
   replaced by nettools' n-dhcp4 implementation.
+* The nmcli command now supports --offline argument with "add" and
+  "modify" commands, allowing operation on keyfile-formatted connection
+  profiles without the service running (e.g. during system provisioning).
 
 =============================================
 NetworkManager-1.38

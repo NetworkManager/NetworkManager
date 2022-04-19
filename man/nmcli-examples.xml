@@ -614,6 +614,32 @@ Connection 'ethernet-4' (de89cdeb-a3e1-4d53-8fa0-c22546c775f4) successfully
 <screen><prompt>$ </prompt><userinput>nmcli connection add type bluetooth con-name "My Bluetooth Hotspot" autoconnect no ifname btnap0 bluetooth.type nap ipv4.method shared ipv6.method shared</userinput></screen>
     </example>
 
+    <example><title>Offline use</title>
+<screen><prompt>$ </prompt><userinput>nmcli --offline con add type ethernet '
+  conn.id eth0 \
+  conn.interface-name eth0 \
+  >/sysroot/etc/NetworkManager/system-connections/eth0.nmconnection</userinput></screen>
+      <para>
+        Creates a connection file in keyfile format without using the NetworkManager service.
+        This allows for use of familiar <command>nmcli</command> syntax in situations
+        where the service is not running, such as during system installation of image
+        provisioning and ensures the resulting file is correctly formatted.
+      </para>
+<screen><prompt>$ </prompt><userinput>nmcli --offline con modify type ethernet '
+  conn.id eth0-ipv6 \
+  ipv4.method disabled \
+  &lt;/sysroot/etc/NetworkManager/system-connections/eth0.nmconnection \
+  >/sysroot/etc/NetworkManager/system-connections/eth0-ipv6.nmconnection</userinput></screen>
+      <para>
+        Read and write a connection file without using the NetworkManager service, modifying
+        some properties along the way.
+      </para>
+      <para>
+        This allows templating of the connection profiles using familiar
+        <command>nmcli</command> syntax in situations where the service is not running.
+      </para>
+    </example>
+
   </refsect1>
 
   <refsect1>

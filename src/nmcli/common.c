@@ -16,6 +16,8 @@
 #include <readline/history.h>
 #include <readline/readline.h>
 #endif
+#include <gio/gunixinputstream.h>
+
 #include "libnm-client-aux-extern/nm-libnm-aux.h"
 
 #include "libnmc-base/nm-vpn-helpers.h"
@@ -469,7 +471,8 @@ nmc_find_connection(const GPtrArray *connections,
                 goto found;
         }
 
-        if (NM_IN_STRSET(filter_type, NULL, "filename")) {
+        if (NM_IS_REMOTE_CONNECTION(connections->pdata[i])
+            && NM_IN_STRSET(filter_type, NULL, "filename")) {
             v = nm_remote_connection_get_filename(NM_REMOTE_CONNECTION(connections->pdata[i]));
             if (complete && (filter_type || *filter_val))
                 nmc_complete_strings(filter_val, v);
@@ -1273,12 +1276,157 @@ got_client(GObject *source_object, GAsyncResult *res, gpointer user_data)
     nm_g_slice_free(call);
 }
 
+typedef struct {
+    GString *str;
+    char     buf[512];
+    CmdCall *call;
+} CmdStdinData;
+
+static void read_offline_connection_next(GInputStream *stream, CmdStdinData *data);
+
+static void
+read_offline_connection_chunk(GObject *source_object, GAsyncResult *res, gpointer user_data)
+{
+    GInputStream                   *stream   = G_INPUT_STREAM(source_object);
+    CmdStdinData                   *data     = user_data;
+    CmdCall                        *call     = data->call;
+    gs_unref_object GTask          *task     = NULL;
+    nm_auto_unref_keyfile GKeyFile *keyfile  = NULL;
+    gs_free char                   *base_dir = NULL;
+    GError                         *error    = NULL;
+    gssize                          bytes_read;
+    NMConnection                   *connection;
+    NmCli                          *nmc;
+
+    bytes_read = g_input_stream_read_finish(stream, res, &error);
+    if (bytes_read > 0) {
+        /* We need to read more. */
+        g_string_append_len(data->str, data->buf, bytes_read);
+        read_offline_connection_next(stream, data);
+        return;
+    }
+
+    /* End reached. */
+
+    task = g_steal_pointer(&call->task);
+    nmc  = g_task_get_task_data(task);
+    nmc->should_wait--;
+
+    if (bytes_read == -1) {
+        g_task_return_error(task, error);
+        goto finish;
+    }
+
+    keyfile = g_key_file_new();
+    if (!g_key_file_load_from_data(keyfile,
+                                   data->str->str,
+                                   data->str->len,
+                                   G_KEY_FILE_NONE,
+                                   &error)) {
+        g_task_return_error(task, error);
+        goto finish;
+    }
+
+    base_dir = g_get_current_dir();
+    connection =
+        nm_keyfile_read(keyfile, base_dir, NM_KEYFILE_HANDLER_FLAGS_NONE, NULL, NULL, &error);
+    if (!connection) {
+        g_task_return_error(task, error);
+        goto finish;
+    }
+
+    g_ptr_array_add(nmc->offline_connections, connection);
+    call->cmd->func(call->cmd, nmc, call->argc, (const char *const *) call->argv);
+    g_task_return_boolean(task, TRUE);
+
+finish:
+    g_strfreev(call->argv);
+    nm_g_slice_free(call);
+    g_string_free(data->str, TRUE);
+    nm_g_slice_free(data);
+}
+
+static void
+read_offline_connection_next(GInputStream *stream, CmdStdinData *data)
+{
+    g_input_stream_read_async(stream,
+                              data->buf,
+                              sizeof(data->buf),
+                              G_PRIORITY_DEFAULT,
+                              NULL,
+                              read_offline_connection_chunk,
+                              data);
+}
+
+static void
+read_offline_connection(CmdCall *call)
+{
+    gs_unref_object GInputStream *stream = NULL;
+    CmdStdinData                 *data;
+
+    stream     = g_unix_input_stream_new(STDIN_FILENO, TRUE);
+    data       = g_slice_new(CmdStdinData);
+    data->call = call;
+    data->str  = g_string_new_len(NULL, sizeof(data->buf));
+
+    read_offline_connection_next(stream, data);
+}
+
+static NMConnection *
+dummy_offline_connection(void)
+{
+    NMConnection *connection;
+
+    connection = nm_simple_connection_new();
+    nm_connection_add_setting(connection, nm_setting_connection_new());
+    return connection;
+}
+
 static void
 call_cmd(NmCli *nmc, GTask *task, const NMCCommand *cmd, int argc, const char *const *argv)
 {
     CmdCall *call;
 
-    if (nmc->client || !cmd->needs_client) {
+    if (nmc->offline) {
+        if (!cmd->supports_offline) {
+            g_task_return_new_error(task,
+                                    NMCLI_ERROR,
+                                    NMC_RESULT_ERROR_USER_INPUT,
+                                    _("Error: command doesn't support --offline mode."));
+            g_object_unref(task);
+            return;
+        }
+
+        if (!nmc->offline_connections)
+            nmc->offline_connections = g_ptr_array_new_full(1, g_object_unref);
+
+        if (cmd->needs_offline_conn) {
+            g_return_if_fail(nmc->offline_connections->len == 0);
+
+            if (nmc->complete) {
+                g_ptr_array_add(nmc->offline_connections, dummy_offline_connection());
+                cmd->func(cmd, nmc, argc, argv);
+                g_task_return_boolean(task, TRUE);
+                g_object_unref(task);
+                return;
+            }
+
+            nmc->should_wait++;
+            call  = g_slice_new(CmdCall);
+            *call = (CmdCall){
+                .cmd  = cmd,
+                .argc = argc,
+                .argv = nm_strv_dup(argv, argc, TRUE),
+                .task = task,
+            };
+            read_offline_connection(call);
+            return;
+        } else {
+            cmd->func(cmd, nmc, argc, argv);
+            g_task_return_boolean(task, TRUE);
+            g_object_unref(task);
+        }
+    } else if (nmc->client || !cmd->needs_client) {
         /* Check whether NetworkManager is running */
         if (cmd->needs_nm_running && !nm_client_get_nm_running(nmc->client)) {
             g_task_return_new_error(task,
