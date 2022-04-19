@@ -3984,7 +3984,9 @@ _dev_l3_cfg_commit_type_reset(NMDevice *self)
         commit_type = NM_L3_CFG_COMMIT_TYPE_NONE;
         goto do_set;
     case NM_DEVICE_SYS_IFACE_STATE_ASSUME:
-        commit_type = NM_L3_CFG_COMMIT_TYPE_ASSUME;
+        /* TODO: NM_DEVICE_SYS_IFACE_STATE_ASSUME, will be dropped from the code.
+         * Meanwhile, the commit type must be updated. */
+        commit_type = NM_L3_CFG_COMMIT_TYPE_UPDATE;
         goto do_set;
     case NM_DEVICE_SYS_IFACE_STATE_MANAGED:
         commit_type = NM_L3_CFG_COMMIT_TYPE_UPDATE;
