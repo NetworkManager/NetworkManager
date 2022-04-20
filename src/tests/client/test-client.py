@@ -377,7 +377,7 @@ class Util:
         return replace_fcn
 
     @staticmethod
-    def ReplaceTextUsingRegex(pattern, replacement):
+    def ReplaceTextRegex(pattern, replacement):
         # See ReplaceTextSimple.
         pattern = Util.as_bytes(pattern)
         replacement = Util.as_bytes(replacement)
@@ -1726,7 +1726,7 @@ class TestNmcli(NmTestBase):
             ["g"],
             extra_env=no_dbus_env,
             replace_stderr=[
-                Util.ReplaceTextUsingRegex(
+                Util.ReplaceTextRegex(
                     # depending on glib version, it prints `%s', '%s', or “%s”.
                     # depending on libc version, it converts unicode to ? or *.
                     r"Key/Value pair 0, [`*?']invalid[*?'], in address element [`*?']very:invalid[*?'] does not contain an equal sign",
@@ -1736,7 +1736,7 @@ class TestNmcli(NmTestBase):
         )
 
         replace_uuids = [
-            Util.ReplaceTextUsingRegex(
+            Util.ReplaceTextRegex(
                 r"\buuid=[-a-f0-9]+\b", "uuid=UUID-WAS-HERE-BUT-IS-NO-MORE-SADLY"
             )
         ]
