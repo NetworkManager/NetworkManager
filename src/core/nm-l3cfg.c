@@ -768,14 +768,6 @@ _nm_n_acd_data_probe_new(NML3Cfg *self, in_addr_t addr, guint32 timeout_msec, gp
     }                                                                                             \
     G_STMT_END
 
-static gboolean
-_obj_state_data_get_assume_config_once(const ObjStateData *obj_state)
-{
-    nm_assert_obj_state(NULL, obj_state);
-
-    return nmp_object_get_assume_config_once(obj_state->obj);
-}
-
 static ObjStateData *
 _obj_state_data_new(const NMPObject *obj, const NMPObject *plobj)
 {
@@ -1054,10 +1046,6 @@ _obj_states_sync_filter(NML3Cfg *self, const NMPObject *obj, NML3CfgCommitType c
     nm_assert(c_list_is_empty(&obj_state->os_zombie_lst));
 
     if (!obj_state->os_nm_configured) {
-        if (commit_type == NM_L3_CFG_COMMIT_TYPE_ASSUME
-            && !_obj_state_data_get_assume_config_once(obj_state))
-            return FALSE;
-
         obj_state->os_nm_configured = TRUE;
 
         _LOGD("obj-state: configure-first-time: %s",
