@@ -6714,3 +6714,547 @@ nm_g_main_context_can_acquire(GMainContext *context)
     g_main_context_release(context);
     return TRUE;
 }
+
+/*****************************************************************************/
+
+int
+nm_unbase64char(char c)
+{
+    /* copied from systemd's unbase64char():
+     * https://github.com/systemd/systemd/blob/688efe7703328c5a0251fafac55757b8864a9f9a/src/basic/hexdecoct.c#L539 */
+
+    switch (c) {
+    case 'A' ... 'Z':
+        return c - 'A';
+    case 'a' ... 'z':
+        return (c - 'a') + ('Z' - 'A' + 1);
+    case '0' ... '9':
+        return (c - '0') + (('Z' - 'A' + 1) + ('z' - 'a' + 1));
+    case '+':
+        return ('Z' - 'A' + 1) + ('z' - 'a' + 1) + ('9' - '0' + 1);
+    case '/':
+        return ('Z' - 'A' + 1) + ('z' - 'a' + 1) + ('9' - '0' + 1) + 1;
+    case '=':
+        /* The padding is a different kind of base64 character. Return
+         * a special error code for it. */
+        return -ERANGE;
+    default:
+        return -EINVAL;
+    }
+}
+
+static int
+unbase64_next(const char **p, size_t *l)
+{
+    int ret;
+
+    nm_assert(p);
+    nm_assert(l);
+
+    /* copied from systemd's unbase64_next():
+     * https://github.com/systemd/systemd/blob/688efe7703328c5a0251fafac55757b8864a9f9a/src/basic/hexdecoct.c#L709 */
+
+    /* Find the next non-whitespace character, and decode it. If we find padding, we return it as INT_MAX. We
+     * greedily skip all preceding and all following whitespace. */
+
+    for (;;) {
+        if (*l == 0)
+            return -EPIPE;
+
+        if (!nm_ascii_is_whitespace(**p))
+            break;
+
+        /* Skip leading whitespace */
+        (*p)++;
+        (*l)--;
+    }
+
+    ret = nm_unbase64char(**p);
+    if (ret < 0) {
+        nm_assert(NM_IN_SET(ret, -EINVAL, -ERANGE));
+        if (ret != -ERANGE)
+            return ret;
+    }
+
+    for (;;) {
+        (*p)++;
+        (*l)--;
+
+        if (*l == 0)
+            break;
+        if (!nm_ascii_is_whitespace(**p))
+            break;
+
+        /* Skip following whitespace */
+    }
+
+    nm_assert(ret == -ERANGE || ret >= 0);
+    return ret;
+}
+
+/**
+ * nm_unbase64mem_full:
+ * @p: a valid base64 string. Whitespace is ignored, but invalid encodings
+ *   will cause the function to fail.
+ * @l: the length of @p. @p is not treated as NUL terminated string but
+ *   merely as a buffer of ascii characters.
+ * @secure: whether the temporary memory will be cleared to avoid leaving
+ *   secrets in memory (see also nm_explicit_bzero()).
+ * @mem: (transfer full): the decoded buffer on success.
+ * @len: the length of @mem on success.
+ *
+ * glib provides g_base64_decode(), but that does not report any errors
+ * from invalid encodings. Expose systemd's implementation which does
+ * reject invalid inputs.
+ *
+ * Returns: a non-negative code on success. Invalid encoding let the
+ *   function fail.
+ */
+int
+nm_unbase64mem_full(const char *p, gsize l, gboolean secure, guint8 **ret, gsize *ret_size)
+{
+    gs_free uint8_t *buf = NULL;
+    const char      *x;
+    guint8          *z;
+    gsize            len;
+    int              r;
+
+    /* copied from systemd's unbase64mem_full():
+     * https://github.com/systemd/systemd/blob/688efe7703328c5a0251fafac55757b8864a9f9a/src/basic/hexdecoct.c#L751 */
+
+    nm_assert(p || l == 0);
+
+    if (l == G_MAXSIZE)
+        l = strlen(p);
+
+    /* A group of four input bytes needs three output bytes, in case of padding we need to add two or three extra
+     * bytes. Note that this calculation is an upper boundary, as we ignore whitespace while decoding */
+    len = (l / 4) * 3 + (l % 4 != 0 ? (l % 4) - 1 : 0);
+
+    buf = g_malloc(len + 1);
+
+    for (x = p, z = buf;;) {
+        int a; /* a == 00XXXXXX */
+        int b; /* b == 00YYYYYY */
+        int c; /* c == 00ZZZZZZ */
+        int d; /* d == 00WWWWWW */
+
+        a = unbase64_next(&x, &l);
+        if (a < 0) {
+            if (a == -EPIPE) /* End of string */
+                break;
+            if (a == -ERANGE) { /* Padding is not allowed at the beginning of a 4ch block */
+                r = -EINVAL;
+                goto on_failure;
+            }
+            r = a;
+            goto on_failure;
+        }
+
+        b = unbase64_next(&x, &l);
+        if (b < 0) {
+            if (b == -ERANGE) {
+                /* Padding is not allowed at the second character of a 4ch block either */
+                r = -EINVAL;
+                goto on_failure;
+            }
+            r = b;
+            goto on_failure;
+        }
+
+        c = unbase64_next(&x, &l);
+        if (c < 0) {
+            if (c != -ERANGE) {
+                r = c;
+                goto on_failure;
+            }
+        }
+
+        d = unbase64_next(&x, &l);
+        if (d < 0) {
+            if (d != -ERANGE) {
+                r = d;
+                goto on_failure;
+            }
+        }
+
+        if (c == -ERANGE) { /* Padding at the third character */
+
+            if (d != -ERANGE) { /* If the third character is padding, the fourth must be too */
+                r = -EINVAL;
+                goto on_failure;
+            }
+
+            /* b == 00YY0000 */
+            if (b & 15) {
+                r = -EINVAL;
+                goto on_failure;
+            }
+
+            if (l > 0) { /* Trailing rubbish? */
+                r = -ENAMETOOLONG;
+                goto on_failure;
+            }
+
+            *(z++) = (uint8_t) a << 2 | (uint8_t) (b >> 4); /* XXXXXXYY */
+            break;
+        }
+
+        if (d == -ERANGE) {
+            /* c == 00ZZZZ00 */
+            if (c & 3) {
+                r = -EINVAL;
+                goto on_failure;
+            }
+
+            if (l > 0) { /* Trailing rubbish? */
+                r = -ENAMETOOLONG;
+                goto on_failure;
+            }
+
+            *(z++) = (uint8_t) a << 2 | (uint8_t) b >> 4; /* XXXXXXYY */
+            *(z++) = (uint8_t) b << 4 | (uint8_t) c >> 2; /* YYYYZZZZ */
+            break;
+        }
+
+        *(z++) = (uint8_t) a << 2 | (uint8_t) b >> 4; /* XXXXXXYY */
+        *(z++) = (uint8_t) b << 4 | (uint8_t) c >> 2; /* YYYYZZZZ */
+        *(z++) = (uint8_t) c << 6 | (uint8_t) d;      /* ZZWWWWWW */
+    }
+
+    *z = '\0';
+
+    NM_SET_OUT(ret_size, (gsize) (z - buf));
+    NM_SET_OUT(ret, g_steal_pointer(&buf));
+    return 0;
+
+on_failure:
+    if (secure)
+        nm_explicit_bzero(buf, len);
+    return r;
+}
+
+/*****************************************************************************/
+
+static const char *
+skip_slash_or_dot(const char *p)
+{
+    for (; !nm_str_is_empty(p);) {
+        if (p[0] == '/') {
+            p += 1;
+            continue;
+        }
+        if (p[0] == '.' && p[1] == '/') {
+            p += 2;
+            continue;
+        }
+        break;
+    }
+    return p;
+}
+
+int
+nm_path_find_first_component(const char **p, gboolean accept_dot_dot, const char **ret)
+{
+    const char *q, *first, *end_first, *next;
+    size_t      len;
+
+    /* Copied from systemd's path_compare()
+     * https://github.com/systemd/systemd/blob/bc85f8b51d962597360e982811e674c126850f56/src/basic/path-util.c#L809 */
+
+    nm_assert(p);
+
+    /* When a path is input, then returns the pointer to the first component and its length, and
+     * move the input pointer to the next component or nul. This skips both over any '/'
+     * immediately *before* and *after* the first component before returning.
+     *
+     * Examples
+     *   Input:  p: "//.//aaa///bbbbb/cc"
+     *   Output: p: "bbbbb///cc"
+     *           ret: "aaa///bbbbb/cc"
+     *           return value: 3 (== strlen("aaa"))
+     *
+     *   Input:  p: "aaa//"
+     *   Output: p: (pointer to NUL)
+     *           ret: "aaa//"
+     *           return value: 3 (== strlen("aaa"))
+     *
+     *   Input:  p: "/", ".", ""
+     *   Output: p: (pointer to NUL)
+     *           ret: NULL
+     *           return value: 0
+     *
+     *   Input:  p: NULL
+     *   Output: p: NULL
+     *           ret: NULL
+     *           return value: 0
+     *
+     *   Input:  p: "(too long component)"
+     *   Output: return value: -EINVAL
+     *
+     *   (when accept_dot_dot is false)
+     *   Input:  p: "//..//aaa///bbbbb/cc"
+     *   Output: return value: -EINVAL
+     */
+
+    q = *p;
+
+    first = skip_slash_or_dot(q);
+    if (nm_str_is_empty(first)) {
+        *p = first;
+        if (ret)
+            *ret = NULL;
+        return 0;
+    }
+    if (nm_streq(first, ".")) {
+        *p = first + 1;
+        if (ret)
+            *ret = NULL;
+        return 0;
+    }
+
+    end_first = strchrnul(first, '/');
+    len       = end_first - first;
+
+    if (len > NAME_MAX)
+        return -EINVAL;
+    if (!accept_dot_dot && len == 2 && first[0] == '.' && first[1] == '.')
+        return -EINVAL;
+
+    next = skip_slash_or_dot(end_first);
+
+    *p = next + (nm_streq(next, ".") ? 1 : 0);
+    if (ret)
+        *ret = first;
+    return len;
+}
+
+int
+nm_path_compare(const char *a, const char *b)
+{
+    /* Copied from systemd's path_compare()
+     * https://github.com/systemd/systemd/blob/bc85f8b51d962597360e982811e674c126850f56/src/basic/path-util.c#L415 */
+
+    /* Order NULL before non-NULL */
+    NM_CMP_SELF(a, b);
+
+    /* A relative path and an absolute path must not compare as equal.
+     * Which one is sorted before the other does not really matter.
+     * Here a relative path is ordered before an absolute path. */
+    NM_CMP_DIRECT(nm_path_is_absolute(a), nm_path_is_absolute(b));
+
+    for (;;) {
+        const char *aa, *bb;
+        int         j, k;
+
+        j = nm_path_find_first_component(&a, TRUE, &aa);
+        k = nm_path_find_first_component(&b, TRUE, &bb);
+
+        if (j < 0 || k < 0) {
+            /* When one of paths is invalid, order invalid path after valid one. */
+            NM_CMP_DIRECT(j < 0, k < 0);
+
+            /* fallback to use strcmp() if both paths are invalid. */
+            NM_CMP_DIRECT_STRCMP(a, b);
+            return 0;
+        }
+
+        /* Order prefixes first: "/foo" before "/foo/bar" */
+        if (j == 0) {
+            if (k == 0)
+                return 0;
+            return -1;
+        }
+        if (k == 0)
+            return 1;
+
+        /* Alphabetical sort: "/foo/aaa" before "/foo/b" */
+        NM_CMP_DIRECT_MEMCMP(aa, bb, NM_MIN(j, k));
+
+        /* Sort "/foo/a" before "/foo/aaa" */
+        NM_CMP_DIRECT(j, k);
+    }
+}
+
+char *
+nm_path_startswith_full(const char *path, const char *prefix, gboolean accept_dot_dot)
+{
+    /* Copied from systemd's path_startswith_full()
+     * https://github.com/systemd/systemd/blob/bc85f8b51d962597360e982811e674c126850f56/src/basic/path-util.c#L375 */
+
+    nm_assert(path);
+    nm_assert(prefix);
+
+    /* Returns a pointer to the start of the first component after the parts matched by
+     * the prefix, iff
+     * - both paths are absolute or both paths are relative,
+     * and
+     * - each component in prefix in turn matches a component in path at the same position.
+     * An empty string will be returned when the prefix and path are equivalent.
+     *
+     * Returns NULL otherwise.
+     */
+
+    if ((path[0] == '/') != (prefix[0] == '/'))
+        return NULL;
+
+    for (;;) {
+        const char *p, *q;
+        int         r, k;
+
+        r = nm_path_find_first_component(&path, accept_dot_dot, &p);
+        if (r < 0)
+            return NULL;
+
+        k = nm_path_find_first_component(&prefix, accept_dot_dot, &q);
+        if (k < 0)
+            return NULL;
+
+        if (k == 0)
+            return (char *) (p ?: path);
+
+        if (r != k)
+            return NULL;
+
+        if (strncmp(p, q, r) != 0)
+            return NULL;
+    }
+}
+
+char *
+nm_path_simplify(char *path)
+{
+    bool  add_slash = false;
+    char *f         = path;
+    int   r;
+
+    /* Copied from systemd's path_simplify()
+     * https://github.com/systemd/systemd/blob/bc85f8b51d962597360e982811e674c126850f56/src/basic/path-util.c#L325 */
+
+    nm_assert(path);
+
+    /* Removes redundant inner and trailing slashes. Also removes unnecessary dots.
+     * Modifies the passed string in-place.
+     *
+     * ///foo//./bar/.   becomes /foo/bar
+     * .//./foo//./bar/. becomes foo/bar
+     */
+
+    if (path[0] == '\0')
+        return path;
+
+    if (nm_path_is_absolute(path))
+        f++;
+
+    for (const char *p = f;;) {
+        const char *e;
+
+        r = nm_path_find_first_component(&p, TRUE, &e);
+        if (r == 0)
+            break;
+
+        if (add_slash)
+            *f++ = '/';
+
+        if (r < 0) {
+            /* if path is invalid, then refuse to simplify remaining part. */
+            memmove(f, p, strlen(p) + 1);
+            return path;
+        }
+
+        memmove(f, e, r);
+        f += r;
+
+        add_slash = TRUE;
+    }
+
+    /* Special rule, if we stripped everything, we need a "." for the current directory. */
+    if (f == path)
+        *f++ = '.';
+
+    *f = '\0';
+    return path;
+}
+
+/*****************************************************************************/
+
+static gboolean
+valid_ldh_char(char c)
+{
+    /* "LDH" → "Letters, digits, hyphens", as per RFC 5890, Section 2.3.1 */
+
+    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '-';
+}
+
+/**
+ * nm_hostname_is_valid:
+ * @s: the hostname to check.
+ * @trailing_dot: Accept trailing dot on multi-label names.
+ *
+ * Return: %TRUE if valid.
+ */
+gboolean
+nm_hostname_is_valid(const char *s, gboolean trailing_dot)
+{
+    unsigned    n_dots = 0;
+    const char *p;
+    gboolean    dot;
+    gboolean    hyphen;
+
+    /* Copied from systemd's hostname_is_valid()
+     * https://github.com/systemd/systemd/blob/bc85f8b51d962597360e982811e674c126850f56/src/basic/hostname-util.c#L85 */
+
+    /* Check if s looks like a valid hostname or FQDN. This does not do full DNS validation, but only
+     * checks if the name is composed of allowed characters and the length is not above the maximum
+     * allowed by Linux (c.f. dns_name_is_valid()). A trailing dot is allowed if
+     * VALID_HOSTNAME_TRAILING_DOT flag is set and at least two components are present in the name. Note
+     * that due to the restricted charset and length this call is substantially more conservative than
+     * dns_name_is_valid(). Doesn't accept empty hostnames, hostnames with leading dots, and hostnames
+     * with multiple dots in a sequence. Doesn't allow hyphens at the beginning or end of label. */
+
+    if (nm_str_is_empty(s))
+        return FALSE;
+
+    if (nm_streq(s, ".host")) {
+        /* Used by the container logic to denote the "root container".
+         * Systemd's hostname_is_valid() would accept that iff VALID_HOSTNAME_DOT_HOST flag
+         * is set. We don't. */
+        return FALSE;
+    }
+
+    for (p = s, dot = hyphen = TRUE; *p; p++)
+        if (*p == '.') {
+            if (dot || hyphen)
+                return FALSE;
+
+            dot    = TRUE;
+            hyphen = FALSE;
+            n_dots++;
+
+        } else if (*p == '-') {
+            if (dot)
+                return FALSE;
+
+            dot    = FALSE;
+            hyphen = TRUE;
+
+        } else {
+            if (!valid_ldh_char(*p))
+                return FALSE;
+
+            dot    = FALSE;
+            hyphen = FALSE;
+        }
+
+    if (dot && (n_dots < 2 || !trailing_dot))
+        return FALSE;
+    if (hyphen)
+        return FALSE;
+
+    /* Note that HOST_NAME_MAX is 64 on Linux, but DNS allows domain names up to
+     * 255 characters */
+    if (p - s > HOST_NAME_MAX)
+        return FALSE;
+
+    return TRUE;
+}

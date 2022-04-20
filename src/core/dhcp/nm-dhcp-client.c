@@ -1080,7 +1080,7 @@ config_init(NMDhcpClientConfig *config, const NMDhcpClientConfig *src)
         if (!config->send_hostname) {
             nm_clear_g_free((gpointer *) &config->hostname);
         } else if ((config->use_fqdn && !nm_sd_dns_name_is_valid(config->hostname))
-                   || (!config->use_fqdn && !nm_sd_hostname_is_valid(config->hostname, FALSE))) {
+                   || (!config->use_fqdn && !nm_hostname_is_valid(config->hostname, FALSE))) {
             nm_log_warn(LOGD_DHCP,
                         "dhcp%c: %s '%s' is invalid, will be ignored",
                         nm_utils_addr_family_to_char(config->addr_family),

@@ -23,7 +23,6 @@
 #include "libnm-glib-aux/nm-enum-utils.h"
 #include "libnm-glib-aux/nm-time-utils.h"
 #include "libnm-glib-aux/nm-secret-utils.h"
-#include "libnm-systemd-shared/nm-sd-utils-shared.h"
 #include "libnm-core-aux-intern/nm-common-macros.h"
 #include "nm-utils-private.h"
 #include "nm-setting-private.h"
@@ -5356,7 +5355,7 @@ nm_utils_base64secret_decode(const char *base64_key, gsize required_key_len, gui
 
     base64_key_len = strlen(base64_key);
 
-    r = nm_sd_utils_unbase64mem(base64_key, base64_key_len, TRUE, &bin_arr, &bin_len);
+    r = nm_unbase64mem_full(base64_key, base64_key_len, TRUE, &bin_arr, &bin_len);
     if (r < 0)
         return FALSE;
     if (bin_len != required_key_len) {

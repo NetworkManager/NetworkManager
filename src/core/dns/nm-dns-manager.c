@@ -26,7 +26,6 @@
 
 #include "libnm-core-intern/nm-core-internal.h"
 #include "libnm-glib-aux/nm-str-buf.h"
-#include "libnm-systemd-shared/nm-sd-utils-shared.h"
 
 #include "NetworkManagerUtils.h"
 #include "devices/nm-device.h"
@@ -2104,7 +2103,7 @@ nm_dns_manager_set_hostname(NMDnsManager *self, const char *hostname, gboolean s
                 domain = hostname;
             }
 
-            if (!nm_sd_hostname_is_valid(domain, FALSE))
+            if (!nm_hostname_is_valid(domain, FALSE))
                 domain = NULL;
         }
     }
