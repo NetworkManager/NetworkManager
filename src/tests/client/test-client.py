@@ -1725,6 +1725,12 @@ class TestNmcli(NmTestBase):
         self.call_nmcli(
             ["g"],
             extra_env=no_dbus_env,
+            replace_stderr=[
+                Util.ReplaceTextUsingRegex(
+                    r"Key/Value pair 0, [*?']invalid[*?'], in address element [*?']very:invalid[*?'] does not contain an equal sign",
+                    "Key/Value pair 0, 'invalid', in address element 'very:invalid' does not contain an equal sign",
+                )
+            ],
         )
 
         replace_uuids = [

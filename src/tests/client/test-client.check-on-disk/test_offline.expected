@@ -5,7 +5,7 @@ lang: C
 returncode: 1
 stderr: 136 bytes
 >>>
-Error: Could not create NMClient object: Key/Value pair 0, ?invalid?, in address element ?very:invalid? does not contain an equal sign.
+Error: Could not create NMClient object: Key/Value pair 0, 'invalid', in address element 'very:invalid' does not contain an equal sign.
 
 <<<
 size: 319
