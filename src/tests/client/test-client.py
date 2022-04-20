@@ -203,14 +203,6 @@ class Util:
         return isinstance(s, t)
 
     @staticmethod
-    def is_regex_pattern(s):
-        if Util.python_has_version(3):
-            t = re.Pattern
-        else:
-            t = re._pattern_type
-        return isinstance(s, t)
-
-    @staticmethod
     def memoize_nullary(nullary_func):
         result = []
 
@@ -342,6 +334,10 @@ class Util:
         except:
             return None
 
+    class ReplaceTextUsingRegex:
+        def __init__(self, pattern):
+            self.pattern = re.compile(pattern)
+
     @staticmethod
     def replace_text(text, replace_arr):
         if not replace_arr:
@@ -359,10 +355,10 @@ class Util:
             v_replace = replace[1]
             v_replace = v_replace.encode("utf-8")
 
-            if Util.is_regex_pattern(v_search):
+            if isinstance(v_search, Util.ReplaceTextUsingRegex):
                 text2 = []
                 for t in text:
-                    text2.append(v_search.sub(v_replace, t))
+                    text2.append(v_search.pattern.sub(v_replace, t))
                 text = text2
                 continue
 
@@ -1713,7 +1709,7 @@ class TestNmcli(NmTestBase):
 
         replace_uuids = [
             (
-                re.compile(b"uuid=.*"),
+                Util.ReplaceTextUsingRegex(b"\\buuid=[-a-f0-9]+\\b"),
                 "uuid=UUID-WAS-HERE-BUT-IS-NO-MORE-SADLY",
             )
         ]
