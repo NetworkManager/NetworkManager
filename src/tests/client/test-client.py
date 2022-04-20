@@ -35,6 +35,7 @@ from __future__ import print_function
 #    # On Debian, you might do:
 #    #   sed -i 's/^# \(pl_PL.UTF-8 .*\)$/\1/p' /etc/locale.gen
 #    #   locale-gen pl_PL.UTF-8
+#    # On Fedora, you might install `glibc-langpack-pl` package.
 #
 #  2) LANG=pl_PL.UTF-8 ./src/nmcli/nmcli --version
 #    # Ensure that the built nmcli has Polish locale working. If not,
@@ -203,6 +204,13 @@ class Util:
         return isinstance(s, t)
 
     @staticmethod
+    def as_bytes(s):
+        if Util.is_string(s):
+            return s.encode("utf-8")
+        assert isinstance(s, bytes)
+        return s
+
+    @staticmethod
     def memoize_nullary(nullary_func):
         result = []
 
@@ -334,9 +342,47 @@ class Util:
         except:
             return None
 
-    class ReplaceTextUsingRegex:
-        def __init__(self, pattern):
-            self.pattern = re.compile(pattern)
+    @staticmethod
+    def _replace_text_match_join(split_arr, replacement):
+        yield split_arr[0]
+        for t in split_arr[1:]:
+            yield (replacement,)
+            yield t
+
+    @staticmethod
+    def ReplaceTextSimple(search, replacement):
+        # This gives a function that can be used by Util.replace_text().
+        # The function replaces an input bytes string @t. It must either return
+        # a bytes string, a list containing bytes strings and/or 1-tuples (the
+        # latter containing one bytes string).
+        # The 1-tuple acts as a placeholder for atomic text, that cannot be replaced
+        # a second time.
+        #
+        # Search for replace_text_fcn in Util.replace_text() where this is called.
+        replacement = Util.as_bytes(replacement)
+
+        if callable(search):
+            search_fcn = search
+        else:
+            search_fcn = lambda: search
+
+        def replace_fcn(t):
+            assert isinstance(t, bytes)
+            search_txt = search_fcn()
+            if search_txt is None:
+                return t
+            search_txt = Util.as_bytes(search_txt)
+            return Util._replace_text_match_join(t.split(search_txt), replacement)
+
+        return replace_fcn
+
+    @staticmethod
+    def ReplaceTextUsingRegex(pattern, replacement):
+        # See ReplaceTextSimple.
+        pattern = Util.as_bytes(pattern)
+        replacement = Util.as_bytes(replacement)
+        p = re.compile(pattern)
+        return lambda t: Util._replace_text_match_join(p.split(t), replacement)
 
     @staticmethod
     def replace_text(text, replace_arr):
@@ -346,36 +392,17 @@ class Util:
         if needs_encode:
             text = text.encode("utf-8")
         text = [text]
-        for replace in replace_arr:
-            try:
-                v_search = replace[0]()
-            except TypeError:
-                v_search = replace[0]
-
-            v_replace = replace[1]
-            v_replace = v_replace.encode("utf-8")
-
-            if isinstance(v_search, Util.ReplaceTextUsingRegex):
-                text2 = []
-                for t in text:
-                    text2.append(v_search.pattern.sub(v_replace, t))
-                text = text2
-                continue
-
-            assert v_search is None or Util.is_string(v_search)
-            if not v_search:
-                continue
-            v_search = v_search.encode("utf-8")
+        for replace_text_fcn in replace_arr:
             text2 = []
             for t in text:
-                if isinstance(t, tuple):
+                # tuples are markers for atomic strings. They won't be replaced a second
+                # time.
+                if not isinstance(t, tuple):
+                    t = replace_text_fcn(t)
+                if isinstance(t, bytes) or isinstance(t, tuple):
                     text2.append(t)
-                    continue
-                t2 = t.split(v_search)
-                text2.append(t2[0])
-                for t3 in t2[1:]:
-                    text2.append((v_replace,))
-                    text2.append(t3)
+                else:
+                    text2.extend(t)
             text = text2
         bb = b"".join([(t[0] if isinstance(t, tuple) else t) for t in text])
         if needs_encode:
@@ -683,6 +710,12 @@ MAX_JOBS = 15
 
 
 class TestNmcli(NmTestBase):
+    def ReplaceTextConUuid(self, con_name, replacement):
+        return Util.ReplaceTextSimple(
+            Util.memoize_nullary(lambda: self.srv.findConnectionUuid(con_name)),
+            replacement,
+        )
+
     @staticmethod
     def _read_expected(filename):
         results_expect = []
@@ -1248,10 +1281,7 @@ class TestNmcli(NmTestBase):
         replace_uuids = []
 
         replace_uuids.append(
-            (
-                Util.memoize_nullary(lambda: self.srv.findConnectionUuid("con-xx1")),
-                "UUID-con-xx1-REPLACED-REPLACED-REPLA",
-            )
+            self.ReplaceTextConUuid("con-xx1", "UUID-con-xx1-REPLACED-REPLACED-REPLA")
         )
 
         self.call_nmcli(
@@ -1264,9 +1294,8 @@ class TestNmcli(NmTestBase):
         for con_name, apn in con_gsm_list:
 
             replace_uuids.append(
-                (
-                    Util.memoize_nullary(lambda: self.srv.findConnectionUuid(con_name)),
-                    "UUID-" + con_name + "-REPLACED-REPLACED-REPL",
+                self.ReplaceTextConUuid(
+                    con_name, "UUID-" + con_name + "-REPLACED-REPLACED-REPL"
                 )
             )
 
@@ -1297,10 +1326,7 @@ class TestNmcli(NmTestBase):
             )
 
         replace_uuids.append(
-            (
-                Util.memoize_nullary(lambda: self.srv.findConnectionUuid("ethernet")),
-                "UUID-ethernet-REPLACED-REPLACED-REPL",
-            )
+            self.ReplaceTextConUuid("ethernet", "UUID-ethernet-REPLACED-REPLACED-REPL")
         )
 
         self.call_nmcli(
@@ -1429,10 +1455,7 @@ class TestNmcli(NmTestBase):
         replace_uuids = []
 
         replace_uuids.append(
-            (
-                Util.memoize_nullary(lambda: self.srv.findConnectionUuid("con-xx1")),
-                "UUID-con-xx1-REPLACED-REPLACED-REPLA",
-            )
+            self.ReplaceTextConUuid("con-xx1", "UUID-con-xx1-REPLACED-REPLACED-REPLA")
         )
 
         self.call_nmcli(
@@ -1478,10 +1501,7 @@ class TestNmcli(NmTestBase):
         self.async_wait()
 
         replace_uuids.append(
-            (
-                Util.memoize_nullary(lambda: self.srv.findConnectionUuid("con-vpn-1")),
-                "UUID-con-vpn-1-REPLACED-REPLACED-REP",
-            )
+            self.ReplaceTextConUuid("con-vpn-1", "UUID-con-vpn-1-REPLACED-REPLACED-REP")
         )
 
         self.call_nmcli(
@@ -1708,9 +1728,8 @@ class TestNmcli(NmTestBase):
         )
 
         replace_uuids = [
-            (
-                Util.ReplaceTextUsingRegex(b"\\buuid=[-a-f0-9]+\\b"),
-                "uuid=UUID-WAS-HERE-BUT-IS-NO-MORE-SADLY",
+            Util.ReplaceTextUsingRegex(
+                r"\buuid=[-a-f0-9]+\b", "uuid=UUID-WAS-HERE-BUT-IS-NO-MORE-SADLY"
             )
         ]
 
