@@ -6585,7 +6585,7 @@ nm_utils_validate_hostname(const char *hostname)
     if (dot)
         return FALSE;
 
-    return (p - hostname <= HOST_NAME_MAX);
+    return (p - hostname <= NM_HOST_NAME_MAX);
 }
 
 /*****************************************************************************/
@@ -7246,7 +7246,7 @@ nm_hostname_is_valid(const char *s, gboolean trailing_dot)
 
     /* Note that HOST_NAME_MAX is 64 on Linux, but DNS allows domain names up to
      * 255 characters */
-    if (p - s > HOST_NAME_MAX)
+    if (p - s > NM_HOST_NAME_MAX)
         return FALSE;
 
     return TRUE;
