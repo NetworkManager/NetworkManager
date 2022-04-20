@@ -1727,7 +1727,9 @@ class TestNmcli(NmTestBase):
             extra_env=no_dbus_env,
             replace_stderr=[
                 Util.ReplaceTextUsingRegex(
-                    r"Key/Value pair 0, [*?']invalid[*?'], in address element [*?']very:invalid[*?'] does not contain an equal sign",
+                    # depending on glib version, it prints `%s', '%s', or “%s”.
+                    # depending on libc version, it converts unicode to ? or *.
+                    r"Key/Value pair 0, [`*?']invalid[*?'], in address element [`*?']very:invalid[*?'] does not contain an equal sign",
                     "Key/Value pair 0, 'invalid', in address element 'very:invalid' does not contain an equal sign",
                 )
             ],
