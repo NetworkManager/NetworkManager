@@ -5222,7 +5222,7 @@ again:
  * @shortened: (out) (transfer full): on return, the shortened hostname
  *
  * Checks whether the input hostname is valid. If not, tries to shorten it
- * to HOST_NAME_MAX or to the first dot, whatever comes earlier.
+ * to HOST_NAME_MAX (64) or to the first dot, whatever comes earlier.
  * The new hostname is returned in @shortened.
  *
  * Returns: %TRUE if the input hostname was already valid or if was shortened
@@ -5248,7 +5248,7 @@ nm_utils_shorten_hostname(const char *hostname, char **shortened)
         l = (dot - hostname);
     else
         l = strlen(hostname);
-    l = MIN(l, (gsize) HOST_NAME_MAX);
+    l = MIN(l, (gsize) NM_HOST_NAME_MAX);
 
     s = g_strndup(hostname, l);
 

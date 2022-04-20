@@ -3256,6 +3256,12 @@ char *_nm_utils_format_variant_attributes(GHashTable                          *a
 
 /*****************************************************************************/
 
+/* glibc defines HOST_NAME_MAX as 64. Also Linux' sethostname() enforces
+ * that (__NEW_UTS_LEN). However, musl sets this to 255.
+ *
+ * At some places, we want to follow Linux. Hardcode our own define. */
+#define NM_HOST_NAME_MAX 64
+
 gboolean nm_utils_is_localhost(const char *name);
 
 gboolean nm_utils_is_specific_hostname(const char *name);

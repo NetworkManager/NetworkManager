@@ -234,8 +234,10 @@ test_shorten_hostname(void)
      * system configuration (`getconf HOST_NAME_MAX`). On Linux
      * it's typically 64 characters, but POSIX allows up to
      * 255 characters.
+     *
+     * We use our own define NM_HOST_NAME_MAX, which is always 64.
      */
-    maxhost = g_strnfill(HOST_NAME_MAX, 'a');
+    maxhost = g_strnfill(NM_HOST_NAME_MAX, 'a');
 
     do_test_shorten_hostname("name1", TRUE, NULL);
 
