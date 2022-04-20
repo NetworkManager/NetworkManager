@@ -2119,13 +2119,29 @@ test_hostname_is_valid(void)
     g_assert(!nm_hostname_is_valid(".foobar", FALSE));
     g_assert(!nm_hostname_is_valid("foo..bar", FALSE));
     g_assert(!nm_hostname_is_valid("foo.bar..", FALSE));
-    g_assert(
-        !nm_hostname_is_valid("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-                              "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-                              FALSE));
-    g_assert(!nm_hostname_is_valid(
-        "au-xph5-rvgrdsb5hcxc-47et3a5vvkrc-server-wyoz4elpdpe3.openstack.local",
-        FALSE));
+
+#define _assert_hostname_length(n, valid)         \
+    G_STMT_START                                  \
+    {                                             \
+        const gsize   _n = (n);                   \
+        gs_free char *_h = g_strnfill(_n, 'x');   \
+        gboolean      _valid;                     \
+                                                  \
+        _valid = nm_hostname_is_valid(_h, FALSE); \
+        g_assert_cmpint(_valid, ==, (valid));     \
+    }                                             \
+    G_STMT_END
+
+    _assert_hostname_length(HOST_NAME_MAX - 10, TRUE);
+    _assert_hostname_length(HOST_NAME_MAX - 1, TRUE);
+    _assert_hostname_length(HOST_NAME_MAX, TRUE);
+    _assert_hostname_length(HOST_NAME_MAX + 1, FALSE);
+    _assert_hostname_length(HOST_NAME_MAX + 10, FALSE);
+
+    g_assert(nm_hostname_is_valid(
+                 "au-xph5-rvgrdsb5hcxc-47et3a5vvkrc-server-wyoz4elpdpe3.openstack.local",
+                 FALSE)
+             == (HOST_NAME_MAX >= 69));
 
     g_assert(nm_hostname_is_valid("foobar", TRUE));
     g_assert(nm_hostname_is_valid("foobar.com", TRUE));
@@ -2143,9 +2159,14 @@ test_hostname_is_valid(void)
     g_assert(!nm_hostname_is_valid("foo..bar", TRUE));
     g_assert(!nm_hostname_is_valid("foo.bar..", TRUE));
     g_assert(
-        !nm_hostname_is_valid("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-                              "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-                              TRUE));
+        nm_hostname_is_valid("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+                             TRUE)
+        == (HOST_NAME_MAX >= 64));
+    g_assert(
+        nm_hostname_is_valid("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                             "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+                             TRUE)
+        == (HOST_NAME_MAX >= 104));
 }
 
 /*****************************************************************************/
