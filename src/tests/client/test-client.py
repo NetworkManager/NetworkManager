@@ -35,6 +35,7 @@ from __future__ import print_function
 #    # On Debian, you might do:
 #    #   sed -i 's/^# \(pl_PL.UTF-8 .*\)$/\1/p' /etc/locale.gen
 #    #   locale-gen pl_PL.UTF-8
+#    # On Fedora, you might install `glibc-langpack-pl` package.
 #
 #  2) LANG=pl_PL.UTF-8 ./src/nmcli/nmcli --version
 #    # Ensure that the built nmcli has Polish locale working. If not,
