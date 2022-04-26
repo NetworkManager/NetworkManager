@@ -3927,12 +3927,15 @@ _dev_l3_cfg_notify_cb(NML3Cfg *l3cfg, const NML3ConfigNotifyData *notify_data, N
     case NM_L3_CONFIG_NOTIFY_TYPE_PRE_COMMIT:
     {
         const NML3ConfigData *l3cd;
+        NMDeviceState         state = nm_device_get_state(self);
 
-        /* FIXME(l3cfg): MTU handling should be moved to l3cfg. */
-        l3cd = nm_l3cfg_get_combined_l3cd(l3cfg, TRUE);
-        if (l3cd)
-            priv->ip6_mtu = nm_l3_config_data_get_ip6_mtu(l3cd);
-        _commit_mtu(self);
+        if (state >= NM_DEVICE_STATE_IP_CONFIG && state < NM_DEVICE_STATE_DEACTIVATING) {
+            /* FIXME(l3cfg): MTU handling should be moved to l3cfg. */
+            l3cd = nm_l3cfg_get_combined_l3cd(l3cfg, TRUE);
+            if (l3cd)
+                priv->ip6_mtu = nm_l3_config_data_get_ip6_mtu(l3cd);
+            _commit_mtu(self);
+        }
         return;
     }
     case NM_L3_CONFIG_NOTIFY_TYPE_POST_COMMIT:
@@ -9556,8 +9559,6 @@ activate_stage2_device_config(NMDevice *self)
 
     lldp_setup(self, NM_TERNARY_DEFAULT);
 
-    _commit_mtu(self);
-
     nm_device_activate_schedule_stage3_ip_config(self, TRUE);
 }
 
@@ -11900,6 +11901,15 @@ activate_stage3_ip_config(NMDevice *self)
                   "interface %s not up for IP configuration",
                   nm_device_get_ip_iface(self));
     }
+
+    /* We currently will attach ports in the state change NM_DEVICE_STATE_IP_CONFIG above.
+     * Note that kernel changes the MTU of bond ports, so we want to commit the MTU
+     * afterwards!
+     *
+     * This might reset the MTU to something different from the bond controller and
+     * it might not be a working configuration. But it's what the user asked for, so
+     * let's do it! */
+    _commit_mtu(self);
 
     ipv4_method = nm_device_get_effective_ip_config_method(self, AF_INET);
     if (nm_streq(ipv4_method, NM_SETTING_IP4_CONFIG_METHOD_AUTO)) {
