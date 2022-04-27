@@ -4009,8 +4009,7 @@ nm_platform_ip_address_sync(NMPlatform *self,
         }
     }
 
-    /* @known_addresses (IPv4) are in decreasing priority order (highest priority addresses first).
-     * @known_addresses (IPv6) are in increasing priority order (highest priority addresses last) (we will sort them by scope next). */
+    /* @known_addresses are in decreasing priority order (highest priority addresses first). */
 
     /* The order we want to enforce is only among addresses with the same
      * scope, as the kernel keeps addresses sorted by scope. Therefore,
@@ -4018,7 +4017,7 @@ nm_platform_ip_address_sync(NMPlatform *self,
      * unnecessary change the order of addresses with different scopes. */
     if (!IS_IPv4) {
         if (known_addresses)
-            g_ptr_array_sort_with_data(known_addresses, ip6_address_scope_cmp_ascending, NULL);
+            g_ptr_array_sort_with_data(known_addresses, ip6_address_scope_cmp_descending, NULL);
     }
 
     if (!_addr_array_clean_expired(addr_family,
@@ -4180,7 +4179,6 @@ nm_platform_ip_address_sync(NMPlatform *self,
             ip4_addr_subnets_destroy_index(plat_subnets, plat_addresses);
             ip4_addr_subnets_destroy_index(known_subnets, known_addresses);
         } else {
-            guint        known_addresses_len;
             IP6AddrScope cur_scope;
             gboolean     delete_remaining_addrs;
 
@@ -4188,8 +4186,6 @@ nm_platform_ip_address_sync(NMPlatform *self,
              * scopes don't have a defined order. */
 
             g_ptr_array_sort_with_data(plat_addresses, ip6_address_scope_cmp_descending, NULL);
-
-            known_addresses_len = nm_g_ptr_array_len(known_addresses);
 
             /* First, check that existing addresses have a matching plen as the ones
              * we are about to configure (@known_addresses). If not, delete them. */
@@ -4235,7 +4231,8 @@ nm_platform_ip_address_sync(NMPlatform *self,
             cur_scope              = IP6_ADDR_SCOPE_LOOPBACK;
             delete_remaining_addrs = FALSE;
             i_plat                 = plat_addresses->len;
-            i_know                 = 0;
+            i_know                 = nm_g_ptr_array_len(known_addresses);
+
             while (i_plat > 0) {
                 const NMPlatformIP6Address *plat_addr =
                     NMP_OBJECT_CAST_IP6_ADDRESS(plat_addresses->pdata[--i_plat]);
@@ -4253,9 +4250,9 @@ nm_platform_ip_address_sync(NMPlatform *self,
 
                 if (!delete_remaining_addrs) {
                     delete_remaining_addrs = TRUE;
-                    for (; i_know < known_addresses_len; i_know++) {
+                    while (i_know > 0) {
                         const NMPlatformIP6Address *know_addr =
-                            NMP_OBJECT_CAST_IP6_ADDRESS(known_addresses->pdata[i_know]);
+                            NMP_OBJECT_CAST_IP6_ADDRESS(known_addresses->pdata[--i_know]);
                         IP6AddrScope know_scope;
 
                         if (!know_addr)
@@ -4292,12 +4289,20 @@ next_plat:;
     /* Add missing addresses. New addresses are added by kernel with top
      * priority.
      */
-    for (i_know = 0; i_know < known_addresses->len; i_know++) {
+    for (i = 0; i < known_addresses->len; i++) {
         const NMPObject            *plat_obj;
         const NMPObject            *known_obj;
         const NMPlatformIPXAddress *known_address;
         guint32                     lifetime;
         guint32                     preferred;
+
+        /* IPv4 addresses we need to add in the order most important first.
+         * IPv6 addresses we need to add in the reverse order with least
+         *   important first. Kernel will interpret the last address as most
+         *   important.
+         *
+         * @known_addresses is always in the order most-important-first. */
+        i_know = IS_IPv4 ? i : (known_addresses->len - i - 1u);
 
         known_obj = known_addresses->pdata[i_know];
         if (!known_obj)
