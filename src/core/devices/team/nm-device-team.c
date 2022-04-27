@@ -790,8 +790,14 @@ deactivate(NMDevice *device)
     teamd_cleanup(self, TRUE);
 }
 
-static gboolean
-attach_port(NMDevice *device, NMDevice *port, NMConnection *connection, gboolean configure)
+static NMTernary
+attach_port(NMDevice                  *device,
+            NMDevice                  *port,
+            NMConnection              *connection,
+            gboolean                   configure,
+            GCancellable              *cancellable,
+            NMDeviceAttachPortCallback callback,
+            gpointer                   user_data)
 {
     NMDeviceTeam        *self       = NM_DEVICE_TEAM(device);
     NMDeviceTeamPrivate *priv       = NM_DEVICE_TEAM_GET_PRIVATE(self);

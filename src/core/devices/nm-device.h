@@ -163,6 +163,7 @@ typedef enum {
 } NMDeviceCheckDevAvailableFlags;
 
 typedef void (*NMDeviceDeactivateCallback)(NMDevice *self, GError *error, gpointer user_data);
+typedef void (*NMDeviceAttachPortCallback)(NMDevice *self, GError *error, gpointer user_data);
 
 typedef struct _NMDeviceClass {
     NMDBusObjectClass parent;
@@ -373,11 +374,17 @@ typedef struct _NMDeviceClass {
                                                NMConnection *connection,
                                                GError      **error);
 
-    gboolean (*attach_port)(NMDevice     *self,
-                            NMDevice     *port,
-                            NMConnection *connection,
-                            gboolean      configure);
-
+    /* Attachs a port asynchronously. Returns TRUE/FALSE on immediate
+     * success/error; in such cases, the callback is not invoked. If the
+     * action couldn't be completed immediately, DEFAULT is returned and
+     * the callback will always be invoked asynchronously. */
+    NMTernary (*attach_port)(NMDevice                  *self,
+                             NMDevice                  *port,
+                             NMConnection              *connection,
+                             gboolean                   configure,
+                             GCancellable              *cancellable,
+                             NMDeviceAttachPortCallback callback,
+                             gpointer                   user_data);
     void (*detach_port)(NMDevice *self, NMDevice *port, gboolean configure);
 
     void (*parent_changed_notify)(NMDevice *self,

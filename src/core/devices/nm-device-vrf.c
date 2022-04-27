@@ -206,8 +206,14 @@ update_connection(NMDevice *device, NMConnection *connection)
         g_object_set(G_OBJECT(s_vrf), NM_SETTING_VRF_TABLE, priv->props.table, NULL);
 }
 
-static gboolean
-attach_port(NMDevice *device, NMDevice *port, NMConnection *connection, gboolean configure)
+static NMTernary
+attach_port(NMDevice                  *device,
+            NMDevice                  *port,
+            NMConnection              *connection,
+            gboolean                   configure,
+            GCancellable              *cancellable,
+            NMDeviceAttachPortCallback callback,
+            gpointer                   user_data)
 {
     NMDeviceVrf *self       = NM_DEVICE_VRF(device);
     gboolean     success    = TRUE;

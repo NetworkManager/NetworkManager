@@ -78,8 +78,14 @@ act_stage3_ip_config(NMDevice *device, int addr_family)
     nm_device_devip_set_state(device, addr_family, NM_DEVICE_IP_STATE_READY, NULL);
 }
 
-static gboolean
-attach_port(NMDevice *device, NMDevice *port, NMConnection *connection, gboolean configure)
+static NMTernary
+attach_port(NMDevice                  *device,
+            NMDevice                  *port,
+            NMConnection              *connection,
+            gboolean                   configure,
+            GCancellable              *cancellable,
+            NMDeviceAttachPortCallback callback,
+            gpointer                   user_data)
 {
     if (!configure)
         return TRUE;

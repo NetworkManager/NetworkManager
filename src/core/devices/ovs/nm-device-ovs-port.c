@@ -115,8 +115,14 @@ set_mtu_cb(GError *error, gpointer user_data)
     g_object_unref(self);
 }
 
-static gboolean
-attach_port(NMDevice *device, NMDevice *port, NMConnection *connection, gboolean configure)
+static NMTernary
+attach_port(NMDevice                    *device,
+            NMDevice                    *port,
+            NMConnection                *connection,
+            gboolean                     configure,
+            GCancellable                *cancellable,
+            NMDeviceEnslaveSlaveCallback callback,
+            gpointer                     user_data)
 {
     NMDeviceOvsPort    *self      = NM_DEVICE_OVS_PORT(device);
     NMActiveConnection *ac_port   = NULL;

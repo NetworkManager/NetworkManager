@@ -424,8 +424,14 @@ commit_port_options(NMDevice *bond_device, NMDevice *port, NMSettingBondPort *s_
                                          queue_id_str);
 }
 
-static gboolean
-attach_port(NMDevice *device, NMDevice *port, NMConnection *connection, gboolean configure)
+static NMTernary
+attach_port(NMDevice                  *device,
+            NMDevice                  *port,
+            NMConnection              *connection,
+            gboolean                   configure,
+            GCancellable              *cancellable,
+            NMDeviceAttachPortCallback callback,
+            gpointer                   user_data)
 {
     NMDeviceBond      *self = NM_DEVICE_BOND(device);
     NMSettingBondPort *s_port;
