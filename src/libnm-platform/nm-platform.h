@@ -827,10 +827,10 @@ typedef struct {
 } NMPlatformVFVlan;
 
 typedef struct {
+    guint             num_vlans;
     guint32           index;
     guint32           min_tx_rate;
     guint32           max_tx_rate;
-    guint             num_vlans;
     NMPlatformVFVlan *vlans;
     struct {
         guint8 data[20]; /* _NM_UTILS_HWADDR_LEN_MAX */
@@ -848,41 +848,41 @@ typedef struct {
 } NMPlatformBridgeVlan;
 
 typedef struct {
-    NMEtherAddr group_addr;
-    bool        mcast_querier : 1;
-    bool        mcast_query_use_ifaddr : 1;
-    bool        mcast_snooping : 1;
-    bool        stp_state : 1;
-    bool        vlan_stats_enabled : 1;
-    guint16     group_fwd_mask;
-    guint16     priority;
-    guint16     vlan_protocol;
-    guint32     ageing_time;
-    guint32     forward_delay;
-    guint32     hello_time;
-    guint32     max_age;
-    guint32     mcast_last_member_count;
-    guint32     mcast_startup_query_count;
-    guint32     mcast_hash_max;
     guint64     mcast_last_member_interval;
     guint64     mcast_membership_interval;
     guint64     mcast_querier_interval;
     guint64     mcast_query_interval;
     guint64     mcast_query_response_interval;
     guint64     mcast_startup_query_interval;
+    guint32     ageing_time;
+    guint32     forward_delay;
+    guint32     hello_time;
+    guint32     max_age;
+    guint32     mcast_hash_max;
+    guint32     mcast_last_member_count;
+    guint32     mcast_startup_query_count;
+    guint16     group_fwd_mask;
+    guint16     priority;
+    guint16     vlan_protocol;
+    NMEtherAddr group_addr;
     guint8      mcast_router;
+    bool        mcast_querier : 1;
+    bool        mcast_query_use_ifaddr : 1;
+    bool        mcast_snooping : 1;
+    bool        stp_state : 1;
+    bool        vlan_stats_enabled : 1;
 } NMPlatformLnkBridge;
 
 extern const NMPlatformLnkBridge nm_platform_lnk_bridge_default;
 
 typedef struct {
+    int       parent_ifindex;
     in_addr_t local;
     in_addr_t remote;
-    int       parent_ifindex;
-    guint16   input_flags;
-    guint16   output_flags;
     guint32   input_key;
     guint32   output_key;
+    guint16   input_flags;
+    guint16   output_flags;
     guint8    ttl;
     guint8    tos;
     bool      path_mtu_discovery : 1;
@@ -898,12 +898,12 @@ typedef struct {
     struct in6_addr local;
     struct in6_addr remote;
     int             parent_ifindex;
+    guint           flow_label;
+    guint32         flags;
     guint8          ttl;
     guint8          tclass;
     guint8          encap_limit;
     guint8          proto;
-    guint           flow_label;
-    guint32         flags;
 
     /* IP6GRE only */
     guint32 input_key;
@@ -915,9 +915,9 @@ typedef struct {
 } NMPlatformLnkIp6Tnl;
 
 typedef struct {
+    int       parent_ifindex;
     in_addr_t local;
     in_addr_t remote;
-    int       parent_ifindex;
     guint8    ttl;
     guint8    tos;
     bool      path_mtu_discovery : 1;
@@ -946,9 +946,9 @@ typedef struct {
 } NMPlatformLnkMacvlan;
 
 typedef struct {
+    int       parent_ifindex;
     in_addr_t local;
     in_addr_t remote;
-    int       parent_ifindex;
     guint16   flags;
     guint8    ttl;
     guint8    tos;
@@ -984,9 +984,9 @@ typedef struct {
 typedef struct {
     struct in6_addr group6;
     struct in6_addr local6;
+    int             parent_ifindex;
     in_addr_t       group;
     in_addr_t       local;
-    int             parent_ifindex;
     guint32         id;
     guint32         ageing;
     guint32         limit;
