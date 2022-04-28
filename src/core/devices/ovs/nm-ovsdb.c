@@ -2481,29 +2481,27 @@ typedef struct {
 static void
 _transact_cb(NMOvsdb *self, json_t *result, GError *error, gpointer user_data)
 {
-    OvsdbCall  *call = user_data;
-    const char *err;
-    const char *err_details;
-    size_t      index;
-    json_t     *value;
+    OvsdbCall            *call  = user_data;
+    gs_free_error GError *local = NULL;
+    const char           *err;
+    const char           *err_details;
+    size_t                index;
+    json_t               *value;
 
-    if (error)
-        goto out;
-
-    json_array_foreach (result, index, value) {
-        if (json_unpack(value, "{s:s, s:s}", "error", &err, "details", &err_details) == 0) {
-            g_set_error(&error,
-                        G_IO_ERROR,
-                        G_IO_ERROR_FAILED,
-                        "Error running the transaction: %s: %s",
-                        err,
-                        err_details);
-            goto out;
+    if (!error) {
+        json_array_foreach (result, index, value) {
+            if (json_unpack(value, "{s:s, s:s}", "error", &err, "details", &err_details) == 0) {
+                local = g_error_new(G_IO_ERROR,
+                                    G_IO_ERROR_FAILED,
+                                    "Error running the transaction: %s: %s",
+                                    err,
+                                    err_details);
+                break;
+            }
         }
     }
 
-out:
-    call->callback(error, call->user_data);
+    call->callback(local ?: error, call->user_data);
     nm_g_slice_free(call);
 }
 
