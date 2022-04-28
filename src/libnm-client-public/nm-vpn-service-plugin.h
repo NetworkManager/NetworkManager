@@ -39,7 +39,7 @@ G_BEGIN_DECLS
 typedef struct {
     NM_AVAILABLE_IN_1_2
     GObject parent;
-} NMVpnServicePlugin NM_AVAILABLE_IN_1_2;
+} NMVpnServicePlugin;
 
 typedef struct {
     NM_AVAILABLE_IN_1_2
@@ -92,7 +92,7 @@ typedef struct {
     /*< private >*/
     NM_AVAILABLE_IN_1_2
     gpointer padding[8];
-} NMVpnServicePluginClass NM_AVAILABLE_IN_1_2;
+} NMVpnServicePluginClass;
 
 NM_AVAILABLE_IN_1_2
 GType nm_vpn_service_plugin_get_type(void);
