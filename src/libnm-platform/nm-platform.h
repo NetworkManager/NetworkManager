@@ -330,7 +330,7 @@ typedef enum {
                                                                                              \
     /* Meta flags not honored by NMPlatform (netlink code). Instead, they can be
      * used by the upper layers which use NMPlatformIPRoute to track addresses that
-     * should be configured. */                                                              \
+     * should be configured. */             \
     bool a_force_commit : 1;                                                                 \
                                                                                              \
     guint8 plen;                                                                             \
@@ -476,7 +476,7 @@ typedef union {
     bool table_any : 1;                                                                   \
     /* Meta flags not honored by NMPlatform (netlink code). Instead, they can be
      * used by the upper layers which use NMPlatformIPRoute to track routes that
-     * should be configured. */                                                           \
+     * should be configured. */          \
     /* Whether the route should be committed even if it was removed externally. */        \
     bool r_force_commit : 1;                                                              \
                                                                                           \
