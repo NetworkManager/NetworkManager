@@ -36,6 +36,18 @@ typedef struct {
      * nmcs_provider_get_config(). */
     bool was_requested : 1;
 
+    /* Usually we would want that the parent class NMCSProvider is not aware about
+     * the implementations. However, it's convenient to track implementation specific data
+     * here, thus we violate such separation. In practice, all subclasses are known
+     * at compile time, and it will be simpler this way. */
+    struct {
+        struct {
+            in_addr_t primary_ip_address;
+            bool      has_primary_ip_address : 1;
+            bool      ipv4s_arr_ordered : 1;
+        } aliyun;
+    } priv;
+
 } NMCSProviderGetConfigIfaceData;
 
 static inline gboolean
