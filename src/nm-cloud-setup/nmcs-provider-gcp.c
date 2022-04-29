@@ -282,9 +282,7 @@ _get_config_iface_cb(GObject *source, GAsyncResult *result, gpointer user_data)
             goto out_done;
         }
         iface_data->iface_get_config =
-            nmcs_provider_get_config_iface_data_create(get_config_data->result_dict,
-                                                       FALSE,
-                                                       v_hwaddr);
+            nmcs_provider_get_config_iface_data_create(get_config_data, FALSE, v_hwaddr);
         is_requested = FALSE;
     } else {
         if (iface_data->iface_get_config->iface_idx >= 0) {
