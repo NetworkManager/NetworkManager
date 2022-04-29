@@ -9,10 +9,15 @@
 
 /*****************************************************************************/
 
+struct _NMCSProvider;
+struct _NMCSProviderGetConfigTaskData;
+
 typedef struct {
     /* And it's exactly the same pointer that is also the key for the iface_datas
      * dictionary. */
     const char *hwaddr;
+
+    struct _NMCSProviderGetConfigTaskData *get_config_data;
 
     in_addr_t *ipv4s_arr;
     gsize      ipv4s_len;
@@ -57,10 +62,6 @@ nmcs_provider_get_config_iface_data_is_valid(const NMCSProviderGetConfigIfaceDat
            && ((config_data->has_ipv4s && config_data->has_cidr) || config_data->iproutes_len);
 }
 
-NMCSProviderGetConfigIfaceData *nmcs_provider_get_config_iface_data_create(GHashTable *iface_datas,
-                                                                           gboolean was_requested,
-                                                                           const char *hwaddr);
-
 /*****************************************************************************/
 
 typedef struct {
@@ -95,8 +96,10 @@ NM_AUTO_DEFINE_FCN0(NMCSProviderGetConfigResult *,
 
 /*****************************************************************************/
 
-typedef struct {
+typedef struct _NMCSProviderGetConfigTaskData {
     GTask *task;
+
+    struct _NMCSProvider *self;
 
     GHashTable *result_dict;
 
@@ -117,6 +120,15 @@ typedef struct {
     bool any : 1;
 } NMCSProviderGetConfigTaskData;
 
+/*****************************************************************************/
+
+NMCSProviderGetConfigIfaceData *
+nmcs_provider_get_config_iface_data_create(NMCSProviderGetConfigTaskData *get_config_data,
+                                           gboolean                       was_requested,
+                                           const char                    *hwaddr);
+
+/*****************************************************************************/
+
 #define NMCS_TYPE_PROVIDER (nmcs_provider_get_type())
 #define NMCS_PROVIDER(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), NMCS_TYPE_PROVIDER, NMCSProvider))
 #define NMCS_PROVIDER_CLASS(klass) \
@@ -130,7 +142,7 @@ typedef struct {
 
 struct _NMCSProviderPrivate;
 
-typedef struct {
+typedef struct _NMCSProvider {
     GObject                      parent;
     struct _NMCSProviderPrivate *_priv;
 } NMCSProvider;
