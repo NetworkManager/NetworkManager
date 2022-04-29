@@ -4374,7 +4374,7 @@ nm_keyfile_utils_create_filename(const char *name, gboolean with_extension)
 
     g_return_val_if_fail(name && name[0], NULL);
 
-    nm_str_buf_init(&str, 0, FALSE);
+    str = NM_STR_BUF_INIT(0, FALSE);
 
     len = strlen(name);
 

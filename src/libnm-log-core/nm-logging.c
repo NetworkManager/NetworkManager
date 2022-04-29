@@ -468,7 +468,7 @@ _domains_to_string(gboolean          include_level_override,
      * nm_logging_setup(), because we want to expand "DEFAULT" and "ALL".
      */
 
-    nm_str_buf_init(&sbuf, NM_UTILS_GET_NEXT_REALLOC_SIZE_40, FALSE);
+    sbuf = NM_STR_BUF_INIT(NM_UTILS_GET_NEXT_REALLOC_SIZE_40, FALSE);
 
     for (diter = &domain_desc[0]; diter->name; diter++) {
         /* If it's set for any lower level, it will also be set for LOGL_ERR */

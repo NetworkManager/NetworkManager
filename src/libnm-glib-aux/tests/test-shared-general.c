@@ -936,7 +936,7 @@ test_nm_str_buf(void)
                                           nmtst_get_rand_bool());
             break;
         default:
-            nm_str_buf_init(&strbuf, nmtst_get_rand_uint32() % 200u + 1u, nmtst_get_rand_bool());
+            strbuf = NM_STR_BUF_INIT(nmtst_get_rand_uint32() % 200u + 1u, nmtst_get_rand_bool());
             break;
         }
 
