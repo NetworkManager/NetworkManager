@@ -1,4 +1,20 @@
 ===============================================
+NetworkManager-1.36.6
+Overview of changes since NetworkManager-1.36.4
+===============================================
+
+* Fix IPv6 on WWAN connections.
+* Fix activation of bluetooth NAP connections.
+* Fix a buffering problem in the libnm VPN plugin code that caused a
+  twenty second delay on VPN activations.
+* Fix a bug in synchronization of IP addresses with kernel that
+  could lead to a wrong address order.
+* With key-mgmt="wpa-psk", enable Wi-Fi WPA3 transition mode only when
+  the the device supports it and PMF is enabled.
+* Fast-transition is disabled when creating a Wi-Fi hotspot, to
+  prevent interoperability issues with clients.
+
+===============================================
 NetworkManager-1.36.4
 Overview of changes since NetworkManager-1.36.2
 ===============================================
