@@ -4029,7 +4029,7 @@ nm_platform_ip_address_sync(NMPlatform *self,
     gint32                         now     = 0;
     const int                      IS_IPv4 = NM_IS_IPv4(addr_family);
     NMPLookup                      lookup;
-    const gboolean                 EXTRA_LOGGING        = FALSE;
+    const gboolean                 EXTRA_LOGGING        = TRUE;
     gs_unref_hashtable GHashTable *known_addresses_idx  = NULL;
     gs_unref_hashtable GHashTable *plat_addrs_to_delete = NULL;
     gs_unref_ptrarray GPtrArray   *plat_addresses       = NULL;
@@ -4314,9 +4314,17 @@ nm_platform_ip_address_sync(NMPlatform *self,
             i_know                 = nm_g_ptr_array_len(known_addresses);
 
             while (i_plat > 0) {
+                char                        sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
                 const NMPObject            *plat_obj  = plat_addresses->pdata[--i_plat];
                 const NMPlatformIP6Address *plat_addr = NMP_OBJECT_CAST_IP6_ADDRESS(plat_obj);
                 IP6AddrScope                plat_scope;
+
+                _LOGT(">>>> check order: i_plat=%u, %s",
+                      i_plat,
+                      nmp_object_to_string(plat_obj,
+                                           NMP_OBJECT_TO_STRING_PUBLIC,
+                                           sbuf,
+                                           sizeof(sbuf)));
 
                 if (!plat_addr)
                     continue;
@@ -4328,11 +4336,24 @@ nm_platform_ip_address_sync(NMPlatform *self,
                     cur_scope              = plat_scope;
                 }
 
+                _LOGT(">>>> i_plat=%u, scope=%d, delete-remaining-addrs=%d",
+                      i_plat,
+                      (int) plat_scope,
+                      delete_remaining_addrs);
+
                 if (!delete_remaining_addrs) {
                     while (i_know > 0) {
                         const NMPlatformIP6Address *know_addr =
                             NMP_OBJECT_CAST_IP6_ADDRESS(known_addresses->pdata[--i_know]);
                         IP6AddrScope know_scope;
+
+                        _LOGT(">>>> i_plat=%u, i_know=%u, %s",
+                              i_plat,
+                              i_know,
+                              nmp_object_to_string(NMP_OBJECT_UP_CAST(know_addr),
+                                                   NMP_OBJECT_TO_STRING_PUBLIC,
+                                                   sbuf,
+                                                   sizeof(sbuf)));
 
                         if (!know_addr)
                             continue;
@@ -4353,9 +4374,11 @@ nm_platform_ip_address_sync(NMPlatform *self,
                     delete_remaining_addrs = TRUE;
                 }
 
+                _LOGT(">>>> i_plat=%u: add", i_plat);
                 g_hash_table_add(_plat_addrs_to_delete_ensure(&plat_addrs_to_delete),
                                  (gpointer) nmp_object_ref(plat_obj));
 next_plat:;
+                _LOGT(">>>> i_plat=%u: next", i_plat);
             }
         }
     }
