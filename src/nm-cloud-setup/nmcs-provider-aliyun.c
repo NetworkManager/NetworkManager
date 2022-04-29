@@ -309,9 +309,7 @@ _get_config_metadata_ready_cb(GObject *source, GAsyncResult *result, gpointer us
             }
 
             config_iface_data =
-                nmcs_provider_get_config_iface_data_create(get_config_data->result_dict,
-                                                           FALSE,
-                                                           v_hwaddr);
+                nmcs_provider_get_config_iface_data_create(get_config_data, FALSE, v_hwaddr);
         }
 
         nm_assert(config_iface_data->iface_idx == -1);
