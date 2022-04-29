@@ -3008,7 +3008,7 @@ nm_utils_buf_utf8safe_unescape(const char             *str,
         return str;
     }
 
-    nm_str_buf_init(&strbuf, len + 1u, FALSE);
+    strbuf = NM_STR_BUF_INIT(len + 1u, FALSE);
 
     nm_str_buf_append_len(&strbuf, str, s - str);
     str = s;
@@ -3175,7 +3175,7 @@ nm_utils_buf_utf8safe_escape(gconstpointer           buf,
             return str;
     }
 
-    nm_str_buf_init(&strbuf, buflen + 5, NM_FLAGS_HAS(flags, NM_UTILS_STR_UTF8_SAFE_FLAG_SECRET));
+    strbuf = NM_STR_BUF_INIT(buflen + 5, NM_FLAGS_HAS(flags, NM_UTILS_STR_UTF8_SAFE_FLAG_SECRET));
 
     s = str;
     do {
