@@ -393,7 +393,7 @@ queue_string_to_helper(AuthRequest *request, const char *response)
     g_return_if_fail(response);
 
     if (!nm_str_buf_is_initalized(&request->out_buffer))
-        nm_str_buf_init(&request->out_buffer, strlen(response) + 2u, TRUE);
+        request->out_buffer = NM_STR_BUF_INIT(strlen(response) + 2u, TRUE);
 
     nm_str_buf_append(&request->out_buffer, response);
     nm_str_buf_ensure_trailing_c(&request->out_buffer, '\n');
@@ -587,9 +587,8 @@ create_request(NMPolkitListener      *listener,
         .cookie               = g_strdup(cookie),
         .request_any_response = FALSE,
         .request_is_completed = FALSE,
+        .in_buffer            = NM_STR_BUF_INIT(NM_UTILS_GET_NEXT_REALLOC_SIZE_1000, FALSE),
     };
-
-    nm_str_buf_init(&request->in_buffer, NM_UTILS_GET_NEXT_REALLOC_SIZE_1000, FALSE);
 
     c_list_link_tail(&listener->request_lst_head, &request->request_lst);
     return request;

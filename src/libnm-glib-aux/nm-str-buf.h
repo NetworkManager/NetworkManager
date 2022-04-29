@@ -87,14 +87,6 @@ NM_STR_BUF_INIT(gsize allocated, gboolean do_bzero_mem)
                          FALSE,                                                                   \
                          (do_bzero_mem));
 
-static inline void
-nm_str_buf_init(NMStrBuf *strbuf, gsize len, bool do_bzero_mem)
-{
-    nm_assert(strbuf);
-    *strbuf = NM_STR_BUF_INIT(len, do_bzero_mem);
-    _nm_str_buf_assert(strbuf);
-}
-
 void _nm_str_buf_ensure_size(NMStrBuf *strbuf, gsize new_size, gboolean reserve_exact);
 
 static inline void
@@ -499,8 +491,8 @@ nm_str_buf_get_char(const NMStrBuf *strbuf, gsize index)
  * Returns: (transfer full): the string of the buffer
  *   which must be freed by the caller. The @strbuf
  *   is afterwards in undefined state, though it can be
- *   reused after nm_str_buf_init().
- *   Note that if no string is allocated yet (after nm_str_buf_init() with
+ *   reused after resetting with NM_STR_BUF_INIT().
+ *   Note that if no string is allocated yet (after NM_STR_BUF_INIT() with
  *   length zero), this will return %NULL.
  *
  *   If the buffer was not malloced before, it will be malloced now. */
@@ -555,7 +547,7 @@ nm_str_buf_finalize_to_gbytes(NMStrBuf *strbuf)
  *
  * Frees the associated memory of @strbuf. The buffer
  * afterwards is in undefined state, but can be re-initialized
- * with nm_str_buf_init().
+ * with NM_STR_BUF_INIT().
  */
 static inline void
 nm_str_buf_destroy(NMStrBuf *strbuf)

@@ -1545,7 +1545,7 @@ _external_ids_to_string(const GArray *arr)
     if (!arr)
         return g_strdup("empty");
 
-    nm_str_buf_init(&strbuf, NM_UTILS_GET_NEXT_REALLOC_SIZE_104, FALSE);
+    strbuf = NM_STR_BUF_INIT(NM_UTILS_GET_NEXT_REALLOC_SIZE_104, FALSE);
     nm_str_buf_append(&strbuf, "[");
     for (i = 0; i < arr->len; i++) {
         const NMUtilsNamedValue *n = &g_array_index(arr, NMUtilsNamedValue, i);

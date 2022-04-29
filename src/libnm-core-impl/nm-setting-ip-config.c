@@ -3812,7 +3812,7 @@ nm_ip_routing_rule_to_string(const NMIPRoutingRule       *self,
         }
     }
 
-    nm_str_buf_init(&str, NM_UTILS_GET_NEXT_REALLOC_SIZE_32, FALSE);
+    str = NM_STR_BUF_INIT(NM_UTILS_GET_NEXT_REALLOC_SIZE_32, FALSE);
 
     if (self->priority_has) {
         nm_str_buf_append_printf(nm_str_buf_append_required_delimiter(&str, ' '),
