@@ -387,10 +387,10 @@ static inline gboolean
 nm_str_buf_is_initalized(NMStrBuf *strbuf)
 {
     nm_assert(strbuf);
-#if NM_MORE_ASSERTS
-    if (strbuf->_priv_str)
-        _nm_str_buf_assert(strbuf);
-#endif
+    if (NM_MORE_ASSERTS > 0) {
+        if (strbuf->_priv_str)
+            _nm_str_buf_assert(strbuf);
+    }
     return !!strbuf->_priv_str;
 }
 
