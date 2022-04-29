@@ -192,6 +192,17 @@ nmcs_provider_get_config_iface_data_create(NMCSProviderGetConfigTaskData *get_co
         .was_requested   = was_requested,
     };
 
+    /* "priv" is a union, and according to C, it might not be properly initialized
+     * that all union members are set to false/0/NULL/0.0. We need to know which
+     * union field we are going to use, and that depends on the type of "self".
+     * Also, knowing the type would allow us to initialize to something other than
+     * false/0/NULL/0.0. */
+    if (G_OBJECT_TYPE(get_config_data->self) == nmcs_provider_aliyun_get_type()) {
+        iface_data->priv.aliyun = (typeof(iface_data->priv.aliyun)){
+            .has_primary_ip_address = FALSE,
+        };
+    }
+
     /* the has does not own the key (iface_datta->hwaddr), the lifetime of the
      * key is associated with the iface_data instance. */
     g_hash_table_replace(get_config_data->result_dict, (char *) iface_data->hwaddr, iface_data);
