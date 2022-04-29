@@ -917,27 +917,58 @@ test_nm_str_buf(void)
 {
     guint i_run;
 
-    for (i_run = 0; TRUE; i_run++) {
-        nm_auto_str_buf NMStrBuf      strbuf = {};
-        nm_auto_free_gstring GString *gstr   = NULL;
+    for (i_run = 0; i_run < 1000; i_run++) {
+        char                          stack_buf[1024];
+        nm_auto_str_buf NMStrBuf      strbuf;
+        nm_auto_free_gstring GString *gstr = NULL;
         int                           i, j, k;
         int                           c;
 
-        nm_str_buf_init(&strbuf, nmtst_get_rand_uint32() % 200u + 1u, nmtst_get_rand_bool());
+        switch (nmtst_get_rand_uint32() % 10) {
+        case 0:
+            memset(&strbuf, 0, sizeof(strbuf));
+            break;
+        case 1 ... 4:
+            strbuf = NM_STR_BUF_INIT_FULL(stack_buf,
+                                          0,
+                                          nmtst_get_rand_uint32() % sizeof(stack_buf),
+                                          FALSE,
+                                          nmtst_get_rand_bool());
+            break;
+        default:
+            nm_str_buf_init(&strbuf, nmtst_get_rand_uint32() % 200u + 1u, nmtst_get_rand_bool());
+            break;
+        }
 
-        if (i_run < 1000) {
-            c = nmtst_get_rand_word_length(NULL);
-            for (i = 0; i < c; i++)
-                nm_str_buf_append_c(&strbuf, '0' + (i % 10));
-            gstr = g_string_new(nm_str_buf_get_str(&strbuf));
-            j    = nmtst_get_rand_uint32() % (strbuf.len + 1);
-            k    = nmtst_get_rand_uint32() % (strbuf.len - j + 2) - 1;
+        c = nmtst_get_rand_word_length(NULL);
+        for (i = 0; i < c; i++)
+            nm_str_buf_append_c(&strbuf, '0' + (i % 10));
+        gstr = g_string_new(nm_str_buf_get_str(&strbuf));
+        j    = nmtst_get_rand_uint32() % (strbuf.len + 1);
+        k    = nmtst_get_rand_uint32() % (strbuf.len - j + 2) - 1;
 
-            nm_str_buf_erase(&strbuf, j, k, nmtst_get_rand_bool());
-            g_string_erase(gstr, j, k);
+        nm_str_buf_erase(&strbuf, j, k, nmtst_get_rand_bool());
+        g_string_erase(gstr, j, k);
+        if (gstr->str[0])
             g_assert_cmpstr(gstr->str, ==, nm_str_buf_get_str(&strbuf));
+        else
+            g_assert(NM_IN_STRSET(nm_str_buf_get_str(&strbuf), NULL, ""));
+    }
+
+    for (i_run = 0; i_run < 50; i_run++) {
+        char                     stack_buf[20];
+        nm_auto_str_buf NMStrBuf strbuf = NM_STR_BUF_INIT_ARR(stack_buf, nmtst_get_rand_bool());
+
+        nm_str_buf_append_c_len(&strbuf, 'a', nmtst_get_rand_uint32() % (sizeof(stack_buf) * 2));
+        if (strbuf.len <= sizeof(stack_buf)) {
+            g_assert(stack_buf == nm_str_buf_get_str_unsafe(&strbuf));
         } else
-            return;
+            g_assert(stack_buf != nm_str_buf_get_str_unsafe(&strbuf));
+
+        if (strbuf.len < sizeof(stack_buf)) {
+            g_assert(stack_buf == nm_str_buf_get_str(&strbuf));
+        } else
+            g_assert(stack_buf != nm_str_buf_get_str(&strbuf));
     }
 }
 
