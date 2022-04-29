@@ -5859,10 +5859,22 @@ _nm_str_buf_ensure_size(NMStrBuf *strbuf, gsize new_size, gboolean reserve_exact
         new_size = nm_utils_get_next_realloc_size(!strbuf->_priv_do_bzero_mem, new_size);
     }
 
-    strbuf->_priv_str       = nm_secret_mem_realloc(strbuf->_priv_str,
-                                              strbuf->_priv_do_bzero_mem,
-                                              strbuf->_priv_allocated,
-                                              new_size);
+    if (strbuf->_priv_malloced) {
+        strbuf->_priv_str = nm_secret_mem_realloc(strbuf->_priv_str,
+                                                  strbuf->_priv_do_bzero_mem,
+                                                  strbuf->_priv_allocated,
+                                                  new_size);
+    } else {
+        char *old = strbuf->_priv_str;
+
+        strbuf->_priv_str = g_malloc(new_size);
+        if (strbuf->_priv_len > 0) {
+            memcpy(strbuf->_priv_str, old, strbuf->_priv_len);
+            if (strbuf->_priv_do_bzero_mem)
+                nm_explicit_bzero(old, strbuf->_priv_len);
+        }
+        strbuf->_priv_malloced = TRUE;
+    }
     strbuf->_priv_allocated = new_size;
 }
 
