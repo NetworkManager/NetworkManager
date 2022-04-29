@@ -45,7 +45,7 @@ typedef struct {
      * the implementations. However, it's convenient to track implementation specific data
      * here, thus we violate such separation. In practice, all subclasses are known
      * at compile time, and it will be simpler this way. */
-    struct {
+    union {
         struct {
             in_addr_t primary_ip_address;
             bool      has_primary_ip_address : 1;
@@ -190,5 +190,11 @@ void nmcs_provider_get_config(NMCSProvider       *provider,
 
 NMCSProviderGetConfigResult *
 nmcs_provider_get_config_finish(NMCSProvider *provider, GAsyncResult *result, GError **error);
+
+/*****************************************************************************/
+
+/* Forward declare the implemented gtype getters so we can use it at a few places without requiring
+ * to include the full header (which we should not use at this place otherwise). */
+GType nmcs_provider_aliyun_get_type(void);
 
 #endif /* __NMCS_PROVIDER_H__ */
