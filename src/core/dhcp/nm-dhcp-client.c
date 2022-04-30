@@ -154,30 +154,23 @@ NM_UTILS_LOOKUP_STR_DEFINE(nm_dhcp_state_to_string,
                            NM_UTILS_LOOKUP_STR_ITEM(NM_DHCP_STATE_UNKNOWN, "unknown"), );
 
 static NMDhcpState
-reason_to_state(NMDhcpClient *self, const char *iface, const char *reason)
+reason_to_state(const char *reason)
 {
-    if (g_ascii_strcasecmp(reason, "bound") == 0 || g_ascii_strcasecmp(reason, "bound6") == 0
-        || g_ascii_strcasecmp(reason, "static") == 0)
+    if (NM_IN_STRSET_ASCII_CASE(reason, "bound", "bound6", "static"))
         return NM_DHCP_STATE_BOUND;
-    else if (g_ascii_strcasecmp(reason, "renew") == 0 || g_ascii_strcasecmp(reason, "renew6") == 0
-             || g_ascii_strcasecmp(reason, "reboot") == 0
-             || g_ascii_strcasecmp(reason, "rebind") == 0
-             || g_ascii_strcasecmp(reason, "rebind6") == 0)
+    if (NM_IN_STRSET_ASCII_CASE(reason, "renew", "renew6", "reboot", "rebind", "rebind6"))
         return NM_DHCP_STATE_EXTENDED;
-    else if (g_ascii_strcasecmp(reason, "timeout") == 0)
+    if (NM_IN_STRSET_ASCII_CASE(reason, "timeout"))
         return NM_DHCP_STATE_TIMEOUT;
-    else if (g_ascii_strcasecmp(reason, "nak") == 0 || g_ascii_strcasecmp(reason, "expire") == 0
-             || g_ascii_strcasecmp(reason, "expire6") == 0)
+    if (NM_IN_STRSET_ASCII_CASE(reason, "nak", "expire", "expire6"))
         return NM_DHCP_STATE_EXPIRE;
-    else if (g_ascii_strcasecmp(reason, "end") == 0 || g_ascii_strcasecmp(reason, "stop") == 0
-             || g_ascii_strcasecmp(reason, "stopped") == 0)
+    if (NM_IN_STRSET_ASCII_CASE(reason, "end", "stop", "stopped"))
         return NM_DHCP_STATE_DONE;
-    else if (g_ascii_strcasecmp(reason, "fail") == 0 || g_ascii_strcasecmp(reason, "abend") == 0)
+    if (NM_IN_STRSET_ASCII_CASE(reason, "fail", "abend"))
         return NM_DHCP_STATE_FAIL;
-    else if (g_ascii_strcasecmp(reason, "preinit") == 0)
+    if (NM_IN_STRSET_ASCII_CASE(reason, "preinit"))
         return NM_DHCP_STATE_NOOP;
 
-    _LOGD("unmapped DHCP state '%s'", reason);
     return NM_DHCP_STATE_UNKNOWN;
 }
 
@@ -915,7 +908,11 @@ nm_dhcp_client_handle_event(gpointer      unused,
     if (priv->pid != pid)
         return FALSE;
 
-    new_state = reason_to_state(self, priv->config.iface, reason);
+    new_state = reason_to_state(reason);
+
+    if (new_state == NM_DHCP_STATE_UNKNOWN)
+        _LOGD("unmapped DHCP state '%s'", reason);
+
     if (new_state == NM_DHCP_STATE_NOOP)
         return TRUE;
 
