@@ -814,7 +814,8 @@ maybe_add_option(NMDhcpClient *self, GHashTable *hash, const char *key, GVariant
 {
     char *str_value = NULL;
 
-    g_return_if_fail(g_variant_is_of_type(value, G_VARIANT_TYPE_BYTESTRING));
+    if (!g_variant_is_of_type(value, G_VARIANT_TYPE_BYTESTRING))
+        return;
 
     if (g_str_has_prefix(key, OLD_TAG))
         return;
