@@ -765,37 +765,31 @@ static char *
 bytearray_variant_to_string(NMDhcpClient *self, GVariant *value, const char *key)
 {
     const guint8 *array;
+    char         *str;
     gsize         length;
-    GString      *str;
-    int           i;
-    unsigned char c;
-    char         *converted = NULL;
+    gsize         i;
 
-    g_return_val_if_fail(value != NULL, NULL);
+    nm_assert(value);
 
     array = g_variant_get_fixed_array(value, &length, 1);
 
-    /* Since the DHCP options come through environment variables, they should
-     * already be UTF-8 safe, but just make sure.
+    /* Since the DHCP options come originally came as environment variables, they
+     * have not guaranteed encoding. Let's only accept ASCII here.
      */
-    str = g_string_sized_new(length);
+    str = g_malloc(length + 1);
     for (i = 0; i < length; i++) {
-        c = array[i];
+        guint8 c = array[i];
 
-        /* Convert NULLs to spaces and non-ASCII characters to ? */
         if (c == '\0')
-            c = ' ';
+            str[i] = ' ';
         else if (c > 127)
-            c = '?';
-        str = g_string_append_c(str, c);
+            str[i] = '?';
+        else
+            str[i] = (char) c;
     }
-    str = g_string_append_c(str, '\0');
+    str[i] = '\0';
 
-    converted = str->str;
-    if (!g_utf8_validate(converted, -1, NULL))
-        _LOGW("option '%s' couldn't be converted to UTF-8", key);
-    g_string_free(str, FALSE);
-    return converted;
+    return str;
 }
 
 static int
