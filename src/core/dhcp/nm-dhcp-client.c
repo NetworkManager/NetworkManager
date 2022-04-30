@@ -812,12 +812,13 @@ label_is_unknown_xyz(const char *label)
 static void
 maybe_add_option(NMDhcpClient *self, GHashTable *hash, const char *key, GVariant *value)
 {
-    char *str_value = NULL;
+    char *str_value;
+    int   priv_opt_num;
 
     if (!g_variant_is_of_type(value, G_VARIANT_TYPE_BYTESTRING))
         return;
 
-    if (g_str_has_prefix(key, OLD_TAG))
+    if (NM_STR_HAS_PREFIX(key, OLD_TAG))
         return;
 
     /* Filter out stuff that's not actually new DHCP options */
@@ -830,34 +831,33 @@ maybe_add_option(NMDhcpClient *self, GHashTable *hash, const char *key, GVariant
         return;
 
     str_value = bytearray_variant_to_string(self, value, key);
-    if (str_value) {
-        int priv_opt_num;
+    if (!str_value)
+        return;
 
-        g_hash_table_insert(hash, g_strdup(key), str_value);
+    g_hash_table_insert(hash, g_strdup(key), str_value);
 
-        /* dhclient has no special labels for private dhcp options: it uses "unknown_xyz"
+    /* dhclient has no special labels for private dhcp options: it uses "unknown_xyz"
          * labels for that. We need to identify those to alias them to our "private_xyz"
          * format unused in the internal dchp plugins.
          */
-        if ((priv_opt_num = label_is_unknown_xyz(key)) > 0) {
-            gs_free guint8 *check_val = NULL;
-            char           *hex_str   = NULL;
-            gsize           len;
+    if ((priv_opt_num = label_is_unknown_xyz(key)) > 0) {
+        gs_free guint8 *check_val = NULL;
+        char           *hex_str   = NULL;
+        gsize           len;
 
-            /* dhclient passes values from dhcp private options in its own "string" format:
+        /* dhclient passes values from dhcp private options in its own "string" format:
              * if the raw values are printable as ascii strings, it will pass the string
              * representation; if the values are not printable as an ascii string, it will
              * pass a string displaying the hex values (hex string). Try to enforce passing
              * always an hex string, converting string representation if needed.
              */
-            check_val = nm_utils_hexstr2bin_alloc(str_value, FALSE, TRUE, ":", 0, &len);
-            hex_str   = nm_utils_bin2hexstr_full(check_val ?: (guint8 *) str_value,
-                                               check_val ? len : strlen(str_value),
-                                               ':',
-                                               FALSE,
-                                               NULL);
-            g_hash_table_insert(hash, g_strdup_printf("private_%d", priv_opt_num), hex_str);
-        }
+        check_val = nm_utils_hexstr2bin_alloc(str_value, FALSE, TRUE, ":", 0, &len);
+        hex_str   = nm_utils_bin2hexstr_full(check_val ?: (guint8 *) str_value,
+                                           check_val ? len : strlen(str_value),
+                                           ':',
+                                           FALSE,
+                                           NULL);
+        g_hash_table_insert(hash, g_strdup_printf("private_%d", priv_opt_num), hex_str);
     }
 }
 
