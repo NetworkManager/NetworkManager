@@ -4262,7 +4262,6 @@ nm_platform_ip_address_sync(NMPlatform *self,
                 }
 
                 if (!delete_remaining_addrs) {
-                    delete_remaining_addrs = TRUE;
                     while (i_know > 0) {
                         const NMPlatformIP6Address *know_addr =
                             NMP_OBJECT_CAST_IP6_ADDRESS(known_addresses->pdata[--i_know]);
@@ -4277,14 +4276,14 @@ nm_platform_ip_address_sync(NMPlatform *self,
 
                         if (IN6_ARE_ADDR_EQUAL(&plat_addr->address, &know_addr->address)) {
                             /* we have a match. Mark address as handled. */
-                            delete_remaining_addrs = FALSE;
                             goto next_plat;
                         }
 
-                        /* plat_address has no match. Now delete_remaining_addrs is TRUE and we will
-                         * delete all the remaining addresses with cur_scope. */
+                        /* "plat_address" has no match. "delete_remaining_addrs" will be set to TRUE and we will
+                         * delete all the remaining addresses with "cur_scope". */
                         break;
                     }
+                    delete_remaining_addrs = TRUE;
                 }
 
                 g_hash_table_add(_plat_addrs_to_delete_ensure(&plat_addrs_to_delete),
