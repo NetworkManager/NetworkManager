@@ -140,6 +140,14 @@ if enable_introspection
       src_inc,
       top_inc,
     ],
+    dependencies: [
+      declare_dependency(
+        compile_args: [
+          '-UGLIB_VERSION_MIN_REQUIRED',
+          '-UGLIB_VERSION_MAX_ALLOWED',
+        ],
+      ),
+    ],
     nsversion: nm_gir_version,
     namespace: 'NM',
     identifier_prefix: nm_id_prefix,
