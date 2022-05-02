@@ -4344,7 +4344,6 @@ nm_platform_ip_address_sync(NMPlatform *self,
 
                         if (IN6_ARE_ADDR_EQUAL(&plat_addr->address, &know_addr->address)) {
                             /* we have a match. Mark address as handled. */
-                            i_know++;
                             delete_remaining_addrs = FALSE;
                             goto next_plat;
                         }
