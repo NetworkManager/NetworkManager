@@ -72,20 +72,42 @@ act_stage3_ip_config(NMDevice *device, int addr_family)
     nm_device_devip_set_state(device, addr_family, NM_DEVICE_IP_STATE_READY, NULL);
 }
 
+typedef struct {
+    NMDevice                  *device;
+    NMDevice                  *port;
+    GCancellable              *cancellable;
+    NMDeviceAttachPortCallback callback;
+    gpointer                   callback_user_data;
+} AttachPortData;
+
 static void
 add_iface_cb(GError *error, gpointer user_data)
 {
-    NMDevice *slave = user_data;
+    AttachPortData       *data = user_data;
+    NMDeviceOvsPort      *self;
+    gs_free_error GError *local = NULL;
 
-    if (error && !g_error_matches(error, NM_UTILS_ERROR, NM_UTILS_ERROR_CANCELLED_DISPOSING)) {
-        nm_log_warn(LOGD_DEVICE,
-                    "device %s could not be added to a ovs port: %s",
-                    nm_device_get_iface(slave),
-                    error->message);
-        nm_device_state_changed(slave, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_OVSDB_FAILED);
+    if (g_cancellable_is_cancelled(data->cancellable)) {
+        local = nm_utils_error_new_cancelled(FALSE, NULL);
+        error = local;
+    } else if (error && !nm_utils_error_is_cancelled_or_disposing(error)) {
+        self = NM_DEVICE_OVS_PORT(data->device);
+        _LOGW(LOGD_DEVICE,
+              "device %s could not be added to a ovs port: %s",
+              nm_device_get_iface(data->port),
+              error->message);
+        nm_device_state_changed(data->port,
+                                NM_DEVICE_STATE_FAILED,
+                                NM_DEVICE_STATE_REASON_OVSDB_FAILED);
     }
 
-    g_object_unref(slave);
+    data->callback(data->device, error, data->callback_user_data);
+
+    g_object_unref(data->device);
+    g_object_unref(data->port);
+    nm_clear_g_cancellable(&data->cancellable);
+
+    nm_g_slice_free(data);
 }
 
 static gboolean
@@ -116,19 +138,20 @@ set_mtu_cb(GError *error, gpointer user_data)
 }
 
 static NMTernary
-attach_port(NMDevice                    *device,
-            NMDevice                    *port,
-            NMConnection                *connection,
-            gboolean                     configure,
-            GCancellable                *cancellable,
-            NMDeviceEnslaveSlaveCallback callback,
-            gpointer                     user_data)
+attach_port(NMDevice                  *device,
+            NMDevice                  *port,
+            NMConnection              *connection,
+            gboolean                   configure,
+            GCancellable              *cancellable,
+            NMDeviceAttachPortCallback callback,
+            gpointer                   user_data)
 {
     NMDeviceOvsPort    *self      = NM_DEVICE_OVS_PORT(device);
     NMActiveConnection *ac_port   = NULL;
     NMActiveConnection *ac_bridge = NULL;
     NMDevice           *bridge_device;
     NMSettingWired     *s_wired;
+    AttachPortData     *data;
 
     if (!configure)
         return TRUE;
@@ -148,6 +171,15 @@ attach_port(NMDevice                    *device,
         return FALSE;
     }
 
+    data  = g_slice_new(AttachPortData);
+    *data = (AttachPortData){
+        .device             = g_object_ref(device),
+        .port               = g_object_ref(port),
+        .cancellable        = g_object_ref(cancellable),
+        .callback           = callback,
+        .callback_user_data = user_data,
+    };
+
     nm_ovsdb_add_interface(nm_ovsdb_get(),
                            nm_active_connection_get_applied_connection(ac_bridge),
                            nm_device_get_applied_connection(device),
@@ -155,24 +187,22 @@ attach_port(NMDevice                    *device,
                            bridge_device,
                            port,
                            add_iface_cb,
-                           g_object_ref(port));
+                           data);
 
     /* DPDK ports does not have a link after the devbind, so the MTU must be
      * set on ovsdb after adding the interface. */
     if (NM_IS_DEVICE_OVS_INTERFACE(port) && _ovs_interface_is_dpdk(port)) {
         s_wired = nm_device_get_applied_setting(port, NM_TYPE_SETTING_WIRED);
-
-        if (!s_wired || !nm_setting_wired_get_mtu(s_wired))
-            return TRUE;
-
-        nm_ovsdb_set_interface_mtu(nm_ovsdb_get(),
-                                   nm_device_get_ip_iface(port),
-                                   nm_setting_wired_get_mtu(s_wired),
-                                   set_mtu_cb,
-                                   g_object_ref(port));
+        if (s_wired && nm_setting_wired_get_mtu(s_wired)) {
+            nm_ovsdb_set_interface_mtu(nm_ovsdb_get(),
+                                       nm_device_get_ip_iface(port),
+                                       nm_setting_wired_get_mtu(s_wired),
+                                       set_mtu_cb,
+                                       g_object_ref(port));
+        }
     }
 
-    return TRUE;
+    return NM_TERNARY_DEFAULT;
 }
 
 static void
