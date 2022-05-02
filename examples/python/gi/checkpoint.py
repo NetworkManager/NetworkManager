@@ -71,11 +71,11 @@ def find_checkpoint(nmc, path):
 
 
 def find_checkpoint_last(nmc):
-    l = [c.get_path() for c in nmc.get_checkpoints()]
-    if not l:
-        return None
-    l.sort(key=checkpoint_path_to_num)
-    return l[-1]
+    return max(
+        nmc.get_checkpoints(),
+        key=lambda c: checkpoint_path_to_num(c.get_path()),
+        default=None,
+    )
 
 
 def validate_path(path, nmc):
