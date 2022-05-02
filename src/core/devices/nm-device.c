@@ -5948,7 +5948,7 @@ nm_device_master_enslave_slave(NMDevice *self, NMDevice *slave, NMConnection *co
 
     g_return_val_if_fail(self != NULL, FALSE);
     g_return_val_if_fail(slave != NULL, FALSE);
-    g_return_val_if_fail(NM_DEVICE_GET_CLASS(self)->enslave_slave != NULL, FALSE);
+    g_return_val_if_fail(NM_DEVICE_GET_CLASS(self)->attach_port != NULL, FALSE);
 
     info = find_slave_info(self, slave);
     if (!info)
@@ -5961,7 +5961,7 @@ nm_device_master_enslave_slave(NMDevice *self, NMDevice *slave, NMConnection *co
         if (configure)
             g_return_val_if_fail(nm_device_get_state(slave) >= NM_DEVICE_STATE_DISCONNECTED, FALSE);
 
-        success = NM_DEVICE_GET_CLASS(self)->enslave_slave(self, slave, connection, configure);
+        success = NM_DEVICE_GET_CLASS(self)->attach_port(self, slave, connection, configure);
         info->slave_is_enslaved = success;
     }
 
@@ -6017,7 +6017,7 @@ nm_device_master_release_slave(NMDevice           *self,
                         RELEASE_SLAVE_TYPE_NO_CONFIG,
                         RELEASE_SLAVE_TYPE_CONFIG,
                         RELEASE_SLAVE_TYPE_CONFIG_FORCE));
-    g_return_if_fail(NM_DEVICE_GET_CLASS(self)->release_slave != NULL);
+    g_return_if_fail(NM_DEVICE_GET_CLASS(self)->detach_port != NULL);
 
     info = find_slave_info(self, slave);
 
@@ -6042,9 +6042,9 @@ nm_device_master_release_slave(NMDevice           *self,
     /* first, let subclasses handle the release ... */
     if (info->slave_is_enslaved || nm_device_sys_iface_state_is_external(slave)
         || release_type >= RELEASE_SLAVE_TYPE_CONFIG_FORCE)
-        NM_DEVICE_GET_CLASS(self)->release_slave(self,
-                                                 slave,
-                                                 release_type >= RELEASE_SLAVE_TYPE_CONFIG);
+        NM_DEVICE_GET_CLASS(self)->detach_port(self,
+                                               slave,
+                                               release_type >= RELEASE_SLAVE_TYPE_CONFIG);
 
     /* raise notifications about the release, including clearing is_enslaved. */
     nm_device_slave_notify_release(slave, reason);
@@ -6385,7 +6385,7 @@ device_recheck_slave_status(NMDevice *self, const NMPlatformLink *plink)
                                        NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
     }
 
-    if (master && NM_DEVICE_GET_CLASS(master)->enslave_slave) {
+    if (master && NM_DEVICE_GET_CLASS(master)->attach_port) {
         nm_device_master_add_slave(master, self, FALSE);
         goto out;
     }
@@ -7609,7 +7609,7 @@ nm_device_master_add_slave(NMDevice *self, NMDevice *slave, gboolean configure)
 
     g_return_val_if_fail(NM_IS_DEVICE(self), FALSE);
     g_return_val_if_fail(NM_IS_DEVICE(slave), FALSE);
-    g_return_val_if_fail(NM_DEVICE_GET_CLASS(self)->enslave_slave != NULL, FALSE);
+    g_return_val_if_fail(NM_DEVICE_GET_CLASS(self)->attach_port != NULL, FALSE);
 
     priv       = NM_DEVICE_GET_PRIVATE(self);
     slave_priv = NM_DEVICE_GET_PRIVATE(slave);

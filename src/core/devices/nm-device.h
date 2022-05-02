@@ -373,12 +373,12 @@ typedef struct _NMDeviceClass {
                                                NMConnection *connection,
                                                GError      **error);
 
-    gboolean (*enslave_slave)(NMDevice     *self,
-                              NMDevice     *slave,
-                              NMConnection *connection,
-                              gboolean      configure);
+    gboolean (*attach_port)(NMDevice     *self,
+                            NMDevice     *port,
+                            NMConnection *connection,
+                            gboolean      configure);
 
-    void (*release_slave)(NMDevice *self, NMDevice *slave, gboolean configure);
+    void (*detach_port)(NMDevice *self, NMDevice *port, gboolean configure);
 
     void (*parent_changed_notify)(NMDevice *self,
                                   int       old_ifindex,

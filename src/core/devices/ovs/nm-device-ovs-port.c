@@ -116,7 +116,7 @@ set_mtu_cb(GError *error, gpointer user_data)
 }
 
 static gboolean
-enslave_slave(NMDevice *device, NMDevice *slave, NMConnection *connection, gboolean configure)
+attach_port(NMDevice *device, NMDevice *port, NMConnection *connection, gboolean configure)
 {
     NMDeviceOvsPort    *self      = NM_DEVICE_OVS_PORT(device);
     NMActiveConnection *ac_port   = NULL;
@@ -131,39 +131,39 @@ enslave_slave(NMDevice *device, NMDevice *slave, NMConnection *connection, gbool
     ac_bridge = nm_active_connection_get_master(ac_port);
     if (!ac_bridge) {
         _LOGW(LOGD_DEVICE,
-              "can't enslave %s: bridge active-connection not found",
-              nm_device_get_iface(slave));
+              "can't attach %s: bridge active-connection not found",
+              nm_device_get_iface(port));
         return FALSE;
     }
 
     bridge_device = nm_active_connection_get_device(ac_bridge);
     if (!bridge_device) {
-        _LOGW(LOGD_DEVICE, "can't enslave %s: bridge device not found", nm_device_get_iface(slave));
+        _LOGW(LOGD_DEVICE, "can't attach %s: bridge device not found", nm_device_get_iface(port));
         return FALSE;
     }
 
     nm_ovsdb_add_interface(nm_ovsdb_get(),
                            nm_active_connection_get_applied_connection(ac_bridge),
                            nm_device_get_applied_connection(device),
-                           nm_device_get_applied_connection(slave),
+                           nm_device_get_applied_connection(port),
                            bridge_device,
-                           slave,
+                           port,
                            add_iface_cb,
-                           g_object_ref(slave));
+                           g_object_ref(port));
 
     /* DPDK ports does not have a link after the devbind, so the MTU must be
      * set on ovsdb after adding the interface. */
-    if (NM_IS_DEVICE_OVS_INTERFACE(slave) && _ovs_interface_is_dpdk(slave)) {
-        s_wired = nm_device_get_applied_setting(slave, NM_TYPE_SETTING_WIRED);
+    if (NM_IS_DEVICE_OVS_INTERFACE(port) && _ovs_interface_is_dpdk(port)) {
+        s_wired = nm_device_get_applied_setting(port, NM_TYPE_SETTING_WIRED);
 
         if (!s_wired || !nm_setting_wired_get_mtu(s_wired))
             return TRUE;
 
         nm_ovsdb_set_interface_mtu(nm_ovsdb_get(),
-                                   nm_device_get_ip_iface(slave),
+                                   nm_device_get_ip_iface(port),
                                    nm_setting_wired_get_mtu(s_wired),
                                    set_mtu_cb,
-                                   g_object_ref(slave));
+                                   g_object_ref(port));
     }
 
     return TRUE;
@@ -186,31 +186,31 @@ del_iface_cb(GError *error, gpointer user_data)
 }
 
 static void
-release_slave(NMDevice *device, NMDevice *slave, gboolean configure)
+detach_port(NMDevice *device, NMDevice *port, gboolean configure)
 {
-    NMDeviceOvsPort *self              = NM_DEVICE_OVS_PORT(device);
-    bool             slave_not_managed = !NM_IN_SET(nm_device_sys_iface_state_get(slave),
-                                        NM_DEVICE_SYS_IFACE_STATE_MANAGED,
-                                        NM_DEVICE_SYS_IFACE_STATE_ASSUME);
+    NMDeviceOvsPort *self             = NM_DEVICE_OVS_PORT(device);
+    bool             port_not_managed = !NM_IN_SET(nm_device_sys_iface_state_get(port),
+                                       NM_DEVICE_SYS_IFACE_STATE_MANAGED,
+                                       NM_DEVICE_SYS_IFACE_STATE_ASSUME);
 
-    _LOGI(LOGD_DEVICE, "releasing ovs interface %s", nm_device_get_ip_iface(slave));
+    _LOGI(LOGD_DEVICE, "detaching ovs interface %s", nm_device_get_ip_iface(port));
 
     /* Even if the an interface's device has gone away (e.g. externally
      * removed and thus we're called with configure=FALSE), we still need
      * to make sure its OVSDB entry is gone.
      */
-    if (configure || slave_not_managed) {
+    if (configure || port_not_managed) {
         nm_ovsdb_del_interface(nm_ovsdb_get(),
-                               nm_device_get_iface(slave),
+                               nm_device_get_iface(port),
                                del_iface_cb,
-                               g_object_ref(slave));
+                               g_object_ref(port));
     }
 
     if (configure) {
         /* Open VSwitch is going to delete this one. We must ignore what happens
          * next with the interface. */
-        if (NM_IS_DEVICE_OVS_INTERFACE(slave))
-            nm_device_update_from_platform_link(slave, NULL);
+        if (NM_IS_DEVICE_OVS_INTERFACE(port))
+            nm_device_update_from_platform_link(port, NULL);
     }
 }
 
@@ -245,8 +245,8 @@ nm_device_ovs_port_class_init(NMDeviceOvsPortClass *klass)
     device_class->get_generic_capabilities            = get_generic_capabilities;
     device_class->act_stage3_ip_config                = act_stage3_ip_config;
     device_class->ready_for_ip_config                 = ready_for_ip_config;
-    device_class->enslave_slave                       = enslave_slave;
-    device_class->release_slave                       = release_slave;
+    device_class->attach_port                         = attach_port;
+    device_class->detach_port                         = detach_port;
     device_class->can_reapply_change_ovs_external_ids = TRUE;
     device_class->reapply_connection                  = nm_device_ovs_reapply_connection;
 }
