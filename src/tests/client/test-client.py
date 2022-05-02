@@ -17,7 +17,7 @@ from __future__ import print_function
 # When adjusting the tests, or when making changes to nmcli that intentionally
 # change the output, the expected output must be regenerated.
 #
-# For that, you'd setup your system correctly (see below) and then simply:
+# For that, you'd setup your system correctly (see SETUP below) and then simply:
 #
 #  $ NM_TEST_REGENERATE=1 make check-local-tests-client
 #    # Or `NM_TEST_REGENERATE=1 make check -j 10`
@@ -25,7 +25,17 @@ from __future__ import print_function
 #    # The previous step regenerated the expected output. Review the changes
 #    # and consider whether they are correct. Then commit the changes to git.
 #
-# Setup: For regenerating the output, the translations must work. First:
+#   With meson, you can do
+#     $ meson -Ddocs=true --prefix=/tmp/nm1 build
+#     $ ninja -C build
+#     $ ninja -C build install
+#     $ NM_TEST_REGENERATE=1 ninja -C build test
+#
+# Beware that you need to install the sources, and beware to choose a prefix that doesn't
+# mess up your system (see SETUP below).
+#
+# SETUP: For regenerating the output, the translations must work. First
+# test whether the following works:
 #
 #  1) LANG=pl_PL.UTF-8 /usr/bin/nmcli --version
 #    # Ensure that Polish output works for the system-installed nmcli.
