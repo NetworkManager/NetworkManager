@@ -41,6 +41,7 @@
 #include "nm-setting-proxy.h"
 #include "nm-setting-generic.h"
 #include "libnm-core-intern/nm-core-internal.h"
+#include "libnm-glib-aux/nm-shared-utils.h"
 #include "nm-utils.h"
 #include "libnm-base/nm-ethtool-base.h"
 
