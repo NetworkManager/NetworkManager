@@ -120,11 +120,12 @@ typedef enum _nm_packed {
 } AddrMethodState;
 
 typedef struct {
-    CList     lst_slave;
-    NMDevice *slave;
-    gulong    watch_id;
-    bool      slave_is_enslaved;
-    bool      configure;
+    CList         lst_slave;
+    NMDevice     *slave;
+    GCancellable *cancellable;
+    gulong        watch_id;
+    bool          slave_is_enslaved;
+    bool          configure;
 } SlaveInfo;
 
 typedef struct {
@@ -5927,43 +5928,16 @@ find_slave_info(NMDevice *self, NMDevice *slave)
     return NULL;
 }
 
-/**
- * nm_device_master_enslave_slave:
- * @self: the master device
- * @slave: the slave device to enslave
- * @connection: (allow-none): the slave device's connection
- *
- * If @self is capable of enslaving other devices (ie it's a bridge, bond, team,
- * etc) then this function enslaves @slave.
- *
- * Returns: %TRUE on success, %FALSE on failure or if this device cannot enslave
- *  other devices.
- */
-static gboolean
-nm_device_master_enslave_slave(NMDevice *self, NMDevice *slave, NMConnection *connection)
+static void
+attach_port_done(NMDevice *self, NMDevice *slave, gboolean success)
 {
     SlaveInfo *info;
-    gboolean   success = FALSE;
-    gboolean   configure;
-
-    g_return_val_if_fail(self != NULL, FALSE);
-    g_return_val_if_fail(slave != NULL, FALSE);
-    g_return_val_if_fail(NM_DEVICE_GET_CLASS(self)->enslave_slave != NULL, FALSE);
 
     info = find_slave_info(self, slave);
     if (!info)
-        return FALSE;
+        return;
 
-    if (info->slave_is_enslaved)
-        success = TRUE;
-    else {
-        configure = (info->configure && connection != NULL);
-        if (configure)
-            g_return_val_if_fail(nm_device_get_state(slave) >= NM_DEVICE_STATE_DISCONNECTED, FALSE);
-
-        success = NM_DEVICE_GET_CLASS(self)->enslave_slave(self, slave, connection, configure);
-        info->slave_is_enslaved = success;
-    }
+    info->slave_is_enslaved = success;
 
     nm_device_slave_notify_enslave(info->slave, success);
 
@@ -5983,8 +5957,71 @@ nm_device_master_enslave_slave(NMDevice *self, NMDevice *slave, NMConnection *co
      */
     if (success)
         nm_device_activate_schedule_stage3_ip_config(self, FALSE);
+}
 
-    return success;
+static void
+attach_port_cb(NMDevice *self, GError *error, gpointer user_data)
+{
+    NMDevice  *slave = user_data;
+    SlaveInfo *info;
+
+    if (nm_utils_error_is_cancelled(error))
+        return;
+
+    info = find_slave_info(self, slave);
+    if (!info)
+        return;
+
+    nm_clear_g_cancellable(&info->cancellable);
+    attach_port_done(self, slave, !error);
+}
+
+/**
+ * nm_device_master_enslave_slave:
+ * @self: the master device
+ * @slave: the slave device to enslave
+ * @connection: (allow-none): the slave device's connection
+ *
+ * If @self is capable of enslaving other devices (ie it's a bridge, bond, team,
+ * etc) then this function enslaves @slave.
+ */
+static void
+nm_device_master_enslave_slave(NMDevice *self, NMDevice *slave, NMConnection *connection)
+{
+    SlaveInfo *info;
+    NMTernary  success;
+    gboolean   configure;
+
+    g_return_if_fail(self);
+    g_return_if_fail(slave);
+    g_return_if_fail(NM_DEVICE_GET_CLASS(self)->attach_port);
+
+    info = find_slave_info(self, slave);
+    if (!info)
+        return;
+
+    if (info->slave_is_enslaved)
+        success = TRUE;
+    else {
+        configure = (info->configure && connection != NULL);
+        if (configure)
+            g_return_if_fail(nm_device_get_state(slave) >= NM_DEVICE_STATE_DISCONNECTED);
+
+        nm_clear_g_cancellable(&info->cancellable);
+        info->cancellable = g_cancellable_new();
+        success           = NM_DEVICE_GET_CLASS(self)->attach_port(self,
+                                                         slave,
+                                                         connection,
+                                                         configure,
+                                                         info->cancellable,
+                                                         attach_port_cb,
+                                                         slave);
+
+        if (success == NM_TERNARY_DEFAULT)
+            return;
+    }
+
+    attach_port_done(self, slave, success);
 }
 
 /**
@@ -6017,7 +6054,7 @@ nm_device_master_release_slave(NMDevice           *self,
                         RELEASE_SLAVE_TYPE_NO_CONFIG,
                         RELEASE_SLAVE_TYPE_CONFIG,
                         RELEASE_SLAVE_TYPE_CONFIG_FORCE));
-    g_return_if_fail(NM_DEVICE_GET_CLASS(self)->release_slave != NULL);
+    g_return_if_fail(NM_DEVICE_GET_CLASS(self)->detach_port != NULL);
 
     info = find_slave_info(self, slave);
 
@@ -6038,13 +6075,14 @@ nm_device_master_release_slave(NMDevice           *self,
 
     g_return_if_fail(self == slave_priv->master);
     nm_assert(slave == info->slave);
+    nm_clear_g_cancellable(&info->cancellable);
 
     /* first, let subclasses handle the release ... */
     if (info->slave_is_enslaved || nm_device_sys_iface_state_is_external(slave)
         || release_type >= RELEASE_SLAVE_TYPE_CONFIG_FORCE)
-        NM_DEVICE_GET_CLASS(self)->release_slave(self,
-                                                 slave,
-                                                 release_type >= RELEASE_SLAVE_TYPE_CONFIG);
+        NM_DEVICE_GET_CLASS(self)->detach_port(self,
+                                               slave,
+                                               release_type >= RELEASE_SLAVE_TYPE_CONFIG);
 
     /* raise notifications about the release, including clearing is_enslaved. */
     nm_device_slave_notify_release(slave, reason);
@@ -6385,7 +6423,7 @@ device_recheck_slave_status(NMDevice *self, const NMPlatformLink *plink)
                                        NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
     }
 
-    if (master && NM_DEVICE_GET_CLASS(master)->enslave_slave) {
+    if (master && NM_DEVICE_GET_CLASS(master)->attach_port) {
         nm_device_master_add_slave(master, self, FALSE);
         goto out;
     }
@@ -7609,7 +7647,7 @@ nm_device_master_add_slave(NMDevice *self, NMDevice *slave, gboolean configure)
 
     g_return_val_if_fail(NM_IS_DEVICE(self), FALSE);
     g_return_val_if_fail(NM_IS_DEVICE(slave), FALSE);
-    g_return_val_if_fail(NM_DEVICE_GET_CLASS(self)->enslave_slave != NULL, FALSE);
+    g_return_val_if_fail(NM_DEVICE_GET_CLASS(self)->attach_port, FALSE);
 
     priv       = NM_DEVICE_GET_PRIVATE(self);
     slave_priv = NM_DEVICE_GET_PRIVATE(slave);

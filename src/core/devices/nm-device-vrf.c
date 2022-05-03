@@ -206,38 +206,44 @@ update_connection(NMDevice *device, NMConnection *connection)
         g_object_set(G_OBJECT(s_vrf), NM_SETTING_VRF_TABLE, priv->props.table, NULL);
 }
 
-static gboolean
-enslave_slave(NMDevice *device, NMDevice *slave, NMConnection *connection, gboolean configure)
+static NMTernary
+attach_port(NMDevice                  *device,
+            NMDevice                  *port,
+            NMConnection              *connection,
+            gboolean                   configure,
+            GCancellable              *cancellable,
+            NMDeviceAttachPortCallback callback,
+            gpointer                   user_data)
 {
-    NMDeviceVrf *self        = NM_DEVICE_VRF(device);
-    gboolean     success     = TRUE;
-    const char  *slave_iface = nm_device_get_ip_iface(slave);
+    NMDeviceVrf *self       = NM_DEVICE_VRF(device);
+    gboolean     success    = TRUE;
+    const char  *port_iface = nm_device_get_ip_iface(port);
 
-    nm_device_master_check_slave_physical_port(device, slave, LOGD_DEVICE);
+    nm_device_master_check_slave_physical_port(device, port, LOGD_DEVICE);
 
     if (configure) {
-        nm_device_take_down(slave, TRUE);
+        nm_device_take_down(port, TRUE);
         success = nm_platform_link_enslave(nm_device_get_platform(device),
                                            nm_device_get_ip_ifindex(device),
-                                           nm_device_get_ip_ifindex(slave));
-        nm_device_bring_up(slave, TRUE, NULL);
+                                           nm_device_get_ip_ifindex(port));
+        nm_device_bring_up(port, TRUE, NULL);
 
         if (!success)
             return FALSE;
 
-        _LOGI(LOGD_DEVICE, "enslaved VRF slave %s", slave_iface);
+        _LOGI(LOGD_DEVICE, "attached VRF port %s", port_iface);
     } else
-        _LOGI(LOGD_BOND, "VRF slave %s was enslaved", slave_iface);
+        _LOGI(LOGD_BOND, "VRF port %s was attached", port_iface);
 
     return TRUE;
 }
 
 static void
-release_slave(NMDevice *device, NMDevice *slave, gboolean configure)
+detach_port(NMDevice *device, NMDevice *port, gboolean configure)
 {
     NMDeviceVrf *self = NM_DEVICE_VRF(device);
     gboolean     success;
-    int          ifindex_slave;
+    int          ifindex_port;
     int          ifindex;
 
     if (configure) {
@@ -246,26 +252,26 @@ release_slave(NMDevice *device, NMDevice *slave, gboolean configure)
             configure = FALSE;
     }
 
-    ifindex_slave = nm_device_get_ip_ifindex(slave);
+    ifindex_port = nm_device_get_ip_ifindex(port);
 
-    if (ifindex_slave <= 0)
-        _LOGD(LOGD_DEVICE, "VRF slave %s is already released", nm_device_get_ip_iface(slave));
+    if (ifindex_port <= 0)
+        _LOGD(LOGD_DEVICE, "VRF port %s is already detached", nm_device_get_ip_iface(port));
 
     if (configure) {
-        if (ifindex_slave > 0) {
+        if (ifindex_port > 0) {
             success = nm_platform_link_release(nm_device_get_platform(device),
                                                nm_device_get_ip_ifindex(device),
-                                               ifindex_slave);
+                                               ifindex_port);
 
             if (success) {
-                _LOGI(LOGD_DEVICE, "released VRF slave %s", nm_device_get_ip_iface(slave));
+                _LOGI(LOGD_DEVICE, "detached VRF port %s", nm_device_get_ip_iface(port));
             } else {
-                _LOGW(LOGD_DEVICE, "failed to release VRF slave %s", nm_device_get_ip_iface(slave));
+                _LOGW(LOGD_DEVICE, "failed to detach VRF port %s", nm_device_get_ip_iface(port));
             }
         }
     } else {
-        if (ifindex_slave > 0) {
-            _LOGI(LOGD_DEVICE, "VRF slave %s was released", nm_device_get_ip_iface(slave));
+        if (ifindex_port > 0) {
+            _LOGI(LOGD_DEVICE, "VRF port %s was detached", nm_device_get_ip_iface(port));
         }
     }
 }
@@ -316,8 +322,8 @@ nm_device_vrf_class_init(NMDeviceVrfClass *klass)
     device_class->is_master                        = TRUE;
     device_class->link_types                       = NM_DEVICE_DEFINE_LINK_TYPES(NM_LINK_TYPE_VRF);
 
-    device_class->enslave_slave               = enslave_slave;
-    device_class->release_slave               = release_slave;
+    device_class->attach_port                 = attach_port;
+    device_class->detach_port                 = detach_port;
     device_class->link_changed                = link_changed;
     device_class->unrealize_notify            = unrealize_notify;
     device_class->create_and_realize          = create_and_realize;
