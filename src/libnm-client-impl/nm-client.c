@@ -8729,7 +8729,7 @@ nm_client_class_init(NMClientClass *client_class)
                                                G_TYPE_UINT);
     /**
      * NMClient::connection-added:
-     * @client: the settings object that received the signal
+     * @client: the client that received the signal
      * @connection: the new connection
      *
      * Notifies that a #NMConnection has been added.
@@ -8747,7 +8747,7 @@ nm_client_class_init(NMClientClass *client_class)
 
     /**
      * NMClient::connection-removed:
-     * @client: the settings object that received the signal
+     * @client: the client that received the signal
      * @connection: the removed connection
      *
      * Notifies that a #NMConnection has been removed.
@@ -8765,7 +8765,7 @@ nm_client_class_init(NMClientClass *client_class)
 
     /**
      * NMClient::active-connection-added:
-     * @client: the settings object that received the signal
+     * @client: the client that received the signal
      * @active_connection: the new active connection
      *
      * Notifies that a #NMActiveConnection has been added.
@@ -8783,7 +8783,7 @@ nm_client_class_init(NMClientClass *client_class)
 
     /**
      * NMClient::active-connection-removed:
-     * @client: the settings object that received the signal
+     * @client: the client that received the signal
      * @active_connection: the removed active connection
      *
      * Notifies that a #NMActiveConnection has been removed.
