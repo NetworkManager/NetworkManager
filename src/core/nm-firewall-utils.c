@@ -15,6 +15,10 @@
 #include "nm-config.h"
 #include "NetworkManagerUtils.h"
 
+typedef enum _nm_packed {
+    FIREWALL_TOPIC_IP4_SHARED,
+} FirewallTopic;
+
 /*****************************************************************************/
 
 static const struct {
@@ -599,7 +603,7 @@ _fw_nft_call_sync(GBytes *stdin_buf, GError **error)
 /*****************************************************************************/
 
 static void
-_fw_nft_set(gboolean up, const char *ip_iface, in_addr_t addr, guint8 plen)
+_fw_nft_set_ip4_shared(gboolean up, const char *ip_iface, in_addr_t addr, guint8 plen)
 {
     nm_auto_str_buf NMStrBuf strbuf = NM_STR_BUF_INIT(NM_UTILS_GET_NEXT_REALLOC_SIZE_1000, FALSE);
     gs_unref_bytes GBytes   *stdin_buf  = NULL;
@@ -686,13 +690,18 @@ _fw_nft_set(gboolean up, const char *ip_iface, in_addr_t addr, guint8 plen)
 /*****************************************************************************/
 
 struct _NMFirewallConfig {
-    char     *ip_iface;
-    in_addr_t addr;
-    guint8    plen;
+    FirewallTopic topic;
+    char         *ip_iface;
+    union {
+        struct {
+            in_addr_t addr;
+            guint8    plen;
+        } ip4_shared;
+    };
 };
 
 NMFirewallConfig *
-nm_firewall_config_new(const char *ip_iface, in_addr_t addr, guint8 plen)
+nm_firewall_config_new_ip4_shared(const char *ip_iface, in_addr_t addr, guint8 plen)
 {
     NMFirewallConfig *self;
 
@@ -702,9 +711,13 @@ nm_firewall_config_new(const char *ip_iface, in_addr_t addr, guint8 plen)
 
     self  = g_slice_new(NMFirewallConfig);
     *self = (NMFirewallConfig){
+        .topic    = FIREWALL_TOPIC_IP4_SHARED,
         .ip_iface = g_strdup(ip_iface),
-        .addr     = addr,
-        .plen     = plen,
+        .ip4_shared =
+            {
+                .addr = addr,
+                .plen = plen,
+            },
     };
     return self;
 }
@@ -715,6 +728,13 @@ nm_firewall_config_free(NMFirewallConfig *self)
     if (!self)
         return;
 
+    switch (self->topic) {
+    case FIREWALL_TOPIC_IP4_SHARED:
+        goto out;
+    }
+    nm_assert_not_reached();
+
+out:
     g_free(self->ip_iface);
     nm_g_slice_free(self);
 }
@@ -722,20 +742,36 @@ nm_firewall_config_free(NMFirewallConfig *self)
 void
 nm_firewall_config_apply(NMFirewallConfig *self, gboolean up)
 {
-    switch (nm_firewall_utils_get_backend()) {
-    case NM_FIREWALL_BACKEND_IPTABLES:
-        _share_iptables_set_masquerade(up, self->ip_iface, self->addr, self->plen);
-        _share_iptables_set_shared(up, self->ip_iface, self->addr, self->plen);
-        break;
-    case NM_FIREWALL_BACKEND_NFTABLES:
-        _fw_nft_set(up, self->ip_iface, self->addr, self->plen);
-        break;
-    case NM_FIREWALL_BACKEND_NONE:
-        break;
-    default:
-        nm_assert_not_reached();
-        break;
+    nm_assert(self);
+
+    switch (self->topic) {
+    case FIREWALL_TOPIC_IP4_SHARED:
+        switch (nm_firewall_utils_get_backend()) {
+        case NM_FIREWALL_BACKEND_IPTABLES:
+            _share_iptables_set_masquerade(up,
+                                           self->ip_iface,
+                                           self->ip4_shared.addr,
+                                           self->ip4_shared.plen);
+            _share_iptables_set_shared(up,
+                                       self->ip_iface,
+                                       self->ip4_shared.addr,
+                                       self->ip4_shared.plen);
+            return;
+        case NM_FIREWALL_BACKEND_NFTABLES:
+            _fw_nft_set_ip4_shared(up,
+                                   self->ip_iface,
+                                   self->ip4_shared.addr,
+                                   self->ip4_shared.plen);
+            return;
+        case NM_FIREWALL_BACKEND_NONE:
+            return;
+        case NM_FIREWALL_BACKEND_UNKNOWN:
+            goto out_bug;
+        }
+        goto out_bug;
     }
+out_bug:
+    nm_assert_not_reached();
 }
 
 /*****************************************************************************/

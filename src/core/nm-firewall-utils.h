@@ -20,7 +20,8 @@ NMFirewallBackend nm_firewall_utils_get_backend(void);
 
 typedef struct _NMFirewallConfig NMFirewallConfig;
 
-NMFirewallConfig *nm_firewall_config_new(const char *ip_iface, in_addr_t addr, guint8 plen);
+NMFirewallConfig *
+nm_firewall_config_new_ip4_shared(const char *ip_iface, in_addr_t addr, guint8 plen);
 
 void nm_firewall_config_free(NMFirewallConfig *self);
 
