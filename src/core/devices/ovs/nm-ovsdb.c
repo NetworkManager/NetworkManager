@@ -376,6 +376,9 @@ ovsdb_call_method(NMOvsdb                  *self,
     NMOvsdbPrivate  *priv = NM_OVSDB_GET_PRIVATE(self);
     OvsdbMethodCall *call;
 
+    /* FIXME(shutdown): this function should accept a cancellable to
+     * interrupt the operation. */
+
     /* Ensure we're not unsynchronized before we queue the method call. */
     ovsdb_try_connect(self);
 
