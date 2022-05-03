@@ -20,6 +20,9 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 * Static IPv6 addresses from "ipv6.addresses" are now interpreted with
   first address being preferred. Their order got inverted. This is now
   consistent with IPv4.
+* The device state file /run/NetworkManager/devices/$ifindex now has
+  new sections [dhcp4] and [dhcp6] containing the DHCP options for the
+  current lease.
 
 =============================================
 NetworkManager-1.38

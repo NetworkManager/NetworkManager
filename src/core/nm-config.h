@@ -183,9 +183,8 @@ gboolean                 nm_config_device_state_write(int                       
                                                       NMTernary                      nm_owned,
                                                       guint32                        route_metric_default_aspired,
                                                       guint32                        route_metric_default_effective,
-                                                      const char                    *next_server,
-                                                      const char                    *root_path,
-                                                      const char                    *dhcp_bootfile);
+                                                      NMDhcpConfig                  *dhcp4_config,
+                                                      NMDhcpConfig                  *dhcp6_config);
 
 void nm_config_device_state_prune_stale(GHashTable *preserve_ifindexes,
                                         NMPlatform *preserve_in_platform);

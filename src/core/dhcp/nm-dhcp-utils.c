@@ -295,7 +295,7 @@ process_classful_routes(const char     *iface,
         return;
 
     if ((NM_PTRARRAY_LEN(searches) % 2) != 0) {
-        _LOG2I(LOGD_DHCP, iface, "  static routes provided, but invalid");
+        _LOG2I(LOGD_DHCP4, iface, "  static routes provided, but invalid");
         return;
     }
 
@@ -305,11 +305,11 @@ process_classful_routes(const char     *iface,
         guint32            rt_addr, rt_route;
 
         if (inet_pton(AF_INET, *s, &rt_addr) <= 0) {
-            _LOG2W(LOGD_DHCP, iface, "DHCP provided invalid static route address: '%s'", *s);
+            _LOG2W(LOGD_DHCP4, iface, "DHCP provided invalid static route address: '%s'", *s);
             continue;
         }
         if (inet_pton(AF_INET, *(s + 1), &rt_route) <= 0) {
-            _LOG2W(LOGD_DHCP, iface, "DHCP provided invalid static route gateway: '%s'", *(s + 1));
+            _LOG2W(LOGD_DHCP4, iface, "DHCP provided invalid static route gateway: '%s'", *(s + 1));
             continue;
         }
 
@@ -340,7 +340,7 @@ process_classful_routes(const char     *iface,
 
         nm_l3_config_data_add_route_4(l3cd, &route);
 
-        _LOG2I(LOGD_DHCP,
+        _LOG2I(LOGD_DHCP4,
                iface,
                "  static route %s",
                nm_platform_ip4_route_to_string(&route, sbuf, sizeof(sbuf)));
@@ -352,6 +352,7 @@ process_domain_search(int addr_family, const char *iface, const char *str, NML3C
 {
     gs_free const char **searches  = NULL;
     gs_free char        *unescaped = NULL;
+    NMLogDomain          logd      = NM_IS_IPv4(addr_family) ? LOGD_DHCP4 : LOGD_DHCP6;
     const char         **s;
     char                *p;
     int                  i;
@@ -373,13 +374,13 @@ process_domain_search(int addr_family, const char *iface, const char *str, NML3C
     } while (*p++);
 
     if (strchr(unescaped, '\\')) {
-        _LOG2W(LOGD_DHCP, iface, "  invalid domain search: '%s'", unescaped);
+        _LOG2W(logd, iface, "  invalid domain search: '%s'", unescaped);
         return;
     }
 
     searches = nm_strsplit_set(unescaped, " ");
     for (s = searches; searches && *s; s++) {
-        _LOG2I(LOGD_DHCP, iface, "  domain search '%s'", *s);
+        _LOG2I(logd, iface, "  domain search '%s'", *s);
         nm_l3_config_data_add_search(l3cd, addr_family, *s);
     }
 }
@@ -818,26 +819,6 @@ nm_dhcp_utils_get_leasefile_path(int         addr_family,
     else
         *out_leasefile_path = g_steal_pointer(&statedir_path);
     return FALSE;
-}
-
-char *
-nm_dhcp_utils_get_dhcp6_event_id(GHashTable *lease)
-{
-    const char *start;
-    const char *iaid;
-
-    if (!lease)
-        return NULL;
-
-    iaid = g_hash_table_lookup(lease, "iaid");
-    if (!iaid)
-        return NULL;
-
-    start = g_hash_table_lookup(lease, "life_starts");
-    if (!start)
-        return NULL;
-
-    return g_strdup_printf("%s|%s", iaid, start);
 }
 
 gboolean

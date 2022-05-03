@@ -7039,10 +7039,6 @@ nm_manager_write_device_state(NMManager *self, NMDevice *device, int *out_ifinde
     guint32                        route_metric_default_aspired;
     guint32                        route_metric_default_effective;
     NMTernary                      nm_owned;
-    NMDhcpConfig                  *dhcp_config;
-    const char                    *next_server   = NULL;
-    const char                    *root_path     = NULL;
-    const char                    *dhcp_bootfile = NULL;
 
     NM_SET_OUT(out_ifindex, 0);
 
@@ -7084,15 +7080,6 @@ nm_manager_write_device_state(NMManager *self, NMDevice *device, int *out_ifinde
                                                               TRUE,
                                                               &route_metric_default_aspired);
 
-    dhcp_config = nm_device_get_dhcp_config(device, AF_INET);
-    if (dhcp_config) {
-        root_path     = nm_dhcp_config_get_option(dhcp_config, "root_path");
-        next_server   = nm_dhcp_config_get_option(dhcp_config, "next_server");
-        dhcp_bootfile = nm_dhcp_config_get_option(dhcp_config, "filename");
-        if (!dhcp_bootfile)
-            dhcp_bootfile = nm_dhcp_config_get_option(dhcp_config, "bootfile_name");
-    }
-
     if (!nm_config_device_state_write(ifindex,
                                       managed_type,
                                       perm_hw_addr_fake,
@@ -7100,9 +7087,8 @@ nm_manager_write_device_state(NMManager *self, NMDevice *device, int *out_ifinde
                                       nm_owned,
                                       route_metric_default_aspired,
                                       route_metric_default_effective,
-                                      next_server,
-                                      root_path,
-                                      dhcp_bootfile))
+                                      nm_device_get_dhcp_config(device, AF_INET),
+                                      nm_device_get_dhcp_config(device, AF_INET6)))
         return FALSE;
 
     NM_SET_OUT(out_ifindex, ifindex);

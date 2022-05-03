@@ -291,6 +291,7 @@ nm_dhcp_client_set_state(NMDhcpClient *self, NMDhcpState new_state, const NML3Co
 
     if (!IS_IPv4 && l3cd) {
         if (nm_dhcp_utils_merge_new_dhcp6_lease(priv->l3cd, l3cd, &l3cd_merged)) {
+            _LOGD("lease merged with existing one");
             l3cd = nm_l3_config_data_seal(l3cd_merged);
         }
     }
@@ -326,14 +327,6 @@ nm_dhcp_client_set_state(NMDhcpClient *self, NMDhcpState new_state, const NML3Co
                 _LOGD("option %-20s => '%s'",
                       keys[i],
                       (char *) g_hash_table_lookup(options, keys[i]));
-            }
-
-            if (priv->config.addr_family == AF_INET6) {
-                gs_free char *event_id = NULL;
-
-                event_id = nm_dhcp_utils_get_dhcp6_event_id(options);
-                if (event_id)
-                    _LOGT("event-id: \"%s\"", event_id);
             }
         }
     }
