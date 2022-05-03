@@ -21,6 +21,7 @@
 #include "dns/nm-dns-manager.h"
 #include "libnm-core-intern/nm-core-internal.h"
 #include "libnm-glib-aux/nm-dbus-aux.h"
+#include "libnm-glib-aux/nm-shared-utils.h"
 #include "libnm-platform/nm-platform.h"
 #include "libnm-std-aux/unaligned.h"
 #include "nm-active-connection.h"
