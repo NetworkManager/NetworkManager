@@ -16,6 +16,7 @@
 #include "libnm-platform/nm-platform-utils.h"
 #include "libnm-platform/nm-platform-private.h"
 #include "libnm-platform/nmp-object.h"
+#include "libnm-glib-aux/nm-shared-utils.h"
 
 #include "nm-test-utils-core.h"
 
