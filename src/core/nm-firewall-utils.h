@@ -23,6 +23,12 @@ typedef struct _NMFirewallConfig NMFirewallConfig;
 NMFirewallConfig *
 nm_firewall_config_new_ip4_shared(const char *ip_iface, in_addr_t addr, guint8 plen);
 
+NMFirewallConfig *nm_firewall_config_new_wireguard(const char     *ip_iface,
+                                                   int             addr_family,
+                                                   guint32         fwmark,
+                                                   const NMIPAddr *addrs,
+                                                   gsize           addrs_len);
+
 void nm_firewall_config_free(NMFirewallConfig *self);
 
 void nm_firewall_config_apply(NMFirewallConfig *self, gboolean up);

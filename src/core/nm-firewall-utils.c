@@ -17,6 +17,7 @@
 
 typedef enum _nm_packed {
     FIREWALL_TOPIC_IP4_SHARED,
+    FIREWALL_TOPIC_WIREGUARD,
 } FirewallTopic;
 
 /*****************************************************************************/
@@ -689,6 +690,86 @@ _fw_nft_set_ip4_shared(gboolean up, const char *ip_iface, in_addr_t addr, guint8
 
 /*****************************************************************************/
 
+static void
+_fw_nft_set_wireguard(gboolean        up,
+                      const char     *ip_iface,
+                      int             addr_family,
+                      guint32         fwmark,
+                      const NMIPAddr *addrs,
+                      gsize           addrs_len)
+{
+    const int                IS_IPv4 = NM_IS_IPv4(addr_family);
+    nm_auto_str_buf NMStrBuf strbuf  = NM_STR_BUF_INIT(NM_UTILS_GET_NEXT_REALLOC_SIZE_1000, FALSE);
+    gs_unref_bytes GBytes   *stdin_buf  = NULL;
+    gs_free char            *table_name = NULL;
+    gs_free char            *ss1        = NULL;
+    const char              *pf         = IS_IPv4 ? "ip" : "ip6";
+    gsize                    i;
+
+    table_name = _share_iptables_get_name(FALSE, "nm-wg", ip_iface);
+
+    /* Taken from wg-quick:
+     * https://git.zx2c4.com/wireguard-tools/tree/src/wg-quick/linux.bash?id=1fd95708391088742c139010cc6b821add941dec#n228 */
+
+#define _append(p_strbuf, fmt, ...) nm_str_buf_append_printf((p_strbuf), "" fmt "\n", ##__VA_ARGS__)
+
+    _append(&strbuf, "add table %s %s", pf, table_name);
+    _append(&strbuf, "%s table %s %s", up ? "flush" : "delete", pf, table_name);
+
+    if (up) {
+        _append(&strbuf,
+                "add chain %s %s preraw {"
+                " type filter hook prerouting priority -300; "
+                "};",
+                pf,
+                table_name);
+        _append(&strbuf,
+                "add chain %s %s premangle {"
+                " type filter hook prerouting priority -150; "
+                "};",
+                pf,
+                table_name);
+        _append(&strbuf,
+                "add chain %s %s postmangle {"
+                " type filter hook postrouting priority -150; "
+                "};",
+                pf,
+                table_name);
+        for (i = 0; i < addrs_len; i++) {
+            char addr_buf[NM_UTILS_INET_ADDRSTRLEN];
+
+            _append(
+                &strbuf,
+                "add rule %s %s preraw iifname != \"%s\" %s daddr %s fib saddr type != local drop",
+                pf,
+                table_name,
+                ip_iface,
+                pf,
+                nm_utils_inet_ntop(addr_family, &addrs[i], addr_buf));
+        }
+        _append(&strbuf,
+                "add rule %s %s postmangle meta l4proto udp mark %u ct mark set mark",
+                pf,
+                table_name,
+                fwmark);
+        _append(&strbuf,
+                "add rule %s %s premangle meta l4proto udp meta mark set ct mark",
+                pf,
+                table_name);
+    }
+
+    nm_log_trace(LOGD_SHARING,
+                 "firewall: nft command: [ %s ]",
+                 nm_utils_str_utf8safe_escape(nm_str_buf_get_str(&strbuf),
+                                              NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL,
+                                              &ss1));
+
+    stdin_buf = nm_str_buf_finalize_to_gbytes(&strbuf);
+    _fw_nft_call_sync(stdin_buf, NULL);
+}
+
+/*****************************************************************************/
+
 struct _NMFirewallConfig {
     FirewallTopic topic;
     char         *ip_iface;
@@ -697,6 +778,12 @@ struct _NMFirewallConfig {
             in_addr_t addr;
             guint8    plen;
         } ip4_shared;
+        struct {
+            int       addr_family;
+            guint32   fwmark;
+            NMIPAddr *addrs;
+            gsize     addrs_len;
+        } wireguard;
     };
 };
 
@@ -722,6 +809,35 @@ nm_firewall_config_new_ip4_shared(const char *ip_iface, in_addr_t addr, guint8 p
     return self;
 }
 
+NMFirewallConfig *
+nm_firewall_config_new_wireguard(const char     *ip_iface,
+                                 int             addr_family,
+                                 guint32         fwmark,
+                                 const NMIPAddr *addrs,
+                                 gsize           addrs_len)
+{
+    NMFirewallConfig *self;
+
+    nm_assert(ip_iface);
+    nm_assert_addr_family(addr_family);
+    nm_assert(addrs_len > 0);
+    nm_assert(addrs);
+
+    self  = g_slice_new(NMFirewallConfig);
+    *self = (NMFirewallConfig){
+        .topic    = FIREWALL_TOPIC_WIREGUARD,
+        .ip_iface = g_strdup(ip_iface),
+        .wireguard =
+            {
+                .addr_family = addr_family,
+                .fwmark      = fwmark,
+                .addrs       = nm_memdup(addrs, addrs_len * sizeof(addrs[0])),
+                .addrs_len   = addrs_len,
+            },
+    };
+    return self;
+}
+
 void
 nm_firewall_config_free(NMFirewallConfig *self)
 {
@@ -730,6 +846,9 @@ nm_firewall_config_free(NMFirewallConfig *self)
 
     switch (self->topic) {
     case FIREWALL_TOPIC_IP4_SHARED:
+        goto out;
+    case FIREWALL_TOPIC_WIREGUARD:
+        g_free(self->wireguard.addrs);
         goto out;
     }
     nm_assert_not_reached();
@@ -762,6 +881,25 @@ nm_firewall_config_apply(NMFirewallConfig *self, gboolean up)
                                    self->ip_iface,
                                    self->ip4_shared.addr,
                                    self->ip4_shared.plen);
+            return;
+        case NM_FIREWALL_BACKEND_NONE:
+            return;
+        case NM_FIREWALL_BACKEND_UNKNOWN:
+            goto out_bug;
+        }
+        goto out_bug;
+    case FIREWALL_TOPIC_WIREGUARD:
+        switch (nm_firewall_utils_get_backend()) {
+        case NM_FIREWALL_BACKEND_IPTABLES:
+            /* XXX: Not implemented. */
+            return;
+        case NM_FIREWALL_BACKEND_NFTABLES:
+            _fw_nft_set_wireguard(up,
+                                  self->ip_iface,
+                                  self->wireguard.addr_family,
+                                  self->wireguard.fwmark,
+                                  self->wireguard.addrs,
+                                  self->wireguard.addrs_len);
             return;
         case NM_FIREWALL_BACKEND_NONE:
             return;

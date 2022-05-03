@@ -23,6 +23,7 @@
 #include "nm-active-connection.h"
 #include "nm-act-request.h"
 #include "dns/nm-dns-manager.h"
+#include "nm-firewall-utils.h"
 
 #define _NMLOG_DEVICE_TYPE NMDeviceWireGuard
 #include "nm-device-logging.h"
@@ -119,6 +120,14 @@ typedef struct {
 
     CList       lst_peers_head;
     GHashTable *peers;
+
+    union {
+        struct {
+            NMFirewallConfig *fw_config_6;
+            NMFirewallConfig *fw_config_4;
+        };
+        NMFirewallConfig *fw_config_x[2];
+    };
 
     /* counts the numbers of peers that are currently resolving. */
     guint peers_resolving_cnt;
@@ -1423,6 +1432,7 @@ link_config(NMDeviceWireGuard   *self,
 {
     NMDeviceWireGuardPrivate                   *priv = NM_DEVICE_WIREGUARD_GET_PRIVATE(self);
     nm_auto_bzero_secret_ptr NMSecretPtr        wg_lnk_clear_private_key = NM_SECRET_PTR_INIT();
+    const char                                 *ip_iface;
     NMSettingWireGuard                         *s_wg;
     NMConnection                               *connection;
     NMActStageReturn                            ret;
@@ -1436,6 +1446,7 @@ link_config(NMDeviceWireGuard   *self,
     NMPlatformWireGuardChangeFlags              wg_change_flags;
     int                                         ifindex;
     int                                         r;
+    int                                         IS_IPv4;
 
     NM_SET_OUT(out_failure_reason, NM_DEVICE_STATE_REASON_NONE);
 
@@ -1478,8 +1489,9 @@ link_config(NMDeviceWireGuard   *self,
         }
     }
 
-    ifindex = nm_device_get_ip_ifindex(NM_DEVICE(self));
-    if (ifindex <= 0) {
+    ifindex  = nm_device_get_ip_ifindex(NM_DEVICE(self));
+    ip_iface = nm_device_get_ip_iface(NM_DEVICE(self));
+    if (ifindex <= 0 || !ip_iface) {
         NM_SET_OUT(out_failure_reason, NM_DEVICE_STATE_REASON_CONFIG_FAILED);
         return NM_ACT_STAGE_RETURN_FAILURE;
     }
@@ -1535,6 +1547,17 @@ link_config(NMDeviceWireGuard   *self,
     if (r < 0) {
         NM_SET_OUT(out_failure_reason, NM_DEVICE_STATE_REASON_CONFIG_FAILED);
         return NM_ACT_STAGE_RETURN_FAILURE;
+    }
+
+    for (IS_IPv4 = 1; IS_IPv4 >= 0; IS_IPv4--) {
+        //XXX
+        nm_firewall_config_apply(priv->fw_config_x[IS_IPv4], FALSE);
+        nm_clear_pointer(&priv->fw_config_x[IS_IPv4], nm_firewall_config_free);
+        priv->fw_config_x[IS_IPv4] = nm_firewall_config_new_wireguard(ip_iface,
+                                                                      IS_IPv4 ? AF_INET : AF_INET6,
+                                                                      wg_lnk.fwmark,
+                                                                      NULL,
+                                                                      0);
     }
 
     return NM_ACT_STAGE_RETURN_SUCCESS;
