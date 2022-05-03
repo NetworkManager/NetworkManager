@@ -974,8 +974,14 @@ deactivate(NMDevice *device)
     }
 }
 
-static gboolean
-enslave_slave(NMDevice *device, NMDevice *slave, NMConnection *connection, gboolean configure)
+static NMTernary
+attach_port(NMDevice                  *device,
+            NMDevice                  *port,
+            NMConnection              *connection,
+            gboolean                   configure,
+            GCancellable              *cancellable,
+            NMDeviceAttachPortCallback callback,
+            gpointer                   user_data)
 {
     NMDeviceBridge      *self = NM_DEVICE_BRIDGE(device);
     NMConnection        *master_connection;
@@ -985,7 +991,7 @@ enslave_slave(NMDevice *device, NMDevice *slave, NMConnection *connection, gbool
     if (configure) {
         if (!nm_platform_link_enslave(nm_device_get_platform(device),
                                       nm_device_get_ip_ifindex(device),
-                                      nm_device_get_ip_ifindex(slave)))
+                                      nm_device_get_ip_ifindex(port)))
             return FALSE;
 
         master_connection = nm_device_get_applied_connection(device);
@@ -1009,25 +1015,25 @@ enslave_slave(NMDevice *device, NMDevice *slave, NMConnection *connection, gbool
              * (except for the default one) and so there's no need to flush. */
 
             if (plat_vlans
-                && !nm_platform_link_set_bridge_vlans(nm_device_get_platform(slave),
-                                                      nm_device_get_ifindex(slave),
+                && !nm_platform_link_set_bridge_vlans(nm_device_get_platform(port),
+                                                      nm_device_get_ifindex(port),
                                                       TRUE,
                                                       plat_vlans))
                 return FALSE;
         }
 
-        commit_slave_options(slave, s_port);
+        commit_slave_options(port, s_port);
 
-        _LOGI(LOGD_BRIDGE, "attached bridge port %s", nm_device_get_ip_iface(slave));
+        _LOGI(LOGD_BRIDGE, "attached bridge port %s", nm_device_get_ip_iface(port));
     } else {
-        _LOGI(LOGD_BRIDGE, "bridge port %s was attached", nm_device_get_ip_iface(slave));
+        _LOGI(LOGD_BRIDGE, "bridge port %s was attached", nm_device_get_ip_iface(port));
     }
 
     return TRUE;
 }
 
 static void
-release_slave(NMDevice *device, NMDevice *slave, gboolean configure)
+detach_port(NMDevice *device, NMDevice *port, gboolean configure)
 {
     NMDeviceBridge *self = NM_DEVICE_BRIDGE(device);
     gboolean        success;
@@ -1040,10 +1046,10 @@ release_slave(NMDevice *device, NMDevice *slave, gboolean configure)
             configure = FALSE;
     }
 
-    ifindex_slave = nm_device_get_ip_ifindex(slave);
+    ifindex_slave = nm_device_get_ip_ifindex(port);
 
     if (ifindex_slave <= 0) {
-        _LOGD(LOGD_TEAM, "bond slave %s is already released", nm_device_get_ip_iface(slave));
+        _LOGD(LOGD_TEAM, "bridge port %s is already detached", nm_device_get_ip_iface(port));
         return;
     }
 
@@ -1053,12 +1059,12 @@ release_slave(NMDevice *device, NMDevice *slave, gboolean configure)
                                            ifindex_slave);
 
         if (success) {
-            _LOGI(LOGD_BRIDGE, "detached bridge port %s", nm_device_get_ip_iface(slave));
+            _LOGI(LOGD_BRIDGE, "detached bridge port %s", nm_device_get_ip_iface(port));
         } else {
-            _LOGW(LOGD_BRIDGE, "failed to detach bridge port %s", nm_device_get_ip_iface(slave));
+            _LOGW(LOGD_BRIDGE, "failed to detach bridge port %s", nm_device_get_ip_iface(port));
         }
     } else {
-        _LOGI(LOGD_BRIDGE, "bridge port %s was detached", nm_device_get_ip_iface(slave));
+        _LOGI(LOGD_BRIDGE, "bridge port %s was detached", nm_device_get_ip_iface(port));
     }
 }
 
@@ -1182,8 +1188,8 @@ nm_device_bridge_class_init(NMDeviceBridgeClass *klass)
     device_class->act_stage1_prepare                     = act_stage1_prepare;
     device_class->act_stage2_config                      = act_stage2_config;
     device_class->deactivate                             = deactivate;
-    device_class->enslave_slave                          = enslave_slave;
-    device_class->release_slave                          = release_slave;
+    device_class->attach_port                            = attach_port;
+    device_class->detach_port                            = detach_port;
     device_class->get_configured_mtu                     = nm_device_get_configured_mtu_for_wired;
 }
 

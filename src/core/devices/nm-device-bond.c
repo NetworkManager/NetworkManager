@@ -424,8 +424,14 @@ commit_port_options(NMDevice *bond_device, NMDevice *port, NMSettingBondPort *s_
                                          queue_id_str);
 }
 
-static gboolean
-enslave_slave(NMDevice *device, NMDevice *port, NMConnection *connection, gboolean configure)
+static NMTernary
+attach_port(NMDevice                  *device,
+            NMDevice                  *port,
+            NMConnection              *connection,
+            gboolean                   configure,
+            GCancellable              *cancellable,
+            NMDeviceAttachPortCallback callback,
+            gpointer                   user_data)
 {
     NMDeviceBond      *self = NM_DEVICE_BOND(device);
     NMSettingBondPort *s_port;
@@ -442,7 +448,7 @@ enslave_slave(NMDevice *device, NMDevice *port, NMConnection *connection, gboole
         nm_device_bring_up(port, TRUE, NULL);
 
         if (!success) {
-            _LOGI(LOGD_BOND, "assigning bond port %s: failed", nm_device_get_ip_iface(port));
+            _LOGI(LOGD_BOND, "attaching bond port %s: failed", nm_device_get_ip_iface(port));
             return FALSE;
         }
 
@@ -450,15 +456,15 @@ enslave_slave(NMDevice *device, NMDevice *port, NMConnection *connection, gboole
 
         commit_port_options(device, port, s_port);
 
-        _LOGI(LOGD_BOND, "assigned bond port %s", nm_device_get_ip_iface(port));
+        _LOGI(LOGD_BOND, "attached bond port %s", nm_device_get_ip_iface(port));
     } else
-        _LOGI(LOGD_BOND, "bond port %s was assigned", nm_device_get_ip_iface(port));
+        _LOGI(LOGD_BOND, "bond port %s was attached", nm_device_get_ip_iface(port));
 
     return TRUE;
 }
 
 static void
-release_slave(NMDevice *device, NMDevice *slave, gboolean configure)
+detach_port(NMDevice *device, NMDevice *port, gboolean configure)
 {
     NMDeviceBond *self = NM_DEVICE_BOND(device);
     gboolean      success;
@@ -472,10 +478,10 @@ release_slave(NMDevice *device, NMDevice *slave, gboolean configure)
             configure = FALSE;
     }
 
-    ifindex_slave = nm_device_get_ip_ifindex(slave);
+    ifindex_slave = nm_device_get_ip_ifindex(port);
 
     if (ifindex_slave <= 0)
-        _LOGD(LOGD_BOND, "bond slave %s is already released", nm_device_get_ip_iface(slave));
+        _LOGD(LOGD_BOND, "bond port %s is already detached", nm_device_get_ip_iface(port));
 
     if (configure) {
         NMConnection   *applied;
@@ -490,9 +496,9 @@ release_slave(NMDevice *device, NMDevice *slave, gboolean configure)
                                                ifindex_slave);
 
             if (success) {
-                _LOGI(LOGD_BOND, "released bond slave %s", nm_device_get_ip_iface(slave));
+                _LOGI(LOGD_BOND, "detached bond port %s", nm_device_get_ip_iface(port));
             } else {
-                _LOGW(LOGD_BOND, "failed to release bond slave %s", nm_device_get_ip_iface(slave));
+                _LOGW(LOGD_BOND, "failed to detach bond port %s", nm_device_get_ip_iface(port));
             }
         }
 
@@ -512,12 +518,12 @@ release_slave(NMDevice *device, NMDevice *slave, gboolean configure)
          * other state is noticed by the now-released slave.
          */
         if (ifindex_slave > 0) {
-            if (!nm_device_bring_up(slave, TRUE, NULL))
-                _LOGW(LOGD_BOND, "released bond slave could not be brought up.");
+            if (!nm_device_bring_up(port, TRUE, NULL))
+                _LOGW(LOGD_BOND, "detached bond port could not be brought up.");
         }
     } else {
         if (ifindex_slave > 0) {
-            _LOGI(LOGD_BOND, "bond slave %s was released", nm_device_get_ip_iface(slave));
+            _LOGI(LOGD_BOND, "bond port %s was detached", nm_device_get_ip_iface(port));
         }
     }
 }
@@ -663,8 +669,8 @@ nm_device_bond_class_init(NMDeviceBondClass *klass)
     device_class->create_and_realize = create_and_realize;
     device_class->act_stage1_prepare = act_stage1_prepare;
     device_class->get_configured_mtu = nm_device_get_configured_mtu_for_wired;
-    device_class->enslave_slave      = enslave_slave;
-    device_class->release_slave      = release_slave;
+    device_class->attach_port        = attach_port;
+    device_class->detach_port        = detach_port;
     device_class->can_reapply_change = can_reapply_change;
     device_class->reapply_connection = reapply_connection;
 }
