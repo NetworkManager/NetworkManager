@@ -63,8 +63,6 @@
 
 #include "nm-gassert-patch.h"
 
-#include "libnm-std-aux/nm-std-aux.h"
-#include "libnm-std-aux/nm-std-utils.h"
 #include "libnm-glib-aux/nm-macros-internal.h"
 #include "libnm-glib-aux/nm-shared-utils.h"
 #include "libnm-glib-aux/nm-errno.h"
