@@ -4029,9 +4029,10 @@ nm_platform_ip_address_sync(NMPlatform *self,
     gint32                         now     = 0;
     const int                      IS_IPv4 = NM_IS_IPv4(addr_family);
     NMPLookup                      lookup;
-    const gboolean                 EXTRA_LOGGING       = FALSE;
-    gs_unref_hashtable GHashTable *known_addresses_idx = NULL;
-    gs_unref_ptrarray GPtrArray   *plat_addresses      = NULL;
+    const gboolean                 EXTRA_LOGGING        = FALSE;
+    gs_unref_hashtable GHashTable *known_addresses_idx  = NULL;
+    gs_unref_hashtable GHashTable *plat_addrs_to_delete = NULL;
+    gs_unref_ptrarray GPtrArray   *plat_addresses       = NULL;
     gboolean                       success;
     guint                          i_plat;
     guint                          i_know;
@@ -4039,6 +4040,19 @@ nm_platform_ip_address_sync(NMPlatform *self,
     guint                          j;
 
     _CHECK_SELF(self, klass, FALSE);
+
+#define _plat_addrs_to_delete_ensure(ptr)                                    \
+    ({                                                                       \
+        GHashTable **_ptr = (ptr);                                           \
+                                                                             \
+        if (!*_ptr) {                                                        \
+            *_ptr = g_hash_table_new_full((GHashFunc) nmp_object_id_hash,    \
+                                          (GEqualFunc) nmp_object_id_equal,  \
+                                          (GDestroyNotify) nmp_object_unref, \
+                                          NULL);                             \
+        }                                                                    \
+        *_ptr;                                                               \
+    })
 
     /* Disabled. Enable this for printf debugging. */
     if (EXTRA_LOGGING) {
@@ -4200,11 +4214,8 @@ nm_platform_ip_address_sync(NMPlatform *self,
                 }
                 plat_handled[i] = TRUE;
 
-                nm_platform_ip4_address_delete(self,
-                                               ifindex,
-                                               plat_address->address,
-                                               plat_address->plen,
-                                               plat_address->peer_address);
+                g_hash_table_add(_plat_addrs_to_delete_ensure(&plat_addrs_to_delete),
+                                 (gpointer) nmp_object_ref(plat_obj));
 
                 if (!ip4_addr_subnets_is_secondary(plat_obj,
                                                    plat_subnets,
@@ -4234,12 +4245,11 @@ nm_platform_ip_address_sync(NMPlatform *self,
                         if (!nm_g_hash_table_contains(known_addresses_idx, *o)) {
                             /* Again, this is an external address. We cannot delete
                              * it to fix the address order. Pass. */
-                        } else {
-                            nm_platform_ip_address_delete(self,
-                                                          AF_INET,
-                                                          ifindex,
-                                                          NMP_OBJECT_CAST_IP4_ADDRESS(*o));
+                            continue;
                         }
+
+                        g_hash_table_add(_plat_addrs_to_delete_ensure(&plat_addrs_to_delete),
+                                         (gpointer) nmp_object_ref(*o));
                     }
                 }
             }
@@ -4275,7 +4285,10 @@ nm_platform_ip_address_sync(NMPlatform *self,
                      * @plat_addr is essentially the same address as @know_addr (w.r.t.
                      * its identity, not its other attributes).
                      * However, we cannot modify an existing addresses' plen without
-                     * removing and readding it. Thus, we need to delete plat_addr. */
+                     * removing and readding it. Thus, we need to delete plat_addr.
+                     *
+                     * We don't just add this address to @plat_addrs_to_delete, because
+                     * it's too different. Instead, delete and re-add below. */
                     nm_platform_ip_address_delete(self,
                                                   AF_INET6,
                                                   ifindex,
@@ -4301,9 +4314,9 @@ nm_platform_ip_address_sync(NMPlatform *self,
             i_know                 = nm_g_ptr_array_len(known_addresses);
 
             while (i_plat > 0) {
-                const NMPlatformIP6Address *plat_addr =
-                    NMP_OBJECT_CAST_IP6_ADDRESS(plat_addresses->pdata[--i_plat]);
-                IP6AddrScope plat_scope;
+                const NMPObject            *plat_obj  = plat_addresses->pdata[--i_plat];
+                const NMPlatformIP6Address *plat_addr = NMP_OBJECT_CAST_IP6_ADDRESS(plat_obj);
+                IP6AddrScope                plat_scope;
 
                 if (!plat_addr)
                     continue;
@@ -4316,7 +4329,6 @@ nm_platform_ip_address_sync(NMPlatform *self,
                 }
 
                 if (!delete_remaining_addrs) {
-                    delete_remaining_addrs = TRUE;
                     while (i_know > 0) {
                         const NMPlatformIP6Address *know_addr =
                             NMP_OBJECT_CAST_IP6_ADDRESS(known_addresses->pdata[--i_know]);
@@ -4331,18 +4343,18 @@ nm_platform_ip_address_sync(NMPlatform *self,
 
                         if (IN6_ARE_ADDR_EQUAL(&plat_addr->address, &know_addr->address)) {
                             /* we have a match. Mark address as handled. */
-                            i_know++;
-                            delete_remaining_addrs = FALSE;
                             goto next_plat;
                         }
 
-                        /* plat_address has no match. Now delete_remaining_addrs is TRUE and we will
-                         * delete all the remaining addresses with cur_scope. */
+                        /* "plat_address" has no match. "delete_remaining_addrs" will be set to TRUE and we will
+                         * delete all the remaining addresses with "cur_scope". */
                         break;
                     }
+                    delete_remaining_addrs = TRUE;
                 }
 
-                nm_platform_ip6_address_delete(self, ifindex, plat_addr->address, plat_addr->plen);
+                g_hash_table_add(_plat_addrs_to_delete_ensure(&plat_addrs_to_delete),
+                                 (gpointer) nmp_object_ref(plat_obj));
 next_plat:;
             }
         }
@@ -4387,6 +4399,17 @@ next_plat:;
         nm_assert(lifetime > 0);
 
         plat_obj = nm_platform_ip_address_get(self, addr_family, ifindex, known_address);
+
+        if (plat_obj && nm_g_hash_table_contains(plat_addrs_to_delete, plat_obj)) {
+            /* This address exists, but it had the wrong priority earlier. We
+             * cannot just update it, we need to remove it first. */
+            nm_platform_ip_address_delete(self,
+                                          addr_family,
+                                          ifindex,
+                                          NMP_OBJECT_CAST_IP_ADDRESS(plat_obj));
+            plat_obj = NULL;
+        }
+
         if (plat_obj
             && nm_platform_vtable_address.vx[IS_IPv4].address_cmp(
                    known_address,
