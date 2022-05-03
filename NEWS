@@ -9,6 +9,7 @@ the later release.
 USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 
 * Add support for route type "throw".
+* Fix bug setting priority for IP addresses.
 * Static IPv6 addresses from "ipv6.addresses" are now preferred over
   addresses from DHCPv6, which are preferred over addresses from autoconf.
   This affects IPv6 source address selection, if the rules from
@@ -44,7 +45,6 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 * nmcli: add connection migrate command to move a profile to a specified
   settings plugin. This allows to convert profiles in the deprecated ifcfg-rh
   format to keyfile.
-* Fix bug setting priority for IP addresses.
 * Set "src" attribute for routes from DHCPv4 to the leased address. This
   helps with source address selection.
 * Updated translations.
