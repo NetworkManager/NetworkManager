@@ -13,6 +13,7 @@ libnm_client_test = static_library(
   ],
   dependencies: [
     libnm_core_public_dep,
+    libnm_client_public_dep,
     glib_dep,
   ],
 )
