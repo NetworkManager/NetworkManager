@@ -411,7 +411,7 @@ do_run() {
         podman run --privileged \
             --name "$CONTAINER_NAME_NAME" \
             -d \
-            -v "$BASEDIR_NM:$BASEDIR_NM:Z" \
+            -v "$BASEDIR_NM:$BASEDIR_NM" \
             "${BIND_NM_CI[@]}" \
             "${BIND_FILES[@]}" \
             "$CONTAINER_NAME_REPOSITORY:$CONTAINER_NAME_TAG"
