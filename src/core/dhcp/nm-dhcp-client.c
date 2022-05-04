@@ -43,9 +43,9 @@ typedef struct _NMDhcpClientPrivate {
     const NML3ConfigData *l3cd;
     GSource              *no_lease_timeout_source;
     GSource              *ipv6_lladdr_timeout_source;
+    GSource              *watch_source;
     GBytes               *effective_client_id;
     pid_t                 pid;
-    guint                 watch_id;
     NMDhcpState           state;
     bool                  iaid_explicit : 1;
     bool                  is_stopped : 1;
@@ -181,7 +181,7 @@ watch_cleanup(NMDhcpClient *self)
 {
     NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
 
-    nm_clear_g_source(&priv->watch_id);
+    nm_clear_g_source_inst(&priv->watch_source);
 }
 
 void
@@ -382,8 +382,9 @@ daemon_watch_cb(GPid pid, int status, gpointer user_data)
     NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
     gs_free char        *desc = NULL;
 
-    g_return_if_fail(priv->watch_id);
-    priv->watch_id = 0;
+    g_return_if_fail(priv->watch_source);
+
+    priv->watch_source = NULL;
 
     _LOGI("client pid %d %s", pid, (desc = nm_utils_get_process_exit_status_desc(status)));
 
@@ -400,8 +401,8 @@ nm_dhcp_client_watch_child(NMDhcpClient *self, pid_t pid)
     g_return_if_fail(priv->pid == -1);
     priv->pid = pid;
 
-    g_return_if_fail(priv->watch_id == 0);
-    priv->watch_id = g_child_watch_add(pid, daemon_watch_cb, self);
+    g_return_if_fail(!priv->watch_source);
+    priv->watch_source = nm_g_child_watch_add_source(pid, daemon_watch_cb, self);
 }
 
 void
