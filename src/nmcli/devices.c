@@ -1109,7 +1109,7 @@ nmc_complete_device(NMClient *client, const char *prefix, gboolean wifi_only)
     complete_device(devices, prefix, wifi_only);
 }
 
-static GSList *
+static GPtrArray *
 get_device_list(NmCli *nmc, int *argc, const char *const **argv)
 {
     int                arg_num;
@@ -1117,7 +1117,7 @@ get_device_list(NmCli *nmc, int *argc, const char *const **argv)
 
     gs_strfreev char **arg_arr = NULL;
     NMDevice         **devices;
-    GSList            *queue = NULL;
+    GPtrArray         *queue = NULL;
     NMDevice          *device;
     int                i;
 
@@ -1158,8 +1158,10 @@ get_device_list(NmCli *nmc, int *argc, const char *const **argv)
         }
 
         if (device) {
-            if (!g_slist_find(queue, device))
-                queue = g_slist_prepend(queue, device);
+            if (!queue)
+                queue = g_ptr_array_new();
+            if (!g_ptr_array_find(queue, device, NULL))
+                g_ptr_array_add(queue, device);
             else
                 g_printerr(_("Warning: argument '%s' is duplicated.\n"), **argv);
         } else {
@@ -2623,9 +2625,10 @@ disconnect_device_cb(GObject *object, GAsyncResult *result, gpointer user_data)
 static void
 do_devices_disconnect(const NMCCommand *cmd, NmCli *nmc, int argc, const char *const *argv)
 {
-    NMDevice     *device;
-    DeviceCbInfo *info = NULL;
-    GSList       *queue, *iter;
+    NMDevice                    *device;
+    DeviceCbInfo                *info  = NULL;
+    gs_unref_ptrarray GPtrArray *queue = NULL;
+    guint                        i;
 
     /* Set default timeout for disconnect operation. */
     if (nmc->timeout == -1)
@@ -2641,8 +2644,7 @@ do_devices_disconnect(const NMCCommand *cmd, NmCli *nmc, int argc, const char *c
     if (!queue)
         return;
     if (nmc->complete)
-        goto out;
-    queue = g_slist_reverse(queue);
+        return;
 
     info                 = g_slice_new0(DeviceCbInfo);
     info->nmc            = nmc;
@@ -2656,8 +2658,8 @@ do_devices_disconnect(const NMCCommand *cmd, NmCli *nmc, int argc, const char *c
     nmc->nowait_flag = (nmc->timeout == 0);
     nmc->should_wait++;
 
-    for (iter = queue; iter; iter = g_slist_next(iter)) {
-        device = iter->data;
+    for (i = 0; i < queue->len; i++) {
+        device = queue->pdata[i];
 
         info->queue = g_slist_prepend(info->queue, g_object_ref(device));
         g_signal_connect(device, "notify::" NM_DEVICE_STATE, G_CALLBACK(disconnect_state_cb), info);
@@ -2665,9 +2667,6 @@ do_devices_disconnect(const NMCCommand *cmd, NmCli *nmc, int argc, const char *c
         /* Now disconnect the device */
         nm_device_disconnect_async(device, info->cancellable, disconnect_device_cb, info);
     }
-
-out:
-    g_slist_free(queue);
 }
 
 static void
@@ -2696,9 +2695,10 @@ delete_device_cb(GObject *object, GAsyncResult *result, gpointer user_data)
 static void
 do_devices_delete(const NMCCommand *cmd, NmCli *nmc, int argc, const char *const *argv)
 {
-    NMDevice     *device;
-    DeviceCbInfo *info = NULL;
-    GSList       *queue, *iter;
+    NMDevice                    *device;
+    DeviceCbInfo                *info  = NULL;
+    gs_unref_ptrarray GPtrArray *queue = NULL;
+    guint                        i;
 
     /* Set default timeout for delete operation. */
     if (nmc->timeout == -1)
@@ -2714,8 +2714,7 @@ do_devices_delete(const NMCCommand *cmd, NmCli *nmc, int argc, const char *const
     if (!queue)
         return;
     if (nmc->complete)
-        goto out;
-    queue = g_slist_reverse(queue);
+        return;
 
     info      = g_slice_new0(DeviceCbInfo);
     info->nmc = nmc;
@@ -2725,17 +2724,14 @@ do_devices_delete(const NMCCommand *cmd, NmCli *nmc, int argc, const char *const
     nmc->nowait_flag = (nmc->timeout == 0);
     nmc->should_wait++;
 
-    for (iter = queue; iter; iter = g_slist_next(iter)) {
-        device = iter->data;
+    for (i = 0; i < queue->len; i++) {
+        device = queue->pdata[i];
 
         info->queue = g_slist_prepend(info->queue, g_object_ref(device));
 
         /* Now delete the device */
         nm_device_delete_async(device, NULL, delete_device_cb, info);
     }
-
-out:
-    g_slist_free(queue);
 }
 
 static void
@@ -2904,36 +2900,32 @@ device_removed(NMClient *client, NMDevice *device, NmCli *nmc)
 static void
 do_devices_monitor(const NMCCommand *cmd, NmCli *nmc, int argc, const char *const *argv)
 {
+    const GPtrArray             *devices;
+    gs_unref_ptrarray GPtrArray *devices_free = NULL;
+    guint                        i;
+
     if (nmc->complete)
         return;
 
     next_arg(nmc, &argc, &argv, NULL);
-    if (argc == 0) {
-        /* No devices specified. Monitor all. */
-        const GPtrArray *devices = nm_client_get_devices(nmc->client);
-        int              i;
-
-        for (i = 0; i < devices->len; i++)
-            device_watch(nmc, g_ptr_array_index(devices, i));
-
-        /* We'll watch the device additions too, never exit. */
-        nmc->should_wait++;
-        g_signal_connect(nmc->client, NM_CLIENT_DEVICE_ADDED, G_CALLBACK(device_added), nmc);
-    } else {
-        GSList *queue = get_device_list(nmc, &argc, &argv);
-        GSList *iter;
-
+    if (argc > 0) {
+        devices = devices_free = get_device_list(nmc, &argc, &argv);
         if (argc) {
             g_string_printf(nmc->return_text, _("Error: invalid extra argument '%s'."), *argv);
             nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
             return;
         }
+    } else {
+        /* No devices specified. Monitor all. */
+        devices = nm_client_get_devices(nmc->client);
 
-        /* Monitor the specified devices. */
-        for (iter = queue; iter; iter = g_slist_next(iter))
-            device_watch(nmc, NM_DEVICE(iter->data));
-        g_slist_free(queue);
+        /* We'll watch the device additions too, never exit. */
+        nmc->should_wait++;
+        g_signal_connect(nmc->client, NM_CLIENT_DEVICE_ADDED, G_CALLBACK(device_added), nmc);
     }
+
+    for (i = 0; i < devices->len; i++)
+        device_watch(nmc, g_ptr_array_index(devices, i));
 
     g_signal_connect(nmc->client, NM_CLIENT_DEVICE_REMOVED, G_CALLBACK(device_removed), nmc);
 }
