@@ -327,8 +327,7 @@ RUN dnf install -y \\
 
 RUN dnf debuginfo-install --skip-broken \$(ldd /usr/sbin/NetworkManager | sed -n 's/.* => \\(.*\\) (0x[0-9A-Fa-f]*)$/\1/p' | xargs -n1 readlink -f) -y
 
-RUN pip3 install --user \\
-    behave_html_formatter
+RUN pip3 install --user behave_html_formatter || true
 
 RUN systemctl enable NetworkManager
 
