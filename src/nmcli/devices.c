@@ -1140,6 +1140,12 @@ get_device_list(NmCli *nmc, int *argc, const char *const **argv)
 
     devices = nmc_get_devices_sorted(nmc->client);
     while (*argc > 0) {
+        if (strcmp(**argv, "--") == 0) {
+            (*argc)--;
+            (*argv)++;
+            break;
+        }
+
         if (*argc == 1 && nmc->complete)
             complete_device(devices, **argv, FALSE);
 
@@ -2627,6 +2633,11 @@ do_devices_disconnect(const NMCCommand *cmd, NmCli *nmc, int argc, const char *c
 
     next_arg(nmc, &argc, &argv, NULL);
     queue = get_device_list(nmc, &argc, &argv);
+    if (argc) {
+        g_string_printf(nmc->return_text, _("Error: invalid extra argument '%s'."), *argv);
+        nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+        return;
+    }
     if (!queue)
         return;
     if (nmc->complete)
@@ -2695,6 +2706,11 @@ do_devices_delete(const NMCCommand *cmd, NmCli *nmc, int argc, const char *const
 
     next_arg(nmc, &argc, &argv, NULL);
     queue = get_device_list(nmc, &argc, &argv);
+    if (argc) {
+        g_string_printf(nmc->return_text, _("Error: invalid extra argument '%s'."), *argv);
+        nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+        return;
+    }
     if (!queue)
         return;
     if (nmc->complete)
@@ -2906,6 +2922,12 @@ do_devices_monitor(const NMCCommand *cmd, NmCli *nmc, int argc, const char *cons
     } else {
         GSList *queue = get_device_list(nmc, &argc, &argv);
         GSList *iter;
+
+        if (argc) {
+            g_string_printf(nmc->return_text, _("Error: invalid extra argument '%s'."), *argv);
+            nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+            return;
+        }
 
         /* Monitor the specified devices. */
         for (iter = queue; iter; iter = g_slist_next(iter))
