@@ -1110,39 +1110,42 @@ nmc_complete_device(NMClient *client, const char *prefix, gboolean wifi_only)
 }
 
 static GSList *
-get_device_list(NmCli *nmc, int argc, const char *const *argv)
+get_device_list(NmCli *nmc, int *argc, const char *const **argv)
 {
-    int                arg_num = argc;
+    int                arg_num;
+    const char *const *arg_ptr;
+
     gs_strfreev char **arg_arr = NULL;
-    const char *const *arg_ptr = argv;
     NMDevice         **devices;
     GSList            *queue = NULL;
     NMDevice          *device;
     int                i;
 
-    if (argc == 0) {
-        if (nmc->ask) {
-            gs_free char *line = NULL;
+    if (*argc == 0 && nmc->ask) {
+        gs_free char *line = NULL;
 
-            line = nmc_readline(&nmc->nmc_config, PROMPT_INTERFACES);
-            nmc_string_to_arg_array(line, NULL, FALSE, &arg_arr, &arg_num);
-            arg_ptr = (const char *const *) arg_arr;
-        }
-        if (arg_num == 0) {
-            g_string_printf(nmc->return_text, _("Error: No interface specified."));
-            nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-            goto error;
-        }
+        line = nmc_readline(&nmc->nmc_config, PROMPT_INTERFACES);
+        nmc_string_to_arg_array(line, NULL, FALSE, &arg_arr, &arg_num);
+        arg_ptr = (const char *const *) arg_arr;
+
+        argc = &arg_num;
+        argv = &arg_ptr;
+    }
+
+    if (*argc == 0) {
+        g_string_printf(nmc->return_text, _("Error: No interface specified."));
+        nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+        goto error;
     }
 
     devices = nmc_get_devices_sorted(nmc->client);
-    while (arg_num > 0) {
-        if (arg_num == 1 && nmc->complete)
-            complete_device(devices, *arg_ptr, FALSE);
+    while (*argc > 0) {
+        if (*argc == 1 && nmc->complete)
+            complete_device(devices, **argv, FALSE);
 
         device = NULL;
         for (i = 0; devices[i]; i++) {
-            if (!g_strcmp0(nm_device_get_iface(devices[i]), *arg_ptr)) {
+            if (!g_strcmp0(nm_device_get_iface(devices[i]), **argv)) {
                 device = devices[i];
                 break;
             }
@@ -1152,16 +1155,16 @@ get_device_list(NmCli *nmc, int argc, const char *const *argv)
             if (!g_slist_find(queue, device))
                 queue = g_slist_prepend(queue, device);
             else
-                g_printerr(_("Warning: argument '%s' is duplicated.\n"), *arg_ptr);
+                g_printerr(_("Warning: argument '%s' is duplicated.\n"), **argv);
         } else {
             if (!nmc->complete)
-                g_printerr(_("Error: Device '%s' not found.\n"), *arg_ptr);
+                g_printerr(_("Error: Device '%s' not found.\n"), **argv);
             g_string_printf(nmc->return_text, _("Error: not all devices found."));
             nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
         }
 
         /* Take next argument */
-        next_arg(nmc->ask ? NULL : nmc, &arg_num, &arg_ptr, NULL);
+        next_arg(nmc->ask ? NULL : nmc, argc, argv, NULL);
     }
     g_free(devices);
 
@@ -2623,7 +2626,7 @@ do_devices_disconnect(const NMCCommand *cmd, NmCli *nmc, int argc, const char *c
         nmc->timeout = 10;
 
     next_arg(nmc, &argc, &argv, NULL);
-    queue = get_device_list(nmc, argc, argv);
+    queue = get_device_list(nmc, &argc, &argv);
     if (!queue)
         return;
     if (nmc->complete)
@@ -2691,7 +2694,7 @@ do_devices_delete(const NMCCommand *cmd, NmCli *nmc, int argc, const char *const
         nmc->timeout = 10;
 
     next_arg(nmc, &argc, &argv, NULL);
-    queue = get_device_list(nmc, argc, argv);
+    queue = get_device_list(nmc, &argc, &argv);
     if (!queue)
         return;
     if (nmc->complete)
@@ -2901,7 +2904,7 @@ do_devices_monitor(const NMCCommand *cmd, NmCli *nmc, int argc, const char *cons
         nmc->should_wait++;
         g_signal_connect(nmc->client, NM_CLIENT_DEVICE_ADDED, G_CALLBACK(device_added), nmc);
     } else {
-        GSList *queue = get_device_list(nmc, argc, argv);
+        GSList *queue = get_device_list(nmc, &argc, &argv);
         GSList *iter;
 
         /* Monitor the specified devices. */
