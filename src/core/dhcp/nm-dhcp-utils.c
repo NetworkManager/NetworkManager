@@ -855,8 +855,7 @@ nm_dhcp_utils_merge_new_dhcp6_lease(const NML3ConfigData  *l3cd_old,
     const char                             *start;
     const char                             *iaid;
 
-    nm_assert(out_l3cd_merged);
-    nm_assert(!*out_l3cd_merged);
+    nm_assert(out_l3cd_merged && !*out_l3cd_merged);
 
     if (!l3cd_old)
         return FALSE;
