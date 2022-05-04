@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * Copyright (C) 2010 - 2018 Red Hat, Inc.
+ * Copyright (C) 2010 - 2022 Red Hat, Inc.
  */
 
 #include "libnm-client-aux-extern/nm-default-client.h"
@@ -1040,6 +1040,18 @@ usage_device_lldp(void)
                  "\n"
                  "List neighboring devices discovered through LLDP. The 'ifname' option can be\n"
                  "used to list neighbors for a particular interface.\n\n"));
+}
+
+static void
+usage_device_checkpoint(void)
+{
+    g_printerr(_("Usage: nmcli device checkpoint { ARGUMENTS | help }\n"
+                 "\n"
+                 "ARGUMENTS := [--timeout <seconds>] -- COMMAND...\n"
+                 "\n"
+                 "Runs the command with a configuration checkpoint taken and asks for a\n"
+                 "confirmation when finished. When the confirmation is not given, the\n"
+                 "checkpoint is automatically restored after timeout.\n\n"));
 }
 
 static void
@@ -5009,6 +5021,214 @@ do_device_lldp(const NMCCommand *cmd, NmCli *nmc, int argc, const char *const *a
     nmc_do_cmd(nmc, device_lldp_cmds, *argv, argc, argv);
 }
 
+/*****************************************************************************/
+
+typedef struct {
+    NmCli        *nmc;
+    NMCheckpoint *checkpoint;
+    char        **argv;
+    guint         removed_id;
+    guint         child_id;
+    gboolean      removed;
+} CheckpointCbInfo;
+
+static void
+free_checkpoint_info(CheckpointCbInfo *info)
+{
+    g_clear_object(&info->checkpoint);
+    g_strfreev(info->argv);
+    g_slice_free(CheckpointCbInfo, info);
+}
+
+static void
+checkpoints_changed_cb(GObject *object, GParamSpec *pspec, CheckpointCbInfo *info)
+{
+    const GPtrArray *checkpoints;
+    guint            i;
+
+    checkpoints = nm_client_get_checkpoints(info->nmc->client);
+    for (i = 0; i < checkpoints->len; i++) {
+        if (checkpoints->pdata[i] == info->checkpoint) {
+            /* Our checkpoint still exists. */
+            return;
+        }
+    }
+
+    g_string_printf(info->nmc->return_text, _("Checkpoint was removed."));
+    info->nmc->return_value = NMC_RESULT_ERROR_TIMEOUT_EXPIRED;
+
+    info->removed = TRUE;
+
+    if (!info->child_id) {
+        /* The command is done, we're in the confirmation prompt. */
+        g_print("%s\n", _("No"));
+        g_main_loop_quit(loop);
+    }
+}
+
+static void
+checkpoint_destroy_cb(GObject *object, GAsyncResult *result, void *user_data)
+{
+    NmCli                *nmc   = (NmCli *) user_data;
+    gs_free_error GError *error = NULL;
+
+    if (!nm_client_checkpoint_destroy_finish(nmc->client, result, &error)) {
+        g_string_printf(nmc->return_text,
+                        _("Error: Destroying a checkpoint failed: %s"),
+                        error->message);
+        nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+    }
+
+    g_main_loop_quit(loop);
+}
+
+static void
+child_watch_cb(GPid pid, gint wait_status, gpointer user_data)
+{
+    CheckpointCbInfo *info = (CheckpointCbInfo *) user_data;
+    NmCli            *nmc  = info->nmc;
+    char             *line;
+
+    info->child_id = 0;
+    if (info->removed) {
+        g_main_loop_quit(loop);
+        goto out;
+    }
+
+    while (g_main_loop_is_running(loop)) {
+        line = nmc_readline(&nmc->nmc_config, "Type \"%s\" to commit the changes: ", _("Yes"));
+        if (g_strcmp0(line, _("Yes")) == 0) {
+            g_signal_handler_disconnect(nmc->client, info->removed_id);
+            nm_client_checkpoint_destroy(nmc->client,
+                                         nm_object_get_path(NM_OBJECT(info->checkpoint)),
+                                         NULL,
+                                         checkpoint_destroy_cb,
+                                         nmc);
+            break;
+        }
+    }
+    nmc_cleanup_readline();
+out:
+    free_checkpoint_info(info);
+}
+
+static void
+checkpoint_create_cb(GObject *object, GAsyncResult *result, void *user_data)
+{
+    NMClient             *client = NM_CLIENT(object);
+    CheckpointCbInfo     *info   = (CheckpointCbInfo *) user_data;
+    gs_free_error GError *error  = NULL;
+    GPid                  pid;
+
+    info->checkpoint = nm_client_checkpoint_create_finish(client, result, &error);
+    if (!info->checkpoint) {
+        g_string_printf(info->nmc->return_text,
+                        _("Error: Creating a checkpoint failed: %s"),
+                        error->message);
+        info->nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+        g_main_loop_quit(loop);
+        goto err;
+    }
+
+    if (!g_spawn_async(NULL,
+                       info->argv,
+                       NULL,
+                       G_SPAWN_LEAVE_DESCRIPTORS_OPEN | G_SPAWN_SEARCH_PATH
+                           | G_SPAWN_CHILD_INHERITS_STDIN | G_SPAWN_DO_NOT_REAP_CHILD,
+                       NULL,
+                       info,
+                       &pid,
+                       &error)) {
+        g_string_printf(info->nmc->return_text, _("Error: %s"), error->message);
+        info->nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+        g_main_loop_quit(loop);
+        goto err;
+    }
+
+    info->child_id   = g_child_watch_add(pid, child_watch_cb, info);
+    info->removed_id = g_signal_connect(client,
+                                        "notify::" NM_CLIENT_CHECKPOINTS,
+                                        G_CALLBACK(checkpoints_changed_cb),
+                                        info);
+
+    return;
+
+err:
+    free_checkpoint_info(info);
+}
+
+static void
+do_device_checkpoint(const NMCCommand *cmd, NmCli *nmc, int argc, const char *const *argv)
+{
+    NMClient                    *client  = nmc->client;
+    long unsigned int            timeout = 15;
+    int                          option;
+    CheckpointCbInfo            *info;
+    const GPtrArray             *devices      = NULL;
+    gs_unref_ptrarray GPtrArray *devices_free = NULL;
+
+    while ((option = next_arg(nmc, &argc, &argv, "--timeout", NULL)) > 0) {
+        switch (option) {
+        case 1: /* --timeout */
+            argc--;
+            argv++;
+            if (!argc) {
+                g_string_printf(nmc->return_text, _("Error: %s argument is missing."), *(argv - 1));
+                nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+                return;
+            }
+            if (!nmc_string_to_uint(*argv, TRUE, 0, G_MAXUINT32, &timeout)) {
+                g_string_printf(nmc->return_text, _("Error: '%s' is not a valid timeout."), *argv);
+                nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+                return;
+            }
+            break;
+        default:
+            nm_assert_not_reached();
+            break;
+        }
+    }
+
+    if (argc) {
+        if (strcmp(*argv, "--") == 0) {
+            devices = nm_client_get_devices(client);
+            argc--;
+            argv++;
+        } else {
+            devices = devices_free = get_device_list(nmc, &argc, &argv);
+            if (!devices) {
+                g_string_printf(nmc->return_text, _("Error: not all devices found."));
+                nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+                return;
+            }
+        }
+    }
+
+    if (argc == 0) {
+        g_string_printf(nmc->return_text, _("Error: Expected a command to run after '--'"));
+        nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+        return;
+    }
+
+    if (nmc->complete)
+        return;
+
+    info       = g_slice_new0(CheckpointCbInfo);
+    info->nmc  = nmc;
+    info->argv = nm_strv_dup(argv, argc, TRUE);
+
+    nmc->should_wait++;
+    nm_client_checkpoint_create(client,
+                                devices,
+                                (guint32) timeout,
+                                NM_CHECKPOINT_CREATE_FLAG_NONE,
+                                NULL,
+                                checkpoint_create_cb,
+                                info);
+}
+
+/*****************************************************************************/
+
 static gboolean
 is_single_word(const char *line)
 {
@@ -5055,6 +5275,7 @@ void
 nmc_command_func_device(const NMCCommand *cmd, NmCli *nmc, int argc, const char *const *argv)
 {
     static const NMCCommand cmds[] = {
+        {"checkpoint", do_device_checkpoint, usage_device_checkpoint, TRUE, TRUE},
         {"connect", do_device_connect, usage_device_connect, TRUE, TRUE},
         {"disconnect", do_devices_disconnect, usage_device_disconnect, TRUE, TRUE},
         {"delete", do_devices_delete, usage_device_delete, TRUE, TRUE},
