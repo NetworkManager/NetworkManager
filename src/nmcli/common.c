@@ -929,7 +929,8 @@ read_again:
         }
     } else if (!rl_string) {
         /* Ctrl-D, exit */
-        nmc_exit();
+        if (g_main_loop_is_running(loop))
+            nmc_exit();
     }
 
     /* Return NULL, not empty string */
