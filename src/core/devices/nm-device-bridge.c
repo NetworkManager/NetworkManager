@@ -1090,10 +1090,6 @@ create_and_realize(NMDevice              *device,
     s_bridge = nm_connection_get_setting_bridge(connection);
     nm_assert(s_bridge);
 
-    s_wired = nm_connection_get_setting_wired(connection);
-    if (s_wired)
-        mtu = nm_setting_wired_get_mtu(s_wired);
-
     hwaddr = nm_setting_bridge_get_mac_address(s_bridge);
     if (!hwaddr
         && nm_device_hw_addr_get_cloned(device, connection, FALSE, &hwaddr_cloned, NULL, NULL)) {
@@ -1117,6 +1113,11 @@ create_and_realize(NMDevice              *device,
     }
 
     _platform_lnk_bridge_init_from_setting(s_bridge, &props);
+
+    s_wired = nm_connection_get_setting_wired(connection);
+    nm_assert(s_wired);
+
+    mtu = nm_setting_wired_get_mtu(s_wired);
 
     /* If mtu != 0, we set the MTU of the new bridge at creation time. However, kernel will still
      * automatically adjust the MTU of the bridge based on the minimum of the slave's MTU.
