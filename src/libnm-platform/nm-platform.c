@@ -4256,15 +4256,25 @@ gboolean
 nm_platform_ip_address_flush(NMPlatform *self, int addr_family, int ifindex)
 {
     gboolean success = TRUE;
+    int      IS_IPv4;
 
     _CHECK_SELF(self, klass, FALSE);
 
-    nm_assert(NM_IN_SET(addr_family, AF_UNSPEC, AF_INET, AF_INET6));
+    nm_assert_addr_family_or_unspec(addr_family);
 
-    if (NM_IN_SET(addr_family, AF_UNSPEC, AF_INET))
-        success &= nm_platform_ip4_address_sync(self, ifindex, NULL);
-    if (NM_IN_SET(addr_family, AF_UNSPEC, AF_INET6))
-        success &= nm_platform_ip6_address_sync(self, ifindex, NULL, TRUE);
+    for (IS_IPv4 = 1; IS_IPv4 >= 0; IS_IPv4--) {
+        gs_unref_ptrarray GPtrArray *addresses_prune = NULL;
+        const int                    addr_family2    = IS_IPv4 ? AF_INET : AF_INET6;
+
+        if (!NM_IN_SET(addr_family, AF_UNSPEC, addr_family2))
+            continue;
+
+        addresses_prune =
+            nm_platform_ip_address_get_prune_list(self, addr_family2, ifindex, NULL, 0);
+
+        if (!nm_platform_ip_address_sync(self, addr_family2, ifindex, NULL, addresses_prune))
+            success = FALSE;
+    }
     return success;
 }
 
@@ -4306,17 +4316,31 @@ _err_inval_due_to_ipv6_tentative_pref_src(NMPlatform *self, const NMPObject *obj
     return TRUE;
 }
 
-GPtrArray *
-nm_platform_ip_address_get_prune_list(NMPlatform *self,
-                                      int         addr_family,
-                                      int         ifindex,
-                                      gboolean    exclude_ipv6_temporary_addrs)
+static guint
+_ipv6_temporary_addr_prefixes_keep_hash(gconstpointer ptr)
 {
-    const int                    IS_IPv4 = NM_IS_IPv4(addr_family);
-    const NMDedupMultiHeadEntry *head_entry;
-    NMPLookup                    lookup;
-    GPtrArray                   *result;
-    CList                       *iter;
+    return nm_hash_mem(1161670183u, ptr, 8);
+}
+
+static gboolean
+_ipv6_temporary_addr_prefixes_keep_equal(gconstpointer ptr_a, gconstpointer ptr_b)
+{
+    return !memcmp(ptr_a, ptr_b, 8);
+}
+
+GPtrArray *
+nm_platform_ip_address_get_prune_list(NMPlatform            *self,
+                                      int                    addr_family,
+                                      int                    ifindex,
+                                      const struct in6_addr *ipv6_temporary_addr_prefixes_keep,
+                                      guint                  ipv6_temporary_addr_prefixes_keep_len)
+{
+    gs_unref_hashtable GHashTable *ipv6_temporary_addr_prefixes_keep_idx = NULL;
+    const int                      IS_IPv4                               = NM_IS_IPv4(addr_family);
+    const NMDedupMultiHeadEntry   *head_entry;
+    NMPLookup                      lookup;
+    GPtrArray                     *result = NULL;
+    CList                         *iter;
 
     nmp_lookup_init_object(&lookup, NMP_OBJECT_TYPE_IP_ADDRESS(NM_IS_IPv4(addr_family)), ifindex);
 
@@ -4331,9 +4355,40 @@ nm_platform_ip_address_get_prune_list(NMPlatform *self,
         const NMPObject *obj = c_list_entry(iter, NMDedupMultiEntry, lst_entries)->obj;
 
         if (!IS_IPv4) {
-            if (exclude_ipv6_temporary_addrs
-                && NM_FLAGS_HAS(NMP_OBJECT_CAST_IP_ADDRESS(obj)->n_ifa_flags, IFA_F_SECONDARY))
-                continue;
+            const NMPlatformIP6Address *a6 = NMP_OBJECT_CAST_IP6_ADDRESS(obj);
+
+            if (NM_FLAGS_HAS(a6->n_ifa_flags, IFA_F_SECONDARY)
+                && ipv6_temporary_addr_prefixes_keep_len > 0 && a6->plen == 64) {
+                gboolean keep = FALSE;
+                guint    i;
+
+                if (ipv6_temporary_addr_prefixes_keep_len < 10) {
+                    for (i = 0; i < ipv6_temporary_addr_prefixes_keep_len; i++) {
+                        if (memcmp(&ipv6_temporary_addr_prefixes_keep[i], &a6->address, 8) == 0) {
+                            keep = TRUE;
+                            break;
+                        }
+                    }
+                } else {
+                    /* We have a larger number of addresses. We want that our functions are O(n),
+                     * so build a lookup index. */
+                    if (!ipv6_temporary_addr_prefixes_keep_idx) {
+                        ipv6_temporary_addr_prefixes_keep_idx =
+                            g_hash_table_new(_ipv6_temporary_addr_prefixes_keep_hash,
+                                             _ipv6_temporary_addr_prefixes_keep_equal);
+                        for (i = 0; i < ipv6_temporary_addr_prefixes_keep_len; i++) {
+                            g_hash_table_add(ipv6_temporary_addr_prefixes_keep_idx,
+                                             (gpointer) &ipv6_temporary_addr_prefixes_keep[i]);
+                        }
+                    }
+                    if (g_hash_table_contains(ipv6_temporary_addr_prefixes_keep_idx, &a6->address))
+                        keep = TRUE;
+                }
+                if (keep) {
+                    /* This IPv6 temporary address has a prefix that we want to keep. */
+                    continue;
+                }
+            }
         }
 
         g_ptr_array_add(result, (gpointer) nmp_object_ref(obj));
