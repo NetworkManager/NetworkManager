@@ -116,19 +116,15 @@ detect(NMCSProvider *provider, GTask *task)
 /*****************************************************************************/
 
 static void
-_get_config_fetch_done_cb(NMHttpClient *http_client,
-                          GAsyncResult *result,
-                          gpointer      user_data,
-                          gboolean      is_local_ipv4)
+_get_config_fetch_done_cb(NMHttpClient                   *http_client,
+                          GAsyncResult                   *result,
+                          NMCSProviderGetConfigIfaceData *config_iface_data,
+                          gboolean                        is_local_ipv4)
 {
-    NMCSProviderGetConfigTaskData  *get_config_data;
-    gs_unref_bytes GBytes          *response = NULL;
-    gs_free_error GError           *error    = NULL;
-    NMCSProviderGetConfigIfaceData *config_iface_data;
-    in_addr_t                       tmp_addr;
-    int                             tmp_prefix;
-
-    nm_utils_user_data_unpack(user_data, &get_config_data, &config_iface_data);
+    gs_unref_bytes GBytes *response = NULL;
+    gs_free_error GError  *error    = NULL;
+    in_addr_t              tmp_addr;
+    int                    tmp_prefix;
 
     nm_http_client_poll_get_finish(http_client, result, NULL, &response, &error);
 
@@ -173,8 +169,9 @@ _get_config_fetch_done_cb(NMHttpClient *http_client,
     }
 
 out:
-    get_config_data->n_pending--;
-    _nmcs_provider_get_config_task_maybe_return(get_config_data, g_steal_pointer(&error));
+    config_iface_data->get_config_data->n_pending--;
+    _nmcs_provider_get_config_task_maybe_return(config_iface_data->get_config_data,
+                                                g_steal_pointer(&error));
 }
 
 static void
@@ -244,9 +241,7 @@ _get_config_metadata_ready_cb(GObject *source, GAsyncResult *result, gpointer us
                 continue;
             }
             config_iface_data =
-                nmcs_provider_get_config_iface_data_create(get_config_data->result_dict,
-                                                           FALSE,
-                                                           v_hwaddr);
+                nmcs_provider_get_config_iface_data_create(get_config_data, FALSE, v_hwaddr);
         }
 
         nm_assert(config_iface_data->iface_idx == -1);
@@ -273,7 +268,7 @@ _get_config_metadata_ready_cb(GObject *source, GAsyncResult *result, gpointer us
             NULL,
             NULL,
             _get_config_fetch_done_cb_subnet_ipv4_cidr_block,
-            nm_utils_user_data_pack(get_config_data, config_iface_data));
+            config_iface_data);
 
         get_config_data->n_pending++;
         nm_http_client_poll_get(
@@ -290,7 +285,7 @@ _get_config_metadata_ready_cb(GObject *source, GAsyncResult *result, gpointer us
             NULL,
             NULL,
             _get_config_fetch_done_cb_local_ipv4s,
-            nm_utils_user_data_pack(get_config_data, config_iface_data));
+            config_iface_data);
     }
 
     _nmcs_provider_get_config_task_maybe_return(get_config_data, NULL);
