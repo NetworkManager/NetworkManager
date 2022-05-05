@@ -49,7 +49,6 @@ typedef struct _NMDhcpClientPrivate {
     GSource              *watch_source;
     GBytes               *effective_client_id;
     pid_t                 pid;
-    NMDhcpState           state;
     bool                  iaid_explicit : 1;
     bool                  is_stopped : 1;
     struct {
@@ -87,27 +86,6 @@ NM_UTILS_LOOKUP_STR_DEFINE(nm_dhcp_state_to_string,
                            NM_UTILS_LOOKUP_STR_ITEM(NM_DHCP_STATE_TERMINATED, "terminated"),
                            NM_UTILS_LOOKUP_STR_ITEM(NM_DHCP_STATE_TIMEOUT, "timeout"),
                            NM_UTILS_LOOKUP_STR_ITEM(NM_DHCP_STATE_UNKNOWN, "unknown"), );
-
-static NMDhcpState
-reason_to_state(const char *reason)
-{
-    if (NM_IN_STRSET_ASCII_CASE(reason, "bound", "bound6", "static"))
-        return NM_DHCP_STATE_BOUND;
-    if (NM_IN_STRSET_ASCII_CASE(reason, "renew", "renew6", "reboot", "rebind", "rebind6"))
-        return NM_DHCP_STATE_EXTENDED;
-    if (NM_IN_STRSET_ASCII_CASE(reason, "timeout"))
-        return NM_DHCP_STATE_TIMEOUT;
-    if (NM_IN_STRSET_ASCII_CASE(reason, "nak", "expire", "expire6"))
-        return NM_DHCP_STATE_EXPIRE;
-    if (NM_IN_STRSET_ASCII_CASE(reason, "end", "stop", "stopped"))
-        return NM_DHCP_STATE_DONE;
-    if (NM_IN_STRSET_ASCII_CASE(reason, "fail", "abend"))
-        return NM_DHCP_STATE_FAIL;
-    if (NM_IN_STRSET_ASCII_CASE(reason, "preinit"))
-        return NM_DHCP_STATE_NOOP;
-
-    return NM_DHCP_STATE_UNKNOWN;
-}
 
 /*****************************************************************************/
 
@@ -891,11 +869,12 @@ nm_dhcp_client_handle_event(gpointer      unused,
                             NMDhcpClient *self)
 {
     NMDhcpClientPrivate                    *priv;
-    guint32                                 new_state;
-    nm_auto_unref_l3cd_init NML3ConfigData *l3cd   = NULL;
+    nm_auto_unref_l3cd_init NML3ConfigData *l3cd = NULL;
+    NMDhcpState                             new_state;
     NMPlatformIP6Address                    prefix = {
         0,
     };
+    gboolean reason_is_bound;
 
     g_return_val_if_fail(NM_IS_DHCP_CLIENT(self), FALSE);
     g_return_val_if_fail(iface != NULL, FALSE);
@@ -910,21 +889,22 @@ nm_dhcp_client_handle_event(gpointer      unused,
     if (priv->pid != pid)
         return FALSE;
 
-    new_state = reason_to_state(reason);
+    _LOGD("DHCP event (reason: '%s')", reason);
 
-    if (new_state == NM_DHCP_STATE_UNKNOWN)
-        _LOGD("unmapped DHCP state '%s'", reason);
-
-    if (new_state == NM_DHCP_STATE_NOOP)
+    if (NM_IN_STRSET_ASCII_CASE(reason, "preinit"))
         return TRUE;
 
-    _LOGD("DHCP state '%s' -> '%s' (reason: '%s')",
-          nm_dhcp_state_to_string(priv->state),
-          nm_dhcp_state_to_string(new_state),
-          reason);
-    priv->state = new_state;
+    reason_is_bound = NM_IN_STRSET_ASCII_CASE(reason,
+                                              "bound",
+                                              "bound6",
+                                              "static",
+                                              "renew",
+                                              "renew6",
+                                              "reboot",
+                                              "rebind",
+                                              "rebind6");
 
-    if (NM_IN_SET(new_state, NM_DHCP_STATE_BOUND, NM_DHCP_STATE_EXTENDED)) {
+    if (reason_is_bound) {
         gs_unref_hashtable GHashTable *str_options = NULL;
         GVariantIter                   iter;
         const char                    *name;
@@ -974,9 +954,26 @@ nm_dhcp_client_handle_event(gpointer      unused,
     }
 
     /* Fail if no valid IP config was received */
-    if (NM_IN_SET(new_state, NM_DHCP_STATE_BOUND, NM_DHCP_STATE_EXTENDED) && !l3cd) {
+    if (reason_is_bound && !l3cd) {
         _LOGW("client bound but IP config not received");
         new_state = NM_DHCP_STATE_FAIL;
+    } else {
+        if (NM_IN_STRSET_ASCII_CASE(reason, "bound", "bound6", "static"))
+            new_state = NM_DHCP_STATE_BOUND;
+        else if (NM_IN_STRSET_ASCII_CASE(reason, "renew", "renew6", "reboot", "rebind", "rebind6"))
+            new_state = NM_DHCP_STATE_EXTENDED;
+        else if (NM_IN_STRSET_ASCII_CASE(reason, "timeout"))
+            new_state = NM_DHCP_STATE_TIMEOUT;
+        else if (NM_IN_STRSET_ASCII_CASE(reason, "nak", "expire", "expire6"))
+            new_state = NM_DHCP_STATE_EXPIRE;
+        else if (NM_IN_STRSET_ASCII_CASE(reason, "end", "stop", "stopped"))
+            new_state = NM_DHCP_STATE_DONE;
+        else if (NM_IN_STRSET_ASCII_CASE(reason, "fail", "abend"))
+            new_state = NM_DHCP_STATE_FAIL;
+        else if (NM_IN_STRSET_ASCII_CASE(reason, "preinit"))
+            new_state = NM_DHCP_STATE_NOOP;
+        else
+            new_state = NM_DHCP_STATE_UNKNOWN;
     }
 
     nm_dhcp_client_set_state(self, new_state, l3cd);
