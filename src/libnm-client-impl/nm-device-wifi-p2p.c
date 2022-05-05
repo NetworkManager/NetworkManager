@@ -5,13 +5,13 @@
 
 #include "libnm-client-impl/nm-default-libnm.h"
 
+#include "nm-wifi-p2p-peer.h"
 #include "nm-device-wifi-p2p.h"
 
 #include "libnm-glib-aux/nm-dbus-aux.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-wifi-p2p.h"
 #include "nm-utils.h"
-#include "nm-wifi-p2p-peer.h"
 #include "nm-object-private.h"
 #include "libnm-core-intern/nm-core-internal.h"
 #include "nm-dbus-helpers.h"

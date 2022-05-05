@@ -1691,7 +1691,6 @@ libnm_lib_h_pub_real = \
 	src/libnm-client-public/nm-object.h \
 	src/libnm-client-public/nm-remote-connection.h \
 	src/libnm-client-public/nm-secret-agent-old.h \
-	src/libnm-client-public/nm-types.h \
 	src/libnm-client-public/nm-vpn-connection.h \
 	src/libnm-client-public/nm-vpn-editor.h \
 	src/libnm-client-public/nm-vpn-plugin-old.h \

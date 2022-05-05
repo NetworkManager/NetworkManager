@@ -20,6 +20,7 @@
 #include "nm-checkpoint.h"
 #include "libnm-core-intern/nm-core-internal.h"
 #include "nm-dbus-helpers.h"
+#include "nm-wifi-p2p-peer.h"
 #include "nm-device-6lowpan.h"
 #include "nm-device-adsl.h"
 #include "nm-device-bond.h"
@@ -33,7 +34,6 @@
 #include "nm-device-macsec.h"
 #include "nm-device-macvlan.h"
 #include "nm-device-modem.h"
-#include "nm-device-olpc-mesh.h"
 #include "nm-device-ovs-bridge.h"
 #include "nm-device-ovs-interface.h"
 #include "nm-device-ovs-port.h"
@@ -46,6 +46,7 @@
 #include "nm-device-wifi.h"
 #include "nm-device-wireguard.h"
 #include "nm-device-wpan.h"
+#include "nm-device-olpc-mesh.h"
 #include "nm-dhcp-config.h"
 #include "nm-dhcp4-config.h"
 #include "nm-dhcp6-config.h"
@@ -56,7 +57,6 @@
 #include "nm-remote-connection.h"
 #include "nm-utils.h"
 #include "nm-vpn-connection.h"
-#include "nm-wifi-p2p-peer.h"
 
 /*****************************************************************************/
 

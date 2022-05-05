@@ -6,8 +6,6 @@
 #ifndef __NM_SECRET_AGENT_OLD_H__
 #define __NM_SECRET_AGENT_OLD_H__
 
-#include "nm-types.h"
-
 G_BEGIN_DECLS
 
 #define NM_TYPE_SECRET_AGENT_OLD (nm_secret_agent_old_get_type())

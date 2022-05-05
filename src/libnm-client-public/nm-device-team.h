@@ -31,6 +31,7 @@ G_BEGIN_DECLS
 /**
  * NMDeviceTeam:
  */
+typedef struct _NMDeviceTeam      NMDeviceTeam;
 typedef struct _NMDeviceTeamClass NMDeviceTeamClass;
 
 GType nm_device_team_get_type(void);

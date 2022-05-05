@@ -28,6 +28,7 @@ G_BEGIN_DECLS
 /**
  * NMDeviceVeth:
  */
+typedef struct _NMDeviceVeth      NMDeviceVeth;
 typedef struct _NMDeviceVethClass NMDeviceVethClass;
 
 NM_AVAILABLE_IN_1_30

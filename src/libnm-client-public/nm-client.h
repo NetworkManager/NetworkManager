@@ -11,8 +11,6 @@
 #error "Only <NetworkManager.h> can be included directly."
 #endif
 
-#include "nm-types.h"
-
 G_BEGIN_DECLS
 
 /**
@@ -148,6 +146,7 @@ gboolean nm_dns_entry_get_vpn(NMDnsEntry *entry);
  * D-Bus signals gets processed and the #NMClient instance updates and
  * emits #GObject signals.
  */
+typedef struct _NMClient      NMClient;
 typedef struct _NMClientClass NMClientClass;
 
 GType nm_client_get_type(void);

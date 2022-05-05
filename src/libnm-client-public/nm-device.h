@@ -62,6 +62,7 @@ _NM_DEPRECATED_SYNC_WRITABLE_PROPERTY
 /**
  * NMDevice:
  */
+typedef struct _NMDevice      NMDevice;
 typedef struct _NMDeviceClass NMDeviceClass;
 
 /**

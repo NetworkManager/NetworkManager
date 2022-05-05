@@ -37,6 +37,7 @@ G_BEGIN_DECLS
 /**
  * NMRemoteConnection:
  */
+typedef struct _NMRemoteConnection      NMRemoteConnection;
 typedef struct _NMRemoteConnectionClass NMRemoteConnectionClass;
 
 GType nm_remote_connection_get_type(void);

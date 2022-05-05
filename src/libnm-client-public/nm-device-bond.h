@@ -30,6 +30,7 @@ G_BEGIN_DECLS
 /**
  * NMDeviceBond:
  */
+typedef struct _NMDeviceBond      NMDeviceBond;
 typedef struct _NMDeviceBondClass NMDeviceBondClass;
 
 GType nm_device_bond_get_type(void);

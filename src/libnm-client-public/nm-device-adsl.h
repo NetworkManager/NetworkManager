@@ -28,6 +28,7 @@ G_BEGIN_DECLS
 /**
  * NMDeviceAdsl:
  */
+typedef struct _NMDeviceAdsl      NMDeviceAdsl;
 typedef struct _NMDeviceAdslClass NMDeviceAdslClass;
 
 GType nm_device_adsl_get_type(void);

@@ -16,6 +16,16 @@
 /*****************************************************************************/
 
 #include "nm-version.h"
+#include "nm-dbus-interface.h"
+#include "nm-dhcp-config.h"
+#include "nm-ip-config.h"
+#include "nm-connection.h"
+#include "nm-remote-connection.h"
+#include "nm-active-connection.h"
+#include "nm-device.h"
+#include "nm-checkpoint.h"
+#include "nm-client.h"
+#include "nm-vpn-connection.h"
 #include "nm-libnm-utils.h"
 
 /*****************************************************************************/

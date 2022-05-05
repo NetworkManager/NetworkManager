@@ -24,6 +24,7 @@ G_BEGIN_DECLS
 /**
  * NMDevicePpp:
  */
+typedef struct _NMDevicePpp      NMDevicePpp;
 typedef struct _NMDevicePppClass NMDevicePppClass;
 
 GType nm_device_ppp_get_type(void);
