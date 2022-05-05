@@ -422,9 +422,7 @@ typedef struct {
     GSource *event_source;
 
     guint32 nlh_seq_next;
-#if NM_MORE_LOGGING
-    guint32 nlh_seq_last_handled;
-#endif
+
     guint32 nlh_seq_last_seen;
 
     guint32 pruning[_REFRESH_ALL_TYPE_NUM];
@@ -7016,12 +7014,6 @@ event_seq_check(NMPlatform             *platform,
             }
         }
     }
-
-#if NM_MORE_LOGGING
-    if (seq_number != priv->nlh_seq_last_handled)
-        _LOGt("netlink: recvmsg: unwaited sequence number %u", seq_number);
-    priv->nlh_seq_last_handled = seq_number;
-#endif
 }
 
 static void
