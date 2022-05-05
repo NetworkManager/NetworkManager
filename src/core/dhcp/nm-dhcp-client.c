@@ -286,6 +286,9 @@ nm_dhcp_client_set_state(NMDhcpClient *self, NMDhcpState new_state, const NML3Co
         watch_cleanup(self);
 
     if (!IS_IPv4 && l3cd) {
+        /* nm_dhcp_utils_merge_new_dhcp6_lease() relies on "life_starts" option
+         * for merging, which is only set by dhclient. Internal client never sets that,
+         * but it supports multiple IP addresses per lease. */
         if (nm_dhcp_utils_merge_new_dhcp6_lease(priv->l3cd, l3cd, &l3cd_merged)) {
             _LOGD("lease merged with existing one");
             l3cd = nm_l3_config_data_seal(l3cd_merged);
