@@ -8399,9 +8399,9 @@ nm_client_class_init(NMClientClass *client_class)
      *
      * Whether a connectivity checking service has been enabled.
      *
-     * Since: 1.10
-     *
      * The property setter is a synchronous D-Bus call. This is deprecated since 1.22.
+     *
+     * Since: 1.10
      */
     obj_properties[PROP_CONNECTIVITY_CHECK_ENABLED] =
         g_param_spec_boolean(NM_CLIENT_CONNECTIVITY_CHECK_ENABLED,

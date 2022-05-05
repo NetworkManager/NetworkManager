@@ -120,11 +120,11 @@ nm_device_macvlan_get_tap(NMDeviceMacvlan *device)
  * Returns: the hardware address. This is the internal string used by the
  * device, and must not be modified.
  *
- * Since: 1.2
- *
  * This property is not implemented yet, and the function always return NULL.
  *
  * Deprecated: 1.24: Use nm_device_get_hw_address() instead.
+ *
+ * Since: 1.2
  **/
 const char *
 nm_device_macvlan_get_hw_address(NMDeviceMacvlan *device)
