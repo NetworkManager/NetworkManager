@@ -1708,7 +1708,7 @@ _normalize_required_settings(NMConnection *self)
     NMSetting          *s_bridge;
     gboolean            changed = FALSE;
 
-    if (nm_connection_get_setting_vlan(self)) {
+    if (nm_connection_get_setting_vlan(self) || nm_connection_get_setting_bridge(self)) {
         if (!nm_connection_get_setting_wired(self)) {
             nm_connection_add_setting(self, nm_setting_wired_new());
             changed = TRUE;

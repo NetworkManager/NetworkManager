@@ -1311,6 +1311,15 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
                                            NM_SETTING_BRIDGE_VLANS))
         return NM_SETTING_VERIFY_NORMALIZABLE;
 
+    if (connection && !nm_connection_get_setting_wired(connection)) {
+        g_set_error_literal(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_SETTING_NOT_FOUND,
+                            _("bridge connection should have a ethernet setting as well"));
+        g_prefix_error(error, "%s: ", NM_SETTING_BRIDGE_SETTING_NAME);
+        return NM_SETTING_VERIFY_NORMALIZABLE;
+    }
+
     return TRUE;
 }
 
