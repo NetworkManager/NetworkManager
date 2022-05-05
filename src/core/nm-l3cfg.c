@@ -4223,6 +4223,8 @@ _l3_commit_one(NML3Cfg              *self,
     if (commit_type == NM_L3_CFG_COMMIT_TYPE_REAPPLY) {
         gs_unref_array GArray *ipv6_temp_addrs_keep = NULL;
 
+        nm_platform_process_events(self->priv.platform);
+
         if (!IS_IPv4 && addresses) {
             for (i = 0; i < addresses->len; i++) {
                 const NMPlatformIP6Address *addr = NMP_OBJECT_CAST_IP6_ADDRESS(addresses->pdata[i]);
