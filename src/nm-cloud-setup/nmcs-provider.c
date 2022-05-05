@@ -174,24 +174,38 @@ nmcs_provider_detect_finish(NMCSProvider *self, GAsyncResult *result, GError **e
 /*****************************************************************************/
 
 NMCSProviderGetConfigIfaceData *
-nmcs_provider_get_config_iface_data_create(GHashTable *iface_datas,
-                                           gboolean    was_requested,
-                                           const char *hwaddr)
+nmcs_provider_get_config_iface_data_create(NMCSProviderGetConfigTaskData *get_config_data,
+                                           gboolean                       was_requested,
+                                           const char                    *hwaddr)
 {
     NMCSProviderGetConfigIfaceData *iface_data;
 
     nm_assert(hwaddr);
+    nm_assert(get_config_data);
+    nm_assert(NMCS_IS_PROVIDER(get_config_data->self));
 
     iface_data  = g_slice_new(NMCSProviderGetConfigIfaceData);
     *iface_data = (NMCSProviderGetConfigIfaceData){
-        .hwaddr        = g_strdup(hwaddr),
-        .iface_idx     = -1,
-        .was_requested = was_requested,
+        .get_config_data = get_config_data,
+        .hwaddr          = g_strdup(hwaddr),
+        .iface_idx       = -1,
+        .was_requested   = was_requested,
     };
+
+    /* "priv" is a union, and according to C, it might not be properly initialized
+     * that all union members are set to false/0/NULL/0.0. We need to know which
+     * union field we are going to use, and that depends on the type of "self".
+     * Also, knowing the type would allow us to initialize to something other than
+     * false/0/NULL/0.0. */
+    if (G_OBJECT_TYPE(get_config_data->self) == nmcs_provider_aliyun_get_type()) {
+        iface_data->priv.aliyun = (typeof(iface_data->priv.aliyun)){
+            .has_primary_ip_address = FALSE,
+        };
+    }
 
     /* the has does not own the key (iface_datta->hwaddr), the lifetime of the
      * key is associated with the iface_data instance. */
-    g_hash_table_replace(iface_datas, (char *) iface_data->hwaddr, iface_data);
+    g_hash_table_replace(get_config_data->result_dict, (char *) iface_data->hwaddr, iface_data);
 
     return iface_data;
 }
@@ -280,6 +294,8 @@ nmcs_provider_get_config(NMCSProvider       *self,
 
     get_config_data  = g_slice_new(NMCSProviderGetConfigTaskData);
     *get_config_data = (NMCSProviderGetConfigTaskData){
+        /* "self" is kept alive by "task". */
+        .self = self,
         .task = nm_g_task_new(self, cancellable, nmcs_provider_get_config, callback, user_data),
         .any  = any,
         .result_dict = g_hash_table_new_full(nm_str_hash, g_str_equal, NULL, _iface_data_free),
@@ -288,7 +304,7 @@ nmcs_provider_get_config(NMCSProvider       *self,
     nmcs_wait_for_objects_register(get_config_data->task);
 
     for (; hwaddrs && hwaddrs[0]; hwaddrs++)
-        nmcs_provider_get_config_iface_data_create(get_config_data->result_dict, TRUE, hwaddrs[0]);
+        nmcs_provider_get_config_iface_data_create(get_config_data, TRUE, hwaddrs[0]);
 
     if (cancellable) {
         gulong cancelled_id;
