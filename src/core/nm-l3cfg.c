@@ -4186,6 +4186,7 @@ _l3_commit_one(NML3Cfg              *self,
     gboolean                     final_failure_for_temporary_not_available = FALSE;
     char                         sbuf_commit_type[50];
     gboolean                     success = TRUE;
+    guint                        i;
 
     nm_assert(NM_IS_L3CFG(self));
     nm_assert(NM_IN_SET(commit_type,
@@ -4218,11 +4219,33 @@ _l3_commit_one(NML3Cfg              *self,
         route_table_sync = NM_IP_ROUTE_TABLE_SYNC_MODE_MAIN;
 
     if (commit_type == NM_L3_CFG_COMMIT_TYPE_REAPPLY) {
-        addresses_prune = nm_platform_ip_address_get_prune_list(self->priv.platform,
-                                                                addr_family,
-                                                                self->priv.ifindex,
-                                                                TRUE);
-        routes_prune    = nm_platform_ip_route_get_prune_list(self->priv.platform,
+        gs_unref_array GArray *ipv6_temp_addrs_keep = NULL;
+
+        if (!IS_IPv4 && addresses) {
+            for (i = 0; i < addresses->len; i++) {
+                const NMPlatformIP6Address *addr = NMP_OBJECT_CAST_IP6_ADDRESS(addresses->pdata[i]);
+
+                if (!NM_FLAGS_HAS(addr->n_ifa_flags, IFA_F_MANAGETEMPADDR))
+                    continue;
+
+                nm_assert(addr->plen == 64);
+
+                /* Construct a list of all IPv6 prefixes for which we (still) set
+                 * IFA_F_MANAGETEMPADDR (that is, for which we will have temporary addresses).
+                 * Those should not be pruned during reapply. */
+                if (!ipv6_temp_addrs_keep)
+                    ipv6_temp_addrs_keep = g_array_new(FALSE, FALSE, sizeof(struct in6_addr));
+                g_array_append_val(ipv6_temp_addrs_keep, addr->address);
+            }
+        }
+        addresses_prune =
+            nm_platform_ip_address_get_prune_list(self->priv.platform,
+                                                  addr_family,
+                                                  self->priv.ifindex,
+                                                  nm_g_array_data(ipv6_temp_addrs_keep),
+                                                  nm_g_array_len(ipv6_temp_addrs_keep));
+
+        routes_prune = nm_platform_ip_route_get_prune_list(self->priv.platform,
                                                            addr_family,
                                                            self->priv.ifindex,
                                                            route_table_sync);
