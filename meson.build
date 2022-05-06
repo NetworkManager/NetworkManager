@@ -5,6 +5,7 @@ project(
                 'c_std=c11'
         ],
         license: 'Apache',
+        meson_version: '>=0.60.0',
         version: '1.0.0',
 )
 major = meson.project_version().split('.')[0]
