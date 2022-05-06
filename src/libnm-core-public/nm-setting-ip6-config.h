@@ -130,6 +130,10 @@ typedef enum {
  * is created by using a cryptographically secure hash of a secret host-specific
  * key along with the connection identification and the network address as
  * specified by RFC7217.
+ * @NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_DEFAULT_OR_EUI64: Fallback to the global
+ *   default, and if unspecified use "eui64". Since: 1.40.
+ * @NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_DEFAULT: Fallback to the global
+ *   default, and if unspecified use "stable-privacy". Since: 1.40.
  *
  * #NMSettingIP6ConfigAddrGenMode controls how the Interface Identifier for
  * RFC4862 Stateless Address Autoconfiguration is created.
@@ -137,8 +141,10 @@ typedef enum {
  * Since: 1.2
  */
 typedef enum {
-    NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_EUI64          = 0,
-    NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_STABLE_PRIVACY = 1,
+    NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_EUI64            = 0,
+    NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_STABLE_PRIVACY   = 1,
+    NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_DEFAULT_OR_EUI64 = 2,
+    NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_DEFAULT          = 3,
 } NMSettingIP6ConfigAddrGenMode;
 
 typedef struct _NMSettingIP6ConfigClass NMSettingIP6ConfigClass;

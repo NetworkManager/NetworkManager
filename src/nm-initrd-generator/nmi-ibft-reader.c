@@ -164,7 +164,7 @@ ip_setting_add_from_block(GHashTable *nic, NMConnection *connection, GError **er
 
         g_object_set(s_ip6,
                      NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE,
-                     (int) NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_EUI64,
+                     (int) NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_DEFAULT_OR_EUI64,
                      NULL);
     }
 

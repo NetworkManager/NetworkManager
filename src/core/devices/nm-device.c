@@ -2169,6 +2169,50 @@ _prop_get_ipv6_ip6_privacy(NMDevice *self)
     return _ip6_privacy_clamp(ip6_privacy);
 }
 
+static NMSettingIP6ConfigAddrGenMode
+_prop_get_ipv6_addr_gen_mode(NMDevice *self)
+{
+    NMSettingIP6ConfigAddrGenMode addr_gen_mode;
+    NMSettingIP6Config           *s_ip6;
+    gint64                        c;
+
+    g_return_val_if_fail(self, NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_STABLE_PRIVACY);
+
+    s_ip6 = nm_device_get_applied_setting(self, NM_TYPE_SETTING_IP6_CONFIG);
+    if (s_ip6) {
+        addr_gen_mode = nm_setting_ip6_config_get_addr_gen_mode(s_ip6);
+        if (NM_IN_SET(addr_gen_mode,
+                      NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_EUI64,
+                      NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_STABLE_PRIVACY))
+            return addr_gen_mode;
+    } else
+        addr_gen_mode = NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_DEFAULT;
+
+    nm_assert(NM_IN_SET(addr_gen_mode,
+                        NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_DEFAULT_OR_EUI64,
+                        NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_DEFAULT));
+
+    c = nm_config_data_get_connection_default_int64(NM_CONFIG_GET_DATA,
+                                                    NM_CON_DEFAULT("ipv6.addr-gen-mode"),
+                                                    self,
+                                                    NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_EUI64,
+                                                    NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_DEFAULT,
+                                                    -1);
+    if (c != -1)
+        addr_gen_mode = c;
+
+    if (addr_gen_mode == NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_DEFAULT)
+        addr_gen_mode = NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_STABLE_PRIVACY;
+    else if (addr_gen_mode == NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_DEFAULT_OR_EUI64)
+        addr_gen_mode = NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_EUI64;
+
+    nm_assert(NM_IN_SET(addr_gen_mode,
+                        NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_EUI64,
+                        NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_STABLE_PRIVACY));
+
+    return addr_gen_mode;
+}
+
 static const char *
 _prop_get_x_cloned_mac_address(NMDevice *self, NMConnection *connection, gboolean is_wifi)
 {
@@ -10761,7 +10805,6 @@ _dev_ipll6_start(NMDevice *self)
 {
     NMDevicePrivate       *priv = NM_DEVICE_GET_PRIVATE(self);
     NMConnection          *connection;
-    NMSettingIP6Config    *s_ip6 = NULL;
     gboolean               assume;
     const char            *ifname;
     NML3IPv6LLState        llstate;
@@ -10782,14 +10825,10 @@ _dev_ipll6_start(NMDevice *self)
     }
 
     connection = nm_device_get_applied_connection(self);
-    if (connection)
-        s_ip6 = NM_SETTING_IP6_CONFIG(nm_connection_get_setting_ip6_config(connection));
 
     assume = nm_device_sys_iface_state_is_external_or_assume(self);
 
-    if (s_ip6
-        && nm_setting_ip6_config_get_addr_gen_mode(s_ip6)
-               == NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_STABLE_PRIVACY) {
+    if (_prop_get_ipv6_addr_gen_mode(self) == NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_STABLE_PRIVACY) {
         NMUtilsStableType stable_type;
         const char       *stable_id;
 
@@ -11484,7 +11523,7 @@ _dev_ipac6_start(NMDevice *self)
             .ifname                       = nm_device_get_ip_iface(self),
             .stable_type                  = stable_type,
             .network_id                   = stable_id,
-            .addr_gen_mode                = nm_setting_ip6_config_get_addr_gen_mode(s_ip),
+            .addr_gen_mode                = _prop_get_ipv6_addr_gen_mode(self),
             .node_type                    = node_type,
             .max_addresses                = max_addresses,
             .router_solicitations         = router_solicitations,

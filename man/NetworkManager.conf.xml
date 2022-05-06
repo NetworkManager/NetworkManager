@@ -937,6 +937,12 @@ ipv6.ip6-privacy=0
           </para></listitem>
         </varlistentry>
         <varlistentry>
+          <term><varname>ipv6.addr-gen-mode</varname></term>
+          <listitem><para>If the per-profile setting is either "default" or "default-or-eui64", the
+            global default is used. If the default is unspecified, the fallback value is either "stable-privacy"
+            or "eui64", depending on whether the per-profile setting is "default" or "default-or-eui64, respectively.</para></listitem>
+        </varlistentry>
+        <varlistentry>
           <term><varname>ipv6.ra-timeout</varname></term>
           <listitem><para>If left unspecified, the default value depends on the sysctl solicitation settings.</para></listitem>
         </varlistentry>

@@ -3167,7 +3167,7 @@ write_ip6_setting(NMConnection *connection, shvarFile *ifcfg, GString **out_rout
 
     /* IPv6 Address generation mode */
     addr_gen_mode = nm_setting_ip6_config_get_addr_gen_mode(NM_SETTING_IP6_CONFIG(s_ip6));
-    if (addr_gen_mode != NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_EUI64) {
+    if (addr_gen_mode != NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_DEFAULT_OR_EUI64) {
         svSetValueEnum(ifcfg,
                        "IPV6_ADDR_GEN_MODE",
                        nm_setting_ip6_config_addr_gen_mode_get_type(),

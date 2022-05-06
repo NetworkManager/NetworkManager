@@ -112,7 +112,7 @@ NMSettingIP6ConfigAddrGenMode
 nm_setting_ip6_config_get_addr_gen_mode(NMSettingIP6Config *setting)
 {
     g_return_val_if_fail(NM_IS_SETTING_IP6_CONFIG(setting),
-                         NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_STABLE_PRIVACY);
+                         NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_DEFAULT);
 
     return NM_SETTING_IP6_CONFIG_GET_PRIVATE(setting)->addr_gen_mode;
 }
@@ -288,7 +288,9 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 
     if (!NM_IN_SET(priv->addr_gen_mode,
                    NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_EUI64,
-                   NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_STABLE_PRIVACY)) {
+                   NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_STABLE_PRIVACY,
+                   NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_DEFAULT_OR_EUI64,
+                   NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_DEFAULT)) {
         g_set_error_literal(error,
                             NM_CONNECTION_ERROR,
                             NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -776,8 +778,10 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
      *
      * Configure method for creating the address for use with RFC4862 IPv6
      * Stateless Address Autoconfiguration. The permitted values are:
-     * %NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_EUI64 or
+     * %NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_EUI64,
      * %NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_STABLE_PRIVACY.
+     * %NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_DEFAULT_OR_EUI64
+     * or %NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_DEFAULT.
      *
      * If the property is set to EUI64, the addresses will be generated
      * using the interface tokens derived from hardware address. This makes
@@ -792,9 +796,16 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
      * and makes the address stable when the network interface hardware is
      * replaced.
      *
-     * On D-Bus, the absence of an addr-gen-mode setting equals enabling
-     * stable-privacy. For keyfile plugin, the absence of the setting
-     * on disk means EUI64 so that the property doesn't change on upgrade
+     * The special values "default" and "default-or-eui64" will fallback to the global
+     * connection default in as documented in NetworkManager.conf(5) manual. If the
+     * global default is not specified, the fallback value is "stable-privacy"
+     * or "eui64", respectively.
+     *
+     * For libnm, the property defaults to "default" since 1.40.
+     * Previously it defaulted to "stable-privacy".
+     * On D-Bus, the absence of an addr-gen-mode setting equals
+     * "default". For keyfile plugin, the absence of the setting
+     * on disk means "default-or-eui64" so that the property doesn't change on upgrade
      * from older versions.
      *
      * Note that this setting is distinct from the Privacy Extensions as
@@ -806,8 +817,8 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
     /* ---ifcfg-rh---
      * property: addr-gen-mode
      * variable: IPV6_ADDR_GEN_MODE
-     * values: IPV6_ADDR_GEN_MODE: eui64, stable-privacy
-     * default: eui64
+     * values: IPV6_ADDR_GEN_MODE: default, default-or-eui64, eui64, stable-privacy
+     * default: "default-or-eui64"
      * description: Configure IPv6 Stable Privacy addressing for SLAAC (RFC7217).
      * example: IPV6_ADDR_GEN_MODE=stable-privacy
      * ---end---
@@ -818,10 +829,11 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
                                              PROP_ADDR_GEN_MODE,
                                              G_MININT32,
                                              G_MAXINT32,
-                                             NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_STABLE_PRIVACY,
+                                             NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_DEFAULT,
                                              NM_SETTING_PARAM_NONE,
                                              NMSettingIP6ConfigPrivate,
-                                             addr_gen_mode);
+                                             addr_gen_mode,
+                                             .to_dbus_including_default = TRUE);
 
     /**
      * NMSettingIP6Config:token:

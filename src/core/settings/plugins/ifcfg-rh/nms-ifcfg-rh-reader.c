@@ -2555,7 +2555,13 @@ make_ip6_setting(shvarFile *ifcfg, shvarFile *network_ifcfg, gboolean routes_rea
         }
     }
 
-    i_val = NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_EUI64;
+    /* IPv6 tokenized interface identifier */
+    nm_clear_g_free(&value);
+    v = svGetValueStr(ifcfg, "IPV6_TOKEN", &value);
+    if (v)
+        g_object_set(s_ip6, NM_SETTING_IP6_CONFIG_TOKEN, v, NULL);
+
+    i_val = NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_DEFAULT_OR_EUI64;
     if (!svGetValueEnum(ifcfg,
                         "IPV6_ADDR_GEN_MODE",
                         nm_setting_ip6_config_addr_gen_mode_get_type(),
@@ -2563,14 +2569,13 @@ make_ip6_setting(shvarFile *ifcfg, shvarFile *network_ifcfg, gboolean routes_rea
                         &local)) {
         PARSE_WARNING("%s", local->message);
         g_clear_error(&local);
+    } else if (errno == ENOENT) {
+        /* The key is not specified. If "v" (IPV6_TOKEN) is set,
+         * we default to EUI64. Otherwise, the connection would not verify. */
+        if (v)
+            i_val = NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_EUI64;
     }
     g_object_set(s_ip6, NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE, i_val, NULL);
-
-    /* IPv6 tokenized interface identifier */
-    nm_clear_g_free(&value);
-    v = svGetValueStr(ifcfg, "IPV6_TOKEN", &value);
-    if (v)
-        g_object_set(s_ip6, NM_SETTING_IP6_CONFIG_TOKEN, v, NULL);
 
     /* DNS servers
      * Pick up just IPv6 addresses (IPv4 addresses are taken by make_ip4_setting())
