@@ -38,6 +38,18 @@ typedef enum {
     NM_DHCP_STATE_TERMINATED, /* client is no longer running */
 } NMDhcpState;
 
+typedef enum {
+    NM_DHCP_CLIENT_EVENT_TYPE_UNSPECIFIED,
+
+    NM_DHCP_CLIENT_EVENT_TYPE_BOUND,
+    NM_DHCP_CLIENT_EVENT_TYPE_EXTENDED,
+
+    NM_DHCP_CLIENT_EVENT_TYPE_TIMEOUT,
+    NM_DHCP_CLIENT_EVENT_TYPE_EXPIRE,
+    NM_DHCP_CLIENT_EVENT_TYPE_FAIL,
+    NM_DHCP_CLIENT_EVENT_TYPE_TERMINATED,
+} NMDhcpClientEventType;
+
 typedef enum _nm_packed {
     NM_DHCP_CLIENT_NOTIFY_TYPE_LEASE_UPDATE,
 
@@ -268,8 +280,9 @@ void nm_dhcp_client_watch_child(NMDhcpClient *self, pid_t pid);
 
 void nm_dhcp_client_stop_watch_child(NMDhcpClient *self, pid_t pid);
 
-void
-nm_dhcp_client_set_state(NMDhcpClient *self, NMDhcpState new_state, const NML3ConfigData *l3cd);
+void _nm_dhcp_client_notify(NMDhcpClient         *self,
+                            NMDhcpClientEventType client_event_type,
+                            const NML3ConfigData *l3cd);
 
 gboolean nm_dhcp_client_handle_event(gpointer      unused,
                                      const char   *iface,

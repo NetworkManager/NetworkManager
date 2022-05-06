@@ -785,15 +785,16 @@ bound4_handle(NMDhcpNettools *self, NDhcp4ClientLease *lease, gboolean extended)
     if (!l3cd) {
         _LOGW("failure to parse lease: %s", error->message);
         g_clear_error(&error);
-        nm_dhcp_client_set_state(NM_DHCP_CLIENT(self), NM_DHCP_STATE_FAIL, NULL);
+        _nm_dhcp_client_notify(NM_DHCP_CLIENT(self), NM_DHCP_CLIENT_EVENT_TYPE_FAIL, NULL);
         return;
     }
 
     lease_save(self, lease, priv->lease_file);
 
-    nm_dhcp_client_set_state(NM_DHCP_CLIENT(self),
-                             extended ? NM_DHCP_STATE_EXTENDED : NM_DHCP_STATE_BOUND,
-                             l3cd);
+    _nm_dhcp_client_notify(NM_DHCP_CLIENT(self),
+                           extended ? NM_DHCP_CLIENT_EVENT_TYPE_EXTENDED
+                                    : NM_DHCP_CLIENT_EVENT_TYPE_BOUND,
+                           l3cd);
 }
 
 static void
@@ -830,10 +831,10 @@ dhcp4_event_handle(NMDhcpNettools *self, NDhcp4ClientEvent *event)
         break;
     case N_DHCP4_CLIENT_EVENT_RETRACTED:
     case N_DHCP4_CLIENT_EVENT_EXPIRED:
-        nm_dhcp_client_set_state(NM_DHCP_CLIENT(self), NM_DHCP_STATE_EXPIRE, NULL);
+        _nm_dhcp_client_notify(NM_DHCP_CLIENT(self), NM_DHCP_CLIENT_EVENT_TYPE_EXPIRE, NULL);
         break;
     case N_DHCP4_CLIENT_EVENT_CANCELLED:
-        nm_dhcp_client_set_state(NM_DHCP_CLIENT(self), NM_DHCP_STATE_FAIL, NULL);
+        _nm_dhcp_client_notify(NM_DHCP_CLIENT(self), NM_DHCP_CLIENT_EVENT_TYPE_FAIL, NULL);
         break;
     case N_DHCP4_CLIENT_EVENT_GRANTED:
         priv->lease = n_dhcp4_client_lease_ref(event->granted.lease);
@@ -885,7 +886,7 @@ dhcp4_event_cb(int fd, GIOCondition condition, gpointer user_data)
          */
         _LOGE("error %d dispatching events", r);
         nm_clear_g_source_inst(&priv->event_source);
-        nm_dhcp_client_set_state(NM_DHCP_CLIENT(self), NM_DHCP_STATE_FAIL, NULL);
+        _nm_dhcp_client_notify(NM_DHCP_CLIENT(self), NM_DHCP_CLIENT_EVENT_TYPE_FAIL, NULL);
         return G_SOURCE_REMOVE;
     }
 
