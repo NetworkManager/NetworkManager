@@ -312,7 +312,7 @@ set_bond_attr_or_default(NMDevice *device, NMSettingBond *s_bond, const char *op
     NMDeviceBond *self = NM_DEVICE_BOND(device);
     const char   *value;
 
-    value = nm_setting_bond_get_option_or_default(s_bond, opt);
+    value = nm_setting_bond_get_option_normalized(s_bond, opt);
     if (!value) {
         if (_LOGT_ENABLED(LOGD_BOND) && nm_setting_bond_get_option_by_name(s_bond, opt))
             _LOGT(LOGD_BOND, "bond option '%s' not set as it conflicts with other options", opt);
@@ -346,7 +346,7 @@ set_bond_arp_ip_targets(NMDevice *device, NMSettingBond *s_bond)
     set_arp_targets(
         device,
         cur_arp_ip_target,
-        nm_setting_bond_get_option_or_default(s_bond, NM_SETTING_BOND_OPTION_ARP_IP_TARGET));
+        nm_setting_bond_get_option_normalized(s_bond, NM_SETTING_BOND_OPTION_ARP_IP_TARGET));
 }
 
 static gboolean
@@ -361,7 +361,7 @@ apply_bonding_config(NMDeviceBond *self)
     s_bond = nm_device_get_applied_setting(device, NM_TYPE_SETTING_BOND);
     g_return_val_if_fail(s_bond, FALSE);
 
-    mode_str = nm_setting_bond_get_option_or_default(s_bond, NM_SETTING_BOND_OPTION_MODE);
+    mode_str = nm_setting_bond_get_option_normalized(s_bond, NM_SETTING_BOND_OPTION_MODE);
     mode     = _nm_setting_bond_mode_from_string(mode_str);
     g_return_val_if_fail(mode != NM_BOND_MODE_UNKNOWN, FALSE);
 
@@ -618,7 +618,7 @@ reapply_connection(NMDevice *device, NMConnection *con_old, NMConnection *con_ne
     s_bond = nm_connection_get_setting_bond(con_new);
     g_return_if_fail(s_bond);
 
-    value = nm_setting_bond_get_option_or_default(s_bond, NM_SETTING_BOND_OPTION_MODE);
+    value = nm_setting_bond_get_option_normalized(s_bond, NM_SETTING_BOND_OPTION_MODE);
     mode  = _nm_setting_bond_mode_from_string(value);
     g_return_if_fail(mode != NM_BOND_MODE_UNKNOWN);
 
