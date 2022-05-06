@@ -1,5 +1,20 @@
 # c-rbtree - Intrusive Red-Black Tree Collection
 
+## CHANGES WITH 4:
+
+        * Add 'ptrace' build option to enable running tests using 'ptrace'
+          to verify extended execution properties. This option should not
+          be used in setups where 'ptrace' cannot be employed (like running
+          under gdb or valgrind). This option only affects the test-suite.
+
+        * meson-0.60.0 is now the minimum required meson version.
+
+        * TBD
+
+        Contributions from: David Rheinsberg
+
+        - TBD, YYYY-MM-DD
+
 ## CHANGES WITH 3:
 
         * Add more helpers. Add both a collection of iteratiors and helpers
