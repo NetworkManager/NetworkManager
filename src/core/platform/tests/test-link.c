@@ -93,6 +93,10 @@ test_loopback(void)
     g_assert(!nm_platform_link_supports_vlans(NM_PLATFORM_GET, LO_INDEX));
 }
 
+const NMPlatformLnkBond nm_platform_lnk_bond_default = {
+    .mode = 3,
+};
+
 static gboolean
 software_add(NMLinkType link_type, const char *name)
 {
@@ -112,12 +116,12 @@ software_add(NMLinkType link_type, const char *name)
         gboolean bond0_exists = !!nm_platform_link_get_by_ifname(NM_PLATFORM_GET, "bond0");
         int      r;
 
-        r = nm_platform_link_bond_add(NM_PLATFORM_GET, name, NULL);
+        r = nm_platform_link_bond_add(NM_PLATFORM_GET, name, &nm_platform_lnk_bond_default, NULL);
 
         /* Check that bond0 is *not* automatically created. */
         if (!bond0_exists)
             g_assert(!nm_platform_link_get_by_ifname(NM_PLATFORM_GET, "bond0"));
-        return r >= 0;
+        return NMTST_NM_ERR_SUCCESS(r);
     }
     case NM_LINK_TYPE_TEAM:
         return NMTST_NM_ERR_SUCCESS(nm_platform_link_team_add(NM_PLATFORM_GET, name, NULL));
