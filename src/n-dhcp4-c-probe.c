@@ -995,14 +995,13 @@ static int n_dhcp4_client_probe_transition_nak(NDhcp4ClientProbe *probe) {
         case N_DHCP4_CLIENT_PROBE_STATE_RENEWING:
         case N_DHCP4_CLIENT_PROBE_STATE_REBINDING:
 
-                /* XXX */
-
                 r = n_dhcp4_client_probe_raise(probe,
                                                NULL,
                                                N_DHCP4_CLIENT_EVENT_RETRACTED);
                 if (r)
                         return r;
 
+                probe->current_lease = n_dhcp4_client_lease_unref(probe->current_lease);
                 probe->state = N_DHCP4_CLIENT_PROBE_STATE_INIT;
                 probe->ns_deferred = n_dhcp4_gettime(CLOCK_BOOTTIME) + probe->ns_nak_restart_delay;
                 probe->ns_nak_restart_delay = C_CLAMP(probe->ns_nak_restart_delay * 2u,

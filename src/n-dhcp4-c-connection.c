@@ -705,6 +705,7 @@ int n_dhcp4_c_connection_select_new(NDhcp4CConnection *connection,
         message->userdata.start_time = offer->userdata.start_time;
         message->userdata.base_time = offer->userdata.base_time;
         message->userdata.client_addr = client.s_addr;
+        message->userdata.server_id = server.s_addr;
         n_dhcp4_incoming_get_xid(offer, &xid);
         n_dhcp4_outgoing_set_xid(message, xid);
 
@@ -1227,6 +1228,24 @@ int n_dhcp4_c_connection_dispatch_io(NDhcp4CConnection *connection,
                             message_type_to_str(type),
                             inet_ntop(AF_INET, &message->message.header.siaddr,
                                       serv_addr, sizeof(serv_addr)));
+        }
+
+        if (type == N_DHCP4_MESSAGE_NAK &&
+            connection->request->userdata.server_id != INADDR_ANY) {
+                struct in_addr server;
+
+                r = n_dhcp4_incoming_query_server_identifier(message, &server);
+                if (r)
+                        return N_DHCP4_E_AGAIN;
+
+                if (connection->request->userdata.server_id != server.s_addr) {
+                        n_dhcp4_log(connection->log_queue,
+                                    LOG_DEBUG,
+                                    "discarded NAK with wrong server-id %s",
+                                    inet_ntop(AF_INET, &server,
+                                              serv_addr, sizeof(serv_addr)));
+                        return N_DHCP4_E_AGAIN;
+                }
         }
 
         switch (type) {
