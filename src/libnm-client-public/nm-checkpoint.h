@@ -30,6 +30,7 @@ G_BEGIN_DECLS
 /**
  * NMCheckpoint:
  */
+typedef struct _NMCheckpoint      NMCheckpoint;
 typedef struct _NMCheckpointClass NMCheckpointClass;
 
 GType nm_checkpoint_get_type(void);

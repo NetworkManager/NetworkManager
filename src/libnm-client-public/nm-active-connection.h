@@ -43,9 +43,12 @@ G_BEGIN_DECLS
 #define NM_ACTIVE_CONNECTION_VPN                  "vpn"
 #define NM_ACTIVE_CONNECTION_MASTER               "master"
 
+typedef struct _NMDevice NMDevice;
+
 /**
  * NMActiveConnection:
  */
+typedef struct _NMActiveConnection      NMActiveConnection;
 typedef struct _NMActiveConnectionClass NMActiveConnectionClass;
 
 GType nm_active_connection_get_type(void);

@@ -34,6 +34,7 @@ G_BEGIN_DECLS
  *
  * Since: 1.16
  */
+typedef struct _NMDeviceWifiP2P      NMDeviceWifiP2P;
 typedef struct _NMDeviceWifiP2PClass NMDeviceWifiP2PClass;
 
 NM_AVAILABLE_IN_1_16

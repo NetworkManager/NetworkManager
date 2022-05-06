@@ -35,6 +35,7 @@ G_BEGIN_DECLS
 /**
  * NMDeviceEthernet:
  */
+typedef struct _NMDeviceEthernet      NMDeviceEthernet;
 typedef struct _NMDeviceEthernetClass NMDeviceEthernetClass;
 
 GType nm_device_ethernet_get_type(void);

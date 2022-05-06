@@ -11,8 +11,6 @@
 #error "Only <NetworkManager.h> can be included directly."
 #endif
 
-#include "nm-types.h"
-
 G_BEGIN_DECLS
 
 #define NM_TYPE_OBJECT            (nm_object_get_type())
@@ -25,9 +23,12 @@ G_BEGIN_DECLS
 #define NM_OBJECT_PATH   "path"
 #define NM_OBJECT_CLIENT "client"
 
+typedef struct _NMClient NMClient;
+
 /**
  * NMObject:
  */
+typedef struct _NMObject      NMObject;
 typedef struct _NMObjectClass NMObjectClass;
 
 GType nm_object_get_type(void);

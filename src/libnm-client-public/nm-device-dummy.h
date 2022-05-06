@@ -29,6 +29,7 @@ G_BEGIN_DECLS
 /**
  * NMDeviceDummy:
  */
+typedef struct _NMDeviceDummy      NMDeviceDummy;
 typedef struct _NMDeviceDummyClass NMDeviceDummyClass;
 
 GType nm_device_dummy_get_type(void);

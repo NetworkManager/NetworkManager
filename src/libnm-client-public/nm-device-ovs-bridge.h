@@ -30,6 +30,7 @@ G_BEGIN_DECLS
 /**
  * NMDeviceOvsBridge:
  */
+typedef struct _NMDeviceOvsBridge      NMDeviceOvsBridge;
 typedef struct _NMDeviceOvsBridgeClass NMDeviceOvsBridgeClass;
 
 NM_AVAILABLE_IN_1_10

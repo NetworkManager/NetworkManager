@@ -25,6 +25,7 @@ G_BEGIN_DECLS
 /**
  * NMDhcpConfig:
  */
+typedef struct _NMDhcpConfig      NMDhcpConfig;
 typedef struct _NMDhcpConfigClass NMDhcpConfigClass;
 
 #define NM_DHCP_CONFIG_FAMILY  "family"

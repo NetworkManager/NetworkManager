@@ -31,6 +31,7 @@ G_BEGIN_DECLS
 /**
  * NMDeviceInfiniband:
  */
+typedef struct _NMDeviceInfiniband      NMDeviceInfiniband;
 typedef struct _NMDeviceInfinibandClass NMDeviceInfinibandClass;
 
 GType nm_device_infiniband_get_type(void);

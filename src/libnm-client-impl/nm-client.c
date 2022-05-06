@@ -20,6 +20,7 @@
 #include "nm-checkpoint.h"
 #include "libnm-core-intern/nm-core-internal.h"
 #include "nm-dbus-helpers.h"
+#include "nm-wifi-p2p-peer.h"
 #include "nm-device-6lowpan.h"
 #include "nm-device-adsl.h"
 #include "nm-device-bond.h"
@@ -33,7 +34,6 @@
 #include "nm-device-macsec.h"
 #include "nm-device-macvlan.h"
 #include "nm-device-modem.h"
-#include "nm-device-olpc-mesh.h"
 #include "nm-device-ovs-bridge.h"
 #include "nm-device-ovs-interface.h"
 #include "nm-device-ovs-port.h"
@@ -46,6 +46,7 @@
 #include "nm-device-wifi.h"
 #include "nm-device-wireguard.h"
 #include "nm-device-wpan.h"
+#include "nm-device-olpc-mesh.h"
 #include "nm-dhcp-config.h"
 #include "nm-dhcp4-config.h"
 #include "nm-dhcp6-config.h"
@@ -56,7 +57,6 @@
 #include "nm-remote-connection.h"
 #include "nm-utils.h"
 #include "nm-vpn-connection.h"
-#include "nm-wifi-p2p-peer.h"
 
 /*****************************************************************************/
 
@@ -8399,9 +8399,9 @@ nm_client_class_init(NMClientClass *client_class)
      *
      * Whether a connectivity checking service has been enabled.
      *
-     * Since: 1.10
-     *
      * The property setter is a synchronous D-Bus call. This is deprecated since 1.22.
+     *
+     * Since: 1.10
      */
     obj_properties[PROP_CONNECTIVITY_CHECK_ENABLED] =
         g_param_spec_boolean(NM_CLIENT_CONNECTIVITY_CHECK_ENABLED,
@@ -8729,7 +8729,7 @@ nm_client_class_init(NMClientClass *client_class)
                                                G_TYPE_UINT);
     /**
      * NMClient::connection-added:
-     * @client: the settings object that received the signal
+     * @client: the client that received the signal
      * @connection: the new connection
      *
      * Notifies that a #NMConnection has been added.
@@ -8747,7 +8747,7 @@ nm_client_class_init(NMClientClass *client_class)
 
     /**
      * NMClient::connection-removed:
-     * @client: the settings object that received the signal
+     * @client: the client that received the signal
      * @connection: the removed connection
      *
      * Notifies that a #NMConnection has been removed.
@@ -8765,7 +8765,7 @@ nm_client_class_init(NMClientClass *client_class)
 
     /**
      * NMClient::active-connection-added:
-     * @client: the settings object that received the signal
+     * @client: the client that received the signal
      * @active_connection: the new active connection
      *
      * Notifies that a #NMActiveConnection has been added.
@@ -8783,7 +8783,7 @@ nm_client_class_init(NMClientClass *client_class)
 
     /**
      * NMClient::active-connection-removed:
-     * @client: the settings object that received the signal
+     * @client: the client that received the signal
      * @active_connection: the removed active connection
      *
      * Notifies that a #NMActiveConnection has been removed.

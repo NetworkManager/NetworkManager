@@ -32,6 +32,7 @@ G_BEGIN_DECLS
 /**
  * NMDeviceOlpcMesh:
  */
+typedef struct _NMDeviceOlpcMesh      NMDeviceOlpcMesh;
 typedef struct _NMDeviceOlpcMeshClass NMDeviceOlpcMeshClass;
 
 GType nm_device_olpc_mesh_get_type(void);
