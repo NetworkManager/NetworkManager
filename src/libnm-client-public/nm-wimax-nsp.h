@@ -33,6 +33,7 @@ G_BEGIN_DECLS
  *
  * Deprecated: 1.22: WiMAX is no longer supported by NetworkManager since 1.2.0.
  */
+typedef struct _NMWimaxNsp      NMWimaxNsp;
 typedef struct _NMWimaxNspClass NMWimaxNspClass;
 
 GType nm_wimax_nsp_get_type(void);

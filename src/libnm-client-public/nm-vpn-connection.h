@@ -32,6 +32,7 @@ G_BEGIN_DECLS
 /**
  * NMVpnConnection:
  */
+typedef struct _NMVpnConnection      NMVpnConnection;
 typedef struct _NMVpnConnectionClass NMVpnConnectionClass;
 
 GType nm_vpn_connection_get_type(void);

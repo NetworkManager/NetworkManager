@@ -45,7 +45,6 @@ libnm_client_headers = files(
   'nm-object.h',
   'nm-remote-connection.h',
   'nm-secret-agent-old.h',
-  'nm-types.h',
   'nm-vpn-connection.h',
   'nm-vpn-editor.h',
   'nm-vpn-plugin-old.h',

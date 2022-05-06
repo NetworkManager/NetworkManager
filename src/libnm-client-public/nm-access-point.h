@@ -42,6 +42,7 @@ G_BEGIN_DECLS
 /**
  * NMAccessPoint:
  */
+typedef struct _NMAccessPoint      NMAccessPoint;
 typedef struct _NMAccessPointClass NMAccessPointClass;
 
 GType nm_access_point_get_type(void);

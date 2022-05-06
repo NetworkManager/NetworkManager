@@ -5,12 +5,13 @@
 
 #include "libnm-client-impl/nm-default-libnm.h"
 
+#include "nm-access-point.h"
+#include "nm-device-wifi.h"
 #include "nm-device-olpc-mesh.h"
 
 #include "nm-setting-connection.h"
 #include "nm-setting-olpc-mesh.h"
 #include "nm-object-private.h"
-#include "nm-device-wifi.h"
 
 /*****************************************************************************/
 

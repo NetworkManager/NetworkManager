@@ -39,6 +39,7 @@ G_BEGIN_DECLS
  *
  * Deprecated: 1.22: WiMAX is no longer supported by NetworkManager since 1.2.0.
  */
+typedef struct _NMDeviceWimax      NMDeviceWimax;
 typedef struct _NMDeviceWimaxClass NMDeviceWimaxClass;
 
 NM_DEPRECATED_IN_1_2

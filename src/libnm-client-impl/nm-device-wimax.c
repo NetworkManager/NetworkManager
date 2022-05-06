@@ -6,9 +6,8 @@
 
 #include "libnm-client-impl/nm-default-libnm.h"
 
-#include "nm-device-wimax.h"
-
 #include "nm-wimax-nsp.h"
+#include "nm-device-wimax.h"
 
 /*****************************************************************************/
 

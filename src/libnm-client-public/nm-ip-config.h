@@ -27,6 +27,7 @@ G_BEGIN_DECLS
 /**
  * NMIPConfig:
  */
+typedef struct _NMIPConfig      NMIPConfig;
 typedef struct _NMIPConfigClass NMIPConfigClass;
 
 #define NM_IP_CONFIG_FAMILY       "family"

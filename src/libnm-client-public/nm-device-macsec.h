@@ -42,6 +42,7 @@ G_BEGIN_DECLS
 /**
  * NMDeviceMacsec:
  */
+typedef struct _NMDeviceMacsec      NMDeviceMacsec;
 typedef struct _NMDeviceMacsecClass NMDeviceMacsecClass;
 
 NM_AVAILABLE_IN_1_6

@@ -28,6 +28,7 @@ G_BEGIN_DECLS
 /**
  * NMDeviceWireGuard:
  */
+typedef struct _NMDeviceWireGuard      NMDeviceWireGuard;
 typedef struct _NMDeviceWireGuardClass NMDeviceWireGuardClass;
 
 #define NM_DEVICE_WIREGUARD_PUBLIC_KEY  "public-key"

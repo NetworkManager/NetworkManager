@@ -36,6 +36,7 @@ G_BEGIN_DECLS
 /**
  * NMDeviceWifi:
  */
+typedef struct _NMDeviceWifi      NMDeviceWifi;
 typedef struct _NMDeviceWifiClass NMDeviceWifiClass;
 
 GType nm_device_wifi_get_type(void);
