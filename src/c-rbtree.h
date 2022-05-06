@@ -144,6 +144,11 @@ static inline void c_rbnode_init(CRBNode *n) {
  *
  * Return: Pointer to parent container, or NULL.
  */
+/*
+ * Note: This was carefully designed to avoid multiple evaluation of `_what`,
+ *       but avoid context-expression-extensions. That is why it uses the
+ *       possibly odd style of `(x ?: offsetof(...)) - offsetof(...))`.
+ */
 #define c_rbnode_entry(_what, _t, _m) \
         ((_t *)(void *)(((unsigned long)(void *)(_what) ?: \
                          offsetof(_t, _m)) - offsetof(_t, _m)))
