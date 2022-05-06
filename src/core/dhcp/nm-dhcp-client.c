@@ -244,23 +244,41 @@ _no_lease_timeout_schedule(NMDhcpClient *self)
 /*****************************************************************************/
 
 void
-nm_dhcp_client_set_state(NMDhcpClient *self, NMDhcpState new_state, const NML3ConfigData *l3cd)
+_nm_dhcp_client_notify(NMDhcpClient         *self,
+                       NMDhcpClientEventType client_event_type,
+                       const NML3ConfigData *l3cd)
 {
     NMDhcpClientPrivate                     *priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
     GHashTable                              *options;
     const int                                IS_IPv4     = NM_IS_IPv4(priv->config.addr_family);
     nm_auto_unref_l3cd const NML3ConfigData *l3cd_merged = NULL;
 
-    if (NM_IN_SET(new_state, NM_DHCP_STATE_BOUND, NM_DHCP_STATE_EXTENDED)) {
-        nm_assert(NM_IS_L3_CONFIG_DATA(l3cd));
-        nm_assert(nm_l3_config_data_get_dhcp_lease(l3cd, priv->config.addr_family));
-    } else
-        nm_assert(!l3cd);
+    nm_assert(NM_IN_SET(client_event_type,
+                        NM_DHCP_CLIENT_EVENT_TYPE_UNSPECIFIED,
+                        NM_DHCP_CLIENT_EVENT_TYPE_BOUND,
+                        NM_DHCP_CLIENT_EVENT_TYPE_EXTENDED,
+                        NM_DHCP_CLIENT_EVENT_TYPE_TIMEOUT,
+                        NM_DHCP_CLIENT_EVENT_TYPE_EXPIRE,
+                        NM_DHCP_CLIENT_EVENT_TYPE_FAIL,
+                        NM_DHCP_CLIENT_EVENT_TYPE_TERMINATED));
+    nm_assert((client_event_type >= NM_DHCP_CLIENT_EVENT_TYPE_TIMEOUT)
+              == NM_IN_SET(client_event_type,
+                           NM_DHCP_CLIENT_EVENT_TYPE_TIMEOUT,
+                           NM_DHCP_CLIENT_EVENT_TYPE_EXPIRE,
+                           NM_DHCP_CLIENT_EVENT_TYPE_FAIL,
+                           NM_DHCP_CLIENT_EVENT_TYPE_TERMINATED));
+    nm_assert((!!l3cd)
+              == NM_IN_SET(client_event_type,
+                           NM_DHCP_CLIENT_EVENT_TYPE_BOUND,
+                           NM_DHCP_CLIENT_EVENT_TYPE_EXTENDED));
+
+    nm_assert(!l3cd || NM_IS_L3_CONFIG_DATA(l3cd));
+    nm_assert(!l3cd || nm_l3_config_data_get_dhcp_lease(l3cd, priv->config.addr_family));
 
     if (l3cd)
         nm_l3_config_data_seal(l3cd);
 
-    if (new_state >= NM_DHCP_STATE_TIMEOUT)
+    if (client_event_type >= NM_DHCP_CLIENT_EVENT_TYPE_TIMEOUT)
         watch_cleanup(self);
 
     if (!IS_IPv4 && l3cd) {
@@ -284,7 +302,7 @@ nm_dhcp_client_set_state(NMDhcpClient *self, NMDhcpState new_state, const NML3Co
     }
 
     /* FIXME(l3cfg:dhcp): the API of NMDhcpClient is changing to expose a simpler API.
-     * The internals like NMDhcpState should not be exposed (or possibly dropped in large
+     * The internals like the state should not be exposed (or possibly dropped in large
      * parts). */
 
     nm_l3_config_data_reset(&priv->l3cd, l3cd);
@@ -337,7 +355,8 @@ nm_dhcp_client_set_state(NMDhcpClient *self, NMDhcpState new_state, const NML3Co
      * as a static address (bypassing ACD), then NML3Cfg is aware of that and signals
      * immediate success. */
 
-    if (nm_dhcp_client_can_accept(self) && new_state == NM_DHCP_STATE_BOUND && priv->l3cd
+    if (nm_dhcp_client_can_accept(self) && client_event_type == NM_DHCP_CLIENT_EVENT_TYPE_BOUND
+        && priv->l3cd
         && nm_l3_config_data_get_num_addresses(priv->l3cd, priv->config.addr_family) > 0) {
         priv->l3cfg_notify.wait_dhcp_commit = TRUE;
     } else {
@@ -374,7 +393,7 @@ daemon_watch_cb(GPid pid, int status, gpointer user_data)
 
     priv->pid = -1;
 
-    nm_dhcp_client_set_state(self, NM_DHCP_STATE_TERMINATED, NULL);
+    _nm_dhcp_client_notify(self, NM_DHCP_CLIENT_EVENT_TYPE_TERMINATED, NULL);
 }
 
 void
@@ -741,7 +760,7 @@ nm_dhcp_client_stop(NMDhcpClient *self, gboolean release)
         _LOGI("canceled DHCP transaction");
     nm_assert(priv->pid == -1);
 
-    nm_dhcp_client_set_state(self, NM_DHCP_STATE_TERMINATED, NULL);
+    _nm_dhcp_client_notify(self, NM_DHCP_CLIENT_EVENT_TYPE_TERMINATED, NULL);
 }
 
 /*****************************************************************************/
@@ -870,6 +889,7 @@ nm_dhcp_client_handle_event(gpointer      unused,
 {
     NMDhcpClientPrivate                    *priv;
     nm_auto_unref_l3cd_init NML3ConfigData *l3cd = NULL;
+    NMDhcpClientEventType                   client_event_type;
     NMDhcpState                             new_state;
     NMPlatformIP6Address                    prefix = {
         0,
@@ -976,7 +996,33 @@ nm_dhcp_client_handle_event(gpointer      unused,
             new_state = NM_DHCP_STATE_UNKNOWN;
     }
 
-    nm_dhcp_client_set_state(self, new_state, l3cd);
+    switch (new_state) {
+    case NM_DHCP_STATE_UNKNOWN:
+        client_event_type = NM_DHCP_CLIENT_EVENT_TYPE_UNSPECIFIED;
+        break;
+    case NM_DHCP_STATE_BOUND:
+        client_event_type = NM_DHCP_CLIENT_EVENT_TYPE_BOUND;
+        break;
+    case NM_DHCP_STATE_EXTENDED:
+        client_event_type = NM_DHCP_CLIENT_EVENT_TYPE_EXTENDED;
+        break;
+    case NM_DHCP_STATE_TIMEOUT:
+        client_event_type = NM_DHCP_CLIENT_EVENT_TYPE_TIMEOUT;
+        break;
+    case NM_DHCP_STATE_EXPIRE:
+        client_event_type = NM_DHCP_CLIENT_EVENT_TYPE_EXPIRE;
+        break;
+    case NM_DHCP_STATE_FAIL:
+        client_event_type = NM_DHCP_CLIENT_EVENT_TYPE_FAIL;
+        break;
+    case NM_DHCP_STATE_TERMINATED:
+    case NM_DHCP_STATE_DONE:
+    case NM_DHCP_STATE_NOOP:
+        client_event_type = NM_DHCP_CLIENT_EVENT_TYPE_TERMINATED;
+        break;
+    }
+
+    _nm_dhcp_client_notify(self, client_event_type, l3cd);
     return TRUE;
 }
 
