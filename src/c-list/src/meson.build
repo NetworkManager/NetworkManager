@@ -13,10 +13,10 @@ if not meson.is_subproject()
         install_headers('c-list.h')
 
         mod_pkgconfig.generate(
-                version: meson.project_version(),
-                name: 'libclist',
-                filebase: 'libclist',
                 description: project_description,
+                filebase: 'libclist-'+major,
+                name: 'libclist',
+                version: meson.project_version(),
         )
 endif
 
