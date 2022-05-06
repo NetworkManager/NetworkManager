@@ -17,7 +17,8 @@ typedef struct {
 } Node;
 
 static void test_api(void) {
-        CList *list_iter, *list_safe, list = C_LIST_INIT(list);
+        CList *list_iter, *list_safe;
+        CList list = C_LIST_INIT(list), list2 = C_LIST_INIT(list2);
         Node node = { .id = 0, .link = C_LIST_INIT(node.link) };
 
         assert(c_list_init(&list) == &list);
@@ -68,13 +69,17 @@ static void test_api(void) {
         c_list_unlink(&node.link);
         assert(!c_list_is_linked(&node.link));
 
-        /* swap / splice list operators */
+        /* swap / splice / split list operators */
 
         c_list_swap(&list, &list);
         assert(c_list_is_empty(&list));
 
         c_list_splice(&list, &list);
         assert(c_list_is_empty(&list));
+
+        c_list_split(&list, &list, &list2);
+        assert(c_list_is_empty(&list));
+        assert(c_list_is_empty(&list2));
 
         /* direct/raw iterators */
 

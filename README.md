@@ -20,7 +20,7 @@ The requirements for this project are:
 
 At build-time, the following software is required:
 
- * `meson >= 0.41`
+ * `meson >= 0.60`
  * `pkg-config >= 0.29`
 
 ### Build

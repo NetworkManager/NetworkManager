@@ -11,6 +11,18 @@
 #include <string.h>
 #include "c-list.h"
 
+static void assert_list_integrity(CList *list) {
+        CList *iter;
+
+        iter = list;
+        do {
+                assert(iter->next->prev == iter);
+                assert(iter->prev->next == iter);
+
+                iter = iter->next;
+        } while (iter != list);
+}
+
 static void test_iterators(void) {
         CList *iter, *safe, a, b, list = C_LIST_INIT(list);
         unsigned int i;
@@ -158,6 +170,85 @@ static void test_splice(void) {
         assert(c_list_last(&target) == &e2);
 }
 
+static void test_split(void) {
+        CList e1, e2;
+
+        /* split empty list */
+        {
+                CList source = C_LIST_INIT(source), target;
+
+                c_list_split(&source, &source, &target);
+                assert(c_list_is_empty(&source));
+                assert(c_list_is_empty(&target));
+                assert_list_integrity(&source);
+                assert_list_integrity(&target);
+        }
+
+        /* split 1-element list excluding the element */
+        {
+                CList source = C_LIST_INIT(source), target;
+
+                c_list_link_tail(&source, &e1);
+                c_list_split(&source, &source, &target);
+                assert(!c_list_is_empty(&source));
+                assert(c_list_is_empty(&target));
+                assert_list_integrity(&source);
+                assert_list_integrity(&target);
+        }
+
+        /* split 1-element list including the element */
+        {
+                CList source = C_LIST_INIT(source), target;
+
+                c_list_link_tail(&source, &e1);
+                c_list_split(&source, &e1, &target);
+                assert(c_list_is_empty(&source));
+                assert(!c_list_is_empty(&target));
+                assert_list_integrity(&source);
+                assert_list_integrity(&target);
+        }
+
+        /* split 2-element list excluding the elements */
+        {
+                CList source = C_LIST_INIT(source), target;
+
+                c_list_link_tail(&source, &e1);
+                c_list_link_tail(&source, &e2);
+                c_list_split(&source, &source, &target);
+                assert(!c_list_is_empty(&source));
+                assert(c_list_is_empty(&target));
+                assert_list_integrity(&source);
+                assert_list_integrity(&target);
+        }
+
+        /* split 2-element list including one element */
+        {
+                CList source = C_LIST_INIT(source), target;
+
+                c_list_link_tail(&source, &e1);
+                c_list_link_tail(&source, &e2);
+                c_list_split(&source, &e2, &target);
+                assert(!c_list_is_empty(&source));
+                assert(!c_list_is_empty(&target));
+                assert_list_integrity(&source);
+                assert_list_integrity(&target);
+        }
+
+        /* split 2-element list including both elements */
+        {
+                CList source = C_LIST_INIT(source), target;
+
+                c_list_link_tail(&source, &e1);
+                c_list_link_tail(&source, &e2);
+                c_list_split(&source, &e1, &target);
+                assert(c_list_is_empty(&source));
+                assert(!c_list_is_empty(&target));
+                assert_list_integrity(&source);
+                assert_list_integrity(&target);
+        }
+}
+
+
 static void test_flush(void) {
         CList e1 = C_LIST_INIT(e1), e2 = C_LIST_INIT(e2);
         CList list1 = C_LIST_INIT(list1), list2 = C_LIST_INIT(list2);
@@ -220,6 +311,7 @@ int main(void) {
         test_iterators();
         test_swap();
         test_splice();
+        test_split();
         test_flush();
         test_macros();
         test_gnu();
