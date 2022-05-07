@@ -101,6 +101,7 @@ static const char *device_sort_order[]   = {"NMDeviceEthernet",
                                           NM_SETTING_BRIDGE_SETTING_NAME,
                                           NM_SETTING_IP_TUNNEL_SETTING_NAME,
                                           NM_SETTING_WIREGUARD_SETTING_NAME,
+                                          NM_SETTING_TUN_SETTING_NAME,
                                           "NMDeviceModem",
                                           "NMDeviceBt"};
 static const int   device_sort_order_len = G_N_ELEMENTS(device_sort_order);
