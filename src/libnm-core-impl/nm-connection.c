@@ -3184,6 +3184,8 @@ nm_connection_get_virtual_device_description(NMConnection *connection)
         display_type = _("IP Tunnel");
     else if (nm_streq(type, NM_SETTING_WIREGUARD_SETTING_NAME))
         display_type = _("WireGuard");
+    else if (nm_streq(type, NM_SETTING_TUN_SETTING_NAME))
+        display_type = _("TUN/TAP");
 
     if (!iface || !display_type)
         return NULL;
