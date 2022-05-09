@@ -14,12 +14,12 @@
  * certain buffer sizes.
  *
  * The use of these defines is to get favorable allocation sequences.
- * For example, nm_str_buf_init() asks for an initial allocation size. Note that
+ * For example, NM_STR_BUF_INIT() asks for an initial allocation size. Note that
  * it reserves the exactly requested amount, under the assumption that the
  * user may know how many bytes will be required. However, often the caller
  * doesn't know in advance, and NMStrBuf grows exponentially by calling
  * nm_utils_get_next_realloc_size().
- * Imagine you call nm_str_buf_init() with an initial buffer size 100, and you
+ * Imagine you call NM_STR_BUF_INIT() with an initial buffer size 100, and you
  * add one character at a time. Then the first reallocation will increase the
  * buffer size only from 100 to 104.
  * If you however start with an initial buffer size of 104, then the next reallocation
