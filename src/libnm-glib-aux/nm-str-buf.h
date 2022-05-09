@@ -26,6 +26,7 @@ typedef struct _NMStrBuf {
     };
 
     bool _priv_do_bzero_mem;
+    bool _priv_malloced;
 } NMStrBuf;
 
 /*****************************************************************************/
@@ -36,28 +37,55 @@ _nm_str_buf_assert(const NMStrBuf *strbuf)
     nm_assert(strbuf);
     nm_assert((!!strbuf->_priv_str) == (strbuf->_priv_allocated > 0));
     nm_assert(strbuf->_priv_len <= strbuf->_priv_allocated);
+    nm_assert(!strbuf->_priv_malloced || strbuf->_priv_str);
+}
+
+static inline NMStrBuf
+NM_STR_BUF_INIT_FULL(char    *str,
+                     gsize    len,
+                     gsize    allocated,
+                     gboolean malloced,
+                     gboolean do_bzero_mem)
+{
+    NMStrBuf strbuf = {
+        ._priv_str          = allocated > 0 ? str : NULL,
+        ._priv_allocated    = allocated,
+        ._priv_len          = len,
+        ._priv_do_bzero_mem = do_bzero_mem,
+        ._priv_malloced     = allocated > 0 && malloced,
+    };
+
+    _nm_str_buf_assert(&strbuf);
+
+    return strbuf;
 }
 
 static inline NMStrBuf
 NM_STR_BUF_INIT(gsize allocated, gboolean do_bzero_mem)
 {
-    NMStrBuf strbuf = {
-        ._priv_str          = allocated ? g_malloc(allocated) : NULL,
-        ._priv_allocated    = allocated,
-        ._priv_len          = 0,
-        ._priv_do_bzero_mem = do_bzero_mem,
-    };
-
-    return strbuf;
+    return NM_STR_BUF_INIT_FULL(allocated > 0 ? g_malloc(allocated) : NULL,
+                                0,
+                                allocated,
+                                allocated > 0,
+                                do_bzero_mem);
 }
 
-static inline void
-nm_str_buf_init(NMStrBuf *strbuf, gsize len, bool do_bzero_mem)
-{
-    nm_assert(strbuf);
-    *strbuf = NM_STR_BUF_INIT(len, do_bzero_mem);
-    _nm_str_buf_assert(strbuf);
-}
+#define NM_STR_BUF_INIT_A(size, do_bzero_mem)                                               \
+    NM_STR_BUF_INIT_FULL(                                                                   \
+        g_alloca(size),                                                                     \
+        0,                                                                                  \
+        NM_STATIC_ASSERT_EXPR_1((size) > 0 && (size) <= NM_UTILS_GET_NEXT_REALLOC_SIZE_488) \
+            ? (size)                                                                        \
+            : 0,                                                                            \
+        FALSE,                                                                              \
+        (do_bzero_mem));
+
+#define NM_STR_BUF_INIT_ARR(arr, do_bzero_mem)                                                    \
+    NM_STR_BUF_INIT_FULL((arr),                                                                   \
+                         0,                                                                       \
+                         NM_STATIC_ASSERT_EXPR_1(sizeof(arr) > sizeof(char *)) ? sizeof(arr) : 0, \
+                         FALSE,                                                                   \
+                         (do_bzero_mem));
 
 void _nm_str_buf_ensure_size(NMStrBuf *strbuf, gsize new_size, gboolean reserve_exact);
 
@@ -359,10 +387,10 @@ static inline gboolean
 nm_str_buf_is_initalized(NMStrBuf *strbuf)
 {
     nm_assert(strbuf);
-#if NM_MORE_ASSERTS
-    if (strbuf->_priv_str)
-        _nm_str_buf_assert(strbuf);
-#endif
+    if (NM_MORE_ASSERTS > 0) {
+        if (strbuf->_priv_str)
+            _nm_str_buf_assert(strbuf);
+    }
     return !!strbuf->_priv_str;
 }
 
@@ -463,9 +491,11 @@ nm_str_buf_get_char(const NMStrBuf *strbuf, gsize index)
  * Returns: (transfer full): the string of the buffer
  *   which must be freed by the caller. The @strbuf
  *   is afterwards in undefined state, though it can be
- *   reused after nm_str_buf_init().
- *   Note that if no string is allocated yet (after nm_str_buf_init() with
- *   length zero), this will return %NULL. */
+ *   reused after resetting with NM_STR_BUF_INIT().
+ *   Note that if no string is allocated yet (after NM_STR_BUF_INIT() with
+ *   length zero), this will return %NULL.
+ *
+ *   If the buffer was not malloced before, it will be malloced now. */
 static inline char *
 nm_str_buf_finalize(NMStrBuf *strbuf, gsize *out_len)
 {
@@ -475,6 +505,16 @@ nm_str_buf_finalize(NMStrBuf *strbuf, gsize *out_len)
 
     if (!strbuf->_priv_str)
         return NULL;
+
+    if (!strbuf->_priv_malloced) {
+        char *str = g_steal_pointer(&strbuf->_priv_str);
+        char *result;
+
+        result = g_strndup(str, strbuf->_priv_len);
+        if (strbuf->_priv_do_bzero_mem)
+            nm_explicit_bzero(str, strbuf->_priv_len);
+        return result;
+    }
 
     nm_str_buf_maybe_expand(strbuf, 1, TRUE);
     strbuf->_priv_str[strbuf->_priv_len] = '\0';
@@ -507,7 +547,7 @@ nm_str_buf_finalize_to_gbytes(NMStrBuf *strbuf)
  *
  * Frees the associated memory of @strbuf. The buffer
  * afterwards is in undefined state, but can be re-initialized
- * with nm_str_buf_init().
+ * with NM_STR_BUF_INIT().
  */
 static inline void
 nm_str_buf_destroy(NMStrBuf *strbuf)
@@ -517,7 +557,8 @@ nm_str_buf_destroy(NMStrBuf *strbuf)
     _nm_str_buf_assert(strbuf);
     if (strbuf->_priv_do_bzero_mem)
         nm_explicit_bzero(strbuf->_priv_str, strbuf->_priv_len);
-    g_free(strbuf->_priv_str);
+    if (strbuf->_priv_malloced)
+        g_free(strbuf->_priv_str);
 
     /* the buffer is in invalid state afterwards, however, we clear it
      * so far, that nm_auto_str_buf is happy when calling

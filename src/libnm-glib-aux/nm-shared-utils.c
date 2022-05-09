@@ -2996,7 +2996,7 @@ nm_utils_buf_utf8safe_unescape(const char             *str,
         return str;
     }
 
-    nm_str_buf_init(&strbuf, len + 1u, FALSE);
+    strbuf = NM_STR_BUF_INIT(len + 1u, FALSE);
 
     nm_str_buf_append_len(&strbuf, str, s - str);
     str = s;
@@ -3160,7 +3160,7 @@ nm_utils_buf_utf8safe_escape(gconstpointer           buf,
             return str;
     }
 
-    nm_str_buf_init(&strbuf, buflen + 5, NM_FLAGS_HAS(flags, NM_UTILS_STR_UTF8_SAFE_FLAG_SECRET));
+    strbuf = NM_STR_BUF_INIT(buflen + 5, NM_FLAGS_HAS(flags, NM_UTILS_STR_UTF8_SAFE_FLAG_SECRET));
 
     s = str;
     do {
@@ -5808,10 +5808,22 @@ _nm_str_buf_ensure_size(NMStrBuf *strbuf, gsize new_size, gboolean reserve_exact
         new_size = nm_utils_get_next_realloc_size(!strbuf->_priv_do_bzero_mem, new_size);
     }
 
-    strbuf->_priv_str       = nm_secret_mem_realloc(strbuf->_priv_str,
-                                              strbuf->_priv_do_bzero_mem,
-                                              strbuf->_priv_allocated,
-                                              new_size);
+    if (strbuf->_priv_malloced) {
+        strbuf->_priv_str = nm_secret_mem_realloc(strbuf->_priv_str,
+                                                  strbuf->_priv_do_bzero_mem,
+                                                  strbuf->_priv_allocated,
+                                                  new_size);
+    } else {
+        char *old = strbuf->_priv_str;
+
+        strbuf->_priv_str = g_malloc(new_size);
+        if (strbuf->_priv_len > 0) {
+            memcpy(strbuf->_priv_str, old, strbuf->_priv_len);
+            if (strbuf->_priv_do_bzero_mem)
+                nm_explicit_bzero(old, strbuf->_priv_len);
+        }
+        strbuf->_priv_malloced = TRUE;
+    }
     strbuf->_priv_allocated = new_size;
 }
 

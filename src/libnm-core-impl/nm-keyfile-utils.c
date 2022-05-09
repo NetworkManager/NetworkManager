@@ -210,7 +210,7 @@ nm_keyfile_plugin_kf_set_integer_list_uint(GKeyFile    *kf,
     g_return_if_fail(group && group[0]);
     g_return_if_fail(key && key[0]);
 
-    nm_str_buf_init(&strbuf, length * 4u + 2u, FALSE);
+    strbuf = NM_STR_BUF_INIT(length * 4u + 2u, FALSE);
     for (i = 0; i < length; i++)
         nm_str_buf_append_printf(&strbuf, "%u;", data[i]);
     nm_keyfile_plugin_kf_set_value(kf, group, key, nm_str_buf_get_str(&strbuf));
@@ -231,7 +231,7 @@ nm_keyfile_plugin_kf_set_integer_list_uint8(GKeyFile     *kf,
     g_return_if_fail(group && group[0]);
     g_return_if_fail(key && key[0]);
 
-    nm_str_buf_init(&strbuf, length * 4u + 2u, FALSE);
+    strbuf = NM_STR_BUF_INIT(length * 4u + 2u, FALSE);
     for (i = 0; i < length; i++)
         nm_str_buf_append_printf(&strbuf, "%u;", (guint) data[i]);
     nm_keyfile_plugin_kf_set_value(kf, group, key, nm_str_buf_get_str(&strbuf));
@@ -542,7 +542,7 @@ _keyfile_key_encode(const char *name, char **out_to_free)
     len = i + strlen(&name[i]);
     nm_assert(len == strlen(name));
 
-    nm_str_buf_init(&str, len + 15u, FALSE);
+    str = NM_STR_BUF_INIT(len + 15u, FALSE);
 
     if (name[0] == ' ') {
         nm_assert(i == 0);
