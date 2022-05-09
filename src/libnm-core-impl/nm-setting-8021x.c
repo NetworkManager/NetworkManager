@@ -3594,9 +3594,13 @@ nm_setting_802_1x_class_init(NMSetting8021xClass *klass)
      *
      * Specifies authentication flags to use in "phase 1" outer
      * authentication using #NMSetting8021xAuthFlags options.
+     *
      * The individual TLS versions can be explicitly disabled. If a certain
      * TLS disable flag is not set, it is up to the supplicant to allow
      * or forbid it. The TLS options map to tls_disable_tlsv1_x settings.
+     * It also allows to set "tls-allow-unsafe-renegotiation" to workaround
+     * authentication servers that don't support RFC 5746 secure authentication.
+     *
      * See the wpa_supplicant documentation for more details.
      *
      * Since: 1.8
