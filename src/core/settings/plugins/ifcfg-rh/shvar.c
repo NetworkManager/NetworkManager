@@ -1328,6 +1328,7 @@ svGetValueEnum(shvarFile *s, const char *key, GType gtype, int *out_value, GErro
     if (!svalue) {
         /* don't touch out_value. The caller is supposed
          * to initialize it with the default value. */
+        errno = ENOENT;
         return TRUE;
     }
 
@@ -1339,10 +1340,12 @@ svGetValueEnum(shvarFile *s, const char *key, GType gtype, int *out_value, GErro
                     err_token,
                     svalue,
                     key);
+        errno = EINVAL;
         return FALSE;
     }
 
     NM_SET_OUT(out_value, value);
+    errno = 0;
     return TRUE;
 }
 
