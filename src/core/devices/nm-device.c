@@ -6585,7 +6585,8 @@ device_link_changed(gpointer user_data)
          * so that it theoretically would also work for NMVpnConnection (although,
          * NMVpnConnection should become like a regular device, akin to NMDevicePpp).
          */
-        if (!nm_device_sys_iface_state_is_external(self))
+        if (priv->state >= NM_DEVICE_STATE_IP_CONFIG && priv->state <= NM_DEVICE_STATE_ACTIVATED
+            && !nm_device_sys_iface_state_is_external(self))
             nm_device_l3cfg_commit(self, NM_L3_CFG_COMMIT_TYPE_REAPPLY, FALSE);
     }
 
