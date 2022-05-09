@@ -2113,6 +2113,12 @@ char *nm_utils_g_slist_strlist_join(const GSList *a, const char *separator);
 
 /*****************************************************************************/
 
+static inline gpointer
+nm_g_array_data(const GArray *arr)
+{
+    return arr ? arr->data : NULL;
+}
+
 static inline guint
 nm_g_array_len(const GArray *arr)
 {
