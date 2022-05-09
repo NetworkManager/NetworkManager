@@ -135,10 +135,13 @@ build_message(NMStrBuf *strbuf, AuditBackend backend, GPtrArray *fields)
 #if HAVE_LIBAUDIT
             if (backend == BACKEND_AUDITD) {
                 if (field->need_encoding) {
-                    gs_free char *value = NULL;
+                    nm_auto_free char *value = NULL;
 
                     value = audit_encode_nv_string(field->name, str, 0);
-                    nm_str_buf_append(strbuf, value);
+                    if (value)
+                        nm_str_buf_append(strbuf, value);
+                    else
+                        nm_str_buf_append_printf(strbuf, "%s=???", field->name);
                 } else
                     nm_str_buf_append_printf(strbuf, "%s=%s", field->name, str);
                 continue;
