@@ -216,7 +216,7 @@ nm_ether_addr_equal(const NMEtherAddr *a, const NMEtherAddr *b)
 
 typedef struct {
     union {
-        guint8          addr_ptr[1];
+        guint8          addr_ptr[sizeof(struct in6_addr)];
         in_addr_t       addr4;
         struct in_addr  addr4_struct;
         struct in6_addr addr6;

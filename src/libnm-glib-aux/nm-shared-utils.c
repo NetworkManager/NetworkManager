@@ -37,6 +37,13 @@ const void *const _NM_PTRARRAY_EMPTY[1] = {NULL};
 
 const NMIPAddr nm_ip_addr_zero = {};
 
+/* We use _nm_alignas(NMIPAddr). Ensure that this struct has the same
+ * alignment as in_addr_t and struct in6_addr. */
+G_STATIC_ASSERT(_nm_alignof(NMIPAddr) == 4);
+G_STATIC_ASSERT(_nm_alignof(in_addr_t) == 4);
+G_STATIC_ASSERT(_nm_alignof(struct in_addr) == 4);
+G_STATIC_ASSERT(_nm_alignof(struct in6_addr) == 4);
+
 /* this initializes a struct in_addr/in6_addr and allows for untrusted
  * arguments (like unsuitable @addr_family or @src_len). It's almost safe
  * in the sense that it verifies input arguments strictly. Also, it

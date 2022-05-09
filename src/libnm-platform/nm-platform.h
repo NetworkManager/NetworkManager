@@ -333,6 +333,9 @@ typedef enum {
      * should be configured. */             \
     bool a_force_commit : 1;                                                                 \
                                                                                              \
+    /* Don't have a bitfield as last field in __NMPlatformIPAddress_COMMON. It would then
+     * be unclear how the following fields get merged. We could also use a zero bitfield,
+     * but instead we just have there the uint8 field. */    \
     guint8 plen;                                                                             \
     ;
 
@@ -343,10 +346,7 @@ typedef enum {
  **/
 typedef struct {
     __NMPlatformIPAddress_COMMON;
-    union {
-        guint8  address_ptr[1];
-        guint32 __dummy_for_32bit_alignment;
-    };
+    _nm_alignas(NMIPAddr) guint8 address_ptr[];
 } NMPlatformIPAddress;
 
 /**
@@ -358,11 +358,15 @@ struct _NMPlatformIP4Address {
 
     /* Whether the address is ready to be configured. By default, an address is, but this
      * flag may indicate that the address is just for tracking purpose only, but the ACD
-     * state is not yet ready for the address to be configured. */
+     * state is not yet ready for the address to be configured.
+     *
+     * This bit fits actually in an alignment gap between __NMPlatformIPAddress_COMMON and
+     * "address" field. Usually "address" must be the first field after __NMPlatformIPAddress_COMMON,
+     * but there is a gap. We have a static assertion that checks this, so all is good. */
     bool a_acd_not_ready : 1;
 
     /* The local address IFA_LOCAL. */
-    in_addr_t address;
+    _nm_alignas(NMIPAddr) in_addr_t address;
 
     /* The IFA_ADDRESS PTP peer address. This field is rather important, because
      * it constitutes the identifier for the IPv4 address (e.g. you can add two
@@ -390,7 +394,7 @@ struct _NMPlatformIP4Address {
  **/
 struct _NMPlatformIP6Address {
     __NMPlatformIPAddress_COMMON;
-    struct in6_addr address;
+    _nm_alignas(NMIPAddr) struct in6_addr address;
     struct in6_addr peer_address;
 };
 
@@ -526,16 +530,16 @@ typedef union {
      *
      * This is not the original type, if type_coerced is 0 then
      * it means RTN_UNSPEC otherwise the type value is preserved.
-     * */                                                                          \
+     */                                                                          \
+    /* Don't have a bitfield as last field in __NMPlatformIPAddress_COMMON. It would then
+     * be unclear how the following fields get merged. We could also use a zero bitfield,
+     * but instead we just have there the uint8 field. */ \
     guint8 type_coerced;                                                                  \
     ;
 
 typedef struct {
     __NMPlatformIPRoute_COMMON;
-    union {
-        guint8  network_ptr[1];
-        guint32 __dummy_for_32bit_alignment;
-    };
+    _nm_alignas(NMIPAddr) guint8 network_ptr[];
 } NMPlatformIPRoute;
 
 #define NM_PLATFORM_IP_ROUTE_CAST(route) \
