@@ -435,7 +435,7 @@ nm_bridge_vlan_to_str(const NMBridgeVlan *vlan, GError **error)
      * future if more parameters are added to the object that could
      * make it invalid. */
 
-    nm_str_buf_init(&string, NM_UTILS_GET_NEXT_REALLOC_SIZE_32, FALSE);
+    string = NM_STR_BUF_INIT(NM_UTILS_GET_NEXT_REALLOC_SIZE_32, FALSE);
 
     if (vlan->vid_start == vlan->vid_end)
         nm_str_buf_append_printf(&string, "%u", vlan->vid_start);
