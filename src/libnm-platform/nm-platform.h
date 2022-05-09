@@ -2187,42 +2187,12 @@ gboolean nm_platform_ip_address_sync(NMPlatform *self,
                                      GPtrArray  *known_addresses,
                                      GPtrArray  *addresses_prune);
 
-GPtrArray *nm_platform_ip_address_get_prune_list(NMPlatform *self,
-                                                 int         addr_family,
-                                                 int         ifindex,
-                                                 gboolean    exclude_ipv6_temporary_addrs);
-
-static inline gboolean
-_nm_platform_ip_address_sync(NMPlatform *self,
-                             int         addr_family,
-                             int         ifindex,
-                             GPtrArray  *known_addresses,
-                             gboolean    full_sync)
-{
-    gs_unref_ptrarray GPtrArray *addresses_prune = NULL;
-
-    addresses_prune = nm_platform_ip_address_get_prune_list(self, addr_family, ifindex, !full_sync);
-    return nm_platform_ip_address_sync(self,
-                                       addr_family,
-                                       ifindex,
-                                       known_addresses,
-                                       addresses_prune);
-}
-
-static inline gboolean
-nm_platform_ip4_address_sync(NMPlatform *self, int ifindex, GPtrArray *known_addresses)
-{
-    return _nm_platform_ip_address_sync(self, AF_INET, ifindex, known_addresses, TRUE);
-}
-
-static inline gboolean
-nm_platform_ip6_address_sync(NMPlatform *self,
-                             int         ifindex,
-                             GPtrArray  *known_addresses,
-                             gboolean    full_sync)
-{
-    return _nm_platform_ip_address_sync(self, AF_INET6, ifindex, known_addresses, full_sync);
-}
+GPtrArray *
+nm_platform_ip_address_get_prune_list(NMPlatform            *self,
+                                      int                    addr_family,
+                                      int                    ifindex,
+                                      const struct in6_addr *ipv6_temporary_addr_prefixes_keep,
+                                      guint                  ipv6_temporary_addr_prefixes_keep_len);
 
 gboolean nm_platform_ip_address_flush(NMPlatform *self, int addr_family, int ifindex);
 
