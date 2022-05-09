@@ -430,60 +430,6 @@ typedef union {
 #define __NMPlatformIPRoute_COMMON                                                        \
     __NMPlatformObjWithIfindex_COMMON;                                                    \
                                                                                           \
-    /* The NMIPConfigSource. For routes that we receive from cache this corresponds
-     * to the rtm_protocol field (and is one of the NM_IP_CONFIG_SOURCE_RTPROT_* values).
-     * When adding a route, the source will be coerced to the protocol using
-     * nmp_utils_ip_config_source_coerce_to_rtprot().
-     *
-     * rtm_protocol is part of the primary key of an IPv4 route (meaning, you can add
-     * two IPv4 routes that only differ in their rtm_protocol. For IPv6, that is not
-     * the case.
-     *
-     * When deleting an IPv4/IPv6 route, the rtm_protocol field must match (even
-     * if it is not part of the primary key for IPv6) -- unless rtm_protocol is set
-     * to zero, in which case the first matching route (with proto ignored) is deleted. */       \
-    NMIPConfigSource rt_source;                                                           \
-                                                                                          \
-    guint8 plen;                                                                          \
-                                                                                          \
-    /* RTA_METRICS:
-     *
-     * For IPv4 routes, these properties are part of their
-     * ID (meaning: you can add otherwise identical IPv4 routes that
-     * only differ by the metric property).
-     * On the other hand, for IPv6 you cannot add two IPv6 routes that only differ
-     * by an RTA_METRICS property.
-     *
-     * When deleting a route, kernel seems to ignore the RTA_METRICS properties.
-     * That is a problem/bug for IPv4 because you cannot explicitly select which
-     * route to delete. Kernel just picks the first. See rh#1475642. */                                                                       \
-                                                                                          \
-    /* RTA_METRICS.RTAX_LOCK (iproute2: "lock" arguments) */                              \
-    bool lock_window : 1;                                                                 \
-    bool lock_cwnd : 1;                                                                   \
-    bool lock_initcwnd : 1;                                                               \
-    bool lock_initrwnd : 1;                                                               \
-    bool lock_mtu : 1;                                                                    \
-                                                                                          \
-    /* if TRUE, the "metric" field is interpreted as an offset that is added to a default
-     * metric. For example, form a DHCP lease we don't know the actually used metric, because
-     * that is determined by upper layers (the configuration). However, we have a default
-     * metric that should be used. So we set "metric_any" to %TRUE, which means to use
-     * the default metric. However, we still treat the "metric" field as an offset that
-     * will be added to the default metric. In most case, you want that "metric" is zero
-     * when setting "metric_any". */ \
-    bool metric_any : 1;                                                                  \
-                                                                                          \
-    /* like "metric_any", the table is determined by other layers of the code.
-     * This field overrides "table_coerced" field. If "table_any" is true, then
-     * the "table_coerced" field is ignored (unlike for the metric). */            \
-    bool table_any : 1;                                                                   \
-    /* Meta flags not honored by NMPlatform (netlink code). Instead, they can be
-     * used by the upper layers which use NMPlatformIPRoute to track routes that
-     * should be configured. */          \
-    /* Whether the route should be committed even if it was removed externally. */        \
-    bool r_force_commit : 1;                                                              \
-                                                                                          \
     /* rtnh_flags
      *
      * Routes with rtm_flags RTM_F_CLONED are hidden by platform and
@@ -525,16 +471,69 @@ typedef union {
      * zero (RT_TABLE_UNSPEC) are swapped, so that the default is the main
      * table. Use nm_platform_route_table_coerce()/nm_platform_route_table_uncoerce(). */                                                              \
     guint32 table_coerced;                                                                \
+    /* The NMIPConfigSource. For routes that we receive from cache this corresponds
+     * to the rtm_protocol field (and is one of the NM_IP_CONFIG_SOURCE_RTPROT_* values).
+     * When adding a route, the source will be coerced to the protocol using
+     * nmp_utils_ip_config_source_coerce_to_rtprot().
+     *
+     * rtm_protocol is part of the primary key of an IPv4 route (meaning, you can add
+     * two IPv4 routes that only differ in their rtm_protocol. For IPv6, that is not
+     * the case.
+     *
+     * When deleting an IPv4/IPv6 route, the rtm_protocol field must match (even
+     * if it is not part of the primary key for IPv6) -- unless rtm_protocol is set
+     * to zero, in which case the first matching route (with proto ignored) is deleted. */       \
+    NMIPConfigSource rt_source;                                                           \
+                                                                                          \
+    /* RTA_METRICS:
+     *
+     * For IPv4 routes, these properties are part of their
+     * ID (meaning: you can add otherwise identical IPv4 routes that
+     * only differ by the metric property).
+     * On the other hand, for IPv6 you cannot add two IPv6 routes that only differ
+     * by an RTA_METRICS property.
+     *
+     * When deleting a route, kernel seems to ignore the RTA_METRICS properties.
+     * That is a problem/bug for IPv4 because you cannot explicitly select which
+     * route to delete. Kernel just picks the first. See rh#1475642. */                                                                       \
+                                                                                          \
+    /* RTA_METRICS.RTAX_LOCK (iproute2: "lock" arguments) */                              \
+    bool lock_window : 1;                                                                 \
+    bool lock_cwnd : 1;                                                                   \
+    bool lock_initcwnd : 1;                                                               \
+    bool lock_initrwnd : 1;                                                               \
+    bool lock_mtu : 1;                                                                    \
+                                                                                          \
+    /* if TRUE, the "metric" field is interpreted as an offset that is added to a default
+     * metric. For example, form a DHCP lease we don't know the actually used metric, because
+     * that is determined by upper layers (the configuration). However, we have a default
+     * metric that should be used. So we set "metric_any" to %TRUE, which means to use
+     * the default metric. However, we still treat the "metric" field as an offset that
+     * will be added to the default metric. In most case, you want that "metric" is zero
+     * when setting "metric_any". */ \
+    bool metric_any : 1;                                                                  \
+                                                                                          \
+    /* like "metric_any", the table is determined by other layers of the code.
+     * This field overrides "table_coerced" field. If "table_any" is true, then
+     * the "table_coerced" field is ignored (unlike for the metric). */            \
+    bool table_any : 1;                                                                   \
+    /* Meta flags not honored by NMPlatform (netlink code). Instead, they can be
+     * used by the upper layers which use NMPlatformIPRoute to track routes that
+     * should be configured. */          \
+    /* Whether the route should be committed even if it was removed externally. */        \
+    bool r_force_commit : 1;                                                              \
                                                                                           \
     /* rtm_type.
      *
      * This is not the original type, if type_coerced is 0 then
      * it means RTN_UNSPEC otherwise the type value is preserved.
      */                                                                          \
+    guint8 type_coerced;                                                                  \
+                                                                                          \
     /* Don't have a bitfield as last field in __NMPlatformIPAddress_COMMON. It would then
      * be unclear how the following fields get merged. We could also use a zero bitfield,
      * but instead we just have there the uint8 field. */ \
-    guint8 type_coerced;                                                                  \
+    guint8 plen;                                                                          \
     ;
 
 typedef struct {
