@@ -971,7 +971,7 @@ nm_dhcp_client_handle_event(gpointer      unused,
         else if (NM_IN_STRSET_ASCII_CASE(reason, "fail", "abend"))
             new_state = NM_DHCP_STATE_FAIL;
         else if (NM_IN_STRSET_ASCII_CASE(reason, "preinit"))
-            new_state = NM_DHCP_STATE_NOOP;
+            return TRUE;
         else
             new_state = NM_DHCP_STATE_UNKNOWN;
     }
