@@ -1005,23 +1005,23 @@ nm_dhcp_client_server_id_is_rejected(NMDhcpClient *self, gconstpointer addr)
     /* IPv6 not implemented yet */
     nm_assert(priv->config.addr_family == AF_INET);
 
-    if (!priv->config.reject_servers || !priv->config.reject_servers[0])
-        return FALSE;
+    if (priv->config.reject_servers) {
+        for (i = 0; priv->config.reject_servers[i]; i++) {
+            in_addr_t r_addr;
+            in_addr_t mask;
+            int       r_prefix;
 
-    for (i = 0; priv->config.reject_servers[i]; i++) {
-        in_addr_t r_addr;
-        in_addr_t mask;
-        int       r_prefix;
+            if (!nm_utils_parse_inaddr_prefix_bin(AF_INET,
+                                                  priv->config.reject_servers[i],
+                                                  NULL,
+                                                  &r_addr,
+                                                  &r_prefix))
+                nm_assert_not_reached();
 
-        if (!nm_utils_parse_inaddr_prefix_bin(AF_INET,
-                                              priv->config.reject_servers[i],
-                                              NULL,
-                                              &r_addr,
-                                              &r_prefix))
-            nm_assert_not_reached();
-        mask = _nm_utils_ip4_prefix_to_netmask(r_prefix < 0 ? 32 : r_prefix);
-        if ((addr4 & mask) == (r_addr & mask))
-            return TRUE;
+            mask = _nm_utils_ip4_prefix_to_netmask(r_prefix < 0 ? 32 : r_prefix);
+            if ((addr4 & mask) == (r_addr & mask))
+                return TRUE;
+        }
     }
 
     return FALSE;
@@ -1049,7 +1049,7 @@ config_init(NMDhcpClientConfig *config, const NMDhcpClientConfig *src)
     config->hostname        = g_strdup(config->hostname);
     config->mud_url         = g_strdup(config->mud_url);
 
-    config->reject_servers = (const char *const *) nm_strv_dup(config->reject_servers, -1, TRUE);
+    config->reject_servers = nm_strv_dup_packed(config->reject_servers, -1);
 
     if (config->addr_family == AF_INET) {
         config->v4.last_address = g_strdup(config->v4.last_address);
@@ -1110,8 +1110,7 @@ config_clear(NMDhcpClientConfig *config)
     nm_clear_g_free((gpointer *) &config->anycast_address);
     nm_clear_g_free((gpointer *) &config->hostname);
     nm_clear_g_free((gpointer *) &config->mud_url);
-
-    nm_clear_pointer((gpointer *) &config->reject_servers, g_strfreev);
+    nm_clear_g_free((gpointer *) &config->reject_servers);
 
     if (config->addr_family == AF_INET) {
         nm_clear_g_free((gpointer *) &config->v4.last_address);
