@@ -230,8 +230,7 @@ typedef struct {
 
 GType nm_dhcp_client_get_type(void);
 
-gboolean nm_dhcp_client_start_ip4(NMDhcpClient *self, GError **error);
-gboolean nm_dhcp_client_start_ip6(NMDhcpClient *self, GError **error);
+gboolean nm_dhcp_client_start(NMDhcpClient *self, GError **error);
 
 const NMDhcpClientConfig *nm_dhcp_client_get_config(NMDhcpClient *self);
 

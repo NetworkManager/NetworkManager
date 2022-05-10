@@ -669,53 +669,44 @@ l3_cfg_notify_cb(NML3Cfg *l3cfg, const NML3ConfigNotifyData *notify_data, NMDhcp
 }
 
 gboolean
-nm_dhcp_client_start_ip4(NMDhcpClient *self, GError **error)
-{
-    NMDhcpClientPrivate *priv;
-
-    g_return_val_if_fail(NM_IS_DHCP_CLIENT(self), FALSE);
-
-    priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
-    g_return_val_if_fail(priv->pid == -1, FALSE);
-    g_return_val_if_fail(priv->config.addr_family == AF_INET, FALSE);
-    g_return_val_if_fail(priv->config.uuid, FALSE);
-
-    _no_lease_timeout_schedule(self);
-
-    return NM_DHCP_CLIENT_GET_CLASS(self)->ip4_start(self, error);
-}
-
-gboolean
-nm_dhcp_client_start_ip6(NMDhcpClient *self, GError **error)
+nm_dhcp_client_start(NMDhcpClient *self, GError **error)
 {
     NMDhcpClientPrivate        *priv;
     gs_unref_bytes GBytes      *own_client_id = NULL;
-    const NMPlatformIP6Address *addr;
+    const NMPlatformIP6Address *addr          = NULL;
+    int                         IS_IPv4;
 
     g_return_val_if_fail(NM_IS_DHCP_CLIENT(self), FALSE);
+
     priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
 
     g_return_val_if_fail(priv->pid == -1, FALSE);
-    g_return_val_if_fail(priv->config.addr_family == AF_INET6, FALSE);
     g_return_val_if_fail(priv->config.uuid, FALSE);
-    g_return_val_if_fail(!priv->effective_client_id, FALSE);
+    nm_assert(!priv->effective_client_id);
 
-    if (!priv->config.v6.enforce_duid)
-        own_client_id = NM_DHCP_CLIENT_GET_CLASS(self)->get_duid(self);
+    IS_IPv4 = NM_IS_IPv4(priv->config.addr_family);
 
-    nm_dhcp_client_set_effective_client_id(self, own_client_id ?: priv->config.client_id);
+    if (!IS_IPv4) {
+        if (!priv->config.v6.enforce_duid)
+            own_client_id = NM_DHCP_CLIENT_GET_CLASS(self)->get_duid(self);
 
-    addr = ipv6_lladdr_find(self);
-    if (!addr) {
-        _LOGD("waiting for IPv6LL address");
-        priv->l3cfg_notify.wait_ll_address = TRUE;
-        connect_l3cfg_notify(self);
-        priv->ipv6_lladdr_timeout_source =
-            nm_g_timeout_add_seconds_source(10, ipv6_lladdr_timeout, self);
-        return TRUE;
+        nm_dhcp_client_set_effective_client_id(self, own_client_id ?: priv->config.client_id);
+
+        addr = ipv6_lladdr_find(self);
+        if (!addr) {
+            _LOGD("waiting for IPv6LL address");
+            priv->l3cfg_notify.wait_ll_address = TRUE;
+            connect_l3cfg_notify(self);
+            priv->ipv6_lladdr_timeout_source =
+                nm_g_timeout_add_seconds_source(10, ipv6_lladdr_timeout, self);
+            return TRUE;
+        }
     }
 
     _no_lease_timeout_schedule(self);
+
+    if (IS_IPv4)
+        return NM_DHCP_CLIENT_GET_CLASS(self)->ip4_start(self, error);
 
     return NM_DHCP_CLIENT_GET_CLASS(self)->ip6_start(self, &addr->address, error);
 }
