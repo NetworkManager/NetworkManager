@@ -362,15 +362,6 @@ _bond_get_option_normalized(NMSettingBond *self, const char *option, gboolean ge
     return _bond_get_option_or_default(self, option);
 }
 
-const char *
-nm_setting_bond_get_option_or_default(NMSettingBond *self, const char *option)
-{
-    g_return_val_if_fail(NM_IS_SETTING_BOND(self), NULL);
-    g_return_val_if_fail(option, NULL);
-
-    return _bond_get_option_normalized(self, option, FALSE);
-}
-
 static int
 _atoi(const char *value)
 {
