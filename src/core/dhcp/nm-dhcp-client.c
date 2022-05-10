@@ -74,18 +74,18 @@ G_STATIC_ASSERT(!(((pid_t) -1) > 0));
 
 /*****************************************************************************/
 
-NM_UTILS_LOOKUP_STR_DEFINE(nm_dhcp_state_to_string,
-                           NMDhcpState,
-                           NM_UTILS_LOOKUP_DEFAULT(NULL),
-                           NM_UTILS_LOOKUP_STR_ITEM(NM_DHCP_STATE_BOUND, "bound"),
-                           NM_UTILS_LOOKUP_STR_ITEM(NM_DHCP_STATE_DONE, "done"),
-                           NM_UTILS_LOOKUP_STR_ITEM(NM_DHCP_STATE_EXPIRE, "expire"),
-                           NM_UTILS_LOOKUP_STR_ITEM(NM_DHCP_STATE_EXTENDED, "extended"),
-                           NM_UTILS_LOOKUP_STR_ITEM(NM_DHCP_STATE_FAIL, "fail"),
-                           NM_UTILS_LOOKUP_STR_ITEM(NM_DHCP_STATE_NOOP, "noop"),
-                           NM_UTILS_LOOKUP_STR_ITEM(NM_DHCP_STATE_TERMINATED, "terminated"),
-                           NM_UTILS_LOOKUP_STR_ITEM(NM_DHCP_STATE_TIMEOUT, "timeout"),
-                           NM_UTILS_LOOKUP_STR_ITEM(NM_DHCP_STATE_UNKNOWN, "unknown"), );
+NM_UTILS_LOOKUP_STR_DEFINE(nm_dhcp_client_event_type_to_string,
+                           NMDhcpClientEventType,
+                           NM_UTILS_LOOKUP_DEFAULT_NM_ASSERT(NULL),
+                           NM_UTILS_LOOKUP_STR_ITEM(NM_DHCP_CLIENT_EVENT_TYPE_BOUND, "bound"),
+                           NM_UTILS_LOOKUP_STR_ITEM(NM_DHCP_CLIENT_EVENT_TYPE_EXPIRE, "expire"),
+                           NM_UTILS_LOOKUP_STR_ITEM(NM_DHCP_CLIENT_EVENT_TYPE_EXTENDED, "extended"),
+                           NM_UTILS_LOOKUP_STR_ITEM(NM_DHCP_CLIENT_EVENT_TYPE_FAIL, "fail"),
+                           NM_UTILS_LOOKUP_STR_ITEM(NM_DHCP_CLIENT_EVENT_TYPE_TERMINATED,
+                                                    "terminated"),
+                           NM_UTILS_LOOKUP_STR_ITEM(NM_DHCP_CLIENT_EVENT_TYPE_TIMEOUT, "timeout"),
+                           NM_UTILS_LOOKUP_STR_ITEM(NM_DHCP_CLIENT_EVENT_TYPE_UNSPECIFIED,
+                                                    "unspecified"), );
 
 /*****************************************************************************/
 
@@ -252,6 +252,7 @@ _nm_dhcp_client_notify(NMDhcpClient         *self,
     GHashTable                              *options;
     const int                                IS_IPv4     = NM_IS_IPv4(priv->config.addr_family);
     nm_auto_unref_l3cd const NML3ConfigData *l3cd_merged = NULL;
+    char                                     sbuf1[NM_HASH_OBFUSCATE_PTR_STR_BUF_SIZE];
 
     nm_assert(NM_IN_SET(client_event_type,
                         NM_DHCP_CLIENT_EVENT_TYPE_UNSPECIFIED,
@@ -274,6 +275,10 @@ _nm_dhcp_client_notify(NMDhcpClient         *self,
 
     nm_assert(!l3cd || NM_IS_L3_CONFIG_DATA(l3cd));
     nm_assert(!l3cd || nm_l3_config_data_get_dhcp_lease(l3cd, priv->config.addr_family));
+
+    _LOGT("notify: event=%s%s%s",
+          nm_dhcp_client_event_type_to_string(client_event_type),
+          NM_PRINT_FMT_QUOTED2(l3cd, "", ", l3cd=", NM_HASH_OBFUSCATE_PTR_STR(l3cd, sbuf1)));
 
     if (l3cd)
         nm_l3_config_data_seal(l3cd);
@@ -890,7 +895,6 @@ nm_dhcp_client_handle_event(gpointer      unused,
     NMDhcpClientPrivate                    *priv;
     nm_auto_unref_l3cd_init NML3ConfigData *l3cd = NULL;
     NMDhcpClientEventType                   client_event_type;
-    NMDhcpState                             new_state;
     NMPlatformIP6Address                    prefix = {
         0,
     };
@@ -976,50 +980,24 @@ nm_dhcp_client_handle_event(gpointer      unused,
     /* Fail if no valid IP config was received */
     if (reason_is_bound && !l3cd) {
         _LOGW("client bound but IP config not received");
-        new_state = NM_DHCP_STATE_FAIL;
+        client_event_type = NM_DHCP_CLIENT_EVENT_TYPE_FAIL;
     } else {
         if (NM_IN_STRSET_ASCII_CASE(reason, "bound", "bound6", "static"))
-            new_state = NM_DHCP_STATE_BOUND;
+            client_event_type = NM_DHCP_CLIENT_EVENT_TYPE_BOUND;
         else if (NM_IN_STRSET_ASCII_CASE(reason, "renew", "renew6", "reboot", "rebind", "rebind6"))
-            new_state = NM_DHCP_STATE_EXTENDED;
+            client_event_type = NM_DHCP_CLIENT_EVENT_TYPE_EXTENDED;
         else if (NM_IN_STRSET_ASCII_CASE(reason, "timeout"))
-            new_state = NM_DHCP_STATE_TIMEOUT;
+            client_event_type = NM_DHCP_CLIENT_EVENT_TYPE_TIMEOUT;
         else if (NM_IN_STRSET_ASCII_CASE(reason, "nak", "expire", "expire6"))
-            new_state = NM_DHCP_STATE_EXPIRE;
+            client_event_type = NM_DHCP_CLIENT_EVENT_TYPE_EXPIRE;
         else if (NM_IN_STRSET_ASCII_CASE(reason, "end", "stop", "stopped"))
-            new_state = NM_DHCP_STATE_DONE;
+            client_event_type = NM_DHCP_CLIENT_EVENT_TYPE_TERMINATED;
         else if (NM_IN_STRSET_ASCII_CASE(reason, "fail", "abend"))
-            new_state = NM_DHCP_STATE_FAIL;
+            client_event_type = NM_DHCP_CLIENT_EVENT_TYPE_FAIL;
         else if (NM_IN_STRSET_ASCII_CASE(reason, "preinit"))
             return TRUE;
         else
-            new_state = NM_DHCP_STATE_UNKNOWN;
-    }
-
-    switch (new_state) {
-    case NM_DHCP_STATE_UNKNOWN:
-        client_event_type = NM_DHCP_CLIENT_EVENT_TYPE_UNSPECIFIED;
-        break;
-    case NM_DHCP_STATE_BOUND:
-        client_event_type = NM_DHCP_CLIENT_EVENT_TYPE_BOUND;
-        break;
-    case NM_DHCP_STATE_EXTENDED:
-        client_event_type = NM_DHCP_CLIENT_EVENT_TYPE_EXTENDED;
-        break;
-    case NM_DHCP_STATE_TIMEOUT:
-        client_event_type = NM_DHCP_CLIENT_EVENT_TYPE_TIMEOUT;
-        break;
-    case NM_DHCP_STATE_EXPIRE:
-        client_event_type = NM_DHCP_CLIENT_EVENT_TYPE_EXPIRE;
-        break;
-    case NM_DHCP_STATE_FAIL:
-        client_event_type = NM_DHCP_CLIENT_EVENT_TYPE_FAIL;
-        break;
-    case NM_DHCP_STATE_TERMINATED:
-    case NM_DHCP_STATE_DONE:
-    case NM_DHCP_STATE_NOOP:
-        client_event_type = NM_DHCP_CLIENT_EVENT_TYPE_TERMINATED;
-        break;
+            client_event_type = NM_DHCP_CLIENT_EVENT_TYPE_UNSPECIFIED;
     }
 
     _nm_dhcp_client_notify(self, client_event_type, l3cd);

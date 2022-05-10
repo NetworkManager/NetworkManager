@@ -27,18 +27,6 @@
 #define NM_DHCP_CLIENT_NOTIFY "dhcp-notify"
 
 typedef enum {
-    NM_DHCP_STATE_UNKNOWN = 0,
-    NM_DHCP_STATE_NOOP,       /* state is a non operation for NetworkManager */
-    NM_DHCP_STATE_BOUND,      /* new lease */
-    NM_DHCP_STATE_EXTENDED,   /* lease extended */
-    NM_DHCP_STATE_TIMEOUT,    /* timed out contacting server */
-    NM_DHCP_STATE_DONE,       /* client reported it's stopping */
-    NM_DHCP_STATE_EXPIRE,     /* lease expired or NAKed */
-    NM_DHCP_STATE_FAIL,       /* failed for some reason */
-    NM_DHCP_STATE_TERMINATED, /* client is no longer running */
-} NMDhcpState;
-
-typedef enum {
     NM_DHCP_CLIENT_EVENT_TYPE_UNSPECIFIED,
 
     NM_DHCP_CLIENT_EVENT_TYPE_BOUND,
@@ -94,7 +82,7 @@ typedef struct {
     };
 } NMDhcpClientNotifyData;
 
-const char *nm_dhcp_state_to_string(NMDhcpState state);
+const char *nm_dhcp_client_event_type_to_string(NMDhcpClientEventType client_event_type);
 
 /* FIXME(l3cfg:dhcp:config): nm_dhcp_manager_start_ip[46]() has a gazillion of parameters,
  * those get passed on as CONSTRUCT_ONLY properties to the NMDhcpClient. Drop
