@@ -1027,21 +1027,25 @@ nm_dhcp_client_server_id_is_rejected(NMDhcpClient *self, gconstpointer addr)
     return FALSE;
 }
 
+/*****************************************************************************/
+
 static void
 config_init(NMDhcpClientConfig *config, const NMDhcpClientConfig *src)
 {
+    nm_assert(config);
+    nm_assert(src);
+    nm_assert(config != src);
+
     *config = *src;
+
+    /* We must not return before un-aliasing all pointers in @config! */
 
     g_object_ref(config->l3cfg);
 
-    if (config->hwaddr)
-        g_bytes_ref(config->hwaddr);
-    if (config->bcast_hwaddr)
-        g_bytes_ref(config->bcast_hwaddr);
-    if (config->vendor_class_identifier)
-        g_bytes_ref(config->vendor_class_identifier);
-    if (config->client_id)
-        g_bytes_ref(config->client_id);
+    nm_g_bytes_ref(config->hwaddr);
+    nm_g_bytes_ref(config->bcast_hwaddr);
+    nm_g_bytes_ref(config->vendor_class_identifier);
+    nm_g_bytes_ref(config->client_id);
 
     config->iface           = g_strdup(config->iface);
     config->uuid            = g_strdup(config->uuid);
@@ -1051,14 +1055,12 @@ config_init(NMDhcpClientConfig *config, const NMDhcpClientConfig *src)
 
     config->reject_servers = nm_strv_dup_packed(config->reject_servers, -1);
 
-    if (config->addr_family == AF_INET) {
+    if (NM_IS_IPv4(config->addr_family))
         config->v4.last_address = g_strdup(config->v4.last_address);
-    } else if (config->addr_family == AF_INET6) {
+    else {
         config->hwaddr       = NULL;
         config->bcast_hwaddr = NULL;
         config->use_fqdn     = TRUE;
-    } else {
-        nm_assert_not_reached();
     }
 
     if (!config->hostname && config->send_hostname) {
@@ -1116,6 +1118,8 @@ config_clear(NMDhcpClientConfig *config)
         nm_clear_g_free((gpointer *) &config->v4.last_address);
     }
 }
+
+/*****************************************************************************/
 
 int
 nm_dhcp_client_get_addr_family(NMDhcpClient *self)
