@@ -1206,6 +1206,10 @@ dispose(GObject *object)
     nm_clear_g_source_inst(&priv->ipv6_lladdr_timeout_source);
     nm_clear_pointer(&priv->effective_client_id, g_bytes_unref);
 
+    nm_assert(!priv->watch_source);
+    nm_assert(!priv->l3cd);
+    nm_assert(priv->l3cfg_notify.id == 0);
+
     G_OBJECT_CLASS(nm_dhcp_client_parent_class)->dispose(object);
 }
 
