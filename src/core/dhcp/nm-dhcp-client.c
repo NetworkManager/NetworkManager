@@ -89,33 +89,52 @@ NM_UTILS_LOOKUP_STR_DEFINE(nm_dhcp_client_event_type_to_string,
 
 /*****************************************************************************/
 
-static void
-_emit_notify(NMDhcpClient *self, const NMDhcpClientNotifyData *notify_data)
-{
-    g_signal_emit(G_OBJECT(self), signals[SIGNAL_NOTIFY], 0, notify_data);
-}
-
-/*****************************************************************************/
-
-static void
-connect_l3cfg_notify(NMDhcpClient *self)
+int
+nm_dhcp_client_get_addr_family(NMDhcpClient *self)
 {
     NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
-    gboolean             do_connect;
 
-    do_connect = priv->l3cfg_notify.wait_dhcp_commit | priv->l3cfg_notify.wait_ll_address;
+    return priv->config.addr_family;
+}
 
-    if (!do_connect) {
-        nm_clear_g_signal_handler(priv->config.l3cfg, &priv->l3cfg_notify.id);
-        return;
-    }
+const char *
+nm_dhcp_client_get_iface(NMDhcpClient *self)
+{
+    NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
 
-    if (priv->l3cfg_notify.id == 0) {
-        priv->l3cfg_notify.id = g_signal_connect(priv->config.l3cfg,
-                                                 NM_L3CFG_SIGNAL_NOTIFY,
-                                                 G_CALLBACK(l3_cfg_notify_cb),
-                                                 self);
-    }
+    return priv->config.iface;
+}
+
+NMDedupMultiIndex *
+nm_dhcp_client_get_multi_idx(NMDhcpClient *self)
+{
+    NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
+
+    return nm_l3cfg_get_multi_idx(priv->config.l3cfg);
+}
+
+int
+nm_dhcp_client_get_ifindex(NMDhcpClient *self)
+{
+    NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
+
+    return nm_l3cfg_get_ifindex(priv->config.l3cfg);
+}
+
+const NMDhcpClientConfig *
+nm_dhcp_client_get_config(NMDhcpClient *self)
+{
+    NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
+
+    return &priv->config;
+}
+
+GBytes *
+nm_dhcp_client_get_effective_client_id(NMDhcpClient *self)
+{
+    NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
+
+    return priv->effective_client_id;
 }
 
 /*****************************************************************************/
@@ -144,12 +163,35 @@ nm_dhcp_client_set_effective_client_id(NMDhcpClient *self, GBytes *client_id)
               : "default");
 }
 
-const NMDhcpClientConfig *
-nm_dhcp_client_get_config(NMDhcpClient *self)
+/*****************************************************************************/
+
+static void
+_emit_notify(NMDhcpClient *self, const NMDhcpClientNotifyData *notify_data)
+{
+    g_signal_emit(G_OBJECT(self), signals[SIGNAL_NOTIFY], 0, notify_data);
+}
+
+/*****************************************************************************/
+
+static void
+connect_l3cfg_notify(NMDhcpClient *self)
 {
     NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
+    gboolean             do_connect;
 
-    return &priv->config;
+    do_connect = priv->l3cfg_notify.wait_dhcp_commit | priv->l3cfg_notify.wait_ll_address;
+
+    if (!do_connect) {
+        nm_clear_g_signal_handler(priv->config.l3cfg, &priv->l3cfg_notify.id);
+        return;
+    }
+
+    if (priv->l3cfg_notify.id == 0) {
+        priv->l3cfg_notify.id = g_signal_connect(priv->config.l3cfg,
+                                                 NM_L3CFG_SIGNAL_NOTIFY,
+                                                 G_CALLBACK(l3_cfg_notify_cb),
+                                                 self);
+    }
 }
 
 /*****************************************************************************/
@@ -425,23 +467,6 @@ nm_dhcp_client_stop_watch_child(NMDhcpClient *self, pid_t pid)
 }
 
 gboolean
-nm_dhcp_client_start_ip4(NMDhcpClient *self, GError **error)
-{
-    NMDhcpClientPrivate *priv;
-
-    g_return_val_if_fail(NM_IS_DHCP_CLIENT(self), FALSE);
-
-    priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
-    g_return_val_if_fail(priv->pid == -1, FALSE);
-    g_return_val_if_fail(priv->config.addr_family == AF_INET, FALSE);
-    g_return_val_if_fail(priv->config.uuid, FALSE);
-
-    _no_lease_timeout_schedule(self);
-
-    return NM_DHCP_CLIENT_GET_CLASS(self)->ip4_start(self, error);
-}
-
-gboolean
 nm_dhcp_client_accept(NMDhcpClient *self, GError **error)
 {
     NMDhcpClientPrivate *priv;
@@ -644,6 +669,23 @@ l3_cfg_notify_cb(NML3Cfg *l3cfg, const NML3ConfigNotifyData *notify_data, NMDhcp
 }
 
 gboolean
+nm_dhcp_client_start_ip4(NMDhcpClient *self, GError **error)
+{
+    NMDhcpClientPrivate *priv;
+
+    g_return_val_if_fail(NM_IS_DHCP_CLIENT(self), FALSE);
+
+    priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
+    g_return_val_if_fail(priv->pid == -1, FALSE);
+    g_return_val_if_fail(priv->config.addr_family == AF_INET, FALSE);
+    g_return_val_if_fail(priv->config.uuid, FALSE);
+
+    _no_lease_timeout_schedule(self);
+
+    return NM_DHCP_CLIENT_GET_CLASS(self)->ip4_start(self, error);
+}
+
+gboolean
 nm_dhcp_client_start_ip6(NMDhcpClient *self, GError **error)
 {
     NMDhcpClientPrivate        *priv;
@@ -677,6 +719,8 @@ nm_dhcp_client_start_ip6(NMDhcpClient *self, GError **error)
 
     return NM_DHCP_CLIENT_GET_CLASS(self)->ip6_start(self, &addr->address, error);
 }
+
+/*****************************************************************************/
 
 void
 nm_dhcp_client_stop_existing(const char *pid_file, const char *binary_name)
@@ -1117,48 +1161,6 @@ config_clear(NMDhcpClientConfig *config)
     if (config->addr_family == AF_INET) {
         nm_clear_g_free((gpointer *) &config->v4.last_address);
     }
-}
-
-/*****************************************************************************/
-
-int
-nm_dhcp_client_get_addr_family(NMDhcpClient *self)
-{
-    NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
-
-    return priv->config.addr_family;
-}
-
-const char *
-nm_dhcp_client_get_iface(NMDhcpClient *self)
-{
-    NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
-
-    return priv->config.iface;
-}
-
-NMDedupMultiIndex *
-nm_dhcp_client_get_multi_idx(NMDhcpClient *self)
-{
-    NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
-
-    return nm_l3cfg_get_multi_idx(priv->config.l3cfg);
-}
-
-int
-nm_dhcp_client_get_ifindex(NMDhcpClient *self)
-{
-    NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
-
-    return nm_l3cfg_get_ifindex(priv->config.l3cfg);
-}
-
-GBytes *
-nm_dhcp_client_get_effective_client_id(NMDhcpClient *self)
-{
-    NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
-
-    return priv->effective_client_id;
 }
 
 /*****************************************************************************/
