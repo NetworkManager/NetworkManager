@@ -965,8 +965,7 @@ nm_dhcp_client_handle_event(gpointer      unused,
                     str_options,
                     priv->config.v6.info_only);
             }
-        } else
-            g_warn_if_reached();
+        }
 
         if (l3cd) {
             nm_l3_config_data_set_dhcp_lease_from_options(l3cd,
