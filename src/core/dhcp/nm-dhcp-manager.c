@@ -131,8 +131,7 @@ NMDhcpClient *
 nm_dhcp_manager_start_client(NMDhcpManager *self, NMDhcpClientConfig *config, GError **error)
 {
     NMDhcpManagerPrivate         *priv;
-    gs_unref_object NMDhcpClient *client  = NULL;
-    gboolean                      success = FALSE;
+    gs_unref_object NMDhcpClient *client = NULL;
     gsize                         hwaddr_len;
     GType                         gtype;
 
@@ -202,13 +201,7 @@ nm_dhcp_manager_start_client(NMDhcpManager *self, NMDhcpClientConfig *config, GE
      * default outside of NetworkManager API.
      */
 
-    if (config->addr_family == AF_INET) {
-        success = nm_dhcp_client_start_ip4(client, error);
-    } else {
-        success = nm_dhcp_client_start_ip6(client, error);
-    }
-
-    if (!success)
+    if (!nm_dhcp_client_start(client, error))
         return NULL;
 
     return g_steal_pointer(&client);
