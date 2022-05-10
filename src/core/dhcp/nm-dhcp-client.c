@@ -898,7 +898,6 @@ nm_dhcp_client_handle_event(gpointer      unused,
     NMPlatformIP6Address                    prefix = {
         0,
     };
-    gboolean reason_is_bound;
 
     g_return_val_if_fail(NM_IS_DHCP_CLIENT(self), FALSE);
     g_return_val_if_fail(iface != NULL, FALSE);
@@ -918,17 +917,24 @@ nm_dhcp_client_handle_event(gpointer      unused,
     if (NM_IN_STRSET_ASCII_CASE(reason, "preinit"))
         return TRUE;
 
-    reason_is_bound = NM_IN_STRSET_ASCII_CASE(reason,
-                                              "bound",
-                                              "bound6",
-                                              "static",
-                                              "renew",
-                                              "renew6",
-                                              "reboot",
-                                              "rebind",
-                                              "rebind6");
+    if (NM_IN_STRSET_ASCII_CASE(reason, "bound", "bound6", "static"))
+        client_event_type = NM_DHCP_CLIENT_EVENT_TYPE_BOUND;
+    else if (NM_IN_STRSET_ASCII_CASE(reason, "renew", "renew6", "reboot", "rebind", "rebind6"))
+        client_event_type = NM_DHCP_CLIENT_EVENT_TYPE_EXTENDED;
+    else if (NM_IN_STRSET_ASCII_CASE(reason, "timeout"))
+        client_event_type = NM_DHCP_CLIENT_EVENT_TYPE_TIMEOUT;
+    else if (NM_IN_STRSET_ASCII_CASE(reason, "nak", "expire", "expire6"))
+        client_event_type = NM_DHCP_CLIENT_EVENT_TYPE_EXPIRE;
+    else if (NM_IN_STRSET_ASCII_CASE(reason, "end", "stop", "stopped"))
+        client_event_type = NM_DHCP_CLIENT_EVENT_TYPE_TERMINATED;
+    else if (NM_IN_STRSET_ASCII_CASE(reason, "fail", "abend"))
+        client_event_type = NM_DHCP_CLIENT_EVENT_TYPE_FAIL;
+    else
+        client_event_type = NM_DHCP_CLIENT_EVENT_TYPE_UNSPECIFIED;
 
-    if (reason_is_bound) {
+    if (NM_IN_SET(client_event_type,
+                  NM_DHCP_CLIENT_EVENT_TYPE_BOUND,
+                  NM_DHCP_CLIENT_EVENT_TYPE_EXTENDED)) {
         gs_unref_hashtable GHashTable *str_options = NULL;
         GVariantIter                   iter;
         const char                    *name;
@@ -977,27 +983,13 @@ nm_dhcp_client_handle_event(gpointer      unused,
         return TRUE;
     }
 
-    /* Fail if no valid IP config was received */
-    if (reason_is_bound && !l3cd) {
+    if (NM_IN_SET(client_event_type,
+                  NM_DHCP_CLIENT_EVENT_TYPE_BOUND,
+                  NM_DHCP_CLIENT_EVENT_TYPE_EXTENDED)
+        && !l3cd) {
+        /* Fail if no valid IP config was received */
         _LOGW("client bound but IP config not received");
         client_event_type = NM_DHCP_CLIENT_EVENT_TYPE_FAIL;
-    } else {
-        if (NM_IN_STRSET_ASCII_CASE(reason, "bound", "bound6", "static"))
-            client_event_type = NM_DHCP_CLIENT_EVENT_TYPE_BOUND;
-        else if (NM_IN_STRSET_ASCII_CASE(reason, "renew", "renew6", "reboot", "rebind", "rebind6"))
-            client_event_type = NM_DHCP_CLIENT_EVENT_TYPE_EXTENDED;
-        else if (NM_IN_STRSET_ASCII_CASE(reason, "timeout"))
-            client_event_type = NM_DHCP_CLIENT_EVENT_TYPE_TIMEOUT;
-        else if (NM_IN_STRSET_ASCII_CASE(reason, "nak", "expire", "expire6"))
-            client_event_type = NM_DHCP_CLIENT_EVENT_TYPE_EXPIRE;
-        else if (NM_IN_STRSET_ASCII_CASE(reason, "end", "stop", "stopped"))
-            client_event_type = NM_DHCP_CLIENT_EVENT_TYPE_TERMINATED;
-        else if (NM_IN_STRSET_ASCII_CASE(reason, "fail", "abend"))
-            client_event_type = NM_DHCP_CLIENT_EVENT_TYPE_FAIL;
-        else if (NM_IN_STRSET_ASCII_CASE(reason, "preinit"))
-            return TRUE;
-        else
-            client_event_type = NM_DHCP_CLIENT_EVENT_TYPE_UNSPECIFIED;
     }
 
     _nm_dhcp_client_notify(self, client_event_type, l3cd);
