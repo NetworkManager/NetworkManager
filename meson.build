@@ -353,10 +353,15 @@ if enable_introspection
 endif
 
 udev_udevdir = get_option('udev_dir')
-install_udevdir = (udev_udevdir != 'no')
-
-if install_udevdir and udev_udevdir == ''
-  udev_udevdir = dependency('udev').get_pkgconfig_variable('udevdir')
+if udev_udevdir == 'no'
+  install_udevdir = false
+  udev_udevdir = ''
+else
+  install_udevdir = true
+  if (udev_udevdir == '' or udev_udevdir == 'yes')
+    udev_udevdir = join_paths(nm_prefix, 'lib/udev')
+  endif
+  assert(udev_udevdir.startswith('/'), 'udev_dir must be an absolute path, but is ' + udev_udevdir)
 endif
 
 systemd_systemdsystemunitdir = get_option('systemdsystemunitdir')
@@ -364,7 +369,7 @@ install_systemdunitdir = (systemd_systemdsystemunitdir != 'no')
 
 if install_systemdunitdir and systemd_systemdsystemunitdir == ''
   assert(systemd_dep.found(), 'systemd required but not found, please provide a valid systemd user unit dir or disable it')
-  systemd_systemdsystemunitdir = systemd_dep.get_pkgconfig_variable('systemdsystemunitdir')
+  systemd_systemdsystemunitdir = systemd_dep.get_pkgconfig_variable('systemdsystemunitdir', define_variable: ['rootprefix', nm_prefix])
 endif
 
 enable_systemd_journal = get_option('systemd_journal')
@@ -1013,6 +1018,7 @@ output = '\nSystem paths:\n'
 output += '  prefix: ' + nm_prefix + '\n'
 output += '  exec_prefix: ' + nm_prefix + '\n'
 output += '  systemdunitdir: ' + systemd_systemdsystemunitdir + '\n'
+output += '  udev_dir: ' + (install_udevdir ? udev_udevdir : '(none)') + '\n'
 output += '  nmbinary: ' + nm_pkgsbindir + '\n'
 output += '  nmconfdir: ' + nm_pkgconfdir + '\n'
 output += '  nmlibdir: ' + nm_pkglibdir + '\n'
