@@ -966,11 +966,10 @@ ip6_start(NMDhcpClient *client, const struct in6_addr *ll_addr, GError **error)
 
     _LOGT("dhcp-client6: set %p", sd_client);
 
-    if (client_config->v6.info_only) {
-        sd_dhcp6_client_set_address_request(sd_client, 0);
-        if (client_config->v6.needed_prefixes == 0)
-            sd_dhcp6_client_set_information_request(sd_client, 1);
-    }
+    sd_dhcp6_client_set_address_request(sd_client, !client_config->v6.info_only);
+    sd_dhcp6_client_set_information_request(sd_client,
+                                            client_config->v6.info_only
+                                                && client_config->v6.needed_prefixes == 0);
 
     r = sd_dhcp6_client_set_iaid(sd_client, client_config->v6.iaid);
     if (r < 0) {
