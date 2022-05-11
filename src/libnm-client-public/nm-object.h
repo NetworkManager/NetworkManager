@@ -23,8 +23,6 @@ G_BEGIN_DECLS
 #define NM_OBJECT_PATH   "path"
 #define NM_OBJECT_CLIENT "client"
 
-typedef struct _NMClient NMClient;
-
 /**
  * NMObject:
  */
@@ -35,8 +33,10 @@ GType nm_object_get_type(void);
 
 const char *nm_object_get_path(NMObject *object);
 
+struct _NMClient;
+
 NM_AVAILABLE_IN_1_24
-NMClient *nm_object_get_client(NMObject *object);
+struct _NMClient *nm_object_get_client(NMObject *object);
 
 G_END_DECLS
 
