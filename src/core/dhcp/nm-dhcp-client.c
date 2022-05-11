@@ -45,17 +45,26 @@ typedef struct _NMDhcpClientPrivate {
     NMDhcpClientConfig    config;
     const NML3ConfigData *l3cd;
     GSource              *no_lease_timeout_source;
-    GSource              *ipv6_lladdr_timeout_source;
     GSource              *watch_source;
     GBytes               *effective_client_id;
-    pid_t                 pid;
-    bool                  iaid_explicit : 1;
-    bool                  is_stopped : 1;
+
+    union {
+        struct {
+            int _unused;
+        } v4;
+        struct {
+            GSource *lladdr_timeout_source;
+        } v6;
+    };
+
     struct {
         gulong id;
         bool   wait_dhcp_commit : 1;
         bool   wait_ll_address : 1;
     } l3cfg_notify;
+
+    pid_t pid;
+    bool  is_stopped : 1;
 } NMDhcpClientPrivate;
 
 G_DEFINE_ABSTRACT_TYPE(NMDhcpClient, nm_dhcp_client, G_TYPE_OBJECT)
@@ -528,7 +537,7 @@ ipv6_lladdr_timeout(gpointer user_data)
     NMDhcpClient        *self = user_data;
     NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
 
-    nm_clear_g_source_inst(&priv->ipv6_lladdr_timeout_source);
+    nm_clear_g_source_inst(&priv->v6.lladdr_timeout_source);
 
     _emit_notify(
         self,
@@ -547,6 +556,8 @@ ipv6_lladdr_find(NMDhcpClient *self)
     NMPLookup            lookup;
     NMDedupMultiIter     iter;
     const NMPObject     *obj;
+
+    nm_assert(!NM_IS_IPv4(priv->config.addr_family));
 
     l3cfg = priv->config.l3cfg;
     nmp_lookup_init_object(&lookup, NMP_OBJECT_TYPE_IP6_ADDRESS, nm_l3cfg_get_ifindex(l3cfg));
@@ -585,7 +596,7 @@ l3_cfg_notify_cb(NML3Cfg *l3cfg, const NML3ConfigNotifyData *notify_data, NMDhcp
             _LOGD("got IPv6LL address, starting transaction");
             priv->l3cfg_notify.wait_ll_address = FALSE;
             connect_l3cfg_notify(self);
-            nm_clear_g_source_inst(&priv->ipv6_lladdr_timeout_source);
+            nm_clear_g_source_inst(&priv->v6.lladdr_timeout_source);
 
             _no_lease_timeout_schedule(self);
 
@@ -697,7 +708,7 @@ nm_dhcp_client_start(NMDhcpClient *self, GError **error)
             _LOGD("waiting for IPv6LL address");
             priv->l3cfg_notify.wait_ll_address = TRUE;
             connect_l3cfg_notify(self);
-            priv->ipv6_lladdr_timeout_source =
+            priv->v6.lladdr_timeout_source =
                 nm_g_timeout_add_seconds_source(10, ipv6_lladdr_timeout, self);
             return TRUE;
         }
@@ -1070,6 +1081,7 @@ config_init(NMDhcpClientConfig *config, const NMDhcpClientConfig *src)
     nm_assert(config);
     nm_assert(src);
     nm_assert(config != src);
+    nm_assert_addr_family(src->addr_family);
 
     *config = *src;
 
@@ -1165,6 +1177,18 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
     case PROP_CONFIG:
         /* construct-only */
         config_init(&priv->config, g_value_get_pointer(value));
+
+        /* I know, this is technically not necessary. It just feels nicer to
+         * explicitly initialize the respective union member. */
+        if (NM_IS_IPv4(priv->config.addr_family)) {
+            priv->v4 = (typeof(priv->v4)){
+                ._unused = 0,
+            };
+        } else {
+            priv->v6 = (typeof(priv->v6)){
+                .lladdr_timeout_source = NULL,
+            };
+        }
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
@@ -1196,7 +1220,8 @@ dispose(GObject *object)
     watch_cleanup(self);
 
     nm_clear_g_source_inst(&priv->no_lease_timeout_source);
-    nm_clear_g_source_inst(&priv->ipv6_lladdr_timeout_source);
+    if (!NM_IS_IPv4(priv->config.addr_family))
+        nm_clear_g_source_inst(&priv->v6.lladdr_timeout_source);
     nm_clear_pointer(&priv->effective_client_id, g_bytes_unref);
 
     nm_assert(!priv->watch_source);
