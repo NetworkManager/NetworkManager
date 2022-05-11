@@ -355,7 +355,6 @@ endif
 udev_udevdir = get_option('udev_dir')
 if udev_udevdir == 'no'
   install_udevdir = false
-  udev_udevdir = ''
 else
   install_udevdir = true
   if (udev_udevdir == '' or udev_udevdir == 'yes')
@@ -1018,7 +1017,7 @@ output = '\nSystem paths:\n'
 output += '  prefix: ' + nm_prefix + '\n'
 output += '  exec_prefix: ' + nm_prefix + '\n'
 output += '  systemdunitdir: ' + systemd_systemdsystemunitdir + '\n'
-output += '  udev_dir: ' + (install_udevdir ? udev_udevdir : '(none)') + '\n'
+output += '  udev_dir: ' + udev_udevdir + '\n'
 output += '  nmbinary: ' + nm_pkgsbindir + '\n'
 output += '  nmconfdir: ' + nm_pkgconfdir + '\n'
 output += '  nmlibdir: ' + nm_pkglibdir + '\n'
