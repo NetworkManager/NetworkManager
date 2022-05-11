@@ -306,11 +306,12 @@ AC_ARG_WITH(udev-dir,
                            [Absolute path of the udev base directory. Set to 'no' not to install the udev rules]),
             [], [with_udev_dir="yes"])
 if test "$with_udev_dir" != 'no'; then
-	if test "$with_udev_dir" != 'yes' && printf '%s' "$with_udev_dir" | grep -v -q '^/'; then
-		AC_MSG_ERROR([--with-udev-dir must be an absolute path or 'yes' or 'no'. Instead it is '$with_udev_dir'])
-	fi
-	if test "$with_udev_dir" = 'yes'; then
-		with_udev_dir="\$(prefix)/lib/udev"
+	if test "$with_udev_dir" = 'yes' -o "$with_udev_dir" = "" ; then
+		with_udev_dir="\${prefix}/lib/udev"
+	else
+		if printf '%s' "$with_udev_dir" | grep -v -q '^/'; then
+			AC_MSG_ERROR([--with-udev-dir must be an absolute path or 'yes' or 'no'. Instead it is '$with_udev_dir'])
+		fi
 	fi
 	UDEV_DIR="$with_udev_dir"
 	AC_SUBST(UDEV_DIR)
@@ -1364,6 +1365,7 @@ echo "  localstatedir: $localstatedir"
 echo "  runstatedir: $runstatedir"
 echo "  datadir: $datadir"
 echo "  systemdunitdir: $with_systemdsystemunitdir"
+echo "  udev-dir: $with_udev_dir"
 echo "  nmbinary: $nmbinary"
 echo "  nmconfdir: $nmconfdir"
 echo "  nmlibdir: $nmlibdir"
