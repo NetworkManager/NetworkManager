@@ -751,14 +751,12 @@ lease_to_ip6_config(NMDedupMultiIndex *multi_idx,
     gs_unref_hashtable GHashTable          *options = NULL;
     struct in6_addr                         tmp_addr;
     const struct in6_addr                  *dns;
-    uint32_t                                lft_pref, lft_valid;
     char                                    addr_str[NM_UTILS_INET_ADDRSTRLEN];
     char                                  **domains;
     char                                  **ntp_fqdns;
     const struct in6_addr                  *ntp_addrs;
     const char                             *s;
-    nm_auto_free_gstring GString           *str               = NULL;
-    gboolean                                has_any_addresses = FALSE;
+    nm_auto_free_gstring GString           *str = NULL;
     int                                     num, i;
 
     nm_assert(lease);
@@ -767,36 +765,45 @@ lease_to_ip6_config(NMDedupMultiIndex *multi_idx,
 
     options = nm_dhcp_option_create_options_dict();
 
-    sd_dhcp6_lease_reset_address_iter(lease);
-    nm_gstring_prepare(&str);
-    while (sd_dhcp6_lease_get_address(lease, &tmp_addr, &lft_pref, &lft_valid) >= 0) {
-        const NMPlatformIP6Address address = {
-            .plen        = 128,
-            .address     = tmp_addr,
-            .timestamp   = ts,
-            .lifetime    = lft_valid,
-            .preferred   = lft_pref,
-            .addr_source = NM_IP_CONFIG_SOURCE_DHCP,
-        };
+    if (!info_only) {
+        gboolean has_any_addresses = FALSE;
+        uint32_t lft_pref;
+        uint32_t lft_valid;
 
-        nm_l3_config_data_add_address_6(l3cd, &address);
+        sd_dhcp6_lease_reset_address_iter(lease);
+        nm_gstring_prepare(&str);
+        while (sd_dhcp6_lease_get_address(lease, &tmp_addr, &lft_pref, &lft_valid) >= 0) {
+            const NMPlatformIP6Address address = {
+                .plen        = 128,
+                .address     = tmp_addr,
+                .timestamp   = ts,
+                .lifetime    = lft_valid,
+                .preferred   = lft_pref,
+                .addr_source = NM_IP_CONFIG_SOURCE_DHCP,
+            };
 
-        _nm_utils_inet6_ntop(&tmp_addr, addr_str);
-        g_string_append(nm_gstring_add_space_delimiter(str), addr_str);
+            nm_l3_config_data_add_address_6(l3cd, &address);
 
-        has_any_addresses = TRUE;
-    }
+            _nm_utils_inet6_ntop(&tmp_addr, addr_str);
+            g_string_append(nm_gstring_add_space_delimiter(str), addr_str);
 
-    if (str->len) {
-        nm_dhcp_option_add_option(options, AF_INET6, NM_DHCP_OPTION_DHCP6_NM_IP_ADDRESS, str->str);
-    }
+            has_any_addresses = TRUE;
+        }
 
-    if (!info_only && !has_any_addresses) {
-        g_set_error_literal(error,
-                            NM_MANAGER_ERROR,
-                            NM_MANAGER_ERROR_FAILED,
-                            "no address received in managed mode");
-        return NULL;
+        if (str->len) {
+            nm_dhcp_option_add_option(options,
+                                      AF_INET6,
+                                      NM_DHCP_OPTION_DHCP6_NM_IP_ADDRESS,
+                                      str->str);
+        }
+
+        if (!has_any_addresses) {
+            g_set_error_literal(error,
+                                NM_MANAGER_ERROR,
+                                NM_MANAGER_ERROR_FAILED,
+                                "no address received in managed mode");
+            return NULL;
+        }
     }
 
     num = sd_dhcp6_lease_get_dns(lease, &dns);
