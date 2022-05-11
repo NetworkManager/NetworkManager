@@ -669,8 +669,13 @@ nm_dhcp_utils_ip6_config_from_options(NMDedupMultiIndex *multi_idx,
         _LOG2I(LOGD_DHCP6, iface, "  preferred_lft %u", address.preferred);
     }
 
-    str = g_hash_table_lookup(options, "ip6_address");
-    if (str) {
+    if (!info_only) {
+        str = g_hash_table_lookup(options, "ip6_address");
+        if (!str) {
+            /* No address in Managed mode is a hard error */
+            return NULL;
+        }
+
         if (!inet_pton(AF_INET6, str, &tmp_addr)) {
             _LOG2W(LOGD_DHCP6, iface, "(%s): DHCP returned invalid address '%s'", iface, str);
             return NULL;
@@ -680,9 +685,6 @@ nm_dhcp_utils_ip6_config_from_options(NMDedupMultiIndex *multi_idx,
         address.addr_source = NM_IP_CONFIG_SOURCE_DHCP;
         nm_l3_config_data_add_address_6(l3cd, &address);
         _LOG2I(LOGD_DHCP6, iface, "  address %s", str);
-    } else if (info_only == FALSE) {
-        /* No address in Managed mode is a hard error */
-        return NULL;
     }
 
     str = g_hash_table_lookup(options, "host_name");
