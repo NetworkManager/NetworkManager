@@ -330,7 +330,7 @@ create_dhclient_config(NMDhcpDhclient     *self,
 
 static gboolean
 dhclient_start(NMDhcpClient *client,
-               const char   *mode_opt,
+               gboolean      set_mode,
                gboolean      release,
                pid_t        *out_pid,
                GError      **error)
@@ -439,14 +439,19 @@ dhclient_start(NMDhcpClient *client,
     }
 
     if (addr_family == AF_INET6) {
-        guint prefixes = client_config->v6.needed_prefixes;
+        guint       prefixes = client_config->v6.needed_prefixes;
+        const char *mode_opt;
 
         g_ptr_array_add(argv, (gpointer) "-6");
 
-        if (prefixes > 0 && nm_streq0(mode_opt, "-S")) {
-            /* -S is incompatible with -P, only use the latter */
+        if (!set_mode)
             mode_opt = NULL;
-        }
+        else if (!client_config->v6.info_only)
+            mode_opt = "-N";
+        else if (prefixes == 0)
+            mode_opt = "-S";
+        else
+            mode_opt = NULL;
 
         if (mode_opt)
             g_ptr_array_add(argv, (gpointer) mode_opt);
@@ -546,7 +551,7 @@ ip4_start(NMDhcpClient *client, GError **error)
         nm_assert(!client_config->client_id);
         nm_dhcp_client_set_effective_client_id(client, new_client_id);
     }
-    return dhclient_start(client, NULL, FALSE, NULL, error);
+    return dhclient_start(client, FALSE, FALSE, NULL, error);
 }
 
 static gboolean
@@ -581,7 +586,7 @@ ip6_start(NMDhcpClient *client, const struct in6_addr *ll_addr, GError **error)
         return FALSE;
     }
 
-    return dhclient_start(client, config->v6.needed_prefixes ? "-S" : "-N", FALSE, NULL, error);
+    return dhclient_start(client, TRUE, FALSE, NULL, error);
 }
 
 static void
@@ -615,7 +620,7 @@ stop(NMDhcpClient *client, gboolean release)
     if (release) {
         pid_t rpid = -1;
 
-        if (dhclient_start(client, NULL, TRUE, &rpid, NULL)) {
+        if (dhclient_start(client, FALSE, TRUE, &rpid, NULL)) {
             /* Wait a few seconds for the release to happen */
             nm_dhcp_client_stop_pid(rpid, nm_dhcp_client_get_iface(client));
         }
