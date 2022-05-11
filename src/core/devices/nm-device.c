@@ -1522,6 +1522,23 @@ _prop_get_ipv4_link_local(NMDevice *self)
 
     link_local = nm_setting_ip4_config_get_link_local(s_ip4);
 
+    if (link_local == NM_SETTING_IP4_LL_DEFAULT) {
+        link_local = nm_config_data_get_connection_default_int64(NM_CONFIG_GET_DATA,
+                                                                 NM_CON_DEFAULT("ipv4.link-local"),
+                                                                 self,
+                                                                 NM_SETTING_IP4_LL_AUTO,
+                                                                 NM_SETTING_IP4_LL_ENABLED,
+                                                                 NM_SETTING_IP4_LL_DEFAULT);
+        if (link_local == NM_SETTING_IP4_LL_DEFAULT)
+            link_local = NM_SETTING_IP4_LL_AUTO;
+        else if (link_local == NM_SETTING_IP4_LL_ENABLED
+                 && nm_streq(nm_setting_ip_config_get_method((NMSettingIPConfig *) s_ip4),
+                             NM_SETTING_IP4_CONFIG_METHOD_DISABLED)) {
+            /* Cannot enable via global defaults, if the method says disabled. */
+            link_local = NM_SETTING_IP4_LL_DISABLED;
+        }
+    }
+
     if (link_local == NM_SETTING_IP4_LL_AUTO) {
         link_local = nm_streq(nm_setting_ip_config_get_method((NMSettingIPConfig *) s_ip4),
                               NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL)

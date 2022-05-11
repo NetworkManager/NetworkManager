@@ -80,18 +80,22 @@ G_BEGIN_DECLS
 
 /**
  * NMSettingIP4LinkLocal:
- * @NM_SETTING_IP4_LL_AUTO: special value which enables LL if "ipv4.method" is set to
+ * @NM_SETTING_IP4_LL_DEFAULT: Allow fallback to a globally configured default. If unspecified,
+ *   fallback to "auto". Note that if "ipv4.method" is "disabled", this always implies link-local
+ *   addresses disabled too.
+ * @NM_SETTING_IP4_LL_AUTO: Special value which enables LL if "ipv4.method" is set to
  *   "link-local".
- * @NM_SETTING_IP4_LL_DISABLED: disable link-local protocol.
- * @NM_SETTING_IP4_LL_ENABLED: enable the link-local protocol regardless what other protocols
+ * @NM_SETTING_IP4_LL_DISABLED: Disable IPv4 link-local protocol.
+ * @NM_SETTING_IP4_LL_ENABLED: Enable the IPv4 link-local protocol regardless what other protocols
  * such as DHCP or manually assigned IP addresses might be active.
  *
- * #NMSettingIP4LinkLocal values indicate whether link-local address protocol should be enabled.
+ * #NMSettingIP4LinkLocal values indicate whether IPv4 link-local address protocol should be enabled.
  *
  * Since: 1.40
  */
 typedef enum {
-    NM_SETTING_IP4_LL_AUTO     = 0,
+    NM_SETTING_IP4_LL_DEFAULT  = 0,
+    NM_SETTING_IP4_LL_AUTO     = 1,
     NM_SETTING_IP4_LL_DISABLED = 2,
     NM_SETTING_IP4_LL_ENABLED  = 3,
 } NMSettingIP4LinkLocal;
