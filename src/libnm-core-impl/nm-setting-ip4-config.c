@@ -143,7 +143,7 @@ nm_setting_ip4_config_get_dhcp_vendor_class_identifier(NMSettingIP4Config *setti
 NMSettingIP4LinkLocal
 nm_setting_ip4_config_get_link_local(NMSettingIP4Config *setting)
 {
-    g_return_val_if_fail(NM_IS_SETTING_IP4_CONFIG(setting), NM_SETTING_IP4_LL_NONE);
+    g_return_val_if_fail(NM_IS_SETTING_IP4_CONFIG(setting), NM_SETTING_IP4_LL_AUTO);
 
     return NM_SETTING_IP4_CONFIG_GET_PRIVATE(setting)->link_local;
 }
@@ -240,7 +240,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
     }
 
     if (!NM_IN_SET(priv->link_local,
-                   NM_SETTING_IP4_LL_NONE,
+                   NM_SETTING_IP4_LL_AUTO,
                    NM_SETTING_IP4_LL_DISABLED,
                    NM_SETTING_IP4_LL_ENABLED)) {
         g_set_error(error,
@@ -922,6 +922,11 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
      * to be obtained in addition to other addresses, such as those manually
      * configured or obtained from a DHCP server.
      *
+     * When set to "auto", the value is dependent on "ipv4.method".
+     * When set to "default", it honors the global connection default before
+     * falling back to "auto". Note that if "ipv4.method" is "disabled", then
+     * link local addressing is always disabled too. The default is "auto".
+     *
      * Since 1.40
      */
     /* ---ifcfg-rh---
@@ -937,7 +942,7 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
                                              PROP_LINK_LOCAL,
                                              G_MININT32,
                                              G_MAXINT32,
-                                             NM_SETTING_IP4_LL_NONE,
+                                             NM_SETTING_IP4_LL_AUTO,
                                              NM_SETTING_PARAM_NONE,
                                              NMSettingIP4ConfigPrivate,
                                              link_local);

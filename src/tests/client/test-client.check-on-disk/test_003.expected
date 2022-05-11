@@ -182,12 +182,12 @@ id
 path
 uuid
 <<<
-size: 4747
+size: 4746
 location: src/tests/client/test-client.py:test_003()/14
 cmd: $NMCLI con s con-gsm1
 lang: C
 returncode: 0
-stdout: 4614 bytes
+stdout: 4613 bytes
 >>>
 connection.id:                          con-gsm1
 connection.uuid:                        UUID-con-gsm1-REPLACED-REPLACED-REPL
@@ -239,7 +239,7 @@ ipv4.may-fail:                          yes
 ipv4.required-timeout:                  -1 (default)
 ipv4.dad-timeout:                       -1 (default)
 ipv4.dhcp-vendor-class-identifier:      --
-ipv4.link-local:                        -1 (none)
+ipv4.link-local:                        0 (auto)
 ipv4.dhcp-reject-servers:               --
 ipv6.method:                            auto
 ipv6.dns:                               --
@@ -292,12 +292,12 @@ proxy.pac-url:                          --
 proxy.pac-script:                       --
 
 <<<
-size: 4777
+size: 4776
 location: src/tests/client/test-client.py:test_003()/15
 cmd: $NMCLI con s con-gsm1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4634 bytes
+stdout: 4633 bytes
 >>>
 connection.id:                          con-gsm1
 connection.uuid:                        UUID-con-gsm1-REPLACED-REPLACED-REPL
@@ -349,7 +349,7 @@ ipv4.may-fail:                          tak
 ipv4.required-timeout:                  -1 (default)
 ipv4.dad-timeout:                       -1 (default)
 ipv4.dhcp-vendor-class-identifier:      --
-ipv4.link-local:                        -1 (none)
+ipv4.link-local:                        0 (auto)
 ipv4.dhcp-reject-servers:               --
 ipv6.method:                            auto
 ipv6.dns:                               --
@@ -402,42 +402,42 @@ proxy.pac-url:                          --
 proxy.pac-script:                       --
 
 <<<
-size: 489
+size: 488
 location: src/tests/client/test-client.py:test_003()/16
 cmd: $NMCLI -g all con s con-gsm1
 lang: C
 returncode: 0
-stdout: 350 bytes
+stdout: 349 bytes
 >>>
 connection:con-gsm1:UUID-con-gsm1-REPLACED-REPLACED-REPL::gsm::no:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1:-1
-ipv4:auto::: :0::::-1:0::no:no:::0:yes:::0x0:no:yes:-1:-1::-1:
+ipv4:auto::: :0::::-1:0::no:no:::0:yes:::0x0:no:yes:-1:-1::0:
 ipv6:auto::::0::::-1:0::no:no:no:yes:-1:-1:stable-privacy:0:::0:yes::0x0:
 serial:5:8:even:1:100
 gsm:no:::<hidden>:0:xyz.con-gsm1::<hidden>:0:no::::auto
 proxy:none:no::
 
 <<<
-size: 499
+size: 498
 location: src/tests/client/test-client.py:test_003()/17
 cmd: $NMCLI -g all con s con-gsm1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 350 bytes
+stdout: 349 bytes
 >>>
 connection:con-gsm1:UUID-con-gsm1-REPLACED-REPLACED-REPL::gsm::no:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1:-1
-ipv4:auto::: :0::::-1:0::no:no:::0:yes:::0x0:no:yes:-1:-1::-1:
+ipv4:auto::: :0::::-1:0::no:no:::0:yes:::0x0:no:yes:-1:-1::0:
 ipv6:auto::::0::::-1:0::no:no:no:yes:-1:-1:stable-privacy:0:::0:yes::0x0:
 serial:5:8:even:1:100
 gsm:no:::<hidden>:0:xyz.con-gsm1::<hidden>:0:no::::auto
 proxy:none:no::
 
 <<<
-size: 4735
+size: 4734
 location: src/tests/client/test-client.py:test_003()/18
 cmd: $NMCLI con s con-gsm2
 lang: C
 returncode: 0
-stdout: 4602 bytes
+stdout: 4601 bytes
 >>>
 connection.id:                          con-gsm2
 connection.uuid:                        UUID-con-gsm2-REPLACED-REPLACED-REPL
@@ -489,7 +489,7 @@ ipv4.may-fail:                          yes
 ipv4.required-timeout:                  -1 (default)
 ipv4.dad-timeout:                       -1 (default)
 ipv4.dhcp-vendor-class-identifier:      --
-ipv4.link-local:                        -1 (none)
+ipv4.link-local:                        0 (auto)
 ipv4.dhcp-reject-servers:               --
 ipv6.method:                            auto
 ipv6.dns:                               --
@@ -542,12 +542,12 @@ proxy.pac-url:                          --
 proxy.pac-script:                       --
 
 <<<
-size: 4765
+size: 4764
 location: src/tests/client/test-client.py:test_003()/19
 cmd: $NMCLI con s con-gsm2
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4622 bytes
+stdout: 4621 bytes
 >>>
 connection.id:                          con-gsm2
 connection.uuid:                        UUID-con-gsm2-REPLACED-REPLACED-REPL
@@ -599,7 +599,7 @@ ipv4.may-fail:                          tak
 ipv4.required-timeout:                  -1 (default)
 ipv4.dad-timeout:                       -1 (default)
 ipv4.dhcp-vendor-class-identifier:      --
-ipv4.link-local:                        -1 (none)
+ipv4.link-local:                        0 (auto)
 ipv4.dhcp-reject-servers:               --
 ipv6.method:                            auto
 ipv6.dns:                               --
@@ -638,6 +638,256 @@ gsm.username:                           --
 gsm.password:                           <hidden>
 gsm.password-flags:                     0 (brak)
 gsm.apn:                                --
+gsm.network-id:                         --
+gsm.pin:                                <hidden>
+gsm.pin-flags:                          0 (brak)
+gsm.home-only:                          nie
+gsm.device-id:                          --
+gsm.sim-id:                             --
+gsm.sim-operator-id:                    --
+gsm.mtu:                                automatyczne
+proxy.method:                           none
+proxy.browser-only:                     nie
+proxy.pac-url:                          --
+proxy.pac-script:                       --
+
+<<<
+size: 476
+location: src/tests/client/test-client.py:test_003()/20
+cmd: $NMCLI -g all con s con-gsm2
+lang: C
+returncode: 0
+stdout: 337 bytes
+>>>
+connection:con-gsm2:UUID-con-gsm2-REPLACED-REPLACED-REPL::gsm::no:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1:-1
+ipv4:auto::: :0::::-1:0::no:no:::0:yes:::0x0:no:yes:-1:-1::0:
+ipv6:auto::::0::::-1:0::no:no:no:yes:-1:-1:stable-privacy:0:::0:yes::0x0:
+serial:5:8:even:1:100
+gsm:no:::<hidden>:0:::<hidden>:0:no::::auto
+proxy:none:no::
+
+<<<
+size: 486
+location: src/tests/client/test-client.py:test_003()/21
+cmd: $NMCLI -g all con s con-gsm2
+lang: pl_PL.UTF-8
+returncode: 0
+stdout: 337 bytes
+>>>
+connection:con-gsm2:UUID-con-gsm2-REPLACED-REPLACED-REPL::gsm::no:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1:-1
+ipv4:auto::: :0::::-1:0::no:no:::0:yes:::0x0:no:yes:-1:-1::0:
+ipv6:auto::::0::::-1:0::no:no:no:yes:-1:-1:stable-privacy:0:::0:yes::0x0:
+serial:5:8:even:1:100
+gsm:no:::<hidden>:0:::<hidden>:0:no::::auto
+proxy:none:no::
+
+<<<
+size: 4734
+location: src/tests/client/test-client.py:test_003()/22
+cmd: $NMCLI con s con-gsm3
+lang: C
+returncode: 0
+stdout: 4601 bytes
+>>>
+connection.id:                          con-gsm3
+connection.uuid:                        UUID-con-gsm3-REPLACED-REPLACED-REPL
+connection.stable-id:                   --
+connection.type:                        gsm
+connection.interface-name:              --
+connection.autoconnect:                 no
+connection.autoconnect-priority:        0
+connection.autoconnect-retries:         -1 (default)
+connection.multi-connect:               0 (default)
+connection.auth-retries:                -1
+connection.timestamp:                   0
+connection.read-only:                   no
+connection.permissions:                 --
+connection.zone:                        --
+connection.master:                      --
+connection.slave-type:                  --
+connection.autoconnect-slaves:          -1 (default)
+connection.secondaries:                 --
+connection.gateway-ping-timeout:        0
+connection.metered:                     unknown
+connection.lldp:                        default
+connection.mdns:                        -1 (default)
+connection.llmnr:                       -1 (default)
+connection.dns-over-tls:                -1 (default)
+connection.wait-device-timeout:         -1
+ipv4.method:                            auto
+ipv4.dns:                               --
+ipv4.dns-search:                        --
+ipv4.dns-options:                       ""
+ipv4.dns-priority:                      0
+ipv4.addresses:                         --
+ipv4.gateway:                           --
+ipv4.routes:                            --
+ipv4.route-metric:                      -1
+ipv4.route-table:                       0 (unspec)
+ipv4.routing-rules:                     --
+ipv4.ignore-auto-routes:                no
+ipv4.ignore-auto-dns:                   no
+ipv4.dhcp-client-id:                    --
+ipv4.dhcp-iaid:                         --
+ipv4.dhcp-timeout:                      0 (default)
+ipv4.dhcp-send-hostname:                yes
+ipv4.dhcp-hostname:                     --
+ipv4.dhcp-fqdn:                         --
+ipv4.dhcp-hostname-flags:               0x0 (none)
+ipv4.never-default:                     no
+ipv4.may-fail:                          yes
+ipv4.required-timeout:                  -1 (default)
+ipv4.dad-timeout:                       -1 (default)
+ipv4.dhcp-vendor-class-identifier:      --
+ipv4.link-local:                        0 (auto)
+ipv4.dhcp-reject-servers:               --
+ipv6.method:                            auto
+ipv6.dns:                               --
+ipv6.dns-search:                        --
+ipv6.dns-options:                       --
+ipv6.dns-priority:                      0
+ipv6.addresses:                         --
+ipv6.gateway:                           --
+ipv6.routes:                            --
+ipv6.route-metric:                      -1
+ipv6.route-table:                       0 (unspec)
+ipv6.routing-rules:                     --
+ipv6.ignore-auto-routes:                no
+ipv6.ignore-auto-dns:                   no
+ipv6.never-default:                     no
+ipv6.may-fail:                          yes
+ipv6.required-timeout:                  -1 (default)
+ipv6.ip6-privacy:                       -1 (unknown)
+ipv6.addr-gen-mode:                     stable-privacy
+ipv6.ra-timeout:                        0 (default)
+ipv6.dhcp-duid:                         --
+ipv6.dhcp-iaid:                         --
+ipv6.dhcp-timeout:                      0 (default)
+ipv6.dhcp-send-hostname:                yes
+ipv6.dhcp-hostname:                     --
+ipv6.dhcp-hostname-flags:               0x0 (none)
+ipv6.token:                             --
+serial.baud:                            5
+serial.bits:                            8
+serial.parity:                          even
+serial.stopbits:                        1
+serial.send-delay:                      100
+gsm.auto-config:                        no
+gsm.number:                             --
+gsm.username:                           --
+gsm.password:                           <hidden>
+gsm.password-flags:                     0 (none)
+gsm.apn:                                ""
+gsm.network-id:                         --
+gsm.pin:                                <hidden>
+gsm.pin-flags:                          0 (none)
+gsm.home-only:                          no
+gsm.device-id:                          --
+gsm.sim-id:                             --
+gsm.sim-operator-id:                    --
+gsm.mtu:                                auto
+proxy.method:                           none
+proxy.browser-only:                     no
+proxy.pac-url:                          --
+proxy.pac-script:                       --
+
+<<<
+size: 4764
+location: src/tests/client/test-client.py:test_003()/23
+cmd: $NMCLI con s con-gsm3
+lang: pl_PL.UTF-8
+returncode: 0
+stdout: 4621 bytes
+>>>
+connection.id:                          con-gsm3
+connection.uuid:                        UUID-con-gsm3-REPLACED-REPLACED-REPL
+connection.stable-id:                   --
+connection.type:                        gsm
+connection.interface-name:              --
+connection.autoconnect:                 nie
+connection.autoconnect-priority:        0
+connection.autoconnect-retries:         -1 (default)
+connection.multi-connect:               0 (default)
+connection.auth-retries:                -1
+connection.timestamp:                   0
+connection.read-only:                   nie
+connection.permissions:                 --
+connection.zone:                        --
+connection.master:                      --
+connection.slave-type:                  --
+connection.autoconnect-slaves:          -1 (default)
+connection.secondaries:                 --
+connection.gateway-ping-timeout:        0
+connection.metered:                     nieznane
+connection.lldp:                        default
+connection.mdns:                        -1 (default)
+connection.llmnr:                       -1 (default)
+connection.dns-over-tls:                -1 (default)
+connection.wait-device-timeout:         -1
+ipv4.method:                            auto
+ipv4.dns:                               --
+ipv4.dns-search:                        --
+ipv4.dns-options:                       ""
+ipv4.dns-priority:                      0
+ipv4.addresses:                         --
+ipv4.gateway:                           --
+ipv4.routes:                            --
+ipv4.route-metric:                      -1
+ipv4.route-table:                       0 (unspec)
+ipv4.routing-rules:                     --
+ipv4.ignore-auto-routes:                nie
+ipv4.ignore-auto-dns:                   nie
+ipv4.dhcp-client-id:                    --
+ipv4.dhcp-iaid:                         --
+ipv4.dhcp-timeout:                      0 (default)
+ipv4.dhcp-send-hostname:                tak
+ipv4.dhcp-hostname:                     --
+ipv4.dhcp-fqdn:                         --
+ipv4.dhcp-hostname-flags:               0x0 (none)
+ipv4.never-default:                     nie
+ipv4.may-fail:                          tak
+ipv4.required-timeout:                  -1 (default)
+ipv4.dad-timeout:                       -1 (default)
+ipv4.dhcp-vendor-class-identifier:      --
+ipv4.link-local:                        0 (auto)
+ipv4.dhcp-reject-servers:               --
+ipv6.method:                            auto
+ipv6.dns:                               --
+ipv6.dns-search:                        --
+ipv6.dns-options:                       --
+ipv6.dns-priority:                      0
+ipv6.addresses:                         --
+ipv6.gateway:                           --
+ipv6.routes:                            --
+ipv6.route-metric:                      -1
+ipv6.route-table:                       0 (unspec)
+ipv6.routing-rules:                     --
+ipv6.ignore-auto-routes:                nie
+ipv6.ignore-auto-dns:                   nie
+ipv6.never-default:                     nie
+ipv6.may-fail:                          tak
+ipv6.required-timeout:                  -1 (default)
+ipv6.ip6-privacy:                       -1 (unknown)
+ipv6.addr-gen-mode:                     stable-privacy
+ipv6.ra-timeout:                        0 (default)
+ipv6.dhcp-duid:                         --
+ipv6.dhcp-iaid:                         --
+ipv6.dhcp-timeout:                      0 (default)
+ipv6.dhcp-send-hostname:                tak
+ipv6.dhcp-hostname:                     --
+ipv6.dhcp-hostname-flags:               0x0 (none)
+ipv6.token:                             --
+serial.baud:                            5
+serial.bits:                            8
+serial.parity:                          even
+serial.stopbits:                        1
+serial.send-delay:                      100
+gsm.auto-config:                        nie
+gsm.number:                             --
+gsm.username:                           --
+gsm.password:                           <hidden>
+gsm.password-flags:                     0 (brak)
+gsm.apn:                                ""
 gsm.network-id:                         --
 gsm.pin:                                <hidden>
 gsm.pin-flags:                          0 (brak)
@@ -653,279 +903,29 @@ proxy.pac-script:                       --
 
 <<<
 size: 477
-location: src/tests/client/test-client.py:test_003()/20
-cmd: $NMCLI -g all con s con-gsm2
-lang: C
-returncode: 0
-stdout: 338 bytes
->>>
-connection:con-gsm2:UUID-con-gsm2-REPLACED-REPLACED-REPL::gsm::no:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1:-1
-ipv4:auto::: :0::::-1:0::no:no:::0:yes:::0x0:no:yes:-1:-1::-1:
-ipv6:auto::::0::::-1:0::no:no:no:yes:-1:-1:stable-privacy:0:::0:yes::0x0:
-serial:5:8:even:1:100
-gsm:no:::<hidden>:0:::<hidden>:0:no::::auto
-proxy:none:no::
-
-<<<
-size: 487
-location: src/tests/client/test-client.py:test_003()/21
-cmd: $NMCLI -g all con s con-gsm2
-lang: pl_PL.UTF-8
-returncode: 0
-stdout: 338 bytes
->>>
-connection:con-gsm2:UUID-con-gsm2-REPLACED-REPLACED-REPL::gsm::no:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1:-1
-ipv4:auto::: :0::::-1:0::no:no:::0:yes:::0x0:no:yes:-1:-1::-1:
-ipv6:auto::::0::::-1:0::no:no:no:yes:-1:-1:stable-privacy:0:::0:yes::0x0:
-serial:5:8:even:1:100
-gsm:no:::<hidden>:0:::<hidden>:0:no::::auto
-proxy:none:no::
-
-<<<
-size: 4735
-location: src/tests/client/test-client.py:test_003()/22
-cmd: $NMCLI con s con-gsm3
-lang: C
-returncode: 0
-stdout: 4602 bytes
->>>
-connection.id:                          con-gsm3
-connection.uuid:                        UUID-con-gsm3-REPLACED-REPLACED-REPL
-connection.stable-id:                   --
-connection.type:                        gsm
-connection.interface-name:              --
-connection.autoconnect:                 no
-connection.autoconnect-priority:        0
-connection.autoconnect-retries:         -1 (default)
-connection.multi-connect:               0 (default)
-connection.auth-retries:                -1
-connection.timestamp:                   0
-connection.read-only:                   no
-connection.permissions:                 --
-connection.zone:                        --
-connection.master:                      --
-connection.slave-type:                  --
-connection.autoconnect-slaves:          -1 (default)
-connection.secondaries:                 --
-connection.gateway-ping-timeout:        0
-connection.metered:                     unknown
-connection.lldp:                        default
-connection.mdns:                        -1 (default)
-connection.llmnr:                       -1 (default)
-connection.dns-over-tls:                -1 (default)
-connection.wait-device-timeout:         -1
-ipv4.method:                            auto
-ipv4.dns:                               --
-ipv4.dns-search:                        --
-ipv4.dns-options:                       ""
-ipv4.dns-priority:                      0
-ipv4.addresses:                         --
-ipv4.gateway:                           --
-ipv4.routes:                            --
-ipv4.route-metric:                      -1
-ipv4.route-table:                       0 (unspec)
-ipv4.routing-rules:                     --
-ipv4.ignore-auto-routes:                no
-ipv4.ignore-auto-dns:                   no
-ipv4.dhcp-client-id:                    --
-ipv4.dhcp-iaid:                         --
-ipv4.dhcp-timeout:                      0 (default)
-ipv4.dhcp-send-hostname:                yes
-ipv4.dhcp-hostname:                     --
-ipv4.dhcp-fqdn:                         --
-ipv4.dhcp-hostname-flags:               0x0 (none)
-ipv4.never-default:                     no
-ipv4.may-fail:                          yes
-ipv4.required-timeout:                  -1 (default)
-ipv4.dad-timeout:                       -1 (default)
-ipv4.dhcp-vendor-class-identifier:      --
-ipv4.link-local:                        -1 (none)
-ipv4.dhcp-reject-servers:               --
-ipv6.method:                            auto
-ipv6.dns:                               --
-ipv6.dns-search:                        --
-ipv6.dns-options:                       --
-ipv6.dns-priority:                      0
-ipv6.addresses:                         --
-ipv6.gateway:                           --
-ipv6.routes:                            --
-ipv6.route-metric:                      -1
-ipv6.route-table:                       0 (unspec)
-ipv6.routing-rules:                     --
-ipv6.ignore-auto-routes:                no
-ipv6.ignore-auto-dns:                   no
-ipv6.never-default:                     no
-ipv6.may-fail:                          yes
-ipv6.required-timeout:                  -1 (default)
-ipv6.ip6-privacy:                       -1 (unknown)
-ipv6.addr-gen-mode:                     stable-privacy
-ipv6.ra-timeout:                        0 (default)
-ipv6.dhcp-duid:                         --
-ipv6.dhcp-iaid:                         --
-ipv6.dhcp-timeout:                      0 (default)
-ipv6.dhcp-send-hostname:                yes
-ipv6.dhcp-hostname:                     --
-ipv6.dhcp-hostname-flags:               0x0 (none)
-ipv6.token:                             --
-serial.baud:                            5
-serial.bits:                            8
-serial.parity:                          even
-serial.stopbits:                        1
-serial.send-delay:                      100
-gsm.auto-config:                        no
-gsm.number:                             --
-gsm.username:                           --
-gsm.password:                           <hidden>
-gsm.password-flags:                     0 (none)
-gsm.apn:                                ""
-gsm.network-id:                         --
-gsm.pin:                                <hidden>
-gsm.pin-flags:                          0 (none)
-gsm.home-only:                          no
-gsm.device-id:                          --
-gsm.sim-id:                             --
-gsm.sim-operator-id:                    --
-gsm.mtu:                                auto
-proxy.method:                           none
-proxy.browser-only:                     no
-proxy.pac-url:                          --
-proxy.pac-script:                       --
-
-<<<
-size: 4765
-location: src/tests/client/test-client.py:test_003()/23
-cmd: $NMCLI con s con-gsm3
-lang: pl_PL.UTF-8
-returncode: 0
-stdout: 4622 bytes
->>>
-connection.id:                          con-gsm3
-connection.uuid:                        UUID-con-gsm3-REPLACED-REPLACED-REPL
-connection.stable-id:                   --
-connection.type:                        gsm
-connection.interface-name:              --
-connection.autoconnect:                 nie
-connection.autoconnect-priority:        0
-connection.autoconnect-retries:         -1 (default)
-connection.multi-connect:               0 (default)
-connection.auth-retries:                -1
-connection.timestamp:                   0
-connection.read-only:                   nie
-connection.permissions:                 --
-connection.zone:                        --
-connection.master:                      --
-connection.slave-type:                  --
-connection.autoconnect-slaves:          -1 (default)
-connection.secondaries:                 --
-connection.gateway-ping-timeout:        0
-connection.metered:                     nieznane
-connection.lldp:                        default
-connection.mdns:                        -1 (default)
-connection.llmnr:                       -1 (default)
-connection.dns-over-tls:                -1 (default)
-connection.wait-device-timeout:         -1
-ipv4.method:                            auto
-ipv4.dns:                               --
-ipv4.dns-search:                        --
-ipv4.dns-options:                       ""
-ipv4.dns-priority:                      0
-ipv4.addresses:                         --
-ipv4.gateway:                           --
-ipv4.routes:                            --
-ipv4.route-metric:                      -1
-ipv4.route-table:                       0 (unspec)
-ipv4.routing-rules:                     --
-ipv4.ignore-auto-routes:                nie
-ipv4.ignore-auto-dns:                   nie
-ipv4.dhcp-client-id:                    --
-ipv4.dhcp-iaid:                         --
-ipv4.dhcp-timeout:                      0 (default)
-ipv4.dhcp-send-hostname:                tak
-ipv4.dhcp-hostname:                     --
-ipv4.dhcp-fqdn:                         --
-ipv4.dhcp-hostname-flags:               0x0 (none)
-ipv4.never-default:                     nie
-ipv4.may-fail:                          tak
-ipv4.required-timeout:                  -1 (default)
-ipv4.dad-timeout:                       -1 (default)
-ipv4.dhcp-vendor-class-identifier:      --
-ipv4.link-local:                        -1 (none)
-ipv4.dhcp-reject-servers:               --
-ipv6.method:                            auto
-ipv6.dns:                               --
-ipv6.dns-search:                        --
-ipv6.dns-options:                       --
-ipv6.dns-priority:                      0
-ipv6.addresses:                         --
-ipv6.gateway:                           --
-ipv6.routes:                            --
-ipv6.route-metric:                      -1
-ipv6.route-table:                       0 (unspec)
-ipv6.routing-rules:                     --
-ipv6.ignore-auto-routes:                nie
-ipv6.ignore-auto-dns:                   nie
-ipv6.never-default:                     nie
-ipv6.may-fail:                          tak
-ipv6.required-timeout:                  -1 (default)
-ipv6.ip6-privacy:                       -1 (unknown)
-ipv6.addr-gen-mode:                     stable-privacy
-ipv6.ra-timeout:                        0 (default)
-ipv6.dhcp-duid:                         --
-ipv6.dhcp-iaid:                         --
-ipv6.dhcp-timeout:                      0 (default)
-ipv6.dhcp-send-hostname:                tak
-ipv6.dhcp-hostname:                     --
-ipv6.dhcp-hostname-flags:               0x0 (none)
-ipv6.token:                             --
-serial.baud:                            5
-serial.bits:                            8
-serial.parity:                          even
-serial.stopbits:                        1
-serial.send-delay:                      100
-gsm.auto-config:                        nie
-gsm.number:                             --
-gsm.username:                           --
-gsm.password:                           <hidden>
-gsm.password-flags:                     0 (brak)
-gsm.apn:                                ""
-gsm.network-id:                         --
-gsm.pin:                                <hidden>
-gsm.pin-flags:                          0 (brak)
-gsm.home-only:                          nie
-gsm.device-id:                          --
-gsm.sim-id:                             --
-gsm.sim-operator-id:                    --
-gsm.mtu:                                automatyczne
-proxy.method:                           none
-proxy.browser-only:                     nie
-proxy.pac-url:                          --
-proxy.pac-script:                       --
-
-<<<
-size: 478
 location: src/tests/client/test-client.py:test_003()/24
 cmd: $NMCLI -g all con s con-gsm3
 lang: C
 returncode: 0
-stdout: 339 bytes
+stdout: 338 bytes
 >>>
 connection:con-gsm3:UUID-con-gsm3-REPLACED-REPLACED-REPL::gsm::no:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1:-1
-ipv4:auto::: :0::::-1:0::no:no:::0:yes:::0x0:no:yes:-1:-1::-1:
+ipv4:auto::: :0::::-1:0::no:no:::0:yes:::0x0:no:yes:-1:-1::0:
 ipv6:auto::::0::::-1:0::no:no:no:yes:-1:-1:stable-privacy:0:::0:yes::0x0:
 serial:5:8:even:1:100
 gsm:no:::<hidden>:0: ::<hidden>:0:no::::auto
 proxy:none:no::
 
 <<<
-size: 488
+size: 487
 location: src/tests/client/test-client.py:test_003()/25
 cmd: $NMCLI -g all con s con-gsm3
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 339 bytes
+stdout: 338 bytes
 >>>
 connection:con-gsm3:UUID-con-gsm3-REPLACED-REPLACED-REPL::gsm::no:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1:-1
-ipv4:auto::: :0::::-1:0::no:no:::0:yes:::0x0:no:yes:-1:-1::-1:
+ipv4:auto::: :0::::-1:0::no:no:::0:yes:::0x0:no:yes:-1:-1::0:
 ipv6:auto::::0::::-1:0::no:no:no:yes:-1:-1:stable-privacy:0:::0:yes::0x0:
 serial:5:8:even:1:100
 gsm:no:::<hidden>:0: ::<hidden>:0:no::::auto
@@ -1072,12 +1072,12 @@ UUID                                  NAME
 UUID-ethernet-REPLACED-REPLACED-REPL  ethernet 
 
 <<<
-size: 4573
+size: 4572
 location: src/tests/client/test-client.py:test_003()/37
 cmd: $NMCLI -f ALL con s ethernet
 lang: C
 returncode: 0
-stdout: 4433 bytes
+stdout: 4432 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -1144,7 +1144,7 @@ ipv4.may-fail:                          yes
 ipv4.required-timeout:                  -1 (default)
 ipv4.dad-timeout:                       -1 (default)
 ipv4.dhcp-vendor-class-identifier:      --
-ipv4.link-local:                        -1 (none)
+ipv4.link-local:                        0 (auto)
 ipv4.dhcp-reject-servers:               --
 ipv6.method:                            auto
 ipv6.dns:                               --
@@ -1178,12 +1178,12 @@ proxy.pac-url:                          --
 proxy.pac-script:                       --
 
 <<<
-size: 4601
+size: 4600
 location: src/tests/client/test-client.py:test_003()/38
 cmd: $NMCLI -f ALL con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4451 bytes
+stdout: 4450 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -1250,7 +1250,7 @@ ipv4.may-fail:                          tak
 ipv4.required-timeout:                  -1 (default)
 ipv4.dad-timeout:                       -1 (default)
 ipv4.dhcp-vendor-class-identifier:      --
-ipv4.link-local:                        -1 (none)
+ipv4.link-local:                        0 (auto)
 ipv4.dhcp-reject-servers:               --
 ipv6.method:                            auto
 ipv6.dns:                               --
@@ -1304,12 +1304,12 @@ stdout: 51 bytes
 GENERAL.STATE:                          aktywowano
 
 <<<
-size: 5275
+size: 5274
 location: src/tests/client/test-client.py:test_003()/41
 cmd: $NMCLI con s ethernet
 lang: C
 returncode: 0
-stdout: 5142 bytes
+stdout: 5141 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -1376,7 +1376,7 @@ ipv4.may-fail:                          yes
 ipv4.required-timeout:                  -1 (default)
 ipv4.dad-timeout:                       -1 (default)
 ipv4.dhcp-vendor-class-identifier:      --
-ipv4.link-local:                        -1 (none)
+ipv4.link-local:                        0 (auto)
 ipv4.dhcp-reject-servers:               --
 ipv6.method:                            auto
 ipv6.dns:                               --
@@ -1423,12 +1423,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 5307
+size: 5306
 location: src/tests/client/test-client.py:test_003()/42
 cmd: $NMCLI con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5164 bytes
+stdout: 5163 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -1495,7 +1495,7 @@ ipv4.may-fail:                          tak
 ipv4.required-timeout:                  -1 (default)
 ipv4.dad-timeout:                       -1 (default)
 ipv4.dhcp-vendor-class-identifier:      --
-ipv4.link-local:                        -1 (none)
+ipv4.link-local:                        0 (auto)
 ipv4.dhcp-reject-servers:               --
 ipv6.method:                            auto
 ipv6.dns:                               --
@@ -2028,12 +2028,12 @@ UUID                                  NAME
 UUID-ethernet-REPLACED-REPLACED-REPL  ethernet 
 
 <<<
-size: 4573
+size: 4572
 location: src/tests/client/test-client.py:test_003()/62
 cmd: $NMCLI -f ALL con s ethernet
 lang: C
 returncode: 0
-stdout: 4433 bytes
+stdout: 4432 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -2100,7 +2100,7 @@ ipv4.may-fail:                          yes
 ipv4.required-timeout:                  -1 (default)
 ipv4.dad-timeout:                       -1 (default)
 ipv4.dhcp-vendor-class-identifier:      --
-ipv4.link-local:                        -1 (none)
+ipv4.link-local:                        0 (auto)
 ipv4.dhcp-reject-servers:               --
 ipv6.method:                            auto
 ipv6.dns:                               --
@@ -2134,12 +2134,12 @@ proxy.pac-url:                          --
 proxy.pac-script:                       --
 
 <<<
-size: 4601
+size: 4600
 location: src/tests/client/test-client.py:test_003()/63
 cmd: $NMCLI -f ALL con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4451 bytes
+stdout: 4450 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -2206,7 +2206,7 @@ ipv4.may-fail:                          tak
 ipv4.required-timeout:                  -1 (default)
 ipv4.dad-timeout:                       -1 (default)
 ipv4.dhcp-vendor-class-identifier:      --
-ipv4.link-local:                        -1 (none)
+ipv4.link-local:                        0 (auto)
 ipv4.dhcp-reject-servers:               --
 ipv6.method:                            auto
 ipv6.dns:                               --
@@ -2264,12 +2264,12 @@ GENERAL.STATE:                          aktywowano
 GENERAL.STATE:                          aktywowano
 
 <<<
-size: 5985
+size: 5984
 location: src/tests/client/test-client.py:test_003()/66
 cmd: $NMCLI con s ethernet
 lang: C
 returncode: 0
-stdout: 5852 bytes
+stdout: 5851 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -2336,7 +2336,7 @@ ipv4.may-fail:                          yes
 ipv4.required-timeout:                  -1 (default)
 ipv4.dad-timeout:                       -1 (default)
 ipv4.dhcp-vendor-class-identifier:      --
-ipv4.link-local:                        -1 (none)
+ipv4.link-local:                        0 (auto)
 ipv4.dhcp-reject-servers:               --
 ipv6.method:                            auto
 ipv6.dns:                               --
@@ -2397,12 +2397,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 6021
+size: 6020
 location: src/tests/client/test-client.py:test_003()/67
 cmd: $NMCLI con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5878 bytes
+stdout: 5877 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -2469,7 +2469,7 @@ ipv4.may-fail:                          tak
 ipv4.required-timeout:                  -1 (default)
 ipv4.dad-timeout:                       -1 (default)
 ipv4.dhcp-vendor-class-identifier:      --
-ipv4.link-local:                        -1 (none)
+ipv4.link-local:                        0 (auto)
 ipv4.dhcp-reject-servers:               --
 ipv6.method:                            auto
 ipv6.dns:                               --
@@ -3008,12 +3008,12 @@ UUID-con-gsm3-REPLACED-REPLACED-REPL  gsm
 UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet 
 
 <<<
-size: 5988
+size: 5987
 location: src/tests/client/test-client.py:test_003()/82
 cmd: $NMCLI con s ethernet
 lang: C
 returncode: 0
-stdout: 5855 bytes
+stdout: 5854 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -3080,7 +3080,7 @@ ipv4.may-fail:                          yes
 ipv4.required-timeout:                  -1 (default)
 ipv4.dad-timeout:                       -1 (default)
 ipv4.dhcp-vendor-class-identifier:      --
-ipv4.link-local:                        -1 (none)
+ipv4.link-local:                        0 (auto)
 ipv4.dhcp-reject-servers:               --
 ipv6.method:                            auto
 ipv6.dns:                               --
@@ -3141,12 +3141,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 6025
+size: 6024
 location: src/tests/client/test-client.py:test_003()/83
 cmd: $NMCLI con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5882 bytes
+stdout: 5881 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -3213,7 +3213,7 @@ ipv4.may-fail:                          tak
 ipv4.required-timeout:                  -1 (default)
 ipv4.dad-timeout:                       -1 (default)
 ipv4.dhcp-vendor-class-identifier:      --
-ipv4.link-local:                        -1 (none)
+ipv4.link-local:                        0 (auto)
 ipv4.dhcp-reject-servers:               --
 ipv6.method:                            auto
 ipv6.dns:                               --
@@ -3274,12 +3274,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 5318
+size: 5317
 location: src/tests/client/test-client.py:test_003()/84
 cmd: $NMCLI c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 5145 bytes
+stdout: 5144 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -3346,7 +3346,7 @@ ipv4.may-fail:                          yes
 ipv4.required-timeout:                  -1 (default)
 ipv4.dad-timeout:                       -1 (default)
 ipv4.dhcp-vendor-class-identifier:      --
-ipv4.link-local:                        -1 (none)
+ipv4.link-local:                        0 (auto)
 ipv4.dhcp-reject-servers:               --
 ipv6.method:                            auto
 ipv6.dns:                               --
@@ -3393,12 +3393,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 5351
+size: 5350
 location: src/tests/client/test-client.py:test_003()/85
 cmd: $NMCLI c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5168 bytes
+stdout: 5167 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -3465,7 +3465,7 @@ ipv4.may-fail:                          tak
 ipv4.required-timeout:                  -1 (default)
 ipv4.dad-timeout:                       -1 (default)
 ipv4.dhcp-vendor-class-identifier:      --
-ipv4.link-local:                        -1 (none)
+ipv4.link-local:                        0 (auto)
 ipv4.dhcp-reject-servers:               --
 ipv6.method:                            auto
 ipv6.dns:                               --
@@ -3722,12 +3722,12 @@ UUID-con-gsm3-REPLACED-REPLACED-REPL  gsm
 UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet 
 
 <<<
-size: 6000
+size: 5999
 location: src/tests/client/test-client.py:test_003()/92
 cmd: $NMCLI --color yes con s ethernet
 lang: C
 returncode: 0
-stdout: 5855 bytes
+stdout: 5854 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -3794,7 +3794,7 @@ ipv4.may-fail:                          yes
 ipv4.required-timeout:                  -1 (default)
 ipv4.dad-timeout:                       -1 (default)
 ipv4.dhcp-vendor-class-identifier:      --
-ipv4.link-local:                        -1 (none)
+ipv4.link-local:                        0 (auto)
 ipv4.dhcp-reject-servers:               --
 ipv6.method:                            auto
 ipv6.dns:                               --
@@ -3855,12 +3855,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 6037
+size: 6036
 location: src/tests/client/test-client.py:test_003()/93
 cmd: $NMCLI --color yes con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5882 bytes
+stdout: 5881 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -3927,7 +3927,7 @@ ipv4.may-fail:                          tak
 ipv4.required-timeout:                  -1 (default)
 ipv4.dad-timeout:                       -1 (default)
 ipv4.dhcp-vendor-class-identifier:      --
-ipv4.link-local:                        -1 (none)
+ipv4.link-local:                        0 (auto)
 ipv4.dhcp-reject-servers:               --
 ipv6.method:                            auto
 ipv6.dns:                               --
@@ -3988,12 +3988,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 5330
+size: 5329
 location: src/tests/client/test-client.py:test_003()/94
 cmd: $NMCLI --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 5145 bytes
+stdout: 5144 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -4060,7 +4060,7 @@ ipv4.may-fail:                          yes
 ipv4.required-timeout:                  -1 (default)
 ipv4.dad-timeout:                       -1 (default)
 ipv4.dhcp-vendor-class-identifier:      --
-ipv4.link-local:                        -1 (none)
+ipv4.link-local:                        0 (auto)
 ipv4.dhcp-reject-servers:               --
 ipv6.method:                            auto
 ipv6.dns:                               --
@@ -4107,12 +4107,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 5363
+size: 5362
 location: src/tests/client/test-client.py:test_003()/95
 cmd: $NMCLI --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5168 bytes
+stdout: 5167 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -4179,7 +4179,7 @@ ipv4.may-fail:                          tak
 ipv4.required-timeout:                  -1 (default)
 ipv4.dad-timeout:                       -1 (default)
 ipv4.dhcp-vendor-class-identifier:      --
-ipv4.link-local:                        -1 (none)
+ipv4.link-local:                        0 (auto)
 ipv4.dhcp-reject-servers:               --
 ipv6.method:                            auto
 ipv6.dns:                               --
@@ -4452,12 +4452,12 @@ UUID-con-gsm3-REPLACED-REPLACED-REPL  gsm
 UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet 
 
 <<<
-size: 7241
+size: 7240
 location: src/tests/client/test-client.py:test_003()/102
 cmd: $NMCLI --pretty con s ethernet
 lang: C
 returncode: 0
-stdout: 7098 bytes
+stdout: 7097 bytes
 >>>
 ===============================================================================
                      Connection profile details (ethernet)
@@ -4529,7 +4529,7 @@ ipv4.may-fail:                          yes
 ipv4.required-timeout:                  -1 (default)
 ipv4.dad-timeout:                       -1 (default)
 ipv4.dhcp-vendor-class-identifier:      --
-ipv4.link-local:                        -1 (none)
+ipv4.link-local:                        0 (auto)
 ipv4.dhcp-reject-servers:               --
 -------------------------------------------------------------------------------
 ipv6.method:                            auto
@@ -4601,12 +4601,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 7299
+size: 7298
 location: src/tests/client/test-client.py:test_003()/103
 cmd: $NMCLI --pretty con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 7146 bytes
+stdout: 7145 bytes
 >>>
 ===============================================================================
                     Szczegóły profilu połączenia (ethernet)
@@ -4678,7 +4678,7 @@ ipv4.may-fail:                          tak
 ipv4.required-timeout:                  -1 (default)
 ipv4.dad-timeout:                       -1 (default)
 ipv4.dhcp-vendor-class-identifier:      --
-ipv4.link-local:                        -1 (none)
+ipv4.link-local:                        0 (auto)
 ipv4.dhcp-reject-servers:               --
 -------------------------------------------------------------------------------
 ipv6.method:                            auto
@@ -4750,12 +4750,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 6259
+size: 6258
 location: src/tests/client/test-client.py:test_003()/104
 cmd: $NMCLI --pretty c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 6076 bytes
+stdout: 6075 bytes
 >>>
 ===============================================================================
                      Connection profile details (ethernet)
@@ -4827,7 +4827,7 @@ ipv4.may-fail:                          yes
 ipv4.required-timeout:                  -1 (default)
 ipv4.dad-timeout:                       -1 (default)
 ipv4.dhcp-vendor-class-identifier:      --
-ipv4.link-local:                        -1 (none)
+ipv4.link-local:                        0 (auto)
 ipv4.dhcp-reject-servers:               --
 -------------------------------------------------------------------------------
 ipv6.method:                            auto
@@ -4881,12 +4881,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 6305
+size: 6304
 location: src/tests/client/test-client.py:test_003()/105
 cmd: $NMCLI --pretty c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 6112 bytes
+stdout: 6111 bytes
 >>>
 ===============================================================================
                     Szczegóły profilu połączenia (ethernet)
@@ -4958,7 +4958,7 @@ ipv4.may-fail:                          tak
 ipv4.required-timeout:                  -1 (default)
 ipv4.dad-timeout:                       -1 (default)
 ipv4.dhcp-vendor-class-identifier:      --
-ipv4.link-local:                        -1 (none)
+ipv4.link-local:                        0 (auto)
 ipv4.dhcp-reject-servers:               --
 -------------------------------------------------------------------------------
 ipv6.method:                            auto
@@ -5262,12 +5262,12 @@ UUID-con-gsm3-REPLACED-REPLACED-REPL  gsm
 UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet 
 
 <<<
-size: 7253
+size: 7252
 location: src/tests/client/test-client.py:test_003()/112
 cmd: $NMCLI --pretty --color yes con s ethernet
 lang: C
 returncode: 0
-stdout: 7098 bytes
+stdout: 7097 bytes
 >>>
 ===============================================================================
                      Connection profile details (ethernet)
@@ -5339,7 +5339,7 @@ ipv4.may-fail:                          yes
 ipv4.required-timeout:                  -1 (default)
 ipv4.dad-timeout:                       -1 (default)
 ipv4.dhcp-vendor-class-identifier:      --
-ipv4.link-local:                        -1 (none)
+ipv4.link-local:                        0 (auto)
 ipv4.dhcp-reject-servers:               --
 -------------------------------------------------------------------------------
 ipv6.method:                            auto
@@ -5411,12 +5411,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 7311
+size: 7310
 location: src/tests/client/test-client.py:test_003()/113
 cmd: $NMCLI --pretty --color yes con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 7146 bytes
+stdout: 7145 bytes
 >>>
 ===============================================================================
                     Szczegóły profilu połączenia (ethernet)
@@ -5488,7 +5488,7 @@ ipv4.may-fail:                          tak
 ipv4.required-timeout:                  -1 (default)
 ipv4.dad-timeout:                       -1 (default)
 ipv4.dhcp-vendor-class-identifier:      --
-ipv4.link-local:                        -1 (none)
+ipv4.link-local:                        0 (auto)
 ipv4.dhcp-reject-servers:               --
 -------------------------------------------------------------------------------
 ipv6.method:                            auto
@@ -5560,12 +5560,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 6271
+size: 6270
 location: src/tests/client/test-client.py:test_003()/114
 cmd: $NMCLI --pretty --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 6076 bytes
+stdout: 6075 bytes
 >>>
 ===============================================================================
                      Connection profile details (ethernet)
@@ -5637,7 +5637,7 @@ ipv4.may-fail:                          yes
 ipv4.required-timeout:                  -1 (default)
 ipv4.dad-timeout:                       -1 (default)
 ipv4.dhcp-vendor-class-identifier:      --
-ipv4.link-local:                        -1 (none)
+ipv4.link-local:                        0 (auto)
 ipv4.dhcp-reject-servers:               --
 -------------------------------------------------------------------------------
 ipv6.method:                            auto
@@ -5691,12 +5691,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 6317
+size: 6316
 location: src/tests/client/test-client.py:test_003()/115
 cmd: $NMCLI --pretty --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 6112 bytes
+stdout: 6111 bytes
 >>>
 ===============================================================================
                     Szczegóły profilu połączenia (ethernet)
@@ -5768,7 +5768,7 @@ ipv4.may-fail:                          tak
 ipv4.required-timeout:                  -1 (default)
 ipv4.dad-timeout:                       -1 (default)
 ipv4.dhcp-vendor-class-identifier:      --
-ipv4.link-local:                        -1 (none)
+ipv4.link-local:                        0 (auto)
 ipv4.dhcp-reject-servers:               --
 -------------------------------------------------------------------------------
 ipv6.method:                            auto
@@ -6052,12 +6052,12 @@ UUID-con-gsm3-REPLACED-REPLACED-REPL:gsm
 UUID-con-xx1-REPLACED-REPLACED-REPLA:802-3-ethernet
 
 <<<
-size: 3212
+size: 3211
 location: src/tests/client/test-client.py:test_003()/122
 cmd: $NMCLI --terse con s ethernet
 lang: C
 returncode: 0
-stdout: 3070 bytes
+stdout: 3069 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -6124,7 +6124,7 @@ ipv4.may-fail:yes
 ipv4.required-timeout:-1
 ipv4.dad-timeout:-1
 ipv4.dhcp-vendor-class-identifier:
-ipv4.link-local:-1
+ipv4.link-local:0
 ipv4.dhcp-reject-servers:
 ipv6.method:auto
 ipv6.dns:
@@ -6185,12 +6185,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 3222
+size: 3221
 location: src/tests/client/test-client.py:test_003()/123
 cmd: $NMCLI --terse con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3070 bytes
+stdout: 3069 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -6257,7 +6257,7 @@ ipv4.may-fail:yes
 ipv4.required-timeout:-1
 ipv4.dad-timeout:-1
 ipv4.dhcp-vendor-class-identifier:
-ipv4.link-local:-1
+ipv4.link-local:0
 ipv4.dhcp-reject-servers:
 ipv6.method:auto
 ipv6.dns:
@@ -6318,12 +6318,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 2862
+size: 2861
 location: src/tests/client/test-client.py:test_003()/124
 cmd: $NMCLI --terse c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 2680 bytes
+stdout: 2679 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -6390,7 +6390,7 @@ ipv4.may-fail:yes
 ipv4.required-timeout:-1
 ipv4.dad-timeout:-1
 ipv4.dhcp-vendor-class-identifier:
-ipv4.link-local:-1
+ipv4.link-local:0
 ipv4.dhcp-reject-servers:
 ipv6.method:auto
 ipv6.dns:
@@ -6437,12 +6437,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 2872
+size: 2871
 location: src/tests/client/test-client.py:test_003()/125
 cmd: $NMCLI --terse c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2680 bytes
+stdout: 2679 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -6509,7 +6509,7 @@ ipv4.may-fail:yes
 ipv4.required-timeout:-1
 ipv4.dad-timeout:-1
 ipv4.dhcp-vendor-class-identifier:
-ipv4.link-local:-1
+ipv4.link-local:0
 ipv4.dhcp-reject-servers:
 ipv6.method:auto
 ipv6.dns:
@@ -6762,12 +6762,12 @@ UUID-con-gsm3-REPLACED-REPLACED-REPL:gsm
 UUID-con-xx1-REPLACED-REPLACED-REPLA:802-3-ethernet
 
 <<<
-size: 3224
+size: 3223
 location: src/tests/client/test-client.py:test_003()/132
 cmd: $NMCLI --terse --color yes con s ethernet
 lang: C
 returncode: 0
-stdout: 3070 bytes
+stdout: 3069 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -6834,7 +6834,7 @@ ipv4.may-fail:yes
 ipv4.required-timeout:-1
 ipv4.dad-timeout:-1
 ipv4.dhcp-vendor-class-identifier:
-ipv4.link-local:-1
+ipv4.link-local:0
 ipv4.dhcp-reject-servers:
 ipv6.method:auto
 ipv6.dns:
@@ -6895,12 +6895,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 3234
+size: 3233
 location: src/tests/client/test-client.py:test_003()/133
 cmd: $NMCLI --terse --color yes con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3070 bytes
+stdout: 3069 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -6967,7 +6967,7 @@ ipv4.may-fail:yes
 ipv4.required-timeout:-1
 ipv4.dad-timeout:-1
 ipv4.dhcp-vendor-class-identifier:
-ipv4.link-local:-1
+ipv4.link-local:0
 ipv4.dhcp-reject-servers:
 ipv6.method:auto
 ipv6.dns:
@@ -7028,12 +7028,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 2874
+size: 2873
 location: src/tests/client/test-client.py:test_003()/134
 cmd: $NMCLI --terse --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 2680 bytes
+stdout: 2679 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -7100,7 +7100,7 @@ ipv4.may-fail:yes
 ipv4.required-timeout:-1
 ipv4.dad-timeout:-1
 ipv4.dhcp-vendor-class-identifier:
-ipv4.link-local:-1
+ipv4.link-local:0
 ipv4.dhcp-reject-servers:
 ipv6.method:auto
 ipv6.dns:
@@ -7147,12 +7147,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 2884
+size: 2883
 location: src/tests/client/test-client.py:test_003()/135
 cmd: $NMCLI --terse --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2680 bytes
+stdout: 2679 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -7219,7 +7219,7 @@ ipv4.may-fail:yes
 ipv4.required-timeout:-1
 ipv4.dad-timeout:-1
 ipv4.dhcp-vendor-class-identifier:
-ipv4.link-local:-1
+ipv4.link-local:0
 ipv4.dhcp-reject-servers:
 ipv6.method:auto
 ipv6.dns:
@@ -7490,7 +7490,7 @@ name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-add
 802-3-ethernet  --    0      --      no              --           --                  --                         --                     auto  --                --            --            default      --                    -1 (default)             
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local  dhcp-reject-servers 
-ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             no                  no               --              --         0 (default)   yes                 --             --         0x0 (none)           no             yes       -1 (default)      -1 (default)  --                            -1 (none)   --                  
+ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             no                  no               --              --         0 (default)   yes                 --             --         0x0 (none)           no             yes       -1 (default)      -1 (default)  --                            0 (auto)    --                  
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   addr-gen-mode   ra-timeout   dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  token 
 ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             no                  no               no             yes       -1 (default)      -1 (unknown)  stable-privacy  0 (default)  --         --         0 (default)   yes                 --             0x0 (none)           --    
@@ -7521,7 +7521,7 @@ name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-add
 802-3-ethernet  --    0      --      nie             --           --                  --                         --                     automatyczne  --                --            --            default      --                    -1 (default)             
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local  dhcp-reject-servers 
-ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             nie                 nie              --              --         0 (default)   tak                 --             --         0x0 (none)           nie            tak       -1 (default)      -1 (default)  --                            -1 (none)   --                  
+ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             nie                 nie              --              --         0 (default)   tak                 --             --         0x0 (none)           nie            tak       -1 (default)      -1 (default)  --                            0 (auto)    --                  
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   addr-gen-mode   ra-timeout   dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  token 
 ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             nie                 nie              nie            tak       -1 (default)      -1 (unknown)  stable-privacy  0 (default)  --         --         0 (default)   tak                 --             0x0 (none)           --    
@@ -7552,7 +7552,7 @@ name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-add
 802-3-ethernet  --    0      --      no              --           --                  --                         --                     auto  --                --            --            default      --                    -1 (default)             
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local  dhcp-reject-servers 
-ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             no                  no               --              --         0 (default)   yes                 --             --         0x0 (none)           no             yes       -1 (default)      -1 (default)  --                            -1 (none)   --                  
+ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             no                  no               --              --         0 (default)   yes                 --             --         0x0 (none)           no             yes       -1 (default)      -1 (default)  --                            0 (auto)    --                  
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   addr-gen-mode   ra-timeout   dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  token 
 ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             no                  no               no             yes       -1 (default)      -1 (unknown)  stable-privacy  0 (default)  --         --         0 (default)   yes                 --             0x0 (none)           --    
@@ -7579,7 +7579,7 @@ name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-add
 802-3-ethernet  --    0      --      nie             --           --                  --                         --                     automatyczne  --                --            --            default      --                    -1 (default)             
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local  dhcp-reject-servers 
-ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             nie                 nie              --              --         0 (default)   tak                 --             --         0x0 (none)           nie            tak       -1 (default)      -1 (default)  --                            -1 (none)   --                  
+ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             nie                 nie              --              --         0 (default)   tak                 --             --         0x0 (none)           nie            tak       -1 (default)      -1 (default)  --                            0 (auto)    --                  
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   addr-gen-mode   ra-timeout   dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  token 
 ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             nie                 nie              nie            tak       -1 (default)      -1 (unknown)  stable-privacy  0 (default)  --         --         0 (default)   tak                 --             0x0 (none)           --    
@@ -7742,7 +7742,7 @@ name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-add
 802-3-ethernet  --    0      --      no              --           --                  --                         --                     auto  --                --            --            default      --                    -1 (default)             
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local  dhcp-reject-servers 
-ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             no                  no               --              --         0 (default)   yes                 --             --         0x0 (none)           no             yes       -1 (default)      -1 (default)  --                            -1 (none)   --                  
+ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             no                  no               --              --         0 (default)   yes                 --             --         0x0 (none)           no             yes       -1 (default)      -1 (default)  --                            0 (auto)    --                  
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   addr-gen-mode   ra-timeout   dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  token 
 ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             no                  no               no             yes       -1 (default)      -1 (unknown)  stable-privacy  0 (default)  --         --         0 (default)   yes                 --             0x0 (none)           --    
@@ -7773,7 +7773,7 @@ name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-add
 802-3-ethernet  --    0      --      nie             --           --                  --                         --                     automatyczne  --                --            --            default      --                    -1 (default)             
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local  dhcp-reject-servers 
-ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             nie                 nie              --              --         0 (default)   tak                 --             --         0x0 (none)           nie            tak       -1 (default)      -1 (default)  --                            -1 (none)   --                  
+ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             nie                 nie              --              --         0 (default)   tak                 --             --         0x0 (none)           nie            tak       -1 (default)      -1 (default)  --                            0 (auto)    --                  
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   addr-gen-mode   ra-timeout   dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  token 
 ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             nie                 nie              nie            tak       -1 (default)      -1 (unknown)  stable-privacy  0 (default)  --         --         0 (default)   tak                 --             0x0 (none)           --    
@@ -7804,7 +7804,7 @@ name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-add
 802-3-ethernet  --    0      --      no              --           --                  --                         --                     auto  --                --            --            default      --                    -1 (default)             
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local  dhcp-reject-servers 
-ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             no                  no               --              --         0 (default)   yes                 --             --         0x0 (none)           no             yes       -1 (default)      -1 (default)  --                            -1 (none)   --                  
+ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             no                  no               --              --         0 (default)   yes                 --             --         0x0 (none)           no             yes       -1 (default)      -1 (default)  --                            0 (auto)    --                  
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   addr-gen-mode   ra-timeout   dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  token 
 ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             no                  no               no             yes       -1 (default)      -1 (unknown)  stable-privacy  0 (default)  --         --         0 (default)   yes                 --             0x0 (none)           --    
@@ -7831,7 +7831,7 @@ name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-add
 802-3-ethernet  --    0      --      nie             --           --                  --                         --                     automatyczne  --                --            --            default      --                    -1 (default)             
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local  dhcp-reject-servers 
-ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             nie                 nie              --              --         0 (default)   tak                 --             --         0x0 (none)           nie            tak       -1 (default)      -1 (default)  --                            -1 (none)   --                  
+ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             nie                 nie              --              --         0 (default)   tak                 --             --         0x0 (none)           nie            tak       -1 (default)      -1 (default)  --                            0 (auto)    --                  
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   addr-gen-mode   ra-timeout   dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  token 
 ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             nie                 nie              nie            tak       -1 (default)      -1 (unknown)  stable-privacy  0 (default)  --         --         0 (default)   tak                 --             0x0 (none)           --    
@@ -8016,7 +8016,7 @@ name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-add
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local  dhcp-reject-servers 
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             no                  no               --              --         0 (default)   yes                 --             --         0x0 (none)           no             yes       -1 (default)      -1 (default)  --                            -1 (none)   --                  
+ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             no                  no               --              --         0 (default)   yes                 --             --         0x0 (none)           no             yes       -1 (default)      -1 (default)  --                            0 (auto)    --                  
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   addr-gen-mode   ra-timeout   dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  token 
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -8063,7 +8063,7 @@ name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-add
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local  dhcp-reject-servers 
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             nie                 nie              --              --         0 (default)   tak                 --             --         0x0 (none)           nie            tak       -1 (default)      -1 (default)  --                            -1 (none)   --                  
+ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             nie                 nie              --              --         0 (default)   tak                 --             --         0x0 (none)           nie            tak       -1 (default)      -1 (default)  --                            0 (auto)    --                  
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   addr-gen-mode   ra-timeout   dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  token 
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -8110,7 +8110,7 @@ name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-add
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local  dhcp-reject-servers 
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             no                  no               --              --         0 (default)   yes                 --             --         0x0 (none)           no             yes       -1 (default)      -1 (default)  --                            -1 (none)   --                  
+ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             no                  no               --              --         0 (default)   yes                 --             --         0x0 (none)           no             yes       -1 (default)      -1 (default)  --                            0 (auto)    --                  
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   addr-gen-mode   ra-timeout   dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  token 
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -8149,7 +8149,7 @@ name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-add
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local  dhcp-reject-servers 
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             nie                 nie              --              --         0 (default)   tak                 --             --         0x0 (none)           nie            tak       -1 (default)      -1 (default)  --                            -1 (none)   --                  
+ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             nie                 nie              --              --         0 (default)   tak                 --             --         0x0 (none)           nie            tak       -1 (default)      -1 (default)  --                            0 (auto)    --                  
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   addr-gen-mode   ra-timeout   dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  token 
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -8364,7 +8364,7 @@ name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-add
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local  dhcp-reject-servers 
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             no                  no               --              --         0 (default)   yes                 --             --         0x0 (none)           no             yes       -1 (default)      -1 (default)  --                            -1 (none)   --                  
+ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             no                  no               --              --         0 (default)   yes                 --             --         0x0 (none)           no             yes       -1 (default)      -1 (default)  --                            0 (auto)    --                  
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   addr-gen-mode   ra-timeout   dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  token 
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -8411,7 +8411,7 @@ name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-add
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local  dhcp-reject-servers 
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             nie                 nie              --              --         0 (default)   tak                 --             --         0x0 (none)           nie            tak       -1 (default)      -1 (default)  --                            -1 (none)   --                  
+ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             nie                 nie              --              --         0 (default)   tak                 --             --         0x0 (none)           nie            tak       -1 (default)      -1 (default)  --                            0 (auto)    --                  
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   addr-gen-mode   ra-timeout   dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  token 
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -8458,7 +8458,7 @@ name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-add
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local  dhcp-reject-servers 
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             no                  no               --              --         0 (default)   yes                 --             --         0x0 (none)           no             yes       -1 (default)      -1 (default)  --                            -1 (none)   --                  
+ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             no                  no               --              --         0 (default)   yes                 --             --         0x0 (none)           no             yes       -1 (default)      -1 (default)  --                            0 (auto)    --                  
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   addr-gen-mode   ra-timeout   dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  token 
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -8497,7 +8497,7 @@ name            port  speed  duplex  auto-negotiate  mac-address  cloned-mac-add
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local  dhcp-reject-servers 
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             nie                 nie              --              --         0 (default)   tak                 --             --         0x0 (none)           nie            tak       -1 (default)      -1 (default)  --                            -1 (none)   --                  
+ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             nie                 nie              --              --         0 (default)   tak                 --             --         0x0 (none)           nie            tak       -1 (default)      -1 (default)  --                            0 (auto)    --                  
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   addr-gen-mode   ra-timeout   dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  token 
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -8672,16 +8672,16 @@ UUID-con-gsm3-REPLACED-REPLACED-REPL:gsm
 UUID-con-xx1-REPLACED-REPLACED-REPLA:802-3-ethernet
 
 <<<
-size: 871
+size: 870
 location: src/tests/client/test-client.py:test_003()/182
 cmd: $NMCLI --mode tabular --terse con s ethernet
 lang: C
 returncode: 0
-stdout: 715 bytes
+stdout: 714 bytes
 >>>
 connection:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL::802-3-ethernet::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1:-1
 802-3-ethernet::0::no:::::auto::::default::-1
-ipv4:auto::::0::::-1:0::no:no:::0:yes:::0x0:no:yes:-1:-1::-1:
+ipv4:auto::::0::::-1:0::no:no:::0:yes:::0x0:no:yes:-1:-1::0:
 ipv6:auto::::0::::-1:0::no:no:no:yes:-1:-1:stable-privacy:0:::0:yes::0x0:
 proxy:none:no::
 GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth1:eth1:activated:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/2:/org/freedesktop/NetworkManager/Settings/Connection/6::
@@ -8689,16 +8689,16 @@ GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth1:eth1:activated:no:no:
 GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth0:eth0:deactivating:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/1:/org/freedesktop/NetworkManager/Settings/Connection/6::
 
 <<<
-size: 881
+size: 880
 location: src/tests/client/test-client.py:test_003()/183
 cmd: $NMCLI --mode tabular --terse con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 715 bytes
+stdout: 714 bytes
 >>>
 connection:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL::802-3-ethernet::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1:-1
 802-3-ethernet::0::no:::::auto::::default::-1
-ipv4:auto::::0::::-1:0::no:no:::0:yes:::0x0:no:yes:-1:-1::-1:
+ipv4:auto::::0::::-1:0::no:no:::0:yes:::0x0:no:yes:-1:-1::0:
 ipv6:auto::::0::::-1:0::no:no:no:yes:-1:-1:stable-privacy:0:::0:yes::0x0:
 proxy:none:no::
 GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth1:eth1:activated:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/2:/org/freedesktop/NetworkManager/Settings/Connection/6::
@@ -8706,31 +8706,31 @@ GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth1:eth1:activated:no:no:
 GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth0:eth0:deactivating:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/1:/org/freedesktop/NetworkManager/Settings/Connection/6::
 
 <<<
-size: 719
+size: 718
 location: src/tests/client/test-client.py:test_003()/184
 cmd: $NMCLI --mode tabular --terse c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 523 bytes
+stdout: 522 bytes
 >>>
 connection:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL::802-3-ethernet::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1:-1
 802-3-ethernet::0::no:::::auto::::default::-1
-ipv4:auto::::0::::-1:0::no:no:::0:yes:::0x0:no:yes:-1:-1::-1:
+ipv4:auto::::0::::-1:0::no:no:::0:yes:::0x0:no:yes:-1:-1::0:
 ipv6:auto::::0::::-1:0::no:no:no:yes:-1:-1:stable-privacy:0:::0:yes::0x0:
 proxy:none:no::
 GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth0:eth0:deactivating:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/1:/org/freedesktop/NetworkManager/Settings/Connection/6::
 
 <<<
-size: 729
+size: 728
 location: src/tests/client/test-client.py:test_003()/185
 cmd: $NMCLI --mode tabular --terse c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 523 bytes
+stdout: 522 bytes
 >>>
 connection:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL::802-3-ethernet::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1:-1
 802-3-ethernet::0::no:::::auto::::default::-1
-ipv4:auto::::0::::-1:0::no:no:::0:yes:::0x0:no:yes:-1:-1::-1:
+ipv4:auto::::0::::-1:0::no:no:::0:yes:::0x0:no:yes:-1:-1::0:
 ipv6:auto::::0::::-1:0::no:no:no:yes:-1:-1:stable-privacy:0:::0:yes::0x0:
 proxy:none:no::
 GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth0:eth0:deactivating:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/1:/org/freedesktop/NetworkManager/Settings/Connection/6::
@@ -8834,16 +8834,16 @@ UUID-con-gsm3-REPLACED-REPLACED-REPL:gsm
 UUID-con-xx1-REPLACED-REPLACED-REPLA:802-3-ethernet
 
 <<<
-size: 883
+size: 882
 location: src/tests/client/test-client.py:test_003()/192
 cmd: $NMCLI --mode tabular --terse --color yes con s ethernet
 lang: C
 returncode: 0
-stdout: 715 bytes
+stdout: 714 bytes
 >>>
 connection:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL::802-3-ethernet::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1:-1
 802-3-ethernet::0::no:::::auto::::default::-1
-ipv4:auto::::0::::-1:0::no:no:::0:yes:::0x0:no:yes:-1:-1::-1:
+ipv4:auto::::0::::-1:0::no:no:::0:yes:::0x0:no:yes:-1:-1::0:
 ipv6:auto::::0::::-1:0::no:no:no:yes:-1:-1:stable-privacy:0:::0:yes::0x0:
 proxy:none:no::
 GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth1:eth1:activated:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/2:/org/freedesktop/NetworkManager/Settings/Connection/6::
@@ -8851,16 +8851,16 @@ GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth1:eth1:activated:no:no:
 GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth0:eth0:deactivating:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/1:/org/freedesktop/NetworkManager/Settings/Connection/6::
 
 <<<
-size: 893
+size: 892
 location: src/tests/client/test-client.py:test_003()/193
 cmd: $NMCLI --mode tabular --terse --color yes con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 715 bytes
+stdout: 714 bytes
 >>>
 connection:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL::802-3-ethernet::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1:-1
 802-3-ethernet::0::no:::::auto::::default::-1
-ipv4:auto::::0::::-1:0::no:no:::0:yes:::0x0:no:yes:-1:-1::-1:
+ipv4:auto::::0::::-1:0::no:no:::0:yes:::0x0:no:yes:-1:-1::0:
 ipv6:auto::::0::::-1:0::no:no:no:yes:-1:-1:stable-privacy:0:::0:yes::0x0:
 proxy:none:no::
 GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth1:eth1:activated:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/2:/org/freedesktop/NetworkManager/Settings/Connection/6::
@@ -8868,31 +8868,31 @@ GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth1:eth1:activated:no:no:
 GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth0:eth0:deactivating:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/1:/org/freedesktop/NetworkManager/Settings/Connection/6::
 
 <<<
-size: 731
+size: 730
 location: src/tests/client/test-client.py:test_003()/194
 cmd: $NMCLI --mode tabular --terse --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 523 bytes
+stdout: 522 bytes
 >>>
 connection:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL::802-3-ethernet::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1:-1
 802-3-ethernet::0::no:::::auto::::default::-1
-ipv4:auto::::0::::-1:0::no:no:::0:yes:::0x0:no:yes:-1:-1::-1:
+ipv4:auto::::0::::-1:0::no:no:::0:yes:::0x0:no:yes:-1:-1::0:
 ipv6:auto::::0::::-1:0::no:no:no:yes:-1:-1:stable-privacy:0:::0:yes::0x0:
 proxy:none:no::
 GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth0:eth0:deactivating:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/1:/org/freedesktop/NetworkManager/Settings/Connection/6::
 
 <<<
-size: 741
+size: 740
 location: src/tests/client/test-client.py:test_003()/195
 cmd: $NMCLI --mode tabular --terse --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 523 bytes
+stdout: 522 bytes
 >>>
 connection:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL::802-3-ethernet::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1:-1
 802-3-ethernet::0::no:::::auto::::default::-1
-ipv4:auto::::0::::-1:0::no:no:::0:yes:::0x0:no:yes:-1:-1::-1:
+ipv4:auto::::0::::-1:0::no:no:::0:yes:::0x0:no:yes:-1:-1::0:
 ipv6:auto::::0::::-1:0::no:no:no:yes:-1:-1:stable-privacy:0:::0:yes::0x0:
 proxy:none:no::
 GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth0:eth0:deactivating:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/1:/org/freedesktop/NetworkManager/Settings/Connection/6::
@@ -9204,12 +9204,12 @@ UUID:                                   UUID-con-xx1-REPLACED-REPLACED-REPLA
 TYPE:                                   ethernet
 
 <<<
-size: 6006
+size: 6005
 location: src/tests/client/test-client.py:test_003()/202
 cmd: $NMCLI --mode multiline con s ethernet
 lang: C
 returncode: 0
-stdout: 5855 bytes
+stdout: 5854 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -9276,7 +9276,7 @@ ipv4.may-fail:                          yes
 ipv4.required-timeout:                  -1 (default)
 ipv4.dad-timeout:                       -1 (default)
 ipv4.dhcp-vendor-class-identifier:      --
-ipv4.link-local:                        -1 (none)
+ipv4.link-local:                        0 (auto)
 ipv4.dhcp-reject-servers:               --
 ipv6.method:                            auto
 ipv6.dns:                               --
@@ -9337,12 +9337,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 6043
+size: 6042
 location: src/tests/client/test-client.py:test_003()/203
 cmd: $NMCLI --mode multiline con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5882 bytes
+stdout: 5881 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -9409,7 +9409,7 @@ ipv4.may-fail:                          tak
 ipv4.required-timeout:                  -1 (default)
 ipv4.dad-timeout:                       -1 (default)
 ipv4.dhcp-vendor-class-identifier:      --
-ipv4.link-local:                        -1 (none)
+ipv4.link-local:                        0 (auto)
 ipv4.dhcp-reject-servers:               --
 ipv6.method:                            auto
 ipv6.dns:                               --
@@ -9470,12 +9470,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 5336
+size: 5335
 location: src/tests/client/test-client.py:test_003()/204
 cmd: $NMCLI --mode multiline c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 5145 bytes
+stdout: 5144 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -9542,7 +9542,7 @@ ipv4.may-fail:                          yes
 ipv4.required-timeout:                  -1 (default)
 ipv4.dad-timeout:                       -1 (default)
 ipv4.dhcp-vendor-class-identifier:      --
-ipv4.link-local:                        -1 (none)
+ipv4.link-local:                        0 (auto)
 ipv4.dhcp-reject-servers:               --
 ipv6.method:                            auto
 ipv6.dns:                               --
@@ -9589,12 +9589,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 5369
+size: 5368
 location: src/tests/client/test-client.py:test_003()/205
 cmd: $NMCLI --mode multiline c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5168 bytes
+stdout: 5167 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -9661,7 +9661,7 @@ ipv4.may-fail:                          tak
 ipv4.required-timeout:                  -1 (default)
 ipv4.dad-timeout:                       -1 (default)
 ipv4.dhcp-vendor-class-identifier:      --
-ipv4.link-local:                        -1 (none)
+ipv4.link-local:                        0 (auto)
 ipv4.dhcp-reject-servers:               --
 ipv6.method:                            auto
 ipv6.dns:                               --
@@ -10122,12 +10122,12 @@ UUID:                                   UUID-con-xx1-REPLACED-REPLACED-REPLA
 TYPE:                                   ethernet
 
 <<<
-size: 6018
+size: 6017
 location: src/tests/client/test-client.py:test_003()/212
 cmd: $NMCLI --mode multiline --color yes con s ethernet
 lang: C
 returncode: 0
-stdout: 5855 bytes
+stdout: 5854 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -10194,7 +10194,7 @@ ipv4.may-fail:                          yes
 ipv4.required-timeout:                  -1 (default)
 ipv4.dad-timeout:                       -1 (default)
 ipv4.dhcp-vendor-class-identifier:      --
-ipv4.link-local:                        -1 (none)
+ipv4.link-local:                        0 (auto)
 ipv4.dhcp-reject-servers:               --
 ipv6.method:                            auto
 ipv6.dns:                               --
@@ -10255,12 +10255,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 6055
+size: 6054
 location: src/tests/client/test-client.py:test_003()/213
 cmd: $NMCLI --mode multiline --color yes con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5882 bytes
+stdout: 5881 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -10327,7 +10327,7 @@ ipv4.may-fail:                          tak
 ipv4.required-timeout:                  -1 (default)
 ipv4.dad-timeout:                       -1 (default)
 ipv4.dhcp-vendor-class-identifier:      --
-ipv4.link-local:                        -1 (none)
+ipv4.link-local:                        0 (auto)
 ipv4.dhcp-reject-servers:               --
 ipv6.method:                            auto
 ipv6.dns:                               --
@@ -10388,12 +10388,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 5348
+size: 5347
 location: src/tests/client/test-client.py:test_003()/214
 cmd: $NMCLI --mode multiline --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 5145 bytes
+stdout: 5144 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -10460,7 +10460,7 @@ ipv4.may-fail:                          yes
 ipv4.required-timeout:                  -1 (default)
 ipv4.dad-timeout:                       -1 (default)
 ipv4.dhcp-vendor-class-identifier:      --
-ipv4.link-local:                        -1 (none)
+ipv4.link-local:                        0 (auto)
 ipv4.dhcp-reject-servers:               --
 ipv6.method:                            auto
 ipv6.dns:                               --
@@ -10507,12 +10507,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 5381
+size: 5380
 location: src/tests/client/test-client.py:test_003()/215
 cmd: $NMCLI --mode multiline --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5168 bytes
+stdout: 5167 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -10579,7 +10579,7 @@ ipv4.may-fail:                          tak
 ipv4.required-timeout:                  -1 (default)
 ipv4.dad-timeout:                       -1 (default)
 ipv4.dhcp-vendor-class-identifier:      --
-ipv4.link-local:                        -1 (none)
+ipv4.link-local:                        0 (auto)
 ipv4.dhcp-reject-servers:               --
 ipv6.method:                            auto
 ipv6.dns:                               --
@@ -11078,12 +11078,12 @@ TYPE:                                   ethernet
 -------------------------------------------------------------------------------
 
 <<<
-size: 7258
+size: 7257
 location: src/tests/client/test-client.py:test_003()/222
 cmd: $NMCLI --mode multiline --pretty con s ethernet
 lang: C
 returncode: 0
-stdout: 7098 bytes
+stdout: 7097 bytes
 >>>
 ===============================================================================
                      Connection profile details (ethernet)
@@ -11155,7 +11155,7 @@ ipv4.may-fail:                          yes
 ipv4.required-timeout:                  -1 (default)
 ipv4.dad-timeout:                       -1 (default)
 ipv4.dhcp-vendor-class-identifier:      --
-ipv4.link-local:                        -1 (none)
+ipv4.link-local:                        0 (auto)
 ipv4.dhcp-reject-servers:               --
 -------------------------------------------------------------------------------
 ipv6.method:                            auto
@@ -11227,12 +11227,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 7316
+size: 7315
 location: src/tests/client/test-client.py:test_003()/223
 cmd: $NMCLI --mode multiline --pretty con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 7146 bytes
+stdout: 7145 bytes
 >>>
 ===============================================================================
                     Szczegóły profilu połączenia (ethernet)
@@ -11304,7 +11304,7 @@ ipv4.may-fail:                          tak
 ipv4.required-timeout:                  -1 (default)
 ipv4.dad-timeout:                       -1 (default)
 ipv4.dhcp-vendor-class-identifier:      --
-ipv4.link-local:                        -1 (none)
+ipv4.link-local:                        0 (auto)
 ipv4.dhcp-reject-servers:               --
 -------------------------------------------------------------------------------
 ipv6.method:                            auto
@@ -11376,12 +11376,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 6276
+size: 6275
 location: src/tests/client/test-client.py:test_003()/224
 cmd: $NMCLI --mode multiline --pretty c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 6076 bytes
+stdout: 6075 bytes
 >>>
 ===============================================================================
                      Connection profile details (ethernet)
@@ -11453,7 +11453,7 @@ ipv4.may-fail:                          yes
 ipv4.required-timeout:                  -1 (default)
 ipv4.dad-timeout:                       -1 (default)
 ipv4.dhcp-vendor-class-identifier:      --
-ipv4.link-local:                        -1 (none)
+ipv4.link-local:                        0 (auto)
 ipv4.dhcp-reject-servers:               --
 -------------------------------------------------------------------------------
 ipv6.method:                            auto
@@ -11507,12 +11507,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 6322
+size: 6321
 location: src/tests/client/test-client.py:test_003()/225
 cmd: $NMCLI --mode multiline --pretty c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 6112 bytes
+stdout: 6111 bytes
 >>>
 ===============================================================================
                     Szczegóły profilu połączenia (ethernet)
@@ -11584,7 +11584,7 @@ ipv4.may-fail:                          tak
 ipv4.required-timeout:                  -1 (default)
 ipv4.dad-timeout:                       -1 (default)
 ipv4.dhcp-vendor-class-identifier:      --
-ipv4.link-local:                        -1 (none)
+ipv4.link-local:                        0 (auto)
 ipv4.dhcp-reject-servers:               --
 -------------------------------------------------------------------------------
 ipv6.method:                            auto
@@ -12114,12 +12114,12 @@ TYPE:                                   ethernet
 -------------------------------------------------------------------------------
 
 <<<
-size: 7270
+size: 7269
 location: src/tests/client/test-client.py:test_003()/232
 cmd: $NMCLI --mode multiline --pretty --color yes con s ethernet
 lang: C
 returncode: 0
-stdout: 7098 bytes
+stdout: 7097 bytes
 >>>
 ===============================================================================
                      Connection profile details (ethernet)
@@ -12191,7 +12191,7 @@ ipv4.may-fail:                          yes
 ipv4.required-timeout:                  -1 (default)
 ipv4.dad-timeout:                       -1 (default)
 ipv4.dhcp-vendor-class-identifier:      --
-ipv4.link-local:                        -1 (none)
+ipv4.link-local:                        0 (auto)
 ipv4.dhcp-reject-servers:               --
 -------------------------------------------------------------------------------
 ipv6.method:                            auto
@@ -12263,12 +12263,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 7328
+size: 7327
 location: src/tests/client/test-client.py:test_003()/233
 cmd: $NMCLI --mode multiline --pretty --color yes con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 7146 bytes
+stdout: 7145 bytes
 >>>
 ===============================================================================
                     Szczegóły profilu połączenia (ethernet)
@@ -12340,7 +12340,7 @@ ipv4.may-fail:                          tak
 ipv4.required-timeout:                  -1 (default)
 ipv4.dad-timeout:                       -1 (default)
 ipv4.dhcp-vendor-class-identifier:      --
-ipv4.link-local:                        -1 (none)
+ipv4.link-local:                        0 (auto)
 ipv4.dhcp-reject-servers:               --
 -------------------------------------------------------------------------------
 ipv6.method:                            auto
@@ -12412,12 +12412,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 6288
+size: 6287
 location: src/tests/client/test-client.py:test_003()/234
 cmd: $NMCLI --mode multiline --pretty --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 6076 bytes
+stdout: 6075 bytes
 >>>
 ===============================================================================
                      Connection profile details (ethernet)
@@ -12489,7 +12489,7 @@ ipv4.may-fail:                          yes
 ipv4.required-timeout:                  -1 (default)
 ipv4.dad-timeout:                       -1 (default)
 ipv4.dhcp-vendor-class-identifier:      --
-ipv4.link-local:                        -1 (none)
+ipv4.link-local:                        0 (auto)
 ipv4.dhcp-reject-servers:               --
 -------------------------------------------------------------------------------
 ipv6.method:                            auto
@@ -12543,12 +12543,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 6334
+size: 6333
 location: src/tests/client/test-client.py:test_003()/235
 cmd: $NMCLI --mode multiline --pretty --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 6112 bytes
+stdout: 6111 bytes
 >>>
 ===============================================================================
                     Szczegóły profilu połączenia (ethernet)
@@ -12620,7 +12620,7 @@ ipv4.may-fail:                          tak
 ipv4.required-timeout:                  -1 (default)
 ipv4.dad-timeout:                       -1 (default)
 ipv4.dhcp-vendor-class-identifier:      --
-ipv4.link-local:                        -1 (none)
+ipv4.link-local:                        0 (auto)
 ipv4.dhcp-reject-servers:               --
 -------------------------------------------------------------------------------
 ipv6.method:                            auto
@@ -13112,12 +13112,12 @@ UUID:UUID-con-xx1-REPLACED-REPLACED-REPLA
 TYPE:802-3-ethernet
 
 <<<
-size: 3229
+size: 3228
 location: src/tests/client/test-client.py:test_003()/242
 cmd: $NMCLI --mode multiline --terse con s ethernet
 lang: C
 returncode: 0
-stdout: 3070 bytes
+stdout: 3069 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -13184,7 +13184,7 @@ ipv4.may-fail:yes
 ipv4.required-timeout:-1
 ipv4.dad-timeout:-1
 ipv4.dhcp-vendor-class-identifier:
-ipv4.link-local:-1
+ipv4.link-local:0
 ipv4.dhcp-reject-servers:
 ipv6.method:auto
 ipv6.dns:
@@ -13245,12 +13245,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 3239
+size: 3238
 location: src/tests/client/test-client.py:test_003()/243
 cmd: $NMCLI --mode multiline --terse con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3070 bytes
+stdout: 3069 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -13317,7 +13317,7 @@ ipv4.may-fail:yes
 ipv4.required-timeout:-1
 ipv4.dad-timeout:-1
 ipv4.dhcp-vendor-class-identifier:
-ipv4.link-local:-1
+ipv4.link-local:0
 ipv4.dhcp-reject-servers:
 ipv6.method:auto
 ipv6.dns:
@@ -13378,12 +13378,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 2879
+size: 2878
 location: src/tests/client/test-client.py:test_003()/244
 cmd: $NMCLI --mode multiline --terse c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 2680 bytes
+stdout: 2679 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -13450,7 +13450,7 @@ ipv4.may-fail:yes
 ipv4.required-timeout:-1
 ipv4.dad-timeout:-1
 ipv4.dhcp-vendor-class-identifier:
-ipv4.link-local:-1
+ipv4.link-local:0
 ipv4.dhcp-reject-servers:
 ipv6.method:auto
 ipv6.dns:
@@ -13497,12 +13497,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 2889
+size: 2888
 location: src/tests/client/test-client.py:test_003()/245
 cmd: $NMCLI --mode multiline --terse c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2680 bytes
+stdout: 2679 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -13569,7 +13569,7 @@ ipv4.may-fail:yes
 ipv4.required-timeout:-1
 ipv4.dad-timeout:-1
 ipv4.dhcp-vendor-class-identifier:
-ipv4.link-local:-1
+ipv4.link-local:0
 ipv4.dhcp-reject-servers:
 ipv6.method:auto
 ipv6.dns:
@@ -14030,12 +14030,12 @@ UUID:UUID-con-xx1-REPLACED-REPLACED-REPLA
 TYPE:802-3-ethernet
 
 <<<
-size: 3241
+size: 3240
 location: src/tests/client/test-client.py:test_003()/252
 cmd: $NMCLI --mode multiline --terse --color yes con s ethernet
 lang: C
 returncode: 0
-stdout: 3070 bytes
+stdout: 3069 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -14102,7 +14102,7 @@ ipv4.may-fail:yes
 ipv4.required-timeout:-1
 ipv4.dad-timeout:-1
 ipv4.dhcp-vendor-class-identifier:
-ipv4.link-local:-1
+ipv4.link-local:0
 ipv4.dhcp-reject-servers:
 ipv6.method:auto
 ipv6.dns:
@@ -14163,12 +14163,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 3251
+size: 3250
 location: src/tests/client/test-client.py:test_003()/253
 cmd: $NMCLI --mode multiline --terse --color yes con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3070 bytes
+stdout: 3069 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -14235,7 +14235,7 @@ ipv4.may-fail:yes
 ipv4.required-timeout:-1
 ipv4.dad-timeout:-1
 ipv4.dhcp-vendor-class-identifier:
-ipv4.link-local:-1
+ipv4.link-local:0
 ipv4.dhcp-reject-servers:
 ipv6.method:auto
 ipv6.dns:
@@ -14296,12 +14296,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 2891
+size: 2890
 location: src/tests/client/test-client.py:test_003()/254
 cmd: $NMCLI --mode multiline --terse --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 2680 bytes
+stdout: 2679 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -14368,7 +14368,7 @@ ipv4.may-fail:yes
 ipv4.required-timeout:-1
 ipv4.dad-timeout:-1
 ipv4.dhcp-vendor-class-identifier:
-ipv4.link-local:-1
+ipv4.link-local:0
 ipv4.dhcp-reject-servers:
 ipv6.method:auto
 ipv6.dns:
@@ -14415,12 +14415,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 2901
+size: 2900
 location: src/tests/client/test-client.py:test_003()/255
 cmd: $NMCLI --mode multiline --terse --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2680 bytes
+stdout: 2679 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -14487,7 +14487,7 @@ ipv4.may-fail:yes
 ipv4.required-timeout:-1
 ipv4.dad-timeout:-1
 ipv4.dhcp-vendor-class-identifier:
-ipv4.link-local:-1
+ipv4.link-local:0
 ipv4.dhcp-reject-servers:
 ipv6.method:auto
 ipv6.dns:

@@ -1521,6 +1521,14 @@ _prop_get_ipv4_link_local(NMDevice *self)
         return NM_SETTING_IP4_LL_DISABLED;
 
     link_local = nm_setting_ip4_config_get_link_local(s_ip4);
+
+    if (link_local == NM_SETTING_IP4_LL_AUTO) {
+        link_local = nm_streq(nm_setting_ip_config_get_method((NMSettingIPConfig *) s_ip4),
+                              NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL)
+                         ? NM_SETTING_IP4_LL_ENABLED
+                         : NM_SETTING_IP4_LL_DISABLED;
+    }
+
     return link_local;
 }
 
