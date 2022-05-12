@@ -2127,6 +2127,7 @@ add_and_activate_cb(GObject *client, GAsyncResult *result, gpointer user_data)
     NmCli                                                 *nmc    = info->nmc;
     gs_unref_object NMActiveConnection                    *active = NULL;
     gs_free_error GError                                  *error  = NULL;
+    const char                                            *deprecated;
 
     if (info->create)
         active = nm_client_add_and_activate_connection_finish(NM_CLIENT(client), result, &error);
@@ -2151,6 +2152,11 @@ add_and_activate_cb(GObject *client, GAsyncResult *result, gpointer user_data)
         quit();
         return;
     }
+
+    deprecated =
+        nmc_connection_check_deprecated(NM_CONNECTION(nm_active_connection_get_connection(active)));
+    if (deprecated)
+        g_printerr(_("Warning: %s.\n"), deprecated);
 
     if (nmc->nowait_flag) {
         quit();
