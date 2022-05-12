@@ -254,17 +254,27 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
             virtual_iface_name =
                 nm_setting_infiniband_get_virtual_interface_name(NM_SETTING_INFINIBAND(setting));
 
-            if (!nm_streq(interface_name, virtual_iface_name)) {
+            if (!nm_streq0(interface_name, virtual_iface_name)) {
                 /* We don't support renaming software infiniband devices. Later we might, but
                  * for now just reject such connections.
                  **/
-                g_set_error(error,
-                            NM_CONNECTION_ERROR,
-                            NM_CONNECTION_ERROR_INVALID_PROPERTY,
-                            _("interface name of software infiniband device must be '%s' or unset "
-                              "(instead it is '%s')"),
-                            virtual_iface_name,
-                            interface_name);
+                if (virtual_iface_name) {
+                    g_set_error(
+                        error,
+                        NM_CONNECTION_ERROR,
+                        NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                        _("interface name of software infiniband device must be '%s' or unset "
+                          "(instead it is '%s')"),
+                        virtual_iface_name,
+                        interface_name);
+                } else {
+                    g_set_error(error,
+                                NM_CONNECTION_ERROR,
+                                NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                                _("interface name of software infiniband device with MAC address "
+                                  "must be unset (instead it is '%s')"),
+                                interface_name);
+                }
                 g_prefix_error(error,
                                "%s.%s: ",
                                NM_SETTING_CONNECTION_SETTING_NAME,
