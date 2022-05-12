@@ -930,6 +930,13 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
      *
      * Since 1.40
      */
+    /* ---ifcfg-rh---
+     * property: link-local
+     * variable: IPV4_LINK_LOCAL(+)
+     * description: Configure link-local IP address in interaction with method
+     * example: IPV4_LINK_LOCAL=auto
+     * ---end---
+     */
     _nm_setting_property_define_direct_int32(properties_override,
                                              obj_properties,
                                              NM_SETTING_IP4_CONFIG_LINK_LOCAL,

@@ -1,0 +1,3 @@
+TYPE=Ethernet
+BOOTPROTO=dhcp
+IPV4_LINK_LOCAL=enabled
