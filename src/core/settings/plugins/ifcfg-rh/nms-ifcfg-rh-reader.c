@@ -1786,6 +1786,7 @@ make_ip4_setting(shvarFile *ifcfg,
     int                                priority;
     const char *const                 *item;
     guint32                            route_table;
+    int                                ipv4_link_local;
 
     nm_assert(out_has_defroute && !*out_has_defroute);
 
@@ -1858,6 +1859,14 @@ make_ip4_setting(shvarFile *ifcfg,
         route_table = 0;
     }
 
+    ipv4_link_local = NM_SETTING_IP4_LL_DEFAULT;
+    if (!svGetValueEnum(ifcfg,
+                        "IPV4_LINK_LOCAL",
+                        nm_setting_ip4_link_local_get_type(),
+                        &ipv4_link_local,
+                        NULL))
+        PARSE_WARNING("invalid IPV4_LINK_LOCAL setting");
+
     g_object_set(s_ip4,
                  NM_SETTING_IP_CONFIG_METHOD,
                  method,
@@ -1873,6 +1882,8 @@ make_ip4_setting(shvarFile *ifcfg,
                  svGetValueInt64(ifcfg, "IPV4_ROUTE_METRIC", 10, -1, G_MAXUINT32, -1),
                  NM_SETTING_IP_CONFIG_ROUTE_TABLE,
                  (guint) route_table,
+                 NM_SETTING_IP4_CONFIG_LINK_LOCAL,
+                 ipv4_link_local,
                  NULL);
 
     if (nm_streq(method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED))
