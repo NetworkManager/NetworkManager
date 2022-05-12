@@ -1238,7 +1238,7 @@ compare_aps(gconstpointer a, gconstpointer b, gpointer user_data)
     NMAccessPoint *apb = *(NMAccessPoint **) b;
 
     /* Sort the deprecated WEP connections last. */
-    NM_CMP_DIRECT(_ap_is_wep(apb), _ap_is_wep(apa));
+    NM_CMP_DIRECT(_ap_is_wep(apa), _ap_is_wep(apb));
 
     NM_CMP_DIRECT(nm_access_point_get_strength(apb), nm_access_point_get_strength(apa));
     NM_CMP_DIRECT(nm_access_point_get_frequency(apa), nm_access_point_get_frequency(apb));
