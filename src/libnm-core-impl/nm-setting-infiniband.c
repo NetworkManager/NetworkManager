@@ -241,6 +241,14 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
             g_prefix_error(error, "%s: ", NM_SETTING_INFINIBAND_PARENT);
             return FALSE;
         }
+        if (NM_IN_SET(priv->p_key, 0, 0x8000)) {
+            g_set_error_literal(error,
+                                NM_CONNECTION_ERROR,
+                                NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                                _("the values 0 and 0x8000 are not allowed"));
+            g_prefix_error(error, "%s: ", NM_SETTING_INFINIBAND_P_KEY);
+            return FALSE;
+        }
     }
 
     if (connection)
