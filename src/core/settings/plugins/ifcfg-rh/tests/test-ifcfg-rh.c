@@ -4538,7 +4538,12 @@ test_write_routing_rules(void)
     _nm_connection_new_setting(connection, NM_TYPE_SETTING_WIRED);
 
     s_ip4 = _nm_connection_new_setting(connection, NM_TYPE_SETTING_IP4_CONFIG);
-    g_object_set(s_ip4, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
+    g_object_set(s_ip4,
+                 NM_SETTING_IP_CONFIG_METHOD,
+                 NM_SETTING_IP4_CONFIG_METHOD_AUTO,
+                 NM_SETTING_IP4_CONFIG_LINK_LOCAL,
+                 NM_SETTING_IP4_LL_ENABLED,
+                 NULL);
 
     s_ip6 = _nm_connection_new_setting(connection, NM_TYPE_SETTING_IP6_CONFIG);
     g_object_set(s_ip6, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO, NULL);
@@ -4631,6 +4636,34 @@ test_write_wired_dhcp_plus_ip(void)
     reread = _connection_from_file(testfile, NULL, TYPE_ETHERNET, NULL);
 
     nmtst_assert_connection_equals(connection, TRUE, reread, FALSE);
+}
+
+static void
+test_read_write_link_local(void)
+{
+    nmtst_auto_unlinkfile char   *testfile   = NULL;
+    gs_unref_object NMConnection *connection = NULL;
+    gs_unref_object NMConnection *reread     = NULL;
+    NMSettingIPConfig            *s_ip4;
+
+    connection =
+        _connection_from_file(TEST_IFCFG_DIR "/ifcfg-test-link_local", NULL, TYPE_ETHERNET, NULL);
+
+    s_ip4 = nmtst_connection_assert_setting(connection, NM_TYPE_SETTING_IP4_CONFIG);
+    g_assert(nm_setting_ip4_config_get_link_local(NM_SETTING_IP4_CONFIG(s_ip4))
+             == NM_SETTING_IP4_LL_ENABLED);
+
+    g_object_set(s_ip4, NM_SETTING_IP4_CONFIG_LINK_LOCAL, NM_SETTING_IP4_LL_DISABLED, NULL);
+
+    _writer_new_connection(connection, TEST_SCRATCH_DIR, &testfile);
+
+    reread = _connection_from_file(testfile, NULL, TYPE_ETHERNET, NULL);
+
+    nmtst_assert_connection_equals(connection, TRUE, reread, FALSE);
+
+    s_ip4 = nmtst_connection_assert_setting(reread, NM_TYPE_SETTING_IP4_CONFIG);
+    g_assert(nm_setting_ip4_config_get_link_local(NM_SETTING_IP4_CONFIG(s_ip4))
+             == NM_SETTING_IP4_LL_DISABLED);
 }
 
 static void
@@ -10245,6 +10278,7 @@ main(int argc, char **argv)
     g_test_add_func(TPATH "read-dhcp", test_read_wired_dhcp);
     g_test_add_func(TPATH "read-dhcp-plus-ip", test_read_wired_dhcp_plus_ip);
     g_test_add_func(TPATH "read-shared-plus-ip", test_read_wired_shared_plus_ip);
+    g_test_add_func(TPATH "read-write-link-local", test_read_write_link_local);
     g_test_add_func(TPATH "read-dhcp-send-hostname", test_read_write_wired_dhcp_send_hostname);
     g_test_add_func(TPATH "read-dhcpv6-hostname-fallback",
                     test_read_wired_dhcpv6_hostname_fallback);

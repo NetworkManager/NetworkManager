@@ -2733,6 +2733,7 @@ write_ip4_setting(NMConnection *connection,
     gboolean                      has_netmask;
     NMDhcpHostnameFlags           flags;
     const char *const            *strv;
+    NMSettingIP4LinkLocal         ipv4_link_local;
 
     NM_SET_OUT(out_route_content_svformat, NULL);
     NM_SET_OUT(out_route_content, NULL);
@@ -2838,6 +2839,14 @@ write_ip4_setting(NMConnection *connection,
 
     value = nm_setting_ip_config_get_dhcp_hostname(s_ip4);
     svSetValueStr(ifcfg, "DHCP_HOSTNAME", value);
+
+    ipv4_link_local = nm_setting_ip4_config_get_link_local(NM_SETTING_IP4_CONFIG(s_ip4));
+    if (ipv4_link_local != NM_SETTING_IP4_LL_DEFAULT) {
+        svSetValueEnum(ifcfg,
+                       "IPV4_LINK_LOCAL",
+                       nm_setting_ip4_link_local_get_type(),
+                       ipv4_link_local);
+    }
 
     value = nm_setting_ip4_config_get_dhcp_fqdn(NM_SETTING_IP4_CONFIG(s_ip4));
     svSetValueStr(ifcfg, "DHCP_FQDN", value);
