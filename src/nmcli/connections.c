@@ -639,8 +639,8 @@ _con_show_fcn_get_type(NMConnection *c, NMActiveConnection *ac, NMMetaAccessorGe
     return connection_type_to_display(s, get_type);
 }
 
-static const char *
-_connection_check_deprecated(NMConnection *c)
+const char *
+nmc_connection_check_deprecated(NMConnection *c)
 {
     NMSettingWirelessSecurity *s_wsec;
     const char                *key_mgmt;
@@ -667,7 +667,7 @@ _connection_to_color(NMConnection *c, NMActiveConnection *ac)
     if (ac)
         return nmc_active_connection_state_to_color(ac);
 
-    if (_connection_check_deprecated(c))
+    if (nmc_connection_check_deprecated(c))
         return NM_META_COLOR_CONNECTION_DEPRECATED;
 
     return NM_META_COLOR_CONNECTION_UNKNOWN;
@@ -2039,7 +2039,8 @@ con_show_get_items_cmp(gconstpointer pa, gconstpointer pb, gpointer user_data)
             }
         }
 
-        NM_CMP_DIRECT(!!_connection_check_deprecated(c_a), !!_connection_check_deprecated(c_b));
+        NM_CMP_DIRECT(!!nmc_connection_check_deprecated(c_a),
+                      !!nmc_connection_check_deprecated(c_b));
         NM_CMP_DIRECT_STRCMP0(nm_connection_get_uuid(c_a), nm_connection_get_uuid(c_b));
         NM_CMP_DIRECT_STRCMP0(nm_connection_get_path(c_a), nm_connection_get_path(c_b));
     }
@@ -5381,7 +5382,7 @@ connection_warnings(NmCli *nmc, NMConnection *connection)
     const char      *id;
     const char      *deprecated;
 
-    deprecated = _connection_check_deprecated(NM_CONNECTION(connection));
+    deprecated = nmc_connection_check_deprecated(NM_CONNECTION(connection));
     if (deprecated)
         g_printerr(_("Warning: %s.\n"), deprecated);
 
