@@ -59,13 +59,48 @@ nm_dhcp_lease_data_consume_in_addr(const uint8_t **datap, size_t *n_datap, in_ad
     return nm_dhcp_lease_data_consume(datap, n_datap, addrp, sizeof(struct in_addr));
 }
 
-char *nm_dhcp_lease_data_parse_domain_validate(const char *str);
-
-gboolean nm_dhcp_lease_data_parse_u16(const guint8 *data, gsize n_data, guint16 *out_val);
-gboolean nm_dhcp_lease_data_parse_mtu(const guint8 *data, gsize n_data, guint16 *out_val);
-gboolean nm_dhcp_lease_data_parse_cstr(const guint8 *data, gsize n_data, gsize *out_new_len);
-gboolean nm_dhcp_lease_data_parse_domain(const guint8 *data, gsize n_data, char **out_val);
-gboolean nm_dhcp_lease_data_parse_in_addr(const guint8 *data, gsize n_data, in_addr_t *out_val);
-char   **nm_dhcp_lease_data_parse_search_list(const guint8 *data, gsize n_data);
+void     nm_dhcp_lease_log_invalid_option(const char *iface,
+                                          int         addr_family,
+                                          guint       option,
+                                          const char *fmt,
+                                          ...) G_GNUC_PRINTF(4, 5);
+char    *nm_dhcp_lease_data_parse_domain_validate(const char *str,
+                                                  const char *iface,
+                                                  int         addr_family,
+                                                  guint       option);
+gboolean nm_dhcp_lease_data_parse_u16(const guint8 *data,
+                                      gsize         n_data,
+                                      guint16      *out_val,
+                                      const char   *iface,
+                                      int           addr_family,
+                                      guint         option);
+gboolean nm_dhcp_lease_data_parse_mtu(const guint8 *data,
+                                      gsize         n_data,
+                                      guint16      *out_val,
+                                      const char   *iface,
+                                      int           addr_family,
+                                      guint         option);
+gboolean nm_dhcp_lease_data_parse_cstr(const guint8 *data,
+                                       gsize         n_data,
+                                       gsize        *out_new_len,
+                                       const char   *iface,
+                                       int           addr_family,
+                                       guint         option);
+gboolean nm_dhcp_lease_data_parse_domain(const guint8 *data,
+                                         gsize         n_data,
+                                         char        **out_val,
+                                         const char   *iface,
+                                         int           addr_family,
+                                         guint         option);
+gboolean nm_dhcp_lease_data_parse_in_addr(const guint8 *data,
+                                          gsize         n_data,
+                                          in_addr_t    *out_val,
+                                          const char   *iface,
+                                          guint         option);
+char   **nm_dhcp_lease_data_parse_search_list(const guint8 *data,
+                                              gsize         n_data,
+                                              const char   *iface,
+                                              int           addr_family,
+                                              guint         option);
 
 #endif /* __NETWORKMANAGER_DHCP_UTILS_H__ */
