@@ -2,12 +2,10 @@
 
 if enable_nmcli
 
-# The file is called "nmcli-completion" but should be installed with
-# name "nmcli". Currently it gets renamed by "tools/meson-post-install.sh",
-# but if we depend on meson 0.46.0, we could use "rename" option.
 install_data(
   'nmcli-completion',
   install_dir: join_paths(nm_datadir, 'bash-completion', 'completions'),
+  rename: 'nmcli',
 )
 
 executable(
