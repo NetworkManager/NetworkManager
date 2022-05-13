@@ -4538,7 +4538,12 @@ test_write_routing_rules(void)
     _nm_connection_new_setting(connection, NM_TYPE_SETTING_WIRED);
 
     s_ip4 = _nm_connection_new_setting(connection, NM_TYPE_SETTING_IP4_CONFIG);
-    g_object_set(s_ip4, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
+    g_object_set(s_ip4,
+                 NM_SETTING_IP_CONFIG_METHOD,
+                 NM_SETTING_IP4_CONFIG_METHOD_AUTO,
+                 NM_SETTING_IP4_CONFIG_LINK_LOCAL,
+                 NM_SETTING_IP4_LL_ENABLED,
+                 NULL);
 
     s_ip6 = _nm_connection_new_setting(connection, NM_TYPE_SETTING_IP6_CONFIG);
     g_object_set(s_ip6, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO, NULL);
