@@ -746,7 +746,6 @@ AC_SUBST(GLIB_MKENUMS)
 
 AC_ARG_WITH(dbus-sys-dir,
             AS_HELP_STRING([--with-dbus-sys-dir=DIR], [where D-BUS system.d directory is]))
-
 if test -n "$with_dbus_sys_dir" ; then
 	DBUS_SYS_DIR="$with_dbus_sys_dir"
 else
@@ -1363,6 +1362,7 @@ echo "  exec_prefix: $exec_prefix"
 echo "  sysconfdir: $sysconfdir"
 echo "  localstatedir: $localstatedir"
 echo "  runstatedir: $runstatedir"
+echo "  datarootdir: $datarootdir"
 echo "  datadir: $datadir"
 echo "  systemdunitdir: $with_systemdsystemunitdir"
 echo "  udev-dir: $with_udev_dir"
@@ -1373,6 +1373,7 @@ echo "  nmdatadir: $nmdatadir"
 echo "  nmstatedir: $nmstatedir"
 echo "  nmrundir: $nmrundir"
 echo "  system-ca-path: $with_system_ca_path"
+echo "  dbus-sys-dir: $DBUS_SYS_DIR"
 echo
 
 echo "Platform:"
