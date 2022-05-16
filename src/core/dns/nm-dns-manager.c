@@ -26,7 +26,6 @@
 
 #include "libnm-core-intern/nm-core-internal.h"
 #include "libnm-glib-aux/nm-str-buf.h"
-#include "libnm-systemd-shared/nm-sd-utils-shared.h"
 
 #include "NetworkManagerUtils.h"
 #include "devices/nm-device.h"
@@ -35,7 +34,6 @@
 #include "nm-dns-dnsmasq.h"
 #include "nm-dns-plugin.h"
 #include "nm-dns-systemd-resolved.h"
-#include "nm-dns-unbound.h"
 #include "nm-ip-config.h"
 #include "nm-l3-config-data.h"
 #include "nm-manager.h"
@@ -56,6 +54,8 @@
 #else
 #define HAS_NETCONFIG 1
 #endif
+
+#define UPDATE_PENDING_UNBLOCK_TIMEOUT_MSEC 5000
 
 /*****************************************************************************/
 
@@ -78,7 +78,11 @@ enum {
     LAST_SIGNAL
 };
 
-NM_GOBJECT_PROPERTIES_DEFINE(NMDnsManager, PROP_MODE, PROP_RC_MANAGER, PROP_CONFIGURATION, );
+NM_GOBJECT_PROPERTIES_DEFINE(NMDnsManager,
+                             PROP_MODE,
+                             PROP_RC_MANAGER,
+                             PROP_CONFIGURATION,
+                             PROP_UPDATE_PENDING, );
 
 static guint signals[LAST_SIGNAL] = {0};
 
@@ -89,6 +93,11 @@ typedef struct {
     CList     ip_data_lst_head;
     GVariant *config_variant;
 
+    /* A DNS plugin should not be marked as pending indefinitely.
+     * We are only blocked if "update_pending" is TRUE and we have
+     * "update_pending_unblock" timer ticking. */
+    GSource *update_pending_unblock;
+
     bool ip_data_lst_need_sort : 1;
 
     bool configs_lst_need_sort : 1;
@@ -97,6 +106,8 @@ typedef struct {
     bool is_stopped : 1;
 
     bool config_changed : 1;
+
+    bool update_pending : 1;
 
     char *hostdomain;
     guint updates_queue;
@@ -108,6 +119,9 @@ typedef struct {
     char                         *mode;
     NMDnsPlugin                  *sd_resolve_plugin;
     NMDnsPlugin                  *plugin;
+
+    gulong update_changed_signal_id_sd;
+    gulong update_changed_signal_id;
 
     NMConfig *config;
 
@@ -137,28 +151,23 @@ NM_DEFINE_SINGLETON_GETTER(NMDnsManager, nm_dns_manager_get, NM_TYPE_DNS_MANAGER
 
 #define _NMLOG_PREFIX_NAME "dns-mgr"
 #define _NMLOG_DOMAIN      LOGD_DNS
-#define _NMLOG(level, ...)                                           \
-    G_STMT_START                                                     \
-    {                                                                \
-        const NMLogLevel __level = (level);                          \
-                                                                     \
-        if (nm_logging_enabled(__level, _NMLOG_DOMAIN)) {            \
-            char                      __prefix[20];                  \
-            const NMDnsManager *const __self = (self);               \
-                                                                     \
-            _nm_log(__level,                                         \
-                    _NMLOG_DOMAIN,                                   \
-                    0,                                               \
-                    NULL,                                            \
-                    NULL,                                            \
-                    "%s%s: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__),     \
-                    _NMLOG_PREFIX_NAME,                              \
-                    ((!__self || __self == singleton_instance)       \
-                         ? ""                                        \
-                         : nm_sprintf_buf(__prefix, "[%p]", __self)) \
-                        _NM_UTILS_MACRO_REST(__VA_ARGS__));          \
-        }                                                            \
-    }                                                                \
+#define _NMLOG(level, ...)                                                 \
+    G_STMT_START                                                           \
+    {                                                                      \
+        const NMLogLevel __level = (level);                                \
+                                                                           \
+        if (nm_logging_enabled(__level, _NMLOG_DOMAIN)) {                  \
+            _nm_unused const NMDnsManager *const __self = (self);          \
+                                                                           \
+            _nm_log(__level,                                               \
+                    _NMLOG_DOMAIN,                                         \
+                    0,                                                     \
+                    NULL,                                                  \
+                    NULL,                                                  \
+                    "%s: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__),             \
+                    _NMLOG_PREFIX_NAME _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
+        }                                                                  \
+    }                                                                      \
     G_STMT_END
 
 /*****************************************************************************/
@@ -204,6 +213,85 @@ static NM_UTILS_LOOKUP_STR_DEFINE(
     NM_UTILS_LOOKUP_STR_ITEM(NM_DNS_IP_CONFIG_TYPE_DEFAULT, "default"),
     NM_UTILS_LOOKUP_STR_ITEM(NM_DNS_IP_CONFIG_TYPE_BEST_DEVICE, "best"),
     NM_UTILS_LOOKUP_STR_ITEM(NM_DNS_IP_CONFIG_TYPE_VPN, "vpn"), );
+
+/*****************************************************************************/
+
+static gboolean
+_update_pending_detect(NMDnsManager *self)
+{
+    NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE(self);
+
+    if (priv->plugin && nm_dns_plugin_get_update_pending(priv->plugin))
+        return TRUE;
+    if (priv->sd_resolve_plugin && nm_dns_plugin_get_update_pending(priv->sd_resolve_plugin))
+        return TRUE;
+    return FALSE;
+}
+
+static gboolean
+_update_pending_unblock_cb(gpointer user_data)
+{
+    NMDnsManager        *self = user_data;
+    NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE(self);
+
+    nm_assert(priv->update_pending);
+    nm_assert(priv->update_pending_unblock);
+    nm_assert(_update_pending_detect(self));
+
+    nm_clear_g_source_inst(&priv->update_pending_unblock);
+
+    _LOGW(
+        "update-pending changed: DNS plugin did not become ready again. Assume something is wrong");
+
+    _notify(self, PROP_UPDATE_PENDING);
+    return G_SOURCE_CONTINUE;
+}
+
+static void
+_update_pending_maybe_changed(NMDnsManager *self)
+{
+    NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE(self);
+    gboolean             update_pending;
+
+    update_pending = _update_pending_detect(self);
+    if (priv->update_pending == update_pending)
+        return;
+
+    if (update_pending) {
+        nm_assert(!priv->update_pending_unblock);
+        priv->update_pending_unblock = nm_g_timeout_add_source(UPDATE_PENDING_UNBLOCK_TIMEOUT_MSEC,
+                                                               _update_pending_unblock_cb,
+                                                               self);
+    } else
+        nm_clear_g_source_inst(&priv->update_pending_unblock);
+
+    priv->update_pending = update_pending;
+    _LOGD("update-pending changed: %spending", update_pending ? "" : "not ");
+    _notify(self, PROP_UPDATE_PENDING);
+}
+
+static void
+_update_pending_changed_cb(NMDnsPlugin *plugin, gboolean update_pending, NMDnsManager *self)
+{
+    _update_pending_maybe_changed(self);
+}
+
+gboolean
+nm_dns_manager_get_update_pending(NMDnsManager *self)
+{
+    NMDnsManagerPrivate *priv;
+
+    g_return_val_if_fail(NM_IS_DNS_MANAGER(self), FALSE);
+
+    priv = NM_DNS_MANAGER_GET_PRIVATE(self);
+    nm_assert(priv->update_pending == _update_pending_detect(self));
+    nm_assert(priv->update_pending || !priv->update_pending_unblock);
+
+    /* update-pending can only be TRUE for a certain time (before we assume
+     * something is really wrong with the plugin). That is, as long as
+     * update_pending_unblock is ticking. */
+    return !!priv->update_pending_unblock;
+}
 
 /*****************************************************************************/
 
@@ -2015,7 +2103,7 @@ nm_dns_manager_set_hostname(NMDnsManager *self, const char *hostname, gboolean s
                 domain = hostname;
             }
 
-            if (!nm_sd_hostname_is_valid(domain, FALSE))
+            if (!nm_hostname_is_valid(domain, FALSE))
                 domain = NULL;
         }
     }
@@ -2120,8 +2208,23 @@ _clear_plugin(NMDnsManager *self)
     nm_clear_g_source(&priv->plugin_ratelimit.timer);
 
     if (priv->plugin) {
+        nm_clear_g_signal_handler(priv->plugin, &priv->update_changed_signal_id);
         nm_dns_plugin_stop(priv->plugin);
         g_clear_object(&priv->plugin);
+        return TRUE;
+    }
+    return FALSE;
+}
+
+static gboolean
+_clear_sd_resolved_plugin(NMDnsManager *self)
+{
+    NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE(self);
+
+    if (priv->sd_resolve_plugin) {
+        nm_clear_g_signal_handler(priv->sd_resolve_plugin, &priv->update_changed_signal_id_sd);
+        nm_dns_plugin_stop(priv->sd_resolve_plugin);
+        g_clear_object(&priv->sd_resolve_plugin);
         return TRUE;
     }
     return FALSE;
@@ -2313,16 +2416,14 @@ again:
             priv->plugin   = nm_dns_dnsmasq_new();
             plugin_changed = TRUE;
         }
-    } else if (nm_streq0(mode, "unbound")) {
-        if (force_reload_plugin || !NM_IS_DNS_UNBOUND(priv->plugin)) {
-            _clear_plugin(self);
-            priv->plugin   = nm_dns_unbound_new();
-            plugin_changed = TRUE;
-        }
     } else {
         if (!NM_IN_STRSET(mode, "none", "default")) {
-            if (mode)
-                _LOGW("init: unknown dns mode '%s'", mode);
+            if (mode) {
+                if (nm_streq(mode, "unbound"))
+                    _LOGW("init: ns mode 'unbound' was removed. Update your configuration");
+                else
+                    _LOGW("init: unknown dns mode '%s'", mode);
+            }
             mode = "default";
         }
         if (_clear_plugin(self))
@@ -2359,7 +2460,7 @@ again:
             priv->sd_resolve_plugin  = nm_dns_systemd_resolved_new();
             systemd_resolved_changed = TRUE;
         }
-    } else if (nm_clear_g_object(&priv->sd_resolve_plugin))
+    } else if (_clear_sd_resolved_plugin(self))
         systemd_resolved_changed = TRUE;
 
     g_object_freeze_notify(G_OBJECT(self));
@@ -2389,6 +2490,23 @@ again:
                                   "",
                                   ""));
     }
+
+    if (plugin_changed && priv->plugin && priv->update_changed_signal_id == 0) {
+        priv->update_changed_signal_id = g_signal_connect(priv->plugin,
+                                                          NM_DNS_PLUGIN_UPDATE_PENDING_CHANGED,
+                                                          G_CALLBACK(_update_pending_changed_cb),
+                                                          self);
+    }
+
+    if (systemd_resolved_changed && priv->sd_resolve_plugin
+        && priv->update_changed_signal_id_sd == 0) {
+        priv->update_changed_signal_id_sd = g_signal_connect(priv->sd_resolve_plugin,
+                                                             NM_DNS_PLUGIN_UPDATE_PENDING_CHANGED,
+                                                             G_CALLBACK(_update_pending_changed_cb),
+                                                             self);
+    }
+
+    _update_pending_maybe_changed(self);
 
     g_object_thaw_notify(G_OBJECT(self));
 }
@@ -2594,6 +2712,9 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
     case PROP_CONFIGURATION:
         g_value_set_variant(value, _get_config_variant(self));
         break;
+    case PROP_UPDATE_PENDING:
+        g_value_set_boolean(value, nm_dns_manager_get_update_pending(self));
+        break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
         break;
@@ -2641,8 +2762,10 @@ dispose(GObject *object)
     if (priv->config)
         g_signal_handlers_disconnect_by_func(priv->config, config_changed_cb, self);
 
-    g_clear_object(&priv->sd_resolve_plugin);
+    _clear_sd_resolved_plugin(self);
     _clear_plugin(self);
+
+    nm_clear_g_source_inst(&priv->update_pending_unblock);
 
     c_list_for_each_entry_safe (ip_data, ip_data_safe, &priv->ip_data_lst_head, ip_data_lst)
         _dns_config_ip_data_free(ip_data);
@@ -2717,6 +2840,13 @@ nm_dns_manager_class_init(NMDnsManagerClass *klass)
                              "",
                              G_VARIANT_TYPE("aa{sv}"),
                              NULL,
+                             G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+
+    obj_properties[PROP_UPDATE_PENDING] =
+        g_param_spec_boolean(NM_DNS_MANAGER_UPDATE_PENDING,
+                             "",
+                             "",
+                             FALSE,
                              G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);

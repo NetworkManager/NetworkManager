@@ -10,8 +10,8 @@ msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: https://gitlab.freedesktop.org/NetworkManager/NetworkMan"
 "ager/issues\n"
-"POT-Creation-Date: 2022-03-31 15:26+0000\n"
-"PO-Revision-Date: 2022-04-04 11:36+0300\n"
+"POT-Creation-Date: 2022-05-12 15:26+0000\n"
+"PO-Revision-Date: 2022-05-16 08:58+0300\n"
 "Last-Translator: Yuri Chornoivan <yurchor@ukr.net>\n"
 "Language-Team: Ukrainian <kde-i18n-uk@kde.org>\n"
 "Language: uk\n"
@@ -193,7 +193,7 @@ msgstr ""
 #. * as "Wired Connection" or "VPN Connection". The %d is a number
 #. * that is combined with the first argument to create a unique
 #. * connection id.
-#: ../src/core/NetworkManagerUtils.c:120
+#: ../src/core/NetworkManagerUtils.c:119
 #, c-format
 msgctxt "connection id fallback"
 msgid "%s %u"
@@ -261,7 +261,7 @@ msgstr "З'єднання 6LOWPAN"
 msgid "Bond connection"
 msgstr "Прив'язане з'єднання"
 
-#: ../src/core/devices/nm-device-bridge.c:154
+#: ../src/core/devices/nm-device-bridge.c:161
 msgid "Bridge connection"
 msgstr "З'єднання містка"
 
@@ -596,7 +596,7 @@ msgstr ""
 msgid "Could not daemonize: %s [error %u]\n"
 msgstr "Не вдалося створити фонову службу: %s [помилка %u]\n"
 
-#: ../src/core/nm-config.c:542
+#: ../src/core/nm-config.c:544
 #: ../src/libnm-core-impl/nm-setting-ovs-bridge.c:187
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:2181
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:4242
@@ -604,93 +604,93 @@ msgstr "Не вдалося створити фонову службу: %s [по
 msgid "'%s' is not valid"
 msgstr "«%s» не є коректним"
 
-#: ../src/core/nm-config.c:564
+#: ../src/core/nm-config.c:566
 #, c-format
 msgid "Bad '%s' option: "
 msgstr "Помилковий параметр «%s»: "
 
-#: ../src/core/nm-config.c:581
+#: ../src/core/nm-config.c:583
 msgid "Config file location"
 msgstr "Розташування файла налаштувань"
 
-#: ../src/core/nm-config.c:588
+#: ../src/core/nm-config.c:590
 msgid "Config directory location"
 msgstr "Розташування каталогу налаштувань"
 
-#: ../src/core/nm-config.c:595
+#: ../src/core/nm-config.c:597
 msgid "System config directory location"
 msgstr "Розташування загальносистемного каталогу налаштувань"
 
-#: ../src/core/nm-config.c:602
+#: ../src/core/nm-config.c:604
 msgid "Internal config file location"
 msgstr "Розташування внутрішнього файла налаштувань"
 
-#: ../src/core/nm-config.c:609
+#: ../src/core/nm-config.c:611
 msgid "State file location"
 msgstr "Розташування файла стану"
 
-#: ../src/core/nm-config.c:616
+#: ../src/core/nm-config.c:618
 msgid "State file for no-auto-default devices"
 msgstr ""
 "Файл станів для пристроїв без автоматичних типових параметрів (no-auto-"
 "default)"
 
-#: ../src/core/nm-config.c:623
+#: ../src/core/nm-config.c:625
 msgid "List of plugins separated by ','"
 msgstr "Список додатків, відокремлених комами («,»)"
 
-#: ../src/core/nm-config.c:630
+#: ../src/core/nm-config.c:632
 msgid "Quit after initial configuration"
 msgstr "Вийти після початкового налаштовування"
 
-#: ../src/core/nm-config.c:637
+#: ../src/core/nm-config.c:639
 msgid "Don't become a daemon, and log to stderr"
 msgstr ""
 "Не переходити у стан фонової служби і записувати повідомлення журналу до "
 "stderr"
 
-#: ../src/core/nm-config.c:646
+#: ../src/core/nm-config.c:648
 msgid "An http(s) address for checking internet connectivity"
 msgstr "Адреса http(s) для спроб перевірки можливості встановлення з'єднання"
 
-#: ../src/core/nm-config.c:653
+#: ../src/core/nm-config.c:655
 msgid "The interval between connectivity checks (in seconds)"
 msgstr "Інтервал між перевірками можливості з'єднання (у секундах)"
 
-#: ../src/core/nm-config.c:660
+#: ../src/core/nm-config.c:662
 msgid "The expected start of the response"
 msgstr "Очікуваний початок відповіді"
 
-#: ../src/core/nm-config.c:669
+#: ../src/core/nm-config.c:671
 msgid "NetworkManager options"
 msgstr "Параметри NetworkManager"
 
-#: ../src/core/nm-config.c:670
+#: ../src/core/nm-config.c:672
 msgid "Show NetworkManager options"
 msgstr "Показати параметри NetworkManager"
 
-#: ../src/core/nm-manager.c:6121
+#: ../src/core/nm-manager.c:6146
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:8243
 msgid "VPN connection"
 msgstr "З'єднання VPN"
 
 #: ../src/core/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:5545
 #: ../src/libnm-client-impl/nm-device.c:1779
-#: ../src/libnm-core-impl/nm-connection.c:3111
+#: ../src/libnm-core-impl/nm-connection.c:3172
 #: ../src/nmtui/nm-editor-utils.c:196
 msgid "Bond"
 msgstr "Прив'язка"
 
 #: ../src/core/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:5616
 #: ../src/libnm-client-impl/nm-device.c:1781
-#: ../src/libnm-core-impl/nm-connection.c:3113
+#: ../src/libnm-core-impl/nm-connection.c:3174
 #: ../src/nmtui/nm-editor-utils.c:214
 msgid "Team"
 msgstr "Команда"
 
 #: ../src/core/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:5953
 #: ../src/libnm-client-impl/nm-device.c:1783
-#: ../src/libnm-core-impl/nm-connection.c:3115
+#: ../src/libnm-core-impl/nm-connection.c:3176
 #: ../src/nmtui/nm-editor-utils.c:205
 msgid "Bridge"
 msgstr "Місток"
@@ -823,7 +823,7 @@ msgstr "З'єднання не є коректним модемним з'єдн�
 msgid "The device is lacking capabilities required by the connection."
 msgstr "У пристрою немає можливостей, потрібних з'єднанню."
 
-#: ../src/libnm-client-impl/nm-device-olpc-mesh.c:102
+#: ../src/libnm-client-impl/nm-device-olpc-mesh.c:103
 msgid "The connection was not an OLPC Mesh connection."
 msgstr "З'єднання не є з'єднанням OLPC Mesh."
 
@@ -936,13 +936,13 @@ msgid "Mobile Broadband"
 msgstr "Мобільна радіомережа"
 
 #: ../src/libnm-client-impl/nm-device.c:1777
-#: ../src/libnm-core-impl/nm-connection.c:3119
+#: ../src/libnm-core-impl/nm-connection.c:3180
 #: ../src/nmtui/nm-editor-utils.c:169
 msgid "InfiniBand"
 msgstr "InfiniBand"
 
 #: ../src/libnm-client-impl/nm-device.c:1785
-#: ../src/libnm-core-impl/nm-connection.c:3117
+#: ../src/libnm-core-impl/nm-connection.c:3178
 #: ../src/nmtui/nm-editor-utils.c:223 ../src/nmtui/nmt-page-vlan.c:57
 msgid "VLAN"
 msgstr "VLAN"
@@ -992,7 +992,7 @@ msgid "6LoWPAN"
 msgstr "6LoWPAN"
 
 #: ../src/libnm-client-impl/nm-device.c:1809
-#: ../src/libnm-core-impl/nm-connection.c:3125
+#: ../src/libnm-core-impl/nm-connection.c:3186
 #: ../src/nmtui/nm-editor-utils.c:263 ../src/nmtui/nmt-page-wireguard.c:57
 msgid "WireGuard"
 msgstr "WireGuard"
@@ -1138,36 +1138,36 @@ msgstr "містить UUID, який потребує нормалізації"
 msgid "has duplicate UUIDs"
 msgstr "містить дублікати UUID"
 
-#: ../src/libnm-core-impl/nm-connection.c:1745
+#: ../src/libnm-core-impl/nm-connection.c:1805
 msgid "setting not found"
 msgstr "параметра не знайдено"
 
-#: ../src/libnm-core-impl/nm-connection.c:1799
-#: ../src/libnm-core-impl/nm-connection.c:1824
-#: ../src/libnm-core-impl/nm-connection.c:1849
+#: ../src/libnm-core-impl/nm-connection.c:1859
+#: ../src/libnm-core-impl/nm-connection.c:1884
+#: ../src/libnm-core-impl/nm-connection.c:1909
 msgid "setting is required for non-slave connections"
 msgstr "для непідлеглих з'єднань потрібен параметр"
 
-#: ../src/libnm-core-impl/nm-connection.c:1812
-#: ../src/libnm-core-impl/nm-connection.c:1837
-#: ../src/libnm-core-impl/nm-connection.c:1862
+#: ../src/libnm-core-impl/nm-connection.c:1872
+#: ../src/libnm-core-impl/nm-connection.c:1897
+#: ../src/libnm-core-impl/nm-connection.c:1922
 msgid "setting not allowed in slave connection"
 msgstr "параметр не можна використовувати у підлеглому з'єднанні"
 
-#: ../src/libnm-core-impl/nm-connection.c:1971
+#: ../src/libnm-core-impl/nm-connection.c:2032
 msgid "Unexpected failure to normalize the connection"
 msgstr "Неочікувана помилка під час спроби нормалізувати з'єднання"
 
-#: ../src/libnm-core-impl/nm-connection.c:2032
+#: ../src/libnm-core-impl/nm-connection.c:2093
 msgid "Unexpected failure to verify the connection"
 msgstr "Неочікувана помилка під час спроби перевірити з'єднання"
 
-#: ../src/libnm-core-impl/nm-connection.c:2069
+#: ../src/libnm-core-impl/nm-connection.c:2130
 #, c-format
 msgid "unexpected uuid %s instead of %s"
 msgstr "неочікуваний UUID %s замість %s"
 
-#: ../src/libnm-core-impl/nm-connection.c:2970
+#: ../src/libnm-core-impl/nm-connection.c:3031
 #: ../src/libnm-core-impl/nm-setting-8021x.c:2607
 #: ../src/libnm-core-impl/nm-setting-8021x.c:2644
 #: ../src/libnm-core-impl/nm-setting-8021x.c:2662
@@ -1193,9 +1193,13 @@ msgstr "неочікуваний UUID %s замість %s"
 msgid "property is missing"
 msgstr "не вказано властивості"
 
-#: ../src/libnm-core-impl/nm-connection.c:3123
+#: ../src/libnm-core-impl/nm-connection.c:3184
 msgid "IP Tunnel"
 msgstr "IP-тунель"
+
+#: ../src/libnm-core-impl/nm-connection.c:3188
+msgid "TUN/TAP"
+msgstr "TUN/TAP"
 
 #: ../src/libnm-core-impl/nm-dbus-utils.c:181
 #, c-format
@@ -1212,239 +1216,239 @@ msgstr "Значення не може бути оброблено як спис
 msgid "value is not an integer in range [%lld, %lld]"
 msgstr "значення не є цілим числом у діапазоні [%lld, %lld]"
 
-#: ../src/libnm-core-impl/nm-keyfile.c:332
+#: ../src/libnm-core-impl/nm-keyfile.c:331
 msgid "ignoring missing number"
 msgstr "ігноруємо пропущене число"
 
-#: ../src/libnm-core-impl/nm-keyfile.c:344
+#: ../src/libnm-core-impl/nm-keyfile.c:343
 #, c-format
 msgid "ignoring invalid number '%s'"
 msgstr "ігноруємо некоректне число «%s»"
 
-#: ../src/libnm-core-impl/nm-keyfile.c:373
+#: ../src/libnm-core-impl/nm-keyfile.c:372
 #, c-format
 msgid "ignoring invalid %s address: %s"
 msgstr "ігноруємо некоректну адресу %s: %s"
 
-#: ../src/libnm-core-impl/nm-keyfile.c:419
+#: ../src/libnm-core-impl/nm-keyfile.c:418
 #, c-format
 msgid "ignoring invalid gateway '%s' for %s route"
 msgstr "ігноруємо некоректний шлюз «%s» для маршруту %s"
 
-#: ../src/libnm-core-impl/nm-keyfile.c:441
+#: ../src/libnm-core-impl/nm-keyfile.c:440
 #, c-format
 msgid "ignoring invalid %s route: %s"
 msgstr "ігноруємо некоректний маршрут %s: %s"
 
-#: ../src/libnm-core-impl/nm-keyfile.c:619
+#: ../src/libnm-core-impl/nm-keyfile.c:618
 #, c-format
 msgid "unexpected character '%c' for address %s: '%s' (position %td)"
 msgstr "неочікуваний символ «%c» для адреси %s: «%s» (позиція %td)"
 
-#: ../src/libnm-core-impl/nm-keyfile.c:635
+#: ../src/libnm-core-impl/nm-keyfile.c:634
 #, c-format
 msgid "unexpected character '%c' for %s: '%s' (position %td)"
 msgstr "неочікуваний символ «%c» для %s: «%s» (позиція %td)"
 
-#: ../src/libnm-core-impl/nm-keyfile.c:651
+#: ../src/libnm-core-impl/nm-keyfile.c:650
 #, c-format
 msgid "unexpected character '%c' in prefix length for %s: '%s' (position %td)"
 msgstr "неочікуваний символ «%c» у префіксі довжини для %s: «%s» (позиція %td)"
 
-#: ../src/libnm-core-impl/nm-keyfile.c:668
+#: ../src/libnm-core-impl/nm-keyfile.c:667
 #, c-format
 msgid "garbage at the end of value %s: '%s'"
 msgstr "зайві дані наприкінці значення %s: «%s»"
 
-#: ../src/libnm-core-impl/nm-keyfile.c:678
+#: ../src/libnm-core-impl/nm-keyfile.c:677
 #, c-format
 msgid "deprecated semicolon at the end of value %s: '%s'"
 msgstr "застаріла крапка з комою наприкінці значення %s: «%s»"
 
-#: ../src/libnm-core-impl/nm-keyfile.c:697
+#: ../src/libnm-core-impl/nm-keyfile.c:696
 #, c-format
 msgid "invalid prefix length for %s '%s', defaulting to %d"
 msgstr "некоректний префікс довжини для %s «%s», повертаємося до типового, %d"
 
-#: ../src/libnm-core-impl/nm-keyfile.c:709
+#: ../src/libnm-core-impl/nm-keyfile.c:708
 #, c-format
 msgid "missing prefix length for %s '%s', defaulting to %d"
 msgstr "пропущено префікс довжини для %s «%s», повертаємося до типового, %d"
 
-#: ../src/libnm-core-impl/nm-keyfile.c:1052
+#: ../src/libnm-core-impl/nm-keyfile.c:1051
 #: ../src/libnm-core-impl/nm-setting-ovs-external-ids.c:320
 #: ../src/libnm-core-impl/nm-setting-user.c:364
 #, c-format
 msgid "invalid value for \"%s\": %s"
 msgstr "некоректне значення для «%s»: %s"
 
-#: ../src/libnm-core-impl/nm-keyfile.c:1130
+#: ../src/libnm-core-impl/nm-keyfile.c:1129
 #, c-format
 msgid "ignoring invalid DNS server IPv%c address '%s'"
 msgstr "ігноруємо некоректну адресу IPv%c сервера DNS «%s»"
 
-#: ../src/libnm-core-impl/nm-keyfile.c:1167
+#: ../src/libnm-core-impl/nm-keyfile.c:1166
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:1666
 #, c-format
 msgid "invalid option '%s', use one of [%s]"
 msgstr ""
 "некоректний параметр «%s», скористайтеся одним із таких параметрів [%s]"
 
-#: ../src/libnm-core-impl/nm-keyfile.c:1229
+#: ../src/libnm-core-impl/nm-keyfile.c:1228
 msgid "ignoring invalid MAC address"
 msgstr "ігноруємо некоректну MAC-адресу"
 
-#: ../src/libnm-core-impl/nm-keyfile.c:1305
+#: ../src/libnm-core-impl/nm-keyfile.c:1304
 #, c-format
 msgid "ignoring invalid bond option %s%s%s = %s%s%s: %s"
 msgstr "ігноруємо некоректний параметр bond %s%s%s = %s%s%s: %s"
 
-#: ../src/libnm-core-impl/nm-keyfile.c:1495
+#: ../src/libnm-core-impl/nm-keyfile.c:1494
 msgid "ignoring invalid SSID"
 msgstr "ігноруємо некоректний SSID"
 
-#: ../src/libnm-core-impl/nm-keyfile.c:1513
+#: ../src/libnm-core-impl/nm-keyfile.c:1512
 msgid "ignoring invalid raw password"
 msgstr "ігноруємо некоректний необроблений пароль"
 
-#: ../src/libnm-core-impl/nm-keyfile.c:1658
+#: ../src/libnm-core-impl/nm-keyfile.c:1657
 msgid "invalid key/cert value"
 msgstr "некоректне значення ключа/сертифіката"
 
-#: ../src/libnm-core-impl/nm-keyfile.c:1673
+#: ../src/libnm-core-impl/nm-keyfile.c:1672
 #, c-format
 msgid "invalid key/cert value path \"%s\""
 msgstr "некоректний шлях до ключа/сертифіката, «%s»"
 
-#: ../src/libnm-core-impl/nm-keyfile.c:1698
-#: ../src/libnm-core-impl/nm-keyfile.c:1795
+#: ../src/libnm-core-impl/nm-keyfile.c:1697
+#: ../src/libnm-core-impl/nm-keyfile.c:1794
 #, c-format
 msgid "certificate or key file '%s' does not exist"
 msgstr "файла сертифіката або ключа «%s» не існує"
 
-#: ../src/libnm-core-impl/nm-keyfile.c:1711
+#: ../src/libnm-core-impl/nm-keyfile.c:1710
 #, c-format
 msgid "invalid PKCS#11 URI \"%s\""
 msgstr "некоректна адреса PKCS#11 «%s»"
 
-#: ../src/libnm-core-impl/nm-keyfile.c:1757
+#: ../src/libnm-core-impl/nm-keyfile.c:1756
 msgid "invalid key/cert value data:;base64, is not base64"
 msgstr "некоректні дані значення ключа/сертифіката data:;base64, не є base64"
 
-#: ../src/libnm-core-impl/nm-keyfile.c:1770
+#: ../src/libnm-core-impl/nm-keyfile.c:1769
 msgid "invalid key/cert value data:;base64,file://"
 msgstr "некоректне значення ключа/сертифіката data:;base64,file://"
 
-#: ../src/libnm-core-impl/nm-keyfile.c:1811
+#: ../src/libnm-core-impl/nm-keyfile.c:1810
 msgid "invalid key/cert value is not a valid blob"
 msgstr ""
 "некоректне значення ключа/сертифіката, не є коректним значення «%s» не є "
 "коректним великим бінарним об'єктом"
 
-#: ../src/libnm-core-impl/nm-keyfile.c:1913
+#: ../src/libnm-core-impl/nm-keyfile.c:1912
 #, c-format
 msgid "invalid parity value '%s'"
 msgstr "некоректне значення парності, «%s»"
 
-#: ../src/libnm-core-impl/nm-keyfile.c:1935
-#: ../src/libnm-core-impl/nm-keyfile.c:3427
+#: ../src/libnm-core-impl/nm-keyfile.c:1934
+#: ../src/libnm-core-impl/nm-keyfile.c:3426
 #, c-format
 msgid "invalid setting: %s"
 msgstr "некоректний параметр: %s"
 
-#: ../src/libnm-core-impl/nm-keyfile.c:1955
+#: ../src/libnm-core-impl/nm-keyfile.c:1954
 #, c-format
 msgid "ignoring invalid team configuration: %s"
 msgstr "ігноруємо некоректне налаштування команди: %s"
 
-#: ../src/libnm-core-impl/nm-keyfile.c:2038
+#: ../src/libnm-core-impl/nm-keyfile.c:2037
 #, c-format
 msgid "invalid qdisc: %s"
 msgstr "некоректний qdisc: %s"
 
-#: ../src/libnm-core-impl/nm-keyfile.c:2088
+#: ../src/libnm-core-impl/nm-keyfile.c:2087
 #, c-format
 msgid "invalid tfilter: %s"
 msgstr "некоректний tfilter: %s"
 
-#: ../src/libnm-core-impl/nm-keyfile.c:3252
+#: ../src/libnm-core-impl/nm-keyfile.c:3251
 #, c-format
 msgid "error loading setting value: %s"
 msgstr "помилка під час завантаження значення параметра: %s"
 
-#: ../src/libnm-core-impl/nm-keyfile.c:3283
-#: ../src/libnm-core-impl/nm-keyfile.c:3295
-#: ../src/libnm-core-impl/nm-keyfile.c:3314
-#: ../src/libnm-core-impl/nm-keyfile.c:3326
-#: ../src/libnm-core-impl/nm-keyfile.c:3338
-#: ../src/libnm-core-impl/nm-keyfile.c:3400
-#: ../src/libnm-core-impl/nm-keyfile.c:3412
+#: ../src/libnm-core-impl/nm-keyfile.c:3282
+#: ../src/libnm-core-impl/nm-keyfile.c:3294
+#: ../src/libnm-core-impl/nm-keyfile.c:3313
+#: ../src/libnm-core-impl/nm-keyfile.c:3325
+#: ../src/libnm-core-impl/nm-keyfile.c:3337
+#: ../src/libnm-core-impl/nm-keyfile.c:3399
+#: ../src/libnm-core-impl/nm-keyfile.c:3411
 msgid "value cannot be interpreted as integer"
 msgstr "значення не може бути оброблено як ціле число"
 
-#: ../src/libnm-core-impl/nm-keyfile.c:3368
+#: ../src/libnm-core-impl/nm-keyfile.c:3367
 #, c-format
 msgid "ignoring invalid byte element '%u' (not between 0 and 255 inclusive)"
 msgstr ""
 "ігноруємо некоректний байтовий елемент «%u» (не у діапазоні від 0 до 255, "
 "включно)"
 
-#: ../src/libnm-core-impl/nm-keyfile.c:3452
+#: ../src/libnm-core-impl/nm-keyfile.c:3451
 #, c-format
 msgid "invalid setting name '%s'"
 msgstr "некоректна назва параметра, «%s»"
 
-#: ../src/libnm-core-impl/nm-keyfile.c:3499
+#: ../src/libnm-core-impl/nm-keyfile.c:3498
 #, c-format
 msgid "invalid key '%s.%s'"
 msgstr "некоректний ключ «%s.%s»"
 
-#: ../src/libnm-core-impl/nm-keyfile.c:3515
+#: ../src/libnm-core-impl/nm-keyfile.c:3514
 #, c-format
 msgid "key '%s.%s' is not boolean"
 msgstr "ключ «%s.%s» не є булевим значенням"
 
-#: ../src/libnm-core-impl/nm-keyfile.c:3532
+#: ../src/libnm-core-impl/nm-keyfile.c:3531
 #, c-format
 msgid "key '%s.%s' is not a uint32"
 msgstr "ключ «%s.%s» не є значенням uint32"
 
-#: ../src/libnm-core-impl/nm-keyfile.c:3589
+#: ../src/libnm-core-impl/nm-keyfile.c:3588
 #, c-format
 msgid "invalid peer public key in section '%s'"
 msgstr "некоректний відкритий ключ вузла у розділі «%s»"
 
-#: ../src/libnm-core-impl/nm-keyfile.c:3604
+#: ../src/libnm-core-impl/nm-keyfile.c:3603
 #, c-format
 msgid "key '%s.%s' is not a valid 256 bit key in base64 encoding"
 msgstr "ключ «%s.%s» не є коректним 256-бітовим ключем у кодуванні base64"
 
-#: ../src/libnm-core-impl/nm-keyfile.c:3627
+#: ../src/libnm-core-impl/nm-keyfile.c:3626
 #, c-format
 msgid "key '%s.%s' is not a valid secret flag"
 msgstr "ключ «%s.%s» не є коректним прапорцем реєстраційних даних"
 
-#: ../src/libnm-core-impl/nm-keyfile.c:3650
+#: ../src/libnm-core-impl/nm-keyfile.c:3649
 #, c-format
 msgid "key '%s.%s' is not a integer in range 0 to 2^32"
 msgstr "ключ «%s.%s» не є цілими числом у діапазоні від 0 до 2^32"
 
-#: ../src/libnm-core-impl/nm-keyfile.c:3666
+#: ../src/libnm-core-impl/nm-keyfile.c:3665
 #, c-format
 msgid "key '%s.%s' is not a valid endpoint"
 msgstr "ключ «%s.%s» не є коректною кінцевою точкою"
 
-#: ../src/libnm-core-impl/nm-keyfile.c:3692
+#: ../src/libnm-core-impl/nm-keyfile.c:3691
 #, c-format
 msgid "key '%s.%s' has invalid allowed-ips"
 msgstr "для ключа «%s.%s» вказано некоректне значення allowed-ips"
 
-#: ../src/libnm-core-impl/nm-keyfile.c:3707
+#: ../src/libnm-core-impl/nm-keyfile.c:3706
 #, c-format
 msgid "peer '%s' is invalid: %s"
 msgstr "вузол «%s» є некоректним: %s"
 
-#: ../src/libnm-core-impl/nm-keyfile.c:4235
+#: ../src/libnm-core-impl/nm-keyfile.c:4234
 #, c-format
 msgid "unsupported option \"%s.%s\" of variant type %s"
 msgstr "непідтримуваний параметр «%s.%s» типу варіанта %s"
@@ -1518,9 +1522,16 @@ msgstr ""
 "підтримки паролів не передбачено, якщо сертифікат не міститься у ключі "
 "PKCS#11"
 
+#. normalizable warnings from here on.
 #: ../src/libnm-core-impl/nm-setting-8021x.c:2612
 #: ../src/libnm-core-impl/nm-setting-8021x.c:2652
 #: ../src/libnm-core-impl/nm-setting-8021x.c:2671
+#: ../src/libnm-core-impl/nm-setting-8021x.c:2838
+#: ../src/libnm-core-impl/nm-setting-8021x.c:2858
+#: ../src/libnm-core-impl/nm-setting-8021x.c:2878
+#: ../src/libnm-core-impl/nm-setting-8021x.c:2919
+#: ../src/libnm-core-impl/nm-setting-8021x.c:2939
+#: ../src/libnm-core-impl/nm-setting-8021x.c:2995
 #: ../src/libnm-core-impl/nm-setting-adsl.c:181
 #: ../src/libnm-core-impl/nm-setting-cdma.c:149
 #: ../src/libnm-core-impl/nm-setting-cdma.c:159
@@ -1542,6 +1553,7 @@ msgstr ""
 #: ../src/libnm-core-impl/nm-setting-wireless-security.c:972
 #: ../src/libnm-core-impl/nm-setting-wireless-security.c:1000
 #: ../src/libnm-core-impl/nm-setting.c:2396
+#, c-format
 msgid "property is empty"
 msgstr "властивість є порожньою"
 
@@ -1582,15 +1594,15 @@ msgstr "можна вмикати лише для з'єднань Ethernet"
 #: ../src/libnm-core-impl/nm-setting-wireless.c:945
 #: ../src/libnm-core-impl/nm-setting-wireless.c:958
 #: ../src/libnm-core-impl/nm-setting-wpan.c:161
-#: ../src/libnm-core-impl/nm-utils.c:4152
+#: ../src/libnm-core-impl/nm-utils.c:4151
 msgid "property is invalid"
 msgstr "властивість є некоректною"
 
-#: ../src/libnm-core-impl/nm-setting-8021x.c:2831
-#: ../src/libnm-core-impl/nm-setting-8021x.c:2844
-#: ../src/libnm-core-impl/nm-setting-8021x.c:2857
-#: ../src/libnm-core-impl/nm-setting-8021x.c:2891
-#: ../src/libnm-core-impl/nm-setting-8021x.c:2904
+#: ../src/libnm-core-impl/nm-setting-8021x.c:2832
+#: ../src/libnm-core-impl/nm-setting-8021x.c:2852
+#: ../src/libnm-core-impl/nm-setting-8021x.c:2872
+#: ../src/libnm-core-impl/nm-setting-8021x.c:2913
+#: ../src/libnm-core-impl/nm-setting-8021x.c:2933
 #: ../src/libnm-core-impl/nm-setting-adsl.c:193
 #: ../src/libnm-core-impl/nm-setting-adsl.c:206
 #: ../src/libnm-core-impl/nm-setting-bluetooth.c:145
@@ -1599,7 +1611,7 @@ msgstr "властивість є некоректною"
 msgid "'%s' is not a valid value for the property"
 msgstr "«%s» не є коректним значенням властивості"
 
-#: ../src/libnm-core-impl/nm-setting-8021x.c:2870
+#: ../src/libnm-core-impl/nm-setting-8021x.c:2891
 msgid "invalid auth flags"
 msgstr "некоректні прапорці розпізнавання"
 
@@ -1629,95 +1641,95 @@ msgid "A connection with a '%s' setting must have the slave-type set to '%s'"
 msgstr ""
 "Для з'єднання з параметром «%s» має бути встановлено тип підлеглості «%s»"
 
-#: ../src/libnm-core-impl/nm-setting-bond.c:513
+#: ../src/libnm-core-impl/nm-setting-bond.c:504
 #, c-format
 msgid "'%s' option is empty"
 msgstr "параметр «%s» є порожнім"
 
-#: ../src/libnm-core-impl/nm-setting-bond.c:522
+#: ../src/libnm-core-impl/nm-setting-bond.c:513
 #, c-format
 msgid "'%s' is not a valid IPv4 address for '%s' option"
 msgstr "«%s» не є припустимою адресою IPv4 для параметра «%s»"
 
-#: ../src/libnm-core-impl/nm-setting-bond.c:549
+#: ../src/libnm-core-impl/nm-setting-bond.c:540
 #, c-format
 msgid "missing option name"
 msgstr "не вказано назви параметра"
 
-#: ../src/libnm-core-impl/nm-setting-bond.c:554
+#: ../src/libnm-core-impl/nm-setting-bond.c:545
 #, c-format
 msgid "invalid option '%s'"
 msgstr "некоректний параметр «%s»"
 
-#: ../src/libnm-core-impl/nm-setting-bond.c:590
+#: ../src/libnm-core-impl/nm-setting-bond.c:581
 #, c-format
 msgid "invalid value '%s' for option '%s'"
 msgstr "некоректне значення «%s» для параметра «%s»"
 
-#: ../src/libnm-core-impl/nm-setting-bond.c:837
+#: ../src/libnm-core-impl/nm-setting-bond.c:828
 #, c-format
 msgid "mandatory option '%s' is missing"
 msgstr "пропущено обов'язковий параметр «%s»"
 
-#: ../src/libnm-core-impl/nm-setting-bond.c:847
+#: ../src/libnm-core-impl/nm-setting-bond.c:838
 #, c-format
 msgid "'%s' is not a valid value for '%s'"
 msgstr "«%s» не є коректним значенням «%s»"
 
-#: ../src/libnm-core-impl/nm-setting-bond.c:860
+#: ../src/libnm-core-impl/nm-setting-bond.c:851
 #, c-format
 msgid "'%s=%s' is incompatible with '%s > 0'"
 msgstr "«%s=%s» є несумісним з «%s > 0»"
 
-#: ../src/libnm-core-impl/nm-setting-bond.c:877
+#: ../src/libnm-core-impl/nm-setting-bond.c:868
 #, c-format
 msgid "'%s' is not valid for the '%s' option: %s"
 msgstr "«%s» є некоректним для параметра «%s»: %s"
 
-#: ../src/libnm-core-impl/nm-setting-bond.c:889
+#: ../src/libnm-core-impl/nm-setting-bond.c:880
 #, c-format
 msgid "'%s' option is only valid for '%s=%s'"
 msgstr "параметр «%s» можна використовувати, лише якщо «%s=%s»"
 
-#: ../src/libnm-core-impl/nm-setting-bond.c:902
+#: ../src/libnm-core-impl/nm-setting-bond.c:893
 #, c-format
 msgid "'%s=%s' is not a valid configuration for '%s'"
 msgstr "«%s=%s» не є коректним налаштуванням для «%s»"
 
-#: ../src/libnm-core-impl/nm-setting-bond.c:917
-#: ../src/libnm-core-impl/nm-setting-bond.c:928
-#: ../src/libnm-core-impl/nm-setting-bond.c:941
+#: ../src/libnm-core-impl/nm-setting-bond.c:908
+#: ../src/libnm-core-impl/nm-setting-bond.c:919
+#: ../src/libnm-core-impl/nm-setting-bond.c:932
 #, c-format
 msgid "'%s' option requires '%s' option to be enabled"
 msgstr "використання параметра «%s» вимагає вмикання параметра «%s»"
 
-#: ../src/libnm-core-impl/nm-setting-bond.c:958
+#: ../src/libnm-core-impl/nm-setting-bond.c:949
 #, c-format
 msgid "'%s' option needs to be a value multiple of '%s' value"
 msgstr "значенням параметр «%s» має бути значення, кратне до значення «%s»"
 
-#: ../src/libnm-core-impl/nm-setting-bond.c:975
-#: ../src/libnm-core-impl/nm-setting-bond.c:986
+#: ../src/libnm-core-impl/nm-setting-bond.c:966
+#: ../src/libnm-core-impl/nm-setting-bond.c:977
 #, c-format
 msgid "'%s' option requires '%s' option to be set"
 msgstr "використання параметра «%s» вимагає встановлення параметра «%s»"
 
-#: ../src/libnm-core-impl/nm-setting-bond.c:999
+#: ../src/libnm-core-impl/nm-setting-bond.c:990
 #, c-format
 msgid "'%s' option is only valid with mode '%s'"
 msgstr "параметр «%s» є коректним лише у режимі «%s»"
 
-#: ../src/libnm-core-impl/nm-setting-bond.c:1012
+#: ../src/libnm-core-impl/nm-setting-bond.c:1003
 #, c-format
 msgid "'%s' and '%s' cannot have different values"
 msgstr "Значення «%s» і «%s» не можуть бути різними"
 
-#: ../src/libnm-core-impl/nm-setting-bond.c:1035
+#: ../src/libnm-core-impl/nm-setting-bond.c:1026
 #, c-format
 msgid "'%s' option should be string"
 msgstr "параметр «%s» має бути рядком"
 
-#: ../src/libnm-core-impl/nm-setting-bond.c:1048
+#: ../src/libnm-core-impl/nm-setting-bond.c:1039
 #, c-format
 msgid "'%s' option is not valid with mode '%s'"
 msgstr "параметр «%s» є коректним з режимом «%s»"
@@ -1763,6 +1775,11 @@ msgstr "не є коректним параметром"
 #, c-format
 msgid "'%s' option must be a power of 2"
 msgstr "Значенням параметра «%s» має бути степінь 2"
+
+#: ../src/libnm-core-impl/nm-setting-bridge.c:1318
+#| msgid "vlan setting should have a ethernet setting as well"
+msgid "bridge connection should have a ethernet setting as well"
+msgstr "з'єднання містка має супроводжуватися параметром ethernet"
 
 #: ../src/libnm-core-impl/nm-setting-connection.c:1005
 #, c-format
@@ -1945,7 +1962,11 @@ msgstr ""
 "У записі з'єднання закритого ключа InfiniBand не вказано назви батьківського "
 "інтерфейсу"
 
-#: ../src/libnm-core-impl/nm-setting-infiniband.c:264
+#: ../src/libnm-core-impl/nm-setting-infiniband.c:248
+msgid "the values 0 and 0x8000 are not allowed"
+msgstr "не можна використовувати значення 0 і 0x8000"
+
+#: ../src/libnm-core-impl/nm-setting-infiniband.c:274
 #, c-format
 msgid ""
 "interface name of software infiniband device must be '%s' or unset (instead "
@@ -1954,7 +1975,19 @@ msgstr ""
 "назвою інтерфейсу програмного пристрою infiniband має бути «%s» або назву "
 "має бути не встановлено (замість неї має бути «%s»)"
 
-#: ../src/libnm-core-impl/nm-setting-infiniband.c:292
+#: ../src/libnm-core-impl/nm-setting-infiniband.c:282
+#, c-format
+#| msgid ""
+#| "interface name of software infiniband device must be '%s' or unset "
+#| "(instead it is '%s')"
+msgid ""
+"interface name of software infiniband device with MAC address must be unset "
+"(instead it is '%s')"
+msgstr ""
+"назву інтерфейсу програмного пристрою infiniband з MAC-адресою має бути не"
+" встановлено (замість неї має бути «%s»)"
+
+#: ../src/libnm-core-impl/nm-setting-infiniband.c:310
 #, c-format
 msgid "mtu can be at most %u but it is %u"
 msgstr "mtu не може перевищувати %u, але маємо %u"
@@ -3132,230 +3165,230 @@ msgstr "некоректний тип D-Bus «%s»"
 msgid "invalid link-watchers: %s"
 msgstr "некоректне значення link-watchers: %s"
 
-#: ../src/libnm-core-impl/nm-utils.c:2256
+#: ../src/libnm-core-impl/nm-utils.c:2255
 #, c-format
 msgid "'%s' is not a valid handle."
 msgstr "«%s» не є коректним дескриптором."
 
-#: ../src/libnm-core-impl/nm-utils.c:2404
+#: ../src/libnm-core-impl/nm-utils.c:2403
 #, c-format
 msgid "'%s' unexpected: parent already specified."
 msgstr "Неочікуване «%s»: батьківський запис вже вказано."
 
-#: ../src/libnm-core-impl/nm-utils.c:2422
+#: ../src/libnm-core-impl/nm-utils.c:2421
 #, c-format
 msgid "invalid handle: '%s'"
 msgstr "некоректний дескриптор: «%s»"
 
-#: ../src/libnm-core-impl/nm-utils.c:2444
+#: ../src/libnm-core-impl/nm-utils.c:2443
 msgid "parent not specified."
 msgstr "не вказано батьківський запис."
 
-#: ../src/libnm-core-impl/nm-utils.c:2508
+#: ../src/libnm-core-impl/nm-utils.c:2507
 #, c-format
 msgid "unsupported qdisc option: '%s'."
 msgstr "непідтримуваний параметр qdisc: «%s»."
 
-#: ../src/libnm-core-impl/nm-utils.c:2638
+#: ../src/libnm-core-impl/nm-utils.c:2637
 msgid "action name missing."
 msgstr "не вказано назви дії."
 
-#: ../src/libnm-core-impl/nm-utils.c:2663
+#: ../src/libnm-core-impl/nm-utils.c:2662
 #, c-format
 msgid "unsupported action option: '%s'."
 msgstr "непідтримуваний параметр дії: «%s»."
 
-#: ../src/libnm-core-impl/nm-utils.c:2800
+#: ../src/libnm-core-impl/nm-utils.c:2799
 msgid "invalid action: "
 msgstr "некоректна дія: "
 
-#: ../src/libnm-core-impl/nm-utils.c:2804
+#: ../src/libnm-core-impl/nm-utils.c:2803
 #, c-format
 msgid "unsupported tfilter option: '%s'."
 msgstr "непідтримуваний параметр tfilter: «%s»."
 
-#: ../src/libnm-core-impl/nm-utils.c:3104
+#: ../src/libnm-core-impl/nm-utils.c:3103
 #, c-format
 msgid "failed stat file %s: %s"
 msgstr "не вдалося отримати статистичні дані щодо файла %s: %s"
 
-#: ../src/libnm-core-impl/nm-utils.c:3115
+#: ../src/libnm-core-impl/nm-utils.c:3114
 #, c-format
 msgid "not a file (%s)"
 msgstr "не є файлом (%s)"
 
-#: ../src/libnm-core-impl/nm-utils.c:3126
+#: ../src/libnm-core-impl/nm-utils.c:3125
 #, c-format
 msgid "invalid file owner %d for %s"
 msgstr "некоректний власник файла, %d, %s"
 
-#: ../src/libnm-core-impl/nm-utils.c:3138
+#: ../src/libnm-core-impl/nm-utils.c:3137
 #, c-format
 msgid "file permissions for %s"
 msgstr "файлові права доступу до %s"
 
-#: ../src/libnm-core-impl/nm-utils.c:3148
+#: ../src/libnm-core-impl/nm-utils.c:3147
 #, c-format
 msgid "reject %s"
 msgstr "відмовити %s"
 
-#: ../src/libnm-core-impl/nm-utils.c:3168
+#: ../src/libnm-core-impl/nm-utils.c:3167
 #, c-format
 msgid "path is not absolute (%s)"
 msgstr "шлях не є абсолютним (%s)"
 
-#: ../src/libnm-core-impl/nm-utils.c:3183
+#: ../src/libnm-core-impl/nm-utils.c:3182
 #, c-format
 msgid "Plugin file does not exist (%s)"
 msgstr "Файла додатка не існує (%s)"
 
-#: ../src/libnm-core-impl/nm-utils.c:3192
+#: ../src/libnm-core-impl/nm-utils.c:3191
 #, c-format
 msgid "Plugin is not a valid file (%s)"
 msgstr "Додаток не є коректним файлом (%s)"
 
-#: ../src/libnm-core-impl/nm-utils.c:3203
+#: ../src/libnm-core-impl/nm-utils.c:3202
 #, c-format
 msgid "libtool archives are not supported (%s)"
 msgstr "Підтримки архівів libtool не передбачено (%s)"
 
-#: ../src/libnm-core-impl/nm-utils.c:3280
+#: ../src/libnm-core-impl/nm-utils.c:3279
 #, c-format
 msgid "Could not find \"%s\" binary"
 msgstr "Не вдалося знайти виконуваний файл «%s»"
 
-#: ../src/libnm-core-impl/nm-utils.c:4103
+#: ../src/libnm-core-impl/nm-utils.c:4102
 msgid "unknown secret flags"
 msgstr "невідомі прапорці реєстраційних даних"
 
-#: ../src/libnm-core-impl/nm-utils.c:4113
+#: ../src/libnm-core-impl/nm-utils.c:4112
 msgid "conflicting secret flags"
 msgstr "конфлікт прапорців реєстраційних даних"
 
-#: ../src/libnm-core-impl/nm-utils.c:4124
+#: ../src/libnm-core-impl/nm-utils.c:4123
 msgid "secret flags must not be \"not-required\""
 msgstr "прапорці реєстраційних даних не можуть бути «not-required»"
 
-#: ../src/libnm-core-impl/nm-utils.c:4132
+#: ../src/libnm-core-impl/nm-utils.c:4131
 msgid "unsupported secret flags"
 msgstr "непідтримувані прапорці реєстраційних даних"
 
-#: ../src/libnm-core-impl/nm-utils.c:4162
+#: ../src/libnm-core-impl/nm-utils.c:4161
 msgid "can't be simultaneously disabled and enabled"
 msgstr "не може бути одночасно вимкнено і увімкнено"
 
-#: ../src/libnm-core-impl/nm-utils.c:4170
+#: ../src/libnm-core-impl/nm-utils.c:4169
 msgid "WPS is required"
 msgstr "Потрібна WPS"
 
-#: ../src/libnm-core-impl/nm-utils.c:4238
+#: ../src/libnm-core-impl/nm-utils.c:4237
 #, c-format
 msgid "not a valid ethernet MAC address for mask at position %lld"
 msgstr "некоректна адреса MAC ethernet для маски у позиції %lld"
 
-#: ../src/libnm-core-impl/nm-utils.c:4257
+#: ../src/libnm-core-impl/nm-utils.c:4256
 #, c-format
 msgid "not a valid ethernet MAC address #%u at position %lld"
 msgstr "некоректна адреса MAC ethernet #%u у позиції %lld"
 
-#: ../src/libnm-core-impl/nm-utils.c:4889
+#: ../src/libnm-core-impl/nm-utils.c:4888
 msgid "not valid utf-8"
 msgstr "некоректні дані UTF-8"
 
-#: ../src/libnm-core-impl/nm-utils.c:4910
-#: ../src/libnm-core-impl/nm-utils.c:4963
+#: ../src/libnm-core-impl/nm-utils.c:4909
+#: ../src/libnm-core-impl/nm-utils.c:4962
 msgid "is not a JSON object"
 msgstr "не є об'єктом JSON"
 
-#: ../src/libnm-core-impl/nm-utils.c:4939
+#: ../src/libnm-core-impl/nm-utils.c:4938
 msgid "value is NULL"
 msgstr "значенням є NULL"
 
-#: ../src/libnm-core-impl/nm-utils.c:4939
+#: ../src/libnm-core-impl/nm-utils.c:4938
 msgid "value is empty"
 msgstr "порожнє значення"
 
-#: ../src/libnm-core-impl/nm-utils.c:4951
+#: ../src/libnm-core-impl/nm-utils.c:4950
 #, c-format
 msgid "invalid JSON at position %d (%s)"
 msgstr "некоректний код JSON на позиції %d (%s)"
 
-#: ../src/libnm-core-impl/nm-utils.c:5079
-#: ../src/libnm-core-impl/nm-utils.c:5099
+#: ../src/libnm-core-impl/nm-utils.c:5078
+#: ../src/libnm-core-impl/nm-utils.c:5098
 msgid "unterminated escape sequence"
 msgstr "незавершена екранована послідовність"
 
-#: ../src/libnm-core-impl/nm-utils.c:5125
+#: ../src/libnm-core-impl/nm-utils.c:5124
 #, c-format
 msgid "unknown attribute '%s'"
 msgstr "невідомий атрибут «%s»"
 
-#: ../src/libnm-core-impl/nm-utils.c:5143
+#: ../src/libnm-core-impl/nm-utils.c:5142
 #, c-format
 msgid "missing key-value separator '%c' after '%s'"
 msgstr "пропущено роздільник пар ключ-значення «%c» після «%s»"
 
-#: ../src/libnm-core-impl/nm-utils.c:5163
+#: ../src/libnm-core-impl/nm-utils.c:5162
 #, c-format
 msgid "invalid uint32 value '%s' for attribute '%s'"
 msgstr "некоректне значення uint32 «%s» атрибута «%s»"
 
-#: ../src/libnm-core-impl/nm-utils.c:5177
+#: ../src/libnm-core-impl/nm-utils.c:5176
 #, c-format
 msgid "invalid int32 value '%s' for attribute '%s'"
 msgstr "некоректне значення int32 «%s» атрибута «%s»"
 
-#: ../src/libnm-core-impl/nm-utils.c:5190
+#: ../src/libnm-core-impl/nm-utils.c:5189
 #, c-format
 msgid "invalid uint64 value '%s' for attribute '%s'"
 msgstr "некоректне значення uint64 «%s» атрибута «%s»"
 
-#: ../src/libnm-core-impl/nm-utils.c:5203
+#: ../src/libnm-core-impl/nm-utils.c:5202
 #, c-format
 msgid "invalid uint8 value '%s' for attribute '%s'"
 msgstr "некоректне значення uint8 «%s» атрибута «%s»"
 
-#: ../src/libnm-core-impl/nm-utils.c:5217
+#: ../src/libnm-core-impl/nm-utils.c:5216
 #, c-format
 msgid "invalid boolean value '%s' for attribute '%s'"
 msgstr "некоректне булеве значення «%s» атрибута «%s»"
 
-#: ../src/libnm-core-impl/nm-utils.c:5231
+#: ../src/libnm-core-impl/nm-utils.c:5230
 #, c-format
 msgid "unsupported attribute '%s' of type '%s'"
 msgstr "непідтримуваний атрибут «%s» типу «%s»"
 
-#: ../src/libnm-core-impl/nm-utils.c:5532
+#: ../src/libnm-core-impl/nm-utils.c:5531
 #, c-format
 msgid "Bridge VLANs %d and %d are not sorted by ascending vid"
 msgstr "VLAN містка %d і %d не упорядковано за зростанням vid"
 
-#: ../src/libnm-core-impl/nm-utils.c:5556
+#: ../src/libnm-core-impl/nm-utils.c:5555
 #, c-format
 msgid "duplicate bridge VLAN vid %u"
 msgstr "дублікат містка vid VLAN %u"
 
-#: ../src/libnm-core-impl/nm-utils.c:5568
+#: ../src/libnm-core-impl/nm-utils.c:5567
 msgid "only one VLAN can be the PVID"
 msgstr "лише одна з VLAN може бути PVID"
 
-#: ../src/libnm-core-impl/nm-utils.c:5613
+#: ../src/libnm-core-impl/nm-utils.c:5612
 #, c-format
 msgid "unknown flags 0x%x"
 msgstr "невідомі прапорці 0x%x"
 
-#: ../src/libnm-core-impl/nm-utils.c:5625
+#: ../src/libnm-core-impl/nm-utils.c:5624
 msgid ""
 "'fqdn-no-update' and 'fqdn-serv-update' flags cannot be set at the same time"
 msgstr ""
 "не можна одночасно встановлювати прапорці «fqdn-no-update» і «fqdn-serv-"
 "update»"
 
-#: ../src/libnm-core-impl/nm-utils.c:5636
+#: ../src/libnm-core-impl/nm-utils.c:5635
 msgid "'fqdn-clear-flags' flag is incompatible with other FQDN flags"
 msgstr "прапорець «fqdn-clear-flags» є несумісним із іншими прапорцями FQDN"
 
-#: ../src/libnm-core-impl/nm-utils.c:5644
+#: ../src/libnm-core-impl/nm-utils.c:5643
 msgid "DHCPv6 does not support the E (encoded) FQDN flag"
 msgstr "у DHCPv6 не передбачено підтримки прапорця E (закодовано) FQDN"
 
@@ -3772,36 +3805,36 @@ msgstr "Не вдалося розпізнати сертифікат"
 msgid "not a valid private key"
 msgstr "не є коректним закритим ключем"
 
-#: ../src/libnm-glib-aux/nm-shared-utils.c:2669
+#: ../src/libnm-glib-aux/nm-shared-utils.c:2667
 #, c-format
 msgid "object class '%s' has no property named '%s'"
 msgstr "у класі об'єктів «%s» немає властивості із назвою «%s»"
 
-#: ../src/libnm-glib-aux/nm-shared-utils.c:2678
+#: ../src/libnm-glib-aux/nm-shared-utils.c:2676
 #, c-format
 msgid "property '%s' of object class '%s' is not writable"
 msgstr "властивість «%s» класу об'єктів «%s» є непридатною до запису"
 
-#: ../src/libnm-glib-aux/nm-shared-utils.c:2687
+#: ../src/libnm-glib-aux/nm-shared-utils.c:2685
 #, c-format
 msgid ""
 "construct property \"%s\" for object '%s' can't be set after construction"
 msgstr ""
 "властивість construct «%s» об'єкта «%s» не можна встановлювати після побудови"
 
-#: ../src/libnm-glib-aux/nm-shared-utils.c:2698
+#: ../src/libnm-glib-aux/nm-shared-utils.c:2696
 #, c-format
 msgid "'%s::%s' is not a valid property name; '%s' is not a GObject subtype"
 msgstr "«%s::%s» не є коректною назвою властивості; «%s» не є підтипом GObject"
 
-#: ../src/libnm-glib-aux/nm-shared-utils.c:2711
+#: ../src/libnm-glib-aux/nm-shared-utils.c:2709
 #, c-format
 msgid "unable to set property '%s' of type '%s' from value of type '%s'"
 msgstr ""
 "не вдалося встановити значення властивості «%s» типу «%s» на основі значення "
 "типу «%s»"
 
-#: ../src/libnm-glib-aux/nm-shared-utils.c:2723
+#: ../src/libnm-glib-aux/nm-shared-utils.c:2721
 #, c-format
 msgid ""
 "value \"%s\" of type '%s' is invalid or out of range for property '%s' of "
@@ -3810,48 +3843,48 @@ msgstr ""
 "значення «%s» типу «%s» є некоректним для властивості «%s» типу «%s» або не "
 "належить до припустимого діапазону значень"
 
-#: ../src/libnm-glib-aux/nm-shared-utils.c:5688
+#: ../src/libnm-glib-aux/nm-shared-utils.c:5687
 msgid "interface name is missing"
 msgstr "пропущено назву інтерфейсу"
 
-#: ../src/libnm-glib-aux/nm-shared-utils.c:5696
+#: ../src/libnm-glib-aux/nm-shared-utils.c:5695
 msgid "interface name is too short"
 msgstr "назва інтерфейсу є надто короткою"
 
-#: ../src/libnm-glib-aux/nm-shared-utils.c:5704
+#: ../src/libnm-glib-aux/nm-shared-utils.c:5703
 msgid "interface name is reserved"
 msgstr "таку назву інтерфейсу зарезервовано"
 
-#: ../src/libnm-glib-aux/nm-shared-utils.c:5717
+#: ../src/libnm-glib-aux/nm-shared-utils.c:5716
 msgid "interface name contains an invalid character"
 msgstr "назва інтерфейсу містить некоректний символ"
 
-#: ../src/libnm-glib-aux/nm-shared-utils.c:5725
+#: ../src/libnm-glib-aux/nm-shared-utils.c:5724
 msgid "interface name is longer than 15 characters"
 msgstr "назва інтерфейсу є довшою за 15 символів"
 
-#: ../src/libnm-glib-aux/nm-shared-utils.c:5750
+#: ../src/libnm-glib-aux/nm-shared-utils.c:5749
 #, c-format
 msgid "'%%' is not allowed in interface names"
 msgstr "«%%» не можна використовувати у назвах інтерфейсів"
 
-#: ../src/libnm-glib-aux/nm-shared-utils.c:5762
+#: ../src/libnm-glib-aux/nm-shared-utils.c:5761
 #, c-format
 msgid "'%s' is not allowed as interface name"
 msgstr "«%s» не можна використовувати як назву інтерфейсу"
 
-#: ../src/libnm-glib-aux/nm-shared-utils.c:5784
+#: ../src/libnm-glib-aux/nm-shared-utils.c:5783
 msgid ""
 "interface name must be alphanumerical with no forward or backward slashes"
 msgstr ""
 "назва інтерфейсу має складатися з літер і цифр без початкового і "
 "завершального символів похилої риски"
 
-#: ../src/libnm-glib-aux/nm-shared-utils.c:5801
+#: ../src/libnm-glib-aux/nm-shared-utils.c:5800
 msgid "interface name must not be empty"
 msgstr "назва інтерфейсу не може бути порожньою"
 
-#: ../src/libnm-glib-aux/nm-shared-utils.c:5809
+#: ../src/libnm-glib-aux/nm-shared-utils.c:5808
 msgid "interface name must be UTF-8 encoded"
 msgstr "назва інтерфейсу має бути набором символів у кодуванні UTF-8"
 
@@ -3894,8 +3927,8 @@ msgstr "«%s» є неоднозначним: %s"
 msgid "missing name, try one of [%s]"
 msgstr "пропущено назву, спробуйте одну з таких назв: [%s]"
 
-#: ../src/libnmc-base/nm-client-utils.c:248 ../src/nmcli/connections.c:3612
-#: ../src/nmcli/connections.c:3670
+#: ../src/libnmc-base/nm-client-utils.c:248 ../src/nmcli/connections.c:3734
+#: ../src/nmcli/connections.c:3792
 #, c-format
 msgid "'%s' not among [%s]"
 msgstr "«%s» немає серед [%s]"
@@ -3907,8 +3940,8 @@ msgstr "«%s» немає серед [%s]"
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:1837
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:1868
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:2832
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:2890 ../src/nmcli/common.c:1477
-#: ../src/nmcli/connections.c:77 ../src/nmcli/connections.c:87
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:2890 ../src/nmcli/common.c:1625
+#: ../src/nmcli/connections.c:78 ../src/nmcli/connections.c:88
 #: ../src/nmcli/devices.c:484 ../src/nmcli/devices.c:591
 #: ../src/nmcli/devices.c:597 ../src/nmcli/general.c:30
 #: ../src/nmcli/general.c:85 ../src/nmcli/general.c:91
@@ -3955,7 +3988,7 @@ msgstr "з'єднання (встановлення другорядних з'є
 msgid "connected"
 msgstr "з'єднано"
 
-#: ../src/libnmc-base/nm-client-utils.c:303 ../src/nmcli/connections.c:80
+#: ../src/libnmc-base/nm-client-utils.c:303 ../src/nmcli/connections.c:81
 msgid "deactivating"
 msgstr "деактивація"
 
@@ -3984,8 +4017,8 @@ msgstr "деактивація (ззовні)"
 #: ../src/libnmc-base/nm-client-utils.c:342
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:883
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:2824
-#: ../src/nmcli/connections.c:5381 ../src/nmcli/connections.c:7326
-#: ../src/nmcli/connections.c:7327 ../src/nmcli/devices.c:590
+#: ../src/nmcli/connections.c:5491 ../src/nmcli/connections.c:7446
+#: ../src/nmcli/connections.c:7447 ../src/nmcli/devices.c:590
 #: ../src/nmcli/devices.c:596 ../src/nmcli/devices.c:1382
 #: ../src/nmcli/general.c:92 ../src/nmcli/utils.h:313
 msgid "yes"
@@ -3994,8 +4027,8 @@ msgstr "так"
 #: ../src/libnmc-base/nm-client-utils.c:343
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:883
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:2827
-#: ../src/nmcli/connections.c:5380 ../src/nmcli/connections.c:7326
-#: ../src/nmcli/connections.c:7327 ../src/nmcli/devices.c:590
+#: ../src/nmcli/connections.c:5490 ../src/nmcli/connections.c:7446
+#: ../src/nmcli/connections.c:7447 ../src/nmcli/devices.c:590
 #: ../src/nmcli/devices.c:596 ../src/nmcli/devices.c:1382
 #: ../src/nmcli/general.c:93 ../src/nmcli/utils.h:313
 msgid "no"
@@ -4014,8 +4047,8 @@ msgid "No reason given"
 msgstr "Причину не вказано"
 
 #. We should not really come here
-#: ../src/libnmc-base/nm-client-utils.c:354 ../src/nmcli/connections.c:3632
-#: ../src/nmcli/connections.c:3691
+#: ../src/libnmc-base/nm-client-utils.c:354 ../src/nmcli/connections.c:3754
+#: ../src/nmcli/connections.c:3813
 #, c-format
 msgid "Unknown error"
 msgstr "Невідома помилка"
@@ -4412,7 +4445,7 @@ msgstr "Користувач"
 #: ../src/libnmc-base/nm-vpn-helpers.c:143
 #: ../src/libnmc-base/nm-vpn-helpers.c:147
 #: ../src/libnmc-base/nm-vpn-helpers.c:153
-#: ../src/libnmc-base/nm-vpn-helpers.c:158 ../src/nmcli/devices.c:4662
+#: ../src/libnmc-base/nm-vpn-helpers.c:158 ../src/nmcli/devices.c:4668
 #: ../src/nmtui/nmt-page-dsl.c:64 ../src/nmtui/nmt-page-wifi.c:271
 #: ../src/nmtui/nmt-page-wifi.c:305 ../src/nmtui/nmt-page-wifi.c:344
 msgid "Password"
@@ -9313,16 +9346,23 @@ msgstr ""
 "на тимчасові адреси, які налаштовано за допомогою відповідної властивості."
 
 #: ../src/libnmc-setting/settings-docs.h.in:258
+#| msgid ""
+#| "A list of IPv6 addresses and their prefix length. Multiple addresses can "
+#| "be separated by comma. For example \"2001:db8:85a3::8a2e:370:7334/64, "
+#| "2001:db8:85a3::5/64\". The addresses are listed in increasing priority, "
+#| "meaning the last address will be the primary address."
 msgid ""
 "A list of IPv6 addresses and their prefix length. Multiple addresses can be "
 "separated by comma. For example \"2001:db8:85a3::8a2e:370:7334/64, 2001:"
-"db8:85a3::5/64\". The addresses are listed in increasing priority, meaning "
-"the last address will be the primary address."
+"db8:85a3::5/64\". The addresses are listed in decreasing priority, meaning "
+"the first address will be the primary address. This can make a difference "
+"with IPv6 source address selection (RFC 6724, section 5)."
 msgstr ""
-"Список адрес IPv46та їхніх довжин префікса. Декілька адрес можна "
+"Список адрес IPv6 та їхніх довжин префікса. Декілька адрес можна "
 "відокремлювати комами. Приклад: \"2001:db8:85a3::8a2e:370:7334/64, 2001:"
-"db8:85a3::5/64\". Список адрес складається за збільшенням пріоритетності, "
-"тобто остання адреса буде основною."
+"db8:85a3::5/64\". Список адрес складається за зменшенням пріоритетності, "
+"тобто перша адреса буде основною. Це може вплинути на вибір початкової адреси"
+" при використанні IPv6 (RFC 6724, розділ 5)."
 
 #: ../src/libnmc-setting/settings-docs.h.in:260
 msgid ""
@@ -10810,28 +10850,28 @@ msgstr "nmcli успішно зареєстровано як агент polkit.\
 msgid "Error: polkit agent initialization failed: %s"
 msgstr "Помилка: не вдалося ініціалізувати агент polkit: %s"
 
-#: ../src/nmcli/common.c:360 ../src/nmcli/common.c:361
-#: ../src/nmcli/common.c:391 ../src/nmcli/common.c:392
-#: ../src/nmcli/connections.c:1621
+#: ../src/nmcli/common.c:362 ../src/nmcli/common.c:363
+#: ../src/nmcli/common.c:393 ../src/nmcli/common.c:394
+#: ../src/nmcli/connections.c:1737
 msgid "GROUP"
 msgstr "ГРУПА"
 
-#: ../src/nmcli/common.c:639
+#: ../src/nmcli/common.c:642
 #, c-format
 msgid "Error: openconnect failed: %s\n"
 msgstr "Помилка: не вдалося виконати openconnect: %s\n"
 
-#: ../src/nmcli/common.c:646
+#: ../src/nmcli/common.c:649
 #, c-format
 msgid "Error: openconnect failed with status %d\n"
 msgstr "Помилка: виконання openconnect завершилося невдало зі станом %d\n"
 
-#: ../src/nmcli/common.c:648
+#: ../src/nmcli/common.c:651
 #, c-format
 msgid "Error: openconnect failed with signal %d\n"
 msgstr "Помилка: виконання openconnect завершилося невдало із сигналом %d\n"
 
-#: ../src/nmcli/common.c:740
+#: ../src/nmcli/common.c:743
 #, c-format
 msgid ""
 "Warning: password for '%s' not given in 'passwd-file' and nmcli cannot ask "
@@ -10840,132 +10880,141 @@ msgstr ""
 "Попередження: у «passwd-file» не вказано пароля до «%s», а nmcli не може "
 "запитати про пароль без параметра «--ask».\n"
 
-#: ../src/nmcli/common.c:1261
+#: ../src/nmcli/common.c:1264
 #, c-format
 msgid "Error: Could not create NMClient object: %s."
 msgstr "Помилка: не вдалося створити об'єкт NMClient: %s."
 
-#: ../src/nmcli/common.c:1287
+#: ../src/nmcli/common.c:1395
+msgid "Error: command doesn't support --offline mode."
+msgstr "Помилка: у команді не передбачено підтримки режиму --offline."
+
+#: ../src/nmcli/common.c:1435
 msgid "Error: NetworkManager is not running."
 msgstr "Помилка: NetworkManager не працює."
 
-#: ../src/nmcli/common.c:1390
+#: ../src/nmcli/common.c:1538
 #, c-format
 msgid "Error: argument '%s' not understood. Try passing --help instead."
 msgstr ""
 "Помилка: параметр «%s» є невідомим. Спробуйте скористатися параметром --help."
 
-#: ../src/nmcli/common.c:1401
+#: ../src/nmcli/common.c:1549
 msgid "Error: missing argument. Try passing --help."
 msgstr "Помилка: пропущено параметр. Спробуйте скористатися параметром --help."
 
-#: ../src/nmcli/common.c:1466
+#: ../src/nmcli/common.c:1614
 msgid "access denied"
 msgstr "доступ заборонено"
 
-#: ../src/nmcli/common.c:1468
+#: ../src/nmcli/common.c:1616
 msgid "NetworkManager is not running"
 msgstr "NetworkManager не запущено"
 
-#: ../src/nmcli/common.c:1478
+#: ../src/nmcli/common.c:1626
 msgid "none"
 msgstr "немає"
 
-#: ../src/nmcli/common.c:1479
+#: ../src/nmcli/common.c:1627
 msgid "portal"
 msgstr "портал"
 
-#: ../src/nmcli/common.c:1480
+#: ../src/nmcli/common.c:1628
 msgid "limited"
 msgstr "обмежена"
 
-#: ../src/nmcli/common.c:1481
+#: ../src/nmcli/common.c:1629
 msgid "full"
 msgstr "повна"
 
 #. define some prompts for connection editor
-#: ../src/nmcli/connections.c:59
+#: ../src/nmcli/connections.c:60
 msgid "Setting name? "
 msgstr "Назва параметра? "
 
-#: ../src/nmcli/connections.c:60
+#: ../src/nmcli/connections.c:61
 msgid "Property name? "
 msgstr "Назва властивості? "
 
-#: ../src/nmcli/connections.c:61
+#: ../src/nmcli/connections.c:62
 msgid "Enter connection type: "
 msgstr "Вкажіть тип з'єднання: "
 
 #. define some other prompts
-#: ../src/nmcli/connections.c:65
+#: ../src/nmcli/connections.c:66
 msgid "Connection (name, UUID, or path): "
 msgstr "З'єднання (назва, UUID або шлях):"
 
-#: ../src/nmcli/connections.c:66
+#: ../src/nmcli/connections.c:67
 msgid "VPN connection (name, UUID, or path): "
 msgstr "З'єднання VPN (назва, UUID або шлях):"
 
-#: ../src/nmcli/connections.c:67
+#: ../src/nmcli/connections.c:68
 msgid "Connection(s) (name, UUID, or path): "
 msgstr "З'єднання (назва, UUID або шлях):"
 
-#: ../src/nmcli/connections.c:68
+#: ../src/nmcli/connections.c:69
 msgid "Connection(s) (name, UUID, path or apath): "
 msgstr "З'єднання (назва, UUID, шлях або apath):"
 
-#: ../src/nmcli/connections.c:78
+#: ../src/nmcli/connections.c:79
 msgid "activating"
 msgstr "активація"
 
-#: ../src/nmcli/connections.c:79
+#: ../src/nmcli/connections.c:80
 msgid "activated"
 msgstr "активовано"
 
-#: ../src/nmcli/connections.c:81
+#: ../src/nmcli/connections.c:82
 msgid "deactivated"
 msgstr "вимкнено"
 
-#: ../src/nmcli/connections.c:88
+#: ../src/nmcli/connections.c:89
 msgid "VPN connecting (prepare)"
 msgstr "З'єднання VPN (приготування)"
 
-#: ../src/nmcli/connections.c:90
+#: ../src/nmcli/connections.c:91
 msgid "VPN connecting (need authentication)"
 msgstr "З'єднання VPN (потрібне розпізнавання)"
 
-#: ../src/nmcli/connections.c:91
+#: ../src/nmcli/connections.c:92
 msgid "VPN connecting"
 msgstr "З'єднання VPN"
 
-#: ../src/nmcli/connections.c:93
+#: ../src/nmcli/connections.c:94
 msgid "VPN connecting (getting IP configuration)"
 msgstr "З'єднання VPN (отримання налаштувань IP)"
 
-#: ../src/nmcli/connections.c:94
+#: ../src/nmcli/connections.c:95
 msgid "VPN connected"
 msgstr "VPN з'єднано"
 
-#: ../src/nmcli/connections.c:95
+#: ../src/nmcli/connections.c:96
 msgid "VPN connection failed"
 msgstr "Невдала спроба з'єднання VPN"
 
-#: ../src/nmcli/connections.c:96
+#: ../src/nmcli/connections.c:97
 msgid "VPN disconnected"
 msgstr "VPN роз'єднано"
 
-#: ../src/nmcli/connections.c:526
+#: ../src/nmcli/connections.c:172 ../src/nmcli/connections.c:232
+#, c-format
+msgid "Error: Error writting connection: %s"
+msgstr "Помилка: помилка під час запису з'єднання: %s"
+
+#: ../src/nmcli/connections.c:652
 msgid "WiMax is no longer supported"
 msgstr "Підтримку WiMax припинено"
 
-#: ../src/nmcli/connections.c:532
+#: ../src/nmcli/connections.c:658
 msgid "WEP encryption is known to be insecure"
 msgstr "Відомо, що шифрування WEP не є безпечним"
 
-#: ../src/nmcli/connections.c:614
+#: ../src/nmcli/connections.c:740
 msgid "never"
 msgstr "ніколи"
 
-#: ../src/nmcli/connections.c:965
+#: ../src/nmcli/connections.c:1089
 #, c-format
 msgid ""
 "Usage: nmcli connection { COMMAND | help }\n"
@@ -11043,7 +11092,7 @@ msgstr ""
 "  export [id | uuid | path] <ідентифікатор> [<файл результатів>]\n"
 "\n"
 
-#: ../src/nmcli/connections.c:991
+#: ../src/nmcli/connections.c:1115
 #, c-format
 msgid ""
 "Usage: nmcli connection show { ARGUMENTS | help }\n"
@@ -11091,7 +11140,7 @@ msgstr ""
 "Якщо вказано параметр «--active», братимуться до уваги лише активні профілі. "
 "Загальний параметр --show-secrets покаже також пов'язані паролі.\n"
 
-#: ../src/nmcli/connections.c:1012
+#: ../src/nmcli/connections.c:1136
 #, c-format
 msgid ""
 "Usage: nmcli connection up { ARGUMENTS | help }\n"
@@ -11137,7 +11186,7 @@ msgstr ""
 "passwd-file - файл з паролями, потрібними для активації з'єднання\n"
 "\n"
 
-#: ../src/nmcli/connections.c:1035
+#: ../src/nmcli/connections.c:1159
 #, c-format
 msgid ""
 "Usage: nmcli connection down { ARGUMENTS | help }\n"
@@ -11159,7 +11208,7 @@ msgstr ""
 "назвою, UUID або шляхом D-Bus.\n"
 "\n"
 
-#: ../src/nmcli/connections.c:1047
+#: ../src/nmcli/connections.c:1171
 #, c-format
 msgid ""
 "Usage: nmcli connection add { ARGUMENTS | help }\n"
@@ -11487,7 +11536,7 @@ msgstr ""
 "                  [ip6 <адреса IPv6>] [gw6 <шлюз IPv6>]\n"
 "\n"
 
-#: ../src/nmcli/connections.c:1177
+#: ../src/nmcli/connections.c:1301
 #, c-format
 msgid ""
 "Usage: nmcli connection modify { ARGUMENTS | help }\n"
@@ -11544,7 +11593,7 @@ msgstr ""
 "nmcli con mod em1-1 remove sriov\n"
 "\n"
 
-#: ../src/nmcli/connections.c:1205
+#: ../src/nmcli/connections.c:1329
 #, c-format
 msgid ""
 "Usage: nmcli connection clone { ARGUMENTS | help }\n"
@@ -11567,7 +11616,7 @@ msgstr ""
 "ідентифікатора (задається параметром <нова назва>).\n"
 "\n"
 
-#: ../src/nmcli/connections.c:1217
+#: ../src/nmcli/connections.c:1341
 #, c-format
 msgid ""
 "Usage: nmcli connection edit { ARGUMENTS | help }\n"
@@ -11595,7 +11644,7 @@ msgstr ""
 "Додати новий профіль з'єднання за допомогою інтерактивного редактора.\n"
 "\n"
 
-#: ../src/nmcli/connections.c:1232
+#: ../src/nmcli/connections.c:1356
 #, c-format
 msgid ""
 "Usage: nmcli connection delete { ARGUMENTS | help }\n"
@@ -11614,7 +11663,7 @@ msgstr ""
 "Профілі можна вказати за допомогою назв, UUID або шляху D-Bus.\n"
 "\n"
 
-#: ../src/nmcli/connections.c:1243
+#: ../src/nmcli/connections.c:1367
 #, c-format
 msgid ""
 "Usage: nmcli connection monitor { ARGUMENTS | help }\n"
@@ -11636,7 +11685,7 @@ msgstr ""
 "Стежить за усіма профілями з'єднань, якщо конкретний профіль не вказано.\n"
 "\n"
 
-#: ../src/nmcli/connections.c:1255
+#: ../src/nmcli/connections.c:1379
 #, c-format
 msgid ""
 "Usage: nmcli connection reload { help }\n"
@@ -11649,7 +11698,7 @@ msgstr ""
 "Перезавантажити усіх файли з'єднань з диска.\n"
 "\n"
 
-#: ../src/nmcli/connections.c:1263
+#: ../src/nmcli/connections.c:1387
 #, c-format
 msgid ""
 "Usage: nmcli connection load { ARGUMENTS | help }\n"
@@ -11672,7 +11721,7 @@ msgstr ""
 "того, щоб завантажити до NetworkManager найсвіжіші налаштування.\n"
 "\n"
 
-#: ../src/nmcli/connections.c:1276
+#: ../src/nmcli/connections.c:1400
 #, c-format
 msgid ""
 "Usage: nmcli connection import { ARGUMENTS | help }\n"
@@ -11697,7 +11746,7 @@ msgstr ""
 "імпортуються додатками VPN NetworkManager.\n"
 "\n"
 
-#: ../src/nmcli/connections.c:1289
+#: ../src/nmcli/connections.c:1413
 #, c-format
 msgid ""
 "Usage: nmcli connection export { ARGUMENTS | help }\n"
@@ -11717,7 +11766,7 @@ msgstr ""
 "Дані спрямовуватимуться до стандартного виведення або до вказаного файла.\n"
 "\n"
 
-#: ../src/nmcli/connections.c:1300
+#: ../src/nmcli/connections.c:1424
 #, c-format
 msgid ""
 "Usage: nmcli connection migrate { ARGUMENTS | help }\n"
@@ -11736,329 +11785,329 @@ msgstr ""
 "зокрема «keyfile» (типовий) або «ifcfg-rh».\n"
 "\n"
 
-#: ../src/nmcli/connections.c:1391
+#: ../src/nmcli/connections.c:1507
 #, c-format
 msgid "Error updating secrets for %s: %s\n"
 msgstr "Помилка під час проби оновлення паролів для %s: %s\n"
 
-#: ../src/nmcli/connections.c:1442
+#: ../src/nmcli/connections.c:1558
 msgid "Connection profile details"
 msgstr "Параметри профілю з'єднання"
 
-#: ../src/nmcli/connections.c:1460 ../src/nmcli/connections.c:1567
+#: ../src/nmcli/connections.c:1576 ../src/nmcli/connections.c:1683
 #, c-format
 msgid "Error: 'connection show': %s"
 msgstr "Помилка: «connection show»: %s"
 
-#: ../src/nmcli/connections.c:1549
+#: ../src/nmcli/connections.c:1665
 msgid "Active connection details"
 msgstr "Активувати параметри з'єднання"
 
-#: ../src/nmcli/connections.c:1678 ../src/nmcli/devices.c:1637
+#: ../src/nmcli/connections.c:1794 ../src/nmcli/devices.c:1637
 #: ../src/nmcli/devices.c:1654 ../src/nmcli/devices.c:1672
 #: ../src/nmcli/devices.c:1691 ../src/nmcli/devices.c:1755
 #: ../src/nmcli/devices.c:1884
 msgid "NAME"
 msgstr "НАЗВА"
 
-#: ../src/nmcli/connections.c:1778
+#: ../src/nmcli/connections.c:1894
 #, c-format
 msgid "invalid field '%s'; allowed fields: %s and %s, or %s,%s"
 msgstr "некоректне поле «%s»; дозволені поля: %s і %s або %s,%s"
 
-#: ../src/nmcli/connections.c:1795 ../src/nmcli/connections.c:1806
+#: ../src/nmcli/connections.c:1911 ../src/nmcli/connections.c:1922
 #, c-format
 msgid "'%s' has to be alone"
 msgstr "«%s» має бути єдиним"
 
-#: ../src/nmcli/connections.c:2061
+#: ../src/nmcli/connections.c:2178
 #, c-format
 msgid "incorrect string '%s' of '--order' option"
 msgstr "помилковий рядок «%s» у параметрі «--order»"
 
-#: ../src/nmcli/connections.c:2085
+#: ../src/nmcli/connections.c:2202
 #, c-format
 msgid "incorrect item '%s' in '--order' option"
 msgstr "помилковий пункт «%s» у параметрі «--order»"
 
-#: ../src/nmcli/connections.c:2125
+#: ../src/nmcli/connections.c:2247
 msgid "No connection specified"
 msgstr "Не вказано з'єднання"
 
-#: ../src/nmcli/connections.c:2138
+#: ../src/nmcli/connections.c:2260
 #, c-format
 msgid "%s argument is missing"
 msgstr "пропущено аргумент %s"
 
-#: ../src/nmcli/connections.c:2159
+#: ../src/nmcli/connections.c:2281
 #, c-format
 msgid "unknown connection '%s'"
 msgstr "невідоме з'єднання «%s»"
 
-#: ../src/nmcli/connections.c:2188
+#: ../src/nmcli/connections.c:2310
 msgid "'--order' argument is missing"
 msgstr "пропущено аргумент «--order»"
 
-#: ../src/nmcli/connections.c:2252
+#: ../src/nmcli/connections.c:2374
 msgid "NetworkManager active profiles"
 msgstr "Активні профілі NetworkManager"
 
-#: ../src/nmcli/connections.c:2253
+#: ../src/nmcli/connections.c:2375
 msgid "NetworkManager connection profiles"
 msgstr "Профілі з'єднань NetworkManager"
 
-#: ../src/nmcli/connections.c:2309 ../src/nmcli/connections.c:3030
-#: ../src/nmcli/connections.c:3042 ../src/nmcli/connections.c:3054
-#: ../src/nmcli/connections.c:3290 ../src/nmcli/connections.c:9448
-#: ../src/nmcli/connections.c:9470 ../src/nmcli/devices.c:3317
-#: ../src/nmcli/devices.c:3330 ../src/nmcli/devices.c:3342
-#: ../src/nmcli/devices.c:3646 ../src/nmcli/devices.c:3657
-#: ../src/nmcli/devices.c:3676 ../src/nmcli/devices.c:3685
-#: ../src/nmcli/devices.c:3707 ../src/nmcli/devices.c:3718
-#: ../src/nmcli/devices.c:3739 ../src/nmcli/devices.c:4303
-#: ../src/nmcli/devices.c:4314 ../src/nmcli/devices.c:4323
-#: ../src/nmcli/devices.c:4337 ../src/nmcli/devices.c:4355
-#: ../src/nmcli/devices.c:4364 ../src/nmcli/devices.c:4520
-#: ../src/nmcli/devices.c:4531 ../src/nmcli/devices.c:4750
-#: ../src/nmcli/devices.c:4929
+#: ../src/nmcli/connections.c:2431 ../src/nmcli/connections.c:3152
+#: ../src/nmcli/connections.c:3164 ../src/nmcli/connections.c:3176
+#: ../src/nmcli/connections.c:3412 ../src/nmcli/connections.c:9579
+#: ../src/nmcli/connections.c:9601 ../src/nmcli/devices.c:3323
+#: ../src/nmcli/devices.c:3336 ../src/nmcli/devices.c:3348
+#: ../src/nmcli/devices.c:3652 ../src/nmcli/devices.c:3663
+#: ../src/nmcli/devices.c:3682 ../src/nmcli/devices.c:3691
+#: ../src/nmcli/devices.c:3713 ../src/nmcli/devices.c:3724
+#: ../src/nmcli/devices.c:3745 ../src/nmcli/devices.c:4309
+#: ../src/nmcli/devices.c:4320 ../src/nmcli/devices.c:4329
+#: ../src/nmcli/devices.c:4343 ../src/nmcli/devices.c:4361
+#: ../src/nmcli/devices.c:4370 ../src/nmcli/devices.c:4526
+#: ../src/nmcli/devices.c:4537 ../src/nmcli/devices.c:4756
+#: ../src/nmcli/devices.c:4935
 #, c-format
 msgid "Error: %s argument is missing."
 msgstr "Помилка: пропущено аргумент %s."
 
-#: ../src/nmcli/connections.c:2344
+#: ../src/nmcli/connections.c:2466
 #, c-format
 msgid "Error: %s - no such connection profile."
 msgstr "Помилка: профілю з'єднання %s не існує."
 
-#: ../src/nmcli/connections.c:2436 ../src/nmcli/connections.c:3016
-#: ../src/nmcli/connections.c:3090 ../src/nmcli/connections.c:8948
-#: ../src/nmcli/connections.c:9038 ../src/nmcli/connections.c:9577
-#: ../src/nmcli/devices.c:1984 ../src/nmcli/devices.c:2254
-#: ../src/nmcli/devices.c:2427 ../src/nmcli/devices.c:2551
-#: ../src/nmcli/devices.c:2738 ../src/nmcli/devices.c:3517
-#: ../src/nmcli/devices.c:4484 ../src/nmcli/devices.c:4936
+#: ../src/nmcli/connections.c:2558 ../src/nmcli/connections.c:3138
+#: ../src/nmcli/connections.c:3212 ../src/nmcli/connections.c:9085
+#: ../src/nmcli/connections.c:9169 ../src/nmcli/connections.c:9708
+#: ../src/nmcli/devices.c:1984 ../src/nmcli/devices.c:2260
+#: ../src/nmcli/devices.c:2433 ../src/nmcli/devices.c:2557
+#: ../src/nmcli/devices.c:2744 ../src/nmcli/devices.c:3523
+#: ../src/nmcli/devices.c:4490 ../src/nmcli/devices.c:4942
 #: ../src/nmcli/general.c:1067
 #, c-format
 msgid "Error: %s."
 msgstr "Помилка: %s."
 
-#: ../src/nmcli/connections.c:2528 ../src/nmcli/devices.c:4703
+#: ../src/nmcli/connections.c:2650 ../src/nmcli/devices.c:4709
 #, c-format
 msgid "no active connection on device '%s'"
 msgstr "на пристрої «%s» немає активних з'єднань"
 
-#: ../src/nmcli/connections.c:2536
+#: ../src/nmcli/connections.c:2658
 msgid "no active connection or device"
 msgstr "немає активних з'єднань або пристроїв"
 
-#: ../src/nmcli/connections.c:2559
+#: ../src/nmcli/connections.c:2681
 #, c-format
 msgid "device '%s' not compatible with connection '%s': "
 msgstr "пристрій «%s» несумісний зі з'єднанням «%s»: "
 
-#: ../src/nmcli/connections.c:2597
+#: ../src/nmcli/connections.c:2719
 #, c-format
 msgid "device '%s' not compatible with connection '%s'"
 msgstr "пристрій «%s» несумісний зі з'єднанням «%s»"
 
-#: ../src/nmcli/connections.c:2604
+#: ../src/nmcli/connections.c:2726
 #, c-format
 msgid "device '%s' not found for connection '%s'"
 msgstr "не знайдено пристрою «%s» для з'єднання «%s»"
 
-#: ../src/nmcli/connections.c:2612
+#: ../src/nmcli/connections.c:2734
 #, c-format
 msgid "no device found for connection '%s'"
 msgstr "не виявлено пристрою для з'єднання «%s»"
 
-#: ../src/nmcli/connections.c:2663
+#: ../src/nmcli/connections.c:2785
 #, c-format
 msgid "Hint: use '%s' to get more details."
 msgstr "Підказка: скористайтеся «%s», щоб ознайомитися із подробицями."
 
-#: ../src/nmcli/connections.c:2681
+#: ../src/nmcli/connections.c:2803
 #, c-format
 msgid "Connection successfully activated (%s) (D-Bus active path: %s)\n"
 msgstr "З'єднання успішно задіяно (%s) (активний шлях D-Bus: %s)\n"
 
-#: ../src/nmcli/connections.c:2685 ../src/nmcli/connections.c:2836
-#: ../src/nmcli/connections.c:7218
+#: ../src/nmcli/connections.c:2807 ../src/nmcli/connections.c:2958
+#: ../src/nmcli/connections.c:7338
 #, c-format
 msgid "Connection successfully activated (D-Bus active path: %s)\n"
 msgstr "З'єднання успішно задіяно (активний шлях D-Bus: %s)\n"
 
-#: ../src/nmcli/connections.c:2692 ../src/nmcli/connections.c:2815
+#: ../src/nmcli/connections.c:2814 ../src/nmcli/connections.c:2937
 #, c-format
 msgid "Error: Connection activation failed: %s"
 msgstr "Помилка: не вдалося активувати з'єднання: %s"
 
-#: ../src/nmcli/connections.c:2728
+#: ../src/nmcli/connections.c:2850
 #, c-format
 msgid "Error: Timeout expired (%d seconds)"
 msgstr "Помилка: перевищено час очікування (%d секунд)."
 
-#: ../src/nmcli/connections.c:2910
+#: ../src/nmcli/connections.c:3032
 #, c-format
 msgid "unknown device '%s'."
 msgstr "невідомий пристрій, «%s»."
 
-#: ../src/nmcli/connections.c:2918
+#: ../src/nmcli/connections.c:3040
 msgid "neither a valid connection nor device given"
 msgstr "не вказано ні коректного з'єднання, ні пристрою"
 
-#: ../src/nmcli/connections.c:2933
+#: ../src/nmcli/connections.c:3055
 #, c-format
 msgid "invalid passwd-file '%s' at line %zd: %s"
 msgstr "некоректний файл passwd «%s» у рядку %zd: %s"
 
-#: ../src/nmcli/connections.c:2941
+#: ../src/nmcli/connections.c:3063
 #, c-format
 msgid "invalid passwd-file '%s': %s"
 msgstr "некоректний файл passwd «%s»: %s"
 
-#: ../src/nmcli/connections.c:3064 ../src/nmcli/connections.c:9481
+#: ../src/nmcli/connections.c:3186 ../src/nmcli/connections.c:9612
 #: ../src/nmcli/devices.c:1941 ../src/nmcli/devices.c:1990
-#: ../src/nmcli/devices.c:2433 ../src/nmcli/devices.c:3377
-#: ../src/nmcli/devices.c:3755 ../src/nmcli/devices.c:4374
-#: ../src/nmcli/devices.c:4537 ../src/nmcli/devices.c:4758
-#: ../src/nmcli/devices.c:4941
+#: ../src/nmcli/devices.c:2439 ../src/nmcli/devices.c:3383
+#: ../src/nmcli/devices.c:3761 ../src/nmcli/devices.c:4380
+#: ../src/nmcli/devices.c:4543 ../src/nmcli/devices.c:4764
+#: ../src/nmcli/devices.c:4947
 #, c-format
 msgid "Error: invalid extra argument '%s'."
 msgstr "Помилка: некоректний додатковий аргумент, «%s»."
 
-#: ../src/nmcli/connections.c:3098
+#: ../src/nmcli/connections.c:3220
 msgid "preparing"
 msgstr "приготування"
 
-#: ../src/nmcli/connections.c:3206
+#: ../src/nmcli/connections.c:3328
 #, c-format
 msgid "Connection '%s' (%s) successfully deleted.\n"
 msgstr "Запис з'єднання «%s» (%s) успішно вилучено.\n"
 
-#: ../src/nmcli/connections.c:3222
+#: ../src/nmcli/connections.c:3344
 #, c-format
 msgid "Connection '%s' successfully deactivated (D-Bus active path: %s)\n"
 msgstr "З'єднання «%s» успішно вимкнено (активний шлях D-Bus: %s)\n"
 
-#: ../src/nmcli/connections.c:3271 ../src/nmcli/connections.c:9134
-#: ../src/nmcli/connections.c:9169 ../src/nmcli/connections.c:9358
+#: ../src/nmcli/connections.c:3393 ../src/nmcli/connections.c:9265
+#: ../src/nmcli/connections.c:9300 ../src/nmcli/connections.c:9489
 #, c-format
 msgid "Error: No connection specified."
 msgstr "Помилка: не вказано з'єднання."
 
-#: ../src/nmcli/connections.c:3303
+#: ../src/nmcli/connections.c:3425
 #, c-format
 msgid "Error: '%s' is not an active connection.\n"
 msgstr "Помилка: «%s» не є активним з'єднанням.\n"
 
-#: ../src/nmcli/connections.c:3304
+#: ../src/nmcli/connections.c:3426
 #, c-format
 msgid "Error: not all active connections found."
 msgstr "Помилка: не усі активні з'єднання знайдено."
 
-#: ../src/nmcli/connections.c:3312
+#: ../src/nmcli/connections.c:3434
 #, c-format
 msgid "Error: no active connection provided."
 msgstr "Помилка: не надано активного з'єднання."
 
-#: ../src/nmcli/connections.c:3344
+#: ../src/nmcli/connections.c:3466
 #, c-format
 msgid "Connection '%s' deactivation failed: %s\n"
 msgstr "Невдала спроба вимкнути з'єднання «%s»: %s\n"
 
-#: ../src/nmcli/connections.c:3825
+#: ../src/nmcli/connections.c:3947
 #, c-format
 msgid "Warning: master='%s' doesn't refer to any existing profile.\n"
 msgstr ""
 "Попередження: master='%s' не посилається ні на один з наявних профілів.\n"
 
-#: ../src/nmcli/connections.c:4200
+#: ../src/nmcli/connections.c:4322
 #, c-format
 msgid "Error: invalid property '%s': %s."
 msgstr "Помилка: некоректна властивість, «%s»: %s."
 
-#: ../src/nmcli/connections.c:4217
+#: ../src/nmcli/connections.c:4339
 #, c-format
 msgid "Error: failed to %s %s.%s: %s."
 msgstr "Помилка: не вдалося %s %s.%s: %s."
 
-#: ../src/nmcli/connections.c:4298
+#: ../src/nmcli/connections.c:4420
 #, c-format
 msgid "Error: invalid slave type; %s."
 msgstr "Помилка: некоректний тип підлеглого; %s."
 
-#: ../src/nmcli/connections.c:4309
+#: ../src/nmcli/connections.c:4431
 #, c-format
 msgid "Error: invalid connection type; %s."
 msgstr "Помилка: некоректний тип з'єднання; %s."
 
-#: ../src/nmcli/connections.c:4400
+#: ../src/nmcli/connections.c:4522
 #, c-format
 msgid "Error: bad connection type: %s"
 msgstr "Помилка: помилковий тип з'єднання: %s"
 
-#: ../src/nmcli/connections.c:4486
+#: ../src/nmcli/connections.c:4608
 msgid "Error: master is required"
 msgstr "Помилка: слід вказати значення параметра «master»"
 
-#: ../src/nmcli/connections.c:4587
+#: ../src/nmcli/connections.c:4709
 #, c-format
 msgid "Error: '%s' is not a valid monitoring mode; use '%s' or '%s'.\n"
 msgstr ""
 "Помилка: «%s» не є коректним режимом спостереження; скористайтеся «%s» або "
 "«%s».\n"
 
-#: ../src/nmcli/connections.c:4626
+#: ../src/nmcli/connections.c:4748
 #, c-format
 msgid "Error: 'bt-type': '%s' not valid; use [%s, %s, %s (%s), %s]."
 msgstr ""
 "Помилка: «bt-type»: «%s» є некоректним; скористайтеся значенням з переліку "
 "[%s, %s, %s (%s), %s]."
 
-#: ../src/nmcli/connections.c:4973
+#: ../src/nmcli/connections.c:5095
 #, c-format
 msgid "Error: setting '%s' is mandatory and cannot be removed."
 msgstr "Помилка: параметр «%s» є обов'язковим, його не можна вилучати."
 
-#: ../src/nmcli/connections.c:4989
+#: ../src/nmcli/connections.c:5111
 #, c-format
 msgid "Error: value for '%s' is missing."
 msgstr "Помилка: не вказано значення «%s»."
 
-#: ../src/nmcli/connections.c:5040
+#: ../src/nmcli/connections.c:5162
 msgid "Error: <setting>.<property> argument is missing."
 msgstr "Помилка: пропущено аргумент <параметр>.<властивість>."
 
-#: ../src/nmcli/connections.c:5082
+#: ../src/nmcli/connections.c:5204
 msgid "Error: missing setting."
 msgstr "Помилка: пропущено параметр."
 
-#: ../src/nmcli/connections.c:5096
+#: ../src/nmcli/connections.c:5218
 #, c-format
 msgid "Error: invalid setting argument '%s'."
 msgstr "Помилка: некоректний аргумент параметра, «%s»."
 
-#: ../src/nmcli/connections.c:5127
+#: ../src/nmcli/connections.c:5249
 #, c-format
 msgid "Error: invalid or not allowed setting '%s': %s."
 msgstr "Помилка: некоректний або заборонений параметр, «%s»: %s."
 
-#: ../src/nmcli/connections.c:5186 ../src/nmcli/connections.c:5207
+#: ../src/nmcli/connections.c:5308 ../src/nmcli/connections.c:5329
 #, c-format
 msgid "Error: '%s' is ambiguous (%s.%s or %s.%s)."
 msgstr "Помилка: «%s» є неоднозначним (%s.%s або %s.%s)."
 
-#: ../src/nmcli/connections.c:5231
+#: ../src/nmcli/connections.c:5353
 #, c-format
 msgid "Error: invalid <setting>.<property> '%s'."
 msgstr "Помилка: некоректний аргумент <параметр>.<властивість>, «%s»."
 
-#: ../src/nmcli/connections.c:5265
+#: ../src/nmcli/connections.c:5387 ../src/nmcli/devices.c:2159
 #, c-format
 msgid "Warning: %s.\n"
 msgstr "Попередження: %s.\n"
 
-#: ../src/nmcli/connections.c:5284
+#: ../src/nmcli/connections.c:5403
 #, c-format
 msgid ""
 "Warning: There is another connection with the name '%1$s'. Reference the "
@@ -12079,7 +12128,7 @@ msgstr[3] ""
 "Попередження: існує інше з'єднання з назвою «%1$s». Посилайтеся на з'єднання "
 "за його UUID, «%2$s»\n"
 
-#: ../src/nmcli/connections.c:5306 ../src/nmcli/connections.c:8986
+#: ../src/nmcli/connections.c:5425 ../src/nmcli/connections.c:9117
 #, c-format
 msgid "Error: Failed to add '%s' connection: %s"
 msgstr "Помилка: не вдалося додати з'єднання «%s»: %s"
@@ -12093,12 +12142,12 @@ msgstr "Помилка: не вдалося додати з'єднання «%s�
 #. *
 #. * This is true for many messages that the user might parse. But this one
 #. * seems in particular interesting for a user to parse.
-#: ../src/nmcli/connections.c:5323
+#: ../src/nmcli/connections.c:5442
 #, c-format
 msgid "Connection '%s' (%s) successfully added.\n"
 msgstr "Запис з'єднання «%s» (%s) успішно додано.\n"
 
-#: ../src/nmcli/connections.c:5467
+#: ../src/nmcli/connections.c:5577
 #, c-format
 msgid ""
 "You can specify this option more than once. Press <Enter> when you're done.\n"
@@ -12107,7 +12156,7 @@ msgstr ""
 "завершите.\n"
 
 #. Ask for optional arguments.
-#: ../src/nmcli/connections.c:5567
+#: ../src/nmcli/connections.c:5677
 #, c-format
 msgid "There is %d optional setting for %s.\n"
 msgid_plural "There are %d optional settings for %s.\n"
@@ -12116,7 +12165,7 @@ msgstr[1] "Для «%2$s» передбачено %1$d додатковий па
 msgstr[2] "Для з'єднань типу «%2$s» передбачено %1$d додаткових аргументів.\n"
 msgstr[3] "Для з'єднань типу «%2$s» передбачено %1$d додатковий аргумент.\n"
 
-#: ../src/nmcli/connections.c:5574
+#: ../src/nmcli/connections.c:5684
 #, c-format
 msgid "Do you want to provide it? %s"
 msgid_plural "Do you want to provide them? %s"
@@ -12125,22 +12174,22 @@ msgstr[1] "Хочете вказати їх? %s"
 msgstr[2] "Хочете вказати їх? %s"
 msgstr[3] "Хочете вказати його? %s"
 
-#: ../src/nmcli/connections.c:5701 ../src/nmcli/utils.c:280
+#: ../src/nmcli/connections.c:5825 ../src/nmcli/utils.c:280
 #, c-format
 msgid "Error: value for '%s' argument is required."
 msgstr "Помилка: слід вказати значення «%s» аргументу."
 
-#: ../src/nmcli/connections.c:5708
+#: ../src/nmcli/connections.c:5832
 #, c-format
 msgid "Error: 'save': %s."
 msgstr "Помилка: «save»: %s."
 
-#: ../src/nmcli/connections.c:5793 ../src/nmcli/connections.c:5806
+#: ../src/nmcli/connections.c:5917 ../src/nmcli/connections.c:5930
 #, c-format
 msgid "Error: '%s' argument is required."
 msgstr "Помилка: слід вказати параметр «%s»."
 
-#: ../src/nmcli/connections.c:6767
+#: ../src/nmcli/connections.c:6887
 #, c-format
 msgid "['%s' setting values]\n"
 msgstr "['%s' значення параметра]\n"
@@ -12148,7 +12197,7 @@ msgstr "['%s' значення параметра]\n"
 #. TRANSLATORS: do not translate command names and keywords before ::
 #. *              However, you should translate terms enclosed in <>.
 #.
-#: ../src/nmcli/connections.c:6878
+#: ../src/nmcli/connections.c:6998
 #, c-format
 msgid ""
 "---[ Main menu ]---\n"
@@ -12182,7 +12231,7 @@ msgstr ""
 "nmcli    <параметр-налашт.> <знач.>   :: налаштовування nmcli\n"
 "quit                                  :: завершити роботу nmcli\n"
 
-#: ../src/nmcli/connections.c:6905
+#: ../src/nmcli/connections.c:7025
 #, c-format
 msgid ""
 "goto <setting>[.<prop>] | <prop>  :: enter setting/property for editing\n"
@@ -12203,7 +12252,7 @@ msgstr ""
 "          nmcli connection> goto secondaries\n"
 "          nmcli> goto ipv4.addresses\n"
 
-#: ../src/nmcli/connections.c:6913
+#: ../src/nmcli/connections.c:7033
 #, c-format
 msgid ""
 "remove <setting>[.<prop>]  :: remove setting or reset property value\n"
@@ -12225,7 +12274,7 @@ msgstr ""
 "Приклади: nmcli> remove wifi-sec\n"
 "          nmcli> remove eth.mtu\n"
 
-#: ../src/nmcli/connections.c:6920
+#: ../src/nmcli/connections.c:7040
 #, c-format
 msgid ""
 "set [<setting>.<prop> <value>]  :: set property value\n"
@@ -12241,7 +12290,7 @@ msgstr ""
 "\n"
 "Приклад: nmcli> s con.id My connection\n"
 
-#: ../src/nmcli/connections.c:6925
+#: ../src/nmcli/connections.c:7045
 #, c-format
 msgid ""
 "add [<setting>.<prop> <value>]  :: add property value\n"
@@ -12256,7 +12305,7 @@ msgstr ""
 "\n"
 "Приклад: nmcli> add ipv4.addresses 192.168.1.1/24\n"
 
-#: ../src/nmcli/connections.c:6930
+#: ../src/nmcli/connections.c:7050
 #, c-format
 msgid ""
 "describe [<setting>.<prop>]  :: describe property\n"
@@ -12269,7 +12318,7 @@ msgstr ""
 "Показує опис властивості. Список усіх параметрів і властивостей NM можна "
 "знайти на сторінці довідника (man) nm-settings(5).\n"
 
-#: ../src/nmcli/connections.c:6935
+#: ../src/nmcli/connections.c:7055
 #, c-format
 msgid ""
 "print [all]  :: print setting or connection values\n"
@@ -12284,7 +12333,7 @@ msgstr ""
 "\n"
 "Приклад: nmcli ipv4> print all\n"
 
-#: ../src/nmcli/connections.c:6941
+#: ../src/nmcli/connections.c:7061
 #, c-format
 msgid ""
 "verify [all | fix]  :: verify setting or connection validity\n"
@@ -12309,7 +12358,7 @@ msgstr ""
 "          nmcli> verify fix\n"
 "          nmcli bond> verify\n"
 
-#: ../src/nmcli/connections.c:6951
+#: ../src/nmcli/connections.c:7071
 #, c-format
 msgid ""
 "save [persistent|temporary]  :: save the connection\n"
@@ -12336,7 +12385,7 @@ msgstr ""
 "потрібно\n"
 "повністю вилучити постійне з'єднання, вам доведеться вилучити його профіль.\n"
 
-#: ../src/nmcli/connections.c:6962
+#: ../src/nmcli/connections.c:7082
 #, c-format
 msgid ""
 "activate [<ifname>] [/<ap>|<nsp>]  :: activate the connection\n"
@@ -12357,7 +12406,7 @@ msgstr ""
 "/<ap>|<nsp> - AP (Wi-Fi) або NSP (WiMAX) (додайте на початку «/», якщо не "
 "вказано <інтерфейс>)\n"
 
-#: ../src/nmcli/connections.c:6970 ../src/nmcli/connections.c:7129
+#: ../src/nmcli/connections.c:7090 ../src/nmcli/connections.c:7249
 #, c-format
 msgid ""
 "back  :: go to upper menu level\n"
@@ -12366,7 +12415,7 @@ msgstr ""
 "back  :: піднятися у меню на один рівень\n"
 "\n"
 
-#: ../src/nmcli/connections.c:6973
+#: ../src/nmcli/connections.c:7093
 #, c-format
 msgid ""
 "help/? [<command>]  :: help for the nmcli commands\n"
@@ -12375,7 +12424,7 @@ msgstr ""
 "help/? [<команда>]  :: довідка з команди nmcli\n"
 "\n"
 
-#: ../src/nmcli/connections.c:6976
+#: ../src/nmcli/connections.c:7096
 #, c-format
 msgid ""
 "nmcli [<conf-option> <value>]  :: nmcli configuration\n"
@@ -12402,7 +12451,7 @@ msgstr ""
 "          nmcli> nmcli save-confirmation no\n"
 "          nmcli> nmcli prompt-color 3\n"
 
-#: ../src/nmcli/connections.c:6998 ../src/nmcli/connections.c:7135
+#: ../src/nmcli/connections.c:7118 ../src/nmcli/connections.c:7255
 #, c-format
 msgid ""
 "quit  :: exit nmcli\n"
@@ -12416,8 +12465,8 @@ msgstr ""
 "запис з'єднання не було збережено, користувачеві буде запропоновано "
 "підтвердити дію з виходу з програми.\n"
 
-#: ../src/nmcli/connections.c:7003 ../src/nmcli/connections.c:7140
-#: ../src/nmcli/connections.c:7528 ../src/nmcli/connections.c:8556
+#: ../src/nmcli/connections.c:7123 ../src/nmcli/connections.c:7260
+#: ../src/nmcli/connections.c:7648 ../src/nmcli/connections.c:8680
 #, c-format
 msgid "Unknown command: '%s'\n"
 msgstr "Невідома команда «%s».\n"
@@ -12425,7 +12474,7 @@ msgstr "Невідома команда «%s».\n"
 #. TRANSLATORS: do not translate command names and keywords before ::
 #. *              However, you should translate terms enclosed in <>.
 #.
-#: ../src/nmcli/connections.c:7068
+#: ../src/nmcli/connections.c:7188
 #, c-format
 msgid ""
 "---[ Property menu ]---\n"
@@ -12452,7 +12501,7 @@ msgstr ""
 "help/?   [<команда>]             :: вивести цю довідку або опис команди\n"
 "quit                             :: вийти з nmcli\n"
 
-#: ../src/nmcli/connections.c:7092
+#: ../src/nmcli/connections.c:7212
 #, c-format
 msgid ""
 "set [<value>]  :: set new value\n"
@@ -12464,7 +12513,7 @@ msgstr ""
 "За допомогою цієї команди можна змінити значення властивості на вказане "
 "<значення>\n"
 
-#: ../src/nmcli/connections.c:7096
+#: ../src/nmcli/connections.c:7216
 #, c-format
 msgid ""
 "add [<value>]  :: append new value to the property\n"
@@ -12479,7 +12528,7 @@ msgstr ""
 "якщо властивість належить до типу контейнерів. Якщо властивість складається "
 "лише з одного значення, це значення буде замінено (те саме, що і «set»).\n"
 
-#: ../src/nmcli/connections.c:7102
+#: ../src/nmcli/connections.c:7222
 #, c-format
 msgid ""
 "change  :: change current value\n"
@@ -12490,7 +12539,7 @@ msgstr ""
 "\n"
 "Показує поточне значення і надає змогу його редагувати.\n"
 
-#: ../src/nmcli/connections.c:7107
+#: ../src/nmcli/connections.c:7227
 #, c-format
 msgid ""
 "remove [<value>|<index>|<option name>]  :: delete the value\n"
@@ -12523,7 +12572,7 @@ msgstr ""
 "          nmcli bond.options> remove downdelay\n"
 "\n"
 
-#: ../src/nmcli/connections.c:7118
+#: ../src/nmcli/connections.c:7238
 #, c-format
 msgid ""
 "describe  :: describe property\n"
@@ -12536,7 +12585,7 @@ msgstr ""
 "Показує опис властивості. Список усіх параметрів і властивостей NM можна "
 "знайти на сторінці довідника (man) nm-settings(5).\n"
 
-#: ../src/nmcli/connections.c:7123
+#: ../src/nmcli/connections.c:7243
 #, c-format
 msgid ""
 "print [property|setting|connection]  :: print property (setting, connection) "
@@ -12551,7 +12600,7 @@ msgstr ""
 "Виводить значення властивості. За допомогою аргументу команди ви можете "
 "виводити значення усього параметра або усього запису з'єднання.\n"
 
-#: ../src/nmcli/connections.c:7132
+#: ../src/nmcli/connections.c:7252
 #, c-format
 msgid ""
 "help/? [<command>]  :: help for nmcli commands\n"
@@ -12560,24 +12609,24 @@ msgstr ""
 "help/? [<команда>]  :: довідка з команди nmcli\n"
 "\n"
 
-#: ../src/nmcli/connections.c:7224
+#: ../src/nmcli/connections.c:7344
 #, c-format
 msgid "Error: Connection activation failed.\n"
 msgstr "Помилка: невдала спроба активації з'єднання.\n"
 
 #. TRANSLATORS: status line in nmcli connection editor
-#: ../src/nmcli/connections.c:7322
+#: ../src/nmcli/connections.c:7442
 #, c-format
 msgid "[ Type: %s | Name: %s | UUID: %s | Dirty: %s | Temp: %s ]\n"
 msgstr "[ Тип: %s | Назва: %s | UUID: %s | Не збережено: %s | Тимч.: %s ]\n"
 
-#: ../src/nmcli/connections.c:7360
+#: ../src/nmcli/connections.c:7480
 #, c-format
 msgid "The connection is not saved. Do you really want to quit? %s"
 msgstr ""
 "З'єднання не збережено. Ви справді хочете завершити роботу програми? %s"
 
-#: ../src/nmcli/connections.c:7404
+#: ../src/nmcli/connections.c:7524
 #, c-format
 msgid ""
 "The connection profile has been removed from another client. You may type "
@@ -12586,60 +12635,60 @@ msgstr ""
 "Профіль з'єднання було вилучено з іншого клієнта. Ви можете ввести «save» у "
 "головному меню, щоб відновити його.\n"
 
-#: ../src/nmcli/connections.c:7436 ../src/nmcli/connections.c:7828
-#: ../src/nmcli/connections.c:7898
+#: ../src/nmcli/connections.c:7556 ../src/nmcli/connections.c:7948
+#: ../src/nmcli/connections.c:8018
 #, c-format
 msgid "Allowed values for '%s' property: %s\n"
 msgstr "Можливі значення властивості «%s»: %s\n"
 
-#: ../src/nmcli/connections.c:7438 ../src/nmcli/connections.c:7831
-#: ../src/nmcli/connections.c:7900
+#: ../src/nmcli/connections.c:7558 ../src/nmcli/connections.c:7951
+#: ../src/nmcli/connections.c:8020
 #, c-format
 msgid "Enter '%s' value: "
 msgstr "Введіть значення «%s»: "
 
-#: ../src/nmcli/connections.c:7451 ../src/nmcli/connections.c:7468
-#: ../src/nmcli/connections.c:7839 ../src/nmcli/connections.c:7911
+#: ../src/nmcli/connections.c:7571 ../src/nmcli/connections.c:7588
+#: ../src/nmcli/connections.c:7959 ../src/nmcli/connections.c:8031
 #, c-format
 msgid "Error: failed to set '%s' property: %s\n"
 msgstr "Помилка: не вдалося встановити значення властивості «%s»: %s\n"
 
-#: ../src/nmcli/connections.c:7460
+#: ../src/nmcli/connections.c:7580
 #, c-format
 msgid "Edit '%s' value: "
 msgstr "Редагування значення «%s»: "
 
-#: ../src/nmcli/connections.c:7481 ../src/nmcli/settings.c:440
+#: ../src/nmcli/connections.c:7601 ../src/nmcli/settings.c:440
 #, c-format
 msgid "Error: %s\n"
 msgstr "Помилка: %s\n"
 
-#: ../src/nmcli/connections.c:7500
+#: ../src/nmcli/connections.c:7620
 #, c-format
 msgid "Unknown command argument: '%s'\n"
 msgstr "Невідомий аргумент команди: «%s»\n"
 
-#: ../src/nmcli/connections.c:7595
+#: ../src/nmcli/connections.c:7715
 #, c-format
 msgid "Available settings: %s\n"
 msgstr "Доступні параметри: %s\n"
 
-#: ../src/nmcli/connections.c:7606
+#: ../src/nmcli/connections.c:7726
 #, c-format
 msgid "Error: invalid setting name; %s\n"
 msgstr "Помилка: некоректна назва параметра; %s\n"
 
-#: ../src/nmcli/connections.c:7623
+#: ../src/nmcli/connections.c:7743
 #, c-format
 msgid "Available properties: %s\n"
 msgstr "Доступні властивості: %s\n"
 
-#: ../src/nmcli/connections.c:7631
+#: ../src/nmcli/connections.c:7751
 #, c-format
 msgid "Error: property %s\n"
 msgstr "Помилка: властивість %s\n"
 
-#: ../src/nmcli/connections.c:7676
+#: ../src/nmcli/connections.c:7796
 #, c-format
 msgid ""
 "Saving the connection with 'autoconnect=yes'. That might result in an "
@@ -12650,12 +12699,12 @@ msgstr ""
 "значення параметра може призвести до негайного задіяння з'єднання.\n"
 "Хочете зберегти запис? %s"
 
-#: ../src/nmcli/connections.c:7762
+#: ../src/nmcli/connections.c:7882
 #, c-format
 msgid "You may edit the following settings: %s\n"
 msgstr "Можна редагувати такі параметри: %s\n"
 
-#: ../src/nmcli/connections.c:7790
+#: ../src/nmcli/connections.c:7910
 #, c-format
 msgid ""
 "The connection profile has been removed from another client. You may type "
@@ -12664,234 +12713,234 @@ msgstr ""
 "Профіль з'єднання було вилучено з іншого клієнта. Ви можете ввести «save», "
 "щоб відновити його.\n"
 
-#: ../src/nmcli/connections.c:7845 ../src/nmcli/connections.c:8127
-#: ../src/nmcli/connections.c:8160
+#: ../src/nmcli/connections.c:7965 ../src/nmcli/connections.c:8247
+#: ../src/nmcli/connections.c:8280
 #, c-format
 msgid "Error: no setting selected; valid are [%s]\n"
 msgstr ""
 "Помилка: не вибрано значення параметра; коректними значеннями є такі: [%s]\n"
 
-#: ../src/nmcli/connections.c:7846
+#: ../src/nmcli/connections.c:7966
 #, c-format
 msgid "use 'goto <setting>' first, or 'set <setting>.<property>'\n"
 msgstr ""
 "спочатку скористайтеся командою «goto <параметр>» або командою «set "
 "<параметр>.<властивість>»\n"
 
-#: ../src/nmcli/connections.c:7866 ../src/nmcli/connections.c:8043
-#: ../src/nmcli/connections.c:8149
+#: ../src/nmcli/connections.c:7986 ../src/nmcli/connections.c:8163
+#: ../src/nmcli/connections.c:8269
 #, c-format
 msgid "Error: invalid setting argument '%s'; valid are [%s]\n"
 msgstr ""
 "Помилка: некоректний аргумент параметра, «%s»; коректними є такі ПАРАМЕТРИ: "
 "[%s]\n"
 
-#: ../src/nmcli/connections.c:7876
+#: ../src/nmcli/connections.c:7996
 #, c-format
 msgid "Error: missing setting for '%s' property\n"
 msgstr "Помилка: не вказано параметра для властивості «%s»\n"
 
-#: ../src/nmcli/connections.c:7883
+#: ../src/nmcli/connections.c:8003
 #, c-format
 msgid "Error: invalid property: %s\n"
 msgstr "Помилка: некоректна властивість: %s\n"
 
-#: ../src/nmcli/connections.c:7944
+#: ../src/nmcli/connections.c:8064
 #, c-format
 msgid "Error: unknown setting '%s'\n"
 msgstr "Помилка: невідоме значення «%s»\n"
 
-#: ../src/nmcli/connections.c:7970
+#: ../src/nmcli/connections.c:8090
 #, c-format
 msgid "You may edit the following properties: %s\n"
 msgstr "Можна редагувати значення таких властивостей: %s\n"
 
-#: ../src/nmcli/connections.c:8016 ../src/nmcli/connections.c:8077
+#: ../src/nmcli/connections.c:8136 ../src/nmcli/connections.c:8197
 #, c-format
 msgid "Error: failed to remove value of '%s': %s\n"
 msgstr "Помилка: не вдалося вилучити значення «%s»: %s\n"
 
-#: ../src/nmcli/connections.c:8022
+#: ../src/nmcli/connections.c:8142
 #, c-format
 msgid "Error: no argument given; valid are [%s]\n"
 msgstr "Помилка: не вказано аргументу; коректними аргументами є такі: [%s]\n"
 
-#: ../src/nmcli/connections.c:8041
+#: ../src/nmcli/connections.c:8161
 #, c-format
 msgid "Setting '%s' is not present in the connection.\n"
 msgstr "У з'єднання немає параметра «%s».\n"
 
-#: ../src/nmcli/connections.c:8103
+#: ../src/nmcli/connections.c:8223
 #, c-format
 msgid "Error: %s properties, nor it is a setting name.\n"
 msgstr "Помилка: властивості %s і не є назвою параметра.\n"
 
-#: ../src/nmcli/connections.c:8128 ../src/nmcli/connections.c:8161
+#: ../src/nmcli/connections.c:8248 ../src/nmcli/connections.c:8281
 #, c-format
 msgid "use 'goto <setting>' first, or 'describe <setting>.<property>'\n"
 msgstr ""
 "скористайтеся спочатку командою «goto <параметр> або командою «describe "
 "<параметр>.<властивість>»\n"
 
-#: ../src/nmcli/connections.c:8184
+#: ../src/nmcli/connections.c:8304
 #, c-format
 msgid "Error: invalid property: %s, neither a valid setting name.\n"
 msgstr ""
 "Помилка: некоректна властивість: %s і не є коректною назвою параметра.\n"
 
-#: ../src/nmcli/connections.c:8214
+#: ../src/nmcli/connections.c:8334
 #, c-format
 msgid "Error: unknown setting: '%s'\n"
 msgstr "Помилка: невідомий параметр: «%s»\n"
 
-#: ../src/nmcli/connections.c:8219
+#: ../src/nmcli/connections.c:8339
 #, c-format
 msgid "Error: '%s' setting not present in the connection\n"
 msgstr "Помилка: у з'єднання немає параметра «%s».\n"
 
-#: ../src/nmcli/connections.c:8251
+#: ../src/nmcli/connections.c:8371
 #, c-format
 msgid "Error: invalid property: %s%s\n"
 msgstr "Помилка: некоректна властивість: %s%s\n"
 
-#: ../src/nmcli/connections.c:8253
+#: ../src/nmcli/connections.c:8373
 msgid ", neither a valid setting name"
 msgstr ", і не є коректною назвою параметра"
 
-#: ../src/nmcli/connections.c:8269
+#: ../src/nmcli/connections.c:8389
 #, c-format
 msgid "Invalid verify option: %s\n"
 msgstr "Некоректний параметр verify: %s\n"
 
-#: ../src/nmcli/connections.c:8277
+#: ../src/nmcli/connections.c:8397
 #, c-format
 msgid "Verify setting '%s': %s\n"
 msgstr "Перевірка параметра «%s»: %s\n"
 
-#: ../src/nmcli/connections.c:8292
+#: ../src/nmcli/connections.c:8412
 #, c-format
 msgid "Verify connection: %s\n"
 msgstr "Перевірка з'єднання: %s\n"
 
-#: ../src/nmcli/connections.c:8294
+#: ../src/nmcli/connections.c:8414
 #, c-format
 msgid "The error cannot be fixed automatically.\n"
 msgstr "Помилку не можна виправити у автоматичному режимі.\n"
 
-#: ../src/nmcli/connections.c:8314
+#: ../src/nmcli/connections.c:8434
 #, c-format
 msgid "Error: invalid argument '%s'\n"
 msgstr "Помилка: некоректний аргумент «%s»\n"
 
-#: ../src/nmcli/connections.c:8367
+#: ../src/nmcli/connections.c:8491
 #, c-format
 msgid "Error: Failed to save '%s' (%s) connection: %s\n"
 msgstr "Помилка: не вдалося додати з'єднання «%s» (%s): %s\n"
 
-#: ../src/nmcli/connections.c:8373
+#: ../src/nmcli/connections.c:8497
 #, c-format
 msgid "Error: Timeout saving '%s' (%s) connection\n"
 msgstr ""
 "Помилка: перевищення часу очікування на збереження з'єднання «%s» (%s)\n"
 
-#: ../src/nmcli/connections.c:8377
+#: ../src/nmcli/connections.c:8501
 #, c-format
 msgid "Connection '%s' (%s) successfully saved.\n"
 msgstr "Запис з'єднання «%s» (%s) успішно збережено.\n"
 
-#: ../src/nmcli/connections.c:8378
+#: ../src/nmcli/connections.c:8502
 #, c-format
 msgid "Connection '%s' (%s) successfully updated.\n"
 msgstr "Запис з'єднання «%s» (%s) успішно оновлено.\n"
 
-#: ../src/nmcli/connections.c:8412
+#: ../src/nmcli/connections.c:8536
 #, c-format
 msgid "Error: connection verification failed: %s\n"
 msgstr "Помилка: з'єднання не пройшло перевірки: %s\n"
 
-#: ../src/nmcli/connections.c:8413
+#: ../src/nmcli/connections.c:8537
 msgid "(unknown error)"
 msgstr "(невідома помилка)"
 
-#: ../src/nmcli/connections.c:8414
+#: ../src/nmcli/connections.c:8538
 #, c-format
 msgid "You may try running 'verify fix' to fix errors.\n"
 msgstr "Ви можете спробувати запустити «verify fix» для виправлення помилок.\n"
 
 #. TRANSLATORS: do not translate 'save', leave it as it is
-#: ../src/nmcli/connections.c:8437
+#: ../src/nmcli/connections.c:8561
 #, c-format
 msgid "Error: connection is not saved. Type 'save' first.\n"
 msgstr "Помилка: з'єднання не збережено. Спочатку введіть «save».\n"
 
-#: ../src/nmcli/connections.c:8441
+#: ../src/nmcli/connections.c:8565
 #, c-format
 msgid "Error: connection is not valid: %s\n"
 msgstr "Помилка: некоректне з'єднання: %s\n"
 
-#: ../src/nmcli/connections.c:8457
+#: ../src/nmcli/connections.c:8581
 #, c-format
 msgid "Error: Cannot activate connection: %s.\n"
 msgstr "Помилка: не вдалося задіяти з'єднання: %s.\n"
 
-#: ../src/nmcli/connections.c:8466
+#: ../src/nmcli/connections.c:8590
 #, c-format
 msgid "Error: Failed to activate '%s' (%s) connection: %s\n"
 msgstr "Помилка: не вдалося задіяти з'єднання «%s» (%s): %s\n"
 
-#: ../src/nmcli/connections.c:8473
+#: ../src/nmcli/connections.c:8597
 msgid "Monitoring connection activation (press any key to continue)\n"
 msgstr ""
 "Спостерігаємо за активацією з'єднання (натисніть будь-яку клавішу, щоб "
 "продовжити)\n"
 
-#: ../src/nmcli/connections.c:8508
+#: ../src/nmcli/connections.c:8632
 #, c-format
 msgid "Error: status-line: %s\n"
 msgstr "Помилка: рядок стану: %s\n"
 
-#: ../src/nmcli/connections.c:8516
+#: ../src/nmcli/connections.c:8640
 #, c-format
 msgid "Error: save-confirmation: %s\n"
 msgstr "Помилка: save-confirmation: %s\n"
 
-#: ../src/nmcli/connections.c:8524
+#: ../src/nmcli/connections.c:8648
 #, c-format
 msgid "Error: show-secrets: %s\n"
 msgstr "Помилка: show-secrets: %s\n"
 
-#: ../src/nmcli/connections.c:8532
+#: ../src/nmcli/connections.c:8656
 #, c-format
 msgid "Current nmcli configuration:\n"
 msgstr "Поточне налаштування nmcli:\n"
 
-#: ../src/nmcli/connections.c:8540
+#: ../src/nmcli/connections.c:8664
 #, c-format
 msgid "Invalid configuration option '%s'; allowed [%s]\n"
 msgstr ""
 "Некоректний параметр налаштування, «%s»; можна використовувати лише такі: "
 "[%s]\n"
 
-#: ../src/nmcli/connections.c:8772
+#: ../src/nmcli/connections.c:8896
 #, c-format
 msgid "Error: only one of 'id', 'filename', uuid, or 'path' can be provided."
 msgstr ""
 "Помилка: можна вказувати лише один з параметрів «id», «filename», uuid або "
 "«path»."
 
-#: ../src/nmcli/connections.c:8787 ../src/nmcli/connections.c:8956
+#: ../src/nmcli/connections.c:8911
 #, c-format
 msgid "Error: Unknown connection '%s'."
 msgstr "Помилка: невідоме з'єднання, «%s»."
 
-#: ../src/nmcli/connections.c:8804
+#: ../src/nmcli/connections.c:8928
 #, c-format
 msgid "Warning: editing existing connection '%s'; 'type' argument is ignored\n"
 msgstr ""
 "Попередження: редагування вже створеного запису з'єднання «%s»; аргумент "
 "«type» проігноровано\n"
 
-#: ../src/nmcli/connections.c:8808
+#: ../src/nmcli/connections.c:8932
 #, c-format
 msgid ""
 "Warning: editing existing connection '%s'; 'con-name' argument is ignored\n"
@@ -12899,227 +12948,227 @@ msgstr ""
 "Попередження: редагування вже створеного запису з'єднання «%s»; аргумент "
 "«con-name» проігноровано\n"
 
-#: ../src/nmcli/connections.c:8835
+#: ../src/nmcli/connections.c:8959
 #, c-format
 msgid "Valid connection types: %s\n"
 msgstr "Коректні типи з'єднань: %s\n"
 
-#: ../src/nmcli/connections.c:8837
+#: ../src/nmcli/connections.c:8961
 #, c-format
 msgid "Error: invalid connection type; %s\n"
 msgstr "Помилка: некоректний тип з'єднання; %s\n"
 
-#: ../src/nmcli/connections.c:8876
+#: ../src/nmcli/connections.c:9000
 #, c-format
 msgid "===| nmcli interactive connection editor |==="
 msgstr "===| Інтерактивний редактор з'єднань nmcli |==="
 
-#: ../src/nmcli/connections.c:8879
+#: ../src/nmcli/connections.c:9003
 #, c-format
 msgid "Editing existing '%s' connection: '%s'"
 msgstr "Редагування наявного з'єднання «%s»: «%s»"
 
-#: ../src/nmcli/connections.c:8881
+#: ../src/nmcli/connections.c:9005
 #, c-format
 msgid "Adding a new '%s' connection"
 msgstr "Додавання нового з'єднання «%s»"
 
 #. TRANSLATORS: do not translate 'help', leave it as it is
-#: ../src/nmcli/connections.c:8884
+#: ../src/nmcli/connections.c:9008
 #, c-format
 msgid "Type 'help' or '?' for available commands."
 msgstr "Введіть «help» або «?», щоб ознайомитися зі списком доступних команд."
 
 #. TRANSLATORS: do not translate 'print', leave it as it is
-#: ../src/nmcli/connections.c:8887
+#: ../src/nmcli/connections.c:9011
 #, c-format
 msgid "Type 'print' to show all the connection properties."
 msgstr "Введіть «print», щоб побачити усі властивості з'єднання."
 
 #. TRANSLATORS: do not translate 'describe', leave it as it is
-#: ../src/nmcli/connections.c:8890
+#: ../src/nmcli/connections.c:9014
 #, c-format
 msgid "Type 'describe [<setting>.<prop>]' for detailed property description."
 msgstr ""
 "Щоб ознайомитися з докладним описом властивості, скористайтеся командою "
 "«describe [<параметр>.<властивість>]."
 
-#: ../src/nmcli/connections.c:8917
+#: ../src/nmcli/connections.c:9041
 #, c-format
 msgid "Error: Failed to modify connection '%s': %s"
 msgstr "Помилка: не вдалося внести зміни до запису з'єднання «%s»: %s"
 
-#: ../src/nmcli/connections.c:8925
+#: ../src/nmcli/connections.c:9049
 #, c-format
 msgid "Connection '%s' (%s) successfully modified.\n"
 msgstr "Зміни до з'єднання «%s» (%s) успішно внесено.\n"
 
-#: ../src/nmcli/connections.c:8991
+#: ../src/nmcli/connections.c:9122
 #, c-format
 msgid "%s (%s) cloned as %s (%s).\n"
 msgstr "%s (%s) клоновано як %s (%s).\n"
 
-#: ../src/nmcli/connections.c:9049
+#: ../src/nmcli/connections.c:9180
 msgid "New connection name: "
 msgstr "Нова назва з'єднання: "
 
-#: ../src/nmcli/connections.c:9051
+#: ../src/nmcli/connections.c:9182
 #, c-format
 msgid "Error: <new name> argument is missing."
 msgstr "Помилка: не вказано параметр <нова назва>."
 
-#: ../src/nmcli/connections.c:9057 ../src/nmcli/connections.c:9588
+#: ../src/nmcli/connections.c:9188 ../src/nmcli/connections.c:9719
 #, c-format
 msgid "Error: unknown extra argument: '%s'."
 msgstr "Помилка: невідомий зайвий параметр: «%s»."
 
-#: ../src/nmcli/connections.c:9091
+#: ../src/nmcli/connections.c:9222
 #, c-format
 msgid "Error: not all connections deleted."
 msgstr "Помилка: вилучено не усі з'єднання."
 
-#: ../src/nmcli/connections.c:9092
+#: ../src/nmcli/connections.c:9223
 #, c-format
 msgid "Error: Connection deletion failed: %s\n"
 msgstr "Помилка: не вдалося вилучити з'єднання: %s\n"
 
-#: ../src/nmcli/connections.c:9147 ../src/nmcli/connections.c:9274
-#: ../src/nmcli/connections.c:9741
+#: ../src/nmcli/connections.c:9278 ../src/nmcli/connections.c:9405
+#: ../src/nmcli/connections.c:9872
 #, c-format
 msgid "Error: %s.\n"
 msgstr "Помилка: %s.\n"
 
-#: ../src/nmcli/connections.c:9148 ../src/nmcli/connections.c:9275
-#: ../src/nmcli/connections.c:9742
+#: ../src/nmcli/connections.c:9279 ../src/nmcli/connections.c:9406
+#: ../src/nmcli/connections.c:9873
 #, c-format
 msgid "Error: not all connections found."
 msgstr "Помилка: знайдено не усі з'єднання."
 
-#: ../src/nmcli/connections.c:9207
+#: ../src/nmcli/connections.c:9338
 #, c-format
 msgid "Error: cannot delete unknown connection(s): %s."
 msgstr "Помилка: не можна вилучати невідомі з'єднання: %s."
 
-#: ../src/nmcli/connections.c:9215
+#: ../src/nmcli/connections.c:9346
 #, c-format
 msgid "%s: connection profile changed\n"
 msgstr "%s: змінено профіль з'єднання\n"
 
-#: ../src/nmcli/connections.c:9241
+#: ../src/nmcli/connections.c:9372
 #, c-format
 msgid "%s: connection profile created\n"
 msgstr "%s: створено профіль з'єднання\n"
 
-#: ../src/nmcli/connections.c:9250
+#: ../src/nmcli/connections.c:9381
 #, c-format
 msgid "%s: connection profile removed\n"
 msgstr "%s: вилучено профіль з'єднання\n"
 
-#: ../src/nmcli/connections.c:9318
+#: ../src/nmcli/connections.c:9449
 #, c-format
 msgid "Error: failed to reload connections: %s."
 msgstr "Помилка: не вдалося перезавантажити з'єднання: %s."
 
-#: ../src/nmcli/connections.c:9390
+#: ../src/nmcli/connections.c:9521
 #, c-format
 msgid "Error: failed to load connection: %s."
 msgstr "Помилка: не вдалося завантажити з'єднання: %s."
 
-#: ../src/nmcli/connections.c:9398
+#: ../src/nmcli/connections.c:9529
 #, c-format
 msgid "Could not load file '%s'\n"
 msgstr "Не вдалося завантажити файл «%s»\n"
 
-#: ../src/nmcli/connections.c:9402
+#: ../src/nmcli/connections.c:9533
 msgid "File to import: "
 msgstr "Файл для імпортування: "
 
-#: ../src/nmcli/connections.c:9433
+#: ../src/nmcli/connections.c:9564
 #, c-format
 msgid "Error: No arguments provided."
 msgstr "Помилка: не надано аргументів."
 
-#: ../src/nmcli/connections.c:9464
+#: ../src/nmcli/connections.c:9595
 #, c-format
 msgid "Warning: 'type' already specified, ignoring extra one.\n"
 msgstr ""
 "Попередження: значення «type» вже задано, зайве значення проігноровано.\n"
 
-#: ../src/nmcli/connections.c:9479
+#: ../src/nmcli/connections.c:9610
 #, c-format
 msgid "Warning: 'file' already specified, ignoring extra one.\n"
 msgstr ""
 "Попередження: значення «file» вже задано, зайве значення проігноровано.\n"
 
-#: ../src/nmcli/connections.c:9493
+#: ../src/nmcli/connections.c:9624
 #, c-format
 msgid "Error: 'type' argument is required."
 msgstr "Помилка: слід вказати значення «type»."
 
-#: ../src/nmcli/connections.c:9498
+#: ../src/nmcli/connections.c:9629
 #, c-format
 msgid "Error: 'file' argument is required."
 msgstr "Помилка: слід вказати значення «file»."
 
-#: ../src/nmcli/connections.c:9508
+#: ../src/nmcli/connections.c:9639
 #, c-format
 msgid "Error: failed to find VPN plugin for %s."
 msgstr "Помилка: не вдалося знайти додаток VPN для %s."
 
-#: ../src/nmcli/connections.c:9517 ../src/nmcli/connections.c:9609
+#: ../src/nmcli/connections.c:9648 ../src/nmcli/connections.c:9740
 #, c-format
 msgid "Error: failed to load VPN plugin: %s."
 msgstr "Помилка: не вдалося завантажити додаток VPN: %s."
 
-#: ../src/nmcli/connections.c:9528
+#: ../src/nmcli/connections.c:9659
 #, c-format
 msgid "Error: failed to import '%s': %s."
 msgstr "Помилка: не вдалося імпортувати «%s»: %s."
 
-#: ../src/nmcli/connections.c:9594
+#: ../src/nmcli/connections.c:9725
 msgid "Output file name: "
 msgstr "Назва файла результатів: "
 
-#: ../src/nmcli/connections.c:9599
+#: ../src/nmcli/connections.c:9730
 #, c-format
 msgid "Error: the connection is not VPN."
 msgstr "Помилка: з'єднання не належить до типу VPN."
 
-#: ../src/nmcli/connections.c:9623
+#: ../src/nmcli/connections.c:9754
 #, c-format
 msgid "Error: failed to create temporary file %s."
 msgstr "Помилка: не вдалося створити тимчасовий файл %s."
 
-#: ../src/nmcli/connections.c:9633
+#: ../src/nmcli/connections.c:9764
 #, c-format
 msgid "Error: failed to export '%s': %s."
 msgstr "Помилка: не вдалося експортувати «%s»: %s."
 
-#: ../src/nmcli/connections.c:9647
+#: ../src/nmcli/connections.c:9778
 #, c-format
 msgid "Error: failed to read temporary file '%s': %s."
 msgstr "Помилка: не вдалося прочитати тимчасовий файл «%s»: %s."
 
-#: ../src/nmcli/connections.c:9671
+#: ../src/nmcli/connections.c:9802
 #, c-format
 msgid "Error: not all connections migrated."
 msgstr "Помилка: перенесено не усі з'єднання."
 
-#: ../src/nmcli/connections.c:9672
+#: ../src/nmcli/connections.c:9803
 #, c-format
 msgid "Error: Connection migration failed: %s\n"
 msgstr "Помилка: не вдалося перенести з'єднання: %s\n"
 
-#: ../src/nmcli/connections.c:9676
+#: ../src/nmcli/connections.c:9807
 #, c-format
 msgid "Connection '%s' (%s) successfully migrated.\n"
 msgstr "Запис з'єднання «%s» (%s) успішно перенесено.\n"
 
-#: ../src/nmcli/connections.c:9708
+#: ../src/nmcli/connections.c:9839
 msgid "'--plugin' argument is missing"
 msgstr "пропущено аргумент до --plugin"
 
-#: ../src/nmcli/connections.c:9804
+#: ../src/nmcli/connections.c:9935
 #, c-format
 msgid "Error: cannot migrate unknown connection(s): %s."
 msgstr "Помилка: не вдалося перенести невідомі з'єднання: %s."
@@ -13673,148 +13722,148 @@ msgstr ""
 msgid "Error: Connection activation failed: (%d) %s.\n"
 msgstr "Помилка: не вдалося активувати з'єднання: (%d) %s.\n"
 
-#: ../src/nmcli/devices.c:2139
+#: ../src/nmcli/devices.c:2140
 #, c-format
 msgid "Error: Failed to setup a Wi-Fi hotspot: %s"
 msgstr "Помилка: не вдалося налаштувати точку доступу Wi-Fi: %s"
 
-#: ../src/nmcli/devices.c:2143
+#: ../src/nmcli/devices.c:2144
 #, c-format
 msgid "Error: Failed to add/activate new connection: %s"
 msgstr "Помилка: не вдалося додати або задіяти нове з'єднання: %s"
 
-#: ../src/nmcli/devices.c:2147
+#: ../src/nmcli/devices.c:2148
 #, c-format
 msgid "Error: Failed to activate connection: %s"
 msgstr "Помилка: не вдалося задіяти з'єднання: %s"
 
-#: ../src/nmcli/devices.c:2210
+#: ../src/nmcli/devices.c:2216
 #, c-format
 msgid "Error: Device activation failed: %s"
 msgstr "Помилка: не вдалося активувати пристрій: %s"
 
-#: ../src/nmcli/devices.c:2260
+#: ../src/nmcli/devices.c:2266
 #, c-format
 msgid "Error: extra argument not allowed: '%s'."
 msgstr "Помилка: некоректний додатковий аргумент, «%s»."
 
-#: ../src/nmcli/devices.c:2329 ../src/nmcli/devices.c:2342
-#: ../src/nmcli/devices.c:2601
+#: ../src/nmcli/devices.c:2335 ../src/nmcli/devices.c:2348
+#: ../src/nmcli/devices.c:2607
 #, c-format
 msgid "Device '%s' successfully disconnected.\n"
 msgstr "Пристрій «%s» успішно від'єднано.\n"
 
-#: ../src/nmcli/devices.c:2331 ../src/nmcli/devices.c:2671
+#: ../src/nmcli/devices.c:2337 ../src/nmcli/devices.c:2677
 #, c-format
 msgid "Device '%s' successfully removed.\n"
 msgstr "Пристрій «%s» успішно вилучено.\n"
 
-#: ../src/nmcli/devices.c:2397 ../src/nmcli/devices.c:2477
+#: ../src/nmcli/devices.c:2403 ../src/nmcli/devices.c:2483
 #, c-format
 msgid "Error: Reapplying connection to device '%s' (%s) failed: %s"
 msgstr ""
 "Помилка: не вдалося повторно застосувати з'єднання із пристроєм «%s» (%s): %s"
 
-#: ../src/nmcli/devices.c:2407 ../src/nmcli/devices.c:2486
+#: ../src/nmcli/devices.c:2413 ../src/nmcli/devices.c:2492
 #, c-format
 msgid "Connection successfully reapplied to device '%s'.\n"
 msgstr "З'єднання успішно повторно застосовано до пристрою «%s».\n"
 
-#: ../src/nmcli/devices.c:2508
+#: ../src/nmcli/devices.c:2514
 #, c-format
 msgid "Error: Reading applied connection from device '%s' (%s) failed: %s"
 msgstr ""
 "Помилка: спроба читання застосованого з'єднання з пристрою «%s» (%s) зазнала "
 "невдачі: %s"
 
-#: ../src/nmcli/devices.c:2585
+#: ../src/nmcli/devices.c:2591
 #, c-format
 msgid "Error: not all devices disconnected."
 msgstr "Помилка: не усі пристрої від'єднано."
 
-#: ../src/nmcli/devices.c:2586
+#: ../src/nmcli/devices.c:2592
 #, c-format
 msgid "Error: Device '%s' (%s) disconnecting failed: %s\n"
 msgstr "Помилка: невдала спроба від'єднання «%s» (%s): %s\n"
 
-#: ../src/nmcli/devices.c:2662
+#: ../src/nmcli/devices.c:2668
 #, c-format
 msgid "Error: not all devices deleted."
 msgstr "Помилка: вилучено не усі пристрої."
 
-#: ../src/nmcli/devices.c:2663
+#: ../src/nmcli/devices.c:2669
 #, c-format
 msgid "Error: Device '%s' (%s) deletion failed: %s\n"
 msgstr "Помилка: помилка під час спроби вилучення пристрою «%s» (%s): %s\n"
 
-#: ../src/nmcli/devices.c:2744
+#: ../src/nmcli/devices.c:2750
 #, c-format
 msgid "Error: No property specified."
 msgstr "Помилка: не вказано властивості."
 
-#: ../src/nmcli/devices.c:2761 ../src/nmcli/devices.c:2780
+#: ../src/nmcli/devices.c:2767 ../src/nmcli/devices.c:2786
 #: ../src/nmcli/general.c:796 ../src/nmcli/general.c:818
 #, c-format
 msgid "Error: '%s' argument is missing."
 msgstr "Помилка: пропущено параметр %s."
 
-#: ../src/nmcli/devices.c:2769
+#: ../src/nmcli/devices.c:2775
 #, c-format
 msgid "Error: 'managed': %s."
 msgstr "Помилка: «managed»: %s."
 
-#: ../src/nmcli/devices.c:2788
+#: ../src/nmcli/devices.c:2794
 #, c-format
 msgid "Error: 'autoconnect': %s."
 msgstr "Помилка: «autoconnect»: %s."
 
-#: ../src/nmcli/devices.c:2795 ../src/nmcli/general.c:868
+#: ../src/nmcli/devices.c:2801 ../src/nmcli/general.c:868
 #, c-format
 msgid "Error: property '%s' is not known."
 msgstr "Помилка: властивість «%s» є невідомою."
 
-#: ../src/nmcli/devices.c:2842
+#: ../src/nmcli/devices.c:2848
 #, c-format
 msgid "%s: using connection '%s'\n"
 msgstr "%s: використовуємо з'єднання «%s»\n"
 
-#: ../src/nmcli/devices.c:2868
+#: ../src/nmcli/devices.c:2874
 #, c-format
 msgid "%s: device created\n"
 msgstr "%s: створено запис пристрою\n"
 
-#: ../src/nmcli/devices.c:2875
+#: ../src/nmcli/devices.c:2881
 #, c-format
 msgid "%s: device removed\n"
 msgstr "%s: пристрій вилучено\n"
 
-#: ../src/nmcli/devices.c:3051
+#: ../src/nmcli/devices.c:3057
 msgid "Wi-Fi scan list"
 msgstr "Список сканування Wi-Fi"
 
-#: ../src/nmcli/devices.c:3168 ../src/nmcli/devices.c:3449
+#: ../src/nmcli/devices.c:3174 ../src/nmcli/devices.c:3455
 #, c-format
 msgid "Error: Access point with bssid '%s' not found."
 msgstr "Помилка: не знайдено точки доступу з bssid «%s»."
 
-#: ../src/nmcli/devices.c:3370
+#: ../src/nmcli/devices.c:3376
 #, c-format
 msgid "Error: 'device wifi': %s"
 msgstr "Помилка: «device wifi»: %s"
 
-#: ../src/nmcli/devices.c:3390
+#: ../src/nmcli/devices.c:3396
 #, c-format
 msgid "Error: invalid rescan argument: '%s' not among [auto, no, yes]"
 msgstr ""
 "Помилка: некоректний аргумент rescan: «%s» не належить до набору [auto, no, "
 "yes]"
 
-#: ../src/nmcli/devices.c:3429
+#: ../src/nmcli/devices.c:3435
 #, c-format
 msgid "Error: Device '%s' not found."
 msgstr "Помилка: не знайдено пристрій «%s»."
 
-#: ../src/nmcli/devices.c:3433
+#: ../src/nmcli/devices.c:3439
 #, c-format
 msgid ""
 "Error: Device '%s' was not recognized as a Wi-Fi device, check "
@@ -13823,28 +13872,28 @@ msgstr ""
 "Помилка: пристрій «%s» не розпізнано як пристрій Wi-Fi, перевірте, чи працює "
 "додаток Wi-Fi NetworkManager."
 
-#: ../src/nmcli/devices.c:3438 ../src/nmcli/devices.c:3790
-#: ../src/nmcli/devices.c:4419 ../src/nmcli/devices.c:4554
-#: ../src/nmcli/devices.c:4689
+#: ../src/nmcli/devices.c:3444 ../src/nmcli/devices.c:3796
+#: ../src/nmcli/devices.c:4425 ../src/nmcli/devices.c:4560
+#: ../src/nmcli/devices.c:4695
 #, c-format
 msgid "Error: Device '%s' is not a Wi-Fi device."
 msgstr "Помилка: пристрій «%s» не є пристроєм Wi-Fi."
 
-#: ../src/nmcli/devices.c:3618
+#: ../src/nmcli/devices.c:3624
 msgid "SSID or BSSID: "
 msgstr "SSID або BSSID: "
 
-#: ../src/nmcli/devices.c:3623
+#: ../src/nmcli/devices.c:3629
 #, c-format
 msgid "Error: SSID or BSSID are missing."
 msgstr "Помилка: не вистачає SSID або BSSID."
 
-#: ../src/nmcli/devices.c:3667
+#: ../src/nmcli/devices.c:3673
 #, c-format
 msgid "Error: bssid argument value '%s' is not a valid BSSID."
 msgstr "Помилка: значення параметра bssid, «%s», не є коректним BSSID."
 
-#: ../src/nmcli/devices.c:3698
+#: ../src/nmcli/devices.c:3704
 #, c-format
 msgid ""
 "Error: wep-key-type argument value '%s' is invalid, use 'key' or 'phrase'."
@@ -13852,49 +13901,49 @@ msgstr ""
 "Помилка: значення параметра wep-key-type, «%s», є некоректним, слід "
 "використовувати «key» або «phrase»."
 
-#: ../src/nmcli/devices.c:3726 ../src/nmcli/devices.c:3747
+#: ../src/nmcli/devices.c:3732 ../src/nmcli/devices.c:3753
 #, c-format
 msgid "Error: %s: %s."
 msgstr "Помилка: %s: %s."
 
-#: ../src/nmcli/devices.c:3769
+#: ../src/nmcli/devices.c:3775
 #, c-format
 msgid "Error: BSSID to connect to (%s) differs from bssid argument (%s)."
 msgstr ""
 "Помилка: BSSID для з'єднання з (%s) відрізняється від параметра bssid (%s)."
 
-#: ../src/nmcli/devices.c:3777
+#: ../src/nmcli/devices.c:3783
 #, c-format
 msgid "Error: Parameter '%s' is neither SSID nor BSSID."
 msgstr "Помилка: параметр «%s» не дорівнює ні SSID, ні BSSID."
 
-#: ../src/nmcli/devices.c:3793 ../src/nmcli/devices.c:4422
-#: ../src/nmcli/devices.c:4557 ../src/nmcli/devices.c:4789
+#: ../src/nmcli/devices.c:3799 ../src/nmcli/devices.c:4428
+#: ../src/nmcli/devices.c:4563 ../src/nmcli/devices.c:4795
 #, c-format
 msgid "Error: No Wi-Fi device found."
 msgstr "Помилка: не знайдено жодного пристрою Wi-Fi."
 
-#: ../src/nmcli/devices.c:3815
+#: ../src/nmcli/devices.c:3821
 #, c-format
 msgid "Error: Failed to scan hidden SSID: %s."
 msgstr "Помилка: неможливо виконати сканування прихованого SSID: %s."
 
-#: ../src/nmcli/devices.c:3847
+#: ../src/nmcli/devices.c:3853
 #, c-format
 msgid "Error: No network with SSID '%s' found."
 msgstr "Помилка: не знайдено мережі з SSID «%s»."
 
-#: ../src/nmcli/devices.c:3851
+#: ../src/nmcli/devices.c:3857
 #, c-format
 msgid "Error: No access point with BSSID '%s' found."
 msgstr "Помилка: не знайдено точки доступу з BSSID «%s»."
 
-#: ../src/nmcli/devices.c:3880
+#: ../src/nmcli/devices.c:3886
 #, c-format
 msgid "Error: Connection '%s' exists but properties don't match."
 msgstr "Помилка: існує з'єднання «%s», але його властивості є невідповідними."
 
-#: ../src/nmcli/devices.c:3929
+#: ../src/nmcli/devices.c:3935
 #, c-format
 msgid ""
 "Warning: '%s' should be SSID for hidden APs; but it looks like a BSSID.\n"
@@ -13902,86 +13951,86 @@ msgstr ""
 "Попередження: «%s» має бути SSID для прихованих точок доступу; втім, "
 "здається, маємо BSSID.\n"
 
-#: ../src/nmcli/devices.c:3971
+#: ../src/nmcli/devices.c:3977
 msgid "Password: "
 msgstr "Пароль: "
 
-#: ../src/nmcli/devices.c:4109
+#: ../src/nmcli/devices.c:4115
 #, c-format
 msgid "'%s' is not valid WPA PSK"
 msgstr "«%s» не є коректним PSK WPA"
 
-#: ../src/nmcli/devices.c:4130
+#: ../src/nmcli/devices.c:4136
 #, c-format
 msgid "'%s' is not valid WEP key (it should be 5 or 13 ASCII chars)"
 msgstr ""
 "«%s» не є коректним ключем WEP (коректний ключ має складатися з 5 або 13 "
 "символів ASCII)"
 
-#: ../src/nmcli/devices.c:4149
+#: ../src/nmcli/devices.c:4155
 #, c-format
 msgid "Hotspot password: %s\n"
 msgstr "Пароль до точки доступу: %s\n"
 
-#: ../src/nmcli/devices.c:4328
+#: ../src/nmcli/devices.c:4334
 #, c-format
 msgid "Error: ssid is too long."
 msgstr "Помилка: SSID є надто довгим."
 
-#: ../src/nmcli/devices.c:4346
+#: ../src/nmcli/devices.c:4352
 #, c-format
 msgid "Error: band argument value '%s' is invalid; use 'a' or 'bg'."
 msgstr ""
 "Помилка: значення аргументу «band» «%s» є некоректним; має бути «a» або «bg»."
 
-#: ../src/nmcli/devices.c:4397
+#: ../src/nmcli/devices.c:4403
 #, c-format
 msgid "Error: channel requires band too."
 msgstr "Помилка: разом із каналом слід вказати смугу."
 
-#: ../src/nmcli/devices.c:4404
+#: ../src/nmcli/devices.c:4410
 #, c-format
 msgid "Error: channel '%s' not valid for band '%s'."
 msgstr "Помилка: не можна використовувати канал «%s» для смуги «%s»."
 
-#: ../src/nmcli/devices.c:4435
+#: ../src/nmcli/devices.c:4441
 #, c-format
 msgid "Error: Device '%s' supports neither AP nor Ad-Hoc mode."
 msgstr ""
 "Помилка: для пристрою «%s» не передбачено ні режиму точки доступу, ні режиму "
 "Ad-Hoc."
 
-#: ../src/nmcli/devices.c:4462
+#: ../src/nmcli/devices.c:4468
 #, c-format
 msgid "Error: Invalid 'password': %s."
 msgstr "Помилка: некоректне значення «password»: %s."
 
-#: ../src/nmcli/devices.c:4513 ../src/nmcli/devices.c:4743
+#: ../src/nmcli/devices.c:4519 ../src/nmcli/devices.c:4749
 #, c-format
 msgid "Error: '%s' cannot repeat."
 msgstr "Помилка: не можна повторювати «%s»."
 
-#: ../src/nmcli/devices.c:4648 ../src/nmcli/devices.c:4651
-#: ../src/nmcli/devices.c:4655 ../src/nmcli/devices.c:4658
+#: ../src/nmcli/devices.c:4654 ../src/nmcli/devices.c:4657
+#: ../src/nmcli/devices.c:4661 ../src/nmcli/devices.c:4664
 #: ../src/nmtui/nmt-page-wifi.c:253
 msgid "Security"
 msgstr "Захист"
 
-#: ../src/nmcli/devices.c:4648
+#: ../src/nmcli/devices.c:4654
 msgid "None"
 msgstr "Немає"
 
-#: ../src/nmcli/devices.c:4777
+#: ../src/nmcli/devices.c:4783
 #, c-format
 msgid "%s"
 msgstr "%s"
 
 #. Main header name
-#: ../src/nmcli/devices.c:4830
+#: ../src/nmcli/devices.c:4836
 msgid "Device LLDP neighbors"
 msgstr "LLDP-сусіди пристрою"
 
-#: ../src/nmcli/devices.c:4963
+#: ../src/nmcli/devices.c:4969
 #, c-format
 msgid "Error: 'device lldp list': %s"
 msgstr "Помилка: «device lldp list»: %s"
@@ -14564,7 +14613,7 @@ msgid "master"
 msgstr "основний"
 
 #: ../src/nmcli/general.c:1419 ../src/nmtui/nm-editor-utils.c:247
-#: ../src/nmtui/nmt-connect-connection-list.c:390
+#: ../src/nmtui/nmt-connect-connection-list.c:391
 msgid "VPN"
 msgstr "VPN"
 
@@ -14707,59 +14756,59 @@ msgstr "Мало бути значення для «%s»\n"
 msgid "Expected a line break following '%s'\n"
 msgstr "Мав бути символ розриву рядка із наступним «%s»\n"
 
-#: ../src/nmcli/nmcli.c:789
+#: ../src/nmcli/nmcli.c:792
 #, c-format
 msgid "Error: Option '--terse' is specified the second time."
 msgstr "Помилка: параметр «--terse» вказано двічі."
 
-#: ../src/nmcli/nmcli.c:795
+#: ../src/nmcli/nmcli.c:798
 #, c-format
 msgid "Error: Option '--terse' is mutually exclusive with '--pretty'."
 msgstr ""
 "Помилка: параметр «--terse» і «--pretty» не можна використовувати одночасно."
 
-#: ../src/nmcli/nmcli.c:803
+#: ../src/nmcli/nmcli.c:806
 #, c-format
 msgid "Error: Option '--pretty' is specified the second time."
 msgstr "Помилка: параметр «--pretty» вказано двічі."
 
-#: ../src/nmcli/nmcli.c:809
+#: ../src/nmcli/nmcli.c:812
 #, c-format
 msgid "Error: Option '--pretty' is mutually exclusive with '--terse'."
 msgstr ""
 "Помилка: параметр «--pretty» і «--terse» не можна використовувати одночасно"
 
-#: ../src/nmcli/nmcli.c:824
+#: ../src/nmcli/nmcli.c:827
 #, c-format
 msgid "Error: '%s' is not a valid argument for '%s' option."
 msgstr "Помилка: «%s» не є коректним аргументом «%s»."
 
-#: ../src/nmcli/nmcli.c:841 ../src/nmcli/nmcli.c:856
+#: ../src/nmcli/nmcli.c:844 ../src/nmcli/nmcli.c:859
 #, c-format
 msgid "Error: '%s' is not valid argument for '%s' option."
 msgstr "Помилка: «%s» не є коректним аргументом «%s»."
 
-#: ../src/nmcli/nmcli.c:882
+#: ../src/nmcli/nmcli.c:885
 #, c-format
 msgid "Error: '%s' is not a valid timeout."
 msgstr "Помилка: «%s» не є коректним часом очікування."
 
-#: ../src/nmcli/nmcli.c:889
+#: ../src/nmcli/nmcli.c:892
 #, c-format
 msgid "nmcli tool, version %s\n"
 msgstr "інструмент nmcli, версія %s\n"
 
-#: ../src/nmcli/nmcli.c:898
+#: ../src/nmcli/nmcli.c:901
 #, c-format
 msgid "Error: Option '%s' is unknown, try 'nmcli -help'."
 msgstr "Помилка: невідомий параметр «%s», спробуйте «nmcli -help»."
 
-#: ../src/nmcli/nmcli.c:956 ../src/nmcli/nmcli.c:965
+#: ../src/nmcli/nmcli.c:959 ../src/nmcli/nmcli.c:968
 #, c-format
 msgid "Error: nmcli terminated by signal %s (%d)"
 msgstr "Помилка: роботу nmcli перервано сигналом %s (%d)"
 
-#: ../src/nmcli/nmcli.c:1030
+#: ../src/nmcli/nmcli.c:1035
 msgid "Success"
 msgstr "Виконано"
 

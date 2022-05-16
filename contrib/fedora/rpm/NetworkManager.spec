@@ -13,8 +13,8 @@
 %global glib2_version %(pkg-config --modversion glib-2.0 2>/dev/null || echo bad)
 
 %global epoch_version 1
-%global rpm_version __VERSION__
 %global real_version __VERSION__
+%global rpm_version %{real_version}
 %global release_version __RELEASE_VERSION__
 %global snapshot __SNAPSHOT__
 %global git_sha __COMMIT__

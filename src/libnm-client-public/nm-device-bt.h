@@ -31,6 +31,7 @@ G_BEGIN_DECLS
 /**
  * NMDeviceBt:
  */
+typedef struct _NMDeviceBt      NMDeviceBt;
 typedef struct _NMDeviceBtClass NMDeviceBtClass;
 
 GType nm_device_bt_get_type(void);

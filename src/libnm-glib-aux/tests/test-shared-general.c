@@ -10,6 +10,7 @@
 #include "libnm-glib-aux/nm-str-buf.h"
 #include "libnm-glib-aux/nm-time-utils.h"
 #include "libnm-glib-aux/nm-ref-string.h"
+#include "libnm-glib-aux/nm-io-utils.h"
 
 #include "libnm-glib-aux/nm-test-utils.h"
 
@@ -781,6 +782,9 @@ test_nm_utils_get_next_realloc_size(void)
         {NM_UTILS_GET_NEXT_REALLOC_SIZE_232,
          NM_UTILS_GET_NEXT_REALLOC_SIZE_232,
          NM_UTILS_GET_NEXT_REALLOC_SIZE_232},
+        {NM_UTILS_GET_NEXT_REALLOC_SIZE_488,
+         NM_UTILS_GET_NEXT_REALLOC_SIZE_488,
+         NM_UTILS_GET_NEXT_REALLOC_SIZE_488},
         {NM_UTILS_GET_NEXT_REALLOC_SIZE_1000,
          NM_UTILS_GET_NEXT_REALLOC_SIZE_1000,
          NM_UTILS_GET_NEXT_REALLOC_SIZE_1000},
@@ -913,27 +917,58 @@ test_nm_str_buf(void)
 {
     guint i_run;
 
-    for (i_run = 0; TRUE; i_run++) {
-        nm_auto_str_buf NMStrBuf      strbuf = {};
-        nm_auto_free_gstring GString *gstr   = NULL;
+    for (i_run = 0; i_run < 1000; i_run++) {
+        char                          stack_buf[1024];
+        nm_auto_str_buf NMStrBuf      strbuf;
+        nm_auto_free_gstring GString *gstr = NULL;
         int                           i, j, k;
         int                           c;
 
-        nm_str_buf_init(&strbuf, nmtst_get_rand_uint32() % 200u + 1u, nmtst_get_rand_bool());
+        switch (nmtst_get_rand_uint32() % 10) {
+        case 0:
+            memset(&strbuf, 0, sizeof(strbuf));
+            break;
+        case 1 ... 4:
+            strbuf = NM_STR_BUF_INIT_FULL(stack_buf,
+                                          0,
+                                          nmtst_get_rand_uint32() % sizeof(stack_buf),
+                                          FALSE,
+                                          nmtst_get_rand_bool());
+            break;
+        default:
+            strbuf = NM_STR_BUF_INIT(nmtst_get_rand_uint32() % 200u + 1u, nmtst_get_rand_bool());
+            break;
+        }
 
-        if (i_run < 1000) {
-            c = nmtst_get_rand_word_length(NULL);
-            for (i = 0; i < c; i++)
-                nm_str_buf_append_c(&strbuf, '0' + (i % 10));
-            gstr = g_string_new(nm_str_buf_get_str(&strbuf));
-            j    = nmtst_get_rand_uint32() % (strbuf.len + 1);
-            k    = nmtst_get_rand_uint32() % (strbuf.len - j + 2) - 1;
+        c = nmtst_get_rand_word_length(NULL);
+        for (i = 0; i < c; i++)
+            nm_str_buf_append_c(&strbuf, '0' + (i % 10));
+        gstr = g_string_new(nm_str_buf_get_str(&strbuf));
+        j    = nmtst_get_rand_uint32() % (strbuf.len + 1);
+        k    = nmtst_get_rand_uint32() % (strbuf.len - j + 2) - 1;
 
-            nm_str_buf_erase(&strbuf, j, k, nmtst_get_rand_bool());
-            g_string_erase(gstr, j, k);
+        nm_str_buf_erase(&strbuf, j, k, nmtst_get_rand_bool());
+        g_string_erase(gstr, j, k);
+        if (gstr->str[0])
             g_assert_cmpstr(gstr->str, ==, nm_str_buf_get_str(&strbuf));
+        else
+            g_assert(NM_IN_STRSET(nm_str_buf_get_str(&strbuf), NULL, ""));
+    }
+
+    for (i_run = 0; i_run < 50; i_run++) {
+        char                     stack_buf[20];
+        nm_auto_str_buf NMStrBuf strbuf = NM_STR_BUF_INIT_ARR(stack_buf, nmtst_get_rand_bool());
+
+        nm_str_buf_append_c_len(&strbuf, 'a', nmtst_get_rand_uint32() % (sizeof(stack_buf) * 2));
+        if (strbuf.len <= sizeof(stack_buf)) {
+            g_assert(stack_buf == nm_str_buf_get_str_unsafe(&strbuf));
         } else
-            return;
+            g_assert(stack_buf != nm_str_buf_get_str_unsafe(&strbuf));
+
+        if (strbuf.len < sizeof(stack_buf)) {
+            g_assert(stack_buf == nm_str_buf_get_str(&strbuf));
+        } else
+            g_assert(stack_buf != nm_str_buf_get_str(&strbuf));
     }
 }
 
@@ -1417,6 +1452,755 @@ test_nm_ascii(void)
 
 /*****************************************************************************/
 
+static int
+_env_file_push_cb(unsigned line, const char *key, const char *value, void *user_data)
+{
+    char ***strv = user_data;
+    char   *s_line;
+    gsize   key_l;
+    gsize   strv_l;
+    gsize   i;
+
+    g_assert(strv);
+    g_assert(key);
+    g_assert(key[0]);
+    g_assert(!strchr(key, '='));
+    g_assert(value);
+
+    key_l = strlen(key);
+
+    s_line = g_strconcat(key, "=", value, NULL);
+
+    strv_l = 0;
+    if (*strv) {
+        const char *s;
+
+        for (i = 0; (s = (*strv)[i]); i++) {
+            if (g_str_has_prefix(s, key) && s[key_l] == '=') {
+                g_free((*strv)[i]);
+                (*strv)[i] = s_line;
+                return 0;
+            }
+        }
+        strv_l = i;
+    }
+
+    *strv               = g_realloc(*strv, sizeof(char *) * (strv_l + 2));
+    (*strv)[strv_l]     = s_line;
+    (*strv)[strv_l + 1] = NULL;
+
+    return 0;
+}
+
+static void
+test_parse_env_file(void)
+{
+    gs_strfreev char **data = NULL;
+    gs_free char      *arg1 = NULL;
+    gs_free char      *arg2 = NULL;
+    int                r;
+
+#define env_file_1                  \
+    "a=a\n"                         \
+    "a=b\n"                         \
+    "a=b\n"                         \
+    "a=a\n"                         \
+    "b=b\\\n"                       \
+    "c\n"                           \
+    "d= d\\\n"                      \
+    "e  \\\n"                       \
+    "f  \n"                         \
+    "g=g\\ \n"                      \
+    "h= ąęół\\ śćńźżµ \n" \
+    "i=i\\"
+    r = nm_parse_env_file_full(env_file_1, _env_file_push_cb, &data);
+    g_assert_cmpint(r, ==, 0);
+    nmtst_assert_strv(data, "a=a", "b=bc", "d=de  f", "g=g ", "h=ąęół śćńźżµ", "i=i");
+    nm_clear_pointer(&data, g_strfreev);
+
+    r = nm_parse_env_file(env_file_1, "a", &arg1);
+    g_assert_cmpint(r, ==, 0);
+    g_assert_cmpstr(arg1, ==, "a");
+    nm_clear_g_free(&arg1);
+
+    r = nm_parse_env_file(env_file_1, "a", &arg1, "d", &arg2);
+    g_assert_cmpint(r, ==, 0);
+    g_assert_cmpstr(arg1, ==, "a");
+    g_assert_cmpstr(arg2, ==, "de  f");
+    nm_clear_g_free(&arg1);
+    nm_clear_g_free(&arg2);
+
+#define env_file_2 "a=a\\\n"
+    r = nm_parse_env_file_full(env_file_2, _env_file_push_cb, &data);
+    g_assert_cmpint(r, ==, 0);
+    nmtst_assert_strv(data, "a=a");
+    nm_clear_pointer(&data, g_strfreev);
+
+#define env_file_3                                              \
+    "#SPAMD_ARGS=\"-d --socketpath=/var/lib/bulwark/spamd \\\n" \
+    "#--nouser-config                                     \\\n" \
+    "normal=line                                          \\\n" \
+    ";normal=ignored                                      \\\n" \
+    "normal_ignored                                       \\\n" \
+    "normal ignored                                       \\\n"
+    r = nm_parse_env_file_full(env_file_3, _env_file_push_cb, &data);
+    g_assert_cmpint(r, ==, 0);
+    g_assert(!data);
+
+#define env_file_4                          \
+    "# Generated\n"                         \
+    "\n"                                    \
+    "HWMON_MODULES=\"coretemp f71882fg\"\n" \
+    "\n"                                    \
+    "# For compatibility reasons\n"         \
+    "\n"                                    \
+    "MODULE_0=coretemp\n"                   \
+    "MODULE_1=f71882fg"
+    r = nm_parse_env_file_full(env_file_4, _env_file_push_cb, &data);
+    g_assert_cmpint(r, ==, 0);
+    nmtst_assert_strv(data,
+                      "HWMON_MODULES=coretemp f71882fg",
+                      "MODULE_0=coretemp",
+                      "MODULE_1=f71882fg");
+    nm_clear_pointer(&data, g_strfreev);
+
+#define env_file_5 \
+    "a=\n"         \
+    "b="
+    r = nm_parse_env_file_full(env_file_5, _env_file_push_cb, &data);
+    g_assert_cmpint(r, ==, 0);
+    nmtst_assert_strv(data, "a=", "b=");
+    nm_clear_pointer(&data, g_strfreev);
+
+#define env_file_6                \
+    "a=\\ \\n \\t \\x \\y \\' \n" \
+    "b= \\$'                  \n" \
+    "c= ' \\n\\t\\$\\`\\\\\n"     \
+    "'   \n"                      \
+    "d= \" \\n\\t\\$\\`\\\\\n"    \
+    "\"   \n"
+    r = nm_parse_env_file_full(env_file_6, _env_file_push_cb, &data);
+    g_assert_cmpint(r, ==, 0);
+    nmtst_assert_strv(data, "a= n t x y '", "b=$'", "c= \\n\\t\\$\\`\\\\\n", "d= \\n\\t$`\\\n");
+    nm_clear_pointer(&data, g_strfreev);
+}
+
+/*****************************************************************************/
+
+static void
+test_unbase64char(void)
+{
+    static const int expected[128] = {
+        [0] = -1,   [1] = -1,   [2] = -1,   [3] = -1,   [4] = -1,   [5] = -1,   [6] = -1,
+        [7] = -1,   [8] = -1,   [9] = -1,   [10] = -1,  [11] = -1,  [12] = -1,  [13] = -1,
+        [14] = -1,  [15] = -1,  [16] = -1,  [17] = -1,  [18] = -1,  [19] = -1,  [20] = -1,
+        [21] = -1,  [22] = -1,  [23] = -1,  [24] = -1,  [25] = -1,  [26] = -1,  [27] = -1,
+        [28] = -1,  [29] = -1,  [30] = -1,  [31] = -1,  [32] = -1,  [33] = -1,  [34] = -1,
+        [35] = -1,  [36] = -1,  [37] = -1,  [38] = -1,  [39] = -1,  [40] = -1,  [41] = -1,
+        [42] = -1,  ['+'] = 62, [44] = -1,  [45] = -1,  [46] = -1,  ['/'] = 63, ['0'] = 52,
+        ['1'] = 53, ['2'] = 54, ['3'] = 55, ['4'] = 56, ['5'] = 57, ['6'] = 58, ['7'] = 59,
+        ['8'] = 60, ['9'] = 61, [58] = -1,  [59] = -1,  [60] = -1,  [61] = -1,  [62] = -1,
+        [63] = -1,  [64] = -1,  ['A'] = 0,  ['B'] = 1,  ['C'] = 2,  ['D'] = 3,  ['E'] = 4,
+        ['F'] = 5,  ['G'] = 6,  ['H'] = 7,  ['I'] = 8,  ['J'] = 9,  ['K'] = 10, ['L'] = 11,
+        ['M'] = 12, ['N'] = 13, ['O'] = 14, ['P'] = 15, ['Q'] = 16, ['R'] = 17, ['S'] = 18,
+        ['T'] = 19, ['U'] = 20, ['V'] = 21, ['W'] = 22, ['X'] = 23, ['Y'] = 24, ['Z'] = 25,
+        [91] = -1,  [92] = -1,  [93] = -1,  [94] = -1,  [95] = -1,  [96] = -1,  ['a'] = 26,
+        ['b'] = 27, ['c'] = 28, ['d'] = 29, ['e'] = 30, ['f'] = 31, ['g'] = 32, ['h'] = 33,
+        ['i'] = 34, ['j'] = 35, ['k'] = 36, ['l'] = 37, ['m'] = 38, ['n'] = 39, ['o'] = 40,
+        ['p'] = 41, ['q'] = 42, ['r'] = 43, ['s'] = 44, ['t'] = 45, ['u'] = 46, ['v'] = 47,
+        ['w'] = 48, ['x'] = 49, ['y'] = 50, ['z'] = 51, [123] = -1, [124] = -1, [125] = -1,
+        [126] = -1, [127] = -1,
+    };
+    int i;
+
+    /* Copied from systemd's TEST(unbase64char)
+     * https://github.com/systemd/systemd/blob/688efe7703328c5a0251fafac55757b8864a9f9a/src/test/test-hexdecoct.c#L44 */
+
+    g_assert_cmpint(nm_unbase64char('A'), ==, 0);
+    g_assert_cmpint(nm_unbase64char('Z'), ==, 25);
+    g_assert_cmpint(nm_unbase64char('a'), ==, 26);
+    g_assert_cmpint(nm_unbase64char('z'), ==, 51);
+    g_assert_cmpint(nm_unbase64char('0'), ==, 52);
+    g_assert_cmpint(nm_unbase64char('9'), ==, 61);
+    g_assert_cmpint(nm_unbase64char('+'), ==, 62);
+    g_assert_cmpint(nm_unbase64char('/'), ==, 63);
+    g_assert_cmpint(nm_unbase64char('='), ==, -ERANGE);
+    g_assert_cmpint(nm_unbase64char('\0'), ==, -EINVAL);
+    g_assert_cmpint(nm_unbase64char('\1'), ==, -EINVAL);
+    g_assert_cmpint(nm_unbase64char('\x7F'), ==, -EINVAL);
+    g_assert_cmpint(nm_unbase64char('\x80'), ==, -EINVAL);
+    g_assert_cmpint(nm_unbase64char('\xFF'), ==, -EINVAL);
+
+    for (i = 0; i < 256; i++) {
+        int base64;
+
+        base64 = nm_unbase64char((char) i);
+
+        if (base64 < 0) {
+            if (((char) i) == '=')
+                g_assert_cmpint(base64, ==, -ERANGE);
+            else
+                g_assert_cmpint(base64, ==, -EINVAL);
+            base64 = -1;
+        }
+
+        if (i >= G_N_ELEMENTS(expected)) {
+            g_assert_cmpint(base64, ==, -1);
+            continue;
+        }
+        g_assert_cmpint(base64, ==, expected[i]);
+    }
+}
+
+/*****************************************************************************/
+
+static void
+test_unbase64mem1(void)
+{
+    nm_auto_str_buf NMStrBuf encoded_wrapped = NM_STR_BUF_INIT(400, FALSE);
+    uint8_t                  data[4096];
+    int                      i_run;
+
+    /* Copied from systemd's TEST(base64mem_linebreak)
+     * https://github.com/systemd/systemd/blob/688efe7703328c5a0251fafac55757b8864a9f9a/src/test/test-hexdecoct.c#L280 */
+
+    for (i_run = 0; i_run < 20; i_run++) {
+        gs_free char   *encoded = NULL;
+        gs_free guint8 *decoded = NULL;
+        gsize           decoded_size;
+        guint64         n;
+        guint64         m;
+        guint64         i;
+        guint64         j;
+        gssize          l;
+        int             r;
+
+        /* Try a bunch of differently sized blobs */
+        n = nmtst_get_rand_uint64() % sizeof(data);
+        nmtst_rand_buf(NULL, data, n);
+
+        /* Break at various different columns */
+        m = 1 + (nmtst_get_rand_uint64() % (n + 5));
+
+        encoded = g_base64_encode(data, n);
+        g_assert(encoded);
+        l = strlen(encoded);
+
+        nm_str_buf_reset(&encoded_wrapped);
+        for (i = 0, j = 0; i < l; i++, j++) {
+            if (j == m) {
+                nm_str_buf_append_c(&encoded_wrapped, '\n');
+                j = 0;
+            }
+            nm_str_buf_append_c(&encoded_wrapped, encoded[i]);
+        }
+
+        g_assert_cmpint(strlen(nm_str_buf_get_str(&encoded_wrapped)), ==, encoded_wrapped.len);
+
+        r = nm_unbase64mem_full(nm_str_buf_get_str(&encoded_wrapped),
+                                nmtst_get_rand_bool() ? SIZE_MAX : encoded_wrapped.len,
+                                nmtst_get_rand_bool(),
+                                &decoded,
+                                &decoded_size);
+        g_assert_cmpint(r, >=, 0);
+        g_assert_cmpmem(data, n, decoded, decoded_size);
+
+        for (j = 0; j < encoded_wrapped.len; j++)
+            g_assert((nm_str_buf_get_str(&encoded_wrapped)[j] == '\n') == (j % (m + 1) == m));
+    }
+}
+
+/*****************************************************************************/
+
+static void
+_assert_unbase64mem(const char *input, const char *output, int ret)
+{
+    gs_free guint8 *buffer = NULL;
+    gsize           size   = 0;
+    int             r;
+
+    r = nm_unbase64mem_full(input, SIZE_MAX, nmtst_get_rand_bool(), &buffer, &size);
+    g_assert_cmpint(r, ==, ret);
+
+    if (ret >= 0) {
+        g_assert_cmpmem(buffer, size, output, strlen(output));
+        g_assert_cmpint(((const char *) buffer)[size], ==, '\0');
+    } else {
+        g_assert(!buffer);
+        g_assert_cmpint(size, ==, 0);
+    }
+}
+
+static void
+test_unbase64mem2(void)
+{
+    /* Copied from systemd's TEST(unbase64mem)
+     * https://github.com/systemd/systemd/blob/688efe7703328c5a0251fafac55757b8864a9f9a/src/test/test-hexdecoct.c#L324 */
+
+    _assert_unbase64mem("", "", 0);
+    _assert_unbase64mem("Zg==", "f", 0);
+    _assert_unbase64mem("Zm8=", "fo", 0);
+    _assert_unbase64mem("Zm9v", "foo", 0);
+    _assert_unbase64mem("Zm9vYg==", "foob", 0);
+    _assert_unbase64mem("Zm9vYmE=", "fooba", 0);
+    _assert_unbase64mem("Zm9vYmFy", "foobar", 0);
+
+    _assert_unbase64mem(" ", "", 0);
+    _assert_unbase64mem(" \n\r ", "", 0);
+    _assert_unbase64mem("    Zg\n==       ", "f", 0);
+    _assert_unbase64mem(" Zm 8=\r", "fo", 0);
+    _assert_unbase64mem("  Zm9\n\r\r\nv   ", "foo", 0);
+    _assert_unbase64mem(" Z m9vYg==\n\r", "foob", 0);
+    _assert_unbase64mem(" Zm 9vYmE=   ", "fooba", 0);
+    _assert_unbase64mem("   Z m9v    YmFy   ", "foobar", 0);
+
+    _assert_unbase64mem("A", NULL, -EPIPE);
+    _assert_unbase64mem("A====", NULL, -EINVAL);
+    _assert_unbase64mem("AAB==", NULL, -EINVAL);
+    _assert_unbase64mem(" A A A B = ", NULL, -EINVAL);
+    _assert_unbase64mem(" Z m 8 = q u u x ", NULL, -ENAMETOOLONG);
+}
+
+/*****************************************************************************/
+
+static void
+_test_unbase64mem_mem(const char *base64, const guint8 *expected_arr, gsize expected_len)
+{
+    gs_free char        *expected_base64 = NULL;
+    int                  r;
+    nm_auto_free guint8 *exp2_arr = NULL;
+    nm_auto_free guint8 *exp3_arr = NULL;
+    gsize                exp2_len;
+    gsize                exp3_len;
+
+    expected_base64 = g_base64_encode(expected_arr, expected_len);
+
+    r = nm_unbase64mem_full(expected_base64, strlen(expected_base64), TRUE, &exp2_arr, &exp2_len);
+    g_assert_cmpint(r, ==, 0);
+    g_assert_cmpmem(expected_arr, expected_len, exp2_arr, exp2_len);
+
+    if (!nm_streq(base64, expected_base64)) {
+        r = nm_unbase64mem_full(base64, strlen(base64), TRUE, &exp3_arr, &exp3_len);
+        g_assert_cmpint(r, ==, 0);
+        g_assert_cmpmem(expected_arr, expected_len, exp3_arr, exp3_len);
+    }
+}
+
+#define _test_unbase64mem(base64, expected_str) \
+    _test_unbase64mem_mem(base64, (const guint8 *) "" expected_str "", NM_STRLEN(expected_str))
+
+static void
+_test_unbase64mem_inval(const char *base64)
+{
+    gs_free guint8 *exp_arr = NULL;
+    gsize           exp_len = 0;
+    int             r;
+
+    r = nm_unbase64mem_full(base64, strlen(base64), TRUE, &exp_arr, &exp_len);
+    g_assert_cmpint(r, <, 0);
+    g_assert(!exp_arr);
+    g_assert(exp_len == 0);
+}
+
+static void
+test_unbase64mem3(void)
+{
+    gs_free char *rnd_base64 = NULL;
+    guint8        rnd_buf[30];
+    guint         i, rnd_len;
+
+    _test_unbase64mem("", "");
+    _test_unbase64mem("  ", "");
+    _test_unbase64mem(" Y Q == ", "a");
+    _test_unbase64mem(" Y   WJjZGV mZ 2g = ", "abcdefgh");
+    _test_unbase64mem_inval(" Y   %WJjZGV mZ 2g = ");
+    _test_unbase64mem_inval(" Y   %WJjZGV mZ 2g = a");
+    _test_unbase64mem("YQ==", "a");
+    _test_unbase64mem_inval("YQ==a");
+
+    rnd_len = nmtst_get_rand_uint32() % sizeof(rnd_buf);
+    for (i = 0; i < rnd_len; i++)
+        rnd_buf[i] = nmtst_get_rand_uint32() % 256;
+    rnd_base64 = g_base64_encode(rnd_buf, rnd_len);
+    _test_unbase64mem_mem(rnd_base64, rnd_buf, rnd_len);
+}
+
+/*****************************************************************************/
+
+static void
+assert_path_compare(const char *a, const char *b, int expected)
+{
+    int r;
+
+    g_assert(NM_IN_SET(expected, -1, 0, 1));
+
+    g_assert_cmpint(nm_path_compare(a, a), ==, 0);
+    g_assert_cmpint(nm_path_compare(b, b), ==, 0);
+
+    r = nm_path_compare(a, b);
+    g_assert_cmpint(r, ==, expected);
+    r = nm_path_compare(b, a);
+    g_assert_cmpint(r, ==, -expected);
+
+    g_assert(nm_path_equal(a, a) == 1);
+    g_assert(nm_path_equal(b, b) == 1);
+    g_assert(nm_path_equal(a, b) == (expected == 0));
+    g_assert(nm_path_equal(b, a) == (expected == 0));
+}
+
+static void
+test_path_compare(void)
+{
+    /* Copied from systemd.
+     * https://github.com/systemd/systemd/blob/bc85f8b51d962597360e982811e674c126850f56/src/test/test-path-util.c#L126 */
+
+    assert_path_compare("/goo", "/goo", 0);
+    assert_path_compare("/goo", "/goo", 0);
+    assert_path_compare("//goo", "/goo", 0);
+    assert_path_compare("//goo/////", "/goo", 0);
+    assert_path_compare("goo/////", "goo", 0);
+    assert_path_compare("/goo/boo", "/goo//boo", 0);
+    assert_path_compare("//goo/boo", "/goo/boo//", 0);
+    assert_path_compare("//goo/././//./boo//././//", "/goo/boo//.", 0);
+    assert_path_compare("/.", "//.///", 0);
+    assert_path_compare("/x", "x/", 1);
+    assert_path_compare("x/", "/", -1);
+    assert_path_compare("/x/./y", "x/y", 1);
+    assert_path_compare("/x/./y", "/x/y", 0);
+    assert_path_compare("/x/./././y", "/x/y/././.", 0);
+    assert_path_compare("./x/./././y", "./x/y/././.", 0);
+    assert_path_compare(".", "./.", 0);
+    assert_path_compare(".", "././.", 0);
+    assert_path_compare("./..", ".", 1);
+    assert_path_compare("x/.y", "x/y", -1);
+    assert_path_compare("foo", "/foo", -1);
+    assert_path_compare("/foo", "/foo/bar", -1);
+    assert_path_compare("/foo/aaa", "/foo/b", -1);
+    assert_path_compare("/foo/aaa", "/foo/b/a", -1);
+    assert_path_compare("/foo/a", "/foo/aaa", -1);
+    assert_path_compare("/foo/a/b", "/foo/aaa", -1);
+}
+
+/*****************************************************************************/
+
+static void
+test_path_equal(void)
+{
+#define _path_equal_check(path, expected)           \
+    G_STMT_START                                    \
+    {                                               \
+        const char   *_path0    = (path);           \
+        const char   *_expected = (expected);       \
+        gs_free char *_path     = g_strdup(_path0); \
+        const char   *_path_result;                 \
+                                                    \
+        _path_result = nm_path_simplify(_path);     \
+        g_assert(_path_result == _path);            \
+        g_assert_cmpstr(_path, ==, _expected);      \
+    }                                               \
+    G_STMT_END
+
+    _path_equal_check("", "");
+    _path_equal_check(".", ".");
+    _path_equal_check("..", "..");
+    _path_equal_check("/..", "/..");
+    _path_equal_check("//..", "/..");
+    _path_equal_check("/.", "/");
+    _path_equal_check("./", ".");
+    _path_equal_check("./.", ".");
+    _path_equal_check(".///.", ".");
+    _path_equal_check(".///./", ".");
+    _path_equal_check(".////", ".");
+    _path_equal_check("//..//foo/", "/../foo");
+    _path_equal_check("///foo//./bar/.", "/foo/bar");
+    _path_equal_check(".//./foo//./bar/.", "foo/bar");
+}
+
+/*****************************************************************************/
+
+static void
+assert_path_find_first_component(const char        *path,
+                                 gboolean           accept_dot_dot,
+                                 const char *const *expected,
+                                 int                ret)
+{
+    const char *p;
+
+    for (p = path;;) {
+        const char *e;
+        int         r;
+
+        r = nm_path_find_first_component(&p, accept_dot_dot, &e);
+        if (r <= 0) {
+            if (r == 0) {
+                if (path)
+                    g_assert(p == path + strlen(path));
+                else
+                    g_assert(!p);
+                g_assert(!e);
+            }
+            g_assert(r == ret);
+            g_assert(!expected || !*expected);
+            return;
+        }
+
+        g_assert(e);
+        g_assert(strcspn(e, "/") == (size_t) r);
+        g_assert(strlen(*expected) == (size_t) r);
+        g_assert(strncmp(e, *expected++, r) == 0);
+    }
+}
+
+static void
+test_path_find_first_component(void)
+{
+    gs_free char *hoge = NULL;
+    char          foo[NAME_MAX * 2];
+
+    /* Copied from systemd.
+     * https://github.com/systemd/systemd/blob/bc85f8b51d962597360e982811e674c126850f56/src/test/test-path-util.c#L631 */
+
+    assert_path_find_first_component(NULL, false, NULL, 0);
+    assert_path_find_first_component("", false, NULL, 0);
+    assert_path_find_first_component("/", false, NULL, 0);
+    assert_path_find_first_component(".", false, NULL, 0);
+    assert_path_find_first_component("./", false, NULL, 0);
+    assert_path_find_first_component("./.", false, NULL, 0);
+    assert_path_find_first_component("..", false, NULL, -EINVAL);
+    assert_path_find_first_component("/..", false, NULL, -EINVAL);
+    assert_path_find_first_component("./..", false, NULL, -EINVAL);
+    assert_path_find_first_component("////./././//.", false, NULL, 0);
+    assert_path_find_first_component("a/b/c", false, NM_MAKE_STRV("a", "b", "c"), 0);
+    assert_path_find_first_component("././//.///aa/bbb//./ccc",
+                                     false,
+                                     NM_MAKE_STRV("aa", "bbb", "ccc"),
+                                     0);
+    assert_path_find_first_component("././//.///aa/.../../bbb//./ccc/.",
+                                     false,
+                                     NM_MAKE_STRV("aa", "..."),
+                                     -EINVAL);
+    assert_path_find_first_component("//./aaa///.//./.bbb/..///c.//d.dd///..eeee/.",
+                                     false,
+                                     NM_MAKE_STRV("aaa", ".bbb"),
+                                     -EINVAL);
+    assert_path_find_first_component("a/foo./b", false, NM_MAKE_STRV("a", "foo.", "b"), 0);
+
+    assert_path_find_first_component(NULL, true, NULL, 0);
+    assert_path_find_first_component("", true, NULL, 0);
+    assert_path_find_first_component("/", true, NULL, 0);
+    assert_path_find_first_component(".", true, NULL, 0);
+    assert_path_find_first_component("./", true, NULL, 0);
+    assert_path_find_first_component("./.", true, NULL, 0);
+    assert_path_find_first_component("..", true, NM_MAKE_STRV(".."), 0);
+    assert_path_find_first_component("/..", true, NM_MAKE_STRV(".."), 0);
+    assert_path_find_first_component("./..", true, NM_MAKE_STRV(".."), 0);
+    assert_path_find_first_component("////./././//.", true, NULL, 0);
+    assert_path_find_first_component("a/b/c", true, NM_MAKE_STRV("a", "b", "c"), 0);
+    assert_path_find_first_component("././//.///aa/bbb//./ccc",
+                                     true,
+                                     NM_MAKE_STRV("aa", "bbb", "ccc"),
+                                     0);
+    assert_path_find_first_component("././//.///aa/.../../bbb//./ccc/.",
+                                     true,
+                                     NM_MAKE_STRV("aa", "...", "..", "bbb", "ccc"),
+                                     0);
+    assert_path_find_first_component("//./aaa///.//./.bbb/..///c.//d.dd///..eeee/.",
+                                     true,
+                                     NM_MAKE_STRV("aaa", ".bbb", "..", "c.", "d.dd", "..eeee"),
+                                     0);
+    assert_path_find_first_component("a/foo./b", true, NM_MAKE_STRV("a", "foo.", "b"), 0);
+
+    memset(foo, 'a', sizeof(foo) - 1);
+    foo[sizeof(foo) - 1] = '\0';
+
+    assert_path_find_first_component(foo, false, NULL, -EINVAL);
+    assert_path_find_first_component(foo, true, NULL, -EINVAL);
+
+    hoge = g_strjoin("", "a/b/c/", foo, "//d/e/.//f/", NULL);
+    g_assert(hoge);
+
+    assert_path_find_first_component(hoge, false, NM_MAKE_STRV("a", "b", "c"), -EINVAL);
+    assert_path_find_first_component(hoge, true, NM_MAKE_STRV("a", "b", "c"), -EINVAL);
+}
+
+/*****************************************************************************/
+
+static void
+assert_path_startswith(const char *path,
+                       const char *prefix,
+                       const char *skipped,
+                       const char *expected)
+{
+    const char *p;
+
+    p = nm_path_startswith(path, prefix);
+    g_assert_cmpstr(p, ==, expected);
+    if (p) {
+        gs_free char *q = NULL;
+
+        g_assert(skipped);
+        q = g_strjoin("", skipped, p, NULL);
+        g_assert_cmpstr(q, ==, path);
+        g_assert(p == path + strlen(skipped));
+    } else
+        g_assert(!skipped);
+}
+
+static void
+test_path_startswith(void)
+{
+    assert_path_startswith("/foo/bar/barfoo/", "/foo", "/foo/", "bar/barfoo/");
+    assert_path_startswith("/foo/bar/barfoo/", "/foo/", "/foo/", "bar/barfoo/");
+    assert_path_startswith("/foo/bar/barfoo/", "/", "/", "foo/bar/barfoo/");
+    assert_path_startswith("/foo/bar/barfoo/", "////", "/", "foo/bar/barfoo/");
+    assert_path_startswith("/foo/bar/barfoo/", "/foo//bar/////barfoo///", "/foo/bar/barfoo/", "");
+    assert_path_startswith("/foo/bar/barfoo/", "/foo/bar/barfoo////", "/foo/bar/barfoo/", "");
+    assert_path_startswith("/foo/bar/barfoo/", "/foo/bar///barfoo/", "/foo/bar/barfoo/", "");
+    assert_path_startswith("/foo/bar/barfoo/", "/foo////bar/barfoo/", "/foo/bar/barfoo/", "");
+    assert_path_startswith("/foo/bar/barfoo/", "////foo/bar/barfoo/", "/foo/bar/barfoo/", "");
+    assert_path_startswith("/foo/bar/barfoo/", "/foo/bar/barfoo", "/foo/bar/barfoo/", "");
+
+    assert_path_startswith("/foo/bar/barfoo/", "/foo/bar/barfooa/", NULL, NULL);
+    assert_path_startswith("/foo/bar/barfoo/", "/foo/bar/barfooa", NULL, NULL);
+    assert_path_startswith("/foo/bar/barfoo/", "", NULL, NULL);
+    assert_path_startswith("/foo/bar/barfoo/", "/bar/foo", NULL, NULL);
+    assert_path_startswith("/foo/bar/barfoo/", "/f/b/b/", NULL, NULL);
+    assert_path_startswith("/foo/bar/barfoo/", "/foo/bar/barfo", NULL, NULL);
+    assert_path_startswith("/foo/bar/barfoo/", "/foo/bar/bar", NULL, NULL);
+    assert_path_startswith("/foo/bar/barfoo/", "/fo", NULL, NULL);
+}
+
+/*****************************************************************************/
+
+static void
+assert_path_simplify(const char *in, const char *out)
+{
+    gs_free char *p = NULL;
+
+    g_assert(in);
+    p = g_strdup(in);
+    nm_path_simplify(p);
+    g_assert_cmpstr(p, ==, out);
+}
+
+static void
+test_path_simplify(void)
+{
+    gs_free char *hoge     = NULL;
+    gs_free char *hoge_out = NULL;
+    char          foo[NAME_MAX * 2];
+
+    assert_path_simplify("", "");
+    assert_path_simplify("aaa/bbb////ccc", "aaa/bbb/ccc");
+    assert_path_simplify("//aaa/.////ccc", "/aaa/ccc");
+    assert_path_simplify("///", "/");
+    assert_path_simplify("///.//", "/");
+    assert_path_simplify("///.//.///", "/");
+    assert_path_simplify("////.././///../.", "/../..");
+    assert_path_simplify(".", ".");
+    assert_path_simplify("./", ".");
+    assert_path_simplify(".///.//./.", ".");
+    assert_path_simplify(".///.//././/", ".");
+    assert_path_simplify("//./aaa///.//./.bbb/..///c.//d.dd///..eeee/.",
+                         "/aaa/.bbb/../c./d.dd/..eeee");
+    assert_path_simplify("//./aaa///.//./.bbb/..///c.//d.dd///..eeee/..",
+                         "/aaa/.bbb/../c./d.dd/..eeee/..");
+    assert_path_simplify(".//./aaa///.//./.bbb/..///c.//d.dd///..eeee/..",
+                         "aaa/.bbb/../c./d.dd/..eeee/..");
+    assert_path_simplify("..//./aaa///.//./.bbb/..///c.//d.dd///..eeee/..",
+                         "../aaa/.bbb/../c./d.dd/..eeee/..");
+
+    memset(foo, 'a', sizeof(foo) - 1);
+    foo[sizeof(foo) - 1] = '\0';
+
+    assert_path_simplify(foo, foo);
+
+    hoge = g_strjoin("", "/", foo, NULL);
+    g_assert(hoge);
+    assert_path_simplify(hoge, hoge);
+    nm_clear_g_free(&hoge);
+
+    hoge =
+        g_strjoin("", "a////.//././//./b///././/./c/////././//./", foo, "//.//////d/e/.//f/", NULL);
+    g_assert(hoge);
+
+    hoge_out = g_strjoin("", "a/b/c/", foo, "//.//////d/e/.//f/", NULL);
+    g_assert(hoge_out);
+
+    assert_path_simplify(hoge, hoge_out);
+}
+
+/*****************************************************************************/
+
+static void
+test_hostname_is_valid(void)
+{
+    g_assert(nm_hostname_is_valid("foobar", FALSE));
+    g_assert(nm_hostname_is_valid("foobar.com", FALSE));
+    g_assert(!nm_hostname_is_valid("foobar.com.", FALSE));
+    g_assert(nm_hostname_is_valid("fooBAR", FALSE));
+    g_assert(nm_hostname_is_valid("fooBAR.com", FALSE));
+    g_assert(!nm_hostname_is_valid("fooBAR.", FALSE));
+    g_assert(!nm_hostname_is_valid("fooBAR.com.", FALSE));
+    g_assert(!nm_hostname_is_valid("fööbar", FALSE));
+    g_assert(!nm_hostname_is_valid("", FALSE));
+    g_assert(!nm_hostname_is_valid(".", FALSE));
+    g_assert(!nm_hostname_is_valid("..", FALSE));
+    g_assert(!nm_hostname_is_valid("foobar.", FALSE));
+    g_assert(!nm_hostname_is_valid(".foobar", FALSE));
+    g_assert(!nm_hostname_is_valid("foo..bar", FALSE));
+    g_assert(!nm_hostname_is_valid("foo.bar..", FALSE));
+
+    G_STATIC_ASSERT_EXPR(NM_HOST_NAME_MAX <= HOST_NAME_MAX);
+
+#define _assert_hostname_length(n, valid)         \
+    G_STMT_START                                  \
+    {                                             \
+        const gsize   _n = (n);                   \
+        gs_free char *_h = g_strnfill(_n, 'x');   \
+        gboolean      _valid;                     \
+                                                  \
+        _valid = nm_hostname_is_valid(_h, FALSE); \
+        g_assert_cmpint(_valid, ==, (valid));     \
+    }                                             \
+    G_STMT_END
+
+    _assert_hostname_length(NM_HOST_NAME_MAX - 10, TRUE);
+    _assert_hostname_length(NM_HOST_NAME_MAX - 1, TRUE);
+    _assert_hostname_length(NM_HOST_NAME_MAX, TRUE);
+    _assert_hostname_length(NM_HOST_NAME_MAX + 1, FALSE);
+    _assert_hostname_length(NM_HOST_NAME_MAX + 10, FALSE);
+
+    g_assert(!nm_hostname_is_valid(
+        "au-xph5-rvgrdsb5hcxc-47et3a5vvkrc-server-wyoz4elpdpe3.openstack.local",
+        FALSE));
+
+    g_assert(nm_hostname_is_valid("foobar", TRUE));
+    g_assert(nm_hostname_is_valid("foobar.com", TRUE));
+    g_assert(nm_hostname_is_valid("foobar.com.", TRUE));
+    g_assert(nm_hostname_is_valid("fooBAR", TRUE));
+    g_assert(nm_hostname_is_valid("fooBAR.com", TRUE));
+    g_assert(!nm_hostname_is_valid("fooBAR.", TRUE));
+    g_assert(nm_hostname_is_valid("fooBAR.com.", TRUE));
+    g_assert(!nm_hostname_is_valid("fööbar", TRUE));
+    g_assert(!nm_hostname_is_valid("", TRUE));
+    g_assert(!nm_hostname_is_valid(".", TRUE));
+    g_assert(!nm_hostname_is_valid("..", TRUE));
+    g_assert(!nm_hostname_is_valid("foobar.", TRUE));
+    g_assert(!nm_hostname_is_valid(".foobar", TRUE));
+    g_assert(!nm_hostname_is_valid("foo..bar", TRUE));
+    g_assert(!nm_hostname_is_valid("foo.bar..", TRUE));
+    g_assert(
+        nm_hostname_is_valid("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+                             TRUE));
+    g_assert(
+        !nm_hostname_is_valid("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                              "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+                              TRUE));
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE();
 
 int
@@ -1450,6 +2234,17 @@ main(int argc, char **argv)
     g_test_add_func("/general/test_utils_hashtable_cmp", test_utils_hashtable_cmp);
     g_test_add_func("/general/test_nm_g_source_sentinel", test_nm_g_source_sentinel);
     g_test_add_func("/general/test_nm_ascii", test_nm_ascii);
+    g_test_add_func("/general/test_parse_env_file", test_parse_env_file);
+    g_test_add_func("/general/test_unbase64char", test_unbase64char);
+    g_test_add_func("/general/test_unbase64mem1", test_unbase64mem1);
+    g_test_add_func("/general/test_unbase64mem2", test_unbase64mem2);
+    g_test_add_func("/general/test_unbase64mem3", test_unbase64mem3);
+    g_test_add_func("/general/test_path_compare", test_path_compare);
+    g_test_add_func("/general/test_path_equal", test_path_equal);
+    g_test_add_func("/general/test_path_find_first_component", test_path_find_first_component);
+    g_test_add_func("/general/test_path_startswith", test_path_startswith);
+    g_test_add_func("/general/test_path_simplify", test_path_simplify);
+    g_test_add_func("/general/test_hostname_is_valid", test_hostname_is_valid);
 
     return g_test_run();
 }

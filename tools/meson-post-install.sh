@@ -14,11 +14,6 @@ install_systemdunitdir="${11}"
 
 [ -n "$DESTDIR" ] && DESTDIR="${DESTDIR%%/}/"
 
-if [ -f "${DESTDIR}${nm_datadir}/bash-completion/completions/nmcli-completion" ]; then
-    mv "${DESTDIR}${nm_datadir}/bash-completion/completions/nmcli-completion" \
-       "${DESTDIR}${nm_datadir}/bash-completion/completions/nmcli"
-fi
-
 if [ -x "${DESTDIR}${nm_bindir}/nmtui" ]; then
     for alias in nmtui-connect nmtui-edit nmtui-hostname; do
         ln -sf nmtui "${DESTDIR}${nm_bindir}/$alias"

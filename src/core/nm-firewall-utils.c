@@ -679,8 +679,7 @@ _fw_nft_set(gboolean add, const char *ip_iface, in_addr_t addr, guint8 plen)
                                               NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL,
                                               &ss1));
 
-    stdin_buf = g_bytes_new_static(nm_str_buf_get_str(&strbuf), strbuf.len);
-
+    stdin_buf = nm_str_buf_finalize_to_gbytes(&strbuf);
     _fw_nft_call_sync(stdin_buf, NULL);
 }
 

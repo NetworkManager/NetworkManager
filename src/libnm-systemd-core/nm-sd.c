@@ -108,6 +108,5 @@ nm_sd_event_attach_default(void)
 /* ensure that defines in nm-sd.h correspond to the internal defines. */
 
 #include "nm-sd-adapt-core.h"
-#include "dhcp-lease-internal.h"
 
 /*****************************************************************************/

@@ -13,22 +13,24 @@
 #include <ctype.h>
 #include <net/if_arp.h>
 
-#include "libnm-glib-aux/nm-dedup-multi.h"
-#include "libnm-std-aux/unaligned.h"
-#include "libnm-glib-aux/nm-str-buf.h"
+#include "n-dhcp4/src/n-dhcp4.h"
 
-#include "nm-l3-config-data.h"
-#include "nm-utils.h"
-#include "nm-config.h"
-#include "nm-dhcp-utils.h"
-#include "nm-dhcp-options.h"
-#include "nm-core-utils.h"
+#include "libnm-glib-aux/nm-dedup-multi.h"
+#include "libnm-glib-aux/nm-io-utils.h"
+#include "libnm-glib-aux/nm-str-buf.h"
+#include "libnm-std-aux/unaligned.h"
+
 #include "NetworkManagerUtils.h"
 #include "libnm-platform/nm-platform.h"
+#include "nm-config.h"
+#include "nm-core-utils.h"
 #include "nm-dhcp-client-logging.h"
-#include "n-dhcp4/src/n-dhcp4.h"
+#include "nm-dhcp-options.h"
+#include "nm-dhcp-utils.h"
+#include "nm-l3-config-data.h"
+#include "nm-utils.h"
+
 #include "libnm-systemd-shared/nm-sd-utils-shared.h"
-#include "libnm-systemd-core/nm-sd-utils-dhcp.h"
 
 /*****************************************************************************/
 
@@ -887,12 +889,15 @@ dhcp4_event_cb(int fd, GIOCondition condition, gpointer user_data)
 
     r = n_dhcp4_client_dispatch(priv->client);
     if (r < 0) {
-        /* FIXME: if any operation (e.g. send()) fails during the
+        /* If any operation (e.g. send()) fails during the
          * dispatch, n-dhcp4 returns an error without arming timers
          * or progressing state, so the only reasonable thing to do
          * is to move to failed state so that the client will be
-         * restarted. Ideally n-dhcp4 should retry failed operations
-         * a predefined number of times (possibly infinite).
+         * restarted.
+         *
+         * That means, n_dhcp4_client_dispatch() must not fail if it can
+         * somehow workaround the problem. A failure is really fatal
+         * and the client needs to be restarted.
          */
         _LOGE("error %d dispatching events", r);
         nm_clear_g_source_inst(&priv->event_source);
@@ -1107,18 +1112,20 @@ ip4_start(NMDhcpClient *client, GError **error)
     if (client_config->v4.last_address)
         inet_pton(AF_INET, client_config->v4.last_address, &last_addr);
     else {
-        /*
-         * TODO: we stick to the systemd-networkd lease file format. Quite easy for now to
-         * just use the functions in systemd code. Anyway, as in the end we just use the
-         * ip address from all the options found in the lease, write a function that parses
-         * the lease file just for the assigned address and returns it in &last_address.
-         * Then drop reference to systemd-networkd structures and functions.
-         */
-        nm_auto(sd_dhcp_lease_unrefp) sd_dhcp_lease *lease = NULL;
+        gs_free char *contents = NULL;
+        gs_free char *s_addr   = NULL;
 
-        dhcp_lease_load(&lease, lease_file);
-        if (lease)
-            sd_dhcp_lease_get_address(lease, &last_addr);
+        nm_utils_file_get_contents(-1,
+                                   lease_file,
+                                   64 * 1024,
+                                   NM_UTILS_FILE_GET_CONTENTS_FLAG_NONE,
+                                   &contents,
+                                   NULL,
+                                   NULL,
+                                   NULL);
+        nm_parse_env_file(contents, "ADDRESS", &s_addr);
+        if (s_addr)
+            nm_utils_parse_inaddr_bin(AF_INET, s_addr, NULL, &last_addr);
     }
 
     if (last_addr.s_addr) {

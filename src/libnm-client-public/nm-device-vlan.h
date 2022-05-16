@@ -31,6 +31,7 @@ G_BEGIN_DECLS
 /**
  * NMDeviceVlan:
  */
+typedef struct _NMDeviceVlan      NMDeviceVlan;
 typedef struct _NMDeviceVlanClass NMDeviceVlanClass;
 
 GType nm_device_vlan_get_type(void);

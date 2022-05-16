@@ -12,10 +12,6 @@
 
 /*****************************************************************************/
 
-#include "libnm-glib-aux/nm-shared-utils.h"
-
-/*****************************************************************************/
-
 #define NM_KEYFILE_GROUP_VPN_SECRETS          "vpn-secrets"
 #define NM_KEYFILE_GROUPPREFIX_WIREGUARD_PEER "wireguard-peer."
 

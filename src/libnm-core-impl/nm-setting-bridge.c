@@ -435,7 +435,7 @@ nm_bridge_vlan_to_str(const NMBridgeVlan *vlan, GError **error)
      * future if more parameters are added to the object that could
      * make it invalid. */
 
-    nm_str_buf_init(&string, NM_UTILS_GET_NEXT_REALLOC_SIZE_32, FALSE);
+    string = NM_STR_BUF_INIT(NM_UTILS_GET_NEXT_REALLOC_SIZE_32, FALSE);
 
     if (vlan->vid_start == vlan->vid_end)
         nm_str_buf_append_printf(&string, "%u", vlan->vid_start);
@@ -1310,6 +1310,15 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
                                            NM_SETTING_BRIDGE_SETTING_NAME,
                                            NM_SETTING_BRIDGE_VLANS))
         return NM_SETTING_VERIFY_NORMALIZABLE;
+
+    if (connection && !nm_connection_get_setting_wired(connection)) {
+        g_set_error_literal(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_SETTING_NOT_FOUND,
+                            _("bridge connection should have a ethernet setting as well"));
+        g_prefix_error(error, "%s: ", NM_SETTING_BRIDGE_SETTING_NAME);
+        return NM_SETTING_VERIFY_NORMALIZABLE;
+    }
 
     return TRUE;
 }

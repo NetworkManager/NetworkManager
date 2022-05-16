@@ -31,6 +31,7 @@ G_BEGIN_DECLS
 /**
  * NMDeviceBridge:
  */
+typedef struct _NMDeviceBridge      NMDeviceBridge;
 typedef struct _NMDeviceBridgeClass NMDeviceBridgeClass;
 
 GType nm_device_bridge_get_type(void);

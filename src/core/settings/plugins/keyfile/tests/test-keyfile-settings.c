@@ -1924,6 +1924,7 @@ test_write_bridge_main(void)
     gs_unref_object NMConnection *connection = NULL;
     NMSettingConnection          *s_con;
     NMSettingBridge              *s_bridge;
+    NMSettingWired               *s_wired;
     NMSettingIPConfig            *s_ip4;
     NMSettingIPConfig            *s_ip6;
 
@@ -1952,6 +1953,11 @@ test_write_bridge_main(void)
     s_bridge = (NMSettingBridge *) nm_setting_bridge_new();
     g_assert(s_bridge);
     nm_connection_add_setting(connection, NM_SETTING(s_bridge));
+
+    /* Ethernet setting */
+    s_wired = (NMSettingWired *) nm_setting_wired_new();
+    g_assert(s_wired);
+    nm_connection_add_setting(connection, NM_SETTING(s_wired));
 
     /* IP4 setting */
     s_ip4 = (NMSettingIPConfig *) nm_setting_ip4_config_new();

@@ -200,6 +200,10 @@ NMMetered nm_manager_get_metered(NMManager *self);
 
 void nm_manager_notify_device_availability_maybe_changed(NMManager *self);
 
+struct _NMDnsManager;
+
+struct _NMDnsManager *nm_manager_get_dns_manager(NMManager *self);
+
 /*****************************************************************************/
 
 void nm_manager_device_auth_request(NMManager                     *self,

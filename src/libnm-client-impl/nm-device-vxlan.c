@@ -96,10 +96,10 @@ nm_device_vxlan_get_hw_address(NMDeviceVxlan *device)
  *
  * Returns: %TRUE if the device has carrier.
  *
- * Since: 1.2
- *
  * This property is not implemented yet, and the function always returns
  * FALSE.
+ *
+ * Since: 1.2
  **/
 gboolean
 nm_device_vxlan_get_carrier(NMDeviceVxlan *device)
@@ -541,9 +541,9 @@ nm_device_vxlan_class_init(NMDeviceVxlanClass *klass)
      *
      * Whether the device has carrier.
      *
-     * Since: 1.2
-     *
      * This property is not implemented yet, and the property is always FALSE.
+     *
+     * Since: 1.2
      **/
     obj_properties[PROP_CARRIER] = g_param_spec_boolean(NM_DEVICE_VXLAN_CARRIER,
                                                         "",

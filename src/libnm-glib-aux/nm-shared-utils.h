@@ -216,7 +216,7 @@ nm_ether_addr_equal(const NMEtherAddr *a, const NMEtherAddr *b)
 
 typedef struct {
     union {
-        guint8          addr_ptr[1];
+        guint8          addr_ptr[sizeof(struct in6_addr)];
         in_addr_t       addr4;
         struct in_addr  addr4_struct;
         struct in6_addr addr6;
@@ -1977,6 +1977,7 @@ typedef struct {
         NMUtilsNamedEntry named_entry;
         const char       *name;
         char             *name_mutable;
+        gpointer          name_ptr;
     };
     union {
         const char *value_str;
@@ -1990,14 +1991,28 @@ typedef struct {
         .name = (n), .value_ptr = (v)   \
     }
 
-NMUtilsNamedValue *
-nm_utils_named_values_from_strdict_full(GHashTable         *hash,
-                                        guint              *out_len,
-                                        GCompareDataFunc    compare_func,
-                                        gpointer            user_data,
-                                        NMUtilsNamedValue  *provided_buffer,
-                                        guint               provided_buffer_len,
-                                        NMUtilsNamedValue **out_allocated_buffer);
+NMUtilsNamedValue *nm_utils_hash_to_array_full(GHashTable         *hash,
+                                               guint              *out_len,
+                                               GCompareDataFunc    compare_func,
+                                               gpointer            user_data,
+                                               NMUtilsNamedValue  *provided_buffer,
+                                               guint               provided_buffer_len,
+                                               NMUtilsNamedValue **out_allocated_buffer);
+
+#define nm_utils_named_values_from_strdict_full(hash,                 \
+                                                out_len,              \
+                                                compare_func,         \
+                                                user_data,            \
+                                                provided_buffer,      \
+                                                provided_buffer_len,  \
+                                                out_allocated_buffer) \
+    nm_utils_hash_to_array_full((hash),                               \
+                                (out_len),                            \
+                                (compare_func),                       \
+                                (user_data),                          \
+                                (provided_buffer),                    \
+                                (provided_buffer_len),                \
+                                (out_allocated_buffer))
 
 #define nm_utils_named_values_from_strdict(hash, out_len, array, out_allocated_buffer) \
     nm_utils_named_values_from_strdict_full((hash),                                    \
@@ -2037,6 +2052,29 @@ gpointer *nm_utils_hash_values_to_array(GHashTable      *hash,
                                         GCompareDataFunc compare_func,
                                         gpointer         user_data,
                                         guint           *out_len);
+
+static inline NMUtilsNamedValue *
+nm_utils_hash_to_array(GHashTable      *hash,
+                       GCompareDataFunc compare_func,
+                       gpointer         user_data,
+                       guint           *out_len)
+{
+    return nm_utils_hash_to_array_full(hash, out_len, compare_func, user_data, NULL, 0, NULL);
+}
+
+#define nm_utils_hash_to_array_with_buffer(hash,                 \
+                                           out_len,              \
+                                           compare_func,         \
+                                           user_data,            \
+                                           array,                \
+                                           out_allocated_buffer) \
+    nm_utils_hash_to_array_full((hash),                          \
+                                (out_len),                       \
+                                (compare_func),                  \
+                                (user_data),                     \
+                                (array),                         \
+                                G_N_ELEMENTS(array),             \
+                                (out_allocated_buffer))
 
 static inline const char **
 nm_strdict_get_keys(const GHashTable *hash, gboolean sorted, guint *out_length)
@@ -3224,6 +3262,12 @@ char *_nm_utils_format_variant_attributes(GHashTable                          *a
 
 /*****************************************************************************/
 
+/* glibc defines HOST_NAME_MAX as 64. Also Linux' sethostname() enforces
+ * that (__NEW_UTS_LEN). However, musl sets this to 255.
+ *
+ * At some places, we want to follow Linux. Hardcode our own define. */
+#define NM_HOST_NAME_MAX 64
+
 gboolean nm_utils_is_localhost(const char *name);
 
 gboolean nm_utils_is_specific_hostname(const char *name);
@@ -3275,5 +3319,47 @@ gboolean nm_utils_validate_hostname(const char *hostname);
 /*****************************************************************************/
 
 void nm_utils_thread_local_register_destroy(gpointer tls_data, GDestroyNotify destroy_notify);
+
+/*****************************************************************************/
+
+int nm_unbase64char(char c);
+int nm_unbase64mem_full(const char *p, gsize l, gboolean secure, guint8 **ret, gsize *ret_size);
+
+/*****************************************************************************/
+
+static inline gboolean
+nm_path_is_absolute(const char *p)
+{
+    /* Copied from systemd's path_is_absolute()
+     * https://github.com/systemd/systemd/blob/bc85f8b51d962597360e982811e674c126850f56/src/basic/path-util.h#L50 */
+
+    nm_assert(p);
+    return p[0] == '/';
+}
+
+int nm_path_find_first_component(const char **p, gboolean accept_dot_dot, const char **ret);
+
+int nm_path_compare(const char *a, const char *b);
+
+static inline gboolean
+nm_path_equal(const char *a, const char *b)
+{
+    return nm_path_compare(a, b) == 0;
+}
+
+char *nm_path_simplify(char *path);
+
+char *
+nm_path_startswith_full(const char *path, const char *prefix, gboolean accept_dot_dot) _nm_pure;
+
+static inline char *
+nm_path_startswith(const char *path, const char *prefix)
+{
+    return nm_path_startswith_full(path, prefix, TRUE);
+}
+
+/*****************************************************************************/
+
+gboolean nm_hostname_is_valid(const char *s, gboolean trailing_dot);
 
 #endif /* __NM_SHARED_UTILS_H__ */

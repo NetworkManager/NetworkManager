@@ -6,6 +6,7 @@
 
 #include "libnm-client-impl/nm-default-libnm.h"
 
+#include "nm-access-point.h"
 #include "nm-device-wifi.h"
 
 #include <linux/if_ether.h>
@@ -15,7 +16,6 @@
 #include "nm-setting-wireless.h"
 #include "nm-setting-wireless-security.h"
 #include "nm-utils.h"
-#include "nm-access-point.h"
 #include "nm-object-private.h"
 #include "libnm-core-intern/nm-core-internal.h"
 #include "nm-dbus-helpers.h"

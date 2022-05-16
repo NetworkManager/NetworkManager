@@ -25,6 +25,7 @@ G_BEGIN_DECLS
 /**
  * NMDeviceVrf:
  */
+typedef struct _NMDeviceVrf      NMDeviceVrf;
 typedef struct _NMDeviceVrfClass NMDeviceVrfClass;
 
 NM_AVAILABLE_IN_1_24

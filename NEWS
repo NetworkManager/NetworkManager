@@ -1,4 +1,23 @@
 =============================================
+NetworkManager-1.40
+Overview of changes since NetworkManager-1.38
+=============================================
+
+This is a snapshot of NetworkManager development. The API is
+subject to change and not guaranteed to be compatible with
+the later release.
+USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
+
+* Drop unused, internal systemd DHCPv4 client. This is long
+  replaced by nettools' n-dhcp4 implementation.
+* The nmcli command now supports --offline argument with "add" and
+  "modify" commands, allowing operation on keyfile-formatted connection
+  profiles without the service running (e.g. during system provisioning).
+* The device state file /run/NetworkManager/devices/$ifindex now has
+  new sections [dhcp4] and [dhcp6] containing the DHCP options for the
+  current lease.
+
+=============================================
 NetworkManager-1.38
 Overview of changes since NetworkManager-1.36
 =============================================

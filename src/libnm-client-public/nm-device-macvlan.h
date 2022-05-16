@@ -33,6 +33,7 @@ G_BEGIN_DECLS
 /**
  * NMDeviceMacvlan:
  */
+typedef struct _NMDeviceMacvlan      NMDeviceMacvlan;
 typedef struct _NMDeviceMacvlanClass NMDeviceMacvlanClass;
 
 NM_AVAILABLE_IN_1_2

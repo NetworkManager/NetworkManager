@@ -109,7 +109,54 @@ find NetworkManager bind mounted at $BASEDIR_NM
 run \`nm-env-prepare.sh setup --idx 1\` to setup test interfaces
 
 Configure NetworkManager with
-  \$ ./configure --enable-maintainer-mode --enable-more-warnings=error --with-more-asserts="\${NM_BUILD_MORE_ASSERTS:-1000}" --with-nm-cloud-setup=yes --prefix=/opt/test --localstatedir=/var --sysconfdir=/etc --enable-gtk-doc --enable-introspection --with-ofono=yes --with-dhclient=yes --with-dhcpcanon=yes --with-dhcpcd=yes --enable-more-logging --enable-compile-warnings=yes --enable-address-sanitizer=no --enable-undefined-sanitizer=no --with-valgrind=yes --enable-concheck --enable-wimax --enable-ifcfg-rh=yes --enable-config-plugin-ibft=yes --enable-ifcfg-suse --enable-ifupdown=yes --enable-ifnet --enable-vala=yes --enable-polkit=yes --with-libnm-glib=yes --with-nmcli=yes --with-nmtui=yes --with-modem-manager-1 --with-suspend-resume=systemd --enable-teamdctl=yes --enable-ovs=yes --enable-tests="\${NM_BUILD_TESTS:-yes}" --with-netconfig=/bin/nowhere/netconfig --with-resolvconf=/bin/nowhere/resolvconf --with-crypto=nss --with-session-tracking=systemd --with-consolekit=yes --with-systemd-logind=yes --with-iwd=yes --enable-json-validation=yes --with-consolekit=yes --with-config-dns-rc-manager-default=auto --with-config-dhcp-default=internal "\${NM_CONFIGURE_OTPS[@]}"
+  \$ ./configure \
+           --enable-address-sanitizer=no \
+           --enable-compile-warnings=yes \
+           --enable-concheck \
+           --enable-config-plugin-ibft=yes \
+           --enable-gtk-doc \
+           --enable-ifcfg-rh=yes \
+           --enable-ifcfg-suse \
+           --enable-ifnet \
+           --enable-ifupdown=yes \
+           --enable-introspection \
+           --enable-json-validation=yes \
+           --enable-maintainer-mode \
+           --enable-more-logging \
+           --enable-more-warnings=error \
+           --enable-ovs=yes \
+           --enable-polkit=yes \
+           --enable-teamdctl=yes \
+           --enable-undefined-sanitizer=no \
+           --enable-vala=yes \
+           --enable-wimax \
+           --localstatedir=/var \
+           --prefix=/opt/test \
+           --sysconfdir=/etc \
+           --with-config-dhcp-default=internal \
+           --with-config-dns-rc-manager-default=auto \
+           --with-consolekit=yes \
+           --with-consolekit=yes \
+           --with-crypto=nss \
+           --with-dhclient=yes \
+           --with-dhcpcanon=yes \
+           --with-dhcpcd=yes \
+           --with-iwd=yes \
+           --with-libnm-glib=yes \
+           --with-modem-manager-1 \
+           --with-netconfig=/bin/nowhere/netconfig \
+           --with-nm-cloud-setup=yes \
+           --with-nmcli=yes \
+           --with-nmtui=yes \
+           --with-ofono=yes \
+           --with-resolvconf=/bin/nowhere/resolvconf \
+           --with-session-tracking=systemd \
+           --with-suspend-resume=systemd \
+           --with-systemd-logind=yes \
+           --with-valgrind=yes \
+           --enable-tests="\${NM_BUILD_TESTS:-yes}" \
+           --with-more-asserts="\${NM_BUILD_MORE_ASSERTS:-1000}" \
+           "\${NM_CONFIGURE_OTPS[@]}"
 Test with:
   \$ systemctl stop NetworkManager; /opt/test/sbin/NetworkManager --debug 2>&1 | tee -a /tmp/nm-log.txt
 EOF
@@ -249,6 +296,8 @@ RUN dnf install -y \\
     mlocate \\
     mobile-broadband-provider-info-devel \\
     newt-devel \\
+    nispor \\
+    nmstate \\
     nss-devel \\
     polkit-devel \\
     ppp \\

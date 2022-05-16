@@ -125,6 +125,29 @@ nm_dhcp_config_set_lease(NMDhcpConfig *self, const NML3ConfigData *l3cd)
     _notify(self, PROP_OPTIONS);
 }
 
+NMUtilsNamedValue *
+nm_dhcp_config_get_option_values(NMDhcpConfig *self, guint *num)
+{
+    NMDhcpConfigPrivate *priv = NM_DHCP_CONFIG_GET_PRIVATE(self);
+    NMDhcpLease         *lease;
+    NMUtilsNamedValue   *buffer = NULL;
+
+    if (!priv->l3cd) {
+        NM_SET_OUT(num, 0);
+        return NULL;
+    }
+
+    lease = nm_l3_config_data_get_dhcp_lease(priv->l3cd, nm_dhcp_config_get_addr_family(self));
+    nm_utils_named_values_from_strdict_full(nm_dhcp_lease_get_options(lease),
+                                            num,
+                                            nm_strcmp_p_with_data,
+                                            NULL,
+                                            NULL,
+                                            0,
+                                            &buffer);
+    return buffer;
+}
+
 const char *
 nm_dhcp_config_get_option(NMDhcpConfig *self, const char *key)
 {

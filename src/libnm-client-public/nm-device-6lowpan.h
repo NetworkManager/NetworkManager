@@ -30,6 +30,7 @@ G_BEGIN_DECLS
 /**
  * NMDevice6Lowpan:
  */
+typedef struct _NMDevice6Lowpan      NMDevice6Lowpan;
 typedef struct _NMDevice6LowpanClass NMDevice6LowpanClass;
 
 NM_AVAILABLE_IN_1_14

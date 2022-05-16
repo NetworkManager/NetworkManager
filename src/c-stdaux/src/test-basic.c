@@ -359,7 +359,7 @@ static void test_destructors(void) {
 
                 /* make sure c_closep() deals fine with negative FDs */
                 {
-                        _c_cleanup_(c_closep) int t = 0;
+                        _c_cleanup_(c_closep) _c_unused_ int t = 0;
                         t = -1;
                 }
 
@@ -370,7 +370,7 @@ static void test_destructors(void) {
                  * path works as well.
                  */
                 for (i = 0; i < 2; ++i) {
-                        _c_cleanup_(c_closep) int t = -1;
+                        _c_cleanup_(c_closep) _c_unused_ int t = -1;
 
                         t = eventfd(0, EFD_CLOEXEC);
                         c_assert(t >= 0);
@@ -401,7 +401,7 @@ static void test_destructors(void) {
 
                 /* make sure c_flosep() deals fine with NULL */
                 {
-                        _c_cleanup_(c_fclosep) FILE *t = (void *)0xdeadbeef;
+                        _c_cleanup_(c_fclosep) _c_unused_ FILE *t = (void *)0xdeadbeef;
                         t = NULL;
                 }
 
@@ -412,7 +412,7 @@ static void test_destructors(void) {
                  * path works as well.
                  */
                 for (i = 0; i < 2; ++i) {
-                        _c_cleanup_(c_fclosep) FILE *t = NULL;
+                        _c_cleanup_(c_fclosep) _c_unused_ FILE *t = NULL;
                         int tfd;
 
                         tfd = eventfd(0, EFD_CLOEXEC);

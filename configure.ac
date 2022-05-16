@@ -7,8 +7,8 @@ dnl  - add corresponding NM_VERSION_x_y_z macros in
 dnl    "shared/nm-version-macros.h.in"
 dnl  - update number in meson.build
 m4_define([nm_major_version], [1])
-m4_define([nm_minor_version], [38])
-m4_define([nm_micro_version], [0])
+m4_define([nm_minor_version], [39])
+m4_define([nm_micro_version], [4])
 m4_define([nm_version],
           [nm_major_version.nm_minor_version.nm_micro_version])
 
@@ -306,11 +306,12 @@ AC_ARG_WITH(udev-dir,
                            [Absolute path of the udev base directory. Set to 'no' not to install the udev rules]),
             [], [with_udev_dir="yes"])
 if test "$with_udev_dir" != 'no'; then
-	if test "$with_udev_dir" != 'yes' && printf '%s' "$with_udev_dir" | grep -v -q '^/'; then
-		AC_MSG_ERROR([--with-udev-dir must be an absolute path or 'yes' or 'no'. Instead it is '$with_udev_dir'])
-	fi
-	if test "$with_udev_dir" = 'yes'; then
-		with_udev_dir="\$(prefix)/lib/udev"
+	if test "$with_udev_dir" = 'yes' -o "$with_udev_dir" = "" ; then
+		with_udev_dir="\${prefix}/lib/udev"
+	else
+		if printf '%s' "$with_udev_dir" | grep -v -q '^/'; then
+			AC_MSG_ERROR([--with-udev-dir must be an absolute path or 'yes' or 'no'. Instead it is '$with_udev_dir'])
+		fi
 	fi
 	UDEV_DIR="$with_udev_dir"
 	AC_SUBST(UDEV_DIR)
@@ -745,7 +746,6 @@ AC_SUBST(GLIB_MKENUMS)
 
 AC_ARG_WITH(dbus-sys-dir,
             AS_HELP_STRING([--with-dbus-sys-dir=DIR], [where D-BUS system.d directory is]))
-
 if test -n "$with_dbus_sys_dir" ; then
 	DBUS_SYS_DIR="$with_dbus_sys_dir"
 else
@@ -1005,18 +1005,6 @@ else
 fi
 AC_DEFINE_UNQUOTED(DNSMASQ_PATH, "$DNSMASQ_PATH", [Define to path of dnsmasq binary])
 AC_SUBST(DNSMASQ_PATH)
-
-# dnssec-trigger-script path
-AC_ARG_WITH(dnssec_trigger,
-            AS_HELP_STRING([--with-dnssec-trigger=/path/to/dnssec-trigger-script], [path to unbound dnssec-trigger-script]))
-if test "x${with_dnssec_trigger}" = x; then
-	AC_PATH_PROG(DNSSEC_TRIGGER_PATH, dnssec-trigger-script, /usr/libexec/dnssec-trigger-script,
-	             /usr/local/libexec:/usr/local/lib:/usr/local/lib/dnssec-trigger:/usr/libexec:/usr/lib:/usr/lib/dnssec-trigger)
-else
-	DNSSEC_TRIGGER_PATH="$with_dnssec_trigger"
-fi
-AC_DEFINE_UNQUOTED(DNSSEC_TRIGGER_PATH, "$DNSSEC_TRIGGER_PATH", [Define to path of unbound dnssec-trigger-script])
-AC_SUBST(DNSSEC_TRIGGER_PATH)
 
 # system CA certificates path
 AC_ARG_WITH(system-ca-path,
@@ -1374,8 +1362,10 @@ echo "  exec_prefix: $exec_prefix"
 echo "  sysconfdir: $sysconfdir"
 echo "  localstatedir: $localstatedir"
 echo "  runstatedir: $runstatedir"
+echo "  datarootdir: $datarootdir"
 echo "  datadir: $datadir"
 echo "  systemdunitdir: $with_systemdsystemunitdir"
+echo "  udev-dir: $with_udev_dir"
 echo "  nmbinary: $nmbinary"
 echo "  nmconfdir: $nmconfdir"
 echo "  nmlibdir: $nmlibdir"
@@ -1383,6 +1373,7 @@ echo "  nmdatadir: $nmdatadir"
 echo "  nmstatedir: $nmstatedir"
 echo "  nmrundir: $nmrundir"
 echo "  system-ca-path: $with_system_ca_path"
+echo "  dbus-sys-dir: $DBUS_SYS_DIR"
 echo
 
 echo "Platform:"

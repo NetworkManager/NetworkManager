@@ -185,7 +185,7 @@
 #define nmtst_assert_strv(strv, ...)                              \
     G_STMT_START                                                  \
     {                                                             \
-        const char *const *const _strv  = (strv);                 \
+        const char *const *const _strv  = NM_CAST_STRV_CC(strv);  \
         const char *const        _exp[] = {__VA_ARGS__, NULL};    \
         const gsize              _n     = G_N_ELEMENTS(_exp) - 1; \
         gsize                    _i;                              \
@@ -196,6 +196,7 @@
             g_assert(_exp[_i]);                                   \
             g_assert_cmpstr(_strv[_i], ==, _exp[_i]);             \
         }                                                         \
+        g_assert(!_strv[_n]);                                     \
     }                                                             \
     G_STMT_END
 

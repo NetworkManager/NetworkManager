@@ -34,6 +34,7 @@ G_BEGIN_DECLS
 /**
  * NMDeviceModem:
  */
+typedef struct _NMDeviceModem      NMDeviceModem;
 typedef struct _NMDeviceModemClass NMDeviceModemClass;
 
 GType nm_device_modem_get_type(void);

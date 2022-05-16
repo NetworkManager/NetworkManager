@@ -260,6 +260,31 @@ static inline void c_list_splice(CList *target, CList *source) {
 }
 
 /**
+ * c_list_split() - split one list in two
+ * @source:     the list to split
+ * @where:      new starting element of newlist
+ * @target:     new list
+ *
+ * This splits @source in two. All elements following @where (including @where)
+ * are moved to @target, replacing any old list. If @where points to @source
+ * (i.e., the end of the list), @target will be empty.
+ */
+static inline void c_list_split(CList *source, CList *where, CList *target) {
+        if (where == source) {
+                *target = (CList)C_LIST_INIT(*target);
+        } else {
+                target->next = where;
+                target->prev = source->prev;
+
+                where->prev->next = source;
+                source->prev = where->prev;
+
+                where->prev = target;
+                target->prev->next = target;
+        }
+}
+
+/**
  * c_list_first() - return pointer to first element, or NULL if empty
  * @list:               list to operate on, or NULL
  *

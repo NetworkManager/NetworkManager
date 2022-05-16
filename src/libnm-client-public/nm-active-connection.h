@@ -46,6 +46,7 @@ G_BEGIN_DECLS
 /**
  * NMActiveConnection:
  */
+typedef struct _NMActiveConnection      NMActiveConnection;
 typedef struct _NMActiveConnectionClass NMActiveConnectionClass;
 
 GType nm_active_connection_get_type(void);
@@ -61,14 +62,18 @@ NM_AVAILABLE_IN_1_10
 NMActivationStateFlags nm_active_connection_get_state_flags(NMActiveConnection *connection);
 NM_AVAILABLE_IN_1_8
 NMActiveConnectionStateReason nm_active_connection_get_state_reason(NMActiveConnection *connection);
-NMDevice                     *nm_active_connection_get_master(NMActiveConnection *connection);
-gboolean                      nm_active_connection_get_default(NMActiveConnection *connection);
-NMIPConfig                   *nm_active_connection_get_ip4_config(NMActiveConnection *connection);
-NMDhcpConfig                 *nm_active_connection_get_dhcp4_config(NMActiveConnection *connection);
-gboolean                      nm_active_connection_get_default6(NMActiveConnection *connection);
-NMIPConfig                   *nm_active_connection_get_ip6_config(NMActiveConnection *connection);
-NMDhcpConfig                 *nm_active_connection_get_dhcp6_config(NMActiveConnection *connection);
-gboolean                      nm_active_connection_get_vpn(NMActiveConnection *connection);
+
+struct _NMDevice;
+
+struct _NMDevice *nm_active_connection_get_master(NMActiveConnection *connection);
+
+gboolean      nm_active_connection_get_default(NMActiveConnection *connection);
+NMIPConfig   *nm_active_connection_get_ip4_config(NMActiveConnection *connection);
+NMDhcpConfig *nm_active_connection_get_dhcp4_config(NMActiveConnection *connection);
+gboolean      nm_active_connection_get_default6(NMActiveConnection *connection);
+NMIPConfig   *nm_active_connection_get_ip6_config(NMActiveConnection *connection);
+NMDhcpConfig *nm_active_connection_get_dhcp6_config(NMActiveConnection *connection);
+gboolean      nm_active_connection_get_vpn(NMActiveConnection *connection);
 
 G_END_DECLS
 

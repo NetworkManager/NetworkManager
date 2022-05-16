@@ -30,7 +30,6 @@
 #include "libnm-glib-aux/nm-secret-utils.h"
 #include "libnm-glib-aux/nm-time-utils.h"
 #include "libnm-glib-aux/nm-str-buf.h"
-#include "libnm-systemd-shared/nm-sd-utils-shared.h"
 #include "nm-utils.h"
 #include "libnm-core-intern/nm-core-internal.h"
 #include "nm-setting-connection.h"
@@ -5114,7 +5113,7 @@ nm_utils_spawn_helper(const char *const  *args,
     fcntl(info->child_stdout, F_SETFL, fd_flags | O_NONBLOCK);
 
     /* Watch process stdin */
-    nm_str_buf_init(&info->out_buffer, 32, TRUE);
+    info->out_buffer = NM_STR_BUF_INIT(32, TRUE);
     for (arg = args; *arg; arg++) {
         nm_str_buf_append(&info->out_buffer, *arg);
         nm_str_buf_append_c(&info->out_buffer, '\0');
@@ -5128,7 +5127,7 @@ nm_utils_spawn_helper(const char *const  *args,
     g_source_attach(info->output_source, g_main_context_get_thread_default());
 
     /* Watch process stdout */
-    nm_str_buf_init(&info->in_buffer, NM_UTILS_GET_NEXT_REALLOC_SIZE_1000, FALSE);
+    info->in_buffer    = NM_STR_BUF_INIT(NM_UTILS_GET_NEXT_REALLOC_SIZE_1000, FALSE);
     info->input_source = nm_g_unix_fd_source_new(info->child_stdout,
                                                  G_IO_IN | G_IO_ERR | G_IO_HUP,
                                                  G_PRIORITY_DEFAULT,
@@ -5223,7 +5222,7 @@ again:
  * @shortened: (out) (transfer full): on return, the shortened hostname
  *
  * Checks whether the input hostname is valid. If not, tries to shorten it
- * to HOST_NAME_MAX or to the first dot, whatever comes earlier.
+ * to HOST_NAME_MAX (64) or to the first dot, whatever comes earlier.
  * The new hostname is returned in @shortened.
  *
  * Returns: %TRUE if the input hostname was already valid or if was shortened
@@ -5239,7 +5238,7 @@ nm_utils_shorten_hostname(const char *hostname, char **shortened)
     nm_assert(hostname);
     nm_assert(shortened);
 
-    if (nm_sd_hostname_is_valid(hostname, FALSE)) {
+    if (nm_hostname_is_valid(hostname, FALSE)) {
         *shortened = NULL;
         return TRUE;
     }
@@ -5249,11 +5248,11 @@ nm_utils_shorten_hostname(const char *hostname, char **shortened)
         l = (dot - hostname);
     else
         l = strlen(hostname);
-    l = MIN(l, (gsize) HOST_NAME_MAX);
+    l = MIN(l, (gsize) NM_HOST_NAME_MAX);
 
     s = g_strndup(hostname, l);
 
-    if (!nm_sd_hostname_is_valid(s, FALSE)) {
+    if (!nm_hostname_is_valid(s, FALSE)) {
         *shortened = NULL;
         return FALSE;
     }

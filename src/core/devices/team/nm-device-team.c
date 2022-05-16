@@ -790,19 +790,25 @@ deactivate(NMDevice *device)
     teamd_cleanup(self, TRUE);
 }
 
-static gboolean
-enslave_slave(NMDevice *device, NMDevice *slave, NMConnection *connection, gboolean configure)
+static NMTernary
+attach_port(NMDevice                  *device,
+            NMDevice                  *port,
+            NMConnection              *connection,
+            gboolean                   configure,
+            GCancellable              *cancellable,
+            NMDeviceAttachPortCallback callback,
+            gpointer                   user_data)
 {
-    NMDeviceTeam        *self        = NM_DEVICE_TEAM(device);
-    NMDeviceTeamPrivate *priv        = NM_DEVICE_TEAM_GET_PRIVATE(self);
-    gboolean             success     = TRUE;
-    const char          *slave_iface = nm_device_get_ip_iface(slave);
+    NMDeviceTeam        *self       = NM_DEVICE_TEAM(device);
+    NMDeviceTeamPrivate *priv       = NM_DEVICE_TEAM_GET_PRIVATE(self);
+    gboolean             success    = TRUE;
+    const char          *port_iface = nm_device_get_ip_iface(port);
     NMSettingTeamPort   *s_team_port;
 
-    nm_device_master_check_slave_physical_port(device, slave, LOGD_TEAM);
+    nm_device_master_check_slave_physical_port(device, port, LOGD_TEAM);
 
     if (configure) {
-        nm_device_take_down(slave, TRUE);
+        nm_device_take_down(port, TRUE);
 
         s_team_port = nm_connection_get_setting_team_port(connection);
         if (s_team_port) {
@@ -811,19 +817,19 @@ enslave_slave(NMDevice *device, NMDevice *slave, NMConnection *connection, gbool
             if (config) {
                 if (!priv->tdc) {
                     _LOGW(LOGD_TEAM,
-                          "enslaved team port %s config not changed, not connected to teamd",
-                          slave_iface);
+                          "attached team port %s config not changed, not connected to teamd",
+                          port_iface);
                 } else {
                     gs_free char *sanitized_config = NULL;
                     int           err;
 
                     sanitized_config = g_strdup(config);
                     g_strdelimit(sanitized_config, "\r\n", ' ');
-                    err = teamdctl_port_config_update_raw(priv->tdc, slave_iface, sanitized_config);
+                    err = teamdctl_port_config_update_raw(priv->tdc, port_iface, sanitized_config);
                     if (err != 0) {
                         _LOGE(LOGD_TEAM,
                               "failed to update config for port %s (err=%d)",
-                              slave_iface,
+                              port_iface,
                               err);
                         return FALSE;
                     }
@@ -832,8 +838,8 @@ enslave_slave(NMDevice *device, NMDevice *slave, NMConnection *connection, gbool
         }
         success = nm_platform_link_enslave(nm_device_get_platform(device),
                                            nm_device_get_ip_ifindex(device),
-                                           nm_device_get_ip_ifindex(slave));
-        nm_device_bring_up(slave, TRUE, NULL);
+                                           nm_device_get_ip_ifindex(port));
+        nm_device_bring_up(port, TRUE, NULL);
 
         if (!success)
             return FALSE;
@@ -841,21 +847,21 @@ enslave_slave(NMDevice *device, NMDevice *slave, NMConnection *connection, gbool
         nm_clear_g_source(&priv->teamd_read_timeout);
         priv->teamd_read_timeout = g_timeout_add_seconds(5, teamd_read_timeout_cb, self);
 
-        _LOGI(LOGD_TEAM, "enslaved team port %s", slave_iface);
+        _LOGI(LOGD_TEAM, "attached team port %s", port_iface);
     } else
-        _LOGI(LOGD_TEAM, "team port %s was enslaved", slave_iface);
+        _LOGI(LOGD_TEAM, "team port %s was attached", port_iface);
 
     return TRUE;
 }
 
 static void
-release_slave(NMDevice *device, NMDevice *slave, gboolean configure)
+detach_port(NMDevice *device, NMDevice *port, gboolean configure)
 {
     NMDeviceTeam        *self = NM_DEVICE_TEAM(device);
     NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE(self);
     gboolean             do_release, success;
     NMSettingTeamPort   *s_port;
-    int                  ifindex_slave;
+    int                  ifindex_port;
     int                  ifindex;
 
     do_release = configure;
@@ -865,39 +871,39 @@ release_slave(NMDevice *device, NMDevice *slave, gboolean configure)
             do_release = FALSE;
     }
 
-    ifindex_slave = nm_device_get_ip_ifindex(slave);
+    ifindex_port = nm_device_get_ip_ifindex(port);
 
-    if (ifindex_slave <= 0) {
-        _LOGD(LOGD_TEAM, "team port %s is already released", nm_device_get_ip_iface(slave));
+    if (ifindex_port <= 0) {
+        _LOGD(LOGD_TEAM, "team port %s is already detached", nm_device_get_ip_iface(port));
     } else if (do_release) {
         success = nm_platform_link_release(nm_device_get_platform(device),
                                            nm_device_get_ip_ifindex(device),
-                                           ifindex_slave);
+                                           ifindex_port);
         if (success)
-            _LOGI(LOGD_TEAM, "released team port %s", nm_device_get_ip_iface(slave));
+            _LOGI(LOGD_TEAM, "detached team port %s", nm_device_get_ip_iface(port));
         else
-            _LOGW(LOGD_TEAM, "failed to release team port %s", nm_device_get_ip_iface(slave));
+            _LOGW(LOGD_TEAM, "failed to detach team port %s", nm_device_get_ip_iface(port));
 
         /* Kernel team code "closes" the port when releasing it, (which clears
          * IFF_UP), so we must bring it back up here to ensure carrier changes and
          * other state is noticed by the now-released port.
          */
-        if (!nm_device_bring_up(slave, TRUE, NULL)) {
+        if (!nm_device_bring_up(port, TRUE, NULL)) {
             _LOGW(LOGD_TEAM,
-                  "released team port %s could not be brought up",
-                  nm_device_get_ip_iface(slave));
+                  "detached team port %s could not be brought up",
+                  nm_device_get_ip_iface(port));
         }
 
         nm_clear_g_source(&priv->teamd_read_timeout);
         priv->teamd_read_timeout = g_timeout_add_seconds(5, teamd_read_timeout_cb, self);
     } else
-        _LOGI(LOGD_TEAM, "team port %s was released", nm_device_get_ip_iface(slave));
+        _LOGI(LOGD_TEAM, "team port %s was detached", nm_device_get_ip_iface(port));
 
     /* Delete any port configuration we previously set */
     if (configure && priv->tdc
-        && (s_port = nm_device_get_applied_setting(slave, NM_TYPE_SETTING_TEAM_PORT))
+        && (s_port = nm_device_get_applied_setting(port, NM_TYPE_SETTING_TEAM_PORT))
         && (nm_setting_team_port_get_config(s_port)))
-        teamdctl_port_config_update_raw(priv->tdc, nm_device_get_ip_iface(slave), "{}");
+        teamdctl_port_config_update_raw(priv->tdc, nm_device_get_ip_iface(port), "{}");
 }
 
 static gboolean
@@ -1064,8 +1070,8 @@ nm_device_team_class_init(NMDeviceTeamClass *klass)
     device_class->act_stage1_prepare                             = act_stage1_prepare;
     device_class->get_configured_mtu = nm_device_get_configured_mtu_for_wired;
     device_class->deactivate         = deactivate;
-    device_class->enslave_slave      = enslave_slave;
-    device_class->release_slave      = release_slave;
+    device_class->attach_port        = attach_port;
+    device_class->detach_port        = detach_port;
 
     obj_properties[PROP_CONFIG] = g_param_spec_string(NM_DEVICE_TEAM_CONFIG,
                                                       "",

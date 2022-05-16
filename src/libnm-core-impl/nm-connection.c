@@ -1708,7 +1708,7 @@ _normalize_required_settings(NMConnection *self)
     NMSetting          *s_bridge;
     gboolean            changed = FALSE;
 
-    if (nm_connection_get_setting_vlan(self)) {
+    if (nm_connection_get_setting_vlan(self) || nm_connection_get_setting_bridge(self)) {
         if (!nm_connection_get_setting_wired(self)) {
             nm_connection_add_setting(self, nm_setting_wired_new());
             changed = TRUE;
@@ -3168,22 +3168,24 @@ nm_connection_get_virtual_device_description(NMConnection *connection)
 
     iface = nm_connection_get_interface_name(connection);
 
-    if (!strcmp(type, NM_SETTING_BOND_SETTING_NAME))
+    if (nm_streq(type, NM_SETTING_BOND_SETTING_NAME))
         display_type = _("Bond");
-    else if (!strcmp(type, NM_SETTING_TEAM_SETTING_NAME))
+    else if (nm_streq(type, NM_SETTING_TEAM_SETTING_NAME))
         display_type = _("Team");
-    else if (!strcmp(type, NM_SETTING_BRIDGE_SETTING_NAME))
+    else if (nm_streq(type, NM_SETTING_BRIDGE_SETTING_NAME))
         display_type = _("Bridge");
-    else if (!strcmp(type, NM_SETTING_VLAN_SETTING_NAME))
+    else if (nm_streq(type, NM_SETTING_VLAN_SETTING_NAME))
         display_type = _("VLAN");
-    else if (!strcmp(type, NM_SETTING_INFINIBAND_SETTING_NAME)) {
+    else if (nm_streq(type, NM_SETTING_INFINIBAND_SETTING_NAME)) {
         display_type = _("InfiniBand");
         iface        = nm_setting_infiniband_get_virtual_interface_name(
             nm_connection_get_setting_infiniband(connection));
-    } else if (!strcmp(type, NM_SETTING_IP_TUNNEL_SETTING_NAME))
+    } else if (nm_streq(type, NM_SETTING_IP_TUNNEL_SETTING_NAME))
         display_type = _("IP Tunnel");
-    else if (!strcmp(type, NM_SETTING_WIREGUARD_SETTING_NAME))
+    else if (nm_streq(type, NM_SETTING_WIREGUARD_SETTING_NAME))
         display_type = _("WireGuard");
+    else if (nm_streq(type, NM_SETTING_TUN_SETTING_NAME))
+        display_type = _("TUN/TAP");
 
     if (!iface || !display_type)
         return NULL;

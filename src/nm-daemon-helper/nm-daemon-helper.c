@@ -2,6 +2,8 @@
 
 /* Copyright (C) 2021 Red Hat, Inc. */
 
+#include "libnm-std-aux/nm-default-std.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <arpa/inet.h>
@@ -9,8 +11,6 @@
 #if defined(__GLIBC__)
 #include <nss.h>
 #endif
-
-#include "libnm-std-aux/nm-std-aux.h"
 
 enum {
     RETURN_SUCCESS      = 0,

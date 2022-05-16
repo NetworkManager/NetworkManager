@@ -726,7 +726,7 @@ process_command_line(NmCli *nmc, int argc, char **argv_orig)
         {"monitor", nmc_command_func_monitor, NULL, TRUE, FALSE},
         {"networking", nmc_command_func_networking, NULL, FALSE, FALSE},
         {"radio", nmc_command_func_radio, NULL, FALSE, FALSE},
-        {"connection", nmc_command_func_connection, NULL, FALSE, FALSE},
+        {"connection", nmc_command_func_connection, NULL, FALSE, FALSE, TRUE},
         {"device", nmc_command_func_device, NULL, FALSE, FALSE},
         {"agent", nmc_command_func_agent, NULL, FALSE, FALSE},
         {NULL, nmc_command_func_overview, usage, TRUE, TRUE},
@@ -761,15 +761,16 @@ process_command_line(NmCli *nmc, int argc, char **argv_orig)
 
         if (argc == 1 && nmc->complete) {
             nmc_complete_strings(argv[0],
+                                 "--overview",
+                                 "--offline",
                                  "--terse",
                                  "--pretty",
                                  "--mode",
-                                 "--overview",
                                  "--colors",
                                  "--escape",
                                  "--fields",
-                                 "--nocheck",
                                  "--get-values",
+                                 "--nocheck",
                                  "--wait",
                                  "--version",
                                  "--help");
@@ -783,6 +784,8 @@ process_command_line(NmCli *nmc, int argc, char **argv_orig)
 
         if (matches_arg(nmc, &argc, &argv, "-overview", NULL)) {
             nmc->nmc_config_mutable.overview = TRUE;
+        } else if (matches_arg(nmc, &argc, &argv, "-offline", NULL)) {
+            nmc->offline = TRUE;
         } else if (matches_arg(nmc, &argc, &argv, "-terse", NULL)) {
             if (nmc->nmc_config.print_output == NMC_PRINT_TERSE) {
                 g_string_printf(nmc->return_text,
@@ -1010,6 +1013,8 @@ nmc_cleanup(NmCli *nmc)
     }
 
     nm_clear_g_free(&nmc->palette_buffer);
+
+    nm_clear_pointer(&nmc->offline_connections, g_ptr_array_unref);
 
     nmc_polkit_agent_fini(nmc);
 }

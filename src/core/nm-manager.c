@@ -20,6 +20,7 @@
 #include "devices/nm-device-factory.h"
 #include "devices/nm-device-generic.h"
 #include "devices/nm-device.h"
+#include "dns/nm-dns-manager.h"
 #include "dhcp/nm-dhcp-manager.h"
 #include "libnm-core-aux-intern/nm-common-macros.h"
 #include "libnm-core-intern/nm-core-internal.h"
@@ -143,6 +144,9 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMManager,
 
 typedef struct {
     NMPlatform *platform;
+
+    NMDnsManager *dns_mgr;
+    gulong        dns_mgr_update_pending_signal_id;
 
     GArray *capabilities;
 
@@ -345,6 +349,9 @@ static NMActiveConnection *_new_active_connection(NMManager             *self,
                                                   GError               **error);
 
 static void policy_activating_ac_changed(GObject *object, GParamSpec *pspec, gpointer user_data);
+
+static void device_has_pending_action_changed(NMDevice *device, GParamSpec *pspec, NMManager *self);
+static void check_if_startup_complete(NMManager *self);
 
 static gboolean find_master(NMManager             *self,
                             NMConnection          *connection,
@@ -1601,7 +1608,11 @@ manager_device_state_changed(NMDevice           *device,
         nm_settings_device_added(priv->settings, device);
 }
 
-static void device_has_pending_action_changed(NMDevice *device, GParamSpec *pspec, NMManager *self);
+static void
+_dns_mgr_update_pending_cb(NMDevice *device, GParamSpec *pspec, NMManager *self)
+{
+    check_if_startup_complete(self);
+}
 
 static void
 check_if_startup_complete(NMManager *self)
@@ -1615,6 +1626,20 @@ check_if_startup_complete(NMManager *self)
 
     if (!priv->devices_inited)
         return;
+
+    if (nm_dns_manager_get_update_pending(nm_manager_get_dns_manager(self))) {
+        if (priv->dns_mgr_update_pending_signal_id == 0) {
+            priv->dns_mgr_update_pending_signal_id =
+                g_signal_connect(nm_manager_get_dns_manager(self),
+                                 "notify::" NM_DNS_MANAGER_UPDATE_PENDING,
+                                 G_CALLBACK(_dns_mgr_update_pending_cb),
+                                 self);
+        }
+        return;
+    }
+
+    nm_clear_g_signal_handler(nm_manager_get_dns_manager(self),
+                              &priv->dns_mgr_update_pending_signal_id);
 
     c_list_for_each_entry (device, &priv->devices_lst_head, devices_lst) {
         reason = nm_device_has_pending_action_reason(device);
@@ -7014,10 +7039,6 @@ nm_manager_write_device_state(NMManager *self, NMDevice *device, int *out_ifinde
     guint32                        route_metric_default_aspired;
     guint32                        route_metric_default_effective;
     NMTernary                      nm_owned;
-    NMDhcpConfig                  *dhcp_config;
-    const char                    *next_server   = NULL;
-    const char                    *root_path     = NULL;
-    const char                    *dhcp_bootfile = NULL;
 
     NM_SET_OUT(out_ifindex, 0);
 
@@ -7059,15 +7080,6 @@ nm_manager_write_device_state(NMManager *self, NMDevice *device, int *out_ifinde
                                                               TRUE,
                                                               &route_metric_default_aspired);
 
-    dhcp_config = nm_device_get_dhcp_config(device, AF_INET);
-    if (dhcp_config) {
-        root_path     = nm_dhcp_config_get_option(dhcp_config, "root_path");
-        next_server   = nm_dhcp_config_get_option(dhcp_config, "next_server");
-        dhcp_bootfile = nm_dhcp_config_get_option(dhcp_config, "filename");
-        if (!dhcp_bootfile)
-            dhcp_bootfile = nm_dhcp_config_get_option(dhcp_config, "bootfile_name");
-    }
-
     if (!nm_config_device_state_write(ifindex,
                                       managed_type,
                                       perm_hw_addr_fake,
@@ -7075,9 +7087,8 @@ nm_manager_write_device_state(NMManager *self, NMDevice *device, int *out_ifinde
                                       nm_owned,
                                       route_metric_default_aspired,
                                       route_metric_default_effective,
-                                      next_server,
-                                      root_path,
-                                      dhcp_bootfile))
+                                      nm_device_get_dhcp_config(device, AF_INET),
+                                      nm_device_get_dhcp_config(device, AF_INET6)))
         return FALSE;
 
     NM_SET_OUT(out_ifindex, ifindex);
@@ -7790,6 +7801,28 @@ impl_manager_checkpoint_adjust_rollback_timeout(NMDBusObject                    
 
 /*****************************************************************************/
 
+NMDnsManager *
+nm_manager_get_dns_manager(NMManager *self)
+{
+    NMManagerPrivate *priv;
+
+    g_return_val_if_fail(NM_IS_MANAGER(self), NULL);
+
+    priv = NM_MANAGER_GET_PRIVATE(self);
+
+    if (G_UNLIKELY(!priv->dns_mgr)) {
+        /* Initialize lazily on first use.
+         *
+         * But keep a reference. This is to ensure proper lifetimes between
+         * singleton instances (i.e. nm_dns_manager_get() outlives NMManager). */
+        priv->dns_mgr = g_object_ref(nm_dns_manager_get());
+    }
+
+    return priv->dns_mgr;
+}
+
+/*****************************************************************************/
+
 static void
 auth_mgr_changed(NMAuthManager *auth_manager, gpointer user_data)
 {
@@ -8249,6 +8282,9 @@ dispose(GObject *object)
                                              self);
         g_clear_object(&priv->concheck_mgr);
     }
+
+    nm_clear_g_signal_handler(priv->dns_mgr, &priv->dns_mgr_update_pending_signal_id);
+    g_clear_object(&priv->dns_mgr);
 
     if (priv->auth_mgr) {
         g_signal_handlers_disconnect_by_func(priv->auth_mgr, G_CALLBACK(auth_mgr_changed), self);

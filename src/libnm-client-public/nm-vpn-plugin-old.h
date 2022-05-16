@@ -32,7 +32,7 @@ G_BEGIN_DECLS
 typedef struct {
     NM_DEPRECATED_IN_1_2
     GObject parent;
-} NMVpnPluginOld NM_DEPRECATED_IN_1_2;
+} NMVpnPluginOld;
 
 typedef struct {
     NM_DEPRECATED_IN_1_2
@@ -85,7 +85,7 @@ typedef struct {
     /*< private >*/
     NM_DEPRECATED_IN_1_2
     gpointer padding[8];
-} NMVpnPluginOldClass NM_DEPRECATED_IN_1_2;
+} NMVpnPluginOldClass;
 
 NM_DEPRECATED_IN_1_2
 GType nm_vpn_plugin_old_get_type(void);

@@ -7,12 +7,8 @@
 #define __NM_LIBNM_UTILS_H__
 
 #include "c-list/src/c-list.h"
-#include "nm-device.h"
 #include "libnm-glib-aux/nm-ref-string.h"
 #include "libnm-glib-aux/nm-logging-fwd.h"
-#include "nm-types.h"
-#include "nm-object.h"
-#include "nm-client.h"
 
 /*****************************************************************************/
 

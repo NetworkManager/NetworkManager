@@ -1,3 +1,0 @@
-[submodule "subprojects/c-stdaux"]
-	path = subprojects/c-stdaux
-	url = https://github.com/c-util/c-stdaux.git
