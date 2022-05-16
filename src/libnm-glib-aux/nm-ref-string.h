@@ -119,7 +119,7 @@ nm_ref_string_cmp(NMRefString *a, NMRefString *b)
     NM_CMP_SELF(a, b);
 
     /* It would be cheaper to first compare by length. But this
-     * way we get a nicer, ASCIIbethical sort order. */
+     * way we get a nicer, ASCIIbetical sort order. */
     NM_CMP_DIRECT_MEMCMP(a->str, b->str, NM_MIN(a->len, b->len));
     NM_CMP_DIRECT(a->len, b->len);
     return nm_assert_unreachable_val(0);

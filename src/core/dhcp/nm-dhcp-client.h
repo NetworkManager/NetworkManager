@@ -27,16 +27,16 @@
 #define NM_DHCP_CLIENT_NOTIFY "dhcp-notify"
 
 typedef enum {
-    NM_DHCP_STATE_UNKNOWN = 0,
-    NM_DHCP_STATE_BOUND,      /* new lease */
-    NM_DHCP_STATE_EXTENDED,   /* lease extended */
-    NM_DHCP_STATE_TIMEOUT,    /* timed out contacting server */
-    NM_DHCP_STATE_DONE,       /* client reported it's stopping */
-    NM_DHCP_STATE_EXPIRE,     /* lease expired or NAKed */
-    NM_DHCP_STATE_FAIL,       /* failed for some reason */
-    NM_DHCP_STATE_TERMINATED, /* client is no longer running */
-    NM_DHCP_STATE_NOOP,       /* state is a non operation for NetworkManager */
-} NMDhcpState;
+    NM_DHCP_CLIENT_EVENT_TYPE_UNSPECIFIED,
+
+    NM_DHCP_CLIENT_EVENT_TYPE_BOUND,
+    NM_DHCP_CLIENT_EVENT_TYPE_EXTENDED,
+
+    NM_DHCP_CLIENT_EVENT_TYPE_TIMEOUT,
+    NM_DHCP_CLIENT_EVENT_TYPE_EXPIRE,
+    NM_DHCP_CLIENT_EVENT_TYPE_FAIL,
+    NM_DHCP_CLIENT_EVENT_TYPE_TERMINATED,
+} NMDhcpClientEventType;
 
 typedef enum _nm_packed {
     NM_DHCP_CLIENT_NOTIFY_TYPE_LEASE_UPDATE,
@@ -82,7 +82,7 @@ typedef struct {
     };
 } NMDhcpClientNotifyData;
 
-const char *nm_dhcp_state_to_string(NMDhcpState state);
+const char *nm_dhcp_client_event_type_to_string(NMDhcpClientEventType client_event_type);
 
 /* FIXME(l3cfg:dhcp:config): nm_dhcp_manager_start_ip[46]() has a gazillion of parameters,
  * those get passed on as CONSTRUCT_ONLY properties to the NMDhcpClient. Drop
@@ -230,8 +230,7 @@ typedef struct {
 
 GType nm_dhcp_client_get_type(void);
 
-gboolean nm_dhcp_client_start_ip4(NMDhcpClient *self, GError **error);
-gboolean nm_dhcp_client_start_ip6(NMDhcpClient *self, GError **error);
+gboolean nm_dhcp_client_start(NMDhcpClient *self, GError **error);
 
 const NMDhcpClientConfig *nm_dhcp_client_get_config(NMDhcpClient *self);
 
@@ -268,8 +267,9 @@ void nm_dhcp_client_watch_child(NMDhcpClient *self, pid_t pid);
 
 void nm_dhcp_client_stop_watch_child(NMDhcpClient *self, pid_t pid);
 
-void
-nm_dhcp_client_set_state(NMDhcpClient *self, NMDhcpState new_state, const NML3ConfigData *l3cd);
+void _nm_dhcp_client_notify(NMDhcpClient         *self,
+                            NMDhcpClientEventType client_event_type,
+                            const NML3ConfigData *l3cd);
 
 gboolean nm_dhcp_client_handle_event(gpointer      unused,
                                      const char   *iface,
