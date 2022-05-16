@@ -10107,13 +10107,6 @@ _dev_ipdhcpx_start(NMDevice *self, int addr_family)
 
     hwaddr = nmp_link_address_get_as_bytes(&pllink->l_address);
 
-    if (!IS_IPv4) {
-        if (!hwaddr) {
-            fail_reason = "interface has no MAC address to start DHCPv6";
-            goto out_fail;
-        }
-    }
-
     request_broadcast = FALSE;
     if (pllink) {
         str = nmp_object_link_udev_device_get_property_value(NMP_OBJECT_UP_CAST(pllink),
