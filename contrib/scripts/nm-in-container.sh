@@ -109,53 +109,53 @@ find NetworkManager bind mounted at $BASEDIR_NM
 run \`nm-env-prepare.sh setup --idx 1\` to setup test interfaces
 
 Configure NetworkManager with
-  \$ ./configure \
-           --enable-address-sanitizer=no \
-           --enable-compile-warnings=yes \
-           --enable-concheck \
-           --enable-config-plugin-ibft=yes \
-           --enable-gtk-doc \
-           --enable-ifcfg-rh=yes \
-           --enable-ifcfg-suse \
-           --enable-ifnet \
-           --enable-ifupdown=yes \
-           --enable-introspection \
-           --enable-json-validation=yes \
-           --enable-maintainer-mode \
-           --enable-more-logging \
-           --enable-more-warnings=error \
-           --enable-ovs=yes \
-           --enable-polkit=yes \
-           --enable-teamdctl=yes \
-           --enable-undefined-sanitizer=no \
-           --enable-vala=yes \
-           --enable-wimax \
-           --localstatedir=/var \
-           --prefix=/opt/test \
-           --sysconfdir=/etc \
-           --with-config-dhcp-default=internal \
-           --with-config-dns-rc-manager-default=auto \
-           --with-consolekit=yes \
-           --with-consolekit=yes \
-           --with-crypto=nss \
-           --with-dhclient=yes \
-           --with-dhcpcanon=yes \
-           --with-dhcpcd=yes \
-           --with-iwd=yes \
-           --with-libnm-glib=yes \
-           --with-modem-manager-1 \
-           --with-netconfig=/bin/nowhere/netconfig \
-           --with-nm-cloud-setup=yes \
-           --with-nmcli=yes \
-           --with-nmtui=yes \
-           --with-ofono=yes \
-           --with-resolvconf=/bin/nowhere/resolvconf \
-           --with-session-tracking=systemd \
-           --with-suspend-resume=systemd \
-           --with-systemd-logind=yes \
-           --with-valgrind=yes \
-           --enable-tests="\${NM_BUILD_TESTS:-yes}" \
-           --with-more-asserts="\${NM_BUILD_MORE_ASSERTS:-1000}" \
+  \$ ./configure \\
+           --enable-address-sanitizer=no \\
+           --enable-compile-warnings=yes \\
+           --enable-concheck \\
+           --enable-config-plugin-ibft=yes \\
+           --enable-gtk-doc \\
+           --enable-ifcfg-rh=yes \\
+           --enable-ifcfg-suse \\
+           --enable-ifnet \\
+           --enable-ifupdown=yes \\
+           --enable-introspection \\
+           --enable-json-validation=yes \\
+           --enable-maintainer-mode \\
+           --enable-more-logging \\
+           --enable-more-warnings=error \\
+           --enable-ovs=yes \\
+           --enable-polkit=yes \\
+           --enable-teamdctl=yes \\
+           --enable-undefined-sanitizer=no \\
+           --enable-vala=yes \\
+           --enable-wimax \\
+           --localstatedir=/var \\
+           --prefix=/opt/test \\
+           --sysconfdir=/etc \\
+           --with-config-dhcp-default=internal \\
+           --with-config-dns-rc-manager-default=auto \\
+           --with-consolekit=yes \\
+           --with-consolekit=yes \\
+           --with-crypto=nss \\
+           --with-dhclient=yes \\
+           --with-dhcpcanon=yes \\
+           --with-dhcpcd=yes \\
+           --with-iwd=yes \\
+           --with-libnm-glib=yes \\
+           --with-modem-manager-1 \\
+           --with-netconfig=/bin/nowhere/netconfig \\
+           --with-nm-cloud-setup=yes \\
+           --with-nmcli=yes \\
+           --with-nmtui=yes \\
+           --with-ofono=yes \\
+           --with-resolvconf=/bin/nowhere/resolvconf \\
+           --with-session-tracking=systemd \\
+           --with-suspend-resume=systemd \\
+           --with-systemd-logind=yes \\
+           --with-valgrind=yes \\
+           --enable-tests="\${NM_BUILD_TESTS:-yes}" \\
+           --with-more-asserts="\${NM_BUILD_MORE_ASSERTS:-1000}" \\
            "\${NM_CONFIGURE_OTPS[@]}"
 Test with:
   \$ systemctl stop NetworkManager; /opt/test/sbin/NetworkManager --debug 2>&1 | tee -a /tmp/nm-log.txt
@@ -327,8 +327,7 @@ RUN dnf install -y \\
 
 RUN dnf debuginfo-install --skip-broken \$(ldd /usr/sbin/NetworkManager | sed -n 's/.* => \\(.*\\) (0x[0-9A-Fa-f]*)$/\1/p' | xargs -n1 readlink -f) -y
 
-RUN pip3 install --user \\
-    behave_html_formatter
+RUN pip3 install --user behave_html_formatter || true
 
 RUN systemctl enable NetworkManager
 
@@ -412,7 +411,7 @@ do_run() {
         podman run --privileged \
             --name "$CONTAINER_NAME_NAME" \
             -d \
-            -v "$BASEDIR_NM:$BASEDIR_NM:Z" \
+            -v "$BASEDIR_NM:$BASEDIR_NM" \
             "${BIND_NM_CI[@]}" \
             "${BIND_FILES[@]}" \
             "$CONTAINER_NAME_REPOSITORY:$CONTAINER_NAME_TAG"
