@@ -14,6 +14,7 @@
 #include "libnm-systemd-shared/nm-sd-utils-shared.h"
 
 #include "nm-dhcp-utils.h"
+#include "nm-dhcp-options.h"
 #include "nm-l3-config-data.h"
 #include "nm-utils.h"
 #include "nm-config.h"
@@ -884,28 +885,75 @@ nm_dhcp_utils_merge_new_dhcp6_lease(const NML3ConfigData  *l3cd_old,
 
 /*****************************************************************************/
 
-gboolean
-nm_dhcp_lease_data_parse_u16(const guint8 *data, gsize n_data, uint16_t *out_val)
+void
+nm_dhcp_lease_log_invalid_option(const char *iface,
+                                 int         addr_family,
+                                 guint       option,
+                                 const char *fmt,
+                                 ...)
 {
-    if (n_data != 2)
+    const char   *option_name;
+    gs_free char *msg = NULL;
+    va_list       ap;
+
+    option_name = nm_dhcp_option_request_string(addr_family, option);
+
+    va_start(ap, fmt);
+    msg = g_strdup_vprintf(fmt, ap);
+    va_end(ap);
+
+    _LOG2I(NM_IS_IPv4(addr_family) ? LOGD_DHCP4 : LOGD_DHCP6,
+           iface,
+           "error parsing DHCP option %d (%s)%s%s",
+           option,
+           option_name,
+           msg ? ": " : "",
+           msg ?: "");
+}
+
+gboolean
+nm_dhcp_lease_data_parse_u16(const guint8 *data,
+                             gsize         n_data,
+                             uint16_t     *out_val,
+                             const char   *iface,
+                             int           addr_family,
+                             guint         option)
+{
+    if (n_data != 2) {
+        nm_dhcp_lease_log_invalid_option(iface,
+                                         addr_family,
+                                         option,
+                                         "invalid option length %lu",
+                                         (unsigned long) n_data);
         return FALSE;
+    }
 
     *out_val = unaligned_read_be16(data);
     return TRUE;
 }
 
 gboolean
-nm_dhcp_lease_data_parse_mtu(const guint8 *data, gsize n_data, uint16_t *out_val)
+nm_dhcp_lease_data_parse_mtu(const guint8 *data,
+                             gsize         n_data,
+                             uint16_t     *out_val,
+                             const char   *iface,
+                             int           addr_family,
+                             guint         option)
 {
     uint16_t mtu;
 
-    if (!nm_dhcp_lease_data_parse_u16(data, n_data, &mtu))
+    if (!nm_dhcp_lease_data_parse_u16(data, n_data, &mtu, iface, addr_family, option))
         return FALSE;
 
     if (mtu < 68) {
         /* https://tools.ietf.org/html/rfc2132#section-5.1:
          *
          * The minimum legal value for the MTU is 68. */
+        nm_dhcp_lease_log_invalid_option(iface,
+                                         addr_family,
+                                         option,
+                                         "value %u is smaller than 68",
+                                         mtu);
         return FALSE;
     }
 
@@ -914,7 +962,12 @@ nm_dhcp_lease_data_parse_mtu(const guint8 *data, gsize n_data, uint16_t *out_val
 }
 
 gboolean
-nm_dhcp_lease_data_parse_cstr(const guint8 *data, gsize n_data, gsize *out_new_len)
+nm_dhcp_lease_data_parse_cstr(const guint8 *data,
+                              gsize         n_data,
+                              gsize        *out_new_len,
+                              const char   *iface,
+                              int           addr_family,
+                              guint         option)
 {
     /* WARNING: this function only validates that the string does not contain
      * NUL characters (and ignores trailing NULs). It does not check character
@@ -929,6 +982,10 @@ nm_dhcp_lease_data_parse_cstr(const guint8 *data, gsize n_data, gsize *out_new_l
              *
              * https://tools.ietf.org/html/rfc2132#section-2
              * https://github.com/systemd/systemd/issues/1337 */
+            nm_dhcp_lease_log_invalid_option(iface,
+                                             addr_family,
+                                             option,
+                                             "string contains embedded NUL");
             return FALSE;
         }
     }
@@ -938,32 +995,47 @@ nm_dhcp_lease_data_parse_cstr(const guint8 *data, gsize n_data, gsize *out_new_l
 }
 
 char *
-nm_dhcp_lease_data_parse_domain_validate(const char *str)
+nm_dhcp_lease_data_parse_domain_validate(const char *str,
+                                         const char *iface,
+                                         int         addr_family,
+                                         guint       option)
 {
     gs_free char *s = NULL;
 
     s = nm_sd_dns_name_normalize(str);
     if (!s)
-        return NULL;
+        goto err;
 
     if (nm_str_is_empty(s) || (s[0] == '.' && s[1] == '\0')) {
         /* root domains are not allowed. */
-        return NULL;
+        goto err;
     }
 
     if (nm_utils_is_localhost(s))
-        return NULL;
+        goto err;
 
     if (!g_utf8_validate(s, -1, NULL)) {
         /* the result must be valid UTF-8. */
-        return NULL;
+        goto err;
     }
 
     return g_steal_pointer(&s);
+err:
+    nm_dhcp_lease_log_invalid_option(iface,
+                                     addr_family,
+                                     option,
+                                     "'%s' is not a valid DNS domain",
+                                     str);
+    return NULL;
 }
 
 gboolean
-nm_dhcp_lease_data_parse_domain(const guint8 *data, gsize n_data, char **out_val)
+nm_dhcp_lease_data_parse_domain(const guint8 *data,
+                                gsize         n_data,
+                                char        **out_val,
+                                const char   *iface,
+                                int           addr_family,
+                                guint         option)
 {
     gs_free char *str1_free = NULL;
     const char   *str1;
@@ -971,7 +1043,7 @@ nm_dhcp_lease_data_parse_domain(const guint8 *data, gsize n_data, char **out_val
 
     /* this is mostly the same as systemd's lease_parse_domain(). */
 
-    if (!nm_dhcp_lease_data_parse_cstr(data, n_data, &n_data))
+    if (!nm_dhcp_lease_data_parse_cstr(data, n_data, &n_data, iface, addr_family, option))
         return FALSE;
 
     if (n_data == 0) {
@@ -983,12 +1055,13 @@ nm_dhcp_lease_data_parse_domain(const guint8 *data, gsize n_data, char **out_val
          *
          * Note that this is *after* we potentially stripped trailing NULs.
          */
+        nm_dhcp_lease_log_invalid_option(iface, addr_family, option, "empty value");
         return FALSE;
     }
 
     str1 = nm_strndup_a(300, (char *) data, n_data, &str1_free);
 
-    s = nm_dhcp_lease_data_parse_domain_validate(str1);
+    s = nm_dhcp_lease_data_parse_domain_validate(str1, iface, addr_family, option);
     if (!s)
         return FALSE;
 
@@ -997,7 +1070,11 @@ nm_dhcp_lease_data_parse_domain(const guint8 *data, gsize n_data, char **out_val
 }
 
 gboolean
-nm_dhcp_lease_data_parse_in_addr(const guint8 *data, gsize n_data, in_addr_t *out_val)
+nm_dhcp_lease_data_parse_in_addr(const guint8 *data,
+                                 gsize         n_data,
+                                 in_addr_t    *out_val,
+                                 const char   *iface,
+                                 guint         option)
 {
     /* - option 1, https://tools.ietf.org/html/rfc2132#section-3.3
      * - option 28, https://tools.ietf.org/html/rfc2132#section-5.3
@@ -1007,8 +1084,14 @@ nm_dhcp_lease_data_parse_in_addr(const guint8 *data, gsize n_data, in_addr_t *ou
      * according to RFC 3396 section 7. Therefore, it's possible that a
      * option carrying a IPv4 address has a length > 4.
      */
-    if (n_data < 4)
+    if (n_data < 4) {
+        nm_dhcp_lease_log_invalid_option(iface,
+                                         AF_INET,
+                                         option,
+                                         "invalid address length %lu",
+                                         (unsigned long) n_data);
         return FALSE;
+    }
 
     *out_val = unaligned_read_ne32(data);
     return TRUE;
@@ -1051,7 +1134,8 @@ static char *
 lease_option_print_domain_name(const uint8_t  *cache,
                                size_t         *n_cachep,
                                const uint8_t **datap,
-                               size_t         *n_datap)
+                               size_t         *n_datap,
+                               gboolean       *invalid)
 {
     nm_auto_str_buf NMStrBuf sbuf = NM_STR_BUF_INIT(NM_UTILS_GET_NEXT_REALLOC_SIZE_40, FALSE);
     const uint8_t           *domain;
@@ -1061,6 +1145,8 @@ lease_option_print_domain_name(const uint8_t  *cache,
     size_t                  *n_domainp = n_datap;
     gboolean                 first     = TRUE;
     uint8_t                  c;
+
+    NM_SET_OUT(invalid, FALSE);
 
     /*
      * We are given two adjacent memory regions. The @cache contains alreday parsed
@@ -1078,8 +1164,10 @@ lease_option_print_domain_name(const uint8_t  *cache,
      * Note, that each time a jump to an offset is performed, the size of the
      * cache shrinks, so this is guaranteed to terminate.
      */
-    if (cache + n_cache != *datap)
+    if (cache + n_cache != *datap) {
+        NM_SET_OUT(invalid, TRUE);
         return NULL;
+    }
 
     for (;;) {
         if (!nm_dhcp_lease_data_consume(domainp, n_domainp, &c, sizeof(c)))
@@ -1104,8 +1192,10 @@ lease_option_print_domain_name(const uint8_t  *cache,
             else
                 first = FALSE;
 
-            if (!lease_option_print_label(&sbuf, n_label, domainp, n_domainp))
+            if (!lease_option_print_label(&sbuf, n_label, domainp, n_domainp)) {
+                NM_SET_OUT(invalid, TRUE);
                 return NULL;
+            }
 
             break;
         }
@@ -1118,13 +1208,17 @@ lease_option_print_domain_name(const uint8_t  *cache,
              * two high bits are masked out.
              */
 
-            if (!nm_dhcp_lease_data_consume(domainp, n_domainp, &c, sizeof(c)))
+            if (!nm_dhcp_lease_data_consume(domainp, n_domainp, &c, sizeof(c))) {
+                NM_SET_OUT(invalid, TRUE);
                 return NULL;
+            }
 
             offset += c;
 
-            if (offset >= n_cache)
+            if (offset >= n_cache) {
+                NM_SET_OUT(invalid, TRUE);
                 return NULL;
+            }
 
             domain   = cache + offset;
             n_domain = n_cache - offset;
@@ -1136,29 +1230,44 @@ lease_option_print_domain_name(const uint8_t  *cache,
             break;
         }
         default:
+            NM_SET_OUT(invalid, TRUE);
             return NULL;
         }
     }
 }
 
 char **
-nm_dhcp_lease_data_parse_search_list(const guint8 *data, gsize n_data)
+nm_dhcp_lease_data_parse_search_list(const guint8 *data,
+                                     gsize         n_data,
+                                     const char   *iface,
+                                     int           addr_family,
+                                     guint         option)
 {
     GPtrArray    *array   = NULL;
     const guint8 *cache   = data;
     gsize         n_cache = 0;
+    guint         i       = 0;
 
     for (;;) {
         gs_free char *s = NULL;
+        gboolean      invalid;
 
-        s = lease_option_print_domain_name(cache, &n_cache, &data, &n_data);
-        if (!s)
+        s = lease_option_print_domain_name(cache, &n_cache, &data, &n_data, &invalid);
+        if (!s) {
+            if (iface && invalid)
+                nm_dhcp_lease_log_invalid_option(iface,
+                                                 addr_family,
+                                                 option,
+                                                 "search domain #%u is invalid",
+                                                 i);
             break;
+        }
 
         if (!array)
             array = g_ptr_array_new();
 
         g_ptr_array_add(array, g_steal_pointer(&s));
+        i++;
     }
 
     if (!array)
