@@ -589,14 +589,10 @@ l3_cfg_notify_cb(NML3Cfg *l3cfg, const NML3ConfigNotifyData *notify_data, NMDhcp
 
     nm_assert(l3cfg == priv->config.l3cfg);
 
-    switch (notify_data->notify_type) {
-    case NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE_ON_IDLE:
-    {
+    if (notify_data->notify_type == NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE_ON_IDLE
+        && priv->l3cfg_notify.wait_ll_address) {
         const NMPlatformIP6Address *addr;
         gs_free_error GError       *error = NULL;
-
-        if (!priv->l3cfg_notify.wait_ll_address)
-            return;
 
         addr = ipv6_lladdr_find(self);
         if (addr) {
@@ -615,11 +611,10 @@ l3_cfg_notify_cb(NML3Cfg *l3cfg, const NML3ConfigNotifyData *notify_data, NMDhcp
                              }));
             }
         }
-
-        break;
     }
-    case NM_L3_CONFIG_NOTIFY_TYPE_POST_COMMIT:
-    {
+
+    if (notify_data->notify_type == NM_L3_CONFIG_NOTIFY_TYPE_POST_COMMIT
+        && priv->l3cfg_notify.wait_dhcp_commit) {
         const NML3ConfigData      *committed_l3cd;
         NMDedupMultiIter           ipconf_iter;
         const NMPlatformIPAddress *lease_address;
@@ -629,9 +624,6 @@ l3_cfg_notify_cb(NML3Cfg *l3cfg, const NML3ConfigNotifyData *notify_data, NMDhcp
          * got a lease, check whether we are waiting for the address to be
          * configured. If the address was added, we can proceed accepting the
          * lease and notifying NMDevice. */
-
-        if (!priv->l3cfg_notify.wait_dhcp_commit)
-            return;
 
         nm_l3_config_data_iter_ip_address_for_each (&ipconf_iter,
                                                     priv->l3cd,
@@ -648,12 +640,12 @@ l3_cfg_notify_cb(NML3Cfg *l3cfg, const NML3ConfigNotifyData *notify_data, NMDhcp
                                                     address4->address,
                                                     address4->plen,
                                                     address4->peer_address))
-                return;
+                goto wait_dhcp_commit_done;
         } else {
             const NMPlatformIP6Address *address6 = (const NMPlatformIP6Address *) lease_address;
 
             if (!nm_l3_config_data_lookup_address_6(committed_l3cd, &address6->address))
-                return;
+                goto wait_dhcp_commit_done;
         }
 
         priv->l3cfg_notify.wait_dhcp_commit = FALSE;
@@ -669,7 +661,7 @@ l3_cfg_notify_cb(NML3Cfg *l3cfg, const NML3ConfigNotifyData *notify_data, NMDhcp
                              .notify_type         = NM_DHCP_CLIENT_NOTIFY_TYPE_IT_LOOKS_BAD,
                              .it_looks_bad.reason = reason,
                          }));
-            return;
+            goto wait_dhcp_commit_done;
         }
 
         _emit_notify(
@@ -679,11 +671,8 @@ l3_cfg_notify_cb(NML3Cfg *l3cfg, const NML3ConfigNotifyData *notify_data, NMDhcp
                                            .l3cd     = priv->l3cd,
                                            .accepted = TRUE,
                                        }}));
-        break;
-    };
-    default:
-        /* ignore */;
     }
+wait_dhcp_commit_done:;
 }
 
 gboolean
