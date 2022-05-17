@@ -84,15 +84,6 @@ typedef struct {
 
 const char *nm_dhcp_client_event_type_to_string(NMDhcpClientEventType client_event_type);
 
-/* FIXME(l3cfg:dhcp:config): nm_dhcp_manager_start_ip[46]() has a gazillion of parameters,
- * those get passed on as CONSTRUCT_ONLY properties to the NMDhcpClient. Drop
- * all these parameters, and let the caller provide one NMDhcpClientConfig
- * instance. There will be only one GObject property (NM_DHCP_CLIENT_CONFIG),
- * which is CONSTRUCT_ONLY and takes a (mandatory) G_TYPE_POINTER for the
- * configuration.
- *
- * Since NMDhcpClientConfig has an addr_family, we also don't need separate
- * nm_dhcp_manager_start_ip[46]() methods. */
 typedef struct {
     int addr_family;
 
