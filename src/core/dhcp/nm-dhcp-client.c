@@ -32,6 +32,38 @@
 
 /*****************************************************************************/
 
+/* This is how long we do ACD for each entry and reject new offers for
+ * the same address. Note that the maximum ACD timeout is limited to 30 seconds
+ * (NM_ACD_TIMEOUT_MAX_MSEC).
+ **/
+#define ACD_REGLIST_GRACE_PERIOD_MSEC 300000u
+
+G_STATIC_ASSERT(ACD_REGLIST_GRACE_PERIOD_MSEC > (NM_ACD_TIMEOUT_MAX_MSEC + 1000));
+
+#define ACD_REGLIST_MAX_ENTRIES 30
+
+/* To do ACD for an address (new lease), we will register a NML3ConfigData
+ * with l3cfg. After ACD completes, we still continue having NML3Cfg
+ * watch that address, for ACD_REGLIST_GRACE_PERIOD_MSEC. The reasons are:
+ *
+ * - the caller is supposed to actually configure the address right after
+ *   ACD passed. We would not want to drop the ACD state before the caller
+ *   got a chance to do that.
+ * - when ACD fails, we decline the address and expect the DHCP client
+ *   to present a new lease. We may want to outright reject the address,
+ *   if ACD is bad. Thus, we want to keep running ACD for the address a bit
+ *   longer, so that future requests for the same address can be rejected.
+ *
+ * This data structure is used for tracking the registered ACD address.
+ */
+typedef struct {
+    const NML3ConfigData *l3cd;
+    gint64                expiry_msec;
+    in_addr_t             addr;
+} AcdRegListData;
+
+/*****************************************************************************/
+
 enum {
     SIGNAL_NOTIFY,
     LAST_SIGNAL,
@@ -42,14 +74,47 @@ static guint signals[LAST_SIGNAL] = {0};
 NM_GOBJECT_PROPERTIES_DEFINE(NMDhcpClient, PROP_CONFIG, );
 
 typedef struct _NMDhcpClientPrivate {
-    NMDhcpClientConfig    config;
-    const NML3ConfigData *l3cd;
-    GSource              *no_lease_timeout_source;
-    GSource              *watch_source;
-    GBytes               *effective_client_id;
+    NMDhcpClientConfig config;
+
+    /* This is the "next" data. That is, the one what was received last via
+     * _nm_dhcp_client_notify(), but which is currently pending on ACD. */
+    const NML3ConfigData *l3cd_next;
+
+    /* This is the currently exposed data. It passed ACD (or no ACD was performed),
+     * and is set from l3cd_next. */
+    const NML3ConfigData *l3cd_curr;
+
+    GSource *no_lease_timeout_source;
+    GSource *watch_source;
+    GBytes  *effective_client_id;
 
     union {
         struct {
+            struct {
+                NML3CfgCommitTypeHandle *l3cfg_commit_handle;
+                GSource                 *done_source;
+
+                /* When we do ACD for a l3cd lease, we will keep running ACD for
+                 * the grace period ACD_REGLIST_GRACE_PERIOD_MSEC, even if we already
+                 * determined the state. There are two reasons for that:
+                 *
+                 * - after ACD completes we notify the lease to the user, who is supposed
+                 *   to configure the address in NML3Cfg. If we were already removing the
+                 *   ACD state from NML3Cfg, ACD might need to start over. Instead, when
+                 *   the caller tries to configure the address, ACD state is already good.
+                 *
+                 * - if we decline on ACD offer, we may want to keep running and
+                 *   select other offers. Offers for which we just failed ACD (within
+                 *   ACD_REGLIST_GRACE_PERIOD_MSEC) are rejected. See _nm_dhcp_client_accept_offer().
+                 *   For that, we keep monitoring the ACD state for up to ACD_REGLIST_MAX_ENTRIES
+                 *   addresses, to not restart and select the same lease twice in a row.
+                 */
+                GArray  *reglist;
+                GSource *reglist_timeout_source;
+
+                in_addr_t    addr;
+                NMOptionBool state;
+            } acd;
             struct {
                 GDBusMethodInvocation *invocation;
             } bound;
@@ -75,15 +140,21 @@ G_DEFINE_ABSTRACT_TYPE(NMDhcpClient, nm_dhcp_client, G_TYPE_OBJECT)
 
 /*****************************************************************************/
 
+#define L3CD_ACD_TAG(priv) (&(priv)->v4.acd.addr)
+
 static gboolean _dhcp_client_accept(NMDhcpClient *self, const NML3ConfigData *l3cd, GError **error);
 
-_nm_unused static gboolean _dhcp_client_decline(NMDhcpClient         *self,
-                                                const NML3ConfigData *l3cd,
-                                                const char           *error_message,
-                                                GError              **error);
+static gboolean _dhcp_client_decline(NMDhcpClient         *self,
+                                     const NML3ConfigData *l3cd,
+                                     const char           *error_message,
+                                     GError              **error);
 
 static void
 l3_cfg_notify_cb(NML3Cfg *l3cfg, const NML3ConfigNotifyData *notify_data, NMDhcpClient *self);
+
+static void _acd_reglist_timeout_reschedule(NMDhcpClient *self, gint64 now_msec);
+
+static void _acd_reglist_data_remove(NMDhcpClient *self, guint idx, gboolean do_log);
 
 /*****************************************************************************/
 
@@ -197,7 +268,8 @@ l3_cfg_notify_check_connected(NMDhcpClient *self)
     NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
     gboolean             do_connect;
 
-    do_connect = priv->l3cfg_notify.wait_dhcp_commit | priv->l3cfg_notify.wait_ll_address;
+    do_connect = priv->l3cfg_notify.wait_dhcp_commit | priv->l3cfg_notify.wait_ll_address
+                 | (NM_IS_IPv4(priv->config.addr_family) && priv->v4.acd.l3cfg_commit_handle);
 
     if (!do_connect) {
         nm_clear_g_signal_handler(priv->config.l3cfg, &priv->l3cfg_notify.id);
@@ -303,6 +375,333 @@ _no_lease_timeout_schedule(NMDhcpClient *self)
 
 /*****************************************************************************/
 
+static void
+_acd_state_reset(NMDhcpClient *self, gboolean forget_addr, gboolean forget_reglist)
+{
+    NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
+
+    if (!NM_IS_IPv4(priv->config.addr_family))
+        return;
+
+    if (priv->v4.acd.addr != INADDR_ANY) {
+        nm_l3cfg_commit_type_clear(priv->config.l3cfg, &priv->v4.acd.l3cfg_commit_handle);
+        l3_cfg_notify_check_connected(self);
+        nm_clear_g_source_inst(&priv->v4.acd.done_source);
+        if (forget_addr) {
+            priv->v4.acd.addr  = INADDR_ANY;
+            priv->v4.acd.state = NM_OPTION_BOOL_DEFAULT;
+        }
+    } else
+        nm_assert(priv->v4.acd.state == NM_OPTION_BOOL_DEFAULT);
+
+    if (forget_reglist) {
+        guint n;
+
+        while ((n = nm_g_array_len(priv->v4.acd.reglist)) > 0)
+            _acd_reglist_data_remove(self, n - 1, TRUE);
+    }
+
+    nm_assert(!priv->v4.acd.l3cfg_commit_handle);
+    nm_assert(!priv->v4.acd.done_source);
+    nm_assert(!forget_reglist
+              || !nm_l3cfg_remove_config_all(priv->config.l3cfg, L3CD_ACD_TAG(priv)));
+}
+
+static gboolean
+_acd_complete_on_idle_cb(gpointer user_data)
+{
+    NMDhcpClient        *self = user_data;
+    NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
+
+    nm_assert(NM_IS_IPv4(priv->config.addr_family));
+    nm_assert(priv->v4.acd.addr != INADDR_ANY);
+    nm_assert(!priv->v4.acd.l3cfg_commit_handle);
+    nm_assert(priv->l3cd_next);
+
+    _acd_state_reset(self, FALSE, FALSE);
+
+    _nm_dhcp_client_notify(self, NM_DHCP_CLIENT_EVENT_TYPE_BOUND, priv->l3cd_next);
+
+    return G_SOURCE_CONTINUE;
+}
+
+#define _acd_reglist_data_get(priv, idx) \
+    nm_g_array_index_p((priv)->v4.acd.reglist, AcdRegListData, (idx))
+
+static guint
+_acd_reglist_data_find(NMDhcpClientPrivate *priv, in_addr_t addr_needle)
+{
+    const guint n = nm_g_array_len(priv->v4.acd.reglist);
+    guint       i;
+
+    nm_assert(addr_needle != INADDR_ANY);
+
+    for (i = 0; i < n; i++) {
+        AcdRegListData *reglist_data = _acd_reglist_data_get(priv, i);
+
+        if (reglist_data->addr == addr_needle)
+            return i;
+    }
+    return G_MAXUINT;
+}
+
+static void
+_acd_reglist_data_remove(NMDhcpClient *self, guint idx, gboolean do_log)
+{
+    NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
+    AcdRegListData      *reglist_data;
+
+    nm_assert(idx < nm_g_array_len(priv->v4.acd.reglist));
+
+    reglist_data = _acd_reglist_data_get(priv, idx);
+
+    if (do_log) {
+        char sbuf_addr[NM_UTILS_INET_ADDRSTRLEN];
+
+        _LOGD("acd: drop check for address %s (l3cd " NM_HASH_OBFUSCATE_PTR_FMT ")",
+              _nm_utils_inet4_ntop(reglist_data->addr, sbuf_addr),
+              NM_HASH_OBFUSCATE_PTR(reglist_data->l3cd));
+    }
+
+    if (!nm_l3cfg_remove_config(priv->config.l3cfg, L3CD_ACD_TAG(priv), reglist_data->l3cd))
+        nm_assert_not_reached();
+
+    nm_clear_l3cd(&reglist_data->l3cd);
+
+    nm_l3cfg_commit_on_idle_schedule(priv->config.l3cfg, NM_L3_CFG_COMMIT_TYPE_UPDATE);
+
+    g_array_remove_index(priv->v4.acd.reglist, idx);
+
+    if (priv->v4.acd.reglist->len == 0) {
+        nm_clear_pointer(&priv->v4.acd.reglist, g_array_unref);
+        nm_clear_g_source_inst(&priv->v4.acd.reglist_timeout_source);
+    }
+}
+
+static gboolean
+_acd_reglist_timeout_cb(gpointer user_data)
+{
+    NMDhcpClient        *self = user_data;
+    NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
+    gint64               now_msec;
+
+    nm_clear_g_source_inst(&priv->v4.acd.reglist_timeout_source);
+
+    now_msec = nm_utils_get_monotonic_timestamp_msec();
+
+    while (nm_g_array_len(priv->v4.acd.reglist) > 0) {
+        AcdRegListData *reglist_data = _acd_reglist_data_get(priv, 0);
+
+        if (reglist_data->expiry_msec > now_msec)
+            break;
+
+        _acd_reglist_data_remove(self, 0, TRUE);
+    }
+
+    _acd_reglist_timeout_reschedule(self, now_msec);
+
+    return G_SOURCE_CONTINUE;
+}
+
+static void
+_acd_reglist_timeout_reschedule(NMDhcpClient *self, gint64 now_msec)
+{
+    NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
+    AcdRegListData      *reglist_data;
+
+    if (nm_g_array_len(priv->v4.acd.reglist) == 0) {
+        nm_assert(!priv->v4.acd.reglist_timeout_source);
+        return;
+    }
+
+    if (priv->v4.acd.reglist_timeout_source) {
+        /* already pending. As we only add new elements with a *later*
+          * expiry, we don't need to ever cancel a pending timer. Worst
+          * case, the timer fires, and there is nothing to do and we
+          * reschedule. */
+        return;
+    }
+
+    now_msec = nm_utils_get_monotonic_timestamp_msec();
+
+    reglist_data = _acd_reglist_data_get(priv, 0);
+
+    nm_assert(reglist_data->expiry_msec > now_msec);
+
+    priv->v4.acd.reglist_timeout_source =
+        nm_g_timeout_add_source(reglist_data->expiry_msec - now_msec,
+                                _acd_reglist_timeout_cb,
+                                self);
+}
+
+static void
+_acd_check_lease(NMDhcpClient *self, NMOptionBool *out_acd_state)
+{
+    NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
+    char                 sbuf_addr[NM_UTILS_INET_ADDRSTRLEN];
+    in_addr_t            addr;
+    gboolean             addr_changed = FALSE;
+    guint                idx;
+    gint64               now_msec;
+
+    if (!NM_IS_IPv4(priv->config.addr_family))
+        goto handle_no_acd;
+
+    if (!priv->l3cd_next)
+        goto handle_no_acd;
+
+    /* an IPv4 lease is always expected to have exactly one address. */
+    nm_assert(nm_l3_config_data_get_num_addresses(priv->l3cd_next, AF_INET) == 1);
+
+    if (priv->config.v4.acd_timeout_msec == 0)
+        goto handle_no_acd;
+
+    addr = NMP_OBJECT_CAST_IP4_ADDRESS(
+               nm_l3_config_data_get_first_obj(priv->l3cd_next, NMP_OBJECT_TYPE_IP4_ADDRESS, NULL))
+               ->address;
+    nm_assert(addr != INADDR_ANY);
+
+    nm_clear_g_source_inst(&priv->v4.acd.done_source);
+
+    if (priv->v4.acd.state != NM_OPTION_BOOL_DEFAULT && priv->v4.acd.addr == addr) {
+        /* the ACD state is already determined. Return right away. */
+        nm_assert(!priv->v4.acd.l3cfg_commit_handle);
+        *out_acd_state = !!priv->v4.acd.state;
+        return;
+    }
+
+    if (priv->v4.acd.addr != addr) {
+        addr_changed      = TRUE;
+        priv->v4.acd.addr = addr;
+    }
+
+    _LOGD("acd: %s check for address %s (timeout %u msec, l3cd " NM_HASH_OBFUSCATE_PTR_FMT ")",
+          addr_changed ? "add" : "update",
+          _nm_utils_inet4_ntop(addr, sbuf_addr),
+          priv->config.v4.acd_timeout_msec,
+          NM_HASH_OBFUSCATE_PTR(priv->l3cd_next));
+
+    priv->v4.acd.state = NM_OPTION_BOOL_DEFAULT;
+
+    if (nm_l3cfg_add_config(priv->config.l3cfg,
+                            L3CD_ACD_TAG(priv),
+                            FALSE,
+                            priv->l3cd_next,
+                            NM_L3CFG_CONFIG_PRIORITY_IPV4LL,
+                            0,
+                            0,
+                            NM_PLATFORM_ROUTE_METRIC_DEFAULT_IP4,
+                            NM_PLATFORM_ROUTE_METRIC_DEFAULT_IP6,
+                            0,
+                            0,
+                            NM_DNS_PRIORITY_DEFAULT_NORMAL,
+                            NM_DNS_PRIORITY_DEFAULT_NORMAL,
+                            NM_L3_ACD_DEFEND_TYPE_ONCE,
+                            NM_MIN(priv->config.v4.acd_timeout_msec, NM_ACD_TIMEOUT_MAX_MSEC),
+                            NM_L3CFG_CONFIG_FLAGS_ONLY_FOR_ACD,
+                            NM_L3_CONFIG_MERGE_FLAGS_NONE))
+        addr_changed = TRUE;
+
+    if (!priv->v4.acd.reglist)
+        priv->v4.acd.reglist = g_array_new(FALSE, FALSE, sizeof(AcdRegListData));
+
+    idx = _acd_reglist_data_find(priv, addr);
+
+    now_msec = nm_utils_get_monotonic_timestamp_msec();
+
+    g_array_append_val(priv->v4.acd.reglist,
+                       ((AcdRegListData){
+                           .l3cd        = nm_l3_config_data_ref(priv->l3cd_next),
+                           .addr        = addr,
+                           .expiry_msec = now_msec + ACD_REGLIST_GRACE_PERIOD_MSEC,
+                       }));
+
+    if (idx != G_MAXUINT) {
+        /* we already tracked this "addr". We don't need to track it twice,
+         * forget about this one. This also has the effect, that we will
+         * always append the new entry to the list (so the list
+         * stays sorted by the increasing timestamp). */
+        _acd_reglist_data_remove(self, idx, FALSE);
+    }
+
+    if (priv->v4.acd.reglist->len > ACD_REGLIST_MAX_ENTRIES) {
+        /* rate limit how many addresses we track for ACD. */
+        _acd_reglist_data_remove(self, 0, TRUE);
+    }
+
+    _acd_reglist_timeout_reschedule(self, now_msec);
+
+    if (!priv->v4.acd.l3cfg_commit_handle) {
+        priv->v4.acd.l3cfg_commit_handle =
+            nm_l3cfg_commit_type_register(priv->config.l3cfg,
+                                          NM_L3_CFG_COMMIT_TYPE_UPDATE,
+                                          NULL,
+                                          "dhcp4-acd");
+        l3_cfg_notify_check_connected(self);
+    }
+
+    if (addr_changed)
+        nm_l3cfg_commit_on_idle_schedule(priv->config.l3cfg, NM_L3_CFG_COMMIT_TYPE_AUTO);
+
+    /* ACD is started/pending... */
+    nm_assert(priv->v4.acd.addr != INADDR_ANY);
+    nm_assert(priv->v4.acd.state == NM_OPTION_BOOL_DEFAULT);
+    nm_assert(priv->v4.acd.l3cfg_commit_handle);
+    nm_assert(priv->l3cfg_notify.id);
+    *out_acd_state = NM_OPTION_BOOL_DEFAULT;
+    return;
+
+handle_no_acd:
+    /* Indicate that ACD is good (or disabled) by returning TRUE. */
+    _acd_state_reset(self, TRUE, FALSE);
+    *out_acd_state = NM_OPTION_BOOL_TRUE;
+    return;
+}
+
+/*****************************************************************************/
+
+gboolean
+_nm_dhcp_client_accept_offer(NMDhcpClient *self, gconstpointer p_yiaddr)
+{
+    NMDhcpClientPrivate   *priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
+    char                   sbuf_addr[NM_UTILS_INET_ADDRSTRLEN];
+    NMIPAddr               yiaddr;
+    const NML3AcdAddrInfo *acd_info;
+
+    if (!NM_IS_IPv4(priv->config.addr_family))
+        return nm_assert_unreachable_val(FALSE);
+
+    if (priv->config.v4.acd_timeout_msec == 0) {
+        /* ACD is disabled. Note that we might track the address for other
+         * reasons and have information about the ACD state below. But
+         * with ACD disabled, we always ignore that information. */
+        return TRUE;
+    }
+
+    nm_ip_addr_set(priv->config.addr_family, &yiaddr, p_yiaddr);
+
+    /* Note that once we do ACD for a certain address, even after completing
+     * it, we keep the l3cd registered in NML3Cfg for ACD_REGLIST_GRACE_PERIOD_MSEC
+     * The idea is, that we don't yet turn off ACD for a grace period, so that
+     * we can avoid selecting the same lease again.
+     *
+     * Note that we even check whether we have an ACD state if priv->v4.acd.reglist
+     * is empty. Maybe for odd reasons, we track ACD for the address already. */
+
+    acd_info = nm_l3cfg_get_acd_addr_info(priv->config.l3cfg, yiaddr.addr4);
+
+    if (!acd_info)
+        return TRUE;
+
+    if (!NM_IN_SET(acd_info->state, NM_L3_ACD_ADDR_STATE_USED, NM_L3_ACD_ADDR_STATE_CONFLICT))
+        return TRUE;
+
+    _LOGD("offered lease rejected: address %s failed ACD check",
+          _nm_utils_inet4_ntop(yiaddr.addr4, sbuf_addr));
+
+    return FALSE;
+}
+
 void
 _nm_dhcp_client_notify(NMDhcpClient         *self,
                        NMDhcpClientEventType client_event_type,
@@ -310,6 +709,8 @@ _nm_dhcp_client_notify(NMDhcpClient         *self,
 {
     NMDhcpClientPrivate                     *priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
     GHashTable                              *options;
+    gboolean                                 l3cd_changed;
+    NMOptionBool                             acd_state;
     const int                                IS_IPv4     = NM_IS_IPv4(priv->config.addr_family);
     nm_auto_unref_l3cd const NML3ConfigData *l3cd_merged = NULL;
     char                                     sbuf1[NM_HASH_OBFUSCATE_PTR_STR_BUF_SIZE];
@@ -340,8 +741,7 @@ _nm_dhcp_client_notify(NMDhcpClient         *self,
           nm_dhcp_client_event_type_to_string(client_event_type),
           NM_PRINT_FMT_QUOTED2(l3cd, ", l3cd=", NM_HASH_OBFUSCATE_PTR_STR(l3cd, sbuf1), ""));
 
-    if (l3cd)
-        nm_l3_config_data_seal(l3cd);
+    nm_l3_config_data_seal(l3cd);
 
     if (client_event_type >= NM_DHCP_CLIENT_EVENT_TYPE_TIMEOUT)
         watch_cleanup(self);
@@ -350,34 +750,40 @@ _nm_dhcp_client_notify(NMDhcpClient         *self,
         /* nm_dhcp_utils_merge_new_dhcp6_lease() relies on "life_starts" option
          * for merging, which is only set by dhclient. Internal client never sets that,
          * but it supports multiple IP addresses per lease. */
-        if (nm_dhcp_utils_merge_new_dhcp6_lease(priv->l3cd, l3cd, &l3cd_merged)) {
+        if (nm_dhcp_utils_merge_new_dhcp6_lease(priv->l3cd_next, l3cd, &l3cd_merged)) {
             _LOGD("lease merged with existing one");
             l3cd = nm_l3_config_data_seal(l3cd_merged);
         }
     }
 
-    if (priv->l3cd == l3cd)
-        return;
-
     if (l3cd) {
         nm_clear_g_source_inst(&priv->no_lease_timeout_source);
-    } else {
-        if (priv->l3cd)
-            _no_lease_timeout_schedule(self);
+    } else
+        _no_lease_timeout_schedule(self);
+
+    l3cd_changed = nm_l3_config_data_reset(&priv->l3cd_next, l3cd);
+
+    _acd_check_lease(self, &acd_state);
+
+    options = priv->l3cd_next ? nm_dhcp_lease_get_options(
+                  nm_l3_config_data_get_dhcp_lease(priv->l3cd_next, priv->config.addr_family))
+                              : NULL;
+
+    if (_LOGI_ENABLED()) {
+        const char *req_str =
+            IS_IPv4 ? nm_dhcp_option_request_string(AF_INET, NM_DHCP_OPTION_DHCP4_NM_IP_ADDRESS)
+                    : nm_dhcp_option_request_string(AF_INET6, NM_DHCP_OPTION_DHCP6_NM_IP_ADDRESS);
+        const char *addr = nm_g_hash_table_lookup(options, req_str);
+
+        _LOGI("state changed %s%s%s%s",
+              priv->l3cd_next ? "new lease" : "no lease",
+              NM_PRINT_FMT_QUOTED2(addr, ", address=", addr, ""),
+              acd_state == NM_OPTION_BOOL_DEFAULT ? ", acd pending"
+                                                  : (acd_state ? "" : ", acd conflict"));
     }
 
-    /* FIXME(l3cfg:dhcp): the API of NMDhcpClient is changing to expose a simpler API.
-     * The internals like the state should not be exposed (or possibly dropped in large
-     * parts). */
-
-    nm_l3_config_data_reset(&priv->l3cd, l3cd);
-
-    options = l3cd ? nm_dhcp_lease_get_options(
-                  nm_l3_config_data_get_dhcp_lease(l3cd, priv->config.addr_family))
-                   : NULL;
-
     if (_LOGD_ENABLED()) {
-        if (options) {
+        if (l3cd_changed && options) {
             gs_free const char **keys = NULL;
             guint                nkeys;
             guint                i;
@@ -391,41 +797,33 @@ _nm_dhcp_client_notify(NMDhcpClient         *self,
         }
     }
 
-    if (_LOGI_ENABLED()) {
-        const char *req_str =
-            IS_IPv4 ? nm_dhcp_option_request_string(AF_INET, NM_DHCP_OPTION_DHCP4_NM_IP_ADDRESS)
-                    : nm_dhcp_option_request_string(AF_INET6, NM_DHCP_OPTION_DHCP6_NM_IP_ADDRESS);
-        const char *addr = nm_g_hash_table_lookup(options, req_str);
-
-        _LOGI("state changed %s%s%s%s",
-              priv->l3cd ? "new lease" : "no lease",
-              NM_PRINT_FMT_QUOTED(addr, ", address=", addr, "", ""));
+    if (acd_state == NM_OPTION_BOOL_DEFAULT) {
+        /* ACD is in progress... */
+        return;
     }
 
-    /* FIXME(l3cfg:dhcp:acd): NMDhcpClient must also do ACD. It needs acd_timeout_msec
-     * as a configuration parameter (in NMDhcpClientConfig). When ACD is enabled,
-     * when a new lease gets announced, it must first use NML3Cfg to run ACD on the
-     * interface (the previous lease -- if any -- will still be used at that point).
-     * If ACD fails, we call _dhcp_client_decline() and try to get a different
-     * lease.
-     * If ACD passes, we need to notify the new lease, and the user (NMDevice) may
-     * then configure the address. We need to watch the configured addresses (in NML3Cfg),
-     * and if the address appears there, we need to accept the lease. That is complicated
-     * but necessary, because we can only accept the lease after we configured the
-     * address.
-     *
-     * As a whole, ACD is transparent for the user (NMDevice). It's entirely managed
-     * by NMDhcpClient. Note that we do ACD through NML3Cfg, which centralizes IP handling
-     * for one interface, so for example if the same address happens to be configured
-     * as a static address (bypassing ACD), then NML3Cfg is aware of that and signals
-     * immediate success. */
+    if (!acd_state) {
+        gs_free_error GError *error = NULL;
 
-    if (client_event_type == NM_DHCP_CLIENT_EVENT_TYPE_BOUND && priv->l3cd
-        && nm_l3_config_data_get_num_addresses(priv->l3cd, priv->config.addr_family) > 0) {
+        /* We only decline. We don't actually emit to the caller that
+         * something is wrong (like NM_DHCP_CLIENT_NOTIFY_TYPE_IT_LOOKS_BAD).
+         * If we would, NMDevice might decide to tear down the device, when
+         * we actually should continue trying to get a better lease. There
+         * is already "ipv4.dhcp-timeout" which will handle the failure if
+         * we don't get a good lease. */
+        if (!_dhcp_client_decline(self, priv->l3cd_next, "acd failed", &error))
+            _LOGD("decline failed: %s", error->message);
+        return;
+    }
+
+    nm_l3_config_data_reset(&priv->l3cd_curr, priv->l3cd_next);
+
+    if (client_event_type == NM_DHCP_CLIENT_EVENT_TYPE_BOUND && priv->l3cd_curr
+        && nm_l3_config_data_get_num_addresses(priv->l3cd_curr, priv->config.addr_family) > 0)
         priv->l3cfg_notify.wait_dhcp_commit = TRUE;
-    } else {
+    else
         priv->l3cfg_notify.wait_dhcp_commit = FALSE;
-    }
+
     l3_cfg_notify_check_connected(self);
 
     {
@@ -433,7 +831,7 @@ _nm_dhcp_client_notify(NMDhcpClient         *self,
             .notify_type = NM_DHCP_CLIENT_NOTIFY_TYPE_LEASE_UPDATE,
             .lease_update =
                 {
-                    .l3cd     = priv->l3cd,
+                    .l3cd     = priv->l3cd_curr,
                     .accepted = !priv->l3cfg_notify.wait_dhcp_commit,
                 },
         };
@@ -512,7 +910,7 @@ _dhcp_client_accept(NMDhcpClient *self, const NML3ConfigData *l3cd, GError **err
 
     klass = NM_DHCP_CLIENT_GET_CLASS(self);
 
-    g_return_val_if_fail(NM_DHCP_CLIENT_GET_PRIVATE(self)->l3cd, FALSE);
+    g_return_val_if_fail(NM_DHCP_CLIENT_GET_PRIVATE(self)->l3cd_curr, FALSE);
 
     return klass->accept(self, l3cd, error);
 }
@@ -552,7 +950,7 @@ _dhcp_client_decline(NMDhcpClient         *self,
 
     klass = NM_DHCP_CLIENT_GET_CLASS(self);
 
-    g_return_val_if_fail(NM_DHCP_CLIENT_GET_PRIVATE(self)->l3cd, FALSE);
+    g_return_val_if_fail(NM_DHCP_CLIENT_GET_PRIVATE(self)->l3cd_next, FALSE);
 
     return klass->decline(self, l3cd, error_message, error);
 }
@@ -611,6 +1009,7 @@ static void
 l3_cfg_notify_cb(NML3Cfg *l3cfg, const NML3ConfigNotifyData *notify_data, NMDhcpClient *self)
 {
     NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
+    char                 sbuf_addr[NM_UTILS_INET_ADDRSTRLEN];
 
     nm_assert(l3cfg == priv->config.l3cfg);
 
@@ -651,7 +1050,7 @@ l3_cfg_notify_cb(NML3Cfg *l3cfg, const NML3ConfigNotifyData *notify_data, NMDhcp
          * lease and notifying NMDevice. */
 
         nm_l3_config_data_iter_ip_address_for_each (&ipconf_iter,
-                                                    priv->l3cd,
+                                                    priv->l3cd_curr,
                                                     priv->config.addr_family,
                                                     &lease_address)
             break;
@@ -678,8 +1077,10 @@ l3_cfg_notify_cb(NML3Cfg *l3cfg, const NML3ConfigNotifyData *notify_data, NMDhcp
 
         _LOGD("accept lease");
 
-        if (!_dhcp_client_accept(self, priv->l3cd, &error)) {
+        if (!_dhcp_client_accept(self, priv->l3cd_curr, &error)) {
             gs_free char *reason = g_strdup_printf("error accepting lease: %s", error->message);
+
+            _LOGD("accept failed: %s", error->message);
 
             _emit_notify(self,
                          &((NMDhcpClientNotifyData){
@@ -693,11 +1094,53 @@ l3_cfg_notify_cb(NML3Cfg *l3cfg, const NML3ConfigNotifyData *notify_data, NMDhcp
             self,
             &((NMDhcpClientNotifyData){.notify_type  = NM_DHCP_CLIENT_NOTIFY_TYPE_LEASE_UPDATE,
                                        .lease_update = {
-                                           .l3cd     = priv->l3cd,
+                                           .l3cd     = priv->l3cd_curr,
                                            .accepted = TRUE,
                                        }}));
     }
 wait_dhcp_commit_done:
+
+    if (notify_data->notify_type == NM_L3_CONFIG_NOTIFY_TYPE_ACD_EVENT
+        && priv->v4.acd.l3cfg_commit_handle) {
+        nm_assert(priv->v4.acd.addr != INADDR_ANY);
+        nm_assert(priv->v4.acd.state == NM_OPTION_BOOL_DEFAULT);
+        nm_assert(!priv->v4.acd.done_source);
+
+        if (priv->v4.acd.addr == notify_data->acd_event.info.addr
+            && nm_l3_acd_addr_info_find_track_info(&notify_data->acd_event.info,
+                                                   L3CD_ACD_TAG(priv),
+                                                   NULL,
+                                                   NULL)) {
+            NMOptionBool acd_state;
+
+            switch (notify_data->acd_event.info.state) {
+            default:
+                nm_assert_not_reached();
+                /* fall-through */
+            case NM_L3_ACD_ADDR_STATE_INIT:
+            case NM_L3_ACD_ADDR_STATE_PROBING:
+                acd_state = NM_OPTION_BOOL_DEFAULT;
+                break;
+            case NM_L3_ACD_ADDR_STATE_USED:
+            case NM_L3_ACD_ADDR_STATE_CONFLICT:
+            case NM_L3_ACD_ADDR_STATE_EXTERNAL_REMOVED:
+                acd_state = NM_OPTION_BOOL_FALSE;
+                break;
+            case NM_L3_ACD_ADDR_STATE_READY:
+            case NM_L3_ACD_ADDR_STATE_DEFENDING:
+                acd_state = NM_OPTION_BOOL_TRUE;
+                break;
+            }
+            if (acd_state != NM_OPTION_BOOL_DEFAULT) {
+                _LOGD("acd: acd %s for %s",
+                      acd_state ? "ready" : "conflict",
+                      _nm_utils_inet4_ntop(priv->v4.acd.addr, sbuf_addr));
+                nm_l3cfg_commit_type_clear(priv->config.l3cfg, &priv->v4.acd.l3cfg_commit_handle);
+                priv->v4.acd.state       = acd_state;
+                priv->v4.acd.done_source = nm_g_idle_add_source(_acd_complete_on_idle_cb, self);
+            }
+        }
+    }
 }
 
 gboolean
@@ -826,6 +1269,8 @@ nm_dhcp_client_stop(NMDhcpClient *self, gboolean release)
                                               "dhcp stopping");
     }
 
+    _acd_state_reset(self, TRUE, TRUE);
+
     priv->l3cfg_notify.wait_dhcp_commit = FALSE;
     priv->l3cfg_notify.wait_ll_address  = FALSE;
     l3_cfg_notify_check_connected(self);
@@ -838,6 +1283,9 @@ nm_dhcp_client_stop(NMDhcpClient *self, gboolean release)
     else
         _LOGI("canceled DHCP transaction");
     nm_assert(priv->pid == -1);
+
+    nm_clear_l3cd(&priv->l3cd_next);
+    nm_clear_l3cd(&priv->l3cd_curr);
 
     _nm_dhcp_client_notify(self, NM_DHCP_CLIENT_EVENT_TYPE_TERMINATED, NULL);
 }
@@ -973,6 +1421,7 @@ nm_dhcp_client_handle_event(gpointer               unused,
     NMPlatformIP6Address                    prefix = {
         0,
     };
+    int IS_IPv4;
 
     g_return_val_if_fail(NM_IS_DHCP_CLIENT(self), FALSE);
     g_return_val_if_fail(iface != NULL, FALSE);
@@ -982,6 +1431,8 @@ nm_dhcp_client_handle_event(gpointer               unused,
     g_return_val_if_fail(G_IS_DBUS_METHOD_INVOCATION(invocation), FALSE);
 
     priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
+
+    g_return_val_if_fail(!priv->is_stopped, FALSE);
 
     if (!nm_streq0(priv->config.iface, iface))
         return FALSE;
@@ -1067,10 +1518,12 @@ nm_dhcp_client_handle_event(gpointer               unused,
         client_event_type = NM_DHCP_CLIENT_EVENT_TYPE_FAIL;
     }
 
-    if (priv->v4.bound.invocation)
+    IS_IPv4 = NM_IS_IPv4(priv->config.addr_family);
+
+    if (IS_IPv4 && priv->v4.bound.invocation)
         g_dbus_method_invocation_return_value(g_steal_pointer(&priv->v4.bound.invocation), NULL);
 
-    if (NM_IS_IPv4(priv->config.addr_family)
+    if (IS_IPv4
         && NM_IN_SET(client_event_type,
                      NM_DHCP_CLIENT_EVENT_TYPE_BOUND,
                      NM_DHCP_CLIENT_EVENT_TYPE_EXTENDED))
@@ -1229,6 +1682,13 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
                     {
                         .invocation = NULL,
                     },
+                .acd =
+                    {
+                        .addr                = INADDR_ANY,
+                        .state               = NM_OPTION_BOOL_DEFAULT,
+                        .l3cfg_commit_handle = NULL,
+                        .done_source         = NULL,
+                    },
             };
         } else {
             priv->v6 = (typeof(priv->v6)){
@@ -1266,12 +1726,15 @@ dispose(GObject *object)
     watch_cleanup(self);
 
     nm_clear_g_source_inst(&priv->no_lease_timeout_source);
+
     if (!NM_IS_IPv4(priv->config.addr_family))
         nm_clear_g_source_inst(&priv->v6.lladdr_timeout_source);
+
     nm_clear_pointer(&priv->effective_client_id, g_bytes_unref);
 
     nm_assert(!priv->watch_source);
-    nm_assert(!priv->l3cd);
+    nm_assert(!priv->l3cd_next);
+    nm_assert(!priv->l3cd_curr);
     nm_assert(priv->l3cfg_notify.id == 0);
 
     G_OBJECT_CLASS(nm_dhcp_client_parent_class)->dispose(object);

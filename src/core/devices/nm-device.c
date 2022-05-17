@@ -10299,6 +10299,7 @@ _dev_ipdhcpx_start(NMDevice *self, int addr_family)
             .v4 =
                 {
                     .request_broadcast = request_broadcast,
+                    .acd_timeout_msec  = _prop_get_ipv4_dad_timeout(self),
                 },
         };
 

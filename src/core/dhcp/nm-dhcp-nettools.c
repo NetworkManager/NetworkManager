@@ -964,6 +964,11 @@ dhcp4_event_handle(NMDhcpNettools *self, NDhcp4ClientEvent *event)
             return;
         }
 
+        if (!_nm_dhcp_client_accept_offer(NM_DHCP_CLIENT(self), &yiaddr.s_addr)) {
+            /* We don't log about this, the parent class is expected to notify about the reasons. */
+            return;
+        }
+
         _LOGT("selecting offered lease from %s for %s",
               _nm_utils_inet4_ntop(server_id.s_addr, addr_str),
               _nm_utils_inet4_ntop(yiaddr.s_addr, addr_str2));

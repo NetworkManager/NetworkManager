@@ -150,6 +150,10 @@ typedef struct {
             /* The address from the previous lease */
             const char *last_address;
 
+            /* Whether to do ACD for the DHCPv4 address. With timeout zero, ACD
+             * is disabled. */
+            guint acd_timeout_msec;
+
             /* Set BOOTP broadcast flag in request packets, so that servers
              * will always broadcast replies. */
             bool request_broadcast : 1;
@@ -260,6 +264,8 @@ void nm_dhcp_client_stop_watch_child(NMDhcpClient *self, pid_t pid);
 void _nm_dhcp_client_notify(NMDhcpClient         *self,
                             NMDhcpClientEventType client_event_type,
                             const NML3ConfigData *l3cd);
+
+gboolean _nm_dhcp_client_accept_offer(NMDhcpClient *self, gconstpointer p_yiaddr);
 
 gboolean nm_dhcp_client_handle_event(gpointer               unused,
                                      const char            *iface,
