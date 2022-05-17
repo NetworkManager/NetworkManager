@@ -183,7 +183,7 @@ _emit_notify(NMDhcpClient *self, const NMDhcpClientNotifyData *notify_data)
 /*****************************************************************************/
 
 static void
-connect_l3cfg_notify(NMDhcpClient *self)
+l3_cfg_notify_check_connected(NMDhcpClient *self)
 {
     NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
     gboolean             do_connect;
@@ -425,7 +425,7 @@ _nm_dhcp_client_notify(NMDhcpClient         *self,
     } else {
         priv->l3cfg_notify.wait_dhcp_commit = FALSE;
     }
-    connect_l3cfg_notify(self);
+    l3_cfg_notify_check_connected(self);
 
     {
         const NMDhcpClientNotifyData notify_data = {
@@ -598,7 +598,7 @@ l3_cfg_notify_cb(NML3Cfg *l3cfg, const NML3ConfigNotifyData *notify_data, NMDhcp
         if (addr) {
             _LOGD("got IPv6LL address, starting transaction");
             priv->l3cfg_notify.wait_ll_address = FALSE;
-            connect_l3cfg_notify(self);
+            l3_cfg_notify_check_connected(self);
             nm_clear_g_source_inst(&priv->v6.lladdr_timeout_source);
 
             _no_lease_timeout_schedule(self);
@@ -649,7 +649,7 @@ l3_cfg_notify_cb(NML3Cfg *l3cfg, const NML3ConfigNotifyData *notify_data, NMDhcp
         }
 
         priv->l3cfg_notify.wait_dhcp_commit = FALSE;
-        connect_l3cfg_notify(self);
+        l3_cfg_notify_check_connected(self);
 
         _LOGD("accept address");
 
@@ -703,7 +703,7 @@ nm_dhcp_client_start(NMDhcpClient *self, GError **error)
         if (!addr) {
             _LOGD("waiting for IPv6LL address");
             priv->l3cfg_notify.wait_ll_address = TRUE;
-            connect_l3cfg_notify(self);
+            l3_cfg_notify_check_connected(self);
             priv->v6.lladdr_timeout_source =
                 nm_g_timeout_add_seconds_source(10, ipv6_lladdr_timeout, self);
             return TRUE;
@@ -796,7 +796,7 @@ nm_dhcp_client_stop(NMDhcpClient *self, gboolean release)
 
     priv->l3cfg_notify.wait_dhcp_commit = FALSE;
     priv->l3cfg_notify.wait_ll_address  = FALSE;
-    connect_l3cfg_notify(self);
+    l3_cfg_notify_check_connected(self);
 
     /* Kill the DHCP client */
     old_pid = priv->pid;
