@@ -2980,8 +2980,6 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
                                error))
         return FALSE;
 
-        /* normalizable warnings from here on. */
-
 #define _check_strempty_and_return(priv, prop_name, field, error)                               \
     G_STMT_START                                                                                \
     {                                                                                           \
@@ -2998,6 +2996,8 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
         }                                                                                       \
     }                                                                                           \
     G_STMT_END
+
+    /* normalizable warnings from here on. */
 
     _check_strempty_and_return(priv, NM_SETTING_802_1X_IDENTITY, identity, error);
     _check_strempty_and_return(priv,
