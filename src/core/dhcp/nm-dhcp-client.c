@@ -320,7 +320,7 @@ _nm_dhcp_client_notify(NMDhcpClient         *self,
 
     _LOGT("notify: event=%s%s%s",
           nm_dhcp_client_event_type_to_string(client_event_type),
-          NM_PRINT_FMT_QUOTED2(l3cd, "", ", l3cd=", NM_HASH_OBFUSCATE_PTR_STR(l3cd, sbuf1)));
+          NM_PRINT_FMT_QUOTED2(l3cd, ", l3cd=", NM_HASH_OBFUSCATE_PTR_STR(l3cd, sbuf1), ""));
 
     if (l3cd)
         nm_l3_config_data_seal(l3cd);
