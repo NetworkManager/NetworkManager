@@ -22,7 +22,9 @@
 /*****************************************************************************/
 
 typedef struct _NMDevicePppPrivate {
-    NMPppMgr *ppp_mgr;
+    NMPppMgr          *ppp_mgr;
+    NMUtilsIPv6IfaceId iid;
+    bool               need_iid;
 } NMDevicePppPrivate;
 
 struct _NMDevicePpp {
@@ -60,17 +62,29 @@ _ppp_mgr_cleanup(NMDevicePpp *self)
 static void
 _ppp_mgr_stage3_maybe_ready(NMDevicePpp *self)
 {
-    NMDevice           *device = NM_DEVICE(self);
-    NMDevicePppPrivate *priv   = NM_DEVICE_PPP_GET_PRIVATE(self);
-    int                 IS_IPv4;
+    NMDevice             *device = NM_DEVICE(self);
+    NMDevicePppPrivate   *priv   = NM_DEVICE_PPP_GET_PRIVATE(self);
+    const NMPppMgrIPData *ip_data;
 
-    for (IS_IPv4 = 1; IS_IPv4 >= 0; IS_IPv4--) {
-        const int             addr_family = IS_IPv4 ? AF_INET : AF_INET6;
-        const NMPppMgrIPData *ip_data;
+    ip_data = nm_ppp_mgr_get_ip_data(priv->ppp_mgr, AF_INET);
+    if (ip_data->ip_received)
+        nm_device_devip_set_state(device, AF_INET, NM_DEVICE_IP_STATE_READY, ip_data->l3cd);
 
-        ip_data = nm_ppp_mgr_get_ip_data(priv->ppp_mgr, addr_family);
-        if (ip_data->ip_received)
-            nm_device_devip_set_state(device, addr_family, NM_DEVICE_IP_STATE_READY, ip_data->l3cd);
+    ip_data = nm_ppp_mgr_get_ip_data(priv->ppp_mgr, AF_INET6);
+    if (ip_data->ip_received) {
+        if (priv->need_iid) {
+            if (ip_data->ipv6_iid && ip_data->ipv6_iid->id != 0) {
+                _LOGD(LOGD_DEVICE | LOGD_PPP, "PPP-IPv6 link-local got interface identifier");
+                priv->iid = *ip_data->ipv6_iid;
+                nm_device_ipll6_set_state(device, NM_DEVICE_IP_STATE_READY, ip_data->l3cd);
+            } else {
+                _LOGW(LOGD_DEVICE | LOGD_PPP,
+                      "PPP-IPv6 link-local got no interface identifier from IPV6CP");
+                nm_device_ipll6_set_state(device, NM_DEVICE_IP_STATE_FAILED, NULL);
+            }
+        } else {
+            nm_device_devip_set_state(device, AF_INET6, NM_DEVICE_IP_STATE_READY, ip_data->l3cd);
+        }
     }
 
     if (nm_ppp_mgr_get_state(priv->ppp_mgr) >= NM_PPP_MGR_STATE_HAVE_IP_CONFIG)
@@ -189,6 +203,39 @@ act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
 }
 
 static void
+ipll6_start(NMDevice *device)
+{
+    NMDevicePpp        *self = NM_DEVICE_PPP(device);
+    NMDevicePppPrivate *priv = NM_DEVICE_PPP_GET_PRIVATE(self);
+    NMSettingIP6Config *s_ip6;
+
+    s_ip6 = nm_device_get_applied_setting(device, NM_TYPE_SETTING_IP6_CONFIG);
+    if (s_ip6
+        && nm_setting_ip6_config_get_addr_gen_mode(s_ip6)
+               == NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_EUI64) {
+        priv->need_iid = TRUE;
+        _LOGD(LOGD_DEVICE | LOGD_PPP, "PPP-IPv6 link-local waiting for interface identifier");
+        return;
+    }
+
+    NM_DEVICE_CLASS(nm_device_ppp_parent_class)->ipll6_start(device);
+}
+
+static gboolean
+get_ip_iface_identifier(NMDevice *device, NMUtilsIPv6IfaceId *out_iid)
+{
+    NMDevicePpp        *self = NM_DEVICE_PPP(device);
+    NMDevicePppPrivate *priv = NM_DEVICE_PPP_GET_PRIVATE(self);
+
+    if (priv->iid.id != 0) {
+        *out_iid = priv->iid;
+        return TRUE;
+    }
+
+    return NM_DEVICE_CLASS(nm_device_ppp_parent_class)->get_ip_iface_identifier(device, out_iid);
+}
+
+static void
 act_stage3_ip_config(NMDevice *device, int addr_family)
 {
     NMDevicePpp        *self = NM_DEVICE_PPP(device);
@@ -304,6 +351,8 @@ nm_device_ppp_class_init(NMDevicePppClass *klass)
     device_class->create_and_realize          = create_and_realize;
     device_class->deactivate                  = deactivate;
     device_class->get_generic_capabilities    = get_generic_capabilities;
+    device_class->ipll6_start                 = ipll6_start;
+    device_class->get_ip_iface_identifier     = get_ip_iface_identifier;
 }
 
 /*****************************************************************************/
