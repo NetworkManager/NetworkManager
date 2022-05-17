@@ -73,6 +73,12 @@ G_DEFINE_ABSTRACT_TYPE(NMDhcpClient, nm_dhcp_client, G_TYPE_OBJECT)
 
 /*****************************************************************************/
 
+static gboolean _dhcp_client_accept(NMDhcpClient *self, GError **error);
+static gboolean _dhcp_client_can_accept(NMDhcpClient *self);
+
+_nm_unused static gboolean
+_dhcp_client_decline(NMDhcpClient *self, const char *error_message, GError **error);
+
 static void
 l3_cfg_notify_cb(NML3Cfg *l3cfg, const NML3ConfigNotifyData *notify_data, NMDhcpClient *self);
 
@@ -397,7 +403,7 @@ _nm_dhcp_client_notify(NMDhcpClient         *self,
      * as a configuration parameter (in NMDhcpClientConfig). When ACD is enabled,
      * when a new lease gets announced, it must first use NML3Cfg to run ACD on the
      * interface (the previous lease -- if any -- will still be used at that point).
-     * If ACD fails, we call nm_dhcp_client_decline() and try to get a different
+     * If ACD fails, we call _dhcp_client_decline() and try to get a different
      * lease.
      * If ACD passes, we need to notify the new lease, and the user (NMDevice) may
      * then configure the address. We need to watch the configured addresses (in NML3Cfg),
@@ -411,7 +417,7 @@ _nm_dhcp_client_notify(NMDhcpClient         *self,
      * as a static address (bypassing ACD), then NML3Cfg is aware of that and signals
      * immediate success. */
 
-    if (nm_dhcp_client_can_accept(self) && client_event_type == NM_DHCP_CLIENT_EVENT_TYPE_BOUND
+    if (_dhcp_client_can_accept(self) && client_event_type == NM_DHCP_CLIENT_EVENT_TYPE_BOUND
         && priv->l3cd
         && nm_l3_config_data_get_num_addresses(priv->l3cd, priv->config.addr_family) > 0) {
         priv->l3cfg_notify.wait_dhcp_commit = TRUE;
@@ -475,8 +481,8 @@ nm_dhcp_client_stop_watch_child(NMDhcpClient *self, pid_t pid)
     watch_cleanup(self);
 }
 
-gboolean
-nm_dhcp_client_accept(NMDhcpClient *self, GError **error)
+static gboolean
+_dhcp_client_accept(NMDhcpClient *self, GError **error)
 {
     NMDhcpClientPrivate *priv;
 
@@ -493,8 +499,8 @@ nm_dhcp_client_accept(NMDhcpClient *self, GError **error)
     return TRUE;
 }
 
-gboolean
-nm_dhcp_client_can_accept(NMDhcpClient *self)
+static gboolean
+_dhcp_client_can_accept(NMDhcpClient *self)
 {
     gboolean can_accept;
 
@@ -507,8 +513,8 @@ nm_dhcp_client_can_accept(NMDhcpClient *self)
     return can_accept;
 }
 
-gboolean
-nm_dhcp_client_decline(NMDhcpClient *self, const char *error_message, GError **error)
+static gboolean
+_dhcp_client_decline(NMDhcpClient *self, const char *error_message, GError **error)
 {
     NMDhcpClientPrivate *priv;
 
@@ -646,7 +652,7 @@ l3_cfg_notify_cb(NML3Cfg *l3cfg, const NML3ConfigNotifyData *notify_data, NMDhcp
 
         _LOGD("accept address");
 
-        if (!nm_dhcp_client_accept(self, &error)) {
+        if (!_dhcp_client_accept(self, &error)) {
             gs_free char *reason = g_strdup_printf("error accepting lease: %s", error->message);
 
             _emit_notify(self,

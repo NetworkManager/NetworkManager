@@ -241,11 +241,6 @@ nm_dhcp_client_get_lease(NMDhcpClient *self)
     return NULL;
 }
 
-gboolean nm_dhcp_client_accept(NMDhcpClient *self, GError **error);
-gboolean nm_dhcp_client_can_accept(NMDhcpClient *self);
-
-gboolean nm_dhcp_client_decline(NMDhcpClient *self, const char *error_message, GError **error);
-
 void nm_dhcp_client_stop(NMDhcpClient *self, gboolean release);
 
 /* Backend helpers for subclasses */
