@@ -910,7 +910,7 @@ dhcp4_event_handle(NMDhcpNettools *self, NDhcp4ClientEvent *event)
     case N_DHCP4_CLIENT_EVENT_OFFER:
         r = n_dhcp4_client_lease_get_server_identifier(event->offer.lease, &server_id);
         if (r) {
-            _LOGW("selecting lease failed: %d", r);
+            _LOGW("selecting lease failed: could not get DHCP server identifier (%d)", r);
             return;
         }
 
