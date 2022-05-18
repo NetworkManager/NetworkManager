@@ -1109,6 +1109,8 @@ nmc_complete_device(NMClient *client, const char *prefix, gboolean wifi_only)
     complete_device(devices, prefix, wifi_only);
 }
 
+static void destroy_queue_element(gpointer data);
+
 static GPtrArray *
 get_device_list(NmCli *nmc, int *argc, const char *const **argv)
 {
@@ -1159,9 +1161,9 @@ get_device_list(NmCli *nmc, int *argc, const char *const **argv)
 
         if (device) {
             if (!queue)
-                queue = g_ptr_array_new();
+                queue = g_ptr_array_new_with_free_func(destroy_queue_element);
             if (!g_ptr_array_find(queue, device, NULL))
-                g_ptr_array_add(queue, device);
+                g_ptr_array_add(queue, g_object_ref(device));
             else
                 g_printerr(_("Warning: argument '%s' is duplicated.\n"), **argv);
         } else {
@@ -2315,7 +2317,7 @@ do_device_connect(const NMCCommand *cmd, NmCli *nmc, int argc, const char *const
 
 typedef struct {
     NmCli        *nmc;
-    GSList       *queue;
+    GPtrArray    *queue;
     guint         timeout_id;
     gboolean      cmd_disconnect;
     GCancellable *cancellable;
@@ -2339,7 +2341,7 @@ device_removed_cb(NMClient *client, NMDevice *device, DeviceCbInfo *info)
     /* Success: device has been removed.
      * It can also happen when disconnecting a software device.
      */
-    if (!g_slist_find(info->queue, device))
+    if (!g_ptr_array_find(info->queue, device, NULL))
         return;
 
     if (info->cmd_disconnect)
@@ -2352,7 +2354,7 @@ device_removed_cb(NMClient *client, NMDevice *device, DeviceCbInfo *info)
 static void
 disconnect_state_cb(NMDevice *device, GParamSpec *pspec, DeviceCbInfo *info)
 {
-    if (!g_slist_find(info->queue, device))
+    if (!g_ptr_array_find(info->queue, device, NULL))
         return;
 
     if (nm_device_get_state(device) <= NM_DEVICE_STATE_DISCONNECTED) {
@@ -2378,22 +2380,16 @@ static void
 device_cb_info_finish(DeviceCbInfo *info, NMDevice *device)
 {
     if (device) {
-        GSList *elem = g_slist_find(info->queue, device);
-        if (!elem)
+        if (!g_ptr_array_remove(info->queue, device))
             return;
-        info->queue = g_slist_delete_link(info->queue, elem);
-        destroy_queue_element(device);
-    } else {
-        g_slist_free_full(info->queue, destroy_queue_element);
-        info->queue = NULL;
+        if (info->queue->len)
+            return;
     }
-
-    if (info->queue)
-        return;
 
     if (info->timeout_id)
         g_source_remove(info->timeout_id);
 
+    g_ptr_array_free(info->queue, TRUE);
     g_signal_handlers_disconnect_by_func(info->nmc->client, device_removed_cb, info);
     nm_clear_g_cancellable(&info->cancellable);
 
@@ -2458,9 +2454,11 @@ do_device_reapply(const NMCCommand *cmd, NmCli *nmc, int argc, const char *const
     nmc->nowait_flag = (nmc->timeout == 0);
     nmc->should_wait++;
 
-    info        = g_slice_new0(DeviceCbInfo);
-    info->nmc   = nmc;
-    info->queue = g_slist_prepend(info->queue, g_object_ref(device));
+    info      = g_slice_new0(DeviceCbInfo);
+    info->nmc = nmc;
+
+    info->queue = g_ptr_array_new_with_free_func(destroy_queue_element);
+    g_ptr_array_add(info->queue, g_object_ref(device));
 
     /* Now reapply the connection to the device */
     nm_device_reapply_async(device, NULL, 0, 0, NULL, reapply_device_cb, info);
@@ -2647,6 +2645,7 @@ do_devices_disconnect(const NMCCommand *cmd, NmCli *nmc, int argc, const char *c
         return;
 
     info                 = g_slice_new0(DeviceCbInfo);
+    info->queue          = g_steal_pointer(&queue);
     info->nmc            = nmc;
     info->cmd_disconnect = TRUE;
     info->cancellable    = g_cancellable_new();
@@ -2658,13 +2657,10 @@ do_devices_disconnect(const NMCCommand *cmd, NmCli *nmc, int argc, const char *c
     nmc->nowait_flag = (nmc->timeout == 0);
     nmc->should_wait++;
 
-    for (i = 0; i < queue->len; i++) {
-        device = queue->pdata[i];
+    for (i = 0; i < info->queue->len; i++) {
+        device = info->queue->pdata[i];
 
-        info->queue = g_slist_prepend(info->queue, g_object_ref(device));
         g_signal_connect(device, "notify::" NM_DEVICE_STATE, G_CALLBACK(disconnect_state_cb), info);
-
-        /* Now disconnect the device */
         nm_device_disconnect_async(device, info->cancellable, disconnect_device_cb, info);
     }
 }
@@ -2695,7 +2691,6 @@ delete_device_cb(GObject *object, GAsyncResult *result, gpointer user_data)
 static void
 do_devices_delete(const NMCCommand *cmd, NmCli *nmc, int argc, const char *const *argv)
 {
-    NMDevice                    *device;
     DeviceCbInfo                *info  = NULL;
     gs_unref_ptrarray GPtrArray *queue = NULL;
     guint                        i;
@@ -2716,8 +2711,9 @@ do_devices_delete(const NMCCommand *cmd, NmCli *nmc, int argc, const char *const
     if (nmc->complete)
         return;
 
-    info      = g_slice_new0(DeviceCbInfo);
-    info->nmc = nmc;
+    info        = g_slice_new0(DeviceCbInfo);
+    info->queue = g_steal_pointer(&queue);
+    info->nmc   = nmc;
     if (nmc->timeout > 0)
         info->timeout_id = g_timeout_add_seconds(nmc->timeout, device_op_timeout_cb, info);
 
@@ -2725,12 +2721,7 @@ do_devices_delete(const NMCCommand *cmd, NmCli *nmc, int argc, const char *const
     nmc->should_wait++;
 
     for (i = 0; i < queue->len; i++) {
-        device = queue->pdata[i];
-
-        info->queue = g_slist_prepend(info->queue, g_object_ref(device));
-
-        /* Now delete the device */
-        nm_device_delete_async(device, NULL, delete_device_cb, info);
+        nm_device_delete_async(queue->pdata[i], NULL, delete_device_cb, info);
     }
 }
 
