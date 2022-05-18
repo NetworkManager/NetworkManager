@@ -35,12 +35,25 @@
  * CRBNode is 4-byte aligned, so the lower 2 bits are actually unused. We also
  * sometimes store a pointer to the root-node, so make sure this one is also 4
  * byte aligned.
- * Note that there are actually some architectures where `max_align_t` is 4, so
- * we do not have much wiggle-room to extend this flag-set.
+ *
+ * Additionally, we want to avoid an alignment that is bigger than the
+ * alignment guaranteed by the system allocator or supported by the system
+ * linker. As there is no standard way to check this, we simply verify against
+ * `alignof(max_align_t)`, as this alignment must be supported by the
+ * toolchain.
+ *
+ * m64k is special here, as it only has a 2-byte max-alignment, but still
+ * guarantees a >=4-byte alignment on allocations. So hard-code the maximum for
+ * it.
  */
-static_assert(alignof(CRBNode) <= alignof(max_align_t), "Invalid RBNode alignment");
+#ifdef __m68k__
+#  define C_RBTREE_MAX_ALIGN (C_MAX(4, alignof(max_align_t)))
+#else
+#  define C_RBTREE_MAX_ALIGN (alignof(max_align_t))
+#endif
+static_assert(alignof(CRBNode) <= C_RBTREE_MAX_ALIGN, "Invalid RBNode alignment");
 static_assert(alignof(CRBNode) >= 4, "Invalid CRBNode alignment");
-static_assert(alignof(CRBTree) <= alignof(max_align_t), "Invalid RBTree alignment");
+static_assert(alignof(CRBTree) <= C_RBTREE_MAX_ALIGN, "Invalid RBTree alignment");
 static_assert(alignof(CRBTree) >= 4, "Invalid CRBTree alignment");
 
 /**
