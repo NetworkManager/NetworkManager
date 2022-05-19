@@ -356,15 +356,6 @@ typedef struct {
 struct _NMPlatformIP4Address {
     __NMPlatformIPAddress_COMMON;
 
-    /* Whether the address is ready to be configured. By default, an address is, but this
-     * flag may indicate that the address is just for tracking purpose only, but the ACD
-     * state is not yet ready for the address to be configured.
-     *
-     * This bit fits actually in an alignment gap between __NMPlatformIPAddress_COMMON and
-     * "address" field. Usually "address" must be the first field after __NMPlatformIPAddress_COMMON,
-     * but there is a gap. We have a static assertion that checks this, so all is good. */
-    bool a_acd_not_ready : 1;
-
     /* The local address IFA_LOCAL. */
     _nm_alignas(NMIPAddr) in_addr_t address;
 
@@ -386,6 +377,11 @@ struct _NMPlatformIP4Address {
     in_addr_t broadcast_address;
 
     char label[NMP_IFNAMSIZ];
+
+    /* Whether the address is ready to be configured. By default, an address is, but this
+     * flag may indicate that the address is just for tracking purpose only, but the ACD
+     * state is not yet ready for the address to be configured. */
+    bool a_acd_not_ready : 1;
 };
 
 /**
