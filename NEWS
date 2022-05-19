@@ -16,6 +16,11 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 * The device state file /run/NetworkManager/devices/$ifindex now has
   new sections [dhcp4] and [dhcp6] containing the DHCP options for the
   current lease.
+* NetworkManager expanded log messages for invalid DHCP options.
+* Support "802-1x.phase1-auth-flags=tls-allow-unsafe-renegotiation" flag
+  for Wi-Fi.
+* Fix the requirement of hardware address for DHCPv6, by dropping it.
+* Several internal improvements.
 
 =============================================
 NetworkManager-1.38
