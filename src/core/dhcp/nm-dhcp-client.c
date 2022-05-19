@@ -73,11 +73,13 @@ G_DEFINE_ABSTRACT_TYPE(NMDhcpClient, nm_dhcp_client, G_TYPE_OBJECT)
 
 /*****************************************************************************/
 
-static gboolean _dhcp_client_accept(NMDhcpClient *self, GError **error);
+static gboolean _dhcp_client_accept(NMDhcpClient *self, const NML3ConfigData *l3cd, GError **error);
 static gboolean _dhcp_client_can_accept(NMDhcpClient *self);
 
-_nm_unused static gboolean
-_dhcp_client_decline(NMDhcpClient *self, const char *error_message, GError **error);
+_nm_unused static gboolean _dhcp_client_decline(NMDhcpClient         *self,
+                                                const NML3ConfigData *l3cd,
+                                                const char           *error_message,
+                                                GError              **error);
 
 static void
 l3_cfg_notify_cb(NML3Cfg *l3cfg, const NML3ConfigNotifyData *notify_data, NMDhcpClient *self);
@@ -482,18 +484,19 @@ nm_dhcp_client_stop_watch_child(NMDhcpClient *self, pid_t pid)
 }
 
 static gboolean
-_dhcp_client_accept(NMDhcpClient *self, GError **error)
+_dhcp_client_accept(NMDhcpClient *self, const NML3ConfigData *l3cd, GError **error)
 {
     NMDhcpClientPrivate *priv;
 
     g_return_val_if_fail(NM_IS_DHCP_CLIENT(self), FALSE);
+    nm_assert(l3cd);
 
     priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
 
     g_return_val_if_fail(priv->l3cd, FALSE);
 
     if (NM_DHCP_CLIENT_GET_CLASS(self)->accept) {
-        return NM_DHCP_CLIENT_GET_CLASS(self)->accept(self, error);
+        return NM_DHCP_CLIENT_GET_CLASS(self)->accept(self, l3cd, error);
     }
 
     return TRUE;
@@ -514,18 +517,22 @@ _dhcp_client_can_accept(NMDhcpClient *self)
 }
 
 static gboolean
-_dhcp_client_decline(NMDhcpClient *self, const char *error_message, GError **error)
+_dhcp_client_decline(NMDhcpClient         *self,
+                     const NML3ConfigData *l3cd,
+                     const char           *error_message,
+                     GError              **error)
 {
     NMDhcpClientPrivate *priv;
 
     g_return_val_if_fail(NM_IS_DHCP_CLIENT(self), FALSE);
+    nm_assert(l3cd);
 
     priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
 
     g_return_val_if_fail(priv->l3cd, FALSE);
 
     if (NM_DHCP_CLIENT_GET_CLASS(self)->decline) {
-        return NM_DHCP_CLIENT_GET_CLASS(self)->decline(self, error_message, error);
+        return NM_DHCP_CLIENT_GET_CLASS(self)->decline(self, l3cd, error_message, error);
     }
 
     return TRUE;
@@ -650,9 +657,9 @@ l3_cfg_notify_cb(NML3Cfg *l3cfg, const NML3ConfigNotifyData *notify_data, NMDhcp
         priv->l3cfg_notify.wait_dhcp_commit = FALSE;
         l3_cfg_notify_check_connected(self);
 
-        _LOGD("accept address");
+        _LOGD("accept lease");
 
-        if (!_dhcp_client_accept(self, &error)) {
+        if (!_dhcp_client_accept(self, priv->l3cd, &error)) {
             gs_free char *reason = g_strdup_printf("error accepting lease: %s", error->message);
 
             _emit_notify(self,

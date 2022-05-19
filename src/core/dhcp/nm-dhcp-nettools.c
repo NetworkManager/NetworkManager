@@ -52,9 +52,14 @@ typedef struct _NMDhcpNettoolsClass NMDhcpNettoolsClass;
 typedef struct {
     NDhcp4Client      *client;
     NDhcp4ClientProbe *probe;
-    NDhcp4ClientLease *lease;
-    GSource           *event_source;
-    char              *lease_file;
+
+    struct {
+        NDhcp4ClientLease    *lease;
+        const NML3ConfigData *lease_l3cd;
+    } granted;
+
+    GSource *event_source;
+    char    *lease_file;
 } NMDhcpNettoolsPrivate;
 
 struct _NMDhcpNettools {
@@ -864,15 +869,19 @@ lease_save(NMDhcpNettools *self, NDhcp4ClientLease *lease, const char *lease_fil
 }
 
 static void
-bound4_handle(NMDhcpNettools *self, NDhcp4ClientLease *lease, gboolean extended)
+bound4_handle(NMDhcpNettools *self, guint event, NDhcp4ClientLease *lease)
 {
     NMDhcpNettoolsPrivate                  *priv   = NM_DHCP_NETTOOLS_GET_PRIVATE(self);
     NMDhcpClient                           *client = NM_DHCP_CLIENT(self);
     const NMDhcpClientConfig               *client_config;
     nm_auto_unref_l3cd_init NML3ConfigData *l3cd  = NULL;
-    GError                                 *error = NULL;
+    gs_free_error GError                   *error = NULL;
 
-    _LOGT("lease available (%s)", extended ? "extended" : "new");
+    nm_assert(NM_IN_SET(event, N_DHCP4_CLIENT_EVENT_GRANTED, N_DHCP4_CLIENT_EVENT_EXTENDED));
+    nm_assert(lease);
+
+    _LOGT("lease available (%s)", (event == N_DHCP4_CLIENT_EVENT_GRANTED) ? "granted" : "extended");
+
     client_config = nm_dhcp_client_get_config(client);
     l3cd          = lease_to_ip4_config(nm_dhcp_client_get_multi_idx(client),
                                client_config->iface,
@@ -881,16 +890,24 @@ bound4_handle(NMDhcpNettools *self, NDhcp4ClientLease *lease, gboolean extended)
                                &error);
     if (!l3cd) {
         _LOGW("failure to parse lease: %s", error->message);
-        g_clear_error(&error);
+
+        if (event == N_DHCP4_CLIENT_EVENT_GRANTED)
+            n_dhcp4_client_lease_decline(lease, "invalid lease");
+
         _nm_dhcp_client_notify(NM_DHCP_CLIENT(self), NM_DHCP_CLIENT_EVENT_TYPE_FAIL, NULL);
         return;
     }
 
-    lease_save(self, lease, priv->lease_file);
+    if (event == N_DHCP4_CLIENT_EVENT_GRANTED) {
+        priv->granted.lease      = n_dhcp4_client_lease_ref(lease);
+        priv->granted.lease_l3cd = nm_l3_config_data_ref(l3cd);
+    } else
+        lease_save(self, lease, priv->lease_file);
 
     _nm_dhcp_client_notify(NM_DHCP_CLIENT(self),
-                           extended ? NM_DHCP_CLIENT_EVENT_TYPE_EXTENDED
-                                    : NM_DHCP_CLIENT_EVENT_TYPE_BOUND,
+                           event == N_DHCP4_CLIENT_EVENT_GRANTED
+                               ? NM_DHCP_CLIENT_EVENT_TYPE_BOUND
+                               : NM_DHCP_CLIENT_EVENT_TYPE_EXTENDED,
                            l3cd);
 }
 
@@ -905,6 +922,16 @@ dhcp4_event_handle(NMDhcpNettools *self, NDhcp4ClientEvent *event)
 
     _LOGT("client event %d", event->event);
     client_config = nm_dhcp_client_get_config(NM_DHCP_CLIENT(self));
+
+    if (!NM_IN_SET(event->event, N_DHCP4_CLIENT_EVENT_LOG)) {
+        /* In almost all events (even those that we don't expect below), we clear
+         * the currently granted lease. That is, because in GRANTED state we
+         * expect to follow up with accept/decline, and that only works while
+         * we are still in the same state. Transitioning away to another state
+         * (on most events) will invalidate that. */
+        nm_clear_pointer(&priv->granted.lease, n_dhcp4_client_lease_unref);
+        nm_clear_l3cd(&priv->granted.lease_l3cd);
+    }
 
     switch (event->event) {
     case N_DHCP4_CLIENT_EVENT_OFFER:
@@ -934,11 +961,10 @@ dhcp4_event_handle(NMDhcpNettools *self, NDhcp4ClientEvent *event)
         _nm_dhcp_client_notify(NM_DHCP_CLIENT(self), NM_DHCP_CLIENT_EVENT_TYPE_FAIL, NULL);
         break;
     case N_DHCP4_CLIENT_EVENT_GRANTED:
-        priv->lease = n_dhcp4_client_lease_ref(event->granted.lease);
-        bound4_handle(self, event->granted.lease, FALSE);
+        bound4_handle(self, event->event, event->granted.lease);
         break;
     case N_DHCP4_CLIENT_EVENT_EXTENDED:
-        bound4_handle(self, event->extended.lease, TRUE);
+        bound4_handle(self, event->event, event->extended.lease);
         break;
     case N_DHCP4_CLIENT_EVENT_DOWN:
         /* ignore down events, they are purely informational */
@@ -1098,45 +1124,64 @@ nettools_create(NMDhcpNettools *self, GError **error)
 }
 
 static gboolean
-_accept(NMDhcpClient *client, GError **error)
+_accept(NMDhcpClient *client, const NML3ConfigData *l3cd, GError **error)
 {
     NMDhcpNettools        *self = NM_DHCP_NETTOOLS(client);
     NMDhcpNettoolsPrivate *priv = NM_DHCP_NETTOOLS_GET_PRIVATE(self);
     int                    r;
 
-    g_return_val_if_fail(priv->lease, FALSE);
-
     _LOGT("accept");
 
-    r = n_dhcp4_client_lease_accept(priv->lease);
+    g_return_val_if_fail(l3cd, FALSE);
+
+    if (priv->granted.lease_l3cd != l3cd) {
+        nm_utils_error_set(error, NM_UTILS_ERROR_UNKNOWN, "calling accept in unexpected state");
+        return FALSE;
+    }
+
+    nm_assert(priv->granted.lease);
+
+    r = n_dhcp4_client_lease_accept(priv->granted.lease);
+
+    nm_clear_pointer(&priv->granted.lease, n_dhcp4_client_lease_unref);
+    nm_clear_l3cd(&priv->granted.lease_l3cd);
+
     if (r) {
         set_error_nettools(error, r, "failed to accept lease");
         return FALSE;
     }
 
-    priv->lease = n_dhcp4_client_lease_unref(priv->lease);
-
     return TRUE;
 }
 
 static gboolean
-decline(NMDhcpClient *client, const char *error_message, GError **error)
+decline(NMDhcpClient *client, const NML3ConfigData *l3cd, const char *error_message, GError **error)
 {
     NMDhcpNettools        *self = NM_DHCP_NETTOOLS(client);
     NMDhcpNettoolsPrivate *priv = NM_DHCP_NETTOOLS_GET_PRIVATE(self);
     int                    r;
+    nm_auto(n_dhcp4_client_lease_unrefp) NDhcp4ClientLease *lease = NULL;
 
-    g_return_val_if_fail(priv->lease, FALSE);
+    _LOGT("decline (%s)", error_message);
 
-    _LOGT("dhcp4-client: decline (%s)", error_message);
+    g_return_val_if_fail(l3cd, FALSE);
 
-    r = n_dhcp4_client_lease_decline(priv->lease, error_message);
+    if (priv->granted.lease_l3cd != l3cd) {
+        nm_utils_error_set(error, NM_UTILS_ERROR_UNKNOWN, "calling decline in unexpected state");
+        return FALSE;
+    }
+
+    nm_assert(priv->granted.lease);
+
+    lease = g_steal_pointer(&priv->granted.lease);
+    nm_clear_l3cd(&priv->granted.lease_l3cd);
+
+    r = n_dhcp4_client_lease_decline(lease, error_message);
+
     if (r) {
         set_error_nettools(error, r, "failed to decline lease");
         return FALSE;
     }
-
-    priv->lease = n_dhcp4_client_lease_unref(priv->lease);
 
     return TRUE;
 }
@@ -1348,7 +1393,8 @@ dispose(GObject *object)
 
     nm_clear_g_free(&priv->lease_file);
     nm_clear_g_source_inst(&priv->event_source);
-    nm_clear_pointer(&priv->lease, n_dhcp4_client_lease_unref);
+    nm_clear_pointer(&priv->granted.lease, n_dhcp4_client_lease_unref);
+    nm_clear_l3cd(&priv->granted.lease_l3cd);
     nm_clear_pointer(&priv->probe, n_dhcp4_client_probe_free);
     nm_clear_pointer(&priv->client, n_dhcp4_client_unref);
 
