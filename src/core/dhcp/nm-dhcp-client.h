@@ -200,9 +200,12 @@ typedef struct {
 
     gboolean (*ip4_start)(NMDhcpClient *self, GError **error);
 
-    gboolean (*accept)(NMDhcpClient *self, GError **error);
+    gboolean (*accept)(NMDhcpClient *self, const NML3ConfigData *l3cd, GError **error);
 
-    gboolean (*decline)(NMDhcpClient *self, const char *error_message, GError **error);
+    gboolean (*decline)(NMDhcpClient         *self,
+                        const NML3ConfigData *l3cd,
+                        const char           *error_message,
+                        GError              **error);
 
     gboolean (*ip6_start)(NMDhcpClient *self, const struct in6_addr *ll_addr, GError **error);
 
