@@ -3,12 +3,22 @@ NetworkManager-1.36.6
 Overview of changes since NetworkManager-1.36.4
 ===============================================
 
+* Fix a bug in synchronization of IP addresses with kernel that
+  could lead to a wrong address order.
+* Don't reset addresses and routes on devices that are not managed by
+  NetworkManager.
+* Fix renewal of DHCP lease after a NAK.
 * Fix IPv6 on WWAN connections.
+* Fix DHCPv6 over PPP.
+* Ignore addresses from DHCPv6 when the Otherconf router advertisement
+  flag is set.
+* Ensure temporary IPv6 addresses are removed on disconnect and
+  reapply.
 * Fix activation of bluetooth NAP connections.
 * Fix a buffering problem in the libnm VPN plugin code that caused a
   twenty second delay on VPN activations.
-* Fix a bug in synchronization of IP addresses with kernel that
-  could lead to a wrong address order.
+* Normalize empty strings to NULL in 802-1x setting to avoid
+  supplicant failure.
 * With key-mgmt="wpa-psk", enable Wi-Fi WPA3 transition mode only when
   the the device supports it and PMF is enabled.
 * Fast-transition is disabled when creating a Wi-Fi hotspot, to
