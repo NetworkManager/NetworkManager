@@ -133,6 +133,9 @@ nm_ip_addr_set_from_variant(int addr_family, gpointer dst, GVariant *variant, in
 
 G_STATIC_ASSERT(ETH_ALEN == sizeof(struct ether_addr));
 G_STATIC_ASSERT(ETH_ALEN == 6);
+G_STATIC_ASSERT(ETH_ALEN == sizeof(NMEtherAddr));
+
+G_STATIC_ASSERT(_nm_alignof(struct ether_addr) <= _nm_alignof(NMEtherAddr));
 
 /*****************************************************************************/
 
