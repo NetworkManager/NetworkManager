@@ -43,16 +43,18 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_IP6_PRIVACY,
                                   PROP_ADDR_GEN_MODE,
                                   PROP_TOKEN,
                                   PROP_DHCP_DUID,
-                                  PROP_RA_TIMEOUT, );
+                                  PROP_RA_TIMEOUT,
+                                  PROP_MTU, );
 
 typedef struct {
     NMSettingIPConfigPrivate parent;
 
-    char  *token;
-    char  *dhcp_duid;
-    int    ip6_privacy;
-    gint32 addr_gen_mode;
-    gint32 ra_timeout;
+    char   *token;
+    char   *dhcp_duid;
+    int     ip6_privacy;
+    gint32  addr_gen_mode;
+    gint32  ra_timeout;
+    guint32 mtu;
 } NMSettingIP6ConfigPrivate;
 
 /**
@@ -169,6 +171,23 @@ nm_setting_ip6_config_get_ra_timeout(NMSettingIP6Config *setting)
     g_return_val_if_fail(NM_IS_SETTING_IP6_CONFIG(setting), 0);
 
     return NM_SETTING_IP6_CONFIG_GET_PRIVATE(setting)->ra_timeout;
+}
+
+/**
+ * nm_setting_ip6_config_get_mtu:
+ * @setting: the #NMSettingIP6Config
+ *
+ * Returns: The configured %NM_SETTING_IP6_CONFIG_MTU value for the maximum
+ * transmission unit.
+ *
+ * Since: 1.40
+ **/
+guint32
+nm_setting_ip6_config_get_mtu(NMSettingIP6Config *setting)
+{
+    g_return_val_if_fail(NM_IS_SETTING_IP6_CONFIG(setting), 0);
+
+    return NM_SETTING_IP6_CONFIG_GET_PRIVATE(setting)->mtu;
 }
 
 static gboolean
@@ -855,6 +874,27 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
                                              NM_SETTING_PARAM_FUZZY_IGNORE,
                                              NMSettingIP6ConfigPrivate,
                                              ra_timeout);
+
+    /**
+     * NMSettingIP6Config:mtu:
+     *
+     * Maximum transmission unit size, in bytes. If zero (the default), the MTU
+     * is set automatically from router advertisements or is left equal to the
+     * link-layer MTU. If greater than the link-layer MTU, or greater than zero
+     * but less than the minimum IPv6 MTU of 1280, this value has no effect.
+     *
+     * Since: 1.40
+     **/
+    _nm_setting_property_define_direct_uint32(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_IP6_CONFIG_MTU,
+                                              PROP_MTU,
+                                              0,
+                                              G_MAXUINT32,
+                                              0,
+                                              NM_SETTING_PARAM_FUZZY_IGNORE,
+                                              NMSettingIP6ConfigPrivate,
+                                              mtu);
 
     /**
      * NMSettingIP6Config:dhcp-duid:

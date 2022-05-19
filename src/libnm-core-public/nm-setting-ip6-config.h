@@ -38,6 +38,8 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_IP6_CONFIG_RA_TIMEOUT "ra-timeout"
 
+#define NM_SETTING_IP6_CONFIG_MTU "mtu"
+
 /**
  * NM_SETTING_IP6_CONFIG_METHOD_IGNORE:
  *
@@ -154,6 +156,8 @@ NM_AVAILABLE_IN_1_12
 const char *nm_setting_ip6_config_get_dhcp_duid(NMSettingIP6Config *setting);
 NM_AVAILABLE_IN_1_24
 gint32 nm_setting_ip6_config_get_ra_timeout(NMSettingIP6Config *setting);
+NM_AVAILABLE_IN_1_40
+guint32 nm_setting_ip6_config_get_mtu(NMSettingIP6Config *setting);
 
 G_END_DECLS
 

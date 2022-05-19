@@ -1831,4 +1831,5 @@ global:
 libnm_1_40_0 {
 global:
 	nm_setting_ip4_link_local_get_type;
+	nm_setting_ip6_config_get_mtu;
 } libnm_1_38_0;
