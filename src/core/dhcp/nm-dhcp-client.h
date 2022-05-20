@@ -261,12 +261,13 @@ void _nm_dhcp_client_notify(NMDhcpClient         *self,
                             NMDhcpClientEventType client_event_type,
                             const NML3ConfigData *l3cd);
 
-gboolean nm_dhcp_client_handle_event(gpointer      unused,
-                                     const char   *iface,
-                                     int           pid,
-                                     GVariant     *options,
-                                     const char   *reason,
-                                     NMDhcpClient *self);
+gboolean nm_dhcp_client_handle_event(gpointer               unused,
+                                     const char            *iface,
+                                     int                    pid,
+                                     GVariant              *options,
+                                     const char            *reason,
+                                     GDBusMethodInvocation *invocation,
+                                     NMDhcpClient          *self);
 
 void nm_dhcp_client_emit_ipv6_prefix_delegated(NMDhcpClient               *self,
                                                const NMPlatformIP6Address *prefix);
