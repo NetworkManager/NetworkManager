@@ -50,7 +50,9 @@ typedef struct _NMDhcpClientPrivate {
 
     union {
         struct {
-            int _unused;
+            struct {
+                GDBusMethodInvocation *invocation;
+            } bound;
         } v4;
         struct {
             GSource *lladdr_timeout_source;
@@ -74,7 +76,6 @@ G_DEFINE_ABSTRACT_TYPE(NMDhcpClient, nm_dhcp_client, G_TYPE_OBJECT)
 /*****************************************************************************/
 
 static gboolean _dhcp_client_accept(NMDhcpClient *self, const NML3ConfigData *l3cd, GError **error);
-static gboolean _dhcp_client_can_accept(NMDhcpClient *self);
 
 _nm_unused static gboolean _dhcp_client_decline(NMDhcpClient         *self,
                                                 const NML3ConfigData *l3cd,
@@ -426,8 +427,7 @@ _nm_dhcp_client_notify(NMDhcpClient         *self,
      * as a static address (bypassing ACD), then NML3Cfg is aware of that and signals
      * immediate success. */
 
-    if (_dhcp_client_can_accept(self) && client_event_type == NM_DHCP_CLIENT_EVENT_TYPE_BOUND
-        && priv->l3cd
+    if (client_event_type == NM_DHCP_CLIENT_EVENT_TYPE_BOUND && priv->l3cd
         && nm_l3_config_data_get_num_addresses(priv->l3cd, priv->config.addr_family) > 0) {
         priv->l3cfg_notify.wait_dhcp_commit = TRUE;
     } else {
@@ -491,6 +491,25 @@ nm_dhcp_client_stop_watch_child(NMDhcpClient *self, pid_t pid)
 }
 
 static gboolean
+_accept(NMDhcpClient *self, const NML3ConfigData *l3cd, GError **error)
+{
+    NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
+
+    if (!NM_IS_IPv4(priv->config.addr_family))
+        return TRUE;
+
+    if (!priv->v4.bound.invocation) {
+        nm_utils_error_set(error,
+                           NM_UTILS_ERROR_UNKNOWN,
+                           "calling accept in unexpected script state");
+        return FALSE;
+    }
+
+    g_dbus_method_invocation_return_value(g_steal_pointer(&priv->v4.bound.invocation), NULL);
+    return TRUE;
+}
+
+static gboolean
 _dhcp_client_accept(NMDhcpClient *self, const NML3ConfigData *l3cd, GError **error)
 {
     NMDhcpClientClass *klass;
@@ -502,27 +521,29 @@ _dhcp_client_accept(NMDhcpClient *self, const NML3ConfigData *l3cd, GError **err
 
     g_return_val_if_fail(NM_DHCP_CLIENT_GET_PRIVATE(self)->l3cd, FALSE);
 
-    if (!klass->accept)
-        return TRUE;
-
     return klass->accept(self, l3cd, error);
 }
 
 static gboolean
-_dhcp_client_can_accept(NMDhcpClient *self)
+decline(NMDhcpClient *self, const NML3ConfigData *l3cd, const char *error_message, GError **error)
 {
-    gboolean can_accept;
-    NMDhcpClientClass *klass;
+    NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
 
-    nm_assert(NM_IS_DHCP_CLIENT(self));
+    if (!NM_IS_IPv4(priv->config.addr_family))
+        return TRUE;
 
-    klass = NM_DHCP_CLIENT_GET_CLASS(self);
+    if (!priv->v4.bound.invocation) {
+        nm_utils_error_set(error,
+                           NM_UTILS_ERROR_UNKNOWN,
+                           "calling decline in unexpected script state");
+        return FALSE;
+    }
 
-    can_accept = !!klass->accept;
-
-    nm_assert(can_accept == (!!klass->decline));
-
-    return can_accept;
+    g_dbus_method_invocation_return_error(g_steal_pointer(&priv->v4.bound.invocation),
+                                          NM_DEVICE_ERROR,
+                                          NM_DEVICE_ERROR_FAILED,
+                                          "acd failed");
+    return TRUE;
 }
 
 static gboolean
@@ -539,9 +560,6 @@ _dhcp_client_decline(NMDhcpClient         *self,
     klass = NM_DHCP_CLIENT_GET_CLASS(self);
 
     g_return_val_if_fail(NM_DHCP_CLIENT_GET_PRIVATE(self)->l3cd, FALSE);
-
-    if (!klass->decline)
-        return TRUE;
 
     return klass->decline(self, l3cd, error_message, error);
 }
@@ -808,6 +826,13 @@ nm_dhcp_client_stop(NMDhcpClient *self, gboolean release)
 
     priv->is_stopped = TRUE;
 
+    if (NM_IS_IPv4(priv->config.addr_family) && priv->v4.bound.invocation) {
+        g_dbus_method_invocation_return_error(g_steal_pointer(&priv->v4.bound.invocation),
+                                              NM_DEVICE_ERROR,
+                                              NM_DEVICE_ERROR_FAILED,
+                                              "dhcp stopping");
+    }
+
     priv->l3cfg_notify.wait_dhcp_commit = FALSE;
     priv->l3cfg_notify.wait_ll_address  = FALSE;
     l3_cfg_notify_check_connected(self);
@@ -946,12 +971,13 @@ nm_dhcp_client_emit_ipv6_prefix_delegated(NMDhcpClient *self, const NMPlatformIP
 }
 
 gboolean
-nm_dhcp_client_handle_event(gpointer      unused,
-                            const char   *iface,
-                            int           pid,
-                            GVariant     *options,
-                            const char   *reason,
-                            NMDhcpClient *self)
+nm_dhcp_client_handle_event(gpointer               unused,
+                            const char            *iface,
+                            int                    pid,
+                            GVariant              *options,
+                            const char            *reason,
+                            GDBusMethodInvocation *invocation,
+                            NMDhcpClient          *self)
 {
     NMDhcpClientPrivate                    *priv;
     nm_auto_unref_l3cd_init NML3ConfigData *l3cd = NULL;
@@ -965,6 +991,7 @@ nm_dhcp_client_handle_event(gpointer      unused,
     g_return_val_if_fail(pid > 0, FALSE);
     g_return_val_if_fail(g_variant_is_of_type(options, G_VARIANT_TYPE_VARDICT), FALSE);
     g_return_val_if_fail(reason != NULL, FALSE);
+    g_return_val_if_fail(G_IS_DBUS_METHOD_INVOCATION(invocation), FALSE);
 
     priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
 
@@ -976,7 +1003,7 @@ nm_dhcp_client_handle_event(gpointer      unused,
     _LOGD("DHCP event (reason: '%s')", reason);
 
     if (NM_IN_STRSET_ASCII_CASE(reason, "preinit"))
-        return TRUE;
+        goto out_handled;
 
     if (NM_IN_STRSET_ASCII_CASE(reason, "bound", "bound6", "static"))
         client_event_type = NM_DHCP_CLIENT_EVENT_TYPE_BOUND;
@@ -1040,7 +1067,7 @@ nm_dhcp_client_handle_event(gpointer      unused,
          * of the DHCP client instance. Instead, we just signal the prefix
          * to the device. */
         nm_dhcp_client_emit_ipv6_prefix_delegated(self, &prefix);
-        return TRUE;
+        goto out_handled;
     }
 
     if (NM_IN_SET(client_event_type,
@@ -1052,7 +1079,20 @@ nm_dhcp_client_handle_event(gpointer      unused,
         client_event_type = NM_DHCP_CLIENT_EVENT_TYPE_FAIL;
     }
 
+    if (priv->v4.bound.invocation)
+        g_dbus_method_invocation_return_value(g_steal_pointer(&priv->v4.bound.invocation), NULL);
+
+    if (NM_IS_IPv4(priv->config.addr_family)
+        && NM_IN_SET(client_event_type,
+                     NM_DHCP_CLIENT_EVENT_TYPE_BOUND,
+                     NM_DHCP_CLIENT_EVENT_TYPE_EXTENDED))
+        priv->v4.bound.invocation = g_steal_pointer(&invocation);
+
     _nm_dhcp_client_notify(self, client_event_type, l3cd);
+
+out_handled:
+    if (invocation)
+        g_dbus_method_invocation_return_value(invocation, NULL);
     return TRUE;
 }
 
@@ -1198,7 +1238,10 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
          * explicitly initialize the respective union member. */
         if (NM_IS_IPv4(priv->config.addr_family)) {
             priv->v4 = (typeof(priv->v4)){
-                ._unused = 0,
+                .bound =
+                    {
+                        .invocation = NULL,
+                    },
             };
         } else {
             priv->v6 = (typeof(priv->v6)){
@@ -1264,6 +1307,8 @@ nm_dhcp_client_class_init(NMDhcpClientClass *client_class)
     object_class->dispose      = dispose;
     object_class->finalize     = finalize;
     object_class->set_property = set_property;
+    client_class->accept       = _accept;
+    client_class->decline      = decline;
 
     client_class->stop     = stop;
     client_class->get_duid = get_duid;
