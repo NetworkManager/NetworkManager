@@ -100,21 +100,6 @@ next:;
     return g_variant_ref_sink(g_variant_new("(a{sv})", &builder));
 }
 
-static void
-kill_pid(void)
-{
-    const char *pid_str;
-    pid_t       pid = 0;
-
-    pid_str = getenv("pid");
-    if (pid_str)
-        pid = strtol(pid_str, NULL, 10);
-    if (pid) {
-        _LOGI("a fatal error occurred, kill dhclient instance with pid %d", pid);
-        kill(pid, SIGTERM);
-    }
-}
-
 int
 main(int argc, char *argv[])
 {
@@ -180,7 +165,7 @@ do_notify:
                                          parameters,
                                          NULL,
                                          G_DBUS_CALL_FLAGS_NONE,
-                                         1000,
+                                         60000,
                                          NULL,
                                          &error);
 
@@ -236,7 +221,5 @@ do_notify:
     }
 
 out:
-    if (!success)
-        kill_pid();
     return success ? EXIT_SUCCESS : EXIT_FAILURE;
 }
