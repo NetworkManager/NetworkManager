@@ -1089,6 +1089,7 @@ int n_dhcp4_client_probe_transition_accept(NDhcp4ClientProbe *probe, NDhcp4Incom
                         return r;
 
                 probe->state = N_DHCP4_CLIENT_PROBE_STATE_BOUND;
+                probe->ns_decline_restart_delay = 0;
                 n_dhcp4_client_lease_unlink(probe->current_lease);
                 n_dhcp4_client_arm_timer(probe->client);
 
@@ -1128,11 +1129,21 @@ int n_dhcp4_client_probe_transition_decline(NDhcp4ClientProbe *probe, NDhcp4Inco
                 else
                         request = NULL; /* consumed */
 
-                /* XXX: what state to transition to? */
-
                 n_dhcp4_client_lease_unlink(probe->current_lease);
                 probe->current_lease = n_dhcp4_client_lease_unref(probe->current_lease);
 
+                probe->state = N_DHCP4_CLIENT_PROBE_STATE_INIT;
+
+                /* RFC2131, 3.1, 5.) The client SHOULD wait a minimum of ten seconds before restarting
+                 * the configuration process to avoid excessive network traffic in case of looping.
+                 *
+                 * Let's go beyond that, and use an exponential backoff. */
+                probe->ns_decline_restart_delay = C_CLAMP(probe->ns_decline_restart_delay * 2u,
+                                                          UINT64_C(10)  * UINT64_C(1000000000),
+                                                          UINT64_C(300) * UINT64_C(1000000000));
+                probe->ns_deferred =  n_dhcp4_gettime(CLOCK_BOOTTIME) + probe->ns_decline_restart_delay;
+
+                n_dhcp4_client_arm_timer(probe->client);
                 return 0;
 
         case N_DHCP4_CLIENT_PROBE_STATE_INIT:
