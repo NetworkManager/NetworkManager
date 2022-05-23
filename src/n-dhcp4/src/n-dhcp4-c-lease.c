@@ -354,28 +354,12 @@ _c_public_ int n_dhcp4_client_lease_query(NDhcp4ClientLease *lease, uint8_t opti
  *   Returns -ENOTRECOVERABLE when called in an unexpected state.
  */
 _c_public_ int n_dhcp4_client_lease_select(NDhcp4ClientLease *lease) {
-        NDhcp4ClientLease *l, *t_l;
-        NDhcp4ClientProbe *probe;
-        int r;
-
         if (!lease->probe)
                 return -ENOTRECOVERABLE;
         if (lease->probe->current_lease)
                 return -ENOTRECOVERABLE;
 
-        r = n_dhcp4_client_probe_transition_select(lease->probe, lease->message, n_dhcp4_gettime(CLOCK_BOOTTIME));
-        if (r)
-                return r;
-
-        /*
-         * Only one of the offered leases can be selected, so flush the list.
-         * All offered lease, including this one are now dead.
-         */
-        probe = lease->probe;
-        c_list_for_each_entry_safe(l, t_l, &probe->lease_list, probe_link)
-                n_dhcp4_client_lease_unlink(l);
-
-        return 0;
+        return n_dhcp4_client_probe_transition_select(lease->probe, lease->message, n_dhcp4_gettime(CLOCK_BOOTTIME));
 }
 
 /**
@@ -392,20 +376,12 @@ _c_public_ int n_dhcp4_client_lease_select(NDhcp4ClientLease *lease) {
  *   Returns -ENOTRECOVERABLE when called in an unexpected state.
  */
 _c_public_ int n_dhcp4_client_lease_accept(NDhcp4ClientLease *lease) {
-        int r;
-
         if (!lease->probe)
                 return -ENOTRECOVERABLE;
         if (lease->probe->current_lease != lease)
                 return -ENOTRECOVERABLE;
 
-        r = n_dhcp4_client_probe_transition_accept(lease->probe, lease->message);
-        if (r)
-                return r;
-
-        n_dhcp4_client_lease_unlink(lease);
-
-        return 0;
+        return n_dhcp4_client_probe_transition_accept(lease->probe, lease->message);
 }
 
 /**
@@ -422,19 +398,10 @@ _c_public_ int n_dhcp4_client_lease_accept(NDhcp4ClientLease *lease) {
  *   Returns -ENOTRECOVERABLE when called in an unexpected state.
  */
 _c_public_ int n_dhcp4_client_lease_decline(NDhcp4ClientLease *lease, const char *error) {
-        int r;
-
         if (!lease->probe)
                 return -ENOTRECOVERABLE;
         if (lease->probe->current_lease != lease)
                 return -ENOTRECOVERABLE;
 
-        r = n_dhcp4_client_probe_transition_decline(lease->probe, lease->message, error, n_dhcp4_gettime(CLOCK_BOOTTIME));
-        if (r)
-                return r;
-
-        lease->probe->current_lease = n_dhcp4_client_lease_unref(lease->probe->current_lease);
-        n_dhcp4_client_lease_unlink(lease);
-
-        return 0;
+        return n_dhcp4_client_probe_transition_decline(lease->probe, lease->message, error, n_dhcp4_gettime(CLOCK_BOOTTIME));
 }

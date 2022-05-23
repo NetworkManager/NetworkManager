@@ -1024,6 +1024,7 @@ static int n_dhcp4_client_probe_transition_nak(NDhcp4ClientProbe *probe) {
 
 int n_dhcp4_client_probe_transition_select(NDhcp4ClientProbe *probe, NDhcp4Incoming *offer, uint64_t ns_now) {
         _c_cleanup_(n_dhcp4_outgoing_freep) NDhcp4Outgoing *request = NULL;
+        NDhcp4ClientLease *l, *t_l;
         int r;
 
         switch (probe->state) {
@@ -1042,9 +1043,14 @@ int n_dhcp4_client_probe_transition_select(NDhcp4ClientProbe *probe, NDhcp4Incom
                 else
                         request = NULL; /* consumed */
 
-                /* XXX: ignore other offers */
-
                 probe->state = N_DHCP4_CLIENT_PROBE_STATE_REQUESTING;
+
+                /*
+                 * Only one of the offered leases can be selected, so flush the list.
+                 * All offered lease, including this one are now dead.
+                 */
+                c_list_for_each_entry_safe(l, t_l, &probe->lease_list, probe_link)
+                        n_dhcp4_client_lease_unlink(l);
 
                 return 0;
         case N_DHCP4_CLIENT_PROBE_STATE_INIT:
@@ -1083,7 +1089,7 @@ int n_dhcp4_client_probe_transition_accept(NDhcp4ClientProbe *probe, NDhcp4Incom
                         return r;
 
                 probe->state = N_DHCP4_CLIENT_PROBE_STATE_BOUND;
-
+                n_dhcp4_client_lease_unlink(probe->current_lease);
                 n_dhcp4_client_arm_timer(probe->client);
 
                 return 0;
@@ -1123,6 +1129,9 @@ int n_dhcp4_client_probe_transition_decline(NDhcp4ClientProbe *probe, NDhcp4Inco
                         request = NULL; /* consumed */
 
                 /* XXX: what state to transition to? */
+
+                n_dhcp4_client_lease_unlink(probe->current_lease);
+                probe->current_lease = n_dhcp4_client_lease_unref(probe->current_lease);
 
                 return 0;
 
