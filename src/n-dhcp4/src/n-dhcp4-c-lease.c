@@ -351,13 +351,12 @@ _c_public_ int n_dhcp4_client_lease_query(NDhcp4ClientLease *lease, uint8_t opti
  * selected none of the others can be.
  *
  * Return: 0 on success, or a negative error code on failure.
+ *   Returns -ENOTRECOVERABLE when called in an unexpected state.
  */
 _c_public_ int n_dhcp4_client_lease_select(NDhcp4ClientLease *lease) {
         NDhcp4ClientLease *l, *t_l;
         NDhcp4ClientProbe *probe;
         int r;
-
-        /* XXX error handling, this must be an OFFER */
 
         if (!lease->probe)
                 return -ENOTRECOVERABLE;
@@ -390,11 +389,10 @@ _c_public_ int n_dhcp4_client_lease_select(NDhcp4ClientLease *lease) {
  * can be accepted.
  *
  * Return: 0 on success, or a negative error code on failure.
+ *   Returns -ENOTRECOVERABLE when called in an unexpected state.
  */
 _c_public_ int n_dhcp4_client_lease_accept(NDhcp4ClientLease *lease) {
         int r;
-
-        /* XXX error handling, this must be an ACK */
 
         if (!lease->probe)
                 return -ENOTRECOVERABLE;
@@ -421,11 +419,10 @@ _c_public_ int n_dhcp4_client_lease_accept(NDhcp4ClientLease *lease) {
  * decline.
  *
  * Return: 0 on success, or a negative error code on failure.
+ *   Returns -ENOTRECOVERABLE when called in an unexpected state.
  */
 _c_public_ int n_dhcp4_client_lease_decline(NDhcp4ClientLease *lease, const char *error) {
         int r;
-
-        /* XXX: error handling, this must be an ACK */
 
         if (!lease->probe)
                 return -ENOTRECOVERABLE;

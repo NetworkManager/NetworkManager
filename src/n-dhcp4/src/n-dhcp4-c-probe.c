@@ -1046,7 +1046,7 @@ int n_dhcp4_client_probe_transition_select(NDhcp4ClientProbe *probe, NDhcp4Incom
 
                 probe->state = N_DHCP4_CLIENT_PROBE_STATE_REQUESTING;
 
-                break;
+                return 0;
         case N_DHCP4_CLIENT_PROBE_STATE_INIT:
         case N_DHCP4_CLIENT_PROBE_STATE_INIT_REBOOT:
         case N_DHCP4_CLIENT_PROBE_STATE_REBOOTING:
@@ -1057,11 +1057,9 @@ int n_dhcp4_client_probe_transition_select(NDhcp4ClientProbe *probe, NDhcp4Incom
         case N_DHCP4_CLIENT_PROBE_STATE_REBINDING:
         case N_DHCP4_CLIENT_PROBE_STATE_EXPIRED:
         default:
-                /* ignore */
-                break;
+                /* user called in invalid state. Return error. */
+                return -ENOTRECOVERABLE;
         }
-
-        return 0;
 }
 
 /**
@@ -1088,7 +1086,7 @@ int n_dhcp4_client_probe_transition_accept(NDhcp4ClientProbe *probe, NDhcp4Incom
 
                 n_dhcp4_client_arm_timer(probe->client);
 
-                break;
+                return 0;
 
         case N_DHCP4_CLIENT_PROBE_STATE_INIT:
         case N_DHCP4_CLIENT_PROBE_STATE_INIT_REBOOT:
@@ -1100,11 +1098,9 @@ int n_dhcp4_client_probe_transition_accept(NDhcp4ClientProbe *probe, NDhcp4Incom
         case N_DHCP4_CLIENT_PROBE_STATE_REBINDING:
         case N_DHCP4_CLIENT_PROBE_STATE_EXPIRED:
         default:
-                /* ignore */
-                break;
+                /* user called in invalid state. Return error. */
+                return -ENOTRECOVERABLE;
         }
-
-        return 0;
 }
 
 /**
@@ -1128,7 +1124,7 @@ int n_dhcp4_client_probe_transition_decline(NDhcp4ClientProbe *probe, NDhcp4Inco
 
                 /* XXX: what state to transition to? */
 
-                break;
+                return 0;
 
         case N_DHCP4_CLIENT_PROBE_STATE_INIT:
         case N_DHCP4_CLIENT_PROBE_STATE_INIT_REBOOT:
@@ -1140,11 +1136,9 @@ int n_dhcp4_client_probe_transition_decline(NDhcp4ClientProbe *probe, NDhcp4Inco
         case N_DHCP4_CLIENT_PROBE_STATE_REBINDING:
         case N_DHCP4_CLIENT_PROBE_STATE_EXPIRED:
         default:
-                /* ignore */
-                break;
+                /* user called in invalid state. Return error. */
+                return -ENOTRECOVERABLE;
         }
-
-        return 0;
 }
 
 /**
