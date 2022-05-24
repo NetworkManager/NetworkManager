@@ -992,12 +992,21 @@ dhcp4_event_handle(NMDhcpNettools *self, NDhcp4ClientEvent *event)
     }
 }
 
+static void
+dhcp4_event_pop_all_events(NMDhcpNettools *self)
+{
+    NMDhcpNettoolsPrivate *priv = NM_DHCP_NETTOOLS_GET_PRIVATE(self);
+    NDhcp4ClientEvent     *event;
+
+    while (!n_dhcp4_client_pop_event(priv->client, &event) && event)
+        dhcp4_event_handle(self, event);
+}
+
 static gboolean
 dhcp4_event_cb(int fd, GIOCondition condition, gpointer user_data)
 {
     NMDhcpNettools        *self = user_data;
     NMDhcpNettoolsPrivate *priv = NM_DHCP_NETTOOLS_GET_PRIVATE(self);
-    NDhcp4ClientEvent     *event;
     int                    r;
 
     r = n_dhcp4_client_dispatch(priv->client);
@@ -1018,8 +1027,7 @@ dhcp4_event_cb(int fd, GIOCondition condition, gpointer user_data)
         return G_SOURCE_REMOVE;
     }
 
-    while (!n_dhcp4_client_pop_event(priv->client, &event) && event)
-        dhcp4_event_handle(self, event);
+    dhcp4_event_pop_all_events(self);
 
     return G_SOURCE_CONTINUE;
 }
