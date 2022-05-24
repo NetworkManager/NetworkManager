@@ -8975,8 +8975,6 @@ nm_platform_ip4_address_generate_device_route(const NMPlatformIP4Address *addr,
 
     nm_assert(addr);
     nm_assert(addr->plen <= 32);
-    if (addr->plen == 0)
-        return NULL;
 
     if (addr->plen == 0)
         return NULL;
