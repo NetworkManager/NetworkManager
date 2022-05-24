@@ -493,32 +493,34 @@ nm_dhcp_client_stop_watch_child(NMDhcpClient *self, pid_t pid)
 static gboolean
 _dhcp_client_accept(NMDhcpClient *self, const NML3ConfigData *l3cd, GError **error)
 {
-    NMDhcpClientPrivate *priv;
+    NMDhcpClientClass *klass;
 
     g_return_val_if_fail(NM_IS_DHCP_CLIENT(self), FALSE);
     nm_assert(l3cd);
 
-    priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
+    klass = NM_DHCP_CLIENT_GET_CLASS(self);
 
-    g_return_val_if_fail(priv->l3cd, FALSE);
+    g_return_val_if_fail(NM_DHCP_CLIENT_GET_PRIVATE(self)->l3cd, FALSE);
 
-    if (NM_DHCP_CLIENT_GET_CLASS(self)->accept) {
-        return NM_DHCP_CLIENT_GET_CLASS(self)->accept(self, l3cd, error);
-    }
+    if (!klass->accept)
+        return TRUE;
 
-    return TRUE;
+    return klass->accept(self, l3cd, error);
 }
 
 static gboolean
 _dhcp_client_can_accept(NMDhcpClient *self)
 {
     gboolean can_accept;
+    NMDhcpClientClass *klass;
 
-    g_return_val_if_fail(NM_IS_DHCP_CLIENT(self), FALSE);
+    nm_assert(NM_IS_DHCP_CLIENT(self));
 
-    can_accept = !!(NM_DHCP_CLIENT_GET_CLASS(self)->accept);
+    klass = NM_DHCP_CLIENT_GET_CLASS(self);
 
-    nm_assert(can_accept == (!!(NM_DHCP_CLIENT_GET_CLASS(self)->decline)));
+    can_accept = !!klass->accept;
+
+    nm_assert(can_accept == (!!klass->decline));
 
     return can_accept;
 }
@@ -529,20 +531,19 @@ _dhcp_client_decline(NMDhcpClient         *self,
                      const char           *error_message,
                      GError              **error)
 {
-    NMDhcpClientPrivate *priv;
+    NMDhcpClientClass *klass;
 
     g_return_val_if_fail(NM_IS_DHCP_CLIENT(self), FALSE);
     nm_assert(l3cd);
 
-    priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
+    klass = NM_DHCP_CLIENT_GET_CLASS(self);
 
-    g_return_val_if_fail(priv->l3cd, FALSE);
+    g_return_val_if_fail(NM_DHCP_CLIENT_GET_PRIVATE(self)->l3cd, FALSE);
 
-    if (NM_DHCP_CLIENT_GET_CLASS(self)->decline) {
-        return NM_DHCP_CLIENT_GET_CLASS(self)->decline(self, l3cd, error_message, error);
-    }
+    if (!klass->decline)
+        return TRUE;
 
-    return TRUE;
+    return klass->decline(self, l3cd, error_message, error);
 }
 
 static GBytes *
