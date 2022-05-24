@@ -828,14 +828,17 @@ bound4_handle(NMDhcpNettools *self, guint event, NDhcp4ClientLease *lease)
 static void
 dhcp4_event_handle(NMDhcpNettools *self, NDhcp4ClientEvent *event)
 {
-    NMDhcpNettoolsPrivate    *priv = NM_DHCP_NETTOOLS_GET_PRIVATE(self);
-    const NMDhcpClientConfig *client_config;
-    struct in_addr            server_id;
-    char                      addr_str[INET_ADDRSTRLEN];
-    int                       r;
+    NMDhcpNettoolsPrivate *priv = NM_DHCP_NETTOOLS_GET_PRIVATE(self);
+    struct in_addr         server_id;
+    struct in_addr         yiaddr;
+    char                   addr_str[INET_ADDRSTRLEN];
+    char                   addr_str2[INET_ADDRSTRLEN];
+    int                    r;
 
-    _LOGT("client event %d", event->event);
-    client_config = nm_dhcp_client_get_config(NM_DHCP_CLIENT(self));
+    if (event->event == N_DHCP4_CLIENT_EVENT_LOG) {
+        _NMLOG(nm_log_level_from_syslog(event->log.level), "event: %s", event->log.message);
+        return;
+    }
 
     if (!NM_IN_SET(event->event, N_DHCP4_CLIENT_EVENT_LOG)) {
         /* In almost all events (even those that we don't expect below), we clear
@@ -855,52 +858,51 @@ dhcp4_event_handle(NMDhcpNettools *self, NDhcp4ClientEvent *event)
             return;
         }
 
+        n_dhcp4_client_lease_get_yiaddr(event->offer.lease, &yiaddr);
+        if (yiaddr.s_addr == INADDR_ANY) {
+            _LOGD("selecting lease failed: no yiaddr address");
+            return;
+        }
+
         if (nm_dhcp_client_server_id_is_rejected(NM_DHCP_CLIENT(self), &server_id)) {
             _LOGD("server-id %s is in the reject-list, ignoring",
                   nm_utils_inet_ntop(AF_INET, &server_id, addr_str));
             return;
         }
 
+        _LOGT("selecting offered lease from %s for %s",
+              _nm_utils_inet4_ntop(server_id.s_addr, addr_str),
+              _nm_utils_inet4_ntop(yiaddr.s_addr, addr_str2));
+
         r = n_dhcp4_client_lease_select(event->offer.lease);
         if (r) {
             _LOGW("selecting lease failed: %d", r);
             return;
         }
-        break;
+
+        return;
     case N_DHCP4_CLIENT_EVENT_RETRACTED:
     case N_DHCP4_CLIENT_EVENT_EXPIRED:
         _nm_dhcp_client_notify(NM_DHCP_CLIENT(self), NM_DHCP_CLIENT_EVENT_TYPE_EXPIRE, NULL);
-        break;
+        return;
     case N_DHCP4_CLIENT_EVENT_CANCELLED:
         _nm_dhcp_client_notify(NM_DHCP_CLIENT(self), NM_DHCP_CLIENT_EVENT_TYPE_FAIL, NULL);
-        break;
+        return;
     case N_DHCP4_CLIENT_EVENT_GRANTED:
         bound4_handle(self, event->event, event->granted.lease);
-        break;
+        return;
     case N_DHCP4_CLIENT_EVENT_EXTENDED:
         bound4_handle(self, event->event, event->extended.lease);
-        break;
+        return;
     case N_DHCP4_CLIENT_EVENT_DOWN:
         /* ignore down events, they are purely informational */
-        break;
-    case N_DHCP4_CLIENT_EVENT_LOG:
-    {
-        NMLogLevel nm_level;
-
-        nm_level = nm_log_level_from_syslog(event->log.level);
-        if (nm_logging_enabled(nm_level, LOGD_DHCP4)) {
-            nm_log(nm_level,
-                   LOGD_DHCP4,
-                   NULL,
-                   NULL,
-                   "dhcp4 (%s): %s",
-                   client_config->iface,
-                   event->log.message);
-        }
-    } break;
+        _LOGT("event: down (ignore)");
+        return;
     default:
-        _LOGW("unhandled DHCP event %d", event->event);
-        break;
+        _LOGE("unhandled DHCP event %d", event->event);
+        nm_assert(event->event != N_DHCP4_CLIENT_EVENT_LOG);
+        nm_assert_not_reached();
+        return;
     }
 }
 
