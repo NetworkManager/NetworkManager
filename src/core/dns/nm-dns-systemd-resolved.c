@@ -78,7 +78,7 @@ typedef struct {
     GDBusConnection *dbus_connection;
     GHashTable      *dirty_interfaces;
     GCancellable    *cancellable;
-    GSource         *try_start_timeout_source;
+    GCancellable    *service_start_cancellable;
     CList            request_queue_lst_head;
     char            *dbus_owner;
     CList            handle_lst_head;
@@ -165,7 +165,7 @@ _update_pending_detect(NMDnsSystemdResolved *self)
         /* D-Bus not yet initialized (and we don't know the name owner yet). Pending. */
         return TRUE;
     }
-    if (priv->try_start_timeout_source) {
+    if (priv->service_start_cancellable) {
         /* We are waiting to D-Bus activate resolved. Pending. */
         return TRUE;
     }
@@ -522,34 +522,45 @@ prepare_one_interface(NMDnsSystemdResolved *self, const InterfaceConfig *ic)
     return has_config;
 }
 
-static gboolean
-_ensure_resolved_running_timeout(gpointer user_data)
+static void
+start_resolved_cb(GObject *source, GAsyncResult *result, gpointer user_data)
 {
-    NMDnsSystemdResolved              *self = user_data;
-    NMDnsSystemdResolvedPrivate       *priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE(self);
+    gs_unref_variant GVariant         *res   = NULL;
+    gs_free_error GError              *error = NULL;
+    NMDnsSystemdResolved              *self;
+    NMDnsSystemdResolvedPrivate       *priv;
     NMDnsSystemdResolvedResolveHandle *handle;
 
-    nm_clear_g_source_inst(&priv->try_start_timeout_source);
+    res = g_dbus_connection_call_finish(G_DBUS_CONNECTION(source), result, &error);
+    if (nm_utils_error_is_cancelled(error))
+        return;
 
-    _LOGT("timeout waiting to D-Bus activate systemd-resolved. Systemd-resolved won't be "
-          "used until it appears on the bus");
+    self = user_data;
+    priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE(self);
+    nm_clear_g_cancellable(&priv->service_start_cancellable);
+
+    if (!res) {
+        g_dbus_error_strip_remote_error(error);
+        _LOGD("error activating systemd-resolved: %s", error->message);
 
 again:
-    c_list_for_each_entry (handle, &priv->handle_lst_head, handle_lst) {
-        gs_free_error GError *error = NULL;
+        c_list_for_each_entry (handle, &priv->handle_lst_head, handle_lst) {
+            gs_free_error GError *local = NULL;
 
-        if (handle->is_failing_on_idle)
-            continue;
+            if (handle->is_failing_on_idle)
+                continue;
 
-        nm_utils_error_set_literal(&error,
-                                   NM_UTILS_ERROR_NOT_READY,
-                                   "timeout waiting for systemd-resolved to start");
-        _resolve_complete_error(handle, error);
-        goto again;
-    }
+            nm_utils_error_set(&local,
+                               NM_UTILS_ERROR_NOT_READY,
+                               "error activating systemd-resolved: %s",
+                               error->message);
+            _resolve_complete_error(handle, local);
+            goto again;
+        }
+    } else
+        _LOGD("systemd-resolved successfully started");
 
     _update_pending_maybe_changed(self);
-    return G_SOURCE_CONTINUE;
 }
 
 static NMTernary
@@ -572,16 +583,14 @@ ensure_resolved_running(NMDnsSystemdResolved *self)
 
         _LOGT("try D-Bus activating systemd-resolved...");
         priv->try_start_blocked = TRUE;
-
-        priv->try_start_timeout_source =
-            nm_g_timeout_add_source(4000, _ensure_resolved_running_timeout, self);
-
+        nm_clear_g_cancellable(&priv->service_start_cancellable);
+        priv->service_start_cancellable = g_cancellable_new();
         nm_dbus_connection_call_start_service_by_name(priv->dbus_connection,
                                                       SYSTEMD_RESOLVED_DBUS_SERVICE,
-                                                      -1,
-                                                      NULL,
-                                                      NULL,
-                                                      NULL);
+                                                      4000,
+                                                      priv->service_start_cancellable,
+                                                      start_resolved_cb,
+                                                      self);
         _update_pending_maybe_changed(self);
         return NM_TERNARY_DEFAULT;
     }
@@ -782,8 +791,7 @@ name_owner_changed(NMDnsSystemdResolved *self, const char *owner)
     else
         _LOGT("D-Bus name for systemd-resolved has owner %s", owner);
 
-    nm_clear_g_source_inst(&priv->try_start_timeout_source);
-
+    nm_clear_g_cancellable(&priv->service_start_cancellable);
     nm_strdup_reset(&priv->dbus_owner, owner);
 
     if (owner) {
@@ -1140,7 +1148,7 @@ stop(NMDnsPlugin *plugin)
 
     nm_clear_g_dbus_connection_signal(priv->dbus_connection, &priv->name_owner_changed_id);
 
-    nm_clear_g_source_inst(&priv->try_start_timeout_source);
+    nm_clear_g_cancellable(&priv->service_start_cancellable);
 }
 
 /*****************************************************************************/
