@@ -273,7 +273,7 @@ typedef enum {
  */
 #define NM_VPN_PLUGIN_IP6_CONFIG_PTP "ptp"
 
-/* uint32: prefix length of the VPN interface; 1 - 128 inclusive */
+/* uint32: prefix length of the VPN interface; 0 - 128 inclusive */
 #define NM_VPN_PLUGIN_IP6_CONFIG_PREFIX "prefix"
 
 /* array of array of uint8: IP addresses of DNS servers for the VPN (network byte order) */
