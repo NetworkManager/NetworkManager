@@ -259,11 +259,11 @@ _parse_ip_address(int family, const char *address, GError **error)
     plen = strchr(ip_str, '/');
     if (plen) {
         *plen++ = '\0';
-        if ((prefix = _nm_utils_ascii_str_to_int64(plen, 10, 1, MAX_PREFIX, -1)) == -1) {
+        if ((prefix = _nm_utils_ascii_str_to_int64(plen, 10, 0, MAX_PREFIX, -1)) == -1) {
             g_set_error(error,
                         NM_UTILS_ERROR,
                         NM_UTILS_ERROR_INVALID_ARGUMENT,
-                        _("invalid prefix '%s'; <1-%d> allowed"),
+                        _("invalid prefix '%s'; <0-%d> allowed"),
                         plen,
                         MAX_PREFIX);
             return NULL;
@@ -329,7 +329,7 @@ _parse_ip_route(int family, const char *str, GError **error)
             g_set_error(error,
                         NM_UTILS_ERROR,
                         NM_UTILS_ERROR_INVALID_ARGUMENT,
-                        _("invalid prefix '%s'; <1-%d> allowed"),
+                        _("invalid prefix '%s'; <0-%d> allowed"),
                         plen,
                         MAX_PREFIX);
             return NULL;

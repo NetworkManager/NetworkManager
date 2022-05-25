@@ -2610,9 +2610,6 @@ nm_l3_config_data_add_dependent_device_routes(NML3ConfigData       *self,
             const gboolean has_peer = !IN6_IS_ADDR_UNSPECIFIED(&addr_src->a6.peer_address);
             int            routes_i;
 
-            if (addr_src->ax.plen == 0)
-                continue;
-
             if (NM_FLAGS_HAS(addr_src->a6.n_ifa_flags, IFA_F_NOPREFIXROUTE))
                 continue;
 

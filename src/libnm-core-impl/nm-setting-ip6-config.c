@@ -936,7 +936,7 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
      *   'address-data' and 'gateway'.
      *
      *   Array of IPv6 address structures.  Each IPv6 address structure is
-     *   composed of an IPv6 address, a prefix length (1 - 128), and an IPv6
+     *   composed of an IPv6 address, a prefix length (0 - 128), and an IPv6
      *   gateway address. The gateway may be zeroed out if no gateway exists for
      *   that subnet.
      * ---end---
@@ -984,7 +984,7 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
      *   you send this property the daemon will ignore 'route-data'.
      *
      *   Array of IPv6 route structures.  Each IPv6 route structure is
-     *   composed of an IPv6 address, a prefix length (1 - 128), an IPv6
+     *   composed of an IPv6 address, a prefix length (0 - 128), an IPv6
      *   next hop address (which may be zeroed out if there is no next hop),
      *   and a metric. If the metric is 0, NM will choose an appropriate
      *   default metric for the device.
