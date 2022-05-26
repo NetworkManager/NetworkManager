@@ -58,6 +58,8 @@ typedef struct {
         const NML3ConfigData *lease_l3cd;
     } granted;
 
+    GSource *pop_all_events_on_idle_source;
+
     GSource *event_source;
     char    *lease_file;
 } NMDhcpNettoolsPrivate;
@@ -75,6 +77,10 @@ G_DEFINE_TYPE(NMDhcpNettools, nm_dhcp_nettools, NM_TYPE_DHCP_CLIENT)
 
 #define NM_DHCP_NETTOOLS_GET_PRIVATE(self) \
     _NM_GET_PRIVATE(self, NMDhcpNettools, NM_IS_DHCP_NETTOOLS)
+
+/*****************************************************************************/
+
+static void dhcp4_event_pop_all_events_on_idle(NMDhcpNettools *self);
 
 /*****************************************************************************/
 
@@ -891,8 +897,10 @@ bound4_handle(NMDhcpNettools *self, guint event, NDhcp4ClientLease *lease)
     if (!l3cd) {
         _LOGW("failure to parse lease: %s", error->message);
 
-        if (event == N_DHCP4_CLIENT_EVENT_GRANTED)
+        if (event == N_DHCP4_CLIENT_EVENT_GRANTED) {
             n_dhcp4_client_lease_decline(lease, "invalid lease");
+            dhcp4_event_pop_all_events_on_idle(self);
+        }
 
         _nm_dhcp_client_notify(NM_DHCP_CLIENT(self), NM_DHCP_CLIENT_EVENT_TYPE_FAIL, NULL);
         return;
@@ -961,6 +969,9 @@ dhcp4_event_handle(NMDhcpNettools *self, NDhcp4ClientEvent *event)
               _nm_utils_inet4_ntop(yiaddr.s_addr, addr_str2));
 
         r = n_dhcp4_client_lease_select(event->offer.lease);
+
+        dhcp4_event_pop_all_events_on_idle(self);
+
         if (r) {
             _LOGW("selecting lease failed: %d", r);
             return;
@@ -1000,6 +1011,51 @@ dhcp4_event_pop_all_events(NMDhcpNettools *self)
 
     while (!n_dhcp4_client_pop_event(priv->client, &event) && event)
         dhcp4_event_handle(self, event);
+
+    nm_clear_g_source_inst(&priv->pop_all_events_on_idle_source);
+}
+
+static gboolean
+dhcp4_event_pop_all_events_on_idle_cb(gpointer user_data)
+{
+    NMDhcpNettools        *self = user_data;
+    NMDhcpNettoolsPrivate *priv = NM_DHCP_NETTOOLS_GET_PRIVATE(self);
+
+    nm_clear_g_source_inst(&priv->pop_all_events_on_idle_source);
+    dhcp4_event_pop_all_events(self);
+    return G_SOURCE_CONTINUE;
+}
+
+static void
+dhcp4_event_pop_all_events_on_idle(NMDhcpNettools *self)
+{
+    NMDhcpNettoolsPrivate *priv = NM_DHCP_NETTOOLS_GET_PRIVATE(self);
+
+    /* For the most part, NDhcp4Client gets driven from internal, that is
+     * by having events ready on the socket or the timerfd. For those
+     * events, we will poll on the (epoll) FD, then let it be processed
+     * by n_dhcp4_client_dispatch(), and pop the queued events.
+     *
+     * But certain commands (n_dhcp4_client_lease_select(), n_dhcp4_client_lease_accept(),
+     * n_dhcp4_client_lease_decline()) are initiated by the user. And they tend
+     * to log events. Logging is done by queuing a message, but that won't be processed,
+     * unless we pop the event.
+     *
+     * To ensure that those logging events get popped, schedule an idle handler to do that.
+     *
+     * Yes, this means, that the messages only get logged later, when the idle handler
+     * runs. The alternative seems even more problematic, because we don't know
+     * the current call-state, and it seems dangerous to pop unexpected events.
+     * E.g. we call n_dhcp4_client_lease_select() from inside the event-handler,
+     * it seems wrong to call dhcp4_event_pop_all_events() in that context again.
+     *
+     * See-also: https://github.com/nettools/n-dhcp4/issues/34
+     */
+
+    if (!priv->pop_all_events_on_idle_source) {
+        priv->pop_all_events_on_idle_source =
+            nm_g_idle_add_source(dhcp4_event_pop_all_events_on_idle_cb, self);
+    }
 }
 
 static gboolean
@@ -1153,6 +1209,8 @@ _accept(NMDhcpClient *client, const NML3ConfigData *l3cd, GError **error)
 
     r = n_dhcp4_client_lease_accept(priv->granted.lease);
 
+    dhcp4_event_pop_all_events_on_idle(self);
+
     nm_clear_pointer(&priv->granted.lease, n_dhcp4_client_lease_unref);
     nm_clear_l3cd(&priv->granted.lease_l3cd);
 
@@ -1187,6 +1245,8 @@ decline(NMDhcpClient *client, const NML3ConfigData *l3cd, const char *error_mess
     nm_clear_l3cd(&priv->granted.lease_l3cd);
 
     r = n_dhcp4_client_lease_decline(lease, error_message);
+
+    dhcp4_event_pop_all_events_on_idle(self);
 
     if (r) {
         set_error_nettools(error, r, "failed to decline lease");
@@ -1403,6 +1463,7 @@ dispose(GObject *object)
 
     nm_clear_g_free(&priv->lease_file);
     nm_clear_g_source_inst(&priv->event_source);
+    nm_clear_g_source_inst(&priv->pop_all_events_on_idle_source);
     nm_clear_pointer(&priv->granted.lease, n_dhcp4_client_lease_unref);
     nm_clear_l3cd(&priv->granted.lease_l3cd);
     nm_clear_pointer(&priv->probe, n_dhcp4_client_probe_free);
