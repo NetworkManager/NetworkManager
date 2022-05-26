@@ -10925,9 +10925,10 @@ _commit_mtu(NMDevice *self)
 {
     NMDevicePrivate      *priv   = NM_DEVICE_GET_PRIVATE(self);
     NMDeviceMtuSource     source = NM_DEVICE_MTU_SOURCE_NONE;
+    NMSettingIPConfig    *s_ip6;
     const NML3ConfigData *l3cd;
     guint32               ip6_mtu_orig;
-    guint32               ip6_mtu;
+    guint32               ip6_mtu = 0;
     guint32               mtu_desired_orig;
     guint32               mtu_desired;
     guint32               mtu_plat;
@@ -11012,10 +11013,9 @@ _commit_mtu(NMDevice *self)
         }
     }
 
-    if (mtu_desired && mtu_desired < 1280) {
-        NMSettingIPConfig *s_ip6;
+    s_ip6 = nm_device_get_applied_setting(self, NM_TYPE_SETTING_IP6_CONFIG);
 
-        s_ip6 = nm_device_get_applied_setting(self, NM_TYPE_SETTING_IP6_CONFIG);
+    if (mtu_desired && mtu_desired < 1280) {
         if (s_ip6
             && !NM_IN_STRSET(nm_setting_ip_config_get_method(s_ip6),
                              NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
@@ -11030,7 +11030,12 @@ _commit_mtu(NMDevice *self)
         }
     }
 
-    ip6_mtu = priv->ip6_mtu;
+    if (s_ip6)
+        ip6_mtu = nm_setting_ip6_config_get_mtu(NM_SETTING_IP6_CONFIG(s_ip6));
+
+    if (!ip6_mtu)
+        ip6_mtu = priv->ip6_mtu;
+
     if (!ip6_mtu && priv->mtu_source == NM_DEVICE_MTU_SOURCE_NONE) {
         /* initially, if the IPv6 MTU is not specified, grow it as large as the
          * link MTU @mtu_desired. Only exception is, if @mtu_desired is so small
