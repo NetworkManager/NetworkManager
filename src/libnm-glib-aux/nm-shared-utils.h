@@ -2194,38 +2194,57 @@ nm_g_array_unref(GArray *arr)
         g_array_unref(arr);
 }
 
-#define nm_g_array_first(arr, type)   \
-    ({                                \
-        GArray *const _arr = (arr);   \
-        guint         _len;           \
-                                      \
-        nm_assert(_arr);              \
-        _len = _arr->len;             \
-        nm_assert(_len > 0);          \
-        &g_array_index(arr, type, 0); \
+#define nm_g_array_first(arr, Type)                                \
+    ({                                                             \
+        GArray *const _arr = (arr);                                \
+                                                                   \
+        nm_assert(_arr);                                           \
+        nm_assert(sizeof(Type) == g_array_get_element_size(_arr)); \
+        nm_assert(_arr->len > 0);                                  \
+                                                                   \
+        &g_array_index(arr, Type, 0);                              \
     })
 
-#define nm_g_array_last(arr, type)            \
-    ({                                        \
-        GArray *const _arr = (arr);           \
-        guint         _len;                   \
-                                              \
-        nm_assert(_arr);                      \
-        _len = _arr->len;                     \
-        nm_assert(_len > 0);                  \
-        &g_array_index(arr, type, _len - 1u); \
+#define nm_g_array_last(arr, Type)                                 \
+    ({                                                             \
+        GArray *const _arr = (arr);                                \
+                                                                   \
+        nm_assert(_arr);                                           \
+        nm_assert(sizeof(Type) == g_array_get_element_size(_arr)); \
+        nm_assert(_arr->len > 0);                                  \
+                                                                   \
+        &g_array_index(arr, Type, _arr->len - 1u);                 \
     })
 
-#define nm_g_array_append_new(arr, type)   \
-    ({                                     \
-        GArray *const _arr = (arr);        \
-        guint         _len;                \
-                                           \
-        nm_assert(_arr);                   \
-        _len = _arr->len;                  \
-        nm_assert(_len < G_MAXUINT);       \
-        g_array_set_size(_arr, _len + 1u); \
-        &g_array_index(arr, type, _len);   \
+/* Similar to g_array_index(). The differences are
+ * - this does nm_assert() checks that the arguments are valid.
+ * - returns a pointer to the element. */
+#define nm_g_array_index_p(arr, Type, idx)                         \
+    ({                                                             \
+        GArray *const _arr = (arr);                                \
+        const guint   _idx = (idx);                                \
+                                                                   \
+        nm_assert(_arr);                                           \
+        nm_assert(sizeof(Type) == g_array_get_element_size(_arr)); \
+        nm_assert(_idx < _arr->len);                               \
+                                                                   \
+        &g_array_index(_arr, Type, _idx);                          \
+    })
+
+#define nm_g_array_append_new(arr, Type)                           \
+    ({                                                             \
+        GArray *const _arr = (arr);                                \
+        guint         _len;                                        \
+                                                                   \
+        nm_assert(_arr);                                           \
+        nm_assert(sizeof(Type) == g_array_get_element_size(_arr)); \
+                                                                   \
+        _len = _arr->len;                                          \
+                                                                   \
+        nm_assert(_len < G_MAXUINT);                               \
+                                                                   \
+        g_array_set_size(_arr, _len + 1u);                         \
+        &g_array_index(arr, Type, _len);                           \
     })
 
 /*****************************************************************************/
