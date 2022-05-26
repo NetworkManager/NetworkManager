@@ -291,7 +291,7 @@ DEVICETYPE=TeamPort
           <para>
             Each secret property in a NetworkManager setting has an associated
             <emphasis>flags</emphasis> property that describes how to handle that secret.
-            In the <emphasis>fcfg-rh</emphasis> plugin variables for secret flags have a
+            In the <emphasis>ifcfg-rh</emphasis> plugin variables for secret flags have a
             <emphasis>_FLAGS</emphasis> suffix. The variables contain one or more of the
             following values (space separated). Missing (or empty) *_FLAGS variable means
             that the password is owned by NetworkManager.
