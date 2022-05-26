@@ -137,6 +137,8 @@ main(int argc, char *argv[])
     gs_free char                               *hostname       = NULL;
     int                                         errsv;
     gint64                                      carrier_timeout_sec = 0;
+    gs_unref_array GArray                      *confs               = NULL;
+    guint                                       i;
 
     option_context = g_option_context_new(
         "-- [ip=...] [rd.route=...] [bridge=...] [bond=...] [team=...] [vlan=...] "
@@ -178,15 +180,45 @@ main(int argc, char *argv[])
                                            &hostname,
                                            &carrier_timeout_sec);
 
+    confs = g_array_new(FALSE, FALSE, sizeof(NMUtilsNamedValue));
+    g_array_set_clear_func(confs, (GDestroyNotify) nm_utils_named_value_clear_with_g_free);
+
+    if (carrier_timeout_sec != 0) {
+        nm_auto_unref_keyfile GKeyFile *keyfile = NULL;
+        NMUtilsNamedValue               v;
+
+        keyfile = g_key_file_new();
+        g_key_file_set_list_separator(keyfile, NM_CONFIG_KEYFILE_LIST_SEPARATOR);
+
+        g_key_file_set_value(keyfile,
+                             NM_CONFIG_KEYFILE_GROUPPREFIX_DEVICE "-15-carrier-timeout",
+                             NM_CONFIG_KEYFILE_KEY_MATCH_DEVICE,
+                             "*");
+        g_key_file_set_int64(keyfile,
+                             NM_CONFIG_KEYFILE_GROUPPREFIX_DEVICE "-15-carrier-timeout",
+                             NM_CONFIG_KEYFILE_KEY_DEVICE_CARRIER_WAIT_TIMEOUT,
+                             carrier_timeout_sec * 1000);
+
+        v = (NMUtilsNamedValue){
+            .name      = g_strdup_printf("%s/15-carrier-timeout.conf", run_config_dir),
+            .value_str = g_key_file_to_data(keyfile, NULL, NULL),
+        };
+        g_array_append_val(confs, v);
+    }
+
     if (dump_to_stdout) {
         nm_clear_g_free(&connections_dir);
         nm_clear_g_free(&initrd_dir);
         nm_clear_g_free(&run_config_dir);
         if (hostname)
             g_print("\n*** Hostname '%s' ***\n", hostname);
-        if (carrier_timeout_sec != 0)
-            g_print("\n*** Carrier Wait Timeout %" G_GINT64_FORMAT " sec ***\n",
-                    carrier_timeout_sec);
+
+        for (i = 0; i < confs->len; i++) {
+            NMUtilsNamedValue *v    = &g_array_index(confs, NMUtilsNamedValue, i);
+            gs_free char      *name = g_path_get_basename(v->name);
+
+            g_print("\n*** Configuration '%s' ***\n\n%s\n", name, v->value_str);
+        }
     } else {
         if (g_mkdir_with_parents(connections_dir, 0755) != 0) {
             errsv = errno;
@@ -216,25 +248,12 @@ main(int argc, char *argv[])
                 return 1;
             }
         }
-        if (carrier_timeout_sec != 0) {
-            nm_auto_unref_keyfile GKeyFile *keyfile  = NULL;
-            gs_free char                   *filename = NULL;
 
-            keyfile = g_key_file_new();
-            g_key_file_set_list_separator(keyfile, NM_CONFIG_KEYFILE_LIST_SEPARATOR);
-            filename = g_strdup_printf("%s/15-carrier-timeout.conf", run_config_dir);
+        for (i = 0; i < confs->len; i++) {
+            NMUtilsNamedValue *v = &g_array_index(confs, NMUtilsNamedValue, i);
 
-            g_key_file_set_value(keyfile,
-                                 NM_CONFIG_KEYFILE_GROUPPREFIX_DEVICE "-15-carrier-timeout",
-                                 NM_CONFIG_KEYFILE_KEY_MATCH_DEVICE,
-                                 "*");
-            g_key_file_set_int64(keyfile,
-                                 NM_CONFIG_KEYFILE_GROUPPREFIX_DEVICE "-15-carrier-timeout",
-                                 NM_CONFIG_KEYFILE_KEY_DEVICE_CARRIER_WAIT_TIMEOUT,
-                                 carrier_timeout_sec * 1000);
-
-            if (!g_key_file_save_to_file(keyfile, filename, &error)) {
-                _LOGW(LOGD_CORE, "%s: %s", filename, error->message);
+            if (!g_file_set_contents(v->name, v->value_str, strlen(v->value_str), &error)) {
+                _LOGW(LOGD_CORE, "%s: %s", v->name, error->message);
                 return 1;
             }
         }
