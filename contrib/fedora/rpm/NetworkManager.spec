@@ -161,8 +161,10 @@
 
 %if 0%{?rhel} > 9 || 0%{?fedora} > 35
 %global split_ifcfg_rh 1
+%global ifcfg_warning 1
 %else
 %global split_ifcfg_rh 0
+%global ifcfg_warning 0
 %endif
 
 %if 0%{?fedora}
@@ -199,6 +201,7 @@ Source2: 00-server.conf
 Source4: 20-connectivity-fedora.conf
 Source5: 20-connectivity-redhat.conf
 Source6: 70-nm-connectivity.conf
+Source7: readme-ifcfg-rh.txt
 
 #Patch1: 0001-some.patch
 
@@ -900,6 +903,10 @@ mkdir -p %{buildroot}%{_sysctldir}
 cp %{SOURCE6} %{buildroot}%{_sysctldir}
 %endif
 
+%if 0%{?ifcfg_warning}
+cp %{SOURCE7} %{buildroot}%{_sysconfdir}/sysconfig/network-scripts
+%endif
+
 cp examples/dispatcher/10-ifcfg-rh-routes.sh %{buildroot}%{nmlibdir}/dispatcher.d/
 ln -s ../no-wait.d/10-ifcfg-rh-routes.sh %{buildroot}%{nmlibdir}/dispatcher.d/pre-up.d/
 ln -s ../10-ifcfg-rh-routes.sh %{buildroot}%{nmlibdir}/dispatcher.d/no-wait.d/
@@ -1090,6 +1097,9 @@ fi
 %{_unitdir}/nm-priv-helper.service
 %dir %{_datadir}/doc/NetworkManager/examples
 %{_datadir}/doc/NetworkManager/examples/server.conf
+%if 0%{?ifcfg_warning}
+%{_sysconfdir}/sysconfig/network-scripts/readme-ifcfg-rh.txt
+%endif
 %doc NEWS AUTHORS README.md CONTRIBUTING.md
 %license COPYING
 %license COPYING.LGPL
