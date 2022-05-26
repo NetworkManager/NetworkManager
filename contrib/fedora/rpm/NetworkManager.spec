@@ -199,6 +199,7 @@ Source2: 00-server.conf
 Source4: 20-connectivity-fedora.conf
 Source5: 20-connectivity-redhat.conf
 Source6: 70-nm-connectivity.conf
+Source7: README_IFCFG_FILES
 
 #Patch1: 0001-some.patch
 
@@ -900,6 +901,10 @@ mkdir -p %{buildroot}%{_sysctldir}
 cp %{SOURCE6} %{buildroot}%{_sysctldir}
 %endif
 
+%if 0%{?rhel} > 9 || 0%{?fedora} > 35
+cp %{SOURCE7} %{buildroot}%{_sysconfdir}/sysconfig/network-scripts
+%endif
+
 cp examples/dispatcher/10-ifcfg-rh-routes.sh %{buildroot}%{nmlibdir}/dispatcher.d/
 ln -s ../no-wait.d/10-ifcfg-rh-routes.sh %{buildroot}%{nmlibdir}/dispatcher.d/pre-up.d/
 ln -s ../10-ifcfg-rh-routes.sh %{buildroot}%{nmlibdir}/dispatcher.d/no-wait.d/
@@ -1075,9 +1080,7 @@ fi
 %{_mandir}/man8/NetworkManager-dispatcher.8.gz
 %{_mandir}/man8/NetworkManager-wait-online.service.8.gz
 %dir %{_localstatedir}/lib/NetworkManager
-%if 0%{?split_ifcfg_rh} == 0
 %dir %{_sysconfdir}/sysconfig/network-scripts
-%endif
 %{_datadir}/dbus-1/system-services/org.freedesktop.nm_dispatcher.service
 %{_datadir}/dbus-1/system-services/org.freedesktop.nm_priv_helper.service
 %{_datadir}/polkit-1/actions/*.policy
@@ -1092,6 +1095,9 @@ fi
 %{_unitdir}/nm-priv-helper.service
 %dir %{_datadir}/doc/NetworkManager/examples
 %{_datadir}/doc/NetworkManager/examples/server.conf
+%if 0%{?rhel} > 9 || 0%{?fedora} > 35
+%{_sysconfdir}/sysconfig/network-scripts/README_IFCFG_FILES
+%endif
 %doc NEWS AUTHORS README.md CONTRIBUTING.md
 %license COPYING
 %license COPYING.LGPL
@@ -1207,7 +1213,6 @@ fi
 
 %if 0%{?split_ifcfg_rh}
 %files initscripts-ifcfg-rh
-%dir %{_sysconfdir}/sysconfig/network-scripts
 %{nmplugindir}/libnm-settings-plugin-ifcfg-rh.so
 %{dbus_sys_dir}/nm-ifcfg-rh.conf
 %endif
