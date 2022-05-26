@@ -1078,9 +1078,7 @@ fi
 %{_mandir}/man8/NetworkManager.8.gz
 %{_mandir}/man8/NetworkManager-dispatcher.8.gz
 %dir %{_localstatedir}/lib/NetworkManager
-%if 0%{?split_ifcfg_rh} == 0
 %dir %{_sysconfdir}/sysconfig/network-scripts
-%endif
 %{_datadir}/dbus-1/system-services/org.freedesktop.nm_dispatcher.service
 %{_datadir}/dbus-1/system-services/org.freedesktop.nm_priv_helper.service
 %{_datadir}/polkit-1/actions/*.policy
@@ -1210,7 +1208,6 @@ fi
 
 %if 0%{?split_ifcfg_rh}
 %files initscripts-ifcfg-rh
-%dir %{_sysconfdir}/sysconfig/network-scripts
 %{nmplugindir}/libnm-settings-plugin-ifcfg-rh.so
 %{dbus_sys_dir}/nm-ifcfg-rh.conf
 %endif
