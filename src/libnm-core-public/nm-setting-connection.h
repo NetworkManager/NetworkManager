@@ -33,32 +33,33 @@ G_BEGIN_DECLS
 #define NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY_MAX     999
 #define NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY_DEFAULT 0
 
-#define NM_SETTING_CONNECTION_ID                   "id"
-#define NM_SETTING_CONNECTION_UUID                 "uuid"
-#define NM_SETTING_CONNECTION_STABLE_ID            "stable-id"
-#define NM_SETTING_CONNECTION_INTERFACE_NAME       "interface-name"
-#define NM_SETTING_CONNECTION_TYPE                 "type"
-#define NM_SETTING_CONNECTION_AUTOCONNECT          "autoconnect"
-#define NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY "autoconnect-priority"
-#define NM_SETTING_CONNECTION_AUTOCONNECT_RETRIES  "autoconnect-retries"
-#define NM_SETTING_CONNECTION_MULTI_CONNECT        "multi-connect"
-#define NM_SETTING_CONNECTION_TIMESTAMP            "timestamp"
-#define NM_SETTING_CONNECTION_READ_ONLY            "read-only"
-#define NM_SETTING_CONNECTION_PERMISSIONS          "permissions"
-#define NM_SETTING_CONNECTION_ZONE                 "zone"
-#define NM_SETTING_CONNECTION_MASTER               "master"
-#define NM_SETTING_CONNECTION_SLAVE_TYPE           "slave-type"
-#define NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES   "autoconnect-slaves"
-#define NM_SETTING_CONNECTION_SECONDARIES          "secondaries"
-#define NM_SETTING_CONNECTION_GATEWAY_PING_TIMEOUT "gateway-ping-timeout"
-#define NM_SETTING_CONNECTION_METERED              "metered"
-#define NM_SETTING_CONNECTION_LLDP                 "lldp"
-#define NM_SETTING_CONNECTION_AUTH_RETRIES         "auth-retries"
-#define NM_SETTING_CONNECTION_MDNS                 "mdns"
-#define NM_SETTING_CONNECTION_LLMNR                "llmnr"
-#define NM_SETTING_CONNECTION_DNS_OVER_TLS         "dns-over-tls"
-#define NM_SETTING_CONNECTION_WAIT_DEVICE_TIMEOUT  "wait-device-timeout"
-#define NM_SETTING_CONNECTION_MUD_URL              "mud-url"
+#define NM_SETTING_CONNECTION_ID                    "id"
+#define NM_SETTING_CONNECTION_UUID                  "uuid"
+#define NM_SETTING_CONNECTION_STABLE_ID             "stable-id"
+#define NM_SETTING_CONNECTION_INTERFACE_NAME        "interface-name"
+#define NM_SETTING_CONNECTION_TYPE                  "type"
+#define NM_SETTING_CONNECTION_AUTOCONNECT           "autoconnect"
+#define NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY  "autoconnect-priority"
+#define NM_SETTING_CONNECTION_AUTOCONNECT_RETRIES   "autoconnect-retries"
+#define NM_SETTING_CONNECTION_MULTI_CONNECT         "multi-connect"
+#define NM_SETTING_CONNECTION_TIMESTAMP             "timestamp"
+#define NM_SETTING_CONNECTION_READ_ONLY             "read-only"
+#define NM_SETTING_CONNECTION_PERMISSIONS           "permissions"
+#define NM_SETTING_CONNECTION_ZONE                  "zone"
+#define NM_SETTING_CONNECTION_MASTER                "master"
+#define NM_SETTING_CONNECTION_SLAVE_TYPE            "slave-type"
+#define NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES    "autoconnect-slaves"
+#define NM_SETTING_CONNECTION_SECONDARIES           "secondaries"
+#define NM_SETTING_CONNECTION_GATEWAY_PING_TIMEOUT  "gateway-ping-timeout"
+#define NM_SETTING_CONNECTION_METERED               "metered"
+#define NM_SETTING_CONNECTION_LLDP                  "lldp"
+#define NM_SETTING_CONNECTION_AUTH_RETRIES          "auth-retries"
+#define NM_SETTING_CONNECTION_MDNS                  "mdns"
+#define NM_SETTING_CONNECTION_LLMNR                 "llmnr"
+#define NM_SETTING_CONNECTION_DNS_OVER_TLS          "dns-over-tls"
+#define NM_SETTING_CONNECTION_WAIT_DEVICE_TIMEOUT   "wait-device-timeout"
+#define NM_SETTING_CONNECTION_MUD_URL               "mud-url"
+#define NM_SETTING_CONNECTION_WAIT_ACTIVATION_DELAY "wait-activation-delay"
 
 /* Types for property values */
 /**
@@ -217,6 +218,9 @@ NMSettingConnectionDnsOverTls nm_setting_connection_get_dns_over_tls(NMSettingCo
 
 NM_AVAILABLE_IN_1_20
 gint32 nm_setting_connection_get_wait_device_timeout(NMSettingConnection *setting);
+
+NM_AVAILABLE_IN_1_40
+gint32 nm_setting_connection_get_wait_activation_delay(NMSettingConnection *setting);
 
 NM_AVAILABLE_IN_1_26
 const char *nm_setting_connection_get_mud_url(NMSettingConnection *setting);

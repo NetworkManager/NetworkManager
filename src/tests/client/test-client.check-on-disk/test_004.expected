@@ -58,12 +58,12 @@ location: src/tests/client/test-client.py:test_004()/7
 cmd: $NMCLI connection mod con-xx1 ipv4.addresses 192.168.77.5/24 ipv4.routes '2.3.4.5/32 192.168.77.1' ipv6.addresses 1:2:3:4::6/64 ipv6.routes 1:2:3:4:5:6::5/128
 lang: C
 returncode: 0
-size: 4862
+size: 4905
 location: src/tests/client/test-client.py:test_004()/8
 cmd: $NMCLI con s con-xx1
 lang: C
 returncode: 0
-stdout: 4731 bytes
+stdout: 4774 bytes
 >>>
 connection.id:                          con-xx1
 connection.uuid:                        UUID-con-xx1-REPLACED-REPLACED-REPLA
@@ -90,6 +90,7 @@ connection.mdns:                        -1 (default)
 connection.llmnr:                       -1 (default)
 connection.dns-over-tls:                -1 (default)
 connection.wait-device-timeout:         -1
+connection.wait-activation-delay:       -1
 802-11-wireless.ssid:                   foobar
 802-11-wireless.mode:                   infrastructure
 802-11-wireless.band:                   a
@@ -168,12 +169,12 @@ proxy.pac-url:                          --
 proxy.pac-script:                       --
 
 <<<
-size: 4898
+size: 4941
 location: src/tests/client/test-client.py:test_004()/9
 cmd: $NMCLI con s con-xx1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4757 bytes
+stdout: 4800 bytes
 >>>
 connection.id:                          con-xx1
 connection.uuid:                        UUID-con-xx1-REPLACED-REPLACED-REPLA
@@ -200,6 +201,7 @@ connection.mdns:                        -1 (default)
 connection.llmnr:                       -1 (default)
 connection.dns-over-tls:                -1 (default)
 connection.wait-device-timeout:         -1
+connection.wait-activation-delay:       -1
 802-11-wireless.ssid:                   foobar
 802-11-wireless.mode:                   infrastructure
 802-11-wireless.band:                   a
@@ -314,12 +316,12 @@ con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  vpn       --
 con-xx1    UUID-con-xx1-REPLACED-REPLACED-REPLA  wifi      --     
 
 <<<
-size: 4276
+size: 4319
 location: src/tests/client/test-client.py:test_004()/13
 cmd: $NMCLI con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 4142 bytes
+stdout: 4185 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -346,6 +348,7 @@ connection.mdns:                        -1 (default)
 connection.llmnr:                       -1 (default)
 connection.dns-over-tls:                -1 (default)
 connection.wait-device-timeout:         -1
+connection.wait-activation-delay:       -1
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
@@ -412,12 +415,12 @@ proxy.pac-url:                          --
 proxy.pac-script:                       --
 
 <<<
-size: 4304
+size: 4347
 location: src/tests/client/test-client.py:test_004()/14
 cmd: $NMCLI con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4160 bytes
+stdout: 4203 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -444,6 +447,7 @@ connection.mdns:                        -1 (default)
 connection.llmnr:                       -1 (default)
 connection.dns-over-tls:                -1 (default)
 connection.wait-device-timeout:         -1
+connection.wait-activation-delay:       -1
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
@@ -582,12 +586,12 @@ con-xx1    UUID-con-xx1-REPLACED-REPLACED-REPLA  wifi      wlan0
 con-1      5fcfd6d7-1e63-3332-8826-a7eda103792d  ethernet  --     
 
 <<<
-size: 5404
+size: 5447
 location: src/tests/client/test-client.py:test_004()/21
 cmd: $NMCLI con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 5270 bytes
+stdout: 5313 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -614,6 +618,7 @@ connection.mdns:                        -1 (default)
 connection.llmnr:                       -1 (default)
 connection.dns-over-tls:                -1 (default)
 connection.wait-device-timeout:         -1
+connection.wait-activation-delay:       -1
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
@@ -701,12 +706,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 5438
+size: 5481
 location: src/tests/client/test-client.py:test_004()/22
 cmd: $NMCLI con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5294 bytes
+stdout: 5337 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -733,6 +738,7 @@ connection.mdns:                        -1 (default)
 connection.llmnr:                       -1 (default)
 connection.dns-over-tls:                -1 (default)
 connection.wait-device-timeout:         -1
+connection.wait-activation-delay:       -1
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
@@ -902,12 +908,12 @@ Strony podręcznika nmcli(1) i nmcli-examples(7) zawierają pełne informacje
 o użyciu.
 
 <<<
-size: 5410
+size: 5453
 location: src/tests/client/test-client.py:test_004()/25
 cmd: $NMCLI con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 5276 bytes
+stdout: 5319 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -934,6 +940,7 @@ connection.mdns:                        -1 (default)
 connection.llmnr:                       -1 (default)
 connection.dns-over-tls:                -1 (default)
 connection.wait-device-timeout:         -1
+connection.wait-activation-delay:       -1
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
@@ -1021,12 +1028,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 5448
+size: 5491
 location: src/tests/client/test-client.py:test_004()/26
 cmd: $NMCLI con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5304 bytes
+stdout: 5347 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -1053,6 +1060,7 @@ connection.mdns:                        -1 (default)
 connection.llmnr:                       -1 (default)
 connection.dns-over-tls:                -1 (default)
 connection.wait-device-timeout:         -1
+connection.wait-activation-delay:       -1
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
@@ -1140,12 +1148,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 5410
+size: 5453
 location: src/tests/client/test-client.py:test_004()/27
 cmd: $NMCLI con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 5276 bytes
+stdout: 5319 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -1172,6 +1180,7 @@ connection.mdns:                        -1 (default)
 connection.llmnr:                       -1 (default)
 connection.dns-over-tls:                -1 (default)
 connection.wait-device-timeout:         -1
+connection.wait-activation-delay:       -1
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
@@ -1259,12 +1268,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 5448
+size: 5491
 location: src/tests/client/test-client.py:test_004()/28
 cmd: $NMCLI con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5304 bytes
+stdout: 5347 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -1291,6 +1300,7 @@ connection.mdns:                        -1 (default)
 connection.llmnr:                       -1 (default)
 connection.dns-over-tls:                -1 (default)
 connection.wait-device-timeout:         -1
+connection.wait-activation-delay:       -1
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
@@ -1378,12 +1388,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 4283
+size: 4326
 location: src/tests/client/test-client.py:test_004()/29
 cmd: $NMCLI -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 4142 bytes
+stdout: 4185 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -1410,6 +1420,7 @@ connection.mdns:                        -1 (default)
 connection.llmnr:                       -1 (default)
 connection.dns-over-tls:                -1 (default)
 connection.wait-device-timeout:         -1
+connection.wait-activation-delay:       -1
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
@@ -1476,12 +1487,12 @@ proxy.pac-url:                          --
 proxy.pac-script:                       --
 
 <<<
-size: 4311
+size: 4354
 location: src/tests/client/test-client.py:test_004()/30
 cmd: $NMCLI -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4160 bytes
+stdout: 4203 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -1508,6 +1519,7 @@ connection.mdns:                        -1 (default)
 connection.llmnr:                       -1 (default)
 connection.dns-over-tls:                -1 (default)
 connection.wait-device-timeout:         -1
+connection.wait-activation-delay:       -1
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
@@ -4168,12 +4180,12 @@ connection.type:                        802-11-wireless
 connection.interface-name:              --
 
 <<<
-size: 5422
+size: 5465
 location: src/tests/client/test-client.py:test_004()/75
 cmd: $NMCLI --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 5276 bytes
+stdout: 5319 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -4200,6 +4212,7 @@ connection.mdns:                        -1 (default)
 connection.llmnr:                       -1 (default)
 connection.dns-over-tls:                -1 (default)
 connection.wait-device-timeout:         -1
+connection.wait-activation-delay:       -1
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
@@ -4287,12 +4300,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 5460
+size: 5503
 location: src/tests/client/test-client.py:test_004()/76
 cmd: $NMCLI --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5304 bytes
+stdout: 5347 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -4319,6 +4332,7 @@ connection.mdns:                        -1 (default)
 connection.llmnr:                       -1 (default)
 connection.dns-over-tls:                -1 (default)
 connection.wait-device-timeout:         -1
+connection.wait-activation-delay:       -1
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
@@ -4406,12 +4420,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 5422
+size: 5465
 location: src/tests/client/test-client.py:test_004()/77
 cmd: $NMCLI --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 5276 bytes
+stdout: 5319 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -4438,6 +4452,7 @@ connection.mdns:                        -1 (default)
 connection.llmnr:                       -1 (default)
 connection.dns-over-tls:                -1 (default)
 connection.wait-device-timeout:         -1
+connection.wait-activation-delay:       -1
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
@@ -4525,12 +4540,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 5460
+size: 5503
 location: src/tests/client/test-client.py:test_004()/78
 cmd: $NMCLI --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5304 bytes
+stdout: 5347 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -4557,6 +4572,7 @@ connection.mdns:                        -1 (default)
 connection.llmnr:                       -1 (default)
 connection.dns-over-tls:                -1 (default)
 connection.wait-device-timeout:         -1
+connection.wait-activation-delay:       -1
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
@@ -4644,12 +4660,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 4295
+size: 4338
 location: src/tests/client/test-client.py:test_004()/79
 cmd: $NMCLI --color yes -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 4142 bytes
+stdout: 4185 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -4676,6 +4692,7 @@ connection.mdns:                        -1 (default)
 connection.llmnr:                       -1 (default)
 connection.dns-over-tls:                -1 (default)
 connection.wait-device-timeout:         -1
+connection.wait-activation-delay:       -1
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
@@ -4742,12 +4759,12 @@ proxy.pac-url:                          --
 proxy.pac-script:                       --
 
 <<<
-size: 4323
+size: 4366
 location: src/tests/client/test-client.py:test_004()/80
 cmd: $NMCLI --color yes -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4160 bytes
+stdout: 4203 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -4774,6 +4791,7 @@ connection.mdns:                        -1 (default)
 connection.llmnr:                       -1 (default)
 connection.dns-over-tls:                -1 (default)
 connection.wait-device-timeout:         -1
+connection.wait-activation-delay:       -1
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
@@ -7434,12 +7452,12 @@ connection.type:                        802-11-wireless
 connection.interface-name:              --
 
 <<<
-size: 6431
+size: 6474
 location: src/tests/client/test-client.py:test_004()/125
 cmd: $NMCLI --pretty con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 6287 bytes
+stdout: 6330 bytes
 >>>
 ===============================================================================
                     Connection profile details (con-vpn-1)
@@ -7469,6 +7487,7 @@ connection.mdns:                        -1 (default)
 connection.llmnr:                       -1 (default)
 connection.dns-over-tls:                -1 (default)
 connection.wait-device-timeout:         -1
+connection.wait-activation-delay:       -1
 -------------------------------------------------------------------------------
 ipv4.method:                            auto
 ipv4.dns:                               --
@@ -7566,12 +7585,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 6482
+size: 6525
 location: src/tests/client/test-client.py:test_004()/126
 cmd: $NMCLI --pretty con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 6328 bytes
+stdout: 6371 bytes
 >>>
 ===============================================================================
                    Szczegóły profilu połączenia (con-vpn-1)
@@ -7601,6 +7620,7 @@ connection.mdns:                        -1 (default)
 connection.llmnr:                       -1 (default)
 connection.dns-over-tls:                -1 (default)
 connection.wait-device-timeout:         -1
+connection.wait-activation-delay:       -1
 -------------------------------------------------------------------------------
 ipv4.method:                            auto
 ipv4.dns:                               --
@@ -7698,12 +7718,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 6431
+size: 6474
 location: src/tests/client/test-client.py:test_004()/127
 cmd: $NMCLI --pretty con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 6287 bytes
+stdout: 6330 bytes
 >>>
 ===============================================================================
                     Connection profile details (con-vpn-1)
@@ -7733,6 +7753,7 @@ connection.mdns:                        -1 (default)
 connection.llmnr:                       -1 (default)
 connection.dns-over-tls:                -1 (default)
 connection.wait-device-timeout:         -1
+connection.wait-activation-delay:       -1
 -------------------------------------------------------------------------------
 ipv4.method:                            auto
 ipv4.dns:                               --
@@ -7830,12 +7851,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 6482
+size: 6525
 location: src/tests/client/test-client.py:test_004()/128
 cmd: $NMCLI --pretty con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 6328 bytes
+stdout: 6371 bytes
 >>>
 ===============================================================================
                    Szczegóły profilu połączenia (con-vpn-1)
@@ -7865,6 +7886,7 @@ connection.mdns:                        -1 (default)
 connection.llmnr:                       -1 (default)
 connection.dns-over-tls:                -1 (default)
 connection.wait-device-timeout:         -1
+connection.wait-activation-delay:       -1
 -------------------------------------------------------------------------------
 ipv4.method:                            auto
 ipv4.dns:                               --
@@ -7962,12 +7984,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 4912
+size: 4955
 location: src/tests/client/test-client.py:test_004()/129
 cmd: $NMCLI --pretty -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 4761 bytes
+stdout: 4804 bytes
 >>>
 ===============================================================================
                     Connection profile details (con-vpn-1)
@@ -7997,6 +8019,7 @@ connection.mdns:                        -1 (default)
 connection.llmnr:                       -1 (default)
 connection.dns-over-tls:                -1 (default)
 connection.wait-device-timeout:         -1
+connection.wait-activation-delay:       -1
 -------------------------------------------------------------------------------
 ipv4.method:                            auto
 ipv4.dns:                               --
@@ -8068,12 +8091,12 @@ proxy.pac-script:                       --
 -------------------------------------------------------------------------------
 
 <<<
-size: 4945
+size: 4988
 location: src/tests/client/test-client.py:test_004()/130
 cmd: $NMCLI --pretty -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4784 bytes
+stdout: 4827 bytes
 >>>
 ===============================================================================
                    Szczegóły profilu połączenia (con-vpn-1)
@@ -8103,6 +8126,7 @@ connection.mdns:                        -1 (default)
 connection.llmnr:                       -1 (default)
 connection.dns-over-tls:                -1 (default)
 connection.wait-device-timeout:         -1
+connection.wait-activation-delay:       -1
 -------------------------------------------------------------------------------
 ipv4.method:                            auto
 ipv4.dns:                               --
@@ -11372,12 +11396,12 @@ connection.interface-name:              --
 -------------------------------------------------------------------------------
 
 <<<
-size: 6443
+size: 6486
 location: src/tests/client/test-client.py:test_004()/175
 cmd: $NMCLI --pretty --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 6287 bytes
+stdout: 6330 bytes
 >>>
 ===============================================================================
                     Connection profile details (con-vpn-1)
@@ -11407,6 +11431,7 @@ connection.mdns:                        -1 (default)
 connection.llmnr:                       -1 (default)
 connection.dns-over-tls:                -1 (default)
 connection.wait-device-timeout:         -1
+connection.wait-activation-delay:       -1
 -------------------------------------------------------------------------------
 ipv4.method:                            auto
 ipv4.dns:                               --
@@ -11504,12 +11529,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 6494
+size: 6537
 location: src/tests/client/test-client.py:test_004()/176
 cmd: $NMCLI --pretty --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 6328 bytes
+stdout: 6371 bytes
 >>>
 ===============================================================================
                    Szczegóły profilu połączenia (con-vpn-1)
@@ -11539,6 +11564,7 @@ connection.mdns:                        -1 (default)
 connection.llmnr:                       -1 (default)
 connection.dns-over-tls:                -1 (default)
 connection.wait-device-timeout:         -1
+connection.wait-activation-delay:       -1
 -------------------------------------------------------------------------------
 ipv4.method:                            auto
 ipv4.dns:                               --
@@ -11636,12 +11662,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 6443
+size: 6486
 location: src/tests/client/test-client.py:test_004()/177
 cmd: $NMCLI --pretty --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 6287 bytes
+stdout: 6330 bytes
 >>>
 ===============================================================================
                     Connection profile details (con-vpn-1)
@@ -11671,6 +11697,7 @@ connection.mdns:                        -1 (default)
 connection.llmnr:                       -1 (default)
 connection.dns-over-tls:                -1 (default)
 connection.wait-device-timeout:         -1
+connection.wait-activation-delay:       -1
 -------------------------------------------------------------------------------
 ipv4.method:                            auto
 ipv4.dns:                               --
@@ -11768,12 +11795,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 6494
+size: 6537
 location: src/tests/client/test-client.py:test_004()/178
 cmd: $NMCLI --pretty --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 6328 bytes
+stdout: 6371 bytes
 >>>
 ===============================================================================
                    Szczegóły profilu połączenia (con-vpn-1)
@@ -11803,6 +11830,7 @@ connection.mdns:                        -1 (default)
 connection.llmnr:                       -1 (default)
 connection.dns-over-tls:                -1 (default)
 connection.wait-device-timeout:         -1
+connection.wait-activation-delay:       -1
 -------------------------------------------------------------------------------
 ipv4.method:                            auto
 ipv4.dns:                               --
@@ -11900,12 +11928,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 4924
+size: 4967
 location: src/tests/client/test-client.py:test_004()/179
 cmd: $NMCLI --pretty --color yes -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 4761 bytes
+stdout: 4804 bytes
 >>>
 ===============================================================================
                     Connection profile details (con-vpn-1)
@@ -11935,6 +11963,7 @@ connection.mdns:                        -1 (default)
 connection.llmnr:                       -1 (default)
 connection.dns-over-tls:                -1 (default)
 connection.wait-device-timeout:         -1
+connection.wait-activation-delay:       -1
 -------------------------------------------------------------------------------
 ipv4.method:                            auto
 ipv4.dns:                               --
@@ -12006,12 +12035,12 @@ proxy.pac-script:                       --
 -------------------------------------------------------------------------------
 
 <<<
-size: 4957
+size: 5000
 location: src/tests/client/test-client.py:test_004()/180
 cmd: $NMCLI --pretty --color yes -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4784 bytes
+stdout: 4827 bytes
 >>>
 ===============================================================================
                    Szczegóły profilu połączenia (con-vpn-1)
@@ -12041,6 +12070,7 @@ connection.mdns:                        -1 (default)
 connection.llmnr:                       -1 (default)
 connection.dns-over-tls:                -1 (default)
 connection.wait-device-timeout:         -1
+connection.wait-activation-delay:       -1
 -------------------------------------------------------------------------------
 ipv4.method:                            auto
 ipv4.dns:                               --
@@ -15310,12 +15340,12 @@ connection.interface-name:              --
 -------------------------------------------------------------------------------
 
 <<<
-size: 2714
+size: 2750
 location: src/tests/client/test-client.py:test_004()/225
 cmd: $NMCLI --terse con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 2571 bytes
+stdout: 2607 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -15342,6 +15372,7 @@ connection.mdns:-1
 connection.llmnr:-1
 connection.dns-over-tls:-1
 connection.wait-device-timeout:-1
+connection.wait-activation-delay:-1
 ipv4.method:auto
 ipv4.dns:
 ipv4.dns-search:
@@ -15429,12 +15460,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 2724
+size: 2760
 location: src/tests/client/test-client.py:test_004()/226
 cmd: $NMCLI --terse con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2571 bytes
+stdout: 2607 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -15461,6 +15492,7 @@ connection.mdns:-1
 connection.llmnr:-1
 connection.dns-over-tls:-1
 connection.wait-device-timeout:-1
+connection.wait-activation-delay:-1
 ipv4.method:auto
 ipv4.dns:
 ipv4.dns-search:
@@ -15548,12 +15580,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 2714
+size: 2750
 location: src/tests/client/test-client.py:test_004()/227
 cmd: $NMCLI --terse con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 2571 bytes
+stdout: 2607 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -15580,6 +15612,7 @@ connection.mdns:-1
 connection.llmnr:-1
 connection.dns-over-tls:-1
 connection.wait-device-timeout:-1
+connection.wait-activation-delay:-1
 ipv4.method:auto
 ipv4.dns:
 ipv4.dns-search:
@@ -15667,12 +15700,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 2724
+size: 2760
 location: src/tests/client/test-client.py:test_004()/228
 cmd: $NMCLI --terse con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2571 bytes
+stdout: 2607 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -15699,6 +15732,7 @@ connection.mdns:-1
 connection.llmnr:-1
 connection.dns-over-tls:-1
 connection.wait-device-timeout:-1
+connection.wait-activation-delay:-1
 ipv4.method:auto
 ipv4.dns:
 ipv4.dns-search:
@@ -15786,12 +15820,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 2139
+size: 2175
 location: src/tests/client/test-client.py:test_004()/229
 cmd: $NMCLI --terse -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 1989 bytes
+stdout: 2025 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -15818,6 +15852,7 @@ connection.mdns:-1
 connection.llmnr:-1
 connection.dns-over-tls:-1
 connection.wait-device-timeout:-1
+connection.wait-activation-delay:-1
 ipv4.method:auto
 ipv4.dns:
 ipv4.dns-search:
@@ -15884,12 +15919,12 @@ proxy.pac-url:
 proxy.pac-script:
 
 <<<
-size: 2149
+size: 2185
 location: src/tests/client/test-client.py:test_004()/230
 cmd: $NMCLI --terse -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 1989 bytes
+stdout: 2025 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -15916,6 +15951,7 @@ connection.mdns:-1
 connection.llmnr:-1
 connection.dns-over-tls:-1
 connection.wait-device-timeout:-1
+connection.wait-activation-delay:-1
 ipv4.method:auto
 ipv4.dns:
 ipv4.dns-search:
@@ -18546,12 +18582,12 @@ connection.type:802-11-wireless
 connection.interface-name:
 
 <<<
-size: 2726
+size: 2762
 location: src/tests/client/test-client.py:test_004()/275
 cmd: $NMCLI --terse --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 2571 bytes
+stdout: 2607 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -18578,6 +18614,7 @@ connection.mdns:-1
 connection.llmnr:-1
 connection.dns-over-tls:-1
 connection.wait-device-timeout:-1
+connection.wait-activation-delay:-1
 ipv4.method:auto
 ipv4.dns:
 ipv4.dns-search:
@@ -18665,12 +18702,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 2736
+size: 2772
 location: src/tests/client/test-client.py:test_004()/276
 cmd: $NMCLI --terse --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2571 bytes
+stdout: 2607 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -18697,6 +18734,7 @@ connection.mdns:-1
 connection.llmnr:-1
 connection.dns-over-tls:-1
 connection.wait-device-timeout:-1
+connection.wait-activation-delay:-1
 ipv4.method:auto
 ipv4.dns:
 ipv4.dns-search:
@@ -18784,12 +18822,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 2726
+size: 2762
 location: src/tests/client/test-client.py:test_004()/277
 cmd: $NMCLI --terse --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 2571 bytes
+stdout: 2607 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -18816,6 +18854,7 @@ connection.mdns:-1
 connection.llmnr:-1
 connection.dns-over-tls:-1
 connection.wait-device-timeout:-1
+connection.wait-activation-delay:-1
 ipv4.method:auto
 ipv4.dns:
 ipv4.dns-search:
@@ -18903,12 +18942,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 2736
+size: 2772
 location: src/tests/client/test-client.py:test_004()/278
 cmd: $NMCLI --terse --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2571 bytes
+stdout: 2607 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -18935,6 +18974,7 @@ connection.mdns:-1
 connection.llmnr:-1
 connection.dns-over-tls:-1
 connection.wait-device-timeout:-1
+connection.wait-activation-delay:-1
 ipv4.method:auto
 ipv4.dns:
 ipv4.dns-search:
@@ -19022,12 +19062,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 2151
+size: 2187
 location: src/tests/client/test-client.py:test_004()/279
 cmd: $NMCLI --terse --color yes -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 1989 bytes
+stdout: 2025 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -19054,6 +19094,7 @@ connection.mdns:-1
 connection.llmnr:-1
 connection.dns-over-tls:-1
 connection.wait-device-timeout:-1
+connection.wait-activation-delay:-1
 ipv4.method:auto
 ipv4.dns:
 ipv4.dns-search:
@@ -19120,12 +19161,12 @@ proxy.pac-url:
 proxy.pac-script:
 
 <<<
-size: 2161
+size: 2197
 location: src/tests/client/test-client.py:test_004()/280
 cmd: $NMCLI --terse --color yes -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 1989 bytes
+stdout: 2025 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -19152,6 +19193,7 @@ connection.mdns:-1
 connection.llmnr:-1
 connection.dns-over-tls:-1
 connection.wait-device-timeout:-1
+connection.wait-activation-delay:-1
 ipv4.method:auto
 ipv4.dns:
 ipv4.dns-search:
@@ -21782,15 +21824,15 @@ connection.type:802-11-wireless
 connection.interface-name:
 
 <<<
-size: 3520
+size: 3566
 location: src/tests/client/test-client.py:test_004()/325
 cmd: $NMCLI --mode tabular con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 3370 bytes
+stdout: 3416 bytes
 >>>
-name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr         dns-over-tls  wait-device-timeout 
-connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              yes          0                     -1 (default)         0 (default)    -1            0          no         --           --    --      --          -1 (default)        --           0                     unknown  default  -1 (default)  -1 (default)  -1 (default)  -1                  
+name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr         dns-over-tls  wait-device-timeout  wait-activation-delay 
+connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              yes          0                     -1 (default)         0 (default)    -1            0          no         --           --    --      --          -1 (default)        --           0                     unknown  default  -1 (default)  -1 (default)  -1 (default)  -1                   -1                    
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers 
 ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             no                  no               --              --         0 (default)   yes                 --             --         0x0 (none)           no             yes       -1 (default)      -1 (default)  --                            0 (default)  --                  
@@ -21811,15 +21853,15 @@ NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE   
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 - VPN connected  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 3559
+size: 3605
 location: src/tests/client/test-client.py:test_004()/326
 cmd: $NMCLI --mode tabular con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3399 bytes
+stdout: 3445 bytes
 >>>
-name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr         dns-over-tls  wait-device-timeout 
-connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              tak          0                     -1 (default)         0 (default)    -1            0          nie        --           --    --      --          -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default)  -1 (default)  -1                  
+name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr         dns-over-tls  wait-device-timeout  wait-activation-delay 
+connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              tak          0                     -1 (default)         0 (default)    -1            0          nie        --           --    --      --          -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default)  -1 (default)  -1                   -1                    
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers 
 ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             nie                 nie              --              --         0 (default)   tak                 --             --         0x0 (none)           nie            tak       -1 (default)      -1 (default)  --                            0 (default)  --                  
@@ -21840,15 +21882,15 @@ NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE   
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 — Połączono z VPN  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 3520
+size: 3566
 location: src/tests/client/test-client.py:test_004()/327
 cmd: $NMCLI --mode tabular con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 3370 bytes
+stdout: 3416 bytes
 >>>
-name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr         dns-over-tls  wait-device-timeout 
-connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              yes          0                     -1 (default)         0 (default)    -1            0          no         --           --    --      --          -1 (default)        --           0                     unknown  default  -1 (default)  -1 (default)  -1 (default)  -1                  
+name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr         dns-over-tls  wait-device-timeout  wait-activation-delay 
+connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              yes          0                     -1 (default)         0 (default)    -1            0          no         --           --    --      --          -1 (default)        --           0                     unknown  default  -1 (default)  -1 (default)  -1 (default)  -1                   -1                    
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers 
 ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             no                  no               --              --         0 (default)   yes                 --             --         0x0 (none)           no             yes       -1 (default)      -1 (default)  --                            0 (default)  --                  
@@ -21869,15 +21911,15 @@ NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE   
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 - VPN connected  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 3559
+size: 3605
 location: src/tests/client/test-client.py:test_004()/328
 cmd: $NMCLI --mode tabular con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3399 bytes
+stdout: 3445 bytes
 >>>
-name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr         dns-over-tls  wait-device-timeout 
-connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              tak          0                     -1 (default)         0 (default)    -1            0          nie        --           --    --      --          -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default)  -1 (default)  -1                  
+name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr         dns-over-tls  wait-device-timeout  wait-activation-delay 
+connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              tak          0                     -1 (default)         0 (default)    -1            0          nie        --           --    --      --          -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default)  -1 (default)  -1                   -1                    
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers 
 ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             nie                 nie              --              --         0 (default)   tak                 --             --         0x0 (none)           nie            tak       -1 (default)      -1 (default)  --                            0 (default)  --                  
@@ -21898,15 +21940,15 @@ NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE   
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 — Połączono z VPN  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 2768
+size: 2814
 location: src/tests/client/test-client.py:test_004()/329
 cmd: $NMCLI --mode tabular -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 2611 bytes
+stdout: 2657 bytes
 >>>
-name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr         dns-over-tls  wait-device-timeout 
-connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              yes          0                     -1 (default)         0 (default)    -1            0          no         --           --    --      --          -1 (default)        --           0                     unknown  default  -1 (default)  -1 (default)  -1 (default)  -1                  
+name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr         dns-over-tls  wait-device-timeout  wait-activation-delay 
+connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              yes          0                     -1 (default)         0 (default)    -1            0          no         --           --    --      --          -1 (default)        --           0                     unknown  default  -1 (default)  -1 (default)  -1 (default)  -1                   -1                    
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers 
 ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             no                  no               --              --         0 (default)   yes                 --             --         0x0 (none)           no             yes       -1 (default)      -1 (default)  --                            0 (default)  --                  
@@ -21922,15 +21964,15 @@ proxy  none    no            --       --
 
 
 <<<
-size: 2796
+size: 2842
 location: src/tests/client/test-client.py:test_004()/330
 cmd: $NMCLI --mode tabular -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2629 bytes
+stdout: 2675 bytes
 >>>
-name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr         dns-over-tls  wait-device-timeout 
-connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              tak          0                     -1 (default)         0 (default)    -1            0          nie        --           --    --      --          -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default)  -1 (default)  -1                  
+name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr         dns-over-tls  wait-device-timeout  wait-activation-delay 
+connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              tak          0                     -1 (default)         0 (default)    -1            0          nie        --           --    --      --          -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default)  -1 (default)  -1                   -1                    
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers 
 ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             nie                 nie              --              --         0 (default)   tak                 --             --         0x0 (none)           nie            tak       -1 (default)      -1 (default)  --                            0 (default)  --                  
@@ -23436,15 +23478,15 @@ interface-name
 
 
 <<<
-size: 3532
+size: 3578
 location: src/tests/client/test-client.py:test_004()/375
 cmd: $NMCLI --mode tabular --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 3370 bytes
+stdout: 3416 bytes
 >>>
-name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr         dns-over-tls  wait-device-timeout 
-connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              yes          0                     -1 (default)         0 (default)    -1            0          no         --           --    --      --          -1 (default)        --           0                     unknown  default  -1 (default)  -1 (default)  -1 (default)  -1                  
+name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr         dns-over-tls  wait-device-timeout  wait-activation-delay 
+connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              yes          0                     -1 (default)         0 (default)    -1            0          no         --           --    --      --          -1 (default)        --           0                     unknown  default  -1 (default)  -1 (default)  -1 (default)  -1                   -1                    
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers 
 ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             no                  no               --              --         0 (default)   yes                 --             --         0x0 (none)           no             yes       -1 (default)      -1 (default)  --                            0 (default)  --                  
@@ -23465,15 +23507,15 @@ NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE   
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 - VPN connected  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 3571
+size: 3617
 location: src/tests/client/test-client.py:test_004()/376
 cmd: $NMCLI --mode tabular --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3399 bytes
+stdout: 3445 bytes
 >>>
-name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr         dns-over-tls  wait-device-timeout 
-connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              tak          0                     -1 (default)         0 (default)    -1            0          nie        --           --    --      --          -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default)  -1 (default)  -1                  
+name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr         dns-over-tls  wait-device-timeout  wait-activation-delay 
+connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              tak          0                     -1 (default)         0 (default)    -1            0          nie        --           --    --      --          -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default)  -1 (default)  -1                   -1                    
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers 
 ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             nie                 nie              --              --         0 (default)   tak                 --             --         0x0 (none)           nie            tak       -1 (default)      -1 (default)  --                            0 (default)  --                  
@@ -23494,15 +23536,15 @@ NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE   
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 — Połączono z VPN  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 3532
+size: 3578
 location: src/tests/client/test-client.py:test_004()/377
 cmd: $NMCLI --mode tabular --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 3370 bytes
+stdout: 3416 bytes
 >>>
-name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr         dns-over-tls  wait-device-timeout 
-connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              yes          0                     -1 (default)         0 (default)    -1            0          no         --           --    --      --          -1 (default)        --           0                     unknown  default  -1 (default)  -1 (default)  -1 (default)  -1                  
+name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr         dns-over-tls  wait-device-timeout  wait-activation-delay 
+connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              yes          0                     -1 (default)         0 (default)    -1            0          no         --           --    --      --          -1 (default)        --           0                     unknown  default  -1 (default)  -1 (default)  -1 (default)  -1                   -1                    
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers 
 ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             no                  no               --              --         0 (default)   yes                 --             --         0x0 (none)           no             yes       -1 (default)      -1 (default)  --                            0 (default)  --                  
@@ -23523,15 +23565,15 @@ NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE   
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 - VPN connected  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 3571
+size: 3617
 location: src/tests/client/test-client.py:test_004()/378
 cmd: $NMCLI --mode tabular --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3399 bytes
+stdout: 3445 bytes
 >>>
-name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr         dns-over-tls  wait-device-timeout 
-connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              tak          0                     -1 (default)         0 (default)    -1            0          nie        --           --    --      --          -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default)  -1 (default)  -1                  
+name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr         dns-over-tls  wait-device-timeout  wait-activation-delay 
+connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              tak          0                     -1 (default)         0 (default)    -1            0          nie        --           --    --      --          -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default)  -1 (default)  -1                   -1                    
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers 
 ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             nie                 nie              --              --         0 (default)   tak                 --             --         0x0 (none)           nie            tak       -1 (default)      -1 (default)  --                            0 (default)  --                  
@@ -23552,15 +23594,15 @@ NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE   
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 — Połączono z VPN  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 2780
+size: 2826
 location: src/tests/client/test-client.py:test_004()/379
 cmd: $NMCLI --mode tabular --color yes -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 2611 bytes
+stdout: 2657 bytes
 >>>
-name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr         dns-over-tls  wait-device-timeout 
-connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              yes          0                     -1 (default)         0 (default)    -1            0          no         --           --    --      --          -1 (default)        --           0                     unknown  default  -1 (default)  -1 (default)  -1 (default)  -1                  
+name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr         dns-over-tls  wait-device-timeout  wait-activation-delay 
+connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              yes          0                     -1 (default)         0 (default)    -1            0          no         --           --    --      --          -1 (default)        --           0                     unknown  default  -1 (default)  -1 (default)  -1 (default)  -1                   -1                    
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers 
 ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             no                  no               --              --         0 (default)   yes                 --             --         0x0 (none)           no             yes       -1 (default)      -1 (default)  --                            0 (default)  --                  
@@ -23576,15 +23618,15 @@ proxy  none    no            --       --
 
 
 <<<
-size: 2808
+size: 2854
 location: src/tests/client/test-client.py:test_004()/380
 cmd: $NMCLI --mode tabular --color yes -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2629 bytes
+stdout: 2675 bytes
 >>>
-name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr         dns-over-tls  wait-device-timeout 
-connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              tak          0                     -1 (default)         0 (default)    -1            0          nie        --           --    --      --          -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default)  -1 (default)  -1                  
+name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr         dns-over-tls  wait-device-timeout  wait-activation-delay 
+connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              tak          0                     -1 (default)         0 (default)    -1            0          nie        --           --    --      --          -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default)  -1 (default)  -1                   -1                    
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers 
 ipv4  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             nie                 nie              --              --         0 (default)   tak                 --             --         0x0 (none)           nie            tak       -1 (default)      -1 (default)  --                            0 (default)  --                  
@@ -25090,19 +25132,19 @@ interface-name
 
 
 <<<
-size: 5550
+size: 5619
 location: src/tests/client/test-client.py:test_004()/425
 cmd: $NMCLI --mode tabular --pretty con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 5391 bytes
+stdout: 5460 bytes
 >>>
 ==========================================
   Connection profile details (con-vpn-1)
 ==========================================
-name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr         dns-over-tls  wait-device-timeout 
-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              yes          0                     -1 (default)         0 (default)    -1            0          no         --           --    --      --          -1 (default)        --           0                     unknown  default  -1 (default)  -1 (default)  -1 (default)  -1                  
+name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr         dns-over-tls  wait-device-timeout  wait-activation-delay 
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              yes          0                     -1 (default)         0 (default)    -1            0          no         --           --    --      --          -1 (default)        --           0                     unknown  default  -1 (default)  -1 (default)  -1 (default)  -1                   -1                    
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -25132,19 +25174,19 @@ NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE   
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 - VPN connected  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 5636
+size: 5705
 location: src/tests/client/test-client.py:test_004()/426
 cmd: $NMCLI --mode tabular --pretty con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5467 bytes
+stdout: 5536 bytes
 >>>
 ============================================
   Szczegóły profilu połączenia (con-vpn-1)
 ============================================
-name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr         dns-over-tls  wait-device-timeout 
------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              tak          0                     -1 (default)         0 (default)    -1            0          nie        --           --    --      --          -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default)  -1 (default)  -1                  
+name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr         dns-over-tls  wait-device-timeout  wait-activation-delay 
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              tak          0                     -1 (default)         0 (default)    -1            0          nie        --           --    --      --          -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default)  -1 (default)  -1                   -1                    
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -25174,19 +25216,19 @@ NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE   
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 — Połączono z VPN  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 5550
+size: 5619
 location: src/tests/client/test-client.py:test_004()/427
 cmd: $NMCLI --mode tabular --pretty con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 5391 bytes
+stdout: 5460 bytes
 >>>
 ==========================================
   Connection profile details (con-vpn-1)
 ==========================================
-name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr         dns-over-tls  wait-device-timeout 
-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              yes          0                     -1 (default)         0 (default)    -1            0          no         --           --    --      --          -1 (default)        --           0                     unknown  default  -1 (default)  -1 (default)  -1 (default)  -1                  
+name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr         dns-over-tls  wait-device-timeout  wait-activation-delay 
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              yes          0                     -1 (default)         0 (default)    -1            0          no         --           --    --      --          -1 (default)        --           0                     unknown  default  -1 (default)  -1 (default)  -1 (default)  -1                   -1                    
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -25216,19 +25258,19 @@ NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE   
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 - VPN connected  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 5636
+size: 5705
 location: src/tests/client/test-client.py:test_004()/428
 cmd: $NMCLI --mode tabular --pretty con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5467 bytes
+stdout: 5536 bytes
 >>>
 ============================================
   Szczegóły profilu połączenia (con-vpn-1)
 ============================================
-name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr         dns-over-tls  wait-device-timeout 
------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              tak          0                     -1 (default)         0 (default)    -1            0          nie        --           --    --      --          -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default)  -1 (default)  -1                  
+name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr         dns-over-tls  wait-device-timeout  wait-activation-delay 
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              tak          0                     -1 (default)         0 (default)    -1            0          nie        --           --    --      --          -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default)  -1 (default)  -1                   -1                    
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -25258,19 +25300,19 @@ NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE   
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 — Połączono z VPN  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 4212
+size: 4281
 location: src/tests/client/test-client.py:test_004()/429
 cmd: $NMCLI --mode tabular --pretty -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 4046 bytes
+stdout: 4115 bytes
 >>>
 ==========================================
   Connection profile details (con-vpn-1)
 ==========================================
-name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr         dns-over-tls  wait-device-timeout 
-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              yes          0                     -1 (default)         0 (default)    -1            0          no         --           --    --      --          -1 (default)        --           0                     unknown  default  -1 (default)  -1 (default)  -1 (default)  -1                  
+name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr         dns-over-tls  wait-device-timeout  wait-activation-delay 
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              yes          0                     -1 (default)         0 (default)    -1            0          no         --           --    --      --          -1 (default)        --           0                     unknown  default  -1 (default)  -1 (default)  -1 (default)  -1                   -1                    
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -25290,19 +25332,19 @@ proxy  none    no            --       --
 
 
 <<<
-size: 4259
+size: 4328
 location: src/tests/client/test-client.py:test_004()/430
 cmd: $NMCLI --mode tabular --pretty -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4083 bytes
+stdout: 4152 bytes
 >>>
 ============================================
   Szczegóły profilu połączenia (con-vpn-1)
 ============================================
-name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr         dns-over-tls  wait-device-timeout 
------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              tak          0                     -1 (default)         0 (default)    -1            0          nie        --           --    --      --          -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default)  -1 (default)  -1                  
+name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr         dns-over-tls  wait-device-timeout  wait-activation-delay 
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              tak          0                     -1 (default)         0 (default)    -1            0          nie        --           --    --      --          -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default)  -1 (default)  -1                   -1                    
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -27398,19 +27440,19 @@ interface-name
 
 
 <<<
-size: 5562
+size: 5631
 location: src/tests/client/test-client.py:test_004()/475
 cmd: $NMCLI --mode tabular --pretty --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 5391 bytes
+stdout: 5460 bytes
 >>>
 ==========================================
   Connection profile details (con-vpn-1)
 ==========================================
-name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr         dns-over-tls  wait-device-timeout 
-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              yes          0                     -1 (default)         0 (default)    -1            0          no         --           --    --      --          -1 (default)        --           0                     unknown  default  -1 (default)  -1 (default)  -1 (default)  -1                  
+name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr         dns-over-tls  wait-device-timeout  wait-activation-delay 
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              yes          0                     -1 (default)         0 (default)    -1            0          no         --           --    --      --          -1 (default)        --           0                     unknown  default  -1 (default)  -1 (default)  -1 (default)  -1                   -1                    
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -27440,19 +27482,19 @@ NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE   
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 - VPN connected  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 5648
+size: 5717
 location: src/tests/client/test-client.py:test_004()/476
 cmd: $NMCLI --mode tabular --pretty --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5467 bytes
+stdout: 5536 bytes
 >>>
 ============================================
   Szczegóły profilu połączenia (con-vpn-1)
 ============================================
-name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr         dns-over-tls  wait-device-timeout 
------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              tak          0                     -1 (default)         0 (default)    -1            0          nie        --           --    --      --          -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default)  -1 (default)  -1                  
+name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr         dns-over-tls  wait-device-timeout  wait-activation-delay 
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              tak          0                     -1 (default)         0 (default)    -1            0          nie        --           --    --      --          -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default)  -1 (default)  -1                   -1                    
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -27482,19 +27524,19 @@ NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE   
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 — Połączono z VPN  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 5562
+size: 5631
 location: src/tests/client/test-client.py:test_004()/477
 cmd: $NMCLI --mode tabular --pretty --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 5391 bytes
+stdout: 5460 bytes
 >>>
 ==========================================
   Connection profile details (con-vpn-1)
 ==========================================
-name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr         dns-over-tls  wait-device-timeout 
-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              yes          0                     -1 (default)         0 (default)    -1            0          no         --           --    --      --          -1 (default)        --           0                     unknown  default  -1 (default)  -1 (default)  -1 (default)  -1                  
+name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr         dns-over-tls  wait-device-timeout  wait-activation-delay 
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              yes          0                     -1 (default)         0 (default)    -1            0          no         --           --    --      --          -1 (default)        --           0                     unknown  default  -1 (default)  -1 (default)  -1 (default)  -1                   -1                    
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -27524,19 +27566,19 @@ NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE   
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 - VPN connected  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 5648
+size: 5717
 location: src/tests/client/test-client.py:test_004()/478
 cmd: $NMCLI --mode tabular --pretty --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5467 bytes
+stdout: 5536 bytes
 >>>
 ============================================
   Szczegóły profilu połączenia (con-vpn-1)
 ============================================
-name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr         dns-over-tls  wait-device-timeout 
------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              tak          0                     -1 (default)         0 (default)    -1            0          nie        --           --    --      --          -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default)  -1 (default)  -1                  
+name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr         dns-over-tls  wait-device-timeout  wait-activation-delay 
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              tak          0                     -1 (default)         0 (default)    -1            0          nie        --           --    --      --          -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default)  -1 (default)  -1                   -1                    
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -27566,19 +27608,19 @@ NAME  TYPE     USERNAME  GATEWAY  BANNER                            VPN-STATE   
 VPN   openvpn  --        --       *** VPN connection con-vpn-1 ***  5 — Połączono z VPN  key1 = val1 | key2 = val2 | key3 = val3 
 
 <<<
-size: 4224
+size: 4293
 location: src/tests/client/test-client.py:test_004()/479
 cmd: $NMCLI --mode tabular --pretty --color yes -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 4046 bytes
+stdout: 4115 bytes
 >>>
 ==========================================
   Connection profile details (con-vpn-1)
 ==========================================
-name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr         dns-over-tls  wait-device-timeout 
-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              yes          0                     -1 (default)         0 (default)    -1            0          no         --           --    --      --          -1 (default)        --           0                     unknown  default  -1 (default)  -1 (default)  -1 (default)  -1                  
+name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr         dns-over-tls  wait-device-timeout  wait-activation-delay 
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              yes          0                     -1 (default)         0 (default)    -1            0          no         --           --    --      --          -1 (default)        --           0                     unknown  default  -1 (default)  -1 (default)  -1 (default)  -1                   -1                    
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -27598,19 +27640,19 @@ proxy  none    no            --       --
 
 
 <<<
-size: 4271
+size: 4340
 location: src/tests/client/test-client.py:test_004()/480
 cmd: $NMCLI --mode tabular --pretty --color yes -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4083 bytes
+stdout: 4152 bytes
 >>>
 ============================================
   Szczegóły profilu połączenia (con-vpn-1)
 ============================================
-name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr         dns-over-tls  wait-device-timeout 
------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              tak          0                     -1 (default)         0 (default)    -1            0          nie        --           --    --      --          -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default)  -1 (default)  -1                  
+name        id         uuid                                  stable-id  type  interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr         dns-over-tls  wait-device-timeout  wait-activation-delay 
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+connection  con-vpn-1  UUID-con-vpn-1-REPLACED-REPLACED-REP  --         vpn   --              tak          0                     -1 (default)         0 (default)    -1            0          nie        --           --    --      --          -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default)  -1 (default)  -1                   -1                    
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  dhcp-client-id  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-fqdn  dhcp-hostname-flags  never-default  may-fail  required-timeout  dad-timeout   dhcp-vendor-class-identifier  link-local   dhcp-reject-servers 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -29706,14 +29748,14 @@ interface-name
 
 
 <<<
-size: 830
+size: 833
 location: src/tests/client/test-client.py:test_004()/525
 cmd: $NMCLI --mode tabular --terse con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 673 bytes
+stdout: 676 bytes
 >>>
-connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1:-1
+connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1:-1:-1
 ipv4:auto::::0::::-1:0::no:no:::0:yes:::0x0:no:yes:-1:-1::0:
 ipv6:auto::::0::::-1:0::no:no:no:yes:-1:-1:stable-privacy:0:auto:::0:yes::0x0:
 vpn:org.freedesktop.NetworkManager.openvpn::key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
@@ -29722,14 +29764,14 @@ GENERAL:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:wlan0:wlan0:activated:no:
 VPN:openvpn:::*** VPN connection con-vpn-1 ***:5 - VPN connected:key1 = val1 | key2 = val2 | key3 = val3
 
 <<<
-size: 840
+size: 843
 location: src/tests/client/test-client.py:test_004()/526
 cmd: $NMCLI --mode tabular --terse con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 673 bytes
+stdout: 676 bytes
 >>>
-connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1:-1
+connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1:-1:-1
 ipv4:auto::::0::::-1:0::no:no:::0:yes:::0x0:no:yes:-1:-1::0:
 ipv6:auto::::0::::-1:0::no:no:no:yes:-1:-1:stable-privacy:0:auto:::0:yes::0x0:
 vpn:org.freedesktop.NetworkManager.openvpn::key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
@@ -29738,14 +29780,14 @@ GENERAL:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:wlan0:wlan0:activated:no:
 VPN:openvpn:::*** VPN connection con-vpn-1 ***:5 - VPN connected:key1 = val1 | key2 = val2 | key3 = val3
 
 <<<
-size: 830
+size: 833
 location: src/tests/client/test-client.py:test_004()/527
 cmd: $NMCLI --mode tabular --terse con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 673 bytes
+stdout: 676 bytes
 >>>
-connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1:-1
+connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1:-1:-1
 ipv4:auto::::0::::-1:0::no:no:::0:yes:::0x0:no:yes:-1:-1::0:
 ipv6:auto::::0::::-1:0::no:no:no:yes:-1:-1:stable-privacy:0:auto:::0:yes::0x0:
 vpn:org.freedesktop.NetworkManager.openvpn::key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
@@ -29754,14 +29796,14 @@ GENERAL:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:wlan0:wlan0:activated:no:
 VPN:openvpn:::*** VPN connection con-vpn-1 ***:5 - VPN connected:key1 = val1 | key2 = val2 | key3 = val3
 
 <<<
-size: 840
+size: 843
 location: src/tests/client/test-client.py:test_004()/528
 cmd: $NMCLI --mode tabular --terse con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 673 bytes
+stdout: 676 bytes
 >>>
-connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1:-1
+connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1:-1:-1
 ipv4:auto::::0::::-1:0::no:no:::0:yes:::0x0:no:yes:-1:-1::0:
 ipv6:auto::::0::::-1:0::no:no:no:yes:-1:-1:stable-privacy:0:auto:::0:yes::0x0:
 vpn:org.freedesktop.NetworkManager.openvpn::key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
@@ -29770,28 +29812,28 @@ GENERAL:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:wlan0:wlan0:activated:no:
 VPN:openvpn:::*** VPN connection con-vpn-1 ***:5 - VPN connected:key1 = val1 | key2 = val2 | key3 = val3
 
 <<<
-size: 537
+size: 540
 location: src/tests/client/test-client.py:test_004()/529
 cmd: $NMCLI --mode tabular --terse -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 373 bytes
+stdout: 376 bytes
 >>>
-connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1:-1
+connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1:-1:-1
 ipv4:auto::::0::::-1:0::no:no:::0:yes:::0x0:no:yes:-1:-1::0:
 ipv6:auto::::0::::-1:0::no:no:no:yes:-1:-1:stable-privacy:0:auto:::0:yes::0x0:
 vpn:org.freedesktop.NetworkManager.openvpn::key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
 proxy:none:no::
 
 <<<
-size: 547
+size: 550
 location: src/tests/client/test-client.py:test_004()/530
 cmd: $NMCLI --mode tabular --terse -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 373 bytes
+stdout: 376 bytes
 >>>
-connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1:-1
+connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1:-1:-1
 ipv4:auto::::0::::-1:0::no:no:::0:yes:::0x0:no:yes:-1:-1::0:
 ipv6:auto::::0::::-1:0::no:no:no:yes:-1:-1:stable-privacy:0:auto:::0:yes::0x0:
 vpn:org.freedesktop.NetworkManager.openvpn::key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
@@ -30644,14 +30686,14 @@ UUID-con-xx1-REPLACED-REPLACED-REPLA
 
 
 <<<
-size: 842
+size: 845
 location: src/tests/client/test-client.py:test_004()/575
 cmd: $NMCLI --mode tabular --terse --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 673 bytes
+stdout: 676 bytes
 >>>
-connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1:-1
+connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1:-1:-1
 ipv4:auto::::0::::-1:0::no:no:::0:yes:::0x0:no:yes:-1:-1::0:
 ipv6:auto::::0::::-1:0::no:no:no:yes:-1:-1:stable-privacy:0:auto:::0:yes::0x0:
 vpn:org.freedesktop.NetworkManager.openvpn::key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
@@ -30660,14 +30702,14 @@ GENERAL:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:wlan0:wlan0:activated:no:
 VPN:openvpn:::*** VPN connection con-vpn-1 ***:5 - VPN connected:key1 = val1 | key2 = val2 | key3 = val3
 
 <<<
-size: 852
+size: 855
 location: src/tests/client/test-client.py:test_004()/576
 cmd: $NMCLI --mode tabular --terse --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 673 bytes
+stdout: 676 bytes
 >>>
-connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1:-1
+connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1:-1:-1
 ipv4:auto::::0::::-1:0::no:no:::0:yes:::0x0:no:yes:-1:-1::0:
 ipv6:auto::::0::::-1:0::no:no:no:yes:-1:-1:stable-privacy:0:auto:::0:yes::0x0:
 vpn:org.freedesktop.NetworkManager.openvpn::key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
@@ -30676,14 +30718,14 @@ GENERAL:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:wlan0:wlan0:activated:no:
 VPN:openvpn:::*** VPN connection con-vpn-1 ***:5 - VPN connected:key1 = val1 | key2 = val2 | key3 = val3
 
 <<<
-size: 842
+size: 845
 location: src/tests/client/test-client.py:test_004()/577
 cmd: $NMCLI --mode tabular --terse --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 673 bytes
+stdout: 676 bytes
 >>>
-connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1:-1
+connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1:-1:-1
 ipv4:auto::::0::::-1:0::no:no:::0:yes:::0x0:no:yes:-1:-1::0:
 ipv6:auto::::0::::-1:0::no:no:no:yes:-1:-1:stable-privacy:0:auto:::0:yes::0x0:
 vpn:org.freedesktop.NetworkManager.openvpn::key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
@@ -30692,14 +30734,14 @@ GENERAL:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:wlan0:wlan0:activated:no:
 VPN:openvpn:::*** VPN connection con-vpn-1 ***:5 - VPN connected:key1 = val1 | key2 = val2 | key3 = val3
 
 <<<
-size: 852
+size: 855
 location: src/tests/client/test-client.py:test_004()/578
 cmd: $NMCLI --mode tabular --terse --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 673 bytes
+stdout: 676 bytes
 >>>
-connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1:-1
+connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1:-1:-1
 ipv4:auto::::0::::-1:0::no:no:::0:yes:::0x0:no:yes:-1:-1::0:
 ipv6:auto::::0::::-1:0::no:no:no:yes:-1:-1:stable-privacy:0:auto:::0:yes::0x0:
 vpn:org.freedesktop.NetworkManager.openvpn::key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
@@ -30708,28 +30750,28 @@ GENERAL:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP:wlan0:wlan0:activated:no:
 VPN:openvpn:::*** VPN connection con-vpn-1 ***:5 - VPN connected:key1 = val1 | key2 = val2 | key3 = val3
 
 <<<
-size: 549
+size: 552
 location: src/tests/client/test-client.py:test_004()/579
 cmd: $NMCLI --mode tabular --terse --color yes -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 373 bytes
+stdout: 376 bytes
 >>>
-connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1:-1
+connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1:-1:-1
 ipv4:auto::::0::::-1:0::no:no:::0:yes:::0x0:no:yes:-1:-1::0:
 ipv6:auto::::0::::-1:0::no:no:no:yes:-1:-1:stable-privacy:0:auto:::0:yes::0x0:
 vpn:org.freedesktop.NetworkManager.openvpn::key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
 proxy:none:no::
 
 <<<
-size: 559
+size: 562
 location: src/tests/client/test-client.py:test_004()/580
 cmd: $NMCLI --mode tabular --terse --color yes -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 373 bytes
+stdout: 376 bytes
 >>>
-connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1:-1
+connection:con-vpn-1:UUID-con-vpn-1-REPLACED-REPLACED-REP::vpn::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1:-1:-1
 ipv4:auto::::0::::-1:0::no:no:::0:yes:::0x0:no:yes:-1:-1::0:
 ipv6:auto::::0::::-1:0::no:no:no:yes:-1:-1:stable-privacy:0:auto:::0:yes::0x0:
 vpn:org.freedesktop.NetworkManager.openvpn::key1 = val1, key2 = val2, key3 = val3:<hidden>:no:0
@@ -31582,12 +31624,12 @@ UUID-con-xx1-REPLACED-REPLACED-REPLA
 
 
 <<<
-size: 5428
+size: 5471
 location: src/tests/client/test-client.py:test_004()/625
 cmd: $NMCLI --mode multiline con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 5276 bytes
+stdout: 5319 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -31614,6 +31656,7 @@ connection.mdns:                        -1 (default)
 connection.llmnr:                       -1 (default)
 connection.dns-over-tls:                -1 (default)
 connection.wait-device-timeout:         -1
+connection.wait-activation-delay:       -1
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
@@ -31701,12 +31744,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 5466
+size: 5509
 location: src/tests/client/test-client.py:test_004()/626
 cmd: $NMCLI --mode multiline con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5304 bytes
+stdout: 5347 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -31733,6 +31776,7 @@ connection.mdns:                        -1 (default)
 connection.llmnr:                       -1 (default)
 connection.dns-over-tls:                -1 (default)
 connection.wait-device-timeout:         -1
+connection.wait-activation-delay:       -1
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
@@ -31820,12 +31864,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 5428
+size: 5471
 location: src/tests/client/test-client.py:test_004()/627
 cmd: $NMCLI --mode multiline con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 5276 bytes
+stdout: 5319 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -31852,6 +31896,7 @@ connection.mdns:                        -1 (default)
 connection.llmnr:                       -1 (default)
 connection.dns-over-tls:                -1 (default)
 connection.wait-device-timeout:         -1
+connection.wait-activation-delay:       -1
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
@@ -31939,12 +31984,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 5466
+size: 5509
 location: src/tests/client/test-client.py:test_004()/628
 cmd: $NMCLI --mode multiline con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5304 bytes
+stdout: 5347 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -31971,6 +32016,7 @@ connection.mdns:                        -1 (default)
 connection.llmnr:                       -1 (default)
 connection.dns-over-tls:                -1 (default)
 connection.wait-device-timeout:         -1
+connection.wait-activation-delay:       -1
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
@@ -32058,12 +32104,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 4301
+size: 4344
 location: src/tests/client/test-client.py:test_004()/629
 cmd: $NMCLI --mode multiline -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 4142 bytes
+stdout: 4185 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -32090,6 +32136,7 @@ connection.mdns:                        -1 (default)
 connection.llmnr:                       -1 (default)
 connection.dns-over-tls:                -1 (default)
 connection.wait-device-timeout:         -1
+connection.wait-activation-delay:       -1
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
@@ -32156,12 +32203,12 @@ proxy.pac-url:                          --
 proxy.pac-script:                       --
 
 <<<
-size: 4329
+size: 4372
 location: src/tests/client/test-client.py:test_004()/630
 cmd: $NMCLI --mode multiline -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4160 bytes
+stdout: 4203 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -32188,6 +32235,7 @@ connection.mdns:                        -1 (default)
 connection.llmnr:                       -1 (default)
 connection.dns-over-tls:                -1 (default)
 connection.wait-device-timeout:         -1
+connection.wait-activation-delay:       -1
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
@@ -35348,12 +35396,12 @@ connection.type:                        802-11-wireless
 connection.interface-name:              --
 
 <<<
-size: 5440
+size: 5483
 location: src/tests/client/test-client.py:test_004()/675
 cmd: $NMCLI --mode multiline --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 5276 bytes
+stdout: 5319 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -35380,6 +35428,7 @@ connection.mdns:                        -1 (default)
 connection.llmnr:                       -1 (default)
 connection.dns-over-tls:                -1 (default)
 connection.wait-device-timeout:         -1
+connection.wait-activation-delay:       -1
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
@@ -35467,12 +35516,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 5478
+size: 5521
 location: src/tests/client/test-client.py:test_004()/676
 cmd: $NMCLI --mode multiline --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5304 bytes
+stdout: 5347 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -35499,6 +35548,7 @@ connection.mdns:                        -1 (default)
 connection.llmnr:                       -1 (default)
 connection.dns-over-tls:                -1 (default)
 connection.wait-device-timeout:         -1
+connection.wait-activation-delay:       -1
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
@@ -35586,12 +35636,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 5440
+size: 5483
 location: src/tests/client/test-client.py:test_004()/677
 cmd: $NMCLI --mode multiline --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 5276 bytes
+stdout: 5319 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -35618,6 +35668,7 @@ connection.mdns:                        -1 (default)
 connection.llmnr:                       -1 (default)
 connection.dns-over-tls:                -1 (default)
 connection.wait-device-timeout:         -1
+connection.wait-activation-delay:       -1
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
@@ -35705,12 +35756,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 5478
+size: 5521
 location: src/tests/client/test-client.py:test_004()/678
 cmd: $NMCLI --mode multiline --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5304 bytes
+stdout: 5347 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -35737,6 +35788,7 @@ connection.mdns:                        -1 (default)
 connection.llmnr:                       -1 (default)
 connection.dns-over-tls:                -1 (default)
 connection.wait-device-timeout:         -1
+connection.wait-activation-delay:       -1
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
@@ -35824,12 +35876,12 @@ VPN.CFG[2]:                             key2 = val2
 VPN.CFG[3]:                             key3 = val3
 
 <<<
-size: 4313
+size: 4356
 location: src/tests/client/test-client.py:test_004()/679
 cmd: $NMCLI --mode multiline --color yes -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 4142 bytes
+stdout: 4185 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -35856,6 +35908,7 @@ connection.mdns:                        -1 (default)
 connection.llmnr:                       -1 (default)
 connection.dns-over-tls:                -1 (default)
 connection.wait-device-timeout:         -1
+connection.wait-activation-delay:       -1
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
@@ -35922,12 +35975,12 @@ proxy.pac-url:                          --
 proxy.pac-script:                       --
 
 <<<
-size: 4341
+size: 4384
 location: src/tests/client/test-client.py:test_004()/680
 cmd: $NMCLI --mode multiline --color yes -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4160 bytes
+stdout: 4203 bytes
 >>>
 connection.id:                          con-vpn-1
 connection.uuid:                        UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -35954,6 +36007,7 @@ connection.mdns:                        -1 (default)
 connection.llmnr:                       -1 (default)
 connection.dns-over-tls:                -1 (default)
 connection.wait-device-timeout:         -1
+connection.wait-activation-delay:       -1
 ipv4.method:                            auto
 ipv4.dns:                               --
 ipv4.dns-search:                        --
@@ -39114,12 +39168,12 @@ connection.type:                        802-11-wireless
 connection.interface-name:              --
 
 <<<
-size: 6448
+size: 6491
 location: src/tests/client/test-client.py:test_004()/725
 cmd: $NMCLI --mode multiline --pretty con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 6287 bytes
+stdout: 6330 bytes
 >>>
 ===============================================================================
                     Connection profile details (con-vpn-1)
@@ -39149,6 +39203,7 @@ connection.mdns:                        -1 (default)
 connection.llmnr:                       -1 (default)
 connection.dns-over-tls:                -1 (default)
 connection.wait-device-timeout:         -1
+connection.wait-activation-delay:       -1
 -------------------------------------------------------------------------------
 ipv4.method:                            auto
 ipv4.dns:                               --
@@ -39246,12 +39301,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 6499
+size: 6542
 location: src/tests/client/test-client.py:test_004()/726
 cmd: $NMCLI --mode multiline --pretty con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 6328 bytes
+stdout: 6371 bytes
 >>>
 ===============================================================================
                    Szczegóły profilu połączenia (con-vpn-1)
@@ -39281,6 +39336,7 @@ connection.mdns:                        -1 (default)
 connection.llmnr:                       -1 (default)
 connection.dns-over-tls:                -1 (default)
 connection.wait-device-timeout:         -1
+connection.wait-activation-delay:       -1
 -------------------------------------------------------------------------------
 ipv4.method:                            auto
 ipv4.dns:                               --
@@ -39378,12 +39434,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 6448
+size: 6491
 location: src/tests/client/test-client.py:test_004()/727
 cmd: $NMCLI --mode multiline --pretty con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 6287 bytes
+stdout: 6330 bytes
 >>>
 ===============================================================================
                     Connection profile details (con-vpn-1)
@@ -39413,6 +39469,7 @@ connection.mdns:                        -1 (default)
 connection.llmnr:                       -1 (default)
 connection.dns-over-tls:                -1 (default)
 connection.wait-device-timeout:         -1
+connection.wait-activation-delay:       -1
 -------------------------------------------------------------------------------
 ipv4.method:                            auto
 ipv4.dns:                               --
@@ -39510,12 +39567,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 6499
+size: 6542
 location: src/tests/client/test-client.py:test_004()/728
 cmd: $NMCLI --mode multiline --pretty con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 6328 bytes
+stdout: 6371 bytes
 >>>
 ===============================================================================
                    Szczegóły profilu połączenia (con-vpn-1)
@@ -39545,6 +39602,7 @@ connection.mdns:                        -1 (default)
 connection.llmnr:                       -1 (default)
 connection.dns-over-tls:                -1 (default)
 connection.wait-device-timeout:         -1
+connection.wait-activation-delay:       -1
 -------------------------------------------------------------------------------
 ipv4.method:                            auto
 ipv4.dns:                               --
@@ -39642,12 +39700,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 4929
+size: 4972
 location: src/tests/client/test-client.py:test_004()/729
 cmd: $NMCLI --mode multiline --pretty -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 4761 bytes
+stdout: 4804 bytes
 >>>
 ===============================================================================
                     Connection profile details (con-vpn-1)
@@ -39677,6 +39735,7 @@ connection.mdns:                        -1 (default)
 connection.llmnr:                       -1 (default)
 connection.dns-over-tls:                -1 (default)
 connection.wait-device-timeout:         -1
+connection.wait-activation-delay:       -1
 -------------------------------------------------------------------------------
 ipv4.method:                            auto
 ipv4.dns:                               --
@@ -39748,12 +39807,12 @@ proxy.pac-script:                       --
 -------------------------------------------------------------------------------
 
 <<<
-size: 4962
+size: 5005
 location: src/tests/client/test-client.py:test_004()/730
 cmd: $NMCLI --mode multiline --pretty -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4784 bytes
+stdout: 4827 bytes
 >>>
 ===============================================================================
                    Szczegóły profilu połączenia (con-vpn-1)
@@ -39783,6 +39842,7 @@ connection.mdns:                        -1 (default)
 connection.llmnr:                       -1 (default)
 connection.dns-over-tls:                -1 (default)
 connection.wait-device-timeout:         -1
+connection.wait-activation-delay:       -1
 -------------------------------------------------------------------------------
 ipv4.method:                            auto
 ipv4.dns:                               --
@@ -43582,12 +43642,12 @@ connection.interface-name:              --
 -------------------------------------------------------------------------------
 
 <<<
-size: 6460
+size: 6503
 location: src/tests/client/test-client.py:test_004()/775
 cmd: $NMCLI --mode multiline --pretty --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 6287 bytes
+stdout: 6330 bytes
 >>>
 ===============================================================================
                     Connection profile details (con-vpn-1)
@@ -43617,6 +43677,7 @@ connection.mdns:                        -1 (default)
 connection.llmnr:                       -1 (default)
 connection.dns-over-tls:                -1 (default)
 connection.wait-device-timeout:         -1
+connection.wait-activation-delay:       -1
 -------------------------------------------------------------------------------
 ipv4.method:                            auto
 ipv4.dns:                               --
@@ -43714,12 +43775,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 6511
+size: 6554
 location: src/tests/client/test-client.py:test_004()/776
 cmd: $NMCLI --mode multiline --pretty --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 6328 bytes
+stdout: 6371 bytes
 >>>
 ===============================================================================
                    Szczegóły profilu połączenia (con-vpn-1)
@@ -43749,6 +43810,7 @@ connection.mdns:                        -1 (default)
 connection.llmnr:                       -1 (default)
 connection.dns-over-tls:                -1 (default)
 connection.wait-device-timeout:         -1
+connection.wait-activation-delay:       -1
 -------------------------------------------------------------------------------
 ipv4.method:                            auto
 ipv4.dns:                               --
@@ -43846,12 +43908,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 6460
+size: 6503
 location: src/tests/client/test-client.py:test_004()/777
 cmd: $NMCLI --mode multiline --pretty --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 6287 bytes
+stdout: 6330 bytes
 >>>
 ===============================================================================
                     Connection profile details (con-vpn-1)
@@ -43881,6 +43943,7 @@ connection.mdns:                        -1 (default)
 connection.llmnr:                       -1 (default)
 connection.dns-over-tls:                -1 (default)
 connection.wait-device-timeout:         -1
+connection.wait-activation-delay:       -1
 -------------------------------------------------------------------------------
 ipv4.method:                            auto
 ipv4.dns:                               --
@@ -43978,12 +44041,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 6511
+size: 6554
 location: src/tests/client/test-client.py:test_004()/778
 cmd: $NMCLI --mode multiline --pretty --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 6328 bytes
+stdout: 6371 bytes
 >>>
 ===============================================================================
                    Szczegóły profilu połączenia (con-vpn-1)
@@ -44013,6 +44076,7 @@ connection.mdns:                        -1 (default)
 connection.llmnr:                       -1 (default)
 connection.dns-over-tls:                -1 (default)
 connection.wait-device-timeout:         -1
+connection.wait-activation-delay:       -1
 -------------------------------------------------------------------------------
 ipv4.method:                            auto
 ipv4.dns:                               --
@@ -44110,12 +44174,12 @@ VPN.CFG[3]:                             key3 = val3
 -------------------------------------------------------------------------------
 
 <<<
-size: 4941
+size: 4984
 location: src/tests/client/test-client.py:test_004()/779
 cmd: $NMCLI --mode multiline --pretty --color yes -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 4761 bytes
+stdout: 4804 bytes
 >>>
 ===============================================================================
                     Connection profile details (con-vpn-1)
@@ -44145,6 +44209,7 @@ connection.mdns:                        -1 (default)
 connection.llmnr:                       -1 (default)
 connection.dns-over-tls:                -1 (default)
 connection.wait-device-timeout:         -1
+connection.wait-activation-delay:       -1
 -------------------------------------------------------------------------------
 ipv4.method:                            auto
 ipv4.dns:                               --
@@ -44216,12 +44281,12 @@ proxy.pac-script:                       --
 -------------------------------------------------------------------------------
 
 <<<
-size: 4974
+size: 5017
 location: src/tests/client/test-client.py:test_004()/780
 cmd: $NMCLI --mode multiline --pretty --color yes -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4784 bytes
+stdout: 4827 bytes
 >>>
 ===============================================================================
                    Szczegóły profilu połączenia (con-vpn-1)
@@ -44251,6 +44316,7 @@ connection.mdns:                        -1 (default)
 connection.llmnr:                       -1 (default)
 connection.dns-over-tls:                -1 (default)
 connection.wait-device-timeout:         -1
+connection.wait-activation-delay:       -1
 -------------------------------------------------------------------------------
 ipv4.method:                            auto
 ipv4.dns:                               --
@@ -48050,12 +48116,12 @@ connection.interface-name:              --
 -------------------------------------------------------------------------------
 
 <<<
-size: 2731
+size: 2767
 location: src/tests/client/test-client.py:test_004()/825
 cmd: $NMCLI --mode multiline --terse con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 2571 bytes
+stdout: 2607 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -48082,6 +48148,7 @@ connection.mdns:-1
 connection.llmnr:-1
 connection.dns-over-tls:-1
 connection.wait-device-timeout:-1
+connection.wait-activation-delay:-1
 ipv4.method:auto
 ipv4.dns:
 ipv4.dns-search:
@@ -48169,12 +48236,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 2741
+size: 2777
 location: src/tests/client/test-client.py:test_004()/826
 cmd: $NMCLI --mode multiline --terse con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2571 bytes
+stdout: 2607 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -48201,6 +48268,7 @@ connection.mdns:-1
 connection.llmnr:-1
 connection.dns-over-tls:-1
 connection.wait-device-timeout:-1
+connection.wait-activation-delay:-1
 ipv4.method:auto
 ipv4.dns:
 ipv4.dns-search:
@@ -48288,12 +48356,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 2731
+size: 2767
 location: src/tests/client/test-client.py:test_004()/827
 cmd: $NMCLI --mode multiline --terse con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 2571 bytes
+stdout: 2607 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -48320,6 +48388,7 @@ connection.mdns:-1
 connection.llmnr:-1
 connection.dns-over-tls:-1
 connection.wait-device-timeout:-1
+connection.wait-activation-delay:-1
 ipv4.method:auto
 ipv4.dns:
 ipv4.dns-search:
@@ -48407,12 +48476,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 2741
+size: 2777
 location: src/tests/client/test-client.py:test_004()/828
 cmd: $NMCLI --mode multiline --terse con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2571 bytes
+stdout: 2607 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -48439,6 +48508,7 @@ connection.mdns:-1
 connection.llmnr:-1
 connection.dns-over-tls:-1
 connection.wait-device-timeout:-1
+connection.wait-activation-delay:-1
 ipv4.method:auto
 ipv4.dns:
 ipv4.dns-search:
@@ -48526,12 +48596,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 2156
+size: 2192
 location: src/tests/client/test-client.py:test_004()/829
 cmd: $NMCLI --mode multiline --terse -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 1989 bytes
+stdout: 2025 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -48558,6 +48628,7 @@ connection.mdns:-1
 connection.llmnr:-1
 connection.dns-over-tls:-1
 connection.wait-device-timeout:-1
+connection.wait-activation-delay:-1
 ipv4.method:auto
 ipv4.dns:
 ipv4.dns-search:
@@ -48624,12 +48695,12 @@ proxy.pac-url:
 proxy.pac-script:
 
 <<<
-size: 2166
+size: 2202
 location: src/tests/client/test-client.py:test_004()/830
 cmd: $NMCLI --mode multiline --terse -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 1989 bytes
+stdout: 2025 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -48656,6 +48727,7 @@ connection.mdns:-1
 connection.llmnr:-1
 connection.dns-over-tls:-1
 connection.wait-device-timeout:-1
+connection.wait-activation-delay:-1
 ipv4.method:auto
 ipv4.dns:
 ipv4.dns-search:
@@ -51816,12 +51888,12 @@ connection.type:802-11-wireless
 connection.interface-name:
 
 <<<
-size: 2743
+size: 2779
 location: src/tests/client/test-client.py:test_004()/875
 cmd: $NMCLI --mode multiline --terse --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 2571 bytes
+stdout: 2607 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -51848,6 +51920,7 @@ connection.mdns:-1
 connection.llmnr:-1
 connection.dns-over-tls:-1
 connection.wait-device-timeout:-1
+connection.wait-activation-delay:-1
 ipv4.method:auto
 ipv4.dns:
 ipv4.dns-search:
@@ -51935,12 +52008,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 2753
+size: 2789
 location: src/tests/client/test-client.py:test_004()/876
 cmd: $NMCLI --mode multiline --terse --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2571 bytes
+stdout: 2607 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -51967,6 +52040,7 @@ connection.mdns:-1
 connection.llmnr:-1
 connection.dns-over-tls:-1
 connection.wait-device-timeout:-1
+connection.wait-activation-delay:-1
 ipv4.method:auto
 ipv4.dns:
 ipv4.dns-search:
@@ -52054,12 +52128,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 2743
+size: 2779
 location: src/tests/client/test-client.py:test_004()/877
 cmd: $NMCLI --mode multiline --terse --color yes con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 2571 bytes
+stdout: 2607 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -52086,6 +52160,7 @@ connection.mdns:-1
 connection.llmnr:-1
 connection.dns-over-tls:-1
 connection.wait-device-timeout:-1
+connection.wait-activation-delay:-1
 ipv4.method:auto
 ipv4.dns:
 ipv4.dns-search:
@@ -52173,12 +52248,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 2753
+size: 2789
 location: src/tests/client/test-client.py:test_004()/878
 cmd: $NMCLI --mode multiline --terse --color yes con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2571 bytes
+stdout: 2607 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -52205,6 +52280,7 @@ connection.mdns:-1
 connection.llmnr:-1
 connection.dns-over-tls:-1
 connection.wait-device-timeout:-1
+connection.wait-activation-delay:-1
 ipv4.method:auto
 ipv4.dns:
 ipv4.dns-search:
@@ -52292,12 +52368,12 @@ VPN.CFG[2]:key2 = val2
 VPN.CFG[3]:key3 = val3
 
 <<<
-size: 2168
+size: 2204
 location: src/tests/client/test-client.py:test_004()/879
 cmd: $NMCLI --mode multiline --terse --color yes -f ALL con s con-vpn-1
 lang: C
 returncode: 0
-stdout: 1989 bytes
+stdout: 2025 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -52324,6 +52400,7 @@ connection.mdns:-1
 connection.llmnr:-1
 connection.dns-over-tls:-1
 connection.wait-device-timeout:-1
+connection.wait-activation-delay:-1
 ipv4.method:auto
 ipv4.dns:
 ipv4.dns-search:
@@ -52390,12 +52467,12 @@ proxy.pac-url:
 proxy.pac-script:
 
 <<<
-size: 2178
+size: 2214
 location: src/tests/client/test-client.py:test_004()/880
 cmd: $NMCLI --mode multiline --terse --color yes -f ALL con s con-vpn-1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 1989 bytes
+stdout: 2025 bytes
 >>>
 connection.id:con-vpn-1
 connection.uuid:UUID-con-vpn-1-REPLACED-REPLACED-REP
@@ -52422,6 +52499,7 @@ connection.mdns:-1
 connection.llmnr:-1
 connection.dns-over-tls:-1
 connection.wait-device-timeout:-1
+connection.wait-activation-delay:-1
 ipv4.method:auto
 ipv4.dns:
 ipv4.dns-search:

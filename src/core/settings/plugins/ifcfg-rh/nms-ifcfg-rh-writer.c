@@ -2258,6 +2258,9 @@ write_connection_setting(NMSettingConnection *s_con, shvarFile *ifcfg)
     vint = nm_setting_connection_get_auth_retries(s_con);
     svSetValueInt64_cond(ifcfg, "AUTH_RETRIES", vint >= 0, vint);
 
+    vint32 = nm_setting_connection_get_wait_activation_delay(s_con);
+    svSetValueInt64_cond(ifcfg, "WAIT_ACTIVATION_DELAY", vint32 >= 0, vint32);
+
     vint32 = nm_setting_connection_get_wait_device_timeout(s_con);
     if (vint32 == -1) {
         /* pass */

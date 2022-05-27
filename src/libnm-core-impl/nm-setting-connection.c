@@ -68,7 +68,8 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMSettingConnection,
                              PROP_STABLE_ID,
                              PROP_AUTH_RETRIES,
                              PROP_WAIT_DEVICE_TIMEOUT,
-                             PROP_MUD_URL, );
+                             PROP_MUD_URL,
+                             PROP_WAIT_ACTIVATION_DELAY, );
 
 typedef struct {
     GArray     *permissions;
@@ -94,6 +95,7 @@ typedef struct {
     gint32      dns_over_tls;
     gint32      wait_device_timeout;
     gint32      lldp;
+    gint32      wait_activation_delay;
     guint32     gateway_ping_timeout;
     bool        autoconnect;
     bool        read_only;
@@ -732,6 +734,23 @@ nm_setting_connection_get_wait_device_timeout(NMSettingConnection *setting)
     g_return_val_if_fail(NM_IS_SETTING_CONNECTION(setting), -1);
 
     return NM_SETTING_CONNECTION_GET_PRIVATE(setting)->wait_device_timeout;
+}
+
+/**
+ * nm_setting_connection_get_wait_activation_delay:
+ * @setting: the #NMSettingConnection
+ *
+ * Returns: the %NM_SETTING_CONNECTION_WAIT_ACTIVATION_DELAY property with
+ *   the delay in milliseconds. -1 is the default.
+ *
+ * Since: 1.40
+ */
+gint32
+nm_setting_connection_get_wait_activation_delay(NMSettingConnection *setting)
+{
+    g_return_val_if_fail(NM_IS_SETTING_CONNECTION(setting), -1);
+
+    return NM_SETTING_CONNECTION_GET_PRIVATE(setting)->wait_activation_delay;
 }
 
 /**
@@ -2529,6 +2548,37 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
                                               NM_SETTING_PARAM_NONE,
                                               NMSettingConnectionPrivate,
                                               mud_url);
+
+    /**
+     * NMSettingConnection:wait-activation-delay:
+     *
+     * Time in milliseconds to wait for connection to be considered activated.
+     * The wait will start after the pre-up dispatcher event.
+     *
+     * The value 0 means no wait time. The default value is -1, which
+     * currently has the same meaning as no wait time.
+     *
+     * Since: 1.40
+     **/
+    /* ---ifcfg-rh---
+     * property: wait-activation-delay
+     * variable: WAIT_ACTIVATION_DELAY(+)
+     * values: delay in milliseconds.
+     * description: Time in milliseconds to wait for connection to be considered activated.
+     * The wait will start after the pre-up dispatcher event.
+     * example: WAIT_ACTIVATION_DELAY=5000
+     * ---end---
+     */
+    _nm_setting_property_define_direct_int32(properties_override,
+                                             obj_properties,
+                                             NM_SETTING_CONNECTION_WAIT_ACTIVATION_DELAY,
+                                             PROP_WAIT_ACTIVATION_DELAY,
+                                             -1,
+                                             G_MAXINT32,
+                                             -1,
+                                             NM_SETTING_PARAM_NONE,
+                                             NMSettingConnectionPrivate,
+                                             wait_activation_delay);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 

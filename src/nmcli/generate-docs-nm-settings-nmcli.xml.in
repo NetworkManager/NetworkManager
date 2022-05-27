@@ -423,6 +423,8 @@
                   description="If configured, set to a Manufacturer Usage Description (MUD) URL that points to manufacturer-recommended network policies for IoT devices. It is transmitted as a DHCPv4 or DHCPv6 option. The value must be a valid URL starting with &quot;https://&quot;. The special value &quot;none&quot; is allowed to indicate that no MUD URL is used. If the per-profile value is unspecified (the default), a global connection default gets consulted. If still unspecified, the ultimate default is &quot;none&quot;." />
         <property name="wait-device-timeout"
                   description="Timeout in milliseconds to wait for device at startup. During boot, devices may take a while to be detected by the driver. This property will cause to delay NetworkManager-wait-online.service and nm-online to give the device a chance to appear. This works by waiting for the given timeout until a compatible device for the profile is available and managed. The value 0 means no wait time. The default value is -1, which currently has the same meaning as no wait time." />
+        <property name="wait-activation-delay"
+                  description="Time in milliseconds to wait for connection to be considered activated. The wait will start after the pre-up dispatcher event. The value 0 means no wait time. The default value is -1, which currently has the same meaning as no wait time." />
     </setting>
     <setting name="dcb" >
         <property name="app-fcoe-flags"
