@@ -3525,7 +3525,7 @@ impl_settings_save_hostname(NMDBusObject                      *obj,
     g_variant_get(parameters, "(&s)", &hostname);
 
     /* Minimal validation of the hostname */
-    if (!nm_utils_validate_hostname(hostname)) {
+    if (nm_str_not_empty(hostname) && !nm_utils_validate_hostname(hostname)) {
         error_code   = NM_SETTINGS_ERROR_INVALID_HOSTNAME;
         error_reason = "The hostname was too long or contained invalid characters";
         goto err;
@@ -3540,7 +3540,7 @@ impl_settings_save_hostname(NMDBusObject                      *obj,
 
     c_list_link_tail(&priv->auth_lst_head, nm_auth_chain_parent_lst_list(chain));
     nm_auth_chain_add_call(chain, NM_AUTH_PERMISSION_SETTINGS_MODIFY_HOSTNAME, TRUE);
-    nm_auth_chain_set_data(chain, "hostname", g_strdup(hostname), g_free);
+    nm_auth_chain_set_data(chain, "hostname", nm_strdup_not_empty(hostname), g_free);
     return;
 err:
     nm_audit_log_control_op(NM_AUDIT_OP_HOSTNAME_SAVE, hostname, FALSE, invocation, error_reason);
