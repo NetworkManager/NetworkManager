@@ -9,14 +9,17 @@ set -e
 #  - build: build a new image, named "$CONTAINER_NAME_REPOSITORY:$CONTAINER_NAME_TAG" ("nm:nm")
 #  - run: start the container and tag it "$CONTAINER_NAME_NAME" ("nm")
 #  - exec: run bash inside the container
+#  - journal|j: print the journal from inside the container
 #  - stop: stop the container
 #  - clean: delete the container and the image.
 #
 # Options:
 #  --no-cleanup: don't delete the CONTAINERFILE and other artifacts
 #  --stop: only has effect with "run". It will stop the container afterwards.
-#  -- [COMMAND]: with command "exec", provide a command to run in the container.
-#    Defaults to "bash".
+#  -- [EXTRA_ARGS]:
+#    - with command "exec", provide a command and arguments to run in the container.
+#      Defaults to "bash".
+#    - with command "journal", additional arguments that are passed to journalctl.
 #
 # It bind mounts the current working directory inside the container.
 # You can run `make install` and run tests.
@@ -32,11 +35,13 @@ CONTAINER_NAME_REPOSITORY=${CONTAINER_NAME_REPOSITORY:-nm}
 CONTAINER_NAME_TAG=${CONTAINER_NAME_TAG:-nm}
 CONTAINER_NAME_NAME=${CONTAINER_NAME_NAME:-nm}
 
+EXEC_ENV=()
+
 ###############################################################################
 
 usage() {
     cat <<EOF
-$0: build|run|exec|stop|clean [--no-cleanup] [--stop]
+$0: build|run|exec|stop|clean|journal [--no-cleanup] [--stop] [-- EXTRA_ARGS]
 EOF
     echo
     awk '/^####*$/{ if(on) exit; on=1} { if (on) { if (on==2) print(substr($0,3)); on=2; } }' "$BASH_SOURCE"
@@ -428,16 +433,27 @@ do_run() {
 do_exec() {
     do_run
 
+    local e
     local EXTRA_ARGS=("$@")
     if [ "${#EXTRA_ARGS[@]}" = 0 ]; then
         EXTRA_ARGS=('bash')
     fi
 
-    podman exec --workdir "$BASEDIR_NM" -it "$CONTAINER_NAME_NAME" "${EXTRA_ARGS[@]}"
+    local ENV=()
+    for e in "${EXEC_ENV[@]}" ; do
+        ENV+=(-e "$e")
+    done
+
+    podman exec "${ENV[@]}" --workdir "$BASEDIR_NM" -it "$CONTAINER_NAME_NAME" "${EXTRA_ARGS[@]}"
 
     if [ "$DO_STOP" = 1 ]; then
         do_stop
     fi
+}
+
+do_journal() {
+    EXEC_ENV+=( "SYSTEMD_COLORS=0" )
+    do_exec "journalctl" --no-pager "$@"
 }
 
 do_stop() {
@@ -460,7 +476,10 @@ for (( i=1 ; i<="$#" ; )) ; do
         --stop)
             DO_STOP=1
             ;;
-        build|run|exec|stop|clean)
+        j)
+            CMD=journal
+            ;;
+        build|run|exec|stop|clean|journal)
             CMD=$c
             ;;
         --)
@@ -472,8 +491,13 @@ for (( i=1 ; i<="$#" ; )) ; do
             exit 0
             ;;
         *)
-            usage
-            die "invalid argument: $c"
+            if [ "$CMD" = "journal" ]; then
+                EXTRA_ARGS=( "${@:$((i-1))}" )
+                break;
+            else
+                usage
+                die "invalid argument: $c"
+            fi
             ;;
     esac
 done
@@ -482,7 +506,7 @@ done
 
 test "$UID" != 0 || die "cannot run as root"
 
-if test $CMD != exec && test "${#EXTRA_ARGS[@]}" != 0 ; then
+if test "$CMD" != exec -a "$CMD" != journal -a "${#EXTRA_ARGS[@]}" != 0 ; then
     die "Extra arguments are only allowed with exec command"
 fi
 
