@@ -325,7 +325,7 @@ gboolean
 nm_hostname_manager_write_hostname(NMHostnameManager *self, const char *hostname)
 {
     NMHostnameManagerPrivate  *priv;
-    char                      *hostname_eol;
+    gs_free char              *hostname_eol = NULL;
     gboolean                   ret;
     gs_free_error GError      *error     = NULL;
     const char                *file      = HOSTNAME_FILE;
@@ -407,8 +407,6 @@ nm_hostname_manager_write_hostname(NMHostnameManager *self, const char *hostname
     if (fcon_prev)
         freecon(fcon_prev);
 #endif
-
-    g_free(hostname_eol);
 
     if (!ret) {
         _LOGW("could not save hostname to %s: %s", file, error->message);
