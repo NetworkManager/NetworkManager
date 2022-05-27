@@ -276,6 +276,7 @@ RUN dnf install -y \\
     bash-completion \\
     bind-utils \\
     bluez-libs-devel \\
+    clang-tools-extra \\
     cscope \\
     dbus-devel \\
     dbus-x11 \\
@@ -315,6 +316,7 @@ RUN dnf install -y \\
     ppp-devel \\
     procps \\
     python3-behave \\
+    python3-black \\
     python3-dbus \\
     python3-devel \\
     python3-gobject \\
