@@ -393,6 +393,7 @@ make_connection_setting(const char *file,
     const char             *v;
     gs_free char           *stable_id = NULL;
     const char *const      *iter;
+    gint32                  vint32;
     int                     vint64, i_val;
 
     ifcfg_name = utils_get_ifcfg_name(file, TRUE);
@@ -642,6 +643,9 @@ make_connection_setting(const char *file,
                         NULL))
         PARSE_WARNING("invalid DNS_OVER_TLS setting");
     g_object_set(s_con, NM_SETTING_CONNECTION_DNS_OVER_TLS, i_val, NULL);
+
+    vint32 = svGetValueInt64(ifcfg, "WAIT_ACTIVATION_DELAY", 10, -1, G_MAXINT32, -1);
+    g_object_set(s_con, NM_SETTING_CONNECTION_WAIT_ACTIVATION_DELAY, (int) vint32, NULL);
 
     return NM_SETTING(s_con);
 }

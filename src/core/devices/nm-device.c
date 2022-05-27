@@ -393,6 +393,8 @@ typedef struct _NMDevicePrivate {
     guint device_link_changed_id;
     guint device_ip_link_changed_id;
 
+    GSource *delay_activation_source;
+
     NMDeviceState       state;
     NMDeviceStateReason state_reason;
     struct {
@@ -12607,7 +12609,8 @@ can_reapply_change(NMDevice   *self,
                                                  NM_SETTING_CONNECTION_LLDP,
                                                  NM_SETTING_CONNECTION_MDNS,
                                                  NM_SETTING_CONNECTION_LLMNR,
-                                                 NM_SETTING_CONNECTION_DNS_OVER_TLS);
+                                                 NM_SETTING_CONNECTION_DNS_OVER_TLS,
+                                                 NM_SETTING_CONNECTION_WAIT_ACTIVATION_DELAY);
     }
 
     if (NM_IN_STRSET(setting_name,
@@ -13474,27 +13477,69 @@ _dispatcher_cleanup(NMDevice *self)
 {
     NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
 
+    nm_clear_g_source_inst(&priv->delay_activation_source);
+
     if (!priv->dispatcher.call_id)
         return FALSE;
 
     nm_dispatcher_call_cancel(g_steal_pointer(&priv->dispatcher.call_id));
     priv->dispatcher.post_state        = NM_DEVICE_STATE_UNKNOWN;
     priv->dispatcher.post_state_reason = NM_DEVICE_STATE_REASON_NONE;
+
     return TRUE;
+}
+
+static void
+_queue_dispatcher_post_state(NMDevice *self)
+{
+    NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
+
+    nm_device_queue_state(self, priv->dispatcher.post_state, priv->dispatcher.post_state_reason);
+    priv->dispatcher.post_state        = NM_DEVICE_STATE_UNKNOWN;
+    priv->dispatcher.post_state_reason = NM_DEVICE_STATE_REASON_NONE;
+}
+
+static gboolean
+_wait_activation_delay_timeout(gpointer user_data)
+{
+    NMDevice        *self = user_data;
+    NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
+
+    nm_clear_g_source_inst(&priv->delay_activation_source);
+
+    _LOGD(LOGD_DEVICE, "finished waiting on activation delay");
+    _queue_dispatcher_post_state(self);
+
+    return G_SOURCE_REMOVE;
 }
 
 static void
 _dispatcher_complete_proceed_state(NMDispatcherCallId *call_id, gpointer user_data)
 {
-    NMDevice        *self = NM_DEVICE(user_data);
-    NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
+    NMDevice            *self = NM_DEVICE(user_data);
+    NMDevicePrivate     *priv = NM_DEVICE_GET_PRIVATE(self);
+    NMConnection        *conn;
+    NMSettingConnection *s_conn;
+    gint32               delay_timeout;
 
     g_return_if_fail(call_id == priv->dispatcher.call_id);
+    nm_assert(!priv->delay_activation_source);
 
     priv->dispatcher.call_id = NULL;
-    nm_device_queue_state(self, priv->dispatcher.post_state, priv->dispatcher.post_state_reason);
-    priv->dispatcher.post_state        = NM_DEVICE_STATE_UNKNOWN;
-    priv->dispatcher.post_state_reason = NM_DEVICE_STATE_REASON_NONE;
+    conn                     = nm_device_get_applied_connection(self);
+    if (conn) {
+        s_conn = nm_connection_get_setting_connection(conn);
+        if (s_conn) {
+            delay_timeout = nm_setting_connection_get_wait_activation_delay(s_conn);
+            if (delay_timeout > 0) {
+                priv->delay_activation_source =
+                    nm_g_timeout_add_source(delay_timeout, _wait_activation_delay_timeout, self);
+                return;
+            }
+        }
+    }
+
+    _queue_dispatcher_post_state(self);
 }
 
 /*****************************************************************************/
