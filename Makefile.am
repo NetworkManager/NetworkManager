@@ -3421,6 +3421,7 @@ EXTRA_DIST += \
 	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-ibft \
 	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-infiniband \
 	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-ip6-disabled.cexpected \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-link_local \
 	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-minimal \
 	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-misc-variables \
 	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-nm-controlled \
