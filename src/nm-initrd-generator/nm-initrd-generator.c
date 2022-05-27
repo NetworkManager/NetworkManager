@@ -26,6 +26,18 @@
 /*****************************************************************************/
 
 static void
+add_keyfile_comment(GKeyFile *keyfile, char *reason)
+{
+    gs_free char *comment = NULL;
+
+    comment = g_strdup_printf(" Created by nm-initrd-generator%s%s%s",
+                              reason ? " (" : "",
+                              reason ? reason : "",
+                              reason ? ")" : "");
+    g_key_file_set_comment(keyfile, NULL, NULL, comment, NULL);
+}
+
+static void
 output_conn(gpointer key, gpointer value, gpointer user_data)
 {
     const char                     *basename        = key;
@@ -48,8 +60,11 @@ output_conn(gpointer key, gpointer value, gpointer user_data)
         goto err_out;
 
     file = nm_keyfile_write(connection, NM_KEYFILE_HANDLER_FLAGS_NONE, NULL, NULL, &error);
-    if (file == NULL)
+    if (!file)
         goto err_out;
+
+    if (connections_dir)
+        add_keyfile_comment(file, NULL);
 
     data = g_key_file_to_data(file, &len, &error);
     if (!data)
@@ -198,6 +213,8 @@ main(int argc, char *argv[])
                              NM_CONFIG_KEYFILE_GROUPPREFIX_DEVICE "-15-carrier-timeout",
                              NM_CONFIG_KEYFILE_KEY_DEVICE_CARRIER_WAIT_TIMEOUT,
                              carrier_timeout_sec * 1000);
+        if (!dump_to_stdout)
+            add_keyfile_comment(keyfile, "from \"rd.net.timeout.carrier\"");
 
         v = (NMUtilsNamedValue){
             .name      = g_strdup_printf("%s/15-carrier-timeout.conf", run_config_dir),
