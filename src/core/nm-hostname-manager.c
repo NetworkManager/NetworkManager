@@ -321,10 +321,30 @@ nm_hostname_manager_get_transient_hostname(NMHostnameManager *self, char **hostn
     return TRUE;
 }
 
-gboolean
-nm_hostname_manager_write_hostname(NMHostnameManager *self, const char *hostname)
+/*****************************************************************************/
+
+static void
+_write_hostname_dbus_cb(GObject *source, GAsyncResult *result, gpointer user_data)
 {
+    gs_unref_object GTask     *task  = G_TASK(user_data);
+    gs_unref_variant GVariant *res   = NULL;
+    GError                    *error = NULL;
+
+    res = g_dbus_proxy_call_finish(G_DBUS_PROXY(source), result, &error);
+    if (!res) {
+        g_task_return_error(task, error);
+        return;
+    }
+    g_task_return_boolean(task, TRUE);
+}
+
+static void
+_write_hostname_on_idle_cb(gpointer user_data, GCancellable *cancellable)
+{
+    gs_unref_object GTask     *task = G_TASK(user_data);
+    NMHostnameManager         *self;
     NMHostnameManagerPrivate  *priv;
+    const char                *hostname;
     gs_free char              *hostname_eol = NULL;
     gboolean                   ret;
     gs_free_error GError      *error     = NULL;
@@ -337,23 +357,15 @@ nm_hostname_manager_write_hostname(NMHostnameManager *self, const char *hostname
     char    *fcon_prev    = NULL;
 #endif
 
-    g_return_val_if_fail(NM_IS_HOSTNAME_MANAGER(self), FALSE);
+    if (g_task_return_error_if_cancelled(task))
+        return;
 
+    self = g_task_get_source_object(task);
     priv = NM_HOSTNAME_MANAGER_GET_PRIVATE(self);
 
-    if (priv->hostnamed_proxy) {
-        var = g_dbus_proxy_call_sync(priv->hostnamed_proxy,
-                                     "SetStaticHostname",
-                                     g_variant_new("(sb)", hostname ?: "", FALSE),
-                                     G_DBUS_CALL_FLAGS_NONE,
-                                     -1,
-                                     NULL,
-                                     &error);
-        if (error)
-            _LOGW("could not set hostname: %s", error->message);
+    nm_assert(!priv->hostnamed_proxy);
 
-        return !error;
-    }
+    hostname = g_task_get_task_data(task);
 
     /* If the hostname file is a symbolic link, follow it to find where the
      * real file is located, otherwise g_file_set_contents will attempt to
@@ -409,11 +421,62 @@ nm_hostname_manager_write_hostname(NMHostnameManager *self, const char *hostname
 #endif
 
     if (!ret) {
-        _LOGW("could not save hostname to %s: %s", file, error->message);
-        return FALSE;
+        g_task_return_new_error(task,
+                                NM_UTILS_ERROR,
+                                NM_UTILS_ERROR_UNKNOWN,
+                                "could not save hostname to %s: %s",
+                                file,
+                                error->message);
+        return;
     }
 
-    return TRUE;
+    g_task_return_boolean(task, TRUE);
+}
+
+void
+nm_hostname_manager_write_hostname(NMHostnameManager  *self,
+                                   const char         *hostname,
+                                   GCancellable       *cancellable,
+                                   GAsyncReadyCallback callback,
+                                   gpointer            user_data)
+{
+    NMHostnameManagerPrivate *priv;
+    GTask                    *task;
+
+    g_return_if_fail(NM_IS_HOSTNAME_MANAGER(self));
+
+    priv = NM_HOSTNAME_MANAGER_GET_PRIVATE(self);
+
+    task =
+        nm_g_task_new(self, cancellable, nm_hostname_manager_write_hostname, callback, user_data);
+
+    g_task_set_task_data(task, g_strdup(hostname), g_free);
+
+    if (priv->hostnamed_proxy) {
+        g_dbus_proxy_call(priv->hostnamed_proxy,
+                          "SetStaticHostname",
+                          g_variant_new("(sb)", hostname ?: "", FALSE),
+                          G_DBUS_CALL_FLAGS_NONE,
+                          15000,
+                          cancellable,
+                          _write_hostname_dbus_cb,
+                          task);
+        return;
+    }
+
+    nm_utils_invoke_on_idle(cancellable, _write_hostname_on_idle_cb, task);
+}
+
+gboolean
+nm_hostname_manager_write_hostname_finish(NMHostnameManager *self,
+                                          GAsyncResult      *result,
+                                          GError           **error)
+{
+    g_return_val_if_fail(NM_IS_HOSTNAME_MANAGER(self), FALSE);
+    g_return_val_if_fail(nm_g_task_is_valid(result, self, nm_hostname_manager_write_hostname),
+                         FALSE);
+
+    return g_task_propagate_boolean(G_TASK(result), error);
 }
 
 /*****************************************************************************/
