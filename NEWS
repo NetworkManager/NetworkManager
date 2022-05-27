@@ -20,6 +20,8 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 * Support "802-1x.phase1-auth-flags=tls-allow-unsafe-renegotiation" flag
   for Wi-Fi.
 * Fix the requirement of hardware address for DHCPv6, by dropping it.
+* Support enabling ipv4ll alongside DHCPv4 and static addressing.
+* Support configuring "ipv6.mtu".
 * Several internal improvements.
 
 =============================================
