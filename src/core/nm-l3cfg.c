@@ -208,6 +208,12 @@ typedef struct {
     gboolean          force_commit_once : 1;
 } L3ConfigData;
 
+struct _NML3CfgBlockHandle {
+    NML3Cfg *self;
+    CList    lst;
+    gboolean is_ipv4;
+};
+
 /*****************************************************************************/
 
 NM_GOBJECT_PROPERTIES_DEFINE(NML3Cfg, PROP_NETNS, PROP_IFINDEX, );
@@ -248,6 +254,14 @@ typedef struct _NML3CfgPrivate {
 
     GSource *nacd_event_down_source;
     gint64   nacd_event_down_ratelimited_until_msec;
+
+    union {
+        struct {
+            CList blocked_lst_head_6;
+            CList blocked_lst_head_4;
+        };
+        CList blocked_lst_head_x[2];
+    };
 
     union {
         struct {
@@ -4240,20 +4254,29 @@ _l3_commit_one(NML3Cfg              *self,
                 g_array_append_val(ipv6_temp_addrs_keep, addr->address);
             }
         }
-        addresses_prune =
-            nm_platform_ip_address_get_prune_list(self->priv.platform,
-                                                  addr_family,
-                                                  self->priv.ifindex,
-                                                  nm_g_array_data(ipv6_temp_addrs_keep),
-                                                  nm_g_array_len(ipv6_temp_addrs_keep));
 
-        routes_prune = nm_platform_ip_route_get_prune_list(self->priv.platform,
-                                                           addr_family,
-                                                           self->priv.ifindex,
-                                                           route_table_sync);
-        _obj_state_zombie_lst_prune_all(self, addr_family);
-    } else
-        _obj_state_zombie_lst_get_prune_lists(self, addr_family, &addresses_prune, &routes_prune);
+        if (c_list_is_empty(&self->priv.p->blocked_lst_head_x[IS_IPv4])) {
+            addresses_prune =
+                nm_platform_ip_address_get_prune_list(self->priv.platform,
+                                                      addr_family,
+                                                      self->priv.ifindex,
+                                                      nm_g_array_data(ipv6_temp_addrs_keep),
+                                                      nm_g_array_len(ipv6_temp_addrs_keep));
+
+            routes_prune = nm_platform_ip_route_get_prune_list(self->priv.platform,
+                                                               addr_family,
+                                                               self->priv.ifindex,
+                                                               route_table_sync);
+            _obj_state_zombie_lst_prune_all(self, addr_family);
+        }
+    } else {
+        if (c_list_is_empty(&self->priv.p->blocked_lst_head_x[IS_IPv4])) {
+            _obj_state_zombie_lst_get_prune_lists(self,
+                                                  addr_family,
+                                                  &addresses_prune,
+                                                  &routes_prune);
+        }
+    }
 
     /* FIXME(l3cfg): need to honor and set nm_l3_config_data_get_ndisc_*(). */
     /* FIXME(l3cfg): need to honor and set nm_l3_config_data_get_mtu(). */
@@ -4372,6 +4395,48 @@ _l3_commit(NML3Cfg *self, NML3CfgCommitType commit_type, gboolean is_idle)
     self->priv.p->commit_reentrant_count--;
 
     _nm_l3cfg_emit_signal_notify_simple(self, NM_L3_CONFIG_NOTIFY_TYPE_POST_COMMIT);
+}
+
+NML3CfgBlockHandle *
+nm_l3cfg_block_obj_pruning(NML3Cfg *self, int addr_family)
+{
+    const int           IS_IPv4 = NM_IS_IPv4(addr_family);
+    NML3CfgBlockHandle *handle;
+
+    if (!self)
+        return NULL;
+
+    nm_assert(NM_IS_L3CFG(self));
+
+    handle          = g_slice_new(NML3CfgBlockHandle);
+    handle->self    = g_object_ref(self);
+    handle->is_ipv4 = IS_IPv4;
+    c_list_link_tail(&self->priv.p->blocked_lst_head_x[IS_IPv4], &handle->lst);
+
+    _LOGT("obj-pruning for IPv%c: blocked (%zu)",
+          nm_utils_addr_family_to_char(addr_family),
+          c_list_length(&self->priv.p->blocked_lst_head_x[IS_IPv4]));
+
+    return handle;
+}
+
+void
+nm_l3cfg_unblock_obj_pruning(NML3CfgBlockHandle *handle)
+{
+    gs_unref_object NML3Cfg *self    = handle->self;
+    const int                IS_IPv4 = handle->is_ipv4;
+
+    nm_assert(NM_IS_L3CFG(self));
+    nm_assert(c_list_is_linked(&handle->lst));
+    nm_assert(c_list_contains(&self->priv.p->blocked_lst_head_x[IS_IPv4], &handle->lst));
+
+    c_list_unlink_stale(&handle->lst);
+
+    _LOGT("obj-pruning for IPv%c: unblocked (%zu)",
+          IS_IPv4 ? '4' : '6',
+          c_list_length(&self->priv.p->blocked_lst_head_x[IS_IPv4]));
+
+    nm_g_slice_free(handle);
 }
 
 /* See DOC(l3cfg:commit-type) */
@@ -4678,6 +4743,8 @@ nm_l3cfg_init(NML3Cfg *self)
     c_list_init(&self->priv.p->obj_state_lst_head);
     c_list_init(&self->priv.p->obj_state_temporary_not_available_lst_head);
     c_list_init(&self->priv.p->obj_state_zombie_lst_head);
+    c_list_init(&self->priv.p->blocked_lst_head_4);
+    c_list_init(&self->priv.p->blocked_lst_head_6);
 
     self->priv.p->obj_state_hash = g_hash_table_new_full(nmp_object_indirect_id_hash,
                                                          nmp_object_indirect_id_equal,
@@ -4726,6 +4793,8 @@ finalize(GObject *object)
     nm_assert(!self->priv.p->ipv4ll);
 
     nm_assert(c_list_is_empty(&self->priv.p->commit_type_lst_head));
+    nm_assert(c_list_is_empty(&self->priv.p->blocked_lst_head_4));
+    nm_assert(c_list_is_empty(&self->priv.p->blocked_lst_head_6));
 
     nm_assert(!self->priv.p->commit_on_idle_source);
 
