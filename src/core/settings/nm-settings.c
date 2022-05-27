@@ -3486,14 +3486,16 @@ pk_hostname_cb(NMAuthChain *chain, GDBusMethodInvocation *context, gpointer user
         error = g_error_new_literal(NM_SETTINGS_ERROR,
                                     NM_SETTINGS_ERROR_PERMISSION_DENIED,
                                     NM_UTILS_ERROR_MSG_INSUFF_PRIV);
-    } else {
-        if (!nm_hostname_manager_write_hostname(priv->hostname_manager, hostname)) {
-            error = g_error_new_literal(NM_SETTINGS_ERROR,
-                                        NM_SETTINGS_ERROR_FAILED,
-                                        "Saving the hostname failed.");
-        }
+        goto done;
     }
 
+    if (!nm_hostname_manager_write_hostname(priv->hostname_manager, hostname)) {
+        error = g_error_new_literal(NM_SETTINGS_ERROR,
+                                    NM_SETTINGS_ERROR_FAILED,
+                                    "Saving the hostname failed.");
+    }
+
+done:
     nm_audit_log_control_op(NM_AUDIT_OP_HOSTNAME_SAVE,
                             hostname,
                             !error,
