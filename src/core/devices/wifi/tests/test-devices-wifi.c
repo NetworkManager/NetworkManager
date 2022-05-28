@@ -412,8 +412,8 @@ test_ap_wpa_psk_connection_base(const char   *key_mgmt,
     const char   *ssid        = "blahblah";
     const char   *bssid       = "01:02:03:04:05:06";
     const KeyData exp_wifi[]  = {{NM_SETTING_WIRELESS_SSID, ssid, 0},
-                                {NM_SETTING_WIRELESS_MODE, "infrastructure", 0},
-                                {NULL}};
+                                 {NM_SETTING_WIRELESS_MODE, "infrastructure", 0},
+                                 {NULL}};
     const KeyData both_wsec[] = {{NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, key_mgmt, 0},
                                  {NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, auth_alg, 0},
                                  {NM_SETTING_WIRELESS_SECURITY_PSK, "asdfasdfasdfasdfasdfafs", 0},
@@ -541,8 +541,8 @@ test_ap_wpa_eap_connection_base(const char *key_mgmt,
     const char   *bssid       = "01:02:03:04:05:06";
     const KeyData src_empty[] = {{NULL}};
     const KeyData src_wsec[]  = {{NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, key_mgmt, 0},
-                                {NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, auth_alg, 0},
-                                {NULL}};
+                                 {NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, auth_alg, 0},
+                                 {NULL}};
     gboolean      success;
     GError       *error = NULL;
 
@@ -778,12 +778,12 @@ test_priv_ap_leap_connection_1(gconstpointer add_wifi)
     const char   *bssid         = "01:02:03:04:05:06";
     const char   *leap_username = "Bill Smith";
     const KeyData src_wsec[]    = {{NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "ieee8021x", 0},
-                                {NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME, leap_username, 0},
-                                {NULL}};
+                                   {NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME, leap_username, 0},
+                                   {NULL}};
     const KeyData exp_wsec[]    = {{NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "ieee8021x", 0},
-                                {NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, "leap", 0},
-                                {NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME, leap_username, 0},
-                                {NULL}};
+                                   {NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, "leap", 0},
+                                   {NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME, leap_username, 0},
+                                   {NULL}};
     gboolean      success;
     GError       *error = NULL;
 
@@ -862,15 +862,15 @@ test_priv_ap_dynamic_wep_1(void)
     const char   *ssid         = "blahblah";
     const char   *bssid        = "01:02:03:04:05:06";
     const KeyData src_wsec[]   = {{NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "ieee8021x", 0},
-                                {NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, "open", 0},
-                                {NULL}};
+                                  {NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, "open", 0},
+                                  {NULL}};
     const KeyData both_8021x[] = {{NM_SETTING_802_1X_EAP, "peap", 0},
                                   {NM_SETTING_802_1X_IDENTITY, "Bill Smith", 0},
                                   {NM_SETTING_802_1X_PHASE2_AUTH, "mschapv2", 0},
                                   {NULL}};
     const KeyData exp_wsec[]   = {{NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "ieee8021x", 0},
-                                {NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, "open", 0},
-                                {NULL}};
+                                  {NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, "open", 0},
+                                  {NULL}};
     gboolean      success;
     GError       *error = NULL;
 
@@ -917,8 +917,8 @@ test_priv_ap_dynamic_wep_2(void)
                                   {NM_SETTING_802_1X_PHASE2_AUTH, "mschapv2", 0},
                                   {NULL}};
     const KeyData exp_wsec[]   = {{NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "ieee8021x", 0},
-                                {NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, "open", 0},
-                                {NULL}};
+                                  {NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, "open", 0},
+                                  {NULL}};
     gboolean      success;
     GError       *error = NULL;
 
@@ -1130,8 +1130,8 @@ test_wpa_ap_leap_connection_1(gconstpointer data)
     const char   *bssid         = "01:02:03:04:05:06";
     const char   *leap_username = "Bill Smith";
     const KeyData src_wsec[]    = {{NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "ieee8021x", 0},
-                                {NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME, leap_username, 0},
-                                {NULL}};
+                                   {NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME, leap_username, 0},
+                                   {NULL}};
     gboolean      success;
     GError       *error = NULL;
 

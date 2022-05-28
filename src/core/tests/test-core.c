@@ -2353,21 +2353,21 @@ test_nm_utils_dhcp_client_id_systemd_node_specific(gconstpointer test_data)
 {
     const int     TEST_IDX     = GPOINTER_TO_INT(test_data);
     const guint8  HASH_KEY[16] = {0x80,
-                                 0x11,
-                                 0x8c,
-                                 0xc2,
-                                 0xfe,
-                                 0x4a,
-                                 0x03,
-                                 0xee,
-                                 0x3e,
-                                 0xd6,
-                                 0x0c,
-                                 0x6f,
-                                 0x36,
-                                 0x39,
-                                 0x14,
-                                 0x09};
+                                  0x11,
+                                  0x8c,
+                                  0xc2,
+                                  0xfe,
+                                  0x4a,
+                                  0x03,
+                                  0xee,
+                                  0x3e,
+                                  0xd6,
+                                  0x0c,
+                                  0x6f,
+                                  0x36,
+                                  0x39,
+                                  0x14,
+                                  0x09};
     const guint16 duid_type_en = htons(2);
     const guint32 systemd_pen  = htonl(43793);
     const struct {

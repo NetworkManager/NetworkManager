@@ -3180,21 +3180,21 @@ ensure_hotspot_frequency(NMDeviceWifi *self, NMSettingWireless *s_wifi, NMWifiAP
         gsize         ssid_len;
         const guint8 *ssid_data;
         const guint8  random_seed[16] = {0x9a,
-                                        0xdc,
-                                        0x86,
-                                        0x9a,
-                                        0xa8,
-                                        0xa2,
-                                        0x07,
-                                        0x97,
-                                        0xbe,
-                                        0x6d,
-                                        0xe6,
-                                        0x99,
-                                        0x9f,
-                                        0xa8,
-                                        0x09,
-                                        0x2b};
+                                         0xdc,
+                                         0x86,
+                                         0x9a,
+                                         0xa8,
+                                         0xa2,
+                                         0x07,
+                                         0x97,
+                                         0xbe,
+                                         0x6d,
+                                         0xe6,
+                                         0x99,
+                                         0x9f,
+                                         0xa8,
+                                         0x09,
+                                         0x2b};
 
         /* Calculate a stable "random" number based on the SSID. */
         ssid      = nm_setting_wireless_get_ssid(s_wifi);

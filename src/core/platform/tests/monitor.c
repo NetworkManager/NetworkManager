@@ -25,14 +25,14 @@ read_argv(int *argc, char ***argv)
 {
     GOptionContext *context;
     GOptionEntry    options[] = {
-        {"no-persist",
-         'P',
-         G_OPTION_FLAG_REVERSE,
-         G_OPTION_ARG_NONE,
-         &global_opt.persist,
-         "Exit after processing netlink messages",
-         NULL},
-        {0},
+           {"no-persist",
+            'P',
+            G_OPTION_FLAG_REVERSE,
+            G_OPTION_ARG_NONE,
+            &global_opt.persist,
+            "Exit after processing netlink messages",
+            NULL},
+           {0},
     };
     gs_free_error GError *error = NULL;
 
