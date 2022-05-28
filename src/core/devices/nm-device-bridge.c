@@ -558,19 +558,38 @@ setting_vlans_to_platform(GPtrArray *array)
 }
 
 static void
+_platform_lnk_bridge_port_init_from_setting(NMSettingBridgePort *s_bridge_port,
+                                            NMPlatformLnkBridgePort *props)
+{
+    *props = (NMPlatformLnkBridgePort){
+        .priority = nm_setting_bridge_port_get_priority(s_bridge_port);
+        .path_cost = nm_setting_bridge_port_get_path_cost(s_bridge_port);
+        .hairpin_mode = nm_setting_bridge_port_get_hairpin_mode(s_bridge_port);
+    };
+}
+
+static void
 commit_slave_options(NMDevice *device, NMSettingBridgePort *setting)
 {
-    const Option              *option;
-    NMSetting                 *s;
+    int ifindex = nm_device_get_ifindex(device);
     gs_unref_object NMSetting *s_clear = NULL;
+    NMPlatformLnkBridgePort props;
+    NMSettingBridgePort *s;
+    int r;
 
     if (setting)
-        s = NM_SETTING(setting);
+        s = setting;
     else
         s = s_clear = nm_setting_bridge_port_new();
 
-    for (option = slave_options; option->name; option++)
-        commit_option(device, s, option, TRUE);
+    _platform_lnk_bridge_port_init_from_setting(s, &props);
+
+    r = nm_platform_link_bridge_port_change(nm_device_get_platform(device),
+                                            ifindex, &props);
+    if (r < 0) {
+        NM_SET_OUT(out_failure_reason, NM_DEVICE_STATE_REASON_CONFIG_FAILED);
+        return NM_ACT_STAGE_RETURN_FAILURE;
+    }
 }
 
 static void
