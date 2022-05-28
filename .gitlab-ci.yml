@@ -47,11 +47,11 @@ variables:
   #
   # This is done by running `ci-fairy generate-template` and possibly bump
   # ".default_tag".
-  FEDORA_TAG:  '2022-03-15.0-7b3d39bfc5ca'
-  UBUNTU_TAG:  '2022-03-15.0-2cd0d40675ab'
-  DEBIAN_TAG:  '2022-03-15.0-2cd0d40675ab'
-  CENTOS_TAG:  '2022-03-15.0-7b3d39bfc5ca'
-  ALPINE_TAG:  '2022-03-15.0-17672b94a192'
+  FEDORA_TAG:  '2022-05-30.0-49e7ce71aa57'
+  UBUNTU_TAG:  '2022-05-30.0-47d3b410b186'
+  DEBIAN_TAG:  '2022-05-30.0-47d3b410b186'
+  CENTOS_TAG:  '2022-05-30.0-49e7ce71aa57'
+  ALPINE_TAG:  '2022-05-30.0-199d80edaa43'
 
   FEDORA_EXEC: 'bash .gitlab-ci/fedora-install.sh'
   UBUNTU_EXEC: 'bash .gitlab-ci/debian-install.sh'
@@ -157,6 +157,16 @@ fedora:36@container-prep:
     FDO_DISTRIBUTION_TAG: $FEDORA_TAG
     FDO_DISTRIBUTION_EXEC: $FEDORA_EXEC
 
+fedora:37@container-prep:
+  extends:
+    - .fdo.container-build@fedora
+  stage: prep
+  variables:
+    GIT_STRATEGY: none
+    FDO_DISTRIBUTION_VERSION: '37'
+    FDO_DISTRIBUTION_TAG: $FEDORA_TAG
+    FDO_DISTRIBUTION_EXEC: $FEDORA_EXEC
+
 ubuntu:16.04@container-prep:
   extends:
     - .fdo.container-build@ubuntu
@@ -184,6 +194,16 @@ ubuntu:20.04@container-prep:
   variables:
     GIT_STRATEGY: none
     FDO_DISTRIBUTION_VERSION: '20.04'
+    FDO_DISTRIBUTION_TAG: $UBUNTU_TAG
+    FDO_DISTRIBUTION_EXEC: $UBUNTU_EXEC
+
+ubuntu:22.04@container-prep:
+  extends:
+    - .fdo.container-build@ubuntu
+  stage: prep
+  variables:
+    GIT_STRATEGY: none
+    FDO_DISTRIBUTION_VERSION: '22.04'
     FDO_DISTRIBUTION_TAG: $UBUNTU_TAG
     FDO_DISTRIBUTION_EXEC: $UBUNTU_EXEC
 
@@ -444,6 +464,15 @@ fedora:36@container-clean:
     FDO_DISTRIBUTION_VERSION: '36'
     FDO_DISTRIBUTION_TAG: $FEDORA_TAG
 
+fedora:37@container-clean:
+  extends:
+    - .container-clean
+  variables:
+    GIT_STRATEGY: none
+    CURRENT_CONTAINER_IMAGE: $CI_REGISTRY_IMAGE/fedora/$FDO_DISTRIBUTION_VERSION:$FDO_DISTRIBUTION_TAG
+    FDO_DISTRIBUTION_VERSION: '37'
+    FDO_DISTRIBUTION_TAG: $FEDORA_TAG
+
 ubuntu:16.04@container-clean:
   extends:
     - .container-clean
@@ -469,6 +498,15 @@ ubuntu:20.04@container-clean:
     GIT_STRATEGY: none
     CURRENT_CONTAINER_IMAGE: $CI_REGISTRY_IMAGE/ubuntu/$FDO_DISTRIBUTION_VERSION:$FDO_DISTRIBUTION_TAG
     FDO_DISTRIBUTION_VERSION: '20.04'
+    FDO_DISTRIBUTION_TAG: $UBUNTU_TAG
+
+ubuntu:22.04@container-clean:
+  extends:
+    - .container-clean
+  variables:
+    GIT_STRATEGY: none
+    CURRENT_CONTAINER_IMAGE: $CI_REGISTRY_IMAGE/ubuntu/$FDO_DISTRIBUTION_VERSION:$FDO_DISTRIBUTION_TAG
+    FDO_DISTRIBUTION_VERSION: '22.04'
     FDO_DISTRIBUTION_TAG: $UBUNTU_TAG
 
 ubuntu:devel@container-clean:
@@ -723,6 +761,18 @@ t_fedora:36:
     - "fedora:36@container-prep"
   when: manual
 
+t_fedora:37:
+  extends:
+    - .build@template
+    - .fdo.distribution-image@fedora
+    - .nm_artifacts_debug
+  variables:
+    FDO_DISTRIBUTION_VERSION: '37'
+    FDO_DISTRIBUTION_TAG: $FEDORA_TAG
+  needs:
+    - "fedora:37@container-prep"
+  when: manual
+
 t_ubuntu:16.04:
   extends:
     - .build@template
@@ -757,6 +807,18 @@ t_ubuntu:20.04:
     FDO_DISTRIBUTION_TAG: $UBUNTU_TAG
   needs:
     - "ubuntu:20.04@container-prep"
+  when: manual
+
+t_ubuntu:22.04:
+  extends:
+    - .build@template
+    - .fdo.distribution-image@ubuntu
+    - .nm_artifacts_debug
+  variables:
+    FDO_DISTRIBUTION_VERSION: '22.04'
+    FDO_DISTRIBUTION_TAG: $UBUNTU_TAG
+  needs:
+    - "ubuntu:22.04@container-prep"
   when: manual
 
 t_ubuntu:devel:
