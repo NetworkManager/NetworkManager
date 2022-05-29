@@ -10,8 +10,8 @@ msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: https://gitlab.freedesktop.org/NetworkManager/NetworkMan"
 "ager/issues\n"
-"POT-Creation-Date: 2022-05-12 15:26+0000\n"
-"PO-Revision-Date: 2022-05-16 08:58+0300\n"
+"POT-Creation-Date: 2022-05-27 15:26+0000\n"
+"PO-Revision-Date: 2022-05-29 21:39+0300\n"
 "Last-Translator: Yuri Chornoivan <yurchor@ukr.net>\n"
 "Language-Team: Ukrainian <kde-i18n-uk@kde.org>\n"
 "Language: uk\n"
@@ -200,7 +200,7 @@ msgid "%s %u"
 msgstr "%s %u"
 
 #: ../src/core/devices/adsl/nm-device-adsl.c:115
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:8203
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:8217
 msgid "ADSL connection"
 msgstr "З'єднання ADSL"
 
@@ -275,7 +275,7 @@ msgid "Wired connection %d"
 msgstr "Дротове з'єднання %d"
 
 #: ../src/core/devices/nm-device-ethernet.c:1628
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:8241
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:8255
 msgid "Veth connection"
 msgstr "З'єднання veth"
 
@@ -288,7 +288,7 @@ msgid "Wired connection"
 msgstr "Дротове з'єднання"
 
 #: ../src/core/devices/nm-device-infiniband.c:157
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:8217
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:8231
 msgid "InfiniBand connection"
 msgstr "З'єднання InfiniBand"
 
@@ -305,17 +305,17 @@ msgid "TUN connection"
 msgstr "З'єднання TUN"
 
 #: ../src/core/devices/nm-device-vlan.c:398
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:8242
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:8256
 msgid "VLAN connection"
 msgstr "З'єднання VLAN"
 
 #: ../src/core/devices/nm-device-vrf.c:182
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:8244
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:8258
 msgid "VRF connection"
 msgstr "З'єднання VRF"
 
 #: ../src/core/devices/nm-device-vxlan.c:382
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:8245
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:8259
 msgid "VXLAN connection"
 msgstr "З'єднання VXLAN"
 
@@ -670,32 +670,32 @@ msgid "Show NetworkManager options"
 msgstr "Показати параметри NetworkManager"
 
 #: ../src/core/nm-manager.c:6146
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:8243
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:8257
 msgid "VPN connection"
 msgstr "З'єднання VPN"
 
-#: ../src/core/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:5545
+#: ../src/core/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:5556
 #: ../src/libnm-client-impl/nm-device.c:1779
 #: ../src/libnm-core-impl/nm-connection.c:3172
 #: ../src/nmtui/nm-editor-utils.c:196
 msgid "Bond"
 msgstr "Прив'язка"
 
-#: ../src/core/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:5616
+#: ../src/core/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:5627
 #: ../src/libnm-client-impl/nm-device.c:1781
 #: ../src/libnm-core-impl/nm-connection.c:3174
 #: ../src/nmtui/nm-editor-utils.c:214
 msgid "Team"
 msgstr "Команда"
 
-#: ../src/core/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:5953
+#: ../src/core/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:5964
 #: ../src/libnm-client-impl/nm-device.c:1783
 #: ../src/libnm-core-impl/nm-connection.c:3176
 #: ../src/nmtui/nm-editor-utils.c:205
 msgid "Bridge"
 msgstr "Місток"
 
-#: ../src/core/settings/plugins/ifcfg-rh/tests/test-ifcfg-rh.c:8719
+#: ../src/core/settings/plugins/ifcfg-rh/tests/test-ifcfg-rh.c:8752
 #: ../src/libnm-core-impl/nm-team-utils.c:2391
 #, c-format
 msgid "invalid json"
@@ -1522,7 +1522,6 @@ msgstr ""
 "підтримки паролів не передбачено, якщо сертифікат не міститься у ключі "
 "PKCS#11"
 
-#. normalizable warnings from here on.
 #: ../src/libnm-core-impl/nm-setting-8021x.c:2612
 #: ../src/libnm-core-impl/nm-setting-8021x.c:2652
 #: ../src/libnm-core-impl/nm-setting-8021x.c:2671
@@ -1531,7 +1530,7 @@ msgstr ""
 #: ../src/libnm-core-impl/nm-setting-8021x.c:2878
 #: ../src/libnm-core-impl/nm-setting-8021x.c:2919
 #: ../src/libnm-core-impl/nm-setting-8021x.c:2939
-#: ../src/libnm-core-impl/nm-setting-8021x.c:2995
+#: ../src/libnm-core-impl/nm-setting-8021x.c:2993
 #: ../src/libnm-core-impl/nm-setting-adsl.c:181
 #: ../src/libnm-core-impl/nm-setting-cdma.c:149
 #: ../src/libnm-core-impl/nm-setting-cdma.c:159
@@ -1543,8 +1542,8 @@ msgstr ""
 #: ../src/libnm-core-impl/nm-setting-gsm.c:396
 #: ../src/libnm-core-impl/nm-setting-gsm.c:405
 #: ../src/libnm-core-impl/nm-setting-ip-config.c:5416
-#: ../src/libnm-core-impl/nm-setting-ip4-config.c:225
-#: ../src/libnm-core-impl/nm-setting-ip4-config.c:237
+#: ../src/libnm-core-impl/nm-setting-ip4-config.c:286
+#: ../src/libnm-core-impl/nm-setting-ip4-config.c:298
 #: ../src/libnm-core-impl/nm-setting-pppoe.c:151
 #: ../src/libnm-core-impl/nm-setting-pppoe.c:161
 #: ../src/libnm-core-impl/nm-setting-vpn.c:554
@@ -1574,9 +1573,10 @@ msgstr "можна вмикати лише для з'єднань Ethernet"
 #: ../src/libnm-core-impl/nm-setting-bluetooth.c:110
 #: ../src/libnm-core-impl/nm-setting-infiniband.c:191
 #: ../src/libnm-core-impl/nm-setting-infiniband.c:203
-#: ../src/libnm-core-impl/nm-setting-ip4-config.c:213
-#: ../src/libnm-core-impl/nm-setting-ip6-config.c:262
-#: ../src/libnm-core-impl/nm-setting-ip6-config.c:276
+#: ../src/libnm-core-impl/nm-setting-ip4-config.c:234
+#: ../src/libnm-core-impl/nm-setting-ip4-config.c:250
+#: ../src/libnm-core-impl/nm-setting-ip6-config.c:281
+#: ../src/libnm-core-impl/nm-setting-ip6-config.c:295
 #: ../src/libnm-core-impl/nm-setting-olpc-mesh.c:137
 #: ../src/libnm-core-impl/nm-setting-wifi-p2p.c:131
 #: ../src/libnm-core-impl/nm-setting-wimax.c:121
@@ -1595,6 +1595,7 @@ msgstr "можна вмикати лише для з'єднань Ethernet"
 #: ../src/libnm-core-impl/nm-setting-wireless.c:958
 #: ../src/libnm-core-impl/nm-setting-wpan.c:161
 #: ../src/libnm-core-impl/nm-utils.c:4151
+#, c-format
 msgid "property is invalid"
 msgstr "властивість є некоректною"
 
@@ -1777,7 +1778,6 @@ msgid "'%s' option must be a power of 2"
 msgstr "Значенням параметра «%s» має бути степінь 2"
 
 #: ../src/libnm-core-impl/nm-setting-bridge.c:1318
-#| msgid "vlan setting should have a ethernet setting as well"
 msgid "bridge connection should have a ethernet setting as well"
 msgstr "з'єднання містка має супроводжуватися параметром ethernet"
 
@@ -1977,15 +1977,12 @@ msgstr ""
 
 #: ../src/libnm-core-impl/nm-setting-infiniband.c:282
 #, c-format
-#| msgid ""
-#| "interface name of software infiniband device must be '%s' or unset "
-#| "(instead it is '%s')"
 msgid ""
 "interface name of software infiniband device with MAC address must be unset "
 "(instead it is '%s')"
 msgstr ""
-"назву інтерфейсу програмного пристрою infiniband з MAC-адресою має бути не"
-" встановлено (замість неї має бути «%s»)"
+"назву інтерфейсу програмного пристрою infiniband з MAC-адресою має бути не "
+"встановлено (замість неї має бути «%s»)"
 
 #: ../src/libnm-core-impl/nm-setting-infiniband.c:310
 #, c-format
@@ -2347,62 +2344,70 @@ msgstr "деякі з прапорців для режиму вибору є н�
 msgid "wired setting not allowed for mode %s"
 msgstr "встановлення параметрів дротового зв'язку для режиму %s неможливе"
 
-#: ../src/libnm-core-impl/nm-setting-ip4-config.c:151
-#: ../src/libnm-core-impl/nm-setting-ip6-config.c:196
+#: ../src/libnm-core-impl/nm-setting-ip4-config.c:172
+#: ../src/libnm-core-impl/nm-setting-ip6-config.c:215
 #, c-format
 msgid "this property cannot be empty for '%s=%s'"
 msgstr "ця властивість не може бути порожньою, якщо «%s=%s»"
 
-#: ../src/libnm-core-impl/nm-setting-ip4-config.c:167
-#: ../src/libnm-core-impl/nm-setting-ip4-config.c:181
-#: ../src/libnm-core-impl/nm-setting-ip4-config.c:197
-#: ../src/libnm-core-impl/nm-setting-ip6-config.c:216
-#: ../src/libnm-core-impl/nm-setting-ip6-config.c:230
-#: ../src/libnm-core-impl/nm-setting-ip6-config.c:244
+#: ../src/libnm-core-impl/nm-setting-ip4-config.c:188
+#: ../src/libnm-core-impl/nm-setting-ip4-config.c:202
+#: ../src/libnm-core-impl/nm-setting-ip4-config.c:218
+#: ../src/libnm-core-impl/nm-setting-ip6-config.c:235
+#: ../src/libnm-core-impl/nm-setting-ip6-config.c:249
+#: ../src/libnm-core-impl/nm-setting-ip6-config.c:263
 #, c-format
 msgid "this property is not allowed for '%s=%s'"
 msgstr "цю властивість не можна застосовувати до «%s=%s»"
 
-#: ../src/libnm-core-impl/nm-setting-ip4-config.c:249
+#: ../src/libnm-core-impl/nm-setting-ip4-config.c:262
+msgid "cannot enable ipv4.link-local with ipv4.method=disabled"
+msgstr "не можна увімкнути ipv4.link-local з ipv4.method=disabled"
+
+#: ../src/libnm-core-impl/nm-setting-ip4-config.c:274
+msgid "cannot disable ipv4.link-local with ipv4.method=link-local"
+msgstr "не можна вимкнути ipv4.link-local з ipv4.method=link-local"
+
+#: ../src/libnm-core-impl/nm-setting-ip4-config.c:310
 #, c-format
 msgid "'%s' is not a valid FQDN"
 msgstr "«%s» не є коректною повною назвою вузла (FQDN)"
 
-#: ../src/libnm-core-impl/nm-setting-ip4-config.c:262
+#: ../src/libnm-core-impl/nm-setting-ip4-config.c:323
 msgid "property cannot be set when dhcp-hostname is also set"
 msgstr "властивість не можна задавати, якщо встановлено dhcp-hostname"
 
-#: ../src/libnm-core-impl/nm-setting-ip4-config.c:277
+#: ../src/libnm-core-impl/nm-setting-ip4-config.c:338
 msgid "FQDN flags requires a FQDN set"
 msgstr "для прапорців FQDN потрібен набір FQDN"
 
-#: ../src/libnm-core-impl/nm-setting-ip4-config.c:296
+#: ../src/libnm-core-impl/nm-setting-ip4-config.c:357
 #, c-format
 msgid "multiple addresses are not allowed for '%s=%s'"
 msgstr "не можна вказувати декілька адрес у «%s=%s»"
 
-#: ../src/libnm-core-impl/nm-setting-ip4-config.c:313
+#: ../src/libnm-core-impl/nm-setting-ip4-config.c:374
 msgid "property should be TRUE when method is set to disabled"
 msgstr ""
 "властивість повинна мати значення TRUE, якщо встановлено метод «disabled»"
 
-#: ../src/libnm-core-impl/nm-setting-ip6-config.c:294
+#: ../src/libnm-core-impl/nm-setting-ip6-config.c:313
 msgid "value is not a valid token"
 msgstr "значення не є коректним жетоном"
 
-#: ../src/libnm-core-impl/nm-setting-ip6-config.c:308
+#: ../src/libnm-core-impl/nm-setting-ip6-config.c:327
 msgid "only makes sense with EUI64 address generation mode"
 msgstr "має сенс лише з режимом створення адрес EUI64"
 
-#: ../src/libnm-core-impl/nm-setting-ip6-config.c:322
+#: ../src/libnm-core-impl/nm-setting-ip6-config.c:341
 msgid "invalid DUID"
 msgstr "некоректний DUID"
 
-#: ../src/libnm-core-impl/nm-setting-ip6-config.c:337
+#: ../src/libnm-core-impl/nm-setting-ip6-config.c:356
 msgid "token is not in canonical form"
 msgstr "жетон вказано не у канонічній формі"
 
-#: ../src/libnm-core-impl/nm-setting-ip6-config.c:354
+#: ../src/libnm-core-impl/nm-setting-ip6-config.c:373
 msgid "property should be TRUE when method is set to ignore or disabled"
 msgstr ""
 "властивість повинна мати значення TRUE, якщо встановлено метод «ignore» або "
@@ -3805,36 +3810,36 @@ msgstr "Не вдалося розпізнати сертифікат"
 msgid "not a valid private key"
 msgstr "не є коректним закритим ключем"
 
-#: ../src/libnm-glib-aux/nm-shared-utils.c:2667
+#: ../src/libnm-glib-aux/nm-shared-utils.c:2670
 #, c-format
 msgid "object class '%s' has no property named '%s'"
 msgstr "у класі об'єктів «%s» немає властивості із назвою «%s»"
 
-#: ../src/libnm-glib-aux/nm-shared-utils.c:2676
+#: ../src/libnm-glib-aux/nm-shared-utils.c:2679
 #, c-format
 msgid "property '%s' of object class '%s' is not writable"
 msgstr "властивість «%s» класу об'єктів «%s» є непридатною до запису"
 
-#: ../src/libnm-glib-aux/nm-shared-utils.c:2685
+#: ../src/libnm-glib-aux/nm-shared-utils.c:2688
 #, c-format
 msgid ""
 "construct property \"%s\" for object '%s' can't be set after construction"
 msgstr ""
 "властивість construct «%s» об'єкта «%s» не можна встановлювати після побудови"
 
-#: ../src/libnm-glib-aux/nm-shared-utils.c:2696
+#: ../src/libnm-glib-aux/nm-shared-utils.c:2699
 #, c-format
 msgid "'%s::%s' is not a valid property name; '%s' is not a GObject subtype"
 msgstr "«%s::%s» не є коректною назвою властивості; «%s» не є підтипом GObject"
 
-#: ../src/libnm-glib-aux/nm-shared-utils.c:2709
+#: ../src/libnm-glib-aux/nm-shared-utils.c:2712
 #, c-format
 msgid "unable to set property '%s' of type '%s' from value of type '%s'"
 msgstr ""
 "не вдалося встановити значення властивості «%s» типу «%s» на основі значення "
 "типу «%s»"
 
-#: ../src/libnm-glib-aux/nm-shared-utils.c:2721
+#: ../src/libnm-glib-aux/nm-shared-utils.c:2724
 #, c-format
 msgid ""
 "value \"%s\" of type '%s' is invalid or out of range for property '%s' of "
@@ -3843,48 +3848,48 @@ msgstr ""
 "значення «%s» типу «%s» є некоректним для властивості «%s» типу «%s» або не "
 "належить до припустимого діапазону значень"
 
-#: ../src/libnm-glib-aux/nm-shared-utils.c:5687
+#: ../src/libnm-glib-aux/nm-shared-utils.c:5690
 msgid "interface name is missing"
 msgstr "пропущено назву інтерфейсу"
 
-#: ../src/libnm-glib-aux/nm-shared-utils.c:5695
+#: ../src/libnm-glib-aux/nm-shared-utils.c:5698
 msgid "interface name is too short"
 msgstr "назва інтерфейсу є надто короткою"
 
-#: ../src/libnm-glib-aux/nm-shared-utils.c:5703
+#: ../src/libnm-glib-aux/nm-shared-utils.c:5706
 msgid "interface name is reserved"
 msgstr "таку назву інтерфейсу зарезервовано"
 
-#: ../src/libnm-glib-aux/nm-shared-utils.c:5716
+#: ../src/libnm-glib-aux/nm-shared-utils.c:5719
 msgid "interface name contains an invalid character"
 msgstr "назва інтерфейсу містить некоректний символ"
 
-#: ../src/libnm-glib-aux/nm-shared-utils.c:5724
+#: ../src/libnm-glib-aux/nm-shared-utils.c:5727
 msgid "interface name is longer than 15 characters"
 msgstr "назва інтерфейсу є довшою за 15 символів"
 
-#: ../src/libnm-glib-aux/nm-shared-utils.c:5749
+#: ../src/libnm-glib-aux/nm-shared-utils.c:5752
 #, c-format
 msgid "'%%' is not allowed in interface names"
 msgstr "«%%» не можна використовувати у назвах інтерфейсів"
 
-#: ../src/libnm-glib-aux/nm-shared-utils.c:5761
+#: ../src/libnm-glib-aux/nm-shared-utils.c:5764
 #, c-format
 msgid "'%s' is not allowed as interface name"
 msgstr "«%s» не можна використовувати як назву інтерфейсу"
 
-#: ../src/libnm-glib-aux/nm-shared-utils.c:5783
+#: ../src/libnm-glib-aux/nm-shared-utils.c:5786
 msgid ""
 "interface name must be alphanumerical with no forward or backward slashes"
 msgstr ""
 "назва інтерфейсу має складатися з літер і цифр без початкового і "
 "завершального символів похилої риски"
 
-#: ../src/libnm-glib-aux/nm-shared-utils.c:5800
+#: ../src/libnm-glib-aux/nm-shared-utils.c:5803
 msgid "interface name must not be empty"
 msgstr "назва інтерфейсу не може бути порожньою"
 
-#: ../src/libnm-glib-aux/nm-shared-utils.c:5808
+#: ../src/libnm-glib-aux/nm-shared-utils.c:5811
 msgid "interface name must be UTF-8 encoded"
 msgstr "назва інтерфейсу має бути набором символів у кодуванні UTF-8"
 
@@ -4548,7 +4553,7 @@ msgid "MACsec PSK authentication"
 msgstr "Розпізнавання у MACsec за PSK"
 
 #: ../src/libnmc-base/nm-secret-agent-simple.c:931
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:6502
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:6516
 msgid "MKA CAK"
 msgstr "MKA CAK"
 
@@ -4659,10 +4664,11 @@ msgstr "некоректне поле «%s%s%s%s%s»; %s%s%s"
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:266
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:332
 #, c-format
-msgid "invalid prefix '%s'; <1-%d> allowed"
+#| msgid "invalid prefix '%s'; <1-%d> allowed"
+msgid "invalid prefix '%s'; <0-%d> allowed"
 msgstr ""
 "некоректний префікс, «%s»; можна використовувати префікси лише у діапазоні "
-"<1-%d>"
+"<0-%d>"
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:278
 #, c-format
@@ -5280,7 +5286,7 @@ msgstr ""
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:5030
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:5326
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:5795
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:6837
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:6851
 msgid "Password [none]"
 msgstr "Пароль [типово немає]"
 
@@ -5294,10 +5300,10 @@ msgstr "Ідентифікатор черги [0]"
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:5136
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:5869
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:7557
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:7595
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:7780
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:8013
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:7571
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:7609
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:7794
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:8027
 msgid "MAC [none]"
 msgstr "MAC [типово немає]"
 
@@ -5347,7 +5353,7 @@ msgstr "Початкова зона [типово немає]"
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:5320
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:5789
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:7404
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:7418
 msgid "Username [none]"
 msgstr "Користувач [типово немає]"
 
@@ -5408,8 +5414,8 @@ msgid "APN"
 msgstr "APN"
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:5878
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:7626
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:7820
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:7640
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:7834
 msgid "MTU [auto]"
 msgstr "MTU [типово авто]"
 
@@ -5486,7 +5492,7 @@ msgstr ""
 "  priority [пріоритетність] [from [джерело]] [to [призначення]], ,...\n"
 "\n"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:6172
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:6180
 msgid ""
 "Enter a list of IPv6 addresses of DNS servers.  If the IPv6 configuration "
 "method is 'auto' these DNS servers are appended to those (if any) returned "
@@ -5507,11 +5513,11 @@ msgstr ""
 "\n"
 "Приклад: 2607:f0d0:1002:51::4, 2607:f0d0:1002:51::1\n"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:6226
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:6234
 msgid "IPv6 address (IP[/plen]) [none]"
 msgstr "Адреса IPv6 (IP[/plen]) [немає]"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:6228
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:6236
 msgid ""
 "Enter a list of IPv6 addresses formatted as:\n"
 "  ip[/prefix], ip[/prefix],...\n"
@@ -5525,11 +5531,11 @@ msgstr ""
 "\n"
 "Приклад: 2607:f0d0:1002:51::4/64, 1050:0:0:0:5:600:300c:326b\n"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:6247
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:6255
 msgid "IPv6 gateway [none]"
 msgstr "Шлюз IPv6 [типово немає]"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:6255
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:6263
 msgid ""
 "Enter a list of IPv6 routes formatted as:\n"
 "  ip[/prefix] [next-hop] [metric],...\n"
@@ -5554,7 +5560,7 @@ msgstr ""
 "db8:beef::3 2\n"
 "          abbe::/64 55\n"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:6295
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:6303
 msgid ""
 "Enter a list of IPv6 routing rules formatted as:\n"
 "  priority [prio] [from [src]] [to [dst]], ,...\n"
@@ -5564,170 +5570,170 @@ msgstr ""
 "  priority [пріоритетність] [from [джерело]] [to [призначення]], ,...\n"
 "\n"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:6417
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:7457
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:6431
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:7471
 msgid "Parent device [none]"
 msgstr "Батьківський пристрій [типово немає]"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:6423
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:6437
 msgid "Local endpoint [none]"
 msgstr "Локальна кінцева точка [типово немає]"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:6430
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:7476
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:6444
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:7490
 msgid "Remote"
 msgstr "Віддалений"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:6475
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:6489
 msgid "MACsec parent device or connection UUID"
 msgstr "Батьківський пристрій MACsec або UUID з'єднання"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:6496
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:6510
 msgid "Enable encryption [yes]"
 msgstr "Увімкнути шифрування [типово «так»]"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:6512
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:6526
 msgid "MKA_CKN"
 msgstr "MKA_CKN"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:6518
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:6532
 msgid "SCI port [1]"
 msgstr "Порт SCI [1]"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:6544
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:6558
 msgid "MACVLAN parent device or connection UUID"
 msgstr "Батьківський пристрій MACVLAN або UUID з'єднання"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:6565
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:6579
 msgid "Tap [no]"
 msgstr "Tap [типово ні]"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:6632
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:7734
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:6646
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:7748
 #: ../src/nmtui/nmt-page-wifi.c:200
 msgid "SSID"
 msgstr "SSID"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:6641
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:6655
 msgid "OLPC Mesh channel [1]"
 msgstr "Канал OLPC Mesh [типово 1]"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:6650
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:6664
 msgid "DHCP anycast MAC address [none]"
 msgstr "MAC-адреса довільного надсилання (anycast) DHCP [типово немає]"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:6818
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:6832
 msgid "PPPoE parent device"
 msgstr "Батьківський пристрій PPPoE"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:6824
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:6838
 msgid "Service [none]"
 msgstr "Служба [типово немає]"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:6831
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:6845
 msgid "PPPoE username"
 msgstr "Користувач PPPoE"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:6867
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:6881
 msgid "Browser only [no]"
 msgstr "Лише навігатор [типово «ні»]"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:6873
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:6887
 msgid "PAC URL"
 msgstr "Адреса PAC"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:6879
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:6893
 msgid "PAC script"
 msgstr "Скрипт PAC"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:7003
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:7191
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:7017
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:7205
 msgid "Team JSON configuration [none]"
 msgstr "Налаштування JSON команди [немає]"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:7294
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:7308
 msgid "User ID [none]"
 msgstr "Ідентифікатор користувача [типово немає]"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:7300
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:7314
 msgid "Group ID [none]"
 msgstr "Ідентифікатор групи [типово немає]"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:7306
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:7320
 msgid "Enable PI [no]"
 msgstr "Увімкнути PI [типово ні]"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:7312
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:7326
 msgid "Enable VNET header [no]"
 msgstr "Увімкнути заголовок VNET [типово ні]"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:7318
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:7332
 msgid "Enable multi queue [no]"
 msgstr "Увімкнути декілька черг [типово ні]"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:7331
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:7345
 msgid "veth peer"
 msgstr "вузол veth"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:7344
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:7358
 msgid "VLAN parent device or connection UUID"
 msgstr "Батьківський пристрій VLAN або UUID з'єднання"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:7351
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:7365
 msgid "VLAN ID (<0-4094>)"
 msgstr "Ід. VLAN (<0-4094>)"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:7357
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:7371
 msgid "VLAN flags (<0-7>) [none]"
 msgstr "Прапорці VLAN (<0-7>) [типово немає]"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:7366
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:7380
 msgid "Ingress priority maps [none]"
 msgstr "Відображення пріоритетності вхідного доступу [типово немає]"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:7376
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:7390
 msgid "Egress priority maps [none]"
 msgstr "Відображення пріоритетності вихідного доступу [типово немає]"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:7444
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:7458
 msgid "Table [0]"
 msgstr "Таблиця [0]"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:7464
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:7478
 msgid "VXLAN ID"
 msgstr "Ід. VXLAN"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:7470
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:7484
 msgid "Local address [none]"
 msgstr "Локальна адреса [типово немає]"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:7482
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:7496
 msgid "Minimum source port [0]"
 msgstr "Мінімальний порт джерела [0]"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:7488
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:7502
 msgid "Maximum source port [0]"
 msgstr "Максимальний порт джерела [0]"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:7494
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:7508
 msgid "Destination port [8472]"
 msgstr "Порт призначення [типово 8472]"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:7534
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:7548
 #: ../src/nmtui/nmt-wireguard-peer-editor.c:78
 msgid "Peer"
 msgstr "Вузол"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:7564
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:7578
 msgid "WiMAX NSP name"
 msgstr "Назва NSP WiMAX"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:7601
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:7785
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:7615
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:7799
 msgid "Cloned MAC [none]"
 msgstr "Клонований MAC [типово немає]"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:7634
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:7648
 msgid ""
 "Enter a list of subchannels (comma or space separated).\n"
 "\n"
@@ -5737,7 +5743,7 @@ msgstr ""
 "\n"
 "Приклад: 0.0.0e20 0.0.0e21 0.0.0e22\n"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:7962
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:7976
 msgid ""
 "Enter the type of WEP keys. The accepted values are: 0 or unknown, 1 or key, "
 "and 2 or passphrase.\n"
@@ -5745,204 +5751,204 @@ msgstr ""
 "Вкажіть тип ключів WEP. Можливі значення: 0 або unknown (невідомо), 1 або "
 "key (ключ) та 2 або passphrase (пароль).\n"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:8021
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:8035
 msgid "Short address (<0x0000-0xffff>)"
 msgstr "Коротка адреса (<0x0000-0xffff>)"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:8037
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:8051
 msgid "PAN Identifier (<0x0000-0xffff>)"
 msgstr "Ідентифікатор PAN (<0x0000-0xffff>)"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:8052
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:8066
 msgid "Page (<default|0-31>)"
 msgstr "Сторінка (<default|0-31>)"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:8066
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:8080
 msgid "Channel (<default|0-26>)"
 msgstr "Канал (<default|0-26>)"
 
 #. ***************************************************************************
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:8201
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:8215
 msgid "6LOWPAN settings"
 msgstr "Параметри 6LOWPAN"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:8202
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:8216
 msgid "802-1x settings"
 msgstr "Параметри 802-1x"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:8204
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:8218
 msgid "bluetooth connection"
 msgstr "з'єднання bluetooth"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:8205
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:8219
 msgid "Bond device"
 msgstr "Пристрій Bond"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:8206
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:8220
 msgid "Bond port"
 msgstr "Пори прив'язки"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:8207
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:8221
 msgid "Bridge device"
 msgstr "Пристрій містка"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:8208
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:8222
 msgid "Bridge port"
 msgstr "Порт містка"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:8209
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:8223
 msgid "CDMA mobile broadband connection"
 msgstr "мобільне широкосмугове з'єднання CDMA"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:8210
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:8224
 msgid "General settings"
 msgstr "Загальні параметри"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:8211
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:8225
 msgid "DCB settings"
 msgstr "Параметри DCB"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:8212
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:8226
 msgid "Dummy settings"
 msgstr "Фіктивні параметри"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:8213
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:8227
 msgid "Ethtool settings"
 msgstr "Параметри Ethtool"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:8214
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:8228
 msgid "Generic settings"
 msgstr "Загальні параметри"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:8215
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:8229
 msgid "GSM mobile broadband connection"
 msgstr "мобільне широкосмугове з'єднання GSM"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:8216
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:8230
 msgid "Hostname settings"
 msgstr "Параметри назви вузла"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:8218
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:8232
 msgid "IPv4 protocol"
 msgstr "Протокол IPv4"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:8219
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:8233
 msgid "IPv6 protocol"
 msgstr "Протокол IPv6"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:8220
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:8234
 msgid "IP-tunnel settings"
 msgstr "Параметри IP-тунелювання"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:8221
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:8235
 msgid "MACsec connection"
 msgstr "З'єднання MACsec"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:8222
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:8236
 msgid "macvlan connection"
 msgstr "З'єднання MACVLAN"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:8223
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:8237
 msgid "Match"
 msgstr "Відповідність"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:8224
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:8238
 msgid "OLPC Mesh connection"
 msgstr "З'єднання OLPC Mesh"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:8225
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:8239
 msgid "Open vSwitch bridge settings"
 msgstr "Параметри містка Open vSwitch"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:8226
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:8240
 msgid "Open vSwitch DPDK interface settings"
 msgstr "Параметри інтерфейсу Open vSwitch DPDK"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:8227
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:8241
 msgid "OVS External IDs"
 msgstr "Зовнішні ідентифікатори OVS"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:8228
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:8242
 msgid "Open vSwitch interface settings"
 msgstr "Параметри інтерфейсу Open vSwitch"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:8229
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:8243
 msgid "Open vSwitch patch interface settings"
 msgstr "Параметри інтерфейсу латок Open vSwitch"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:8230
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:8244
 msgid "Open vSwitch port settings"
 msgstr "Параметри портів Open vSwitch"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:8231
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:8245
 msgid "PPP settings"
 msgstr "Параметри PPP"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:8232
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:8246
 msgid "PPPoE"
 msgstr "PPPoE"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:8233
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:8247
 msgid "Proxy"
 msgstr "Проксі"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:8234
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:8248
 msgid "Serial settings"
 msgstr "Параметри послідовного з'єднання"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:8235
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:8249
 msgid "SR-IOV settings"
 msgstr "Параметри SR-IOV"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:8236
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:8250
 msgid "Traffic controls"
 msgstr "Засоби керування обміном даними"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:8237
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:8251
 msgid "Team device"
 msgstr "Пристрій Team"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:8238
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:8252
 msgid "Team port"
 msgstr "Порт Team"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:8239
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:8253
 msgid "Tun device"
 msgstr "Пристрій TUN"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:8240
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:8254
 msgid "User settings"
 msgstr "Параметри користувача"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:8246
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:8260
 msgid "Wi-Fi P2P connection"
 msgstr "З'єднання P2P Wi-Fi"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:8247
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:8261
 msgid "WiMAX connection"
 msgstr "З'єднання WiMAX"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:8248
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:8262
 msgid "Wired Ethernet"
 msgstr "Дротовий Ethernet"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:8249
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:8263
 msgid "WireGuard VPN settings"
 msgstr "Параметри VPN WireGuard"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:8250
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:8264
 msgid "Wi-Fi connection"
 msgstr "З'єднання Wi-Fi"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:8251
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:8265
 msgid "Wi-Fi security settings"
 msgstr "Параметри захисту Wi-Fi"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:8252
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:8266
 msgid "WPAN settings"
 msgstr "Параметри WPAN"
 
-#: ../src/libnmc-setting/nm-meta-setting-desc.c:8658
+#: ../src/libnmc-setting/nm-meta-setting-desc.c:8672
 msgid "name"
 msgstr "назва"
 
@@ -6741,7 +6747,7 @@ msgstr ""
 #: ../src/libnmc-setting/settings-docs.h.in:109
 #: ../src/libnmc-setting/settings-docs.h.in:152
 #: ../src/libnmc-setting/settings-docs.h.in:203
-#: ../src/libnmc-setting/settings-docs.h.in:338
+#: ../src/libnmc-setting/settings-docs.h.in:340
 msgid "Flags indicating how to handle the \"password\" property."
 msgstr "Прапорці, які позначають, як обробляти властивість «password»."
 
@@ -6762,12 +6768,21 @@ msgid "Flags indicating how to handle the \"password-raw\" property."
 msgstr "Прапорці, які позначають, як обробляти властивість «password-raw»."
 
 #: ../src/libnmc-setting/settings-docs.h.in:65
+#| msgid ""
+#| "Specifies authentication flags to use in \"phase 1\" outer authentication "
+#| "using NMSetting8021xAuthFlags options. The individual TLS versions can be "
+#| "explicitly disabled. If a certain TLS disable flag is not set, it is up "
+#| "to the supplicant to allow or forbid it. The TLS options map to "
+#| "tls_disable_tlsv1_x settings. See the wpa_supplicant documentation for "
+#| "more details."
 msgid ""
 "Specifies authentication flags to use in \"phase 1\" outer authentication "
 "using NMSetting8021xAuthFlags options. The individual TLS versions can be "
 "explicitly disabled. If a certain TLS disable flag is not set, it is up to "
 "the supplicant to allow or forbid it. The TLS options map to "
-"tls_disable_tlsv1_x settings. See the wpa_supplicant documentation for more "
+"tls_disable_tlsv1_x settings. It also allows to set \"tls-allow-unsafe-"
+"renegotiation\" to workaround authentication servers that don't support RFC "
+"5746 secure authentication. See the wpa_supplicant documentation for more "
 "details."
 msgstr ""
 "Визначає прапорці розпізнавання, якими слід користуватися під час «фази 1» "
@@ -6775,7 +6790,10 @@ msgstr ""
 "NMSetting8021xAuthFlags. Окремі версії TLS може бути вимкнено явним чином. "
 "Якщо певний прапорець вимикання TLS не встановлено, дозвіл або заборону "
 "версії виконає допоміжна програма. Параметри TLS пов'язано із параметрами "
-"tls_disable_tlsv1_x. Докладнішу інформацію можна знайти у документації до "
+"tls_disable_tlsv1_x. Також можна встановити «tls-allow-unsafe-renegotiation»"
+" для обходу серверів розпізнавання, на яких не передбачено підтримки"
+" безпечного розпізнавання за RFC 5746. Докладнішу інформацію можна знайти у"
+" документації до "
 "wpa_supplicant."
 
 #: ../src/libnmc-setting/settings-docs.h.in:66
@@ -8747,7 +8765,7 @@ msgstr ""
 "основною."
 
 #: ../src/libnmc-setting/settings-docs.h.in:232
-#: ../src/libnmc-setting/settings-docs.h.in:259
+#: ../src/libnmc-setting/settings-docs.h.in:260
 msgid ""
 "Timeout in milliseconds used to check for the presence of duplicate IP "
 "addresses on the network.  If an address conflict is detected, the "
@@ -8825,7 +8843,7 @@ msgstr ""
 "використовувати разом із властивістю «dhcp-hostname»."
 
 #: ../src/libnmc-setting/settings-docs.h.in:235
-#: ../src/libnmc-setting/settings-docs.h.in:261
+#: ../src/libnmc-setting/settings-docs.h.in:262
 msgid ""
 "If the \"dhcp-send-hostname\" property is TRUE, then the specified name will "
 "be sent to the DHCP server when acquiring a lease. This property and \"dhcp-"
@@ -8836,7 +8854,7 @@ msgstr ""
 "використовувати разом із властивістю «dhcp-fqdn»."
 
 #: ../src/libnmc-setting/settings-docs.h.in:236
-#: ../src/libnmc-setting/settings-docs.h.in:262
+#: ../src/libnmc-setting/settings-docs.h.in:263
 msgid ""
 "Flags for the DHCP hostname and FQDN. Currently, this property only includes "
 "flags to control the FQDN flags set in the DHCP FQDN option. Supported FQDN "
@@ -8874,7 +8892,7 @@ msgstr ""
 "прапорці FQDN, описані вище."
 
 #: ../src/libnmc-setting/settings-docs.h.in:237
-#: ../src/libnmc-setting/settings-docs.h.in:263
+#: ../src/libnmc-setting/settings-docs.h.in:264
 msgid ""
 "A string containing the \"Identity Association Identifier\" (IAID) used by "
 "the DHCP client. The property is a 32-bit decimal value or a special value "
@@ -8904,7 +8922,7 @@ msgstr ""
 "адреси."
 
 #: ../src/libnmc-setting/settings-docs.h.in:238
-#: ../src/libnmc-setting/settings-docs.h.in:264
+#: ../src/libnmc-setting/settings-docs.h.in:265
 msgid ""
 "Array of servers from which DHCP offers must be rejected. This property is "
 "useful to avoid getting a lease from misconfigured or rogue servers. For "
@@ -8920,7 +8938,7 @@ msgstr ""
 "DHCPv6."
 
 #: ../src/libnmc-setting/settings-docs.h.in:239
-#: ../src/libnmc-setting/settings-docs.h.in:265
+#: ../src/libnmc-setting/settings-docs.h.in:266
 msgid ""
 "If TRUE, a hostname is sent to the DHCP server when acquiring a lease. Some "
 "DHCP servers use this hostname to update DNS databases, essentially "
@@ -8936,7 +8954,7 @@ msgstr ""
 "комп'ютера."
 
 #: ../src/libnmc-setting/settings-docs.h.in:240
-#: ../src/libnmc-setting/settings-docs.h.in:266
+#: ../src/libnmc-setting/settings-docs.h.in:267
 msgid ""
 "A timeout for a DHCP transaction in seconds. If zero (the default), a "
 "globally configured default is used. If still unspecified, a device specific "
@@ -8967,12 +8985,12 @@ msgstr ""
 "сервер. Реалізовано з версії 1.28"
 
 #: ../src/libnmc-setting/settings-docs.h.in:242
-#: ../src/libnmc-setting/settings-docs.h.in:267
+#: ../src/libnmc-setting/settings-docs.h.in:268
 msgid "Array of IP addresses of DNS servers."
 msgstr "Масив IP-адрес серверів DNS."
 
 #: ../src/libnmc-setting/settings-docs.h.in:243
-#: ../src/libnmc-setting/settings-docs.h.in:268
+#: ../src/libnmc-setting/settings-docs.h.in:269
 msgid ""
 "Array of DNS options as described in man 5 resolv.conf. NULL means that the "
 "options are unset and left at the default. In this case NetworkManager will "
@@ -9000,7 +9018,7 @@ msgstr ""
 "«trust-ad» буде додано автоматично."
 
 #: ../src/libnmc-setting/settings-docs.h.in:244
-#: ../src/libnmc-setting/settings-docs.h.in:269
+#: ../src/libnmc-setting/settings-docs.h.in:270
 msgid ""
 "DNS servers priority. The relative priority for DNS servers specified by "
 "this setting.  A lower numerical value is better (higher priority). Negative "
@@ -9082,7 +9100,7 @@ msgstr ""
 "пошуку, так, щоб було налаштовано лише сервери назв бажаного інтерфейсу."
 
 #: ../src/libnmc-setting/settings-docs.h.in:245
-#: ../src/libnmc-setting/settings-docs.h.in:270
+#: ../src/libnmc-setting/settings-docs.h.in:271
 msgid ""
 "Array of DNS search domains. Domains starting with a tilde ('~') are "
 "considered 'routing' domains and are used only to decide the interface over "
@@ -9102,7 +9120,7 @@ msgstr ""
 "ознайомтеся із довідкою до параметра dns-priority."
 
 #: ../src/libnmc-setting/settings-docs.h.in:246
-#: ../src/libnmc-setting/settings-docs.h.in:271
+#: ../src/libnmc-setting/settings-docs.h.in:272
 msgid ""
 "The gateway associated with this configuration. This is only meaningful if "
 "\"addresses\" is also set. The gateway's main purpose is to control the next "
@@ -9119,7 +9137,7 @@ msgstr ""
 "налаштовування статичного типового маршруту з довжиною префікса /0."
 
 #: ../src/libnmc-setting/settings-docs.h.in:247
-#: ../src/libnmc-setting/settings-docs.h.in:272
+#: ../src/libnmc-setting/settings-docs.h.in:273
 msgid ""
 "When \"method\" is set to \"auto\" and this property to TRUE, automatically "
 "configured name servers and search domains are ignored and only name servers "
@@ -9133,7 +9151,7 @@ msgstr ""
 "вказано якісь записи серверів і доменів для цих властивостей."
 
 #: ../src/libnmc-setting/settings-docs.h.in:248
-#: ../src/libnmc-setting/settings-docs.h.in:273
+#: ../src/libnmc-setting/settings-docs.h.in:274
 msgid ""
 "When \"method\" is set to \"auto\" and this property to TRUE, automatically "
 "configured routes are ignored and only routes specified in the \"routes\" "
@@ -9145,7 +9163,27 @@ msgstr ""
 "«routes», якщо такі існують."
 
 #: ../src/libnmc-setting/settings-docs.h.in:249
-#: ../src/libnmc-setting/settings-docs.h.in:275
+msgid ""
+"Enable and disable the IPv4 link-local configuration independently of the "
+"ipv4.method configuration. This allows a link-local address (169.254.x.y/16) "
+"to be obtained in addition to other addresses, such as those manually "
+"configured or obtained from a DHCP server. When set to \"auto\", the value "
+"is dependent on \"ipv4.method\". When set to \"default\", it honors the "
+"global connection default, before falling back to \"auto\". Note that if "
+"\"ipv4.method\" is \"disabled\", then link local addressing is always "
+"disabled too. The default is \"default\". Since 1.40"
+msgstr ""
+"Увімкнути або вимкнути налаштування link-local IPv4 незалежно від налаштувань"
+" ipv4.method. Це уможливлює отримання адреси link-local (169.254.x.y/16) на"
+" додачу до інших адрес, зокрема тих, які налаштовано вручну або отримано з"
+" сервера DHCP. Якщо встановити значення «auto», значення залежатиме від"
+" «ipv4.method». Якщо встановити значення «default», буде враховано типові"
+" параметри загального з'єднання із резервним варіантом «auto». Зауважте, що"
+" якщо значенням «ipv4.method» є «disabled», також буде вимкнено адресування"
+" link-local. Типовим значенням є «default». Уперше реалізовано у версії 1.40."
+
+#: ../src/libnmc-setting/settings-docs.h.in:250
+#: ../src/libnmc-setting/settings-docs.h.in:276
 msgid ""
 "If TRUE, allow overall network configuration to proceed even if the "
 "configuration specified by this property times out.  Note that at least one "
@@ -9162,8 +9200,8 @@ msgstr ""
 "NMSettingIP4Config уможливлює успішне налаштовування усієї мережі, якщо не "
 "вдається налаштувати IPv4, але IPv6 налаштовано успішно."
 
-#: ../src/libnmc-setting/settings-docs.h.in:250
-#: ../src/libnmc-setting/settings-docs.h.in:276
+#: ../src/libnmc-setting/settings-docs.h.in:251
+#: ../src/libnmc-setting/settings-docs.h.in:277
 msgid ""
 "IP configuration method. NMSettingIP4Config and NMSettingIP6Config both "
 "support \"disabled\", \"auto\", \"manual\", and \"link-local\". See the "
@@ -9192,8 +9230,8 @@ msgstr ""
 "налаштовано на інтерфейсі, який надає спільний доступ до інтернету для "
 "підмережі, а не на з'єднанні, яке надається у спільний доступ."
 
-#: ../src/libnmc-setting/settings-docs.h.in:251
-#: ../src/libnmc-setting/settings-docs.h.in:277
+#: ../src/libnmc-setting/settings-docs.h.in:252
+#: ../src/libnmc-setting/settings-docs.h.in:279
 msgid ""
 "If TRUE, this connection will never be the default connection for this IP "
 "type, meaning it will never be assigned the default route by NetworkManager."
@@ -9202,8 +9240,8 @@ msgstr ""
 "IP, що означає, що його ніколи не буде пов'язано із типовим маршрутом у "
 "NetworkManager."
 
-#: ../src/libnmc-setting/settings-docs.h.in:252
-#: ../src/libnmc-setting/settings-docs.h.in:279
+#: ../src/libnmc-setting/settings-docs.h.in:253
+#: ../src/libnmc-setting/settings-docs.h.in:281
 msgid ""
 "The minimum time interval in milliseconds for which dynamic IP configuration "
 "should be tried before the connection succeeds. This property is useful for "
@@ -9232,8 +9270,8 @@ msgstr ""
 "означає типове значення (або пріоритетне значення налаштування ipvx.required-"
 "timeout, або нуль)."
 
-#: ../src/libnmc-setting/settings-docs.h.in:253
-#: ../src/libnmc-setting/settings-docs.h.in:280
+#: ../src/libnmc-setting/settings-docs.h.in:254
+#: ../src/libnmc-setting/settings-docs.h.in:282
 msgid ""
 "The default metric for routes that don't explicitly specify a metric. The "
 "default value -1 means that the metric is chosen automatically based on the "
@@ -9253,8 +9291,8 @@ msgstr ""
 "насправді означає, що встановлено значення 1024. Для IPv4 нуль є звичайним "
 "значенням для метрики."
 
-#: ../src/libnmc-setting/settings-docs.h.in:254
-#: ../src/libnmc-setting/settings-docs.h.in:281
+#: ../src/libnmc-setting/settings-docs.h.in:255
+#: ../src/libnmc-setting/settings-docs.h.in:283
 msgid ""
 "Enable policy routing (source routing) and set the routing table used when "
 "adding routes. This affects all routes, including device-routes, IPv4LL, "
@@ -9286,7 +9324,7 @@ msgstr ""
 "таблиці. Так зроблено, щоб зберегти зворотну сумісність для користувачів, "
 "які змінюють таблиці маршрутизації з-поза меж NetworkManager."
 
-#: ../src/libnmc-setting/settings-docs.h.in:255
+#: ../src/libnmc-setting/settings-docs.h.in:256
 msgid ""
 "A list of IPv4 destination addresses, prefix length, optional IPv4 next hop "
 "addresses, optional route metric, optional attribute. The valid syntax is: "
@@ -9299,12 +9337,12 @@ msgstr ""
 "[атрибут=значення]...[,ip[/префікс]...]\". Приклад: \"192.0.2.0/24 10.1.1.1 "
 "77, 198.51.100.0/24\"."
 
-#: ../src/libnmc-setting/settings-docs.h.in:256
-#: ../src/libnmc-setting/settings-docs.h.in:283
+#: ../src/libnmc-setting/settings-docs.h.in:257
+#: ../src/libnmc-setting/settings-docs.h.in:285
 msgid "A comma separated list of routing rules for policy routing."
 msgstr "Список відокремлених комами правил маршрутизації для розподілу правил."
 
-#: ../src/libnmc-setting/settings-docs.h.in:257
+#: ../src/libnmc-setting/settings-docs.h.in:258
 msgid ""
 "Configure method for creating the address for use with RFC4862 IPv6 "
 "Stateless Address Autoconfiguration. The permitted values are: "
@@ -9345,12 +9383,7 @@ msgstr ""
 "конфіденційності, які налаштовуються властивістю «ip6-privacy», і не впливає "
 "на тимчасові адреси, які налаштовано за допомогою відповідної властивості."
 
-#: ../src/libnmc-setting/settings-docs.h.in:258
-#| msgid ""
-#| "A list of IPv6 addresses and their prefix length. Multiple addresses can "
-#| "be separated by comma. For example \"2001:db8:85a3::8a2e:370:7334/64, "
-#| "2001:db8:85a3::5/64\". The addresses are listed in increasing priority, "
-#| "meaning the last address will be the primary address."
+#: ../src/libnmc-setting/settings-docs.h.in:259
 msgid ""
 "A list of IPv6 addresses and their prefix length. Multiple addresses can be "
 "separated by comma. For example \"2001:db8:85a3::8a2e:370:7334/64, 2001:"
@@ -9361,10 +9394,10 @@ msgstr ""
 "Список адрес IPv6 та їхніх довжин префікса. Декілька адрес можна "
 "відокремлювати комами. Приклад: \"2001:db8:85a3::8a2e:370:7334/64, 2001:"
 "db8:85a3::5/64\". Список адрес складається за зменшенням пріоритетності, "
-"тобто перша адреса буде основною. Це може вплинути на вибір початкової адреси"
-" при використанні IPv6 (RFC 6724, розділ 5)."
+"тобто перша адреса буде основною. Це може вплинути на вибір початкової "
+"адреси при використанні IPv6 (RFC 6724, розділ 5)."
 
-#: ../src/libnmc-setting/settings-docs.h.in:260
+#: ../src/libnmc-setting/settings-docs.h.in:261
 msgid ""
 "A string containing the DHCPv6 Unique Identifier (DUID) used by the dhcp "
 "client to identify itself to DHCPv6 servers (RFC 3315). The DUID is carried "
@@ -9421,7 +9454,7 @@ msgstr ""
 "використано загальне значення для «ipv6.dhcp-duid». Якщо загальне значення "
 "не вказано, буде використано типове значення «lease»."
 
-#: ../src/libnmc-setting/settings-docs.h.in:274
+#: ../src/libnmc-setting/settings-docs.h.in:275
 msgid ""
 "Configure IPv6 Privacy Extensions for SLAAC, described in RFC4941.  If "
 "enabled, it makes the kernel generate a temporary IPv6 address in addition "
@@ -9454,6 +9487,19 @@ msgstr ""
 
 #: ../src/libnmc-setting/settings-docs.h.in:278
 msgid ""
+"Maximum transmission unit size, in bytes. If zero (the default), the MTU is "
+"set automatically from router advertisements or is left equal to the link-"
+"layer MTU. If greater than the link-layer MTU, or greater than zero but less "
+"than the minimum IPv6 MTU of 1280, this value has no effect."
+msgstr ""
+"Максимальний розмір модуля передавання у байтах. Якщо має нульове значення"
+" (типовий варіант), MTU буде встановлено автоматично на основі даних"
+" маршрутизатора або залишено значення MTU шару зв'язку. Якщо значення"
+" перевищує значення MTU шару зв'язку або є більшим за нуль, але меншим за"
+" мінімальний MTU IPv6, 1280, це значення враховано не буде."
+
+#: ../src/libnmc-setting/settings-docs.h.in:280
+msgid ""
 "A timeout for waiting Router Advertisements in seconds. If zero (the "
 "default), a globally configured default is used. If still unspecified, the "
 "timeout depends on the sysctl settings of the device. Set to 2147483647 "
@@ -9465,11 +9511,11 @@ msgstr ""
 "залежатиме від параметрів sysctl пристрою. Встановіть значення 2147483647 "
 "(MAXINT32), якщо час очікування має бути необмеженим."
 
-#: ../src/libnmc-setting/settings-docs.h.in:282
+#: ../src/libnmc-setting/settings-docs.h.in:284
 msgid "Array of IP routes."
 msgstr "Масив IP-маршрутів."
 
-#: ../src/libnmc-setting/settings-docs.h.in:284
+#: ../src/libnmc-setting/settings-docs.h.in:286
 msgid ""
 "Configure the token for draft-chown-6man-tokenised-ipv6-identifiers-02 IPv6 "
 "tokenized interface identifiers. Useful with eui64 addr-gen-mode."
@@ -9478,22 +9524,22 @@ msgstr ""
 "chown-6man-tokenised-ipv6-identifiers-02. Корисне у поєднанні зі значення "
 "addr-gen-mode eui64."
 
-#: ../src/libnmc-setting/settings-docs.h.in:285
+#: ../src/libnmc-setting/settings-docs.h.in:287
 msgid "Whether the transmitted traffic must be encrypted."
 msgstr "Визначає, чи слід шифрувати дані, які передаються."
 
-#: ../src/libnmc-setting/settings-docs.h.in:286
+#: ../src/libnmc-setting/settings-docs.h.in:288
 msgid ""
 "The pre-shared CAK (Connectivity Association Key) for MACsec Key Agreement."
 msgstr ""
 "Попереднього поширений CAK (ключ прив'язки з'єднань) для узгодження ключів "
 "MACsec."
 
-#: ../src/libnmc-setting/settings-docs.h.in:287
+#: ../src/libnmc-setting/settings-docs.h.in:289
 msgid "Flags indicating how to handle the \"mka-cak\" property."
 msgstr "Прапорці, які позначають, як обробляти властивість «mka-cak»."
 
-#: ../src/libnmc-setting/settings-docs.h.in:288
+#: ../src/libnmc-setting/settings-docs.h.in:290
 msgid ""
 "The pre-shared CKN (Connectivity-association Key Name) for MACsec Key "
 "Agreement."
@@ -9501,7 +9547,7 @@ msgstr ""
 "Попереднього поширена CKN (назва ключа ключ прив'язки з'єднань) для "
 "узгодження ключів MACsec."
 
-#: ../src/libnmc-setting/settings-docs.h.in:289
+#: ../src/libnmc-setting/settings-docs.h.in:291
 msgid ""
 "Specifies how the CAK (Connectivity Association Key) for MKA (MACsec Key "
 "Agreement) is obtained."
@@ -9509,7 +9555,7 @@ msgstr ""
 "Визначає спосіб отримання CAK (ключа прив'язки з'єднань) для MKA (узгодження "
 "ключів MACsec)."
 
-#: ../src/libnmc-setting/settings-docs.h.in:290
+#: ../src/libnmc-setting/settings-docs.h.in:292
 msgid ""
 "If given, specifies the parent interface name or parent connection UUID from "
 "which this MACSEC interface should be created.  If this property is not "
@@ -9521,7 +9567,7 @@ msgstr ""
 "значення для цієї властивості не вказано, запис з'єднання має містити "
 "параметр «802-3-ethernet» із властивістю «mac-address»."
 
-#: ../src/libnmc-setting/settings-docs.h.in:291
+#: ../src/libnmc-setting/settings-docs.h.in:293
 msgid ""
 "The port component of the SCI (Secure Channel Identifier), between 1 and "
 "65534."
@@ -9529,17 +9575,17 @@ msgstr ""
 "Компонент порту SCI (ідентифікатора безпечного каналу), значення від 1 до "
 "65534."
 
-#: ../src/libnmc-setting/settings-docs.h.in:292
+#: ../src/libnmc-setting/settings-docs.h.in:294
 msgid ""
 "Specifies whether the SCI (Secure Channel Identifier) is included in every "
 "packet."
 msgstr "Вказує, чи включено SCI (Secure Channel Identifier) до кожного пакета."
 
-#: ../src/libnmc-setting/settings-docs.h.in:293
+#: ../src/libnmc-setting/settings-docs.h.in:295
 msgid "Specifies the validation mode for incoming frames."
 msgstr "Визначає режим перевірки для вхідних кадрів."
 
-#: ../src/libnmc-setting/settings-docs.h.in:294
+#: ../src/libnmc-setting/settings-docs.h.in:296
 msgid ""
 "The macvlan mode, which specifies the communication mechanism between "
 "multiple macvlans on the same lower device."
@@ -9547,7 +9593,7 @@ msgstr ""
 "Режим macvlan, який визначає механізм обміну даними між декількома macvlan "
 "на одному пристрої нижнього рівня."
 
-#: ../src/libnmc-setting/settings-docs.h.in:295
+#: ../src/libnmc-setting/settings-docs.h.in:297
 msgid ""
 "If given, specifies the parent interface name or parent connection UUID from "
 "which this MAC-VLAN interface should be created.  If this property is not "
@@ -9559,15 +9605,15 @@ msgstr ""
 "значення для цієї властивості не вказано, запис з'єднання має містити "
 "параметр «802-3-ethernet» із властивістю «mac-address»."
 
-#: ../src/libnmc-setting/settings-docs.h.in:296
+#: ../src/libnmc-setting/settings-docs.h.in:298
 msgid "Whether the interface should be put in promiscuous mode."
 msgstr "Визначає, чи слід переводити інтерфейс у нерозбірливий режим."
 
-#: ../src/libnmc-setting/settings-docs.h.in:297
+#: ../src/libnmc-setting/settings-docs.h.in:299
 msgid "Whether the interface should be a MACVTAP."
 msgstr "Визначає, чи має бути інтерфейс інтерфейсом MACVTAP."
 
-#: ../src/libnmc-setting/settings-docs.h.in:298
+#: ../src/libnmc-setting/settings-docs.h.in:300
 msgid ""
 "A list of driver names to match. Each element is a shell wildcard pattern. "
 "See NMSettingMatch:interface-name for how special characters '|', '&', '!' "
@@ -9580,7 +9626,7 @@ msgstr ""
 "символами — «|», «&», «!» та «\\» — для визначення необов'язкових і "
 "обов'язкових відповідностей та інвертування взірців."
 
-#: ../src/libnmc-setting/settings-docs.h.in:299
+#: ../src/libnmc-setting/settings-docs.h.in:301
 msgid ""
 "A list of interface names to match. Each element is a shell wildcard "
 "pattern. An element can be prefixed with a pipe symbol (|) or an ampersand "
@@ -9612,7 +9658,7 @@ msgstr ""
 "початку взірця. Наприклад, «&\\!a» є обов'язковою умовою для встановлення "
 "відповідності рядку «!a»."
 
-#: ../src/libnmc-setting/settings-docs.h.in:300
+#: ../src/libnmc-setting/settings-docs.h.in:302
 msgid ""
 "A list of kernel command line arguments to match. This may be used to check "
 "whether a specific kernel command line option is set (or unset, if prefixed "
@@ -9637,7 +9683,7 @@ msgstr ""
 "«&», «!» та «\\» — для визначення необов'язкових і обов'язкових "
 "відповідностей та інвертування взірців."
 
-#: ../src/libnmc-setting/settings-docs.h.in:301
+#: ../src/libnmc-setting/settings-docs.h.in:303
 msgid ""
 "A list of paths to match against the ID_PATH udev property of devices. "
 "ID_PATH represents the topological persistent path of a device. It typically "
@@ -9665,35 +9711,35 @@ msgstr ""
 "«\\» — для визначення необов'язкових і обов'язкових відповідностей та "
 "інвертування взірців."
 
-#: ../src/libnmc-setting/settings-docs.h.in:302
+#: ../src/libnmc-setting/settings-docs.h.in:304
 msgid "The data path type. One of \"system\", \"netdev\" or empty."
 msgstr ""
 "Тип шляху до даних. Одне з таких значень: «system», «netdev» або порожнє "
 "значення."
 
-#: ../src/libnmc-setting/settings-docs.h.in:303
+#: ../src/libnmc-setting/settings-docs.h.in:305
 msgid "The bridge failure mode. One of \"secure\", \"standalone\" or empty."
 msgstr ""
 "Режим відмови містка. Одне з таких значень: «secure», «standalone» або "
 "порожнє значення."
 
-#: ../src/libnmc-setting/settings-docs.h.in:304
+#: ../src/libnmc-setting/settings-docs.h.in:306
 msgid "Enable or disable multicast snooping."
 msgstr "Увімкнути або вимкнути переставляння універсальної трансляції."
 
-#: ../src/libnmc-setting/settings-docs.h.in:305
+#: ../src/libnmc-setting/settings-docs.h.in:307
 msgid "Enable or disable RSTP."
 msgstr "Увімкнути або вимкнути RSTP."
 
-#: ../src/libnmc-setting/settings-docs.h.in:306
+#: ../src/libnmc-setting/settings-docs.h.in:308
 msgid "Enable or disable STP."
 msgstr "Увімкнути або вимкнути STP."
 
-#: ../src/libnmc-setting/settings-docs.h.in:307
+#: ../src/libnmc-setting/settings-docs.h.in:309
 msgid "Open vSwitch DPDK device arguments."
 msgstr "Параметри пристрою Open vSwitch DPDK."
 
-#: ../src/libnmc-setting/settings-docs.h.in:308
+#: ../src/libnmc-setting/settings-docs.h.in:310
 msgid ""
 "Open vSwitch DPDK number of rx queues. Defaults to zero which means to leave "
 "the parameter in OVS unspecified and effectively configures one queue."
@@ -9702,11 +9748,11 @@ msgstr ""
 "значення, що означає «лишити цей параметр в OVS невизначеним і, власне, "
 "налаштувати одну чергу»."
 
-#: ../src/libnmc-setting/settings-docs.h.in:309
+#: ../src/libnmc-setting/settings-docs.h.in:311
 msgid "A dictionary of key/value pairs with exernal-ids for OVS."
 msgstr "Словник з пар ключ/значення із зовнішніми ідентифікаторами для OVS."
 
-#: ../src/libnmc-setting/settings-docs.h.in:310
+#: ../src/libnmc-setting/settings-docs.h.in:312
 msgid ""
 "The interface type. Either \"internal\", \"system\", \"patch\", \"dpdk\", or "
 "empty."
@@ -9714,7 +9760,7 @@ msgstr ""
 "Тип інтерфейсу. Рядок «internal», «system», «patch», «dpdk» або порожній "
 "рядок."
 
-#: ../src/libnmc-setting/settings-docs.h.in:311
+#: ../src/libnmc-setting/settings-docs.h.in:313
 msgid ""
 "Specifies the name of the interface for the other side of the patch. The "
 "patch on the other side must also set this interface as peer."
@@ -9723,30 +9769,30 @@ msgstr ""
 "з'єднання на іншому боці також має встановлювати цей інтерфейс як "
 "однорівневий вузол."
 
-#: ../src/libnmc-setting/settings-docs.h.in:312
+#: ../src/libnmc-setting/settings-docs.h.in:314
 msgid "The time port must be inactive in order to be considered down."
 msgstr "Щоб вважатися вимкненим, порт часу має бути неактивним."
 
-#: ../src/libnmc-setting/settings-docs.h.in:313
+#: ../src/libnmc-setting/settings-docs.h.in:315
 msgid ""
 "Bonding mode. One of \"active-backup\", \"balance-slb\", or \"balance-tcp\"."
 msgstr ""
 "Режим прив'язування. Одне з таких значень: «active-backup», «balance-slb» "
 "або «balance-tcp»."
 
-#: ../src/libnmc-setting/settings-docs.h.in:314
+#: ../src/libnmc-setting/settings-docs.h.in:316
 msgid "The time port must be active before it starts forwarding traffic."
 msgstr "Щоб почати переспрямовувати дані, слід активувати порт часу."
 
-#: ../src/libnmc-setting/settings-docs.h.in:315
+#: ../src/libnmc-setting/settings-docs.h.in:317
 msgid "LACP mode. One of \"active\", \"off\", or \"passive\"."
 msgstr "Режим LACP. Одне з таких значень: «active», «off» або «passive»."
 
-#: ../src/libnmc-setting/settings-docs.h.in:316
+#: ../src/libnmc-setting/settings-docs.h.in:318
 msgid "The VLAN tag in the range 0-4095."
 msgstr "Теґ VLAN у діапазоні від 0 до 4095."
 
-#: ../src/libnmc-setting/settings-docs.h.in:317
+#: ../src/libnmc-setting/settings-docs.h.in:319
 msgid ""
 "The VLAN mode. One of \"access\", \"native-tagged\", \"native-untagged\", "
 "\"trunk\" or unset."
@@ -9754,7 +9800,7 @@ msgstr ""
 "Режим VLAN. Одне з таких значень: «access», «native-tagged», «native-"
 "untagged», «trunk» або порожнє значення."
 
-#: ../src/libnmc-setting/settings-docs.h.in:318
+#: ../src/libnmc-setting/settings-docs.h.in:320
 msgid ""
 "If non-zero, instruct pppd to set the serial port to the specified "
 "baudrate.  This value should normally be left as 0 to automatically choose "
@@ -9764,7 +9810,7 @@ msgstr ""
 "вказану швидкість передавання даних у бодах. Зазвичай, для цієї властивості "
 "слід залишити нульове значення, щоб швидкість було вибрано автоматично."
 
-#: ../src/libnmc-setting/settings-docs.h.in:319
+#: ../src/libnmc-setting/settings-docs.h.in:321
 msgid ""
 "If TRUE, specify that pppd should set the serial port to use hardware flow "
 "control with RTS and CTS signals.  This value should normally be set to "
@@ -9774,7 +9820,7 @@ msgstr ""
 "керування потоком апаратних даних за допомогою сигналів RTS і CTS. За "
 "звичних умов, для цієї властивості має бути встановлено значення FALSE."
 
-#: ../src/libnmc-setting/settings-docs.h.in:320
+#: ../src/libnmc-setting/settings-docs.h.in:322
 msgid ""
 "If non-zero, instruct pppd to presume the connection to the peer has failed "
 "if the specified number of LCP echo-requests go unanswered by the peer.  The "
@@ -9786,7 +9832,7 @@ msgstr ""
 "кількість луна-запитів LCP. Якщо використовується ця властивість, для "
 "властивості «lcp-echo-interval» слід встановити ненульове значення."
 
-#: ../src/libnmc-setting/settings-docs.h.in:321
+#: ../src/libnmc-setting/settings-docs.h.in:323
 msgid ""
 "If non-zero, instruct pppd to send an LCP echo-request frame to the peer "
 "every n seconds (where n is the specified value).  Note that some PPP peers "
@@ -9798,7 +9844,7 @@ msgstr ""
 "відповідатимуть на луна-запити, а деякі — ні. Визначити, чи відповідатиме "
 "певний вузол, у автоматичному режимі неможливо."
 
-#: ../src/libnmc-setting/settings-docs.h.in:322
+#: ../src/libnmc-setting/settings-docs.h.in:324
 msgid ""
 "If TRUE, stateful MPPE is used.  See pppd documentation for more information "
 "on stateful MPPE."
@@ -9806,7 +9852,7 @@ msgstr ""
 "Якщо TRUE, використовуватиметься режим MPPE зі станами (stateful). "
 "Докладніший опис режиму MPPE зі станами наведено у документації із pppd."
 
-#: ../src/libnmc-setting/settings-docs.h.in:323
+#: ../src/libnmc-setting/settings-docs.h.in:325
 msgid ""
 "If non-zero, instruct pppd to request that the peer send packets no larger "
 "than the specified size.  If non-zero, the MRU should be between 128 and "
@@ -9816,20 +9862,20 @@ msgstr ""
 "щодо того, щоб він надсилав пакети, не більші за вказаний розмір. Якщо має "
 "ненульове значення, MRU має бути від 128 до 16384."
 
-#: ../src/libnmc-setting/settings-docs.h.in:324
+#: ../src/libnmc-setting/settings-docs.h.in:326
 msgid ""
 "If non-zero, instruct pppd to send packets no larger than the specified size."
 msgstr ""
 "Якщо має ненульове значення, наказує pppd надсилати пакети, не більші за "
 "вказаний розмір."
 
-#: ../src/libnmc-setting/settings-docs.h.in:325
+#: ../src/libnmc-setting/settings-docs.h.in:327
 msgid "If TRUE, Van Jacobsen TCP header compression will not be requested."
 msgstr ""
 "Якщо має значення TRUE, запит щодо стискання заголовків TCP ван Якобсена не "
 "надсилатиметься."
 
-#: ../src/libnmc-setting/settings-docs.h.in:326
+#: ../src/libnmc-setting/settings-docs.h.in:328
 msgid ""
 "If TRUE, do not require the other side (usually the PPP server) to "
 "authenticate itself to the client.  If FALSE, require authentication from "
@@ -9840,35 +9886,35 @@ msgstr ""
 "FALSE, вимагати проходження розпізнавання з боку віддаленого вузла. У "
 "більшості випадків слід використовувати значення TRUE."
 
-#: ../src/libnmc-setting/settings-docs.h.in:327
+#: ../src/libnmc-setting/settings-docs.h.in:329
 msgid "If TRUE, BSD compression will not be requested."
 msgstr "Якщо TRUE, стискання BSD не вимагатиметься."
 
-#: ../src/libnmc-setting/settings-docs.h.in:328
+#: ../src/libnmc-setting/settings-docs.h.in:330
 msgid "If TRUE, \"deflate\" compression will not be requested."
 msgstr "Якщо TRUE, стискання «deflate» не вимагатиметься."
 
-#: ../src/libnmc-setting/settings-docs.h.in:329
+#: ../src/libnmc-setting/settings-docs.h.in:331
 msgid "If TRUE, the CHAP authentication method will not be used."
 msgstr "Якщо TRUE, спосіб розпізнавання CHAP не використовуватиметься."
 
-#: ../src/libnmc-setting/settings-docs.h.in:330
+#: ../src/libnmc-setting/settings-docs.h.in:332
 msgid "If TRUE, the EAP authentication method will not be used."
 msgstr "Якщо TRUE, спосіб розпізнавання EAP не використовуватиметься."
 
-#: ../src/libnmc-setting/settings-docs.h.in:331
+#: ../src/libnmc-setting/settings-docs.h.in:333
 msgid "If TRUE, the MSCHAP authentication method will not be used."
 msgstr "Якщо TRUE, спосіб розпізнавання MSCHAP не використовуватиметься."
 
-#: ../src/libnmc-setting/settings-docs.h.in:332
+#: ../src/libnmc-setting/settings-docs.h.in:334
 msgid "If TRUE, the MSCHAPv2 authentication method will not be used."
 msgstr "Якщо TRUE, спосіб розпізнавання MSCHAPv2 не використовуватиметься."
 
-#: ../src/libnmc-setting/settings-docs.h.in:333
+#: ../src/libnmc-setting/settings-docs.h.in:335
 msgid "If TRUE, the PAP authentication method will not be used."
 msgstr "Якщо TRUE, спосіб розпізнавання PAP не використовуватиметься."
 
-#: ../src/libnmc-setting/settings-docs.h.in:334
+#: ../src/libnmc-setting/settings-docs.h.in:336
 msgid ""
 "If TRUE, MPPE (Microsoft Point-to-Point Encryption) will be required for the "
 "PPP session.  If either 64-bit or 128-bit MPPE is not available the session "
@@ -9879,7 +9925,7 @@ msgstr ""
 "128-бітове MPPE виявиться недоступним, сеанс не буде створено. Зауважте, що "
 "MPPE не використовується для мобільних широкосмугових з'єднань."
 
-#: ../src/libnmc-setting/settings-docs.h.in:335
+#: ../src/libnmc-setting/settings-docs.h.in:337
 msgid ""
 "If TRUE, 128-bit MPPE (Microsoft Point-to-Point Encryption) will be required "
 "for the PPP session, and the \"require-mppe\" property must also be set to "
@@ -9890,7 +9936,7 @@ msgstr ""
 "для властивості «require-mppe» також має бути встановлено TRUE. Якщо 128-"
 "бітове MPPE виявиться недоступним, сеанс не буде створено."
 
-#: ../src/libnmc-setting/settings-docs.h.in:336
+#: ../src/libnmc-setting/settings-docs.h.in:338
 msgid ""
 "If given, specifies the parent interface name on which this PPPoE connection "
 "should be created.  If this property is not specified, the connection is "
@@ -9902,11 +9948,11 @@ msgstr ""
 "з'єднання буде активовано на інтерфейсі, який вказано за допомогою параметра "
 "«interface-name» NMSettingConnection."
 
-#: ../src/libnmc-setting/settings-docs.h.in:337
+#: ../src/libnmc-setting/settings-docs.h.in:339
 msgid "Password used to authenticate with the PPPoE service."
 msgstr "Пароль, який використовуватиметься для розпізнавання на службі PPPoE."
 
-#: ../src/libnmc-setting/settings-docs.h.in:339
+#: ../src/libnmc-setting/settings-docs.h.in:341
 msgid ""
 "If specified, instruct PPPoE to only initiate sessions with access "
 "concentrators that provide the specified service.  For most providers, this "
@@ -9919,25 +9965,25 @@ msgstr ""
 "якщо ви маєте справу із концентраторами із декількома способами доступу або "
 "відомо, що вказана служба є необхідною."
 
-#: ../src/libnmc-setting/settings-docs.h.in:340
+#: ../src/libnmc-setting/settings-docs.h.in:342
 msgid "Username used to authenticate with the PPPoE service."
 msgstr ""
 "Ім'я користувача, яке використовуватиметься для розпізнавання на службі "
 "PPPoE."
 
-#: ../src/libnmc-setting/settings-docs.h.in:341
+#: ../src/libnmc-setting/settings-docs.h.in:343
 msgid "Whether the proxy configuration is for browser only."
 msgstr ""
 "Визначає, чи використовуються налаштування проксі лише для програм для "
 "перегляду інтернету."
 
-#: ../src/libnmc-setting/settings-docs.h.in:342
+#: ../src/libnmc-setting/settings-docs.h.in:344
 msgid ""
 "Method for proxy configuration, Default is NM_SETTING_PROXY_METHOD_NONE (0)"
 msgstr ""
 "Спосіб налаштовування проксі. Типовим є NM_SETTING_PROXY_METHOD_NONE (0)"
 
-#: ../src/libnmc-setting/settings-docs.h.in:343
+#: ../src/libnmc-setting/settings-docs.h.in:345
 msgid ""
 "The PAC script. In the profile this must be an UTF-8 encoded javascript code "
 "that defines a FindProxyForURL() function. When setting the property in "
@@ -9951,11 +9997,11 @@ msgstr ""
 "файла і встановить скрипт. Для явного розмежування двох можливих випадків "
 "передбачено підтримку префіксів «file://» і «js://»."
 
-#: ../src/libnmc-setting/settings-docs.h.in:344
+#: ../src/libnmc-setting/settings-docs.h.in:346
 msgid "PAC URL for obtaining PAC file."
 msgstr "Адреса PAC для отримання файла PAC."
 
-#: ../src/libnmc-setting/settings-docs.h.in:345
+#: ../src/libnmc-setting/settings-docs.h.in:347
 msgid ""
 "Speed to use for communication over the serial port.  Note that this value "
 "usually has no effect for mobile broadband modems as they generally ignore "
@@ -9966,20 +10012,20 @@ msgstr ""
 "загалом, для них параметри швидкості ігноруються — просто використовується "
 "найвища доступна швидкість."
 
-#: ../src/libnmc-setting/settings-docs.h.in:346
+#: ../src/libnmc-setting/settings-docs.h.in:348
 msgid "Byte-width of the serial communication. The 8 in \"8n1\" for example."
 msgstr "Байтова ширина послідовного обміну даними. Наприклад, 8 у «8n1»."
 
-#: ../src/libnmc-setting/settings-docs.h.in:347
+#: ../src/libnmc-setting/settings-docs.h.in:349
 msgid "Parity setting of the serial port."
 msgstr "Параметр парності послідовного порту."
 
-#: ../src/libnmc-setting/settings-docs.h.in:348
+#: ../src/libnmc-setting/settings-docs.h.in:350
 msgid "Time to delay between each byte sent to the modem, in microseconds."
 msgstr ""
 "Затримка у часі між надсиланнями одного байта на модем, у мікросекундах."
 
-#: ../src/libnmc-setting/settings-docs.h.in:349
+#: ../src/libnmc-setting/settings-docs.h.in:351
 msgid ""
 "Number of stop bits for communication on the serial port.  Either 1 or 2. "
 "The 1 in \"8n1\" for example."
@@ -9987,7 +10033,7 @@ msgstr ""
 "Кількість бітів зупинки для обміну даними на послідовному порту. Може мати "
 "значення 1 або 2. Наприклад, 1 у «8n1»."
 
-#: ../src/libnmc-setting/settings-docs.h.in:350
+#: ../src/libnmc-setting/settings-docs.h.in:352
 msgid ""
 "Whether to autoprobe virtual functions by a compatible driver. If set to "
 "NM_TERNARY_TRUE (1), the kernel will try to bind VFs to a compatible driver "
@@ -10007,7 +10053,7 @@ msgstr ""
 "використовуватимуться загальні типові параметри. Якщо загальні типові "
 "параметри не вказано, припускатиметься варіант NM_TERNARY_TRUE (1)."
 
-#: ../src/libnmc-setting/settings-docs.h.in:351
+#: ../src/libnmc-setting/settings-docs.h.in:353
 msgid ""
 "The total number of virtual functions to create. Note that when the sriov "
 "setting is present NetworkManager enforces the number of virtual functions "
@@ -10022,7 +10068,7 @@ msgstr ""
 "внесенню будь-яких змін до параметрів SR-IOV, не додавайте параметр sriov до "
 "параметрів з'єднання."
 
-#: ../src/libnmc-setting/settings-docs.h.in:352
+#: ../src/libnmc-setting/settings-docs.h.in:354
 msgid ""
 "Array of virtual function descriptors. Each VF descriptor is a dictionary "
 "mapping attribute names to GVariant values. The 'index' entry is mandatory "
@@ -10048,7 +10094,7 @@ msgstr ""
 "форму: «ІДЕНТИФІКАТОР[.ПРІОРИТЕТНІСТЬ[.ПРОТОКОЛ]]». Значенням ПРОТОКОЛ може "
 "бути або «q» для 802.1Q (типовий варіант) або «ad» для 802.1ad."
 
-#: ../src/libnmc-setting/settings-docs.h.in:353
+#: ../src/libnmc-setting/settings-docs.h.in:355
 msgid ""
 "Array of TC queueing disciplines. When the \"tc\" setting is present, qdiscs "
 "from this property are applied upon activation. If the property is empty, "
@@ -10064,7 +10110,7 @@ msgstr ""
 "параметра «net.core.default_qdisc». Якщо параметр «tc» не вказано, "
 "NetworkManager не втручатиметься у наявні планування черги інтерфейсу."
 
-#: ../src/libnmc-setting/settings-docs.h.in:354
+#: ../src/libnmc-setting/settings-docs.h.in:356
 msgid ""
 "Array of TC traffic filters. When the \"tc\" setting is present, filters "
 "from this property are applied upon activation. If the property is empty, "
@@ -10076,7 +10122,7 @@ msgstr ""
 "порожнім, NetworkManager вилучає усі фільтри. Якщо параметр «tc» не "
 "встановлено, NetworkManager не втручатиметься у поточні фільтри інтерфейсу."
 
-#: ../src/libnmc-setting/settings-docs.h.in:355
+#: ../src/libnmc-setting/settings-docs.h.in:357
 msgid ""
 "The JSON configuration for the team network interface.  The property should "
 "contain raw JSON configuration data suitable for teamd, because the value is "
@@ -10089,8 +10135,8 @@ msgstr ""
 "використовуватимуться типові налаштування. Щоб дізнатися більше про "
 "форматування даних, ознайомитеся із підручником (man) з teamd.conf."
 
-#: ../src/libnmc-setting/settings-docs.h.in:356
-#: ../src/libnmc-setting/settings-docs.h.in:374
+#: ../src/libnmc-setting/settings-docs.h.in:358
+#: ../src/libnmc-setting/settings-docs.h.in:376
 msgid ""
 "Link watchers configuration for the connection: each link watcher is defined "
 "by a dictionary, whose keys depend upon the selected link watcher. Available "
@@ -10111,23 +10157,23 @@ msgstr ""
 "«validate-inactive», «send-always». Докладніше про це на сторінці підручника "
 "(man) щодо teamd.conf."
 
-#: ../src/libnmc-setting/settings-docs.h.in:357
+#: ../src/libnmc-setting/settings-docs.h.in:359
 msgid "Corresponds to the teamd mcast_rejoin.count."
 msgstr "Відповідає mcast_rejoin.count у teamd."
 
-#: ../src/libnmc-setting/settings-docs.h.in:358
+#: ../src/libnmc-setting/settings-docs.h.in:360
 msgid "Corresponds to the teamd mcast_rejoin.interval."
 msgstr "Відповідає mcast_rejoin.interval у teamd."
 
-#: ../src/libnmc-setting/settings-docs.h.in:359
+#: ../src/libnmc-setting/settings-docs.h.in:361
 msgid "Corresponds to the teamd notify_peers.count."
 msgstr "Відповідає notify_peers.count у teamd."
 
-#: ../src/libnmc-setting/settings-docs.h.in:360
+#: ../src/libnmc-setting/settings-docs.h.in:362
 msgid "Corresponds to the teamd notify_peers.interval."
 msgstr "Відповідає notify_peers.interval у teamd."
 
-#: ../src/libnmc-setting/settings-docs.h.in:361
+#: ../src/libnmc-setting/settings-docs.h.in:363
 msgid ""
 "Corresponds to the teamd runner.name. Permitted values are: \"roundrobin\", "
 "\"broadcast\", \"activebackup\", \"loadbalance\", \"lacp\", \"random\"."
@@ -10135,43 +10181,43 @@ msgstr ""
 "Відповідає runner.name у teamd. Можливі такі значення: «roundrobin», "
 "«broadcast», «activebackup», «loadbalance», «lacp», «random»."
 
-#: ../src/libnmc-setting/settings-docs.h.in:362
+#: ../src/libnmc-setting/settings-docs.h.in:364
 msgid "Corresponds to the teamd runner.active."
 msgstr "Відповідає runner.active у teamd."
 
-#: ../src/libnmc-setting/settings-docs.h.in:363
+#: ../src/libnmc-setting/settings-docs.h.in:365
 msgid "Corresponds to the teamd runner.agg_select_policy."
 msgstr "Відповідає runner.agg_select_policy у teamd."
 
-#: ../src/libnmc-setting/settings-docs.h.in:364
+#: ../src/libnmc-setting/settings-docs.h.in:366
 msgid "Corresponds to the teamd runner.fast_rate."
 msgstr "Відповідає runner.fast_rate у teamd."
 
-#: ../src/libnmc-setting/settings-docs.h.in:365
+#: ../src/libnmc-setting/settings-docs.h.in:367
 msgid "Corresponds to the teamd runner.hwaddr_policy."
 msgstr "Відповідає runner.hwaddr_policy у teamd."
 
-#: ../src/libnmc-setting/settings-docs.h.in:366
+#: ../src/libnmc-setting/settings-docs.h.in:368
 msgid "Corresponds to the teamd runner.min_ports."
 msgstr "Відповідає runner.min_ports у teamd."
 
-#: ../src/libnmc-setting/settings-docs.h.in:367
+#: ../src/libnmc-setting/settings-docs.h.in:369
 msgid "Corresponds to the teamd runner.sys_prio."
 msgstr "Відповідає runner.sys_prio у teamd."
 
-#: ../src/libnmc-setting/settings-docs.h.in:368
+#: ../src/libnmc-setting/settings-docs.h.in:370
 msgid "Corresponds to the teamd runner.tx_balancer.name."
 msgstr "Відповідає runner.tx_balancer.name у teamd."
 
-#: ../src/libnmc-setting/settings-docs.h.in:369
+#: ../src/libnmc-setting/settings-docs.h.in:371
 msgid "Corresponds to the teamd runner.tx_balancer.interval."
 msgstr "Відповідає runner.tx_balancer.interval у teamd."
 
-#: ../src/libnmc-setting/settings-docs.h.in:370
+#: ../src/libnmc-setting/settings-docs.h.in:372
 msgid "Corresponds to the teamd runner.tx_hash."
 msgstr "Відповідає runner.tx_hash у teamd."
 
-#: ../src/libnmc-setting/settings-docs.h.in:371
+#: ../src/libnmc-setting/settings-docs.h.in:373
 msgid ""
 "The JSON configuration for the team port. The property should contain raw "
 "JSON configuration data suitable for teamd, because the value is passed "
@@ -10184,19 +10230,19 @@ msgstr ""
 "використовуватимуться типові налаштування. Щоб дізнатися більше про "
 "форматування даних, ознайомитеся із підручником (man) з teamd.conf."
 
-#: ../src/libnmc-setting/settings-docs.h.in:372
+#: ../src/libnmc-setting/settings-docs.h.in:374
 msgid "Corresponds to the teamd ports.PORTIFNAME.lacp_key."
 msgstr "Відповідає ports.PORTIFNAME.lacp_key у teamd."
 
-#: ../src/libnmc-setting/settings-docs.h.in:373
+#: ../src/libnmc-setting/settings-docs.h.in:375
 msgid "Corresponds to the teamd ports.PORTIFNAME.lacp_prio."
 msgstr "Відповідає ports.PORTIFNAME.lacp_prio у teamd."
 
-#: ../src/libnmc-setting/settings-docs.h.in:375
+#: ../src/libnmc-setting/settings-docs.h.in:377
 msgid "Corresponds to the teamd ports.PORTIFNAME.prio."
 msgstr "Відповідає ports.PORTIFNAME.prio у teamd."
 
-#: ../src/libnmc-setting/settings-docs.h.in:376
+#: ../src/libnmc-setting/settings-docs.h.in:378
 msgid ""
 "Corresponds to the teamd ports.PORTIFNAME.queue_id. When set to -1 means the "
 "parameter is skipped from the json config."
@@ -10204,11 +10250,11 @@ msgstr ""
 "Відповідає ports.PORTIFNAME.queue_id у teamd. Значення -1 означає, що "
 "параметр пропускається у налаштуваннях json."
 
-#: ../src/libnmc-setting/settings-docs.h.in:377
+#: ../src/libnmc-setting/settings-docs.h.in:379
 msgid "Corresponds to the teamd ports.PORTIFNAME.sticky."
 msgstr "Відповідає ports.PORTIFNAME.sticky у teamd."
 
-#: ../src/libnmc-setting/settings-docs.h.in:378
+#: ../src/libnmc-setting/settings-docs.h.in:380
 msgid ""
 "The group ID which will own the device. If set to NULL everyone will be able "
 "to use the device."
@@ -10216,7 +10262,7 @@ msgstr ""
 "Ідентифікатор групи-власника пристрою. Якщо встановлено значення NULL, "
 "пристроєм зможе користуватися будь-хто."
 
-#: ../src/libnmc-setting/settings-docs.h.in:379
+#: ../src/libnmc-setting/settings-docs.h.in:381
 msgid ""
 "The operating mode of the virtual device. Allowed values are "
 "NM_SETTING_TUN_MODE_TUN (1) to create a layer 3 device and "
@@ -10226,7 +10272,7 @@ msgstr ""
 "NM_SETTING_TUN_MODE_TUN (1) для створення пристрою шару 3 і "
 "NM_SETTING_TUN_MODE_TAP (2) для створення пристрою Ethernet-подібного шару 2."
 
-#: ../src/libnmc-setting/settings-docs.h.in:380
+#: ../src/libnmc-setting/settings-docs.h.in:382
 msgid ""
 "If the property is set to TRUE, the interface will support multiple file "
 "descriptors (queues) to parallelize packet sending or receiving. Otherwise, "
@@ -10237,7 +10283,7 @@ msgstr ""
 "надсилання або отримування пакетів. Якщо ж встановлено значення FALSE, "
 "інтерфейсом підтримуватиметься лише одна черга."
 
-#: ../src/libnmc-setting/settings-docs.h.in:381
+#: ../src/libnmc-setting/settings-docs.h.in:383
 msgid ""
 "The user ID which will own the device. If set to NULL everyone will be able "
 "to use the device."
@@ -10245,7 +10291,7 @@ msgstr ""
 "Ідентифікатор користувача-власника пристрою. Якщо встановлено значення NULL, "
 "пристроєм зможе користуватися будь-хто."
 
-#: ../src/libnmc-setting/settings-docs.h.in:382
+#: ../src/libnmc-setting/settings-docs.h.in:384
 msgid ""
 "If TRUE the interface will prepend a 4 byte header describing the physical "
 "interface to the packets."
@@ -10253,7 +10299,7 @@ msgstr ""
 "Якщо TRUE, інтерфейс дописуватиме на початку пакетів заголовок у 4 байти із "
 "описом фізичного інтерфейсу."
 
-#: ../src/libnmc-setting/settings-docs.h.in:383
+#: ../src/libnmc-setting/settings-docs.h.in:385
 msgid ""
 "If TRUE the IFF_VNET_HDR the tunnel packets will include a virtio network "
 "header."
@@ -10261,7 +10307,7 @@ msgstr ""
 "Якщо IFF_VNET_HDR має значення TRUE, тунельовані пакети включатимуть "
 "заголовок мережі virtio."
 
-#: ../src/libnmc-setting/settings-docs.h.in:384
+#: ../src/libnmc-setting/settings-docs.h.in:386
 msgid ""
 "A dictionary of key/value pairs with user data. This data is ignored by "
 "NetworkManager and can be used at the users discretion. The keys only "
@@ -10274,7 +10320,7 @@ msgstr ""
 "формату ASCII, але значення можуть бути довільними рядками UTF8, довжина "
 "яких не перевищує певного значення."
 
-#: ../src/libnmc-setting/settings-docs.h.in:385
+#: ../src/libnmc-setting/settings-docs.h.in:387
 msgid ""
 "This property specifies the peer interface name of the veth. This property "
 "is mandatory."
@@ -10282,7 +10328,7 @@ msgstr ""
 "Ця властивість визначає назву однорангового інтерфейсу для veth. Значення "
 "цієї властивості слід вказати обов'язково."
 
-#: ../src/libnmc-setting/settings-docs.h.in:386
+#: ../src/libnmc-setting/settings-docs.h.in:388
 msgid ""
 "For outgoing packets, a list of mappings from Linux SKB priorities to 802.1p "
 "priorities.  The mapping is given in the format \"from:to\" where both \"from"
@@ -10292,7 +10338,7 @@ msgstr ""
 "802.1p. Прив'язка визначається у форматі «з:до», де обидва значення, «з» і "
 "«до» є цілими додатними числами, наприклад «7:3»."
 
-#: ../src/libnmc-setting/settings-docs.h.in:387
+#: ../src/libnmc-setting/settings-docs.h.in:389
 msgid ""
 "One or more flags which control the behavior and features of the VLAN "
 "interface.  Flags include NM_VLAN_FLAG_REORDER_HEADERS (0x1) (reordering of "
@@ -10314,7 +10360,7 @@ msgstr ""
 "зберегти зворотну сумісність, типовим значенням у програмному інтерфейсі D-"
 "Bus лишається 0, а нестача властивості у D-Bus також розглядається як 0."
 
-#: ../src/libnmc-setting/settings-docs.h.in:388
+#: ../src/libnmc-setting/settings-docs.h.in:390
 msgid ""
 "The VLAN identifier that the interface created by this connection should be "
 "assigned. The valid range is from 0 to 4094, without the reserved id 4095."
@@ -10323,7 +10369,7 @@ msgstr ""
 "з'єднанням. Коректним діапазоном є діапазон від 0 до 4094, без "
 "зарезервованого ідентифікатора 4095."
 
-#: ../src/libnmc-setting/settings-docs.h.in:389
+#: ../src/libnmc-setting/settings-docs.h.in:391
 msgid ""
 "For incoming packets, a list of mappings from 802.1p priorities to Linux SKB "
 "priorities.  The mapping is given in the format \"from:to\" where both \"from"
@@ -10333,7 +10379,7 @@ msgstr ""
 "Linux. Прив'язка визначається у форматі «з:до», де обидва значення, «з» і "
 "«до» є цілими додатними числами, наприклад «7:3»."
 
-#: ../src/libnmc-setting/settings-docs.h.in:390
+#: ../src/libnmc-setting/settings-docs.h.in:392
 msgid ""
 "If given, specifies the parent interface name or parent connection UUID from "
 "which this VLAN interface should be created.  If this property is not "
@@ -10345,7 +10391,7 @@ msgstr ""
 "значення для цієї властивості не вказано, запис з'єднання має містити "
 "параметр «802-3-ethernet» із властивістю «mac-address»."
 
-#: ../src/libnmc-setting/settings-docs.h.in:391
+#: ../src/libnmc-setting/settings-docs.h.in:393
 msgid ""
 "Dictionary of key/value pairs of VPN plugin specific data.  Both keys and "
 "values must be strings."
@@ -10353,7 +10399,7 @@ msgstr ""
 "Словник із пар ключ-значення для специфічних даних додатка VPN. Величинами "
 "ключа і значення можуть бути лише текстові рядки."
 
-#: ../src/libnmc-setting/settings-docs.h.in:392
+#: ../src/libnmc-setting/settings-docs.h.in:394
 msgid ""
 "If the VPN service supports persistence, and this property is TRUE, the VPN "
 "will attempt to stay connected across link changes and outages, until "
@@ -10364,7 +10410,7 @@ msgstr ""
 "час зміни параметрів зв'язку або неможливості обміну даними, аж доки "
 "з'єднання не буде розірвано явним чином."
 
-#: ../src/libnmc-setting/settings-docs.h.in:393
+#: ../src/libnmc-setting/settings-docs.h.in:395
 msgid ""
 "Dictionary of key/value pairs of VPN plugin specific secrets like passwords "
 "or private keys.  Both keys and values must be strings."
@@ -10373,7 +10419,7 @@ msgstr ""
 "VPN, зокрема паролів або закритих ключів. Величинами ключа і значення можуть "
 "бути лише текстові рядки."
 
-#: ../src/libnmc-setting/settings-docs.h.in:394
+#: ../src/libnmc-setting/settings-docs.h.in:396
 msgid ""
 "D-Bus service name of the VPN plugin that this setting uses to connect to "
 "its network.  i.e. org.freedesktop.NetworkManager.vpnc for the vpnc plugin."
@@ -10382,7 +10428,7 @@ msgstr ""
 "додатка з його мережею. Приклад: org.freedesktop.NetworkManager.vpnc для "
 "додатка vpnc."
 
-#: ../src/libnmc-setting/settings-docs.h.in:395
+#: ../src/libnmc-setting/settings-docs.h.in:397
 msgid ""
 "Timeout for the VPN service to establish the connection. Some services may "
 "take quite a long time to connect. Value of 0 means a default timeout, which "
@@ -10395,7 +10441,7 @@ msgstr ""
 "допомогою параметра vpn.timeout у файлі налаштувань). Значення, які "
 "перевищують нуль, визначають час очікування у секундах."
 
-#: ../src/libnmc-setting/settings-docs.h.in:396
+#: ../src/libnmc-setting/settings-docs.h.in:398
 msgid ""
 "If the VPN connection requires a user name for authentication, that name "
 "should be provided here.  If the connection is available to more than one "
@@ -10411,15 +10457,15 @@ msgstr ""
 "порожнє, NetworkManager автоматично використає ім'я користувача, який "
 "надіслав запит щодо встановлення з'єднання VPN."
 
-#: ../src/libnmc-setting/settings-docs.h.in:397
+#: ../src/libnmc-setting/settings-docs.h.in:399
 msgid "The routing table for this VRF."
 msgstr "Таблиця маршрутизації для цього VRF."
 
-#: ../src/libnmc-setting/settings-docs.h.in:398
+#: ../src/libnmc-setting/settings-docs.h.in:400
 msgid "Specifies the lifetime in seconds of FDB entries learnt by the kernel."
 msgstr "Визначає час життя у секундах записів FDB, вивчених ядром."
 
-#: ../src/libnmc-setting/settings-docs.h.in:399
+#: ../src/libnmc-setting/settings-docs.h.in:401
 msgid ""
 "Specifies the UDP destination port to communicate to the remote VXLAN tunnel "
 "endpoint."
@@ -10427,22 +10473,22 @@ msgstr ""
 "Визначає порт призначення UDP для обміну даними із віддаленою кінцевою "
 "точкою тунелю VXLAN."
 
-#: ../src/libnmc-setting/settings-docs.h.in:400
+#: ../src/libnmc-setting/settings-docs.h.in:402
 msgid ""
 "Specifies the VXLAN Network Identifier (or VXLAN Segment Identifier) to use."
 msgstr ""
 "Визначає ідентифікатор мережі VXLAN (або ідентифікатор сегмента VXLAN), яким "
 "слід скористатися."
 
-#: ../src/libnmc-setting/settings-docs.h.in:401
+#: ../src/libnmc-setting/settings-docs.h.in:403
 msgid "Specifies whether netlink LL ADDR miss notifications are generated."
 msgstr "Визначає, чи будуть створюватися сповіщення netlink LL ADDR miss."
 
-#: ../src/libnmc-setting/settings-docs.h.in:402
+#: ../src/libnmc-setting/settings-docs.h.in:404
 msgid "Specifies whether netlink IP ADDR miss notifications are generated."
 msgstr "Визначає, чи будуть створюватися сповіщення netlink IP ADDR miss."
 
-#: ../src/libnmc-setting/settings-docs.h.in:403
+#: ../src/libnmc-setting/settings-docs.h.in:405
 msgid ""
 "Specifies whether unknown source link layer addresses and IP addresses are "
 "entered into the VXLAN device forwarding database."
@@ -10450,7 +10496,7 @@ msgstr ""
 "Вказує, чи вводяться невідомі адреси шару посилань та IP-адреси до бази "
 "даних переспрямовування пристроїв VXLAN."
 
-#: ../src/libnmc-setting/settings-docs.h.in:404
+#: ../src/libnmc-setting/settings-docs.h.in:406
 msgid ""
 "Specifies the maximum number of FDB entries. A value of zero means that the "
 "kernel will store unlimited entries."
@@ -10458,24 +10504,24 @@ msgstr ""
 "Вказує максимальну кількість записів FDB. Нульове значення означає, що ядро "
 "зберігатиме необмежену кількість записів."
 
-#: ../src/libnmc-setting/settings-docs.h.in:405
+#: ../src/libnmc-setting/settings-docs.h.in:407
 msgid "If given, specifies the source IP address to use in outgoing packets."
 msgstr ""
 "Якщо задано, визначає початкову IP-адресу, якою слід скористатися для "
 "вихідних пакетів."
 
-#: ../src/libnmc-setting/settings-docs.h.in:406
+#: ../src/libnmc-setting/settings-docs.h.in:408
 msgid ""
 "If given, specifies the parent interface name or parent connection UUID."
 msgstr ""
 "Якщо задано, визначає назву батьківського інтерфейсу або UUID батьківського "
 "з'єднання."
 
-#: ../src/libnmc-setting/settings-docs.h.in:407
+#: ../src/libnmc-setting/settings-docs.h.in:409
 msgid "Specifies whether ARP proxy is turned on."
 msgstr "Визначає, чи увімкнено ARP-проксі."
 
-#: ../src/libnmc-setting/settings-docs.h.in:408
+#: ../src/libnmc-setting/settings-docs.h.in:410
 msgid ""
 "Specifies the unicast destination IP address to use in outgoing packets when "
 "the destination link layer address is not known in the VXLAN device "
@@ -10486,11 +10532,11 @@ msgstr ""
 "переспрямовування пристроїв VXLAN, або IP-адреса універсальної трансляції, з "
 "якою слід встановити зв'язок."
 
-#: ../src/libnmc-setting/settings-docs.h.in:409
+#: ../src/libnmc-setting/settings-docs.h.in:411
 msgid "Specifies whether route short circuit is turned on."
 msgstr "Визначає, чи увімкнено коротке замикання маршруту."
 
-#: ../src/libnmc-setting/settings-docs.h.in:410
+#: ../src/libnmc-setting/settings-docs.h.in:412
 msgid ""
 "Specifies the maximum UDP source port to communicate to the remote VXLAN "
 "tunnel endpoint."
@@ -10498,7 +10544,7 @@ msgstr ""
 "Визначає максимальний початковий порт UDP для обміну даними із віддаленою "
 "кінцевою точкою тунелю VXLAN."
 
-#: ../src/libnmc-setting/settings-docs.h.in:411
+#: ../src/libnmc-setting/settings-docs.h.in:413
 msgid ""
 "Specifies the minimum UDP source port to communicate to the remote VXLAN "
 "tunnel endpoint."
@@ -10506,16 +10552,16 @@ msgstr ""
 "Визначає мінімальний початковий порт UDP для обміну даними із віддаленою "
 "кінцевою точкою тунелю VXLAN."
 
-#: ../src/libnmc-setting/settings-docs.h.in:412
+#: ../src/libnmc-setting/settings-docs.h.in:414
 msgid "Specifies the TOS value to use in outgoing packets."
 msgstr "Визначає значення TOS, яке слід використовувати для вихідних пакетів."
 
-#: ../src/libnmc-setting/settings-docs.h.in:413
+#: ../src/libnmc-setting/settings-docs.h.in:415
 msgid "Specifies the time-to-live value to use in outgoing packets."
 msgstr ""
 "Визначає значення часу життя, яке слід використовувати для вихідних пакетів."
 
-#: ../src/libnmc-setting/settings-docs.h.in:414
+#: ../src/libnmc-setting/settings-docs.h.in:416
 msgid ""
 "The P2P device that should be connected to. Currently, this is the only way "
 "to create or join a group."
@@ -10523,7 +10569,7 @@ msgstr ""
 "Пристрій P2P, з яким слід встановити з'єднання. У поточній версії це єдиний "
 "спосіб створення групи або долучення до неї."
 
-#: ../src/libnmc-setting/settings-docs.h.in:415
+#: ../src/libnmc-setting/settings-docs.h.in:417
 msgid ""
 "The Wi-Fi Display (WFD) Information Elements (IEs) to set. Wi-Fi Display "
 "requires a protocol specific information element to be set in certain Wi-Fi "
@@ -10537,7 +10583,7 @@ msgstr ""
 "Вказати ці елементи з метою встановлення з'єднання можна тут. Цей параметр є "
 "корисним лише для реалізації клієнта дисплея Wi-Fi."
 
-#: ../src/libnmc-setting/settings-docs.h.in:416
+#: ../src/libnmc-setting/settings-docs.h.in:418
 msgid ""
 "Flags indicating which mode of WPS is to be used. There's little point in "
 "changing the default setting as NetworkManager will automatically determine "
@@ -10547,7 +10593,7 @@ msgstr ""
 "типове значення не варто, оскільки NetworkManager автоматично визначає "
 "найкращий режим."
 
-#: ../src/libnmc-setting/settings-docs.h.in:417
+#: ../src/libnmc-setting/settings-docs.h.in:419
 msgid ""
 "If specified, this connection will only apply to the WiMAX device whose MAC "
 "address matches. This property does not change the MAC address of the device "
@@ -10557,7 +10603,7 @@ msgstr ""
 "відповідною адресою MAC. Ця властивість не змінює MAC-адреси пристрою (таку "
 "зміну називають підміною MAC). Застаріле: 1"
 
-#: ../src/libnmc-setting/settings-docs.h.in:418
+#: ../src/libnmc-setting/settings-docs.h.in:420
 msgid ""
 "Network Service Provider (NSP) name of the WiMAX network this connection "
 "should use. Deprecated: 1"
@@ -10565,7 +10611,7 @@ msgstr ""
 "Назва надавача мережевих послуг (NSP) для мережі WiMAX, яку має "
 "використовувати це з'єднання. Застаріле: 1"
 
-#: ../src/libnmc-setting/settings-docs.h.in:419
+#: ../src/libnmc-setting/settings-docs.h.in:421
 msgid ""
 "The use of fwmark is optional and is by default off. Setting it to 0 "
 "disables it. Otherwise, it is a 32-bit fwmark for outgoing packets. Note "
@@ -10577,7 +10623,7 @@ msgstr ""
 "fwmark для вихідних пакетів. Зауважте, що вмикання «ip4-auto-default-route» "
 "або «ip6-auto-default-route» неявним чином призводить до вибору fwmark."
 
-#: ../src/libnmc-setting/settings-docs.h.in:420
+#: ../src/libnmc-setting/settings-docs.h.in:422
 msgid ""
 "Whether to enable special handling of the IPv4 default route. If enabled, "
 "the IPv4 default route from wireguard.peer-routes will be placed to a "
@@ -10605,11 +10651,11 @@ msgstr ""
 "і не буде жодного вузла, який використовує типовий маршрут (default-route) у "
 "дозволених IP-адресах (allowed-ips)."
 
-#: ../src/libnmc-setting/settings-docs.h.in:421
+#: ../src/libnmc-setting/settings-docs.h.in:423
 msgid "Like ip4-auto-default-route, but for the IPv6 default route."
 msgstr "Те саме, що ip4-auto-default-route, але для типового маршруту IPv6."
 
-#: ../src/libnmc-setting/settings-docs.h.in:422
+#: ../src/libnmc-setting/settings-docs.h.in:424
 msgid ""
 "The listen-port. If listen-port is not specified, the port will be chosen "
 "randomly when the interface comes up."
@@ -10617,7 +10663,7 @@ msgstr ""
 "Порт для очікування на дані. Якщо порт для очікування на дані не вказано, "
 "номер буде вибрано випадковим чином під час підняття інтерфейсу."
 
-#: ../src/libnmc-setting/settings-docs.h.in:423
+#: ../src/libnmc-setting/settings-docs.h.in:425
 msgid ""
 "If non-zero, only transmit packets of the specified size or smaller, "
 "breaking larger packets up into multiple fragments. If zero a default MTU is "
@@ -10630,7 +10676,7 @@ msgstr ""
 "відміну від параметра MTU wg-quick, тут не беруться до уваги поточні "
 "маршрути на момент активації."
 
-#: ../src/libnmc-setting/settings-docs.h.in:424
+#: ../src/libnmc-setting/settings-docs.h.in:426
 msgid ""
 "Whether to automatically add routes for the AllowedIPs ranges of the peers. "
 "If TRUE (the default), NetworkManager will automatically add routes in the "
@@ -10652,15 +10698,15 @@ msgstr ""
 "«0.0.0.0/0» або «::/0», а для профілю увімкнено ipv4.never-default або ipv6."
 "never-default, маршрут вузла для цього вузла не буде додано автоматично."
 
-#: ../src/libnmc-setting/settings-docs.h.in:425
+#: ../src/libnmc-setting/settings-docs.h.in:427
 msgid "The 256 bit private-key in base64 encoding."
 msgstr "256-бітовий закритий ключ у кодуванні base64."
 
-#: ../src/libnmc-setting/settings-docs.h.in:426
+#: ../src/libnmc-setting/settings-docs.h.in:428
 msgid "Flags indicating how to handle the \"private-key\" property."
 msgstr "Прапорці, які позначають, як обробляти властивість «private-key»."
 
-#: ../src/libnmc-setting/settings-docs.h.in:427
+#: ../src/libnmc-setting/settings-docs.h.in:429
 msgid ""
 "IEEE 802.15.4 channel. A positive integer or -1, meaning \"do not set, use "
 "whatever the device is already set to\"."
@@ -10668,7 +10714,7 @@ msgstr ""
 "Канал IEEE 802.15.4. Додане ціле значення або -1, що означає «не "
 "встановлювати, використовувати той, який вже встановлено пристроєм»."
 
-#: ../src/libnmc-setting/settings-docs.h.in:428
+#: ../src/libnmc-setting/settings-docs.h.in:430
 msgid ""
 "If specified, this connection will only apply to the IEEE 802.15.4 (WPAN) "
 "MAC layer device whose permanent MAC address matches."
@@ -10676,7 +10722,7 @@ msgstr ""
 "Якщо вказано, це з'єднання застосовуватиметься лише до пристрою шару MAC "
 "IEEE 802.15.4 (WPAN) із відповідною сталою адресою MAC."
 
-#: ../src/libnmc-setting/settings-docs.h.in:429
+#: ../src/libnmc-setting/settings-docs.h.in:431
 msgid ""
 "IEEE 802.15.4 channel page. A positive integer or -1, meaning \"do not set, "
 "use whatever the device is already set to\"."
@@ -10684,11 +10730,11 @@ msgstr ""
 "Сторінка каналу IEEE 80215.4. Додане ціле значення або -1, що означає «не "
 "встановлювати, використовувати ту, яку вже встановлено пристроєм»."
 
-#: ../src/libnmc-setting/settings-docs.h.in:430
+#: ../src/libnmc-setting/settings-docs.h.in:432
 msgid "IEEE 802.15.4 Personal Area Network (PAN) identifier."
 msgstr "Ідентифікатор Personal Area Network (PAN) IEEE 802.15.4."
 
-#: ../src/libnmc-setting/settings-docs.h.in:431
+#: ../src/libnmc-setting/settings-docs.h.in:433
 msgid "Short IEEE 802.15.4 address to be used within a restricted environment."
 msgstr ""
 "Коротка адреса IEEE 802.15.4, яку слід використовувати у обмеженому "
