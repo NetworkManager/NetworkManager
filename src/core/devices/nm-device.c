@@ -15108,6 +15108,9 @@ _cancel_activation(NMDevice *self)
     _dispatcher_cleanup(self);
     ip_check_gw_ping_cleanup(self);
 
+    _dev_ip_state_cleanup(self, AF_INET, FALSE);
+    _dev_ip_state_cleanup(self, AF_INET6, FALSE);
+
     /* Break the activation chain */
     activation_source_clear(self);
 }
