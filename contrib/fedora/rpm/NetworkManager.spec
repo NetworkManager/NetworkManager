@@ -161,9 +161,13 @@
 
 %if 0%{?rhel} > 9 || 0%{?fedora} > 35
 %global split_ifcfg_rh 1
-%global ifcfg_warning 1
 %else
 %global split_ifcfg_rh 0
+%endif
+
+%if 0%{?rhel} > 8 || 0%{?fedora} > 35
+%global ifcfg_warning 1
+%else
 %global ifcfg_warning 0
 %endif
 
