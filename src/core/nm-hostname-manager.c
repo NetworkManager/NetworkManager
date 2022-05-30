@@ -341,17 +341,16 @@ _write_hostname_dbus_cb(GObject *source, GAsyncResult *result, gpointer user_dat
 static void
 _write_hostname_on_idle_cb(gpointer user_data, GCancellable *cancellable)
 {
-    gs_unref_object GTask     *task = G_TASK(user_data);
-    NMHostnameManager         *self;
-    NMHostnameManagerPrivate  *priv;
-    const char                *hostname;
-    gs_free char              *hostname_eol = NULL;
-    gboolean                   ret;
-    gs_free_error GError      *error     = NULL;
-    const char                *file      = HOSTNAME_FILE;
-    gs_free char              *link_path = NULL;
-    gs_unref_variant GVariant *var       = NULL;
-    struct stat                file_stat;
+    gs_unref_object GTask    *task = G_TASK(user_data);
+    NMHostnameManager        *self;
+    NMHostnameManagerPrivate *priv;
+    const char               *hostname;
+    gs_free char             *hostname_eol = NULL;
+    gboolean                  ret;
+    gs_free_error GError     *error     = NULL;
+    const char               *file      = HOSTNAME_FILE;
+    gs_free char             *link_path = NULL;
+    struct stat               file_stat;
 #if HAVE_SELINUX
     gboolean fcon_was_set = FALSE;
     char    *fcon_prev    = NULL;
