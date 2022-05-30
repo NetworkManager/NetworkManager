@@ -36,7 +36,15 @@ NMHostnameManager *nm_hostname_manager_get(void);
 
 const char *nm_hostname_manager_get_static_hostname(NMHostnameManager *self);
 
-gboolean nm_hostname_manager_write_hostname(NMHostnameManager *self, const char *hostname);
+void nm_hostname_manager_write_hostname(NMHostnameManager  *self,
+                                        const char         *hostname,
+                                        GCancellable       *cancellable,
+                                        GAsyncReadyCallback callback,
+                                        gpointer            user_data);
+
+gboolean nm_hostname_manager_write_hostname_finish(NMHostnameManager *self,
+                                                   GAsyncResult      *result,
+                                                   GError           **error);
 
 void nm_hostname_manager_set_transient_hostname(NMHostnameManager             *self,
                                                 const char                    *hostname,

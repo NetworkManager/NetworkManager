@@ -376,6 +376,8 @@ typedef struct {
 
     GHashTable *sce_idx;
 
+    GCancellable *shutdown_cancellable;
+
     CList sce_dirty_lst_head;
 
     CList connections_lst_head;
@@ -3466,44 +3468,93 @@ load_plugins(NMSettings *self, const char *const *plugins, GError **error)
 /*****************************************************************************/
 
 static void
-pk_hostname_cb(NMAuthChain *chain, GDBusMethodInvocation *context, gpointer user_data)
+_save_hostname_write_cb(GObject *source, GAsyncResult *result, gpointer user_data)
+{
+    NMSettings                    *self;
+    GDBusMethodInvocation         *context;
+    gs_free char                  *hostname     = NULL;
+    gs_unref_object NMAuthSubject *auth_subject = NULL;
+    gs_unref_object GCancellable  *cancellable  = NULL;
+    gs_free_error GError          *error        = NULL;
+
+    nm_utils_user_data_unpack(user_data, &self, &context, &auth_subject, &hostname, &cancellable);
+
+    nm_hostname_manager_write_hostname_finish(NM_HOSTNAME_MANAGER(source), result, &error);
+
+    nm_audit_log_control_op(NM_AUDIT_OP_HOSTNAME_SAVE,
+                            hostname ?: "",
+                            !error,
+                            auth_subject,
+                            error ? error->message : NULL);
+
+    if (nm_utils_error_is_cancelled(error)) {
+        g_dbus_method_invocation_return_error_literal(context,
+                                                      NM_SETTINGS_ERROR,
+                                                      NM_SETTINGS_ERROR_FAILED,
+                                                      "NetworkManager is shutting down");
+        return;
+    }
+
+    if (error) {
+        g_dbus_method_invocation_take_error(context,
+                                            g_error_new(NM_SETTINGS_ERROR,
+                                                        NM_SETTINGS_ERROR_FAILED,
+                                                        "Saving the hostname failed: %s",
+                                                        error->message));
+        return;
+    }
+
+    g_dbus_method_invocation_return_value(context, NULL);
+}
+
+static void
+_save_hostname_pk_cb(NMAuthChain *chain, GDBusMethodInvocation *context, gpointer user_data)
 {
     NMSettings        *self = NM_SETTINGS(user_data);
     NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE(self);
     NMAuthCallResult   result;
-    GError            *error = NULL;
-    const char        *hostname;
+    gs_free char      *hostname = NULL;
 
     nm_assert(G_IS_DBUS_METHOD_INVOCATION(context));
 
     c_list_unlink(nm_auth_chain_parent_lst_list(chain));
 
     result   = nm_auth_chain_get_result(chain, NM_AUTH_PERMISSION_SETTINGS_MODIFY_HOSTNAME);
-    hostname = nm_auth_chain_get_data(chain, "hostname");
+    hostname = nm_auth_chain_steal_data(chain, "hostname");
 
-    /* If our NMSettingsConnection is already gone, do nothing */
     if (result != NM_AUTH_CALL_RESULT_YES) {
-        error = g_error_new_literal(NM_SETTINGS_ERROR,
-                                    NM_SETTINGS_ERROR_PERMISSION_DENIED,
-                                    NM_UTILS_ERROR_MSG_INSUFF_PRIV);
-    } else {
-        if (!nm_hostname_manager_write_hostname(priv->hostname_manager, hostname)) {
-            error = g_error_new_literal(NM_SETTINGS_ERROR,
-                                        NM_SETTINGS_ERROR_FAILED,
-                                        "Saving the hostname failed.");
-        }
+        nm_audit_log_control_op(NM_AUDIT_OP_HOSTNAME_SAVE,
+                                hostname ?: "",
+                                FALSE,
+                                nm_auth_chain_get_subject(chain),
+                                NM_UTILS_ERROR_MSG_INSUFF_PRIV);
+        g_dbus_method_invocation_return_error_literal(context,
+                                                      NM_SETTINGS_ERROR,
+                                                      NM_SETTINGS_ERROR_PERMISSION_DENIED,
+                                                      NM_UTILS_ERROR_MSG_INSUFF_PRIV);
+        return;
     }
 
-    nm_audit_log_control_op(NM_AUDIT_OP_HOSTNAME_SAVE,
-                            hostname,
-                            !error,
-                            nm_auth_chain_get_subject(chain),
-                            error ? error->message : NULL);
+    if (!priv->shutdown_cancellable) {
+        /* we only keep a weak pointer on the cancellable, so we can
+         * wrap it up after use. We almost never require this, because
+         * SaveHostname is almost never called. */
+        priv->shutdown_cancellable = g_cancellable_new();
+        g_object_add_weak_pointer(G_OBJECT(priv->shutdown_cancellable),
+                                  (gpointer *) &priv->shutdown_cancellable);
+    }
 
-    if (error)
-        g_dbus_method_invocation_take_error(context, error);
-    else
-        g_dbus_method_invocation_return_value(context, NULL);
+    nm_hostname_manager_write_hostname(
+        priv->hostname_manager,
+        hostname,
+        priv->shutdown_cancellable,
+        _save_hostname_write_cb,
+        nm_utils_user_data_pack(self,
+                                context,
+                                g_object_ref(nm_auth_chain_get_subject(chain)),
+                                hostname,
+                                g_object_ref(priv->shutdown_cancellable)));
+    g_steal_pointer(&hostname);
 }
 
 static void
@@ -3525,13 +3576,13 @@ impl_settings_save_hostname(NMDBusObject                      *obj,
     g_variant_get(parameters, "(&s)", &hostname);
 
     /* Minimal validation of the hostname */
-    if (!nm_utils_validate_hostname(hostname)) {
+    if (nm_str_not_empty(hostname) && !nm_utils_validate_hostname(hostname)) {
         error_code   = NM_SETTINGS_ERROR_INVALID_HOSTNAME;
         error_reason = "The hostname was too long or contained invalid characters";
         goto err;
     }
 
-    chain = nm_auth_chain_new_context(invocation, pk_hostname_cb, self);
+    chain = nm_auth_chain_new_context(invocation, _save_hostname_pk_cb, self);
     if (!chain) {
         error_code   = NM_SETTINGS_ERROR_PERMISSION_DENIED;
         error_reason = NM_UTILS_ERROR_MSG_REQ_AUTH_FAILED;
@@ -3540,7 +3591,7 @@ impl_settings_save_hostname(NMDBusObject                      *obj,
 
     c_list_link_tail(&priv->auth_lst_head, nm_auth_chain_parent_lst_list(chain));
     nm_auth_chain_add_call(chain, NM_AUTH_PERMISSION_SETTINGS_MODIFY_HOSTNAME, TRUE);
-    nm_auth_chain_set_data(chain, "hostname", g_strdup(hostname), g_free);
+    nm_auth_chain_set_data(chain, "hostname", nm_strdup_not_empty(hostname), g_free);
     return;
 err:
     nm_audit_log_control_op(NM_AUDIT_OP_HOSTNAME_SAVE, hostname, FALSE, invocation, error_reason);
@@ -4122,6 +4173,12 @@ dispose(GObject *object)
                                              G_CALLBACK(session_monitor_changed_cb),
                                              self);
         g_clear_object(&priv->session_monitor);
+    }
+
+    if (priv->shutdown_cancellable) {
+        g_object_remove_weak_pointer(G_OBJECT(priv->shutdown_cancellable),
+                                     (gpointer *) &priv->shutdown_cancellable);
+        g_cancellable_cancel(g_steal_pointer(&priv->shutdown_cancellable));
     }
 
     G_OBJECT_CLASS(nm_settings_parent_class)->dispose(object);
