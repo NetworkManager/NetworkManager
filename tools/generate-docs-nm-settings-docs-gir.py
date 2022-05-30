@@ -4,16 +4,14 @@
 # Copyright (C) 2009 - 2017 Red Hat, Inc.
 #
 from __future__ import print_function, unicode_literals
+import xml.etree.ElementTree as ET
 import argparse
 import os
 import gi
-import xml.sax.saxutils as saxutils
 import re
 
 gi.require_version("GIRepository", "2.0")
 from gi.repository import GIRepository
-
-import xml.etree.ElementTree as ET
 
 try:
     libs = os.environ["LD_LIBRARY_PATH"].split(":")
@@ -186,13 +184,8 @@ def settings_sort_key(x):
     return (x_prefix != "setting_connection", x_prefix)
 
 
-def xml_quoteattr(val):
-    return saxutils.quoteattr(str(val))
-
-
 def main(gir_path_str, output_path_str):
     girxml = ET.parse(gir_path_str).getroot()
-    outfile = open(output_path_str, mode="w")
 
     basexml = girxml.find('./gi:namespace/gi:class[@name="Setting"]', ns_map)
     settings = girxml.findall('./gi:namespace/gi:class[@parent="Setting"]', ns_map)
@@ -205,14 +198,8 @@ def main(gir_path_str, output_path_str):
 
     init_constants(girxml, settings)
 
-    outfile.write(
-        """<?xml version=\"1.0\"?>
-    <!DOCTYPE nm-setting-docs [
-    <!ENTITY quot "&#34;">
-    ]>
-    <nm-setting-docs>
-    """
-    )
+    nm_settings_docs_element = ET.Element("nm-setting-docs")
+    docs_gir = ET.ElementTree(nm_settings_docs_element)
 
     for settingxml in settings:
         if "abstract" in settingxml.attrib:
@@ -227,13 +214,14 @@ def main(gir_path_str, output_path_str):
                 "%s needs a gtk-doc block with one-line description"
                 % setting.props.name
             )
-        outfile.write(
-            '  <setting name="%s" description=%s name_upper="%s" >\n'
-            % (
-                setting.props.name,
-                xml_quoteattr(class_desc),
-                get_setting_name_define(settingxml),
-            )
+        setting_element = ET.SubElement(
+            nm_settings_docs_element,
+            "setting",
+            attrib={
+                "name": setting.props.name,
+                "description": class_desc,
+                "name_upper": get_setting_name_define(settingxml),
+            },
         )
 
         setting_properties = {
@@ -263,25 +251,28 @@ def main(gir_path_str, output_path_str):
                     % (setting.props.name, prop)
                 )
 
-            default_value_as_xml = ""
-            if default_value is not None:
-                default_value_as_xml = " default=%s" % (xml_quoteattr(default_value))
+            property_attributes = {
+                "name": prop,
+                "name_upper": prop_upper,
+                "type": value_type,
+                "description": value_desc,
+            }
 
-            outfile.write(
-                '    <property name="%s" name_upper="%s" type="%s"%s description=%s />\n'
-                % (
-                    prop,
-                    prop_upper,
-                    value_type,
-                    default_value_as_xml,
-                    xml_quoteattr(value_desc),
-                )
+            if default_value is not None:
+                property_attributes["default"] = str(default_value)
+
+            ET.SubElement(
+                setting_element,
+                "property",
+                attrib=property_attributes,
             )
 
-        outfile.write("  </setting>\n")
-
-    outfile.write("</nm-setting-docs>\n")
-    outfile.close()
+    with open(output_path_str, mode="w") as outfile:
+        docs_gir.write(
+            outfile,
+            encoding="unicode",
+            xml_declaration=True,
+        )
 
 
 if __name__ == "__main__":
