@@ -3,17 +3,15 @@
 #
 # Copyright (C) 2009 - 2017 Red Hat, Inc.
 #
-
-from __future__ import print_function
-
+from __future__ import print_function, unicode_literals
+import xml.etree.ElementTree as ET
+import argparse
 import os
 import gi
-import xml.sax.saxutils as saxutils
+import re
 
 gi.require_version("GIRepository", "2.0")
 from gi.repository import GIRepository
-import argparse, re, sys
-import xml.etree.ElementTree as ET
 
 try:
     libs = os.environ["LD_LIBRARY_PATH"].split(":")
@@ -186,120 +184,125 @@ def settings_sort_key(x):
     return (x_prefix != "setting_connection", x_prefix)
 
 
-def xml_quoteattr(val):
-    return saxutils.quoteattr(str(val))
+def main(gir_path_str, output_path_str):
+    girxml = ET.parse(gir_path_str).getroot()
 
+    basexml = girxml.find('./gi:namespace/gi:class[@name="Setting"]', ns_map)
+    settings = girxml.findall('./gi:namespace/gi:class[@parent="Setting"]', ns_map)
+    # Hack. Need a better way to do this
+    ipxml = girxml.find('./gi:namespace/gi:class[@name="SettingIPConfig"]', ns_map)
+    settings.extend(
+        girxml.findall('./gi:namespace/gi:class[@parent="SettingIPConfig"]', ns_map)
+    )
+    settings = sorted(settings, key=settings_sort_key)
 
-def usage():
-    print("Usage: %s --gir FILE --output FILE" % sys.argv[0])
-    exit()
+    init_constants(girxml, settings)
 
+    nm_settings_docs_element = ET.Element("nm-setting-docs")
+    docs_gir = ET.ElementTree(nm_settings_docs_element)
 
-parser = argparse.ArgumentParser()
-parser.add_argument(
-    "-l",
-    "--lib-path",
-    metavar="PATH",
-    action="append",
-    help="path to scan for shared libraries",
-)
-parser.add_argument("-g", "--gir", metavar="FILE", help="NM-1.0.gir file")
-parser.add_argument("-o", "--output", metavar="FILE", help="output file")
+    for settingxml in settings:
+        if "abstract" in settingxml.attrib:
+            continue
 
-args = parser.parse_args()
-if args.gir is None or args.output is None:
-    usage()
+        new_func = NM.__getattr__(settingxml.attrib["name"])
+        setting = new_func()
 
-if args.lib_path:
-    for lib in args.lib_path:
-        GIRepository.Repository.prepend_library_path(lib)
-
-girxml = ET.parse(args.gir).getroot()
-outfile = open(args.output, mode="w")
-
-basexml = girxml.find('./gi:namespace/gi:class[@name="Setting"]', ns_map)
-settings = girxml.findall('./gi:namespace/gi:class[@parent="Setting"]', ns_map)
-# Hack. Need a better way to do this
-ipxml = girxml.find('./gi:namespace/gi:class[@name="SettingIPConfig"]', ns_map)
-settings.extend(
-    girxml.findall('./gi:namespace/gi:class[@parent="SettingIPConfig"]', ns_map)
-)
-settings = sorted(settings, key=settings_sort_key)
-
-init_constants(girxml, settings)
-
-outfile.write(
-    """<?xml version=\"1.0\"?>
-<!DOCTYPE nm-setting-docs [
-<!ENTITY quot "&#34;">
-]>
-<nm-setting-docs>
-"""
-)
-
-for settingxml in settings:
-    if "abstract" in settingxml.attrib:
-        continue
-
-    new_func = NM.__getattr__(settingxml.attrib["name"])
-    setting = new_func()
-
-    class_desc = get_docs(settingxml)
-    if class_desc is None:
-        raise Exception(
-            "%s needs a gtk-doc block with one-line description" % setting.props.name
+        class_desc = get_docs(settingxml)
+        if class_desc is None:
+            raise Exception(
+                "%s needs a gtk-doc block with one-line description"
+                % setting.props.name
+            )
+        setting_element = ET.SubElement(
+            nm_settings_docs_element,
+            "setting",
+            attrib={
+                "name": setting.props.name,
+                "description": class_desc,
+                "name_upper": get_setting_name_define(settingxml),
+            },
         )
-    outfile.write(
-        '  <setting name="%s" description=%s name_upper="%s" >\n'
-        % (
-            setting.props.name,
-            xml_quoteattr(class_desc),
-            get_setting_name_define(settingxml),
+
+        setting_properties = {
+            prop.name: prop
+            for prop in GObject.list_properties(setting)
+            if prop.name != "name"
+        }
+
+        for prop in sorted(setting_properties):
+            pspec = setting_properties[prop]
+
+            propxml = settingxml.find('./gi:property[@name="%s"]' % pspec.name, ns_map)
+            if propxml is None:
+                propxml = basexml.find('./gi:property[@name="%s"]' % pspec.name, ns_map)
+            if propxml is None:
+                propxml = ipxml.find('./gi:property[@name="%s"]' % pspec.name, ns_map)
+
+            value_type = get_prop_type(setting, pspec)
+            value_desc = get_docs(propxml)
+            default_value = get_default_value(setting, pspec, propxml)
+
+            prop_upper = prop.upper().replace("-", "_")
+
+            if value_desc is None:
+                raise Exception(
+                    "%s.%s needs a documentation description"
+                    % (setting.props.name, prop)
+                )
+
+            property_attributes = {
+                "name": prop,
+                "name_upper": prop_upper,
+                "type": value_type,
+                "description": value_desc,
+            }
+
+            if default_value is not None:
+                property_attributes["default"] = str(default_value)
+
+            ET.SubElement(
+                setting_element,
+                "property",
+                attrib=property_attributes,
+            )
+
+    with open(output_path_str, mode="w") as outfile:
+        docs_gir.write(
+            outfile,
+            encoding="unicode",
+            xml_declaration=True,
         )
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "-l",
+        "--lib-path",
+        metavar="PATH",
+        action="append",
+        help="path to scan for shared libraries",
+    )
+    parser.add_argument(
+        "-g",
+        "--gir",
+        metavar="FILE",
+        help="NM-1.0.gir file",
+        required=True,
+    )
+    parser.add_argument(
+        "-o",
+        "--output",
+        metavar="FILE",
+        help="output file",
+        required=True,
     )
 
-    setting_properties = {
-        prop.name: prop
-        for prop in GObject.list_properties(setting)
-        if prop.name != "name"
-    }
+    args = parser.parse_args()
 
-    for prop in sorted(setting_properties):
-        pspec = setting_properties[prop]
+    if args.lib_path:
+        for lib in args.lib_path:
+            GIRepository.Repository.prepend_library_path(lib)
 
-        propxml = settingxml.find('./gi:property[@name="%s"]' % pspec.name, ns_map)
-        if propxml is None:
-            propxml = basexml.find('./gi:property[@name="%s"]' % pspec.name, ns_map)
-        if propxml is None:
-            propxml = ipxml.find('./gi:property[@name="%s"]' % pspec.name, ns_map)
-
-        value_type = get_prop_type(setting, pspec)
-        value_desc = get_docs(propxml)
-        default_value = get_default_value(setting, pspec, propxml)
-
-        prop_upper = prop.upper().replace("-", "_")
-
-        if value_desc is None:
-            raise Exception(
-                "%s.%s needs a documentation description" % (setting.props.name, prop)
-            )
-
-        default_value_as_xml = ""
-        if default_value is not None:
-            default_value_as_xml = " default=%s" % (xml_quoteattr(default_value))
-
-        outfile.write(
-            '    <property name="%s" name_upper="%s" type="%s"%s description=%s />\n'
-            % (
-                prop,
-                prop_upper,
-                value_type,
-                default_value_as_xml,
-                xml_quoteattr(value_desc),
-            )
-        )
-
-    outfile.write("  </setting>\n")
-
-outfile.write("</nm-setting-docs>\n")
-outfile.close()
+    main(args.gir, args.output)
