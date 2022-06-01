@@ -59,7 +59,16 @@ typedef enum {
     LOGD_IP   = LOGD_IP4 | LOGD_IP6,
 
 #define LOGD_DHCPX(is_ipv4) ((is_ipv4) ? LOGD_DHCP4 : LOGD_DHCP6)
-#define LOGD_IPX(is_ipv4)   ((is_ipv4) ? LOGD_IP4 : LOGD_IP6)
+
+#define LOGD_DHCP_af(addr_family)                                                               \
+    ({                                                                                          \
+        const int _addr_family_1 = (addr_family);                                               \
+                                                                                                \
+        (_addr_family_1 == AF_UNSPEC ? LOGD_DHCP                                                \
+                                     : (NM_IS_IPv4(_addr_family_1) ? LOGD_DHCP4 : LOGD_DHCP6)); \
+    })
+
+#define LOGD_IPX(is_ipv4) ((is_ipv4) ? LOGD_IP4 : LOGD_IP6)
 
 } NMLogDomain;
 

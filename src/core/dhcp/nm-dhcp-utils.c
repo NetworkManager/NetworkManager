@@ -416,6 +416,8 @@ nm_dhcp_utils_ip4_config_from_options(NMDedupMultiIndex *multi_idx,
     str = g_hash_table_lookup(options, "ip_address");
     if (!str || !nm_utils_parse_inaddr_bin(AF_INET, str, NULL, &addr))
         return NULL;
+    if (addr == INADDR_ANY)
+        return NULL;
 
     _LOG2I(LOGD_DHCP4, iface, "  address %s", str);
 
@@ -428,6 +430,7 @@ nm_dhcp_utils_ip4_config_from_options(NMDedupMultiIndex *multi_idx,
         plen = _nm_utils_ip4_get_default_prefix(addr);
         _LOG2I(LOGD_DHCP4, iface, "  plen %d (default)", plen);
     }
+
     nm_platform_ip4_address_set_addr(&address, addr, plen);
 
     /* Routes: if the server returns classless static routes, we MUST ignore

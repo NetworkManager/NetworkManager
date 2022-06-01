@@ -10296,7 +10296,11 @@ _dev_ipdhcpx_start(NMDevice *self, int addr_family)
             .vendor_class_identifier = vendor_class_identifier,
             .use_fqdn                = hostname_is_fqdn,
             .reject_servers          = reject_servers,
-            .v4.request_broadcast    = request_broadcast,
+            .v4 =
+                {
+                    .request_broadcast = request_broadcast,
+                    .acd_timeout_msec  = _prop_get_ipv4_dad_timeout(self),
+                },
         };
 
         priv->ipdhcp_data_4.client =
@@ -10311,22 +10315,25 @@ _dev_ipdhcpx_start(NMDevice *self, int addr_family)
         duid = _prop_get_ipv6_dhcp_duid(self, connection, hwaddr, &enforce_duid);
 
         config = (NMDhcpClientConfig){
-            .addr_family        = AF_INET6,
-            .l3cfg              = nm_device_get_l3cfg(self),
-            .iface              = nm_device_get_ip_iface(self),
-            .uuid               = nm_connection_get_uuid(connection),
-            .send_hostname      = nm_setting_ip_config_get_dhcp_send_hostname(s_ip),
-            .hostname           = nm_setting_ip_config_get_dhcp_hostname(s_ip),
-            .hostname_flags     = _prop_get_ipvx_dhcp_hostname_flags(self, AF_INET6),
-            .client_id          = duid,
-            .mud_url            = _prop_get_connection_mud_url(self, s_con),
-            .timeout            = no_lease_timeout_sec,
-            .anycast_address    = _device_get_dhcp_anycast_address(self),
-            .v6.enforce_duid    = enforce_duid,
-            .v6.iaid            = iaid,
-            .v6.iaid_explicit   = iaid_explicit,
-            .v6.info_only       = (priv->ipdhcp_data_6.v6.mode == NM_NDISC_DHCP_LEVEL_OTHERCONF),
-            .v6.needed_prefixes = priv->ipdhcp_data_6.v6.needed_prefixes,
+            .addr_family     = AF_INET6,
+            .l3cfg           = nm_device_get_l3cfg(self),
+            .iface           = nm_device_get_ip_iface(self),
+            .uuid            = nm_connection_get_uuid(connection),
+            .send_hostname   = nm_setting_ip_config_get_dhcp_send_hostname(s_ip),
+            .hostname        = nm_setting_ip_config_get_dhcp_hostname(s_ip),
+            .hostname_flags  = _prop_get_ipvx_dhcp_hostname_flags(self, AF_INET6),
+            .client_id       = duid,
+            .mud_url         = _prop_get_connection_mud_url(self, s_con),
+            .timeout         = no_lease_timeout_sec,
+            .anycast_address = _device_get_dhcp_anycast_address(self),
+            .v6 =
+                {
+                    .enforce_duid  = enforce_duid,
+                    .iaid          = iaid,
+                    .iaid_explicit = iaid_explicit,
+                    .info_only     = (priv->ipdhcp_data_6.v6.mode == NM_NDISC_DHCP_LEVEL_OTHERCONF),
+                    .needed_prefixes = priv->ipdhcp_data_6.v6.needed_prefixes,
+                },
         };
 
         priv->ipdhcp_data_6.client =
