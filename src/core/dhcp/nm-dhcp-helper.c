@@ -100,32 +100,20 @@ next:;
     return g_variant_ref_sink(g_variant_new("(a{sv})", &builder));
 }
 
-static void
-kill_pid(void)
-{
-    const char *pid_str;
-    pid_t       pid = 0;
-
-    pid_str = getenv("pid");
-    if (pid_str)
-        pid = strtol(pid_str, NULL, 10);
-    if (pid) {
-        _LOGI("a fatal error occurred, kill dhclient instance with pid %d", pid);
-        kill(pid, SIGTERM);
-    }
-}
-
 int
 main(int argc, char *argv[])
 {
-    gs_unref_object GDBusConnection *connection = NULL;
-    gs_free_error GError            *error      = NULL;
-    gs_unref_variant GVariant       *parameters = NULL;
-    gs_unref_variant GVariant       *result     = NULL;
-    gboolean                         success    = FALSE;
+    gs_unref_object GDBusConnection *connection  = NULL;
+    gs_free_error GError            *error       = NULL;
+    gs_free_error GError            *error_flush = NULL;
+    gs_unref_variant GVariant       *parameters  = NULL;
+    gs_unref_variant GVariant       *result      = NULL;
+    gs_free char                    *s_err       = NULL;
+    gboolean                         success;
     guint                            try_count;
     gint64                           time_start;
     gint64                           time_end;
+    gint64                           remaining_time;
 
     /* Connecting to the unix socket can fail with EAGAIN if there are too
      * many pending connections and the server can't accept them in time
@@ -135,6 +123,8 @@ main(int argc, char *argv[])
     time_start = g_get_monotonic_time();
     time_end   = time_start + (5000 * 1000L);
     try_count  = 0;
+
+    _LOGi("nm-dhcp-helper: event called");
 
 do_connect:
     try_count++;
@@ -146,16 +136,16 @@ do_connect:
                                                &error);
     if (!connection) {
         if (g_error_matches(error, G_IO_ERROR, G_IO_ERROR_WOULD_BLOCK)) {
-            gint64 time_remaining = time_end - g_get_monotonic_time();
-            gint64 interval;
+            remaining_time = time_end - g_get_monotonic_time();
+            if (remaining_time > 0) {
+                gint64 interval;
 
-            if (time_remaining > 0) {
                 _LOGi("failure to connect: %s (retry %u, waited %lld ms)",
                       error->message,
                       try_count,
-                      (long long) (time_end - time_remaining - time_start) / 1000);
+                      (long long) (time_end - remaining_time - time_start) / 1000);
                 interval = NM_CLAMP((gint64) (100L * (1L << NM_MIN(try_count, 31))), 5000, 100000);
-                g_usleep(NM_MIN(interval, time_remaining));
+                g_usleep(NM_MIN(interval, remaining_time));
                 g_clear_error(&error);
                 goto do_connect;
             }
@@ -163,6 +153,7 @@ do_connect:
 
         g_dbus_error_strip_remote_error(error);
         _LOGE("could not connect to NetworkManager D-Bus socket: %s", error->message);
+        success = FALSE;
         goto out;
     }
 
@@ -180,63 +171,78 @@ do_notify:
                                          parameters,
                                          NULL,
                                          G_DBUS_CALL_FLAGS_NONE,
-                                         1000,
+                                         60000,
                                          NULL,
                                          &error);
 
-    if (!result) {
-        gs_free char *s_err = NULL;
-
-        s_err = g_dbus_error_get_remote_error(error);
-        if (NM_IN_STRSET(s_err, "org.freedesktop.DBus.Error.UnknownMethod")) {
-            gint64 remaining_time = time_end - g_get_monotonic_time();
-            gint64 interval;
-
-            /* I am not sure that a race can actually happen, as we register the object
-             * on the server side during GDBusServer:new-connection signal.
-             *
-             * However, there was also a race for subscribing to an event, so let's just
-             * do some retry. */
-            if (remaining_time > 0) {
-                _LOGi("failure to call notify: %s (retry %u)", error->message, try_count);
-                interval = NM_CLAMP((gint64) (100L * (1L << NM_MIN(try_count, 31))), 5000, 25000);
-                g_usleep(NM_MIN(interval, remaining_time));
-                g_clear_error(&error);
-                goto do_notify;
-            }
-        }
-        _LOGW("failure to call notify: %s (try signal via Event)", error->message);
-        g_clear_error(&error);
-
-        /* for backward compatibility, try to emit the signal. There is no stable
-         * API between the dhcp-helper and NetworkManager. However, while upgrading
-         * the NetworkManager package, a newer helper might want to notify an
-         * older server, which still uses the "Event". */
-        if (!g_dbus_connection_emit_signal(connection,
-                                           NULL,
-                                           "/",
-                                           NM_DHCP_CLIENT_DBUS_IFACE,
-                                           "Event",
-                                           parameters,
-                                           &error)) {
-            g_dbus_error_strip_remote_error(error);
-            _LOGE("could not send DHCP Event signal: %s", error->message);
-            goto out;
-        }
-        /* We were able to send the asynchronous Event. Consider that a success. */
+    if (result) {
         success = TRUE;
-    } else
-        success = TRUE;
+        goto out;
+    }
 
-    if (!g_dbus_connection_flush_sync(connection, NULL, &error)) {
-        g_dbus_error_strip_remote_error(error);
-        _LOGE("could not flush D-Bus connection: %s", error->message);
+    s_err = g_dbus_error_get_remote_error(error);
+
+    if (NM_IN_STRSET(s_err, "org.freedesktop.NetworkManager.Device.Failed")) {
+        _LOGi("notify failed with reason: %s", error->message);
         success = FALSE;
         goto out;
     }
 
+    if (!NM_IN_STRSET(s_err, "org.freedesktop.DBus.Error.UnknownMethod")) {
+        /* Some unexpected error. We treat that as a failure. In particular,
+         * the daemon will fail the request if ACD fails. This causes nm-dhcp-helper
+         * to fail, which in turn causes dhclient to send a DECLINE. */
+        _LOGW("failure to call notify: %s (try signal via Event)", error->message);
+        success = FALSE;
+        goto out;
+    }
+
+    /* I am not sure that a race can actually happen, as we register the object
+     * on the server side during GDBusServer:new-connection signal.
+     *
+     * However, there was also a race for subscribing to an event, so let's just
+     * do some retry. */
+    remaining_time = time_end - g_get_monotonic_time();
+    if (remaining_time > 0) {
+        gint64 interval;
+
+        _LOGi("failure to call notify: %s (retry %u)", error->message, try_count);
+        interval = NM_CLAMP((gint64) (100L * (1L << NM_MIN(try_count, 31))), 5000, 25000);
+        g_usleep(NM_MIN(interval, remaining_time));
+        g_clear_error(&error);
+        goto do_notify;
+    }
+
+    /* for backward compatibility, try to emit the signal. There is no stable
+     * API between the dhcp-helper and NetworkManager. However, while upgrading
+     * the NetworkManager package, a newer helper might want to notify an
+     * older server, which still uses the "Event". */
+
+    _LOGW("failure to call notify: %s (try signal via Event)", error->message);
+    g_clear_error(&error);
+
+    if (g_dbus_connection_emit_signal(connection,
+                                      NULL,
+                                      "/",
+                                      NM_DHCP_CLIENT_DBUS_IFACE,
+                                      "Event",
+                                      parameters,
+                                      &error)) {
+        /* We were able to send the asynchronous Event. Consider that a success. */
+        success = TRUE;
+        goto out;
+    }
+
+    g_dbus_error_strip_remote_error(error);
+    _LOGE("could not send DHCP Event signal: %s", error->message);
+    success = FALSE;
+
 out:
-    if (!success)
-        kill_pid();
+    if (!g_dbus_connection_flush_sync(connection, NULL, &error_flush)) {
+        _LOGE("could not flush D-Bus connection: %s", error_flush->message);
+        /* if we considered this a success so far, don't fail because of this. */
+    }
+
+    _LOGi("success: %s", success ? "YES" : "NO");
     return success ? EXIT_SUCCESS : EXIT_FAILURE;
 }

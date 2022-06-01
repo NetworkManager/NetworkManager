@@ -42,6 +42,30 @@ G_DEFINE_TYPE(NMDhcpManager, nm_dhcp_manager, G_TYPE_OBJECT)
 
 /*****************************************************************************/
 
+#undef _NMLOG_ENABLED
+#define _NMLOG_ENABLED(level, addr_family) nm_logging_enabled((level), _LOGD_DHCP(addr_family))
+
+#define _NMLOG(level, addr_family, ...)                                                           \
+    G_STMT_START                                                                                  \
+    {                                                                                             \
+        const int         _addr_family = (addr_family);                                           \
+        const NMLogLevel  _log_level   = (level);                                                 \
+        const NMLogDomain _log_domain  = LOGD_DHCP_af(_addr_family);                              \
+                                                                                                  \
+        if (nm_logging_enabled(_log_level, _log_domain)) {                                        \
+            _nm_log(_log_level,                                                                   \
+                    _log_domain,                                                                  \
+                    0,                                                                            \
+                    NULL,                                                                         \
+                    NULL,                                                                         \
+                    "dhcp%s: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__),                                \
+                    nm_utils_addr_family_to_str(_addr_family) _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
+        }                                                                                         \
+    }                                                                                             \
+    G_STMT_END
+
+/*****************************************************************************/
+
 /* default to installed helper, but can be modified for testing */
 const char *nm_dhcp_helper_path = LIBEXECDIR "/nm-dhcp-helper";
 
@@ -167,11 +191,10 @@ nm_dhcp_manager_start_client(NMDhcpManager *self, NMDhcpClientConfig *config, GE
 
     gtype = _client_factory_get_gtype(priv->client_factory, config->addr_family);
 
-    nm_log_trace(LOGD_DHCP,
-                 "dhcp%c: creating IPv%c DHCP client of type %s",
-                 nm_utils_addr_family_to_char(config->addr_family),
-                 nm_utils_addr_family_to_char(config->addr_family),
-                 g_type_name(gtype));
+    _LOGT(config->addr_family,
+          "creating IPv%c DHCP client of type %s",
+          nm_utils_addr_family_to_char(config->addr_family),
+          g_type_name(gtype));
 
     client = g_object_new(gtype, NM_DHCP_CLIENT_CONFIG, config, NULL);
 
@@ -244,11 +267,11 @@ nm_dhcp_manager_init(NMDhcpManager *self)
         if (!f)
             continue;
 
-        nm_log_dbg(LOGD_DHCP,
-                   "dhcp-init: enabled DHCP client '%s'%s%s",
-                   f->name,
-                   _client_factory_available(f) ? "" : " (not available)",
-                   f->undocumented ? " (undocumented internal plugin)" : "");
+        _LOGD(AF_UNSPEC,
+              "init: enabled DHCP client '%s'%s%s",
+              f->name,
+              _client_factory_available(f) ? "" : " (not available)",
+              f->undocumented ? " (undocumented internal plugin)" : "");
     }
 
     /* Client-specific setup */
@@ -261,20 +284,20 @@ nm_dhcp_manager_init(NMDhcpManager *self)
     if (client) {
         client_factory = _client_factory_available(_client_factory_find_by_name(client));
         if (!client_factory)
-            nm_log_warn(LOGD_DHCP, "dhcp-init: DHCP client '%s' not available", client);
+            _LOGW(AF_UNSPEC, "init: DHCP client '%s' not available", client);
     }
     if (!client_factory) {
         client_factory = _client_factory_find_by_name("" NM_CONFIG_DEFAULT_MAIN_DHCP);
         if (!client_factory)
-            nm_log_err(LOGD_DHCP,
-                       "dhcp-init: default DHCP client '%s' is not installed",
-                       NM_CONFIG_DEFAULT_MAIN_DHCP);
+            _LOGE(AF_UNSPEC,
+                  "init: default DHCP client '%s' is not installed",
+                  NM_CONFIG_DEFAULT_MAIN_DHCP);
         else {
             client_factory = _client_factory_available(client_factory);
             if (!client_factory)
-                nm_log_info(LOGD_DHCP,
-                            "dhcp-init: default DHCP client '%s' is not available",
-                            NM_CONFIG_DEFAULT_MAIN_DHCP);
+                _LOGI(AF_UNSPEC,
+                      "init: default DHCP client '%s' is not available",
+                      NM_CONFIG_DEFAULT_MAIN_DHCP);
         }
     }
     if (!client_factory) {
@@ -287,7 +310,7 @@ nm_dhcp_manager_init(NMDhcpManager *self)
 
     g_return_if_fail(client_factory);
 
-    nm_log_info(LOGD_DHCP, "dhcp-init: Using DHCP client '%s'", client_factory->name);
+    _LOGI(AF_UNSPEC, "init: Using DHCP client '%s'", client_factory->name);
 
     /* NOTE: currently the DHCP plugin is chosen once at start. It's not
      * possible to reload that configuration. If that ever becomes possible,

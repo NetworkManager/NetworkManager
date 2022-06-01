@@ -37,7 +37,6 @@ G_STATIC_ASSERT(NM_ACD_TIMEOUT_RFC5227_MSEC == N_ACD_TIMEOUT_RFC5227);
 #define ACD_ENSURE_RATELIMIT_MSEC               ((guint32) 4000u)
 #define ACD_WAIT_PROBING_EXTRA_TIME_MSEC        ((guint32) (1000u + ACD_ENSURE_RATELIMIT_MSEC))
 #define ACD_WAIT_PROBING_EXTRA_TIME2_MSEC       ((guint32) 1000u)
-#define ACD_MAX_TIMEOUT_MSEC                    ((guint32) 30000u)
 #define ACD_WAIT_TIME_PROBING_FULL_RESTART_MSEC ((guint32) 30000u)
 #define ACD_WAIT_TIME_CONFLICT_RESTART_MSEC     ((guint32) 120000u)
 #define ACD_WAIT_TIME_ANNOUNCE_RESTART_MSEC     ((guint32) 30000u)
@@ -1866,10 +1865,10 @@ _l3_acd_data_add(NML3Cfg              *self,
 
     acd_data = _l3_acd_data_find(self, addr);
 
-    if (acd_timeout_msec > ACD_MAX_TIMEOUT_MSEC) {
+    if (acd_timeout_msec > NM_ACD_TIMEOUT_MAX_MSEC) {
         /* we limit the maximum timeout. Otherwise we have to handle integer overflow
          * when adding timeouts. */
-        acd_timeout_msec = ACD_MAX_TIMEOUT_MSEC;
+        acd_timeout_msec = NM_ACD_TIMEOUT_MAX_MSEC;
     }
 
     if (!acd_data) {
@@ -3229,8 +3228,8 @@ nm_l3cfg_add_config(NML3Cfg              *self,
     nm_assert(l3cd);
     nm_assert(nm_l3_config_data_get_ifindex(l3cd) == self->priv.ifindex);
 
-    if (acd_timeout_msec > ACD_MAX_TIMEOUT_MSEC)
-        acd_timeout_msec = ACD_MAX_TIMEOUT_MSEC;
+    if (acd_timeout_msec > NM_ACD_TIMEOUT_MAX_MSEC)
+        acd_timeout_msec = NM_ACD_TIMEOUT_MAX_MSEC;
 
     nm_assert(NM_IN_SET(acd_defend_type,
                         NM_L3_ACD_DEFEND_TYPE_NEVER,

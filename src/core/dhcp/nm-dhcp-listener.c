@@ -128,7 +128,7 @@ get_option(GVariant *options, const char *key)
 }
 
 static void
-_method_call_handle(NMDhcpListener *self, GVariant *parameters)
+_method_call_handle(NMDhcpListener *self, GDBusMethodInvocation *invocation, GVariant *parameters)
 {
     gs_free char              *iface   = NULL;
     gs_free char              *pid_str = NULL;
@@ -142,23 +142,23 @@ _method_call_handle(NMDhcpListener *self, GVariant *parameters)
     iface = get_option(options, "interface");
     if (iface == NULL) {
         _LOGW("dhcp-event: didn't have associated interface.");
-        return;
+        goto out;
     }
 
     pid_str = get_option(options, "pid");
     pid     = _nm_utils_ascii_str_to_int64(pid_str, 10, 0, G_MAXINT32, -1);
     if (pid == -1) {
         _LOGW("dhcp-event: couldn't convert PID '%s' to an integer", pid_str ?: "(null)");
-        return;
+        goto out;
     }
 
     reason = get_option(options, "reason");
     if (reason == NULL) {
         _LOGW("dhcp-event: (pid %d) DHCP event didn't have a reason", pid);
-        return;
+        goto out;
     }
 
-    g_signal_emit(self, signals[EVENT], 0, iface, pid, options, reason, &handled);
+    g_signal_emit(self, signals[EVENT], 0, iface, pid, options, reason, invocation, &handled);
     if (!handled) {
         if (g_ascii_strcasecmp(reason, "RELEASE") == 0) {
             /* Ignore event when the dhcp client gets killed and we receive its last message */
@@ -166,6 +166,10 @@ _method_call_handle(NMDhcpListener *self, GVariant *parameters)
         } else
             _LOGW("dhcp-event: (pid %d) unhandled DHCP event for interface %s", pid, iface);
     }
+
+out:
+    if (!handled)
+        g_dbus_method_invocation_return_value(invocation, NULL);
 }
 
 static void
@@ -190,8 +194,7 @@ _method_call(GDBusConnection       *connection,
         return;
     }
 
-    _method_call_handle(self, parameters);
-    g_dbus_method_invocation_return_value(invocation, NULL);
+    _method_call_handle(self, invocation, parameters);
 }
 
 static GDBusInterfaceInfo *const interface_info = NM_DEFINE_GDBUS_INTERFACE_INFO(
@@ -311,9 +314,10 @@ nm_dhcp_listener_class_init(NMDhcpListenerClass *listener_class)
                                   NULL,
                                   NULL,
                                   G_TYPE_BOOLEAN, /* listeners return TRUE if handled */
-                                  4,
+                                  5,
                                   G_TYPE_STRING,  /* iface */
                                   G_TYPE_INT,     /* pid */
                                   G_TYPE_VARIANT, /* options */
-                                  G_TYPE_STRING); /* reason */
+                                  G_TYPE_STRING,  /* reason */
+                                  G_TYPE_DBUS_METHOD_INVOCATION /* invocation*/);
 }

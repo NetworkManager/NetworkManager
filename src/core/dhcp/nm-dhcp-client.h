@@ -84,15 +84,6 @@ typedef struct {
 
 const char *nm_dhcp_client_event_type_to_string(NMDhcpClientEventType client_event_type);
 
-/* FIXME(l3cfg:dhcp:config): nm_dhcp_manager_start_ip[46]() has a gazillion of parameters,
- * those get passed on as CONSTRUCT_ONLY properties to the NMDhcpClient. Drop
- * all these parameters, and let the caller provide one NMDhcpClientConfig
- * instance. There will be only one GObject property (NM_DHCP_CLIENT_CONFIG),
- * which is CONSTRUCT_ONLY and takes a (mandatory) G_TYPE_POINTER for the
- * configuration.
- *
- * Since NMDhcpClientConfig has an addr_family, we also don't need separate
- * nm_dhcp_manager_start_ip[46]() methods. */
 typedef struct {
     int addr_family;
 
@@ -156,12 +147,17 @@ typedef struct {
 
     union {
         struct {
+            /* The address from the previous lease */
+            const char *last_address;
+
+            /* Whether to do ACD for the DHCPv4 address. With timeout zero, ACD
+             * is disabled. */
+            guint acd_timeout_msec;
+
             /* Set BOOTP broadcast flag in request packets, so that servers
              * will always broadcast replies. */
             bool request_broadcast : 1;
 
-            /* The address from the previous lease */
-            const char *last_address;
         } v4;
         struct {
             /* If set, the DUID from the connection is used; otherwise
@@ -208,9 +204,12 @@ typedef struct {
 
     gboolean (*ip4_start)(NMDhcpClient *self, GError **error);
 
-    gboolean (*accept)(NMDhcpClient *self, GError **error);
+    gboolean (*accept)(NMDhcpClient *self, const NML3ConfigData *l3cd, GError **error);
 
-    gboolean (*decline)(NMDhcpClient *self, const char *error_message, GError **error);
+    gboolean (*decline)(NMDhcpClient         *self,
+                        const NML3ConfigData *l3cd,
+                        const char           *error_message,
+                        GError              **error);
 
     gboolean (*ip6_start)(NMDhcpClient *self, const struct in6_addr *ll_addr, GError **error);
 
@@ -249,11 +248,6 @@ nm_dhcp_client_get_lease(NMDhcpClient *self)
     return NULL;
 }
 
-gboolean nm_dhcp_client_accept(NMDhcpClient *self, GError **error);
-gboolean nm_dhcp_client_can_accept(NMDhcpClient *self);
-
-gboolean nm_dhcp_client_decline(NMDhcpClient *self, const char *error_message, GError **error);
-
 void nm_dhcp_client_stop(NMDhcpClient *self, gboolean release);
 
 /* Backend helpers for subclasses */
@@ -271,12 +265,15 @@ void _nm_dhcp_client_notify(NMDhcpClient         *self,
                             NMDhcpClientEventType client_event_type,
                             const NML3ConfigData *l3cd);
 
-gboolean nm_dhcp_client_handle_event(gpointer      unused,
-                                     const char   *iface,
-                                     int           pid,
-                                     GVariant     *options,
-                                     const char   *reason,
-                                     NMDhcpClient *self);
+gboolean _nm_dhcp_client_accept_offer(NMDhcpClient *self, gconstpointer p_yiaddr);
+
+gboolean nm_dhcp_client_handle_event(gpointer               unused,
+                                     const char            *iface,
+                                     int                    pid,
+                                     GVariant              *options,
+                                     const char            *reason,
+                                     GDBusMethodInvocation *invocation,
+                                     NMDhcpClient          *self);
 
 void nm_dhcp_client_emit_ipv6_prefix_delegated(NMDhcpClient               *self,
                                                const NMPlatformIP6Address *prefix);
