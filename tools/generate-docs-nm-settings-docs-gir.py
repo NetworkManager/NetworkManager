@@ -267,12 +267,11 @@ def main(gir_path_str, output_path_str):
                 attrib=property_attributes,
             )
 
-    with open(output_path_str, mode="w") as outfile:
-        docs_gir.write(
-            outfile,
-            encoding="unicode",
-            xml_declaration=True,
-        )
+    docs_gir.write(
+        output_path_str,
+        xml_declaration=True,
+        encoding="utf-8",
+    )
 
 
 if __name__ == "__main__":
