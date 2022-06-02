@@ -163,6 +163,7 @@ EXTRA_DIST += \
 	examples/python/dbus/add-connection-compat.py \
 	examples/python/dbus/add-wifi-eap-connection.py \
 	examples/python/dbus/add-wifi-psk-connection.py \
+        examples/python/dbus/add-wifi-sae-connection.py \
 	examples/python/dbus/vpn.py \
 	examples/python/dbus/update-secrets.py \
 	examples/python/dbus/list-connections.py \
