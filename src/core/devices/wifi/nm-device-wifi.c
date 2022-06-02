@@ -1076,8 +1076,9 @@ check_connection_compatible(NMDevice *device, NMConnection *connection, GError *
     if (s_wsec) {
         key_mgmt = nm_setting_wireless_security_get_key_mgmt(s_wsec);
 
-        if (nm_supplicant_interface_get_capability(priv->sup_iface, NM_SUPPL_CAP_TYPE_WEP)
-                == NM_TERNARY_FALSE
+        if (priv->sup_iface
+            && nm_supplicant_interface_get_capability(priv->sup_iface, NM_SUPPL_CAP_TYPE_WEP)
+                   == NM_TERNARY_FALSE
             && NM_IN_STRSET(key_mgmt, "ieee8021x", "none")) {
             nm_utils_error_set_literal(error,
                                        NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
