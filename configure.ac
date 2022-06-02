@@ -1444,4 +1444,5 @@ echo "  sanitizers: $sanitizers"
 echo "  Mozilla Public Suffix List: $with_libpsl"
 echo "  eBPF: $have_ebpf"
 echo "  readline: $with_readline"
+echo "  python: $PYTHON"
 echo
