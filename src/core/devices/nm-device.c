@@ -7656,8 +7656,9 @@ slave_state_changed(NMDevice           *slave,
     }
 
     if (release) {
-        configure = priv->sys_iface_state == NM_DEVICE_SYS_IFACE_STATE_MANAGED
-                    && nm_device_sys_iface_state_get(slave) != NM_DEVICE_SYS_IFACE_STATE_EXTERNAL;
+        configure = (priv->sys_iface_state == NM_DEVICE_SYS_IFACE_STATE_MANAGED
+                     && nm_device_sys_iface_state_get(slave) != NM_DEVICE_SYS_IFACE_STATE_EXTERNAL)
+                    || nm_device_sys_iface_state_get(slave) == NM_DEVICE_SYS_IFACE_STATE_MANAGED;
 
         nm_device_master_release_slave(self,
                                        slave,
