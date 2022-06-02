@@ -11,6 +11,13 @@ grep -q '^NAME=.*\(CentOS\)' /etc/os-release && IS_CENTOS=1
 grep -q '^NAME=.*\(Fedora\)' /etc/os-release && IS_FEDORA=1
 grep -q '^NAME=.*\(Alpine\)' /etc/os-release && IS_ALPINE=1
 
+IS_CENTOS_7=0
+if [ $IS_CENTOS = 1 ]; then
+    if grep -q '^VERSION_ID=.*\<7\>' /etc/os-release ; then
+        IS_CENTOS_7=1
+    fi
+fi
+
 do_clean() {
     git clean -fdx
 }
@@ -35,6 +42,8 @@ mv build/INST/share/gtk-doc/html /tmp/nm-docs-html
 do_clean; BUILD_TYPE=meson     CC=gcc   WITH_DOCS=1 WITH_VALGRIND=1 contrib/scripts/nm-ci-run.sh
 do_clean; BUILD_TYPE=autotools CC=clang WITH_DOCS=0                 contrib/scripts/nm-ci-run.sh
 do_clean; BUILD_TYPE=meson     CC=clang WITH_DOCS=0                 contrib/scripts/nm-ci-run.sh
+
+do_clean; test $IS_CENTOS_7 = 1 && PYTHON=python2 BUILD_TYPE=autotools CC=gcc WITH_DOCS=1 contrib/scripts/nm-ci-run.sh
 
 do_clean; test $IS_FEDORA = 1 -o $IS_CENTOS = 1 && ./contrib/fedora/rpm/build_clean.sh -g -w crypto_gnutls -w debug -w iwd -w test -W meson
 do_clean; test $IS_FEDORA = 1                   && ./contrib/fedora/rpm/build_clean.sh -g -w crypto_gnutls -w debug -w iwd -w test -w meson
