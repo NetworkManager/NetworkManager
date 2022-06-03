@@ -93,7 +93,7 @@ bind_files() {
         [[ "$f2" = *.tmp ]] && continue
         [[ "$f2" = *~ ]] && continue
         f2="/root/$f2"
-        ARR+=( -v "$f:$f2:Z" )
+        ARR+=( -v "$f:$f2" )
     done
 
     eval "$VARIABLE_NAME=( \"\${ARR[@]}\" )"
@@ -419,7 +419,7 @@ do_run() {
         BIND_NM_CI=()
         if [ -d "$BASEDIR_NM/.git/NetworkManager-ci" ] ; then
             DIR="$(readlink -f "$BASEDIR_NM/.git/NetworkManager-ci")"
-            BIND_NM_CI=(-v "$DIR:$DIR:Z")
+            BIND_NM_CI=(-v "$DIR:$DIR")
         fi
 
         podman run --privileged \
