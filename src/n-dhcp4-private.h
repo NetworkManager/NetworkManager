@@ -378,6 +378,7 @@ struct NDhcp4ClientProbe {
         uint64_t ns_deferred;                   /* timeout for deferred action */
         uint64_t ns_reinit;
         uint64_t ns_nak_restart_delay;          /* restart delay after a nak */
+        uint64_t ns_decline_restart_delay;      /* restart delay after a decline */
         NDhcp4ClientLease *current_lease;       /* current lease */
 
         NDhcp4CConnection connection;           /* client connection wrapper */

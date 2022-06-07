@@ -1024,6 +1024,7 @@ static int n_dhcp4_client_probe_transition_nak(NDhcp4ClientProbe *probe) {
 
 int n_dhcp4_client_probe_transition_select(NDhcp4ClientProbe *probe, NDhcp4Incoming *offer, uint64_t ns_now) {
         _c_cleanup_(n_dhcp4_outgoing_freep) NDhcp4Outgoing *request = NULL;
+        NDhcp4ClientLease *l, *t_l;
         int r;
 
         switch (probe->state) {
@@ -1042,11 +1043,16 @@ int n_dhcp4_client_probe_transition_select(NDhcp4ClientProbe *probe, NDhcp4Incom
                 else
                         request = NULL; /* consumed */
 
-                /* XXX: ignore other offers */
-
                 probe->state = N_DHCP4_CLIENT_PROBE_STATE_REQUESTING;
 
-                break;
+                /*
+                 * Only one of the offered leases can be selected, so flush the list.
+                 * All offered lease, including this one are now dead.
+                 */
+                c_list_for_each_entry_safe(l, t_l, &probe->lease_list, probe_link)
+                        n_dhcp4_client_lease_unlink(l);
+
+                return 0;
         case N_DHCP4_CLIENT_PROBE_STATE_INIT:
         case N_DHCP4_CLIENT_PROBE_STATE_INIT_REBOOT:
         case N_DHCP4_CLIENT_PROBE_STATE_REBOOTING:
@@ -1057,11 +1063,9 @@ int n_dhcp4_client_probe_transition_select(NDhcp4ClientProbe *probe, NDhcp4Incom
         case N_DHCP4_CLIENT_PROBE_STATE_REBINDING:
         case N_DHCP4_CLIENT_PROBE_STATE_EXPIRED:
         default:
-                /* ignore */
-                break;
+                /* user called in invalid state. Return error. */
+                return -ENOTRECOVERABLE;
         }
-
-        return 0;
 }
 
 /**
@@ -1085,10 +1089,11 @@ int n_dhcp4_client_probe_transition_accept(NDhcp4ClientProbe *probe, NDhcp4Incom
                         return r;
 
                 probe->state = N_DHCP4_CLIENT_PROBE_STATE_BOUND;
-
+                probe->ns_decline_restart_delay = 0;
+                n_dhcp4_client_lease_unlink(probe->current_lease);
                 n_dhcp4_client_arm_timer(probe->client);
 
-                break;
+                return 0;
 
         case N_DHCP4_CLIENT_PROBE_STATE_INIT:
         case N_DHCP4_CLIENT_PROBE_STATE_INIT_REBOOT:
@@ -1100,11 +1105,9 @@ int n_dhcp4_client_probe_transition_accept(NDhcp4ClientProbe *probe, NDhcp4Incom
         case N_DHCP4_CLIENT_PROBE_STATE_REBINDING:
         case N_DHCP4_CLIENT_PROBE_STATE_EXPIRED:
         default:
-                /* ignore */
-                break;
+                /* user called in invalid state. Return error. */
+                return -ENOTRECOVERABLE;
         }
-
-        return 0;
 }
 
 /**
@@ -1126,9 +1129,22 @@ int n_dhcp4_client_probe_transition_decline(NDhcp4ClientProbe *probe, NDhcp4Inco
                 else
                         request = NULL; /* consumed */
 
-                /* XXX: what state to transition to? */
+                n_dhcp4_client_lease_unlink(probe->current_lease);
+                probe->current_lease = n_dhcp4_client_lease_unref(probe->current_lease);
 
-                break;
+                probe->state = N_DHCP4_CLIENT_PROBE_STATE_INIT;
+
+                /* RFC2131, 3.1, 5.) The client SHOULD wait a minimum of ten seconds before restarting
+                 * the configuration process to avoid excessive network traffic in case of looping.
+                 *
+                 * Let's go beyond that, and use an exponential backoff. */
+                probe->ns_decline_restart_delay = C_CLAMP(probe->ns_decline_restart_delay * 2u,
+                                                          UINT64_C(10)  * UINT64_C(1000000000),
+                                                          UINT64_C(300) * UINT64_C(1000000000));
+                probe->ns_deferred =  n_dhcp4_gettime(CLOCK_BOOTTIME) + probe->ns_decline_restart_delay;
+
+                n_dhcp4_client_arm_timer(probe->client);
+                return 0;
 
         case N_DHCP4_CLIENT_PROBE_STATE_INIT:
         case N_DHCP4_CLIENT_PROBE_STATE_INIT_REBOOT:
@@ -1140,11 +1156,9 @@ int n_dhcp4_client_probe_transition_decline(NDhcp4ClientProbe *probe, NDhcp4Inco
         case N_DHCP4_CLIENT_PROBE_STATE_REBINDING:
         case N_DHCP4_CLIENT_PROBE_STATE_EXPIRED:
         default:
-                /* ignore */
-                break;
+                /* user called in invalid state. Return error. */
+                return -ENOTRECOVERABLE;
         }
-
-        return 0;
 }
 
 /**
