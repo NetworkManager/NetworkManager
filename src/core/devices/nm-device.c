@@ -4026,7 +4026,6 @@ _set_ifindex(NMDevice *self, int ifindex, gboolean is_ip_ifindex)
     NMDevicePrivate         *priv                  = NM_DEVICE_GET_PRIVATE(self);
     gs_unref_object NML3Cfg *l3cfg_old             = NULL;
     NML3CfgCommitTypeHandle *l3cfg_commit_type_old = NULL;
-    gboolean                 l3_changed;
     int                      ip_ifindex_new;
     int                     *p_ifindex;
     gboolean                 l3cfg_was_reset = FALSE;
@@ -4067,6 +4066,10 @@ _set_ifindex(NMDevice *self, int ifindex, gboolean is_ip_ifindex)
             l3cfg_was_reset       = TRUE;
         }
     }
+
+    if (!priv->l3cfg && l3cfg_old)
+        _dev_l3_register_l3cds(self, l3cfg_old, FALSE, FALSE);
+
     if (!priv->l3cfg && ip_ifindex_new > 0) {
         priv->l3cfg_ = nm_netns_l3cfg_acquire(priv->netns, ip_ifindex_new);
 
@@ -4078,6 +4081,7 @@ _set_ifindex(NMDevice *self, int ifindex, gboolean is_ip_ifindex)
         _dev_l3_cfg_commit_type_reset(self);
         l3cfg_was_reset = TRUE;
     }
+
     if (!priv->l3cfg) {
         _cleanup_ip_pre(self, AF_INET, CLEANUP_TYPE_KEEP, FALSE);
         _cleanup_ip_pre(self, AF_INET6, CLEANUP_TYPE_KEEP, FALSE);
@@ -4118,11 +4122,7 @@ _set_ifindex(NMDevice *self, int ifindex, gboolean is_ip_ifindex)
         _notify(self, PROP_IP6_CONFIG);
     }
 
-    if (l3cfg_old != priv->l3cfg) {
-        l3_changed = FALSE;
-        if (_dev_l3_register_l3cds(self, l3cfg_old, FALSE, FALSE))
-            l3_changed = TRUE;
-
+    if (priv->l3cfg && l3cfg_old != priv->l3cfg) {
         /* Now it gets ugly. We changed the ip-ifindex, which determines the NML3Cfg instance.
          * But all the NML3ConfigData we currently track are still for the old ifindex. We
          * need to update them.
@@ -4131,12 +4131,10 @@ _set_ifindex(NMDevice *self, int ifindex, gboolean is_ip_ifindex)
          * associated with one ifindex (and not the ifindex/ip-ifindex split). Or it
          * is not at all associated with an ifindex, but only a controlling device for
          * a real NMDevice (that has the ifindex). */
+
         _dev_l3_update_l3cds_ifindex(self);
 
         if (_dev_l3_register_l3cds(self, priv->l3cfg, TRUE, FALSE))
-            l3_changed = TRUE;
-
-        if (l3_changed)
             _dev_l3_cfg_commit(self, TRUE);
     }
 
