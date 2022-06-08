@@ -1199,6 +1199,21 @@ _linktype_get_type(NMPlatform *      platform,
  * libnl unility functions and wrappers
  ******************************************************************/
 
+typedef struct {
+    /* The first time, we are called with "iter_more" false. If there is only
+     * one message to parse, the callee can leave this at false and be done
+     * (meaning, it can just ignore the potential parsing of multiple messages).
+     * If there are multiple message, then set this to TRUE. We will continue
+     * the parsing as long as this flag stays TRUE and an object gets returned. */
+    bool iter_more;
+
+    union {
+        struct {
+            guint next_multihop;
+        } ip6_route;
+    };
+} ParseNlmsgIter;
+
 #define NLMSG_TAIL(nmsg) ((struct rtattr *) (((char *) (nmsg)) + NLMSG_ALIGN((nmsg)->nlmsg_len)))
 
 /* copied from iproute2's addattr_l(). */
@@ -3257,7 +3272,7 @@ _new_from_nl_addr(struct nlmsghdr *nlh, gboolean id_only)
     };
     struct nlattr *         tb[G_N_ELEMENTS(policy)];
     const struct ifaddrmsg *ifa;
-    gboolean                is_v4;
+    gboolean                IS_IPv4;
     nm_auto_nmpobj NMPObject *obj = NULL;
     int                       addr_len;
     guint32                   lifetime, preferred, timestamp;
@@ -3267,29 +3282,31 @@ _new_from_nl_addr(struct nlmsghdr *nlh, gboolean id_only)
 
     ifa = nlmsg_data(nlh);
 
-    if (!NM_IN_SET(ifa->ifa_family, AF_INET, AF_INET6))
+    if (ifa->ifa_family == AF_INET)
+        IS_IPv4 = TRUE;
+    else if (ifa->ifa_family == AF_INET6)
+        IS_IPv4 = FALSE;
+    else
         return NULL;
-
-    is_v4 = ifa->ifa_family == AF_INET;
 
     if (nlmsg_parse_arr(nlh, sizeof(*ifa), tb, policy) < 0)
         return NULL;
 
-    addr_len = is_v4 ? sizeof(in_addr_t) : sizeof(struct in6_addr);
+    addr_len = IS_IPv4 ? sizeof(in_addr_t) : sizeof(struct in6_addr);
 
-    if (ifa->ifa_prefixlen > (is_v4 ? 32 : 128))
+    if (ifa->ifa_prefixlen > (IS_IPv4 ? 32 : 128))
         return NULL;
 
     /*****************************************************************/
 
-    obj = nmp_object_new(is_v4 ? NMP_OBJECT_TYPE_IP4_ADDRESS : NMP_OBJECT_TYPE_IP6_ADDRESS, NULL);
+    obj = nmp_object_new(IS_IPv4 ? NMP_OBJECT_TYPE_IP4_ADDRESS : NMP_OBJECT_TYPE_IP6_ADDRESS, NULL);
 
     obj->ip_address.ifindex = ifa->ifa_index;
     obj->ip_address.plen    = ifa->ifa_prefixlen;
 
     _check_addr_or_return_null(tb, IFA_ADDRESS, addr_len);
     _check_addr_or_return_null(tb, IFA_LOCAL, addr_len);
-    if (is_v4) {
+    if (IS_IPv4) {
         /* For IPv4, kernel omits IFA_LOCAL/IFA_ADDRESS if (and only if) they
          * are effectively 0.0.0.0 (all-zero). */
         if (tb[IFA_LOCAL])
@@ -3325,7 +3342,7 @@ _new_from_nl_addr(struct nlmsghdr *nlh, gboolean id_only)
 
     obj->ip_address.n_ifa_flags = tb[IFA_FLAGS] ? nla_get_u32(tb[IFA_FLAGS]) : ifa->ifa_flags;
 
-    if (is_v4) {
+    if (IS_IPv4) {
         if (tb[IFA_LABEL]) {
             char label[IFNAMSIZ];
 
@@ -3361,7 +3378,7 @@ _new_from_nl_addr(struct nlmsghdr *nlh, gboolean id_only)
 
 /* Copied and heavily modified from libnl3's rtnl_route_parse() and parse_multipath(). */
 static NMPObject *
-_new_from_nl_route(struct nlmsghdr *nlh, gboolean id_only)
+_new_from_nl_route(struct nlmsghdr *nlh, gboolean id_only, ParseNlmsgIter *parse_nlmsg_iter)
 {
     static const struct nla_policy policy[] = {
         [RTA_TABLE]     = {.type = NLA_U32},
@@ -3374,17 +3391,21 @@ _new_from_nl_route(struct nlmsghdr *nlh, gboolean id_only)
         [RTA_METRICS]   = {.type = NLA_NESTED},
         [RTA_MULTIPATH] = {.type = NLA_NESTED},
     };
+    guint               multihop_idx;
     const struct rtmsg *rtm;
     struct nlattr *     tb[G_N_ELEMENTS(policy)];
-    gboolean            is_v4;
+    int                 addr_family;
+    gboolean            IS_IPv4;
     nm_auto_nmpobj NMPObject *obj = NULL;
     int                       addr_len;
     struct {
-        gboolean is_present;
+        gboolean found;
+        gboolean has_more;
         int      ifindex;
         NMIPAddr gateway;
     } nh = {
-        .is_present = FALSE,
+        .found    = FALSE,
+        .has_more = FALSE,
     };
     guint32 mss;
     guint32 window   = 0;
@@ -3393,6 +3414,10 @@ _new_from_nl_route(struct nlmsghdr *nlh, gboolean id_only)
     guint32 initrwnd = 0;
     guint32 mtu      = 0;
     guint32 lock     = 0;
+
+    nm_assert((parse_nlmsg_iter->iter_more && parse_nlmsg_iter->ip6_route.next_multihop > 0)
+              || (!parse_nlmsg_iter->iter_more && parse_nlmsg_iter->ip6_route.next_multihop == 0));
+    multihop_idx = parse_nlmsg_iter->ip6_route.next_multihop;
 
     if (!nlmsg_valid_hdr(nlh, sizeof(*rtm)))
         return NULL;
@@ -3403,7 +3428,13 @@ _new_from_nl_route(struct nlmsghdr *nlh, gboolean id_only)
      * only handle ~supported~ routes.
      *****************************************************************/
 
-    if (!NM_IN_SET(rtm->rtm_family, AF_INET, AF_INET6))
+    addr_family = rtm->rtm_family;
+
+    if (addr_family == AF_INET)
+        IS_IPv4 = TRUE;
+    else if (addr_family == AF_INET6)
+        IS_IPv4 = FALSE;
+    else
         return NULL;
 
     if (!NM_IN_SET(rtm->rtm_type, RTN_UNICAST, RTN_LOCAL))
@@ -3414,58 +3445,76 @@ _new_from_nl_route(struct nlmsghdr *nlh, gboolean id_only)
 
     /*****************************************************************/
 
-    is_v4    = rtm->rtm_family == AF_INET;
-    addr_len = is_v4 ? sizeof(in_addr_t) : sizeof(struct in6_addr);
+    addr_len = nm_utils_addr_family_to_size(addr_family);
 
-    if (rtm->rtm_dst_len > (is_v4 ? 32 : 128))
+    if (rtm->rtm_dst_len > (IS_IPv4 ? 32 : 128))
         return NULL;
 
-    /*****************************************************************
-     * parse nexthops. Only handle routes with one nh.
-     *****************************************************************/
-
     if (tb[RTA_MULTIPATH]) {
-        size_t            tlen = nla_len(tb[RTA_MULTIPATH]);
+        size_t            tlen;
         struct rtnexthop *rtnh;
+        guint             idx;
 
+        tlen = nla_len(tb[RTA_MULTIPATH]);
         if (tlen < sizeof(*rtnh))
             goto rta_multipath_done;
 
         rtnh = nla_data_as(struct rtnexthop, tb[RTA_MULTIPATH]);
-
         if (tlen < rtnh->rtnh_len)
             goto rta_multipath_done;
 
+        idx = 0;
         while (TRUE) {
-            if (nh.is_present) {
-                /* we don't support multipath routes. */
-                return NULL;
-            }
+            if (idx == multihop_idx) {
+                nh.found   = TRUE;
+                nh.ifindex = rtnh->rtnh_ifindex;
+                if (rtnh->rtnh_len > sizeof(*rtnh)) {
+                    struct nlattr *ntb[RTA_MAX + 1];
 
-            nh.is_present = TRUE;
-            nh.ifindex    = rtnh->rtnh_ifindex;
+                    if (nla_parse_arr(ntb,
+                                      (struct nlattr *) RTNH_DATA(rtnh),
+                                      rtnh->rtnh_len - sizeof(*rtnh),
+                                      NULL)
+                        < 0)
+                        return NULL;
 
-            if (rtnh->rtnh_len > sizeof(*rtnh)) {
-                struct nlattr *ntb[G_N_ELEMENTS(policy)];
-
-                if (nla_parse_arr(ntb,
-                                  (struct nlattr *) RTNH_DATA(rtnh),
-                                  rtnh->rtnh_len - sizeof(*rtnh),
-                                  policy)
-                    < 0)
+                    if (_check_addr_or_return_null(ntb, RTA_GATEWAY, addr_len))
+                        memcpy(&nh.gateway, nla_data(ntb[RTA_GATEWAY]), addr_len);
+                }
+            } else if (nh.found) {
+                /* we just parsed a nexthop, but there is yet another hop afterwards. */
+                nm_assert(idx == multihop_idx + 1);
+                if (IS_IPv4) {
+                    /* for IPv4, multihop routes are currently not supported.
+                     *
+                     * If we ever support them, then the next-hop list is part of the NMPlatformIPRoute,
+                     * that is, for IPv4 we truly have multihop routes. Unlike for IPv6.
+                     *
+                     * For now, just error out. */
                     return NULL;
+                }
 
-                if (_check_addr_or_return_null(ntb, RTA_GATEWAY, addr_len))
-                    memcpy(&nh.gateway, nla_data(ntb[RTA_GATEWAY]), addr_len);
+                /* For IPv6 multihop routes, we need to remember to iterate again.
+                 * For each next-hop, we will create a distinct single-hop NMPlatformIP6Route. */
+                nh.has_more = TRUE;
+                break;
             }
 
             if (tlen < RTNH_ALIGN(rtnh->rtnh_len) + sizeof(*rtnh))
-                goto rta_multipath_done;
+                break;
 
             tlen -= RTNH_ALIGN(rtnh->rtnh_len);
             rtnh = RTNH_NEXT(rtnh);
+            idx++;
         }
-rta_multipath_done:;
+    }
+
+rta_multipath_done:
+
+    if (!nh.found && multihop_idx > 0) {
+        /* something is wrong. We are called back to collect multi_idx, but the index
+         * is not there. We messed up the book keeping. */
+        return nm_assert_unreachable_val(NULL);
     }
 
     if (tb[RTA_OIF] || tb[RTA_GATEWAY] || tb[RTA_FLOW]) {
@@ -3477,19 +3526,23 @@ rta_multipath_done:;
         if (_check_addr_or_return_null(tb, RTA_GATEWAY, addr_len))
             memcpy(&gateway, nla_data(tb[RTA_GATEWAY]), addr_len);
 
-        if (!nh.is_present) {
+        if (!nh.found) {
             /* If no nexthops have been provided via RTA_MULTIPATH
              * we add it as regular nexthop to maintain backwards
              * compatibility */
             nh.ifindex = ifindex;
             nh.gateway = gateway;
+            nh.found   = TRUE;
         } else {
             /* Kernel supports new style nexthop configuration,
              * verify that it is a duplicate and ignore old-style nexthop. */
-            if (nh.ifindex != ifindex || memcmp(&nh.gateway, &gateway, addr_len) != 0)
+            if (nh.ifindex != ifindex || memcmp(&nh.gateway, &gateway, addr_len) != 0) {
+                /* we have a RTA_MULTIPATH attribute that does not agree.
+                 * That seems not right. Error out. */
                 return NULL;
+            }
         }
-    } else if (!nh.is_present)
+    } else if (!nh.found)
         return NULL;
 
     /*****************************************************************/
@@ -3528,7 +3581,7 @@ rta_multipath_done:;
 
     /*****************************************************************/
 
-    obj = nmp_object_new(is_v4 ? NMP_OBJECT_TYPE_IP4_ROUTE : NMP_OBJECT_TYPE_IP6_ROUTE, NULL);
+    obj = nmp_object_new(IS_IPv4 ? NMP_OBJECT_TYPE_IP4_ROUTE : NMP_OBJECT_TYPE_IP6_ROUTE, NULL);
 
     obj->ip_route.is_external   = TRUE;
     obj->ip_route.type_coerced  = nm_platform_route_type_coerce(rtm->rtm_type);
@@ -3545,22 +3598,22 @@ rta_multipath_done:;
     if (tb[RTA_PRIORITY])
         obj->ip_route.metric = nla_get_u32(tb[RTA_PRIORITY]);
 
-    if (is_v4)
+    if (IS_IPv4)
         obj->ip4_route.gateway = nh.gateway.addr4;
     else
         obj->ip6_route.gateway = nh.gateway.addr6;
 
-    if (is_v4)
+    if (IS_IPv4)
         obj->ip4_route.scope_inv = nm_platform_route_scope_inv(rtm->rtm_scope);
 
     if (_check_addr_or_return_null(tb, RTA_PREFSRC, addr_len)) {
-        if (is_v4)
+        if (IS_IPv4)
             memcpy(&obj->ip4_route.pref_src, nla_data(tb[RTA_PREFSRC]), addr_len);
         else
             memcpy(&obj->ip6_route.pref_src, nla_data(tb[RTA_PREFSRC]), addr_len);
     }
 
-    if (is_v4)
+    if (IS_IPv4)
         obj->ip4_route.tos = rtm->rtm_tos;
     else {
         if (tb[RTA_SRC]) {
@@ -3582,13 +3635,19 @@ rta_multipath_done:;
     obj->ip_route.lock_initrwnd = NM_FLAGS_HAS(lock, 1 << RTAX_INITRWND);
     obj->ip_route.lock_mtu      = NM_FLAGS_HAS(lock, 1 << RTAX_MTU);
 
-    if (!is_v4) {
+    if (!IS_IPv4) {
         if (tb[RTA_PREF])
             obj->ip6_route.rt_pref = nla_get_u8(tb[RTA_PREF]);
     }
 
     obj->ip_route.r_rtm_flags = rtm->rtm_flags;
     obj->ip_route.rt_source   = nmp_utils_ip_config_source_from_rtprot(rtm->rtm_protocol);
+
+    if (nh.has_more) {
+        parse_nlmsg_iter->iter_more               = TRUE;
+        parse_nlmsg_iter->ip6_route.next_multihop = multihop_idx + 1;
+    } else
+        parse_nlmsg_iter->iter_more = FALSE;
 
     return g_steal_pointer(&obj);
 }
@@ -4031,7 +4090,8 @@ static NMPObject *
 nmp_object_new_from_nl(NMPlatform *    platform,
                        const NMPCache *cache,
                        struct nl_msg * msg,
-                       gboolean        id_only)
+                       gboolean        id_only,
+                       ParseNlmsgIter *parse_nlmsg_iter)
 {
     struct nlmsghdr *msghdr;
 
@@ -4053,7 +4113,7 @@ nmp_object_new_from_nl(NMPlatform *    platform,
     case RTM_NEWROUTE:
     case RTM_DELROUTE:
     case RTM_GETROUTE:
-        return _new_from_nl_route(msghdr, id_only);
+        return _new_from_nl_route(msghdr, id_only, parse_nlmsg_iter);
     case RTM_NEWRULE:
     case RTM_DELRULE:
     case RTM_GETRULE:
@@ -4684,23 +4744,23 @@ ip_route_get_lock_flag(const NMPlatformIPRoute *route)
 static struct nl_msg *
 _nl_msg_new_route(int nlmsg_type, guint16 nlmsgflags, const NMPObject *obj)
 {
-    nm_auto_nlmsg struct nl_msg *msg   = NULL;
-    const NMPClass *             klass = NMP_OBJECT_GET_CLASS(obj);
-    gboolean                     is_v4 = klass->addr_family == AF_INET;
-    const guint32                lock  = ip_route_get_lock_flag(NMP_OBJECT_CAST_IP_ROUTE(obj));
+    nm_auto_nlmsg struct nl_msg *msg     = NULL;
+    const NMPClass *             klass   = NMP_OBJECT_GET_CLASS(obj);
+    const gboolean               IS_IPv4 = NM_IS_IPv4(klass->addr_family);
+    const guint32                lock    = ip_route_get_lock_flag(NMP_OBJECT_CAST_IP_ROUTE(obj));
     const guint32                table =
         nm_platform_route_table_uncoerce(NMP_OBJECT_CAST_IP_ROUTE(obj)->table_coerced, TRUE);
     const struct rtmsg rtmsg = {
         .rtm_family   = klass->addr_family,
-        .rtm_tos      = is_v4 ? obj->ip4_route.tos : 0,
+        .rtm_tos      = IS_IPv4 ? obj->ip4_route.tos : 0,
         .rtm_table    = table <= 0xFF ? table : RT_TABLE_UNSPEC,
         .rtm_protocol = nmp_utils_ip_config_source_coerce_to_rtprot(obj->ip_route.rt_source),
         .rtm_scope =
-            is_v4 ? nm_platform_route_scope_inv(obj->ip4_route.scope_inv) : RT_SCOPE_NOWHERE,
+            IS_IPv4 ? nm_platform_route_scope_inv(obj->ip4_route.scope_inv) : RT_SCOPE_NOWHERE,
         .rtm_type    = nm_platform_route_type_uncoerce(NMP_OBJECT_CAST_IP_ROUTE(obj)->type_coerced),
         .rtm_flags   = obj->ip_route.r_rtm_flags & ((unsigned) (RTNH_F_ONLINK)),
         .rtm_dst_len = obj->ip_route.plen,
-        .rtm_src_len = is_v4 ? 0 : NMP_OBJECT_CAST_IP6_ROUTE(obj)->src_plen,
+        .rtm_src_len = IS_IPv4 ? 0 : NMP_OBJECT_CAST_IP6_ROUTE(obj)->src_plen,
     };
 
     gsize addr_len;
@@ -4714,28 +4774,28 @@ _nl_msg_new_route(int nlmsg_type, guint16 nlmsgflags, const NMPObject *obj)
     if (nlmsg_append_struct(msg, &rtmsg) < 0)
         goto nla_put_failure;
 
-    addr_len = is_v4 ? sizeof(in_addr_t) : sizeof(struct in6_addr);
+    addr_len = IS_IPv4 ? sizeof(in_addr_t) : sizeof(struct in6_addr);
 
     NLA_PUT(msg,
             RTA_DST,
             addr_len,
-            is_v4 ? (gconstpointer) &obj->ip4_route.network
-                  : (gconstpointer) &obj->ip6_route.network);
+            IS_IPv4 ? (gconstpointer) &obj->ip4_route.network
+                    : (gconstpointer) &obj->ip6_route.network);
 
-    if (!is_v4) {
+    if (!IS_IPv4) {
         if (!IN6_IS_ADDR_UNSPECIFIED(&NMP_OBJECT_CAST_IP6_ROUTE(obj)->src))
             NLA_PUT(msg, RTA_SRC, addr_len, &obj->ip6_route.src);
     }
 
     NLA_PUT_U32(msg,
                 RTA_PRIORITY,
-                is_v4 ? nm_platform_ip4_route_get_effective_metric(&obj->ip4_route)
-                      : nm_platform_ip6_route_get_effective_metric(&obj->ip6_route));
+                IS_IPv4 ? nm_platform_ip4_route_get_effective_metric(&obj->ip4_route)
+                        : nm_platform_ip6_route_get_effective_metric(&obj->ip6_route));
 
     if (table > 0xFF)
         NLA_PUT_U32(msg, RTA_TABLE, table);
 
-    if (is_v4) {
+    if (IS_IPv4) {
         if (NMP_OBJECT_CAST_IP4_ROUTE(obj)->pref_src)
             NLA_PUT(msg, RTA_PREFSRC, addr_len, &obj->ip4_route.pref_src);
     } else {
@@ -4770,7 +4830,7 @@ _nl_msg_new_route(int nlmsg_type, guint16 nlmsgflags, const NMPObject *obj)
     }
 
     /* We currently don't have need for multi-hop routes... */
-    if (is_v4) {
+    if (IS_IPv4) {
         NLA_PUT(msg, RTA_GATEWAY, addr_len, &obj->ip4_route.gateway);
     } else {
         if (!IN6_IS_ADDR_UNSPECIFIED(&obj->ip6_route.gateway))
@@ -4778,7 +4838,7 @@ _nl_msg_new_route(int nlmsg_type, guint16 nlmsgflags, const NMPObject *obj)
     }
     NLA_PUT_U32(msg, RTA_OIF, obj->ip_route.ifindex);
 
-    if (!is_v4 && obj->ip6_route.rt_pref != NM_ICMPV6_ROUTER_PREF_MEDIUM)
+    if (!IS_IPv4 && obj->ip6_route.rt_pref != NM_ICMPV6_ROUTER_PREF_MEDIUM)
         NLA_PUT_U8(msg, RTA_PREF, obj->ip6_route.rt_pref);
 
     return g_steal_pointer(&msg);
@@ -6909,11 +6969,12 @@ event_valid_msg(NMPlatform *platform, struct nl_msg *msg, gboolean handle_events
     gboolean                  is_del  = FALSE;
     gboolean                  is_dump = FALSE;
     NMPCache *                cache   = nm_platform_get_cache(platform);
-
-    msghdr = nlmsg_hdr(msg);
+    ParseNlmsgIter            parse_nlmsg_iter;
 
     if (!handle_events)
         return;
+
+    msghdr = nlmsg_hdr(msg);
 
     if (NM_IN_SET(msghdr->nlmsg_type,
                   RTM_DELLINK,
@@ -6927,7 +6988,11 @@ event_valid_msg(NMPlatform *platform, struct nl_msg *msg, gboolean handle_events
         is_del = TRUE;
     }
 
-    obj = nmp_object_new_from_nl(platform, cache, msg, is_del);
+    parse_nlmsg_iter = (ParseNlmsgIter){
+        .iter_more = FALSE,
+    };
+
+    obj = nmp_object_new_from_nl(platform, cache, msg, is_del, &parse_nlmsg_iter);
     if (!obj) {
         _LOGT("event-notification: %s: ignore",
               nl_nlmsghdr_to_str(msghdr, buf_nlmsghdr, sizeof(buf_nlmsghdr)));
@@ -6955,7 +7020,7 @@ event_valid_msg(NMPlatform *platform, struct nl_msg *msg, gboolean handle_events
                                NULL,
                                0));
 
-    {
+    while (TRUE) {
         nm_auto_nmpobj const NMPObject *obj_old = NULL;
         nm_auto_nmpobj const NMPObject *obj_new = NULL;
 
@@ -7078,6 +7143,31 @@ event_valid_msg(NMPlatform *platform, struct nl_msg *msg, gboolean handle_events
             break;
         default:
             break;
+        }
+
+        if (!parse_nlmsg_iter.iter_more) {
+            /* we are done. */
+            return;
+        }
+
+        /* There is a special case here. For IPv6 routes, kernel will merge/mangle routes
+         * that only differ by their next-hop, and pretend they are multi-hop routes. We
+         * untangle them, and pretend there are only single-hop routes. Hence, one RTM_{NEW,DEL}ROUTE
+         * message might be about multiple IPv6 routes (NMPObject). So, now let's parse the next... */
+
+        nm_assert(NM_IN_SET(msghdr->nlmsg_type, RTM_NEWROUTE, RTM_DELROUTE));
+
+        nm_clear_pointer(&obj, nmp_object_unref);
+
+        obj = nmp_object_new_from_nl(platform, cache, msg, is_del, &parse_nlmsg_iter);
+        if (!obj) {
+            /* we are done. Usually we don't expect this, because we were told that
+             * there would be another object to collect, but there isn't one. Something
+             * unusual happened.
+             *
+             * the only reason why this actually could happen is if the next-hop data
+             * is invalid -- we didn't verify that it would be valid when we set iter_more. */
+            return;
         }
     }
 }
@@ -8696,8 +8786,8 @@ ip_route_get(NMPlatform *  platform,
              int           oif_ifindex,
              NMPObject **  out_route)
 {
-    const gboolean          is_v4     = (addr_family == AF_INET);
-    const int               addr_len  = is_v4 ? 4 : 16;
+    const gboolean          IS_IPv4   = NM_IS_IPv4(addr_family);
+    const int               addr_len  = IS_IPv4 ? 4 : 16;
     int                     try_count = 0;
     WaitForNlResponseResult seq_result;
     int                     nle;
@@ -8718,7 +8808,7 @@ ip_route_get(NMPlatform *  platform,
             .n.nlmsg_type  = RTM_GETROUTE,
             .r.rtm_family  = addr_family,
             .r.rtm_tos     = 0,
-            .r.rtm_dst_len = is_v4 ? 32 : 128,
+            .r.rtm_dst_len = IS_IPv4 ? 32 : 128,
             .r.rtm_flags   = 0x1000 /* RTM_F_LOOKUP_TABLE */,
         };
 
