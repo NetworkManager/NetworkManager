@@ -104,6 +104,8 @@ case "$(git config --get-all remote.origin.url)" in
 esac
 
 git_config_add blame.ignoreRevsFile '.git-blame-ignore-revs'
+git_config_reset blame.markIgnoredLines true
+git_config_reset blame.markUnblamableLines true
 git_config_add notes.displayref 'refs/notes/bugs'
 git_config_add remote.origin.fetch 'refs/notes/bugs:refs/notes/bugs'
 git_config_reset remote.origin.pushurl 'git@gitlab.freedesktop.org:NetworkManager/NetworkManager.git'
