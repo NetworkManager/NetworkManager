@@ -65,6 +65,50 @@ static gboolean teamd_start(NMDeviceTeam *self);
 
 /*****************************************************************************/
 
+static struct teamdctl *
+_tdc_connect_new(NMDeviceTeam *self, const char *iface, GError **error)
+{
+    NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE(self);
+    struct teamdctl     *tdc;
+    const char          *cli_type;
+    int                  r;
+
+    tdc = teamdctl_alloc();
+    if (!tdc) {
+        nm_utils_error_set(error, NM_UTILS_ERROR_UNKNOWN, "failure to allocate teamdctl structure");
+        g_return_val_if_reached(NULL);
+    }
+
+    if (priv->teamd_dbus_watch)
+        cli_type = "dbus";
+    else if (priv->usock_monitor)
+        cli_type = "usock";
+    else
+        cli_type = NULL;
+
+again:
+    r = teamdctl_connect(tdc, iface, NULL, cli_type);
+    if (r != 0) {
+        _LOGD(LOGD_TEAM,
+              "failure to connect to teamdctl%s%s, err=%d",
+              NM_PRINT_FMT_QUOTED2(cli_type, " with cli_type=", cli_type, ""),
+              r);
+        if (cli_type) {
+            /* How odd. Let's retry with any CLI type. */
+            cli_type = NULL;
+            goto again;
+        }
+        teamdctl_free(tdc);
+        nm_utils_error_set(error,
+                           NM_UTILS_ERROR_UNKNOWN,
+                           "failure to connect to teamd (err=%d)",
+                           r);
+        return NULL;
+    }
+
+    return tdc;
+}
+
 static NMDeviceCapabilities
 get_generic_capabilities(NMDevice *device)
 {
@@ -96,21 +140,16 @@ complete_connection(NMDevice            *device,
 static gboolean
 ensure_teamd_connection(NMDevice *device)
 {
-    NMDeviceTeam        *self = NM_DEVICE_TEAM(device);
-    NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE(self);
-    int                  err;
+    NMDeviceTeam         *self  = NM_DEVICE_TEAM(device);
+    NMDeviceTeamPrivate  *priv  = NM_DEVICE_TEAM_GET_PRIVATE(self);
+    gs_free_error GError *error = NULL;
 
     if (priv->tdc)
         return TRUE;
 
-    priv->tdc = teamdctl_alloc();
-    g_assert(priv->tdc);
-    err = teamdctl_connect(priv->tdc, nm_device_get_iface(device), NULL, NULL);
-    if (err != 0) {
-        _LOGE(LOGD_TEAM, "failed to connect to teamd (err=%d)", err);
-        teamdctl_free(priv->tdc);
-        priv->tdc = NULL;
-    }
+    priv->tdc = _tdc_connect_new(self, nm_device_get_iface(device), &error);
+    if (!priv->tdc)
+        _LOGE(LOGD_TEAM, "failed to connect to teamd: %s", error->message);
 
     return !!priv->tdc;
 }
@@ -183,42 +222,31 @@ update_connection(NMDevice *device, NMConnection *connection)
 /*****************************************************************************/
 
 static gboolean
-master_update_slave_connection(NMDevice     *self,
+master_update_slave_connection(NMDevice     *device,
                                NMDevice     *slave,
                                NMConnection *connection,
                                GError      **error)
 {
-    NMSettingTeamPort *s_port;
-    char              *port_config = NULL;
-    int                err         = 0;
-    struct teamdctl   *tdc;
-    const char        *team_port_config = NULL;
-    const char        *iface            = nm_device_get_iface(self);
-    const char        *iface_slave      = nm_device_get_iface(slave);
+    NMDeviceTeam         *self = NM_DEVICE_TEAM(device);
+    NMSettingTeamPort    *s_port;
+    char                 *port_config   = NULL;
+    gs_free_error GError *connect_error = NULL;
+    int                   err           = 0;
+    struct teamdctl      *tdc;
+    const char           *team_port_config = NULL;
+    const char           *iface            = nm_device_get_iface(device);
+    const char           *iface_slave      = nm_device_get_iface(slave);
 
-    tdc = teamdctl_alloc();
+    tdc = _tdc_connect_new(self, iface, &connect_error);
     if (!tdc) {
         g_set_error(error,
                     NM_DEVICE_ERROR,
                     NM_DEVICE_ERROR_FAILED,
                     "update slave connection for slave '%s' failed to connect to teamd for master "
-                    "%s (out of memory?)",
-                    iface_slave,
-                    iface);
-        g_return_val_if_reached(FALSE);
-    }
-
-    err = teamdctl_connect(tdc, iface, NULL, NULL);
-    if (err) {
-        teamdctl_free(tdc);
-        g_set_error(error,
-                    NM_DEVICE_ERROR,
-                    NM_DEVICE_ERROR_FAILED,
-                    "update slave connection for slave '%s' failed to connect to teamd for master "
-                    "%s (err=%d)",
+                    "%s (%s)",
                     iface_slave,
                     iface,
-                    err);
+                    connect_error->message);
         return FALSE;
     }
 
