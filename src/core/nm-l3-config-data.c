@@ -2275,6 +2275,8 @@ nm_l3_config_data_cmp_full(const NML3ConfigData *a,
         }
 
         if (NM_FLAGS_HAS(flags, NM_L3_CONFIG_CMP_FLAGS_DNS)) {
+            const NML3ConfigDatFlags FLAG = NM_L3_CONFIG_DAT_FLAGS_HAS_DNS_PRIORITY(IS_IPv4);
+
             NM_CMP_RETURN(_garray_inaddr_cmp(a->nameservers_x[IS_IPv4],
                                              b->nameservers_x[IS_IPv4],
                                              addr_family));
@@ -2283,7 +2285,8 @@ nm_l3_config_data_cmp_full(const NML3ConfigData *a,
             NM_CMP_RETURN(
                 nm_strv_ptrarray_cmp(a->dns_options_x[IS_IPv4], b->dns_options_x[IS_IPv4]));
 
-            if (NM_FLAGS_ANY(a->flags, NM_L3_CONFIG_DAT_FLAGS_HAS_DNS_PRIORITY(IS_IPv4)))
+            NM_CMP_DIRECT(NM_FLAGS_ANY(a->flags, FLAG), NM_FLAGS_ANY(b->flags, FLAG));
+            if (NM_FLAGS_ANY(a->flags, FLAG))
                 NM_CMP_DIRECT(a->dns_priority_x[IS_IPv4], b->dns_priority_x[IS_IPv4]);
         }
 
