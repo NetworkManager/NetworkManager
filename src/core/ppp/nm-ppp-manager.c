@@ -642,6 +642,7 @@ impl_ppp_manager_set_ip6_config(NMDBusObject                      *obj,
     nm_auto_unref_l3cd_init NML3ConfigData *l3cd = NULL;
     NMPlatformIP6Address                    address;
     struct in6_addr                         a;
+    guint32                                 mtu;
     NMUtilsIPv6IfaceId                      iid         = NM_UTILS_IPV6_IFACE_ID_INIT;
     gboolean                                has_peer    = FALSE;
     gs_unref_variant GVariant              *config_dict = NULL;
@@ -652,12 +653,15 @@ impl_ppp_manager_set_ip6_config(NMDBusObject                      *obj,
 
     nm_clear_g_source(&priv->ppp_timeout_handler);
 
-    if (!set_ip_config_common(self, config_dict, NULL))
+    if (!set_ip_config_common(self, config_dict, &mtu))
         goto out;
 
     l3cd = nm_l3_config_data_new(nm_platform_get_multi_idx(NM_PLATFORM_GET),
                                  priv->ifindex,
                                  NM_IP_CONFIG_SOURCE_PPP);
+
+    nm_l3_config_data_set_mtu(l3cd, mtu);
+    nm_l3_config_data_set_dns_priority(l3cd, AF_INET6, 0);
 
     address = (NMPlatformIP6Address){
         .plen        = 64,
