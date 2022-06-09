@@ -659,6 +659,8 @@ impl_ppp_manager_set_ip6_config(NMDBusObject                      *obj,
                                  priv->ifindex,
                                  NM_IP_CONFIG_SOURCE_PPP);
 
+    nm_l3_config_data_set_dns_priority(l3cd, AF_INET6, 0);
+
     address = (NMPlatformIP6Address){
         .plen        = 64,
         .addr_source = NM_IP_CONFIG_SOURCE_PPP,
