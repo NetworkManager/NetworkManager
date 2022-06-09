@@ -7923,9 +7923,6 @@ nm_device_slave_notify_release(NMDevice *self, NMDeviceStateReason reason)
 
     g_return_if_fail(priv->master);
 
-    if (!priv->is_enslaved)
-        return;
-
     if (priv->state > NM_DEVICE_STATE_DISCONNECTED && priv->state <= NM_DEVICE_STATE_ACTIVATED) {
         switch (nm_device_state_reason_check(reason)) {
         case NM_DEVICE_STATE_REASON_DEPENDENCY_FAILED:
@@ -7955,12 +7952,14 @@ nm_device_slave_notify_release(NMDevice *self, NMDeviceStateReason reason)
     } else
         _LOGI(LOGD_DEVICE, "released from master device %s", nm_device_get_iface(priv->master));
 
-    priv->is_enslaved = FALSE;
+    if (priv->is_enslaved) {
+        priv->is_enslaved = FALSE;
 
-    _notify(self, PROP_MASTER);
+        _notify(self, PROP_MASTER);
 
-    nm_clear_pointer(&NM_DEVICE_GET_PRIVATE(priv->master)->ports_variant, g_variant_unref);
-    nm_gobject_notify_together(priv->master, PROP_PORTS, PROP_SLAVES);
+        nm_clear_pointer(&NM_DEVICE_GET_PRIVATE(priv->master)->ports_variant, g_variant_unref);
+        nm_gobject_notify_together(priv->master, PROP_PORTS, PROP_SLAVES);
+    }
 }
 
 /**
