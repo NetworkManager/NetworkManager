@@ -1106,15 +1106,20 @@ nm_ptr_to_uintptr(const void *p)
 #define NM_CMP_RETURN(c)             \
     do {                             \
         const int _cc = (c);         \
+                                     \
         if (_cc)                     \
             return _cc < 0 ? -1 : 1; \
     } while (0)
 
-#define NM_CMP_RETURN_DIRECT(c) \
-    do {                        \
-        const int _cc = (c);    \
-        if (_cc)                \
-            return _cc;         \
+#define NM_CMP_RETURN_DIRECT(c)                               \
+    /* Usually we want that our CMP functions return strictly
+     * -1, 0, or 1. NM_CMP_RETURN_DIRECT() is like NM_CMP_RETURN(),
+     *  except, it does not clamp the integer value. */ \
+    do {                                                      \
+        const int _cc = (c);                                  \
+                                                              \
+        if (_cc)                                              \
+            return _cc;                                       \
     } while (0)
 
 #define NM_CMP_SELF(a, b)   \
@@ -1130,6 +1135,8 @@ nm_ptr_to_uintptr(const void *p)
             return 1;       \
     } while (0)
 
+/*****************************************************************************/
+
 #define NM_CMP_DIRECT(a, b)            \
     do {                               \
         typeof(a) _a = (a);            \
@@ -1139,10 +1146,13 @@ nm_ptr_to_uintptr(const void *p)
             return (_a < _b) ? -1 : 1; \
     } while (0)
 
-#define NM_CMP_DIRECT_UNSAFE(a, b)       \
-    do {                                 \
-        if ((a) != (b))                  \
-            return ((a) < (b)) ? -1 : 1; \
+#define NM_CMP_DIRECT_UNSAFE(a, b)                                                  \
+    /* This variant is "unsafe", because it evaluates the arguments more then once.
+     * This is only useful for bitfields, for which typeof() doesn't work.
+     * Don't use otherwise. */ \
+    do {                                                                            \
+        if ((a) != (b))                                                             \
+            return ((a) < (b)) ? -1 : 1;                                            \
     } while (0)
 
 /* In the general case, direct pointer comparison is undefined behavior in C.
@@ -1151,57 +1161,59 @@ nm_ptr_to_uintptr(const void *p)
  * between pointers (that can otherwise not be compared). */
 #define NM_CMP_DIRECT_PTR(a, b) NM_CMP_DIRECT(nm_ptr_to_uintptr(a), nm_ptr_to_uintptr(b))
 
+#define NM_CMP_DIRECT_BOOL(a, b) NM_CMP_DIRECT(!!(a), !!(b))
+
 #define NM_CMP_DIRECT_MEMCMP(a, b, size) NM_CMP_RETURN(memcmp((a), (b), (size)))
 
 #define NM_CMP_DIRECT_STRCMP(a, b) NM_CMP_RETURN_DIRECT(strcmp((a), (b)))
 
 #define NM_CMP_DIRECT_STRCMP0(a, b) NM_CMP_RETURN_DIRECT(nm_strcmp0((a), (b)))
 
+#define NM_CMP_DIRECT_STR_INTERNED(a, b)                                                 \
+    /* This is interned strings, which are first checked for equality only using pointer
+     * comparison. Only in case of differences, the sort order is still determined by strcmp(). */ \
+    do {                                                                                 \
+        const char *const _a = (a);                                                      \
+        const char *const _b = (b);                                                      \
+                                                                                         \
+        if (_a != _b)                                                                    \
+            NM_CMP_RETURN_DIRECT(nm_strcmp0(_a, _b));                                    \
+    } while (0)
+
 #define NM_CMP_DIRECT_IN6ADDR(a, b)                             \
     do {                                                        \
         const struct in6_addr *const _a = (a);                  \
         const struct in6_addr *const _b = (b);                  \
+                                                                \
         NM_CMP_RETURN(memcmp(_a, _b, sizeof(struct in6_addr))); \
     } while (0)
+
+/*****************************************************************************/
 
 #define NM_CMP_FIELD(a, b, field) NM_CMP_DIRECT(((a)->field), ((b)->field))
 
-#define NM_CMP_FIELD_UNSAFE(a, b, field)                                   \
-    do {                                                                   \
-        /* it's unsafe, because it evaluates the arguments more then once.
-         * This is necessary for bitfields, for which typeof() doesn't work. */ \
-        if (((a)->field) != ((b)->field))                                  \
-            return ((a)->field < ((b)->field)) ? -1 : 1;                   \
-    } while (0)
+#define NM_CMP_FIELD_UNSAFE(a, b, field)                                            \
+    /* This variant is "unsafe", because it evaluates the arguments more then once.
+     * This is only useful for bitfields, for which typeof() doesn't work.
+     * Don't use otherwise. */ \
+    NM_CMP_DIRECT_UNSAFE(((a)->field), ((b)->field))
 
-#define NM_CMP_FIELD_BOOL(a, b, field) NM_CMP_DIRECT(!!((a)->field), !!((b)->field))
+#define NM_CMP_FIELD_BOOL(a, b, field) NM_CMP_DIRECT_BOOL(((a)->field), ((b)->field))
 
-#define NM_CMP_FIELD_STR(a, b, field) NM_CMP_RETURN(strcmp(((a)->field), ((b)->field)))
+#define NM_CMP_FIELD_STR(a, b, field) NM_CMP_DIRECT_STRCMP(((a)->field), ((b)->field))
 
-#define NM_CMP_FIELD_STR_INTERNED(a, b, field)        \
-    do {                                              \
-        const char *_a = ((a)->field);                \
-        const char *_b = ((b)->field);                \
-                                                      \
-        if (_a != _b) {                               \
-            NM_CMP_RETURN_DIRECT(nm_strcmp0(_a, _b)); \
-        }                                             \
-    } while (0)
+#define NM_CMP_FIELD_STR0(a, b, field) NM_CMP_DIRECT_STRCMP0(((a)->field), ((b)->field))
 
-#define NM_CMP_FIELD_STR0(a, b, field) NM_CMP_RETURN_DIRECT(nm_strcmp0(((a)->field), ((b)->field)))
+#define NM_CMP_FIELD_STR_INTERNED(a, b, field) \
+    NM_CMP_DIRECT_STR_INTERNED(((a)->field), ((b)->field))
 
 #define NM_CMP_FIELD_MEMCMP_LEN(a, b, field, len) \
-    NM_CMP_RETURN(memcmp(&((a)->field), &((b)->field), NM_MIN(len, sizeof((a)->field))))
+    NM_CMP_DIRECT_MEMCMP(&((a)->field), &((b)->field), NM_MIN(len, sizeof((a)->field)))
 
 #define NM_CMP_FIELD_MEMCMP(a, b, field) \
-    NM_CMP_RETURN(memcmp(&((a)->field), &((b)->field), sizeof((a)->field)))
+    NM_CMP_DIRECT_MEMCMP(&((a)->field), &((b)->field), sizeof((a)->field))
 
-#define NM_CMP_FIELD_IN6ADDR(a, b, field)                       \
-    do {                                                        \
-        const struct in6_addr *const _a = &((a)->field);        \
-        const struct in6_addr *const _b = &((b)->field);        \
-        NM_CMP_RETURN(memcmp(_a, _b, sizeof(struct in6_addr))); \
-    } while (0)
+#define NM_CMP_FIELD_IN6ADDR(a, b, field) NM_CMP_DIRECT_IN6ADDR(&((a)->field), &((b)->field))
 
 /*****************************************************************************/
 
