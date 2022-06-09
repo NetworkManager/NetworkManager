@@ -78,7 +78,9 @@ do_setup() {
             --except-interface=lo \
             --clear-on-reload \
             --listen-address="192.168.$((120 + $IDX)).1" \
+            --listen-address="192:168:$((120 + IDX))::1" \
             --dhcp-range="192.168.$((120 + $IDX)).100,192.168.$((120 + $IDX)).150" \
+            --dhcp-range="192:168:$((120 + IDX))::1:1000,192:168:$((120 + IDX))::1:2000,64,2m" \
             --no-ping \
             &
 
@@ -86,6 +88,7 @@ do_setup() {
 interface $PEER_PREFIX$IDX
 {
         AdvSendAdvert on;
+        AdvManagedFlag on;
         prefix 192:168:$((120 + IDX))::/64
         {
                 AdvOnLink on;
