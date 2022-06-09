@@ -3978,11 +3978,26 @@ nm_platform_ip_address_sync(NMPlatform *self,
     /* @plat_addresses for IPv6 must be sorted in decreasing priority order (highest priority addresses first).
      * IPv4 are probably unsorted or sorted with lowest priority first, but their order doesn't matter because
      * we check the "secondary" flag. */
-    plat_addresses = nm_platform_lookup_clone(
-        self,
-        nmp_lookup_init_object(&lookup, NMP_OBJECT_TYPE_IP_ADDRESS(IS_IPv4), ifindex),
-        NULL,
-        NULL);
+    if (IS_IPv4) {
+        plat_addresses = nm_platform_lookup_clone(
+            self,
+            nmp_lookup_init_object(&lookup, NMP_OBJECT_TYPE_IP_ADDRESS(IS_IPv4), ifindex),
+            NULL,
+            NULL);
+    } else {
+        /* HACK: early 1.36 versions had a bug of not actually reordering the IPv6 addresses.
+         * This was fixed by commit cd4601802de5 ('platform: fix address order in
+         * nm_platform_ip_address_sync()').
+         *
+         * However, also in 1.36, the actually implemented order of IPv6 addresses is not
+         * the one we want ([1]). So disable the fix again, to not reorder IPv6 addresses.
+         *
+         * The effect is, that DHCPv6 addresses end up being preferred over SLAAC, because
+         * they get added later during activation. Of course, if any address gets added
+         * even later (like a new router appearing), then the order will be wrong again.
+         *
+         * [1] https://gitlab.freedesktop.org/NetworkManager/NetworkManager/-/issues/1021 */
+    }
 
     if (nm_g_ptr_array_len(plat_addresses) > 0) {
         /* Delete addresses that interfere with our intended order. */
