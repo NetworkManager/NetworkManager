@@ -73,11 +73,11 @@ NM-log() {
         else
             a="${1--}"
             shift
-            /usr/bin/less "$a" "$@"
+            /usr/bin/less -f "$a" "$@"
         fi
     ) | \
         NM_LOG_GREP="$NM_LOG_GREP" NM-colorize | \
-        LESS=FRSXM less -R --shift=5
+        LESS=FRSXM less -f -R --shift=5
 }
 
 if [[ "$NM_not_sourced" != "" ]]; then
