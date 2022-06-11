@@ -417,6 +417,8 @@ typedef struct _NMDeviceClass {
     gboolean (*set_platform_mtu)(NMDevice *self, guint32 mtu);
 
     const char *(*get_dhcp_anycast_address)(NMDevice *self);
+
+    void (*ipll6_start)(NMDevice *self);
 } NMDeviceClass;
 
 GType nm_device_get_type(void);

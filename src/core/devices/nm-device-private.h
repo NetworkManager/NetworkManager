@@ -104,6 +104,9 @@ nm_device_devip_set_failed(NMDevice *self, int addr_family, NMDeviceStateReason 
     nm_device_devip_set_state_full(self, addr_family, NM_DEVICE_IP_STATE_FAILED, NULL, reason);
 }
 
+void
+nm_device_ipll6_set_state(NMDevice *self, NMDeviceIPState ip_state, const NML3ConfigData *l3cd);
+
 gboolean nm_device_sysctl_ip_conf_set(NMDevice   *self,
                                       int         addr_family,
                                       const char *property,

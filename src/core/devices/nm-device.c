@@ -10669,7 +10669,8 @@ _dev_ipll6_set_llstate(NMDevice *self, NML3IPv6LLState llstate, const struct in6
               || (!priv->ipll_data_6.v6.ipv6ll
                   && NM_IN_SET(priv->ipll_data_6.v6.llstate,
                                NM_L3_IPV6LL_STATE_NONE,
-                               NM_L3_IPV6LL_STATE_DEFUNCT)));
+                               NM_L3_IPV6LL_STATE_DEFUNCT))
+              || (!priv->ipll_data_6.v6.ipv6ll && NM_DEVICE_GET_CLASS(self)->ipll6_start));
 
     switch (priv->ipll_data_6.v6.llstate) {
     case NM_L3_IPV6LL_STATE_NONE:
@@ -10730,6 +10731,39 @@ _dev_ipll6_set_llstate(NMDevice *self, NML3IPv6LLState llstate, const struct in6
     }
 }
 
+void
+nm_device_ipll6_set_state(NMDevice *self, NMDeviceIPState ip_state, const NML3ConfigData *l3cd)
+{
+    NMDedupMultiIter            iter;
+    const NMPlatformIP6Address *pladdr = NULL;
+    NML3IPv6LLState             llstate;
+
+    switch (ip_state) {
+    case NM_DEVICE_IP_STATE_PENDING:
+        llstate = NM_L3_IPV6LL_STATE_STARTING;
+        break;
+    case NM_DEVICE_IP_STATE_READY:
+        nm_assert(l3cd);
+        llstate = NM_L3_IPV6LL_STATE_READY;
+        break;
+    case NM_DEVICE_IP_STATE_FAILED:
+        llstate = NM_L3_IPV6LL_STATE_DEFUNCT;
+        break;
+    default:
+        nm_assert_not_reached();
+    }
+
+    if (l3cd) {
+        nm_l3_config_data_iter_ip6_address_for_each (&iter, l3cd, &pladdr)
+            break;
+    }
+
+    if (ip_state == NM_DEVICE_IP_STATE_READY)
+        _dev_l3_register_l3cds_set_one(self, L3_CONFIG_DATA_TYPE_LL_6, l3cd, FALSE);
+
+    _dev_ipll6_set_llstate(self, llstate, pladdr ? &pladdr->address : NULL);
+}
+
 static void
 _dev_ipll6_state_change_cb(NML3IPv6LL            *ipv6ll,
                            NML3IPv6LLState        llstate,
@@ -10741,6 +10775,12 @@ _dev_ipll6_state_change_cb(NML3IPv6LL            *ipv6ll,
 
 static void
 _dev_ipll6_start(NMDevice *self)
+{
+    NM_DEVICE_GET_CLASS(self)->ipll6_start(self);
+}
+
+static void
+ipll6_start(NMDevice *self)
 {
     NMDevicePrivate       *priv = NM_DEVICE_GET_PRIVATE(self);
     NMConnection          *connection;
@@ -17800,6 +17840,7 @@ nm_device_class_init(NMDeviceClass *klass)
     klass->can_reapply_change            = can_reapply_change;
     klass->reapply_connection            = reapply_connection;
     klass->set_platform_mtu              = set_platform_mtu;
+    klass->ipll6_start                   = ipll6_start;
 
     klass->rfkill_type = NM_RFKILL_TYPE_UNKNOWN;
 
