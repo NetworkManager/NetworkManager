@@ -254,15 +254,19 @@ gboolean nm_ip6_addr_is_ula(const struct in6_addr *address);
 
 /*****************************************************************************/
 
-#define NM_IPV4LL_NETWORK ((in_addr_t) htonl(0xA9FE0000lu))
-#define NM_IPV4LL_NETMASK ((in_addr_t) htonl(0xFFFF0000lu))
+#define NM_IPV4LL_NETWORK   ((in_addr_t) htonl(0xA9FE0000lu)) /* 169.254.0.0 */
+#define NM_IPV4LL_NETMASK   ((in_addr_t) htonl(0xFFFF0000lu)) /* 255.255.0.0 */
+#define NM_IPV4LO_NETWORK   ((in_addr_t) htonl(0x7F000000lu)) /* 127.0.0.0 */
+#define NM_IPV4LO_NETMASK   ((in_addr_t) htonl(0xFF000000lu)) /* 255.0.0.0 */
+#define NM_IPV4LO_PREFIXLEN 8
+#define NM_IPV4LO_ADDR1     ((in_addr_t) htonl(0x7F000001lu)) /* 127.0.0.1 */
 
 static inline gboolean
 nm_ip4_addr_is_loopback(in_addr_t addr)
 {
     /* There is also IN_LOOPBACK() in <linux/in.h>, but there the
      * argument is in host order not `in_addr_t`. */
-    return (addr & htonl(0xFF000000u)) == htonl(0x7F000000u);
+    return (addr & NM_IPV4LO_NETMASK) == NM_IPV4LO_NETWORK;
 }
 
 static inline gboolean
