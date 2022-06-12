@@ -17,6 +17,7 @@ libnm_client_impl_sources = files(
   'nm-device-generic.c',
   'nm-device-infiniband.c',
   'nm-device-ip-tunnel.c',
+  'nm-device-loopback.c',
   'nm-device-macsec.c',
   'nm-device-macvlan.c',
   'nm-device-modem.c',

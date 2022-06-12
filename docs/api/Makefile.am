@@ -41,6 +41,7 @@ content_files = \
 	dbus-org.freedesktop.NetworkManager.Device.Generic.xml \
 	dbus-org.freedesktop.NetworkManager.Device.IPTunnel.xml \
 	dbus-org.freedesktop.NetworkManager.Device.Infiniband.xml \
+	dbus-org.freedesktop.NetworkManager.Device.Loopback.xml \
 	dbus-org.freedesktop.NetworkManager.Device.Macsec.xml \
 	dbus-org.freedesktop.NetworkManager.Device.Macvlan.xml \
 	dbus-org.freedesktop.NetworkManager.Device.Modem.xml \
