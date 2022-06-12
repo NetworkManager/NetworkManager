@@ -17,6 +17,7 @@ ifaces = [
   'org.freedesktop.NetworkManager.Device.Generic',
   'org.freedesktop.NetworkManager.Device.IPTunnel',
   'org.freedesktop.NetworkManager.Device.Infiniband',
+  'org.freedesktop.NetworkManager.Device.Loopback',
   'org.freedesktop.NetworkManager.Device.Lowpan',
   'org.freedesktop.NetworkManager.Device.Macsec',
   'org.freedesktop.NetworkManager.Device.Macvlan',

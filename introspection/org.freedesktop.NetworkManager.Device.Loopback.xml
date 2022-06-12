@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node name="/">
+  <!--
+      org.freedesktop.NetworkManager.Device.Loopback:
+      @short_description: Loopback Device.
+
+  -->
+  <interface name="org.freedesktop.NetworkManager.Device.Loopback">
+
+    <!--
+        HwAddress:
+
+        Hardware address of the device.
+n
+        DEPRECATED. Use the "HwAddress" property in "org.freedesktop.NetworkManager.Device" instead which exists since version NetworkManager 1.24.0.
+    -->
+    <property name="HwAddress" type="s" access="read"/>
+
+  </interface>
+</node>

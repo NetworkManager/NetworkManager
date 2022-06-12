@@ -4995,6 +4995,8 @@ nm_device_get_route_metric_default(NMDeviceType device_type)
         return 800;
     case NM_DEVICE_TYPE_WPAN:
         return 850;
+    case NM_DEVICE_TYPE_LOOPBACK:
+        return 875;
     case NM_DEVICE_TYPE_WIFI_P2P:
     case NM_DEVICE_TYPE_GENERIC:
         return 950;
@@ -10919,6 +10921,10 @@ nm_device_get_configured_mtu_from_connection(NMDevice          *self,
         if (setting)
             mtu = nm_setting_wireguard_get_mtu(NM_SETTING_WIREGUARD(setting));
         global_property_name = NM_CON_DEFAULT("wireguard.mtu");
+    } else if (setting_type == NM_TYPE_SETTING_LOOPBACK) {
+        if (setting)
+            mtu = nm_setting_loopback_get_mtu(NM_SETTING_LOOPBACK(setting));
+        global_property_name = NM_CON_DEFAULT("loopback.mtu");
     } else
         g_return_val_if_reached(0);
 
@@ -17436,7 +17442,7 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
         nm_assert(priv->type == NM_DEVICE_TYPE_UNKNOWN);
         priv->type = g_value_get_uint(value);
         nm_assert(priv->type > NM_DEVICE_TYPE_UNKNOWN);
-        nm_assert(priv->type <= NM_DEVICE_TYPE_VRF);
+        nm_assert(priv->type <= NM_DEVICE_TYPE_LOOPBACK);
         break;
     case PROP_LINK_TYPE:
         /* construct-only */

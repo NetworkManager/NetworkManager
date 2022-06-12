@@ -31,6 +31,7 @@
 #include "nm-device-generic.h"
 #include "nm-device-infiniband.h"
 #include "nm-device-ip-tunnel.h"
+#include "nm-device-loopback.h"
 #include "nm-device-macsec.h"
 #include "nm-device-macvlan.h"
 #include "nm-device-modem.h"
