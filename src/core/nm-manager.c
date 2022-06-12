@@ -19,6 +19,7 @@
 #include "NetworkManagerUtils.h"
 #include "devices/nm-device-factory.h"
 #include "devices/nm-device-generic.h"
+#include "devices/nm-device-loopback.h"
 #include "devices/nm-device.h"
 #include "dns/nm-dns-manager.h"
 #include "dhcp/nm-dhcp-manager.h"
@@ -1464,8 +1465,11 @@ find_best_device_state(NMManager *manager)
     NMActiveConnection *ac;
 
     c_list_for_each_entry (ac, &priv->active_connections_lst_head, active_connections_lst) {
-        NMActiveConnectionState ac_state = nm_active_connection_get_state(ac);
+        NMActiveConnectionState ac_state;
 
+        if (NM_IS_DEVICE_LOOPBACK(nm_active_connection_get_device(ac)))
+            continue;
+        ac_state = nm_active_connection_get_state(ac);
         switch (ac_state) {
         case NM_ACTIVE_CONNECTION_STATE_ACTIVATED:
             if (nm_active_connection_get_default(ac, AF_UNSPEC)) {
@@ -7087,10 +7091,6 @@ nm_manager_write_device_state(NMManager *self, NMDevice *device, int *out_ifinde
     ifindex = nm_device_get_ip_ifindex(device);
     if (ifindex <= 0)
         return FALSE;
-    if (ifindex == NM_LOOPBACK_IFINDEX) {
-        /* ignore loopback */
-        return FALSE;
-    }
 
     if (!nm_platform_link_get(priv->platform, ifindex))
         return FALSE;

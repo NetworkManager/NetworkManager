@@ -418,6 +418,8 @@ prepare_one_interface(NMDnsSystemdResolved *self, const InterfaceConfig *ic)
     gboolean                      has_default_route = FALSE;
     guint                         i;
 
+    nm_assert(ic->ifindex != NM_LOOPBACK_IFINDEX);
+
     g_variant_builder_init(&dns, G_VARIANT_TYPE("(ia(iay))"));
     g_variant_builder_add(&dns, "i", ic->ifindex);
     g_variant_builder_open(&dns, G_VARIANT_TYPE("a(iay)"));
@@ -707,6 +709,13 @@ update(NMDnsPlugin             *plugin,
         int              ifindex = ip_data->data->ifindex;
 
         nm_assert(ifindex == nm_l3_config_data_get_ifindex(ip_data->l3cd));
+
+        if (ifindex == NM_LOOPBACK_IFINDEX) {
+            /* systemd-resolved API is per-link, and loopback is not supported.
+             * Unclear what to do about DNS configuration on loopback. Just skip
+             * it here. */
+            continue;
+        }
 
         ic = g_hash_table_lookup(interfaces, GINT_TO_POINTER(ifindex));
         if (!ic) {
