@@ -20,6 +20,7 @@ libnm_client_headers = files(
   'nm-device-generic.h',
   'nm-device-infiniband.h',
   'nm-device-ip-tunnel.h',
+  'nm-device-loopback.h',
   'nm-device-macsec.h',
   'nm-device-macvlan.h',
   'nm-device-modem.h',

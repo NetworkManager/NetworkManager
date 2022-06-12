@@ -4105,6 +4105,8 @@ ip6_address_scope_cmp_descending(gconstpointer p_a, gconstpointer p_b, gpointer 
  *   by the function.
  *   Addresses that are both contained in @known_addresses and @addresses_prune
  *   will be configured.
+ * @flag: determine if the noprefixroute tag will be automatically added for
+ *   the addresses configured
  *
  * A convenience function to synchronize addresses for a specific interface
  * with the least possible disturbance. It simply removes addresses that are
@@ -4113,11 +4115,12 @@ ip6_address_scope_cmp_descending(gconstpointer p_a, gconstpointer p_b, gpointer 
  * Returns: %TRUE on success.
  */
 gboolean
-nm_platform_ip_address_sync(NMPlatform *self,
-                            int         addr_family,
-                            int         ifindex,
-                            GPtrArray  *known_addresses,
-                            GPtrArray  *addresses_prune)
+nm_platform_ip_address_sync(NMPlatform           *self,
+                            int                   addr_family,
+                            int                   ifindex,
+                            GPtrArray            *known_addresses,
+                            GPtrArray            *addresses_prune,
+                            NMPIPAddressSyncFlags flag)
 {
     gint32                         now     = 0;
     const int                      IS_IPv4 = NM_IS_IPv4(addr_family);
@@ -4529,18 +4532,22 @@ next_plat:;
                     nm_platform_ip4_broadcast_address_from_addr(&known_address->a4),
                     lifetime,
                     preferred,
-                    IFA_F_NOPREFIXROUTE,
+                    flag == NMP_IP_ADDRESS_SYNC_FLAGS_NO_AUTO_NOPREFIXROUTE ? 0
+                                                                            : IFA_F_NOPREFIXROUTE,
                     known_address->a4.label))
                 success = FALSE;
         } else {
-            if (!nm_platform_ip6_address_add(self,
-                                             ifindex,
-                                             known_address->a6.address,
-                                             known_address->a6.plen,
-                                             known_address->a6.peer_address,
-                                             lifetime,
-                                             preferred,
-                                             IFA_F_NOPREFIXROUTE | known_address->a6.n_ifa_flags))
+            if (!nm_platform_ip6_address_add(
+                    self,
+                    ifindex,
+                    known_address->a6.address,
+                    known_address->a6.plen,
+                    known_address->a6.peer_address,
+                    lifetime,
+                    preferred,
+                    (flag == NMP_IP_ADDRESS_SYNC_FLAGS_NO_AUTO_NOPREFIXROUTE ? 0
+                                                                             : IFA_F_NOPREFIXROUTE)
+                        | known_address->a6.n_ifa_flags))
                 success = FALSE;
         }
     }
@@ -4568,7 +4575,12 @@ nm_platform_ip_address_flush(NMPlatform *self, int addr_family, int ifindex)
         addresses_prune =
             nm_platform_ip_address_get_prune_list(self, addr_family2, ifindex, NULL, 0);
 
-        if (!nm_platform_ip_address_sync(self, addr_family2, ifindex, NULL, addresses_prune))
+        if (!nm_platform_ip_address_sync(self,
+                                         addr_family2,
+                                         ifindex,
+                                         NULL,
+                                         addresses_prune,
+                                         NMP_IP_ADDRESS_SYNC_FLAGS_NONE))
             success = FALSE;
     }
     return success;

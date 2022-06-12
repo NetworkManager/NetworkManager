@@ -1011,6 +1011,10 @@ ipv6.ip6-privacy=0
           </para></listitem>
         </varlistentry>
         <varlistentry>
+          <term><varname>loopback.mtu</varname></term>
+          <listitem><para>If configured explicitly to 0, the MTU is not reconfigured during device activation unless it is required due to IPv6 constraints. If left unspecified, a DHCP/IPv6 SLAAC provided value is used or the MTU is left unspecified on activation.</para></listitem>
+        </varlistentry>
+        <varlistentry>
           <term><varname>sriov.autoprobe-drivers</varname></term>
           <listitem><para>If left unspecified, drivers are autoprobed when the SR-IOV VF gets created.</para></listitem>
         </varlistentry>
