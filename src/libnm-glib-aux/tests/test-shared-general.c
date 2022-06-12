@@ -259,6 +259,7 @@ test_nm_utils_ip4_address_is_loopback(void)
     g_assert(!nm_utils_ip4_address_is_loopback(nmtst_inet4_from_string("126.5.0.1")));
     g_assert(!nm_utils_ip4_address_is_loopback(nmtst_inet4_from_string("128.5.0.1")));
     g_assert(!nm_utils_ip4_address_is_loopback(nmtst_inet4_from_string("129.5.0.1")));
+    g_assert_cmpint(nmtst_inet4_from_string("127.0.0.1"), ==, NM_IPV4LO_NETWORK);
 }
 
 /*****************************************************************************/

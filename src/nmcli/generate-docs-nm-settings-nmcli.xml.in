@@ -762,6 +762,11 @@
         <property name="token"
                   description="Configure the token for draft-chown-6man-tokenised-ipv6-identifiers-02 IPv6 tokenized interface identifiers. Useful with eui64 addr-gen-mode." />
     </setting>
+    <setting name="loopback" >
+        <property name="mtu"
+                  alias="mtu"
+                  description="If non-zero, only transmit packets of the specified size or smaller, breaking larger packets up into multiple Ethernet frames." />
+    </setting>
     <setting name="macsec" >
         <property name="parent"
                   alias="dev"

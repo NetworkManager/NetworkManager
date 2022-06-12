@@ -7089,10 +7089,6 @@ nm_manager_write_device_state(NMManager *self, NMDevice *device, int *out_ifinde
     ifindex = nm_device_get_ip_ifindex(device);
     if (ifindex <= 0)
         return FALSE;
-    if (ifindex == 1) {
-        /* ignore loopback */
-        return FALSE;
-    }
 
     if (!nm_platform_link_get(priv->platform, ifindex))
         return FALSE;
