@@ -948,9 +948,9 @@ _link_get_all_presort(gconstpointer p_a, gconstpointer p_b, gpointer sort_by_nam
     const NMPlatformLink *b = NMP_OBJECT_CAST_LINK(*((const NMPObject **) p_b));
 
     /* Loopback always first */
-    if (a->ifindex == 1)
+    if (a->ifindex == NM_LOOPBACK_IFINDEX)
         return -1;
-    if (b->ifindex == 1)
+    if (b->ifindex == NM_LOOPBACK_IFINDEX)
         return 1;
 
     if (GPOINTER_TO_INT(sort_by_name)) {
