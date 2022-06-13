@@ -23,6 +23,13 @@
 
 typedef struct _NMDevicePppPrivate {
     NMPppMgr *ppp_mgr;
+    union {
+        struct {
+            NML3CfgBlockHandle *l3cfg_block_handle_6;
+            NML3CfgBlockHandle *l3cfg_block_handle_4;
+        };
+        NML3CfgBlockHandle *l3cfg_block_handle_x[2];
+    };
 } NMDevicePppPrivate;
 
 struct _NMDevicePpp {
@@ -69,8 +76,10 @@ _ppp_mgr_stage3_maybe_ready(NMDevicePpp *self)
         const NMPppMgrIPData *ip_data;
 
         ip_data = nm_ppp_mgr_get_ip_data(priv->ppp_mgr, addr_family);
-        if (ip_data->ip_received)
+        if (ip_data->ip_received) {
+            nm_clear_pointer(&priv->l3cfg_block_handle_x[IS_IPv4], nm_l3cfg_unblock_obj_pruning);
             nm_device_devip_set_state(device, addr_family, NM_DEVICE_IP_STATE_READY, ip_data->l3cd);
+        }
     }
 
     if (nm_ppp_mgr_get_state(priv->ppp_mgr) >= NM_PPP_MGR_STATE_HAVE_IP_CONFIG)
@@ -80,9 +89,10 @@ _ppp_mgr_stage3_maybe_ready(NMDevicePpp *self)
 static void
 _ppp_mgr_callback(NMPppMgr *ppp_mgr, const NMPppMgrCallbackData *callback_data, gpointer user_data)
 {
-    NMDevicePpp  *self   = NM_DEVICE_PPP(user_data);
-    NMDevice     *device = NM_DEVICE(self);
-    NMDeviceState device_state;
+    NMDevicePpp        *self   = NM_DEVICE_PPP(user_data);
+    NMDevice           *device = NM_DEVICE(self);
+    NMDevicePppPrivate *priv   = NM_DEVICE_PPP_GET_PRIVATE(self);
+    NMDeviceState       device_state;
 
     if (callback_data->callback_type != NM_PPP_MGR_CALLBACK_TYPE_STATE_CHANGED)
         return;
@@ -110,6 +120,19 @@ _ppp_mgr_callback(NMPppMgr *ppp_mgr, const NMPppMgrCallbackData *callback_data, 
                                         NM_DEVICE_STATE_FAILED,
                                         NM_DEVICE_STATE_REASON_CONFIG_FAILED);
                 return;
+            }
+
+            /* pppd also tries to configure addresses by itself through some
+             * ioctls. If we remove between those calls an address that was added,
+             * pppd fails and quits. Temporarily block the removal of addresses
+             * and routes. */
+            if (!priv->l3cfg_block_handle_4) {
+                priv->l3cfg_block_handle_4 =
+                    nm_l3cfg_block_obj_pruning(nm_device_get_l3cfg(device), AF_INET);
+            }
+            if (!priv->l3cfg_block_handle_6) {
+                priv->l3cfg_block_handle_6 =
+                    nm_l3cfg_block_obj_pruning(nm_device_get_l3cfg(device), AF_INET6);
             }
 
             if (old_name)
@@ -257,7 +280,11 @@ create_and_realize(NMDevice              *device,
 static void
 deactivate(NMDevice *device)
 {
-    NMDevicePpp *self = NM_DEVICE_PPP(device);
+    NMDevicePpp        *self = NM_DEVICE_PPP(device);
+    NMDevicePppPrivate *priv = NM_DEVICE_PPP_GET_PRIVATE(self);
+
+    nm_clear_pointer(&priv->l3cfg_block_handle_4, nm_l3cfg_unblock_obj_pruning);
+    nm_clear_pointer(&priv->l3cfg_block_handle_6, nm_l3cfg_unblock_obj_pruning);
 
     _ppp_mgr_cleanup(self);
 }
