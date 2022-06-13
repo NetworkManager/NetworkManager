@@ -394,7 +394,8 @@ make_connection_setting(const char *file,
     gs_free char           *stable_id = NULL;
     const char *const      *iter;
     gint32                  vint32;
-    int                     vint64, i_val;
+    gint64                  vint64;
+    int                     i_val;
 
     ifcfg_name = utils_get_ifcfg_name(file, TRUE);
     if (!ifcfg_name)
@@ -587,8 +588,8 @@ make_connection_setting(const char *file,
         break;
     }
 
-    vint64 = svGetValueInt64(ifcfg, "AUTH_RETRIES", 10, -1, G_MAXINT32, -1);
-    g_object_set(s_con, NM_SETTING_CONNECTION_AUTH_RETRIES, (int) vint64, NULL);
+    vint32 = svGetValueInt64(ifcfg, "AUTH_RETRIES", 10, -1, G_MAXINT32, -1);
+    g_object_set(s_con, NM_SETTING_CONNECTION_AUTH_RETRIES, (int) vint32, NULL);
 
     nm_clear_g_free(&value);
     v = svGetValue(ifcfg, "DEVTIMEOUT", &value);
