@@ -946,8 +946,9 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
      * format: a comma separated list of addresses
      * description: A list of IPv6 addresses and their prefix length. Multiple addresses
      * can be separated by comma. For example "2001:db8:85a3::8a2e:370:7334/64, 2001:db8:85a3::5/64".
-     * The addresses are listed in increasing priority, meaning the last address will
-     * be the primary address.
+     * The addresses are listed in decreasing priority, meaning the first address will
+     * be the primary address. This can make a difference with IPv6 source address selection
+     * (RFC 6724, section 5).
      * ---end---
      */
     _nm_properties_override_gobj(

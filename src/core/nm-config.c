@@ -2870,6 +2870,7 @@ _set_config_data(NMConfig *self, NMConfigData *new_data, NMConfigChangeFlags rel
     NMConfigData       *old_data = priv->config_data;
     NMConfigChangeFlags changes, changes_diff;
     gboolean            had_new_data = !!new_data;
+    char                sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
 
     nm_assert(reload_flags);
     nm_assert(!NM_FLAGS_ANY(reload_flags, ~NM_CONFIG_CHANGE_CAUSES));
@@ -2901,15 +2902,15 @@ _set_config_data(NMConfig *self, NMConfigData *new_data, NMConfigChangeFlags rel
 
     if (new_data) {
         _LOGI("signal: %s (%s)",
-              nm_config_change_flags_to_string(changes, NULL, 0),
+              nm_config_change_flags_to_string(changes, sbuf, sizeof(sbuf)),
               nm_config_data_get_config_description(new_data));
         nm_config_data_log(new_data, "CONFIG: ", "  ", priv->no_auto_default_file, NULL);
         priv->config_data = new_data;
     } else if (had_new_data)
         _LOGI("signal: %s (no changes from disk)",
-              nm_config_change_flags_to_string(changes, NULL, 0));
+              nm_config_change_flags_to_string(changes, sbuf, sizeof(sbuf)));
     else
-        _LOGI("signal: %s", nm_config_change_flags_to_string(changes, NULL, 0));
+        _LOGI("signal: %s", nm_config_change_flags_to_string(changes, sbuf, sizeof(sbuf)));
     g_signal_emit(self, signals[SIGNAL_CONFIG_CHANGED], 0, new_data ?: old_data, changes, old_data);
     if (new_data)
         g_object_unref(old_data);

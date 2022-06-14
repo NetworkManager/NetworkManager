@@ -870,7 +870,12 @@ nm_utils_to_string_buffer_init(char **buf, gsize *len)
 {
     if (!*buf) {
         *buf = _nm_utils_to_string_buffer;
-        *len = sizeof(_nm_utils_to_string_buffer);
+        *len = NM_UTILS_TO_STRING_BUFFER_SIZE;
+
+        /* We no longer want to support callers to omit the buffer
+         * and fallback to the global buffer. Callers should be fixed
+         * to always provide a valid buffer. */
+        g_return_if_reached();
     }
 }
 
@@ -942,20 +947,6 @@ nm_utils_flags2str(const NMUtilsFlags2StrDesc *descs,
     }
     return buf;
 };
-
-/*****************************************************************************/
-
-/**
- * _nm_utils_ip4_prefix_to_netmask:
- * @prefix: a CIDR prefix
- *
- * Returns: the netmask represented by the prefix, in network byte order
- **/
-guint32
-_nm_utils_ip4_prefix_to_netmask(guint32 prefix)
-{
-    return prefix < 32 ? ~htonl(0xFFFFFFFFu >> prefix) : 0xFFFFFFFFu;
-}
 
 /*****************************************************************************/
 
@@ -6259,7 +6250,7 @@ _nm_utils_ssid_to_string_gbytes(GBytes *ssid)
 /*****************************************************************************/
 
 gconstpointer
-nm_utils_ipx_address_clear_host_address(int family, gpointer dst, gconstpointer src, guint8 plen)
+nm_utils_ipx_address_clear_host_address(int family, gpointer dst, gconstpointer src, guint32 plen)
 {
     g_return_val_if_fail(dst, NULL);
 
@@ -6283,21 +6274,10 @@ nm_utils_ipx_address_clear_host_address(int family, gpointer dst, gconstpointer 
     return dst;
 }
 
-/* nm_utils_ip4_address_clear_host_address:
- * @addr: source ip6 address
- * @plen: prefix length of network
- *
- * returns: the input address, with the host address set to 0.
- */
-in_addr_t
-nm_utils_ip4_address_clear_host_address(in_addr_t addr, guint8 plen)
-{
-    return addr & _nm_utils_ip4_prefix_to_netmask(plen);
-}
-
 /* nm_utils_ip6_address_clear_host_address:
  * @dst: destination output buffer, will contain the network part of the @src address
- * @src: source ip6 address
+ * @src: source ip6 address. If NULL, this does an in-place update of @dst.
+ *   Also, @src and @dst are allowed to be the same pointers.
  * @plen: prefix length of network
  *
  * Note: this function is self assignment safe, to update @src inplace, set both
@@ -6306,7 +6286,7 @@ nm_utils_ip4_address_clear_host_address(in_addr_t addr, guint8 plen)
 const struct in6_addr *
 nm_utils_ip6_address_clear_host_address(struct in6_addr       *dst,
                                         const struct in6_addr *src,
-                                        guint8                 plen)
+                                        guint32                plen)
 {
     g_return_val_if_fail(plen <= 128, NULL);
     g_return_val_if_fail(dst, NULL);
@@ -6335,14 +6315,15 @@ nm_utils_ip6_address_clear_host_address(struct in6_addr       *dst,
 int
 nm_utils_ip6_address_same_prefix_cmp(const struct in6_addr *addr_a,
                                      const struct in6_addr *addr_b,
-                                     guint8                 plen)
+                                     guint32                plen)
 {
     int    nbytes;
     guint8 va, vb, m;
 
-    if (plen >= 128)
+    if (plen >= 128) {
+        nm_assert(plen == 128);
         NM_CMP_DIRECT_MEMCMP(addr_a, addr_b, sizeof(struct in6_addr));
-    else {
+    } else {
         nbytes = plen / 8;
         if (nbytes)
             NM_CMP_DIRECT_MEMCMP(addr_a, addr_b, nbytes);

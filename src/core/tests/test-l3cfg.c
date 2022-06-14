@@ -954,7 +954,7 @@ test_l3_ipv6ll(gconstpointer test_data)
                                        .steps_done = FALSE,
     };
     TestL3IPv6LLData *const tdata = &tdata_stack;
-    char                    sbuf1[sizeof(_nm_utils_to_string_buffer)];
+    char                    sbuf1[NM_UTILS_TO_STRING_BUFFER_SIZE];
     int                     r;
 
     _LOGD("test start (/l3-ipv6ll/%d)", TEST_IDX);
