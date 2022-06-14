@@ -455,4 +455,9 @@ struct _NMIPConfig *nm_l3cfg_ipconfig_acquire(NML3Cfg *self, int addr_family);
 
 /*****************************************************************************/
 
+typedef struct _NML3CfgBlockHandle NML3CfgBlockHandle;
+
+NML3CfgBlockHandle *nm_l3cfg_block_obj_pruning(NML3Cfg *self, int addr_family);
+void                nm_l3cfg_unblock_obj_pruning(NML3CfgBlockHandle *handle);
+
 #endif /* __NM_L3CFG_H__ */
