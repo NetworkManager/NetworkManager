@@ -293,6 +293,7 @@ RUN dnf install -y \\
     gtk-doc \\
     intltool \\
     iproute \\
+    iproute-tc \\
     iptables \\
     jansson-devel \\
     libasan \\

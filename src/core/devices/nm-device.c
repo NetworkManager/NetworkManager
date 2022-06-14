@@ -6276,10 +6276,6 @@ carrier_changed(NMDevice *self, gboolean carrier)
 
     if (nm_device_is_master(self)) {
         if (carrier) {
-            /* Force master to retry getting ip addresses when carrier
-             * is restored. */
-            if (priv->state == NM_DEVICE_STATE_ACTIVATED)
-                nm_device_update_dynamic_ip_setup(self);
             /* If needed, also resume IP configuration that is
              * waiting for carrier. */
             if (priv->state == NM_DEVICE_STATE_IP_CONFIG)
@@ -6307,12 +6303,6 @@ carrier_changed(NMDevice *self, gboolean carrier)
              * the device.
              */
             nm_device_emit_recheck_auto_activate(self);
-        } else if (priv->state == NM_DEVICE_STATE_ACTIVATED) {
-            /* If the device is active without a carrier (probably because it is
-             * tagged for carrier ignore) ensure that when the carrier appears we
-             * renew DHCP leases and such.
-             */
-            nm_device_update_dynamic_ip_setup(self);
         }
     } else {
         if (priv->state == NM_DEVICE_STATE_UNAVAILABLE) {
@@ -6700,6 +6690,14 @@ device_link_changed(gpointer user_data)
         if (priv->state >= NM_DEVICE_STATE_IP_CONFIG && priv->state <= NM_DEVICE_STATE_ACTIVATED
             && !nm_device_sys_iface_state_is_external(self))
             nm_device_l3cfg_commit(self, NM_L3_CFG_COMMIT_TYPE_REAPPLY, FALSE);
+
+        /* If the device is active without a carrier (probably because it is
+         * tagged for carrier ignore) ensure that when the carrier appears we
+         * renew DHCP leases and such.
+         */
+        if (priv->state == NM_DEVICE_STATE_ACTIVATED) {
+            nm_device_update_dynamic_ip_setup(self);
+        }
     }
 
     if (update_unmanaged_specs)
@@ -7656,8 +7654,9 @@ slave_state_changed(NMDevice           *slave,
     }
 
     if (release) {
-        configure = priv->sys_iface_state == NM_DEVICE_SYS_IFACE_STATE_MANAGED
-                    && nm_device_sys_iface_state_get(slave) != NM_DEVICE_SYS_IFACE_STATE_EXTERNAL;
+        configure = (priv->sys_iface_state == NM_DEVICE_SYS_IFACE_STATE_MANAGED
+                     && nm_device_sys_iface_state_get(slave) != NM_DEVICE_SYS_IFACE_STATE_EXTERNAL)
+                    || nm_device_sys_iface_state_get(slave) == NM_DEVICE_SYS_IFACE_STATE_MANAGED;
 
         nm_device_master_release_slave(self,
                                        slave,
@@ -7922,6 +7921,9 @@ nm_device_slave_notify_release(NMDevice *self, NMDeviceStateReason reason)
 
     g_return_if_fail(priv->master);
 
+    if (!priv->is_enslaved)
+        return;
+
     if (priv->state > NM_DEVICE_STATE_DISCONNECTED && priv->state <= NM_DEVICE_STATE_ACTIVATED) {
         switch (nm_device_state_reason_check(reason)) {
         case NM_DEVICE_STATE_REASON_DEPENDENCY_FAILED:
@@ -7951,14 +7953,12 @@ nm_device_slave_notify_release(NMDevice *self, NMDeviceStateReason reason)
     } else
         _LOGI(LOGD_DEVICE, "released from master device %s", nm_device_get_iface(priv->master));
 
-    if (priv->is_enslaved) {
-        priv->is_enslaved = FALSE;
+    priv->is_enslaved = FALSE;
 
-        _notify(self, PROP_MASTER);
+    _notify(self, PROP_MASTER);
 
-        nm_clear_pointer(&NM_DEVICE_GET_PRIVATE(priv->master)->ports_variant, g_variant_unref);
-        nm_gobject_notify_together(priv->master, PROP_PORTS, PROP_SLAVES);
-    }
+    nm_clear_pointer(&NM_DEVICE_GET_PRIVATE(priv->master)->ports_variant, g_variant_unref);
+    nm_gobject_notify_together(priv->master, PROP_PORTS, PROP_SLAVES);
 }
 
 /**
@@ -15109,6 +15109,9 @@ _cancel_activation(NMDevice *self)
 
     _dispatcher_cleanup(self);
     ip_check_gw_ping_cleanup(self);
+
+    _dev_ip_state_cleanup(self, AF_INET, FALSE);
+    _dev_ip_state_cleanup(self, AF_INET6, FALSE);
 
     /* Break the activation chain */
     activation_source_clear(self);
