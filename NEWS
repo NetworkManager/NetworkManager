@@ -5,6 +5,8 @@ Overview of changes since NetworkManager-1.36.6
 
 * Set "src" attribute for routes from DHCPv4 to the leased address. This
   helps with source address selection.
+* Fix and change order of IPv4 and IPv6 addresses. The order affects
+  the priority for source address selection.
 
 ===============================================
 NetworkManager-1.36.6
