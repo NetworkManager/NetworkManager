@@ -61,6 +61,7 @@
 #include "nm-simple-connection.h"
 #include "libnm-core-intern/nm-keyfile-internal.h"
 #include "libnm-glib-aux/nm-dedup-multi.h"
+#include "libnm-glib-aux/nm-shared-utils.h"
 #include "libnm-base/nm-ethtool-base.h"
 #include "libnm-base/nm-ethtool-utils-base.h"
 

@@ -12,6 +12,7 @@
 #include "nmcs-provider-azure.h"
 #include "nmcs-provider-aliyun.h"
 #include "libnm-core-aux-intern/nm-libnm-core-utils.h"
+#include "libnm-glib-aux/nm-dbus-aux.h"
 
 /*****************************************************************************/
 

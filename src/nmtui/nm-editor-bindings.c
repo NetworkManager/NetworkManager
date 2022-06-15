@@ -13,6 +13,7 @@
  */
 
 #include "libnm-client-aux-extern/nm-default-client.h"
+#include "src/libnm-glib-aux/nm-shared-utils.h"
 
 #include "nm-editor-bindings.h"
 

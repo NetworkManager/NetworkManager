@@ -8,6 +8,7 @@
 
 #include "libnm-platform/nmp-base.h"
 #include "libnm-base/nm-base.h"
+#include "libnm-glib-aux/nm-shared-utils.h"
 
 #define NM_TYPE_PLATFORM (nm_platform_get_type())
 #define NM_PLATFORM(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_PLATFORM, NMPlatform))

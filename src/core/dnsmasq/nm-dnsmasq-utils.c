@@ -10,6 +10,7 @@
 #include <arpa/inet.h>
 
 #include "libnm-platform/nm-platform.h"
+#include "libnm-glib-aux/nm-shared-utils.h"
 #include "nm-utils.h"
 
 gboolean
