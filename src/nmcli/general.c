@@ -300,11 +300,12 @@ static void
 usage_general(void)
 {
     g_printerr(_("Usage: nmcli general { COMMAND | help }\n\n"
-                 "COMMAND := { status | hostname | permissions | logging }\n\n"
+                 "COMMAND := { status | hostname | permissions | logging | reload }\n\n"
                  "  status\n\n"
                  "  hostname [<hostname>]\n\n"
                  "  permissions\n\n"
-                 "  logging [level <log level>] [domains <log domains>]\n\n"));
+                 "  logging [level <log level>] [domains <log domains>]\n\n"
+                 "  reload [<flags>]\n\n"));
 }
 
 static void
