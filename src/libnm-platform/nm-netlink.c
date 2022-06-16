@@ -1101,6 +1101,8 @@ nl_socket_new(struct nl_sock **out_sk, int protocol)
     if (local.nl_family != AF_NETLINK)
         return -NME_UNSPEC;
 
+    (void) nl_socket_set_ext_ack(sk, TRUE);
+
     sk->s_local = local;
     sk->s_proto = protocol;
 

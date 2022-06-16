@@ -9739,10 +9739,6 @@ constructed(GObject *_object)
     nle = nl_socket_set_buffer_size(priv->nlh, 8 * 1024 * 1024, 0);
     g_assert(!nle);
 
-    nle = nl_socket_set_ext_ack(priv->nlh, TRUE);
-    if (nle)
-        _LOGD("could not enable extended acks on netlink socket");
-
     /* explicitly set the msg buffer size and disable MSG_PEEK.
      * We use our own receive buffer priv->netlink_recv_buf.
      * If we encounter NME_NL_MSG_TRUNC, we will increase the buffer
