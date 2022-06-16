@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: LGPL-2.1-or-later
 
 if enable_docs
+  assert(enable_introspection, '-Ddocs=true requires -Dintrospection=true')
   settings_docs_input_xml = custom_target(
     'settings-docs-input.xml',
     input: [nm_settings_docs_xml_gir, nm_property_infos_xml['nmcli']],
@@ -18,7 +19,12 @@ if enable_docs
     'settings-docs.h',
     input: settings_docs_input_xml,
     output: 'settings-docs.h',
-    command: [xsltproc, '--output', '@OUTPUT@', join_paths(meson.current_source_dir(), 'settings-docs.xsl'), '@INPUT@'],
+    command: [
+      python.path(),
+      join_paths(meson.source_root(), 'tools', 'generate-docs-settings-docs.py'),
+      '--output', '@OUTPUT@',
+      '--xml', '@INPUT@'
+    ],
   )
 
   test(

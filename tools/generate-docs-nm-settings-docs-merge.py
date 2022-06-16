@@ -186,6 +186,12 @@ for setting_name in iter_keys_of_dicts(settings_roots, key_fcn_setting_name):
             if p_attr is not None
         )
 
+        description = find_first_not_none(
+            p_attr.find("description")
+            for p_attr in properties_attrs
+            if p_attr is not None
+        )
+
         if gl_only_from_first and properties_attrs[0] is None:
             dbg("> > > > skip (only-from-first")
             continue
@@ -203,10 +209,16 @@ for setting_name in iter_keys_of_dicts(settings_roots, key_fcn_setting_name):
             node_set_attr(property_node, "type", properties_attrs)
 
         node_set_attr(property_node, "default", properties_attrs)
-        node_set_attr(property_node, "description", properties_attrs)
+        desc_value = node_get_attr(properties_attrs, "description")
         node_set_attr(property_node, "alias", properties_attrs)
+
         if description_docbook is not None:
             property_node.insert(0, description_docbook)
-
+        if desc_value:
+            description = ET.Element("description")
+            description.text = desc_value
+            property_node.append(description)
+        elif description is not None:
+            property_node.append(description)
 
 ET.ElementTree(root_node).write(gl_output_xml_file)
