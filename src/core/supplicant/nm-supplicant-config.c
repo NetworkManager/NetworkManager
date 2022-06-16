@@ -1088,6 +1088,14 @@ nm_supplicant_config_add_setting_wireless_security(NMSupplicantConfig           
                     error))
                 return FALSE;
         }
+
+        /* In case the connection is saved as OWE / Enhanced Open, prevent
+         * unencrypted downgrade
+         */
+        if (nm_streq(key_mgmt, "owe")) {
+            if (!nm_supplicant_config_add_option(self, "owe_only", "1", -1, NULL, error))
+                return FALSE;
+        }
     }
 
     /* WEP keys if required */
