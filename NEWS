@@ -1,3 +1,17 @@
+===============================================
+NetworkManager-1.38.2
+Overview of changes since NetworkManager-1.38.0
+===============================================
+
+* Fix race condition with pppd that caused failures when activating
+  PPPoE connections.
+* Unbreak DHCPv6 over PPP.
+* Don't ignore IPv6 DNS servers received from PPP.
+* Fix crash while checking WEP capability of Wi-Fi interfaces.
+* Ensure DHCP is restarted every time the link goes up.
+* Fix struct alignment issues seen on some architectures.
+* Various other bugfixes and improvements.
+
 =============================================
 NetworkManager-1.38
 Overview of changes since NetworkManager-1.36
