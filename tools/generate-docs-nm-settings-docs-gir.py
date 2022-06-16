@@ -116,6 +116,10 @@ def get_prop_type(setting, pspec):
     return prop_type
 
 
+def remove_prefix(line, prefix):
+    return line[len(prefix) :] if line.startswith(prefix) else line
+
+
 def get_docs(propxml):
     doc_xml = propxml.find("gi:doc", ns_map)
     if doc_xml is None:
@@ -125,7 +129,18 @@ def get_docs(propxml):
     if "deprecated" in propxml.attrib:
         doc = doc + " Deprecated: " + propxml.attrib["deprecated"]
 
-    doc = re.sub(r"\n\s*", r" ", doc)
+    # split docs into lines
+    lines = re.split("\n", doc)
+    # strip leading *char and strip white spaces
+    lines = [remove_prefix(l, "*").strip() for l in lines]
+    doc = ""
+    for l in lines:
+        if l:
+            doc += " " + l
+        else:
+            doc += "\n\n"
+
+    doc = doc.strip("\n")
 
     # Expand constants
     doc = re.sub(r"%([^%]\w*)", lambda match: constants[match.group(1)], doc)
@@ -182,6 +197,22 @@ def settings_sort_key(x):
     x_prefix = x.attrib["{%s}symbol-prefix" % ns_map["c"]]
     # always sort NMSettingConnection first
     return (x_prefix != "setting_connection", x_prefix)
+
+
+def create_desc_docbook(desc_docbook, description):
+    lines = re.split("\n", description)
+    in_par = True
+
+    paragraph = ET.SubElement(
+        desc_docbook,
+        "para",
+    )
+
+    for l in lines:
+        if l and in_par:
+            paragraph.text = l
+        else:
+            paragraph = ET.SubElement(desc_docbook, "para")
 
 
 def main(gir_path_str, output_path_str):
@@ -255,17 +286,29 @@ def main(gir_path_str, output_path_str):
                 "name": prop,
                 "name_upper": prop_upper,
                 "type": value_type,
-                "description": value_desc,
             }
 
             if default_value is not None:
                 property_attributes["default"] = str(default_value)
 
-            ET.SubElement(
+            property_element = ET.SubElement(
                 setting_element,
                 "property",
                 attrib=property_attributes,
             )
+
+            ET.SubElement(
+                property_element,
+                "description",
+            ).text = value_desc
+
+            if value_desc:
+                description_docbook = ET.SubElement(
+                    property_element,
+                    "description-docbook",
+                )
+
+                create_desc_docbook(description_docbook, value_desc)
 
     docs_gir.write(
         output_path_str,

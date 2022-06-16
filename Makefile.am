@@ -4764,8 +4764,8 @@ EXTRA_DIST += src/libnmc-base/meson.build
 
 libnmc_setting_settings_doc_h = src/libnmc-setting/settings-docs.h
 if BUILD_DOCS
-$(libnmc_setting_settings_doc_h): src/libnmc-setting/settings-docs.xsl src/libnmc-setting/settings-docs-input.xml src/libnmc-setting/.dirstamp
-	$(AM_V_GEN) $(XSLTPROC) --output $@ $< $(word 2,$^)
+$(libnmc_setting_settings_doc_h): src/libnmc-setting/settings-docs-input.xml src/libnmc-setting/.dirstamp tools/generate-docs-settings-docs.py
+	$(AM_V_GEN) "$(PYTHON)" $(srcdir)/tools/generate-docs-settings-docs.py --output $@ --xml $<
 DISTCLEANFILES += $(libnmc_setting_settings_doc_h)
 check-local-settings-docs: $(libnmc_setting_settings_doc_h)
 	$(srcdir)/tools/check-compare-generated.sh "$(srcdir)" "$(builddir)" "$(libnmc_setting_settings_doc_h)"
@@ -4776,6 +4776,7 @@ $(libnmc_setting_settings_doc_h): $(libnmc_setting_settings_doc_h).in src/libnmc
 check-local-settings-docs:
 endif
 EXTRA_DIST += \
+	tools/generate-docs-settings-docs.py \
 	$(libnmc_setting_settings_doc_h) \
 	$(libnmc_setting_settings_doc_h).in
 
@@ -4946,7 +4947,6 @@ $(src_nmcli_generate_docs_nm_settings_nmcli_OBJECTS): $(src_libnm_client_public_
 EXTRA_DIST += \
 	src/nmcli/nmcli-completion \
 	src/nmcli/meson.build \
-	src/libnmc-setting/settings-docs.xsl \
 	src/libnmc-setting/meson.build \
 	src/libnmc-setting/tests/meson.build
 
