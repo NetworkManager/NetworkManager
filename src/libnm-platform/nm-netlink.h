@@ -413,11 +413,7 @@ void nlmsg_set_src(struct nl_msg *msg, struct sockaddr_nl *addr);
 struct ucred *nlmsg_get_creds(struct nl_msg *msg);
 void          nlmsg_set_creds(struct nl_msg *msg, struct ucred *creds);
 
-static inline void
-_nm_auto_nl_msg_cleanup(struct nl_msg **ptr)
-{
-    nlmsg_free(*ptr);
-}
+NM_AUTO_DEFINE_FCN0(struct nl_msg *, _nm_auto_nl_msg_cleanup, nlmsg_free);
 #define nm_auto_nlmsg nm_auto(_nm_auto_nl_msg_cleanup)
 
 static inline void *
@@ -495,6 +491,9 @@ struct nl_sock;
 struct nl_sock *nl_socket_alloc(void);
 
 void nl_socket_free(struct nl_sock *sk);
+
+NM_AUTO_DEFINE_FCN0(struct nl_sock *, _nm_auto_nlsock, nl_socket_free);
+#define nm_auto_nlsock nm_auto(_nm_auto_nlsock)
 
 int nl_socket_get_fd(const struct nl_sock *sk);
 
