@@ -162,6 +162,8 @@ EXTRA_DIST += \
 	examples/python/dbus/add-connection.py \
 	examples/python/dbus/add-wifi-eap-connection.py \
 	examples/python/dbus/add-wifi-psk-connection.py \
+	examples/python/dbus/add-wifi-sae-connection.py \
+	examples/python/dbus/checkpoint.py \
 	examples/python/dbus/create-bond.py \
 	examples/python/dbus/disconnect-device.py \
 	examples/python/dbus/get-active-connection-uuids.py \
@@ -178,10 +180,15 @@ EXTRA_DIST += \
 	\
 	examples/python/gi/README \
 	examples/python/gi/add_connection.py \
+	examples/python/gi/checkpoint.py \
 	examples/python/gi/deactivate-all.py \
 	examples/python/gi/device-state-ip4config.py \
+	examples/python/gi/dns.py \
 	examples/python/gi/firewall-zone.py \
 	examples/python/gi/get-active-connections.py \
+	examples/python/gi/get-devices.py \
+	examples/python/gi/get-interface-flags.py \
+	examples/python/gi/get-lldp-neighbors.py \
 	examples/python/gi/get_ips.py \
 	examples/python/gi/list-connections.py \
 	examples/python/gi/nm-add-connection2.py \
@@ -194,6 +201,8 @@ EXTRA_DIST += \
 	examples/python/gi/setting-user-data.py \
 	examples/python/gi/show-wifi-networks.py \
 	examples/python/gi/update-ip4-method.py \
+	examples/python/gi/vpn-import.py \
+	examples/python/gi/wifi-p2p.py \
 	\
 	examples/python/python-networkmanager/README \
 	\
