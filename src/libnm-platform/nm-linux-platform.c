@@ -9721,21 +9721,13 @@ constructed(GObject *_object)
           nm_platform_get_use_udev(platform) ? "use" : "no",
           nm_platform_get_cache_tc(platform) ? "use" : "no");
 
-    priv->genl = nl_socket_alloc();
-    g_assert(priv->genl);
-
-    nle = nl_connect(priv->genl, NETLINK_GENERIC);
-    if (nle) {
+    nle = nl_socket_new(&priv->genl, NETLINK_GENERIC);
+    if (nle)
         _LOGE("unable to connect the generic netlink socket \"%s\" (%d)", nm_strerror(nle), -nle);
-        nl_socket_free(priv->genl);
-        priv->genl = NULL;
-    }
 
-    priv->nlh = nl_socket_alloc();
-    g_assert(priv->nlh);
-
-    nle = nl_connect(priv->nlh, NETLINK_ROUTE);
+    nle = nl_socket_new(&priv->nlh, NETLINK_ROUTE);
     g_assert(!nle);
+
     nle = nl_socket_set_passcred(priv->nlh, 1);
     g_assert(!nle);
 
