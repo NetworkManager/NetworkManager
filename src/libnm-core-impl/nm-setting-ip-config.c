@@ -6149,7 +6149,7 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
     /**
      * NMSettingIPConfig:dns-search:
      *
-     * Array of DNS search domains. Domains starting with a tilde ('~')
+     * List of DNS search domains. Domains starting with a tilde ('~')
      * are considered 'routing' domains and are used only to decide the
      * interface over which a query must be forwarded; they are not used
      * to complete unqualified host names.
@@ -6158,6 +6158,12 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
      * Split DNS, then the search domains specify which name servers to
      * query. This makes the behavior different from running with plain
      * /etc/resolv.conf. For more information see also the dns-priority setting.
+     *
+     * When set on a profile that also enabled DHCP, the DNS search list
+     * received automatically (option 119 for DHCPv4 and option 24 for DHCPv6)
+     * gets merged with the manual list. This can be prevented by setting
+     * "ignore-auto-dns". Note that if no DNS searches are configured, the
+     * fallback will be derived from the domain from DHCP (option 15).
      **/
     obj_properties[PROP_DNS_SEARCH] =
         g_param_spec_boxed(NM_SETTING_IP_CONFIG_DNS_SEARCH,
