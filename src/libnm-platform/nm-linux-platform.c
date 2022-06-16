@@ -570,8 +570,7 @@ static void cache_on_change(NMPlatform      *platform,
                             const NMPObject *obj_old,
                             const NMPObject *obj_new);
 static void cache_prune_all(NMPlatform *platform);
-static gboolean        event_handler_read_netlink(NMPlatform *platform, gboolean wait_for_acks);
-static struct nl_sock *_genl_sock(NMLinuxPlatform *platform);
+static gboolean event_handler_read_netlink(NMPlatform *platform, gboolean wait_for_acks);
 
 /*****************************************************************************/
 
@@ -3222,13 +3221,13 @@ _new_from_nl_link(NMPlatform      *platform,
         case NM_LINK_TYPE_OLPC_MESH:
             obj->_link.ext_data =
                 (GObject *) nm_wifi_utils_new(ifi->ifi_index,
-                                              _genl_sock(NM_LINUX_PLATFORM(platform)),
+                                              NM_LINUX_PLATFORM_GET_PRIVATE(platform)->genl,
                                               TRUE);
             break;
         case NM_LINK_TYPE_WPAN:
             obj->_link.ext_data =
                 (GObject *) nm_wpan_utils_new(ifi->ifi_index,
-                                              _genl_sock(NM_LINUX_PLATFORM(platform)),
+                                              NM_LINUX_PLATFORM_GET_PRIVATE(platform)->genl,
                                               TRUE);
             break;
         default:
@@ -5203,14 +5202,6 @@ nla_put_failure:
 }
 
 /*****************************************************************************/
-
-static struct nl_sock *
-_genl_sock(NMLinuxPlatform *platform)
-{
-    NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE(platform);
-
-    return priv->genl;
-}
 
 #define ASSERT_SYSCTL_ARGS(pathid, dirfd, path)                                                 \
     G_STMT_START                                                                                \
