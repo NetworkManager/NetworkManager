@@ -9241,11 +9241,11 @@ rtnl_event_handler(int fd, GIOCondition io_condition, gpointer user_data)
 
 /*****************************************************************************/
 
-/* copied from libnl3's recvmsgs() */
 static int
-event_handler_recvmsgs(NMPlatform *platform, gboolean handle_events)
+_netlink_recv_handle(NMPlatform *platform, int netlink_protocol, gboolean handle_events)
 {
     NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE(platform);
+    struct nl_sock         *sk;
     int                     n;
     int                     err         = 0;
     gboolean                multipart   = 0;
@@ -9255,10 +9255,15 @@ event_handler_recvmsgs(NMPlatform *platform, gboolean handle_events)
     struct sockaddr_nl      nla;
     struct ucred            creds;
     gboolean                creds_has;
+    const char             *log_prefix;
+
+    nm_assert(netlink_protocol == NETLINK_ROUTE);
+    sk         = priv->sk_rtnl;
+    log_prefix = "rtnl";
 
 continue_reading:
 
-    n = _netlink_recv(platform, priv->sk_rtnl, &nla, &creds, &creds_has);
+    n = _netlink_recv(platform, sk, &nla, &creds, &creds_has);
     if (n < 0) {
         if (n == -NME_NL_MSG_TRUNC && !handle_events)
             goto continue_reading;
@@ -9267,9 +9272,9 @@ continue_reading:
 
     if (!creds_has || creds.pid) {
         if (!creds_has)
-            _LOGT("netlink: recvmsg: received message without credentials");
+            _LOGT("%s: recvmsg: received message without credentials", log_prefix);
         else
-            _LOGT("netlink: recvmsg: received non-kernel message (pid %d)", creds.pid);
+            _LOGT("%s: recvmsg: received non-kernel message (pid %d)", log_prefix, creds.pid);
         err = 0;
         goto stop;
     }
@@ -9284,13 +9289,13 @@ continue_reading:
         const char                  *extack_msg = NULL;
 
         msg = nlmsg_alloc_convert(hdr);
-
-        nlmsg_set_proto(msg, NETLINK_ROUTE);
+        nlmsg_set_proto(msg, netlink_protocol);
         nlmsg_set_src(msg, &nla);
         nlmsg_set_creds(msg, &creds);
 
-        _LOGt("netlink: recvmsg: new message %s",
-              nl_nlmsghdr_to_str(NETLINK_ROUTE, hdr, buf_nlmsghdr, sizeof(buf_nlmsghdr)));
+        _LOGt("%s: recvmsg: new message %s",
+              log_prefix,
+              nl_nlmsghdr_to_str(netlink_protocol, hdr, buf_nlmsghdr, sizeof(buf_nlmsghdr)));
 
         if (hdr->nlmsg_flags & NLM_F_MULTI)
             multipart = TRUE;
@@ -9309,95 +9314,104 @@ continue_reading:
             /* FIXME: implement */
         }
 
-        seq_result = WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_UNKNOWN;
+        switch (netlink_protocol) {
+        case NETLINK_ROUTE:
+        {
+            seq_result = WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_UNKNOWN;
 
-        if (hdr->nlmsg_type == NLMSG_DONE) {
-            /* messages terminates a multipart message, this is
-             * usually the end of a message and therefore we slip
-             * out of the loop by default. the user may overrule
-             * this action by skipping this packet. */
-            multipart  = FALSE;
-            seq_result = WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK;
-        } else if (hdr->nlmsg_type == NLMSG_NOOP) {
-            /* Message to be ignored, the default action is to
-             * skip this message if no callback is specified. The
-             * user may overrule this action by returning
-             * NL_PROCEED. */
-        } else if (hdr->nlmsg_type == NLMSG_OVERRUN) {
-            /* Data got lost, report back to user. The default action is to
-             * quit parsing. The user may overrule this action by returning
-             * NL_SKIP or NL_PROCEED (dangerous) */
-            err           = -NME_NL_MSG_OVERFLOW;
-            abort_parsing = TRUE;
-        } else if (hdr->nlmsg_type == NLMSG_ERROR) {
-            /* Message carries a nlmsgerr */
-            struct nlmsgerr *e = nlmsg_data(hdr);
-
-            if (hdr->nlmsg_len < nlmsg_size(sizeof(*e))) {
-                /* Truncated error message, the default action
-                 * is to stop parsing. The user may overrule
-                 * this action by returning NL_SKIP or
-                 * NL_PROCEED (dangerous) */
-                err           = -NME_NL_MSG_TRUNC;
-                abort_parsing = TRUE;
-            } else if (e->error) {
-                int errsv = nm_errno_native(e->error);
-
-                if (NM_FLAGS_HAS(hdr->nlmsg_flags, NLM_F_ACK_TLVS)
-                    && hdr->nlmsg_len >= sizeof(*e) + e->msg.nlmsg_len) {
-                    static const struct nla_policy policy[] = {
-                        [NLMSGERR_ATTR_MSG]  = {.type = NLA_STRING},
-                        [NLMSGERR_ATTR_OFFS] = {.type = NLA_U32},
-                    };
-                    struct nlattr *tb[G_N_ELEMENTS(policy)];
-                    struct nlattr *tlvs;
-
-                    tlvs = (struct nlattr *) ((char *) e + sizeof(*e) + e->msg.nlmsg_len
-                                              - NLMSG_HDRLEN);
-                    if (nla_parse_arr(tb,
-                                      tlvs,
-                                      hdr->nlmsg_len - sizeof(*e) - e->msg.nlmsg_len,
-                                      policy)
-                        >= 0) {
-                        if (tb[NLMSGERR_ATTR_MSG])
-                            extack_msg = nla_get_string(tb[NLMSGERR_ATTR_MSG]);
-                    }
-                }
-
-                /* Error message reported back from kernel. */
-                _LOGD("netlink: recvmsg: error message from kernel: %s (%d)%s%s%s for request %d",
-                      nm_strerror_native(errsv),
-                      errsv,
-                      NM_PRINT_FMT_QUOTED(extack_msg, " \"", extack_msg, "\"", ""),
-                      nlmsg_hdr(msg)->nlmsg_seq);
-                seq_result = -NM_ERRNO_NATIVE(errsv);
-            } else
+            if (hdr->nlmsg_type == NLMSG_DONE) {
+                /* messages terminates a multipart message, this is
+                 * usually the end of a message and therefore we slip
+                 * out of the loop by default. the user may overrule
+                 * this action by skipping this packet. */
+                multipart  = FALSE;
                 seq_result = WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK;
-        } else
-            process_valid_msg = TRUE;
+            } else if (hdr->nlmsg_type == NLMSG_NOOP) {
+                /* Message to be ignored, the default action is to
+                 * skip this message if no callback is specified. The
+                 * user may overrule this action by returning
+                 * NL_PROCEED. */
+            } else if (hdr->nlmsg_type == NLMSG_OVERRUN) {
+                /* Data got lost, report back to user. The default action is to
+                 * quit parsing. The user may overrule this action by returning
+                 * NL_SKIP or NL_PROCEED (dangerous) */
+                err           = -NME_NL_MSG_OVERFLOW;
+                abort_parsing = TRUE;
+            } else if (hdr->nlmsg_type == NLMSG_ERROR) {
+                /* Message carries a nlmsgerr */
+                struct nlmsgerr *e = nlmsg_data(hdr);
 
-        seq_number = nlmsg_hdr(msg)->nlmsg_seq;
+                if (hdr->nlmsg_len < nlmsg_size(sizeof(*e))) {
+                    /* Truncated error message, the default action
+                     * is to stop parsing. The user may overrule
+                     * this action by returning NL_SKIP or
+                     * NL_PROCEED (dangerous) */
+                    err           = -NME_NL_MSG_TRUNC;
+                    abort_parsing = TRUE;
+                } else if (e->error) {
+                    int errsv = nm_errno_native(e->error);
 
-        /* check whether the seq number is different from before, and
-         * whether the previous number (@nlh_seq_last_seen) is a pending
-         * refresh-all request. In that case, the pending request is thereby
-         * completed.
-         *
-         * We must do that before processing the message with event_valid_msg(),
-         * because we must track the completion of the pending request before that. */
-        event_seq_check_refresh_all(platform, seq_number);
+                    if (NM_FLAGS_HAS(hdr->nlmsg_flags, NLM_F_ACK_TLVS)
+                        && hdr->nlmsg_len >= sizeof(*e) + e->msg.nlmsg_len) {
+                        static const struct nla_policy policy[] = {
+                            [NLMSGERR_ATTR_MSG]  = {.type = NLA_STRING},
+                            [NLMSGERR_ATTR_OFFS] = {.type = NLA_U32},
+                        };
+                        struct nlattr *tb[G_N_ELEMENTS(policy)];
+                        struct nlattr *tlvs;
 
-        if (process_valid_msg) {
-            /* Valid message (not checking for MULTIPART bit to
-             * get along with broken kernels. NL_SKIP has no
-             * effect on this.  */
+                        tlvs = (struct nlattr *) ((char *) e + sizeof(*e) + e->msg.nlmsg_len
+                                                  - NLMSG_HDRLEN);
+                        if (nla_parse_arr(tb,
+                                          tlvs,
+                                          hdr->nlmsg_len - sizeof(*e) - e->msg.nlmsg_len,
+                                          policy)
+                            >= 0) {
+                            if (tb[NLMSGERR_ATTR_MSG])
+                                extack_msg = nla_get_string(tb[NLMSGERR_ATTR_MSG]);
+                        }
+                    }
 
-            event_valid_msg(platform, msg, handle_events);
+                    /* Error message reported back from kernel. */
+                    _LOGD(
+                        "netlink: recvmsg: error message from kernel: %s (%d)%s%s%s for request %d",
+                        nm_strerror_native(errsv),
+                        errsv,
+                        NM_PRINT_FMT_QUOTED(extack_msg, " \"", extack_msg, "\"", ""),
+                        nlmsg_hdr(msg)->nlmsg_seq);
+                    seq_result = -NM_ERRNO_NATIVE(errsv);
+                } else
+                    seq_result = WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK;
+            } else
+                process_valid_msg = TRUE;
 
-            seq_result = WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK;
+            seq_number = nlmsg_hdr(msg)->nlmsg_seq;
+
+            /* check whether the seq number is different from before, and
+             * whether the previous number (@nlh_seq_last_seen) is a pending
+             * refresh-all request. In that case, the pending request is thereby
+             * completed.
+             *
+             * We must do that before processing the message with event_valid_msg(),
+             * because we must track the completion of the pending request before that. */
+            event_seq_check_refresh_all(platform, seq_number);
+
+            if (process_valid_msg) {
+                /* Valid message (not checking for MULTIPART bit to
+                 * get along with broken kernels. NL_SKIP has no
+                 * effect on this.  */
+
+                event_valid_msg(platform, msg, handle_events);
+
+                seq_result = WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK;
+            }
+
+            event_seq_check(platform, seq_number, seq_result, extack_msg);
+            break;
         }
-
-        event_seq_check(platform, seq_number, seq_result, extack_msg);
+        default:
+            nm_assert_not_reached();
+        }
 
         if (abort_parsing)
             goto stop;
@@ -9450,7 +9464,7 @@ event_handler_read_netlink(NMPlatform *platform, gboolean wait_for_acks)
         for (;;) {
             int nle;
 
-            nle = event_handler_recvmsgs(platform, TRUE);
+            nle = _netlink_recv_handle(platform, NETLINK_ROUTE, TRUE);
 
             if (nle < 0) {
                 switch (nle) {
@@ -9475,7 +9489,7 @@ event_handler_read_netlink(NMPlatform *platform, gboolean wait_for_acks)
                               }
                               _reason;
                           }));
-                    event_handler_recvmsgs(platform, FALSE);
+                    _netlink_recv_handle(platform, NETLINK_ROUTE, FALSE);
                     delayed_action_wait_for_nl_response_complete_all(
                         platform,
                         WAIT_FOR_NL_RESPONSE_RESULT_FAILED_RESYNC);
