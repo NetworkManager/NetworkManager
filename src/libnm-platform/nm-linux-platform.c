@@ -415,11 +415,11 @@ typedef struct {
 /*****************************************************************************/
 
 typedef struct {
-    struct nl_sock *genl;
+    struct nl_sock *sk_genl_sync;
 
-    struct nl_sock *nlh;
+    struct nl_sock *sk_rtnl;
 
-    GSource *event_source;
+    GSource *rtnl_event_source;
 
     guint32 nlh_seq_next;
 #if NM_MORE_LOGGING
@@ -2542,7 +2542,7 @@ _wireguard_get_family_id(NMPlatform *platform, int ifindex_try)
             wireguard_family_id = NMP_OBJECT_UP_CAST(plink)->_link.wireguard_family_id;
     }
     if (wireguard_family_id < 0)
-        wireguard_family_id = genl_ctrl_resolve(priv->genl, "wireguard");
+        wireguard_family_id = genl_ctrl_resolve(priv->sk_genl_sync, "wireguard");
     return wireguard_family_id;
 }
 
@@ -2572,7 +2572,7 @@ _wireguard_refresh_link(NMPlatform *platform, int wireguard_family_id, int ifind
         if (NMP_OBJECT_GET_TYPE(plink->_link.netlink.lnk) == NMP_OBJECT_TYPE_LNK_WIREGUARD)
             lnk_new = nmp_object_ref(plink->_link.netlink.lnk);
     } else {
-        lnk_new = _wireguard_read_info(platform, priv->genl, wireguard_family_id, ifindex);
+        lnk_new = _wireguard_read_info(platform, priv->sk_genl_sync, wireguard_family_id, ifindex);
         if (!lnk_new) {
             if (NMP_OBJECT_GET_TYPE(plink->_link.netlink.lnk) == NMP_OBJECT_TYPE_LNK_WIREGUARD)
                 lnk_new = nmp_object_ref(plink->_link.netlink.lnk);
@@ -2881,14 +2881,14 @@ link_wireguard_change(NMPlatform                               *platform,
     }
 
     for (i = 0; i < msgs->len; i++) {
-        r = nl_send_auto(priv->genl, msgs->pdata[i]);
+        r = nl_send_auto(priv->sk_genl_sync, msgs->pdata[i]);
         if (r < 0) {
             _LOGW("wireguard: set-device, send netlink message #%u failed: %s", i, nm_strerror(r));
             return r;
         }
 
         do {
-            r = nl_recvmsgs(priv->genl, NULL);
+            r = nl_recvmsgs(priv->sk_genl_sync, NULL);
         } while (r == -EAGAIN);
         if (r < 0) {
             _LOGW("wireguard: set-device, message #%u was rejected: %s", i, nm_strerror(r));
@@ -3221,13 +3221,13 @@ _new_from_nl_link(NMPlatform      *platform,
         case NM_LINK_TYPE_OLPC_MESH:
             obj->_link.ext_data =
                 (GObject *) nm_wifi_utils_new(ifi->ifi_index,
-                                              NM_LINUX_PLATFORM_GET_PRIVATE(platform)->genl,
+                                              NM_LINUX_PLATFORM_GET_PRIVATE(platform)->sk_genl_sync,
                                               TRUE);
             break;
         case NM_LINK_TYPE_WPAN:
             obj->_link.ext_data =
                 (GObject *) nm_wpan_utils_new(ifi->ifi_index,
-                                              NM_LINUX_PLATFORM_GET_PRIVATE(platform)->genl,
+                                              NM_LINUX_PLATFORM_GET_PRIVATE(platform)->sk_genl_sync,
                                               TRUE);
             break;
         default:
@@ -3237,7 +3237,7 @@ _new_from_nl_link(NMPlatform      *platform,
 
     if (obj->link.type == NM_LINK_TYPE_WIREGUARD) {
         const NMPObject *lnk_data_new = NULL;
-        struct nl_sock  *genl         = NM_LINUX_PLATFORM_GET_PRIVATE(platform)->genl;
+        struct nl_sock  *genl         = NM_LINUX_PLATFORM_GET_PRIVATE(platform)->sk_genl_sync;
 
         /* The WireGuard kernel module does not yet send link update
          * notifications, so we don't actually update the cache. For
@@ -6680,12 +6680,12 @@ _nl_send_nlmsghdr(NMPlatform                        *platform,
         int try_count;
 
         if (!nlhdr->nlmsg_pid)
-            nlhdr->nlmsg_pid = nl_socket_get_local_port(priv->nlh);
+            nlhdr->nlmsg_pid = nl_socket_get_local_port(priv->sk_rtnl);
         nlhdr->nlmsg_flags |= (NLM_F_REQUEST | NLM_F_ACK);
 
         try_count = 0;
 again:
-        errsv = sendmsg(nl_socket_get_fd(priv->nlh), &msg, 0);
+        errsv = sendmsg(nl_socket_get_fd(priv->sk_rtnl), &msg, 0);
         if (errsv < 0) {
             errsv = errno;
             if (errsv == EINTR && try_count++ < 100)
@@ -6733,7 +6733,7 @@ _nl_send_nlmsg(NMPlatform                        *platform,
     seq              = _nlh_seq_next_get(priv);
     nlhdr->nlmsg_seq = seq;
 
-    nle = nl_send_auto(priv->nlh, nlmsg);
+    nle = nl_send_auto(priv->sk_rtnl, nlmsg);
     if (nle < 0) {
         _LOGD("netlink: nl-send-nlmsg: failed sending message: %s (%d)", nm_strerror(nle), nle);
         return nle;
@@ -9190,7 +9190,7 @@ tfilter_delete(NMPlatform *platform, int ifindex, guint32 parent, gboolean log_e
 /*****************************************************************************/
 
 static gboolean
-event_handler(int fd, GIOCondition io_condition, gpointer user_data)
+rtnl_event_handler(int fd, GIOCondition io_condition, gpointer user_data)
 {
     delayed_action_handle_all(NM_PLATFORM(user_data), TRUE);
     return TRUE;
@@ -9203,7 +9203,7 @@ static int
 event_handler_recvmsgs(NMPlatform *platform, gboolean handle_events)
 {
     NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE(platform);
-    struct nl_sock         *sk   = priv->nlh;
+    struct nl_sock         *sk   = priv->sk_rtnl;
     int                     n;
     int                     err         = 0;
     gboolean                multipart   = 0;
@@ -9512,7 +9512,7 @@ after_read:
               timeout_msec);
 
         memset(&pfd, 0, sizeof(pfd));
-        pfd.fd     = nl_socket_get_fd(priv->nlh);
+        pfd.fd     = nl_socket_get_fd(priv->sk_rtnl);
         pfd.events = POLLIN;
         r          = poll(&pfd, 1, timeout_msec);
 
@@ -9712,30 +9712,30 @@ constructed(GObject *_object)
           nm_platform_get_use_udev(platform) ? "use" : "no",
           nm_platform_get_cache_tc(platform) ? "use" : "no");
 
-    nle = nl_socket_new(&priv->genl, NETLINK_GENERIC);
+    nle = nl_socket_new(&priv->sk_genl_sync, NETLINK_GENERIC);
     g_assert(!nle);
 
-    nle = nl_socket_new(&priv->nlh, NETLINK_ROUTE);
+    nle = nl_socket_new(&priv->sk_rtnl, NETLINK_ROUTE);
     g_assert(!nle);
 
-    nle = nl_socket_set_passcred(priv->nlh, 1);
+    nle = nl_socket_set_passcred(priv->sk_rtnl, 1);
     g_assert(!nle);
 
     /* No blocking for event socket, so that we can drain it safely. */
-    nle = nl_socket_set_nonblocking(priv->nlh);
+    nle = nl_socket_set_nonblocking(priv->sk_rtnl);
     g_assert(!nle);
 
     /* use 8 MB for receive socket kernel queue. */
-    nle = nl_socket_set_buffer_size(priv->nlh, 8 * 1024 * 1024, 0);
+    nle = nl_socket_set_buffer_size(priv->sk_rtnl, 8 * 1024 * 1024, 0);
     g_assert(!nle);
 
     /* explicitly set the msg buffer size and disable MSG_PEEK.
      * We use our own receive buffer priv->netlink_recv_buf.
      * If we encounter NME_NL_MSG_TRUNC, we will increase the buffer
      * and resync (as we would have lost the message without NL_MSG_PEEK). */
-    nl_socket_disable_msg_peek(priv->nlh);
+    nl_socket_disable_msg_peek(priv->sk_rtnl);
 
-    nle = nl_socket_add_memberships(priv->nlh,
+    nle = nl_socket_add_memberships(priv->sk_rtnl,
                                     RTNLGRP_IPV4_IFADDR,
                                     RTNLGRP_IPV4_ROUTE,
                                     RTNLGRP_IPV4_RULE,
@@ -9747,20 +9747,20 @@ constructed(GObject *_object)
     g_assert(!nle);
 
     if (nm_platform_get_cache_tc(platform)) {
-        nle = nl_socket_add_memberships(priv->nlh, RTNLGRP_TC, 0);
+        nle = nl_socket_add_memberships(priv->sk_rtnl, RTNLGRP_TC, 0);
         nm_assert(!nle);
     }
 
-    fd = nl_socket_get_fd(priv->nlh);
+    fd = nl_socket_get_fd(priv->sk_rtnl);
 
     _LOGD("Netlink socket for events established: port=%u, fd=%d",
-          nl_socket_get_local_port(priv->nlh),
+          nl_socket_get_local_port(priv->sk_rtnl),
           fd);
 
-    priv->event_source =
+    priv->rtnl_event_source =
         nm_g_unix_fd_add_source(fd,
                                 G_IO_IN | G_IO_NVAL | G_IO_PRI | G_IO_ERR | G_IO_HUP,
-                                event_handler,
+                                rtnl_event_handler,
                                 platform);
 
     /* complete construction of the GObject instance before populating the cache. */
@@ -9877,11 +9877,11 @@ finalize(GObject *object)
     g_ptr_array_unref(priv->delayed_action.list_refresh_link);
     g_array_unref(priv->delayed_action.list_wait_for_nl_response);
 
-    nl_socket_free(priv->genl);
+    nl_socket_free(priv->sk_genl_sync);
 
-    nm_clear_g_source_inst(&priv->event_source);
+    nm_clear_g_source_inst(&priv->rtnl_event_source);
 
-    nl_socket_free(priv->nlh);
+    nl_socket_free(priv->sk_rtnl);
 
     {
         NM_G_MUTEX_LOCKED(&sysctl_clear_cache_lock);
