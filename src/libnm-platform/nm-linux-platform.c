@@ -9265,6 +9265,15 @@ continue_reading:
         return n;
     }
 
+    if (!creds_has || creds.pid) {
+        if (!creds_has)
+            _LOGT("netlink: recvmsg: received message without credentials");
+        else
+            _LOGT("netlink: recvmsg: received non-kernel message (pid %d)", creds.pid);
+        err = 0;
+        goto stop;
+    }
+
     hdr = (struct nlmsghdr *) priv->netlink_recv_buf.buf;
     while (nlmsg_ok(hdr, n)) {
         nm_auto_nlmsg struct nl_msg *msg               = NULL;
@@ -9278,20 +9287,10 @@ continue_reading:
 
         nlmsg_set_proto(msg, NETLINK_ROUTE);
         nlmsg_set_src(msg, &nla);
-
-        if (!creds_has || creds.pid) {
-            if (!creds_has)
-                _LOGT("netlink: recvmsg: received message without credentials");
-            else
-                _LOGT("netlink: recvmsg: received non-kernel message (pid %d)", creds.pid);
-            err = 0;
-            goto stop;
-        }
+        nlmsg_set_creds(msg, &creds);
 
         _LOGt("netlink: recvmsg: new message %s",
               nl_nlmsghdr_to_str(NETLINK_ROUTE, hdr, buf_nlmsghdr, sizeof(buf_nlmsghdr)));
-
-        nlmsg_set_creds(msg, &creds);
 
         if (hdr->nlmsg_flags & NLM_F_MULTI)
             multipart = TRUE;
