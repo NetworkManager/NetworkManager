@@ -84,10 +84,10 @@ NM_UTILS_FLAGS2STR_DEFINE(nl_nlmsg_flags2str,
 /*****************************************************************************/
 
 const char *
-nl_nlmsghdr_to_str(const struct nlmsghdr *hdr, char *buf, gsize len)
+nl_nlmsghdr_to_str(int netlink_protocol, const struct nlmsghdr *hdr, char *buf, gsize len)
 {
     const char *b;
-    const char *s;
+    const char *s = NULL;
     guint       flags, flags_before;
     const char *prefix;
 
@@ -96,78 +96,81 @@ nl_nlmsghdr_to_str(const struct nlmsghdr *hdr, char *buf, gsize len)
 
     b = buf;
 
-    switch (hdr->nlmsg_type) {
-    case RTM_GETLINK:
-        s = "RTM_GETLINK";
+    switch (netlink_protocol) {
+    case NETLINK_ROUTE:
+        switch (hdr->nlmsg_type) {
+        case RTM_GETLINK:
+            s = "RTM_GETLINK";
+            break;
+        case RTM_NEWLINK:
+            s = "RTM_NEWLINK";
+            break;
+        case RTM_DELLINK:
+            s = "RTM_DELLINK";
+            break;
+        case RTM_SETLINK:
+            s = "RTM_SETLINK";
+            break;
+        case RTM_GETADDR:
+            s = "RTM_GETADDR";
+            break;
+        case RTM_NEWADDR:
+            s = "RTM_NEWADDR";
+            break;
+        case RTM_DELADDR:
+            s = "RTM_DELADDR";
+            break;
+        case RTM_GETROUTE:
+            s = "RTM_GETROUTE";
+            break;
+        case RTM_NEWROUTE:
+            s = "RTM_NEWROUTE";
+            break;
+        case RTM_DELROUTE:
+            s = "RTM_DELROUTE";
+            break;
+        case RTM_GETRULE:
+            s = "RTM_GETRULE";
+            break;
+        case RTM_NEWRULE:
+            s = "RTM_NEWRULE";
+            break;
+        case RTM_DELRULE:
+            s = "RTM_DELRULE";
+            break;
+        case RTM_GETQDISC:
+            s = "RTM_GETQDISC";
+            break;
+        case RTM_NEWQDISC:
+            s = "RTM_NEWQDISC";
+            break;
+        case RTM_DELQDISC:
+            s = "RTM_DELQDISC";
+            break;
+        case RTM_GETTFILTER:
+            s = "RTM_GETTFILTER";
+            break;
+        case RTM_NEWTFILTER:
+            s = "RTM_NEWTFILTER";
+            break;
+        case RTM_DELTFILTER:
+            s = "RTM_DELTFILTER";
+            break;
+        case NLMSG_NOOP:
+            s = "NLMSG_NOOP";
+            break;
+        case NLMSG_ERROR:
+            s = "NLMSG_ERROR";
+            break;
+        case NLMSG_DONE:
+            s = "NLMSG_DONE";
+            break;
+        case NLMSG_OVERRUN:
+            s = "NLMSG_OVERRUN";
+            break;
+        }
         break;
-    case RTM_NEWLINK:
-        s = "RTM_NEWLINK";
-        break;
-    case RTM_DELLINK:
-        s = "RTM_DELLINK";
-        break;
-    case RTM_SETLINK:
-        s = "RTM_SETLINK";
-        break;
-    case RTM_GETADDR:
-        s = "RTM_GETADDR";
-        break;
-    case RTM_NEWADDR:
-        s = "RTM_NEWADDR";
-        break;
-    case RTM_DELADDR:
-        s = "RTM_DELADDR";
-        break;
-    case RTM_GETROUTE:
-        s = "RTM_GETROUTE";
-        break;
-    case RTM_NEWROUTE:
-        s = "RTM_NEWROUTE";
-        break;
-    case RTM_DELROUTE:
-        s = "RTM_DELROUTE";
-        break;
-    case RTM_GETRULE:
-        s = "RTM_GETRULE";
-        break;
-    case RTM_NEWRULE:
-        s = "RTM_NEWRULE";
-        break;
-    case RTM_DELRULE:
-        s = "RTM_DELRULE";
-        break;
-    case RTM_GETQDISC:
-        s = "RTM_GETQDISC";
-        break;
-    case RTM_NEWQDISC:
-        s = "RTM_NEWQDISC";
-        break;
-    case RTM_DELQDISC:
-        s = "RTM_DELQDISC";
-        break;
-    case RTM_GETTFILTER:
-        s = "RTM_GETTFILTER";
-        break;
-    case RTM_NEWTFILTER:
-        s = "RTM_NEWTFILTER";
-        break;
-    case RTM_DELTFILTER:
-        s = "RTM_DELTFILTER";
-        break;
-    case NLMSG_NOOP:
-        s = "NLMSG_NOOP";
-        break;
-    case NLMSG_ERROR:
-        s = "NLMSG_ERROR";
-        break;
-    case NLMSG_DONE:
-        s = "NLMSG_DONE";
-        break;
-    case NLMSG_OVERRUN:
-        s = "NLMSG_OVERRUN";
-        break;
-    default:
-        s = NULL;
+    case NETLINK_GENERIC:
         break;
     }
 
@@ -208,27 +211,30 @@ nl_nlmsghdr_to_str(const struct nlmsghdr *hdr, char *buf, gsize len)
     if (flags_before != flags)
         prefix = ";";
 
-    switch (hdr->nlmsg_type) {
-    case RTM_NEWLINK:
-    case RTM_NEWADDR:
-    case RTM_NEWROUTE:
-    case RTM_NEWQDISC:
-    case RTM_NEWTFILTER:
-        _F(NLM_F_REPLACE, "replace");
-        _F(NLM_F_EXCL, "excl");
-        _F(NLM_F_CREATE, "create");
-        _F(NLM_F_APPEND, "append");
-        break;
-    case RTM_GETLINK:
-    case RTM_GETADDR:
-    case RTM_GETROUTE:
-    case RTM_DELQDISC:
-    case RTM_DELTFILTER:
-        _F(NLM_F_DUMP, "dump");
-        _F(NLM_F_ROOT, "root");
-        _F(NLM_F_MATCH, "match");
-        _F(NLM_F_ATOMIC, "atomic");
-        break;
+    switch (netlink_protocol) {
+    case NETLINK_ROUTE:
+        switch (hdr->nlmsg_type) {
+        case RTM_NEWLINK:
+        case RTM_NEWADDR:
+        case RTM_NEWROUTE:
+        case RTM_NEWQDISC:
+        case RTM_NEWTFILTER:
+            _F(NLM_F_REPLACE, "replace");
+            _F(NLM_F_EXCL, "excl");
+            _F(NLM_F_CREATE, "create");
+            _F(NLM_F_APPEND, "append");
+            break;
+        case RTM_GETLINK:
+        case RTM_GETADDR:
+        case RTM_GETROUTE:
+        case RTM_DELQDISC:
+        case RTM_DELTFILTER:
+            _F(NLM_F_DUMP, "dump");
+            _F(NLM_F_ROOT, "root");
+            _F(NLM_F_MATCH, "match");
+            _F(NLM_F_ATOMIC, "atomic");
+            break;
+        }
     }
 
 #undef _F

@@ -7053,7 +7053,7 @@ event_valid_msg(NMPlatform *platform, struct nl_msg *msg, gboolean handle_events
     obj = nmp_object_new_from_nl(platform, cache, msg, is_del, &parse_nlmsg_iter);
     if (!obj) {
         _LOGT("event-notification: %s: ignore",
-              nl_nlmsghdr_to_str(msghdr, buf_nlmsghdr, sizeof(buf_nlmsghdr)));
+              nl_nlmsghdr_to_str(NETLINK_ROUTE, msghdr, buf_nlmsghdr, sizeof(buf_nlmsghdr)));
         return;
     }
 
@@ -7071,7 +7071,7 @@ event_valid_msg(NMPlatform *platform, struct nl_msg *msg, gboolean handle_events
     }
 
     _LOGT("event-notification: %s%s: %s",
-          nl_nlmsghdr_to_str(msghdr, buf_nlmsghdr, sizeof(buf_nlmsghdr)),
+          nl_nlmsghdr_to_str(NETLINK_ROUTE, msghdr, buf_nlmsghdr, sizeof(buf_nlmsghdr)),
           is_dump ? ", in-dump" : "",
           nmp_object_to_string(obj,
                                is_del ? NMP_OBJECT_TO_STRING_ID : NMP_OBJECT_TO_STRING_PUBLIC,
@@ -9289,7 +9289,7 @@ continue_reading:
         }
 
         _LOGt("netlink: recvmsg: new message %s",
-              nl_nlmsghdr_to_str(hdr, buf_nlmsghdr, sizeof(buf_nlmsghdr)));
+              nl_nlmsghdr_to_str(NETLINK_ROUTE, hdr, buf_nlmsghdr, sizeof(buf_nlmsghdr)));
 
         nlmsg_set_creds(msg, &creds);
 
