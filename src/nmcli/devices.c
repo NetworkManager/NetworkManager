@@ -1343,9 +1343,10 @@ fill_output_access_point(NMAccessPoint *ap, const APInfo *info)
         if (rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_SAE) {
             g_string_append(security_str, "WPA3 ");
         }
-        if (NM_FLAGS_ANY(rsn_flags,
-                         NM_802_11_AP_SEC_KEY_MGMT_OWE | NM_802_11_AP_SEC_KEY_MGMT_OWE_TM)) {
+        if (NM_FLAGS_ANY(rsn_flags, NM_802_11_AP_SEC_KEY_MGMT_OWE)) {
             g_string_append(security_str, "OWE ");
+        } else if (NM_FLAGS_ANY(rsn_flags, NM_802_11_AP_SEC_KEY_MGMT_OWE_TM)) {
+            g_string_append(security_str, "OWE-TM ");
         }
         if ((wpa_flags & NM_802_11_AP_SEC_KEY_MGMT_802_1X)
             || (rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_802_1X)) {
