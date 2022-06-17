@@ -49,7 +49,8 @@ const char *nl_nlmsgtype2str(int type, char *buf, size_t size);
 
 const char *nl_nlmsg_flags2str(int flags, char *buf, size_t len);
 
-const char *nl_nlmsghdr_to_str(const struct nlmsghdr *hdr, char *buf, gsize len);
+const char *
+nl_nlmsghdr_to_str(int netlink_protocol, const struct nlmsghdr *hdr, char *buf, gsize len);
 
 /*****************************************************************************/
 
@@ -413,11 +414,7 @@ void nlmsg_set_src(struct nl_msg *msg, struct sockaddr_nl *addr);
 struct ucred *nlmsg_get_creds(struct nl_msg *msg);
 void          nlmsg_set_creds(struct nl_msg *msg, struct ucred *creds);
 
-static inline void
-_nm_auto_nl_msg_cleanup(struct nl_msg **ptr)
-{
-    nlmsg_free(*ptr);
-}
+NM_AUTO_DEFINE_FCN0(struct nl_msg *, _nm_auto_nl_msg_cleanup, nlmsg_free);
 #define nm_auto_nlmsg nm_auto(_nm_auto_nl_msg_cleanup)
 
 static inline void *
@@ -492,9 +489,12 @@ nlmsg_put(struct nl_msg *n, uint32_t pid, uint32_t seq, int type, int payload, i
 
 struct nl_sock;
 
-struct nl_sock *nl_socket_alloc(void);
+int nl_socket_new(struct nl_sock **out_sk, int protocol);
 
 void nl_socket_free(struct nl_sock *sk);
+
+NM_AUTO_DEFINE_FCN0(struct nl_sock *, _nm_auto_nlsock, nl_socket_free);
+#define nm_auto_nlsock nm_auto(_nm_auto_nlsock)
 
 int nl_socket_get_fd(const struct nl_sock *sk);
 

@@ -415,11 +415,11 @@ typedef struct {
 /*****************************************************************************/
 
 typedef struct {
-    struct nl_sock *genl;
+    struct nl_sock *sk_genl_sync;
 
-    struct nl_sock *nlh;
+    struct nl_sock *sk_rtnl;
 
-    GSource *event_source;
+    GSource *rtnl_event_source;
 
     guint32 nlh_seq_next;
 #if NM_MORE_LOGGING
@@ -570,8 +570,7 @@ static void cache_on_change(NMPlatform      *platform,
                             const NMPObject *obj_old,
                             const NMPObject *obj_new);
 static void cache_prune_all(NMPlatform *platform);
-static gboolean        event_handler_read_netlink(NMPlatform *platform, gboolean wait_for_acks);
-static struct nl_sock *_genl_sock(NMLinuxPlatform *platform);
+static gboolean event_handler_read_netlink(NMPlatform *platform, gboolean wait_for_acks);
 
 /*****************************************************************************/
 
@@ -2543,7 +2542,7 @@ _wireguard_get_family_id(NMPlatform *platform, int ifindex_try)
             wireguard_family_id = NMP_OBJECT_UP_CAST(plink)->_link.wireguard_family_id;
     }
     if (wireguard_family_id < 0)
-        wireguard_family_id = genl_ctrl_resolve(priv->genl, "wireguard");
+        wireguard_family_id = genl_ctrl_resolve(priv->sk_genl_sync, "wireguard");
     return wireguard_family_id;
 }
 
@@ -2573,7 +2572,7 @@ _wireguard_refresh_link(NMPlatform *platform, int wireguard_family_id, int ifind
         if (NMP_OBJECT_GET_TYPE(plink->_link.netlink.lnk) == NMP_OBJECT_TYPE_LNK_WIREGUARD)
             lnk_new = nmp_object_ref(plink->_link.netlink.lnk);
     } else {
-        lnk_new = _wireguard_read_info(platform, priv->genl, wireguard_family_id, ifindex);
+        lnk_new = _wireguard_read_info(platform, priv->sk_genl_sync, wireguard_family_id, ifindex);
         if (!lnk_new) {
             if (NMP_OBJECT_GET_TYPE(plink->_link.netlink.lnk) == NMP_OBJECT_TYPE_LNK_WIREGUARD)
                 lnk_new = nmp_object_ref(plink->_link.netlink.lnk);
@@ -2882,14 +2881,14 @@ link_wireguard_change(NMPlatform                               *platform,
     }
 
     for (i = 0; i < msgs->len; i++) {
-        r = nl_send_auto(priv->genl, msgs->pdata[i]);
+        r = nl_send_auto(priv->sk_genl_sync, msgs->pdata[i]);
         if (r < 0) {
             _LOGW("wireguard: set-device, send netlink message #%u failed: %s", i, nm_strerror(r));
             return r;
         }
 
         do {
-            r = nl_recvmsgs(priv->genl, NULL);
+            r = nl_recvmsgs(priv->sk_genl_sync, NULL);
         } while (r == -EAGAIN);
         if (r < 0) {
             _LOGW("wireguard: set-device, message #%u was rejected: %s", i, nm_strerror(r));
@@ -3222,13 +3221,13 @@ _new_from_nl_link(NMPlatform      *platform,
         case NM_LINK_TYPE_OLPC_MESH:
             obj->_link.ext_data =
                 (GObject *) nm_wifi_utils_new(ifi->ifi_index,
-                                              _genl_sock(NM_LINUX_PLATFORM(platform)),
+                                              NM_LINUX_PLATFORM_GET_PRIVATE(platform)->sk_genl_sync,
                                               TRUE);
             break;
         case NM_LINK_TYPE_WPAN:
             obj->_link.ext_data =
                 (GObject *) nm_wpan_utils_new(ifi->ifi_index,
-                                              _genl_sock(NM_LINUX_PLATFORM(platform)),
+                                              NM_LINUX_PLATFORM_GET_PRIVATE(platform)->sk_genl_sync,
                                               TRUE);
             break;
         default:
@@ -3238,7 +3237,7 @@ _new_from_nl_link(NMPlatform      *platform,
 
     if (obj->link.type == NM_LINK_TYPE_WIREGUARD) {
         const NMPObject *lnk_data_new = NULL;
-        struct nl_sock  *genl         = NM_LINUX_PLATFORM_GET_PRIVATE(platform)->genl;
+        struct nl_sock  *genl         = NM_LINUX_PLATFORM_GET_PRIVATE(platform)->sk_genl_sync;
 
         /* The WireGuard kernel module does not yet send link update
          * notifications, so we don't actually update the cache. For
@@ -5204,14 +5203,6 @@ nla_put_failure:
 
 /*****************************************************************************/
 
-static struct nl_sock *
-_genl_sock(NMLinuxPlatform *platform)
-{
-    NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE(platform);
-
-    return priv->genl;
-}
-
 #define ASSERT_SYSCTL_ARGS(pathid, dirfd, path)                                                 \
     G_STMT_START                                                                                \
     {                                                                                           \
@@ -6689,12 +6680,12 @@ _nl_send_nlmsghdr(NMPlatform                        *platform,
         int try_count;
 
         if (!nlhdr->nlmsg_pid)
-            nlhdr->nlmsg_pid = nl_socket_get_local_port(priv->nlh);
+            nlhdr->nlmsg_pid = nl_socket_get_local_port(priv->sk_rtnl);
         nlhdr->nlmsg_flags |= (NLM_F_REQUEST | NLM_F_ACK);
 
         try_count = 0;
 again:
-        errsv = sendmsg(nl_socket_get_fd(priv->nlh), &msg, 0);
+        errsv = sendmsg(nl_socket_get_fd(priv->sk_rtnl), &msg, 0);
         if (errsv < 0) {
             errsv = errno;
             if (errsv == EINTR && try_count++ < 100)
@@ -6742,7 +6733,7 @@ _nl_send_nlmsg(NMPlatform                        *platform,
     seq              = _nlh_seq_next_get(priv);
     nlhdr->nlmsg_seq = seq;
 
-    nle = nl_send_auto(priv->nlh, nlmsg);
+    nle = nl_send_auto(priv->sk_rtnl, nlmsg);
     if (nle < 0) {
         _LOGD("netlink: nl-send-nlmsg: failed sending message: %s (%d)", nm_strerror(nle), nle);
         return nle;
@@ -7062,7 +7053,7 @@ event_valid_msg(NMPlatform *platform, struct nl_msg *msg, gboolean handle_events
     obj = nmp_object_new_from_nl(platform, cache, msg, is_del, &parse_nlmsg_iter);
     if (!obj) {
         _LOGT("event-notification: %s: ignore",
-              nl_nlmsghdr_to_str(msghdr, buf_nlmsghdr, sizeof(buf_nlmsghdr)));
+              nl_nlmsghdr_to_str(NETLINK_ROUTE, msghdr, buf_nlmsghdr, sizeof(buf_nlmsghdr)));
         return;
     }
 
@@ -7080,7 +7071,7 @@ event_valid_msg(NMPlatform *platform, struct nl_msg *msg, gboolean handle_events
     }
 
     _LOGT("event-notification: %s%s: %s",
-          nl_nlmsghdr_to_str(msghdr, buf_nlmsghdr, sizeof(buf_nlmsghdr)),
+          nl_nlmsghdr_to_str(NETLINK_ROUTE, msghdr, buf_nlmsghdr, sizeof(buf_nlmsghdr)),
           is_dump ? ", in-dump" : "",
           nmp_object_to_string(obj,
                                is_del ? NMP_OBJECT_TO_STRING_ID : NMP_OBJECT_TO_STRING_PUBLIC,
@@ -9198,8 +9189,51 @@ tfilter_delete(NMPlatform *platform, int ifindex, guint32 parent, gboolean log_e
 
 /*****************************************************************************/
 
+static int
+_netlink_recv(NMPlatform         *platform,
+              struct nl_sock     *sk,
+              struct sockaddr_nl *nla,
+              struct ucred       *out_creds,
+              gboolean           *out_creds_has)
+{
+    NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE(platform);
+    unsigned char          *buf  = NULL;
+    int                     n;
+
+    nm_assert(nla);
+    nm_assert(out_creds);
+    nm_assert(out_creds_has);
+
+    /* We use a pre-allocated receive buffer. */
+
+    n = nl_recv(sk,
+                priv->netlink_recv_buf.buf,
+                priv->netlink_recv_buf.len,
+                nla,
+                &buf,
+                out_creds,
+                out_creds_has);
+
+    nm_assert((n <= 0 && !buf)
+              || (n > 0 && n <= priv->netlink_recv_buf.len && buf == priv->netlink_recv_buf.buf));
+
+    if (n == -NME_NL_MSG_TRUNC) {
+        /* the message receive buffer was too small. We lost one message, which
+         * is unfortunate. Try to double the buffer size for the next time. */
+        priv->netlink_recv_buf.len *= 2;
+        priv->netlink_recv_buf.buf =
+            g_realloc(priv->netlink_recv_buf.buf, priv->netlink_recv_buf.len);
+        _LOGT("netlink: recvmsg: increase message buffer size for recvmsg() to %zu bytes",
+              priv->netlink_recv_buf.len);
+    }
+
+    return n;
+}
+
+/*****************************************************************************/
+
 static gboolean
-event_handler(int fd, GIOCondition io_condition, gpointer user_data)
+rtnl_event_handler(int fd, GIOCondition io_condition, gpointer user_data)
 {
     delayed_action_handle_all(NM_PLATFORM(user_data), TRUE);
     return TRUE;
@@ -9207,12 +9241,11 @@ event_handler(int fd, GIOCondition io_condition, gpointer user_data)
 
 /*****************************************************************************/
 
-/* copied from libnl3's recvmsgs() */
 static int
-event_handler_recvmsgs(NMPlatform *platform, gboolean handle_events)
+_netlink_recv_handle(NMPlatform *platform, int netlink_protocol, gboolean handle_events)
 {
     NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE(platform);
-    struct nl_sock         *sk   = priv->nlh;
+    struct nl_sock         *sk;
     int                     n;
     int                     err         = 0;
     gboolean                multipart   = 0;
@@ -9222,39 +9255,31 @@ event_handler_recvmsgs(NMPlatform *platform, gboolean handle_events)
     struct sockaddr_nl      nla;
     struct ucred            creds;
     gboolean                creds_has;
-    unsigned char          *buf;
+    const char             *log_prefix;
+
+    nm_assert(netlink_protocol == NETLINK_ROUTE);
+    sk         = priv->sk_rtnl;
+    log_prefix = "rtnl";
 
 continue_reading:
-    buf = NULL;
 
-    n = nl_recv(sk,
-                priv->netlink_recv_buf.buf,
-                priv->netlink_recv_buf.len,
-                &nla,
-                &buf,
-                &creds,
-                &creds_has);
-
-    nm_assert((n <= 0 && !buf)
-              || (n > 0 && n <= priv->netlink_recv_buf.len && buf == priv->netlink_recv_buf.buf));
-
-    if (n <= 0) {
-        if (n == -NME_NL_MSG_TRUNC) {
-            /* the message receive buffer was too small. We lost one message, which
-             * is unfortunate. Try to double the buffer size for the next time. */
-            priv->netlink_recv_buf.len *= 2;
-            priv->netlink_recv_buf.buf =
-                g_realloc(priv->netlink_recv_buf.buf, priv->netlink_recv_buf.len);
-            _LOGT("netlink: recvmsg: increase message buffer size for recvmsg() to %zu bytes",
-                  priv->netlink_recv_buf.len);
-            if (!handle_events)
-                goto continue_reading;
-        }
-
+    n = _netlink_recv(platform, sk, &nla, &creds, &creds_has);
+    if (n < 0) {
+        if (n == -NME_NL_MSG_TRUNC && !handle_events)
+            goto continue_reading;
         return n;
     }
 
-    hdr = (struct nlmsghdr *) buf;
+    if (!creds_has || creds.pid) {
+        if (!creds_has)
+            _LOGT("%s: recvmsg: received message without credentials", log_prefix);
+        else
+            _LOGT("%s: recvmsg: received non-kernel message (pid %d)", log_prefix, creds.pid);
+        err = 0;
+        goto stop;
+    }
+
+    hdr = (struct nlmsghdr *) priv->netlink_recv_buf.buf;
     while (nlmsg_ok(hdr, n)) {
         nm_auto_nlmsg struct nl_msg *msg               = NULL;
         gboolean                     abort_parsing     = FALSE;
@@ -9264,23 +9289,13 @@ continue_reading:
         const char                  *extack_msg = NULL;
 
         msg = nlmsg_alloc_convert(hdr);
-
-        nlmsg_set_proto(msg, NETLINK_ROUTE);
+        nlmsg_set_proto(msg, netlink_protocol);
         nlmsg_set_src(msg, &nla);
-
-        if (!creds_has || creds.pid) {
-            if (!creds_has)
-                _LOGT("netlink: recvmsg: received message without credentials");
-            else
-                _LOGT("netlink: recvmsg: received non-kernel message (pid %d)", creds.pid);
-            err = 0;
-            goto stop;
-        }
-
-        _LOGt("netlink: recvmsg: new message %s",
-              nl_nlmsghdr_to_str(hdr, buf_nlmsghdr, sizeof(buf_nlmsghdr)));
-
         nlmsg_set_creds(msg, &creds);
+
+        _LOGt("%s: recvmsg: new message %s",
+              log_prefix,
+              nl_nlmsghdr_to_str(netlink_protocol, hdr, buf_nlmsghdr, sizeof(buf_nlmsghdr)));
 
         if (hdr->nlmsg_flags & NLM_F_MULTI)
             multipart = TRUE;
@@ -9299,95 +9314,104 @@ continue_reading:
             /* FIXME: implement */
         }
 
-        seq_result = WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_UNKNOWN;
+        switch (netlink_protocol) {
+        case NETLINK_ROUTE:
+        {
+            seq_result = WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_UNKNOWN;
 
-        if (hdr->nlmsg_type == NLMSG_DONE) {
-            /* messages terminates a multipart message, this is
-             * usually the end of a message and therefore we slip
-             * out of the loop by default. the user may overrule
-             * this action by skipping this packet. */
-            multipart  = FALSE;
-            seq_result = WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK;
-        } else if (hdr->nlmsg_type == NLMSG_NOOP) {
-            /* Message to be ignored, the default action is to
-             * skip this message if no callback is specified. The
-             * user may overrule this action by returning
-             * NL_PROCEED. */
-        } else if (hdr->nlmsg_type == NLMSG_OVERRUN) {
-            /* Data got lost, report back to user. The default action is to
-             * quit parsing. The user may overrule this action by returning
-             * NL_SKIP or NL_PROCEED (dangerous) */
-            err           = -NME_NL_MSG_OVERFLOW;
-            abort_parsing = TRUE;
-        } else if (hdr->nlmsg_type == NLMSG_ERROR) {
-            /* Message carries a nlmsgerr */
-            struct nlmsgerr *e = nlmsg_data(hdr);
-
-            if (hdr->nlmsg_len < nlmsg_size(sizeof(*e))) {
-                /* Truncated error message, the default action
-                 * is to stop parsing. The user may overrule
-                 * this action by returning NL_SKIP or
-                 * NL_PROCEED (dangerous) */
-                err           = -NME_NL_MSG_TRUNC;
-                abort_parsing = TRUE;
-            } else if (e->error) {
-                int errsv = nm_errno_native(e->error);
-
-                if (NM_FLAGS_HAS(hdr->nlmsg_flags, NLM_F_ACK_TLVS)
-                    && hdr->nlmsg_len >= sizeof(*e) + e->msg.nlmsg_len) {
-                    static const struct nla_policy policy[] = {
-                        [NLMSGERR_ATTR_MSG]  = {.type = NLA_STRING},
-                        [NLMSGERR_ATTR_OFFS] = {.type = NLA_U32},
-                    };
-                    struct nlattr *tb[G_N_ELEMENTS(policy)];
-                    struct nlattr *tlvs;
-
-                    tlvs = (struct nlattr *) ((char *) e + sizeof(*e) + e->msg.nlmsg_len
-                                              - NLMSG_HDRLEN);
-                    if (nla_parse_arr(tb,
-                                      tlvs,
-                                      hdr->nlmsg_len - sizeof(*e) - e->msg.nlmsg_len,
-                                      policy)
-                        >= 0) {
-                        if (tb[NLMSGERR_ATTR_MSG])
-                            extack_msg = nla_get_string(tb[NLMSGERR_ATTR_MSG]);
-                    }
-                }
-
-                /* Error message reported back from kernel. */
-                _LOGD("netlink: recvmsg: error message from kernel: %s (%d)%s%s%s for request %d",
-                      nm_strerror_native(errsv),
-                      errsv,
-                      NM_PRINT_FMT_QUOTED(extack_msg, " \"", extack_msg, "\"", ""),
-                      nlmsg_hdr(msg)->nlmsg_seq);
-                seq_result = -NM_ERRNO_NATIVE(errsv);
-            } else
+            if (hdr->nlmsg_type == NLMSG_DONE) {
+                /* messages terminates a multipart message, this is
+                 * usually the end of a message and therefore we slip
+                 * out of the loop by default. the user may overrule
+                 * this action by skipping this packet. */
+                multipart  = FALSE;
                 seq_result = WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK;
-        } else
-            process_valid_msg = TRUE;
+            } else if (hdr->nlmsg_type == NLMSG_NOOP) {
+                /* Message to be ignored, the default action is to
+                 * skip this message if no callback is specified. The
+                 * user may overrule this action by returning
+                 * NL_PROCEED. */
+            } else if (hdr->nlmsg_type == NLMSG_OVERRUN) {
+                /* Data got lost, report back to user. The default action is to
+                 * quit parsing. The user may overrule this action by returning
+                 * NL_SKIP or NL_PROCEED (dangerous) */
+                err           = -NME_NL_MSG_OVERFLOW;
+                abort_parsing = TRUE;
+            } else if (hdr->nlmsg_type == NLMSG_ERROR) {
+                /* Message carries a nlmsgerr */
+                struct nlmsgerr *e = nlmsg_data(hdr);
 
-        seq_number = nlmsg_hdr(msg)->nlmsg_seq;
+                if (hdr->nlmsg_len < nlmsg_size(sizeof(*e))) {
+                    /* Truncated error message, the default action
+                     * is to stop parsing. The user may overrule
+                     * this action by returning NL_SKIP or
+                     * NL_PROCEED (dangerous) */
+                    err           = -NME_NL_MSG_TRUNC;
+                    abort_parsing = TRUE;
+                } else if (e->error) {
+                    int errsv = nm_errno_native(e->error);
 
-        /* check whether the seq number is different from before, and
-         * whether the previous number (@nlh_seq_last_seen) is a pending
-         * refresh-all request. In that case, the pending request is thereby
-         * completed.
-         *
-         * We must do that before processing the message with event_valid_msg(),
-         * because we must track the completion of the pending request before that. */
-        event_seq_check_refresh_all(platform, seq_number);
+                    if (NM_FLAGS_HAS(hdr->nlmsg_flags, NLM_F_ACK_TLVS)
+                        && hdr->nlmsg_len >= sizeof(*e) + e->msg.nlmsg_len) {
+                        static const struct nla_policy policy[] = {
+                            [NLMSGERR_ATTR_MSG]  = {.type = NLA_STRING},
+                            [NLMSGERR_ATTR_OFFS] = {.type = NLA_U32},
+                        };
+                        struct nlattr *tb[G_N_ELEMENTS(policy)];
+                        struct nlattr *tlvs;
 
-        if (process_valid_msg) {
-            /* Valid message (not checking for MULTIPART bit to
-             * get along with broken kernels. NL_SKIP has no
-             * effect on this.  */
+                        tlvs = (struct nlattr *) ((char *) e + sizeof(*e) + e->msg.nlmsg_len
+                                                  - NLMSG_HDRLEN);
+                        if (nla_parse_arr(tb,
+                                          tlvs,
+                                          hdr->nlmsg_len - sizeof(*e) - e->msg.nlmsg_len,
+                                          policy)
+                            >= 0) {
+                            if (tb[NLMSGERR_ATTR_MSG])
+                                extack_msg = nla_get_string(tb[NLMSGERR_ATTR_MSG]);
+                        }
+                    }
 
-            event_valid_msg(platform, msg, handle_events);
+                    /* Error message reported back from kernel. */
+                    _LOGD(
+                        "netlink: recvmsg: error message from kernel: %s (%d)%s%s%s for request %d",
+                        nm_strerror_native(errsv),
+                        errsv,
+                        NM_PRINT_FMT_QUOTED(extack_msg, " \"", extack_msg, "\"", ""),
+                        nlmsg_hdr(msg)->nlmsg_seq);
+                    seq_result = -NM_ERRNO_NATIVE(errsv);
+                } else
+                    seq_result = WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK;
+            } else
+                process_valid_msg = TRUE;
 
-            seq_result = WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK;
+            seq_number = nlmsg_hdr(msg)->nlmsg_seq;
+
+            /* check whether the seq number is different from before, and
+             * whether the previous number (@nlh_seq_last_seen) is a pending
+             * refresh-all request. In that case, the pending request is thereby
+             * completed.
+             *
+             * We must do that before processing the message with event_valid_msg(),
+             * because we must track the completion of the pending request before that. */
+            event_seq_check_refresh_all(platform, seq_number);
+
+            if (process_valid_msg) {
+                /* Valid message (not checking for MULTIPART bit to
+                 * get along with broken kernels. NL_SKIP has no
+                 * effect on this.  */
+
+                event_valid_msg(platform, msg, handle_events);
+
+                seq_result = WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK;
+            }
+
+            event_seq_check(platform, seq_number, seq_result, extack_msg);
+            break;
         }
-
-        event_seq_check(platform, seq_number, seq_result, extack_msg);
+        default:
+            nm_assert_not_reached();
+        }
 
         if (abort_parsing)
             goto stop;
@@ -9440,7 +9464,7 @@ event_handler_read_netlink(NMPlatform *platform, gboolean wait_for_acks)
         for (;;) {
             int nle;
 
-            nle = event_handler_recvmsgs(platform, TRUE);
+            nle = _netlink_recv_handle(platform, NETLINK_ROUTE, TRUE);
 
             if (nle < 0) {
                 switch (nle) {
@@ -9465,7 +9489,7 @@ event_handler_read_netlink(NMPlatform *platform, gboolean wait_for_acks)
                               }
                               _reason;
                           }));
-                    event_handler_recvmsgs(platform, FALSE);
+                    _netlink_recv_handle(platform, NETLINK_ROUTE, FALSE);
                     delayed_action_wait_for_nl_response_complete_all(
                         platform,
                         WAIT_FOR_NL_RESPONSE_RESULT_FAILED_RESYNC);
@@ -9521,7 +9545,7 @@ after_read:
               timeout_msec);
 
         memset(&pfd, 0, sizeof(pfd));
-        pfd.fd     = nl_socket_get_fd(priv->nlh);
+        pfd.fd     = nl_socket_get_fd(priv->sk_rtnl);
         pfd.events = POLLIN;
         r          = poll(&pfd, 1, timeout_msec);
 
@@ -9721,43 +9745,36 @@ constructed(GObject *_object)
           nm_platform_get_use_udev(platform) ? "use" : "no",
           nm_platform_get_cache_tc(platform) ? "use" : "no");
 
-    priv->genl = nl_socket_alloc();
-    g_assert(priv->genl);
+    /*************************************************************************/
 
-    nle = nl_connect(priv->genl, NETLINK_GENERIC);
-    if (nle) {
-        _LOGE("unable to connect the generic netlink socket \"%s\" (%d)", nm_strerror(nle), -nle);
-        nl_socket_free(priv->genl);
-        priv->genl = NULL;
-    }
-
-    priv->nlh = nl_socket_alloc();
-    g_assert(priv->nlh);
-
-    nle = nl_connect(priv->nlh, NETLINK_ROUTE);
-    g_assert(!nle);
-    nle = nl_socket_set_passcred(priv->nlh, 1);
+    nle = nl_socket_new(&priv->sk_genl_sync, NETLINK_GENERIC);
     g_assert(!nle);
 
-    /* No blocking for event socket, so that we can drain it safely. */
-    nle = nl_socket_set_nonblocking(priv->nlh);
+    _LOGD("genl: generic netlink socket for sync operations created: port=%u, fd=%d",
+          nl_socket_get_local_port(priv->sk_genl_sync),
+          nl_socket_get_fd(priv->sk_genl_sync));
+
+    /*************************************************************************/
+
+    nle = nl_socket_new(&priv->sk_rtnl, NETLINK_ROUTE);
     g_assert(!nle);
 
-    /* use 8 MB for receive socket kernel queue. */
-    nle = nl_socket_set_buffer_size(priv->nlh, 8 * 1024 * 1024, 0);
+    nle = nl_socket_set_passcred(priv->sk_rtnl, 1);
     g_assert(!nle);
 
-    nle = nl_socket_set_ext_ack(priv->nlh, TRUE);
-    if (nle)
-        _LOGD("could not enable extended acks on netlink socket");
+    nle = nl_socket_set_nonblocking(priv->sk_rtnl);
+    g_assert(!nle);
+
+    nle = nl_socket_set_buffer_size(priv->sk_rtnl, 8 * 1024 * 1024, 0);
+    g_assert(!nle);
 
     /* explicitly set the msg buffer size and disable MSG_PEEK.
      * We use our own receive buffer priv->netlink_recv_buf.
      * If we encounter NME_NL_MSG_TRUNC, we will increase the buffer
      * and resync (as we would have lost the message without NL_MSG_PEEK). */
-    nl_socket_disable_msg_peek(priv->nlh);
+    nl_socket_disable_msg_peek(priv->sk_rtnl);
 
-    nle = nl_socket_add_memberships(priv->nlh,
+    nle = nl_socket_add_memberships(priv->sk_rtnl,
                                     RTNLGRP_IPV4_IFADDR,
                                     RTNLGRP_IPV4_ROUTE,
                                     RTNLGRP_IPV4_RULE,
@@ -9769,21 +9786,23 @@ constructed(GObject *_object)
     g_assert(!nle);
 
     if (nm_platform_get_cache_tc(platform)) {
-        nle = nl_socket_add_memberships(priv->nlh, RTNLGRP_TC, 0);
+        nle = nl_socket_add_memberships(priv->sk_rtnl, RTNLGRP_TC, 0);
         nm_assert(!nle);
     }
 
-    fd = nl_socket_get_fd(priv->nlh);
+    fd = nl_socket_get_fd(priv->sk_rtnl);
 
-    _LOGD("Netlink socket for events established: port=%u, fd=%d",
-          nl_socket_get_local_port(priv->nlh),
+    _LOGD("rtnl: rtnetlink socket created: port=%u, fd=%d",
+          nl_socket_get_local_port(priv->sk_rtnl),
           fd);
 
-    priv->event_source =
+    priv->rtnl_event_source =
         nm_g_unix_fd_add_source(fd,
                                 G_IO_IN | G_IO_NVAL | G_IO_PRI | G_IO_ERR | G_IO_HUP,
-                                event_handler,
+                                rtnl_event_handler,
                                 platform);
+
+    /*************************************************************************/
 
     /* complete construction of the GObject instance before populating the cache. */
     G_OBJECT_CLASS(nm_linux_platform_parent_class)->constructed(_object);
@@ -9899,11 +9918,11 @@ finalize(GObject *object)
     g_ptr_array_unref(priv->delayed_action.list_refresh_link);
     g_array_unref(priv->delayed_action.list_wait_for_nl_response);
 
-    nl_socket_free(priv->genl);
+    nl_socket_free(priv->sk_genl_sync);
 
-    nm_clear_g_source_inst(&priv->event_source);
+    nm_clear_g_source_inst(&priv->rtnl_event_source);
 
-    nl_socket_free(priv->nlh);
+    nl_socket_free(priv->sk_rtnl);
 
     {
         NM_G_MUTEX_LOCKED(&sysctl_clear_cache_lock);

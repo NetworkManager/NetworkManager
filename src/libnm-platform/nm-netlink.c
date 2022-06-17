@@ -18,6 +18,16 @@
 
 /*****************************************************************************/
 
+#define nm_assert_sk(sk)                  \
+    G_STMT_START                          \
+    {                                     \
+        const struct nl_sock *_sk = (sk); \
+                                          \
+        nm_assert(_sk);                   \
+        nm_assert(_sk->s_fd >= 0);        \
+    }                                     \
+    G_STMT_END
+
 #define NL_SOCK_PASSCRED     (1 << 1)
 #define NL_MSG_PEEK          (1 << 3)
 #define NL_MSG_PEEK_EXPLICIT (1 << 4)
@@ -74,10 +84,10 @@ NM_UTILS_FLAGS2STR_DEFINE(nl_nlmsg_flags2str,
 /*****************************************************************************/
 
 const char *
-nl_nlmsghdr_to_str(const struct nlmsghdr *hdr, char *buf, gsize len)
+nl_nlmsghdr_to_str(int netlink_protocol, const struct nlmsghdr *hdr, char *buf, gsize len)
 {
     const char *b;
-    const char *s;
+    const char *s = NULL;
     guint       flags, flags_before;
     const char *prefix;
 
@@ -86,78 +96,81 @@ nl_nlmsghdr_to_str(const struct nlmsghdr *hdr, char *buf, gsize len)
 
     b = buf;
 
-    switch (hdr->nlmsg_type) {
-    case RTM_GETLINK:
-        s = "RTM_GETLINK";
+    switch (netlink_protocol) {
+    case NETLINK_ROUTE:
+        switch (hdr->nlmsg_type) {
+        case RTM_GETLINK:
+            s = "RTM_GETLINK";
+            break;
+        case RTM_NEWLINK:
+            s = "RTM_NEWLINK";
+            break;
+        case RTM_DELLINK:
+            s = "RTM_DELLINK";
+            break;
+        case RTM_SETLINK:
+            s = "RTM_SETLINK";
+            break;
+        case RTM_GETADDR:
+            s = "RTM_GETADDR";
+            break;
+        case RTM_NEWADDR:
+            s = "RTM_NEWADDR";
+            break;
+        case RTM_DELADDR:
+            s = "RTM_DELADDR";
+            break;
+        case RTM_GETROUTE:
+            s = "RTM_GETROUTE";
+            break;
+        case RTM_NEWROUTE:
+            s = "RTM_NEWROUTE";
+            break;
+        case RTM_DELROUTE:
+            s = "RTM_DELROUTE";
+            break;
+        case RTM_GETRULE:
+            s = "RTM_GETRULE";
+            break;
+        case RTM_NEWRULE:
+            s = "RTM_NEWRULE";
+            break;
+        case RTM_DELRULE:
+            s = "RTM_DELRULE";
+            break;
+        case RTM_GETQDISC:
+            s = "RTM_GETQDISC";
+            break;
+        case RTM_NEWQDISC:
+            s = "RTM_NEWQDISC";
+            break;
+        case RTM_DELQDISC:
+            s = "RTM_DELQDISC";
+            break;
+        case RTM_GETTFILTER:
+            s = "RTM_GETTFILTER";
+            break;
+        case RTM_NEWTFILTER:
+            s = "RTM_NEWTFILTER";
+            break;
+        case RTM_DELTFILTER:
+            s = "RTM_DELTFILTER";
+            break;
+        case NLMSG_NOOP:
+            s = "NLMSG_NOOP";
+            break;
+        case NLMSG_ERROR:
+            s = "NLMSG_ERROR";
+            break;
+        case NLMSG_DONE:
+            s = "NLMSG_DONE";
+            break;
+        case NLMSG_OVERRUN:
+            s = "NLMSG_OVERRUN";
+            break;
+        }
         break;
-    case RTM_NEWLINK:
-        s = "RTM_NEWLINK";
-        break;
-    case RTM_DELLINK:
-        s = "RTM_DELLINK";
-        break;
-    case RTM_SETLINK:
-        s = "RTM_SETLINK";
-        break;
-    case RTM_GETADDR:
-        s = "RTM_GETADDR";
-        break;
-    case RTM_NEWADDR:
-        s = "RTM_NEWADDR";
-        break;
-    case RTM_DELADDR:
-        s = "RTM_DELADDR";
-        break;
-    case RTM_GETROUTE:
-        s = "RTM_GETROUTE";
-        break;
-    case RTM_NEWROUTE:
-        s = "RTM_NEWROUTE";
-        break;
-    case RTM_DELROUTE:
-        s = "RTM_DELROUTE";
-        break;
-    case RTM_GETRULE:
-        s = "RTM_GETRULE";
-        break;
-    case RTM_NEWRULE:
-        s = "RTM_NEWRULE";
-        break;
-    case RTM_DELRULE:
-        s = "RTM_DELRULE";
-        break;
-    case RTM_GETQDISC:
-        s = "RTM_GETQDISC";
-        break;
-    case RTM_NEWQDISC:
-        s = "RTM_NEWQDISC";
-        break;
-    case RTM_DELQDISC:
-        s = "RTM_DELQDISC";
-        break;
-    case RTM_GETTFILTER:
-        s = "RTM_GETTFILTER";
-        break;
-    case RTM_NEWTFILTER:
-        s = "RTM_NEWTFILTER";
-        break;
-    case RTM_DELTFILTER:
-        s = "RTM_DELTFILTER";
-        break;
-    case NLMSG_NOOP:
-        s = "NLMSG_NOOP";
-        break;
-    case NLMSG_ERROR:
-        s = "NLMSG_ERROR";
-        break;
-    case NLMSG_DONE:
-        s = "NLMSG_DONE";
-        break;
-    case NLMSG_OVERRUN:
-        s = "NLMSG_OVERRUN";
-        break;
-    default:
-        s = NULL;
+    case NETLINK_GENERIC:
         break;
     }
 
@@ -198,27 +211,30 @@ nl_nlmsghdr_to_str(const struct nlmsghdr *hdr, char *buf, gsize len)
     if (flags_before != flags)
         prefix = ";";
 
-    switch (hdr->nlmsg_type) {
-    case RTM_NEWLINK:
-    case RTM_NEWADDR:
-    case RTM_NEWROUTE:
-    case RTM_NEWQDISC:
-    case RTM_NEWTFILTER:
-        _F(NLM_F_REPLACE, "replace");
-        _F(NLM_F_EXCL, "excl");
-        _F(NLM_F_CREATE, "create");
-        _F(NLM_F_APPEND, "append");
-        break;
-    case RTM_GETLINK:
-    case RTM_GETADDR:
-    case RTM_GETROUTE:
-    case RTM_DELQDISC:
-    case RTM_DELTFILTER:
-        _F(NLM_F_DUMP, "dump");
-        _F(NLM_F_ROOT, "root");
-        _F(NLM_F_MATCH, "match");
-        _F(NLM_F_ATOMIC, "atomic");
-        break;
+    switch (netlink_protocol) {
+    case NETLINK_ROUTE:
+        switch (hdr->nlmsg_type) {
+        case RTM_NEWLINK:
+        case RTM_NEWADDR:
+        case RTM_NEWROUTE:
+        case RTM_NEWQDISC:
+        case RTM_NEWTFILTER:
+            _F(NLM_F_REPLACE, "replace");
+            _F(NLM_F_EXCL, "excl");
+            _F(NLM_F_CREATE, "create");
+            _F(NLM_F_APPEND, "append");
+            break;
+        case RTM_GETLINK:
+        case RTM_GETADDR:
+        case RTM_GETROUTE:
+        case RTM_DELQDISC:
+        case RTM_DELTFILTER:
+            _F(NLM_F_DUMP, "dump");
+            _F(NLM_F_ROOT, "root");
+            _F(NLM_F_MATCH, "match");
+            _F(NLM_F_ATOMIC, "atomic");
+            break;
+        }
     }
 
 #undef _F
@@ -879,30 +895,14 @@ genl_ctrl_resolve(struct nl_sock *sk, const char *name)
 
 /*****************************************************************************/
 
-struct nl_sock *
-nl_socket_alloc(void)
-{
-    struct nl_sock *sk;
-
-    sk = g_slice_new0(struct nl_sock);
-
-    sk->s_fd              = -1;
-    sk->s_local.nl_family = AF_NETLINK;
-    sk->s_peer.nl_family  = AF_NETLINK;
-    sk->s_seq_expect = sk->s_seq_next = time(NULL);
-
-    return sk;
-}
-
 void
 nl_socket_free(struct nl_sock *sk)
 {
     if (!sk)
         return;
 
-    if (sk->s_fd >= 0)
-        nm_close(sk->s_fd);
-    g_slice_free(struct nl_sock, sk);
+    nm_close(sk->s_fd);
+    nm_g_slice_free(sk);
 }
 
 int
@@ -928,8 +928,7 @@ nl_socket_set_passcred(struct nl_sock *sk, int state)
 {
     int err;
 
-    if (sk->s_fd == -1)
-        return -NME_NL_BAD_SOCK;
+    nm_assert_sk(sk);
 
     err = setsockopt(sk->s_fd, SOL_SOCKET, SO_PASSCRED, &state, sizeof(state));
     if (err < 0)
@@ -960,8 +959,7 @@ nlmsg_get_dst(struct nl_msg *msg)
 int
 nl_socket_set_nonblocking(const struct nl_sock *sk)
 {
-    if (sk->s_fd == -1)
-        return -NME_NL_BAD_SOCK;
+    nm_assert_sk(sk);
 
     if (fcntl(sk->s_fd, F_SETFL, O_NONBLOCK) < 0)
         return -nm_errno_from_native(errno);
@@ -974,14 +972,13 @@ nl_socket_set_buffer_size(struct nl_sock *sk, int rxbuf, int txbuf)
 {
     int err;
 
+    nm_assert_sk(sk);
+
     if (rxbuf <= 0)
         rxbuf = 32768;
 
     if (txbuf <= 0)
         txbuf = 32768;
-
-    if (sk->s_fd == -1)
-        return -NME_NL_BAD_SOCK;
 
     err = setsockopt(sk->s_fd, SOL_SOCKET, SO_SNDBUF, &txbuf, sizeof(txbuf));
     if (err < 0) {
@@ -1002,8 +999,7 @@ nl_socket_add_memberships(struct nl_sock *sk, int group, ...)
     int     err;
     va_list ap;
 
-    if (sk->s_fd == -1)
-        return -NME_NL_BAD_SOCK;
+    nm_assert_sk(sk);
 
     va_start(ap, group);
 
@@ -1032,10 +1028,10 @@ nl_socket_add_memberships(struct nl_sock *sk, int group, ...)
 int
 nl_socket_set_ext_ack(struct nl_sock *sk, gboolean enable)
 {
-    int err, val;
+    int err;
+    int val;
 
-    if (sk->s_fd == -1)
-        return -NME_NL_BAD_SOCK;
+    nm_assert_sk(sk);
 
     val = !!enable;
     err = setsockopt(sk->s_fd, SOL_NETLINK, NETLINK_EXT_ACK, &val, sizeof(val));
@@ -1052,62 +1048,72 @@ nl_socket_disable_msg_peek(struct nl_sock *sk)
     sk->s_flags &= ~NL_MSG_PEEK;
 }
 
+/*****************************************************************************/
+
 int
-nl_connect(struct nl_sock *sk, int protocol)
+nl_socket_new(struct nl_sock **out_sk, int protocol)
 {
-    int                err, nmerr;
-    socklen_t          addrlen;
-    struct sockaddr_nl local = {0};
+    nm_auto_nlsock struct nl_sock *sk = NULL;
+    nm_auto_close int              fd = -1;
+    time_t                         t;
+    int                            err;
+    int                            nmerr;
+    socklen_t                      addrlen;
+    struct sockaddr_nl             local = {0};
 
-    if (sk->s_fd != -1)
-        return -NME_NL_BAD_SOCK;
+    nm_assert(out_sk && !*out_sk);
 
-    sk->s_fd = socket(AF_NETLINK, SOCK_RAW | SOCK_CLOEXEC, protocol);
-    if (sk->s_fd < 0) {
-        nmerr = -nm_errno_from_native(errno);
-        goto errout;
-    }
+    fd = socket(AF_NETLINK, SOCK_RAW | SOCK_CLOEXEC, protocol);
+    if (fd < 0)
+        return -nm_errno_from_native(errno);
+
+    t = time(NULL);
+
+    sk  = g_slice_new(struct nl_sock);
+    *sk = (struct nl_sock){
+        .s_fd = nm_steal_fd(&fd),
+        .s_local =
+            {
+                .nl_pid    = 0,
+                .nl_family = AF_NETLINK,
+                .nl_groups = 0,
+            },
+        .s_peer =
+            {
+                .nl_pid    = 0,
+                .nl_family = AF_NETLINK,
+                .nl_groups = 0,
+            },
+        .s_seq_expect = t,
+        .s_seq_next   = t,
+    };
 
     nmerr = nl_socket_set_buffer_size(sk, 0, 0);
     if (nmerr < 0)
-        goto errout;
-
-    nm_assert(sk->s_local.nl_pid == 0);
+        return nmerr;
 
     err = bind(sk->s_fd, (struct sockaddr *) &sk->s_local, sizeof(sk->s_local));
-    if (err != 0) {
-        nmerr = -nm_errno_from_native(errno);
-        goto errout;
-    }
+    if (err != 0)
+        return -nm_errno_from_native(errno);
 
     addrlen = sizeof(local);
     err     = getsockname(sk->s_fd, (struct sockaddr *) &local, &addrlen);
-    if (err < 0) {
-        nmerr = -nm_errno_from_native(errno);
-        goto errout;
-    }
+    if (err < 0)
+        return -nm_errno_from_native(errno);
 
-    if (addrlen != sizeof(local)) {
-        nmerr = -NME_UNSPEC;
-        goto errout;
-    }
+    if (addrlen != sizeof(local))
+        return -NME_UNSPEC;
 
-    if (local.nl_family != AF_NETLINK) {
-        nmerr = -NME_UNSPEC;
-        goto errout;
-    }
+    if (local.nl_family != AF_NETLINK)
+        return -NME_UNSPEC;
+
+    (void) nl_socket_set_ext_ack(sk, TRUE);
 
     sk->s_local = local;
     sk->s_proto = protocol;
 
+    *out_sk = g_steal_pointer(&sk);
     return 0;
-
-errout:
-    if (sk->s_fd != -1) {
-        close(sk->s_fd);
-        sk->s_fd = -1;
-    }
-    return nmerr;
 }
 
 /*****************************************************************************/
