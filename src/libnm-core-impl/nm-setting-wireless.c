@@ -141,6 +141,10 @@ nm_setting_wireless_ap_security_compatible(NMSettingWireless         *s_wireless
     g_return_val_if_fail(NM_IS_SETTING_WIRELESS(s_wireless), FALSE);
 
     if (!s_wireless_sec) {
+        /* A OWE-TM network can be used w/o security */
+        if (ap_wpa == NM_802_11_AP_SEC_KEY_MGMT_OWE_TM
+            || (ap_rsn == NM_802_11_AP_SEC_KEY_MGMT_OWE_TM))
+            return TRUE;
         if ((ap_flags & NM_802_11_AP_FLAGS_PRIVACY) || (ap_wpa != NM_802_11_AP_SEC_NONE)
             || (ap_rsn != NM_802_11_AP_SEC_NONE))
             return FALSE;
