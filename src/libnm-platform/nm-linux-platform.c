@@ -9712,8 +9712,16 @@ constructed(GObject *_object)
           nm_platform_get_use_udev(platform) ? "use" : "no",
           nm_platform_get_cache_tc(platform) ? "use" : "no");
 
+    /*************************************************************************/
+
     nle = nl_socket_new(&priv->sk_genl_sync, NETLINK_GENERIC);
     g_assert(!nle);
+
+    _LOGD("genl: generic netlink socket for sync operations created: port=%u, fd=%d",
+          nl_socket_get_local_port(priv->sk_genl_sync),
+          nl_socket_get_fd(priv->sk_genl_sync));
+
+    /*************************************************************************/
 
     nle = nl_socket_new(&priv->sk_rtnl, NETLINK_ROUTE);
     g_assert(!nle);
@@ -9721,11 +9729,9 @@ constructed(GObject *_object)
     nle = nl_socket_set_passcred(priv->sk_rtnl, 1);
     g_assert(!nle);
 
-    /* No blocking for event socket, so that we can drain it safely. */
     nle = nl_socket_set_nonblocking(priv->sk_rtnl);
     g_assert(!nle);
 
-    /* use 8 MB for receive socket kernel queue. */
     nle = nl_socket_set_buffer_size(priv->sk_rtnl, 8 * 1024 * 1024, 0);
     g_assert(!nle);
 
@@ -9753,7 +9759,7 @@ constructed(GObject *_object)
 
     fd = nl_socket_get_fd(priv->sk_rtnl);
 
-    _LOGD("Netlink socket for events established: port=%u, fd=%d",
+    _LOGD("rtnl: rtnetlink socket created: port=%u, fd=%d",
           nl_socket_get_local_port(priv->sk_rtnl),
           fd);
 
@@ -9762,6 +9768,8 @@ constructed(GObject *_object)
                                 G_IO_IN | G_IO_NVAL | G_IO_PRI | G_IO_ERR | G_IO_HUP,
                                 rtnl_event_handler,
                                 platform);
+
+    /*************************************************************************/
 
     /* complete construction of the GObject instance before populating the cache. */
     G_OBJECT_CLASS(nm_linux_platform_parent_class)->constructed(_object);
