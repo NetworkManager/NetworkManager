@@ -86,6 +86,7 @@ typedef struct {
     GCancellable *scan_request_cancellable;
 
     GSource *scan_request_delay_source;
+    GSource *roam_supplicant_wait_source;
 
     NMWifiAP *current_ap;
 
@@ -939,6 +940,7 @@ deactivate(NMDevice *device)
     int                  ifindex = nm_device_get_ifindex(device);
 
     nm_clear_g_source(&priv->periodic_update_id);
+    nm_clear_g_source_inst(&priv->roam_supplicant_wait_source);
 
     cleanup_association_attempt(self, TRUE);
 
@@ -2495,8 +2497,15 @@ supplicant_iface_state(NMDeviceWifi              *self,
                                                    : "Connected to wireless network",
                   (ssid_str = _nm_utils_ssid_to_string_gbytes(ssid)));
             nm_device_activate_schedule_stage3_ip_config(device, FALSE);
-        } else if (devstate == NM_DEVICE_STATE_ACTIVATED)
+        } else if (devstate == NM_DEVICE_STATE_ACTIVATED) {
             periodic_update(self);
+            if (priv->roam_supplicant_wait_source) {
+                _LOGD(LOGD_WIFI,
+                      "supplicant state settled after roaming, renew dynamic IP configuration");
+                nm_clear_g_source_inst(&priv->roam_supplicant_wait_source);
+                nm_device_update_dynamic_ip_setup(device);
+            }
+        }
         break;
     case NM_SUPPLICANT_INTERFACE_STATE_DISCONNECTED:
         if ((devstate == NM_DEVICE_STATE_ACTIVATED) || nm_device_is_activating(device)) {
@@ -2567,6 +2576,21 @@ supplicant_iface_assoc_cb(NMSupplicantInterface *iface, GError *error, gpointer 
     }
 }
 
+static gboolean
+roam_supplicant_wait_timeout(gpointer user_data)
+{
+    NMDeviceWifi        *self = NM_DEVICE_WIFI(user_data);
+    NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE(self);
+
+    _LOGD(LOGD_WIFI, "timeout waiting for supplicant to settle after roaming");
+
+    /* Eventually we still want to restart DHCP when the supplicant
+     * becomes ready */
+    nm_clear_g_source_inst(&priv->roam_supplicant_wait_source);
+    priv->roam_supplicant_wait_source = g_source_ref(nm_g_source_sentinel_get(0));
+    return G_SOURCE_CONTINUE;
+}
+
 static void
 supplicant_iface_notify_current_bss(NMSupplicantInterface *iface,
                                     GParamSpec            *pspec,
@@ -2619,7 +2643,19 @@ supplicant_iface_notify_current_bss(NMSupplicantInterface *iface,
              * Also, some APs (e.g. Cisco) can be configured to drop
              * all traffic until DHCP completes. To support such
              * cases, renew the lease when roaming to a new AP. */
-            nm_device_update_dynamic_ip_setup(NM_DEVICE(self));
+
+            if (nm_supplicant_interface_get_state(priv->sup_iface)
+                == NM_SUPPLICANT_INTERFACE_STATE_COMPLETED) {
+                nm_device_update_dynamic_ip_setup(NM_DEVICE(self));
+            } else {
+                /* Wait that the authentication to new the AP completes before
+                 * trying to renew, otherwise the DHCP REQUEST could be lost
+                 * and the client will fall back to a DISCOVER, potentially
+                 * getting a different address. */
+                nm_clear_g_source_inst(&priv->roam_supplicant_wait_source);
+                priv->roam_supplicant_wait_source =
+                    nm_g_timeout_add_source(10000, roam_supplicant_wait_timeout, self);
+            }
         }
 
         set_current_ap(self, new_ap, TRUE);
@@ -3681,6 +3717,7 @@ dispose(GObject *object)
     nm_assert(c_list_is_empty(&priv->scanning_prohibited_lst_head));
 
     nm_clear_g_source(&priv->periodic_update_id);
+    nm_clear_g_source_inst(&priv->roam_supplicant_wait_source);
 
     wifi_secrets_cancel(self);
 
