@@ -1213,6 +1213,8 @@ _accept(NMDhcpClient *client, const NML3ConfigData *l3cd, GError **error)
     nm_assert(priv->granted.lease);
 
     r = n_dhcp4_client_lease_accept(priv->granted.lease);
+    if (!r)
+        lease_save(self, priv->granted.lease, priv->lease_file);
 
     dhcp4_event_pop_all_events_on_idle(self);
 
