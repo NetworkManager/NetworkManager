@@ -9189,6 +9189,49 @@ tfilter_delete(NMPlatform *platform, int ifindex, guint32 parent, gboolean log_e
 
 /*****************************************************************************/
 
+static int
+_netlink_recv(NMPlatform         *platform,
+              struct nl_sock     *sk,
+              struct sockaddr_nl *nla,
+              struct ucred       *out_creds,
+              gboolean           *out_creds_has)
+{
+    NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE(platform);
+    unsigned char          *buf  = NULL;
+    int                     n;
+
+    nm_assert(nla);
+    nm_assert(out_creds);
+    nm_assert(out_creds_has);
+
+    /* We use a pre-allocated receive buffer. */
+
+    n = nl_recv(sk,
+                priv->netlink_recv_buf.buf,
+                priv->netlink_recv_buf.len,
+                nla,
+                &buf,
+                out_creds,
+                out_creds_has);
+
+    nm_assert((n <= 0 && !buf)
+              || (n > 0 && n <= priv->netlink_recv_buf.len && buf == priv->netlink_recv_buf.buf));
+
+    if (n == -NME_NL_MSG_TRUNC) {
+        /* the message receive buffer was too small. We lost one message, which
+         * is unfortunate. Try to double the buffer size for the next time. */
+        priv->netlink_recv_buf.len *= 2;
+        priv->netlink_recv_buf.buf =
+            g_realloc(priv->netlink_recv_buf.buf, priv->netlink_recv_buf.len);
+        _LOGT("netlink: recvmsg: increase message buffer size for recvmsg() to %zu bytes",
+              priv->netlink_recv_buf.len);
+    }
+
+    return n;
+}
+
+/*****************************************************************************/
+
 static gboolean
 rtnl_event_handler(int fd, GIOCondition io_condition, gpointer user_data)
 {
@@ -9203,7 +9246,6 @@ static int
 event_handler_recvmsgs(NMPlatform *platform, gboolean handle_events)
 {
     NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE(platform);
-    struct nl_sock         *sk   = priv->sk_rtnl;
     int                     n;
     int                     err         = 0;
     gboolean                multipart   = 0;
@@ -9213,39 +9255,17 @@ event_handler_recvmsgs(NMPlatform *platform, gboolean handle_events)
     struct sockaddr_nl      nla;
     struct ucred            creds;
     gboolean                creds_has;
-    unsigned char          *buf;
 
 continue_reading:
-    buf = NULL;
 
-    n = nl_recv(sk,
-                priv->netlink_recv_buf.buf,
-                priv->netlink_recv_buf.len,
-                &nla,
-                &buf,
-                &creds,
-                &creds_has);
-
-    nm_assert((n <= 0 && !buf)
-              || (n > 0 && n <= priv->netlink_recv_buf.len && buf == priv->netlink_recv_buf.buf));
-
-    if (n <= 0) {
-        if (n == -NME_NL_MSG_TRUNC) {
-            /* the message receive buffer was too small. We lost one message, which
-             * is unfortunate. Try to double the buffer size for the next time. */
-            priv->netlink_recv_buf.len *= 2;
-            priv->netlink_recv_buf.buf =
-                g_realloc(priv->netlink_recv_buf.buf, priv->netlink_recv_buf.len);
-            _LOGT("netlink: recvmsg: increase message buffer size for recvmsg() to %zu bytes",
-                  priv->netlink_recv_buf.len);
-            if (!handle_events)
-                goto continue_reading;
-        }
-
+    n = _netlink_recv(platform, priv->sk_rtnl, &nla, &creds, &creds_has);
+    if (n < 0) {
+        if (n == -NME_NL_MSG_TRUNC && !handle_events)
+            goto continue_reading;
         return n;
     }
 
-    hdr = (struct nlmsghdr *) buf;
+    hdr = (struct nlmsghdr *) priv->netlink_recv_buf.buf;
     while (nlmsg_ok(hdr, n)) {
         nm_auto_nlmsg struct nl_msg *msg               = NULL;
         gboolean                     abort_parsing     = FALSE;
