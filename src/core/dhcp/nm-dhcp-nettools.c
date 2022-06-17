@@ -1044,6 +1044,8 @@ _accept(NMDhcpClient *client, const NML3ConfigData *l3cd, GError **error)
     nm_assert(priv->granted.lease);
 
     r = n_dhcp4_client_lease_accept(priv->granted.lease);
+    if (!r)
+        lease_save(self, priv->granted.lease, priv->lease_file);
 
     nm_clear_pointer(&priv->granted.lease, n_dhcp4_client_lease_unref);
     nm_clear_l3cd(&priv->granted.lease_l3cd);
