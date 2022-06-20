@@ -11513,8 +11513,8 @@ _dev_ipac6_start(NMDevice *self)
 
     if (node_type == NM_NDISC_NODE_TYPE_ROUTER)
         _dev_ipac6_set_state(self, NM_DEVICE_IP_STATE_READY);
-    else
-        _dev_ipac6_grace_period_start(self, ra_timeout, TRUE);
+
+    _dev_ipac6_grace_period_start(self, ra_timeout, TRUE);
 
     nm_ndisc_start(priv->ipac6_data.ndisc);
 }
