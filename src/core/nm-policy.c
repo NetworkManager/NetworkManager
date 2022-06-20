@@ -887,6 +887,9 @@ update_system_hostname(NMPolicy *self, const char *msg)
                 dhcp_hostname =
                     nm_dhcp_config_get_option(dhcp_config,
                                               info->IS_IPv4 ? "host_name" : "fqdn_fqdn");
+                if (dhcp_hostname == NULL && info->IS_IPv4) {
+                    dhcp_hostname = nm_dhcp_config_get_option(dhcp_config, "fqdn_hostname");
+                }
                 if (dhcp_hostname && dhcp_hostname[0]) {
                     p = nm_str_skip_leading_spaces(dhcp_hostname);
                     if (p[0]) {
