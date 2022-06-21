@@ -465,7 +465,7 @@ nlmsg_find_attr(struct nlmsghdr *nlh, int hdrlen, int attrtype)
     return nla_find(nlmsg_attrdata(nlh, hdrlen), nlmsg_attrlen(nlh, hdrlen), attrtype);
 }
 
-int nlmsg_parse(struct nlmsghdr         *nlh,
+int nlmsg_parse(const struct nlmsghdr   *nlh,
                 int                      hdrlen,
                 struct nlattr           *tb[],
                 int                      maxtype,

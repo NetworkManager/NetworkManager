@@ -2924,10 +2924,10 @@ _nmp_link_address_set(NMPLinkAddress *dst, const struct nlattr *nla)
 
 /* Copied and heavily modified from libnl3's link_msg_parser(). */
 static NMPObject *
-_new_from_nl_link(NMPlatform      *platform,
-                  const NMPCache  *cache,
-                  struct nlmsghdr *nlh,
-                  gboolean         id_only)
+_new_from_nl_link(NMPlatform            *platform,
+                  const NMPCache        *cache,
+                  const struct nlmsghdr *nlh,
+                  gboolean               id_only)
 {
     static const struct nla_policy policy[] = {
         [IFLA_IFNAME]        = {.type = NLA_STRING, .maxlen = IFNAMSIZ},
@@ -3275,7 +3275,7 @@ _new_from_nl_link(NMPlatform      *platform,
 
 /* Copied and heavily modified from libnl3's addr_msg_parser(). */
 static NMPObject *
-_new_from_nl_addr(struct nlmsghdr *nlh, gboolean id_only)
+_new_from_nl_addr(const struct nlmsghdr *nlh, gboolean id_only)
 {
     static const struct nla_policy policy[] = {
         [IFA_LABEL]     = {.type = NLA_STRING, .maxlen = IFNAMSIZ},
@@ -3390,7 +3390,7 @@ _new_from_nl_addr(struct nlmsghdr *nlh, gboolean id_only)
 
 /* Copied and heavily modified from libnl3's rtnl_route_parse() and parse_multipath(). */
 static NMPObject *
-_new_from_nl_route(struct nlmsghdr *nlh, gboolean id_only, ParseNlmsgIter *parse_nlmsg_iter)
+_new_from_nl_route(const struct nlmsghdr *nlh, gboolean id_only, ParseNlmsgIter *parse_nlmsg_iter)
 {
     static const struct nla_policy policy[] = {
         [RTA_TABLE]     = {.type = NLA_U32},
@@ -3698,7 +3698,7 @@ rta_multipath_done:
 }
 
 static NMPObject *
-_new_from_nl_routing_rule(struct nlmsghdr *nlh, gboolean id_only)
+_new_from_nl_routing_rule(const struct nlmsghdr *nlh, gboolean id_only)
 {
     static const struct nla_policy policy[] = {
         [FRA_UNSPEC] = {},
@@ -3974,7 +3974,7 @@ psched_tick_to_time(NMPlatform *platform, guint32 tick)
 }
 
 static NMPObject *
-_new_from_nl_qdisc(NMPlatform *platform, struct nlmsghdr *nlh, gboolean id_only)
+_new_from_nl_qdisc(NMPlatform *platform, const struct nlmsghdr *nlh, gboolean id_only)
 {
     static const struct nla_policy policy[] = {
         [TCA_KIND]    = {.type = NLA_STRING},
@@ -4087,7 +4087,7 @@ _new_from_nl_qdisc(NMPlatform *platform, struct nlmsghdr *nlh, gboolean id_only)
 }
 
 static NMPObject *
-_new_from_nl_tfilter(NMPlatform *platform, struct nlmsghdr *nlh, gboolean id_only)
+_new_from_nl_tfilter(NMPlatform *platform, const struct nlmsghdr *nlh, gboolean id_only)
 {
     static const struct nla_policy policy[] = {
         [TCA_KIND] = {.type = NLA_STRING},
@@ -4138,7 +4138,7 @@ nmp_object_new_from_nl(NMPlatform     *platform,
                        gboolean        id_only,
                        ParseNlmsgIter *parse_nlmsg_iter)
 {
-    struct nlmsghdr *msghdr;
+    const struct nlmsghdr *msghdr;
 
     if (nlmsg_get_proto(msg) != NETLINK_ROUTE)
         return NULL;

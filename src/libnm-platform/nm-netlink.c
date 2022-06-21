@@ -402,7 +402,7 @@ nlmsg_append(struct nl_msg *n, const void *data, size_t len, int pad)
 /*****************************************************************************/
 
 int
-nlmsg_parse(struct nlmsghdr         *nlh,
+nlmsg_parse(const struct nlmsghdr   *nlh,
             int                      hdrlen,
             struct nlattr           *tb[],
             int                      maxtype,
