@@ -254,7 +254,8 @@ lease_parse_address(NDhcp4ClientLease *lease,
                                        "could not get netmask from lease");
             return FALSE;
         }
-        a_plen = _nm_utils_ip4_netmask_to_prefix(a_netmask);
+        a_plen    = _nm_utils_ip4_netmask_to_prefix(a_netmask);
+        a_netmask = _nm_utils_ip4_prefix_to_netmask(a_plen);
     }
 
     nm_dhcp_option_add_option_in_addr(options,
