@@ -4132,18 +4132,18 @@ _new_from_nl_tfilter(NMPlatform *platform, const struct nlmsghdr *nlh, gboolean 
  * Returns: %NULL or a newly created NMPObject instance.
  **/
 static NMPObject *
-nmp_object_new_from_nl(NMPlatform     *platform,
-                       const NMPCache *cache,
-                       struct nl_msg  *msg,
-                       gboolean        id_only,
-                       ParseNlmsgIter *parse_nlmsg_iter)
+nmp_object_new_from_nl(NMPlatform               *platform,
+                       const NMPCache           *cache,
+                       const struct nl_msg_lite *msg,
+                       gboolean                  id_only,
+                       ParseNlmsgIter           *parse_nlmsg_iter)
 {
     const struct nlmsghdr *msghdr;
 
-    if (nlmsg_get_proto(msg) != NETLINK_ROUTE)
+    if (msg->nm_protocol != NETLINK_ROUTE)
         return NULL;
 
-    msghdr = nlmsg_hdr(msg);
+    msghdr = msg->nm_nlh;
 
     switch (msghdr->nlmsg_type) {
     case RTM_NEWLINK:
@@ -7016,13 +7016,13 @@ event_seq_check(NMPlatform             *platform,
 }
 
 static void
-event_valid_msg(NMPlatform *platform, struct nl_msg *msg, gboolean handle_events)
+event_valid_msg(NMPlatform *platform, const struct nl_msg_lite *msg, gboolean handle_events)
 {
     char                      sbuf1[NM_UTILS_TO_STRING_BUFFER_SIZE];
     NMLinuxPlatformPrivate   *priv;
     nm_auto_nmpobj NMPObject *obj = NULL;
     NMPCacheOpsType           cache_op;
-    struct nlmsghdr          *msghdr;
+    const struct nlmsghdr    *msghdr;
     char                      buf_nlmsghdr[400];
     gboolean                  is_del  = FALSE;
     gboolean                  is_dump = FALSE;
@@ -7032,7 +7032,7 @@ event_valid_msg(NMPlatform *platform, struct nl_msg *msg, gboolean handle_events
     if (!handle_events)
         return;
 
-    msghdr = nlmsg_hdr(msg);
+    msghdr = msg->nm_nlh;
 
     if (NM_IN_SET(msghdr->nlmsg_type,
                   RTM_DELLINK,
@@ -7123,7 +7123,7 @@ event_valid_msg(NMPlatform *platform, struct nl_msg *msg, gboolean handle_events
                         if (data->response_type == DELAYED_ACTION_RESPONSE_TYPE_ROUTE_GET
                             && data->response.out_route_get) {
                             nm_assert(!*data->response.out_route_get);
-                            if (data->seq_number == nlmsg_hdr(msg)->nlmsg_seq) {
+                            if (data->seq_number == msg->nm_nlh->nlmsg_seq) {
                                 *data->response.out_route_get = nmp_object_clone(obj, FALSE);
                                 data->response.out_route_get  = NULL;
                                 break;
@@ -9281,26 +9281,29 @@ continue_reading:
 
     hdr = (struct nlmsghdr *) priv->netlink_recv_buf.buf;
     while (nlmsg_ok(hdr, n)) {
-        nm_auto_nlmsg struct nl_msg *msg               = NULL;
-        gboolean                     abort_parsing     = FALSE;
-        gboolean                     process_valid_msg = FALSE;
-        guint32                      seq_number;
-        char                         buf_nlmsghdr[400];
-        const char                  *extack_msg = NULL;
+        gboolean                 abort_parsing     = FALSE;
+        gboolean                 process_valid_msg = FALSE;
+        char                     buf_nlmsghdr[400];
+        const char              *extack_msg = NULL;
+        const struct nl_msg_lite msg        = {
+                   .nm_protocol = netlink_protocol,
+                   .nm_src      = &nla,
+                   .nm_creds    = &creds,
+                   .nm_size     = NLMSG_ALIGN(hdr->nlmsg_len),
+                   .nm_nlh      = hdr,
+        };
+        const guint32 seq_number = msg.nm_nlh->nlmsg_seq;
 
-        msg = nlmsg_alloc_convert(hdr);
-        nlmsg_set_proto(msg, netlink_protocol);
-        nlmsg_set_src(msg, &nla);
-        nlmsg_set_creds(msg, &creds);
+        nm_assert((((uintptr_t) (const void *) msg.nm_nlh) % NLMSG_ALIGNTO) == 0);
 
         _LOGt("%s: recvmsg: new message %s",
               log_prefix,
-              nl_nlmsghdr_to_str(netlink_protocol, hdr, buf_nlmsghdr, sizeof(buf_nlmsghdr)));
+              nl_nlmsghdr_to_str(netlink_protocol, msg.nm_nlh, buf_nlmsghdr, sizeof(buf_nlmsghdr)));
 
-        if (hdr->nlmsg_flags & NLM_F_MULTI)
+        if (msg.nm_nlh->nlmsg_flags & NLM_F_MULTI)
             multipart = TRUE;
 
-        if (hdr->nlmsg_flags & NLM_F_DUMP_INTR) {
+        if (msg.nm_nlh->nlmsg_flags & NLM_F_DUMP_INTR) {
             /*
              * We have to continue reading to clear
              * all messages until a NLMSG_DONE is
@@ -9310,7 +9313,7 @@ continue_reading:
         }
 
         /* Other side wishes to see an ack for this message */
-        if (hdr->nlmsg_flags & NLM_F_ACK) {
+        if (msg.nm_nlh->nlmsg_flags & NLM_F_ACK) {
             /* FIXME: implement */
         }
 
@@ -9319,29 +9322,29 @@ continue_reading:
         {
             seq_result = WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_UNKNOWN;
 
-            if (hdr->nlmsg_type == NLMSG_DONE) {
+            if (msg.nm_nlh->nlmsg_type == NLMSG_DONE) {
                 /* messages terminates a multipart message, this is
                  * usually the end of a message and therefore we slip
                  * out of the loop by default. the user may overrule
                  * this action by skipping this packet. */
                 multipart  = FALSE;
                 seq_result = WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK;
-            } else if (hdr->nlmsg_type == NLMSG_NOOP) {
+            } else if (msg.nm_nlh->nlmsg_type == NLMSG_NOOP) {
                 /* Message to be ignored, the default action is to
                  * skip this message if no callback is specified. The
                  * user may overrule this action by returning
                  * NL_PROCEED. */
-            } else if (hdr->nlmsg_type == NLMSG_OVERRUN) {
+            } else if (msg.nm_nlh->nlmsg_type == NLMSG_OVERRUN) {
                 /* Data got lost, report back to user. The default action is to
                  * quit parsing. The user may overrule this action by returning
                  * NL_SKIP or NL_PROCEED (dangerous) */
                 err           = -NME_NL_MSG_OVERFLOW;
                 abort_parsing = TRUE;
-            } else if (hdr->nlmsg_type == NLMSG_ERROR) {
+            } else if (msg.nm_nlh->nlmsg_type == NLMSG_ERROR) {
                 /* Message carries a nlmsgerr */
-                struct nlmsgerr *e = nlmsg_data(hdr);
+                struct nlmsgerr *e = nlmsg_data(msg.nm_nlh);
 
-                if (hdr->nlmsg_len < nlmsg_size(sizeof(*e))) {
+                if (msg.nm_nlh->nlmsg_len < nlmsg_size(sizeof(*e))) {
                     /* Truncated error message, the default action
                      * is to stop parsing. The user may overrule
                      * this action by returning NL_SKIP or
@@ -9351,8 +9354,8 @@ continue_reading:
                 } else if (e->error) {
                     int errsv = nm_errno_native(e->error);
 
-                    if (NM_FLAGS_HAS(hdr->nlmsg_flags, NLM_F_ACK_TLVS)
-                        && hdr->nlmsg_len >= sizeof(*e) + e->msg.nlmsg_len) {
+                    if (NM_FLAGS_HAS(msg.nm_nlh->nlmsg_flags, NLM_F_ACK_TLVS)
+                        && msg.nm_nlh->nlmsg_len >= sizeof(*e) + e->msg.nlmsg_len) {
                         static const struct nla_policy policy[] = {
                             [NLMSGERR_ATTR_MSG]  = {.type = NLA_STRING},
                             [NLMSGERR_ATTR_OFFS] = {.type = NLA_U32},
@@ -9364,7 +9367,7 @@ continue_reading:
                                                   - NLMSG_HDRLEN);
                         if (nla_parse_arr(tb,
                                           tlvs,
-                                          hdr->nlmsg_len - sizeof(*e) - e->msg.nlmsg_len,
+                                          msg.nm_nlh->nlmsg_len - sizeof(*e) - e->msg.nlmsg_len,
                                           policy)
                             >= 0) {
                             if (tb[NLMSGERR_ATTR_MSG])
@@ -9378,14 +9381,12 @@ continue_reading:
                         nm_strerror_native(errsv),
                         errsv,
                         NM_PRINT_FMT_QUOTED(extack_msg, " \"", extack_msg, "\"", ""),
-                        nlmsg_hdr(msg)->nlmsg_seq);
+                        msg.nm_nlh->nlmsg_seq);
                     seq_result = -NM_ERRNO_NATIVE(errsv);
                 } else
                     seq_result = WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK;
             } else
                 process_valid_msg = TRUE;
-
-            seq_number = nlmsg_hdr(msg)->nlmsg_seq;
 
             /* check whether the seq number is different from before, and
              * whether the previous number (@nlh_seq_last_seen) is a pending
@@ -9401,7 +9402,7 @@ continue_reading:
                  * get along with broken kernels. NL_SKIP has no
                  * effect on this.  */
 
-                event_valid_msg(platform, msg, handle_events);
+                event_valid_msg(platform, &msg, handle_events);
 
                 seq_result = WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK;
             }

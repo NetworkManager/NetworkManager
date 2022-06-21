@@ -43,6 +43,26 @@ enum {
 
 struct nl_msg;
 
+/* This is similar to "struct nl_msg", in that it contains a
+ * netlink message including additional information like the
+ * src, creds, protocol.
+ *
+ * The difference is that "struct nl_msg" is an opaque type and
+ * contains a copy of the message (requiring two heap allocations).
+ * "struct nl_msg_lite" can be on the stack and it can directly
+ * point to the receive buffer, without need to copy the message.
+ * That can be useful, if you don't need to clone the message and
+ * just need to pass it "down the stack" for somebody to parse
+ * the message. */
+struct nl_msg_lite {
+    int                       nm_protocol;
+    const struct sockaddr_nl *nm_src;
+    const struct sockaddr_nl *nm_dst;
+    const struct ucred       *nm_creds;
+    const struct nlmsghdr    *nm_nlh;
+    size_t                    nm_size;
+};
+
 /*****************************************************************************/
 
 const char *nl_nlmsgtype2str(int type, char *buf, size_t size);
