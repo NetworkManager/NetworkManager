@@ -489,7 +489,7 @@ nlmsg_put(struct nl_msg *n, uint32_t pid, uint32_t seq, int type, int payload, i
 
 struct nl_sock;
 
-int nl_socket_new(struct nl_sock **out_sk, int protocol);
+int nl_socket_new(struct nl_sock **out_sk, int protocol, bool blocking);
 
 void nl_socket_free(struct nl_sock *sk);
 

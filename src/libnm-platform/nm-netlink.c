@@ -1051,7 +1051,7 @@ nl_socket_disable_msg_peek(struct nl_sock *sk)
 /*****************************************************************************/
 
 int
-nl_socket_new(struct nl_sock **out_sk, int protocol)
+nl_socket_new(struct nl_sock **out_sk, int protocol, bool blocking)
 {
     nm_auto_nlsock struct nl_sock *sk = NULL;
     nm_auto_close int              fd = -1;
@@ -1063,7 +1063,7 @@ nl_socket_new(struct nl_sock **out_sk, int protocol)
 
     nm_assert(out_sk && !*out_sk);
 
-    fd = socket(AF_NETLINK, SOCK_RAW | SOCK_CLOEXEC, protocol);
+    fd = socket(AF_NETLINK, SOCK_RAW | SOCK_CLOEXEC | (blocking ? 0 : SOCK_NONBLOCK), protocol);
     if (fd < 0)
         return -nm_errno_from_native(errno);
 
