@@ -79,6 +79,25 @@ enum { TCA_DEF_UNSPEC, TCA_DEF_TM, TCA_DEF_PARMS, TCA_DEF_DATA, TCA_DEF_PAD, __T
 
 /*****************************************************************************/
 
+typedef enum _nm_packed {
+    _NMP_NETLINK_FIRST  = 0,
+    NMP_NETLINK_GENERIC = 0,
+    NMP_NETLINK_ROUTE,
+    _NMP_NETLINK_NUM,
+    _NMP_NETLINK_NONE = _NMP_NETLINK_NUM,
+} NMPNetlinkProtocol;
+
+#define nmp_netlink_protocol_check(netlink_protocol)                                       \
+    ({                                                                                     \
+        const NMPNetlinkProtocol _netlink_protocol_2 = (netlink_protocol);                 \
+                                                                                           \
+        nm_assert(NM_IN_SET(_netlink_protocol_2, NMP_NETLINK_ROUTE, NMP_NETLINK_GENERIC)); \
+                                                                                           \
+        _netlink_protocol_2;                                                               \
+    })
+
+/*****************************************************************************/
+
 #ifndef IFLA_PROMISCUITY
 #define IFLA_PROMISCUITY 30
 #endif
@@ -279,6 +298,12 @@ struct _ifla_vf_vlan_info {
 
 /*****************************************************************************/
 
+typedef struct {
+    guint16 family_id;
+} GenlFamilyData;
+
+/*****************************************************************************/
+
 typedef enum {
     INFINIBAND_ACTION_CREATE_CHILD,
     INFINIBAND_ACTION_DELETE_CHILD,
@@ -312,11 +337,15 @@ typedef enum {
     REFRESH_ALL_TYPE_RTNL_QDISCS            = 7,
     REFRESH_ALL_TYPE_RTNL_TFILTERS          = 8,
 
+    REFRESH_ALL_TYPE_GENL_FAMILIES = 9,
+
     _REFRESH_ALL_TYPE_NUM,
 } RefreshAllType;
 
 typedef struct {
     NMPObjectType obj_type;
+
+    NMPNetlinkProtocol protocol;
 
     /* For NLM_F_DUMP, which address family to request.
      * Either AF_UNSPEC, AF_INET or AF_INET6. */
@@ -340,12 +369,16 @@ typedef enum _nm_packed {
         1 << F(6, REFRESH_ALL_TYPE_RTNL_ROUTING_RULES_IP6),
     DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_QDISCS   = 1 << F(7, REFRESH_ALL_TYPE_RTNL_QDISCS),
     DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_TFILTERS = 1 << F(8, REFRESH_ALL_TYPE_RTNL_TFILTERS),
+
+    DELAYED_ACTION_TYPE_REFRESH_ALL_GENL_FAMILIES = 1 << F(9, REFRESH_ALL_TYPE_GENL_FAMILIES),
 #undef F
 
-    DELAYED_ACTION_TYPE_REFRESH_LINK           = 1 << 9,
-    DELAYED_ACTION_TYPE_MASTER_CONNECTED       = 1 << 10,
-    DELAYED_ACTION_TYPE_READ_RTNL              = 1 << 11,
+    DELAYED_ACTION_TYPE_READ_RTNL              = 1 << 10,
+    DELAYED_ACTION_TYPE_READ_GENL              = 1 << 11,
     DELAYED_ACTION_TYPE_WAIT_FOR_RESPONSE_RTNL = 1 << 12,
+    DELAYED_ACTION_TYPE_WAIT_FOR_RESPONSE_GENL = 1 << 13,
+    DELAYED_ACTION_TYPE_REFRESH_LINK           = 1 << 14,
+    DELAYED_ACTION_TYPE_MASTER_CONNECTED       = 1 << 15,
 
     __DELAYED_ACTION_TYPE_MAX,
 
@@ -361,6 +394,8 @@ typedef enum _nm_packed {
                                            | DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_ROUTING_RULES_ALL
                                            | DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_QDISCS
                                            | DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_TFILTERS,
+
+    DELAYED_ACTION_TYPE_REFRESH_GENL_ALL = DELAYED_ACTION_TYPE_REFRESH_ALL_GENL_FAMILIES,
 
     DELAYED_ACTION_TYPE_MAX = __DELAYED_ACTION_TYPE_MAX - 1,
 } DelayedActionType;
@@ -420,17 +455,34 @@ typedef struct {
 /*****************************************************************************/
 
 typedef struct {
-    struct nl_sock *sk_genl_sync;
-
-    struct nl_sock *sk_rtnl;
-
-    GSource *event_source_rtnl;
-
     guint32 nlh_seq_next;
+    guint32 nlh_seq_last_seen;
 #if NM_MORE_LOGGING
     guint32 nlh_seq_last_handled;
 #endif
-    guint32 nlh_seq_last_seen;
+} NetlinkProtocolPrivData;
+
+typedef struct {
+    struct nl_sock *sk_genl_sync;
+
+    union {
+        struct {
+            struct nl_sock *sk_genl;
+            struct nl_sock *sk_rtnl;
+        };
+        struct nl_sock *sk_x[_NMP_NETLINK_NUM];
+    };
+
+    GSource *event_source_genl;
+    GSource *event_source_rtnl;
+
+    union {
+        struct {
+            NetlinkProtocolPrivData proto_data_genl;
+            NetlinkProtocolPrivData proto_data_rtnl;
+        };
+        NetlinkProtocolPrivData proto_data_x[_NMP_NETLINK_NUM];
+    };
 
     guint32 pruning[_REFRESH_ALL_TYPE_NUM];
 
@@ -451,7 +503,13 @@ typedef struct {
 
         GPtrArray *list_master_connected;
         GPtrArray *list_refresh_link;
-        GArray    *list_wait_for_response_rtnl;
+        union {
+            struct {
+                GArray *list_wait_for_response_genl;
+                GArray *list_wait_for_response_rtnl;
+            };
+            GArray *list_wait_for_response_x[_NMP_NETLINK_NUM];
+        };
 
         int is_handling;
     } delayed_action;
@@ -466,6 +524,8 @@ typedef struct {
         unsigned char *buf;
         gsize          len;
     } netlink_recv_buf;
+
+    GenlFamilyData genl_family_data[_NMP_GENL_FAMILY_TYPE_NUM];
 
 } NMLinuxPlatformPrivate;
 
@@ -567,7 +627,7 @@ NM_LINUX_PLATFORM_FROM_PRIVATE(NMLinuxPlatformPrivate *priv)
 
 static void
 delayed_action_schedule(NMPlatform *platform, DelayedActionType action_type, gpointer user_data);
-static gboolean delayed_action_handle_all(NMPlatform *platform, gboolean read_netlink);
+static gboolean delayed_action_handle_all(NMPlatform *platform);
 static void do_request_link_no_delayed_actions(NMPlatform *platform, int ifindex, const char *name);
 static void do_request_all_no_delayed_actions(NMPlatform *platform, DelayedActionType action_type);
 static void cache_on_change(NMPlatform      *platform,
@@ -575,7 +635,36 @@ static void cache_on_change(NMPlatform      *platform,
                             const NMPObject *obj_old,
                             const NMPObject *obj_new);
 static void cache_prune_all(NMPlatform *platform);
-static gboolean event_handler_read_netlink(NMPlatform *platform, gboolean wait_for_acks);
+static gboolean event_handler_read_netlink(NMPlatform        *platform,
+                                           NMPNetlinkProtocol netlink_protocol,
+                                           gboolean           wait_for_acks);
+
+/*****************************************************************************/
+
+static const struct {
+    gint8             netlink_protocol;
+    DelayedActionType delayed_action_type_read;
+    DelayedActionType delayed_action_type_wait_for_response;
+    const char        name[5];
+} _nmp_netlink_protocol_infos[_NMP_NETLINK_NUM] = {
+    [NMP_NETLINK_ROUTE] =
+        {
+            .netlink_protocol                      = NETLINK_ROUTE,
+            .name                                  = "rtnl",
+            .delayed_action_type_read              = DELAYED_ACTION_TYPE_READ_RTNL,
+            .delayed_action_type_wait_for_response = DELAYED_ACTION_TYPE_WAIT_FOR_RESPONSE_RTNL,
+        },
+    [NMP_NETLINK_GENERIC] =
+        {
+            .netlink_protocol                      = NETLINK_GENERIC,
+            .name                                  = "genl",
+            .delayed_action_type_read              = DELAYED_ACTION_TYPE_READ_GENL,
+            .delayed_action_type_wait_for_response = DELAYED_ACTION_TYPE_WAIT_FOR_RESPONSE_GENL,
+        },
+};
+
+#define nmp_netlink_protocol_info(netlink_protocol) \
+    (&_nmp_netlink_protocol_infos[nmp_netlink_protocol_check((netlink_protocol))])
 
 /*****************************************************************************/
 
@@ -5793,7 +5882,10 @@ sysctl_get(NMPlatform *platform, const char *pathid, int dirfd, const char *path
 static void
 process_events(NMPlatform *platform)
 {
-    delayed_action_handle_all(platform, TRUE);
+    delayed_action_schedule(platform,
+                            DELAYED_ACTION_TYPE_READ_RTNL | DELAYED_ACTION_TYPE_READ_GENL,
+                            NULL);
+    delayed_action_handle_all(platform);
 }
 
 /*****************************************************************************/
@@ -5801,27 +5893,34 @@ process_events(NMPlatform *platform)
 static const RefreshAllInfo *
 refresh_all_type_get_info(RefreshAllType refresh_all_type)
 {
-    static const RefreshAllInfo infos[] = {
-#define R(_refresh_all_type, _obj_type, _addr_family) \
-    [_refresh_all_type] = {                           \
-        .obj_type             = _obj_type,            \
-        .addr_family_for_dump = _addr_family,         \
+#define R(_protocol, _refresh_all_type, _obj_type, _addr_family) \
+    [_refresh_all_type] = {                                      \
+        .protocol             = _protocol,                       \
+        .obj_type             = _obj_type,                       \
+        .addr_family_for_dump = _addr_family,                    \
     }
-        R(REFRESH_ALL_TYPE_RTNL_LINKS, NMP_OBJECT_TYPE_LINK, AF_UNSPEC),
-        R(REFRESH_ALL_TYPE_RTNL_IP4_ADDRESSES, NMP_OBJECT_TYPE_IP4_ADDRESS, AF_UNSPEC),
-        R(REFRESH_ALL_TYPE_RTNL_IP6_ADDRESSES, NMP_OBJECT_TYPE_IP6_ADDRESS, AF_UNSPEC),
-        R(REFRESH_ALL_TYPE_RTNL_IP4_ROUTES, NMP_OBJECT_TYPE_IP4_ROUTE, AF_UNSPEC),
-        R(REFRESH_ALL_TYPE_RTNL_IP6_ROUTES, NMP_OBJECT_TYPE_IP6_ROUTE, AF_UNSPEC),
-        R(REFRESH_ALL_TYPE_RTNL_ROUTING_RULES_IP4, NMP_OBJECT_TYPE_ROUTING_RULE, AF_INET),
-        R(REFRESH_ALL_TYPE_RTNL_ROUTING_RULES_IP6, NMP_OBJECT_TYPE_ROUTING_RULE, AF_INET6),
-        R(REFRESH_ALL_TYPE_RTNL_QDISCS, NMP_OBJECT_TYPE_QDISC, AF_UNSPEC),
-        R(REFRESH_ALL_TYPE_RTNL_TFILTERS, NMP_OBJECT_TYPE_TFILTER, AF_UNSPEC),
-#undef R
+#define R_ROUTE(...)   R(NMP_NETLINK_ROUTE, __VA_ARGS__)
+#define R_GENERIC(...) R(NMP_NETLINK_GENERIC, __VA_ARGS__)
+    static const RefreshAllInfo infos[] = {
+        R_ROUTE(REFRESH_ALL_TYPE_RTNL_LINKS, NMP_OBJECT_TYPE_LINK, AF_UNSPEC),
+        R_ROUTE(REFRESH_ALL_TYPE_RTNL_IP4_ADDRESSES, NMP_OBJECT_TYPE_IP4_ADDRESS, AF_UNSPEC),
+        R_ROUTE(REFRESH_ALL_TYPE_RTNL_IP6_ADDRESSES, NMP_OBJECT_TYPE_IP6_ADDRESS, AF_UNSPEC),
+        R_ROUTE(REFRESH_ALL_TYPE_RTNL_IP4_ROUTES, NMP_OBJECT_TYPE_IP4_ROUTE, AF_UNSPEC),
+        R_ROUTE(REFRESH_ALL_TYPE_RTNL_IP6_ROUTES, NMP_OBJECT_TYPE_IP6_ROUTE, AF_UNSPEC),
+        R_ROUTE(REFRESH_ALL_TYPE_RTNL_ROUTING_RULES_IP4, NMP_OBJECT_TYPE_ROUTING_RULE, AF_INET),
+        R_ROUTE(REFRESH_ALL_TYPE_RTNL_ROUTING_RULES_IP6, NMP_OBJECT_TYPE_ROUTING_RULE, AF_INET6),
+        R_ROUTE(REFRESH_ALL_TYPE_RTNL_QDISCS, NMP_OBJECT_TYPE_QDISC, AF_UNSPEC),
+        R_ROUTE(REFRESH_ALL_TYPE_RTNL_TFILTERS, NMP_OBJECT_TYPE_TFILTER, AF_UNSPEC),
+        R_GENERIC(REFRESH_ALL_TYPE_GENL_FAMILIES, NMP_OBJECT_TYPE_UNKNOWN, AF_UNSPEC),
     };
+#undef R_GENERIC
+#undef R_ROUTE
+#undef R
 
     nm_assert(_NM_INT_NOT_NEGATIVE(refresh_all_type));
     nm_assert(refresh_all_type < G_N_ELEMENTS(infos));
-    nm_assert(nmp_class_from_type(infos[refresh_all_type].obj_type));
+    nm_assert(refresh_all_type == REFRESH_ALL_TYPE_GENL_FAMILIES
+              || nmp_class_from_type(infos[refresh_all_type].obj_type));
 
     return &infos[refresh_all_type];
 }
@@ -5847,6 +5946,8 @@ static NM_UTILS_LOOKUP_DEFINE(
     NM_UTILS_LOOKUP_ITEM(DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_QDISCS, REFRESH_ALL_TYPE_RTNL_QDISCS),
     NM_UTILS_LOOKUP_ITEM(DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_TFILTERS,
                          REFRESH_ALL_TYPE_RTNL_TFILTERS),
+    NM_UTILS_LOOKUP_ITEM(DELAYED_ACTION_TYPE_REFRESH_ALL_GENL_FAMILIES,
+                         REFRESH_ALL_TYPE_GENL_FAMILIES),
     NM_UTILS_LOOKUP_ITEM_IGNORE_OTHER(), );
 
 static DelayedActionType
@@ -5947,14 +6048,24 @@ static NM_UTILS_LOOKUP_STR_DEFINE(
                              "refresh-all-rtnl-qdiscs"),
     NM_UTILS_LOOKUP_STR_ITEM(DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_TFILTERS,
                              "refresh-all-rtnl-tfilters"),
+    NM_UTILS_LOOKUP_STR_ITEM(DELAYED_ACTION_TYPE_REFRESH_ALL_GENL_FAMILIES,
+                             "refresh-all-genl-families"),
     NM_UTILS_LOOKUP_STR_ITEM(DELAYED_ACTION_TYPE_REFRESH_LINK, "refresh-link"),
     NM_UTILS_LOOKUP_STR_ITEM(DELAYED_ACTION_TYPE_MASTER_CONNECTED, "master-connected"),
     NM_UTILS_LOOKUP_STR_ITEM(DELAYED_ACTION_TYPE_READ_RTNL, "read-rtnl"),
+    NM_UTILS_LOOKUP_STR_ITEM(DELAYED_ACTION_TYPE_READ_GENL, "read-genl"),
     NM_UTILS_LOOKUP_STR_ITEM(DELAYED_ACTION_TYPE_WAIT_FOR_RESPONSE_RTNL, "wait-for-response-rtnl"),
+    NM_UTILS_LOOKUP_STR_ITEM(DELAYED_ACTION_TYPE_WAIT_FOR_RESPONSE_GENL, "wait-for-response-genl"),
     NM_UTILS_LOOKUP_ITEM_IGNORE(DELAYED_ACTION_TYPE_NONE),
     NM_UTILS_LOOKUP_ITEM_IGNORE(DELAYED_ACTION_TYPE_REFRESH_RTNL_ALL),
     NM_UTILS_LOOKUP_ITEM_IGNORE(DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_ROUTING_RULES_ALL),
     NM_UTILS_LOOKUP_ITEM_IGNORE(__DELAYED_ACTION_TYPE_MAX), );
+
+#define delayed_action_get_list_wait_for_resonse(priv, netlink_protocol, idx)                   \
+    (&g_array_index((priv)->delayed_action.list_wait_for_response_x[nmp_netlink_protocol_check( \
+                        (netlink_protocol))],                                                   \
+                    DelayedActionWaitForNlResponseData,                                         \
+                    (idx)))
 
 static const char *
 delayed_action_to_string_full(DelayedActionType action_type,
@@ -5966,6 +6077,7 @@ delayed_action_to_string_full(DelayedActionType action_type,
     const DelayedActionWaitForNlResponseData *data;
 
     nm_strbuf_append_str(&buf, &buf_size, delayed_action_to_string(action_type));
+
     switch (action_type) {
     case DELAYED_ACTION_TYPE_MASTER_CONNECTED:
         nm_strbuf_append(&buf, &buf_size, " (master-ifindex %d)", GPOINTER_TO_INT(user_data));
@@ -5974,6 +6086,7 @@ delayed_action_to_string_full(DelayedActionType action_type,
         nm_strbuf_append(&buf, &buf_size, " (ifindex %d)", GPOINTER_TO_INT(user_data));
         break;
     case DELAYED_ACTION_TYPE_WAIT_FOR_RESPONSE_RTNL:
+    case DELAYED_ACTION_TYPE_WAIT_FOR_RESPONSE_GENL:
         data = user_data;
 
         if (data) {
@@ -6035,25 +6148,26 @@ delayed_action_refresh_all_in_progress(NMPlatform *platform, DelayedActionType a
 }
 
 static void
-delayed_action_wait_for_nl_response_complete(NMPlatform             *platform,
-                                             guint                   idx,
-                                             WaitForNlResponseResult seq_result)
+delayed_action_wait_for_response_complete(NMPlatform             *platform,
+                                          NMPNetlinkProtocol      netlink_protocol,
+                                          guint                   idx,
+                                          WaitForNlResponseResult seq_result)
 {
     NMLinuxPlatformPrivate             *priv = NM_LINUX_PLATFORM_GET_PRIVATE(platform);
     DelayedActionWaitForNlResponseData *data;
+    const DelayedActionType             ACTION_TYPE =
+        nmp_netlink_protocol_info(netlink_protocol)->delayed_action_type_wait_for_response;
 
-    nm_assert(NM_FLAGS_HAS(priv->delayed_action.flags, DELAYED_ACTION_TYPE_WAIT_FOR_RESPONSE_RTNL));
-    nm_assert(idx < priv->delayed_action.list_wait_for_response_rtnl->len);
+    nm_assert(NM_FLAGS_ANY(priv->delayed_action.flags, ACTION_TYPE));
+    nm_assert(idx < priv->delayed_action.list_wait_for_response_x[netlink_protocol]->len);
     nm_assert(seq_result);
 
-    data = &g_array_index(priv->delayed_action.list_wait_for_response_rtnl,
-                          DelayedActionWaitForNlResponseData,
-                          idx);
+    data = delayed_action_get_list_wait_for_resonse(priv, netlink_protocol, idx);
 
-    _LOGt_delayed_action(DELAYED_ACTION_TYPE_WAIT_FOR_RESPONSE_RTNL, data, "complete");
+    _LOGt_delayed_action(ACTION_TYPE, data, "complete");
 
-    if (priv->delayed_action.list_wait_for_response_rtnl->len <= 1)
-        priv->delayed_action.flags &= ~DELAYED_ACTION_TYPE_WAIT_FOR_RESPONSE_RTNL;
+    if (priv->delayed_action.list_wait_for_response_x[netlink_protocol]->len <= 1)
+        priv->delayed_action.flags &= ~ACTION_TYPE;
     if (data->out_seq_result)
         *data->out_seq_result = seq_result;
     switch (data->response_type) {
@@ -6074,15 +6188,16 @@ delayed_action_wait_for_nl_response_complete(NMPlatform             *platform,
         break;
     }
 
-    g_array_remove_index_fast(priv->delayed_action.list_wait_for_response_rtnl, idx);
+    g_array_remove_index_fast(priv->delayed_action.list_wait_for_response_x[netlink_protocol], idx);
 }
 
 static void
-delayed_action_wait_for_nl_response_complete_check(NMPlatform             *platform,
-                                                   WaitForNlResponseResult force_result,
-                                                   guint32                *out_next_seq_number,
-                                                   gint64                 *out_next_timeout_abs_ns,
-                                                   gint64                 *p_now_nsec)
+delayed_action_wait_for_response_complete_check(NMPlatform             *platform,
+                                                NMPNetlinkProtocol      netlink_protocol,
+                                                WaitForNlResponseResult force_result,
+                                                guint32                *out_next_seq_number,
+                                                gint64                 *out_next_timeout_abs_ns,
+                                                gint64                 *p_now_nsec)
 {
     NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE(platform);
     guint                   i;
@@ -6090,24 +6205,25 @@ delayed_action_wait_for_nl_response_complete_check(NMPlatform             *platf
     gint64                  next_timeout_abs_ns = 0;
     gint64                  now_nsec            = 0;
 
-    for (i = 0; i < priv->delayed_action.list_wait_for_response_rtnl->len;) {
+    for (i = 0; i < priv->delayed_action.list_wait_for_response_x[netlink_protocol]->len;) {
         const DelayedActionWaitForNlResponseData *data =
-            &g_array_index(priv->delayed_action.list_wait_for_response_rtnl,
-                           DelayedActionWaitForNlResponseData,
-                           i);
+            delayed_action_get_list_wait_for_resonse(priv, netlink_protocol, i);
 
         if (data->seq_result)
-            delayed_action_wait_for_nl_response_complete(platform, i, data->seq_result);
+            delayed_action_wait_for_response_complete(platform,
+                                                      netlink_protocol,
+                                                      i,
+                                                      data->seq_result);
         else if (p_now_nsec
                  && ((now_nsec ?: (now_nsec = nm_utils_get_monotonic_timestamp_nsec()))
                      >= data->timeout_abs_nsec)) {
             /* the caller can optionally check for timeout by providing a p_now_nsec argument. */
-            delayed_action_wait_for_nl_response_complete(
-                platform,
-                i,
-                WAIT_FOR_NL_RESPONSE_RESULT_FAILED_TIMEOUT);
+            delayed_action_wait_for_response_complete(platform,
+                                                      netlink_protocol,
+                                                      i,
+                                                      WAIT_FOR_NL_RESPONSE_RESULT_FAILED_TIMEOUT);
         } else if (force_result != WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN)
-            delayed_action_wait_for_nl_response_complete(platform, i, force_result);
+            delayed_action_wait_for_response_complete(platform, netlink_protocol, i, force_result);
         else {
             if (next_seq_number == 0 || next_timeout_abs_ns > data->timeout_abs_nsec) {
                 next_seq_number     = data->seq_number;
@@ -6118,9 +6234,10 @@ delayed_action_wait_for_nl_response_complete_check(NMPlatform             *platf
     }
 
     if (force_result != WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN) {
-        nm_assert(
-            !NM_FLAGS_HAS(priv->delayed_action.flags, DELAYED_ACTION_TYPE_WAIT_FOR_RESPONSE_RTNL));
-        nm_assert(priv->delayed_action.list_wait_for_response_rtnl->len == 0);
+        nm_assert(!NM_FLAGS_ANY(
+            priv->delayed_action.flags,
+            nmp_netlink_protocol_info(netlink_protocol)->delayed_action_type_wait_for_response));
+        nm_assert(priv->delayed_action.list_wait_for_response_x[netlink_protocol]->len == 0);
     }
 
     NM_SET_OUT(out_next_seq_number, next_seq_number);
@@ -6130,9 +6247,15 @@ delayed_action_wait_for_nl_response_complete_check(NMPlatform             *platf
 
 static void
 delayed_action_wait_for_nl_response_complete_all(NMPlatform             *platform,
+                                                 NMPNetlinkProtocol      netlink_protocol,
                                                  WaitForNlResponseResult fallback_result)
 {
-    delayed_action_wait_for_nl_response_complete_check(platform, fallback_result, NULL, NULL, NULL);
+    delayed_action_wait_for_response_complete_check(platform,
+                                                    nmp_netlink_protocol_check(netlink_protocol),
+                                                    fallback_result,
+                                                    NULL,
+                                                    NULL,
+                                                    NULL);
 }
 
 /*****************************************************************************/
@@ -6167,15 +6290,15 @@ delayed_action_handle_REFRESH_ALL(NMPlatform *platform, DelayedActionType flags)
 }
 
 static void
-delayed_action_handle_READ_NETLINK(NMPlatform *platform)
+delayed_action_handle_READ_NETLINK(NMPlatform *platform, NMPNetlinkProtocol netlink_protocol)
 {
-    event_handler_read_netlink(platform, FALSE);
+    event_handler_read_netlink(platform, netlink_protocol, FALSE);
 }
 
 static void
-delayed_action_handle_WAIT_FOR_NL_RESPONSE(NMPlatform *platform)
+delayed_action_handle_WAIT_FOR_RESPONSE(NMPlatform *platform, NMPNetlinkProtocol netlink_protocol)
 {
-    event_handler_read_netlink(platform, TRUE);
+    event_handler_read_netlink(platform, netlink_protocol, TRUE);
 }
 
 static gboolean
@@ -6183,6 +6306,8 @@ delayed_action_handle_one(NMPlatform *platform)
 {
     NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE(platform);
     gpointer                user_data;
+    NMPNetlinkProtocol      netlink_protocol;
+    DelayedActionType       iflags;
 
     if (priv->delayed_action.flags == DELAYED_ACTION_TYPE_NONE)
         return FALSE;
@@ -6209,28 +6334,46 @@ delayed_action_handle_one(NMPlatform *platform)
     }
     nm_assert(priv->delayed_action.list_master_connected->len == 0);
 
-    /* Next we prefer read-netlink, because the buffer size is limited and we want to process events
+    /* Next we prefer read-genl/read-rtnl, because the buffer size is limited and we want to process events
      * from netlink early. */
-    if (NM_FLAGS_HAS(priv->delayed_action.flags, DELAYED_ACTION_TYPE_READ_RTNL)) {
-        _LOGt_delayed_action(DELAYED_ACTION_TYPE_READ_RTNL, NULL, "handle");
-        priv->delayed_action.flags &= ~DELAYED_ACTION_TYPE_READ_RTNL;
-        delayed_action_handle_READ_NETLINK(platform);
+    for (netlink_protocol = _NMP_NETLINK_FIRST; netlink_protocol < _NMP_NETLINK_NUM;
+         netlink_protocol++) {
+        const DelayedActionType ACTION_TYPE =
+            nmp_netlink_protocol_info(netlink_protocol)->delayed_action_type_read;
+
+        if (NM_FLAGS_ANY(priv->delayed_action.flags, ACTION_TYPE)) {
+            _LOGt_delayed_action(ACTION_TYPE, NULL, "handle");
+            priv->delayed_action.flags &= ~ACTION_TYPE;
+            delayed_action_handle_READ_NETLINK(platform, netlink_protocol);
+            return TRUE;
+        }
+    }
+
+    if (NM_FLAGS_ANY(priv->delayed_action.flags, DELAYED_ACTION_TYPE_REFRESH_GENL_ALL)) {
+        const DelayedActionType FLAGS =
+            priv->delayed_action.flags & DELAYED_ACTION_TYPE_REFRESH_GENL_ALL;
+
+        if (_LOGt_ENABLED()) {
+            FOR_EACH_DELAYED_ACTION (iflags, FLAGS)
+                _LOGt_delayed_action(iflags, NULL, "handle");
+        }
+
+        priv->delayed_action.flags &= ~FLAGS;
+        delayed_action_handle_REFRESH_ALL(platform, FLAGS);
         return TRUE;
     }
 
     if (NM_FLAGS_ANY(priv->delayed_action.flags, DELAYED_ACTION_TYPE_REFRESH_RTNL_ALL)) {
-        DelayedActionType flags, iflags;
-
-        flags = priv->delayed_action.flags & DELAYED_ACTION_TYPE_REFRESH_RTNL_ALL;
-
-        priv->delayed_action.flags &= ~DELAYED_ACTION_TYPE_REFRESH_RTNL_ALL;
+        const DelayedActionType FLAGS =
+            (priv->delayed_action.flags & DELAYED_ACTION_TYPE_REFRESH_RTNL_ALL);
 
         if (_LOGt_ENABLED()) {
-            FOR_EACH_DELAYED_ACTION (iflags, flags)
+            FOR_EACH_DELAYED_ACTION (iflags, FLAGS)
                 _LOGt_delayed_action(iflags, NULL, "handle");
         }
 
-        delayed_action_handle_REFRESH_ALL(platform, flags);
+        priv->delayed_action.flags &= ~FLAGS;
+        delayed_action_handle_REFRESH_ALL(platform, FLAGS);
         return TRUE;
     }
 
@@ -6254,18 +6397,24 @@ delayed_action_handle_one(NMPlatform *platform)
         return TRUE;
     }
 
-    if (NM_FLAGS_HAS(priv->delayed_action.flags, DELAYED_ACTION_TYPE_WAIT_FOR_RESPONSE_RTNL)) {
-        nm_assert(priv->delayed_action.list_wait_for_response_rtnl->len > 0);
-        _LOGt_delayed_action(DELAYED_ACTION_TYPE_WAIT_FOR_RESPONSE_RTNL, NULL, "handle");
-        delayed_action_handle_WAIT_FOR_NL_RESPONSE(platform);
-        return TRUE;
+    for (netlink_protocol = _NMP_NETLINK_FIRST; netlink_protocol < _NMP_NETLINK_NUM;
+         netlink_protocol++) {
+        const DelayedActionType ACTION_TYPE =
+            nmp_netlink_protocol_info(netlink_protocol)->delayed_action_type_wait_for_response;
+
+        if (NM_FLAGS_ANY(priv->delayed_action.flags, ACTION_TYPE)) {
+            nm_assert(priv->delayed_action.list_wait_for_response_x[netlink_protocol]->len > 0);
+            _LOGt_delayed_action(ACTION_TYPE, NULL, "handle");
+            delayed_action_handle_WAIT_FOR_RESPONSE(platform, netlink_protocol);
+            return TRUE;
+        }
     }
 
     return FALSE;
 }
 
 static gboolean
-delayed_action_handle_all(NMPlatform *platform, gboolean read_netlink)
+delayed_action_handle_all(NMPlatform *platform)
 {
     NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE(platform);
     gboolean                any  = FALSE;
@@ -6273,8 +6422,6 @@ delayed_action_handle_all(NMPlatform *platform, gboolean read_netlink)
     g_return_val_if_fail(priv->delayed_action.is_handling == 0, FALSE);
 
     priv->delayed_action.is_handling++;
-    if (read_netlink)
-        delayed_action_schedule(platform, DELAYED_ACTION_TYPE_READ_RTNL, NULL);
     while (delayed_action_handle_one(platform))
         any = TRUE;
     priv->delayed_action.is_handling--;
@@ -6312,11 +6459,18 @@ delayed_action_schedule(NMPlatform *platform, DelayedActionType action_type, gpo
     case DELAYED_ACTION_TYPE_WAIT_FOR_RESPONSE_RTNL:
         g_array_append_vals(priv->delayed_action.list_wait_for_response_rtnl, user_data, 1);
         break;
+    case DELAYED_ACTION_TYPE_WAIT_FOR_RESPONSE_GENL:
+        g_array_append_vals(priv->delayed_action.list_wait_for_response_genl, user_data, 1);
+        break;
     default:
+        /* For other action types, we support setting multiple flags at once. They
+         * also don't have any user-data. */
         nm_assert(!user_data);
-        nm_assert(!NM_FLAGS_HAS(action_type, DELAYED_ACTION_TYPE_REFRESH_LINK));
-        nm_assert(!NM_FLAGS_HAS(action_type, DELAYED_ACTION_TYPE_MASTER_CONNECTED));
-        nm_assert(!NM_FLAGS_HAS(action_type, DELAYED_ACTION_TYPE_WAIT_FOR_RESPONSE_RTNL));
+        nm_assert(!NM_FLAGS_ANY(action_type,
+                                DELAYED_ACTION_TYPE_REFRESH_LINK
+                                    | DELAYED_ACTION_TYPE_MASTER_CONNECTED
+                                    | DELAYED_ACTION_TYPE_WAIT_FOR_RESPONSE_RTNL
+                                    | DELAYED_ACTION_TYPE_WAIT_FOR_RESPONSE_GENL));
         break;
     }
 
@@ -6329,31 +6483,37 @@ delayed_action_schedule(NMPlatform *platform, DelayedActionType action_type, gpo
 }
 
 static void
-delayed_action_schedule_refresh_all(NMPlatform *platform)
+delayed_action_schedule_refresh_all(NMPlatform *platform, NMPNetlinkProtocol netlink_protocol)
 {
     DelayedActionType action_type;
 
-    action_type = DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_LINKS
-                  | DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_IP4_ADDRESSES
-                  | DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_IP6_ADDRESSES
-                  | DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_IP4_ROUTES
-                  | DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_IP6_ROUTES
-                  | DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_ROUTING_RULES_ALL;
-    if (nm_platform_get_cache_tc(platform)) {
-        action_type |= (DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_QDISCS
-                        | DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_TFILTERS);
+    if (netlink_protocol == NMP_NETLINK_ROUTE) {
+        action_type = DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_LINKS
+                      | DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_IP4_ADDRESSES
+                      | DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_IP6_ADDRESSES
+                      | DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_IP4_ROUTES
+                      | DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_IP6_ROUTES
+                      | DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_ROUTING_RULES_ALL;
+        if (nm_platform_get_cache_tc(platform)) {
+            action_type |= (DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_QDISCS
+                            | DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_TFILTERS);
+        }
+    } else {
+        nm_assert(netlink_protocol == NMP_NETLINK_GENERIC);
+        action_type = DELAYED_ACTION_TYPE_REFRESH_ALL_GENL_FAMILIES;
     }
 
     delayed_action_schedule(platform, action_type, NULL);
 }
 
 static void
-delayed_action_schedule_WAIT_FOR_NL_RESPONSE(NMPlatform                        *platform,
-                                             guint32                            seq_number,
-                                             WaitForNlResponseResult           *out_seq_result,
-                                             char                             **out_errmsg,
-                                             DelayedActionWaitForNlResponseType response_type,
-                                             gpointer                           response_out_data)
+delayed_action_schedule_WAIT_FOR_RESPONSE(NMPlatform                        *platform,
+                                          NMPNetlinkProtocol                 netlink_protocol,
+                                          guint32                            seq_number,
+                                          WaitForNlResponseResult           *out_seq_result,
+                                          char                             **out_errmsg,
+                                          DelayedActionWaitForNlResponseType response_type,
+                                          gpointer                           response_out_data)
 {
     DelayedActionWaitForNlResponseData data = {
         .seq_number = seq_number,
@@ -6365,7 +6525,10 @@ delayed_action_schedule_WAIT_FOR_NL_RESPONSE(NMPlatform                        *
         .response.out_data = response_out_data,
     };
 
-    delayed_action_schedule(platform, DELAYED_ACTION_TYPE_WAIT_FOR_RESPONSE_RTNL, &data);
+    delayed_action_schedule(
+        platform,
+        nmp_netlink_protocol_info(netlink_protocol)->delayed_action_type_wait_for_response,
+        &data);
 }
 
 /*****************************************************************************/
@@ -6417,6 +6580,9 @@ cache_prune_all(NMPlatform *platform)
 
         if (priv->pruning[refresh_all_type] == 0)
             continue;
+
+        nm_assert(refresh_all_type != REFRESH_ALL_TYPE_GENL_FAMILIES);
+
         priv->pruning[refresh_all_type] -= 1;
         if (priv->pruning[refresh_all_type] > 0)
             continue;
@@ -6681,12 +6847,14 @@ cache_on_change(NMPlatform      *platform,
 /*****************************************************************************/
 
 static guint32
-_nlh_seq_next_get(NMLinuxPlatformPrivate *priv)
+_nlh_seq_next_get(NMLinuxPlatformPrivate *priv, NMPNetlinkProtocol netlink_protocol)
 {
+    guint32 *p = &priv->proto_data_x[netlink_protocol].nlh_seq_next;
+
     /* generate a new sequence number, but never return zero.
      * Wrapping numbers are not a problem, because we don't rely
      * on strictly increasing sequence numbers. */
-    return (++priv->nlh_seq_next) ?: (++priv->nlh_seq_next);
+    return (++(*p)) ?: (++(*p));
 }
 
 /**
@@ -6713,7 +6881,7 @@ _nl_send_nlmsghdr(NMPlatform                        *platform,
 
     nm_assert(nlhdr);
 
-    seq              = _nlh_seq_next_get(priv);
+    seq              = _nlh_seq_next_get(priv, NMP_NETLINK_ROUTE);
     nlhdr->nlmsg_seq = seq;
 
     {
@@ -6747,32 +6915,24 @@ again:
         }
     }
 
-    delayed_action_schedule_WAIT_FOR_NL_RESPONSE(platform,
-                                                 seq,
-                                                 out_seq_result,
-                                                 out_errmsg,
-                                                 response_type,
-                                                 response_out_data);
+    delayed_action_schedule_WAIT_FOR_RESPONSE(platform,
+                                              NMP_NETLINK_ROUTE,
+                                              seq,
+                                              out_seq_result,
+                                              out_errmsg,
+                                              response_type,
+                                              response_out_data);
     return 0;
 }
 
-/**
- * _nl_send_nlmsg:
- * @platform:
- * @nlmsg:
- * @out_seq_result:
- * @response_type:
- * @response_out_data:
- *
- * Returns: 0 on success, or a negative libnl3 error code (beware, it's not an errno).
- */
 static int
-_nl_send_nlmsg(NMPlatform                        *platform,
-               struct nl_msg                     *nlmsg,
-               WaitForNlResponseResult           *out_seq_result,
-               char                             **out_errmsg,
-               DelayedActionWaitForNlResponseType response_type,
-               gpointer                           response_out_data)
+_netlink_send_nlmsg(NMPlatform                        *platform,
+                    NMPNetlinkProtocol                 netlink_protocol,
+                    struct nl_msg                     *nlmsg,
+                    WaitForNlResponseResult           *out_seq_result,
+                    char                             **out_errmsg,
+                    DelayedActionWaitForNlResponseType response_type,
+                    gpointer                           response_out_data)
 {
     NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE(platform);
     struct nlmsghdr        *nlhdr;
@@ -6780,22 +6940,38 @@ _nl_send_nlmsg(NMPlatform                        *platform,
     int                     nle;
 
     nlhdr            = nlmsg_hdr(nlmsg);
-    seq              = _nlh_seq_next_get(priv);
+    seq              = _nlh_seq_next_get(priv, netlink_protocol);
     nlhdr->nlmsg_seq = seq;
 
-    nle = nl_send_auto(priv->sk_rtnl, nlmsg);
+    nle = nl_send_auto(priv->sk_x[netlink_protocol], nlmsg);
     if (nle < 0) {
         _LOGD("netlink: nl-send-nlmsg: failed sending message: %s (%d)", nm_strerror(nle), nle);
         return nle;
     }
 
-    delayed_action_schedule_WAIT_FOR_NL_RESPONSE(platform,
-                                                 seq,
-                                                 out_seq_result,
-                                                 out_errmsg,
-                                                 response_type,
-                                                 response_out_data);
+    delayed_action_schedule_WAIT_FOR_RESPONSE(platform,
+                                              netlink_protocol,
+                                              seq,
+                                              out_seq_result,
+                                              out_errmsg,
+                                              response_type,
+                                              response_out_data);
     return 0;
+}
+
+static int
+_netlink_send_nlmsg_rtnl(NMPlatform              *platform,
+                         struct nl_msg           *nlmsg,
+                         WaitForNlResponseResult *out_seq_result,
+                         char                   **out_errmsg)
+{
+    return _netlink_send_nlmsg(platform,
+                               NMP_NETLINK_ROUTE,
+                               nlmsg,
+                               out_seq_result,
+                               out_errmsg,
+                               DELAYED_ACTION_RESPONSE_TYPE_VOID,
+                               NULL);
 }
 
 static void
@@ -6822,11 +6998,11 @@ do_request_link_no_delayed_actions(NMPlatform *platform, int ifindex, const char
         }
     }
 
-    event_handler_read_netlink(platform, FALSE);
+    event_handler_read_netlink(platform, NMP_NETLINK_ROUTE, FALSE);
 
     nlmsg = _nl_msg_new_link(RTM_GETLINK, 0, ifindex, name);
     if (nlmsg) {
-        nle = _nl_send_nlmsg(platform, nlmsg, NULL, NULL, DELAYED_ACTION_RESPONSE_TYPE_VOID, NULL);
+        nle = _netlink_send_nlmsg_rtnl(platform, nlmsg, NULL, NULL);
         if (nle < 0) {
             _LOGE("do-request-link: %d %s: failed sending netlink request \"%s\" (%d)",
                   ifindex,
@@ -6842,11 +7018,11 @@ static void
 do_request_link(NMPlatform *platform, int ifindex, const char *name)
 {
     do_request_link_no_delayed_actions(platform, ifindex, name);
-    delayed_action_handle_all(platform, FALSE);
+    delayed_action_handle_all(platform);
 }
 
 static struct nl_msg *
-_nl_msg_new_dump(NMPObjectType obj_type, int preferred_addr_family)
+_nl_msg_new_dump_rtnl(NMPObjectType obj_type, int preferred_addr_family)
 {
     nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
     const NMPClass              *klass;
@@ -6896,6 +7072,26 @@ _nl_msg_new_dump(NMPObjectType obj_type, int preferred_addr_family)
     return g_steal_pointer(&nlmsg);
 }
 
+static struct nl_msg *
+_nl_msg_new_dump_genl_families(void)
+{
+    nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
+
+    nlmsg = nlmsg_alloc_size(nlmsg_total_size(GENL_HDRLEN));
+
+    if (!genlmsg_put(nlmsg,
+                     NL_AUTO_PORT,
+                     NL_AUTO_SEQ,
+                     GENL_ID_CTRL,
+                     0,
+                     NLM_F_DUMP,
+                     CTRL_CMD_GETFAMILY,
+                     1))
+        g_return_val_if_reached(NULL);
+
+    return g_steal_pointer(&nlmsg);
+}
+
 static void
 do_request_all_no_delayed_actions(NMPlatform *platform, DelayedActionType action_type)
 {
@@ -6903,28 +7099,35 @@ do_request_all_no_delayed_actions(NMPlatform *platform, DelayedActionType action
     DelayedActionType       action_type_prune;
     DelayedActionType       iflags;
 
-    nm_assert(!NM_FLAGS_ANY(action_type, ~DELAYED_ACTION_TYPE_REFRESH_RTNL_ALL));
-    action_type &= DELAYED_ACTION_TYPE_REFRESH_RTNL_ALL;
+    nm_assert((NM_FLAGS_ANY(action_type, DELAYED_ACTION_TYPE_REFRESH_RTNL_ALL)
+               && !NM_FLAGS_ANY(action_type, ~DELAYED_ACTION_TYPE_REFRESH_RTNL_ALL))
+              || (NM_FLAGS_ANY(action_type, DELAYED_ACTION_TYPE_REFRESH_GENL_ALL)
+                  && !NM_FLAGS_ANY(action_type, ~DELAYED_ACTION_TYPE_REFRESH_GENL_ALL)));
 
     action_type_prune = action_type;
 
-    /* calling nmp_cache_dirty_set_all_main() with a non-main lookup-index requires an extra
-     * cache lookup for every entry.
-     *
-     * Avoid that, by special casing routing-rules here. */
     if (NM_FLAGS_ALL(action_type_prune, DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_ROUTING_RULES_ALL)) {
         NMPLookup lookup;
 
+        /* calling nmp_cache_dirty_set_all_main() with a non-main lookup-index requires an extra
+         * cache lookup for every entry.
+         *
+         * Avoid that, by special casing routing-rules here. */
         priv->pruning[REFRESH_ALL_TYPE_RTNL_ROUTING_RULES_IP4] += 1;
         priv->pruning[REFRESH_ALL_TYPE_RTNL_ROUTING_RULES_IP6] += 1;
         nmp_lookup_init_obj_type(&lookup, NMP_OBJECT_TYPE_ROUTING_RULE);
         nmp_cache_dirty_set_all_main(nm_platform_get_cache(platform), &lookup);
         action_type_prune &= ~DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_ROUTING_RULES_ALL;
     }
-
     FOR_EACH_DELAYED_ACTION (iflags, action_type_prune) {
         RefreshAllType refresh_all_type = delayed_action_type_to_refresh_all_type(iflags);
         NMPLookup      lookup;
+
+        if (refresh_all_type == REFRESH_ALL_TYPE_GENL_FAMILIES) {
+            /* genl families are not tracked in the NMPObject cache, because there is
+             * only a static number of objects we care about (NMPGenlFamilyType). */
+            continue;
+        }
 
         priv->pruning[refresh_all_type] += 1;
         refresh_all_type_init_lookup(refresh_all_type, &lookup);
@@ -6959,24 +7162,30 @@ do_request_all_no_delayed_actions(NMPlatform *platform, DelayedActionType action
             }
         }
 
-        event_handler_read_netlink(platform, FALSE);
+        event_handler_read_netlink(platform, refresh_all_info->protocol, FALSE);
 
-        nlmsg =
-            _nl_msg_new_dump(refresh_all_info->obj_type, refresh_all_info->addr_family_for_dump);
+        if (refresh_all_info->protocol == NMP_NETLINK_ROUTE) {
+            nlmsg = _nl_msg_new_dump_rtnl(refresh_all_info->obj_type,
+                                          refresh_all_info->addr_family_for_dump);
+        } else {
+            nm_assert(refresh_all_type == REFRESH_ALL_TYPE_GENL_FAMILIES);
+            nlmsg = _nl_msg_new_dump_genl_families();
+        }
+
         if (!nlmsg)
             goto next_after_fail;
 
-        if (_nl_send_nlmsg(platform,
-                           nlmsg,
-                           NULL,
-                           NULL,
-                           DELAYED_ACTION_RESPONSE_TYPE_REFRESH_ALL_IN_PROGRESS,
-                           out_refresh_all_in_progress)
+        if (_netlink_send_nlmsg(platform,
+                                refresh_all_info->protocol,
+                                nlmsg,
+                                NULL,
+                                NULL,
+                                DELAYED_ACTION_RESPONSE_TYPE_REFRESH_ALL_IN_PROGRESS,
+                                out_refresh_all_in_progress)
             < 0)
             goto next_after_fail;
 
         continue;
-
 next_after_fail:
         nm_assert(*out_refresh_all_in_progress > 0);
         *out_refresh_all_in_progress -= 1;
@@ -6988,86 +7197,94 @@ do_request_one_type_by_needle_object(NMPlatform *platform, const NMPObject *obj_
 {
     do_request_all_no_delayed_actions(platform,
                                       delayed_action_refresh_from_needle_object(obj_needle));
-    delayed_action_handle_all(platform, FALSE);
+    delayed_action_handle_all(platform);
 }
 
 static void
-event_seq_check_refresh_all(NMPlatform *platform, guint32 seq_number)
+event_seq_check_refresh_all(NMPlatform        *platform,
+                            NMPNetlinkProtocol netlink_protocol,
+                            guint32            seq_number)
 {
-    NMLinuxPlatformPrivate             *priv = NM_LINUX_PLATFORM_GET_PRIVATE(platform);
-    DelayedActionWaitForNlResponseData *data;
-    guint                               i;
+    NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE(platform);
+    guint                   i;
 
-    if (NM_IN_SET(seq_number, 0, priv->nlh_seq_last_seen))
+    if (NM_IN_SET(seq_number, 0, priv->proto_data_x[netlink_protocol].nlh_seq_last_seen))
         return;
 
-    if (NM_FLAGS_HAS(priv->delayed_action.flags, DELAYED_ACTION_TYPE_WAIT_FOR_RESPONSE_RTNL)) {
-        nm_assert(priv->delayed_action.list_wait_for_response_rtnl->len > 0);
+    if (!NM_FLAGS_ANY(
+            priv->delayed_action.flags,
+            nmp_netlink_protocol_info(netlink_protocol)->delayed_action_type_wait_for_response))
+        goto out;
 
-        for (i = 0; i < priv->delayed_action.list_wait_for_response_rtnl->len; i++) {
-            data = &g_array_index(priv->delayed_action.list_wait_for_response_rtnl,
-                                  DelayedActionWaitForNlResponseData,
-                                  i);
+    nm_assert(priv->delayed_action.list_wait_for_response_x[netlink_protocol]->len > 0);
 
-            if (data->response_type == DELAYED_ACTION_RESPONSE_TYPE_REFRESH_ALL_IN_PROGRESS
-                && data->response.out_refresh_all_in_progress
-                && data->seq_number == priv->nlh_seq_last_seen) {
-                *data->response.out_refresh_all_in_progress -= 1;
-                data->response.out_refresh_all_in_progress = NULL;
-                break;
-            }
+    for (i = 0; i < priv->delayed_action.list_wait_for_response_x[netlink_protocol]->len; i++) {
+        DelayedActionWaitForNlResponseData *data =
+            delayed_action_get_list_wait_for_resonse(priv, netlink_protocol, i);
+
+        if (data->response_type == DELAYED_ACTION_RESPONSE_TYPE_REFRESH_ALL_IN_PROGRESS
+            && data->response.out_refresh_all_in_progress
+            && data->seq_number == priv->proto_data_x[netlink_protocol].nlh_seq_last_seen) {
+            *data->response.out_refresh_all_in_progress -= 1;
+            data->response.out_refresh_all_in_progress = NULL;
+            break;
         }
     }
 
-    priv->nlh_seq_last_seen = seq_number;
+out:
+    priv->proto_data_x[netlink_protocol].nlh_seq_last_seen = seq_number;
 }
 
 static void
 event_seq_check(NMPlatform             *platform,
+                NMPNetlinkProtocol      netlink_protocol,
                 guint32                 seq_number,
                 WaitForNlResponseResult seq_result,
                 const char             *msg)
 {
-    NMLinuxPlatformPrivate             *priv = NM_LINUX_PLATFORM_GET_PRIVATE(platform);
-    DelayedActionWaitForNlResponseData *data;
-    guint                               i;
+    NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE(platform);
+    guint                   i;
 
     if (seq_number == 0)
         return;
 
-    if (NM_FLAGS_HAS(priv->delayed_action.flags, DELAYED_ACTION_TYPE_WAIT_FOR_RESPONSE_RTNL)) {
-        nm_assert(priv->delayed_action.list_wait_for_response_rtnl->len > 0);
+    if (!NM_FLAGS_ANY(
+            priv->delayed_action.flags,
+            nmp_netlink_protocol_info(netlink_protocol)->delayed_action_type_wait_for_response))
+        goto out;
 
-        for (i = 0; i < priv->delayed_action.list_wait_for_response_rtnl->len; i++) {
-            data = &g_array_index(priv->delayed_action.list_wait_for_response_rtnl,
-                                  DelayedActionWaitForNlResponseData,
-                                  i);
+    nm_assert(priv->delayed_action.list_wait_for_response_x[netlink_protocol]->len > 0);
 
-            if (data->seq_number == seq_number) {
-                /* We potentially receive many parts partial responses for the same sequence number.
+    for (i = 0; i < priv->delayed_action.list_wait_for_response_x[netlink_protocol]->len; i++) {
+        DelayedActionWaitForNlResponseData *data =
+            delayed_action_get_list_wait_for_resonse(priv, netlink_protocol, i);
+
+        if (data->seq_number == seq_number) {
+            /* We potentially receive many parts partial responses for the same sequence number.
                  * Thus, we only remember the result, and collect it later. */
-                if (data->seq_result < 0) {
-                    /* we already saw an error for this sequence number.
+            if (data->seq_result < 0) {
+                /* we already saw an error for this sequence number.
                      * Preserve it. */
-                } else if (seq_result != WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_UNKNOWN
-                           || data->seq_result == WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN)
-                    data->seq_result = seq_result;
-                if (data->out_errmsg && !*data->out_errmsg)
-                    *data->out_errmsg = g_strdup(msg);
-                return;
-            }
+            } else if (seq_result != WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_UNKNOWN
+                       || data->seq_result == WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN)
+                data->seq_result = seq_result;
+            if (data->out_errmsg && !*data->out_errmsg)
+                *data->out_errmsg = g_strdup(msg);
+            return;
         }
     }
 
+out:
+
 #if NM_MORE_LOGGING
-    if (seq_number != priv->nlh_seq_last_handled)
+    if (seq_number != priv->proto_data_x[netlink_protocol].nlh_seq_last_handled)
         _LOGt("netlink: recvmsg: unwaited sequence number %u", seq_number);
-    priv->nlh_seq_last_handled = seq_number;
+    priv->proto_data_x[netlink_protocol].nlh_seq_last_handled = seq_number;
 #endif
 }
 
 static void
-_rtnl_handle_msg(NMPlatform *platform, const struct nl_msg_lite *msg, gboolean handle_events)
+_rtnl_handle_msg(NMPlatform *platform, const struct nl_msg_lite *msg)
 {
     char                      sbuf1[NM_UTILS_TO_STRING_BUFFER_SIZE];
     NMLinuxPlatformPrivate   *priv;
@@ -7079,9 +7296,6 @@ _rtnl_handle_msg(NMPlatform *platform, const struct nl_msg_lite *msg, gboolean h
     gboolean                  is_dump = FALSE;
     NMPCache                 *cache   = nm_platform_get_cache(platform);
     ParseNlmsgIter            parse_nlmsg_iter;
-
-    if (!handle_events)
-        return;
 
     msghdr = msg->nm_nlh;
 
@@ -7167,9 +7381,7 @@ _rtnl_handle_msg(NMPlatform *platform, const struct nl_msg_lite *msg, gboolean h
                     nm_assert(priv->delayed_action.list_wait_for_response_rtnl->len > 0);
                     for (i = 0; i < priv->delayed_action.list_wait_for_response_rtnl->len; i++) {
                         DelayedActionWaitForNlResponseData *data =
-                            &g_array_index(priv->delayed_action.list_wait_for_response_rtnl,
-                                           DelayedActionWaitForNlResponseData,
-                                           i);
+                            delayed_action_get_list_wait_for_resonse(priv, NMP_NETLINK_ROUTE, i);
 
                         if (data->response_type == DELAYED_ACTION_RESPONSE_TYPE_ROUTE_GET
                             && data->response.out_route_get) {
@@ -7311,14 +7523,9 @@ do_add_link_with_lookup(NMPlatform            *platform,
     char                    s_buf[256];
     NMPCache               *cache = nm_platform_get_cache(platform);
 
-    event_handler_read_netlink(platform, FALSE);
+    event_handler_read_netlink(platform, NMP_NETLINK_ROUTE, FALSE);
 
-    nle = _nl_send_nlmsg(platform,
-                         nlmsg,
-                         &seq_result,
-                         &errmsg,
-                         DELAYED_ACTION_RESPONSE_TYPE_VOID,
-                         NULL);
+    nle = _netlink_send_nlmsg_rtnl(platform, nlmsg, &seq_result, &errmsg);
     if (nle < 0) {
         _LOGE("do-add-link[%s/%s]: failed sending netlink request \"%s\" (%d)",
               name,
@@ -7329,7 +7536,7 @@ do_add_link_with_lookup(NMPlatform            *platform,
         return nle;
     }
 
-    delayed_action_handle_all(platform, FALSE);
+    delayed_action_handle_all(platform);
 
     nm_assert(seq_result);
 
@@ -7365,14 +7572,9 @@ do_add_addrroute(NMPlatform      *platform,
                         NMP_OBJECT_TYPE_IP4_ROUTE,
                         NMP_OBJECT_TYPE_IP6_ROUTE));
 
-    event_handler_read_netlink(platform, FALSE);
+    event_handler_read_netlink(platform, NMP_NETLINK_ROUTE, FALSE);
 
-    nle = _nl_send_nlmsg(platform,
-                         nlmsg,
-                         &seq_result,
-                         &errmsg,
-                         DELAYED_ACTION_RESPONSE_TYPE_VOID,
-                         NULL);
+    nle = _netlink_send_nlmsg_rtnl(platform, nlmsg, &seq_result, &errmsg);
     if (nle < 0) {
         _LOGE("do-add-%s[%s]: failure sending netlink request \"%s\" (%d)",
               NMP_OBJECT_GET_CLASS(obj_id)->obj_type_name,
@@ -7382,7 +7584,7 @@ do_add_addrroute(NMPlatform      *platform,
         return -NME_PL_NETLINK;
     }
 
-    delayed_action_handle_all(platform, FALSE);
+    delayed_action_handle_all(platform);
 
     nm_assert(seq_result);
 
@@ -7421,14 +7623,9 @@ do_delete_object(NMPlatform *platform, const NMPObject *obj_id, struct nl_msg *n
     gboolean                success;
     const char             *log_detail = "";
 
-    event_handler_read_netlink(platform, FALSE);
+    event_handler_read_netlink(platform, NMP_NETLINK_ROUTE, FALSE);
 
-    nle = _nl_send_nlmsg(platform,
-                         nlmsg,
-                         &seq_result,
-                         &errmsg,
-                         DELAYED_ACTION_RESPONSE_TYPE_VOID,
-                         NULL);
+    nle = _netlink_send_nlmsg_rtnl(platform, nlmsg, &seq_result, &errmsg);
     if (nle < 0) {
         _LOGE("do-delete-%s[%s]: failure sending netlink request \"%s\" (%d)",
               NMP_OBJECT_GET_CLASS(obj_id)->obj_type_name,
@@ -7438,7 +7635,7 @@ do_delete_object(NMPlatform *platform, const NMPObject *obj_id, struct nl_msg *n
         return FALSE;
     }
 
-    delayed_action_handle_all(platform, FALSE);
+    delayed_action_handle_all(platform);
 
     nm_assert(seq_result);
 
@@ -7512,12 +7709,7 @@ do_change_link(NMPlatform           *platform,
     }
 
 retry:
-    nle = _nl_send_nlmsg(platform,
-                         nlmsg,
-                         &seq_result,
-                         &errmsg,
-                         DELAYED_ACTION_RESPONSE_TYPE_VOID,
-                         NULL);
+    nle = _netlink_send_nlmsg_rtnl(platform, nlmsg, &seq_result, &errmsg);
     if (nle < 0) {
         log_level = LOGL_ERR;
         log_detail_free =
@@ -7530,7 +7722,7 @@ retry:
      * and we sometimes lack events. Nuke it from the orbit... */
     delayed_action_schedule(platform, DELAYED_ACTION_TYPE_REFRESH_LINK, GINT_TO_POINTER(ifindex));
 
-    delayed_action_handle_all(platform, FALSE);
+    delayed_action_handle_all(platform);
 
     nm_assert(seq_result);
 
@@ -9009,7 +9201,7 @@ ip_route_get(NMPlatform   *platform,
             return -NME_UNSPEC;
         }
 
-        delayed_action_handle_all(platform, FALSE);
+        delayed_action_handle_all(platform);
 
         /* Retry, if we failed due to a cache resync. That can happen when the netlink
          * socket fills up and we lost the response. */
@@ -9045,20 +9237,15 @@ routing_rule_add(NMPlatform *platform, NMPNlmFlags flags, const NMPlatformRoutin
 
     msg = _nl_msg_new_routing_rule(RTM_NEWRULE, flags, routing_rule);
 
-    event_handler_read_netlink(platform, FALSE);
+    event_handler_read_netlink(platform, NMP_NETLINK_ROUTE, FALSE);
 
-    nle = _nl_send_nlmsg(platform,
-                         msg,
-                         &seq_result,
-                         &errmsg,
-                         DELAYED_ACTION_RESPONSE_TYPE_VOID,
-                         NULL);
+    nle = _netlink_send_nlmsg_rtnl(platform, msg, &seq_result, &errmsg);
     if (nle < 0) {
         _LOGE("do-add-rule: failed sending netlink request \"%s\" (%d)", nm_strerror(nle), -nle);
         return -NME_PL_NETLINK;
     }
 
-    delayed_action_handle_all(platform, FALSE);
+    delayed_action_handle_all(platform);
 
     nm_assert(seq_result);
 
@@ -9089,20 +9276,15 @@ qdisc_add(NMPlatform *platform, NMPNlmFlags flags, const NMPlatformQdisc *qdisc)
 
     msg = _nl_msg_new_qdisc(RTM_NEWQDISC, flags, qdisc);
 
-    event_handler_read_netlink(platform, FALSE);
+    event_handler_read_netlink(platform, NMP_NETLINK_ROUTE, FALSE);
 
-    nle = _nl_send_nlmsg(platform,
-                         msg,
-                         &seq_result,
-                         &errmsg,
-                         DELAYED_ACTION_RESPONSE_TYPE_VOID,
-                         NULL);
+    nle = _netlink_send_nlmsg_rtnl(platform, msg, &seq_result, &errmsg);
     if (nle < 0) {
         _LOGE("do-add-qdisc: failed sending netlink request \"%s\" (%d)", nm_strerror(nle), -nle);
         return -NME_PL_NETLINK;
     }
 
-    delayed_action_handle_all(platform, FALSE);
+    delayed_action_handle_all(platform);
 
     nm_assert(seq_result);
 
@@ -9148,14 +9330,9 @@ tc_delete(NMPlatform *platform, int nlmsgtype, int ifindex, guint32 parent, gboo
     if (nlmsg_append_struct(msg, &tcm) < 0)
         goto nla_put_failure;
 
-    event_handler_read_netlink(platform, FALSE);
+    event_handler_read_netlink(platform, NMP_NETLINK_ROUTE, FALSE);
 
-    nle = _nl_send_nlmsg(platform,
-                         msg,
-                         &seq_result,
-                         &errmsg,
-                         DELAYED_ACTION_RESPONSE_TYPE_VOID,
-                         NULL);
+    nle = _netlink_send_nlmsg_rtnl(platform, msg, &seq_result, &errmsg);
     if (nle < 0) {
         _NMLOG(log_error ? LOGL_ERR : LOGL_DEBUG,
                "%s: failed sending netlink request \"%s\" (%d)",
@@ -9165,7 +9342,7 @@ tc_delete(NMPlatform *platform, int nlmsgtype, int ifindex, guint32 parent, gboo
         return -NME_PL_NETLINK;
     }
 
-    delayed_action_handle_all(platform, FALSE);
+    delayed_action_handle_all(platform);
 
     nm_assert(seq_result);
 
@@ -9205,20 +9382,15 @@ tfilter_add(NMPlatform *platform, NMPNlmFlags flags, const NMPlatformTfilter *tf
 
     msg = _nl_msg_new_tfilter(RTM_NEWTFILTER, flags, tfilter);
 
-    event_handler_read_netlink(platform, FALSE);
+    event_handler_read_netlink(platform, NMP_NETLINK_ROUTE, FALSE);
 
-    nle = _nl_send_nlmsg(platform,
-                         msg,
-                         &seq_result,
-                         &errmsg,
-                         DELAYED_ACTION_RESPONSE_TYPE_VOID,
-                         NULL);
+    nle = _netlink_send_nlmsg_rtnl(platform, msg, &seq_result, &errmsg);
     if (nle < 0) {
         _LOGE("do-add-tfilter: failed sending netlink request \"%s\" (%d)", nm_strerror(nle), -nle);
         return -NME_PL_NETLINK;
     }
 
-    delayed_action_handle_all(platform, FALSE);
+    delayed_action_handle_all(platform);
 
     nm_assert(seq_result);
 
@@ -9240,12 +9412,66 @@ tfilter_delete(NMPlatform *platform, int ifindex, guint32 parent, gboolean log_e
 
 /*****************************************************************************/
 
+static void
+_genl_handle_msg_ctrl(NMPlatform *platform, const struct nlmsghdr *hdr)
+{
+    NMLinuxPlatformPrivate  *priv = NM_LINUX_PLATFORM_GET_PRIVATE(platform);
+    const struct genlmsghdr *ghdr = nlmsg_data(hdr);
+
+    switch (ghdr->cmd) {
+    case CTRL_CMD_NEWFAMILY:
+    case CTRL_CMD_DELFAMILY:
+    {
+        struct nlattr    *tb[G_N_ELEMENTS(genl_ctrl_policy)];
+        NMPGenlFamilyType family_type;
+        const char       *name;
+        guint16           family_id = 0;
+
+        if (genlmsg_parse_arr(hdr, 0, tb, genl_ctrl_policy) < 0)
+            return;
+
+        name        = nla_get_string(tb[CTRL_ATTR_FAMILY_NAME]);
+        family_type = nmp_genl_family_type_from_name(name);
+
+        if (family_type == _NMP_GENL_FAMILY_TYPE_NONE)
+            return;
+
+        if (ghdr->cmd == CTRL_CMD_NEWFAMILY)
+            family_id = nla_get_u16(tb[CTRL_ATTR_FAMILY_ID]);
+
+        if (priv->genl_family_data[family_type].family_id != family_id) {
+            if (family_id != 0)
+                _LOGD("genl:ctrl: new family-id for %s: 0x%04x", name, family_id);
+            else
+                _LOGD("genl:ctrl: del family-id for %s", name);
+            priv->genl_family_data[family_type].family_id = family_id;
+        }
+    }
+    }
+}
+
+static void
+_genl_handle_msg(NMPlatform *platform, guint32 pktinfo_group, const struct nl_msg_lite *msg)
+{
+    const struct nlmsghdr *hdr = msg->nm_nlh;
+
+    if (!genlmsg_valid_hdr(hdr, 0))
+        return;
+
+    if (hdr->nlmsg_type == GENL_ID_CTRL)
+        _genl_handle_msg_ctrl(platform, hdr);
+}
+
+/*****************************************************************************/
+
 static int
 _netlink_recv(NMPlatform         *platform,
               struct nl_sock     *sk,
               struct sockaddr_nl *nla,
               struct ucred       *out_creds,
-              gboolean           *out_creds_has)
+              gboolean           *out_creds_has,
+              guint32            *out_pktinfo_group,
+              gboolean           *out_pktinfo_has)
 {
     NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE(platform);
     unsigned char          *buf  = NULL;
@@ -9255,7 +9481,10 @@ _netlink_recv(NMPlatform         *platform,
     nm_assert(out_creds);
     nm_assert(out_creds_has);
 
-    /* We use a pre-allocated receive buffer. */
+    /* We use a pre-allocated receive buffer. We use it both for sk_rtnl
+     * and sk_genl. We can do that, because we are deep inside the netlink
+     * handling, and we never will need to use it for both sockets at the
+     * same time. */
 
     n = nl_recv(sk,
                 priv->netlink_recv_buf.buf,
@@ -9264,8 +9493,8 @@ _netlink_recv(NMPlatform         *platform,
                 &buf,
                 out_creds,
                 out_creds_has,
-                NULL,
-                NULL);
+                out_pktinfo_group,
+                out_pktinfo_has);
 
     nm_assert((n <= 0 && !buf)
               || (n > 0 && n <= priv->netlink_recv_buf.len && buf == priv->netlink_recv_buf.buf));
@@ -9286,19 +9515,33 @@ _netlink_recv(NMPlatform         *platform,
 /*****************************************************************************/
 
 static gboolean
-rtnl_event_handler(int fd, GIOCondition io_condition, gpointer user_data)
+_nl_event_handler(NMPlatform *platform, DelayedActionType action_type)
 {
-    delayed_action_handle_all(NM_PLATFORM(user_data), TRUE);
+    delayed_action_schedule(platform, action_type, NULL);
+    delayed_action_handle_all(platform);
     return TRUE;
+}
+
+static gboolean
+_nl_event_handler_genl(int fd, GIOCondition io_condition, gpointer user_data)
+{
+    return _nl_event_handler(user_data, DELAYED_ACTION_TYPE_READ_GENL);
+}
+
+static gboolean
+_nl_event_handler_rtnl(int fd, GIOCondition io_condition, gpointer user_data)
+{
+    return _nl_event_handler(user_data, DELAYED_ACTION_TYPE_READ_RTNL);
 }
 
 /*****************************************************************************/
 
 static int
-_netlink_recv_handle(NMPlatform *platform, int netlink_protocol, gboolean handle_events)
+_netlink_recv_handle(NMPlatform        *platform,
+                     NMPNetlinkProtocol netlink_protocol,
+                     gboolean           handle_events)
 {
     NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE(platform);
-    struct nl_sock         *sk;
     int                     n;
     int                     retval      = 0;
     gboolean                multipart   = 0;
@@ -9307,15 +9550,19 @@ _netlink_recv_handle(NMPlatform *platform, int netlink_protocol, gboolean handle
     struct sockaddr_nl      nla;
     struct ucred            creds;
     gboolean                creds_has;
-    const char             *log_prefix;
-
-    nm_assert(netlink_protocol == NETLINK_ROUTE);
-    sk         = priv->sk_rtnl;
-    log_prefix = "rtnl";
+    guint32                 pktinfo_group = 0;
+    gboolean                pktinfo_has   = FALSE;
+    const char *const       log_prefix    = nmp_netlink_protocol_info(netlink_protocol)->name;
 
 continue_reading:
 
-    n = _netlink_recv(platform, sk, &nla, &creds, &creds_has);
+    n = _netlink_recv(platform,
+                      priv->sk_x[netlink_protocol],
+                      &nla,
+                      &creds,
+                      &creds_has,
+                      &pktinfo_group,
+                      netlink_protocol == NMP_NETLINK_GENERIC ? &pktinfo_has : NULL);
     if (n < 0) {
         if (n == -NME_NL_MSG_TRUNC && !handle_events)
             goto continue_reading;
@@ -9337,7 +9584,7 @@ continue_reading:
         char                     buf_nlmsghdr[400];
         const char              *extack_msg = NULL;
         const struct nl_msg_lite msg        = {
-                   .nm_protocol = netlink_protocol,
+                   .nm_protocol = nmp_netlink_protocol_info(netlink_protocol)->netlink_protocol,
                    .nm_src      = &nla,
                    .nm_creds    = &creds,
                    .nm_size     = NLMSG_ALIGN(hdr->nlmsg_len),
@@ -9349,8 +9596,8 @@ continue_reading:
 
         _LOGt("%s: recvmsg: new message %s",
               log_prefix,
-              nl_nlmsghdr_to_str(netlink_protocol,
-                                 0,
+              nl_nlmsghdr_to_str(nmp_netlink_protocol_info(netlink_protocol)->netlink_protocol,
+                                 pktinfo_group,
                                  msg.nm_nlh,
                                  buf_nlmsghdr,
                                  sizeof(buf_nlmsghdr)));
@@ -9367,9 +9614,8 @@ continue_reading:
             interrupted = TRUE;
         }
 
-        /* Other side wishes to see an ack for this message */
         if (msg.nm_nlh->nlmsg_flags & NLM_F_ACK) {
-            /* FIXME: implement */
+            /* TODO: Other side wishes to see an ack for this message */
         }
 
         seq_result = WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_UNKNOWN;
@@ -9426,7 +9672,8 @@ continue_reading:
                 }
 
                 /* Error message reported back from kernel. */
-                _LOGD("netlink: recvmsg: error message from kernel: %s (%d)%s%s%s for request %d",
+                _LOGD("%s: recvmsg: error message from kernel: %s (%d)%s%s%s for request %d",
+                      log_prefix,
                       nm_strerror_native(errsv),
                       errsv,
                       NM_PRINT_FMT_QUOTED(extack_msg, " \"", extack_msg, "\"", ""),
@@ -9437,33 +9684,30 @@ continue_reading:
         } else
             process_valid_msg = TRUE;
 
-        switch (netlink_protocol) {
-        default:
-            nm_assert_not_reached();
-            /* fall-through */
-        case NETLINK_ROUTE:
-            /* check whether the seq number is different from before, and
-             * whether the previous number (@nlh_seq_last_seen) is a pending
-             * refresh-all request. In that case, the pending request is thereby
-             * completed.
-             *
-             * We must do that before processing the message with _rtnl_handle_msg(),
-             * because we must track the completion of the pending request before that. */
-            event_seq_check_refresh_all(platform, seq_number);
+        /* check whether the seq number is different from before, and
+         * whether the previous number (@nlh_seq_last_seen) is a pending
+         * refresh-all request. In that case, the pending request is thereby
+         * completed.
+         *
+         * We must do that before processing the message with _rtnl_handle_msg(),
+         * because we must track the completion of the pending request before that. */
+        event_seq_check_refresh_all(platform, netlink_protocol, seq_number);
 
-            if (process_valid_msg) {
+        if (process_valid_msg) {
+            if (handle_events) {
                 /* Valid message (not checking for MULTIPART bit to
                  * get along with broken kernels. NL_SKIP has no
                  * effect on this.  */
-
-                _rtnl_handle_msg(platform, &msg, handle_events);
-
-                seq_result = WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK;
+                if (netlink_protocol == NMP_NETLINK_ROUTE) {
+                    _rtnl_handle_msg(platform, &msg);
+                } else {
+                    _genl_handle_msg(platform, pktinfo_group, &msg);
+                }
             }
-
-            event_seq_check(platform, seq_number, seq_result, extack_msg);
-            break;
+            seq_result = WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK;
         }
+
+        event_seq_check(platform, netlink_protocol, seq_number, seq_result, extack_msg);
 
         if (retval != 0)
             goto stop;
@@ -9492,7 +9736,9 @@ stop:
 /*****************************************************************************/
 
 static gboolean
-event_handler_read_netlink(NMPlatform *platform, gboolean wait_for_acks)
+event_handler_read_netlink(NMPlatform        *platform,
+                           NMPNetlinkProtocol netlink_protocol,
+                           gboolean           wait_for_acks)
 {
     nm_auto_pop_netns NMPNetns *netns = NULL;
     NMLinuxPlatformPrivate     *priv  = NM_LINUX_PLATFORM_GET_PRIVATE(platform);
@@ -9506,8 +9752,11 @@ event_handler_read_netlink(NMPlatform *platform, gboolean wait_for_acks)
         gint64  now_nsec;
     } next;
 
+    nmp_netlink_protocol_check(netlink_protocol);
+
     if (!nm_platform_netns_push(platform, &netns)) {
         delayed_action_wait_for_nl_response_complete_all(platform,
+                                                         netlink_protocol,
                                                          WAIT_FOR_NL_RESPONSE_RESULT_FAILED_SETNS);
         return FALSE;
     }
@@ -9516,20 +9765,24 @@ event_handler_read_netlink(NMPlatform *platform, gboolean wait_for_acks)
         for (;;) {
             int nle;
 
-            nle = _netlink_recv_handle(platform, NETLINK_ROUTE, TRUE);
+            nle = _netlink_recv_handle(platform, netlink_protocol, TRUE);
 
             if (nle < 0) {
                 switch (nle) {
                 case -EAGAIN:
                     goto after_read;
                 case -NME_NL_DUMP_INTR:
-                    _LOGD("netlink: read: uncritical failure to retrieve incoming events: %s (%d)",
+                    _LOGD("netlink[%s]: read: uncritical failure to retrieve incoming events: %s "
+                          "(%d)",
+                          nmp_netlink_protocol_info(netlink_protocol)->name,
                           nm_strerror(nle),
                           nle);
                     break;
                 case -NME_NL_MSG_TRUNC:
                 case -ENOBUFS:
-                    _LOGI("netlink: read: %s. Need to resynchronize platform cache", ({
+                    _LOGI("netlink[%s]: read: %s. Need to resynchronize platform cache",
+                          nmp_netlink_protocol_info(netlink_protocol)->name,
+                          ({
                               const char *_reason = "unknown";
                               switch (nle) {
                               case -NME_NL_MSG_TRUNC:
@@ -9541,14 +9794,16 @@ event_handler_read_netlink(NMPlatform *platform, gboolean wait_for_acks)
                               }
                               _reason;
                           }));
-                    _netlink_recv_handle(platform, NETLINK_ROUTE, FALSE);
+                    _netlink_recv_handle(platform, netlink_protocol, FALSE);
                     delayed_action_wait_for_nl_response_complete_all(
                         platform,
+                        netlink_protocol,
                         WAIT_FOR_NL_RESPONSE_RESULT_FAILED_RESYNC);
-                    delayed_action_schedule_refresh_all(platform);
+                    delayed_action_schedule_refresh_all(platform, netlink_protocol);
                     break;
                 default:
-                    _LOGE("netlink: read: failed to retrieve incoming events: %s (%d)",
+                    _LOGE("netlink[%s]: read: failed to retrieve incoming events: %s (%d)",
+                          nmp_netlink_protocol_info(netlink_protocol)->name,
                           nm_strerror(nle),
                           nle);
                     break;
@@ -9559,18 +9814,22 @@ event_handler_read_netlink(NMPlatform *platform, gboolean wait_for_acks)
 
 after_read:
 
-        if (!NM_FLAGS_HAS(priv->delayed_action.flags, DELAYED_ACTION_TYPE_WAIT_FOR_RESPONSE_RTNL))
+        if (!NM_FLAGS_ANY(
+                priv->delayed_action.flags,
+                nmp_netlink_protocol_info(netlink_protocol)->delayed_action_type_wait_for_response))
             return any;
 
-        delayed_action_wait_for_nl_response_complete_check(platform,
-                                                           WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN,
-                                                           &next.seq_number,
-                                                           &next.timeout_abs_nsec,
-                                                           &next.now_nsec);
+        delayed_action_wait_for_response_complete_check(platform,
+                                                        netlink_protocol,
+                                                        WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN,
+                                                        &next.seq_number,
+                                                        &next.timeout_abs_nsec,
+                                                        &next.now_nsec);
 
         if (!wait_for_acks
-            || !NM_FLAGS_HAS(priv->delayed_action.flags,
-                             DELAYED_ACTION_TYPE_WAIT_FOR_RESPONSE_RTNL))
+            || !NM_FLAGS_ANY(
+                priv->delayed_action.flags,
+                nmp_netlink_protocol_info(netlink_protocol)->delayed_action_type_wait_for_response))
             return any;
 
         nm_assert(next.seq_number);
@@ -9606,12 +9865,34 @@ after_read:
                 _LOGE("netlink: read: poll failed with %s", nm_strerror_native(errsv));
                 delayed_action_wait_for_nl_response_complete_all(
                     platform,
+                    netlink_protocol,
                     WAIT_FOR_NL_RESPONSE_RESULT_FAILED_POLL);
                 return any;
             }
             /* Continue to read again, even if there might be nothing to read after EINTR. */
         }
     }
+}
+
+/*****************************************************************************/
+
+static guint16
+genl_get_family_id(NMPlatform *platform, NMPGenlFamilyType family_type)
+{
+    NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE(platform);
+
+    nm_assert(_NM_INT_NOT_NEGATIVE(family_type));
+    nm_assert(family_type < G_N_ELEMENTS(priv->genl_family_data));
+
+    if (priv->genl_family_data[family_type].family_id == 0) {
+        /* Unknown family ID. Try to read the netlink socket, maybe we have
+         * a message there to learn it. */
+        delayed_action_schedule(platform, DELAYED_ACTION_TYPE_READ_GENL, NULL);
+        if (priv->delayed_action.is_handling == 0)
+            delayed_action_handle_all(platform);
+    }
+
+    return priv->genl_family_data[family_type].family_id;
 }
 
 /*****************************************************************************/
@@ -9758,6 +10039,8 @@ nm_linux_platform_init(NMLinuxPlatform *self)
     priv->delayed_action.list_refresh_link     = g_ptr_array_new();
     priv->delayed_action.list_wait_for_response_rtnl =
         g_array_new(FALSE, TRUE, sizeof(DelayedActionWaitForNlResponseData));
+    priv->delayed_action.list_wait_for_response_genl =
+        g_array_new(FALSE, TRUE, sizeof(DelayedActionWaitForNlResponseData));
 }
 
 static void
@@ -9800,6 +10083,32 @@ constructed(GObject *_object)
     /*************************************************************************/
 
     /* disable MSG_PEEK, we will handle lost messages ourselves. */
+    nle = nl_socket_new(&priv->sk_genl,
+                        NETLINK_GENERIC,
+                        NL_SOCKET_FLAGS_NONBLOCK | NL_SOCKET_FLAGS_PASSCRED
+                            | NL_SOCKET_FLAGS_DISABLE_MSG_PEEK,
+                        8 * 1024 * 1024,
+                        0);
+    g_assert(!nle);
+
+    nle = nl_socket_add_memberships(priv->sk_genl, GENL_ID_CTRL, 0);
+    g_assert(!nle);
+
+    fd = nl_socket_get_fd(priv->sk_genl);
+
+    _LOGD("genl: generic netlink socket created: port=%u, fd=%d",
+          nl_socket_get_local_port(priv->sk_genl),
+          fd);
+
+    priv->event_source_genl =
+        nm_g_unix_fd_add_source(fd,
+                                G_IO_IN | G_IO_NVAL | G_IO_PRI | G_IO_ERR | G_IO_HUP,
+                                _nl_event_handler_genl,
+                                platform);
+
+    /*************************************************************************/
+
+    /* disable MSG_PEEK, we will handle lost messages ourselves. */
     nle = nl_socket_new(&priv->sk_rtnl,
                         NETLINK_ROUTE,
                         NL_SOCKET_FLAGS_NONBLOCK | NL_SOCKET_FLAGS_PASSCRED
@@ -9833,7 +10142,7 @@ constructed(GObject *_object)
     priv->event_source_rtnl =
         nm_g_unix_fd_add_source(fd,
                                 G_IO_IN | G_IO_NVAL | G_IO_PRI | G_IO_ERR | G_IO_HUP,
-                                rtnl_event_handler,
+                                _nl_event_handler_rtnl,
                                 platform);
 
     /*************************************************************************/
@@ -9842,9 +10151,10 @@ constructed(GObject *_object)
     G_OBJECT_CLASS(nm_linux_platform_parent_class)->constructed(_object);
 
     _LOGD("populate platform cache");
-    delayed_action_schedule_refresh_all(platform);
+    delayed_action_schedule_refresh_all(platform, NMP_NETLINK_ROUTE);
+    delayed_action_schedule_refresh_all(platform, NMP_NETLINK_GENERIC);
 
-    delayed_action_handle_all(platform, FALSE);
+    delayed_action_handle_all(platform);
 
     /* Set up udev monitoring */
     if (priv->udev_client) {
@@ -9926,6 +10236,11 @@ dispose(GObject *object)
     _LOGD("dispose");
 
     delayed_action_wait_for_nl_response_complete_all(platform,
+                                                     NMP_NETLINK_GENERIC,
+                                                     WAIT_FOR_NL_RESPONSE_RESULT_FAILED_DISPOSING);
+
+    delayed_action_wait_for_nl_response_complete_all(platform,
+                                                     NMP_NETLINK_ROUTE,
                                                      WAIT_FOR_NL_RESPONSE_RESULT_FAILED_DISPOSING);
 
     priv->delayed_action.flags = DELAYED_ACTION_TYPE_NONE;
@@ -9943,11 +10258,13 @@ finalize(GObject *object)
     g_ptr_array_unref(priv->delayed_action.list_master_connected);
     g_ptr_array_unref(priv->delayed_action.list_refresh_link);
     g_array_unref(priv->delayed_action.list_wait_for_response_rtnl);
+    g_array_unref(priv->delayed_action.list_wait_for_response_genl);
 
-    nl_socket_free(priv->sk_genl_sync);
-
+    nm_clear_g_source_inst(&priv->event_source_genl);
     nm_clear_g_source_inst(&priv->event_source_rtnl);
 
+    nl_socket_free(priv->sk_genl_sync);
+    nl_socket_free(priv->sk_genl);
     nl_socket_free(priv->sk_rtnl);
 
     {
@@ -10066,4 +10383,6 @@ nm_linux_platform_class_init(NMLinuxPlatformClass *klass)
     platform_class->tfilter_delete = tfilter_delete;
 
     platform_class->process_events = process_events;
+
+    platform_class->genl_get_family_id = genl_get_family_id;
 }
