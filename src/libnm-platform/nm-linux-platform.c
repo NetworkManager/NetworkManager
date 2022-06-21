@@ -4140,8 +4140,7 @@ nmp_object_new_from_nl(NMPlatform               *platform,
 {
     const struct nlmsghdr *msghdr;
 
-    if (msg->nm_protocol != NETLINK_ROUTE)
-        return NULL;
+    nm_assert(msg->nm_protocol == NETLINK_ROUTE);
 
     msghdr = msg->nm_nlh;
 
@@ -9317,77 +9316,78 @@ continue_reading:
             /* FIXME: implement */
         }
 
-        switch (netlink_protocol) {
-        case NETLINK_ROUTE:
-        {
-            seq_result = WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_UNKNOWN;
+        seq_result = WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_UNKNOWN;
 
-            if (msg.nm_nlh->nlmsg_type == NLMSG_DONE) {
-                /* messages terminates a multipart message, this is
-                 * usually the end of a message and therefore we slip
-                 * out of the loop by default. the user may overrule
-                 * this action by skipping this packet. */
-                multipart  = FALSE;
-                seq_result = WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK;
-            } else if (msg.nm_nlh->nlmsg_type == NLMSG_NOOP) {
-                /* Message to be ignored, the default action is to
-                 * skip this message if no callback is specified. The
-                 * user may overrule this action by returning
-                 * NL_PROCEED. */
-            } else if (msg.nm_nlh->nlmsg_type == NLMSG_OVERRUN) {
-                /* Data got lost, report back to user. The default action is to
-                 * quit parsing. The user may overrule this action by returning
-                 * NL_SKIP or NL_PROCEED (dangerous) */
-                err           = -NME_NL_MSG_OVERFLOW;
+        if (msg.nm_nlh->nlmsg_type == NLMSG_DONE) {
+            /* messages terminates a multipart message, this is
+             * usually the end of a message and therefore we slip
+             * out of the loop by default. the user may overrule
+             * this action by skipping this packet. */
+            multipart  = FALSE;
+            seq_result = WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK;
+        } else if (msg.nm_nlh->nlmsg_type == NLMSG_NOOP) {
+            /* Message to be ignored, the default action is to
+             * skip this message if no callback is specified. The
+             * user may overrule this action by returning
+             * NL_PROCEED. */
+        } else if (msg.nm_nlh->nlmsg_type == NLMSG_OVERRUN) {
+            /* Data got lost, report back to user. The default action is to
+             * quit parsing. The user may overrule this action by returning
+             * NL_SKIP or NL_PROCEED (dangerous) */
+            err           = -NME_NL_MSG_OVERFLOW;
+            abort_parsing = TRUE;
+        } else if (msg.nm_nlh->nlmsg_type == NLMSG_ERROR) {
+            /* Message carries a nlmsgerr */
+            struct nlmsgerr *e = nlmsg_data(msg.nm_nlh);
+
+            if (msg.nm_nlh->nlmsg_len < nlmsg_size(sizeof(*e))) {
+                /* Truncated error message, the default action
+                 * is to stop parsing. The user may overrule
+                 * this action by returning NL_SKIP or
+                 * NL_PROCEED (dangerous) */
+                err           = -NME_NL_MSG_TRUNC;
                 abort_parsing = TRUE;
-            } else if (msg.nm_nlh->nlmsg_type == NLMSG_ERROR) {
-                /* Message carries a nlmsgerr */
-                struct nlmsgerr *e = nlmsg_data(msg.nm_nlh);
+            } else if (e->error) {
+                int errsv = nm_errno_native(e->error);
 
-                if (msg.nm_nlh->nlmsg_len < nlmsg_size(sizeof(*e))) {
-                    /* Truncated error message, the default action
-                     * is to stop parsing. The user may overrule
-                     * this action by returning NL_SKIP or
-                     * NL_PROCEED (dangerous) */
-                    err           = -NME_NL_MSG_TRUNC;
-                    abort_parsing = TRUE;
-                } else if (e->error) {
-                    int errsv = nm_errno_native(e->error);
+                if (NM_FLAGS_HAS(msg.nm_nlh->nlmsg_flags, NLM_F_ACK_TLVS)
+                    && msg.nm_nlh->nlmsg_len >= sizeof(*e) + e->msg.nlmsg_len) {
+                    static const struct nla_policy policy[] = {
+                        [NLMSGERR_ATTR_MSG]  = {.type = NLA_STRING},
+                        [NLMSGERR_ATTR_OFFS] = {.type = NLA_U32},
+                    };
+                    struct nlattr *tb[G_N_ELEMENTS(policy)];
+                    struct nlattr *tlvs;
 
-                    if (NM_FLAGS_HAS(msg.nm_nlh->nlmsg_flags, NLM_F_ACK_TLVS)
-                        && msg.nm_nlh->nlmsg_len >= sizeof(*e) + e->msg.nlmsg_len) {
-                        static const struct nla_policy policy[] = {
-                            [NLMSGERR_ATTR_MSG]  = {.type = NLA_STRING},
-                            [NLMSGERR_ATTR_OFFS] = {.type = NLA_U32},
-                        };
-                        struct nlattr *tb[G_N_ELEMENTS(policy)];
-                        struct nlattr *tlvs;
-
-                        tlvs = (struct nlattr *) ((char *) e + sizeof(*e) + e->msg.nlmsg_len
-                                                  - NLMSG_HDRLEN);
-                        if (nla_parse_arr(tb,
-                                          tlvs,
-                                          msg.nm_nlh->nlmsg_len - sizeof(*e) - e->msg.nlmsg_len,
-                                          policy)
-                            >= 0) {
-                            if (tb[NLMSGERR_ATTR_MSG])
-                                extack_msg = nla_get_string(tb[NLMSGERR_ATTR_MSG]);
-                        }
+                    tlvs = (struct nlattr *) ((char *) e + sizeof(*e) + e->msg.nlmsg_len
+                                              - NLMSG_HDRLEN);
+                    if (nla_parse_arr(tb,
+                                      tlvs,
+                                      msg.nm_nlh->nlmsg_len - sizeof(*e) - e->msg.nlmsg_len,
+                                      policy)
+                        >= 0) {
+                        if (tb[NLMSGERR_ATTR_MSG])
+                            extack_msg = nla_get_string(tb[NLMSGERR_ATTR_MSG]);
                     }
+                }
 
-                    /* Error message reported back from kernel. */
-                    _LOGD(
-                        "netlink: recvmsg: error message from kernel: %s (%d)%s%s%s for request %d",
-                        nm_strerror_native(errsv),
-                        errsv,
-                        NM_PRINT_FMT_QUOTED(extack_msg, " \"", extack_msg, "\"", ""),
-                        msg.nm_nlh->nlmsg_seq);
-                    seq_result = -NM_ERRNO_NATIVE(errsv);
-                } else
-                    seq_result = WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK;
+                /* Error message reported back from kernel. */
+                _LOGD("netlink: recvmsg: error message from kernel: %s (%d)%s%s%s for request %d",
+                      nm_strerror_native(errsv),
+                      errsv,
+                      NM_PRINT_FMT_QUOTED(extack_msg, " \"", extack_msg, "\"", ""),
+                      msg.nm_nlh->nlmsg_seq);
+                seq_result = -NM_ERRNO_NATIVE(errsv);
             } else
-                process_valid_msg = TRUE;
+                seq_result = WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK;
+        } else
+            process_valid_msg = TRUE;
 
+        switch (netlink_protocol) {
+        default:
+            nm_assert_not_reached();
+            /* fall-through */
+        case NETLINK_ROUTE:
             /* check whether the seq number is different from before, and
              * whether the previous number (@nlh_seq_last_seen) is a pending
              * refresh-all request. In that case, the pending request is thereby
@@ -9410,9 +9410,6 @@ continue_reading:
             event_seq_check(platform, seq_number, seq_result, extack_msg);
             break;
         }
-        default:
-            nm_assert_not_reached();
-        }
 
         if (abort_parsing)
             goto stop;
@@ -9425,6 +9422,7 @@ continue_reading:
         /* Multipart message not yet complete, continue reading */
         goto continue_reading;
     }
+
 stop:
     if (!handle_events) {
         /* when we don't handle events, we want to drain all messages from the socket
