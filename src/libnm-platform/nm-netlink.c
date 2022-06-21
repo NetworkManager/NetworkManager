@@ -1051,7 +1051,7 @@ nl_socket_disable_msg_peek(struct nl_sock *sk)
 /*****************************************************************************/
 
 int
-nl_socket_new(struct nl_sock **out_sk, int protocol, bool blocking)
+nl_socket_new(struct nl_sock **out_sk, int protocol, bool blocking, int bufsize_rx, int bufsize_tx)
 {
     nm_auto_nlsock struct nl_sock *sk = NULL;
     nm_auto_close int              fd = -1;
@@ -1088,7 +1088,7 @@ nl_socket_new(struct nl_sock **out_sk, int protocol, bool blocking)
         .s_seq_next   = t,
     };
 
-    nmerr = nl_socket_set_buffer_size(sk, 0, 0);
+    nmerr = nl_socket_set_buffer_size(sk, bufsize_rx, bufsize_tx);
     if (nmerr < 0)
         return nmerr;
 

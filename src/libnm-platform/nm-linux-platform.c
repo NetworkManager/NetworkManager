@@ -9747,7 +9747,7 @@ constructed(GObject *_object)
 
     /*************************************************************************/
 
-    nle = nl_socket_new(&priv->sk_genl_sync, NETLINK_GENERIC, TRUE);
+    nle = nl_socket_new(&priv->sk_genl_sync, NETLINK_GENERIC, TRUE, 0, 0);
     g_assert(!nle);
 
     _LOGD("genl: generic netlink socket for sync operations created: port=%u, fd=%d",
@@ -9756,13 +9756,10 @@ constructed(GObject *_object)
 
     /*************************************************************************/
 
-    nle = nl_socket_new(&priv->sk_rtnl, NETLINK_ROUTE, FALSE);
+    nle = nl_socket_new(&priv->sk_rtnl, NETLINK_ROUTE, FALSE, 8 * 1024 * 1024, 0);
     g_assert(!nle);
 
     nle = nl_socket_set_passcred(priv->sk_rtnl, 1);
-    g_assert(!nle);
-
-    nle = nl_socket_set_buffer_size(priv->sk_rtnl, 8 * 1024 * 1024, 0);
     g_assert(!nle);
 
     /* explicitly set the msg buffer size and disable MSG_PEEK.
