@@ -7392,11 +7392,6 @@ realize_start_setup(NMDevice             *self,
                                   NM_UNMANAGED_EXTERNAL_DOWN,
                                   _dev_unmanaged_is_external_down(self, TRUE));
 
-    /* Unmanaged the loopback device with an explicit NM_UNMANAGED_BY_TYPE flag.
-     * Later we might want to manage 'lo' too. Currently, that doesn't work because
-     * NetworkManager might down the interface or remove the 127.0.0.1 address. */
-    nm_device_set_unmanaged_flags(self, NM_UNMANAGED_BY_TYPE, is_loopback(self));
-
     nm_device_set_unmanaged_by_user_udev(self);
     nm_device_set_unmanaged_by_user_conf(self);
 
@@ -7586,9 +7581,9 @@ nm_device_unrealize(NMDevice *self, gboolean remove_resources, GError **error)
     nm_device_set_unmanaged_flags(self, NM_UNMANAGED_PLATFORM_INIT, TRUE);
 
     nm_device_set_unmanaged_flags(self,
-                                  NM_UNMANAGED_PARENT | NM_UNMANAGED_BY_TYPE
-                                      | NM_UNMANAGED_USER_UDEV | NM_UNMANAGED_USER_EXPLICIT
-                                      | NM_UNMANAGED_EXTERNAL_DOWN | NM_UNMANAGED_IS_SLAVE,
+                                  NM_UNMANAGED_PARENT | NM_UNMANAGED_USER_UDEV
+                                      | NM_UNMANAGED_USER_EXPLICIT | NM_UNMANAGED_EXTERNAL_DOWN
+                                      | NM_UNMANAGED_IS_SLAVE,
                                   NM_UNMAN_FLAG_OP_FORGET);
 
     nm_device_state_changed(self,
