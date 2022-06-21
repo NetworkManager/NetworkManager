@@ -9034,6 +9034,19 @@ nm_platform_ip_address_cmp_expiry(const NMPlatformIPAddress *a, const NMPlatform
 
 /*****************************************************************************/
 
+guint16
+nm_platform_genl_get_family_id(NMPlatform *self, NMPGenlFamilyType family_type)
+{
+    _CHECK_SELF(self, klass, 0);
+
+    if (!_NM_INT_NOT_NEGATIVE(family_type) || family_type >= _NMP_GENL_FAMILY_TYPE_NUM)
+        g_return_val_if_reached(0);
+
+    return klass->genl_get_family_id(self, family_type);
+}
+
+/*****************************************************************************/
+
 GHashTable *
 nm_platform_ip4_address_addr_to_hash(NMPlatform *self, int ifindex)
 {
