@@ -237,19 +237,25 @@ lease_parse_address(NDhcp4ClientLease *lease,
     }
 
     r = _client_lease_query(lease, NM_DHCP_OPTION_DHCP4_SUBNET_MASK, &l_data, &l_data_len);
-    if (r != 0
-        || !nm_dhcp_lease_data_parse_in_addr(l_data,
-                                             l_data_len,
-                                             &a_netmask,
-                                             iface,
-                                             NM_DHCP_OPTION_DHCP4_SUBNET_MASK)) {
-        nm_utils_error_set_literal(error,
-                                   NM_UTILS_ERROR_UNKNOWN,
-                                   "could not get netmask from lease");
-        return FALSE;
+    if (r == N_DHCP4_E_UNSET) {
+        /* Some DHCP servers may not set the subnet-mask (issue#1037).
+         * Do the same as the dhclient plugin and use a default. */
+        a_plen    = _nm_utils_ip4_get_default_prefix(a_address.s_addr);
+        a_netmask = _nm_utils_ip4_prefix_to_netmask(a_plen);
+    } else {
+        if (r != 0
+            || !nm_dhcp_lease_data_parse_in_addr(l_data,
+                                                 l_data_len,
+                                                 &a_netmask,
+                                                 iface,
+                                                 NM_DHCP_OPTION_DHCP4_SUBNET_MASK)) {
+            nm_utils_error_set_literal(error,
+                                       NM_UTILS_ERROR_UNKNOWN,
+                                       "could not get netmask from lease");
+            return FALSE;
+        }
+        a_plen = _nm_utils_ip4_netmask_to_prefix(a_netmask);
     }
-
-    a_plen = _nm_utils_ip4_netmask_to_prefix(a_netmask);
 
     nm_dhcp_option_add_option_in_addr(options,
                                       AF_INET,
