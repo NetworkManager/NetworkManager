@@ -9211,7 +9211,9 @@ _netlink_recv(NMPlatform         *platform,
                 nla,
                 &buf,
                 out_creds,
-                out_creds_has);
+                out_creds_has,
+                NULL,
+                NULL);
 
     nm_assert((n <= 0 && !buf)
               || (n > 0 && n <= priv->netlink_recv_buf.len && buf == priv->netlink_recv_buf.buf));

@@ -528,6 +528,8 @@ int nl_socket_set_buffer_size(struct nl_sock *sk, int rxbuf, int txbuf);
 
 int nl_socket_set_passcred(struct nl_sock *sk, int state);
 
+int nl_socket_set_pktinfo(struct nl_sock *sk, int state);
+
 int nl_socket_set_nonblocking(const struct nl_sock *sk);
 
 void nl_socket_disable_msg_peek(struct nl_sock *sk);
@@ -544,7 +546,9 @@ int nl_recv(struct nl_sock     *sk,
             struct sockaddr_nl *nla,
             unsigned char     **buf,
             struct ucred       *out_creds,
-            gboolean           *out_creds_has);
+            gboolean           *out_creds_has,
+            uint32_t           *out_pktinfo_group,
+            gboolean           *out_pktinfo_has);
 
 int nl_send(struct nl_sock *sk, struct nl_msg *msg);
 

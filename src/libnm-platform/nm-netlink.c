@@ -28,7 +28,6 @@
     }                                     \
     G_STMT_END
 
-#define NL_SOCK_PASSCRED     (1 << 1)
 #define NL_MSG_PEEK          (1 << 3)
 #define NL_MSG_PEEK_EXPLICIT (1 << 4)
 #define NL_NO_AUTO_ACK       (1 << 5)
@@ -933,12 +932,19 @@ nl_socket_set_passcred(struct nl_sock *sk, int state)
     err = setsockopt(sk->s_fd, SOL_SOCKET, SO_PASSCRED, &state, sizeof(state));
     if (err < 0)
         return -nm_errno_from_native(errno);
+    return 0;
+}
 
-    if (state)
-        sk->s_flags |= NL_SOCK_PASSCRED;
-    else
-        sk->s_flags &= ~NL_SOCK_PASSCRED;
+int
+nl_socket_set_pktinfo(struct nl_sock *sk, int state)
+{
+    int err;
 
+    nm_assert_sk(sk);
+
+    err = setsockopt(sk->s_fd, SOL_NETLINK, NETLINK_PKTINFO, &state, sizeof(state));
+    if (err < 0)
+        return -nm_errno_from_native(errno);
     return 0;
 }
 
@@ -1182,7 +1188,7 @@ nl_recvmsgs(struct nl_sock *sk, const struct nl_cb *cb)
     gboolean               creds_has;
 
 continue_reading:
-    n = nl_recv(sk, NULL, 0, &nla, &buf, &creds, &creds_has);
+    n = nl_recv(sk, NULL, 0, &nla, &buf, &creds, &creds_has, NULL, NULL);
     if (n <= 0)
         return n;
 
@@ -1419,6 +1425,10 @@ nl_send_auto(struct nl_sock *sk, struct nl_msg *msg)
  *   on success.
  * @out_creds_has: (out) (allow-none): result indicating whether
  *   @out_creds was filled.
+* @out_pktinfo_group: (out) (allow-none): optional out buffer for NETLINK_PKTINFO
+*    group on success.
+ * @out_pktinfo_has: (out) (allow-none): result indicating whether
+ *   @out_pktinfo_group was filled.
  *
  * If @buf0_len is zero, the function will g_malloc() a new receive buffer of size
  * nl_socket_get_msg_buf_size(). If @buf0_len is larger than zero, then @buf0
@@ -1441,18 +1451,20 @@ nl_recv(struct nl_sock     *sk,
         struct sockaddr_nl *nla,
         unsigned char     **buf,
         struct ucred       *out_creds,
-        gboolean           *out_creds_has)
+        gboolean           *out_creds_has,
+        uint32_t           *out_pktinfo_group,
+        gboolean           *out_pktinfo_has)
 {
-    /* We really expect msg_contol_buf to be large enough and MSG_CTRUNC not
-     * happening. We nm_assert() against that. However, in release builds
-     * we don't assert, so add some extra safety space for the unexpected
-     * case where we might need more than CMSG_SPACE(sizeof(struct ucred)).
-     * It should not hurt and should not be necessary. It's just some
-     * extra defensive space. */
-#define _MSG_CONTROL_BUF_EXTRA_SPACE (NM_MORE_ASSERTS ? 512u : 0u)
     union {
-        struct cmsghdr cmsghdr;
-        char           buf[CMSG_SPACE(sizeof(struct ucred)) + _MSG_CONTROL_BUF_EXTRA_SPACE];
+        struct cmsghdr _dummy_for_alignment;
+        struct {
+            char buf[CMSG_SPACE(sizeof(struct ucred)) + CMSG_SPACE(sizeof(struct nl_pktinfo))];
+
+            /* We really expect that "buf" is large enough end even assert against
+             * that. We don't expect and don't want to handle MSG_CTRUNC error.
+             * Still, add some extra safety. This is on the stack and essentially for free. */
+            char _extra[512];
+        };
     } msg_contol_buf;
     ssize_t       n;
     int           flags = 0;
@@ -1465,14 +1477,14 @@ nl_recv(struct nl_sock     *sk,
         .msg_controllen = 0,
         .msg_control    = NULL,
     };
-    struct ucred tmpcreds;
-    gboolean     tmpcreds_has = FALSE;
-    int          retval;
-    int          errsv;
+    struct cmsghdr *cmsg;
+    int             retval;
+    int             errsv;
 
     nm_assert(nla);
     nm_assert(buf && !*buf);
-    nm_assert(!out_creds_has == !out_creds);
+    nm_assert(!out_creds_has || out_creds);
+    nm_assert(!out_pktinfo_has || out_pktinfo_group);
 
     if ((sk->s_flags & NL_MSG_PEEK)
         || (!(sk->s_flags & NL_MSG_PEEK_EXPLICIT) && sk->s_bufsize == 0))
@@ -1486,7 +1498,7 @@ nl_recv(struct nl_sock     *sk,
         iov.iov_base = g_malloc(iov.iov_len);
     }
 
-    if (out_creds && (sk->s_flags & NL_SOCK_PASSCRED)) {
+    if (out_creds_has || out_pktinfo_has) {
         msg.msg_controllen = sizeof(msg_contol_buf);
         msg.msg_control    = msg_contol_buf.buf;
     }
@@ -1506,11 +1518,14 @@ retry:
         goto abort;
     }
 
+    nm_assert((gsize) n <= G_MAXINT);
+
     /* We really don't expect truncation of ancillary data. We provided a large
     * enough buffer, so this is likely a bug. In the worst case, we might lack
     * the requested credentials and the caller likely will reject the message
     * later. */
     nm_assert(!(msg.msg_flags & MSG_CTRUNC));
+    nm_assert(msg.msg_controllen <= G_STRUCT_OFFSET(typeof(msg_contol_buf), _extra));
 
     if (iov.iov_len < n || (msg.msg_flags & MSG_TRUNC)) {
         /* respond with error to an incomplete message */
@@ -1539,32 +1554,35 @@ retry:
         goto abort;
     }
 
-    if (out_creds && (sk->s_flags & NL_SOCK_PASSCRED)) {
-        struct cmsghdr *cmsg;
-
+    if (out_creds_has || out_pktinfo_has) {
+        NM_SET_OUT(out_creds_has, FALSE);
+        NM_SET_OUT(out_pktinfo_has, FALSE);
         for (cmsg = CMSG_FIRSTHDR(&msg); cmsg; cmsg = CMSG_NXTHDR(&msg, cmsg)) {
-            if (cmsg->cmsg_level != SOL_SOCKET)
-                continue;
-            if (cmsg->cmsg_type != SCM_CREDENTIALS)
-                continue;
-            memcpy(&tmpcreds, CMSG_DATA(cmsg), sizeof(tmpcreds));
-            tmpcreds_has = TRUE;
-            break;
+            switch (cmsg->cmsg_level) {
+            case SOL_SOCKET:
+                if (cmsg->cmsg_type == SCM_CREDENTIALS && out_creds_has) {
+                    memcpy(out_creds, CMSG_DATA(cmsg), sizeof(*out_creds));
+                    *out_creds_has = TRUE;
+                }
+                break;
+            case SOL_NETLINK:
+                if (cmsg->cmsg_type == NETLINK_PKTINFO && out_pktinfo_has) {
+                    struct nl_pktinfo p;
+
+                    memcpy(&p, CMSG_DATA(cmsg), sizeof(p));
+                    *out_pktinfo_group = p.group;
+                    *out_pktinfo_has   = TRUE;
+                }
+                break;
+            }
         }
     }
 
-    retval = n;
+    *buf = iov.iov_base;
+    return (int) n;
 
 abort:
-    if (retval <= 0) {
-        if (iov.iov_base != buf0)
-            g_free(iov.iov_base);
-        return retval;
-    }
-
-    *buf = iov.iov_base;
-    if (out_creds && tmpcreds_has)
-        *out_creds = tmpcreds;
-    NM_SET_OUT(out_creds_has, tmpcreds_has);
+    if (iov.iov_base != buf0)
+        g_free(iov.iov_base);
     return retval;
 }
