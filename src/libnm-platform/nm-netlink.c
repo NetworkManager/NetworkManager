@@ -80,10 +80,57 @@ NM_UTILS_FLAGS2STR_DEFINE(nl_nlmsg_flags2str,
                           NM_UTILS_FLAGS2STR(NLM_F_CREATE, "CREATE"),
                           NM_UTILS_FLAGS2STR(NLM_F_APPEND, "APPEND"), );
 
+static NM_UTILS_LOOKUP_STR_DEFINE(_rtnl_type_to_str,
+                                  guint16,
+                                  NM_UTILS_LOOKUP_DEFAULT(NULL),
+                                  NM_UTILS_LOOKUP_STR_ITEM(RTM_GETLINK, "RTM_GETLINK"),
+                                  NM_UTILS_LOOKUP_STR_ITEM(RTM_NEWLINK, "RTM_NEWLINK"),
+                                  NM_UTILS_LOOKUP_STR_ITEM(RTM_DELLINK, "RTM_DELLINK"),
+                                  NM_UTILS_LOOKUP_STR_ITEM(RTM_SETLINK, "RTM_SETLINK"),
+                                  NM_UTILS_LOOKUP_STR_ITEM(RTM_GETADDR, "RTM_GETADDR"),
+                                  NM_UTILS_LOOKUP_STR_ITEM(RTM_NEWADDR, "RTM_NEWADDR"),
+                                  NM_UTILS_LOOKUP_STR_ITEM(RTM_DELADDR, "RTM_DELADDR"),
+                                  NM_UTILS_LOOKUP_STR_ITEM(RTM_GETROUTE, "RTM_GETROUTE"),
+                                  NM_UTILS_LOOKUP_STR_ITEM(RTM_NEWROUTE, "RTM_NEWROUTE"),
+                                  NM_UTILS_LOOKUP_STR_ITEM(RTM_DELROUTE, "RTM_DELROUTE"),
+                                  NM_UTILS_LOOKUP_STR_ITEM(RTM_GETRULE, "RTM_GETRULE"),
+                                  NM_UTILS_LOOKUP_STR_ITEM(RTM_NEWRULE, "RTM_NEWRULE"),
+                                  NM_UTILS_LOOKUP_STR_ITEM(RTM_DELRULE, "RTM_DELRULE"),
+                                  NM_UTILS_LOOKUP_STR_ITEM(RTM_GETQDISC, "RTM_GETQDISC"),
+                                  NM_UTILS_LOOKUP_STR_ITEM(RTM_NEWQDISC, "RTM_NEWQDISC"),
+                                  NM_UTILS_LOOKUP_STR_ITEM(RTM_DELQDISC, "RTM_DELQDISC"),
+                                  NM_UTILS_LOOKUP_STR_ITEM(RTM_GETTFILTER, "RTM_GETTFILTER"),
+                                  NM_UTILS_LOOKUP_STR_ITEM(RTM_NEWTFILTER, "RTM_NEWTFILTER"),
+                                  NM_UTILS_LOOKUP_STR_ITEM(RTM_DELTFILTER, "RTM_DELTFILTER"),
+                                  NM_UTILS_LOOKUP_STR_ITEM(NLMSG_NOOP, "NLMSG_NOOP"),
+                                  NM_UTILS_LOOKUP_STR_ITEM(NLMSG_ERROR, "NLMSG_ERROR"),
+                                  NM_UTILS_LOOKUP_STR_ITEM(NLMSG_DONE, "NLMSG_DONE"),
+                                  NM_UTILS_LOOKUP_STR_ITEM(NLMSG_OVERRUN, "NLMSG_OVERRUN"), );
+
+static NM_UTILS_LOOKUP_STR_DEFINE(
+    _genl_ctrl_cmd_to_str,
+    guint8,
+    NM_UTILS_LOOKUP_DEFAULT(NULL),
+    NM_UTILS_LOOKUP_STR_ITEM(CTRL_CMD_UNSPEC, "CTRL_CMD_UNSPEC"),
+    NM_UTILS_LOOKUP_STR_ITEM(CTRL_CMD_NEWFAMILY, "CTRL_CMD_NEWFAMILY"),
+    NM_UTILS_LOOKUP_STR_ITEM(CTRL_CMD_DELFAMILY, "CTRL_CMD_DELFAMILY"),
+    NM_UTILS_LOOKUP_STR_ITEM(CTRL_CMD_GETFAMILY, "CTRL_CMD_GETFAMILY"),
+    NM_UTILS_LOOKUP_STR_ITEM(CTRL_CMD_NEWOPS, "CTRL_CMD_NEWOPS"),
+    NM_UTILS_LOOKUP_STR_ITEM(CTRL_CMD_DELOPS, "CTRL_CMD_DELOPS"),
+    NM_UTILS_LOOKUP_STR_ITEM(CTRL_CMD_GETOPS, "CTRL_CMD_GETOPS"),
+    NM_UTILS_LOOKUP_STR_ITEM(CTRL_CMD_NEWMCAST_GRP, "CTRL_CMD_NEWMCAST_GRP"),
+    NM_UTILS_LOOKUP_STR_ITEM(CTRL_CMD_DELMCAST_GRP, "CTRL_CMD_DELMCAST_GRP"),
+    NM_UTILS_LOOKUP_STR_ITEM(CTRL_CMD_GETMCAST_GRP, "CTRL_CMD_GETMCAST_GRP"),
+    NM_UTILS_LOOKUP_STR_ITEM(CTRL_CMD_GETPOLICY, "CTRL_CMD_GETPOLICY"), );
+
 /*****************************************************************************/
 
 const char *
-nl_nlmsghdr_to_str(int netlink_protocol, const struct nlmsghdr *hdr, char *buf, gsize len)
+nl_nlmsghdr_to_str(int                    netlink_protocol,
+                   guint32                pktinfo_group,
+                   const struct nlmsghdr *hdr,
+                   char                  *buf,
+                   gsize                  len)
 {
     const char *b;
     const char *s = NULL;
@@ -97,86 +144,43 @@ nl_nlmsghdr_to_str(int netlink_protocol, const struct nlmsghdr *hdr, char *buf, 
 
     switch (netlink_protocol) {
     case NETLINK_ROUTE:
-        switch (hdr->nlmsg_type) {
-        case RTM_GETLINK:
-            s = "RTM_GETLINK";
-            break;
-        case RTM_NEWLINK:
-            s = "RTM_NEWLINK";
-            break;
-        case RTM_DELLINK:
-            s = "RTM_DELLINK";
-            break;
-        case RTM_SETLINK:
-            s = "RTM_SETLINK";
-            break;
-        case RTM_GETADDR:
-            s = "RTM_GETADDR";
-            break;
-        case RTM_NEWADDR:
-            s = "RTM_NEWADDR";
-            break;
-        case RTM_DELADDR:
-            s = "RTM_DELADDR";
-            break;
-        case RTM_GETROUTE:
-            s = "RTM_GETROUTE";
-            break;
-        case RTM_NEWROUTE:
-            s = "RTM_NEWROUTE";
-            break;
-        case RTM_DELROUTE:
-            s = "RTM_DELROUTE";
-            break;
-        case RTM_GETRULE:
-            s = "RTM_GETRULE";
-            break;
-        case RTM_NEWRULE:
-            s = "RTM_NEWRULE";
-            break;
-        case RTM_DELRULE:
-            s = "RTM_DELRULE";
-            break;
-        case RTM_GETQDISC:
-            s = "RTM_GETQDISC";
-            break;
-        case RTM_NEWQDISC:
-            s = "RTM_NEWQDISC";
-            break;
-        case RTM_DELQDISC:
-            s = "RTM_DELQDISC";
-            break;
-        case RTM_GETTFILTER:
-            s = "RTM_GETTFILTER";
-            break;
-        case RTM_NEWTFILTER:
-            s = "RTM_NEWTFILTER";
-            break;
-        case RTM_DELTFILTER:
-            s = "RTM_DELTFILTER";
-            break;
-        case NLMSG_NOOP:
-            s = "NLMSG_NOOP";
-            break;
-        case NLMSG_ERROR:
-            s = "NLMSG_ERROR";
-            break;
-        case NLMSG_DONE:
-            s = "NLMSG_DONE";
-            break;
-        case NLMSG_OVERRUN:
-            s = "NLMSG_OVERRUN";
-            break;
+        s = _rtnl_type_to_str(hdr->nlmsg_type);
+        if (s)
+            nm_strbuf_append_str(&buf, &len, s);
+        else
+            nm_strbuf_append(&buf, &len, "(%u)", (unsigned) hdr->nlmsg_type);
+        break;
+    default:
+        nm_assert_not_reached();
+        /* fall-through */
+    case NETLINK_GENERIC:
+        if (pktinfo_group == 0)
+            nm_strbuf_append(&buf, &len, "group:unicast");
+        else
+            nm_strbuf_append(&buf, &len, "group:multicast(%u)", (unsigned) pktinfo_group);
+
+        s = NULL;
+        if (hdr->nlmsg_type == GENL_ID_CTRL)
+            s = "GENL_ID_CTRL";
+        if (s)
+            nm_strbuf_append(&buf, &len, ", msg-type:%s", s);
+        else
+            nm_strbuf_append(&buf, &len, ", msg-type:(%u)", (unsigned) hdr->nlmsg_type);
+
+        if (genlmsg_valid_hdr(hdr, 0)) {
+            const struct genlmsghdr *ghdr;
+
+            ghdr = nlmsg_data(hdr);
+            s    = NULL;
+            if (hdr->nlmsg_type == GENL_ID_CTRL)
+                s = _genl_ctrl_cmd_to_str(ghdr->cmd);
+            if (s)
+                nm_strbuf_append(&buf, &len, ", cmd:%s", s);
+            else
+                nm_strbuf_append(&buf, &len, ", cmd:(%u)", (unsigned) ghdr->cmd);
         }
         break;
-    case NETLINK_GENERIC:
-        break;
     }
-
-    if (s)
-        nm_strbuf_append_str(&buf, &len, s);
-    else
-        nm_strbuf_append(&buf, &len, "(%u)", (unsigned) hdr->nlmsg_type);
 
     flags = hdr->nlmsg_flags;
 

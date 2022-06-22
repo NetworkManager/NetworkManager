@@ -7052,7 +7052,7 @@ _rtnl_handle_msg(NMPlatform *platform, const struct nl_msg_lite *msg, gboolean h
     obj = nmp_object_new_from_nl(platform, cache, msg, is_del, &parse_nlmsg_iter);
     if (!obj) {
         _LOGT("event-notification: %s: ignore",
-              nl_nlmsghdr_to_str(NETLINK_ROUTE, msghdr, buf_nlmsghdr, sizeof(buf_nlmsghdr)));
+              nl_nlmsghdr_to_str(NETLINK_ROUTE, 0, msghdr, buf_nlmsghdr, sizeof(buf_nlmsghdr)));
         return;
     }
 
@@ -7070,7 +7070,7 @@ _rtnl_handle_msg(NMPlatform *platform, const struct nl_msg_lite *msg, gboolean h
     }
 
     _LOGT("event-notification: %s%s: %s",
-          nl_nlmsghdr_to_str(NETLINK_ROUTE, msghdr, buf_nlmsghdr, sizeof(buf_nlmsghdr)),
+          nl_nlmsghdr_to_str(NETLINK_ROUTE, 0, msghdr, buf_nlmsghdr, sizeof(buf_nlmsghdr)),
           is_dump ? ", in-dump" : "",
           nmp_object_to_string(obj,
                                is_del ? NMP_OBJECT_TO_STRING_ID : NMP_OBJECT_TO_STRING_PUBLIC,
@@ -9297,7 +9297,11 @@ continue_reading:
 
         _LOGt("%s: recvmsg: new message %s",
               log_prefix,
-              nl_nlmsghdr_to_str(netlink_protocol, msg.nm_nlh, buf_nlmsghdr, sizeof(buf_nlmsghdr)));
+              nl_nlmsghdr_to_str(netlink_protocol,
+                                 0,
+                                 msg.nm_nlh,
+                                 buf_nlmsghdr,
+                                 sizeof(buf_nlmsghdr)));
 
         if (msg.nm_nlh->nlmsg_flags & NLM_F_MULTI)
             multipart = TRUE;

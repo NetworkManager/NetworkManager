@@ -69,8 +69,11 @@ const char *nl_nlmsgtype2str(int type, char *buf, size_t size);
 
 const char *nl_nlmsg_flags2str(int flags, char *buf, size_t len);
 
-const char *
-nl_nlmsghdr_to_str(int netlink_protocol, const struct nlmsghdr *hdr, char *buf, gsize len);
+const char *nl_nlmsghdr_to_str(int                    netlink_protocol,
+                               guint32                pktinfo_group,
+                               const struct nlmsghdr *hdr,
+                               char                  *buf,
+                               gsize                  len);
 
 /*****************************************************************************/
 
