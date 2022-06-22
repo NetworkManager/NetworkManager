@@ -7015,7 +7015,7 @@ event_seq_check(NMPlatform             *platform,
 }
 
 static void
-event_valid_msg(NMPlatform *platform, const struct nl_msg_lite *msg, gboolean handle_events)
+_rtnl_handle_msg(NMPlatform *platform, const struct nl_msg_lite *msg, gboolean handle_events)
 {
     char                      sbuf1[NM_UTILS_TO_STRING_BUFFER_SIZE];
     NMLinuxPlatformPrivate   *priv;
@@ -9246,11 +9246,10 @@ _netlink_recv_handle(NMPlatform *platform, int netlink_protocol, gboolean handle
     NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE(platform);
     struct nl_sock         *sk;
     int                     n;
-    int                     err         = 0;
+    int                     retval      = 0;
     gboolean                multipart   = 0;
     gboolean                interrupted = FALSE;
     struct nlmsghdr        *hdr;
-    WaitForNlResponseResult seq_result;
     struct sockaddr_nl      nla;
     struct ucred            creds;
     gboolean                creds_has;
@@ -9274,13 +9273,12 @@ continue_reading:
             _LOGT("%s: recvmsg: received message without credentials", log_prefix);
         else
             _LOGT("%s: recvmsg: received non-kernel message (pid %d)", log_prefix, creds.pid);
-        err = 0;
         goto stop;
     }
 
     hdr = (struct nlmsghdr *) priv->netlink_recv_buf.buf;
     while (nlmsg_ok(hdr, n)) {
-        gboolean                 abort_parsing     = FALSE;
+        WaitForNlResponseResult  seq_result;
         gboolean                 process_valid_msg = FALSE;
         char                     buf_nlmsghdr[400];
         const char              *extack_msg = NULL;
@@ -9334,8 +9332,7 @@ continue_reading:
             /* Data got lost, report back to user. The default action is to
              * quit parsing. The user may overrule this action by returning
              * NL_SKIP or NL_PROCEED (dangerous) */
-            err           = -NME_NL_MSG_OVERFLOW;
-            abort_parsing = TRUE;
+            retval = -NME_NL_MSG_OVERFLOW;
         } else if (msg.nm_nlh->nlmsg_type == NLMSG_ERROR) {
             /* Message carries a nlmsgerr */
             struct nlmsgerr *e = nlmsg_data(msg.nm_nlh);
@@ -9345,8 +9342,7 @@ continue_reading:
                  * is to stop parsing. The user may overrule
                  * this action by returning NL_SKIP or
                  * NL_PROCEED (dangerous) */
-                err           = -NME_NL_MSG_TRUNC;
-                abort_parsing = TRUE;
+                retval = -NME_NL_MSG_TRUNC;
             } else if (e->error) {
                 int errsv = nm_errno_native(e->error);
 
@@ -9393,7 +9389,7 @@ continue_reading:
              * refresh-all request. In that case, the pending request is thereby
              * completed.
              *
-             * We must do that before processing the message with event_valid_msg(),
+             * We must do that before processing the message with _rtnl_handle_msg(),
              * because we must track the completion of the pending request before that. */
             event_seq_check_refresh_all(platform, seq_number);
 
@@ -9402,7 +9398,7 @@ continue_reading:
                  * get along with broken kernels. NL_SKIP has no
                  * effect on this.  */
 
-                event_valid_msg(platform, &msg, handle_events);
+                _rtnl_handle_msg(platform, &msg, handle_events);
 
                 seq_result = WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK;
             }
@@ -9411,10 +9407,9 @@ continue_reading:
             break;
         }
 
-        if (abort_parsing)
+        if (retval != 0)
             goto stop;
 
-        err = 0;
         hdr = nlmsg_next(hdr, &n);
     }
 
@@ -9433,7 +9428,7 @@ stop:
 
     if (interrupted)
         return -NME_NL_DUMP_INTR;
-    return err;
+    return retval;
 }
 
 /*****************************************************************************/
