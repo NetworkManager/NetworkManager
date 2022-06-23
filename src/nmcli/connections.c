@@ -4509,7 +4509,7 @@ gen_func_bond_lacp_rate(const char *text, int state)
 /*****************************************************************************/
 
 static gboolean
-enable_type_settings_and_options(NMConnection *con, GError **error)
+enable_type_settings_and_options(NmCli *nmc, NMConnection *con, GError **error)
 {
     const NMMetaSettingValidPartItem *const *type_settings;
     const NMMetaSettingValidPartItem *const *slv_settings;
@@ -4522,11 +4522,20 @@ enable_type_settings_and_options(NMConnection *con, GError **error)
         enable_options(NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_MASTER, NULL);
 
     if (NM_IN_STRSET(nm_setting_connection_get_connection_type(s_con),
+                     NM_SETTING_BLUETOOTH_SETTING_NAME,
                      NM_SETTING_BOND_SETTING_NAME,
-                     NM_SETTING_TEAM_SETTING_NAME,
                      NM_SETTING_BRIDGE_SETTING_NAME,
-                     NM_SETTING_VLAN_SETTING_NAME)) {
-        disable_options(NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_INTERFACE_NAME);
+                     NM_SETTING_DUMMY_SETTING_NAME,
+                     NM_SETTING_OVS_BRIDGE_SETTING_NAME,
+                     NM_SETTING_OVS_PATCH_SETTING_NAME,
+                     NM_SETTING_OVS_PORT_SETTING_NAME,
+                     NM_SETTING_TEAM_SETTING_NAME,
+                     NM_SETTING_VETH_SETTING_NAME,
+                     NM_SETTING_VRF_SETTING_NAME,
+                     NM_SETTING_WIREGUARD_SETTING_NAME)) {
+        enable_options(NM_SETTING_CONNECTION_SETTING_NAME,
+                       NM_SETTING_CONNECTION_INTERFACE_NAME,
+                       NULL);
     }
 
     if (!con_settings(con, &type_settings, &slv_settings, error))
@@ -4534,6 +4543,9 @@ enable_type_settings_and_options(NMConnection *con, GError **error)
 
     ensure_settings(con, slv_settings);
     ensure_settings(con, type_settings);
+
+    /* For some software connection types we generate the interface name for the user. */
+    set_default_interface_name(nmc, s_con);
 
     return TRUE;
 }
@@ -4583,7 +4595,7 @@ set_connection_type(NmCli            *nmc,
                       error))
         return FALSE;
 
-    return enable_type_settings_and_options(con, error);
+    return enable_type_settings_and_options(nmc, con, error);
 }
 
 static gboolean
@@ -5891,7 +5903,7 @@ read_properties:
     if (nmc->complete)
         goto finish;
 
-    if (!enable_type_settings_and_options(connection, &error)) {
+    if (!enable_type_settings_and_options(nmc, connection, &error)) {
         g_string_assign(nmc->return_text, error->message);
         nmc->return_value = error->code;
         goto finish;
@@ -5931,9 +5943,6 @@ read_properties:
             g_object_set(s_con, NM_SETTING_CONNECTION_ID, default_name, NULL);
         }
     }
-
-    /* For some software connection types we generate the interface name for the user. */
-    set_default_interface_name(nmc, s_con);
 
     /* Now see if there's something optional that needs to be asked for.
      * Keep asking until there's no more things to ask for. */
