@@ -4651,7 +4651,6 @@ set_bond_option(NmCli            *nmc,
                 GError          **error)
 {
     NMSettingBond *s_bond;
-    gboolean       success;
     gs_free char  *name = NULL;
     char          *p;
 
@@ -4665,26 +4664,25 @@ set_bond_option(NmCli            *nmc,
     }
 
     if (nm_str_is_empty(value)) {
-        nm_setting_bond_remove_option(s_bond, name);
-        success = TRUE;
-    } else
-        success = _nm_meta_setting_bond_add_option(NM_SETTING(s_bond), name, value, error);
+        if (allow_reset) {
+            nm_setting_bond_remove_option(s_bond, name);
+            return TRUE;
+        }
+    } else {
+        if (!_nm_meta_setting_bond_add_option(NM_SETTING(s_bond), name, value, error))
+            return FALSE;
+    }
 
-    if (!success)
-        return FALSE;
-
-    if (success) {
-        if (nm_streq(name, NM_SETTING_BOND_OPTION_MODE)) {
-            value = nmc_bond_validate_mode(value, error);
-            if (nm_streq(value, "active-backup")) {
-                enable_options(NM_SETTING_BOND_SETTING_NAME,
-                               NM_SETTING_BOND_OPTIONS,
-                               NM_MAKE_STRV("primary"));
-            }
+    if (nm_streq(name, NM_SETTING_BOND_OPTION_MODE)) {
+        value = nm_setting_bond_get_option_by_name(s_bond, name);
+        if (nm_streq(value, "active-backup")) {
+            enable_options(NM_SETTING_BOND_SETTING_NAME,
+                           NM_SETTING_BOND_OPTIONS,
+                           NM_MAKE_STRV("primary"));
         }
     }
 
-    return success;
+    return TRUE;
 }
 
 static gboolean
