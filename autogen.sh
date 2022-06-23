@@ -22,7 +22,7 @@ PKG_NAME=NetworkManager
 
 cd $srcdir
 
-gtkdocize --copy
+gtkdocize
 autoreconf --verbose --force --install
 
 cd $olddir
