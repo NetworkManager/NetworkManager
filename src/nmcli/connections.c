@@ -5615,7 +5615,9 @@ connection_get_base_meta_setting_type(NMConnection *connection)
     const NMMetaSettingInfoEditor *editor;
 
     connection_type = nm_connection_get_connection_type(connection);
-    nm_assert(connection_type);
+    if (!connection_type)
+        return NM_META_SETTING_TYPE_UNKNOWN;
+
     base_setting = nm_connection_get_setting_by_name(connection, connection_type);
     nm_assert(base_setting);
     editor = nm_meta_setting_info_editor_find_by_setting(base_setting);
@@ -5671,10 +5673,15 @@ questionnaire_mandatory(NmCli *nmc, NMConnection *connection)
     NMMetaSettingType s, base;
 
     /* First ask connection properties */
-    questionnaire_mandatory_ask_setting(nmc, connection, NM_META_SETTING_TYPE_CONNECTION);
+    while (1) {
+        base = connection_get_base_meta_setting_type(connection);
+        if (base != NM_META_SETTING_TYPE_UNKNOWN)
+            break;
+        enable_options(NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_TYPE, NULL);
+        questionnaire_mandatory_ask_setting(nmc, connection, NM_META_SETTING_TYPE_CONNECTION);
+    }
 
     /* Ask properties of the base setting */
-    base = connection_get_base_meta_setting_type(connection);
     questionnaire_mandatory_ask_setting(nmc, connection, base);
 
     /* Remaining settings */
