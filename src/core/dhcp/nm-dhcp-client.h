@@ -288,6 +288,8 @@ int                nm_dhcp_client_get_ifindex(NMDhcpClient *self);
 void    nm_dhcp_client_set_effective_client_id(NMDhcpClient *self, GBytes *client_id);
 GBytes *nm_dhcp_client_get_effective_client_id(NMDhcpClient *self);
 
+NML3ConfigData *nm_dhcp_client_create_l3cd(NMDhcpClient *self);
+
 /*****************************************************************************
  * Client data
  *****************************************************************************/
