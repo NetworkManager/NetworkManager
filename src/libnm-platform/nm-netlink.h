@@ -607,8 +607,6 @@ int nl_recvmsgs(struct nl_sock *sk, const struct nl_cb *cb);
 
 int nl_wait_for_ack(struct nl_sock *sk, const struct nl_cb *cb);
 
-int nl_socket_set_ext_ack(struct nl_sock *sk, gboolean enable);
-
 /*****************************************************************************/
 
 void                    *genlmsg_put(struct nl_msg *msg,

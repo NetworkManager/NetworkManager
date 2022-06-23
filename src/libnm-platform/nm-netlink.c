@@ -1032,22 +1032,6 @@ nl_socket_add_memberships(struct nl_sock *sk, int group, ...)
     return 0;
 }
 
-int
-nl_socket_set_ext_ack(struct nl_sock *sk, gboolean enable)
-{
-    int err;
-    int val;
-
-    nm_assert_sk(sk);
-
-    val = !!enable;
-    err = setsockopt(sk->s_fd, SOL_NETLINK, NETLINK_EXT_ACK, &val, sizeof(val));
-    if (err < 0)
-        return -nm_errno_from_native(errno);
-
-    return 0;
-}
-
 /*****************************************************************************/
 
 int
@@ -1064,6 +1048,7 @@ nl_socket_new(struct nl_sock **out_sk,
     int                            nmerr;
     socklen_t                      addrlen;
     struct sockaddr_nl             local = {0};
+    int                            i_val;
 
     nm_assert(out_sk && !*out_sk);
 
@@ -1102,7 +1087,8 @@ nl_socket_new(struct nl_sock **out_sk,
     if (nmerr < 0)
         return nmerr;
 
-    (void) nl_socket_set_ext_ack(sk, TRUE);
+    i_val = 1;
+    (void) setsockopt(sk->s_fd, SOL_NETLINK, NETLINK_EXT_ACK, &i_val, sizeof(i_val));
 
     if (NM_FLAGS_HAS(flags, NL_SOCKET_FLAGS_PASSCRED)) {
         err = nl_socket_set_passcred(sk, 1);
