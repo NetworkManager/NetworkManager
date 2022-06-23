@@ -453,6 +453,9 @@ typedef union {
     /* RTA_METRICS.RTAX_INITRWND (iproute2: initrwnd) */                                  \
     guint32 initrwnd;                                                                     \
                                                                                           \
+    /* RTA_METRICS.RTAX_RTO_MIN (iproute2: rto_min) */                                    \
+    guint32 rto_min;                                                                      \
+                                                                                          \
     /* RTA_METRICS.RTAX_MTU (iproute2: mtu) */                                            \
     guint32 mtu;                                                                          \
                                                                                           \
@@ -499,6 +502,10 @@ typedef union {
     bool lock_initcwnd : 1;                                                               \
     bool lock_initrwnd : 1;                                                               \
     bool lock_mtu : 1;                                                                    \
+    bool lock_mss : 1;                                                                    \
+                                                                                          \
+    /* RTA_METRICS.RTAX_QUICKACK (iproute2: quickack) */                                  \
+    bool quickack : 1;                                                                    \
                                                                                           \
     /* if TRUE, the "metric" field is interpreted as an offset that is added to a default
      * metric. For example, form a DHCP lease we don't know the actually used metric, because
