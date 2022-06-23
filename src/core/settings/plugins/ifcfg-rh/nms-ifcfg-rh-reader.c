@@ -879,6 +879,9 @@ enum {
     PARSE_LINE_ATTR_ROUTE_INITCWND,
     PARSE_LINE_ATTR_ROUTE_INITRWND,
     PARSE_LINE_ATTR_ROUTE_MTU,
+    PARSE_LINE_ATTR_ROUTE_ADVMSS,
+    PARSE_LINE_ATTR_ROUTE_RTO_MIN,
+    PARSE_LINE_ATTR_ROUTE_QUICKACK,
 
     /* iproute2 arguments that only matter when parsing the file. */
     PARSE_LINE_ATTR_ROUTE_TO,
@@ -979,6 +982,11 @@ parse_route_line(const char *line,
                 .key  = NM_IP_ROUTE_ATTRIBUTE_CWND,
                 .type = PARSE_LINE_TYPE_UINT32_WITH_LOCK,
             },
+        [PARSE_LINE_ATTR_ROUTE_ADVMSS] =
+            {
+                .key  = NM_IP_ROUTE_ATTRIBUTE_ADVMSS,
+                .type = PARSE_LINE_TYPE_UINT32_WITH_LOCK,
+            },
         [PARSE_LINE_ATTR_ROUTE_INITCWND] =
             {
                 .key  = NM_IP_ROUTE_ATTRIBUTE_INITCWND,
@@ -994,7 +1002,16 @@ parse_route_line(const char *line,
                 .key  = NM_IP_ROUTE_ATTRIBUTE_MTU,
                 .type = PARSE_LINE_TYPE_UINT32_WITH_LOCK,
             },
-
+        [PARSE_LINE_ATTR_ROUTE_QUICKACK] =
+            {
+                .key  = NM_IP_ROUTE_ATTRIBUTE_QUICKACK,
+                .type = PARSE_LINE_TYPE_BOOL,
+            },
+        [PARSE_LINE_ATTR_ROUTE_RTO_MIN] =
+            {
+                .key  = NM_IP_ROUTE_ATTRIBUTE_RTO_MIN,
+                .type = PARSE_LINE_TYPE_UINT32,
+            },
         [PARSE_LINE_ATTR_ROUTE_TO] =
             {
                 .key                         = "to",

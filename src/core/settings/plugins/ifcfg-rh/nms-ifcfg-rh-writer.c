@@ -2321,6 +2321,7 @@ get_route_attributes_string(NMIPRoute *route, int family)
             continue;
 
         if (NM_IN_STRSET(names[i],
+                         NM_IP_ROUTE_ATTRIBUTE_ADVMSS,
                          NM_IP_ROUTE_ATTRIBUTE_WINDOW,
                          NM_IP_ROUTE_ATTRIBUTE_CWND,
                          NM_IP_ROUTE_ATTRIBUTE_INITCWND,
@@ -2350,8 +2351,12 @@ get_route_attributes_string(NMIPRoute *route, int family)
             g_string_append_printf(str, "%s %u", names[i], (unsigned) g_variant_get_byte(attr));
         } else if (nm_streq(names[i], NM_IP_ROUTE_ATTRIBUTE_TOS)) {
             g_string_append_printf(str, "%s 0x%02x", names[i], (unsigned) g_variant_get_byte(attr));
-        } else if (nm_streq(names[i], NM_IP_ROUTE_ATTRIBUTE_TABLE)) {
+        } else if (NM_IN_STRSET(names[i],
+                                NM_IP_ROUTE_ATTRIBUTE_TABLE,
+                                NM_IP_ROUTE_ATTRIBUTE_RTO_MIN)) {
             g_string_append_printf(str, "%s %u", names[i], (unsigned) g_variant_get_uint32(attr));
+        } else if (nm_streq(names[i], NM_IP_ROUTE_ATTRIBUTE_QUICKACK)) {
+            g_string_append_printf(str, "%s %u", names[i], (unsigned) g_variant_get_boolean(attr));
         } else if (nm_streq(names[i], NM_IP_ROUTE_ATTRIBUTE_ONLINK)) {
             if (g_variant_get_boolean(attr))
                 g_string_append(str, "onlink");

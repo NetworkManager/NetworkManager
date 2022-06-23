@@ -123,10 +123,12 @@ gboolean nm_ip_route_attribute_validate(const char *name,
                                         gboolean   *known,
                                         GError    **error);
 
+#define NM_IP_ROUTE_ATTRIBUTE_ADVMSS        "advmss"
 #define NM_IP_ROUTE_ATTRIBUTE_CWND          "cwnd"
 #define NM_IP_ROUTE_ATTRIBUTE_FROM          "from"
 #define NM_IP_ROUTE_ATTRIBUTE_INITCWND      "initcwnd"
 #define NM_IP_ROUTE_ATTRIBUTE_INITRWND      "initrwnd"
+#define NM_IP_ROUTE_ATTRIBUTE_LOCK_ADVMSS   "lock-advmss"
 #define NM_IP_ROUTE_ATTRIBUTE_LOCK_CWND     "lock-cwnd"
 #define NM_IP_ROUTE_ATTRIBUTE_LOCK_INITCWND "lock-initcwnd"
 #define NM_IP_ROUTE_ATTRIBUTE_LOCK_INITRWND "lock-initrwnd"
@@ -134,6 +136,8 @@ gboolean nm_ip_route_attribute_validate(const char *name,
 #define NM_IP_ROUTE_ATTRIBUTE_LOCK_WINDOW   "lock-window"
 #define NM_IP_ROUTE_ATTRIBUTE_MTU           "mtu"
 #define NM_IP_ROUTE_ATTRIBUTE_ONLINK        "onlink"
+#define NM_IP_ROUTE_ATTRIBUTE_QUICKACK      "quickack"
+#define NM_IP_ROUTE_ATTRIBUTE_RTO_MIN       "rto_min"
 #define NM_IP_ROUTE_ATTRIBUTE_SCOPE         "scope"
 #define NM_IP_ROUTE_ATTRIBUTE_SRC           "src"
 #define NM_IP_ROUTE_ATTRIBUTE_TABLE         "table"
