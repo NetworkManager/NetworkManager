@@ -5891,6 +5891,12 @@ read_properties:
     if (nmc->complete)
         goto finish;
 
+    if (!enable_type_settings_and_options(connection, &error)) {
+        g_string_assign(nmc->return_text, error->message);
+        nmc->return_value = error->code;
+        goto finish;
+    }
+
     /* Now ask user for the rest of the mandatory options. */
     if (nmc->ask)
         questionnaire_mandatory(nmc, connection);
