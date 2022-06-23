@@ -761,8 +761,8 @@ genlmsg_user_hdr(const struct genlmsghdr *gnlh)
     return genlmsg_data(gnlh);
 }
 
-struct genlmsghdr *
-genlmsg_hdr(struct nlmsghdr *nlh)
+const struct genlmsghdr *
+genlmsg_hdr(const struct nlmsghdr *nlh)
 {
     return nlmsg_data(nlh);
 }
@@ -795,7 +795,7 @@ genlmsg_attrlen(const struct genlmsghdr *gnlh, int hdrlen)
 }
 
 int
-genlmsg_valid_hdr(struct nlmsghdr *nlh, int hdrlen)
+genlmsg_valid_hdr(const struct nlmsghdr *nlh, int hdrlen)
 {
     struct genlmsghdr *ghdr;
 
@@ -810,13 +810,13 @@ genlmsg_valid_hdr(struct nlmsghdr *nlh, int hdrlen)
 }
 
 int
-genlmsg_parse(struct nlmsghdr         *nlh,
+genlmsg_parse(const struct nlmsghdr   *nlh,
               int                      hdrlen,
               struct nlattr           *tb[],
               int                      maxtype,
               const struct nla_policy *policy)
 {
-    struct genlmsghdr *ghdr;
+    const struct genlmsghdr *ghdr;
 
     if (!genlmsg_valid_hdr(nlh, hdrlen))
         return -NME_NL_MSG_TOOSHORT;
