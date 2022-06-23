@@ -22,7 +22,6 @@ PKG_NAME=NetworkManager
 
 cd $srcdir
 
-aclocal --install
 gtkdocize --copy
 autoreconf --verbose --force --install
 
