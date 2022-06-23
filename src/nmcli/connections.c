@@ -5696,16 +5696,14 @@ want_provide_opt_args(const NmcConfig *nmc_config, const char *type, guint num)
 {
     gs_free char *answer = NULL;
 
+    /* Don't ask to ask. */
+    if (num == 1)
+        return TRUE;
+
     /* Ask for optional arguments. */
-    g_print(ngettext("There is %d optional setting for %s.\n",
-                     "There are %d optional settings for %s.\n",
-                     num),
-            (int) num,
-            type);
-    answer = nmc_readline(
-        nmc_config,
-        ngettext("Do you want to provide it? %s", "Do you want to provide them? %s", num),
-        prompt_yes_no(TRUE, NULL));
+    g_print(_("There are %d optional settings for %s.\n"), (int) num, type);
+    answer =
+        nmc_readline(nmc_config, _("Do you want to provide them? %s"), prompt_yes_no(TRUE, NULL));
     nm_strstrip(answer);
     return !answer || matches(answer, WORD_YES);
 }
