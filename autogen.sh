@@ -22,9 +22,9 @@ PKG_NAME=NetworkManager
 
 cd $srcdir
 
-aclocal --install || exit 1
-gtkdocize --copy || exit 1
-autoreconf --verbose --force --install || exit 1
+aclocal --install
+gtkdocize --copy
+autoreconf --verbose --force --install
 
 cd $olddir
 if test -z "$NOCONFIGURE"; then
