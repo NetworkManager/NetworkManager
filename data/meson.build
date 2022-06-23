@@ -60,7 +60,6 @@ if enable_polkit
   )
 
   i18n.merge_file(
-    policy,
     input: policy_in,
     output: '@BASENAME@',
     po_dir: po_dir,
