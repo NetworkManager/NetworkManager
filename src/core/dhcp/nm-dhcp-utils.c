@@ -423,7 +423,7 @@ nm_dhcp_utils_ip4_config_from_options(NMDedupMultiIndex *multi_idx,
 
     str = g_hash_table_lookup(options, "subnet_mask");
     if (str && (inet_pton(AF_INET, str, &tmp_addr) > 0)) {
-        plen = nm_utils_ip4_netmask_to_prefix(tmp_addr);
+        plen = _nm_utils_ip4_netmask_to_prefix(tmp_addr);
         _LOG2I(LOGD_DHCP4, iface, "  plen %d (%s)", plen, str);
     } else {
         /* Get default netmask for the IP according to appropriate class. */

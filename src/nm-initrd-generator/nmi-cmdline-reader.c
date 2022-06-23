@@ -633,7 +633,7 @@ reader_parse_ip(Reader *reader, const char *sysfs_dir, char *argument)
         NMIPAddr addr;
 
         if (is_ipv4 && nm_utils_parse_inaddr_bin(AF_INET, netmask, NULL, &addr))
-            client_ip_prefix = nm_utils_ip4_netmask_to_prefix(addr.addr4);
+            client_ip_prefix = _nm_utils_ip4_netmask_to_prefix(addr.addr4);
         else
             client_ip_prefix = _nm_utils_ascii_str_to_int64(netmask, 10, 0, is_ipv4 ? 32 : 128, -1);
 

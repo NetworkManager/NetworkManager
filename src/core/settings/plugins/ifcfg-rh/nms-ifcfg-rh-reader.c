@@ -777,7 +777,7 @@ read_full_ip4_address(shvarFile    *ifcfg,
         if (!read_ip4_address(ifcfg, numbered_tag(tag, "NETMASK", which), &has_key, &a, error))
             return FALSE;
         if (has_key)
-            prefix = nm_utils_ip4_netmask_to_prefix(a);
+            prefix = _nm_utils_ip4_netmask_to_prefix(a);
         else {
             if (base_addr)
                 prefix = nm_ip_address_get_prefix(base_addr);
@@ -1450,7 +1450,7 @@ read_one_ip4_route(shvarFile *ifcfg, guint32 which, NMIPRoute **out_route, GErro
                           error))
         return FALSE;
     if (has_key) {
-        prefix = nm_utils_ip4_netmask_to_prefix(netmask);
+        prefix = _nm_utils_ip4_netmask_to_prefix(netmask);
         if (netmask != _nm_utils_ip4_prefix_to_netmask(prefix)) {
             g_set_error(error,
                         NM_SETTINGS_ERROR,

@@ -4925,7 +4925,7 @@ _netmask_to_prefix(guint32 netmask)
 
     /* we re-implemented the netmask-to-prefix code differently. Check
      * that they agree. */
-    g_assert_cmpint(prefix, ==, nm_utils_ip4_netmask_to_prefix(netmask));
+    g_assert_cmpint(prefix, ==, _nm_utils_ip4_netmask_to_prefix(netmask));
 
     return prefix;
 }

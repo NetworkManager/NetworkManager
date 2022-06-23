@@ -805,7 +805,7 @@ handle_settings(GVariant *v_dict, gpointer user_data)
         _LOGW("invalid 'Netmask': %s", s ?: "");
         goto out;
     }
-    address.plen = nm_utils_ip4_netmask_to_prefix(address_network);
+    address.plen = _nm_utils_ip4_netmask_to_prefix(address_network);
 
     _LOGI("Address: %s", nm_platform_ip4_address_to_string(&address, sbuf, sizeof(sbuf)));
     nm_l3_config_data_add_address_4(priv->l3cd_4, &address);

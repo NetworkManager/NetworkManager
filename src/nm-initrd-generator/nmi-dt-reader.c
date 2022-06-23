@@ -288,7 +288,7 @@ nmi_dt_reader_parse(const char *sysfs_dir)
             guint32 netmask_v4;
 
             nm_ip_address_get_address_binary(netmask, &netmask_v4);
-            prefix = nm_utils_ip4_netmask_to_prefix(netmask_v4);
+            prefix = _nm_utils_ip4_netmask_to_prefix(netmask_v4);
         }
 
         if (prefix == -1)

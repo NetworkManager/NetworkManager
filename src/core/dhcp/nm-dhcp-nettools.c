@@ -249,7 +249,7 @@ lease_parse_address(NDhcp4ClientLease *lease,
         return FALSE;
     }
 
-    a_plen = nm_utils_ip4_netmask_to_prefix(a_netmask);
+    a_plen = _nm_utils_ip4_netmask_to_prefix(a_netmask);
 
     nm_dhcp_option_add_option_in_addr(options,
                                       AF_INET,
