@@ -816,8 +816,7 @@ system_resolver_resolve_cb(GObject *source_object, GAsyncResult *res, gpointer u
             addr_family = AF_INET6;
             break;
         default:
-            addr_family = AF_UNSPEC;
-            break;
+            goto next;
         }
         if (cb_data->addr_family != AF_UNSPEC && cb_data->addr_family != addr_family)
             continue;
@@ -832,6 +831,7 @@ system_resolver_resolve_cb(GObject *source_object, GAsyncResult *res, gpointer u
 
         nm_str_buf_append(&strbuf_hosts,
                           nm_utils_inet_ntop(addr_family, g_inet_address_to_bytes(a), str_addr));
+next:;
     }
 
     g_list_free_full(list, g_object_unref);
