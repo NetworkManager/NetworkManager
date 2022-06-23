@@ -1558,7 +1558,13 @@ nm_utils_ip4_routes_from_variant(GVariant *value)
 
 /**
  * nm_utils_ip4_netmask_to_prefix:
- * @netmask: an IPv4 netmask in network byte order
+ * @netmask: an IPv4 netmask in network byte order.
+ *   Usually the netmask has all leading bits up to the prefix
+ *   set so that the netmask is identical to having the first
+ *   prefix bits of the address set.
+ *   If that is not the case and there are "holes" in the
+ *   mask, the prefix is determined based on the lowest bit
+ *   set.
  *
  * Returns: the CIDR prefix represented by the netmask
  **/
@@ -1567,6 +1573,7 @@ nm_utils_ip4_netmask_to_prefix(guint32 netmask)
 {
     G_STATIC_ASSERT_EXPR(__SIZEOF_INT__ == 4);
     G_STATIC_ASSERT_EXPR(sizeof(int) == 4);
+    G_STATIC_ASSERT_EXPR(sizeof(guint) == 4);
     G_STATIC_ASSERT_EXPR(sizeof(netmask) == 4);
 
     return ((netmask != 0u) ? (guint32) (32 - __builtin_ctz(ntohl(netmask))) : 0u);
@@ -1574,13 +1581,15 @@ nm_utils_ip4_netmask_to_prefix(guint32 netmask)
 
 /**
  * nm_utils_ip4_prefix_to_netmask:
- * @prefix: a CIDR prefix
+ * @prefix: a CIDR prefix, must be not larger than 32.
  *
  * Returns: the netmask represented by the prefix, in network byte order
  **/
 guint32
 nm_utils_ip4_prefix_to_netmask(guint32 prefix)
 {
+    g_return_val_if_fail(prefix <= 32, 0xffffffffu);
+
     return _nm_utils_ip4_prefix_to_netmask(prefix);
 }
 
