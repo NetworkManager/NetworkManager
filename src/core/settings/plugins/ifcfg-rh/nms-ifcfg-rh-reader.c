@@ -850,6 +850,7 @@ typedef struct {
     union {
         guint8      uint8;
         guint32     uint32;
+        gboolean    boolean;
         const char *str;
         struct {
             guint32 uint32;
@@ -891,6 +892,7 @@ enum {
 #define PARSE_LINE_TYPE_UINT8            '8'
 #define PARSE_LINE_TYPE_UINT32           'u'
 #define PARSE_LINE_TYPE_UINT32_WITH_LOCK 'l'
+#define PARSE_LINE_TYPE_BOOL             'b'
 #define PARSE_LINE_TYPE_ADDR             'a'
 #define PARSE_LINE_TYPE_ADDR_WITH_PREFIX 'p'
 #define PARSE_LINE_TYPE_IFNAME           'i'
@@ -1095,6 +1097,9 @@ parse_route_line(const char *line,
             case PARSE_LINE_TYPE_UINT32_WITH_LOCK:
                 i_words++;
                 goto parse_line_type_uint32_with_lock;
+            case PARSE_LINE_TYPE_BOOL:
+                i_words++;
+                goto parse_line_type_bool;
             case PARSE_LINE_TYPE_ADDR:
                 i_words++;
                 goto parse_line_type_addr;
@@ -1217,6 +1222,22 @@ parse_line_type_uint32_with_lock:
                         NM_SETTINGS_ERROR,
                         NM_SETTINGS_ERROR_INVALID_CONNECTION,
                         "Argument for \"%s\" is not a valid number",
+                        w);
+            return -EINVAL;
+        }
+        i_words++;
+        goto next;
+
+parse_line_type_bool:
+        s = words[i_words];
+        if (!s)
+            goto err_word_missing_argument;
+        p_data->v.boolean = !!_nm_utils_ascii_str_to_int64(s, 10, 0, 1, 0);
+        if (errno) {
+            g_set_error(error,
+                        NM_SETTINGS_ERROR,
+                        NM_SETTINGS_ERROR_INVALID_CONNECTION,
+                        "Argument for \"%s\" is not a valid boolean number",
                         w);
             return -EINVAL;
         }
@@ -1374,6 +1395,9 @@ next:;
             nm_ip_route_set_attribute(route,
                                       p_info->key,
                                       g_variant_new_uint32(p_data->v.uint32_with_lock.uint32));
+            break;
+        case PARSE_LINE_TYPE_BOOL:
+            nm_ip_route_set_attribute(route, p_info->key, g_variant_new_boolean(p_data->v.boolean));
             break;
         case PARSE_LINE_TYPE_ADDR:
         case PARSE_LINE_TYPE_ADDR_WITH_PREFIX:
