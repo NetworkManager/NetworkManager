@@ -68,13 +68,7 @@ G_DEFINE_TYPE(NMDhcpSystemd, nm_dhcp_systemd, NM_TYPE_DHCP_CLIENT)
 /*****************************************************************************/
 
 static NML3ConfigData *
-lease_to_ip6_config(NMDedupMultiIndex *multi_idx,
-                    const char        *iface,
-                    int                ifindex,
-                    sd_dhcp6_lease    *lease,
-                    gboolean           info_only,
-                    gint32             ts,
-                    GError           **error)
+lease_to_ip6_config(NMDhcpSystemd *self, sd_dhcp6_lease *lease, gint32 ts, GError **error)
 {
     nm_auto_unref_l3cd_init NML3ConfigData *l3cd    = NULL;
     gs_unref_hashtable GHashTable          *options = NULL;
@@ -90,11 +84,11 @@ lease_to_ip6_config(NMDedupMultiIndex *multi_idx,
 
     nm_assert(lease);
 
-    l3cd = nm_l3_config_data_new(multi_idx, ifindex, NM_IP_CONFIG_SOURCE_DHCP);
+    l3cd = nm_dhcp_client_create_l3cd(NM_DHCP_CLIENT(self));
 
     options = nm_dhcp_option_create_options_dict();
 
-    if (!info_only) {
+    if (!nm_dhcp_client_get_config(NM_DHCP_CLIENT(self))->v6.info_only) {
         gboolean has_any_addresses = FALSE;
         uint32_t lft_pref;
         uint32_t lft_valid;
@@ -192,16 +186,12 @@ lease_to_ip6_config(NMDedupMultiIndex *multi_idx,
 static void
 bound6_handle(NMDhcpSystemd *self)
 {
-    NMDhcpSystemdPrivate                   *priv  = NM_DHCP_SYSTEMD_GET_PRIVATE(self);
-    const gint32                            ts    = nm_utils_get_monotonic_timestamp_sec();
-    const char                             *iface = nm_dhcp_client_get_iface(NM_DHCP_CLIENT(self));
-    const NMDhcpClientConfig               *client_config;
+    NMDhcpSystemdPrivate                   *priv   = NM_DHCP_SYSTEMD_GET_PRIVATE(self);
+    const gint32                            ts     = nm_utils_get_monotonic_timestamp_sec();
     nm_auto_unref_l3cd_init NML3ConfigData *l3cd   = NULL;
     gs_free_error GError                   *error  = NULL;
     NMPlatformIP6Address                    prefix = {0};
     sd_dhcp6_lease                         *lease  = NULL;
-
-    client_config = nm_dhcp_client_get_config(NM_DHCP_CLIENT(self));
 
     if (sd_dhcp6_client_get_lease(priv->client6, &lease) < 0 || !lease) {
         _LOGW(" no lease!");
@@ -211,13 +201,7 @@ bound6_handle(NMDhcpSystemd *self)
 
     _LOGD("lease available");
 
-    l3cd = lease_to_ip6_config(nm_dhcp_client_get_multi_idx(NM_DHCP_CLIENT(self)),
-                               iface,
-                               nm_dhcp_client_get_ifindex(NM_DHCP_CLIENT(self)),
-                               lease,
-                               client_config->v6.info_only,
-                               ts,
-                               &error);
+    l3cd = lease_to_ip6_config(self, lease, ts, &error);
 
     if (!l3cd) {
         _LOGW("%s", error->message);
