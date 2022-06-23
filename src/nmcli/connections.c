@@ -5575,17 +5575,30 @@ ask_option(NmCli *nmc, NMConnection *connection, const NMMetaAbstractInfo *abstr
     GError                *error  = NULL;
     gs_free char          *prompt = NULL;
     gboolean               multi;
+    const char            *setting_name, *property_name;
     const char            *opt_prompt, *opt_def_hint;
+    gs_free char          *def_hint     = NULL;
+    gs_free char          *property_val = NULL;
     NMMetaPropertyInfFlags inf_flags;
+    NMSetting             *setting;
 
     _meta_abstract_get(abstract_info,
                        NULL,
-                       NULL,
-                       NULL,
+                       &setting_name,
+                       &property_name,
                        NULL,
                        &inf_flags,
                        &opt_prompt,
                        &opt_def_hint);
+
+    if (!opt_def_hint) {
+        setting = nm_connection_get_setting_by_name(connection, setting_name);
+        if (setting)
+            property_val = nmc_setting_get_property_parsable(setting, property_name, NULL);
+        if (property_val)
+            opt_def_hint = def_hint = g_strdup_printf("[%s]", property_val);
+    }
+
     prompt =
         g_strjoin("", gettext(opt_prompt), opt_def_hint ? " " : "", opt_def_hint ?: "", ": ", NULL);
 
