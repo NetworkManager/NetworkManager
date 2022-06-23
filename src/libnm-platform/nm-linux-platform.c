@@ -9747,7 +9747,7 @@ constructed(GObject *_object)
 
     /*************************************************************************/
 
-    nle = nl_socket_new(&priv->sk_genl_sync, NETLINK_GENERIC, TRUE, 0, 0);
+    nle = nl_socket_new(&priv->sk_genl_sync, NETLINK_GENERIC, NL_SOCKET_FLAGS_NONE, 0, 0);
     g_assert(!nle);
 
     _LOGD("genl: generic netlink socket for sync operations created: port=%u, fd=%d",
@@ -9756,17 +9756,14 @@ constructed(GObject *_object)
 
     /*************************************************************************/
 
-    nle = nl_socket_new(&priv->sk_rtnl, NETLINK_ROUTE, FALSE, 8 * 1024 * 1024, 0);
+    /* disable MSG_PEEK, we will handle lost messages ourselves. */
+    nle = nl_socket_new(&priv->sk_rtnl,
+                        NETLINK_ROUTE,
+                        NL_SOCKET_FLAGS_NONBLOCK | NL_SOCKET_FLAGS_PASSCRED
+                            | NL_SOCKET_FLAGS_DISABLE_MSG_PEEK,
+                        8 * 1024 * 1024,
+                        0);
     g_assert(!nle);
-
-    nle = nl_socket_set_passcred(priv->sk_rtnl, 1);
-    g_assert(!nle);
-
-    /* explicitly set the msg buffer size and disable MSG_PEEK.
-     * We use our own receive buffer priv->netlink_recv_buf.
-     * If we encounter NME_NL_MSG_TRUNC, we will increase the buffer
-     * and resync (as we would have lost the message without NL_MSG_PEEK). */
-    nl_socket_disable_msg_peek(priv->sk_rtnl);
 
     nle = nl_socket_add_memberships(priv->sk_rtnl,
                                     RTNLGRP_IPV4_IFADDR,

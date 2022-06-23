@@ -1061,7 +1061,11 @@ nl_socket_disable_msg_peek(struct nl_sock *sk)
 /*****************************************************************************/
 
 int
-nl_socket_new(struct nl_sock **out_sk, int protocol, bool blocking, int bufsize_rx, int bufsize_tx)
+nl_socket_new(struct nl_sock **out_sk,
+              int              protocol,
+              NLSocketFlags    flags,
+              int              bufsize_rx,
+              int              bufsize_tx)
 {
     nm_auto_nlsock struct nl_sock *sk = NULL;
     nm_auto_close int              fd = -1;
@@ -1073,7 +1077,10 @@ nl_socket_new(struct nl_sock **out_sk, int protocol, bool blocking, int bufsize_
 
     nm_assert(out_sk && !*out_sk);
 
-    fd = socket(AF_NETLINK, SOCK_RAW | SOCK_CLOEXEC | (blocking ? 0 : SOCK_NONBLOCK), protocol);
+    fd = socket(AF_NETLINK,
+                SOCK_RAW | SOCK_CLOEXEC
+                    | (NM_FLAGS_HAS(flags, NL_SOCKET_FLAGS_NONBLOCK) ? SOCK_NONBLOCK : 0),
+                protocol);
     if (fd < 0)
         return -nm_errno_from_native(errno);
 
@@ -1096,11 +1103,26 @@ nl_socket_new(struct nl_sock **out_sk, int protocol, bool blocking, int bufsize_
             },
         .s_seq_expect = t,
         .s_seq_next   = t,
+        .s_flags      = NM_FLAGS_HAS(flags, NL_SOCKET_FLAGS_DISABLE_MSG_PEEK) ? 0 : NL_MSG_PEEK,
     };
 
     nmerr = nl_socket_set_buffer_size(sk, bufsize_rx, bufsize_tx);
     if (nmerr < 0)
         return nmerr;
+
+    (void) nl_socket_set_ext_ack(sk, TRUE);
+
+    if (NM_FLAGS_HAS(flags, NL_SOCKET_FLAGS_PASSCRED)) {
+        err = nl_socket_set_passcred(sk, 1);
+        if (err < 0)
+            return err;
+    }
+
+    if (NM_FLAGS_HAS(flags, NL_SOCKET_FLAGS_PKTINFO)) {
+        err = nl_socket_set_pktinfo(sk, 1);
+        if (err < 0)
+            return err;
+    }
 
     err = bind(sk->s_fd, (struct sockaddr *) &sk->s_local, sizeof(sk->s_local));
     if (err != 0)
@@ -1116,8 +1138,6 @@ nl_socket_new(struct nl_sock **out_sk, int protocol, bool blocking, int bufsize_
 
     if (local.nl_family != AF_NETLINK)
         return -NME_UNSPEC;
-
-    (void) nl_socket_set_ext_ack(sk, TRUE);
 
     sk->s_local = local;
     sk->s_proto = protocol;

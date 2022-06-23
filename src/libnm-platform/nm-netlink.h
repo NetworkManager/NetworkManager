@@ -507,13 +507,26 @@ nlmsg_put(struct nl_msg *n, uint32_t pid, uint32_t seq, int type, int payload, i
 
 /*****************************************************************************/
 
+typedef enum {
+    NL_SOCKET_FLAGS_NONE             = 0,
+    NL_SOCKET_FLAGS_NONBLOCK         = 0x1,
+    NL_SOCKET_FLAGS_PASSCRED         = 0x2,
+    NL_SOCKET_FLAGS_PKTINFO          = 0x4,
+    NL_SOCKET_FLAGS_DISABLE_MSG_PEEK = 0x8,
+
+    _NL_SOCKET_FLAGS_ALL = (NL_SOCKET_FLAGS_DISABLE_MSG_PEEK << 1) - 1,
+} NLSocketFlags;
+
 #define NL_AUTO_PORT 0
 #define NL_AUTO_SEQ  0
 
 struct nl_sock;
 
-int
-nl_socket_new(struct nl_sock **out_sk, int protocol, bool blocking, int bufsize_rx, int bufsize_tx);
+int nl_socket_new(struct nl_sock **out_sk,
+                  int              protocol,
+                  NLSocketFlags    flags,
+                  int              bufsize_rx,
+                  int              bufsize_tx);
 
 void nl_socket_free(struct nl_sock *sk);
 
