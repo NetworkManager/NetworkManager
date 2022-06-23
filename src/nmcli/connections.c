@@ -4174,11 +4174,16 @@ enable_options(const char *setting_name, const char *property, const char *const
         for (i = 0; i < nm_meta_property_typ_data_bond.nested_len; i++) {
             const NMMetaNestedPropertyInfo *bi = &nm_meta_property_typ_data_bond.nested[i];
 
-            if (bi->base.inf_flags & NM_META_PROPERTY_INF_FLAG_DONT_ASK && bi->base.property_alias
-                && g_strv_contains(opts, bi->base.property_alias))
+            if (opts) {
+                if (!bi->base.property_alias || !g_strv_contains(opts, bi->base.property_alias))
+                    continue;
+            }
+
+            if (bi->base.inf_flags & NM_META_PROPERTY_INF_FLAG_DONT_ASK) {
                 _dynamic_options_set((const NMMetaAbstractInfo *) bi,
                                      PROPERTY_INF_FLAG_ENABLED,
                                      PROPERTY_INF_FLAG_ENABLED);
+            }
         }
         return;
     }
@@ -4186,11 +4191,16 @@ enable_options(const char *setting_name, const char *property, const char *const
     if (!property_info->is_cli_option)
         g_return_if_reached();
 
-    if (property_info->inf_flags & NM_META_PROPERTY_INF_FLAG_DONT_ASK
-        && property_info->property_alias && g_strv_contains(opts, property_info->property_alias))
+    if (opts) {
+        if (!property_info->property_alias || !g_strv_contains(opts, property_info->property_alias))
+            return;
+    }
+
+    if (property_info->inf_flags & NM_META_PROPERTY_INF_FLAG_DONT_ASK) {
         _dynamic_options_set((const NMMetaAbstractInfo *) property_info,
                              PROPERTY_INF_FLAG_ENABLED,
                              PROPERTY_INF_FLAG_ENABLED);
+    }
 }
 
 /*
@@ -4513,7 +4523,6 @@ set_connection_type(NmCli            *nmc,
     const NMMetaSettingValidPartItem *const *type_settings;
     const NMMetaSettingValidPartItem *const *slv_settings;
     GError                                  *local      = NULL;
-    const char                              *master[]   = {"master", NULL};
     const char                              *slave_type = NULL;
 
     value = check_valid_name_toplevel(value, &slave_type, &local);
@@ -4539,7 +4548,7 @@ set_connection_type(NmCli            *nmc,
                           error)) {
             return FALSE;
         }
-        enable_options(NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_MASTER, master);
+        enable_options(NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_MASTER, NULL);
     }
 
     /* ifname is mandatory for all connection types except virtual ones (bond, team, bridge, vlan) */
