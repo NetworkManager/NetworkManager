@@ -307,6 +307,33 @@ _nm_g_ptr_array_insert(GPtrArray *array, int index_, gpointer data)
 
 /*****************************************************************************/
 
+#if !GLIB_CHECK_VERSION(2, 54, 0)
+static inline gboolean
+g_ptr_array_find(GPtrArray *haystack, gconstpointer needle, guint *index_)
+{
+    guint i;
+    g_return_val_if_fail(haystack, FALSE);
+
+    for (i = 0; i < haystack->len; i++) {
+        if (haystack->pdata[i] == needle) {
+            if (index_)
+                *index_ = i;
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+#else
+#define g_ptr_array_find(haystack, needle, index_)  \
+    ({                                              \
+        G_GNUC_BEGIN_IGNORE_DEPRECATIONS            \
+        g_ptr_array_find(haystack, needle, index_); \
+        G_GNUC_END_IGNORE_DEPRECATIONS              \
+    })
+#endif
+
+/*****************************************************************************/
+
 #if !GLIB_CHECK_VERSION(2, 40, 0)
 static inline gboolean
 _g_key_file_save_to_file(GKeyFile *key_file, const char *filename, GError **error)

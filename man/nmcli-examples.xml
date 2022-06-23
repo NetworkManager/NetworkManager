@@ -9,7 +9,7 @@
 <!--
   nmcli-examples(7) manual page
 
-  Copyright 2005 - 2016 Red Hat, Inc.
+  Copyright 2005 - 2022 Red Hat, Inc.
 
   Permission is granted to copy, distribute and/or modify this document
   under the terms of the GNU Free Documentation License, Version 1.1
@@ -638,6 +638,33 @@ Connection 'ethernet-4' (de89cdeb-a3e1-4d53-8fa0-c22546c775f4) successfully
         This allows templating of the connection profiles using familiar
         <command>nmcli</command> syntax in situations where the service is not running.
       </para>
+    </example>
+
+    <example><title>Device Checkpoint and Restore</title>
+
+<screen><prompt>$ </prompt><userinput>nmcli dev checkpoint eth0 -- nmcli dev dis eth0</userinput>
+Device 'eth0' successfully disconnected.
+Type "Yes" to commit the changes: No
+Checkpoint was removed.</screen>
+      <para>
+        In this example the device eth0 was disconnected with the eth0 checkpoint
+        taken. The user didn't confirm that the change is good, so the eth0 was
+        brought back to the state it was when the checkpoint was taken.
+      </para>
+      <para>
+        If the command being run unintentionaly brings down the remote connection
+        (such as a
+        <citerefentry><refentrytitle>ssh</refentrytitle><manvolnum>1</manvolnum></citerefentry>
+        session) to the very machine it's being run on, the user wouldn't be able to
+        confirm the success and the connectivity would end up being restored
+        after a timeout.
+      </para>
+      <para>
+        If, on the other hand, the command results in a success, the user could just
+        confirm, causing the checkpoint to be abandoned without a rollback:
+      </para>
+<screen><prompt>$ </prompt><userinput>nmcli dev checkpoint -- ip link del br0</userinput>
+Type "Yes" to commit the changes: <userinput>Yes</userinput></screen>
     </example>
 
   </refsect1>

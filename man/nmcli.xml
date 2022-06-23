@@ -9,7 +9,7 @@
 <!--
   nmcli(1) manual page
 
-  Copyright 2010 - 2018 Red Hat, Inc.
+  Copyright 2010 - 2022 Red Hat, Inc.
 
   Permission is granted to copy, distribute and/or modify this document
   under the terms of the GNU Free Documentation License, Version 1.1
@@ -1396,6 +1396,7 @@
         <arg choice='plain'><command>monitor</command></arg>
         <arg choice='plain'><command>wifi</command></arg>
         <arg choice='plain'><command>lldp</command></arg>
+        <arg choice='plain'><command>checkpoint</command></arg>
       </group>
       <arg rep='repeat'><replaceable>ARGUMENTS</replaceable></arg>
     </cmdsynopsis>
@@ -1836,6 +1837,33 @@
           Layer Discovery Protocol (LLDP). The <option>ifname</option> option can be
           used to list neighbors only for a given interface. The protocol must be enabled
           in the connection settings.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term>
+          <command>checkpoint</command>
+          <arg><option>--timeout</option> <replaceable>seconds</replaceable></arg>
+          <arg rep='repeat'><replaceable>ifname</replaceable></arg>
+          <arg choice='plain'><option>--</option></arg>
+          <arg rep='repeat' choice='plain'><replaceable>COMMAND</replaceable></arg>
+        </term>
+
+        <listitem>
+          <para>Runs the command with a configuration checkpoint taken and asks for a
+          confirmation when finished. When the confirmation is not given, the
+          checkpoint is automatically restored after timeout.</para>
+
+          <para>This allows doing disruptive configuration changes over remote
+          connections with an option of restoring the network configuration to a
+          known good state in case of an error.</para>
+
+          <para>If the a list of interface names is specified, the checkpoint is
+          taken, the checkpoint is takes only on the specified devices. Otherwise
+          a checkpoint is taken for all devices.</para>
+
+          <para>Currently the timeout defaults to 15 seconds. This may change in
+          a future version.</para>
         </listitem>
       </varlistentry>
     </variablelist>

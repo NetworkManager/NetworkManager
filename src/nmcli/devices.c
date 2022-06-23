@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * Copyright (C) 2010 - 2018 Red Hat, Inc.
+ * Copyright (C) 2010 - 2022 Red Hat, Inc.
  */
 
 #include "libnm-client-aux-extern/nm-default-client.h"
@@ -1043,6 +1043,18 @@ usage_device_lldp(void)
 }
 
 static void
+usage_device_checkpoint(void)
+{
+    g_printerr(_("Usage: nmcli device checkpoint { ARGUMENTS | help }\n"
+                 "\n"
+                 "ARGUMENTS := [--timeout <seconds>] -- COMMAND...\n"
+                 "\n"
+                 "Runs the command with a configuration checkpoint taken and asks for a\n"
+                 "confirmation when finished. When the confirmation is not given, the\n"
+                 "checkpoint is automatically restored after timeout.\n\n"));
+}
+
+static void
 quit(void)
 {
     if (nm_clear_g_source(&progress_id))
@@ -1109,59 +1121,72 @@ nmc_complete_device(NMClient *client, const char *prefix, gboolean wifi_only)
     complete_device(devices, prefix, wifi_only);
 }
 
-static GSList *
-get_device_list(NmCli *nmc, int argc, const char *const *argv)
+static void destroy_queue_element(gpointer data);
+
+static GPtrArray *
+get_device_list(NmCli *nmc, int *argc, const char *const **argv)
 {
-    int                arg_num = argc;
+    int                arg_num;
+    const char *const *arg_ptr;
+
     gs_strfreev char **arg_arr = NULL;
-    const char *const *arg_ptr = argv;
     NMDevice         **devices;
-    GSList            *queue = NULL;
+    GPtrArray         *queue = NULL;
     NMDevice          *device;
     int                i;
 
-    if (argc == 0) {
-        if (nmc->ask) {
-            gs_free char *line = NULL;
+    if (*argc == 0 && nmc->ask) {
+        gs_free char *line = NULL;
 
-            line = nmc_readline(&nmc->nmc_config, PROMPT_INTERFACES);
-            nmc_string_to_arg_array(line, NULL, FALSE, &arg_arr, &arg_num);
-            arg_ptr = (const char *const *) arg_arr;
-        }
-        if (arg_num == 0) {
-            g_string_printf(nmc->return_text, _("Error: No interface specified."));
-            nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-            goto error;
-        }
+        line = nmc_readline(&nmc->nmc_config, PROMPT_INTERFACES);
+        nmc_string_to_arg_array(line, NULL, FALSE, &arg_arr, &arg_num);
+        arg_ptr = (const char *const *) arg_arr;
+
+        argc = &arg_num;
+        argv = &arg_ptr;
+    }
+
+    if (*argc == 0) {
+        g_string_printf(nmc->return_text, _("Error: No interface specified."));
+        nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+        goto error;
     }
 
     devices = nmc_get_devices_sorted(nmc->client);
-    while (arg_num > 0) {
-        if (arg_num == 1 && nmc->complete)
-            complete_device(devices, *arg_ptr, FALSE);
+    while (*argc > 0) {
+        if (strcmp(**argv, "--") == 0) {
+            (*argc)--;
+            (*argv)++;
+            break;
+        }
+
+        if (*argc == 1 && nmc->complete)
+            complete_device(devices, **argv, FALSE);
 
         device = NULL;
         for (i = 0; devices[i]; i++) {
-            if (!g_strcmp0(nm_device_get_iface(devices[i]), *arg_ptr)) {
+            if (!g_strcmp0(nm_device_get_iface(devices[i]), **argv)) {
                 device = devices[i];
                 break;
             }
         }
 
         if (device) {
-            if (!g_slist_find(queue, device))
-                queue = g_slist_prepend(queue, device);
+            if (!queue)
+                queue = g_ptr_array_new_with_free_func(destroy_queue_element);
+            if (!g_ptr_array_find(queue, device, NULL))
+                g_ptr_array_add(queue, g_object_ref(device));
             else
-                g_printerr(_("Warning: argument '%s' is duplicated.\n"), *arg_ptr);
+                g_printerr(_("Warning: argument '%s' is duplicated.\n"), **argv);
         } else {
             if (!nmc->complete)
-                g_printerr(_("Error: Device '%s' not found.\n"), *arg_ptr);
+                g_printerr(_("Error: Device '%s' not found.\n"), **argv);
             g_string_printf(nmc->return_text, _("Error: not all devices found."));
             nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
         }
 
         /* Take next argument */
-        next_arg(nmc->ask ? NULL : nmc, &arg_num, &arg_ptr, NULL);
+        next_arg(nmc->ask ? NULL : nmc, argc, argv, NULL);
     }
     g_free(devices);
 
@@ -2305,7 +2330,7 @@ do_device_connect(const NMCCommand *cmd, NmCli *nmc, int argc, const char *const
 
 typedef struct {
     NmCli        *nmc;
-    GSList       *queue;
+    GPtrArray    *queue;
     guint         timeout_id;
     gboolean      cmd_disconnect;
     GCancellable *cancellable;
@@ -2329,7 +2354,7 @@ device_removed_cb(NMClient *client, NMDevice *device, DeviceCbInfo *info)
     /* Success: device has been removed.
      * It can also happen when disconnecting a software device.
      */
-    if (!g_slist_find(info->queue, device))
+    if (!g_ptr_array_find(info->queue, device, NULL))
         return;
 
     if (info->cmd_disconnect)
@@ -2342,7 +2367,7 @@ device_removed_cb(NMClient *client, NMDevice *device, DeviceCbInfo *info)
 static void
 disconnect_state_cb(NMDevice *device, GParamSpec *pspec, DeviceCbInfo *info)
 {
-    if (!g_slist_find(info->queue, device))
+    if (!g_ptr_array_find(info->queue, device, NULL))
         return;
 
     if (nm_device_get_state(device) <= NM_DEVICE_STATE_DISCONNECTED) {
@@ -2368,22 +2393,16 @@ static void
 device_cb_info_finish(DeviceCbInfo *info, NMDevice *device)
 {
     if (device) {
-        GSList *elem = g_slist_find(info->queue, device);
-        if (!elem)
+        if (!g_ptr_array_remove(info->queue, device))
             return;
-        info->queue = g_slist_delete_link(info->queue, elem);
-        destroy_queue_element(device);
-    } else {
-        g_slist_free_full(info->queue, destroy_queue_element);
-        info->queue = NULL;
+        if (info->queue->len)
+            return;
     }
-
-    if (info->queue)
-        return;
 
     if (info->timeout_id)
         g_source_remove(info->timeout_id);
 
+    g_ptr_array_free(info->queue, TRUE);
     g_signal_handlers_disconnect_by_func(info->nmc->client, device_removed_cb, info);
     nm_clear_g_cancellable(&info->cancellable);
 
@@ -2448,9 +2467,11 @@ do_device_reapply(const NMCCommand *cmd, NmCli *nmc, int argc, const char *const
     nmc->nowait_flag = (nmc->timeout == 0);
     nmc->should_wait++;
 
-    info        = g_slice_new0(DeviceCbInfo);
-    info->nmc   = nmc;
-    info->queue = g_slist_prepend(info->queue, g_object_ref(device));
+    info      = g_slice_new0(DeviceCbInfo);
+    info->nmc = nmc;
+
+    info->queue = g_ptr_array_new_with_free_func(destroy_queue_element);
+    g_ptr_array_add(info->queue, g_object_ref(device));
 
     /* Now reapply the connection to the device */
     nm_device_reapply_async(device, NULL, 0, 0, NULL, reapply_device_cb, info);
@@ -2615,23 +2636,29 @@ disconnect_device_cb(GObject *object, GAsyncResult *result, gpointer user_data)
 static void
 do_devices_disconnect(const NMCCommand *cmd, NmCli *nmc, int argc, const char *const *argv)
 {
-    NMDevice     *device;
-    DeviceCbInfo *info = NULL;
-    GSList       *queue, *iter;
+    NMDevice                    *device;
+    DeviceCbInfo                *info  = NULL;
+    gs_unref_ptrarray GPtrArray *queue = NULL;
+    guint                        i;
 
     /* Set default timeout for disconnect operation. */
     if (nmc->timeout == -1)
         nmc->timeout = 10;
 
     next_arg(nmc, &argc, &argv, NULL);
-    queue = get_device_list(nmc, argc, argv);
+    queue = get_device_list(nmc, &argc, &argv);
+    if (argc) {
+        g_string_printf(nmc->return_text, _("Error: invalid extra argument '%s'."), *argv);
+        nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+        return;
+    }
     if (!queue)
         return;
     if (nmc->complete)
-        goto out;
-    queue = g_slist_reverse(queue);
+        return;
 
     info                 = g_slice_new0(DeviceCbInfo);
+    info->queue          = g_steal_pointer(&queue);
     info->nmc            = nmc;
     info->cmd_disconnect = TRUE;
     info->cancellable    = g_cancellable_new();
@@ -2643,18 +2670,12 @@ do_devices_disconnect(const NMCCommand *cmd, NmCli *nmc, int argc, const char *c
     nmc->nowait_flag = (nmc->timeout == 0);
     nmc->should_wait++;
 
-    for (iter = queue; iter; iter = g_slist_next(iter)) {
-        device = iter->data;
+    for (i = 0; i < info->queue->len; i++) {
+        device = info->queue->pdata[i];
 
-        info->queue = g_slist_prepend(info->queue, g_object_ref(device));
         g_signal_connect(device, "notify::" NM_DEVICE_STATE, G_CALLBACK(disconnect_state_cb), info);
-
-        /* Now disconnect the device */
         nm_device_disconnect_async(device, info->cancellable, disconnect_device_cb, info);
     }
-
-out:
-    g_slist_free(queue);
 }
 
 static void
@@ -2683,41 +2704,38 @@ delete_device_cb(GObject *object, GAsyncResult *result, gpointer user_data)
 static void
 do_devices_delete(const NMCCommand *cmd, NmCli *nmc, int argc, const char *const *argv)
 {
-    NMDevice     *device;
-    DeviceCbInfo *info = NULL;
-    GSList       *queue, *iter;
+    DeviceCbInfo                *info  = NULL;
+    gs_unref_ptrarray GPtrArray *queue = NULL;
+    guint                        i;
 
     /* Set default timeout for delete operation. */
     if (nmc->timeout == -1)
         nmc->timeout = 10;
 
     next_arg(nmc, &argc, &argv, NULL);
-    queue = get_device_list(nmc, argc, argv);
+    queue = get_device_list(nmc, &argc, &argv);
+    if (argc) {
+        g_string_printf(nmc->return_text, _("Error: invalid extra argument '%s'."), *argv);
+        nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+        return;
+    }
     if (!queue)
         return;
     if (nmc->complete)
-        goto out;
-    queue = g_slist_reverse(queue);
+        return;
 
-    info      = g_slice_new0(DeviceCbInfo);
-    info->nmc = nmc;
+    info        = g_slice_new0(DeviceCbInfo);
+    info->queue = g_steal_pointer(&queue);
+    info->nmc   = nmc;
     if (nmc->timeout > 0)
         info->timeout_id = g_timeout_add_seconds(nmc->timeout, device_op_timeout_cb, info);
 
     nmc->nowait_flag = (nmc->timeout == 0);
     nmc->should_wait++;
 
-    for (iter = queue; iter; iter = g_slist_next(iter)) {
-        device = iter->data;
-
-        info->queue = g_slist_prepend(info->queue, g_object_ref(device));
-
-        /* Now delete the device */
-        nm_device_delete_async(device, NULL, delete_device_cb, info);
+    for (i = 0; i < queue->len; i++) {
+        nm_device_delete_async(queue->pdata[i], NULL, delete_device_cb, info);
     }
-
-out:
-    g_slist_free(queue);
 }
 
 static void
@@ -2886,30 +2904,32 @@ device_removed(NMClient *client, NMDevice *device, NmCli *nmc)
 static void
 do_devices_monitor(const NMCCommand *cmd, NmCli *nmc, int argc, const char *const *argv)
 {
+    const GPtrArray             *devices;
+    gs_unref_ptrarray GPtrArray *devices_free = NULL;
+    guint                        i;
+
     if (nmc->complete)
         return;
 
     next_arg(nmc, &argc, &argv, NULL);
-    if (argc == 0) {
+    if (argc > 0) {
+        devices = devices_free = get_device_list(nmc, &argc, &argv);
+        if (argc) {
+            g_string_printf(nmc->return_text, _("Error: invalid extra argument '%s'."), *argv);
+            nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+            return;
+        }
+    } else {
         /* No devices specified. Monitor all. */
-        const GPtrArray *devices = nm_client_get_devices(nmc->client);
-        int              i;
-
-        for (i = 0; i < devices->len; i++)
-            device_watch(nmc, g_ptr_array_index(devices, i));
+        devices = nm_client_get_devices(nmc->client);
 
         /* We'll watch the device additions too, never exit. */
         nmc->should_wait++;
         g_signal_connect(nmc->client, NM_CLIENT_DEVICE_ADDED, G_CALLBACK(device_added), nmc);
-    } else {
-        GSList *queue = get_device_list(nmc, argc, argv);
-        GSList *iter;
-
-        /* Monitor the specified devices. */
-        for (iter = queue; iter; iter = g_slist_next(iter))
-            device_watch(nmc, NM_DEVICE(iter->data));
-        g_slist_free(queue);
     }
+
+    for (i = 0; i < devices->len; i++)
+        device_watch(nmc, g_ptr_array_index(devices, i));
 
     g_signal_connect(nmc->client, NM_CLIENT_DEVICE_REMOVED, G_CALLBACK(device_removed), nmc);
 }
@@ -5002,6 +5022,214 @@ do_device_lldp(const NMCCommand *cmd, NmCli *nmc, int argc, const char *const *a
     nmc_do_cmd(nmc, device_lldp_cmds, *argv, argc, argv);
 }
 
+/*****************************************************************************/
+
+typedef struct {
+    NmCli        *nmc;
+    NMCheckpoint *checkpoint;
+    char        **argv;
+    guint         removed_id;
+    guint         child_id;
+    gboolean      removed;
+} CheckpointCbInfo;
+
+static void
+free_checkpoint_info(CheckpointCbInfo *info)
+{
+    g_clear_object(&info->checkpoint);
+    g_strfreev(info->argv);
+    g_slice_free(CheckpointCbInfo, info);
+}
+
+static void
+checkpoints_changed_cb(GObject *object, GParamSpec *pspec, CheckpointCbInfo *info)
+{
+    const GPtrArray *checkpoints;
+    guint            i;
+
+    checkpoints = nm_client_get_checkpoints(info->nmc->client);
+    for (i = 0; i < checkpoints->len; i++) {
+        if (checkpoints->pdata[i] == info->checkpoint) {
+            /* Our checkpoint still exists. */
+            return;
+        }
+    }
+
+    g_string_printf(info->nmc->return_text, _("Checkpoint was removed."));
+    info->nmc->return_value = NMC_RESULT_ERROR_TIMEOUT_EXPIRED;
+
+    info->removed = TRUE;
+
+    if (!info->child_id) {
+        /* The command is done, we're in the confirmation prompt. */
+        g_print("%s\n", _("No"));
+        g_main_loop_quit(loop);
+    }
+}
+
+static void
+checkpoint_destroy_cb(GObject *object, GAsyncResult *result, void *user_data)
+{
+    NmCli                *nmc   = (NmCli *) user_data;
+    gs_free_error GError *error = NULL;
+
+    if (!nm_client_checkpoint_destroy_finish(nmc->client, result, &error)) {
+        g_string_printf(nmc->return_text,
+                        _("Error: Destroying a checkpoint failed: %s"),
+                        error->message);
+        nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+    }
+
+    g_main_loop_quit(loop);
+}
+
+static void
+child_watch_cb(GPid pid, gint wait_status, gpointer user_data)
+{
+    CheckpointCbInfo *info = (CheckpointCbInfo *) user_data;
+    NmCli            *nmc  = info->nmc;
+    char             *line;
+
+    info->child_id = 0;
+    if (info->removed) {
+        g_main_loop_quit(loop);
+        goto out;
+    }
+
+    while (g_main_loop_is_running(loop)) {
+        line = nmc_readline(&nmc->nmc_config, "Type \"%s\" to commit the changes: ", _("Yes"));
+        if (g_strcmp0(line, _("Yes")) == 0) {
+            g_signal_handler_disconnect(nmc->client, info->removed_id);
+            nm_client_checkpoint_destroy(nmc->client,
+                                         nm_object_get_path(NM_OBJECT(info->checkpoint)),
+                                         NULL,
+                                         checkpoint_destroy_cb,
+                                         nmc);
+            break;
+        }
+    }
+    nmc_cleanup_readline();
+out:
+    free_checkpoint_info(info);
+}
+
+static void
+checkpoint_create_cb(GObject *object, GAsyncResult *result, void *user_data)
+{
+    NMClient             *client = NM_CLIENT(object);
+    CheckpointCbInfo     *info   = (CheckpointCbInfo *) user_data;
+    gs_free_error GError *error  = NULL;
+    GPid                  pid;
+
+    info->checkpoint = nm_client_checkpoint_create_finish(client, result, &error);
+    if (!info->checkpoint) {
+        g_string_printf(info->nmc->return_text,
+                        _("Error: Creating a checkpoint failed: %s"),
+                        error->message);
+        info->nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+        g_main_loop_quit(loop);
+        goto err;
+    }
+
+    if (!g_spawn_async(NULL,
+                       info->argv,
+                       NULL,
+                       G_SPAWN_LEAVE_DESCRIPTORS_OPEN | G_SPAWN_SEARCH_PATH
+                           | G_SPAWN_CHILD_INHERITS_STDIN | G_SPAWN_DO_NOT_REAP_CHILD,
+                       NULL,
+                       info,
+                       &pid,
+                       &error)) {
+        g_string_printf(info->nmc->return_text, _("Error: %s"), error->message);
+        info->nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
+        g_main_loop_quit(loop);
+        goto err;
+    }
+
+    info->child_id   = g_child_watch_add(pid, child_watch_cb, info);
+    info->removed_id = g_signal_connect(client,
+                                        "notify::" NM_CLIENT_CHECKPOINTS,
+                                        G_CALLBACK(checkpoints_changed_cb),
+                                        info);
+
+    return;
+
+err:
+    free_checkpoint_info(info);
+}
+
+static void
+do_device_checkpoint(const NMCCommand *cmd, NmCli *nmc, int argc, const char *const *argv)
+{
+    NMClient                    *client  = nmc->client;
+    long unsigned int            timeout = 15;
+    int                          option;
+    CheckpointCbInfo            *info;
+    const GPtrArray             *devices      = NULL;
+    gs_unref_ptrarray GPtrArray *devices_free = NULL;
+
+    while ((option = next_arg(nmc, &argc, &argv, "--timeout", NULL)) > 0) {
+        switch (option) {
+        case 1: /* --timeout */
+            argc--;
+            argv++;
+            if (!argc) {
+                g_string_printf(nmc->return_text, _("Error: %s argument is missing."), *(argv - 1));
+                nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+                return;
+            }
+            if (!nmc_string_to_uint(*argv, TRUE, 0, G_MAXUINT32, &timeout)) {
+                g_string_printf(nmc->return_text, _("Error: '%s' is not a valid timeout."), *argv);
+                nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+                return;
+            }
+            break;
+        default:
+            nm_assert_not_reached();
+            break;
+        }
+    }
+
+    if (argc) {
+        if (strcmp(*argv, "--") == 0) {
+            devices = nm_client_get_devices(client);
+            argc--;
+            argv++;
+        } else {
+            devices = devices_free = get_device_list(nmc, &argc, &argv);
+            if (!devices) {
+                g_string_printf(nmc->return_text, _("Error: not all devices found."));
+                nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+                return;
+            }
+        }
+    }
+
+    if (argc == 0) {
+        g_string_printf(nmc->return_text, _("Error: Expected a command to run after '--'"));
+        nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
+        return;
+    }
+
+    if (nmc->complete)
+        return;
+
+    info       = g_slice_new0(CheckpointCbInfo);
+    info->nmc  = nmc;
+    info->argv = nm_strv_dup(argv, argc, TRUE);
+
+    nmc->should_wait++;
+    nm_client_checkpoint_create(client,
+                                devices,
+                                (guint32) timeout,
+                                NM_CHECKPOINT_CREATE_FLAG_NONE,
+                                NULL,
+                                checkpoint_create_cb,
+                                info);
+}
+
+/*****************************************************************************/
+
 static gboolean
 is_single_word(const char *line)
 {
@@ -5048,6 +5276,7 @@ void
 nmc_command_func_device(const NMCCommand *cmd, NmCli *nmc, int argc, const char *const *argv)
 {
     static const NMCCommand cmds[] = {
+        {"checkpoint", do_device_checkpoint, usage_device_checkpoint, TRUE, TRUE},
         {"connect", do_device_connect, usage_device_connect, TRUE, TRUE},
         {"disconnect", do_devices_disconnect, usage_device_disconnect, TRUE, TRUE},
         {"delete", do_devices_delete, usage_device_delete, TRUE, TRUE},
