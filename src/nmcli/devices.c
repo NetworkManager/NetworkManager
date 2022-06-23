@@ -2733,8 +2733,8 @@ do_devices_delete(const NMCCommand *cmd, NmCli *nmc, int argc, const char *const
     nmc->nowait_flag = (nmc->timeout == 0);
     nmc->should_wait++;
 
-    for (i = 0; i < queue->len; i++) {
-        nm_device_delete_async(queue->pdata[i], NULL, delete_device_cb, info);
+    for (i = 0; i < info->queue->len; i++) {
+        nm_device_delete_async(info->queue->pdata[i], NULL, delete_device_cb, info);
     }
 }
 
