@@ -609,6 +609,8 @@ int nl_wait_for_ack(struct nl_sock *sk, const struct nl_cb *cb);
 
 /*****************************************************************************/
 
+extern const struct nla_policy genl_ctrl_policy[8];
+
 void                    *genlmsg_put(struct nl_msg *msg,
                                      uint32_t       port,
                                      uint32_t       seq,
