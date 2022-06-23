@@ -28,10 +28,6 @@
     }                                     \
     G_STMT_END
 
-#define NL_MSG_PEEK          (1 << 3)
-#define NL_MSG_PEEK_EXPLICIT (1 << 4)
-#define NL_NO_AUTO_ACK       (1 << 5)
-
 #ifndef NETLINK_EXT_ACK
 #define NETLINK_EXT_ACK 11
 #endif
@@ -49,12 +45,13 @@ struct nl_msg {
 struct nl_sock {
     struct sockaddr_nl s_local;
     struct sockaddr_nl s_peer;
+    size_t             s_bufsize;
     int                s_fd;
     int                s_proto;
     unsigned int       s_seq_next;
     unsigned int       s_seq_expect;
-    int                s_flags;
-    size_t             s_bufsize;
+    bool               s_msg_peek : 1;
+    bool               s_auto_ack : 1;
 };
 
 /*****************************************************************************/
@@ -1051,13 +1048,6 @@ nl_socket_set_ext_ack(struct nl_sock *sk, gboolean enable)
     return 0;
 }
 
-void
-nl_socket_disable_msg_peek(struct nl_sock *sk)
-{
-    sk->s_flags |= NL_MSG_PEEK_EXPLICIT;
-    sk->s_flags &= ~NL_MSG_PEEK;
-}
-
 /*****************************************************************************/
 
 int
@@ -1103,7 +1093,9 @@ nl_socket_new(struct nl_sock **out_sk,
             },
         .s_seq_expect = t,
         .s_seq_next   = t,
-        .s_flags      = NM_FLAGS_HAS(flags, NL_SOCKET_FLAGS_DISABLE_MSG_PEEK) ? 0 : NL_MSG_PEEK,
+        .s_bufsize    = 0,
+        .s_msg_peek   = !NM_FLAGS_HAS(flags, NL_SOCKET_FLAGS_DISABLE_MSG_PEEK),
+        .s_auto_ack   = TRUE,
     };
 
     nmerr = nl_socket_set_buffer_size(sk, bufsize_rx, bufsize_tx);
@@ -1229,7 +1221,7 @@ continue_reading:
         nrecv++;
 
         /* Only do sequence checking if auto-ack mode is enabled */
-        if (!(sk->s_flags & NL_NO_AUTO_ACK)) {
+        if (sk->s_auto_ack) {
             if (hdr->nlmsg_seq != sk->s_seq_expect) {
                 nmerr = -NME_NL_SEQ_MISMATCH;
                 goto out;
@@ -1414,7 +1406,7 @@ nl_complete_msg(struct nl_sock *sk, struct nl_msg *msg)
 
     nlh->nlmsg_flags |= NLM_F_REQUEST;
 
-    if (!(sk->s_flags & NL_NO_AUTO_ACK))
+    if (sk->s_auto_ack)
         nlh->nlmsg_flags |= NLM_F_ACK;
 }
 
@@ -1510,8 +1502,7 @@ nl_recv(struct nl_sock     *sk,
     nm_assert(!out_creds_has || out_creds);
     nm_assert(!out_pktinfo_has || out_pktinfo_group);
 
-    if ((sk->s_flags & NL_MSG_PEEK)
-        || (!(sk->s_flags & NL_MSG_PEEK_EXPLICIT) && sk->s_bufsize == 0))
+    if (sk->s_msg_peek)
         flags |= MSG_PEEK | MSG_TRUNC;
 
     if (buf0_len > 0) {

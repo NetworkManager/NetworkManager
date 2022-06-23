@@ -71,7 +71,6 @@ test_use_symbols(void)
         (void (*)(void)) nl_socket_set_buffer_size,
         (void (*)(void)) nl_socket_add_memberships,
         (void (*)(void)) nl_socket_set_ext_ack,
-        (void (*)(void)) nl_socket_disable_msg_peek,
         (void (*)(void)) nl_wait_for_ack,
         (void (*)(void)) nl_recvmsgs,
         (void (*)(void)) nl_sendmsg,
