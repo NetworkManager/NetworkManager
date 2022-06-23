@@ -4179,11 +4179,9 @@ enable_options(const char *setting_name, const char *property, const char *const
                     continue;
             }
 
-            if (bi->base.inf_flags & NM_META_PROPERTY_INF_FLAG_DONT_ASK) {
-                _dynamic_options_set((const NMMetaAbstractInfo *) bi,
-                                     PROPERTY_INF_FLAG_ENABLED,
-                                     PROPERTY_INF_FLAG_ENABLED);
-            }
+            _dynamic_options_set((const NMMetaAbstractInfo *) bi,
+                                 PROPERTY_INF_FLAG_ENABLED | PROPERTY_INF_FLAG_DISABLED,
+                                 PROPERTY_INF_FLAG_ENABLED);
         }
         return;
     }
@@ -4196,11 +4194,9 @@ enable_options(const char *setting_name, const char *property, const char *const
             return;
     }
 
-    if (property_info->inf_flags & NM_META_PROPERTY_INF_FLAG_DONT_ASK) {
-        _dynamic_options_set((const NMMetaAbstractInfo *) property_info,
-                             PROPERTY_INF_FLAG_ENABLED,
-                             PROPERTY_INF_FLAG_ENABLED);
-    }
+    _dynamic_options_set((const NMMetaAbstractInfo *) property_info,
+                         PROPERTY_INF_FLAG_ENABLED | PROPERTY_INF_FLAG_DISABLED,
+                         PROPERTY_INF_FLAG_ENABLED);
 }
 
 /*
