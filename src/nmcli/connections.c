@@ -4509,6 +4509,36 @@ gen_func_bond_lacp_rate(const char *text, int state)
 /*****************************************************************************/
 
 static gboolean
+enable_type_settings_and_options(NMConnection *con, GError **error)
+{
+    const NMMetaSettingValidPartItem *const *type_settings;
+    const NMMetaSettingValidPartItem *const *slv_settings;
+    NMSettingConnection                     *s_con;
+
+    s_con = nm_connection_get_setting_connection(con);
+    g_return_val_if_fail(s_con, FALSE);
+
+    if (nm_setting_connection_get_slave_type(s_con))
+        enable_options(NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_MASTER, NULL);
+
+    if (NM_IN_STRSET(nm_setting_connection_get_connection_type(s_con),
+                     NM_SETTING_BOND_SETTING_NAME,
+                     NM_SETTING_TEAM_SETTING_NAME,
+                     NM_SETTING_BRIDGE_SETTING_NAME,
+                     NM_SETTING_VLAN_SETTING_NAME)) {
+        disable_options(NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_INTERFACE_NAME);
+    }
+
+    if (!con_settings(con, &type_settings, &slv_settings, error))
+        return FALSE;
+
+    ensure_settings(con, slv_settings);
+    ensure_settings(con, type_settings);
+
+    return TRUE;
+}
+
+static gboolean
 set_connection_type(NmCli            *nmc,
                     NMConnection     *con,
                     const OptionInfo *option,
@@ -4516,10 +4546,8 @@ set_connection_type(NmCli            *nmc,
                     gboolean          allow_reset,
                     GError          **error)
 {
-    const NMMetaSettingValidPartItem *const *type_settings;
-    const NMMetaSettingValidPartItem *const *slv_settings;
-    GError                                  *local      = NULL;
-    const char                              *slave_type = NULL;
+    GError     *local      = NULL;
+    const char *slave_type = NULL;
 
     value = check_valid_name_toplevel(value, &slave_type, &local);
     if (!value) {
@@ -4544,16 +4572,6 @@ set_connection_type(NmCli            *nmc,
                           error)) {
             return FALSE;
         }
-        enable_options(NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_MASTER, NULL);
-    }
-
-    /* ifname is mandatory for all connection types except virtual ones (bond, team, bridge, vlan) */
-    if (NM_IN_STRSET(value,
-                     NM_SETTING_BOND_SETTING_NAME,
-                     NM_SETTING_TEAM_SETTING_NAME,
-                     NM_SETTING_BRIDGE_SETTING_NAME,
-                     NM_SETTING_VLAN_SETTING_NAME)) {
-        disable_options(NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_INTERFACE_NAME);
     }
 
     if (!set_property(nmc->client,
@@ -4565,13 +4583,7 @@ set_connection_type(NmCli            *nmc,
                       error))
         return FALSE;
 
-    if (!con_settings(con, &type_settings, &slv_settings, error))
-        return FALSE;
-
-    ensure_settings(con, slv_settings);
-    ensure_settings(con, type_settings);
-
-    return TRUE;
+    return enable_type_settings_and_options(con, error);
 }
 
 static gboolean
