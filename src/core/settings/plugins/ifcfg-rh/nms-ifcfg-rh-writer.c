@@ -2295,7 +2295,8 @@ static char *
 get_route_attributes_string(NMIPRoute *route, int family)
 {
     gs_free const char **names = NULL;
-    GVariant            *attr, *lock;
+    GVariant            *attr;
+    GVariant            *lock;
     GString             *str;
     guint                i, len;
 
@@ -2338,9 +2339,9 @@ get_route_attributes_string(NMIPRoute *route, int family)
         } else if (NM_STR_HAS_PREFIX(names[i], "lock-")) {
             const char *n = &(names[i])[NM_STRLEN("lock-")];
 
-            attr = nm_ip_route_get_attribute(route, n);
-            if (!attr) {
-                g_string_append_printf(str, "%s lock 0", n);
+            if (!nm_ip_route_get_attribute(route, n)) {
+                if (g_variant_get_boolean(attr))
+                    g_string_append_printf(str, "%s lock 0", n);
             } else {
                 /* we also have a corresponding attribute with the numeric value. The
                  * lock setting is handled above. */
