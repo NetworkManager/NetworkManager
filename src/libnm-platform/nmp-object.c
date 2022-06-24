@@ -805,13 +805,9 @@ _nmp_object_stackinit_from_class(NMPObject *obj, const NMPClass *klass)
     nm_assert(obj);
     nm_assert(klass);
 
-    *obj = (NMPObject){
-        .parent =
-            {
-                .klass      = (const NMDedupMultiObjClass *) klass,
-                ._ref_count = NM_OBJ_REF_COUNT_STACKINIT,
-            },
-    };
+    memset(obj, 0, sizeof(NMPObject));
+    obj->_class            = klass;
+    obj->parent._ref_count = NM_OBJ_REF_COUNT_STACKINIT;
     return obj;
 }
 
