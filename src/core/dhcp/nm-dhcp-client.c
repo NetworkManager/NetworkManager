@@ -1020,7 +1020,9 @@ ipv6_lladdr_find(NMDhcpClient *self)
     nm_assert(!NM_IS_IPv4(priv->config.addr_family));
 
     l3cfg = priv->config.l3cfg;
-    nmp_lookup_init_object(&lookup, NMP_OBJECT_TYPE_IP6_ADDRESS, nm_l3cfg_get_ifindex(l3cfg));
+    nmp_lookup_init_object_by_ifindex(&lookup,
+                                      NMP_OBJECT_TYPE_IP6_ADDRESS,
+                                      nm_l3cfg_get_ifindex(l3cfg));
 
     nm_platform_iter_obj_for_each (&iter, nm_l3cfg_get_platform(l3cfg), &lookup, &obj) {
         const NMPlatformIP6Address *pladdr = NMP_OBJECT_CAST_IP6_ADDRESS(obj);

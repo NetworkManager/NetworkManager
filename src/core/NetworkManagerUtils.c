@@ -1694,7 +1694,7 @@ nm_utils_platform_capture_ip_setting(NMPlatform *platform,
         return NM_SETTING(g_steal_pointer(&s_ip));
     }
 
-    nmp_lookup_init_object(&lookup, NMP_OBJECT_TYPE_IP_ADDRESS(IS_IPv4), ifindex);
+    nmp_lookup_init_object_by_ifindex(&lookup, NMP_OBJECT_TYPE_IP_ADDRESS(IS_IPv4), ifindex);
     nm_platform_iter_obj_for_each (&iter, platform, &lookup, &obj) {
         const NMPlatformIPXAddress           *address = NMP_OBJECT_CAST_IPX_ADDRESS(obj);
         nm_auto_unref_ip_address NMIPAddress *s_addr  = NULL;
@@ -1748,7 +1748,7 @@ nm_utils_platform_capture_ip_setting(NMPlatform *platform,
     }
     g_object_set(s_ip, NM_SETTING_IP_CONFIG_METHOD, method, NULL);
 
-    nmp_lookup_init_object(&lookup, NMP_OBJECT_TYPE_IP_ROUTE(IS_IPv4), ifindex);
+    nmp_lookup_init_object_by_ifindex(&lookup, NMP_OBJECT_TYPE_IP_ROUTE(IS_IPv4), ifindex);
     nm_platform_iter_obj_for_each (&iter, platform, &lookup, &obj) {
         const NMPlatformIPXRoute         *route   = NMP_OBJECT_CAST_IPX_ROUTE(obj);
         nm_auto_unref_ip_route NMIPRoute *s_route = NULL;

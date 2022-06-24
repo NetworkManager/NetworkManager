@@ -8603,11 +8603,11 @@ link_can_assume(NMPlatform *platform, int ifindex)
     if (link->link.master > 0)
         return TRUE;
 
-    nmp_lookup_init_object(&lookup, NMP_OBJECT_TYPE_IP4_ADDRESS, ifindex);
+    nmp_lookup_init_object_by_ifindex(&lookup, NMP_OBJECT_TYPE_IP4_ADDRESS, ifindex);
     if (nmp_cache_lookup(cache, &lookup))
         return TRUE;
 
-    nmp_lookup_init_object(&lookup, NMP_OBJECT_TYPE_IP6_ADDRESS, ifindex);
+    nmp_lookup_init_object_by_ifindex(&lookup, NMP_OBJECT_TYPE_IP6_ADDRESS, ifindex);
     nmp_cache_iter_for_each (&iter, nmp_cache_lookup(cache, &lookup), &o) {
         nm_assert(NMP_OBJECT_GET_TYPE(o) == NMP_OBJECT_TYPE_IP6_ADDRESS);
         if (!IN6_IS_ADDR_LINKLOCAL(&o->ip6_address.address))

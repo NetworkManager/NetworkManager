@@ -551,7 +551,9 @@ test_cache_qdisc(void)
     g_assert(nmp_cache_lookup_obj(cache, obj1b) == obj1b);
     g_assert(nmp_cache_lookup_obj(cache, obj2) == obj2);
 
-    head_entry = nmp_cache_lookup(cache, nmp_lookup_init_object(&lookup, NMP_OBJECT_TYPE_QDISC, 1));
+    head_entry =
+        nmp_cache_lookup(cache,
+                         nmp_lookup_init_object_by_ifindex(&lookup, NMP_OBJECT_TYPE_QDISC, 1));
     g_assert(head_entry->len == 2);
 
     nmp_cache_free(cache);

@@ -343,7 +343,9 @@ _pladdr_find_ll(NML3IPv6LL *self, gboolean *out_cur_addr_failed)
     if (!NM_IN_SET(self->state, NM_L3_IPV6LL_STATE_DAD_IN_PROGRESS, NM_L3_IPV6LL_STATE_READY))
         cur_addr_check = FALSE;
 
-    nmp_lookup_init_object(&lookup, NMP_OBJECT_TYPE_IP6_ADDRESS, nm_l3_ipv6ll_get_ifindex(self));
+    nmp_lookup_init_object_by_ifindex(&lookup,
+                                      NMP_OBJECT_TYPE_IP6_ADDRESS,
+                                      nm_l3_ipv6ll_get_ifindex(self));
 
     nm_platform_iter_obj_for_each (&iter, nm_l3_ipv6ll_get_platform(self), &lookup, &obj) {
         const NMPlatformIP6Address *pladdr = NMP_OBJECT_CAST_IP6_ADDRESS(obj);

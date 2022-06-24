@@ -4625,7 +4625,9 @@ nm_l3cfg_has_commited_ip6_addresses_pending_dad(NML3Cfg *self)
      * Of course, all lookups are O(1) anyway, so in any case the operation is
      * O(n) (once "n" being the addresses in platform, and once in l3cd). */
 
-    nmp_lookup_init_object(&plat_lookup, NMP_OBJECT_TYPE_IP6_ADDRESS, self->priv.ifindex);
+    nmp_lookup_init_object_by_ifindex(&plat_lookup,
+                                      NMP_OBJECT_TYPE_IP6_ADDRESS,
+                                      self->priv.ifindex);
 
     nm_platform_iter_obj_for_each (&iter, self->priv.platform, &plat_lookup, &plat_obj) {
         const NMPlatformIP6Address *plat_addr = NMP_OBJECT_CAST_IP6_ADDRESS(plat_obj);
