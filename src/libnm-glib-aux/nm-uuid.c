@@ -202,28 +202,25 @@ nm_uuid_is_valid_nm(const char *str,
 
     /* @out_normalized_str is only set, if normalization was necessary
      * and possible. The caller cannot request @out_normalized_str, without
-     * also getting @out_normalized. */
+     * also requesting @out_normalized. Otherwise, they couldn't know whether
+     * a normalized string was returned. */
     nm_assert(!out_normalized_str || out_normalized);
 
     if (!str)
         return FALSE;
 
     if (nm_uuid_parse_full(str, &uuid, &is_normalized)) {
-        /* Note that:
-         *   @is_normalized means that "str" contains a normalized UUID
-         *   @out_normalized: indicates whether str requires normalization
-         *     and whether @out_normalized_str was set to contain the normalized
-         *     UUID.
-         * With this, we get the slightly odd assignment: */
-        NM_SET_OUT(out_normalized, !is_normalized);
-
-        if (!is_normalized && out_normalized_str) {
-            /* we need to normalize the UUID */
-            nm_uuid_unparse(&uuid, out_normalized_str);
+        if (is_normalized) {
+            /* @str is already normalized. No need to normalize again, so
+             * @out_normalized is FALSE. */
+            NM_SET_OUT(out_normalized, FALSE);
+        } else {
+            NM_SET_OUT(out_normalized, TRUE);
+            if (out_normalized_str) {
+                /* we need to normalize the UUID */
+                nm_uuid_unparse(&uuid, out_normalized_str);
+            }
         }
-
-        /* regardless whether normalization was necessary, the UUID is
-         * essentially valid. */
         return TRUE;
     }
 
