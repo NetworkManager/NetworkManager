@@ -1913,11 +1913,8 @@ class TestNmcli(NmTestBase):
         nmc = start_mon()
         self.srv.shutdown()
         self.srv = None
-        nmc.expect("\(null\): device removed")
+        nmc.expect("eth0: device removed")
         nmc.expect("con-1: connection profile removed")
-        nmc.expect("Hostname set to '\(null\)'")
-        nmc.expect("Networkmanager is now in the 'unknown' state")
-        nmc.expect("Connectivity is now 'unknown'")
         nmc.expect("NetworkManager is stopped")
         end_mon(nmc)
 
