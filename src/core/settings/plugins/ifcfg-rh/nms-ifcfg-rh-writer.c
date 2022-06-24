@@ -2335,7 +2335,7 @@ get_route_attributes_string(NMIPRoute *route, int family)
                                    names[i],
                                    (lock && g_variant_get_boolean(lock)) ? "lock " : "",
                                    g_variant_get_uint32(attr));
-        } else if (strstr(names[i], "lock-")) {
+        } else if (NM_STR_HAS_PREFIX(names[i], "lock-")) {
             const char *n = &(names[i])[NM_STRLEN("lock-")];
 
             attr = nm_ip_route_get_attribute(route, n);
