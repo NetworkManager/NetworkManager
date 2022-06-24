@@ -2924,10 +2924,10 @@ _nmp_link_address_set(NMPLinkAddress *dst, const struct nlattr *nla)
 
 /* Copied and heavily modified from libnl3's link_msg_parser(). */
 static NMPObject *
-_new_from_nl_link(NMPlatform      *platform,
-                  const NMPCache  *cache,
-                  struct nlmsghdr *nlh,
-                  gboolean         id_only)
+_new_from_nl_link(NMPlatform            *platform,
+                  const NMPCache        *cache,
+                  const struct nlmsghdr *nlh,
+                  gboolean               id_only)
 {
     static const struct nla_policy policy[] = {
         [IFLA_IFNAME]        = {.type = NLA_STRING, .maxlen = IFNAMSIZ},
@@ -3275,7 +3275,7 @@ _new_from_nl_link(NMPlatform      *platform,
 
 /* Copied and heavily modified from libnl3's addr_msg_parser(). */
 static NMPObject *
-_new_from_nl_addr(struct nlmsghdr *nlh, gboolean id_only)
+_new_from_nl_addr(const struct nlmsghdr *nlh, gboolean id_only)
 {
     static const struct nla_policy policy[] = {
         [IFA_LABEL]     = {.type = NLA_STRING, .maxlen = IFNAMSIZ},
@@ -3390,7 +3390,7 @@ _new_from_nl_addr(struct nlmsghdr *nlh, gboolean id_only)
 
 /* Copied and heavily modified from libnl3's rtnl_route_parse() and parse_multipath(). */
 static NMPObject *
-_new_from_nl_route(struct nlmsghdr *nlh, gboolean id_only, ParseNlmsgIter *parse_nlmsg_iter)
+_new_from_nl_route(const struct nlmsghdr *nlh, gboolean id_only, ParseNlmsgIter *parse_nlmsg_iter)
 {
     static const struct nla_policy policy[] = {
         [RTA_TABLE]     = {.type = NLA_U32},
@@ -3698,7 +3698,7 @@ rta_multipath_done:
 }
 
 static NMPObject *
-_new_from_nl_routing_rule(struct nlmsghdr *nlh, gboolean id_only)
+_new_from_nl_routing_rule(const struct nlmsghdr *nlh, gboolean id_only)
 {
     static const struct nla_policy policy[] = {
         [FRA_UNSPEC] = {},
@@ -3974,7 +3974,7 @@ psched_tick_to_time(NMPlatform *platform, guint32 tick)
 }
 
 static NMPObject *
-_new_from_nl_qdisc(NMPlatform *platform, struct nlmsghdr *nlh, gboolean id_only)
+_new_from_nl_qdisc(NMPlatform *platform, const struct nlmsghdr *nlh, gboolean id_only)
 {
     static const struct nla_policy policy[] = {
         [TCA_KIND]    = {.type = NLA_STRING},
@@ -4087,7 +4087,7 @@ _new_from_nl_qdisc(NMPlatform *platform, struct nlmsghdr *nlh, gboolean id_only)
 }
 
 static NMPObject *
-_new_from_nl_tfilter(NMPlatform *platform, struct nlmsghdr *nlh, gboolean id_only)
+_new_from_nl_tfilter(NMPlatform *platform, const struct nlmsghdr *nlh, gboolean id_only)
 {
     static const struct nla_policy policy[] = {
         [TCA_KIND] = {.type = NLA_STRING},
@@ -4132,18 +4132,17 @@ _new_from_nl_tfilter(NMPlatform *platform, struct nlmsghdr *nlh, gboolean id_onl
  * Returns: %NULL or a newly created NMPObject instance.
  **/
 static NMPObject *
-nmp_object_new_from_nl(NMPlatform     *platform,
-                       const NMPCache *cache,
-                       struct nl_msg  *msg,
-                       gboolean        id_only,
-                       ParseNlmsgIter *parse_nlmsg_iter)
+nmp_object_new_from_nl(NMPlatform               *platform,
+                       const NMPCache           *cache,
+                       const struct nl_msg_lite *msg,
+                       gboolean                  id_only,
+                       ParseNlmsgIter           *parse_nlmsg_iter)
 {
-    struct nlmsghdr *msghdr;
+    const struct nlmsghdr *msghdr;
 
-    if (nlmsg_get_proto(msg) != NETLINK_ROUTE)
-        return NULL;
+    nm_assert(msg->nm_protocol == NETLINK_ROUTE);
 
-    msghdr = nlmsg_hdr(msg);
+    msghdr = msg->nm_nlh;
 
     switch (msghdr->nlmsg_type) {
     case RTM_NEWLINK:
@@ -7016,13 +7015,13 @@ event_seq_check(NMPlatform             *platform,
 }
 
 static void
-event_valid_msg(NMPlatform *platform, struct nl_msg *msg, gboolean handle_events)
+_rtnl_handle_msg(NMPlatform *platform, const struct nl_msg_lite *msg, gboolean handle_events)
 {
     char                      sbuf1[NM_UTILS_TO_STRING_BUFFER_SIZE];
     NMLinuxPlatformPrivate   *priv;
     nm_auto_nmpobj NMPObject *obj = NULL;
     NMPCacheOpsType           cache_op;
-    struct nlmsghdr          *msghdr;
+    const struct nlmsghdr    *msghdr;
     char                      buf_nlmsghdr[400];
     gboolean                  is_del  = FALSE;
     gboolean                  is_dump = FALSE;
@@ -7032,7 +7031,7 @@ event_valid_msg(NMPlatform *platform, struct nl_msg *msg, gboolean handle_events
     if (!handle_events)
         return;
 
-    msghdr = nlmsg_hdr(msg);
+    msghdr = msg->nm_nlh;
 
     if (NM_IN_SET(msghdr->nlmsg_type,
                   RTM_DELLINK,
@@ -7053,7 +7052,7 @@ event_valid_msg(NMPlatform *platform, struct nl_msg *msg, gboolean handle_events
     obj = nmp_object_new_from_nl(platform, cache, msg, is_del, &parse_nlmsg_iter);
     if (!obj) {
         _LOGT("event-notification: %s: ignore",
-              nl_nlmsghdr_to_str(NETLINK_ROUTE, msghdr, buf_nlmsghdr, sizeof(buf_nlmsghdr)));
+              nl_nlmsghdr_to_str(NETLINK_ROUTE, 0, msghdr, buf_nlmsghdr, sizeof(buf_nlmsghdr)));
         return;
     }
 
@@ -7071,7 +7070,7 @@ event_valid_msg(NMPlatform *platform, struct nl_msg *msg, gboolean handle_events
     }
 
     _LOGT("event-notification: %s%s: %s",
-          nl_nlmsghdr_to_str(NETLINK_ROUTE, msghdr, buf_nlmsghdr, sizeof(buf_nlmsghdr)),
+          nl_nlmsghdr_to_str(NETLINK_ROUTE, 0, msghdr, buf_nlmsghdr, sizeof(buf_nlmsghdr)),
           is_dump ? ", in-dump" : "",
           nmp_object_to_string(obj,
                                is_del ? NMP_OBJECT_TO_STRING_ID : NMP_OBJECT_TO_STRING_PUBLIC,
@@ -7123,7 +7122,7 @@ event_valid_msg(NMPlatform *platform, struct nl_msg *msg, gboolean handle_events
                         if (data->response_type == DELAYED_ACTION_RESPONSE_TYPE_ROUTE_GET
                             && data->response.out_route_get) {
                             nm_assert(!*data->response.out_route_get);
-                            if (data->seq_number == nlmsg_hdr(msg)->nlmsg_seq) {
+                            if (data->seq_number == msg->nm_nlh->nlmsg_seq) {
                                 *data->response.out_route_get = nmp_object_clone(obj, FALSE);
                                 data->response.out_route_get  = NULL;
                                 break;
@@ -9212,7 +9211,9 @@ _netlink_recv(NMPlatform         *platform,
                 nla,
                 &buf,
                 out_creds,
-                out_creds_has);
+                out_creds_has,
+                NULL,
+                NULL);
 
     nm_assert((n <= 0 && !buf)
               || (n > 0 && n <= priv->netlink_recv_buf.len && buf == priv->netlink_recv_buf.buf));
@@ -9247,11 +9248,10 @@ _netlink_recv_handle(NMPlatform *platform, int netlink_protocol, gboolean handle
     NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE(platform);
     struct nl_sock         *sk;
     int                     n;
-    int                     err         = 0;
+    int                     retval      = 0;
     gboolean                multipart   = 0;
     gboolean                interrupted = FALSE;
     struct nlmsghdr        *hdr;
-    WaitForNlResponseResult seq_result;
     struct sockaddr_nl      nla;
     struct ucred            creds;
     gboolean                creds_has;
@@ -9275,32 +9275,38 @@ continue_reading:
             _LOGT("%s: recvmsg: received message without credentials", log_prefix);
         else
             _LOGT("%s: recvmsg: received non-kernel message (pid %d)", log_prefix, creds.pid);
-        err = 0;
         goto stop;
     }
 
     hdr = (struct nlmsghdr *) priv->netlink_recv_buf.buf;
     while (nlmsg_ok(hdr, n)) {
-        nm_auto_nlmsg struct nl_msg *msg               = NULL;
-        gboolean                     abort_parsing     = FALSE;
-        gboolean                     process_valid_msg = FALSE;
-        guint32                      seq_number;
-        char                         buf_nlmsghdr[400];
-        const char                  *extack_msg = NULL;
+        WaitForNlResponseResult  seq_result;
+        gboolean                 process_valid_msg = FALSE;
+        char                     buf_nlmsghdr[400];
+        const char              *extack_msg = NULL;
+        const struct nl_msg_lite msg        = {
+                   .nm_protocol = netlink_protocol,
+                   .nm_src      = &nla,
+                   .nm_creds    = &creds,
+                   .nm_size     = NLMSG_ALIGN(hdr->nlmsg_len),
+                   .nm_nlh      = hdr,
+        };
+        const guint32 seq_number = msg.nm_nlh->nlmsg_seq;
 
-        msg = nlmsg_alloc_convert(hdr);
-        nlmsg_set_proto(msg, netlink_protocol);
-        nlmsg_set_src(msg, &nla);
-        nlmsg_set_creds(msg, &creds);
+        nm_assert((((uintptr_t) (const void *) msg.nm_nlh) % NLMSG_ALIGNTO) == 0);
 
         _LOGt("%s: recvmsg: new message %s",
               log_prefix,
-              nl_nlmsghdr_to_str(netlink_protocol, hdr, buf_nlmsghdr, sizeof(buf_nlmsghdr)));
+              nl_nlmsghdr_to_str(netlink_protocol,
+                                 0,
+                                 msg.nm_nlh,
+                                 buf_nlmsghdr,
+                                 sizeof(buf_nlmsghdr)));
 
-        if (hdr->nlmsg_flags & NLM_F_MULTI)
+        if (msg.nm_nlh->nlmsg_flags & NLM_F_MULTI)
             multipart = TRUE;
 
-        if (hdr->nlmsg_flags & NLM_F_DUMP_INTR) {
+        if (msg.nm_nlh->nlmsg_flags & NLM_F_DUMP_INTR) {
             /*
              * We have to continue reading to clear
              * all messages until a NLMSG_DONE is
@@ -9310,89 +9316,86 @@ continue_reading:
         }
 
         /* Other side wishes to see an ack for this message */
-        if (hdr->nlmsg_flags & NLM_F_ACK) {
+        if (msg.nm_nlh->nlmsg_flags & NLM_F_ACK) {
             /* FIXME: implement */
         }
 
-        switch (netlink_protocol) {
-        case NETLINK_ROUTE:
-        {
-            seq_result = WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_UNKNOWN;
+        seq_result = WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_UNKNOWN;
 
-            if (hdr->nlmsg_type == NLMSG_DONE) {
-                /* messages terminates a multipart message, this is
-                 * usually the end of a message and therefore we slip
-                 * out of the loop by default. the user may overrule
-                 * this action by skipping this packet. */
-                multipart  = FALSE;
-                seq_result = WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK;
-            } else if (hdr->nlmsg_type == NLMSG_NOOP) {
-                /* Message to be ignored, the default action is to
-                 * skip this message if no callback is specified. The
-                 * user may overrule this action by returning
-                 * NL_PROCEED. */
-            } else if (hdr->nlmsg_type == NLMSG_OVERRUN) {
-                /* Data got lost, report back to user. The default action is to
-                 * quit parsing. The user may overrule this action by returning
-                 * NL_SKIP or NL_PROCEED (dangerous) */
-                err           = -NME_NL_MSG_OVERFLOW;
-                abort_parsing = TRUE;
-            } else if (hdr->nlmsg_type == NLMSG_ERROR) {
-                /* Message carries a nlmsgerr */
-                struct nlmsgerr *e = nlmsg_data(hdr);
+        if (msg.nm_nlh->nlmsg_type == NLMSG_DONE) {
+            /* messages terminates a multipart message, this is
+             * usually the end of a message and therefore we slip
+             * out of the loop by default. the user may overrule
+             * this action by skipping this packet. */
+            multipart  = FALSE;
+            seq_result = WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK;
+        } else if (msg.nm_nlh->nlmsg_type == NLMSG_NOOP) {
+            /* Message to be ignored, the default action is to
+             * skip this message if no callback is specified. The
+             * user may overrule this action by returning
+             * NL_PROCEED. */
+        } else if (msg.nm_nlh->nlmsg_type == NLMSG_OVERRUN) {
+            /* Data got lost, report back to user. The default action is to
+             * quit parsing. The user may overrule this action by returning
+             * NL_SKIP or NL_PROCEED (dangerous) */
+            retval = -NME_NL_MSG_OVERFLOW;
+        } else if (msg.nm_nlh->nlmsg_type == NLMSG_ERROR) {
+            /* Message carries a nlmsgerr */
+            struct nlmsgerr *e = nlmsg_data(msg.nm_nlh);
 
-                if (hdr->nlmsg_len < nlmsg_size(sizeof(*e))) {
-                    /* Truncated error message, the default action
-                     * is to stop parsing. The user may overrule
-                     * this action by returning NL_SKIP or
-                     * NL_PROCEED (dangerous) */
-                    err           = -NME_NL_MSG_TRUNC;
-                    abort_parsing = TRUE;
-                } else if (e->error) {
-                    int errsv = nm_errno_native(e->error);
+            if (msg.nm_nlh->nlmsg_len < nlmsg_size(sizeof(*e))) {
+                /* Truncated error message, the default action
+                 * is to stop parsing. The user may overrule
+                 * this action by returning NL_SKIP or
+                 * NL_PROCEED (dangerous) */
+                retval = -NME_NL_MSG_TRUNC;
+            } else if (e->error) {
+                int errsv = nm_errno_native(e->error);
 
-                    if (NM_FLAGS_HAS(hdr->nlmsg_flags, NLM_F_ACK_TLVS)
-                        && hdr->nlmsg_len >= sizeof(*e) + e->msg.nlmsg_len) {
-                        static const struct nla_policy policy[] = {
-                            [NLMSGERR_ATTR_MSG]  = {.type = NLA_STRING},
-                            [NLMSGERR_ATTR_OFFS] = {.type = NLA_U32},
-                        };
-                        struct nlattr *tb[G_N_ELEMENTS(policy)];
-                        struct nlattr *tlvs;
+                if (NM_FLAGS_HAS(msg.nm_nlh->nlmsg_flags, NLM_F_ACK_TLVS)
+                    && msg.nm_nlh->nlmsg_len >= sizeof(*e) + e->msg.nlmsg_len) {
+                    static const struct nla_policy policy[] = {
+                        [NLMSGERR_ATTR_MSG]  = {.type = NLA_STRING},
+                        [NLMSGERR_ATTR_OFFS] = {.type = NLA_U32},
+                    };
+                    struct nlattr *tb[G_N_ELEMENTS(policy)];
+                    struct nlattr *tlvs;
 
-                        tlvs = (struct nlattr *) ((char *) e + sizeof(*e) + e->msg.nlmsg_len
-                                                  - NLMSG_HDRLEN);
-                        if (nla_parse_arr(tb,
-                                          tlvs,
-                                          hdr->nlmsg_len - sizeof(*e) - e->msg.nlmsg_len,
-                                          policy)
-                            >= 0) {
-                            if (tb[NLMSGERR_ATTR_MSG])
-                                extack_msg = nla_get_string(tb[NLMSGERR_ATTR_MSG]);
-                        }
+                    tlvs = (struct nlattr *) ((char *) e + sizeof(*e) + e->msg.nlmsg_len
+                                              - NLMSG_HDRLEN);
+                    if (nla_parse_arr(tb,
+                                      tlvs,
+                                      msg.nm_nlh->nlmsg_len - sizeof(*e) - e->msg.nlmsg_len,
+                                      policy)
+                        >= 0) {
+                        if (tb[NLMSGERR_ATTR_MSG])
+                            extack_msg = nla_get_string(tb[NLMSGERR_ATTR_MSG]);
                     }
+                }
 
-                    /* Error message reported back from kernel. */
-                    _LOGD(
-                        "netlink: recvmsg: error message from kernel: %s (%d)%s%s%s for request %d",
-                        nm_strerror_native(errsv),
-                        errsv,
-                        NM_PRINT_FMT_QUOTED(extack_msg, " \"", extack_msg, "\"", ""),
-                        nlmsg_hdr(msg)->nlmsg_seq);
-                    seq_result = -NM_ERRNO_NATIVE(errsv);
-                } else
-                    seq_result = WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK;
+                /* Error message reported back from kernel. */
+                _LOGD("netlink: recvmsg: error message from kernel: %s (%d)%s%s%s for request %d",
+                      nm_strerror_native(errsv),
+                      errsv,
+                      NM_PRINT_FMT_QUOTED(extack_msg, " \"", extack_msg, "\"", ""),
+                      msg.nm_nlh->nlmsg_seq);
+                seq_result = -NM_ERRNO_NATIVE(errsv);
             } else
-                process_valid_msg = TRUE;
+                seq_result = WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK;
+        } else
+            process_valid_msg = TRUE;
 
-            seq_number = nlmsg_hdr(msg)->nlmsg_seq;
-
+        switch (netlink_protocol) {
+        default:
+            nm_assert_not_reached();
+            /* fall-through */
+        case NETLINK_ROUTE:
             /* check whether the seq number is different from before, and
              * whether the previous number (@nlh_seq_last_seen) is a pending
              * refresh-all request. In that case, the pending request is thereby
              * completed.
              *
-             * We must do that before processing the message with event_valid_msg(),
+             * We must do that before processing the message with _rtnl_handle_msg(),
              * because we must track the completion of the pending request before that. */
             event_seq_check_refresh_all(platform, seq_number);
 
@@ -9401,7 +9404,7 @@ continue_reading:
                  * get along with broken kernels. NL_SKIP has no
                  * effect on this.  */
 
-                event_valid_msg(platform, msg, handle_events);
+                _rtnl_handle_msg(platform, &msg, handle_events);
 
                 seq_result = WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK;
             }
@@ -9409,14 +9412,10 @@ continue_reading:
             event_seq_check(platform, seq_number, seq_result, extack_msg);
             break;
         }
-        default:
-            nm_assert_not_reached();
-        }
 
-        if (abort_parsing)
+        if (retval != 0)
             goto stop;
 
-        err = 0;
         hdr = nlmsg_next(hdr, &n);
     }
 
@@ -9424,6 +9423,7 @@ continue_reading:
         /* Multipart message not yet complete, continue reading */
         goto continue_reading;
     }
+
 stop:
     if (!handle_events) {
         /* when we don't handle events, we want to drain all messages from the socket
@@ -9434,7 +9434,7 @@ stop:
 
     if (interrupted)
         return -NME_NL_DUMP_INTR;
-    return err;
+    return retval;
 }
 
 /*****************************************************************************/
@@ -9747,7 +9747,7 @@ constructed(GObject *_object)
 
     /*************************************************************************/
 
-    nle = nl_socket_new(&priv->sk_genl_sync, NETLINK_GENERIC);
+    nle = nl_socket_new(&priv->sk_genl_sync, NETLINK_GENERIC, NL_SOCKET_FLAGS_NONE, 0, 0);
     g_assert(!nle);
 
     _LOGD("genl: generic netlink socket for sync operations created: port=%u, fd=%d",
@@ -9756,23 +9756,14 @@ constructed(GObject *_object)
 
     /*************************************************************************/
 
-    nle = nl_socket_new(&priv->sk_rtnl, NETLINK_ROUTE);
+    /* disable MSG_PEEK, we will handle lost messages ourselves. */
+    nle = nl_socket_new(&priv->sk_rtnl,
+                        NETLINK_ROUTE,
+                        NL_SOCKET_FLAGS_NONBLOCK | NL_SOCKET_FLAGS_PASSCRED
+                            | NL_SOCKET_FLAGS_DISABLE_MSG_PEEK,
+                        8 * 1024 * 1024,
+                        0);
     g_assert(!nle);
-
-    nle = nl_socket_set_passcred(priv->sk_rtnl, 1);
-    g_assert(!nle);
-
-    nle = nl_socket_set_nonblocking(priv->sk_rtnl);
-    g_assert(!nle);
-
-    nle = nl_socket_set_buffer_size(priv->sk_rtnl, 8 * 1024 * 1024, 0);
-    g_assert(!nle);
-
-    /* explicitly set the msg buffer size and disable MSG_PEEK.
-     * We use our own receive buffer priv->netlink_recv_buf.
-     * If we encounter NME_NL_MSG_TRUNC, we will increase the buffer
-     * and resync (as we would have lost the message without NL_MSG_PEEK). */
-    nl_socket_disable_msg_peek(priv->sk_rtnl);
 
     nle = nl_socket_add_memberships(priv->sk_rtnl,
                                     RTNLGRP_IPV4_IFADDR,
