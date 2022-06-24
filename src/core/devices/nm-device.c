@@ -7975,7 +7975,8 @@ nm_device_slave_notify_release(NMDevice *self, NMDeviceStateReason reason)
 void
 nm_device_removed(NMDevice *self, gboolean unconfigure_ip_config)
 {
-    NMDevicePrivate *priv;
+    NMDevicePrivate      *priv;
+    const NML3ConfigData *l3cd_old;
 
     g_return_if_fail(NM_IS_DEVICE(self));
 
@@ -7993,6 +7994,18 @@ nm_device_removed(NMDevice *self, gboolean unconfigure_ip_config)
     }
 
     _dev_l3_register_l3cds(self, priv->l3cfg, FALSE, unconfigure_ip_config);
+
+    /* _dev_l3_register_l3cds() schedules a commit, but if the device has
+     * commit type NONE, that doesn't emit a l3cd-changed. Do it manually,
+     * to ensure that entries are removed from the DNS manager. */
+    if (priv->l3cfg
+        && NM_IN_SET(priv->sys_iface_state,
+                     NM_DEVICE_SYS_IFACE_STATE_REMOVED,
+                     NM_DEVICE_SYS_IFACE_STATE_EXTERNAL)) {
+        l3cd_old = nm_l3cfg_get_combined_l3cd(priv->l3cfg, TRUE);
+        if (l3cd_old)
+            g_signal_emit(self, signals[L3CD_CHANGED], 0, l3cd_old, NULL);
+    }
 }
 
 static gboolean
