@@ -498,7 +498,8 @@ nm_running_changed(GObject *client, GParamSpec *pspec, gpointer user_data)
 {
     int *running_changed = user_data;
 
-    (*running_changed)++;
+    if (running_changed)
+        (*running_changed)++;
     g_main_loop_quit(gl.loop);
 }
 
@@ -865,24 +866,11 @@ test_activate_virtual(void)
 }
 
 static void
-_dev_eth0_1_state_changed_cb(NMDevice           *device,
-                             NMDeviceState       new_state,
-                             NMDeviceState       old_state,
-                             NMDeviceStateReason reason,
-                             int                *p_count_call)
+_client_dev_removed(NMClient *client, NMDevice *device, int *p_count_call)
 {
     const GPtrArray *arr;
 
-    g_assert(p_count_call);
-    g_assert_cmpint(*p_count_call, ==, 0);
-
     (*p_count_call)++;
-
-    g_assert(NM_IS_DEVICE_VLAN(device));
-
-    g_assert_cmpint(old_state, >=, NM_DEVICE_STATE_PREPARE);
-    g_assert_cmpint(old_state, <=, NM_DEVICE_STATE_ACTIVATED);
-    g_assert_cmpint(new_state, ==, NM_DEVICE_STATE_UNKNOWN);
 
     arr = nm_device_get_available_connections(device);
     g_assert(arr);
@@ -899,7 +887,6 @@ test_activate_virtual_teardown(gconstpointer user_data)
     NMDevice                                      *dev_eth0_1;
     NMActiveConnection                            *ac;
     const GPtrArray                               *arr;
-    gulong                                         sig_id;
     int                                            call_count       = 0;
     gboolean                                       take_ref         = nmtst_get_rand_bool();
     gboolean                                       teardown_service = GPOINTER_TO_INT(user_data);
@@ -928,19 +915,20 @@ test_activate_virtual_teardown(gconstpointer user_data)
     ac = nm_device_get_active_connection(dev_eth0_1);
     g_assert(NM_IS_ACTIVE_CONNECTION(ac));
 
-    sig_id = g_signal_connect(dev_eth0_1,
-                              "state-changed",
-                              G_CALLBACK(_dev_eth0_1_state_changed_cb),
-                              &call_count);
+    g_signal_connect(client, "device-removed", G_CALLBACK(_client_dev_removed), &call_count);
 
     if (teardown_service) {
-        nmtstc_service_cleanup(g_steal_pointer(&sinfo));
-        nmtst_main_loop_run(gl.loop, 50);
+        g_signal_connect(client,
+                         "notify::" NM_CLIENT_NM_RUNNING,
+                         G_CALLBACK(nm_running_changed),
+                         NULL);
+        nm_clear_pointer(&sinfo, nmtstc_service_cleanup);
+        nmtst_main_loop_run(gl.loop, 1000);
+        g_assert_cmpint(call_count, ==, 2);
     } else {
         g_clear_object(&client);
+        g_assert_cmpint(call_count, ==, 0);
     }
-
-    g_assert_cmpint(call_count, ==, 1);
 
     if (take_ref) {
         arr = nm_device_get_available_connections(dev_eth0_1);
@@ -948,8 +936,6 @@ test_activate_virtual_teardown(gconstpointer user_data)
         g_assert_cmpint(arr->len, ==, 0);
 
         g_assert(!nm_device_get_active_connection(dev_eth0_1));
-
-        nm_clear_g_signal_handler(dev_eth0_1, &sig_id);
 
         g_object_unref(dev_eth0_1);
     }
