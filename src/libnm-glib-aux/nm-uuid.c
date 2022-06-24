@@ -235,24 +235,23 @@ nm_uuid_is_valid_nm(const char *str,
          * are made lower case first. */
         NM_SET_OUT(out_normalized, TRUE);
         if (out_normalized_str) {
-            char str_lower[40 + 1];
+            char str_lower[40];
             int  i;
 
-            nm_assert(strlen(str) < G_N_ELEMENTS(str_lower));
+            nm_assert(strlen(str) <= G_N_ELEMENTS(str_lower));
 
             /* normalize first to lower-case. */
             for (i = 0; str[i]; i++) {
                 nm_assert(i < G_N_ELEMENTS(str_lower));
                 str_lower[i] = g_ascii_tolower(str[i]);
             }
-            nm_assert(i < G_N_ELEMENTS(str_lower));
-            str_lower[i] = '\0';
+            nm_assert(i <= G_N_ELEMENTS(str_lower));
 
             /* The namespace UUID is chosen randomly. */
             nm_uuid_generate_from_string(
                 &uuid,
                 str_lower,
-                -1,
+                i,
                 NM_UUID_TYPE_VERSION5,
                 &NM_UUID_INIT(4e, 72, f7, 09, ca, 95, 44, 05, 90, 53, 1f, 43, 29, 4a, 61, 8c));
             nm_uuid_unparse(&uuid, out_normalized_str);
