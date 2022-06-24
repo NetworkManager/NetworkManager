@@ -43,14 +43,37 @@ enum {
 
 struct nl_msg;
 
+/* This is similar to "struct nl_msg", in that it contains a
+ * netlink message including additional information like the
+ * src, creds, protocol.
+ *
+ * The difference is that "struct nl_msg" is an opaque type and
+ * contains a copy of the message (requiring two heap allocations).
+ * "struct nl_msg_lite" can be on the stack and it can directly
+ * point to the receive buffer, without need to copy the message.
+ * That can be useful, if you don't need to clone the message and
+ * just need to pass it "down the stack" for somebody to parse
+ * the message. */
+struct nl_msg_lite {
+    int                       nm_protocol;
+    const struct sockaddr_nl *nm_src;
+    const struct sockaddr_nl *nm_dst;
+    const struct ucred       *nm_creds;
+    const struct nlmsghdr    *nm_nlh;
+    size_t                    nm_size;
+};
+
 /*****************************************************************************/
 
 const char *nl_nlmsgtype2str(int type, char *buf, size_t size);
 
 const char *nl_nlmsg_flags2str(int flags, char *buf, size_t len);
 
-const char *
-nl_nlmsghdr_to_str(int netlink_protocol, const struct nlmsghdr *hdr, char *buf, gsize len);
+const char *nl_nlmsghdr_to_str(int                    netlink_protocol,
+                               guint32                pktinfo_group,
+                               const struct nlmsghdr *hdr,
+                               char                  *buf,
+                               gsize                  len);
 
 /*****************************************************************************/
 
@@ -465,7 +488,7 @@ nlmsg_find_attr(struct nlmsghdr *nlh, int hdrlen, int attrtype)
     return nla_find(nlmsg_attrdata(nlh, hdrlen), nlmsg_attrlen(nlh, hdrlen), attrtype);
 }
 
-int nlmsg_parse(struct nlmsghdr         *nlh,
+int nlmsg_parse(const struct nlmsghdr   *nlh,
                 int                      hdrlen,
                 struct nlattr           *tb[],
                 int                      maxtype,
@@ -484,12 +507,26 @@ nlmsg_put(struct nl_msg *n, uint32_t pid, uint32_t seq, int type, int payload, i
 
 /*****************************************************************************/
 
+typedef enum {
+    NL_SOCKET_FLAGS_NONE             = 0,
+    NL_SOCKET_FLAGS_NONBLOCK         = 0x1,
+    NL_SOCKET_FLAGS_PASSCRED         = 0x2,
+    NL_SOCKET_FLAGS_PKTINFO          = 0x4,
+    NL_SOCKET_FLAGS_DISABLE_MSG_PEEK = 0x8,
+
+    _NL_SOCKET_FLAGS_ALL = (NL_SOCKET_FLAGS_DISABLE_MSG_PEEK << 1) - 1,
+} NLSocketFlags;
+
 #define NL_AUTO_PORT 0
 #define NL_AUTO_SEQ  0
 
 struct nl_sock;
 
-int nl_socket_new(struct nl_sock **out_sk, int protocol);
+int nl_socket_new(struct nl_sock **out_sk,
+                  int              protocol,
+                  NLSocketFlags    flags,
+                  int              bufsize_rx,
+                  int              bufsize_tx);
 
 void nl_socket_free(struct nl_sock *sk);
 
@@ -507,9 +544,9 @@ int nl_socket_set_buffer_size(struct nl_sock *sk, int rxbuf, int txbuf);
 
 int nl_socket_set_passcred(struct nl_sock *sk, int state);
 
-int nl_socket_set_nonblocking(const struct nl_sock *sk);
+int nl_socket_set_pktinfo(struct nl_sock *sk, int state);
 
-void nl_socket_disable_msg_peek(struct nl_sock *sk);
+int nl_socket_set_nonblocking(const struct nl_sock *sk);
 
 uint32_t nl_socket_get_local_port(const struct nl_sock *sk);
 
@@ -523,7 +560,9 @@ int nl_recv(struct nl_sock     *sk,
             struct sockaddr_nl *nla,
             unsigned char     **buf,
             struct ucred       *out_creds,
-            gboolean           *out_creds_has);
+            gboolean           *out_creds_has,
+            uint32_t           *out_pktinfo_group,
+            gboolean           *out_pktinfo_has);
 
 int nl_send(struct nl_sock *sk, struct nl_msg *msg);
 
@@ -568,28 +607,28 @@ int nl_recvmsgs(struct nl_sock *sk, const struct nl_cb *cb);
 
 int nl_wait_for_ack(struct nl_sock *sk, const struct nl_cb *cb);
 
-int nl_socket_set_ext_ack(struct nl_sock *sk, gboolean enable);
-
 /*****************************************************************************/
 
-void              *genlmsg_put(struct nl_msg *msg,
-                               uint32_t       port,
-                               uint32_t       seq,
-                               int            family,
-                               int            hdrlen,
-                               int            flags,
-                               uint8_t        cmd,
-                               uint8_t        version);
-void              *genlmsg_data(const struct genlmsghdr *gnlh);
-void              *genlmsg_user_hdr(const struct genlmsghdr *gnlh);
-struct genlmsghdr *genlmsg_hdr(struct nlmsghdr *nlh);
-void              *genlmsg_user_data(const struct genlmsghdr *gnlh, const int hdrlen);
-struct nlattr     *genlmsg_attrdata(const struct genlmsghdr *gnlh, int hdrlen);
-int                genlmsg_len(const struct genlmsghdr *gnlh);
-int                genlmsg_attrlen(const struct genlmsghdr *gnlh, int hdrlen);
-int                genlmsg_valid_hdr(struct nlmsghdr *nlh, int hdrlen);
+extern const struct nla_policy genl_ctrl_policy[8];
 
-int genlmsg_parse(struct nlmsghdr         *nlh,
+void                    *genlmsg_put(struct nl_msg *msg,
+                                     uint32_t       port,
+                                     uint32_t       seq,
+                                     int            family,
+                                     int            hdrlen,
+                                     int            flags,
+                                     uint8_t        cmd,
+                                     uint8_t        version);
+void                    *genlmsg_data(const struct genlmsghdr *gnlh);
+void                    *genlmsg_user_hdr(const struct genlmsghdr *gnlh);
+const struct genlmsghdr *genlmsg_hdr(const struct nlmsghdr *nlh);
+void                    *genlmsg_user_data(const struct genlmsghdr *gnlh, const int hdrlen);
+struct nlattr           *genlmsg_attrdata(const struct genlmsghdr *gnlh, int hdrlen);
+int                      genlmsg_len(const struct genlmsghdr *gnlh);
+int                      genlmsg_attrlen(const struct genlmsghdr *gnlh, int hdrlen);
+int                      genlmsg_valid_hdr(const struct nlmsghdr *nlh, int hdrlen);
+
+int genlmsg_parse(const struct nlmsghdr   *nlh,
                   int                      hdrlen,
                   struct nlattr           *tb[],
                   int                      maxtype,
