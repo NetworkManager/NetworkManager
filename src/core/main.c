@@ -417,9 +417,10 @@ main(int argc, char *argv[])
     }
 
     nm_log_info(LOGD_CORE,
-                "NetworkManager (version " NM_DIST_VERSION ") is starting... (%s%s)",
-                nm_config_get_first_start(config) ? "for the first time" : "after a restart",
-                NM_MORE_ASSERTS != 0 ? ", asserts:" G_STRINGIFY(NM_MORE_ASSERTS) : "");
+                "NetworkManager (version " NM_DIST_VERSION ") is starting... (%s%sboot:%s)",
+                nm_config_get_first_start(config) ? "" : "after a restart, ",
+                NM_MORE_ASSERTS != 0 ? "asserts:" G_STRINGIFY(NM_MORE_ASSERTS) ", " : "",
+                nm_utils_boot_id_str());
 
     nm_log_info(LOGD_CORE,
                 "Read config: %s",
