@@ -24,7 +24,7 @@ struct _NMDevice;
     "(" NM_SETTING_ADSL_ENCAPSULATION_VCMUX "/" NM_SETTING_ADSL_ENCAPSULATION_LLC ") [none]"
 
 #define NM_META_TEXT_PROMPT_CON_TYPE N_("Connection type")
-#define NM_META_TEXT_PROMPT_IFNAME   N_("Interface name [*]")
+#define NM_META_TEXT_PROMPT_IFNAME   N_("Interface name")
 #define NM_META_TEXT_PROMPT_VPN_TYPE N_("VPN type")
 #define NM_META_TEXT_PROMPT_MASTER   N_("Master")
 

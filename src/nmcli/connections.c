@@ -52,6 +52,7 @@ typedef struct _OptionInfo {
                               NMConnection             *connection,
                               const struct _OptionInfo *option,
                               const char               *value,
+                              gboolean                  allow_reset,
                               GError                  **error);
     CompEntryFunc generator_func;
 } OptionInfo;
@@ -4173,11 +4174,14 @@ enable_options(const char *setting_name, const char *property, const char *const
         for (i = 0; i < nm_meta_property_typ_data_bond.nested_len; i++) {
             const NMMetaNestedPropertyInfo *bi = &nm_meta_property_typ_data_bond.nested[i];
 
-            if (bi->base.inf_flags & NM_META_PROPERTY_INF_FLAG_DONT_ASK && bi->base.property_alias
-                && g_strv_contains(opts, bi->base.property_alias))
-                _dynamic_options_set((const NMMetaAbstractInfo *) bi,
-                                     PROPERTY_INF_FLAG_ENABLED,
-                                     PROPERTY_INF_FLAG_ENABLED);
+            if (opts) {
+                if (!bi->base.property_alias || !g_strv_contains(opts, bi->base.property_alias))
+                    continue;
+            }
+
+            _dynamic_options_set((const NMMetaAbstractInfo *) bi,
+                                 PROPERTY_INF_FLAG_ENABLED | PROPERTY_INF_FLAG_DISABLED,
+                                 PROPERTY_INF_FLAG_ENABLED);
         }
         return;
     }
@@ -4185,11 +4189,14 @@ enable_options(const char *setting_name, const char *property, const char *const
     if (!property_info->is_cli_option)
         g_return_if_reached();
 
-    if (property_info->inf_flags & NM_META_PROPERTY_INF_FLAG_DONT_ASK
-        && property_info->property_alias && g_strv_contains(opts, property_info->property_alias))
-        _dynamic_options_set((const NMMetaAbstractInfo *) property_info,
-                             PROPERTY_INF_FLAG_ENABLED,
-                             PROPERTY_INF_FLAG_ENABLED);
+    if (opts) {
+        if (!property_info->property_alias || !g_strv_contains(opts, property_info->property_alias))
+            return;
+    }
+
+    _dynamic_options_set((const NMMetaAbstractInfo *) property_info,
+                         PROPERTY_INF_FLAG_ENABLED | PROPERTY_INF_FLAG_DISABLED,
+                         PROPERTY_INF_FLAG_ENABLED);
 }
 
 /*
@@ -4375,7 +4382,7 @@ set_option(NmCli                    *nmc,
                        NULL,
                        NULL);
     if (option && option->check_and_set) {
-        return option->check_and_set(nmc, connection, option, value, error);
+        return option->check_and_set(nmc, connection, option, value, allow_reset, error);
     } else if (value || allow_reset) {
         return set_property(nmc->client,
                             connection,
@@ -4502,20 +4509,62 @@ gen_func_bond_lacp_rate(const char *text, int state)
 /*****************************************************************************/
 
 static gboolean
+enable_type_settings_and_options(NmCli *nmc, NMConnection *con, GError **error)
+{
+    const NMMetaSettingValidPartItem *const *type_settings;
+    const NMMetaSettingValidPartItem *const *slv_settings;
+    NMSettingConnection                     *s_con;
+
+    s_con = nm_connection_get_setting_connection(con);
+    g_return_val_if_fail(s_con, FALSE);
+
+    if (nm_setting_connection_get_slave_type(s_con))
+        enable_options(NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_MASTER, NULL);
+
+    if (NM_IN_STRSET(nm_setting_connection_get_connection_type(s_con),
+                     NM_SETTING_BLUETOOTH_SETTING_NAME,
+                     NM_SETTING_BOND_SETTING_NAME,
+                     NM_SETTING_BRIDGE_SETTING_NAME,
+                     NM_SETTING_DUMMY_SETTING_NAME,
+                     NM_SETTING_OVS_BRIDGE_SETTING_NAME,
+                     NM_SETTING_OVS_PATCH_SETTING_NAME,
+                     NM_SETTING_OVS_PORT_SETTING_NAME,
+                     NM_SETTING_TEAM_SETTING_NAME,
+                     NM_SETTING_VETH_SETTING_NAME,
+                     NM_SETTING_VRF_SETTING_NAME,
+                     NM_SETTING_WIREGUARD_SETTING_NAME)) {
+        enable_options(NM_SETTING_CONNECTION_SETTING_NAME,
+                       NM_SETTING_CONNECTION_INTERFACE_NAME,
+                       NULL);
+    }
+
+    if (!con_settings(con, &type_settings, &slv_settings, error))
+        return FALSE;
+
+    ensure_settings(con, slv_settings);
+    ensure_settings(con, type_settings);
+
+    /* For some software connection types we generate the interface name for the user. */
+    set_default_interface_name(nmc, s_con);
+
+    return TRUE;
+}
+
+static gboolean
 set_connection_type(NmCli            *nmc,
                     NMConnection     *con,
                     const OptionInfo *option,
                     const char       *value,
+                    gboolean          allow_reset,
                     GError          **error)
 {
-    const NMMetaSettingValidPartItem *const *type_settings;
-    const NMMetaSettingValidPartItem *const *slv_settings;
-    GError                                  *local      = NULL;
-    const char                              *master[]   = {"master", NULL};
-    const char                              *slave_type = NULL;
+    GError     *local      = NULL;
+    const char *slave_type = NULL;
 
     value = check_valid_name_toplevel(value, &slave_type, &local);
     if (!value) {
+        if (!allow_reset)
+            return TRUE;
         g_set_error(error,
                     NMCLI_ERROR,
                     NMC_RESULT_ERROR_USER_INPUT,
@@ -4535,16 +4584,6 @@ set_connection_type(NmCli            *nmc,
                           error)) {
             return FALSE;
         }
-        enable_options(NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_MASTER, master);
-    }
-
-    /* ifname is mandatory for all connection types except virtual ones (bond, team, bridge, vlan) */
-    if (NM_IN_STRSET(value,
-                     NM_SETTING_BOND_SETTING_NAME,
-                     NM_SETTING_TEAM_SETTING_NAME,
-                     NM_SETTING_BRIDGE_SETTING_NAME,
-                     NM_SETTING_VLAN_SETTING_NAME)) {
-        disable_options(NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_INTERFACE_NAME);
     }
 
     if (!set_property(nmc->client,
@@ -4556,13 +4595,7 @@ set_connection_type(NmCli            *nmc,
                       error))
         return FALSE;
 
-    if (!con_settings(con, &type_settings, &slv_settings, error))
-        return FALSE;
-
-    ensure_settings(con, slv_settings);
-    ensure_settings(con, type_settings);
-
-    return TRUE;
+    return enable_type_settings_and_options(nmc, con, error);
 }
 
 static gboolean
@@ -4570,12 +4603,15 @@ set_connection_iface(NmCli            *nmc,
                      NMConnection     *con,
                      const OptionInfo *option,
                      const char       *value,
+                     gboolean          allow_reset,
                      GError          **error)
 {
     if (value) {
         /* Special value of '*' means no specific interface name */
         if (nm_streq(value, "*"))
             value = NULL;
+    } else if (!allow_reset) {
+        return TRUE;
     }
 
     return set_property(nmc->client,
@@ -4592,6 +4628,7 @@ set_connection_master(NmCli            *nmc,
                       NMConnection     *con,
                       const OptionInfo *option,
                       const char       *value,
+                      gboolean          allow_reset,
                       GError          **error)
 {
     const GPtrArray     *connections;
@@ -4602,6 +4639,8 @@ set_connection_master(NmCli            *nmc,
     g_return_val_if_fail(s_con, FALSE);
 
     if (!value) {
+        if (!allow_reset)
+            return TRUE;
         g_set_error_literal(error,
                             NMCLI_ERROR,
                             NMC_RESULT_ERROR_USER_INPUT,
@@ -4637,10 +4676,10 @@ set_bond_option(NmCli            *nmc,
                 NMConnection     *con,
                 const OptionInfo *option,
                 const char       *value,
+                gboolean          allow_reset,
                 GError          **error)
 {
     NMSettingBond *s_bond;
-    gboolean       success;
     gs_free char  *name = NULL;
     char          *p;
 
@@ -4654,26 +4693,25 @@ set_bond_option(NmCli            *nmc,
     }
 
     if (nm_str_is_empty(value)) {
-        nm_setting_bond_remove_option(s_bond, name);
-        success = TRUE;
-    } else
-        success = _nm_meta_setting_bond_add_option(NM_SETTING(s_bond), name, value, error);
+        if (allow_reset) {
+            nm_setting_bond_remove_option(s_bond, name);
+            return TRUE;
+        }
+    } else {
+        if (!_nm_meta_setting_bond_add_option(NM_SETTING(s_bond), name, value, error))
+            return FALSE;
+    }
 
-    if (!success)
-        return FALSE;
-
-    if (success) {
-        if (nm_streq(name, NM_SETTING_BOND_OPTION_MODE)) {
-            value = nmc_bond_validate_mode(value, error);
-            if (nm_streq(value, "active-backup")) {
-                enable_options(NM_SETTING_BOND_SETTING_NAME,
-                               NM_SETTING_BOND_OPTIONS,
-                               NM_MAKE_STRV("primary"));
-            }
+    if (nm_streq(name, NM_SETTING_BOND_OPTION_MODE)) {
+        value = nm_setting_bond_get_option_by_name(s_bond, name);
+        if (nm_streq(value, "active-backup")) {
+            enable_options(NM_SETTING_BOND_SETTING_NAME,
+                           NM_SETTING_BOND_OPTIONS,
+                           NM_MAKE_STRV("primary"));
         }
     }
 
-    return success;
+    return TRUE;
 }
 
 static gboolean
@@ -4681,6 +4719,7 @@ set_bond_monitoring_mode(NmCli            *nmc,
                          NMConnection     *con,
                          const OptionInfo *option,
                          const char       *value,
+                         gboolean          allow_reset,
                          GError          **error)
 {
     NMSettingBond *s_bond;
@@ -4721,6 +4760,7 @@ set_bluetooth_type(NmCli            *nmc,
                    NMConnection     *con,
                    const OptionInfo *option,
                    const char       *value,
+                   gboolean          allow_reset,
                    GError          **error)
 {
     NMSetting *setting;
@@ -4769,6 +4809,7 @@ set_ip4_address(NmCli            *nmc,
                 NMConnection     *con,
                 const OptionInfo *option,
                 const char       *value,
+                gboolean          allow_reset,
                 GError          **error)
 {
     NMSettingIPConfig *s_ip4;
@@ -4796,6 +4837,7 @@ set_ip6_address(NmCli            *nmc,
                 NMConnection     *con,
                 const OptionInfo *option,
                 const char       *value,
+                gboolean          allow_reset,
                 GError          **error)
 {
     NMSettingIPConfig *s_ip6;
@@ -5557,17 +5599,30 @@ ask_option(NmCli *nmc, NMConnection *connection, const NMMetaAbstractInfo *abstr
     GError                *error  = NULL;
     gs_free char          *prompt = NULL;
     gboolean               multi;
+    const char            *setting_name, *property_name;
     const char            *opt_prompt, *opt_def_hint;
+    gs_free char          *def_hint     = NULL;
+    gs_free char          *property_val = NULL;
     NMMetaPropertyInfFlags inf_flags;
+    NMSetting             *setting;
 
     _meta_abstract_get(abstract_info,
                        NULL,
-                       NULL,
-                       NULL,
+                       &setting_name,
+                       &property_name,
                        NULL,
                        &inf_flags,
                        &opt_prompt,
                        &opt_def_hint);
+
+    if (!opt_def_hint) {
+        setting = nm_connection_get_setting_by_name(connection, setting_name);
+        if (setting)
+            property_val = nmc_setting_get_property_parsable(setting, property_name, NULL);
+        if (property_val)
+            opt_def_hint = def_hint = g_strdup_printf("[%s]", property_val);
+    }
+
     prompt =
         g_strjoin("", gettext(opt_prompt), opt_def_hint ? " " : "", opt_def_hint ?: "", ": ", NULL);
 
@@ -5578,8 +5633,6 @@ ask_option(NmCli *nmc, NMConnection *connection, const NMMetaAbstractInfo *abstr
 
 again:
     value = nmc_readline(&nmc->nmc_config, "%s", prompt);
-    if (multi && !value)
-        return;
 
     if (!set_option(nmc, connection, abstract_info, value, FALSE, &error)) {
         g_printerr("%s\n", error->message);
@@ -5599,7 +5652,9 @@ connection_get_base_meta_setting_type(NMConnection *connection)
     const NMMetaSettingInfoEditor *editor;
 
     connection_type = nm_connection_get_connection_type(connection);
-    nm_assert(connection_type);
+    if (!connection_type)
+        return NM_META_SETTING_TYPE_UNKNOWN;
+
     base_setting = nm_connection_get_setting_by_name(connection, connection_type);
     nm_assert(base_setting);
     editor = nm_meta_setting_info_editor_find_by_setting(base_setting);
@@ -5655,10 +5710,15 @@ questionnaire_mandatory(NmCli *nmc, NMConnection *connection)
     NMMetaSettingType s, base;
 
     /* First ask connection properties */
-    questionnaire_mandatory_ask_setting(nmc, connection, NM_META_SETTING_TYPE_CONNECTION);
+    while (1) {
+        base = connection_get_base_meta_setting_type(connection);
+        if (base != NM_META_SETTING_TYPE_UNKNOWN)
+            break;
+        enable_options(NM_SETTING_CONNECTION_SETTING_NAME, NM_SETTING_CONNECTION_TYPE, NULL);
+        questionnaire_mandatory_ask_setting(nmc, connection, NM_META_SETTING_TYPE_CONNECTION);
+    }
 
     /* Ask properties of the base setting */
-    base = connection_get_base_meta_setting_type(connection);
     questionnaire_mandatory_ask_setting(nmc, connection, base);
 
     /* Remaining settings */
@@ -5673,16 +5733,14 @@ want_provide_opt_args(const NmcConfig *nmc_config, const char *type, guint num)
 {
     gs_free char *answer = NULL;
 
+    /* Don't ask to ask. */
+    if (num == 1)
+        return TRUE;
+
     /* Ask for optional arguments. */
-    g_print(ngettext("There is %d optional setting for %s.\n",
-                     "There are %d optional settings for %s.\n",
-                     num),
-            (int) num,
-            type);
-    answer = nmc_readline(
-        nmc_config,
-        ngettext("Do you want to provide it? %s", "Do you want to provide them? %s", num),
-        prompt_yes_no(TRUE, NULL));
+    g_print(_("There are %d optional settings for %s.\n"), (int) num, type);
+    answer =
+        nmc_readline(nmc_config, _("Do you want to provide them? %s"), prompt_yes_no(TRUE, NULL));
     nm_strstrip(answer);
     return !answer || matches(answer, WORD_YES);
 }
@@ -5845,6 +5903,12 @@ read_properties:
     if (nmc->complete)
         goto finish;
 
+    if (!enable_type_settings_and_options(nmc, connection, &error)) {
+        g_string_assign(nmc->return_text, error->message);
+        nmc->return_value = error->code;
+        goto finish;
+    }
+
     /* Now ask user for the rest of the mandatory options. */
     if (nmc->ask)
         questionnaire_mandatory(nmc, connection);
@@ -5879,9 +5943,6 @@ read_properties:
             g_object_set(s_con, NM_SETTING_CONNECTION_ID, default_name, NULL);
         }
     }
-
-    /* For some software connection types we generate the interface name for the user. */
-    set_default_interface_name(nmc, s_con);
 
     /* Now see if there's something optional that needs to be asked for.
      * Keep asking until there's no more things to ask for. */
