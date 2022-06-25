@@ -118,7 +118,9 @@ static NM_UTILS_LOOKUP_STR_DEFINE(
     NM_UTILS_LOOKUP_STR_ITEM(CTRL_CMD_NEWMCAST_GRP, "CTRL_CMD_NEWMCAST_GRP"),
     NM_UTILS_LOOKUP_STR_ITEM(CTRL_CMD_DELMCAST_GRP, "CTRL_CMD_DELMCAST_GRP"),
     NM_UTILS_LOOKUP_STR_ITEM(CTRL_CMD_GETMCAST_GRP, "CTRL_CMD_GETMCAST_GRP"),
-    NM_UTILS_LOOKUP_STR_ITEM(CTRL_CMD_GETPOLICY, "CTRL_CMD_GETPOLICY"), );
+    /* CTRL_CMD_GETPOLICY was added in Linux 5.7 (released on 31 May, 2020),
+     * commit d07dcf9aadd6 ('netlink: add infrastructure to expose policies to userspace') */
+    NM_UTILS_LOOKUP_STR_ITEM(10 /* CTRL_CMD_GETPOLICY */, "CTRL_CMD_GETPOLICY"), );
 
 /*****************************************************************************/
 
