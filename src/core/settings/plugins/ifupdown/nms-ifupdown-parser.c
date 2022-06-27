@@ -451,7 +451,7 @@ update_ip4_setting_from_if_block(NMConnection *connection, if_block *block, GErr
                             netmask_v);
                 return FALSE;
             } else {
-                netmask_int = nm_utils_ip4_netmask_to_prefix(tmp_mask);
+                netmask_int = _nm_utils_ip4_netmask_to_prefix(tmp_mask);
             }
         }
 

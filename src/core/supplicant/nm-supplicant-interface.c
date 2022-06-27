@@ -3131,7 +3131,7 @@ _signal_handle(NMSupplicantInterface *self,
 
                         _set_p2p_assigned_addr(iface,
                                                addr_data,
-                                               nm_utils_ip4_netmask_to_prefix(netmask));
+                                               _nm_utils_ip4_netmask_to_prefix(netmask));
                     } else {
                         _LOGW("P2P: GroupStarted signaled invalid IP Address information");
                     }

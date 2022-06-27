@@ -203,7 +203,7 @@ _get_config_fetch_done_cb(NMHttpClient                   *http_client,
                                       g_bytes_get_data(response, NULL),
                                       NULL,
                                       &netmask_bin)) {
-            config_iface_data->cidr_prefix = nm_utils_ip4_netmask_to_prefix(netmask_bin);
+            config_iface_data->cidr_prefix = _nm_utils_ip4_netmask_to_prefix(netmask_bin);
         };
         break;
 
