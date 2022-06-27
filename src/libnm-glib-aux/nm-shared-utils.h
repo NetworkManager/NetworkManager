@@ -389,6 +389,17 @@ gboolean nm_utils_get_ipv6_interface_identifier(NMLinkType          link_type,
 
 /*****************************************************************************/
 
+static inline guint32
+_nm_utils_ip4_netmask_to_prefix(in_addr_t subnetmask)
+{
+    G_STATIC_ASSERT_EXPR(__SIZEOF_INT__ == 4);
+    G_STATIC_ASSERT_EXPR(sizeof(int) == 4);
+    G_STATIC_ASSERT_EXPR(sizeof(guint) == 4);
+    G_STATIC_ASSERT_EXPR(sizeof(subnetmask) == 4);
+
+    return ((subnetmask != 0u) ? (guint32) (32 - __builtin_ctz(ntohl(subnetmask))) : 0u);
+}
+
 /**
  * _nm_utils_ip4_prefix_to_netmask:
  * @prefix: a CIDR prefix

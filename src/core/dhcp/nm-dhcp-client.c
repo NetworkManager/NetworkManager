@@ -228,6 +228,16 @@ nm_dhcp_client_get_effective_client_id(NMDhcpClient *self)
     return priv->effective_client_id;
 }
 
+NML3ConfigData *
+nm_dhcp_client_create_l3cd(NMDhcpClient *self)
+{
+    NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
+
+    return nm_l3_config_data_new(nm_l3cfg_get_multi_idx(priv->config.l3cfg),
+                                 nm_l3cfg_get_ifindex(priv->config.l3cfg),
+                                 NM_IP_CONFIG_SOURCE_DHCP);
+}
+
 /*****************************************************************************/
 
 void

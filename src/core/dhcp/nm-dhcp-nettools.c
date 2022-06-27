@@ -164,7 +164,8 @@ lease_option_consume_route(const uint8_t **datap,
 /*****************************************************************************/
 
 static gboolean
-lease_parse_address(NDhcp4ClientLease *lease,
+lease_parse_address(NMDhcpNettools    *self /* for logging context only */,
+                    NDhcp4ClientLease *lease,
                     NML3ConfigData    *l3cd,
                     const char        *iface,
                     GHashTable        *options,
@@ -237,19 +238,32 @@ lease_parse_address(NDhcp4ClientLease *lease,
     }
 
     r = _client_lease_query(lease, NM_DHCP_OPTION_DHCP4_SUBNET_MASK, &l_data, &l_data_len);
-    if (r != 0
-        || !nm_dhcp_lease_data_parse_in_addr(l_data,
-                                             l_data_len,
-                                             &a_netmask,
-                                             iface,
-                                             NM_DHCP_OPTION_DHCP4_SUBNET_MASK)) {
-        nm_utils_error_set_literal(error,
-                                   NM_UTILS_ERROR_UNKNOWN,
-                                   "could not get netmask from lease");
-        return FALSE;
-    }
+    if (r == N_DHCP4_E_UNSET) {
+        char str1[NM_UTILS_INET_ADDRSTRLEN];
+        char str2[NM_UTILS_INET_ADDRSTRLEN];
 
-    a_plen = nm_utils_ip4_netmask_to_prefix(a_netmask);
+        /* Some DHCP servers may not set the subnet-mask (issue#1037).
+         * Do the same as the dhclient plugin and use a default. */
+        a_plen    = _nm_utils_ip4_get_default_prefix(a_address.s_addr);
+        a_netmask = _nm_utils_ip4_prefix_to_netmask(a_plen);
+        _LOGT("missing subnet mask (option 1). Guess %s based on IP address %s",
+              _nm_utils_inet4_ntop(a_netmask, str1),
+              _nm_utils_inet4_ntop(a_address.s_addr, str2));
+    } else {
+        if (r != 0
+            || !nm_dhcp_lease_data_parse_in_addr(l_data,
+                                                 l_data_len,
+                                                 &a_netmask,
+                                                 iface,
+                                                 NM_DHCP_OPTION_DHCP4_SUBNET_MASK)) {
+            nm_utils_error_set_literal(error,
+                                       NM_UTILS_ERROR_UNKNOWN,
+                                       "could not get netmask from lease");
+            return FALSE;
+        }
+        a_plen    = _nm_utils_ip4_netmask_to_prefix(a_netmask);
+        a_netmask = _nm_utils_ip4_prefix_to_netmask(a_plen);
+    }
 
     nm_dhcp_option_add_option_in_addr(options,
                                       AF_INET,
@@ -589,12 +603,9 @@ lease_parse_private_options(NDhcp4ClientLease *lease, GHashTable *options)
 }
 
 static NML3ConfigData *
-lease_to_ip4_config(NMDedupMultiIndex *multi_idx,
-                    const char        *iface,
-                    int                ifindex,
-                    NDhcp4ClientLease *lease,
-                    GError           **error)
+lease_to_ip4_config(NMDhcpNettools *self, NDhcp4ClientLease *lease, GError **error)
 {
+    const char                             *iface;
     nm_auto_str_buf NMStrBuf                sbuf    = NM_STR_BUF_INIT(0, FALSE);
     nm_auto_unref_l3cd_init NML3ConfigData *l3cd    = NULL;
     gs_unref_hashtable GHashTable          *options = NULL;
@@ -607,13 +618,15 @@ lease_to_ip4_config(NMDedupMultiIndex *multi_idx,
     struct in_addr                          v_inaddr_s;
     int                                     r;
 
-    g_return_val_if_fail(lease != NULL, NULL);
+    nm_assert(lease);
 
-    l3cd = nm_l3_config_data_new(multi_idx, ifindex, NM_IP_CONFIG_SOURCE_DHCP);
+    iface = nm_dhcp_client_get_iface(NM_DHCP_CLIENT(self));
+
+    l3cd = nm_dhcp_client_create_l3cd(NM_DHCP_CLIENT(self));
 
     options = nm_dhcp_option_create_options_dict();
 
-    if (!lease_parse_address(lease, l3cd, iface, options, &lease_address, error))
+    if (!lease_parse_address(self, lease, l3cd, iface, options, &lease_address, error))
         return NULL;
 
     r = n_dhcp4_client_lease_get_server_identifier(lease, &v_inaddr_s);
@@ -877,9 +890,7 @@ lease_save(NMDhcpNettools *self, NDhcp4ClientLease *lease, const char *lease_fil
 static void
 bound4_handle(NMDhcpNettools *self, guint event, NDhcp4ClientLease *lease)
 {
-    NMDhcpNettoolsPrivate                  *priv   = NM_DHCP_NETTOOLS_GET_PRIVATE(self);
-    NMDhcpClient                           *client = NM_DHCP_CLIENT(self);
-    const NMDhcpClientConfig               *client_config;
+    NMDhcpNettoolsPrivate                  *priv  = NM_DHCP_NETTOOLS_GET_PRIVATE(self);
     nm_auto_unref_l3cd_init NML3ConfigData *l3cd  = NULL;
     gs_free_error GError                   *error = NULL;
 
@@ -888,12 +899,7 @@ bound4_handle(NMDhcpNettools *self, guint event, NDhcp4ClientLease *lease)
 
     _LOGT("lease available (%s)", (event == N_DHCP4_CLIENT_EVENT_GRANTED) ? "granted" : "extended");
 
-    client_config = nm_dhcp_client_get_config(client);
-    l3cd          = lease_to_ip4_config(nm_dhcp_client_get_multi_idx(client),
-                               client_config->iface,
-                               nm_dhcp_client_get_ifindex(client),
-                               lease,
-                               &error);
+    l3cd = lease_to_ip4_config(self, lease, &error);
     if (!l3cd) {
         _LOGW("failure to parse lease: %s", error->message);
 
