@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -xe
+
 # A list of packages useful/needed to build and develop
 # NetworkManager on Debian and Ubuntu.
 #
@@ -11,14 +13,19 @@
 # This is a generous list of related packages.
 
 install() {
-    for p in "$@"; do
-        if [ "$NM_INSTALL" != "" ]; then
-            $NM_INSTALL "$p" || :
-        else
-            sudo apt-get install -y "$p" || :
-        fi
+    if [ "$NM_INSTALL" != "" ]; then
+        $NM_INSTALL "$@"
+    else
+        sudo apt-get install -y "$@"
+    fi
+}
+
+install_ignore_missing() {
+    for p; do
+        install "$p" || :
     done
 }
+
 
 install \
     \
@@ -38,11 +45,9 @@ install \
     libaudit-dev \
     libcurl4-gnutls-dev \
     libdbus-1-dev \
-    libgcrypt11-dev \
     libgirepository1.0-dev \
     libglib2.0-dev \
     libglib2.0-doc \
-    libgnutls-dev \
     libgnutls28-dev \
     libiw-dev \
     libjansson-dev \
@@ -65,10 +70,7 @@ install \
     policykit-1 \
     ppp \
     ppp-dev \
-    python-dbus \
-    python-gi \
     python-setuptools \
-    python-software-properties \
     python3-dbus \
     python3-gi \
     python3-pip \
@@ -76,5 +78,28 @@ install \
     udev \
     uuid-dev \
     valgrind \
+    \
+    #end
+
+# Old. Present in Ubuntu 20.04, not in Ubuntu 22.04
+# software-properties-common
+install_ignore_missing \
+    python-dbus \
+    python-gi \
+    \
+    #end
+
+# Old. Present in Ubuntu 18.04, not in Ubuntu 20.04
+# software-properties-common
+install_ignore_missing \
+    libgcrypt11-dev \
+    \
+    #end
+
+# Old. Present in Ubuntu 16.04, not in Ubuntu 18.04
+# software-properties-common
+install_ignore_missing \
+    libgnutls-dev \
+    python-software-properties \
     \
     #end
