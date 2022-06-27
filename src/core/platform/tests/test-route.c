@@ -1398,10 +1398,15 @@ again_table:
         rr->protocol = _rr_rand_choose_u8(nmtst_get_rand_uint32());
 
 #define IPTOS_TOS_MASK 0x1E
+#define INET_DSCP_MASK 0xFC
 
 again_tos:
     rr->tos = _rr_rand_choose_u8(nmtst_get_rand_uint32());
+
     if (rr->addr_family == AF_INET && rr->tos & ~IPTOS_TOS_MASK)
+        goto again_tos;
+
+    if (rr->tos & ~INET_DSCP_MASK)
         goto again_tos;
 
     if (_rule_check_kernel_support(platform, FRA_IP_PROTO))
