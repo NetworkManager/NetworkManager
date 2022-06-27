@@ -5,6 +5,7 @@
 ########################################
 #                                      #
 # THIS FILE IS GENERATED, DO NOT EDIT  #
+# Edit .gitlab-ci/ci.template instead  #
 #                                      #
 ########################################
 
@@ -33,7 +34,7 @@ variables:
   # changing these will force rebuilding the associated image
   # Note: these tags have no meaning and are not tied to a particular NM version
   #
-  # This is done by running `ci-fairy generate-template` and possibly bump
+  # This is done by running `ci-fairy generate-template` and possibly bumping
   # ".default_tag".
 {% for distro in distributions %}
   {{"%-13s"| format(distro.name.upper() + '_TAG:')}}'{{distro.tag}}-{{
