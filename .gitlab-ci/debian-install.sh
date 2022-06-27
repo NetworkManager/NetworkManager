@@ -2,8 +2,23 @@
 
 set -ex
 
-IS_UBUNTU_1604=0
-grep -q '^VERSION=.16.04.[0-9]\+ LTS' /etc/os-release && IS_UBUNTU_1604=1
+grep -q '^VERSION=.16.04.[0-9]\+ LTS' /etc/os-release && IS_UBUNTU_1604=1 || IS_UBUNTU_1604=0
+grep -q '^VERSION=.\(9 (stretch)\|18.04.[0-9]\+ LTS\)' /etc/os-release && IS_DEBIAN_9=1 || IS_DEBIAN_9=0
+
+if [ $IS_DEBIAN_9 = 1 ]; then
+    # pam is hosted on this release to the point chfn doesn't work.
+    # It's okay on Ubuntu 16.04 and 20.04 though, so keep this version specific.
+    #
+    # Setting up systemd (237-3ubuntu10.53) ...
+    # ...
+    # chfn: PAM: System error
+    # adduser: `/usr/bin/chfn -f systemd Network Management systemd-network' returned error code 1. Exiting.
+    # dpkg: error processing package systemd (--configure):
+    #  installed systemd package post-installation script subprocess returned error exit status 1
+    # Errors were encountered while processing:
+    #  systemd
+    ln -sf /bin/true /usr/bin/chfn
+fi
 
 DEBIAN_FRONTEND=noninteractive apt-get update
 DEBIAN_FRONTEND=noninteractive NM_INSTALL="apt-get --yes install" bash -x ./contrib/debian/REQUIRED_PACKAGES
