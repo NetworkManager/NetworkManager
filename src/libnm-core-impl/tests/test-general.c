@@ -2381,11 +2381,17 @@ test_setting_ip_route_attributes(void)
     TEST_ATTR("tos", byte, 127, AF_INET, TRUE, TRUE);
     TEST_ATTR("tos", string, "0x28", AF_INET, FALSE, TRUE);
 
+    TEST_ATTR("advmss", uint32, 1400, AF_INET, TRUE, TRUE);
+    TEST_ATTR("advmss", string, "1400", AF_INET, FALSE, TRUE);
+
     TEST_ATTR("cwnd", uint32, 10, AF_INET, TRUE, TRUE);
     TEST_ATTR("cwnd", string, "11", AF_INET, FALSE, TRUE);
 
     TEST_ATTR("lock-mtu", boolean, TRUE, AF_INET, TRUE, TRUE);
     TEST_ATTR("lock-mtu", uint32, 1, AF_INET, FALSE, TRUE);
+
+    TEST_ATTR("lock-advmss", boolean, TRUE, AF_INET, TRUE, TRUE);
+    TEST_ATTR("lock-advmss", boolean, TRUE, AF_INET6, TRUE, TRUE);
 
     TEST_ATTR("from", string, "fd01::1", AF_INET6, TRUE, TRUE);
     TEST_ATTR("from", string, "fd01::1/64", AF_INET6, TRUE, TRUE);
@@ -2395,6 +2401,12 @@ test_setting_ip_route_attributes(void)
     TEST_ATTR("from", string, "abc/64", AF_INET6, FALSE, TRUE);
     TEST_ATTR("from", string, "1.2.3.4", AF_INET, FALSE, TRUE);
     TEST_ATTR("from", string, "1.2.3.4", AF_INET6, FALSE, TRUE);
+
+    TEST_ATTR("quickack", boolean, TRUE, AF_INET, TRUE, TRUE);
+    TEST_ATTR("quickack", boolean, TRUE, AF_INET6, TRUE, TRUE);
+
+    TEST_ATTR("rto_min", uint32, 1000, AF_INET, TRUE, TRUE);
+    TEST_ATTR("rto_min", uint32, 1000, AF_INET6, TRUE, TRUE);
 
     TEST_ATTR("src", string, "1.2.3.4", AF_INET, TRUE, TRUE);
     TEST_ATTR("src", string, "1.2.3.4", AF_INET6, FALSE, TRUE);

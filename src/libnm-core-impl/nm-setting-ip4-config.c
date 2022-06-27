@@ -1057,6 +1057,9 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
      *     Various attributes are supported:
      *     <itemizedlist>
      *      <listitem>
+     *        <para><literal>"advmss"</literal> - an unsigned 32 bit integer.</para>
+     *      </listitem>
+     *      <listitem>
      *        <para><literal>"cwnd"</literal> - an unsigned 32 bit integer.</para>
      *      </listitem>
      *      <listitem>
@@ -1064,6 +1067,9 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
      *      </listitem>
      *      <listitem>
      *        <para><literal>"initrwnd"</literal> - an unsigned 32 bit integer.</para>
+     *      </listitem>
+     *      <listitem>
+     *        <para><literal>"lock-advmss"</literal> - a boolean value.</para>
      *      </listitem>
      *      <listitem>
      *        <para><literal>"lock-cwnd"</literal> - a boolean value.</para>
@@ -1085,6 +1091,13 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
      *      </listitem>
      *      <listitem>
      *        <para><literal>"onlink"</literal> - a boolean value.</para>
+     *      </listitem>
+     *      <listitem>
+     *        <para><literal>"quickack"</literal> - a boolean value.</para>
+     *      </listitem>
+     *      <listitem>
+     *        <para><literal>"rto_min"</literal> - an unsigned 32 bit integer.
+     *        The value is in milliseconds.</para>
      *      </listitem>
      *      <listitem>
      *        <para><literal>"scope"</literal> - an unsigned 8 bit integer. IPv4 only.</para>

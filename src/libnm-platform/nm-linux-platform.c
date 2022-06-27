@@ -3419,13 +3419,15 @@ _new_from_nl_route(const struct nlmsghdr *nlh, gboolean id_only, ParseNlmsgIter 
         .found    = FALSE,
         .has_more = FALSE,
     };
-    guint32 mss;
-    guint32 window   = 0;
-    guint32 cwnd     = 0;
-    guint32 initcwnd = 0;
-    guint32 initrwnd = 0;
-    guint32 mtu      = 0;
-    guint32 lock     = 0;
+    guint32  mss;
+    guint32  window   = 0;
+    guint32  cwnd     = 0;
+    guint32  initcwnd = 0;
+    guint32  initrwnd = 0;
+    guint32  mtu      = 0;
+    guint32  rto_min  = 0;
+    guint32  lock     = 0;
+    gboolean quickack = FALSE;
 
     nm_assert((parse_nlmsg_iter->iter_more && parse_nlmsg_iter->ip6_route.next_multihop > 0)
               || (!parse_nlmsg_iter->iter_more && parse_nlmsg_iter->ip6_route.next_multihop == 0));
@@ -3603,6 +3605,8 @@ rta_multipath_done:
             [RTAX_INITCWND] = {.type = NLA_U32},
             [RTAX_INITRWND] = {.type = NLA_U32},
             [RTAX_MTU]      = {.type = NLA_U32},
+            [RTAX_QUICKACK] = {.type = NLA_U32},
+            [RTAX_RTO_MIN]  = {.type = NLA_U32},
         };
         struct nlattr *mtb[G_N_ELEMENTS(rtax_policy)];
 
@@ -3623,6 +3627,10 @@ rta_multipath_done:
             initrwnd = nla_get_u32(mtb[RTAX_INITRWND]);
         if (mtb[RTAX_MTU])
             mtu = nla_get_u32(mtb[RTAX_MTU]);
+        if (mtb[RTAX_RTO_MIN])
+            rto_min = nla_get_u32(mtb[RTAX_RTO_MIN]);
+        if (mtb[RTAX_QUICKACK])
+            quickack = !!nla_get_u32(mtb[RTAX_QUICKACK]);
     }
 
     /*****************************************************************/
@@ -3673,12 +3681,15 @@ rta_multipath_done:
     obj->ip_route.cwnd          = cwnd;
     obj->ip_route.initcwnd      = initcwnd;
     obj->ip_route.initrwnd      = initrwnd;
+    obj->ip_route.rto_min       = rto_min;
+    obj->ip_route.quickack      = quickack;
     obj->ip_route.mtu           = mtu;
     obj->ip_route.lock_window   = NM_FLAGS_HAS(lock, 1 << RTAX_WINDOW);
     obj->ip_route.lock_cwnd     = NM_FLAGS_HAS(lock, 1 << RTAX_CWND);
     obj->ip_route.lock_initcwnd = NM_FLAGS_HAS(lock, 1 << RTAX_INITCWND);
     obj->ip_route.lock_initrwnd = NM_FLAGS_HAS(lock, 1 << RTAX_INITRWND);
     obj->ip_route.lock_mtu      = NM_FLAGS_HAS(lock, 1 << RTAX_MTU);
+    obj->ip_route.lock_mss      = NM_FLAGS_HAS(lock, 1 << RTAX_ADVMSS);
 
     if (!IS_IPv4) {
         if (tb[RTA_PREF])
@@ -4781,7 +4792,8 @@ ip_route_get_lock_flag(const NMPlatformIPRoute *route)
            | (((guint32) route->lock_cwnd) << RTAX_CWND)
            | (((guint32) route->lock_initcwnd) << RTAX_INITCWND)
            | (((guint32) route->lock_initrwnd) << RTAX_INITRWND)
-           | (((guint32) route->lock_mtu) << RTAX_MTU);
+           | (((guint32) route->lock_mtu) << RTAX_MTU)
+           | (((guint32) route->lock_mss) << RTAX_ADVMSS);
 }
 
 static gboolean
@@ -4869,7 +4881,8 @@ _nl_msg_new_route(int nlmsg_type, guint16 nlmsgflags, const NMPObject *obj)
     }
 
     if (obj->ip_route.mss || obj->ip_route.window || obj->ip_route.cwnd || obj->ip_route.initcwnd
-        || obj->ip_route.initrwnd || obj->ip_route.mtu || lock) {
+        || obj->ip_route.initrwnd || obj->ip_route.mtu || obj->ip_route.quickack
+        || obj->ip_route.rto_min || lock) {
         struct nlattr *metrics;
 
         metrics = nla_nest_start(msg, RTA_METRICS);
@@ -4888,6 +4901,10 @@ _nl_msg_new_route(int nlmsg_type, guint16 nlmsgflags, const NMPObject *obj)
             NLA_PUT_U32(msg, RTAX_INITRWND, obj->ip_route.initrwnd);
         if (obj->ip_route.mtu)
             NLA_PUT_U32(msg, RTAX_MTU, obj->ip_route.mtu);
+        if (obj->ip_route.rto_min)
+            NLA_PUT_U32(msg, RTAX_RTO_MIN, obj->ip_route.rto_min);
+        if (obj->ip_route.quickack)
+            NLA_PUT_U32(msg, RTAX_QUICKACK, obj->ip_route.quickack);
         if (lock)
             NLA_PUT_U32(msg, RTAX_LOCK, lock);
 
