@@ -95,11 +95,3 @@ install_ignore_missing \
     libgcrypt11-dev \
     \
     #end
-
-# Old. Present in Ubuntu 16.04, not in Ubuntu 18.04
-# software-properties-common
-install_ignore_missing \
-    libgnutls-dev \
-    python-software-properties \
-    \
-    #end
