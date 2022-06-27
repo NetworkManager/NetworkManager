@@ -2,7 +2,6 @@
 
 set -ex
 
-grep -q '^VERSION=.16.04.[0-9]\+ LTS' /etc/os-release && IS_UBUNTU_1604=1 || IS_UBUNTU_1604=0
 grep -q '^VERSION=.\(9 (stretch)\|18.04.[0-9]\+ LTS\)' /etc/os-release && IS_DEBIAN_9=1 || IS_DEBIAN_9=0
 
 if [ $IS_DEBIAN_9 = 1 ]; then
@@ -28,12 +27,7 @@ dbus-uuidgen --ensure
 sed -i 's/^# \(pl_PL.UTF-8 .*\)$/\1/p' /etc/locale.gen || true
 locale-gen pl_PL.UTF-8
 
-if [ $IS_UBUNTU_1604 = 1 ]; then
-    pip3 install meson==0.53.2
-    contrib/scripts/nm-ci-install-valgrind-in-ubuntu1604.sh
-else
-    pip3 install meson
-fi
+pip3 install meson
 
 # iproute2 5.2.0 on debian:sid causes our unit tests to fail.
 # Downgrade to a working version. See https://www.spinics.net/lists/netdev/msg584916.html
