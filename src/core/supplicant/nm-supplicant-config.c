@@ -974,6 +974,20 @@ nm_supplicant_config_add_setting_wireless_security(NMSupplicantConfig           
                                                            "<hidden>",
                                                            error))
                 return FALSE;
+
+            /* When supplicant is in ap mode and sae is used, sae_passwork
+             * must be present.
+             */
+            if (is_ap && nm_streq(key_mgmt, "sae")) {
+                if (!nm_supplicant_config_add_option_with_type(self,
+                                                               "sae_password",
+                                                               psk,
+                                                               -1,
+                                                               NM_SUPPL_OPT_TYPE_STRING,
+                                                               "<hidden>",
+                                                               error))
+                    return FALSE;
+            }
         } else if (nm_streq(key_mgmt, "sae")) {
             /* If the SAE password doesn't comply with WPA-PSK limitation,
              * we need to call it "sae_password" instead of "psk".
