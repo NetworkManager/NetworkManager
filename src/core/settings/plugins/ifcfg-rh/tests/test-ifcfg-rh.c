@@ -1352,6 +1352,7 @@ test_read_wired_static_routes(void)
     g_assert_cmpint(nm_ip_route_get_prefix(ip4_route), ==, 32);
     g_assert_cmpstr(nm_ip_route_get_next_hop(ip4_route), ==, "192.168.1.7");
     g_assert_cmpint(nm_ip_route_get_metric(ip4_route), ==, 3);
+    nmtst_assert_route_attribute_uint32(ip4_route, NM_IP_ROUTE_ATTRIBUTE_ADVMSS, 1300);
     nmtst_assert_route_attribute_byte(ip4_route, NM_IP_ROUTE_ATTRIBUTE_TOS, 0x28);
     nmtst_assert_route_attribute_uint32(ip4_route, NM_IP_ROUTE_ATTRIBUTE_WINDOW, 30000);
     nmtst_assert_route_attribute_uint32(ip4_route, NM_IP_ROUTE_ATTRIBUTE_CWND, 12);
@@ -1360,6 +1361,8 @@ test_read_wired_static_routes(void)
     nmtst_assert_route_attribute_uint32(ip4_route, NM_IP_ROUTE_ATTRIBUTE_MTU, 9000);
     nmtst_assert_route_attribute_boolean(ip4_route, NM_IP_ROUTE_ATTRIBUTE_LOCK_MTU, TRUE);
     nmtst_assert_route_attribute_boolean(ip4_route, NM_IP_ROUTE_ATTRIBUTE_LOCK_INITCWND, TRUE);
+    nmtst_assert_route_attribute_uint32(ip4_route, NM_IP_ROUTE_ATTRIBUTE_RTO_MIN, 300);
+    nmtst_assert_route_attribute_boolean(ip4_route, NM_IP_ROUTE_ATTRIBUTE_QUICKACK, TRUE);
     nmtst_assert_route_attribute_string(ip4_route, NM_IP_ROUTE_ATTRIBUTE_SRC, "1.1.1.1");
     nmtst_assert_route_attribute_byte(ip4_route, NM_IP_ROUTE_ATTRIBUTE_SCOPE, 10);
 

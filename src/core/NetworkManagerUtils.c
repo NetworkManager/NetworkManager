@@ -1388,16 +1388,20 @@ nm_utils_ip_route_attribute_to_platform(int                addr_family,
 
     r->r_rtm_flags = ((onlink) ? (unsigned) RTNH_F_ONLINK : 0u);
 
+    GET_ATTR(NM_IP_ROUTE_ATTRIBUTE_ADVMSS, r->mss, UINT32, uint32, 0);
     GET_ATTR(NM_IP_ROUTE_ATTRIBUTE_WINDOW, r->window, UINT32, uint32, 0);
     GET_ATTR(NM_IP_ROUTE_ATTRIBUTE_CWND, r->cwnd, UINT32, uint32, 0);
     GET_ATTR(NM_IP_ROUTE_ATTRIBUTE_INITCWND, r->initcwnd, UINT32, uint32, 0);
     GET_ATTR(NM_IP_ROUTE_ATTRIBUTE_INITRWND, r->initrwnd, UINT32, uint32, 0);
     GET_ATTR(NM_IP_ROUTE_ATTRIBUTE_MTU, r->mtu, UINT32, uint32, 0);
+    GET_ATTR(NM_IP_ROUTE_ATTRIBUTE_RTO_MIN, r->rto_min, UINT32, uint32, 0);
+    GET_ATTR(NM_IP_ROUTE_ATTRIBUTE_QUICKACK, r->quickack, BOOLEAN, boolean, FALSE);
     GET_ATTR(NM_IP_ROUTE_ATTRIBUTE_LOCK_WINDOW, r->lock_window, BOOLEAN, boolean, FALSE);
     GET_ATTR(NM_IP_ROUTE_ATTRIBUTE_LOCK_CWND, r->lock_cwnd, BOOLEAN, boolean, FALSE);
     GET_ATTR(NM_IP_ROUTE_ATTRIBUTE_LOCK_INITCWND, r->lock_initcwnd, BOOLEAN, boolean, FALSE);
     GET_ATTR(NM_IP_ROUTE_ATTRIBUTE_LOCK_INITRWND, r->lock_initrwnd, BOOLEAN, boolean, FALSE);
     GET_ATTR(NM_IP_ROUTE_ATTRIBUTE_LOCK_MTU, r->lock_mtu, BOOLEAN, boolean, FALSE);
+    GET_ATTR(NM_IP_ROUTE_ATTRIBUTE_LOCK_ADVMSS, r->lock_mss, BOOLEAN, boolean, FALSE);
 
     if ((variant = nm_ip_route_get_attribute(s_route, NM_IP_ROUTE_ATTRIBUTE_SRC))
         && g_variant_is_of_type(variant, G_VARIANT_TYPE_STRING)) {

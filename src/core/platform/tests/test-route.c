@@ -646,6 +646,9 @@ test_ip4_route_options(gconstpointer test_data)
             .initrwnd  = 50,
             .mtu       = 1350,
             .lock_cwnd = TRUE,
+            .mss       = 1300,
+            .quickack  = TRUE,
+            .rto_min   = 1000,
         });
         break;
     case 2:

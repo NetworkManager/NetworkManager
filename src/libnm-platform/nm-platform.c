@@ -6787,6 +6787,7 @@ nm_platform_ip4_route_to_string(const NMPlatformIP4Route *route, char *buf, gsiz
     char s_gateway[INET_ADDRSTRLEN];
     char s_pref_src[INET_ADDRSTRLEN];
     char str_dev[TO_STRING_DEV_BUF_SIZE];
+    char str_mss[32];
     char str_table[30];
     char str_scope[30];
     char s_source[50];
@@ -6795,6 +6796,7 @@ nm_platform_ip4_route_to_string(const NMPlatformIP4Route *route, char *buf, gsiz
     char str_cwnd[32];
     char str_initcwnd[32];
     char str_initrwnd[32];
+    char str_rto_min[32];
     char str_mtu[32];
     char str_rtm_flags[_RTM_FLAGS_TO_STRING_MAXLEN];
     char str_type[30];
@@ -6821,18 +6823,20 @@ nm_platform_ip4_route_to_string(const NMPlatformIP4Route *route, char *buf, gsiz
         "%s%s" /* gateway */
         "%s"
         " metric %s"
-        " mss %" G_GUINT32_FORMAT /* mss */
-        " rt-src %s"              /* protocol */
-        "%s"                      /* rtm_flags */
-        "%s%s"                    /* scope */
-        "%s%s"                    /* pref-src */
-        "%s"                      /* tos */
-        "%s"                      /* window */
-        "%s"                      /* cwnd */
-        "%s"                      /* initcwnd */
-        "%s"                      /* initrwnd */
-        "%s"                      /* mtu */
-        "%s"                      /* r_force_commit */
+        "%s"         /* mss */
+        " rt-src %s" /* protocol */
+        "%s"         /* rtm_flags */
+        "%s%s"       /* scope */
+        "%s%s"       /* pref-src */
+        "%s"         /* tos */
+        "%s"         /* window */
+        "%s"         /* cwnd */
+        "%s"         /* initcwnd */
+        "%s"         /* initrwnd */
+        "%s"         /* rto_min */
+        "%s"         /* quickack */
+        "%s"         /* mtu */
+        "%s"         /* r_force_commit */
         "",
         nm_net_aux_rtnl_rtntype_n2a_maybe_buf(nm_platform_route_type_uncoerce(route->type_coerced),
                                               str_type),
@@ -6851,7 +6855,10 @@ nm_platform_ip4_route_to_string(const NMPlatformIP4Route *route, char *buf, gsiz
         route->metric_any
             ? (route->metric ? nm_sprintf_buf(str_metric, "??+%u", route->metric) : "??")
             : nm_sprintf_buf(str_metric, "%u", route->metric),
-        route->mss,
+        nm_sprintf_buf(str_mss,
+                       " mss %s%" G_GUINT32_FORMAT,
+                       route->lock_mss ? "lock " : "",
+                       route->mss),
         nmp_utils_ip_config_source_to_string(route->rt_source, s_source, sizeof(s_source)),
         _rtm_flags_to_string_full(str_rtm_flags, sizeof(str_rtm_flags), route->r_rtm_flags),
         route->scope_inv ? " scope " : "",
@@ -6885,6 +6892,9 @@ nm_platform_ip4_route_to_string(const NMPlatformIP4Route *route, char *buf, gsiz
                              route->lock_initrwnd ? "lock " : "",
                              route->initrwnd)
             : "",
+        route->rto_min ? nm_sprintf_buf(str_rto_min, " rto_min %" G_GUINT32_FORMAT, route->rto_min)
+                       : "",
+        route->quickack ? " quickack 1" : "",
         route->mtu || route->lock_mtu ? nm_sprintf_buf(str_mtu,
                                                        " mtu %s%" G_GUINT32_FORMAT,
                                                        route->lock_mtu ? "lock " : "",
@@ -6919,11 +6929,13 @@ nm_platform_ip6_route_to_string(const NMPlatformIP6Route *route, char *buf, gsiz
     char str_pref[40];
     char str_pref2[30];
     char str_dev[TO_STRING_DEV_BUF_SIZE];
+    char str_mss[32];
     char s_source[50];
     char str_window[32];
     char str_cwnd[32];
     char str_initcwnd[32];
     char str_initrwnd[32];
+    char str_rto_min[32];
     char str_mtu[32];
     char str_rtm_flags[_RTM_FLAGS_TO_STRING_MAXLEN];
     char str_metric[30];
@@ -6954,18 +6966,20 @@ nm_platform_ip6_route_to_string(const NMPlatformIP6Route *route, char *buf, gsiz
         "%s%s" /* gateway */
         "%s"
         " metric %s"
-        " mss %" G_GUINT32_FORMAT /* mss */
-        " rt-src %s"              /* protocol */
-        "%s"                      /* source */
-        "%s"                      /* rtm_flags */
-        "%s%s"                    /* pref-src */
-        "%s"                      /* window */
-        "%s"                      /* cwnd */
-        "%s"                      /* initcwnd */
-        "%s"                      /* initrwnd */
-        "%s"                      /* mtu */
-        "%s"                      /* pref */
-        "%s"                      /* r_force_commit */
+        "%s"         /* mss */
+        " rt-src %s" /* protocol */
+        "%s"         /* source */
+        "%s"         /* rtm_flags */
+        "%s%s"       /* pref-src */
+        "%s"         /* window */
+        "%s"         /* cwnd */
+        "%s"         /* initcwnd */
+        "%s"         /* initrwnd */
+        "%s"         /* rto_min */
+        "%s"         /* quickack */
+        "%s"         /* mtu */
+        "%s"         /* pref */
+        "%s"         /* r_force_commit */
         "",
         nm_net_aux_rtnl_rtntype_n2a_maybe_buf(nm_platform_route_type_uncoerce(route->type_coerced),
                                               str_type),
@@ -6984,7 +6998,10 @@ nm_platform_ip6_route_to_string(const NMPlatformIP6Route *route, char *buf, gsiz
         route->metric_any
             ? (route->metric ? nm_sprintf_buf(str_metric, "??+%u", route->metric) : "??")
             : nm_sprintf_buf(str_metric, "%u", route->metric),
-        route->mss,
+        nm_sprintf_buf(str_mss,
+                       " mss %s%" G_GUINT32_FORMAT,
+                       route->lock_mss ? "lock " : "",
+                       route->mss),
         nmp_utils_ip_config_source_to_string(route->rt_source, s_source, sizeof(s_source)),
         route->src_plen || !IN6_IS_ADDR_UNSPECIFIED(&route->src)
             ? nm_sprintf_buf(s_src_all,
@@ -7017,6 +7034,9 @@ nm_platform_ip6_route_to_string(const NMPlatformIP6Route *route, char *buf, gsiz
                              route->lock_initrwnd ? "lock " : "",
                              route->initrwnd)
             : "",
+        route->rto_min ? nm_sprintf_buf(str_rto_min, " rto_min %" G_GUINT32_FORMAT, route->rto_min)
+                       : "",
+        route->quickack ? " quickack 1" : "",
         route->mtu || route->lock_mtu ? nm_sprintf_buf(str_mtu,
                                                        " mtu %s%" G_GUINT32_FORMAT,
                                                        route->lock_mtu ? "lock " : "",
@@ -8337,15 +8357,18 @@ nm_platform_ip4_route_hash_update(const NMPlatformIP4Route *obj,
             obj->initcwnd,
             obj->initrwnd,
             obj->mtu,
+            obj->rto_min,
             obj->r_rtm_flags & RTNH_F_ONLINK,
-            NM_HASH_COMBINE_BOOLS(guint8,
+            NM_HASH_COMBINE_BOOLS(guint16,
                                   obj->metric_any,
                                   obj->table_any,
+                                  obj->quickack,
                                   obj->lock_window,
                                   obj->lock_cwnd,
                                   obj->lock_initcwnd,
                                   obj->lock_initrwnd,
-                                  obj->lock_mtu));
+                                  obj->lock_mtu,
+                                  obj->lock_mss));
         break;
     case NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY:
         nm_hash_update_vals(
@@ -8367,15 +8390,18 @@ nm_platform_ip4_route_hash_update(const NMPlatformIP4Route *obj,
             obj->initcwnd,
             obj->initrwnd,
             obj->mtu,
+            obj->rto_min,
             obj->r_rtm_flags & (RTM_F_CLONED | RTNH_F_ONLINK),
-            NM_HASH_COMBINE_BOOLS(guint8,
+            NM_HASH_COMBINE_BOOLS(guint16,
                                   obj->metric_any,
                                   obj->table_any,
+                                  obj->quickack,
                                   obj->lock_window,
                                   obj->lock_cwnd,
                                   obj->lock_initcwnd,
                                   obj->lock_initrwnd,
-                                  obj->lock_mtu));
+                                  obj->lock_mtu,
+                                  obj->lock_mss));
         break;
     case NM_PLATFORM_IP_ROUTE_CMP_TYPE_FULL:
         nm_hash_update_vals(h,
@@ -8396,15 +8422,18 @@ nm_platform_ip4_route_hash_update(const NMPlatformIP4Route *obj,
                             obj->initcwnd,
                             obj->initrwnd,
                             obj->mtu,
+                            obj->rto_min,
                             obj->r_rtm_flags,
-                            NM_HASH_COMBINE_BOOLS(guint8,
+                            NM_HASH_COMBINE_BOOLS(guint16,
                                                   obj->metric_any,
                                                   obj->table_any,
+                                                  obj->quickack,
                                                   obj->lock_window,
                                                   obj->lock_cwnd,
                                                   obj->lock_initcwnd,
                                                   obj->lock_initrwnd,
                                                   obj->lock_mtu,
+                                                  obj->lock_mss,
                                                   obj->r_force_commit));
         break;
     }
@@ -8442,12 +8471,15 @@ nm_platform_ip4_route_cmp(const NMPlatformIP4Route *a,
             NM_CMP_FIELD(a, b, initcwnd);
             NM_CMP_FIELD(a, b, initrwnd);
             NM_CMP_FIELD(a, b, mtu);
+            NM_CMP_FIELD(a, b, rto_min);
             NM_CMP_DIRECT(a->r_rtm_flags & RTNH_F_ONLINK, b->r_rtm_flags & RTNH_F_ONLINK);
+            NM_CMP_FIELD_UNSAFE(a, b, quickack);
             NM_CMP_FIELD_UNSAFE(a, b, lock_window);
             NM_CMP_FIELD_UNSAFE(a, b, lock_cwnd);
             NM_CMP_FIELD_UNSAFE(a, b, lock_initcwnd);
             NM_CMP_FIELD_UNSAFE(a, b, lock_initrwnd);
             NM_CMP_FIELD_UNSAFE(a, b, lock_mtu);
+            NM_CMP_FIELD_UNSAFE(a, b, lock_mss);
         }
         break;
     case NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY:
@@ -8485,16 +8517,19 @@ nm_platform_ip4_route_cmp(const NMPlatformIP4Route *a,
         } else
             NM_CMP_FIELD(a, b, r_rtm_flags);
         NM_CMP_FIELD(a, b, tos);
+        NM_CMP_FIELD_UNSAFE(a, b, quickack);
         NM_CMP_FIELD_UNSAFE(a, b, lock_window);
         NM_CMP_FIELD_UNSAFE(a, b, lock_cwnd);
         NM_CMP_FIELD_UNSAFE(a, b, lock_initcwnd);
         NM_CMP_FIELD_UNSAFE(a, b, lock_initrwnd);
         NM_CMP_FIELD_UNSAFE(a, b, lock_mtu);
+        NM_CMP_FIELD_UNSAFE(a, b, lock_mss);
         NM_CMP_FIELD(a, b, window);
         NM_CMP_FIELD(a, b, cwnd);
         NM_CMP_FIELD(a, b, initcwnd);
         NM_CMP_FIELD(a, b, initrwnd);
         NM_CMP_FIELD(a, b, mtu);
+        NM_CMP_FIELD(a, b, rto_min);
         if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_FULL)
             NM_CMP_FIELD_UNSAFE(a, b, r_force_commit);
         break;
@@ -8552,19 +8587,22 @@ nm_platform_ip6_route_hash_update(const NMPlatformIP6Route *obj,
             nmp_utils_ip_config_source_round_trip_rtprot(obj->rt_source),
             obj->mss,
             obj->r_rtm_flags & RTM_F_CLONED,
-            NM_HASH_COMBINE_BOOLS(guint8,
+            NM_HASH_COMBINE_BOOLS(guint16,
                                   obj->metric_any,
                                   obj->table_any,
+                                  obj->quickack,
                                   obj->lock_window,
                                   obj->lock_cwnd,
                                   obj->lock_initcwnd,
                                   obj->lock_initrwnd,
-                                  obj->lock_mtu),
+                                  obj->lock_mtu,
+                                  obj->lock_mss),
             obj->window,
             obj->cwnd,
             obj->initcwnd,
             obj->initrwnd,
             obj->mtu,
+            obj->rto_min,
             _route_pref_normalize(obj->rt_pref));
         break;
     case NM_PLATFORM_IP_ROUTE_CMP_TYPE_FULL:
@@ -8584,17 +8622,20 @@ nm_platform_ip6_route_hash_update(const NMPlatformIP6Route *obj,
                             NM_HASH_COMBINE_BOOLS(guint16,
                                                   obj->metric_any,
                                                   obj->table_any,
+                                                  obj->quickack,
                                                   obj->lock_window,
                                                   obj->lock_cwnd,
                                                   obj->lock_initcwnd,
                                                   obj->lock_initrwnd,
                                                   obj->lock_mtu,
+                                                  obj->lock_mss,
                                                   obj->r_force_commit),
                             obj->window,
                             obj->cwnd,
                             obj->initcwnd,
                             obj->initrwnd,
                             obj->mtu,
+                            obj->rto_min,
                             obj->rt_pref);
         break;
     }
@@ -8658,16 +8699,19 @@ nm_platform_ip6_route_cmp(const NMPlatformIP6Route *a,
             NM_CMP_DIRECT(a->r_rtm_flags & RTM_F_CLONED, b->r_rtm_flags & RTM_F_CLONED);
         } else
             NM_CMP_FIELD(a, b, r_rtm_flags);
+        NM_CMP_FIELD_UNSAFE(a, b, quickack);
         NM_CMP_FIELD_UNSAFE(a, b, lock_window);
         NM_CMP_FIELD_UNSAFE(a, b, lock_cwnd);
         NM_CMP_FIELD_UNSAFE(a, b, lock_initcwnd);
         NM_CMP_FIELD_UNSAFE(a, b, lock_initrwnd);
         NM_CMP_FIELD_UNSAFE(a, b, lock_mtu);
+        NM_CMP_FIELD_UNSAFE(a, b, lock_mss);
         NM_CMP_FIELD(a, b, window);
         NM_CMP_FIELD(a, b, cwnd);
         NM_CMP_FIELD(a, b, initcwnd);
         NM_CMP_FIELD(a, b, initrwnd);
         NM_CMP_FIELD(a, b, mtu);
+        NM_CMP_FIELD(a, b, rto_min);
         if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY)
             NM_CMP_DIRECT(_route_pref_normalize(a->rt_pref), _route_pref_normalize(b->rt_pref));
         else
