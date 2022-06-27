@@ -23,8 +23,7 @@ PKG_NAME=NetworkManager
 cd $srcdir
 
 gtkdocize
-autopoint --force
-AUTOPOINT='intltoolize --automake --copy' autoreconf --force --install --verbose
+autoreconf --verbose --force --install
 
 cd $olddir
 if test -z "$NOCONFIGURE"; then

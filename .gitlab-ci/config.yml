@@ -8,7 +8,7 @@
 #
 
 # We're happy to rebuild all containers when one changes.
-.default_tag: &default_tag '2022-06-25.1'
+.default_tag: &default_tag '2022-06-27.0'
 
 
 # The list of all distributions we want to create job for.
@@ -30,7 +30,6 @@ distributions:
     tag: *default_tag
     base_type: debian
     versions:
-      - '16.04'
       - '18.04'
       - '20.04'
       - '22.04'
