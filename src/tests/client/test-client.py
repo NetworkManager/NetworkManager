@@ -1107,6 +1107,9 @@ class TestNmcli(NmTestBase):
         results = self._results
         self._results = None
 
+        if len(results) == 0:
+            return
+
         skip_test_for_l10n_diff = self._skip_test_for_l10n_diff
         self._skip_test_for_l10n_diff = None
 
