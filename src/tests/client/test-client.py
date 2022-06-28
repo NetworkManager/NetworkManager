@@ -1842,6 +1842,28 @@ class TestNmcli(NmTestBase):
             extra_env=no_dbus_env,
         )
 
+    @nm_test
+    def test_ask_mode(self):
+        nmc = self.call_nmcli_pexpect(["--ask", "c", "add"])
+        nmc.expect("Connection type:")
+        nmc.sendline("ethernet")
+        nmc.expect("Interface name:")
+        nmc.sendline("eth0")
+        nmc.expect("There are 3 optional settings for Wired Ethernet.")
+        nmc.expect("Do you want to provide them\? \(yes/no\) \[yes]")
+        nmc.sendline("no")
+        nmc.expect("There are 2 optional settings for IPv4 protocol.")
+        nmc.expect("Do you want to provide them\? \(yes/no\) \[yes]")
+        nmc.sendline("no")
+        nmc.expect("There are 2 optional settings for IPv6 protocol.")
+        nmc.expect("Do you want to provide them\? \(yes/no\) \[yes]")
+        nmc.sendline("no")
+        nmc.expect("There are 4 optional settings for Proxy.")
+        nmc.expect("Do you want to provide them\? \(yes/no\) \[yes]")
+        nmc.sendline("no")
+        nmc.expect("Connection 'ethernet' \(.*\) successfully added.")
+        nmc.expect(pexpect.EOF)
+
 
 ###############################################################################
 
