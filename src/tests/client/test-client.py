@@ -120,6 +120,7 @@ import random
 import dbus.service
 import dbus.mainloop.glib
 import io
+import pexpect
 
 ###############################################################################
 
@@ -837,6 +838,47 @@ class TestNmcli(NmTestBase):
                 frame,
             )
 
+    def call_nmcli_pexpect(self, args):
+        env = self._env()
+        return pexpect.spawn(
+            conf.get(ENV_NM_TEST_CLIENT_NMCLI_PATH), args, timeout=5, env=env
+        )
+
+    def _env(
+        self, lang="C", calling_num=None, fatal_warnings=_DEFAULT_ARG, extra_env=None
+    ):
+        if lang == "C":
+            language = ""
+        elif lang == "de_DE.utf8":
+            language = "de"
+        elif lang == "pl_PL.UTF-8":
+            language = "pl"
+        else:
+            self.fail("invalid language %s" % (lang))
+
+        env = {}
+        for k in ["LD_LIBRARY_PATH", "DBUS_SESSION_BUS_ADDRESS"]:
+            val = os.environ.get(k, None)
+            if val is not None:
+                env[k] = val
+        env["LANG"] = lang
+        env["LANGUAGE"] = language
+        env["LIBNM_USE_SESSION_BUS"] = "1"
+        env["LIBNM_USE_NO_UDEV"] = "1"
+        env["TERM"] = "linux"
+        env["ASAN_OPTIONS"] = conf.get(ENV_NM_TEST_ASAN_OPTIONS)
+        env["LSAN_OPTIONS"] = conf.get(ENV_NM_TEST_LSAN_OPTIONS)
+        env["LBSAN_OPTIONS"] = conf.get(ENV_NM_TEST_UBSAN_OPTIONS)
+        env["XDG_CONFIG_HOME"] = PathConfiguration.srcdir()
+        if calling_num is not None:
+            env["NM_TEST_CALLING_NUM"] = str(calling_num)
+        if fatal_warnings is _DEFAULT_ARG or fatal_warnings:
+            env["G_DEBUG"] = "fatal-warnings"
+        if extra_env is not None:
+            for k, v in extra_env.items():
+                env[k] = v
+        return env
+
     def _call_nmcli(
         self,
         args,
@@ -889,36 +931,12 @@ class TestNmcli(NmTestBase):
 
         if lang is None or lang == "C":
             lang = "C"
-            language = ""
         elif lang == "de":
             lang = "de_DE.utf8"
-            language = "de"
         elif lang == "pl":
             lang = "pl_PL.UTF-8"
-            language = "pl"
         else:
             self.fail("invalid language %s" % (lang))
-
-        env = {}
-        for k in ["LD_LIBRARY_PATH", "DBUS_SESSION_BUS_ADDRESS"]:
-            val = os.environ.get(k, None)
-            if val is not None:
-                env[k] = val
-        env["LANG"] = lang
-        env["LANGUAGE"] = language
-        env["LIBNM_USE_SESSION_BUS"] = "1"
-        env["LIBNM_USE_NO_UDEV"] = "1"
-        env["TERM"] = "linux"
-        env["ASAN_OPTIONS"] = conf.get(ENV_NM_TEST_ASAN_OPTIONS)
-        env["LSAN_OPTIONS"] = conf.get(ENV_NM_TEST_LSAN_OPTIONS)
-        env["LBSAN_OPTIONS"] = conf.get(ENV_NM_TEST_UBSAN_OPTIONS)
-        env["XDG_CONFIG_HOME"] = PathConfiguration.srcdir()
-        env["NM_TEST_CALLING_NUM"] = str(calling_num)
-        if fatal_warnings is _DEFAULT_ARG or fatal_warnings:
-            env["G_DEBUG"] = "fatal-warnings"
-        if extra_env is not None:
-            for k, v in extra_env.items():
-                env[k] = v
 
         args = [conf.get(ENV_NM_TEST_CLIENT_NMCLI_PATH)] + list(args)
 
@@ -1030,6 +1048,7 @@ class TestNmcli(NmTestBase):
                     "content": content,
                 }
 
+        env = self._env(lang, calling_num, fatal_warnings, extra_env)
         async_job = AsyncProcess(args=args, env=env, complete_cb=complete_cb)
 
         self._async_jobs.append(async_job)
