@@ -44,6 +44,7 @@ apk add \
     'ppp-dev' \
     'py3-dbus' \
     'py3-gobject3' \
+    'py3-pexpect' \
     'python3' \
     'readline-dev' \
     'util-linux-dev' \
