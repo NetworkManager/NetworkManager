@@ -75,6 +75,7 @@ install \
     ppp-devel \
     python3-dbus \
     python3-gobject \
+    python3-pexpect \
     readline-devel \
     rpm-build \
     systemd-devel \
