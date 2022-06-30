@@ -95,6 +95,11 @@
             setting). While trying and retrying, NetworkManager is busy until all
             profiles and devices either reached an activated or disconnected state
             and no further events are expected.
+          <para>
+          </para>
+            Basically, as long as there are devices and connections in <literal>activating</literal>
+            state visible with <command>nmcli device</command> and <command>nmcli connection</command>,
+            startup is still pending.
           </para>
         </listitem>
         <listitem>
@@ -122,9 +127,27 @@
         </listitem>
         <listitem>
           <para>
+            Dispatcher scripts for the "pre-up" event run at a late stage during activation
+            of a profile. These scripts block the activation for when NetworkManager considers
+            the profile fully activated.
+            See also <link linkend='NetworkManager-dispatcher'><citerefentry><refentrytitle>NetworkManager-dispatcher</refentrytitle><manvolnum>8</manvolnum></citerefentry></link>
+            for details.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            The connection property <literal>connection.wait-activation-delay</literal> also
+            adds an additional delay during activation and delays startup complete. This is to
+            workaround certain cases where a device is known to not be ready for a certain
+            amount of time.
+          </para>
+        </listitem>
+        <listitem>
+          <para>
             The property <literal>connection.wait-device-timeout</literal> of the connection
             profiles waits until the waited devices appear. This is useful if the driver
-            takes a longer time to detect the networking interfaces.
+            takes a longer time to detect the networking interfaces. Similar with the
+            <literal>connection.gateway-ping-timeout</literal> property.
           </para>
         </listitem>
         <listitem>
