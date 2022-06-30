@@ -190,6 +190,7 @@ EXTRA_DIST += \
 	examples/python/gi/get-interface-flags.py \
 	examples/python/gi/get-lldp-neighbors.py \
 	examples/python/gi/get_ips.py \
+	examples/python/gi/gmaincontext.py \
 	examples/python/gi/list-connections.py \
 	examples/python/gi/nm-add-connection2.py \
 	examples/python/gi/nm-connection-update-stable-id.py \
