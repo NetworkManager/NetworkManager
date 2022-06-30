@@ -2488,7 +2488,10 @@ nm_setting_wireguard_class_init(NMSettingWireGuardClass *klass)
      *
      * Leaving this at the default will enable this option automatically
      * if ipv4.never-default is not set and there are any peers that use
-     * a default-route as allowed-ips.
+     * a default-route as allowed-ips. Since this automatism only makes
+     * sense if you also have a peer with an /0 allowed-ips, it is usually
+     * not necessary to enable this explicitly. However, you can disable
+     * it if you want to configure your own routing and rules.
      *
      * Since: 1.20
      **/
