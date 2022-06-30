@@ -821,7 +821,7 @@ _test_l3_ipv6ll_find_lladdr(TestL3IPv6LLData *tdata, int ifindex)
 
     g_assert(tdata);
 
-    nmp_lookup_init_object(&lookup, NMP_OBJECT_TYPE_IP6_ADDRESS, ifindex);
+    nmp_lookup_init_object_by_ifindex(&lookup, NMP_OBJECT_TYPE_IP6_ADDRESS, ifindex);
     nm_platform_iter_obj_for_each (&iter, tdata->f->platform, &lookup, &obj) {
         const NMPlatformIP6Address *a = NMP_OBJECT_CAST_IP6_ADDRESS(obj);
 

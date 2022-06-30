@@ -8323,13 +8323,13 @@ device_has_config(NMDevice *self)
 
     head_entry = nm_platform_lookup(
         nm_device_get_platform(self),
-        nmp_lookup_init_object(&lookup, NMP_OBJECT_TYPE_IP4_ADDRESS, pllink->ifindex));
+        nmp_lookup_init_object_by_ifindex(&lookup, NMP_OBJECT_TYPE_IP4_ADDRESS, pllink->ifindex));
     if (head_entry)
         return TRUE;
 
     head_entry = nm_platform_lookup(
         nm_device_get_platform(self),
-        nmp_lookup_init_object(&lookup, NMP_OBJECT_TYPE_IP6_ADDRESS, pllink->ifindex));
+        nmp_lookup_init_object_by_ifindex(&lookup, NMP_OBJECT_TYPE_IP6_ADDRESS, pllink->ifindex));
     if (head_entry)
         return TRUE;
 
@@ -17017,7 +17017,7 @@ get_address_for_hostname_dns_lookup(NMDevice *self, int addr_family)
      *   opposed to an address that is configured? */
     head_entry = nm_platform_lookup(
         nm_device_get_platform(self),
-        nmp_lookup_init_object(&lookup, NMP_OBJECT_TYPE_IP_ADDRESS(IS_IPv4), ifindex));
+        nmp_lookup_init_object_by_ifindex(&lookup, NMP_OBJECT_TYPE_IP_ADDRESS(IS_IPv4), ifindex));
 
     if (head_entry) {
         c_list_for_each_entry (iter, &head_entry->lst_entries_head, lst_entries) {

@@ -672,7 +672,9 @@ _ipv4ll_platform_find_addr(NML3IPv4LL *self, const NML3AcdAddrInfo **out_acd_inf
     const NML3AcdAddrInfo      *acd_info;
     const NMPlatformIP4Address *addr;
 
-    nmp_lookup_init_object(&lookup, NMP_OBJECT_TYPE_IP4_ADDRESS, nm_l3_ipv4ll_get_ifindex(self));
+    nmp_lookup_init_object_by_ifindex(&lookup,
+                                      NMP_OBJECT_TYPE_IP4_ADDRESS,
+                                      nm_l3_ipv4ll_get_ifindex(self));
     nm_platform_iter_obj_for_each (&iter, nm_l3_ipv4ll_get_platform(self), &lookup, &obj) {
         addr = NMP_OBJECT_CAST_IP4_ADDRESS(obj);
         if (!_ip4_address_is_link_local(addr))

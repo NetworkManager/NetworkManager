@@ -70,7 +70,7 @@ _ipx_address_get_all(NMPlatform *self, int ifindex, NMPObjectType obj_type)
     g_assert(NM_IS_PLATFORM(self));
     g_assert(ifindex > 0);
     g_assert(NM_IN_SET(obj_type, NMP_OBJECT_TYPE_IP4_ADDRESS, NMP_OBJECT_TYPE_IP6_ADDRESS));
-    nmp_lookup_init_object(&lookup, obj_type, ifindex);
+    nmp_lookup_init_object_by_ifindex(&lookup, obj_type, ifindex);
     return nmp_cache_lookup_to_array(nm_platform_lookup(self, &lookup),
                                      obj_type,
                                      FALSE /*addresses are always visible. */);
@@ -103,7 +103,7 @@ nmtstp_platform_ip_address_find(NMPlatform *self, int ifindex, int addr_family, 
     nm_assert(addr);
 
     if (ifindex > 0)
-        nmp_lookup_init_object(&lookup, NMP_OBJECT_TYPE_IP_ADDRESS(IS_IPv4), ifindex);
+        nmp_lookup_init_object_by_ifindex(&lookup, NMP_OBJECT_TYPE_IP_ADDRESS(IS_IPv4), ifindex);
     else
         nmp_lookup_init_obj_type(&lookup, NMP_OBJECT_TYPE_IP_ADDRESS(IS_IPv4));
 
@@ -187,7 +187,9 @@ _nmtstp_platform_ip_addresses_assert(const char        *filename,
 
         plat_addrs = nm_platform_lookup_clone(
             self,
-            nmp_lookup_init_object(&lookup, NMP_OBJECT_TYPE_IP_ADDRESS(IS_IPv4), ifindex),
+            nmp_lookup_init_object_by_ifindex(&lookup,
+                                              NMP_OBJECT_TYPE_IP_ADDRESS(IS_IPv4),
+                                              ifindex),
             NULL,
             NULL);
 

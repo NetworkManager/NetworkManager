@@ -4133,7 +4133,7 @@ nm_platform_ip_address_sync(NMPlatform *self,
      * we check the "secondary" flag. */
     plat_addresses = nm_platform_lookup_clone(
         self,
-        nmp_lookup_init_object(&lookup, NMP_OBJECT_TYPE_IP_ADDRESS(IS_IPv4), ifindex),
+        nmp_lookup_init_object_by_ifindex(&lookup, NMP_OBJECT_TYPE_IP_ADDRESS(IS_IPv4), ifindex),
         NULL,
         NULL);
 
@@ -4545,7 +4545,9 @@ nm_platform_ip_address_get_prune_list(NMPlatform            *self,
     GPtrArray                     *result = NULL;
     CList                         *iter;
 
-    nmp_lookup_init_object(&lookup, NMP_OBJECT_TYPE_IP_ADDRESS(NM_IS_IPv4(addr_family)), ifindex);
+    nmp_lookup_init_object_by_ifindex(&lookup,
+                                      NMP_OBJECT_TYPE_IP_ADDRESS(NM_IS_IPv4(addr_family)),
+                                      ifindex);
 
     head_entry = nm_platform_lookup(self, &lookup);
 
@@ -4626,7 +4628,9 @@ nm_platform_ip_route_get_prune_list(NMPlatform            *self,
                         NM_IP_ROUTE_TABLE_SYNC_MODE_ALL,
                         NM_IP_ROUTE_TABLE_SYNC_MODE_ALL_PRUNE));
 
-    nmp_lookup_init_object(&lookup, NMP_OBJECT_TYPE_IP_ROUTE(NM_IS_IPv4(addr_family)), ifindex);
+    nmp_lookup_init_object_by_ifindex(&lookup,
+                                      NMP_OBJECT_TYPE_IP_ROUTE(NM_IS_IPv4(addr_family)),
+                                      ifindex);
     head_entry = nm_platform_lookup(self, &lookup);
     if (!head_entry)
         return NULL;
@@ -8983,7 +8987,7 @@ nm_platform_ip4_address_addr_to_hash(NMPlatform *self, int ifindex)
     g_return_val_if_fail(NM_IS_PLATFORM(self), NULL);
     g_return_val_if_fail(ifindex > 0, NULL);
 
-    nmp_lookup_init_object(&lookup, NMP_OBJECT_TYPE_IP4_ADDRESS, ifindex);
+    nmp_lookup_init_object_by_ifindex(&lookup, NMP_OBJECT_TYPE_IP4_ADDRESS, ifindex);
 
     head_entry = nmp_cache_lookup(NM_PLATFORM_GET_PRIVATE(self)->cache, &lookup);
 

@@ -30,10 +30,11 @@ qdiscs_lookup(int ifindex)
 {
     NMPLookup lookup;
 
-    return nm_platform_lookup_clone(NM_PLATFORM_GET,
-                                    nmp_lookup_init_object(&lookup, NMP_OBJECT_TYPE_QDISC, ifindex),
-                                    NULL,
-                                    NULL);
+    return nm_platform_lookup_clone(
+        NM_PLATFORM_GET,
+        nmp_lookup_init_object_by_ifindex(&lookup, NMP_OBJECT_TYPE_QDISC, ifindex),
+        NULL,
+        NULL);
 }
 
 static void

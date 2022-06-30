@@ -35,8 +35,9 @@ _wait_for_ipv4_addr_device_route(NMPlatform *platform,
 
         nmp_cache_iter_for_each (
             &iter,
-            nm_platform_lookup(platform,
-                               nmp_lookup_init_object(&lookup, NMP_OBJECT_TYPE_IP4_ROUTE, ifindex)),
+            nm_platform_lookup(
+                platform,
+                nmp_lookup_init_object_by_ifindex(&lookup, NMP_OBJECT_TYPE_IP4_ROUTE, ifindex)),
             &o) {
             const NMPlatformIP4Route *r = NMP_OBJECT_CAST_IP4_ROUTE(o);
 

@@ -792,7 +792,8 @@ nmp_cache_lookup(const NMPCache *cache, const NMPLookup *lookup)
 
 const NMPLookup *nmp_lookup_init_obj_type(NMPLookup *lookup, NMPObjectType obj_type);
 const NMPLookup *nmp_lookup_init_link_by_ifname(NMPLookup *lookup, const char *ifname);
-const NMPLookup *nmp_lookup_init_object(NMPLookup *lookup, NMPObjectType obj_type, int ifindex);
+const NMPLookup *
+nmp_lookup_init_object_by_ifindex(NMPLookup *lookup, NMPObjectType obj_type, int ifindex);
 const NMPLookup *nmp_lookup_init_route_default(NMPLookup *lookup, NMPObjectType obj_type);
 const NMPLookup *nmp_lookup_init_route_by_weak_id(NMPLookup *lookup, const NMPObject *obj);
 const NMPLookup *nmp_lookup_init_ip4_route_by_weak_id(NMPLookup *lookup,
@@ -1019,7 +1020,7 @@ nm_platform_lookup_object(NMPlatform *platform, NMPObjectType obj_type, int ifin
 {
     NMPLookup lookup;
 
-    nmp_lookup_init_object(&lookup, obj_type, ifindex);
+    nmp_lookup_init_object_by_ifindex(&lookup, obj_type, ifindex);
     return nm_platform_lookup(platform, &lookup);
 }
 
@@ -1032,7 +1033,7 @@ nm_platform_lookup_object_clone(NMPlatform            *platform,
 {
     NMPLookup lookup;
 
-    nmp_lookup_init_object(&lookup, obj_type, ifindex);
+    nmp_lookup_init_object_by_ifindex(&lookup, obj_type, ifindex);
     return nm_platform_lookup_clone(platform, &lookup, predicate, user_data);
 }
 
