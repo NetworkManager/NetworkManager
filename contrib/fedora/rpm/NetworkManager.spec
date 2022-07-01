@@ -302,10 +302,12 @@ BuildRequires: /usr/bin/dbus-launch
 BuildRequires: python3
 BuildRequires: python3-gobject-base
 BuildRequires: python3-dbus
+BuildRequires: python3-pexpect
 %else
 BuildRequires: python2
 BuildRequires: pygobject3-base
 BuildRequires: dbus-python
+BuildRequires: pexpect
 %endif
 BuildRequires: libselinux-devel
 BuildRequires: polkit-devel
