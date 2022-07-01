@@ -2131,19 +2131,14 @@ device_l3cd_changed(NMDevice             *device,
 
     nm_dns_manager_begin_updates(priv->dns_manager, __func__);
 
-    /* We catch already all the IP events registering on the device state changes but
-     * the ones where the IP changes with a stable state (i.e., activated):
-     * ignore IP config changes but when the device is in activated state.
-     * Prevents unnecessary changes to DNS information.
-     * FIXME(l3cfg): check why ^^^ this is needed and implement it. Note that
-     * this function is not always called when the device becomes ACTIVATED.
-     * Previously, we would also update the DNS manager's IP config in
-     * device_state_change(ACTIVATED). There we would also special-case
-     * pseudo-VPNs like wireguard. I don't see the code where this is handled
-     * now.
+    /* FIXME(l3cfg): Note that this function is not always called when the
+     * device becomes ACTIVATED. Previously, we would also update the DNS
+     * manager's IP config in device_state_change(ACTIVATED). There we would
+     * also special-case pseudo-VPNs like wireguard. I don't see the code where
+     * this is handled now.
      */
     state = nm_device_get_state(device);
-    if (l3cd_new && state > NM_DEVICE_STATE_IP_CONFIG && state < NM_DEVICE_STATE_DEACTIVATING) {
+    if (l3cd_new && state >= NM_DEVICE_STATE_IP_CONFIG && state < NM_DEVICE_STATE_DEACTIVATING) {
         nm_dns_manager_set_ip_config(priv->dns_manager,
                                      AF_UNSPEC,
                                      device,
