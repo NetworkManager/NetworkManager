@@ -27,16 +27,16 @@
 #define NM_DHCP_CLIENT_NOTIFY "dhcp-notify"
 
 typedef enum {
-    NM_DHCP_STATE_UNKNOWN = 0,
-    NM_DHCP_STATE_BOUND,      /* new lease */
-    NM_DHCP_STATE_EXTENDED,   /* lease extended */
-    NM_DHCP_STATE_TIMEOUT,    /* timed out contacting server */
-    NM_DHCP_STATE_DONE,       /* client reported it's stopping */
-    NM_DHCP_STATE_EXPIRE,     /* lease expired or NAKed */
-    NM_DHCP_STATE_FAIL,       /* failed for some reason */
-    NM_DHCP_STATE_TERMINATED, /* client is no longer running */
-    NM_DHCP_STATE_NOOP,       /* state is a non operation for NetworkManager */
-} NMDhcpState;
+    NM_DHCP_CLIENT_EVENT_TYPE_UNSPECIFIED,
+
+    NM_DHCP_CLIENT_EVENT_TYPE_BOUND,
+    NM_DHCP_CLIENT_EVENT_TYPE_EXTENDED,
+
+    NM_DHCP_CLIENT_EVENT_TYPE_TIMEOUT,
+    NM_DHCP_CLIENT_EVENT_TYPE_EXPIRE,
+    NM_DHCP_CLIENT_EVENT_TYPE_FAIL,
+    NM_DHCP_CLIENT_EVENT_TYPE_TERMINATED,
+} NMDhcpClientEventType;
 
 typedef enum _nm_packed {
     NM_DHCP_CLIENT_NOTIFY_TYPE_LEASE_UPDATE,
@@ -82,17 +82,8 @@ typedef struct {
     };
 } NMDhcpClientNotifyData;
 
-const char *nm_dhcp_state_to_string(NMDhcpState state);
+const char *nm_dhcp_client_event_type_to_string(NMDhcpClientEventType client_event_type);
 
-/* FIXME(l3cfg:dhcp:config): nm_dhcp_manager_start_ip[46]() has a gazillion of parameters,
- * those get passed on as CONSTRUCT_ONLY properties to the NMDhcpClient. Drop
- * all these parameters, and let the caller provide one NMDhcpClientConfig
- * instance. There will be only one GObject property (NM_DHCP_CLIENT_CONFIG),
- * which is CONSTRUCT_ONLY and takes a (mandatory) G_TYPE_POINTER for the
- * configuration.
- *
- * Since NMDhcpClientConfig has an addr_family, we also don't need separate
- * nm_dhcp_manager_start_ip[46]() methods. */
 typedef struct {
     int addr_family;
 
@@ -156,12 +147,13 @@ typedef struct {
 
     union {
         struct {
+            /* The address from the previous lease */
+            const char *last_address;
+
             /* Set BOOTP broadcast flag in request packets, so that servers
              * will always broadcast replies. */
             bool request_broadcast : 1;
 
-            /* The address from the previous lease */
-            const char *last_address;
         } v4;
         struct {
             /* If set, the DUID from the connection is used; otherwise
@@ -208,9 +200,12 @@ typedef struct {
 
     gboolean (*ip4_start)(NMDhcpClient *self, GError **error);
 
-    gboolean (*accept)(NMDhcpClient *self, GError **error);
+    gboolean (*accept)(NMDhcpClient *self, const NML3ConfigData *l3cd, GError **error);
 
-    gboolean (*decline)(NMDhcpClient *self, const char *error_message, GError **error);
+    gboolean (*decline)(NMDhcpClient         *self,
+                        const NML3ConfigData *l3cd,
+                        const char           *error_message,
+                        GError              **error);
 
     gboolean (*ip6_start)(NMDhcpClient *self, const struct in6_addr *ll_addr, GError **error);
 
@@ -230,8 +225,7 @@ typedef struct {
 
 GType nm_dhcp_client_get_type(void);
 
-gboolean nm_dhcp_client_start_ip4(NMDhcpClient *self, GError **error);
-gboolean nm_dhcp_client_start_ip6(NMDhcpClient *self, GError **error);
+gboolean nm_dhcp_client_start(NMDhcpClient *self, GError **error);
 
 const NMDhcpClientConfig *nm_dhcp_client_get_config(NMDhcpClient *self);
 
@@ -250,11 +244,6 @@ nm_dhcp_client_get_lease(NMDhcpClient *self)
     return NULL;
 }
 
-gboolean nm_dhcp_client_accept(NMDhcpClient *self, GError **error);
-gboolean nm_dhcp_client_can_accept(NMDhcpClient *self);
-
-gboolean nm_dhcp_client_decline(NMDhcpClient *self, const char *error_message, GError **error);
-
 void nm_dhcp_client_stop(NMDhcpClient *self, gboolean release);
 
 /* Backend helpers for subclasses */
@@ -268,15 +257,17 @@ void nm_dhcp_client_watch_child(NMDhcpClient *self, pid_t pid);
 
 void nm_dhcp_client_stop_watch_child(NMDhcpClient *self, pid_t pid);
 
-void
-nm_dhcp_client_set_state(NMDhcpClient *self, NMDhcpState new_state, const NML3ConfigData *l3cd);
+void _nm_dhcp_client_notify(NMDhcpClient         *self,
+                            NMDhcpClientEventType client_event_type,
+                            const NML3ConfigData *l3cd);
 
-gboolean nm_dhcp_client_handle_event(gpointer      unused,
-                                     const char   *iface,
-                                     int           pid,
-                                     GVariant     *options,
-                                     const char   *reason,
-                                     NMDhcpClient *self);
+gboolean nm_dhcp_client_handle_event(gpointer               unused,
+                                     const char            *iface,
+                                     int                    pid,
+                                     GVariant              *options,
+                                     const char            *reason,
+                                     GDBusMethodInvocation *invocation,
+                                     NMDhcpClient          *self);
 
 void nm_dhcp_client_emit_ipv6_prefix_delegated(NMDhcpClient               *self,
                                                const NMPlatformIP6Address *prefix);
