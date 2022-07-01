@@ -18,6 +18,8 @@
 %global release_version __RELEASE_VERSION__
 %global snapshot __SNAPSHOT__
 %global git_sha __COMMIT__
+%global bcond_default_debug __BCOND_DEFAULT_DEBUG__
+%global bcond_default_test __BCOND_DEFAULT_TEST__
 
 %global obsoletes_device_plugins     1:0.9.9.95-1
 %global obsoletes_ppp_plugin         1:1.5.3
@@ -45,18 +47,6 @@
 %global systemd_units_cloud_setup nm-cloud-setup.service nm-cloud-setup.timer
 
 ###############################################################################
-
-%if "x__BCOND_DEFAULT_DEBUG__" == "x1" || "x__BCOND_DEFAULT_DEBUG__" == "x0"
-%global bcond_default_debug __BCOND_DEFAULT_DEBUG__
-%else
-%global bcond_default_debug 0
-%endif
-
-%if "x__BCOND_DEFAULT_TEST__" == "x1" || "x__BCOND_DEFAULT_TEST__" == "x0"
-%global bcond_default_test __BCOND_DEFAULT_TEST__
-%else
-%global bcond_default_test 0
-%endif
 
 %bcond_with meson
 %bcond_without adsl
