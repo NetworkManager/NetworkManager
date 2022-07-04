@@ -529,7 +529,6 @@ _nm_client_dbus_call_simple(NMClient           *self,
     nm_assert(object_path);
     nm_assert(interface_name);
     nm_assert(method_name);
-    nm_assert(parameters);
     nm_assert(reply_type);
 
     dbus_context = nm_g_main_context_push_thread_default_if_necessary(priv->dbus_context);
@@ -590,20 +589,21 @@ _nm_client_dbus_call(NMClient           *self,
     nm_assert(object_path);
     nm_assert(interface_name);
     nm_assert(method_name);
-    nm_assert(parameters);
     nm_assert(reply_type);
 
     task = nm_g_task_new(source_obj, cancellable, source_tag, user_callback, user_callback_data);
 
     if (!self) {
-        nm_g_variant_unref_floating(parameters);
+        if (parameters)
+            nm_g_variant_unref_floating(parameters);
         g_task_return_error(task, _nm_client_new_error_nm_not_cached());
         return;
     }
 
     priv = NM_CLIENT_GET_PRIVATE(self);
     if (!priv->name_owner) {
-        nm_g_variant_unref_floating(parameters);
+        if (parameters)
+            nm_g_variant_unref_floating(parameters);
         g_task_return_error(task, _nm_client_new_error_nm_not_running());
         return;
     }
