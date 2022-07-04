@@ -97,14 +97,14 @@ _nml_dbus_log(NMLDBusLogLevel level, gboolean use_stdout, const char *fmt, ...)
                 (long long) pid,
                 prefix,
                 ts / NM_UTILS_NSEC_PER_SEC,
-                (ts / (NM_UTILS_NSEC_PER_SEC / 10000)) % 10000,
+                (ts / (NM_UTILS_NSEC_PER_SEC / 100000)) % 100000,
                 msg);
     } else {
         g_printerr("libnm-dbus[%lld]: %s[%" G_GINT64_FORMAT ".%05" G_GINT64_FORMAT "] %s\n",
                    (long long) pid,
                    prefix,
                    ts / NM_UTILS_NSEC_PER_SEC,
-                   (ts / (NM_UTILS_NSEC_PER_SEC / 10000)) % 10000,
+                   (ts / (NM_UTILS_NSEC_PER_SEC / 100000)) % 100000,
                    msg);
     }
 }
