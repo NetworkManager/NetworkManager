@@ -1249,6 +1249,7 @@ parse_capabilities(NMSupplicantInterface *self, GVariant *capabilities)
                 break;
             }
         }
+        g_free(array);
     }
 
     priv->iface_capabilities = NM_SUPPL_CAP_MASK_SET(priv->iface_capabilities,
