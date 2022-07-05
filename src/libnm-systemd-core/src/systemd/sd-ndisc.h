@@ -16,7 +16,7 @@
   Lesser General Public License for more details.
 
   You should have received a copy of the GNU Lesser General Public License
-  along with systemd; If not, see <http://www.gnu.org/licenses/>.
+  along with systemd; If not, see <https://www.gnu.org/licenses/>.
 ***/
 
 #include <errno.h>
@@ -42,25 +42,25 @@ enum {
         SD_NDISC_OPTION_RDNSS              = 25,
         SD_NDISC_OPTION_FLAGS_EXTENSION    = 26,
         SD_NDISC_OPTION_DNSSL              = 31,
-        SD_NDISC_OPTION_CAPTIVE_PORTAL     = 37,
+        SD_NDISC_OPTION_CAPTIVE_PORTAL     = 37
 };
 
 /* Route preference, RFC 4191, Section 2.1 */
 enum {
         SD_NDISC_PREFERENCE_LOW    = 3U,
         SD_NDISC_PREFERENCE_MEDIUM = 0U,
-        SD_NDISC_PREFERENCE_HIGH   = 1U,
+        SD_NDISC_PREFERENCE_HIGH   = 1U
 };
 
 typedef struct sd_ndisc sd_ndisc;
 typedef struct sd_ndisc_router sd_ndisc_router;
 
-typedef enum sd_ndisc_event_t {
+__extension__ typedef enum sd_ndisc_event_t {
         SD_NDISC_EVENT_TIMEOUT,
         SD_NDISC_EVENT_ROUTER,
         _SD_NDISC_EVENT_MAX,
         _SD_NDISC_EVENT_INVALID = -EINVAL,
-        _SD_ENUM_FORCE_S64(NDISC_EVENT),
+        _SD_ENUM_FORCE_S64(NDISC_EVENT)
 } sd_ndisc_event_t;
 
 typedef void (*sd_ndisc_callback_t)(sd_ndisc *nd, sd_ndisc_event_t event, sd_ndisc_router *rt, void *userdata);
@@ -82,7 +82,6 @@ int sd_ndisc_set_ifname(sd_ndisc *nd, const char *interface_name);
 int sd_ndisc_get_ifname(sd_ndisc *nd, const char **ret);
 int sd_ndisc_set_mac(sd_ndisc *nd, const struct ether_addr *mac_addr);
 
-int sd_ndisc_router_from_raw(sd_ndisc_router **ret, const void *raw, size_t raw_size);
 sd_ndisc_router *sd_ndisc_router_ref(sd_ndisc_router *rt);
 sd_ndisc_router *sd_ndisc_router_unref(sd_ndisc_router *rt);
 

@@ -13,6 +13,7 @@
 #include "event-source.h"
 #include "fd-util.h"
 #include "fs-util.h"
+#include "glyph-util.h"
 #include "hashmap.h"
 #include "list.h"
 #include "macro.h"
@@ -405,7 +406,8 @@ _public_ int sd_event_new(sd_event** ret) {
         e->epoll_fd = fd_move_above_stdio(e->epoll_fd);
 
         if (secure_getenv("SD_EVENT_PROFILE_DELAYS")) {
-                log_debug("Event loop profiling enabled. Logarithmic histogram of event loop iterations in the range 2^0 … 2^63 us will be logged every 5s.");
+                log_debug("Event loop profiling enabled. Logarithmic histogram of event loop iterations in the range 2^0 %s 2^63 us will be logged every 5s.",
+                          special_glyph(SPECIAL_GLYPH_ELLIPSIS));
                 e->profile_delays = true;
         }
 
@@ -706,6 +708,9 @@ static void event_unmask_signal_data(sd_event *e, struct signal_data *d, int sig
                 return;
         }
 
+        if (event_pid_changed(e))
+                return;
+
         assert(d->fd >= 0);
 
         if (signalfd(d->fd, &d->sigset, SFD_NONBLOCK|SFD_CLOEXEC) < 0)
@@ -851,6 +856,9 @@ static void source_disconnect(sd_event_source *s) {
                 break;
 
         case SOURCE_CHILD:
+                if (event_pid_changed(s->event))
+                        s->child.process_owned = false;
+
                 if (s->child.pid > 0) {
                         if (event_source_is_online(s)) {
                                 assert(s->event->n_online_child_sources > 0);
@@ -1426,7 +1434,6 @@ _public_ int sd_event_add_child(
                 return -ENOMEM;
 
         s->wakeup = WAKEUP_EVENT_SOURCE;
-        s->child.pid = pid;
         s->child.options = options;
         s->child.callback = callback;
         s->userdata = userdata;
@@ -1436,7 +1443,7 @@ _public_ int sd_event_add_child(
          * pin the PID, and make regular waitid() handling race-free. */
 
         if (shall_use_pidfd()) {
-                s->child.pidfd = pidfd_open(s->child.pid, 0);
+                s->child.pidfd = pidfd_open(pid, 0);
                 if (s->child.pidfd < 0) {
                         /* Propagate errors unless the syscall is not supported or blocked */
                         if (!ERRNO_IS_NOT_SUPPORTED(errno) && !ERRNO_IS_PRIVILEGE(errno))
@@ -1445,10 +1452,6 @@ _public_ int sd_event_add_child(
                         s->child.pidfd_owned = true; /* If we allocate the pidfd we own it by default */
         } else
                 s->child.pidfd = -1;
-
-        r = hashmap_put(e->child_sources, PID_TO_PTR(pid), s);
-        if (r < 0)
-                return r;
 
         if (EVENT_SOURCE_WATCH_PIDFD(s)) {
                 /* We have a pidfd and we only want to watch for exit */
@@ -1465,6 +1468,12 @@ _public_ int sd_event_add_child(
                 e->need_process_child = true;
         }
 
+        r = hashmap_put(e->child_sources, PID_TO_PTR(pid), s);
+        if (r < 0)
+                return r;
+
+        /* These must be done after everything succeeds. */
+        s->child.pid = pid;
         e->n_online_child_sources++;
 
         if (ret)
@@ -1691,7 +1700,8 @@ static void event_free_inotify_data(sd_event *e, struct inotify_data *d) {
         assert_se(hashmap_remove(e->inotify_data, &d->priority) == d);
 
         if (d->fd >= 0) {
-                if (epoll_ctl(e->epoll_fd, EPOLL_CTL_DEL, d->fd, NULL) < 0)
+                if (!event_pid_changed(e) &&
+                    epoll_ctl(e->epoll_fd, EPOLL_CTL_DEL, d->fd, NULL) < 0)
                         log_debug_errno(errno, "Failed to remove inotify fd from epoll, ignoring: %m");
 
                 safe_close(d->fd);
@@ -1791,7 +1801,7 @@ static void event_free_inode_data(
         if (!d)
                 return;
 
-        assert(!d->event_sources);
+        assert(LIST_IS_EMPTY(d->event_sources));
 
         if (d->fd >= 0) {
                 LIST_REMOVE(to_close, e->inode_data_to_close, d);
@@ -1801,7 +1811,7 @@ static void event_free_inode_data(
         if (d->inotify_data) {
 
                 if (d->wd >= 0) {
-                        if (d->inotify_data->fd >= 0) {
+                        if (d->inotify_data->fd >= 0 && !event_pid_changed(e)) {
                                 /* So here's a problem. At the time this runs the watch descriptor might already be
                                  * invalidated, because an IN_IGNORED event might be queued right the moment we enter
                                  * the syscall. Hence, whenever we get EINVAL, ignore it entirely, since it's a very
@@ -1854,7 +1864,7 @@ static void event_gc_inode_data(
         if (!d)
                 return;
 
-        if (d->event_sources)
+        if (!LIST_IS_EMPTY(d->event_sources))
                 return;
 
         inotify_data = d->inotify_data;
@@ -2403,6 +2413,10 @@ fail:
 }
 
 _public_ int sd_event_source_get_enabled(sd_event_source *s, int *ret) {
+        /* Quick mode: the event source doesn't exist and we only want to query boolean enablement state. */
+        if (!s && !ret)
+                return false;
+
         assert_return(s, -EINVAL);
         assert_return(!event_pid_changed(s->event), -ECHILD);
 
@@ -2580,8 +2594,13 @@ static int event_source_online(
 _public_ int sd_event_source_set_enabled(sd_event_source *s, int m) {
         int r;
 
-        assert_return(s, -EINVAL);
         assert_return(IN_SET(m, SD_EVENT_OFF, SD_EVENT_ON, SD_EVENT_ONESHOT), -EINVAL);
+
+        /* Quick mode: if the source doesn't exist, SD_EVENT_OFF is a noop. */
+        if (m == SD_EVENT_OFF && !s)
+                return 0;
+
+        assert_return(s, -EINVAL);
         assert_return(!event_pid_changed(s->event), -ECHILD);
 
         /* If we are dead anyway, we are fine with turning off sources, but everything else needs to fail. */
@@ -3218,23 +3237,16 @@ static int process_child(sd_event *e, int64_t threshold, int64_t *ret_min_priori
 
         e->need_process_child = false;
 
-        /*
-           So, this is ugly. We iteratively invoke waitid() with P_PID
-           + WNOHANG for each PID we wait for, instead of using
-           P_ALL. This is because we only want to get child
-           information of very specific child processes, and not all
-           of them. We might not have processed the SIGCHLD even of a
-           previous invocation and we don't want to maintain a
-           unbounded *per-child* event queue, hence we really don't
-           want anything flushed out of the kernel's queue that we
-           don't care about. Since this is O(n) this means that if you
-           have a lot of processes you probably want to handle SIGCHLD
-           yourself.
-
-           We do not reap the children here (by using WNOWAIT), this
-           is only done after the event source is dispatched so that
-           the callback still sees the process as a zombie.
-        */
+        /* So, this is ugly. We iteratively invoke waitid() with P_PID + WNOHANG for each PID we wait
+         * for, instead of using P_ALL. This is because we only want to get child information of very
+         * specific child processes, and not all of them. We might not have processed the SIGCHLD event
+         * of a previous invocation and we don't want to maintain a unbounded *per-child* event queue,
+         * hence we really don't want anything flushed out of the kernel's queue that we don't care
+         * about. Since this is O(n) this means that if you have a lot of processes you probably want
+         * to handle SIGCHLD yourself.
+         *
+         * We do not reap the children here (by using WNOWAIT), this is only done after the event
+         * source is dispatched so that the callback still sees the process as a zombie. */
 
         HASHMAP_FOREACH(s, e->child_sources) {
                 assert(s->type == SOURCE_CHILD);
@@ -3251,7 +3263,9 @@ static int process_child(sd_event *e, int64_t threshold, int64_t *ret_min_priori
                 if (s->child.exited)
                         continue;
 
-                if (EVENT_SOURCE_WATCH_PIDFD(s)) /* There's a usable pidfd known for this event source? then don't waitid() for it here */
+                if (EVENT_SOURCE_WATCH_PIDFD(s))
+                        /* There's a usable pidfd known for this event source? Then don't waitid() for
+                         * it here */
                         continue;
 
                 zero(s->child.siginfo);
@@ -3266,10 +3280,9 @@ static int process_child(sd_event *e, int64_t threshold, int64_t *ret_min_priori
                                 s->child.exited = true;
 
                         if (!zombie && (s->child.options & WEXITED)) {
-                                /* If the child isn't dead then let's
-                                 * immediately remove the state change
-                                 * from the queue, since there's no
-                                 * benefit in leaving it queued */
+                                /* If the child isn't dead then let's immediately remove the state
+                                 * change from the queue, since there's no benefit in leaving it
+                                 * queued. */
 
                                 assert(s->child.options & (WSTOPPED|WCONTINUED));
                                 (void) waitid(P_PID, s->child.pid, &s->child.siginfo, WNOHANG|(s->child.options & (WSTOPPED|WCONTINUED)));
@@ -3324,19 +3337,16 @@ static int process_signal(sd_event *e, struct signal_data *d, uint32_t events, i
         assert_return(events == EPOLLIN, -EIO);
         assert(min_priority);
 
-        /* If there's a signal queued on this priority and SIGCHLD is
-           on this priority too, then make sure to recheck the
-           children we watch. This is because we only ever dequeue
-           the first signal per priority, and if we dequeue one, and
-           SIGCHLD might be enqueued later we wouldn't know, but we
-           might have higher priority children we care about hence we
-           need to check that explicitly. */
+        /* If there's a signal queued on this priority and SIGCHLD is on this priority too, then make
+         * sure to recheck the children we watch. This is because we only ever dequeue the first signal
+         * per priority, and if we dequeue one, and SIGCHLD might be enqueued later we wouldn't know,
+         * but we might have higher priority children we care about hence we need to check that
+         * explicitly. */
 
         if (sigismember(&d->sigset, SIGCHLD))
                 e->need_process_child = true;
 
-        /* If there's already an event source pending for this
-         * priority we don't read another */
+        /* If there's already an event source pending for this priority we don't read another */
         if (d->current)
                 return 0;
 
@@ -3875,7 +3885,7 @@ _public_ int sd_event_prepare(sd_event *e) {
 
         event_close_inode_data_fds(e);
 
-        if (event_next_pending(e) || e->need_process_child)
+        if (event_next_pending(e) || e->need_process_child || !LIST_IS_EMPTY(e->inotify_data_buffered))
                 goto pending;
 
         e->state = SD_EVENT_ARMED;
@@ -3955,7 +3965,7 @@ static int process_epoll(sd_event *e, usec_t timeout, int64_t threshold, int64_t
         n_event_max = MALLOC_ELEMENTSOF(e->event_queue);
 
         /* If we still have inotify data buffered, then query the other fds, but don't wait on it */
-        if (e->inotify_data_buffered)
+        if (!LIST_IS_EMPTY(e->inotify_data_buffered))
                 timeout = 0;
 
         for (;;) {
