@@ -131,7 +131,7 @@ static inline int fd_inc_sndbuf(int fd, size_t n) {
         return fd_set_sndbuf(fd, n, true);
 }
 int fd_set_rcvbuf(int fd, size_t n, bool increase);
-static inline int fd_inc_rcvbuf(int fd, size_t n) {
+static inline int fd_increase_rxbuf(int fd, size_t n) {
         return fd_set_rcvbuf(fd, n, true);
 }
 
@@ -226,9 +226,9 @@ struct cmsghdr* cmsg_find(struct msghdr *mh, int level, int type, socklen_t leng
                          strnlen(_sa->sun_path, sizeof(_sa->sun_path))+1); \
         })
 
-#define SOCKADDR_LEN(sa)                                                \
+#define SOCKADDR_LEN(saddr)                                             \
         ({                                                              \
-                const union sockaddr_union *__sa = &(sa);               \
+                const union sockaddr_union *__sa = &(saddr);            \
                 size_t _len;                                            \
                 switch (__sa->sa.sa_family) {                           \
                 case AF_INET:                                           \
@@ -336,3 +336,5 @@ int socket_get_mtu(int fd, int af, size_t *ret);
 
 /* an initializer for struct ucred that initialized all fields to the invalid value appropriate for each */
 #define UCRED_INVALID { .pid = 0, .uid = UID_INVALID, .gid = GID_INVALID }
+
+int connect_unix_path(int fd, int dir_fd, const char *path);

@@ -76,6 +76,7 @@ static inline int missing_memfd_create(const char *name, unsigned int flags) {
 
 #  define memfd_create missing_memfd_create
 #endif
+#endif /* NM_IGNORED */
 
 /* ======================================================================= */
 
@@ -95,6 +96,7 @@ static inline ssize_t missing_getrandom(void *buffer, size_t count, unsigned fla
 
 /* ======================================================================= */
 
+#if 0 /* NM_IGNORED */
 /* The syscall has been defined since forever, but the glibc wrapper was missing. */
 #if !HAVE_GETTID
 static inline pid_t missing_gettid(void) {

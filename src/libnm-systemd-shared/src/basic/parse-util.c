@@ -215,7 +215,7 @@ int parse_size(const char *t, uint64_t base, uint64_t *size) {
                         e++;
 
                         /* strtoull() itself would accept space/+/- */
-                        if (*e >= '0' && *e <= '9') {
+                        if (ascii_isdigit(*e)) {
                                 unsigned long long l2;
                                 char *e2;
 
@@ -606,7 +606,7 @@ int parse_fractional_part_u(const char **p, size_t digits, unsigned *res) {
 
         /* accept any number of digits, strtoull is limited to 19 */
         for (size_t i = 0; i < digits; i++,s++) {
-                if (*s < '0' || *s > '9') {
+                if (!ascii_isdigit(*s)) {
                         if (i == 0)
                                 return -EINVAL;
 
@@ -696,34 +696,6 @@ int parse_ip_prefix_length(const char *s, int *ret) {
 
         *ret = (int) l;
 
-        return 0;
-}
-
-int parse_dev(const char *s, dev_t *ret) {
-        const char *major;
-        unsigned x, y;
-        size_t n;
-        int r;
-
-        n = strspn(s, DIGITS);
-        if (n == 0)
-                return -EINVAL;
-        if (s[n] != ':')
-                return -EINVAL;
-
-        major = strndupa_safe(s, n);
-        r = safe_atou(major, &x);
-        if (r < 0)
-                return r;
-
-        r = safe_atou(s + n + 1, &y);
-        if (r < 0)
-                return r;
-
-        if (!DEVICE_MAJOR_VALID(x) || !DEVICE_MINOR_VALID(y))
-                return -ERANGE;
-
-        *ret = makedev(x, y);
         return 0;
 }
 

@@ -53,6 +53,8 @@
 
 #define BUILD_MODE_DEVELOPER (NM_MORE_ASSERTS > 0)
 
+#define LOG_MESSAGE_VERIFICATION (NM_MORE_ASSERTS > 0)
+
 /*****************************************************************************/
 
 /* systemd cannot be compiled with "-Wdeclaration-after-statement". In particular

@@ -10,26 +10,23 @@
 #include "string-util-fundamental.h"
 
 /* What is interpreted as whitespace? */
-#define WHITESPACE        " \t\n\r"
-#define NEWLINE           "\n\r"
-#define QUOTES            "\"\'"
-#define COMMENTS          "#;"
-#define GLOB_CHARS        "*?["
-#define DIGITS            "0123456789"
-#define LOWERCASE_LETTERS "abcdefghijklmnopqrstuvwxyz"
-#define UPPERCASE_LETTERS "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-#define LETTERS           LOWERCASE_LETTERS UPPERCASE_LETTERS
-#define ALPHANUMERICAL    LETTERS DIGITS
-#define HEXDIGITS         DIGITS "abcdefABCDEF"
+#define WHITESPACE          " \t\n\r"
+#define NEWLINE             "\n\r"
+#define QUOTES              "\"\'"
+#define COMMENTS            "#;"
+#define GLOB_CHARS          "*?["
+#define DIGITS              "0123456789"
+#define LOWERCASE_LETTERS   "abcdefghijklmnopqrstuvwxyz"
+#define UPPERCASE_LETTERS   "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+#define LETTERS             LOWERCASE_LETTERS UPPERCASE_LETTERS
+#define ALPHANUMERICAL      LETTERS DIGITS
+#define HEXDIGITS           DIGITS "abcdefABCDEF"
+#define LOWERCASE_HEXDIGITS DIGITS "abcdef"
 
 static inline char* strstr_ptr(const char *haystack, const char *needle) {
         if (!haystack || !needle)
                 return NULL;
         return strstr(haystack, needle);
-}
-
-static inline const char* strempty(const char *s) {
-        return s ?: "";
 }
 
 static inline const char* strnull(const char *s) {
@@ -180,13 +177,6 @@ int free_and_strndup(char **p, const char *s, size_t l);
 
 bool string_is_safe(const char *p) _pure_;
 
-static inline size_t strlen_ptr(const char *s) {
-        if (!s)
-                return 0;
-
-        return strlen(s);
-}
-
 DISABLE_WARNING_STRINGOP_TRUNCATION;
 static inline void strncpy_exact(char *buf, const char *src, size_t buf_len) {
         strncpy(buf, src, buf_len);
@@ -232,3 +222,7 @@ static inline int string_contains_word(const char *string, const char *separator
 }
 
 bool streq_skip_trailing_chars(const char *s1, const char *s2, const char *ok);
+
+char *string_replace_char(char *str, char old_char, char new_char);
+
+size_t strspn_from_end(const char *str, const char *accept);

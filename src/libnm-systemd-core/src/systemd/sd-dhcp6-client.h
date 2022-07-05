@@ -16,7 +16,7 @@
   Lesser General Public License for more details.
 
   You should have received a copy of the GNU Lesser General Public License
-  along with systemd; If not, see <http://www.gnu.org/licenses/>.
+  along with systemd; If not, see <https://www.gnu.org/licenses/>.
 ***/
 
 #include <inttypes.h>
@@ -36,7 +36,7 @@ enum {
         SD_DHCP6_CLIENT_EVENT_RESEND_EXPIRE             = 10,
         SD_DHCP6_CLIENT_EVENT_RETRANS_MAX               = 11,
         SD_DHCP6_CLIENT_EVENT_IP_ACQUIRE                = 12,
-        SD_DHCP6_CLIENT_EVENT_INFORMATION_REQUEST       = 13,
+        SD_DHCP6_CLIENT_EVENT_INFORMATION_REQUEST       = 13
 };
 
 /* https://www.iana.org/assignments/dhcpv6-parameters/dhcpv6-parameters.xhtml#dhcpv6-parameters-2 */
@@ -63,15 +63,15 @@ enum {
         SD_DHCP6_OPTION_RECONF_ACCEPT              = 20,  /* RFC 8415 */
         SD_DHCP6_OPTION_SIP_SERVER_DOMAIN_NAME     = 21,  /* RFC 3319 */
         SD_DHCP6_OPTION_SIP_SERVER_ADDRESS         = 22,  /* RFC 3319 */
-        SD_DHCP6_OPTION_DNS_SERVERS                = 23,  /* RFC 3646 */
-        SD_DHCP6_OPTION_DOMAIN_LIST                = 24,  /* RFC 3646 */
+        SD_DHCP6_OPTION_DNS_SERVER                 = 23,  /* RFC 3646 */
+        SD_DHCP6_OPTION_DOMAIN                     = 24,  /* RFC 3646 */
         SD_DHCP6_OPTION_IA_PD                      = 25,  /* RFC 3633, RFC 8415 */
         SD_DHCP6_OPTION_IA_PD_PREFIX               = 26,  /* RFC 3633, RFC 8415 */
-        SD_DHCP6_OPTION_NIS_SERVERS                = 27,  /* RFC 3898 */
-        SD_DHCP6_OPTION_NISP_SERVERS               = 28,  /* RFC 3898 */
+        SD_DHCP6_OPTION_NIS_SERVER                 = 27,  /* RFC 3898 */
+        SD_DHCP6_OPTION_NISP_SERVER                = 28,  /* RFC 3898 */
         SD_DHCP6_OPTION_NIS_DOMAIN_NAME            = 29,  /* RFC 3898 */
         SD_DHCP6_OPTION_NISP_DOMAIN_NAME           = 30,  /* RFC 3898 */
-        SD_DHCP6_OPTION_SNTP_SERVERS               = 31,  /* RFC 4075, deprecated */
+        SD_DHCP6_OPTION_SNTP_SERVER                = 31,  /* RFC 4075, deprecated */
         SD_DHCP6_OPTION_INFORMATION_REFRESH_TIME   = 32,  /* RFC 4242, 8415, sec. 21.23 */
         SD_DHCP6_OPTION_BCMCS_SERVER_D             = 33,  /* RFC 4280 */
         SD_DHCP6_OPTION_BCMCS_SERVER_A             = 34,  /* RFC 4280 */
@@ -183,7 +183,7 @@ enum {
         SD_DHCP6_OPTION_SLAP_QUAD                  = 140, /* RFC 8948 */
         SD_DHCP6_OPTION_V6_DOTS_RI                 = 141, /* RFC 8973 */
         SD_DHCP6_OPTION_V6_DOTS_ADDRESS            = 142, /* RFC 8973 */
-        SD_DHCP6_OPTION_IPV6_ADDRESS_ANDSF         = 143, /* RFC 6153 */
+        SD_DHCP6_OPTION_IPV6_ADDRESS_ANDSF         = 143 /* RFC 6153 */
         /* option codes 144-65535 are unassigned */
 };
 

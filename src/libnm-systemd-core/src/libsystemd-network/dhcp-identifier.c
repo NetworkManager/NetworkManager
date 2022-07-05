@@ -13,7 +13,6 @@
 #include "netif-util.h"
 #include "siphash24.h"
 #include "sparse-endian.h"
-#include "stat-util.h"
 #include "string-table.h"
 #include "udev-util.h"
 
@@ -220,7 +219,7 @@ int dhcp_identifier_set_iaid(
         uint64_t id;
         int r;
 
-        if (path_is_read_only_fs("/sys") <= 0 && !use_mac) {
+        if (udev_available() && !use_mac) {
                 /* udev should be around */
 
                 r = sd_device_new_from_ifindex(&device, ifindex);

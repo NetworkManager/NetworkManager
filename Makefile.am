@@ -2177,7 +2177,6 @@ src_libnm_systemd_shared_libnm_systemd_shared_la_SOURCES = \
 	src/libnm-systemd-shared/sd-adapt-shared/hmac.h \
 	src/libnm-systemd-shared/sd-adapt-shared/idn-util.h \
 	src/libnm-systemd-shared/sd-adapt-shared/ioprio.h \
-	src/libnm-systemd-shared/sd-adapt-shared/locale-util.h \
 	src/libnm-systemd-shared/sd-adapt-shared/memfd-util.h \
 	src/libnm-systemd-shared/sd-adapt-shared/missing_fs.h \
 	src/libnm-systemd-shared/sd-adapt-shared/missing_ioprio.h \
@@ -2225,6 +2224,8 @@ src_libnm_systemd_shared_libnm_systemd_shared_la_SOURCES = \
 	src/libnm-systemd-shared/src/basic/format-util.h \
 	src/libnm-systemd-shared/src/basic/fs-util.c \
 	src/libnm-systemd-shared/src/basic/fs-util.h \
+	src/libnm-systemd-shared/src/basic/glyph-util.c \
+	src/libnm-systemd-shared/src/basic/glyph-util.h \
 	src/libnm-systemd-shared/src/basic/hash-funcs.c \
 	src/libnm-systemd-shared/src/basic/hash-funcs.h \
 	src/libnm-systemd-shared/src/basic/hashmap.c \
@@ -2240,6 +2241,8 @@ src_libnm_systemd_shared_libnm_systemd_shared_la_SOURCES = \
 	src/libnm-systemd-shared/src/basic/io-util.c \
 	src/libnm-systemd-shared/src/basic/io-util.h \
 	src/libnm-systemd-shared/src/basic/list.h \
+	src/libnm-systemd-shared/src/basic/locale-util.c \
+	src/libnm-systemd-shared/src/basic/locale-util.h \
 	src/libnm-systemd-shared/src/basic/log.h \
 	src/libnm-systemd-shared/src/basic/macro.h \
 	src/libnm-systemd-shared/src/basic/memory-util.c \
@@ -2295,9 +2298,10 @@ src_libnm_systemd_shared_libnm_systemd_shared_la_SOURCES = \
 	src/libnm-systemd-shared/src/basic/util.c \
 	src/libnm-systemd-shared/src/basic/util.h \
 	src/libnm-systemd-shared/src/fundamental/macro-fundamental.h \
+	src/libnm-systemd-shared/src/fundamental/sha256.c \
+	src/libnm-systemd-shared/src/fundamental/sha256.h \
 	src/libnm-systemd-shared/src/fundamental/string-util-fundamental.c \
 	src/libnm-systemd-shared/src/fundamental/string-util-fundamental.h \
-	src/libnm-systemd-shared/src/fundamental/types-fundamental.h \
 	src/libnm-systemd-shared/src/shared/dns-domain.c \
 	src/libnm-systemd-shared/src/shared/dns-domain.h \
 	src/libnm-systemd-shared/src/shared/log-link.h \

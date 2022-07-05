@@ -35,18 +35,36 @@ size_t strv_length(char * const *l) _pure_;
 int strv_extend_strv(char ***a, char * const *b, bool filter_duplicates);
 int strv_extend_strv_concat(char ***a, char * const *b, const char *suffix);
 int strv_prepend(char ***l, const char *value);
-int strv_extend(char ***l, const char *value);
+
+/* _with_size() are lower-level functions where the size can be provided externally,
+ * which allows us to skip iterating over the strv to find the end, which saves
+ * a bit of time and reduces the complexity of appending from O(n²) to O(n). */
+
+int strv_extend_with_size(char ***l, size_t *n, const char *value);
+static inline int strv_extend(char ***l, const char *value) {
+        return strv_extend_with_size(l, NULL, value);
+}
+
 int strv_extendf(char ***l, const char *format, ...) _printf_(2,0);
 int strv_extend_front(char ***l, const char *value);
-int strv_push(char ***l, char *value);
+
+int strv_push_with_size(char ***l, size_t *n, char *value);
+static inline int strv_push(char ***l, char *value) {
+        return strv_push_with_size(l, NULL, value);
+}
 int strv_push_pair(char ***l, char *a, char *b);
+
 int strv_insert(char ***l, size_t position, char *value);
 
 static inline int strv_push_prepend(char ***l, char *value) {
         return strv_insert(l, 0, value);
 }
 
-int strv_consume(char ***l, char *value);
+int strv_consume_with_size(char ***l, size_t *n, char *value);
+static inline int strv_consume(char ***l, char *value) {
+        return strv_consume_with_size(l, NULL, value);
+}
+
 int strv_consume_pair(char ***l, char *a, char *b);
 int strv_consume_prepend(char ***l, char *value);
 
@@ -77,7 +95,7 @@ int strv_split_full(char ***t, const char *s, const char *separators, ExtractFla
 static inline char** strv_split(const char *s, const char *separators) {
         char **ret;
 
-        if (strv_split_full(&ret, s, separators, 0) < 0)
+        if (strv_split_full(&ret, s, separators, EXTRACT_RETAIN_ESCAPE) < 0)
                 return NULL;
 
         return ret;
@@ -101,7 +119,7 @@ static inline char** strv_split_newlines(const char *s) {
  * string in the vector is an empty string. */
 int strv_split_colon_pairs(char ***t, const char *s);
 
-char* strv_join_full(char * const *l, const char *separator, const char *prefix, bool escape_separtor);
+char* strv_join_full(char * const *l, const char *separator, const char *prefix, bool escape_separator);
 static inline char *strv_join(char * const *l, const char *separator) {
         return strv_join_full(l, separator, NULL, false);
 }
@@ -121,12 +139,6 @@ static inline int strv_from_nulstr(char ***a, const char *nulstr) {
 }
 
 bool strv_overlap(char * const *a, char * const *b) _pure_;
-
-#define _STRV_FOREACH(s, l, i)                                          \
-        for (typeof(*(l)) *s, *i = (l); (s = i) && *i; i++)
-
-#define STRV_FOREACH(s, l)                      \
-        _STRV_FOREACH(s, l, UNIQ_T(i, UNIQ))
 
 #define _STRV_FOREACH_BACKWARDS(s, l, h, i)                             \
         for (typeof(*(l)) *s, *h = (l), *i = ({                         \
