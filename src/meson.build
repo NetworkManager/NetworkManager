@@ -19,10 +19,9 @@ libcrbtree_both = both_libraries(
         ],
         dependencies: libcrbtree_deps,
         install: not meson.is_subproject(),
-        link_args: [
-                '-Wl,--no-undefined',
+        link_args: dep_cstdaux.get_variable('version-scripts') == 'yes' ? [
                 '-Wl,--version-script=@0@'.format(libcrbtree_symfile),
-        ],
+        ] : [],
         link_depends: libcrbtree_symfile,
         soversion: 0,
 )
@@ -62,10 +61,10 @@ test('Generic Map', test_map)
 test_misc = executable('test-misc', ['test-misc.c'], dependencies: libcrbtree_dep)
 test('Miscellaneous', test_misc)
 
-test_parallel = executable('test-parallel', ['test-parallel.c'], dependencies: libcrbtree_dep)
 if use_ptrace
+        test_parallel = executable('test-parallel', ['test-parallel.c'], dependencies: libcrbtree_dep)
         test('Lockless Parallel Readers', test_parallel)
-endif
 
-test_posix = executable('test-posix', ['test-posix.c'], dependencies: libcrbtree_dep)
-test('Posix tsearch(3p) Comparison', test_posix)
+        test_posix = executable('test-posix', ['test-posix.c'], dependencies: libcrbtree_dep)
+        test('Posix tsearch(3p) Comparison', test_posix)
+endif

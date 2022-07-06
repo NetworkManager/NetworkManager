@@ -15,9 +15,29 @@ jobs:
       m32: true
       matrixmode: true
       valgrind: true
+
   ci-ptrace:
     name: Reduced CI with PTrace
     uses: bus1/cabuild/.github/workflows/ci-c-util.yml@v1
     with:
       cabuild_ref: "v1"
       mesonargs: '-Dptrace=true'
+
+  ci-macos:
+    name: CI on MacOS
+    runs-on: macos-latest
+    steps:
+    - name: Fetch Sources
+      uses: actions/checkout@v2
+    - name: Setup Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'
+    - name: Install Python Dependencies
+      run: pip install meson ninja
+    - name: Prepare Build
+      run: meson setup build
+    - name: Run Build
+      run: meson compile -v -C build
+    - name: Run Test Suite
+      run: meson test -v -C build
