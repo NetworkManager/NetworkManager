@@ -95,7 +95,9 @@ install_ignore_missing \
     libasan \
     libpsl-devel \
     libubsan \
+    pexpect \
     pygobject3-base \
     python-gobject-base \
+    python36-pexpect \
     qt-devel \
     #end
