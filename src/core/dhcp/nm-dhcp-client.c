@@ -1520,7 +1520,7 @@ nm_dhcp_client_handle_event(gpointer               unused,
     nm_auto_unref_l3cd_init NML3ConfigData *l3cd = NULL;
     NMDhcpClientEventType                   client_event_type;
     NMPlatformIP6Address                    prefix = {
-        0,
+                           0,
     };
     int IS_IPv4;
 

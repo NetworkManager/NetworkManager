@@ -1014,7 +1014,7 @@ nmc_readline_echo(const NmcConfig *nmc_config, gboolean echo_on, const char *pro
 #if HAVE_READLINE_HISTORY
     nm_auto_free HISTORY_STATE *saved_history  = NULL;
     HISTORY_STATE               passwd_history = {
-        0,
+                      0,
     };
 #else
     int start, curpos;

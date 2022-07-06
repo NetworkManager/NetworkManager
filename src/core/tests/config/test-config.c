@@ -1103,9 +1103,9 @@ test_config_set_values(void)
     const char               *CONFIG_USER               = BUILD_DIR "/test-set-values-user.conf";
     const char               *CONFIG_INTERN             = BUILD_DIR "/test-set-values-intern.conf";
     const char               *atomic_section_prefixes[] = {
-        "atomic-prefix-1.",
-        "atomic-prefix-2.",
-        NULL,
+                      "atomic-prefix-1.",
+                      "atomic-prefix-2.",
+                      NULL,
     };
 
     g_assert(g_file_set_contents(CONFIG_USER, "", 0, NULL));

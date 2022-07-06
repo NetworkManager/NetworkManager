@@ -227,11 +227,11 @@ do_test_nm_utils_kill_child(void)
 {
     GLogLevelFlags fatal_mask;
     char          *argv_watchdog[] = {
-        "bash",
-        "-c",
-        "sleep 4; "
-                 "kill -KILL 0; #watchdog for #" TEST_TOKEN,
-        NULL,
+                 "bash",
+                 "-c",
+                 "sleep 4; "
+                          "kill -KILL 0; #watchdog for #" TEST_TOKEN,
+                 NULL,
     };
     char *argv1[] = {
         "bash",

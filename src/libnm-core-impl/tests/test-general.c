@@ -3928,11 +3928,11 @@ test_connection_diff_different(void)
     NMSettingIPConfig *s_ip4;
     gboolean           same;
     const DiffSetting  settings[] = {
-        {NM_SETTING_IP4_CONFIG_SETTING_NAME,
-         {
-             {NM_SETTING_IP_CONFIG_METHOD,
-              NM_SETTING_DIFF_RESULT_IN_A | NM_SETTING_DIFF_RESULT_IN_B},
-             {NULL, NM_SETTING_DIFF_RESULT_UNKNOWN},
+         {NM_SETTING_IP4_CONFIG_SETTING_NAME,
+          {
+              {NM_SETTING_IP_CONFIG_METHOD,
+               NM_SETTING_DIFF_RESULT_IN_A | NM_SETTING_DIFF_RESULT_IN_B},
+              {NULL, NM_SETTING_DIFF_RESULT_UNKNOWN},
          }},
     };
 
@@ -4013,10 +4013,10 @@ test_connection_diff_inferrable(void)
     NMSettingIPConfig   *s_ip4;
     char                *uuid;
     const DiffSetting    settings[] = {
-        {NM_SETTING_CONNECTION_SETTING_NAME,
-         {
-             {NM_SETTING_CONNECTION_INTERFACE_NAME, NM_SETTING_DIFF_RESULT_IN_A},
-             {NULL, NM_SETTING_DIFF_RESULT_UNKNOWN},
+           {NM_SETTING_CONNECTION_SETTING_NAME,
+            {
+                {NM_SETTING_CONNECTION_INTERFACE_NAME, NM_SETTING_DIFF_RESULT_IN_A},
+                {NULL, NM_SETTING_DIFF_RESULT_UNKNOWN},
          }},
     };
 
@@ -6736,53 +6736,53 @@ test_setting_ip6_gateway(void)
     GVariant          *gateway_var;
     GVariantBuilder    addrs_builder;
     guint8             addr_bytes_0[]    = {0xab,
-                             0xcd,
-                             0x00,
-                             0x00,
-                             0x00,
-                             0x00,
-                             0x00,
-                             0x00,
-                             0x00,
-                             0x00,
-                             0x00,
-                             0x00,
-                             0x00,
-                             0x00,
-                             0x00,
-                             0x0a};
+                                            0xcd,
+                                            0x00,
+                                            0x00,
+                                            0x00,
+                                            0x00,
+                                            0x00,
+                                            0x00,
+                                            0x00,
+                                            0x00,
+                                            0x00,
+                                            0x00,
+                                            0x00,
+                                            0x00,
+                                            0x00,
+                                            0x0a};
     guint8             addr_bytes_1[]    = {0xab,
-                             0xcd,
-                             0x00,
-                             0x00,
-                             0x00,
-                             0x00,
-                             0x00,
-                             0x00,
-                             0x00,
-                             0x00,
-                             0x00,
-                             0x00,
-                             0x00,
-                             0x00,
-                             0x00,
-                             0x0b};
+                                            0xcd,
+                                            0x00,
+                                            0x00,
+                                            0x00,
+                                            0x00,
+                                            0x00,
+                                            0x00,
+                                            0x00,
+                                            0x00,
+                                            0x00,
+                                            0x00,
+                                            0x00,
+                                            0x00,
+                                            0x00,
+                                            0x0b};
     guint8             gateway_bytes_1[] = {0xab,
-                                0xcd,
-                                0x00,
-                                0x00,
-                                0x00,
-                                0x00,
-                                0x00,
-                                0x00,
-                                0x00,
-                                0x00,
-                                0x00,
-                                0x00,
-                                0x00,
-                                0x00,
-                                0x00,
-                                0x01};
+                                            0xcd,
+                                            0x00,
+                                            0x00,
+                                            0x00,
+                                            0x00,
+                                            0x00,
+                                            0x00,
+                                            0x00,
+                                            0x00,
+                                            0x00,
+                                            0x00,
+                                            0x00,
+                                            0x00,
+                                            0x00,
+                                            0x01};
     GError            *error             = NULL;
 
     /* When serializing on the daemon side, ipv6.gateway is copied to the first

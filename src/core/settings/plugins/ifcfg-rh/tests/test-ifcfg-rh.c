@@ -668,8 +668,8 @@ test_read_miscellaneous_variables(void)
     NMSettingWired               *s_wired;
     NMSettingIPConfig            *s_ip4;
     char                         *expected_mac_blacklist[3] = {"00:16:41:11:22:88",
-                                       "00:16:41:11:22:99",
-                                       "6a:5d:5a:fa:dd:f0"};
+                                                               "00:16:41:11:22:99",
+                                                               "6a:5d:5a:fa:dd:f0"};
     int                           mac_blacklist_num, i;
     guint64                       expected_timestamp = 0;
 
@@ -2030,17 +2030,17 @@ test_read_wired_aliases_good(gconstpointer test_data)
     NMSettingIPConfig            *s_ip4;
     int                           expected_num_addresses;
     const char                   *expected_address_0[] = {"192.168.1.5",
-                                        "192.168.1.6",
-                                        "192.168.1.9",
-                                        "192.168.1.99",
-                                        NULL};
+                                                          "192.168.1.6",
+                                                          "192.168.1.9",
+                                                          "192.168.1.99",
+                                                          NULL};
     const char                   *expected_address_3[] = {"192.168.1.5", "192.168.1.6", NULL};
     const char                   *expected_label_0[]   = {
-        NULL,
-        "aliasem0:1",
-        "aliasem0:2",
-        "aliasem0:99",
-        NULL,
+                            NULL,
+                            "aliasem0:1",
+                            "aliasem0:2",
+                            "aliasem0:99",
+                            NULL,
     };
     const char *expected_label_3[] = {
         NULL,
@@ -8189,8 +8189,8 @@ test_read_infiniband(void)
     char                         *unmanaged = NULL;
     const char                   *mac;
     char        expected_mac_address[INFINIBAND_ALEN] = {0x80, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55,
-                                                  0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc,
-                                                  0xdd, 0xee, 0xff, 0x00, 0x11, 0x22};
+                                                         0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc,
+                                                         0xdd, 0xee, 0xff, 0x00, 0x11, 0x22};
     const char *transport_mode;
 
     connection = _connection_from_file(TEST_IFCFG_DIR "/ifcfg-test-infiniband",

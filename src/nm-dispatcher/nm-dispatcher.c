@@ -1138,25 +1138,25 @@ _initial_setup(int *p_argc, char ***p_argv, GError **error)
     GOptionContext *opt_ctx;
     gboolean        arg_debug = FALSE;
     GOptionEntry    entries[] = {{
-                                  "debug",
-                                  0,
-                                  0,
-                                  G_OPTION_ARG_NONE,
-                                  &arg_debug,
-                                  "Output to console rather than syslog",
-                                  NULL,
+                                     "debug",
+                                     0,
+                                     0,
+                                     G_OPTION_ARG_NONE,
+                                     &arg_debug,
+                                     "Output to console rather than syslog",
+                                     NULL,
                               },
-                              {
-                                  "persist",
-                                  0,
-                                  0,
-                                  G_OPTION_ARG_NONE,
-                                  &gl.persist,
-                                  "Don't quit after a short timeout",
-                                  NULL,
+                                 {
+                                     "persist",
+                                     0,
+                                     0,
+                                     G_OPTION_ARG_NONE,
+                                     &gl.persist,
+                                     "Don't quit after a short timeout",
+                                     NULL,
                               },
-                              {
-                                  NULL,
+                                 {
+                                     NULL,
                               }};
     gboolean        success;
 
