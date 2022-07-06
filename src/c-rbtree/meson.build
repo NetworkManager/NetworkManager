@@ -6,7 +6,7 @@ project(
         ],
         license: 'Apache',
         meson_version: '>=0.60.0',
-        version: '3.0.0',
+        version: '3.1.0',
 )
 major = meson.project_version().split('.')[0]
 project_description = 'Intrusive Red-Black Tree Collection'

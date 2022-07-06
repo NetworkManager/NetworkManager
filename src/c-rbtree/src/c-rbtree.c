@@ -1,5 +1,6 @@
 /*
  * RB-Tree Implementation
+ *
  * This implements the insertion/removal of elements in RB-Trees. You're highly
  * recommended to have an RB-Tree documentation at hand when reading this. Both
  * insertion and removal can be split into a handful of situations that can
@@ -57,12 +58,21 @@ static_assert(alignof(CRBTree) <= C_RBTREE_MAX_ALIGN, "Invalid RBTree alignment"
 static_assert(alignof(CRBTree) >= 4, "Invalid CRBTree alignment");
 
 /**
- * c_rbnode_leftmost() - return leftmost child
- * @n:          current node, or NULL
+ * DOC: Traversal
  *
- * This returns the leftmost child of @n. If @n is NULL, this will return NULL.
- * In all other cases, this function returns a valid pointer. That is, if @n
- * does not have any left children, this returns @n.
+ * If you prefer open-coding the tree traversal over the built-in iterators,
+ * c-rbtree provides a set of helpers to find starting position and end nodes
+ * for different kind of tree traversals.
+ */
+/**/
+
+/**
+ * c_rbnode_leftmost() - Return leftmost child
+ * @n:          Current node, or NULL
+ *
+ * This returns the leftmost child of ``n``. If ``n`` is NULL, this will return
+ * NULL. In all other cases, this function returns a valid pointer. That is, if
+ * ``n`` does not have any left children, this returns ``n``.
  *
  * Worst case runtime (n: number of elements in tree): O(log(n))
  *
@@ -76,12 +86,12 @@ _c_public_ CRBNode *c_rbnode_leftmost(CRBNode *n) {
 }
 
 /**
- * c_rbnode_rightmost() - return rightmost child
- * @n:          current node, or NULL
+ * c_rbnode_rightmost() - Return rightmost child
+ * @n:          Current node, or NULL
  *
- * This returns the rightmost child of @n. If @n is NULL, this will return
- * NULL. In all other cases, this function returns a valid pointer. That is, if
- * @n does not have any right children, this returns @n.
+ * This returns the rightmost child of ``n``. If ``n`` is NULL, this will
+ * return NULL. In all other cases, this function returns a valid pointer. That
+ * is, if ``n`` does not have any right children, this returns ``n``.
  *
  * Worst case runtime (n: number of elements in tree): O(log(n))
  *
@@ -95,12 +105,12 @@ _c_public_ CRBNode *c_rbnode_rightmost(CRBNode *n) {
 }
 
 /**
- * c_rbnode_leftdeepest() - return left-deepest child
- * @n:          current node, or NULL
+ * c_rbnode_leftdeepest() - Return left-deepest child
+ * @n:          Current node, or NULL
  *
- * This returns the left-deepest child of @n. If @n is NULL, this will return
- * NULL. In all other cases, this function returns a valid pointer. That is, if
- * @n does not have any children, this returns @n.
+ * This returns the left-deepest child of ``n``. If ``n`` is NULL, this will
+ * return NULL. In all other cases, this function returns a valid pointer. That
+ * is, if ``n`` does not have any children, this returns ``n``.
  *
  * The left-deepest child is defined as the deepest child without any left
  * (grand-...)siblings.
@@ -124,12 +134,12 @@ _c_public_ CRBNode *c_rbnode_leftdeepest(CRBNode *n) {
 }
 
 /**
- * c_rbnode_rightdeepest() - return right-deepest child
- * @n:          current node, or NULL
+ * c_rbnode_rightdeepest() - Return right-deepest child
+ * @n:          Current node, or NULL
  *
- * This returns the right-deepest child of @n. If @n is NULL, this will return
- * NULL. In all other cases, this function returns a valid pointer. That is, if
- * @n does not have any children, this returns @n.
+ * This returns the right-deepest child of ``n``. If ``n`` is NULL, this will
+ * return NULL. In all other cases, this function returns a valid pointer. That
+ * is, if ``n`` does not have any children, this returns ``n``.
  *
  * The right-deepest child is defined as the deepest child without any right
  * (grand-...)siblings.
@@ -153,11 +163,11 @@ _c_public_ CRBNode *c_rbnode_rightdeepest(CRBNode *n) {
 }
 
 /**
- * c_rbnode_next() - return next node
- * @n:          current node, or NULL
+ * c_rbnode_next() - Return next node
+ * @n:          Current node, or NULL
  *
  * An RB-Tree always defines a linear order of its elements. This function
- * returns the logically next node to @n. If @n is NULL, the last node or
+ * returns the logically next node to ``n``. If ``n`` is NULL, the last node or
  * unlinked, this returns NULL.
  *
  * Worst case runtime (n: number of elements in tree): O(log(n))
@@ -179,12 +189,12 @@ _c_public_ CRBNode *c_rbnode_next(CRBNode *n) {
 }
 
 /**
- * c_rbnode_prev() - return previous node
- * @n:          current node, or NULL
+ * c_rbnode_prev() - Return previous node
+ * @n:          Current node, or NULL
  *
  * An RB-Tree always defines a linear order of its elements. This function
- * returns the logically previous node to @n. If @n is NULL, the first node or
- * unlinked, this returns NULL.
+ * returns the logically previous node to ``n``. If ``n`` is NULL, the first
+ * node or unlinked, this returns NULL.
  *
  * Worst case runtime (n: number of elements in tree): O(log(n))
  *
@@ -205,17 +215,19 @@ _c_public_ CRBNode *c_rbnode_prev(CRBNode *n) {
 }
 
 /**
- * c_rbnode_next_postorder() - return next node in post-order
- * @n:          current node, or NULL
+ * c_rbnode_next_postorder() - Return next node in post-order
+ * @n:          Current node, or NULL
  *
- * This returns the next node to @n, based on a left-to-right post-order
- * traversal. If @n is NULL, the root node, or unlinked, this returns NULL.
+ * This returns the next node to ``n``, based on a left-to-right post-order
+ * traversal. If ``n`` is NULL, the root node, or unlinked, this returns NULL.
  *
  * This implements a left-to-right post-order traversal: First visit the left
  * child of a node, then the right, and lastly the node itself. Children are
  * traversed recursively.
  *
  * This function can be used to implement a left-to-right post-order traversal:
+ *
+ * ::
  *
  *     for (n = c_rbtree_first_postorder(t); n; n = c_rbnode_next_postorder(n))
  *             visit(n);
@@ -238,24 +250,29 @@ _c_public_ CRBNode *c_rbnode_next_postorder(CRBNode *n) {
 }
 
 /**
- * c_rbnode_prev_postorder() - return previous node in post-order
- * @n:          current node, or NULL
+ * c_rbnode_prev_postorder() - Return previous node in post-order
+ * @n:          Current node, or NULL
  *
- * This returns the previous node to @n, based on a left-to-right post-order
- * traversal. That is, it is the inverse operation to c_rbnode_next_postorder().
- * If @n is NULL, the left-deepest node, or unlinked, this returns NULL.
+ * This returns the previous node to ``n``, based on a left-to-right post-order
+ * traversal. That is, it is the inverse operation to
+ * :c:func:`c_rbnode_next_postorder()`. If ``n`` is NULL, the left-deepest
+ * node, or unlinked, this returns NULL.
  *
  * This function returns the logical previous node in a directed post-order
  * traversal. That is, it effectively does a pre-order traversal (since a
  * reverse post-order traversal is a pre-order traversal). This function does
  * NOT do a right-to-left post-order traversal! In other words, the following
- * invariant is guaranteed, if c_rbnode_next_postorder(n) is non-NULL:
+ * invariant is guaranteed, if ``c_rbnode_next_postorder(n)`` is non-NULL:
+ *
+ * ::
  *
  *     n == c_rbnode_prev_postorder(c_rbnode_next_postorder(n))
  *
  * This function can be used to implement a right-to-left pre-order traversal,
  * using the fact that a reverse post-order traversal is also a valid pre-order
  * traversal:
+ *
+ * ::
  *
  *     for (n = c_rbtree_last_postorder(t); n; n = c_rbnode_prev_postorder(n))
  *             visit(n);
@@ -288,11 +305,12 @@ _c_public_ CRBNode *c_rbnode_prev_postorder(CRBNode *n) {
 }
 
 /**
- * c_rbtree_first() - return first node
- * @t:          tree to operate on
+ * c_rbtree_first() - Return first node
+ * @t:          Tree to operate on
  *
  * An RB-Tree always defines a linear order of its elements. This function
- * returns the logically first node in @t. If @t is empty, NULL is returned.
+ * returns the logically first node in ``t``. If ``t`` is empty, NULL is
+ * returned.
  *
  * Fixed runtime (n: number of elements in tree): O(log(n))
  *
@@ -304,11 +322,12 @@ _c_public_ CRBNode *c_rbtree_first(CRBTree *t) {
 }
 
 /**
- * c_rbtree_last() - return last node
- * @t:          tree to operate on
+ * c_rbtree_last() - Return last node
+ * @t:          Tree to operate on
  *
  * An RB-Tree always defines a linear order of its elements. This function
- * returns the logically last node in @t. If @t is empty, NULL is returned.
+ * returns the logically last node in ``t``. If ``t`` is empty, NULL is
+ * returned.
  *
  * Fixed runtime (n: number of elements in tree): O(log(n))
  *
@@ -320,8 +339,8 @@ _c_public_ CRBNode *c_rbtree_last(CRBTree *t) {
 }
 
 /**
- * c_rbtree_first_postorder() - return first node in post-order
- * @t:          tree to operate on
+ * c_rbtree_first_postorder() - Return first node in post-order
+ * @t:          Tree to operate on
  *
  * This returns the first node of a left-to-right post-order traversal. That
  * is, it returns the left-deepest leaf. If the tree is empty, this returns
@@ -340,8 +359,8 @@ _c_public_ CRBNode *c_rbtree_first_postorder(CRBTree *t) {
 }
 
 /**
- * c_rbtree_last_postorder() - return last node in post-order
- * @t:          tree to operate on
+ * c_rbtree_last_postorder() - Return last node in post-order
+ * @t:          Tree to operate on
  *
  * This returns the last node of a left-to-right post-order traversal. That is,
  * it always returns the root node, or NULL if the tree is empty.
@@ -358,9 +377,18 @@ _c_public_ CRBNode *c_rbtree_last_postorder(CRBTree *t) {
         return t->root;
 }
 
+/**
+ * DOC: Tree Modification
+ *
+ * Insertion into and removal from an RB-Tree require rebalancing to make sure
+ * the tree stays balanced. The following functions ensure the tree integrity
+ * is kept.
+ */
+/**/
+
 static inline void c_rbtree_store(CRBNode **ptr, CRBNode *addr) {
         /*
-         * We use volatile accesses whenever we STORE @left or @right members
+         * We use volatile accesses whenever we STORE left or right members
          * of a node. This guarantees that any parallel, lockless lookup gets
          * to see those stores in the correct order, which itself guarantees
          * that there're no temporary loops during tree rotation.
@@ -437,6 +465,8 @@ static inline CRBTree *c_rbnode_push_root(CRBNode *n, CRBTree *t) {
  * The sole purpose of this function is to shortcut left/right conditionals
  * like this:
  *
+ * ::
+ *
  *     if (old == old->parent->left)
  *             old->parent->left = new;
  *     else
@@ -457,12 +487,12 @@ static inline void c_rbnode_swap_child(CRBNode *old, CRBNode *new) {
 }
 
 /**
- * c_rbtree_move() - move tree
- * @to:         destination tree
- * @from:       source tree
+ * c_rbtree_move() - Move tree
+ * @to:         Destination tree
+ * @from:       Source tree
  *
- * This imports the entire tree from @from into @to. @to must be empty! @from
- * will be empty afterwards.
+ * This imports the entire tree from ``from`` into ``to``. ``to`` must be
+ * empty! ``from`` will be empty afterwards.
  *
  * Note that this operates in O(1) time. Only the root-entry is updated to
  * point to the new tree-root.
@@ -672,21 +702,21 @@ static inline void c_rbtree_paint(CRBNode *n) {
 }
 
 /**
- * c_rbnode_link() - link node into tree
- * @p:          parent node to link under
- * @l:          left/right slot of @p to link at
- * @n:          node to add
+ * c_rbnode_link() - Link node into tree
+ * @p:          Parent node to link under
+ * @l:          Left/right slot of ``p`` to link at
+ * @n:          Node to add
  *
- * This links @n into an tree underneath another node. The caller must provide
- * the exact spot where to link the node. That is, the caller must traverse the
- * tree based on their search order. Once they hit a leaf where to insert the
- * node, call this function to link it and rebalance the tree.
+ * This links ``n`` into an tree underneath another node. The caller must
+ * provide the exact spot where to link the node. That is, the caller must
+ * traverse the tree based on their search order. Once they hit a leaf where to
+ * insert the node, call this function to link it and rebalance the tree.
  *
  * For this to work, the caller must provide a pointer to the parent node. If
- * the tree might be empty, you must resort to c_rbtree_add().
+ * the tree might be empty, you must resort to :c:func:`c_rbtree_add()`.
  *
- * In most cases you are better off using c_rbtree_add(). See there for details
- * how tree-insertion works.
+ * In most cases you are better off using :c:func:`c_rbtree_add()`. See there
+ * for details how tree-insertion works.
  */
 _c_public_ void c_rbnode_link(CRBNode *p, CRBNode **l, CRBNode *n) {
         c_assert(p);
@@ -703,18 +733,19 @@ _c_public_ void c_rbnode_link(CRBNode *p, CRBNode **l, CRBNode *n) {
 }
 
 /**
- * c_rbtree_add() - add node to tree
- * @t:          tree to operate one
- * @p:          parent node to link under, or NULL
- * @l:          left/right slot of @p (or root) to link at
- * @n:          node to add
+ * c_rbtree_add() - Add node to tree
+ * @t:          Tree to operate one
+ * @p:          Parent node to link under, or NULL
+ * @l:          Left/right slot of @p (or root) to link at
+ * @n:          Node to add
  *
- * This links @n into the tree given as @t. The caller must provide the exact
- * spot where to link the node. That is, the caller must traverse the tree
- * based on their search order. Once they hit a leaf where to insert the node,
- * call this function to link it and rebalance the tree.
+ * This links @n into the tree given as ``t``. The caller must provide the
+ * exact spot where to link the node. That is, the caller must traverse the
+ * tree based on their search order. Once they hit a leaf where to insert the
+ * node, call this function to link it and rebalance the tree.
  *
- * A typical insertion would look like this (@t is your tree, @n is your node):
+ * A typical insertion would look like this (``t`` is your tree, ``n`` is your
+ * node)::
  *
  *        CRBNode **i, *p;
  *
@@ -731,7 +762,7 @@ _c_public_ void c_rbnode_link(CRBNode *p, CRBNode **l, CRBNode *n) {
  *        c_rbtree_add(t, p, i, n);
  *
  * Once the node is linked into the tree, a simple lookup on the same tree can
- * be coded like this:
+ * be coded like this::
  *
  *        CRBNode *i;
  *
@@ -747,11 +778,13 @@ _c_public_ void c_rbnode_link(CRBNode *p, CRBNode **l, CRBNode *n) {
  *        }
  *
  * When you add nodes to a tree, the memory contents of the node do not matter.
- * That is, there is no need to initialize the node via c_rbnode_init().
+ * That is, there is no need to initialize the node via
+ * :c:func:`c_rbnode_init()`.
  * However, if you relink nodes multiple times during their lifetime, it is
- * usually very convenient to use c_rbnode_init() and c_rbnode_unlink() (rather
- * than c_rbnode_unlink_stale()). In those cases, you should validate that a
- * node is unlinked before you call c_rbtree_add().
+ * usually very convenient to use :c:func:`c_rbnode_init()` and
+ * :c:func:`c_rbnode_unlink()` (rather than :c:func:`c_rbnode_unlink_stale()`).
+ * In those cases, you should validate that a node is unlinked before you call
+ * :c:func:`c_rbtree_add()`.
  */
 _c_public_ void c_rbtree_add(CRBTree *t, CRBNode *p, CRBNode **l, CRBNode *n) {
         c_assert(t);
@@ -968,14 +1001,14 @@ static inline void c_rbnode_rebalance(CRBNode *n) {
 }
 
 /**
- * c_rbnode_unlink_stale() - remove node from tree
- * @n:          node to remove
+ * c_rbnode_unlink_stale() - Remove node from tree
+ * @n:          Node to remove
  *
  * This removes the given node from its tree. Once unlinked, the tree is
  * rebalanced.
  *
- * This does *NOT* reset @n to being unlinked. If you need this, use
- * c_rbtree_unlink().
+ * This does *NOT* reset ``n`` to being unlinked. If you need this, use
+ * :c:func:`c_rbtree_unlink()`.
  */
 _c_public_ void c_rbnode_unlink_stale(CRBNode *n) {
         CRBTree *t;
