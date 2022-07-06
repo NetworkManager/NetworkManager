@@ -19,10 +19,9 @@ libcsiphash_both = both_libraries(
         ],
         dependencies: libcsiphash_deps,
         install: not meson.is_subproject(),
-        link_args: [
-                '-Wl,--no-undefined',
+        link_args: dep_cstdaux.get_variable('version-scripts') == 'yes' ? [
                 '-Wl,--version-script=@0@'.format(libcsiphash_symfile),
-        ],
+        ] : [],
         link_depends: libcsiphash_symfile,
         soversion: 0,
 )

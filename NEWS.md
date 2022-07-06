@@ -1,11 +1,9 @@
 # c-siphash - Streaming-capable SipHash Implementation
 
-## CHANGES WITH 1:
+## CHANGES WITH 1.0.0:
 
         * Initial release of c-siphash.
 
-        * TBD
+        Contributions from: David Rheinsberg, Tom Gundersen
 
-        Contributions from: TBD
-
-        - TBD, YYYY-MM-DD
+        - Brno, 2022-06-22
