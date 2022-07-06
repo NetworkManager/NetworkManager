@@ -1,17 +1,15 @@
 # c-list - Circular Intrusive Double Linked List Collection
 
-## CHANGES WITH 4:
+## CHANGES WITH 3.1.0:
 
         * The minimum required meson version is now 0.60.0.
 
         * New function c_list_split() is added. It reverses c_list_splice()
           and thus allows to split a list in half.
 
-        * TBD
+        Contributions from: David Rheinsberg, Michele Dionisio
 
-        Contributions from: David Rheinsberg
-
-        - TBD, YYYY-MM-DD
+        - Brno, 2022-06-22
 
 ## CHANGES WITH 3:
 
