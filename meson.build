@@ -1,3 +1,7 @@
+#
+# Global Project Setup
+#
+
 project(
         'c-stdaux',
         'c',
@@ -6,7 +10,7 @@ project(
         ],
         license: 'Apache',
         meson_version: '>=0.60.0',
-        version: '1.0.0',
+        version: '1.1.0',
 )
 major = meson.project_version().split('.')[0]
 project_description = 'Auxiliary macros and functions for the C standard library'
@@ -23,6 +27,7 @@ mod_pkgconfig = import('pkgconfig')
 # well. Since these exports are limited to strings, we need to be careful that
 # the individual entries do not contain spaces (see the assertion below).
 #
+
 cflags = meson.get_compiler('c').get_supported_arguments(
         # Enable GNU features of our dependencies. See feature_test_macros(7).
         '-D_GNU_SOURCE',
@@ -81,6 +86,25 @@ cflags = meson.get_compiler('c').get_supported_arguments(
 assert(not ''.join(cflags).contains(' '), 'Malformed compiler flags.')
 add_project_arguments(cflags, language: 'c')
 
+#
+# Version Scripts
+#
+
+use_version_scripts = get_option('version-scripts')
+if use_version_scripts == 'auto'
+        use_version_scripts = meson.get_compiler('c').has_link_argument(
+                '-Wl,--version-script=' + (meson.current_source_dir() / 'src/libcstdaux.sym')
+        ) ? 'yes' : 'no'
+endif
+
+#
+# Subdir Delegation
+#
+
 subdir('src')
+
+#
+# Meson Subproject Configuration
+#
 
 meson.override_dependency('libcstdaux-'+major, libcstdaux_dep, static: true)

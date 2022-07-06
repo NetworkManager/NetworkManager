@@ -1,0 +1,7 @@
+option(
+        'version-scripts',
+        choices: ['yes', 'no', 'auto'],
+        description: 'Enable GNU-version-scripts for linking',
+        type: 'combo',
+        value: 'auto',
+)
