@@ -75,6 +75,16 @@ FILES=()
 FILES+=( $(git ls-tree --name-only -r HEAD | grep '\.py$') )
 FILES+=( $(git grep -l '#!.*\<p[y]thon3\?\>') )
 FILES=( $(printf "%s\n" "${FILES[@]}" | sort -u) )
+
+# Filter out paths that are forked from upstream projects and not
+# ours to reformat.
+FILES=( $(
+    printf "%s\n" "${FILES[@]}" |
+    sed \
+        -e '/^src\/[cn]-[^/]\+\//d' \
+        -e '/^src\/libnm-systemd-[^/]\+\/src\//d'
+) )
+
 IFS="$OLD_IFS"
 
 if [ $SHOW_FILENAMES = 1 ]; then
