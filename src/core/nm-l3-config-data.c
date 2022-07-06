@@ -2996,10 +2996,10 @@ nm_l3_config_data_merge(NML3ConfigData       *self,
                         gpointer                  hook_user_data)
 {
     static const guint32 x_default_route_metric_x[2]  = {NM_PLATFORM_ROUTE_METRIC_DEFAULT_IP6,
-                                                        NM_PLATFORM_ROUTE_METRIC_DEFAULT_IP4};
+                                                         NM_PLATFORM_ROUTE_METRIC_DEFAULT_IP4};
     static const guint32 x_default_route_penalty_x[2] = {0, 0};
     static const int     x_default_dns_priority_x[2]  = {NM_DNS_PRIORITY_DEFAULT_NORMAL,
-                                                    NM_DNS_PRIORITY_DEFAULT_NORMAL};
+                                                         NM_DNS_PRIORITY_DEFAULT_NORMAL};
     guint32              default_route_table_coerced_x[2];
     NMDedupMultiIter     iter;
     const NMPObject     *obj;

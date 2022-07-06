@@ -8905,12 +8905,12 @@ do_connection_edit(const NMCCommand *cmd, NmCli *nmc, int argc, const char *cons
     gs_free_error GError         *error        = NULL;
     GError                       *err1         = NULL;
     nmc_arg_t                     exp_args[]   = {{"type", TRUE, &type, FALSE},
-                            {"con-name", TRUE, &con_name, FALSE},
-                            {"id", TRUE, &con_id, FALSE},
-                            {"uuid", TRUE, &con_uuid, FALSE},
-                            {"path", TRUE, &con_path, FALSE},
-                            {"filename", TRUE, &con_filename, FALSE},
-                            {NULL}};
+                                                  {"con-name", TRUE, &con_name, FALSE},
+                                                  {"id", TRUE, &con_id, FALSE},
+                                                  {"uuid", TRUE, &con_uuid, FALSE},
+                                                  {"path", TRUE, &con_path, FALSE},
+                                                  {"filename", TRUE, &con_filename, FALSE},
+                                                  {NULL}};
 
     next_arg(nmc, &argc, &argv, NULL);
     if (argc == 1 && nmc->complete)

@@ -92,18 +92,18 @@ nmt_connect_device_free(NmtConnectDevice *nmtdev)
 }
 
 static const char *device_sort_order[]   = {"NMDeviceEthernet",
-                                          "NMDeviceVeth",
-                                          "NMDeviceInfiniband",
-                                          "NMDeviceWifi",
-                                          NM_SETTING_VLAN_SETTING_NAME,
-                                          NM_SETTING_BOND_SETTING_NAME,
-                                          NM_SETTING_TEAM_SETTING_NAME,
-                                          NM_SETTING_BRIDGE_SETTING_NAME,
-                                          NM_SETTING_IP_TUNNEL_SETTING_NAME,
-                                          NM_SETTING_WIREGUARD_SETTING_NAME,
-                                          NM_SETTING_TUN_SETTING_NAME,
-                                          "NMDeviceModem",
-                                          "NMDeviceBt"};
+                                            "NMDeviceVeth",
+                                            "NMDeviceInfiniband",
+                                            "NMDeviceWifi",
+                                            NM_SETTING_VLAN_SETTING_NAME,
+                                            NM_SETTING_BOND_SETTING_NAME,
+                                            NM_SETTING_TEAM_SETTING_NAME,
+                                            NM_SETTING_BRIDGE_SETTING_NAME,
+                                            NM_SETTING_IP_TUNNEL_SETTING_NAME,
+                                            NM_SETTING_WIREGUARD_SETTING_NAME,
+                                            NM_SETTING_TUN_SETTING_NAME,
+                                            "NMDeviceModem",
+                                            "NMDeviceBt"};
 static const int   device_sort_order_len = G_N_ELEMENTS(device_sort_order);
 
 static int

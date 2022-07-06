@@ -825,10 +825,10 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 {
     NMSettingWirelessPrivate *priv          = NM_SETTING_WIRELESS_GET_PRIVATE(setting);
     const char               *valid_modes[] = {NM_SETTING_WIRELESS_MODE_INFRA,
-                                 NM_SETTING_WIRELESS_MODE_ADHOC,
-                                 NM_SETTING_WIRELESS_MODE_AP,
-                                 NM_SETTING_WIRELESS_MODE_MESH,
-                                 NULL};
+                                               NM_SETTING_WIRELESS_MODE_ADHOC,
+                                               NM_SETTING_WIRELESS_MODE_AP,
+                                               NM_SETTING_WIRELESS_MODE_MESH,
+                                               NULL};
     const char               *valid_bands[] = {"a", "bg", NULL};
     guint                     i;
     gsize                     length;

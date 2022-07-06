@@ -1805,8 +1805,8 @@ test_read_infiniband_connection(void)
     NMSettingInfiniband          *s_ib;
     const char                   *mac;
     guint8      expected_mac[INFINIBAND_ALEN] = {0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66,
-                                            0x77, 0x88, 0x99, 0x01, 0x12, 0x23, 0x34,
-                                            0x45, 0x56, 0x67, 0x78, 0x89, 0x90};
+                                                 0x77, 0x88, 0x99, 0x01, 0x12, 0x23, 0x34,
+                                                 0x45, 0x56, 0x67, 0x78, 0x89, 0x90};
     const char *expected_id                   = "Test InfiniBand Connection";
     const char *expected_uuid                 = "4e80a56d-c99f-4aad-a6dd-b449bc398c57";
 

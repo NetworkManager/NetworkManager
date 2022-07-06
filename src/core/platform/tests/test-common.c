@@ -1938,10 +1938,10 @@ nmtstp_link_macvlan_add(NMPlatform                 *platform,
     if (external_command) {
         const char *dev;
         char       *modes[] = {
-            [MACVLAN_MODE_BRIDGE]   = "bridge",
-            [MACVLAN_MODE_VEPA]     = "vepa",
-            [MACVLAN_MODE_PRIVATE]  = "private",
-            [MACVLAN_MODE_PASSTHRU] = "passthru",
+                  [MACVLAN_MODE_BRIDGE]   = "bridge",
+                  [MACVLAN_MODE_VEPA]     = "vepa",
+                  [MACVLAN_MODE_PRIVATE]  = "private",
+                  [MACVLAN_MODE_PASSTHRU] = "passthru",
         };
 
         dev = nm_platform_link_get_name(platform, parent);

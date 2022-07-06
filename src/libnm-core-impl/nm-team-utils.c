@@ -2148,11 +2148,11 @@ nm_team_setting_config_set(NMTeamSetting *self, const char *js_str)
         else {
             gboolean unrecognized_content            = FALSE;
             bool     has_lst[_NM_TEAM_ATTRIBUTE_NUM] = {
-                FALSE,
+                    FALSE,
             };
             NMValueTypUnion val_lst[_NM_TEAM_ATTRIBUTE_NUM];
             nm_json_t      *found_keys[_NM_TEAM_ATTRIBUTE_NUM] = {
-                NULL,
+                     NULL,
             };
             gs_unref_ptrarray GPtrArray *ptr_array_master_runner_tx_hash_free = NULL;
             gs_unref_ptrarray GPtrArray *ptr_array_link_watchers_free         = NULL;

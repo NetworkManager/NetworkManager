@@ -13647,14 +13647,14 @@ spawn_ping(NMDevice *self)
     gs_free char         *str_timeout = NULL;
     gs_free char         *tmp_str     = NULL;
     const char           *args[]      = {priv->gw_ping.binary,
-                          "-I",
-                          nm_device_get_ip_iface(self),
-                          "-c",
-                          "1",
-                          "-w",
-                          NULL,
-                          priv->gw_ping.address,
-                          NULL};
+                                         "-I",
+                                         nm_device_get_ip_iface(self),
+                                         "-c",
+                                         "1",
+                                         "-w",
+                                         NULL,
+                                         priv->gw_ping.address,
+                                         NULL};
     gs_free_error GError *error       = NULL;
     gboolean              ret;
 

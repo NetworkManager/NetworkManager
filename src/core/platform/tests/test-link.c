@@ -853,7 +853,7 @@ static void
 _test_wireguard_change(NMPlatform *platform, int ifindex, int test_mode)
 {
     const KeyPair self_key  = {"yOWEsaXFxX9/DOkQPzqB9RufZOpfSP4LZZCErP0N0Xo=",
-                              "s6pVT2xPwktor9O5bVOSzcPqBu9uzQOUzPQHXLU2jmk="};
+                               "s6pVT2xPwktor9O5bVOSzcPqBu9uzQOUzPQHXLU2jmk="};
     const KeyPair keys[100] = {
         {"+BDHMh11bkheGfvlQpqt8P/H7N1sPXtVi05XraZS0E8=",
          "QItu7PJadBVXFXGv55CMtVnbRHdrI6E2CGlu2N5oGx4=",

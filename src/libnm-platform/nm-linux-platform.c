@@ -5169,7 +5169,7 @@ _nl_msg_new_tfilter(int nlmsg_type, int nlmsg_flags, const NMPlatformTfilter *tf
         if (nm_streq(action->kind, NM_PLATFORM_ACTION_KIND_SIMPLE)) {
             const NMPlatformActionSimple *simple = &action->simple;
             struct tc_defact              sel    = {
-                0,
+                                0,
             };
 
             if (!(act_options = nla_nest_start(msg, TCA_ACT_OPTIONS)))
@@ -5183,7 +5183,7 @@ _nl_msg_new_tfilter(int nlmsg_type, int nlmsg_flags, const NMPlatformTfilter *tf
         } else if (nm_streq(action->kind, NM_PLATFORM_ACTION_KIND_MIRRED)) {
             const NMPlatformActionMirred *mirred = &action->mirred;
             struct tc_mirred              sel    = {
-                0,
+                                0,
             };
 
             if (!(act_options = nla_nest_start(msg, TCA_ACT_OPTIONS)))
@@ -7767,7 +7767,7 @@ link_set_address(NMPlatform *platform, int ifindex, gconstpointer address, size_
     nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
     const ChangeLinkData         d     = {
                     .set_address =
-            {
+                        {
                             .address = address,
                             .length  = length,
             },
