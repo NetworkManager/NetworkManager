@@ -7,7 +7,6 @@
 
 #undef NDEBUG
 #include <stdlib.h>
-#include <sys/eventfd.h>
 #include "c-stdaux.h"
 
 /*
@@ -138,6 +137,8 @@ static void test_misc(int non_constant_expr) {
                 c_assert(&sub == c_container_of(&sub.a, struct foobar, a));
                 c_assert(&sub == c_container_of(&sub.b, struct foobar, b));
                 c_assert(&sub == c_container_of((const char *)&sub.b, struct foobar, b));
+
+                c_assert(!c_container_of(NULL, struct foobar, b));
         }
 
         /*
@@ -304,6 +305,58 @@ static void test_misc(int non_constant_expr) {
                 errno = 0;
                 c_assert(c_errno() != errno);
         }
+
+        /*
+         * Test c_memset(). Simply verify its most basic behavior, as well as
+         * calling it on empty regions.
+         */
+        {
+                uint64_t v = (uint64_t)-1;
+                size_t n;
+                void *p;
+
+                /* try filling with 0 and 0xff */
+                c_assert(v == (uint64_t)-1);
+                c_memset(&v, 0, sizeof(v));
+                c_assert(v == (uint64_t)0);
+                c_memset(&v, 0xff, sizeof(v));
+                c_assert(v == (uint64_t)-1);
+
+                /*
+                 * Try tricking the optimizer into thinking @p cannot be NULL,
+                 * as normal `memset(3)` would allow.
+                 */
+                p = NULL;
+                n = 0;
+                c_memset(p, 0, n);
+                if (p)
+                        abort();
+                c_assert(p == NULL);
+        }
+
+        /*
+         * Test c_memzero(). Simply verify it can clear a trivial area to 0.
+         */
+        {
+                uint64_t v = (uint64_t)-1;
+
+                c_assert(v == (uint64_t)-1);
+                c_memzero(&v, sizeof(v));
+                c_assert(v == (uint64_t)0);
+        }
+
+        /*
+         * Test c_memcpy() with a simple 8-byte copy.
+         */
+        {
+                uint64_t v1 = (uint64_t)-1, v2 = (uint64_t)0;
+
+                c_assert(v1 == (uint64_t)-1);
+                c_memcpy(&v1, &v2, sizeof(v1));
+                c_assert(v1 == (uint64_t)0);
+
+                c_memcpy(NULL, NULL, 0);
+        }
 }
 
 /*
@@ -345,13 +398,16 @@ static void test_destructors(void) {
          * helpers actually close the fd, and cope fine with negative numbers.
          */
         {
-                int fd;
+                int r, fd1, fd2, tmp[2];
 
-                fd = eventfd(0, EFD_CLOEXEC);
-                c_assert(fd >= 0);
+                r = pipe(tmp);
+                c_assert(r >= 0);
+                fd1 = tmp[0];
+                fd2 = tmp[1];
 
                 /* verify c_close() returns -1 */
-                c_assert(c_close(fd) == -1);
+                c_assert(c_close(fd1) == -1);
+                c_assert(c_close(fd2) == -1);
 
                 /* verify c_close() deals fine with negative fds */
                 c_assert(c_close(-1) == -1);
@@ -370,11 +426,15 @@ static void test_destructors(void) {
                  * path works as well.
                  */
                 for (i = 0; i < 2; ++i) {
-                        _c_cleanup_(c_closep) _c_unused_ int t = -1;
+                        _c_cleanup_(c_closep) _c_unused_ int t1 = -1, t2 = -1;
 
-                        t = eventfd(0, EFD_CLOEXEC);
-                        c_assert(t >= 0);
-                        c_assert(t == fd);
+                        r = pipe(tmp);
+                        c_assert(r >= 0);
+                        t1 = tmp[0];
+                        t2 = tmp[1];
+
+                        c_assert(t1 == fd1);
+                        c_assert(t2 == fd2);
                 }
         }
 
@@ -383,11 +443,13 @@ static void test_destructors(void) {
          * tests for c_close() (i.e., sparse FD allocation).
          */
         {
+                int r, fd, tmp[2];
                 FILE *f;
-                int fd;
 
-                fd = eventfd(0, EFD_CLOEXEC);
-                c_assert(fd >= 0);
+                r = pipe(tmp);
+                c_assert(r >= 0);
+                fd = tmp[0];
+                c_close(tmp[1]);
 
                 f = fdopen(fd, "r");
                 c_assert(f);
@@ -415,10 +477,12 @@ static void test_destructors(void) {
                         _c_cleanup_(c_fclosep) _c_unused_ FILE *t = NULL;
                         int tfd;
 
-                        tfd = eventfd(0, EFD_CLOEXEC);
-                        c_assert(tfd >= 0);
-                        c_assert(tfd == fd); /* the same as before */
+                        r = pipe(tmp);
+                        c_assert(r >= 0);
+                        tfd = tmp[0];
+                        c_close(tmp[1]);
 
+                        c_assert(tfd == fd); /* the same as before */
                         t = fdopen(tfd, "r");
                         c_assert(t);
                 }

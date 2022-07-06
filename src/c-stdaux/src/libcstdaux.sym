@@ -1,0 +1,6 @@
+LIBCSTDAUX_1 {
+global:
+        c_internal_dummy;
+local:
+       *;
+};

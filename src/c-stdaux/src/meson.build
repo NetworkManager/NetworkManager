@@ -4,9 +4,14 @@
 #  future, if we add more complex helpers.)
 #
 
+libcstdaux_vars = {
+        'cflags': ' '.join(cflags),
+        'version-scripts': use_version_scripts,
+}
+
 libcstdaux_dep = declare_dependency(
         include_directories: include_directories('.'),
-        variables: { 'cflags': ' '.join(cflags) },
+        variables: libcstdaux_vars,
         version: meson.project_version(),
 )
 
@@ -17,6 +22,7 @@ if not meson.is_subproject()
                 description: project_description,
                 filebase: 'libcstdaux-'+major,
                 name: 'libcstdaux',
+                unescaped_variables: libcstdaux_vars,
                 version: meson.project_version(),
         )
 endif
