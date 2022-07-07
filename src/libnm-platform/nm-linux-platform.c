@@ -6318,6 +6318,24 @@ delayed_action_schedule(NMPlatform *platform, DelayedActionType action_type, gpo
 }
 
 static void
+delayed_action_schedule_refresh_all(NMPlatform *platform)
+{
+    DelayedActionType action_type;
+
+    action_type =
+        DELAYED_ACTION_TYPE_REFRESH_ALL_LINKS | DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ADDRESSES
+        | DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ADDRESSES | DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ROUTES
+        | DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ROUTES
+        | DELAYED_ACTION_TYPE_REFRESH_ALL_ROUTING_RULES_ALL;
+    if (nm_platform_get_cache_tc(platform)) {
+        action_type |=
+            (DELAYED_ACTION_TYPE_REFRESH_ALL_QDISCS | DELAYED_ACTION_TYPE_REFRESH_ALL_TFILTERS);
+    }
+
+    delayed_action_schedule(platform, action_type, NULL);
+}
+
+static void
 delayed_action_schedule_WAIT_FOR_NL_RESPONSE(NMPlatform                        *platform,
                                              guint32                            seq_number,
                                              WaitForNlResponseResult           *out_seq_result,
@@ -6476,8 +6494,10 @@ cache_on_change(NMPlatform      *platform,
                                             | DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ROUTES
                                             | DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ROUTES
                                             | DELAYED_ACTION_TYPE_REFRESH_ALL_ROUTING_RULES_ALL
-                                            | DELAYED_ACTION_TYPE_REFRESH_ALL_QDISCS
-                                            | DELAYED_ACTION_TYPE_REFRESH_ALL_TFILTERS,
+                                            | (nm_platform_get_cache_tc(platform)
+                                                   ? (DELAYED_ACTION_TYPE_REFRESH_ALL_QDISCS
+                                                      | DELAYED_ACTION_TYPE_REFRESH_ALL_TFILTERS)
+                                                   : DELAYED_ACTION_TYPE_NONE),
                                         NULL);
             }
         }
@@ -9512,17 +9532,7 @@ event_handler_read_netlink(NMPlatform *platform, gboolean wait_for_acks)
                     delayed_action_wait_for_nl_response_complete_all(
                         platform,
                         WAIT_FOR_NL_RESPONSE_RESULT_FAILED_RESYNC);
-
-                    delayed_action_schedule(platform,
-                                            DELAYED_ACTION_TYPE_REFRESH_ALL_LINKS
-                                                | DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ADDRESSES
-                                                | DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ADDRESSES
-                                                | DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ROUTES
-                                                | DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ROUTES
-                                                | DELAYED_ACTION_TYPE_REFRESH_ALL_ROUTING_RULES_ALL
-                                                | DELAYED_ACTION_TYPE_REFRESH_ALL_QDISCS
-                                                | DELAYED_ACTION_TYPE_REFRESH_ALL_TFILTERS,
-                                            NULL);
+                    delayed_action_schedule_refresh_all(platform);
                     break;
                 default:
                     _LOGE("netlink: read: failed to retrieve incoming events: %s (%d)",
@@ -9818,15 +9828,7 @@ constructed(GObject *_object)
     G_OBJECT_CLASS(nm_linux_platform_parent_class)->constructed(_object);
 
     _LOGD("populate platform cache");
-    delayed_action_schedule(
-        platform,
-        DELAYED_ACTION_TYPE_REFRESH_ALL_LINKS | DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ADDRESSES
-            | DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ADDRESSES
-            | DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ROUTES
-            | DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ROUTES
-            | DELAYED_ACTION_TYPE_REFRESH_ALL_ROUTING_RULES_ALL
-            | DELAYED_ACTION_TYPE_REFRESH_ALL_QDISCS | DELAYED_ACTION_TYPE_REFRESH_ALL_TFILTERS,
-        NULL);
+    delayed_action_schedule_refresh_all(platform);
 
     delayed_action_handle_all(platform, FALSE);
 
