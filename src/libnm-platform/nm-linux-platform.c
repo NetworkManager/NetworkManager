@@ -323,7 +323,7 @@ typedef struct {
     gint8 addr_family_for_dump;
 } RefreshAllInfo;
 
-typedef enum {
+typedef enum _nm_packed {
     DELAYED_ACTION_TYPE_NONE = 0,
 
 #define F(val, name) ((sizeof(char[(((val)) == (name)) ? 1 : -1]) * 0) + (val))
@@ -378,7 +378,7 @@ typedef enum {
          });                                                \
          (iflags) <<= 1)
 
-typedef enum {
+typedef enum _nm_packed {
     /* Negative values are errors from kernel. Add dummy member to
      * make enum signed. */
     _WAIT_FOR_NL_RESPONSE_RESULT_SYSTEM_ERROR = G_MININT,
@@ -393,24 +393,24 @@ typedef enum {
     WAIT_FOR_NL_RESPONSE_RESULT_FAILED_SETNS,
 } WaitForNlResponseResult;
 
-typedef enum {
+typedef enum _nm_packed {
     DELAYED_ACTION_RESPONSE_TYPE_VOID                    = 0,
     DELAYED_ACTION_RESPONSE_TYPE_REFRESH_ALL_IN_PROGRESS = 1,
     DELAYED_ACTION_RESPONSE_TYPE_ROUTE_GET               = 2,
 } DelayedActionWaitForNlResponseType;
 
 typedef struct {
-    guint32                            seq_number;
-    WaitForNlResponseResult            seq_result;
-    DelayedActionWaitForNlResponseType response_type;
-    gint64                             timeout_abs_nsec;
-    WaitForNlResponseResult           *out_seq_result;
-    char                             **out_errmsg;
+    WaitForNlResponseResult *out_seq_result;
+    char                   **out_errmsg;
     union {
         int        *out_refresh_all_in_progress;
         NMPObject **out_route_get;
         gpointer    out_data;
     } response;
+    gint64                             timeout_abs_nsec;
+    guint32                            seq_number;
+    WaitForNlResponseResult            seq_result;
+    DelayedActionWaitForNlResponseType response_type;
 } DelayedActionWaitForNlResponseData;
 
 /*****************************************************************************/
