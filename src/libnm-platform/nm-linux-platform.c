@@ -318,8 +318,9 @@ typedef enum {
 typedef struct {
     NMPObjectType obj_type;
 
-    /* for NLM_F_DUMP, which address family to request. */
-    int addr_family;
+    /* For NLM_F_DUMP, which address family to request.
+     * Either AF_UNSPEC, AF_INET or AF_INET6. */
+    gint8 addr_family_for_dump;
 } RefreshAllInfo;
 
 typedef enum {
@@ -5799,8 +5800,8 @@ refresh_all_type_get_info(RefreshAllType refresh_all_type)
     static const RefreshAllInfo infos[] = {
 #define R(_refresh_all_type, _obj_type, _addr_family) \
     [_refresh_all_type] = {                           \
-        .obj_type    = _obj_type,                     \
-        .addr_family = _addr_family,                  \
+        .obj_type             = _obj_type,            \
+        .addr_family_for_dump = _addr_family,         \
     }
         R(REFRESH_ALL_TYPE_LINKS, NMP_OBJECT_TYPE_LINK, AF_UNSPEC),
         R(REFRESH_ALL_TYPE_IP4_ADDRESSES, NMP_OBJECT_TYPE_IP4_ADDRESS, AF_UNSPEC),
@@ -5902,11 +5903,11 @@ refresh_all_type_init_lookup(RefreshAllType refresh_all_type, NMPLookup *lookup)
     if (NM_IN_SET(refresh_all_info->obj_type, NMP_OBJECT_TYPE_ROUTING_RULE)) {
         return nmp_lookup_init_object_by_addr_family(lookup,
                                                      refresh_all_info->obj_type,
-                                                     refresh_all_info->addr_family);
+                                                     refresh_all_info->addr_family_for_dump);
     }
 
     /* not yet implemented. */
-    nm_assert(refresh_all_info->addr_family == AF_UNSPEC);
+    nm_assert(refresh_all_info->addr_family_for_dump == AF_UNSPEC);
 
     return nmp_lookup_init_obj_type(lookup, refresh_all_info->obj_type);
 }
@@ -6927,7 +6928,8 @@ do_request_all_no_delayed_actions(NMPlatform *platform, DelayedActionType action
 
         event_handler_read_netlink(platform, FALSE);
 
-        nlmsg = _nl_msg_new_dump(refresh_all_info->obj_type, refresh_all_info->addr_family);
+        nlmsg =
+            _nl_msg_new_dump(refresh_all_info->obj_type, refresh_all_info->addr_family_for_dump);
         if (!nlmsg)
             goto next_after_fail;
 
