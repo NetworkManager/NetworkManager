@@ -3691,6 +3691,26 @@ _l3cfg_update_combined_config(NML3Cfg               *self,
                                     &hook_data);
         }
 
+        if (self->priv.ifindex == 1) {
+            if (!nm_l3_config_data_lookup_address_4(l3cd,
+                                                    NM_IPV4LO_NETWORK,
+                                                    8,
+                                                    NM_IPV4LO_NETWORK)) {
+                const NMPlatformIP4Address ip4_address = (NMPlatformIP4Address){
+                    .address      = NM_IPV4LO_NETWORK,
+                    .plen         = 8,
+                    .peer_address = NM_IPV4LO_NETWORK,
+                };
+                nm_l3_config_data_add_address_4(l3cd, &ip4_address);
+            }
+            if (!nm_l3_config_data_lookup_address_6(l3cd, &in6addr_loopback)) {
+                const NMPlatformIP6Address ip6_address = (NMPlatformIP6Address){
+                    .address = IN6ADDR_LOOPBACK_INIT,
+                    .plen    = 128,
+                };
+                nm_l3_config_data_add_address_6(l3cd, &ip6_address);
+            }
+        }
         for (i = 0; i < l3_config_datas_len; i++) {
             const L3ConfigData *l3cd_data = l3_config_datas_arr[i];
             int                 IS_IPv4;
