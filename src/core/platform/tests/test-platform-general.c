@@ -788,6 +788,64 @@ test_route_type_is_nodev(void)
 
 /*****************************************************************************/
 
+static void
+test_nmp_genl_family_type_from_name(void)
+{
+    int n_run;
+    int i;
+
+    for (i = 0; i < (int) _NMP_GENL_FAMILY_TYPE_NUM; i++) {
+        const char *name = nmp_genl_family_infos[i].name;
+
+        g_assert(name);
+        if (i > 0)
+            g_assert_cmpint(strcmp(nmp_genl_family_infos[i - 1].name, name), <, 0);
+    }
+
+    g_assert_cmpint(nmp_genl_family_type_from_name("ethtool"), ==, NMP_GENL_FAMILY_TYPE_ETHTOOL);
+    g_assert_cmpint(nmp_genl_family_type_from_name("mptcp_pm"), ==, NMP_GENL_FAMILY_TYPE_MPTCP_PM);
+    g_assert_cmpint(nmp_genl_family_type_from_name("nl80211"), ==, NMP_GENL_FAMILY_TYPE_NL80211);
+    g_assert_cmpint(nmp_genl_family_type_from_name("nl802154"), ==, NMP_GENL_FAMILY_TYPE_NL802154);
+    g_assert_cmpint(nmp_genl_family_type_from_name("wireguard"),
+                    ==,
+                    NMP_GENL_FAMILY_TYPE_WIREGUARD);
+
+    g_assert_cmpint(nmp_genl_family_type_from_name(NULL), ==, _NMP_GENL_FAMILY_TYPE_NONE);
+    g_assert_cmpint(nmp_genl_family_type_from_name("a"), ==, _NMP_GENL_FAMILY_TYPE_NONE);
+    g_assert_cmpint(nmp_genl_family_type_from_name("wireguara"), ==, _NMP_GENL_FAMILY_TYPE_NONE);
+    g_assert_cmpint(nmp_genl_family_type_from_name("wireguarb"), ==, _NMP_GENL_FAMILY_TYPE_NONE);
+    g_assert_cmpint(nmp_genl_family_type_from_name(""), ==, _NMP_GENL_FAMILY_TYPE_NONE);
+    g_assert_cmpint(nmp_genl_family_type_from_name("z"), ==, _NMP_GENL_FAMILY_TYPE_NONE);
+
+    for (n_run = 0; n_run < 20; n_run++) {
+        for (i = 0; i < (int) _NMP_GENL_FAMILY_TYPE_NUM; i++) {
+            const char *cname  = nmp_genl_family_infos[i].name;
+            const int   ch_idx = nmtst_get_rand_uint() % strlen(cname);
+            char        name[200];
+            char        ch;
+            gsize       l;
+
+            l = g_strlcpy(name, cname, sizeof(name));
+            g_assert_cmpint(l, <, sizeof(name));
+
+            if (n_run == 0) {
+                g_assert_cmpint(nmp_genl_family_type_from_name(cname), ==, i);
+                g_assert_cmpint(nmp_genl_family_type_from_name(name), ==, i);
+            }
+
+            /* randomly change one character in the name. Such a name becomes invalid.
+             * There are no two valid names which only differ by one characters. */
+            do {
+                ch = nmtst_get_rand_uint() % 256;
+            } while (cname[ch_idx] == ch);
+            name[ch_idx] = ch;
+            g_assert_cmpint(nmp_genl_family_type_from_name(name), ==, _NMP_GENL_FAMILY_TYPE_NONE);
+        }
+    }
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE();
 
 int
@@ -808,6 +866,8 @@ main(int argc, char **argv)
                          GINT_TO_POINTER(2),
                          test_platform_ip_address_pretty_sort_cmp);
     g_test_add_func("/general/test_route_type_is_nodev", test_route_type_is_nodev);
+    g_test_add_func("/nm-platform/test_nmp_genl_family_type_from_name",
+                    test_nmp_genl_family_type_from_name);
 
     return g_test_run();
 }
