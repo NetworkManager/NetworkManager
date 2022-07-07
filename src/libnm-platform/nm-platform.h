@@ -1103,6 +1103,25 @@ nm_platform_kernel_support_get(NMPlatformKernelSupportType type)
     return nm_platform_kernel_support_get_full(type, TRUE) != NM_OPTION_BOOL_FALSE;
 }
 
+typedef enum {
+    NMP_GENL_FAMILY_TYPE_ETHTOOL,
+    NMP_GENL_FAMILY_TYPE_MPTCP_PM,
+    NMP_GENL_FAMILY_TYPE_NL80211,
+    NMP_GENL_FAMILY_TYPE_NL802154,
+    NMP_GENL_FAMILY_TYPE_WIREGUARD,
+
+    _NMP_GENL_FAMILY_TYPE_NUM,
+    _NMP_GENL_FAMILY_TYPE_NONE = _NMP_GENL_FAMILY_TYPE_NUM,
+} NMPGenlFamilyType;
+
+typedef struct {
+    const char *name;
+} NMPGenlFamilyInfo;
+
+extern const NMPGenlFamilyInfo nmp_genl_family_infos[_NMP_GENL_FAMILY_TYPE_NUM];
+
+NMPGenlFamilyType nmp_genl_family_type_from_name(const char *name);
+
 /*****************************************************************************/
 
 struct _NMPlatformPrivate;

@@ -395,6 +395,76 @@ _nm_platform_kernel_support_init(NMPlatformKernelSupportType type, int value)
 
 /*****************************************************************************/
 
+const NMPGenlFamilyInfo nmp_genl_family_infos[_NMP_GENL_FAMILY_TYPE_NUM] = {
+    [NMP_GENL_FAMILY_TYPE_ETHTOOL] =
+        {
+            .name = "ethtool",
+        },
+    [NMP_GENL_FAMILY_TYPE_MPTCP_PM] =
+        {
+            .name = "mptcp_pm",
+        },
+    [NMP_GENL_FAMILY_TYPE_NL80211] =
+        {
+            .name = "nl80211",
+        },
+    [NMP_GENL_FAMILY_TYPE_NL802154] =
+        {
+            .name = "nl802154",
+        },
+    [NMP_GENL_FAMILY_TYPE_WIREGUARD] =
+        {
+            .name = "wireguard",
+        },
+};
+
+NMPGenlFamilyType
+nmp_genl_family_type_from_name(const char *name)
+{
+    int imin, imax, imid;
+
+    if (NM_MORE_ASSERT_ONCE(50)) {
+        int i;
+
+        for (i = 0; i < (int) G_N_ELEMENTS(nmp_genl_family_infos); i++) {
+            nm_assert(nmp_genl_family_infos[i].name);
+            if (i > 0)
+                nm_assert(strcmp(nmp_genl_family_infos[i - 1].name, nmp_genl_family_infos[i].name)
+                          < 0);
+        }
+    }
+
+    if (!name)
+        goto out;
+
+    imin = 0;
+    imax = G_N_ELEMENTS(nmp_genl_family_infos) - 1;
+    imid = imax / 2;
+
+    while (TRUE) {
+        int c;
+
+        c = strcmp(nmp_genl_family_infos[imid].name, name);
+        if (c == 0)
+            return (NMPGenlFamilyType) imid;
+
+        if (c < 0)
+            imin = imid + 1;
+        else
+            imax = imid - 1;
+
+        if (imin > imax)
+            break;
+
+        imid = (imax + imin) / 2;
+    }
+
+out:
+    return _NMP_GENL_FAMILY_TYPE_NONE;
+}
+
+/*****************************************************************************/
+
 /**
  * nm_platform_process_events:
  * @self: platform instance
