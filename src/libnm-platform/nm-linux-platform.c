@@ -342,7 +342,7 @@ typedef enum _nm_packed {
 
     DELAYED_ACTION_TYPE_REFRESH_LINK         = 1 << 9,
     DELAYED_ACTION_TYPE_MASTER_CONNECTED     = 1 << 10,
-    DELAYED_ACTION_TYPE_READ_NETLINK         = 1 << 11,
+    DELAYED_ACTION_TYPE_READ_RTNL            = 1 << 11,
     DELAYED_ACTION_TYPE_WAIT_FOR_NL_RESPONSE = 1 << 12,
 
     __DELAYED_ACTION_TYPE_MAX,
@@ -351,7 +351,7 @@ typedef enum _nm_packed {
         DELAYED_ACTION_TYPE_REFRESH_ALL_ROUTING_RULES_IP4
         | DELAYED_ACTION_TYPE_REFRESH_ALL_ROUTING_RULES_IP6,
 
-    DELAYED_ACTION_TYPE_REFRESH_ALL =
+    DELAYED_ACTION_TYPE_REFRESH_RTNL_ALL =
         DELAYED_ACTION_TYPE_REFRESH_ALL_LINKS | DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ADDRESSES
         | DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ADDRESSES | DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ROUTES
         | DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ROUTES
@@ -5938,10 +5938,10 @@ static NM_UTILS_LOOKUP_STR_DEFINE(
     NM_UTILS_LOOKUP_STR_ITEM(DELAYED_ACTION_TYPE_REFRESH_ALL_TFILTERS, "refresh-all-tfilters"),
     NM_UTILS_LOOKUP_STR_ITEM(DELAYED_ACTION_TYPE_REFRESH_LINK, "refresh-link"),
     NM_UTILS_LOOKUP_STR_ITEM(DELAYED_ACTION_TYPE_MASTER_CONNECTED, "master-connected"),
-    NM_UTILS_LOOKUP_STR_ITEM(DELAYED_ACTION_TYPE_READ_NETLINK, "read-netlink"),
+    NM_UTILS_LOOKUP_STR_ITEM(DELAYED_ACTION_TYPE_READ_RTNL, "read-rtnl"),
     NM_UTILS_LOOKUP_STR_ITEM(DELAYED_ACTION_TYPE_WAIT_FOR_NL_RESPONSE, "wait-for-nl-response"),
     NM_UTILS_LOOKUP_ITEM_IGNORE(DELAYED_ACTION_TYPE_NONE),
-    NM_UTILS_LOOKUP_ITEM_IGNORE(DELAYED_ACTION_TYPE_REFRESH_ALL),
+    NM_UTILS_LOOKUP_ITEM_IGNORE(DELAYED_ACTION_TYPE_REFRESH_RTNL_ALL),
     NM_UTILS_LOOKUP_ITEM_IGNORE(DELAYED_ACTION_TYPE_REFRESH_ALL_ROUTING_RULES_ALL),
     NM_UTILS_LOOKUP_ITEM_IGNORE(__DELAYED_ACTION_TYPE_MAX), );
 
@@ -6013,8 +6013,8 @@ delayed_action_refresh_all_in_progress(NMPlatform *platform, DelayedActionType a
     RefreshAllType          refresh_all_type;
 
     nm_assert(nm_utils_is_power_of_two(action_type));
-    nm_assert(NM_FLAGS_ANY(action_type, DELAYED_ACTION_TYPE_REFRESH_ALL));
-    nm_assert(!NM_FLAGS_ANY(action_type, ~DELAYED_ACTION_TYPE_REFRESH_ALL));
+    nm_assert(NM_FLAGS_ANY(action_type, DELAYED_ACTION_TYPE_REFRESH_RTNL_ALL));
+    nm_assert(!NM_FLAGS_ANY(action_type, ~DELAYED_ACTION_TYPE_REFRESH_RTNL_ALL));
 
     if (NM_FLAGS_ANY(priv->delayed_action.flags, action_type))
         return TRUE;
@@ -6200,19 +6200,19 @@ delayed_action_handle_one(NMPlatform *platform)
 
     /* Next we prefer read-netlink, because the buffer size is limited and we want to process events
      * from netlink early. */
-    if (NM_FLAGS_HAS(priv->delayed_action.flags, DELAYED_ACTION_TYPE_READ_NETLINK)) {
-        _LOGt_delayed_action(DELAYED_ACTION_TYPE_READ_NETLINK, NULL, "handle");
-        priv->delayed_action.flags &= ~DELAYED_ACTION_TYPE_READ_NETLINK;
+    if (NM_FLAGS_HAS(priv->delayed_action.flags, DELAYED_ACTION_TYPE_READ_RTNL)) {
+        _LOGt_delayed_action(DELAYED_ACTION_TYPE_READ_RTNL, NULL, "handle");
+        priv->delayed_action.flags &= ~DELAYED_ACTION_TYPE_READ_RTNL;
         delayed_action_handle_READ_NETLINK(platform);
         return TRUE;
     }
 
-    if (NM_FLAGS_ANY(priv->delayed_action.flags, DELAYED_ACTION_TYPE_REFRESH_ALL)) {
+    if (NM_FLAGS_ANY(priv->delayed_action.flags, DELAYED_ACTION_TYPE_REFRESH_RTNL_ALL)) {
         DelayedActionType flags, iflags;
 
-        flags = priv->delayed_action.flags & DELAYED_ACTION_TYPE_REFRESH_ALL;
+        flags = priv->delayed_action.flags & DELAYED_ACTION_TYPE_REFRESH_RTNL_ALL;
 
-        priv->delayed_action.flags &= ~DELAYED_ACTION_TYPE_REFRESH_ALL;
+        priv->delayed_action.flags &= ~DELAYED_ACTION_TYPE_REFRESH_RTNL_ALL;
 
         if (_LOGt_ENABLED()) {
             FOR_EACH_DELAYED_ACTION (iflags, flags)
@@ -6263,7 +6263,7 @@ delayed_action_handle_all(NMPlatform *platform, gboolean read_netlink)
 
     priv->delayed_action.is_handling++;
     if (read_netlink)
-        delayed_action_schedule(platform, DELAYED_ACTION_TYPE_READ_NETLINK, NULL);
+        delayed_action_schedule(platform, DELAYED_ACTION_TYPE_READ_RTNL, NULL);
     while (delayed_action_handle_one(platform))
         any = TRUE;
     priv->delayed_action.is_handling--;
@@ -6870,8 +6870,8 @@ do_request_all_no_delayed_actions(NMPlatform *platform, DelayedActionType action
     DelayedActionType       action_type_prune;
     DelayedActionType       iflags;
 
-    nm_assert(!NM_FLAGS_ANY(action_type, ~DELAYED_ACTION_TYPE_REFRESH_ALL));
-    action_type &= DELAYED_ACTION_TYPE_REFRESH_ALL;
+    nm_assert(!NM_FLAGS_ANY(action_type, ~DELAYED_ACTION_TYPE_REFRESH_RTNL_ALL));
+    action_type &= DELAYED_ACTION_TYPE_REFRESH_RTNL_ALL;
 
     action_type_prune = action_type;
 
