@@ -82,6 +82,8 @@ create_and_realize(NMDevice              *device,
                    GError               **error)
 {
     const char    *iface = nm_device_get_iface(device);
+    const char    *peer;
+    NMDevice      *peer_device;
     NMSettingVeth *s_veth;
     int            r;
 
@@ -96,10 +98,15 @@ create_and_realize(NMDevice              *device,
         return FALSE;
     }
 
-    r = nm_platform_link_veth_add(nm_device_get_platform(device),
-                                  iface,
-                                  nm_setting_veth_get_peer(s_veth),
-                                  out_plink);
+    peer        = nm_setting_veth_get_peer(s_veth);
+    peer_device = nm_manager_get_device(NM_MANAGER_GET, peer, NM_DEVICE_TYPE_VETH);
+    if (peer_device) {
+        /* The veth device and its peer already exist. No need to create it again. */
+        if (nm_streq0(nm_device_get_iface(nm_device_parent_get_device(peer_device)), iface))
+            return TRUE;
+    }
+
+    r = nm_platform_link_veth_add(nm_device_get_platform(device), iface, peer, out_plink);
     if (r < 0) {
         g_set_error(error,
                     NM_DEVICE_ERROR,
