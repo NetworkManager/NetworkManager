@@ -2250,6 +2250,18 @@ connection_updated_cb(NMSettings           *settings,
     connection_changed(self, sett_conn);
 }
 
+static void
+connections_changed(NMManager *self)
+{
+    NMManagerPrivate            *priv = NM_MANAGER_GET_PRIVATE(self);
+    NMSettingsConnection *const *connections;
+    guint                        i;
+
+    connections = nm_settings_get_connections_sorted_by_autoconnect_priority(priv->settings, NULL);
+    for (i = 0; connections[i]; i++)
+        connection_changed(self, connections[i]);
+}
+
 /*****************************************************************************/
 
 static void
@@ -6598,6 +6610,10 @@ do_sleep_wake(NMManager *self, gboolean sleeping_changed)
                                              FALSE,
                                              NM_DEVICE_STATE_REASON_NOW_MANAGED);
         }
+
+        /* Give the connections a chance to recreate the virtual devices.
+	 * We've torn them down on sleep. */
+        connections_changed(self);
     }
 
     nm_manager_update_state(self);
@@ -7158,9 +7174,8 @@ devices_inited_cb(gpointer user_data)
 gboolean
 nm_manager_start(NMManager *self, GError **error)
 {
-    NMManagerPrivate            *priv = NM_MANAGER_GET_PRIVATE(self);
-    NMSettingsConnection *const *connections;
-    guint                        i;
+    NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE(self);
+    guint             i;
 
     nm_device_factory_manager_load_factories(_register_device_factory, self);
 
@@ -7214,9 +7229,10 @@ nm_manager_start(NMManager *self, GError **error)
                      NM_SETTINGS_SIGNAL_CONNECTION_UPDATED,
                      G_CALLBACK(connection_updated_cb),
                      self);
-    connections = nm_settings_get_connections_sorted_by_autoconnect_priority(priv->settings, NULL);
-    for (i = 0; connections[i]; i++)
-        connection_changed(self, connections[i]);
+
+    /* Make sure virtual devices for all connections are created so
+     * that they could be autoconnected.  */
+    connections_changed(self);
 
     nm_clear_g_source(&priv->devices_inited_id);
     priv->devices_inited_id = g_idle_add_full(G_PRIORITY_LOW + 10, devices_inited_cb, self, NULL);
