@@ -213,6 +213,10 @@ typedef struct {
 
     unsigned connectivity_check_enabled_last : 2;
 
+    /* List of GDBusMethodInvocation of in progress Sleep() and Enable()
+     * calls. They return only if all in-flight deactivations finished. */
+    GSList *sleep_invocations;
+
     guint delete_volatile_connection_idle_id;
     CList delete_volatile_connection_lst_head;
 } NMManagerPrivate;
@@ -6361,6 +6365,22 @@ done:
     g_clear_object(&subject);
 }
 
+static void
+sleep_devices_check_empty(NMManager *self)
+{
+    NMManagerPrivate      *priv = NM_MANAGER_GET_PRIVATE(self);
+    GDBusMethodInvocation *invocation;
+
+    if (g_hash_table_size(priv->sleep_devices) > 0)
+        return;
+
+    while (priv->sleep_invocations) {
+        invocation = priv->sleep_invocations->data;
+        g_dbus_method_invocation_return_value(invocation, NULL);
+        priv->sleep_invocations = g_slist_remove(priv->sleep_invocations, invocation);
+    }
+}
+
 static gboolean
 sleep_devices_add(NMManager *self, NMDevice *device, gboolean suspending)
 {
@@ -6403,6 +6423,9 @@ sleep_devices_remove(NMManager *self, NMDevice *device)
     g_signal_handlers_disconnect_by_func(device, device_sleep_cb, self);
     g_hash_table_remove(priv->sleep_devices, device);
     g_object_unref(device);
+
+    sleep_devices_check_empty(self);
+
     return TRUE;
 }
 
@@ -6414,9 +6437,6 @@ sleep_devices_clear(NMManager *self)
     NMSleepMonitorInhibitorHandle *handle;
     GHashTableIter                 iter;
 
-    if (!priv->sleep_devices)
-        return;
-
     g_hash_table_iter_init(&iter, priv->sleep_devices);
     while (g_hash_table_iter_next(&iter, (gpointer *) &device, (gpointer *) &handle)) {
         g_signal_handlers_disconnect_by_func(device, device_sleep_cb, self);
@@ -6425,6 +6445,8 @@ sleep_devices_clear(NMManager *self)
         g_object_unref(device);
         g_hash_table_iter_remove(&iter);
     }
+
+    sleep_devices_check_empty(self);
 }
 
 static void
@@ -6653,7 +6675,10 @@ impl_manager_sleep(NMDBusObject                      *obj,
                             TRUE,
                             subject,
                             NULL);
-    g_dbus_method_invocation_return_value(invocation, NULL);
+
+    priv->sleep_invocations = g_slist_prepend(priv->sleep_invocations, invocation);
+    sleep_devices_check_empty(self);
+
     return;
 }
 
@@ -6693,10 +6718,11 @@ _internal_enable(NMManager *self, gboolean enable)
 static void
 enable_net_done_cb(NMAuthChain *chain, GDBusMethodInvocation *context, gpointer user_data)
 {
-    NMManager       *self = NM_MANAGER(user_data);
-    NMAuthCallResult result;
-    gboolean         enable;
-    NMAuthSubject   *subject;
+    NMManager        *self = NM_MANAGER(user_data);
+    NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE(self);
+    NMAuthCallResult  result;
+    gboolean          enable;
+    NMAuthSubject    *subject;
 
     nm_assert(G_IS_DBUS_METHOD_INVOCATION(context));
 
@@ -6721,8 +6747,10 @@ enable_net_done_cb(NMAuthChain *chain, GDBusMethodInvocation *context, gpointer 
     }
 
     _internal_enable(self, enable);
-    g_dbus_method_invocation_return_value(context, NULL);
     nm_audit_log_control_op(NM_AUDIT_OP_NET_CONTROL, enable ? "on" : "off", TRUE, subject, NULL);
+
+    priv->sleep_invocations = g_slist_prepend(priv->sleep_invocations, context);
+    sleep_devices_check_empty(self);
 }
 
 static void
@@ -8336,8 +8364,10 @@ dispose(GObject *object)
 
     g_clear_object(&priv->vpn_manager);
 
-    sleep_devices_clear(self);
-    nm_clear_pointer(&priv->sleep_devices, g_hash_table_unref);
+    if (priv->sleep_devices) {
+        sleep_devices_clear(self);
+        nm_clear_pointer(&priv->sleep_devices, g_hash_table_unref);
+    }
 
     if (priv->sleep_monitor) {
         g_signal_handlers_disconnect_by_func(priv->sleep_monitor, sleeping_cb, self);
