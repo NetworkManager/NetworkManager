@@ -302,15 +302,15 @@ typedef struct {
 typedef enum {
     _REFRESH_ALL_TYPE_FIRST = 0,
 
-    REFRESH_ALL_TYPE_LINKS             = 0,
-    REFRESH_ALL_TYPE_IP4_ADDRESSES     = 1,
-    REFRESH_ALL_TYPE_IP6_ADDRESSES     = 2,
-    REFRESH_ALL_TYPE_IP4_ROUTES        = 3,
-    REFRESH_ALL_TYPE_IP6_ROUTES        = 4,
-    REFRESH_ALL_TYPE_ROUTING_RULES_IP4 = 5,
-    REFRESH_ALL_TYPE_ROUTING_RULES_IP6 = 6,
-    REFRESH_ALL_TYPE_QDISCS            = 7,
-    REFRESH_ALL_TYPE_TFILTERS          = 8,
+    REFRESH_ALL_TYPE_RTNL_LINKS             = 0,
+    REFRESH_ALL_TYPE_RTNL_IP4_ADDRESSES     = 1,
+    REFRESH_ALL_TYPE_RTNL_IP6_ADDRESSES     = 2,
+    REFRESH_ALL_TYPE_RTNL_IP4_ROUTES        = 3,
+    REFRESH_ALL_TYPE_RTNL_IP6_ROUTES        = 4,
+    REFRESH_ALL_TYPE_RTNL_ROUTING_RULES_IP4 = 5,
+    REFRESH_ALL_TYPE_RTNL_ROUTING_RULES_IP6 = 6,
+    REFRESH_ALL_TYPE_RTNL_QDISCS            = 7,
+    REFRESH_ALL_TYPE_RTNL_TFILTERS          = 8,
 
     _REFRESH_ALL_TYPE_NUM,
 } RefreshAllType;
@@ -327,36 +327,40 @@ typedef enum _nm_packed {
     DELAYED_ACTION_TYPE_NONE = 0,
 
 #define F(val, name) ((sizeof(char[(((val)) == (name)) ? 1 : -1]) * 0) + (val))
-    DELAYED_ACTION_TYPE_REFRESH_ALL_LINKS             = 1 << F(0, REFRESH_ALL_TYPE_LINKS),
-    DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ADDRESSES     = 1 << F(1, REFRESH_ALL_TYPE_IP4_ADDRESSES),
-    DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ADDRESSES     = 1 << F(2, REFRESH_ALL_TYPE_IP6_ADDRESSES),
-    DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ROUTES        = 1 << F(3, REFRESH_ALL_TYPE_IP4_ROUTES),
-    DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ROUTES        = 1 << F(4, REFRESH_ALL_TYPE_IP6_ROUTES),
-    DELAYED_ACTION_TYPE_REFRESH_ALL_ROUTING_RULES_IP4 = 1
-                                                        << F(5, REFRESH_ALL_TYPE_ROUTING_RULES_IP4),
-    DELAYED_ACTION_TYPE_REFRESH_ALL_ROUTING_RULES_IP6 = 1
-                                                        << F(6, REFRESH_ALL_TYPE_ROUTING_RULES_IP6),
-    DELAYED_ACTION_TYPE_REFRESH_ALL_QDISCS   = 1 << F(7, REFRESH_ALL_TYPE_QDISCS),
-    DELAYED_ACTION_TYPE_REFRESH_ALL_TFILTERS = 1 << F(8, REFRESH_ALL_TYPE_TFILTERS),
+    DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_LINKS = 1 << F(0, REFRESH_ALL_TYPE_RTNL_LINKS),
+    DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_IP4_ADDRESSES =
+        1 << F(1, REFRESH_ALL_TYPE_RTNL_IP4_ADDRESSES),
+    DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_IP6_ADDRESSES =
+        1 << F(2, REFRESH_ALL_TYPE_RTNL_IP6_ADDRESSES),
+    DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_IP4_ROUTES = 1 << F(3, REFRESH_ALL_TYPE_RTNL_IP4_ROUTES),
+    DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_IP6_ROUTES = 1 << F(4, REFRESH_ALL_TYPE_RTNL_IP6_ROUTES),
+    DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_ROUTING_RULES_IP4 =
+        1 << F(5, REFRESH_ALL_TYPE_RTNL_ROUTING_RULES_IP4),
+    DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_ROUTING_RULES_IP6 =
+        1 << F(6, REFRESH_ALL_TYPE_RTNL_ROUTING_RULES_IP6),
+    DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_QDISCS   = 1 << F(7, REFRESH_ALL_TYPE_RTNL_QDISCS),
+    DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_TFILTERS = 1 << F(8, REFRESH_ALL_TYPE_RTNL_TFILTERS),
 #undef F
 
-    DELAYED_ACTION_TYPE_REFRESH_LINK         = 1 << 9,
-    DELAYED_ACTION_TYPE_MASTER_CONNECTED     = 1 << 10,
-    DELAYED_ACTION_TYPE_READ_RTNL            = 1 << 11,
-    DELAYED_ACTION_TYPE_WAIT_FOR_NL_RESPONSE = 1 << 12,
+    DELAYED_ACTION_TYPE_REFRESH_LINK           = 1 << 9,
+    DELAYED_ACTION_TYPE_MASTER_CONNECTED       = 1 << 10,
+    DELAYED_ACTION_TYPE_READ_RTNL              = 1 << 11,
+    DELAYED_ACTION_TYPE_WAIT_FOR_RESPONSE_RTNL = 1 << 12,
 
     __DELAYED_ACTION_TYPE_MAX,
 
-    DELAYED_ACTION_TYPE_REFRESH_ALL_ROUTING_RULES_ALL =
-        DELAYED_ACTION_TYPE_REFRESH_ALL_ROUTING_RULES_IP4
-        | DELAYED_ACTION_TYPE_REFRESH_ALL_ROUTING_RULES_IP6,
+    DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_ROUTING_RULES_ALL =
+        DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_ROUTING_RULES_IP4
+        | DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_ROUTING_RULES_IP6,
 
-    DELAYED_ACTION_TYPE_REFRESH_RTNL_ALL =
-        DELAYED_ACTION_TYPE_REFRESH_ALL_LINKS | DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ADDRESSES
-        | DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ADDRESSES | DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ROUTES
-        | DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ROUTES
-        | DELAYED_ACTION_TYPE_REFRESH_ALL_ROUTING_RULES_ALL | DELAYED_ACTION_TYPE_REFRESH_ALL_QDISCS
-        | DELAYED_ACTION_TYPE_REFRESH_ALL_TFILTERS,
+    DELAYED_ACTION_TYPE_REFRESH_RTNL_ALL = DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_LINKS
+                                           | DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_IP4_ADDRESSES
+                                           | DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_IP6_ADDRESSES
+                                           | DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_IP4_ROUTES
+                                           | DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_IP6_ROUTES
+                                           | DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_ROUTING_RULES_ALL
+                                           | DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_QDISCS
+                                           | DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_TFILTERS,
 
     DELAYED_ACTION_TYPE_MAX = __DELAYED_ACTION_TYPE_MAX - 1,
 } DelayedActionType;
@@ -420,7 +424,7 @@ typedef struct {
 
     struct nl_sock *sk_rtnl;
 
-    GSource *rtnl_event_source;
+    GSource *event_source_rtnl;
 
     guint32 nlh_seq_next;
 #if NM_MORE_LOGGING
@@ -447,7 +451,7 @@ typedef struct {
 
         GPtrArray *list_master_connected;
         GPtrArray *list_refresh_link;
-        GArray    *list_wait_for_nl_response;
+        GArray    *list_wait_for_response_rtnl;
 
         int is_handling;
     } delayed_action;
@@ -5803,15 +5807,15 @@ refresh_all_type_get_info(RefreshAllType refresh_all_type)
         .obj_type             = _obj_type,            \
         .addr_family_for_dump = _addr_family,         \
     }
-        R(REFRESH_ALL_TYPE_LINKS, NMP_OBJECT_TYPE_LINK, AF_UNSPEC),
-        R(REFRESH_ALL_TYPE_IP4_ADDRESSES, NMP_OBJECT_TYPE_IP4_ADDRESS, AF_UNSPEC),
-        R(REFRESH_ALL_TYPE_IP6_ADDRESSES, NMP_OBJECT_TYPE_IP6_ADDRESS, AF_UNSPEC),
-        R(REFRESH_ALL_TYPE_IP4_ROUTES, NMP_OBJECT_TYPE_IP4_ROUTE, AF_UNSPEC),
-        R(REFRESH_ALL_TYPE_IP6_ROUTES, NMP_OBJECT_TYPE_IP6_ROUTE, AF_UNSPEC),
-        R(REFRESH_ALL_TYPE_ROUTING_RULES_IP4, NMP_OBJECT_TYPE_ROUTING_RULE, AF_INET),
-        R(REFRESH_ALL_TYPE_ROUTING_RULES_IP6, NMP_OBJECT_TYPE_ROUTING_RULE, AF_INET6),
-        R(REFRESH_ALL_TYPE_QDISCS, NMP_OBJECT_TYPE_QDISC, AF_UNSPEC),
-        R(REFRESH_ALL_TYPE_TFILTERS, NMP_OBJECT_TYPE_TFILTER, AF_UNSPEC),
+        R(REFRESH_ALL_TYPE_RTNL_LINKS, NMP_OBJECT_TYPE_LINK, AF_UNSPEC),
+        R(REFRESH_ALL_TYPE_RTNL_IP4_ADDRESSES, NMP_OBJECT_TYPE_IP4_ADDRESS, AF_UNSPEC),
+        R(REFRESH_ALL_TYPE_RTNL_IP6_ADDRESSES, NMP_OBJECT_TYPE_IP6_ADDRESS, AF_UNSPEC),
+        R(REFRESH_ALL_TYPE_RTNL_IP4_ROUTES, NMP_OBJECT_TYPE_IP4_ROUTE, AF_UNSPEC),
+        R(REFRESH_ALL_TYPE_RTNL_IP6_ROUTES, NMP_OBJECT_TYPE_IP6_ROUTE, AF_UNSPEC),
+        R(REFRESH_ALL_TYPE_RTNL_ROUTING_RULES_IP4, NMP_OBJECT_TYPE_ROUTING_RULE, AF_INET),
+        R(REFRESH_ALL_TYPE_RTNL_ROUTING_RULES_IP6, NMP_OBJECT_TYPE_ROUTING_RULE, AF_INET6),
+        R(REFRESH_ALL_TYPE_RTNL_QDISCS, NMP_OBJECT_TYPE_QDISC, AF_UNSPEC),
+        R(REFRESH_ALL_TYPE_RTNL_TFILTERS, NMP_OBJECT_TYPE_TFILTER, AF_UNSPEC),
 #undef R
     };
 
@@ -5827,19 +5831,22 @@ static NM_UTILS_LOOKUP_DEFINE(
     DelayedActionType,
     RefreshAllType,
     NM_UTILS_LOOKUP_DEFAULT_NM_ASSERT(0),
-    NM_UTILS_LOOKUP_ITEM(DELAYED_ACTION_TYPE_REFRESH_ALL_LINKS, REFRESH_ALL_TYPE_LINKS),
-    NM_UTILS_LOOKUP_ITEM(DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ADDRESSES,
-                         REFRESH_ALL_TYPE_IP4_ADDRESSES),
-    NM_UTILS_LOOKUP_ITEM(DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ADDRESSES,
-                         REFRESH_ALL_TYPE_IP6_ADDRESSES),
-    NM_UTILS_LOOKUP_ITEM(DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ROUTES, REFRESH_ALL_TYPE_IP4_ROUTES),
-    NM_UTILS_LOOKUP_ITEM(DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ROUTES, REFRESH_ALL_TYPE_IP6_ROUTES),
-    NM_UTILS_LOOKUP_ITEM(DELAYED_ACTION_TYPE_REFRESH_ALL_ROUTING_RULES_IP4,
-                         REFRESH_ALL_TYPE_ROUTING_RULES_IP4),
-    NM_UTILS_LOOKUP_ITEM(DELAYED_ACTION_TYPE_REFRESH_ALL_ROUTING_RULES_IP6,
-                         REFRESH_ALL_TYPE_ROUTING_RULES_IP6),
-    NM_UTILS_LOOKUP_ITEM(DELAYED_ACTION_TYPE_REFRESH_ALL_QDISCS, REFRESH_ALL_TYPE_QDISCS),
-    NM_UTILS_LOOKUP_ITEM(DELAYED_ACTION_TYPE_REFRESH_ALL_TFILTERS, REFRESH_ALL_TYPE_TFILTERS),
+    NM_UTILS_LOOKUP_ITEM(DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_LINKS, REFRESH_ALL_TYPE_RTNL_LINKS),
+    NM_UTILS_LOOKUP_ITEM(DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_IP4_ADDRESSES,
+                         REFRESH_ALL_TYPE_RTNL_IP4_ADDRESSES),
+    NM_UTILS_LOOKUP_ITEM(DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_IP6_ADDRESSES,
+                         REFRESH_ALL_TYPE_RTNL_IP6_ADDRESSES),
+    NM_UTILS_LOOKUP_ITEM(DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_IP4_ROUTES,
+                         REFRESH_ALL_TYPE_RTNL_IP4_ROUTES),
+    NM_UTILS_LOOKUP_ITEM(DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_IP6_ROUTES,
+                         REFRESH_ALL_TYPE_RTNL_IP6_ROUTES),
+    NM_UTILS_LOOKUP_ITEM(DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_ROUTING_RULES_IP4,
+                         REFRESH_ALL_TYPE_RTNL_ROUTING_RULES_IP4),
+    NM_UTILS_LOOKUP_ITEM(DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_ROUTING_RULES_IP6,
+                         REFRESH_ALL_TYPE_RTNL_ROUTING_RULES_IP6),
+    NM_UTILS_LOOKUP_ITEM(DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_QDISCS, REFRESH_ALL_TYPE_RTNL_QDISCS),
+    NM_UTILS_LOOKUP_ITEM(DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_TFILTERS,
+                         REFRESH_ALL_TYPE_RTNL_TFILTERS),
     NM_UTILS_LOOKUP_ITEM_IGNORE_OTHER(), );
 
 static DelayedActionType
@@ -5861,25 +5868,25 @@ refresh_all_type_from_needle_object(const NMPObject *obj_needle)
 {
     switch (NMP_OBJECT_GET_TYPE(obj_needle)) {
     case NMP_OBJECT_TYPE_LINK:
-        return REFRESH_ALL_TYPE_LINKS;
+        return REFRESH_ALL_TYPE_RTNL_LINKS;
     case NMP_OBJECT_TYPE_IP4_ADDRESS:
-        return REFRESH_ALL_TYPE_IP4_ADDRESSES;
+        return REFRESH_ALL_TYPE_RTNL_IP4_ADDRESSES;
     case NMP_OBJECT_TYPE_IP6_ADDRESS:
-        return REFRESH_ALL_TYPE_IP6_ADDRESSES;
+        return REFRESH_ALL_TYPE_RTNL_IP6_ADDRESSES;
     case NMP_OBJECT_TYPE_IP4_ROUTE:
-        return REFRESH_ALL_TYPE_IP4_ROUTES;
+        return REFRESH_ALL_TYPE_RTNL_IP4_ROUTES;
     case NMP_OBJECT_TYPE_IP6_ROUTE:
-        return REFRESH_ALL_TYPE_IP6_ROUTES;
+        return REFRESH_ALL_TYPE_RTNL_IP6_ROUTES;
     case NMP_OBJECT_TYPE_QDISC:
-        return REFRESH_ALL_TYPE_QDISCS;
+        return REFRESH_ALL_TYPE_RTNL_QDISCS;
     case NMP_OBJECT_TYPE_TFILTER:
-        return REFRESH_ALL_TYPE_TFILTERS;
+        return REFRESH_ALL_TYPE_RTNL_TFILTERS;
     case NMP_OBJECT_TYPE_ROUTING_RULE:
         switch (NMP_OBJECT_CAST_ROUTING_RULE(obj_needle)->addr_family) {
         case AF_INET:
-            return REFRESH_ALL_TYPE_ROUTING_RULES_IP4;
+            return REFRESH_ALL_TYPE_RTNL_ROUTING_RULES_IP4;
         case AF_INET6:
-            return REFRESH_ALL_TYPE_ROUTING_RULES_IP6;
+            return REFRESH_ALL_TYPE_RTNL_ROUTING_RULES_IP6;
         }
         nm_assert_not_reached();
         return 0;
@@ -5923,26 +5930,30 @@ static NM_UTILS_LOOKUP_STR_DEFINE(
     delayed_action_to_string,
     DelayedActionType,
     NM_UTILS_LOOKUP_DEFAULT_NM_ASSERT("unknown"),
-    NM_UTILS_LOOKUP_STR_ITEM(DELAYED_ACTION_TYPE_REFRESH_ALL_LINKS, "refresh-all-links"),
-    NM_UTILS_LOOKUP_STR_ITEM(DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ADDRESSES,
-                             "refresh-all-ip4-addresses"),
-    NM_UTILS_LOOKUP_STR_ITEM(DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ADDRESSES,
-                             "refresh-all-ip6-addresses"),
-    NM_UTILS_LOOKUP_STR_ITEM(DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ROUTES, "refresh-all-ip4-routes"),
-    NM_UTILS_LOOKUP_STR_ITEM(DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ROUTES, "refresh-all-ip6-routes"),
-    NM_UTILS_LOOKUP_STR_ITEM(DELAYED_ACTION_TYPE_REFRESH_ALL_ROUTING_RULES_IP4,
-                             "refresh-all-routing-rules-ip4"),
-    NM_UTILS_LOOKUP_STR_ITEM(DELAYED_ACTION_TYPE_REFRESH_ALL_ROUTING_RULES_IP6,
-                             "refresh-all-routing-rules-ip6"),
-    NM_UTILS_LOOKUP_STR_ITEM(DELAYED_ACTION_TYPE_REFRESH_ALL_QDISCS, "refresh-all-qdiscs"),
-    NM_UTILS_LOOKUP_STR_ITEM(DELAYED_ACTION_TYPE_REFRESH_ALL_TFILTERS, "refresh-all-tfilters"),
+    NM_UTILS_LOOKUP_STR_ITEM(DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_LINKS, "refresh-all-rtnl-links"),
+    NM_UTILS_LOOKUP_STR_ITEM(DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_IP4_ADDRESSES,
+                             "refresh-all-rtnl-ip4-addresses"),
+    NM_UTILS_LOOKUP_STR_ITEM(DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_IP6_ADDRESSES,
+                             "refresh-all-rtnl-ip6-addresses"),
+    NM_UTILS_LOOKUP_STR_ITEM(DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_IP4_ROUTES,
+                             "refresh-all-rtnl-ip4-routes"),
+    NM_UTILS_LOOKUP_STR_ITEM(DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_IP6_ROUTES,
+                             "refresh-all-rtnl-ip6-routes"),
+    NM_UTILS_LOOKUP_STR_ITEM(DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_ROUTING_RULES_IP4,
+                             "refresh-all-rtnl-routing-rules-ip4"),
+    NM_UTILS_LOOKUP_STR_ITEM(DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_ROUTING_RULES_IP6,
+                             "refresh-all-rtnl-routing-rules-ip6"),
+    NM_UTILS_LOOKUP_STR_ITEM(DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_QDISCS,
+                             "refresh-all-rtnl-qdiscs"),
+    NM_UTILS_LOOKUP_STR_ITEM(DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_TFILTERS,
+                             "refresh-all-rtnl-tfilters"),
     NM_UTILS_LOOKUP_STR_ITEM(DELAYED_ACTION_TYPE_REFRESH_LINK, "refresh-link"),
     NM_UTILS_LOOKUP_STR_ITEM(DELAYED_ACTION_TYPE_MASTER_CONNECTED, "master-connected"),
     NM_UTILS_LOOKUP_STR_ITEM(DELAYED_ACTION_TYPE_READ_RTNL, "read-rtnl"),
-    NM_UTILS_LOOKUP_STR_ITEM(DELAYED_ACTION_TYPE_WAIT_FOR_NL_RESPONSE, "wait-for-nl-response"),
+    NM_UTILS_LOOKUP_STR_ITEM(DELAYED_ACTION_TYPE_WAIT_FOR_RESPONSE_RTNL, "wait-for-response-rtnl"),
     NM_UTILS_LOOKUP_ITEM_IGNORE(DELAYED_ACTION_TYPE_NONE),
     NM_UTILS_LOOKUP_ITEM_IGNORE(DELAYED_ACTION_TYPE_REFRESH_RTNL_ALL),
-    NM_UTILS_LOOKUP_ITEM_IGNORE(DELAYED_ACTION_TYPE_REFRESH_ALL_ROUTING_RULES_ALL),
+    NM_UTILS_LOOKUP_ITEM_IGNORE(DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_ROUTING_RULES_ALL),
     NM_UTILS_LOOKUP_ITEM_IGNORE(__DELAYED_ACTION_TYPE_MAX), );
 
 static const char *
@@ -5962,7 +5973,7 @@ delayed_action_to_string_full(DelayedActionType action_type,
     case DELAYED_ACTION_TYPE_REFRESH_LINK:
         nm_strbuf_append(&buf, &buf_size, " (ifindex %d)", GPOINTER_TO_INT(user_data));
         break;
-    case DELAYED_ACTION_TYPE_WAIT_FOR_NL_RESPONSE:
+    case DELAYED_ACTION_TYPE_WAIT_FOR_RESPONSE_RTNL:
         data = user_data;
 
         if (data) {
@@ -6031,18 +6042,18 @@ delayed_action_wait_for_nl_response_complete(NMPlatform             *platform,
     NMLinuxPlatformPrivate             *priv = NM_LINUX_PLATFORM_GET_PRIVATE(platform);
     DelayedActionWaitForNlResponseData *data;
 
-    nm_assert(NM_FLAGS_HAS(priv->delayed_action.flags, DELAYED_ACTION_TYPE_WAIT_FOR_NL_RESPONSE));
-    nm_assert(idx < priv->delayed_action.list_wait_for_nl_response->len);
+    nm_assert(NM_FLAGS_HAS(priv->delayed_action.flags, DELAYED_ACTION_TYPE_WAIT_FOR_RESPONSE_RTNL));
+    nm_assert(idx < priv->delayed_action.list_wait_for_response_rtnl->len);
     nm_assert(seq_result);
 
-    data = &g_array_index(priv->delayed_action.list_wait_for_nl_response,
+    data = &g_array_index(priv->delayed_action.list_wait_for_response_rtnl,
                           DelayedActionWaitForNlResponseData,
                           idx);
 
-    _LOGt_delayed_action(DELAYED_ACTION_TYPE_WAIT_FOR_NL_RESPONSE, data, "complete");
+    _LOGt_delayed_action(DELAYED_ACTION_TYPE_WAIT_FOR_RESPONSE_RTNL, data, "complete");
 
-    if (priv->delayed_action.list_wait_for_nl_response->len <= 1)
-        priv->delayed_action.flags &= ~DELAYED_ACTION_TYPE_WAIT_FOR_NL_RESPONSE;
+    if (priv->delayed_action.list_wait_for_response_rtnl->len <= 1)
+        priv->delayed_action.flags &= ~DELAYED_ACTION_TYPE_WAIT_FOR_RESPONSE_RTNL;
     if (data->out_seq_result)
         *data->out_seq_result = seq_result;
     switch (data->response_type) {
@@ -6063,7 +6074,7 @@ delayed_action_wait_for_nl_response_complete(NMPlatform             *platform,
         break;
     }
 
-    g_array_remove_index_fast(priv->delayed_action.list_wait_for_nl_response, idx);
+    g_array_remove_index_fast(priv->delayed_action.list_wait_for_response_rtnl, idx);
 }
 
 static void
@@ -6079,9 +6090,9 @@ delayed_action_wait_for_nl_response_complete_check(NMPlatform             *platf
     gint64                  next_timeout_abs_ns = 0;
     gint64                  now_nsec            = 0;
 
-    for (i = 0; i < priv->delayed_action.list_wait_for_nl_response->len;) {
+    for (i = 0; i < priv->delayed_action.list_wait_for_response_rtnl->len;) {
         const DelayedActionWaitForNlResponseData *data =
-            &g_array_index(priv->delayed_action.list_wait_for_nl_response,
+            &g_array_index(priv->delayed_action.list_wait_for_response_rtnl,
                            DelayedActionWaitForNlResponseData,
                            i);
 
@@ -6108,8 +6119,8 @@ delayed_action_wait_for_nl_response_complete_check(NMPlatform             *platf
 
     if (force_result != WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN) {
         nm_assert(
-            !NM_FLAGS_HAS(priv->delayed_action.flags, DELAYED_ACTION_TYPE_WAIT_FOR_NL_RESPONSE));
-        nm_assert(priv->delayed_action.list_wait_for_nl_response->len == 0);
+            !NM_FLAGS_HAS(priv->delayed_action.flags, DELAYED_ACTION_TYPE_WAIT_FOR_RESPONSE_RTNL));
+        nm_assert(priv->delayed_action.list_wait_for_response_rtnl->len == 0);
     }
 
     NM_SET_OUT(out_next_seq_number, next_seq_number);
@@ -6243,9 +6254,9 @@ delayed_action_handle_one(NMPlatform *platform)
         return TRUE;
     }
 
-    if (NM_FLAGS_HAS(priv->delayed_action.flags, DELAYED_ACTION_TYPE_WAIT_FOR_NL_RESPONSE)) {
-        nm_assert(priv->delayed_action.list_wait_for_nl_response->len > 0);
-        _LOGt_delayed_action(DELAYED_ACTION_TYPE_WAIT_FOR_NL_RESPONSE, NULL, "handle");
+    if (NM_FLAGS_HAS(priv->delayed_action.flags, DELAYED_ACTION_TYPE_WAIT_FOR_RESPONSE_RTNL)) {
+        nm_assert(priv->delayed_action.list_wait_for_response_rtnl->len > 0);
+        _LOGt_delayed_action(DELAYED_ACTION_TYPE_WAIT_FOR_RESPONSE_RTNL, NULL, "handle");
         delayed_action_handle_WAIT_FOR_NL_RESPONSE(platform);
         return TRUE;
     }
@@ -6298,14 +6309,14 @@ delayed_action_schedule(NMPlatform *platform, DelayedActionType action_type, gpo
             < 0)
             g_ptr_array_add(priv->delayed_action.list_master_connected, user_data);
         break;
-    case DELAYED_ACTION_TYPE_WAIT_FOR_NL_RESPONSE:
-        g_array_append_vals(priv->delayed_action.list_wait_for_nl_response, user_data, 1);
+    case DELAYED_ACTION_TYPE_WAIT_FOR_RESPONSE_RTNL:
+        g_array_append_vals(priv->delayed_action.list_wait_for_response_rtnl, user_data, 1);
         break;
     default:
         nm_assert(!user_data);
         nm_assert(!NM_FLAGS_HAS(action_type, DELAYED_ACTION_TYPE_REFRESH_LINK));
         nm_assert(!NM_FLAGS_HAS(action_type, DELAYED_ACTION_TYPE_MASTER_CONNECTED));
-        nm_assert(!NM_FLAGS_HAS(action_type, DELAYED_ACTION_TYPE_WAIT_FOR_NL_RESPONSE));
+        nm_assert(!NM_FLAGS_HAS(action_type, DELAYED_ACTION_TYPE_WAIT_FOR_RESPONSE_RTNL));
         break;
     }
 
@@ -6322,14 +6333,15 @@ delayed_action_schedule_refresh_all(NMPlatform *platform)
 {
     DelayedActionType action_type;
 
-    action_type =
-        DELAYED_ACTION_TYPE_REFRESH_ALL_LINKS | DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ADDRESSES
-        | DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ADDRESSES | DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ROUTES
-        | DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ROUTES
-        | DELAYED_ACTION_TYPE_REFRESH_ALL_ROUTING_RULES_ALL;
+    action_type = DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_LINKS
+                  | DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_IP4_ADDRESSES
+                  | DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_IP6_ADDRESSES
+                  | DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_IP4_ROUTES
+                  | DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_IP6_ROUTES
+                  | DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_ROUTING_RULES_ALL;
     if (nm_platform_get_cache_tc(platform)) {
-        action_type |=
-            (DELAYED_ACTION_TYPE_REFRESH_ALL_QDISCS | DELAYED_ACTION_TYPE_REFRESH_ALL_TFILTERS);
+        action_type |= (DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_QDISCS
+                        | DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_TFILTERS);
     }
 
     delayed_action_schedule(platform, action_type, NULL);
@@ -6353,7 +6365,7 @@ delayed_action_schedule_WAIT_FOR_NL_RESPONSE(NMPlatform                        *
         .response.out_data = response_out_data,
     };
 
-    delayed_action_schedule(platform, DELAYED_ACTION_TYPE_WAIT_FOR_NL_RESPONSE, &data);
+    delayed_action_schedule(platform, DELAYED_ACTION_TYPE_WAIT_FOR_RESPONSE_RTNL, &data);
 }
 
 /*****************************************************************************/
@@ -6488,17 +6500,18 @@ cache_on_change(NMPlatform      *platform,
                 ifindex = obj_new->link.ifindex;
 
             if (ifindex > 0) {
-                delayed_action_schedule(platform,
-                                        DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ADDRESSES
-                                            | DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ADDRESSES
-                                            | DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ROUTES
-                                            | DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ROUTES
-                                            | DELAYED_ACTION_TYPE_REFRESH_ALL_ROUTING_RULES_ALL
-                                            | (nm_platform_get_cache_tc(platform)
-                                                   ? (DELAYED_ACTION_TYPE_REFRESH_ALL_QDISCS
-                                                      | DELAYED_ACTION_TYPE_REFRESH_ALL_TFILTERS)
-                                                   : DELAYED_ACTION_TYPE_NONE),
-                                        NULL);
+                delayed_action_schedule(
+                    platform,
+                    DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_IP4_ADDRESSES
+                        | DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_IP6_ADDRESSES
+                        | DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_IP4_ROUTES
+                        | DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_IP6_ROUTES
+                        | DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_ROUTING_RULES_ALL
+                        | (nm_platform_get_cache_tc(platform)
+                               ? (DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_QDISCS
+                                  | DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_TFILTERS)
+                               : DELAYED_ACTION_TYPE_NONE),
+                    NULL);
             }
         }
         {
@@ -6546,8 +6559,8 @@ cache_on_change(NMPlatform      *platform,
                  * think kernel does send RTM_DELROUTE events for IPv6 routes, so
                  * we might not need to refresh IPv6 routes. */
                 delayed_action_schedule(platform,
-                                        DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ROUTES
-                                            | DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ROUTES,
+                                        DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_IP4_ROUTES
+                                            | DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_IP6_ROUTES,
                                         NULL);
             }
         }
@@ -6655,8 +6668,8 @@ cache_on_change(NMPlatform      *platform,
         if (cache_op == NMP_CACHE_OPS_REMOVED) {
             delayed_action_schedule(platform,
                                     (klass->obj_type == NMP_OBJECT_TYPE_IP4_ADDRESS)
-                                        ? DELAYED_ACTION_TYPE_REFRESH_ALL_IP4_ROUTES
-                                        : DELAYED_ACTION_TYPE_REFRESH_ALL_IP6_ROUTES,
+                                        ? DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_IP4_ROUTES
+                                        : DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_IP6_ROUTES,
                                     NULL);
         }
     } break;
@@ -6804,7 +6817,7 @@ do_request_link_no_delayed_actions(NMPlatform *platform, int ifindex, const char
 
         entry = nmp_cache_lookup_entry_link(nm_platform_get_cache(platform), ifindex);
         if (entry) {
-            priv->pruning[REFRESH_ALL_TYPE_LINKS] += 1;
+            priv->pruning[REFRESH_ALL_TYPE_RTNL_LINKS] += 1;
             nm_dedup_multi_entry_set_dirty(entry, TRUE);
         }
     }
@@ -6899,14 +6912,14 @@ do_request_all_no_delayed_actions(NMPlatform *platform, DelayedActionType action
      * cache lookup for every entry.
      *
      * Avoid that, by special casing routing-rules here. */
-    if (NM_FLAGS_ALL(action_type_prune, DELAYED_ACTION_TYPE_REFRESH_ALL_ROUTING_RULES_ALL)) {
+    if (NM_FLAGS_ALL(action_type_prune, DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_ROUTING_RULES_ALL)) {
         NMPLookup lookup;
 
-        priv->pruning[REFRESH_ALL_TYPE_ROUTING_RULES_IP4] += 1;
-        priv->pruning[REFRESH_ALL_TYPE_ROUTING_RULES_IP6] += 1;
+        priv->pruning[REFRESH_ALL_TYPE_RTNL_ROUTING_RULES_IP4] += 1;
+        priv->pruning[REFRESH_ALL_TYPE_RTNL_ROUTING_RULES_IP6] += 1;
         nmp_lookup_init_obj_type(&lookup, NMP_OBJECT_TYPE_ROUTING_RULE);
         nmp_cache_dirty_set_all_main(nm_platform_get_cache(platform), &lookup);
-        action_type_prune &= ~DELAYED_ACTION_TYPE_REFRESH_ALL_ROUTING_RULES_ALL;
+        action_type_prune &= ~DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_ROUTING_RULES_ALL;
     }
 
     FOR_EACH_DELAYED_ACTION (iflags, action_type_prune) {
@@ -6933,7 +6946,7 @@ do_request_all_no_delayed_actions(NMPlatform *platform, DelayedActionType action
         priv->delayed_action.flags &= ~iflags;
         _LOGt_delayed_action(iflags, NULL, "handle (do-request-all)");
 
-        if (refresh_all_type == REFRESH_ALL_TYPE_LINKS) {
+        if (refresh_all_type == REFRESH_ALL_TYPE_RTNL_LINKS) {
             nm_assert(
                 (priv->delayed_action.list_refresh_link->len > 0)
                 == NM_FLAGS_HAS(priv->delayed_action.flags, DELAYED_ACTION_TYPE_REFRESH_LINK));
@@ -6988,11 +7001,11 @@ event_seq_check_refresh_all(NMPlatform *platform, guint32 seq_number)
     if (NM_IN_SET(seq_number, 0, priv->nlh_seq_last_seen))
         return;
 
-    if (NM_FLAGS_HAS(priv->delayed_action.flags, DELAYED_ACTION_TYPE_WAIT_FOR_NL_RESPONSE)) {
-        nm_assert(priv->delayed_action.list_wait_for_nl_response->len > 0);
+    if (NM_FLAGS_HAS(priv->delayed_action.flags, DELAYED_ACTION_TYPE_WAIT_FOR_RESPONSE_RTNL)) {
+        nm_assert(priv->delayed_action.list_wait_for_response_rtnl->len > 0);
 
-        for (i = 0; i < priv->delayed_action.list_wait_for_nl_response->len; i++) {
-            data = &g_array_index(priv->delayed_action.list_wait_for_nl_response,
+        for (i = 0; i < priv->delayed_action.list_wait_for_response_rtnl->len; i++) {
+            data = &g_array_index(priv->delayed_action.list_wait_for_response_rtnl,
                                   DelayedActionWaitForNlResponseData,
                                   i);
 
@@ -7022,11 +7035,11 @@ event_seq_check(NMPlatform             *platform,
     if (seq_number == 0)
         return;
 
-    if (NM_FLAGS_HAS(priv->delayed_action.flags, DELAYED_ACTION_TYPE_WAIT_FOR_NL_RESPONSE)) {
-        nm_assert(priv->delayed_action.list_wait_for_nl_response->len > 0);
+    if (NM_FLAGS_HAS(priv->delayed_action.flags, DELAYED_ACTION_TYPE_WAIT_FOR_RESPONSE_RTNL)) {
+        nm_assert(priv->delayed_action.list_wait_for_response_rtnl->len > 0);
 
-        for (i = 0; i < priv->delayed_action.list_wait_for_nl_response->len; i++) {
-            data = &g_array_index(priv->delayed_action.list_wait_for_nl_response,
+        for (i = 0; i < priv->delayed_action.list_wait_for_response_rtnl->len; i++) {
+            data = &g_array_index(priv->delayed_action.list_wait_for_response_rtnl,
                                   DelayedActionWaitForNlResponseData,
                                   i);
 
@@ -7148,13 +7161,13 @@ _rtnl_handle_msg(NMPlatform *platform, const struct nl_msg_lite *msg, gboolean h
                 nm_assert(is_ipv6 || !nmp_object_is_alive(obj));
                 priv = NM_LINUX_PLATFORM_GET_PRIVATE(platform);
                 if (NM_FLAGS_HAS(priv->delayed_action.flags,
-                                 DELAYED_ACTION_TYPE_WAIT_FOR_NL_RESPONSE)) {
+                                 DELAYED_ACTION_TYPE_WAIT_FOR_RESPONSE_RTNL)) {
                     guint i;
 
-                    nm_assert(priv->delayed_action.list_wait_for_nl_response->len > 0);
-                    for (i = 0; i < priv->delayed_action.list_wait_for_nl_response->len; i++) {
+                    nm_assert(priv->delayed_action.list_wait_for_response_rtnl->len > 0);
+                    for (i = 0; i < priv->delayed_action.list_wait_for_response_rtnl->len; i++) {
                         DelayedActionWaitForNlResponseData *data =
-                            &g_array_index(priv->delayed_action.list_wait_for_nl_response,
+                            &g_array_index(priv->delayed_action.list_wait_for_response_rtnl,
                                            DelayedActionWaitForNlResponseData,
                                            i);
 
@@ -9546,7 +9559,7 @@ event_handler_read_netlink(NMPlatform *platform, gboolean wait_for_acks)
 
 after_read:
 
-        if (!NM_FLAGS_HAS(priv->delayed_action.flags, DELAYED_ACTION_TYPE_WAIT_FOR_NL_RESPONSE))
+        if (!NM_FLAGS_HAS(priv->delayed_action.flags, DELAYED_ACTION_TYPE_WAIT_FOR_RESPONSE_RTNL))
             return any;
 
         delayed_action_wait_for_nl_response_complete_check(platform,
@@ -9556,7 +9569,8 @@ after_read:
                                                            &next.now_nsec);
 
         if (!wait_for_acks
-            || !NM_FLAGS_HAS(priv->delayed_action.flags, DELAYED_ACTION_TYPE_WAIT_FOR_NL_RESPONSE))
+            || !NM_FLAGS_HAS(priv->delayed_action.flags,
+                             DELAYED_ACTION_TYPE_WAIT_FOR_RESPONSE_RTNL))
             return any;
 
         nm_assert(next.seq_number);
@@ -9742,7 +9756,7 @@ nm_linux_platform_init(NMLinuxPlatform *self)
 
     priv->delayed_action.list_master_connected = g_ptr_array_new();
     priv->delayed_action.list_refresh_link     = g_ptr_array_new();
-    priv->delayed_action.list_wait_for_nl_response =
+    priv->delayed_action.list_wait_for_response_rtnl =
         g_array_new(FALSE, TRUE, sizeof(DelayedActionWaitForNlResponseData));
 }
 
@@ -9816,7 +9830,7 @@ constructed(GObject *_object)
           nl_socket_get_local_port(priv->sk_rtnl),
           fd);
 
-    priv->rtnl_event_source =
+    priv->event_source_rtnl =
         nm_g_unix_fd_add_source(fd,
                                 G_IO_IN | G_IO_NVAL | G_IO_PRI | G_IO_ERR | G_IO_HUP,
                                 rtnl_event_handler,
@@ -9928,11 +9942,11 @@ finalize(GObject *object)
 
     g_ptr_array_unref(priv->delayed_action.list_master_connected);
     g_ptr_array_unref(priv->delayed_action.list_refresh_link);
-    g_array_unref(priv->delayed_action.list_wait_for_nl_response);
+    g_array_unref(priv->delayed_action.list_wait_for_response_rtnl);
 
     nl_socket_free(priv->sk_genl_sync);
 
-    nm_clear_g_source_inst(&priv->rtnl_event_source);
+    nm_clear_g_source_inst(&priv->event_source_rtnl);
 
     nl_socket_free(priv->sk_rtnl);
 
