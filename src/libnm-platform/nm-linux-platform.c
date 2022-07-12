@@ -365,21 +365,21 @@ typedef enum _nm_packed {
     DELAYED_ACTION_TYPE_MAX = __DELAYED_ACTION_TYPE_MAX - 1,
 } DelayedActionType;
 
-#define FOR_EACH_DELAYED_ACTION(iflags, flags_all)          \
-    for ((iflags) = (DelayedActionType) 0x1LL; ({           \
-             gboolean _good = FALSE;                        \
-                                                            \
-             nm_assert(nm_utils_is_power_of_two(iflags));   \
-                                                            \
-             while ((iflags) <= DELAYED_ACTION_TYPE_MAX) {  \
-                 if (NM_FLAGS_ANY((flags_all), (iflags))) { \
-                     _good = TRUE;                          \
-                     break;                                 \
-                 }                                          \
-                 (iflags) <<= 1;                            \
-             }                                              \
-             _good;                                         \
-         });                                                \
+#define FOR_EACH_DELAYED_ACTION(iflags, flags_all)                          \
+    for ((iflags) = (DelayedActionType) 0x1LL; ({                           \
+             gboolean _good = FALSE;                                        \
+                                                                            \
+             nm_assert((iflags) == 0 || nm_utils_is_power_of_two(iflags));  \
+                                                                            \
+             while ((iflags) != 0 && (iflags) <= DELAYED_ACTION_TYPE_MAX) { \
+                 if (NM_FLAGS_ANY((flags_all), (iflags))) {                 \
+                     _good = TRUE;                                          \
+                     break;                                                 \
+                 }                                                          \
+                 (iflags) <<= 1;                                            \
+             }                                                              \
+             _good;                                                         \
+         });                                                                \
          (iflags) <<= 1)
 
 typedef enum _nm_packed {
