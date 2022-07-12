@@ -37,9 +37,9 @@
 
 struct NMWpanUtils {
     GObject         parent;
-    int             ifindex;
     struct nl_sock *nl_sock;
-    int             id;
+    int             ifindex;
+    guint16         genl_family_id;
 };
 
 typedef struct {
@@ -75,12 +75,12 @@ error_handler(struct sockaddr_nl *nla, struct nlmsgerr *err, void *arg)
 }
 
 static struct nl_msg *
-_nl802154_alloc_msg(int id, int ifindex, guint32 cmd, guint32 flags)
+_nl802154_alloc_msg(guint16 genl_family_id, int ifindex, guint32 cmd, guint32 flags)
 {
     nm_auto_nlmsg struct nl_msg *msg = NULL;
 
     msg = nlmsg_alloc();
-    genlmsg_put(msg, 0, 0, id, 0, flags, cmd, 0);
+    genlmsg_put(msg, 0, 0, genl_family_id, 0, flags, cmd, 0);
     NLA_PUT_U32(msg, NL802154_ATTR_IFINDEX, ifindex);
     return g_steal_pointer(&msg);
 
@@ -91,7 +91,7 @@ nla_put_failure:
 static struct nl_msg *
 nl802154_alloc_msg(NMWpanUtils *self, guint32 cmd, guint32 flags)
 {
-    return _nl802154_alloc_msg(self->id, self->ifindex, cmd, flags);
+    return _nl802154_alloc_msg(self->genl_family_id, self->ifindex, cmd, flags);
 }
 
 static int
@@ -264,7 +264,7 @@ nm_wpan_utils_class_init(NMWpanUtilsClass *klass)
 {}
 
 NMWpanUtils *
-nm_wpan_utils_new(int ifindex, struct nl_sock *genl, gboolean check_scan)
+nm_wpan_utils_new(struct nl_sock *genl, guint16 genl_family_id, int ifindex, gboolean check_scan)
 {
     NMWpanUtils *self;
 
@@ -273,16 +273,13 @@ nm_wpan_utils_new(int ifindex, struct nl_sock *genl, gboolean check_scan)
     if (!genl)
         return NULL;
 
-    self          = g_object_new(NM_TYPE_WPAN_UTILS, NULL);
-    self->ifindex = ifindex;
-    self->nl_sock = genl;
-    self->id      = genl_ctrl_resolve(genl, "nl802154");
-
-    if (self->id < 0) {
-        _LOGD(LOGD_PLATFORM, "genl_ctrl_resolve: failed to resolve \"nl802154\"");
-        g_object_unref(self);
+    if (!genl_family_id)
         return NULL;
-    }
+
+    self                 = g_object_new(NM_TYPE_WPAN_UTILS, NULL);
+    self->ifindex        = ifindex;
+    self->nl_sock        = genl;
+    self->genl_family_id = genl_family_id;
 
     return self;
 }
