@@ -3303,10 +3303,11 @@ _new_from_nl_link(NMPlatform            *platform,
                 TRUE);
             break;
         case NM_LINK_TYPE_WPAN:
-            obj->_link.ext_data =
-                (GObject *) nm_wpan_utils_new(ifi->ifi_index,
-                                              NM_LINUX_PLATFORM_GET_PRIVATE(platform)->sk_genl_sync,
-                                              TRUE);
+            obj->_link.ext_data = (GObject *) nm_wpan_utils_new(
+                NM_LINUX_PLATFORM_GET_PRIVATE(platform)->sk_genl_sync,
+                nm_platform_genl_get_family_id(platform, NMP_GENL_FAMILY_TYPE_NL802154),
+                ifi->ifi_index,
+                TRUE);
             break;
         default:
             g_assert_not_reached();
