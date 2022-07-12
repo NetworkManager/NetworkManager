@@ -32,16 +32,16 @@ nm_wifi_utils_class_init(NMWifiUtilsClass *klass)
 {}
 
 NMWifiUtils *
-nm_wifi_utils_new(int ifindex, struct nl_sock *genl, gboolean check_scan)
+nm_wifi_utils_new(struct nl_sock *genl, guint16 genl_family_id, int ifindex, gboolean check_scan)
 {
     NMWifiUtils *ret;
 
     g_return_val_if_fail(ifindex > 0, NULL);
 
-    ret = nm_wifi_utils_nl80211_new(ifindex, genl);
+    ret = nm_wifi_utils_nl80211_new(genl, genl_family_id, ifindex);
 
 #if HAVE_WEXT
-    if (ret == NULL)
+    if (!ret)
         ret = nm_wifi_utils_wext_new(ifindex, check_scan);
 #endif
 

@@ -46,9 +46,9 @@ typedef struct {
     NMWifiUtils     parent;
     struct nl_sock *nl_sock;
     guint32        *freqs;
-    int             id;
     int             num_freqs;
     int             phy;
+    guint16         genl_family_id;
     bool            can_wowlan : 1;
 } NMWifiUtilsNl80211;
 
@@ -83,12 +83,12 @@ error_handler(struct sockaddr_nl *nla, struct nlmsgerr *err, void *arg)
 }
 
 static struct nl_msg *
-_nl80211_alloc_msg(int id, int ifindex, int phy, guint32 cmd, guint32 flags)
+_nl80211_alloc_msg(guint16 genl_family_id, int ifindex, int phy, guint32 cmd, guint32 flags)
 {
     nm_auto_nlmsg struct nl_msg *msg = NULL;
 
     msg = nlmsg_alloc();
-    genlmsg_put(msg, 0, 0, id, 0, flags, cmd, 0);
+    genlmsg_put(msg, 0, 0, genl_family_id, 0, flags, cmd, 0);
     NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX, ifindex);
     if (phy != -1)
         NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, phy);
@@ -101,7 +101,7 @@ nla_put_failure:
 static struct nl_msg *
 nl80211_alloc_msg(NMWifiUtilsNl80211 *self, guint32 cmd, guint32 flags)
 {
-    return _nl80211_alloc_msg(self->id, self->parent.ifindex, self->phy, cmd, flags);
+    return _nl80211_alloc_msg(self->genl_family_id, self->parent.ifindex, self->phy, cmd, flags);
 }
 
 static int
@@ -945,7 +945,7 @@ nm_wifi_utils_nl80211_class_init(NMWifiUtilsNl80211Class *klass)
 }
 
 NMWifiUtils *
-nm_wifi_utils_nl80211_new(int ifindex, struct nl_sock *genl)
+nm_wifi_utils_nl80211_new(struct nl_sock *genl, guint16 genl_family_id, int ifindex)
 {
     gs_unref_object NMWifiUtilsNl80211 *self        = NULL;
     nm_auto_nlmsg struct nl_msg        *msg         = NULL;
@@ -954,16 +954,14 @@ nm_wifi_utils_nl80211_new(int ifindex, struct nl_sock *genl)
     if (!genl)
         return NULL;
 
+    if (genl_family_id == 0)
+        return NULL;
+
     self = g_object_new(NM_TYPE_WIFI_UTILS_NL80211, NULL);
 
     self->parent.ifindex = ifindex;
     self->nl_sock        = genl;
-
-    self->id = genl_ctrl_resolve(self->nl_sock, "nl80211");
-    if (self->id < 0) {
-        _LOGD("genl_ctrl_resolve: failed to resolve \"nl80211\"");
-        return NULL;
-    }
+    self->genl_family_id = genl_family_id;
 
     self->phy = -1;
 

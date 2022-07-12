@@ -24,6 +24,6 @@
 
 GType nm_wifi_utils_nl80211_get_type(void);
 
-NMWifiUtils *nm_wifi_utils_nl80211_new(int ifindex, struct nl_sock *genl);
+NMWifiUtils *nm_wifi_utils_nl80211_new(struct nl_sock *genl, guint16 genl_family_id, int ifindex);
 
 #endif /* __WIFI_UTILS_NL80211_H__ */

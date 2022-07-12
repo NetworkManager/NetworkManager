@@ -3296,10 +3296,11 @@ _new_from_nl_link(NMPlatform            *platform,
         switch (obj->link.type) {
         case NM_LINK_TYPE_WIFI:
         case NM_LINK_TYPE_OLPC_MESH:
-            obj->_link.ext_data =
-                (GObject *) nm_wifi_utils_new(ifi->ifi_index,
-                                              NM_LINUX_PLATFORM_GET_PRIVATE(platform)->sk_genl_sync,
-                                              TRUE);
+            obj->_link.ext_data = (GObject *) nm_wifi_utils_new(
+                NM_LINUX_PLATFORM_GET_PRIVATE(platform)->sk_genl_sync,
+                nm_platform_genl_get_family_id(platform, NMP_GENL_FAMILY_TYPE_NL80211),
+                ifi->ifi_index,
+                TRUE);
             break;
         case NM_LINK_TYPE_WPAN:
             obj->_link.ext_data =
