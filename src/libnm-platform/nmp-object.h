@@ -238,11 +238,6 @@ typedef struct {
 
     /* Auxiliary data object for Wi-Fi and WPAN */
     GObject *ext_data;
-
-    /* FIXME: not every NMPObjectLink should pay the price for tracking
-     * the wireguard family id. This should be tracked via ext_data, which
-     * would be exactly the right place. */
-    int wireguard_family_id;
 } NMPObjectLink;
 
 typedef struct {
