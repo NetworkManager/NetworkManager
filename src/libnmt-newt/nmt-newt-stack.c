@@ -166,8 +166,7 @@ nmt_newt_stack_child_validity_changed(NmtNewtContainer *container, NmtNewtWidget
         return;
 
     if (priv->children->pdata[priv->active] == (gpointer) widget) {
-        NMT_NEWT_CONTAINER_CLASS(nmt_newt_stack_parent_class)
-            ->child_validity_changed(container, widget);
+        nmt_newt_widget_set_valid(NMT_NEWT_WIDGET(container), nmt_newt_widget_get_valid(widget));
     }
 }
 
@@ -190,6 +189,7 @@ nmt_newt_stack_set_active(NmtNewtStack *stack, guint active)
     g_object_notify(G_OBJECT(stack), "active");
     g_object_notify(G_OBJECT(stack), "active-id");
     nmt_newt_widget_needs_rebuild(NMT_NEWT_WIDGET(stack));
+    nmt_newt_stack_child_validity_changed(NMT_NEWT_CONTAINER(stack), priv->children->pdata[active]);
 }
 
 /**
@@ -230,6 +230,8 @@ nmt_newt_stack_set_active_id(NmtNewtStack *stack, const char *id)
             g_object_notify(G_OBJECT(stack), "active");
             g_object_notify(G_OBJECT(stack), "active-id");
             nmt_newt_widget_needs_rebuild(NMT_NEWT_WIDGET(stack));
+            nmt_newt_stack_child_validity_changed(NMT_NEWT_CONTAINER(stack),
+                                                  priv->children->pdata[i]);
             return;
         }
     }
