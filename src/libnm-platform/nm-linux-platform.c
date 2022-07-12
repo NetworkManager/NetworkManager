@@ -2493,7 +2493,7 @@ _wireguard_get_device_cb(struct nl_msg *msg, void *arg)
 static const NMPObject *
 _wireguard_read_info(NMPlatform     *platform /* used only as logging context */,
                      struct nl_sock *genl,
-                     int             wireguard_family_id,
+                     guint16         wireguard_family_id,
                      int             ifindex)
 {
     nm_auto_nlmsg struct nl_msg *msg = NULL;
@@ -2507,10 +2507,12 @@ _wireguard_read_info(NMPlatform     *platform /* used only as logging context */
     guint i;
 
     nm_assert(genl);
-    nm_assert(wireguard_family_id >= 0);
     nm_assert(ifindex > 0);
 
-    _LOGT("wireguard: fetching information for ifindex %d (genl-id %d)...",
+    if (wireguard_family_id == 0)
+        return NULL;
+
+    _LOGT("wireguard: fetching information for ifindex %d (genl-id %u)...",
           ifindex,
           wireguard_family_id);
 
@@ -2623,25 +2625,8 @@ nla_put_failure:
     g_return_val_if_reached(NULL);
 }
 
-static int
-_wireguard_get_family_id(NMPlatform *platform, int ifindex_try)
-{
-    NMLinuxPlatformPrivate *priv                = NM_LINUX_PLATFORM_GET_PRIVATE(platform);
-    int                     wireguard_family_id = -1;
-
-    if (ifindex_try > 0) {
-        const NMPlatformLink *plink;
-
-        if (nm_platform_link_get_lnk_wireguard(platform, ifindex_try, &plink))
-            wireguard_family_id = NMP_OBJECT_UP_CAST(plink)->_link.wireguard_family_id;
-    }
-    if (wireguard_family_id < 0)
-        wireguard_family_id = genl_ctrl_resolve(priv->sk_genl_sync, "wireguard");
-    return wireguard_family_id;
-}
-
 static const NMPObject *
-_wireguard_refresh_link(NMPlatform *platform, int wireguard_family_id, int ifindex)
+_wireguard_refresh_link(NMPlatform *platform, guint16 wireguard_family_id, int ifindex)
 {
     NMLinuxPlatformPrivate         *priv    = NM_LINUX_PLATFORM_GET_PRIVATE(platform);
     nm_auto_nmpobj const NMPObject *obj_old = NULL;
@@ -2651,7 +2636,7 @@ _wireguard_refresh_link(NMPlatform *platform, int wireguard_family_id, int ifind
     const NMPObject                *plink = NULL;
     nm_auto_nmpobj NMPObject       *obj   = NULL;
 
-    nm_assert(wireguard_family_id >= 0);
+    nm_assert(wireguard_family_id > 0);
     nm_assert(ifindex > 0);
 
     nm_platform_process_events(platform);
@@ -2676,15 +2661,13 @@ _wireguard_refresh_link(NMPlatform *platform, int wireguard_family_id, int ifind
         }
     }
 
-    if (plink->_link.wireguard_family_id == wireguard_family_id
-        && plink->_link.netlink.lnk == lnk_new)
+    if (plink->_link.netlink.lnk == lnk_new)
         return plink;
 
     /* we use nmp_cache_update_netlink() to re-inject the new object into the cache.
      * For that, we need to clone it, and tweak it so that it's suitable. It's a bit
      * of a hack, in particular that we need to clear driver and udev-device. */
-    obj                            = nmp_object_clone(plink, FALSE);
-    obj->_link.wireguard_family_id = wireguard_family_id;
+    obj = nmp_object_clone(plink, FALSE);
     nmp_object_unref(obj->_link.netlink.lnk);
     obj->_link.netlink.lnk = g_steal_pointer(&lnk_new);
     obj->link.driver       = NULL;
@@ -2710,7 +2693,7 @@ _wireguard_refresh_link(NMPlatform *platform, int wireguard_family_id, int ifind
 static int
 _wireguard_create_change_nlmsgs(NMPlatform                               *platform,
                                 int                                       ifindex,
-                                int                                       wireguard_family_id,
+                                guint16                                   wireguard_family_id,
                                 const NMPlatformLnkWireGuard             *lnk_wireguard,
                                 const NMPWireGuardPeer                   *peers,
                                 const NMPlatformWireGuardChangePeerFlags *peer_flags,
@@ -2952,12 +2935,12 @@ link_wireguard_change(NMPlatform                               *platform,
 {
     NMLinuxPlatformPrivate      *priv = NM_LINUX_PLATFORM_GET_PRIVATE(platform);
     gs_unref_ptrarray GPtrArray *msgs = NULL;
-    int                          wireguard_family_id;
+    guint16                      wireguard_family_id;
     guint                        i;
     int                          r;
 
-    wireguard_family_id = _wireguard_get_family_id(platform, ifindex);
-    if (wireguard_family_id < 0)
+    wireguard_family_id = nm_platform_genl_get_family_id(platform, NMP_GENL_FAMILY_TYPE_WIREGUARD);
+    if (wireguard_family_id == 0)
         return -NME_PL_NO_FIRMWARE;
 
     r = _wireguard_create_change_nlmsgs(platform,
@@ -3337,22 +3320,11 @@ _new_from_nl_link(NMPlatform            *platform,
          * notifications, so we don't actually update the cache. For
          * now, always refetch link data here. */
 
-        _lookup_cached_link(cache, obj->link.ifindex, completed_from_cache, &link_cached);
-        if (link_cached && link_cached->_link.netlink.is_in_netlink
-            && link_cached->link.type == NM_LINK_TYPE_WIREGUARD)
-            obj->_link.wireguard_family_id = link_cached->_link.wireguard_family_id;
-        else
-            obj->_link.wireguard_family_id = -1;
-
-        if (obj->_link.wireguard_family_id < 0)
-            obj->_link.wireguard_family_id = genl_ctrl_resolve(genl, "wireguard");
-
-        if (obj->_link.wireguard_family_id >= 0) {
-            lnk_data_new = _wireguard_read_info(platform,
-                                                genl,
-                                                obj->_link.wireguard_family_id,
-                                                obj->link.ifindex);
-        }
+        lnk_data_new = _wireguard_read_info(
+            platform,
+            genl,
+            nm_platform_genl_get_family_id(platform, NMP_GENL_FAMILY_TYPE_WIREGUARD),
+            obj->link.ifindex);
 
         if (lnk_data_new && obj->_link.netlink.lnk
             && nmp_object_equal(obj->_link.netlink.lnk, lnk_data_new))
