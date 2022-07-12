@@ -7,6 +7,8 @@ Overview of changes since NetworkManager-1.36.6
   helps with source address selection.
 * Fix and change order of IPv4 and IPv6 addresses. The order affects
   the priority for source address selection.
+* ppp: fix problems with IPv6 enabled.
+* Various minor bugfixes.
 
 ===============================================
 NetworkManager-1.36.6
