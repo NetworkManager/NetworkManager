@@ -375,9 +375,9 @@ def destroy_nmc(nmc_holder):
     finished = []
 
     def _weak_ref_cb():
-        if not finished:
-            log(f"[destroy_nmc]: context busy watcher is gone")
-            finished.append(True)
+        log(f"[destroy_nmc]: context busy watcher is gone")
+        finished.clear()
+        finished.append(True)
 
     # We take a weak ref on the context-busy-watcher object and give up
     # our reference on nmc. This must be the last reference, which initiates
