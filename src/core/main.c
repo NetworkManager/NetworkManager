@@ -293,6 +293,7 @@ main(int argc, char *argv[])
     GError                 *error_invalid_logging_config = NULL;
     const char *const      *warnings;
     int                     errsv;
+    gboolean                has_logging = FALSE;
 
     _nm_utils_is_manager_process = TRUE;
 
@@ -354,10 +355,14 @@ main(int argc, char *argv[])
         g_free(path);
     }
 
-    if (!nm_logging_setup(global_opt.opt_log_level,
-                          global_opt.opt_log_domains,
-                          &bad_domains,
-                          &error)) {
+    if (nm_strv_find_first(nm_utils_proc_cmdline_split(), -1, "nm.debug") >= 0) {
+        /* we honor kernel command line. If "nm.debug" is set, we always enable trace logging. */
+        nm_logging_setup("TRACE", "ALL", NULL, NULL);
+        has_logging = TRUE;
+    } else if (!nm_logging_setup(global_opt.opt_log_level,
+                                 global_opt.opt_log_domains,
+                                 &bad_domains,
+                                 &error)) {
         fprintf(stderr,
                 _("%s.  Please use --help to see a list of valid options.\n"),
                 error->message);
@@ -379,7 +384,7 @@ main(int argc, char *argv[])
     /* Initialize logging from config file *only* if not explicitly
      * specified by commandline.
      */
-    if (global_opt.opt_log_level == NULL && global_opt.opt_log_domains == NULL) {
+    if (!has_logging && !global_opt.opt_log_level && !global_opt.opt_log_domains) {
         if (!nm_logging_setup(nm_config_get_log_level(config),
                               nm_config_get_log_domains(config),
                               &bad_domains,
