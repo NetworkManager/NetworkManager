@@ -1292,6 +1292,12 @@ nm_platform_link_add(NMPlatform            *self,
                                                      buf_p,
                                                      buf_len);
                    break;
+               case NM_LINK_TYPE_BOND:
+                   nm_strbuf_append_str(&buf_p, &buf_len, ", ");
+                   nm_platform_lnk_bond_to_string((const NMPlatformLnkBond *) extra_data,
+                                                  buf_p,
+                                                  buf_len);
+                   break;
                default:
                    nm_assert(!extra_data);
                    break;
@@ -1331,6 +1337,12 @@ nm_platform_link_change(NMPlatform *self, NMLinkType type, int ifindex, gconstpo
                    nm_platform_lnk_bridge_to_string((const NMPlatformLnkBridge *) extra_data,
                                                     buf_p,
                                                     buf_len);
+                   break;
+               case NM_LINK_TYPE_BOND:
+                   nm_strbuf_append_str(&buf_p, &buf_len, ", ");
+                   nm_platform_lnk_bond_to_string((const NMPlatformLnkBond *) extra_data,
+                                                  buf_p,
+                                                  buf_len);
                    break;
                default:
                    nm_assert(!extra_data);
@@ -2230,6 +2242,12 @@ _link_get_lnk(NMPlatform *self, int ifindex, NMLinkType link_type, const NMPlatf
 
     lnk = nm_platform_link_get_lnk(self, ifindex, link_type, out_link);
     return lnk ? &lnk->object : NULL;
+}
+
+const NMPlatformLnkBond *
+nm_platform_link_get_lnk_bond(NMPlatform *self, int ifindex, const NMPlatformLink **out_link)
+{
+    return _link_get_lnk(self, ifindex, NM_LINK_TYPE_BOND, out_link);
 }
 
 const NMPlatformLnkBridge *
@@ -5976,6 +5994,69 @@ nm_platform_lnk_bridge_to_string(const NMPlatformLnkBridge *lnk, char *buf, gsiz
 }
 
 const char *
+nm_platform_lnk_bond_to_string(const NMPlatformLnkBond *lnk, char *buf, gsize len)
+{
+    if (!nm_utils_to_string_buffer_init_null(lnk, &buf, &len))
+        return buf;
+
+    g_snprintf(buf,
+               len,
+               "bond"
+               " mode %u"
+               " primary %u"
+               " miimon %u"
+               " updelay %u"
+               " downdelay %u"
+               " arp_interval %u"
+               " resend_igmp %u"
+               " min_links %u"
+               " lp_interval %u"
+               " packets_per_port %u"
+               " peer_notif_delay %u"
+               " arp_all_targets %u"
+               " arp_validate %u"
+               " ad_actor_sys_prio %u"
+               " ad_user_port_key %u"
+               " ad_actor_system " NM_ETHER_ADDR_FORMAT_STR " primary_reselect %u"
+               " fail_over_mac %u"
+               " xmit_hash_policy %u"
+               " num_unsol_na %u"
+               " num_gray_arp %u"
+               " all_ports_active %u"
+               " lacp_rate %u"
+               " ad_select %u"
+               " use_carrier %d"
+               " tlb_dynamic_lb %d",
+               lnk->mode,
+               lnk->primary,
+               lnk->miimon,
+               lnk->updelay,
+               lnk->downdelay,
+               lnk->arp_interval,
+               lnk->resend_igmp,
+               lnk->min_links,
+               lnk->lp_interval,
+               lnk->packets_per_port,
+               lnk->peer_notif_delay,
+               lnk->arp_all_targets,
+               lnk->arp_validate,
+               lnk->ad_actor_sys_prio,
+               lnk->ad_user_port_key,
+               NM_ETHER_ADDR_FORMAT_VAL(&lnk->ad_actor_system),
+               lnk->primary_reselect,
+               lnk->fail_over_mac,
+               lnk->xmit_hash_policy,
+               lnk->num_unsol_na,
+               lnk->num_grat_arp,
+               lnk->all_ports_active,
+               lnk->lacp_rate,
+               lnk->ad_select,
+               (int) lnk->use_carrier,
+               (int) lnk->tlb_dynamic_lb);
+    return buf;
+}
+
+const char *
 nm_platform_lnk_gre_to_string(const NMPlatformLnkGre *lnk, char *buf, gsize len)
 {
     char str_local[30];
@@ -7690,6 +7771,72 @@ nm_platform_lnk_bridge_hash_update(const NMPlatformLnkBridge *obj, NMHashState *
                                               obj->mcast_query_use_ifaddr,
                                               obj->mcast_snooping,
                                               obj->vlan_stats_enabled));
+}
+
+void
+nm_platform_lnk_bond_hash_update(const NMPlatformLnkBond *obj, NMHashState *h)
+{
+    nm_hash_update_vals(h,
+                        obj->mode,
+                        obj->primary,
+                        obj->miimon,
+                        obj->updelay,
+                        obj->downdelay,
+                        obj->arp_interval,
+                        obj->resend_igmp,
+                        obj->min_links,
+                        obj->lp_interval,
+                        obj->packets_per_port,
+                        obj->peer_notif_delay,
+                        obj->arp_all_targets,
+                        obj->arp_validate,
+                        obj->ad_actor_sys_prio,
+                        obj->ad_user_port_key,
+                        obj->ad_actor_system,
+                        obj->primary_reselect,
+                        obj->fail_over_mac,
+                        obj->xmit_hash_policy,
+                        obj->num_unsol_na,
+                        obj->num_grat_arp,
+                        obj->all_ports_active,
+                        obj->lacp_rate,
+                        obj->ad_select,
+                        NM_HASH_COMBINE_BOOLS(guint8, obj->use_carrier, obj->tlb_dynamic_lb));
+}
+
+int
+nm_platform_lnk_bond_cmp(const NMPlatformLnkBond *a, const NMPlatformLnkBond *b)
+{
+    NM_CMP_SELF(a, b);
+    NM_CMP_FIELD(a, b, mode);
+    NM_CMP_FIELD(a, b, primary);
+    NM_CMP_FIELD_MEMCMP(a, b, arp_ip_target);
+    NM_CMP_FIELD(a, b, miimon);
+    NM_CMP_FIELD(a, b, updelay);
+    NM_CMP_FIELD(a, b, downdelay);
+    NM_CMP_FIELD(a, b, arp_interval);
+    NM_CMP_FIELD(a, b, resend_igmp);
+    NM_CMP_FIELD(a, b, min_links);
+    NM_CMP_FIELD(a, b, lp_interval);
+    NM_CMP_FIELD(a, b, packets_per_port);
+    NM_CMP_FIELD(a, b, peer_notif_delay);
+    NM_CMP_FIELD(a, b, arp_all_targets);
+    NM_CMP_FIELD(a, b, arp_validate);
+    NM_CMP_FIELD(a, b, ad_actor_sys_prio);
+    NM_CMP_FIELD(a, b, ad_user_port_key);
+    NM_CMP_FIELD_MEMCMP(a, b, ad_actor_system);
+    NM_CMP_FIELD(a, b, primary_reselect);
+    NM_CMP_FIELD(a, b, fail_over_mac);
+    NM_CMP_FIELD(a, b, xmit_hash_policy);
+    NM_CMP_FIELD(a, b, num_unsol_na);
+    NM_CMP_FIELD(a, b, num_grat_arp);
+    NM_CMP_FIELD(a, b, all_ports_active);
+    NM_CMP_FIELD(a, b, lacp_rate);
+    NM_CMP_FIELD(a, b, ad_select);
+    NM_CMP_FIELD_BOOL(a, b, use_carrier);
+    NM_CMP_FIELD_BOOL(a, b, tlb_dynamic_lb);
+
+    return 0;
 }
 
 int

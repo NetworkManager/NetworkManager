@@ -881,6 +881,42 @@ typedef struct {
 
 extern const NMPlatformLnkBridge nm_platform_lnk_bridge_default;
 
+/* Defined in net/bonding.h. */
+#define NM_BOND_MAX_ARP_TARGETS 16
+
+G_STATIC_ASSERT(NM_BOND_MAX_ARP_TARGETS == 16);
+
+typedef struct {
+    struct in_addr arp_ip_target[NM_BOND_MAX_ARP_TARGETS];
+    guint32        primary;
+    guint32        miimon;
+    guint32        updelay;
+    guint32        downdelay;
+    guint32        arp_interval;
+    guint32        resend_igmp;
+    guint32        min_links;
+    guint32        lp_interval;
+    guint32        packets_per_port;
+    guint32        peer_notif_delay;
+    guint32        arp_all_targets;
+    guint32        arp_validate;
+    guint16        ad_actor_sys_prio;
+    guint16        ad_user_port_key;
+    NMEtherAddr    ad_actor_system;
+    guint8         mode;
+    guint8         primary_reselect;
+    guint8         fail_over_mac;
+    guint8         xmit_hash_policy;
+    guint8         num_unsol_na;
+    guint8         num_grat_arp;
+    guint8         all_ports_active;
+    guint8         lacp_rate;
+    guint8         ad_select;
+    guint8         arp_ip_targets_num;
+    bool           use_carrier : 1;
+    bool           tlb_dynamic_lb : 1;
+} NMPlatformLnkBond;
+
 typedef struct {
     int       parent_ifindex;
     in_addr_t local;
@@ -1212,6 +1248,7 @@ typedef struct {
                                  gboolean                egress_reset_all,
                                  const NMVlanQosMapping *egress_map,
                                  gsize                   n_egress_map);
+
     gboolean (*link_tun_add)(NMPlatform             *self,
                              const char             *name,
                              const NMPlatformLnkTun *props,
@@ -1664,9 +1701,18 @@ nm_platform_link_bridge_change(NMPlatform *self, int ifindex, const NMPlatformLn
 }
 
 static inline int
-nm_platform_link_bond_add(NMPlatform *self, const char *name, const NMPlatformLink **out_link)
+nm_platform_link_bond_change(NMPlatform *self, int ifindex, const NMPlatformLnkBond *props)
 {
-    return nm_platform_link_add(self, NM_LINK_TYPE_BOND, name, 0, NULL, 0, 0, NULL, out_link);
+    return nm_platform_link_change(self, NM_LINK_TYPE_BOND, ifindex, props);
+}
+
+static inline int
+nm_platform_link_bond_add(NMPlatform              *self,
+                          const char              *name,
+                          const NMPlatformLnkBond *props,
+                          const NMPlatformLink   **out_link)
+{
+    return nm_platform_link_add(self, NM_LINK_TYPE_BOND, name, 0, NULL, 0, 0, props, out_link);
 }
 
 static inline int
@@ -2000,6 +2046,8 @@ const NMPObject *nm_platform_link_get_lnk(NMPlatform            *self,
                                           int                    ifindex,
                                           NMLinkType             link_type,
                                           const NMPlatformLink **out_link);
+const NMPlatformLnkBond *
+nm_platform_link_get_lnk_bond(NMPlatform *self, int ifindex, const NMPlatformLink **out_link);
 const NMPlatformLnkBridge *
 nm_platform_link_get_lnk_bridge(NMPlatform *self, int ifindex, const NMPlatformLink **out_link);
 const NMPlatformLnkGre *
@@ -2294,6 +2342,7 @@ gboolean nm_platform_tc_sync(NMPlatform *self,
                              GPtrArray  *known_tfilters);
 
 const char *nm_platform_link_to_string(const NMPlatformLink *link, char *buf, gsize len);
+const char *nm_platform_lnk_bond_to_string(const NMPlatformLnkBond *lnk, char *buf, gsize len);
 const char *nm_platform_lnk_bridge_to_string(const NMPlatformLnkBridge *lnk, char *buf, gsize len);
 const char *nm_platform_lnk_gre_to_string(const NMPlatformLnkGre *lnk, char *buf, gsize len);
 const char *
@@ -2334,6 +2383,7 @@ const char *
 nm_platform_wireguard_peer_to_string(const struct _NMPWireGuardPeer *peer, char *buf, gsize len);
 
 int nm_platform_link_cmp(const NMPlatformLink *a, const NMPlatformLink *b);
+int nm_platform_lnk_bond_cmp(const NMPlatformLnkBond *a, const NMPlatformLnkBond *b);
 int nm_platform_lnk_bridge_cmp(const NMPlatformLnkBridge *a, const NMPlatformLnkBridge *b);
 int nm_platform_lnk_gre_cmp(const NMPlatformLnkGre *a, const NMPlatformLnkGre *b);
 int nm_platform_lnk_infiniband_cmp(const NMPlatformLnkInfiniband *a,
@@ -2423,6 +2473,7 @@ void nm_platform_ip6_route_hash_update(const NMPlatformIP6Route *obj,
 void nm_platform_routing_rule_hash_update(const NMPlatformRoutingRule *obj,
                                           NMPlatformRoutingRuleCmpType cmp_type,
                                           NMHashState                 *h);
+void nm_platform_lnk_bond_hash_update(const NMPlatformLnkBond *obj, NMHashState *h);
 void nm_platform_lnk_bridge_hash_update(const NMPlatformLnkBridge *obj, NMHashState *h);
 void nm_platform_lnk_gre_hash_update(const NMPlatformLnkGre *obj, NMHashState *h);
 void nm_platform_lnk_infiniband_hash_update(const NMPlatformLnkInfiniband *obj, NMHashState *h);

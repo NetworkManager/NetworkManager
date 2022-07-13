@@ -1334,6 +1334,22 @@ nm_manager_get_device_by_ifindex(NMManager *self, int ifindex)
     return NULL;
 }
 
+NMDevice *
+nm_manager_get_device_by_iface(NMManager *self, const char *iface)
+{
+    NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE(self);
+    NMDevice         *device;
+
+    if (iface) {
+        c_list_for_each_entry (device, &priv->devices_lst_head, devices_lst) {
+            if (nm_streq0(nm_device_get_iface(device), iface))
+                return device;
+        }
+    }
+
+    return NULL;
+}
+
 static NMDevice *
 find_device_by_permanent_hw_addr(NMManager *self, const char *hwaddr)
 {

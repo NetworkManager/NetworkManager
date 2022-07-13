@@ -234,6 +234,14 @@ nla_get_be64(const struct nlattr *nla)
     return unaligned_read_be64(nla_data(nla));
 }
 
+static inline uint32_t
+nla_get_be32(const struct nlattr *nla)
+{
+    nm_assert(nla_len(nla) >= sizeof(uint32_t));
+
+    return unaligned_read_be32(nla_data(nla));
+}
+
 static inline char *
 nla_get_string(const struct nlattr *nla)
 {
