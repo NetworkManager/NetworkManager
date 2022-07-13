@@ -584,14 +584,18 @@ _nest_end(struct nl_msg *msg, struct nlattr *start, int keep_empty)
 
     pad = NLMSG_ALIGN(msg->nm_nlh->nlmsg_len) - msg->nm_nlh->nlmsg_len;
     if (pad > 0) {
+        void *p;
+
         /*
          * Data inside attribute does not end at a alignment boundary.
          * Pad accordingly and account for the additional space in
          * the message. nlmsg_reserve() may never fail in this situation,
          * the allocate message buffer must be a multiple of NLMSG_ALIGNTO.
          */
-        if (!nlmsg_reserve(msg, pad, 0))
+        p = nlmsg_reserve(msg, pad, 0);
+        if (!p)
             g_return_val_if_reached(-NME_BUG);
+        memset(p, 0, pad);
     }
 
     return 0;
