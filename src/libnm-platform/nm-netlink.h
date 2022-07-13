@@ -60,7 +60,7 @@ struct nl_msg_lite {
     const struct sockaddr_nl *nm_dst;
     const struct ucred       *nm_creds;
     const struct nlmsghdr    *nm_nlh;
-    size_t                    nm_size;
+    uint32_t                  nm_size;
 };
 
 /*****************************************************************************/
@@ -389,13 +389,13 @@ struct nl_msg *nlmsg_alloc_size(size_t max);
 
 struct nl_msg *nlmsg_alloc_convert(struct nlmsghdr *hdr);
 
-struct nl_msg *nlmsg_alloc_simple(int nlmsgtype, int flags);
+struct nl_msg *nlmsg_alloc_simple(uint16_t nlmsgtype, uint16_t flags);
 
-void *nlmsg_reserve(struct nl_msg *n, size_t len, int pad);
+void *nlmsg_reserve(struct nl_msg *n, uint32_t len, uint32_t pad);
 
-int nlmsg_append(struct nl_msg *n, const void *data, size_t len, int pad);
+int nlmsg_append(struct nl_msg *n, const void *data, uint32_t len, uint32_t pad);
 
-#define nlmsg_append_struct(n, data) nlmsg_append(n, (data), sizeof(*(data)), NLMSG_ALIGNTO)
+#define nlmsg_append_struct(n, data) (nlmsg_append((n), (data), sizeof(*(data)), NLMSG_ALIGNTO))
 
 void nlmsg_free(struct nl_msg *msg);
 
@@ -502,8 +502,12 @@ int nlmsg_parse(const struct nlmsghdr   *nlh,
         nlmsg_parse((nlh), (hdrlen), (tb), G_N_ELEMENTS(tb) - 1, (policy)); \
     })
 
-struct nlmsghdr *
-nlmsg_put(struct nl_msg *n, uint32_t pid, uint32_t seq, int type, int payload, int flags);
+struct nlmsghdr *nlmsg_put(struct nl_msg *n,
+                           uint32_t       pid,
+                           uint32_t       seq,
+                           uint16_t       type,
+                           uint32_t       payload,
+                           uint16_t       flags);
 
 /*****************************************************************************/
 
@@ -614,9 +618,9 @@ extern const struct nla_policy genl_ctrl_policy[8];
 void                    *genlmsg_put(struct nl_msg *msg,
                                      uint32_t       port,
                                      uint32_t       seq,
-                                     int            family,
-                                     int            hdrlen,
-                                     int            flags,
+                                     uint16_t       family,
+                                     uint32_t       hdrlen,
+                                     uint16_t       flags,
                                      uint8_t        cmd,
                                      uint8_t        version);
 void                    *genlmsg_data(const struct genlmsghdr *gnlh);
