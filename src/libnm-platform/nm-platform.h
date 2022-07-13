@@ -61,6 +61,12 @@ typedef gboolean (*NMPObjectPredicateFunc)(const NMPObject *obj, gpointer user_d
 
 #define NM_IFF_MULTI_QUEUE 0x0100 /* IFF_MULTI_QUEUE */
 
+#define NM_MPTCP_PM_ADDR_FLAG_SIGNAL   ((guint32) (1 << 0))
+#define NM_MPTCP_PM_ADDR_FLAG_SUBFLOW  ((guint32) (1 << 1))
+#define NM_MPTCP_PM_ADDR_FLAG_BACKUP   ((guint32) (1 << 2))
+#define NM_MPTCP_PM_ADDR_FLAG_FULLMESH ((guint32) (1 << 3))
+#define NM_MPTCP_PM_ADDR_FLAG_IMPLICIT ((guint32) (1 << 4))
+
 /* Redefine this in host's endianness */
 #define NM_GRE_KEY 0x2000
 
@@ -782,8 +788,6 @@ typedef struct {
     NMPlatformAction action;
 } NMPlatformTfilter;
 
-#undef __NMPlatformObjWithIfindex_COMMON
-
 typedef struct {
     bool          is_ip4;
     NMPObjectType obj_type;
@@ -1044,6 +1048,27 @@ typedef enum {
 } NMPlatformWireGuardChangePeerFlags;
 
 typedef void (*NMPlatformAsyncCallback)(GError *error, gpointer user_data);
+
+typedef struct {
+    __NMPlatformObjWithIfindex_COMMON;
+
+    guint32  id;
+    guint32  flags;
+    guint16  port;
+    NMIPAddr addr;
+    gint8    addr_family;
+
+    /* If TRUE, then the instance was received by kernel and is inside NMPlatform
+     * cache. In that case, the "id" is set and acts as primary key for the instance.
+     *
+     * If FALSE, this instance is not yet configured in kernel. In this case,
+     * the tuple (id, addr_family, addr) is the primary key of the instance.
+     * This way, we can track mptcp addresses in NetworkManager internally,
+     * before configuring them in kernel. */
+    bool in_kernel : 1;
+} NMPlatformMptcpAddr;
+
+#undef __NMPlatformObjWithIfindex_COMMON
 
 /*****************************************************************************/
 
@@ -2355,6 +2380,9 @@ const char *nm_platform_vlan_qos_mapping_to_string(const char             *name,
 const char *
 nm_platform_wireguard_peer_to_string(const struct _NMPWireGuardPeer *peer, char *buf, gsize len);
 
+const char *
+nm_platform_mptcp_addr_to_string(const NMPlatformMptcpAddr *mptcp_addr, char *buf, gsize len);
+
 int nm_platform_link_cmp(const NMPlatformLink *a, const NMPlatformLink *b);
 int nm_platform_lnk_bridge_cmp(const NMPlatformLnkBridge *a, const NMPlatformLnkBridge *b);
 int nm_platform_lnk_gre_cmp(const NMPlatformLnkGre *a, const NMPlatformLnkGre *b);
@@ -2433,6 +2461,8 @@ int nm_platform_qdisc_cmp_full(const NMPlatformQdisc *a,
                                gboolean               compare_handle);
 int nm_platform_tfilter_cmp(const NMPlatformTfilter *a, const NMPlatformTfilter *b);
 
+int nm_platform_mptcp_addr_cmp(const NMPlatformMptcpAddr *a, const NMPlatformMptcpAddr *b);
+
 void nm_platform_link_hash_update(const NMPlatformLink *obj, NMHashState *h);
 void nm_platform_ip4_address_hash_update(const NMPlatformIP4Address *obj, NMHashState *h);
 void nm_platform_ip6_address_hash_update(const NMPlatformIP6Address *obj, NMHashState *h);
@@ -2461,6 +2491,8 @@ void nm_platform_lnk_wireguard_hash_update(const NMPlatformLnkWireGuard *obj, NM
 
 void nm_platform_qdisc_hash_update(const NMPlatformQdisc *obj, NMHashState *h);
 void nm_platform_tfilter_hash_update(const NMPlatformTfilter *obj, NMHashState *h);
+
+void nm_platform_mptcp_addr_hash_update(const NMPlatformMptcpAddr *obj, NMHashState *h);
 
 #define NM_PLATFORM_LINK_FLAGS2STR_MAX_LEN ((gsize) 162)
 

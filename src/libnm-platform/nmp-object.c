@@ -381,7 +381,8 @@ _idx_obj_part(const DedupMultiIdxType *idx_type,
                        NMP_OBJECT_TYPE_IP4_ROUTE,
                        NMP_OBJECT_TYPE_IP6_ROUTE,
                        NMP_OBJECT_TYPE_QDISC,
-                       NMP_OBJECT_TYPE_TFILTER)
+                       NMP_OBJECT_TYPE_TFILTER,
+                       NMP_OBJECT_TYPE_MPTCP_ADDR)
             || !nmp_object_is_visible(obj_a)) {
             if (h)
                 nm_hash_update_val(h, obj_a);
@@ -1551,6 +1552,21 @@ _vt_cmd_plobj_id_cmp_routing_rule(const NMPlatformObject *obj1, const NMPlatform
                                         NM_PLATFORM_ROUTING_RULE_CMP_TYPE_ID);
 }
 
+_vt_cmd_plobj_id_cmp(mptcp_addr, NMPlatformMptcpAddr, {
+    NM_CMP_FIELD(obj1, obj2, id);
+    NM_CMP_FIELD_UNSAFE(obj1, obj2, in_kernel);
+    if (!obj1->in_kernel) {
+        /* See comment NMPlatformMptcpAddr.in_kernel for why. */
+        NM_CMP_FIELD(obj1, obj2, addr_family);
+
+        /* nm_utils_addr_family_to_size() asserts that addr-family is either AF_INET or AF_INET6.
+         * This means, we cannot compare totally bogus objects. That is in particular fine
+         * for instances which are not "in_kernel".  While we might receive unexpected values
+         * from kernel, we should not create them for internal purposes. */
+        NM_CMP_FIELD_MEMCMP_LEN(obj1, obj2, addr, nm_utils_addr_family_to_size(obj1->addr_family));
+    }
+});
+
 void
 nmp_object_id_hash_update(const NMPObject *obj, NMHashState *h)
 {
@@ -1634,6 +1650,16 @@ _vt_cmd_plobj_id_hash_update(qdisc, NMPlatformQdisc, {
 
 _vt_cmd_plobj_id_hash_update(tfilter, NMPlatformTfilter, {
     nm_hash_update_vals(h, obj->ifindex, obj->handle);
+});
+
+_vt_cmd_plobj_id_hash_update(mptcp_addr, NMPlatformMptcpAddr, {
+    if (obj->in_kernel) {
+        nm_hash_update_val(h, obj->id);
+    } else {
+        /* _vt_cmd_plobj_id_cmp_mptcp_addr for why. */
+        nm_hash_update_vals(h, obj->id, obj->addr_family);
+        nm_hash_update(h, &obj->addr, nm_utils_addr_family_to_size(obj->addr_family));
+    }
 });
 
 static void
@@ -1742,6 +1768,12 @@ static gboolean
 _vt_cmd_obj_is_alive_tfilter(const NMPObject *obj)
 {
     return NMP_OBJECT_CAST_TFILTER(obj)->ifindex > 0;
+}
+
+static gboolean
+_vt_cmd_obj_is_alive_mptcp_addr(const NMPObject *obj)
+{
+    return NM_IN_SET(obj->mptcp_addr.addr_family, AF_INET, AF_INET6);
 }
 
 gboolean
@@ -2089,6 +2121,7 @@ nmp_lookup_init_obj_type(NMPLookup *lookup, NMPObjectType obj_type)
     case NMP_OBJECT_TYPE_ROUTING_RULE:
     case NMP_OBJECT_TYPE_QDISC:
     case NMP_OBJECT_TYPE_TFILTER:
+    case NMP_OBJECT_TYPE_MPTCP_ADDR:
         _nmp_object_stackinit_from_type(&lookup->selector_obj, obj_type);
         lookup->cache_id_type = NMP_CACHE_ID_TYPE_OBJECT_TYPE;
         return _L(lookup);
@@ -2123,7 +2156,8 @@ nmp_lookup_init_object_by_ifindex(NMPLookup *lookup, NMPObjectType obj_type, int
                         NMP_OBJECT_TYPE_IP4_ROUTE,
                         NMP_OBJECT_TYPE_IP6_ROUTE,
                         NMP_OBJECT_TYPE_QDISC,
-                        NMP_OBJECT_TYPE_TFILTER));
+                        NMP_OBJECT_TYPE_TFILTER,
+                        NMP_OBJECT_TYPE_MPTCP_ADDR));
     nm_assert(ifindex > 0
               || (ifindex == 0
                   && NM_IN_SET(obj_type, NMP_OBJECT_TYPE_IP4_ROUTE, NMP_OBJECT_TYPE_IP6_ROUTE)));
@@ -3462,5 +3496,21 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
             .cmd_plobj_to_string   = (CmdPlobjToStringFunc) nm_platform_lnk_wireguard_to_string,
             .cmd_plobj_hash_update = (CmdPlobjHashUpdateFunc) nm_platform_lnk_wireguard_hash_update,
             .cmd_plobj_cmp         = (CmdPlobjCmpFunc) nm_platform_lnk_wireguard_cmp,
+        },
+    [NMP_OBJECT_TYPE_MPTCP_ADDR - 1] =
+        {
+            .parent                   = DEDUP_MULTI_OBJ_CLASS_INIT(),
+            .obj_type                 = NMP_OBJECT_TYPE_MPTCP_ADDR,
+            .sizeof_data              = sizeof(NMPObjectMptcpAddr),
+            .sizeof_public            = sizeof(NMPlatformMptcpAddr),
+            .obj_type_name            = "mptcp-addr",
+            .supported_cache_ids      = _supported_cache_ids_object,
+            .cmd_obj_is_alive         = _vt_cmd_obj_is_alive_mptcp_addr,
+            .cmd_plobj_id_cmp         = _vt_cmd_plobj_id_cmp_mptcp_addr,
+            .cmd_plobj_id_hash_update = _vt_cmd_plobj_id_hash_update_mptcp_addr,
+            .cmd_plobj_to_string_id   = (CmdPlobjToStringIdFunc) nm_platform_mptcp_addr_to_string,
+            .cmd_plobj_to_string      = (CmdPlobjToStringFunc) nm_platform_mptcp_addr_to_string,
+            .cmd_plobj_hash_update    = (CmdPlobjHashUpdateFunc) nm_platform_mptcp_addr_hash_update,
+            .cmd_plobj_cmp            = (CmdPlobjCmpFunc) nm_platform_mptcp_addr_cmp,
         },
 };

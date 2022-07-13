@@ -23,6 +23,7 @@
 #include <linux/if_vlan.h>
 #include <linux/ip6_tunnel.h>
 #include <linux/tc_act/tc_mirred.h>
+#include <linux-headers/mptcp.h>
 #include <netinet/icmp6.h>
 #include <netinet/in.h>
 #include <net/if_arp.h>
@@ -47,6 +48,14 @@
 #include "libnm-udev-aux/nm-udev-utils.h"
 #include "nm-platform-private.h"
 #include "nmp-object.h"
+
+/*****************************************************************************/
+
+G_STATIC_ASSERT(NM_MPTCP_PM_ADDR_FLAG_SIGNAL == MPTCP_PM_ADDR_FLAG_SIGNAL);
+G_STATIC_ASSERT(NM_MPTCP_PM_ADDR_FLAG_SUBFLOW == MPTCP_PM_ADDR_FLAG_SUBFLOW);
+G_STATIC_ASSERT(NM_MPTCP_PM_ADDR_FLAG_BACKUP == MPTCP_PM_ADDR_FLAG_BACKUP);
+G_STATIC_ASSERT(NM_MPTCP_PM_ADDR_FLAG_FULLMESH == MPTCP_PM_ADDR_FLAG_FULLMESH);
+G_STATIC_ASSERT(NM_MPTCP_PM_ADDR_FLAG_IMPLICIT == MPTCP_PM_ADDR_FLAG_IMPLICIT);
 
 /*****************************************************************************/
 
