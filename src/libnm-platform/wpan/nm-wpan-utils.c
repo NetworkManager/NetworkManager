@@ -75,12 +75,12 @@ error_handler(struct sockaddr_nl *nla, struct nlmsgerr *err, void *arg)
 }
 
 static struct nl_msg *
-_nl802154_alloc_msg(guint16 genl_family_id, int ifindex, guint32 cmd, guint32 flags)
+_nl802154_alloc_msg(guint16 genl_family_id, int ifindex, uint8_t cmd, uint16_t flags)
 {
     nm_auto_nlmsg struct nl_msg *msg = NULL;
 
     msg = nlmsg_alloc();
-    genlmsg_put(msg, 0, 0, genl_family_id, 0, flags, cmd, 0);
+    genlmsg_put(msg, NL_AUTO_PORT, NL_AUTO_SEQ, genl_family_id, 0, flags, cmd, 0);
     NLA_PUT_U32(msg, NL802154_ATTR_IFINDEX, ifindex);
     return g_steal_pointer(&msg);
 
@@ -89,7 +89,7 @@ nla_put_failure:
 }
 
 static struct nl_msg *
-nl802154_alloc_msg(NMWpanUtils *self, guint32 cmd, guint32 flags)
+nl802154_alloc_msg(NMWpanUtils *self, uint8_t cmd, uint16_t flags)
 {
     return _nl802154_alloc_msg(self->genl_family_id, self->ifindex, cmd, flags);
 }

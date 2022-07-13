@@ -83,12 +83,12 @@ error_handler(struct sockaddr_nl *nla, struct nlmsgerr *err, void *arg)
 }
 
 static struct nl_msg *
-_nl80211_alloc_msg(guint16 genl_family_id, int ifindex, int phy, guint32 cmd, guint32 flags)
+_nl80211_alloc_msg(guint16 genl_family_id, int ifindex, int phy, uint8_t cmd, uint16_t flags)
 {
     nm_auto_nlmsg struct nl_msg *msg = NULL;
 
     msg = nlmsg_alloc();
-    genlmsg_put(msg, 0, 0, genl_family_id, 0, flags, cmd, 0);
+    genlmsg_put(msg, NL_AUTO_PORT, NL_AUTO_SEQ, genl_family_id, 0, flags, cmd, 0);
     NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX, ifindex);
     if (phy != -1)
         NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, phy);
@@ -99,7 +99,7 @@ nla_put_failure:
 }
 
 static struct nl_msg *
-nl80211_alloc_msg(NMWifiUtilsNl80211 *self, guint32 cmd, guint32 flags)
+nl80211_alloc_msg(NMWifiUtilsNl80211 *self, uint8_t cmd, uint16_t flags)
 {
     return _nl80211_alloc_msg(self->genl_family_id, self->parent.ifindex, self->phy, cmd, flags);
 }

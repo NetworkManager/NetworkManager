@@ -4732,8 +4732,8 @@ nla_put_failure:
 }
 
 static struct nl_msg *
-_nl_msg_new_link_full(int         nlmsg_type,
-                      int         nlmsg_flags,
+_nl_msg_new_link_full(uint16_t    nlmsg_type,
+                      uint16_t    nlmsg_flags,
                       int         ifindex,
                       const char *ifname,
                       guint8      family,
@@ -4765,15 +4765,15 @@ nla_put_failure:
 }
 
 static struct nl_msg *
-_nl_msg_new_link(int nlmsg_type, int nlmsg_flags, int ifindex, const char *ifname)
+_nl_msg_new_link(uint16_t nlmsg_type, uint16_t nlmsg_flags, int ifindex, const char *ifname)
 {
     return _nl_msg_new_link_full(nlmsg_type, nlmsg_flags, ifindex, ifname, AF_UNSPEC, 0, 0);
 }
 
 /* Copied and modified from libnl3's build_addr_msg(). */
 static struct nl_msg *
-_nl_msg_new_address(int           nlmsg_type,
-                    int           nlmsg_flags,
+_nl_msg_new_address(uint16_t      nlmsg_type,
+                    uint16_t      nlmsg_flags,
                     int           family,
                     int           ifindex,
                     gconstpointer address,
@@ -4887,7 +4887,7 @@ ip_route_ignored_protocol(const NMPlatformIPRoute *route)
 
 /* Copied and modified from libnl3's build_route_msg() and rtnl_route_build_msg(). */
 static struct nl_msg *
-_nl_msg_new_route(int nlmsg_type, guint16 nlmsgflags, const NMPObject *obj)
+_nl_msg_new_route(uint16_t nlmsg_type, uint16_t nlmsg_flags, const NMPObject *obj)
 {
     nm_auto_nlmsg struct nl_msg *msg     = NULL;
     const NMPClass              *klass   = NMP_OBJECT_GET_CLASS(obj);
@@ -4914,7 +4914,7 @@ _nl_msg_new_route(int nlmsg_type, guint16 nlmsgflags, const NMPObject *obj)
         NM_IN_SET(NMP_OBJECT_GET_TYPE(obj), NMP_OBJECT_TYPE_IP4_ROUTE, NMP_OBJECT_TYPE_IP6_ROUTE));
     nm_assert(NM_IN_SET(nlmsg_type, RTM_NEWROUTE, RTM_DELROUTE));
 
-    msg = nlmsg_alloc_simple(nlmsg_type, (int) nlmsgflags);
+    msg = nlmsg_alloc_simple(nlmsg_type, nlmsg_flags);
 
     if (nlmsg_append_struct(msg, &rtmsg) < 0)
         goto nla_put_failure;
@@ -4998,7 +4998,9 @@ nla_put_failure:
 }
 
 static struct nl_msg *
-_nl_msg_new_routing_rule(int nlmsg_type, int nlmsg_flags, const NMPlatformRoutingRule *routing_rule)
+_nl_msg_new_routing_rule(uint16_t                     nlmsg_type,
+                         uint16_t                     nlmsg_flags,
+                         const NMPlatformRoutingRule *routing_rule)
 {
     nm_auto_nlmsg struct nl_msg *msg = NULL;
     const guint8 addr_size           = nm_utils_addr_family_to_size(routing_rule->addr_family);
@@ -5111,7 +5113,7 @@ nla_put_failure:
 }
 
 static struct nl_msg *
-_nl_msg_new_qdisc(int nlmsg_type, int nlmsg_flags, const NMPlatformQdisc *qdisc)
+_nl_msg_new_qdisc(uint16_t nlmsg_type, uint16_t nlmsg_flags, const NMPlatformQdisc *qdisc)
 {
     nm_auto_nlmsg struct nl_msg *msg = NULL;
     struct nlattr               *tc_options;
@@ -5198,7 +5200,7 @@ nla_put_failure:
 }
 
 static struct nl_msg *
-_nl_msg_new_tfilter(int nlmsg_type, int nlmsg_flags, const NMPlatformTfilter *tfilter)
+_nl_msg_new_tfilter(uint16_t nlmsg_type, uint16_t nlmsg_flags, const NMPlatformTfilter *tfilter)
 {
     nm_auto_nlmsg struct nl_msg *msg = NULL;
     struct nlattr               *tc_options;
@@ -9274,7 +9276,11 @@ qdisc_add(NMPlatform *platform, NMPNlmFlags flags, const NMPlatformQdisc *qdisc)
 }
 
 static int
-tc_delete(NMPlatform *platform, int nlmsgtype, int ifindex, guint32 parent, gboolean log_error)
+tc_delete(NMPlatform *platform,
+          uint16_t    nlmsg_type,
+          int         ifindex,
+          guint32     parent,
+          gboolean    log_error)
 {
     WaitForNlResponseResult      seq_result = WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN;
     gs_free char                *errmsg     = NULL;
@@ -9287,7 +9293,7 @@ tc_delete(NMPlatform *platform, int nlmsgtype, int ifindex, guint32 parent, gboo
                   .tcm_parent  = parent,
     };
 
-    switch (nlmsgtype) {
+    switch (nlmsg_type) {
     case RTM_DELQDISC:
         log_tag = "do-delete-qdisc";
         break;
@@ -9299,7 +9305,7 @@ tc_delete(NMPlatform *platform, int nlmsgtype, int ifindex, guint32 parent, gboo
         log_tag = "do-delete-tc";
     }
 
-    msg = nlmsg_alloc_simple(nlmsgtype, NMP_NLM_FLAG_F_ECHO);
+    msg = nlmsg_alloc_simple(nlmsg_type, NMP_NLM_FLAG_F_ECHO);
 
     if (nlmsg_append_struct(msg, &tcm) < 0)
         goto nla_put_failure;
