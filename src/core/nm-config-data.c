@@ -839,6 +839,13 @@ nm_config_data_log(const NMConfigData  *self,
             _LOG(stream, prefix, "# no-auto-default specs \"%s\"", msg);
     }
 
+    if (nm_config_kernel_command_line_nm_debug()) {
+        _LOG(stream,
+             prefix,
+             "# /proc/cmdline contains \"" NM_CONFIG_KERNEL_CMDLINE_NM_DEBUG
+             "\". Debug log enabled");
+    }
+
 #undef _LOG
 }
 

@@ -3014,6 +3014,15 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
 
 /*****************************************************************************/
 
+gboolean
+nm_config_kernel_command_line_nm_debug(void)
+{
+    return (nm_strv_find_first(nm_utils_proc_cmdline_split(), -1, NM_CONFIG_KERNEL_CMDLINE_NM_DEBUG)
+            >= 0);
+}
+
+/*****************************************************************************/
+
 static gboolean
 init_sync(GInitable *initable, GCancellable *cancellable, GError **error)
 {
