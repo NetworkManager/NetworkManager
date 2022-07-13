@@ -836,30 +836,33 @@ _platform_lnk_bridge_init_from_setting(NMSettingBridge *s_bridge, NMPlatformLnkB
     to_sysfs_group_address_sys(nm_setting_bridge_get_group_address(s_bridge), &props->group_addr);
 }
 
+static gboolean
+link_config(NMDevice *device, NMConnection *connection)
+{
+    int                 ifindex = nm_device_get_ifindex(device);
+    NMSettingBridge    *s_bridge;
+    NMPlatformLnkBridge props;
+
+    s_bridge = nm_connection_get_setting_bridge(connection);
+    g_return_val_if_fail(s_bridge, FALSE);
+
+    _platform_lnk_bridge_init_from_setting(s_bridge, &props);
+
+    if (nm_platform_link_bridge_change(nm_device_get_platform(device), ifindex, &props) < 0)
+        return FALSE;
+
+    return bridge_set_vlan_options(device, s_bridge);
+}
+
 static NMActStageReturn
 act_stage1_prepare(NMDevice *device, NMDeviceStateReason *out_failure_reason)
 {
-    NMConnection       *connection;
-    NMSettingBridge    *s_bridge;
-    NMPlatformLnkBridge props;
-    int                 r;
-    int                 ifindex = nm_device_get_ifindex(device);
+    NMConnection *connection;
 
     connection = nm_device_get_applied_connection(device);
     g_return_val_if_fail(connection, NM_ACT_STAGE_RETURN_FAILURE);
 
-    s_bridge = nm_connection_get_setting_bridge(connection);
-    g_return_val_if_fail(s_bridge, NM_ACT_STAGE_RETURN_FAILURE);
-
-    _platform_lnk_bridge_init_from_setting(s_bridge, &props);
-
-    r = nm_platform_link_bridge_change(nm_device_get_platform(device), ifindex, &props);
-    if (r < 0) {
-        NM_SET_OUT(out_failure_reason, NM_DEVICE_STATE_REASON_CONFIG_FAILED);
-        return NM_ACT_STAGE_RETURN_FAILURE;
-    }
-
-    if (!bridge_set_vlan_options(device, s_bridge)) {
+    if (!link_config(device, connection)) {
         NM_SET_OUT(out_failure_reason, NM_DEVICE_STATE_REASON_CONFIG_FAILED);
         return NM_ACT_STAGE_RETURN_FAILURE;
     }
@@ -1148,6 +1151,68 @@ create_and_realize(NMDevice              *device,
 
 /*****************************************************************************/
 
+static gboolean
+can_reapply_change(NMDevice   *device,
+                   const char *setting_name,
+                   NMSetting  *s_old,
+                   NMSetting  *s_new,
+                   GHashTable *diffs,
+                   GError    **error)
+{
+    /* Delegate changes to other settings to parent class */
+    if (!nm_streq(setting_name, NM_SETTING_BRIDGE_SETTING_NAME)) {
+        NM_DEVICE_CLASS(nm_device_bridge_parent_class)
+            ->can_reapply_change(device, setting_name, s_old, s_new, diffs, error);
+    }
+
+    return nm_device_hash_check_invalid_keys(diffs,
+                                             NM_SETTING_BRIDGE_SETTING_NAME,
+                                             error,
+                                             NM_SETTING_BRIDGE_STP,
+                                             NM_SETTING_BRIDGE_PRIORITY,
+                                             NM_SETTING_BRIDGE_FORWARD_DELAY,
+                                             NM_SETTING_BRIDGE_HELLO_TIME,
+                                             NM_SETTING_BRIDGE_MAX_AGE,
+                                             NM_SETTING_BRIDGE_AGEING_TIME,
+                                             NM_SETTING_BRIDGE_GROUP_FORWARD_MASK,
+                                             NM_SETTING_BRIDGE_MULTICAST_HASH_MAX,
+                                             NM_SETTING_BRIDGE_MULTICAST_LAST_MEMBER_COUNT,
+                                             NM_SETTING_BRIDGE_MULTICAST_LAST_MEMBER_INTERVAL,
+                                             NM_SETTING_BRIDGE_MULTICAST_MEMBERSHIP_INTERVAL,
+                                             NM_SETTING_BRIDGE_MULTICAST_SNOOPING,
+                                             NM_SETTING_BRIDGE_MULTICAST_ROUTER,
+                                             NM_SETTING_BRIDGE_MULTICAST_QUERIER,
+                                             NM_SETTING_BRIDGE_MULTICAST_QUERIER_INTERVAL,
+                                             NM_SETTING_BRIDGE_MULTICAST_QUERY_INTERVAL,
+                                             NM_SETTING_BRIDGE_MULTICAST_QUERY_RESPONSE_INTERVAL,
+                                             NM_SETTING_BRIDGE_MULTICAST_QUERY_USE_IFADDR,
+                                             NM_SETTING_BRIDGE_MULTICAST_STARTUP_QUERY_COUNT,
+                                             NM_SETTING_BRIDGE_MULTICAST_STARTUP_QUERY_INTERVAL,
+                                             NM_SETTING_BRIDGE_GROUP_ADDRESS,
+                                             NM_SETTING_BRIDGE_VLAN_PROTOCOL,
+                                             NM_SETTING_BRIDGE_VLAN_STATS_ENABLED,
+                                             NM_SETTING_BRIDGE_VLAN_FILTERING,
+                                             NM_SETTING_BRIDGE_VLAN_DEFAULT_PVID,
+                                             NM_SETTING_BRIDGE_VLANS);
+}
+
+static void
+reapply_connection(NMDevice *device, NMConnection *con_old, NMConnection *con_new)
+{
+    NMDeviceBridge  *self = NM_DEVICE_BRIDGE(device);
+    NMSettingBridge *s_bridge;
+
+    NM_DEVICE_CLASS(nm_device_bridge_parent_class)->reapply_connection(device, con_old, con_new);
+
+    _LOGD(LOGD_BRIDGE, "reapplying bridge settings");
+    s_bridge = nm_connection_get_setting_bridge(con_new);
+    g_return_if_fail(s_bridge);
+
+    link_config(device, con_new);
+}
+
+/*****************************************************************************/
+
 static void
 nm_device_bridge_init(NMDeviceBridge *self)
 {
@@ -1192,6 +1257,8 @@ nm_device_bridge_class_init(NMDeviceBridgeClass *klass)
     device_class->attach_port                            = attach_port;
     device_class->detach_port                            = detach_port;
     device_class->get_configured_mtu                     = nm_device_get_configured_mtu_for_wired;
+    device_class->can_reapply_change                     = can_reapply_change;
+    device_class->reapply_connection                     = reapply_connection;
 }
 
 /*****************************************************************************/
