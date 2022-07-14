@@ -826,7 +826,7 @@ update_system_hostname(NMPolicy *self, const char *msg)
         && (nm_utils_is_specific_hostname(temp_hostname)
             || nm_utils_is_specific_hostname(priv->last_hostname))) {
         external_hostname = TRUE;
-        _LOGI(LOGD_DNS,
+        _LOGD(LOGD_DNS,
               "set-hostname: current hostname was changed outside NetworkManager: '%s'",
               temp_hostname);
         priv->dhcp_hostname = FALSE;
