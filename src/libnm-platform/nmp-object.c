@@ -840,6 +840,17 @@ nmp_object_stackinit_id(NMPObject *obj, const NMPObject *src)
     _nmp_object_stackinit_from_class(obj, klass);
     if (klass->cmd_plobj_id_copy)
         klass->cmd_plobj_id_copy(&obj->object, &src->object);
+    else {
+        /* This object must not implement cmd_obj_copy().
+         * If it would, it would mean that we require a deep copy
+         * of the data. As @obj is stack-allocated, it cannot track
+         * ownership. The caller must not use nmp_object_stackinit_id()
+         * with an object of such a type. */
+        nm_assert(!klass->cmd_obj_copy);
+
+        /* plain memcpy of the public part suffices. */
+        memcpy(&obj->object, &src->object, klass->sizeof_data);
+    }
     return obj;
 }
 
