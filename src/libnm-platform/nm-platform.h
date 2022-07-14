@@ -1394,6 +1394,10 @@ typedef struct {
 
     guint16 (*genl_get_family_id)(NMPlatform *platform, NMPGenlFamilyType family_type);
 
+    int (*mptcp_addr_update)(NMPlatform *self, NMOptionBool add, const NMPlatformMptcpAddr *addr);
+
+    GPtrArray *(*mptcp_addrs_dump)(NMPlatform *self);
+
 } NMPlatformClass;
 
 /* NMPlatform signals
@@ -2667,5 +2671,10 @@ gboolean nm_platform_ip_address_match(int                        addr_family,
 /*****************************************************************************/
 
 guint16 nm_platform_genl_get_family_id(NMPlatform *self, NMPGenlFamilyType family_type);
+
+int
+nm_platform_mptcp_addr_update(NMPlatform *self, NMOptionBool add, const NMPlatformMptcpAddr *addr);
+
+GPtrArray *nm_platform_mptcp_addrs_dump(NMPlatform *self);
 
 #endif /* __NETWORKMANAGER_PLATFORM_H__ */

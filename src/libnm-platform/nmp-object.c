@@ -1785,7 +1785,7 @@ _vt_cmd_obj_is_alive_tfilter(const NMPObject *obj)
 static gboolean
 _vt_cmd_obj_is_alive_mptcp_addr(const NMPObject *obj)
 {
-    return NM_IN_SET(obj->mptcp_addr.addr_family, AF_INET, AF_INET6);
+    return NM_IN_SET(obj->mptcp_addr.addr_family, AF_INET, AF_INET6, AF_UNSPEC);
 }
 
 gboolean

@@ -7,6 +7,8 @@
 
 #include "nm-platform.h"
 
+#include "libnm-std-aux/nm-linux-compat.h"
+
 #include <stdlib.h>
 #include <unistd.h>
 #include <netinet/in.h>
@@ -402,7 +404,7 @@ const NMPGenlFamilyInfo nmp_genl_family_infos[_NMP_GENL_FAMILY_TYPE_NUM] = {
         },
     [NMP_GENL_FAMILY_TYPE_MPTCP_PM] =
         {
-            .name = "mptcp_pm",
+            .name = MPTCP_PM_NAME,
         },
     [NMP_GENL_FAMILY_TYPE_NL80211] =
         {
@@ -5320,23 +5322,26 @@ nm_platform_object_delete(NMPlatform *self, const NMPObject *obj)
 
     _CHECK_SELF(self, klass, FALSE);
 
-    switch (NMP_OBJECT_GET_TYPE(obj)) {
-    case NMP_OBJECT_TYPE_ROUTING_RULE:
-        _LOGD("%s: delete %s",
-              NMP_OBJECT_GET_CLASS(obj)->obj_type_name,
-              nmp_object_to_string(obj, NMP_OBJECT_TO_STRING_PUBLIC, sbuf, sizeof(sbuf)));
-        break;
-    case NMP_OBJECT_TYPE_IP4_ROUTE:
-    case NMP_OBJECT_TYPE_IP6_ROUTE:
-    case NMP_OBJECT_TYPE_QDISC:
-    case NMP_OBJECT_TYPE_TFILTER:
-        ifindex = NMP_OBJECT_CAST_OBJ_WITH_IFINDEX(obj)->ifindex;
-        _LOG3D("%s: delete %s",
-               NMP_OBJECT_GET_CLASS(obj)->obj_type_name,
-               nmp_object_to_string(obj, NMP_OBJECT_TO_STRING_PUBLIC, sbuf, sizeof(sbuf)));
-        break;
-    default:
-        g_return_val_if_reached(FALSE);
+    if (_LOGD_ENABLED()) {
+        switch (NMP_OBJECT_GET_TYPE(obj)) {
+        case NMP_OBJECT_TYPE_ROUTING_RULE:
+        case NMP_OBJECT_TYPE_MPTCP_ADDR:
+            _LOGD("%s: delete %s",
+                  NMP_OBJECT_GET_CLASS(obj)->obj_type_name,
+                  nmp_object_to_string(obj, NMP_OBJECT_TO_STRING_PUBLIC, sbuf, sizeof(sbuf)));
+            break;
+        case NMP_OBJECT_TYPE_IP4_ROUTE:
+        case NMP_OBJECT_TYPE_IP6_ROUTE:
+        case NMP_OBJECT_TYPE_QDISC:
+        case NMP_OBJECT_TYPE_TFILTER:
+            ifindex = NMP_OBJECT_CAST_OBJ_WITH_IFINDEX(obj)->ifindex;
+            _LOG3D("%s: delete %s",
+                   NMP_OBJECT_GET_CLASS(obj)->obj_type_name,
+                   nmp_object_to_string(obj, NMP_OBJECT_TO_STRING_PUBLIC, sbuf, sizeof(sbuf)));
+            break;
+        default:
+            g_return_val_if_reached(FALSE);
+        }
     }
 
     return klass->object_delete(self, obj);
@@ -9389,6 +9394,24 @@ nm_platform_genl_get_family_id(NMPlatform *self, NMPGenlFamilyType family_type)
         g_return_val_if_reached(0);
 
     return klass->genl_get_family_id(self, family_type);
+}
+
+/*****************************************************************************/
+
+int
+nm_platform_mptcp_addr_update(NMPlatform *self, NMOptionBool add, const NMPlatformMptcpAddr *addr)
+{
+    _CHECK_SELF(self, klass, -NME_BUG);
+
+    return klass->mptcp_addr_update(self, add, addr);
+}
+
+GPtrArray *
+nm_platform_mptcp_addrs_dump(NMPlatform *self)
+{
+    _CHECK_SELF(self, klass, NULL);
+
+    return klass->mptcp_addrs_dump(self);
 }
 
 /*****************************************************************************/
