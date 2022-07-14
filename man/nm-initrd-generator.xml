@@ -160,13 +160,18 @@
             <member><option>ib.pkey</option></member>
             <member><option>bootdev</option></member>
             <member><option>nameserver</option></member>
+            <member><option>net.ifnames</option></member>
             <member><option>rd.peerdns</option></member>
+            <member><option>rd.iscsi.ibft</option></member>
             <member><option>rd.bootif</option></member>
+            <member><option>rd.neednet</option></member>
             <member><option>rd.ethtool</option></member>
             <member><option>rd.net.timeout.dhcp</option></member>
+            <member><option>rd.net.dhcp.retry</option></member>
+            <member><option>rd.net.dhcp.vendor-class</option></member>
             <member><option>rd.net.timeout.carrier</option></member>
             <member><option>rd.znet</option></member>
-            <member><option>rd.znet_ifnames</option></member>
+            <member><option>rd.znet_ifname</option></member>
             <member><option>BOOTIF</option></member>
           </simplelist>
 
