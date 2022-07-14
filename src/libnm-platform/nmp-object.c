@@ -20,25 +20,26 @@
 /*****************************************************************************/
 
 #define _NMLOG_DOMAIN LOGD_PLATFORM
-#define _NMLOG(level, obj, ...)                                               \
-    G_STMT_START                                                              \
-    {                                                                         \
-        const NMLogLevel __level = (level);                                   \
-                                                                              \
-        if (nm_logging_enabled(__level, _NMLOG_DOMAIN)) {                     \
-            const NMPObject *const __obj = (obj);                             \
-                                                                              \
-            _nm_log(__level,                                                  \
-                    _NMLOG_DOMAIN,                                            \
-                    0,                                                        \
-                    NULL,                                                     \
-                    NULL,                                                     \
-                    "nmp-object[%p/%s]: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
-                    __obj,                                                    \
-                    (__obj ? NMP_OBJECT_GET_CLASS(__obj)->obj_type_name       \
-                           : "???") _NM_UTILS_MACRO_REST(__VA_ARGS__));       \
-        }                                                                     \
-    }                                                                         \
+#define _NMLOG(level, obj, ...)                                         \
+    G_STMT_START                                                        \
+    {                                                                   \
+        const NMLogLevel __level = (level);                             \
+                                                                        \
+        if (nm_logging_enabled(__level, _NMLOG_DOMAIN)) {               \
+            const NMPObject *const __obj = (obj);                       \
+                                                                        \
+            _nm_log(__level,                                            \
+                    _NMLOG_DOMAIN,                                      \
+                    0,                                                  \
+                    NULL,                                               \
+                    NULL,                                               \
+                    "nmp-object[" NM_HASH_OBFUSCATE_PTR_FMT ""          \
+                    "/%s]: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__),        \
+                    NM_HASH_OBFUSCATE_PTR(__obj),                       \
+                    (__obj ? NMP_OBJECT_GET_CLASS(__obj)->obj_type_name \
+                           : "???") _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
+        }                                                               \
+    }                                                                   \
     G_STMT_END
 
 /*****************************************************************************/
@@ -911,7 +912,7 @@ nmp_object_to_string(const NMPObject      *obj,
     switch (to_string_mode) {
     case NMP_OBJECT_TO_STRING_ID:
         if (!klass->cmd_plobj_to_string_id) {
-            g_snprintf(buf, buf_size, "%p", obj);
+            g_snprintf(buf, buf_size, NM_HASH_OBFUSCATE_PTR_FMT, NM_HASH_OBFUSCATE_PTR(obj));
             return buf;
         }
         return klass->cmd_plobj_to_string_id(&obj->object, buf, buf_size);
@@ -919,9 +920,9 @@ nmp_object_to_string(const NMPObject      *obj,
         g_snprintf(
             buf,
             buf_size,
-            "[%s,%p,%u,%calive,%cvisible; %s]",
+            "[%s," NM_HASH_OBFUSCATE_PTR_FMT ",%u,%calive,%cvisible; %s]",
             klass->obj_type_name,
-            obj,
+            NM_HASH_OBFUSCATE_PTR(obj),
             obj->parent._ref_count,
             nmp_object_is_alive(obj) ? '+' : '-',
             nmp_object_is_visible(obj) ? '+' : '-',
@@ -950,14 +951,15 @@ _vt_cmd_obj_to_string_link(const NMPObject      *obj,
     case NMP_OBJECT_TO_STRING_ALL:
         nm_strbuf_append(&b,
                          &buf_size,
-                         "[%s,%p,%u,%calive,%cvisible,%cin-nl,%p; ",
+                         "[%s," NM_HASH_OBFUSCATE_PTR_FMT
+                         ",%u,%calive,%cvisible,%cin-nl," NM_HASH_OBFUSCATE_PTR_FMT "; ",
                          klass->obj_type_name,
-                         obj,
+                         NM_HASH_OBFUSCATE_PTR(obj),
                          obj->parent._ref_count,
                          nmp_object_is_alive(obj) ? '+' : '-',
                          nmp_object_is_visible(obj) ? '+' : '-',
                          obj->_link.netlink.is_in_netlink ? '+' : '-',
-                         obj->_link.udev.device);
+                         NM_HASH_OBFUSCATE_PTR(obj->_link.udev.device));
         NMP_OBJECT_GET_CLASS(obj)->cmd_plobj_to_string(&obj->object, b, buf_size);
         nm_strbuf_seek_end(&b, &buf_size);
         if (obj->_link.netlink.lnk) {
@@ -995,15 +997,15 @@ _vt_cmd_obj_to_string_lnk_vlan(const NMPObject      *obj,
 
     switch (to_string_mode) {
     case NMP_OBJECT_TO_STRING_ID:
-        g_snprintf(buf, buf_size, "%p", obj);
+        g_snprintf(buf, buf_size, NM_HASH_OBFUSCATE_PTR_FMT, NM_HASH_OBFUSCATE_PTR(obj));
         return buf;
     case NMP_OBJECT_TO_STRING_ALL:
 
         g_snprintf(buf,
                    buf_size,
-                   "[%s,%p,%u,%calive,%cvisible; %s]",
+                   "[%s," NM_HASH_OBFUSCATE_PTR_FMT ",%u,%calive,%cvisible; %s]",
                    klass->obj_type_name,
-                   obj,
+                   NM_HASH_OBFUSCATE_PTR(obj),
                    obj->parent._ref_count,
                    nmp_object_is_alive(obj) ? '+' : '-',
                    nmp_object_is_visible(obj) ? '+' : '-',
@@ -1059,17 +1061,17 @@ _vt_cmd_obj_to_string_lnk_wireguard(const NMPObject      *obj,
 
     switch (to_string_mode) {
     case NMP_OBJECT_TO_STRING_ID:
-        g_snprintf(buf, buf_size, "%p", obj);
+        g_snprintf(buf, buf_size, NM_HASH_OBFUSCATE_PTR_FMT, NM_HASH_OBFUSCATE_PTR(obj));
         return buf;
     case NMP_OBJECT_TO_STRING_ALL:
         b = buf;
 
         nm_strbuf_append(&b,
                          &buf_size,
-                         "[%s,%p,%u,%calive,%cvisible; %s"
+                         "[%s," NM_HASH_OBFUSCATE_PTR_FMT ",%u,%calive,%cvisible; %s"
                          "%s",
                          klass->obj_type_name,
-                         obj,
+                         NM_HASH_OBFUSCATE_PTR(obj),
                          obj->parent._ref_count,
                          nmp_object_is_alive(obj) ? '+' : '-',
                          nmp_object_is_visible(obj) ? '+' : '-',
