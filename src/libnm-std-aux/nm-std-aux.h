@@ -1174,7 +1174,7 @@ nm_ptr_to_uintptr(const void *p)
 
 #define NM_CMP_DIRECT_BOOL(a, b) NM_CMP_DIRECT(!!(a), !!(b))
 
-#define NM_CMP_DIRECT_MEMCMP(a, b, size) NM_CMP_RETURN(memcmp((a), (b), (size)))
+#define NM_CMP_DIRECT_MEMCMP(a, b, size) NM_CMP_RETURN(nm_memcmp((a), (b), (size)))
 
 #define NM_CMP_DIRECT_STRCMP(a, b) NM_CMP_RETURN_DIRECT(strcmp((a), (b)))
 
