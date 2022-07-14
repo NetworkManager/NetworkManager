@@ -355,7 +355,7 @@ main(int argc, char *argv[])
         g_free(path);
     }
 
-    if (nm_strv_find_first(nm_utils_proc_cmdline_split(), -1, "nm.debug") >= 0) {
+    if (nm_config_kernel_command_line_nm_debug()) {
         /* we honor kernel command line. If "nm.debug" is set, we always enable trace logging. */
         nm_logging_setup("TRACE", "ALL", NULL, NULL);
         has_logging = TRUE;
