@@ -1431,21 +1431,6 @@ _vt_cmd_plobj_id_copy(ip6_address, NMPlatformIP6Address, {
     dst->address = src->address;
 });
 
-_vt_cmd_plobj_id_copy(ip4_route, NMPlatformIP4Route, {
-    *dst = *src;
-    nm_assert(nm_platform_ip4_route_cmp(dst, src, NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID) == 0);
-});
-
-_vt_cmd_plobj_id_copy(ip6_route, NMPlatformIP6Route, {
-    *dst = *src;
-    nm_assert(nm_platform_ip6_route_cmp(dst, src, NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID) == 0);
-});
-
-_vt_cmd_plobj_id_copy(routing_rule, NMPlatformRoutingRule, {
-    *dst = *src;
-    nm_assert(nm_platform_routing_rule_cmp(dst, src, NM_PLATFORM_ROUTING_RULE_CMP_TYPE_ID) == 0);
-});
-
 /* Uses internally nmp_object_copy(), hence it also violates the const
  * promise for @obj.
  * */
@@ -3177,7 +3162,6 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
             .signal_type              = NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED,
             .supported_cache_ids      = _supported_cache_ids_ipx_route,
             .cmd_obj_is_alive         = _vt_cmd_obj_is_alive_ipx_route,
-            .cmd_plobj_id_copy        = _vt_cmd_plobj_id_copy_ip4_route,
             .cmd_plobj_id_cmp         = _vt_cmd_plobj_id_cmp_ip4_route,
             .cmd_plobj_id_hash_update = _vt_cmd_plobj_id_hash_update_ip4_route,
             .cmd_plobj_to_string_id   = (CmdPlobjToStringIdFunc) nm_platform_ip4_route_to_string,
@@ -3198,7 +3182,6 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
             .signal_type              = NM_PLATFORM_SIGNAL_IP6_ROUTE_CHANGED,
             .supported_cache_ids      = _supported_cache_ids_ipx_route,
             .cmd_obj_is_alive         = _vt_cmd_obj_is_alive_ipx_route,
-            .cmd_plobj_id_copy        = _vt_cmd_plobj_id_copy_ip6_route,
             .cmd_plobj_id_cmp         = _vt_cmd_plobj_id_cmp_ip6_route,
             .cmd_plobj_id_hash_update = _vt_cmd_plobj_id_hash_update_ip6_route,
             .cmd_plobj_to_string_id   = (CmdPlobjToStringIdFunc) nm_platform_ip6_route_to_string,
@@ -3218,7 +3201,6 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
             .signal_type              = NM_PLATFORM_SIGNAL_ROUTING_RULE_CHANGED,
             .supported_cache_ids      = _supported_cache_ids_routing_rules,
             .cmd_obj_is_alive         = _vt_cmd_obj_is_alive_routing_rule,
-            .cmd_plobj_id_copy        = _vt_cmd_plobj_id_copy_routing_rule,
             .cmd_plobj_id_cmp         = _vt_cmd_plobj_id_cmp_routing_rule,
             .cmd_plobj_id_hash_update = _vt_cmd_plobj_id_hash_update_routing_rule,
             .cmd_plobj_to_string_id   = (CmdPlobjToStringIdFunc) nm_platform_routing_rule_to_string,
