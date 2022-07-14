@@ -487,6 +487,17 @@ nm_streq0(const char *s1, const char *s2)
     return (s1 == s2) || (s1 && s2 && strcmp(s1, s2) == 0);
 }
 
+static inline int
+nm_memcmp(const void *s1, const void *s2, size_t n)
+{
+    /* Workaround undefined behavior in memcmp() with NULL pointers. */
+    if (n == 0)
+        return 0;
+    nm_assert(s1);
+    nm_assert(s2);
+    return memcmp(s1, s2, n);
+}
+
 /*
  * Very similar to g_str_has_prefix() with the obvious meaning.
  * Differences:
