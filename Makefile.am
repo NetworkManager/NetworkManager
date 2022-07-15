@@ -590,8 +590,9 @@ src_libnm_platform_libnm_platform_la_CPPFLAGS = \
 src_libnm_platform_libnm_platform_la_SOURCES = \
 	\
 	src/linux-headers/ethtool.h \
-	src/linux-headers/nl802154.h \
+	src/linux-headers/mptcp.h \
 	src/linux-headers/nl80211-vnd-intel.h \
+	src/linux-headers/nl802154.h \
 	\
 	src/libnm-platform/nm-linux-platform.c \
 	src/libnm-platform/nm-linux-platform.h \
