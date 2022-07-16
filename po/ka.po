@@ -8,34 +8,32 @@ msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2022-03-30 23:46+0200\n"
-"PO-Revision-Date: 2017-04-21 06:08-0400\n"
-"Last-Translator: Copied by Zanata <copied-by-zanata@zanata.org>\n"
+"PO-Revision-Date: 2022-07-16 18:47+0200\n"
+"Last-Translator: Temuri Doghonadze <temuri.doghonadze@gmail.com>\n"
 "Language-Team: Georgian <http://mail.gnome.org/mailman/listinfo/gnome-ge-"
 "list>\n"
 "Language: ka\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=1; plural=0\n"
-"X-Generator: Zanata 3.9.6\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Generator: Poedit 3.1.1\n"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:1
-#, fuzzy
 msgid "Enable or disable system networking"
-msgstr "_ქსელური შეერთების ნების დართვა"
+msgstr "სისტემური ქსელის ჩართვ/გამორთვ"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:2
 msgid "System policy prevents enabling or disabling system networking"
-msgstr ""
+msgstr "სისტემის წესი, რომელიც ჩართავს ან გამორთავს ქსელის მხარდაჭერას"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:3
-#, fuzzy
 msgid "Reload NetworkManager configuration"
-msgstr "NetworkManager არ არის გაშვებული"
+msgstr "NetworkManager-ის კონფიგურაციის თავიდან წაკითხვა"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:4
 msgid "System policy prevents reloading NetworkManager"
-msgstr ""
+msgstr "სისტემის წესი კრძალავს NetworkManager-ის გადატვირთვას"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:5
 msgid ""
@@ -49,19 +47,20 @@ msgstr ""
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:7
 msgid "Enable or disable Wi-Fi devices"
-msgstr ""
+msgstr "Wi-Fi მოწყობილობების ჩართვა ან გამორთვა"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:8
 msgid "System policy prevents enabling or disabling Wi-Fi devices"
-msgstr ""
+msgstr "სისტემის წესი კრძალავს Wifi მოწყობილობების ჩართვას ან გამორთვას"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:9
 msgid "Enable or disable mobile broadband devices"
-msgstr ""
+msgstr "მობილური ფართოზოლოვანი მოწყობილობების ჩართვა ან გამორთვა"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:10
 msgid "System policy prevents enabling or disabling mobile broadband devices"
 msgstr ""
+"სისტემის წესი კრძალავს ფართოზოლოვანი მოწყობილობების ჩართვას ან გამორთვას"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:11
 msgid "Enable or disable WiMAX mobile broadband devices"
@@ -73,79 +72,76 @@ msgid ""
 msgstr ""
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:13
-#, fuzzy
 msgid "Allow control of network connections"
-msgstr "არ არის ქსელთან შეერთება"
+msgstr "წვდომა ქსელის კავშირების კონტროლზე"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:14
 msgid "System policy prevents control of network connections"
-msgstr ""
+msgstr "სისტემის წესი კრძალავს ქსელური კავშირების კონტროლს"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:15
-#, fuzzy
 msgid "Allow control of Wi-Fi scans"
-msgstr "არ არის ქსელთან შეერთება"
+msgstr "Wi-Fi-ის სკანირების კონტროლის უფლება"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:16
 msgid "System policy prevents Wi-Fi scans"
-msgstr ""
+msgstr "სისტემის წესი კრძალავს Wi-Fi სკანირებას"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:17
 msgid "Connection sharing via a protected Wi-Fi network"
-msgstr ""
+msgstr "კავშირის გაზიარება დაცული Wi-Fi ქსელის გავლით"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:18
 msgid ""
 "System policy prevents sharing connections via a protected Wi-Fi network"
-msgstr ""
+msgstr "სისტემის წესი კრძალავს კავშირის გაზიარებას დაცული Wi-Fi ქსელის გავლით"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:19
 msgid "Connection sharing via an open Wi-Fi network"
-msgstr ""
+msgstr "კავშირის გაზიარება ღია Wi-Fi ქსელის გავლით"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:20
 msgid "System policy prevents sharing connections via an open Wi-Fi network"
-msgstr ""
+msgstr "სისტემის წესი კრძალავს კავშირის გაზიარებას ღია Wi-Fi ქსელის გავლით"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:21
-#, fuzzy
 msgid "Modify personal network connections"
-msgstr "არ არის ქსელთან შეერთება"
+msgstr "პირადი ქსელის კავშირები"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:22
 msgid "System policy prevents modification of personal network settings"
-msgstr ""
+msgstr "სისტემის წესი კრძალავს ქსელის პირადი კავშირების ჩასწორებას"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:23
-#, fuzzy
 msgid "Modify network connections for all users"
-msgstr "არ არის ქსელთან შეერთება"
+msgstr "ქსელის კავშირის ყველა მომხმარებლისთვის ჩასწორება"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:24
 msgid "System policy prevents modification of network settings for all users"
 msgstr ""
+"სისტემის წესი კრძალავს ქსელის პარამეტრების ყველა მომხმარებლისთვის ჩასწორებას"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:25
 msgid "Modify persistent system hostname"
-msgstr ""
+msgstr "ჰოსტის მუდმივი სახელის ჩასწორება"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:26
 msgid "System policy prevents modification of the persistent system hostname"
-msgstr ""
+msgstr "სისტემის წესი კრძალავს ჰოსტის მუდმივი სახელის ჩასწორებას"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:27
 msgid "Modify persistent global DNS configuration"
-msgstr ""
+msgstr "DNS-ის გლობალური კონფიგურაციის ჩასწორება"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:28
 msgid ""
 "System policy prevents modification of the persistent global DNS "
 "configuration"
-msgstr ""
+msgstr "სისტემური წესი კრძალავს DNS-ის გლობალური კონფიგურაციის ჩასწორებას"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:29
 msgid "Perform a checkpoint or rollback of interfaces configuration"
-msgstr ""
+msgstr "ინტერფეისის კონფიგურაციის საკონტროლო წერტილის დასმა ან დაბრუნება"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:30
 msgid "System policy prevents the creation of a checkpoint or its rollback"
@@ -160,9 +156,8 @@ msgid "System policy prevents enabling or disabling device statistics"
 msgstr ""
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:33
-#, fuzzy
 msgid "Enable or disable connectivity checking"
-msgstr "_ქსელური შეერთების ნების დართვა"
+msgstr "_ქსელური შეერთების შემოწმების ნების დართვა"
 
 #: ../data/org.freedesktop.NetworkManager.policy.in.in.h:34
 msgid "System policy prevents enabling or disabling connectivity checking"
@@ -176,18 +171,17 @@ msgstr ""
 #, c-format
 msgctxt "connection id fallback"
 msgid "%s %u"
-msgstr ""
+msgstr "%s %u"
 
 #: ../src/core/devices/adsl/nm-device-adsl.c:115
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:8203
-#, fuzzy
 msgid "ADSL connection"
-msgstr "VPN-შეერთებები"
+msgstr "ADSL შეერთება"
 
 #: ../src/core/devices/bluetooth/nm-bluez-manager.c:1315
-#, fuzzy, c-format
+#, c-format
 msgid "%s Network"
-msgstr "უკაბელო ქსელი"
+msgstr "%s ქსელი"
 
 #: ../src/core/devices/bluetooth/nm-device-bt.c:297
 msgid "PAN requested, but Bluetooth device does not support NAP"
@@ -198,9 +192,8 @@ msgid "PAN connections cannot specify GSM, CDMA, or serial settings"
 msgstr ""
 
 #: ../src/core/devices/bluetooth/nm-device-bt.c:325
-#, fuzzy
 msgid "PAN connection"
-msgstr "VPN-შეერთებები"
+msgstr "PAN კავშირი"
 
 #: ../src/core/devices/bluetooth/nm-device-bt.c:332
 msgid "DUN requested, but Bluetooth device does not support DUN"
@@ -212,15 +205,13 @@ msgstr ""
 
 #: ../src/core/devices/bluetooth/nm-device-bt.c:356
 #: ../src/core/devices/wwan/nm-modem-broadband.c:814
-#, fuzzy
 msgid "GSM connection"
-msgstr "VPN-შეერთებები"
+msgstr "GSM კავშირი"
 
 #: ../src/core/devices/bluetooth/nm-device-bt.c:358
 #: ../src/core/devices/wwan/nm-modem-broadband.c:835
-#, fuzzy
 msgid "CDMA connection"
-msgstr "VPN-შეერთებები"
+msgstr "CDMA კავშირი"
 
 #: ../src/core/devices/bluetooth/nm-device-bt.c:366
 msgid "Unknown/unhandled Bluetooth connection type"
@@ -231,99 +222,83 @@ msgid "connection does not match device"
 msgstr ""
 
 #: ../src/core/devices/nm-device-6lowpan.c:191
-#, fuzzy
 msgid "6LOWPAN connection"
-msgstr "VPN-შეერთებები"
+msgstr "6LOWPAN კავშირი"
 
 #: ../src/core/devices/nm-device-bond.c:88
-#, fuzzy
 msgid "Bond connection"
-msgstr "არ არის ქსელთან შეერთება"
+msgstr "ქსელის ინტერფეისების გადაბმული შეერთება"
 
 #: ../src/core/devices/nm-device-bridge.c:154
-#, fuzzy
 msgid "Bridge connection"
-msgstr "შეერთებულია კაბელურ ქსელთან"
+msgstr "ქსელის ინტერფეისის ხიდოვანი შეერთება"
 
 #: ../src/core/devices/nm-device-dummy.c:56
-#, fuzzy
 msgid "Dummy connection"
-msgstr "VPN-შეერთებები"
+msgstr "შტერი შეერთება"
 
 #: ../src/core/devices/nm-device-ethernet-utils.c:20
-#, fuzzy, c-format
+#, c-format
 msgid "Wired connection %d"
-msgstr "შეერთებულია კაბელურ ქსელთან"
+msgstr "მავთულოვანი შეერთება %d"
 
 #: ../src/core/devices/nm-device-ethernet.c:1628
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:8241
-#, fuzzy
 msgid "Veth connection"
-msgstr "VPN-შეერთებები"
+msgstr "Veth შეერთება"
 
 #: ../src/core/devices/nm-device-ethernet.c:1686
-#, fuzzy
 msgid "PPPoE connection"
-msgstr "VPN-შეერთებები"
+msgstr "PPPoE შეერთება"
 
 #: ../src/core/devices/nm-device-ethernet.c:1686
-#, fuzzy
 msgid "Wired connection"
-msgstr "შეერთებულია კაბელურ ქსელთან"
+msgstr "მავთულოვანი შეერთება"
 
 #: ../src/core/devices/nm-device-infiniband.c:157
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:8217
-#, fuzzy
 msgid "InfiniBand connection"
-msgstr "ვერ მოინახა VPN შეერთება"
+msgstr "InfiniBand შეერთევა"
 
 #: ../src/core/devices/nm-device-ip-tunnel.c:399
-#, fuzzy
 msgid "IP tunnel connection"
-msgstr "არ არის ქსელთან შეერთება"
+msgstr "IP გვირაბის შეერთება"
 
 #: ../src/core/devices/nm-device-macvlan.c:389
-#, fuzzy
 msgid "MACVLAN connection"
-msgstr "VPN-შეერთებები"
+msgstr "MACVLAN შეერთბა"
 
 #: ../src/core/devices/nm-device-tun.c:144
-#, fuzzy
 msgid "TUN connection"
-msgstr "VPN-შეერთებები"
+msgstr "TUN შეერთბა"
 
 #: ../src/core/devices/nm-device-vlan.c:398
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:8242
-#, fuzzy
 msgid "VLAN connection"
-msgstr "VPN-შეერთებები"
+msgstr "VLAN შეერთება"
 
 #: ../src/core/devices/nm-device-vrf.c:182
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:8244
-#, fuzzy
 msgid "VRF connection"
-msgstr "VPN-შეერთებები"
+msgstr "VRF შეერთბა"
 
 #: ../src/core/devices/nm-device-vxlan.c:382
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:8245
-#, fuzzy
 msgid "VXLAN connection"
-msgstr "VPN-შეერთებები"
+msgstr "VXLAN შეერთება"
 
 #: ../src/core/devices/nm-device-wpan.c:54
-#, fuzzy
 msgid "WPAN connection"
-msgstr "VPN-შეერთებები"
+msgstr "WPAN შეერთება"
 
 #: ../src/core/devices/team/nm-device-team.c:86
-#, fuzzy
 msgid "Team connection"
-msgstr "არ არის ქსელთან შეერთება"
+msgstr "ქსელის ინტერფეისების ჯგუფოვანი შეერთება"
 
 #: ../src/core/devices/wifi/nm-device-olpc-mesh.c:112
 #: ../src/nmcli/devices.c:1371
 msgid "Mesh"
-msgstr ""
+msgstr "ბადე"
 
 #: ../src/core/devices/wifi/nm-wifi-utils.c:33
 #, c-format
@@ -397,14 +372,12 @@ msgid "Access point does not support PSK but setting requires it"
 msgstr ""
 
 #: ../src/core/devices/wifi/nm-wifi-utils.c:363
-#, fuzzy
 msgid "WPA Ad-Hoc authentication requires 'rsn' protocol"
-msgstr "ახალი უკაბელო ქსელის შექმნა"
+msgstr ""
 
 #: ../src/core/devices/wifi/nm-wifi-utils.c:376
-#, fuzzy
 msgid "WPA Ad-Hoc authentication requires 'ccmp' pairwise cipher"
-msgstr "ახალი უკაბელო ქსელის შექმნა"
+msgstr ""
 
 #: ../src/core/devices/wifi/nm-wifi-utils.c:389
 msgid "WPA Ad-Hoc requires 'ccmp' group cipher"
@@ -449,9 +422,9 @@ msgid "connection does not match access point"
 msgstr ""
 
 #: ../src/core/devices/wifi/nm-wifi-utils.c:653
-#, fuzzy, c-format
+#, c-format
 msgid "connection does not match mesh point"
-msgstr "ქსელური შეერთება გათიშულია."
+msgstr ""
 
 #: ../src/core/devices/wifi/nm-wifi-utils.c:672
 msgid "Access point is unencrypted but setting specifies security"
@@ -518,14 +491,12 @@ msgid "Failed to read configuration: %s\n"
 msgstr ""
 
 #: ../src/core/main.c:191
-#, fuzzy
 msgid "Print NetworkManager version and exit"
-msgstr "NetworkManager არ არის გაშვებული"
+msgstr ""
 
 #: ../src/core/main.c:198
-#, fuzzy
 msgid "Don't become a daemon"
-msgstr "_შეხსენების აკრძალვა"
+msgstr ""
 
 #: ../src/core/main.c:205
 #, c-format
@@ -539,7 +510,7 @@ msgstr ""
 
 #: ../src/core/main.c:219
 msgid "Make all warnings fatal"
-msgstr ""
+msgstr "ყველა გაფრთხილების ფატალურად გამოცხადება"
 
 #: ../src/core/main.c:226
 msgid "Specify the location of a PID file"
@@ -568,7 +539,7 @@ msgstr ""
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:4242
 #, c-format
 msgid "'%s' is not valid"
-msgstr ""
+msgstr "'%s' არასწორია"
 
 #: ../src/core/nm-config.c:564
 #, c-format
@@ -577,23 +548,23 @@ msgstr ""
 
 #: ../src/core/nm-config.c:581
 msgid "Config file location"
-msgstr ""
+msgstr "კონფიგურაციის ფაილის მდებარეობა"
 
 #: ../src/core/nm-config.c:588
 msgid "Config directory location"
-msgstr ""
+msgstr "კონფიგურაციის საქაღალდის მდებარეობა"
 
 #: ../src/core/nm-config.c:595
 msgid "System config directory location"
-msgstr ""
+msgstr "სისტემური კონფიგურაციის საქაღალდის მდებარეობა"
 
 #: ../src/core/nm-config.c:602
 msgid "Internal config file location"
-msgstr ""
+msgstr "შიდა კონფიგურაციის ფაილის მდებარეობა"
 
 #: ../src/core/nm-config.c:609
 msgid "State file location"
-msgstr ""
+msgstr "მდგომარეობის ფაილის მდებარეობა"
 
 #: ../src/core/nm-config.c:616
 msgid "State file for no-auto-default devices"
@@ -624,47 +595,44 @@ msgid "The expected start of the response"
 msgstr ""
 
 #: ../src/core/nm-config.c:669
-#, fuzzy
 msgid "NetworkManager options"
-msgstr "აპლეტი NetworkManager"
+msgstr "NetworkManager-ის გამართვა"
 
 #: ../src/core/nm-config.c:670
-#, fuzzy
 msgid "Show NetworkManager options"
-msgstr "აპლეტი NetworkManager"
+msgstr "NetworkManager პარამეტრების ჩვენება"
 
 #: ../src/core/nm-manager.c:6121
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:8243
-#, fuzzy
 msgid "VPN connection"
-msgstr "VPN-შეერთებები"
+msgstr "VPN-შეერთება"
 
 #: ../src/core/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:5545
 #: ../src/libnm-client-impl/nm-device.c:1779
 #: ../src/libnm-core-impl/nm-connection.c:3111
 #: ../src/nmtui/nm-editor-utils.c:196
 msgid "Bond"
-msgstr ""
+msgstr "ბმა"
 
 #: ../src/core/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:5616
 #: ../src/libnm-client-impl/nm-device.c:1781
 #: ../src/libnm-core-impl/nm-connection.c:3113
 #: ../src/nmtui/nm-editor-utils.c:214
 msgid "Team"
-msgstr ""
+msgstr "ჯგუფი"
 
 #: ../src/core/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:5953
 #: ../src/libnm-client-impl/nm-device.c:1783
 #: ../src/libnm-core-impl/nm-connection.c:3115
 #: ../src/nmtui/nm-editor-utils.c:205
 msgid "Bridge"
-msgstr ""
+msgstr "ხდი"
 
 #: ../src/core/settings/plugins/ifcfg-rh/tests/test-ifcfg-rh.c:8719
 #: ../src/libnm-core-impl/nm-team-utils.c:2391
-#, fuzzy, c-format
+#, c-format
 msgid "invalid json"
-msgstr "IP მისამართი:"
+msgstr "არასწორი json-ი"
 
 #: ../src/libnm-client-impl/nm-client.c:3801
 #, c-format
@@ -677,29 +645,26 @@ msgid "operation succeeded but object %s does not exist"
 msgstr ""
 
 #: ../src/libnm-client-impl/nm-device-adsl.c:66
-#, fuzzy
 msgid "The connection was not an ADSL connection."
-msgstr "VPN-შეერთება '%s' არასწორად იყო კონფიგურირებული."
+msgstr "შეერთება არ წარმოადგენდა ADSL-ს."
 
 #: ../src/libnm-client-impl/nm-device-bond.c:104
-#, fuzzy
 msgid "The connection was not a bond connection."
-msgstr "ქსელური შეერთება გათიშულია."
+msgstr "შეერთება არ წარმოადგენდა ბმას."
 
 #: ../src/libnm-client-impl/nm-device-bridge.c:108
-#, fuzzy
 msgid "The connection was not a bridge connection."
-msgstr "ქსელური შეერთება გათიშულია."
+msgstr "შეერთება არ წარმოადგენდა ხიდს."
 
 #: ../src/libnm-client-impl/nm-device-bt.c:133
-#, fuzzy, c-format
+#, c-format
 msgid "The connection was not a Bluetooth connection."
-msgstr "VPN-შეერთება '%s' არასწორად იყო კონფიგურირებული."
+msgstr "შეერთება არ წარმოადგენდა Bluetooth-ს."
 
 #: ../src/libnm-client-impl/nm-device-bt.c:141
-#, fuzzy, c-format
+#, c-format
 msgid "The connection is of Bluetooth NAP type."
-msgstr "VPN-შეერთება '%s' არასწორად იყო კონფიგურირებული."
+msgstr ""
 
 #: ../src/libnm-client-impl/nm-device-bt.c:152
 msgid "Invalid device Bluetooth address."
@@ -715,9 +680,8 @@ msgid ""
 msgstr ""
 
 #: ../src/libnm-client-impl/nm-device-dummy.c:65
-#, fuzzy
 msgid "The connection was not a dummy connection."
-msgstr "ქსელური შეერთება გათიშულია."
+msgstr ""
 
 #: ../src/libnm-client-impl/nm-device-dummy.c:74
 #: ../src/libnm-client-impl/nm-device-generic.c:89
@@ -755,19 +719,17 @@ msgid "Device MAC (%s) is blacklisted by the connection."
 msgstr ""
 
 #: ../src/libnm-client-impl/nm-device-generic.c:80
-#, fuzzy
 msgid "The connection was not a generic connection."
-msgstr "ქსელური შეერთება გათიშულია."
+msgstr ""
 
 #: ../src/libnm-client-impl/nm-device-infiniband.c:90
-#, fuzzy
 msgid "The connection was not an InfiniBand connection."
-msgstr "ქსელური შეერთება გათიშულია."
+msgstr "შეერთება არ იყო InfiniBand."
 
 #: ../src/libnm-client-impl/nm-device-infiniband.c:100
 #: ../src/libnm-client-impl/nm-device-wifi.c:481
 msgid "Invalid device MAC address."
-msgstr ""
+msgstr "მოწყობილობის არასწორი MAC მისამართი."
 
 #: ../src/libnm-client-impl/nm-device-infiniband.c:110
 #: ../src/libnm-client-impl/nm-device-wifi.c:490
@@ -775,67 +737,56 @@ msgid "The MACs of the device and the connection didn't match."
 msgstr ""
 
 #: ../src/libnm-client-impl/nm-device-ip-tunnel.c:266
-#, fuzzy
 msgid "The connection was not an IP tunnel connection."
-msgstr "VPN-შეერთება '%s' არასწორად იყო კონფიგურირებული."
+msgstr ""
 
 #: ../src/libnm-client-impl/nm-device-macvlan.c:151
-#, fuzzy
 msgid "The connection was not a MAC-VLAN connection."
-msgstr "VPN-შეერთება '%s' არასწორად იყო კონფიგურირებული."
+msgstr ""
 
 #: ../src/libnm-client-impl/nm-device-modem.c:179
-#, fuzzy
 msgid "The connection was not a modem connection."
-msgstr "ქსელური შეერთება გათიშულია."
+msgstr ""
 
 #: ../src/libnm-client-impl/nm-device-modem.c:189
-#, fuzzy
 msgid "The connection was not a valid modem connection."
-msgstr "ქსელური შეერთება გათიშულია."
+msgstr ""
 
 #: ../src/libnm-client-impl/nm-device-modem.c:198
 msgid "The device is lacking capabilities required by the connection."
 msgstr ""
 
 #: ../src/libnm-client-impl/nm-device-olpc-mesh.c:102
-#, fuzzy
 msgid "The connection was not an OLPC Mesh connection."
-msgstr "ქსელური შეერთება გათიშულია."
+msgstr ""
 
 #: ../src/libnm-client-impl/nm-device-ovs-bridge.c:74
-#, fuzzy
 msgid "The connection was not a ovs_bridge connection."
-msgstr "ქსელური შეერთება გათიშულია."
+msgstr ""
 
 #: ../src/libnm-client-impl/nm-device-ovs-interface.c:48
-#, fuzzy
 msgid "The connection was not a ovs_interface connection."
-msgstr "VPN-შეერთება '%s' არასწორად იყო კონფიგურირებული."
+msgstr ""
 
 #: ../src/libnm-client-impl/nm-device-ovs-port.c:74
-#, fuzzy
 msgid "The connection was not a ovs_port connection."
-msgstr "VPN-შეერთება '%s' არასწორად იყო კონფიგურირებული."
+msgstr ""
 
 #: ../src/libnm-client-impl/nm-device-team.c:124
-#, fuzzy
 msgid "The connection was not a team connection."
-msgstr "VPN-შეერთება '%s' არასწორად იყო კონფიგურირებული."
+msgstr ""
 
 #: ../src/libnm-client-impl/nm-device-tun.c:204
-#, fuzzy
 msgid "The connection was not a tun connection."
-msgstr "VPN-შეერთება '%s' არასწორად იყო კონფიგურირებული."
+msgstr ""
 
 #: ../src/libnm-client-impl/nm-device-tun.c:215
 msgid "The mode of the device and the connection didn't match"
 msgstr ""
 
 #: ../src/libnm-client-impl/nm-device-vlan.c:121
-#, fuzzy
 msgid "The connection was not a VLAN connection."
-msgstr "VPN-შეერთება '%s' არასწორად იყო კონფიგურირებული."
+msgstr ""
 
 #: ../src/libnm-client-impl/nm-device-vlan.c:131
 msgid "The VLAN identifiers of the device and the connection didn't match."
@@ -846,32 +797,28 @@ msgid "The hardware address of the device and the connection didn't match."
 msgstr ""
 
 #: ../src/libnm-client-impl/nm-device-vrf.c:65
-#, fuzzy
 msgid "The connection was not a VRF connection."
-msgstr "VPN-შეერთება '%s' არასწორად იყო კონფიგურირებული."
+msgstr ""
 
 #: ../src/libnm-client-impl/nm-device-vrf.c:74
 msgid "The VRF table of the device and the connection didn't match."
 msgstr ""
 
 #: ../src/libnm-client-impl/nm-device-vxlan.c:383
-#, fuzzy
 msgid "The connection was not a VXLAN connection."
-msgstr "VPN-შეერთება '%s' არასწორად იყო კონფიგურირებული."
+msgstr ""
 
 #: ../src/libnm-client-impl/nm-device-vxlan.c:393
 msgid "The VXLAN identifiers of the device and the connection didn't match."
 msgstr ""
 
 #: ../src/libnm-client-impl/nm-device-wifi-p2p.c:266
-#, fuzzy
 msgid "The connection was not a Wi-Fi P2P connection."
-msgstr "ქსელური შეერთება გათიშულია."
+msgstr ""
 
 #: ../src/libnm-client-impl/nm-device-wifi.c:470
-#, fuzzy
 msgid "The connection was not a Wi-Fi connection."
-msgstr "ქსელური შეერთება გათიშულია."
+msgstr ""
 
 #: ../src/libnm-client-impl/nm-device-wifi.c:511
 msgid "The device is lacking WPA capabilities required by the connection."
@@ -882,33 +829,32 @@ msgid "The device is lacking WPA2/RSN capabilities required by the connection."
 msgstr ""
 
 #: ../src/libnm-client-impl/nm-device-wpan.c:57
-#, fuzzy
 msgid "The connection was not a wpan connection."
-msgstr "VPN-შეერთება '%s' არასწორად იყო კონფიგურირებული."
+msgstr ""
 
 #: ../src/libnm-client-impl/nm-device.c:1759 ../src/nmtui/nm-editor-utils.c:144
 msgid "Ethernet"
-msgstr ""
+msgstr "Ethernet"
 
 #: ../src/libnm-client-impl/nm-device.c:1761 ../src/nmtui/nm-editor-utils.c:160
 msgid "Wi-Fi"
-msgstr ""
+msgstr "Wi-Fi"
 
 #: ../src/libnm-client-impl/nm-device.c:1763
 msgid "Bluetooth"
-msgstr ""
+msgstr "Bluetooth"
 
 #: ../src/libnm-client-impl/nm-device.c:1765
 msgid "OLPC Mesh"
-msgstr ""
+msgstr "OPLC ბადე"
 
 #: ../src/libnm-client-impl/nm-device.c:1767
 msgid "Open vSwitch Interface"
-msgstr ""
+msgstr "OpenvSwitch-ის ინტერფეისი"
 
 #: ../src/libnm-client-impl/nm-device.c:1769
 msgid "Open vSwitch Port"
-msgstr ""
+msgstr "OpenvSwitch-ის პორტი"
 
 #: ../src/libnm-client-impl/nm-device.c:1771
 msgid "Open vSwitch Bridge"
@@ -916,82 +862,81 @@ msgstr ""
 
 #: ../src/libnm-client-impl/nm-device.c:1773
 msgid "WiMAX"
-msgstr ""
+msgstr "WiMAX"
 
 #: ../src/libnm-client-impl/nm-device.c:1775 ../src/nmtui/nm-editor-utils.c:178
 msgid "Mobile Broadband"
-msgstr ""
+msgstr "მობილური ფართოზოლოვანი ინტერნეტი"
 
 #: ../src/libnm-client-impl/nm-device.c:1777
 #: ../src/libnm-core-impl/nm-connection.c:3119
 #: ../src/nmtui/nm-editor-utils.c:169
 msgid "InfiniBand"
-msgstr ""
+msgstr "InfiniBand"
 
 #: ../src/libnm-client-impl/nm-device.c:1785
 #: ../src/libnm-core-impl/nm-connection.c:3117
 #: ../src/nmtui/nm-editor-utils.c:223 ../src/nmtui/nmt-page-vlan.c:57
 msgid "VLAN"
-msgstr ""
+msgstr "VLAN"
 
 #: ../src/libnm-client-impl/nm-device.c:1787
 msgid "ADSL"
-msgstr ""
+msgstr "ADSL"
 
 #: ../src/libnm-client-impl/nm-device.c:1789
 msgid "MACVLAN"
-msgstr ""
+msgstr "MACVLAN"
 
 #: ../src/libnm-client-impl/nm-device.c:1791
 msgid "VXLAN"
-msgstr ""
+msgstr "VXLAN"
 
 #: ../src/libnm-client-impl/nm-device.c:1793
 msgid "IPTunnel"
-msgstr ""
+msgstr "IPTunnel"
 
 #: ../src/libnm-client-impl/nm-device.c:1795
 msgid "Tun"
-msgstr ""
+msgstr "Tun"
 
 #: ../src/libnm-client-impl/nm-device.c:1797 ../src/nmtui/nm-editor-utils.c:152
 msgid "Veth"
-msgstr ""
+msgstr "Veth"
 
 #: ../src/libnm-client-impl/nm-device.c:1799
 msgid "MACsec"
-msgstr ""
+msgstr "MACsec"
 
 #: ../src/libnm-client-impl/nm-device.c:1801
 msgid "Dummy"
-msgstr ""
+msgstr "Dummy"
 
 #: ../src/libnm-client-impl/nm-device.c:1803
-#, fuzzy
 msgid "PPP"
-msgstr "PEAP"
+msgstr "PPP"
 
 #: ../src/libnm-client-impl/nm-device.c:1805
 msgid "IEEE 802.15.4"
-msgstr ""
+msgstr "IEEE 802.15.4"
 
 #: ../src/libnm-client-impl/nm-device.c:1807
 msgid "6LoWPAN"
-msgstr ""
+msgstr "6LoWPAN"
 
 #: ../src/libnm-client-impl/nm-device.c:1809
 #: ../src/libnm-core-impl/nm-connection.c:3125
 #: ../src/nmtui/nm-editor-utils.c:263 ../src/nmtui/nmt-page-wireguard.c:57
 msgid "WireGuard"
-msgstr ""
+msgstr "WireGuard"
 
 #: ../src/libnm-client-impl/nm-device.c:1811
 msgid "Wi-Fi P2P"
-msgstr ""
+msgstr "Wi-Fi P2P"
 
 #: ../src/libnm-client-impl/nm-device.c:1813
 msgid "VRF"
-msgstr ""
+msgstr "VRF"
 
 #. TRANSLATORS: Unknown reason for a device state change (NMDeviceStateReason)
 #. TRANSLATORS: Unknown reason for a connection state change (NMActiveConnectionStateReason)
@@ -1003,15 +948,15 @@ msgstr "უცნობია"
 
 #: ../src/libnm-client-impl/nm-device.c:1845
 msgid "Wired"
-msgstr ""
+msgstr "მავთულით"
 
 #: ../src/libnm-client-impl/nm-device.c:1877
 msgid "PCI"
-msgstr ""
+msgstr "PCI"
 
 #: ../src/libnm-client-impl/nm-device.c:1879
 msgid "USB"
-msgstr ""
+msgstr "USB"
 
 #. TRANSLATORS: the first %s is a bus name (eg, "USB") or
 #. * product name, the second is a device type (eg,
@@ -1024,12 +969,12 @@ msgstr ""
 #, c-format
 msgctxt "long device name"
 msgid "%s %s"
-msgstr ""
+msgstr "%s %s"
 
 #: ../src/libnm-client-impl/nm-device.c:2857
-#, fuzzy, c-format
+#, c-format
 msgid "The connection was not valid: %s"
-msgstr "VPN-შეერთება '%s' არასწორად იყო კონფიგურირებული."
+msgstr "კავშირი იყო სწორი: %s"
 
 #: ../src/libnm-client-impl/nm-device.c:2869
 #, c-format
@@ -1037,9 +982,8 @@ msgid "The interface names of the device and the connection didn't match"
 msgstr ""
 
 #: ../src/libnm-client-impl/nm-secret-agent-old.c:1384
-#, fuzzy
 msgid "registration failed"
-msgstr "ქსელური საშუალებები გამორთულია"
+msgstr "რეგისტრაციის შეცდომა"
 
 #: ../src/libnm-client-impl/nm-vpn-plugin-old.c:817
 #: ../src/libnm-client-impl/nm-vpn-service-plugin.c:1025
@@ -1052,14 +996,14 @@ msgid "'%s' is not valid: properties should be specified as 'key=value'"
 msgstr ""
 
 #: ../src/libnm-core-aux-extern/nm-libnm-core-aux.c:301
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not a valid key"
-msgstr "IP მისამართი:"
+msgstr "%s სწორ გასაღებს არ წარმოადგენს"
 
 #: ../src/libnm-core-aux-extern/nm-libnm-core-aux.c:306
 #, c-format
 msgid "duplicate key '%s'"
-msgstr ""
+msgstr "დუბლირებულ გასაღები %s"
 
 #: ../src/libnm-core-aux-extern/nm-libnm-core-aux.c:320
 #, c-format
@@ -1081,14 +1025,14 @@ msgid "missing 'name' attribute"
 msgstr ""
 
 #: ../src/libnm-core-aux-extern/nm-libnm-core-aux.c:356
-#, fuzzy, c-format
+#, c-format
 msgid "invalid 'name' \"%s\""
-msgstr "IP მისამართი:"
+msgstr "არასწორი 'სახელი' \"%s\""
 
 #: ../src/libnm-core-aux-extern/nm-libnm-core-aux.c:369
-#, fuzzy, c-format
+#, c-format
 msgid "attribute '%s' is invalid for \"%s\""
-msgstr "CA სერტიფიკატის ფაილი:"
+msgstr "ატრიბუტი %s არასწორია \"%s\"-სთვის"
 
 #: ../src/libnm-core-aux-intern/nm-libnm-core-utils.c:295
 msgid "property cannot be an empty string"
@@ -1124,11 +1068,11 @@ msgstr ""
 
 #: ../src/libnm-core-impl/nm-connection.c:967
 msgid "has duplicate UUIDs"
-msgstr ""
+msgstr "გააჩნია დუბლირებული UUID-ები"
 
 #: ../src/libnm-core-impl/nm-connection.c:1745
 msgid "setting not found"
-msgstr ""
+msgstr "პარამეტრი ნაპოვნი არაა"
 
 #: ../src/libnm-core-impl/nm-connection.c:1799
 #: ../src/libnm-core-impl/nm-connection.c:1824
@@ -1179,11 +1123,11 @@ msgstr ""
 #: ../src/libnm-core-impl/nm-setting-wireless-security.c:916
 #: ../src/libnm-core-impl/nm-setting-wireless.c:837
 msgid "property is missing"
-msgstr ""
+msgstr "ნაკლული თვისება"
 
 #: ../src/libnm-core-impl/nm-connection.c:3123
 msgid "IP Tunnel"
-msgstr ""
+msgstr "IP გვირაბი"
 
 #: ../src/libnm-core-impl/nm-dbus-utils.c:181
 #, c-format
@@ -1267,9 +1211,9 @@ msgid "invalid value for \"%s\": %s"
 msgstr ""
 
 #: ../src/libnm-core-impl/nm-keyfile.c:1130
-#, fuzzy, c-format
+#, c-format
 msgid "ignoring invalid DNS server IPv%c address '%s'"
-msgstr "IP მისამართი:"
+msgstr ""
 
 #: ../src/libnm-core-impl/nm-keyfile.c:1167
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:1666
@@ -1333,29 +1277,29 @@ msgstr ""
 
 #: ../src/libnm-core-impl/nm-keyfile.c:1935
 #: ../src/libnm-core-impl/nm-keyfile.c:3427
-#, fuzzy, c-format
+#, c-format
 msgid "invalid setting: %s"
-msgstr "IP მისამართი:"
+msgstr "არასწორი პარამეტრი: %s"
 
 #: ../src/libnm-core-impl/nm-keyfile.c:1955
 #, c-format
 msgid "ignoring invalid team configuration: %s"
-msgstr ""
+msgstr "team-ის არასწორი კონფიგურაცია: %s"
 
 #: ../src/libnm-core-impl/nm-keyfile.c:2038
-#, fuzzy, c-format
+#, c-format
 msgid "invalid qdisc: %s"
-msgstr "IP მისამართი:"
+msgstr "არასწორი qdisc: %s"
 
 #: ../src/libnm-core-impl/nm-keyfile.c:2088
-#, fuzzy, c-format
+#, c-format
 msgid "invalid tfilter: %s"
-msgstr "IP მისამართი:"
+msgstr "არასწორი tfilter-ი: %s"
 
 #: ../src/libnm-core-impl/nm-keyfile.c:3252
 #, c-format
 msgid "error loading setting value: %s"
-msgstr ""
+msgstr "პარამეტრის მნიშვნელობის ჩატვირთვის შეცდომა: %s"
 
 #: ../src/libnm-core-impl/nm-keyfile.c:3283
 #: ../src/libnm-core-impl/nm-keyfile.c:3295
@@ -1365,7 +1309,7 @@ msgstr ""
 #: ../src/libnm-core-impl/nm-keyfile.c:3400
 #: ../src/libnm-core-impl/nm-keyfile.c:3412
 msgid "value cannot be interpreted as integer"
-msgstr ""
+msgstr "მნიშვნელობის, როგორც მთელი რიცხვის წაკითხვა შეუძლებელია"
 
 #: ../src/libnm-core-impl/nm-keyfile.c:3368
 #, c-format
@@ -1378,9 +1322,9 @@ msgid "invalid setting name '%s'"
 msgstr ""
 
 #: ../src/libnm-core-impl/nm-keyfile.c:3499
-#, fuzzy, c-format
+#, c-format
 msgid "invalid key '%s.%s'"
-msgstr "IP მისამართი:"
+msgstr "არასწორი გასაღები \"%s.%s\""
 
 #: ../src/libnm-core-impl/nm-keyfile.c:3515
 #, c-format
@@ -1388,9 +1332,9 @@ msgid "key '%s.%s' is not boolean"
 msgstr ""
 
 #: ../src/libnm-core-impl/nm-keyfile.c:3532
-#, fuzzy, c-format
+#, c-format
 msgid "key '%s.%s' is not a uint32"
-msgstr "IP მისამართი:"
+msgstr ""
 
 #: ../src/libnm-core-impl/nm-keyfile.c:3589
 #, c-format
@@ -1403,9 +1347,9 @@ msgid "key '%s.%s' is not a valid 256 bit key in base64 encoding"
 msgstr ""
 
 #: ../src/libnm-core-impl/nm-keyfile.c:3627
-#, fuzzy, c-format
+#, c-format
 msgid "key '%s.%s' is not a valid secret flag"
-msgstr "IP მისამართი:"
+msgstr ""
 
 #: ../src/libnm-core-impl/nm-keyfile.c:3650
 #, c-format
@@ -1413,9 +1357,9 @@ msgid "key '%s.%s' is not a integer in range 0 to 2^32"
 msgstr ""
 
 #: ../src/libnm-core-impl/nm-keyfile.c:3666
-#, fuzzy, c-format
+#, c-format
 msgid "key '%s.%s' is not a valid endpoint"
-msgstr "IP მისამართი:"
+msgstr ""
 
 #: ../src/libnm-core-impl/nm-keyfile.c:3692
 #, c-format
@@ -1423,9 +1367,9 @@ msgid "key '%s.%s' has invalid allowed-ips"
 msgstr ""
 
 #: ../src/libnm-core-impl/nm-keyfile.c:3707
-#, fuzzy, c-format
+#, c-format
 msgid "peer '%s' is invalid: %s"
-msgstr "CA სერტიფიკატის ფაილი:"
+msgstr ""
 
 #: ../src/libnm-core-impl/nm-keyfile.c:4235
 #, c-format
@@ -1465,26 +1409,26 @@ msgstr ""
 
 #: ../src/libnm-core-impl/nm-setting-8021x.c:275
 msgid "URI is empty"
-msgstr ""
+msgstr "URI ცარიელია"
 
 #: ../src/libnm-core-impl/nm-setting-8021x.c:283
 msgid "URI is not valid UTF-8"
-msgstr ""
+msgstr "URI არ წარმოადგენს სწორ UTF-8-ს"
 
 #: ../src/libnm-core-impl/nm-setting-8021x.c:301
 msgid "data missing"
-msgstr ""
+msgstr "აკლია მონაცემები"
 
 #: ../src/libnm-core-impl/nm-setting-8021x.c:322
 #: ../src/libnm-core-impl/nm-setting-8021x.c:690
-#, fuzzy, c-format
+#, c-format
 msgid "certificate is invalid: %s"
-msgstr "CA სერტიფიკატის ფაილი:"
+msgstr "სერტიფიკატი არასწორია: %s"
 
 #: ../src/libnm-core-impl/nm-setting-8021x.c:331
-#, fuzzy, c-format
+#, c-format
 msgid "certificate detected as invalid scheme"
-msgstr "CA სერტიფიკატის ფაილი:"
+msgstr "სერტიფიკატის არასწორი სქემა"
 
 #: ../src/libnm-core-impl/nm-setting-8021x.c:557
 msgid "CA certificate must be in X.509 format"
@@ -1492,7 +1436,7 @@ msgstr ""
 
 #: ../src/libnm-core-impl/nm-setting-8021x.c:569
 msgid "invalid certificate format"
-msgstr ""
+msgstr "სერტიფიკატის არასწორი ფორმატი"
 
 #: ../src/libnm-core-impl/nm-setting-8021x.c:701
 #, c-format
@@ -1524,7 +1468,7 @@ msgstr ""
 #: ../src/libnm-core-impl/nm-setting-wireless-security.c:1000
 #: ../src/libnm-core-impl/nm-setting.c:2396
 msgid "property is empty"
-msgstr ""
+msgstr "თვისება ცარიელია"
 
 #: ../src/libnm-core-impl/nm-setting-8021x.c:2685
 #, c-format
@@ -1536,9 +1480,8 @@ msgid "exactly one property must be set"
 msgstr ""
 
 #: ../src/libnm-core-impl/nm-setting-8021x.c:2785
-#, fuzzy
 msgid "can be enabled only on Ethernet connections"
-msgstr "წავშალოთ VPN-შეერთება \"%s\"?"
+msgstr ""
 
 #: ../src/libnm-core-impl/nm-setting-8021x.c:2806
 #: ../src/libnm-core-impl/nm-setting-bluetooth.c:110
@@ -1566,7 +1509,7 @@ msgstr "წავშალოთ VPN-შეერთება \"%s\"?"
 #: ../src/libnm-core-impl/nm-setting-wpan.c:161
 #: ../src/libnm-core-impl/nm-utils.c:4152
 msgid "property is invalid"
-msgstr ""
+msgstr "არასწორი თვისება"
 
 #: ../src/libnm-core-impl/nm-setting-8021x.c:2831
 #: ../src/libnm-core-impl/nm-setting-8021x.c:2844
@@ -1583,7 +1526,7 @@ msgstr ""
 
 #: ../src/libnm-core-impl/nm-setting-8021x.c:2870
 msgid "invalid auth flags"
-msgstr ""
+msgstr "ავთენტიკაციის არასწორი ალმები"
 
 #: ../src/libnm-core-impl/nm-setting-bluetooth.c:169
 #, c-format
@@ -1591,9 +1534,9 @@ msgid "'%s' connection requires '%s' or '%s' setting"
 msgstr ""
 
 #: ../src/libnm-core-impl/nm-setting-bluetooth.c:221
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' connection requires '%s' setting"
-msgstr "შეერთებულია  VPN-ქსელთან '%s'"
+msgstr ""
 
 #: ../src/libnm-core-impl/nm-setting-bond-port.c:82
 #: ../src/libnm-core-impl/nm-setting-bridge-port.c:328
@@ -1603,17 +1546,17 @@ msgstr "შეერთებულია  VPN-ქსელთან '%s'"
 #: ../src/libnm-core-impl/nm-setting-team-port.c:323
 #, c-format
 msgid "missing setting"
-msgstr ""
+msgstr "ნაკლული პარამეტრი"
 
 #: ../src/libnm-core-impl/nm-setting-bond-port.c:92
-#, fuzzy, c-format
+#, c-format
 msgid "A connection with a '%s' setting must have the slave-type set to '%s'"
-msgstr "შეერთებულია  VPN-ქსელთან '%s'"
+msgstr ""
 
 #: ../src/libnm-core-impl/nm-setting-bond.c:513
 #, c-format
 msgid "'%s' option is empty"
-msgstr ""
+msgstr "%s პარამეტრი ცარიელია"
 
 #: ../src/libnm-core-impl/nm-setting-bond.c:522
 #, c-format
@@ -1623,22 +1566,22 @@ msgstr ""
 #: ../src/libnm-core-impl/nm-setting-bond.c:549
 #, c-format
 msgid "missing option name"
-msgstr ""
+msgstr "აკლია პარამეტრის სახელი"
 
 #: ../src/libnm-core-impl/nm-setting-bond.c:554
-#, fuzzy, c-format
+#, c-format
 msgid "invalid option '%s'"
-msgstr "IP მისამართი:"
+msgstr "აკლია პარამეტრი \"%s\""
 
 #: ../src/libnm-core-impl/nm-setting-bond.c:590
-#, fuzzy, c-format
+#, c-format
 msgid "invalid value '%s' for option '%s'"
-msgstr "IP მისამართი:"
+msgstr "არასწორი მნიშვნელობა \"%s\" პარამეტრისთვის %s"
 
 #: ../src/libnm-core-impl/nm-setting-bond.c:837
 #, c-format
 msgid "mandatory option '%s' is missing"
-msgstr ""
+msgstr "პარამეტრი %s მითითებული არაა"
 
 #: ../src/libnm-core-impl/nm-setting-bond.c:847
 #, c-format
@@ -1668,14 +1611,14 @@ msgstr ""
 #: ../src/libnm-core-impl/nm-setting-bond.c:917
 #: ../src/libnm-core-impl/nm-setting-bond.c:928
 #: ../src/libnm-core-impl/nm-setting-bond.c:941
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' option requires '%s' option to be enabled"
-msgstr "შეერთებულია  VPN-ქსელთან '%s'"
+msgstr ""
 
 #: ../src/libnm-core-impl/nm-setting-bond.c:958
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' option needs to be a value multiple of '%s' value"
-msgstr "IP მისამართი:"
+msgstr ""
 
 #: ../src/libnm-core-impl/nm-setting-bond.c:975
 #: ../src/libnm-core-impl/nm-setting-bond.c:986
@@ -1696,12 +1639,12 @@ msgstr ""
 #: ../src/libnm-core-impl/nm-setting-bond.c:1035
 #, c-format
 msgid "'%s' option should be string"
-msgstr ""
+msgstr "%s სტრიქონს უნდა წარმოადგენდეს"
 
 #: ../src/libnm-core-impl/nm-setting-bond.c:1048
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' option is not valid with mode '%s'"
-msgstr "IP მისამართი:"
+msgstr ""
 
 #: ../src/libnm-core-impl/nm-setting-bridge-port.c:338
 #: ../src/libnm-core-impl/nm-setting-ovs-interface.c:312
@@ -1720,25 +1663,23 @@ msgstr ""
 
 #: ../src/libnm-core-impl/nm-setting-bridge.c:1194
 msgid "is not a valid MAC address"
-msgstr ""
+msgstr "არ წარმოადგენს სწორ MAC მისამართს"
 
 #: ../src/libnm-core-impl/nm-setting-bridge.c:1238
 msgid "the mask can't contain bits 0 (STP), 1 (MAC) or 2 (LACP)"
 msgstr ""
 
 #: ../src/libnm-core-impl/nm-setting-bridge.c:1260
-#, fuzzy
 msgid "is not a valid link local MAC address"
-msgstr "IP მისამართი:"
+msgstr ""
 
 #: ../src/libnm-core-impl/nm-setting-bridge.c:1272
 msgid "is not a valid VLAN filtering protocol"
 msgstr ""
 
 #: ../src/libnm-core-impl/nm-setting-bridge.c:1284
-#, fuzzy
 msgid "is not a valid option"
-msgstr "IP მისამართი:"
+msgstr "სწორი პარამეტრი არაა"
 
 #: ../src/libnm-core-impl/nm-setting-bridge.c:1296
 #, c-format
@@ -1761,9 +1702,9 @@ msgid "Slave connections need a valid '%s' property"
 msgstr ""
 
 #: ../src/libnm-core-impl/nm-setting-connection.c:1075
-#, fuzzy, c-format
+#, c-format
 msgid "Cannot set '%s' without '%s'"
-msgstr "VPN-შეერთების '%s' გაშვება ვერ ხერხდება"
+msgstr ""
 
 #: ../src/libnm-core-impl/nm-setting-connection.c:1134
 #, c-format
@@ -1771,9 +1712,9 @@ msgid "'%s' is not a valid UUID"
 msgstr ""
 
 #: ../src/libnm-core-impl/nm-setting-connection.c:1179
-#, fuzzy, c-format
+#, c-format
 msgid "connection type '%s' is not valid"
-msgstr "შეერთებულია  VPN-ქსელთან '%s'"
+msgstr ""
 
 #: ../src/libnm-core-impl/nm-setting-connection.c:1285
 #, c-format
@@ -1798,14 +1739,12 @@ msgid "DHCP option cannot be longer than 255 characters"
 msgstr ""
 
 #: ../src/libnm-core-impl/nm-setting-connection.c:1398
-#, fuzzy
 msgid "MUD URL is not a valid URL"
-msgstr "IP მისამართი:"
+msgstr ""
 
 #: ../src/libnm-core-impl/nm-setting-connection.c:1418
-#, fuzzy
 msgid "invalid permissions not in format \"user:$UNAME[:]\""
-msgstr "IP მისამართი:"
+msgstr ""
 
 #: ../src/libnm-core-impl/nm-setting-connection.c:1447
 #, c-format
@@ -1835,7 +1774,7 @@ msgstr ""
 
 #: ../src/libnm-core-impl/nm-setting-dcb.c:499
 msgid "flags invalid"
-msgstr ""
+msgstr "არასწორი ალმები"
 
 #: ../src/libnm-core-impl/nm-setting-dcb.c:508
 msgid "flags invalid - disabled"
@@ -1848,25 +1787,24 @@ msgstr ""
 
 #: ../src/libnm-core-impl/nm-setting-dcb.c:543
 msgid "element invalid"
-msgstr ""
+msgstr "არასწორი ელემენტი"
 
 #: ../src/libnm-core-impl/nm-setting-dcb.c:558
 msgid "sum not 100%"
-msgstr ""
+msgstr "ჯამში 100% არაა"
 
 #: ../src/libnm-core-impl/nm-setting-dcb.c:589
 #: ../src/libnm-core-impl/nm-setting-dcb.c:617
 msgid "property invalid"
-msgstr ""
+msgstr "არასწორი თვისება"
 
 #: ../src/libnm-core-impl/nm-setting-ethtool.c:311
 msgid "unsupported ethtool setting"
 msgstr ""
 
 #: ../src/libnm-core-impl/nm-setting-ethtool.c:320
-#, fuzzy
 msgid "setting has invalid variant type"
-msgstr "ვერ განხორციელდა VPN-შეერთება '%s' "
+msgstr ""
 
 #: ../src/libnm-core-impl/nm-setting-ethtool.c:332
 msgid "coalesce option must be either 0 or 1"
@@ -1877,9 +1815,9 @@ msgid "pause-autoneg cannot be enabled when setting rx/tx options"
 msgstr ""
 
 #: ../src/libnm-core-impl/nm-setting-ethtool.c:374
-#, fuzzy, c-format
+#, c-format
 msgid "unknown ethtool option '%s'"
-msgstr "(უცნობია)"
+msgstr ""
 
 #: ../src/libnm-core-impl/nm-setting-gsm.c:311
 #, c-format
@@ -1936,32 +1874,32 @@ msgstr ""
 #: ../src/libnm-core-impl/nm-setting-ip-config.c:80
 #, c-format
 msgid "Missing IPv4 address"
-msgstr ""
+msgstr "აკლია IPv4 მისამართი"
 
 #: ../src/libnm-core-impl/nm-setting-ip-config.c:80
 #, c-format
 msgid "Missing IPv6 address"
-msgstr ""
+msgstr "აკლია IPv6 მისამართი"
 
 #: ../src/libnm-core-impl/nm-setting-ip-config.c:87
 #, c-format
 msgid "Invalid IPv4 address '%s'"
-msgstr ""
+msgstr "არასწორი IPv4 მისამართი: %s"
 
 #: ../src/libnm-core-impl/nm-setting-ip-config.c:88
 #, c-format
 msgid "Invalid IPv6 address '%s'"
-msgstr ""
+msgstr "არასწორი IPv6 მისამართი: %s"
 
 #: ../src/libnm-core-impl/nm-setting-ip-config.c:105
 #, c-format
 msgid "Invalid IPv4 address prefix '%u'"
-msgstr ""
+msgstr "არასწორი IPv4 მისამართის პრეფიქსი: %u"
 
 #: ../src/libnm-core-impl/nm-setting-ip-config.c:106
 #, c-format
 msgid "Invalid IPv6 address prefix '%u'"
-msgstr ""
+msgstr "არასწორი IPv6 მისამართის პრეფიქსი: %u"
 
 #: ../src/libnm-core-impl/nm-setting-ip-config.c:123
 #, c-format
@@ -1970,15 +1908,14 @@ msgstr ""
 
 #: ../src/libnm-core-impl/nm-setting-ip-config.c:1312
 #: ../src/libnm-core-impl/nm-setting-sriov.c:400
-#, fuzzy
 msgid "unknown attribute"
-msgstr "(უცნობია)"
+msgstr "(უცნობი ატრიბუტი)"
 
 #: ../src/libnm-core-impl/nm-setting-ip-config.c:1322
 #: ../src/libnm-core-impl/nm-setting-sriov.c:410
-#, fuzzy, c-format
+#, c-format
 msgid "invalid attribute type '%s'"
-msgstr "ვერ განხორციელდა VPN-შეერთება '%s' "
+msgstr "ატრიბუტის არასწორი ტიპი: %s"
 
 #: ../src/libnm-core-impl/nm-setting-ip-config.c:1331
 #, c-format
@@ -1992,30 +1929,30 @@ msgstr ""
 
 #: ../src/libnm-core-impl/nm-setting-ip-config.c:1343
 #: ../src/libnm-core-impl/nm-setting-ip-config.c:1375
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not a valid IPv4 address"
-msgstr "IP მისამართი:"
+msgstr "%s არ წარმოადგენს სწორ IPv4 მისამართს"
 
 #: ../src/libnm-core-impl/nm-setting-ip-config.c:1344
 #: ../src/libnm-core-impl/nm-setting-ip-config.c:1376
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not a valid IPv6 address"
-msgstr "IP მისამართი:"
+msgstr "%s არ წარმოადგენს სწორ IPv6 მისამართს"
 
 #: ../src/libnm-core-impl/nm-setting-ip-config.c:1366
-#, fuzzy, c-format
+#, c-format
 msgid "invalid prefix %s"
-msgstr "IP მისამართი:"
+msgstr "არასწორი პრეფიქსი: %s"
 
 #: ../src/libnm-core-impl/nm-setting-ip-config.c:1398
-#, fuzzy, c-format
+#, c-format
 msgid "%s is not a valid route type"
-msgstr "IP მისამართი:"
+msgstr "რაუტის არასწორი ტიპი: %s"
 
 #: ../src/libnm-core-impl/nm-setting-ip-config.c:1491
-#, fuzzy, c-format
+#, c-format
 msgid "route scope is invalid for local route"
-msgstr "CA სერტიფიკატის ფაილი:"
+msgstr "რაუტის ჩარჩო არასწორია ლოკალური რაუტისთვის"
 
 #: ../src/libnm-core-impl/nm-setting-ip-config.c:1503
 #, c-format
@@ -2023,18 +1960,16 @@ msgid "a %s route cannot have a next-hop"
 msgstr ""
 
 #: ../src/libnm-core-impl/nm-setting-ip-config.c:2689
-#, fuzzy
 msgid "missing priority"
-msgstr "IP მისამართი:"
+msgstr "აკლია პრიორიტეტი"
 
 #: ../src/libnm-core-impl/nm-setting-ip-config.c:2702
 msgid "missing table"
-msgstr ""
+msgstr "აკლია ცხრილი"
 
 #: ../src/libnm-core-impl/nm-setting-ip-config.c:2712
-#, fuzzy
 msgid "invalid action type"
-msgstr "IP მისამართი:"
+msgstr "ქმედების არასწორი ტიპი"
 
 #: ../src/libnm-core-impl/nm-setting-ip-config.c:2721
 msgid "has from/src but the prefix-length is zero"
@@ -2045,14 +1980,12 @@ msgid "missing from/src for a non zero prefix-length"
 msgstr ""
 
 #: ../src/libnm-core-impl/nm-setting-ip-config.c:2736
-#, fuzzy
 msgid "invalid from/src"
-msgstr "IP მისამართი:"
+msgstr "არასწორი წყარო/საწყისი"
 
 #: ../src/libnm-core-impl/nm-setting-ip-config.c:2743
-#, fuzzy
 msgid "invalid prefix length for from/src"
-msgstr "IP მისამართი:"
+msgstr "წყარო/საწყისის პრეფიქსის არასწორი სიგრძე"
 
 #: ../src/libnm-core-impl/nm-setting-ip-config.c:2752
 msgid "has to/dst but the prefix-length is zero"
@@ -2063,33 +1996,28 @@ msgid "missing to/dst for a non zero prefix-length"
 msgstr ""
 
 #: ../src/libnm-core-impl/nm-setting-ip-config.c:2767
-#, fuzzy
 msgid "invalid to/dst"
-msgstr "IP მისამართი:"
+msgstr "არასწორი სამიზნე/დანიშნულება"
 
 #: ../src/libnm-core-impl/nm-setting-ip-config.c:2774
-#, fuzzy
 msgid "invalid prefix length for to/dst"
-msgstr "IP მისამართი:"
+msgstr "სამიზნე/დანიშნულების პრეფიქსის არასწორი სიგრძე"
 
 #: ../src/libnm-core-impl/nm-setting-ip-config.c:2784
-#, fuzzy
 msgid "invalid iifname"
-msgstr "IP მისამართი:"
+msgstr "არასწორი iifname"
 
 #: ../src/libnm-core-impl/nm-setting-ip-config.c:2794
-#, fuzzy
 msgid "invalid oifname"
-msgstr "IP მისამართი:"
+msgstr "არასწორი oifname"
 
 #: ../src/libnm-core-impl/nm-setting-ip-config.c:2802
 msgid "invalid source port range"
-msgstr ""
+msgstr "საწყისი პორტების არასწორი დიაპაზონი"
 
 #: ../src/libnm-core-impl/nm-setting-ip-config.c:2810
-#, fuzzy
 msgid "invalid destination port range"
-msgstr "IP მისამართი:"
+msgstr "სამიზნე პორტების არასწორი დიაპაზონი"
 
 #: ../src/libnm-core-impl/nm-setting-ip-config.c:2820
 msgid "suppress_prefixlength out of range"
@@ -2100,28 +2028,27 @@ msgid "suppress_prefixlength is only allowed with the to-table action"
 msgstr ""
 
 #: ../src/libnm-core-impl/nm-setting-ip-config.c:2971
-#, fuzzy, c-format
+#, c-format
 msgid "invalid key \"%s\""
-msgstr "IP მისამართი:"
+msgstr "არასწორი გასაღები \"%s\""
 
 #: ../src/libnm-core-impl/nm-setting-ip-config.c:2983
 #, c-format
 msgid "duplicate key %s"
-msgstr ""
+msgstr "დუბლირებულ გასაღები %s"
 
 #: ../src/libnm-core-impl/nm-setting-ip-config.c:2999
-#, fuzzy, c-format
+#, c-format
 msgid "invalid variant type '%s' for \"%s\""
-msgstr "ვერ განხორციელდა VPN-შეერთება '%s' "
+msgstr "ვარიანტის (%s) არასწორი ტიპი %s-სთვის"
 
 #: ../src/libnm-core-impl/nm-setting-ip-config.c:3010
 msgid "missing \"family\""
-msgstr ""
+msgstr "აკლია \"ოჯახი\""
 
 #: ../src/libnm-core-impl/nm-setting-ip-config.c:3018
-#, fuzzy
 msgid "invalid \"family\""
-msgstr "IP მისამართი:"
+msgstr "არასწორი \"ოჯახი\""
 
 #: ../src/libnm-core-impl/nm-setting-ip-config.c:3075
 msgid "\"uid-range-start\" is greater than \"uid-range-end\""
@@ -2133,7 +2060,7 @@ msgstr ""
 
 #: ../src/libnm-core-impl/nm-setting-ip-config.c:3277
 msgid "Unsupported extra-argument"
-msgstr ""
+msgstr "მხარდაუჭერელი დამატებითი არგუმენტი"
 
 #: ../src/libnm-core-impl/nm-setting-ip-config.c:3579
 #, c-format
@@ -2146,9 +2073,9 @@ msgid "duplicate key \"%s\""
 msgstr ""
 
 #: ../src/libnm-core-impl/nm-setting-ip-config.c:3593
-#, fuzzy, c-format
+#, c-format
 msgid "invalid value for \"%s\""
-msgstr "IP მისამართი:"
+msgstr "%s-ის არასწორი მნიშვნელობა"
 
 #: ../src/libnm-core-impl/nm-setting-ip-config.c:3605
 msgid "empty text does not describe a rule"
@@ -2157,16 +2084,15 @@ msgstr ""
 #: ../src/libnm-core-impl/nm-setting-ip-config.c:3613
 #, c-format
 msgid "missing argument for \"%s\""
-msgstr ""
+msgstr "აკლია \"%s\"-ის არგუმენტი"
 
 #: ../src/libnm-core-impl/nm-setting-ip-config.c:3627
 msgid "invalid \"from\" part"
 msgstr ""
 
 #: ../src/libnm-core-impl/nm-setting-ip-config.c:3643
-#, fuzzy
 msgid "invalid \"to\" part"
-msgstr "IP მისამართი:"
+msgstr "\"სამიზნის\" არასწორი ნაწილი"
 
 #: ../src/libnm-core-impl/nm-setting-ip-config.c:3654
 #, c-format
@@ -2175,19 +2101,18 @@ msgstr ""
 
 #: ../src/libnm-core-impl/nm-setting-ip-config.c:3721
 #: ../src/libnm-core-impl/nm-setting-ip-config.c:3811
-#, fuzzy, c-format
+#, c-format
 msgid "rule is invalid: %s"
-msgstr "CA სერტიფიკატის ფაილი:"
+msgstr "არასწორი წესი: %s"
 
 #: ../src/libnm-core-impl/nm-setting-ip-config.c:3792
-#, fuzzy
 msgid "invalid address family"
-msgstr "IP მისამართი:"
+msgstr "მისამართის არასწორი ოჯახი"
 
 #: ../src/libnm-core-impl/nm-setting-ip-config.c:5064
-#, fuzzy, c-format
+#, c-format
 msgid "rule #%u is invalid: %s"
-msgstr "CA სერტიფიკატის ფაილი:"
+msgstr "წესი #%u არასწორია: %s"
 
 #: ../src/libnm-core-impl/nm-setting-ip-config.c:5432
 #, c-format
@@ -2223,9 +2148,9 @@ msgid "%d. route is invalid"
 msgstr ""
 
 #: ../src/libnm-core-impl/nm-setting-ip-config.c:5539
-#, fuzzy, c-format
+#, c-format
 msgid "invalid attribute: %s"
-msgstr "ვერ განხორციელდა VPN-შეერთება '%s' "
+msgstr "არასწორი ატრიბუტი: %s"
 
 #: ../src/libnm-core-impl/nm-setting-ip-config.c:5559
 #, c-format
@@ -2233,14 +2158,14 @@ msgid "%u. rule has wrong address-family"
 msgstr ""
 
 #: ../src/libnm-core-impl/nm-setting-ip-config.c:5571
-#, fuzzy, c-format
+#, c-format
 msgid "%u. rule is invalid: %s"
-msgstr "CA სერტიფიკატის ფაილი:"
+msgstr "%u. წესი არასწორია: %s"
 
 #: ../src/libnm-core-impl/nm-setting-ip-config.c:5587
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not a valid IAID"
-msgstr "IP მისამართი:"
+msgstr "'%s' არასწორი IAID-ია"
 
 #: ../src/libnm-core-impl/nm-setting-ip-config.c:5601
 #, c-format
@@ -2252,9 +2177,9 @@ msgid "the property is currently supported only for DHCPv4"
 msgstr ""
 
 #: ../src/libnm-core-impl/nm-setting-ip-config.c:5644
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not a valid IP or subnet"
-msgstr "IP მისამართი:"
+msgstr "'%s' არ წარმოადგენს სწორ არც IP-ს, არც ქვექსელს"
 
 #: ../src/libnm-core-impl/nm-setting-ip-config.c:5660
 #, c-format
@@ -2356,7 +2281,7 @@ msgstr ""
 
 #: ../src/libnm-core-impl/nm-setting-macsec.c:251
 msgid "the key is empty"
-msgstr ""
+msgstr "გასაღები ცარიელია"
 
 #: ../src/libnm-core-impl/nm-setting-macsec.c:260
 #, c-format
@@ -2397,7 +2322,7 @@ msgstr ""
 #: ../src/libnm-core-impl/nm-setting-match.c:708
 #, c-format
 msgid "is empty"
-msgstr ""
+msgstr "ცარიელია"
 
 #: ../src/libnm-core-impl/nm-setting-olpc-mesh.c:112
 #: ../src/libnm-core-impl/nm-setting-wireless.c:850
@@ -2411,24 +2336,24 @@ msgid "'%d' is not a valid channel"
 msgstr ""
 
 #: ../src/libnm-core-impl/nm-setting-ovs-bridge.c:160
-#, fuzzy, c-format
+#, c-format
 msgid "A connection with a '%s' setting must not have a master."
-msgstr "შეერთებულია  VPN-ქსელთან '%s'"
+msgstr ""
 
 #: ../src/libnm-core-impl/nm-setting-ovs-bridge.c:174
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not allowed in fail_mode"
-msgstr "ვერ მოინახა VPN შეერთება"
+msgstr "'%s' fail_mode-ში დაუშვებელია"
 
 #: ../src/libnm-core-impl/nm-setting-ovs-external-ids.c:90
 #: ../src/libnm-core-impl/nm-setting-user.c:91
 msgid "missing key"
-msgstr ""
+msgstr "აკლია გასაღები"
 
 #: ../src/libnm-core-impl/nm-setting-ovs-external-ids.c:98
 #: ../src/libnm-core-impl/nm-setting-user.c:99
 msgid "key is too long"
-msgstr ""
+msgstr "გასაღები ძალიან გრძელია"
 
 #: ../src/libnm-core-impl/nm-setting-ovs-external-ids.c:105
 #: ../src/libnm-core-impl/nm-setting-user.c:106
@@ -2447,23 +2372,23 @@ msgstr ""
 #: ../src/libnm-core-impl/nm-setting-ovs-external-ids.c:153
 #: ../src/libnm-core-impl/nm-setting-user.c:180
 msgid "value is missing"
-msgstr ""
+msgstr "აკლია მნიშვნელობა"
 
 #: ../src/libnm-core-impl/nm-setting-ovs-external-ids.c:162
 #: ../src/libnm-core-impl/nm-setting-user.c:189
 msgid "value is too large"
-msgstr ""
+msgstr "მნიშვნელობა ძალიან გრძელია"
 
 #: ../src/libnm-core-impl/nm-setting-ovs-external-ids.c:170
 #: ../src/libnm-core-impl/nm-setting-user.c:197
 msgid "value is not valid UTF8"
-msgstr ""
+msgstr "მნიშვნელობა არ წარმოადგენს სწორ UTF-8 სტრიქონს"
 
 #: ../src/libnm-core-impl/nm-setting-ovs-external-ids.c:313
 #: ../src/libnm-core-impl/nm-setting-user.c:357
 #, c-format
 msgid "invalid key \"%s\": %s"
-msgstr ""
+msgstr "არასწორი გასაღები \"%s\": %s"
 
 #: ../src/libnm-core-impl/nm-setting-ovs-external-ids.c:337
 #: ../src/libnm-core-impl/nm-setting-user.c:381
@@ -2478,9 +2403,9 @@ msgid ""
 msgstr ""
 
 #: ../src/libnm-core-impl/nm-setting-ovs-interface.c:93
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not a valid interface type"
-msgstr "IP მისამართი:"
+msgstr "%s არ წარმოადგენს ინტერფეისის სწორ ტიპს არ წარმოადგენს"
 
 #: ../src/libnm-core-impl/nm-setting-ovs-interface.c:120
 #, c-format
@@ -2498,9 +2423,9 @@ msgid "A connection of type '%s' cannot have an ovs-interface.type \"%s\""
 msgstr ""
 
 #: ../src/libnm-core-impl/nm-setting-ovs-interface.c:170
-#, fuzzy, c-format
+#, c-format
 msgid "A connection can not have both '%s' and '%s' settings at the same time"
-msgstr "შეერთებულია  VPN-ქსელთან '%s'"
+msgstr "შეერთებას არ შეიძლება '%s' და '%s' პარამეტრები ერთდროულად ჰქონდეს"
 
 #: ../src/libnm-core-impl/nm-setting-ovs-interface.c:184
 #, c-format
@@ -2510,10 +2435,10 @@ msgid ""
 msgstr ""
 
 #: ../src/libnm-core-impl/nm-setting-ovs-interface.c:200
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "A connection with '%s' setting needs to be of '%s' interface type, not '%s'"
-msgstr "შეერთებულია  VPN-ქსელთან '%s'"
+msgstr "შეერთება '%s' პარამეტრით '%s' ტიპის ინტერფესი უნდა იყოს და არა '%s'"
 
 #: ../src/libnm-core-impl/nm-setting-ovs-interface.c:222
 #, c-format
@@ -2537,9 +2462,9 @@ msgid "A connection with a '%s' setting must have a master."
 msgstr ""
 
 #: ../src/libnm-core-impl/nm-setting-ovs-port.c:215
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not allowed in vlan_mode"
-msgstr "IP მისამართი:"
+msgstr "'%s' vlan_mode-ში დაუშვებელია"
 
 #: ../src/libnm-core-impl/nm-setting-ovs-port.c:228
 #, c-format
@@ -2547,14 +2472,14 @@ msgid "the tag id must be in range 0-4094 but is %u"
 msgstr ""
 
 #: ../src/libnm-core-impl/nm-setting-ovs-port.c:238
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not allowed in lacp"
-msgstr "IP მისამართი:"
+msgstr "%s დაუშვებელია lacp-ში"
 
 #: ../src/libnm-core-impl/nm-setting-ovs-port.c:251
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not allowed in bond_mode"
-msgstr "IP მისამართი:"
+msgstr "%s bond_mode-ში დაუშვებელია"
 
 #: ../src/libnm-core-impl/nm-setting-ppp.c:353
 #, c-format
@@ -2610,9 +2535,9 @@ msgid "VF with index %u, but the total number of VFs is %u"
 msgstr ""
 
 #: ../src/libnm-core-impl/nm-setting-sriov.c:1059
-#, fuzzy, c-format
+#, c-format
 msgid "invalid VF %u: %s"
-msgstr "IP მისამართი:"
+msgstr "არასწორი VF %u: %s"
 
 #: ../src/libnm-core-impl/nm-setting-sriov.c:1073
 #, c-format
@@ -2634,9 +2559,9 @@ msgstr ""
 #: ../src/libnm-core-impl/nm-setting-tc-config.c:62
 #: ../src/libnm-core-impl/nm-setting-tc-config.c:428
 #: ../src/libnm-core-impl/nm-setting-tc-config.c:705
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not a valid kind"
-msgstr "IP მისამართი:"
+msgstr "'%s' არასწორი სახეობაა"
 
 #: ../src/libnm-core-impl/nm-setting-tc-config.c:71
 #: ../src/libnm-core-impl/nm-setting-tc-config.c:714
@@ -2684,9 +2609,9 @@ msgid "vlanid is out of range [-1, 4094]"
 msgstr ""
 
 #: ../src/libnm-core-impl/nm-setting-tun.c:165
-#, fuzzy, c-format
+#, c-format
 msgid "'%u': invalid mode"
-msgstr "(არასწორი უნიკოდი)"
+msgstr "'%u': არასწორი რეჟიმი"
 
 #: ../src/libnm-core-impl/nm-setting-tun.c:176
 #, c-format
@@ -2711,9 +2636,9 @@ msgid "maximum number of user data entries reached"
 msgstr ""
 
 #: ../src/libnm-core-impl/nm-setting-veth.c:90
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not a valid interface name"
-msgstr "IP მისამართი:"
+msgstr "%s ინტერფეისის არასწორი სახელია"
 
 #: ../src/libnm-core-impl/nm-setting-vlan.c:650
 #, c-format
@@ -2761,9 +2686,9 @@ msgstr ""
 
 #: ../src/libnm-core-impl/nm-setting-vxlan.c:356
 #: ../src/libnm-core-impl/nm-setting-vxlan.c:367
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not a valid IP%s address"
-msgstr "IP მისამართი:"
+msgstr "%s არასწორი IP%s მისამართია"
 
 #: ../src/libnm-core-impl/nm-setting-vxlan.c:390
 #, c-format
@@ -2781,14 +2706,14 @@ msgid "'%s' is not a valid duplex value"
 msgstr ""
 
 #: ../src/libnm-core-impl/nm-setting-wired.c:866
-#, fuzzy, c-format
+#, c-format
 msgid "invalid key '%s'"
-msgstr "IP მისამართი:"
+msgstr "არასწორი გასაღები \"%s\""
 
 #: ../src/libnm-core-impl/nm-setting-wired.c:878
-#, fuzzy, c-format
+#, c-format
 msgid "invalid value for key '%s'"
-msgstr "IP მისამართი:"
+msgstr "გასაღების (%s) არასწორი მნიშვნელობა"
 
 #: ../src/libnm-core-impl/nm-setting-wired.c:927
 msgid "Wake-on-LAN mode 'default' and 'ignore' are exclusive flags"
@@ -2823,9 +2748,9 @@ msgid "invalid endpoint for peer"
 msgstr ""
 
 #: ../src/libnm-core-impl/nm-setting-wireguard.c:795
-#, fuzzy, c-format
+#, c-format
 msgid "invalid IP address \"%s\" for allowed-ip of peer"
-msgstr "IP მისამართი:"
+msgstr "პარტნიორის არასწორი დაშვებული IP მისამართი: %s"
 
 #: ../src/libnm-core-impl/nm-setting-wireguard.c:806
 msgid "invalid preshared-key-flags for peer"
@@ -2852,9 +2777,9 @@ msgid "peer #%u has invalid allowed-ips setting"
 msgstr ""
 
 #: ../src/libnm-core-impl/nm-setting-wireguard.c:1663
-#, fuzzy, c-format
+#, c-format
 msgid "peer #%u is invalid: %s"
-msgstr "CA სერტიფიკატის ფაილი:"
+msgstr "პარტნიორის #%u არასწორია: %s"
 
 #: ../src/libnm-core-impl/nm-setting-wireguard.c:1735
 #: ../src/libnm-core-impl/nm-setting-wireguard.c:1754
@@ -2867,9 +2792,8 @@ msgid "key must be 32 bytes base64 encoded"
 msgstr ""
 
 #: ../src/libnm-core-impl/nm-setting-wireguard.c:1911
-#, fuzzy
 msgid "invalid peer secrets"
-msgstr "IP მისამართი:"
+msgstr "პარტნიორის არასწორი საიდუმლო ფრაზები"
 
 #: ../src/libnm-core-impl/nm-setting-wireguard.c:1937
 #, c-format
@@ -2882,9 +2806,9 @@ msgid "non-existing peer '%s'"
 msgstr ""
 
 #: ../src/libnm-core-impl/nm-setting-wireless-security.c:942
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not a valid value for '%s' mode connections"
-msgstr "არავითარი აქტიური შეერთება!"
+msgstr "%s არ წარმოადგენს სწორ მნიშვნელობას '%s' რეჟიმის შეერთებებისთვის"
 
 #: ../src/libnm-core-impl/nm-setting-wireless-security.c:958
 #, c-format
@@ -2931,15 +2855,15 @@ msgid "'%s' requires setting '%s' property"
 msgstr ""
 
 #: ../src/libnm-core-impl/nm-setting-wireless.c:918
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' requires '%s' and '%s' property"
-msgstr "შეერთებულია  VPN-ქსელთან '%s'"
+msgstr "'%s'-ს '%s' და '%s' თვისებები სჭირდება"
 
 #: ../src/libnm-core-impl/nm-setting-wireless.c:1030
 #: ../src/libnm-core-impl/nm-team-utils.c:2251
 #, c-format
 msgid "invalid value"
-msgstr ""
+msgstr "არასწორი მნიშვნელობა"
 
 #: ../src/libnm-core-impl/nm-setting-wireless.c:1043
 msgid "Wake-on-WLAN mode 'default' and 'ignore' are exclusive flags"
@@ -2995,15 +2919,15 @@ msgid "duplicate property"
 msgstr ""
 
 #: ../src/libnm-core-impl/nm-setting.c:1954
-#, fuzzy, c-format
+#, c-format
 msgid "unknown property"
-msgstr "(უცნობია)"
+msgstr "უცნობი თვისება"
 
 #: ../src/libnm-core-impl/nm-setting.c:2028
 #: ../src/libnm-core-impl/nm-setting.c:2110
-#, fuzzy, c-format
+#, c-format
 msgid "failed to set property: %s"
-msgstr "არ იტვირთება"
+msgstr "თვისების დაყენების შეცდომა: %s"
 
 #: ../src/libnm-core-impl/nm-setting.c:3222
 msgid "secret not found"
@@ -3011,9 +2935,9 @@ msgstr ""
 
 #: ../src/libnm-core-impl/nm-team-utils.c:1530
 #: ../src/libnm-core-impl/nm-team-utils.c:1547
-#, fuzzy, c-format
+#, c-format
 msgid "invalid D-Bus property \"%s\""
-msgstr "IP მისამართი:"
+msgstr "d-bus-ის არასწორი თვისება: %s"
 
 #: ../src/libnm-core-impl/nm-team-utils.c:1559
 #, c-format
@@ -3036,19 +2960,19 @@ msgid "value out or range"
 msgstr ""
 
 #: ../src/libnm-core-impl/nm-team-utils.c:2270
-#, fuzzy, c-format
+#, c-format
 msgid "invalid runner-tx-hash"
-msgstr "IP მისამართი:"
+msgstr "არასწორი runner-tx-hash"
 
 #: ../src/libnm-core-impl/nm-team-utils.c:2298
-#, fuzzy, c-format
+#, c-format
 msgid "%s is only allowed for runner %s"
-msgstr "IP მისამართი:"
+msgstr "%s დაშვებულია მხოლოდ დამხმარე პროცესისთვის %s"
 
 #: ../src/libnm-core-impl/nm-team-utils.c:2308
-#, fuzzy, c-format
+#, c-format
 msgid "%s is only allowed for runners %s"
-msgstr "IP მისამართი:"
+msgstr "%s მხოლოდ დაშვებულია დამხმარე პროცესისთვის %s"
 
 #: ../src/libnm-core-impl/nm-team-utils.c:2329
 #, c-format
@@ -3056,9 +2980,9 @@ msgid "cannot set parameters for lacp and activebackup runners together"
 msgstr ""
 
 #: ../src/libnm-core-impl/nm-team-utils.c:2343
-#, fuzzy, c-format
+#, c-format
 msgid "missing link watcher"
-msgstr "IP მისამართი:"
+msgstr "შეერთებას მაყურებელი აკლია"
 
 #: ../src/libnm-core-impl/nm-team-utils.c:2369
 #, c-format
@@ -3066,24 +2990,24 @@ msgid "team config exceeds size limit"
 msgstr ""
 
 #: ../src/libnm-core-impl/nm-team-utils.c:2380
-#, fuzzy, c-format
+#, c-format
 msgid "team config is not valid UTF-8"
-msgstr "VPN-შეერთება '%s' არასწორად იყო კონფიგურირებული."
+msgstr "ჯგუფის კონფიგურაცია სწორ UTF-8-ს არ წარმოადგენს"
 
 #: ../src/libnm-core-impl/nm-team-utils.c:2555
-#, fuzzy, c-format
+#, c-format
 msgid "invalid D-Bus type \"%s\""
-msgstr "IP მისამართი:"
+msgstr "d-bus-ის არასწორი ტიპი: %s"
 
 #: ../src/libnm-core-impl/nm-team-utils.c:2594
-#, fuzzy, c-format
+#, c-format
 msgid "invalid link-watchers: %s"
-msgstr "IP მისამართი:"
+msgstr "შეერთების არასწორი მაყურებლები: %s"
 
 #: ../src/libnm-core-impl/nm-utils.c:2256
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not a valid handle."
-msgstr "IP მისამართი:"
+msgstr "%s სწორ სახელურს არ წარმოადგენს."
 
 #: ../src/libnm-core-impl/nm-utils.c:2404
 #, c-format
@@ -3091,9 +3015,9 @@ msgid "'%s' unexpected: parent already specified."
 msgstr ""
 
 #: ../src/libnm-core-impl/nm-utils.c:2422
-#, fuzzy, c-format
+#, c-format
 msgid "invalid handle: '%s'"
-msgstr "IP მისამართი:"
+msgstr "არასწორი სახელური: %s"
 
 #: ../src/libnm-core-impl/nm-utils.c:2444
 msgid "parent not specified."
@@ -3114,9 +3038,8 @@ msgid "unsupported action option: '%s'."
 msgstr ""
 
 #: ../src/libnm-core-impl/nm-utils.c:2800
-#, fuzzy
 msgid "invalid action: "
-msgstr "IP მისამართი:"
+msgstr "არასწორი ქმედება: "
 
 #: ../src/libnm-core-impl/nm-utils.c:2804
 #, c-format
@@ -3174,9 +3097,8 @@ msgid "Could not find \"%s\" binary"
 msgstr ""
 
 #: ../src/libnm-core-impl/nm-utils.c:4103
-#, fuzzy
 msgid "unknown secret flags"
-msgstr "(უცნობია)"
+msgstr "უცნობი საიდუმლო ალმები"
 
 #: ../src/libnm-core-impl/nm-utils.c:4113
 msgid "conflicting secret flags"
@@ -3236,9 +3158,9 @@ msgid "unterminated escape sequence"
 msgstr ""
 
 #: ../src/libnm-core-impl/nm-utils.c:5125
-#, fuzzy, c-format
+#, c-format
 msgid "unknown attribute '%s'"
-msgstr "(უცნობია)"
+msgstr "უცნობი ატრიბუტი: '%s'"
 
 #: ../src/libnm-core-impl/nm-utils.c:5143
 #, c-format
@@ -3251,14 +3173,14 @@ msgid "invalid uint32 value '%s' for attribute '%s'"
 msgstr ""
 
 #: ../src/libnm-core-impl/nm-utils.c:5177
-#, fuzzy, c-format
+#, c-format
 msgid "invalid int32 value '%s' for attribute '%s'"
-msgstr "ვერ განხორციელდა VPN-შეერთება '%s' "
+msgstr "არასწორი int32 მნიშვნელობა %s ატრიბუტისთვის %s"
 
 #: ../src/libnm-core-impl/nm-utils.c:5190
-#, fuzzy, c-format
+#, c-format
 msgid "invalid uint64 value '%s' for attribute '%s'"
-msgstr "ვერ განხორციელდა VPN-შეერთება '%s' "
+msgstr "არასწორი int64 მნიშვნელობა %s ატრიბუტისთვის %s"
 
 #: ../src/libnm-core-impl/nm-utils.c:5203
 #, c-format
@@ -3290,9 +3212,9 @@ msgid "only one VLAN can be the PVID"
 msgstr ""
 
 #: ../src/libnm-core-impl/nm-utils.c:5613
-#, fuzzy, c-format
+#, c-format
 msgid "unknown flags 0x%x"
-msgstr "(უცნობია)"
+msgstr "უცნობი ალმები 0x%x"
 
 #: ../src/libnm-core-impl/nm-utils.c:5625
 msgid ""
@@ -3345,7 +3267,7 @@ msgstr ""
 #: ../src/libnm-core-impl/nm-vpn-plugin-info.c:109
 #, c-format
 msgid "missing filename"
-msgstr ""
+msgstr "აკლია ფაილის სახელი"
 
 #: ../src/libnm-core-impl/nm-vpn-plugin-info.c:117
 #, c-format
@@ -3370,7 +3292,7 @@ msgstr ""
 #: ../src/libnm-core-impl/nm-vpn-plugin-info.c:1050
 #, c-format
 msgid "missing \"plugin\" setting"
-msgstr ""
+msgstr "აკლია დამატებების პარამეტრი"
 
 #: ../src/libnm-core-impl/nm-vpn-plugin-info.c:1060
 #, c-format
@@ -3769,14 +3691,14 @@ msgid "interface name is longer than 15 characters"
 msgstr ""
 
 #: ../src/libnm-glib-aux/nm-shared-utils.c:5750
-#, fuzzy, c-format
+#, c-format
 msgid "'%%' is not allowed in interface names"
-msgstr "ვერ მოინახა VPN შეერთება"
+msgstr "'%%' ინტერფეისის სახელში დაუშვებელია"
 
 #: ../src/libnm-glib-aux/nm-shared-utils.c:5762
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not allowed as interface name"
-msgstr "IP მისამართი:"
+msgstr "'%s' ინტერფეისის სახელი ვერ იქნება"
 
 #: ../src/libnm-glib-aux/nm-shared-utils.c:5784
 msgid ""
@@ -3848,9 +3770,8 @@ msgstr ""
 #: ../src/nmcli/devices.c:484 ../src/nmcli/devices.c:591
 #: ../src/nmcli/devices.c:597 ../src/nmcli/general.c:30
 #: ../src/nmcli/general.c:85 ../src/nmcli/general.c:91
-#, fuzzy
 msgid "unknown"
-msgstr "(უცნობია)"
+msgstr "უცნობი"
 
 #: ../src/libnmc-base/nm-client-utils.c:292
 msgid "unmanaged"
@@ -3858,10 +3779,9 @@ msgstr ""
 
 #: ../src/libnmc-base/nm-client-utils.c:293
 msgid "unavailable"
-msgstr ""
+msgstr "მიუწვდომელი"
 
 #: ../src/libnmc-base/nm-client-utils.c:294 ../src/nmcli/general.c:39
-#, fuzzy
 msgid "disconnected"
 msgstr "გათიშულია"
 
@@ -3870,18 +3790,16 @@ msgid "connecting (prepare)"
 msgstr ""
 
 #: ../src/libnmc-base/nm-client-utils.c:296
-#, fuzzy
 msgid "connecting (configuring)"
-msgstr "ინფორმაცია შეერთების შესახებ"
+msgstr "შეერთება (მორგება)"
 
 #: ../src/libnmc-base/nm-client-utils.c:297
 msgid "connecting (need authentication)"
 msgstr ""
 
 #: ../src/libnmc-base/nm-client-utils.c:298
-#, fuzzy
 msgid "connecting (getting IP configuration)"
-msgstr "ინფორმაცია შეერთების შესახებ"
+msgstr "შეერთება (IP კონფიგურაციის მიღება)"
 
 #: ../src/libnmc-base/nm-client-utils.c:299
 msgid "connecting (checking IP connectivity)"
@@ -3892,18 +3810,16 @@ msgid "connecting (starting secondary connections)"
 msgstr ""
 
 #: ../src/libnmc-base/nm-client-utils.c:302 ../src/nmcli/general.c:37
-#, fuzzy
 msgid "connected"
-msgstr "გათიშულია"
+msgstr "დაკავშირებულია"
 
 #: ../src/libnmc-base/nm-client-utils.c:303 ../src/nmcli/connections.c:80
 msgid "deactivating"
 msgstr ""
 
 #: ../src/libnmc-base/nm-client-utils.c:304
-#, fuzzy
 msgid "connection failed"
-msgstr "შეერთება დამყარებულია"
+msgstr "შეერთების შეცდომა"
 
 #: ../src/libnmc-base/nm-client-utils.c:311
 #: ../src/libnmc-base/nm-client-utils.c:312
@@ -3911,9 +3827,8 @@ msgstr "შეერთება დამყარებულია"
 #: ../src/libnmc-base/nm-client-utils.c:314
 #: ../src/libnmc-base/nm-client-utils.c:315
 #: ../src/libnmc-base/nm-client-utils.c:316
-#, fuzzy
 msgid "connecting (externally)"
-msgstr "შეერთება  VPN-ქსელთან '%s'"
+msgstr "შეერთება (გარე)"
 
 #: ../src/libnmc-base/nm-client-utils.c:317
 msgid "connected (externally)"
@@ -3932,7 +3847,7 @@ msgstr ""
 #: ../src/nmcli/devices.c:596 ../src/nmcli/devices.c:1382
 #: ../src/nmcli/general.c:92 ../src/nmcli/utils.h:313
 msgid "yes"
-msgstr ""
+msgstr "დიახ"
 
 #: ../src/libnmc-base/nm-client-utils.c:343
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:883
@@ -3941,9 +3856,8 @@ msgstr ""
 #: ../src/nmcli/connections.c:7327 ../src/nmcli/devices.c:590
 #: ../src/nmcli/devices.c:596 ../src/nmcli/devices.c:1382
 #: ../src/nmcli/general.c:93 ../src/nmcli/utils.h:313
-#, fuzzy
 msgid "no"
-msgstr "არცერთი"
+msgstr "არა"
 
 #: ../src/libnmc-base/nm-client-utils.c:344
 msgid "yes (guessed)"
@@ -3955,14 +3869,14 @@ msgstr ""
 
 #: ../src/libnmc-base/nm-client-utils.c:353
 msgid "No reason given"
-msgstr ""
+msgstr "მიზეზების გარეშე"
 
 #. We should not really come here
 #: ../src/libnmc-base/nm-client-utils.c:354 ../src/nmcli/connections.c:3632
 #: ../src/nmcli/connections.c:3691
-#, fuzzy, c-format
+#, c-format
 msgid "Unknown error"
-msgstr "უცნობია"
+msgstr "უცნობი შეცდომა"
 
 #: ../src/libnmc-base/nm-client-utils.c:355
 msgid "Device is now managed"
@@ -4010,13 +3924,12 @@ msgid "PPP service failed to start"
 msgstr ""
 
 #: ../src/libnmc-base/nm-client-utils.c:375
-#, fuzzy
 msgid "PPP service disconnected"
-msgstr "გათიშულია"
+msgstr "PPP სერვისი გაითიშა"
 
 #: ../src/libnmc-base/nm-client-utils.c:376
 msgid "PPP failed"
-msgstr ""
+msgstr "PPP-ის შეცდომა"
 
 #: ../src/libnmc-base/nm-client-utils.c:378
 msgid "DHCP client failed to start"
@@ -4056,7 +3969,7 @@ msgstr ""
 
 #: ../src/libnmc-base/nm-client-utils.c:390
 msgid "No dial tone"
-msgstr ""
+msgstr "ზუმერის გარეშე"
 
 #: ../src/libnmc-base/nm-client-utils.c:392
 msgid "No carrier could be established"
@@ -4083,9 +3996,8 @@ msgid "Not searching for networks"
 msgstr ""
 
 #: ../src/libnmc-base/nm-client-utils.c:404
-#, fuzzy
 msgid "Network registration denied"
-msgstr "ქსელური საშუალებები გამორთულია"
+msgstr "ქსელში რეგისტრაცია უარყოფილია"
 
 #: ../src/libnmc-base/nm-client-utils.c:406
 msgid "Network registration timed out"
@@ -4097,7 +4009,7 @@ msgstr ""
 
 #: ../src/libnmc-base/nm-client-utils.c:409
 msgid "PIN check failed"
-msgstr ""
+msgstr "PIN-ის შემოწმების შეცდომა"
 
 #: ../src/libnmc-base/nm-client-utils.c:411
 msgid "Necessary firmware for the device may be missing"
@@ -4105,12 +4017,11 @@ msgstr ""
 
 #: ../src/libnmc-base/nm-client-utils.c:412
 msgid "The device was removed"
-msgstr ""
+msgstr "მოწყობილობა გამოერთებულია"
 
 #: ../src/libnmc-base/nm-client-utils.c:413
-#, fuzzy
 msgid "NetworkManager went to sleep"
-msgstr "აპლეტი NetworkManager"
+msgstr "NetworkManager-ს სძინავს"
 
 #: ../src/libnmc-base/nm-client-utils.c:415
 msgid "The device's active connection disappeared"
@@ -4134,7 +4045,7 @@ msgstr ""
 
 #: ../src/libnmc-base/nm-client-utils.c:424
 msgid "The modem could not be found"
-msgstr ""
+msgstr "მოდემის პოვნა შეუძლებელია"
 
 #: ../src/libnmc-base/nm-client-utils.c:426
 msgid "The Bluetooth connection failed or timed out"
@@ -4154,15 +4065,15 @@ msgstr ""
 
 #: ../src/libnmc-base/nm-client-utils.c:433
 msgid "GSM Modem's SIM wrong"
-msgstr ""
+msgstr "GSM მოდემის SIM ბარათი არასწორია"
 
 #: ../src/libnmc-base/nm-client-utils.c:435
 msgid "InfiniBand device does not support connected mode"
-msgstr ""
+msgstr "InfiniBand მოწყობილობებს შეერთებული რეჟიმის მხარდაჭერა არ გააჩნიათ"
 
 #: ../src/libnmc-base/nm-client-utils.c:437
 msgid "A dependency of the connection failed"
-msgstr ""
+msgstr "შეერთების დამოკიდებულების შეცდომა"
 
 #: ../src/libnmc-base/nm-client-utils.c:439
 msgid "A problem with the RFC 2684 Ethernet over ADSL bridge"
@@ -4177,25 +4088,24 @@ msgid "The Wi-Fi network could not be found"
 msgstr ""
 
 #: ../src/libnmc-base/nm-client-utils.c:445
-#, fuzzy
 msgid "A secondary connection of the base connection failed"
-msgstr "ვერ მოხერხდა შეერთება უკაბელო ქსელთან."
+msgstr "საბაზისო შეერთების მეორადი შეერთება გაითიშა"
 
 #: ../src/libnmc-base/nm-client-utils.c:446
 msgid "DCB or FCoE setup failed"
-msgstr ""
+msgstr "DCB ან FCoE-ის მორგების შეცდომა"
 
 #: ../src/libnmc-base/nm-client-utils.c:447
 msgid "teamd control failed"
-msgstr ""
+msgstr "teamd-ის კონტროლის შეცდომა"
 
 #: ../src/libnmc-base/nm-client-utils.c:449
 msgid "Modem failed or no longer available"
-msgstr ""
+msgstr "Modem-ის გაფუჭდა ან მიუწვდომელია"
 
 #: ../src/libnmc-base/nm-client-utils.c:451
 msgid "Modem now ready and available"
-msgstr ""
+msgstr "მოდემი ახლა მზადაა და ხელმისაწვდომია"
 
 #: ../src/libnmc-base/nm-client-utils.c:452
 msgid "SIM PIN was incorrect"
@@ -4207,16 +4117,15 @@ msgstr ""
 
 #: ../src/libnmc-base/nm-client-utils.c:455
 msgid "The device's parent changed"
-msgstr ""
+msgstr "ამ მოწყობილობის მშობელი შეიცვალა"
 
 #: ../src/libnmc-base/nm-client-utils.c:457
 msgid "The device parent's management changed"
-msgstr ""
+msgstr "შეიცვალა მშობელი მოწყობილობის მართვა"
 
 #: ../src/libnmc-base/nm-client-utils.c:459
-#, fuzzy
 msgid "Open vSwitch database connection failed"
-msgstr "შეერთება დამყარებულია"
+msgstr "OpenvSwitch-ის მონაცემთა ბაზასთან მიერთების პრობლემა"
 
 #: ../src/libnmc-base/nm-client-utils.c:461
 msgid "A duplicate IP address was detected"
@@ -4235,38 +4144,32 @@ msgid "The Wi-Fi P2P peer could not be found"
 msgstr ""
 
 #: ../src/libnmc-base/nm-client-utils.c:474
-#, fuzzy
 msgid "Unknown reason"
-msgstr "(უცნობია)"
+msgstr "უცნობი მიზეზი"
 
 #: ../src/libnmc-base/nm-client-utils.c:476
-#, fuzzy
 msgid "The connection was disconnected"
-msgstr "ქსელური შეერთება გათიშულია."
+msgstr "ქსელური შეერთება გათიშულია"
 
 #: ../src/libnmc-base/nm-client-utils.c:478
-#, fuzzy
 msgid "Disconnected by user"
-msgstr "გათიშულია"
+msgstr "გათიშულია მომხმარებლის მიერ"
 
 #: ../src/libnmc-base/nm-client-utils.c:480
-#, fuzzy
 msgid "The base network connection was interrupted"
-msgstr "ქსელური შეერთება გათიშულია."
+msgstr "ძირითადი ქსელური შეერთება გაწყვეტილია"
 
 #: ../src/libnmc-base/nm-client-utils.c:482
-#, fuzzy
 msgid "The VPN service stopped unexpectedly"
-msgstr "გათიშულია"
+msgstr "VPN სერვისი მოულოდნელად გაჩერდა"
 
 #: ../src/libnmc-base/nm-client-utils.c:484
 msgid "The VPN service returned invalid configuration"
 msgstr ""
 
 #: ../src/libnmc-base/nm-client-utils.c:486
-#, fuzzy
 msgid "The connection attempt timed out"
-msgstr "VPN-შეერთება '%s' არასწორად იყო კონფიგურირებული."
+msgstr "შეერთების მცდელობას ვადა გაუვიდა"
 
 #: ../src/libnmc-base/nm-client-utils.c:488
 msgid "The VPN service did not start in time"
@@ -4285,14 +4188,12 @@ msgid "Invalid secrets"
 msgstr ""
 
 #: ../src/libnmc-base/nm-client-utils.c:494
-#, fuzzy
 msgid "The connection was removed"
-msgstr "VPN-შეერთება '%s' არასწორად იყო კონფიგურირებული."
+msgstr "შეერთება წაშლილია"
 
 #: ../src/libnmc-base/nm-client-utils.c:496
-#, fuzzy
 msgid "Master connection failed"
-msgstr "შეერთება დამყარებულია"
+msgstr "ძირითადი კავშირი გათიშულია"
 
 #: ../src/libnmc-base/nm-client-utils.c:498
 msgid "Could not create a software link"
@@ -4319,9 +4220,8 @@ msgid "missing property for \"<setting>.<property>:<secret>\" format"
 msgstr ""
 
 #: ../src/libnmc-base/nm-client-utils.c:867
-#, fuzzy
 msgid "invalid setting name"
-msgstr "IP მისამართი:"
+msgstr "პარამეტრის არასწორი სახელი"
 
 #: ../src/libnmc-base/nm-client-utils.c:881
 msgid "property name is not UTF-8"
@@ -4329,9 +4229,8 @@ msgstr ""
 
 #: ../src/libnmc-base/nm-client-utils.c:898
 #: ../src/libnmc-base/nm-client-utils.c:904
-#, fuzzy
 msgid "secret is not UTF-8"
-msgstr "VPN-შეერთება '%s' არასწორად იყო კონფიგურირებული."
+msgstr "პაროლი UTF-8 არაა"
 
 #: ../src/libnmc-base/nm-polkit-listener.c:327
 #, c-format
@@ -4339,9 +4238,9 @@ msgid "Could not find any session id for uid %d"
 msgstr ""
 
 #: ../src/libnmc-base/nm-polkit-listener.c:329
-#, fuzzy, c-format
+#, c-format
 msgid "Could not retrieve session id: %s"
-msgstr "არავითარი აქტიური შეერთება!"
+msgstr "სესიის ID-ის მიღების შეცდომა: %s"
 
 #: ../src/libnmc-base/nm-secret-agent-simple.c:222
 #, c-format
@@ -4352,9 +4251,8 @@ msgstr ""
 #: ../src/libnmc-base/nm-secret-agent-simple.c:357
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:5024
 #: ../src/nmtui/nmt-page-dsl.c:51 ../src/nmtui/nmt-page-wifi.c:331
-#, fuzzy
 msgid "Username"
-msgstr "სახელი:"
+msgstr "მომხმარებლის სახელი"
 
 #: ../src/libnmc-base/nm-secret-agent-simple.c:275
 #: ../src/libnmc-base/nm-secret-agent-simple.c:312
@@ -4369,30 +4267,26 @@ msgstr "სახელი:"
 #: ../src/libnmc-base/nm-vpn-helpers.c:158 ../src/nmcli/devices.c:4662
 #: ../src/nmtui/nmt-page-dsl.c:64 ../src/nmtui/nmt-page-wifi.c:271
 #: ../src/nmtui/nmt-page-wifi.c:305 ../src/nmtui/nmt-page-wifi.c:344
-#, fuzzy
 msgid "Password"
-msgstr "პაროლი:"
+msgstr "პაროლი"
 
 #: ../src/libnmc-base/nm-secret-agent-simple.c:284
-#, fuzzy
 msgid "Identity"
-msgstr "იდენტიფიკაცია:"
+msgstr "იდენტიფიკაცია"
 
 #: ../src/libnmc-base/nm-secret-agent-simple.c:289
-#, fuzzy
 msgid "Private key password"
-msgstr "პირადი გასაღების პაროლი:"
+msgstr "პირადი გასაღების პაროლი"
 
 #: ../src/libnmc-base/nm-secret-agent-simple.c:325
 #: ../src/nmtui/nmt-page-wifi.c:284
-#, fuzzy
 msgid "Key"
-msgstr "გასაღები:"
+msgstr "გასაღები"
 
 #: ../src/libnmc-base/nm-secret-agent-simple.c:362
 #: ../src/nmtui/nmt-page-dsl.c:67
 msgid "Service"
-msgstr ""
+msgstr "სერვისი"
 
 #: ../src/libnmc-base/nm-secret-agent-simple.c:473
 msgid "WireGuard private-key"
@@ -4413,21 +4307,20 @@ msgid "A password is required to connect to '%s'."
 msgstr ""
 
 #: ../src/libnmc-base/nm-secret-agent-simple.c:878
-#, fuzzy
 msgid "Authentication required by wireless network"
-msgstr "ახალი უკაბელო ქსელის შექმნა"
+msgstr "უსადენო ქსელი ავთენტიკაციას მოითხოვს"
 
 #: ../src/libnmc-base/nm-secret-agent-simple.c:880
-#, fuzzy, c-format
+#, c-format
 msgid ""
 "Passwords or encryption keys are required to access the wireless network "
 "'%s'."
-msgstr "თქვენ შეერთებული ხართ უკაბელო ქსელთან  \"%s\"."
+msgstr ""
+"უსადენო ქსელთან (%s) წვდომისთვის საჭიროა პაროლები ან დაშიფვრის გასაღებები."
 
 #: ../src/libnmc-base/nm-secret-agent-simple.c:886
-#, fuzzy
 msgid "Wired 802.1X authentication"
-msgstr "აუტენთიკაცია:"
+msgstr "802.1X ავთენტიკაცია მავთულზე"
 
 #: ../src/libnmc-base/nm-secret-agent-simple.c:887
 #, c-format
@@ -4435,9 +4328,8 @@ msgid "Secrets are required to access the wired network '%s'"
 msgstr ""
 
 #: ../src/libnmc-base/nm-secret-agent-simple.c:893
-#, fuzzy
 msgid "DSL authentication"
-msgstr "აუტენთიკაცია:"
+msgstr "DSL ავთენტიკაცია"
 
 #: ../src/libnmc-base/nm-secret-agent-simple.c:894
 #, c-format
@@ -4446,15 +4338,15 @@ msgstr ""
 
 #: ../src/libnmc-base/nm-secret-agent-simple.c:903
 msgid "PIN code required"
-msgstr ""
+msgstr "საჭიროა PIN კოდი"
 
 #: ../src/libnmc-base/nm-secret-agent-simple.c:904
 msgid "PIN code is needed for the mobile broadband device"
-msgstr ""
+msgstr "მობილური კავშირის მოწყობილობას სჭირდება PIN კოდი"
 
 #: ../src/libnmc-base/nm-secret-agent-simple.c:907
 msgid "PIN"
-msgstr ""
+msgstr "PIN კოდი"
 
 #: ../src/libnmc-base/nm-secret-agent-simple.c:912
 #: ../src/libnmc-base/nm-secret-agent-simple.c:947
@@ -4510,25 +4402,22 @@ msgid "failed to load VPN plugin \"%s\": %s"
 msgstr ""
 
 #: ../src/libnmc-base/nm-vpn-helpers.c:148
-#, fuzzy
 msgid "Certificate password"
-msgstr "პირადი გასაღების პაროლი:"
+msgstr "სერტიფიკატის პაროლი"
 
 #: ../src/libnmc-base/nm-vpn-helpers.c:149
-#, fuzzy
 msgid "HTTP proxy password"
-msgstr "პაროლის ჩვენება"
+msgstr "HTTP პროქსის პაროლი"
 
 #: ../src/libnmc-base/nm-vpn-helpers.c:154
 #: ../src/libnmc-base/nm-vpn-helpers.c:159
-#, fuzzy
 msgid "Group password"
-msgstr "პაროლის ჩვენება"
+msgstr "ჯგუფის პაროლი"
 
 #: ../src/libnmc-base/nm-vpn-helpers.c:163 ../src/nmtui/nmt-page-ip4.c:132
 #: ../src/nmtui/nmt-page-ip6.c:133
 msgid "Gateway"
-msgstr ""
+msgstr "ნაგულისხმები რაუტერი"
 
 #: ../src/libnmc-base/nm-vpn-helpers.c:164
 msgid "Cookie"
@@ -4539,9 +4428,9 @@ msgid "Gateway certificate hash"
 msgstr ""
 
 #: ../src/libnmc-base/nm-vpn-helpers.c:267
-#, fuzzy, c-format
+#, c-format
 msgid "Invalid peer starting at %s:%zu: %s"
-msgstr "IP მისამართი:"
+msgstr "პარტნიორი არასწორად იწყება %s:%zu: %s"
 
 #: ../src/libnmc-base/nm-vpn-helpers.c:388
 msgid ""
@@ -4555,19 +4444,19 @@ msgid "unrecognized line at %s:%zu"
 msgstr ""
 
 #: ../src/libnmc-base/nm-vpn-helpers.c:678
-#, fuzzy, c-format
+#, c-format
 msgid "invalid value for '%s' at %s:%zu"
-msgstr "IP მისამართი:"
+msgstr "'%s'-ის არასწორი მნიშვნელობა %s:%zu-სთან"
 
 #: ../src/libnmc-base/nm-vpn-helpers.c:686
-#, fuzzy, c-format
+#, c-format
 msgid "invalid secret '%s' at %s:%zu"
-msgstr "IP მისამართი:"
+msgstr "'%s' '%s:%zu'-ის არასწორი საიდუმლო ფრაზაა"
 
 #: ../src/libnmc-base/nm-vpn-helpers.c:810
-#, fuzzy, c-format
+#, c-format
 msgid "Failed to create WireGuard connection: %s"
-msgstr "VPN-შეერთების '%s' გაშვება ვერ ხერხდება"
+msgstr "WireGuard შეერთების შექმნის შეცდომა: %s"
 
 #: ../src/libnmc-setting/nm-meta-setting-access.c:501
 #, c-format
@@ -4586,9 +4475,9 @@ msgid "invalid prefix '%s'; <1-%d> allowed"
 msgstr ""
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:278
-#, fuzzy, c-format
+#, c-format
 msgid "invalid IP address: %s"
-msgstr "IP მისამართი:"
+msgstr "არასწორი IP მისამართი: %s"
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:303
 msgid ""
@@ -4642,13 +4531,14 @@ msgid "team config file '%s' contains non-valid utf-8"
 msgstr ""
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:1058
+#, fuzzy
 msgid "auto"
-msgstr ""
+msgstr "ავტომატური"
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:1222
 #, c-format
 msgid "%s (%s)"
-msgstr ""
+msgstr "%s (%s)"
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:1415
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:1423
@@ -4682,14 +4572,14 @@ msgid "%d (key)"
 msgstr ""
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:1806
-#, fuzzy, c-format
+#, c-format
 msgid "%d (passphrase)"
-msgstr "ფრაზა-პაროლის ჩვენება"
+msgstr "%d (კოდური ფრაზა)"
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:1809
-#, fuzzy, c-format
+#, c-format
 msgid "%d (unknown)"
-msgstr "(უცნობია)"
+msgstr "%d (უცნობი)"
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:1822
 msgid "0 (NONE)"
@@ -4712,9 +4602,8 @@ msgid "MVRP, "
 msgstr ""
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:1855
-#, fuzzy
 msgid "0 (none)"
-msgstr "არცერთი"
+msgstr "0 (არცერთი)"
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:1861
 msgid "agent-owned, "
@@ -4749,14 +4638,13 @@ msgid "'%s' is not a valid number (or out of range)"
 msgstr ""
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:2259
-#, fuzzy, c-format
+#, c-format
 msgid "invalid IPv4 or subnet \"%s\""
-msgstr "IP მისამართი:"
+msgstr "არასწორი IPv4 მისამართი ან ქვექსელი: %s"
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:2290
-#, fuzzy
 msgid "not a valid hex-string"
-msgstr "IP მისამართი:"
+msgstr "არ წარმოადგენს სწორ სტრიქონს თექვსმეტობითში"
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:2306
 #, c-format
@@ -4770,9 +4658,9 @@ msgid ""
 msgstr ""
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:2507
-#, fuzzy, c-format
+#, c-format
 msgid "failed to set bond option \"%s\""
-msgstr "არ იტვირთება"
+msgstr "ბმის პარამეტრის დაყენების შეცდომა: \"%s\""
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:2555
 #, c-format
@@ -4800,14 +4688,14 @@ msgstr ""
 #. * nmc_setting_set_property() is called only after the property
 #. * we're setting (type) has been removed.
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:2623
-#, fuzzy, c-format
+#, c-format
 msgid "Can not change the connection type"
-msgstr "არ არის ქსელთან შეერთება"
+msgstr "ქსელური შეერთების ტიპის შეცვლა შეუძლებელია"
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:2706
-#, fuzzy, c-format
+#, c-format
 msgid "invalid permission \"%s\""
-msgstr "IP მისამართი:"
+msgstr "არასწორი წვდომა: %s"
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:2806
 #, c-format
@@ -4871,12 +4759,12 @@ msgstr ""
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:3236
 msgid "default"
-msgstr ""
+msgstr "ნაგულისხმები"
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:3397
-#, fuzzy, c-format
+#, c-format
 msgid "invalid IPv%c address '%s'"
-msgstr "IP მისამართი:"
+msgstr "არასწორი IPv%c მისამართი: '%s'"
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:3525
 #, c-format
@@ -4953,13 +4841,12 @@ msgid "'%s' is not compatible with '%s' type, please change or delete the key."
 msgstr ""
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:4348 ../src/nmcli/utils.h:319
-#, fuzzy
 msgid "on"
-msgstr "არა"
+msgstr "ჩართული"
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:4348 ../src/nmcli/utils.h:319
 msgid "off"
-msgstr ""
+msgstr "გამორთული"
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:4390
 #, c-format
@@ -5039,9 +4926,8 @@ msgid ""
 msgstr ""
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:4745
-#, fuzzy
 msgid "IEEE 802.15.4 (WPAN) parent device or connection UUID"
-msgstr "ვერ განხორციელდა VPN-შეერთება '%s' "
+msgstr "IEEE 802.15.4 (WPAN) მშობელი მოწყობილობის ან შეერთების UUID"
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:4781
 msgid ""
@@ -5105,9 +4991,8 @@ msgstr ""
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:5326
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:5795
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:6837
-#, fuzzy
 msgid "Password [none]"
-msgstr "პაროლი:"
+msgstr "პაროლი: [არაფერი]"
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:5076
 msgid "Bluetooth device address"
@@ -5173,9 +5058,8 @@ msgstr ""
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:5320
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:5789
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:7404
-#, fuzzy
 msgid "Username [none]"
-msgstr "სახელი:"
+msgstr "მომხმარებელი [არცერთი]"
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:5422
 msgid ""
@@ -5210,9 +5094,8 @@ msgid ""
 msgstr ""
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:5805
-#, fuzzy
 msgid "APN"
-msgstr "PEAP"
+msgstr "APN"
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:5878
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:7626
@@ -5334,7 +5217,7 @@ msgstr ""
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:6430
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:7476
 msgid "Remote"
-msgstr ""
+msgstr "დაშორებული"
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:6475
 msgid "MACsec parent device or connection UUID"
@@ -5353,9 +5236,8 @@ msgid "SCI port [1]"
 msgstr ""
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:6544
-#, fuzzy
 msgid "MACVLAN parent device or connection UUID"
-msgstr "VPN-შეერთებები"
+msgstr "MACVLAN მშობელი მოწყობილობის ან შეერთების UUID"
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:6565
 msgid "Tap [no]"
@@ -5384,9 +5266,8 @@ msgid "Service [none]"
 msgstr ""
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:6831
-#, fuzzy
 msgid "PPPoE username"
-msgstr "სახელი:"
+msgstr "PPPoE-ის მომხმარებლის სახელი"
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:6867
 msgid "Browser only [no]"
@@ -5402,9 +5283,8 @@ msgstr ""
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:7003
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:7191
-#, fuzzy
 msgid "Team JSON configuration [none]"
-msgstr "VPN-კონფგურაციის შეცდომა"
+msgstr "ჯგუფური შეერთების JSON კონფიგურაცია [არცერთი]"
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:7294
 msgid "User ID [none]"
@@ -5431,9 +5311,8 @@ msgid "veth peer"
 msgstr ""
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:7344
-#, fuzzy
 msgid "VLAN parent device or connection UUID"
-msgstr "ვერ განხორციელდა VPN-შეერთება '%s' "
+msgstr "VLAN-ის მშობელი მოწყობილობის ან შეერთების UUID"
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:7351
 msgid "VLAN ID (<0-4094>)"
@@ -5472,14 +5351,13 @@ msgid "Maximum source port [0]"
 msgstr ""
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:7494
-#, fuzzy
 msgid "Destination port [8472]"
-msgstr "დანიშნულების მისამართი:"
+msgstr "დანიშნულების პორტი [8472]"
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:7534
 #: ../src/nmtui/nmt-wireguard-peer-editor.c:78
 msgid "Peer"
-msgstr ""
+msgstr "პარტნიორი"
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:7564
 msgid "WiMAX NSP name"
@@ -5526,197 +5404,183 @@ msgstr ""
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:8202
 msgid "802-1x settings"
-msgstr ""
+msgstr "802-1x-ის მორგება"
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:8204
-#, fuzzy
 msgid "bluetooth connection"
-msgstr "არ არის ქსელთან შეერთება"
+msgstr "bluetooth შეერთება"
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:8205
 msgid "Bond device"
-msgstr ""
+msgstr "ინტერფეისის ბმის მოწყობილბა"
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:8206
-#, fuzzy
 msgid "Bond port"
-msgstr "შეერთებულია კაბელურ ქსელთან"
+msgstr "ინტერფეისის ბმის პორტი"
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:8207
-#, fuzzy
 msgid "Bridge device"
-msgstr "შეერთებულია კაბელურ ქსელთან"
+msgstr "ხიდის მოწყობილობა"
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:8208
-#, fuzzy
 msgid "Bridge port"
-msgstr "შეერთებულია კაბელურ ქსელთან"
+msgstr "ხიდის პორტი"
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:8209
-#, fuzzy
 msgid "CDMA mobile broadband connection"
-msgstr "VPN-შეერთებები"
+msgstr "CDMA მობილური ფართოზოლოვანი შეერთება"
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:8210
 msgid "General settings"
-msgstr ""
+msgstr "ზოგადი პარამეტრები"
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:8211
 msgid "DCB settings"
-msgstr ""
+msgstr "DCB-ის მორგება"
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:8212
 msgid "Dummy settings"
-msgstr ""
+msgstr "უაზრო პარამეტრები"
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:8213
 msgid "Ethtool settings"
-msgstr ""
+msgstr "Ethtool-ის მორგება"
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:8214
 msgid "Generic settings"
-msgstr ""
+msgstr "საერთო პარამეტრები"
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:8215
-#, fuzzy
 msgid "GSM mobile broadband connection"
-msgstr "VPN-შეერთებები"
+msgstr "GSM მობილური ფართოზოლოვანი შეერთება"
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:8216
-#, fuzzy
 msgid "Hostname settings"
-msgstr "IP მისამართი:"
+msgstr "ჰოსტის სახელის მორგება"
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:8218
 msgid "IPv4 protocol"
-msgstr ""
+msgstr "IPv4 პროტოკოლი"
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:8219
 msgid "IPv6 protocol"
-msgstr ""
+msgstr "IPv6 პროტოკოლი"
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:8220
 msgid "IP-tunnel settings"
-msgstr ""
+msgstr "IP გვირაბის მორგება"
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:8221
 msgid "MACsec connection"
-msgstr ""
+msgstr "MACsec შეერთება"
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:8222
-#, fuzzy
 msgid "macvlan connection"
-msgstr "არ არის ქსელთან შეერთება"
+msgstr "macvlan შეერთება"
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:8223
 msgid "Match"
-msgstr ""
+msgstr "დამთხვევა"
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:8224
-#, fuzzy
 msgid "OLPC Mesh connection"
-msgstr "VPN-შეერთებები"
+msgstr "OPLC ბადესთან შეერთება"
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:8225
 msgid "Open vSwitch bridge settings"
-msgstr ""
+msgstr "OpenvSwitch-ის ხიდის პარამეტრები"
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:8226
 msgid "Open vSwitch DPDK interface settings"
-msgstr ""
+msgstr "Open vSwitch DPDK ინტერფეისის მორგება"
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:8227
 msgid "OVS External IDs"
-msgstr ""
+msgstr "OVS-ის გარე ID-ები"
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:8228
 msgid "Open vSwitch interface settings"
-msgstr ""
+msgstr "OpenvSwitch-ის ინტერფეისის მორგება"
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:8229
 msgid "Open vSwitch patch interface settings"
-msgstr ""
+msgstr "OpenvSwitch-ის პაჩის ინტერფეისის მორგება"
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:8230
 msgid "Open vSwitch port settings"
-msgstr ""
+msgstr "OpenvSwitch-ის პორტის მორგება"
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:8231
 msgid "PPP settings"
-msgstr ""
+msgstr "PPP-ის მორგება"
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:8232
 msgid "PPPoE"
-msgstr ""
+msgstr "PPPoE"
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:8233
 msgid "Proxy"
-msgstr ""
+msgstr "პროქსი"
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:8234
 msgid "Serial settings"
-msgstr ""
+msgstr "სერიული პორტის მორგება"
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:8235
 msgid "SR-IOV settings"
-msgstr ""
+msgstr "SR-IOV-ის მორგება"
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:8236
 msgid "Traffic controls"
-msgstr ""
+msgstr "ტრაფიკის კონტროლი"
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:8237
 msgid "Team device"
-msgstr ""
+msgstr "ჯგუფური მოწყობილობა"
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:8238
 msgid "Team port"
-msgstr ""
+msgstr "ჯგუფური პორტი"
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:8239
 msgid "Tun device"
-msgstr ""
+msgstr "Tun მოწყობილობა"
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:8240
 msgid "User settings"
-msgstr ""
+msgstr "მომხმარებლის მორგება"
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:8246
-#, fuzzy
 msgid "Wi-Fi P2P connection"
-msgstr "შეერთებულია  VPN-ქსელთან '%s'"
+msgstr "WiFi P2P შეერთება"
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:8247
-#, fuzzy
 msgid "WiMAX connection"
-msgstr "VPN-შეერთებები"
+msgstr "WiMAX შეერთება"
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:8248
-#, fuzzy
 msgid "Wired Ethernet"
-msgstr "კაბელიანი Ethernet (%s)"
+msgstr "მავთულიანი Ethernet"
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:8249
 msgid "WireGuard VPN settings"
-msgstr ""
+msgstr "WireGuard VPN-ის მორგება"
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:8250
-#, fuzzy
 msgid "Wi-Fi connection"
-msgstr "შეერთებულია  VPN-ქსელთან '%s'"
+msgstr "Wi-Fi კავშირი"
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:8251
 msgid "Wi-Fi security settings"
-msgstr ""
+msgstr "Wi-Fi-ის უსაფრთხოების მორგება"
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:8252
 msgid "WPAN settings"
-msgstr ""
+msgstr "WPAN-ის მორგება"
 
 #: ../src/libnmc-setting/nm-meta-setting-desc.c:8658
-#, fuzzy
 msgid "name"
-msgstr "სახელი:"
+msgstr "სახელი"
 
 #. Generated file. Do not edit.
 #: ../src/libnmc-setting/settings-docs.h.in:3
@@ -8036,19 +7900,16 @@ msgid "The bridge failure mode. One of \"secure\", \"standalone\" or empty."
 msgstr ""
 
 #: ../src/libnmc-setting/settings-docs.h.in:304
-#, fuzzy
 msgid "Enable or disable multicast snooping."
-msgstr "_ქსელური შეერთების ნების დართვა"
+msgstr "Multicast სნუპინგის ჩართ/გამორთ."
 
 #: ../src/libnmc-setting/settings-docs.h.in:305
-#, fuzzy
 msgid "Enable or disable RSTP."
-msgstr "_ქსელური შეერთების ნების დართვა"
+msgstr "RSTP-ის ჩართ/გამორთ."
 
 #: ../src/libnmc-setting/settings-docs.h.in:306
-#, fuzzy
 msgid "Enable or disable STP."
-msgstr "_ქსელური შეერთების ნების დართვა"
+msgstr "STP-ის ჩართ/გამორთ."
 
 #: ../src/libnmc-setting/settings-docs.h.in:307
 msgid "Open vSwitch DPDK device arguments."
@@ -8783,7 +8644,7 @@ msgstr ""
 #: ../src/nmtui/nmt-wireguard-peer-editor.c:154
 #: ../src/nmtui/nmtui-hostname.c:53 ../src/nmtui/nmtui.c:118
 msgid "OK"
-msgstr ""
+msgstr "დიახ"
 
 #: ../src/libnmt-newt/nmt-newt-utils.c:412
 #: ../src/libnmt-newt/nmt-newt-utils.c:450
@@ -8802,9 +8663,8 @@ msgid "Could not re-read file: %s"
 msgstr ""
 
 #: ../src/nm-online/nm-online.c:76
-#, fuzzy
 msgid "Connecting"
-msgstr "_შეერთება"
+msgstr "დაკავშირება"
 
 #: ../src/nm-online/nm-online.c:189
 #, c-format
@@ -8812,14 +8672,13 @@ msgid "Error: timeout creating NMClient object\n"
 msgstr ""
 
 #: ../src/nm-online/nm-online.c:210
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Could not create NMClient object: %s\n"
-msgstr "VPN-შეერთების '%s' გაშვება ვერ ხერხდება"
+msgstr "შეცდომა: NMClient ტიპის ობიექტის შექმნა შეუძლებელია: %s\n"
 
 #: ../src/nm-online/nm-online.c:236
-#, fuzzy
 msgid "Don't print anything"
-msgstr "_შეხსენების აკრძალვა"
+msgstr "არაფერი გამოიტანო"
 
 #: ../src/nm-online/nm-online.c:242
 msgid "Wait for NetworkManager startup instead of a connection"
@@ -8832,9 +8691,8 @@ msgid ""
 msgstr ""
 
 #: ../src/nm-online/nm-online.c:257
-#, fuzzy
 msgid "Exit immediately if NetworkManager is not running or connecting"
-msgstr "NetworkManager არ არის გაშვებული"
+msgstr "მუშაობის დასრულება, თუ NetworkManager-ი გაშვებული არაა"
 
 #: ../src/nm-online/nm-online.c:281
 msgid ""
@@ -8911,7 +8769,7 @@ msgstr ""
 #: ../src/nmcli/common.c:391 ../src/nmcli/common.c:392
 #: ../src/nmcli/connections.c:1621
 msgid "GROUP"
-msgstr ""
+msgstr "GROUP"
 
 #: ../src/nmcli/common.c:639
 #, c-format
@@ -8941,9 +8799,8 @@ msgid "Error: Could not create NMClient object: %s."
 msgstr ""
 
 #: ../src/nmcli/common.c:1287
-#, fuzzy
 msgid "Error: NetworkManager is not running."
-msgstr "NetworkManager არ არის გაშვებული"
+msgstr "შეცდომა: NetworkManager გაშვებული არაა."
 
 #: ../src/nmcli/common.c:1390
 #, c-format
@@ -8956,21 +8813,19 @@ msgstr ""
 
 #: ../src/nmcli/common.c:1466
 msgid "access denied"
-msgstr ""
+msgstr "წვდომა აკრძალულია"
 
 #: ../src/nmcli/common.c:1468
-#, fuzzy
 msgid "NetworkManager is not running"
-msgstr "NetworkManager არ არის გაშვებული"
+msgstr "NetworkManager-ი გაშვებული არაა"
 
 #: ../src/nmcli/common.c:1478
 msgid "none"
 msgstr "არცერთი"
 
 #: ../src/nmcli/common.c:1479
-#, fuzzy
 msgid "portal"
-msgstr "_ექსპორტი"
+msgstr "პორტალი"
 
 #: ../src/nmcli/common.c:1480
 msgid "limited"
@@ -8978,7 +8833,7 @@ msgstr ""
 
 #: ../src/nmcli/common.c:1481
 msgid "full"
-msgstr ""
+msgstr "მთლიანი"
 
 #. define some prompts for connection editor
 #: ../src/nmcli/connections.c:59
@@ -8990,30 +8845,25 @@ msgid "Property name? "
 msgstr ""
 
 #: ../src/nmcli/connections.c:61
-#, fuzzy
 msgid "Enter connection type: "
-msgstr "არ არის ქსელთან შეერთება"
+msgstr "შეიყვანეთ შეერთების ტიპი: "
 
 #. define some other prompts
 #: ../src/nmcli/connections.c:65
-#, fuzzy
 msgid "Connection (name, UUID, or path): "
-msgstr "VPN-შეერთებები"
+msgstr "შეერთება (სახელი, UUID ან ბილიკი): "
 
 #: ../src/nmcli/connections.c:66
-#, fuzzy
 msgid "VPN connection (name, UUID, or path): "
-msgstr "შეერთება  VPN-ქსელთან '%s'"
+msgstr "VPN შეერთება (სახელი, UUID ან ბილიკი): "
 
 #: ../src/nmcli/connections.c:67
-#, fuzzy
 msgid "Connection(s) (name, UUID, or path): "
-msgstr "VPN-შეერთებები"
+msgstr "შეერთება (სახელი, UUID ან ბილიკი): "
 
 #: ../src/nmcli/connections.c:68
-#, fuzzy
 msgid "Connection(s) (name, UUID, path or apath): "
-msgstr "VPN-შეერთებები"
+msgstr "VPN შეერთება (სახელი, UUID ან ბილიკი): "
 
 #: ../src/nmcli/connections.c:78
 msgid "activating"
@@ -9028,37 +8878,32 @@ msgid "deactivated"
 msgstr ""
 
 #: ../src/nmcli/connections.c:88
-#, fuzzy
 msgid "VPN connecting (prepare)"
-msgstr "შეერთება  VPN-ქსელთან '%s'"
+msgstr "მიმდინარეობს VPN მიერთება (მომზადება)"
 
 #: ../src/nmcli/connections.c:90
 msgid "VPN connecting (need authentication)"
 msgstr ""
 
 #: ../src/nmcli/connections.c:91
-#, fuzzy
 msgid "VPN connecting"
-msgstr "VPN-შეერთებები"
+msgstr "მიმდინარეობს VPN მიერთება"
 
 #: ../src/nmcli/connections.c:93
 msgid "VPN connecting (getting IP configuration)"
 msgstr ""
 
 #: ../src/nmcli/connections.c:94
-#, fuzzy
 msgid "VPN connected"
-msgstr "გათიშულია"
+msgstr "VPN დაკავშირებულია"
 
 #: ../src/nmcli/connections.c:95
-#, fuzzy
 msgid "VPN connection failed"
 msgstr "შეცდომა VPN-შეერთებისას"
 
 #: ../src/nmcli/connections.c:96
-#, fuzzy
 msgid "VPN disconnected"
-msgstr "გათიშულია"
+msgstr "VPN გათიშულია"
 
 #: ../src/nmcli/connections.c:526
 msgid "WiMax is no longer supported"
@@ -9070,7 +8915,7 @@ msgstr ""
 
 #: ../src/nmcli/connections.c:614
 msgid "never"
-msgstr ""
+msgstr "არასოდეს"
 
 #: ../src/nmcli/connections.c:965
 #, c-format
@@ -9494,26 +9339,24 @@ msgid "Error updating secrets for %s: %s\n"
 msgstr ""
 
 #: ../src/nmcli/connections.c:1442
-#, fuzzy
 msgid "Connection profile details"
-msgstr "შეერთება დამყარებულია"
+msgstr "შეერთების პროფილის დეტალები"
 
 #: ../src/nmcli/connections.c:1460 ../src/nmcli/connections.c:1567
-#, fuzzy, c-format
+#, c-format
 msgid "Error: 'connection show': %s"
-msgstr "შეერთებულია  VPN-ქსელთან '%s'"
+msgstr "შეცდომა: 'შეერთების ჩვენება': %s"
 
 #: ../src/nmcli/connections.c:1549
-#, fuzzy
 msgid "Active connection details"
-msgstr "არავითარი აქტიური შეერთება!"
+msgstr "აქტიური შეერთების დეტალები"
 
 #: ../src/nmcli/connections.c:1678 ../src/nmcli/devices.c:1637
 #: ../src/nmcli/devices.c:1654 ../src/nmcli/devices.c:1672
 #: ../src/nmcli/devices.c:1691 ../src/nmcli/devices.c:1755
 #: ../src/nmcli/devices.c:1884
 msgid "NAME"
-msgstr ""
+msgstr "სახელი"
 
 #: ../src/nmcli/connections.c:1778
 #, c-format
@@ -9554,14 +9397,12 @@ msgid "'--order' argument is missing"
 msgstr ""
 
 #: ../src/nmcli/connections.c:2252
-#, fuzzy
 msgid "NetworkManager active profiles"
-msgstr "აპლეტი NetworkManager"
+msgstr "NetworkManager-ის აქტიური პროფილები"
 
 #: ../src/nmcli/connections.c:2253
-#, fuzzy
 msgid "NetworkManager connection profiles"
-msgstr "აპლეტი NetworkManager"
+msgstr "NetworkManager-ის შეერთების პროფილები"
 
 #: ../src/nmcli/connections.c:2309 ../src/nmcli/connections.c:3030
 #: ../src/nmcli/connections.c:3042 ../src/nmcli/connections.c:3054
@@ -9596,22 +9437,21 @@ msgstr ""
 #: ../src/nmcli/general.c:1067
 #, c-format
 msgid "Error: %s."
-msgstr ""
+msgstr "შეცდომა: %s."
 
 #: ../src/nmcli/connections.c:2528 ../src/nmcli/devices.c:4703
-#, fuzzy, c-format
+#, c-format
 msgid "no active connection on device '%s'"
-msgstr "არავითარი აქტიური შეერთება!"
+msgstr "მოწყობილობაზე '%s' აქტიური შეერთებები არ არსებობს"
 
 #: ../src/nmcli/connections.c:2536
-#, fuzzy
 msgid "no active connection or device"
-msgstr "არავითარი აქტიური შეერთება!"
+msgstr "აქტიური შეერთების ან მოწყობილობის გარეშე"
 
 #: ../src/nmcli/connections.c:2559
-#, fuzzy, c-format
+#, c-format
 msgid "device '%s' not compatible with connection '%s': "
-msgstr "VPN-შეერთების '%s' გაშვება ვერ ხერხდება"
+msgstr "მოწყობილობა (%s) შეერთებასთან (%s) თავსებადი არაა: "
 
 #: ../src/nmcli/connections.c:2597
 #, c-format
@@ -9619,14 +9459,14 @@ msgid "device '%s' not compatible with connection '%s'"
 msgstr ""
 
 #: ../src/nmcli/connections.c:2604
-#, fuzzy, c-format
+#, c-format
 msgid "device '%s' not found for connection '%s'"
-msgstr "ვერ განხორციელდა VPN-შეერთება '%s' "
+msgstr "მოწყობილობა %s არ არსებობს შეერთებისთვის %s"
 
 #: ../src/nmcli/connections.c:2612
-#, fuzzy, c-format
+#, c-format
 msgid "no device found for connection '%s'"
-msgstr "ვერ განხორციელდა VPN-შეერთება '%s' "
+msgstr "შეერთებისთვის (%s) მოწყობილობა არ არსებობს"
 
 #: ../src/nmcli/connections.c:2663
 #, c-format
@@ -9664,14 +9504,14 @@ msgid "neither a valid connection nor device given"
 msgstr ""
 
 #: ../src/nmcli/connections.c:2933
-#, fuzzy, c-format
+#, c-format
 msgid "invalid passwd-file '%s' at line %zd: %s"
-msgstr "IP მისამართი:"
+msgstr "passwd ფაილი (%s) არასწორია ხაზზე %zd: %s"
 
 #: ../src/nmcli/connections.c:2941
-#, fuzzy, c-format
+#, c-format
 msgid "invalid passwd-file '%s': %s"
-msgstr "IP მისამართი:"
+msgstr "არასწორი passwd ფაილი '%s': %s"
 
 #: ../src/nmcli/connections.c:3064 ../src/nmcli/connections.c:9481
 #: ../src/nmcli/devices.c:1941 ../src/nmcli/devices.c:1990
@@ -9704,24 +9544,24 @@ msgid "Error: No connection specified."
 msgstr ""
 
 #: ../src/nmcli/connections.c:3303
-#, fuzzy, c-format
+#, c-format
 msgid "Error: '%s' is not an active connection.\n"
-msgstr "არავითარი აქტიური შეერთება!"
+msgstr "შეცდომა: %s აქტიურ შეერთებას არ წარმოადგენს.\n"
 
 #: ../src/nmcli/connections.c:3304
-#, fuzzy, c-format
+#, c-format
 msgid "Error: not all active connections found."
-msgstr "არავითარი აქტიური შეერთება!"
+msgstr "შეცდომა: ყველა აქტიური შეერთება ნაპოვნი არაა."
 
 #: ../src/nmcli/connections.c:3312
-#, fuzzy, c-format
+#, c-format
 msgid "Error: no active connection provided."
-msgstr "არავითარი აქტიური შეერთება!"
+msgstr "შეცდომა: აქტიური შეერთება მიწოდებული არაა."
 
 #: ../src/nmcli/connections.c:3344
-#, fuzzy, c-format
+#, c-format
 msgid "Connection '%s' deactivation failed: %s\n"
-msgstr "ვერ მოხერხდა შეერთება უკაბელო ქსელთან."
+msgstr "შეერთების (%s) დეაქტივაციის შეცდომა: %s\n"
 
 #: ../src/nmcli/connections.c:3825
 #, c-format
@@ -9734,24 +9574,24 @@ msgid "Error: invalid property '%s': %s."
 msgstr ""
 
 #: ../src/nmcli/connections.c:4217
-#, fuzzy, c-format
+#, c-format
 msgid "Error: failed to %s %s.%s: %s."
-msgstr "ვერ განხორციელდა VPN-შეერთება '%s' "
+msgstr "შეცდომა: შეცდომა %s %s.%s: %s."
 
 #: ../src/nmcli/connections.c:4298
-#, fuzzy, c-format
+#, c-format
 msgid "Error: invalid slave type; %s."
-msgstr "ვერ განხორციელდა VPN-შეერთება '%s' "
+msgstr ""
 
 #: ../src/nmcli/connections.c:4309
-#, fuzzy, c-format
+#, c-format
 msgid "Error: invalid connection type; %s."
-msgstr "ვერ განხორციელდა VPN-შეერთება '%s' "
+msgstr "შეცდომა: შეერთების არასწორი ტიპი: %s."
 
 #: ../src/nmcli/connections.c:4400
-#, fuzzy, c-format
+#, c-format
 msgid "Error: bad connection type: %s"
-msgstr "ვერ განხორციელდა VPN-შეერთება '%s' "
+msgstr "შეცდომა: შეერთების ცუდი ტიპი: %s"
 
 #: ../src/nmcli/connections.c:4486
 msgid "Error: master is required"
@@ -9768,9 +9608,9 @@ msgid "Error: 'bt-type': '%s' not valid; use [%s, %s, %s (%s), %s]."
 msgstr ""
 
 #: ../src/nmcli/connections.c:4973
-#, fuzzy, c-format
+#, c-format
 msgid "Error: setting '%s' is mandatory and cannot be removed."
-msgstr "არავითარი აქტიური შეერთება!"
+msgstr "შეცდომა: პარამეტრი %s აუცილებელია და ვერ წაიშლება."
 
 #: ../src/nmcli/connections.c:4989
 #, c-format
@@ -9786,9 +9626,9 @@ msgid "Error: missing setting."
 msgstr ""
 
 #: ../src/nmcli/connections.c:5096
-#, fuzzy, c-format
+#, c-format
 msgid "Error: invalid setting argument '%s'."
-msgstr "ვერ განხორციელდა VPN-შეერთება '%s' "
+msgstr "შეცდომა: პარამეტრის არასწორი არგუმენტი '%s'."
 
 #: ../src/nmcli/connections.c:5127
 #, c-format
@@ -9821,9 +9661,9 @@ msgid_plural ""
 msgstr[0] ""
 
 #: ../src/nmcli/connections.c:5306 ../src/nmcli/connections.c:8986
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Failed to add '%s' connection: %s"
-msgstr "ვერ განხორციელდა VPN-შეერთება '%s' "
+msgstr "შეცდომა: '%s' ინტერფეისის დამატების შეცდომა: %s"
 
 #. We print here human readable text, but as scripts might parse this output
 #. * (with LANG=C), this is important to not change in the future. At least
@@ -10145,9 +9985,9 @@ msgid ""
 msgstr ""
 
 #: ../src/nmcli/connections.c:7224
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Connection activation failed.\n"
-msgstr "ვერ მოხერხდა შეერთება უკაბელო ქსელთან."
+msgstr "შეცდომა: ქსელის კავშირის აქტივაციის შეცდომა.\n"
 
 #. TRANSLATORS: status line in nmcli connection editor
 #: ../src/nmcli/connections.c:7322
@@ -10193,7 +10033,7 @@ msgstr ""
 #: ../src/nmcli/connections.c:7481 ../src/nmcli/settings.c:440
 #, c-format
 msgid "Error: %s\n"
-msgstr ""
+msgstr "შეცდომა: %s\n"
 
 #: ../src/nmcli/connections.c:7500
 #, c-format
@@ -10337,9 +10177,9 @@ msgid "Verify setting '%s': %s\n"
 msgstr ""
 
 #: ../src/nmcli/connections.c:8292
-#, fuzzy, c-format
+#, c-format
 msgid "Verify connection: %s\n"
-msgstr "შეერთებულია  VPN-ქსელთან '%s'"
+msgstr "შეერთების შემოწმება: %s\n"
 
 #: ../src/nmcli/connections.c:8294
 #, c-format
@@ -10357,9 +10197,9 @@ msgid "Error: Failed to save '%s' (%s) connection: %s\n"
 msgstr ""
 
 #: ../src/nmcli/connections.c:8373
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Timeout saving '%s' (%s) connection\n"
-msgstr "ვერ განხორციელდა VPN-შეერთება '%s' "
+msgstr "შეცდომა: '%s'(%s) შეერთების შენახვის დრო გავიდა\n"
 
 #: ../src/nmcli/connections.c:8377
 #, c-format
@@ -10372,14 +10212,13 @@ msgid "Connection '%s' (%s) successfully updated.\n"
 msgstr ""
 
 #: ../src/nmcli/connections.c:8412
-#, fuzzy, c-format
+#, c-format
 msgid "Error: connection verification failed: %s\n"
-msgstr "შეცდომა შეერთების შესახებ ინფორმაციის ჩვენებისას:"
+msgstr "შეცდომა: შეერთების შემოწმების შეცდომა: %s\n"
 
 #: ../src/nmcli/connections.c:8413
-#, fuzzy
 msgid "(unknown error)"
-msgstr "(უცნობია)"
+msgstr "(უცნობი შეცდომა)"
 
 #: ../src/nmcli/connections.c:8414
 #, c-format
@@ -10393,14 +10232,14 @@ msgid "Error: connection is not saved. Type 'save' first.\n"
 msgstr ""
 
 #: ../src/nmcli/connections.c:8441
-#, fuzzy, c-format
+#, c-format
 msgid "Error: connection is not valid: %s\n"
-msgstr "შეცდომა შეერთების შესახებ ინფორმაციის ჩვენებისას:"
+msgstr "შეცდომა: შეერთება არასწორია: %s\n"
 
 #: ../src/nmcli/connections.c:8457
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Cannot activate connection: %s.\n"
-msgstr "VPN-შეერთების '%s' გაშვება ვერ ხერხდება"
+msgstr "შეცდომა: შეერთების აქტივაცია შეუძლებელია: %s.\n"
 
 #: ../src/nmcli/connections.c:8466
 #, c-format
@@ -10417,9 +10256,9 @@ msgid "Error: status-line: %s\n"
 msgstr ""
 
 #: ../src/nmcli/connections.c:8516
-#, fuzzy, c-format
+#, c-format
 msgid "Error: save-confirmation: %s\n"
-msgstr "შეცდომა შეერთების შესახებ ინფორმაციის ჩვენებისას:"
+msgstr "შეცდომა: შენახვის-დადასტურება: %s\n"
 
 #: ../src/nmcli/connections.c:8524
 #, c-format
@@ -10442,9 +10281,9 @@ msgid "Error: only one of 'id', 'filename', uuid, or 'path' can be provided."
 msgstr ""
 
 #: ../src/nmcli/connections.c:8787 ../src/nmcli/connections.c:8956
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Unknown connection '%s'."
-msgstr "ვერ განხორციელდა VPN-შეერთება '%s' "
+msgstr "შეცდომა: უცნობი შეერთება '%s'."
 
 #: ../src/nmcli/connections.c:8804
 #, c-format
@@ -10458,14 +10297,14 @@ msgid ""
 msgstr ""
 
 #: ../src/nmcli/connections.c:8835
-#, fuzzy, c-format
+#, c-format
 msgid "Valid connection types: %s\n"
-msgstr "შეერთებულია  VPN-ქსელთან '%s'"
+msgstr "შეერთების სწორი ტიპები: %s\n"
 
 #: ../src/nmcli/connections.c:8837
-#, fuzzy, c-format
+#, c-format
 msgid "Error: invalid connection type; %s\n"
-msgstr "ვერ განხორციელდა VPN-შეერთება '%s' "
+msgstr "შეცდომა: შეერთების არასწორი ტიპი: %s\n"
 
 #: ../src/nmcli/connections.c:8876
 #, c-format
@@ -10473,14 +10312,14 @@ msgid "===| nmcli interactive connection editor |==="
 msgstr ""
 
 #: ../src/nmcli/connections.c:8879
-#, fuzzy, c-format
+#, c-format
 msgid "Editing existing '%s' connection: '%s'"
-msgstr "ვერ განხორციელდა VPN-შეერთება '%s' "
+msgstr "არსებული '%s' შეერთების ჩასწორება: '%s'"
 
 #: ../src/nmcli/connections.c:8881
-#, fuzzy, c-format
+#, c-format
 msgid "Adding a new '%s' connection"
-msgstr "ახალი VPN-შეერთების დამატება "
+msgstr "ახალი %s შეერთების დამატება"
 
 #. TRANSLATORS: do not translate 'help', leave it as it is
 #: ../src/nmcli/connections.c:8884
@@ -10501,9 +10340,9 @@ msgid "Type 'describe [<setting>.<prop>]' for detailed property description."
 msgstr ""
 
 #: ../src/nmcli/connections.c:8917
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Failed to modify connection '%s': %s"
-msgstr "ვერ განხორციელდა VPN-შეერთება '%s' "
+msgstr "შეცდომა: '%s' შეერთების შეცვლის შეცდომა: %s"
 
 #: ../src/nmcli/connections.c:8925
 #, c-format
@@ -10516,9 +10355,8 @@ msgid "%s (%s) cloned as %s (%s).\n"
 msgstr ""
 
 #: ../src/nmcli/connections.c:9049
-#, fuzzy
 msgid "New connection name: "
-msgstr "არ არის ქსელთან შეერთება"
+msgstr "ახალი შეერთების სახელი: "
 
 #: ../src/nmcli/connections.c:9051
 #, c-format
@@ -10536,9 +10374,9 @@ msgid "Error: not all connections deleted."
 msgstr ""
 
 #: ../src/nmcli/connections.c:9092
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Connection deletion failed: %s\n"
-msgstr "შეცდომა უკაბელო ქსელთან მიერთებისას"
+msgstr "შეცდომა: შეერთების წაშლა შეუძლებელია: %s\n"
 
 #: ../src/nmcli/connections.c:9147 ../src/nmcli/connections.c:9274
 #: ../src/nmcli/connections.c:9741
@@ -10548,9 +10386,9 @@ msgstr ""
 
 #: ../src/nmcli/connections.c:9148 ../src/nmcli/connections.c:9275
 #: ../src/nmcli/connections.c:9742
-#, fuzzy, c-format
+#, c-format
 msgid "Error: not all connections found."
-msgstr "შეცდომა შეერთების შესახებ ინფორმაციის ჩვენებისას:"
+msgstr "შეცდომა: ყველა შეერთება ნაპოვნი არაა."
 
 #: ../src/nmcli/connections.c:9207
 #, c-format
@@ -10573,14 +10411,14 @@ msgid "%s: connection profile removed\n"
 msgstr ""
 
 #: ../src/nmcli/connections.c:9318
-#, fuzzy, c-format
+#, c-format
 msgid "Error: failed to reload connections: %s."
-msgstr "ვერ განხორციელდა VPN-შეერთება '%s' "
+msgstr "შეცდომა: შეერთების გადატვირთვის შეცდომა: %s."
 
 #: ../src/nmcli/connections.c:9390
-#, fuzzy, c-format
+#, c-format
 msgid "Error: failed to load connection: %s."
-msgstr "ვერ განხორციელდა VPN-შეერთება '%s' "
+msgstr "შეცდომა: შეერთების ჩატვირთვის შეცდომა: %s."
 
 #: ../src/nmcli/connections.c:9398
 #, c-format
@@ -10617,9 +10455,9 @@ msgid "Error: 'file' argument is required."
 msgstr ""
 
 #: ../src/nmcli/connections.c:9508
-#, fuzzy, c-format
+#, c-format
 msgid "Error: failed to find VPN plugin for %s."
-msgstr "ვერ განხორციელდა VPN-შეერთება '%s' "
+msgstr "შეცდომა: VPN დამატების მოძებნა %s-სთვის შეუძლებელია."
 
 #: ../src/nmcli/connections.c:9517 ../src/nmcli/connections.c:9609
 #, c-format
@@ -10636,9 +10474,9 @@ msgid "Output file name: "
 msgstr ""
 
 #: ../src/nmcli/connections.c:9599
-#, fuzzy, c-format
+#, c-format
 msgid "Error: the connection is not VPN."
-msgstr "ვერ განხორციელდა VPN-შეერთება '%s' "
+msgstr "შეცდომა: შეერთება VPN არაა."
 
 #: ../src/nmcli/connections.c:9623
 #, c-format
@@ -10656,14 +10494,14 @@ msgid "Error: failed to read temporary file '%s': %s."
 msgstr ""
 
 #: ../src/nmcli/connections.c:9671
-#, fuzzy, c-format
+#, c-format
 msgid "Error: not all connections migrated."
-msgstr "შეცდომა შეერთების შესახებ ინფორმაციის ჩვენებისას:"
+msgstr "შეცდომა: ყველა შეერთება არ დამიგრირებულა."
 
 #: ../src/nmcli/connections.c:9672
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Connection migration failed: %s\n"
-msgstr "შეცდომა უკაბელო ქსელთან მიერთებისას"
+msgstr "შეცდომა: შეერთების მიგრაცია შეუძლებელია: %s\n"
 
 #: ../src/nmcli/connections.c:9676
 #, c-format
@@ -10675,25 +10513,22 @@ msgid "'--plugin' argument is missing"
 msgstr ""
 
 #: ../src/nmcli/connections.c:9804
-#, fuzzy, c-format
+#, c-format
 msgid "Error: cannot migrate unknown connection(s): %s."
-msgstr "VPN-შეერთების '%s' გაშვება ვერ ხერხდება"
+msgstr "შეცდომა: უცნობი შეერთებების მიგრაცია შეუძლებელია: %s."
 
 #. define some prompts
 #: ../src/nmcli/devices.c:28
-#, fuzzy
 msgid "Interface: "
-msgstr "ინტერფეისი:"
+msgstr "ინტერფეისი: "
 
 #: ../src/nmcli/devices.c:29
-#, fuzzy
 msgid "Interface(s): "
-msgstr "ინტერფეისი:"
+msgstr "ინტერფეის(ებ)-ი: "
 
 #: ../src/nmcli/devices.c:71 ../src/nmcli/devices.c:1416
-#, fuzzy
 msgid "(none)"
-msgstr "არცერთი"
+msgstr "(არცერთი)"
 
 #: ../src/nmcli/devices.c:373
 #, c-format
@@ -10705,9 +10540,9 @@ msgid "<invisible>"
 msgstr ""
 
 #: ../src/nmcli/devices.c:481
-#, fuzzy, c-format
+#, c-format
 msgid "%u Mb/s"
-msgstr "%d მბ/წმ"
+msgstr "%u მბ/წმ"
 
 #: ../src/nmcli/devices.c:840
 #, c-format
@@ -10993,19 +10828,19 @@ msgstr ""
 
 #: ../src/nmcli/devices.c:1369
 msgid "Ad-Hoc"
-msgstr ""
+msgstr "Ad-Hoc"
 
 #: ../src/nmcli/devices.c:1370
 msgid "Infra"
-msgstr ""
+msgstr "Infra"
 
 #: ../src/nmcli/devices.c:1372
 msgid "N/A"
-msgstr ""
+msgstr "არარსებული"
 
 #: ../src/nmcli/devices.c:1564
 msgid "Device details"
-msgstr ""
+msgstr "მოწყობილობის დეტალები"
 
 #: ../src/nmcli/devices.c:1581
 #, c-format
@@ -11053,9 +10888,9 @@ msgid "Error: Failed to add/activate new connection: %s"
 msgstr ""
 
 #: ../src/nmcli/devices.c:2147
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Failed to activate connection: %s"
-msgstr "VPN-შეერთების '%s' გაშვება ვერ ხერხდება"
+msgstr "შეცდომა: შეერთების აქტივაცია შეუძლებელია: %s"
 
 #: ../src/nmcli/devices.c:2210
 #, c-format
@@ -11079,9 +10914,10 @@ msgid "Device '%s' successfully removed.\n"
 msgstr ""
 
 #: ../src/nmcli/devices.c:2397 ../src/nmcli/devices.c:2477
-#, fuzzy, c-format
+#, c-format
 msgid "Error: Reapplying connection to device '%s' (%s) failed: %s"
-msgstr "შეცდომა შეერთების შესახებ ინფორმაციის ჩვენებისას:"
+msgstr ""
+"შეცდომა: მოწყობილობაზე %s (%s) შეერთების თავიდან გადატარების შეცდომა: %s"
 
 #: ../src/nmcli/devices.c:2407 ../src/nmcli/devices.c:2486
 #, c-format
@@ -11140,19 +10976,19 @@ msgid "Error: property '%s' is not known."
 msgstr ""
 
 #: ../src/nmcli/devices.c:2842
-#, fuzzy, c-format
+#, c-format
 msgid "%s: using connection '%s'\n"
-msgstr "შეერთებულია  VPN-ქსელთან '%s'"
+msgstr "%s: გამოყენებული შეერთება %s\n"
 
 #: ../src/nmcli/devices.c:2868
 #, c-format
 msgid "%s: device created\n"
-msgstr ""
+msgstr "%s მოწყობილობა შექმნილია\n"
 
 #: ../src/nmcli/devices.c:2875
 #, c-format
 msgid "%s: device removed\n"
-msgstr ""
+msgstr "%s: მოწყობილობა წაიშალა\n"
 
 #: ../src/nmcli/devices.c:3051
 msgid "Wi-Fi scan list"
@@ -11194,7 +11030,7 @@ msgstr ""
 
 #: ../src/nmcli/devices.c:3618
 msgid "SSID or BSSID: "
-msgstr ""
+msgstr "SSID ან BSSID: "
 
 #: ../src/nmcli/devices.c:3623
 #, c-format
@@ -11260,9 +11096,8 @@ msgid ""
 msgstr ""
 
 #: ../src/nmcli/devices.c:3971
-#, fuzzy
 msgid "Password: "
-msgstr "პაროლი:"
+msgstr "პაროლი: "
 
 #: ../src/nmcli/devices.c:4109
 #, c-format
@@ -11275,9 +11110,9 @@ msgid "'%s' is not valid WEP key (it should be 5 or 13 ASCII chars)"
 msgstr ""
 
 #: ../src/nmcli/devices.c:4149
-#, fuzzy, c-format
+#, c-format
 msgid "Hotspot password: %s\n"
-msgstr "პაროლების ჩვენება"
+msgstr "ჰოტსპოტის პაროლი: %s\n"
 
 #: ../src/nmcli/devices.c:4328
 #, c-format
@@ -11318,17 +11153,16 @@ msgstr ""
 #: ../src/nmcli/devices.c:4655 ../src/nmcli/devices.c:4658
 #: ../src/nmtui/nmt-page-wifi.c:253
 msgid "Security"
-msgstr ""
+msgstr "უსაფრთხოება"
 
 #: ../src/nmcli/devices.c:4648
-#, fuzzy
 msgid "None"
-msgstr "არა"
+msgstr "არცერთი"
 
 #: ../src/nmcli/devices.c:4777
 #, c-format
 msgid "%s"
-msgstr ""
+msgstr "%s"
 
 #. Main header name
 #: ../src/nmcli/devices.c:4830
@@ -11342,12 +11176,11 @@ msgstr ""
 
 #: ../src/nmcli/general.c:31
 msgid "asleep"
-msgstr ""
+msgstr "სძინავს"
 
 #: ../src/nmcli/general.c:32
-#, fuzzy
 msgid "connecting"
-msgstr "_შეერთება"
+msgstr "დაკავშირება"
 
 #: ../src/nmcli/general.c:34
 msgid "connected (local only)"
@@ -11358,37 +11191,36 @@ msgid "connected (site only)"
 msgstr ""
 
 #: ../src/nmcli/general.c:38
-#, fuzzy
 msgid "disconnecting"
-msgstr "გათიშულია"
+msgstr "გათიშვა"
 
 #: ../src/nmcli/general.c:94
 msgid "auth"
-msgstr ""
+msgstr "ავთენტიკაცია"
 
 #: ../src/nmcli/general.c:123
 msgid "running"
-msgstr ""
+msgstr "გაშვებულია"
 
 #: ../src/nmcli/general.c:137
 msgid "starting"
-msgstr ""
+msgstr "გაშვება"
 
 #: ../src/nmcli/general.c:137
 msgid "started"
-msgstr ""
+msgstr "გაეშვა"
 
 #: ../src/nmcli/general.c:150 ../src/nmcli/general.c:161
 msgid "missing"
-msgstr ""
+msgstr "აკლია"
 
 #: ../src/nmcli/general.c:181
 msgid "enabled"
-msgstr ""
+msgstr "ჩართულია"
 
 #: ../src/nmcli/general.c:181
 msgid "disabled"
-msgstr ""
+msgstr "გამორთულია"
 
 #: ../src/nmcli/general.c:302
 #, c-format
@@ -11591,9 +11423,8 @@ msgid ""
 msgstr ""
 
 #: ../src/nmcli/general.c:496
-#, fuzzy
 msgid "NetworkManager status"
-msgstr "აპლეტი NetworkManager"
+msgstr "NetworkManager-ის სტატუსი"
 
 #: ../src/nmcli/general.c:501
 #, c-format
@@ -11602,14 +11433,13 @@ msgstr ""
 
 #. NetworkManager quit while we were waiting.
 #: ../src/nmcli/general.c:553 ../src/nmtui/nmtui.c:246
-#, fuzzy, c-format
+#, c-format
 msgid "NetworkManager is not running."
-msgstr "NetworkManager არ არის გაშვებული"
+msgstr "NetworkManager-ი გაშვებული არაა."
 
 #: ../src/nmcli/general.c:575
-#, fuzzy
 msgid "NetworkManager permissions"
-msgstr "აპლეტი NetworkManager"
+msgstr "NetworkManager-ის წვდომები"
 
 #: ../src/nmcli/general.c:579
 #, c-format
@@ -11617,9 +11447,9 @@ msgid "Error: 'general permissions': %s"
 msgstr ""
 
 #: ../src/nmcli/general.c:626
-#, fuzzy, c-format
+#, c-format
 msgid "Error: failed to reload: %s"
-msgstr "ვერ განხორციელდა VPN-შეერთება '%s' "
+msgstr "შეცდომა: გადატვირთვის შეცდომა: %s"
 
 #: ../src/nmcli/general.c:667
 #, c-format
@@ -11632,9 +11462,8 @@ msgid "Error: extra argument '%s'"
 msgstr ""
 
 #: ../src/nmcli/general.c:729
-#, fuzzy
 msgid "NetworkManager logging"
-msgstr "NetworkManager არ არის გაშვებული"
+msgstr "NetworkManager-ის ჟურნალი"
 
 #: ../src/nmcli/general.c:733
 #, c-format
@@ -11662,15 +11491,14 @@ msgid "Error: invalid '%s' argument: '%s' (use on/off)."
 msgstr ""
 
 #: ../src/nmcli/general.c:1013
-#, fuzzy, c-format
+#, c-format
 msgid "Error: failed to set networking: %s"
-msgstr "ვერ განხორციელდა VPN-შეერთება '%s' "
+msgstr "შეცდომა: ქსელის აწყობის შეცდომა: %s"
 
 #. no arguments -> get current state
 #: ../src/nmcli/general.c:1058 ../src/nmcli/general.c:1070
-#, fuzzy
 msgid "Connectivity"
-msgstr "_შეერთება"
+msgstr "დაკავშირება"
 
 #: ../src/nmcli/general.c:1074
 #, c-format
@@ -11678,9 +11506,8 @@ msgid "Error: 'networking' command '%s' is not valid."
 msgstr ""
 
 #: ../src/nmcli/general.c:1087
-#, fuzzy
 msgid "Networking"
-msgstr "_ქსელური შეერთების ნების დართვა"
+msgstr "ქსელი"
 
 #. no argument, show all radio switches
 #: ../src/nmcli/general.c:1115
@@ -11688,9 +11515,9 @@ msgid "Radio switches"
 msgstr ""
 
 #: ../src/nmcli/general.c:1141
-#, fuzzy, c-format
+#, c-format
 msgid "Error: failed to set Wi-Fi radio: %s"
-msgstr "ვერ განხორციელდა VPN-შეერთება '%s' "
+msgstr "შეცდომა: Wi-Fi-ის რადიოს დაყენების შეცდომა: %s"
 
 #. no argument, show current Wi-Fi state
 #: ../src/nmcli/general.c:1159
@@ -11703,14 +11530,12 @@ msgid "WWAN radio switch"
 msgstr ""
 
 #: ../src/nmcli/general.c:1235
-#, fuzzy
 msgid "NetworkManager has started"
-msgstr "NetworkManager არ არის გაშვებული"
+msgstr "NetworkManager-ი გაეშვა"
 
 #: ../src/nmcli/general.c:1235
-#, fuzzy
 msgid "NetworkManager has stopped"
-msgstr "აპლეტი NetworkManager"
+msgstr "NetworkManager-ი შეჩერებულია"
 
 #: ../src/nmcli/general.c:1246
 #, c-format
@@ -11723,9 +11548,9 @@ msgid "'%s' is now the primary connection\n"
 msgstr ""
 
 #: ../src/nmcli/general.c:1263
-#, fuzzy, c-format
+#, c-format
 msgid "There's no primary connection\n"
-msgstr "შეერთებულია კაბელურ ქსელთან"
+msgstr "ძირითადი შეერთება არ არსებობს\n"
 
 #: ../src/nmcli/general.c:1276
 #, c-format
@@ -11733,9 +11558,9 @@ msgid "Connectivity is now '%s'\n"
 msgstr ""
 
 #: ../src/nmcli/general.c:1291
-#, fuzzy, c-format
+#, c-format
 msgid "Networkmanager is now in the '%s' state\n"
-msgstr "NetworkManager არ არის გაშვებული"
+msgstr "NetworkManager-ის მიმდინარე მდგომარეობაა: %s\n"
 
 #: ../src/nmcli/general.c:1311
 msgid "connection available"
@@ -11767,36 +11592,36 @@ msgstr ""
 
 #: ../src/nmcli/general.c:1381
 msgid "sw"
-msgstr ""
+msgstr "sw"
 
 #: ../src/nmcli/general.c:1383
 msgid "hw"
-msgstr ""
+msgstr "hw"
 
 #: ../src/nmcli/general.c:1386
 msgid "iface"
-msgstr ""
+msgstr "iface"
 
 #: ../src/nmcli/general.c:1391
 msgid "port"
-msgstr ""
+msgstr "პორტი"
 
 #: ../src/nmcli/general.c:1395
 msgid "mtu"
-msgstr ""
+msgstr "mtu"
 
 #: ../src/nmcli/general.c:1415
 msgid "master"
-msgstr ""
+msgstr "master"
 
 #: ../src/nmcli/general.c:1419 ../src/nmtui/nm-editor-utils.c:247
 #: ../src/nmtui/nmt-connect-connection-list.c:390
 msgid "VPN"
-msgstr ""
+msgstr "VPN"
 
 #: ../src/nmcli/general.c:1421
 msgid "ip4 default"
-msgstr ""
+msgstr "ნაგულისხმები ip4"
 
 #: ../src/nmcli/general.c:1423
 msgid "ip6 default"
@@ -11811,13 +11636,13 @@ msgstr ""
 #, c-format
 msgctxt "nmcli-overview"
 msgid "%s: %s to %s"
-msgstr ""
+msgstr "%s: %s-დან %s-მდე"
 
 #: ../src/nmcli/general.c:1535
 #, c-format
 msgctxt "nmcli-overview"
 msgid "%s: %s"
-msgstr ""
+msgstr "%s: %s"
 
 #: ../src/nmcli/general.c:1585
 #, c-format
@@ -11836,9 +11661,8 @@ msgid "Error: 'monitor' command '%s' is not valid."
 msgstr ""
 
 #: ../src/nmcli/general.c:1616
-#, fuzzy
 msgid "Networkmanager is not running (waiting for it)\n"
-msgstr "NetworkManager არ არის გაშვებული"
+msgstr "NetworkManager-ი გაშვებული არაა (ველოდები)\n"
 
 #: ../src/nmcli/nmcli.c:243
 #, c-format
@@ -11950,12 +11774,12 @@ msgstr ""
 
 #: ../src/nmcli/nmcli.c:1030
 msgid "Success"
-msgstr ""
+msgstr "წარმატება"
 
 #: ../src/nmcli/polkit-agent.c:39
-#, fuzzy, c-format
+#, c-format
 msgid "Error: polkit agent failed: %s\n"
-msgstr "შეცდომა უკაბელო ქსელთან მიერთებისას"
+msgstr "შეცდომა: polkit-ის აგენტის შეცდომა: %s\n"
 
 #: ../src/nmcli/polkit-agent.c:92
 #, c-format
@@ -11993,9 +11817,9 @@ msgid "Warning: %s is not an UUID of any existing connection profile\n"
 msgstr ""
 
 #: ../src/nmcli/settings.c:381 ../src/nmcli/settings.c:394
-#, fuzzy, c-format
+#, c-format
 msgid "'%s' is not a VPN connection profile"
-msgstr "ვერ მოინახა VPN შეერთება"
+msgstr "'%s' VPN შეერთების პროფილს არ წარმოადგენს"
 
 #: ../src/nmcli/settings.c:388
 #, c-format
@@ -12005,12 +11829,12 @@ msgstr ""
 #: ../src/nmcli/settings.c:434
 #, c-format
 msgid "Warning: %s\n"
-msgstr ""
+msgstr "გაფრთხილება: %s\n"
 
 #: ../src/nmcli/settings.c:437
 #, c-format
 msgid "Info: %s\n"
-msgstr ""
+msgstr "ინფორმაცია: %s\n"
 
 #: ../src/nmcli/settings.c:535
 msgid "don't know how to get the property value"
@@ -12085,119 +11909,118 @@ msgstr "(უცნობია)"
 #: ../src/nmcli/utils.h:347
 #, c-format
 msgid "%lld (%s)"
-msgstr ""
+msgstr "%lld (%s)"
 
 #: ../src/nmcli/utils.h:354
 #, c-format
 msgid "%lld - %s"
-msgstr ""
+msgstr "%lld - %s"
 
 #: ../src/nmtui/nm-editor-utils.c:148
-#, fuzzy, c-format
+#, c-format
 msgid "Ethernet connection %d"
-msgstr "წავშალოთ VPN-შეერთება \"%s\"?"
+msgstr "Ethernet შეერთება %d"
 
 #: ../src/nmtui/nm-editor-utils.c:156
-#, fuzzy, c-format
+#, c-format
 msgid "Veth connection %d"
-msgstr "შეერთებულია  VPN-ქსელთან '%s'"
+msgstr "Veth შეერთება %d"
 
 #: ../src/nmtui/nm-editor-utils.c:164
-#, fuzzy, c-format
+#, c-format
 msgid "Wi-Fi connection %d"
-msgstr "შეერთებულია  VPN-ქსელთან '%s'"
+msgstr "Wi-Fi შეერთება %d"
 
 #: ../src/nmtui/nm-editor-utils.c:173
-#, fuzzy, c-format
+#, c-format
 msgid "InfiniBand connection %d"
-msgstr "ვერ მოინახა VPN შეერთება"
+msgstr "InfiniBand შეერთება %d"
 
 #: ../src/nmtui/nm-editor-utils.c:181
 #, c-format
 msgid "Mobile broadband connection %d"
-msgstr ""
+msgstr "მობილური ფართოზოლოვანი შეერთება %d"
 
 #: ../src/nmtui/nm-editor-utils.c:187 ../src/nmtui/nmt-page-dsl.c:47
 msgid "DSL"
-msgstr ""
+msgstr "DSL"
 
 #: ../src/nmtui/nm-editor-utils.c:191
-#, fuzzy, c-format
+#, c-format
 msgid "DSL connection %d"
-msgstr "შეერთებულია  VPN-ქსელთან '%s'"
+msgstr "DSL შეერთება %d"
 
 #: ../src/nmtui/nm-editor-utils.c:200
-#, fuzzy, c-format
+#, c-format
 msgid "Bond connection %d"
-msgstr "არ არის ქსელთან შეერთება"
+msgstr "ბმული შეერთება %d"
 
 #: ../src/nmtui/nm-editor-utils.c:210
-#, fuzzy, c-format
+#, c-format
 msgid "Bridge connection %d"
-msgstr "შეერთებულია კაბელურ ქსელთან"
+msgstr "ხიდის შეერთება %d"
 
 #: ../src/nmtui/nm-editor-utils.c:219
-#, fuzzy, c-format
+#, c-format
 msgid "Team connection %d"
-msgstr "შეერთებულია  VPN-ქსელთან '%s'"
+msgstr "ჯგუფური შეერთება %d"
 
 #: ../src/nmtui/nm-editor-utils.c:227
-#, fuzzy, c-format
+#, c-format
 msgid "VLAN connection %d"
-msgstr "შეერთებულია  VPN-ქსელთან '%s'"
+msgstr "VLAN შეერთება %d"
 
 #: ../src/nmtui/nm-editor-utils.c:231 ../src/nmtui/nmt-page-ip-tunnel.c:113
 msgid "IP tunnel"
-msgstr ""
+msgstr "IP გვირაბი"
 
 #: ../src/nmtui/nm-editor-utils.c:235
 #, c-format
 msgid "IP tunnel connection %d"
-msgstr ""
+msgstr "IP გვირაბის შეერთება %d"
 
 #: ../src/nmtui/nm-editor-utils.c:250
-#, fuzzy, c-format
+#, c-format
 msgid "VPN connection %d"
-msgstr "შეერთებულია  VPN-ქსელთან '%s'"
+msgstr "VPN-შეერთება %d"
 
 #: ../src/nmtui/nm-editor-utils.c:267
-#, fuzzy, c-format
+#, c-format
 msgid "WireGuard connection %d"
-msgstr "შეერთებულია კაბელურ ქსელთან"
+msgstr "WireGuard-ის შეერთება %d"
 
 #: ../src/nmtui/nmt-device-entry.c:348
 msgid "Select..."
-msgstr ""
+msgstr "აირჩიეთ..."
 
 #: ../src/nmtui/nmt-edit-connection-list.c:101
 #: ../src/nmtui/nmt-wireguard-peer-list.c:126
 msgid "Add"
-msgstr ""
+msgstr "დამატება"
 
 #: ../src/nmtui/nmt-edit-connection-list.c:104 ../src/nmtui/nmt-page-ip4.c:163
 #: ../src/nmtui/nmt-page-ip6.c:162 ../src/nmtui/nmt-page-team-port.c:92
 #: ../src/nmtui/nmt-page-team.c:145 ../src/nmtui/nmt-wireguard-peer-list.c:129
 msgid "Edit..."
-msgstr ""
+msgstr "ჩასწორება…"
 
 #: ../src/nmtui/nmt-edit-connection-list.c:107
 #: ../src/nmtui/nmt-wireguard-peer-list.c:132 ../src/nmtui/nmtui-edit.c:518
 msgid "Delete"
-msgstr ""
+msgstr "წაშლა"
 
 #: ../src/nmtui/nmt-editor-section.c:89
 msgid "Hide"
-msgstr ""
+msgstr "დამალვა"
 
 #: ../src/nmtui/nmt-editor-section.c:89
-#, fuzzy
 msgid "Show"
-msgstr "გასაღების ჩვენება"
+msgstr "ჩვენება"
 
 #: ../src/nmtui/nmt-editor.c:90
-#, fuzzy, c-format
+#, c-format
 msgid "Could not create editor for connection '%s' of type '%s'."
-msgstr "შეერთების შეცდომის გამო ვერ მოხერხდა VPN-შეერთების '%s'გაშვება."
+msgstr "რედაქტორის შექმნის შეცდომა შეერთებისთვის %s, რომლის ტიპია %s."
 
 #: ../src/nmtui/nmt-editor.c:94
 #, c-format
@@ -12205,85 +12028,82 @@ msgid "Could not create editor for invalid connection '%s'."
 msgstr ""
 
 #: ../src/nmtui/nmt-editor.c:107
-#, fuzzy
 msgid "Edit Connection"
-msgstr "VPN-შეერთების რედაქტირება"
+msgstr "შეერთების ჩასწორება"
 
 #: ../src/nmtui/nmt-editor.c:165
-#, fuzzy, c-format
+#, c-format
 msgid "Unable to save connection: %s"
-msgstr "არავითარი აქტიური შეერთება!"
+msgstr "შეერთების შენახვის შეცდომა: %s"
 
 #: ../src/nmtui/nmt-editor.c:182
-#, fuzzy, c-format
+#, c-format
 msgid "Unable to add new connection: %s"
-msgstr "ვერ მოინახა VPN შეერთება"
+msgstr "ახალი შეერთების დამატების შეცდომა: %s"
 
 #: ../src/nmtui/nmt-editor.c:331
 msgid "Profile name"
-msgstr ""
+msgstr "პროფილის სახელი"
 
 #: ../src/nmtui/nmt-editor.c:342
 msgid "Ethernet device"
-msgstr ""
+msgstr "Ethernet მოწყობილობა"
 
 #: ../src/nmtui/nmt-editor.c:344
 msgid "Device"
-msgstr ""
+msgstr "მოწყობილობა"
 
 #. And finally the bottom widgets
 #: ../src/nmtui/nmt-editor.c:410
-#, fuzzy
 msgid "Automatically connect"
-msgstr "ავტომატურად (ნაგულისხმევია)"
+msgstr "ავტომატური მიერთება"
 
 #: ../src/nmtui/nmt-editor.c:418
 msgid "Available to all users"
-msgstr ""
+msgstr "ხელმისაწვდომია ყველა მომხმარებლისთვის"
 
 #: ../src/nmtui/nmt-editor.c:436 ../src/nmtui/nmt-password-dialog.c:162
 #: ../src/nmtui/nmt-route-editor.c:97
 #: ../src/nmtui/nmt-wireguard-peer-editor.c:146 ../src/nmtui/nmtui-edit.c:206
 #: ../src/nmtui/nmtui-edit.c:517 ../src/nmtui/nmtui-hostname.c:51
 msgid "Cancel"
-msgstr ""
+msgstr "გაუქმება"
 
 #: ../src/nmtui/nmt-mtu-entry.c:70
 msgid "(default)"
-msgstr ""
+msgstr "(ნაგულისხმები)"
 
 #: ../src/nmtui/nmt-mtu-entry.c:72 ../src/nmtui/nmt-mtu-entry.c:102
 msgid "bytes"
-msgstr ""
+msgstr "ბაიტი"
 
 #: ../src/nmtui/nmt-page-bond-port.c:42
 msgid "BOND PORT"
-msgstr ""
+msgstr "ინტერფეისის ბმის პორტი"
 
 #: ../src/nmtui/nmt-page-bond-port.c:51
 msgid "Queue ID"
-msgstr ""
+msgstr "რიგის ID"
 
 #: ../src/nmtui/nmt-page-bond.c:82
 msgid "Round-robin"
-msgstr ""
+msgstr "რიგრიგობით"
 
 #: ../src/nmtui/nmt-page-bond.c:83
 msgid "Active Backup"
-msgstr ""
+msgstr "აქტიური-მარქაფი"
 
 #: ../src/nmtui/nmt-page-bond.c:84
 msgid "XOR"
-msgstr ""
+msgstr "XOR"
 
 #: ../src/nmtui/nmt-page-bond.c:85
-#, fuzzy
 msgid "Broadcast"
-msgstr "ფართეზოლოვანი მაუწყებლობის მისამართი:"
+msgstr "გამოცხადება"
 
 #: ../src/nmtui/nmt-page-bond.c:86
 msgid "802.3ad"
-msgstr ""
+msgstr "802.3ad"
 
 #: ../src/nmtui/nmt-page-bond.c:87
 msgid "Adaptive Transmit Load Balancing (tlb)"
@@ -12296,90 +12116,89 @@ msgstr ""
 #. NB: the ordering/numbering here corresponds to NmtPageBondMonitoringMode
 #: ../src/nmtui/nmt-page-bond.c:92
 msgid "MII (recommended)"
-msgstr ""
+msgstr "MII (რეკომენდებულია)"
 
 #: ../src/nmtui/nmt-page-bond.c:93
 msgid "ARP"
-msgstr ""
+msgstr "ARP"
 
 #: ../src/nmtui/nmt-page-bond.c:342
 msgid "BOND"
-msgstr ""
+msgstr "ბმა"
 
 #: ../src/nmtui/nmt-page-bond.c:346 ../src/nmtui/nmt-page-bridge.c:63
 #: ../src/nmtui/nmt-page-team.c:126
 msgid "Slaves"
-msgstr ""
+msgstr "დამხმარეები"
 
 #: ../src/nmtui/nmt-page-bond.c:356 ../src/nmtui/nmt-page-ip-tunnel.c:128
 #: ../src/nmtui/nmt-page-wifi.c:208
 msgid "Mode"
-msgstr ""
+msgstr "რეჟიმი"
 
 #: ../src/nmtui/nmt-page-bond.c:361
-#, fuzzy
 msgid "Primary"
-msgstr "პირველადი DNS:"
+msgstr "ძირითადი"
 
 #: ../src/nmtui/nmt-page-bond.c:366
 msgid "Link monitoring"
-msgstr ""
+msgstr "შეერთების მონიტორინგი"
 
 #: ../src/nmtui/nmt-page-bond.c:371 ../src/nmtui/nmt-page-bond.c:377
 #: ../src/nmtui/nmt-page-bond.c:383 ../src/nmtui/nmt-page-bond.c:389
 msgctxt "milliseconds"
 msgid "ms"
-msgstr ""
+msgstr "მწმ"
 
 #: ../src/nmtui/nmt-page-bond.c:372 ../src/nmtui/nmt-page-bond.c:390
 msgid "Monitoring frequency"
-msgstr ""
+msgstr "მონიტორინგის სიხშირე"
 
 #: ../src/nmtui/nmt-page-bond.c:378
 msgid "Link up delay"
-msgstr ""
+msgstr "შეერთების ჩართვის დაყოვნება"
 
 #: ../src/nmtui/nmt-page-bond.c:384
 msgid "Link down delay"
-msgstr ""
+msgstr "შეერთების გათიშვის დაყოვნება"
 
 #: ../src/nmtui/nmt-page-bond.c:395
 msgid "ARP targets"
-msgstr ""
+msgstr "ARP სამიზნეები"
 
 #: ../src/nmtui/nmt-page-bond.c:404 ../src/nmtui/nmt-page-ethernet.c:64
 #: ../src/nmtui/nmt-page-vlan.c:92 ../src/nmtui/nmt-page-wifi.c:372
 msgid "Cloned MAC address"
-msgstr ""
+msgstr "კლონირებული MAC მისამართი"
 
 #: ../src/nmtui/nmt-page-bridge-port.c:42
 msgid "BRIDGE PORT"
-msgstr ""
+msgstr "ხიდის პორტი"
 
 #: ../src/nmtui/nmt-page-bridge-port.c:51 ../src/nmtui/nmt-page-bridge.c:106
 msgid "Priority"
-msgstr ""
+msgstr "პრიორიტეტი"
 
 #: ../src/nmtui/nmt-page-bridge-port.c:59
 msgid "Path cost"
-msgstr ""
+msgstr "ბილიკის ფასი"
 
 #: ../src/nmtui/nmt-page-bridge-port.c:61
 msgid "Hairpin mode"
-msgstr ""
+msgstr "თმისსარჭის რეჟიმი"
 
 #: ../src/nmtui/nmt-page-bridge.c:59
 msgid "BRIDGE"
-msgstr ""
+msgstr "ხდი"
 
 #: ../src/nmtui/nmt-page-bridge.c:76 ../src/nmtui/nmt-page-bridge.c:119
 #: ../src/nmtui/nmt-page-bridge.c:133 ../src/nmtui/nmt-page-bridge.c:147
 msgid "seconds"
-msgstr ""
+msgstr "წამი"
 
 #: ../src/nmtui/nmt-page-bridge.c:77
 msgid "Aging time"
-msgstr ""
+msgstr "დაბერების დრო"
 
 #: ../src/nmtui/nmt-page-bridge.c:79
 msgid "Enable IGMP snooping"
@@ -12387,99 +12206,98 @@ msgstr ""
 
 #: ../src/nmtui/nmt-page-bridge.c:87
 msgid "Enable STP (Spanning Tree Protocol)"
-msgstr ""
+msgstr "STP-ის ჩართვა"
 
 #: ../src/nmtui/nmt-page-bridge.c:120
 msgid "Forward delay"
-msgstr ""
+msgstr "გადაგზავნის დაყოვნება"
 
 #: ../src/nmtui/nmt-page-bridge.c:134
 msgid "Hello time"
-msgstr ""
+msgstr "მისალმების დრო"
 
 #: ../src/nmtui/nmt-page-bridge.c:148
 msgid "Max age"
-msgstr ""
+msgstr "მაქს. ასაკი"
 
 #: ../src/nmtui/nmt-page-bridge.c:156
 msgid "Group forward mask"
-msgstr ""
+msgstr "ჯგუფური გადაგზავნის ნიღაბი"
 
 #: ../src/nmtui/nmt-page-ethernet.c:55
 msgid "ETHERNET"
-msgstr ""
+msgstr "Ethernet"
 
 #: ../src/nmtui/nmt-page-ethernet.c:72 ../src/nmtui/nmt-page-infiniband.c:81
 #: ../src/nmtui/nmt-page-ip-tunnel.c:178 ../src/nmtui/nmt-page-vlan.c:100
 #: ../src/nmtui/nmt-page-wifi.c:380 ../src/nmtui/nmt-page-wireguard.c:85
 msgid "MTU"
-msgstr ""
+msgstr "MTU"
 
 #: ../src/nmtui/nmt-page-infiniband.c:35
 msgid "Datagram"
-msgstr ""
+msgstr "დატაგრამა"
 
 #: ../src/nmtui/nmt-page-infiniband.c:36
-#, fuzzy
 msgid "Connected"
-msgstr "_შეერთება"
+msgstr "დაკავშირებულია"
 
 #: ../src/nmtui/nmt-page-infiniband.c:64
 msgid "INFINIBAND"
-msgstr ""
+msgstr "InfiniBand"
 
 #: ../src/nmtui/nmt-page-infiniband.c:73
 msgid "Transport mode"
-msgstr ""
+msgstr "ტრანსპორტის რეჟიმი"
 
 #. The order must match the NM_IP_TUNNEL_MODE_* enum
 #: ../src/nmtui/nmt-page-ip-tunnel.c:65
 msgid "IPIP"
-msgstr ""
+msgstr "IPIP"
 
 #: ../src/nmtui/nmt-page-ip-tunnel.c:66
 msgid "GRE"
-msgstr ""
+msgstr "GRE"
 
 #: ../src/nmtui/nmt-page-ip-tunnel.c:67
 msgid "SIT"
-msgstr ""
+msgstr "SIT"
 
 #: ../src/nmtui/nmt-page-ip-tunnel.c:68
 msgid "ISATAP"
-msgstr ""
+msgstr "ISATAP"
 
 #: ../src/nmtui/nmt-page-ip-tunnel.c:69
 msgid "VTI"
-msgstr ""
+msgstr "VTI"
 
 #: ../src/nmtui/nmt-page-ip-tunnel.c:70
 msgid "IP6IP6"
-msgstr ""
+msgstr "IP6IP6"
 
 #: ../src/nmtui/nmt-page-ip-tunnel.c:71
 msgid "IPIP6"
-msgstr ""
+msgstr "IPIP6"
 
 #: ../src/nmtui/nmt-page-ip-tunnel.c:72
 msgid "IP6GRE"
-msgstr ""
+msgstr "IP6GRE"
 
 #: ../src/nmtui/nmt-page-ip-tunnel.c:73
 msgid "VTI6"
-msgstr ""
+msgstr "VTI6"
 
 #: ../src/nmtui/nmt-page-ip-tunnel.c:130 ../src/nmtui/nmt-page-vlan.c:62
 msgid "Parent"
-msgstr ""
+msgstr "მშობელი"
 
 #: ../src/nmtui/nmt-page-ip-tunnel.c:139
 msgid "Local IP"
-msgstr ""
+msgstr "ლოკალური IP მისამართი"
 
 #: ../src/nmtui/nmt-page-ip-tunnel.c:147
 msgid "Remote IP"
-msgstr ""
+msgstr "დაშორებული IP მისამართი"
 
 #: ../src/nmtui/nmt-page-ip-tunnel.c:155
 msgid "Input key"
@@ -12491,56 +12309,53 @@ msgstr ""
 
 #: ../src/nmtui/nmt-page-ip4.c:27 ../src/nmtui/nmt-page-ip6.c:32
 msgid "Disabled"
-msgstr ""
+msgstr "გამორთულია"
 
 #: ../src/nmtui/nmt-page-ip4.c:28 ../src/nmtui/nmt-page-ip6.c:28
-#, fuzzy
 msgid "Automatic"
-msgstr "WPA Automatic"
+msgstr "ავტომატური"
 
 #: ../src/nmtui/nmt-page-ip4.c:29 ../src/nmtui/nmt-page-ip6.c:30
 msgid "Link-Local"
-msgstr ""
+msgstr "Link-Local"
 
 #: ../src/nmtui/nmt-page-ip4.c:30 ../src/nmtui/nmt-page-ip6.c:31
 msgid "Manual"
-msgstr ""
+msgstr "ხელით"
 
 #: ../src/nmtui/nmt-page-ip4.c:31
-#, fuzzy
 msgid "Shared"
-msgstr "ზიარი გასაღები"
+msgstr "გაზიარებული"
 
 #: ../src/nmtui/nmt-page-ip4.c:66 ../src/nmtui/nmt-page-ip6.c:67
 msgid "(No custom routes)"
-msgstr ""
+msgstr "(რაუტები ხელით მითითებული არაა)"
 
 #: ../src/nmtui/nmt-page-ip4.c:69 ../src/nmtui/nmt-page-ip6.c:70
 #, c-format
 msgid "One custom route"
 msgid_plural "%d custom routes"
-msgstr[0] ""
+msgstr[0] "ხელით მითითებული %d რაუტი"
 
 #: ../src/nmtui/nmt-page-ip4.c:112
 msgid "IPv4 CONFIGURATION"
-msgstr ""
+msgstr "IPv4 კონფიგურაცია"
 
 #: ../src/nmtui/nmt-page-ip4.c:123 ../src/nmtui/nmt-page-ip6.c:124
-#, fuzzy
 msgid "Addresses"
-msgstr "IP მისამართი:"
+msgstr "მისამართები"
 
 #: ../src/nmtui/nmt-page-ip4.c:141 ../src/nmtui/nmt-page-ip6.c:142
 msgid "DNS servers"
-msgstr ""
+msgstr "DNS სერვერები"
 
 #: ../src/nmtui/nmt-page-ip4.c:149 ../src/nmtui/nmt-page-ip6.c:150
 msgid "Search domains"
-msgstr ""
+msgstr "საძებნი დომენები"
 
 #: ../src/nmtui/nmt-page-ip4.c:165 ../src/nmtui/nmt-page-ip6.c:164
 msgid "Routing"
-msgstr ""
+msgstr "რაუტინგი"
 
 #: ../src/nmtui/nmt-page-ip4.c:167 ../src/nmtui/nmt-page-ip6.c:166
 msgid "Never use this network for default route"
@@ -12548,7 +12363,7 @@ msgstr ""
 
 #: ../src/nmtui/nmt-page-ip4.c:175 ../src/nmtui/nmt-page-ip6.c:174
 msgid "Ignore automatically obtained routes"
-msgstr ""
+msgstr "ავტომატურად მიღებული რაუტების იგნორი"
 
 #: ../src/nmtui/nmt-page-ip4.c:183 ../src/nmtui/nmt-page-ip6.c:182
 msgid "Ignore automatically obtained DNS parameters"
@@ -12560,12 +12375,11 @@ msgstr ""
 
 #: ../src/nmtui/nmt-page-ip6.c:27
 msgid "Ignore"
-msgstr ""
+msgstr "იგნორი"
 
 #: ../src/nmtui/nmt-page-ip6.c:29
-#, fuzzy
 msgid "Automatic (DHCP-only)"
-msgstr "ავტომატურად (ნაგულისხმევია)"
+msgstr "ავტომატური (მხოლოდ DHCP)"
 
 #: ../src/nmtui/nmt-page-ip6.c:113
 msgid "IPv6 CONFIGURATION"
@@ -12577,144 +12391,132 @@ msgstr ""
 
 #: ../src/nmtui/nmt-page-ppp.c:116
 msgid "PPP CONFIGURATION"
-msgstr ""
+msgstr "PPP-ის მორგება"
 
 #: ../src/nmtui/nmt-page-ppp.c:125
-#, fuzzy
 msgid "Allowed authentication methods:"
-msgstr "აუტენთიკაცია:"
+msgstr "ავთენტიკაციის შესაძლო მეთოდები:"
 
 #: ../src/nmtui/nmt-page-ppp.c:132
-#, fuzzy
 msgid "EAP"
-msgstr "PEAP"
+msgstr "EAP"
 
 #: ../src/nmtui/nmt-page-ppp.c:141
-#, fuzzy
 msgid "PAP"
-msgstr "PEAP"
+msgstr "PAP"
 
 #: ../src/nmtui/nmt-page-ppp.c:150
 msgid "CHAP"
-msgstr ""
+msgstr "CHAP"
 
 #: ../src/nmtui/nmt-page-ppp.c:159
 msgid "MSCHAPv2"
-msgstr ""
+msgstr "MSCHAPv2"
 
 #: ../src/nmtui/nmt-page-ppp.c:168
 msgid "MSCHAP"
-msgstr ""
+msgstr "MSCHAP"
 
 #: ../src/nmtui/nmt-page-ppp.c:185
 msgid "Use point-to-point encryption (MPPE)"
-msgstr ""
+msgstr "წერტილიდან წერტილამდე შიფრაცია (MPPE)"
 
 #: ../src/nmtui/nmt-page-ppp.c:198
 msgid "Require 128-bit encryption"
-msgstr ""
+msgstr "128-ბიტიანი შიფრაციის მოთხოვნა"
 
 #: ../src/nmtui/nmt-page-ppp.c:207
 msgid "Use stateful MPPE"
-msgstr ""
+msgstr "საიმედო MPPE-ის გამოყენება"
 
 #: ../src/nmtui/nmt-page-ppp.c:218
 msgid "Allow BSD data compression"
-msgstr ""
+msgstr "მონაცემების BSD შეკუმშვა"
 
 #: ../src/nmtui/nmt-page-ppp.c:227
 msgid "Allow Deflate data compression"
-msgstr ""
+msgstr "მონაცემების Deflate შეკუმშვა"
 
 #: ../src/nmtui/nmt-page-ppp.c:236
 msgid "Use TCP header compression"
-msgstr ""
+msgstr "TCP თავსართების შეკუმშვა"
 
 #: ../src/nmtui/nmt-page-ppp.c:247
 msgid "Send PPP echo packets"
-msgstr ""
+msgstr "PPP ექოს გაგზავნა"
 
 #: ../src/nmtui/nmt-page-team-port.c:72
 msgid "TEAM PORT"
-msgstr ""
+msgstr "ჯგუფური პორტი"
 
 #: ../src/nmtui/nmt-page-team-port.c:79 ../src/nmtui/nmt-page-team.c:136
-#, fuzzy
 msgid "JSON configuration"
-msgstr "VPN-კონფგურაციის შეცდომა"
+msgstr "JSON კონფიგურაცია"
 
 #: ../src/nmtui/nmt-page-team.c:119
 msgid "TEAM"
-msgstr ""
+msgstr "ჯგუფი"
 
 #: ../src/nmtui/nmt-page-vlan.c:82
 msgid "VLAN id"
-msgstr ""
+msgstr "Vlan ID"
 
 #: ../src/nmtui/nmt-page-wifi.c:49
 msgctxt "Wi-Fi"
 msgid "Client"
-msgstr ""
+msgstr "კლიენტი"
 
 #: ../src/nmtui/nmt-page-wifi.c:50
 msgid "Access Point"
-msgstr ""
+msgstr "წვდომის წერტილი"
 
 #: ../src/nmtui/nmt-page-wifi.c:51
-#, fuzzy
 msgid "Ad-Hoc Network"
-msgstr "_კაბელური ქსელი"
+msgstr "Ad-Hoc ქსელი"
 
 #: ../src/nmtui/nmt-page-wifi.c:54
-#, fuzzy
 msgctxt "Wi-Fi"
 msgid "Automatic"
-msgstr "WPA Automatic"
+msgstr "ავტომატური"
 
 #. 802.11a Wi-Fi network
 #: ../src/nmtui/nmt-page-wifi.c:56
 msgid "A (5 GHz)"
-msgstr ""
+msgstr "A (5 GHz)"
 
 #. 802.11b / 802.11g Wi-Fi network
 #: ../src/nmtui/nmt-page-wifi.c:58
 msgid "B/G (2.4 GHz)"
-msgstr ""
+msgstr "B/G (2.4 GHz)"
 
 #: ../src/nmtui/nmt-page-wifi.c:61
-#, fuzzy
 msgctxt "Wi-Fi security"
 msgid "None"
-msgstr "არა"
+msgstr "არცერთი"
 
 #: ../src/nmtui/nmt-page-wifi.c:62
-#, fuzzy
 msgid "WPA & WPA2 Personal"
-msgstr "WPA2 Personal"
+msgstr "WPA & WPA2 პერსონალური"
 
 #: ../src/nmtui/nmt-page-wifi.c:63
-#, fuzzy
 msgid "WPA3 Personal"
-msgstr "WPA2 Personal"
+msgstr "WPA2 პერსონალური"
 
 #: ../src/nmtui/nmt-page-wifi.c:64
-#, fuzzy
 msgid "WPA & WPA2 Enterprise"
-msgstr "WPA2 Enterprise"
+msgstr "WPA & WPA2 საწარმოო"
 
 #: ../src/nmtui/nmt-page-wifi.c:65
-#, fuzzy
 msgid "WEP 40/128-bit Key (Hex or ASCII)"
-msgstr "WEP 64/128-bit ASCII"
+msgstr "WEP 40/128-bit Key (Hex or ASCII)"
 
 #: ../src/nmtui/nmt-page-wifi.c:66
 msgid "WEP 128-bit Passphrase"
 msgstr "WEP 128-bit Passphrase"
 
 #: ../src/nmtui/nmt-page-wifi.c:67
-#, fuzzy
 msgid "Dynamic WEP (802.1x)"
-msgstr "Dynamic WEP"
+msgstr "დინამიკური WEP (802.1x)"
 
 #: ../src/nmtui/nmt-page-wifi.c:68
 msgid "LEAP"
@@ -12725,29 +12527,28 @@ msgid "Enhanced Open (OWE)"
 msgstr ""
 
 #: ../src/nmtui/nmt-page-wifi.c:72
-#, fuzzy
 msgctxt "WEP key index"
 msgid "1 (Default)"
-msgstr "ავტომატურად (ნაგულისხმევია)"
+msgstr "1 (ნაგულისხმები)"
 
 #: ../src/nmtui/nmt-page-wifi.c:73
 msgctxt "WEP key index"
 msgid "2"
-msgstr ""
+msgstr "2"
 
 #: ../src/nmtui/nmt-page-wifi.c:74
 msgctxt "WEP key index"
 msgid "3"
-msgstr ""
+msgstr "3"
 
 #: ../src/nmtui/nmt-page-wifi.c:75
 msgctxt "WEP key index"
 msgid "4"
-msgstr ""
+msgstr "4"
 
 #: ../src/nmtui/nmt-page-wifi.c:78
 msgid "Open System"
-msgstr "ღია სისტემა "
+msgstr "ღია სისტემა"
 
 #: ../src/nmtui/nmt-page-wifi.c:79
 msgid "Shared Key"
@@ -12755,11 +12556,11 @@ msgstr "ზიარი გასაღები"
 
 #: ../src/nmtui/nmt-page-wifi.c:187
 msgid "WI-FI"
-msgstr ""
+msgstr "Wi-Fi"
 
 #: ../src/nmtui/nmt-page-wifi.c:248
 msgid "Channel"
-msgstr ""
+msgstr "არხი"
 
 #. "wpa-enterprise"
 #. FIXME
@@ -12769,12 +12570,11 @@ msgstr ""
 
 #: ../src/nmtui/nmt-page-wifi.c:287 ../src/nmtui/nmt-page-wifi.c:308
 msgid "WEP index"
-msgstr ""
+msgstr "WEP-ის ინდექსი"
 
 #: ../src/nmtui/nmt-page-wifi.c:297 ../src/nmtui/nmt-page-wifi.c:318
-#, fuzzy
 msgid "Authentication"
-msgstr "აუტენთიკაცია:"
+msgstr "ავთენტიფიკაცია"
 
 #. "dynamic-wep"
 #. FIXME
@@ -12784,58 +12584,55 @@ msgstr ""
 
 #: ../src/nmtui/nmt-page-wifi.c:364
 msgid "BSSID"
-msgstr ""
+msgstr "BSSID"
 
 #: ../src/nmtui/nmt-page-wireguard.c:61
-#, fuzzy
 msgid "Private key"
-msgstr "პირადი გასაღების პაროლი:"
+msgstr "პირადი გასაღები"
 
 #: ../src/nmtui/nmt-page-wireguard.c:69
-#, fuzzy
 msgid "Listen port"
-msgstr "შეერთებულია კაბელურ ქსელთან"
+msgstr "პორტის მოსმენა"
 
 #: ../src/nmtui/nmt-page-wireguard.c:77
 msgid "Fwmark"
-msgstr ""
+msgstr "Fwmark"
 
 #: ../src/nmtui/nmt-page-wireguard.c:92
 msgid "Add peer routes"
-msgstr ""
+msgstr "პარტნიორის რაუტების დამატება"
 
 #: ../src/nmtui/nmt-page-wireguard.c:101
 msgid "Peers"
-msgstr ""
+msgstr "პარტნიორები"
 
 #: ../src/nmtui/nmt-password-fields.c:108
 msgid "Ask for this password every time"
-msgstr ""
+msgstr "პაროლის ყოველ ჯერზე მოთხოვნა"
 
 #: ../src/nmtui/nmt-password-fields.c:109
 msgid "Show password"
 msgstr "პაროლის ჩვენება"
 
 #: ../src/nmtui/nmt-route-table.c:169
-#, fuzzy
 msgid "Destination"
-msgstr "დანიშნულების მისამართი:"
+msgstr "დანიშნულება"
 
 #: ../src/nmtui/nmt-route-table.c:169
 msgid "Prefix"
-msgstr ""
+msgstr "პრეფიქსი"
 
 #: ../src/nmtui/nmt-route-table.c:176
 msgid "Next Hop"
-msgstr ""
+msgstr "შემდეგი რაუტერი"
 
 #: ../src/nmtui/nmt-route-table.c:182
 msgid "Metric"
-msgstr ""
+msgstr "მეტრიკა"
 
 #: ../src/nmtui/nmt-route-table.c:201
 msgid "No custom routes are defined."
-msgstr ""
+msgstr "რაუტები ხელით მითითებული არაა."
 
 #: ../src/nmtui/nmt-slave-list.c:126
 msgid "Select the type of slave connection you wish to add."
@@ -12843,37 +12640,36 @@ msgstr ""
 
 #: ../src/nmtui/nmt-widget-list.c:131
 msgid "Add..."
-msgstr ""
+msgstr "დამატება..."
 
 #: ../src/nmtui/nmt-widget-list.c:193
 msgid "Remove"
-msgstr ""
+msgstr "წაშლა"
 
 #: ../src/nmtui/nmt-wireguard-peer-editor.c:82
 msgid "Public key"
-msgstr ""
+msgstr "საჯარო გასაღები"
 
 #: ../src/nmtui/nmt-wireguard-peer-editor.c:94
 msgid "Allowed IPs"
-msgstr ""
+msgstr "დაშვებული IP-ები"
 
 #: ../src/nmtui/nmt-wireguard-peer-editor.c:106
 msgid "Endpoint"
-msgstr ""
+msgstr "ბოლო წერტილი"
 
 #: ../src/nmtui/nmt-wireguard-peer-editor.c:118
-#, fuzzy
 msgid "Preshared key"
-msgstr "ზიარი გასაღები"
+msgstr "წინასწარ გაზიარებული გასაღები"
 
 #: ../src/nmtui/nmt-wireguard-peer-editor.c:130
 msgctxt "seconds"
 msgid "seconds"
-msgstr ""
+msgstr "წამი"
 
 #: ../src/nmtui/nmt-wireguard-peer-editor.c:131
 msgid "Persistent keepalive"
-msgstr ""
+msgstr "მუდმივად ჩართული მდგომარეობა"
 
 #: ../src/nmtui/nmtui-connect.c:43
 msgid ""
@@ -12897,55 +12693,53 @@ msgid "openconnect failed with signal %d"
 msgstr ""
 
 #: ../src/nmtui/nmtui-connect.c:174
-#, fuzzy, c-format
+#, c-format
 msgid "Activation failed: %s"
-msgstr "ვერ მოხერხდა შეერთება უკაბელო ქსელთან."
+msgstr "აქტივაციის შეცდომა: %s"
 
 #: ../src/nmtui/nmtui-connect.c:227
-#, fuzzy, c-format
+#, c-format
 msgid "Could not deactivate connection: %s"
-msgstr "არავითარი აქტიური შეერთება!"
+msgstr "შეერთების დეაქტივაციის შეცდომა: %s"
 
 #: ../src/nmtui/nmtui-connect.c:245
-#, fuzzy
 msgid "Connecting..."
-msgstr "შეერთება ქსელთან %s..."
+msgstr "დაკავშირება…"
 
 #: ../src/nmtui/nmtui-connect.c:290 ../src/nmtui/nmtui-connect.c:330
-#, fuzzy, c-format
+#, c-format
 msgid "Could not activate connection: %s"
-msgstr "არავითარი აქტიური შეერთება!"
+msgstr "შეერთების აქტივაციის შეცდომა: %s"
 
 #: ../src/nmtui/nmtui-connect.c:390 ../src/nmtui/nmtui-connect.c:443
 msgid "Activate"
-msgstr ""
+msgstr "აქტივაცია"
 
 #: ../src/nmtui/nmtui-connect.c:392
 msgid "Deactivate"
-msgstr ""
+msgstr "დეაქტივაცია"
 
 #: ../src/nmtui/nmtui-connect.c:448 ../src/nmtui/nmtui-edit.c:103
 #: ../src/nmtui/nmtui.c:112
 msgid "Quit"
-msgstr ""
+msgstr "გასვლა"
 
 #: ../src/nmtui/nmtui-connect.c:448 ../src/nmtui/nmtui-edit.c:103
 msgid "Back"
-msgstr ""
+msgstr "უკან"
 
 #: ../src/nmtui/nmtui-connect.c:471
-#, fuzzy, c-format
+#, c-format
 msgid "No such connection '%s'"
-msgstr "შეერთებულია  VPN-ქსელთან '%s'"
+msgstr "შეერთება არ არსებობს: %s"
 
 #: ../src/nmtui/nmtui-connect.c:473
-#, fuzzy
 msgid "Connection is already active"
-msgstr "შეერთება დამყარებულია"
+msgstr "შეერთება უკვე აქტიურია"
 
 #: ../src/nmtui/nmtui-edit.c:215
 msgid "Create"
-msgstr ""
+msgstr "შექმნა"
 
 #: ../src/nmtui/nmtui-edit.c:356
 msgid "Select the type of connection you wish to create."
@@ -12958,19 +12752,18 @@ msgid ""
 msgstr ""
 
 #: ../src/nmtui/nmtui-edit.c:401 ../src/nmtui/nmtui-edit.c:417
-#, fuzzy
 msgid "New Connection"
-msgstr "VPN-შეერთებები"
+msgstr "ახალი შეერთება"
 
 #: ../src/nmtui/nmtui-edit.c:459
-#, fuzzy, c-format
+#, c-format
 msgid "Unable to delete connection: %s"
-msgstr "წავშალოთ VPN-შეერთება \"%s\"?"
+msgstr "შეერთების წაშლა შეუძლებელია: %s"
 
 #: ../src/nmtui/nmtui-edit.c:497
-#, fuzzy, c-format
+#, c-format
 msgid "Could not delete connection '%s': %s"
-msgstr "VPN-შეერთების '%s' გაშვება ვერ ხერხდება"
+msgstr "შეერთების (%s) წაშლის შეცდომა: %s"
 
 #: ../src/nmtui/nmtui-edit.c:519
 #, c-format
@@ -12979,67 +12772,63 @@ msgstr ""
 
 #: ../src/nmtui/nmtui-hostname.c:31
 msgid "Set Hostname"
-msgstr ""
+msgstr "ჰოსტის სახელის დაყენება"
 
 #: ../src/nmtui/nmtui-hostname.c:37
 msgid "Hostname"
-msgstr ""
+msgstr "ჰოსტის სახელი"
 
 #. TRANSLATORS: this indicates the result. ie, "I have set the hostname to ..."
 #: ../src/nmtui/nmtui-hostname.c:96
 #, c-format
 msgid "Set hostname to '%s'"
-msgstr ""
+msgstr "ჰოსტის სახელის დაყენება: %s"
 
 #: ../src/nmtui/nmtui-hostname.c:98
-#, fuzzy, c-format
+#, c-format
 msgid "Unable to set hostname: %s"
-msgstr "არ იტვირთება"
+msgstr "ჰოსტის სახელის დაყენების შეცდომა: %s"
 
 #: ../src/nmtui/nmtui.c:40 ../src/nmtui/nmtui.c:41
-#, fuzzy
 msgid "connection"
-msgstr "VPN-შეერთებები"
+msgstr "შეერთება"
 
 #: ../src/nmtui/nmtui.c:40
-#, fuzzy
 msgid "Edit a connection"
-msgstr "VPN-შეერთების რედაქტირება"
+msgstr "შეერთების ჩასწორება"
 
 #: ../src/nmtui/nmtui.c:41
-#, fuzzy
 msgid "Activate a connection"
-msgstr "არავითარი აქტიური შეერთება!"
+msgstr "შეერთების აქტივაცია"
 
 #: ../src/nmtui/nmtui.c:42
 msgid "new hostname"
-msgstr ""
+msgstr "ჰოსტის ახალი სახელი"
 
 #: ../src/nmtui/nmtui.c:42
 msgid "Set system hostname"
-msgstr ""
+msgstr "ჰოსტის სისტემური სახელის დაყენება"
 
 #: ../src/nmtui/nmtui.c:85
-#, fuzzy
 msgid "NetworkManager TUI"
-msgstr "აპლეტი NetworkManager"
+msgstr "NetworkManager-ის TUI"
 
 #: ../src/nmtui/nmtui.c:94
 msgid "Please select an option"
-msgstr ""
+msgstr "აირჩიეთ პარამეტრი"
 
 #: ../src/nmtui/nmtui.c:141
 msgid "Usage"
-msgstr ""
+msgstr "გამოყენება"
 
 #: ../src/nmtui/nmtui.c:228
 msgid "Could not parse arguments"
-msgstr ""
+msgstr "არგუმენტების დამუშავების შეცდომა"
 
 #: ../src/nmtui/nmtui.c:241
 #, c-format
 msgid "Could not contact NetworkManager: %s.\n"
-msgstr ""
+msgstr "NetworkManager-თან დაკავშირების შეცდომა: %s.\n"
 
 #, fuzzy
 #~ msgid "Connection UUID"
