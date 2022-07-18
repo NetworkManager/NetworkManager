@@ -3090,7 +3090,10 @@ again:
     if (G_UNLIKELY(!proc_cmdline)) {
         gs_free char *str = NULL;
 
-        g_file_get_contents("/proc/cmdline", &str, NULL, NULL);
+        /* /run/NetworkManager/proc-cmdline can be used to overrule /proc/cmdline. */
+        if (!g_file_get_contents(NMRUNDIR "/proc-cmdline", &str, NULL, NULL))
+            g_file_get_contents("/proc/cmdline", &str, NULL, NULL);
+
         str = nm_str_realloc(str);
 
         proc_cmdline = str ?: "";

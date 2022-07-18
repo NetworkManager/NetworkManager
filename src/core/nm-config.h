@@ -18,6 +18,8 @@
 #define NM_IS_CONFIG_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE((klass), NM_TYPE_CONFIG))
 #define NM_CONFIG_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS((obj), NM_TYPE_CONFIG, NMConfigClass))
 
+#define NM_CONFIG_KERNEL_CMDLINE_NM_DEBUG "nm.debug"
+
 /* Properties */
 #define NM_CONFIG_CMD_LINE_OPTIONS        "cmd-line-options"
 #define NM_CONFIG_ATOMIC_SECTION_PREFIXES "atomic-section-prefixes"
@@ -194,6 +196,10 @@ const NMConfigDeviceStateData *nm_config_device_state_get(NMConfig *self, int if
 
 const char *const *nm_config_get_warnings(NMConfig *config);
 void               nm_config_clear_warnings(NMConfig *config);
+
+/*****************************************************************************/
+
+gboolean nm_config_kernel_command_line_nm_debug(void);
 
 /*****************************************************************************/
 
