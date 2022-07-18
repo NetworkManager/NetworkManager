@@ -198,7 +198,7 @@ set_platform_mtu(NMDevice *device, guint32 mtu)
 }
 
 static gboolean
-ready_for_ip_config(NMDevice *device)
+ready_for_ip_config(NMDevice *device, gboolean is_manual)
 {
     return nm_device_get_ip_ifindex(device) > 0;
 }

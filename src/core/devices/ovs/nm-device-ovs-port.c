@@ -61,7 +61,7 @@ get_generic_capabilities(NMDevice *device)
 }
 
 static gboolean
-ready_for_ip_config(NMDevice *device)
+ready_for_ip_config(NMDevice *device, gboolean is_manual)
 {
     return FALSE;
 }

@@ -11806,7 +11806,7 @@ activate_stage3_ip_config_for_addr_family(NMDevice *self, int addr_family, const
         priv->ip_data_x[IS_IPv4].wait_for_ports = FALSE;
     }
 
-    if (klass->ready_for_ip_config && !klass->ready_for_ip_config(self))
+    if (klass->ready_for_ip_config && !klass->ready_for_ip_config(self, FALSE))
         goto out_devip;
 
     if (IS_IPv4) {
@@ -12073,7 +12073,7 @@ activate_stage3_ip_config(NMDevice *self)
     }
 
     if (!nm_device_sys_iface_state_is_external(self)
-        && (!klass->ready_for_ip_config || klass->ready_for_ip_config(self))) {
+        && (!klass->ready_for_ip_config || klass->ready_for_ip_config(self, TRUE))) {
         if (priv->ipmanual_data.state_6 == NM_DEVICE_IP_STATE_NONE
             && !NM_IN_STRSET(ipv6_method,
                              NM_SETTING_IP6_CONFIG_METHOD_DISABLED,
