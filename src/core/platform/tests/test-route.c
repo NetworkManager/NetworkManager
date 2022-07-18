@@ -10,7 +10,7 @@
 
 #include "nm-core-utils.h"
 #include "libnm-platform/nm-platform-utils.h"
-#include "libnm-platform/nmp-route-manager.h"
+#include "libnm-platform/nmp-global-tracker.h"
 
 #include "test-common.h"
 

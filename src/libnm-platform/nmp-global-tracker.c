@@ -2,7 +2,7 @@
 
 #include "libnm-glib-aux/nm-default-glib-i18n-lib.h"
 
-#include "nmp-route-manager.h"
+#include "nmp-global-tracker.h"
 
 #include <linux/fib_rules.h>
 #include <linux/rtnetlink.h>
