@@ -2288,9 +2288,11 @@ nm_utils_escaped_tokens_options_split(char *str, const char **out_key, const cha
 char **
 nm_utils_strsplit_quoted(const char *str)
 {
-    gs_unref_ptrarray GPtrArray *arr     = NULL;
-    gs_free char                *str_out = NULL;
-    CharLookupTable              ch_lookup;
+    char          **arr       = NULL;
+    gsize           arr_len   = 0;
+    gsize           arr_alloc = 0;
+    gs_free char   *str_out   = NULL;
+    CharLookupTable ch_lookup;
 
     nm_assert(str);
 
@@ -2347,19 +2349,32 @@ nm_utils_strsplit_quoted(const char *str)
             str++;
         }
 
-        if (!arr)
-            arr = g_ptr_array_new();
-        g_ptr_array_add(arr, g_strndup(str_out, j));
+        if (arr_len >= arr_alloc) {
+            if (arr_alloc == 0)
+                arr_alloc = 4;
+            else
+                arr_alloc *= 2;
+            arr = g_realloc(arr, sizeof(char *) * arr_alloc);
+        }
+
+        arr[arr_len++] = g_strndup(str_out, j);
     }
 
     if (!arr)
         return g_new0(char *, 1);
 
-    g_ptr_array_add(arr, NULL);
-
     /* We want to return an optimally sized strv array, with no excess
      * memory allocated. Hence, clone once more. */
-    return nm_memdup(arr->pdata, sizeof(char *) * arr->len);
+
+    if (arr_len + 1u != arr_alloc) {
+        gs_free char **arr_old = arr;
+
+        arr = g_new(char *, arr_len + 1u);
+        memcpy(arr, arr_old, sizeof(char *) * arr_len);
+    }
+
+    arr[arr_len] = NULL;
+    return arr;
 }
 
 /*****************************************************************************/
