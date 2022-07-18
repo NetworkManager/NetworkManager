@@ -5578,6 +5578,21 @@ static const NMMetaPropertyInfo *const property_infos_CONNECTION[] = {
             ),
         ),
     ),
+    PROPERTY_INFO_WITH_DESC (NM_SETTING_CONNECTION_MPTCP_FLAGS,
+        .property_type =                &_pt_gobject_enum,
+        .property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+            PROPERTY_TYP_DATA_SUBTYPE (gobject_enum,
+                .get_gtype =            nm_mptcp_flags_get_type,
+                .value_infos_get =      GOBJECT_ENUM_VALUE_INFOS_GET_FROM_SETTER,
+                .value_infos =          ENUM_VALUE_INFOS (
+                    {
+                        .value = NM_MPTCP_FLAGS_NONE,
+                        .nick = "default",
+                    },
+                ),
+            ),
+        ),
+    ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_CONNECTION_MUD_URL,
         .property_type =                &_pt_gobject_string,
         .hide_if_default =              TRUE,

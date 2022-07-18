@@ -267,4 +267,20 @@ gboolean nm_settings_connection_validate_permission_user(const char *item, gssiz
 gpointer _nm_connection_ensure_setting(NMConnection *connection, GType gtype);
 gpointer _nm_connection_new_setting(NMConnection *connection, GType gtype);
 
+/*****************************************************************************/
+
+#define _NM_MPTCP_FLAGS_ALL                                                                    \
+    ((NMMptcpFlags) (NM_MPTCP_FLAGS_DISABLED | NM_MPTCP_FLAGS_ENABLED_ON_GLOBAL_IFACE          \
+                     | NM_MPTCP_FLAGS_ENABLED | NM_MPTCP_FLAGS_SIGNAL | NM_MPTCP_FLAGS_SUBFLOW \
+                     | NM_MPTCP_FLAGS_BACKUP | NM_MPTCP_FLAGS_FULLMESH                         \
+                     | NM_MPTCP_FLAGS_WITH_LOOPBACK_4 | NM_MPTCP_FLAGS_WITH_LINK_LOCAL_4       \
+                     | NM_MPTCP_FLAGS_SKIP_SITE_LOCAL_4 | NM_MPTCP_FLAGS_WITH_LOOPBACK_6       \
+                     | NM_MPTCP_FLAGS_WITH_LINK_LOCAL_6 | NM_MPTCP_FLAGS_WITH_SITE_LOCAL_6     \
+                     | NM_MPTCP_FLAGS_NO_RELAX_RP_FILTER))
+
+#define _NM_MPTCP_FLAGS_DEFAULT \
+    ((NMMptcpFlags) (NM_MPTCP_FLAGS_ENABLED_ON_GLOBAL_IFACE | NM_MPTCP_FLAGS_SUBFLOW))
+
+NMMptcpFlags nm_mptcp_flags_normalize(NMMptcpFlags flags);
+
 #endif /* __NM_LIBNM_SHARED_UTILS_H__ */

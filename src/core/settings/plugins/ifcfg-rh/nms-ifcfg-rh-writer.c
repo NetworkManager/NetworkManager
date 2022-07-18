@@ -2095,6 +2095,7 @@ write_connection_setting(NMSettingConnection *s_con, shvarFile *ifcfg)
     NMSettingConnectionMdns       mdns;
     NMSettingConnectionLlmnr      llmnr;
     NMSettingConnectionDnsOverTls dns_over_tls;
+    NMMptcpFlags                  mptcp_flags;
     guint32                       vuint32;
     const char                   *tmp, *mud_url;
 
@@ -2289,6 +2290,10 @@ write_connection_setting(NMSettingConnection *s_con, shvarFile *ifcfg)
                        nm_setting_connection_dns_over_tls_get_type(),
                        dns_over_tls);
     }
+
+    mptcp_flags = nm_setting_connection_get_mptcp_flags(s_con);
+    if (mptcp_flags != NM_MPTCP_FLAGS_NONE)
+        svSetValueEnum(ifcfg, "MPTCP_FLAGS", nm_mptcp_flags_get_type(), mptcp_flags);
 }
 
 static char *

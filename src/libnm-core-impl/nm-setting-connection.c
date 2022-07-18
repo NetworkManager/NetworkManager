@@ -65,6 +65,7 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMSettingConnection,
                              PROP_MDNS,
                              PROP_LLMNR,
                              PROP_DNS_OVER_TLS,
+                             PROP_MPTCP_FLAGS,
                              PROP_STABLE_ID,
                              PROP_AUTH_RETRIES,
                              PROP_WAIT_DEVICE_TIMEOUT,
@@ -96,6 +97,7 @@ typedef struct {
     gint32      wait_device_timeout;
     gint32      lldp;
     gint32      wait_activation_delay;
+    guint32     mptcp_flags;
     guint32     gateway_ping_timeout;
     bool        autoconnect;
     bool        read_only;
@@ -1015,6 +1017,22 @@ nm_setting_connection_get_dns_over_tls(NMSettingConnection *setting)
     return NM_SETTING_CONNECTION_GET_PRIVATE(setting)->dns_over_tls;
 }
 
+/**
+ * nm_setting_connection_get_mptcp_flags:
+ * @setting: the #NMSettingConnection
+ *
+ * Returns: the #NMSettingConnection:mptcp-flags property of the setting.
+ *
+ * Since: 1.40
+ **/
+NMMptcpFlags
+nm_setting_connection_get_mptcp_flags(NMSettingConnection *setting)
+{
+    g_return_val_if_fail(NM_IS_SETTING_CONNECTION(setting), NM_MPTCP_FLAGS_NONE);
+
+    return NM_SETTING_CONNECTION_GET_PRIVATE(setting)->mptcp_flags;
+}
+
 static void
 _set_error_missing_base_setting(GError **error, const char *type)
 {
@@ -1365,6 +1383,64 @@ after_interface_name:
                        NM_SETTING_CONNECTION_SETTING_NAME,
                        NM_SETTING_CONNECTION_DNS_OVER_TLS);
         return FALSE;
+    }
+
+    if (priv->mptcp_flags != 0) {
+        if (NM_FLAGS_HAS(priv->mptcp_flags, NM_MPTCP_FLAGS_DISABLED)) {
+            if (priv->mptcp_flags != NM_MPTCP_FLAGS_DISABLED) {
+                g_set_error_literal(
+                    error,
+                    NM_CONNECTION_ERROR,
+                    NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                    _("\"disabled\" flag cannot be combined with other MPTCP flags"));
+                g_prefix_error(error,
+                               "%s.%s: ",
+                               NM_SETTING_CONNECTION_SETTING_NAME,
+                               NM_SETTING_CONNECTION_MPTCP_FLAGS);
+                return FALSE;
+            }
+        } else {
+            guint32 f;
+
+            if (NM_FLAGS_ALL(priv->mptcp_flags,
+                             NM_MPTCP_FLAGS_ENABLED_ON_GLOBAL_IFACE | NM_MPTCP_FLAGS_ENABLED)) {
+                g_set_error_literal(
+                    error,
+                    NM_CONNECTION_ERROR,
+                    NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                    _("\"enabled\" and \"enabled-on-global-iface\" flag cannot be set together"));
+                g_prefix_error(error,
+                               "%s.%s: ",
+                               NM_SETTING_CONNECTION_SETTING_NAME,
+                               NM_SETTING_CONNECTION_MPTCP_FLAGS);
+                return FALSE;
+            }
+            if (NM_FLAGS_ALL(priv->mptcp_flags, NM_MPTCP_FLAGS_SIGNAL | NM_MPTCP_FLAGS_FULLMESH)) {
+                g_set_error_literal(error,
+                                    NM_CONNECTION_ERROR,
+                                    NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                                    _("cannot set both \"signal\" and \"fullmesh\" MPTCP flags"));
+                g_prefix_error(error,
+                               "%s.%s: ",
+                               NM_SETTING_CONNECTION_SETTING_NAME,
+                               NM_SETTING_CONNECTION_MPTCP_FLAGS);
+                return FALSE;
+            }
+            f = NM_FLAGS_UNSET(priv->mptcp_flags, NM_MPTCP_FLAGS_ENABLED_ON_GLOBAL_IFACE)
+                | ((guint32) NM_MPTCP_FLAGS_ENABLED);
+            if (f != nm_mptcp_flags_normalize(f)) {
+                g_set_error(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                            _("value %u is not a valid combination of MPTCP flags"),
+                            priv->mptcp_flags);
+                g_prefix_error(error,
+                               "%s.%s: ",
+                               NM_SETTING_CONNECTION_SETTING_NAME,
+                               NM_SETTING_CONNECTION_MPTCP_FLAGS);
+                return FALSE;
+            }
+        }
     }
 
     if (!NM_IN_SET(priv->multi_connect,
@@ -2482,6 +2558,115 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
                                              NM_SETTING_PARAM_NONE,
                                              NMSettingConnectionPrivate,
                                              dns_over_tls);
+
+    /* Notes about "mptcp-flags":
+     *
+     * It is a bit odd that NMMptcpFlags mixes flags with different purposes:
+     *
+     * - "disabled", "disabled-on-local-iface", "enable": whether MPTCP handling
+     *   is enabled. The flag "disabled-on-local-iface" enables it based on whether
+     *   the interface has a default route.
+     * - "signal", "subflow", "backup", "fullmesh": the endpoint flags
+     *   that are used.
+     * - "with-loopback-4", "with-*", ..., "skip-site-local-4": to include/exclude addresses,
+     *   which should be configured as endpoints.
+     * - "no-relax-rp-filter": controls whether to (not) change rp_filter.
+     *
+     * The reason is, that it is useful to have one "connection.mptcp-flags"
+     * property, that can express various aspects at once. The alternatives
+     * would be multiple properties like "connection.mptcp-enabled",
+     * "connection.mptcp-addr-flags" and "connection.mptcp-notify-flags".
+     * More properties does not necessarily make the API simpler. In particular
+     * for something like MPTCP, which should just work by default and only
+     * in special cases require special configuration.
+     *
+     * The entire idea is to only have one "connection.mptcp-flags" property (for now).
+     * That one can encode multiple aspects about MPTCP, whether it's enabled at all,
+     * which address flags to use when configuring endpoints, and opt-in addresses
+     * that otherwise would not be configured as endpoints.
+     *
+     * "connection.mptcp-flags" applies to all addresses on the interface (minus the ones
+     * that are not included via "with-*" and "skip-*" flags). The idea is that in the future we could have
+     * more properties like "ipv4.dhcp-mptcp-flags=subflow", "ipv6.link-local-mptcp-flags=disabled",
+     * "ipv4.addresses='192.168.1.5/24 mptcp-flags=signal,backup'", which can overwrite the
+     * flags on a per-address basis.
+     *
+     * But for that future extension, we now need a global "connection.mptcp-flags" property
+     * in the API that is the basis and applies to all addresses.
+     */
+
+    /**
+     * NMSettingConnection:mptcp-flags:
+     *
+     * Whether to configure MPTCP endpoints and the address flags.
+     * If MPTCP is enabled in NetworkManager, it will configure the
+     * addresses of the interface as MPTCP endpoints. The supported
+     * flags are as follows.
+     *
+     * If "disabled" (0x1), MPTCP handling for the interface is disabled and
+     * no endpoints are registered.
+     *
+     * The flag "enabled-on-global-iface" (0x2) means that MPTCP handling is enabled
+     * if the interface configures a default route in the main routing table.
+     * This choice is per-address family, for example if there is an IPv4 default route
+     * 0.0.0.0/0, IPv4 endpoints are configured.
+     *
+     * The "enabled" (0x4) flag means that MPTCP handling is explicitly enabled.
+     * This flag can also be implied from the presence of other flags.
+     *
+     * If MPTCP handling is enabled, then endpoints will be configured
+     * with the specified address flags "signal" (0x10), "subflow" (0x20), "backup" (0x40),
+     * "fullmesh" (0x80). See ip-mptcp(8) manual for additional information about the flags.
+     *
+     * The flag "with-loopback-4" (0x100) indicates that NetworkManager will
+     * also configure MPTCP endpoints for IPv4 loopback addresses 127.0.0.0/8.
+     * Likewise, the flag "with-link-local-4" (0x200) includes IPv4 link local
+     * addresses 169.254.0.0/16.
+     *
+     * The "skip-site-local-4" (0x400) flag indicates to exclude rfc1918 private addresses
+     * (10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16).
+     *
+     * The flags "with-loopback-6" (0x1000), "with-link-local-6" (0x2000)
+     * and "with-site-local-6" (0x4000) apply to the IPv6 loopback address (::1),
+     * IPv6 link local addresses (fe80::/10) and IPv6 unique local addresses (ULA, fc00::/7),
+     * respectively. IPv6 privacy addresses (rfc3041, ipv6.ip6-privacy) are excluded
+     * from MPTCP configuration.
+     *
+     * The flag "no-relax-rp-filter" (0x10000) causes NetworkManager to not touch
+     * IPv4 rp_filter. Strict reverse path filtering (rp_filter) breaks many MPTCP
+     * use cases, so when MPTCP handling on the interface is enabled, NetworkManager would
+     * loosen the strict reverse path filtering (1) to the loose setting (2).
+     * This flag prevents that.
+     *
+     * If the flags are zero, the global connection default from NetworkManager.conf is
+     * honored. If still unspecified, the fallback is either "disabled" or
+     * "enabled-on-global-iface,subflow" depending on "/proc/sys/net/mptcp/enabled".
+     *
+     * NetworkManager does not change the MPTCP limits nor enable MPTCP via
+     * "/proc/sys/net/mptcp/enabled". That is a host configuration which the
+     * admin can change via sysctl and ip-mptcp.
+     *
+     * Since: 1.40
+     **/
+    /* ---ifcfg-rh---
+     * property: mptcp-flags
+     * variable: MPTCP_FLAGS(+)
+     * default: missing variable means global default
+     * description: The MPTCP flags that indicate whether MPTCP is enabled
+     *   and which flags to use for the address endpoints.
+     * example: MPTCP_FLAGS="signal,subflow"
+     * ---end---
+     */
+    _nm_setting_property_define_direct_uint32(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_CONNECTION_MPTCP_FLAGS,
+                                              PROP_MPTCP_FLAGS,
+                                              0,
+                                              G_MAXUINT32,
+                                              NM_MPTCP_FLAGS_NONE,
+                                              NM_SETTING_PARAM_NONE,
+                                              NMSettingConnectionPrivate,
+                                              mptcp_flags);
 
     /**
      * NMSettingConnection:wait-device-timeout:
