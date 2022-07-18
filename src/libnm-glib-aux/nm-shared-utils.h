@@ -501,6 +501,7 @@ gboolean nm_utils_ip_is_site_local(int addr_family, const void *address);
 
 #define NM_IPV4LL_NETWORK ((in_addr_t) (htonl(0xA9FE0000lu)))
 #define NM_IPV4LL_NETMASK ((in_addr_t) (htonl(0xFFFF0000lu)))
+#define NM_IPV4LO_NETWORK ((in_addr_t) (htonl(0x7F000001u)))
 
 static inline gboolean
 nm_utils_ip4_address_is_link_local(in_addr_t addr)

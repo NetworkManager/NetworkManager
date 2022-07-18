@@ -4277,6 +4277,30 @@ _l3_commit_one(NML3Cfg              *self,
         }
     }
 
+    if (self->priv.ifindex == 1) {
+        if (!addresses)
+            addresses = g_ptr_array_new_with_free_func((GDestroyNotify) nmp_object_unref);
+        if (IS_IPv4) {
+            g_ptr_array_add(addresses,
+                            nmp_object_new(NMP_OBJECT_TYPE_IP4_ADDRESS,
+                                           &((const NMPlatformIP4Address){
+                                               .address                 = NM_IPV4LO_NETWORK,
+                                               .a_no_auto_noprefixroute = FALSE,
+                                               .ifindex                 = 1,
+                                               .plen                    = 8,
+                                           })));
+        } else {
+            g_ptr_array_add(addresses,
+                            nmp_object_new(NMP_OBJECT_TYPE_IP6_ADDRESS,
+                                           &((const NMPlatformIP6Address){
+                                               .address                 = IN6ADDR_LOOPBACK_INIT,
+                                               .a_no_auto_noprefixroute = FALSE,
+                                               .ifindex                 = 1,
+                                               .plen                    = 128,
+                                           })));
+        }
+    }
+
     /* FIXME(l3cfg): need to honor and set nm_l3_config_data_get_ndisc_*(). */
     /* FIXME(l3cfg): need to honor and set nm_l3_config_data_get_mtu(). */
 
