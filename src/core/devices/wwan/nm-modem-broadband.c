@@ -1032,7 +1032,6 @@ stage3_ip_config_start(NMModem *modem, int addr_family, NMModemIPMethod ip_metho
         l3cd = nm_l3_config_data_new(nm_platform_get_multi_idx(NM_PLATFORM_GET),
                                      ifindex,
                                      NM_IP_CONFIG_SOURCE_WWAN);
-        nm_l3_config_data_set_dns_priority(l3cd, AF_INET, 0);
 
         address = (NMPlatformIP4Address){
             .address      = address_network,
@@ -1116,11 +1115,9 @@ stage3_ip_config_start(NMModem *modem, int addr_family, NMModemIPMethod ip_metho
 
         _LOGI("IPv6 base configuration:");
 
-        l3cd = nm_l3_config_data_new(nm_platform_get_multi_idx(NM_PLATFORM_GET),
+        l3cd    = nm_l3_config_data_new(nm_platform_get_multi_idx(NM_PLATFORM_GET),
                                      ifindex,
                                      NM_IP_CONFIG_SOURCE_WWAN);
-        nm_l3_config_data_set_dns_priority(l3cd, AF_INET6, 0);
-
         do_auto = TRUE;
 
         address.plen = mm_bearer_ip_config_get_prefix(self->_priv.ipv6_config);
