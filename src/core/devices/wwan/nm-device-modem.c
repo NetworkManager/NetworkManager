@@ -621,13 +621,13 @@ is_available(NMDevice *device, NMDeviceCheckDevAvailableFlags flags)
 }
 
 static gboolean
-ready_for_ip_config(NMDevice *device)
+ready_for_ip_config(NMDevice *device, gboolean is_manual)
 {
-    /* Tell NMDevice to only run device-specific IP
+    /* Tell NMDevice to only run manual and device-specific IP
      * configuration (devip) and skip other methods
-     * (manual, dhcp, etc).
+     * (dhcp, link-local, shared, etc).
      */
-    return FALSE;
+    return is_manual;
 }
 
 /*****************************************************************************/
