@@ -1647,8 +1647,8 @@ again:
 
     if (TEST_SYNC) {
         gs_unref_hashtable GHashTable *unique_priorities = g_hash_table_new(NULL, NULL);
-        nm_auto_unref_route_manager NMPRouteManager *route_manager =
-            nmp_route_manager_new(platform);
+        nm_auto_unref_global_tracker NMPGlobalTracker *global_tracker =
+            nmp_global_tracker_new(platform);
         gs_unref_ptrarray GPtrArray *objs_sync  = NULL;
         gconstpointer                USER_TAG_1 = &platform;
         gconstpointer                USER_TAG_2 = &unique_priorities;
@@ -1670,29 +1670,29 @@ again:
         }
 
         for (i = 0; i < objs_sync->len; i++) {
-            nmp_route_manager_track_rule(route_manager,
-                                         NMP_OBJECT_CAST_ROUTING_RULE(objs_sync->pdata[i]),
-                                         1,
-                                         USER_TAG_1,
-                                         NULL);
+            nmp_global_tracker_track_rule(global_tracker,
+                                          NMP_OBJECT_CAST_ROUTING_RULE(objs_sync->pdata[i]),
+                                          1,
+                                          USER_TAG_1,
+                                          NULL);
             if (nmtst_get_rand_bool()) {
                 /* this has no effect, because a negative priority (of same absolute value)
                  * has lower priority than the positive priority above. */
-                nmp_route_manager_track_rule(route_manager,
-                                             NMP_OBJECT_CAST_ROUTING_RULE(objs_sync->pdata[i]),
-                                             -1,
-                                             USER_TAG_2,
-                                             NULL);
+                nmp_global_tracker_track_rule(global_tracker,
+                                              NMP_OBJECT_CAST_ROUTING_RULE(objs_sync->pdata[i]),
+                                              -1,
+                                              USER_TAG_2,
+                                              NULL);
             }
             if (nmtst_get_rand_uint32() % objs_sync->len == 0) {
-                nmp_route_manager_sync(route_manager, NMP_OBJECT_TYPE_ROUTING_RULE, FALSE);
+                nmp_global_tracker_sync(global_tracker, NMP_OBJECT_TYPE_ROUTING_RULE, FALSE);
                 g_assert_cmpint(nmtstp_platform_routing_rules_get_count(platform, AF_UNSPEC),
                                 ==,
                                 i + 1);
             }
         }
 
-        nmp_route_manager_sync(route_manager, NMP_OBJECT_TYPE_ROUTING_RULE, FALSE);
+        nmp_global_tracker_sync(global_tracker, NMP_OBJECT_TYPE_ROUTING_RULE, FALSE);
         g_assert_cmpint(nmtstp_platform_routing_rules_get_count(platform, AF_UNSPEC),
                         ==,
                         objs_sync->len);
@@ -1700,37 +1700,37 @@ again:
         for (i = 0; i < objs_sync->len; i++) {
             switch (nmtst_get_rand_uint32() % 3) {
             case 0:
-                nmp_route_manager_untrack_rule(route_manager,
-                                               NMP_OBJECT_CAST_ROUTING_RULE(objs_sync->pdata[i]),
-                                               USER_TAG_1);
-                nmp_route_manager_untrack_rule(route_manager,
-                                               NMP_OBJECT_CAST_ROUTING_RULE(objs_sync->pdata[i]),
-                                               USER_TAG_1);
+                nmp_global_tracker_untrack_rule(global_tracker,
+                                                NMP_OBJECT_CAST_ROUTING_RULE(objs_sync->pdata[i]),
+                                                USER_TAG_1);
+                nmp_global_tracker_untrack_rule(global_tracker,
+                                                NMP_OBJECT_CAST_ROUTING_RULE(objs_sync->pdata[i]),
+                                                USER_TAG_1);
                 break;
             case 1:
-                nmp_route_manager_track_rule(route_manager,
-                                             NMP_OBJECT_CAST_ROUTING_RULE(objs_sync->pdata[i]),
-                                             -1,
-                                             USER_TAG_1,
-                                             NULL);
+                nmp_global_tracker_track_rule(global_tracker,
+                                              NMP_OBJECT_CAST_ROUTING_RULE(objs_sync->pdata[i]),
+                                              -1,
+                                              USER_TAG_1,
+                                              NULL);
                 break;
             case 2:
-                nmp_route_manager_track_rule(route_manager,
-                                             NMP_OBJECT_CAST_ROUTING_RULE(objs_sync->pdata[i]),
-                                             -2,
-                                             USER_TAG_2,
-                                             NULL);
+                nmp_global_tracker_track_rule(global_tracker,
+                                              NMP_OBJECT_CAST_ROUTING_RULE(objs_sync->pdata[i]),
+                                              -2,
+                                              USER_TAG_2,
+                                              NULL);
                 break;
             }
             if (nmtst_get_rand_uint32() % objs_sync->len == 0) {
-                nmp_route_manager_sync(route_manager, NMP_OBJECT_TYPE_ROUTING_RULE, FALSE);
+                nmp_global_tracker_sync(global_tracker, NMP_OBJECT_TYPE_ROUTING_RULE, FALSE);
                 g_assert_cmpint(nmtstp_platform_routing_rules_get_count(platform, AF_UNSPEC),
                                 ==,
                                 objs_sync->len - i - 1);
             }
         }
 
-        nmp_route_manager_sync(route_manager, NMP_OBJECT_TYPE_ROUTING_RULE, FALSE);
+        nmp_global_tracker_sync(global_tracker, NMP_OBJECT_TYPE_ROUTING_RULE, FALSE);
 
     } else {
         for (i = 0; i < objs->len;) {
