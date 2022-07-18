@@ -11,6 +11,10 @@
 #include "libnm-std-aux/c-list-util.h"
 #include "nmp-object.h"
 
+/* This limit comes from kernel, and it limits the number of MPTCP addresses
+ * we can configure. */
+#define MPTCP_PM_ADDR_MAX 8
+
 /*****************************************************************************/
 
 /* NMPGlobalTracker tracks certain objects for the entire network namespace and can
@@ -48,7 +52,7 @@ struct _NMPGlobalTracker {
     GHashTable *by_obj;
     GHashTable *by_user_tag;
     GHashTable *by_data;
-    CList       by_obj_lst_heads[3];
+    CList       by_obj_lst_heads[4];
     guint       ref_count;
 };
 
@@ -93,6 +97,9 @@ typedef struct {
     guint32 track_priority_val;
     bool    track_priority_present : 1;
 
+    /* Calling nmp_global_tracker_track() will ensure that the tracked entry is
+     * non-dirty. Together with nmp_global_tracker_set_dirty() and nmp_global_tracker_untrack_all()'s
+     * @all parameter, this can be used to remove stale entries. */
     bool dirty : 1;
 } TrackData;
 
@@ -149,7 +156,7 @@ static void _track_data_untrack(NMPGlobalTracker *self,
 static CList *
 _by_obj_lst_head(NMPGlobalTracker *self, NMPObjectType obj_type)
 {
-    G_STATIC_ASSERT(G_N_ELEMENTS(self->by_obj_lst_heads) == 3);
+    G_STATIC_ASSERT(G_N_ELEMENTS(self->by_obj_lst_heads) == 4);
 
     switch (obj_type) {
     case NMP_OBJECT_TYPE_IP4_ROUTE:
@@ -158,6 +165,8 @@ _by_obj_lst_head(NMPGlobalTracker *self, NMPObjectType obj_type)
         return &self->by_obj_lst_heads[1];
     case NMP_OBJECT_TYPE_ROUTING_RULE:
         return &self->by_obj_lst_heads[2];
+    case NMP_OBJECT_TYPE_MPTCP_ADDR:
+        return &self->by_obj_lst_heads[3];
     default:
         return nm_assert_unreachable_val(NULL);
     }
@@ -172,7 +181,8 @@ _track_data_assert(const TrackData *track_data, gboolean linked)
     nm_assert(NM_IN_SET(NMP_OBJECT_GET_TYPE(track_data->obj),
                         NMP_OBJECT_TYPE_IP4_ROUTE,
                         NMP_OBJECT_TYPE_IP6_ROUTE,
-                        NMP_OBJECT_TYPE_ROUTING_RULE));
+                        NMP_OBJECT_TYPE_ROUTING_RULE,
+                        NMP_OBJECT_TYPE_MPTCP_ADDR));
     nm_assert(nmp_object_is_visible(track_data->obj));
     nm_assert(track_data->user_tag);
     nm_assert(!linked || !c_list_is_empty(&track_data->obj_lst));
@@ -296,13 +306,42 @@ _track_data_lookup(GHashTable *by_data, const NMPObject *obj, gconstpointer user
 
 /*****************************************************************************/
 
+static const NMPObject *
+_obj_stackinit(NMPObject *obj_stack, NMPObjectType obj_type, gconstpointer obj)
+{
+    nmp_object_stackinit(obj_stack, obj_type, obj);
+
+    if (NM_MORE_ASSERTS > 10) {
+        if (obj_type == NMP_OBJECT_TYPE_MPTCP_ADDR) {
+            NMPlatformMptcpAddr *m = NMP_OBJECT_CAST_MPTCP_ADDR(obj_stack);
+            NMPlatformMptcpAddr  m_dummy;
+
+            /* Only certain MPTCP addresses can be added. */
+            nm_assert(m->ifindex > 0);
+            if (nm_platform_mptcp_addr_cmp(
+                    nmp_global_tracker_mptcp_addr_init_for_ifindex(&m_dummy, m->ifindex),
+                    m)
+                == 0) {
+                /* This is a dummy instance. We are good. */
+            } else {
+                nm_assert_addr_family(m->addr_family);
+                nm_assert(m->port == 0);
+                nm_assert(m->id == 0);
+            }
+        }
+    }
+
+    nm_assert(nmp_object_is_visible(obj_stack));
+    return obj_stack;
+}
+
 /**
  * nmp_global_tracker_track:
  * @self: the #NMPGlobalTracker instance
  * @obj_type: the NMPObjectType of @obj that we are tracking.
  * @obj: the NMPlatformObject (of type NMPObjectType) to track. Usually
- *   a #NMPlatformRoutingRule, #NMPlatformIP4Route or #NMPlatformIP6Route
- *   pointer.
+ *   a #NMPlatformRoutingRule, #NMPlatformIP4Route, #NMPlatformIP6Route
+ *   or #NMPlatformMptcpAddr pointer.
  * @track_priority: the priority for tracking the rule. Note that
  *   negative values indicate a forced absence of the rule. Priorities
  *   are compared with their absolute values (with higher absolute
@@ -345,16 +384,15 @@ nmp_global_tracker_track(NMPGlobalTracker *self,
     /* The route must not be tied to an interface. We can only handle here
      * blackhole/unreachable/prohibit route types. */
     g_return_val_if_fail(
-        obj_type == NMP_OBJECT_TYPE_ROUTING_RULE
+        NM_IN_SET(obj_type, NMP_OBJECT_TYPE_ROUTING_RULE, NMP_OBJECT_TYPE_MPTCP_ADDR)
             || (NM_IN_SET(obj_type, NMP_OBJECT_TYPE_IP4_ROUTE, NMP_OBJECT_TYPE_IP6_ROUTE)
                 && ((const NMPlatformIPRoute *) obj)->ifindex == 0),
         FALSE);
 
-    nm_assert(track_priority != G_MININT32);
+    /* only positive track priorities are implemented for MPTCP addrs. */
+    nm_assert(obj_type != NMP_OBJECT_TYPE_MPTCP_ADDR || track_priority > 0);
 
-    p_obj_stack = nmp_object_stackinit(&obj_stack, obj_type, obj);
-
-    nm_assert(nmp_object_is_visible(p_obj_stack));
+    p_obj_stack = _obj_stackinit(&obj_stack, obj_type, obj);
 
     if (track_priority >= 0) {
         track_priority_val     = track_priority;
@@ -512,13 +550,12 @@ nmp_global_tracker_untrack(NMPGlobalTracker *self,
     nm_assert(NM_IN_SET(obj_type,
                         NMP_OBJECT_TYPE_IP4_ROUTE,
                         NMP_OBJECT_TYPE_IP6_ROUTE,
-                        NMP_OBJECT_TYPE_ROUTING_RULE));
+                        NMP_OBJECT_TYPE_ROUTING_RULE,
+                        NMP_OBJECT_TYPE_MPTCP_ADDR));
     g_return_val_if_fail(obj, FALSE);
     g_return_val_if_fail(user_tag, FALSE);
 
-    p_obj_stack = nmp_object_stackinit(&obj_stack, obj_type, obj);
-
-    nm_assert(nmp_object_is_visible(p_obj_stack));
+    p_obj_stack = _obj_stackinit(&obj_stack, obj_type, obj);
 
     track_data = _track_data_lookup(self->by_data, p_obj_stack, user_tag);
     if (track_data) {
@@ -584,12 +621,335 @@ nmp_global_tracker_untrack_all(NMPGlobalTracker *self,
 
 /*****************************************************************************/
 
+/* Usually, we track NMPlatformMptcpAddr instances with an ifindex set.
+ * If we have *any* such instance, we know that the ifindex is fully
+ * synched (meaning, we will delete all unknown endpoints for that interface).
+ * However, if we don't have an endpoint on the interface, we may still
+ * want to track that a certain ifindex is fully managed.
+ *
+ * This initializes a dummy instance for exactly that purpose. */
+const NMPlatformMptcpAddr *
+nmp_global_tracker_mptcp_addr_init_for_ifindex(NMPlatformMptcpAddr *addr, int ifindex)
+{
+    nm_assert(addr);
+    nm_assert(ifindex > 0);
+
+    *addr = (NMPlatformMptcpAddr){
+        .ifindex     = ifindex,
+        .addr_family = AF_UNSPEC,
+    };
+
+    return addr;
+}
+
+/*****************************************************************************/
+
+typedef struct {
+    TrackObjData    *obj_data;
+    const TrackData *td_best;
+} MptcpSyncData;
+
+static int
+_mptcp_entries_cmp(gconstpointer a, gconstpointer b, gpointer user_data)
+{
+    const MptcpSyncData *d_a = a;
+    const MptcpSyncData *d_b = b;
+
+    /* 1) prefer addresses based on the priority (highest priority
+     * sorted first). */
+    NM_CMP_FIELD(d_b->td_best, d_a->td_best, track_priority_val);
+
+    /* Finally, we only care about the order in which they were tracked.
+     * Rely on the stable sort to get that right. */
+    return 0;
+}
+
+void
+nmp_global_tracker_sync_mptcp_addrs(NMPGlobalTracker *self, gboolean reapply, gboolean keep_deleted)
+{
+    char                           sbuf[64 + NM_UTILS_TO_STRING_BUFFER_SIZE];
+    gs_unref_ptrarray GPtrArray   *kaddrs_arr = NULL;
+    gs_unref_hashtable GHashTable *kaddrs_idx = NULL;
+    TrackObjData                  *obj_data;
+    TrackObjData                  *obj_data_safe;
+    CList                         *by_obj_lst_head;
+    const TrackData               *td_best;
+    gs_unref_hashtable GHashTable *handled_ifindexes    = NULL;
+    gs_unref_array GArray         *entries              = NULL;
+    gs_unref_hashtable GHashTable *entries_hash_by_addr = NULL;
+    gs_unref_hashtable GHashTable *entries_to_delete    = NULL;
+    guint                          i;
+    guint                          j;
+
+    g_return_if_fail(NMP_IS_GLOBAL_TRACKER(self));
+
+    _LOGD("sync mptcp-addr%s%s",
+          reapply ? " (reapply)" : "",
+          keep_deleted ? " (keep-deleted)" : "");
+
+    /* Iterate over the tracked objects and construct @handled_ifindexes, @entries
+     * and @entries_to_delete.
+     * - @handled_ifindexes is a hash with all managed interfaces (their ifindex).
+     * - @entries are the MptcpSyncData instances for the tracked objects.
+     * - @entries_to_delete are the NMPObject which we added earlier, but now not
+     *     anymore (and which we shall delete). */
+    by_obj_lst_head = _by_obj_lst_head(self, NMP_OBJECT_TYPE_MPTCP_ADDR);
+    c_list_for_each_entry_safe (obj_data, obj_data_safe, by_obj_lst_head, by_obj_lst) {
+        const NMPlatformMptcpAddr *mptcp_addr = NMP_OBJECT_CAST_MPTCP_ADDR(obj_data->obj);
+        NMPlatformMptcpAddr        xtst;
+
+        nm_assert(mptcp_addr->port == 0);
+        nm_assert(mptcp_addr->ifindex > 0);
+        nm_assert(mptcp_addr->id == 0);
+        nm_assert_addr_family_or_unspec(mptcp_addr->addr_family);
+
+        /* AF_UNSPEC means this is the dummy object. We only care about it to make the
+         * ifindex as managed via @handled_ifindexes. */
+        nm_assert(
+            (mptcp_addr->addr_family == AF_UNSPEC)
+            == (nm_platform_mptcp_addr_cmp(
+                    mptcp_addr,
+                    nmp_global_tracker_mptcp_addr_init_for_ifindex(&xtst, mptcp_addr->ifindex))
+                == 0));
+
+        if (reapply) {
+            /* For a reapply, we clear all configured MPTCP addresses that we no longer
+             * shall configured, provided they are on one of the ifindexes we care
+             * about. */
+            if (!handled_ifindexes)
+                handled_ifindexes = g_hash_table_new(nm_direct_hash, NULL);
+            g_hash_table_add(handled_ifindexes, GINT_TO_POINTER(mptcp_addr->ifindex));
+        }
+
+        td_best = _track_obj_data_get_best_data(obj_data);
+
+        if (!td_best) {
+            nm_assert(obj_data->config_state == CONFIG_STATE_ADDED_BY_US);
+
+            /* This entry is a tombstone, that tells us that added the object earlier.
+             * We can delete the MPTCP address (if it's still configured).
+             *
+             * Then we can drop the tombstone. */
+
+            if (mptcp_addr->addr_family != AF_UNSPEC) {
+                if (!reapply) {
+                    if (!entries_to_delete) {
+                        entries_to_delete = g_hash_table_new_full((GHashFunc) nmp_object_id_hash,
+                                                                  (GEqualFunc) nmp_object_id_equal,
+                                                                  (GDestroyNotify) nmp_object_unref,
+                                                                  NULL);
+                    }
+                    g_hash_table_add(entries_to_delete, (gpointer) nmp_object_ref(obj_data->obj));
+                }
+            }
+
+            /* We can forget about this entry now. */
+            g_hash_table_remove(self->by_obj, obj_data);
+            continue;
+        }
+
+        /* negative and zero track priorities are not implemented (and make no sense?). */
+        nm_assert(td_best->track_priority_val > 0);
+        nm_assert(td_best->track_priority_present);
+
+        if (mptcp_addr->addr_family == AF_UNSPEC) {
+            /* This is a nmp_global_tracker_mptcp_addr_init_for_ifindex() dummy entry.
+             * It only exists so we can add the @handled_ifindexes entry above
+             * and handle addresses on this interface. */
+            obj_data->config_state = CONFIG_STATE_ADDED_BY_US;
+            continue;
+        }
+
+        if (!entries)
+            entries = g_array_new(FALSE, FALSE, sizeof(MptcpSyncData));
+
+        g_array_append_val(entries,
+                           ((const MptcpSyncData){
+                               .obj_data = obj_data,
+                               .td_best  = td_best,
+                           }));
+    }
+    /* We collected all the entires we want to configure. Now, sort them by
+     * priority, and drop all the duplicates (preferring the entries that
+     * appear first, where first means "older"). In kernel, we can only configure an IP
+     * address (without port) as endpoint once. If two interfaces provide the same IP
+     * address, we can only configure one. We need to select one and filter out duplicates.
+     * While there is no solution, the idea is to select the preferred address
+     * somewhat consistently.
+     *
+     * Also, create a lookup index @entries_hash_by_addr to lookup by address. */
+    if (entries) {
+        /* First we sort the entries by priority, to prefer the ones with higher
+         * priority. In case of equal priority, we rely on the stable sort to
+         * preserve the order in which things got tracked. */
+        g_array_sort_with_data(entries, _mptcp_entries_cmp, NULL);
+
+        entries_hash_by_addr = g_hash_table_new(nm_platform_mptcp_addr_index_addr_cmp,
+                                                nm_platform_mptcp_addr_index_addr_equal);
+
+        /* Now, drop all duplicates addresses. Only keep the first one. */
+        for (i = 0, j = 0; i < entries->len; i++) {
+            const MptcpSyncData       *d          = nm_g_array_index_p(entries, MptcpSyncData, i);
+            const NMPlatformMptcpAddr *mptcp_addr = NMP_OBJECT_CAST_MPTCP_ADDR(d->obj_data->obj);
+
+            obj_data = g_hash_table_lookup(entries_hash_by_addr, (gpointer) mptcp_addr);
+            if (obj_data) {
+                /* This object is shadowed. We ignore it.
+                 *
+                 * However, we first propagate the config_state. For MPTCP addrs, it can only be
+                 * NONE or ADDED_BY_US. */
+                nm_assert(NM_IN_SET(d->obj_data->config_state,
+                                    CONFIG_STATE_NONE,
+                                    CONFIG_STATE_ADDED_BY_US));
+                nm_assert(
+                    NM_IN_SET(obj_data->config_state, CONFIG_STATE_NONE, CONFIG_STATE_ADDED_BY_US));
+
+                if (d->obj_data->config_state == CONFIG_STATE_ADDED_BY_US) {
+                    obj_data->config_state    = CONFIG_STATE_ADDED_BY_US;
+                    d->obj_data->config_state = CONFIG_STATE_NONE;
+                }
+                continue;
+            }
+
+            if (!g_hash_table_insert(entries_hash_by_addr, (gpointer) mptcp_addr, d->obj_data))
+                nm_assert_not_reached();
+
+            if (i != j)
+                *(nm_g_array_index_p(entries, MptcpSyncData, j)) = *d;
+            j++;
+
+            if (j >= MPTCP_PM_ADDR_MAX) {
+                /* Kernel limits the number of addresses we can configure.
+                 * It's hard-coded here, taken from current kernel. Hopefully
+                 * it matches the running kernel.
+                 *
+                 * It's worse. There might be other addresses already configured
+                 * on other interfaces (or with a port). Our sync method will leave
+                 * them alone, as they were not added by us. So the actual limit
+                 * is possibly smaller, and kernel fails with EINVAL.
+                 *
+                 * Still, we definitely need to truncate the list here. Imagine
+                 * during an earlier sync we added MAX addresses on one interface.
+                 * Now, another interface activates, and wants to configure one
+                 * address. That address will get a higher priority (chosen by NML3Cfg),
+                 * so that part is good. However, it means we must drop the last from
+                 * the other MAX addresses. We achieve that by truncating the list
+                 * to MPTCP_PM_ADDR_MAX.
+                 */
+                break;
+            }
+        }
+        g_array_set_size(entries, j);
+    }
+
+    /* Get the list of currently (in kernel) configured MPTCP endpoints. */
+    kaddrs_arr = nm_platform_mptcp_addrs_dump(self->platform);
+
+    /* First, delete all kaddrs which we no longer want... */
+    if (kaddrs_arr) {
+        for (i = 0; i < kaddrs_arr->len; i++) {
+            const NMPObject           *obj        = kaddrs_arr->pdata[i];
+            const NMPlatformMptcpAddr *mptcp_addr = NMP_OBJECT_CAST_MPTCP_ADDR(obj);
+
+            if (mptcp_addr->port != 0 || mptcp_addr->ifindex <= 0) {
+                /* We ignore all endpoints that have a port or no ifindex.
+                 * Those were never created by us, let the user who created
+                 * them handle them. */
+                nm_clear_pointer(&kaddrs_arr->pdata[i], nmp_object_unref);
+                continue;
+            }
+
+            if (reapply) {
+                /* In full-sync-mode, we delete all MPTCP addrs that are for ifindexes
+                 * that we care about. */
+                if (!nm_g_hash_table_contains(handled_ifindexes,
+                                              GINT_TO_POINTER(mptcp_addr->ifindex))) {
+                    goto index_and_next;
+                }
+            } else {
+                /* Otherwise, we only delete objects that we remember to have
+                 * added earlier. */
+                if (!nm_g_hash_table_contains(entries_to_delete, obj)) {
+                    /* This object is not to delete. */
+                    goto index_and_next;
+                }
+            }
+
+            /* We have the object in the delete-list. However, we might still also want
+             * to add it back. Check for that too. */
+            obj_data = nm_g_hash_table_lookup(entries_hash_by_addr, mptcp_addr);
+            if (obj_data) {
+                const NMPlatformMptcpAddr *mptcp_addr2 = NMP_OBJECT_CAST_MPTCP_ADDR(obj_data->obj);
+
+                if (mptcp_addr->flags == mptcp_addr2->flags
+                    && mptcp_addr->ifindex == mptcp_addr2->ifindex) {
+                    /* We also want to re-add this very same address. Don't delete it. */
+                    goto index_and_next;
+                }
+            }
+
+            if (keep_deleted) {
+                _LOGD("forget/leak object added by us: %s \"%s\"",
+                      NMP_OBJECT_GET_CLASS(obj)->obj_type_name,
+                      nmp_object_to_string(obj, NMP_OBJECT_TO_STRING_PUBLIC, sbuf, sizeof(sbuf)));
+                goto index_and_next;
+            }
+
+            /* This entry is marked for deletion. Delete it. */
+            if (nm_platform_object_delete(self->platform, obj)) {
+                nm_clear_pointer(&kaddrs_arr->pdata[i], nmp_object_unref);
+                continue;
+            }
+
+            /* We failed to delete it. It's unclear what is the matter with this
+             * object. Pretend it doesn't exist (don't add it to kaddrs_idx and
+             * proceed. */
+            nm_clear_pointer(&kaddrs_arr->pdata[i], nmp_object_unref);
+            continue;
+
+index_and_next:
+            _LOGt("keep: %s \"%s\"",
+                  NMP_OBJECT_GET_CLASS(obj)->obj_type_name,
+                  nmp_object_to_string(obj, NMP_OBJECT_TO_STRING_PUBLIC, sbuf, sizeof(sbuf)));
+            if (!kaddrs_idx) {
+                kaddrs_idx = g_hash_table_new((GHashFunc) nmp_object_id_hash,
+                                              (GEqualFunc) nmp_object_id_equal);
+            }
+            g_hash_table_add(kaddrs_idx, (gpointer) obj);
+        }
+    }
+
+    if (entries) {
+        for (i = 0; i < entries->len; i++) {
+            const MptcpSyncData       *d          = nm_g_array_index_p(entries, MptcpSyncData, i);
+            const NMPlatformMptcpAddr *mptcp_addr = NMP_OBJECT_CAST_MPTCP_ADDR(d->obj_data->obj);
+            const NMPObject           *kobj;
+
+            d->obj_data->config_state = CONFIG_STATE_ADDED_BY_US;
+
+            kobj = nm_g_hash_table_lookup(kaddrs_idx, d->obj_data->obj);
+            if (kobj && kobj->mptcp_addr.flags == mptcp_addr->flags) {
+                /* This address is already added with the right flags. We can
+                 * skip it. */
+                continue;
+            }
+
+            /* Kernel actually only allows us to add a small number of addresses.
+             * Also, if we have a conflicting address on another interface, the
+             * request will be rejected.
+             *
+             * Don't try to handle that. Just attempt to add the address, and if
+             * we fail, there is nothing we can do about it. */
+            nm_platform_mptcp_addr_update(self->platform, TRUE, mptcp_addr);
+        }
+    }
+}
+
 void
 nmp_global_tracker_sync(NMPGlobalTracker *self, NMPObjectType obj_type, gboolean keep_deleted)
 {
     char                         sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
     const NMDedupMultiHeadEntry *pl_head_entry;
-    NMDedupMultiIter             pl_iter;
     const NMPObject             *plobj;
     gs_unref_ptrarray GPtrArray *objs_to_delete = NULL;
     TrackObjData                *obj_data;
@@ -614,6 +974,8 @@ nmp_global_tracker_sync(NMPGlobalTracker *self, NMPObjectType obj_type, gboolean
         pl_head_entry = nm_platform_lookup_object(self->platform, obj_type, 0);
 
     if (pl_head_entry) {
+        NMDedupMultiIter pl_iter;
+
         nmp_cache_iter_for_each (&pl_iter, pl_head_entry, &plobj) {
             obj_data = g_hash_table_lookup(self->by_obj, &plobj);
 
@@ -867,6 +1229,7 @@ nmp_global_tracker_new(NMPlatform *platform)
         .by_obj_lst_heads[0] = C_LIST_INIT(self->by_obj_lst_heads[0]),
         .by_obj_lst_heads[1] = C_LIST_INIT(self->by_obj_lst_heads[1]),
         .by_obj_lst_heads[2] = C_LIST_INIT(self->by_obj_lst_heads[2]),
+        .by_obj_lst_heads[3] = C_LIST_INIT(self->by_obj_lst_heads[3]),
     };
     return self;
 }
@@ -894,6 +1257,7 @@ nmp_global_tracker_unref(NMPGlobalTracker *self)
     nm_assert(c_list_is_empty(&self->by_obj_lst_heads[0]));
     nm_assert(c_list_is_empty(&self->by_obj_lst_heads[1]));
     nm_assert(c_list_is_empty(&self->by_obj_lst_heads[2]));
+    nm_assert(c_list_is_empty(&self->by_obj_lst_heads[3]));
     g_object_unref(self->platform);
     nm_g_slice_free(self);
 }

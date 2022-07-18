@@ -1961,6 +1961,200 @@ test_blackhole(gconstpointer test_data)
 
 /*****************************************************************************/
 
+static gboolean
+_mptcp_has_permissions(void)
+{
+    static int has_permissions = -1;
+    int        p;
+
+    /* We create a new netns for testing, where we also have CAP_NET_ADMIN.
+     * However, that is not enough for configuring MPTCP endpoints. Probably
+     * you can only create them, by running the test as root. Detect the
+     * inability, to skip the test.
+     *
+     * See https://lore.kernel.org/mptcp/20220805115020.525181-1-thaller@redhat.com/T/#u */
+
+again:
+    p = g_atomic_int_get(&has_permissions);
+
+    if (p == -1) {
+        static gsize              lock;
+        const NMPlatformMptcpAddr mptcp_addr = (NMPlatformMptcpAddr){
+            .id          = 1,
+            .addr_family = AF_INET,
+            .addr.addr4  = nmtst_inet4_from_string("1.2.3.4"),
+        };
+        int r;
+
+        if (!g_once_init_enter(&lock))
+            goto again;
+
+        if (nmtst_get_rand_one_case_in(3)) {
+            gs_unref_ptrarray GPtrArray *arr = NULL;
+
+            arr = nm_platform_mptcp_addrs_dump(NM_PLATFORM_GET);
+            g_assert_cmpint(nm_g_ptr_array_len(arr), ==, 0);
+        }
+
+        r = nm_platform_mptcp_addr_update(NM_PLATFORM_GET, TRUE, &mptcp_addr);
+        if (r == 0)
+            p = TRUE;
+        else if (r == -EPERM)
+            p = FALSE;
+        else
+            g_assert_cmpint(r, ==, 0);
+
+        if (p) {
+            if (nmtst_get_rand_one_case_in(3)) {
+                gs_unref_ptrarray GPtrArray *arr = NULL;
+
+                arr = nm_platform_mptcp_addrs_dump(NM_PLATFORM_GET);
+                g_assert_cmpint(nm_g_ptr_array_len(arr), ==, 1);
+            }
+
+            r = nm_platform_mptcp_addr_update(NM_PLATFORM_GET, FALSE, &mptcp_addr);
+            g_assert_cmpint(r, ==, 0);
+        }
+
+        if (nmtst_get_rand_one_case_in(3)) {
+            gs_unref_ptrarray GPtrArray *arr = NULL;
+
+            arr = nm_platform_mptcp_addrs_dump(NM_PLATFORM_GET);
+            g_assert_cmpint(nm_g_ptr_array_len(arr), ==, 0);
+        }
+
+        g_atomic_int_set(&has_permissions, p);
+        g_once_init_leave(&lock, 1);
+    }
+
+    return p;
+}
+
+static gboolean
+_mptcp_skip_test(void)
+{
+    if (nm_platform_genl_get_family_id(NM_PLATFORM_GET, NMP_GENL_FAMILY_TYPE_MPTCP_PM) == 0) {
+        g_test_skip("mptcp not available");
+        return TRUE;
+    }
+
+    if (!_mptcp_has_permissions()) {
+        g_test_skip("No permissions to create MPTCP endpoints");
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
+static void
+test_mptcp(gconstpointer test_data)
+{
+    const int                                      TEST_IDX = GPOINTER_TO_INT(test_data);
+    gs_unref_object NMPlatform                    *platform = g_object_ref(NM_PLATFORM_GET);
+    nm_auto_unref_global_tracker NMPGlobalTracker *global_tracker =
+        nmp_global_tracker_new(platform);
+    gconstpointer const          USER_TAG = &TEST_IDX;
+    const int                    IFINDEX  = nm_platform_link_get_ifindex(platform, DEVICE_NAME);
+    guint                        i;
+    guint                        j;
+    int                          r;
+    gs_unref_ptrarray GPtrArray *arr_external =
+        g_ptr_array_new_with_free_func((GDestroyNotify) nmp_object_unref);
+    gs_unref_ptrarray GPtrArray *arr_tracked =
+        g_ptr_array_new_with_free_func((GDestroyNotify) nmp_object_unref);
+    const NMPObject *obj;
+    gboolean         delete_extra;
+
+    g_assert_cmpint(IFINDEX, >, 0);
+
+    if (_mptcp_skip_test())
+        return;
+
+    j = nmtst_get_rand_uint32() % 5;
+    for (i = 0; i < j; i++) {
+        obj = nmtst_object_new_mptcp_addr(.id          = i + 1,
+                                          .ifindex     = IFINDEX,
+                                          .addr_family = AF_INET,
+                                          .addr.addr4  = htonl(0xC0A80001u + i));
+        g_ptr_array_add(arr_external, (gpointer) obj);
+        r = nm_platform_mptcp_addr_update(platform, TRUE, NMP_OBJECT_CAST_MPTCP_ADDR(obj));
+        g_assert_cmpint(r, ==, 0);
+    }
+
+    j = nmtst_get_rand_uint32() % 10;
+    for (i = 0; i < j; i++) {
+        obj = nmtst_object_new_mptcp_addr(.ifindex     = IFINDEX,
+                                          .addr_family = AF_INET,
+                                          .addr.addr4  = htonl(0xC0A80001u + i));
+        g_ptr_array_add(arr_tracked, (gpointer) obj);
+        nmp_global_tracker_track(global_tracker,
+                                 NMP_OBJECT_TYPE_MPTCP_ADDR,
+                                 NMP_OBJECT_CAST_MPTCP_ADDR(obj),
+                                 20 - i,
+                                 USER_TAG,
+                                 NULL);
+    }
+    for (i = 0; i < arr_tracked->len;) {
+        if (nmtst_get_rand_bool()) {
+            nmp_global_tracker_untrack(global_tracker,
+                                       NMP_OBJECT_TYPE_MPTCP_ADDR,
+                                       NMP_OBJECT_CAST_MPTCP_ADDR(arr_tracked->pdata[i]),
+                                       USER_TAG);
+            g_ptr_array_remove_index(arr_tracked, i);
+        } else
+            i++;
+    }
+
+    if (arr_tracked->len == 0 || nmtst_get_rand_bool()) {
+        NMPlatformMptcpAddr a;
+
+        /* Track a dummy object that marks the ifindex as managed. */
+        nmp_global_tracker_track(global_tracker,
+                                 NMP_OBJECT_TYPE_MPTCP_ADDR,
+                                 nmp_global_tracker_mptcp_addr_init_for_ifindex(&a, IFINDEX),
+                                 10,
+                                 USER_TAG,
+                                 NULL);
+    }
+
+    nmp_global_tracker_sync_mptcp_addrs(global_tracker, FALSE, FALSE);
+
+    if (nmtst_get_rand_bool()) {
+        gboolean reapply;
+
+        nmp_global_tracker_untrack_all(global_tracker, USER_TAG, TRUE, FALSE);
+        reapply = nmtst_get_rand_bool();
+        nmp_global_tracker_sync_mptcp_addrs(global_tracker, reapply, FALSE);
+
+        delete_extra = !reapply;
+    } else
+        delete_extra = TRUE;
+
+    if (delete_extra) {
+        gs_unref_ptrarray GPtrArray *arr = NULL;
+
+        /* We need to delete all MPTCP address again, because the next test uses the
+         * same netns (this test setup doesn't create a netns per test). */
+        arr = nm_platform_mptcp_addrs_dump(platform);
+        for (i = 0; i < nm_g_ptr_array_len(arr); i++) {
+            r = nm_platform_mptcp_addr_update(platform,
+                                              FALSE,
+                                              NMP_OBJECT_CAST_MPTCP_ADDR(arr->pdata[i]));
+            g_assert(NMTST_NM_ERR_SUCCESS(r));
+        }
+    }
+
+    {
+        gs_unref_ptrarray GPtrArray *arr = NULL;
+
+        arr = nm_platform_mptcp_addrs_dump(platform);
+        g_assert(arr);
+        g_assert_cmpint(arr->len, ==, 0);
+    }
+}
+
+/*****************************************************************************/
+
 NMTstpSetupFunc const _nmtstp_setup_platform_func = SETUP;
 
 void
@@ -1975,6 +2169,7 @@ _nmtstp_setup_tests(void)
 #define add_test_func(testpath, test_func) nmtstp_env1_add_test_func(testpath, test_func, TRUE)
 #define add_test_func_data(testpath, test_func, arg) \
     nmtstp_env1_add_test_func_data(testpath, test_func, arg, TRUE)
+
     add_test_func("/route/ip4", test_ip4_route);
     add_test_func("/route/ip6", test_ip6_route);
     add_test_func("/route/ip4_metric0", test_ip4_route_metric0);
@@ -2001,5 +2196,9 @@ _nmtstp_setup_tests(void)
     if (nmtstp_is_root_test()) {
         add_test_func_data("/route/blackhole/1", test_blackhole, GINT_TO_POINTER(1));
         add_test_func_data("/route/blackhole/2", test_blackhole, GINT_TO_POINTER(2));
+    }
+    if (nmtstp_is_root_test()) {
+        add_test_func_data("/route/mptcp/1", test_mptcp, GINT_TO_POINTER(1));
+        add_test_func_data("/route/mptcp/2", test_mptcp, GINT_TO_POINTER(2));
     }
 }

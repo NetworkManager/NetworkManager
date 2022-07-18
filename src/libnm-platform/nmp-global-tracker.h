@@ -74,6 +74,13 @@ gboolean nmp_global_tracker_untrack_all(NMPGlobalTracker *self,
 
 void nmp_global_tracker_sync(NMPGlobalTracker *self, NMPObjectType obj_type, gboolean keep_deleted);
 
+void nmp_global_tracker_sync_mptcp_addrs(NMPGlobalTracker *self,
+                                         gboolean          reapply,
+                                         gboolean          keep_deleted);
+
 /*****************************************************************************/
+
+const NMPlatformMptcpAddr *nmp_global_tracker_mptcp_addr_init_for_ifindex(NMPlatformMptcpAddr *addr,
+                                                                          int ifindex);
 
 #endif /* __NMP_GLOBAL_TRACKER_H__ */

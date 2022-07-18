@@ -518,6 +518,11 @@ void nmtstp_link_delete(NMPlatform *platform,
 
 /*****************************************************************************/
 
+#define nmtst_object_new_mptcp_addr(...) \
+    nmp_object_new(NMP_OBJECT_TYPE_MPTCP_ADDR, &((const NMPlatformMptcpAddr){__VA_ARGS__}))
+
+/*****************************************************************************/
+
 extern int NMTSTP_ENV1_IFINDEX;
 extern int NMTSTP_ENV1_EX;
 
