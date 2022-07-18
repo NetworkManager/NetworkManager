@@ -421,7 +421,7 @@ const NMPGenlFamilyInfo nmp_genl_family_infos[_NMP_GENL_FAMILY_TYPE_NUM] = {
 NMPGenlFamilyType
 nmp_genl_family_type_from_name(const char *name)
 {
-    int imin, imax, imid;
+    gssize idx;
 
     if (NM_MORE_ASSERT_ONCE(50)) {
         int i;
@@ -437,27 +437,16 @@ nmp_genl_family_type_from_name(const char *name)
     if (!name)
         goto out;
 
-    imin = 0;
-    imax = G_N_ELEMENTS(nmp_genl_family_infos) - 1;
-    imid = imax / 2;
+    G_STATIC_ASSERT_EXPR(G_STRUCT_OFFSET(NMPGenlFamilyInfo, name) == 0);
 
-    while (TRUE) {
-        int c;
-
-        c = strcmp(nmp_genl_family_infos[imid].name, name);
-        if (c == 0)
-            return (NMPGenlFamilyType) imid;
-
-        if (c < 0)
-            imin = imid + 1;
-        else
-            imax = imid - 1;
-
-        if (imin > imax)
-            break;
-
-        imid = (imax + imin) / 2;
-    }
+    idx = nm_utils_array_find_binary_search(nmp_genl_family_infos,
+                                            sizeof(nmp_genl_family_infos[0]),
+                                            G_N_ELEMENTS(nmp_genl_family_infos),
+                                            &name,
+                                            nm_strcmp_p_with_data,
+                                            NULL);
+    if (idx >= 0)
+        return (NMPGenlFamilyType) idx;
 
 out:
     return _NMP_GENL_FAMILY_TYPE_NONE;
