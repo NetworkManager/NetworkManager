@@ -244,7 +244,11 @@ ovsdb_interface_failed(NMOvsdb         *ovsdb,
             TRUE);
     }
 
-    nm_device_state_changed(device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_OVSDB_FAILED);
+    if (nm_device_is_activating(device)) {
+        nm_device_state_changed(device,
+                                NM_DEVICE_STATE_FAILED,
+                                NM_DEVICE_STATE_REASON_OVSDB_FAILED);
+    }
 }
 
 static void
