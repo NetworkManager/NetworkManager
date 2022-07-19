@@ -357,6 +357,17 @@ static void test_misc(int non_constant_expr) {
 
                 c_memcpy(NULL, NULL, 0);
         }
+
+        /*
+         * Test c_memcmp() with.
+         */
+        {
+                uint64_t v1 = (uint64_t)-1, v2 = (uint64_t)0;
+
+                c_assert(c_memcmp(NULL, NULL, 0) == 0);
+                c_assert(c_memcmp(&v1, &v2, 0) == 0);
+                c_assert(c_memcmp(&v1, &v2, 8) != 0);
+        }
 }
 
 /*

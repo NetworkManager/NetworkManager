@@ -676,6 +676,23 @@ static inline void *c_memcpy(void *dst, const void *src, size_t n) {
 }
 
 /**
+ * c_memcmp() - Compare memory areas
+ * @s1:         Pointer to one area
+ * @s2:         Pointer to other area
+ * @n:          Length of area to compare
+ *
+ * Compare the memory of size ``n`` of ``s1`` and ``s2``, just as ``memcmp(3)``
+ * does, except this function allows either to be ``NULL`` if ``n`` is zero.
+ *
+ * Return: Comparison result for ordering is returned.
+ */
+static inline int c_memcmp(const void *s1, const void *s2, size_t n) {
+        if (n > 0)
+                return memcmp(s1, s2, n);
+        return 0;
+}
+
+/**
  * DOC: Common Destructors
  *
  * A set of destructors is provided which extends standard library destructors
