@@ -1103,6 +1103,25 @@ nm_platform_kernel_support_get(NMPlatformKernelSupportType type)
     return nm_platform_kernel_support_get_full(type, TRUE) != NM_OPTION_BOOL_FALSE;
 }
 
+typedef enum {
+    NMP_GENL_FAMILY_TYPE_ETHTOOL,
+    NMP_GENL_FAMILY_TYPE_MPTCP_PM,
+    NMP_GENL_FAMILY_TYPE_NL80211,
+    NMP_GENL_FAMILY_TYPE_NL802154,
+    NMP_GENL_FAMILY_TYPE_WIREGUARD,
+
+    _NMP_GENL_FAMILY_TYPE_NUM,
+    _NMP_GENL_FAMILY_TYPE_NONE = _NMP_GENL_FAMILY_TYPE_NUM,
+} NMPGenlFamilyType;
+
+typedef struct {
+    const char *name;
+} NMPGenlFamilyInfo;
+
+extern const NMPGenlFamilyInfo nmp_genl_family_infos[_NMP_GENL_FAMILY_TYPE_NUM];
+
+NMPGenlFamilyType nmp_genl_family_type_from_name(const char *name);
+
 /*****************************************************************************/
 
 struct _NMPlatformPrivate;
@@ -1309,6 +1328,9 @@ typedef struct {
 
     int (*tfilter_add)(NMPlatform *self, NMPNlmFlags flags, const NMPlatformTfilter *tfilter);
     int (*tfilter_delete)(NMPlatform *self, int ifindex, guint32 parent, gboolean log_error);
+
+    guint16 (*genl_get_family_id)(NMPlatform *platform, NMPGenlFamilyType family_type);
+
 } NMPlatformClass;
 
 /* NMPlatform signals
@@ -2511,5 +2533,9 @@ NMPlatformIP4Route *nm_platform_ip4_address_generate_device_route(const NMPlatfo
 gboolean nm_platform_ip_address_match(int                        addr_family,
                                       const NMPlatformIPAddress *addr,
                                       NMPlatformMatchFlags       match_flag);
+
+/*****************************************************************************/
+
+guint16 nm_platform_genl_get_family_id(NMPlatform *self, NMPGenlFamilyType family_type);
 
 #endif /* __NETWORKMANAGER_PLATFORM_H__ */

@@ -1149,10 +1149,7 @@ _vt_cmd_obj_hash_update_link(const NMPObject *obj, NMHashState *h)
     nm_assert(NMP_OBJECT_GET_TYPE(obj) == NMP_OBJECT_TYPE_LINK);
 
     nm_platform_link_hash_update(&obj->link, h);
-    nm_hash_update_vals(h,
-                        obj->_link.netlink.is_in_netlink,
-                        obj->_link.wireguard_family_id,
-                        obj->_link.udev.device);
+    nm_hash_update_vals(h, obj->_link.netlink.is_in_netlink, obj->_link.udev.device);
     if (obj->_link.netlink.lnk)
         nmp_object_hash_update(obj->_link.netlink.lnk, h);
 }
@@ -1232,7 +1229,6 @@ _vt_cmd_obj_cmp_link(const NMPObject *obj1, const NMPObject *obj2)
     NM_CMP_RETURN(nm_platform_link_cmp(&obj1->link, &obj2->link));
     NM_CMP_DIRECT(obj1->_link.netlink.is_in_netlink, obj2->_link.netlink.is_in_netlink);
     NM_CMP_RETURN(nmp_object_cmp(obj1->_link.netlink.lnk, obj2->_link.netlink.lnk));
-    NM_CMP_DIRECT(obj1->_link.wireguard_family_id, obj2->_link.wireguard_family_id);
 
     if (obj1->_link.udev.device != obj2->_link.udev.device) {
         if (!obj1->_link.udev.device)

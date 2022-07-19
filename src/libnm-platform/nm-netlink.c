@@ -38,7 +38,7 @@ struct nl_msg {
     struct sockaddr_nl nm_dst;
     struct ucred       nm_creds;
     struct nlmsghdr   *nm_nlh;
-    size_t             nm_size;
+    uint32_t           nm_size;
     bool               nm_creds_has : 1;
 };
 
@@ -261,23 +261,26 @@ nlmsg_hdr(struct nl_msg *n)
 }
 
 void *
-nlmsg_reserve(struct nl_msg *n, size_t len, int pad)
+nlmsg_reserve(struct nl_msg *n, uint32_t len, uint32_t pad)
 {
-    char  *buf       = (char *) n->nm_nlh;
-    size_t nlmsg_len = n->nm_nlh->nlmsg_len;
-    size_t tlen;
+    char    *buf = (char *) n->nm_nlh;
+    uint32_t tlen;
 
-    nm_assert(pad >= 0);
+    nm_assert(n);
+    nm_assert(pad == 0 || nm_utils_is_power_of_two(pad));
+    nm_assert(n->nm_nlh->nlmsg_len <= n->nm_size);
 
-    if (len > n->nm_size)
+    if (pad != 0) {
+        tlen = (len + (pad - 1u)) & ~(pad - 1u);
+        if (tlen < len)
+            return NULL;
+    } else
+        tlen = len;
+
+    if (tlen > n->nm_size - n->nm_nlh->nlmsg_len)
         return NULL;
 
-    tlen = pad ? ((len + (pad - 1)) & ~(pad - 1)) : len;
-
-    if ((tlen + nlmsg_len) > n->nm_size)
-        return NULL;
-
-    buf += nlmsg_len;
+    buf += n->nm_nlh->nlmsg_len;
     n->nm_nlh->nlmsg_len += tlen;
 
     if (tlen > len)
@@ -322,6 +325,8 @@ nlmsg_alloc_size(size_t len)
 
     if (len < sizeof(struct nlmsghdr))
         len = sizeof(struct nlmsghdr);
+    else if (len > UINT32_MAX)
+        g_return_val_if_reached(NULL);
 
     nm  = g_slice_new(struct nl_msg);
     *nm = (struct nl_msg){
@@ -359,7 +364,7 @@ nlmsg_alloc_convert(struct nlmsghdr *hdr)
 }
 
 struct nl_msg *
-nlmsg_alloc_simple(int nlmsgtype, int flags)
+nlmsg_alloc_simple(uint16_t nlmsgtype, uint16_t flags)
 {
     struct nl_msg *nm;
     struct nlmsghdr *new;
@@ -384,20 +389,20 @@ nlmsg_free(struct nl_msg *msg)
 /*****************************************************************************/
 
 int
-nlmsg_append(struct nl_msg *n, const void *data, size_t len, int pad)
+nlmsg_append(struct nl_msg *n, const void *data, uint32_t len, uint32_t pad)
 {
     void *tmp;
 
     nm_assert(n);
-    nm_assert(data);
-    nm_assert(len > 0);
-    nm_assert(pad >= 0);
+    nm_assert(len == 0 || data);
 
     tmp = nlmsg_reserve(n, len, pad);
-    if (tmp == NULL)
+    if (!tmp)
         return -ENOMEM;
 
-    memcpy(tmp, data, len);
+    if (len > 0)
+        memcpy(tmp, data, len);
+
     return 0;
 }
 
@@ -417,14 +422,17 @@ nlmsg_parse(const struct nlmsghdr   *nlh,
 }
 
 struct nlmsghdr *
-nlmsg_put(struct nl_msg *n, uint32_t pid, uint32_t seq, int type, int payload, int flags)
+nlmsg_put(struct nl_msg *n,
+          uint32_t       pid,
+          uint32_t       seq,
+          uint16_t       type,
+          uint32_t       payload,
+          uint16_t       flags)
 {
-    struct nlmsghdr *nlh;
+    struct nlmsghdr *nlh = (struct nlmsghdr *) n->nm_nlh;
 
-    if (n->nm_nlh->nlmsg_len < NLMSG_HDRLEN)
-        g_return_val_if_reached(NULL);
+    nm_assert(nlh->nlmsg_len >= NLMSG_HDRLEN);
 
-    nlh              = (struct nlmsghdr *) n->nm_nlh;
     nlh->nlmsg_type  = type;
     nlh->nlmsg_flags = flags;
     nlh->nlmsg_pid   = pid;
@@ -565,7 +573,8 @@ nla_nest_start(struct nl_msg *msg, int attrtype)
 static int
 _nest_end(struct nl_msg *msg, struct nlattr *start, int keep_empty)
 {
-    size_t pad, len;
+    size_t   len;
+    uint32_t pad;
 
     len = (char *) nlmsg_tail(msg->nm_nlh) - (char *) start;
 
@@ -584,14 +593,18 @@ _nest_end(struct nl_msg *msg, struct nlattr *start, int keep_empty)
 
     pad = NLMSG_ALIGN(msg->nm_nlh->nlmsg_len) - msg->nm_nlh->nlmsg_len;
     if (pad > 0) {
+        void *p;
+
         /*
          * Data inside attribute does not end at a alignment boundary.
          * Pad accordingly and account for the additional space in
          * the message. nlmsg_reserve() may never fail in this situation,
          * the allocate message buffer must be a multiple of NLMSG_ALIGNTO.
          */
-        if (!nlmsg_reserve(msg, pad, 0))
+        p = nlmsg_reserve(msg, pad, 0);
+        if (!p)
             g_return_val_if_reached(-NME_BUG);
+        memset(p, 0, pad);
     }
 
     return 0;
@@ -730,9 +743,9 @@ void *
 genlmsg_put(struct nl_msg *msg,
             uint32_t       port,
             uint32_t       seq,
-            int            family,
-            int            hdrlen,
-            int            flags,
+            uint16_t       family,
+            uint32_t       hdrlen,
+            uint16_t       flags,
             uint8_t        cmd,
             uint8_t        version)
 {

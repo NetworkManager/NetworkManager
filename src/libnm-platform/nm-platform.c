@@ -395,6 +395,65 @@ _nm_platform_kernel_support_init(NMPlatformKernelSupportType type, int value)
 
 /*****************************************************************************/
 
+const NMPGenlFamilyInfo nmp_genl_family_infos[_NMP_GENL_FAMILY_TYPE_NUM] = {
+    [NMP_GENL_FAMILY_TYPE_ETHTOOL] =
+        {
+            .name = "ethtool",
+        },
+    [NMP_GENL_FAMILY_TYPE_MPTCP_PM] =
+        {
+            .name = "mptcp_pm",
+        },
+    [NMP_GENL_FAMILY_TYPE_NL80211] =
+        {
+            .name = "nl80211",
+        },
+    [NMP_GENL_FAMILY_TYPE_NL802154] =
+        {
+            .name = "nl802154",
+        },
+    [NMP_GENL_FAMILY_TYPE_WIREGUARD] =
+        {
+            .name = "wireguard",
+        },
+};
+
+NMPGenlFamilyType
+nmp_genl_family_type_from_name(const char *name)
+{
+    gssize idx;
+
+    if (NM_MORE_ASSERT_ONCE(50)) {
+        int i;
+
+        for (i = 0; i < (int) G_N_ELEMENTS(nmp_genl_family_infos); i++) {
+            nm_assert(nmp_genl_family_infos[i].name);
+            if (i > 0)
+                nm_assert(strcmp(nmp_genl_family_infos[i - 1].name, nmp_genl_family_infos[i].name)
+                          < 0);
+        }
+    }
+
+    if (!name)
+        goto out;
+
+    G_STATIC_ASSERT_EXPR(G_STRUCT_OFFSET(NMPGenlFamilyInfo, name) == 0);
+
+    idx = nm_utils_array_find_binary_search(nmp_genl_family_infos,
+                                            sizeof(nmp_genl_family_infos[0]),
+                                            G_N_ELEMENTS(nmp_genl_family_infos),
+                                            &name,
+                                            nm_strcmp_p_with_data,
+                                            NULL);
+    if (idx >= 0)
+        return (NMPGenlFamilyType) idx;
+
+out:
+    return _NMP_GENL_FAMILY_TYPE_NONE;
+}
+
+/*****************************************************************************/
+
 /**
  * nm_platform_process_events:
  * @self: platform instance
@@ -8971,6 +9030,19 @@ nm_platform_ip_address_cmp_expiry(const NMPlatformIPAddress *a, const NMPlatform
     }
 
     return ta < tb ? -1 : 1;
+}
+
+/*****************************************************************************/
+
+guint16
+nm_platform_genl_get_family_id(NMPlatform *self, NMPGenlFamilyType family_type)
+{
+    _CHECK_SELF(self, klass, 0);
+
+    if (!_NM_INT_NOT_NEGATIVE(family_type) || family_type >= _NMP_GENL_FAMILY_TYPE_NUM)
+        g_return_val_if_reached(0);
+
+    return klass->genl_get_family_id(self, family_type);
 }
 
 /*****************************************************************************/
