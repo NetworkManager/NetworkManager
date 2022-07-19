@@ -1,0 +1,23 @@
+# Read the Docs configuration file
+
+version: 2
+
+build:
+  apt_packages:
+  - "clang"
+  jobs:
+    pre_build:
+    - meson subprojects download
+  os: "ubuntu-22.04"
+  tools:
+    python: "3"
+
+formats: "all"
+
+python:
+  install:
+  - requirements: "src/docs/requirements.txt"
+  system_packages: true
+
+sphinx:
+  configuration: "src/docs/conf.py"

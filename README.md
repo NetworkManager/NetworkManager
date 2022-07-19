@@ -12,6 +12,7 @@ as well as the docbook comments for each function.
 ### Project
 
  * **Website**: <https://c-util.github.io/c-rbtree>
+ * **Documentation**: <https://c-rbtree.readthedocs.io>
  * **Bug Tracker**: <https://github.com/c-util/c-rbtree/issues>
 
 ### Requirements
