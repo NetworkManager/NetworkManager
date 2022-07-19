@@ -25,6 +25,6 @@ jobs:
       macos: true
   ci-docs:
     name: Documentation CI
-    uses: bus1/cabuild/.github/workflows/ci-sphinx.yml@main
+    uses: bus1/cabuild/.github/workflows/ci-sphinx.yml@v1
     with:
       source: "./src/docs"

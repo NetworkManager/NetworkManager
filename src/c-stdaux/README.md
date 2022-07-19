@@ -11,6 +11,7 @@ common extended features of wide-spread compilers like gcc and clang.
 ### Project
 
  * **Website**: <https://c-util.github.io/c-stdaux>
+ * **Documentation**: <https://c-stdaux.readthedocs.io>
  * **Bug Tracker**: <https://github.com/c-util/c-stdaux/issues>
 
 ### Requirements
