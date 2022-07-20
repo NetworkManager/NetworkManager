@@ -36,6 +36,7 @@ src/core/nm-manager.c
 src/core/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c
 src/core/settings/plugins/ifcfg-rh/tests/test-ifcfg-rh.c
 src/libnm-client-impl/nm-client.c
+src/libnm-client-impl/nm-conn-utils.c
 src/libnm-client-impl/nm-device-6lowpan.c
 src/libnm-client-impl/nm-device-adsl.c
 src/libnm-client-impl/nm-device-bond.c
