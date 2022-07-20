@@ -2521,7 +2521,7 @@ _wireguard_read_info(NMPlatform     *platform /* used only as logging context */
     if (wireguard_family_id == 0)
         return NULL;
 
-    _LOGT("wireguard: fetching information for ifindex %d (genl-id %u)...",
+    _LOGT("wireguard: fetching information for ifindex %d (genl-id 0x%x)...",
           ifindex,
           wireguard_family_id);
 
@@ -9402,7 +9402,7 @@ _genl_family_id_update(NMPlatform *platform, NMPGenlFamilyType family_type, guin
         return FALSE;
 
     if (family_id != 0) {
-        _LOGD("genl:ctrl: new family-id for %s: 0x%04x",
+        _LOGD("genl:ctrl: new family-id for %s: 0x%x",
               nmp_genl_family_infos[family_type].name,
               family_id);
     } else
