@@ -31,6 +31,7 @@ enum {
     NLA_UNSPEC, /* Unspecified type, binary data chunk */
     NLA_U8,     /* 8 bit integer */
     NLA_U16,    /* 16 bit integer */
+    NLA_S32,    /* 32 bit integer */
     NLA_U32,    /* 32 bit integer */
     NLA_U64,    /* 64 bit integer */
     NLA_STRING, /* NUL terminated character string */

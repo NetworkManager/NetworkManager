@@ -331,6 +331,10 @@ typedef struct {
     NMPlatformTfilter _public;
 } NMPObjectTfilter;
 
+typedef struct {
+    NMPlatformMptcpAddr _public;
+} NMPObjectMptcpAddr;
+
 struct _NMPObject {
     union {
         NMDedupMultiObj parent;
@@ -404,6 +408,9 @@ struct _NMPObject {
         NMPObjectQdisc    _qdisc;
         NMPlatformTfilter tfilter;
         NMPObjectTfilter  _tfilter;
+
+        NMPlatformMptcpAddr mptcp_addr;
+        NMPObjectMptcpAddr  _mptcp_addr;
     };
 };
 
@@ -504,6 +511,8 @@ _NMP_OBJECT_TYPE_IS_OBJ_WITH_IFINDEX(NMPObjectType obj_type)
     case NMP_OBJECT_TYPE_LNK_VRF:
     case NMP_OBJECT_TYPE_LNK_VXLAN:
     case NMP_OBJECT_TYPE_LNK_WIREGUARD:
+
+    case NMP_OBJECT_TYPE_MPTCP_ADDR:
         return TRUE;
 
     case NMP_OBJECT_TYPE_ROUTING_RULE:
@@ -565,6 +574,8 @@ _NMP_OBJECT_TYPE_IS_OBJ_WITH_IFINDEX(NMPObjectType obj_type)
     _NMP_OBJECT_CAST(obj, lnk_wireguard, NMP_OBJECT_TYPE_LNK_WIREGUARD)
 #define NMP_OBJECT_CAST_LNK_BRIDGE(obj) \
     _NMP_OBJECT_CAST(obj, lnk_bridge, NMP_OBJECT_TYPE_LNK_BRIDGE)
+#define NMP_OBJECT_CAST_MPTCP_ADDR(obj) \
+    _NMP_OBJECT_CAST(obj, mptcp_addr, NMP_OBJECT_TYPE_MPTCP_ADDR)
 
 static inline int
 NMP_OBJECT_TYPE_TO_ADDR_FAMILY(NMPObjectType obj_type)
