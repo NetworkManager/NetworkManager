@@ -339,6 +339,12 @@ typedef enum {
      * should be configured. */             \
     bool a_force_commit : 1;                                                                 \
                                                                                              \
+    /* nm_platform_ip_address_sync() likes to add IFA_F_NOPREFIXROUTE flag for all
+     * addresses, regardless of a_ifi_flags property. By setting this boolean, that
+     * automatism can be suppressed, and the noprefixroute flag does not get added
+     * automatically. */           \
+    bool a_no_auto_noprefixroute : 1;                                                        \
+                                                                                             \
     /* Don't have a bitfield as last field in __NMPlatformIPAddress_COMMON. It would then
      * be unclear how the following fields get merged. We could also use a zero bitfield,
      * but instead we just have there the uint8 field. */    \
