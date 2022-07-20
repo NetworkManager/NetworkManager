@@ -9393,10 +9393,27 @@ tfilter_delete(NMPlatform *platform, int ifindex, guint32 parent, gboolean log_e
 
 /*****************************************************************************/
 
+static gboolean
+_genl_family_id_update(NMPlatform *platform, NMPGenlFamilyType family_type, guint16 family_id)
+{
+    NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE(platform);
+
+    if (priv->genl_family_data[family_type].family_id == family_id)
+        return FALSE;
+
+    if (family_id != 0) {
+        _LOGD("genl:ctrl: new family-id for %s: 0x%04x",
+              nmp_genl_family_infos[family_type].name,
+              family_id);
+    } else
+        _LOGD("genl:ctrl: del family-id for %s", nmp_genl_family_infos[family_type].name);
+    priv->genl_family_data[family_type].family_id = family_id;
+    return TRUE;
+}
+
 static void
 _genl_handle_msg_ctrl(NMPlatform *platform, const struct nlmsghdr *hdr)
 {
-    NMLinuxPlatformPrivate  *priv = NM_LINUX_PLATFORM_GET_PRIVATE(platform);
     const struct genlmsghdr *ghdr = nlmsg_data(hdr);
 
     switch (ghdr->cmd) {
@@ -9420,13 +9437,7 @@ _genl_handle_msg_ctrl(NMPlatform *platform, const struct nlmsghdr *hdr)
         if (ghdr->cmd == CTRL_CMD_NEWFAMILY)
             family_id = nla_get_u16(tb[CTRL_ATTR_FAMILY_ID]);
 
-        if (priv->genl_family_data[family_type].family_id != family_id) {
-            if (family_id != 0)
-                _LOGD("genl:ctrl: new family-id for %s: 0x%04x", name, family_id);
-            else
-                _LOGD("genl:ctrl: del family-id for %s", name);
-            priv->genl_family_data[family_type].family_id = family_id;
-        }
+        _genl_family_id_update(platform, family_type, family_id);
     }
     }
 }
@@ -9861,18 +9872,33 @@ static guint16
 genl_get_family_id(NMPlatform *platform, NMPGenlFamilyType family_type)
 {
     NMLinuxPlatformPrivate *priv = NM_LINUX_PLATFORM_GET_PRIVATE(platform);
+    int                     family_id;
 
     nm_assert(_NM_INT_NOT_NEGATIVE(family_type));
     nm_assert(family_type < G_N_ELEMENTS(priv->genl_family_data));
 
-    if (priv->genl_family_data[family_type].family_id == 0) {
-        /* Unknown family ID. Try to read the netlink socket, maybe we have
-         * a message there to learn it. */
-        delayed_action_schedule(platform, DELAYED_ACTION_TYPE_READ_GENL, NULL);
-        if (priv->delayed_action.is_handling == 0)
-            delayed_action_handle_all(platform);
-    }
+    if (priv->genl_family_data[family_type].family_id != 0)
+        goto out;
 
+    /* Unknown family ID... usually we expect to start using the protocol.
+     * Let's try harder and fetch the ID synchronously.
+     *
+     * Note that we might also be called back during delayed_action_handle_all(),
+     * when we add a WireGuard link, the module gets autoloaded, and we didn't
+     * yet process the genl notification about the new family. Let's not call
+     * delayed_action_handle_all() again, because that might emit various
+     * signals. */
+
+    family_id = genl_ctrl_resolve(priv->sk_genl_sync, nmp_genl_family_infos[family_type].name);
+    if (family_id < 0)
+        family_id = 0;
+
+    /* We cache the family ID and update it via genl notifications.
+     * Here we bypass the order of that, and update the cached value
+     * directly. */
+    _genl_family_id_update(platform, family_type, family_id);
+
+out:
     return priv->genl_family_data[family_type].family_id;
 }
 
