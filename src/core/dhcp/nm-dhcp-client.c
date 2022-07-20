@@ -837,6 +837,16 @@ _nm_dhcp_client_notify(NMDhcpClient         *self,
     else
         priv->l3cfg_notify.wait_dhcp_commit = FALSE;
 
+    if (!priv->l3cfg_notify.wait_dhcp_commit && priv->l3cd_curr) {
+        gs_free_error GError *error = NULL;
+
+        _LOGD("accept lease right away");
+        if (!_dhcp_client_accept(self, priv->l3cd_curr, &error)) {
+            _LOGD("accept failed: %s", error->message);
+            /* Unclear why this happened, or what to do about it. Just proceed. */
+        }
+    }
+
     l3_cfg_notify_check_connected(self);
 
     {
@@ -902,12 +912,8 @@ _accept(NMDhcpClient *self, const NML3ConfigData *l3cd, GError **error)
     if (!NM_IS_IPv4(priv->config.addr_family))
         return TRUE;
 
-    if (!priv->v4.bound.invocation) {
-        nm_utils_error_set(error,
-                           NM_UTILS_ERROR_UNKNOWN,
-                           "calling accept in unexpected script state");
-        return FALSE;
-    }
+    if (!priv->v4.bound.invocation)
+        return TRUE;
 
     g_dbus_method_invocation_return_value(g_steal_pointer(&priv->v4.bound.invocation), NULL);
     return TRUE;
