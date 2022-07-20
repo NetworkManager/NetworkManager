@@ -23,6 +23,9 @@ do_clean() {
     # "make -C update-po", run on "make dist" has a silly habit of
     # modifying files in-tree. Lets undo that.
     git checkout -- po/
+
+    git status
+    git diff
 }
 
 uname -a
