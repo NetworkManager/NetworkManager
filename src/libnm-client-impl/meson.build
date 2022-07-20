@@ -5,6 +5,7 @@ libnm_client_impl_sources = files(
   'nm-active-connection.c',
   'nm-checkpoint.c',
   'nm-client.c',
+  'nm-conn-utils.c',
   'nm-dbus-helpers.c',
   'nm-device-6lowpan.c',
   'nm-device-adsl.c',

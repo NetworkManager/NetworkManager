@@ -9,6 +9,7 @@ libnm_client_headers = files(
   'nm-autoptr.h',
   'nm-checkpoint.h',
   'nm-client.h',
+  'nm-conn-utils.h',
   'nm-device-6lowpan.h',
   'nm-device-adsl.h',
   'nm-device-bond.h',

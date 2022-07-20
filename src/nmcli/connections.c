@@ -9693,7 +9693,7 @@ do_connection_import(const NMCCommand *cmd, NmCli *nmc, int argc, const char *co
     }
 
     if (nm_streq(type, "wireguard"))
-        connection = nm_vpn_wireguard_import(filename, &error);
+        connection = nm_conn_wireguard_import(filename, &error);
     else {
         service_type = nm_vpn_plugin_info_list_find_service_type(nm_vpn_get_plugin_infos(), type);
         if (!service_type) {

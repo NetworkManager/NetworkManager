@@ -26,6 +26,4 @@ gboolean nm_vpn_openconnect_authenticate_helper(const char *host,
                                                 int        *status,
                                                 GError    **error);
 
-NMConnection *nm_vpn_wireguard_import(const char *filename, GError **error);
-
 #endif /* __NM_VPN_HELPERS_H__ */
