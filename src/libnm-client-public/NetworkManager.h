@@ -83,6 +83,7 @@
 #include "nm-ethtool-utils.h"
 
 #include "nm-object.h"
+#include "nm-conn-utils.h"
 #include "nm-dhcp-config.h"
 #include "nm-ip-config.h"
 #include "nm-remote-connection.h"

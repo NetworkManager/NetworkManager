@@ -1656,6 +1656,7 @@ libnm_lib_h_pub_real = \
 	src/libnm-client-public/nm-autoptr.h \
 	src/libnm-client-public/nm-checkpoint.h \
 	src/libnm-client-public/nm-client.h \
+	src/libnm-client-public/nm-conn-utils.h \
 	src/libnm-client-public/nm-device-6lowpan.h \
 	src/libnm-client-public/nm-device-adsl.h \
 	src/libnm-client-public/nm-device-bond.h \
@@ -1724,6 +1725,7 @@ libnm_lib_c_real = \
 	\
 	src/libnm-client-impl/nm-access-point.c \
 	src/libnm-client-impl/nm-checkpoint.c \
+	src/libnm-client-impl/nm-conn-utils.c \
 	src/libnm-client-impl/nm-dbus-helpers.c \
 	src/libnm-client-impl/nm-device-6lowpan.c \
 	src/libnm-client-impl/nm-device-adsl.c \
