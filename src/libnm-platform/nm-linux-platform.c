@@ -7257,6 +7257,8 @@ out:
     if (seq_number != priv->proto_data_x[netlink_protocol].nlh_seq_last_handled)
         _LOGt("netlink: recvmsg: unwaited sequence number %u", seq_number);
     priv->proto_data_x[netlink_protocol].nlh_seq_last_handled = seq_number;
+#else
+    (void) 0;
 #endif
 }
 
