@@ -1047,10 +1047,8 @@ _accept(NMDhcpClient *client, const NML3ConfigData *l3cd, GError **error)
 
     g_return_val_if_fail(l3cd, FALSE);
 
-    if (priv->granted.lease_l3cd != l3cd) {
-        nm_utils_error_set(error, NM_UTILS_ERROR_UNKNOWN, "calling accept in unexpected state");
-        return FALSE;
-    }
+    if (priv->granted.lease_l3cd != l3cd)
+        return TRUE;
 
     nm_assert(priv->granted.lease);
 
