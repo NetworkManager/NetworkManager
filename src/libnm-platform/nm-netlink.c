@@ -619,6 +619,7 @@ nla_nest_end(struct nl_msg *msg, struct nlattr *start)
 static const uint8_t nla_attr_minlen[NLA_TYPE_MAX + 1] = {
     [NLA_U8]     = sizeof(uint8_t),
     [NLA_U16]    = sizeof(uint16_t),
+    [NLA_S32]    = sizeof(int32_t),
     [NLA_U32]    = sizeof(uint32_t),
     [NLA_U64]    = sizeof(uint64_t),
     [NLA_STRING] = 1,

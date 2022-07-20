@@ -20,25 +20,26 @@
 /*****************************************************************************/
 
 #define _NMLOG_DOMAIN LOGD_PLATFORM
-#define _NMLOG(level, obj, ...)                                               \
-    G_STMT_START                                                              \
-    {                                                                         \
-        const NMLogLevel __level = (level);                                   \
-                                                                              \
-        if (nm_logging_enabled(__level, _NMLOG_DOMAIN)) {                     \
-            const NMPObject *const __obj = (obj);                             \
-                                                                              \
-            _nm_log(__level,                                                  \
-                    _NMLOG_DOMAIN,                                            \
-                    0,                                                        \
-                    NULL,                                                     \
-                    NULL,                                                     \
-                    "nmp-object[%p/%s]: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
-                    __obj,                                                    \
-                    (__obj ? NMP_OBJECT_GET_CLASS(__obj)->obj_type_name       \
-                           : "???") _NM_UTILS_MACRO_REST(__VA_ARGS__));       \
-        }                                                                     \
-    }                                                                         \
+#define _NMLOG(level, obj, ...)                                         \
+    G_STMT_START                                                        \
+    {                                                                   \
+        const NMLogLevel __level = (level);                             \
+                                                                        \
+        if (nm_logging_enabled(__level, _NMLOG_DOMAIN)) {               \
+            const NMPObject *const __obj = (obj);                       \
+                                                                        \
+            _nm_log(__level,                                            \
+                    _NMLOG_DOMAIN,                                      \
+                    0,                                                  \
+                    NULL,                                               \
+                    NULL,                                               \
+                    "nmp-object[" NM_HASH_OBFUSCATE_PTR_FMT ""          \
+                    "/%s]: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__),        \
+                    NM_HASH_OBFUSCATE_PTR(__obj),                       \
+                    (__obj ? NMP_OBJECT_GET_CLASS(__obj)->obj_type_name \
+                           : "???") _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
+        }                                                               \
+    }                                                                   \
     G_STMT_END
 
 /*****************************************************************************/
@@ -380,7 +381,8 @@ _idx_obj_part(const DedupMultiIdxType *idx_type,
                        NMP_OBJECT_TYPE_IP4_ROUTE,
                        NMP_OBJECT_TYPE_IP6_ROUTE,
                        NMP_OBJECT_TYPE_QDISC,
-                       NMP_OBJECT_TYPE_TFILTER)
+                       NMP_OBJECT_TYPE_TFILTER,
+                       NMP_OBJECT_TYPE_MPTCP_ADDR)
             || !nmp_object_is_visible(obj_a)) {
             if (h)
                 nm_hash_update_val(h, obj_a);
@@ -840,6 +842,17 @@ nmp_object_stackinit_id(NMPObject *obj, const NMPObject *src)
     _nmp_object_stackinit_from_class(obj, klass);
     if (klass->cmd_plobj_id_copy)
         klass->cmd_plobj_id_copy(&obj->object, &src->object);
+    else {
+        /* This object must not implement cmd_obj_copy().
+         * If it would, it would mean that we require a deep copy
+         * of the data. As @obj is stack-allocated, it cannot track
+         * ownership. The caller must not use nmp_object_stackinit_id()
+         * with an object of such a type. */
+        nm_assert(!klass->cmd_obj_copy);
+
+        /* plain memcpy of the public part suffices. */
+        memcpy(&obj->object, &src->object, klass->sizeof_data);
+    }
     return obj;
 }
 
@@ -900,7 +913,7 @@ nmp_object_to_string(const NMPObject      *obj,
     switch (to_string_mode) {
     case NMP_OBJECT_TO_STRING_ID:
         if (!klass->cmd_plobj_to_string_id) {
-            g_snprintf(buf, buf_size, "%p", obj);
+            g_snprintf(buf, buf_size, NM_HASH_OBFUSCATE_PTR_FMT, NM_HASH_OBFUSCATE_PTR(obj));
             return buf;
         }
         return klass->cmd_plobj_to_string_id(&obj->object, buf, buf_size);
@@ -908,9 +921,9 @@ nmp_object_to_string(const NMPObject      *obj,
         g_snprintf(
             buf,
             buf_size,
-            "[%s,%p,%u,%calive,%cvisible; %s]",
+            "[%s," NM_HASH_OBFUSCATE_PTR_FMT ",%u,%calive,%cvisible; %s]",
             klass->obj_type_name,
-            obj,
+            NM_HASH_OBFUSCATE_PTR(obj),
             obj->parent._ref_count,
             nmp_object_is_alive(obj) ? '+' : '-',
             nmp_object_is_visible(obj) ? '+' : '-',
@@ -939,14 +952,15 @@ _vt_cmd_obj_to_string_link(const NMPObject      *obj,
     case NMP_OBJECT_TO_STRING_ALL:
         nm_strbuf_append(&b,
                          &buf_size,
-                         "[%s,%p,%u,%calive,%cvisible,%cin-nl,%p; ",
+                         "[%s," NM_HASH_OBFUSCATE_PTR_FMT
+                         ",%u,%calive,%cvisible,%cin-nl," NM_HASH_OBFUSCATE_PTR_FMT "; ",
                          klass->obj_type_name,
-                         obj,
+                         NM_HASH_OBFUSCATE_PTR(obj),
                          obj->parent._ref_count,
                          nmp_object_is_alive(obj) ? '+' : '-',
                          nmp_object_is_visible(obj) ? '+' : '-',
                          obj->_link.netlink.is_in_netlink ? '+' : '-',
-                         obj->_link.udev.device);
+                         NM_HASH_OBFUSCATE_PTR(obj->_link.udev.device));
         NMP_OBJECT_GET_CLASS(obj)->cmd_plobj_to_string(&obj->object, b, buf_size);
         nm_strbuf_seek_end(&b, &buf_size);
         if (obj->_link.netlink.lnk) {
@@ -984,15 +998,15 @@ _vt_cmd_obj_to_string_lnk_vlan(const NMPObject      *obj,
 
     switch (to_string_mode) {
     case NMP_OBJECT_TO_STRING_ID:
-        g_snprintf(buf, buf_size, "%p", obj);
+        g_snprintf(buf, buf_size, NM_HASH_OBFUSCATE_PTR_FMT, NM_HASH_OBFUSCATE_PTR(obj));
         return buf;
     case NMP_OBJECT_TO_STRING_ALL:
 
         g_snprintf(buf,
                    buf_size,
-                   "[%s,%p,%u,%calive,%cvisible; %s]",
+                   "[%s," NM_HASH_OBFUSCATE_PTR_FMT ",%u,%calive,%cvisible; %s]",
                    klass->obj_type_name,
-                   obj,
+                   NM_HASH_OBFUSCATE_PTR(obj),
                    obj->parent._ref_count,
                    nmp_object_is_alive(obj) ? '+' : '-',
                    nmp_object_is_visible(obj) ? '+' : '-',
@@ -1048,17 +1062,17 @@ _vt_cmd_obj_to_string_lnk_wireguard(const NMPObject      *obj,
 
     switch (to_string_mode) {
     case NMP_OBJECT_TO_STRING_ID:
-        g_snprintf(buf, buf_size, "%p", obj);
+        g_snprintf(buf, buf_size, NM_HASH_OBFUSCATE_PTR_FMT, NM_HASH_OBFUSCATE_PTR(obj));
         return buf;
     case NMP_OBJECT_TO_STRING_ALL:
         b = buf;
 
         nm_strbuf_append(&b,
                          &buf_size,
-                         "[%s,%p,%u,%calive,%cvisible; %s"
+                         "[%s," NM_HASH_OBFUSCATE_PTR_FMT ",%u,%calive,%cvisible; %s"
                          "%s",
                          klass->obj_type_name,
-                         obj,
+                         NM_HASH_OBFUSCATE_PTR(obj),
                          obj->parent._ref_count,
                          nmp_object_is_alive(obj) ? '+' : '-',
                          nmp_object_is_visible(obj) ? '+' : '-',
@@ -1420,21 +1434,6 @@ _vt_cmd_plobj_id_copy(ip6_address, NMPlatformIP6Address, {
     dst->address = src->address;
 });
 
-_vt_cmd_plobj_id_copy(ip4_route, NMPlatformIP4Route, {
-    *dst = *src;
-    nm_assert(nm_platform_ip4_route_cmp(dst, src, NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID) == 0);
-});
-
-_vt_cmd_plobj_id_copy(ip6_route, NMPlatformIP6Route, {
-    *dst = *src;
-    nm_assert(nm_platform_ip6_route_cmp(dst, src, NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID) == 0);
-});
-
-_vt_cmd_plobj_id_copy(routing_rule, NMPlatformRoutingRule, {
-    *dst = *src;
-    nm_assert(nm_platform_routing_rule_cmp(dst, src, NM_PLATFORM_ROUTING_RULE_CMP_TYPE_ID) == 0);
-});
-
 /* Uses internally nmp_object_copy(), hence it also violates the const
  * promise for @obj.
  * */
@@ -1553,6 +1552,21 @@ _vt_cmd_plobj_id_cmp_routing_rule(const NMPlatformObject *obj1, const NMPlatform
                                         NM_PLATFORM_ROUTING_RULE_CMP_TYPE_ID);
 }
 
+_vt_cmd_plobj_id_cmp(mptcp_addr, NMPlatformMptcpAddr, {
+    NM_CMP_FIELD(obj1, obj2, id);
+    NM_CMP_FIELD_UNSAFE(obj1, obj2, in_kernel);
+    if (!obj1->in_kernel) {
+        /* See comment NMPlatformMptcpAddr.in_kernel for why. */
+        NM_CMP_FIELD(obj1, obj2, addr_family);
+
+        /* nm_utils_addr_family_to_size() asserts that addr-family is either AF_INET or AF_INET6.
+         * This means, we cannot compare totally bogus objects. That is in particular fine
+         * for instances which are not "in_kernel".  While we might receive unexpected values
+         * from kernel, we should not create them for internal purposes. */
+        NM_CMP_FIELD_MEMCMP_LEN(obj1, obj2, addr, nm_utils_addr_family_to_size(obj1->addr_family));
+    }
+});
+
 void
 nmp_object_id_hash_update(const NMPObject *obj, NMHashState *h)
 {
@@ -1636,6 +1650,16 @@ _vt_cmd_plobj_id_hash_update(qdisc, NMPlatformQdisc, {
 
 _vt_cmd_plobj_id_hash_update(tfilter, NMPlatformTfilter, {
     nm_hash_update_vals(h, obj->ifindex, obj->handle);
+});
+
+_vt_cmd_plobj_id_hash_update(mptcp_addr, NMPlatformMptcpAddr, {
+    if (obj->in_kernel) {
+        nm_hash_update_val(h, obj->id);
+    } else {
+        /* _vt_cmd_plobj_id_cmp_mptcp_addr for why. */
+        nm_hash_update_vals(h, obj->id, obj->addr_family);
+        nm_hash_update(h, &obj->addr, nm_utils_addr_family_to_size(obj->addr_family));
+    }
 });
 
 static void
@@ -1744,6 +1768,12 @@ static gboolean
 _vt_cmd_obj_is_alive_tfilter(const NMPObject *obj)
 {
     return NMP_OBJECT_CAST_TFILTER(obj)->ifindex > 0;
+}
+
+static gboolean
+_vt_cmd_obj_is_alive_mptcp_addr(const NMPObject *obj)
+{
+    return NM_IN_SET(obj->mptcp_addr.addr_family, AF_INET, AF_INET6);
 }
 
 gboolean
@@ -2091,6 +2121,7 @@ nmp_lookup_init_obj_type(NMPLookup *lookup, NMPObjectType obj_type)
     case NMP_OBJECT_TYPE_ROUTING_RULE:
     case NMP_OBJECT_TYPE_QDISC:
     case NMP_OBJECT_TYPE_TFILTER:
+    case NMP_OBJECT_TYPE_MPTCP_ADDR:
         _nmp_object_stackinit_from_type(&lookup->selector_obj, obj_type);
         lookup->cache_id_type = NMP_CACHE_ID_TYPE_OBJECT_TYPE;
         return _L(lookup);
@@ -2125,7 +2156,8 @@ nmp_lookup_init_object_by_ifindex(NMPLookup *lookup, NMPObjectType obj_type, int
                         NMP_OBJECT_TYPE_IP4_ROUTE,
                         NMP_OBJECT_TYPE_IP6_ROUTE,
                         NMP_OBJECT_TYPE_QDISC,
-                        NMP_OBJECT_TYPE_TFILTER));
+                        NMP_OBJECT_TYPE_TFILTER,
+                        NMP_OBJECT_TYPE_MPTCP_ADDR));
     nm_assert(ifindex > 0
               || (ifindex == 0
                   && NM_IN_SET(obj_type, NMP_OBJECT_TYPE_IP4_ROUTE, NMP_OBJECT_TYPE_IP6_ROUTE)));
@@ -3166,7 +3198,6 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
             .signal_type              = NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED,
             .supported_cache_ids      = _supported_cache_ids_ipx_route,
             .cmd_obj_is_alive         = _vt_cmd_obj_is_alive_ipx_route,
-            .cmd_plobj_id_copy        = _vt_cmd_plobj_id_copy_ip4_route,
             .cmd_plobj_id_cmp         = _vt_cmd_plobj_id_cmp_ip4_route,
             .cmd_plobj_id_hash_update = _vt_cmd_plobj_id_hash_update_ip4_route,
             .cmd_plobj_to_string_id   = (CmdPlobjToStringIdFunc) nm_platform_ip4_route_to_string,
@@ -3187,7 +3218,6 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
             .signal_type              = NM_PLATFORM_SIGNAL_IP6_ROUTE_CHANGED,
             .supported_cache_ids      = _supported_cache_ids_ipx_route,
             .cmd_obj_is_alive         = _vt_cmd_obj_is_alive_ipx_route,
-            .cmd_plobj_id_copy        = _vt_cmd_plobj_id_copy_ip6_route,
             .cmd_plobj_id_cmp         = _vt_cmd_plobj_id_cmp_ip6_route,
             .cmd_plobj_id_hash_update = _vt_cmd_plobj_id_hash_update_ip6_route,
             .cmd_plobj_to_string_id   = (CmdPlobjToStringIdFunc) nm_platform_ip6_route_to_string,
@@ -3207,7 +3237,6 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
             .signal_type              = NM_PLATFORM_SIGNAL_ROUTING_RULE_CHANGED,
             .supported_cache_ids      = _supported_cache_ids_routing_rules,
             .cmd_obj_is_alive         = _vt_cmd_obj_is_alive_routing_rule,
-            .cmd_plobj_id_copy        = _vt_cmd_plobj_id_copy_routing_rule,
             .cmd_plobj_id_cmp         = _vt_cmd_plobj_id_cmp_routing_rule,
             .cmd_plobj_id_hash_update = _vt_cmd_plobj_id_hash_update_routing_rule,
             .cmd_plobj_to_string_id   = (CmdPlobjToStringIdFunc) nm_platform_routing_rule_to_string,
@@ -3467,5 +3496,21 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
             .cmd_plobj_to_string   = (CmdPlobjToStringFunc) nm_platform_lnk_wireguard_to_string,
             .cmd_plobj_hash_update = (CmdPlobjHashUpdateFunc) nm_platform_lnk_wireguard_hash_update,
             .cmd_plobj_cmp         = (CmdPlobjCmpFunc) nm_platform_lnk_wireguard_cmp,
+        },
+    [NMP_OBJECT_TYPE_MPTCP_ADDR - 1] =
+        {
+            .parent                   = DEDUP_MULTI_OBJ_CLASS_INIT(),
+            .obj_type                 = NMP_OBJECT_TYPE_MPTCP_ADDR,
+            .sizeof_data              = sizeof(NMPObjectMptcpAddr),
+            .sizeof_public            = sizeof(NMPlatformMptcpAddr),
+            .obj_type_name            = "mptcp-addr",
+            .supported_cache_ids      = _supported_cache_ids_object,
+            .cmd_obj_is_alive         = _vt_cmd_obj_is_alive_mptcp_addr,
+            .cmd_plobj_id_cmp         = _vt_cmd_plobj_id_cmp_mptcp_addr,
+            .cmd_plobj_id_hash_update = _vt_cmd_plobj_id_hash_update_mptcp_addr,
+            .cmd_plobj_to_string_id   = (CmdPlobjToStringIdFunc) nm_platform_mptcp_addr_to_string,
+            .cmd_plobj_to_string      = (CmdPlobjToStringFunc) nm_platform_mptcp_addr_to_string,
+            .cmd_plobj_hash_update    = (CmdPlobjHashUpdateFunc) nm_platform_mptcp_addr_hash_update,
+            .cmd_plobj_cmp            = (CmdPlobjCmpFunc) nm_platform_mptcp_addr_cmp,
         },
 };

@@ -7586,6 +7586,93 @@ nm_platform_tfilter_cmp(const NMPlatformTfilter *a, const NMPlatformTfilter *b)
     return 0;
 }
 
+static NM_UTILS_FLAGS2STR_DEFINE(_mptcp_flags_to_string,
+                                 guint32,
+                                 NM_UTILS_FLAGS2STR(NM_MPTCP_PM_ADDR_FLAG_SIGNAL, "signal"),
+                                 NM_UTILS_FLAGS2STR(NM_MPTCP_PM_ADDR_FLAG_SUBFLOW, "subflow"),
+                                 NM_UTILS_FLAGS2STR(NM_MPTCP_PM_ADDR_FLAG_BACKUP, "backup"),
+                                 NM_UTILS_FLAGS2STR(NM_MPTCP_PM_ADDR_FLAG_FULLMESH, "fullmesh"));
+
+const char *
+nm_platform_mptcp_addr_to_string(const NMPlatformMptcpAddr *mptcp_addr, char *buf, gsize len)
+{
+    char str_addr[30 + NM_UTILS_INET_ADDRSTRLEN];
+    char str_port[30];
+    char str_id[30];
+    char str_flags[200];
+    char str_flags2[30 + sizeof(str_flags)];
+    char str_ifindex[30];
+
+    if (!nm_utils_to_string_buffer_init_null(mptcp_addr, &buf, &len))
+        return buf;
+
+    if (mptcp_addr->addr_family == 0)
+        nm_sprintf_buf(str_addr, "no-addr");
+    else if (NM_IN_SET(mptcp_addr->addr_family, AF_INET, AF_INET6))
+        nm_utils_inet_ntop(mptcp_addr->addr_family, &mptcp_addr->addr, str_addr);
+    else
+        nm_sprintf_buf(str_addr, "af %d", mptcp_addr->addr_family);
+
+    if (mptcp_addr->flags != 0)
+        _mptcp_flags_to_string(mptcp_addr->flags, str_flags, sizeof(str_flags));
+    else
+        str_flags[0] = '\0';
+
+    g_snprintf(buf,
+               len,
+               "%s" /* in_kernel */
+               "%s" /* address */
+               "%s" /* port */
+               "%s" /* id */
+               "%s" /* flags */
+               "%s" /* ifindex */
+               "",
+               mptcp_addr->in_kernel ? "" : "[nm] ",
+               str_addr,
+               mptcp_addr->port == 0 ? "" : nm_sprintf_buf(str_port, " port %u", mptcp_addr->port),
+               mptcp_addr->id == 0 ? "" : nm_sprintf_buf(str_id, " id %u", mptcp_addr->id),
+               str_flags[0] == '\0' ? "" : nm_sprintf_buf(str_flags2, " flags %s", str_flags),
+               mptcp_addr->ifindex == 0
+                   ? ""
+                   : nm_sprintf_buf(str_ifindex, " ifindex %d", mptcp_addr->ifindex));
+    return buf;
+}
+
+void
+nm_platform_mptcp_addr_hash_update(const NMPlatformMptcpAddr *obj, NMHashState *h)
+{
+    nm_assert(obj);
+    nm_assert_addr_family_or_unspec(obj->addr_family);
+
+    nm_hash_update_vals(h,
+                        obj->id,
+                        obj->flags,
+                        obj->port,
+                        obj->addr_family,
+                        (bool) obj->in_kernel,
+                        obj->ifindex);
+    if (NM_IN_SET(obj->addr_family, AF_INET, AF_INET6))
+        nm_hash_update(h, &obj->addr, nm_utils_addr_family_to_size(obj->addr_family));
+}
+
+int
+nm_platform_mptcp_addr_cmp(const NMPlatformMptcpAddr *a, const NMPlatformMptcpAddr *b)
+{
+    NM_CMP_SELF(a, b);
+
+    nm_assert_addr_family_or_unspec(a->addr_family);
+    nm_assert_addr_family_or_unspec(b->addr_family);
+
+    NM_CMP_FIELD(a, b, id);
+    NM_CMP_FIELD_UNSAFE(a, b, in_kernel);
+    NM_CMP_FIELD(a, b, addr_family);
+    if (NM_IN_SET(a->addr_family, AF_INET, AF_INET6))
+        NM_CMP_FIELD_MEMCMP_LEN(a, b, addr, nm_utils_addr_family_to_size(a->addr_family));
+    NM_CMP_FIELD(a, b, ifindex);
+
+    return 0;
+}
+
 const char *
 nm_platform_vf_to_string(const NMPlatformVF *vf, char *buf, gsize len)
 {

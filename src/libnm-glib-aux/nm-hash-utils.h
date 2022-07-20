@@ -140,7 +140,7 @@ nm_hash_update_bool(NMHashState *state, bool val)
 #define NM_HASH_COMBINE_VALS(var, ...)                                       \
     const struct _nm_packed {                                                \
         NM_VA_ARGS_FOREACH(, , , _NM_HASH_COMBINE_VALS_TYPE_OP, __VA_ARGS__) \
-    } var _nm_alignas(guint64) = {                                           \
+    } var _nm_alignas(max_align_t) = {                                       \
         NM_VA_ARGS_FOREACH(, , , _NM_HASH_COMBINE_VALS_INIT_OP, __VA_ARGS__)}
 
 /* nm_hash_update_vals() is faster then nm_hash_update_val() as it combines multiple

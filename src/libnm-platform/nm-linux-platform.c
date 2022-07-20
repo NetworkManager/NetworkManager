@@ -23,6 +23,7 @@
 #include <linux/if_vlan.h>
 #include <linux/ip6_tunnel.h>
 #include <linux/tc_act/tc_mirred.h>
+#include <linux-headers/mptcp.h>
 #include <netinet/icmp6.h>
 #include <netinet/in.h>
 #include <net/if_arp.h>
@@ -47,6 +48,14 @@
 #include "libnm-udev-aux/nm-udev-utils.h"
 #include "nm-platform-private.h"
 #include "nmp-object.h"
+
+/*****************************************************************************/
+
+G_STATIC_ASSERT(NM_MPTCP_PM_ADDR_FLAG_SIGNAL == MPTCP_PM_ADDR_FLAG_SIGNAL);
+G_STATIC_ASSERT(NM_MPTCP_PM_ADDR_FLAG_SUBFLOW == MPTCP_PM_ADDR_FLAG_SUBFLOW);
+G_STATIC_ASSERT(NM_MPTCP_PM_ADDR_FLAG_BACKUP == MPTCP_PM_ADDR_FLAG_BACKUP);
+G_STATIC_ASSERT(NM_MPTCP_PM_ADDR_FLAG_FULLMESH == MPTCP_PM_ADDR_FLAG_FULLMESH);
+G_STATIC_ASSERT(NM_MPTCP_PM_ADDR_FLAG_IMPLICIT == MPTCP_PM_ADDR_FLAG_IMPLICIT);
 
 /*****************************************************************************/
 
@@ -4780,7 +4789,7 @@ _nl_msg_new_address(uint16_t      nlmsg_type,
                     guint8        plen,
                     gconstpointer peer_address,
                     guint32       flags,
-                    int           scope,
+                    guint8        scope,
                     guint32       lifetime,
                     guint32       preferred,
                     in_addr_t     ip4_broadcast_address,
@@ -4792,6 +4801,7 @@ _nl_msg_new_address(uint16_t      nlmsg_type,
                      .ifa_index     = ifindex,
                      .ifa_prefixlen = plen,
                      .ifa_flags     = flags,
+                     .ifa_scope     = scope,
     };
     gsize addr_len;
 
@@ -4799,15 +4809,6 @@ _nl_msg_new_address(uint16_t      nlmsg_type,
     nm_assert(NM_IN_SET(nlmsg_type, RTM_NEWADDR, RTM_DELADDR));
 
     msg = nlmsg_alloc_simple(nlmsg_type, nlmsg_flags);
-
-    if (scope == -1) {
-        /* Allow having scope unset, and detect the scope (including IPv4 compatibility hack). */
-        if (family == AF_INET && address && *((char *) address) == 127)
-            scope = RT_SCOPE_HOST;
-        else
-            scope = RT_SCOPE_UNIVERSE;
-    }
-    am.ifa_scope = scope,
 
     addr_len = family == AF_INET ? sizeof(in_addr_t) : sizeof(struct in6_addr);
 
