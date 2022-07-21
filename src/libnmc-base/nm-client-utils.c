@@ -305,7 +305,7 @@ NM_UTILS_LOOKUP_STR_DEFINE(
     NM_UTILS_LOOKUP_ITEM(NM_DEVICE_STATE_UNKNOWN, N_("unknown")), );
 
 static NM_UTILS_LOOKUP_STR_DEFINE(
-    _device_state_to_string,
+    _device_state_externally_to_string,
     NMDeviceState,
     NM_UTILS_LOOKUP_DEFAULT(NULL),
     NM_UTILS_LOOKUP_ITEM(NM_DEVICE_STATE_PREPARE, N_("connecting (externally)")),
@@ -330,7 +330,7 @@ nmc_device_state_to_string_with_external(NMDevice *device)
 
     if ((ac = nm_device_get_active_connection(device))
         && NM_FLAGS_HAS(nm_active_connection_get_state_flags(ac), NM_ACTIVATION_STATE_FLAG_EXTERNAL)
-        && (s = _device_state_to_string(state)))
+        && (s = _device_state_externally_to_string(state)))
         return s;
 
     return nmc_device_state_to_string(state);
