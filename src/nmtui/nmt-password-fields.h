@@ -34,6 +34,7 @@ GType nmt_password_fields_get_type(void);
 typedef enum {
     NMT_PASSWORD_FIELDS_ALWAYS_ASK    = (1 << 0),
     NMT_PASSWORD_FIELDS_SHOW_PASSWORD = (1 << 1),
+    NMT_PASSWORD_FIELDS_NOT_EMPTY     = (1 << 2), /* Return NULL instead of empty string */
 } NmtPasswordFieldsExtras;
 
 NmtNewtWidget *nmt_password_fields_new(int width, NmtPasswordFieldsExtras extras);

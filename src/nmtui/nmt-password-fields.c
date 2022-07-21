@@ -47,6 +47,7 @@ enum {
  * NmtPasswordFieldsExtras:
  * @NMT_PASSWORD_FIELDS_ALWAYS_ASK: show an "Always ask" checkbox
  * @NMT_PASSWORD_FIELDS_SHOW_PASSWORD: show a "Show password" checkbox
+ * @NMT_PASSWORD_FIELDS_NOT_EMPTY: return NULL instead of empty string
  *
  * Extra widgets to include in an #NmtPasswordFields
  */
@@ -82,8 +83,13 @@ static const char *
 nmt_password_fields_get_password(NmtPasswordFields *fields)
 {
     NmtPasswordFieldsPrivate *priv = NMT_PASSWORD_FIELDS_GET_PRIVATE(fields);
+    const char               *text;
 
-    return nmt_newt_entry_get_text(priv->entry);
+    text = nmt_newt_entry_get_text(priv->entry);
+    if (priv->extras & NMT_PASSWORD_FIELDS_NOT_EMPTY)
+        return nm_str_not_empty(text);
+
+    return text;
 }
 
 static void
