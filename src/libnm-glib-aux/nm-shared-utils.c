@@ -146,6 +146,18 @@ G_STATIC_ASSERT(ETH_ALEN == sizeof(NMEtherAddr));
 
 G_STATIC_ASSERT(_nm_alignof(struct ether_addr) <= _nm_alignof(NMEtherAddr));
 
+NMEtherAddr *
+nm_ether_addr_from_string(NMEtherAddr *addr, const char *str)
+{
+    nm_assert(addr);
+
+    if (!str || !_nm_utils_hwaddr_aton_exact(str, addr, ETH_ALEN)) {
+        *addr = NM_ETHER_ADDR_INIT(0x00, 0x00, 0x00, 0x00, 0x00, 0x00);
+        return NULL;
+    }
+
+    return addr;
+}
 /*****************************************************************************/
 
 /**
