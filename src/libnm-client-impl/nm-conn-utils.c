@@ -96,11 +96,11 @@ value_split_word(char **line_remainder, char **out_word)
  * @filename: name of the file to attempt to read into a new #NMConnection
  * @error: on return, an error or %NULL
  *
- * Returns: a new #NMConnection imported from @path, or %NULL
+ * Returns: (transfer full): a new #NMConnection imported from @path, or %NULL
  * on error or if the file with @filename was not recognized as a WireGuard config
  *
  * Since: 1.40
- * */
+ */
 NMConnection *
 nm_conn_wireguard_import(const char *filename, GError **error)
 {
