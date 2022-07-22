@@ -1549,6 +1549,37 @@ nm_platform_route_type_uncoerce(guint8 type_coerced)
     return nm_platform_route_type_coerce(type_coerced);
 }
 
+static inline guint8
+nm_platform_ip4_address_get_scope(in_addr_t addr)
+{
+    /* For IPv4 addresses, we can set any scope we want (for any address).
+     * However, there are scopes that make sense based on the address,
+     * so choose those. */
+    return nm_utils_ip4_address_is_loopback(addr)     ? (254 /* RT_SCOPE_HOST */)
+           : nm_utils_ip4_address_is_link_local(addr) ? (253 /* RT_SCOPE_LINK */)
+                                                      : (0 /* RT_SCOPE_UNIVERSE */);
+}
+
+static inline guint8
+nm_platform_ip6_address_get_scope(const struct in6_addr *addr)
+{
+    /* For IPv6, kernel does not allow userspace to configure the address scope.
+     * Instead, it is calculated based on the address. See rt_scope() and
+     * ipv6_addr_scope(). We do the same here. */
+    return IN6_IS_ADDR_LOOPBACK(addr)    ? (254 /* RT_SCOPE_HOST */)
+           : IN6_IS_ADDR_LINKLOCAL(addr) ? (253 /* RT_SCOPE_LINK */)
+           : IN6_IS_ADDR_SITELOCAL(addr) ? (200 /* RT_SCOPE_SITE */)
+                                         : (0 /* RT_SCOPE_UNIVERSE */);
+}
+
+static inline guint8
+nm_platform_ip_address_get_scope(int addr_family, gconstpointer addr)
+{
+    if (NM_IS_IPv4(addr_family))
+        return nm_platform_ip4_address_get_scope(*((in_addr_t *) addr));
+    return nm_platform_ip6_address_get_scope(addr);
+}
+
 gboolean nm_platform_get_use_udev(NMPlatform *self);
 gboolean nm_platform_get_log_with_ptr(NMPlatform *self);
 gboolean nm_platform_get_cache_tc(NMPlatform *self);
