@@ -17104,6 +17104,12 @@ nm_device_clear_dns_lookup_data(NMDevice *self)
         nm_clear_pointer(&priv->hostname_resolver_x[i], _hostname_resolver_free);
 }
 
+gboolean
+nm_device_get_allow_autoconnect_on_external(NMDevice *self)
+{
+    return NM_DEVICE_GET_CLASS(self)->allow_autoconnect_on_external;
+}
+
 static GInetAddress *
 get_address_for_hostname_dns_lookup(NMDevice *self, int addr_family)
 {
