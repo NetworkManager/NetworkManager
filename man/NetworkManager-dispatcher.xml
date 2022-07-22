@@ -288,8 +288,9 @@
           <term><varname>CONNECTIVITY_STATE</varname></term>
           <listitem><para> The network connectivity state, which can
           take the values defined by the NMConnectivityState type,
-          from the org.freedesktop.NetworkManager D-Bus API: unknown,
-          none, portal, limited or full. Note: this variable will only
+          from the org.freedesktop.NetworkManager D-Bus API: <literal>UNKNOWN</literal>,
+          <literal>NONE</literal>, <literal>PORTAL</literal>, <literal>LIMITED</literal>
+          or <literal>FULL</literal>. Note: this variable will only
           be set for connectivity-change actions.
           </para></listitem>
         </varlistentry>
