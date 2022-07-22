@@ -287,7 +287,9 @@ glib_dep = declare_dependency(
   ]
 )
 
-if run_command('test', '-e', '/etc/sysconfig/network-scripts').returncode() == 0
+if meson.is_cross_build()
+  distro = 'unknown'
+elif run_command('test', '-e', '/etc/sysconfig/network-scripts').returncode() == 0
   distro = 'redhat'
 elif run_command('test', '-e', '/etc/SuSE-release').returncode() == 0
   distro = 'suse'
