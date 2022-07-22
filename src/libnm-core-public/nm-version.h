@@ -343,7 +343,7 @@
 
 /*
  * Synchronous API for calling D-Bus in libnm is deprecated. See
- * https://developer.gnome.org/libnm/stable/usage.html#sync-api
+ * https://networkmanager.dev/docs/libnm/latest/usage.html#sync-api
  *
  * Note that "deprecated" here does not really mean that the API is going
  * to be removed. We don't break API. Just comment that it is awkward and
