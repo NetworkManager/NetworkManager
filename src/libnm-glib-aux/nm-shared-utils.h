@@ -277,8 +277,15 @@ nm_ip_addr_set(int addr_family, gpointer dst, gconstpointer src)
     nm_assert(dst);
     nm_assert(src);
 
-    /* this MUST use memcpy() (or similar means) to support unaligned src/dst pointers. */
+    /* this MUST use memcpy() to support unaligned src/dst pointers. */
     memcpy(dst, src, nm_utils_addr_family_to_size(addr_family));
+
+    /* Note that @dst is not necessarily a NMIPAddr, it could also be just
+     * an in_addr_t/struct in6_addr. We thus can only set the bytes that
+     * we know are present based on the address family.
+     *
+     * Using this function to initialize an NMIPAddr union (for IPv4) leaves
+     * uninitalized bytes. Avoid that by using nm_ip_addr_init() instead. */
 }
 
 static inline NMIPAddr
@@ -290,6 +297,8 @@ nm_ip_addr_init(int addr_family, gconstpointer src)
     nm_assert(src);
 
     G_STATIC_ASSERT_EXPR(sizeof(NMIPAddr) == sizeof(struct in6_addr));
+
+    /* this MUST use memcpy() to support unaligned src/dst pointers. */
 
     if (NM_IS_IPv4(addr_family)) {
         memcpy(&a, src, sizeof(in_addr_t));
