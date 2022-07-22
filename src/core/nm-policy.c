@@ -1338,7 +1338,9 @@ auto_activate_device(NMPolicy *self, NMDevice *device)
     // but another connection now overrides the current one for that device,
     // deactivate the device and activate the new connection instead of just
     // bailing if the device is already active
-    if (nm_device_get_act_request(device))
+    if (nm_device_get_act_request(device)
+        && !(nm_device_sys_iface_state_is_external(device)
+             && nm_device_get_allow_autoconnect_on_external(device)))
         return;
 
     if (!nm_device_autoconnect_allowed(device))
@@ -1666,8 +1668,13 @@ schedule_activate_check(NMPolicy *self, NMDevice *device)
         return;
 
     nm_manager_for_each_active_connection (priv->manager, ac, tmp_list) {
-        if (nm_active_connection_get_device(ac) == device)
-            return;
+        if (nm_active_connection_get_device(ac) == device) {
+            if (nm_device_sys_iface_state_is_external(device)
+                && nm_device_get_allow_autoconnect_on_external(device)) {
+                /* pass */
+            } else
+                return;
+        }
     }
 
     nm_device_add_pending_action(device, NM_PENDING_ACTION_AUTOACTIVATE, TRUE);
