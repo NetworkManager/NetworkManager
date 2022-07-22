@@ -287,22 +287,19 @@ glib_dep = declare_dependency(
   ]
 )
 
-if meson.is_cross_build()
-  distro = 'unknown'
-elif run_command('test', '-e', '/etc/sysconfig/network-scripts').returncode() == 0
-  distro = 'redhat'
-elif run_command('test', '-e', '/etc/SuSE-release').returncode() == 0
-  distro = 'suse'
-elif run_command('test', '-e', '/etc/debian_version').returncode() == 0
-  distro = 'debian'
-elif run_command('test', '-e', '/etc/gentoo-release').returncode() == 0
-  distro = 'gentoo'
+enable_ifcfg_rh = get_option('ifcfg_rh')
+if enable_ifcfg_rh == 'auto'
+  enable_ifcfg_rh = (run_command('test', '-e', '/etc/sysconfig/network-scripts').returncode() == 0)
 else
-  distro = 'unknown'
+  enable_ifcfg_rh = (enable_ifcfg_rh != 'false')
 endif
 
-enable_ifcfg_rh = get_option('ifcfg_rh') or (distro == 'redhat')
-enable_ifupdown = get_option('ifupdown') or (distro == 'debian')
+enable_ifupdown = get_option('ifupdown')
+if enable_ifupdown == 'auto'
+  enable_ifupdown = (run_command('test', '-e', '/etc/debian_version').returncode() == 0)
+else
+  enable_ifupdown = (enable_ifupdown != 'false')
+endif
 
 config_plugins_default = get_option('config_plugins_default')
 config_h.set_quoted('NM_CONFIG_DEFAULT_MAIN_PLUGINS', config_plugins_default)
