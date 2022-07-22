@@ -8207,6 +8207,9 @@ nm_device_autoconnect_allowed(NMDevice *self)
     GValue           instance = G_VALUE_INIT;
     GValue           retval   = G_VALUE_INIT;
 
+    if (klass->allow_autoconnect_on_external)
+        return TRUE;
+
     if (nm_device_autoconnect_blocked_get(self, NM_DEVICE_AUTOCONNECT_BLOCKED_ALL))
         return FALSE;
 

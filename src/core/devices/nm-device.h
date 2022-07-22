@@ -208,6 +208,8 @@ typedef struct _NMDeviceClass {
 
     bool can_reapply_change_ovs_external_ids : 1;
 
+    bool allow_autoconnect_on_external : 1;
+
     NMRfkillType rfkill_type : 4;
 
     void (*state_changed)(NMDevice           *device,
