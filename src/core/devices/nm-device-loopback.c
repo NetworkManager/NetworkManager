@@ -126,6 +126,7 @@ nm_device_loopback_class_init(NMDeviceLoopbackClass *klass)
     device_class->act_stage1_prepare_set_hwaddr_ethernet = TRUE;
     device_class->get_auto_ip_config_method              = get_auto_ip_config_method;
     device_class->get_configured_mtu                     = get_configured_mtu;
+    device_class->allow_autoconnect_on_external          = TRUE;
     device_class->can_reapply_change                     = can_reapply_change;
 }
 
