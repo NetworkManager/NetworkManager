@@ -468,7 +468,8 @@ static const char *action_table[] = {[NM_DISPATCHER_ACTION_HOSTNAME]      = NMD_
                                      [NM_DISPATCHER_ACTION_DHCP_CHANGE_4] = NMD_ACTION_DHCP4_CHANGE,
                                      [NM_DISPATCHER_ACTION_DHCP_CHANGE_6] = NMD_ACTION_DHCP6_CHANGE,
                                      [NM_DISPATCHER_ACTION_CONNECTIVITY_CHANGE] =
-                                         NMD_ACTION_CONNECTIVITY_CHANGE};
+                                         NMD_ACTION_CONNECTIVITY_CHANGE,
+                                     [NM_DISPATCHER_ACTION_REAPPLY] = NMD_ACTION_REAPPLY};
 
 static const char *
 action_to_string(NMDispatcherAction action)
