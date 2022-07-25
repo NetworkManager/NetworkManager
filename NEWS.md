@@ -1,5 +1,23 @@
 # c-stdaux - Auxiliary macros and functions for the C standard library
 
+## CHANGES WITH 1.2.0:
+
+        * Add c_memcmp() as a safe wrapper around memcmp(3) that supports
+          empty arenas as NULL pointers.
+
+        * Add an API documentation renderer based on the sphinx docutils
+          suite. The documentation is available on readthedocs.org.
+
+        * Drop stdatomic.h from the public includes. This was not used by
+          any of the dependent projects, but breaks builds on older GCC
+          compilers. While this is technically an API break, no breakage
+          has been discovered in our tests, and thus we deemed it reasonable
+          to proceed without version bump.
+
+        Contributions from: David Rheinsberg, Thomas Haller
+
+        - Dußlingen, 2022-07-22
+
 ## CHANGES WITH 1.1.0:
 
         * Add c_memcpy() as a safe wrapper around memcpy(3) that supports
