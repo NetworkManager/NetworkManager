@@ -1564,6 +1564,8 @@ _vt_cmd_plobj_id_cmp(mptcp_addr, NMPlatformMptcpAddr, {
          * for instances which are not "in_kernel".  While we might receive unexpected values
          * from kernel, we should not create them for internal purposes. */
         NM_CMP_FIELD_MEMCMP_LEN(obj1, obj2, addr, nm_utils_addr_family_to_size(obj1->addr_family));
+
+        NM_CMP_FIELD(obj1, obj2, port);
     }
 });
 
@@ -1657,7 +1659,7 @@ _vt_cmd_plobj_id_hash_update(mptcp_addr, NMPlatformMptcpAddr, {
         nm_hash_update_val(h, obj->id);
     } else {
         /* _vt_cmd_plobj_id_cmp_mptcp_addr for why. */
-        nm_hash_update_vals(h, obj->id, obj->addr_family);
+        nm_hash_update_vals(h, obj->id, obj->addr_family, obj->port);
         nm_hash_update(h, &obj->addr, nm_utils_addr_family_to_size(obj->addr_family));
     }
 });
