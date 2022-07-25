@@ -243,10 +243,15 @@ extern const NMIPAddr nm_ip_addr_zero;
 static inline int
 nm_ip_addr_cmp(int addr_family, gconstpointer a, gconstpointer b)
 {
+    /* Note that @a and @b are not required to be full NMIPAddr unions.
+     * Depending on @addr_family, they can also be only in_addr_t or
+     * struct in6_addr. */
     NM_CMP_SELF(a, b);
     NM_CMP_DIRECT_MEMCMP(a, b, nm_utils_addr_family_to_size(addr_family));
     return 0;
 }
+
+int nm_ip_addr_cmp_for_sort(gconstpointer a, gconstpointer b, gpointer user_data);
 
 static inline gboolean
 nm_ip_addr_equal(int addr_family, gconstpointer a, gconstpointer b)
