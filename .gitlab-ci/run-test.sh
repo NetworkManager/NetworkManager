@@ -23,6 +23,9 @@ do_clean() {
     # "make -C update-po", run on "make dist" has a silly habit of
     # modifying files in-tree. Lets undo that.
     git checkout -- po/
+
+    git status
+    git diff
 }
 
 uname -a
@@ -60,5 +63,38 @@ if [ "$NM_BUILD_TARBALL" = 1 ]; then
     mv /tmp/nm-docs-html ./docs-html
     mv /tmp/NetworkManager-1*.tar.xz /tmp/NetworkManager-1*.src.rpm ./
 fi
+
+###############################################################################
+
+test_subtree() {
+    local d="$1"
+    local cc="$2"
+
+    if meson --version | grep -q '^0\.[0-5][0-9]\.' ; then
+        # These subprojects require a newer meson than NetworkManager. Skip the test.
+        return 0
+    fi
+
+    do_clean
+    pushd ./src/$d
+
+    ARGS=()
+    if [ "$d" = n-acd ]; then
+        ARGS+=('-Debpf=false')
+    fi
+
+    CC="$cc" CFLAGS="-Werror -Wall" meson build "${ARGS[@]}"
+    ninja -v -C build test
+
+    popd
+}
+
+for d in c-list c-rbtree c-siphash c-stdaux n-acd n-dhcp4 ; do
+    for cc in gcc clang; do
+        test_subtree "$d" "$cc"
+    done
+done
+
+###############################################################################
 
 echo "BUILD SUCCESSFUL!!"
