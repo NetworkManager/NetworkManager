@@ -540,7 +540,7 @@ create_and_realize(NMDevice              *device,
 
     g_assert(iface);
 
-    r = nm_platform_link_bond_add(nm_device_get_platform(device), iface, out_plink);
+    r = nm_platform_link_bond_add(nm_device_get_platform(device), iface, NULL, out_plink);
     if (r < 0) {
         g_set_error(error,
                     NM_DEVICE_ERROR,
