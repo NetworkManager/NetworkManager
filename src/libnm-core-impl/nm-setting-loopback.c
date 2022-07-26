@@ -84,7 +84,7 @@ nm_setting_loopback_init(NMSettingLoopback *setting)
  *
  * Returns: (transfer full): the new empty #NMSettingLoopback object
  *
- * Since: 1.8
+ * Since: 1.40
  **/
 NMSetting *
 nm_setting_loopback_new(void)
@@ -111,6 +111,8 @@ nm_setting_loopback_class_init(NMSettingLoopbackClass *klass)
      *
      * If non-zero, only transmit packets of the specified size or smaller,
      * breaking larger packets up into multiple Ethernet frames.
+     *
+     * Since: 1.40
      **/
     /* ---ifcfg-rh---
      * property: mtu

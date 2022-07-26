@@ -31,9 +31,9 @@ G_BEGIN_DECLS
 
 typedef struct _NMSettingLoopbackClass NMSettingLoopbackClass;
 
-NM_AVAILABLE_IN_1_8
+NM_AVAILABLE_IN_1_40
 GType nm_setting_loopback_get_type(void);
-NM_AVAILABLE_IN_1_8
+NM_AVAILABLE_IN_1_40
 NMSetting *nm_setting_loopback_new(void);
 
 guint32 nm_setting_loopback_get_mtu(NMSettingLoopback *setting);
