@@ -38,7 +38,7 @@ G_DEFINE_TYPE(NMDeviceLoopback, nm_device_loopback, NM_TYPE_DEVICE)
 static NMDeviceCapabilities
 get_generic_capabilities(NMDevice *dev)
 {
-    return NM_DEVICE_CAP_IS_SOFTWARE;
+    return NM_DEVICE_CAP_NONE;
 }
 
 static guint32
