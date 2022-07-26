@@ -53,4 +53,19 @@ c_list_length_is(const CList *list, unsigned long check_len)
     for (_iter = c_list_entry((_list)->prev, __typeof__(*_iter), _m); &(_iter)->_m != (_list); \
          _iter = c_list_entry((_iter)->_m.prev, __typeof__(*_iter), _m))
 
+CList *c_list_first_unsorted(CList *list, int ascending, CListSortCmp cmp, const void *user_data);
+
+static inline int
+c_list_is_sorted(CList *list, int ascending, CListSortCmp cmp, const void *user_data)
+{
+    return !c_list_first_unsorted(list, ascending, cmp, user_data);
+}
+
+void c_list_insert_sorted(CList       *list,
+                          CList       *elem,
+                          int          ascending,
+                          int          append_equal,
+                          CListSortCmp cmp,
+                          const void  *user_data);
+
 #endif /* __C_LIST_UTIL_H__ */
