@@ -7804,12 +7804,13 @@ nm_platform_mptcp_addr_cmp(const NMPlatformMptcpAddr *a, const NMPlatformMptcpAd
     nm_assert_addr_family_or_unspec(a->addr_family);
     nm_assert_addr_family_or_unspec(b->addr_family);
 
+    NM_CMP_FIELD(a, b, ifindex);
     NM_CMP_FIELD(a, b, id);
     NM_CMP_FIELD_UNSAFE(a, b, in_kernel);
     NM_CMP_FIELD(a, b, addr_family);
     if (NM_IN_SET(a->addr_family, AF_INET, AF_INET6))
         NM_CMP_FIELD_MEMCMP_LEN(a, b, addr, nm_utils_addr_family_to_size(a->addr_family));
-    NM_CMP_FIELD(a, b, ifindex);
+    NM_CMP_FIELD(a, b, port);
 
     return 0;
 }
