@@ -29,7 +29,7 @@ NMNetns *nm_netns_new(struct _NMPlatform *platform);
 struct _NMPlatform *nm_netns_get_platform(NMNetns *self);
 NMPNetns           *nm_netns_get_platform_netns(NMNetns *self);
 
-struct _NMPRouteManager *nm_netns_get_route_manager(NMNetns *self);
+struct _NMPGlobalTracker *nm_netns_get_global_tracker(NMNetns *self);
 
 struct _NMDedupMultiIndex *nm_netns_get_multi_idx(NMNetns *self);
 

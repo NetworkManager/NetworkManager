@@ -7,6 +7,8 @@
 
 #include "nm-linux-platform.h"
 
+#include "libnm-std-aux/nm-linux-compat.h"
+
 #include <arpa/inet.h>
 #include <dlfcn.h>
 #include <endian.h>
@@ -23,7 +25,6 @@
 #include <linux/if_vlan.h>
 #include <linux/ip6_tunnel.h>
 #include <linux/tc_act/tc_mirred.h>
-#include <linux-headers/mptcp.h>
 #include <netinet/icmp6.h>
 #include <netinet/in.h>
 #include <net/if_arp.h>
@@ -8963,8 +8964,7 @@ ip4_address_add(NMPlatform *platform,
                                 plen,
                                 &peer_addr,
                                 flags,
-                                nm_utils_ip4_address_is_link_local(addr) ? RT_SCOPE_LINK
-                                                                         : RT_SCOPE_UNIVERSE,
+                                nm_platform_ip4_address_get_scope(addr),
                                 lifetime,
                                 preferred,
                                 broadcast_address,

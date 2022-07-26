@@ -304,6 +304,7 @@ nla_put_uint32(struct nl_msg *msg, int attrtype, uint32_t val)
     G_STMT_START                                          \
     {                                                     \
         type __nla_tmp = value;                           \
+                                                          \
         NLA_PUT(msg, attrtype, sizeof(type), &__nla_tmp); \
     }                                                     \
     G_STMT_END

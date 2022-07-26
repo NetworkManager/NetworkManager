@@ -243,10 +243,15 @@ extern const NMIPAddr nm_ip_addr_zero;
 static inline int
 nm_ip_addr_cmp(int addr_family, gconstpointer a, gconstpointer b)
 {
+    /* Note that @a and @b are not required to be full NMIPAddr unions.
+     * Depending on @addr_family, they can also be only in_addr_t or
+     * struct in6_addr. */
     NM_CMP_SELF(a, b);
     NM_CMP_DIRECT_MEMCMP(a, b, nm_utils_addr_family_to_size(addr_family));
     return 0;
 }
+
+int nm_ip_addr_cmp_for_sort(gconstpointer a, gconstpointer b, gpointer user_data);
 
 static inline gboolean
 nm_ip_addr_equal(int addr_family, gconstpointer a, gconstpointer b)
@@ -277,8 +282,15 @@ nm_ip_addr_set(int addr_family, gpointer dst, gconstpointer src)
     nm_assert(dst);
     nm_assert(src);
 
-    /* this MUST use memcpy() (or similar means) to support unaligned src/dst pointers. */
+    /* this MUST use memcpy() to support unaligned src/dst pointers. */
     memcpy(dst, src, nm_utils_addr_family_to_size(addr_family));
+
+    /* Note that @dst is not necessarily a NMIPAddr, it could also be just
+     * an in_addr_t/struct in6_addr. We thus can only set the bytes that
+     * we know are present based on the address family.
+     *
+     * Using this function to initialize an NMIPAddr union (for IPv4) leaves
+     * uninitalized bytes. Avoid that by using nm_ip_addr_init() instead. */
 }
 
 static inline NMIPAddr
@@ -290,6 +302,8 @@ nm_ip_addr_init(int addr_family, gconstpointer src)
     nm_assert(src);
 
     G_STATIC_ASSERT_EXPR(sizeof(NMIPAddr) == sizeof(struct in6_addr));
+
+    /* this MUST use memcpy() to support unaligned src/dst pointers. */
 
     if (NM_IS_IPv4(addr_family)) {
         memcpy(&a, src, sizeof(in_addr_t));
@@ -499,8 +513,16 @@ gboolean nm_utils_ip_is_site_local(int addr_family, const void *address);
 
 /*****************************************************************************/
 
-#define NM_IPV4LL_NETWORK ((in_addr_t) (htonl(0xA9FE0000lu)))
-#define NM_IPV4LL_NETMASK ((in_addr_t) (htonl(0xFFFF0000lu)))
+#define NM_IPV4LL_NETWORK ((in_addr_t) htonl(0xA9FE0000lu))
+#define NM_IPV4LL_NETMASK ((in_addr_t) htonl(0xFFFF0000lu))
+
+static inline gboolean
+nm_utils_ip4_address_is_loopback(in_addr_t addr)
+{
+    /* There is also IN_LOOPBACK() in <linux/in.h>, but there the
+     * argument is in host order not `in_addr_t`. */
+    return (addr & htonl(0xFF000000u)) == htonl(0x7F000000u);
+}
 
 static inline gboolean
 nm_utils_ip4_address_is_link_local(in_addr_t addr)

@@ -196,18 +196,18 @@ typedef struct {
 } NML3ConfigNotifyData;
 
 struct _NML3CfgPrivate;
-struct _NMPRouteManager;
+struct _NMPGlobalTracker;
 
 struct _NML3Cfg {
     GObject parent;
     struct {
-        struct _NML3CfgPrivate  *p;
-        NMNetns                 *netns;
-        NMPlatform              *platform;
-        struct _NMPRouteManager *route_manager;
-        const NMPObject         *plobj;
-        const NMPObject         *plobj_next;
-        int                      ifindex;
+        struct _NML3CfgPrivate   *p;
+        NMNetns                  *netns;
+        NMPlatform               *platform;
+        struct _NMPGlobalTracker *global_tracker;
+        const NMPObject          *plobj;
+        const NMPObject          *plobj_next;
+        int                       ifindex;
     } priv;
 };
 
