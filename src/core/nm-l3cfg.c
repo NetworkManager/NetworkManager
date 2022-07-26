@@ -3700,6 +3700,7 @@ _l3cfg_update_combined_config(NML3Cfg               *self,
                     .address      = NM_IPV4LO_NETWORK,
                     .plen         = 8,
                     .peer_address = NM_IPV4LO_NETWORK,
+                    .a_no_auto_noprefixroute = TRUE,
                 };
 
                 nm_l3_config_data_add_address_4(l3cd, &ip4_address);
@@ -3708,6 +3709,7 @@ _l3cfg_update_combined_config(NML3Cfg               *self,
                 const NMPlatformIP6Address ip6_address = (NMPlatformIP6Address){
                     .address = IN6ADDR_LOOPBACK_INIT,
                     .plen    = 128,
+                    .a_no_auto_noprefixroute = TRUE,
                 };
 
                 nm_l3_config_data_add_address_6(l3cd, &ip6_address);
@@ -4296,30 +4298,6 @@ _l3_commit_one(NML3Cfg              *self,
                                                   addr_family,
                                                   &addresses_prune,
                                                   &routes_prune);
-        }
-    }
-
-    if (self->priv.ifindex == 1) {
-        if (!addresses)
-            addresses = g_ptr_array_new_with_free_func((GDestroyNotify) nmp_object_unref);
-        if (IS_IPv4) {
-            g_ptr_array_add(addresses,
-                            nmp_object_new(NMP_OBJECT_TYPE_IP4_ADDRESS,
-                                           &((const NMPlatformIP4Address){
-                                               .address                 = NM_IPV4LO_NETWORK,
-                                               .a_no_auto_noprefixroute = TRUE,
-                                               .ifindex                 = 1,
-                                               .plen                    = 8,
-                                           })));
-        } else {
-            g_ptr_array_add(addresses,
-                            nmp_object_new(NMP_OBJECT_TYPE_IP6_ADDRESS,
-                                           &((const NMPlatformIP6Address){
-                                               .address                 = IN6ADDR_LOOPBACK_INIT,
-                                               .a_no_auto_noprefixroute = TRUE,
-                                               .ifindex                 = 1,
-                                               .plen                    = 128,
-                                           })));
         }
     }
 
