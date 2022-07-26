@@ -3701,6 +3701,7 @@ _l3cfg_update_combined_config(NML3Cfg               *self,
                     .plen         = 8,
                     .peer_address = NM_IPV4LO_NETWORK,
                 };
+
                 nm_l3_config_data_add_address_4(l3cd, &ip4_address);
             }
             if (!nm_l3_config_data_lookup_address_6(l3cd, &in6addr_loopback)) {
@@ -3708,6 +3709,7 @@ _l3cfg_update_combined_config(NML3Cfg               *self,
                     .address = IN6ADDR_LOOPBACK_INIT,
                     .plen    = 128,
                 };
+
                 nm_l3_config_data_add_address_6(l3cd, &ip6_address);
             }
         }
