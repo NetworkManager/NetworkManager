@@ -2,7 +2,7 @@
 
 #include "libnm-glib-aux/nm-default-glib-i18n-lib.h"
 
-#include "nmp-route-manager.h"
+#include "nmp-global-tracker.h"
 
 #include <linux/fib_rules.h>
 #include <linux/rtnetlink.h>
@@ -13,7 +13,37 @@
 
 /*****************************************************************************/
 
-struct _NMPRouteManager {
+/* NMPGlobalTracker tracks certain objects for the entire network namespace and can
+ * commit them.
+ *
+ * We tend to configure things per-interface and per-profile. In many cases,
+ * we thereby only need to care about the things for that interface. For example,
+ * we can configure IP addresses and (unicast) routes without having a system wide
+ * view. That is mainly, because such objects are themselves tied to an ifindex.
+ *
+ * However, for certain objects that's not the case. For example, policy routing
+ * rules, certain route types (blackhole, unavailable, prohibit, throw) and MPTCP
+ * endpoints require a holistic view of the system. That is, because rules and
+ * these route types have no ifindex. For MPTCP endpoints, they have an ifindex,
+ * however we can only configure a small number of them at a time, so we need a
+ * central (global) instance that can track which endpoints to configure.
+ *
+ * In general, the NMPGlobalTracker tracks objects for the entire namespace, and
+ * it's sync() method will figure out how to configure them.
+ *
+ * Since the users of NMPGloablTracker (NML3Cfg, NMDevice) themselves don't
+ * have this holistic view, the API of NMPGlobalTracker allows them to track
+ * individual objects independently (they register their objects for a private
+ * user-tag). If multiple such independent users track the same object, the tracking
+ * priority (track_priority_val) determines which one wins.
+ *
+ * NMPGlobalTracker can not only track whether an object should be present,
+ * it also can track whether it should be absent. See track_priority_present.
+ */
+
+/*****************************************************************************/
+
+struct _NMPGlobalTracker {
     NMPlatform *platform;
     GHashTable *by_obj;
     GHashTable *by_user_tag;
@@ -25,17 +55,17 @@ struct _NMPRouteManager {
 /*****************************************************************************/
 
 #define _NMLOG_DOMAIN      LOGD_PLATFORM
-#define _NMLOG_PREFIX_NAME "route-manager"
+#define _NMLOG_PREFIX_NAME "global-tracker"
 
 #define _NMLOG(level, ...) __NMLOG_DEFAULT(level, LOGD_PLATFORM, _NMLOG_PREFIX_NAME, __VA_ARGS__)
 
 /*****************************************************************************/
 
 static gboolean
-NMP_IS_ROUTE_MANAGER(gpointer self)
+NMP_IS_GLOBAL_TRACKER(gpointer self)
 {
-    return self && ((NMPRouteManager *) self)->ref_count > 0
-           && NM_IS_PLATFORM(((NMPRouteManager *) self)->platform);
+    return self && ((NMPGlobalTracker *) self)->ref_count > 0
+           && NM_IS_PLATFORM(((NMPGlobalTracker *) self)->platform);
 }
 
 /*****************************************************************************/
@@ -46,19 +76,20 @@ typedef struct {
     CList            obj_lst;
     CList            user_tag_lst;
 
-    /* track_priority_val zero is special: those are weakly tracked rules.
+    /* @track_priority_val zero is special: those are weakly tracked objects.
      * That means: NetworkManager will restore them only if it removed them earlier.
      * But it will not remove or add them otherwise.
      *
-     * Otherwise, the track_priority_val goes together with track_priority_present.
-     * In case of one rule being tracked multiple times (with different priorities),
+     * Otherwise, @track_priority_val goes together with @track_priority_present.
+     * In case of one object being tracked multiple times (with different priorities),
      * the one with higher priority wins. See _track_obj_data_get_best_data().
      * Then, the winning present state either enforces that the rule is present
      * or absent.
      *
-     * If a rules is not tracked at all, it is ignored by NetworkManager. Assuming
-     * that it was added externally by the user. But unlike weakly tracked rules,
-     * NM will *not* restore such rules if NetworkManager themself removed them. */
+     * If an object is not tracked at all, it is ignored by NetworkManager (except
+     * for MPTCP endpoints for the tracked interface). Assuming that it was added
+     * externally by the user. But unlike weakly tracked rules, NM will *not* restore
+     * such rules if NetworkManager themself removed them. */
     guint32 track_priority_val;
     bool    track_priority_present : 1;
 
@@ -70,9 +101,9 @@ typedef enum {
     CONFIG_STATE_ADDED_BY_US   = 1,
     CONFIG_STATE_REMOVED_BY_US = 2,
 
-    /* ConfigState encodes whether the rule was touched by us at all (CONFIG_STATE_NONE).
+    /* ConfigState encodes whether the object was touched by us at all (CONFIG_STATE_NONE).
      *
-     * Maybe we would only need to track whether we touched the rule at all. But we
+     * Maybe we would only need to track whether we touched the object at all. But we
      * track it more in detail what we did: did we add it (CONFIG_STATE_ADDED_BY_US)
      * or did we remove it (CONFIG_STATE_REMOVED_BY_US)?
      * Finally, we need CONFIG_STATE_OWNED_BY_US, which means that we didn't actively
@@ -88,16 +119,16 @@ typedef struct {
 
     CList by_obj_lst;
 
-    /* indicates whether we configured/removed the rule (during sync()). We need that, so
-     * if the rule gets untracked, that we know to remove/restore it.
+    /* indicates whether we configured/removed the object (during sync()). We need that, so
+     * if the object gets untracked, that we know to remove/restore it.
      *
-     * This makes NMPRouteManager stateful (beyond the configuration that indicates
-     * which rules are tracked).
-     * After a restart, NetworkManager would no longer remember which rules were added
+     * This makes NMPGlobalTracker stateful (beyond the configuration that indicates
+     * which objects are tracked).
+     * After a restart, NetworkManager would no longer remember which objects were added
      * by us.
      *
-     * That is partially fixed by NetworkManager taking over the rules that it
-     * actively configures (see %NMP_ROUTE_MANAGER_EXTERN_WEAKLY_TRACKED_USER_TAG). */
+     * That is partially fixed by NetworkManager taking over the objects that it
+     * actively configures (see %NMP_GLOBAL_TRACKER_EXTERN_WEAKLY_TRACKED_USER_TAG). */
     ConfigState config_state;
 } TrackObjData;
 
@@ -108,15 +139,15 @@ typedef struct {
 
 /*****************************************************************************/
 
-static void _track_data_untrack(NMPRouteManager *self,
-                                TrackData       *track_data,
-                                gboolean         remove_user_tag_data,
-                                gboolean         make_owned_by_us);
+static void _track_data_untrack(NMPGlobalTracker *self,
+                                TrackData        *track_data,
+                                gboolean          remove_user_tag_data,
+                                gboolean          make_owned_by_us);
 
 /*****************************************************************************/
 
 static CList *
-_by_obj_lst_head(NMPRouteManager *self, NMPObjectType obj_type)
+_by_obj_lst_head(NMPGlobalTracker *self, NMPObjectType obj_type)
 {
     G_STATIC_ASSERT(G_N_ELEMENTS(self->by_obj_lst_heads) == 3);
 
@@ -266,8 +297,8 @@ _track_data_lookup(GHashTable *by_data, const NMPObject *obj, gconstpointer user
 /*****************************************************************************/
 
 /**
- * nmp_route_manager_track:
- * @self: the #NMPRouteManager instance
+ * nmp_global_tracker_track:
+ * @self: the #NMPGlobalTracker instance
  * @obj_type: the NMPObjectType of @obj that we are tracking.
  * @obj: the NMPlatformObject (of type NMPObjectType) to track. Usually
  *   a #NMPlatformRoutingRule, #NMPlatformIP4Route or #NMPlatformIP6Route
@@ -282,20 +313,20 @@ _track_data_lookup(GHashTable *by_data, const NMPObject *obj, gconstpointer user
  * @user_tag: the tag associated with tracking this rule. The same tag
  *   must be used to untrack the rule later.
  * @user_tag_untrack: if not %NULL, at the same time untrack this user-tag
- *   for the same rule. Note that this is different from a plain nmp_route_manager_untrack_rule(),
+ *   for the same rule. Note that this is different from a plain nmp_global_tracker_untrack_rule(),
  *   because it enforces ownership of the now tracked rule. On the other hand,
- *   a plain nmp_route_manager_untrack_rule() merely forgets about the tracking.
- *   The purpose here is to set this to %NMP_ROUTE_MANAGER_EXTERN_WEAKLY_TRACKED_USER_TAG.
+ *   a plain nmp_global_tracker_untrack_rule() merely forgets about the tracking.
+ *   The purpose here is to set this to %NMP_GLOBAL_TRACKER_EXTERN_WEAKLY_TRACKED_USER_TAG.
  *
  * Returns: %TRUE, if something changed.
  */
 gboolean
-nmp_route_manager_track(NMPRouteManager *self,
-                        NMPObjectType    obj_type,
-                        gconstpointer    obj,
-                        gint32           track_priority,
-                        gconstpointer    user_tag,
-                        gconstpointer    user_tag_untrack)
+nmp_global_tracker_track(NMPGlobalTracker *self,
+                         NMPObjectType     obj_type,
+                         gconstpointer     obj,
+                         gint32            track_priority,
+                         gconstpointer     user_tag,
+                         gconstpointer     user_tag_untrack)
 {
     NMPObject         obj_stack;
     const NMPObject  *p_obj_stack;
@@ -307,7 +338,7 @@ nmp_route_manager_track(NMPRouteManager *self,
     guint32           track_priority_val;
     gboolean          track_priority_present;
 
-    g_return_val_if_fail(NMP_IS_ROUTE_MANAGER(self), FALSE);
+    g_return_val_if_fail(NMP_IS_GLOBAL_TRACKER(self), FALSE);
     g_return_val_if_fail(obj, FALSE);
     g_return_val_if_fail(user_tag, FALSE);
 
@@ -414,15 +445,15 @@ nmp_route_manager_track(NMPRouteManager *self,
 }
 
 static void
-_track_data_untrack(NMPRouteManager *self,
-                    TrackData       *track_data,
-                    gboolean         remove_user_tag_data,
-                    gboolean         make_owned_by_us)
+_track_data_untrack(NMPGlobalTracker *self,
+                    TrackData        *track_data,
+                    gboolean          remove_user_tag_data,
+                    gboolean          make_owned_by_us)
 {
     char          sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
     TrackObjData *obj_data;
 
-    nm_assert(NMP_IS_ROUTE_MANAGER(self));
+    nm_assert(NMP_IS_GLOBAL_TRACKER(self));
     _track_data_assert(track_data, TRUE);
     nm_assert(self->by_data);
     nm_assert(g_hash_table_lookup(self->by_data, track_data) == track_data);
@@ -467,17 +498,17 @@ _track_data_untrack(NMPRouteManager *self,
 }
 
 gboolean
-nmp_route_manager_untrack(NMPRouteManager *self,
-                          NMPObjectType    obj_type,
-                          gconstpointer    obj,
-                          gconstpointer    user_tag)
+nmp_global_tracker_untrack(NMPGlobalTracker *self,
+                           NMPObjectType     obj_type,
+                           gconstpointer     obj,
+                           gconstpointer     user_tag)
 {
     NMPObject        obj_stack;
     const NMPObject *p_obj_stack;
     TrackData       *track_data;
     gboolean         changed = FALSE;
 
-    g_return_val_if_fail(NMP_IS_ROUTE_MANAGER(self), FALSE);
+    g_return_val_if_fail(NMP_IS_GLOBAL_TRACKER(self), FALSE);
     nm_assert(NM_IN_SET(obj_type,
                         NMP_OBJECT_TYPE_IP4_ROUTE,
                         NMP_OBJECT_TYPE_IP6_ROUTE,
@@ -499,12 +530,12 @@ nmp_route_manager_untrack(NMPRouteManager *self,
 }
 
 void
-nmp_route_manager_set_dirty(NMPRouteManager *self, gconstpointer user_tag)
+nmp_global_tracker_set_dirty(NMPGlobalTracker *self, gconstpointer user_tag)
 {
     TrackData        *track_data;
     TrackUserTagData *user_tag_data;
 
-    g_return_if_fail(NMP_IS_ROUTE_MANAGER(self));
+    g_return_if_fail(NMP_IS_GLOBAL_TRACKER(self));
     g_return_if_fail(user_tag);
 
     user_tag_data = g_hash_table_lookup(self->by_user_tag, &user_tag);
@@ -516,17 +547,17 @@ nmp_route_manager_set_dirty(NMPRouteManager *self, gconstpointer user_tag)
 }
 
 gboolean
-nmp_route_manager_untrack_all(NMPRouteManager *self,
-                              gconstpointer    user_tag,
-                              gboolean         all /* or only dirty */,
-                              gboolean         make_survivors_dirty)
+nmp_global_tracker_untrack_all(NMPGlobalTracker *self,
+                               gconstpointer     user_tag,
+                               gboolean          all /* or only dirty */,
+                               gboolean          make_survivors_dirty)
 {
     TrackData        *track_data;
     TrackData        *track_data_safe;
     TrackUserTagData *user_tag_data;
     gboolean          changed = FALSE;
 
-    g_return_val_if_fail(NMP_IS_ROUTE_MANAGER(self), FALSE);
+    g_return_val_if_fail(NMP_IS_GLOBAL_TRACKER(self), FALSE);
     g_return_val_if_fail(user_tag, FALSE);
 
     user_tag_data = g_hash_table_lookup(self->by_user_tag, &user_tag);
@@ -554,7 +585,7 @@ nmp_route_manager_untrack_all(NMPRouteManager *self,
 /*****************************************************************************/
 
 void
-nmp_route_manager_sync(NMPRouteManager *self, NMPObjectType obj_type, gboolean keep_deleted)
+nmp_global_tracker_sync(NMPGlobalTracker *self, NMPObjectType obj_type, gboolean keep_deleted)
 {
     char                         sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
     const NMDedupMultiHeadEntry *pl_head_entry;
@@ -567,7 +598,7 @@ nmp_route_manager_sync(NMPRouteManager *self, NMPObjectType obj_type, gboolean k
     guint                        i;
     const TrackData             *td_best;
 
-    g_return_if_fail(NMP_IS_ROUTE_MANAGER(self));
+    g_return_if_fail(NMP_IS_GLOBAL_TRACKER(self));
     g_return_if_fail(NM_IN_SET(obj_type,
                                NMP_OBJECT_TYPE_IP4_ROUTE,
                                NMP_OBJECT_TYPE_IP6_ROUTE,
@@ -677,18 +708,18 @@ nmp_route_manager_sync(NMPRouteManager *self, NMPObjectType obj_type, gboolean k
 /*****************************************************************************/
 
 void
-nmp_route_manager_track_rule_from_platform(NMPRouteManager *self,
-                                           NMPlatform      *platform,
-                                           int              addr_family,
-                                           gint32           tracking_priority,
-                                           gconstpointer    user_tag)
+nmp_global_tracker_track_rule_from_platform(NMPGlobalTracker *self,
+                                            NMPlatform       *platform,
+                                            int               addr_family,
+                                            gint32            tracking_priority,
+                                            gconstpointer     user_tag)
 {
     NMPLookup                    lookup;
     const NMDedupMultiHeadEntry *head_entry;
     NMDedupMultiIter             iter;
     const NMPObject             *o;
 
-    g_return_if_fail(NMP_IS_ROUTE_MANAGER(self));
+    g_return_if_fail(NMP_IS_GLOBAL_TRACKER(self));
 
     if (!platform)
         platform = self->platform;
@@ -705,98 +736,98 @@ nmp_route_manager_track_rule_from_platform(NMPRouteManager *self,
         if (addr_family != AF_UNSPEC && rr->addr_family != addr_family)
             continue;
 
-        nmp_route_manager_track_rule(self, rr, tracking_priority, user_tag, NULL);
+        nmp_global_tracker_track_rule(self, rr, tracking_priority, user_tag, NULL);
     }
 }
 
 /*****************************************************************************/
 
 void
-nmp_route_manager_track_rule_default(NMPRouteManager *self,
-                                     int              addr_family,
-                                     gint32           track_priority,
-                                     gconstpointer    user_tag)
+nmp_global_tracker_track_rule_default(NMPGlobalTracker *self,
+                                      int               addr_family,
+                                      gint32            track_priority,
+                                      gconstpointer     user_tag)
 {
-    g_return_if_fail(NMP_IS_ROUTE_MANAGER(self));
+    g_return_if_fail(NMP_IS_GLOBAL_TRACKER(self));
 
     nm_assert(NM_IN_SET(addr_family, AF_UNSPEC, AF_INET, AF_INET6));
 
     /* track the default rules. See also `man ip-rule`. */
 
     if (NM_IN_SET(addr_family, AF_UNSPEC, AF_INET)) {
-        nmp_route_manager_track_rule(self,
-                                     &((NMPlatformRoutingRule){
-                                         .addr_family = AF_INET,
-                                         .priority    = 0,
-                                         .table       = RT_TABLE_LOCAL,
-                                         .action      = FR_ACT_TO_TBL,
-                                         .protocol    = RTPROT_KERNEL,
-                                     }),
-                                     track_priority,
-                                     user_tag,
-                                     NULL);
-        nmp_route_manager_track_rule(self,
-                                     &((NMPlatformRoutingRule){
-                                         .addr_family = AF_INET,
-                                         .priority    = 32766,
-                                         .table       = RT_TABLE_MAIN,
-                                         .action      = FR_ACT_TO_TBL,
-                                         .protocol    = RTPROT_KERNEL,
-                                     }),
-                                     track_priority,
-                                     user_tag,
-                                     NULL);
-        nmp_route_manager_track_rule(self,
-                                     &((NMPlatformRoutingRule){
-                                         .addr_family = AF_INET,
-                                         .priority    = 32767,
-                                         .table       = RT_TABLE_DEFAULT,
-                                         .action      = FR_ACT_TO_TBL,
-                                         .protocol    = RTPROT_KERNEL,
-                                     }),
-                                     track_priority,
-                                     user_tag,
-                                     NULL);
+        nmp_global_tracker_track_rule(self,
+                                      &((NMPlatformRoutingRule){
+                                          .addr_family = AF_INET,
+                                          .priority    = 0,
+                                          .table       = RT_TABLE_LOCAL,
+                                          .action      = FR_ACT_TO_TBL,
+                                          .protocol    = RTPROT_KERNEL,
+                                      }),
+                                      track_priority,
+                                      user_tag,
+                                      NULL);
+        nmp_global_tracker_track_rule(self,
+                                      &((NMPlatformRoutingRule){
+                                          .addr_family = AF_INET,
+                                          .priority    = 32766,
+                                          .table       = RT_TABLE_MAIN,
+                                          .action      = FR_ACT_TO_TBL,
+                                          .protocol    = RTPROT_KERNEL,
+                                      }),
+                                      track_priority,
+                                      user_tag,
+                                      NULL);
+        nmp_global_tracker_track_rule(self,
+                                      &((NMPlatformRoutingRule){
+                                          .addr_family = AF_INET,
+                                          .priority    = 32767,
+                                          .table       = RT_TABLE_DEFAULT,
+                                          .action      = FR_ACT_TO_TBL,
+                                          .protocol    = RTPROT_KERNEL,
+                                      }),
+                                      track_priority,
+                                      user_tag,
+                                      NULL);
     }
     if (NM_IN_SET(addr_family, AF_UNSPEC, AF_INET6)) {
-        nmp_route_manager_track_rule(self,
-                                     &((NMPlatformRoutingRule){
-                                         .addr_family = AF_INET6,
-                                         .priority    = 0,
-                                         .table       = RT_TABLE_LOCAL,
-                                         .action      = FR_ACT_TO_TBL,
-                                         .protocol    = RTPROT_KERNEL,
-                                     }),
-                                     track_priority,
-                                     user_tag,
-                                     NULL);
-        nmp_route_manager_track_rule(self,
-                                     &((NMPlatformRoutingRule){
-                                         .addr_family = AF_INET6,
-                                         .priority    = 32766,
-                                         .table       = RT_TABLE_MAIN,
-                                         .action      = FR_ACT_TO_TBL,
-                                         .protocol    = RTPROT_KERNEL,
-                                     }),
-                                     track_priority,
-                                     user_tag,
-                                     NULL);
+        nmp_global_tracker_track_rule(self,
+                                      &((NMPlatformRoutingRule){
+                                          .addr_family = AF_INET6,
+                                          .priority    = 0,
+                                          .table       = RT_TABLE_LOCAL,
+                                          .action      = FR_ACT_TO_TBL,
+                                          .protocol    = RTPROT_KERNEL,
+                                      }),
+                                      track_priority,
+                                      user_tag,
+                                      NULL);
+        nmp_global_tracker_track_rule(self,
+                                      &((NMPlatformRoutingRule){
+                                          .addr_family = AF_INET6,
+                                          .priority    = 32766,
+                                          .table       = RT_TABLE_MAIN,
+                                          .action      = FR_ACT_TO_TBL,
+                                          .protocol    = RTPROT_KERNEL,
+                                      }),
+                                      track_priority,
+                                      user_tag,
+                                      NULL);
     }
 }
 
 /*****************************************************************************/
 
-NMPRouteManager *
-nmp_route_manager_new(NMPlatform *platform)
+NMPGlobalTracker *
+nmp_global_tracker_new(NMPlatform *platform)
 {
-    NMPRouteManager *self;
+    NMPGlobalTracker *self;
 
     g_return_val_if_fail(NM_IS_PLATFORM(platform), NULL);
 
     G_STATIC_ASSERT_EXPR(G_STRUCT_OFFSET(TrackUserTagData, user_tag) == 0);
 
-    self  = g_slice_new(NMPRouteManager);
-    *self = (NMPRouteManager){
+    self  = g_slice_new(NMPGlobalTracker);
+    *self = (NMPGlobalTracker){
         .ref_count = 1,
         .platform  = g_object_ref(platform),
         .by_data =
@@ -816,19 +847,19 @@ nmp_route_manager_new(NMPlatform *platform)
     return self;
 }
 
-NMPRouteManager *
-nmp_route_manager_ref(NMPRouteManager *self)
+NMPGlobalTracker *
+nmp_global_tracker_ref(NMPGlobalTracker *self)
 {
-    g_return_val_if_fail(NMP_IS_ROUTE_MANAGER(self), NULL);
+    g_return_val_if_fail(NMP_IS_GLOBAL_TRACKER(self), NULL);
 
     self->ref_count++;
     return self;
 }
 
 void
-nmp_route_manager_unref(NMPRouteManager *self)
+nmp_global_tracker_unref(NMPGlobalTracker *self)
 {
-    g_return_if_fail(NMP_IS_ROUTE_MANAGER(self));
+    g_return_if_fail(NMP_IS_GLOBAL_TRACKER(self));
 
     if (--self->ref_count > 0)
         return;

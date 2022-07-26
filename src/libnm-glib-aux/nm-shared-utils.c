@@ -44,6 +44,15 @@ G_STATIC_ASSERT(_nm_alignof(struct in_addr) <= _nm_alignof(NMIPAddr));
 G_STATIC_ASSERT(_nm_alignof(struct in6_addr) <= _nm_alignof(NMIPAddr));
 G_STATIC_ASSERT(_nm_alignof(NMEtherAddr) <= _nm_alignof(NMIPAddr));
 
+int
+nm_ip_addr_cmp_for_sort(gconstpointer a, gconstpointer b, gpointer user_data)
+{
+    /* This is a compare function that can be used for sorting IP addresses.
+     * Essentially, it calls memcmp(). @user_data must be GINT_TO_POINTER(addr_family).
+     * @a and @b must be either pointers to in_addr_t, struct in6_addr or NMIPAddr. */
+    return nm_ip_addr_cmp(GPOINTER_TO_INT(user_data), a, b);
+}
+
 /* this initializes a struct in_addr/in6_addr and allows for untrusted
  * arguments (like unsuitable @addr_family or @src_len). It's almost safe
  * in the sense that it verifies input arguments strictly. Also, it

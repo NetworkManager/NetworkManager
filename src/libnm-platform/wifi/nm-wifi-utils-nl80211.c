@@ -9,13 +9,13 @@
 
 #include "nm-wifi-utils-nl80211.h"
 
+#include "libnm-std-aux/nm-linux-compat.h"
+
 #include <sys/ioctl.h>
 #include <net/ethernet.h>
 #include <unistd.h>
 #include <linux/nl80211.h>
 #include <linux/if.h>
-
-#include "linux-headers/nl80211-vnd-intel.h"
 
 #include "libnm-log-core/nm-logging.h"
 #include "libnm-platform/nm-netlink.h"

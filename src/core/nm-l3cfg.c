@@ -12,7 +12,7 @@
 #include "libnm-glib-aux/nm-time-utils.h"
 #include "libnm-platform/nm-platform.h"
 #include "libnm-platform/nmp-object.h"
-#include "libnm-platform/nmp-route-manager.h"
+#include "libnm-platform/nmp-global-tracker.h"
 #include "nm-netns.h"
 #include "n-acd/src/n-acd.h"
 #include "nm-l3-ipv4ll.h"
@@ -3450,15 +3450,16 @@ nm_l3cfg_remove_config_all_dirty(NML3Cfg *self, gconstpointer tag)
 
 /*****************************************************************************/
 
-#define _NODEV_ROUTES_TAG(self, IS_IPv4) ((gconstpointer) (&(&(self)->priv.route_manager)[IS_IPv4]))
+#define _NODEV_ROUTES_TAG(self, IS_IPv4) \
+    ((gconstpointer) (&(&(self)->priv.global_tracker)[IS_IPv4]))
 
 static gboolean
 _nodev_routes_untrack(NML3Cfg *self, int addr_family)
 {
-    return nmp_route_manager_untrack_all(self->priv.route_manager,
-                                         _NODEV_ROUTES_TAG(self, NM_IS_IPv4(addr_family)),
-                                         FALSE,
-                                         TRUE);
+    return nmp_global_tracker_untrack_all(self->priv.global_tracker,
+                                          _NODEV_ROUTES_TAG(self, NM_IS_IPv4(addr_family)),
+                                          FALSE,
+                                          TRUE);
 }
 
 static void
@@ -3478,12 +3479,12 @@ _nodev_routes_sync(NML3Cfg          *self,
     for (i = 0; i < routes_nodev->len; i++) {
         const NMPObject *obj = routes_nodev->pdata[i];
 
-        if (nmp_route_manager_track(self->priv.route_manager,
-                                    obj_type,
-                                    NMP_OBJECT_CAST_IP_ROUTE(obj),
-                                    1,
-                                    _NODEV_ROUTES_TAG(self, IS_IPv4),
-                                    NULL))
+        if (nmp_global_tracker_track(self->priv.global_tracker,
+                                     obj_type,
+                                     NMP_OBJECT_CAST_IP_ROUTE(obj),
+                                     1,
+                                     _NODEV_ROUTES_TAG(self, IS_IPv4),
+                                     NULL))
             changed = TRUE;
     }
 
@@ -3492,7 +3493,9 @@ out_clear:
         changed = TRUE;
 
     if (changed || commit_type >= NM_L3_CFG_COMMIT_TYPE_REAPPLY)
-        nmp_route_manager_sync(self->priv.route_manager, NMP_OBJECT_TYPE_IP_ROUTE(IS_IPv4), FALSE);
+        nmp_global_tracker_sync(self->priv.global_tracker,
+                                NMP_OBJECT_TYPE_IP_ROUTE(IS_IPv4),
+                                FALSE);
 }
 
 /*****************************************************************************/
@@ -4764,7 +4767,8 @@ constructed(GObject *object)
     self->priv.platform = g_object_ref(nm_netns_get_platform(self->priv.netns));
     nm_assert(NM_IS_PLATFORM(self->priv.platform));
 
-    self->priv.route_manager = nmp_route_manager_ref(nm_netns_get_route_manager(self->priv.netns));
+    self->priv.global_tracker =
+        nmp_global_tracker_ref(nm_netns_get_global_tracker(self->priv.netns));
 
     _LOGT("created (netns=" NM_HASH_OBFUSCATE_PTR_FMT ")", NM_HASH_OBFUSCATE_PTR(self->priv.netns));
 
@@ -4819,13 +4823,13 @@ finalize(GObject *object)
     nm_assert(c_list_is_empty(&self->priv.p->obj_state_zombie_lst_head));
 
     if (_nodev_routes_untrack(self, AF_INET))
-        nmp_route_manager_sync(self->priv.route_manager, NMP_OBJECT_TYPE_IP4_ROUTE, FALSE);
+        nmp_global_tracker_sync(self->priv.global_tracker, NMP_OBJECT_TYPE_IP4_ROUTE, FALSE);
     if (_nodev_routes_untrack(self, AF_INET6))
-        nmp_route_manager_sync(self->priv.route_manager, NMP_OBJECT_TYPE_IP6_ROUTE, FALSE);
+        nmp_global_tracker_sync(self->priv.global_tracker, NMP_OBJECT_TYPE_IP6_ROUTE, FALSE);
 
     g_clear_object(&self->priv.netns);
     g_clear_object(&self->priv.platform);
-    nm_clear_pointer(&self->priv.route_manager, nmp_route_manager_unref);
+    nm_clear_pointer(&self->priv.global_tracker, nmp_global_tracker_unref);
 
     nm_clear_l3cd(&self->priv.p->combined_l3cd_merged);
     nm_clear_l3cd(&self->priv.p->combined_l3cd_commited);
