@@ -13,6 +13,36 @@
 
 /*****************************************************************************/
 
+/* NMPGlobalTracker tracks certain objects for the entire network namespace and can
+ * commit them.
+ *
+ * We tend to configure things per-interface and per-profile. In many cases,
+ * we thereby only need to care about the things for that interface. For example,
+ * we can configure IP addresses and (unicast) routes without having a system wide
+ * view. That is mainly, because such objects are themselves tied to an ifindex.
+ *
+ * However, for certain objects that's not the case. For example, policy routing
+ * rules, certain route types (blackhole, unavailable, prohibit, throw) and MPTCP
+ * endpoints require a holistic view of the system. That is, because rules and
+ * these route types have no ifindex. For MPTCP endpoints, they have an ifindex,
+ * however we can only configure a small number of them at a time, so we need a
+ * central (global) instance that can track which endpoints to configure.
+ *
+ * In general, the NMPGlobalTracker tracks objects for the entire namespace, and
+ * it's sync() method will figure out how to configure them.
+ *
+ * Since the users of NMPGloablTracker (NML3Cfg, NMDevice) themselves don't
+ * have this holistic view, the API of NMPGlobalTracker allows them to track
+ * individual objects independently (they register their objects for a private
+ * user-tag). If multiple such independent users track the same object, the tracking
+ * priority (track_priority_val) determines which one wins.
+ *
+ * NMPGlobalTracker can not only track whether an object should be present,
+ * it also can track whether it should be absent. See track_priority_present.
+ */
+
+/*****************************************************************************/
+
 struct _NMPGlobalTracker {
     NMPlatform *platform;
     GHashTable *by_obj;
@@ -46,19 +76,20 @@ typedef struct {
     CList            obj_lst;
     CList            user_tag_lst;
 
-    /* track_priority_val zero is special: those are weakly tracked rules.
+    /* @track_priority_val zero is special: those are weakly tracked objects.
      * That means: NetworkManager will restore them only if it removed them earlier.
      * But it will not remove or add them otherwise.
      *
-     * Otherwise, the track_priority_val goes together with track_priority_present.
-     * In case of one rule being tracked multiple times (with different priorities),
+     * Otherwise, @track_priority_val goes together with @track_priority_present.
+     * In case of one object being tracked multiple times (with different priorities),
      * the one with higher priority wins. See _track_obj_data_get_best_data().
      * Then, the winning present state either enforces that the rule is present
      * or absent.
      *
-     * If a rules is not tracked at all, it is ignored by NetworkManager. Assuming
-     * that it was added externally by the user. But unlike weakly tracked rules,
-     * NM will *not* restore such rules if NetworkManager themself removed them. */
+     * If an object is not tracked at all, it is ignored by NetworkManager (except
+     * for MPTCP endpoints for the tracked interface). Assuming that it was added
+     * externally by the user. But unlike weakly tracked rules, NM will *not* restore
+     * such rules if NetworkManager themself removed them. */
     guint32 track_priority_val;
     bool    track_priority_present : 1;
 
@@ -70,9 +101,9 @@ typedef enum {
     CONFIG_STATE_ADDED_BY_US   = 1,
     CONFIG_STATE_REMOVED_BY_US = 2,
 
-    /* ConfigState encodes whether the rule was touched by us at all (CONFIG_STATE_NONE).
+    /* ConfigState encodes whether the object was touched by us at all (CONFIG_STATE_NONE).
      *
-     * Maybe we would only need to track whether we touched the rule at all. But we
+     * Maybe we would only need to track whether we touched the object at all. But we
      * track it more in detail what we did: did we add it (CONFIG_STATE_ADDED_BY_US)
      * or did we remove it (CONFIG_STATE_REMOVED_BY_US)?
      * Finally, we need CONFIG_STATE_OWNED_BY_US, which means that we didn't actively
@@ -88,15 +119,15 @@ typedef struct {
 
     CList by_obj_lst;
 
-    /* indicates whether we configured/removed the rule (during sync()). We need that, so
-     * if the rule gets untracked, that we know to remove/restore it.
+    /* indicates whether we configured/removed the object (during sync()). We need that, so
+     * if the object gets untracked, that we know to remove/restore it.
      *
      * This makes NMPGlobalTracker stateful (beyond the configuration that indicates
-     * which rules are tracked).
-     * After a restart, NetworkManager would no longer remember which rules were added
+     * which objects are tracked).
+     * After a restart, NetworkManager would no longer remember which objects were added
      * by us.
      *
-     * That is partially fixed by NetworkManager taking over the rules that it
+     * That is partially fixed by NetworkManager taking over the objects that it
      * actively configures (see %NMP_GLOBAL_TRACKER_EXTERN_WEAKLY_TRACKED_USER_TAG). */
     ConfigState config_state;
 } TrackObjData;
