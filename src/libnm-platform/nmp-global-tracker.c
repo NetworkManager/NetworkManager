@@ -691,8 +691,32 @@ nmp_global_tracker_sync(NMPGlobalTracker *self, NMPObjectType obj_type, gboolean
 
         plobj =
             nm_platform_lookup_obj(self->platform, NMP_CACHE_ID_TYPE_OBJECT_TYPE, obj_data->obj);
-        if (plobj)
-            continue;
+        if (plobj) {
+            int c;
+
+            switch (obj_type) {
+            case NMP_OBJECT_TYPE_ROUTING_RULE:
+                c = nm_platform_routing_rule_cmp(NMP_OBJECT_CAST_ROUTING_RULE(obj_data->obj),
+                                                 NMP_OBJECT_CAST_ROUTING_RULE(plobj),
+                                                 NM_PLATFORM_ROUTING_RULE_CMP_TYPE_SEMANTICALLY);
+                break;
+            case NMP_OBJECT_TYPE_IP4_ROUTE:
+                c = nm_platform_ip4_route_cmp(NMP_OBJECT_CAST_IP4_ROUTE(obj_data->obj),
+                                              NMP_OBJECT_CAST_IP4_ROUTE(plobj),
+                                              NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY);
+                break;
+            case NMP_OBJECT_TYPE_IP6_ROUTE:
+                c = nm_platform_ip6_route_cmp(NMP_OBJECT_CAST_IP6_ROUTE(obj_data->obj),
+                                              NMP_OBJECT_CAST_IP6_ROUTE(plobj),
+                                              NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY);
+                break;
+            default:
+                nm_assert_not_reached();
+            }
+            if (c == 0)
+                continue;
+            nm_platform_object_delete(self->platform, plobj);
+        }
 
         obj_data->config_state = CONFIG_STATE_ADDED_BY_US;
 
