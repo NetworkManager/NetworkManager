@@ -51,6 +51,7 @@ void nm_editor_bind_ip_route_to_strings(int           family,
 
 void nm_editor_bind_wireless_security_method(NMConnection              *connection,
                                              NMSettingWirelessSecurity *s_wsec,
+                                             NMSetting8021x            *s_8021x,
                                              gpointer                   target,
                                              const char                *target_property,
                                              GBindingFlags              flags);

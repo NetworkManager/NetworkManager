@@ -848,7 +848,9 @@ peer_transform_from_persistent_keepalive_string(GBinding     *binding,
 typedef struct {
     NMConnection              *connection;
     NMSettingWirelessSecurity *s_wsec;
+    NMSetting8021x            *s_8021x;
     gboolean                   s_wsec_in_use;
+    gboolean                   s_8021x_in_use;
 
     GObject *target;
     char    *target_property;
@@ -936,6 +938,7 @@ wireless_security_target_changed(GObject *object, GParamSpec *pspec, gpointer us
 {
     NMEditorWirelessSecurityMethodBinding *binding = user_data;
     char                                  *method;
+    gboolean                               need_8021x = FALSE;
 
     if (binding->updating)
         return;
@@ -945,11 +948,14 @@ wireless_security_target_changed(GObject *object, GParamSpec *pspec, gpointer us
     binding->updating = TRUE;
 
     if (!strcmp(method, "none")) {
-        if (!binding->s_wsec_in_use)
-            return;
-        binding->s_wsec_in_use = FALSE;
-        nm_connection_remove_setting(binding->connection, NM_TYPE_SETTING_WIRELESS_SECURITY);
-
+        if (binding->s_wsec_in_use) {
+            binding->s_wsec_in_use = FALSE;
+            nm_connection_remove_setting(binding->connection, NM_TYPE_SETTING_WIRELESS_SECURITY);
+        }
+        if (binding->s_8021x_in_use) {
+            binding->s_8021x_in_use = FALSE;
+            nm_connection_remove_setting(binding->connection, NM_TYPE_SETTING_802_1X);
+        }
         binding->updating = FALSE;
         return;
     }
@@ -1030,9 +1036,20 @@ wireless_security_target_changed(GObject *object, GParamSpec *pspec, gpointer us
                      NULL,
                      NM_SETTING_WIRELESS_SECURITY_WEP_KEY_TYPE,
                      NM_WEP_KEY_TYPE_UNKNOWN,
+                     NM_SETTING_WIRELESS_SECURITY_PSK,
+                     NULL,
                      NULL);
+        need_8021x = TRUE;
     } else
         g_warn_if_reached();
+
+    if (need_8021x != binding->s_8021x_in_use) {
+        binding->s_8021x_in_use = need_8021x;
+        if (need_8021x)
+            nm_connection_add_setting(binding->connection, NM_SETTING(binding->s_8021x));
+        else
+            nm_connection_remove_setting(binding->connection, NM_TYPE_SETTING_802_1X);
+    }
 
     binding->updating = FALSE;
 }
@@ -1076,6 +1093,7 @@ wireless_security_target_destroyed(gpointer user_data, GObject *ex_target)
 void
 nm_editor_bind_wireless_security_method(NMConnection              *connection,
                                         NMSettingWirelessSecurity *s_wsec,
+                                        NMSetting8021x            *s_8021x,
                                         gpointer                   target,
                                         const char                *target_property,
                                         GBindingFlags              flags)
@@ -1099,9 +1117,11 @@ nm_editor_bind_wireless_security_method(NMConnection              *connection,
                      NM_CONNECTION_CHANGED,
                      G_CALLBACK(wireless_connection_changed),
                      binding);
-    binding->s_wsec_in_use = (nm_connection_get_setting_wireless_security(connection) != NULL);
+    binding->s_wsec_in_use  = (nm_connection_get_setting_wireless_security(connection) != NULL);
+    binding->s_wsec         = g_object_ref(s_wsec);
+    binding->s_8021x_in_use = (nm_connection_get_setting_802_1x(connection) != NULL);
+    binding->s_8021x        = g_object_ref(s_8021x);
 
-    binding->s_wsec = g_object_ref(s_wsec);
     g_signal_connect(s_wsec,
                      "notify::" NM_SETTING_WIRELESS_SECURITY_KEY_MGMT,
                      G_CALLBACK(wireless_security_changed),
