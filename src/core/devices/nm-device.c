@@ -76,6 +76,7 @@
 #include "nm-hostname-manager.h"
 
 #include "nm-device-generic.h"
+#include "nm-device-loopback.h"
 #include "nm-device-bridge.h"
 #include "nm-device-vlan.h"
 #include "nm-device-vrf.h"
@@ -2674,12 +2675,6 @@ _ethtool_state_set(NMDevice *self)
 }
 
 /*****************************************************************************/
-
-static gboolean
-is_loopback(NMDevice *self)
-{
-    return NM_IS_DEVICE_GENERIC(self) && NM_DEVICE_GET_PRIVATE(self)->ifindex == 1;
-}
 
 gboolean
 nm_device_is_vpn(NMDevice *self)
@@ -5361,7 +5356,7 @@ concheck_is_possible(NMDevice *self)
 {
     NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
 
-    if (!nm_device_is_real(self) || is_loopback(self))
+    if (!nm_device_is_real(self) || !NM_IS_DEVICE_LOOPBACK(self))
         return FALSE;
 
     /* we enable periodic checks for every device state (except UNKNOWN). Especially with
