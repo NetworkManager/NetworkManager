@@ -4307,7 +4307,7 @@ _l3_commit_one(NML3Cfg              *self,
                             nmp_object_new(NMP_OBJECT_TYPE_IP4_ADDRESS,
                                            &((const NMPlatformIP4Address){
                                                .address                 = NM_IPV4LO_NETWORK,
-                                               .a_no_auto_noprefixroute = FALSE,
+                                               .a_no_auto_noprefixroute = TRUE,
                                                .ifindex                 = 1,
                                                .plen                    = 8,
                                            })));
@@ -4316,7 +4316,7 @@ _l3_commit_one(NML3Cfg              *self,
                             nmp_object_new(NMP_OBJECT_TYPE_IP6_ADDRESS,
                                            &((const NMPlatformIP6Address){
                                                .address                 = IN6ADDR_LOOPBACK_INIT,
-                                               .a_no_auto_noprefixroute = FALSE,
+                                               .a_no_auto_noprefixroute = TRUE,
                                                .ifindex                 = 1,
                                                .plen                    = 128,
                                            })));
