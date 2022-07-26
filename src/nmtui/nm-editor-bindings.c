@@ -54,6 +54,51 @@ nm_editor_bindings_init(void)
     g_value_register_transform_func(G_TYPE_STRING, G_TYPE_UINT, value_transform_string_uint);
 }
 
+gboolean
+certificate_to_string(GBinding     *binding,
+                      const GValue *source_value,
+                      GValue       *target_value,
+                      gpointer      user_data)
+{
+    GBytes *bytes;
+    char   *utf8;
+
+    bytes = g_value_get_boxed(source_value);
+    if (bytes)
+        utf8 = nm_utils_ssid_to_utf8(g_bytes_get_data(bytes, NULL), g_bytes_get_size(bytes));
+    else
+        utf8 = g_strdup("");
+    g_value_take_string(target_value, utf8);
+    return TRUE;
+}
+
+gboolean
+certificate_from_string(GBinding     *binding,
+                        const GValue *source_value,
+                        GValue       *target_value,
+                        gpointer      user_data)
+{
+    const char   *text;
+    gs_free char *cert  = NULL;
+    GBytes       *bytes = NULL;
+
+    text = g_value_get_string(source_value);
+
+    if (text[0]) {
+        /* Consider anything without a scheme prefix as an absolute path */
+        if (!g_str_has_prefix(text, "file://") && !g_str_has_prefix(text, "blob://")
+            && !g_str_has_prefix(text, "pkcs11://")) {
+            cert = g_strdup_printf("file://%s%s", text[0] == '/' ? "" : "/", text);
+            text = cert;
+        }
+
+        bytes = g_bytes_new(text, strlen(text) + 1);
+    }
+    g_value_take_boxed(target_value, bytes);
+
+    return TRUE;
+}
+
 static gboolean
 ip_addresses_with_prefix_to_strv(GBinding     *binding,
                                  const GValue *source_value,

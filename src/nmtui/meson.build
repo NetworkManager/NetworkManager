@@ -5,6 +5,7 @@ executable(
   files(
     'nm-editor-bindings.c',
     'nm-editor-utils.c',
+    'nmt-8021x-fields.c',
     'nmt-address-list.c',
     'nmt-connect-connection-list.c',
     'nmt-device-entry.c',
