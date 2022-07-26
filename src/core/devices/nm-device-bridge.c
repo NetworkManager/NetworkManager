@@ -1003,7 +1003,8 @@ attach_port(NMDevice                  *device,
         nm_assert(s_bridge);
         s_port = nm_connection_get_setting_bridge_port(connection);
 
-        bridge_set_vlan_options(device, s_bridge);
+        if (!nm_device_sys_iface_state_is_external(device))
+            bridge_set_vlan_options(device, s_bridge);
 
         if (nm_setting_bridge_get_vlan_filtering(s_bridge)) {
             gs_free const NMPlatformBridgeVlan **plat_vlans = NULL;
