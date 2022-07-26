@@ -4934,6 +4934,10 @@ nm_device_get_route_metric_default(NMDeviceType device_type)
      */
 
     switch (device_type) {
+
+    case NM_DEVICE_TYPE_LOOPBACK:
+        return 30;
+
     /* 50 is also used for VPN plugins (NM_VPN_ROUTE_METRIC_DEFAULT).
      *
      * Note that returning 50 from this function means that this device-type is
@@ -4990,8 +4994,6 @@ nm_device_get_route_metric_default(NMDeviceType device_type)
         return 800;
     case NM_DEVICE_TYPE_WPAN:
         return 850;
-    case NM_DEVICE_TYPE_LOOPBACK:
-        return 875;
     case NM_DEVICE_TYPE_WIFI_P2P:
     case NM_DEVICE_TYPE_GENERIC:
         return 950;
