@@ -21,6 +21,7 @@
 #include "nm-supplicant-manager.h"
 
 #define DBUS_TIMEOUT_MSEC 20000
+#define PMK_LIFETIME_SEC  (3600 * 24 * 7)
 
 /*****************************************************************************/
 
@@ -2452,6 +2453,32 @@ assoc_set_ap_scan_cb(GVariant *ret, GError *error, gpointer user_data)
         add_network(self);
 }
 
+static void
+assoc_set_pmk_lifetime(GVariant *ret, GError *error, gpointer user_data)
+{
+    NMSupplicantInterface        *self;
+    NMSupplicantInterfacePrivate *priv;
+
+    if (nm_utils_error_is_cancelled(error))
+        return;
+
+    self = NM_SUPPLICANT_INTERFACE(user_data);
+    priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE(self);
+
+    if (error) {
+        assoc_return(self, error, "failure to set PMK lifetime");
+        return;
+    }
+
+    _LOGT("assoc[" NM_HASH_OBFUSCATE_PTR_FMT "]: interface PMK lifetime set to %u",
+          NM_HASH_OBFUSCATE_PTR(priv->assoc_data),
+          PMK_LIFETIME_SEC);
+
+    nm_assert(priv->assoc_data->calls_left > 0);
+    if (--priv->assoc_data->calls_left == 0)
+        add_network(self);
+}
+
 static gboolean
 assoc_fail_on_idle_cb(gpointer user_data)
 {
@@ -2534,6 +2561,21 @@ nm_supplicant_interface_assoc(NMSupplicantInterface       *self,
         assoc_data->cancellable,
         assoc_set_ap_scan_cb,
         self);
+
+    /* Set the PMK lifetime to a longer interval (1 week) instead of
+     * the default one (12 hours) that would trigger a WPA-EAP
+     * reauthentication after only 8:24 hours (70% of the lifetime). */
+    assoc_data->calls_left++;
+    nm_dbus_connection_call_set(priv->dbus_connection,
+                                priv->name_owner->str,
+                                priv->object_path->str,
+                                NM_WPAS_DBUS_IFACE_INTERFACE,
+                                "Dot11RSNAConfigPMKLifetime",
+                                g_variant_new_take_string(g_strdup_printf("%u", PMK_LIFETIME_SEC)),
+                                DBUS_TIMEOUT_MSEC,
+                                assoc_data->cancellable,
+                                assoc_set_pmk_lifetime,
+                                self);
 
     ap_isolation = nm_supplicant_config_get_ap_isolation(priv->assoc_data->cfg);
     if (!priv->ap_isolate_supported) {
