@@ -1338,6 +1338,7 @@ typedef struct {
 static int
 _c_list_sort_cmp(const CList *lst_a, const CList *lst_b, const void *user_data)
 {
+    const int        MODFIER = user_data ? GPOINTER_TO_INT(user_data) : 0;
     const CListSort *a, *b;
 
     g_assert(lst_a);
@@ -1351,7 +1352,34 @@ _c_list_sort_cmp(const CList *lst_a, const CList *lst_b, const void *user_data)
         return -1;
     if (a->val > b->val)
         return 1;
+
+    switch (MODFIER) {
+    case 0:
+        break;
+    case 1:
+        NM_CMP_DIRECT_PTR(a, b);
+        g_assert_not_reached();
+        break;
+    case 2:
+        NM_CMP_DIRECT_PTR(b, a);
+        g_assert_not_reached();
+        break;
+    default:
+        g_assert_not_reached();
+        break;
+    }
+
     return 0;
+}
+
+static int
+_c_list_sort_cmp_inverse(const CList *lst_a, const CList *lst_b, const void *user_data)
+{
+    int c;
+
+    c = _c_list_sort_cmp(lst_b, lst_a, user_data);
+    g_assert(NM_IN_SET(c, -1, 0, 1));
+    return c;
 }
 
 static void
@@ -1411,8 +1439,9 @@ static void
 test_c_list_sort(void)
 {
     const guint        N_ELEMENTS = 10000;
-    guint              n_list, repeat;
-    gs_free CListSort *elements = NULL;
+    gs_free CListSort *elements   = NULL;
+    guint              n_list;
+    guint              repeat;
 
     {
         CList head;
@@ -1435,6 +1464,97 @@ test_c_list_sort(void)
 
             for (repeat = 0; repeat < N_REPEAT; repeat++)
                 _do_test_c_list_sort(elements, n_list, nmtst_get_rand_uint32() % 2);
+        }
+    }
+}
+
+/*****************************************************************************/
+
+static void
+_do_test_c_list_insert_sorted(CListSort *elements, guint n_list, bool append_equal)
+{
+    CList            head;
+    guint            i;
+    const CListSort *el_prev;
+    CListSort       *el;
+
+    c_list_init(&head);
+    for (i = 0; i < n_list; i++) {
+        el      = &elements[i];
+        el->val = nmtst_get_rand_uint32() % (2 * n_list);
+
+        if (nmtst_get_rand_bool()) {
+            c_list_insert_sorted(&head, &el->lst, TRUE, append_equal, _c_list_sort_cmp, NULL);
+        } else {
+            c_list_insert_sorted(&head,
+                                 &el->lst,
+                                 FALSE,
+                                 append_equal,
+                                 _c_list_sort_cmp_inverse,
+                                 NULL);
+        }
+
+        if (nmtst_get_rand_one_case_in(20)) {
+            nm_assert(c_list_is_sorted(&head, TRUE, _c_list_sort_cmp, NULL));
+            if (append_equal) {
+                nm_assert(c_list_is_sorted(&head, TRUE, _c_list_sort_cmp, GINT_TO_POINTER(1)));
+            } else {
+                nm_assert(c_list_is_sorted(&head, TRUE, _c_list_sort_cmp, GINT_TO_POINTER(2)));
+            }
+            nm_assert(c_list_is_sorted(&head, FALSE, _c_list_sort_cmp_inverse, NULL));
+            if (append_equal) {
+                nm_assert(
+                    c_list_is_sorted(&head, FALSE, _c_list_sort_cmp_inverse, GINT_TO_POINTER(1)));
+            } else {
+                nm_assert(
+                    c_list_is_sorted(&head, FALSE, _c_list_sort_cmp_inverse, GINT_TO_POINTER(2)));
+            }
+        }
+    }
+
+    g_assert_cmpint(c_list_length(&head), ==, n_list);
+    g_assert(!c_list_length_is(&head, n_list - 1));
+    g_assert(c_list_length_is(&head, n_list));
+    g_assert(!c_list_length_is(&head, n_list + 1));
+
+    el_prev = NULL;
+    c_list_for_each_entry (el, &head, lst) {
+        if (el_prev) {
+            int c;
+
+            c = _c_list_sort_cmp(&el_prev->lst, &el->lst, NULL);
+            g_assert_cmpint(c, <=, 0);
+            if (c == 0) {
+                if (append_equal)
+                    g_assert(&el_prev->lst < &el->lst);
+                else
+                    g_assert(&el_prev->lst > &el->lst);
+            }
+        }
+        el_prev = el;
+    }
+}
+
+static void
+test_c_list_insert_sorted(void)
+{
+    const guint        N_ELEMENTS = 1000;
+    gs_free CListSort *elements   = NULL;
+    guint              n_list;
+    guint              repeat;
+
+    elements = g_new0(CListSort, N_ELEMENTS);
+    for (n_list = 1; n_list < N_ELEMENTS; n_list++) {
+        if (n_list > 150) {
+            n_list += nmtst_get_rand_uint32() % n_list;
+            if (n_list >= N_ELEMENTS)
+                break;
+        }
+        {
+            const guint N_REPEAT = n_list > 50 ? 1 : 5;
+
+            for (repeat = 0; repeat < N_REPEAT; repeat++)
+                _do_test_c_list_insert_sorted(elements, n_list, nmtst_get_rand_bool());
         }
     }
 }
@@ -10838,6 +10958,7 @@ main(int argc, char **argv)
     g_test_add_func("/core/general/test_nm_hash", test_nm_hash);
     g_test_add_func("/core/general/test_nm_g_slice_free_fcn", test_nm_g_slice_free_fcn);
     g_test_add_func("/core/general/test_c_list_sort", test_c_list_sort);
+    g_test_add_func("/core/general/test_c_list_insert_sorted", test_c_list_insert_sorted);
     g_test_add_func("/core/general/test_dedup_multi", test_dedup_multi);
     g_test_add_func("/core/general/test_utils_str_utf8safe", test_utils_str_utf8safe);
     g_test_add_func("/core/general/test_nm_strsplit_set", test_nm_strsplit_set);

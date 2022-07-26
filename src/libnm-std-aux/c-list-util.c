@@ -182,3 +182,77 @@ c_list_sort(CList *head, CListSortCmp cmp, const void *user_data)
         c_list_relink(head);
     }
 }
+
+/*****************************************************************************/
+
+CList *
+c_list_first_unsorted(CList *list, int ascending, CListSortCmp cmp, const void *user_data)
+{
+    CList *iter_prev = NULL;
+    CList *iter;
+    int    c;
+
+    /* Returns the first element with the wrong sort order,
+     * or NULL, if they are all sorted. */
+
+    c_list_for_each (iter, list) {
+        if (iter_prev) {
+            c = cmp(iter_prev, iter, user_data);
+            if (ascending) {
+                if (c > 0)
+                    return iter;
+            } else {
+                if (c < 0)
+                    return iter;
+            }
+        }
+        iter_prev = iter;
+    }
+
+    return NULL;
+}
+
+void
+c_list_insert_sorted(CList       *list,
+                     CList       *elem,
+                     int          ascending,
+                     int          append_equal,
+                     CListSortCmp cmp,
+                     const void  *user_data)
+{
+    CList *iter;
+
+    /* We iterate the list front-to-end, and insert @elem according
+     * to the sort order @cmp. If @append_equal is TRUE, we will
+     * skip over equal elements and append afterwards. */
+    c_list_for_each (iter, list) {
+        int c;
+
+        c = cmp(iter, elem, user_data);
+
+        if (ascending) {
+            if (c < 0)
+                continue;
+            if (c > 0 || !append_equal)
+                goto out;
+        } else {
+            if (c > 0)
+                continue;
+            if (c < 0 || !append_equal)
+                goto out;
+        }
+
+        for (iter = iter->next; iter != list; iter = iter->next) {
+            c = cmp(iter, elem, user_data);
+            if (c != 0) {
+                /* We'd expect that the list is sorted, so @c should be
+                 * greater than 0. But don't enforce that. */
+                goto out;
+            }
+        }
+        goto out;
+    }
+
+out:
+    c_list_link_before(iter, elem);
+}
