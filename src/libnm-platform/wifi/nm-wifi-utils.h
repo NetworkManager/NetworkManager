@@ -7,8 +7,6 @@
 #ifndef __WIFI_UTILS_H__
 #define __WIFI_UTILS_H__
 
-#include <net/ethernet.h>
-
 #include "libnm-platform/nm-netlink.h"
 #include "libnm-base/nm-base.h"
 

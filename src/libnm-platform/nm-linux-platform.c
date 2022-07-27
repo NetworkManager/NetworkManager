@@ -14,7 +14,6 @@
 #include <endian.h>
 #include <fcntl.h>
 #include <libudev.h>
-#include <net/ethernet.h>
 #include <linux/fib_rules.h>
 #include <linux/ip.h>
 #include <linux/if.h>
