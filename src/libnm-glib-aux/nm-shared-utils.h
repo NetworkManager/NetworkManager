@@ -326,12 +326,6 @@ gboolean nm_ip_addr_set_from_untrusted(int           addr_family,
 gboolean
 nm_ip_addr_set_from_variant(int addr_family, gpointer dst, GVariant *variant, int *out_addr_family);
 
-static inline gboolean
-nm_ip4_addr_is_localhost(in_addr_t addr4)
-{
-    return (addr4 & htonl(0xFF000000u)) == htonl(0x7F000000u);
-}
-
 static inline gconstpointer
 nm_ip_addr_from_packed_array(int addr_family, gconstpointer ipaddr_arr, gsize idx)
 {

@@ -251,14 +251,14 @@ test_nm_strndup_a(void)
 /*****************************************************************************/
 
 static void
-test_nm_ip4_addr_is_localhost(void)
+test_nm_utils_ip4_address_is_loopback(void)
 {
-    g_assert(nm_ip4_addr_is_localhost(nmtst_inet4_from_string("127.0.0.0")));
-    g_assert(nm_ip4_addr_is_localhost(nmtst_inet4_from_string("127.0.0.1")));
-    g_assert(nm_ip4_addr_is_localhost(nmtst_inet4_from_string("127.5.0.1")));
-    g_assert(!nm_ip4_addr_is_localhost(nmtst_inet4_from_string("126.5.0.1")));
-    g_assert(!nm_ip4_addr_is_localhost(nmtst_inet4_from_string("128.5.0.1")));
-    g_assert(!nm_ip4_addr_is_localhost(nmtst_inet4_from_string("129.5.0.1")));
+    g_assert(nm_utils_ip4_address_is_loopback(nmtst_inet4_from_string("127.0.0.0")));
+    g_assert(nm_utils_ip4_address_is_loopback(nmtst_inet4_from_string("127.0.0.1")));
+    g_assert(nm_utils_ip4_address_is_loopback(nmtst_inet4_from_string("127.5.0.1")));
+    g_assert(!nm_utils_ip4_address_is_loopback(nmtst_inet4_from_string("126.5.0.1")));
+    g_assert(!nm_utils_ip4_address_is_loopback(nmtst_inet4_from_string("128.5.0.1")));
+    g_assert(!nm_utils_ip4_address_is_loopback(nmtst_inet4_from_string("129.5.0.1")));
 }
 
 /*****************************************************************************/
@@ -2215,7 +2215,8 @@ main(int argc, char **argv)
     g_test_add_func("/general/test_nm_make_strv", test_make_strv);
     g_test_add_func("/general/test_nm_strdup_int", test_nm_strdup_int);
     g_test_add_func("/general/test_nm_strndup_a", test_nm_strndup_a);
-    g_test_add_func("/general/test_nm_ip4_addr_is_localhost", test_nm_ip4_addr_is_localhost);
+    g_test_add_func("/general/test_nm_utils_ip4_address_is_loopback",
+                    test_nm_utils_ip4_address_is_loopback);
     g_test_add_func("/general/test_nm_utils_ip4_prefix_to_netmask",
                     test_nm_utils_ip4_prefix_to_netmask);
     g_test_add_func("/general/test_unaligned", test_unaligned);
