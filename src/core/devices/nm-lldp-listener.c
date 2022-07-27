@@ -7,6 +7,8 @@
 
 #include "nm-lldp-listener.h"
 
+#include <net/ethernet.h>
+
 #include "NetworkManagerUtils.h"
 #include "libnm-core-public/nm-errors.h"
 #include "libnm-glib-aux/nm-time-utils.h"

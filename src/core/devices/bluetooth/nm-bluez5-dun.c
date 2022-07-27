@@ -9,6 +9,7 @@
 #include <bluetooth/sdp.h>
 #include <bluetooth/sdp_lib.h>
 #include <bluetooth/rfcomm.h>
+#include <net/ethernet.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
 #include <fcntl.h>
