@@ -343,7 +343,7 @@ lease_parse_address_list(NDhcp4ClientLease       *lease,
 
         switch (option) {
         case NM_DHCP_OPTION_DHCP4_DOMAIN_NAME_SERVER:
-            if (addr == 0 || nm_ip4_addr_is_localhost(addr)) {
+            if (addr == 0 || nm_utils_ip4_address_is_loopback(addr)) {
                 /* Skip localhost addresses, like also networkd does.
                  * See https://github.com/systemd/systemd/issues/4524. */
                 nm_dhcp_lease_log_invalid_option(iface,
