@@ -498,6 +498,12 @@ nm_memcmp(const void *s1, const void *s2, size_t n)
     return memcmp(s1, s2, n);
 }
 
+static inline bool
+nm_memeq(const void *s1, const void *s2, size_t len)
+{
+    return nm_memcmp(s1, s2, len) == 0;
+}
+
 /*
  * Very similar to g_str_has_prefix() with the obvious meaning.
  * Differences:
