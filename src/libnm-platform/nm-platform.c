@@ -7806,6 +7806,28 @@ nm_platform_mptcp_addr_cmp(const NMPlatformMptcpAddr *a, const NMPlatformMptcpAd
     return 0;
 }
 
+guint
+nm_platform_mptcp_addr_index_addr_cmp(gconstpointer data)
+{
+    const NMPlatformMptcpAddr *mptcp_addr = data;
+    NMHashState                h;
+
+    nm_hash_init(&h, 1408914077u);
+    nm_hash_update_val(&h, mptcp_addr->addr_family);
+    nm_hash_update(&h, &mptcp_addr->addr, nm_utils_addr_family_to_size(mptcp_addr->addr_family));
+    return nm_hash_complete(&h);
+}
+
+gboolean
+nm_platform_mptcp_addr_index_addr_equal(gconstpointer data_a, gconstpointer data_b)
+{
+    const NMPlatformMptcpAddr *mptcp_addr_a = data_a;
+    const NMPlatformMptcpAddr *mptcp_addr_b = data_b;
+
+    return mptcp_addr_a->addr_family == mptcp_addr_b->addr_family
+           && nm_ip_addr_equal(mptcp_addr_a->addr_family, &mptcp_addr_a->addr, &mptcp_addr_b->addr);
+}
+
 const char *
 nm_platform_vf_to_string(const NMPlatformVF *vf, char *buf, gsize len)
 {

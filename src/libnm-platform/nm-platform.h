@@ -2589,6 +2589,9 @@ void nm_platform_tfilter_hash_update(const NMPlatformTfilter *obj, NMHashState *
 
 void nm_platform_mptcp_addr_hash_update(const NMPlatformMptcpAddr *obj, NMHashState *h);
 
+guint    nm_platform_mptcp_addr_index_addr_cmp(gconstpointer data);
+gboolean nm_platform_mptcp_addr_index_addr_equal(gconstpointer data_a, gconstpointer data_b);
+
 #define NM_PLATFORM_LINK_FLAGS2STR_MAX_LEN ((gsize) 162)
 
 const char *nm_platform_link_flags2str(unsigned flags, char *buf, gsize len);
