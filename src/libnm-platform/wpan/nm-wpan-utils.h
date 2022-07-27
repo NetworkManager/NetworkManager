@@ -6,8 +6,6 @@
 #ifndef __WPAN_UTILS_H__
 #define __WPAN_UTILS_H__
 
-#include <net/ethernet.h>
-
 #include "libnm-platform/nm-netlink.h"
 
 typedef struct NMWpanUtils NMWpanUtils;

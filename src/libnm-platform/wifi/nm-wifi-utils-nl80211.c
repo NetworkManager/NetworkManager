@@ -12,7 +12,6 @@
 #include "libnm-std-aux/nm-linux-compat.h"
 
 #include <sys/ioctl.h>
-#include <net/ethernet.h>
 #include <unistd.h>
 #include <linux/nl80211.h>
 #include <linux/if.h>
