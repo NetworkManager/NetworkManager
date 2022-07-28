@@ -326,12 +326,6 @@ gboolean nm_ip_addr_set_from_untrusted(int           addr_family,
 gboolean
 nm_ip_addr_set_from_variant(int addr_family, gpointer dst, GVariant *variant, int *out_addr_family);
 
-static inline gboolean
-nm_ip4_addr_is_localhost(in_addr_t addr4)
-{
-    return (addr4 & htonl(0xFF000000u)) == htonl(0x7F000000u);
-}
-
 static inline gconstpointer
 nm_ip_addr_from_packed_array(int addr_family, gconstpointer ipaddr_arr, gsize idx)
 {
@@ -2252,16 +2246,16 @@ nm_g_array_unref(GArray *arr)
 /* Similar to g_array_index(). The differences are
  * - this does nm_assert() checks that the arguments are valid.
  * - returns a pointer to the element. */
-#define nm_g_array_index_p(arr, Type, idx)                         \
-    ({                                                             \
-        GArray *const _arr = (arr);                                \
-        const guint   _idx = (idx);                                \
-                                                                   \
-        nm_assert(_arr);                                           \
-        nm_assert(sizeof(Type) == g_array_get_element_size(_arr)); \
-        nm_assert(_idx < _arr->len);                               \
-                                                                   \
-        &g_array_index(_arr, Type, _idx);                          \
+#define nm_g_array_index_p(arr, Type, idx)                            \
+    ({                                                                \
+        GArray *const _arr_55 = (arr);                                \
+        const guint   _idx_55 = (idx);                                \
+                                                                      \
+        nm_assert(_arr_55);                                           \
+        nm_assert(sizeof(Type) == g_array_get_element_size(_arr_55)); \
+        nm_assert(_idx_55 < _arr_55->len);                            \
+                                                                      \
+        &g_array_index(_arr_55, Type, _idx_55);                       \
     })
 
 #define nm_g_array_append_new(arr, Type)                           \
