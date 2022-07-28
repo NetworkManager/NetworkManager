@@ -1195,7 +1195,7 @@ _NM_IN_STRSET_EVAL_op_streq_ascii_case(const char *x1, const char *x)
     return x && g_ascii_strcasecmp(x1, x) == 0;
 }
 
-#define _NM_IN_STRSET_EVAL_OP_STREQ_ASCII_CASE(x, idx) \
+#define _NM_IN_STRSET_EVAL_OP_STREQ_ASCII_CASE(x, idx, op_Arg) \
     _NM_IN_STRSET_EVAL_op_streq_ascii_case(_x1, x)
 #define NM_IN_STRSET_ASCII_CASE(x1, ...) \
     _NM_IN_STRSET_EVAL(||, _NM_IN_STRSET_EVAL_OP_STREQ_ASCII_CASE, x1, __VA_ARGS__)
