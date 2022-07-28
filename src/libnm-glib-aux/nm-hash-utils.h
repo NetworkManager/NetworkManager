@@ -122,26 +122,26 @@ nm_hash_update_bool(NMHashState *state, bool val)
     nm_hash_update(state, &val, sizeof(val));
 }
 
-#define _NM_HASH_COMBINE_BOOLS_OP(x, n) ((x) ? NM_BIT((n)) : 0u)
+#define _NM_HASH_COMBINE_BOOLS_OP(x, n, op_arg) ((x) ? NM_BIT((n)) : 0u)
 
-#define NM_HASH_COMBINE_BOOLS(type, ...)                                               \
-    ((type) (NM_STATIC_ASSERT_EXPR_1(NM_NARG(__VA_ARGS__) <= 8 * sizeof(type))         \
-                 ? (NM_VA_ARGS_FOREACH(, , |, _NM_HASH_COMBINE_BOOLS_OP, __VA_ARGS__)) \
+#define NM_HASH_COMBINE_BOOLS(type, ...)                                                 \
+    ((type) (NM_STATIC_ASSERT_EXPR_1(NM_NARG(__VA_ARGS__) <= 8 * sizeof(type))           \
+                 ? (NM_VA_ARGS_FOREACH(, , |, _NM_HASH_COMBINE_BOOLS_OP, , __VA_ARGS__)) \
                  : 0))
 
 #define nm_hash_update_bools(state, ...) \
     nm_hash_update_val(state, NM_HASH_COMBINE_BOOLS(guint8, __VA_ARGS__))
 
-#define _NM_HASH_COMBINE_VALS_TYPE_OP(x, idx) typeof(x) _v##idx;
-#define _NM_HASH_COMBINE_VALS_INIT_OP(x, idx) ._v##idx = (x),
+#define _NM_HASH_COMBINE_VALS_TYPE_OP(x, idx, op_arg) typeof(x) _v##idx;
+#define _NM_HASH_COMBINE_VALS_INIT_OP(x, idx, op_arg) ._v##idx = (x),
 
 /* NM_HASH_COMBINE_VALS() is faster then nm_hash_update_val() as it combines multiple
  * calls to nm_hash_update() using a packed structure. */
-#define NM_HASH_COMBINE_VALS(var, ...)                                       \
-    const struct _nm_packed {                                                \
-        NM_VA_ARGS_FOREACH(, , , _NM_HASH_COMBINE_VALS_TYPE_OP, __VA_ARGS__) \
-    } var _nm_alignas(max_align_t) = {                                       \
-        NM_VA_ARGS_FOREACH(, , , _NM_HASH_COMBINE_VALS_INIT_OP, __VA_ARGS__)}
+#define NM_HASH_COMBINE_VALS(var, ...)                                         \
+    const struct _nm_packed {                                                  \
+        NM_VA_ARGS_FOREACH(, , , _NM_HASH_COMBINE_VALS_TYPE_OP, , __VA_ARGS__) \
+    } var _nm_alignas(max_align_t) = {                                         \
+        NM_VA_ARGS_FOREACH(, , , _NM_HASH_COMBINE_VALS_INIT_OP, , __VA_ARGS__)}
 
 /* nm_hash_update_vals() is faster then nm_hash_update_val() as it combines multiple
  * calls to nm_hash_update() using a packed structure. */
