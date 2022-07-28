@@ -539,8 +539,6 @@ nmc_find_active_connection(const GPtrArray *active_cons,
         NMActiveConnection *candidate = g_ptr_array_index(active_cons, i);
         const char         *v, *v_num;
 
-        con = nm_active_connection_get_connection(candidate);
-
         /* When filter_type is NULL, compare connection ID (filter_val)
          * against all types. Otherwise, only compare against the specific
          * type. If 'path' or 'apath' filter types are specified, comparison
@@ -561,6 +559,8 @@ nmc_find_active_connection(const GPtrArray *active_cons,
             if (nm_streq0(filter_val, v))
                 goto found;
         }
+
+        con = nm_active_connection_get_connection(candidate);
 
         if (NM_IN_STRSET(filter_type, NULL, "path")) {
             v     = con ? nm_connection_get_path(NM_CONNECTION(con)) : NULL;
