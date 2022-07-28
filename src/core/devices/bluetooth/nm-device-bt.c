@@ -262,6 +262,7 @@ complete_connection(NMDevice            *device,
     const char         *ctype;
     gboolean            is_dun = FALSE;
     gboolean            is_pan = FALSE;
+    gboolean            is_nap = FALSE;
     NMSettingGsm       *s_gsm;
     NMSettingCdma      *s_cdma;
     NMSettingSerial    *s_serial;
@@ -281,6 +282,8 @@ complete_connection(NMDevice            *device,
             is_dun = TRUE;
         else if (!strcmp(ctype, NM_SETTING_BLUETOOTH_TYPE_PANU))
             is_pan = TRUE;
+        else if (!strcmp(ctype, NM_SETTING_BLUETOOTH_TYPE_NAP))
+            is_nap = TRUE;
     } else {
         if (s_gsm || s_cdma)
             is_dun = TRUE;
@@ -288,7 +291,27 @@ complete_connection(NMDevice            *device,
             is_pan = TRUE;
     }
 
-    if (is_pan) {
+    if (is_nap) {
+        /* Make sure the device supports NAP */
+        if (!(priv->capabilities & NM_BT_CAPABILITY_NAP)) {
+            g_set_error_literal(error,
+                                NM_CONNECTION_ERROR,
+                                NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                                _("NAP requested, but Bluetooth device does not support NAP"));
+            g_prefix_error(error,
+                           "%s.%s: ",
+                           NM_SETTING_BLUETOOTH_SETTING_NAME,
+                           NM_SETTING_BLUETOOTH_TYPE);
+            return FALSE;
+        }
+
+        g_object_set(G_OBJECT(s_bt),
+                     NM_SETTING_BLUETOOTH_TYPE,
+                     NM_SETTING_BLUETOOTH_TYPE_NAP,
+                     NULL);
+
+        fallback_prefix = _("NAP connection");
+    } else if (is_pan) {
         /* Make sure the device supports PAN */
         if (!(priv->capabilities & NM_BT_CAPABILITY_NAP)) {
             g_set_error_literal(error,
