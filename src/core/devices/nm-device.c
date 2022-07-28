@@ -13875,10 +13875,38 @@ _get_carrier_wait_ms(NMDevice *self)
                                                   CARRIER_WAIT_TIME_MS);
 }
 
+/*
+ * Devices that support carrier detect must be IFF_UP to report carrier
+ * changes; so after setting the device IFF_UP we must suppress startup
+ * complete (via a pending action) until either the carrier turns on, or
+ * a timeout is reached.
+ */
+static void
+carrier_detect_wait(NMDevice *self)
+{
+    NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
+    gint64           now_ms, until_ms;
+
+    if (!nm_device_has_capability(self, NM_DEVICE_CAP_CARRIER_DETECT))
+        return;
+
+    /* we start a grace period of 5 seconds during which we will schedule
+     * a pending action whenever we have no carrier.
+     *
+     * If during that time carrier goes away, we declare the interface
+     * as not ready. */
+    nm_clear_g_source(&priv->carrier_wait_id);
+    if (!priv->carrier)
+        nm_device_add_pending_action(self, NM_PENDING_ACTION_CARRIER_WAIT, FALSE);
+
+    now_ms   = nm_utils_get_monotonic_timestamp_msec();
+    until_ms = NM_MAX(now_ms + _get_carrier_wait_ms(self), priv->carrier_wait_until_ms);
+    priv->carrier_wait_id = g_timeout_add(until_ms - now_ms, carrier_wait_timeout, self);
+}
+
 gboolean
 nm_device_bring_up(NMDevice *self, gboolean block, gboolean *no_firmware)
 {
-    NMDevicePrivate     *priv         = NM_DEVICE_GET_PRIVATE(self);
     gboolean             device_is_up = FALSE;
     NMDeviceCapabilities capabilities;
     int                  ifindex;
@@ -13934,27 +13962,7 @@ nm_device_bring_up(NMDevice *self, gboolean block, gboolean *no_firmware)
         capabilities |= NM_DEVICE_GET_CLASS(self)->get_generic_capabilities(self);
     _add_capabilities(self, capabilities);
 
-    /* Devices that support carrier detect must be IFF_UP to report carrier
-     * changes; so after setting the device IFF_UP we must suppress startup
-     * complete (via a pending action) until either the carrier turns on, or
-     * a timeout is reached.
-     */
-    if (nm_device_has_capability(self, NM_DEVICE_CAP_CARRIER_DETECT)) {
-        gint64 now_ms, until_ms;
-
-        /* we start a grace period of 5 seconds during which we will schedule
-         * a pending action whenever we have no carrier.
-         *
-         * If during that time carrier goes away, we declare the interface
-         * as not ready. */
-        nm_clear_g_source(&priv->carrier_wait_id);
-        if (!priv->carrier)
-            nm_device_add_pending_action(self, NM_PENDING_ACTION_CARRIER_WAIT, FALSE);
-
-        now_ms   = nm_utils_get_monotonic_timestamp_msec();
-        until_ms = NM_MAX(now_ms + _get_carrier_wait_ms(self), priv->carrier_wait_until_ms);
-        priv->carrier_wait_id = g_timeout_add(until_ms - now_ms, carrier_wait_timeout, self);
-    }
+    carrier_detect_wait(self);
 
     /* Can only get HW address of some devices when they are up */
     nm_device_update_hw_address(self);
@@ -15713,6 +15721,13 @@ _set_state_full(NMDevice *self, NMDeviceState state, NMDeviceStateReason reason,
                 if (!nm_device_bring_up(self, TRUE, &no_firmware) && no_firmware)
                     _LOGW(LOGD_PLATFORM, "firmware may be missing.");
                 nm_device_set_firmware_missing(self, no_firmware ? TRUE : FALSE);
+            } else {
+                /* We didn't bring the device up and we have little idea
+                 * when was it brought up. Play it safe and assume it could
+                 * have been brought up very recently and it might one of
+                 * those who take time to detect carrier.
+                 */
+                carrier_detect_wait(self);
             }
 
             /* Ensure the device gets deactivated in response to stuff like
