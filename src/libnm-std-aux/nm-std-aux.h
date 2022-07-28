@@ -796,33 +796,33 @@ nm_memeq(const void *s1, const void *s2, size_t len)
 
 /*****************************************************************************/
 
-#define _NM_IN_SET_OP(x, idx, op_arg) ((int) (_x == (x)))
-#define _NM_IN_SET(op, type, x, ...)                                  \
-    ({                                                                \
-        type _x = (x);                                                \
-                                                                      \
-        /* trigger a -Wenum-compare warning */                        \
-        nm_assert(true || _x == (x));                                 \
-                                                                      \
-        !!(NM_VA_ARGS_FOREACH(, , op, _NM_IN_SET_OP, , __VA_ARGS__)); \
+#define _NM_IN_SET_OP(x, idx, uniq) ((int) (NM_UNIQ_T(xx, uniq) == (x)))
+#define _NM_IN_SET(uniq, op, type, x, ...)                                \
+    ({                                                                    \
+        type NM_UNIQ_T(xx, uniq) = (x);                                   \
+                                                                          \
+        /* trigger a -Wenum-compare warning */                            \
+        nm_assert(true || NM_UNIQ_T(xx, uniq) == (x));                    \
+                                                                          \
+        !!(NM_VA_ARGS_FOREACH(, , op, _NM_IN_SET_OP, uniq, __VA_ARGS__)); \
     })
 
 /* Beware that this does short-circuit evaluation (use "||" instead of "|")
  * which has a possibly unexpected non-function-like behavior.
  * Use NM_IN_SET_SE if you need all arguments to be evaluated. */
-#define NM_IN_SET(x, ...) _NM_IN_SET(||, typeof(x), x, __VA_ARGS__)
+#define NM_IN_SET(x, ...) _NM_IN_SET(NM_UNIQ, ||, typeof(x), x, __VA_ARGS__)
 
 /* "SE" stands for "side-effect". Contrary to NM_IN_SET(), this does not do
  * short-circuit evaluation, which can make a difference if the arguments have
  * side-effects. */
-#define NM_IN_SET_SE(x, ...) _NM_IN_SET(|, typeof(x), x, __VA_ARGS__)
+#define NM_IN_SET_SE(x, ...) _NM_IN_SET(NM_UNIQ, |, typeof(x), x, __VA_ARGS__)
 
 /* the *_TYPED forms allow to explicitly select the type of "x". This is useful
  * if "x" doesn't support typeof (bitfields) or you want to gracefully convert
  * a type using automatic type conversion rules (but not forcing the conversion
  * with a cast). */
-#define NM_IN_SET_TYPED(type, x, ...)    _NM_IN_SET(||, type, x, __VA_ARGS__)
-#define NM_IN_SET_SE_TYPED(type, x, ...) _NM_IN_SET(|, type, x, __VA_ARGS__)
+#define NM_IN_SET_TYPED(type, x, ...)    _NM_IN_SET(NM_UNIQ, ||, type, x, __VA_ARGS__)
+#define NM_IN_SET_SE_TYPED(type, x, ...) _NM_IN_SET(NM_UNIQ, |, type, x, __VA_ARGS__)
 
 /*****************************************************************************/
 
