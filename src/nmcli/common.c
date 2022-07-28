@@ -572,7 +572,7 @@ nmc_find_active_connection(const GPtrArray *active_cons,
         }
 
         if (NM_IN_STRSET(filter_type, NULL, "filename")) {
-            v = nm_remote_connection_get_filename(con);
+            v = con ? nm_remote_connection_get_filename(con) : NULL;
             if (complete && (filter_type || *filter_val))
                 nmc_complete_strings(filter_val, v);
             if (nm_streq0(filter_val, v))
