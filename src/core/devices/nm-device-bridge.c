@@ -1162,7 +1162,7 @@ can_reapply_change(NMDevice   *device,
 {
     /* Delegate changes to other settings to parent class */
     if (!nm_streq(setting_name, NM_SETTING_BRIDGE_SETTING_NAME)) {
-        NM_DEVICE_CLASS(nm_device_bridge_parent_class)
+        return NM_DEVICE_CLASS(nm_device_bridge_parent_class)
             ->can_reapply_change(device, setting_name, s_old, s_new, diffs, error);
     }
 
