@@ -291,7 +291,27 @@ nm_str_buf_append0(NMStrBuf *strbuf, const char *str)
     return nm_str_buf_append_len0(strbuf, str, strlen(str));
 }
 
-void nm_str_buf_append_printf(NMStrBuf *strbuf, const char *format, ...) _nm_printf(2, 3);
+void nm_str_buf_append_printfv(NMStrBuf *strbuf, const char *format, va_list args) _nm_printf(2, 0);
+
+/* Warning, this is not a function-like macro. That is, you must
+ * evaluate it in a place where you would otherwise call va_start(). */
+#define nm_str_buf_append_printfv_eval(strbuf, format, va_start_last) \
+    ({                                                                \
+        NMStrBuf *const _strbuf = (strbuf);                           \
+        va_list         _ap;                                          \
+                                                                      \
+        va_start(_ap, (va_start_last));                               \
+        nm_str_buf_append_printfv(_strbuf, (format), _ap);            \
+        va_end(_ap);                                                  \
+                                                                      \
+        _strbuf;                                                      \
+    })
+
+static inline void _nm_printf(2, 3)
+    nm_str_buf_append_printf(NMStrBuf *strbuf, const char *format, ...)
+{
+    nm_str_buf_append_printfv_eval(strbuf, format, format);
+}
 
 static inline void
 nm_str_buf_ensure_trailing_c(NMStrBuf *strbuf, char ch)

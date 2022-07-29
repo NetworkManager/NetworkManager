@@ -5879,9 +5879,9 @@ _nm_str_buf_ensure_size(NMStrBuf *strbuf, gsize new_size, gboolean reserve_exact
 }
 
 void
-nm_str_buf_append_printf(NMStrBuf *strbuf, const char *format, ...)
+nm_str_buf_append_printfv(NMStrBuf *strbuf, const char *format, va_list args)
 {
-    va_list args;
+    va_list args_copy;
     gsize   available;
     int     l;
 
@@ -5891,12 +5891,12 @@ nm_str_buf_append_printf(NMStrBuf *strbuf, const char *format, ...)
 
     nm_assert(available < G_MAXULONG);
 
-    va_start(args, format);
+    va_copy(args_copy, args);
     l = g_vsnprintf(strbuf->_priv_allocated > 0 ? &strbuf->_priv_str[strbuf->_priv_len] : NULL,
                     available,
                     format,
-                    args);
-    va_end(args);
+                    args_copy);
+    va_end(args_copy);
 
     nm_assert(l >= 0);
     nm_assert(l < G_MAXINT);
@@ -5911,9 +5911,9 @@ nm_str_buf_append_printf(NMStrBuf *strbuf, const char *format, ...)
 
         nm_str_buf_maybe_expand(strbuf, l2, FALSE);
 
-        va_start(args, format);
-        l = g_vsnprintf(&strbuf->_priv_str[strbuf->_priv_len], l2, format, args);
-        va_end(args);
+        va_copy(args_copy, args);
+        l = g_vsnprintf(&strbuf->_priv_str[strbuf->_priv_len], l2, format, args_copy);
+        va_end(args_copy);
 
         nm_assert(l >= 0);
         nm_assert((gsize) l == l2 - 1u);
