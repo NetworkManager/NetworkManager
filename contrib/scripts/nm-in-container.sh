@@ -269,6 +269,7 @@ FROM $BASE_IMAGE
 ENTRYPOINT ["/sbin/init"]
 
 RUN dnf install -y \\
+    /usr/bin/python \\
     ModemManager-devel \\
     ModemManager-glib-devel \\
     NetworkManager \\
