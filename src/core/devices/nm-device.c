@@ -12691,6 +12691,16 @@ check_and_reapply_connection(NMDevice     *self,
         if (nm_g_hash_table_lookup(diffs, NM_SETTING_IP6_CONFIG_SETTING_NAME))
             priv->ip_data_6.do_reapply = TRUE;
 
+        if (nm_g_hash_table_contains_any(
+                nm_g_hash_table_lookup(diffs, NM_SETTING_CONNECTION_SETTING_NAME),
+                NM_SETTING_CONNECTION_LLDP,
+                NM_SETTING_CONNECTION_MDNS,
+                NM_SETTING_CONNECTION_LLMNR,
+                NM_SETTING_CONNECTION_DNS_OVER_TLS)) {
+            priv->ip_data_4.do_reapply = TRUE;
+            priv->ip_data_6.do_reapply = TRUE;
+        }
+
         nm_device_activate_schedule_stage3_ip_config(self, FALSE);
 
         _routing_rules_sync(self, NM_TERNARY_TRUE);
