@@ -2321,6 +2321,25 @@ nm_g_hash_table_contains(GHashTable *hash, gconstpointer key)
     return hash ? g_hash_table_contains(hash, key) : FALSE;
 }
 
+#define nm_g_hash_table_contains_any(hash, ...)                              \
+    ({                                                                       \
+        GHashTable *const   _hash   = (hash);                                \
+        gconstpointer const _keys[] = {__VA_ARGS__};                         \
+        int                 _i_key;                                          \
+        gboolean            _contains = FALSE;                               \
+                                                                             \
+        if (_hash) {                                                         \
+            for (_i_key = 0; _i_key < (int) G_N_ELEMENTS(_keys); _i_key++) { \
+                if (g_hash_table_contains(_hash, _keys[_i_key])) {           \
+                    _contains = TRUE;                                        \
+                    break;                                                   \
+                }                                                            \
+            }                                                                \
+        }                                                                    \
+                                                                             \
+        _contains;                                                           \
+    })
+
 static inline gboolean
 nm_g_hash_table_remove(GHashTable *hash, gconstpointer key)
 {
