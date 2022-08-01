@@ -72,6 +72,10 @@ typedef struct _nm_packed {
         guint8  u8[NM_UTILS_CHECKSUM_LENGTH_SHA256 / 2];
         guint32 u32[((NM_UTILS_CHECKSUM_LENGTH_SHA256 / 2) + 3) / 4];
     } rand_vals;
+#if HAVE_GETRANDOM
+    guint8 rand_vals_getrandom[16];
+#endif
+    gint16 rand_vals_timestamp;
     GRand *rand;
 } BadRandState;
 
@@ -167,6 +171,21 @@ _bad_random_bytes(guint8 *buf, gsize n)
             g_checksum_update(sum, (const guchar *) &data, sizeof(data));
             nm_utils_checksum_get_digest(sum, gl_state.sha_digest.full);
         }
+
+#if HAVE_GETRANDOM
+        {
+            ssize_t r;
+
+            /* This is likely to fail, because we already failed a moment earlier. Still, give
+             * it a try. */
+            r = getrandom(gl_state.rand_vals_getrandom,
+                          sizeof(gl_state.rand_vals_getrandom),
+                          GRND_INSECURE | GRND_NONBLOCK);
+            (void) r;
+        }
+#endif
+
+        gl_state.rand_vals_timestamp = nm_utils_clock_gettime_nsec(CLOCK_BOOTTIME);
 
         while (TRUE) {
             int i;
