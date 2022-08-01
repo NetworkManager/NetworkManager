@@ -30,6 +30,8 @@ static char *secret_flags_to_string(guint32 flags, NMMetaAccessorGetType get_typ
     (NM_SETTING_SECRET_FLAG_NONE | NM_SETTING_SECRET_FLAG_AGENT_OWNED \
      | NM_SETTING_SECRET_FLAG_NOT_SAVED | NM_SETTING_SECRET_FLAG_NOT_REQUIRED)
 
+const NMUtilsEnumValueInfo GOBJECT_ENUM_VALUE_INFOS_GET_FROM_SETTER[1];
+
 /*****************************************************************************/
 
 static GType
@@ -1082,7 +1084,7 @@ _get_fcn_gobject_enum(ARGS_GET_FCN)
     GType                                gtype            = 0;
     nm_auto_unref_gtypeclass GTypeClass *gtype_class      = NULL;
     nm_auto_unref_gtypeclass GTypeClass *gtype_prop_class = NULL;
-    const struct _NMUtilsEnumValueInfo  *value_infos      = NULL;
+    const NMUtilsEnumValueInfo          *value_infos      = NULL;
     gboolean                             has_gtype        = FALSE;
     nm_auto_unset_gvalue GValue          gval             = G_VALUE_INIT;
     gint64                               v;
@@ -1198,11 +1200,12 @@ _get_fcn_gobject_enum(ARGS_GET_FCN)
         RETURN_STR_TO_FREE(g_steal_pointer(&s));
     }
 
-    /* the gobject_enum.value_infos are currently ignored for the getter. They
-     * only declare additional aliases for the setter. */
-
-    if (property_info->property_typ_data)
+    if (property_info->property_typ_data) {
         value_infos = property_info->property_typ_data->subtype.gobject_enum.value_infos_get;
+        if (value_infos == GOBJECT_ENUM_VALUE_INFOS_GET_FROM_SETTER)
+            value_infos = property_info->property_typ_data->subtype.gobject_enum.value_infos;
+    }
+
     s = _nm_utils_enum_to_str_full(gtype, (int) v, ", ", value_infos);
 
     if (!format_numeric)
@@ -1676,12 +1679,13 @@ fail:
 static const char *const *
 _values_fcn_gobject_enum(ARGS_VALUES_FCN)
 {
-    GType    gtype      = 0;
-    gboolean has_gtype  = FALSE;
-    gboolean has_minmax = FALSE;
-    int      min        = G_MININT;
-    int      max        = G_MAXINT;
-    char   **v;
+    const NMUtilsEnumValueInfo *value_infos = NULL;
+    GType                       gtype       = 0;
+    gboolean                    has_gtype   = FALSE;
+    gboolean                    has_minmax  = FALSE;
+    int                         min         = G_MININT;
+    int                         max         = G_MAXINT;
+    char                      **v;
 
     if (property_info->property_typ_data) {
         if (property_info->property_typ_data->subtype.gobject_enum.min
@@ -1711,10 +1715,29 @@ _values_fcn_gobject_enum(ARGS_VALUES_FCN)
         }
     }
 
-    /* the gobject_enum.value_infos are currently ignored for the list of
-     * values. They only declare additional (hidden) aliases for the setter. */
+    /* There is a problem. For flags, we don't expand to all the values that we could
+     * complete for. We only expand to a single flag "FLAG1", but if the property
+     * is already set to "FLAG2", we should also expand to "FLAG1,FLAG2". */
 
     v = nm_strv_make_deep_copied(nm_utils_enum_get_values(gtype, min, max));
+
+    if (property_info->property_typ_data
+        && (value_infos = property_info->property_typ_data->subtype.gobject_enum.value_infos)) {
+        const guint V_N = NM_PTRARRAY_LEN(v);
+        guint       n;
+        guint       i;
+
+        nm_assert(value_infos[0].nick);
+
+        for (n = 0; value_infos[n].nick;)
+            n++;
+
+        v = g_realloc(v, (V_N + n + 1) * sizeof(char *));
+        for (i = 0; i < n; i++)
+            v[V_N + i] = g_strdup(value_infos[i].nick);
+        v[V_N + n] = NULL;
+    }
+
     return (const char *const *) (*out_to_free = v);
 }
 
