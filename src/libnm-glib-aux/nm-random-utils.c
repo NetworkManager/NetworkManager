@@ -245,8 +245,10 @@ nm_utils_random_bytes(void *p, size_t n)
     gboolean has_high_quality = TRUE;
     guint8  *buf              = p;
 
+    if (n == 0)
+        return TRUE;
+
     g_return_val_if_fail(p, FALSE);
-    g_return_val_if_fail(n > 0, FALSE);
 
 #if HAVE_GETRANDOM
     {
