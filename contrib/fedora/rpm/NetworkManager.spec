@@ -611,6 +611,9 @@ Preferably use nmcli instead.
 %meson \
 	-Db_ndebug=false \
 	--warnlevel 2 \
+%if %{with test}
+	--werror \
+%endif
 	-Dnft=/usr/sbin/nft \
 	-Diptables=/usr/sbin/iptables \
 	-Ddhcpcanon=no \
@@ -622,7 +625,6 @@ Preferably use nmcli instead.
 	-Dcrypto=nss \
 %endif
 %if %{with debug}
-	--werror \
 	-Dmore_logging=true \
 	-Dmore_asserts=10000 \
 %else
@@ -764,11 +766,9 @@ autoreconf --install --force
 	--disable-undefined-sanitizer \
 %endif
 %if %{with debug}
-	--enable-more-warnings=error \
 	--enable-more-logging \
 	--with-more-asserts=10000 \
 %else
-	--enable-more-warnings=yes \
 	--disable-more-logging \
 	--without-more-asserts \
 %endif
@@ -846,6 +846,11 @@ autoreconf --install --force
 	--with-system-ca-path=/etc/pki/tls/cert.pem \
 	--with-dbus-sys-dir=%{dbus_sys_dir} \
 	--with-tests=yes \
+%if %{with test}
+	--enable-more-warnings=error \
+%else
+	--enable-more-warnings=yes \
+%endif
 	--with-valgrind=no \
 	--enable-ifcfg-rh=yes \
 	--enable-ifupdown=no \
