@@ -7761,14 +7761,12 @@ nm_platform_mptcp_addr_to_string(const NMPlatformMptcpAddr *mptcp_addr, char *bu
 
     g_snprintf(buf,
                len,
-               "%s" /* in_kernel */
                "%s" /* address */
                "%s" /* port */
                "%s" /* id */
                "%s" /* flags */
                "%s" /* ifindex */
                "",
-               mptcp_addr->in_kernel ? "" : "[nm] ",
                str_addr,
                mptcp_addr->port == 0 ? "" : nm_sprintf_buf(str_port, " port %u", mptcp_addr->port),
                mptcp_addr->id == 0 ? "" : nm_sprintf_buf(str_id, " id %u", mptcp_addr->id),
@@ -7785,13 +7783,7 @@ nm_platform_mptcp_addr_hash_update(const NMPlatformMptcpAddr *obj, NMHashState *
     nm_assert(obj);
     nm_assert_addr_family_or_unspec(obj->addr_family);
 
-    nm_hash_update_vals(h,
-                        obj->id,
-                        obj->flags,
-                        obj->port,
-                        obj->addr_family,
-                        (bool) obj->in_kernel,
-                        obj->ifindex);
+    nm_hash_update_vals(h, obj->id, obj->flags, obj->port, obj->addr_family, obj->ifindex);
     if (NM_IN_SET(obj->addr_family, AF_INET, AF_INET6))
         nm_hash_update(h, &obj->addr, nm_utils_addr_family_to_size(obj->addr_family));
 }
@@ -7806,7 +7798,6 @@ nm_platform_mptcp_addr_cmp(const NMPlatformMptcpAddr *a, const NMPlatformMptcpAd
 
     NM_CMP_FIELD(a, b, ifindex);
     NM_CMP_FIELD(a, b, id);
-    NM_CMP_FIELD_UNSAFE(a, b, in_kernel);
     NM_CMP_FIELD(a, b, addr_family);
     if (NM_IN_SET(a->addr_family, AF_INET, AF_INET6))
         NM_CMP_FIELD_MEMCMP_LEN(a, b, addr, nm_utils_addr_family_to_size(a->addr_family));

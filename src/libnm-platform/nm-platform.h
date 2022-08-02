@@ -1098,21 +1098,11 @@ typedef void (*NMPlatformAsyncCallback)(GError *error, gpointer user_data);
 
 typedef struct {
     __NMPlatformObjWithIfindex_COMMON;
-
     guint32  id;
     guint32  flags;
     guint16  port;
     NMIPAddr addr;
     gint8    addr_family;
-
-    /* If TRUE, then the instance was received by kernel and is inside NMPlatform
-     * cache. In that case, the "id" is set and acts as primary key for the instance.
-     *
-     * If FALSE, this instance is not yet configured in kernel. In this case,
-     * the tuple (id, addr_family, addr) is the primary key of the instance.
-     * This way, we can track mptcp addresses in NetworkManager internally,
-     * before configuring them in kernel. */
-    bool in_kernel : 1;
 } NMPlatformMptcpAddr;
 
 #undef __NMPlatformObjWithIfindex_COMMON
