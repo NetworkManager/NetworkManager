@@ -1290,7 +1290,7 @@ out_fail:
               duid,
               duid_error);
 
-        nm_utils_random_bytes(&uuid, sizeof(uuid));
+        nm_random_get_bytes(&uuid, sizeof(uuid));
         duid_out = nm_utils_generate_duid_uuid(&uuid);
     }
 
@@ -2073,7 +2073,7 @@ out_fail:
           fail_reason);
     client_id_buf    = g_malloc(1 + 15);
     client_id_buf[0] = 0;
-    nm_utils_random_bytes(&client_id_buf[1], 15);
+    nm_random_get_bytes(&client_id_buf[1], 15);
     result = g_bytes_new_take(client_id_buf, 1 + 15);
 
 out_good:

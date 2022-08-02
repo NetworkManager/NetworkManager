@@ -115,12 +115,12 @@ nm_uuid_generate_random(NMUuid *out_uuid)
 
     /* See also, systemd's id128_make_v4_uuid() */
 
-    /* nm_utils_random_bytes() is supposed to try hard to give good
+    /* nm_random_get_bytes() is supposed to try hard to give good
      * randomness. If it fails, it still makes an effort to fill
      * random data into the buffer. There is not much we can do about
      * that case, except making sure that it does not happen in the
      * first place. */
-    nm_utils_random_bytes(out_uuid, sizeof(*out_uuid));
+    nm_random_get_bytes(out_uuid, sizeof(*out_uuid));
 
     /* Set the four most significant bits (bits 12 through 15) of the
      * time_hi_and_version field to the 4-bit version number from
