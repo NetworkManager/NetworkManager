@@ -25,6 +25,9 @@
 #define PEM_DSA_KEY_BEGIN "-----BEGIN DSA PRIVATE KEY-----"
 #define PEM_DSA_KEY_END   "-----END DSA PRIVATE KEY-----"
 
+#define PEM_EC_KEY_BEGIN "-----BEGIN EC PRIVATE KEY-----"
+#define PEM_EC_KEY_END   "-----END EC PRIVATE KEY-----"
+
 #define PEM_CERT_BEGIN "-----BEGIN CERTIFICATE-----"
 #define PEM_CERT_END   "-----END CERTIFICATE-----"
 
@@ -201,6 +204,10 @@ parse_old_openssl_key_file(const guint8       *data,
         key_type  = NM_CRYPTO_KEY_TYPE_DSA;
         start_tag = PEM_DSA_KEY_BEGIN;
         end_tag   = PEM_DSA_KEY_END;
+    } else if (find_tag(PEM_EC_KEY_BEGIN, data, data_len, 0, &start)) {
+        key_type  = NM_CRYPTO_KEY_TYPE_EC;
+        start_tag = PEM_EC_KEY_BEGIN;
+        end_tag   = PEM_EC_KEY_END;
     } else {
         g_set_error(error,
                     _NM_CRYPTO_ERROR,

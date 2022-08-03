@@ -29,7 +29,8 @@ const NMCryptoCipherInfo *nm_crypto_cipher_get_info_by_name(const char *cipher_n
 typedef enum {
     NM_CRYPTO_KEY_TYPE_UNKNOWN = 0,
     NM_CRYPTO_KEY_TYPE_RSA,
-    NM_CRYPTO_KEY_TYPE_DSA
+    NM_CRYPTO_KEY_TYPE_DSA,
+    NM_CRYPTO_KEY_TYPE_EC,
 } NMCryptoKeyType;
 
 typedef enum {
