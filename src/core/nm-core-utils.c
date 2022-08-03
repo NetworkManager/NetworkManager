@@ -2814,7 +2814,10 @@ _host_id_read(guint8 **out_host_id, gsize *out_host_id_len)
         int    base64_save  = 0;
         gsize  len;
 
-        nm_random_get_bytes_full(rnd_buf, sizeof(rnd_buf), &success);
+        if (nm_random_get_crypto_bytes(rnd_buf, sizeof(rnd_buf)) < 0)
+            nm_random_get_bytes_full(rnd_buf, sizeof(rnd_buf), &success);
+        else
+            success = TRUE;
 
         /* Our key is really binary data. But since we anyway generate a random seed
          * (with 32 random bytes), don't write it in binary, but instead create
