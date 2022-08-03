@@ -1634,6 +1634,8 @@ EXTRA_DIST += \
 	src/libnm-core-impl/tests/certs/test2_key_and_cert.pem \
 	src/libnm-core-impl/tests/certs/test-aes-128-key.pem \
 	src/libnm-core-impl/tests/certs/test-aes-256-key.pem \
+	src/libnm-core-impl/tests/certs/test-aes-128-ec-key.pem \
+	src/libnm-core-impl/tests/certs/test-aes-256-ec-key.pem \
 	src/libnm-core-impl/tests/certs/test_ca_cert.der \
 	src/libnm-core-impl/tests/certs/test_ca_cert.pem \
 	src/libnm-core-impl/tests/certs/test-ca-cert.pem \
@@ -1642,6 +1644,8 @@ EXTRA_DIST += \
 	src/libnm-core-impl/tests/certs/test-key-and-cert.pem \
 	src/libnm-core-impl/tests/certs/test-key-only-decrypted.der \
 	src/libnm-core-impl/tests/certs/test-key-only-decrypted.pem \
+	src/libnm-core-impl/tests/certs/test-ec-key-only-decrypted.der \
+	src/libnm-core-impl/tests/certs/test-ec-key-only-decrypted.pem \
 	src/libnm-core-impl/tests/certs/test-key-only.pem \
 	src/libnm-core-impl/tests/certs/test-tpm2wrapped-key.pem \
 	src/libnm-core-impl/tests/nm-core-tests-enum-types.c.template \

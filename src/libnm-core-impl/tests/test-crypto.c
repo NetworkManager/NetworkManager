@@ -111,7 +111,7 @@ test_load_private_key(const char *path,
 
     array = nmtst_crypto_decrypt_openssl_private_key(path, password, &key_type, &error);
     /* Even if the password is wrong, we should determine the key type */
-    g_assert_cmpint(key_type, ==, NM_CRYPTO_KEY_TYPE_RSA);
+    g_assert_cmpint(key_type, !=, NM_CRYPTO_KEY_TYPE_UNKNOWN);
 
     if (expected_error != -1) {
         g_assert(array == NULL);
@@ -226,7 +226,7 @@ test_encrypt_private_key(const char *path, const char *password)
 
     array = nmtst_crypto_decrypt_openssl_private_key(path, password, &key_type, &error);
     nmtst_assert_success(array, error);
-    g_assert_cmpint(key_type, ==, NM_CRYPTO_KEY_TYPE_RSA);
+    g_assert_cmpint(key_type, !=, NM_CRYPTO_KEY_TYPE_UNKNOWN);
 
     /* Now re-encrypt the private key */
     encrypted = nmtst_crypto_rsa_key_encrypt(g_bytes_get_data(array, NULL),
@@ -244,7 +244,7 @@ test_encrypt_private_key(const char *path, const char *password)
                                                                  &key_type,
                                                                  &error);
     nmtst_assert_success(re_decrypted, error);
-    g_assert_cmpint(key_type, ==, NM_CRYPTO_KEY_TYPE_RSA);
+    g_assert_cmpint(key_type, !=, NM_CRYPTO_KEY_TYPE_UNKNOWN);
 
     /* Compare the original decrypted key with the re-decrypted key */
     g_assert(g_bytes_equal(array, re_decrypted));
@@ -452,11 +452,20 @@ main(int argc, char **argv)
     g_test_add_data_func("/libnm/crypto/key/aes-128",
                          "test-aes-128-key.pem, test-aes-password",
                          test_key);
+    g_test_add_data_func("/libnm/crypto/key/aes-128-ec",
+                         "test-aes-128-ec-key.pem, test-aes-password",
+                         test_key);
     g_test_add_data_func("/libnm/crypto/key/aes-256",
                          "test-aes-256-key.pem, test-aes-password",
                          test_key);
+    g_test_add_data_func("/libnm/crypto/key/aes-256-ec",
+                         "test-aes-256-ec-key.pem, test-aes-password",
+                         test_key);
     g_test_add_data_func("/libnm/crypto/key/decrypted",
                          "test-key-only-decrypted.pem",
+                         test_key_decrypted);
+    g_test_add_data_func("/libnm/crypto/key/decrypted-ec",
+                         "test-ec-key-only-decrypted.pem",
                          test_key_decrypted);
 
     g_test_add_data_func("/libnm/crypto/PKCS#12/1", "test-cert.p12, test", test_pkcs12);
