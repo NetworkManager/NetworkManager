@@ -892,6 +892,12 @@ typedef struct {
 extern const NMPlatformLnkBridge nm_platform_lnk_bridge_default;
 
 typedef struct {
+    guint32    priority;
+    guint32    path_cost;
+    bool       hairpin_mode;
+} NMPlatformLnkBridgePort;
+
+typedef struct {
     int       parent_ifindex;
     in_addr_t local;
     in_addr_t remote;
@@ -1745,6 +1751,12 @@ static inline int
 nm_platform_link_bridge_change(NMPlatform *self, int ifindex, const NMPlatformLnkBridge *props)
 {
     return nm_platform_link_change(self, NM_LINK_TYPE_BRIDGE, ifindex, props);
+}
+
+static inline int
+nm_platform_link_bridge_port_change(NMPlatform *self, int ifindex, const NMPlatformLnkBridgePort *props)
+{
+    return nm_platform_link_change(self, NM_LINK_TYPE_BRIDGE_PORT, ifindex, props);
 }
 
 static inline int
