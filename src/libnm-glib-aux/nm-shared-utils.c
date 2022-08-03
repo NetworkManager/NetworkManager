@@ -1021,6 +1021,13 @@ nm_utils_ip_is_site_local(int addr_family, const void *address)
     }
 }
 
+gboolean
+nm_utils_ip6_is_ula(const struct in6_addr *address)
+{
+    /* Unique local IPv6 address (ULA) fc00::/7 */
+    return (address->s6_addr32[0] & htonl(0xfe000000u)) == htonl(0xfc000000u);
+}
+
 /*****************************************************************************/
 
 static gboolean

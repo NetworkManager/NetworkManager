@@ -504,6 +504,7 @@ nm_utils_ip_address_same_prefix(int           addr_family,
 /*****************************************************************************/
 
 gboolean nm_utils_ip_is_site_local(int addr_family, const void *address);
+gboolean nm_utils_ip6_is_ula(const struct in6_addr *address);
 
 /*****************************************************************************/
 
