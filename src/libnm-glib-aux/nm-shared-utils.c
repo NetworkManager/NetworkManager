@@ -3383,6 +3383,8 @@ nm_utils_fd_wait_for_event(int fd, int event, gint64 timeout_nsec)
     struct timespec ts, *pts;
     int             r;
 
+    nm_assert(fd >= 0);
+
     if (timeout_nsec < 0)
         pts = NULL;
     else {
@@ -3396,6 +3398,13 @@ nm_utils_fd_wait_for_event(int fd, int event, gint64 timeout_nsec)
         return -NM_ERRNO_NATIVE(errno);
     if (r == 0)
         return 0;
+
+    nm_assert(r == 1);
+    nm_assert(pollfd.revents > 0);
+
+    if (pollfd.revents & POLLNVAL)
+        return nm_assert_unreachable_val(-EBADF);
+
     return pollfd.revents;
 }
 
