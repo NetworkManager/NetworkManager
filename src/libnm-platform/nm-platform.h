@@ -1617,6 +1617,18 @@ nm_platform_ip6_address_get_scope(const struct in6_addr *addr)
 static inline guint8
 nm_platform_ip_address_get_scope(int addr_family, gconstpointer addr)
 {
+    /* Note that this function returns the scope as we configure
+     * it in kernel (for IPv4) or as kernel chooses it (for IPv6).
+     *
+     * That means, rfc1918 private addresses nm_utils_ip_is_site_local() are
+     * considered RT_SCOPE_UNIVERSE.
+     *
+     * Also, the deprecated IN6_IS_ADDR_SITELOCAL() addresses (fec0::/10)
+     * are considered RT_SCOPE_SITE, while unique local addresses (ULA, fc00::/7)
+     * are considered RT_SCOPE_UNIVERSE.
+     *
+     * You may not want to use this function when reasoning about
+     * site-local addresses (RFC1918, ULA). */
     if (NM_IS_IPv4(addr_family))
         return nm_platform_ip4_address_get_scope(*((in_addr_t *) addr));
     return nm_platform_ip6_address_get_scope(addr);
