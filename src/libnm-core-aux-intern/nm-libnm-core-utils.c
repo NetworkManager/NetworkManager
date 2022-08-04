@@ -41,6 +41,121 @@ _nm_setting_bond_remove_options_arp_interval(NMSettingBond *s_bond)
 /*****************************************************************************/
 
 NM_UTILS_STRING_TABLE_LOOKUP_DEFINE(
+    _nm_setting_bond_ad_select_from_string,
+    NMBondAdSelect,
+    {
+        G_STATIC_ASSERT_EXPR(_NM_BOND_AD_SELECT_NUM <= 3);
+
+        if (name && name[0] < '0' + _NM_BOND_AD_SELECT_NUM && name[0] >= '0' && name[1] == '\0') {
+            return name[0] - '0';
+        }
+    },
+    { return NM_BOND_AD_SELECT_STABLE; },
+    {"bandwith", NM_BOND_AD_SELECT_BANDWIDTH},
+    {"count", NM_BOND_AD_SELECT_COUNT},
+    {"stable", NM_BOND_AD_SELECT_STABLE}, );
+
+NM_UTILS_STRING_TABLE_LOOKUP_DEFINE(
+    _nm_setting_bond_arp_all_targets_from_string,
+    NMBondArpAllTargets,
+    {
+        G_STATIC_ASSERT_EXPR(_NM_BOND_ARP_ALL_TARGETS_NUM <= 2);
+
+        if (name && name[0] < '0' + _NM_BOND_ARP_ALL_TARGETS_NUM && name[0] >= '0'
+            && name[1] == '\0') {
+            return name[0] - '0';
+        }
+    },
+    { return NM_BOND_ARP_ALL_TARGETS_ANY; },
+    {"all", NM_BOND_ARP_ALL_TARGETS_ALL},
+    {"any", NM_BOND_ARP_ALL_TARGETS_ANY}, );
+
+NM_UTILS_STRING_TABLE_LOOKUP_DEFINE(
+    _nm_setting_bond_fail_over_mac_from_string,
+    NMBondFailOverMac,
+    {
+        G_STATIC_ASSERT_EXPR(_NM_BOND_FAIL_OVER_MAC_NUM <= 3);
+
+        if (name && name[0] < '0' + _NM_BOND_FAIL_OVER_MAC_NUM && name[0] >= '0'
+            && name[1] == '\0') {
+            return name[0] - '0';
+        }
+    },
+    { return NM_BOND_FAIL_OVER_MAC_NONE; },
+    {"active", NM_BOND_FAIL_OVER_MAC_ACTIVE},
+    {"follow", NM_BOND_FAIL_OVER_MAC_FOLLOW},
+    {"none", NM_BOND_FAIL_OVER_MAC_NONE}, );
+
+NM_UTILS_STRING_TABLE_LOOKUP_DEFINE(
+    _nm_setting_bond_lacp_rate_from_string,
+    NMBondLacpRate,
+    {
+        G_STATIC_ASSERT_EXPR(_NM_BOND_LACP_RATE_NUM <= 2);
+
+        if (name && name[0] < '0' + _NM_BOND_LACP_RATE_NUM && name[0] >= '0' && name[1] == '\0') {
+            return name[0] - '0';
+        }
+    },
+    { return NM_BOND_LACP_RATE_SLOW; },
+    {"fast", NM_BOND_LACP_RATE_FAST},
+    {"slow", NM_BOND_LACP_RATE_SLOW}, );
+
+NM_UTILS_STRING_TABLE_LOOKUP_DEFINE(
+    _nm_setting_bond_arp_validate_from_string,
+    NMBondArpValidate,
+    {
+        G_STATIC_ASSERT_EXPR(_NM_BOND_ARP_VALIDATE_NUM <= 7);
+
+        if (name && name[0] < '0' + _NM_BOND_ARP_VALIDATE_NUM && name[0] >= '0'
+            && name[1] == '\0') {
+            return name[0] - '0';
+        }
+    },
+    { return NM_BOND_ARP_VALIDATE_NONE; },
+    {"active", NM_BOND_ARP_VALIDATE_ACTIVE},
+    {"all", NM_BOND_ARP_VALIDATE_ALL},
+    {"backup", NM_BOND_ARP_VALIDATE_BACKUP},
+    {"filter", NM_BOND_ARP_VALIDATE_FILTER},
+    {"filter_active", NM_BOND_ARP_VALIDATE_FILTER_ACTIVE},
+    {"filter_backup", NM_BOND_ARP_VALIDATE_FILTER_BACKUP},
+    {"none", NM_BOND_ARP_VALIDATE_NONE}, );
+
+NM_UTILS_STRING_TABLE_LOOKUP_DEFINE(
+    _nm_setting_bond_primary_reselect_from_string,
+    NMBondPrimaryReselect,
+    {
+        G_STATIC_ASSERT_EXPR(_NM_BOND_PRIMARY_RESELECT_NUM <= 3);
+
+        if (name && name[0] < '0' + _NM_BOND_PRIMARY_RESELECT_NUM && name[0] >= '0'
+            && name[1] == '\0') {
+            return name[0] - '0';
+        }
+    },
+    { return NM_BOND_PRIMARY_RESELECT_ALWAYS; },
+    {"always", NM_BOND_PRIMARY_RESELECT_ALWAYS},
+    {"better", NM_BOND_PRIMARY_RESELECT_BETTER},
+    {"failure", NM_BOND_PRIMARY_RESELECT_FAILURE}, );
+
+NM_UTILS_STRING_TABLE_LOOKUP_DEFINE(
+    _nm_setting_bond_xmit_hash_policy_from_string,
+    NMBondXmitHashPolicy,
+    {
+        G_STATIC_ASSERT_EXPR(_NM_BOND_XMIT_HASH_POLICY_NUM <= 6);
+
+        if (name && name[0] < '0' + _NM_BOND_XMIT_HASH_POLICY_NUM && name[0] >= '0'
+            && name[1] == '\0') {
+            return name[0] - '0';
+        }
+    },
+    { return NM_BOND_XMIT_HASH_POLICY_LAYER2; },
+    {"encap2+3", NM_BOND_XMIT_HASH_POLICY_ENCAP2_3},
+    {"encap3+4", NM_BOND_XMIT_HASH_POLICY_ENCAP3_4},
+    {"layer2", NM_BOND_XMIT_HASH_POLICY_LAYER2},
+    {"layer2+3", NM_BOND_XMIT_HASH_POLICY_LAYER2_3},
+    {"layer3+4", NM_BOND_XMIT_HASH_POLICY_LAYER3_4},
+    {"vlan+srcmac", NM_BOND_XMIT_HASH_POLICY_VLAN_SRCMAC}, );
+
+NM_UTILS_STRING_TABLE_LOOKUP_DEFINE(
     _nm_setting_bond_mode_from_string,
     NMBondMode,
     {

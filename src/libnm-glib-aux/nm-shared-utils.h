@@ -2859,6 +2859,8 @@ nm_ether_addr_to_string(const NMEtherAddr *ether_addr, char sbuf[static(sizeof(N
 #define nm_ether_addr_to_string_a(ether_addr) \
     nm_ether_addr_to_string((ether_addr), g_alloca(sizeof(NMEtherAddr) * 3))
 
+NMEtherAddr *nm_ether_addr_from_string(NMEtherAddr *addr, const char *str);
+
 guint8 *nm_utils_hexstr2bin_full(const char *hexstr,
                                  gboolean    allow_0x_prefix,
                                  gboolean    delimiter_required,

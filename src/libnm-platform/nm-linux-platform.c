@@ -1536,6 +1536,152 @@ _parse_lnk_bridge(const char *kind, struct nlattr *info_data)
 /***********************************************************************************/
 
 static NMPObject *
+_parse_lnk_bond(const char *kind, struct nlattr *info_data)
+{
+    static const struct nla_policy policy[] = {
+        [IFLA_BOND_MODE]              = {.type = NLA_U8},
+        [IFLA_BOND_ACTIVE_SLAVE]      = {.type = NLA_U32},
+        [IFLA_BOND_MIIMON]            = {.type = NLA_U32},
+        [IFLA_BOND_UPDELAY]           = {.type = NLA_U32},
+        [IFLA_BOND_DOWNDELAY]         = {.type = NLA_U32},
+        [IFLA_BOND_USE_CARRIER]       = {.type = NLA_U8},
+        [IFLA_BOND_ARP_INTERVAL]      = {.type = NLA_U32},
+        [IFLA_BOND_ARP_IP_TARGET]     = {.type = NLA_NESTED},
+        [IFLA_BOND_ARP_VALIDATE]      = {.type = NLA_U32},
+        [IFLA_BOND_ARP_ALL_TARGETS]   = {.type = NLA_U32},
+        [IFLA_BOND_PRIMARY]           = {.type = NLA_U32},
+        [IFLA_BOND_PRIMARY_RESELECT]  = {.type = NLA_U8},
+        [IFLA_BOND_FAIL_OVER_MAC]     = {.type = NLA_U8},
+        [IFLA_BOND_XMIT_HASH_POLICY]  = {.type = NLA_U8},
+        [IFLA_BOND_RESEND_IGMP]       = {.type = NLA_U32},
+        [IFLA_BOND_NUM_PEER_NOTIF]    = {.type = NLA_U8},
+        [IFLA_BOND_ALL_SLAVES_ACTIVE] = {.type = NLA_U8},
+        [IFLA_BOND_MIN_LINKS]         = {.type = NLA_U32},
+        [IFLA_BOND_LP_INTERVAL]       = {.type = NLA_U32},
+        [IFLA_BOND_PACKETS_PER_SLAVE] = {.type = NLA_U32},
+        [IFLA_BOND_AD_LACP_RATE]      = {.type = NLA_U8},
+        [IFLA_BOND_AD_SELECT]         = {.type = NLA_U8},
+        [IFLA_BOND_AD_ACTOR_SYS_PRIO] = {.type = NLA_U16},
+        [IFLA_BOND_AD_USER_PORT_KEY]  = {.type = NLA_U16},
+        [IFLA_BOND_AD_ACTOR_SYSTEM]   = {.minlen = sizeof(NMEtherAddr)},
+        [IFLA_BOND_TLB_DYNAMIC_LB]    = {.type = NLA_U8},
+        [IFLA_BOND_PEER_NOTIF_DELAY]  = {.type = NLA_U32},
+    };
+    NMPlatformLnkBond *props;
+    struct nlattr     *tb[G_N_ELEMENTS(policy)];
+    NMPObject         *obj = NULL;
+
+    if (!info_data || !nm_streq0(kind, "bond"))
+        return NULL;
+
+    if (nla_parse_nested_arr(tb, info_data, policy) < 0)
+        return NULL;
+
+    obj = nmp_object_new(NMP_OBJECT_TYPE_LNK_BOND, NULL);
+
+    props = &obj->lnk_bond;
+
+    if (tb[IFLA_BOND_MODE])
+        props->mode = nla_get_u8(tb[IFLA_BOND_MODE]);
+    if (tb[IFLA_BOND_PRIMARY]) {
+        props->primary = nla_get_u32(tb[IFLA_BOND_PRIMARY]);
+    } else if (tb[IFLA_BOND_ACTIVE_SLAVE]) {
+        props->primary = nla_get_u32(tb[IFLA_BOND_ACTIVE_SLAVE]);
+    }
+    if (tb[IFLA_BOND_MIIMON]) {
+        props->miimon     = nla_get_u32(tb[IFLA_BOND_MIIMON]);
+        props->miimon_has = TRUE;
+    } else {
+        props->miimon_has = FALSE;
+    }
+    if (tb[IFLA_BOND_UPDELAY]) {
+        props->updelay     = nla_get_u32(tb[IFLA_BOND_UPDELAY]);
+        props->updelay_has = TRUE;
+    } else {
+        props->updelay_has = FALSE;
+    }
+    if (tb[IFLA_BOND_DOWNDELAY]) {
+        props->downdelay     = nla_get_u32(tb[IFLA_BOND_DOWNDELAY]);
+        props->downdelay_has = TRUE;
+    } else {
+        props->downdelay_has = FALSE;
+    }
+    if (tb[IFLA_BOND_USE_CARRIER])
+        props->use_carrier = nla_get_u8(tb[IFLA_BOND_USE_CARRIER]);
+    if (tb[IFLA_BOND_ARP_INTERVAL])
+        props->arp_interval = nla_get_u32(tb[IFLA_BOND_ARP_INTERVAL]);
+    if (tb[IFLA_BOND_ARP_IP_TARGET]) {
+        struct nlattr *attr;
+        int            rem;
+
+        nla_for_each_nested (attr, tb[IFLA_BOND_ARP_IP_TARGET], rem) {
+            if (props->arp_ip_targets_num > NM_BOND_MAX_ARP_TARGETS - 1)
+                break;
+            if (nla_len(attr) < sizeof(in_addr_t))
+                break;
+
+            props->arp_ip_target[props->arp_ip_targets_num++] = nla_get_u32(attr);
+        }
+    }
+    if (tb[IFLA_BOND_ARP_VALIDATE])
+        props->arp_validate = nla_get_u32(tb[IFLA_BOND_ARP_VALIDATE]);
+    if (tb[IFLA_BOND_ARP_ALL_TARGETS]) {
+        props->arp_all_targets     = nla_get_u32(tb[IFLA_BOND_ARP_ALL_TARGETS]);
+        props->arp_all_targets_has = TRUE;
+    } else {
+        props->arp_all_targets_has = FALSE;
+    }
+    if (tb[IFLA_BOND_PRIMARY_RESELECT])
+        props->primary_reselect = nla_get_u8(tb[IFLA_BOND_PRIMARY_RESELECT]);
+    if (tb[IFLA_BOND_FAIL_OVER_MAC])
+        props->fail_over_mac = nla_get_u8(tb[IFLA_BOND_FAIL_OVER_MAC]);
+    if (tb[IFLA_BOND_XMIT_HASH_POLICY])
+        props->xmit_hash_policy = nla_get_u8(tb[IFLA_BOND_XMIT_HASH_POLICY]);
+    if (tb[IFLA_BOND_RESEND_IGMP]) {
+        props->resend_igmp     = nla_get_u32(tb[IFLA_BOND_RESEND_IGMP]);
+        props->resend_igmp_has = TRUE;
+    } else {
+        props->resend_igmp_has = FALSE;
+    }
+    if (tb[IFLA_BOND_NUM_PEER_NOTIF])
+        props->num_grat_arp = nla_get_u8(tb[IFLA_BOND_NUM_PEER_NOTIF]);
+    if (tb[IFLA_BOND_ALL_SLAVES_ACTIVE])
+        props->all_ports_active = nla_get_u8(tb[IFLA_BOND_ALL_SLAVES_ACTIVE]);
+    if (tb[IFLA_BOND_MIN_LINKS])
+        props->min_links = nla_get_u32(tb[IFLA_BOND_MIN_LINKS]);
+    if (tb[IFLA_BOND_LP_INTERVAL])
+        props->lp_interval = nla_get_u32(tb[IFLA_BOND_LP_INTERVAL]);
+    if (tb[IFLA_BOND_PACKETS_PER_SLAVE])
+        props->packets_per_port = nla_get_u32(tb[IFLA_BOND_PACKETS_PER_SLAVE]);
+    if (tb[IFLA_BOND_AD_LACP_RATE])
+        props->lacp_rate = nla_get_u8(tb[IFLA_BOND_AD_LACP_RATE]);
+    if (tb[IFLA_BOND_AD_SELECT])
+        props->ad_select = nla_get_u8(tb[IFLA_BOND_AD_SELECT]);
+    if (tb[IFLA_BOND_AD_ACTOR_SYS_PRIO])
+        props->ad_actor_sys_prio = nla_get_u16(tb[IFLA_BOND_AD_ACTOR_SYS_PRIO]);
+    if (tb[IFLA_BOND_AD_USER_PORT_KEY])
+        props->ad_user_port_key = nla_get_u16(tb[IFLA_BOND_AD_USER_PORT_KEY]);
+    if (tb[IFLA_BOND_AD_ACTOR_SYSTEM])
+        props->ad_actor_system = *nla_data_as(NMEtherAddr, tb[IFLA_BOND_AD_ACTOR_SYSTEM]);
+    if (tb[IFLA_BOND_TLB_DYNAMIC_LB]) {
+        props->tlb_dynamic_lb     = nla_get_u8(tb[IFLA_BOND_TLB_DYNAMIC_LB]);
+        props->tlb_dynamic_lb_has = TRUE;
+    } else {
+        props->tlb_dynamic_lb_has = FALSE;
+    }
+    if (tb[IFLA_BOND_PEER_NOTIF_DELAY]) {
+        props->peer_notif_delay     = nla_get_u32(tb[IFLA_BOND_PEER_NOTIF_DELAY]);
+        props->peer_notif_delay_has = TRUE;
+    } else {
+        props->peer_notif_delay_has = FALSE;
+    }
+
+    return obj;
+}
+
+/***********************************************************************************/
+
+static NMPObject *
 _parse_lnk_gre(const char *kind, struct nlattr *info_data)
 {
     static const struct nla_policy policy[] = {
@@ -3202,6 +3348,9 @@ _new_from_nl_link(NMPlatform            *platform,
     case NM_LINK_TYPE_BRIDGE:
         lnk_data = _parse_lnk_bridge(nl_info_kind, nl_info_data);
         break;
+    case NM_LINK_TYPE_BOND:
+        lnk_data = _parse_lnk_bond(nl_info_kind, nl_info_data);
+        break;
     case NM_LINK_TYPE_GRE:
     case NM_LINK_TYPE_GRETAP:
         lnk_data = _parse_lnk_gre(nl_info_kind, nl_info_data);
@@ -4352,6 +4501,86 @@ _nl_msg_new_link_set_linkinfo(struct nl_msg *msg, NMLinkType link_type, gconstpo
         NLA_PUT_U64(msg, IFLA_BR_MCAST_QUERY_INTVL, props->mcast_query_interval);
         NLA_PUT_U64(msg, IFLA_BR_MCAST_QUERY_RESPONSE_INTVL, props->mcast_query_response_interval);
         NLA_PUT_U64(msg, IFLA_BR_MCAST_STARTUP_QUERY_INTVL, props->mcast_startup_query_interval);
+        break;
+    }
+    case NM_LINK_TYPE_BOND:
+    {
+        const NMPlatformLnkBond *props = extra_data;
+        struct nlattr           *targets;
+        int                      i = 0;
+
+        nm_assert(extra_data);
+
+        if (!(data = nla_nest_start(msg, IFLA_INFO_DATA)))
+            goto nla_put_failure;
+
+        if (props->arp_ip_targets_num > 0) {
+            targets = nla_nest_start(msg, IFLA_BOND_ARP_IP_TARGET);
+            if (!targets)
+                goto nla_put_failure;
+
+            for (i = 0; i < props->arp_ip_targets_num; i++)
+                NLA_PUT_U32(msg, i, props->arp_ip_target[i]);
+
+            nla_nest_end(msg, targets);
+        }
+
+        if (props->arp_all_targets_has)
+            NLA_PUT_U32(msg, IFLA_BOND_ARP_ALL_TARGETS, props->arp_all_targets);
+        if (props->arp_interval)
+            NLA_PUT_U32(msg, IFLA_BOND_ARP_INTERVAL, props->arp_interval);
+        if (props->arp_validate)
+            NLA_PUT_U32(msg, IFLA_BOND_ARP_VALIDATE, props->arp_validate);
+        if (props->downdelay_has)
+            NLA_PUT_U32(msg, IFLA_BOND_DOWNDELAY, props->downdelay);
+        if (props->lp_interval_has)
+            NLA_PUT_U32(msg, IFLA_BOND_LP_INTERVAL, props->lp_interval);
+        if (props->miimon_has)
+            NLA_PUT_U32(msg, IFLA_BOND_MIIMON, props->miimon);
+        if (props->min_links)
+            NLA_PUT_U32(msg, IFLA_BOND_MIN_LINKS, props->min_links);
+        if (props->packets_per_port)
+            NLA_PUT_U32(msg, IFLA_BOND_PACKETS_PER_SLAVE, props->packets_per_port);
+        if (props->peer_notif_delay_has)
+            NLA_PUT_U32(msg, IFLA_BOND_PEER_NOTIF_DELAY, props->peer_notif_delay);
+        if (props->primary)
+            NLA_PUT_U32(msg, IFLA_BOND_PRIMARY, props->primary);
+        if (props->resend_igmp_has)
+            NLA_PUT_U32(msg, IFLA_BOND_RESEND_IGMP, props->resend_igmp);
+        if (props->updelay_has)
+            NLA_PUT_U32(msg, IFLA_BOND_UPDELAY, props->updelay);
+        if (props->ad_actor_sys_prio)
+            NLA_PUT_U16(msg, IFLA_BOND_AD_ACTOR_SYS_PRIO, props->ad_actor_sys_prio);
+        if (props->ad_user_port_key)
+            NLA_PUT_U16(msg, IFLA_BOND_AD_USER_PORT_KEY, props->ad_user_port_key);
+        if (!nm_ether_addr_equal(&props->ad_actor_system, &nm_ether_addr_zero))
+            NLA_PUT(msg,
+                    IFLA_BOND_AD_ACTOR_SYSTEM,
+                    sizeof(props->ad_actor_system),
+                    &props->ad_actor_system);
+        if (props->ad_select)
+            NLA_PUT_U8(msg, IFLA_BOND_AD_SELECT, props->ad_select);
+
+        NLA_PUT_U8(msg, IFLA_BOND_ALL_SLAVES_ACTIVE, props->all_ports_active);
+
+        if (props->fail_over_mac)
+            NLA_PUT_U8(msg, IFLA_BOND_FAIL_OVER_MAC, props->fail_over_mac);
+        if (props->lacp_rate)
+            NLA_PUT_U8(msg, IFLA_BOND_AD_LACP_RATE, props->lacp_rate);
+        if (props->num_grat_arp)
+            NLA_PUT_U8(msg, IFLA_BOND_NUM_PEER_NOTIF, props->num_grat_arp);
+
+        NLA_PUT_U8(msg, IFLA_BOND_MODE, props->mode);
+
+        if (props->primary_reselect)
+            NLA_PUT_U8(msg, IFLA_BOND_PRIMARY_RESELECT, props->primary_reselect);
+        if (props->xmit_hash_policy)
+            NLA_PUT_U8(msg, IFLA_BOND_XMIT_HASH_POLICY, props->xmit_hash_policy);
+        if (props->tlb_dynamic_lb_has)
+            NLA_PUT_U8(msg, IFLA_BOND_TLB_DYNAMIC_LB, !!props->tlb_dynamic_lb);
+
+        NLA_PUT_U8(msg, IFLA_BOND_USE_CARRIER, !!props->use_carrier);
+
         break;
     }
     case NM_LINK_TYPE_VLAN:
