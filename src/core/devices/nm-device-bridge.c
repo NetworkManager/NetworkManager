@@ -1209,6 +1209,10 @@ reapply_connection(NMDevice *device, NMConnection *con_old, NMConnection *con_ne
     s_bridge = nm_connection_get_setting_bridge(con_new);
     g_return_if_fail(s_bridge);
 
+    /* Make sure bridge_set_vlan_options() called by link_config()
+     * sets vlan_filtering and default_pvid anew. */
+    self->vlan_configured = FALSE;
+
     link_config(device, con_new);
 }
 
