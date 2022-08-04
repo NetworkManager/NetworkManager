@@ -741,8 +741,8 @@ gtkdocize
 autoreconf --install --force
 %configure \
 	--with-runstatedir=%{_rundir} \
-	--disable-silent-rules \
-	--disable-static \
+	--enable-silent-rules=no \
+	--enable-static=no \
 	--with-nft=/usr/sbin/nft \
 	--with-iptables=/usr/sbin/iptables \
 	--with-dhclient=yes \
@@ -757,26 +757,26 @@ autoreconf --install --force
 %if %{with sanitizer}
 	--with-address-sanitizer=exec \
 %if 0%{?fedora} || 0%{?rhel} >= 8
-	--enable-undefined-sanitizer \
+	--enable-undefined-sanitizer=yes \
 %else
-	--disable-undefined-sanitizer \
+	--enable-undefined-sanitizer=no \
 %endif
 %else
 	--with-address-sanitizer=no \
-	--disable-undefined-sanitizer \
+	--enable-undefined-sanitizer=no \
 %endif
 %if %{with debug}
-	--enable-more-logging \
+	--enable-more-logging=yes \
 	--with-more-asserts=10000 \
 %else
-	--disable-more-logging \
-	--without-more-asserts \
+	--enable-more-logging=no \
+	--with-more-asserts=0 \
 %endif
-	--enable-ld-gc \
+	--enable-ld-gc=yes \
 %if %{with lto}
-	--enable-lto \
+	--enable-lto=yes \
 %else
-	--disable-lto \
+	--enable-lto=no \
 %endif
 	--with-libaudit=yes-disabled-by-default \
 %if 0%{?with_modem_manager_1}
@@ -815,11 +815,11 @@ autoreconf --install --force
 	--with-nm-cloud-setup=no \
 %endif
 	--enable-vala=yes \
-	--enable-introspection \
+	--enable-introspection=yes \
 %if %{with regen_docs}
-	--enable-gtk-doc \
+	--enable-gtk-doc=yes \
 %else
-	--disable-gtk-doc \
+	--enable-gtk-doc=no \
 %endif
 %if %{with team}
 	--enable-teamdctl=yes \
@@ -834,11 +834,11 @@ autoreconf --install --force
 	--with-selinux=yes \
 	--enable-polkit=yes \
 	--enable-modify-system=yes \
-	--enable-concheck \
+	--enable-concheck=yes \
 %if 0%{?fedora}
-	--with-libpsl \
+	--with-libpsl=yes \
 %else
-	--without-libpsl \
+	--with-libpsl=no \
 %endif
 	--with-ebpf=%{ebpf_enabled} \
 	--with-session-tracking=systemd \
@@ -859,9 +859,9 @@ autoreconf --install --force
 	--enable-ppp=yes \
 %endif
 %if %{with firewalld_zone}
-	--enable-firewalld-zone \
+	--enable-firewalld-zone=yes \
 %else
-	--disable-firewalld-zone \
+	--enable-firewalld-zone=no \
 %endif
 	--with-dist-version=%{version}-%{release} \
 %if %{?config_plugins_default_ifcfg_rh}
