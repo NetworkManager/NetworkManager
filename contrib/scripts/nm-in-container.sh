@@ -326,6 +326,7 @@ RUN dnf install -y \\
     python3-pip \\
     python3-pyte \\
     python3-pyyaml \\
+    qt-devel \\
     radvd \\
     readline-devel \\
     rp-pppoe \\
