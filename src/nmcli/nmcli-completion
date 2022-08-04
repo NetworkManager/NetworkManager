@@ -84,7 +84,7 @@ _nmcli()
             # no quotes in front, escaping _everything_
             # [ ]bla'bla"bla\bla bla --> [ ]bla\'bla\"bla\\bla\ bla
             entry="${entry//\\/\\\\}"
-            entry="${entry//\'/\'}"
+            entry="${entry//\'/\\\'}"
             entry="${entry//\"/\\\"}"
             entry="${entry// /\\ }"
             entry="${entry//\(/\\(}"
