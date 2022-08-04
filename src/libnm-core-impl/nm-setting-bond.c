@@ -764,6 +764,39 @@ _nm_setting_bond_get_option_type(NMSettingBond *setting, const char *name)
     return option_meta->opt_type;
 }
 
+guint32
+_nm_setting_bond_opt_value_as_u32(NMSettingBond *s_bond, const char *opt)
+{
+    nm_assert(_get_option_meta(opt)->opt_type == NM_BOND_OPTION_TYPE_INT);
+    return _nm_utils_ascii_str_to_uint64(nm_setting_bond_get_option_normalized(s_bond, opt),
+                                         10,
+                                         0,
+                                         G_MAXUINT32,
+                                         0);
+}
+
+guint16
+_nm_setting_bond_opt_value_as_u16(NMSettingBond *s_bond, const char *opt)
+{
+    nm_assert(_get_option_meta(opt)->opt_type == NM_BOND_OPTION_TYPE_INT);
+    return _nm_utils_ascii_str_to_uint64(nm_setting_bond_get_option_normalized(s_bond, opt),
+                                         10,
+                                         0,
+                                         G_MAXUINT16,
+                                         0);
+}
+
+guint8
+_nm_setting_bond_opt_value_as_u8(NMSettingBond *s_bond, const char *opt)
+{
+    nm_assert(_get_option_meta(opt)->opt_type == NM_BOND_OPTION_TYPE_INT);
+    return _nm_utils_ascii_str_to_uint64(nm_setting_bond_get_option_normalized(s_bond, opt),
+                                         10,
+                                         0,
+                                         G_MAXUINT8,
+                                         0);
+}
+
 /*****************************************************************************/
 
 static gboolean

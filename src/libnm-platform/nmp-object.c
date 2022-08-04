@@ -3499,6 +3499,18 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
             .cmd_plobj_hash_update = (CmdPlobjHashUpdateFunc) nm_platform_lnk_wireguard_hash_update,
             .cmd_plobj_cmp         = (CmdPlobjCmpFunc) nm_platform_lnk_wireguard_cmp,
         },
+    [NMP_OBJECT_TYPE_LNK_BOND - 1] =
+        {
+            .parent                = DEDUP_MULTI_OBJ_CLASS_INIT(),
+            .obj_type              = NMP_OBJECT_TYPE_LNK_BOND,
+            .sizeof_data           = sizeof(NMPObjectLnkBond),
+            .sizeof_public         = sizeof(NMPlatformLnkBond),
+            .obj_type_name         = "bond",
+            .lnk_link_type         = NM_LINK_TYPE_BOND,
+            .cmd_plobj_to_string   = (CmdPlobjToStringFunc) nm_platform_lnk_bond_to_string,
+            .cmd_plobj_hash_update = (CmdPlobjHashUpdateFunc) nm_platform_lnk_bond_hash_update,
+            .cmd_plobj_cmp         = (CmdPlobjCmpFunc) nm_platform_lnk_bond_cmp,
+        },
     [NMP_OBJECT_TYPE_MPTCP_ADDR - 1] =
         {
             .parent                   = DEDUP_MULTI_OBJ_CLASS_INIT(),

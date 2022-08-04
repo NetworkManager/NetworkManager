@@ -9,6 +9,8 @@
 
 #include <stdlib.h>
 #include <net/if.h>
+#include <linux/if_ether.h>
+#include <linux/if_link.h>
 
 #include "NetworkManagerUtils.h"
 #include "nm-device-private.h"
@@ -16,6 +18,7 @@
 #include "nm-device-factory.h"
 #include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 #include "libnm-core-intern/nm-core-internal.h"
+#include "nm-manager.h"
 #include "nm-setting-bond-port.h"
 
 #define _NMLOG_DEVICE_TYPE NMDeviceBond
@@ -349,51 +352,144 @@ set_bond_arp_ip_targets(NMDevice *device, NMSettingBond *s_bond)
         nm_setting_bond_get_option_normalized(s_bond, NM_SETTING_BOND_OPTION_ARP_IP_TARGET));
 }
 
-static gboolean
-apply_bonding_config(NMDeviceBond *self)
+static guint8
+_bond_arp_ip_target_to_platform(const char *value, in_addr_t out[static NM_BOND_MAX_ARP_TARGETS])
 {
-    NMDevice      *device = NM_DEVICE(self);
-    NMSettingBond *s_bond;
-    NMBondMode     mode;
-    const char    *mode_str;
-    gs_free char  *device_bond_mode = NULL;
+    gs_free const char **ip = NULL;
+    in_addr_t            in_a;
+    int                  i;
+    int                  added = 0;
 
-    s_bond = nm_device_get_applied_setting(device, NM_TYPE_SETTING_BOND);
-    g_return_val_if_fail(s_bond, FALSE);
+    ip = nm_strsplit_set(value, " ");
 
-    mode_str = nm_setting_bond_get_option_normalized(s_bond, NM_SETTING_BOND_OPTION_MODE);
-    mode     = _nm_setting_bond_mode_from_string(mode_str);
-    g_return_val_if_fail(mode != NM_BOND_MODE_UNKNOWN, FALSE);
+    if (!ip)
+        return added;
 
-    /* Set mode first, as some other options (e.g. arp_interval) are valid
-     * only for certain modes.
-     */
-    device_bond_mode = nm_platform_sysctl_master_get_option(nm_device_get_platform(device),
-                                                            nm_device_get_ifindex(device),
-                                                            NM_SETTING_BOND_OPTION_MODE);
-    /* Need to release all slaves before we can change bond mode */
-    if (!nm_streq0(device_bond_mode, mode_str))
-        nm_device_master_release_slaves_all(device);
+    for (i = 0; ip[i]; i++) {
+        if (added > NM_BOND_MAX_ARP_TARGETS - 1)
+            break;
+        if (!nm_utils_parse_inaddr_bin(AF_INET, ip[i], NULL, &in_a))
+            continue;
 
-    set_bond_attr_or_default(device, s_bond, NM_SETTING_BOND_OPTION_MODE);
+        out[added++] = in_a;
+    }
+    return added;
+}
 
-    set_bond_arp_ip_targets(device, s_bond);
+static int
+_setting_bond_primary_opt_as_ifindex(NMSettingBond *s_bond)
+{
+    const char *primary_str;
+    int         ifindex = 0;
 
-    set_bond_attrs_or_default(device, s_bond, NM_MAKE_STRV(OPTIONS_APPLY_SUBSET));
-    return TRUE;
+    primary_str = nm_setting_bond_get_option_normalized(s_bond, NM_SETTING_BOND_OPTION_PRIMARY);
+
+    if (primary_str != NULL)
+        ifindex = nm_platform_link_get_ifindex(NM_PLATFORM_GET, primary_str);
+
+    return ifindex;
+}
+
+static void
+_platform_lnk_bond_init_from_setting(NMSettingBond *s_bond, NMPlatformLnkBond *props)
+{
+    const char *opt_value;
+
+    *props = (NMPlatformLnkBond){
+        .mode = _nm_setting_bond_mode_from_string(
+            nm_setting_bond_get_option_normalized(s_bond, NM_SETTING_BOND_OPTION_MODE)),
+        .primary   = _setting_bond_primary_opt_as_ifindex(s_bond),
+        .miimon    = _nm_setting_bond_opt_value_as_u32(s_bond, NM_SETTING_BOND_OPTION_MIIMON),
+        .updelay   = _nm_setting_bond_opt_value_as_u32(s_bond, NM_SETTING_BOND_OPTION_UPDELAY),
+        .downdelay = _nm_setting_bond_opt_value_as_u32(s_bond, NM_SETTING_BOND_OPTION_DOWNDELAY),
+        .arp_interval =
+            _nm_setting_bond_opt_value_as_u32(s_bond, NM_SETTING_BOND_OPTION_ARP_INTERVAL),
+        .resend_igmp =
+            _nm_setting_bond_opt_value_as_u32(s_bond, NM_SETTING_BOND_OPTION_RESEND_IGMP),
+        .min_links = _nm_setting_bond_opt_value_as_u32(s_bond, NM_SETTING_BOND_OPTION_MIN_LINKS),
+        .lp_interval =
+            _nm_setting_bond_opt_value_as_u32(s_bond, NM_SETTING_BOND_OPTION_LP_INTERVAL),
+        .packets_per_port =
+            _nm_setting_bond_opt_value_as_u32(s_bond, NM_SETTING_BOND_OPTION_PACKETS_PER_SLAVE),
+        .peer_notif_delay =
+            _nm_setting_bond_opt_value_as_u32(s_bond, NM_SETTING_BOND_OPTION_PEER_NOTIF_DELAY),
+        .arp_all_targets = _nm_setting_bond_arp_all_targets_from_string(
+            nm_setting_bond_get_option_normalized(s_bond, NM_SETTING_BOND_OPTION_ARP_ALL_TARGETS)),
+        .arp_validate = _nm_setting_bond_arp_validate_from_string(
+            nm_setting_bond_get_option_normalized(s_bond, NM_SETTING_BOND_OPTION_ARP_VALIDATE)),
+        .ad_actor_sys_prio =
+            _nm_setting_bond_opt_value_as_u16(s_bond, NM_SETTING_BOND_OPTION_AD_ACTOR_SYS_PRIO),
+        .ad_user_port_key =
+            _nm_setting_bond_opt_value_as_u16(s_bond, NM_SETTING_BOND_OPTION_AD_USER_PORT_KEY),
+        .primary_reselect = _nm_setting_bond_primary_reselect_from_string(
+            nm_setting_bond_get_option_normalized(s_bond, NM_SETTING_BOND_OPTION_PRIMARY_RESELECT)),
+        .fail_over_mac = _nm_setting_bond_fail_over_mac_from_string(
+            nm_setting_bond_get_option_normalized(s_bond, NM_SETTING_BOND_OPTION_FAIL_OVER_MAC)),
+        .xmit_hash_policy = _nm_setting_bond_xmit_hash_policy_from_string(
+            nm_setting_bond_get_option_normalized(s_bond, NM_SETTING_BOND_OPTION_XMIT_HASH_POLICY)),
+        .num_grat_arp =
+            _nm_setting_bond_opt_value_as_u8(s_bond, NM_SETTING_BOND_OPTION_NUM_GRAT_ARP),
+        .all_ports_active =
+            _nm_setting_bond_opt_value_as_u8(s_bond, NM_SETTING_BOND_OPTION_ALL_SLAVES_ACTIVE),
+        .lacp_rate = _nm_setting_bond_lacp_rate_from_string(
+            nm_setting_bond_get_option_normalized(s_bond, NM_SETTING_BOND_OPTION_LACP_RATE)),
+        .ad_select = _nm_setting_bond_ad_select_from_string(
+            nm_setting_bond_get_option_normalized(s_bond, NM_SETTING_BOND_OPTION_AD_SELECT)),
+    };
+
+    nm_ether_addr_from_string(
+        &props->ad_actor_system,
+        nm_setting_bond_get_option_normalized(s_bond, NM_SETTING_BOND_OPTION_AD_ACTOR_SYSTEM));
+
+    opt_value = nm_setting_bond_get_option_normalized(s_bond, NM_SETTING_BOND_OPTION_USE_CARRIER);
+    if (opt_value != NULL)
+        props->use_carrier = _nm_utils_ascii_str_to_bool(opt_value, FALSE);
+
+    opt_value =
+        nm_setting_bond_get_option_normalized(s_bond, NM_SETTING_BOND_OPTION_TLB_DYNAMIC_LB);
+    if (opt_value != NULL)
+        props->tlb_dynamic_lb = _nm_utils_ascii_str_to_bool(opt_value, FALSE);
+
+    opt_value = nm_setting_bond_get_option_normalized(s_bond, NM_SETTING_BOND_OPTION_ARP_IP_TARGET);
+    if (opt_value != NULL)
+        props->arp_ip_targets_num =
+            _bond_arp_ip_target_to_platform(opt_value, props->arp_ip_target);
+
+    props->miimon_has           = !props->arp_interval && !props->arp_validate;
+    props->updelay_has          = props->miimon_has && props->miimon;
+    props->downdelay_has        = props->miimon_has && props->miimon;
+    props->peer_notif_delay_has = (props->miimon || props->arp_interval) && props->peer_notif_delay;
+    props->arp_all_targets_has  = props->arp_interval && props->arp_all_targets;
+    props->resend_igmp_has      = props->resend_igmp != 1;
+    props->lp_interval          = props->lp_interval != 1;
+    props->tlb_dynamic_lb_has   = NM_IN_SET(props->mode, NM_BOND_MODE_TLB, NM_BOND_MODE_ALB);
 }
 
 static NMActStageReturn
 act_stage1_prepare(NMDevice *device, NMDeviceStateReason *out_failure_reason)
 {
-    NMDeviceBond    *self = NM_DEVICE_BOND(device);
-    NMActStageReturn ret  = NM_ACT_STAGE_RETURN_SUCCESS;
+    NMActStageReturn  ret = NM_ACT_STAGE_RETURN_SUCCESS;
+    NMConnection     *connection;
+    NMSettingBond    *s_bond;
+    NMPlatformLnkBond props;
+    int               r;
+    int               ifindex = nm_device_get_ifindex(device);
+
+    connection = nm_device_get_applied_connection(device);
+    g_return_val_if_fail(connection, NM_ACT_STAGE_RETURN_FAILURE);
+
+    s_bond = nm_connection_get_setting_bond(connection);
+    g_return_val_if_fail(s_bond, NM_ACT_STAGE_RETURN_FAILURE);
+
+    _platform_lnk_bond_init_from_setting(s_bond, &props);
 
     /* Interface must be down to set bond options */
     nm_device_take_down(device, TRUE);
-    if (!apply_bonding_config(self))
+    r = nm_platform_link_bond_change(nm_device_get_platform(device), ifindex, &props);
+    if (r < 0) {
         ret = NM_ACT_STAGE_RETURN_FAILURE;
-    else {
+        NM_SET_OUT(out_failure_reason, NM_DEVICE_STATE_REASON_CONFIG_FAILED);
+    } else {
         if (!nm_device_hw_addr_set_cloned(device, nm_device_get_applied_connection(device), FALSE))
             ret = NM_ACT_STAGE_RETURN_FAILURE;
     }
@@ -535,12 +631,19 @@ create_and_realize(NMDevice              *device,
                    const NMPlatformLink **out_plink,
                    GError               **error)
 {
-    const char *iface = nm_device_get_iface(device);
-    int         r;
+    const char       *iface = nm_device_get_iface(device);
+    NMSettingBond    *s_bond;
+    NMPlatformLnkBond props;
+    int               r;
 
     g_assert(iface);
 
-    r = nm_platform_link_bond_add(nm_device_get_platform(device), iface, out_plink);
+    s_bond = nm_connection_get_setting_bond(connection);
+    nm_assert(s_bond);
+
+    _platform_lnk_bond_init_from_setting(s_bond, &props);
+
+    r = nm_platform_link_bond_add(nm_device_get_platform(device), iface, &props, out_plink);
     if (r < 0) {
         g_set_error(error,
                     NM_DEVICE_ERROR,
