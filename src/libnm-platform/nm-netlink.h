@@ -292,21 +292,21 @@ nla_put_uint32(struct nl_msg *msg, int attrtype, uint32_t val)
     return nla_put(msg, attrtype, sizeof(val), &val);
 }
 
-#define NLA_PUT(msg, attrtype, attrlen, data)          \
-    G_STMT_START                                       \
-    {                                                  \
-        if (nla_put(msg, attrtype, attrlen, data) < 0) \
-            goto nla_put_failure;                      \
-    }                                                  \
+#define NLA_PUT(msg, attrtype, attrlen, data)                  \
+    G_STMT_START                                               \
+    {                                                          \
+        if (nla_put((msg), (attrtype), (attrlen), (data)) < 0) \
+            goto nla_put_failure;                              \
+    }                                                          \
     G_STMT_END
 
-#define NLA_PUT_TYPE(msg, type, attrtype, value)          \
-    G_STMT_START                                          \
-    {                                                     \
-        type __nla_tmp = value;                           \
-                                                          \
-        NLA_PUT(msg, attrtype, sizeof(type), &__nla_tmp); \
-    }                                                     \
+#define NLA_PUT_TYPE(msg, type, attrtype, value)                 \
+    G_STMT_START                                                 \
+    {                                                            \
+        type const _nla_tmp = value;                             \
+                                                                 \
+        NLA_PUT((msg), (attrtype), sizeof(_nla_tmp), &_nla_tmp); \
+    }                                                            \
     G_STMT_END
 
 #define NLA_PUT_U8(msg, attrtype, value) NLA_PUT_TYPE(msg, uint8_t, attrtype, value)
