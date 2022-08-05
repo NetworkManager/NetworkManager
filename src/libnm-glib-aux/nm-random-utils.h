@@ -6,6 +6,14 @@
 #ifndef __NM_RANDOM_UTILS_H__
 #define __NM_RANDOM_UTILS_H__
 
-gboolean nm_utils_random_bytes(void *p, size_t n);
+void nm_random_get_bytes_full(void *p, size_t n, gboolean *out_high_quality);
+
+static inline void
+nm_random_get_bytes(void *p, size_t n)
+{
+    nm_random_get_bytes_full(p, n, NULL);
+}
+
+int nm_random_get_crypto_bytes(void *p, size_t n);
 
 #endif /* __NM_RANDOM_UTILS_H__ */

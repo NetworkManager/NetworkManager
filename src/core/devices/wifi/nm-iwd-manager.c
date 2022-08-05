@@ -306,7 +306,7 @@ iwd_agent_export(GDBusConnection *connection, gpointer user_data, char **agent_p
     unsigned int rnd;
     guint        id;
 
-    nm_utils_random_bytes(&rnd, sizeof(rnd));
+    nm_random_get_bytes(&rnd, sizeof(rnd));
 
     nm_sprintf_buf(path, "/agent/%u", rnd);
 

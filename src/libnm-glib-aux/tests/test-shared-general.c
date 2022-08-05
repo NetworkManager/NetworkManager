@@ -94,7 +94,7 @@ test_nmhash(void)
 {
     int rnd;
 
-    nm_utils_random_bytes(&rnd, sizeof(rnd));
+    nm_random_get_bytes(&rnd, sizeof(rnd));
 
     g_assert(nm_hash_val(555, 4) != 0);
 }

@@ -45,7 +45,7 @@ again:
             guint8 _extra_entropy[3 * HASH_KEY_SIZE];
         } t_arr;
 
-        nm_utils_random_bytes(&t_arr, sizeof(t_arr));
+        nm_random_get_bytes(&t_arr, sizeof(t_arr));
 
         /* We only initialize one random hash key. So we can spend some effort
          * of getting this right. For one, we collect more random bytes than
