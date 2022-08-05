@@ -9856,49 +9856,20 @@ continue_reading:
              * NL_SKIP or NL_PROCEED (dangerous) */
             retval = -NME_NL_MSG_OVERFLOW;
         } else if (msg.nm_nlh->nlmsg_type == NLMSG_ERROR) {
-            /* Message carries a nlmsgerr */
-            struct nlmsgerr *e = nlmsg_data(msg.nm_nlh);
+            int errsv;
 
-            if (msg.nm_nlh->nlmsg_len < nlmsg_size(sizeof(*e))) {
-                /* Truncated error message, the default action
-                 * is to stop parsing. The user may overrule
-                 * this action by returning NL_SKIP or
-                 * NL_PROCEED (dangerous) */
-                retval = -NME_NL_MSG_TRUNC;
-            } else if (e->error) {
-                int errsv = nm_errno_native(e->error);
-
-                if (NM_FLAGS_HAS(msg.nm_nlh->nlmsg_flags, NLM_F_ACK_TLVS)
-                    && msg.nm_nlh->nlmsg_len >= sizeof(*e) + e->msg.nlmsg_len) {
-                    static const struct nla_policy policy[] = {
-                        [NLMSGERR_ATTR_MSG]  = {.type = NLA_STRING},
-                        [NLMSGERR_ATTR_OFFS] = {.type = NLA_U32},
-                    };
-                    struct nlattr *tb[G_N_ELEMENTS(policy)];
-                    struct nlattr *tlvs;
-
-                    tlvs = (struct nlattr *) ((char *) e + sizeof(*e) + e->msg.nlmsg_len
-                                              - NLMSG_HDRLEN);
-                    if (nla_parse_arr(tb,
-                                      tlvs,
-                                      msg.nm_nlh->nlmsg_len - sizeof(*e) - e->msg.nlmsg_len,
-                                      policy)
-                        >= 0) {
-                        if (tb[NLMSGERR_ATTR_MSG])
-                            extack_msg = nla_get_string(tb[NLMSGERR_ATTR_MSG]);
-                    }
-                }
-
-                /* Error message reported back from kernel. */
+            errsv = nlmsg_parse_error(msg.nm_nlh, &extack_msg);
+            if (errsv == 0)
+                seq_result = WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK;
+            else {
                 _LOGD("%s: recvmsg: error message from kernel: %s (%d)%s%s%s for request %d",
                       log_prefix,
-                      nm_strerror_native(errsv),
+                      nm_strerror(errsv),
                       errsv,
                       NM_PRINT_FMT_QUOTED(extack_msg, " \"", extack_msg, "\"", ""),
                       msg.nm_nlh->nlmsg_seq);
-                seq_result = -NM_ERRNO_NATIVE(errsv);
-            } else
-                seq_result = WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK;
+                seq_result = errsv;
+            }
         } else
             process_valid_msg = TRUE;
 
