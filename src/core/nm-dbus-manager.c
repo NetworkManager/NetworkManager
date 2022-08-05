@@ -314,7 +314,7 @@ private_server_allow_mechanism(GDBusAuthObserver *observer,
                                const char        *mechanism,
                                gpointer           user_data)
 {
-    return NM_IN_STRSET(mechanism, "EXTERNAL");
+    return nm_streq(mechanism, "EXTERNAL");
 }
 
 static void

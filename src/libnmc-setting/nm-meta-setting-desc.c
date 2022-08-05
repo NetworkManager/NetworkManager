@@ -917,7 +917,7 @@ _get_fcn_gobject_impl(const NMMetaPropertyInfo *property_info,
 
         nm_assert(property_info->setting_info
                       == &nm_meta_setting_infos_editor[NM_META_SETTING_TYPE_WIRED]
-                  && NM_IN_STRSET(property_info->property_name, NM_SETTING_WIRED_S390_OPTIONS));
+                  && nm_streq(property_info->property_name, NM_SETTING_WIRED_S390_OPTIONS));
         nm_assert(property_info->property_type->set_fcn == _set_fcn_optionlist);
 
         strdict = g_value_get_boxed(&val);

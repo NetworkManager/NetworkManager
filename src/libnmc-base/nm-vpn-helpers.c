@@ -143,13 +143,13 @@ nm_vpn_get_secret_names(const char *service_type)
         return _VPN_PASSWORD_LIST({"password", N_("Password")}, );
     }
 
-    if (NM_IN_STRSET(type, "openvpn")) {
+    if (nm_streq(type, "openvpn")) {
         return _VPN_PASSWORD_LIST({"password", N_("Password")},
                                   {"cert-pass", N_("Certificate password")},
                                   {"http-proxy-password", N_("HTTP proxy password")}, );
     }
 
-    if (NM_IN_STRSET(type, "vpnc")) {
+    if (nm_streq(type, "vpnc")) {
         return _VPN_PASSWORD_LIST({"Xauth password", N_("Password")},
                                   {"IPSec secret", N_("Group password")}, );
     };
@@ -159,7 +159,7 @@ nm_vpn_get_secret_names(const char *service_type)
                                   {"pskvalue", N_("Group password")}, );
     };
 
-    if (NM_IN_STRSET(type, "openconnect")) {
+    if (nm_streq(type, "openconnect")) {
         return _VPN_PASSWORD_LIST({"gateway", N_("Gateway")},
                                   {"cookie", N_("Cookie")},
                                   {"gwcert", N_("Gateway certificate hash")}, );

@@ -2826,7 +2826,7 @@ state_changed(NMDeviceIwd *self, const char *new_state)
     /* Don't allow new connection until iwd exits disconnecting and no
      * Connect callback is pending.
      */
-    if (!priv->iwd_autoconnect && NM_IN_STRSET(new_state, "disconnected")) {
+    if (!priv->iwd_autoconnect && nm_streq(new_state, "disconnected")) {
         priv->nm_autoconnect = TRUE;
         if (!can_connect)
             nm_device_emit_recheck_auto_activate(device);

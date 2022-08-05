@@ -1267,7 +1267,7 @@ nms_keyfile_plugin_init(NMSKeyfilePlugin *plugin)
     /* no duplicates */
     if (NM_IN_STRSET(priv->dirname_libs[0], priv->dirname_etc, priv->dirname_run))
         nm_clear_g_free(&priv->dirname_libs[0]);
-    if (NM_IN_STRSET(priv->dirname_etc, priv->dirname_run))
+    if (nm_streq(priv->dirname_etc, priv->dirname_run))
         nm_clear_g_free(&priv->dirname_etc);
 
     nm_assert(!priv->dirname_libs[0] || priv->dirname_libs[0][0] == '/');

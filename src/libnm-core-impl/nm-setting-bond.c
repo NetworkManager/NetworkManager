@@ -335,11 +335,11 @@ _bond_get_option_normalized(NMSettingBond *self, const char *option, gboolean ge
             value = _bond_get_option(self, NM_SETTING_BOND_OPTION_NUM_GRAT_ARP);
             if (!value)
                 value = _bond_get_option(self, NM_SETTING_BOND_OPTION_NUM_UNSOL_NA);
-        } else if (NM_IN_STRSET(option, NM_SETTING_BOND_OPTION_ACTIVE_SLAVE)) {
+        } else if (nm_streq(option, NM_SETTING_BOND_OPTION_ACTIVE_SLAVE)) {
             /* "active_slave" is deprecated, and an alias for "primary". The property
              * itself always normalizes to %NULL. */
             value = NULL;
-        } else if (NM_IN_STRSET(option, NM_SETTING_BOND_OPTION_PRIMARY)) {
+        } else if (nm_streq(option, NM_SETTING_BOND_OPTION_PRIMARY)) {
             /* "active_slave" is deprecated, and an alias for "primary". */
             value = _bond_get_option(self, NM_SETTING_BOND_OPTION_PRIMARY);
             if (!value)

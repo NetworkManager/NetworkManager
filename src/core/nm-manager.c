@@ -7439,7 +7439,7 @@ _dbus_set_property_audit_log_get_args(NMDBusObject *obj,
                                                property_name,
                                                g_variant_get_boolean(value) ? "on" : "off"));
     }
-    if (NM_IN_STRSET(property_name, NM_MANAGER_GLOBAL_DNS_CONFIGURATION)) {
+    if (nm_streq(property_name, NM_MANAGER_GLOBAL_DNS_CONFIGURATION)) {
         return NM_MANAGER_GLOBAL_DNS_CONFIGURATION;
     }
 

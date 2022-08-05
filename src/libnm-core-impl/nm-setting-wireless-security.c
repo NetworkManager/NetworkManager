@@ -934,7 +934,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
         return FALSE;
     }
 
-    if (NM_IN_STRSET(wifi_mode, NM_SETTING_WIRELESS_MODE_MESH)
+    if (nm_streq(wifi_mode, NM_SETTING_WIRELESS_MODE_MESH)
         && !NM_IN_STRSET(priv->key_mgmt, "none", "sae")) {
         g_set_error(error,
                     NM_CONNECTION_ERROR,
