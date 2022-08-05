@@ -51,7 +51,7 @@ G_DEFINE_TYPE(NMWpanUtils, nm_wpan_utils, G_TYPE_OBJECT)
 /*****************************************************************************/
 
 static int
-ack_handler(struct nl_msg *msg, void *arg)
+ack_handler(const struct nl_msg *msg, void *arg)
 {
     int *done = arg;
     *done     = 1;
@@ -59,7 +59,7 @@ ack_handler(struct nl_msg *msg, void *arg)
 }
 
 static int
-finish_handler(struct nl_msg *msg, void *arg)
+finish_handler(const struct nl_msg *msg, void *arg)
 {
     int *done = arg;
     *done     = 1;
@@ -67,7 +67,7 @@ finish_handler(struct nl_msg *msg, void *arg)
 }
 
 static int
-error_handler(struct sockaddr_nl *nla, struct nlmsgerr *err, void *arg)
+error_handler(const struct sockaddr_nl *nla, const struct nlmsgerr *err, void *arg)
 {
     int *done = arg;
     *done     = err->error;
@@ -98,7 +98,7 @@ nl802154_alloc_msg(NMWpanUtils *self, uint8_t cmd, uint16_t flags)
 static int
 nl802154_send_and_recv(NMWpanUtils   *self,
                        struct nl_msg *msg,
-                       int (*valid_handler)(struct nl_msg *, void *),
+                       int (*valid_handler)(const struct nl_msg *, void *),
                        void *valid_data)
 {
     int                err;
@@ -144,7 +144,7 @@ struct nl802154_interface {
 };
 
 static int
-nl802154_get_interface_handler(struct nl_msg *msg, void *arg)
+nl802154_get_interface_handler(const struct nl_msg *msg, void *arg)
 {
     static const struct nla_policy nl802154_policy[] = {
         [NL802154_ATTR_PAN_ID]     = {.type = NLA_U16},

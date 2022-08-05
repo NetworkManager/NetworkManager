@@ -255,7 +255,7 @@ flags_done:
 /*****************************************************************************/
 
 struct nlmsghdr *
-nlmsg_hdr(struct nl_msg *n)
+nlmsg_hdr(const struct nl_msg *n)
 {
     return n->nm_nlh;
 }
@@ -856,7 +856,7 @@ const struct nla_policy genl_ctrl_policy[CTRL_ATTR_MCAST_GROUPS + 1] = {
 };
 
 static int
-_genl_parse_getfamily(struct nl_msg *msg, void *arg)
+_genl_parse_getfamily(const struct nl_msg *msg, void *arg)
 {
     struct nlattr   *tb[G_N_ELEMENTS(genl_ctrl_policy)];
     struct nlmsghdr *nlh           = nlmsg_hdr(msg);
@@ -1155,7 +1155,7 @@ _cb_init(struct nl_cb *dst, const struct nl_cb *src)
 }
 
 static int
-ack_wait_handler(struct nl_msg *msg, void *arg)
+ack_wait_handler(const struct nl_msg *msg, void *arg)
 {
     return NL_STOP;
 }

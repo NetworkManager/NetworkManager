@@ -454,7 +454,7 @@ nlmsg_tail(const struct nlmsghdr *nlh)
     return (unsigned char *) nlh + NLMSG_ALIGN(nlh->nlmsg_len);
 }
 
-struct nlmsghdr *nlmsg_hdr(struct nl_msg *n);
+struct nlmsghdr *nlmsg_hdr(const struct nl_msg *n);
 
 static inline int
 nlmsg_valid_hdr(const struct nlmsghdr *nlh, int hdrlen)
@@ -585,9 +585,11 @@ enum nl_cb_action {
     NL_STOP,
 };
 
-typedef int (*nl_recvmsg_msg_cb_t)(struct nl_msg *msg, void *arg);
+typedef int (*nl_recvmsg_msg_cb_t)(const struct nl_msg *msg, void *arg);
 
-typedef int (*nl_recvmsg_err_cb_t)(struct sockaddr_nl *nla, struct nlmsgerr *nlerr, void *arg);
+typedef int (*nl_recvmsg_err_cb_t)(const struct sockaddr_nl *nla,
+                                   const struct nlmsgerr    *nlerr,
+                                   void                     *arg);
 
 struct nl_cb {
     nl_recvmsg_msg_cb_t valid_cb;

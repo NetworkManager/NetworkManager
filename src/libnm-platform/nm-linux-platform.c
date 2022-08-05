@@ -2576,7 +2576,7 @@ typedef struct {
 } WireGuardParseData;
 
 static int
-_wireguard_get_device_cb(struct nl_msg *msg, void *arg)
+_wireguard_get_device_cb(const struct nl_msg *msg, void *arg)
 {
     static const struct nla_policy policy[] = {
         [WGDEVICE_A_IFINDEX]     = {.type = NLA_U32},
