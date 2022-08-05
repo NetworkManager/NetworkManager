@@ -2815,7 +2815,10 @@ _host_id_read(guint8 **out_host_id, gsize *out_host_id_len)
         int    base64_save  = 0;
         gsize  len;
 
-        success = nm_utils_random_bytes(rnd_buf, sizeof(rnd_buf));
+        if (nm_random_get_crypto_bytes(rnd_buf, sizeof(rnd_buf)) < 0)
+            nm_random_get_bytes_full(rnd_buf, sizeof(rnd_buf), &success);
+        else
+            success = TRUE;
 
         /* Our key is really binary data. But since we anyway generate a random seed
          * (with 32 random bytes), don't write it in binary, but instead create
@@ -3313,7 +3316,7 @@ nm_utils_stable_id_random(void)
 {
     char buf[15];
 
-    nm_utils_random_bytes(buf, sizeof(buf));
+    nm_random_get_bytes(buf, sizeof(buf));
     return g_base64_encode((guchar *) buf, sizeof(buf));
 }
 
@@ -3684,7 +3687,7 @@ nm_utils_hw_addr_gen_random_eth(const char *current_mac_address,
 {
     struct ether_addr bin_addr;
 
-    nm_utils_random_bytes(&bin_addr, ETH_ALEN);
+    nm_random_get_bytes(&bin_addr, ETH_ALEN);
     _hw_addr_eth_complete(&bin_addr, current_mac_address, generate_mac_address_mask);
     return nm_utils_hwaddr_ntoa(&bin_addr, ETH_ALEN);
 }
