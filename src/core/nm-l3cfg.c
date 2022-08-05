@@ -4218,11 +4218,8 @@ _rp_filter_update(NML3Cfg *self, gboolean reapply)
      * While we only have one "connection.mptcp-flags=enabled" property, whether
      * we handle MPTCP is still tracked per AF. In particular, with "enabled-on-global-iface"
      * flag, which honors the AF-specific default route. */
-    if (self->priv.p->mptcp_set_4 && self->priv.p->combined_l3cd_commited
-        && !NM_FLAGS_HAS(nm_l3_config_data_get_mptcp_flags(self->priv.p->combined_l3cd_commited),
-                         NM_MPTCP_FLAGS_NO_RELAX_RP_FILTER)) {
+    if (self->priv.p->mptcp_set_4)
         rp_filter_relax = TRUE;
-    }
 
     if (!rp_filter_relax) {
         if (self->priv.p->rp_filter_handled) {
@@ -4368,32 +4365,17 @@ _l3_commit_mptcp_af(NML3Cfg          *self,
                  * the address. */
                 switch (nm_platform_ip_address_get_scope(addr_family, addr->ax.address_ptr)) {
                 case RT_SCOPE_HOST:
-                    if (!NM_FLAGS_ANY(mptcp_flags,
-                                      IS_IPv4 ? NM_MPTCP_FLAGS_WITH_LOOPBACK_4
-                                              : NM_MPTCP_FLAGS_WITH_LOOPBACK_6))
-                        goto skip_addr;
-                    break;
+                    goto skip_addr;
                 case RT_SCOPE_LINK:
-                    if (!NM_FLAGS_ANY(mptcp_flags,
-                                      IS_IPv4 ? NM_MPTCP_FLAGS_WITH_LINK_LOCAL_4
-                                              : NM_MPTCP_FLAGS_WITH_LINK_LOCAL_6))
-                        goto skip_addr;
-                    break;
+                    goto skip_addr;
                 default:
                     if (IS_IPv4) {
-                        if (nm_utils_ip_is_site_local(AF_INET, &addr->a4.address)) {
-                            /* By default we take rfc1918 private addresses, unless there
-                             * is a flag to opt-out. */
-                            if (NM_FLAGS_HAS(mptcp_flags, NM_MPTCP_FLAGS_SKIP_SITE_LOCAL_4))
-                                goto skip_addr;
-                        } else {
-                            /* other addresses we take. */
-                        }
+                        /* We take all addresses, including rfc1918 private addresses
+                         * (nm_utils_ip_is_site_local()). */
                     } else {
                         if (nm_utils_ip6_is_ula(&addr->a6.address)) {
-                            /* Special treatment for unique local IPv6 addresses fc00::/7. */
-                            if (!NM_FLAGS_HAS(mptcp_flags, NM_MPTCP_FLAGS_WITH_SITE_LOCAL_6))
-                                goto skip_addr;
+                            /* Exclude unique local IPv6 addresses fc00::/7. */
+                            goto skip_addr;
                         } else {
                             /* We take all other addresses, including deprecated IN6_IS_ADDR_SITELOCAL()
                              * (fec0::/10). */

@@ -2568,9 +2568,6 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      *   the interface has a default route.
      * - "signal", "subflow", "backup", "fullmesh": the endpoint flags
      *   that are used.
-     * - "with-loopback-4", "with-*", ..., "skip-site-local-4": to include/exclude addresses,
-     *   which should be configured as endpoints.
-     * - "no-relax-rp-filter": controls whether to (not) change rp_filter.
      *
      * The reason is, that it is useful to have one "connection.mptcp-flags"
      * property, that can express various aspects at once. The alternatives
@@ -2586,7 +2583,7 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      * that otherwise would not be configured as endpoints.
      *
      * "connection.mptcp-flags" applies to all addresses on the interface (minus the ones
-     * that are not included via "with-*" and "skip-*" flags). The idea is that in the future we could have
+     * that are not included by default). The idea is that in the future we could have
      * more properties like "ipv4.dhcp-mptcp-flags=subflow", "ipv6.link-local-mptcp-flags=disabled",
      * "ipv4.addresses='192.168.1.5/24 mptcp-flags=signal,backup'", which can overwrite the
      * flags on a per-address basis.
@@ -2600,8 +2597,13 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      *
      * Whether to configure MPTCP endpoints and the address flags.
      * If MPTCP is enabled in NetworkManager, it will configure the
-     * addresses of the interface as MPTCP endpoints. The supported
-     * flags are as follows.
+     * addresses of the interface as MPTCP endpoints. Note that
+     * IPv4 loopback addresses (127.0.0.0/8), IPv4 link local
+     * addresses (169.254.0.0/16), the IPv6 loopback address (::1),
+     * IPv6 link local addresses (fe80::/10), IPv6 unique
+     * local addresses (ULA, fc00::/7) and IPv6 privacy extension addresses
+     * (rfc3041, ipv6.ip6-privacy) will be excluded from being
+     * configured as endpoints.
      *
      * If "disabled" (0x1), MPTCP handling for the interface is disabled and
      * no endpoints are registered.
@@ -2618,26 +2620,6 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      * with the specified address flags "signal" (0x10), "subflow" (0x20), "backup" (0x40),
      * "fullmesh" (0x80). See ip-mptcp(8) manual for additional information about the flags.
      *
-     * The flag "with-loopback-4" (0x100) indicates that NetworkManager will
-     * also configure MPTCP endpoints for IPv4 loopback addresses 127.0.0.0/8.
-     * Likewise, the flag "with-link-local-4" (0x200) includes IPv4 link local
-     * addresses 169.254.0.0/16.
-     *
-     * The "skip-site-local-4" (0x400) flag indicates to exclude rfc1918 private addresses
-     * (10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16).
-     *
-     * The flags "with-loopback-6" (0x1000), "with-link-local-6" (0x2000)
-     * and "with-site-local-6" (0x4000) apply to the IPv6 loopback address (::1),
-     * IPv6 link local addresses (fe80::/10) and IPv6 unique local addresses (ULA, fc00::/7),
-     * respectively. IPv6 privacy addresses (rfc3041, ipv6.ip6-privacy) are excluded
-     * from MPTCP configuration.
-     *
-     * The flag "no-relax-rp-filter" (0x10000) causes NetworkManager to not touch
-     * IPv4 rp_filter. Strict reverse path filtering (rp_filter) breaks many MPTCP
-     * use cases, so when MPTCP handling on the interface is enabled, NetworkManager would
-     * loosen the strict reverse path filtering (1) to the loose setting (2).
-     * This flag prevents that.
-     *
      * If the flags are zero, the global connection default from NetworkManager.conf is
      * honored. If still unspecified, the fallback is either "disabled" or
      * "enabled-on-global-iface,subflow" depending on "/proc/sys/net/mptcp/enabled".
@@ -2645,6 +2627,10 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      * NetworkManager does not change the MPTCP limits nor enable MPTCP via
      * "/proc/sys/net/mptcp/enabled". That is a host configuration which the
      * admin can change via sysctl and ip-mptcp.
+     *
+     * Strict reverse path filtering (rp_filter) breaks many MPTCP use cases, so when
+     * MPTCP handling for IPv4 addresses on the interface is enabled, NetworkManager would
+     * loosen the strict reverse path filtering (1) to the loose setting (2).
      *
      * Since: 1.40
      **/

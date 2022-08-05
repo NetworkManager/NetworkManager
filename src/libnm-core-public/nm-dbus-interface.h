@@ -1344,14 +1344,6 @@ typedef enum /*< flags >*/ {
  *   any additional addresses using the MPTCP ADD_ADDR sub-option, this will behave the same
  *   as a plain subflow endpoint. When the peer does announce addresses, each received ADD_ADDR
  *   sub-option will trigger creation of an additional subflow to generate a full mesh topology.
- * @NM_MPTCP_FLAGS_WITH_LOOPBACK_4: Also configure MPTCP endpoints for IPv4 addresses 127.0.0.0/8 with scope "host".
- * @NM_MPTCP_FLAGS_WITH_LOOPBACK_6: Also configure MPTCP endpoints for the IPv6 address ::1 with scope "host".
- * @NM_MPTCP_FLAGS_WITH_LINK_LOCAL_4: Also configure MPTCP endpoints for IPv4 addresses 169.254.0.0/16 with scope "link".
- * @NM_MPTCP_FLAGS_WITH_LINK_LOCAL_6: Also configure MPTCP endpoints for IPv6 addresses fe80::/10 with scope "link".
- * @NM_MPTCP_FLAGS_SKIP_SITE_LOCAL_4: Don't configure MPTCP endpoints for site local IPv4 addresses (RFC1918, 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16).
- * @NM_MPTCP_FLAGS_WITH_SITE_LOCAL_6: Also configure MPTCP endpoints for unique local IPv6 addresses (ULA, fc00::/7).
- * @NM_MPTCP_FLAGS_NO_RELAX_RP_FILTER: When configure MPTCP on an interface, NetworkManager will
- *   loosen a strict rp_filter source validation. This flag prevents changing rp_filter.
  *
  * Since: 1.40
  */
@@ -1366,15 +1358,6 @@ typedef enum /*< flags >*/ {
     NM_MPTCP_FLAGS_SUBFLOW  = 0x20,
     NM_MPTCP_FLAGS_BACKUP   = 0x40,
     NM_MPTCP_FLAGS_FULLMESH = 0x80,
-
-    NM_MPTCP_FLAGS_WITH_LOOPBACK_4   = 0x0100,
-    NM_MPTCP_FLAGS_WITH_LINK_LOCAL_4 = 0x0200,
-    NM_MPTCP_FLAGS_SKIP_SITE_LOCAL_4 = 0x0400,
-    NM_MPTCP_FLAGS_WITH_LOOPBACK_6   = 0x1000,
-    NM_MPTCP_FLAGS_WITH_LINK_LOCAL_6 = 0x2000,
-    NM_MPTCP_FLAGS_WITH_SITE_LOCAL_6 = 0x4000,
-
-    NM_MPTCP_FLAGS_NO_RELAX_RP_FILTER = 0x10000,
 } NMMptcpFlags;
 
 #endif /* __NM_DBUS_INTERFACE_H__ */

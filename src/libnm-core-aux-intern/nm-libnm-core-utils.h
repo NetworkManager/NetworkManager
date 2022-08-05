@@ -272,11 +272,7 @@ gpointer _nm_connection_new_setting(NMConnection *connection, GType gtype);
 #define _NM_MPTCP_FLAGS_ALL                                                                    \
     ((NMMptcpFlags) (NM_MPTCP_FLAGS_DISABLED | NM_MPTCP_FLAGS_ENABLED_ON_GLOBAL_IFACE          \
                      | NM_MPTCP_FLAGS_ENABLED | NM_MPTCP_FLAGS_SIGNAL | NM_MPTCP_FLAGS_SUBFLOW \
-                     | NM_MPTCP_FLAGS_BACKUP | NM_MPTCP_FLAGS_FULLMESH                         \
-                     | NM_MPTCP_FLAGS_WITH_LOOPBACK_4 | NM_MPTCP_FLAGS_WITH_LINK_LOCAL_4       \
-                     | NM_MPTCP_FLAGS_SKIP_SITE_LOCAL_4 | NM_MPTCP_FLAGS_WITH_LOOPBACK_6       \
-                     | NM_MPTCP_FLAGS_WITH_LINK_LOCAL_6 | NM_MPTCP_FLAGS_WITH_SITE_LOCAL_6     \
-                     | NM_MPTCP_FLAGS_NO_RELAX_RP_FILTER))
+                     | NM_MPTCP_FLAGS_BACKUP | NM_MPTCP_FLAGS_FULLMESH))
 
 #define _NM_MPTCP_FLAGS_DEFAULT \
     ((NMMptcpFlags) (NM_MPTCP_FLAGS_ENABLED_ON_GLOBAL_IFACE | NM_MPTCP_FLAGS_SUBFLOW))
