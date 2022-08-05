@@ -442,16 +442,23 @@ void          nlmsg_set_creds(struct nl_msg *msg, struct ucred *creds);
 NM_AUTO_DEFINE_FCN0(struct nl_msg *, _nm_auto_nl_msg_cleanup, nlmsg_free);
 #define nm_auto_nlmsg nm_auto(_nm_auto_nl_msg_cleanup)
 
+static inline const struct nlmsghdr *
+nlmsg_undata(const void *data)
+{
+    /* from the data, get back the header. It's the inverse of nlmsg_data(). */
+    return (void *) (((unsigned char *) data) - NLMSG_HDRLEN);
+}
+
 static inline void *
 nlmsg_data(const struct nlmsghdr *nlh)
 {
-    return (unsigned char *) nlh + NLMSG_HDRLEN;
+    return ((unsigned char *) nlh) + NLMSG_HDRLEN;
 }
 
 static inline void *
 nlmsg_tail(const struct nlmsghdr *nlh)
 {
-    return (unsigned char *) nlh + NLMSG_ALIGN(nlh->nlmsg_len);
+    return ((unsigned char *) nlh) + NLMSG_ALIGN(nlh->nlmsg_len);
 }
 
 struct nlmsghdr *nlmsg_hdr(const struct nl_msg *n);
