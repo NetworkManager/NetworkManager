@@ -19,6 +19,9 @@ typedef struct {
     /* Set power saving mode on an interface */
     gboolean (*set_powersave)(NMWifiUtils *data, guint32 powersave);
 
+    /* Set 4addr mode on an interface */
+    gboolean (*set_use_4addr_mode)(NMWifiUtils *data, guint32 use_4addr_mode);
+
     /* Get WakeOnWLAN configuration on an interface */
     _NMSettingWirelessWakeOnWLan (*get_wake_on_wlan)(NMWifiUtils *data);
 

@@ -2812,6 +2812,7 @@ test_types(void)
         G(nm_setting_wireless_security_get_type),
         G(nm_setting_wireless_security_pmf_get_type),
         G(nm_setting_wireless_security_wps_method_get_type),
+        G(nm_setting_wireless_use4addr_mode_get_type),
         G(nm_setting_wireless_wake_on_wlan_get_type),
         G(nm_setting_wpan_get_type),
         G(nm_simple_connection_get_type),

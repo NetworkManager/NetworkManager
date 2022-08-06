@@ -3154,6 +3154,22 @@ nm_platform_wifi_set_powersave(NMPlatform *self, int ifindex, guint32 powersave)
     klass->wifi_set_powersave(self, ifindex, powersave);
 }
 
+static void
+wifi_set_use_4addr_mode(NMPlatform *p, int ifindex, guint32 use_4addr_mode)
+{
+    /* empty */
+}
+
+void
+nm_platform_wifi_set_use_4addr_mode(NMPlatform *self, int ifindex, guint32 use_4addr_mode)
+{
+    _CHECK_SELF_VOID(self, klass);
+
+    g_return_if_fail(ifindex > 0);
+
+    klass->wifi_set_use_4addr_mode(self, ifindex, use_4addr_mode);
+}
+
 guint32
 nm_platform_wifi_find_frequency(NMPlatform *self, int ifindex, const guint32 *freqs)
 {
@@ -9863,7 +9879,8 @@ nm_platform_class_init(NMPlatformClass *platform_class)
     object_class->set_property = set_property;
     object_class->finalize     = finalize;
 
-    platform_class->wifi_set_powersave = wifi_set_powersave;
+    platform_class->wifi_set_powersave      = wifi_set_powersave;
+    platform_class->wifi_set_use_4addr_mode = wifi_set_use_4addr_mode;
 
     g_object_class_install_property(
         object_class,
