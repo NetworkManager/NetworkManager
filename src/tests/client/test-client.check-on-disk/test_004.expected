@@ -107,6 +107,7 @@ connection.wait-activation-delay:       -1
 802-11-wireless.seen-bssids:            --
 802-11-wireless.hidden:                 no
 802-11-wireless.powersave:              0 (default)
+802-11-wireless.use-4addr-mode:         0 (default)
 802-11-wireless.wake-on-wlan:           0x1 (default)
 802-11-wireless.ap-isolation:           -1 (default)
 ipv4.method:                            auto
@@ -218,6 +219,7 @@ connection.wait-activation-delay:       -1
 802-11-wireless.seen-bssids:            --
 802-11-wireless.hidden:                 nie
 802-11-wireless.powersave:              0 (default)
+802-11-wireless.use-4addr-mode:         0 (default)
 802-11-wireless.wake-on-wlan:           0x1 (default)
 802-11-wireless.ap-isolation:           -1 (default)
 ipv4.method:                            auto

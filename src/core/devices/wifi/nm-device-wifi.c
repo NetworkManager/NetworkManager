@@ -3263,6 +3263,38 @@ set_powersave(NMDevice *device)
                                    val == NM_SETTING_WIRELESS_POWERSAVE_ENABLE);
 }
 
+static void
+set_use_4addr_mode(NMDevice *device)
+{
+    NMDeviceWifi                 *self = NM_DEVICE_WIFI(device);
+    NMSettingWireless            *s_wireless;
+    NMSettingWirelessUse4addrMode val;
+
+    s_wireless = nm_device_get_applied_setting(device, NM_TYPE_SETTING_WIRELESS);
+
+    g_return_if_fail(s_wireless);
+
+    val = nm_setting_wireless_get_use_4addr_mode(s_wireless);
+    if (val == NM_SETTING_WIRELESS_USE_4ADDR_MODE_DEFAULT) {
+        val =
+            nm_config_data_get_connection_default_int64(NM_CONFIG_GET_DATA,
+                                                        "wifi.use-4addr-mode",
+                                                        device,
+                                                        NM_SETTING_WIRELESS_USE_4ADDR_MODE_IGNORE,
+                                                        NM_SETTING_WIRELESS_USE_4ADDR_MODE_ENABLE,
+                                                        NM_SETTING_WIRELESS_USE_4ADDR_MODE_IGNORE);
+    }
+
+    _LOGT(LOGD_WIFI, "use-4addr-mode is set to %u", (unsigned) val);
+
+    if (val == NM_SETTING_WIRELESS_USE_4ADDR_MODE_IGNORE)
+        return;
+
+    nm_platform_wifi_set_use_4addr_mode(nm_device_get_platform(device),
+                                        nm_device_get_ifindex(device),
+                                        val == NM_SETTING_WIRELESS_USE_4ADDR_MODE_ENABLE);
+}
+
 static NMActStageReturn
 act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
 {
@@ -3342,6 +3374,8 @@ act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
 
     if (ap_mode == _NM_802_11_MODE_INFRA)
         set_powersave(device);
+
+    set_use_4addr_mode(device);
 
     /* Build up the supplicant configuration */
     config = build_supplicant_config(self, connection, nm_wifi_ap_get_freq(ap), &error);

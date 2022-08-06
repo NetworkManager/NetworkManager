@@ -88,6 +88,7 @@ typedef enum /*< flags >*/ {
 #define NM_SETTING_WIRELESS_SEEN_BSSIDS               "seen-bssids"
 #define NM_SETTING_WIRELESS_HIDDEN                    "hidden"
 #define NM_SETTING_WIRELESS_POWERSAVE                 "powersave"
+#define NM_SETTING_WIRELESS_USE_4ADDR_MODE            "use-4addr-mode"
 #define NM_SETTING_WIRELESS_MAC_ADDRESS_RANDOMIZATION "mac-address-randomization"
 #define NM_SETTING_WIRELESS_WAKE_ON_WLAN              "wake-on-wlan"
 #define NM_SETTING_WIRELESS_AP_ISOLATION              "ap-isolation"
@@ -141,6 +142,24 @@ typedef enum {
     _NM_SETTING_WIRELESS_POWERSAVE_NUM,                                          /*< skip >*/
     NM_SETTING_WIRELESS_POWERSAVE_LAST = _NM_SETTING_WIRELESS_POWERSAVE_NUM - 1, /*< skip >*/
 } NMSettingWirelessPowersave;
+
+/**
+ * NMSettingWirelessUse4addrMode:
+ * @NM_SETTING_WIRELESS_USE_4ADDR_MODE_DEFAULT: use the default value
+ * @NM_SETTING_WIRELESS_USE_4ADDR_MODE_IGNORE: don't touch existing setting
+ * @NM_SETTING_WIRELESS_USE_4ADDR_MODE_DISABLE: disable 4addr mode
+ * @NM_SETTING_WIRELESS_USE_4ADDR_MODE_ENABLE: enable 4addr mode
+ *
+ * These flags indicate whether wireless 4addr mode must be enabled.
+ **/
+typedef enum {
+    NM_SETTING_WIRELESS_USE_4ADDR_MODE_DEFAULT = 0,
+    NM_SETTING_WIRELESS_USE_4ADDR_MODE_IGNORE  = 1,
+    NM_SETTING_WIRELESS_USE_4ADDR_MODE_DISABLE = 2,
+    NM_SETTING_WIRELESS_USE_4ADDR_MODE_ENABLE  = 3,
+    _NM_SETTING_WIRELESS_USE_4ADDR_MODE_NUM,                                               /*< skip >*/
+    NM_SETTING_WIRELESS_USE_4ADDR_MODE_LAST = _NM_SETTING_WIRELESS_USE_4ADDR_MODE_NUM - 1, /*< skip >*/
+} NMSettingWirelessUse4addrMode;
 
 typedef struct _NMSettingWirelessClass NMSettingWirelessClass;
 
@@ -196,6 +215,9 @@ NMSettingWirelessWakeOnWLan nm_setting_wireless_get_wake_on_wlan(NMSettingWirele
 
 NM_AVAILABLE_IN_1_28
 NMTernary nm_setting_wireless_get_ap_isolation(NMSettingWireless *setting);
+
+NM_AVAILABLE_IN_1_40
+guint32 nm_setting_wireless_get_use_4addr_mode(NMSettingWireless *setting);
 
 G_END_DECLS
 

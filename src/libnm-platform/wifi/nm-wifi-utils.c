@@ -91,6 +91,17 @@ nm_wifi_utils_set_powersave(NMWifiUtils *data, guint32 powersave)
     return klass->set_powersave ? klass->set_powersave(data, powersave) : TRUE;
 }
 
+gboolean
+nm_wifi_utils_set_use_4addr_mode(NMWifiUtils *data, guint32 use_4addr_mode)
+{
+    NMWifiUtilsClass *klass;
+
+    g_return_val_if_fail(data != NULL, FALSE);
+
+    klass = NM_WIFI_UTILS_GET_CLASS(data);
+    return klass->set_use_4addr_mode ? klass->set_use_4addr_mode(data, use_4addr_mode) : TRUE;
+}
+
 _NMSettingWirelessWakeOnWLan
 nm_wifi_utils_get_wake_on_wlan(NMWifiUtils *data)
 {
