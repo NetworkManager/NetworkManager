@@ -268,6 +268,22 @@ nla_put_failure:
     g_return_val_if_reached(FALSE);
 }
 
+static gboolean
+wifi_nl80211_set_use_4addr_mode(NMWifiUtils *data, guint32 use_4addr_mode)
+{
+    NMWifiUtilsNl80211          *self = (NMWifiUtilsNl80211 *) data;
+    nm_auto_nlmsg struct nl_msg *msg  = NULL;
+    int                          err;
+
+    msg = nl80211_alloc_msg(self, NL80211_CMD_SET_INTERFACE, 0);
+    NLA_PUT_U8(msg, NL80211_ATTR_4ADDR, use_4addr_mode);
+    err = nl80211_send_and_recv(self, msg, NULL, NULL);
+    return err >= 0;
+
+nla_put_failure:
+    g_return_val_if_reached(FALSE);
+}
+
 static int
 nl80211_get_wake_on_wlan_handler(struct nl_msg *msg, void *arg)
 {
@@ -930,6 +946,7 @@ nm_wifi_utils_nl80211_class_init(NMWifiUtilsNl80211Class *klass)
     wifi_utils_class->get_mode                    = wifi_nl80211_get_mode;
     wifi_utils_class->set_mode                    = wifi_nl80211_set_mode;
     wifi_utils_class->set_powersave               = wifi_nl80211_set_powersave;
+    wifi_utils_class->set_use_4addr_mode          = wifi_nl80211_set_use_4addr_mode;
     wifi_utils_class->get_wake_on_wlan            = wifi_nl80211_get_wake_on_wlan,
     wifi_utils_class->set_wake_on_wlan            = wifi_nl80211_set_wake_on_wlan,
     wifi_utils_class->get_freq                    = wifi_nl80211_get_freq;

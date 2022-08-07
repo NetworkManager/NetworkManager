@@ -58,6 +58,8 @@ gboolean nm_wifi_utils_indicate_addressing_running(NMWifiUtils *data, gboolean r
 
 gboolean nm_wifi_utils_set_powersave(NMWifiUtils *data, guint32 powersave);
 
+gboolean nm_wifi_utils_set_use_4addr_mode(NMWifiUtils *data, guint32 use_4addr_mode);
+
 _NMSettingWirelessWakeOnWLan nm_wifi_utils_get_wake_on_wlan(NMWifiUtils *data);
 
 gboolean nm_wifi_utils_set_wake_on_wlan(NMWifiUtils *data, _NMSettingWirelessWakeOnWLan wowl);

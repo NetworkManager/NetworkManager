@@ -7862,6 +7862,15 @@ static const NMMetaPropertyInfo *const property_infos_WIRELESS[] = {
             .typ_flags =                NM_META_PROPERTY_TYP_FLAG_ENUM_GET_PARSABLE_TEXT,
         ),
     ),
+    PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRELESS_USE_4ADDR_MODE,
+        .property_type =                &_pt_gobject_enum,
+        .property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+            PROPERTY_TYP_DATA_SUBTYPE (gobject_enum,
+                .get_gtype =            nm_setting_wireless_use4addr_mode_get_type,
+            ),
+            .typ_flags =                NM_META_PROPERTY_TYP_FLAG_ENUM_GET_PARSABLE_TEXT,
+        ),
+    ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRELESS_WAKE_ON_WLAN,
         .property_type =                &_pt_gobject_enum,
         .property_typ_data = DEFINE_PROPERTY_TYP_DATA (
