@@ -177,6 +177,12 @@ G_STATIC_ASSERT(RTA_MAX == (__RTA_MAX - 1));
 
 /*****************************************************************************/
 
+#define IFLA_BOND_PEER_NOTIF_DELAY 28
+
+#undef IFLA_BOND_MAX
+
+/*****************************************************************************/
+
 /* Appeared in the kernel prior to 3.13 dated 19 January, 2014 */
 #ifndef ARPHRD_6LOWPAN
 #define ARPHRD_6LOWPAN 825
