@@ -247,21 +247,26 @@ EOF
     cat <<EOF | tmp_file "$BASEDIR/data-bash_history" 600
 NM-log
 NM-log /tmp/nm-log.txt
-behave -f html --stop ./features/scenarios/vrf.feature
 behave -f html --stop -t ipv4_method_static_with_IP ./features/scenarios/ipv4.feature
+behave -f html --stop ./features/scenarios/vrf.feature
 cd $BASEDIR_NM
+for i in {1..9}; do nm-env-prepare.sh --prefix eth -i \$i; done
 journalctl | NM-log
+m
+make
+make install
+n
 nm-env-prepare.sh
 nm-env-prepare.sh --prefix eth -i 4
 nm_run_gdb
 nm_run_normal
-nmcli device connect net1
 nmcli connection add type pppoe con-name ppp-net1 ifname ppp-net1 pppoe.parent net1 service isp username test password networkmanager autoconnect no
-for i in {1..9}; do nm-env-prepare.sh --prefix eth -i \$i; done
+nmcli device connect net1
+systemctl daemon-reload ; systemctl restart NetworkManager
 systemctl status NetworkManager
 systemctl stop NetworkManager
-systemctl stop NetworkManager; gdb -ex run --args /opt/test/sbin/NetworkManager --debug
 systemctl stop NetworkManager; /opt/test/sbin/NetworkManager --debug 2>&1 | tee -a ./nm-log.txt
+systemctl stop NetworkManager; gdb -ex run --args /opt/test/sbin/NetworkManager --debug
 EOF
 
     cat <<EOF | tmp_file "$BASEDIR/data-gdbinit"
