@@ -2873,14 +2873,6 @@ _wireguard_create_change_nlmsgs(NMPlatform                               *platfo
     struct nlattr                     *nest_curr_allowed_ip;
     NMPlatformWireGuardChangePeerFlags p_flags = NM_PLATFORM_WIREGUARD_CHANGE_PEER_FLAG_DEFAULT;
 
-#define _nla_nest_end(msg, nest_start)             \
-    G_STMT_START                                   \
-    {                                              \
-        if (nla_nest_end((msg), (nest_start)) < 0) \
-            g_return_val_if_reached(-NME_BUG);     \
-    }                                              \
-    G_STMT_END
-
     /* Adapted from LGPL-2.1+ code [1].
      *
      * [1] https://git.zx2c4.com/WireGuard/tree/contrib/examples/embeddable-wg-library/wireguard.c?id=5e99a6d43fe2351adf36c786f5ea2086a8fe7ab8#n1073 */
@@ -3036,36 +3028,36 @@ again:
                     if (nla_put_uint8(msg, WGALLOWEDIP_A_CIDR_MASK, aip->mask) < 0)
                         goto toobig_allowedips;
 
-                    _nla_nest_end(msg, nest_curr_allowed_ip);
+                    NLA_NEST_END(msg, nest_curr_allowed_ip);
                     nest_curr_allowed_ip = NULL;
                 }
                 idx_allowed_ips_curr = IDX_NIL;
 
-                _nla_nest_end(msg, nest_allowed_ips);
+                NLA_NEST_END(msg, nest_allowed_ips);
                 nest_allowed_ips = NULL;
             }
         }
 
-        _nla_nest_end(msg, nest_curr_peer);
+        NLA_NEST_END(msg, nest_curr_peer);
         nest_curr_peer = NULL;
     }
 
-    _nla_nest_end(msg, nest_peers);
+    NLA_NEST_END(msg, nest_peers);
     goto send;
 
 toobig_allowedips:
     if (nest_curr_allowed_ip)
         nla_nest_cancel(msg, nest_curr_allowed_ip);
     if (nest_allowed_ips)
-        _nla_nest_end(msg, nest_allowed_ips);
-    _nla_nest_end(msg, nest_curr_peer);
-    _nla_nest_end(msg, nest_peers);
+        NLA_NEST_END(msg, nest_allowed_ips);
+    NLA_NEST_END(msg, nest_curr_peer);
+    NLA_NEST_END(msg, nest_peers);
     goto send;
 
 toobig_peers:
     if (nest_curr_peer)
         nla_nest_cancel(msg, nest_curr_peer);
-    _nla_nest_end(msg, nest_peers);
+    NLA_NEST_END(msg, nest_peers);
     goto send;
 
 send:
@@ -3081,8 +3073,6 @@ send:
 
 nla_put_failure:
     g_return_val_if_reached(-NME_BUG);
-
-#undef _nla_nest_end
 }
 
 static int
