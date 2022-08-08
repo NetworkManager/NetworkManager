@@ -5557,7 +5557,11 @@ if ENABLE_VAPIGEN
 VAPIGEN_VAPIS += \
 	vapi/libnm.vapi
 
-vapi/libnm.vapi:      $(builddir)/src/libnm-client-impl/NM-1.0.gir                   vapi/libnm.deps      vapi/NM-1.0.metadata
+vapi/libnm.vapi: \
+	$(builddir)/src/libnm-client-impl/NM-1.0.gir \
+	vapi/libnm.deps \
+	vapi/NM-1.0.metadata \
+	$(NULL)
 
 vapi_libnm_vapi_METADATADIRS = $(srcdir)/vapi
 vapi_libnm_vapi_FILES = $(builddir)/src/libnm-client-impl/NM-1.0.gir
