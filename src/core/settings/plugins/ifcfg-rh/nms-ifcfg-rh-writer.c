@@ -1002,6 +1002,21 @@ write_wireless_setting(NMConnection *connection,
         break;
     }
 
+    switch (nm_setting_wireless_get_use_4addr_mode(s_wireless)) {
+    case NM_SETTING_WIRELESS_USE_4ADDR_MODE_IGNORE:
+        svSetValueStr(ifcfg, "USE_4ADDR_MODE", "ignore");
+        break;
+    case NM_SETTING_WIRELESS_USE_4ADDR_MODE_DISABLE:
+        svSetValueStr(ifcfg, "USE_4ADDR_MODE", "disable");
+        break;
+    case NM_SETTING_WIRELESS_USE_4ADDR_MODE_ENABLE:
+        svSetValueStr(ifcfg, "USE_4ADDR_MODE", "enable");
+        break;
+    default:
+    case NM_SETTING_WIRELESS_USE_4ADDR_MODE_DEFAULT:
+        break;
+    }
+
     switch (nm_setting_wireless_get_mac_address_randomization(s_wireless)) {
     case NM_SETTING_MAC_RANDOMIZATION_NEVER:
         svSetValueStr(ifcfg, "MAC_ADDRESS_RANDOMIZATION", "never");

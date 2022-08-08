@@ -41,6 +41,7 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMSettingWireless,
                              PROP_SEEN_BSSIDS,
                              PROP_HIDDEN,
                              PROP_POWERSAVE,
+                             PROP_USE_4ADDR_MODE,
                              PROP_MAC_ADDRESS_RANDOMIZATION,
                              PROP_WAKE_ON_WLAN,
                              PROP_AP_ISOLATION, );
@@ -62,6 +63,7 @@ typedef struct {
     guint32    tx_power;
     guint32    mtu;
     guint32    powersave;
+    guint32    use_4addr_mode;
     guint32    wake_on_wlan;
     bool       hidden;
 } NMSettingWirelessPrivate;
@@ -657,6 +659,22 @@ nm_setting_wireless_get_powersave(NMSettingWireless *setting)
     g_return_val_if_fail(NM_IS_SETTING_WIRELESS(setting), 0);
 
     return NM_SETTING_WIRELESS_GET_PRIVATE(setting)->powersave;
+}
+
+/**
+ * nm_setting_wireless_get_use_4addr_mode:
+ * @setting: the #NMSettingWireless
+ *
+ * Returns: the #NMSettingWireless:use-4addr-mode property of the setting
+ *
+ * Since: 1.40
+ **/
+guint32
+nm_setting_wireless_get_use_4addr_mode(NMSettingWireless *setting)
+{
+    g_return_val_if_fail(NM_IS_SETTING_WIRELESS(setting), 0);
+
+    return NM_SETTING_WIRELESS_GET_PRIVATE(setting)->use_4addr_mode;
 }
 
 /**
@@ -1774,6 +1792,44 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
                                               NM_SETTING_PARAM_NONE,
                                               NMSettingWirelessPrivate,
                                               powersave);
+
+    /**
+     * NMSettingWireless:use-4addr-mode:
+     *
+     * One of %NM_SETTING_WIRELESS_USE_4ADDR_MODE_DISABLE (disable Wi-Fi 4addr
+     * mode), %NM_SETTING_WIRELESS_USE_4ADDR_MODE_ENABLE (enable Wi-Fi 4addr
+     * mode), %NM_SETTING_WIRELESS_USE_4ADDR_MODE_IGNORE (don't touch currently
+     * configured setting) or %NM_SETTING_WIRELESS_USE_4ADDR_MODE_DEFAULT (use
+     * the globally configured value). All other values are reserved. Linux
+     * requires that a Wi-Fi interface is set in 4addr mode before it can be
+     * enslaved to a bridge. On the other hand, many access points don't support
+     * or prohibit the use of 4addr mode. In a setup were you need the ability
+     * to switch between such different kinds of connections, you can use this
+     * property to enable 4addr mode for connections enslaving the interface, by
+     * setting %NM_SETTING_WIRELESS_USE_4ADDR_MODE_ENABLE, while keeping it
+     * disabled for the rest, by setting
+     * %NM_SETTING_WIRELESS_USE_4ADDR_MODE_DISABLE.
+     *
+     * Since: 1.40
+     **/
+    /* ---ifcfg-rh---
+     * property: use4addrmode
+     * variable: USE_4ADDR_MODE(+)
+     * values: default, ignore, enable, disable
+     * description: Enables or disables Wi-Fi 4-addr mode.
+     * example: USE_4ADDR_MODE=enable
+     * ---end---
+     */
+    _nm_setting_property_define_direct_uint32(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_WIRELESS_USE_4ADDR_MODE,
+                                              PROP_USE_4ADDR_MODE,
+                                              0,
+                                              G_MAXUINT32,
+                                              NM_SETTING_WIRELESS_USE_4ADDR_MODE_DEFAULT,
+                                              NM_SETTING_PARAM_NONE,
+                                              NMSettingWirelessPrivate,
+                                              use_4addr_mode);
 
     /**
      * NMSettingWireless:mac-address-randomization:

@@ -18322,6 +18322,7 @@ NM_CON_DEFAULT_NOP("cdma.mtu");
 NM_CON_DEFAULT_NOP("gsm.mtu");
 NM_CON_DEFAULT_NOP("wifi.ap-isolation");
 NM_CON_DEFAULT_NOP("wifi.powersave");
+NM_CON_DEFAULT_NOP("wifi.use-4addr-mode");
 NM_CON_DEFAULT_NOP("wifi.wake-on-wlan");
 NM_CON_DEFAULT_NOP("wifi-sec.pmf");
 NM_CON_DEFAULT_NOP("wifi-sec.fils");

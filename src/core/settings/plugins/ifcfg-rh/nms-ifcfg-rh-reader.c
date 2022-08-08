@@ -4353,13 +4353,14 @@ transform_hwaddr_blacklist(const char *blacklist)
 static NMSetting *
 make_wireless_setting(shvarFile *ifcfg, GError **error)
 {
-    NMSettingWireless         *s_wireless;
-    const char                *cvalue;
-    char                      *value = NULL;
-    gint64                     chan  = 0;
-    NMSettingMacRandomization  mac_randomization;
-    NMSettingWirelessPowersave powersave = NM_SETTING_WIRELESS_POWERSAVE_DEFAULT;
-    NMTernary                  ternary;
+    NMSettingWireless            *s_wireless;
+    const char                   *cvalue;
+    char                         *value = NULL;
+    gint64                        chan  = 0;
+    NMSettingMacRandomization     mac_randomization;
+    NMSettingWirelessPowersave    powersave    = NM_SETTING_WIRELESS_POWERSAVE_DEFAULT;
+    NMSettingWirelessUse4addrMode use4addrmode = NM_SETTING_WIRELESS_USE_4ADDR_MODE_DEFAULT;
+    NMTernary                     ternary;
 
     s_wireless = NM_SETTING_WIRELESS(nm_setting_wireless_new());
 
@@ -4559,6 +4560,30 @@ make_wireless_setting(shvarFile *ifcfg, GError **error)
     }
 
     g_object_set(s_wireless, NM_SETTING_WIRELESS_POWERSAVE, powersave, NULL);
+
+    cvalue = svGetValue(ifcfg, "USE_4ADDR_MODE", &value);
+    if (cvalue) {
+        if (nm_streq(cvalue, "default"))
+            use4addrmode = NM_SETTING_WIRELESS_USE_4ADDR_MODE_DEFAULT;
+        else if (nm_streq(cvalue, "ignore"))
+            use4addrmode = NM_SETTING_WIRELESS_USE_4ADDR_MODE_IGNORE;
+        else if (nm_streq(cvalue, "disable") || nm_streq(cvalue, "no"))
+            use4addrmode = NM_SETTING_WIRELESS_USE_4ADDR_MODE_DISABLE;
+        else if (nm_streq(cvalue, "enable") || nm_streq(cvalue, "yes"))
+            use4addrmode = NM_SETTING_WIRELESS_USE_4ADDR_MODE_ENABLE;
+        else {
+            g_set_error(error,
+                        NM_SETTINGS_ERROR,
+                        NM_SETTINGS_ERROR_INVALID_CONNECTION,
+                        "Invalid USE_4ADDR_MODE value '%s'",
+                        cvalue);
+            g_free(value);
+            goto error;
+        }
+        g_free(value);
+    }
+
+    g_object_set(s_wireless, NM_SETTING_WIRELESS_USE_4ADDR_MODE, use4addrmode, NULL);
 
     cvalue = svGetValue(ifcfg, "MAC_ADDRESS_RANDOMIZATION", &value);
     if (cvalue) {
