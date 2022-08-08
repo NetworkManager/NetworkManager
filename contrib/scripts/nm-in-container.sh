@@ -113,7 +113,19 @@ create_dockerfile() {
 find NetworkManager bind mounted at $BASEDIR_NM
 run \`nm-env-prepare.sh setup --idx 1\` to setup test interfaces
 
-Configure NetworkManager with
+Coredumps: coredumps are not namespaced, so by default they will
+be sent to coredumpctl of the outer host, which has no idea where
+to get the debugging symbols from. A possible workaround is setting
+
+  $ echo '/tmp/core.%e.%p' | sudo tee /proc/sys/kernel/core_pattern
+
+so that core dumps get written to file. Afterwards, restore with
+
+  echo '|/usr/lib/systemd/systemd-coredump %P %u %g %s %t %c %h' | sudo tee /proc/sys/kernel/core_pattern
+
+from /usr/lib/sysctl.d/50-coredump.conf.
+
+For example, configure NetworkManager with
   \$ ./configure \\
            --enable-address-sanitizer=no \\
            --enable-compile-warnings=yes \\
@@ -164,6 +176,10 @@ Configure NetworkManager with
            "\${NM_CONFIGURE_OTPS[@]}"
 Test with:
   \$ systemctl stop NetworkManager; /opt/test/sbin/NetworkManager --debug 2>&1 | tee -a /tmp/nm-log.txt
+
+Alternatively, configure with \`contrib/fedora/rpm/configure-for-system.sh\`,
+subsequent \`make && make install\` will overwrite your system's NetworkManager,
+and you can test it with \`systemctl daemon-reload ; systemctl restart NetworkManager\`.
 EOF
 
     cat <<EOF | tmp_file "$BASEDIR/data-bashrc.my"
@@ -326,6 +342,7 @@ RUN dnf install -y \\
     python3-pip \\
     python3-pyte \\
     python3-pyyaml \\
+    qt-devel \\
     radvd \\
     readline-devel \\
     rp-pppoe \\

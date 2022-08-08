@@ -80,12 +80,12 @@
 %else
 %bcond_with connectivity_fedora
 %endif
-%if 0%{?rhel} && 0%{?rhel} > 7
+%if 0%{?rhel} && 0%{?rhel} >= 8
 %bcond_without connectivity_redhat
 %else
 %bcond_with connectivity_redhat
 %endif
-%if 0%{?fedora} > 28 || 0%{?rhel} > 7
+%if 0%{?fedora} >= 29 || 0%{?rhel} >= 8
 %bcond_without crypto_gnutls
 %else
 %bcond_with crypto_gnutls
@@ -95,7 +95,7 @@
 %else
 %bcond_without iwd
 %endif
-%if 0%{?fedora} > 31 || 0%{?rhel} > 7
+%if 0%{?fedora} >= 32 || 0%{?rhel} >= 8
 %bcond_without firewalld_zone
 %else
 %bcond_with firewalld_zone
@@ -103,7 +103,7 @@
 
 ###############################################################################
 
-%if 0%{?fedora} || 0%{?rhel} > 7
+%if 0%{?fedora} || 0%{?rhel} >= 8
 %global dbus_version 1.9.18
 %global dbus_sys_dir %{_datadir}/dbus-1/system.d
 %else
@@ -125,15 +125,15 @@
 %global with_modem_manager_1 0
 %endif
 
-%if 0%{?fedora} >= 31 || 0%{?rhel} > 7
+%if 0%{?fedora} >= 31 || 0%{?rhel} >= 8
 %global dhcp_default internal
 %else
 %global dhcp_default dhclient
 %endif
 
-%if 0%{?fedora} || 0%{?rhel} > 7
+%if 0%{?fedora} || 0%{?rhel} >= 8
 %global logging_backend_default journal
-%if 0%{?fedora} || 0%{?rhel} > 8
+%if 0%{?fedora} || 0%{?rhel} >= 9
 %global dns_rc_manager_default auto
 %else
 %global dns_rc_manager_default symlink
@@ -143,19 +143,19 @@
 %global dns_rc_manager_default file
 %endif
 
-%if 0%{?rhel} > 8 || 0%{?fedora} > 32
+%if 0%{?fedora} >= 33 || 0%{?rhel} >= 9
 %global config_plugins_default_ifcfg_rh 0
 %else
 %global config_plugins_default_ifcfg_rh 1
 %endif
 
-%if 0%{?rhel} > 9 || 0%{?fedora} > 35
+%if 0%{?fedora} >= 36 || 0%{?rhel} >= 10
 %global split_ifcfg_rh 1
 %else
 %global split_ifcfg_rh 0
 %endif
 
-%if 0%{?rhel} > 8 || 0%{?fedora} > 35
+%if 0%{?fedora} >= 36 || 0%{?rhel} >= 9
 %global ifcfg_warning 1
 %else
 %global ifcfg_warning 0
@@ -200,7 +200,7 @@ Source7: readme-ifcfg-rh.txt
 #Patch1: 0001-some.patch
 
 Requires(post): systemd
-%if 0%{?fedora} || 0%{?rhel} > 7
+%if 0%{?fedora} || 0%{?rhel} >= 8
 Requires(post): systemd-udev
 %endif
 Requires(post): /usr/sbin/update-alternatives
@@ -288,7 +288,7 @@ BuildRequires: mobile-broadband-provider-info-devel
 BuildRequires: newt-devel
 %endif
 BuildRequires: /usr/bin/dbus-launch
-%if 0%{?fedora} > 27 || 0%{?rhel} > 7
+%if 0%{?fedora} >= 28 || 0%{?rhel} >= 8
 BuildRequires: python3
 BuildRequires: python3-gobject-base
 BuildRequires: python3-dbus
@@ -312,7 +312,7 @@ BuildRequires: libubsan
 BuildRequires: firewalld-filesystem
 %endif
 BuildRequires: iproute
-%if 0%{?fedora} || 0%{?rhel} > 7
+%if 0%{?fedora} || 0%{?rhel} >= 8
 BuildRequires: iproute-tc
 %endif
 
@@ -401,7 +401,7 @@ Requires: wireless-regdb
 Requires: crda
 %endif
 
-%if %{with iwd} && (0%{?fedora} > 24 || 0%{?rhel} > 7)
+%if %{with iwd} && (0%{?fedora} >= 25 || 0%{?rhel} >= 8)
 Requires: (wpa_supplicant >= %{wpa_supplicant_version} or iwd)
 Suggests: wpa_supplicant
 %else
@@ -741,8 +741,8 @@ gtkdocize
 autoreconf --install --force
 %configure \
 	--with-runstatedir=%{_rundir} \
-	--disable-silent-rules \
-	--disable-static \
+	--enable-silent-rules=no \
+	--enable-static=no \
 	--with-nft=/usr/sbin/nft \
 	--with-iptables=/usr/sbin/iptables \
 	--with-dhclient=yes \
@@ -757,26 +757,26 @@ autoreconf --install --force
 %if %{with sanitizer}
 	--with-address-sanitizer=exec \
 %if 0%{?fedora} || 0%{?rhel} >= 8
-	--enable-undefined-sanitizer \
+	--enable-undefined-sanitizer=yes \
 %else
-	--disable-undefined-sanitizer \
+	--enable-undefined-sanitizer=no \
 %endif
 %else
 	--with-address-sanitizer=no \
-	--disable-undefined-sanitizer \
+	--enable-undefined-sanitizer=no \
 %endif
 %if %{with debug}
-	--enable-more-logging \
+	--enable-more-logging=yes \
 	--with-more-asserts=10000 \
 %else
-	--disable-more-logging \
-	--without-more-asserts \
+	--enable-more-logging=no \
+	--with-more-asserts=0 \
 %endif
-	--enable-ld-gc \
+	--enable-ld-gc=yes \
 %if %{with lto}
-	--enable-lto \
+	--enable-lto=yes \
 %else
-	--disable-lto \
+	--enable-lto=no \
 %endif
 	--with-libaudit=yes-disabled-by-default \
 %if 0%{?with_modem_manager_1}
@@ -815,11 +815,11 @@ autoreconf --install --force
 	--with-nm-cloud-setup=no \
 %endif
 	--enable-vala=yes \
-	--enable-introspection \
+	--enable-introspection=yes \
 %if %{with regen_docs}
-	--enable-gtk-doc \
+	--enable-gtk-doc=yes \
 %else
-	--disable-gtk-doc \
+	--enable-gtk-doc=no \
 %endif
 %if %{with team}
 	--enable-teamdctl=yes \
@@ -834,11 +834,11 @@ autoreconf --install --force
 	--with-selinux=yes \
 	--enable-polkit=yes \
 	--enable-modify-system=yes \
-	--enable-concheck \
+	--enable-concheck=yes \
 %if 0%{?fedora}
-	--with-libpsl \
+	--with-libpsl=yes \
 %else
-	--without-libpsl \
+	--with-libpsl=no \
 %endif
 	--with-ebpf=%{ebpf_enabled} \
 	--with-session-tracking=systemd \
@@ -859,9 +859,9 @@ autoreconf --install --force
 	--enable-ppp=yes \
 %endif
 %if %{with firewalld_zone}
-	--enable-firewalld-zone \
+	--enable-firewalld-zone=yes \
 %else
-	--disable-firewalld-zone \
+	--enable-firewalld-zone=no \
 %endif
 	--with-dist-version=%{version}-%{release} \
 %if %{?config_plugins_default_ifcfg_rh}
