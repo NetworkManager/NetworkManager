@@ -354,6 +354,14 @@ void           nla_nest_cancel(struct nl_msg *msg, const struct nlattr *attr);
 struct nlattr *nla_nest_start(struct nl_msg *msg, int attrtype);
 int            nla_nest_end(struct nl_msg *msg, struct nlattr *start);
 
+#define NLA_NEST_END(msg, nest_start)              \
+    G_STMT_START                                   \
+    {                                              \
+        if (nla_nest_end((msg), (nest_start)) < 0) \
+            goto nla_put_failure;                  \
+    }                                              \
+    G_STMT_END
+
 int nla_parse(struct nlattr           *tb[],
               int                      maxtype,
               struct nlattr           *head,
