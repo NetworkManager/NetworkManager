@@ -5968,6 +5968,12 @@ static const NMMetaPropertyInfo *const property_infos_GSM[] = {
             .get_fcn =                  MTU_GET_FCN (NMSettingGsm, nm_setting_gsm_get_mtu),
         ),
     ),
+    PROPERTY_INFO_WITH_DESC (NM_SETTING_GSM_INITIAL_EPS_BEARER_CONFIGURE,
+        .property_type =                &_pt_gobject_bool,
+    ),
+    PROPERTY_INFO_WITH_DESC (NM_SETTING_GSM_INITIAL_EPS_BEARER_APN,
+        .property_type =                &_pt_gobject_string,
+    ),
     NULL
 };
 

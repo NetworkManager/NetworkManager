@@ -1892,6 +1892,8 @@ global:
 	nm_range_ref;
 	nm_range_to_str;
 	nm_range_unref;
+	nm_setting_gsm_get_initial_eps_apn;
+	nm_setting_gsm_get_initial_eps_config;
 	nm_setting_ip_config_get_dhcp_iaid;
 	nm_setting_ip_config_get_dhcp_iaid;
 	nm_setting_loopback_get_mtu;

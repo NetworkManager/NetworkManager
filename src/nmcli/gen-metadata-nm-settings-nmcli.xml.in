@@ -588,6 +588,10 @@
                   description="A MCC/MNC string like &quot;310260&quot; or &quot;21601&quot; identifying the specific mobile network operator which this connection applies to.  If given, the connection will apply to any device also allowed by &quot;device-id&quot; and &quot;sim-id&quot; which contains a SIM card provisioned by the given operator." />
         <property name="mtu"
                   description="If non-zero, only transmit packets of the specified size or smaller, breaking larger packets up into multiple frames." />
+        <property name="initial-eps-bearer-configure"
+                  description="For LTE modems, this setting determines whether the initial EPS bearer shall be configured when bringing up the connection.  It is inferred TRUE if initial-eps-bearer-apn is set." />
+        <property name="initial-eps-bearer-apn"
+                  description="For LTE modems, this sets the APN for the initial EPS bearer that is set up when attaching to the network.  Setting this parameters implies initial-eps-bearer-configure to be TRUE." />
     </setting>
     <setting name="hostname" >
         <property name="priority"
