@@ -36,7 +36,9 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_AUTO_CONFIG,
                                   PROP_DEVICE_ID,
                                   PROP_SIM_ID,
                                   PROP_SIM_OPERATOR_ID,
-                                  PROP_MTU, );
+                                  PROP_MTU,
+                                  PROP_INITIAL_EPS_CONFIG,
+                                  PROP_INITIAL_EPS_APN, );
 
 typedef struct {
     char   *number;
@@ -48,11 +50,13 @@ typedef struct {
     char   *apn;
     char   *network_id;
     char   *pin;
+    char   *initial_eps_apn;
     guint   password_flags;
     guint   pin_flags;
     guint32 mtu;
     bool    auto_config;
     bool    home_only;
+    bool    initial_eps_config;
 } NMSettingGsmPrivate;
 
 /**
@@ -286,6 +290,38 @@ nm_setting_gsm_get_mtu(NMSettingGsm *setting)
     return NM_SETTING_GSM_GET_PRIVATE(setting)->mtu;
 }
 
+/**
+ * nm_setting_gsm_get_initial_eps_config:
+ * @setting: the #NMSettingGsm
+ *
+ * Returns: the #NMSettingGsm:initial-eps-bearer-configure property of the setting
+ *
+ * Since: 1.44
+ **/
+gboolean
+nm_setting_gsm_get_initial_eps_config(NMSettingGsm *setting)
+{
+    g_return_val_if_fail(NM_IS_SETTING_GSM(setting), FALSE);
+
+    return NM_SETTING_GSM_GET_PRIVATE(setting)->initial_eps_config;
+}
+
+/**
+ * nm_setting_gsm_get_initial_eps_apn:
+ * @setting: the #NMSettingGsm
+ *
+ * Returns: the #NMSettingGsm:initial-eps-bearer-apn property of the setting
+ *
+ * Since: 1.44
+ **/
+const char *
+nm_setting_gsm_get_initial_eps_apn(NMSettingGsm *setting)
+{
+    g_return_val_if_fail(NM_IS_SETTING_GSM(setting), NULL);
+
+    return NM_SETTING_GSM_GET_PRIVATE(setting)->initial_eps_apn;
+}
+
 static gboolean
 _verify_apn(const char *apn, gboolean allow_empty, const char *property_name, GError **error)
 {
@@ -366,6 +402,9 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
     }
 
     if (!_verify_apn(priv->apn, TRUE, NM_SETTING_GSM_APN, error))
+        return FALSE;
+
+    if (!_verify_apn(priv->initial_eps_apn, FALSE, NM_SETTING_GSM_INITIAL_EPS_BEARER_APN, error))
         return FALSE;
 
     if (priv->username && priv->username[0] == '\0') {
@@ -763,6 +802,41 @@ nm_setting_gsm_class_init(NMSettingGsmClass *klass)
                                               NM_SETTING_PARAM_FUZZY_IGNORE,
                                               NMSettingGsmPrivate,
                                               mtu);
+
+    /**
+     * NMSettingGsm:initial-eps-bearer-configure:
+     *
+     * For LTE modems, this setting determines whether the initial EPS bearer
+     * shall be configured when bringing up the connection.  It is inferred TRUE
+     * if initial-eps-bearer-apn is set.
+     *
+     * Since: 1.44
+     **/
+    _nm_setting_property_define_direct_boolean(properties_override,
+                                               obj_properties,
+                                               NM_SETTING_GSM_INITIAL_EPS_BEARER_CONFIGURE,
+                                               PROP_INITIAL_EPS_CONFIG,
+                                               FALSE,
+                                               NM_SETTING_PARAM_NONE,
+                                               NMSettingGsmPrivate,
+                                               initial_eps_config);
+
+    /**
+     * NMSettingGsm:initial-eps-bearer-apn:
+     *
+     * For LTE modems, this sets the APN for the initial EPS bearer that is set
+     * up when attaching to the network.  Setting this parameters implies
+     * initial-eps-bearer-configure to be TRUE.
+     *
+     * Since: 1.44
+     **/
+    _nm_setting_property_define_direct_string(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_GSM_INITIAL_EPS_BEARER_APN,
+                                              PROP_INITIAL_EPS_APN,
+                                              NM_SETTING_PARAM_NONE,
+                                              NMSettingGsmPrivate,
+                                              initial_eps_apn);
 
     /* Ignore incoming deprecated properties */
     _nm_properties_override_dbus(properties_override,

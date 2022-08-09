@@ -1923,4 +1923,6 @@ global:
 libnm_1_44_0 {
 global:
 	nm_active_connection_get_controller;
+	nm_setting_gsm_get_initial_eps_apn;
+	nm_setting_gsm_get_initial_eps_config;
 } libnm_1_42_0;
