@@ -16,6 +16,16 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 * The device state file /run/NetworkManager/devices/$ifindex now has
   new sections [dhcp4] and [dhcp6] containing the DHCP options for the
   current lease.
+* Add multipath TCP (MPTCP) support. NetworkManager can now configure IP addresses
+  as MPTCP endpoints. This is configurable via the "connection.mptcp-flags"
+  property. The default setting is such that MPTCP handling is automatically
+  enabled if the kernel sysctl "/proc/sys/net/mptcp/enabled" indicates so.
+  NetworkManager does not enable the MPTCP sysctl or adjust the limits (ip mptcp limits).
+  The administrator or the distribution is supposed to configure the desired system
+  settings.
+  Note that strict reverse path filtering (rp_filter) breaks many MPTCP use cases.
+  With MPTCP handling enabled, NetworkManager will relax a strict (1) rp_filter
+  to loose (2). Otherwise rp_filter is untouched by NetworkManager.
 * NetworkManager expanded log messages for invalid DHCP options.
 * Support "802-1x.phase1-auth-flags=tls-allow-unsafe-renegotiation" flag
   for Wi-Fi.
