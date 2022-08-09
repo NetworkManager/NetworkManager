@@ -287,6 +287,11 @@
       <literal>RateLimitBurst</literal> options of journald (see
       <link linkend='journald.conf'><citerefentry><refentrytitle>journald.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry></link> manual).
     </para>
+    <para>
+      NetworkManager does not log any secrets. However, you are advised to check whether anything
+      private sensitive gets logged before posting. When reporting an issue, provide complete
+      logs and avoid modifications (for privacy) that distort the meaning.
+    </para>
   </refsect1>
 
   <refsect1>

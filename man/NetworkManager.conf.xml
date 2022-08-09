@@ -624,6 +624,18 @@ unmanaged-devices=mac:00:22:68:1c:59:b1;mac:00:1E:65:30:D1:C4;interface-name:eth
     </para>
 
     <para>
+    The recommended way for enabling logging is with a file <filename>/etc/NetworkManager/conf.d/95-logging.conf</filename>
+    that contains
+<programlisting>
+[logging]
+level=TRACE
+domains=ALL
+</programlisting>
+    and restart the daemon with <command>systemctl restart NetworkManager</command>. Then
+    reproduce the problem. You can find the logs in syslog (for example <command>journalctl</command>).
+    </para>
+
+    <para>
     Any settings here are overridden by the <option>--log-level</option>
     and <option>--log-domains</option> command-line options.
     Logging can also be reconfigured at runtime with
@@ -645,8 +657,8 @@ unmanaged-devices=mac:00:22:68:1c:59:b1;mac:00:1E:65:30:D1:C4;interface-name:eth
     NetworkManager's logging aims not to contain private sensitive data
     and you should be fine sharing the debug logs. Still, there will
     be IP addresses and your network setup, if you consider that private
-    then review the log before sharing. Do not mangle the logfile in
-    a way that distorts the meaning too much.
+    then review the log before sharing. However, try not to mangle the logfile
+    in a way that distorts the meaning too much.
     </para>
 
     <para>
