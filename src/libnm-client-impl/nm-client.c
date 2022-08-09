@@ -7954,8 +7954,8 @@ dispose(GObject *object)
     nm_assert(c_list_is_empty(&self->obj_base.queue_notify_lst));
     nm_assert(nm_g_hash_table_size(priv->dbus_objects) == 0);
 
-    nml_dbus_property_o_clear_many(priv->nm.property_o, G_N_ELEMENTS(priv->nm.property_o), NULL);
-    nml_dbus_property_ao_clear_many(priv->nm.property_ao, G_N_ELEMENTS(priv->nm.property_ao), NULL);
+    nml_dbus_property_o_clear_many(priv->nm.property_o, G_N_ELEMENTS(priv->nm.property_o), self);
+    nml_dbus_property_ao_clear_many(priv->nm.property_ao, G_N_ELEMENTS(priv->nm.property_ao), self);
 
     nm_clear_g_free(&priv->nm.connectivity_check_uri);
     nm_clear_g_free(&priv->nm.version);
