@@ -44,6 +44,7 @@ typedef enum {
     CONNECT_STEP_WAIT_FOR_SIM,
     CONNECT_STEP_UNLOCK,
     CONNECT_STEP_WAIT_FOR_READY,
+    CONNECT_STEP_INTIAL_EPS_BEARER,
     CONNECT_STEP_CONNECT,
     CONNECT_STEP_LAST,
 } ConnectStep;
@@ -561,6 +562,34 @@ out:
 }
 
 static void
+set_initial_eps_bearer_settings_ready(MMModem3gpp      *modem_3gpp_iface,
+                                      GAsyncResult     *res,
+                                      NMModemBroadband *self)
+{
+    gs_free_error GError *error = NULL;
+
+    if (!mm_modem_3gpp_set_initial_eps_bearer_settings_finish(modem_3gpp_iface, res, &error)) {
+        if (g_error_matches(error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+            return;
+
+        if (!g_error_matches(error, MM_CORE_ERROR, MM_CORE_ERROR_UNSUPPORTED)) {
+            _LOGW("failed to set initial EPS bearer settings: %s", error->message);
+            nm_modem_emit_prepare_result(NM_MODEM(self),
+                                         FALSE,
+                                         NM_DEVICE_STATE_REASON_GSM_APN_FAILED);
+            connect_context_clear(self);
+            return;
+        }
+
+        _LOGD("failed to set initial EPS bearer settings due to lack of support: %s",
+              error->message);
+    }
+
+    self->_priv.ctx->step++;
+    connect_context_step(self);
+}
+
+static void
 connect_context_step(NMModemBroadband *self)
 {
     ConnectContext *ctx = self->_priv.ctx;
@@ -629,6 +658,52 @@ connect_context_step(NMModemBroadband *self)
         ctx->step++;
     }
         /* fall-through */
+
+    case CONNECT_STEP_INTIAL_EPS_BEARER:
+        if (MODEM_CAPS_3GPP(ctx->caps)) {
+            NMSettingGsm *s_gsm     = nm_connection_get_setting_gsm(ctx->connection);
+            const char   *apn       = nm_setting_gsm_get_initial_eps_apn(s_gsm);
+            gboolean      do_config = nm_setting_gsm_get_initial_eps_config(s_gsm);
+
+            /* assume do_config is true if an APN is set */
+            if (apn || do_config) {
+                gs_unref_object MMBearerProperties *config = NULL;
+                NMModemIPType ip_type = nm_modem_get_initial_eps_bearer_ip_type(ctx->ip_types);
+
+                config = mm_bearer_properties_new();
+                switch (ip_type) {
+                case NM_MODEM_IP_TYPE_IPV4:
+                    mm_bearer_properties_set_ip_type(config, MM_BEARER_IP_FAMILY_IPV4);
+                    break;
+                case NM_MODEM_IP_TYPE_IPV6:
+                    mm_bearer_properties_set_ip_type(config, MM_BEARER_IP_FAMILY_IPV6);
+                    break;
+                case NM_MODEM_IP_TYPE_IPV4V6:
+                    mm_bearer_properties_set_ip_type(config, MM_BEARER_IP_FAMILY_IPV4V6);
+                    break;
+                default:
+                    /* do nothing */
+                    break;
+                }
+                if (apn)
+                    mm_bearer_properties_set_apn(config, apn);
+
+                /*
+                 * Setting the initial EPS bearer settings is a no-op in
+                 * ModemManager if the desired configuration is already active.
+                 */
+                mm_modem_3gpp_set_initial_eps_bearer_settings(
+                    self->_priv.modem_3gpp_iface,
+                    config,
+                    ctx->cancellable,
+                    (GAsyncReadyCallback) set_initial_eps_bearer_settings_ready,
+                    self);
+                break;
+            }
+        }
+        ctx->step++;
+        /* fall-through */
+
     case CONNECT_STEP_CONNECT:
         if (!ctx->connect_properties)
             break;
