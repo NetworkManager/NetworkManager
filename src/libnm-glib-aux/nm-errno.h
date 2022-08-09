@@ -39,6 +39,7 @@ enum _NMErrno {
 
     /* netlink errors. */
     NME_NL_SEQ_MISMATCH,
+    NME_NL_MSG_INVAL,
     NME_NL_MSG_TRUNC,
     NME_NL_MSG_TOOSHORT,
     NME_NL_DUMP_INTR,

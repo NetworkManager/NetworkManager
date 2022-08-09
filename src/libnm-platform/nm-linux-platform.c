@@ -2576,7 +2576,7 @@ typedef struct {
 } WireGuardParseData;
 
 static int
-_wireguard_get_device_cb(struct nl_msg *msg, void *arg)
+_wireguard_get_device_cb(const struct nl_msg *msg, void *arg)
 {
     static const struct nla_policy policy[] = {
         [WGDEVICE_A_IFINDEX]     = {.type = NLA_U32},
@@ -2873,14 +2873,6 @@ _wireguard_create_change_nlmsgs(NMPlatform                               *platfo
     struct nlattr                     *nest_curr_allowed_ip;
     NMPlatformWireGuardChangePeerFlags p_flags = NM_PLATFORM_WIREGUARD_CHANGE_PEER_FLAG_DEFAULT;
 
-#define _nla_nest_end(msg, nest_start)             \
-    G_STMT_START                                   \
-    {                                              \
-        if (nla_nest_end((msg), (nest_start)) < 0) \
-            g_return_val_if_reached(-NME_BUG);     \
-    }                                              \
-    G_STMT_END
-
     /* Adapted from LGPL-2.1+ code [1].
      *
      * [1] https://git.zx2c4.com/WireGuard/tree/contrib/examples/embeddable-wg-library/wireguard.c?id=5e99a6d43fe2351adf36c786f5ea2086a8fe7ab8#n1073 */
@@ -3036,36 +3028,36 @@ again:
                     if (nla_put_uint8(msg, WGALLOWEDIP_A_CIDR_MASK, aip->mask) < 0)
                         goto toobig_allowedips;
 
-                    _nla_nest_end(msg, nest_curr_allowed_ip);
+                    NLA_NEST_END(msg, nest_curr_allowed_ip);
                     nest_curr_allowed_ip = NULL;
                 }
                 idx_allowed_ips_curr = IDX_NIL;
 
-                _nla_nest_end(msg, nest_allowed_ips);
+                NLA_NEST_END(msg, nest_allowed_ips);
                 nest_allowed_ips = NULL;
             }
         }
 
-        _nla_nest_end(msg, nest_curr_peer);
+        NLA_NEST_END(msg, nest_curr_peer);
         nest_curr_peer = NULL;
     }
 
-    _nla_nest_end(msg, nest_peers);
+    NLA_NEST_END(msg, nest_peers);
     goto send;
 
 toobig_allowedips:
     if (nest_curr_allowed_ip)
         nla_nest_cancel(msg, nest_curr_allowed_ip);
     if (nest_allowed_ips)
-        _nla_nest_end(msg, nest_allowed_ips);
-    _nla_nest_end(msg, nest_curr_peer);
-    _nla_nest_end(msg, nest_peers);
+        NLA_NEST_END(msg, nest_allowed_ips);
+    NLA_NEST_END(msg, nest_curr_peer);
+    NLA_NEST_END(msg, nest_peers);
     goto send;
 
 toobig_peers:
     if (nest_curr_peer)
         nla_nest_cancel(msg, nest_curr_peer);
-    _nla_nest_end(msg, nest_peers);
+    NLA_NEST_END(msg, nest_peers);
     goto send;
 
 send:
@@ -3081,8 +3073,6 @@ send:
 
 nla_put_failure:
     g_return_val_if_reached(-NME_BUG);
-
-#undef _nla_nest_end
 }
 
 static int
@@ -9344,6 +9334,9 @@ object_delete(NMPlatform *platform, const NMPObject *obj)
     case NMP_OBJECT_TYPE_TFILTER:
         nlmsg = _nl_msg_new_tfilter(RTM_DELTFILTER, 0, NMP_OBJECT_CAST_TFILTER(obj));
         break;
+    case NMP_OBJECT_TYPE_MPTCP_ADDR:
+        return (nm_platform_mptcp_addr_update(platform, FALSE, NMP_OBJECT_CAST_MPTCP_ADDR(obj))
+                >= 0);
     default:
         break;
     }
@@ -9866,49 +9859,20 @@ continue_reading:
              * NL_SKIP or NL_PROCEED (dangerous) */
             retval = -NME_NL_MSG_OVERFLOW;
         } else if (msg.nm_nlh->nlmsg_type == NLMSG_ERROR) {
-            /* Message carries a nlmsgerr */
-            struct nlmsgerr *e = nlmsg_data(msg.nm_nlh);
+            int errsv;
 
-            if (msg.nm_nlh->nlmsg_len < nlmsg_size(sizeof(*e))) {
-                /* Truncated error message, the default action
-                 * is to stop parsing. The user may overrule
-                 * this action by returning NL_SKIP or
-                 * NL_PROCEED (dangerous) */
-                retval = -NME_NL_MSG_TRUNC;
-            } else if (e->error) {
-                int errsv = nm_errno_native(e->error);
-
-                if (NM_FLAGS_HAS(msg.nm_nlh->nlmsg_flags, NLM_F_ACK_TLVS)
-                    && msg.nm_nlh->nlmsg_len >= sizeof(*e) + e->msg.nlmsg_len) {
-                    static const struct nla_policy policy[] = {
-                        [NLMSGERR_ATTR_MSG]  = {.type = NLA_STRING},
-                        [NLMSGERR_ATTR_OFFS] = {.type = NLA_U32},
-                    };
-                    struct nlattr *tb[G_N_ELEMENTS(policy)];
-                    struct nlattr *tlvs;
-
-                    tlvs = (struct nlattr *) ((char *) e + sizeof(*e) + e->msg.nlmsg_len
-                                              - NLMSG_HDRLEN);
-                    if (nla_parse_arr(tb,
-                                      tlvs,
-                                      msg.nm_nlh->nlmsg_len - sizeof(*e) - e->msg.nlmsg_len,
-                                      policy)
-                        >= 0) {
-                        if (tb[NLMSGERR_ATTR_MSG])
-                            extack_msg = nla_get_string(tb[NLMSGERR_ATTR_MSG]);
-                    }
-                }
-
-                /* Error message reported back from kernel. */
+            errsv = nlmsg_parse_error(msg.nm_nlh, &extack_msg);
+            if (errsv == 0)
+                seq_result = WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK;
+            else {
                 _LOGD("%s: recvmsg: error message from kernel: %s (%d)%s%s%s for request %d",
                       log_prefix,
-                      nm_strerror_native(errsv),
+                      nm_strerror(errsv),
                       errsv,
                       NM_PRINT_FMT_QUOTED(extack_msg, " \"", extack_msg, "\"", ""),
                       msg.nm_nlh->nlmsg_seq);
-                seq_result = -NM_ERRNO_NATIVE(errsv);
-            } else
-                seq_result = WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK;
+                seq_result = errsv;
+            }
         } else
             process_valid_msg = TRUE;
 
@@ -10136,6 +10100,301 @@ genl_get_family_id(NMPlatform *platform, NMPGenlFamilyType family_type)
 
 out:
     return priv->genl_family_data[family_type].family_id;
+}
+
+/*****************************************************************************/
+
+static const NMPObject *
+_mptcp_addrs_dump_parse_addr(struct nlattr *attr)
+{
+    static const struct nla_policy policy[] = {
+        [MPTCP_PM_ADDR_ATTR_FAMILY] = {.type = NLA_U16},
+        [MPTCP_PM_ADDR_ATTR_ID]     = {.type = NLA_U8},
+        [MPTCP_PM_ADDR_ATTR_ADDR4]  = {.minlen = sizeof(in_addr_t)},
+        [MPTCP_PM_ADDR_ATTR_ADDR6]  = {.minlen = sizeof(struct in6_addr)},
+        [MPTCP_PM_ADDR_ATTR_PORT]   = {.type = NLA_U16},
+        [MPTCP_PM_ADDR_ATTR_FLAGS]  = {.type = NLA_U32},
+        [MPTCP_PM_ADDR_ATTR_IF_IDX] = {.type = NLA_S32},
+    };
+    struct nlattr            *tb[G_N_ELEMENTS(policy)];
+    nm_auto_nmpobj NMPObject *obj = NULL;
+    NMPlatformMptcpAddr      *mptcp_addr;
+    int                       addr_family;
+    int                       addr_attr;
+
+    if (nla_parse_nested_arr(tb, attr, policy) < 0)
+        return NULL;
+
+    if (!tb[MPTCP_PM_ADDR_ATTR_ID])
+        return NULL;
+
+    obj        = nmp_object_new(NMP_OBJECT_TYPE_MPTCP_ADDR, NULL);
+    mptcp_addr = &obj->mptcp_addr;
+
+    mptcp_addr->id = nla_get_u8(tb[MPTCP_PM_ADDR_ATTR_ID]);
+
+    if (!tb[MPTCP_PM_ADDR_ATTR_FAMILY]) {
+        /* If we don't have the family. Only create a stub object containing
+         * the ID. */
+        goto out;
+    }
+
+    addr_family = nla_get_u16(tb[MPTCP_PM_ADDR_ATTR_FAMILY]);
+
+    if (addr_family == AF_INET)
+        addr_attr = MPTCP_PM_ADDR_ATTR_ADDR4;
+    else if (addr_family == AF_INET6)
+        addr_attr = MPTCP_PM_ADDR_ATTR_ADDR6;
+    else
+        goto out;
+
+    if (!tb[addr_attr])
+        goto out;
+
+    mptcp_addr->addr_family = addr_family;
+    memcpy(&mptcp_addr->addr, nla_data(tb[addr_attr]), nm_utils_addr_family_to_size(addr_family));
+
+    if (tb[MPTCP_PM_ADDR_ATTR_PORT])
+        mptcp_addr->port = nla_get_u16(tb[MPTCP_PM_ADDR_ATTR_PORT]);
+
+    if (tb[MPTCP_PM_ADDR_ATTR_IF_IDX])
+        mptcp_addr->ifindex = nla_get_s32(tb[MPTCP_PM_ADDR_ATTR_IF_IDX]);
+
+    if (tb[MPTCP_PM_ADDR_ATTR_FLAGS])
+        mptcp_addr->flags = nla_get_u32(tb[MPTCP_PM_ADDR_ATTR_FLAGS]);
+
+out:
+
+    return g_steal_pointer(&obj);
+}
+
+typedef struct {
+    GPtrArray *addrs;
+} FetchMptcpAddrParseData;
+
+static int
+_mptcp_addrs_dump_parse_cb(const struct nl_msg *msg, void *arg)
+{
+    static const struct nla_policy policy[] = {
+        [MPTCP_PM_ATTR_ADDR] = {.type = NLA_NESTED},
+    };
+    struct nlattr           *tb[G_N_ELEMENTS(policy)];
+    FetchMptcpAddrParseData *parse_data = arg;
+
+    if (genlmsg_parse_arr(nlmsg_hdr(msg), 0, tb, policy) < 0)
+        return NL_SKIP;
+
+    if (tb[MPTCP_PM_ATTR_ADDR]) {
+        const NMPObject *obj;
+
+        obj = _mptcp_addrs_dump_parse_addr(tb[MPTCP_PM_ATTR_ADDR]);
+        if (obj)
+            g_ptr_array_add(parse_data->addrs, (gpointer) obj);
+    }
+
+    return NL_OK;
+}
+
+#define EXTACK_MSG_BUFSIZE 200
+
+static int
+_mptcp_addr_update_err_cb(const struct sockaddr_nl *nla, const struct nlmsgerr *nlerr, void *arg)
+{
+    char       *out_extack_msg = arg;
+    const char *extack_msg;
+    int         errsv;
+
+    errsv = nlmsg_parse_error(nlmsg_undata(nlerr), &extack_msg);
+    if (extack_msg)
+        g_strlcpy(out_extack_msg, extack_msg, EXTACK_MSG_BUFSIZE);
+    return errsv;
+}
+
+static int
+mptcp_addr_update(NMPlatform *platform, NMOptionBool add, const NMPlatformMptcpAddr *addr)
+{
+    NMLinuxPlatformPrivate      *priv  = NM_LINUX_PLATFORM_GET_PRIVATE(platform);
+    nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
+    struct nlattr               *nla_nest;
+    char                         sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
+    guint16                      genl_family_id;
+    guint8                       cmd_num;
+    const char                  *cmd_str;
+    int                          nle;
+    char                         extack_msg[EXTACK_MSG_BUFSIZE];
+    const struct nl_cb           cb = {
+                  .err_cb  = _mptcp_addr_update_err_cb,
+                  .err_arg = extack_msg,
+    };
+
+    extack_msg[0] = '\0';
+
+    if (add == NM_OPTION_BOOL_DEFAULT) {
+        cmd_num = MPTCP_PM_CMD_SET_FLAGS;
+        cmd_str = "update";
+    } else if (add) {
+        cmd_num = MPTCP_PM_CMD_ADD_ADDR;
+        cmd_str = "add";
+    } else {
+        cmd_num = MPTCP_PM_CMD_DEL_ADDR;
+        cmd_str = "delete";
+    }
+
+    nm_assert_addr_family_or_unspec(addr->addr_family);
+    nm_assert(cmd_num != MPTCP_PM_CMD_ADD_ADDR
+              || (addr->port == 0 && addr->addr_family != AF_UNSPEC));
+    nm_assert(cmd_num != MPTCP_PM_CMD_SET_FLAGS || (addr->id != 0 && addr->port == 0));
+    nm_assert(cmd_num != MPTCP_PM_CMD_DEL_ADDR || addr->id != 0);
+
+    genl_family_id = nm_platform_genl_get_family_id(platform, NMP_GENL_FAMILY_TYPE_MPTCP_PM);
+    if (genl_family_id == 0) {
+        _LOGT("mptcp: %s address %s fails because %s generic netlink family is unknown",
+              cmd_str,
+              nm_platform_mptcp_addr_to_string(addr, sbuf, sizeof(sbuf)),
+              nmp_genl_family_infos[NMP_GENL_FAMILY_TYPE_MPTCP_PM].name);
+        return -ENOSYS;
+    }
+
+    _LOGT("mptcp: %s address %s",
+          cmd_str,
+          nm_platform_mptcp_addr_to_string(addr, sbuf, sizeof(sbuf)));
+
+    nlmsg = nlmsg_alloc_size(nlmsg_total_size(GENL_HDRLEN) + 200);
+
+    if (!genlmsg_put(nlmsg,
+                     NL_AUTO_PORT,
+                     NL_AUTO_SEQ,
+                     genl_family_id,
+                     0,
+                     NLM_F_REQUEST,
+                     cmd_num,
+                     MPTCP_PM_VER))
+        goto nla_put_failure;
+
+    nla_nest = nla_nest_start(nlmsg, MPTCP_PM_ATTR_ADDR | NLA_F_NESTED);
+    if (!nla_nest)
+        goto nla_put_failure;
+
+    if (addr->id != 0)
+        NLA_PUT_U8(nlmsg, MPTCP_PM_ADDR_ATTR_ID, addr->id);
+    if (addr->flags != 0)
+        NLA_PUT_U32(nlmsg, MPTCP_PM_ADDR_ATTR_FLAGS, addr->flags);
+    if (addr->ifindex != 0)
+        NLA_PUT_S32(nlmsg, MPTCP_PM_ADDR_ATTR_IF_IDX, addr->ifindex);
+    if (addr->port != 0)
+        NLA_PUT_U16(nlmsg, MPTCP_PM_ADDR_ATTR_PORT, addr->port);
+    if (addr->addr_family != AF_UNSPEC) {
+        int addr_attr;
+
+        NLA_PUT_U16(nlmsg, MPTCP_PM_ADDR_ATTR_FAMILY, addr->addr_family);
+        if (addr->addr_family == AF_INET)
+            addr_attr = MPTCP_PM_ADDR_ATTR_ADDR4;
+        else if (addr->addr_family == AF_INET6)
+            addr_attr = MPTCP_PM_ADDR_ATTR_ADDR6;
+        else
+            g_return_val_if_reached(-NME_BUG);
+        NLA_PUT(nlmsg, addr_attr, nm_utils_addr_family_to_size(addr->addr_family), &addr->addr);
+    }
+
+    NLA_NEST_END(nlmsg, nla_nest);
+
+    nle = nl_send_auto(priv->sk_genl_sync, nlmsg);
+    if (nle < 0) {
+        _LOGT("mptcp: %s address %s: failed sending request: %s (%d)",
+              cmd_str,
+              nm_platform_mptcp_addr_to_string(addr, sbuf, sizeof(sbuf)),
+              nm_strerror(nle),
+              nle);
+        return nle;
+    }
+
+    do {
+        nle = nl_recvmsgs(priv->sk_genl_sync, &cb);
+    } while (nle == -EAGAIN);
+
+    if (nle < 0) {
+        _LOGT("mptcp: %s address %s: failed: %s (%d)%s%s%s",
+              cmd_str,
+              nm_platform_mptcp_addr_to_string(addr, sbuf, sizeof(sbuf)),
+              nm_strerror(nle),
+              nle,
+              NM_PRINT_FMT_QUOTED(extack_msg[0] != '\0', " \"", extack_msg, "\"", ""));
+        return nle;
+    }
+
+    _LOGT("mptcp: %s address %s: success",
+          cmd_str,
+          nm_platform_mptcp_addr_to_string(addr, sbuf, sizeof(sbuf)));
+
+    return 0;
+
+nla_put_failure:
+    g_return_val_if_reached(-NME_BUG);
+}
+
+static GPtrArray *
+mptcp_addrs_dump(NMPlatform *platform)
+{
+    NMLinuxPlatformPrivate      *priv  = NM_LINUX_PLATFORM_GET_PRIVATE(platform);
+    gs_unref_ptrarray GPtrArray *addrs = NULL;
+    nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
+    FetchMptcpAddrParseData      parse_data;
+    guint16                      genl_family_id;
+    int                          r;
+    guint                        i;
+
+    genl_family_id = nm_platform_genl_get_family_id(platform, NMP_GENL_FAMILY_TYPE_MPTCP_PM);
+    if (genl_family_id == 0) {
+        _LOGT("mptcp: dump addresses fails because %s generic netlink family is unknown",
+              nmp_genl_family_infos[NMP_GENL_FAMILY_TYPE_MPTCP_PM].name);
+        return NULL;
+    }
+
+    nlmsg = nlmsg_alloc_size(nlmsg_total_size(GENL_HDRLEN));
+
+    if (!genlmsg_put(nlmsg,
+                     NL_AUTO_PORT,
+                     NL_AUTO_SEQ,
+                     genl_family_id,
+                     0,
+                     NLM_F_REQUEST | NLM_F_DUMP,
+                     MPTCP_PM_CMD_GET_ADDR,
+                     MPTCP_PM_VER))
+        g_return_val_if_reached(NULL);
+
+    r = nl_send_auto(priv->sk_genl_sync, nlmsg);
+    if (r < 0) {
+        _LOGT("mptcp: dump addresses failed to send dump request: %s", nm_strerror(r));
+        return NULL;
+    }
+
+    addrs = g_ptr_array_new_with_free_func((GDestroyNotify) nmp_object_unref);
+
+    parse_data = (FetchMptcpAddrParseData){
+        .addrs = addrs,
+    };
+
+    nl_recvmsgs(priv->sk_genl_sync,
+                &((const struct nl_cb){
+                    .valid_cb  = _mptcp_addrs_dump_parse_cb,
+                    .valid_arg = (gpointer) &parse_data,
+                }));
+
+    if (_LOGT_ENABLED()) {
+        _LOGT("mptcp: %u addresses dumped", addrs->len);
+        for (i = 0; i < addrs->len; i++) {
+            char sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
+
+            _LOGT("mptcp: address[%04d]: %s",
+                  i,
+                  nmp_object_to_string(addrs->pdata[i],
+                                       NMP_OBJECT_TO_STRING_PUBLIC,
+                                       sbuf,
+                                       sizeof(sbuf)));
+        }
+    }
+
+    return g_steal_pointer(&addrs);
 }
 
 /*****************************************************************************/
@@ -10628,4 +10887,6 @@ nm_linux_platform_class_init(NMLinuxPlatformClass *klass)
     platform_class->process_events = process_events;
 
     platform_class->genl_get_family_id = genl_get_family_id;
+    platform_class->mptcp_addr_update  = mptcp_addr_update;
+    platform_class->mptcp_addrs_dump   = mptcp_addrs_dump;
 }

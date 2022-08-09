@@ -9,6 +9,7 @@
 #include <syslog.h>
 
 #include "libnm-platform/nm-linux-platform.h"
+#include "libnm-platform/nmp-object.h"
 
 #include "nm-test-utils-core.h"
 
@@ -50,6 +51,18 @@ read_argv(int *argc, char ***argv)
     return TRUE;
 }
 
+/*****************************************************************************/
+
+static void
+mptcp_addr_dump(NMPlatform *platform)
+{
+    gs_unref_ptrarray GPtrArray *addrs = NULL;
+
+    addrs = nm_platform_mptcp_addrs_dump(platform);
+}
+
+/*****************************************************************************/
+
 int
 main(int argc, char **argv)
 {
@@ -68,6 +81,8 @@ main(int argc, char **argv)
     loop = g_main_loop_new(NULL, FALSE);
 
     nm_linux_platform_setup();
+
+    mptcp_addr_dump(NM_PLATFORM_GET);
 
     if (global_opt.persist)
         g_main_loop_run(loop);

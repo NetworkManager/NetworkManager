@@ -267,4 +267,16 @@ gboolean nm_settings_connection_validate_permission_user(const char *item, gssiz
 gpointer _nm_connection_ensure_setting(NMConnection *connection, GType gtype);
 gpointer _nm_connection_new_setting(NMConnection *connection, GType gtype);
 
+/*****************************************************************************/
+
+#define _NM_MPTCP_FLAGS_ALL                                                                    \
+    ((NMMptcpFlags) (NM_MPTCP_FLAGS_DISABLED | NM_MPTCP_FLAGS_ENABLED_ON_GLOBAL_IFACE          \
+                     | NM_MPTCP_FLAGS_ENABLED | NM_MPTCP_FLAGS_SIGNAL | NM_MPTCP_FLAGS_SUBFLOW \
+                     | NM_MPTCP_FLAGS_BACKUP | NM_MPTCP_FLAGS_FULLMESH))
+
+#define _NM_MPTCP_FLAGS_DEFAULT \
+    ((NMMptcpFlags) (NM_MPTCP_FLAGS_ENABLED_ON_GLOBAL_IFACE | NM_MPTCP_FLAGS_SUBFLOW))
+
+NMMptcpFlags nm_mptcp_flags_normalize(NMMptcpFlags flags);
+
 #endif /* __NM_LIBNM_SHARED_UTILS_H__ */

@@ -1839,6 +1839,7 @@ global:
 libnm_1_40_0 {
 global:
 	nm_conn_wireguard_import;
+	nm_mptcp_flags_get_type;
 	nm_setting_connection_get_wait_activation_delay;
 	nm_setting_ip4_link_local_get_type;
 	nm_setting_ip6_config_get_mtu;

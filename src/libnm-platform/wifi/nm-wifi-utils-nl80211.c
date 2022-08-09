@@ -58,7 +58,7 @@ typedef struct {
 G_DEFINE_TYPE(NMWifiUtilsNl80211, nm_wifi_utils_nl80211, NM_TYPE_WIFI_UTILS)
 
 static int
-ack_handler(struct nl_msg *msg, void *arg)
+ack_handler(const struct nl_msg *msg, void *arg)
 {
     int *done = arg;
     *done     = 1;
@@ -66,7 +66,7 @@ ack_handler(struct nl_msg *msg, void *arg)
 }
 
 static int
-finish_handler(struct nl_msg *msg, void *arg)
+finish_handler(const struct nl_msg *msg, void *arg)
 {
     int *done = arg;
     *done     = 1;
@@ -74,7 +74,7 @@ finish_handler(struct nl_msg *msg, void *arg)
 }
 
 static int
-error_handler(struct sockaddr_nl *nla, struct nlmsgerr *err, void *arg)
+error_handler(const struct sockaddr_nl *nla, const struct nlmsgerr *err, void *arg)
 {
     int *done = arg;
     *done     = err->error;
@@ -106,7 +106,7 @@ nl80211_alloc_msg(NMWifiUtilsNl80211 *self, uint8_t cmd, uint16_t flags)
 static int
 nl80211_send_and_recv(NMWifiUtilsNl80211 *self,
                       struct nl_msg      *msg,
-                      int (*valid_handler)(struct nl_msg *, void *),
+                      int (*valid_handler)(const struct nl_msg *, void *),
                       void *valid_data)
 {
     int                err;
@@ -167,7 +167,7 @@ struct nl80211_iface_info {
 };
 
 static int
-nl80211_iface_info_handler(struct nl_msg *msg, void *arg)
+nl80211_iface_info_handler(const struct nl_msg *msg, void *arg)
 {
     struct nl80211_iface_info *info = arg;
     struct genlmsghdr         *gnlh = nlmsg_data(nlmsg_hdr(msg));
@@ -269,7 +269,7 @@ nla_put_failure:
 }
 
 static int
-nl80211_get_wake_on_wlan_handler(struct nl_msg *msg, void *arg)
+nl80211_get_wake_on_wlan_handler(const struct nl_msg *msg, void *arg)
 {
     _NMSettingWirelessWakeOnWLan *wowl = arg;
     struct nlattr                *attrs[NL80211_ATTR_MAX + 1];
@@ -422,7 +422,7 @@ struct nl80211_station_info {
 };
 
 static int
-nl80211_station_dump_handler(struct nl_msg *msg, void *arg)
+nl80211_station_dump_handler(const struct nl_msg *msg, void *arg)
 {
     static const struct nla_policy stats_policy[] = {
         [NL80211_STA_INFO_INACTIVE_TIME]     = {.type = NLA_U32},
@@ -576,7 +576,7 @@ struct nl80211_device_info {
 #define WLAN_CIPHER_SUITE_SMS4      0x00147201
 
 static int
-nl80211_wiphy_info_handler(struct nl_msg *msg, void *arg)
+nl80211_wiphy_info_handler(const struct nl_msg *msg, void *arg)
 {
     static const struct nla_policy freq_policy[] = {
         [NL80211_FREQUENCY_ATTR_FREQ]     = {.type = NLA_U32},
@@ -816,7 +816,7 @@ struct nl80211_csme_conn_info {
 };
 
 static int
-nl80211_csme_conn_event_handler(struct nl_msg *msg, void *arg)
+nl80211_csme_conn_event_handler(const struct nl_msg *msg, void *arg)
 {
     struct nl80211_csme_conn_info *info          = arg;
     NMPlatformCsmeConnInfo        *out_conn_info = info->conn_info;

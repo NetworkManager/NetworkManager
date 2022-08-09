@@ -493,3 +493,36 @@ _nm_connection_new_setting(NMConnection *connection, GType gtype)
     nm_connection_add_setting(connection, setting);
     return setting;
 }
+
+/*****************************************************************************/
+
+NMMptcpFlags
+nm_mptcp_flags_normalize(NMMptcpFlags flags)
+{
+    /* Certain combinations of flags are incompatible. Normalize them.
+     *
+     * This function never returns 0x0 (NONE). If the flags are neither
+     * disabled,enabled-on-global-iface,enabled, then we default to "enabled". */
+
+    if (NM_FLAGS_HAS(flags, NM_MPTCP_FLAGS_DISABLED)) {
+        /* If the disabled flag is set, then that's the end of it. */
+        return NM_MPTCP_FLAGS_DISABLED;
+    }
+
+    /* Clear all unknown flags. */
+    flags &= _NM_MPTCP_FLAGS_ALL;
+
+    /* We must either set "enabled-on-global-iface" or "enabled". The
+     * former takes precedence, if they are both set.
+     *
+     * If neither is set, we default to "enabled".  */
+    if (NM_FLAGS_HAS(flags, NM_MPTCP_FLAGS_ENABLED_ON_GLOBAL_IFACE))
+        flags = NM_FLAGS_UNSET(flags, NM_MPTCP_FLAGS_ENABLED);
+    else
+        flags = NM_FLAGS_SET(flags, NM_MPTCP_FLAGS_ENABLED);
+
+    if (NM_FLAGS_ALL(flags, NM_MPTCP_FLAGS_SIGNAL | NM_MPTCP_FLAGS_FULLMESH))
+        flags = NM_FLAGS_UNSET(flags, NM_MPTCP_FLAGS_FULLMESH);
+
+    return flags;
+}

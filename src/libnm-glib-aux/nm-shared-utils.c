@@ -1015,10 +1015,20 @@ nm_utils_ip_is_site_local(int addr_family, const void *address)
         return (addr4 & 0xff000000) == 0x0a000000 || (addr4 & 0xfff00000) == 0xac100000
                || (addr4 & 0xffff0000) == 0xc0a80000;
     case AF_INET6:
+        /* IN6_IS_ADDR_SITELOCAL() is for deprecated fec0::/10 addresses (see rfc3879, 4.).
+         * Note that for unique local IPv6 addresses (ULA, fc00::/7) this returns false,
+         * which may or may not be a bug. */
         return IN6_IS_ADDR_SITELOCAL(address);
     default:
         g_return_val_if_reached(FALSE);
     }
+}
+
+gboolean
+nm_utils_ip6_is_ula(const struct in6_addr *address)
+{
+    /* Unique local IPv6 address (ULA) fc00::/7 */
+    return (address->s6_addr32[0] & htonl(0xfe000000u)) == htonl(0xfc000000u);
 }
 
 /*****************************************************************************/
