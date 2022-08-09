@@ -57,6 +57,7 @@ G_BEGIN_DECLS
 #define NM_SETTING_CONNECTION_MDNS                  "mdns"
 #define NM_SETTING_CONNECTION_LLMNR                 "llmnr"
 #define NM_SETTING_CONNECTION_DNS_OVER_TLS          "dns-over-tls"
+#define NM_SETTING_CONNECTION_MPTCP_FLAGS           "mptcp-flags"
 #define NM_SETTING_CONNECTION_WAIT_DEVICE_TIMEOUT   "wait-device-timeout"
 #define NM_SETTING_CONNECTION_MUD_URL               "mud-url"
 #define NM_SETTING_CONNECTION_WAIT_ACTIVATION_DELAY "wait-activation-delay"
@@ -215,6 +216,9 @@ NM_AVAILABLE_IN_1_14
 NMSettingConnectionLlmnr nm_setting_connection_get_llmnr(NMSettingConnection *setting);
 NM_AVAILABLE_IN_1_34
 NMSettingConnectionDnsOverTls nm_setting_connection_get_dns_over_tls(NMSettingConnection *setting);
+
+NM_AVAILABLE_IN_1_40
+NMMptcpFlags nm_setting_connection_get_mptcp_flags(NMSettingConnection *setting);
 
 NM_AVAILABLE_IN_1_20
 gint32 nm_setting_connection_get_wait_device_timeout(NMSettingConnection *setting);

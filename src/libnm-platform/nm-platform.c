@@ -7,6 +7,8 @@
 
 #include "nm-platform.h"
 
+#include "libnm-std-aux/nm-linux-compat.h"
+
 #include <stdlib.h>
 #include <unistd.h>
 #include <netinet/in.h>
@@ -402,7 +404,7 @@ const NMPGenlFamilyInfo nmp_genl_family_infos[_NMP_GENL_FAMILY_TYPE_NUM] = {
         },
     [NMP_GENL_FAMILY_TYPE_MPTCP_PM] =
         {
-            .name = "mptcp_pm",
+            .name = MPTCP_PM_NAME,
         },
     [NMP_GENL_FAMILY_TYPE_NL80211] =
         {
@@ -5320,23 +5322,26 @@ nm_platform_object_delete(NMPlatform *self, const NMPObject *obj)
 
     _CHECK_SELF(self, klass, FALSE);
 
-    switch (NMP_OBJECT_GET_TYPE(obj)) {
-    case NMP_OBJECT_TYPE_ROUTING_RULE:
-        _LOGD("%s: delete %s",
-              NMP_OBJECT_GET_CLASS(obj)->obj_type_name,
-              nmp_object_to_string(obj, NMP_OBJECT_TO_STRING_PUBLIC, sbuf, sizeof(sbuf)));
-        break;
-    case NMP_OBJECT_TYPE_IP4_ROUTE:
-    case NMP_OBJECT_TYPE_IP6_ROUTE:
-    case NMP_OBJECT_TYPE_QDISC:
-    case NMP_OBJECT_TYPE_TFILTER:
-        ifindex = NMP_OBJECT_CAST_OBJ_WITH_IFINDEX(obj)->ifindex;
-        _LOG3D("%s: delete %s",
-               NMP_OBJECT_GET_CLASS(obj)->obj_type_name,
-               nmp_object_to_string(obj, NMP_OBJECT_TO_STRING_PUBLIC, sbuf, sizeof(sbuf)));
-        break;
-    default:
-        g_return_val_if_reached(FALSE);
+    if (_LOGD_ENABLED()) {
+        switch (NMP_OBJECT_GET_TYPE(obj)) {
+        case NMP_OBJECT_TYPE_ROUTING_RULE:
+        case NMP_OBJECT_TYPE_MPTCP_ADDR:
+            _LOGD("%s: delete %s",
+                  NMP_OBJECT_GET_CLASS(obj)->obj_type_name,
+                  nmp_object_to_string(obj, NMP_OBJECT_TO_STRING_PUBLIC, sbuf, sizeof(sbuf)));
+            break;
+        case NMP_OBJECT_TYPE_IP4_ROUTE:
+        case NMP_OBJECT_TYPE_IP6_ROUTE:
+        case NMP_OBJECT_TYPE_QDISC:
+        case NMP_OBJECT_TYPE_TFILTER:
+            ifindex = NMP_OBJECT_CAST_OBJ_WITH_IFINDEX(obj)->ifindex;
+            _LOG3D("%s: delete %s",
+                   NMP_OBJECT_GET_CLASS(obj)->obj_type_name,
+                   nmp_object_to_string(obj, NMP_OBJECT_TO_STRING_PUBLIC, sbuf, sizeof(sbuf)));
+            break;
+        default:
+            g_return_val_if_reached(FALSE);
+        }
     }
 
     return klass->object_delete(self, obj);
@@ -7761,14 +7766,12 @@ nm_platform_mptcp_addr_to_string(const NMPlatformMptcpAddr *mptcp_addr, char *bu
 
     g_snprintf(buf,
                len,
-               "%s" /* in_kernel */
                "%s" /* address */
                "%s" /* port */
                "%s" /* id */
                "%s" /* flags */
                "%s" /* ifindex */
                "",
-               mptcp_addr->in_kernel ? "" : "[nm] ",
                str_addr,
                mptcp_addr->port == 0 ? "" : nm_sprintf_buf(str_port, " port %u", mptcp_addr->port),
                mptcp_addr->id == 0 ? "" : nm_sprintf_buf(str_id, " id %u", mptcp_addr->id),
@@ -7785,13 +7788,7 @@ nm_platform_mptcp_addr_hash_update(const NMPlatformMptcpAddr *obj, NMHashState *
     nm_assert(obj);
     nm_assert_addr_family_or_unspec(obj->addr_family);
 
-    nm_hash_update_vals(h,
-                        obj->id,
-                        obj->flags,
-                        obj->port,
-                        obj->addr_family,
-                        (bool) obj->in_kernel,
-                        obj->ifindex);
+    nm_hash_update_vals(h, obj->id, obj->flags, obj->port, obj->addr_family, obj->ifindex);
     if (NM_IN_SET(obj->addr_family, AF_INET, AF_INET6))
         nm_hash_update(h, &obj->addr, nm_utils_addr_family_to_size(obj->addr_family));
 }
@@ -7804,14 +7801,36 @@ nm_platform_mptcp_addr_cmp(const NMPlatformMptcpAddr *a, const NMPlatformMptcpAd
     nm_assert_addr_family_or_unspec(a->addr_family);
     nm_assert_addr_family_or_unspec(b->addr_family);
 
+    NM_CMP_FIELD(a, b, ifindex);
     NM_CMP_FIELD(a, b, id);
-    NM_CMP_FIELD_UNSAFE(a, b, in_kernel);
     NM_CMP_FIELD(a, b, addr_family);
     if (NM_IN_SET(a->addr_family, AF_INET, AF_INET6))
         NM_CMP_FIELD_MEMCMP_LEN(a, b, addr, nm_utils_addr_family_to_size(a->addr_family));
-    NM_CMP_FIELD(a, b, ifindex);
+    NM_CMP_FIELD(a, b, port);
 
     return 0;
+}
+
+guint
+nm_platform_mptcp_addr_index_addr_cmp(gconstpointer data)
+{
+    const NMPlatformMptcpAddr *mptcp_addr = data;
+    NMHashState                h;
+
+    nm_hash_init(&h, 1408914077u);
+    nm_hash_update_val(&h, mptcp_addr->addr_family);
+    nm_hash_update(&h, &mptcp_addr->addr, nm_utils_addr_family_to_size(mptcp_addr->addr_family));
+    return nm_hash_complete(&h);
+}
+
+gboolean
+nm_platform_mptcp_addr_index_addr_equal(gconstpointer data_a, gconstpointer data_b)
+{
+    const NMPlatformMptcpAddr *mptcp_addr_a = data_a;
+    const NMPlatformMptcpAddr *mptcp_addr_b = data_b;
+
+    return mptcp_addr_a->addr_family == mptcp_addr_b->addr_family
+           && nm_ip_addr_equal(mptcp_addr_a->addr_family, &mptcp_addr_a->addr, &mptcp_addr_b->addr);
 }
 
 const char *
@@ -9375,6 +9394,24 @@ nm_platform_genl_get_family_id(NMPlatform *self, NMPGenlFamilyType family_type)
         g_return_val_if_reached(0);
 
     return klass->genl_get_family_id(self, family_type);
+}
+
+/*****************************************************************************/
+
+int
+nm_platform_mptcp_addr_update(NMPlatform *self, NMOptionBool add, const NMPlatformMptcpAddr *addr)
+{
+    _CHECK_SELF(self, klass, -NME_BUG);
+
+    return klass->mptcp_addr_update(self, add, addr);
+}
+
+GPtrArray *
+nm_platform_mptcp_addrs_dump(NMPlatform *self)
+{
+    _CHECK_SELF(self, klass, NULL);
+
+    return klass->mptcp_addrs_dump(self);
 }
 
 /*****************************************************************************/

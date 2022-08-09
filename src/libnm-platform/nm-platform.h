@@ -1098,21 +1098,11 @@ typedef void (*NMPlatformAsyncCallback)(GError *error, gpointer user_data);
 
 typedef struct {
     __NMPlatformObjWithIfindex_COMMON;
-
     guint32  id;
     guint32  flags;
     guint16  port;
     NMIPAddr addr;
     gint8    addr_family;
-
-    /* If TRUE, then the instance was received by kernel and is inside NMPlatform
-     * cache. In that case, the "id" is set and acts as primary key for the instance.
-     *
-     * If FALSE, this instance is not yet configured in kernel. In this case,
-     * the tuple (id, addr_family, addr) is the primary key of the instance.
-     * This way, we can track mptcp addresses in NetworkManager internally,
-     * before configuring them in kernel. */
-    bool in_kernel : 1;
 } NMPlatformMptcpAddr;
 
 #undef __NMPlatformObjWithIfindex_COMMON
@@ -1404,6 +1394,10 @@ typedef struct {
 
     guint16 (*genl_get_family_id)(NMPlatform *platform, NMPGenlFamilyType family_type);
 
+    int (*mptcp_addr_update)(NMPlatform *self, NMOptionBool add, const NMPlatformMptcpAddr *addr);
+
+    GPtrArray *(*mptcp_addrs_dump)(NMPlatform *self);
+
 } NMPlatformClass;
 
 /* NMPlatform signals
@@ -1617,6 +1611,18 @@ nm_platform_ip6_address_get_scope(const struct in6_addr *addr)
 static inline guint8
 nm_platform_ip_address_get_scope(int addr_family, gconstpointer addr)
 {
+    /* Note that this function returns the scope as we configure
+     * it in kernel (for IPv4) or as kernel chooses it (for IPv6).
+     *
+     * That means, rfc1918 private addresses nm_utils_ip_is_site_local() are
+     * considered RT_SCOPE_UNIVERSE.
+     *
+     * Also, the deprecated IN6_IS_ADDR_SITELOCAL() addresses (fec0::/10)
+     * are considered RT_SCOPE_SITE, while unique local addresses (ULA, fc00::/7)
+     * are considered RT_SCOPE_UNIVERSE.
+     *
+     * You may not want to use this function when reasoning about
+     * site-local addresses (RFC1918, ULA). */
     if (NM_IS_IPv4(addr_family))
         return nm_platform_ip4_address_get_scope(*((in_addr_t *) addr));
     return nm_platform_ip6_address_get_scope(addr);
@@ -2587,6 +2593,9 @@ void nm_platform_tfilter_hash_update(const NMPlatformTfilter *obj, NMHashState *
 
 void nm_platform_mptcp_addr_hash_update(const NMPlatformMptcpAddr *obj, NMHashState *h);
 
+guint    nm_platform_mptcp_addr_index_addr_cmp(gconstpointer data);
+gboolean nm_platform_mptcp_addr_index_addr_equal(gconstpointer data_a, gconstpointer data_b);
+
 #define NM_PLATFORM_LINK_FLAGS2STR_MAX_LEN ((gsize) 162)
 
 const char *nm_platform_link_flags2str(unsigned flags, char *buf, gsize len);
@@ -2662,5 +2671,10 @@ gboolean nm_platform_ip_address_match(int                        addr_family,
 /*****************************************************************************/
 
 guint16 nm_platform_genl_get_family_id(NMPlatform *self, NMPGenlFamilyType family_type);
+
+int
+nm_platform_mptcp_addr_update(NMPlatform *self, NMOptionBool add, const NMPlatformMptcpAddr *addr);
+
+GPtrArray *nm_platform_mptcp_addrs_dump(NMPlatform *self);
 
 #endif /* __NETWORKMANAGER_PLATFORM_H__ */

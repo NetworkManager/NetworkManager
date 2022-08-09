@@ -1553,20 +1553,34 @@ _vt_cmd_plobj_id_cmp_routing_rule(const NMPlatformObject *obj1, const NMPlatform
 }
 
 _vt_cmd_plobj_id_cmp(mptcp_addr, NMPlatformMptcpAddr, {
-    NM_CMP_FIELD(obj1, obj2, id);
-    NM_CMP_FIELD_UNSAFE(obj1, obj2, in_kernel);
-    if (!obj1->in_kernel) {
-        /* See comment NMPlatformMptcpAddr.in_kernel for why. */
-        NM_CMP_FIELD(obj1, obj2, addr_family);
-
-        /* nm_utils_addr_family_to_size() asserts that addr-family is either AF_INET or AF_INET6.
-         * This means, we cannot compare totally bogus objects. That is in particular fine
-         * for instances which are not "in_kernel".  While we might receive unexpected values
-         * from kernel, we should not create them for internal purposes. */
-        NM_CMP_FIELD_MEMCMP_LEN(obj1, obj2, addr, nm_utils_addr_family_to_size(obj1->addr_family));
-
-        NM_CMP_FIELD(obj1, obj2, port);
-    }
+    /* The primary key of an MPTCP endpoint is only the address:port@ifindex.
+     *
+     * Which does not fully correspond to kernel's view. Kernel's view is determined
+     * by the question whether you can add two objects that only differ by one
+     * attribute. If you can, the attribute is part of the ID otherwise it isn't.
+     *
+     * Note that for kernel, the "ifindex" is not part of the identity.
+     * That is, you cannot two add two endpoints that only differ by
+     * ifindex. However, for our purpose, it is very useful to make
+     * the "ifindex" part of the identity. For example, NMPGlobalTracker will use
+     * this to track MPTCP addresses from independent callers (NML3Cfg).
+     * It would be bad, if objects that differ by "ifindex" would be
+     * combined.
+     *
+     * The "id" is intentionally not part of the identity for us. Note however, that kernel
+     * does not allow configuring duplicates "id" -- so the "id" could be a primary key
+     * as far as kernel is concerned. However, when we track MPTCP endpoints that
+     * we want to configure, the "id" is left undefined (and we let kernel choose it).
+     * If the "id" would be part of the NMPObject's ID, we could not lookup
+     * an object unless we know the "id" -- which we often don't.
+     */
+    NM_CMP_FIELD(obj1, obj2, ifindex);
+    NM_CMP_FIELD(obj1, obj2, addr_family);
+    NM_CMP_FIELD_MEMCMP_LEN(obj1,
+                            obj2,
+                            addr,
+                            nm_utils_addr_family_to_size_untrusted(obj1->addr_family));
+    NM_CMP_FIELD(obj1, obj2, port);
 });
 
 void
@@ -1655,13 +1669,9 @@ _vt_cmd_plobj_id_hash_update(tfilter, NMPlatformTfilter, {
 });
 
 _vt_cmd_plobj_id_hash_update(mptcp_addr, NMPlatformMptcpAddr, {
-    if (obj->in_kernel) {
-        nm_hash_update_val(h, obj->id);
-    } else {
-        /* _vt_cmd_plobj_id_cmp_mptcp_addr for why. */
-        nm_hash_update_vals(h, obj->id, obj->addr_family, obj->port);
-        nm_hash_update(h, &obj->addr, nm_utils_addr_family_to_size(obj->addr_family));
-    }
+    /* See the corresponding ID cmp function for details. */
+    nm_hash_update_vals(h, obj->addr_family, obj->port, obj->ifindex);
+    nm_hash_update(h, &obj->addr, nm_utils_addr_family_to_size_untrusted(obj->addr_family));
 });
 
 static void
@@ -1775,7 +1785,7 @@ _vt_cmd_obj_is_alive_tfilter(const NMPObject *obj)
 static gboolean
 _vt_cmd_obj_is_alive_mptcp_addr(const NMPObject *obj)
 {
-    return NM_IN_SET(obj->mptcp_addr.addr_family, AF_INET, AF_INET6);
+    return NM_IN_SET(obj->mptcp_addr.addr_family, AF_INET, AF_INET6, AF_UNSPEC);
 }
 
 gboolean

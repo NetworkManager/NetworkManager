@@ -354,6 +354,14 @@ void           nla_nest_cancel(struct nl_msg *msg, const struct nlattr *attr);
 struct nlattr *nla_nest_start(struct nl_msg *msg, int attrtype);
 int            nla_nest_end(struct nl_msg *msg, struct nlattr *start);
 
+#define NLA_NEST_END(msg, nest_start)              \
+    G_STMT_START                                   \
+    {                                              \
+        if (nla_nest_end((msg), (nest_start)) < 0) \
+            goto nla_put_failure;                  \
+    }                                              \
+    G_STMT_END
+
 int nla_parse(struct nlattr           *tb[],
               int                      maxtype,
               struct nlattr           *head,
@@ -442,19 +450,26 @@ void          nlmsg_set_creds(struct nl_msg *msg, struct ucred *creds);
 NM_AUTO_DEFINE_FCN0(struct nl_msg *, _nm_auto_nl_msg_cleanup, nlmsg_free);
 #define nm_auto_nlmsg nm_auto(_nm_auto_nl_msg_cleanup)
 
+static inline const struct nlmsghdr *
+nlmsg_undata(const void *data)
+{
+    /* from the data, get back the header. It's the inverse of nlmsg_data(). */
+    return (void *) (((unsigned char *) data) - NLMSG_HDRLEN);
+}
+
 static inline void *
 nlmsg_data(const struct nlmsghdr *nlh)
 {
-    return (unsigned char *) nlh + NLMSG_HDRLEN;
+    return ((unsigned char *) nlh) + NLMSG_HDRLEN;
 }
 
 static inline void *
 nlmsg_tail(const struct nlmsghdr *nlh)
 {
-    return (unsigned char *) nlh + NLMSG_ALIGN(nlh->nlmsg_len);
+    return ((unsigned char *) nlh) + NLMSG_ALIGN(nlh->nlmsg_len);
 }
 
-struct nlmsghdr *nlmsg_hdr(struct nl_msg *n);
+struct nlmsghdr *nlmsg_hdr(const struct nl_msg *n);
 
 static inline int
 nlmsg_valid_hdr(const struct nlmsghdr *nlh, int hdrlen)
@@ -489,6 +504,8 @@ nlmsg_find_attr(struct nlmsghdr *nlh, int hdrlen, int attrtype)
 {
     return nla_find(nlmsg_attrdata(nlh, hdrlen), nlmsg_attrlen(nlh, hdrlen), attrtype);
 }
+
+int nlmsg_parse_error(const struct nlmsghdr *nlh, const char **out_extack_msg);
 
 int nlmsg_parse(const struct nlmsghdr   *nlh,
                 int                      hdrlen,
@@ -585,9 +602,11 @@ enum nl_cb_action {
     NL_STOP,
 };
 
-typedef int (*nl_recvmsg_msg_cb_t)(struct nl_msg *msg, void *arg);
+typedef int (*nl_recvmsg_msg_cb_t)(const struct nl_msg *msg, void *arg);
 
-typedef int (*nl_recvmsg_err_cb_t)(struct sockaddr_nl *nla, struct nlmsgerr *nlerr, void *arg);
+typedef int (*nl_recvmsg_err_cb_t)(const struct sockaddr_nl *nla,
+                                   const struct nlmsgerr    *nlerr,
+                                   void                     *arg);
 
 struct nl_cb {
     nl_recvmsg_msg_cb_t valid_cb;

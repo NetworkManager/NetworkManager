@@ -255,7 +255,7 @@ flags_done:
 /*****************************************************************************/
 
 struct nlmsghdr *
-nlmsg_hdr(struct nl_msg *n)
+nlmsg_hdr(const struct nl_msg *n)
 {
     return n->nm_nlh;
 }
@@ -287,6 +287,52 @@ nlmsg_reserve(struct nl_msg *n, uint32_t len, uint32_t pad)
         memset(buf + len, 0, tlen - len);
 
     return buf;
+}
+
+/*****************************************************************************/
+
+int
+nlmsg_parse_error(const struct nlmsghdr *nlh, const char **out_extack_msg)
+{
+    const struct nlmsgerr *e;
+
+    nm_assert(nlh);
+
+    NM_SET_OUT(out_extack_msg, NULL);
+
+    if (nlh->nlmsg_type != NLMSG_ERROR)
+        return -NME_NL_MSG_INVAL;
+
+    if (nlh->nlmsg_len < nlmsg_size(sizeof(struct nlmsgerr))) {
+        /* Truncated error message, the default action
+         * is to stop parsing. The user may overrule
+         * this action by returning NL_SKIP or
+         * NL_PROCEED (dangerous) */
+        return -NME_NL_MSG_TRUNC;
+    }
+
+    e = nlmsg_data(nlh);
+
+    if (!e->error)
+        return 0;
+
+    if (NM_FLAGS_HAS(nlh->nlmsg_flags, NLM_F_ACK_TLVS) && out_extack_msg
+        && nlh->nlmsg_len >= sizeof(*e) + e->msg.nlmsg_len) {
+        static const struct nla_policy policy[] = {
+            [NLMSGERR_ATTR_MSG]  = {.type = NLA_STRING},
+            [NLMSGERR_ATTR_OFFS] = {.type = NLA_U32},
+        };
+        struct nlattr *tb[G_N_ELEMENTS(policy)];
+        struct nlattr *tlvs;
+
+        tlvs = (struct nlattr *) ((char *) e + sizeof(*e) + e->msg.nlmsg_len - NLMSG_HDRLEN);
+        if (nla_parse_arr(tb, tlvs, nlh->nlmsg_len - sizeof(*e) - e->msg.nlmsg_len, policy) >= 0) {
+            if (tb[NLMSGERR_ATTR_MSG])
+                *out_extack_msg = nla_get_string(tb[NLMSGERR_ATTR_MSG]);
+        }
+    }
+
+    return -nm_errno_from_native(e->error);
 }
 
 /*****************************************************************************/
@@ -856,7 +902,7 @@ const struct nla_policy genl_ctrl_policy[CTRL_ATTR_MCAST_GROUPS + 1] = {
 };
 
 static int
-_genl_parse_getfamily(struct nl_msg *msg, void *arg)
+_genl_parse_getfamily(const struct nl_msg *msg, void *arg)
 {
     struct nlattr   *tb[G_N_ELEMENTS(genl_ctrl_policy)];
     struct nlmsghdr *nlh           = nlmsg_hdr(msg);
@@ -1155,7 +1201,7 @@ _cb_init(struct nl_cb *dst, const struct nl_cb *src)
 }
 
 static int
-ack_wait_handler(struct nl_msg *msg, void *arg)
+ack_wait_handler(const struct nl_msg *msg, void *arg)
 {
     return NL_STOP;
 }

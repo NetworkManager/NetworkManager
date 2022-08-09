@@ -1398,6 +1398,56 @@ _prop_get_connection_dns_over_tls(NMDevice *self)
                                                        NM_SETTING_CONNECTION_DNS_OVER_TLS_DEFAULT);
 }
 
+static NMMptcpFlags
+_prop_get_connection_mptcp_flags(NMDevice *self)
+{
+    NMConnection *connection;
+    NMMptcpFlags  mptcp_flags = NM_MPTCP_FLAGS_NONE;
+
+    g_return_val_if_fail(NM_IS_DEVICE(self), NM_MPTCP_FLAGS_DISABLED);
+
+    connection = nm_device_get_applied_connection(self);
+    if (connection) {
+        mptcp_flags =
+            nm_setting_connection_get_mptcp_flags(nm_connection_get_setting_connection(connection));
+        if (mptcp_flags != NM_MPTCP_FLAGS_NONE)
+            mptcp_flags = nm_mptcp_flags_normalize(mptcp_flags);
+    }
+
+    if (mptcp_flags == NM_MPTCP_FLAGS_NONE) {
+        guint64 v;
+
+        v = nm_config_data_get_connection_default_int64(NM_CONFIG_GET_DATA,
+                                                        NM_CON_DEFAULT("connection.mptcp-flags"),
+                                                        self,
+                                                        0,
+                                                        G_MAXINT64,
+                                                        NM_MPTCP_FLAGS_NONE);
+        /* We filter out all invalid settings and accept it. Somewhat intentionally, we don't do a
+         * strict parsing of the value to support forward compatibility. */
+        if (v != NM_MPTCP_FLAGS_NONE)
+            mptcp_flags = nm_mptcp_flags_normalize(v);
+    }
+
+    if (mptcp_flags == NM_MPTCP_FLAGS_NONE) {
+        gint32 v;
+
+        v = nm_platform_sysctl_get_int32(nm_device_get_platform(self),
+                                         NMP_SYSCTL_PATHID_ABSOLUTE("/proc/sys/net/mptcp/enabled"),
+                                         -1);
+        if (v > 0) {
+            /* if MPTCP is enabled via the sysctl, we use the default. */
+            mptcp_flags = _NM_MPTCP_FLAGS_DEFAULT;
+        } else
+            mptcp_flags = NM_MPTCP_FLAGS_DISABLED;
+    }
+
+    nm_assert(mptcp_flags != NM_MPTCP_FLAGS_NONE
+              && mptcp_flags == nm_mptcp_flags_normalize(mptcp_flags));
+
+    return mptcp_flags;
+}
+
 static guint32
 _prop_get_ipvx_route_table(NMDevice *self, int addr_family)
 {
@@ -2773,6 +2823,7 @@ nm_device_create_l3_config_data_from_connection(NMDevice *self, NMConnection *co
     nm_l3_config_data_set_llmnr(l3cd, _prop_get_connection_llmnr(self));
     nm_l3_config_data_set_dns_over_tls(l3cd, _prop_get_connection_dns_over_tls(self));
     nm_l3_config_data_set_ip6_privacy(l3cd, _prop_get_ipv6_ip6_privacy(self));
+    nm_l3_config_data_set_mptcp_flags(l3cd, _prop_get_connection_mptcp_flags(self));
     return l3cd;
 }
 
@@ -12662,6 +12713,7 @@ can_reapply_change(NMDevice   *self,
                                                  NM_SETTING_CONNECTION_MDNS,
                                                  NM_SETTING_CONNECTION_LLMNR,
                                                  NM_SETTING_CONNECTION_DNS_OVER_TLS,
+                                                 NM_SETTING_CONNECTION_MPTCP_FLAGS,
                                                  NM_SETTING_CONNECTION_WAIT_ACTIVATION_DELAY);
     }
 
@@ -12872,6 +12924,17 @@ check_and_reapply_connection(NMDevice     *self,
             priv->ip_data_4.do_reapply = TRUE;
         if (nm_g_hash_table_lookup(diffs, NM_SETTING_IP6_CONFIG_SETTING_NAME))
             priv->ip_data_6.do_reapply = TRUE;
+
+        if (nm_g_hash_table_contains_any(
+                nm_g_hash_table_lookup(diffs, NM_SETTING_CONNECTION_SETTING_NAME),
+                NM_SETTING_CONNECTION_LLDP,
+                NM_SETTING_CONNECTION_MDNS,
+                NM_SETTING_CONNECTION_LLMNR,
+                NM_SETTING_CONNECTION_DNS_OVER_TLS,
+                NM_SETTING_CONNECTION_MPTCP_FLAGS)) {
+            priv->ip_data_4.do_reapply = TRUE;
+            priv->ip_data_6.do_reapply = TRUE;
+        }
 
         nm_device_activate_schedule_stage3_ip_config(self, FALSE);
 

@@ -1307,6 +1307,28 @@ nm_utils_addr_family_to_size(int addr_family)
     return nm_assert_unreachable_val(0);
 }
 
+static inline size_t
+nm_utils_addr_family_to_size_untrusted(int addr_family)
+{
+    /* This is almost the same as nm_utils_addr_family_to_size().
+     * The difference is that nm_utils_addr_family_to_size() requires that
+     * addr_family is either AF_INET or AF_INET6 (it asserts against that).
+     *
+     * This variant accepts any addr_family, but returns zero for any unknown
+     * family.
+     *
+     * Use this, if the address family is untrusted or not guaranteed to be valid.
+     * Of course, then you also need to handle that this function potentially returns
+     * zero. */
+    switch (addr_family) {
+    case NM_AF_INET:
+        return NM_AF_INET_SIZE;
+    case NM_AF_INET6:
+        return NM_AF_INET6_SIZE;
+    }
+    return 0;
+}
+
 static inline int
 nm_utils_addr_family_from_size(size_t len)
 {
