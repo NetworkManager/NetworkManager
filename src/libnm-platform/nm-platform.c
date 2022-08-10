@@ -115,24 +115,29 @@ nmp_link_address_get_as_bytes(const NMPLinkAddress *addr)
 #define _NMLOG_DOMAIN      LOGD_PLATFORM
 #define _NMLOG_PREFIX_NAME "platform"
 
-#define NMLOG_COMMON(level, name, ...)                                                \
-    char                    __prefix[32];                                             \
-    const char             *__p_prefix = _NMLOG_PREFIX_NAME;                          \
-    const NMPlatform *const __self     = (self);                                      \
-    const char             *__name     = name;                                        \
-                                                                                      \
-    if (__self && NM_PLATFORM_GET_PRIVATE(__self)->log_with_ptr) {                    \
-        g_snprintf(__prefix, sizeof(__prefix), "%s[%p]", _NMLOG_PREFIX_NAME, __self); \
-        __p_prefix = __prefix;                                                        \
-    }                                                                                 \
-    _nm_log(__level,                                                                  \
-            _NMLOG_DOMAIN,                                                            \
-            0,                                                                        \
-            __name,                                                                   \
-            NULL,                                                                     \
-            "%s: %s%s%s" _NM_UTILS_MACRO_FIRST(__VA_ARGS__),                          \
-            __p_prefix,                                                               \
-            NM_PRINT_FMT_QUOTED(__name, "(", __name, ") ", "") _NM_UTILS_MACRO_REST(__VA_ARGS__));
+#define NMLOG_COMMON(level, name, ...)                                                    \
+    G_STMT_START                                                                          \
+    {                                                                                     \
+        char                    __prefix[32];                                             \
+        const char             *__p_prefix = _NMLOG_PREFIX_NAME;                          \
+        const NMPlatform *const __self     = (self);                                      \
+        const char             *__name     = name;                                        \
+                                                                                          \
+        if (__self && NM_PLATFORM_GET_PRIVATE(__self)->log_with_ptr) {                    \
+            g_snprintf(__prefix, sizeof(__prefix), "%s[%p]", _NMLOG_PREFIX_NAME, __self); \
+            __p_prefix = __prefix;                                                        \
+        }                                                                                 \
+        _nm_log(__level,                                                                  \
+                _NMLOG_DOMAIN,                                                            \
+                0,                                                                        \
+                __name,                                                                   \
+                NULL,                                                                     \
+                "%s: %s%s%s" _NM_UTILS_MACRO_FIRST(__VA_ARGS__),                          \
+                __p_prefix,                                                               \
+                NM_PRINT_FMT_QUOTED(__name, "(", __name, ") ", "")                        \
+                    _NM_UTILS_MACRO_REST(__VA_ARGS__));                                   \
+    }                                                                                     \
+    G_STMT_END
 
 #define _NMLOG(level, ...)                                \
     G_STMT_START                                          \
