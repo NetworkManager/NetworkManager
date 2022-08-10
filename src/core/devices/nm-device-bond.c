@@ -360,7 +360,7 @@ _bond_arp_ip_target_to_platform(const char *value, in_addr_t out[static NM_BOND_
     int                  i;
     int                  added = 0;
 
-    ip = nm_strsplit_set(value, " ");
+    ip = nm_utils_bond_option_arp_ip_targets_split(value);
 
     if (!ip)
         return added;
@@ -369,7 +369,7 @@ _bond_arp_ip_target_to_platform(const char *value, in_addr_t out[static NM_BOND_
         if (added > NM_BOND_MAX_ARP_TARGETS - 1)
             break;
         if (!nm_utils_parse_inaddr_bin(AF_INET, ip[i], NULL, &in_a))
-            continue;
+            nm_assert_not_reached(); /* verify() already validated the IP addresses */
 
         out[added++] = in_a;
     }
