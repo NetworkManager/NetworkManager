@@ -1688,7 +1688,7 @@ nm_config_data_get_connection_default_int64(const NMConfigData *self,
     const char *value;
 
     value = nm_config_data_get_connection_default(self, property, device);
-    return _nm_utils_ascii_str_to_int64(value, 10, min, max, fallback);
+    return _nm_utils_ascii_str_to_int64(value, 0, min, max, fallback);
 }
 
 static const char *
