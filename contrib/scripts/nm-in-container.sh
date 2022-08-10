@@ -355,6 +355,7 @@ RUN dnf install -y \\
     strace \\
     systemd \\
     systemd-devel \\
+    tcpdump \\
     teamd-devel \\
     vala \\
     vala-devel \\
