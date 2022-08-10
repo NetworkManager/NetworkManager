@@ -9529,9 +9529,13 @@ log_link(NMPlatform                *self,
 {
     char sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
 
-    _LOG3D("signal: link %7s: %s",
-           nm_platform_signal_change_type_to_string(change_type),
-           nm_platform_link_to_string(device, sbuf, sizeof(sbuf)));
+    if (_LOGD_ENABLED()) {
+        NMLOG_COMMON(LOGL_DEBUG,
+                     device->name,
+                     "signal: link %7s: %s",
+                     nm_platform_signal_change_type_to_string(change_type),
+                     nm_platform_link_to_string(device, sbuf, sizeof(sbuf)));
+    }
 }
 
 static void
