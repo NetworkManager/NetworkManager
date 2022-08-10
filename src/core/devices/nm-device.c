@@ -77,6 +77,7 @@
 
 #include "nm-device-generic.h"
 #include "nm-device-bridge.h"
+#include "nm-device-loopback.h"
 #include "nm-device-vlan.h"
 #include "nm-device-vrf.h"
 #include "nm-device-wireguard.h"
@@ -1572,6 +1573,9 @@ _prop_get_ipv4_link_local(NMDevice *self)
     if (!s_ip4)
         return NM_SETTING_IP4_LL_DISABLED;
 
+    if (NM_IS_DEVICE_LOOPBACK(self))
+        return NM_SETTING_IP4_LL_DISABLED;
+
     link_local = nm_setting_ip4_config_get_link_local(s_ip4);
 
     if (link_local == NM_SETTING_IP4_LL_DEFAULT) {
@@ -2724,12 +2728,6 @@ _ethtool_state_set(NMDevice *self)
 }
 
 /*****************************************************************************/
-
-static gboolean
-is_loopback(NMDevice *self)
-{
-    return NM_IS_DEVICE_GENERIC(self) && NM_DEVICE_GET_PRIVATE(self)->ifindex == 1;
-}
 
 gboolean
 nm_device_is_vpn(NMDevice *self)
@@ -4990,6 +4988,9 @@ nm_device_get_route_metric_default(NMDeviceType device_type)
      */
 
     switch (device_type) {
+    case NM_DEVICE_TYPE_LOOPBACK:
+        return 30;
+
     /* 50 is also used for VPN plugins (NM_VPN_ROUTE_METRIC_DEFAULT).
      *
      * Note that returning 50 from this function means that this device-type is
@@ -5410,7 +5411,7 @@ concheck_is_possible(NMDevice *self)
 {
     NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
 
-    if (!nm_device_is_real(self) || is_loopback(self))
+    if (!nm_device_is_real(self) || NM_IS_DEVICE_LOOPBACK(self))
         return FALSE;
 
     /* we enable periodic checks for every device state (except UNKNOWN). Especially with
@@ -7443,11 +7444,6 @@ realize_start_setup(NMDevice             *self,
                                   NM_UNMANAGED_EXTERNAL_DOWN,
                                   _dev_unmanaged_is_external_down(self, TRUE));
 
-    /* Unmanaged the loopback device with an explicit NM_UNMANAGED_BY_TYPE flag.
-     * Later we might want to manage 'lo' too. Currently, that doesn't work because
-     * NetworkManager might down the interface or remove the 127.0.0.1 address. */
-    nm_device_set_unmanaged_flags(self, NM_UNMANAGED_BY_TYPE, is_loopback(self));
-
     nm_device_set_unmanaged_by_user_udev(self);
     nm_device_set_unmanaged_by_user_conf(self);
 
@@ -7637,9 +7633,9 @@ nm_device_unrealize(NMDevice *self, gboolean remove_resources, GError **error)
     nm_device_set_unmanaged_flags(self, NM_UNMANAGED_PLATFORM_INIT, TRUE);
 
     nm_device_set_unmanaged_flags(self,
-                                  NM_UNMANAGED_PARENT | NM_UNMANAGED_BY_TYPE
-                                      | NM_UNMANAGED_USER_UDEV | NM_UNMANAGED_USER_EXPLICIT
-                                      | NM_UNMANAGED_EXTERNAL_DOWN | NM_UNMANAGED_IS_SLAVE,
+                                  NM_UNMANAGED_PARENT | NM_UNMANAGED_USER_UDEV
+                                      | NM_UNMANAGED_USER_EXPLICIT | NM_UNMANAGED_EXTERNAL_DOWN
+                                      | NM_UNMANAGED_IS_SLAVE,
                                   NM_UNMAN_FLAG_OP_FORGET);
 
     nm_device_state_changed(self,
@@ -10781,7 +10777,8 @@ _dev_ipll6_set_llstate(NMDevice *self, NML3IPv6LLState llstate, const struct in6
               || (!priv->ipll_data_6.v6.ipv6ll
                   && NM_IN_SET(priv->ipll_data_6.v6.llstate,
                                NM_L3_IPV6LL_STATE_NONE,
-                               NM_L3_IPV6LL_STATE_DEFUNCT)));
+                               NM_L3_IPV6LL_STATE_DEFUNCT,
+                               NM_L3_IPV6LL_STATE_READY)));
 
     switch (priv->ipll_data_6.v6.llstate) {
     case NM_L3_IPV6LL_STATE_NONE:
@@ -10863,6 +10860,11 @@ _dev_ipll6_start(NMDevice *self)
 
     if (priv->ipll_data_6.v6.ipv6ll)
         return;
+
+    if (NM_IS_DEVICE_LOOPBACK(self)) {
+        _dev_ipll6_set_llstate(self, NM_L3_IPV6LL_STATE_READY, NULL);
+        return;
+    }
 
     if (!priv->l3cfg) {
         _LOGD(LOGD_IP6, "linklocal6: no IP link for IPv6");
@@ -10975,6 +10977,10 @@ nm_device_get_configured_mtu_from_connection(NMDevice          *self,
         if (setting)
             mtu = nm_setting_wireguard_get_mtu(NM_SETTING_WIREGUARD(setting));
         global_property_name = NM_CON_DEFAULT("wireguard.mtu");
+    } else if (setting_type == NM_TYPE_SETTING_LOOPBACK) {
+        if (setting)
+            mtu = nm_setting_loopback_get_mtu(NM_SETTING_LOOPBACK(setting));
+        global_property_name = NM_CON_DEFAULT("loopback.mtu");
     } else
         g_return_val_if_reached(0);
 
@@ -14101,7 +14107,6 @@ NM_UTILS_FLAGS2STR_DEFINE(nm_unmanaged_flags2str,
                           NM_UTILS_FLAGS2STR(NM_UNMANAGED_SLEEPING, "sleeping"),
                           NM_UTILS_FLAGS2STR(NM_UNMANAGED_QUITTING, "quitting"),
                           NM_UTILS_FLAGS2STR(NM_UNMANAGED_PARENT, "parent"),
-                          NM_UTILS_FLAGS2STR(NM_UNMANAGED_BY_TYPE, "by-type"),
                           NM_UTILS_FLAGS2STR(NM_UNMANAGED_PLATFORM_INIT, "platform-init"),
                           NM_UTILS_FLAGS2STR(NM_UNMANAGED_USER_EXPLICIT, "user-explicit"),
                           NM_UTILS_FLAGS2STR(NM_UNMANAGED_BY_DEFAULT, "by-default"),
@@ -17076,6 +17081,12 @@ nm_device_clear_dns_lookup_data(NMDevice *self)
         nm_clear_pointer(&priv->hostname_resolver_x[i], _hostname_resolver_free);
 }
 
+gboolean
+nm_device_get_allow_autoconnect_on_external(NMDevice *self)
+{
+    return NM_DEVICE_GET_CLASS(self)->allow_autoconnect_on_external;
+}
+
 static GInetAddress *
 get_address_for_hostname_dns_lookup(NMDevice *self, int addr_family)
 {
@@ -17520,7 +17531,7 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
         nm_assert(priv->type == NM_DEVICE_TYPE_UNKNOWN);
         priv->type = g_value_get_uint(value);
         nm_assert(priv->type > NM_DEVICE_TYPE_UNKNOWN);
-        nm_assert(priv->type <= NM_DEVICE_TYPE_VRF);
+        nm_assert(priv->type <= NM_DEVICE_TYPE_LOOPBACK);
         break;
     case PROP_LINK_TYPE:
         /* construct-only */

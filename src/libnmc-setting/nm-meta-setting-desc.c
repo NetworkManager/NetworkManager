@@ -6528,6 +6528,21 @@ static const NMMetaPropertyInfo *const property_infos_IP_TUNNEL[] = {
 };
 
 #undef  _CURRENT_NM_META_SETTING_TYPE
+#define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_LOOPBACK
+static const NMMetaPropertyInfo *const property_infos_LOOPBACK[] = {
+    PROPERTY_INFO_WITH_DESC (NM_SETTING_LOOPBACK_MTU,
+        .is_cli_option =                TRUE,
+        .property_alias =               "mtu",
+        .prompt =                       N_("MTU"),
+        .property_type =                &_pt_gobject_mtu,
+        .property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (mtu,
+            .get_fcn =                  MTU_GET_FCN (NMSettingLoopback, nm_setting_loopback_get_mtu),
+        ),
+    ),
+    NULL
+};
+
+#undef  _CURRENT_NM_META_SETTING_TYPE
 #define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_MACSEC
 static const NMMetaPropertyInfo *const property_infos_MACSEC[] = {
     PROPERTY_INFO_WITH_DESC (NM_SETTING_MACSEC_PARENT,
@@ -8280,6 +8295,7 @@ _setting_init_fcn_wireless (ARGS_SETTING_INIT_FCN)
 #define SETTING_PRETTY_NAME_IP4_CONFIG          N_("IPv4 protocol")
 #define SETTING_PRETTY_NAME_IP6_CONFIG          N_("IPv6 protocol")
 #define SETTING_PRETTY_NAME_IP_TUNNEL           N_("IP-tunnel settings")
+#define SETTING_PRETTY_NAME_LOOPBACK            N_("Loopback settings")
 #define SETTING_PRETTY_NAME_MACSEC              N_("MACsec connection")
 #define SETTING_PRETTY_NAME_MACVLAN             N_("macvlan connection")
 #define SETTING_PRETTY_NAME_MATCH               N_("Match")
@@ -8437,6 +8453,12 @@ const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[] = {
             NM_META_SETTING_VALID_PART_ITEM (IP_TUNNEL,             TRUE),
             NM_META_SETTING_VALID_PART_ITEM (WIRED,                 FALSE),
             NM_META_SETTING_VALID_PART_ITEM (ETHTOOL,               FALSE),
+        ),
+    ),
+    SETTING_INFO (LOOPBACK,
+        .valid_parts = NM_META_SETTING_VALID_PARTS (
+            NM_META_SETTING_VALID_PART_ITEM (CONNECTION,            TRUE),
+            NM_META_SETTING_VALID_PART_ITEM (LOOPBACK,              TRUE),
         ),
     ),
     SETTING_INFO (MACSEC,

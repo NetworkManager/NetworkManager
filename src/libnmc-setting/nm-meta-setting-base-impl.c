@@ -32,6 +32,7 @@
 #include "nm-setting-ip-tunnel.h"
 #include "nm-setting-ip4-config.h"
 #include "nm-setting-ip6-config.h"
+#include "nm-setting-loopback.h"
 #include "nm-setting-macsec.h"
 #include "nm-setting-macvlan.h"
 #include "nm-setting-match.h"
@@ -358,6 +359,13 @@ const NMMetaSettingInfo nm_meta_setting_infos[] = {
             .setting_name      = NM_SETTING_IP_TUNNEL_SETTING_NAME,
             .get_setting_gtype = nm_setting_ip_tunnel_get_type,
         },
+    [NM_META_SETTING_TYPE_LOOPBACK] =
+        {
+            .meta_type         = NM_META_SETTING_TYPE_LOOPBACK,
+            .setting_priority  = NM_SETTING_PRIORITY_HW_BASE,
+            .setting_name      = NM_SETTING_LOOPBACK_SETTING_NAME,
+            .get_setting_gtype = nm_setting_loopback_get_type,
+        },
     [NM_META_SETTING_TYPE_MACSEC] =
         {
             .meta_type         = NM_META_SETTING_TYPE_MACSEC,
@@ -608,6 +616,7 @@ const NMMetaSettingType nm_meta_setting_types_by_priority[] = {
     NM_META_SETTING_TYPE_GSM,
     NM_META_SETTING_TYPE_INFINIBAND,
     NM_META_SETTING_TYPE_IP_TUNNEL,
+    NM_META_SETTING_TYPE_LOOPBACK,
     NM_META_SETTING_TYPE_MACSEC,
     NM_META_SETTING_TYPE_MACVLAN,
     NM_META_SETTING_TYPE_OVS_BRIDGE,

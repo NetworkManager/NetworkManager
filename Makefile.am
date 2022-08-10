@@ -963,6 +963,8 @@ introspection_sources = \
 	introspection/org.freedesktop.NetworkManager.Device.IPTunnel.h \
 	introspection/org.freedesktop.NetworkManager.Device.Infiniband.c \
 	introspection/org.freedesktop.NetworkManager.Device.Infiniband.h \
+	introspection/org.freedesktop.NetworkManager.Device.Loopback.c \
+	introspection/org.freedesktop.NetworkManager.Device.Loopback.h \
 	introspection/org.freedesktop.NetworkManager.Device.Lowpan.c \
 	introspection/org.freedesktop.NetworkManager.Device.Lowpan.h \
 	introspection/org.freedesktop.NetworkManager.Device.Macsec.c \
@@ -1050,6 +1052,7 @@ DBUS_INTERFACE_DOCS = \
 	docs/api/dbus-org.freedesktop.NetworkManager.Device.Generic.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.Device.IPTunnel.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.Device.Infiniband.xml \
+	docs/api/dbus-org.freedesktop.NetworkManager.Device.Loopback.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.Device.Lowpan.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.Device.Macsec.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.Device.Macvlan.xml \
@@ -1118,6 +1121,7 @@ dbusinterfaces_DATA = \
 	introspection/org.freedesktop.NetworkManager.Device.Generic.xml \
 	introspection/org.freedesktop.NetworkManager.Device.IPTunnel.xml \
 	introspection/org.freedesktop.NetworkManager.Device.Infiniband.xml \
+	introspection/org.freedesktop.NetworkManager.Device.Loopback.xml \
 	introspection/org.freedesktop.NetworkManager.Device.Lowpan.xml \
 	introspection/org.freedesktop.NetworkManager.Device.Macsec.xml \
 	introspection/org.freedesktop.NetworkManager.Device.Macvlan.xml \
@@ -1199,6 +1203,7 @@ src_libnm_core_impl_lib_h_pub_real = \
 	src/libnm-core-public/nm-setting-ip-tunnel.h \
 	src/libnm-core-public/nm-setting-ip4-config.h \
 	src/libnm-core-public/nm-setting-ip6-config.h \
+	src/libnm-core-public/nm-setting-loopback.h \
 	src/libnm-core-public/nm-setting-macsec.h \
 	src/libnm-core-public/nm-setting-macvlan.h \
 	src/libnm-core-public/nm-setting-match.h \
@@ -1278,6 +1283,7 @@ src_libnm_core_impl_lib_c_settings_real = \
 	src/libnm-core-impl/nm-setting-ip-tunnel.c \
 	src/libnm-core-impl/nm-setting-ip4-config.c \
 	src/libnm-core-impl/nm-setting-ip6-config.c \
+	src/libnm-core-impl/nm-setting-loopback.c \
 	src/libnm-core-impl/nm-setting-macsec.c \
 	src/libnm-core-impl/nm-setting-macvlan.c \
 	src/libnm-core-impl/nm-setting-match.c \
@@ -1672,6 +1678,7 @@ libnm_lib_h_pub_real = \
 	src/libnm-client-public/nm-device-generic.h \
 	src/libnm-client-public/nm-device-infiniband.h \
 	src/libnm-client-public/nm-device-ip-tunnel.h \
+	src/libnm-client-public/nm-device-loopback.h \
 	src/libnm-client-public/nm-device-macsec.h \
 	src/libnm-client-public/nm-device-macvlan.h \
 	src/libnm-client-public/nm-device-modem.h \
@@ -1742,6 +1749,7 @@ libnm_lib_c_real = \
 	src/libnm-client-impl/nm-device-generic.c \
 	src/libnm-client-impl/nm-device-infiniband.c \
 	src/libnm-client-impl/nm-device-ip-tunnel.c \
+	src/libnm-client-impl/nm-device-loopback.c \
 	src/libnm-client-impl/nm-device-macsec.c \
 	src/libnm-client-impl/nm-device-macvlan.c \
 	src/libnm-client-impl/nm-device-modem.c \
@@ -2501,6 +2509,8 @@ src_core_libNetworkManager_la_SOURCES = \
 	src/core/devices/nm-device-infiniband.h \
 	src/core/devices/nm-device-ip-tunnel.c \
 	src/core/devices/nm-device-ip-tunnel.h \
+	src/core/devices/nm-device-loopback.c \
+	src/core/devices/nm-device-loopback.h \
 	src/core/devices/nm-device-macsec.c \
 	src/core/devices/nm-device-macsec.h \
 	src/core/devices/nm-device-macvlan.c \
