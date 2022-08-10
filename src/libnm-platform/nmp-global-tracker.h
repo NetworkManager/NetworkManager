@@ -74,9 +74,7 @@ gboolean nmp_global_tracker_untrack_all(NMPGlobalTracker *self,
 
 void nmp_global_tracker_sync(NMPGlobalTracker *self, NMPObjectType obj_type, gboolean keep_deleted);
 
-void nmp_global_tracker_sync_mptcp_addrs(NMPGlobalTracker *self,
-                                         gboolean          reapply,
-                                         gboolean          keep_deleted);
+void nmp_global_tracker_sync_mptcp_addrs(NMPGlobalTracker *self, gboolean reapply);
 
 /*****************************************************************************/
 

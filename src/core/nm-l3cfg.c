@@ -4449,7 +4449,7 @@ _l3_commit_mptcp(NML3Cfg *self, NML3CfgCommitType commit_type)
     nm_assert(commit_type < NM_L3_CFG_COMMIT_TYPE_REAPPLY || reapply);
 
     if (changed)
-        nmp_global_tracker_sync_mptcp_addrs(self->priv.global_tracker, reapply, FALSE);
+        nmp_global_tracker_sync_mptcp_addrs(self->priv.global_tracker, reapply);
     else
         nm_assert(!reapply);
 
@@ -5108,7 +5108,7 @@ finalize(GObject *object)
     if (_global_tracker_mptcp_untrack(self, AF_INET6))
         changed = TRUE;
     if (changed)
-        nmp_global_tracker_sync_mptcp_addrs(self->priv.global_tracker, FALSE, FALSE);
+        nmp_global_tracker_sync_mptcp_addrs(self->priv.global_tracker, FALSE);
 
     g_clear_object(&self->priv.netns);
     g_clear_object(&self->priv.platform);

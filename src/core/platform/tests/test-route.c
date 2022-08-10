@@ -2117,14 +2117,14 @@ test_mptcp(gconstpointer test_data)
                                  NULL);
     }
 
-    nmp_global_tracker_sync_mptcp_addrs(global_tracker, FALSE, FALSE);
+    nmp_global_tracker_sync_mptcp_addrs(global_tracker, FALSE);
 
     if (nmtst_get_rand_bool()) {
         gboolean reapply;
 
         nmp_global_tracker_untrack_all(global_tracker, USER_TAG, TRUE, FALSE);
         reapply = nmtst_get_rand_bool();
-        nmp_global_tracker_sync_mptcp_addrs(global_tracker, reapply, FALSE);
+        nmp_global_tracker_sync_mptcp_addrs(global_tracker, reapply);
 
         delete_extra = !reapply;
     } else

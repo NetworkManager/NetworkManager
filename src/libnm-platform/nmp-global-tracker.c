@@ -665,7 +665,7 @@ _mptcp_entries_cmp(gconstpointer a, gconstpointer b, gpointer user_data)
 }
 
 void
-nmp_global_tracker_sync_mptcp_addrs(NMPGlobalTracker *self, gboolean reapply, gboolean keep_deleted)
+nmp_global_tracker_sync_mptcp_addrs(NMPGlobalTracker *self, gboolean reapply)
 {
     char                           sbuf[64 + NM_UTILS_TO_STRING_BUFFER_SIZE];
     gs_unref_ptrarray GPtrArray   *kaddrs_arr = NULL;
@@ -683,9 +683,7 @@ nmp_global_tracker_sync_mptcp_addrs(NMPGlobalTracker *self, gboolean reapply, gb
 
     g_return_if_fail(NMP_IS_GLOBAL_TRACKER(self));
 
-    _LOGD("sync mptcp-addr%s%s",
-          reapply ? " (reapply)" : "",
-          keep_deleted ? " (keep-deleted)" : "");
+    _LOGD("sync mptcp-addr%s", reapply ? " (reapply)" : "");
 
     /* Iterate over the tracked objects and construct @handled_ifindexes, @entries
      * and @entries_to_delete.
@@ -712,14 +710,11 @@ nmp_global_tracker_sync_mptcp_addrs(NMPGlobalTracker *self, gboolean reapply, gb
                     nmp_global_tracker_mptcp_addr_init_for_ifindex(&xtst, mptcp_addr->ifindex))
                 == 0));
 
-        if (reapply) {
-            /* For a reapply, we clear all configured MPTCP addresses that we no longer
-             * shall configured, provided they are on one of the ifindexes we care
-             * about. */
-            if (!handled_ifindexes)
-                handled_ifindexes = g_hash_table_new(nm_direct_hash, NULL);
-            g_hash_table_add(handled_ifindexes, GINT_TO_POINTER(mptcp_addr->ifindex));
-        }
+        /* We need to know which ifindexes are managed/handled by us. Build an index
+         * for that. */
+        if (!handled_ifindexes)
+            handled_ifindexes = g_hash_table_new(nm_direct_hash, NULL);
+        g_hash_table_add(handled_ifindexes, GINT_TO_POINTER(mptcp_addr->ifindex));
 
         td_best = _track_obj_data_get_best_data(obj_data);
 
@@ -848,31 +843,21 @@ nmp_global_tracker_sync_mptcp_addrs(NMPGlobalTracker *self, gboolean reapply, gb
     /* First, delete all kaddrs which we no longer want... */
     if (kaddrs_arr) {
         for (i = 0; i < kaddrs_arr->len; i++) {
-            const NMPObject           *obj        = kaddrs_arr->pdata[i];
-            const NMPlatformMptcpAddr *mptcp_addr = NMP_OBJECT_CAST_MPTCP_ADDR(obj);
+            const NMPObject           *obj              = kaddrs_arr->pdata[i];
+            const NMPlatformMptcpAddr *mptcp_addr       = NMP_OBJECT_CAST_MPTCP_ADDR(obj);
+            gboolean                   add_to_kaddr_idx = FALSE;
 
             if (mptcp_addr->port != 0 || mptcp_addr->ifindex <= 0) {
                 /* We ignore all endpoints that have a port or no ifindex.
                  * Those were never created by us, let the user who created
                  * them handle them. */
-                nm_clear_pointer(&kaddrs_arr->pdata[i], nmp_object_unref);
-                continue;
+                goto keep_and_next;
             }
 
-            if (reapply) {
-                /* In full-sync-mode, we delete all MPTCP addrs that are for ifindexes
-                 * that we care about. */
-                if (!nm_g_hash_table_contains(handled_ifindexes,
-                                              GINT_TO_POINTER(mptcp_addr->ifindex))) {
-                    goto index_and_next;
-                }
-            } else {
-                /* Otherwise, we only delete objects that we remember to have
-                 * added earlier. */
-                if (!nm_g_hash_table_contains(entries_to_delete, obj)) {
-                    /* This object is not to delete. */
-                    goto index_and_next;
-                }
+            if (!nm_g_hash_table_contains(handled_ifindexes,
+                                          GINT_TO_POINTER(mptcp_addr->ifindex))) {
+                /* This endpoint is on an interface we don't manage. Ignore (and keep) it. */
+                goto keep_and_next;
             }
 
             /* We have the object in the delete-list. However, we might still also want
@@ -883,39 +868,48 @@ nmp_global_tracker_sync_mptcp_addrs(NMPGlobalTracker *self, gboolean reapply, gb
 
                 if (mptcp_addr->flags == mptcp_addr2->flags
                     && mptcp_addr->ifindex == mptcp_addr2->ifindex) {
-                    /* We also want to re-add this very same address. Don't delete it. */
-                    goto index_and_next;
+                    /* We want to add this address and it's already configured. Keep it
+                     * and remember that we already have it. */
+                    add_to_kaddr_idx = TRUE;
+                    goto keep_and_next;
+                }
+
+                /* We want to configure a similar address mptcp_addr2) as the one that is already configured
+                 * (mptcp_addr). However, the ifindex or flag differs. Delete this one to add the
+                 * right one blow. */
+            } else {
+                /* We don't want to configure this address (anymore). */
+                if (reapply) {
+                    /* in reapply mode, we delete the extra address. */
+                } else {
+                    /* Otherwise, we only delete it, if we remember that we added this one
+                     * before. */
+                    if (!nm_g_hash_table_contains(entries_to_delete, obj)) {
+                        /* This address was not added by us. Keep it. */
+                        goto keep_and_next;
+                    }
                 }
             }
 
-            if (keep_deleted) {
-                _LOGD("forget/leak object added by us: %s \"%s\"",
-                      NMP_OBJECT_GET_CLASS(obj)->obj_type_name,
-                      nmp_object_to_string(obj, NMP_OBJECT_TO_STRING_PUBLIC, sbuf, sizeof(sbuf)));
-                goto index_and_next;
+            if (!nm_platform_object_delete(self->platform, obj)) {
+                /* We failed to delete it. It's unclear what is the matter with this
+                 * object. Ignore the failure. */
             }
 
-            /* This entry is marked for deletion. Delete it. */
-            if (nm_platform_object_delete(self->platform, obj)) {
-                nm_clear_pointer(&kaddrs_arr->pdata[i], nmp_object_unref);
-                continue;
-            }
-
-            /* We failed to delete it. It's unclear what is the matter with this
-             * object. Pretend it doesn't exist (don't add it to kaddrs_idx and
-             * proceed. */
-            nm_clear_pointer(&kaddrs_arr->pdata[i], nmp_object_unref);
             continue;
 
-index_and_next:
-            _LOGt("keep: %s \"%s\"",
+keep_and_next:
+            _LOGt("keep: %s \"%s\"%s",
                   NMP_OBJECT_GET_CLASS(obj)->obj_type_name,
-                  nmp_object_to_string(obj, NMP_OBJECT_TO_STRING_PUBLIC, sbuf, sizeof(sbuf)));
-            if (!kaddrs_idx) {
-                kaddrs_idx = g_hash_table_new((GHashFunc) nmp_object_id_hash,
-                                              (GEqualFunc) nmp_object_id_equal);
+                  nmp_object_to_string(obj, NMP_OBJECT_TO_STRING_PUBLIC, sbuf, sizeof(sbuf)),
+                  add_to_kaddr_idx ? " (index)" : "");
+            if (add_to_kaddr_idx) {
+                if (!kaddrs_idx) {
+                    kaddrs_idx = g_hash_table_new((GHashFunc) nmp_object_id_hash,
+                                                  (GEqualFunc) nmp_object_id_equal);
+                }
+                g_hash_table_add(kaddrs_idx, (gpointer) obj);
             }
-            g_hash_table_add(kaddrs_idx, (gpointer) obj);
         }
     }
 
@@ -924,6 +918,9 @@ index_and_next:
             const MptcpSyncData       *d          = nm_g_array_index_p(entries, MptcpSyncData, i);
             const NMPlatformMptcpAddr *mptcp_addr = NMP_OBJECT_CAST_MPTCP_ADDR(d->obj_data->obj);
             const NMPObject           *kobj;
+
+            nm_assert(mptcp_addr->port == 0);
+            nm_assert(mptcp_addr->ifindex > 0);
 
             d->obj_data->config_state = CONFIG_STATE_ADDED_BY_US;
 
