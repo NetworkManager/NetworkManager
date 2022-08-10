@@ -43,10 +43,12 @@ do_setup() {
     logger --id "nm-env-prepare-$IDX" "setup start # $@"
 
     ip netns add "$NETNS_PREFIX$IDX"
-    ip -netns "$NETNS_PREFIX$IDX" link set lo up
+    ip -netns "$NETNS_PREFIX$IDX" link set name lo up
 
     ip -netns "$NETNS_PREFIX$IDX" link add "$NAME_PREFIX$IDX" type veth peer "$PEER_PREFIX$IDX"
-    ip -netns "$NETNS_PREFIX$IDX" link set "$PEER_PREFIX$IDX" up
+    ip -netns "$NETNS_PREFIX$IDX" link set name "$NAME_PREFIX$IDX" addr aa:0f:f1:ce:00:$(printf '%02x' $IDX)
+    ip -netns "$NETNS_PREFIX$IDX" link set name "$PEER_PREFIX$IDX" addr cc:0f:f1:ce:00:$(printf '%02x' $IDX)
+    ip -netns "$NETNS_PREFIX$IDX" link set name "$PEER_PREFIX$IDX" up
 
     ip -netns "$NETNS_PREFIX$IDX" addr add "192.168.$((120 + IDX)).1/23" dev "$PEER_PREFIX$IDX"
     ip -netns "$NETNS_PREFIX$IDX" addr add "192:168:$((120 + IDX))::1/64" dev "$PEER_PREFIX$IDX"
@@ -104,7 +106,7 @@ EOF
             -d 5 \
             &
 
-    ip -netns ""$NETNS_PREFIX$IDX"" link set "$NAME_PREFIX$IDX" netns $$
+    ip -netns ""$NETNS_PREFIX$IDX"" link set name "$NAME_PREFIX$IDX" netns $$
 
     logger --id "nm-env-prepare-$IDX" "setup complete: netns=$NETNS_PREFIX$IDX, iface=$NAME_PREFIX$IDX, peer=$PEER_PREFIX$IDX # $@"
 }
