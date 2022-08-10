@@ -127,7 +127,7 @@ nmp_link_address_get_as_bytes(const NMPLinkAddress *addr)
             g_snprintf(__prefix, sizeof(__prefix), "%s[%p]", _NMLOG_PREFIX_NAME, __self); \
             __p_prefix = __prefix;                                                        \
         }                                                                                 \
-        _nm_log(__level,                                                                  \
+        _nm_log((level),                                                                  \
                 _NMLOG_DOMAIN,                                                            \
                 0,                                                                        \
                 __name,                                                                   \
