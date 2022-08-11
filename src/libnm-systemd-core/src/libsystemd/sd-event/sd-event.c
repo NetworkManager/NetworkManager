@@ -51,19 +51,19 @@ static bool event_source_is_offline(sd_event_source *s) {
 }
 
 static const char* const event_source_type_table[_SOURCE_EVENT_SOURCE_TYPE_MAX] = {
-        [SOURCE_IO] = "io",
-        [SOURCE_TIME_REALTIME] = "realtime",
-        [SOURCE_TIME_BOOTTIME] = "bootime",
-        [SOURCE_TIME_MONOTONIC] = "monotonic",
+        [SOURCE_IO]                  = "io",
+        [SOURCE_TIME_REALTIME]       = "realtime",
+        [SOURCE_TIME_BOOTTIME]       = "bootime",
+        [SOURCE_TIME_MONOTONIC]      = "monotonic",
         [SOURCE_TIME_REALTIME_ALARM] = "realtime-alarm",
         [SOURCE_TIME_BOOTTIME_ALARM] = "boottime-alarm",
-        [SOURCE_SIGNAL] = "signal",
-        [SOURCE_CHILD] = "child",
-        [SOURCE_DEFER] = "defer",
-        [SOURCE_POST] = "post",
-        [SOURCE_EXIT] = "exit",
-        [SOURCE_WATCHDOG] = "watchdog",
-        [SOURCE_INOTIFY] = "inotify",
+        [SOURCE_SIGNAL]              = "signal",
+        [SOURCE_CHILD]               = "child",
+        [SOURCE_DEFER]               = "defer",
+        [SOURCE_POST]                = "post",
+        [SOURCE_EXIT]                = "exit",
+        [SOURCE_WATCHDOG]            = "watchdog",
+        [SOURCE_INOTIFY]             = "inotify",
 };
 
 DEFINE_PRIVATE_STRING_TABLE_LOOKUP_TO_STRING(event_source_type, int);
@@ -126,10 +126,10 @@ struct sd_event {
         Hashmap *inotify_data; /* indexed by priority */
 
         /* A list of inode structures that still have an fd open, that we need to close before the next loop iteration */
-        LIST_HEAD(struct inode_data, inode_data_to_close);
+        LIST_HEAD(struct inode_data, inode_data_to_close_list);
 
         /* A list of inotify objects that already have events buffered which aren't processed yet */
-        LIST_HEAD(struct inotify_data, inotify_data_buffered);
+        LIST_HEAD(struct inotify_data, buffered_inotify_data_list);
 
         pid_t original_pid;
 
@@ -422,6 +422,8 @@ fail:
 }
 
 DEFINE_PUBLIC_TRIVIAL_REF_UNREF_FUNC(sd_event, sd_event, event_free);
+#define PROTECT_EVENT(e)                                                \
+        _unused_ _cleanup_(sd_event_unrefp) sd_event *_ref = sd_event_ref(e);
 
 _public_ sd_event_source* sd_event_source_disable_unref(sd_event_source *s) {
         if (s)
@@ -1696,7 +1698,7 @@ static void event_free_inotify_data(sd_event *e, struct inotify_data *d) {
         assert(hashmap_isempty(d->wd));
 
         if (d->buffer_filled > 0)
-                LIST_REMOVE(buffered, e->inotify_data_buffered, d);
+                LIST_REMOVE(buffered, e->buffered_inotify_data_list, d);
 
         hashmap_free(d->inodes);
         hashmap_free(d->wd);
@@ -1805,10 +1807,10 @@ static void event_free_inode_data(
         if (!d)
                 return;
 
-        assert(LIST_IS_EMPTY(d->event_sources));
+        assert(!d->event_sources);
 
         if (d->fd >= 0) {
-                LIST_REMOVE(to_close, e->inode_data_to_close, d);
+                LIST_REMOVE(to_close, e->inode_data_to_close_list, d);
                 safe_close(d->fd);
         }
 
@@ -1868,7 +1870,7 @@ static void event_gc_inode_data(
         if (!d)
                 return;
 
-        if (!LIST_IS_EMPTY(d->event_sources))
+        if (d->event_sources)
                 return;
 
         inotify_data = d->inotify_data;
@@ -2070,7 +2072,7 @@ static int event_add_inotify_fd_internal(
                         }
                 }
 
-                LIST_PREPEND(to_close, e->inode_data_to_close, inode_data);
+                LIST_PREPEND(to_close, e->inode_data_to_close_list, inode_data);
         }
 
         /* Link our event source to the inode data object */
@@ -2143,12 +2145,9 @@ static sd_event_source* event_source_free(sd_event_source *s) {
          * we still retain a valid event source object after
          * the callback. */
 
-        if (s->dispatching) {
-                if (s->type == SOURCE_IO)
-                        source_io_unregister(s);
-
+        if (s->dispatching)
                 source_disconnect(s);
-        } else
+        else
                 source_free(s);
 
         return NULL;
@@ -2357,7 +2356,7 @@ _public_ int sd_event_source_set_priority(sd_event_source *s, int64_t priority) 
                                 goto fail;
                         }
 
-                        LIST_PREPEND(to_close, s->event->inode_data_to_close, new_inode_data);
+                        LIST_PREPEND(to_close, s->event->inode_data_to_close_list, new_inode_data);
                 }
 
                 /* Move the event source to the new inode data structure */
@@ -3423,7 +3422,7 @@ static int event_inotify_data_read(sd_event *e, struct inotify_data *d, uint32_t
 
         assert(n > 0);
         d->buffer_filled = (size_t) n;
-        LIST_PREPEND(buffered, e->inotify_data_buffered, d);
+        LIST_PREPEND(buffered, e->buffered_inotify_data_list, d);
 
         return 1;
 }
@@ -3441,7 +3440,7 @@ static void event_inotify_data_drop(sd_event *e, struct inotify_data *d, size_t 
         d->buffer_filled -= sz;
 
         if (d->buffer_filled == 0)
-                LIST_REMOVE(buffered, e->inotify_data_buffered, d);
+                LIST_REMOVE(buffered, e->buffered_inotify_data_list, d);
 }
 
 static int event_inotify_data_process(sd_event *e, struct inotify_data *d) {
@@ -3534,7 +3533,7 @@ static int process_inotify(sd_event *e) {
 
         assert(e);
 
-        LIST_FOREACH(buffered, d, e->inotify_data_buffered) {
+        LIST_FOREACH(buffered, d, e->buffered_inotify_data_list) {
                 r = event_inotify_data_process(e, d);
                 if (r < 0)
                         return r;
@@ -3546,8 +3545,8 @@ static int process_inotify(sd_event *e) {
 }
 
 static int source_dispatch(sd_event_source *s) {
-        _cleanup_(sd_event_unrefp) sd_event *saved_event = NULL;
         EventSourceType saved_type;
+        sd_event *saved_event;
         int r = 0;
 
         assert(s);
@@ -3559,7 +3558,8 @@ static int source_dispatch(sd_event_source *s) {
 
         /* Similarly, store a reference to the event loop object, so that we can still access it after the
          * callback might have invalidated/disconnected the event source. */
-        saved_event = sd_event_ref(s->event);
+        saved_event = s->event;
+        PROTECT_EVENT(saved_event);
 
         /* Check if we hit the ratelimit for this event source, and if so, let's disable it. */
         assert(!s->ratelimited);
@@ -3760,7 +3760,7 @@ static int dispatch_exit(sd_event *e) {
                 return 0;
         }
 
-        _unused_ _cleanup_(sd_event_unrefp) sd_event *ref = sd_event_ref(e);
+        PROTECT_EVENT(e);
         e->iteration++;
         e->state = SD_EVENT_EXITING;
         r = source_dispatch(p);
@@ -3831,11 +3831,11 @@ static void event_close_inode_data_fds(sd_event *e) {
          * for the inode). Hence, let's close them when entering the first iteration after they were added, as a
          * compromise. */
 
-        while ((d = e->inode_data_to_close)) {
+        while ((d = e->inode_data_to_close_list)) {
                 assert(d->fd >= 0);
                 d->fd = safe_close(d->fd);
 
-                LIST_REMOVE(to_close, e->inode_data_to_close, d);
+                LIST_REMOVE(to_close, e->inode_data_to_close_list, d);
         }
 }
 
@@ -3854,7 +3854,7 @@ _public_ int sd_event_prepare(sd_event *e) {
         assert_return(!e->default_event_ptr || e->tid == gettid(), -EREMOTEIO);
 
         /* Make sure that none of the preparation callbacks ends up freeing the event source under our feet */
-        _unused_ _cleanup_(sd_event_unrefp) sd_event *ref = sd_event_ref(e);
+        PROTECT_EVENT(e);
 
         if (e->exit_requested)
                 goto pending;
@@ -3889,7 +3889,7 @@ _public_ int sd_event_prepare(sd_event *e) {
 
         event_close_inode_data_fds(e);
 
-        if (event_next_pending(e) || e->need_process_child || !LIST_IS_EMPTY(e->inotify_data_buffered))
+        if (event_next_pending(e) || e->need_process_child || e->buffered_inotify_data_list)
                 goto pending;
 
         e->state = SD_EVENT_ARMED;
@@ -3969,7 +3969,7 @@ static int process_epoll(sd_event *e, usec_t timeout, int64_t threshold, int64_t
         n_event_max = MALLOC_ELEMENTSOF(e->event_queue);
 
         /* If we still have inotify data buffered, then query the other fds, but don't wait on it */
-        if (!LIST_IS_EMPTY(e->inotify_data_buffered))
+        if (e->buffered_inotify_data_list)
                 timeout = 0;
 
         for (;;) {
@@ -4184,7 +4184,7 @@ _public_ int sd_event_dispatch(sd_event *e) {
 
         p = event_next_pending(e);
         if (p) {
-                _unused_ _cleanup_(sd_event_unrefp) sd_event *ref = sd_event_ref(e);
+                PROTECT_EVENT(e);
 
                 e->state = SD_EVENT_RUNNING;
                 r = source_dispatch(p);
@@ -4236,7 +4236,7 @@ _public_ int sd_event_run(sd_event *e, uint64_t timeout) {
         }
 
         /* Make sure that none of the preparation callbacks ends up freeing the event source under our feet */
-        _unused_ _cleanup_(sd_event_unrefp) sd_event *ref = sd_event_ref(e);
+        PROTECT_EVENT(e);
 
         r = sd_event_prepare(e);
         if (r == 0)
@@ -4266,7 +4266,7 @@ _public_ int sd_event_loop(sd_event *e) {
         assert_return(!event_pid_changed(e), -ECHILD);
         assert_return(e->state == SD_EVENT_INITIAL, -EBUSY);
 
-        _unused_ _cleanup_(sd_event_unrefp) sd_event *ref = sd_event_ref(e);
+        PROTECT_EVENT(e);
 
         while (e->state != SD_EVENT_FINISHED) {
                 r = sd_event_run(e, UINT64_MAX);

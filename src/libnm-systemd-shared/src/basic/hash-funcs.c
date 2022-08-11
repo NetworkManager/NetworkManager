@@ -6,6 +6,7 @@
 
 #include "hash-funcs.h"
 #include "path-util.h"
+#include "strv.h"
 
 void string_hash_func(const char *p, struct siphash *state) {
         siphash24_compress(p, strlen(p) + 1, state);
@@ -17,6 +18,9 @@ DEFINE_HASH_OPS_WITH_KEY_DESTRUCTOR(string_hash_ops_free,
 DEFINE_HASH_OPS_FULL(string_hash_ops_free_free,
                      char, string_hash_func, string_compare_func, free,
                      void, free);
+DEFINE_HASH_OPS_FULL(string_hash_ops_free_strv_free,
+                     char, string_hash_func, string_compare_func, free,
+                     char*, strv_free);
 
 #if 0 /* NM_IGNORED */
 void path_hash_func(const char *q, struct siphash *state) {

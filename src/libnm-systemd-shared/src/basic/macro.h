@@ -88,10 +88,6 @@
         _Pragma("GCC diagnostic push")
 #endif
 
-#define DISABLE_WARNING_FLOAT_EQUAL \
-        _Pragma("GCC diagnostic push");                                 \
-        _Pragma("GCC diagnostic ignored \"-Wfloat-equal\"")
-
 #define DISABLE_WARNING_TYPE_LIMITS \
         _Pragma("GCC diagnostic push");                                 \
         _Pragma("GCC diagnostic ignored \"-Wtype-limits\"")
