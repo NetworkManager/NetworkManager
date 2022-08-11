@@ -27,8 +27,6 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   With MPTCP handling enabled, NetworkManager will relax a strict (1) rp_filter
   to loose (2). Otherwise rp_filter is untouched by NetworkManager.
 * NetworkManager expanded log messages for invalid DHCP options.
-* Support "802-1x.phase1-auth-flags=tls-allow-unsafe-renegotiation" flag
-  for Wi-Fi.
 * Fix the requirement of hardware address for DHCPv6, by dropping it.
 * Increase the PMK lifetime for Wi-Fi connections using WPA-EAP.
 * "nmcli networking off" now waits for deactivations to complete.
