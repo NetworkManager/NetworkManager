@@ -95,6 +95,20 @@
                 _expr_;                         \
         })
 
+#define ASSERT_NONNEG(expr)                              \
+        ({                                               \
+                typeof(expr) _expr_ = (expr), _zero = 0; \
+                assert(_expr_ >= _zero);                 \
+                _expr_;                                  \
+        })
+
+#define ASSERT_SE_NONNEG(expr)                           \
+        ({                                               \
+                typeof(expr) _expr_ = (expr), _zero = 0; \
+                assert_se(_expr_ >= _zero);              \
+                _expr_;                                  \
+        })
+
 #define assert_cc(expr) static_assert(expr, #expr)
 
 
@@ -106,10 +120,10 @@
  * on this macro will run concurrently to all other code conditionalized
  * the same way, there's no ordering or completion enforced. */
 #define ONCE __ONCE(UNIQ_T(_once_, UNIQ))
-#define __ONCE(o)                                                \
-        ({                                                       \
-                static bool (o) = false;                         \
-                __sync_bool_compare_and_swap(&(o), false, true); \
+#define __ONCE(o)                                                  \
+        ({                                                         \
+                static bool (o) = false;                           \
+                __atomic_exchange_n(&(o), true, __ATOMIC_SEQ_CST); \
         })
 
 #undef MAX
@@ -185,6 +199,27 @@
                 const typeof(x) _c = MIN(x, y);         \
                 MIN(_c, z);                             \
         })
+
+/* Returns true if the passed integer is a positive power of two */
+#define CONST_ISPOWEROF2(x)                     \
+        ((x) > 0 && ((x) & ((x) - 1)) == 0)
+
+#if 0 /* NM_IGNORED */
+#define ISPOWEROF2(x)                                                  \
+        __builtin_choose_expr(                                         \
+                __builtin_constant_p(x),                               \
+                CONST_ISPOWEROF2(x),                                   \
+                ({                                                     \
+                        const typeof(x) _x = (x);                      \
+                        CONST_ISPOWEROF2(_x);                          \
+                }))
+#else /* NM_IGNORED */
+#define ISPOWEROF2(x)                                                  \
+                ({                                                     \
+                        const typeof(x) _x = (x);                      \
+                        CONST_ISPOWEROF2(_x);                          \
+                })
+#endif /* NM_IGNORED */
 
 #define LESS_BY(a, b) __LESS_BY(UNIQ, (a), UNIQ, (b))
 #define __LESS_BY(aq, a, bq, b)                         \
@@ -300,16 +335,7 @@
         })
 
 static inline size_t ALIGN_TO(size_t l, size_t ali) {
-        /* Check that alignment is exponent of 2 */
-#if SIZE_MAX == UINT_MAX
-        assert(__builtin_popcount(ali) == 1);
-#elif SIZE_MAX == ULONG_MAX
-        assert(__builtin_popcountl(ali) == 1);
-#elif SIZE_MAX == ULLONG_MAX
-        assert(__builtin_popcountll(ali) == 1);
-#else
-        #error "Unexpected size_t"
-#endif
+        assert(ISPOWEROF2(ali));
 
         if (l > SIZE_MAX - (ali - 1))
                 return SIZE_MAX; /* indicate overflow */
@@ -330,7 +356,7 @@ static inline size_t ALIGN_TO(size_t l, size_t ali) {
         __builtin_choose_expr(                                         \
                 __builtin_constant_p(l) &&                             \
                 __builtin_constant_p(ali) &&                           \
-                __builtin_popcountll(ali) == 1 && /* is power of 2? */ \
+                CONST_ISPOWEROF2(ali) &&                               \
                 (l <= SIZE_MAX - (ali - 1)),      /* overflow? */      \
                 ((l) + (ali) - 1) & ~((ali) - 1),                      \
                 VOID_0)
