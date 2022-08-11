@@ -1070,7 +1070,8 @@ nmp_global_tracker_sync(NMPGlobalTracker *self, NMPObjectType obj_type, gboolean
                                               NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY);
                 break;
             default:
-                nm_assert_not_reached();
+                c = nm_assert_unreachable_val(0);
+                break;
             }
             if (c == 0)
                 continue;
