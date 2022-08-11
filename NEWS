@@ -1,4 +1,14 @@
 ===============================================
+NetworkManager-1.38.4
+Overview of changes since NetworkManager-1.38.2
+===============================================
+
+* Fix DAD for DHCPv6 addresses.
+* Wi-Fi: improvements for OWE networks.
+* Support EC private keys
+* Various bugfixes.
+
+===============================================
 NetworkManager-1.38.2
 Overview of changes since NetworkManager-1.38.0
 ===============================================
