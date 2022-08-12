@@ -2275,6 +2275,18 @@ act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
             goto out_fail;
         }
 
+        /* With priv->iwd_autoconnect we have to let IWD handle retries for
+         * infrastructure networks.  IWD will not necessarily retry the same
+         * network after a failure but it will likely go into an autoconnect
+         * mode and we don't want to try to override the logic.  We don't need
+         * to reset the retry count so we set no timeout.
+         */
+        if (priv->iwd_autoconnect) {
+            NMSettingsConnection *sett_conn = nm_act_request_get_settings_connection(req);
+
+            nm_settings_connection_autoconnect_retries_set(sett_conn, 0);
+        }
+
         /* With priv->iwd_autoconnect, if we're assuming a connection because
          * of a state change to "connecting", signal stage 2 is still running.
          * If "connected" or "roaming", we can go right to the IP_CONFIG state
