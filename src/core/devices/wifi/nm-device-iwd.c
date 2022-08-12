@@ -70,6 +70,7 @@ typedef struct {
     bool                          secrets_failed : 1;
     bool                          networks_requested : 1;
     bool                          networks_changed : 1;
+    bool                          assuming : 1;
     gint64                        last_scan;
     uint32_t                      ap_id;
     guint32                       rate;
@@ -579,6 +580,10 @@ deactivate(NMDevice *device)
     NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE(self);
 
     if (!priv->dbus_obj)
+        return;
+
+    /* Don't cause IWD to break the connection being assumed */
+    if (priv->assuming)
         return;
 
     if (priv->dbus_station_proxy) {
@@ -2719,12 +2724,20 @@ state_changed(NMDeviceIwd *self, const char *new_state)
               "IWD is connecting to the wrong AP, %s activation",
               switch_ap ? "replacing" : "aborting");
         cleanup_association_attempt(self, !switch_ap);
-        nm_device_state_changed(device,
-                                NM_DEVICE_STATE_FAILED,
-                                NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT);
 
-        if (switch_ap)
-            assume_connection(self, ap);
+        if (!switch_ap) {
+            nm_device_state_changed(device,
+                                    NM_DEVICE_STATE_FAILED,
+                                    NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT);
+            return;
+        }
+
+        priv->assuming = TRUE; /* Don't send Station.Disconnect() */
+        nm_device_state_changed(device,
+                                NM_DEVICE_STATE_DISCONNECTED,
+                                NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT);
+        priv->assuming = FALSE;
+        assume_connection(self, ap);
         return;
     }
 
