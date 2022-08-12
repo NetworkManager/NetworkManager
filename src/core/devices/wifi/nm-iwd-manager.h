@@ -30,6 +30,8 @@
 #define NM_IWD_P2P_SERVICE_MANAGER_INTERFACE "net.connman.iwd.p2p.ServiceManager"
 #define NM_IWD_P2P_WFD_INTERFACE             "net.connman.iwd.p2p.Display"
 
+#define NM_IWD_AGENT_PATH NM_DBUS_PATH "/iwd/agent"
+
 #define NM_TYPE_IWD_MANAGER (nm_iwd_manager_get_type())
 #define NM_IWD_MANAGER(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_IWD_MANAGER, NMIwdManager))
 #define NM_IWD_MANAGER_CLASS(klass) \

@@ -8,6 +8,7 @@
 #include "nm-device-iwd.h"
 
 #include <linux/if_ether.h>
+#include <linux/rtnetlink.h>
 
 #include "devices/nm-device-private.h"
 #include "devices/nm-device.h"
@@ -32,6 +33,7 @@
 #include "supplicant/nm-supplicant-types.h"
 #include "nm-auth-utils.h"
 #include "nm-manager.h"
+#include "nm-l3-config-data.h"
 
 #define _NMLOG_DEVICE_TYPE NMDeviceIwd
 #include "devices/nm-device-logging.h"
@@ -78,7 +80,16 @@ typedef struct {
     GDBusMethodInvocation        *pending_agent_request;
     NMActiveConnection           *assumed_ac;
     guint                         assumed_ac_timeout;
-    NMIwdManager                 *manager;
+
+    union {
+        struct {
+            const NML3ConfigData *pending_l3cd_6;
+            const NML3ConfigData *pending_l3cd_4;
+        };
+        const NML3ConfigData *pending_l3cd_x[2];
+    };
+
+    NMIwdManager *manager;
 } NMDeviceIwdPrivate;
 
 struct _NMDeviceIwd {
@@ -528,6 +539,9 @@ cleanup_association_attempt(NMDeviceIwd *self, gboolean disconnect)
 
     if (disconnect && priv->dbus_station_proxy)
         send_disconnect(self);
+
+    nm_clear_l3cd(&priv->pending_l3cd_6);
+    nm_clear_l3cd(&priv->pending_l3cd_4);
 }
 
 static void
@@ -2446,6 +2460,38 @@ out_fail:
     return NM_ACT_STAGE_RETURN_FAILURE;
 }
 
+static void
+act_stage3_ip_config(NMDevice *device, int addr_family)
+{
+    NMDeviceIwd        *self    = NM_DEVICE_IWD(device);
+    NMDeviceIwdPrivate *priv    = NM_DEVICE_IWD_GET_PRIVATE(self);
+    const int           IS_IPv4 = NM_IS_IPv4(addr_family);
+
+    if (!nm_iwd_manager_get_netconfig_enabled(nm_iwd_manager_get())) {
+        NMDeviceClass *device_class = NM_DEVICE_CLASS(nm_device_iwd_parent_class);
+
+        if (device_class->act_stage3_ip_config)
+            device_class->act_stage3_ip_config(device, addr_family);
+
+        return;
+    }
+
+    if (!priv->pending_l3cd_x[IS_IPv4])
+        return;
+
+    nm_device_devip_set_state(device,
+                              addr_family,
+                              NM_DEVICE_IP_STATE_READY,
+                              priv->pending_l3cd_x[IS_IPv4]);
+    nm_clear_l3cd(&priv->pending_l3cd_x[IS_IPv4]);
+}
+
+static gboolean
+ready_for_ip_config(NMDevice *device, gboolean is_manual)
+{
+    return !nm_iwd_manager_get_netconfig_enabled(nm_iwd_manager_get());
+}
+
 static guint32
 get_configured_mtu(NMDevice *device, NMDeviceMtuSource *out_source, gboolean *out_force)
 {
@@ -3311,7 +3357,7 @@ nm_device_iwd_agent_query(NMDeviceIwd *self, GDBusMethodInvocation *invocation)
      * it.  IWD only queries us if it has not saved the PSK (e.g. by policy)
      * or a previous attempt has failed with current secrets so it wants a
      * fresh value.  It doesn't know about agent-owned secrets so whenever
-     * possible and the PSK is saved and not asked from NM.  However if this
+     * possible, the PSK is saved and not asked from NM.  However if this
      * is a new connection it may include all of the needed settings already
      * so allow using these, too.  Connection timestamp is set after
      * activation or after first activation failure (to 0).
@@ -3399,6 +3445,341 @@ nm_device_iwd_network_add_remove(NMDeviceIwd *self, GDBusProxy *network, bool ad
         priv->networks_changed |= !recheck;
         return;
     }
+}
+
+static const NML3ConfigData *
+nm_device_iwd_parse_netconfig(NMDeviceIwd *self, int addr_family, GVariantIter *config_iter)
+{
+    NMDevice                               *device = NM_DEVICE(self);
+    nm_auto_unref_l3cd_init NML3ConfigData *l3cd   = NULL;
+    const char                             *key;
+    GVariant                               *value;
+    NMIPConfigSource                        source       = NM_IP_CONFIG_SOURCE_UNKNOWN;
+    nm_auto_free_variant_iter GVariantIter *address_iter = NULL;
+    nm_auto_free_variant_iter GVariantIter *route_iter   = NULL;
+    nm_auto_free_variant_iter GVariantIter *dns_iter     = NULL;
+    nm_auto_free_variant_iter GVariantIter *domain_iter  = NULL;
+    NMSettingConnectionMdns                 mdns         = NM_SETTING_CONNECTION_MDNS_DEFAULT;
+    const char                             *str_value;
+    GVariantIter                           *entry_iter;
+    uint32_t                                timestamp = nm_utils_get_monotonic_timestamp_sec();
+
+    while (g_variant_iter_next(config_iter, "{&sv}", &key, &value)) {
+        _nm_unused gs_unref_variant GVariant *value_free = value;
+
+        if (nm_streq(key, "Method")) {
+            if (!g_variant_is_of_type(value, G_VARIANT_TYPE_STRING)
+                || source != NM_IP_CONFIG_SOURCE_UNKNOWN)
+                goto param_error;
+
+            str_value = g_variant_get_string(value, NULL);
+            if (nm_streq(str_value, "static"))
+                source = NM_IP_CONFIG_SOURCE_USER;
+            else if (nm_streq(str_value, "auto"))
+                /* Use SOURCE_DHCP as shorthand for the various autoconfiguration protocols */
+                source = NM_IP_CONFIG_SOURCE_DHCP;
+            else
+                _LOGW(LOGD_WIFI, "iwd_parse_netconfig: Uknown Method value \"%s\"", str_value);
+        }
+
+        if (nm_streq(key, "Addresses")) {
+            if (!g_variant_is_of_type(value, G_VARIANT_TYPE("aa{sv}")) || address_iter)
+                goto param_error;
+
+            g_variant_get(value, "aa{sv}", &address_iter);
+        }
+
+        if (nm_streq(key, "Routes")) {
+            if (!g_variant_is_of_type(value, G_VARIANT_TYPE("aa{sv}")) || route_iter)
+                goto param_error;
+
+            g_variant_get(value, "aa{sv}", &route_iter);
+        }
+
+        if (nm_streq(key, "DomainNameServers")) {
+            if (!g_variant_is_of_type(value, G_VARIANT_TYPE_STRING_ARRAY) || dns_iter)
+                goto param_error;
+
+            g_variant_get(value, "as", &dns_iter);
+        }
+
+        if (nm_streq(key, "DomainNames")) {
+            if (!g_variant_is_of_type(value, G_VARIANT_TYPE_STRING_ARRAY) || domain_iter)
+                goto param_error;
+
+            g_variant_get(value, "as", &domain_iter);
+        }
+
+        if (nm_streq(key, "MDNS")) {
+            if (!g_variant_is_of_type(value, G_VARIANT_TYPE_STRING)
+                || mdns != NM_SETTING_CONNECTION_MDNS_DEFAULT)
+                goto param_error;
+
+            str_value = g_variant_get_string(value, NULL);
+            if (nm_streq(str_value, "yes"))
+                mdns = NM_SETTING_CONNECTION_MDNS_YES;
+            else if (nm_streq(str_value, "no"))
+                mdns = NM_SETTING_CONNECTION_MDNS_NO;
+            else if (nm_streq(str_value, "resolve"))
+                mdns = NM_SETTING_CONNECTION_MDNS_RESOLVE;
+            else
+                _LOGW(LOGD_WIFI, "iwd_parse_netconfig: Uknown MDNS value \"%s\"", str_value);
+        }
+    }
+
+    if (!address_iter || !route_iter)
+        goto param_error;
+
+    l3cd = nm_l3_config_data_new(nm_device_get_multi_index(device),
+                                 nm_device_get_ip_ifindex(device),
+                                 source);
+
+    while (g_variant_iter_next(address_iter, "a{sv}", &entry_iter)) {
+        _nm_unused nm_auto_free_variant_iter GVariantIter *entry_iter_free = entry_iter;
+        const char                                        *addr_str        = NULL;
+        NMIPAddr                                           addr_bin;
+        uint8_t                                            plen      = 0;
+        const char                                        *bcast_str = NULL;
+        NMIPAddr                                           bcast_bin = {};
+        uint32_t             valid_lifetime     = NM_PLATFORM_LIFETIME_PERMANENT;
+        uint32_t             preferred_lifetime = NM_PLATFORM_LIFETIME_PERMANENT;
+        NMPlatformIPXAddress a;
+
+        while (g_variant_iter_next(entry_iter, "{&sv}", &key, &value)) {
+            _nm_unused gs_unref_variant GVariant *value_free = value;
+
+            if (nm_streq(key, "Address")) {
+                if (!g_variant_is_of_type(value, G_VARIANT_TYPE_STRING) || addr_str)
+                    goto param_error;
+
+                addr_str = g_variant_get_string(value, NULL);
+                if (inet_pton(addr_family, addr_str, &addr_bin) != 1)
+                    goto param_error;
+            }
+
+            if (nm_streq(key, "PrefixLength")) {
+                if (!g_variant_is_of_type(value, G_VARIANT_TYPE_BYTE))
+                    goto param_error;
+
+                plen = g_variant_get_byte(value);
+            }
+
+            if (nm_streq(key, "Broadcast")) {
+                if (!g_variant_is_of_type(value, G_VARIANT_TYPE_STRING) || bcast_str)
+                    goto param_error;
+
+                bcast_str = g_variant_get_string(value, NULL);
+                if (inet_pton(addr_family, bcast_str, &bcast_bin) != 1)
+                    goto param_error;
+            }
+
+            if (nm_streq(key, "ValidLifetime")) {
+                if (!g_variant_is_of_type(value, G_VARIANT_TYPE_UINT32)
+                    || valid_lifetime != NM_PLATFORM_LIFETIME_PERMANENT)
+                    goto param_error;
+
+                valid_lifetime = g_variant_get_uint32(value);
+            }
+
+            if (nm_streq(key, "PreferredLifetime")) {
+                if (!g_variant_is_of_type(value, G_VARIANT_TYPE_UINT32)
+                    || preferred_lifetime != NM_PLATFORM_LIFETIME_PERMANENT)
+                    goto param_error;
+
+                preferred_lifetime = g_variant_get_uint32(value);
+            }
+        }
+
+        if (addr_str == NULL)
+            goto param_error;
+
+        if (valid_lifetime != NM_PLATFORM_LIFETIME_PERMANENT
+            && preferred_lifetime == NM_PLATFORM_LIFETIME_PERMANENT)
+            preferred_lifetime = valid_lifetime;
+
+        if (addr_family == AF_INET) {
+            a.a4 = (NMPlatformIP4Address){
+                .address      = addr_bin.addr4,
+                .peer_address = addr_bin.addr4,
+                .plen         = plen,
+                .timestamp    = (valid_lifetime != NM_PLATFORM_LIFETIME_PERMANENT) ? timestamp : 0,
+                .lifetime     = valid_lifetime,
+                .preferred    = preferred_lifetime,
+                .addr_source  = source,
+                .use_ip4_broadcast_address = (bcast_str != NULL),
+                .broadcast_address         = bcast_bin.addr4,
+            };
+        } else {
+            a.a6 = (NMPlatformIP6Address){
+                .address     = addr_bin.addr6,
+                .plen        = 128,
+                .timestamp   = (valid_lifetime != NM_PLATFORM_LIFETIME_PERMANENT) ? timestamp : 0,
+                .lifetime    = valid_lifetime,
+                .preferred   = preferred_lifetime,
+                .addr_source = source,
+            };
+        }
+
+        nm_l3_config_data_add_address(l3cd, addr_family, NULL, &a.ax);
+    }
+
+    while (g_variant_iter_next(route_iter, "a{sv}", &entry_iter)) {
+        _nm_unused nm_auto_free_variant_iter GVariantIter *entry_iter_free = entry_iter;
+        const char                                        *dst_addr_str    = NULL;
+        NMIPAddr                                           dst_addr_bin    = {};
+        uint8_t                                            dst_plen        = 0;
+        const char                                        *router_str      = NULL;
+        NMIPAddr                                           router_bin      = {};
+        const char                                        *pref_src_str    = NULL;
+        NMIPAddr                                           pref_src_bin    = {};
+        _nm_unused uint32_t lifetime   = NM_PLATFORM_LIFETIME_PERMANENT;
+        _nm_unused uint32_t priority   = 0;
+        uint8_t             preference = 0;
+        uint32_t            mtu        = 0;
+        NMPlatformIPXRoute  r;
+
+        while (g_variant_iter_next(entry_iter, "{&sv}", &key, &value)) {
+            _nm_unused gs_unref_variant GVariant *value_free = value;
+
+            if (nm_streq(key, "Destination")) {
+                if (!g_variant_is_of_type(value, G_VARIANT_TYPE("(sy)")) || dst_addr_str)
+                    goto param_error;
+
+                g_variant_get(value, "(&sy)", &dst_addr_str, &dst_plen);
+                if (inet_pton(addr_family, dst_addr_str, &dst_addr_bin) != 1)
+                    goto param_error;
+            }
+
+            if (nm_streq(key, "Router")) {
+                if (!g_variant_is_of_type(value, G_VARIANT_TYPE_STRING) || router_str)
+                    goto param_error;
+
+                router_str = g_variant_get_string(value, NULL);
+                if (inet_pton(addr_family, router_str, &router_bin) != 1)
+                    goto param_error;
+            }
+
+            if (nm_streq(key, "PreferredSource")) {
+                if (!g_variant_is_of_type(value, G_VARIANT_TYPE_STRING) || pref_src_str)
+                    goto param_error;
+
+                pref_src_str = g_variant_get_string(value, NULL);
+                if (inet_pton(addr_family, pref_src_str, &pref_src_bin) != 1)
+                    goto param_error;
+            }
+
+            if (nm_streq(key, "Lifetime")) {
+                if (!g_variant_is_of_type(value, G_VARIANT_TYPE_UINT32)
+                    || lifetime != NM_PLATFORM_LIFETIME_PERMANENT)
+                    goto param_error;
+
+                lifetime = g_variant_get_uint32(value);
+            }
+
+            if (nm_streq(key, "Priority")) {
+                if (!g_variant_is_of_type(value, G_VARIANT_TYPE_UINT32))
+                    goto param_error;
+
+                priority = g_variant_get_uint32(value);
+            }
+
+            if (nm_streq(key, "Preference")) {
+                if (!g_variant_is_of_type(value, G_VARIANT_TYPE_BYTE))
+                    goto param_error;
+
+                preference = g_variant_get_byte(value);
+            }
+
+            if (nm_streq(key, "MTU")) {
+                if (!g_variant_is_of_type(value, G_VARIANT_TYPE_UINT32))
+                    goto param_error;
+
+                mtu = g_variant_get_uint32(value);
+            }
+        }
+
+        if (addr_family == AF_INET) {
+            r.r4 = (NMPlatformIP4Route){
+                .network  = dst_addr_str ? dst_addr_bin.addr4 : 0,
+                .plen     = dst_addr_str ? dst_plen : 0,
+                .gateway  = router_str ? router_bin.addr4 : 0,
+                .pref_src = pref_src_str ? pref_src_bin.addr4 : 0,
+                .scope_inv =
+                    nm_platform_route_scope_inv(router_str ? RT_SCOPE_UNIVERSE : RT_SCOPE_LINK),
+            };
+        } else {
+            r.r6 = (NMPlatformIP6Route){
+                .network     = dst_addr_str ? dst_addr_bin.addr6 : nm_ip_addr_zero.addr6,
+                .plen        = dst_addr_str ? dst_plen : 0,
+                .gateway     = router_str ? router_bin.addr6 : nm_ip_addr_zero.addr6,
+                .pref_src    = pref_src_str ? pref_src_bin.addr6 : nm_ip_addr_zero.addr6,
+                .rt_pref     = preference,
+                .r_rtm_flags = RTNH_F_ONLINK,
+            };
+        }
+
+        r.rx.metric_any   = TRUE;
+        r.rx.mtu          = mtu;
+        r.rx.rt_source    = source;
+        r.rx.type_coerced = nm_platform_route_type_coerce(RTN_UNICAST);
+        r.rx.table_any    = TRUE;
+
+        /* TODO: set the lifetime */
+        nm_l3_config_data_add_route(l3cd, addr_family, NULL, &r.rx);
+    }
+
+    if (dns_iter) {
+        while (g_variant_iter_next(dns_iter, "&s", &str_value)) {
+            NMIPAddr dns_bin;
+
+            if (inet_pton(addr_family, str_value, &dns_bin) != 1)
+                goto param_error;
+
+            nm_l3_config_data_add_nameserver(l3cd, addr_family, &dns_bin);
+            nm_l3_config_data_set_dns_priority(l3cd, addr_family, NM_DNS_PRIORITY_DEFAULT_NORMAL);
+        }
+    }
+
+    if (domain_iter) {
+        while (g_variant_iter_next(domain_iter, "&s", &str_value))
+            nm_l3_config_data_add_search(l3cd, addr_family, str_value);
+    }
+
+    if (mdns != NM_SETTING_CONNECTION_MDNS_DEFAULT)
+        nm_l3_config_data_set_mdns(l3cd, mdns);
+
+    return nm_l3_config_data_ref_and_seal(l3cd);
+
+param_error:
+    return NULL;
+}
+
+bool
+nm_device_iwd_set_netconfig(NMDeviceIwd *self, int addr_family, GVariantIter *config_iter)
+{
+    NMDevice             *device = NM_DEVICE(self);
+    NMDeviceIwdPrivate   *priv   = NM_DEVICE_IWD_GET_PRIVATE(self);
+    const NML3ConfigData *l3cd;
+    NMDeviceState         state = nm_device_get_state(device);
+
+    if (state < NM_DEVICE_STATE_CONFIG || state > NM_DEVICE_STATE_ACTIVATED)
+        return FALSE;
+
+    l3cd = nm_device_iwd_parse_netconfig(self, addr_family, config_iter);
+    if (!l3cd) {
+        _LOGE(LOGD_WIFI, "Malformed netconfig DBus structure");
+        return FALSE;
+    }
+
+    if (state == NM_DEVICE_STATE_CONFIG) {
+        nm_l3_config_data_unref(priv->pending_l3cd_x[NM_IS_IPv4(addr_family)]);
+        priv->pending_l3cd_x[NM_IS_IPv4(addr_family)] = l3cd;
+    } else {
+        nm_device_devip_set_state(device, addr_family, NM_DEVICE_IP_STATE_READY, l3cd);
+        nm_l3_config_data_unref(l3cd);
+    }
+
+    return TRUE;
 }
 
 static void
@@ -3507,12 +3888,14 @@ nm_device_iwd_class_init(NMDeviceIwdClass *klass)
     device_class->set_enabled                 = set_enabled;
     device_class->get_type_description        = get_type_description;
 
-    device_class->act_stage1_prepare = act_stage1_prepare;
-    device_class->act_stage2_config  = act_stage2_config;
-    device_class->get_configured_mtu = get_configured_mtu;
-    device_class->deactivate         = deactivate;
-    device_class->deactivate_async   = deactivate_async;
-    device_class->can_reapply_change = can_reapply_change;
+    device_class->act_stage1_prepare   = act_stage1_prepare;
+    device_class->act_stage2_config    = act_stage2_config;
+    device_class->act_stage3_ip_config = act_stage3_ip_config;
+    device_class->ready_for_ip_config  = ready_for_ip_config;
+    device_class->get_configured_mtu   = get_configured_mtu;
+    device_class->deactivate           = deactivate;
+    device_class->deactivate_async     = deactivate_async;
+    device_class->can_reapply_change   = can_reapply_change;
 
     /* Stage 1 needed only for the set_current_ap() call.  Stage 2 is
      * needed if we're assuming a connection still in the "connecting"
