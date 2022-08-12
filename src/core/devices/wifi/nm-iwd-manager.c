@@ -58,7 +58,7 @@ typedef struct {
     gboolean            running;
     GDBusObjectManager *object_manager;
     guint               agent_id;
-    char               *agent_path;
+    guint               netconfig_agent_id;
     GHashTable         *known_networks;
     NMDeviceIwd        *last_agent_call_device;
     char               *last_state_dir;
@@ -277,6 +277,77 @@ return_error:
                                                   "Secrets not available for this connection");
 }
 
+static void
+netconfig_agent_dbus_method_cb(GDBusConnection       *connection,
+                               const char            *sender,
+                               const char            *object_path,
+                               const char            *interface_name,
+                               const char            *method_name,
+                               GVariant              *parameters,
+                               GDBusMethodInvocation *invocation,
+                               gpointer               user_data)
+{
+    NMIwdManager                           *self       = user_data;
+    NMIwdManagerPrivate                    *priv       = NM_IWD_MANAGER_GET_PRIVATE(self);
+    gs_free char                           *name_owner = NULL;
+    const char                             *device_path;
+    gs_unref_object GDBusInterface         *device_obj = NULL;
+    NMDevice                               *device;
+    nm_auto_free_variant_iter GVariantIter *config_iter = NULL;
+    const char                             *ifname;
+    int                                     addr_family;
+
+    /* Be paranoid and check the sender address */
+    name_owner = g_dbus_object_manager_client_get_name_owner(
+        G_DBUS_OBJECT_MANAGER_CLIENT(priv->object_manager));
+    if (!nm_streq0(name_owner, sender))
+        goto return_error;
+
+    if (nm_streq(method_name, "ConfigureIPv4"))
+        addr_family = AF_INET;
+    else if (nm_streq(method_name, "ConfigureIPv6"))
+        addr_family = AF_INET6;
+    else
+        goto return_error;
+
+    g_variant_get(parameters, "(&oa{sv})", &device_path, &config_iter);
+
+    device_obj = g_dbus_object_manager_get_interface(priv->object_manager,
+                                                     device_path,
+                                                     NM_IWD_DEVICE_INTERFACE);
+    if (!device_obj) {
+        _LOGE("netconfig-agent-request: unable to find the device object");
+        goto return_error;
+    }
+
+    ifname = get_property_string_or_null(G_DBUS_PROXY(device_obj), "Name");
+    if (!ifname) {
+        _LOGD("Name not cached for device at %s", device_path);
+        goto return_error;
+    }
+
+    device = nm_manager_get_device(priv->manager, ifname, NM_DEVICE_TYPE_WIFI);
+    if (!device || !NM_IS_DEVICE_IWD(device)) {
+        _LOGD("NM device %s is not an IWD-managed device", ifname);
+        goto return_error;
+    }
+
+    if (nm_device_iwd_set_netconfig(NM_DEVICE_IWD(device), addr_family, config_iter)) {
+        g_dbus_method_invocation_return_value(invocation, g_variant_new("()"));
+        return;
+    }
+
+    _LOGD("netconfig-agent-request: device %s did not handle the IWD Netconfig Agent request",
+          ifname);
+
+return_error:
+    /* IWD doesn't look at the specific error */
+    g_dbus_method_invocation_return_error_literal(invocation,
+                                                  NM_DEVICE_ERROR,
+                                                  NM_DEVICE_ERROR_INVALID_CONNECTION,
+                                                  "Couldn't set netconfig data");
+}
+
 static const GDBusInterfaceInfo iwd_agent_iface_info = NM_DEFINE_GDBUS_INTERFACE_INFO_INIT(
     "net.connman.iwd.Agent",
     .methods = NM_DEFINE_GDBUS_METHOD_INFOS(
@@ -302,36 +373,55 @@ static const GDBusInterfaceInfo iwd_agent_iface_info = NM_DEFINE_GDBUS_INTERFACE
                                     .in_args = NM_DEFINE_GDBUS_ARG_INFOS(
                                         NM_DEFINE_GDBUS_ARG_INFO("reason", "s"), ), ), ), );
 
+static const GDBusInterfaceInfo iwd_netconfig_agent_iface_info =
+    NM_DEFINE_GDBUS_INTERFACE_INFO_INIT(
+        "net.connman.iwd.NetworkConfigurationAgent",
+        .methods = NM_DEFINE_GDBUS_METHOD_INFOS(
+            NM_DEFINE_GDBUS_METHOD_INFO("ConfigureIPv4",
+                                        .in_args = NM_DEFINE_GDBUS_ARG_INFOS(
+                                            NM_DEFINE_GDBUS_ARG_INFO("device", "o"),
+                                            NM_DEFINE_GDBUS_ARG_INFO("config", "a{sv}"), ), ),
+            NM_DEFINE_GDBUS_METHOD_INFO("ConfigureIPv6",
+                                        .in_args = NM_DEFINE_GDBUS_ARG_INFOS(
+                                            NM_DEFINE_GDBUS_ARG_INFO("device", "o"),
+                                            NM_DEFINE_GDBUS_ARG_INFO("config", "a{sv}"), ), ), ), );
+
 static guint
-iwd_agent_export(GDBusConnection *connection, gpointer user_data, char **agent_path, GError **error)
+iwd_agent_export(GDBusConnection *connection, gpointer user_data, GError **error)
 {
     static const GDBusInterfaceVTable vtable = {
         .method_call = agent_dbus_method_cb,
     };
-    char         path[50];
-    unsigned int rnd;
-    guint        id;
 
-    nm_random_get_bytes(&rnd, sizeof(rnd));
+    return g_dbus_connection_register_object(
+        connection,
+        NM_IWD_AGENT_PATH,
+        NM_UNCONST_PTR(GDBusInterfaceInfo, &iwd_agent_iface_info),
+        &vtable,
+        user_data,
+        NULL,
+        error);
+}
 
-    nm_sprintf_buf(path, "/agent/%u", rnd);
+static guint
+iwd_netconfig_agent_export(GDBusConnection *connection, gpointer user_data, GError **error)
+{
+    static const GDBusInterfaceVTable vtable = {
+        .method_call = netconfig_agent_dbus_method_cb,
+    };
 
-    id =
-        g_dbus_connection_register_object(connection,
-                                          path,
-                                          NM_UNCONST_PTR(GDBusInterfaceInfo, &iwd_agent_iface_info),
-                                          &vtable,
-                                          user_data,
-                                          NULL,
-                                          error);
-
-    if (id)
-        *agent_path = g_strdup(path);
-    return id;
+    return g_dbus_connection_register_object(
+        connection,
+        NM_IWD_AGENT_PATH,
+        NM_UNCONST_PTR(GDBusInterfaceInfo, &iwd_netconfig_agent_iface_info),
+        &vtable,
+        user_data,
+        NULL,
+        error);
 }
 
 static void
-register_agent(NMIwdManager *self)
+register_agent(NMIwdManager *self, const char *method)
 {
     NMIwdManagerPrivate *priv = NM_IWD_MANAGER_GET_PRIVATE(self);
     GDBusInterface      *agent_manager;
@@ -340,14 +430,14 @@ register_agent(NMIwdManager *self)
                                                         "/net/connman/iwd", /* IWD 1.0+ */
                                                         NM_IWD_AGENT_MANAGER_INTERFACE);
     if (!agent_manager) {
-        _LOGE("unable to register the IWD Agent: PSK/8021x Wi-Fi networks may not work");
+        _LOGE("unable to register the IWD Agent");
         return;
     }
 
     /* Register our agent */
     g_dbus_proxy_call(G_DBUS_PROXY(agent_manager),
-                      "RegisterAgent",
-                      g_variant_new("(o)", priv->agent_path),
+                      method,
+                      g_variant_new("(o)", NM_IWD_AGENT_PATH),
                       G_DBUS_CALL_FLAGS_NONE,
                       -1,
                       NULL,
@@ -1435,26 +1525,33 @@ _om_has_name_owner(GDBusObjectManager *object_manager)
 static void
 release_object_manager(NMIwdManager *self)
 {
-    NMIwdManagerPrivate *priv = NM_IWD_MANAGER_GET_PRIVATE(self);
+    NMIwdManagerPrivate      *priv = NM_IWD_MANAGER_GET_PRIVATE(self);
+    GDBusConnection          *agent_connection;
+    GDBusObjectManagerClient *omc;
 
     if (!priv->object_manager)
         return;
 
     g_signal_handlers_disconnect_by_data(priv->object_manager, self);
 
+    omc              = G_DBUS_OBJECT_MANAGER_CLIENT(priv->object_manager);
+    agent_connection = g_dbus_object_manager_client_get_connection(omc);
+
+    /* We're called when we're shutting down (i.e. our DBus connection
+     * is being closed, and IWD will detect this) or IWD was stopped so
+     * in either case calling UnregisterAgent will not do anything.
+     * Just unregister the agent interfaces.  The agents are on the same
+     * object (same path) but it seems g_dbus_connection_unregister_object()
+     * should be called for each interface on the object separately.
+     */
     if (priv->agent_id) {
-        GDBusConnection          *agent_connection;
-        GDBusObjectManagerClient *omc = G_DBUS_OBJECT_MANAGER_CLIENT(priv->object_manager);
-
-        agent_connection = g_dbus_object_manager_client_get_connection(omc);
-
-        /* We're is called when we're shutting down (i.e. our DBus connection
-         * is being closed, and IWD will detect this) or IWD was stopped so
-         * in either case calling UnregisterAgent will not do anything.
-         */
         g_dbus_connection_unregister_object(agent_connection, priv->agent_id);
         priv->agent_id = 0;
-        nm_clear_g_free(&priv->agent_path);
+    }
+
+    if (priv->netconfig_agent_id) {
+        g_dbus_connection_unregister_object(agent_connection, priv->netconfig_agent_id);
+        priv->netconfig_agent_id = 0;
     }
 
     g_clear_object(&priv->object_manager);
@@ -1669,6 +1766,10 @@ next:
     }
 
     g_variant_iter_free(properties_iter);
+
+    /* Register the netconfig agent only once we know netconfig is enabled */
+    if (nm_iwd_manager_get_netconfig_enabled(self) && priv->netconfig_agent_id)
+        register_agent(self, "RegisterNetworkConfigurationAgent");
 }
 
 static void
@@ -1700,10 +1801,16 @@ got_object_manager(GObject *object, GAsyncResult *result, gpointer user_data)
     connection =
         g_dbus_object_manager_client_get_connection(G_DBUS_OBJECT_MANAGER_CLIENT(object_manager));
 
-    priv->agent_id = iwd_agent_export(connection, self, &priv->agent_path, &error);
+    priv->agent_id = iwd_agent_export(connection, self, &error);
     if (!priv->agent_id) {
         _LOGE("failed to export the IWD Agent: PSK/8021x Wi-Fi networks may not work: %s",
               error->message);
+        g_clear_error(&error);
+    }
+
+    priv->netconfig_agent_id = iwd_netconfig_agent_export(connection, self, &error);
+    if (!priv->netconfig_agent_id) {
+        _LOGE("failed to export the IWD Netconfig Agent: %s", error->message);
         g_clear_error(&error);
     }
 
@@ -1734,7 +1841,7 @@ got_object_manager(GObject *object, GAsyncResult *result, gpointer user_data)
         g_list_free_full(objects, g_object_unref);
 
         if (priv->agent_id)
-            register_agent(self);
+            register_agent(self, "RegisterAgent");
 
         priv->netconfig_enabled = false; /* Assume false until GetInfo() results come in */
 
