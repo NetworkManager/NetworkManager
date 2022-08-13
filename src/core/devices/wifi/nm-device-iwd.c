@@ -799,7 +799,8 @@ check_connection_compatible(NMDevice *device, NMConnection *connection, GError *
          * thus are Known Networks.
          */
         if (security == NM_IWD_NETWORK_SECURITY_8021X) {
-            if (!is_connection_known_network(connection)) {
+            if (!is_connection_known_network(connection)
+                && !nm_iwd_manager_is_recently_mirrored(nm_iwd_manager_get(), ssid)) {
                 nm_utils_error_set_literal(error,
                                            NM_UTILS_ERROR_CONNECTION_AVAILABLE_INCOMPATIBLE,
                                            "802.1x connections must have IWD provisioning files");
@@ -932,7 +933,9 @@ check_connection_available(NMDevice                      *device,
      */
     if (nm_wifi_connection_get_iwd_ssid_and_security(connection, NULL, &security)
         && security == NM_IWD_NETWORK_SECURITY_8021X) {
-        if (!is_ap_known_network(ap)) {
+        if (!is_ap_known_network(ap)
+            && !nm_iwd_manager_is_recently_mirrored(nm_iwd_manager_get(),
+                                                    nm_setting_wireless_get_ssid(s_wifi))) {
             nm_utils_error_set_literal(
                 error,
                 NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
@@ -2327,7 +2330,9 @@ act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
          * fail, for other combinations we will let the Connect call fail
          * or ask us for any missing secrets through the Agent.
          */
-        if (nm_connection_get_setting_802_1x(connection) && !is_ap_known_network(ap)) {
+        if (nm_connection_get_setting_802_1x(connection) && !is_ap_known_network(ap)
+            && !nm_iwd_manager_is_recently_mirrored(nm_iwd_manager_get(),
+                                                    nm_setting_wireless_get_ssid(s_wireless))) {
             _LOGI(LOGD_DEVICE | LOGD_WIFI,
                   "Activation: (wifi) access point '%s' has 802.1x security but is not configured "
                   "in IWD.",
