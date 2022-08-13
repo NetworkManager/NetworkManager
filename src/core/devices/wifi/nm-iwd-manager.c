@@ -47,6 +47,11 @@ typedef struct {
 } KnownNetworkData;
 
 typedef struct {
+    GBytes *ssid;
+    gint64  timestamp;
+} RecentlyMirroredData;
+
+typedef struct {
     NMManager          *manager;
     NMSettings         *settings;
     GCancellable       *cancellable;
@@ -62,6 +67,7 @@ typedef struct {
     GHashTable         *p2p_devices;
     NMIwdWfdInfo        wfd_info;
     guint               wfd_use_count;
+    GSList             *recently_mirrored;
 } NMIwdManagerPrivate;
 
 struct _NMIwdManager {
@@ -349,6 +355,70 @@ register_agent(NMIwdManager *self)
                       NULL);
 
     g_object_unref(agent_manager);
+}
+
+/*****************************************************************************/
+
+static void
+recently_mirrored_data_free(void *data)
+{
+    RecentlyMirroredData *rmd = data;
+
+    g_bytes_unref(rmd->ssid);
+    g_free(rmd);
+}
+
+/* When we mirror an 802.1x connection to an IWD config file, and there's an
+ * AP in range with matching SSID, that connection should become available
+ * for activation.  In IWD terms when an 802.1x network becomes a Known
+ * Network, it can be connected to using the .Connect D-Bus method.
+ *
+ * However there's a delay between writing the IWD config file and receiving
+ * the InterfaceAdded event for the Known Network so we don't immediately
+ * find out that the network can now be used.  If an NM client creates a
+ * new connection for an 802.1x AP and tries to activate it immediately,
+ * NMDeviceIWD will not allow it to because it doesn't know the network is
+ * known yet.  To work around this, we save the SSIDs of 802.1x connections
+ * we recently mirrored to IWD config files, for 2 seconds, and we treat
+ * them as Known Networks in that period since in theory activations should
+ * succeed.
+ */
+bool
+nm_iwd_manager_is_recently_mirrored(NMIwdManager *self, const GBytes *ssid)
+{
+    NMIwdManagerPrivate  *priv = NM_IWD_MANAGER_GET_PRIVATE(self);
+    gint64                now  = nm_utils_get_monotonic_timestamp_nsec();
+    GSList               *iter;
+    RecentlyMirroredData *rmd;
+
+    /* Drop entries older than 2 seconds */
+    while (priv->recently_mirrored) {
+        rmd = priv->recently_mirrored->data;
+        if (now < rmd->timestamp + 2000000000)
+            break;
+
+        priv->recently_mirrored = g_slist_remove(priv->recently_mirrored, rmd);
+        recently_mirrored_data_free(rmd);
+    }
+
+    for (iter = priv->recently_mirrored; iter; iter = iter->next) {
+        rmd = iter->data;
+        if (g_bytes_equal(ssid, rmd->ssid))
+            return TRUE;
+    }
+
+    return FALSE;
+}
+
+static void
+save_mirrored(NMIwdManager *self, GBytes *ssid)
+{
+    NMIwdManagerPrivate  *priv = NM_IWD_MANAGER_GET_PRIVATE(self);
+    RecentlyMirroredData *rmd  = g_malloc(sizeof(RecentlyMirroredData));
+
+    rmd->ssid               = g_bytes_ref(ssid);
+    rmd->timestamp          = nm_utils_get_monotonic_timestamp_nsec();
+    priv->recently_mirrored = g_slist_append(priv->recently_mirrored, rmd);
 }
 
 /*****************************************************************************/
@@ -721,6 +791,9 @@ sett_conn_changed(NMSettingsConnection   *sett_conn,
                "iwd: changed Wi-Fi connection %s mirrored as IWD profile %s",
                nm_settings_connection_get_id(sett_conn),
                full_path);
+
+    if (security == NM_IWD_NETWORK_SECURITY_8021X)
+        save_mirrored(nm_iwd_manager_get(), ssid);
 }
 
 /* Look up an existing NMSettingsConnection for a network that has been
@@ -1283,6 +1356,7 @@ connection_added(NMSettings *settings, NMSettingsConnection *sett_conn, gpointer
     gs_free_error GError           *error      = NULL;
     nm_auto_unref_keyfile GKeyFile *iwd_config = NULL;
     NMSettingsConnectionIntFlags    flags;
+    NMIwdNetworkSecurity            security;
 
     if (!nm_streq(nm_settings_connection_get_connection_type(sett_conn), "802-11-wireless"))
         return;
@@ -1338,6 +1412,12 @@ connection_added(NMSettings *settings, NMSettingsConnection *sett_conn, gpointer
     _LOGD("New Wi-Fi connection %s mirrored as IWD profile %s",
           nm_settings_connection_get_id(sett_conn),
           full_path);
+
+    if (nm_wifi_connection_get_iwd_ssid_and_security(conn, NULL, &security)
+        && security == NM_IWD_NETWORK_SECURITY_8021X) {
+        NMSettingWireless *s_wifi = nm_connection_get_setting_wireless(conn);
+        save_mirrored(nm_iwd_manager_get(), nm_setting_wireless_get_ssid(s_wifi));
+    }
 }
 
 static gboolean
@@ -1951,6 +2031,8 @@ dispose(GObject *object)
     nm_clear_g_free(&priv->warned_state_dir);
 
     g_hash_table_unref(nm_steal_pointer(&priv->p2p_devices));
+
+    g_slist_free_full(nm_steal_pointer(&priv->recently_mirrored), recently_mirrored_data_free);
 
     G_OBJECT_CLASS(nm_iwd_manager_parent_class)->dispose(object);
 }
