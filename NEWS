@@ -41,6 +41,9 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   "match.kernel-command-line" setting in the profile. NetworkManager now
   first looks now for "/run/NetworkManager/proc-cmdline", which allows to
   overwrite the command line.
+* Improve the reapply of non-bridge properties.
+* Honor adding a Bluetooth NAP connection with all available methods.
+* Improve carrier detection.
 * Several internal improvements.
 
 The following changes were backported to 1.38.x releases between 1.38.0
@@ -48,9 +51,10 @@ and 1.38.4 are also present in NetworkManager-1.40:
 
 - 1.38.4
 
-* Fix DAD for DHCPv6 addresses.
 * Wi-Fi: improvements for OWE networks.
 * Support EC private keys
+* Fix nmcli tab completion support for embedded quote characters.
+* Fix reapply for lldp/mdns/llmnr/dns-over-tls settings.
 * Various bugfixes.
 
 - 1.38.2
