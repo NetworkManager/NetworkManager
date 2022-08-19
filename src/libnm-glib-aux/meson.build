@@ -8,6 +8,7 @@ libnm_glib_aux = static_library(
     'nm-enum-utils.c',
     'nm-errno.c',
     'nm-hash-utils.c',
+    'nm-inet-utils.c',
     'nm-io-utils.c',
     'nm-json-aux.c',
     'nm-keyfile-aux.c',
