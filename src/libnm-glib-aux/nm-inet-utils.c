@@ -425,20 +425,11 @@ gboolean
 nm_inet_parse_str(int addr_family, const char *text, char **out_addr)
 {
     NMIPAddr addrbin;
-    char     addrstr_buf[MAX(INET_ADDRSTRLEN, INET6_ADDRSTRLEN)];
 
-    g_return_val_if_fail(text, FALSE);
-
-    if (addr_family == AF_UNSPEC)
-        addr_family = strchr(text, ':') ? AF_INET6 : AF_INET;
-    else
-        g_return_val_if_fail(NM_IN_SET(addr_family, AF_INET, AF_INET6), FALSE);
-
-    if (inet_pton(addr_family, text, &addrbin) != 1)
+    if (!nm_inet_parse_bin(addr_family, text, &addr_family, &addrbin))
         return FALSE;
 
-    NM_SET_OUT(out_addr,
-               g_strdup(inet_ntop(addr_family, &addrbin, addrstr_buf, sizeof(addrstr_buf))));
+    NM_SET_OUT(out_addr, nm_inet_ntop_dup(addr_family, &addrbin));
     return TRUE;
 }
 
@@ -492,12 +483,11 @@ gboolean
 nm_inet_parse_with_prefix_str(int addr_family, const char *text, char **out_addr, int *out_prefix)
 {
     NMIPAddr addrbin;
-    char     addrstr_buf[MAX(INET_ADDRSTRLEN, INET6_ADDRSTRLEN)];
 
     if (!nm_inet_parse_with_prefix_bin(addr_family, text, &addr_family, &addrbin, out_prefix))
         return FALSE;
-    NM_SET_OUT(out_addr,
-               g_strdup(inet_ntop(addr_family, &addrbin, addrstr_buf, sizeof(addrstr_buf))));
+
+    NM_SET_OUT(out_addr, nm_inet_ntop_dup(addr_family, &addrbin));
     return TRUE;
 }
 
