@@ -50,23 +50,6 @@ nm_ip_addr_equal(int addr_family, gconstpointer a, gconstpointer b)
     return nm_ip_addr_cmp(addr_family, a, b) == 0;
 }
 
-static inline gboolean
-nm_ip_addr_is_null(int addr_family, gconstpointer addr)
-{
-    nm_assert(addr);
-
-    if (NM_IS_IPv4(addr_family)) {
-        in_addr_t t;
-
-        /* also for in_addr_t type (AF_INET), we accept that the pointer might
-         * be unaligned. */
-        memcpy(&t, addr, sizeof(t));
-        return t == 0;
-    }
-
-    return IN6_IS_ADDR_UNSPECIFIED((const struct in6_addr *) addr);
-}
-
 static inline void
 nm_ip_addr_set(int addr_family, gpointer dst, gconstpointer src)
 {
@@ -82,6 +65,19 @@ nm_ip_addr_set(int addr_family, gpointer dst, gconstpointer src)
      *
      * Using this function to initialize an NMIPAddr union (for IPv4) leaves
      * uninitalized bytes. Avoid that by using nm_ip_addr_init() instead. */
+}
+
+static inline gboolean
+nm_ip_addr_is_null(int addr_family, gconstpointer addr)
+{
+    NMIPAddr a;
+
+    nm_ip_addr_set(addr_family, &a, addr);
+
+    if (NM_IS_IPv4(addr_family))
+        return a.addr4 == 0;
+
+    return IN6_IS_ADDR_UNSPECIFIED(&a.addr6);
 }
 
 static inline NMIPAddr
@@ -201,15 +197,18 @@ nm_ip6_addr_same_prefix(const struct in6_addr *addr_a, const struct in6_addr *ad
 static inline int
 nm_ip_addr_same_prefix_cmp(int addr_family, gconstpointer addr_a, gconstpointer addr_b, guint8 plen)
 {
+    NMIPAddr a;
+    NMIPAddr b;
+
     NM_CMP_SELF(addr_a, addr_b);
 
-    if (NM_IS_IPv4(addr_family)) {
-        return nm_ip4_addr_same_prefix_cmp(*((const in_addr_t *) addr_a),
-                                           *((const in_addr_t *) addr_b),
-                                           plen);
-    }
+    nm_ip_addr_set(addr_family, &a, addr_a);
+    nm_ip_addr_set(addr_family, &b, addr_b);
 
-    return nm_ip6_addr_same_prefix_cmp(addr_a, addr_b, plen);
+    if (NM_IS_IPv4(addr_family))
+        return nm_ip4_addr_same_prefix_cmp(a.addr4, b.addr4, plen);
+
+    return nm_ip6_addr_same_prefix_cmp(&a.addr6, &b.addr6, plen);
 }
 
 static inline gboolean

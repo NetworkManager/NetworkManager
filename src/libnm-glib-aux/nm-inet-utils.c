@@ -138,20 +138,22 @@ nm_ip4_addr_get_default_prefix(in_addr_t ip)
 gboolean
 nm_ip_addr_is_site_local(int addr_family, const void *address)
 {
-    in_addr_t addr4;
+    NMIPAddr a;
+
+    nm_ip_addr_set(addr_family, &a, address);
 
     switch (addr_family) {
     case AF_INET:
         /* RFC1918 private addresses
          * 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16 */
-        addr4 = ntohl(*((const in_addr_t *) address));
-        return (addr4 & 0xff000000) == 0x0a000000 || (addr4 & 0xfff00000) == 0xac100000
-               || (addr4 & 0xffff0000) == 0xc0a80000;
+        return (a.addr4 & htonl(0xff000000)) == htonl(0x0a000000)
+               || (a.addr4 & htonl(0xfff00000)) == htonl(0xac100000)
+               || (a.addr4 & htonl(0xffff0000)) == htonl(0xc0a80000);
     case AF_INET6:
         /* IN6_IS_ADDR_SITELOCAL() is for deprecated fec0::/10 addresses (see rfc3879, 4.).
-         * Note that for unique local IPv6 addresses (ULA, fc00::/7) this returns false,
-         * which may or may not be a bug. */
-        return IN6_IS_ADDR_SITELOCAL(address);
+         * Note that for unique local IPv6 addresses (ULA, fc00::/7) this returns false.
+         * This may or may not be a bug of this function. */
+        return IN6_IS_ADDR_SITELOCAL(&a.addr6);
     default:
         g_return_val_if_reached(FALSE);
     }
@@ -169,25 +171,33 @@ nm_ip6_addr_is_ula(const struct in6_addr *address)
 gconstpointer
 nm_ip_addr_clear_host_address(int family, gpointer dst, gconstpointer src, guint32 plen)
 {
+    NMIPAddr a;
+    NMIPAddr a2;
+
     g_return_val_if_fail(dst, NULL);
+
+    if (!src) {
+        /* allow "self-assignment", by specifying %NULL as source. */
+        src = dst;
+    }
+
+    nm_ip_addr_set(family, &a, src);
 
     switch (family) {
     case AF_INET:
         g_return_val_if_fail(plen <= 32, NULL);
 
-        if (!src) {
-            /* allow "self-assignment", by specifying %NULL as source. */
-            src = dst;
-        }
-
-        *((guint32 *) dst) = nm_ip4_addr_clear_host_address(*((guint32 *) src), plen);
+        a2.addr4 = nm_ip4_addr_clear_host_address(a.addr4, plen);
         break;
     case AF_INET6:
-        nm_ip6_addr_clear_host_address(dst, src, plen);
+        nm_ip6_addr_clear_host_address(&a2.addr6, &a.addr6, plen);
         break;
     default:
         g_return_val_if_reached(NULL);
     }
+
+    nm_ip_addr_set(family, dst, &a2);
+
     return dst;
 }
 
