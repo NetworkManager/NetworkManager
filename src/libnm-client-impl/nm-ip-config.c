@@ -175,9 +175,7 @@ _notify_update_prop_nameservers(NMClient               *client,
 
                         if (!g_variant_is_of_type(val, G_VARIANT_TYPE_STRING))
                             goto next;
-                        if (!nm_utils_parse_inaddr(AF_INET,
-                                                   g_variant_get_string(val, NULL),
-                                                   &val_str))
+                        if (!nm_inet_parse_str(AF_INET, g_variant_get_string(val, NULL), &val_str))
                             goto next;
                         if (!arr)
                             arr = g_ptr_array_new();

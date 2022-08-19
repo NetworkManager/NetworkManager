@@ -90,7 +90,7 @@ get_property_ip(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec
     NMIPConfig        *self        = NM_IP_CONFIG(object);
     NMIPConfigPrivate *priv        = NM_IP_CONFIG_GET_PRIVATE(self);
     const int          addr_family = nm_ip_config_get_addr_family(self);
-    char               sbuf_addr[NM_UTILS_INET_ADDRSTRLEN];
+    char               sbuf_addr[NM_INET_ADDRSTRLEN];
     const char *const *strv;
     guint              len;
     int                v_i;
@@ -108,7 +108,7 @@ get_property_ip(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec
                 NMP_OBJECT_CAST_IP_ROUTE(priv->v_gateway.best_default_route));
             g_value_set_variant(
                 value,
-                g_variant_new_string(nm_utils_inet_ntop(addr_family, gateway, sbuf_addr)));
+                g_variant_new_string(nm_inet_ntop(addr_family, gateway, sbuf_addr)));
         } else
             g_value_set_variant(value, nm_g_variant_singleton_s_empty());
         break;
@@ -333,7 +333,7 @@ get_property_ip4(GObject *object, guint prop_id, GValue *value, GParamSpec *pspe
 {
     NMIPConfig        *self = NM_IP_CONFIG(object);
     NMIPConfigPrivate *priv = NM_IP_CONFIG_GET_PRIVATE(self);
-    char               addr_str[NM_UTILS_INET_ADDRSTRLEN];
+    char               addr_str[NM_INET_ADDRSTRLEN];
     GVariantBuilder    builder;
     const in_addr_t   *addrs;
     guint              len;
@@ -361,7 +361,7 @@ get_property_ip4(GObject *object, guint prop_id, GValue *value, GParamSpec *pspe
             for (i = 0; i < len; i++) {
                 GVariantBuilder nested_builder;
 
-                _nm_utils_inet4_ntop(addrs[i], addr_str);
+                nm_inet4_ntop(addrs[i], addr_str);
 
                 g_variant_builder_init(&nested_builder, G_VARIANT_TYPE("a{sv}"));
                 g_variant_builder_add(&nested_builder,
@@ -387,7 +387,7 @@ get_property_ip4(GObject *object, guint prop_id, GValue *value, GParamSpec *pspe
         else {
             g_variant_builder_init(&builder, G_VARIANT_TYPE("as"));
             for (i = 0; i < len; i++)
-                g_variant_builder_add(&builder, "s", _nm_utils_inet4_ntop(addrs[i], addr_str));
+                g_variant_builder_add(&builder, "s", nm_inet4_ntop(addrs[i], addr_str));
             g_value_take_variant(value, g_variant_builder_end(&builder));
         }
         break;

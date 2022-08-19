@@ -50,12 +50,12 @@ _share_iptables_subnet_to_str(char      buf[static _SHARE_IPTABLES_SUBNET_TO_STR
     in_addr_t netmask;
     int       l;
 
-    netmask = _nm_utils_ip4_prefix_to_netmask(plen);
+    netmask = nm_ip4_addr_netmask_from_prefix(plen);
 
     l = g_snprintf(buf,
                    _SHARE_IPTABLES_SUBNET_TO_STR_LEN,
                    "%s/%u",
-                   _nm_utils_inet4_ntop(addr & netmask, buf_addr),
+                   nm_inet4_ntop(addr & netmask, buf_addr),
                    plen);
     nm_assert(l < _SHARE_IPTABLES_SUBNET_TO_STR_LEN);
     return buf;

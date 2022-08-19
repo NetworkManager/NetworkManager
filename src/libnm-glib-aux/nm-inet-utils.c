@@ -115,7 +115,7 @@ nm_ip_addr_set_from_variant(int addr_family, gpointer dst, GVariant *variant, in
 /*****************************************************************************/
 
 guint32
-_nm_utils_ip4_get_default_prefix0(in_addr_t ip)
+nm_ip4_addr_get_default_prefix0(in_addr_t ip)
 {
     /* The function is originally from ipcalc.c of Red Hat's initscripts. */
     switch (ntohl(ip) >> 24) {
@@ -130,13 +130,13 @@ _nm_utils_ip4_get_default_prefix0(in_addr_t ip)
 }
 
 guint32
-_nm_utils_ip4_get_default_prefix(in_addr_t ip)
+nm_ip4_addr_get_default_prefix(in_addr_t ip)
 {
-    return _nm_utils_ip4_get_default_prefix0(ip) ?: 24;
+    return nm_ip4_addr_get_default_prefix0(ip) ?: 24;
 }
 
 gboolean
-nm_utils_ip_is_site_local(int addr_family, const void *address)
+nm_ip_addr_is_site_local(int addr_family, const void *address)
 {
     in_addr_t addr4;
 
@@ -158,7 +158,7 @@ nm_utils_ip_is_site_local(int addr_family, const void *address)
 }
 
 gboolean
-nm_utils_ip6_is_ula(const struct in6_addr *address)
+nm_ip6_addr_is_ula(const struct in6_addr *address)
 {
     /* Unique local IPv6 address (ULA) fc00::/7 */
     return (address->s6_addr32[0] & htonl(0xfe000000u)) == htonl(0xfc000000u);
@@ -167,7 +167,7 @@ nm_utils_ip6_is_ula(const struct in6_addr *address)
 /*****************************************************************************/
 
 gconstpointer
-nm_utils_ipx_address_clear_host_address(int family, gpointer dst, gconstpointer src, guint32 plen)
+nm_ip_addr_clear_host_address(int family, gpointer dst, gconstpointer src, guint32 plen)
 {
     g_return_val_if_fail(dst, NULL);
 
@@ -180,10 +180,10 @@ nm_utils_ipx_address_clear_host_address(int family, gpointer dst, gconstpointer 
             src = dst;
         }
 
-        *((guint32 *) dst) = nm_utils_ip4_address_clear_host_address(*((guint32 *) src), plen);
+        *((guint32 *) dst) = nm_ip4_addr_clear_host_address(*((guint32 *) src), plen);
         break;
     case AF_INET6:
-        nm_utils_ip6_address_clear_host_address(dst, src, plen);
+        nm_ip6_addr_clear_host_address(dst, src, plen);
         break;
     default:
         g_return_val_if_reached(NULL);
@@ -191,7 +191,7 @@ nm_utils_ipx_address_clear_host_address(int family, gpointer dst, gconstpointer 
     return dst;
 }
 
-/* nm_utils_ip6_address_clear_host_address:
+/* nm_ip6_addr_clear_host_address:
  * @dst: destination output buffer, will contain the network part of the @src address
  * @src: source ip6 address. If NULL, this does an in-place update of @dst.
  *   Also, @src and @dst are allowed to be the same pointers.
@@ -201,9 +201,7 @@ nm_utils_ipx_address_clear_host_address(int family, gpointer dst, gconstpointer 
  * @dst and @src to the same destination or set @src NULL.
  */
 const struct in6_addr *
-nm_utils_ip6_address_clear_host_address(struct in6_addr       *dst,
-                                        const struct in6_addr *src,
-                                        guint32                plen)
+nm_ip6_addr_clear_host_address(struct in6_addr *dst, const struct in6_addr *src, guint32 plen)
 {
     g_return_val_if_fail(plen <= 128, NULL);
     g_return_val_if_fail(dst, NULL);
@@ -230,9 +228,9 @@ nm_utils_ip6_address_clear_host_address(struct in6_addr       *dst,
 }
 
 int
-nm_utils_ip6_address_same_prefix_cmp(const struct in6_addr *addr_a,
-                                     const struct in6_addr *addr_b,
-                                     guint32                plen)
+nm_ip6_addr_same_prefix_cmp(const struct in6_addr *addr_a,
+                            const struct in6_addr *addr_b,
+                            guint32                plen)
 {
     int    nbytes;
     guint8 va, vb, m;
@@ -360,11 +358,11 @@ _parse_legacy_addr4(const char *text, in_addr_t *out_addr, GError **error)
 }
 
 gboolean
-nm_utils_parse_inaddr_bin_full(int         addr_family,
-                               gboolean    accept_legacy,
-                               const char *text,
-                               int        *out_addr_family,
-                               gpointer    out_addr)
+nm_inet_parse_bin_full(int         addr_family,
+                       gboolean    accept_legacy,
+                       const char *text,
+                       int        *out_addr_family,
+                       gpointer    out_addr)
 {
     NMIPAddr addrbin;
 
@@ -399,7 +397,7 @@ nm_utils_parse_inaddr_bin_full(int         addr_family,
             g_error("unexpected assertion failure: could parse \"%s\" as %s, but not accepted by "
                     "legacy parser: %s",
                     text,
-                    _nm_utils_inet4_ntop(addrbin.addr4, buf),
+                    nm_inet4_ntop(addrbin.addr4, buf),
                     error->message);
         }
         nm_assert(addrbin.addr4 == a);
@@ -414,7 +412,7 @@ nm_utils_parse_inaddr_bin_full(int         addr_family,
 }
 
 gboolean
-nm_utils_parse_inaddr(int addr_family, const char *text, char **out_addr)
+nm_inet_parse_str(int addr_family, const char *text, char **out_addr)
 {
     NMIPAddr addrbin;
     char     addrstr_buf[MAX(INET_ADDRSTRLEN, INET6_ADDRSTRLEN)];
@@ -435,11 +433,11 @@ nm_utils_parse_inaddr(int addr_family, const char *text, char **out_addr)
 }
 
 gboolean
-nm_utils_parse_inaddr_prefix_bin(int         addr_family,
-                                 const char *text,
-                                 int        *out_addr_family,
-                                 gpointer    out_addr,
-                                 int        *out_prefix)
+nm_inet_parse_with_prefix_bin(int         addr_family,
+                              const char *text,
+                              int        *out_addr_family,
+                              gpointer    out_addr,
+                              int        *out_prefix)
 {
     gs_free char *addrstr_free = NULL;
     int           prefix       = -1;
@@ -481,12 +479,12 @@ nm_utils_parse_inaddr_prefix_bin(int         addr_family,
 }
 
 gboolean
-nm_utils_parse_inaddr_prefix(int addr_family, const char *text, char **out_addr, int *out_prefix)
+nm_inet_parse_with_prefix_str(int addr_family, const char *text, char **out_addr, int *out_prefix)
 {
     NMIPAddr addrbin;
     char     addrstr_buf[MAX(INET_ADDRSTRLEN, INET6_ADDRSTRLEN)];
 
-    if (!nm_utils_parse_inaddr_prefix_bin(addr_family, text, &addr_family, &addrbin, out_prefix))
+    if (!nm_inet_parse_with_prefix_bin(addr_family, text, &addr_family, &addrbin, out_prefix))
         return FALSE;
     NM_SET_OUT(out_addr,
                g_strdup(inet_ntop(addr_family, &addrbin, addrstr_buf, sizeof(addrstr_buf))));
@@ -496,28 +494,28 @@ nm_utils_parse_inaddr_prefix(int addr_family, const char *text, char **out_addr,
 /*****************************************************************************/
 
 gboolean
-nm_utils_ipaddr_is_valid(int addr_family, const char *str_addr)
+nm_inet_is_valid(int addr_family, const char *str_addr)
 {
     nm_assert(NM_IN_SET(addr_family, AF_UNSPEC, AF_INET, AF_INET6));
 
-    return str_addr && nm_utils_parse_inaddr_bin(addr_family, str_addr, NULL, NULL);
+    return str_addr && nm_inet_parse_bin(addr_family, str_addr, NULL, NULL);
 }
 
 gboolean
-nm_utils_ipaddr_is_normalized(int addr_family, const char *str_addr)
+nm_inet_is_normalized(int addr_family, const char *str_addr)
 {
     NMIPAddr addr;
-    char     sbuf[NM_UTILS_INET_ADDRSTRLEN];
+    char     sbuf[NM_INET_ADDRSTRLEN];
 
     nm_assert(NM_IN_SET(addr_family, AF_UNSPEC, AF_INET, AF_INET6));
 
     if (!str_addr)
         return FALSE;
 
-    if (!nm_utils_parse_inaddr_bin(addr_family, str_addr, &addr_family, &addr))
+    if (!nm_inet_parse_bin(addr_family, str_addr, &addr_family, &addr))
         return FALSE;
 
-    nm_utils_inet_ntop(addr_family, &addr, sbuf);
+    nm_inet_ntop(addr_family, &addr, sbuf);
     return nm_streq(sbuf, str_addr);
 }
 

@@ -116,7 +116,7 @@ ip_addresses_with_prefix_from_strv(GBinding     *binding,
         } else
             addr = addrs->pdata[i];
 
-        if (!nm_utils_parse_inaddr_prefix(addr_family, strings[i], &addrstr, &prefix)) {
+        if (!nm_inet_parse_with_prefix_str(addr_family, strings[i], &addrstr, &prefix)) {
             g_ptr_array_unref(addrs);
             return FALSE;
         }
@@ -126,7 +126,7 @@ ip_addresses_with_prefix_from_strv(GBinding     *binding,
                 in_addr_t v4;
 
                 inet_pton(addr_family, addrstr, &v4);
-                if (nm_utils_ip_is_site_local(AF_INET, &v4))
+                if (nm_ip_addr_is_site_local(AF_INET, &v4))
                     prefix = nm_utils_ip4_get_default_prefix(v4);
                 else
                     prefix = 32;
@@ -194,7 +194,7 @@ ip_addresses_check_and_copy(GBinding     *binding,
     strings = g_value_get_boxed(source_value);
 
     for (i = 0; strings[i]; i++) {
-        if (!nm_utils_ipaddr_is_valid(addr_family, strings[i]))
+        if (!nm_inet_is_valid(addr_family, strings[i]))
             return FALSE;
     }
 
@@ -256,7 +256,7 @@ ip_gateway_from_string(GBinding     *binding,
     const char *gateway;
 
     gateway = g_value_get_string(source_value);
-    if (gateway && !nm_utils_ipaddr_is_valid(addr_family, gateway))
+    if (gateway && !nm_inet_is_valid(addr_family, gateway))
         gateway = NULL;
 
     g_value_set_string(target_value, gateway);
@@ -428,7 +428,7 @@ ip_route_transform_from_dest_string(GBinding     *binding,
     int         prefix;
 
     text = g_value_get_string(source_value);
-    if (!nm_utils_parse_inaddr_prefix(addr_family, text, &addrstr, &prefix))
+    if (!nm_inet_parse_with_prefix_str(addr_family, text, &addrstr, &prefix))
         return FALSE;
 
     /* Fetch the original property value */
@@ -442,9 +442,9 @@ ip_route_transform_from_dest_string(GBinding     *binding,
             in_addr_t v4;
 
             inet_pton(addr_family, addrstr, &v4);
-            if (nm_utils_ip_is_site_local(AF_INET, &v4)) {
+            if (nm_ip_addr_is_site_local(AF_INET, &v4)) {
                 prefix = nm_utils_ip4_get_default_prefix(v4);
-                if (v4 & (~_nm_utils_ip4_prefix_to_netmask(prefix)))
+                if (v4 & (~nm_ip4_addr_netmask_from_prefix(prefix)))
                     prefix = 32;
             } else
                 prefix = 32;
@@ -472,7 +472,7 @@ ip_route_transform_from_next_hop_string(GBinding     *binding,
 
     text = g_value_get_string(source_value);
     if (*text) {
-        if (!nm_utils_ipaddr_is_valid(addr_family, text))
+        if (!nm_inet_is_valid(addr_family, text))
             return FALSE;
     } else
         text = NULL;

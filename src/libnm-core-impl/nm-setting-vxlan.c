@@ -344,9 +344,9 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
     gboolean               remote_is_valid = TRUE;
     gboolean               local_is_valid  = TRUE;
 
-    if (priv->remote && !nm_utils_parse_inaddr_bin(addr_family, priv->remote, &addr_family, NULL))
+    if (priv->remote && !nm_inet_parse_bin(addr_family, priv->remote, &addr_family, NULL))
         remote_is_valid = FALSE;
-    if (priv->local && !nm_utils_parse_inaddr_bin(addr_family, priv->local, &addr_family, NULL))
+    if (priv->local && !nm_inet_parse_bin(addr_family, priv->local, &addr_family, NULL))
         local_is_valid = FALSE;
 
     if (!remote_is_valid) {

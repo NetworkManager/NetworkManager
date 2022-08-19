@@ -139,7 +139,7 @@ nm_utils_ipv6_interface_identifier_get_from_token(NMUtilsIPv6IfaceId *iid, const
 /**
  * nm_utils_inet6_interface_identifier_to_token:
  * @iid: %NMUtilsIPv6IfaceId interface identifier
- * @buf: the destination buffer of at least %NM_UTILS_INET_ADDRSTRLEN
+ * @buf: the destination buffer of at least %NM_INET_ADDRSTRLEN
  *   bytes.
  *
  * Converts the interface identifier to a string token.
@@ -156,7 +156,7 @@ nm_utils_inet6_interface_identifier_to_token(const NMUtilsIPv6IfaceId *iid,
 
     nm_assert(buf);
     nm_utils_ipv6_addr_set_interface_identifier(&i6_token, iid);
-    return _nm_utils_inet6_ntop(&i6_token, buf);
+    return nm_inet6_ntop(&i6_token, buf);
 }
 
 /*****************************************************************************/

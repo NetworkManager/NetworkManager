@@ -174,15 +174,15 @@ create_and_realize(NMDevice              *device,
 
     str = nm_setting_vxlan_get_local(s_vxlan);
     if (str) {
-        if (!nm_utils_parse_inaddr_bin(AF_INET, str, NULL, &props.local)
-            && !nm_utils_parse_inaddr_bin(AF_INET6, str, NULL, &props.local6))
+        if (!nm_inet_parse_bin(AF_INET, str, NULL, &props.local)
+            && !nm_inet_parse_bin(AF_INET6, str, NULL, &props.local6))
             return FALSE;
     }
 
     str = nm_setting_vxlan_get_remote(s_vxlan);
     if (str) {
-        if (!nm_utils_parse_inaddr_bin(AF_INET, str, NULL, &props.group)
-            && !nm_utils_parse_inaddr_bin(AF_INET6, str, NULL, &props.group6))
+        if (!nm_inet_parse_bin(AF_INET, str, NULL, &props.group)
+            && !nm_inet_parse_bin(AF_INET6, str, NULL, &props.group6))
             return FALSE;
     }
 
@@ -223,7 +223,7 @@ address_matches(const char *candidate, in_addr_t addr4, struct in6_addr *addr6)
     if (!candidate)
         return addr4 == 0u && IN6_IS_ADDR_UNSPECIFIED(addr6);
 
-    if (!nm_utils_parse_inaddr_bin(AF_UNSPEC, candidate, &addr_family, &candidate_addr))
+    if (!nm_inet_parse_bin(AF_UNSPEC, candidate, &addr_family, &candidate_addr))
         return FALSE;
 
     if (!nm_ip_addr_equal(addr_family,
@@ -401,7 +401,7 @@ update_connection(NMDevice *device, NMConnection *connection)
 {
     NMDeviceVxlanPrivate *priv = NM_DEVICE_VXLAN_GET_PRIVATE(device);
     NMSettingVxlan *s_vxlan    = _nm_connection_ensure_setting(connection, NM_TYPE_SETTING_VXLAN);
-    char            sbuf[NM_UTILS_INET_ADDRSTRLEN];
+    char            sbuf[NM_INET_ADDRSTRLEN];
 
     if (priv->props.id != nm_setting_vxlan_get_id(s_vxlan))
         g_object_set(G_OBJECT(s_vxlan), NM_SETTING_VXLAN_ID, priv->props.id, NULL);
@@ -417,12 +417,12 @@ update_connection(NMDevice *device, NMConnection *connection)
         if (priv->props.group) {
             g_object_set(s_vxlan,
                          NM_SETTING_VXLAN_REMOTE,
-                         _nm_utils_inet4_ntop(priv->props.group, sbuf),
+                         nm_inet4_ntop(priv->props.group, sbuf),
                          NULL);
         } else {
             g_object_set(s_vxlan,
                          NM_SETTING_VXLAN_REMOTE,
-                         _nm_utils_inet6_ntop(&priv->props.group6, sbuf),
+                         nm_inet6_ntop(&priv->props.group6, sbuf),
                          NULL);
         }
     }
@@ -433,12 +433,12 @@ update_connection(NMDevice *device, NMConnection *connection)
         if (priv->props.local) {
             g_object_set(s_vxlan,
                          NM_SETTING_VXLAN_LOCAL,
-                         _nm_utils_inet4_ntop(priv->props.local, sbuf),
+                         nm_inet4_ntop(priv->props.local, sbuf),
                          NULL);
         } else if (memcmp(&priv->props.local6, &in6addr_any, sizeof(in6addr_any))) {
             g_object_set(s_vxlan,
                          NM_SETTING_VXLAN_LOCAL,
-                         _nm_utils_inet6_ntop(&priv->props.local6, sbuf),
+                         nm_inet6_ntop(&priv->props.local6, sbuf),
                          NULL);
         }
     }
@@ -510,15 +510,15 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
         break;
     case PROP_GROUP:
         if (priv->props.group)
-            g_value_take_string(value, nm_utils_inet4_ntop_dup(priv->props.group));
+            g_value_take_string(value, nm_inet4_ntop_dup(priv->props.group));
         else if (!IN6_IS_ADDR_UNSPECIFIED(&priv->props.group6))
-            g_value_take_string(value, nm_utils_inet6_ntop_dup(&priv->props.group6));
+            g_value_take_string(value, nm_inet6_ntop_dup(&priv->props.group6));
         break;
     case PROP_LOCAL:
         if (priv->props.local)
-            g_value_take_string(value, nm_utils_inet4_ntop_dup(priv->props.local));
+            g_value_take_string(value, nm_inet4_ntop_dup(priv->props.local));
         else if (!IN6_IS_ADDR_UNSPECIFIED(&priv->props.local6))
-            g_value_take_string(value, nm_utils_inet6_ntop_dup(&priv->props.local6));
+            g_value_take_string(value, nm_inet6_ntop_dup(&priv->props.local6));
         break;
     case PROP_TOS:
         g_value_set_uchar(value, priv->props.tos);

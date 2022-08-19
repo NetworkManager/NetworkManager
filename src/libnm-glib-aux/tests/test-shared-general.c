@@ -253,12 +253,12 @@ test_nm_strndup_a(void)
 static void
 test_nm_utils_ip4_address_is_loopback(void)
 {
-    g_assert(nm_utils_ip4_address_is_loopback(nmtst_inet4_from_string("127.0.0.0")));
-    g_assert(nm_utils_ip4_address_is_loopback(nmtst_inet4_from_string("127.0.0.1")));
-    g_assert(nm_utils_ip4_address_is_loopback(nmtst_inet4_from_string("127.5.0.1")));
-    g_assert(!nm_utils_ip4_address_is_loopback(nmtst_inet4_from_string("126.5.0.1")));
-    g_assert(!nm_utils_ip4_address_is_loopback(nmtst_inet4_from_string("128.5.0.1")));
-    g_assert(!nm_utils_ip4_address_is_loopback(nmtst_inet4_from_string("129.5.0.1")));
+    g_assert(nm_ip4_addr_is_loopback(nmtst_inet4_from_string("127.0.0.0")));
+    g_assert(nm_ip4_addr_is_loopback(nmtst_inet4_from_string("127.0.0.1")));
+    g_assert(nm_ip4_addr_is_loopback(nmtst_inet4_from_string("127.5.0.1")));
+    g_assert(!nm_ip4_addr_is_loopback(nmtst_inet4_from_string("126.5.0.1")));
+    g_assert(!nm_ip4_addr_is_loopback(nmtst_inet4_from_string("128.5.0.1")));
+    g_assert(!nm_ip4_addr_is_loopback(nmtst_inet4_from_string("129.5.0.1")));
 }
 
 /*****************************************************************************/
@@ -266,22 +266,22 @@ test_nm_utils_ip4_address_is_loopback(void)
 static void
 test_nm_utils_ip4_prefix_to_netmask(void)
 {
-    g_assert_cmpint(_nm_utils_ip4_prefix_to_netmask(0), ==, nmtst_inet4_from_string("0.0.0.0"));
-    g_assert_cmpint(_nm_utils_ip4_prefix_to_netmask(1), ==, nmtst_inet4_from_string("128.0.0.0"));
-    g_assert_cmpint(_nm_utils_ip4_prefix_to_netmask(2), ==, nmtst_inet4_from_string("192.0.0.0"));
-    g_assert_cmpint(_nm_utils_ip4_prefix_to_netmask(16),
+    g_assert_cmpint(nm_ip4_addr_netmask_from_prefix(0), ==, nmtst_inet4_from_string("0.0.0.0"));
+    g_assert_cmpint(nm_ip4_addr_netmask_from_prefix(1), ==, nmtst_inet4_from_string("128.0.0.0"));
+    g_assert_cmpint(nm_ip4_addr_netmask_from_prefix(2), ==, nmtst_inet4_from_string("192.0.0.0"));
+    g_assert_cmpint(nm_ip4_addr_netmask_from_prefix(16),
                     ==,
                     nmtst_inet4_from_string("255.255.0.0"));
-    g_assert_cmpint(_nm_utils_ip4_prefix_to_netmask(24),
+    g_assert_cmpint(nm_ip4_addr_netmask_from_prefix(24),
                     ==,
                     nmtst_inet4_from_string("255.255.255.0"));
-    g_assert_cmpint(_nm_utils_ip4_prefix_to_netmask(30),
+    g_assert_cmpint(nm_ip4_addr_netmask_from_prefix(30),
                     ==,
                     nmtst_inet4_from_string("255.255.255.252"));
-    g_assert_cmpint(_nm_utils_ip4_prefix_to_netmask(31),
+    g_assert_cmpint(nm_ip4_addr_netmask_from_prefix(31),
                     ==,
                     nmtst_inet4_from_string("255.255.255.254"));
-    g_assert_cmpint(_nm_utils_ip4_prefix_to_netmask(32),
+    g_assert_cmpint(nm_ip4_addr_netmask_from_prefix(32),
                     ==,
                     nmtst_inet4_from_string("255.255.255.255"));
 }

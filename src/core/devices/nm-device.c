@@ -8561,7 +8561,7 @@ nm_device_generate_connection(NMDevice *self,
 
         pllink = nm_platform_link_get(nm_device_get_platform(self), priv->ifindex);
         if (pllink && pllink->inet6_token.id) {
-            char sbuf[NM_UTILS_INET_ADDRSTRLEN];
+            char sbuf[NM_INET_ADDRSTRLEN];
 
             g_object_set(s_ip6,
                          NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE,
@@ -10819,7 +10819,7 @@ _dev_ipll6_set_llstate(NMDevice *self, NML3IPv6LLState llstate, const struct in6
     }
 
     if (changed) {
-        char sbuf[NM_UTILS_INET_ADDRSTRLEN];
+        char sbuf[NM_INET_ADDRSTRLEN];
 
         _LOGT_ipll(AF_INET6,
                    "set state %s (was %s, llstate=%s, lladdr=%s)",
@@ -10828,7 +10828,7 @@ _dev_ipll6_set_llstate(NMDevice *self, NML3IPv6LLState llstate, const struct in6
                    nm_l3_ipv6ll_state_to_string(priv->ipll_data_6.v6.llstate),
                    nm_ip_addr_is_null(AF_INET6, &priv->ipll_data_6.v6.lladdr)
                        ? "(none)"
-                       : _nm_utils_inet6_ntop(&priv->ipll_data_6.v6.lladdr, sbuf));
+                       : nm_inet6_ntop(&priv->ipll_data_6.v6.lladdr, sbuf));
     }
 
     if (changed)
@@ -13847,7 +13847,7 @@ nm_device_start_ip_check(NMDevice *self)
     NMSettingConnection *s_con;
     guint                timeout     = 0;
     const char          *ping_binary = NULL;
-    char                 buf[NM_UTILS_INET_ADDRSTRLEN];
+    char                 buf[NM_INET_ADDRSTRLEN];
     NMLogDomain          log_domain = LOGD_IP4;
 
     /* Shouldn't be any active ping here, since IP_CHECK happens after the
@@ -13878,14 +13878,14 @@ nm_device_start_ip_check(NMDevice *self)
         } else if (priv->ip_data_4.state == NM_DEVICE_IP_STATE_READY) {
             gw = nm_l3_config_data_get_best_default_route(l3cd, AF_INET);
             if (gw) {
-                _nm_utils_inet4_ntop(NMP_OBJECT_CAST_IP4_ROUTE(gw)->gateway, buf);
+                nm_inet4_ntop(NMP_OBJECT_CAST_IP4_ROUTE(gw)->gateway, buf);
                 ping_binary = nm_utils_find_helper("ping", "/usr/bin/ping", NULL);
                 log_domain  = LOGD_IP4;
             }
         } else if (priv->ip_data_6.state == NM_DEVICE_IP_STATE_READY) {
             gw = nm_l3_config_data_get_best_default_route(l3cd, AF_INET6);
             if (gw) {
-                _nm_utils_inet6_ntop(&NMP_OBJECT_CAST_IP6_ROUTE(gw)->gateway, buf);
+                nm_inet6_ntop(&NMP_OBJECT_CAST_IP6_ROUTE(gw)->gateway, buf);
                 ping_binary = nm_utils_find_helper("ping6", "/usr/bin/ping6", NULL);
                 log_domain  = LOGD_IP6;
             }

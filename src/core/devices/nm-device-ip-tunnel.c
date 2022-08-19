@@ -107,12 +107,12 @@ address_equal_pp(int addr_family, const char *a, const char *b)
     nm_assert_addr_family(addr_family);
 
     if (a) {
-        if (!nm_utils_parse_inaddr_bin(addr_family, a, NULL, &addr_a_val))
+        if (!nm_inet_parse_bin(addr_family, a, NULL, &addr_a_val))
             nm_assert_not_reached();
         addr_a = &addr_a_val;
     }
     if (b) {
-        if (!nm_utils_parse_inaddr_bin(addr_family, b, NULL, &addr_b_val))
+        if (!nm_inet_parse_bin(addr_family, b, NULL, &addr_b_val))
             nm_assert_not_reached();
         addr_b = &addr_b_val;
     }
@@ -125,7 +125,7 @@ address_set(int addr_family, char **p_addr, const NMIPAddr *addr_new)
 {
     nm_assert_addr_family(addr_family);
     nm_assert(p_addr);
-    nm_assert(!*p_addr || nm_utils_ipaddr_is_normalized(addr_family, *p_addr));
+    nm_assert(!*p_addr || nm_inet_is_normalized(addr_family, *p_addr));
 
     if (!addr_new || nm_ip_addr_is_null(addr_family, addr_new)) {
         if (nm_clear_g_free(p_addr))
@@ -136,7 +136,7 @@ address_set(int addr_family, char **p_addr, const NMIPAddr *addr_new)
     if (*p_addr) {
         NMIPAddr addr_val;
 
-        if (!nm_utils_parse_inaddr_bin(addr_family, *p_addr, NULL, &addr_val))
+        if (!nm_inet_parse_bin(addr_family, *p_addr, NULL, &addr_val))
             nm_assert_not_reached();
 
         if (nm_ip_addr_equal(addr_family, &addr_val, addr_new))
@@ -145,7 +145,7 @@ address_set(int addr_family, char **p_addr, const NMIPAddr *addr_new)
         g_free(*p_addr);
     }
 
-    *p_addr = nm_utils_inet_ntop_dup(addr_family, addr_new);
+    *p_addr = nm_inet_ntop_dup(addr_family, addr_new);
     return TRUE;
 }
 

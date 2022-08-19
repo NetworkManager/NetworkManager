@@ -112,7 +112,7 @@ nm_hash_update_in6addr_prefix(NMHashState *h, const struct in6_addr *addr, guint
 
     nm_assert(addr);
 
-    nm_utils_ip6_address_clear_host_address(&a, addr, plen);
+    nm_ip6_addr_clear_host_address(&a, addr, plen);
     /* we don't hash plen itself. The caller may want to do that.*/
     nm_hash_update_in6addr(h, &a);
 }

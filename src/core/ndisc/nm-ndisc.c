@@ -1233,9 +1233,9 @@ nm_ndisc_dad_failed(NMNDisc *ndisc, const struct in6_addr *address, gboolean emi
         NMNDiscAddress *item = &g_array_index(rdata->addresses, NMNDiscAddress, i);
 
         if (IN6_ARE_ADDR_EQUAL(&item->address, address)) {
-            char sbuf[NM_UTILS_INET_ADDRSTRLEN];
+            char sbuf[NM_INET_ADDRSTRLEN];
 
-            _LOGD("DAD failed for discovered address %s", _nm_utils_inet6_ntop(address, sbuf));
+            _LOGD("DAD failed for discovered address %s", nm_inet6_ntop(address, sbuf));
             changed = TRUE;
             if (!complete_address(ndisc, item)) {
                 g_array_remove_index(rdata->addresses, i);
@@ -1278,7 +1278,7 @@ _config_changed_log(NMNDisc *ndisc, NMNDiscConfigMap changed)
     NMNDiscDataInternal *rdata;
     guint                i;
     char                 changedstr[CONFIG_MAP_MAX_STR];
-    char                 addrstr[NM_UTILS_INET_ADDRSTRLEN];
+    char                 addrstr[NM_INET_ADDRSTRLEN];
     char                 str_pref[35];
     char                 str_exp[100];
     gint64               now_msec;
@@ -1306,7 +1306,7 @@ _config_changed_log(NMNDisc *ndisc, NMNDiscConfigMap changed)
         const NMNDiscGateway *gateway = &g_array_index(rdata->gateways, NMNDiscGateway, i);
 
         _LOGD("  gateway %s pref %s exp %s",
-              _nm_utils_inet6_ntop(&gateway->address, addrstr),
+              nm_inet6_ntop(&gateway->address, addrstr),
               nm_icmpv6_router_pref_to_string(gateway->preference, str_pref, sizeof(str_pref)),
               get_exp(str_exp, now_msec, gateway));
     }
@@ -1314,17 +1314,17 @@ _config_changed_log(NMNDisc *ndisc, NMNDiscConfigMap changed)
         const NMNDiscAddress *address = &g_array_index(rdata->addresses, NMNDiscAddress, i);
 
         _LOGD("  address %s exp %s",
-              _nm_utils_inet6_ntop(&address->address, addrstr),
+              nm_inet6_ntop(&address->address, addrstr),
               get_exp(str_exp, now_msec, address));
     }
     for (i = 0; i < rdata->routes->len; i++) {
         const NMNDiscRoute *route = &g_array_index(rdata->routes, NMNDiscRoute, i);
-        char                sbuf[NM_UTILS_INET_ADDRSTRLEN];
+        char                sbuf[NM_INET_ADDRSTRLEN];
 
         _LOGD("  route %s/%u via %s pref %s exp %s",
-              _nm_utils_inet6_ntop(&route->network, addrstr),
+              nm_inet6_ntop(&route->network, addrstr),
               (guint) route->plen,
-              _nm_utils_inet6_ntop(&route->gateway, sbuf),
+              nm_inet6_ntop(&route->gateway, sbuf),
               nm_icmpv6_router_pref_to_string(route->preference, str_pref, sizeof(str_pref)),
               get_exp(str_exp, now_msec, route));
     }
@@ -1333,7 +1333,7 @@ _config_changed_log(NMNDisc *ndisc, NMNDiscConfigMap changed)
             &g_array_index(rdata->dns_servers, NMNDiscDNSServer, i);
 
         _LOGD("  dns_server %s exp %s",
-              _nm_utils_inet6_ntop(&dns_server->address, addrstr),
+              nm_inet6_ntop(&dns_server->address, addrstr),
               get_exp(str_exp, now_msec, dns_server));
     }
     for (i = 0; i < rdata->dns_domains->len; i++) {

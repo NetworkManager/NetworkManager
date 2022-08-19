@@ -217,13 +217,13 @@ _nmtstp_platform_ip_addresses_assert(const char        *filename,
             }
 
             if (!addr_bin->found) {
-                char sbuf[NM_UTILS_INET_ADDRSTRLEN];
+                char sbuf[NM_INET_ADDRSTRLEN];
 
                 g_error("%s:%d: IPv%c address %s was not found on ifindex %d",
                         filename,
                         lineno,
                         nm_utils_addr_family_to_char(addr_bin->addr_family),
-                        nm_utils_inet_ntop(addr_bin->addr_family, &addr_bin->addr, sbuf),
+                        nm_inet_ntop(addr_bin->addr_family, &addr_bin->addr, sbuf),
                         ifindex);
             }
         }
@@ -582,7 +582,7 @@ _nmtstp_assert_ip4_route_exists(const char *file,
     r = _ip4_route_get(platform, ifindex, network, plen, metric, tos, &c);
 
     if (c != c_exists && c_exists != -1) {
-        char sbuf[NM_UTILS_INET_ADDRSTRLEN];
+        char sbuf[NM_INET_ADDRSTRLEN];
 
         NM_PRAGMA_WARNING_DISABLE_DANGLING_POINTER
         g_error("[%s:%u] %s(): The ip4 route %s/%d metric %u tos %u shall exist %u times, but "
@@ -590,7 +590,7 @@ _nmtstp_assert_ip4_route_exists(const char *file,
                 file,
                 line,
                 func,
-                _nm_utils_inet4_ntop(network, sbuf),
+                nm_inet4_ntop(network, sbuf),
                 plen,
                 metric,
                 tos,
@@ -676,8 +676,8 @@ _nmtstp_assert_ip6_route_exists(const char            *file,
     r = _ip6_route_get(platform, ifindex, network, plen, metric, src, src_plen, &c);
 
     if (c != c_exists && c_exists != -1) {
-        char s_src[NM_UTILS_INET_ADDRSTRLEN];
-        char s_network[NM_UTILS_INET_ADDRSTRLEN];
+        char s_src[NM_INET_ADDRSTRLEN];
+        char s_network[NM_INET_ADDRSTRLEN];
 
         NM_PRAGMA_WARNING_DISABLE_DANGLING_POINTER
         g_error("[%s:%u] %s(): The ip6 route %s/%d metric %u src %s/%d shall exist %u times, but "
@@ -685,10 +685,10 @@ _nmtstp_assert_ip6_route_exists(const char            *file,
                 file,
                 line,
                 func,
-                _nm_utils_inet6_ntop(network, s_network),
+                nm_inet6_ntop(network, s_network),
                 plen,
                 metric,
-                _nm_utils_inet6_ntop(src, s_src),
+                nm_inet6_ntop(src, s_src),
                 src_plen,
                 c_exists,
                 c);
@@ -1051,8 +1051,8 @@ _ip_address_add(NMPlatform     *platform,
         gs_free char *s_valid     = NULL;
         gs_free char *s_preferred = NULL;
         gs_free char *s_label     = NULL;
-        char          b1[NM_UTILS_INET_ADDRSTRLEN];
-        char          b2[NM_UTILS_INET_ADDRSTRLEN];
+        char          b1[NM_INET_ADDRSTRLEN];
+        char          b2[NM_INET_ADDRSTRLEN];
 
         ifname = nm_platform_link_get_name(platform, ifindex);
         g_assert(ifname);
@@ -1065,18 +1065,18 @@ _ip_address_add(NMPlatform     *platform,
             s_label = g_strdup_printf("%s:%s", ifname, label);
 
         if (is_v4) {
-            char s_peer[NM_UTILS_INET_ADDRSTRLEN + 50];
+            char s_peer[NM_INET_ADDRSTRLEN + 50];
 
             g_assert(flags == 0);
 
             if (peer_address->addr4 != address->addr4 || nmtst_get_rand_uint32() % 2) {
                 /* If the peer is the same as the local address, we can omit it. The result should be identical */
-                nm_sprintf_buf(s_peer, " peer %s", _nm_utils_inet4_ntop(peer_address->addr4, b2));
+                nm_sprintf_buf(s_peer, " peer %s", nm_inet4_ntop(peer_address->addr4, b2));
             } else
                 s_peer[0] = '\0';
 
             nmtstp_run_command_check("ip address change %s%s/%d dev %s%s%s%s",
-                                     _nm_utils_inet4_ntop(address->addr4, b1),
+                                     nm_inet4_ntop(address->addr4, b1),
                                      s_peer,
                                      plen,
                                      ifname,
@@ -1089,10 +1089,10 @@ _ip_address_add(NMPlatform     *platform,
             /* flags not implemented (yet) */
             g_assert(flags == 0);
             nmtstp_run_command_check("ip address change %s%s%s/%d dev %s%s%s%s",
-                                     _nm_utils_inet6_ntop(&address->addr6, b1),
+                                     nm_inet6_ntop(&address->addr6, b1),
                                      !IN6_IS_ADDR_UNSPECIFIED(&peer_address->addr6) ? " peer " : "",
                                      !IN6_IS_ADDR_UNSPECIFIED(&peer_address->addr6)
-                                         ? _nm_utils_inet6_ntop(&peer_address->addr6, b2)
+                                         ? nm_inet6_ntop(&peer_address->addr6, b2)
                                          : "",
                                      plen,
                                      ifname,
@@ -1299,8 +1299,8 @@ _ip_address_del(NMPlatform     *platform,
 
     if (external_command) {
         const char *ifname;
-        char        b1[NM_UTILS_INET_ADDRSTRLEN];
-        char        b2[NM_UTILS_INET_ADDRSTRLEN];
+        char        b1[NM_INET_ADDRSTRLEN];
+        char        b2[NM_INET_ADDRSTRLEN];
         int         success;
         gboolean    had_address;
 
@@ -1318,18 +1318,17 @@ _ip_address_del(NMPlatform     *platform,
             had_address = !!nm_platform_ip6_address_get(platform, ifindex, &address->addr6);
 
         if (is_v4) {
-            success = nmtstp_run_command("ip address delete %s%s%s/%d dev %s",
-                                         _nm_utils_inet4_ntop(address->addr4, b1),
-                                         peer_address->addr4 != address->addr4 ? " peer " : "",
-                                         peer_address->addr4 != address->addr4
-                                             ? _nm_utils_inet4_ntop(peer_address->addr4, b2)
-                                             : "",
-                                         plen,
-                                         ifname);
+            success = nmtstp_run_command(
+                "ip address delete %s%s%s/%d dev %s",
+                nm_inet4_ntop(address->addr4, b1),
+                peer_address->addr4 != address->addr4 ? " peer " : "",
+                peer_address->addr4 != address->addr4 ? nm_inet4_ntop(peer_address->addr4, b2) : "",
+                plen,
+                ifname);
         } else {
             g_assert(!peer_address);
             success = nmtstp_run_command("ip address delete %s/%d dev %s",
-                                         _nm_utils_inet6_ntop(&address->addr6, b1),
+                                         nm_inet6_ntop(&address->addr6, b1),
                                          plen,
                                          ifname);
         }
@@ -1732,8 +1731,8 @@ nmtstp_link_gre_add(NMPlatform             *platform,
                                       name,
                                       type,
                                       dev ?: "",
-                                      _nm_utils_inet4_ntop(lnk->local, b1),
-                                      _nm_utils_inet4_ntop(lnk->remote, b2),
+                                      nm_inet4_ntop(lnk->local, b1),
+                                      nm_inet4_ntop(lnk->remote, b2),
                                       lnk->ttl,
                                       lnk->tos,
                                       lnk->path_mtu_discovery ? "pmtudisc" : "nopmtudisc");
@@ -1756,8 +1755,8 @@ nmtstp_link_ip6tnl_add(NMPlatform                *platform,
 {
     const NMPlatformLink *pllink = NULL;
     gboolean              success;
-    char                  b1[NM_UTILS_INET_ADDRSTRLEN];
-    char                  b2[NM_UTILS_INET_ADDRSTRLEN];
+    char                  b1[NM_INET_ADDRSTRLEN];
+    char                  b2[NM_INET_ADDRSTRLEN];
     char                  encap[20];
     char                  tclass[20];
     gboolean              encap_ignore;
@@ -1798,8 +1797,8 @@ nmtstp_link_ip6tnl_add(NMPlatform                *platform,
             name,
             mode,
             dev,
-            _nm_utils_inet6_ntop(&lnk->local, b1),
-            _nm_utils_inet6_ntop(&lnk->remote, b2),
+            nm_inet6_ntop(&lnk->local, b1),
+            nm_inet6_ntop(&lnk->remote, b2),
             lnk->ttl,
             tclass_inherit ? "inherit" : nm_sprintf_buf(tclass, "%02x", lnk->tclass),
             encap_ignore ? "none" : nm_sprintf_buf(encap, "%u", lnk->encap_limit),
@@ -1822,8 +1821,8 @@ nmtstp_link_ip6gre_add(NMPlatform                *platform,
 {
     const NMPlatformLink *pllink = NULL;
     gboolean              success;
-    char                  b1[NM_UTILS_INET_ADDRSTRLEN];
-    char                  b2[NM_UTILS_INET_ADDRSTRLEN];
+    char                  b1[NM_INET_ADDRSTRLEN];
+    char                  b2[NM_INET_ADDRSTRLEN];
     char                  tclass[20];
     gboolean              tclass_inherit;
 
@@ -1848,8 +1847,8 @@ nmtstp_link_ip6gre_add(NMPlatform                *platform,
             name,
             lnk->is_tap ? "ip6gretap" : "ip6gre",
             dev,
-            _nm_utils_inet6_ntop(&lnk->local, b1),
-            _nm_utils_inet6_ntop(&lnk->remote, b2),
+            nm_inet6_ntop(&lnk->local, b1),
+            nm_inet6_ntop(&lnk->remote, b2),
             lnk->ttl,
             tclass_inherit ? "inherit" : nm_sprintf_buf(tclass, "%02x", lnk->tclass),
             lnk->flow_label);
@@ -1901,8 +1900,8 @@ nmtstp_link_ipip_add(NMPlatform              *platform,
             "ip tunnel add %s mode ipip %s local %s remote %s ttl %u tos %02x %s",
             name,
             dev,
-            _nm_utils_inet4_ntop(lnk->local, b1),
-            _nm_utils_inet4_ntop(lnk->remote, b2),
+            nm_inet4_ntop(lnk->local, b1),
+            nm_inet4_ntop(lnk->remote, b2),
             lnk->ttl,
             lnk->tos,
             lnk->path_mtu_discovery ? "pmtudisc" : "nopmtudisc");
@@ -1997,8 +1996,8 @@ nmtstp_link_sit_add(NMPlatform             *platform,
             !nmtstp_run_command("ip tunnel add %s mode sit%s local %s remote %s ttl %u tos %02x %s",
                                 name,
                                 dev,
-                                _nm_utils_inet4_ntop(lnk->local, b1),
-                                _nm_utils_inet4_ntop(lnk->remote, b2),
+                                nm_inet4_ntop(lnk->local, b1),
+                                nm_inet4_ntop(lnk->remote, b2),
                                 lnk->ttl,
                                 lnk->tos,
                                 lnk->path_mtu_discovery ? "pmtudisc" : "nopmtudisc");
@@ -2132,24 +2131,24 @@ nmtstp_link_vxlan_add(NMPlatform               *platform,
 
     if (external_command) {
         gs_free char *dev = NULL;
-        char          local[NM_UTILS_INET_ADDRSTRLEN];
-        char          group[NM_UTILS_INET_ADDRSTRLEN];
+        char          local[NM_INET_ADDRSTRLEN];
+        char          group[NM_INET_ADDRSTRLEN];
 
         if (lnk->parent_ifindex)
             dev =
                 g_strdup_printf("dev %s", nm_platform_link_get_name(platform, lnk->parent_ifindex));
 
         if (lnk->local)
-            _nm_utils_inet4_ntop(lnk->local, local);
+            nm_inet4_ntop(lnk->local, local);
         else if (memcmp(&lnk->local6, &in6addr_any, sizeof(in6addr_any)))
-            _nm_utils_inet6_ntop(&lnk->local6, local);
+            nm_inet6_ntop(&lnk->local6, local);
         else
             local[0] = '\0';
 
         if (lnk->group)
-            _nm_utils_inet4_ntop(lnk->group, group);
+            nm_inet4_ntop(lnk->group, group);
         else if (memcmp(&lnk->group6, &in6addr_any, sizeof(in6addr_any)))
-            _nm_utils_inet6_ntop(&lnk->group6, group);
+            nm_inet6_ntop(&lnk->group6, group);
         else
             group[0] = '\0';
 
@@ -2732,7 +2731,7 @@ nmtstp_acd_defender_new(int ifindex, in_addr_t ip_addr, const NMEtherAddr *mac_a
     NAcdProbe                                         *probe        = NULL;
     int                                                fd;
     int                                                r;
-    char                                               sbuf_addr[NM_UTILS_INET_ADDRSTRLEN];
+    char                                               sbuf_addr[NM_INET_ADDRSTRLEN];
 
     g_assert_cmpint(ifindex, >, 0);
     g_assert(mac_addr);
@@ -2773,7 +2772,7 @@ nmtstp_acd_defender_new(int ifindex, in_addr_t ip_addr, const NMEtherAddr *mac_a
           NM_HASH_OBFUSCATE_PTR(defender),
           ifindex,
           NM_ETHER_ADDR_FORMAT_VAL(mac_addr),
-          _nm_utils_inet4_ntop(ip_addr, sbuf_addr));
+          nm_inet4_ntop(ip_addr, sbuf_addr));
 
     n_acd_probe_set_userdata(defender->probe, defender);
 

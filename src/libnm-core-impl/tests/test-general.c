@@ -5058,7 +5058,7 @@ _netmask_to_prefix(guint32 netmask)
 
     /* we re-implemented the netmask-to-prefix code differently. Check
      * that they agree. */
-    g_assert_cmpint(prefix, ==, _nm_utils_ip4_netmask_to_prefix(netmask));
+    g_assert_cmpint(prefix, ==, nm_ip4_addr_netmask_to_prefix(netmask));
 
     return prefix;
 }
@@ -5069,7 +5069,7 @@ test_ip4_prefix_to_netmask(void)
     int i;
 
     for (i = 0; i <= 32; i++) {
-        guint32 netmask = _nm_utils_ip4_prefix_to_netmask(i);
+        guint32 netmask = nm_ip4_addr_netmask_from_prefix(i);
         int     plen    = _netmask_to_prefix(netmask);
 
         g_assert_cmpint(i, ==, plen);
@@ -5097,8 +5097,8 @@ test_ip4_netmask_to_prefix(void)
     g_rand_set_seed(rand, 1);
 
     for (i = 2; i <= 32; i++) {
-        guint32 netmask            = _nm_utils_ip4_prefix_to_netmask(i);
-        guint32 netmask_lowest_bit = netmask & ~_nm_utils_ip4_prefix_to_netmask(i - 1);
+        guint32 netmask            = nm_ip4_addr_netmask_from_prefix(i);
+        guint32 netmask_lowest_bit = netmask & ~nm_ip4_addr_netmask_from_prefix(i - 1);
 
         g_assert_cmpint(i, ==, _netmask_to_prefix(netmask));
 
@@ -7140,7 +7140,7 @@ _sock_addr_endpoint_fixed(const char *endpoint, const char *host, guint16 port, 
     g_assert(host);
     g_assert(port > 0);
 
-    if (!nm_utils_parse_inaddr_bin(AF_UNSPEC, host, &addr_family, &addrbin))
+    if (!nm_inet_parse_bin(AF_UNSPEC, host, &addr_family, &addrbin))
         g_assert_not_reached();
 
     ep = nm_sock_addr_endpoint_new(endpoint);
@@ -10247,7 +10247,7 @@ test_nm_ip_addr_zero(void)
 {
     in_addr_t       a4 = nmtst_inet4_from_string("0.0.0.0");
     struct in6_addr a6 = *nmtst_inet6_from_string("::");
-    char            buf[NM_UTILS_INET_ADDRSTRLEN];
+    char            buf[NM_INET_ADDRSTRLEN];
     NMIPAddr        a = NM_IP_ADDR_INIT;
 
     g_assert(memcmp(&a, &nm_ip_addr_zero, sizeof(a)) == 0);
@@ -10258,11 +10258,11 @@ test_nm_ip_addr_zero(void)
     g_assert(memcmp(&nm_ip_addr_zero, &a4, sizeof(a4)) == 0);
     g_assert(memcmp(&nm_ip_addr_zero, &a6, sizeof(a6)) == 0);
 
-    g_assert_cmpstr(_nm_utils_inet4_ntop(nm_ip_addr_zero.addr4, buf), ==, "0.0.0.0");
-    g_assert_cmpstr(_nm_utils_inet6_ntop(&nm_ip_addr_zero.addr6, buf), ==, "::");
+    g_assert_cmpstr(nm_inet4_ntop(nm_ip_addr_zero.addr4, buf), ==, "0.0.0.0");
+    g_assert_cmpstr(nm_inet6_ntop(&nm_ip_addr_zero.addr6, buf), ==, "::");
 
-    g_assert_cmpstr(nm_utils_inet_ntop(AF_INET, &nm_ip_addr_zero, buf), ==, "0.0.0.0");
-    g_assert_cmpstr(nm_utils_inet_ntop(AF_INET6, &nm_ip_addr_zero, buf), ==, "::");
+    g_assert_cmpstr(nm_inet_ntop(AF_INET, &nm_ip_addr_zero, buf), ==, "0.0.0.0");
+    g_assert_cmpstr(nm_inet_ntop(AF_INET6, &nm_ip_addr_zero, buf), ==, "::");
 
     G_STATIC_ASSERT_EXPR(sizeof(a) == sizeof(a.array));
 }

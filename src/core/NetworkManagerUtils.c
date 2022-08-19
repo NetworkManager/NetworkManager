@@ -419,8 +419,8 @@ route_compare(NMIPRoute *route1, NMIPRoute *route2, gint64 default_metric)
         nm_assert_not_reached();
     if (!inet_pton(family, nm_ip_route_get_dest(route2), &a2))
         nm_assert_not_reached();
-    nm_utils_ipx_address_clear_host_address(family, &a1, NULL, plen);
-    nm_utils_ipx_address_clear_host_address(family, &a2, NULL, plen);
+    nm_ip_addr_clear_host_address(family, &a1, NULL, plen);
+    nm_ip_addr_clear_host_address(family, &a2, NULL, plen);
     NM_CMP_DIRECT_MEMCMP(&a1, &a2, nm_utils_addr_family_to_size(family));
 
     return 0;
@@ -1417,11 +1417,11 @@ nm_utils_ip_route_attribute_to_platform(int                addr_family,
         && g_variant_is_of_type(variant, G_VARIANT_TYPE_STRING)) {
         int prefix;
 
-        if (nm_utils_parse_inaddr_prefix_bin(addr_family,
-                                             g_variant_get_string(variant, NULL),
-                                             NULL,
-                                             &addr,
-                                             &prefix)) {
+        if (nm_inet_parse_with_prefix_bin(addr_family,
+                                          g_variant_get_string(variant, NULL),
+                                          NULL,
+                                          &addr,
+                                          &prefix)) {
             if (prefix < 0)
                 prefix = 128;
             r6->src      = addr.addr6;
@@ -1443,7 +1443,7 @@ nm_utils_ip_addresses_to_dbus(int                          addr_family,
     const int        IS_IPv4 = NM_IS_IPv4(addr_family);
     GVariantBuilder  builder_data;
     GVariantBuilder  builder_legacy;
-    char             addr_str[NM_UTILS_INET_ADDRSTRLEN];
+    char             addr_str[NM_INET_ADDRSTRLEN];
     NMDedupMultiIter iter;
     const NMPObject *obj;
     guint            i;
@@ -1478,8 +1478,7 @@ nm_utils_ip_addresses_to_dbus(int                          addr_family,
                 &addr_builder,
                 "{sv}",
                 "address",
-                g_variant_new_string(
-                    nm_utils_inet_ntop(addr_family, address->ax.address_ptr, addr_str)));
+                g_variant_new_string(nm_inet_ntop(addr_family, address->ax.address_ptr, addr_str)));
 
             g_variant_builder_add(&addr_builder,
                                   "{sv}",
@@ -1496,11 +1495,10 @@ nm_utils_ip_addresses_to_dbus(int                          addr_family,
                     p = &address->a6.peer_address;
             }
             if (p) {
-                g_variant_builder_add(
-                    &addr_builder,
-                    "{sv}",
-                    "peer",
-                    g_variant_new_string(nm_utils_inet_ntop(addr_family, p, addr_str)));
+                g_variant_builder_add(&addr_builder,
+                                      "{sv}",
+                                      "peer",
+                                      g_variant_new_string(nm_inet_ntop(addr_family, p, addr_str)));
             }
 
             if (IS_IPv4) {
@@ -1558,7 +1556,7 @@ nm_utils_ip_routes_to_dbus(int                          addr_family,
     const NMPObject *obj;
     GVariantBuilder  builder_data;
     GVariantBuilder  builder_legacy;
-    char             addr_str[NM_UTILS_INET_ADDRSTRLEN];
+    char             addr_str[NM_INET_ADDRSTRLEN];
 
     nm_assert_addr_family(addr_family);
 
@@ -1579,14 +1577,12 @@ nm_utils_ip_routes_to_dbus(int                          addr_family,
         nm_assert(r);
         nm_assert(r->rx.plen <= 8u * nm_utils_addr_family_to_size(addr_family));
         nm_assert(!IS_IPv4
-                  || r->r4.network
-                         == nm_utils_ip4_address_clear_host_address(r->r4.network, r->r4.plen));
-        nm_assert(
-            IS_IPv4
-            || (memcmp(&r->r6.network,
-                       nm_utils_ip6_address_clear_host_address(&n, &r->r6.network, r->r6.plen),
-                       sizeof(n))
-                == 0));
+                  || r->r4.network == nm_ip4_addr_clear_host_address(r->r4.network, r->r4.plen));
+        nm_assert(IS_IPv4
+                  || (memcmp(&r->r6.network,
+                             nm_ip6_addr_clear_host_address(&n, &r->r6.network, r->r6.plen),
+                             sizeof(n))
+                      == 0));
 
         if (r->rx.type_coerced != nm_platform_route_type_coerce(RTN_UNICAST))
             continue;
@@ -1601,7 +1597,7 @@ nm_utils_ip_routes_to_dbus(int                          addr_family,
                 &route_builder,
                 "{sv}",
                 "dest",
-                g_variant_new_string(nm_utils_inet_ntop(addr_family, r->rx.network_ptr, addr_str)));
+                g_variant_new_string(nm_inet_ntop(addr_family, r->rx.network_ptr, addr_str)));
 
             g_variant_builder_add(&route_builder,
                                   "{sv}",
@@ -1614,7 +1610,7 @@ nm_utils_ip_routes_to_dbus(int                          addr_family,
                     &route_builder,
                     "{sv}",
                     "next-hop",
-                    g_variant_new_string(nm_utils_inet_ntop(addr_family, gateway, addr_str)));
+                    g_variant_new_string(nm_inet_ntop(addr_family, gateway, addr_str)));
             }
 
             g_variant_builder_add(&route_builder,
@@ -1679,7 +1675,7 @@ nm_utils_platform_capture_ip_setting(NMPlatform *platform,
     NMDedupMultiIter                   iter;
     const NMPObject                   *obj;
     const char                        *method = NULL;
-    char                               sbuf[NM_UTILS_INET_ADDRSTRLEN];
+    char                               sbuf[NM_INET_ADDRSTRLEN];
     const NMPlatformIPXRoute          *best_default_route = NULL;
 
     s_ip =
@@ -1781,13 +1777,13 @@ nm_utils_platform_capture_ip_setting(NMPlatform *platform,
     }
 
     if (best_default_route && nm_setting_ip_config_get_num_addresses(s_ip) > 0) {
-        g_object_set(s_ip,
-                     NM_SETTING_IP_CONFIG_GATEWAY,
-                     nm_utils_inet_ntop(
-                         addr_family,
+        g_object_set(
+            s_ip,
+            NM_SETTING_IP_CONFIG_GATEWAY,
+            nm_inet_ntop(addr_family,
                          nm_platform_ip_route_get_gateway(addr_family, &best_default_route->rx),
                          sbuf),
-                     NULL);
+            NULL);
     }
 
     return NM_SETTING(g_steal_pointer(&s_ip));

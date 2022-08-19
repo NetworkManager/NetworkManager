@@ -1217,7 +1217,7 @@ _parent_device_l3cd_add_gateway_route(NML3ConfigData *l3cd,
             if (!nm_ip_addr_is_null(addr_family, gw)) {
                 nm_ip_addr_set(addr_family, &parent_gw, gw);
                 has_parent_gw = TRUE;
-            } else if (nm_utils_ip_is_site_local(addr_family, vpn_gw))
+            } else if (nm_ip_addr_is_site_local(addr_family, vpn_gw))
                 has_parent_gw = TRUE;
             else if ((obj = nm_device_get_best_default_route(parent_device, addr_family))
                      && nm_ip_addr_is_null(
@@ -2104,9 +2104,8 @@ _dbus_signal_ip_config_cb(NMVpnConnection *self, int addr_family, GVariant *dict
 
                     if (plen > 32)
                         break;
-                    route.r4.plen = plen;
-                    route.r4.network =
-                        nm_utils_ip4_address_clear_host_address(route.r4.network, plen);
+                    route.r4.plen    = plen;
+                    route.r4.network = nm_ip4_addr_clear_host_address(route.r4.network, plen);
 
                     if (priv->ip_data_4.gw_external.addr4
                         && route.r4.network == priv->ip_data_4.gw_external.addr4
@@ -2146,9 +2145,7 @@ _dbus_signal_ip_config_cb(NMVpnConnection *self, int addr_family, GVariant *dict
 
                 nm_ip_addr_set_from_variant(AF_INET6, &route.r6.gateway, next_hop, NULL);
 
-                nm_utils_ip6_address_clear_host_address(&route.r6.network,
-                                                        &route.r6.network,
-                                                        route.r6.plen);
+                nm_ip6_addr_clear_host_address(&route.r6.network, &route.r6.network, route.r6.plen);
 
                 if (!IN6_IS_ADDR_UNSPECIFIED(&priv->ip_data_6.gw_external.addr6)
                     && IN6_ARE_ADDR_EQUAL(&route.r6.network, &priv->ip_data_6.gw_external.addr6)

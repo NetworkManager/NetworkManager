@@ -128,7 +128,7 @@ nm_ip_addr_from_packed_array(int addr_family, gconstpointer ipaddr_arr, gsize id
 /*****************************************************************************/
 
 static inline guint32
-_nm_utils_ip4_netmask_to_prefix(in_addr_t subnetmask)
+nm_ip4_addr_netmask_to_prefix(in_addr_t subnetmask)
 {
     G_STATIC_ASSERT_EXPR(__SIZEOF_INT__ == 4);
     G_STATIC_ASSERT_EXPR(sizeof(int) == 4);
@@ -139,104 +139,95 @@ _nm_utils_ip4_netmask_to_prefix(in_addr_t subnetmask)
 }
 
 /**
- * _nm_utils_ip4_prefix_to_netmask:
+ * nm_ip4_addr_netmask_from_prefix:
  * @prefix: a CIDR prefix
  *
  * Returns: the netmask represented by the prefix, in network byte order
  **/
 static inline in_addr_t
-_nm_utils_ip4_prefix_to_netmask(guint32 prefix)
+nm_ip4_addr_netmask_from_prefix(guint32 prefix)
 {
     nm_assert(prefix <= 32);
     return prefix < 32 ? ~htonl(0xFFFFFFFFu >> prefix) : 0xFFFFFFFFu;
 }
 
-guint32 _nm_utils_ip4_get_default_prefix0(in_addr_t ip);
-guint32 _nm_utils_ip4_get_default_prefix(in_addr_t ip);
+guint32 nm_ip4_addr_get_default_prefix0(in_addr_t ip);
+guint32 nm_ip4_addr_get_default_prefix(in_addr_t ip);
 
 gconstpointer
-nm_utils_ipx_address_clear_host_address(int family, gpointer dst, gconstpointer src, guint32 plen);
+nm_ip_addr_clear_host_address(int family, gpointer dst, gconstpointer src, guint32 plen);
 
-/* nm_utils_ip4_address_clear_host_address:
+/* nm_ip4_addr_clear_host_address:
  * @addr: source ip6 address
  * @plen: prefix length of network
  *
  * returns: the input address, with the host address set to 0.
  */
 static inline in_addr_t
-nm_utils_ip4_address_clear_host_address(in_addr_t addr, guint32 plen)
+nm_ip4_addr_clear_host_address(in_addr_t addr, guint32 plen)
 {
-    return addr & _nm_utils_ip4_prefix_to_netmask(plen);
+    return addr & nm_ip4_addr_netmask_from_prefix(plen);
 }
 
-const struct in6_addr *nm_utils_ip6_address_clear_host_address(struct in6_addr       *dst,
-                                                               const struct in6_addr *src,
-                                                               guint32                plen);
+const struct in6_addr *
+nm_ip6_addr_clear_host_address(struct in6_addr *dst, const struct in6_addr *src, guint32 plen);
 
 /*****************************************************************************/
 
 static inline int
-nm_utils_ip4_address_same_prefix_cmp(in_addr_t addr_a, in_addr_t addr_b, guint32 plen)
+nm_ip4_addr_same_prefix_cmp(in_addr_t addr_a, in_addr_t addr_b, guint32 plen)
 {
-    NM_CMP_DIRECT(htonl(nm_utils_ip4_address_clear_host_address(addr_a, plen)),
-                  htonl(nm_utils_ip4_address_clear_host_address(addr_b, plen)));
+    NM_CMP_DIRECT(htonl(nm_ip4_addr_clear_host_address(addr_a, plen)),
+                  htonl(nm_ip4_addr_clear_host_address(addr_b, plen)));
     return 0;
 }
 
-int nm_utils_ip6_address_same_prefix_cmp(const struct in6_addr *addr_a,
-                                         const struct in6_addr *addr_b,
-                                         guint32                plen);
+int nm_ip6_addr_same_prefix_cmp(const struct in6_addr *addr_a,
+                                const struct in6_addr *addr_b,
+                                guint32                plen);
 
 static inline gboolean
-nm_utils_ip4_address_same_prefix(in_addr_t addr_a, in_addr_t addr_b, guint32 plen)
+nm_ip4_addr_same_prefix(in_addr_t addr_a, in_addr_t addr_b, guint32 plen)
 {
-    return nm_utils_ip4_address_same_prefix_cmp(addr_a, addr_b, plen) == 0;
+    return nm_ip4_addr_same_prefix_cmp(addr_a, addr_b, plen) == 0;
 }
 
 static inline gboolean
-nm_utils_ip6_address_same_prefix(const struct in6_addr *addr_a,
-                                 const struct in6_addr *addr_b,
-                                 guint8                 plen)
+nm_ip6_addr_same_prefix(const struct in6_addr *addr_a, const struct in6_addr *addr_b, guint8 plen)
 {
-    return nm_utils_ip6_address_same_prefix_cmp(addr_a, addr_b, plen) == 0;
+    return nm_ip6_addr_same_prefix_cmp(addr_a, addr_b, plen) == 0;
 }
 
 static inline int
-nm_utils_ip_address_same_prefix_cmp(int           addr_family,
-                                    gconstpointer addr_a,
-                                    gconstpointer addr_b,
-                                    guint8        plen)
+nm_ip_addr_same_prefix_cmp(int addr_family, gconstpointer addr_a, gconstpointer addr_b, guint8 plen)
 {
     NM_CMP_SELF(addr_a, addr_b);
 
     if (NM_IS_IPv4(addr_family)) {
-        return nm_utils_ip4_address_same_prefix_cmp(*((const in_addr_t *) addr_a),
-                                                    *((const in_addr_t *) addr_b),
-                                                    plen);
+        return nm_ip4_addr_same_prefix_cmp(*((const in_addr_t *) addr_a),
+                                           *((const in_addr_t *) addr_b),
+                                           plen);
     }
 
-    return nm_utils_ip6_address_same_prefix_cmp(addr_a, addr_b, plen);
+    return nm_ip6_addr_same_prefix_cmp(addr_a, addr_b, plen);
 }
 
 static inline gboolean
-nm_utils_ip_address_same_prefix(int           addr_family,
-                                gconstpointer addr_a,
-                                gconstpointer addr_b,
-                                guint8        plen)
+nm_ip_addr_same_prefix(int addr_family, gconstpointer addr_a, gconstpointer addr_b, guint8 plen)
 {
-    return nm_utils_ip_address_same_prefix_cmp(addr_family, addr_a, addr_b, plen) == 0;
+    return nm_ip_addr_same_prefix_cmp(addr_family, addr_a, addr_b, plen) == 0;
 }
 
-#define NM_CMP_DIRECT_IN4ADDR_SAME_PREFIX(a, b, plen) \
-    NM_CMP_RETURN(nm_utils_ip4_address_same_prefix_cmp((a), (b), (plen)))
+#define NM_CMP_DIRECT_IP4_ADDR_SAME_PREFIX(a, b, plen) \
+    NM_CMP_RETURN(nm_ip4_addr_same_prefix_cmp((a), (b), (plen)))
 
-#define NM_CMP_DIRECT_IN6ADDR_SAME_PREFIX(a, b, plen) \
-    NM_CMP_RETURN(nm_utils_ip6_address_same_prefix_cmp((a), (b), (plen)))
+#define NM_CMP_DIRECT_IP6_ADDR_SAME_PREFIX(a, b, plen) \
+    NM_CMP_RETURN(nm_ip6_addr_same_prefix_cmp((a), (b), (plen)))
 
 /*****************************************************************************/
 
-gboolean nm_utils_ip_is_site_local(int addr_family, const void *address);
-gboolean nm_utils_ip6_is_ula(const struct in6_addr *address);
+gboolean nm_ip_addr_is_site_local(int addr_family, const void *address);
+gboolean nm_ip6_addr_is_ula(const struct in6_addr *address);
 
 /*****************************************************************************/
 
@@ -244,7 +235,7 @@ gboolean nm_utils_ip6_is_ula(const struct in6_addr *address);
 #define NM_IPV4LL_NETMASK ((in_addr_t) htonl(0xFFFF0000lu))
 
 static inline gboolean
-nm_utils_ip4_address_is_loopback(in_addr_t addr)
+nm_ip4_addr_is_loopback(in_addr_t addr)
 {
     /* There is also IN_LOOPBACK() in <linux/in.h>, but there the
      * argument is in host order not `in_addr_t`. */
@@ -252,13 +243,13 @@ nm_utils_ip4_address_is_loopback(in_addr_t addr)
 }
 
 static inline gboolean
-nm_utils_ip4_address_is_link_local(in_addr_t addr)
+nm_ip4_addr_is_link_local(in_addr_t addr)
 {
     return (addr & NM_IPV4LL_NETMASK) == NM_IPV4LL_NETWORK;
 }
 
 static inline gboolean
-nm_utils_ip4_address_is_zeronet(in_addr_t network)
+nm_ip4_addr_is_zeronet(in_addr_t network)
 {
     /* Same as ipv4_is_zeronet() from kernel's include/linux/in.h. */
     return (network & htonl(0xFF000000u)) == htonl(0x00000000u);
@@ -266,13 +257,13 @@ nm_utils_ip4_address_is_zeronet(in_addr_t network)
 
 /*****************************************************************************/
 
-#define NM_UTILS_INET_ADDRSTRLEN INET6_ADDRSTRLEN
+#define NM_INET_ADDRSTRLEN INET6_ADDRSTRLEN
 
 /* Forward declare function so we don't have to drag in <arpa/inet.h>. */
 const char *inet_ntop(int af, const void *src, char *dst, socklen_t size);
 
 static inline const char *
-nm_utils_inet_ntop(int addr_family, gconstpointer addr, char *dst)
+nm_inet_ntop(int addr_family, gconstpointer addr, char *dst)
 {
     const char *s;
 
@@ -289,69 +280,66 @@ nm_utils_inet_ntop(int addr_family, gconstpointer addr, char *dst)
 }
 
 static inline const char *
-_nm_utils_inet4_ntop(in_addr_t addr, char dst[static INET_ADDRSTRLEN])
+nm_inet4_ntop(in_addr_t addr, char dst[static INET_ADDRSTRLEN])
 {
-    return nm_utils_inet_ntop(AF_INET, &addr, dst);
+    return nm_inet_ntop(AF_INET, &addr, dst);
 }
 
 static inline const char *
-_nm_utils_inet6_ntop(const struct in6_addr *addr, char dst[static INET6_ADDRSTRLEN])
+nm_inet6_ntop(const struct in6_addr *addr, char dst[static INET6_ADDRSTRLEN])
 {
-    return nm_utils_inet_ntop(AF_INET6, addr, dst);
+    return nm_inet_ntop(AF_INET6, addr, dst);
 }
 
 static inline char *
-nm_utils_inet_ntop_dup(int addr_family, gconstpointer addr)
+nm_inet_ntop_dup(int addr_family, gconstpointer addr)
 {
-    char buf[NM_UTILS_INET_ADDRSTRLEN];
+    char buf[NM_INET_ADDRSTRLEN];
 
-    return g_strdup(nm_utils_inet_ntop(addr_family, addr, buf));
+    return g_strdup(nm_inet_ntop(addr_family, addr, buf));
 }
 
 static inline char *
-nm_utils_inet4_ntop_dup(in_addr_t addr)
+nm_inet4_ntop_dup(in_addr_t addr)
 {
-    return nm_utils_inet_ntop_dup(AF_INET, &addr);
+    return nm_inet_ntop_dup(AF_INET, &addr);
 }
 
 static inline char *
-nm_utils_inet6_ntop_dup(const struct in6_addr *addr)
+nm_inet6_ntop_dup(const struct in6_addr *addr)
 {
-    return nm_utils_inet_ntop_dup(AF_INET6, addr);
+    return nm_inet_ntop_dup(AF_INET6, addr);
 }
 
 /*****************************************************************************/
 
-gboolean nm_utils_parse_inaddr_bin_full(int         addr_family,
-                                        gboolean    accept_legacy,
-                                        const char *text,
-                                        int        *out_addr_family,
-                                        gpointer    out_addr);
+gboolean nm_inet_parse_bin_full(int         addr_family,
+                                gboolean    accept_legacy,
+                                const char *text,
+                                int        *out_addr_family,
+                                gpointer    out_addr);
 static inline gboolean
-nm_utils_parse_inaddr_bin(int         addr_family,
-                          const char *text,
-                          int        *out_addr_family,
-                          gpointer    out_addr)
+nm_inet_parse_bin(int addr_family, const char *text, int *out_addr_family, gpointer out_addr)
 {
-    return nm_utils_parse_inaddr_bin_full(addr_family, FALSE, text, out_addr_family, out_addr);
+    return nm_inet_parse_bin_full(addr_family, FALSE, text, out_addr_family, out_addr);
 }
 
-gboolean nm_utils_parse_inaddr(int addr_family, const char *text, char **out_addr);
+gboolean nm_inet_parse_str(int addr_family, const char *text, char **out_addr);
 
-gboolean nm_utils_parse_inaddr_prefix_bin(int         addr_family,
-                                          const char *text,
-                                          int        *out_addr_family,
-                                          gpointer    out_addr,
-                                          int        *out_prefix);
+gboolean nm_inet_parse_with_prefix_bin(int         addr_family,
+                                       const char *text,
+                                       int        *out_addr_family,
+                                       gpointer    out_addr,
+                                       int        *out_prefix);
 
 gboolean
-nm_utils_parse_inaddr_prefix(int addr_family, const char *text, char **out_addr, int *out_prefix);
+nm_inet_parse_with_prefix_str(int addr_family, const char *text, char **out_addr, int *out_prefix);
 
 /*****************************************************************************/
 
-gboolean nm_utils_ipaddr_is_valid(int addr_family, const char *str_addr);
+gboolean nm_inet_is_valid(int addr_family, const char *str_addr);
 
-gboolean nm_utils_ipaddr_is_normalized(int addr_family, const char *str_addr);
+gboolean nm_inet_is_normalized(int addr_family, const char *str_addr);
 
 /*****************************************************************************/
 

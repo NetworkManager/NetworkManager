@@ -217,7 +217,7 @@ ip_setting_add_from_block(GHashTable *nic, NMConnection *connection, GError **er
                  FALSE,
                  NULL);
 
-    if (s_gateway && !nm_utils_ipaddr_is_valid(family, s_gateway)) {
+    if (s_gateway && !nm_inet_is_valid(family, s_gateway)) {
         g_set_error(error,
                     NM_SETTINGS_ERROR,
                     NM_SETTINGS_ERROR_INVALID_CONNECTION,
@@ -226,7 +226,7 @@ ip_setting_add_from_block(GHashTable *nic, NMConnection *connection, GError **er
         return FALSE;
     }
 
-    if (s_dns1 && !nm_utils_ipaddr_is_valid(family, s_dns1)) {
+    if (s_dns1 && !nm_inet_is_valid(family, s_dns1)) {
         g_set_error(error,
                     NM_SETTINGS_ERROR,
                     NM_SETTINGS_ERROR_INVALID_CONNECTION,
@@ -235,7 +235,7 @@ ip_setting_add_from_block(GHashTable *nic, NMConnection *connection, GError **er
         return FALSE;
     }
 
-    if (s_dns2 && !nm_utils_ipaddr_is_valid(family, s_dns2)) {
+    if (s_dns2 && !nm_inet_is_valid(family, s_dns2)) {
         g_set_error(error,
                     NM_SETTINGS_ERROR,
                     NM_SETTINGS_ERROR_INVALID_CONNECTION,

@@ -628,18 +628,18 @@ _peer_append_allowed_ip(NMWireGuardPeer *self, const char *allowed_ip, gboolean 
 
     /* normalize the address (if it is valid. Otherwise, take it
      * as-is (it will render the instance invalid). */
-    if (!nm_utils_parse_inaddr_prefix_bin(AF_UNSPEC, allowed_ip, &addr_family, &addrbin, &prefix)) {
+    if (!nm_inet_parse_with_prefix_bin(AF_UNSPEC, allowed_ip, &addr_family, &addrbin, &prefix)) {
         if (!accept_invalid)
             return FALSE;
         /* mark the entry as invalid by having a "X" prefix. */
         str      = g_strconcat(ALLOWED_IP_INVALID_X_STR, allowed_ip, NULL);
         is_valid = FALSE;
     } else {
-        char addrstr[NM_UTILS_INET_ADDRSTRLEN];
+        char addrstr[NM_INET_ADDRSTRLEN];
 
         nm_assert_addr_family(addr_family);
 
-        nm_utils_inet_ntop(addr_family, &addrbin, addrstr);
+        nm_inet_ntop(addr_family, &addrbin, addrstr);
         if (prefix >= 0)
             str = g_strdup_printf("%s/%d", addrstr, prefix);
         else

@@ -993,7 +993,7 @@ stage3_ip_config_start(NMModem *modem, int addr_family, NMModemIPMethod ip_metho
         /* Fully fail if invalid IP address retrieved */
         address_string = mm_bearer_ip_config_get_address(self->_priv.ipv4_config);
         if (!address_string
-            || !nm_utils_parse_inaddr_bin(AF_INET, address_string, NULL, &address_network)) {
+            || !nm_inet_parse_bin(AF_INET, address_string, NULL, &address_network)) {
             g_set_error(&error,
                         NM_DEVICE_ERROR,
                         NM_DEVICE_ERROR_INVALID_CONNECTION,
@@ -1005,7 +1005,7 @@ stage3_ip_config_start(NMModem *modem, int addr_family, NMModemIPMethod ip_metho
 
         /* Missing gateway not a hard failure */
         gw_string = mm_bearer_ip_config_get_gateway(self->_priv.ipv4_config);
-        if (gw_string && !nm_utils_parse_inaddr_bin(AF_INET, gw_string, NULL, &gw)) {
+        if (gw_string && !nm_inet_parse_bin(AF_INET, gw_string, NULL, &gw)) {
             g_set_error(&error,
                         NM_DEVICE_ERROR,
                         NM_DEVICE_ERROR_INVALID_CONNECTION,
@@ -1057,8 +1057,7 @@ stage3_ip_config_start(NMModem *modem, int addr_family, NMModemIPMethod ip_metho
 
         dns = mm_bearer_ip_config_get_dns(self->_priv.ipv4_config);
         for (i = 0; dns && dns[i]; i++) {
-            if (nm_utils_parse_inaddr_bin(AF_INET, dns[i], NULL, &address_network)
-                && address_network > 0) {
+            if (nm_inet_parse_bin(AF_INET, dns[i], NULL, &address_network) && address_network > 0) {
                 nm_l3_config_data_add_nameserver(l3cd, AF_INET, &address_network);
                 _LOGI("  DNS %s", dns[i]);
             }

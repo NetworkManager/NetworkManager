@@ -216,7 +216,7 @@ _emit_changed_on_idle_cb(gpointer user_data)
     _LOGT("emit changed signal (state=%s%s%s)",
           nm_l3_ipv6ll_state_to_string(state),
           lladdr ? ", " : "",
-          lladdr ? _nm_utils_inet6_ntop(lladdr, sbuf) : "");
+          lladdr ? nm_inet6_ntop(lladdr, sbuf) : "");
 
     self->notify_fcn(self, state, lladdr, self->user_data);
 
@@ -525,14 +525,14 @@ _check(NML3IPv6LL *self)
         if (_pladdr_is_ll_tentative(pladdr)) {
             if (_set_cur_lladdr_obj(self, NM_L3_IPV6LL_STATE_DAD_IN_PROGRESS, pladdr)) {
                 _LOGT("changed: waiting for address %s to complete DAD",
-                      _nm_utils_inet6_ntop(&self->cur_lladdr, sbuf));
+                      nm_inet6_ntop(&self->cur_lladdr, sbuf));
                 _lladdr_handle_changed(self);
             }
             return;
         }
 
         if (_set_cur_lladdr_obj(self, NM_L3_IPV6LL_STATE_READY, pladdr)) {
-            _LOGT("changed: address %s is ready", _nm_utils_inet6_ntop(&self->cur_lladdr, sbuf));
+            _LOGT("changed: address %s is ready", nm_inet6_ntop(&self->cur_lladdr, sbuf));
             _lladdr_handle_changed(self);
         }
         return;
@@ -545,9 +545,9 @@ _check(NML3IPv6LL *self)
             NM_IN_SET(self->state, NM_L3_IPV6LL_STATE_DAD_IN_PROGRESS, NM_L3_IPV6LL_STATE_READY));
         if (self->state == NM_L3_IPV6LL_STATE_DAD_IN_PROGRESS)
             _LOGT("changed: address %s did not complete DAD",
-                  _nm_utils_inet6_ntop(&self->cur_lladdr, sbuf));
+                  nm_inet6_ntop(&self->cur_lladdr, sbuf));
         else {
-            _LOGT("changed: address %s is gone", _nm_utils_inet6_ntop(&self->cur_lladdr, sbuf));
+            _LOGT("changed: address %s is gone", nm_inet6_ntop(&self->cur_lladdr, sbuf));
         }
 
         /* reset the state here, so that we are sure that the following
@@ -579,8 +579,7 @@ _check(NML3IPv6LL *self)
      * If that does not happen within timeout, we assume that this address failed DAD. */
     self->wait_for_addr_source = nm_g_timeout_add_source(2000, _wait_for_addr_timeout_cb, self);
     if (_set_cur_lladdr_bin(self, NM_L3_IPV6LL_STATE_DAD_IN_PROGRESS, &lladdr)) {
-        _LOGT("changed: starting DAD for address %s",
-              _nm_utils_inet6_ntop(&self->cur_lladdr, sbuf));
+        _LOGT("changed: starting DAD for address %s", nm_inet6_ntop(&self->cur_lladdr, sbuf));
         _lladdr_handle_changed(self);
     }
     return;
