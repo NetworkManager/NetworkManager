@@ -58,16 +58,22 @@ static NmtNewtPopupEntry wifi_band[] = {{NC_("Wi-Fi", "Automatic"), NULL},
                                         {N_("B/G (2.4 GHz)"), "bg"},
                                         {NULL, NULL}};
 
-static NmtNewtPopupEntry wifi_security[] = {{NC_("Wi-Fi security", "None"), "none"},
-                                            {N_("WPA & WPA2 Personal"), "wpa-personal"},
-                                            {N_("WPA3 Personal"), "wpa3-personal"},
-                                            {N_("WPA & WPA2 Enterprise"), "wpa-enterprise"},
-                                            {N_("WEP 40/128-bit Key (Hex or ASCII)"), "wep-key"},
-                                            {N_("WEP 128-bit Passphrase"), "wep-passphrase"},
-                                            {N_("Dynamic WEP (802.1x)"), "dynamic-wep"},
-                                            {N_("LEAP"), "leap"},
-                                            {N_("Enhanced Open (OWE)"), "owe"},
-                                            {NULL, NULL}};
+static struct {
+    NmtNewtPopupEntry common[6];
+    NmtNewtPopupEntry wep[4];
+} wifi_security = {
+    {{NC_("Wi-Fi security", "None"), "none"},
+     {N_("WPA & WPA2 Personal"), "wpa-personal"},
+     {N_("WPA3 Personal"), "wpa3-personal"},
+     {N_("WPA & WPA2 Enterprise"), "wpa-enterprise"},
+     {N_("LEAP"), "leap"},
+     {N_("Enhanced Open (OWE)"), "owe"}},
+    {{N_("WEP 40/128-bit Key (Hex or ASCII)"), "wep-key"},
+     {N_("WEP 128-bit Passphrase"), "wep-passphrase"},
+     {N_("Dynamic WEP (802.1x)"), "dynamic-wep"},
+     {NULL, NULL}},
+
+};
 
 static NmtNewtPopupEntry wep_index[] = {{NC_("WEP key index", "1 (Default)"), "1"},
                                         {NC_("WEP key index", "2"), "2"},
@@ -249,7 +255,7 @@ nmt_page_wifi_constructed(GObject *object)
 
     nmt_editor_grid_append(grid, NULL, nmt_newt_separator_new(), NULL);
 
-    widget = nmt_newt_popup_new(wifi_security);
+    widget = nmt_newt_popup_new((NmtNewtPopupEntry *) &wifi_security);
     nmt_editor_grid_append(grid, _("Security"), widget, NULL);
     security = widget;
 
@@ -403,4 +409,9 @@ nmt_page_wifi_class_init(NmtPageWifiClass *wifi_class)
 
     object_class->constructed = nmt_page_wifi_constructed;
     object_class->finalize    = nmt_page_wifi_finalize;
+
+    if (!getenv("NM_ALLOW_INSECURE_WEP")) {
+        wifi_security.wep[0].label = NULL;
+        wifi_security.wep[0].id    = NULL;
+    }
 }
