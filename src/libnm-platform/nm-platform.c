@@ -4529,20 +4529,18 @@ next_plat:;
                     nm_platform_ip4_broadcast_address_from_addr(&known_address->a4),
                     lifetime,
                     preferred,
-                    known_address->ax.a_no_auto_noprefixroute ? 0 : IFA_F_NOPREFIXROUTE,
+                    IFA_F_NOPREFIXROUTE,
                     known_address->a4.label))
                 success = FALSE;
         } else {
-            if (!nm_platform_ip6_address_add(
-                    self,
-                    ifindex,
-                    known_address->a6.address,
-                    known_address->a6.plen,
-                    known_address->a6.peer_address,
-                    lifetime,
-                    preferred,
-                    (known_address->ax.a_no_auto_noprefixroute ? 0 : IFA_F_NOPREFIXROUTE)
-                        | known_address->a6.n_ifa_flags))
+            if (!nm_platform_ip6_address_add(self,
+                                             ifindex,
+                                             known_address->a6.address,
+                                             known_address->a6.plen,
+                                             known_address->a6.peer_address,
+                                             lifetime,
+                                             preferred,
+                                             IFA_F_NOPREFIXROUTE | known_address->a6.n_ifa_flags))
                 success = FALSE;
         }
     }
@@ -6790,7 +6788,6 @@ nm_platform_ip4_address_to_string(const NMPlatformIP4Address *address, char *buf
         " src %s"
         "%s" /* a_acd_not_ready */
         "%s" /* a_force_commit */
-        "%s" /* a_no_auto_noprefixroute */
         "",
         s_address,
         address->plen,
@@ -6809,8 +6806,7 @@ nm_platform_ip4_address_to_string(const NMPlatformIP4Address *address, char *buf
         str_label,
         nmp_utils_ip_config_source_to_string(address->addr_source, s_source, sizeof(s_source)),
         address->a_acd_not_ready ? " ip4acd-not-ready" : "",
-        address->a_force_commit ? " force-commit" : "",
-        address->a_no_auto_noprefixroute ? " no-auto-noprefixroute" : "");
+        address->a_force_commit ? " force-commit" : "");
     g_free(str_peer);
     return buf;
 }
@@ -6931,7 +6927,6 @@ nm_platform_ip6_address_to_string(const NMPlatformIP6Address *address, char *buf
         len,
         "%s/%d lft %s pref %s%s%s%s%s src %s"
         "%s" /* a_force_commit */
-        "%s" /* a_no_auto_noprefixroute */
         "",
         s_address,
         address->plen,
@@ -6942,8 +6937,7 @@ nm_platform_ip6_address_to_string(const NMPlatformIP6Address *address, char *buf
         str_dev,
         _to_string_ifa_flags(address->n_ifa_flags, s_flags, sizeof(s_flags)),
         nmp_utils_ip_config_source_to_string(address->addr_source, s_source, sizeof(s_source)),
-        address->a_force_commit ? " force-commit" : "",
-        address->a_no_auto_noprefixroute ? " no-auto-noprefixroute" : "");
+        address->a_force_commit ? " force-commit" : "");
     g_free(str_peer);
     return buf;
 }
@@ -8606,8 +8600,7 @@ nm_platform_ip4_address_hash_update(const NMPlatformIP4Address *obj, NMHashState
                         NM_HASH_COMBINE_BOOLS(guint8,
                                               obj->use_ip4_broadcast_address,
                                               obj->a_acd_not_ready,
-                                              obj->a_force_commit,
-                                              obj->a_no_auto_noprefixroute));
+                                              obj->a_force_commit));
     nm_hash_update_strarr(h, obj->label);
 }
 
@@ -8656,7 +8649,6 @@ nm_platform_ip4_address_cmp(const NMPlatformIP4Address *a,
                 NM_CMP_FIELD(a, b, broadcast_address);
             NM_CMP_FIELD_UNSAFE(a, b, a_acd_not_ready);
             NM_CMP_FIELD_UNSAFE(a, b, a_force_commit);
-            NM_CMP_FIELD_UNSAFE(a, b, a_no_auto_noprefixroute);
         }
         return 0;
     }
@@ -8666,18 +8658,17 @@ nm_platform_ip4_address_cmp(const NMPlatformIP4Address *a,
 void
 nm_platform_ip6_address_hash_update(const NMPlatformIP6Address *obj, NMHashState *h)
 {
-    nm_hash_update_vals(
-        h,
-        obj->ifindex,
-        obj->addr_source,
-        obj->timestamp,
-        obj->lifetime,
-        obj->preferred,
-        obj->n_ifa_flags,
-        obj->plen,
-        obj->address,
-        obj->peer_address,
-        NM_HASH_COMBINE_BOOLS(guint8, obj->a_force_commit, obj->a_no_auto_noprefixroute));
+    nm_hash_update_vals(h,
+                        obj->ifindex,
+                        obj->addr_source,
+                        obj->timestamp,
+                        obj->lifetime,
+                        obj->preferred,
+                        obj->n_ifa_flags,
+                        obj->plen,
+                        obj->address,
+                        obj->peer_address,
+                        NM_HASH_COMBINE_BOOLS(guint8, obj->a_force_commit));
 }
 
 int
@@ -8721,7 +8712,6 @@ nm_platform_ip6_address_cmp(const NMPlatformIP6Address *a,
             NM_CMP_FIELD(a, b, n_ifa_flags);
             NM_CMP_FIELD(a, b, addr_source);
             NM_CMP_FIELD_UNSAFE(a, b, a_force_commit);
-            NM_CMP_FIELD_UNSAFE(a, b, a_no_auto_noprefixroute);
         }
         return 0;
     }
