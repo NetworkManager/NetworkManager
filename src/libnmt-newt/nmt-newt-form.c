@@ -36,7 +36,7 @@ typedef struct {
     gboolean fixed_width, fixed_height;
     char    *title_lc;
 
-    gboolean       dirty, escape_exits;
+    gboolean       dirty;
     NmtNewtWidget *focus;
 #ifdef HAVE_NEWTFORMGETSCROLLPOSITION
     int scroll_position = 0;
@@ -54,7 +54,6 @@ enum {
     PROP_WIDTH,
     PROP_HEIGHT,
     PROP_PADDING,
-    PROP_ESCAPE_EXITS,
 
     LAST_PROP
 };
@@ -211,8 +210,7 @@ nmt_newt_form_build(NmtNewtForm *form)
     } else
         priv->form = newtForm(NULL, NULL, NEWT_FLAG_NOF12);
 
-    if (priv->escape_exits)
-        newtFormAddHotKey(priv->form, NEWT_KEY_ESCAPE);
+    newtFormAddHotKey(priv->form, NEWT_KEY_ESCAPE);
 
     cos = nmt_newt_widget_get_components(priv->content);
     for (i = 0; cos[i]; i++)
@@ -504,9 +502,6 @@ nmt_newt_form_set_property(GObject *object, guint prop_id, const GValue *value, 
     case PROP_PADDING:
         priv->padding = g_value_get_uint(value);
         break;
-    case PROP_ESCAPE_EXITS:
-        priv->escape_exits = g_value_get_boolean(value);
-        break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
         break;
@@ -539,9 +534,6 @@ nmt_newt_form_get_property(GObject *object, guint prop_id, GValue *value, GParam
         break;
     case PROP_PADDING:
         g_value_set_uint(value, priv->padding);
-        break;
-    case PROP_ESCAPE_EXITS:
-        g_value_set_boolean(value, priv->escape_exits);
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
@@ -722,18 +714,4 @@ nmt_newt_form_class_init(NmtNewtFormClass *form_class)
                           G_MAXUINT,
                           1,
                           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS | G_PARAM_CONSTRUCT_ONLY));
-    /**
-     * NmtNewtForm:escape-exits:
-     *
-     * If %TRUE, then hitting the Escape key will cause the form to
-     * exit.
-     */
-    g_object_class_install_property(
-        object_class,
-        PROP_ESCAPE_EXITS,
-        g_param_spec_boolean("escape-exits",
-                             "",
-                             "",
-                             FALSE,
-                             G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS | G_PARAM_CONSTRUCT_ONLY));
 }

@@ -162,8 +162,6 @@ nmt_newt_popup_activated(NmtNewtWidget *widget)
                         list_h,
                         "padding",
                         0,
-                        "escape-exits",
-                        TRUE,
                         NULL);
     nmt_newt_form_set_content(form, listbox);
 

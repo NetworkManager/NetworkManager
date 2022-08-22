@@ -91,14 +91,7 @@ nmt_edit_main_connection_list(gboolean is_top)
 
     newtGetScreenSize(&screen_width, &screen_height);
 
-    form = g_object_new(NMT_TYPE_NEWT_FORM,
-                        "y",
-                        2,
-                        "height",
-                        screen_height - 4,
-                        "escape-exits",
-                        TRUE,
-                        NULL);
+    form = g_object_new(NMT_TYPE_NEWT_FORM, "y", 2, "height", screen_height - 4, NULL);
 
     quit = nmt_newt_button_new(is_top ? _("Quit") : _("Back"));
     nmt_newt_widget_set_exit_on_activate(quit, TRUE);
@@ -398,12 +391,7 @@ nmt_add_connection(void)
 {
     NmtNewtForm *form;
 
-    form = g_object_new(NMT_TYPE_ADD_CONNECTION,
-                        "title",
-                        _("New Connection"),
-                        "escape-exits",
-                        TRUE,
-                        NULL);
+    form = g_object_new(NMT_TYPE_ADD_CONNECTION, "title", _("New Connection"), NULL);
     nmt_newt_form_show(form);
     g_object_unref(form);
 }
