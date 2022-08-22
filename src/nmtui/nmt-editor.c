@@ -107,6 +107,8 @@ nmt_editor_new(NMConnection *connection)
                         _("Edit Connection"),
                         "fullscreen-vertical",
                         TRUE,
+                        "escape-exits",
+                        TRUE,
                         NULL);
 }
 

@@ -398,7 +398,12 @@ nmt_add_connection(void)
 {
     NmtNewtForm *form;
 
-    form = g_object_new(NMT_TYPE_ADD_CONNECTION, "title", _("New Connection"), NULL);
+    form = g_object_new(NMT_TYPE_ADD_CONNECTION,
+                        "title",
+                        _("New Connection"),
+                        "escape-exits",
+                        TRUE,
+                        NULL);
     nmt_newt_form_show(form);
     g_object_unref(form);
 }
