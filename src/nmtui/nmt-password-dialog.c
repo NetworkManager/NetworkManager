@@ -71,8 +71,6 @@ nmt_password_dialog_new(const char *request_id,
                         prompt,
                         "secrets",
                         secrets,
-                        "escape-exits",
-                        TRUE,
                         NULL);
 }
 

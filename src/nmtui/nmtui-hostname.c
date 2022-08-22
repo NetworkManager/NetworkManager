@@ -28,7 +28,7 @@ nmtui_hostname_run_dialog(void)
     NmtNewtButtonBox *bbox;
     char             *hostname, *ret = NULL;
 
-    form = g_object_new(NMT_TYPE_NEWT_FORM, "title", _("Set Hostname"), "escape-exits", TRUE, NULL);
+    form = g_object_new(NMT_TYPE_NEWT_FORM, "title", _("Set Hostname"), NULL);
 
     widget = nmt_newt_grid_new();
     nmt_newt_form_set_content(form, widget);
