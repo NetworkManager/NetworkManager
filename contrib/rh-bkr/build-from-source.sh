@@ -71,6 +71,7 @@ if [[ "$INSTALL_DEPENDENCIES" == yes ]]; then
       ppp-devel \
       pygobject3-base \
       python3 \
+      python3-pexpect \
       readline-devel \
       rpm-build \
       strace \
