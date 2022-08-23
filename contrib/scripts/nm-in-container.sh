@@ -289,6 +289,8 @@ FROM $BASE_IMAGE
 
 ENTRYPOINT ["/sbin/init"]
 
+RUN sed -i 's/^tsflags=.*/tsflags=/' /etc/dnf/dnf.conf
+
 RUN dnf install -y \\
     /usr/bin/python \\
     ModemManager-devel \\
@@ -310,6 +312,7 @@ RUN dnf install -y \\
     gettext-devel \\
     git \\
     glib2-doc \\
+    glibc-langpack-pl \\
     gnutls-devel \\
     gobject-introspection-devel \\
     gtk-doc \\
