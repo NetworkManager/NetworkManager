@@ -6304,12 +6304,14 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
      * The gateway associated with this configuration. This is only meaningful
      * if #NMSettingIPConfig:addresses is also set.
      *
-     * The gateway's main purpose is to control the next hop of the standard default route on the device.
-     * Hence, the gateway property conflicts with #NMSettingIPConfig:never-default and will be
-     * automatically dropped if the IP configuration is set to never-default.
+     * Setting the gateway causes NetworkManager to configure a standard default route
+     * with the gateway as next hop. This is ignored if #NMSettingIPConfig:never-default
+     * is set. An alternative is to configure the default route explicitly with a manual
+     * route and /0 as prefix length.
      *
-     * As an alternative to set the gateway, configure a static default route with /0 as prefix
-     * length.
+     * Note that the gateway usually conflicts with routing that NetworkManager configures
+     * for WireGuard interfaces, so usually it should not be set in that case. See
+     * #NMSettingWireGuard:ip4-auto-default-route.
      **/
     obj_properties[PROP_GATEWAY] = g_param_spec_string(
         NM_SETTING_IP_CONFIG_GATEWAY,
