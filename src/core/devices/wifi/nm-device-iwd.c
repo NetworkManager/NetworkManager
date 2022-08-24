@@ -685,23 +685,6 @@ is_connection_known_network(NMConnection *connection)
 }
 
 static gboolean
-is_ap_known_network(NMWifiAP *ap)
-{
-    gs_unref_object GDBusProxy *network_proxy = NULL;
-    gs_unref_variant GVariant  *known_network = NULL;
-
-    network_proxy =
-        nm_iwd_manager_get_dbus_interface(nm_iwd_manager_get(),
-                                          nm_ref_string_get_str(nm_wifi_ap_get_supplicant_path(ap)),
-                                          NM_IWD_NETWORK_INTERFACE);
-    if (!network_proxy)
-        return FALSE;
-
-    known_network = g_dbus_proxy_get_cached_property(network_proxy, "KnownNetwork");
-    return nm_g_variant_is_of_type(known_network, G_VARIANT_TYPE_OBJECT_PATH);
-}
-
-static gboolean
 check_connection_compatible(NMDevice *device, NMConnection *connection, GError **error)
 {
     NMDeviceIwd         *self = NM_DEVICE_IWD(device);
@@ -790,19 +773,10 @@ check_connection_compatible(NMDevice *device, NMConnection *connection, GError *
     }
 
     if (NM_IN_STRSET(mode, NULL, NM_SETTING_WIRELESS_MODE_INFRA)) {
-        /* 8021x networks can only be used if they've been provisioned on the IWD side and
-         * thus are Known Networks.
-         */
-        if (security == NM_IWD_NETWORK_SECURITY_8021X) {
-            if (!is_connection_known_network(connection)) {
-                nm_utils_error_set_literal(error,
-                                           NM_UTILS_ERROR_CONNECTION_AVAILABLE_INCOMPATIBLE,
-                                           "802.1x connections must have IWD provisioning files");
-                return FALSE;
-            }
-        } else if (!NM_IN_SET(security,
-                              NM_IWD_NETWORK_SECURITY_OPEN,
-                              NM_IWD_NETWORK_SECURITY_PSK)) {
+        if (!NM_IN_SET(security,
+                       NM_IWD_NETWORK_SECURITY_OPEN,
+                       NM_IWD_NETWORK_SECURITY_PSK,
+                       NM_IWD_NETWORK_SECURITY_8021X)) {
             nm_utils_error_set_literal(error,
                                        NM_UTILS_ERROR_CONNECTION_AVAILABLE_INCOMPATIBLE,
                                        "IWD backend only supports Open, PSK and 802.1x network "
@@ -866,12 +840,11 @@ check_connection_available(NMDevice                      *device,
                            const char                    *specific_object,
                            GError                       **error)
 {
-    NMDeviceIwd         *self = NM_DEVICE_IWD(device);
-    NMDeviceIwdPrivate  *priv = NM_DEVICE_IWD_GET_PRIVATE(self);
-    NMSettingWireless   *s_wifi;
-    const char          *mode;
-    NMWifiAP            *ap = NULL;
-    NMIwdNetworkSecurity security;
+    NMDeviceIwd        *self = NM_DEVICE_IWD(device);
+    NMDeviceIwdPrivate *priv = NM_DEVICE_IWD_GET_PRIVATE(self);
+    NMSettingWireless  *s_wifi;
+    const char         *mode;
+    NMWifiAP           *ap = NULL;
 
     s_wifi = nm_connection_get_setting_wireless(connection);
     g_return_val_if_fail(s_wifi, FALSE);
@@ -920,20 +893,6 @@ check_connection_available(NMDevice                      *device,
                                    NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
                                    "no compatible access point found");
         return FALSE;
-    }
-
-    /* 8021x networks can only be used if they've been provisioned on the IWD side and
-     * thus are Known Networks.
-     */
-    if (nm_wifi_connection_get_iwd_ssid_and_security(connection, NULL, &security)
-        && security == NM_IWD_NETWORK_SECURITY_8021X) {
-        if (!is_ap_known_network(ap)) {
-            nm_utils_error_set_literal(
-                error,
-                NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
-                "802.1x network is not an IWD Known Network (missing provisioning file?)");
-            return FALSE;
-        }
     }
 
     return TRUE;
@@ -2304,20 +2263,6 @@ act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
             nm_assert(result);
 
             return NM_ACT_STAGE_RETURN_POSTPONE;
-        }
-
-        /* 802.1x networks that are not IWD Known Networks will definitely
-         * fail, for other combinations we will let the Connect call fail
-         * or ask us for any missing secrets through the Agent.
-         */
-        if (nm_connection_get_setting_802_1x(connection) && !is_ap_known_network(ap)) {
-            _LOGI(LOGD_DEVICE | LOGD_WIFI,
-                  "Activation: (wifi) access point '%s' has 802.1x security but is not configured "
-                  "in IWD.",
-                  nm_connection_get_id(connection));
-
-            NM_SET_OUT(out_failure_reason, NM_DEVICE_STATE_REASON_NO_SECRETS);
-            goto out_fail;
         }
 
         priv->secrets_failed = FALSE;
