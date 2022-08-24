@@ -6637,6 +6637,7 @@ device_link_changed(gpointer user_data)
     NMDeviceClass                  *klass             = NM_DEVICE_GET_CLASS(self);
     NMDevicePrivate                *priv              = NM_DEVICE_GET_PRIVATE(self);
     gboolean                        ip_ifname_changed = FALSE;
+    gboolean                        hw_addr_changed   = FALSE;
     nm_auto_nmpobj const NMPObject *pllink_keep_alive = NULL;
     const NMPlatformLink           *pllink;
     const char                     *str;
@@ -6684,7 +6685,7 @@ device_link_changed(gpointer user_data)
         _stats_update_counters_from_pllink(self, pllink);
 
     had_hw_addr = (priv->hw_addr != NULL);
-    nm_device_update_hw_address(self);
+    hw_addr_changed = nm_device_update_hw_address(self);
     got_hw_addr = (!had_hw_addr && priv->hw_addr);
     nm_device_update_permanent_hw_address(self, FALSE);
 
@@ -6736,6 +6737,8 @@ device_link_changed(gpointer user_data)
     /* Update DHCP, etc, if needed */
     if (ip_ifname_changed)
         nm_device_update_dynamic_ip_setup(self, "IP interface changed");
+    else if (hw_addr_changed)
+        nm_device_update_dynamic_ip_setup(self, "hw-address changed");
 
     was_up   = priv->up;
     priv->up = NM_FLAGS_HAS(pllink->n_ifi_flags, IFF_UP);
