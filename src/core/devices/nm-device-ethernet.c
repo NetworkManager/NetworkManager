@@ -451,7 +451,7 @@ supplicant_auth_state_changed(NMSupplicantInterface *iface,
 
     if (state == NM_SUPPLICANT_AUTH_STATE_SUCCESS) {
         nm_clear_g_signal_handler(priv->supplicant.iface, &priv->supplicant.iface_state_id);
-        nm_device_update_dynamic_ip_setup(NM_DEVICE(self));
+        nm_device_update_dynamic_ip_setup(NM_DEVICE(self), "supplicant auth state changed");
     }
 }
 
