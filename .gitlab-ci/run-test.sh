@@ -28,6 +28,10 @@ do_clean() {
     git diff
 }
 
+ARTIFACT_DIR=/tmp/nm-artifact
+rm -rf "$ARTIFACT_DIR"
+mkdir -p "$ARTIFACT_DIR"
+
 uname -a
 ! command -v locale &>/dev/null || locale -a
 meson --version
@@ -43,8 +47,7 @@ meson --version
 export NMTST_SKIP_CHECK_GITLAB_CI=1
 
 do_clean; BUILD_TYPE=autotools CC=gcc   WITH_DOCS=1 WITH_VALGRIND=1 contrib/scripts/nm-ci-run.sh
-rm -rf /tmp/nm-docs-html;
-mv build/INST/share/gtk-doc/html /tmp/nm-docs-html
+mv build/INST/share/gtk-doc/html "$ARTIFACT_DIR/docs-html"
 do_clean; BUILD_TYPE=meson     CC=gcc   WITH_DOCS=1 WITH_VALGRIND=1 contrib/scripts/nm-ci-run.sh
 do_clean; BUILD_TYPE=autotools CC=clang WITH_DOCS=0                 contrib/scripts/nm-ci-run.sh
 do_clean; BUILD_TYPE=meson     CC=clang WITH_DOCS=0                 contrib/scripts/nm-ci-run.sh
@@ -57,11 +60,9 @@ do_clean; test $IS_FEDORA = 1                   && ./contrib/fedora/rpm/build_cl
 do_clean
 if [ "$NM_BUILD_TARBALL" = 1 ]; then
     SIGN_SOURCE=0 ./contrib/fedora/rpm/build_clean.sh -r
-    mv ./NetworkManager-1*.tar.xz /tmp/
-    mv ./contrib/fedora/rpm/latest/SRPMS/NetworkManager-1*.src.rpm /tmp/
+    mv ./NetworkManager-1*.tar.xz "$ARTIFACT_DIR/"
+    mv ./contrib/fedora/rpm/latest/SRPMS/NetworkManager-1*.src.rpm "$ARTIFACT_DIR/"
     do_clean
-    mv /tmp/nm-docs-html ./docs-html
-    mv /tmp/NetworkManager-1*.tar.xz /tmp/NetworkManager-1*.src.rpm ./
 fi
 
 ###############################################################################
@@ -96,5 +97,14 @@ for d in c-list c-rbtree c-siphash c-stdaux n-acd n-dhcp4 ; do
 done
 
 ###############################################################################
+
+do_clean
+
+if [ "$NM_BUILD_TARBALL" = 1 ]; then
+    mv "$ARTIFACT_DIR/docs-html/" \
+       "$ARTIFACT_DIR"/NetworkManager-1*.tar.xz \
+       "$ARTIFACT_DIR"/NetworkManager-1*.src.rpm \
+       ./
+fi
 
 echo "BUILD SUCCESSFUL!!"
