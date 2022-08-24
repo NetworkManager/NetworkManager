@@ -63,4 +63,6 @@ gboolean nm_iwd_manager_check_wfd_info_compatible(NMIwdManager *self, const NMIw
 gboolean nm_iwd_manager_register_wfd(NMIwdManager *self, const NMIwdWfdInfo *wfd_info);
 void     nm_iwd_manager_unregister_wfd(NMIwdManager *self);
 
+bool nm_iwd_manager_is_recently_mirrored(NMIwdManager *self, const GBytes *ssid);
+
 #endif /* __NETWORKMANAGER_IWD_MANAGER_H__ */
