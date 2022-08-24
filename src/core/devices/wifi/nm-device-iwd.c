@@ -78,6 +78,7 @@ typedef struct {
     GDBusMethodInvocation        *pending_agent_request;
     NMActiveConnection           *assumed_ac;
     guint                         assumed_ac_timeout;
+    NMIwdManager                 *manager;
 } NMDeviceIwdPrivate;
 
 struct _NMDeviceIwd {
@@ -290,6 +291,7 @@ insert_ap_from_network(NMDeviceIwd *self,
                        gint64       last_seen_msec,
                        int16_t      signal)
 {
+    NMDeviceIwdPrivate             *priv          = NM_DEVICE_IWD_GET_PRIVATE(self);
     gs_unref_object GDBusProxy     *network_proxy = NULL;
     nm_auto_ref_string NMRefString *bss_path      = nm_ref_string_new(path);
     NMWifiAP                       *ap;
@@ -300,7 +302,7 @@ insert_ap_from_network(NMDeviceIwd *self,
     }
 
     network_proxy =
-        nm_iwd_manager_get_dbus_interface(nm_iwd_manager_get(), path, NM_IWD_NETWORK_INTERFACE);
+        nm_iwd_manager_get_dbus_interface(priv->manager, path, NM_IWD_NETWORK_INTERFACE);
 
     ap = ap_from_network(self, network_proxy, bss_path, last_seen_msec, signal);
     if (!ap)
@@ -678,7 +680,7 @@ deactivate_async(NMDevice                  *device,
 }
 
 static gboolean
-is_connection_known_network(NMConnection *connection)
+is_connection_known_network(NMIwdManager *manager, NMConnection *connection)
 {
     NMIwdNetworkSecurity security;
     gs_free char        *ssid = NULL;
@@ -686,17 +688,17 @@ is_connection_known_network(NMConnection *connection)
     if (!nm_wifi_connection_get_iwd_ssid_and_security(connection, &ssid, &security))
         return FALSE;
 
-    return nm_iwd_manager_is_known_network(nm_iwd_manager_get(), ssid, security);
+    return nm_iwd_manager_is_known_network(manager, ssid, security);
 }
 
 static gboolean
-is_ap_known_network(NMWifiAP *ap)
+is_ap_known_network(NMIwdManager *manager, NMWifiAP *ap)
 {
     gs_unref_object GDBusProxy *network_proxy = NULL;
     gs_unref_variant GVariant  *known_network = NULL;
 
     network_proxy =
-        nm_iwd_manager_get_dbus_interface(nm_iwd_manager_get(),
+        nm_iwd_manager_get_dbus_interface(manager,
                                           nm_ref_string_get_str(nm_wifi_ap_get_supplicant_path(ap)),
                                           NM_IWD_NETWORK_INTERFACE);
     if (!network_proxy)
@@ -799,8 +801,8 @@ check_connection_compatible(NMDevice *device, NMConnection *connection, GError *
          * thus are Known Networks.
          */
         if (security == NM_IWD_NETWORK_SECURITY_8021X) {
-            if (!is_connection_known_network(connection)
-                && !nm_iwd_manager_is_recently_mirrored(nm_iwd_manager_get(), ssid)) {
+            if (!is_connection_known_network(priv->manager, connection)
+                && !nm_iwd_manager_is_recently_mirrored(priv->manager, ssid)) {
                 nm_utils_error_set_literal(error,
                                            NM_UTILS_ERROR_CONNECTION_AVAILABLE_INCOMPATIBLE,
                                            "802.1x connections must have IWD provisioning files");
@@ -933,8 +935,8 @@ check_connection_available(NMDevice                      *device,
      */
     if (nm_wifi_connection_get_iwd_ssid_and_security(connection, NULL, &security)
         && security == NM_IWD_NETWORK_SECURITY_8021X) {
-        if (!is_ap_known_network(ap)
-            && !nm_iwd_manager_is_recently_mirrored(nm_iwd_manager_get(),
+        if (!is_ap_known_network(priv->manager, ap)
+            && !nm_iwd_manager_is_recently_mirrored(priv->manager,
                                                     nm_setting_wireless_get_ssid(s_wifi))) {
             nm_utils_error_set_literal(
                 error,
@@ -2052,7 +2054,7 @@ assume_connection(NMDeviceIwd *self, NMWifiAP *ap)
      * becomes "managed" only when ACTIVATED but for IWD it's really
      * managed when IP_CONFIG starts.
      */
-    sett_conn = nm_iwd_manager_get_ap_mirror_connection(nm_iwd_manager_get(), ap);
+    sett_conn = nm_iwd_manager_get_ap_mirror_connection(priv->manager, ap);
     if (!sett_conn)
         goto error;
 
@@ -2225,7 +2227,8 @@ act_stage1_prepare(NMDevice *device, NMDeviceStateReason *out_failure_reason)
      * for a first-time connection to a hidden network.  If a hidden network is
      * a Known Network it should still have been in the AP list.
      */
-    if (!nm_setting_wireless_get_hidden(s_wireless) || is_connection_known_network(connection))
+    if (!nm_setting_wireless_get_hidden(s_wireless)
+        || is_connection_known_network(priv->manager, connection))
         return NM_ACT_STAGE_RETURN_FAILURE;
 
 add_new:
@@ -2330,8 +2333,8 @@ act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
          * fail, for other combinations we will let the Connect call fail
          * or ask us for any missing secrets through the Agent.
          */
-        if (nm_connection_get_setting_802_1x(connection) && !is_ap_known_network(ap)
-            && !nm_iwd_manager_is_recently_mirrored(nm_iwd_manager_get(),
+        if (nm_connection_get_setting_802_1x(connection) && !is_ap_known_network(priv->manager, ap)
+            && !nm_iwd_manager_is_recently_mirrored(priv->manager,
                                                     nm_setting_wireless_get_ssid(s_wireless))) {
             _LOGI(LOGD_DEVICE | LOGD_WIFI,
                   "Activation: (wifi) access point '%s' has 802.1x security but is not configured "
@@ -2373,7 +2376,7 @@ act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
         }
 
         network_proxy = nm_iwd_manager_get_dbus_interface(
-            nm_iwd_manager_get(),
+            priv->manager,
             nm_ref_string_get_str(nm_wifi_ap_get_supplicant_path(ap)),
             NM_IWD_NETWORK_INTERFACE);
         if (!network_proxy) {
@@ -3131,7 +3134,7 @@ nm_device_iwd_set_dbus_object(NMDeviceIwd *self, GDBusObject *object)
         goto error;
     }
 
-    adapter_proxy = nm_iwd_manager_get_dbus_interface(nm_iwd_manager_get(),
+    adapter_proxy = nm_iwd_manager_get_dbus_interface(priv->manager,
                                                       g_variant_get_string(value, NULL),
                                                       NM_IWD_WIPHY_INTERFACE);
     if (!adapter_proxy) {
@@ -3441,7 +3444,7 @@ nm_device_iwd_init(NMDeviceIwd *self)
     g_signal_connect(self, "notify::" NM_DEVICE_AUTOCONNECT, G_CALLBACK(autoconnect_changed), self);
 
     /* Make sure the manager is running */
-    (void) nm_iwd_manager_get();
+    priv->manager = g_object_ref(nm_iwd_manager_get());
 }
 
 NMDevice *
@@ -3473,6 +3476,8 @@ dispose(GObject *object)
     G_OBJECT_CLASS(nm_device_iwd_parent_class)->dispose(object);
 
     nm_assert(c_list_is_empty(&priv->aps_lst_head));
+
+    g_clear_object(&priv->manager);
 }
 
 static void
