@@ -2525,7 +2525,7 @@ supplicant_iface_state(NMDeviceWifi              *self,
                 _LOGD(LOGD_WIFI,
                       "supplicant state settled after roaming, renew dynamic IP configuration");
                 nm_clear_g_source_inst(&priv->roam_supplicant_wait_source);
-                nm_device_update_dynamic_ip_setup(device, "roamed to a different AP");
+                nm_device_update_dynamic_ip_setup(device, FALSE, "roamed to a different AP");
             }
         }
         break;
@@ -2668,7 +2668,9 @@ supplicant_iface_notify_current_bss(NMSupplicantInterface *iface,
 
             if (nm_supplicant_interface_get_state(priv->sup_iface)
                 == NM_SUPPLICANT_INTERFACE_STATE_COMPLETED) {
-                nm_device_update_dynamic_ip_setup(NM_DEVICE(self), "roamed to a different AP");
+                nm_device_update_dynamic_ip_setup(NM_DEVICE(self),
+                                                  FALSE,
+                                                  "roamed to a different AP");
             } else {
                 /* Wait that the authentication to new the AP completes before
                  * trying to renew, otherwise the DHCP REQUEST could be lost
