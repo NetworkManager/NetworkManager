@@ -22,7 +22,6 @@
 #include "nm-act-request.h"
 #include "nm-l3-config-data.h"
 #include "nm-manager.h"
-#include "nm-manager.h"
 #include "nm-setting-wifi-p2p.h"
 #include "nm-utils.h"
 #include "nm-wifi-p2p-peer.h"
