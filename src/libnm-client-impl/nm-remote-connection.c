@@ -443,7 +443,11 @@ nm_remote_connection_delete_finish(NMRemoteConnection *connection,
  * Returns: (transfer full): a #GVariant of type %NM_VARIANT_TYPE_CONNECTION containing
  * @connection's secrets, or %NULL on error.
  *
- * Deprecated: 1.22: Use nm_remote_connection_get_secrets_async() or GDBusConnection.
+ * Warning: NMClient contains a cache of objects on D-Bus. This cache gets updated
+ *   with D-Bus signals when iterating the GMainContext. This function performs a
+ *   (pseudo) blocking D-Bus call. Aside blocking, the result will not be in sync
+ *   and not be ordered with the content of the NMClient cache.
+ *   This function used to be deprecated between 1.22 and 1.38 releases.
  **/
 GVariant *
 nm_remote_connection_get_secrets(NMRemoteConnection *connection,
