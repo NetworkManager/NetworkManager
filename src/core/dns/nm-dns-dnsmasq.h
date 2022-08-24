@@ -25,4 +25,6 @@ GType nm_dns_dnsmasq_get_type(void);
 
 NMDnsPlugin *nm_dns_dnsmasq_new(void);
 
+void nm_dnsmasq_kill_external(void);
+
 #endif /* __NETWORKMANAGER_DNS_DNSMASQ_H__ */

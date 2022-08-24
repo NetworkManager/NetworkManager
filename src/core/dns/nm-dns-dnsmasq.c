@@ -668,6 +668,14 @@ _gl_pid_spawn(const char           *dm_binary,
 
 /*****************************************************************************/
 
+void
+nm_dnsmasq_kill_external(void)
+{
+    _gl_pid_kill_external();
+}
+
+/*****************************************************************************/
+
 typedef struct {
     GDBusConnection *dbus_connection;
 

@@ -2513,6 +2513,9 @@ again:
                                                              self);
     }
 
+    if (!NM_IS_DNS_DNSMASQ(priv->plugin))
+        nm_dnsmasq_kill_external();
+
     _update_pending_maybe_changed(self);
 
     g_object_thaw_notify(G_OBJECT(self));
