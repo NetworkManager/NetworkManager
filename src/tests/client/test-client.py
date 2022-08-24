@@ -117,14 +117,18 @@ import gi
 
 try:
     from gi.repository import GLib
-except ImportError as e:
+except ImportError:
     GLib = None
 
 try:
     gi.require_version("NM", "1.0")
-    from gi.repository import NM
-except ImportError as e:
+except ValueError:
     NM = None
+else:
+    try:
+        from gi.repository import NM
+    except ImportError:
+        NM = None
 
 try:
     import pexpect
