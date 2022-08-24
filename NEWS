@@ -5,7 +5,9 @@ Overview of changes since NetworkManager-1.38.2
 
 * Fix DAD for DHCPv6 addresses.
 * Wi-Fi: improvements for OWE networks.
-* Support EC private keys
+* Support EC private keys.
+* Fix nmcli tab completion support for embedded quote characters.
+* Fix reapply for lldp/mdns/llmnr/dns-over-tls settings.
 * Various bugfixes.
 
 ===============================================
