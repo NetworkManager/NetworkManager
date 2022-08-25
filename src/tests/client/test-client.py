@@ -111,8 +111,6 @@ import dbus.service
 import dbus.mainloop.glib
 import io
 
-moduleNotFoundError = ModuleNotFoundError if sys.version_info[0] >= 3 else ImportError
-
 import gi
 
 try:
@@ -132,7 +130,7 @@ else:
 
 try:
     import pexpect
-except moduleNotFoundError:
+except ImportError:
     pexpect = None
 
 
