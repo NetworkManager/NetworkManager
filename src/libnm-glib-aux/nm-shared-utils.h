@@ -274,6 +274,7 @@ gboolean nm_utils_get_ipv6_interface_identifier(NMLinkType          link_type,
                                                 NMUtilsIPv6IfaceId *out_iid);
 
 /*****************************************************************************/
+
 gboolean nm_utils_memeqzero(gconstpointer data, gsize length);
 
 /*****************************************************************************/

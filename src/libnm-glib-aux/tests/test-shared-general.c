@@ -251,7 +251,7 @@ test_nm_strndup_a(void)
 /*****************************************************************************/
 
 static void
-test_nm_utils_ip4_address_is_loopback(void)
+test_nm_ip4_addr_is_loopback(void)
 {
     g_assert(nm_ip4_addr_is_loopback(nmtst_inet4_from_string("127.0.0.0")));
     g_assert(nm_ip4_addr_is_loopback(nmtst_inet4_from_string("127.0.0.1")));
@@ -264,7 +264,7 @@ test_nm_utils_ip4_address_is_loopback(void)
 /*****************************************************************************/
 
 static void
-test_nm_utils_ip4_prefix_to_netmask(void)
+test_nm_ip4_addr_netmask_from_prefix(void)
 {
     g_assert_cmpint(nm_ip4_addr_netmask_from_prefix(0), ==, nmtst_inet4_from_string("0.0.0.0"));
     g_assert_cmpint(nm_ip4_addr_netmask_from_prefix(1), ==, nmtst_inet4_from_string("128.0.0.0"));
@@ -2228,10 +2228,9 @@ main(int argc, char **argv)
     g_test_add_func("/general/test_nm_make_strv", test_make_strv);
     g_test_add_func("/general/test_nm_strdup_int", test_nm_strdup_int);
     g_test_add_func("/general/test_nm_strndup_a", test_nm_strndup_a);
-    g_test_add_func("/general/test_nm_utils_ip4_address_is_loopback",
-                    test_nm_utils_ip4_address_is_loopback);
-    g_test_add_func("/general/test_nm_utils_ip4_prefix_to_netmask",
-                    test_nm_utils_ip4_prefix_to_netmask);
+    g_test_add_func("/general/test_nm_ip4_addr_is_loopback", test_nm_ip4_addr_is_loopback);
+    g_test_add_func("/general/test_nm_ip4_addr_netmask_from_prefix",
+                    test_nm_ip4_addr_netmask_from_prefix);
     g_test_add_func("/general/test_unaligned", test_unaligned);
     g_test_add_func("/general/test_strv_cmp", test_strv_cmp);
     g_test_add_func("/general/test_strstrip_avoid_copy", test_strstrip_avoid_copy);
