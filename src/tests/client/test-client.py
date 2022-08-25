@@ -95,16 +95,6 @@ ENV_NM_TEST_UBSAN_OPTIONS = "NM_TEST_UBSAN_OPTIONS"
 
 import sys
 
-try:
-    import gi
-    from gi.repository import GLib
-
-    gi.require_version("NM", "1.0")
-    from gi.repository import NM
-except Exception as e:
-    GLib = None
-    NM = None
-
 import os
 import errno
 import unittest
@@ -120,7 +110,29 @@ import random
 import dbus.service
 import dbus.mainloop.glib
 import io
-import pexpect
+
+import gi
+
+try:
+    from gi.repository import GLib
+except ImportError:
+    GLib = None
+
+try:
+    gi.require_version("NM", "1.0")
+except ValueError:
+    NM = None
+else:
+    try:
+        from gi.repository import NM
+    except ImportError:
+        NM = None
+
+try:
+    import pexpect
+except ImportError:
+    pexpect = None
+
 
 ###############################################################################
 
@@ -1206,6 +1218,14 @@ class TestNmcli(NmTestBase):
                 % (",".join(skip_test_for_l10n_diff))
             )
 
+    def skip_without_pexpect(func):
+        def f(self):
+            if pexpect is None:
+                raise unittest.SkipTest("pexpect not available")
+            func(self)
+
+        return f
+
     def nm_test(func):
         def f(self):
             self.srv = NMStubServer(self._testMethodName)
@@ -1842,6 +1862,7 @@ class TestNmcli(NmTestBase):
             extra_env=no_dbus_env,
         )
 
+    @skip_without_pexpect
     @nm_test
     def test_ask_mode(self):
         nmc = self.call_nmcli_pexpect(["--ask", "c", "add"])
