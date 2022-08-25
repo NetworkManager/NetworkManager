@@ -512,14 +512,8 @@ nm_mptcp_flags_normalize(NMMptcpFlags flags)
     /* Clear all unknown flags. */
     flags &= _NM_MPTCP_FLAGS_ALL;
 
-    /* We must either set "enabled-on-global-iface" or "enabled". The
-     * former takes precedence, if they are both set.
-     *
-     * If neither is set, we default to "enabled".  */
-    if (NM_FLAGS_HAS(flags, NM_MPTCP_FLAGS_ENABLED_ON_GLOBAL_IFACE))
-        flags = NM_FLAGS_UNSET(flags, NM_MPTCP_FLAGS_ENABLED);
-    else
-        flags = NM_FLAGS_SET(flags, NM_MPTCP_FLAGS_ENABLED);
+    /* Not disabled means enabled. */
+    flags |= NM_MPTCP_FLAGS_ENABLED;
 
     if (NM_FLAGS_ALL(flags, NM_MPTCP_FLAGS_SIGNAL | NM_MPTCP_FLAGS_FULLMESH))
         flags = NM_FLAGS_UNSET(flags, NM_MPTCP_FLAGS_FULLMESH);
