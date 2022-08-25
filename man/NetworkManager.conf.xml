@@ -868,7 +868,7 @@ ipv6.ip6-privacy=0
         </varlistentry>
         <varlistentry>
           <term><varname>connection.mptcp-flags</varname></term>
-          <listitem><para>If unspecified, the fallback is either 0 (<literal>"disabled"</literal>) or 0x22 (<literal>"enabled-on-global-iface,subflow"</literal>), depending on <literal>/proc/sys/net/mptcp/enabled</literal>.</para></listitem>
+          <listitem><para>If unspecified, the fallback is 0x22 (<literal>"enabled,subflow"</literal>). Note that if sysctl <literal>/proc/sys/net/mptcp/enabled</literal> is disabled, NetworkManager will still not configure endpoints.</para></listitem>
         </varlistentry>
         <varlistentry>
           <term><varname>connection.dns-over-tls</varname></term>
