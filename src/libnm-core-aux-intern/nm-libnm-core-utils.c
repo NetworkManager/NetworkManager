@@ -51,7 +51,7 @@ NM_UTILS_STRING_TABLE_LOOKUP_DEFINE(
         }
     },
     { return NM_BOND_AD_SELECT_STABLE; },
-    {"bandwith", NM_BOND_AD_SELECT_BANDWIDTH},
+    {"bandwidth", NM_BOND_AD_SELECT_BANDWIDTH},
     {"count", NM_BOND_AD_SELECT_COUNT},
     {"stable", NM_BOND_AD_SELECT_STABLE}, );
 
