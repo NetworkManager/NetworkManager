@@ -461,7 +461,7 @@ _platform_lnk_bond_init_from_setting(NMSettingBond *s_bond, NMPlatformLnkBond *p
     props->peer_notif_delay_has = (props->miimon || props->arp_interval) && props->peer_notif_delay;
     props->arp_all_targets_has  = props->arp_interval && props->arp_all_targets;
     props->resend_igmp_has      = props->resend_igmp != 1;
-    props->lp_interval          = props->lp_interval != 1;
+    props->lp_interval_has      = props->lp_interval != 1;
     props->tlb_dynamic_lb_has   = NM_IN_SET(props->mode, NM_BOND_MODE_TLB, NM_BOND_MODE_ALB);
 }
 
