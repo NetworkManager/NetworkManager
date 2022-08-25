@@ -9124,6 +9124,10 @@ test_nm_utils_enum(void)
             .value = 5,
         },
         {
+            .nick  = "nick-0",
+            .value = 0,
+        },
+        {
             .nick  = "nick-red",
             .value = NM_TEST_GENERAL_COLOR_FLAGS_RED,
         },
@@ -9168,6 +9172,11 @@ test_nm_utils_enum(void)
     _test_nm_utils_enum_to_str_do_full(color_flags,
                                        5 | NM_TEST_GENERAL_COLOR_FLAGS_GREEN,
                                        "nick-5, green",
+                                       color_value_infos);
+
+    _test_nm_utils_enum_to_str_do_full(color_flags,
+                                       0,
+                                       "nick-0",
                                        color_value_infos);
 
     _test_nm_utils_enum_from_str_do(bool_enum, "", FALSE, 0, NULL);
