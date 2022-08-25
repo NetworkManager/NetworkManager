@@ -6098,7 +6098,7 @@ _dev_unmanaged_check_external_down(NMDevice *self, gboolean only_if_unmanaged, g
 }
 
 void
-nm_device_update_dynamic_ip_setup(NMDevice *self)
+nm_device_update_dynamic_ip_setup(NMDevice *self, const char *reason)
 {
     NMDevicePrivate *priv;
 
@@ -6108,6 +6108,8 @@ nm_device_update_dynamic_ip_setup(NMDevice *self)
 
     if (priv->state < NM_DEVICE_STATE_IP_CONFIG || priv->state > NM_DEVICE_STATE_ACTIVATED)
         return;
+
+    _LOGD(LOGD_DEVICE, "restarting dynamic IP configuration (%s)", reason);
 
     g_hash_table_remove_all(priv->ip6_saved_properties);
 
@@ -6410,6 +6412,7 @@ device_link_changed(gpointer user_data)
     NMDeviceClass                  *klass             = NM_DEVICE_GET_CLASS(self);
     NMDevicePrivate                *priv              = NM_DEVICE_GET_PRIVATE(self);
     gboolean                        ip_ifname_changed = FALSE;
+    gboolean                        hw_addr_changed;
     nm_auto_nmpobj const NMPObject *pllink_keep_alive = NULL;
     const NMPlatformLink           *pllink;
     const char                     *str;
@@ -6456,9 +6459,9 @@ device_link_changed(gpointer user_data)
     if (ifindex == nm_device_get_ip_ifindex(self))
         _stats_update_counters_from_pllink(self, pllink);
 
-    had_hw_addr = (priv->hw_addr != NULL);
-    nm_device_update_hw_address(self);
-    got_hw_addr = (!had_hw_addr && priv->hw_addr);
+    had_hw_addr     = (priv->hw_addr != NULL);
+    hw_addr_changed = nm_device_update_hw_address(self);
+    got_hw_addr     = (!had_hw_addr && priv->hw_addr);
     nm_device_update_permanent_hw_address(self, FALSE);
 
     if (pllink->name[0] && !nm_streq(priv->iface, pllink->name)) {
@@ -6508,7 +6511,9 @@ device_link_changed(gpointer user_data)
 
     /* Update DHCP, etc, if needed */
     if (ip_ifname_changed)
-        nm_device_update_dynamic_ip_setup(self);
+        nm_device_update_dynamic_ip_setup(self, "IP interface changed");
+    else if (hw_addr_changed)
+        nm_device_update_dynamic_ip_setup(self, "hw-address changed");
 
     was_up   = priv->up;
     priv->up = NM_FLAGS_HAS(pllink->n_ifi_flags, IFF_UP);
@@ -6568,7 +6573,7 @@ device_link_changed(gpointer user_data)
          * renew DHCP leases and such.
          */
         if (priv->state == NM_DEVICE_STATE_ACTIVATED) {
-            nm_device_update_dynamic_ip_setup(self);
+            nm_device_update_dynamic_ip_setup(self, "interface got carrier");
         }
     }
 
@@ -6630,7 +6635,7 @@ device_ip_link_changed(gpointer user_data)
         priv->ip_iface_ = g_strdup(ip_iface);
         update_prop_ip_iface(self);
 
-        nm_device_update_dynamic_ip_setup(self);
+        nm_device_update_dynamic_ip_setup(self, "interface renamed");
     }
 
     return G_SOURCE_REMOVE;
