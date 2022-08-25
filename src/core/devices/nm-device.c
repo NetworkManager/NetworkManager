@@ -15778,6 +15778,13 @@ _set_state_full(NMDevice *self, NMDeviceState state, NMDeviceStateReason reason,
             if (priv->sys_iface_state == NM_DEVICE_SYS_IFACE_STATE_MANAGED)
                 ip6_managed_setup(self);
             device_init_static_sriov_num_vfs(self);
+
+            /* We didn't bring the device up and we have little idea
+             * when was it brought up. Play it safe and assume it could
+             * have been brought up very recently and it might one of
+             * those who take time to detect carrier.
+             */
+            carrier_detect_wait(self);
         }
 
         if (priv->sys_iface_state == NM_DEVICE_SYS_IFACE_STATE_MANAGED) {
@@ -15785,13 +15792,6 @@ _set_state_full(NMDevice *self, NMDeviceState state, NMDeviceStateReason reason,
                 if (!nm_device_bring_up(self, TRUE, &no_firmware) && no_firmware)
                     _LOGW(LOGD_PLATFORM, "firmware may be missing.");
                 nm_device_set_firmware_missing(self, no_firmware ? TRUE : FALSE);
-            } else {
-                /* We didn't bring the device up and we have little idea
-                 * when was it brought up. Play it safe and assume it could
-                 * have been brought up very recently and it might one of
-                 * those who take time to detect carrier.
-                 */
-                carrier_detect_wait(self);
             }
 
             /* Ensure the device gets deactivated in response to stuff like
