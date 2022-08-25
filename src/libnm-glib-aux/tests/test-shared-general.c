@@ -2201,6 +2201,19 @@ test_hostname_is_valid(void)
 
 /*****************************************************************************/
 
+static void
+test_inet_utils(void)
+{
+    g_assert(nm_ip_addr_is_site_local(AF_INET, nmtst_inet_from_string(AF_INET, "172.16.0.1")));
+    g_assert(nm_ip_addr_is_site_local(AF_INET, nmtst_inet_from_string(AF_INET, "172.17.0.1")));
+    g_assert(nm_ip_addr_is_site_local(AF_INET, nmtst_inet_from_string(AF_INET, "192.168.7.5")));
+    g_assert(!nm_ip_addr_is_site_local(AF_INET, nmtst_inet_from_string(AF_INET, "192.0.7.5")));
+    g_assert(nm_ip_addr_is_site_local(AF_INET6, nmtst_inet_from_string(AF_INET6, "fec0::")));
+    g_assert(!nm_ip_addr_is_site_local(AF_INET6, nmtst_inet_from_string(AF_INET6, "fc00::")));
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE();
 
 int
@@ -2246,6 +2259,7 @@ main(int argc, char **argv)
     g_test_add_func("/general/test_path_startswith", test_path_startswith);
     g_test_add_func("/general/test_path_simplify", test_path_simplify);
     g_test_add_func("/general/test_hostname_is_valid", test_hostname_is_valid);
+    g_test_add_func("/general/test_inet_utils", test_inet_utils);
 
     return g_test_run();
 }
