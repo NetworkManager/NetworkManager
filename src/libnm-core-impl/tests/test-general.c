@@ -9174,10 +9174,7 @@ test_nm_utils_enum(void)
                                        "nick-5, green",
                                        color_value_infos);
 
-    _test_nm_utils_enum_to_str_do_full(color_flags,
-                                       0,
-                                       "nick-0",
-                                       color_value_infos);
+    _test_nm_utils_enum_to_str_do_full(color_flags, 0, "nick-0", color_value_infos);
 
     _test_nm_utils_enum_from_str_do(bool_enum, "", FALSE, 0, NULL);
     _test_nm_utils_enum_from_str_do(bool_enum, " ", FALSE, 0, NULL);
