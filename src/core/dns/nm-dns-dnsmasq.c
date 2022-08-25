@@ -191,7 +191,8 @@ _gl_pid_kill_external(void)
     if (!g_file_get_contents(PIDFILE, &contents, NULL, &error)) {
         if (g_error_matches(error, G_FILE_ERROR, G_FILE_ERROR_NOENT))
             do_unlink = FALSE;
-        _LOGD("spawn: failure to read pidfile %s: %s", PIDFILE, error->message);
+        else
+            _LOGD("spawn: failure to read pidfile %s: %s", PIDFILE, error->message);
         g_clear_error(&error);
         goto handle_kill;
     }
