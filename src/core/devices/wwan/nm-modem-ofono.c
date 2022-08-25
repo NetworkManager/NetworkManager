@@ -786,7 +786,7 @@ handle_settings(GVariant *v_dict, gpointer user_data)
         _LOGW("Settings 'Address' missing");
         goto out;
     }
-    if (!s || !nm_utils_parse_inaddr_bin(AF_INET, s, NULL, &address_network)) {
+    if (!s || !nm_inet_parse_bin(AF_INET, s, NULL, &address_network)) {
         _LOGW("can't convert 'Address' %s to addr", s ?: "");
         goto out;
     }
@@ -801,11 +801,11 @@ handle_settings(GVariant *v_dict, gpointer user_data)
         _LOGW("Settings 'Netmask' missing");
         goto out;
     }
-    if (!s || !nm_utils_parse_inaddr_bin(AF_INET, s, NULL, &address_network)) {
+    if (!s || !nm_inet_parse_bin(AF_INET, s, NULL, &address_network)) {
         _LOGW("invalid 'Netmask': %s", s ?: "");
         goto out;
     }
-    address.plen = _nm_utils_ip4_netmask_to_prefix(address_network);
+    address.plen = nm_ip4_addr_netmask_to_prefix(address_network);
 
     _LOGI("Address: %s", nm_platform_ip4_address_to_string(&address, sbuf, sizeof(sbuf)));
     nm_l3_config_data_add_address_4(priv->l3cd_4, &address);
@@ -814,7 +814,7 @@ handle_settings(GVariant *v_dict, gpointer user_data)
         _LOGW("Settings 'Gateway' missing");
         goto out;
     }
-    if (!nm_utils_parse_inaddr_bin(AF_INET, s, NULL, &gateway_network)) {
+    if (!nm_inet_parse_bin(AF_INET, s, NULL, &gateway_network)) {
         _LOGW("invalid 'Gateway': %s", s);
         goto out;
     }
@@ -840,8 +840,7 @@ handle_settings(GVariant *v_dict, gpointer user_data)
         gboolean any_good = FALSE;
 
         for (; array[0]; array++) {
-            if (!nm_utils_parse_inaddr_bin(AF_INET, *array, NULL, &address_network)
-                || !address_network) {
+            if (!nm_inet_parse_bin(AF_INET, *array, NULL, &address_network) || !address_network) {
                 _LOGW("invalid NameServer: %s", *array);
                 continue;
             }
@@ -857,7 +856,7 @@ handle_settings(GVariant *v_dict, gpointer user_data)
 
     if (g_variant_lookup(v_dict, "MessageProxy", "&s", &s)) {
         _LOGI("MessageProxy: %s", s);
-        if (s && nm_utils_parse_inaddr_bin(AF_INET, s, NULL, &address_network)) {
+        if (s && nm_inet_parse_bin(AF_INET, s, NULL, &address_network)) {
             const NMPlatformIP4Route mms_route = {
                 .network       = address_network,
                 .plen          = 32,

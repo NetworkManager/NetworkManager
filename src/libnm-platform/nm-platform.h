@@ -1431,7 +1431,7 @@ GType nm_platform_get_type(void);
 static inline in_addr_t
 nm_platform_ip4_broadcast_address_create(in_addr_t address, guint8 plen)
 {
-    return address | ~_nm_utils_ip4_prefix_to_netmask(plen);
+    return address | ~nm_ip4_addr_netmask_from_prefix(plen);
 }
 
 static inline in_addr_t
@@ -1591,9 +1591,9 @@ nm_platform_ip4_address_get_scope(in_addr_t addr)
     /* For IPv4 addresses, we can set any scope we want (for any address).
      * However, there are scopes that make sense based on the address,
      * so choose those. */
-    return nm_utils_ip4_address_is_loopback(addr)     ? (254 /* RT_SCOPE_HOST */)
-           : nm_utils_ip4_address_is_link_local(addr) ? (253 /* RT_SCOPE_LINK */)
-                                                      : (0 /* RT_SCOPE_UNIVERSE */);
+    return nm_ip4_addr_is_loopback(addr)     ? (254 /* RT_SCOPE_HOST */)
+           : nm_ip4_addr_is_link_local(addr) ? (253 /* RT_SCOPE_LINK */)
+                                             : (0 /* RT_SCOPE_UNIVERSE */);
 }
 
 static inline guint8
@@ -1614,7 +1614,7 @@ nm_platform_ip_address_get_scope(int addr_family, gconstpointer addr)
     /* Note that this function returns the scope as we configure
      * it in kernel (for IPv4) or as kernel chooses it (for IPv6).
      *
-     * That means, rfc1918 private addresses nm_utils_ip_is_site_local() are
+     * That means, rfc1918 private addresses nm_ip_addr_is_site_local() are
      * considered RT_SCOPE_UNIVERSE.
      *
      * Also, the deprecated IN6_IS_ADDR_SITELOCAL() addresses (fec0::/10)

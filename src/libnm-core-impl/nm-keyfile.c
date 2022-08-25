@@ -397,7 +397,7 @@ build_route(KeyfileReaderInfo *info,
 
     /* Next hop */
     if (gateway_str && gateway_str[0]) {
-        if (!nm_utils_ipaddr_is_valid(family, gateway_str)) {
+        if (!nm_inet_is_valid(family, gateway_str)) {
             /* Try workaround for routes written by broken keyfile writer.
              * Due to bug bgo#719851, an older version of writer would have
              * written "a:b:c:d::/plen,metric" if the gateway was ::, instead
@@ -3692,7 +3692,7 @@ _read_setting_wireguard_peer(KeyfileReaderInfo *info)
         gsize    i;
 
         for (i = 0; i < n_sa; i++) {
-            if (!nm_utils_parse_inaddr_prefix_bin(AF_UNSPEC, sa[i], NULL, NULL, NULL)) {
+            if (!nm_inet_parse_with_prefix_bin(AF_UNSPEC, sa[i], NULL, NULL, NULL)) {
                 has_error = TRUE;
                 continue;
             }

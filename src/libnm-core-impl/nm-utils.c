@@ -269,7 +269,7 @@ nm_sock_addr_endpoint_get_fixed_sockaddr(NMSockAddrEndpoint *self, gpointer sock
     if (!self->host)
         return FALSE;
 
-    if (nm_utils_parse_inaddr_bin(AF_UNSPEC, self->host, &addr_family, &addrbin))
+    if (nm_inet_parse_bin(AF_UNSPEC, self->host, &addr_family, &addrbin))
         goto good;
 
     /* See if there is an IPv6 scope-id...
@@ -295,7 +295,7 @@ nm_sock_addr_endpoint_get_fixed_sockaddr(NMSockAddrEndpoint *self, gpointer sock
         const char   *host_part;
 
         host_part = nm_strndup_a(200, self->host, s - self->host, &tmp_str);
-        if (nm_utils_parse_inaddr_bin(AF_INET6, host_part, &addr_family, &addrbin))
+        if (nm_inet_parse_bin(AF_INET6, host_part, &addr_family, &addrbin))
             goto good;
     }
 
@@ -1346,7 +1346,7 @@ nm_utils_ip4_dns_from_variant(GVariant *value)
     array = g_variant_get_fixed_array(value, &length, sizeof(guint32));
     dns   = g_new(char *, length + 1u);
     for (i = 0; i < length; i++)
-        dns[i] = nm_utils_inet4_ntop_dup(array[i]);
+        dns[i] = nm_inet4_ntop_dup(array[i]);
     dns[i] = NULL;
 
     return dns;
@@ -1449,7 +1449,7 @@ nm_utils_ip4_addresses_from_variant(GVariant *value, char **out_gateway)
             g_ptr_array_add(addresses, addr);
 
             if (addr_array[2] && out_gateway && !*out_gateway)
-                *out_gateway = nm_utils_inet4_ntop_dup(addr_array[2]);
+                *out_gateway = nm_inet4_ntop_dup(addr_array[2]);
         } else {
             g_warning("Ignoring invalid IP4 address: %s", error->message);
             g_clear_error(&error);
@@ -1571,7 +1571,7 @@ nm_utils_ip4_routes_from_variant(GVariant *value)
 guint32
 nm_utils_ip4_netmask_to_prefix(guint32 netmask)
 {
-    return _nm_utils_ip4_netmask_to_prefix(netmask);
+    return nm_ip4_addr_netmask_to_prefix(netmask);
 }
 
 /**
@@ -1585,7 +1585,7 @@ nm_utils_ip4_prefix_to_netmask(guint32 prefix)
 {
     g_return_val_if_fail(prefix <= 32, 0xffffffffu);
 
-    return _nm_utils_ip4_prefix_to_netmask(prefix);
+    return nm_ip4_addr_netmask_from_prefix(prefix);
 }
 
 /**
@@ -1603,7 +1603,7 @@ nm_utils_ip4_prefix_to_netmask(guint32 prefix)
 guint32
 nm_utils_ip4_get_default_prefix(guint32 ip)
 {
-    return _nm_utils_ip4_get_default_prefix(ip);
+    return nm_ip4_addr_get_default_prefix(ip);
 }
 
 /**
@@ -1676,7 +1676,7 @@ nm_utils_ip6_dns_from_variant(GVariant *value)
         const struct in6_addr *ip = g_variant_get_fixed_array(ip_var, &length, 1);
 
         if (length == sizeof(struct in6_addr))
-            dns[i++] = nm_utils_inet6_ntop_dup(ip);
+            dns[i++] = nm_inet6_ntop_dup(ip);
 
         g_variant_unref(ip_var);
     }
@@ -1798,7 +1798,7 @@ nm_utils_ip6_addresses_from_variant(GVariant *value, char **out_gateway)
                     goto next;
                 }
                 if (!IN6_IS_ADDR_UNSPECIFIED(gateway_bytes))
-                    *out_gateway = nm_utils_inet6_ntop_dup(gateway_bytes);
+                    *out_gateway = nm_inet6_ntop_dup(gateway_bytes);
             }
         } else {
             g_warning("Ignoring invalid IP6 address: %s", error->message);
@@ -3825,13 +3825,13 @@ _nm_utils_ipaddr_canonical_or_invalid(int addr_family, const char *ip, gboolean 
     if (!ip)
         return NULL;
 
-    if (!nm_utils_parse_inaddr_bin(addr_family, ip, &addr_family, &addr_bin))
+    if (!nm_inet_parse_bin(addr_family, ip, &addr_family, &addr_bin))
         return g_strdup(ip);
 
     if (map_zero_to_null && nm_ip_addr_is_null(addr_family, &addr_bin))
         return NULL;
 
-    return nm_utils_inet_ntop_dup(addr_family, &addr_bin);
+    return nm_inet_ntop_dup(addr_family, &addr_bin);
 }
 
 /*
@@ -4363,13 +4363,13 @@ nm_utils_is_uuid(const char *str)
     return nm_uuid_is_valid_nmlegacy(str);
 }
 
-static _nm_thread_local char _nm_utils_inet_ntop_buffer[NM_UTILS_INET_ADDRSTRLEN];
+static _nm_thread_local char _nm_utils_inet_ntop_buffer[NM_INET_ADDRSTRLEN];
 
 /**
  * nm_utils_inet4_ntop: (skip)
  * @inaddr: the address that should be converted to string.
  * @dst: the destination buffer, it must contain at least
- *  <literal>INET_ADDRSTRLEN</literal> or %NM_UTILS_INET_ADDRSTRLEN
+ *  <literal>INET_ADDRSTRLEN</literal> or %NM_INET_ADDRSTRLEN
  *  characters. If set to %NULL, it will return a pointer to an internal, static
  *  buffer (shared with nm_utils_inet6_ntop()).  Beware, that the internal
  *  buffer will be overwritten with ever new call of nm_utils_inet4_ntop() or
@@ -4391,14 +4391,14 @@ nm_utils_inet4_ntop(in_addr_t inaddr, char *dst)
      *
      * However, still support it to be lenient against mistakes and because
      * this is public API of libnm. */
-    return _nm_utils_inet4_ntop(inaddr, dst ?: _nm_utils_inet_ntop_buffer);
+    return nm_inet4_ntop(inaddr, dst ?: _nm_utils_inet_ntop_buffer);
 }
 
 /**
  * nm_utils_inet6_ntop: (skip)
  * @in6addr: the address that should be converted to string.
  * @dst: the destination buffer, it must contain at least
- *  <literal>INET6_ADDRSTRLEN</literal> or %NM_UTILS_INET_ADDRSTRLEN
+ *  <literal>INET6_ADDRSTRLEN</literal> or %NM_INET_ADDRSTRLEN
  *  characters. If set to %NULL, it will return a pointer to an internal, static
  *  buffer (shared with nm_utils_inet4_ntop()).  Beware, that the internal
  *  buffer will be overwritten with ever new call of nm_utils_inet4_ntop() or
@@ -4422,7 +4422,7 @@ nm_utils_inet6_ntop(const struct in6_addr *in6addr, char *dst)
      * However, still support it to be lenient against mistakes and because
      * this is public API of libnm. */
     g_return_val_if_fail(in6addr, NULL);
-    return _nm_utils_inet6_ntop(in6addr, dst ?: _nm_utils_inet_ntop_buffer);
+    return nm_inet6_ntop(in6addr, dst ?: _nm_utils_inet_ntop_buffer);
 }
 
 /**
@@ -4440,7 +4440,7 @@ nm_utils_ipaddr_valid(int family, const char *ip)
 {
     g_return_val_if_fail(family == AF_INET || family == AF_INET6 || family == AF_UNSPEC, FALSE);
 
-    return nm_utils_ipaddr_is_valid(family, ip);
+    return nm_inet_is_valid(family, ip);
 }
 
 /**

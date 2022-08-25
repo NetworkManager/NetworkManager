@@ -254,7 +254,7 @@ nm_netns_shared_ip_reserve(NMNetns *self)
     NMNetnsSharedIPHandle *handle;
     const in_addr_t        addr_start = ntohl(0x0a2a0001u); /* 10.42.0.1 */
     in_addr_t              addr;
-    char                   sbuf_addr[NM_UTILS_INET_ADDRSTRLEN];
+    char                   sbuf_addr[NM_INET_ADDRSTRLEN];
 
     /* Find an unused address in the 10.42.x.x range */
 
@@ -284,10 +284,10 @@ nm_netns_shared_ip_reserve(NMNetns *self)
             if (count > 0xFFu) {
                 if (handle->_ref_count == 1) {
                     _LOGE("shared-ip4: ran out of shared IP addresses. Reuse %s/24",
-                          _nm_utils_inet4_ntop(handle->addr, sbuf_addr));
+                          nm_inet4_ntop(handle->addr, sbuf_addr));
                 } else {
                     _LOGD("shared-ip4: reserved IP address range %s/24 (duplicate)",
-                          _nm_utils_inet4_ntop(handle->addr, sbuf_addr));
+                          nm_inet4_ntop(handle->addr, sbuf_addr));
                 }
                 handle->_ref_count++;
                 return handle;
@@ -304,8 +304,7 @@ nm_netns_shared_ip_reserve(NMNetns *self)
 
     g_hash_table_add(priv->shared_ips, handle);
 
-    _LOGD("shared-ip4: reserved IP address range %s/24",
-          _nm_utils_inet4_ntop(handle->addr, sbuf_addr));
+    _LOGD("shared-ip4: reserved IP address range %s/24", nm_inet4_ntop(handle->addr, sbuf_addr));
     return handle;
 }
 
@@ -314,7 +313,7 @@ nm_netns_shared_ip_release(NMNetnsSharedIPHandle *handle)
 {
     NMNetns        *self;
     NMNetnsPrivate *priv;
-    char            sbuf_addr[NM_UTILS_INET_ADDRSTRLEN];
+    char            sbuf_addr[NM_INET_ADDRSTRLEN];
 
     g_return_if_fail(handle);
 
@@ -331,7 +330,7 @@ nm_netns_shared_ip_release(NMNetnsSharedIPHandle *handle)
         nm_assert(handle->addr == ntohl(0x0A2AFF01u)); /* 10.42.255.1 */
         handle->_ref_count--;
         _LOGD("shared-ip4: release IP address range %s/24 (%d more references held)",
-              _nm_utils_inet4_ntop(handle->addr, sbuf_addr),
+              nm_inet4_ntop(handle->addr, sbuf_addr),
               handle->_ref_count);
         return;
     }
@@ -344,8 +343,7 @@ nm_netns_shared_ip_release(NMNetnsSharedIPHandle *handle)
         g_object_unref(self);
     }
 
-    _LOGD("shared-ip4: release IP address range %s/24",
-          _nm_utils_inet4_ntop(handle->addr, sbuf_addr));
+    _LOGD("shared-ip4: release IP address range %s/24", nm_inet4_ntop(handle->addr, sbuf_addr));
 
     handle->_self = NULL;
     nm_g_slice_free(handle);

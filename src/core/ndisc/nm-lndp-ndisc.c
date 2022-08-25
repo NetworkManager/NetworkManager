@@ -202,9 +202,7 @@ receive_ra(struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
         r_plen = ndp_msg_opt_prefix_len(msg, offset);
         if (r_plen == 0 || r_plen > 128)
             continue;
-        nm_utils_ip6_address_clear_host_address(&r_network,
-                                                ndp_msg_opt_prefix(msg, offset),
-                                                r_plen);
+        nm_ip6_addr_clear_host_address(&r_network, ndp_msg_opt_prefix(msg, offset), r_plen);
 
         if (IN6_IS_ADDR_UNSPECIFIED(&r_network) || IN6_IS_ADDR_LINKLOCAL(&r_network))
             continue;
@@ -244,9 +242,7 @@ receive_ra(struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
         if (plen == 0 || plen > 128)
             continue;
 
-        nm_utils_ip6_address_clear_host_address(&network,
-                                                ndp_msg_opt_route_prefix(msg, offset),
-                                                plen);
+        nm_ip6_addr_clear_host_address(&network, ndp_msg_opt_route_prefix(msg, offset), plen);
 
         {
             const NMNDiscRoute route = {

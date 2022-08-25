@@ -151,16 +151,16 @@ _get_config_fetch_done_cb(NMHttpClient                   *http_client,
             config_iface_data->ipv4s_arr = g_new(in_addr_t, len);
 
             for (i = 0; i < len; i++) {
-                if (nm_utils_parse_inaddr_bin(AF_INET, s_addrs[i], NULL, &tmp_addr))
+                if (nm_inet_parse_bin(AF_INET, s_addrs[i], NULL, &tmp_addr))
                     config_iface_data->ipv4s_arr[config_iface_data->ipv4s_len++] = tmp_addr;
             }
         }
     } else {
-        if (nm_utils_parse_inaddr_prefix_bin(AF_INET,
-                                             g_bytes_get_data(response, NULL),
-                                             NULL,
-                                             &tmp_addr,
-                                             &tmp_prefix)) {
+        if (nm_inet_parse_with_prefix_bin(AF_INET,
+                                          g_bytes_get_data(response, NULL),
+                                          NULL,
+                                          &tmp_addr,
+                                          &tmp_prefix)) {
             nm_assert(!config_iface_data->has_cidr);
             config_iface_data->has_cidr    = TRUE;
             config_iface_data->cidr_prefix = tmp_prefix;

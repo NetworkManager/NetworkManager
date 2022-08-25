@@ -171,25 +171,25 @@ typedef struct {
 
 #define _NMLOG_PREFIX_NAME "resolve-addr"
 #define _NMLOG_DOMAIN      LOGD_CORE
-#define _NMLOG2(level, info, ...)                                                      \
-    G_STMT_START                                                                       \
-    {                                                                                  \
-        if (nm_logging_enabled((level), (_NMLOG_DOMAIN))) {                            \
-            ResolveAddrInfo *_info = (info);                                           \
-            char             _addr_str[NM_UTILS_INET_ADDRSTRLEN];                      \
-                                                                                       \
-            _nm_log((level),                                                           \
-                    (_NMLOG_DOMAIN),                                                   \
-                    0,                                                                 \
-                    NULL,                                                              \
-                    NULL,                                                              \
-                    _NMLOG_PREFIX_NAME "[" NM_HASH_OBFUSCATE_PTR_FMT                   \
-                                       ",%s]: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__),    \
-                    NM_HASH_OBFUSCATE_PTR(_info),                                      \
-                    nm_utils_inet_ntop(_info->addr_family, &_info->address, _addr_str) \
-                        _NM_UTILS_MACRO_REST(__VA_ARGS__));                            \
-        }                                                                              \
-    }                                                                                  \
+#define _NMLOG2(level, info, ...)                                                   \
+    G_STMT_START                                                                    \
+    {                                                                               \
+        if (nm_logging_enabled((level), (_NMLOG_DOMAIN))) {                         \
+            ResolveAddrInfo *_info = (info);                                        \
+            char             _addr_str[NM_INET_ADDRSTRLEN];                         \
+                                                                                    \
+            _nm_log((level),                                                        \
+                    (_NMLOG_DOMAIN),                                                \
+                    0,                                                              \
+                    NULL,                                                           \
+                    NULL,                                                           \
+                    _NMLOG_PREFIX_NAME "[" NM_HASH_OBFUSCATE_PTR_FMT                \
+                                       ",%s]: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
+                    NM_HASH_OBFUSCATE_PTR(_info),                                   \
+                    nm_inet_ntop(_info->addr_family, &_info->address, _addr_str)    \
+                        _NM_UTILS_MACRO_REST(__VA_ARGS__));                         \
+        }                                                                           \
+    }                                                                               \
     G_STMT_END
 
 static void
@@ -234,9 +234,9 @@ resolve_addr_helper_cb(GObject *source, GAsyncResult *result, gpointer user_data
 static void
 resolve_addr_spawn_helper(ResolveAddrInfo *info)
 {
-    char addr_str[NM_UTILS_INET_ADDRSTRLEN];
+    char addr_str[NM_INET_ADDRSTRLEN];
 
-    nm_utils_inet_ntop(info->addr_family, &info->address, addr_str);
+    nm_inet_ntop(info->addr_family, &info->address, addr_str);
     _LOG2D(info, "start lookup via nm-daemon-helper");
     nm_utils_spawn_helper(NM_MAKE_STRV("resolve-address", addr_str),
                           g_task_get_cancellable(info->task),

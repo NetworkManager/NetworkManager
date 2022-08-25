@@ -358,16 +358,16 @@ G_DEFINE_TYPE(NML3Cfg, nm_l3cfg, G_TYPE_OBJECT)
     }                                                                         \
     G_STMT_END
 
-#define _LOGT_acd(acd_data, ...)                                      \
-    G_STMT_START                                                      \
-    {                                                                 \
-        char _sbuf_acd[NM_UTILS_INET_ADDRSTRLEN];                     \
-                                                                      \
-        _LOGT("acd[%s, %s]: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__),     \
-              _nm_utils_inet4_ntop((acd_data)->info.addr, _sbuf_acd), \
-              _l3_acd_addr_state_to_string((acd_data)->info.state)    \
-                  _NM_UTILS_MACRO_REST(__VA_ARGS__));                 \
-    }                                                                 \
+#define _LOGT_acd(acd_data, ...)                                   \
+    G_STMT_START                                                   \
+    {                                                              \
+        char _sbuf_acd[NM_INET_ADDRSTRLEN];                        \
+                                                                   \
+        _LOGT("acd[%s, %s]: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__),  \
+              nm_inet4_ntop((acd_data)->info.addr, _sbuf_acd),     \
+              _l3_acd_addr_state_to_string((acd_data)->info.state) \
+                  _NM_UTILS_MACRO_REST(__VA_ARGS__));              \
+    }                                                              \
     G_STMT_END
 
 /*****************************************************************************/
@@ -548,7 +548,7 @@ _l3_config_notify_data_to_string(const NML3ConfigNotifyData *notify_data,
                                  char                       *sbuf,
                                  gsize                       sbuf_size)
 {
-    char      sbuf_addr[NM_UTILS_INET_ADDRSTRLEN];
+    char      sbuf_addr[NM_INET_ADDRSTRLEN];
     char      sbuf100[100];
     char      sbufobf[NM_HASH_OBFUSCATE_PTR_STR_BUF_SIZE];
     char     *s = sbuf;
@@ -577,7 +577,7 @@ _l3_config_notify_data_to_string(const NML3ConfigNotifyData *notify_data,
         nm_strbuf_append(&s,
                          &l,
                          ", addr=%s, state=%s",
-                         _nm_utils_inet4_ntop(notify_data->acd_event.info.addr, sbuf_addr),
+                         nm_inet4_ntop(notify_data->acd_event.info.addr, sbuf_addr),
                          _l3_acd_addr_state_to_string(notify_data->acd_event.info.state));
         break;
     case NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE:
@@ -603,7 +603,7 @@ _l3_config_notify_data_to_string(const NML3ConfigNotifyData *notify_data,
             &l,
             ", ipv4ll=" NM_HASH_OBFUSCATE_PTR_FMT "%s%s, state=%s",
             NM_HASH_OBFUSCATE_PTR(notify_data->ipv4ll_event.ipv4ll),
-            NM_PRINT_FMT_QUOTED2(addr4 != 0, ", addr=", _nm_utils_inet4_ntop(addr4, sbuf_addr), ""),
+            NM_PRINT_FMT_QUOTED2(addr4 != 0, ", addr=", nm_inet4_ntop(addr4, sbuf_addr), ""),
             nm_l3_ipv4ll_state_to_string(nm_l3_ipv4ll_get_state(notify_data->ipv4ll_event.ipv4ll),
                                          sbuf100,
                                          sizeof(sbuf100)));
@@ -2230,7 +2230,7 @@ _l3_acd_data_state_change(NML3Cfg           *self,
     gint64            now_msec;
     const char       *log_reason;
     char              sbuf256[256];
-    char              sbuf_addr[NM_UTILS_INET_ADDRSTRLEN];
+    char              sbuf_addr[NM_INET_ADDRSTRLEN];
 
     if (!p_now_msec) {
         now_msec   = 0;
@@ -2550,7 +2550,7 @@ handle_init:
         if (!_l3_acd_data_defendconflict_warning_ratelimited(acd_data, p_now_msec)) {
             _LOGI("IPv4 address %s is used on network connected to interface %d%s%s%s from "
                   "host %s",
-                  _nm_utils_inet4_ntop(acd_data->info.addr, sbuf_addr),
+                  nm_inet4_ntop(acd_data->info.addr, sbuf_addr),
                   self->priv.ifindex,
                   NM_PRINT_FMT_QUOTED(self->priv.plobj_next,
                                       " (",
@@ -2565,7 +2565,7 @@ handle_init:
         nm_assert(acd_data->info.state == NM_L3_ACD_ADDR_STATE_DEFENDING);
         _LOGT_acd(acd_data,
                   "address %s defended from %s",
-                  _nm_utils_inet4_ntop(acd_data->info.addr, sbuf_addr),
+                  nm_inet4_ntop(acd_data->info.addr, sbuf_addr),
                   nm_ether_addr_to_string_a(sender_addr));
         /* we just log an info message. Nothing else to do. */
         return;
@@ -2575,7 +2575,7 @@ handle_init:
 
         _LOGT_acd(acd_data,
                   "address conflict for %s detected with %s",
-                  _nm_utils_inet4_ntop(acd_data->info.addr, sbuf_addr),
+                  nm_inet4_ntop(acd_data->info.addr, sbuf_addr),
                   nm_ether_addr_to_string_a(sender_addr));
 
         if (!_l3_acd_data_defendconflict_warning_ratelimited(acd_data, p_now_msec)) {
@@ -2587,7 +2587,7 @@ handle_init:
                                       NMP_OBJECT_CAST_LINK(self->priv.plobj_next)->name,
                                       ")",
                                       ""),
-                  _nm_utils_inet4_ntop(acd_data->info.addr, sbuf_addr),
+                  nm_inet4_ntop(acd_data->info.addr, sbuf_addr),
                   nm_ether_addr_to_string_a(sender_addr));
         }
 
@@ -4371,9 +4371,9 @@ _l3_commit_mptcp_af(NML3Cfg          *self,
                 default:
                     if (IS_IPv4) {
                         /* We take all addresses, including rfc1918 private addresses
-                         * (nm_utils_ip_is_site_local()). */
+                         * (nm_ip_addr_is_site_local()). */
                     } else {
-                        if (nm_utils_ip6_is_ula(&addr->a6.address)) {
+                        if (nm_ip6_addr_is_ula(&addr->a6.address)) {
                             /* Exclude unique local IPv6 addresses fc00::/7. */
                             goto skip_addr;
                         } else {

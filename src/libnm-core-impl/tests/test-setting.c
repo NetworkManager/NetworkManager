@@ -3755,7 +3755,7 @@ test_roundtrip_conversion(gconstpointer test_data)
         for (is_ipv4 = 0; is_ipv4 < 2; is_ipv4++) {
             g_assert(NM_IS_SETTING_IP_CONFIG(s_ip.s_x[is_ipv4]));
             for (i = 0; i < 3; i++) {
-                char addrstr[NM_UTILS_INET_ADDRSTRLEN];
+                char addrstr[NM_INET_ADDRSTRLEN];
 
                 nm_auto_unref_ip_routing_rule NMIPRoutingRule *rr = NULL;
 

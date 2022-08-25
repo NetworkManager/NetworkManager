@@ -360,7 +360,7 @@ format_network_address(const guint8 *data, gsize sz)
     } else
         return NULL;
 
-    return nm_utils_inet_ntop_dup(family, &a);
+    return nm_inet_ntop_dup(family, &a);
 }
 
 static const char *

@@ -1066,7 +1066,7 @@ nm_dns_systemd_resolved_resolve_address(NMDnsSystemdResolved                    
 {
     NMDnsSystemdResolvedPrivate       *priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE(self);
     NMDnsSystemdResolvedResolveHandle *handle;
-    char                               addr_str[NM_UTILS_INET_ADDRSTRLEN];
+    char                               addr_str[NM_INET_ADDRSTRLEN];
 
     g_return_val_if_fail(NM_IS_DNS_SYSTEMD_RESOLVED(self), NULL);
     nm_assert_addr_family(addr_family);
@@ -1092,7 +1092,7 @@ nm_dns_systemd_resolved_resolve_address(NMDnsSystemdResolved                    
     _LOG2T(handle,
            "resolve-address(ifindex=%d, %s, flags=%" G_GINT64_MODIFIER "x): new request",
            handle->r_address.ifindex,
-           nm_utils_inet_ntop(handle->r_address.addr_family, &handle->r_address.addr, addr_str),
+           nm_inet_ntop(handle->r_address.addr_family, &handle->r_address.addr, addr_str),
            handle->r_address.flags);
 
     _resolve_start(self, handle);

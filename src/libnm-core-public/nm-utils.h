@@ -171,12 +171,12 @@ gboolean nm_utils_is_valid_iface_name(const char *name, GError **error);
 gboolean nm_utils_is_uuid(const char *str);
 
 /**
- * NM_UTILS_INET_ADDRSTRLEN:
+ * NM_INET_ADDRSTRLEN:
  *
  * Defines the minimal length for a char buffer that is suitable as @dst argument
  * for both nm_utils_inet4_ntop() and nm_utils_inet6_ntop().
  **/
-#define NM_UTILS_INET_ADDRSTRLEN INET6_ADDRSTRLEN
+#define NM_INET_ADDRSTRLEN INET6_ADDRSTRLEN
 
 const char *nm_utils_inet4_ntop(guint32 inaddr, char *dst);
 

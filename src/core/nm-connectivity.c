@@ -805,7 +805,7 @@ system_resolver_resolve_cb(GObject *source_object, GAsyncResult *res, gpointer u
 
     for (iter = list; iter; iter = iter->next) {
         GInetAddress *a = iter->data;
-        char          str_addr[NM_UTILS_INET_ADDRSTRLEN];
+        char          str_addr[NM_INET_ADDRSTRLEN];
         int           addr_family;
 
         switch (g_inet_address_get_family(a)) {
@@ -830,7 +830,7 @@ system_resolver_resolve_cb(GObject *source_object, GAsyncResult *res, gpointer u
             nm_str_buf_append_c(&strbuf_hosts, ',');
 
         nm_str_buf_append(&strbuf_hosts,
-                          nm_utils_inet_ntop(addr_family, g_inet_address_to_bytes(a), str_addr));
+                          nm_inet_ntop(addr_family, g_inet_address_to_bytes(a), str_addr));
 next:;
     }
 
@@ -905,7 +905,7 @@ systemd_resolved_resolve_cb(GObject *object, GAsyncResult *res, gpointer user_da
 
     for (i = 0; i < no_addresses; i++) {
         gs_unref_variant GVariant *address = NULL;
-        char                       str_addr[NM_UTILS_INET_ADDRSTRLEN];
+        char                       str_addr[NM_INET_ADDRSTRLEN];
         const guchar              *address_buf;
 
         g_variant_get_child(addresses, i, "(ii@ay)", &ifindex, &addr_family, &address);
@@ -928,7 +928,7 @@ systemd_resolved_resolve_cb(GObject *object, GAsyncResult *res, gpointer user_da
         } else
             nm_str_buf_append_c(&strbuf_hosts, ',');
 
-        nm_str_buf_append(&strbuf_hosts, nm_utils_inet_ntop(addr_family, address_buf, str_addr));
+        nm_str_buf_append(&strbuf_hosts, nm_inet_ntop(addr_family, address_buf, str_addr));
     }
     if (strbuf_hosts.len == 0) {
         _LOG2D("systemd-resolve returned no usable IPv%c addresses",

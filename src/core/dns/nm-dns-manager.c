@@ -552,7 +552,7 @@ add_dns_domains(GPtrArray            *array,
 static void
 merge_one_l3cd(NMResolvConfData *rc, int addr_family, int ifindex, const NML3ConfigData *l3cd)
 {
-    char               buf[NM_UTILS_INET_ADDRSTRLEN + 50];
+    char               buf[NM_INET_ADDRSTRLEN + 50];
     gboolean           has_trust_ad;
     guint              num_nameservers;
     guint              num;
@@ -569,11 +569,11 @@ merge_one_l3cd(NMResolvConfData *rc, int addr_family, int ifindex, const NML3Con
         addr = nm_ip_addr_from_packed_array(addr_family, nameservers, i);
 
         if (addr_family == AF_INET)
-            nm_utils_inet_ntop(addr_family, addr, buf);
+            nm_inet_ntop(addr_family, addr, buf);
         else if (IN6_IS_ADDR_V4MAPPED(addr))
-            _nm_utils_inet4_ntop(addr->addr6.s6_addr32[3], buf);
+            nm_inet4_ntop(addr->addr6.s6_addr32[3], buf);
         else {
-            _nm_utils_inet6_ntop(&addr->addr6, buf);
+            nm_inet6_ntop(&addr->addr6, buf);
             if (IN6_IS_ADDR_LINKLOCAL(addr)) {
                 const char *ifname;
 
@@ -619,7 +619,7 @@ merge_one_l3cd(NMResolvConfData *rc, int addr_family, int ifindex, const NML3Con
 
         nis_servers = nm_l3_config_data_get_nis_servers(l3cd, &num);
         for (i = 0; i < num; i++)
-            add_string_item(rc->nis_servers, _nm_utils_inet4_ntop(nis_servers[i], buf), TRUE);
+            add_string_item(rc->nis_servers, nm_inet4_ntop(nis_servers[i], buf), TRUE);
 
         if ((nis_domain = nm_l3_config_data_get_nis_domain(l3cd))) {
             /* FIXME: handle multiple domains */
@@ -1258,7 +1258,7 @@ merge_global_dns_config(NMResolvConfData *rc, NMGlobalDnsConfig *global_conf)
 static const char *
 get_nameserver_list(int addr_family, const NML3ConfigData *l3cd, NMStrBuf *tmp_strbuf)
 {
-    char          buf[NM_UTILS_INET_ADDRSTRLEN];
+    char          buf[NM_INET_ADDRSTRLEN];
     guint         num;
     guint         i;
     gconstpointer nameservers;
@@ -1270,7 +1270,7 @@ get_nameserver_list(int addr_family, const NML3ConfigData *l3cd, NMStrBuf *tmp_s
         const NMIPAddr *addr;
 
         addr = nm_ip_addr_from_packed_array(addr_family, nameservers, i);
-        nm_utils_inet_ntop(addr_family, addr->addr_ptr, buf);
+        nm_inet_ntop(addr_family, addr->addr_ptr, buf);
         if (i > 0)
             nm_str_buf_append_c(tmp_strbuf, ' ');
         nm_str_buf_append(tmp_strbuf, buf);
@@ -2083,8 +2083,7 @@ nm_dns_manager_set_hostname(NMDnsManager *self, const char *hostname, gboolean s
 
     /* Certain hostnames we don't want to include in resolv.conf 'searches' */
     if (hostname && nm_utils_is_specific_hostname(hostname)
-        && !g_str_has_suffix(hostname, ".in-addr.arpa")
-        && !nm_utils_ipaddr_is_valid(AF_UNSPEC, hostname)) {
+        && !g_str_has_suffix(hostname, ".in-addr.arpa") && !nm_inet_is_valid(AF_UNSPEC, hostname)) {
         domain = strchr(hostname, '.');
         if (domain) {
             domain++;
@@ -2628,7 +2627,7 @@ _get_config_variant(NMDnsManager *self)
         guint           num_domains;
         guint           num_searches;
         guint           i;
-        char            buf[NM_UTILS_INET_ADDRSTRLEN];
+        char            buf[NM_INET_ADDRSTRLEN];
         const char     *ifname;
         gconstpointer   nameservers;
 
@@ -2645,7 +2644,7 @@ _get_config_variant(NMDnsManager *self)
             addr = nm_ip_addr_from_packed_array(ip_data->addr_family, nameservers, i);
             g_variant_builder_add(&strv_builder,
                                   "s",
-                                  nm_utils_inet_ntop(ip_data->addr_family, addr, buf));
+                                  nm_inet_ntop(ip_data->addr_family, addr, buf));
         }
         g_variant_builder_add(&entry_builder,
                               "{sv}",

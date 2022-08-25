@@ -438,9 +438,9 @@ nm_dhcp_option_add_option_in_addr(GHashTable *options,
                                   guint       option,
                                   in_addr_t   value)
 {
-    char sbuf[NM_UTILS_INET_ADDRSTRLEN];
+    char sbuf[NM_INET_ADDRSTRLEN];
 
-    nm_dhcp_option_add_option(options, addr_family, option, _nm_utils_inet4_ntop(value, sbuf));
+    nm_dhcp_option_add_option(options, addr_family, option, nm_inet4_ntop(value, sbuf));
 }
 
 void

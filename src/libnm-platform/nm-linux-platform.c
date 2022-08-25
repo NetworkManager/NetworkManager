@@ -8122,7 +8122,7 @@ static gboolean
 link_set_token(NMPlatform *platform, int ifindex, const NMUtilsIPv6IfaceId *iid)
 {
     nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
-    char                         sbuf[NM_UTILS_INET_ADDRSTRLEN];
+    char                         sbuf[NM_INET_ADDRSTRLEN];
 
     _LOGD("link: change %d: token: set IPv6 address generation token to %s",
           ifindex,

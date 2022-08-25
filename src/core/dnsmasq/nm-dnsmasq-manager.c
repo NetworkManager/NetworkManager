@@ -147,7 +147,7 @@ create_dm_cmd_line(const char           *iface,
      */
     nm_strv_ptrarray_add_string_dup(cmd, "--strict-order");
 
-    _nm_utils_inet4_ntop(listen_address->address, listen_address_s);
+    nm_inet4_ntop(listen_address->address, listen_address_s);
 
     nm_strv_ptrarray_add_string_concat(cmd, "--listen-address=", listen_address_s);
 
@@ -169,7 +169,7 @@ create_dm_cmd_line(const char           *iface,
         g_string_append(s, "--dhcp-option=option:dns-server");
         for (i = 0; i < n; i++) {
             g_string_append_c(s, ',');
-            g_string_append(s, _nm_utils_inet4_ntop(ipv4arr[i], sbuf_addr));
+            g_string_append(s, nm_inet4_ntop(ipv4arr[i], sbuf_addr));
         }
         nm_strv_ptrarray_take_gstring(cmd, &s);
     }

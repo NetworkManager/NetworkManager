@@ -271,11 +271,11 @@ nm_conn_wireguard_import(const char *filename, GError **error)
                     int         addr_family;
                     int         prefix_len;
 
-                    if (!nm_utils_parse_inaddr_prefix_bin(AF_UNSPEC,
-                                                          value_word,
-                                                          &addr_family,
-                                                          &addr_bin,
-                                                          &prefix_len))
+                    if (!nm_inet_parse_with_prefix_bin(AF_UNSPEC,
+                                                       value_word,
+                                                       &addr_family,
+                                                       &addr_bin,
+                                                       &prefix_len))
                         goto fail_invalid_value;
 
                     p_data_addr = (addr_family == AF_INET) ? &data_addr_v4 : &data_addr_v6;
@@ -315,13 +315,12 @@ nm_conn_wireguard_import(const char *filename, GError **error)
                     NMIPAddr    addr_bin;
                     int         addr_family;
 
-                    if (nm_utils_parse_inaddr_bin(AF_UNSPEC, value_word, &addr_family, &addr_bin)) {
+                    if (nm_inet_parse_bin(AF_UNSPEC, value_word, &addr_family, &addr_bin)) {
                         p_data_dns = (addr_family == AF_INET) ? &data_dns_v4 : &data_dns_v6;
                         if (!*p_data_dns)
                             *p_data_dns = g_ptr_array_new_with_free_func(g_free);
 
-                        g_ptr_array_add(*p_data_dns,
-                                        nm_utils_inet_ntop_dup(addr_family, &addr_bin));
+                        g_ptr_array_add(*p_data_dns, nm_inet_ntop_dup(addr_family, &addr_bin));
                         continue;
                     }
 

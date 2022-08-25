@@ -506,7 +506,7 @@ validate_ip(const char *name, const char *value, GError **error)
         return FALSE;
     }
     for (i = 0; addrs[i]; i++) {
-        if (!nm_utils_parse_inaddr_bin(AF_INET, addrs[i], NULL, NULL)) {
+        if (!nm_inet_parse_bin(AF_INET, addrs[i], NULL, NULL)) {
             g_set_error(error,
                         NM_CONNECTION_ERROR,
                         NM_CONNECTION_ERROR_INVALID_PROPERTY,

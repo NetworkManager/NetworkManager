@@ -423,6 +423,8 @@ src_libnm_glib_aux_libnm_glib_aux_la_SOURCES = \
 	src/libnm-glib-aux/nm-glib.h \
 	src/libnm-glib-aux/nm-hash-utils.c \
 	src/libnm-glib-aux/nm-hash-utils.h \
+	src/libnm-glib-aux/nm-inet-utils.c \
+	src/libnm-glib-aux/nm-inet-utils.h \
 	src/libnm-glib-aux/nm-io-utils.c \
 	src/libnm-glib-aux/nm-io-utils.h \
 	src/libnm-glib-aux/nm-jansson.h \

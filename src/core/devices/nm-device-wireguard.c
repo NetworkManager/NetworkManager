@@ -219,7 +219,7 @@ _auto_default_route_get_enabled(NMSettingWireGuard *s_wg,
                 aip = nm_wireguard_peer_get_allowed_ip(peer, j, &valid);
                 if (!valid)
                     continue;
-                if (!nm_utils_parse_inaddr_prefix_bin(AF_UNSPEC, aip, &addr_family, NULL, &prefix))
+                if (!nm_inet_parse_with_prefix_bin(AF_UNSPEC, aip, &addr_family, NULL, &prefix))
                     continue;
                 if (prefix != 0)
                     continue;
@@ -1152,11 +1152,11 @@ _peers_get_platform_list(NMDeviceWireGuardPrivate            *priv,
 
                 aip = nm_wireguard_peer_get_allowed_ip(peer_data->peer, i_aip, &valid);
                 if (!valid
-                    || !nm_utils_parse_inaddr_prefix_bin(AF_UNSPEC,
-                                                         aip,
-                                                         &addr_family,
-                                                         &addrbin,
-                                                         &prefix)) {
+                    || !nm_inet_parse_with_prefix_bin(AF_UNSPEC,
+                                                      aip,
+                                                      &addr_family,
+                                                      &addrbin,
+                                                      &prefix)) {
                     /* the address is really not expected to be invalid, because then
                      * the connection would not verify. Anyway, silently skip it. */
                     continue;
@@ -1701,8 +1701,7 @@ _get_dev2_ip_config(NMDeviceWireGuard *self, int addr_family)
 
             aip = nm_wireguard_peer_get_allowed_ip(peer, j, &valid);
 
-            if (!valid
-                || !nm_utils_parse_inaddr_prefix_bin(addr_family, aip, NULL, &addrbin, &prefix))
+            if (!valid || !nm_inet_parse_with_prefix_bin(addr_family, aip, NULL, &addrbin, &prefix))
                 continue;
 
             if (prefix < 0)
@@ -1722,7 +1721,7 @@ _get_dev2_ip_config(NMDeviceWireGuard *self, int addr_family)
                                             NM_L3_CONFIG_DAT_FLAGS_IGNORE_MERGE_NO_DEFAULT_ROUTES);
             }
 
-            nm_utils_ipx_address_clear_host_address(addr_family, &addrbin, NULL, prefix);
+            nm_ip_addr_clear_host_address(addr_family, &addrbin, NULL, prefix);
 
             rtable_coerced = route_table_coerced;
 

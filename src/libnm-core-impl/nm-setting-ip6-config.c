@@ -305,7 +305,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
     if (priv->token) {
         if (priv->addr_gen_mode == NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_EUI64) {
             struct in6_addr i6_token;
-            char            s_token[NM_UTILS_INET_ADDRSTRLEN];
+            char            s_token[NM_INET_ADDRSTRLEN];
 
             if (inet_pton(AF_INET6, priv->token, &i6_token) != 1
                 || !_nm_utils_inet6_is_token(&i6_token)) {
@@ -320,7 +320,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
                 return FALSE;
             }
 
-            if (g_strcmp0(priv->token, _nm_utils_inet6_ntop(&i6_token, s_token)))
+            if (g_strcmp0(priv->token, nm_inet6_ntop(&i6_token, s_token)))
                 token_needs_normalization = TRUE;
         } else {
             g_set_error_literal(error,

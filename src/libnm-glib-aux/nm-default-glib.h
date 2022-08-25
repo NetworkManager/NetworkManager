@@ -67,6 +67,7 @@
 #include "libnm-glib-aux/nm-shared-utils.h"
 #include "libnm-glib-aux/nm-errno.h"
 #include "libnm-glib-aux/nm-hash-utils.h"
+#include "libnm-glib-aux/nm-inet-utils.h"
 
 /*****************************************************************************/
 

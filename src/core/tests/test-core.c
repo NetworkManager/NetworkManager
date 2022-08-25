@@ -40,7 +40,7 @@ test_config_h(void)
 
 /*****************************************************************************/
 
-/* Reference implementation for nm_utils_ip6_address_clear_host_address.
+/* Reference implementation for nm_ip6_addr_clear_host_address.
  * Taken originally from set_address_masked(), src/ndisc/nm-lndp-ndisc.c
  **/
 static void
@@ -95,14 +95,14 @@ test_nm_utils_ip6_address_clear_host_address(void)
             _randomize_in6_addr(&addr1, r);
             _randomize_in6_addr(&addr2, r);
             addr1 = addr_src;
-            nm_utils_ip6_address_clear_host_address(&addr2, &addr1, plen);
+            nm_ip6_addr_clear_host_address(&addr2, &addr1, plen);
             g_assert_cmpint(memcmp(&addr1, &addr_src, sizeof(struct in6_addr)), ==, 0);
             g_assert_cmpint(memcmp(&addr2, &addr_ref, sizeof(struct in6_addr)), ==, 0);
 
             /* test for self assignment/inplace update. */
             _randomize_in6_addr(&addr1, r);
             addr1 = addr_src;
-            nm_utils_ip6_address_clear_host_address(&addr1, &addr1, plen);
+            nm_ip6_addr_clear_host_address(&addr1, &addr1, plen);
             g_assert_cmpint(memcmp(&addr1, &addr_ref, sizeof(struct in6_addr)), ==, 0);
         }
     }
@@ -155,11 +155,11 @@ _test_same_prefix(const char *a1, const char *a2, guint8 plen)
     struct in6_addr a = *nmtst_inet6_from_string(a1);
     struct in6_addr b = *nmtst_inet6_from_string(a2);
 
-    g_assert(nm_utils_ip6_address_same_prefix(&a, &b, plen));
+    g_assert(nm_ip6_addr_same_prefix(&a, &b, plen));
 }
 
 static void
-test_nm_utils_ip6_address_same_prefix(void)
+test_nm_ip_addr_same_prefix(void)
 {
     guint       n, i;
     const guint N = 100;
@@ -202,7 +202,7 @@ again_plen:
         } else
             b = a;
 
-        result = nm_utils_ip6_address_same_prefix(&a.val, &b.val, plen);
+        result = nm_ip6_addr_same_prefix(&a.val, &b.val, plen);
         g_assert(result == is_same);
         g_assert(NM_IN_SET(result, TRUE, FALSE));
     }
@@ -214,12 +214,12 @@ again_plen:
         plen = nmtst_get_rand_uint32() % 129;
 
         memset(addrmask.ptr, 0xFF, sizeof(addrmask));
-        nm_utils_ip6_address_clear_host_address(&addrmask.val, &addrmask.val, plen);
+        nm_ip6_addr_clear_host_address(&addrmask.val, &addrmask.val, plen);
 
         for (i = 0; i < sizeof(a); i++)
             b.ptr[i] = (a.ptr[i] & addrmask.ptr[i]) | (b.ptr[i] & ~addrmask.ptr[i]);
 
-        g_assert(nm_utils_ip6_address_same_prefix(&a.val, &b.val, plen) == TRUE);
+        g_assert(nm_ip6_addr_same_prefix(&a.val, &b.val, plen) == TRUE);
     }
 
     /* test#3 */
@@ -234,10 +234,10 @@ again_plen:
             continue;
 
         memset(addrmask.ptr, 0xFF, sizeof(addrmask));
-        nm_utils_ip6_address_clear_host_address(&addrmask.val, &addrmask.val, plen);
+        nm_ip6_addr_clear_host_address(&addrmask.val, &addrmask.val, plen);
 
         memset(addrmask_bit.ptr, 0xFF, sizeof(addrmask_bit));
-        nm_utils_ip6_address_clear_host_address(&addrmask_bit.val, &addrmask_bit.val, plen - 1);
+        nm_ip6_addr_clear_host_address(&addrmask_bit.val, &addrmask_bit.val, plen - 1);
 
         for (i = 0; i < sizeof(a); i++)
             b.ptr[i] = (a.ptr[i] & addrmask.ptr[i]) | (b.ptr[i] & ~addrmask.ptr[i]);
@@ -254,7 +254,7 @@ again_plen:
         }
         g_assert(reached);
 
-        g_assert(nm_utils_ip6_address_same_prefix(&a.val, &b.val, plen) == FALSE);
+        g_assert(nm_ip6_addr_same_prefix(&a.val, &b.val, plen) == FALSE);
     }
 
     /* test#4 */
@@ -2594,10 +2594,9 @@ main(int argc, char **argv)
 
     g_test_add_func("/general/nm_strbuf_append", test_nm_utils_strbuf_append);
 
-    g_test_add_func("/general/nm_utils_ip6_address_clear_host_address",
+    g_test_add_func("/general/nm_ip6_addr_clear_host_address",
                     test_nm_utils_ip6_address_clear_host_address);
-    g_test_add_func("/general/nm_utils_ip6_address_same_prefix",
-                    test_nm_utils_ip6_address_same_prefix);
+    g_test_add_func("/general/nm_ip6_addr_same_prefix", test_nm_ip_addr_same_prefix);
     g_test_add_func("/general/nm_utils_log_connection_diff", test_nm_utils_log_connection_diff);
 
     g_test_add_func("/general/nm_utils_sysctl_ip_conf_path", test_nm_utils_sysctl_ip_conf_path);

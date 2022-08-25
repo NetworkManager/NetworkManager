@@ -1944,9 +1944,9 @@ nmtst_setting_ip_config_add_address(NMSettingIPConfig *s_ip, const char *address
 
     g_assert(s_ip);
 
-    if (nm_utils_ipaddr_is_valid(AF_INET, address))
+    if (nm_inet_is_valid(AF_INET, address))
         family = AF_INET;
-    else if (nm_utils_ipaddr_is_valid(AF_INET6, address))
+    else if (nm_inet_is_valid(AF_INET6, address))
         family = AF_INET6;
     else
         g_assert_not_reached();
@@ -1969,9 +1969,9 @@ nmtst_setting_ip_config_add_route(NMSettingIPConfig *s_ip,
 
     g_assert(s_ip);
 
-    if (nm_utils_ipaddr_is_valid(AF_INET, dest))
+    if (nm_inet_is_valid(AF_INET, dest))
         family = AF_INET;
-    else if (nm_utils_ipaddr_is_valid(AF_INET6, dest))
+    else if (nm_inet_is_valid(AF_INET6, dest))
         family = AF_INET6;
     else
         g_assert_not_reached();
@@ -2913,7 +2913,7 @@ nmtst_ip_address_new(int addr_family, const char *str)
     GError      *error = NULL;
     NMIPAddress *a;
 
-    if (!nm_utils_parse_inaddr_prefix_bin(addr_family, str, &addr_family, &addr, &plen))
+    if (!nm_inet_parse_with_prefix_bin(addr_family, str, &addr_family, &addr, &plen))
         g_assert_not_reached();
 
     if (plen == -1)
