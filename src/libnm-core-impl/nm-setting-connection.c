@@ -1402,19 +1402,6 @@ after_interface_name:
         } else {
             guint32 f;
 
-            if (NM_FLAGS_ALL(priv->mptcp_flags,
-                             NM_MPTCP_FLAGS_ENABLED_ON_GLOBAL_IFACE | NM_MPTCP_FLAGS_ENABLED)) {
-                g_set_error_literal(
-                    error,
-                    NM_CONNECTION_ERROR,
-                    NM_CONNECTION_ERROR_INVALID_PROPERTY,
-                    _("\"enabled\" and \"enabled-on-global-iface\" flag cannot be set together"));
-                g_prefix_error(error,
-                               "%s.%s: ",
-                               NM_SETTING_CONNECTION_SETTING_NAME,
-                               NM_SETTING_CONNECTION_MPTCP_FLAGS);
-                return FALSE;
-            }
             if (NM_FLAGS_ALL(priv->mptcp_flags, NM_MPTCP_FLAGS_SIGNAL | NM_MPTCP_FLAGS_FULLMESH)) {
                 g_set_error_literal(error,
                                     NM_CONNECTION_ERROR,
@@ -1426,8 +1413,7 @@ after_interface_name:
                                NM_SETTING_CONNECTION_MPTCP_FLAGS);
                 return FALSE;
             }
-            f = NM_FLAGS_UNSET(priv->mptcp_flags, NM_MPTCP_FLAGS_ENABLED_ON_GLOBAL_IFACE)
-                | ((guint32) NM_MPTCP_FLAGS_ENABLED);
+            f = priv->mptcp_flags | ((guint32) NM_MPTCP_FLAGS_ENABLED);
             if (f != nm_mptcp_flags_normalize(f)) {
                 g_set_error(error,
                             NM_CONNECTION_ERROR,
@@ -2608,21 +2594,30 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      * If "disabled" (0x1), MPTCP handling for the interface is disabled and
      * no endpoints are registered.
      *
-     * The flag "enabled-on-global-iface" (0x2) means that MPTCP handling is enabled
-     * if the interface configures a default route in the main routing table.
-     * This choice is per-address family, for example if there is an IPv4 default route
-     * 0.0.0.0/0, IPv4 endpoints are configured.
-     *
-     * The "enabled" (0x4) flag means that MPTCP handling is explicitly enabled.
+     * The "enabled" (0x2) flag means that MPTCP handling is enabled.
      * This flag can also be implied from the presence of other flags.
      *
-     * If MPTCP handling is enabled, then endpoints will be configured
-     * with the specified address flags "signal" (0x10), "subflow" (0x20), "backup" (0x40),
+     * Even when enabled, MPTCP handling will by default still be disabled
+     * unless "/proc/sys/net/mptcp/enabled" sysctl is on. NetworkManager
+     * does not change the sysctl and this is up to the administrator
+     * or distribution. To configure endpoints even if the sysctl is
+     * disabled, "also-without-sysctl" (0x4) flag can be used. In that case,
+     * NetworkManager doesn't look at the sysctl and configures endpoints
+     * regardless.
+     *
+     * Even when enabled, NetworkManager will only configure MPTCP endpoints
+     * for a certain address family, if there is a unicast default route (0.0.0.0/0
+     * or ::/0) in the main routing table. The flag "also-without-default-route"
+     * (0x8) can override that.
+     *
+     * When MPTCP handling is enabled then endpoints are configured with
+     * the specified address flags "signal" (0x10), "subflow" (0x20), "backup" (0x40),
      * "fullmesh" (0x80). See ip-mptcp(8) manual for additional information about the flags.
      *
-     * If the flags are zero, the global connection default from NetworkManager.conf is
-     * honored. If still unspecified, the fallback is either "disabled" or
-     * "enabled-on-global-iface,subflow" depending on "/proc/sys/net/mptcp/enabled".
+     * If the flags are zero (0x0), the global connection default from NetworkManager.conf is
+     * honored. If still unspecified, the fallback is "enabled,subflow".
+     * Note that this means that MPTCP is by default done depending on the
+     * "/proc/sys/net/mptcp/enabled" sysctl.
      *
      * NetworkManager does not change the MPTCP limits nor enable MPTCP via
      * "/proc/sys/net/mptcp/enabled". That is a host configuration which the
