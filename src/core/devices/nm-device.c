@@ -1410,8 +1410,6 @@ _prop_get_connection_mptcp_flags(NMDevice *self)
     if (connection) {
         mptcp_flags =
             nm_setting_connection_get_mptcp_flags(nm_connection_get_setting_connection(connection));
-        if (mptcp_flags != NM_MPTCP_FLAGS_NONE)
-            mptcp_flags = nm_mptcp_flags_normalize(mptcp_flags);
     }
 
     if (mptcp_flags == NM_MPTCP_FLAGS_NONE) {
@@ -1423,27 +1421,38 @@ _prop_get_connection_mptcp_flags(NMDevice *self)
                                                         0,
                                                         G_MAXINT64,
                                                         NM_MPTCP_FLAGS_NONE);
-        /* We filter out all invalid settings and accept it. Somewhat intentionally, we don't do a
-         * strict parsing of the value to support forward compatibility. */
-        if (v != NM_MPTCP_FLAGS_NONE)
-            mptcp_flags = nm_mptcp_flags_normalize(v);
+        if (v != NM_MPTCP_FLAGS_NONE) {
+            /* We silently ignore all invalid flags (and will normalize them away below). */
+            mptcp_flags = (NMMptcpFlags) v;
+            if (mptcp_flags == NM_MPTCP_FLAGS_NONE)
+                mptcp_flags = NM_MPTCP_FLAGS_ENABLED;
+        }
     }
 
-    if (mptcp_flags == NM_MPTCP_FLAGS_NONE) {
-        gint32 v;
+    if (mptcp_flags == NM_MPTCP_FLAGS_NONE)
+        mptcp_flags = _NM_MPTCP_FLAGS_DEFAULT;
 
-        v = nm_platform_sysctl_get_int32(nm_device_get_platform(self),
-                                         NMP_SYSCTL_PATHID_ABSOLUTE("/proc/sys/net/mptcp/enabled"),
-                                         -1);
-        if (v > 0) {
-            /* if MPTCP is enabled via the sysctl, we use the default. */
-            mptcp_flags = _NM_MPTCP_FLAGS_DEFAULT;
+    mptcp_flags = nm_mptcp_flags_normalize(mptcp_flags);
+
+    if (!NM_FLAGS_HAS(mptcp_flags, NM_MPTCP_FLAGS_DISABLED)) {
+        if (!NM_FLAGS_HAS(mptcp_flags, NM_MPTCP_FLAGS_ALSO_WITHOUT_SYSCTL)) {
+            guint32 v;
+
+            /* If enabled, but without "also-without-sysctl", then MPTCP is still
+             * disabled, if the sysctl says so...
+             *
+             * We evaluate this here. The point is that the decision is then cached
+             * until deactivation/reapply. The user can toggle the sysctl any time,
+             * but we only pick it up at certain moments (now). */
+            v = nm_platform_sysctl_get_int32(
+                nm_device_get_platform(self),
+                NMP_SYSCTL_PATHID_ABSOLUTE("/proc/sys/net/mptcp/enabled"),
+                -1);
+            if (v <= 0)
+                mptcp_flags = NM_MPTCP_FLAGS_DISABLED;
         } else
-            mptcp_flags = NM_MPTCP_FLAGS_DISABLED;
+            mptcp_flags = NM_FLAGS_UNSET(mptcp_flags, NM_MPTCP_FLAGS_ALSO_WITHOUT_SYSCTL);
     }
-
-    nm_assert(mptcp_flags != NM_MPTCP_FLAGS_NONE
-              && mptcp_flags == nm_mptcp_flags_normalize(mptcp_flags));
 
     return mptcp_flags;
 }

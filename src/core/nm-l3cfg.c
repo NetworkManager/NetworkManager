@@ -4307,13 +4307,13 @@ _l3_commit_mptcp_af(NML3Cfg          *self,
 
     if (mptcp_flags == NM_MPTCP_FLAGS_NONE || NM_FLAGS_HAS(mptcp_flags, NM_MPTCP_FLAGS_DISABLED))
         mptcp_flags = NM_MPTCP_FLAGS_DISABLED;
-    else if (NM_FLAGS_HAS(mptcp_flags, NM_MPTCP_FLAGS_ENABLED_ON_GLOBAL_IFACE)) {
-        /* Whether MPTCP is enabled/disabled, depends on whether we have a unicast default
-         * route (in the main routing table). */
+    else if (!NM_FLAGS_HAS(mptcp_flags, NM_MPTCP_FLAGS_ALSO_WITHOUT_DEFAULT_ROUTE)) {
+        /* Whether MPTCP is enabled/disabled (per address family), depends on whether we have a unicast
+         * default route (in the main routing table). */
         if (self->priv.p->combined_l3cd_commited
             && nm_l3_config_data_get_best_default_route(self->priv.p->combined_l3cd_commited,
                                                         addr_family))
-            mptcp_flags = NM_FLAGS_UNSET(mptcp_flags, NM_MPTCP_FLAGS_ENABLED_ON_GLOBAL_IFACE)
+            mptcp_flags = NM_FLAGS_UNSET(mptcp_flags, NM_MPTCP_FLAGS_ALSO_WITHOUT_DEFAULT_ROUTE)
                           | NM_MPTCP_FLAGS_ENABLED;
         else
             mptcp_flags = NM_MPTCP_FLAGS_DISABLED;
