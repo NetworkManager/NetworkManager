@@ -764,7 +764,7 @@ void nm_device_update_metered(NMDevice *self);
 gboolean nm_device_update_hw_address(NMDevice *self);
 void     nm_device_update_initial_hw_address(NMDevice *self);
 void     nm_device_update_permanent_hw_address(NMDevice *self, gboolean force_freeze);
-void     nm_device_update_dynamic_ip_setup(NMDevice *self);
+void     nm_device_update_dynamic_ip_setup(NMDevice *self, const char *reason);
 guint    nm_device_get_supplicant_timeout(NMDevice *self);
 
 gboolean nm_device_auth_retries_try_next(NMDevice *self);

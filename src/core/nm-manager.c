@@ -6580,7 +6580,7 @@ do_sleep_wake(NMManager *self, gboolean sleeping_changed)
                 && !nm_device_get_unmanaged_flags(device, NM_UNMANAGED_SLEEPING)) {
                 /* DHCP leases of software devices could have gone stale
                  * so we need to renew them. */
-                nm_device_update_dynamic_ip_setup(device);
+                nm_device_update_dynamic_ip_setup(device, "wake up");
                 continue;
             }
 
