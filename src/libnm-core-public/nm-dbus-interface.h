@@ -1319,12 +1319,25 @@ typedef enum /*< flags >*/ {
  * NMMptcpFlags:
  * @NM_MPTCP_FLAGS_NONE: The default, meaning that no MPTCP flags are set.
  * @NM_MPTCP_FLAGS_DISABLED: don't configure MPTCP endpoints on the device.
- * @NM_MPTCP_FLAGS_ENABLED_ON_GLOBAL_IFACE: MPTCP handling is enabled
- *   or disabled depending on whether a /0 default route (either IPv4 or IPv6) is
- *   configured in the main routing table.
  * @NM_MPTCP_FLAGS_ENABLED: MPTCP is enabled and endpoints will be configured.
  *   This flag is implied if any of the other flags indicate that
  *   MPTCP is enabled and therefore in most cases unnecessary.
+ *   Note that if "/proc/sys/net/mptcp/enabled" sysctl is disabled, MPTCP
+ *   handling is disabled despite this flag. This can be overruled with the
+ *   "also-without-sysctl" flag.
+ *   Note that by default interfaces that don't have a default route are
+ *   excluded from having MPTCP endpoints configured. This can be overruled
+ *   with the "also-without-default-route" and this affects endpoints
+ *   per address family.
+ * @NM_MPTCP_FLAGS_ALSO_WITHOUT_SYSCTL: even if MPTCP handling is enabled
+ *   via the "enabled" flag, it is ignored unless "/proc/sys/net/mptcp/enabled"
+ *   is on. With this flag, MPTCP endpoints will be configured regardless
+ *   of the sysctl setting.
+ * @NM_MPTCP_FLAGS_ALSO_WITHOUT_DEFAULT_ROUTE: even if MPTCP handling is enabled
+ *   via the "enabled" flag, it is ignored per-address family unless NetworkManager
+ *   configures a default route. With this flag, NetworkManager will also configure
+ *   MPTCP endpoints if there is no default route. This takes effect per-address
+ *   family.
  * @NM_MPTCP_FLAGS_SIGNAL: Flag for the MPTCP endpoint. The endpoint will be
  *   announced/signaled to each peer via an MPTCP ADD_ADDR sub-option.
  * @NM_MPTCP_FLAGS_SUBFLOW: Flag for the MPTCP endpoint. If additional subflow creation
@@ -1350,9 +1363,11 @@ typedef enum /*< flags >*/ {
 typedef enum /*< flags >*/ {
     NM_MPTCP_FLAGS_NONE = 0,
 
-    NM_MPTCP_FLAGS_DISABLED                = 0x1,
-    NM_MPTCP_FLAGS_ENABLED_ON_GLOBAL_IFACE = 0x2,
-    NM_MPTCP_FLAGS_ENABLED                 = 0x4,
+    NM_MPTCP_FLAGS_DISABLED = 0x1,
+    NM_MPTCP_FLAGS_ENABLED  = 0x2,
+
+    NM_MPTCP_FLAGS_ALSO_WITHOUT_SYSCTL        = 0x4,
+    NM_MPTCP_FLAGS_ALSO_WITHOUT_DEFAULT_ROUTE = 0x8,
 
     NM_MPTCP_FLAGS_SIGNAL   = 0x10,
     NM_MPTCP_FLAGS_SUBFLOW  = 0x20,
