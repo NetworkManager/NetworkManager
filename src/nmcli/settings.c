@@ -488,12 +488,23 @@ _env_get_nm_connections(const NMMetaEnvironment *environment,
     return (NMRemoteConnection *const *) values->pdata;
 }
 
+static NMMetaEnvFlags
+_env_get_env_flags(const NMMetaEnvironment *environment, gpointer environment_user_data)
+{
+    NmCli *nmc = environment_user_data;
+
+    nm_assert(nmc);
+
+    return (nmc->offline ? NM_META_ENV_FLAGS_OFFLINE : NM_META_ENV_FLAGS_NONE);
+}
+
 /*****************************************************************************/
 
 const NMMetaEnvironment *const nmc_meta_environment = &((NMMetaEnvironment){
     .warn_fcn           = _env_warn_fcn_handle,
     .get_nm_devices     = _env_get_nm_devices,
     .get_nm_connections = _env_get_nm_connections,
+    .get_env_flags      = _env_get_env_flags,
 });
 
 static char *
