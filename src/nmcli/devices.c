@@ -4801,7 +4801,7 @@ do_device_wifi_show_password(const NMCCommand *cmd, NmCli *nmc, int argc, const 
             found = TRUE;
         } else {
             if (ifname) {
-                g_string_printf(nmc->return_text, _("%s"), error->message);
+                g_string_assign(nmc->return_text, error->message);
                 nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
                 return;
             }
