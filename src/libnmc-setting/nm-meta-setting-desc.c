@@ -15,6 +15,7 @@
 #include "libnm-core-aux-intern/nm-common-macros.h"
 #include "libnm-glib-aux/nm-enum-utils.h"
 #include "libnm-glib-aux/nm-secret-utils.h"
+#include "libnm-glib-aux/nm-uuid.h"
 #include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 #include "libnm-core-aux-extern/nm-libnm-core-aux.h"
 
@@ -2635,18 +2636,28 @@ _get_fcn_connection_permissions(ARGS_GET_FCN)
 static gboolean
 _set_fcn_connection_type(ARGS_SET_FCN)
 {
-    gs_free char *uuid = NULL;
+    const char *connection_type;
 
-    if (nm_setting_connection_get_uuid(NM_SETTING_CONNECTION(setting))) {
-        /* Don't allow setting type unless the connection is brand new.
-         * Just because it's a bad idea and the user wouldn't probably want that.
-         * No technical reason, really.
-         * Also, using uuid to see if the connection is brand new is a bit
-         * hacky: we can not see if the type is already set, because
-         * nmc_setting_set_property() is called only after the property
-         * we're setting (type) has been removed. */
-        nm_utils_error_set(error, NM_UTILS_ERROR_UNKNOWN, _("Can not change the connection type"));
-        return FALSE;
+    connection_type = nm_setting_connection_get_connection_type(NM_SETTING_CONNECTION(setting));
+
+    if (connection_type) {
+        if (nm_streq0(connection_type, value)) {
+            /* No change. Setting the same again is fine. */
+            return TRUE;
+        }
+
+        /* There is no technical reason that a profile couldn't change its type.
+         * NetworkManager allows that just fine.
+         *
+         * However, it seems an unusual thing to do, so only allow that in
+         * offline mode. */
+        if (!NM_FLAGS_HAS(nm_meta_environment_get_env_flags(environment, environment_user_data),
+                          NM_META_ENV_FLAGS_OFFLINE)) {
+            nm_utils_error_set(error,
+                               NM_UTILS_ERROR_UNKNOWN,
+                               _("Can not change the connection type"));
+            return FALSE;
+        }
     }
 
     if (_SET_FCN_DO_RESET_DEFAULT(property_info, modifier, value)) {
@@ -2654,8 +2665,13 @@ _set_fcn_connection_type(ARGS_SET_FCN)
         return TRUE;
     }
 
-    uuid = nm_utils_uuid_generate();
-    g_object_set(G_OBJECT(setting), NM_SETTING_CONNECTION_UUID, uuid, NULL);
+    if (!nm_setting_connection_get_uuid(NM_SETTING_CONNECTION(setting))) {
+        /* If we so far have not UUID set, set it together with the connection type. */
+        g_object_set(G_OBJECT(setting),
+                     NM_SETTING_CONNECTION_UUID,
+                     nm_uuid_generate_random_str_a(),
+                     NULL);
+    }
 
     g_object_set(G_OBJECT(setting), property_info->property_name, value, NULL);
     return TRUE;
