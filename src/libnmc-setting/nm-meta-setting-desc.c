@@ -2634,6 +2634,26 @@ _get_fcn_connection_permissions(ARGS_GET_FCN)
 }
 
 static gboolean
+_set_fcn_connection_uuid(ARGS_SET_FCN)
+{
+    if (!NM_FLAGS_HAS(nm_meta_environment_get_env_flags(environment, environment_user_data),
+                      NM_META_ENV_FLAGS_OFFLINE)) {
+        /* The UUID is the unchanging ID of a profile. It cannot change, unless
+         * we are in offline mode (in which case, it can be useful to do just that). */
+        nm_utils_error_set(error, NM_UTILS_ERROR_INVALID_ARGUMENT, "the property can't be changed");
+        return FALSE;
+    }
+
+    if (NM_IN_STRSET(value, NULL, "", "new", "generate")) {
+        /* Special keywords are used for generating a new UUID. */
+        value = nm_uuid_generate_random_str_a();
+    }
+
+    g_object_set(G_OBJECT(setting), NM_SETTING_CONNECTION_UUID, value, NULL);
+    return TRUE;
+}
+
+static gboolean
 _set_fcn_connection_type(ARGS_SET_FCN)
 {
     const char *connection_type;
@@ -5411,7 +5431,10 @@ static const NMMetaPropertyInfo *const property_infos_CONNECTION[] = {
         .property_type =                &_pt_gobject_string,
     ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_CONNECTION_UUID,
-        .property_type =                DEFINE_PROPERTY_TYPE ( .get_fcn = _get_fcn_gobject ),
+            .property_type =                DEFINE_PROPERTY_TYPE (
+                .get_fcn =                  _get_fcn_gobject,
+                .set_fcn =                  _set_fcn_connection_uuid,
+            ),
     ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_CONNECTION_STABLE_ID,
         .property_type =                &_pt_gobject_string,
