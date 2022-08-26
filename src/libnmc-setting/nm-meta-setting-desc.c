@@ -262,23 +262,21 @@ _parse_ip_address(int family, const char *address, GError **error)
     if (plen) {
         *plen++ = '\0';
         if ((prefix = _nm_utils_ascii_str_to_int64(plen, 10, 0, MAX_PREFIX, -1)) == -1) {
-            g_set_error(error,
-                        NM_UTILS_ERROR,
-                        NM_UTILS_ERROR_INVALID_ARGUMENT,
-                        _("invalid prefix '%s'; <0-%d> allowed"),
-                        plen,
-                        MAX_PREFIX);
+            nm_utils_error_set(error,
+                               NM_UTILS_ERROR_INVALID_ARGUMENT,
+                               _("invalid prefix '%s'; <0-%d> allowed"),
+                               plen,
+                               MAX_PREFIX);
             return NULL;
         }
     }
 
     addr = nm_ip_address_new(family, ip_str, prefix, &local);
     if (!addr) {
-        g_set_error(error,
-                    NM_UTILS_ERROR,
-                    NM_UTILS_ERROR_INVALID_ARGUMENT,
-                    _("invalid IP address: %s"),
-                    local->message);
+        nm_utils_error_set(error,
+                           NM_UTILS_ERROR_INVALID_ARGUMENT,
+                           _("invalid IP address: %s"),
+                           local->message);
         g_clear_error(&local);
     }
     return addr;
@@ -312,7 +310,11 @@ _parse_ip_route(int family, const char *str, GError **error)
     str_clean = nm_strstrip_avoid_copy_a(300, str, &str_clean_free);
     routev    = nm_strsplit_set(str_clean, " \t");
     if (!routev) {
-        g_set_error(error, 1, 0, "'%s' is not valid. %s", str, ROUTE_SYNTAX);
+        nm_utils_error_set(error,
+                           NM_UTILS_ERROR_UNKNOWN,
+                           "'%s' is not valid. %s",
+                           str,
+                           ROUTE_SYNTAX);
         return NULL;
     }
 
@@ -328,12 +330,11 @@ _parse_ip_route(int family, const char *str, GError **error)
     prefix = MAX_PREFIX;
     if (plen) {
         if ((prefix = _nm_utils_ascii_str_to_int64(plen, 10, 0, MAX_PREFIX, -1)) == -1) {
-            g_set_error(error,
-                        NM_UTILS_ERROR,
-                        NM_UTILS_ERROR_INVALID_ARGUMENT,
-                        _("invalid prefix '%s'; <0-%d> allowed"),
-                        plen,
-                        MAX_PREFIX);
+            nm_utils_error_set(error,
+                               NM_UTILS_ERROR_INVALID_ARGUMENT,
+                               _("invalid prefix '%s'; <0-%d> allowed"),
+                               plen,
+                               MAX_PREFIX);
             return NULL;
         }
     }
@@ -343,18 +344,20 @@ _parse_ip_route(int family, const char *str, GError **error)
 
         if (nm_inet_is_valid(family, routev[i])) {
             if (metric != -1 || attrs) {
-                g_set_error(error, 1, 0, _("the next hop ('%s') must be first"), routev[i]);
+                nm_utils_error_set(error,
+                                   NM_UTILS_ERROR_UNKNOWN,
+                                   _("the next hop ('%s') must be first"),
+                                   routev[i]);
                 return NULL;
             }
             next_hop = routev[i];
         } else if ((tmp64 = _nm_utils_ascii_str_to_int64(routev[i], 10, 0, G_MAXUINT32, -1))
                    != -1) {
             if (attrs) {
-                g_set_error(error,
-                            1,
-                            0,
-                            _("the metric ('%s') must be before attributes"),
-                            routev[i]);
+                nm_utils_error_set(error,
+                                   NM_UTILS_ERROR_UNKNOWN,
+                                   _("the metric ('%s') must be before attributes"),
+                                   routev[i]);
                 return NULL;
             }
             metric = tmp64;
@@ -397,14 +400,18 @@ _parse_ip_route(int family, const char *str, GError **error)
                 g_hash_table_iter_steal(&iter);
             }
         } else {
-            g_set_error(error, 1, 0, "%s", ROUTE_SYNTAX);
+            nm_utils_error_set(error, NM_UTILS_ERROR_UNKNOWN, "%s", ROUTE_SYNTAX);
             return NULL;
         }
     }
 
     route = nm_ip_route_new(family, dest, prefix, next_hop, metric, &local);
     if (!route) {
-        g_set_error(error, 1, 0, _("invalid route: %s. %s"), local->message, ROUTE_SYNTAX);
+        nm_utils_error_set(error,
+                           NM_UTILS_ERROR_UNKNOWN,
+                           _("invalid route: %s. %s"),
+                           local->message,
+                           ROUTE_SYNTAX);
         g_clear_error(&local);
         return NULL;
     }
@@ -469,20 +476,18 @@ nmc_proxy_check_script(const char *script, char **out_script, GError **error)
 
         if (!g_file_get_contents(script, &contents, &c_len, NULL)) {
             if (desired_type == _PAC_SCRIPT_TYPE_FILE) {
-                g_set_error(error,
-                            NM_UTILS_ERROR,
-                            NM_UTILS_ERROR_INVALID_ARGUMENT,
-                            _("cannot read pac-script from file '%s'"),
-                            script);
+                nm_utils_error_set(error,
+                                   NM_UTILS_ERROR_INVALID_ARGUMENT,
+                                   _("cannot read pac-script from file '%s'"),
+                                   script);
                 return FALSE;
             }
         } else {
             if (c_len != strlen(contents)) {
-                g_set_error(error,
-                            NM_UTILS_ERROR,
-                            NM_UTILS_ERROR_INVALID_ARGUMENT,
-                            _("file '%s' contains non-valid utf-8"),
-                            script);
+                nm_utils_error_set(error,
+                                   NM_UTILS_ERROR_INVALID_ARGUMENT,
+                                   _("file '%s' contains non-valid utf-8"),
+                                   script);
                 return FALSE;
             }
             filename = script;
@@ -492,16 +497,12 @@ nmc_proxy_check_script(const char *script, char **out_script, GError **error)
 
     if (!strstr(script, "FindProxyForURL") || !g_utf8_validate(script, -1, NULL)) {
         if (filename) {
-            g_set_error(error,
-                        NM_UTILS_ERROR,
-                        NM_UTILS_ERROR_INVALID_ARGUMENT,
-                        _("'%s' does not contain a valid PAC Script"),
-                        filename);
+            nm_utils_error_set(error,
+                               NM_UTILS_ERROR_INVALID_ARGUMENT,
+                               _("'%s' does not contain a valid PAC Script"),
+                               filename);
         } else {
-            g_set_error(error,
-                        NM_UTILS_ERROR,
-                        NM_UTILS_ERROR_INVALID_ARGUMENT,
-                        _("Not a valid PAC Script"));
+            nm_utils_error_set(error, NM_UTILS_ERROR_INVALID_ARGUMENT, _("Not a valid PAC Script"));
         }
         return FALSE;
     }
@@ -551,20 +552,18 @@ nmc_team_check_config(const char *config, char **out_config, GError **error)
 
         if (!g_file_get_contents(config, &contents, &c_len, NULL)) {
             if (desired_type == _TEAM_CONFIG_TYPE_FILE) {
-                g_set_error(error,
-                            NM_UTILS_ERROR,
-                            NM_UTILS_ERROR_INVALID_ARGUMENT,
-                            _("cannot read team config from file '%s'"),
-                            config);
+                nm_utils_error_set(error,
+                                   NM_UTILS_ERROR_INVALID_ARGUMENT,
+                                   _("cannot read team config from file '%s'"),
+                                   config);
                 return FALSE;
             }
         } else {
             if (c_len != strlen(contents)) {
-                g_set_error(error,
-                            NM_UTILS_ERROR,
-                            NM_UTILS_ERROR_INVALID_ARGUMENT,
-                            _("team config file '%s' contains non-valid utf-8"),
-                            config);
+                nm_utils_error_set(error,
+                                   NM_UTILS_ERROR_INVALID_ARGUMENT,
+                                   _("team config file '%s' contains non-valid utf-8"),
+                                   config);
                 return FALSE;
             }
             config = config_clone = g_steal_pointer(&contents);
@@ -1411,29 +1410,27 @@ _set_fcn_gobject_int(ARGS_SET_FCN)
     if ((errsv = errno) != 0) {
         if (errsv == ERANGE) {
             if (is_uint64) {
-                g_set_error(
+                nm_utils_error_set(
                     error,
-                    NM_UTILS_ERROR,
                     NM_UTILS_ERROR_INVALID_ARGUMENT,
                     _("'%s' is out of range [%" G_GUINT64_FORMAT ", %" G_GUINT64_FORMAT "]"),
                     value,
                     min.u64,
                     max.u64);
             } else {
-                g_set_error(error,
-                            NM_UTILS_ERROR,
-                            NM_UTILS_ERROR_INVALID_ARGUMENT,
-                            _("'%s' is out of range [%" G_GINT64_FORMAT ", %" G_GINT64_FORMAT "]"),
-                            value,
-                            min.i64,
-                            max.i64);
+                nm_utils_error_set(
+                    error,
+                    NM_UTILS_ERROR_INVALID_ARGUMENT,
+                    _("'%s' is out of range [%" G_GINT64_FORMAT ", %" G_GINT64_FORMAT "]"),
+                    value,
+                    min.i64,
+                    max.i64);
             }
         } else {
-            g_set_error(error,
-                        NM_UTILS_ERROR,
-                        NM_UTILS_ERROR_INVALID_ARGUMENT,
-                        _("'%s' is not a valid number"),
-                        value);
+            nm_utils_error_set(error,
+                               NM_UTILS_ERROR_INVALID_ARGUMENT,
+                               _("'%s' is not a valid number"),
+                               value);
         }
         return FALSE;
     }
@@ -1486,12 +1483,11 @@ _set_fcn_gobject_mtu(ARGS_SET_FCN)
 
     v = _nm_utils_ascii_str_to_int64(value, 10, 0, G_MAXUINT32, -1);
     if (v < 0) {
-        g_set_error(error,
-                    NM_UTILS_ERROR,
-                    NM_UTILS_ERROR_INVALID_ARGUMENT,
-                    _("'%s' is out of range [0, %u]"),
-                    value,
-                    (unsigned) G_MAXUINT32);
+        nm_utils_error_set(error,
+                           NM_UTILS_ERROR_INVALID_ARGUMENT,
+                           _("'%s' is out of range [0, %u]"),
+                           value,
+                           (unsigned) G_MAXUINT32);
         return FALSE;
     }
 
@@ -1534,7 +1530,10 @@ _set_fcn_gobject_mac(ARGS_SET_FCN)
     }
 
     if (!valid) {
-        g_set_error(error, 1, 0, _("'%s' is not a valid Ethernet MAC"), value);
+        nm_utils_error_set(error,
+                           NM_UTILS_ERROR_UNKNOWN,
+                           _("'%s' is not a valid Ethernet MAC"),
+                           value);
         return FALSE;
     }
 
@@ -1656,19 +1655,17 @@ fail:
         valid_all = nm_utils_enum_get_values(gtype, min, max);
         valid_str = g_strjoinv(",", (char **) valid_all);
         if (is_flags) {
-            g_set_error(error,
-                        NM_UTILS_ERROR,
-                        NM_UTILS_ERROR_INVALID_ARGUMENT,
-                        _("invalid option '%s', use a combination of [%s]"),
-                        value,
-                        valid_str);
+            nm_utils_error_set(error,
+                               NM_UTILS_ERROR_INVALID_ARGUMENT,
+                               _("invalid option '%s', use a combination of [%s]"),
+                               value,
+                               valid_str);
         } else {
-            g_set_error(error,
-                        NM_UTILS_ERROR,
-                        NM_UTILS_ERROR_INVALID_ARGUMENT,
-                        _("invalid option '%s', use one of [%s]"),
-                        value,
-                        valid_str);
+            nm_utils_error_set(error,
+                               NM_UTILS_ERROR_INVALID_ARGUMENT,
+                               _("invalid option '%s', use one of [%s]"),
+                               value,
+                               valid_str);
         }
     }
     return FALSE;
@@ -2159,12 +2156,11 @@ validate_flags(NMSetting *setting, const char *prop, guint val, GError **error)
         flag_values = flag_values_to_string(pspec_flags->flags_class->values,
                                             pspec_flags->flags_class->n_values);
 
-        g_set_error(error,
-                    1,
-                    0,
-                    _("'%u' flags are not valid; use combination of %s"),
-                    val,
-                    flag_values);
+        nm_utils_error_set(error,
+                           NM_UTILS_ERROR_UNKNOWN,
+                           _("'%u' flags are not valid; use combination of %s"),
+                           val,
+                           flag_values);
         success = FALSE;
     }
     g_value_unset(&value);
@@ -2180,7 +2176,10 @@ _set_fcn_gobject_flags(ARGS_SET_FCN)
         return _gobject_property_reset_default(setting, property_info->property_name);
 
     if (!nmc_string_to_uint(value, TRUE, 0, G_MAXUINT, &val_int)) {
-        g_set_error(error, 1, 0, _("'%s' is not a valid number (or out of range)"), value);
+        nm_utils_error_set(error,
+                           NM_UTILS_ERROR_UNKNOWN,
+                           _("'%s' is not a valid number (or out of range)"),
+                           value);
         return FALSE;
     }
 
@@ -2201,7 +2200,7 @@ _set_fcn_gobject_ssid(ARGS_SET_FCN)
         return _gobject_property_reset_default(setting, property_info->property_name);
 
     if (strlen(value) > 32) {
-        g_set_error(error, 1, 0, _("'%s' is not valid"), value);
+        nm_utils_error_set(error, NM_UTILS_ERROR_UNKNOWN, _("'%s' is not valid"), value);
         return FALSE;
     }
 
@@ -2326,7 +2325,10 @@ _set_fcn_gobject_bytes(ARGS_SET_FCN)
 
         v = _nm_utils_ascii_str_to_int64(*iter, 16, 0, 255, -1);
         if (v == -1) {
-            g_set_error(error, 1, 0, _("'%s' is not a valid hex character"), *iter);
+            nm_utils_error_set(error,
+                               NM_UTILS_ERROR_UNKNOWN,
+                               _("'%s' is not a valid hex character"),
+                               *iter);
             g_byte_array_free(array, TRUE);
             return FALSE;
         }
@@ -2643,7 +2645,7 @@ _set_fcn_connection_type(ARGS_SET_FCN)
          * hacky: we can not see if the type is already set, because
          * nmc_setting_set_property() is called only after the property
          * we're setting (type) has been removed. */
-        g_set_error(error, 1, 0, _("Can not change the connection type"));
+        nm_utils_error_set(error, NM_UTILS_ERROR_UNKNOWN, _("Can not change the connection type"));
         return FALSE;
     }
 
@@ -2994,7 +2996,10 @@ _set_fcn_dcb_flags(ARGS_SET_FCN)
                      || g_ascii_strcasecmp(*iter, "disabled") == 0 || t == 0) {
                 /* pass */
             } else {
-                g_set_error(error, 1, 0, _("'%s' is not a valid DCB flag"), *iter);
+                nm_utils_error_set(error,
+                                   NM_UTILS_ERROR_UNKNOWN,
+                                   _("'%s' is not a valid DCB flag"),
+                                   *iter);
                 return FALSE;
             }
         }
@@ -3034,20 +3039,18 @@ dcb_parse_uint_array(const char *val,
         /* If number is greater than 'max' it must equal 'other' */
         if (num == -1 || (other && (num > max) && (num != other))) {
             if (other) {
-                g_set_error(error,
-                            1,
-                            0,
-                            _("'%s' not a number between 0 and %u (inclusive) or %u"),
-                            *iter,
-                            max,
-                            other);
+                nm_utils_error_set(error,
+                                   NM_UTILS_ERROR_UNKNOWN,
+                                   _("'%s' not a number between 0 and %u (inclusive) or %u"),
+                                   *iter,
+                                   max,
+                                   other);
             } else {
-                g_set_error(error,
-                            1,
-                            0,
-                            _("'%s' not a number between 0 and %u (inclusive)"),
-                            *iter,
-                            max);
+                nm_utils_error_set(error,
+                                   NM_UTILS_ERROR_UNKNOWN,
+                                   _("'%s' not a number between 0 and %u (inclusive)"),
+                                   *iter,
+                                   max);
             }
             return FALSE;
         }
@@ -3233,7 +3236,10 @@ _set_fcn_infiniband_p_key(ARGS_SET_FCN)
     else {
         p_key = _nm_utils_ascii_str_to_int64(value, 0, -1, G_MAXUINT16, -2);
         if (p_key == -2) {
-            g_set_error(error, 1, 0, _("'%s' is not a valid IBoIP P_Key"), value);
+            nm_utils_error_set(error,
+                               NM_UTILS_ERROR_UNKNOWN,
+                               _("'%s' is not a valid IBoIP P_Key"),
+                               value);
             return FALSE;
         }
     }
@@ -3542,11 +3548,10 @@ _set_fcn_ip_config_gateway(ARGS_SET_FCN)
     value = nm_strstrip_avoid_copy_a(300, value, &value_to_free);
 
     if (!nm_inet_is_valid(addr_family, value)) {
-        g_set_error(error,
-                    NM_UTILS_ERROR,
-                    NM_UTILS_ERROR_INVALID_ARGUMENT,
-                    _("invalid gateway address '%s'"),
-                    value);
+        nm_utils_error_set(error,
+                           NM_UTILS_ERROR_INVALID_ARGUMENT,
+                           _("invalid gateway address '%s'"),
+                           value);
         return FALSE;
     }
 
@@ -3695,7 +3700,10 @@ _set_fcn_olpc_mesh_channel(ARGS_SET_FCN)
         return _gobject_property_reset_default(setting, property_info->property_name);
 
     if (!nmc_string_to_uint(value, TRUE, 1, 13, &chan_int)) {
-        g_set_error(error, 1, 0, _("'%s' is not a valid channel; use <1-13>"), value);
+        nm_utils_error_set(error,
+                           NM_UTILS_ERROR_UNKNOWN,
+                           _("'%s' is not a valid channel; use <1-13>"),
+                           value);
         return FALSE;
     }
     g_object_set(setting, property_info->property_name, chan_int, NULL);
@@ -4026,7 +4034,10 @@ _set_fcn_vlan_xgress_priority_map(ARGS_SET_FCN)
                                                   NULL,
                                                   NULL,
                                                   NULL)) {
-            g_set_error(error, 1, 0, _("invalid priority map '%s'"), prio_map[i]);
+            nm_utils_error_set(error,
+                               NM_UTILS_ERROR_UNKNOWN,
+                               _("invalid priority map '%s'"),
+                               prio_map[i]);
             return FALSE;
         }
     }
@@ -4116,7 +4127,10 @@ _set_fcn_wired_s390_subchannels(ARGS_SET_FCN)
     strv = nm_strsplit_set(value, " ,\t");
     len  = NM_PTRARRAY_LEN(strv);
     if (len != 2 && len != 3) {
-        g_set_error(error, 1, 0, _("'%s' is not valid; 2 or 3 strings should be provided"), value);
+        nm_utils_error_set(error,
+                           NM_UTILS_ERROR_UNKNOWN,
+                           _("'%s' is not valid; 2 or 3 strings should be provided"),
+                           value);
         return FALSE;
     }
 
@@ -4188,13 +4202,16 @@ _set_fcn_wireless_channel(ARGS_SET_FCN)
         return _gobject_property_reset_default(setting, property_info->property_name);
 
     if (!nmc_string_to_uint(value, FALSE, 0, 0, &chan_int)) {
-        g_set_error(error, 1, 0, _("'%s' is not a valid channel"), value);
+        nm_utils_error_set(error, NM_UTILS_ERROR_UNKNOWN, _("'%s' is not a valid channel"), value);
         return FALSE;
     }
 
     if (!nm_utils_wifi_is_channel_valid(chan_int, "a")
         && !nm_utils_wifi_is_channel_valid(chan_int, "bg")) {
-        g_set_error(error, 1, 0, _("'%ld' is not a valid channel"), chan_int);
+        nm_utils_error_set(error,
+                           NM_UTILS_ERROR_UNKNOWN,
+                           _("'%ld' is not a valid channel"),
+                           chan_int);
         return FALSE;
     }
 
@@ -4262,7 +4279,7 @@ _set_fcn_wireless_wep_key(ARGS_SET_FCN)
         guessed_type = NM_WEP_KEY_TYPE_PASSPHRASE;
 
     if (guessed_type == NM_WEP_KEY_TYPE_UNKNOWN) {
-        g_set_error(error, 1, 0, _("'%s' is not valid"), value);
+        nm_utils_error_set(error, NM_UTILS_ERROR_UNKNOWN, _("'%s' is not valid"), value);
         return FALSE;
     }
 
@@ -4270,15 +4287,15 @@ _set_fcn_wireless_wep_key(ARGS_SET_FCN)
         if (nm_utils_wep_key_valid(value, type))
             guessed_type = type;
         else {
-            g_set_error(error,
-                        1,
-                        0,
-                        _("'%s' not compatible with %s '%s', please change the key or set the "
-                          "right %s first."),
-                        value,
-                        NM_SETTING_WIRELESS_SECURITY_WEP_KEY_TYPE,
-                        wep_key_type_to_string(type),
-                        NM_SETTING_WIRELESS_SECURITY_WEP_KEY_TYPE);
+            nm_utils_error_set(
+                error,
+                NM_UTILS_ERROR_UNKNOWN,
+                _("'%s' not compatible with %s '%s', please change the key or set the "
+                  "right %s first."),
+                value,
+                NM_SETTING_WIRELESS_SECURITY_WEP_KEY_TYPE,
+                wep_key_type_to_string(type),
+                NM_SETTING_WIRELESS_SECURITY_WEP_KEY_TYPE);
             return FALSE;
         }
     }
@@ -4387,13 +4404,13 @@ _set_fcn_ethtool(ARGS_SET_FCN)
     if (nm_ethtool_id_is_coalesce(ethtool_id) || nm_ethtool_id_is_ring(ethtool_id)) {
         i64 = _nm_utils_ascii_str_to_int64(value, 10, 0, G_MAXUINT32, -1);
         if (i64 == -1) {
-            g_set_error(error,
-                        NM_UTILS_ERROR,
-                        NM_UTILS_ERROR_INVALID_ARGUMENT,
-                        _("'%s' is out of range [%" G_GUINT32_FORMAT ", %" G_GUINT32_FORMAT "]"),
-                        value,
-                        0,
-                        G_MAXUINT32);
+            nm_utils_error_set(
+                error,
+                NM_UTILS_ERROR_INVALID_ARGUMENT,
+                _("'%s' is out of range [%" G_GUINT32_FORMAT ", %" G_GUINT32_FORMAT "]"),
+                value,
+                0,
+                G_MAXUINT32);
             return FALSE;
         }
 
@@ -4407,11 +4424,10 @@ _set_fcn_ethtool(ARGS_SET_FCN)
                                     NMC_STRING_TO_TERNARY_FLAGS_IGNORE_FOR_DEFAULT,
                                     &t,
                                     NULL)) {
-        g_set_error(error,
-                    NM_UTILS_ERROR,
-                    NM_UTILS_ERROR_INVALID_ARGUMENT,
-                    _("'%s' is not valid; use 'on', 'off', or 'ignore'"),
-                    value);
+        nm_utils_error_set(error,
+                           NM_UTILS_ERROR_INVALID_ARGUMENT,
+                           _("'%s' is not valid; use 'on', 'off', or 'ignore'"),
+                           value);
         return FALSE;
     }
     if (t == NM_TERNARY_DEFAULT)
