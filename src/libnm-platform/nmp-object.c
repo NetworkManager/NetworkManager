@@ -216,7 +216,7 @@ nm_sock_addr_union_cpy_untrusted(NMSockAddrUnion *dst,
 const char *
 nm_sock_addr_union_to_string(const NMSockAddrUnion *sa, char *buf, gsize len)
 {
-    char s_addr[NM_UTILS_INET_ADDRSTRLEN];
+    char s_addr[NM_INET_ADDRSTRLEN];
     char s_scope_id[40];
 
     if (!nm_utils_to_string_buffer_init_null(sa, &buf, &len))
@@ -232,14 +232,14 @@ nm_sock_addr_union_to_string(const NMSockAddrUnion *sa, char *buf, gsize len)
         g_snprintf(buf,
                    len,
                    "%s:%u",
-                   _nm_utils_inet4_ntop(sa->in.sin_addr.s_addr, s_addr),
+                   nm_inet4_ntop(sa->in.sin_addr.s_addr, s_addr),
                    (guint) htons(sa->in.sin_port));
         break;
     case AF_INET6:
         g_snprintf(buf,
                    len,
                    "[%s%s]:%u",
-                   _nm_utils_inet6_ntop(&sa->in6.sin6_addr, s_addr),
+                   nm_inet6_ntop(&sa->in6.sin6_addr, s_addr),
                    (sa->in6.sin6_scope_id != 0
                         ? nm_sprintf_buf(s_scope_id, "%u", sa->in6.sin6_scope_id)
                         : ""),
@@ -1106,8 +1106,8 @@ _vt_cmd_obj_to_string_lnk_wireguard(const NMPObject      *obj,
                                                          gsize                   buf_len) \
     {                                                                                     \
         plat_type *const obj = (plat_type *) _obj;                                        \
-        _nm_unused char  buf1[NM_UTILS_INET_ADDRSTRLEN];                                  \
-        _nm_unused char  buf2[NM_UTILS_INET_ADDRSTRLEN];                                  \
+        _nm_unused char  buf1[NM_INET_ADDRSTRLEN];                                        \
+        _nm_unused char  buf2[NM_INET_ADDRSTRLEN];                                        \
                                                                                           \
         g_snprintf(buf, buf_len, __VA_ARGS__);                                            \
         return buf;                                                                       \
@@ -1116,24 +1116,23 @@ _vt_cmd_obj_to_string_lnk_wireguard(const NMPObject      *obj,
 
 _vt_cmd_plobj_to_string_id(link, NMPlatformLink, "%d", obj->ifindex);
 
-_vt_cmd_plobj_to_string_id(ip4_address,
-                           NMPlatformIP4Address,
-                           "%d: %s/%d%s%s",
-                           obj->ifindex,
-                           _nm_utils_inet4_ntop(obj->address, buf1),
-                           obj->plen,
-                           obj->peer_address != obj->address ? "," : "",
-                           obj->peer_address != obj->address ? _nm_utils_inet4_ntop(
-                               nm_utils_ip4_address_clear_host_address(obj->peer_address,
-                                                                       obj->plen),
-                               buf2)
-                                                             : "");
+_vt_cmd_plobj_to_string_id(
+    ip4_address,
+    NMPlatformIP4Address,
+    "%d: %s/%d%s%s",
+    obj->ifindex,
+    nm_inet4_ntop(obj->address, buf1),
+    obj->plen,
+    obj->peer_address != obj->address ? "," : "",
+    obj->peer_address != obj->address
+        ? nm_inet4_ntop(nm_ip4_addr_clear_host_address(obj->peer_address, obj->plen), buf2)
+        : "");
 
 _vt_cmd_plobj_to_string_id(ip6_address,
                            NMPlatformIP6Address,
                            "%d: %s",
                            obj->ifindex,
-                           _nm_utils_inet6_ntop(&obj->address, buf1));
+                           nm_inet6_ntop(&obj->address, buf1));
 
 _vt_cmd_plobj_to_string_id(qdisc, NMPlatformQdisc, "%d: %d", obj->ifindex, obj->parent);
 
@@ -1637,7 +1636,7 @@ _vt_cmd_plobj_id_hash_update(ip4_address, NMPlatformIP4Address, {
         obj->plen,
         obj->address,
         /* for IPv4 we must also consider the net-part of the peer-address (IFA_ADDRESS) */
-        nm_utils_ip4_address_clear_host_address(obj->peer_address, obj->plen));
+        nm_ip4_addr_clear_host_address(obj->peer_address, obj->plen));
 });
 
 _vt_cmd_plobj_id_hash_update(ip6_address, NMPlatformIP6Address, {

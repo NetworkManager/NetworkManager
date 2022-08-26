@@ -352,7 +352,7 @@ nm_l3_config_data_log(const NML3ConfigData *self,
                       NMLogDomain           log_domain)
 {
     char  sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
-    char  sbuf_addr[NM_UTILS_INET_ADDRSTRLEN];
+    char  sbuf_addr[NM_INET_ADDRSTRLEN];
     int   IS_IPv4;
     guint i;
 
@@ -484,9 +484,9 @@ nm_l3_config_data_log(const NML3ConfigData *self,
             _L("nameserver%c[%u]: %s",
                nm_utils_addr_family_to_char(addr_family),
                i,
-               nm_utils_inet_ntop(addr_family,
-                                  _garray_inaddr_at(self->nameservers_x[IS_IPv4], IS_IPv4, i),
-                                  sbuf_addr));
+               nm_inet_ntop(addr_family,
+                            _garray_inaddr_at(self->nameservers_x[IS_IPv4], IS_IPv4, i),
+                            sbuf_addr));
         }
 
         for (i = 0; i < nm_g_ptr_array_len(self->domains_x[IS_IPv4]); i++) {
@@ -514,12 +514,12 @@ nm_l3_config_data_log(const NML3ConfigData *self,
             for (i = 0; i < nm_g_array_len(self->wins); i++) {
                 _L("wins[%u]: %s",
                    i,
-                   _nm_utils_inet4_ntop(g_array_index(self->wins, in_addr_t, i), sbuf_addr));
+                   nm_inet4_ntop(g_array_index(self->wins, in_addr_t, i), sbuf_addr));
             }
             for (i = 0; i < nm_g_array_len(self->nis_servers); i++) {
                 _L("nis-server[%u]: %s",
                    i,
-                   _nm_utils_inet4_ntop(g_array_index(self->nis_servers, in_addr_t, i), sbuf_addr));
+                   nm_inet4_ntop(g_array_index(self->nis_servers, in_addr_t, i), sbuf_addr));
             }
             if (self->nis_domain)
                 _L("nis-domain: %s", self->nis_domain->str);
@@ -621,8 +621,7 @@ nm_l3_config_data_log(const NML3ConfigData *self,
 static gboolean
 _route_valid_4(const NMPlatformIP4Route *r)
 {
-    return r && r->plen <= 32
-           && r->network == nm_utils_ip4_address_clear_host_address(r->network, r->plen);
+    return r && r->plen <= 32 && r->network == nm_ip4_addr_clear_host_address(r->network, r->plen);
 }
 
 static gboolean
@@ -632,7 +631,7 @@ _route_valid_6(const NMPlatformIP6Route *r)
 
     return r && r->plen <= 128
            && (memcmp(&r->network,
-                      nm_utils_ip6_address_clear_host_address(&n, &r->network, r->plen),
+                      nm_ip6_addr_clear_host_address(&n, &r->network, r->plen),
                       sizeof(n))
                == 0);
 }
@@ -2185,8 +2184,7 @@ _dedup_multi_index_cmp(const NML3ConfigData *a,
 
                 NM_CMP_DIRECT(ra.metric, rb.metric);
                 NM_CMP_DIRECT(ra.plen, rb.plen);
-                NM_CMP_RETURN_DIRECT(
-                    nm_utils_ip4_address_same_prefix_cmp(ra.network, rb.network, ra.plen));
+                NM_CMP_RETURN_DIRECT(nm_ip4_addr_same_prefix_cmp(ra.network, rb.network, ra.plen));
                 break;
             }
             case NMP_OBJECT_TYPE_IP6_ROUTE:
@@ -2197,7 +2195,7 @@ _dedup_multi_index_cmp(const NML3ConfigData *a,
                 NM_CMP_DIRECT(ra.metric, rb.metric);
                 NM_CMP_DIRECT(ra.plen, rb.plen);
                 NM_CMP_RETURN_DIRECT(
-                    nm_utils_ip6_address_same_prefix_cmp(&ra.network, &rb.network, ra.plen));
+                    nm_ip6_addr_same_prefix_cmp(&ra.network, &rb.network, ra.plen));
                 break;
             }
             default:
@@ -2298,8 +2296,7 @@ nm_l3_config_data_cmp_full(const NML3ConfigData *a,
 
                 NM_CMP_DIRECT(ra.metric, rb.metric);
                 NM_CMP_DIRECT(ra.plen, rb.plen);
-                NM_CMP_RETURN_DIRECT(
-                    nm_utils_ip4_address_same_prefix_cmp(ra.network, rb.network, ra.plen));
+                NM_CMP_RETURN_DIRECT(nm_ip4_addr_same_prefix_cmp(ra.network, rb.network, ra.plen));
             } else {
                 NMPlatformIP6Route ra = def_route_a->ip6_route;
                 NMPlatformIP6Route rb = def_route_b->ip6_route;
@@ -2307,7 +2304,7 @@ nm_l3_config_data_cmp_full(const NML3ConfigData *a,
                 NM_CMP_DIRECT(ra.metric, rb.metric);
                 NM_CMP_DIRECT(ra.plen, rb.plen);
                 NM_CMP_RETURN_DIRECT(
-                    nm_utils_ip6_address_same_prefix_cmp(&ra.network, &rb.network, ra.plen));
+                    nm_ip6_addr_same_prefix_cmp(&ra.network, &rb.network, ra.plen));
             }
         }
 
@@ -2425,10 +2422,7 @@ _data_get_direct_route_for_host(const NML3ConfigData *self,
         if (nm_platform_route_table_uncoerce(item->rx.table_coerced, TRUE) != route_table)
             continue;
 
-        if (!nm_utils_ip_address_same_prefix(addr_family,
-                                             host,
-                                             item->rx.network_ptr,
-                                             item->rx.plen))
+        if (!nm_ip_addr_same_prefix(addr_family, host, item->rx.network_ptr, item->rx.plen))
             continue;
 
         if (best_route && best_route->rx.metric <= item->rx.metric)
@@ -2478,9 +2472,9 @@ nm_l3_config_data_get_blacklisted_ip4_routes(const NML3ConfigData *self, gboolea
         if (my_addr->plen == 0)
             continue;
 
-        network_4 = nm_utils_ip4_address_clear_host_address(my_addr->peer_address, my_addr->plen);
+        network_4 = nm_ip4_addr_clear_host_address(my_addr->peer_address, my_addr->plen);
 
-        if (nm_utils_ip4_address_is_zeronet(network_4)) {
+        if (nm_ip4_addr_is_zeronet(network_4)) {
             /* Kernel doesn't add device-routes for destinations that
              * start with 0.x.y.z. Skip them. */
             continue;
@@ -2672,9 +2666,9 @@ nm_l3_config_data_add_dependent_device_routes(NML3ConfigData       *self,
                         a6 = &addr_src->a6.peer_address;
                     plen = 128;
                 } else {
-                    a6   = nm_utils_ip6_address_clear_host_address(&a6_stack,
-                                                                 &addr_src->a6.address,
-                                                                 addr_src->a6.plen);
+                    a6   = nm_ip6_addr_clear_host_address(&a6_stack,
+                                                        &addr_src->a6.address,
+                                                        addr_src->a6.plen);
                     plen = addr_src->a6.plen;
                 }
 
@@ -2819,7 +2813,7 @@ _init_from_connection_ip(NML3ConfigData *self, int addr_family, NMConnection *co
 
         plen = nm_ip_route_get_prefix(s_route);
 
-        nm_utils_ipx_address_clear_host_address(addr_family, &network_bin, &network_bin, plen);
+        nm_ip_addr_clear_host_address(addr_family, &network_bin, &network_bin, plen);
 
         if (IS_IPv4) {
             r.r4 = (NMPlatformIP4Route){
@@ -2854,7 +2848,7 @@ _init_from_connection_ip(NML3ConfigData *self, int addr_family, NMConnection *co
         NMIPAddr    ip;
 
         s = nm_setting_ip_config_get_dns(s_ip, i);
-        if (!nm_utils_parse_inaddr_bin(addr_family, s, NULL, &ip))
+        if (!nm_inet_parse_bin(addr_family, s, NULL, &ip))
             continue;
         nm_l3_config_data_add_nameserver(self, addr_family, &ip);
     }

@@ -507,7 +507,7 @@ nmcs_utils_ipaddr_normalize_bin(int         addr_family,
 
     g_strstrip(ad);
 
-    return nm_utils_parse_inaddr_bin(addr_family, ad, out_addr_family, out_addr_bin);
+    return nm_inet_parse_bin(addr_family, ad, out_addr_family, out_addr_bin);
 }
 
 char *
@@ -518,7 +518,7 @@ nmcs_utils_ipaddr_normalize(int addr_family, const char *addr, gssize len)
     if (!nmcs_utils_ipaddr_normalize_bin(addr_family, addr, len, &addr_family, &ipaddr))
         return NULL;
 
-    return nm_utils_inet_ntop_dup(addr_family, &ipaddr);
+    return nm_inet_ntop_dup(addr_family, &ipaddr);
 }
 
 /*****************************************************************************/

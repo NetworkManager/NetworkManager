@@ -96,7 +96,7 @@ str_addr(const char *str, int *family)
 {
     NMIPAddr addr_bin;
 
-    if (!nm_utils_parse_inaddr_bin_full(*family, TRUE, str, family, &addr_bin)) {
+    if (!nm_inet_parse_bin_full(*family, TRUE, str, family, &addr_bin)) {
         _LOGW(LOGD_CORE, "Malformed IP address: '%s'", str);
         return NULL;
     }
@@ -288,7 +288,7 @@ nmi_dt_reader_parse(const char *sysfs_dir)
             guint32 netmask_v4;
 
             nm_ip_address_get_address_binary(netmask, &netmask_v4);
-            prefix = _nm_utils_ip4_netmask_to_prefix(netmask_v4);
+            prefix = nm_ip4_addr_netmask_to_prefix(netmask_v4);
         }
 
         if (prefix == -1)

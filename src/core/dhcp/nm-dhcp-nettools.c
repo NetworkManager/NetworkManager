@@ -143,12 +143,12 @@ lease_option_consume_route(const uint8_t **datap,
         if (!nm_dhcp_lease_data_consume_in_addr(&data, &n_data, &dest))
             return FALSE;
 
-        plen = _nm_utils_ip4_get_default_prefix0(dest);
+        plen = nm_ip4_addr_get_default_prefix0(dest);
         if (plen == 0)
             return FALSE;
     }
 
-    dest = nm_utils_ip4_address_clear_host_address(dest, plen);
+    dest = nm_ip4_addr_clear_host_address(dest, plen);
 
     if (!nm_dhcp_lease_data_consume_in_addr(&data, &n_data, &gateway))
         return FALSE;
@@ -239,16 +239,16 @@ lease_parse_address(NMDhcpNettools    *self /* for logging context only */,
 
     r = _client_lease_query(lease, NM_DHCP_OPTION_DHCP4_SUBNET_MASK, &l_data, &l_data_len);
     if (r == N_DHCP4_E_UNSET) {
-        char str1[NM_UTILS_INET_ADDRSTRLEN];
-        char str2[NM_UTILS_INET_ADDRSTRLEN];
+        char str1[NM_INET_ADDRSTRLEN];
+        char str2[NM_INET_ADDRSTRLEN];
 
         /* Some DHCP servers may not set the subnet-mask (issue#1037).
          * Do the same as the dhclient plugin and use a default. */
-        a_plen    = _nm_utils_ip4_get_default_prefix(a_address.s_addr);
-        a_netmask = _nm_utils_ip4_prefix_to_netmask(a_plen);
+        a_plen    = nm_ip4_addr_get_default_prefix(a_address.s_addr);
+        a_netmask = nm_ip4_addr_netmask_from_prefix(a_plen);
         _LOGT("missing subnet mask (option 1). Guess %s based on IP address %s",
-              _nm_utils_inet4_ntop(a_netmask, str1),
-              _nm_utils_inet4_ntop(a_address.s_addr, str2));
+              nm_inet4_ntop(a_netmask, str1),
+              nm_inet4_ntop(a_address.s_addr, str2));
     } else {
         if (r != 0
             || !nm_dhcp_lease_data_parse_in_addr(l_data,
@@ -261,8 +261,8 @@ lease_parse_address(NMDhcpNettools    *self /* for logging context only */,
                                        "could not get netmask from lease");
             return FALSE;
         }
-        a_plen    = _nm_utils_ip4_netmask_to_prefix(a_netmask);
-        a_netmask = _nm_utils_ip4_prefix_to_netmask(a_plen);
+        a_plen    = nm_ip4_addr_netmask_to_prefix(a_netmask);
+        a_netmask = nm_ip4_addr_netmask_from_prefix(a_plen);
     }
 
     nm_dhcp_option_add_option_in_addr(options,
@@ -335,22 +335,22 @@ lease_parse_address_list(NDhcp4ClientLease       *lease,
     nm_str_buf_reset(sbuf);
 
     for (; l_data_len > 0; l_data_len -= 4, l_data += 4) {
-        char            addr_str[NM_UTILS_INET_ADDRSTRLEN];
+        char            addr_str[NM_INET_ADDRSTRLEN];
         const in_addr_t addr = unaligned_read_ne32(l_data);
 
         nm_str_buf_append_required_delimiter(sbuf, ' ');
-        nm_str_buf_append(sbuf, _nm_utils_inet4_ntop(addr, addr_str));
+        nm_str_buf_append(sbuf, nm_inet4_ntop(addr, addr_str));
 
         switch (option) {
         case NM_DHCP_OPTION_DHCP4_DOMAIN_NAME_SERVER:
-            if (addr == 0 || nm_utils_ip4_address_is_loopback(addr)) {
+            if (addr == 0 || nm_ip4_addr_is_loopback(addr)) {
                 /* Skip localhost addresses, like also networkd does.
                  * See https://github.com/systemd/systemd/issues/4524. */
                 nm_dhcp_lease_log_invalid_option(iface,
                                                  AF_INET,
                                                  option,
                                                  "address %s is ignored",
-                                                 _nm_utils_inet4_ntop(addr, addr_str));
+                                                 nm_inet4_ntop(addr, addr_str));
                 continue;
             }
             nm_l3_config_data_add_nameserver(l3cd, AF_INET, &addr);
@@ -378,8 +378,8 @@ lease_parse_routes(NDhcp4ClientLease *lease,
                    GHashTable        *options,
                    NMStrBuf          *sbuf)
 {
-    char          dest_str[NM_UTILS_INET_ADDRSTRLEN];
-    char          gateway_str[NM_UTILS_INET_ADDRSTRLEN];
+    char          dest_str[NM_INET_ADDRSTRLEN];
+    char          gateway_str[NM_INET_ADDRSTRLEN];
     in_addr_t     dest;
     in_addr_t     gateway;
     uint8_t       plen;
@@ -412,8 +412,8 @@ lease_parse_routes(NDhcp4ClientLease *lease,
 
         nm_str_buf_reset(sbuf);
         while (lease_option_consume_route(&l_data, &l_data_len, TRUE, &dest, &plen, &gateway)) {
-            _nm_utils_inet4_ntop(dest, dest_str);
-            _nm_utils_inet4_ntop(gateway, gateway_str);
+            nm_inet4_ntop(dest, dest_str);
+            nm_inet4_ntop(gateway, gateway_str);
 
             nm_str_buf_append_required_delimiter(sbuf, ' ');
             nm_str_buf_append_printf(sbuf, "%s/%d %s", dest_str, (int) plen, gateway_str);
@@ -454,8 +454,8 @@ lease_parse_routes(NDhcp4ClientLease *lease,
         nm_str_buf_reset(sbuf);
 
         while (lease_option_consume_route(&l_data, &l_data_len, FALSE, &dest, &plen, &gateway)) {
-            _nm_utils_inet4_ntop(dest, dest_str);
-            _nm_utils_inet4_ntop(gateway, gateway_str);
+            nm_inet4_ntop(dest, dest_str);
+            nm_inet4_ntop(gateway, gateway_str);
 
             nm_str_buf_append_required_delimiter(sbuf, ' ');
             nm_str_buf_append_printf(sbuf, "%s/%d %s", dest_str, (int) plen, gateway_str);
@@ -501,7 +501,7 @@ lease_parse_routes(NDhcp4ClientLease *lease,
 
         while (nm_dhcp_lease_data_consume_in_addr(&l_data, &l_data_len, &gateway)) {
             nm_str_buf_append_required_delimiter(sbuf, ' ');
-            nm_str_buf_append(sbuf, _nm_utils_inet4_ntop(gateway, gateway_str));
+            nm_str_buf_append(sbuf, nm_inet4_ntop(gateway, gateway_str));
 
             if (gateway == 0) {
                 /* silently skip 0.0.0.0 */
@@ -868,7 +868,7 @@ lease_save(NMDhcpNettools *self, NDhcp4ClientLease *lease, const char *lease_fil
 {
     struct in_addr           a_address;
     nm_auto_str_buf NMStrBuf sbuf = NM_STR_BUF_INIT(NM_UTILS_GET_NEXT_REALLOC_SIZE_104, FALSE);
-    char                     addr_str[NM_UTILS_INET_ADDRSTRLEN];
+    char                     addr_str[NM_INET_ADDRSTRLEN];
     gs_free_error GError    *error = NULL;
 
     nm_assert(lease);
@@ -879,9 +879,7 @@ lease_save(NMDhcpNettools *self, NDhcp4ClientLease *lease, const char *lease_fil
         return;
 
     nm_str_buf_append(&sbuf, "# This is private data. Do not parse.\n");
-    nm_str_buf_append_printf(&sbuf,
-                             "ADDRESS=%s\n",
-                             _nm_utils_inet4_ntop(a_address.s_addr, addr_str));
+    nm_str_buf_append_printf(&sbuf, "ADDRESS=%s\n", nm_inet4_ntop(a_address.s_addr, addr_str));
 
     if (!g_file_set_contents(lease_file, nm_str_buf_get_str_unsafe(&sbuf), sbuf.len, &error))
         _LOGW("error saving lease to %s: %s", lease_file, error->message);
@@ -966,7 +964,7 @@ dhcp4_event_handle(NMDhcpNettools *self, NDhcp4ClientEvent *event)
 
         if (nm_dhcp_client_server_id_is_rejected(NM_DHCP_CLIENT(self), &server_id)) {
             _LOGD("server-id %s is in the reject-list, ignoring",
-                  nm_utils_inet_ntop(AF_INET, &server_id, addr_str));
+                  nm_inet_ntop(AF_INET, &server_id, addr_str));
             return;
         }
 
@@ -976,8 +974,8 @@ dhcp4_event_handle(NMDhcpNettools *self, NDhcp4ClientEvent *event)
         }
 
         _LOGT("selecting offered lease from %s for %s",
-              _nm_utils_inet4_ntop(server_id.s_addr, addr_str),
-              _nm_utils_inet4_ntop(yiaddr.s_addr, addr_str2));
+              nm_inet4_ntop(server_id.s_addr, addr_str),
+              nm_inet4_ntop(yiaddr.s_addr, addr_str2));
 
         r = n_dhcp4_client_lease_select(event->offer.lease);
 
@@ -1336,7 +1334,7 @@ ip4_start(NMDhcpClient *client, GError **error)
                                    NULL);
         nm_parse_env_file(contents, "ADDRESS", &s_addr);
         if (s_addr)
-            nm_utils_parse_inaddr_bin(AF_INET, s_addr, NULL, &last_addr);
+            nm_inet_parse_bin(AF_INET, s_addr, NULL, &last_addr);
     }
 
     if (last_addr.s_addr) {

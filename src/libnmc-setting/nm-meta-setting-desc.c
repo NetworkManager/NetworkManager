@@ -341,7 +341,7 @@ _parse_ip_route(int family, const char *str, GError **error)
     for (i = 1; routev[i]; i++) {
         gint64 tmp64;
 
-        if (nm_utils_ipaddr_is_valid(family, routev[i])) {
+        if (nm_inet_is_valid(family, routev[i])) {
             if (metric != -1 || attrs) {
                 g_set_error(error, 1, 0, _("the next hop ('%s') must be first"), routev[i]);
                 return NULL;
@@ -2276,7 +2276,7 @@ _multilist_validate_fcn_is_domain(const char *domain, GError **error)
 static const char *
 _multilist_validate_fcn_is_ipv4_addr_or_subnet(const char *value, GError **error)
 {
-    if (!nm_utils_parse_inaddr_prefix_bin(AF_INET, value, NULL, NULL, NULL)) {
+    if (!nm_inet_parse_with_prefix_bin(AF_INET, value, NULL, NULL, NULL)) {
         nm_utils_error_set(error,
                            NM_UTILS_ERROR_INVALID_ARGUMENT,
                            _("invalid IPv4 or subnet \"%s\""),
@@ -3414,7 +3414,7 @@ _multilist_validate2_fcn_ip_config_dns(NMSetting *setting, const char *value, GE
 {
     int addr_family = nm_setting_ip_config_get_addr_family(NM_SETTING_IP_CONFIG(setting));
 
-    if (!nm_utils_parse_inaddr(addr_family, value, NULL)) {
+    if (!nm_inet_parse_str(addr_family, value, NULL)) {
         nm_utils_error_set(error,
                            NM_UTILS_ERROR_INVALID_ARGUMENT,
                            _("invalid IPv%c address '%s'"),
@@ -3541,7 +3541,7 @@ _set_fcn_ip_config_gateway(ARGS_SET_FCN)
 
     value = nm_strstrip_avoid_copy_a(300, value, &value_to_free);
 
-    if (!nm_utils_ipaddr_is_valid(addr_family, value)) {
+    if (!nm_inet_is_valid(addr_family, value)) {
         g_set_error(error,
                     NM_UTILS_ERROR,
                     NM_UTILS_ERROR_INVALID_ARGUMENT,

@@ -980,7 +980,7 @@ ipx_address_delete(NMPlatform   *platform,
                 || (plen && address->plen != *plen)
                 || (peer_addr
                     && (((peer_addr_i ^ address->peer_address)
-                         & _nm_utils_ip4_prefix_to_netmask(address->plen))
+                         & nm_ip4_addr_netmask_from_prefix(address->plen))
                         != 0)))
                 continue;
         } else {
@@ -1151,8 +1151,8 @@ ip_route_add(NMPlatform              *platform,
                                  &o) {
             if (addr_family == AF_INET) {
                 const NMPlatformIP4Route *item = NMP_OBJECT_CAST_IP4_ROUTE(o);
-                guint32 n = nm_utils_ip4_address_clear_host_address(item->network, item->plen);
-                guint32 g = nm_utils_ip4_address_clear_host_address(r4->gateway, item->plen);
+                guint32 n = nm_ip4_addr_clear_host_address(item->network, item->plen);
+                guint32 g = nm_ip4_addr_clear_host_address(r4->gateway, item->plen);
 
                 if (r->ifindex == item->ifindex && n == g) {
                     has_route_to_gw = TRUE;
@@ -1162,21 +1162,21 @@ ip_route_add(NMPlatform              *platform,
                 const NMPlatformIP6Route *item = NMP_OBJECT_CAST_IP6_ROUTE(o);
 
                 if (r->ifindex == item->ifindex
-                    && nm_utils_ip6_address_same_prefix(&r6->gateway, &item->network, item->plen)) {
+                    && nm_ip6_addr_same_prefix(&r6->gateway, &item->network, item->plen)) {
                     has_route_to_gw = TRUE;
                     break;
                 }
             }
         }
         if (!has_route_to_gw) {
-            char sbuf[NM_UTILS_INET_ADDRSTRLEN];
+            char sbuf[NM_INET_ADDRSTRLEN];
 
             if (addr_family == AF_INET) {
                 nm_log_warn(
                     LOGD_PLATFORM,
                     "Fake platform: failure adding ip4-route '%d: %s/%d %d': Network Unreachable",
                     r->ifindex,
-                    _nm_utils_inet4_ntop(r4->network, sbuf),
+                    nm_inet4_ntop(r4->network, sbuf),
                     r->plen,
                     r->metric);
             } else {
@@ -1184,7 +1184,7 @@ ip_route_add(NMPlatform              *platform,
                     LOGD_PLATFORM,
                     "Fake platform: failure adding ip6-route '%d: %s/%d %d': Network Unreachable",
                     r->ifindex,
-                    _nm_utils_inet6_ntop(&r6->network, sbuf),
+                    nm_inet6_ntop(&r6->network, sbuf),
                     r->plen,
                     r->metric);
             }

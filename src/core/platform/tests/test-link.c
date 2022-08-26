@@ -1183,7 +1183,7 @@ _test_wireguard_change(NMPlatform *platform, int ifindex, int test_mode)
 
         for (i = 0; i < num_peers; i++) {
             NMPWireGuardPeer       peer;
-            char                   s_addr[NM_UTILS_INET_ADDRSTRLEN];
+            char                   s_addr[NM_INET_ADDRSTRLEN];
             NMSockAddrUnion        endpoint;
             guint                  i_allowed_ips, n_allowed_ips;
             NMPWireGuardAllowedIP *allowed_ips;

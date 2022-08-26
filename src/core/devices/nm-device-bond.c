@@ -274,10 +274,10 @@ set_arp_targets(NMDevice *device, const char *cur_arp_ip_target, const char *new
             in_addr_t   a4;
 
             s = new_strv[i];
-            if (nm_utils_parse_inaddr_bin(AF_INET, s, NULL, &a4)) {
+            if (nm_inet_parse_bin(AF_INET, s, NULL, &a4)) {
                 char sbuf[INET_ADDRSTRLEN];
 
-                _nm_utils_inet4_ntop(a4, sbuf);
+                nm_inet4_ntop(a4, sbuf);
                 if (!nm_streq(s, sbuf)) {
                     if (!free_list)
                         free_list = g_ptr_array_new_with_free_func(g_free);
@@ -368,7 +368,7 @@ _bond_arp_ip_target_to_platform(const char *value, in_addr_t out[static NM_BOND_
     for (i = 0; ip[i]; i++) {
         if (added > NM_BOND_MAX_ARP_TARGETS - 1)
             break;
-        if (!nm_utils_parse_inaddr_bin(AF_INET, ip[i], NULL, &in_a))
+        if (!nm_inet_parse_bin(AF_INET, ip[i], NULL, &in_a))
             nm_assert_not_reached(); /* verify() already validated the IP addresses */
 
         out[added++] = in_a;

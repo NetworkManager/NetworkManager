@@ -167,7 +167,7 @@ _get_config_fetch_done_cb(NMHttpClient                   *http_client,
             config_iface_data->ipv4s_arr = g_new(in_addr_t, len);
             for (i = 0; i < len; i++) {
                 filter_chars((char *) s_addrs[i], "[]\"");
-                if (nm_utils_parse_inaddr_bin(AF_INET, s_addrs[i], NULL, &tmp_addr)) {
+                if (nm_inet_parse_bin(AF_INET, s_addrs[i], NULL, &tmp_addr)) {
                     config_iface_data->ipv4s_arr[config_iface_data->ipv4s_len++] = tmp_addr;
                 }
             }
@@ -176,7 +176,7 @@ _get_config_fetch_done_cb(NMHttpClient                   *http_client,
 
     case GET_CONFIG_FETCH_DONE_TYPE_PRIMARY_IP_ADDRESS:
 
-        if (nm_utils_parse_inaddr_bin(AF_INET, g_bytes_get_data(response, NULL), NULL, &tmp_addr)) {
+        if (nm_inet_parse_bin(AF_INET, g_bytes_get_data(response, NULL), NULL, &tmp_addr)) {
             nm_assert(config_iface_data->priv.aliyun.primary_ip_address == 0);
             nm_assert(!config_iface_data->priv.aliyun.has_primary_ip_address);
             config_iface_data->priv.aliyun.primary_ip_address     = tmp_addr;
@@ -186,11 +186,11 @@ _get_config_fetch_done_cb(NMHttpClient                   *http_client,
 
     case GET_CONFIG_FETCH_DONE_TYPE_SUBNET_VPC_CIDR_BLOCK:
 
-        if (nm_utils_parse_inaddr_prefix_bin(AF_INET,
-                                             g_bytes_get_data(response, NULL),
-                                             NULL,
-                                             &tmp_addr,
-                                             &tmp_prefix)) {
+        if (nm_inet_parse_with_prefix_bin(AF_INET,
+                                          g_bytes_get_data(response, NULL),
+                                          NULL,
+                                          &tmp_addr,
+                                          &tmp_prefix)) {
             nm_assert(!config_iface_data->has_cidr);
             config_iface_data->has_cidr  = TRUE;
             config_iface_data->cidr_addr = tmp_addr;
@@ -199,20 +199,14 @@ _get_config_fetch_done_cb(NMHttpClient                   *http_client,
 
     case GET_CONFIG_FETCH_DONE_TYPE_NETMASK:
 
-        if (nm_utils_parse_inaddr_bin(AF_INET,
-                                      g_bytes_get_data(response, NULL),
-                                      NULL,
-                                      &netmask_bin)) {
-            config_iface_data->cidr_prefix = _nm_utils_ip4_netmask_to_prefix(netmask_bin);
+        if (nm_inet_parse_bin(AF_INET, g_bytes_get_data(response, NULL), NULL, &netmask_bin)) {
+            config_iface_data->cidr_prefix = nm_ip4_addr_netmask_to_prefix(netmask_bin);
         };
         break;
 
     case GET_CONFIG_FETCH_DONE_TYPE_GATEWAY:
 
-        if (nm_utils_parse_inaddr_bin(AF_INET,
-                                      g_bytes_get_data(response, NULL),
-                                      NULL,
-                                      &gateway_bin)) {
+        if (nm_inet_parse_bin(AF_INET, g_bytes_get_data(response, NULL), NULL, &gateway_bin)) {
             config_iface_data->has_gateway = TRUE;
             config_iface_data->gateway     = gateway_bin;
         };

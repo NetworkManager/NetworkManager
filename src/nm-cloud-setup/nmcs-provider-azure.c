@@ -117,7 +117,7 @@ _get_config_fetch_done_cb(NMHttpClient      *http_client,
     gs_free_error GError           *error    = NULL;
     const char                     *resp_str = NULL;
     gsize                           resp_len;
-    char                            tmp_addr_str[NM_UTILS_INET_ADDRSTRLEN];
+    char                            tmp_addr_str[NM_INET_ADDRSTRLEN];
     in_addr_t                       tmp_addr;
     int                             tmp_prefix = -1;
 
@@ -145,7 +145,7 @@ _get_config_fetch_done_cb(NMHttpClient      *http_client,
         }
         _LOGD("interface[%" G_GSSIZE_FORMAT "]: received address %s",
               iface_data->intern_iface_idx,
-              _nm_utils_inet4_ntop(tmp_addr, tmp_addr_str));
+              nm_inet4_ntop(tmp_addr, tmp_addr_str));
         iface_get_config->ipv4s_arr[iface_get_config->ipv4s_len] = tmp_addr;
         iface_get_config->has_ipv4s                              = TRUE;
         iface_get_config->ipv4s_len++;
@@ -159,7 +159,7 @@ _get_config_fetch_done_cb(NMHttpClient      *http_client,
         }
         _LOGD("interface[%" G_GSSIZE_FORMAT "]: received subnet address %s",
               iface_data->intern_iface_idx,
-              _nm_utils_inet4_ntop(tmp_addr, tmp_addr_str));
+              nm_inet4_ntop(tmp_addr, tmp_addr_str));
         iface_get_config->cidr_addr = tmp_addr;
         break;
 

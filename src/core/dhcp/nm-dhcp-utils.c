@@ -94,7 +94,7 @@ ip4_process_dhcpcd_rfc3442_routes(const char     *iface,
                 l3cd,
                 &((const NMPlatformIP4Route){
                     .rt_source  = NM_IP_CONFIG_SOURCE_DHCP,
-                    .network    = nm_utils_ip4_address_clear_host_address(rt_addr, rt_cidr),
+                    .network    = nm_ip4_addr_clear_host_address(rt_addr, rt_cidr),
                     .plen       = rt_cidr,
                     .gateway    = rt_route,
                     .pref_src   = address,
@@ -139,7 +139,7 @@ process_dhclient_rfc3442_route(const char *const **p_octets, NMPlatformIP4Route 
         str_addr = g_strjoin(".", addr[0], addr[1], addr[2], addr[3], NULL);
         if (inet_pton(AF_INET, str_addr, &tmp_addr) <= 0)
             return FALSE;
-        v_network = nm_utils_ip4_address_clear_host_address(tmp_addr, v_plen);
+        v_network = nm_ip4_addr_clear_host_address(tmp_addr, v_plen);
     }
 
     next_hop = g_strjoin(".", o[0], o[1], o[2], o[3], NULL);
@@ -203,9 +203,9 @@ ip4_process_dhclient_rfc3442_routes(const char     *iface,
             _LOG2I(LOGD_DHCP4,
                    iface,
                    "  classless static route %s/%d gw %s",
-                   _nm_utils_inet4_ntop(route.network, b1),
+                   nm_inet4_ntop(route.network, b1),
                    route.plen,
-                   _nm_utils_inet4_ntop(route.gateway, b2));
+                   nm_inet4_ntop(route.gateway, b2));
         }
     }
 
@@ -324,8 +324,8 @@ process_classful_routes(const char     *iface,
          * The Static Routes option (option 33) does not provide a subnet mask
          * for each route - it is assumed that the subnet mask is implicit in
          * whatever network number is specified in each route entry */
-        route.plen = _nm_utils_ip4_get_default_prefix(rt_addr);
-        if (rt_addr & ~_nm_utils_ip4_prefix_to_netmask(route.plen)) {
+        route.plen = nm_ip4_addr_get_default_prefix(rt_addr);
+        if (rt_addr & ~nm_ip4_addr_netmask_from_prefix(route.plen)) {
             /* RFC 943: target not "this network"; using host routing */
             route.plen = 32;
         }
@@ -337,7 +337,7 @@ process_classful_routes(const char     *iface,
         route.metric_any    = TRUE;
         route.metric        = 0;
 
-        route.network = nm_utils_ip4_address_clear_host_address(route.network, route.plen);
+        route.network = nm_ip4_addr_clear_host_address(route.network, route.plen);
 
         nm_l3_config_data_add_route_4(l3cd, &route);
 
@@ -400,7 +400,7 @@ nm_dhcp_utils_ip4_config_from_options(NMDedupMultiIndex *multi_idx,
     gboolean                                gateway_has = FALSE;
     guint32                                 gateway     = 0;
     guint8                                  plen        = 0;
-    char                                    sbuf[NM_UTILS_INET_ADDRSTRLEN];
+    char                                    sbuf[NM_INET_ADDRSTRLEN];
     guint32                                 now;
 
     g_return_val_if_fail(options != NULL, NULL);
@@ -414,7 +414,7 @@ nm_dhcp_utils_ip4_config_from_options(NMDedupMultiIndex *multi_idx,
     };
 
     str = g_hash_table_lookup(options, "ip_address");
-    if (!str || !nm_utils_parse_inaddr_bin(AF_INET, str, NULL, &addr))
+    if (!str || !nm_inet_parse_bin(AF_INET, str, NULL, &addr))
         return NULL;
     if (addr == INADDR_ANY)
         return NULL;
@@ -423,11 +423,11 @@ nm_dhcp_utils_ip4_config_from_options(NMDedupMultiIndex *multi_idx,
 
     str = g_hash_table_lookup(options, "subnet_mask");
     if (str && (inet_pton(AF_INET, str, &tmp_addr) > 0)) {
-        plen = _nm_utils_ip4_netmask_to_prefix(tmp_addr);
+        plen = nm_ip4_addr_netmask_to_prefix(tmp_addr);
         _LOG2I(LOGD_DHCP4, iface, "  plen %d (%s)", plen, str);
     } else {
         /* Get default netmask for the IP according to appropriate class. */
-        plen = _nm_utils_ip4_get_default_prefix(addr);
+        plen = nm_ip4_addr_get_default_prefix(addr);
         _LOG2I(LOGD_DHCP4, iface, "  plen %d (default)", plen);
     }
 
@@ -440,7 +440,7 @@ nm_dhcp_utils_ip4_config_from_options(NMDedupMultiIndex *multi_idx,
         process_classful_routes(iface, options, l3cd, address.address);
 
     if (gateway) {
-        _LOG2I(LOGD_DHCP4, iface, "  gateway %s", _nm_utils_inet4_ntop(gateway, sbuf));
+        _LOG2I(LOGD_DHCP4, iface, "  gateway %s", nm_inet4_ntop(gateway, sbuf));
         gateway_has = TRUE;
     } else {
         /* If the gateway wasn't provided as a classless static route with a

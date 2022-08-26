@@ -1591,12 +1591,12 @@ ip4_config_to_iwd_config(GKeyFile *file, NMSettingIPConfig *s_ip, GError **error
     if (num) {
         NMIPAddress *addr    = nm_setting_ip_config_get_address(s_ip, 0);
         guint        prefix  = nm_ip_address_get_prefix(addr);
-        in_addr_t    netmask = _nm_utils_ip4_prefix_to_netmask(prefix);
+        in_addr_t    netmask = nm_ip4_addr_netmask_from_prefix(prefix);
         char         buf[INET_ADDRSTRLEN];
 
         nm_ip_address_get_address_binary(addr, &ip);
         g_key_file_set_string(file, "IPv4", "Address", nm_ip_address_get_address(addr));
-        g_key_file_set_string(file, "IPv4", "Netmask", _nm_utils_inet4_ntop(netmask, buf));
+        g_key_file_set_string(file, "IPv4", "Netmask", nm_inet4_ntop(netmask, buf));
     } else {
         inet_pton(AF_INET, "10.42.0.100", &ip);
         g_key_file_set_string(file, "IPv4", "Address", "10.42.0.100");
@@ -1614,7 +1614,7 @@ ip4_config_to_iwd_config(GKeyFile *file, NMSettingIPConfig *s_ip, GError **error
         val = (ntohl(ip.s_addr) & 0xfffffff0) + 1;
         if (val == ntohl(ip.s_addr))
             val += 1;
-        g_key_file_set_string(file, "IPv4", "Gateway", _nm_utils_inet4_ntop(htonl(val), buf));
+        g_key_file_set_string(file, "IPv4", "Gateway", nm_inet4_ntop(htonl(val), buf));
     }
 
     return TRUE;

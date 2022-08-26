@@ -4186,7 +4186,7 @@ nm_utils_get_reverse_dns_domains_ip_6(const struct in6_addr *ip, guint8 plen, GP
         return;
 
     memcpy(&addr, ip, sizeof(struct in6_addr));
-    nm_utils_ip6_address_clear_host_address(&addr, NULL, plen);
+    nm_ip6_addr_clear_host_address(&addr, NULL, plen);
 
     /* Number of nibbles to include in domains */
     nibbles = (plen - 1) / 4 + 1;

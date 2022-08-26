@@ -451,7 +451,7 @@ update_ip4_setting_from_if_block(NMConnection *connection, if_block *block, GErr
                             netmask_v);
                 return FALSE;
             } else {
-                netmask_int = _nm_utils_ip4_netmask_to_prefix(tmp_mask);
+                netmask_int = nm_ip4_addr_netmask_to_prefix(tmp_mask);
             }
         }
 
@@ -470,7 +470,7 @@ update_ip4_setting_from_if_block(NMConnection *connection, if_block *block, GErr
         /* gateway */
         gateway_v = ifparser_getkey(block, "gateway");
         if (gateway_v) {
-            if (!nm_utils_ipaddr_is_valid(AF_INET, gateway_v)) {
+            if (!nm_inet_is_valid(AF_INET, gateway_v)) {
                 g_set_error(error,
                             NM_SETTINGS_ERROR,
                             NM_SETTINGS_ERROR_INVALID_CONNECTION,
@@ -579,7 +579,7 @@ update_ip6_setting_from_if_block(NMConnection *connection, if_block *block, GErr
 
         gateway_v = ifparser_getkey(block, "gateway");
         if (gateway_v) {
-            if (!nm_utils_ipaddr_is_valid(AF_INET6, gateway_v)) {
+            if (!nm_inet_is_valid(AF_INET6, gateway_v)) {
                 g_set_error(error,
                             NM_SETTINGS_ERROR,
                             NM_SETTINGS_ERROR_INVALID_CONNECTION,

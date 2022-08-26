@@ -80,12 +80,7 @@ nmtui_main(gboolean is_top, int argc, char **argv)
     NmtNewtButtonBox *bbox;
     int               i;
 
-    form = g_object_new(NMT_TYPE_NEWT_FORM,
-                        "title",
-                        _("NetworkManager TUI"),
-                        "escape-exits",
-                        TRUE,
-                        NULL);
+    form = g_object_new(NMT_TYPE_NEWT_FORM, "title", _("NetworkManager TUI"), NULL);
 
     widget = nmt_newt_grid_new();
     nmt_newt_form_set_content(form, widget);

@@ -27,7 +27,7 @@ _wait_for_ipv4_addr_device_route(NMPlatform *platform,
     /* Wait that the addresses gets a device-route. After adding a address,
      * the device route is not added immediately. It takes a moment... */
 
-    addr = nm_utils_ip4_address_clear_host_address(addr, plen);
+    addr = nm_ip4_addr_clear_host_address(addr, plen);
     NMTST_WAIT_ASSERT(400, {
         NMDedupMultiIter iter;
         NMPLookup        lookup;
@@ -41,7 +41,7 @@ _wait_for_ipv4_addr_device_route(NMPlatform *platform,
             &o) {
             const NMPlatformIP4Route *r = NMP_OBJECT_CAST_IP4_ROUTE(o);
 
-            if (r->plen == plen && addr == nm_utils_ip4_address_clear_host_address(r->network, plen)
+            if (r->plen == plen && addr == nm_ip4_addr_clear_host_address(r->network, plen)
                 && r->metric == 0 && r->scope_inv == nm_platform_route_scope_inv(RT_SCOPE_LINK)
                 && r->rt_source == NM_IP_CONFIG_SOURCE_RTPROT_KERNEL)
                 return;
@@ -918,7 +918,7 @@ test_ip(gconstpointer test_data)
     const NMPlatformLink *l;
     char                  ifname[IFNAMSIZ];
     char                  ifname2[IFNAMSIZ];
-    char                  s1[NM_UTILS_INET_ADDRSTRLEN];
+    char                  s1[NM_INET_ADDRSTRLEN];
     NMPlatform           *platform = NM_PLATFORM_GET;
     const int             EX_      = -1;
     struct {
@@ -1278,7 +1278,7 @@ _rule_create_random(NMPlatform *platform)
     guint32                p;
     int                    addr_size;
     guint                  i;
-    char                   saddr[NM_UTILS_INET_ADDRSTRLEN];
+    char                   saddr[NM_INET_ADDRSTRLEN];
     static struct {
         guint32 uid;
         guint32 euid;

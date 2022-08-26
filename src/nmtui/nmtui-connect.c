@@ -241,7 +241,7 @@ activate_connection(NMConnection *connection, NMDevice *device, NMObject *specif
     GError                              *error = NULL;
     ActivateConnectionInfo               info  = {};
 
-    form  = g_object_new(NMT_TYPE_NEWT_FORM, "escape-exits", TRUE, NULL);
+    form  = g_object_new(NMT_TYPE_NEWT_FORM, NULL);
     label = nmt_newt_label_new(_("Connecting..."));
     nmt_newt_form_set_content(form, label);
 
@@ -417,14 +417,7 @@ nmt_connect_connection_list(gboolean is_top)
 
     newtGetScreenSize(&screen_width, &screen_height);
 
-    form = g_object_new(NMT_TYPE_NEWT_FORM,
-                        "y",
-                        2,
-                        "height",
-                        screen_height - 4,
-                        "escape-exits",
-                        TRUE,
-                        NULL);
+    form = g_object_new(NMT_TYPE_NEWT_FORM, "y", 2, "height", screen_height - 4, NULL);
 
     grid = nmt_newt_grid_new();
 

@@ -191,7 +191,8 @@ _gl_pid_kill_external(void)
     if (!g_file_get_contents(PIDFILE, &contents, NULL, &error)) {
         if (g_error_matches(error, G_FILE_ERROR, G_FILE_ERROR_NOENT))
             do_unlink = FALSE;
-        _LOGD("spawn: failure to read pidfile %s: %s", PIDFILE, error->message);
+        else
+            _LOGD("spawn: failure to read pidfile %s: %s", PIDFILE, error->message);
         g_clear_error(&error);
         goto handle_kill;
     }
@@ -667,6 +668,14 @@ _gl_pid_spawn(const char           *dm_binary,
 
 /*****************************************************************************/
 
+void
+nm_dnsmasq_kill_external(void)
+{
+    _gl_pid_kill_external();
+}
+
+/*****************************************************************************/
+
 typedef struct {
     GDBusConnection *dbus_connection;
 
@@ -792,13 +801,13 @@ add_dnsmasq_nameserver(NMDnsDnsmasq    *self,
     g_variant_builder_close(servers);
 }
 
-#define IP_ADDR_TO_STRING_BUFLEN (NM_UTILS_INET_ADDRSTRLEN + 1 + IFNAMSIZ)
+#define IP_ADDR_TO_STRING_BUFLEN (NM_INET_ADDRSTRLEN + 1 + IFNAMSIZ)
 
 static const char *
 ip_addr_to_string(int addr_family, gconstpointer addr, const char *iface, char *out_buf)
 {
     int         n_written;
-    char        buf2[NM_UTILS_INET_ADDRSTRLEN];
+    char        buf2[NM_INET_ADDRSTRLEN];
     const char *separator;
 
     nm_assert_addr_family(addr_family);
@@ -806,13 +815,13 @@ ip_addr_to_string(int addr_family, gconstpointer addr, const char *iface, char *
     nm_assert(out_buf);
 
     if (addr_family == AF_INET) {
-        nm_utils_inet_ntop(addr_family, addr, buf2);
+        nm_inet_ntop(addr_family, addr, buf2);
         separator = "@";
     } else {
         if (IN6_IS_ADDR_V4MAPPED(addr))
-            _nm_utils_inet4_ntop(((const struct in6_addr *) addr)->s6_addr32[3], buf2);
+            nm_inet4_ntop(((const struct in6_addr *) addr)->s6_addr32[3], buf2);
         else
-            _nm_utils_inet6_ntop(addr, buf2);
+            nm_inet6_ntop(addr, buf2);
         /* Need to scope link-local addresses with %<zone-id>. Before dnsmasq 2.58,
          * only '@' was supported as delimiter. Since 2.58, '@' and '%' are
          * supported. Due to a bug, since 2.73 only '%' works properly as "server"

@@ -67,7 +67,7 @@ canonicalize_ip_binary(int family, const NMIPAddr *ip, gboolean null_any)
     if (null_any && nm_ip_addr_is_null(family, ip))
         return NULL;
 
-    return nm_utils_inet_ntop_dup(family, ip);
+    return nm_inet_ntop_dup(family, ip);
 }
 
 static gboolean
@@ -80,7 +80,7 @@ valid_ip(int family, const char *ip, NMIPAddr *addr, GError **error)
                     family == AF_INET ? _("Missing IPv4 address") : _("Missing IPv6 address"));
         return FALSE;
     }
-    if (!nm_utils_parse_inaddr_bin(family, ip, NULL, addr)) {
+    if (!nm_inet_parse_bin(family, ip, NULL, addr)) {
         g_set_error(error,
                     NM_CONNECTION_ERROR,
                     NM_CONNECTION_ERROR_FAILED,
@@ -210,7 +210,7 @@ nm_ip_address_new_binary(int family, gconstpointer addr, guint prefix, GError **
     *address = (NMIPAddress){
         .refcount = 1,
         .family   = family,
-        .address  = nm_utils_inet_ntop_dup(family, addr),
+        .address  = nm_inet_ntop_dup(family, addr),
         .prefix   = prefix,
     };
 
@@ -418,7 +418,7 @@ nm_ip_address_set_address(NMIPAddress *address, const char *addr)
 
     if (!valid_ip(address->family, addr, &addr_bin, NULL)) {
         g_return_if_fail(addr != NULL);
-        g_return_if_fail(nm_utils_ipaddr_is_valid(address->family, addr));
+        g_return_if_fail(nm_inet_is_valid(address->family, addr));
         nm_assert_not_reached();
     }
 
@@ -460,7 +460,7 @@ nm_ip_address_set_address_binary(NMIPAddress *address, gconstpointer addr)
     g_return_if_fail(addr != NULL);
 
     g_free(address->address);
-    address->address = nm_utils_inet_ntop_dup(address->family, addr);
+    address->address = nm_inet_ntop_dup(address->family, addr);
 }
 
 /**
@@ -883,7 +883,7 @@ nm_ip_route_get_dest(NMIPRoute *route)
  * Sets the destination property of this route object.
  *
  * @dest must be a valid address of @route's family. If you aren't sure you
- * have a valid address, use nm_utils_ipaddr_is_valid() to check it.
+ * have a valid address, use nm_inet_is_valid() to check it.
  **/
 void
 nm_ip_route_set_dest(NMIPRoute *route, const char *dest)
@@ -893,7 +893,7 @@ nm_ip_route_set_dest(NMIPRoute *route, const char *dest)
     g_return_if_fail(route != NULL);
 
     if (!valid_ip(route->family, dest, &dest_bin, NULL)) {
-        g_return_if_fail(nm_utils_ipaddr_is_valid(route->family, dest));
+        g_return_if_fail(nm_inet_is_valid(route->family, dest));
         nm_assert_not_reached();
     }
 
@@ -935,7 +935,7 @@ nm_ip_route_set_dest_binary(NMIPRoute *route, gconstpointer dest)
     g_return_if_fail(dest != NULL);
 
     g_free(route->dest);
-    route->dest = nm_utils_inet_ntop_dup(route->family, dest);
+    route->dest = nm_inet_ntop_dup(route->family, dest);
 }
 
 /**
@@ -1008,7 +1008,7 @@ nm_ip_route_set_next_hop(NMIPRoute *route, const char *next_hop)
     g_return_if_fail(route != NULL);
 
     if (next_hop && !valid_ip(route->family, next_hop, &next_hop_bin, NULL)) {
-        g_return_if_fail(!next_hop || nm_utils_ipaddr_is_valid(route->family, next_hop));
+        g_return_if_fail(!next_hop || nm_inet_is_valid(route->family, next_hop));
         nm_assert_not_reached();
     }
 
@@ -1352,7 +1352,7 @@ _ip_route_attribute_validate(const char           *name,
     switch (spec->type_detail) {
     case 'a': /* IP address */
         string = g_variant_get_string(value, NULL);
-        if (!nm_utils_ipaddr_is_valid(family, string)) {
+        if (!nm_inet_is_valid(family, string)) {
             g_set_error(error,
                         NM_CONNECTION_ERROR,
                         NM_CONNECTION_ERROR_FAILED,
@@ -1384,7 +1384,7 @@ _ip_route_attribute_validate(const char           *name,
                 return FALSE;
             }
         }
-        if (!nm_utils_ipaddr_is_valid(family, addr)) {
+        if (!nm_inet_is_valid(family, addr)) {
             g_set_error(error,
                         NM_CONNECTION_ERROR,
                         NM_CONNECTION_ERROR_FAILED,
@@ -1911,7 +1911,7 @@ nm_ip_routing_rule_get_from(const NMIPRoutingRule *self)
     if (!self->from_str) {
         nm_assert(self->from_valid);
         ((NMIPRoutingRule *) self)->from_str =
-            nm_utils_inet_ntop_dup(_ip_routing_rule_get_addr_family(self), &self->from_bin);
+            nm_inet_ntop_dup(_ip_routing_rule_get_addr_family(self), &self->from_bin);
     }
     return self->from_str;
 }
@@ -1968,12 +1968,10 @@ nm_ip_routing_rule_set_from(NMIPRoutingRule *self, const char *from, guint8 len)
     }
 
     nm_clear_g_free(&self->from_str);
-    self->from_has   = TRUE;
-    self->from_len   = len;
-    self->from_valid = nm_utils_parse_inaddr_bin(_ip_routing_rule_get_addr_family(self),
-                                                 from,
-                                                 NULL,
-                                                 &self->from_bin);
+    self->from_has = TRUE;
+    self->from_len = len;
+    self->from_valid =
+        nm_inet_parse_bin(_ip_routing_rule_get_addr_family(self), from, NULL, &self->from_bin);
     if (!self->from_valid)
         self->from_str = g_strdup(from);
 }
@@ -2013,7 +2011,7 @@ nm_ip_routing_rule_get_to(const NMIPRoutingRule *self)
     if (!self->to_str) {
         nm_assert(self->to_valid);
         ((NMIPRoutingRule *) self)->to_str =
-            nm_utils_inet_ntop_dup(_ip_routing_rule_get_addr_family(self), &self->to_bin);
+            nm_inet_ntop_dup(_ip_routing_rule_get_addr_family(self), &self->to_bin);
     }
     return self->to_str;
 }
@@ -2074,7 +2072,7 @@ nm_ip_routing_rule_set_to(NMIPRoutingRule *self, const char *to, guint8 len)
     self->to_has = TRUE;
     self->to_len = len;
     self->to_valid =
-        nm_utils_parse_inaddr_bin(_ip_routing_rule_get_addr_family(self), to, NULL, &self->to_bin);
+        nm_inet_parse_bin(_ip_routing_rule_get_addr_family(self), to, NULL, &self->to_bin);
     if (!self->to_valid)
         self->to_str = g_strdup(to);
 }
@@ -3167,7 +3165,7 @@ GVariant *
 nm_ip_routing_rule_to_dbus(const NMIPRoutingRule *self)
 {
     GVariantBuilder builder;
-    char            addr_str[NM_UTILS_INET_ADDRSTRLEN];
+    char            addr_str[NM_INET_ADDRSTRLEN];
 
     g_return_val_if_fail(NM_IS_IP_ROUTING_RULE(self, TRUE), NULL);
 
@@ -3220,9 +3218,9 @@ nm_ip_routing_rule_to_dbus(const NMIPRoutingRule *self)
             &builder,
             RR_DBUS_ATTR_FROM,
             g_variant_new_string(self->from_str
-                                     ?: nm_utils_inet_ntop(_ip_routing_rule_get_addr_family(self),
-                                                           &self->from_bin,
-                                                           addr_str)));
+                                     ?: nm_inet_ntop(_ip_routing_rule_get_addr_family(self),
+                                                     &self->from_bin,
+                                                     addr_str)));
         _rr_to_dbus_add(&builder, RR_DBUS_ATTR_FROM_LEN, g_variant_new_byte(self->from_len));
     }
 
@@ -3231,9 +3229,9 @@ nm_ip_routing_rule_to_dbus(const NMIPRoutingRule *self)
             &builder,
             RR_DBUS_ATTR_TO,
             g_variant_new_string(self->to_str
-                                     ?: nm_utils_inet_ntop(_ip_routing_rule_get_addr_family(self),
-                                                           &self->to_bin,
-                                                           addr_str)));
+                                     ?: nm_inet_ntop(_ip_routing_rule_get_addr_family(self),
+                                                     &self->to_bin,
+                                                     addr_str)));
         _rr_to_dbus_add(&builder, RR_DBUS_ATTR_TO_LEN, g_variant_new_byte(self->to_len));
     }
 
@@ -3632,11 +3630,11 @@ next_words_consumed:
     }
 
     if (!NM_IN_STRSET(word_from, NULL, "all")) {
-        if (!nm_utils_parse_inaddr_prefix_bin(addr_family,
-                                              word_from,
-                                              &addr_family,
-                                              &val_from,
-                                              &val_from_len)) {
+        if (!nm_inet_parse_with_prefix_bin(addr_family,
+                                           word_from,
+                                           &addr_family,
+                                           &val_from,
+                                           &val_from_len)) {
             g_set_error_literal(error,
                                 NM_CONNECTION_ERROR,
                                 NM_CONNECTION_ERROR_FAILED,
@@ -3648,11 +3646,11 @@ next_words_consumed:
     }
 
     if (!NM_IN_STRSET(word_to, NULL, "all")) {
-        if (!nm_utils_parse_inaddr_prefix_bin(addr_family,
-                                              word_to,
-                                              &addr_family,
-                                              &val_to,
-                                              &val_to_len)) {
+        if (!nm_inet_parse_with_prefix_bin(addr_family,
+                                           word_to,
+                                           &addr_family,
+                                           &val_to,
+                                           &val_to_len)) {
             g_set_error_literal(error,
                                 NM_CONNECTION_ERROR,
                                 NM_CONNECTION_ERROR_FAILED,
@@ -3751,7 +3749,7 @@ _rr_string_append_inet_addr(NMStrBuf       *str,
                             const NMIPAddr *addr_bin,
                             guint8          addr_len)
 {
-    char addr_str[NM_UTILS_INET_ADDRSTRLEN];
+    char addr_str[NM_INET_ADDRSTRLEN];
 
     if (addr_len == 0) {
         if (required) {
@@ -3766,7 +3764,7 @@ _rr_string_append_inet_addr(NMStrBuf       *str,
     nm_str_buf_append_printf(nm_str_buf_append_required_delimiter(str, ' '),
                              "%s %s",
                              is_from ? "from" : "to",
-                             nm_utils_inet_ntop(addr_family, addr_bin, addr_str));
+                             nm_inet_ntop(addr_family, addr_bin, addr_str));
     if (addr_len != nm_utils_addr_family_to_size(addr_family) * 8) {
         nm_str_buf_append_printf(str, "/%u", addr_len);
     }
@@ -4058,7 +4056,7 @@ nm_setting_ip_config_add_dns(NMSettingIPConfig *setting, const char *dns)
     NMSettingIPConfigPrivate *priv;
     int                       addr_family;
     NMIPAddr                  dns_bin;
-    char                      dns_canonical[NM_UTILS_INET_ADDRSTRLEN];
+    char                      dns_canonical[NM_INET_ADDRSTRLEN];
     guint                     i;
 
     g_return_val_if_fail(NM_IS_SETTING_IP_CONFIG(setting), FALSE);
@@ -4067,13 +4065,13 @@ nm_setting_ip_config_add_dns(NMSettingIPConfig *setting, const char *dns)
 
     if (!valid_ip(addr_family, dns, &dns_bin, NULL)) {
         g_return_val_if_fail(dns != NULL, FALSE);
-        g_return_val_if_fail(nm_utils_ipaddr_is_valid(addr_family, dns), FALSE);
+        g_return_val_if_fail(nm_inet_is_valid(addr_family, dns), FALSE);
         nm_assert_not_reached();
     }
 
     priv = NM_SETTING_IP_CONFIG_GET_PRIVATE(setting);
 
-    nm_utils_inet_ntop(addr_family, &dns_bin, dns_canonical);
+    nm_inet_ntop(addr_family, &dns_bin, dns_canonical);
 
     for (i = 0; i < priv->dns->len; i++) {
         if (nm_streq(dns_canonical, priv->dns->pdata[i]))
@@ -4121,7 +4119,7 @@ nm_setting_ip_config_remove_dns_by_value(NMSettingIPConfig *setting, const char 
     NMSettingIPConfigPrivate *priv;
     int                       addr_family;
     NMIPAddr                  dns_bin;
-    char                      dns_canonical[NM_UTILS_INET_ADDRSTRLEN];
+    char                      dns_canonical[NM_INET_ADDRSTRLEN];
     guint                     i;
 
     g_return_val_if_fail(NM_IS_SETTING_IP_CONFIG(setting), FALSE);
@@ -4130,13 +4128,13 @@ nm_setting_ip_config_remove_dns_by_value(NMSettingIPConfig *setting, const char 
 
     if (!valid_ip(addr_family, dns, &dns_bin, NULL)) {
         g_return_val_if_fail(dns != NULL, FALSE);
-        g_return_val_if_fail(nm_utils_ipaddr_is_valid(addr_family, dns), FALSE);
+        g_return_val_if_fail(nm_inet_is_valid(addr_family, dns), FALSE);
         nm_assert_not_reached();
     }
 
     priv = NM_SETTING_IP_CONFIG_GET_PRIVATE(setting);
 
-    nm_utils_inet_ntop(addr_family, &dns_bin, dns_canonical);
+    nm_inet_ntop(addr_family, &dns_bin, dns_canonical);
 
     for (i = 0; i < priv->dns->len; i++) {
         if (nm_streq(dns_canonical, priv->dns->pdata[i])) {
@@ -5441,7 +5439,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
     for (i = 0; i < priv->dns->len; i++) {
         const char *dns = priv->dns->pdata[i];
 
-        if (!nm_utils_ipaddr_is_valid(NM_SETTING_IP_CONFIG_GET_FAMILY(setting), dns)) {
+        if (!nm_inet_is_valid(NM_SETTING_IP_CONFIG_GET_FAMILY(setting), dns)) {
             g_set_error(error,
                         NM_CONNECTION_ERROR,
                         NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -5517,7 +5515,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
             return FALSE;
         }
 
-        if (!nm_utils_ipaddr_is_valid(NM_SETTING_IP_CONFIG_GET_FAMILY(setting), priv->gateway)) {
+        if (!nm_inet_is_valid(NM_SETTING_IP_CONFIG_GET_FAMILY(setting), priv->gateway)) {
             g_set_error_literal(error,
                                 NM_CONNECTION_ERROR,
                                 NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -5649,7 +5647,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
         }
 
         for (i = 0; i < priv->dhcp_reject_servers->len; i++) {
-            if (!nm_utils_parse_inaddr_prefix(
+            if (!nm_inet_parse_with_prefix_str(
                     NM_SETTING_IP_CONFIG_GET_FAMILY(setting),
                     g_array_index(priv->dhcp_reject_servers, const char *, i),
                     NULL,

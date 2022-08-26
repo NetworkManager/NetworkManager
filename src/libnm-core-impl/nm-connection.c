@@ -1306,11 +1306,11 @@ _normalize_ip_config(NMConnection *self, GHashTable *parameters)
                 && nm_setting_ip6_config_get_addr_gen_mode((NMSettingIP6Config *) s_ip6)
                        == NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_EUI64) {
                 struct in6_addr i6_token;
-                char            normalized[NM_UTILS_INET_ADDRSTRLEN];
+                char            normalized[NM_INET_ADDRSTRLEN];
 
                 if (inet_pton(AF_INET6, token, &i6_token) == 1
                     && _nm_utils_inet6_is_token(&i6_token)) {
-                    _nm_utils_inet6_ntop(&i6_token, normalized);
+                    nm_inet6_ntop(&i6_token, normalized);
                     if (g_strcmp0(token, normalized)) {
                         g_object_set(s_ip6, NM_SETTING_IP6_CONFIG_TOKEN, normalized, NULL);
                         changed = TRUE;

@@ -469,10 +469,10 @@ _acd_reglist_data_remove(NMDhcpClient *self, guint idx, gboolean do_log)
     reglist_data = _acd_reglist_data_get(priv, idx);
 
     if (do_log) {
-        char sbuf_addr[NM_UTILS_INET_ADDRSTRLEN];
+        char sbuf_addr[NM_INET_ADDRSTRLEN];
 
         _LOGD("acd: drop check for address %s (l3cd " NM_HASH_OBFUSCATE_PTR_FMT ")",
-              _nm_utils_inet4_ntop(reglist_data->addr, sbuf_addr),
+              nm_inet4_ntop(reglist_data->addr, sbuf_addr),
               NM_HASH_OBFUSCATE_PTR(reglist_data->l3cd));
     }
 
@@ -551,7 +551,7 @@ static void
 _acd_check_lease(NMDhcpClient *self, NMOptionBool *out_acd_state)
 {
     NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
-    char                 sbuf_addr[NM_UTILS_INET_ADDRSTRLEN];
+    char                 sbuf_addr[NM_INET_ADDRSTRLEN];
     in_addr_t            addr;
     gboolean             addr_changed = FALSE;
     guint                idx;
@@ -590,7 +590,7 @@ _acd_check_lease(NMDhcpClient *self, NMOptionBool *out_acd_state)
 
     _LOGD("acd: %s check for address %s (timeout %u msec, l3cd " NM_HASH_OBFUSCATE_PTR_FMT ")",
           addr_changed ? "add" : "update",
-          _nm_utils_inet4_ntop(addr, sbuf_addr),
+          nm_inet4_ntop(addr, sbuf_addr),
           priv->config.v4.acd_timeout_msec,
           NM_HASH_OBFUSCATE_PTR(priv->l3cd_next));
 
@@ -677,7 +677,7 @@ gboolean
 _nm_dhcp_client_accept_offer(NMDhcpClient *self, gconstpointer p_yiaddr)
 {
     NMDhcpClientPrivate   *priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
-    char                   sbuf_addr[NM_UTILS_INET_ADDRSTRLEN];
+    char                   sbuf_addr[NM_INET_ADDRSTRLEN];
     NMIPAddr               yiaddr;
     const NML3AcdAddrInfo *acd_info;
 
@@ -710,7 +710,7 @@ _nm_dhcp_client_accept_offer(NMDhcpClient *self, gconstpointer p_yiaddr)
         return TRUE;
 
     _LOGD("offered lease rejected: address %s failed ACD check",
-          _nm_utils_inet4_ntop(yiaddr.addr4, sbuf_addr));
+          nm_inet4_ntop(yiaddr.addr4, sbuf_addr));
 
     return FALSE;
 }
@@ -1078,7 +1078,7 @@ static void
 l3_cfg_notify_cb(NML3Cfg *l3cfg, const NML3ConfigNotifyData *notify_data, NMDhcpClient *self)
 {
     NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
-    char                 sbuf_addr[NM_UTILS_INET_ADDRSTRLEN];
+    char                 sbuf_addr[NM_INET_ADDRSTRLEN];
 
     nm_assert(l3cfg == priv->config.l3cfg);
 
@@ -1240,7 +1240,7 @@ wait_dhcp_commit_done:
             if (acd_state != NM_OPTION_BOOL_DEFAULT) {
                 _LOGD("acd: acd %s for %s",
                       acd_state ? "ready" : "conflict",
-                      _nm_utils_inet4_ntop(priv->v4.acd.addr, sbuf_addr));
+                      nm_inet4_ntop(priv->v4.acd.addr, sbuf_addr));
                 nm_l3cfg_commit_type_clear(priv->config.l3cfg, &priv->v4.acd.l3cfg_commit_handle);
                 priv->v4.acd.state       = acd_state;
                 priv->v4.acd.done_source = nm_g_idle_add_source(_acd_complete_on_idle_cb, self);
@@ -1660,14 +1660,14 @@ nm_dhcp_client_server_id_is_rejected(NMDhcpClient *self, gconstpointer addr)
             in_addr_t mask;
             int       r_prefix;
 
-            if (!nm_utils_parse_inaddr_prefix_bin(AF_INET,
-                                                  priv->config.reject_servers[i],
-                                                  NULL,
-                                                  &r_addr,
-                                                  &r_prefix))
+            if (!nm_inet_parse_with_prefix_bin(AF_INET,
+                                               priv->config.reject_servers[i],
+                                               NULL,
+                                               &r_addr,
+                                               &r_prefix))
                 nm_assert_not_reached();
 
-            mask = _nm_utils_ip4_prefix_to_netmask(r_prefix < 0 ? 32 : r_prefix);
+            mask = nm_ip4_addr_netmask_from_prefix(r_prefix < 0 ? 32 : r_prefix);
             if ((addr4 & mask) == (r_addr & mask))
                 return TRUE;
         }

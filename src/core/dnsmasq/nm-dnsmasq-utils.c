@@ -50,7 +50,7 @@ nm_dnsmasq_utils_get_range(const NMPlatformIP4Address *addr,
         prefix = 24;
     }
 
-    netmask = _nm_utils_ip4_prefix_to_netmask(prefix);
+    netmask = nm_ip4_addr_netmask_from_prefix(prefix);
 
     /* treat addresses in host-order from here on. */
     netmask = ntohl(netmask);
@@ -96,8 +96,8 @@ nm_dnsmasq_utils_get_range(const NMPlatformIP4Address *addr,
     first = htonl(first);
     last  = htonl(last);
 
-    _nm_utils_inet4_ntop(first, out_first);
-    _nm_utils_inet4_ntop(last, out_last);
+    nm_inet4_ntop(first, out_first);
+    nm_inet4_ntop(last, out_last);
 
     return TRUE;
 }

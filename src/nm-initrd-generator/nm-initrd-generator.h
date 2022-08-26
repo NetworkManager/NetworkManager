@@ -21,10 +21,10 @@ get_ip_address_family(const char *str, gboolean with_prefix)
         return AF_UNSPEC;
 
     if (with_prefix) {
-        if (nm_utils_parse_inaddr_prefix_bin(AF_UNSPEC, str, &addr_family, NULL, NULL))
+        if (nm_inet_parse_with_prefix_bin(AF_UNSPEC, str, &addr_family, NULL, NULL))
             return addr_family;
     } else {
-        if (nm_utils_parse_inaddr_bin(AF_UNSPEC, str, &addr_family, NULL))
+        if (nm_inet_parse_bin(AF_UNSPEC, str, &addr_family, NULL))
             return addr_family;
     }
 

@@ -739,7 +739,7 @@ read_full_ip4_address(shvarFile    *ifcfg,
     int           prefix = 0;
     gboolean      has_key;
     guint32       a;
-    char          inet_buf[NM_UTILS_INET_ADDRSTRLEN];
+    char          inet_buf[NM_INET_ADDRSTRLEN];
 
     g_return_val_if_fail(which >= -1, FALSE);
     g_return_val_if_fail(ifcfg != NULL, FALSE);
@@ -761,7 +761,7 @@ read_full_ip4_address(shvarFile    *ifcfg,
         if (!read_ip4_address(ifcfg, numbered_tag(tag, "GATEWAY", which), &has_key, &a, error))
             return FALSE;
         if (has_key)
-            *out_gateway = nm_utils_inet4_ntop_dup(a);
+            *out_gateway = nm_inet4_ntop_dup(a);
     }
 
     /* Prefix */
@@ -782,16 +782,16 @@ read_full_ip4_address(shvarFile    *ifcfg,
         if (!read_ip4_address(ifcfg, numbered_tag(tag, "NETMASK", which), &has_key, &a, error))
             return FALSE;
         if (has_key)
-            prefix = _nm_utils_ip4_netmask_to_prefix(a);
+            prefix = nm_ip4_addr_netmask_to_prefix(a);
         else {
             if (base_addr)
                 prefix = nm_ip_address_get_prefix(base_addr);
             else {
                 /* Try to autodetermine the prefix for the address' class */
-                prefix = _nm_utils_ip4_get_default_prefix(ipaddr);
+                prefix = nm_ip4_addr_get_default_prefix(ipaddr);
                 PARSE_WARNING("missing %s, assuming %s/%d",
                               prefix_tag,
-                              _nm_utils_inet4_ntop(ipaddr, inet_buf),
+                              nm_inet4_ntop(ipaddr, inet_buf),
                               prefix);
             }
         }
@@ -1282,7 +1282,7 @@ parse_line_type_addr_with_prefix:
             int prefix = -1;
 
             if (p_info->type == PARSE_LINE_TYPE_ADDR) {
-                if (!nm_utils_parse_inaddr_bin(addr_family, s, NULL, &p_data->v.addr.addr)) {
+                if (!nm_inet_parse_bin(addr_family, s, NULL, &p_data->v.addr.addr)) {
                     if (p_info == &parse_infos[PARSE_LINE_ATTR_ROUTE_VIA]
                         && nm_streq(s, "(null)")) {
                         /* Due to a bug, would older versions of NM write "via (null)"
@@ -1313,11 +1313,11 @@ parse_line_type_addr_with_prefix:
                 if (p_info == &parse_infos[PARSE_LINE_ATTR_ROUTE_TO] && nm_streq(s, "default")) {
                     memset(&p_data->v.addr.addr, 0, sizeof(p_data->v.addr.addr));
                     prefix = 0;
-                } else if (!nm_utils_parse_inaddr_prefix_bin(addr_family,
-                                                             s,
-                                                             NULL,
-                                                             &p_data->v.addr.addr,
-                                                             &prefix)) {
+                } else if (!nm_inet_parse_with_prefix_bin(addr_family,
+                                                          s,
+                                                          NULL,
+                                                          &p_data->v.addr.addr,
+                                                          &prefix)) {
                     g_set_error(error,
                                 NM_SETTINGS_ERROR,
                                 NM_SETTINGS_ERROR_INVALID_CONNECTION,
@@ -1468,7 +1468,7 @@ read_one_ip4_route(shvarFile *ifcfg, guint32 which, NMIPRoute **out_route, GErro
     const char   *v;
     gs_free char *value = NULL;
     gint64        prefix, metric;
-    char          inet_buf[NM_UTILS_INET_ADDRSTRLEN];
+    char          inet_buf[NM_INET_ADDRSTRLEN];
 
     g_return_val_if_fail(ifcfg != NULL, FALSE);
     g_return_val_if_fail(out_route && !*out_route, FALSE);
@@ -1496,14 +1496,14 @@ read_one_ip4_route(shvarFile *ifcfg, guint32 which, NMIPRoute **out_route, GErro
                           error))
         return FALSE;
     if (has_key) {
-        prefix = _nm_utils_ip4_netmask_to_prefix(netmask);
-        if (netmask != _nm_utils_ip4_prefix_to_netmask(prefix)) {
+        prefix = nm_ip4_addr_netmask_to_prefix(netmask);
+        if (netmask != nm_ip4_addr_netmask_from_prefix(prefix)) {
             g_set_error(error,
                         NM_SETTINGS_ERROR,
                         NM_SETTINGS_ERROR_INVALID_CONNECTION,
                         "Invalid IP4 netmask '%s' \"%s\"",
                         netmask_tag,
-                        _nm_utils_inet4_ntop(netmask, inet_buf));
+                        nm_inet4_ntop(netmask, inet_buf));
             return FALSE;
         }
     } else {
@@ -1667,7 +1667,7 @@ parse_full_ip6_address(shvarFile    *ifcfg,
     nm_assert(out_address && !*out_address);
     nm_assert(!error || !*error);
 
-    if (!nm_utils_parse_inaddr_prefix_bin(AF_INET6, addr_str, NULL, &addr_bin, &prefix)) {
+    if (!nm_inet_parse_with_prefix_bin(AF_INET6, addr_str, NULL, &addr_bin, &prefix)) {
         g_set_error(error,
                     NM_SETTINGS_ERROR,
                     NM_SETTINGS_ERROR_INVALID_CONNECTION,
@@ -2027,7 +2027,7 @@ make_ip4_setting(shvarFile *ifcfg,
                                   "because the connection has no static addresses",
                                   f);
                 } else
-                    gateway = nm_utils_inet4_ntop_dup(a);
+                    gateway = nm_inet4_ntop_dup(a);
             }
         }
     }
@@ -2055,10 +2055,10 @@ make_ip4_setting(shvarFile *ifcfg,
             if (!v)
                 break;
 
-            if (nm_utils_ipaddr_is_valid(AF_INET, v)) {
+            if (nm_inet_is_valid(AF_INET, v)) {
                 if (!nm_setting_ip_config_add_dns(s_ip4, v))
                     PARSE_WARNING("duplicate DNS server %s", tag);
-            } else if (nm_utils_ipaddr_is_valid(AF_INET6, v)) {
+            } else if (nm_inet_is_valid(AF_INET6, v)) {
                 /* Ignore IPv6 addresses */
             } else {
                 g_set_error(error,
@@ -2546,7 +2546,7 @@ make_ip6_setting(shvarFile *ifcfg, shvarFile *network_ifcfg, gboolean routes_rea
 
             if ((ptr = strchr(v, '%')) != NULL)
                 *ptr = '\0'; /* remove %interface prefix if present */
-            if (!nm_utils_ipaddr_is_valid(AF_INET6, v)) {
+            if (!nm_inet_is_valid(AF_INET6, v)) {
                 if (!is_disabled) {
                     g_set_error(error,
                                 NM_SETTINGS_ERROR,
@@ -2594,14 +2594,14 @@ make_ip6_setting(shvarFile *ifcfg, shvarFile *network_ifcfg, gboolean routes_rea
         if (!v)
             break;
 
-        if (nm_utils_ipaddr_is_valid(AF_INET6, v)) {
+        if (nm_inet_is_valid(AF_INET6, v)) {
             if (is_disabled) {
                 PARSE_WARNING("ignore DNS server addresses with method disabled/ignore");
                 break;
             }
             if (!nm_setting_ip_config_add_dns(s_ip6, v))
                 PARSE_WARNING("duplicate DNS server %s", tag);
-        } else if (nm_utils_ipaddr_is_valid(AF_INET, v)) {
+        } else if (nm_inet_is_valid(AF_INET, v)) {
             /* Ignore IPv4 addresses */
         } else {
             if (is_disabled)

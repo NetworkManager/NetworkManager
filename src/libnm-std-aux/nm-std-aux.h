@@ -1298,13 +1298,10 @@ nm_utils_addr_family_other(int addr_family)
 static inline size_t
 nm_utils_addr_family_to_size(int addr_family)
 {
-    switch (addr_family) {
-    case NM_AF_INET:
-        return NM_AF_INET_SIZE;
-    case NM_AF_INET6:
+    if (!NM_IS_IPv4(addr_family))
         return NM_AF_INET6_SIZE;
-    }
-    return nm_assert_unreachable_val(0);
+    else
+        return NM_AF_INET_SIZE;
 }
 
 static inline size_t

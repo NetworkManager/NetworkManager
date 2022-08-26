@@ -343,7 +343,7 @@ _nmc_mangle_connection(NMDevice                             *device,
         NMIPRoute       *route_entry;
         NMIPRoutingRule *rule_entry;
         in_addr_t        gateway;
-        char             sbuf[NM_UTILS_INET_ADDRSTRLEN];
+        char             sbuf[NM_INET_ADDRSTRLEN];
 
         for (i = 0; i < config_data->ipv4s_len; i++) {
             addr_entry = nm_ip_address_new_binary(AF_INET,
@@ -357,8 +357,8 @@ _nmc_mangle_connection(NMDevice                             *device,
         if (config_data->has_gateway && config_data->gateway) {
             gateway = config_data->gateway;
         } else {
-            gateway = nm_utils_ip4_address_clear_host_address(config_data->cidr_addr,
-                                                              config_data->cidr_prefix);
+            gateway =
+                nm_ip4_addr_clear_host_address(config_data->cidr_addr, config_data->cidr_prefix);
             if (config_data->cidr_prefix < 32)
                 ((guint8 *) &gateway)[3] += 1;
         }
@@ -366,7 +366,7 @@ _nmc_mangle_connection(NMDevice                             *device,
         for (i = 0; i < config_data->ipv4s_len; i++) {
             in_addr_t a = config_data->ipv4s_arr[i];
 
-            a = nm_utils_ip4_address_clear_host_address(a, config_data->cidr_prefix);
+            a = nm_ip4_addr_clear_host_address(a, config_data->cidr_prefix);
 
             G_STATIC_ASSERT_EXPR(sizeof(gsize) >= sizeof(in_addr_t));
             if (g_hash_table_add(unique_subnets, GSIZE_TO_POINTER(a))) {
@@ -381,7 +381,7 @@ _nmc_mangle_connection(NMDevice                             *device,
             rule_entry = nm_ip_routing_rule_new(AF_INET);
             nm_ip_routing_rule_set_priority(rule_entry, 30200 + config_data->iface_idx);
             nm_ip_routing_rule_set_from(rule_entry,
-                                        _nm_utils_inet4_ntop(config_data->ipv4s_arr[i], sbuf),
+                                        nm_inet4_ntop(config_data->ipv4s_arr[i], sbuf),
                                         32);
             nm_ip_routing_rule_set_table(rule_entry, 30200 + config_data->iface_idx);
             nm_assert(nm_ip_routing_rule_validate(rule_entry, NULL));
@@ -405,7 +405,7 @@ _nmc_mangle_connection(NMDevice                             *device,
             rule_entry = nm_ip_routing_rule_new(AF_INET);
             nm_ip_routing_rule_set_priority(rule_entry, 30400 + config_data->iface_idx);
             nm_ip_routing_rule_set_from(rule_entry,
-                                        _nm_utils_inet4_ntop(config_data->ipv4s_arr[i], sbuf),
+                                        nm_inet4_ntop(config_data->ipv4s_arr[i], sbuf),
                                         32);
             nm_ip_routing_rule_set_table(rule_entry, 30400 + config_data->iface_idx);
             nm_assert(nm_ip_routing_rule_validate(rule_entry, NULL));
