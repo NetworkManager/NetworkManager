@@ -1439,7 +1439,8 @@ nm_setting_bridge_class_init(NMSettingBridgeClass *klass)
      * example: mac-address=00:22:68:12:79:A2
      *  mac-address=0;34;104;18;121;162;
      * ---end---
-     * ---ifcfg-rh---
+     */
+    /* ---ifcfg-rh---
      * property: mac-address
      * variable: BRIDGE_MACADDR(+)
      * description: MAC address of the bridge. Note that this requires a recent

@@ -965,7 +965,8 @@ nm_setting_vlan_class_init(NMSettingVlanClass *klass)
      *   but VLAN id from DEVICE takes precedence over VLAN_ID.
      * example: PHYSDEV=eth0, VLAN_ID=12; or DEVICE=eth0.12
      * ---end---
-     * ---dbus---
+     */
+    /* ---dbus---
      * property: interface-name
      * format: string
      * description: Deprecated in favor of connection.interface-name, but can

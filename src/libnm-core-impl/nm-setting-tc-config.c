@@ -2107,8 +2107,8 @@ nm_setting_tc_config_class_init(NMSettingTCConfigClass *klass)
      * format: GPtrArray(NMTCTfilter)
      * description-docbook:
      *  <para>
-     * Array of TC traffic filters. Traffic control can manage the packet content during
-     * classification by using filters.
+     *   Array of TC traffic filters. Traffic control can manage the packet content during
+     *   classification by using filters.
      *  </para>
      *  <para>
      *   Each tfilters can be specified by the following attributes:
