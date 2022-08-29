@@ -1944,8 +1944,8 @@ nm_setting_tc_config_class_init(NMSettingTCConfigClass *klass)
      *        <para>
      *     can be used to set a different hash table size, available
      *     from kernel 2.6.39 onwards.  The specified divisor must be
-     *     a power of two and cannot be larger than 65536.  Default
-     *     value: 1024.
+     *     a power of two and cannot be larger than 65536.
+     *     Default value: 1024.
      *        </para>
      *      </listitem>
      *  </varlistentry>
