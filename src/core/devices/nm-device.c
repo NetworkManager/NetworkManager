@@ -8960,7 +8960,7 @@ nm_device_emit_recheck_assume(gpointer user_data)
     priv = NM_DEVICE_GET_PRIVATE(self);
 
     priv->recheck_assume_id = 0;
-    if (!nm_device_get_act_request(self))
+    if (!priv->queued_act_request && !nm_device_get_act_request(self))
         g_signal_emit(self, signals[RECHECK_ASSUME], 0);
 
     return G_SOURCE_REMOVE;
