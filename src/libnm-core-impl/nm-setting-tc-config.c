@@ -2206,7 +2206,7 @@ nm_setting_tc_config_class_init(NMSettingTCConfigClass *klass)
      * ---end---
      **/
     /* ---ifcfg-rh---
-     * property: qdiscs
+     * property: tfilters
      * variable: FILTER1(+), FILTER2(+), ..., TC_COMMIT(+)
      * description: Traffic filters to set on the interface. When no
      *  QDISC1, QDISC2, ..., FILTER1, FILTER2, ... keys are present,

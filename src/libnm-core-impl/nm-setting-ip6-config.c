@@ -870,7 +870,7 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
      * Since: 1.24
      **/
     /* ---ifcfg-rh---
-     * property: dhcp-timeout
+     * property: ra-timeout
      * variable: IPV6_RA_TIMEOUT(+)
      * description: A timeout for waiting Router Advertisements in seconds.
      * example: IPV6_RA_TIMEOUT=10

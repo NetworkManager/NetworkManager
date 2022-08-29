@@ -233,7 +233,7 @@ nm_setting_hostname_class_init(NMSettingHostnameClass *klass)
      * Since: 1.30
      **/
     /* ---ifcfg-rh---
-     * property: from-dhcp
+     * property: from-dns-lookup
      * variable: HOSTNAME_FROM_DNS_LOOKUP(+)
      * default: missing variable means global default or 1
      * description: whether the system hostname can be determined from reverse
