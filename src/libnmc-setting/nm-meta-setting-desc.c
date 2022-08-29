@@ -2636,8 +2636,18 @@ _get_fcn_connection_permissions(ARGS_GET_FCN)
 static gboolean
 _set_fcn_connection_uuid(ARGS_SET_FCN)
 {
-    if (!NM_FLAGS_HAS(nm_meta_environment_get_env_flags(environment, environment_user_data),
-                      NM_META_ENV_FLAGS_OFFLINE)) {
+    const char *uuid;
+
+    uuid = nm_setting_connection_get_uuid(NM_SETTING_CONNECTION(setting));
+
+    if (!uuid) {
+        /* No UUID yet, we are about to create a new profile. We can set the UUID. */
+    } else if (NM_FLAGS_HAS(nm_meta_environment_get_env_flags(environment, environment_user_data),
+                            NM_META_ENV_FLAGS_OFFLINE)) {
+        /* In offline mode, we can change it. */
+    } else if (nm_uuid_is_valid_nmlegacy(value) && nm_streq(uuid, value)) {
+        /* Setting the same value does not actually trigger an error. */
+    } else {
         /* The UUID is the unchanging ID of a profile. It cannot change, unless
          * we are in offline mode (in which case, it can be useful to do just that). */
         nm_utils_error_set(error, NM_UTILS_ERROR_INVALID_ARGUMENT, "the property can't be changed");
@@ -2683,14 +2693,6 @@ _set_fcn_connection_type(ARGS_SET_FCN)
     if (_SET_FCN_DO_RESET_DEFAULT(property_info, modifier, value)) {
         g_object_set(G_OBJECT(setting), property_info->property_name, NULL, NULL);
         return TRUE;
-    }
-
-    if (!nm_setting_connection_get_uuid(NM_SETTING_CONNECTION(setting))) {
-        /* If we so far have not UUID set, set it together with the connection type. */
-        g_object_set(G_OBJECT(setting),
-                     NM_SETTING_CONNECTION_UUID,
-                     nm_uuid_generate_random_str_a(),
-                     NULL);
     }
 
     g_object_set(G_OBJECT(setting), property_info->property_name, value, NULL);
