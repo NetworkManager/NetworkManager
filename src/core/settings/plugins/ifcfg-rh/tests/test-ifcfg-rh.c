@@ -8211,8 +8211,35 @@ test_read_infiniband(void)
 }
 
 static void
-test_write_infiniband(void)
+test_read_ipoib(void)
 {
+    gs_unref_object NMConnection *connection = NULL;
+    NMSettingInfiniband          *s_infiniband;
+    char                         *unmanaged = NULL;
+    const char                   *transport_mode;
+    int                           pkey;
+
+    connection = _connection_from_file(TEST_IFCFG_DIR "/ifcfg-test-ipoib",
+                                       NULL,
+                                       TYPE_INFINIBAND,
+                                       &unmanaged);
+    g_assert(!unmanaged);
+
+    s_infiniband = nmtst_connection_assert_setting(connection, NM_TYPE_SETTING_INFINIBAND);
+
+    pkey = nm_setting_infiniband_get_p_key(s_infiniband);
+    g_assert(pkey);
+    g_assert_cmpint(pkey, ==, 12);
+
+    transport_mode = nm_setting_infiniband_get_transport_mode(s_infiniband);
+    g_assert(transport_mode);
+    g_assert_cmpstr(transport_mode, ==, "connected");
+}
+
+static void
+test_write_infiniband(gconstpointer test_data)
+{
+    const int                     TEST_IDX   = GPOINTER_TO_INT(test_data);
     nmtst_auto_unlinkfile char   *testfile   = NULL;
     gs_unref_object NMConnection *connection = NULL;
     gs_unref_object NMConnection *reread     = NULL;
@@ -8223,14 +8250,15 @@ test_write_infiniband(void)
     const char  *mac = "80:00:11:22:33:44:55:66:77:88:99:aa:bb:cc:dd:ee:ff:00:11:22";
     guint32      mtu = 65520;
     NMIPAddress *addr;
-    GError      *error = NULL;
+    GError      *error          = NULL;
+    const char  *interface_name = NULL;
 
     connection = nm_simple_connection_new();
 
     s_con = _nm_connection_new_setting(connection, NM_TYPE_SETTING_CONNECTION);
     g_object_set(s_con,
                  NM_SETTING_CONNECTION_ID,
-                 "Test Write InfiniBand",
+                 "Test Write Infiniband",
                  NM_SETTING_CONNECTION_UUID,
                  nm_uuid_generate_random_str_a(),
                  NM_SETTING_CONNECTION_AUTOCONNECT,
@@ -8239,15 +8267,28 @@ test_write_infiniband(void)
                  NM_SETTING_INFINIBAND_SETTING_NAME,
                  NULL);
 
+    if (NM_IN_SET(TEST_IDX, 1, 3))
+        interface_name = "ib0.000c";
+
+    g_object_set(s_con, NM_SETTING_CONNECTION_INTERFACE_NAME, interface_name, NULL);
+
     s_infiniband = _nm_connection_new_setting(connection, NM_TYPE_SETTING_INFINIBAND);
-    g_object_set(s_infiniband,
-                 NM_SETTING_INFINIBAND_MAC_ADDRESS,
-                 mac,
-                 NM_SETTING_INFINIBAND_MTU,
-                 mtu,
-                 NM_SETTING_INFINIBAND_TRANSPORT_MODE,
-                 "connected",
-                 NULL);
+    g_object_set(s_infiniband, NM_SETTING_INFINIBAND_TRANSPORT_MODE, "connected", NULL);
+    if (NM_IN_SET(TEST_IDX, 1, 2)) {
+        g_object_set(s_infiniband,
+                     NM_SETTING_INFINIBAND_MAC_ADDRESS,
+                     mac,
+                     NM_SETTING_INFINIBAND_MTU,
+                     mtu,
+                     NULL);
+    } else {
+        g_object_set(s_infiniband,
+                     NM_SETTING_INFINIBAND_P_KEY,
+                     12,
+                     NM_SETTING_INFINIBAND_PARENT,
+                     "ib0",
+                     NULL);
+    }
 
     s_ip4 = _nm_connection_new_setting(connection, NM_TYPE_SETTING_IP4_CONFIG);
     g_object_set(s_ip4,
@@ -8267,6 +8308,9 @@ test_write_infiniband(void)
     s_ip6 = _nm_connection_new_setting(connection, NM_TYPE_SETTING_IP6_CONFIG);
     g_object_set(s_ip6, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE, NULL);
 
+    if (nmtst_get_rand_bool())
+        nmtst_connection_normalize(connection);
+
     nmtst_assert_connection_verifies(connection);
 
     _writer_new_connection(connection, TEST_SCRATCH_DIR, &testfile);
@@ -8274,6 +8318,8 @@ test_write_infiniband(void)
     reread = _connection_from_file(testfile, NULL, TYPE_INFINIBAND, NULL);
 
     nmtst_assert_connection_equals(connection, TRUE, reread, FALSE);
+
+    g_assert_cmpstr(interface_name, ==, nm_connection_get_interface_name(reread));
 }
 
 static void
@@ -10446,6 +10492,7 @@ main(int argc, char **argv)
     g_test_add_func(TPATH "wifi/read/wep-no-keys", test_read_wifi_wep_no_keys);
     g_test_add_func(TPATH "wifi/read/wep-agent-keys", test_read_wifi_wep_agent_keys);
     g_test_add_func(TPATH "infiniband/read", test_read_infiniband);
+    g_test_add_func(TPATH "ipoib/read", test_read_ipoib);
     g_test_add_func(TPATH "vlan/read", test_read_vlan_interface);
     g_test_add_func(TPATH "vlan/read-flags-1", test_read_vlan_flags_1);
     g_test_add_func(TPATH "vlan/read-flags-2", test_read_vlan_flags_2);
@@ -10582,7 +10629,10 @@ main(int argc, char **argv)
     g_test_add_func(TPATH "permissions/read", test_read_permissions);
     g_test_add_func(TPATH "permissions/write", test_write_permissions);
     g_test_add_func(TPATH "wifi/write-wep-agent-keys", test_write_wifi_wep_agent_keys);
-    g_test_add_func(TPATH "infiniband/write", test_write_infiniband);
+    g_test_add_data_func(TPATH "infiniband/write/1", GINT_TO_POINTER(1), test_write_infiniband);
+    g_test_add_data_func(TPATH "infiniband/write/2", GINT_TO_POINTER(2), test_write_infiniband);
+    g_test_add_data_func(TPATH "infiniband/write/3", GINT_TO_POINTER(3), test_write_infiniband);
+    g_test_add_data_func(TPATH "infiniband/write/4", GINT_TO_POINTER(4), test_write_infiniband);
     g_test_add_func(TPATH "vlan/write", test_write_vlan);
     g_test_add_func(TPATH "vlan/write-flags", test_write_vlan_flags);
     g_test_add_func(TPATH "vlan/write-only-vlanid", test_write_vlan_only_vlanid);
