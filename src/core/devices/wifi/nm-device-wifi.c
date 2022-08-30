@@ -99,12 +99,12 @@ typedef struct {
     NMSupplMgrCreateIfaceHandle *sup_create_handle;
     NMSupplicantInterface       *sup_iface;
 
+    GSource *scan_kickoff_timeout_source;
+
     gint64 scan_last_complete_msec;
     gint64 scan_periodic_next_msec;
 
     gint64 scan_last_request_started_at_msec;
-
-    guint scan_kickoff_timeout_id;
 
     guint ap_dump_id;
 
@@ -662,7 +662,7 @@ supplicant_interface_release(NMDeviceWifi *self)
                                         NM_PENDING_ACTION_WAITING_FOR_SUPPLICANT,
                                         TRUE);
 
-    nm_clear_g_source(&priv->scan_kickoff_timeout_id);
+    nm_clear_g_source_inst(&priv->scan_kickoff_timeout_source);
     nm_clear_g_source_inst(&priv->scan_request_delay_source);
     nm_clear_g_cancellable(&priv->scan_request_cancellable);
 
@@ -1721,9 +1721,9 @@ _scan_kickoff_timeout_cb(gpointer user_data)
     NMDeviceWifi        *self = user_data;
     NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE(self);
 
-    priv->scan_kickoff_timeout_id = 0;
+    nm_clear_g_source_inst(&priv->scan_kickoff_timeout_source);
     _scan_kickoff(self);
-    return G_SOURCE_REMOVE;
+    return G_SOURCE_CONTINUE;
 }
 
 static void
@@ -1766,13 +1766,13 @@ _scan_kickoff(NMDeviceWifi *self)
                    / 1000),
             (int) ((priv->scan_last_request_started_at_msec + ratelimit_duration_msec - now_msec)
                    % 1000),
-            !priv->scan_kickoff_timeout_id ? ", schedule timeout" : "");
-        if (!priv->scan_kickoff_timeout_id
+            !priv->scan_kickoff_timeout_source ? ", schedule timeout" : "");
+        if (!priv->scan_kickoff_timeout_source
             && (priv->scan_explicit_allowed || priv->scan_periodic_allowed)) {
-            priv->scan_kickoff_timeout_id = g_timeout_add(priv->scan_last_request_started_at_msec
-                                                              + ratelimit_duration_msec - now_msec,
-                                                          _scan_kickoff_timeout_cb,
-                                                          self);
+            priv->scan_kickoff_timeout_source = nm_g_timeout_add_source(
+                priv->scan_last_request_started_at_msec + ratelimit_duration_msec - now_msec,
+                _scan_kickoff_timeout_cb,
+                self);
         }
         return;
     }
@@ -1789,14 +1789,16 @@ _scan_kickoff(NMDeviceWifi *self)
         _LOGT_scan("kickoff: don't scan (rate limited for another %d.%03d sec after previous scan)",
                    timeout_msec / 1000,
                    timeout_msec % 1000);
-        nm_clear_g_source(&priv->scan_kickoff_timeout_id);
-        priv->scan_kickoff_timeout_id = g_timeout_add(timeout_msec, _scan_kickoff_timeout_cb, self);
+        nm_clear_g_source_inst(&priv->scan_kickoff_timeout_source);
+        priv->scan_kickoff_timeout_source =
+            nm_g_timeout_add_source(timeout_msec, _scan_kickoff_timeout_cb, self);
         return;
     }
 
     if (priv->scan_explicit_requested) {
         if (!priv->scan_explicit_allowed) {
-            _LOGT_scan("kickoff: don't scan (explicit scan requested but not allowed)");
+            _LOGT_scan(
+                "kickoff: don't scan (explicit scan requested but not allowed at the moment)");
             return;
         }
         priv->scan_explicit_requested = FALSE;
@@ -1806,7 +1808,7 @@ _scan_kickoff(NMDeviceWifi *self)
             _LOGT_scan("kickoff: don't scan (periodic scan currently not allowed)");
             priv->scan_periodic_next_msec    = 0;
             priv->scan_periodic_interval_sec = 0;
-            nm_clear_g_source(&priv->scan_kickoff_timeout_id);
+            nm_clear_g_source_inst(&priv->scan_kickoff_timeout_source);
             return;
         }
 
@@ -1816,12 +1818,12 @@ _scan_kickoff(NMDeviceWifi *self)
             _LOGT_scan("kickoff: don't scan (periodic scan waiting for another %d.%03d sec%s)",
                        (int) ((priv->scan_periodic_next_msec - now_msec) / 1000),
                        (int) ((priv->scan_periodic_next_msec - now_msec) % 1000),
-                       !priv->scan_kickoff_timeout_id ? ", schedule timeout" : "");
-            if (!priv->scan_kickoff_timeout_id) {
-                priv->scan_kickoff_timeout_id =
-                    g_timeout_add_seconds((priv->scan_periodic_next_msec - now_msec + 999) / 1000,
-                                          _scan_kickoff_timeout_cb,
-                                          self);
+                       !priv->scan_kickoff_timeout_source ? ", schedule timeout" : "");
+            if (!priv->scan_kickoff_timeout_source) {
+                priv->scan_kickoff_timeout_source = nm_g_timeout_add_seconds_source(
+                    (priv->scan_periodic_next_msec - now_msec + 999) / 1000,
+                    _scan_kickoff_timeout_cb,
+                    self);
             }
             return;
         }
