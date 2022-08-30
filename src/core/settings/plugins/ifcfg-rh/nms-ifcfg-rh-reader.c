@@ -5355,16 +5355,9 @@ wired_connection_from_ifcfg(const char *file, shvarFile *ifcfg, GError **error)
 static gboolean
 parse_infiniband_p_key(shvarFile *ifcfg, int *out_p_key, char **out_parent, GError **error)
 {
-    char    *device = NULL, *physdev = NULL, *pkey_id = NULL;
-    char    *ifname = NULL;
+    char    *physdev = NULL, *pkey_id = NULL;
     int      id;
     gboolean ret = FALSE;
-
-    device = svGetValueStr_cp(ifcfg, "DEVICE");
-    if (!device) {
-        PARSE_WARNING("InfiniBand connection specified PKEY but not DEVICE");
-        goto done;
-    }
 
     physdev = svGetValueStr_cp(ifcfg, "PHYSDEV");
     if (!physdev) {
@@ -5384,21 +5377,13 @@ parse_infiniband_p_key(shvarFile *ifcfg, int *out_p_key, char **out_parent, GErr
         goto done;
     }
 
-    ifname = g_strdup_printf("%s.%04x", physdev, (unsigned) id);
-    if (strcmp(device, ifname) != 0) {
-        PARSE_WARNING("InfiniBand DEVICE (%s) does not match PHYSDEV+PKEY_ID (%s)", device, ifname);
-        goto done;
-    }
-
     *out_p_key  = id;
     *out_parent = g_strdup(physdev);
     ret         = TRUE;
 
 done:
-    g_free(device);
     g_free(physdev);
     g_free(pkey_id);
-    g_free(ifname);
 
     if (!ret) {
         g_set_error(error,
