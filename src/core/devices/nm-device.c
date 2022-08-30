@@ -12263,16 +12263,28 @@ _dev_ipshared4_new_l3cd(NMDevice *self, NMConnection *connection, NMPlatformIP4A
 static gboolean
 _dev_ipshared4_init(NMDevice *self)
 {
-    static const char *const modules[] = {"ip_tables",
-                                          "iptable_nat",
-                                          "nf_nat_ftp",
-                                          "nf_nat_irc",
-                                          "nf_nat_sip",
-                                          "nf_nat_tftp",
-                                          "nf_nat_pptp",
-                                          "nf_nat_h323"};
-    int                      errsv;
-    guint                    i;
+    static const char *const modules_iptables[] = {"ip_tables", "iptable_nat"};
+    static const char *const modules_nftables[] =
+        {"nf_nat_ftp", "nf_nat_irc", "nf_nat_sip", "nf_nat_tftp", "nf_nat_pptp", "nf_nat_h323"};
+    int   errsv;
+    guint i;
+
+    switch (nm_firewall_utils_get_backend()) {
+    case NM_FIREWALL_BACKEND_IPTABLES:
+        for (i = 0; i < G_N_ELEMENTS(modules_iptables); i++)
+            nmp_utils_modprobe(NULL, FALSE, modules_iptables[i], NULL);
+        break;
+    case NM_FIREWALL_BACKEND_NFTABLES:
+        for (i = 0; i < G_N_ELEMENTS(modules_nftables); i++)
+            nmp_utils_modprobe(NULL, FALSE, modules_nftables[i], NULL);
+        break;
+    case NM_FIREWALL_BACKEND_NONE:
+        /* do not modify network settings like ip forwarding */
+        return TRUE;
+    default:
+        nm_assert_not_reached();
+        break;
+    }
 
     if (nm_platform_sysctl_get_int32(nm_device_get_platform(self),
                                      NMP_SYSCTL_PATHID_ABSOLUTE("/proc/sys/net/ipv4/ip_forward"),
@@ -12300,9 +12312,6 @@ _dev_ipshared4_init(NMDevice *self)
                        "share: error enabling dynamic addresses: %s",
                        nm_strerror_native(errsv));
     }
-
-    for (i = 0; i < G_N_ELEMENTS(modules); i++)
-        nmp_utils_modprobe(NULL, FALSE, modules[i], NULL);
 
     return TRUE;
 }
