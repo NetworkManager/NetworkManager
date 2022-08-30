@@ -508,7 +508,10 @@ _scan_notify_allowed(NMDeviceWifi *self, NMTernary do_kickoff)
         /* something prohibits scanning. */
     } else if (NM_IN_SET(priv->mode, _NM_802_11_MODE_ADHOC, _NM_802_11_MODE_AP)) {
         /* Don't scan when a an AP or Ad-Hoc connection is active as it will
-         * disrupt connected clients or peers. */
+         * disrupt connected clients or peers.
+         *
+         * Explicit scans are allowed however. */
+        explicit_allowed = TRUE;
     } else if (NM_IN_SET(state, NM_DEVICE_STATE_DISCONNECTED, NM_DEVICE_STATE_FAILED)) {
         /* Can always scan when disconnected */
         explicit_allowed = TRUE;
