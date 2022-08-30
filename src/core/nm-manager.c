@@ -3088,7 +3088,7 @@ recheck_assume_connection(NMManager *self, NMDevice *device)
         if (nm_device_get_unmanaged_flags(device, NM_UNMANAGED_ALL)
             & ~(NM_UNMANAGED_PLATFORM_INIT | NM_UNMANAGED_PARENT))
             nm_device_assume_state_reset(device);
-        _LOG2D(LOGD_DEVICE, device, "assume: don't assume because %s", "not managed");
+        _LOG2D(LOGD_DEVICE, device, "assume: don't assume because device is not managed");
         return FALSE;
     }
 
