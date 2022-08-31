@@ -425,7 +425,7 @@ nm_uuid_generate_from_strings(const char *string1, ...)
         return nm_uuid_generate_from_string_str(NULL, 0, NM_UUID_TYPE_VERSION3, &nm_uuid_ns_1);
 
     {
-        nm_auto_str_buf NMStrBuf str = NM_STR_BUF_INIT(NM_UTILS_GET_NEXT_REALLOC_SIZE_104, FALSE);
+        nm_auto_str_buf NMStrBuf str = NM_STR_BUF_INIT_A(NM_UTILS_GET_NEXT_REALLOC_SIZE_232, FALSE);
         va_list                  args;
         const char              *s;
 

@@ -78,14 +78,14 @@ NM_STR_BUF_INIT(gsize allocated, gboolean do_bzero_mem)
             ? (size)                                                                        \
             : 0,                                                                            \
         FALSE,                                                                              \
-        (do_bzero_mem));
+        (do_bzero_mem))
 
 #define NM_STR_BUF_INIT_ARR(arr, do_bzero_mem)                                                    \
     NM_STR_BUF_INIT_FULL((arr),                                                                   \
                          0,                                                                       \
                          NM_STATIC_ASSERT_EXPR_1(sizeof(arr) > sizeof(char *)) ? sizeof(arr) : 0, \
                          FALSE,                                                                   \
-                         (do_bzero_mem));
+                         (do_bzero_mem))
 
 void _nm_str_buf_ensure_size(NMStrBuf *strbuf, gsize new_size, gboolean reserve_exact);
 
