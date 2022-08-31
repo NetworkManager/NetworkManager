@@ -80,7 +80,7 @@ nmi_ibft_read(const char *sysfs_dir)
     gs_free char         *ibft_path = NULL;
     GDir                 *ibft_dir;
     const char           *dir_name;
-    GHashTable           *ibft, *nic;
+    GHashTable           *ibft;
     char                 *mac;
     gs_free_error GError *error = NULL;
 
@@ -93,10 +93,11 @@ nmi_ibft_read(const char *sysfs_dir)
                                  g_free,
                                  (GDestroyNotify) g_hash_table_unref);
 
-    if (!g_file_test(ibft_path, G_FILE_TEST_IS_DIR))
+    if (!g_file_test(ibft_path, G_FILE_TEST_IS_DIR)) {
         nmp_utils_modprobe(NULL, FALSE, "iscsi_ibft", NULL);
-    if (!g_file_test(ibft_path, G_FILE_TEST_IS_DIR))
-        return ibft;
+        if (!g_file_test(ibft_path, G_FILE_TEST_IS_DIR))
+            return ibft;
+    }
 
     ibft_dir = g_dir_open(ibft_path, 0, &error);
     if (!ibft_dir) {
@@ -105,20 +106,21 @@ nmi_ibft_read(const char *sysfs_dir)
     }
 
     while ((dir_name = g_dir_read_name(ibft_dir))) {
+        gs_unref_hashtable GHashTable *nic = NULL;
+
         if (!g_str_has_prefix(dir_name, "ethernet"))
             continue;
 
         nic = load_one_nic(ibft_path, dir_name);
-        mac = g_hash_table_lookup(nic, "mac");
+        mac = nm_g_hash_table_lookup(nic, "mac");
 
         if (!mac) {
             _LOGW(LOGD_CORE, "Ignoring an iBFT record without a MAC address");
-            g_hash_table_unref(nic);
             continue;
         }
 
         mac = g_ascii_strup(mac, -1);
-        if (!g_hash_table_insert(ibft, mac, nic))
+        if (!g_hash_table_insert(ibft, mac, g_steal_pointer(&nic)))
             _LOGW(LOGD_CORE, "Duplicate iBFT record for %s", mac);
     }
 
