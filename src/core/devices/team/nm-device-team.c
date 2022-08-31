@@ -676,7 +676,7 @@ teamd_start(NMDeviceTeam *self)
     g_ptr_array_add(argv, (gpointer) "-U");
     if (priv->teamd_dbus_watch)
         g_ptr_array_add(argv, (gpointer) "-D");
-    g_ptr_array_add(argv, (gpointer) "-N");
+    g_ptr_array_add(argv, (gpointer) "-NN");
     g_ptr_array_add(argv, (gpointer) "-t");
     g_ptr_array_add(argv, (gpointer) iface);
 
