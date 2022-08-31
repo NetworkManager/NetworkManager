@@ -834,6 +834,8 @@
     <setting name="ovs-interface" >
         <property name="type"
                   description="The interface type. Either &quot;internal&quot;, &quot;system&quot;, &quot;patch&quot;, &quot;dpdk&quot;, or empty." />
+        <property name="ofport-request"
+                  description="Open vSwitch openflow port number. Defaults to zero which means that port number will not be specified and it will be chosen randomly by ovs. OpenFlow ports are the network interfaces for passing packets between OpenFlow processing and the rest of the network. OpenFlow switches connect logically to each other via their OpenFlow ports." />
     </setting>
     <setting name="ovs-patch" >
         <property name="peer"
