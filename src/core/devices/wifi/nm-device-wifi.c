@@ -2609,7 +2609,7 @@ supplicant_iface_notify_current_bss(NMSupplicantInterface *iface,
              * Also, some APs (e.g. Cisco) can be configured to drop
              * all traffic until DHCP completes. To support such
              * cases, renew the lease when roaming to a new AP. */
-            nm_device_update_dynamic_ip_setup(NM_DEVICE(self));
+            nm_device_update_dynamic_ip_setup(NM_DEVICE(self), "roamed to a different AP");
         }
 
         set_current_ap(self, new_ap, TRUE);
