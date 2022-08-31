@@ -6536,12 +6536,16 @@ device_recheck_slave_status(NMDevice *self, const NMPlatformLink *plink)
 
     g_return_if_fail(plink);
 
-    if (plink->master <= 0)
-        goto out;
-
-    master                  = nm_manager_get_device_by_ifindex(NM_MANAGER_GET, plink->master);
-    plink_master            = nm_platform_link_get(nm_device_get_platform(self), plink->master);
-    plink_master_keep_alive = nmp_object_ref(NMP_OBJECT_UP_CAST(plink_master));
+    if (plink->master > 0) {
+        master                  = nm_manager_get_device_by_ifindex(NM_MANAGER_GET, plink->master);
+        plink_master            = nm_platform_link_get(nm_device_get_platform(self), plink->master);
+        plink_master_keep_alive = nmp_object_ref(NMP_OBJECT_UP_CAST(plink_master));
+    } else {
+        if (!priv->is_enslaved)
+            goto out;
+        master       = NULL;
+        plink_master = NULL;
+    }
 
     if (master == NULL && plink_master
         && NM_IN_STRSET(plink_master->name, "ovs-system", "ovs-netdev")
