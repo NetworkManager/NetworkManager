@@ -1284,7 +1284,7 @@ test_utils_hashtable_cmp(void)
     for (test_run = 0; test_run < 30; test_run++) {
         for (is_num_key = 0; is_num_key < 2; is_num_key++) {
             GHashFunc        func_key_hash  = is_num_key ? nm_direct_hash : nm_str_hash;
-            GEqualFunc       func_key_equal = is_num_key ? g_direct_equal : g_str_equal;
+            GEqualFunc       func_key_equal = is_num_key ? NULL : g_str_equal;
             GCompareDataFunc func_key_cmp =
                 is_num_key ? _hash_func_cmp_direct : (GCompareDataFunc) nm_strcmp_with_data;
             GCompareDataFunc func_val_cmp =

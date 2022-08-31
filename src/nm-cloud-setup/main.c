@@ -337,13 +337,12 @@ _nmc_mangle_connection(NMDevice                             *device,
          * We don't need to configure policy routing in this case. */
         NM_SET_OUT(out_skipped_single_addr, TRUE);
     } else if (config_data->has_ipv4s && config_data->has_cidr) {
-        gs_unref_hashtable GHashTable *unique_subnets =
-            g_hash_table_new(nm_direct_hash, g_direct_equal);
-        NMIPAddress     *addr_entry;
-        NMIPRoute       *route_entry;
-        NMIPRoutingRule *rule_entry;
-        in_addr_t        gateway;
-        char             sbuf[NM_INET_ADDRSTRLEN];
+        gs_unref_hashtable GHashTable *unique_subnets = g_hash_table_new(nm_direct_hash, NULL);
+        NMIPAddress                   *addr_entry;
+        NMIPRoute                     *route_entry;
+        NMIPRoutingRule               *rule_entry;
+        in_addr_t                      gateway;
+        char                           sbuf[NM_INET_ADDRSTRLEN];
 
         for (i = 0; i < config_data->ipv4s_len; i++) {
             addr_entry = nm_ip_address_new_binary(AF_INET,
