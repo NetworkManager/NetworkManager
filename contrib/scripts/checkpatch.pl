@@ -197,6 +197,10 @@ complain ("Initialize GError variables to NULL, if you pass them on") if $line =
 complain ("Don't use strcmp/g_strcmp0 unless you need to sort. Consider nm_streq()/nm_streq0(),NM_IN_STRSET() for testing equality") if $line =~ /\b(strcmp|g_strcmp0)\b/;
 complain ("Don't use API that uses the numeric source id. Instead, use GSource and API like nm_g_idle_add(), nm_g_idle_add_source(), nm_clear_g_source_inst(), etc.") if $line =~ /\b(g_idle_add|g_idle_add_full|g_timeout_add|g_timeout_add_seconds|g_source_remove|nm_clear_g_source)\b/;
 complain ("Prefer g_snprintf() over snprintf() (for consistency)") if $line =~ /\b(snprintf)\b/;
+complain ("Prefer nm_str_hash()/nm_direct_hash() over g_str_hash()/g_direct_hash(). Those use siphash24") if $line =~ /\b(g_str_hash|g_direct_hash)\b/;
+complain ("Don't use g_direct_equal() for hash tables, pass NULL for pointer equality which avoids the function call") if $line =~ /\b(g_direct_equal)\b/;
+complain ("Prefer nm_pint_hash()/nm_pint64_hash()/nm_pdouble_hash() over g_int_hash()/g_int64_hash()/g_double_hash(). Those use siphash24") if $line =~ /\b(g_int_hash|g_int64_hash|g_double_hash)\b/;
+complain ("Prefer nm_pint_equal()/nm_pint64_equal()/nm_pdouble_equal() over g_int_equal()/g_int64_equal()/g_double_equal(). Those names mirror our nm_p*_hash() functions") if $line =~ /\b(g_int_equal|g_int64_equal|g_double_equal)\b/;
 complain ("Avoid g_clear_pointer() and use nm_clear_pointer() (or nm_clear_g_free(), g_clear_object(), etc.)") if $line =~ /\b(g_clear_pointer)\b/;
 complain ("Define setting properties with _nm_setting_property_define_direct_*() API") if $line =~ /g_param_spec_/ and $filename =~ /\/libnm-core-impl\/nm-setting/;
 complain ("Use spaces instead of tabs") if $line =~ /\t/;
