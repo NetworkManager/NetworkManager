@@ -8,6 +8,9 @@ subject to change and not guaranteed to be compatible with
 the later release.
 USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 
+* nmcli: allow changing "connection.uuid" and "connection.type"
+  in offline mode and setting the UUID when creating a connection.
+
 =============================================
 NetworkManager-1.40
 Overview of changes since NetworkManager-1.38

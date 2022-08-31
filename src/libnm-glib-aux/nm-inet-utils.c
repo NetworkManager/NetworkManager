@@ -98,7 +98,7 @@ nm_ip_addr_set_from_variant(int addr_family, gpointer dst, GVariant *variant, in
     g_return_val_if_fail(dst, FALSE);
     g_return_val_if_fail(variant, FALSE);
 
-    /* This function always expects IP addressea a byte arrays ("ay"). Note that
+    /* This function always expects IP addresses as byte arrays ("ay"). Note that
      * several NetworkManager API uses "u" (32 bit unsigned intergers) for IPv4 addresses.
      * So this function won't work in those cases.
      *
