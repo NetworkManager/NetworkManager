@@ -885,8 +885,9 @@ attach_port(NMDevice                  *device,
 static void
 detach_port(NMDevice *device, NMDevice *port, gboolean configure)
 {
-    NMDeviceTeam        *self = NM_DEVICE_TEAM(device);
-    NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE(self);
+    NMDeviceTeam        *self       = NM_DEVICE_TEAM(device);
+    NMDeviceTeamPrivate *priv       = NM_DEVICE_TEAM_GET_PRIVATE(self);
+    const char          *port_iface = nm_device_get_ip_iface(port);
     gboolean             do_release, success;
     NMSettingTeamPort   *s_port;
     int                  ifindex_port;
@@ -902,36 +903,34 @@ detach_port(NMDevice *device, NMDevice *port, gboolean configure)
     ifindex_port = nm_device_get_ip_ifindex(port);
 
     if (ifindex_port <= 0) {
-        _LOGD(LOGD_TEAM, "team port %s is already detached", nm_device_get_ip_iface(port));
+        _LOGD(LOGD_TEAM, "team port %s is already detached", port_iface);
     } else if (do_release) {
         success = nm_platform_link_release(nm_device_get_platform(device),
                                            nm_device_get_ip_ifindex(device),
                                            ifindex_port);
         if (success)
-            _LOGI(LOGD_TEAM, "detached team port %s", nm_device_get_ip_iface(port));
+            _LOGI(LOGD_TEAM, "detached team port %s", port_iface);
         else
-            _LOGW(LOGD_TEAM, "failed to detach team port %s", nm_device_get_ip_iface(port));
+            _LOGW(LOGD_TEAM, "failed to detach team port %s", port_iface);
 
         /* Kernel team code "closes" the port when releasing it, (which clears
          * IFF_UP), so we must bring it back up here to ensure carrier changes and
          * other state is noticed by the now-released port.
          */
         if (!nm_device_bring_up(port, TRUE, NULL)) {
-            _LOGW(LOGD_TEAM,
-                  "detached team port %s could not be brought up",
-                  nm_device_get_ip_iface(port));
+            _LOGW(LOGD_TEAM, "detached team port %s could not be brought up", port_iface);
         }
 
         nm_clear_g_source(&priv->teamd_read_timeout);
         priv->teamd_read_timeout = g_timeout_add_seconds(5, teamd_read_timeout_cb, self);
     } else
-        _LOGI(LOGD_TEAM, "team port %s was detached", nm_device_get_ip_iface(port));
+        _LOGI(LOGD_TEAM, "team port %s was detached", port_iface);
 
     /* Delete any port configuration we previously set */
     if (configure && priv->tdc
         && (s_port = nm_device_get_applied_setting(port, NM_TYPE_SETTING_TEAM_PORT))
         && (nm_setting_team_port_get_config(s_port)))
-        teamdctl_port_config_update_raw(priv->tdc, nm_device_get_ip_iface(port), "{}");
+        teamdctl_port_config_update_raw(priv->tdc, port_iface, "{}");
 }
 
 static gboolean
