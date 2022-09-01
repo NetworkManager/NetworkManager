@@ -6,12 +6,13 @@ set -e
 # Script to create a podman container for testing NetworkManager.
 #
 # Commands:
-#  - build: build a new image, named "$CONTAINER_NAME_REPOSITORY:$CONTAINER_NAME_TAG" ("nm:nm")
-#  - run: start the container and tag it "$CONTAINER_NAME_NAME" ("nm")
-#  - exec: run bash inside the container
-#  - journal|j: print the journal from inside the container
-#  - stop: stop the container
-#  - clean: delete the container and the image.
+#  - build: build a new image, named "$CONTAINER_NAME_REPOSITORY:$CONTAINER_NAME_TAG" ("nm:nm").
+#  - run: start the container and tag it "$CONTAINER_NAME_NAME" ("nm").
+#  - exec: run bash inside the container (this is the default).
+#  - journal|j: print the journal from inside the container.
+#  - stop: stop the container.
+#  - reset: stop and delete the container.
+#  - clean: stop and delete the container and the image.
 #
 # Options:
 #  --no-cleanup: don't delete the CONTAINERFILE and other artifacts
@@ -41,7 +42,7 @@ EXEC_ENV=()
 
 usage() {
     cat <<EOF
-$0: build|run|exec|stop|clean|journal [--no-cleanup] [--stop] [-- EXTRA_ARGS]
+$0: build|run|exec|stop|reset|clean|journal [--no-cleanup] [--stop] [-- EXTRA_ARGS]
 EOF
     echo
     awk '/^####*$/{ if(on) exit; on=1} { if (on) { if (on==2) print(substr($0,3)); on=2; } }' "$BASH_SOURCE"
@@ -418,9 +419,13 @@ container_is_running() {
 
 ###############################################################################
 
-do_clean() {
+do_reset() {
     podman stop "$CONTAINER_NAME_NAME" || :
     podman rm "$CONTAINER_NAME_NAME" || :
+}
+
+do_clean() {
+    do_reset
     podman rmi "$CONTAINER_NAME_REPOSITORY:$CONTAINER_NAME_TAG" || :
 }
 
@@ -509,7 +514,7 @@ for (( i=1 ; i<="$#" ; )) ; do
         j)
             CMD=journal
             ;;
-        build|run|exec|stop|clean|journal)
+        build|run|exec|stop|reset|clean|journal)
             CMD=$c
             ;;
         --)
