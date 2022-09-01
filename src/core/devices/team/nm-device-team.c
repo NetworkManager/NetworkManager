@@ -43,6 +43,7 @@ typedef struct {
     bool               kill_in_progress : 1;
     GFileMonitor      *usock_monitor;
     NMDeviceStageState stage1_state : 3;
+    GHashTable        *port_configs;
 } NMDeviceTeamPrivate;
 
 struct _NMDeviceTeam {
@@ -138,20 +139,44 @@ complete_connection(NMDevice            *device,
 }
 
 static gboolean
+_update_port_config(NMDeviceTeam *self, const char *port_iface, const char *sanitized_config)
+{
+    NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE(self);
+    int                  err;
+
+    err = teamdctl_port_config_update_raw(priv->tdc, port_iface, sanitized_config);
+    if (err != 0) {
+        _LOGE(LOGD_TEAM, "failed to update config for port %s (err=%d)", port_iface, err);
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
+static gboolean
 ensure_teamd_connection(NMDevice *device)
 {
     NMDeviceTeam         *self  = NM_DEVICE_TEAM(device);
     NMDeviceTeamPrivate  *priv  = NM_DEVICE_TEAM_GET_PRIVATE(self);
     gs_free_error GError *error = NULL;
+    const char           *port_iface;
+    const char           *port_config;
+    GHashTableIter        iter;
 
     if (priv->tdc)
         return TRUE;
 
     priv->tdc = _tdc_connect_new(self, nm_device_get_iface(device), &error);
-    if (!priv->tdc)
+    if (!priv->tdc) {
         _LOGE(LOGD_TEAM, "failed to connect to teamd: %s", error->message);
+        return FALSE;
+    }
 
-    return !!priv->tdc;
+    g_hash_table_iter_init(&iter, priv->port_configs);
+    while (g_hash_table_iter_next(&iter, (gpointer *) &port_iface, (gpointer *) &port_config))
+        _update_port_config(self, port_iface, port_config);
+
+    return TRUE;
 }
 
 static const char *
@@ -843,24 +868,18 @@ attach_port(NMDevice                  *device,
             const char *config = nm_setting_team_port_get_config(s_team_port);
 
             if (config) {
+                char *sanitized_config = g_strdup(config);
+                g_strdelimit(sanitized_config, "\r\n", ' ');
+
+                g_hash_table_insert(priv->port_configs, g_strdup(port_iface), sanitized_config);
+
                 if (!priv->tdc) {
                     _LOGW(LOGD_TEAM,
                           "attached team port %s config not changed, not connected to teamd",
                           port_iface);
                 } else {
-                    gs_free char *sanitized_config = NULL;
-                    int           err;
-
-                    sanitized_config = g_strdup(config);
-                    g_strdelimit(sanitized_config, "\r\n", ' ');
-                    err = teamdctl_port_config_update_raw(priv->tdc, port_iface, sanitized_config);
-                    if (err != 0) {
-                        _LOGE(LOGD_TEAM,
-                              "failed to update config for port %s (err=%d)",
-                              port_iface,
-                              err);
+                    if (!_update_port_config(self, port_iface, sanitized_config))
                         return FALSE;
-                    }
                 }
             }
         }
@@ -929,8 +948,10 @@ detach_port(NMDevice *device, NMDevice *port, gboolean configure)
     /* Delete any port configuration we previously set */
     if (configure && priv->tdc
         && (s_port = nm_device_get_applied_setting(port, NM_TYPE_SETTING_TEAM_PORT))
-        && (nm_setting_team_port_get_config(s_port)))
-        teamdctl_port_config_update_raw(priv->tdc, port_iface, "{}");
+        && (nm_setting_team_port_get_config(s_port))) {
+        _update_port_config(self, port_iface, "{}");
+        g_hash_table_remove(priv->port_configs, port_iface);
+    }
 }
 
 static gboolean
@@ -994,6 +1015,8 @@ constructed(GObject *object)
 
     G_OBJECT_CLASS(nm_device_team_parent_class)->constructed(object);
 
+    priv->port_configs = g_hash_table_new_full(nm_str_hash, g_str_equal, g_free, g_free);
+
     if (nm_dbus_manager_get_dbus_connection(nm_dbus_manager_get())) {
         /* Register D-Bus name watcher */
         tmp_str = g_strdup_printf("org.libteam.teamd.%s", nm_device_get_ip_iface(device));
@@ -1053,6 +1076,7 @@ dispose(GObject *object)
 
     teamd_cleanup(self, TRUE);
     nm_clear_g_free(&priv->config);
+    nm_clear_pointer(&priv->port_configs, g_hash_table_destroy);
 
     G_OBJECT_CLASS(nm_device_team_parent_class)->dispose(object);
 }
