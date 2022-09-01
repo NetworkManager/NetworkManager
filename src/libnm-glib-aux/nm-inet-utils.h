@@ -230,9 +230,10 @@ gboolean nm_ip6_addr_is_ula(const struct in6_addr *address);
 
 /*****************************************************************************/
 
-#define NM_IPV4LL_NETWORK ((in_addr_t) htonl(0xA9FE0000lu))
-#define NM_IPV4LL_NETMASK ((in_addr_t) htonl(0xFFFF0000lu))
-#define NM_IPV4LO_NETWORK ((in_addr_t) htonl(0x7F000001lu))
+#define NM_IPV4LL_NETWORK    ((in_addr_t) htonl(0xA9FE0000lu))
+#define NM_IPV4LL_NETMASK    ((in_addr_t) htonl(0xFFFF0000lu))
+#define NM_IPV4LO_NETWORK    ((in_addr_t) htonl(0x7F000001lu))
+#define NM_IPV4LO_RT_NETWORK ((in_addr_t) htonl(0x7F000000lu))
 
 static inline gboolean
 nm_ip4_addr_is_loopback(in_addr_t addr)

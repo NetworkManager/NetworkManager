@@ -4770,6 +4770,44 @@ nm_platform_ip_route_get_prune_list(NMPlatform            *self,
              * pruning them. */
 
             if (NM_IS_IPv4(addr_family)) {
+                _LOGD("*************drop route start**************");
+                if (rt->r4.network == NM_IPV4LO_NETWORK) {
+                    _LOGD("*************drop route1**************");
+                    rt_local4 = (NMPlatformIP4Route){
+                        .ifindex       = ifindex,
+                        .type_coerced  = nm_platform_route_type_coerce(RTN_LOCAL),
+                        .plen          = 32,
+                        .rt_source     = NM_IPV4LO_NETWORK,
+                        .metric        = 0,
+                        .table_coerced = nm_platform_route_table_coerce(local_table),
+                        .scope_inv     = nm_platform_route_scope_inv(RT_SCOPE_HOST),
+                        .network       = NM_IPV4LO_NETWORK,
+                        .pref_src      = NM_IPV4LO_NETWORK,
+                    };
+                } else if (rt->r4.network == NM_IPV4LO_RT_NETWORK) {
+                    _LOGD("*************drop route2**************");
+                    rt_local4 = (NMPlatformIP4Route){
+                        .ifindex       = ifindex,
+                        .type_coerced  = nm_platform_route_type_coerce(RTN_LOCAL),
+                        .plen          = 8,
+                        .rt_source     = NM_IPV4LO_NETWORK,
+                        .metric        = 0,
+                        .table_coerced = nm_platform_route_table_coerce(local_table),
+                        .scope_inv     = nm_platform_route_scope_inv(RT_SCOPE_HOST),
+                        .network       = NM_IPV4LO_RT_NETWORK,
+                        .pref_src      = NM_IPV4LO_NETWORK,
+                    };
+                }
+                if (nm_platform_ip4_route_cmp(&rt->r4,
+                                              &rt_local4,
+                                              NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY)
+                    == 0) {
+                    _LOGD("*************drop route**************");
+                    continue;
+                }
+            }
+            if (NM_IS_IPv4(addr_family)) {
+                _LOGD("++++++++++++drop route general++++++++++++++");
                 /* for each IPv4 address kernel adds a route like
                  *
                  *  local $ADDR dev $IFACE table local proto kernel scope host src $PRIMARY_ADDR

@@ -3724,6 +3724,8 @@ _l3cfg_update_combined_config(NML3Cfg               *self,
         }
 
         if (self->priv.ifindex == NM_LOOPBACK_IFINDEX) {
+            NMPlatformIPXRoute rx;
+
             if (!nm_l3_config_data_lookup_address_4(l3cd,
                                                     NM_IPV4LO_NETWORK,
                                                     8,
@@ -3742,6 +3744,21 @@ _l3cfg_update_combined_config(NML3Cfg               *self,
                     .plen    = 128,
                 };
                 nm_l3_config_data_add_address_6(l3cd, &ip6_address);
+            }
+
+            rx.r4 = (NMPlatformIP4Route){
+                .ifindex       = 1,
+                .rt_source     = NM_IP_CONFIG_SOURCE_KERNEL,
+                .network       = NM_IPV4LO_NETWORK,
+                .plen          = 8,
+                .table_coerced = nm_platform_route_table_coerce(RT_TABLE_LOCAL),
+                .scope_inv     = nm_platform_route_scope_inv(RT_SCOPE_HOST),
+                .type_coerced  = nm_platform_route_type_coerce(RTN_LOCAL),
+            };
+            nm_platform_ip_route_normalize(AF_INET, &rx.rx);
+            if (!nm_l3_config_data_lookup_route(l3cd, AF_INET, &rx.rx)) {
+                _LOGE("---- adding loopback route");
+                nm_l3_config_data_add_route_4(l3cd, &rx.r4);
             }
         }
         for (i = 0; i < l3_config_datas_len; i++) {
