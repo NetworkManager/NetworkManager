@@ -3296,9 +3296,6 @@ nm_setting_802_1x_class_init(NMSetting8021xClass *klass)
      *
      * Since: 1.8
      **/
-    /* ---ifcfg-rh---
-     * ---end---
-     */
     _nm_setting_property_define_direct_string(properties_override,
                                               obj_properties,
                                               NM_SETTING_802_1X_CA_CERT_PASSWORD,
@@ -3314,9 +3311,6 @@ nm_setting_802_1x_class_init(NMSetting8021xClass *klass)
      *
      * Since: 1.8
      **/
-    /* ---ifcfg-rh---
-     * ---end---
-     */
     _nm_setting_property_define_direct_secret_flags(properties_override,
                                                     obj_properties,
                                                     NM_SETTING_802_1X_CA_CERT_PASSWORD_FLAGS,
@@ -3486,9 +3480,6 @@ nm_setting_802_1x_class_init(NMSetting8021xClass *klass)
      *
      * Since: 1.8
      **/
-    /* ---ifcfg-rh---
-     * ---end---
-     */
     _nm_setting_property_define_direct_string(properties_override,
                                               obj_properties,
                                               NM_SETTING_802_1X_CLIENT_CERT_PASSWORD,
@@ -3504,9 +3495,6 @@ nm_setting_802_1x_class_init(NMSetting8021xClass *klass)
      *
      * Since: 1.8
      **/
-    /* ---ifcfg-rh---
-     * ---end---
-     */
     _nm_setting_property_define_direct_secret_flags(properties_override,
                                                     obj_properties,
                                                     NM_SETTING_802_1X_CLIENT_CERT_PASSWORD_FLAGS,
@@ -3718,9 +3706,6 @@ nm_setting_802_1x_class_init(NMSetting8021xClass *klass)
      *
      * Since: 1.8
      **/
-    /* ---ifcfg-rh---
-     * ---end---
-     */
     _nm_setting_property_define_direct_string(properties_override,
                                               obj_properties,
                                               NM_SETTING_802_1X_PHASE2_CA_CERT_PASSWORD,
@@ -3736,9 +3721,6 @@ nm_setting_802_1x_class_init(NMSetting8021xClass *klass)
      *
      * Since: 1.8
      **/
-    /* ---ifcfg-rh---
-     * ---end---
-     */
     _nm_setting_property_define_direct_secret_flags(properties_override,
                                                     obj_properties,
                                                     NM_SETTING_802_1X_PHASE2_CA_CERT_PASSWORD_FLAGS,
@@ -3913,9 +3895,6 @@ nm_setting_802_1x_class_init(NMSetting8021xClass *klass)
      *
      * Since: 1.8
      **/
-    /* ---ifcfg-rh---
-     * ---end---
-     */
     _nm_setting_property_define_direct_string(properties_override,
                                               obj_properties,
                                               NM_SETTING_802_1X_PHASE2_CLIENT_CERT_PASSWORD,
@@ -3931,9 +3910,6 @@ nm_setting_802_1x_class_init(NMSetting8021xClass *klass)
      *
      * Since: 1.8
      **/
-    /* ---ifcfg-rh---
-     * ---end---
-     */
     _nm_setting_property_define_direct_secret_flags(
         properties_override,
         obj_properties,
