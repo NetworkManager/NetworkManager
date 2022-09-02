@@ -21,7 +21,7 @@
 
 /*****************************************************************************/
 
-NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_TYPE, );
+NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_TYPE, PROP_OFPORT_REQUEST, );
 
 /**
  * NMSettingOvsInterface:
@@ -31,7 +31,8 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_TYPE, );
 struct _NMSettingOvsInterface {
     NMSetting parent;
 
-    char *type;
+    char   *type;
+    guint32 ofport_request;
 };
 
 struct _NMSettingOvsInterfaceClass {
@@ -56,6 +57,22 @@ nm_setting_ovs_interface_get_interface_type(NMSettingOvsInterface *self)
     g_return_val_if_fail(NM_IS_SETTING_OVS_INTERFACE(self), NULL);
 
     return self->type;
+}
+
+/**
+ * nm_setting_ovs_interface_get_ofport_request:
+ * @self: the #NMSettingOvsInterface
+ *
+ * Returns: id of the preassigned ovs port
+ *
+ * Since: 1.42
+ **/
+guint32
+nm_setting_ovs_interface_get_ofport_request(NMSettingOvsInterface *self)
+{
+    g_return_val_if_fail(NM_IS_SETTING_OVS_INTERFACE(self), 0);
+
+    return self->ofport_request;
 }
 
 /*****************************************************************************/
@@ -378,6 +395,27 @@ nm_setting_ovs_interface_class_init(NMSettingOvsInterfaceClass *klass)
                                               NM_SETTING_PARAM_INFERRABLE,
                                               NMSettingOvsInterface,
                                               type);
+    /**
+     * NMSettingOvsInterface:ofport-request:
+     *
+     * Open vSwitch openflow port number.
+     * Defaults to zero which means that port number will not be specified
+     * and it will be chosen randomly by ovs. OpenFlow ports are the network interfaces
+     * for passing packets between OpenFlow processing and the rest of the network.
+     * OpenFlow switches connect logically to each other via their OpenFlow ports.
+     *
+     * Since: 1.42
+     **/
+    _nm_setting_property_define_direct_uint32(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_OVS_INTERFACE_OFPORT_REQUEST,
+                                              PROP_OFPORT_REQUEST,
+                                              0,
+                                              65279,
+                                              0,
+                                              NM_SETTING_PARAM_INFERRABLE,
+                                              NMSettingOvsInterface,
+                                              ofport_request);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 

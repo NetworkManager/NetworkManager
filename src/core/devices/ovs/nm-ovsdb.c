@@ -767,11 +767,14 @@ _insert_interface(json_t       *params,
     NMSettingOvsPatch     *s_ovs_patch;
     json_t                *options = json_array();
     json_t                *row;
-    guint32                mtu = 0;
+    guint32                mtu            = 0;
+    guint32                ofport_request = 0;
 
     s_ovs_iface = nm_connection_get_setting_ovs_interface(interface);
-    if (s_ovs_iface)
-        type = nm_setting_ovs_interface_get_interface_type(s_ovs_iface);
+    if (s_ovs_iface) {
+        type           = nm_setting_ovs_interface_get_interface_type(s_ovs_iface);
+        ofport_request = nm_setting_ovs_interface_get_ofport_request(s_ovs_iface);
+    }
 
     if (nm_streq0(type, "internal")) {
         NMSettingWired *s_wired;
@@ -827,6 +830,9 @@ _insert_interface(json_t       *params,
 
     if (mtu != 0)
         json_object_set_new(row, "mtu_request", json_integer(mtu));
+
+    if (ofport_request != 0)
+        json_object_set_new(row, "ofport_request", json_integer(ofport_request));
 
     json_array_append_new(params,
                           json_pack("{s:s, s:s, s:o, s:s}",
