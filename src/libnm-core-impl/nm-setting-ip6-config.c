@@ -576,7 +576,8 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
      * description: List of DNS servers.
      * example: dns=2001:4860:4860::8888;2001:4860:4860::8844;
      * ---end---
-     * ---ifcfg-rh---
+     */
+    /* ---ifcfg-rh---
      * property: dns
      * variable: DNS1, DNS2, ...
      * format:   string
@@ -600,7 +601,8 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
      * description: List of static IP addresses.
      * example: address1=abbe::cafe/96 address2=2001::1234
      * ---end---
-     * ---ifcfg-rh---
+     */
+    /* ---ifcfg-rh---
      * property: addresses
      * variable: IPV6ADDR, IPV6ADDR_SECONDARIES
      * description: List of static IP addresses.
@@ -616,7 +618,8 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
      * description: Gateway IP addresses as a string.
      * example: gateway=abbe::1
      * ---end---
-     * ---ifcfg-rh---
+     */
+    /* ---ifcfg-rh---
      * property: gateway
      * variable: IPV6_DEFAULTGW
      * description: Gateway IP address.
@@ -631,7 +634,8 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
      * description: List of IP routes.
      * example: route1=2001:4860:4860::/64,2620:52:0:2219:222:68ff:fe11:5403
      * ---end---
-     * ---ifcfg-rh---
+     */
+    /* ---ifcfg-rh---
      * property: routes
      * variable: (none)
      * description: List of static routes. They are not stored in ifcfg-* file,
@@ -870,7 +874,7 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
      * Since: 1.24
      **/
     /* ---ifcfg-rh---
-     * property: dhcp-timeout
+     * property: ra-timeout
      * variable: IPV6_RA_TIMEOUT(+)
      * description: A timeout for waiting Router Advertisements in seconds.
      * example: IPV6_RA_TIMEOUT=10

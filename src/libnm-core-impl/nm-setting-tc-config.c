@@ -1944,8 +1944,8 @@ nm_setting_tc_config_class_init(NMSettingTCConfigClass *klass)
      *        <para>
      *     can be used to set a different hash table size, available
      *     from kernel 2.6.39 onwards.  The specified divisor must be
-     *     a power of two and cannot be larger than 65536.  Default
-     *     value: 1024.
+     *     a power of two and cannot be larger than 65536.
+     *     Default value: 1024.
      *        </para>
      *      </listitem>
      *  </varlistentry>
@@ -2107,8 +2107,8 @@ nm_setting_tc_config_class_init(NMSettingTCConfigClass *klass)
      * format: GPtrArray(NMTCTfilter)
      * description-docbook:
      *  <para>
-     * Array of TC traffic filters. Traffic control can manage the packet content during
-     * classification by using filters.
+     *   Array of TC traffic filters. Traffic control can manage the packet content during
+     *   classification by using filters.
      *  </para>
      *  <para>
      *   Each tfilters can be specified by the following attributes:
@@ -2206,7 +2206,7 @@ nm_setting_tc_config_class_init(NMSettingTCConfigClass *klass)
      * ---end---
      **/
     /* ---ifcfg-rh---
-     * property: qdiscs
+     * property: tfilters
      * variable: FILTER1(+), FILTER2(+), ..., TC_COMMIT(+)
      * description: Traffic filters to set on the interface. When no
      *  QDISC1, QDISC2, ..., FILTER1, FILTER2, ... keys are present,

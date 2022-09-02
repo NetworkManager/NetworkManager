@@ -1311,7 +1311,8 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
      * description: SSID of Wi-Fi network.
      * example: ssid=Quick Net
      * ---end---
-     * ---ifcfg-rh---
+     */
+    /* ---ifcfg-rh---
      * property: ssid
      * variable: ESSID
      * description: SSID of Wi-Fi network.
@@ -1493,7 +1494,8 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
      *   (e.g. 00:22:68:12:79:A2), or semicolon separated list of 6 bytes (obsolete)
      *   (e.g. 0;34;104;18;121;162).
      * ---end---
-     * ---ifcfg-rh---
+     */
+    /* ---ifcfg-rh---
      * property: mac-address
      * variable: HWADDR
      * description: Hardware address of the device in traditional hex-digits-and-colons
@@ -1540,13 +1542,15 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
      *   (e.g. 00:22:68:12:79:B2), or semicolon separated list of 6 bytes (obsolete)
      *   (e.g. 0;34;104;18;121;178).
      * ---end---
-     * ---ifcfg-rh---
+     */
+    /* ---ifcfg-rh---
      * property: cloned-mac-address
      * variable: MACADDR
      * description: Cloned (spoofed) MAC address in traditional hex-digits-and-colons
      *    notation (e.g. 00:22:68:14:5A:99).
      * ---end---
-     * ---dbus---
+     */
+    /* ---dbus---
      * property: cloned-mac-address
      * format: byte array
      * description: This D-Bus field is deprecated in favor of "assigned-mac-address"
@@ -1645,7 +1649,8 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
      * description: MAC address blacklist.
      * example: mac-address-blacklist= 00:22:68:12:79:A6;00:22:68:12:79:78
      * ---end---
-     * ---ifcfg-rh---
+     */
+    /* ---ifcfg-rh---
      * property: mac-address-blacklist
      * variable: HWADDR_BLACKLIST(+)
      * description: It denies usage of the connection for any device whose address
@@ -1813,7 +1818,8 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
      * variable: (none)
      * description: This property is deprecated and not handled by ifcfg-rh-plugin.
      * ---end---
-     * ---dbus---
+     */
+    /* ---dbus---
      * property: security
      * description: This property is deprecated, but can be set to the value
      *   '802-11-wireless-security' when a wireless security setting is also

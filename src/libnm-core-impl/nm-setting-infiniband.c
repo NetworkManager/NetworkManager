@@ -378,7 +378,8 @@ nm_setting_infiniband_class_init(NMSettingInfinibandClass *klass)
      *   or semicolon separated list of 20 decimal bytes (obsolete)
      * example: mac-address= 80:00:00:6d:fe:80:00:00:00:00:00:00:00:02:55:00:70:33:cf:01
      * ---end---
-     * ---ifcfg-rh---
+     */
+    /* ---ifcfg-rh---
      * property: mac-address
      * variable: HWADDR
      * description: IBoIP 20-byte hardware address of the device (in traditional

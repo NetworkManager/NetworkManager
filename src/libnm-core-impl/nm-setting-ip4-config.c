@@ -637,7 +637,8 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
      * description: List of DNS servers.
      * example: dns=1.2.3.4;8.8.8.8;8.8.4.4;
      * ---end---
-     * ---ifcfg-rh---
+     */
+    /* ---ifcfg-rh---
      * property: dns
      * variable: DNS1, DNS2, ...
      * format:   string
@@ -662,7 +663,8 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
      * description: List of static IP addresses.
      * example: address1=192.168.100.100/24 address2=10.1.1.5/24
      * ---end---
-     * ---ifcfg-rh---
+     */
+    /* ---ifcfg-rh---
      * property: addresses
      * variable: IPADDR, PREFIX (NETMASK), IPADDR1, PREFIX1 (NETMASK1), ...
      * description: List of static IP addresses.
@@ -677,7 +679,8 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
      * description: Gateway IP addresses as a string.
      * example: gateway=192.168.100.1
      * ---end---
-     * ---ifcfg-rh---
+     */
+    /* ---ifcfg-rh---
      * property: gateway
      * variable: GATEWAY
      * description: Gateway IP address.
@@ -693,7 +696,8 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
      * example: route1=8.8.8.0/24,10.1.1.1,77
      *   route2=7.7.0.0/16
      * ---end---
-     * ---ifcfg-rh---
+     */
+    /* ---ifcfg-rh---
      * property: routes
      * variable: ADDRESS1, NETMASK1, GATEWAY1, METRIC1, OPTIONS1, ...
      * description: List of static routes. They are not stored in ifcfg-* file,
@@ -860,6 +864,7 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
      * variable: DHCP_HOSTNAME_FLAGS
      * description: flags for the DHCP hostname and FQDN properties
      * example: DHCP_HOSTNAME_FLAGS=5
+     * ---end---
      */
 
     /**

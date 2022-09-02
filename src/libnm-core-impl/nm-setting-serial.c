@@ -278,7 +278,8 @@ nm_setting_serial_class_init(NMSettingSerialClass *klass)
      *   111 ('o') for odd, or 110 ('n') for none.
      * example: parity=n
      * ---end---
-     * ---dbus---
+     */
+    /* ---dbus---
      * property: parity
      * format: byte
      * description: The connection parity: 69 (ASCII 'E') for even parity,
