@@ -5383,7 +5383,6 @@ parse_infiniband_p_key(shvarFile *ifcfg, int *out_p_key, char **out_parent, GErr
         PARSE_WARNING("invalid InfiniBand PKEY_ID '%s'", pkey_id);
         goto done;
     }
-    id = (id | 0x8000);
 
     ifname = g_strdup_printf("%s.%04x", physdev, (unsigned) id);
     if (strcmp(device, ifname) != 0) {
