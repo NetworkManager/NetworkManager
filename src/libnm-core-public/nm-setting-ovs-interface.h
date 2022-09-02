@@ -32,6 +32,8 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_OVS_INTERFACE_TYPE "type"
 
+#define NM_SETTING_OVS_INTERFACE_OFPORT_REQUEST "ofport-request"
+
 typedef struct _NMSettingOvsInterfaceClass NMSettingOvsInterfaceClass;
 
 NM_AVAILABLE_IN_1_10
@@ -41,6 +43,9 @@ NMSetting *nm_setting_ovs_interface_new(void);
 
 NM_AVAILABLE_IN_1_10
 const char *nm_setting_ovs_interface_get_interface_type(NMSettingOvsInterface *self);
+
+NM_AVAILABLE_IN_1_42
+guint32 nm_setting_ovs_interface_get_ofport_request(NMSettingOvsInterface *self);
 
 G_END_DECLS
 
