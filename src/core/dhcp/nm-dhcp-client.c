@@ -115,15 +115,14 @@ typedef struct _NMDhcpClientPrivate {
                 in_addr_t    addr;
                 NMOptionBool state;
             } acd;
-            struct {
-                GDBusMethodInvocation *invocation;
-            } bound;
         } v4;
         struct {
             GSource *lladdr_timeout_source;
             GSource *dad_timeout_source;
         } v6;
     };
+
+    GDBusMethodInvocation *invocation;
 
     struct {
         gulong id;
@@ -909,13 +908,10 @@ _accept(NMDhcpClient *self, const NML3ConfigData *l3cd, GError **error)
 {
     NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
 
-    if (!NM_IS_IPv4(priv->config.addr_family))
+    if (!priv->invocation)
         return TRUE;
 
-    if (!priv->v4.bound.invocation)
-        return TRUE;
-
-    g_dbus_method_invocation_return_value(g_steal_pointer(&priv->v4.bound.invocation), NULL);
+    g_dbus_method_invocation_return_value(g_steal_pointer(&priv->invocation), NULL);
     return TRUE;
 }
 
@@ -939,20 +935,17 @@ decline(NMDhcpClient *self, const NML3ConfigData *l3cd, const char *error_messag
 {
     NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
 
-    if (!NM_IS_IPv4(priv->config.addr_family))
-        return TRUE;
-
-    if (!priv->v4.bound.invocation) {
+    if (!priv->invocation) {
         nm_utils_error_set(error,
                            NM_UTILS_ERROR_UNKNOWN,
                            "calling decline in unexpected script state");
         return FALSE;
     }
-
-    g_dbus_method_invocation_return_error(g_steal_pointer(&priv->v4.bound.invocation),
+    g_dbus_method_invocation_return_error(g_steal_pointer(&priv->invocation),
                                           NM_DEVICE_ERROR,
                                           NM_DEVICE_ERROR_FAILED,
-                                          "acd failed");
+                                          NM_IS_IPv4(priv->config.addr_family) ? "ACD failed"
+                                                                               : "DAD failed");
     return TRUE;
 }
 
@@ -1424,8 +1417,8 @@ nm_dhcp_client_stop(NMDhcpClient *self, gboolean release)
 
     priv->is_stopped = TRUE;
 
-    if (NM_IS_IPv4(priv->config.addr_family) && priv->v4.bound.invocation) {
-        g_dbus_method_invocation_return_error(g_steal_pointer(&priv->v4.bound.invocation),
+    if (priv->invocation) {
+        g_dbus_method_invocation_return_error(g_steal_pointer(&priv->invocation),
                                               NM_DEVICE_ERROR,
                                               NM_DEVICE_ERROR_FAILED,
                                               "dhcp stopping");
@@ -1584,7 +1577,6 @@ nm_dhcp_client_handle_event(gpointer               unused,
     NMPlatformIP6Address                    prefix = {
                            0,
     };
-    int IS_IPv4;
 
     g_return_val_if_fail(NM_IS_DHCP_CLIENT(self), FALSE);
     g_return_val_if_fail(iface != NULL, FALSE);
@@ -1681,16 +1673,13 @@ nm_dhcp_client_handle_event(gpointer               unused,
         client_event_type = NM_DHCP_CLIENT_EVENT_TYPE_FAIL;
     }
 
-    IS_IPv4 = NM_IS_IPv4(priv->config.addr_family);
+    if (priv->invocation)
+        g_dbus_method_invocation_return_value(g_steal_pointer(&priv->invocation), NULL);
 
-    if (IS_IPv4 && priv->v4.bound.invocation)
-        g_dbus_method_invocation_return_value(g_steal_pointer(&priv->v4.bound.invocation), NULL);
-
-    if (IS_IPv4
-        && NM_IN_SET(client_event_type,
-                     NM_DHCP_CLIENT_EVENT_TYPE_BOUND,
-                     NM_DHCP_CLIENT_EVENT_TYPE_EXTENDED))
-        priv->v4.bound.invocation = g_steal_pointer(&invocation);
+    if (NM_IN_SET(client_event_type,
+                  NM_DHCP_CLIENT_EVENT_TYPE_BOUND,
+                  NM_DHCP_CLIENT_EVENT_TYPE_EXTENDED))
+        priv->invocation = g_steal_pointer(&invocation);
 
     _nm_dhcp_client_notify(self, client_event_type, l3cd);
 
@@ -1841,10 +1830,6 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
          * explicitly initialize the respective union member. */
         if (NM_IS_IPv4(priv->config.addr_family)) {
             priv->v4 = (typeof(priv->v4)){
-                .bound =
-                    {
-                        .invocation = NULL,
-                    },
                 .acd =
                     {
                         .addr                = INADDR_ANY,
