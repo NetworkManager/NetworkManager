@@ -58,8 +58,13 @@
 
 /*****************************************************************************/
 
+typedef struct {
+    bool missing_primary;
+} NMDeviceBondPrivate;
+
 struct _NMDeviceBond {
-    NMDevice parent;
+    NMDevice            parent;
+    NMDeviceBondPrivate _priv;
 };
 
 struct _NMDeviceBondClass {
@@ -67,6 +72,9 @@ struct _NMDeviceBondClass {
 };
 
 G_DEFINE_TYPE(NMDeviceBond, nm_device_bond, NM_TYPE_DEVICE)
+
+#define NM_DEVICE_BOND_GET_PRIVATE(self) \
+    _NM_GET_PRIVATE(self, NMDeviceBond, NM_IS_DEVICE_BOND, NMDevice)
 
 /*****************************************************************************/
 
@@ -465,15 +473,25 @@ _platform_lnk_bond_init_from_setting(NMSettingBond *s_bond, NMPlatformLnkBond *p
     props->tlb_dynamic_lb_has   = NM_IN_SET(props->mode, NM_BOND_MODE_TLB, NM_BOND_MODE_ALB);
 }
 
+static gboolean
+_check_primary_missing(NMPlatformLnkBond *props, NMSettingBond *s_bond)
+{
+    /* checks if the ifindex is 0 but the primary option string is set */
+    return !_setting_bond_primary_opt_as_ifindex(s_bond)
+           && nm_setting_bond_get_option_normalized(s_bond, NM_SETTING_BOND_OPTION_PRIMARY);
+}
+
 static NMActStageReturn
 act_stage1_prepare(NMDevice *device, NMDeviceStateReason *out_failure_reason)
 {
-    NMActStageReturn  ret = NM_ACT_STAGE_RETURN_SUCCESS;
-    NMConnection     *connection;
-    NMSettingBond    *s_bond;
-    NMPlatformLnkBond props;
-    int               r;
-    int               ifindex = nm_device_get_ifindex(device);
+    NMActStageReturn     ret  = NM_ACT_STAGE_RETURN_SUCCESS;
+    NMDeviceBond        *self = NM_DEVICE_BOND(device);
+    NMDeviceBondPrivate *priv = NM_DEVICE_BOND_GET_PRIVATE(self);
+    NMConnection        *connection;
+    NMSettingBond       *s_bond;
+    NMPlatformLnkBond    props;
+    int                  r;
+    int                  ifindex = nm_device_get_ifindex(device);
 
     connection = nm_device_get_applied_connection(device);
     g_return_val_if_fail(connection, NM_ACT_STAGE_RETURN_FAILURE);
@@ -482,6 +500,7 @@ act_stage1_prepare(NMDevice *device, NMDeviceStateReason *out_failure_reason)
     g_return_val_if_fail(s_bond, NM_ACT_STAGE_RETURN_FAILURE);
 
     _platform_lnk_bond_init_from_setting(s_bond, &props);
+    priv->missing_primary = _check_primary_missing(&props, s_bond);
 
     /* Interface must be down to set bond options */
     nm_device_take_down(device, TRUE);
@@ -529,10 +548,44 @@ attach_port(NMDevice                  *device,
             NMDeviceAttachPortCallback callback,
             gpointer                   user_data)
 {
-    NMDeviceBond      *self = NM_DEVICE_BOND(device);
-    NMSettingBondPort *s_port;
+    NMDeviceBond        *self = NM_DEVICE_BOND(device);
+    NMDeviceBondPrivate *priv = NM_DEVICE_BOND_GET_PRIVATE(self);
+    NMSettingBondPort   *s_port;
 
     nm_device_master_check_slave_physical_port(device, port, LOGD_BOND);
+
+    if (priv->missing_primary) {
+        NMSettingBond *s_bond;
+        NMConnection  *conn_bond;
+
+        conn_bond = nm_device_get_applied_connection(device);
+        if (conn_bond) {
+            s_bond = nm_connection_get_setting_bond(conn_bond);
+            if (s_bond) {
+                /* mode is a mandatory property */
+                int               r;
+                int               ifindex;
+                NMPlatformLnkBond props = {
+                    .mode = _nm_setting_bond_mode_from_string(
+                        nm_setting_bond_get_option_normalized(s_bond, NM_SETTING_BOND_OPTION_MODE)),
+                };
+
+                ifindex = _setting_bond_primary_opt_as_ifindex(s_bond);
+                if (ifindex) {
+                    props.primary = ifindex;
+                    r             = nm_platform_link_bond_change(nm_device_get_platform(device),
+                                                     nm_device_get_ip_ifindex(device),
+                                                     &props);
+                    if (r < 0)
+                        _LOGW(LOGD_BOND,
+                              "setting bond opts when attaching port %s: failed",
+                              nm_device_get_ip_iface(port));
+                    else
+                        priv->missing_primary = FALSE;
+                }
+            }
+        }
+    }
 
     if (configure) {
         gboolean success;
@@ -631,10 +684,12 @@ create_and_realize(NMDevice              *device,
                    const NMPlatformLink **out_plink,
                    GError               **error)
 {
-    const char       *iface = nm_device_get_iface(device);
-    NMSettingBond    *s_bond;
-    NMPlatformLnkBond props;
-    int               r;
+    const char          *iface = nm_device_get_iface(device);
+    NMDeviceBond        *self  = NM_DEVICE_BOND(device);
+    NMDeviceBondPrivate *priv  = NM_DEVICE_BOND_GET_PRIVATE(self);
+    NMSettingBond       *s_bond;
+    NMPlatformLnkBond    props;
+    int                  r;
 
     g_assert(iface);
 
@@ -642,6 +697,7 @@ create_and_realize(NMDevice              *device,
     nm_assert(s_bond);
 
     _platform_lnk_bond_init_from_setting(s_bond, &props);
+    priv->missing_primary = _check_primary_missing(&props, s_bond);
 
     r = nm_platform_link_bond_add(nm_device_get_platform(device), iface, &props, out_plink);
     if (r < 0) {
