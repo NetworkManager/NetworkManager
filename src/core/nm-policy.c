@@ -1379,9 +1379,10 @@ auto_activate_device(NMPolicy *self, NMDevice *device)
         return;
 
     _LOGI(LOGD_DEVICE,
-          "auto-activating connection '%s' (%s)",
+          "auto-activating connection '%s' (%s) on '%s'",
           nm_settings_connection_get_id(best_connection),
-          nm_settings_connection_get_uuid(best_connection));
+          nm_settings_connection_get_uuid(best_connection),
+	  nm_device_get_iface(device));
 
     subject = nm_auth_subject_new_internal();
     ac      = nm_manager_activate_connection(
