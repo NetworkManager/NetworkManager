@@ -3731,9 +3731,10 @@ _l3cfg_update_combined_config(NML3Cfg               *self,
                                                     8,
                                                     NM_IPV4LO_NETWORK)) {
                 const NMPlatformIP4Address ip4_address = (NMPlatformIP4Address){
-                    .address = NM_IPV4LO_NETWORK,
-                    .ifindex = 1,
-                    .plen    = 8,
+                    .address      = NM_IPV4LO_NETWORK,
+                    .peer_address = NM_IPV4LO_NETWORK,
+                    .ifindex      = 1,
+                    .plen         = 8,
                 };
                 nm_l3_config_data_add_address_4(l3cd, &ip4_address);
             }
@@ -3754,6 +3755,7 @@ _l3cfg_update_combined_config(NML3Cfg               *self,
                 .table_coerced = nm_platform_route_table_coerce(RT_TABLE_LOCAL),
                 .scope_inv     = nm_platform_route_scope_inv(RT_SCOPE_HOST),
                 .type_coerced  = nm_platform_route_type_coerce(RTN_LOCAL),
+                .pref_src      = NM_IPV4LO_NETWORK,
             };
             nm_platform_ip_route_normalize(AF_INET, &rx.rx);
             if (!nm_l3_config_data_lookup_route(l3cd, AF_INET, &rx.rx)) {
@@ -4607,9 +4609,10 @@ _l3_commit_one(NML3Cfg              *self,
                 g_ptr_array_add(addresses,
                                 nmp_object_new(NMP_OBJECT_TYPE_IP4_ADDRESS,
                                                &((const NMPlatformIP4Address){
-                                                   .address = NM_IPV4LO_NETWORK,
-                                                   .ifindex = 1,
-                                                   .plen    = 8,
+                                                   .address      = NM_IPV4LO_NETWORK,
+                                                   .peer_address = NM_IPV4LO_NETWORK,
+                                                   .ifindex      = 1,
+                                                   .plen         = 8,
                                                })));
             } else {
                 g_ptr_array_add(addresses,

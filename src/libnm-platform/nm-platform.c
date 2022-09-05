@@ -4662,7 +4662,25 @@ nm_platform_ip_address_get_prune_list(NMPlatform            *self,
     c_list_for_each (iter, &head_entry->lst_entries_head) {
         const NMPObject *obj = c_list_entry(iter, NMDedupMultiEntry, lst_entries)->obj;
 
-        if (!IS_IPv4) {
+        if (IS_IPv4) {
+            const NMPlatformIP4Address *a4 = NMP_OBJECT_CAST_IP4_ADDRESS(obj);
+
+            if (a4->address == NM_IPV4LO_NETWORK && a4->plen == 8) {
+                NMPlatformIP4Address addr = (NMPlatformIP4Address){
+                    .address                   = NM_IPV4LO_NETWORK,
+                    .peer_address              = NM_IPV4LO_NETWORK,
+                    .use_ip4_broadcast_address = TRUE,
+                    .ifindex                   = 1,
+                    .plen                      = 8,
+                };
+                if (nm_platform_ip4_address_cmp(a4,
+                                                &addr,
+                                                NM_PLATFORM_IP_ADDRESS_CMP_TYPE_SEMANTICALLY)
+                    == 0) {
+                    continue;
+                }
+            }
+        } else {
             const NMPlatformIP6Address *a6 = NMP_OBJECT_CAST_IP6_ADDRESS(obj);
 
             if (NM_FLAGS_HAS(a6->n_ifa_flags, IFA_F_SECONDARY)
