@@ -114,6 +114,8 @@ main(int argc, char *argv[])
     gint64                           time_start;
     gint64                           time_end;
     gint64                           remaining_time;
+    gboolean                         IS_IPv4;
+    const char                      *reason;
 
     /* Connecting to the unix socket can fail with EAGAIN if there are too
      * many pending connections and the server can't accept them in time
@@ -124,7 +126,19 @@ main(int argc, char *argv[])
     time_end   = time_start + (5000 * 1000L);
     try_count  = 0;
 
-    _LOGi("nm-dhcp-helper: event called");
+    reason = getenv("reason");
+
+    _LOGi("nm-dhcp-helper: event called: %s", reason);
+
+    IS_IPv4 = !NM_IN_STRSET(reason,
+                            "PREINIT6",
+                            "BOUND6",
+                            "RENEW6",
+                            "REBIND6",
+                            "DEPREF6",
+                            "EXPIRE6",
+                            "RELEASE6",
+                            "STOP6");
 
 do_connect:
     try_count++;
@@ -244,5 +258,6 @@ out:
     }
 
     _LOGi("success: %s", success ? "YES" : "NO");
-    return success ? EXIT_SUCCESS : EXIT_FAILURE;
+    /* The error code to send a decline depends on the address family */
+    return success ? EXIT_SUCCESS : (IS_IPv4 ? 1 : 3);
 }
