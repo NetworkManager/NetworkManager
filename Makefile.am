@@ -512,6 +512,36 @@ EXTRA_DIST += src/libnm-udev-aux/meson.build
 
 ###############################################################################
 
+noinst_LTLIBRARIES += src/libnm-lldp/libnm-lldp.la
+
+src_libnm_lldp_libnm_lldp_la_CFLAGS = \
+	$(src_libnm_glib_aux_cppflags) \
+	-I$(srcdir)/src \
+	-I$(builddir)/src \
+	$(NULL)
+
+src_libnm_lldp_libnm_lldp_la_CPPFLAGS = \
+	$(CODE_COVERAGE_CFLAGS) \
+	$(SANITIZER_LIB_CFLAGS) \
+	$(NULL)
+
+src_libnm_lldp_libnm_lldp_la_LDFLAGS = \
+	$(SANITIZER_LIB_LDFLAGS) \
+	$(NULL)
+
+src_libnm_lldp_libnm_lldp_la_SOURCES = \
+	src/libnm-lldp/nm-lldp-neighbor.c \
+	src/libnm-lldp/nm-lldp-neighbor.h \
+	src/libnm-lldp/nm-lldp-network.c \
+	src/libnm-lldp/nm-lldp-network.h \
+	src/libnm-lldp/nm-lldp-rx-internal.h \
+	src/libnm-lldp/nm-lldp-rx.c \
+	src/libnm-lldp/nm-lldp-rx.h \
+	src/libnm-lldp/nm-lldp.h \
+	$(NULL)
+
+###############################################################################
+
 noinst_LTLIBRARIES += src/libnm-base/libnm-base.la
 
 src_libnm_base_libnm_base_la_CPPFLAGS = \
