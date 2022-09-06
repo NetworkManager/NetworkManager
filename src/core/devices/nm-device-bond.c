@@ -557,52 +557,39 @@ attach_port(NMDevice                  *device,
             NMDeviceAttachPortCallback callback,
             gpointer                   user_data)
 {
-    NMDeviceBond        *self = NM_DEVICE_BOND(device);
-    NMDeviceBondPrivate *priv = NM_DEVICE_BOND_GET_PRIVATE(self);
+    NMDeviceBond        *self     = NM_DEVICE_BOND(device);
+    NMDeviceBondPrivate *priv     = NM_DEVICE_BOND_GET_PRIVATE(self);
+    NMPlatform          *platform = nm_device_get_platform(device);
     NMSettingBondPort   *s_port;
+    NMSettingBond       *s_bond;
+    int                  ifindex;
 
     nm_device_master_check_slave_physical_port(device, port, LOGD_BOND);
 
-    if (priv->primary_missing) {
-        NMSettingBond *s_bond;
-        NMConnection  *conn_bond;
+    if (priv->primary_missing
+        && (s_bond = nm_device_get_applied_setting(device, NM_TYPE_SETTING_BOND))
+        && ((ifindex = _setting_bond_primary_opt_as_ifindex(platform, s_bond)) > 0)) {
+        const NMPlatformLnkBond props = {
+            .mode = _nm_setting_bond_mode_from_string(
+                nm_setting_bond_get_option_normalized(s_bond, NM_SETTING_BOND_OPTION_MODE)),
+            .primary = ifindex,
+        };
+        int r;
 
-        conn_bond = nm_device_get_applied_connection(device);
-        if (conn_bond) {
-            s_bond = nm_connection_get_setting_bond(conn_bond);
-            if (s_bond) {
-                NMPlatform *platform = nm_device_get_platform(device);
-                int         ifindex;
-
-                ifindex = _setting_bond_primary_opt_as_ifindex(platform, s_bond);
-                if (ifindex > 0) {
-                    const NMPlatformLnkBond props = {
-                        .mode = _nm_setting_bond_mode_from_string(
-                            nm_setting_bond_get_option_normalized(s_bond,
-                                                                  NM_SETTING_BOND_OPTION_MODE)),
-                        .primary = ifindex,
-                    };
-                    int r;
-
-                    r = nm_platform_link_bond_change(platform,
-                                                     nm_device_get_ip_ifindex(device),
-                                                     &props);
-                    if (r < 0)
-                        _LOGW(LOGD_BOND,
-                              "setting bond opts when attaching port %s: failed",
-                              nm_device_get_ip_iface(port));
-                    else
-                        priv->primary_missing = FALSE;
-                }
-            }
-        }
+        r = nm_platform_link_bond_change(platform, nm_device_get_ip_ifindex(device), &props);
+        if (r < 0)
+            _LOGW(LOGD_BOND,
+                  "setting bond opts when attaching port %s: failed",
+                  nm_device_get_ip_iface(port));
+        else
+            priv->primary_missing = FALSE;
     }
 
     if (configure) {
         gboolean success;
 
         nm_device_take_down(port, TRUE);
-        success = nm_platform_link_enslave(nm_device_get_platform(device),
+        success = nm_platform_link_enslave(platform,
                                            nm_device_get_ip_ifindex(device),
                                            nm_device_get_ip_ifindex(port));
         nm_device_bring_up(port, TRUE, NULL);
