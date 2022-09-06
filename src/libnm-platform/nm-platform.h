@@ -905,7 +905,7 @@ typedef struct {
     guint32     min_links;
     guint32     packets_per_port;
     guint32     peer_notif_delay;
-    guint32     primary;
+    int         primary;
     guint32     resend_igmp;
     guint32     updelay;
     guint16     ad_actor_sys_prio;
