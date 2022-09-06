@@ -385,28 +385,41 @@ _bond_arp_ip_target_to_platform(const char *value, in_addr_t out[static NM_BOND_
 }
 
 static int
-_setting_bond_primary_opt_as_ifindex(NMSettingBond *s_bond)
+_setting_bond_primary_opt_as_ifindex(NMPlatform *platform, NMSettingBond *s_bond)
 {
     const char *primary_str;
     int         ifindex = 0;
 
     primary_str = nm_setting_bond_get_option_normalized(s_bond, NM_SETTING_BOND_OPTION_PRIMARY);
 
-    if (primary_str != NULL)
-        ifindex = nm_platform_link_get_ifindex(NM_PLATFORM_GET, primary_str);
+    if (!primary_str)
+        return 0;
+
+    ifindex = nm_platform_link_get_ifindex(platform, primary_str);
+    if (ifindex <= 0)
+        return -ENODEV;
 
     return ifindex;
 }
 
 static void
-_platform_lnk_bond_init_from_setting(NMSettingBond *s_bond, NMPlatformLnkBond *props)
+_platform_lnk_bond_init_from_setting(NMPlatform        *platform,
+                                     NMSettingBond     *s_bond,
+                                     NMPlatformLnkBond *props,
+                                     bool              *out_primary_missing)
 {
+    gboolean    primary_missing;
     const char *opt_value;
+    int         primary;
+
+    primary = _setting_bond_primary_opt_as_ifindex(platform, s_bond);
+    if ((primary_missing = (primary < 0)))
+        primary = 0;
 
     *props = (NMPlatformLnkBond){
         .mode = _nm_setting_bond_mode_from_string(
             nm_setting_bond_get_option_normalized(s_bond, NM_SETTING_BOND_OPTION_MODE)),
-        .primary   = _setting_bond_primary_opt_as_ifindex(s_bond),
+        .primary   = primary,
         .miimon    = _nm_setting_bond_opt_value_as_u32(s_bond, NM_SETTING_BOND_OPTION_MIIMON),
         .updelay   = _nm_setting_bond_opt_value_as_u32(s_bond, NM_SETTING_BOND_OPTION_UPDELAY),
         .downdelay = _nm_setting_bond_opt_value_as_u32(s_bond, NM_SETTING_BOND_OPTION_DOWNDELAY),
@@ -471,14 +484,8 @@ _platform_lnk_bond_init_from_setting(NMSettingBond *s_bond, NMPlatformLnkBond *p
     props->resend_igmp_has      = props->resend_igmp != 1;
     props->lp_interval_has      = props->lp_interval != 1;
     props->tlb_dynamic_lb_has   = NM_IN_SET(props->mode, NM_BOND_MODE_TLB, NM_BOND_MODE_ALB);
-}
 
-static gboolean
-_check_primary_missing(NMPlatformLnkBond *props, NMSettingBond *s_bond)
-{
-    /* checks if the ifindex is 0 but the primary option string is set */
-    return !_setting_bond_primary_opt_as_ifindex(s_bond)
-           && nm_setting_bond_get_option_normalized(s_bond, NM_SETTING_BOND_OPTION_PRIMARY);
+    NM_SET_OUT(out_primary_missing, primary_missing);
 }
 
 static NMActStageReturn
@@ -487,6 +494,7 @@ act_stage1_prepare(NMDevice *device, NMDeviceStateReason *out_failure_reason)
     NMActStageReturn     ret  = NM_ACT_STAGE_RETURN_SUCCESS;
     NMDeviceBond        *self = NM_DEVICE_BOND(device);
     NMDeviceBondPrivate *priv = NM_DEVICE_BOND_GET_PRIVATE(self);
+    NMPlatform          *platform;
     NMConnection        *connection;
     NMSettingBond       *s_bond;
     NMPlatformLnkBond    props;
@@ -499,12 +507,13 @@ act_stage1_prepare(NMDevice *device, NMDeviceStateReason *out_failure_reason)
     s_bond = nm_connection_get_setting_bond(connection);
     g_return_val_if_fail(s_bond, NM_ACT_STAGE_RETURN_FAILURE);
 
-    _platform_lnk_bond_init_from_setting(s_bond, &props);
-    priv->primary_missing = _check_primary_missing(&props, s_bond);
+    platform = nm_device_get_platform(device);
+
+    _platform_lnk_bond_init_from_setting(platform, s_bond, &props, &priv->primary_missing);
 
     /* Interface must be down to set bond options */
     nm_device_take_down(device, TRUE);
-    r = nm_platform_link_bond_change(nm_device_get_platform(device), ifindex, &props);
+    r = nm_platform_link_bond_change(platform, ifindex, &props);
     if (r < 0) {
         ret = NM_ACT_STAGE_RETURN_FAILURE;
         NM_SET_OUT(out_failure_reason, NM_DEVICE_STATE_REASON_CONFIG_FAILED);
@@ -562,18 +571,20 @@ attach_port(NMDevice                  *device,
         if (conn_bond) {
             s_bond = nm_connection_get_setting_bond(conn_bond);
             if (s_bond) {
-                /* mode is a mandatory property */
-                int               r;
-                int               ifindex;
-                NMPlatformLnkBond props = {
-                    .mode = _nm_setting_bond_mode_from_string(
-                        nm_setting_bond_get_option_normalized(s_bond, NM_SETTING_BOND_OPTION_MODE)),
-                };
+                NMPlatform *platform = nm_device_get_platform(device);
+                int         ifindex;
 
-                ifindex = _setting_bond_primary_opt_as_ifindex(s_bond);
-                if (ifindex) {
-                    props.primary = ifindex;
-                    r             = nm_platform_link_bond_change(nm_device_get_platform(device),
+                ifindex = _setting_bond_primary_opt_as_ifindex(platform, s_bond);
+                if (ifindex > 0) {
+                    const NMPlatformLnkBond props = {
+                        .mode = _nm_setting_bond_mode_from_string(
+                            nm_setting_bond_get_option_normalized(s_bond,
+                                                                  NM_SETTING_BOND_OPTION_MODE)),
+                        .primary = ifindex,
+                    };
+                    int r;
+
+                    r = nm_platform_link_bond_change(platform,
                                                      nm_device_get_ip_ifindex(device),
                                                      &props);
                     if (r < 0)
@@ -687,19 +698,21 @@ create_and_realize(NMDevice              *device,
     const char          *iface = nm_device_get_iface(device);
     NMDeviceBond        *self  = NM_DEVICE_BOND(device);
     NMDeviceBondPrivate *priv  = NM_DEVICE_BOND_GET_PRIVATE(self);
+    NMPlatform          *platform;
     NMSettingBond       *s_bond;
     NMPlatformLnkBond    props;
     int                  r;
 
-    g_assert(iface);
+    nm_assert(iface);
 
     s_bond = nm_connection_get_setting_bond(connection);
     nm_assert(s_bond);
 
-    _platform_lnk_bond_init_from_setting(s_bond, &props);
-    priv->primary_missing = _check_primary_missing(&props, s_bond);
+    platform = nm_device_get_platform(device);
 
-    r = nm_platform_link_bond_add(nm_device_get_platform(device), iface, &props, out_plink);
+    _platform_lnk_bond_init_from_setting(platform, s_bond, &props, &priv->primary_missing);
+
+    r = nm_platform_link_bond_add(platform, iface, &props, out_plink);
     if (r < 0) {
         g_set_error(error,
                     NM_DEVICE_ERROR,
