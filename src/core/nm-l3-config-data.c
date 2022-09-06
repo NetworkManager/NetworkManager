@@ -2818,7 +2818,7 @@ _init_from_connection_ip(NML3ConfigData *self, int addr_family, NMConnection *co
         if (IS_IPv4) {
             r.r4 = (NMPlatformIP4Route){
                 .network    = network_bin.addr4,
-                .plen       = nm_ip_route_get_prefix(s_route),
+                .plen       = plen,
                 .gateway    = next_hop_bin.addr4,
                 .metric_any = metric_any,
                 .metric     = metric,
@@ -2828,7 +2828,7 @@ _init_from_connection_ip(NML3ConfigData *self, int addr_family, NMConnection *co
         } else {
             r.r6 = (NMPlatformIP6Route){
                 .network    = network_bin.addr6,
-                .plen       = nm_ip_route_get_prefix(s_route),
+                .plen       = plen,
                 .gateway    = next_hop_bin.addr6,
                 .metric_any = metric_any,
                 .metric     = metric,
