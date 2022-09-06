@@ -190,12 +190,16 @@ _notify_update_prop_state_reason(NMClient               *client,
                                  NMLDBusObject          *dbobj,
                                  const NMLDBusMetaIface *meta_iface,
                                  guint                   dbus_property_idx,
+                                 gboolean                is_removed,
                                  GVariant               *value)
 {
     NMDevice        *self      = NM_DEVICE(dbobj->nmobj);
     NMDevicePrivate *priv      = NM_DEVICE_GET_PRIVATE(self);
     guint32          new_state = NM_DEVICE_STATE_UNKNOWN;
     guint32          reason    = NM_DEVICE_STATE_REASON_NONE;
+
+    if (is_removed)
+        return NML_DBUS_NOTIFY_UPDATE_PROP_FLAGS_NONE;
 
     /* We ignore the "State" property and the "StateChanged" signal of the device.
      * This information is redundant to the "StateReason" property, and we rely
@@ -234,6 +238,7 @@ _notify_update_prop_lldp_neighbors(NMClient               *client,
                                    NMLDBusObject          *dbobj,
                                    const NMLDBusMetaIface *meta_iface,
                                    guint                   dbus_property_idx,
+                                   gboolean                is_removed,
                                    GVariant               *value)
 {
     NMDevice                    *self = NM_DEVICE(dbobj->nmobj);
@@ -242,6 +247,9 @@ _notify_update_prop_lldp_neighbors(NMClient               *client,
     gs_unref_ptrarray GPtrArray *new  = NULL;
     GVariantIter *attrs_iter;
     GVariantIter  iter;
+
+    if (is_removed)
+        return NML_DBUS_NOTIFY_UPDATE_PROP_FLAGS_NONE;
 
     new = g_ptr_array_new_with_free_func((GDestroyNotify) nm_lldp_neighbor_unref);
 
@@ -1300,12 +1308,16 @@ _nm_device_notify_update_prop_hw_address(NMClient               *client,
                                          NMLDBusObject          *dbobj,
                                          const NMLDBusMetaIface *meta_iface,
                                          guint                   dbus_property_idx,
+                                         gboolean                is_removed,
                                          GVariant               *value)
 {
     NMDevice        *self    = NM_DEVICE(dbobj->nmobj);
     NMDevicePrivate *priv    = NM_DEVICE_GET_PRIVATE(self);
     gboolean         is_new  = (meta_iface == &_nml_dbus_meta_iface_nm_device);
     gboolean         changed = FALSE;
+
+    if (is_removed)
+        return NML_DBUS_NOTIFY_UPDATE_PROP_FLAGS_NONE;
 
     if (!is_new && priv->hw_address_is_new) {
         /* once the instance is marked to honor the new property, the
@@ -1364,6 +1376,7 @@ _nm_device_notify_update_prop_ports(NMClient               *client,
                                     NMLDBusObject          *dbobj,
                                     const NMLDBusMetaIface *meta_iface,
                                     guint                   dbus_property_idx,
+                                    gboolean                is_removed,
                                     GVariant               *value)
 {
     const NMLDBusMetaProperty *meta_property =

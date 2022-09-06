@@ -399,10 +399,14 @@ _notify_update_prop_hw_address(NMClient               *client,
                                NMLDBusObject          *dbobj,
                                const NMLDBusMetaIface *meta_iface,
                                guint                   dbus_property_idx,
+                               gboolean                is_removed,
                                GVariant               *value)
 {
     NMAccessPoint        *self = NM_ACCESS_POINT(dbobj->nmobj);
     NMAccessPointPrivate *priv = NM_ACCESS_POINT_GET_PRIVATE(self);
+
+    if (is_removed)
+        return NML_DBUS_NOTIFY_UPDATE_PROP_FLAGS_NONE;
 
     g_free(priv->bssid);
     priv->bssid = value ? g_variant_dup_string(value, NULL) : 0u;

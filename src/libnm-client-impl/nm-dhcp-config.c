@@ -34,10 +34,14 @@ _notify_update_prop_options(NMClient               *client,
                             NMLDBusObject          *dbobj,
                             const NMLDBusMetaIface *meta_iface,
                             guint                   dbus_property_idx,
+                            gboolean                is_removed,
                             GVariant               *value)
 {
     NMDhcpConfig        *self = NM_DHCP_CONFIG(dbobj->nmobj);
     NMDhcpConfigPrivate *priv = NM_DHCP_CONFIG_GET_PRIVATE(self);
+
+    if (is_removed)
+        return NML_DBUS_NOTIFY_UPDATE_PROP_FLAGS_NONE;
 
     g_hash_table_remove_all(priv->options);
 

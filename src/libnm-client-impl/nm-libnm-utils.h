@@ -325,12 +325,14 @@ NMLDBusNotifyUpdatePropFlags _nml_dbus_notify_update_prop_ignore(NMClient       
                                                                  NMLDBusObject          *dbobj,
                                                                  const NMLDBusMetaIface *meta_iface,
                                                                  guint     dbus_property_idx,
+                                                                 gboolean  is_removed,
                                                                  GVariant *value);
 
 NMLDBusNotifyUpdatePropFlags _nml_dbus_notify_update_prop_o(NMClient               *client,
                                                             NMLDBusObject          *dbobj,
                                                             const NMLDBusMetaIface *meta_iface,
                                                             guint     dbus_property_idx,
+                                                            gboolean  is_removed,
                                                             GVariant *value);
 
 NMLDBusNotifyUpdatePropFlags nml_dbus_property_ao_notify(NMClient               *self,
@@ -348,6 +350,7 @@ typedef struct {
                                                        NMLDBusObject          *dbobj,
                                                        const NMLDBusMetaIface *meta_iface,
                                                        guint                   dbus_property_idx,
+                                                       gboolean                is_removed,
                                                        GVariant               *value);
 
     guint16 prop_struct_offset;
@@ -1043,12 +1046,14 @@ _nm_device_notify_update_prop_hw_address(NMClient               *client,
                                          NMLDBusObject          *dbobj,
                                          const NMLDBusMetaIface *meta_iface,
                                          guint                   dbus_property_idx,
+                                         gboolean                is_removed,
                                          GVariant               *value);
 
 NMLDBusNotifyUpdatePropFlags _nm_device_notify_update_prop_ports(NMClient               *client,
                                                                  NMLDBusObject          *dbobj,
                                                                  const NMLDBusMetaIface *meta_iface,
                                                                  guint     dbus_property_idx,
+                                                                 gboolean  is_removed,
                                                                  GVariant *value);
 
 /*****************************************************************************/

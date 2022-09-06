@@ -2364,6 +2364,7 @@ _nml_dbus_notify_update_prop_ignore(NMClient               *self,
                                     NMLDBusObject          *dbobj,
                                     const NMLDBusMetaIface *meta_iface,
                                     guint                   dbus_property_idx,
+                                    gboolean                is_removed,
                                     GVariant               *value)
 {
     return NML_DBUS_NOTIFY_UPDATE_PROP_FLAGS_NONE;
@@ -2374,10 +2375,14 @@ _nml_dbus_notify_update_prop_o(NMClient               *self,
                                NMLDBusObject          *dbobj,
                                const NMLDBusMetaIface *meta_iface,
                                guint                   dbus_property_idx,
+                               gboolean                is_removed,
                                GVariant               *value)
 {
     const char   *path = NULL;
     NMRefString **p_property;
+
+    if (is_removed)
+        return NML_DBUS_NOTIFY_UPDATE_PROP_FLAGS_NONE;
 
     if (value)
         path = g_variant_get_string(value, NULL);
@@ -2409,8 +2414,21 @@ _obj_handle_dbus_prop_changes(NMClient            *self,
     const char                  *dbus_type_s;
     const GParamSpec            *param_spec;
     NMLDBusNotifyUpdatePropFlags notify_update_prop_flags;
+    const gboolean               is_removed = (!value);
 
     nm_assert(G_IS_OBJECT(dbobj->nmobj));
+
+#define _HANDLE_IS_REMOVED(is_removed)                                       \
+    G_STMT_START                                                             \
+    {                                                                        \
+        /* The D-Bus interface was removed, when @value was originally NULL.
+         * In that case, we only want to reset complex properties ("o"
+         * and "ao"), which refer to other objects. Plain properties
+         * are frozen at the last value, and we do nothing about them */ \
+        if (is_removed)                                                      \
+            return;                                                          \
+    }                                                                        \
+    G_STMT_END
 
     if (value && !g_variant_is_of_type(value, meta_property->dbus_type)) {
         NML_NMCLIENT_LOG_E(self,
@@ -2424,8 +2442,12 @@ _obj_handle_dbus_prop_changes(NMClient            *self,
     }
 
     if (meta_property->notify_update_prop) {
-        notify_update_prop_flags =
-            meta_property->notify_update_prop(self, dbobj, meta_iface, dbus_property_idx, value);
+        notify_update_prop_flags = meta_property->notify_update_prop(self,
+                                                                     dbobj,
+                                                                     meta_iface,
+                                                                     dbus_property_idx,
+                                                                     is_removed,
+                                                                     value);
         if (notify_update_prop_flags == NML_DBUS_NOTIFY_UPDATE_PROP_FLAGS_NONE)
             return;
 
@@ -2451,6 +2473,7 @@ _obj_handle_dbus_prop_changes(NMClient            *self,
     switch (dbus_type_s[0]) {
     case 'b':
         nm_assert(dbus_type_s[1] == '\0');
+        _HANDLE_IS_REMOVED(is_removed);
         if (value)
             *((bool *) p_property) = g_variant_get_boolean(value);
         else if (param_spec->value_type == G_TYPE_BOOLEAN)
@@ -2462,6 +2485,7 @@ _obj_handle_dbus_prop_changes(NMClient            *self,
         break;
     case 'y':
         nm_assert(dbus_type_s[1] == '\0');
+        _HANDLE_IS_REMOVED(is_removed);
         if (value)
             *((guint8 *) p_property) = g_variant_get_byte(value);
         else {
@@ -2471,6 +2495,7 @@ _obj_handle_dbus_prop_changes(NMClient            *self,
         break;
     case 'q':
         nm_assert(dbus_type_s[1] == '\0');
+        _HANDLE_IS_REMOVED(is_removed);
         if (value)
             *((guint16 *) p_property) = g_variant_get_uint16(value);
         else {
@@ -2480,6 +2505,7 @@ _obj_handle_dbus_prop_changes(NMClient            *self,
         break;
     case 'i':
         nm_assert(dbus_type_s[1] == '\0');
+        _HANDLE_IS_REMOVED(is_removed);
         if (value)
             *((gint32 *) p_property) = g_variant_get_int32(value);
         else if (param_spec->value_type == G_TYPE_INT)
@@ -2491,6 +2517,7 @@ _obj_handle_dbus_prop_changes(NMClient            *self,
         break;
     case 'u':
         nm_assert(dbus_type_s[1] == '\0');
+        _HANDLE_IS_REMOVED(is_removed);
         if (value)
             *((guint32 *) p_property) = g_variant_get_uint32(value);
         else {
@@ -2500,6 +2527,7 @@ _obj_handle_dbus_prop_changes(NMClient            *self,
         break;
     case 'x':
         nm_assert(dbus_type_s[1] == '\0');
+        _HANDLE_IS_REMOVED(is_removed);
         if (value)
             *((gint64 *) p_property) = g_variant_get_int64(value);
         else if (param_spec->value_type == G_TYPE_INT64)
@@ -2511,6 +2539,7 @@ _obj_handle_dbus_prop_changes(NMClient            *self,
         break;
     case 't':
         nm_assert(dbus_type_s[1] == '\0');
+        _HANDLE_IS_REMOVED(is_removed);
         if (value)
             *((guint64 *) p_property) = g_variant_get_uint64(value);
         else {
@@ -2521,6 +2550,7 @@ _obj_handle_dbus_prop_changes(NMClient            *self,
     case 's':
         nm_assert(dbus_type_s[1] == '\0');
         nm_clear_g_free((char **) p_property);
+        _HANDLE_IS_REMOVED(is_removed);
         if (value)
             *((char **) p_property) = g_variant_dup_string(value, NULL);
         else {
@@ -2530,6 +2560,7 @@ _obj_handle_dbus_prop_changes(NMClient            *self,
         break;
     case 'o':
         nm_assert(dbus_type_s[1] == '\0');
+        /* Don't call _HANDLE_IS_REMOVED(), because we want to break reference cycles. */
         notify_update_prop_flags = nml_dbus_property_o_notify(self,
                                                               p_property,
                                                               dbobj,
@@ -2541,6 +2572,7 @@ _obj_handle_dbus_prop_changes(NMClient            *self,
         switch (dbus_type_s[1]) {
         case 'y':
             nm_assert(dbus_type_s[2] == '\0');
+            _HANDLE_IS_REMOVED(is_removed);
             {
                 gconstpointer v;
                 gsize         l;
@@ -2563,6 +2595,8 @@ _obj_handle_dbus_prop_changes(NMClient            *self,
             nm_assert(dbus_type_s[2] == '\0');
             nm_assert(param_spec->value_type == G_TYPE_STRV);
 
+            _HANDLE_IS_REMOVED(is_removed);
+
             g_strfreev(*((char ***) p_property));
             if (value)
                 *((char ***) p_property) = g_variant_dup_strv(value, NULL);
@@ -2571,6 +2605,7 @@ _obj_handle_dbus_prop_changes(NMClient            *self,
             break;
         case 'o':
             nm_assert(dbus_type_s[2] == '\0');
+            /* Don't call _HANDLE_IS_REMOVED(), because we want to break reference cycles. */
             notify_update_prop_flags = nml_dbus_property_ao_notify(self,
                                                                    p_property,
                                                                    dbobj,
@@ -2630,16 +2665,7 @@ _obj_handle_dbus_iface_changes(NMClient            *self,
 
     if (is_removed) {
         for (i_prop = 0; i_prop < db_iface_data->dbus_iface.meta->n_dbus_properties; i_prop++) {
-            const GVariantType *dbus_type =
-                db_iface_data->dbus_iface.meta->dbus_properties[i_prop].dbus_type;
-
-            /* Unset properties that can potentially contain objects, to release them,
-             * but keep the rest around, because it might still make sense to know what
-             * they were (e.g. when a device has been removed we'd like know what interface
-             * name it had, or keep the state to avoid spurious state change into UNKNOWN). */
-            if (g_variant_type_is_array(dbus_type)
-                || g_variant_type_equal(dbus_type, G_VARIANT_TYPE_OBJECT_PATH))
-                _obj_handle_dbus_prop_changes(self, dbobj, db_iface_data, i_prop, NULL);
+            _obj_handle_dbus_prop_changes(self, dbobj, db_iface_data, i_prop, NULL);
         }
     } else {
         while ((db_prop_data = c_list_first_entry(&db_iface_data->changed_prop_lst_head,
@@ -6201,6 +6227,7 @@ _notify_update_prop_dns_manager_configuration(NMClient               *self,
                                               NMLDBusObject          *dbobj,
                                               const NMLDBusMetaIface *meta_iface,
                                               guint                   dbus_property_idx,
+                                              gboolean                is_removed,
                                               GVariant               *value)
 {
     NMClientPrivate             *priv              = NM_CLIENT_GET_PRIVATE(self);
@@ -6208,6 +6235,9 @@ _notify_update_prop_dns_manager_configuration(NMClient               *self,
     gs_unref_ptrarray GPtrArray *configuration_new = NULL;
 
     nm_assert(G_OBJECT(self) == dbobj->nmobj);
+
+    if (is_removed)
+        return NML_DBUS_NOTIFY_UPDATE_PROP_FLAGS_NONE;
 
     if (value) {
         GVariant    *entry_var_tmp;
@@ -6304,11 +6334,15 @@ _notify_update_prop_nm_capabilities(NMClient               *self,
                                     NMLDBusObject          *dbobj,
                                     const NMLDBusMetaIface *meta_iface,
                                     guint                   dbus_property_idx,
+                                    gboolean                is_removed,
                                     GVariant               *value)
 {
     NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE(self);
 
     nm_assert(G_OBJECT(self) == dbobj->nmobj);
+
+    if (is_removed)
+        return NML_DBUS_NOTIFY_UPDATE_PROP_FLAGS_NONE;
 
     nm_clear_g_free(&priv->nm.capabilities_arr);
     priv->nm.capabilities_len = 0;

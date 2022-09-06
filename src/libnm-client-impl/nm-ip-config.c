@@ -55,6 +55,7 @@ _notify_update_prop_addresses(NMClient               *client,
                               NMLDBusObject          *dbobj,
                               const NMLDBusMetaIface *meta_iface,
                               guint                   dbus_property_idx,
+                              gboolean                is_removed,
                               GVariant               *value)
 {
     NMIPConfig                  *self          = NM_IP_CONFIG(dbobj->nmobj);
@@ -63,6 +64,9 @@ _notify_update_prop_addresses(NMClient               *client,
     gs_unref_ptrarray GPtrArray *addresses_new = NULL;
     int      addr_family = meta_iface == &_nml_dbus_meta_iface_nm_ip4config ? AF_INET : AF_INET6;
     gboolean new_style;
+
+    if (is_removed)
+        return NML_DBUS_NOTIFY_UPDATE_PROP_FLAGS_NONE;
 
     new_style =
         (((const char *) meta_iface->dbus_properties[dbus_property_idx].dbus_type)[2] == '{');
@@ -95,6 +99,7 @@ _notify_update_prop_routes(NMClient               *client,
                            NMLDBusObject          *dbobj,
                            const NMLDBusMetaIface *meta_iface,
                            guint                   dbus_property_idx,
+                           gboolean                is_removed,
                            GVariant               *value)
 {
     NMIPConfig                  *self       = NM_IP_CONFIG(dbobj->nmobj);
@@ -103,6 +108,9 @@ _notify_update_prop_routes(NMClient               *client,
     gs_unref_ptrarray GPtrArray *routes_new = NULL;
     int      addr_family = meta_iface == &_nml_dbus_meta_iface_nm_ip4config ? AF_INET : AF_INET6;
     gboolean new_style;
+
+    if (is_removed)
+        return NML_DBUS_NOTIFY_UPDATE_PROP_FLAGS_NONE;
 
     new_style =
         (((const char *) meta_iface->dbus_properties[dbus_property_idx].dbus_type)[2] == '{');
@@ -135,6 +143,7 @@ _notify_update_prop_nameservers(NMClient               *client,
                                 NMLDBusObject          *dbobj,
                                 const NMLDBusMetaIface *meta_iface,
                                 guint                   dbus_property_idx,
+                                gboolean                is_removed,
                                 GVariant               *value)
 {
     NMIPConfig        *self            = NM_IP_CONFIG(dbobj->nmobj);
@@ -142,6 +151,9 @@ _notify_update_prop_nameservers(NMClient               *client,
     gs_strfreev char **nameservers_new = NULL;
     gboolean           new_style       = TRUE;
     int addr_family = meta_iface == &_nml_dbus_meta_iface_nm_ip4config ? AF_INET : AF_INET6;
+
+    if (is_removed)
+        return NML_DBUS_NOTIFY_UPDATE_PROP_FLAGS_NONE;
 
     if (addr_family == AF_INET) {
         new_style =
@@ -205,12 +217,16 @@ _notify_update_prop_wins_servers(NMClient               *client,
                                  NMLDBusObject          *dbobj,
                                  const NMLDBusMetaIface *meta_iface,
                                  guint                   dbus_property_idx,
+                                 gboolean                is_removed,
                                  GVariant               *value)
 {
     NMIPConfig        *self             = NM_IP_CONFIG(dbobj->nmobj);
     NMIPConfigPrivate *priv             = NM_IP_CONFIG_GET_PRIVATE(self);
     gs_strfreev char **wins_servers_new = NULL;
     gboolean           new_style;
+
+    if (is_removed)
+        return NML_DBUS_NOTIFY_UPDATE_PROP_FLAGS_NONE;
 
     new_style =
         (((const char *) meta_iface->dbus_properties[dbus_property_idx].dbus_type)[1] == 's');
