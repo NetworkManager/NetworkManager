@@ -45,7 +45,7 @@
         <property name="mac-address-blacklist"
                   description="A list of permanent MAC addresses of Wi-Fi devices to which this connection should never apply.  Each MAC address should be given in the standard hex-digits-and-colons notation (eg &quot;00:11:22:33:44:55&quot;)." />
         <property name="mac-address-randomization"
-                  description="One of NM_SETTING_MAC_RANDOMIZATION_DEFAULT (0) (never randomize unless the user has set a global default to randomize and the supplicant supports randomization),  NM_SETTING_MAC_RANDOMIZATION_NEVER (1) (never randomize the MAC address), or NM_SETTING_MAC_RANDOMIZATION_ALWAYS (2) (always randomize the MAC address). This property is deprecated for &apos;cloned-mac-address&apos;. Deprecated: 1" />
+                  description="One of NM_SETTING_MAC_RANDOMIZATION_DEFAULT (0) (never randomize unless the user has set a global default to randomize and the supplicant supports randomization),  NM_SETTING_MAC_RANDOMIZATION_NEVER (1) (never randomize the MAC address), or NM_SETTING_MAC_RANDOMIZATION_ALWAYS (2) (always randomize the MAC address). This property is deprecated for &apos;cloned-mac-address&apos;." />
         <property name="mtu"
                   alias="mtu"
                   description="If non-zero, only transmit packets of the specified size or smaller, breaking larger packets up into multiple Ethernet frames." />
@@ -275,7 +275,7 @@
     <setting name="bridge" >
         <property name="mac-address"
                   alias="mac"
-                  description="If specified, the MAC address of bridge. When creating a new bridge, this MAC address will be set. If this field is left unspecified, the &quot;ethernet.cloned-mac-address&quot; is referred instead to generate the initial MAC address. Note that setting &quot;ethernet.cloned-mac-address&quot; anyway overwrites the MAC address of the bridge later while activating the bridge. Hence, this property is deprecated. Deprecated: 1" />
+                  description="If specified, the MAC address of bridge. When creating a new bridge, this MAC address will be set. If this field is left unspecified, the &quot;ethernet.cloned-mac-address&quot; is referred instead to generate the initial MAC address. Note that setting &quot;ethernet.cloned-mac-address&quot; anyway overwrites the MAC address of the bridge later while activating the bridge. Hence, this property is deprecated." />
         <property name="stp"
                   alias="stp"
                   description="Controls whether Spanning Tree Protocol (STP) is enabled for this bridge." />
@@ -560,7 +560,7 @@
         <property name="auto-config"
                   description="When TRUE, the settings such as APN, username, or password will default to values that match the network the modem will register to in the Mobile Broadband Provider database." />
         <property name="number"
-                  description="Legacy setting that used to help establishing PPP data sessions for GSM-based modems. Deprecated: 1" />
+                  description="Legacy setting that used to help establishing PPP data sessions for GSM-based modems." />
         <property name="username"
                   alias="user"
                   description="The username used to authenticate with the network, if required.  Many providers do not require a username, or accept any username.  But if a username is required, it is specified here." />
@@ -1119,10 +1119,10 @@
     <setting name="wimax" >
         <property name="mac-address"
                   alias="mac"
-                  description="If specified, this connection will only apply to the WiMAX device whose MAC address matches. This property does not change the MAC address of the device (known as MAC spoofing). Deprecated: 1" />
+                  description="If specified, this connection will only apply to the WiMAX device whose MAC address matches. This property does not change the MAC address of the device (known as MAC spoofing)." />
         <property name="network-name"
                   alias="nsp"
-                  description="Network Service Provider (NSP) name of the WiMAX network this connection should use. Deprecated: 1" />
+                  description="Network Service Provider (NSP) name of the WiMAX network this connection should use." />
     </setting>
     <setting name="wireguard" >
         <property name="private-key"
