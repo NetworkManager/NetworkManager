@@ -1221,28 +1221,35 @@ nm_ndisc_stop(NMNDisc *ndisc)
 }
 
 NMNDiscConfigMap
-nm_ndisc_dad_failed(NMNDisc *ndisc, const struct in6_addr *address, gboolean emit_changed_signal)
+nm_ndisc_dad_failed(NMNDisc *ndisc, GArray *addresses, gboolean emit_changed_signal)
 {
     NMNDiscDataInternal *rdata;
     guint                i;
+    guint                j;
     gboolean             changed = FALSE;
+
+    g_return_val_if_fail(addresses, NM_NDISC_CONFIG_NONE);
 
     rdata = &NM_NDISC_GET_PRIVATE(ndisc)->rdata;
 
-    for (i = 0; i < rdata->addresses->len;) {
-        NMNDiscAddress *item = &nm_g_array_index(rdata->addresses, NMNDiscAddress, i);
+    for (i = 0; i < addresses->len; i++) {
+        const struct in6_addr *addr = &nm_g_array_index(addresses, struct in6_addr, i);
 
-        if (IN6_ARE_ADDR_EQUAL(&item->address, address)) {
-            char sbuf[NM_INET_ADDRSTRLEN];
+        for (j = 0; j < rdata->addresses->len;) {
+            NMNDiscAddress *item = &nm_g_array_index(rdata->addresses, NMNDiscAddress, j);
 
-            _LOGD("DAD failed for discovered address %s", nm_inet6_ntop(address, sbuf));
-            changed = TRUE;
-            if (!complete_address(ndisc, item)) {
-                g_array_remove_index(rdata->addresses, i);
-                continue;
+            if (IN6_ARE_ADDR_EQUAL(&item->address, addr)) {
+                char sbuf[NM_INET_ADDRSTRLEN];
+
+                _LOGD("DAD failed for discovered address %s", nm_inet6_ntop(addr, sbuf));
+                changed = TRUE;
+                if (!complete_address(ndisc, item)) {
+                    g_array_remove_index(rdata->addresses, j);
+                    continue;
+                }
             }
+            j++;
         }
-        i++;
     }
 
     if (emit_changed_signal && changed)

@@ -228,9 +228,9 @@ NMNDiscNodeType nm_ndisc_get_node_type(NMNDisc *self);
 gboolean nm_ndisc_set_iid(NMNDisc *ndisc, const NMUtilsIPv6IfaceId iid, gboolean is_token);
 void     nm_ndisc_start(NMNDisc *ndisc);
 void     nm_ndisc_stop(NMNDisc *ndisc);
+void     nm_ndisc_set_config(NMNDisc *ndisc, const NML3ConfigData *l3cd);
 NMNDiscConfigMap
-nm_ndisc_dad_failed(NMNDisc *ndisc, const struct in6_addr *address, gboolean emit_changed_signal);
-void nm_ndisc_set_config(NMNDisc *ndisc, const NML3ConfigData *l3cd);
+nm_ndisc_dad_failed(NMNDisc *ndisc, GArray *addresses, gboolean emit_changed_signal);
 
 NMPlatform *nm_ndisc_get_platform(NMNDisc *self);
 NMPNetns   *nm_ndisc_netns_get(NMNDisc *self);
