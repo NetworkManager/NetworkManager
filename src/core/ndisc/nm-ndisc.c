@@ -476,12 +476,12 @@ complete_address(NMNDisc *ndisc, NMNDiscAddress *addr)
                                                             priv->config.network_id,
                                                             addr->dad_counter++,
                                                             &error)) {
-            _LOGW("complete-address: failed to generate an stable-privacy address: %s",
+            _LOGW("complete-address: failed to generate a stable-privacy address: %s",
                   error->message);
             g_clear_error(&error);
             return FALSE;
         }
-        _LOGD("complete-address: using an stable-privacy address");
+        _LOGD("complete-address: using a stable-privacy address");
         return TRUE;
     }
 
@@ -496,7 +496,7 @@ complete_address(NMNDisc *ndisc, NMNDiscAddress *addr)
         return TRUE;
     }
 
-    _LOGW("complete-address: can't generate a new_item EUI-64 address");
+    _LOGW("complete-address: can't generate a new EUI-64 address");
     return FALSE;
 }
 
@@ -1241,7 +1241,7 @@ nm_ndisc_dad_failed(NMNDisc *ndisc, GArray *addresses, gboolean emit_changed_sig
             if (IN6_ARE_ADDR_EQUAL(&item->address, addr)) {
                 char sbuf[NM_INET_ADDRSTRLEN];
 
-                _LOGD("DAD failed for discovered address %s", nm_inet6_ntop(addr, sbuf));
+                _LOGI("DAD failed for discovered address %s", nm_inet6_ntop(addr, sbuf));
                 changed = TRUE;
                 if (!complete_address(ndisc, item)) {
                     g_array_remove_index(rdata->addresses, j);
