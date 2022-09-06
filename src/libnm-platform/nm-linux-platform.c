@@ -1590,7 +1590,7 @@ _parse_lnk_bond(const char *kind, struct nlattr *info_data)
     if (tb[IFLA_BOND_MODE])
         props->mode = nla_get_u8(tb[IFLA_BOND_MODE]);
     if (tb[IFLA_BOND_PRIMARY])
-        props->primary = nla_get_u32(tb[IFLA_BOND_PRIMARY]);
+        props->primary = NM_CLAMP((int) nla_get_u32(tb[IFLA_BOND_PRIMARY]), 0, G_MAXINT);
     if (tb[IFLA_BOND_MIIMON]) {
         props->miimon     = nla_get_u32(tb[IFLA_BOND_MIIMON]);
         props->miimon_has = TRUE;
@@ -4536,7 +4536,7 @@ _nl_msg_new_link_set_linkinfo(struct nl_msg *msg, NMLinkType link_type, gconstpo
             NLA_PUT_U32(msg, IFLA_BOND_PACKETS_PER_SLAVE, props->packets_per_port);
         if (props->peer_notif_delay_has)
             NLA_PUT_U32(msg, IFLA_BOND_PEER_NOTIF_DELAY, props->peer_notif_delay);
-        if (props->primary)
+        if (props->primary > 0)
             NLA_PUT_U32(msg, IFLA_BOND_PRIMARY, props->primary);
         if (props->resend_igmp_has)
             NLA_PUT_U32(msg, IFLA_BOND_RESEND_IGMP, props->resend_igmp);
