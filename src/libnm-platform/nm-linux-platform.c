@@ -1589,11 +1589,8 @@ _parse_lnk_bond(const char *kind, struct nlattr *info_data)
 
     if (tb[IFLA_BOND_MODE])
         props->mode = nla_get_u8(tb[IFLA_BOND_MODE]);
-    if (tb[IFLA_BOND_PRIMARY]) {
+    if (tb[IFLA_BOND_PRIMARY])
         props->primary = nla_get_u32(tb[IFLA_BOND_PRIMARY]);
-    } else if (tb[IFLA_BOND_ACTIVE_SLAVE]) {
-        props->primary = nla_get_u32(tb[IFLA_BOND_ACTIVE_SLAVE]);
-    }
     if (tb[IFLA_BOND_MIIMON]) {
         props->miimon     = nla_get_u32(tb[IFLA_BOND_MIIMON]);
         props->miimon_has = TRUE;
