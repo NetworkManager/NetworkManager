@@ -59,7 +59,7 @@
 /*****************************************************************************/
 
 typedef struct {
-    bool missing_primary;
+    bool primary_missing;
 } NMDeviceBondPrivate;
 
 struct _NMDeviceBond {
@@ -500,7 +500,7 @@ act_stage1_prepare(NMDevice *device, NMDeviceStateReason *out_failure_reason)
     g_return_val_if_fail(s_bond, NM_ACT_STAGE_RETURN_FAILURE);
 
     _platform_lnk_bond_init_from_setting(s_bond, &props);
-    priv->missing_primary = _check_primary_missing(&props, s_bond);
+    priv->primary_missing = _check_primary_missing(&props, s_bond);
 
     /* Interface must be down to set bond options */
     nm_device_take_down(device, TRUE);
@@ -554,7 +554,7 @@ attach_port(NMDevice                  *device,
 
     nm_device_master_check_slave_physical_port(device, port, LOGD_BOND);
 
-    if (priv->missing_primary) {
+    if (priv->primary_missing) {
         NMSettingBond *s_bond;
         NMConnection  *conn_bond;
 
@@ -581,7 +581,7 @@ attach_port(NMDevice                  *device,
                               "setting bond opts when attaching port %s: failed",
                               nm_device_get_ip_iface(port));
                     else
-                        priv->missing_primary = FALSE;
+                        priv->primary_missing = FALSE;
                 }
             }
         }
@@ -697,7 +697,7 @@ create_and_realize(NMDevice              *device,
     nm_assert(s_bond);
 
     _platform_lnk_bond_init_from_setting(s_bond, &props);
-    priv->missing_primary = _check_primary_missing(&props, s_bond);
+    priv->primary_missing = _check_primary_missing(&props, s_bond);
 
     r = nm_platform_link_bond_add(nm_device_get_platform(device), iface, &props, out_plink);
     if (r < 0) {
