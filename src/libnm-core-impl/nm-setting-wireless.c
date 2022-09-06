@@ -1787,11 +1787,10 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
      * the user has set a global default to randomize and the supplicant
      * supports randomization),  %NM_SETTING_MAC_RANDOMIZATION_NEVER (never
      * randomize the MAC address), or %NM_SETTING_MAC_RANDOMIZATION_ALWAYS
-     * (always randomize the MAC address). This property is deprecated for
-     * 'cloned-mac-address'.
+     * (always randomize the MAC address).
      *
      * Since: 1.2
-     * Deprecated: 1.4: Deprecated by NMSettingWireless:cloned-mac-address property.
+     * Deprecated: 1.4: Use the #NMSettingWireless:cloned-mac-address property instead.
      **/
     /* ---ifcfg-rh---
      * property: mac-address-randomization
