@@ -181,6 +181,8 @@ for setting_name in iter_keys_of_dicts(settings_roots, key_fcn_setting_name):
         properties_attrs = list([p.get(property_name) for p in properties])
         description_docbook = find_attr(properties_attrs, "description-docbook")
         description = find_attr(properties_attrs, "description")
+        deprecated_docbook = find_attr(properties_attrs, "deprecated-docbook")
+        deprecated = find_attr(properties_attrs, "deprecated")
 
         if gl_only_from_first and properties_attrs[0] is None:
             dbg("> > > > skip (only-from-first")
@@ -210,5 +212,10 @@ for setting_name in iter_keys_of_dicts(settings_roots, key_fcn_setting_name):
             property_node.append(description)
         elif description is not None:
             property_node.append(description)
+
+        if deprecated_docbook is not None:
+            property_node.insert(0, deprecated_docbook)
+        if deprecated is not None:
+            property_node.insert(0, deprecated)
 
 ET.ElementTree(root_node).write(gl_output_xml_file)
