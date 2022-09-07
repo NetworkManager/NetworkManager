@@ -1426,10 +1426,9 @@ nm_setting_bridge_class_init(NMSettingBridgeClass *klass)
      * If this field is left unspecified, the "ethernet.cloned-mac-address" is
      * referred instead to generate the initial MAC address. Note that setting
      * "ethernet.cloned-mac-address" anyway overwrites the MAC address of
-     * the bridge later while activating the bridge. Hence, this property
-     * is deprecated.
+     * the bridge later while activating the bridge.
      *
-     * Deprecated: 1.12: Use the ethernet.cloned-mac-address property instead.
+     * Deprecated: 1.12: Use the #NMSettingWired:cloned-mac-address property instead.
      **/
     /* ---keyfile---
      * property: mac-address

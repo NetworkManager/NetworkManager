@@ -163,6 +163,12 @@
             </para>
           </xsl:otherwise>
         </xsl:choose>
+        <xsl:if test="deprecated">
+          <para>
+            This property is deprecated since version <xsl:value-of select="deprecated/@since"/>.
+            <xsl:value-of select="deprecated"/>
+          </para>
+        </xsl:if>
         <xsl:if test="@type">
           <para>
             Format: <xsl:value-of select="@type"/>
