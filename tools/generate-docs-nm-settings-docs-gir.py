@@ -130,11 +130,11 @@ def format_docs(doc_xml):
     doc = ""
     for l in lines:
         if l:
-            doc += " " + l
+            doc += l + " "
         else:
-            doc += "\n\n"
+            doc = doc.strip(" ") + "\n\n"
 
-    doc = doc.strip("\n")
+    doc = doc.strip("\n ")
 
     # Expand constants
     doc = re.sub(r"%([^%]\w*)", lambda match: constants[match.group(1)], doc)
