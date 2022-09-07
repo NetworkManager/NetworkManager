@@ -797,6 +797,20 @@ device_dns_lookup_done(NMDevice *device, gpointer user_data)
 }
 
 static void
+device_carrier_changed(NMDevice *device, GParamSpec *pspec, gpointer user_data)
+{
+    NMPolicyPrivate *priv = user_data;
+    NMPolicy        *self = _PRIV_TO_SELF(priv);
+    gs_free char    *msg  = NULL;
+
+    if (nm_device_has_carrier(device)) {
+        g_signal_handlers_disconnect_by_func(device, device_carrier_changed, priv);
+        msg = g_strdup_printf("device '%s' got carrier", nm_device_get_iface(device));
+        update_system_hostname(self, msg);
+    }
+}
+
+static void
 update_system_hostname(NMPolicy *self, const char *msg)
 {
     NMPolicyPrivate       *priv = NM_POLICY_GET_PRIVATE(self);
@@ -880,6 +894,7 @@ update_system_hostname(NMPolicy *self, const char *msg)
         info        = &g_array_index(infos, DeviceHostnameInfo, i);
         addr_family = info->IS_IPv4 ? AF_INET : AF_INET6;
         g_signal_handlers_disconnect_by_func(info->device, device_dns_lookup_done, self);
+        g_signal_handlers_disconnect_by_func(info->device, device_carrier_changed, priv);
 
         if (info->from_dhcp) {
             dhcp_config = nm_device_get_dhcp_config(info->device, addr_family);
@@ -905,10 +920,18 @@ update_system_hostname(NMPolicy *self, const char *msg)
 
         if (priv->hostname_mode != NM_POLICY_HOSTNAME_MODE_DHCP) {
             if (info->from_dns) {
-                const char *result;
-                gboolean    wait = FALSE;
+                const char *result = NULL;
+                gboolean    wait   = FALSE;
 
-                result = nm_device_get_hostname_from_dns_lookup(info->device, addr_family, &wait);
+                if (nm_device_has_carrier(info->device)) {
+                    result =
+                        nm_device_get_hostname_from_dns_lookup(info->device, addr_family, &wait);
+                } else {
+                    g_signal_connect(info->device,
+                                     "notify::" NM_DEVICE_CARRIER,
+                                     G_CALLBACK(device_carrier_changed),
+                                     priv);
+                }
                 if (result) {
                     _set_hostname(self, result, "from address lookup");
                     return;
