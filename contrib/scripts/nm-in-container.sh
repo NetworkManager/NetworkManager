@@ -25,6 +25,13 @@ set -e
 # It bind mounts the current working directory inside the container.
 # You can run `make install` and run tests.
 # There is a script nm-env-prepare.sh to generate a net1 interface for testing.
+#
+# This will bind-mount the NetworkManager working tree inside the container.
+# Create a symlink ./.git/NetworkManager-ci, to also bind-mount the CI directory.
+#
+# Currently NM-ci requires a working eth1.
+# Hence call `nm-env-prepare.sh --prefix eth -i 1 && nmcli device connect eth1` before
+# running a CI test.
 ###############################################################################
 
 BASE_IMAGE="${BASE_IMAGE:-fedora:latest}"
@@ -178,9 +185,12 @@ For example, configure NetworkManager with
 Test with:
   \$ systemctl stop NetworkManager; /opt/test/sbin/NetworkManager --debug 2>&1 | tee -a /tmp/nm-log.txt
 
-Alternatively, configure with \`contrib/fedora/rpm/configure-for-system.sh\`,
+Or better, configure with \`contrib/fedora/rpm/configure-for-system.sh\`,
 subsequent \`make && make install\` will overwrite your system's NetworkManager,
 and you can test it with \`systemctl daemon-reload ; systemctl restart NetworkManager\`.
+
+Run NM-ci tests after creating eth1 with
+\`nm-env-prepare.sh --prefix eth -i 1 && nmcli device connect eth1\`.
 EOF
 
     cat <<EOF | tmp_file "$BASEDIR/data-bashrc.my"
@@ -258,11 +268,12 @@ make
 make install
 n
 nm-env-prepare.sh
-nm-env-prepare.sh --prefix eth -i 4
+nm-env-prepare.sh --prefix eth -i 1
+nm-env-prepare.sh --prefix eth -i 1 && nmcli device connect eth1
 nm_run_gdb
 nm_run_normal
 nmcli connection add type pppoe con-name ppp-net1 ifname ppp-net1 pppoe.parent net1 service isp username test password networkmanager autoconnect no
-nmcli device connect net1
+nmcli device connect eth1
 systemctl daemon-reload ; systemctl restart NetworkManager
 systemctl status NetworkManager
 systemctl stop NetworkManager
