@@ -5355,59 +5355,41 @@ wired_connection_from_ifcfg(const char *file, shvarFile *ifcfg, GError **error)
 static gboolean
 parse_infiniband_p_key(shvarFile *ifcfg, int *out_p_key, char **out_parent, GError **error)
 {
-    char    *device = NULL, *physdev = NULL, *pkey_id = NULL;
-    char    *ifname = NULL;
-    int      id;
-    gboolean ret = FALSE;
-
-    device = svGetValueStr_cp(ifcfg, "DEVICE");
-    if (!device) {
-        PARSE_WARNING("InfiniBand connection specified PKEY but not DEVICE");
-        goto done;
-    }
+    gs_free char *physdev = NULL;
+    gs_free char *pkey_id = NULL;
+    int           id;
 
     physdev = svGetValueStr_cp(ifcfg, "PHYSDEV");
     if (!physdev) {
-        PARSE_WARNING("InfiniBand connection specified PKEY but not PHYSDEV");
-        goto done;
+        g_set_error(error,
+                    NM_SETTINGS_ERROR,
+                    NM_SETTINGS_ERROR_INVALID_CONNECTION,
+                    "infiniband connection specified PKEY but not PHYSDEV");
+        return FALSE;
     }
 
     pkey_id = svGetValueStr_cp(ifcfg, "PKEY_ID");
     if (!pkey_id) {
-        PARSE_WARNING("InfiniBand connection specified PKEY but not PKEY_ID");
-        goto done;
+        g_set_error(error,
+                    NM_SETTINGS_ERROR,
+                    NM_SETTINGS_ERROR_INVALID_CONNECTION,
+                    "infiniband connection specified PKEY but not PKEY_ID");
+        return FALSE;
     }
 
     id = _nm_utils_ascii_str_to_int64(pkey_id, 0, 0, 0xFFFF, -1);
     if (id == -1) {
-        PARSE_WARNING("invalid InfiniBand PKEY_ID '%s'", pkey_id);
-        goto done;
-    }
-    id = (id | 0x8000);
-
-    ifname = g_strdup_printf("%s.%04x", physdev, (unsigned) id);
-    if (strcmp(device, ifname) != 0) {
-        PARSE_WARNING("InfiniBand DEVICE (%s) does not match PHYSDEV+PKEY_ID (%s)", device, ifname);
-        goto done;
-    }
-
-    *out_p_key  = id;
-    *out_parent = g_strdup(physdev);
-    ret         = TRUE;
-
-done:
-    g_free(device);
-    g_free(physdev);
-    g_free(pkey_id);
-    g_free(ifname);
-
-    if (!ret) {
         g_set_error(error,
                     NM_SETTINGS_ERROR,
                     NM_SETTINGS_ERROR_INVALID_CONNECTION,
-                    "Failed to create InfiniBand setting");
+                    "invalid infiniband PKEY_ID '%s'",
+                    pkey_id);
+        return FALSE;
     }
-    return ret;
+
+    *out_p_key  = id;
+    *out_parent = g_steal_pointer(&physdev);
+    return TRUE;
 }
 
 static NMSetting *
