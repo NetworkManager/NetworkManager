@@ -17937,6 +17937,13 @@ nm_device_get_hostname_from_dns_lookup(NMDevice *self, int addr_family, gboolean
     /* If the device is not supposed to have addresses,
      * return an immediate empty result.*/
     if (!nm_device_get_applied_connection(self)) {
+        nm_clear_pointer(&priv->hostname_resolver_x[IS_IPv4], _hostname_resolver_free);
+        NM_SET_OUT(out_wait, FALSE);
+        return NULL;
+    }
+
+    if (!priv->carrier) {
+        nm_clear_pointer(&priv->hostname_resolver_x[IS_IPv4], _hostname_resolver_free);
         NM_SET_OUT(out_wait, FALSE);
         return NULL;
     }
