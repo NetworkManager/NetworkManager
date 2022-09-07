@@ -123,7 +123,7 @@
         <property name="ca-path"
                   description="UTF-8 encoded path to a directory containing PEM or DER formatted certificates to be added to the verification chain in addition to the certificate specified in the &quot;ca-cert&quot; property. If NMSetting8021x:system-ca-certs is enabled and the built-in CA path is an existing directory, then this setting is ignored." />
         <property name="subject-match"
-                  description="Substring to be matched against the subject of the certificate presented by the authentication server. When unset, no verification of the authentication server certificate&apos;s subject is performed.  This property provides little security, if any, and its use is deprecated in favor of NMSetting8021x:domain-suffix-match." />
+                  description="Substring to be matched against the subject of the certificate presented by the authentication server. When unset, no verification of the authentication server certificate&apos;s subject is performed. This property provides little security, if any, and should not be used." />
         <property name="altsubject-matches"
                   description="List of strings to be matched against the altSubjectName of the certificate presented by the authentication server. If the list is empty, no verification of the server certificate&apos;s altSubjectName is performed." />
         <property name="domain-suffix-match"
@@ -157,7 +157,7 @@
         <property name="phase2-ca-path"
                   description="UTF-8 encoded path to a directory containing PEM or DER formatted certificates to be added to the verification chain in addition to the certificate specified in the &quot;phase2-ca-cert&quot; property. If NMSetting8021x:system-ca-certs is enabled and the built-in CA path is an existing directory, then this setting is ignored." />
         <property name="phase2-subject-match"
-                  description="Substring to be matched against the subject of the certificate presented by the authentication server during the inner &quot;phase 2&quot; authentication. When unset, no verification of the authentication server certificate&apos;s subject is performed.  This property provides little security, if any, and its use is deprecated in favor of NMSetting8021x:phase2-domain-suffix-match." />
+                  description="Substring to be matched against the subject of the certificate presented by the authentication server during the inner &quot;phase 2&quot; authentication. When unset, no verification of the authentication server certificate&apos;s subject is performed. This property provides little security, if any, and should not be used." />
         <property name="phase2-altsubject-matches"
                   description="List of strings to be matched against the altSubjectName of the certificate presented by the authentication server during the inner &quot;phase 2&quot; authentication. If the list is empty, no verification of the server certificate&apos;s altSubjectName is performed." />
         <property name="phase2-domain-suffix-match"
