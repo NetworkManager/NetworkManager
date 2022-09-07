@@ -203,6 +203,7 @@ complain ("Prefer nm_pint_hash()/nm_pint64_hash()/nm_pdouble_hash() over g_int_h
 complain ("Prefer nm_pint_equal()/nm_pint64_equal()/nm_pdouble_equal() over g_int_equal()/g_int64_equal()/g_double_equal(). Those names mirror our nm_p*_hash() functions") if $line =~ /\b(g_int_equal|g_int64_equal|g_double_equal)\b/;
 complain ("Avoid g_clear_pointer() and use nm_clear_pointer() (or nm_clear_g_free(), g_clear_object(), etc.)") if $line =~ /\b(g_clear_pointer)\b/;
 complain ("Define setting properties with _nm_setting_property_define_direct_*() API") if $line =~ /g_param_spec_/ and $filename =~ /\/libnm-core-impl\/nm-setting/;
+complain ("Use nm_g_array_{index,first,last,index_p}() instead of g_array_index(), as it nm_assert()s for valid element size and out-of-bound access") if $line =~ /\bg_array_index\b/;
 complain ("Use spaces instead of tabs") if $line =~ /\t/;
 
 # Further on we process stuff without comments.
