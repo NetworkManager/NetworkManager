@@ -120,14 +120,8 @@ def remove_prefix(line, prefix):
     return line[len(prefix) :] if line.startswith(prefix) else line
 
 
-def get_docs(propxml):
-    doc_xml = propxml.find("gi:doc", ns_map)
-    if doc_xml is None:
-        return None
-
+def format_docs(doc_xml):
     doc = doc_xml.text
-    if "deprecated" in propxml.attrib:
-        doc = doc + " Deprecated: " + propxml.attrib["deprecated"]
 
     # split docs into lines
     lines = re.split("\n", doc)
@@ -136,11 +130,11 @@ def get_docs(propxml):
     doc = ""
     for l in lines:
         if l:
-            doc += " " + l
+            doc += l + " "
         else:
-            doc += "\n\n"
+            doc = doc.strip(" ") + "\n\n"
 
-    doc = doc.strip("\n")
+    doc = doc.strip("\n ")
 
     # Expand constants
     doc = re.sub(r"%([^%]\w*)", lambda match: constants[match.group(1)], doc)
@@ -171,6 +165,14 @@ def get_docs(propxml):
         doc = re.sub(r"\.\s+[^.]*\w\(\)[^.]*\.", r".", doc)
 
     return doc
+
+
+def get_docs(propxml):
+    doc_xml = propxml.find("gi:doc", ns_map)
+    if doc_xml is None:
+        return None
+    else:
+        return format_docs(doc_xml)
 
 
 def get_default_value(setting, pspec, propxml):
@@ -274,6 +276,13 @@ def main(gir_path_str, output_path_str):
             value_desc = get_docs(propxml)
             default_value = get_default_value(setting, pspec, propxml)
 
+            if "deprecated" in propxml.attrib:
+                deprecated = True
+                deprecated_since = propxml.attrib["deprecated-version"]
+                deprecated_desc = format_docs(propxml.find("gi:doc-deprecated", ns_map))
+            else:
+                deprecated = False
+
             prop_upper = prop.upper().replace("-", "_")
 
             if value_desc is None:
@@ -309,6 +318,22 @@ def main(gir_path_str, output_path_str):
                 )
 
                 create_desc_docbook(description_docbook, value_desc)
+
+            if deprecated:
+                ET.SubElement(
+                    property_element,
+                    "deprecated",
+                    attrib={
+                        "since": deprecated_since,
+                    },
+                ).text = deprecated_desc
+
+                deprecated_docbook = ET.SubElement(
+                    property_element,
+                    "deprecated-docbook",
+                )
+
+                create_desc_docbook(deprecated_docbook, deprecated_desc)
 
     docs_gir.write(
         output_path_str,

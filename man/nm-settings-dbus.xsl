@@ -162,7 +162,9 @@
       <entry align="left"><xsl:attribute name="id">nm-settings-dbus.property.<xsl:value-of select="../@name"/>.<xsl:value-of select="@name"/></xsl:attribute><xsl:value-of select="@name"/></entry>
       <entry align="left"><xsl:value-of select="@type"/></entry>
       <entry align="left"><xsl:value-of select="@default"/></entry>
-      <entry><xsl:apply-templates select="description"/></entry>
+      <entry><xsl:apply-templates select="description"/><xsl:if test="deprecated">
+
+This property is deprecated since version <xsl:value-of select="deprecated/@since"/>.<xsl:value-of select="deprecated"/></xsl:if></entry>
     </row>
   </xsl:template>
 
