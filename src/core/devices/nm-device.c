@@ -2737,7 +2737,8 @@ _ethtool_state_set(NMDevice *self)
 static gboolean
 is_loopback(NMDevice *self)
 {
-    return NM_IS_DEVICE_GENERIC(self) && NM_DEVICE_GET_PRIVATE(self)->ifindex == 1;
+    return NM_IS_DEVICE_GENERIC(self)
+           && NM_DEVICE_GET_PRIVATE(self)->ifindex == NM_LOOPBACK_IFINDEX;
 }
 
 gboolean

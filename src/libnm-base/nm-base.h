@@ -393,6 +393,12 @@ typedef struct {
 
 #define NM_BOND_PORT_QUEUE_ID_DEF 0
 
+/****************************************************************************/
+
+/* ifindex generation is per-net namespace, and loopback is always the first
+ * device in the network namespace, thus any loopback device should get ifindex 1. */
+#define NM_LOOPBACK_IFINDEX 1
+
 /*****************************************************************************/
 
 /* NM_CRYPTO_ERROR is part of public API in libnm (implemented in libnm-core).
