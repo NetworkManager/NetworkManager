@@ -585,7 +585,7 @@ _merge_keyfiles(GKeyFile *keyfile_user, GKeyFile *keyfile_intern)
         if (!keys)
             continue;
 
-        is_intern = g_str_has_prefix(group, NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN);
+        is_intern = NM_STR_HAS_PREFIX(group, NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN);
         if (!is_intern
             && g_key_file_has_key(keyfile_intern,
                                   group,
@@ -637,8 +637,8 @@ _nm_config_data_log_sort(const char **pa, const char **pb, gpointer dummy)
     nm_assert(a && b && !nm_streq(a, b));
 
     /* we sort intern groups to the end. */
-    a_is_intern = g_str_has_prefix(a, NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN);
-    b_is_intern = g_str_has_prefix(b, NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN);
+    a_is_intern = NM_STR_HAS_PREFIX(a, NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN);
+    b_is_intern = NM_STR_HAS_PREFIX(b, NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN);
 
     if (a_is_intern && b_is_intern)
         return 0;
@@ -648,8 +648,8 @@ _nm_config_data_log_sort(const char **pa, const char **pb, gpointer dummy)
         return -1;
 
     /* we sort connection groups before intern groups (to the end). */
-    a_is_connection = a && g_str_has_prefix(a, NM_CONFIG_KEYFILE_GROUPPREFIX_CONNECTION);
-    b_is_connection = b && g_str_has_prefix(b, NM_CONFIG_KEYFILE_GROUPPREFIX_CONNECTION);
+    a_is_connection = NM_STR_HAS_PREFIX(a, NM_CONFIG_KEYFILE_GROUPPREFIX_CONNECTION);
+    b_is_connection = NM_STR_HAS_PREFIX(b, NM_CONFIG_KEYFILE_GROUPPREFIX_CONNECTION);
 
     if (a_is_connection && b_is_connection) {
         /* if both are connection groups, we want the explicit [connection] group first. */
@@ -670,8 +670,8 @@ _nm_config_data_log_sort(const char **pa, const char **pb, gpointer dummy)
         return -1;
 
     /* we sort device groups before connection groups (to the end). */
-    a_is_device = a && g_str_has_prefix(a, NM_CONFIG_KEYFILE_GROUPPREFIX_DEVICE);
-    b_is_device = b && g_str_has_prefix(b, NM_CONFIG_KEYFILE_GROUPPREFIX_DEVICE);
+    a_is_device = NM_STR_HAS_PREFIX(a, NM_CONFIG_KEYFILE_GROUPPREFIX_DEVICE);
+    b_is_device = NM_STR_HAS_PREFIX(b, NM_CONFIG_KEYFILE_GROUPPREFIX_DEVICE);
 
     if (a_is_device && b_is_device) {
         /* if both are device groups, we want the explicit [device] group first. */
