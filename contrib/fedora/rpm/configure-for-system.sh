@@ -305,9 +305,9 @@ else
 fi
 
 if [ -z "$P_BUILD_TYPE" ] ; then
-    if [ -d ./build -a ! -f ./configure] ; then
+    if [ -d ./build -a ! -f ./configure ] ; then
         P_BUILD_TYPE=meson
-    elif [ ! -d ./build -a -f ./configure] ; then
+    elif [ ! -d ./build -a -f ./configure ] ; then
         P_BUILD_TYPE=autotools
     else
         P_BUILD_TYPE=autotools
