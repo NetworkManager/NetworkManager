@@ -2541,16 +2541,15 @@ _wireguard_update_from_peers_nla(CList *peers, GArray **p_allowed_ips, struct nl
         GArray        *allowed_ips = *p_allowed_ips;
 
         nla_for_each_nested (attr, tb[WGPEER_A_ALLOWEDIPS], rem) {
+            NMPWireGuardAllowedIP *new;
+
             if (!allowed_ips) {
                 allowed_ips    = g_array_new(FALSE, FALSE, sizeof(NMPWireGuardAllowedIP));
                 *p_allowed_ips = allowed_ips;
-                g_array_set_size(allowed_ips, 1);
-            } else
-                g_array_set_size(allowed_ips, allowed_ips->len + 1);
+            }
 
-            if (!_wireguard_update_from_allowed_ips_nla(
-                    &g_array_index(allowed_ips, NMPWireGuardAllowedIP, allowed_ips->len - 1),
-                    attr)) {
+            new = nm_g_array_append_new(allowed_ips, NMPWireGuardAllowedIP);
+            if (!_wireguard_update_from_allowed_ips_nla(new, attr)) {
                 /* we ignore the error of parsing one allowed-ip. */
                 g_array_set_size(allowed_ips, allowed_ips->len - 1);
                 continue;

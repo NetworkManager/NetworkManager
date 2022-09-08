@@ -360,8 +360,7 @@ _nm_setting_class_commit(NMSettingClass             *setting_class,
                                                  name))
             continue;
 
-        g_array_set_size(properties_override, properties_override->len + 1);
-        p = &g_array_index(properties_override, NMSettInfoProperty, properties_override->len - 1);
+        p = nm_g_array_append_new(properties_override, NMSettInfoProperty);
         memset(p, 0, sizeof(*p));
         p->name       = name;
         p->param_spec = property_specs[i];

@@ -331,9 +331,8 @@ device_ip6_prefix_delegated(NMDevice                   *device,
 
     if (i == priv->ip6_prefix_delegations->len) {
         /* Allocate a delegation for new prefix. */
-        g_array_set_size(priv->ip6_prefix_delegations, i + 1);
-        delegation          = &g_array_index(priv->ip6_prefix_delegations, IP6PrefixDelegation, i);
-        delegation->subnets = g_hash_table_new(nm_direct_hash, NULL);
+        delegation = nm_g_array_append_new(priv->ip6_prefix_delegations, IP6PrefixDelegation);
+        delegation->subnets     = g_hash_table_new(nm_direct_hash, NULL);
         delegation->next_subnet = 0;
     }
 

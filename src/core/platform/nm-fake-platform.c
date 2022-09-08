@@ -234,8 +234,7 @@ link_add_pre(NMPlatform *platform,
 
     g_assert(!name || strlen(name) < IFNAMSIZ);
 
-    g_array_set_size(priv->links, priv->links->len + 1);
-    device  = &g_array_index(priv->links, NMFakePlatformLink, priv->links->len - 1);
+    device  = nm_g_array_append_new(priv->links, NMFakePlatformLink);
     ifindex = priv->links->len;
 
     memset(device, 0, sizeof(*device));
