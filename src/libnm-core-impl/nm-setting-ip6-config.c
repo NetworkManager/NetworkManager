@@ -832,8 +832,7 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
                                              NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_DEFAULT,
                                              NM_SETTING_PARAM_NONE,
                                              NMSettingIP6ConfigPrivate,
-                                             addr_gen_mode,
-                                             .to_dbus_including_default = TRUE);
+                                             addr_gen_mode);
 
     /**
      * NMSettingIP6Config:token:
