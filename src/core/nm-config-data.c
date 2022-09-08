@@ -634,6 +634,8 @@ _nm_config_data_log_sort(const char **pa, const char **pb, gpointer dummy)
     const char *a = *pa;
     const char *b = *pb;
 
+    nm_assert(a && b && !nm_streq(a, b));
+
     /* we sort intern groups to the end. */
     a_is_intern = g_str_has_prefix(a, NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN);
     b_is_intern = g_str_has_prefix(b, NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN);
@@ -770,26 +772,47 @@ nm_config_data_log(const NMConfigData  *self,
     groups_full = g_ptr_array_sized_new(ngroups + 5);
 
     if (ngroups) {
+        /* g_key_file_get_groups() can return duplicates ( :( ), but the
+         * keyfile that we constructed should not have any. Assert for that. */
+        nm_assert(!nm_strv_has_duplicate((const char *const *) groups, ngroups, FALSE));
+
         g_ptr_array_set_size(groups_full, ngroups);
         memcpy(groups_full->pdata, groups, sizeof(groups[0]) * ngroups);
-        g_ptr_array_sort_with_data(groups_full, (GCompareDataFunc) _nm_config_data_log_sort, NULL);
     }
 
     if (print_default) {
         for (g = 0; g < G_N_ELEMENTS(default_values); g++) {
             const char *group = default_values[g].group;
-            gssize      idx;
+            guint       g2;
 
-            idx = nm_utils_array_find_binary_search((gconstpointer *) groups_full->pdata,
-                                                    sizeof(char *),
-                                                    groups_full->len,
-                                                    &group,
-                                                    (GCompareDataFunc) _nm_config_data_log_sort,
-                                                    NULL);
-            if (idx < 0)
-                g_ptr_array_insert(groups_full, (~idx), (gpointer) group);
+            if (g > 0) {
+                if (nm_streq(group, default_values[g - 1].group)) {
+                    /* Repeated values. We already added this one. Skip */
+                    continue;
+                }
+                if (NM_MORE_ASSERT_ONCE(20)) {
+                    /* We require that the default values are grouped by their "group".
+                     * That is, all default values for a certain "group" are close to
+                     * each other in the list. Assert for that. */
+                    for (g2 = g + 1; g2 < groups_full->len; g2++) {
+                        nm_assert(!nm_streq(default_values[g - 1].group, default_values[g2].group));
+                    }
+                }
+            }
+
+            for (g2 = 0; g2 < groups_full->len; g2++) {
+                if (nm_streq(group, groups_full->pdata[g2]))
+                    goto next;
+            }
+
+            g_ptr_array_add(groups_full, (gpointer) group);
+
+next:
+            (void) 0;
         }
     }
+
+    g_ptr_array_sort_with_data(groups_full, (GCompareDataFunc) _nm_config_data_log_sort, NULL);
 
     if (!stream)
         _LOG(stream, prefix, "config-data[%p]: %u groups", self, groups_full->len);
