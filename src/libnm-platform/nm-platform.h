@@ -2324,11 +2324,17 @@ nm_platform_ip_address_delete(NMPlatform                                       *
     }
 }
 
-gboolean nm_platform_ip_address_sync(NMPlatform *self,
-                                     int         addr_family,
-                                     int         ifindex,
-                                     GPtrArray  *known_addresses,
-                                     GPtrArray  *addresses_prune);
+typedef enum {
+    NMP_IP_ADDRESS_SYNC_FLAGS_NONE               = 0,
+    NMP_IP_ADDRESS_SYNC_FLAGS_WITH_NOPREFIXROUTE = (1 << 0),
+} NMPIPAddressSyncFlags;
+
+gboolean nm_platform_ip_address_sync(NMPlatform           *self,
+                                     int                   addr_family,
+                                     int                   ifindex,
+                                     GPtrArray            *known_addresses,
+                                     GPtrArray            *addresses_prune,
+                                     NMPIPAddressSyncFlags flags);
 
 GPtrArray *
 nm_platform_ip_address_get_prune_list(NMPlatform            *self,

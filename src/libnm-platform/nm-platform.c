@@ -4105,6 +4105,9 @@ ip6_address_scope_cmp_descending(gconstpointer p_a, gconstpointer p_b, gpointer 
  *   by the function.
  *   Addresses that are both contained in @known_addresses and @addresses_prune
  *   will be configured.
+ * @flags: #NMPIPAddressSyncFlags to affect the sync. If "with-noprefixroute"
+ *   flag is set, the method will automatically set IFA_F_NOPREFIXROUTE for
+ *   all addresses.
  *
  * A convenience function to synchronize addresses for a specific interface
  * with the least possible disturbance. It simply removes addresses that are
@@ -4113,11 +4116,12 @@ ip6_address_scope_cmp_descending(gconstpointer p_a, gconstpointer p_b, gpointer 
  * Returns: %TRUE on success.
  */
 gboolean
-nm_platform_ip_address_sync(NMPlatform *self,
-                            int         addr_family,
-                            int         ifindex,
-                            GPtrArray  *known_addresses,
-                            GPtrArray  *addresses_prune)
+nm_platform_ip_address_sync(NMPlatform           *self,
+                            int                   addr_family,
+                            int                   ifindex,
+                            GPtrArray            *known_addresses,
+                            GPtrArray            *addresses_prune,
+                            NMPIPAddressSyncFlags flags)
 {
     gint32                         now     = 0;
     const int                      IS_IPv4 = NM_IS_IPv4(addr_family);
@@ -4529,18 +4533,24 @@ next_plat:;
                     nm_platform_ip4_broadcast_address_from_addr(&known_address->a4),
                     lifetime,
                     preferred,
-                    IFA_F_NOPREFIXROUTE,
+                    NM_FLAGS_HAS(flags, NMP_IP_ADDRESS_SYNC_FLAGS_WITH_NOPREFIXROUTE)
+                        ? IFA_F_NOPREFIXROUTE
+                        : 0,
                     known_address->a4.label))
                 success = FALSE;
         } else {
-            if (!nm_platform_ip6_address_add(self,
-                                             ifindex,
-                                             known_address->a6.address,
-                                             known_address->a6.plen,
-                                             known_address->a6.peer_address,
-                                             lifetime,
-                                             preferred,
-                                             IFA_F_NOPREFIXROUTE | known_address->a6.n_ifa_flags))
+            if (!nm_platform_ip6_address_add(
+                    self,
+                    ifindex,
+                    known_address->a6.address,
+                    known_address->a6.plen,
+                    known_address->a6.peer_address,
+                    lifetime,
+                    preferred,
+                    (NM_FLAGS_HAS(flags, NMP_IP_ADDRESS_SYNC_FLAGS_WITH_NOPREFIXROUTE)
+                         ? IFA_F_NOPREFIXROUTE
+                         : 0)
+                        | known_address->a6.n_ifa_flags))
                 success = FALSE;
         }
     }
@@ -4568,7 +4578,12 @@ nm_platform_ip_address_flush(NMPlatform *self, int addr_family, int ifindex)
         addresses_prune =
             nm_platform_ip_address_get_prune_list(self, addr_family2, ifindex, NULL, 0);
 
-        if (!nm_platform_ip_address_sync(self, addr_family2, ifindex, NULL, addresses_prune))
+        if (!nm_platform_ip_address_sync(self,
+                                         addr_family2,
+                                         ifindex,
+                                         NULL,
+                                         addresses_prune,
+                                         NMP_IP_ADDRESS_SYNC_FLAGS_NONE))
             success = FALSE;
     }
     return success;
@@ -8634,7 +8649,8 @@ nm_platform_ip4_address_cmp(const NMPlatformIP4Address *a,
              * NetworkManager actively sets.
              *
              * NM actively only sets IFA_F_NOPREFIXROUTE (and IFA_F_MANAGETEMPADDR for IPv6),
-             * where nm_platform_ip_address_sync() always sets IFA_F_NOPREFIXROUTE.
+             * where nm_platform_ip_address_sync() sets IFA_F_NOPREFIXROUTE depending on
+             * NMP_IP_ADDRESS_SYNC_FLAGS_WITH_NOPREFIXROUTE.
              * There are thus no flags to compare for IPv4. */
 
             NM_CMP_DIRECT(nm_platform_ip4_broadcast_address_from_addr(a),
@@ -8702,7 +8718,8 @@ nm_platform_ip6_address_cmp(const NMPlatformIP6Address *a,
              * NetworkManager actively sets.
              *
              * NM actively only sets IFA_F_NOPREFIXROUTE and IFA_F_MANAGETEMPADDR,
-             * where nm_platform_ip_address_sync() always sets IFA_F_NOPREFIXROUTE.
+             * where nm_platform_ip_address_sync() sets IFA_F_NOPREFIXROUTE depending on
+             * NMP_IP_ADDRESS_SYNC_FLAGS_WITH_NOPREFIXROUTE.
              * We thus only care about IFA_F_MANAGETEMPADDR. */
             NM_CMP_DIRECT(a->n_ifa_flags & IFA_F_MANAGETEMPADDR,
                           b->n_ifa_flags & IFA_F_MANAGETEMPADDR);

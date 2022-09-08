@@ -4559,7 +4559,8 @@ _l3_commit_one(NML3Cfg              *self,
                                 addr_family,
                                 self->priv.ifindex,
                                 addresses,
-                                addresses_prune);
+                                addresses_prune,
+                                NMP_IP_ADDRESS_SYNC_FLAGS_WITH_NOPREFIXROUTE);
 
     _nodev_routes_sync(self, addr_family, commit_type, routes_nodev);
 
