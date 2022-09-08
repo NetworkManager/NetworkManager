@@ -110,12 +110,14 @@ def node_set_attr(dst_node, name, nodes):
     if x:
         dst_node.set(name, x)
 
+
 def find_attr(properties_attrs, name):
     for p_attr in properties_attrs:
         if p_attr is not None:
             p_attr = p_attr.find(name)
         if p_attr is not None:
             return p_attr
+
 
 ###############################################################################
 
