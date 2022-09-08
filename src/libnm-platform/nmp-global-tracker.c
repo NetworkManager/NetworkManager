@@ -784,7 +784,7 @@ nmp_global_tracker_sync_mptcp_addrs(NMPGlobalTracker *self, gboolean reapply)
 
         /* Now, drop all duplicates addresses. Only keep the first one. */
         for (i = 0, j = 0; i < entries->len; i++) {
-            const MptcpSyncData       *d          = nm_g_array_index_p(entries, MptcpSyncData, i);
+            const MptcpSyncData       *d          = &nm_g_array_index(entries, MptcpSyncData, i);
             const NMPlatformMptcpAddr *mptcp_addr = NMP_OBJECT_CAST_MPTCP_ADDR(d->obj_data->obj);
 
             obj_data = g_hash_table_lookup(entries_hash_by_addr, (gpointer) mptcp_addr);
@@ -810,7 +810,7 @@ nmp_global_tracker_sync_mptcp_addrs(NMPGlobalTracker *self, gboolean reapply)
                 nm_assert_not_reached();
 
             if (i != j)
-                *(nm_g_array_index_p(entries, MptcpSyncData, j)) = *d;
+                (nm_g_array_index(entries, MptcpSyncData, j)) = *d;
             j++;
 
             if (j >= MPTCP_PM_ADDR_MAX) {
@@ -915,7 +915,7 @@ keep_and_next:
 
     if (entries) {
         for (i = 0; i < entries->len; i++) {
-            const MptcpSyncData       *d          = nm_g_array_index_p(entries, MptcpSyncData, i);
+            const MptcpSyncData       *d          = &nm_g_array_index(entries, MptcpSyncData, i);
             const NMPlatformMptcpAddr *mptcp_addr = NMP_OBJECT_CAST_MPTCP_ADDR(d->obj_data->obj);
             const NMPObject           *kobj;
 

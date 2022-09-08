@@ -2333,14 +2333,14 @@ nm_utils_log_connection_diff(NMConnection *connection,
 
     for (i = 0; i < sorted_hashes->len; i++) {
         LogConnectionSettingData *setting_data =
-            &g_array_index(sorted_hashes, LogConnectionSettingData, i);
+            &nm_g_array_index(sorted_hashes, LogConnectionSettingData, i);
 
         _log_connection_sort_names(setting_data, sorted_names);
         print_setting_header = TRUE;
         for (j = 0; j < sorted_names->len; j++) {
             char                     *str_conn, *str_diff;
             LogConnectionSettingItem *item =
-                &g_array_index(sorted_names, LogConnectionSettingItem, j);
+                &nm_g_array_index(sorted_names, LogConnectionSettingItem, j);
 
             str_conn = (item->diff_result & NM_SETTING_DIFF_RESULT_IN_A)
                            ? _log_connection_get_property(setting_data->setting, item->item_name)
@@ -3013,7 +3013,7 @@ nmtst_utils_host_id_pop(void)
 
     nm_log_dbg(LOGD_CORE, "nmtst: host-id pop");
 
-    h = &g_array_index(nmtst_host_id_stack, HostIdData, nmtst_host_id_stack->len - 1);
+    h = &nm_g_array_index(nmtst_host_id_stack, HostIdData, nmtst_host_id_stack->len - 1);
 
     g_free((char *) h->host_id);
     g_array_set_size(nmtst_host_id_stack, nmtst_host_id_stack->len - 1u);
@@ -4331,7 +4331,7 @@ skip:
 
     result = g_new(char *, paths->len + 1);
     for (i = 0; i < paths->len; i++)
-        result[i] = g_array_index(paths, struct plugin_info, i).path;
+        result[i] = nm_g_array_index(paths, struct plugin_info, i).path;
     result[i] = NULL;
 
     g_array_free(paths, TRUE);

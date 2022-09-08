@@ -1197,7 +1197,7 @@ skip:
             nm_assert(plp->_construct_idx_start < plp->_construct_idx_end);
             l = plp->_construct_idx_end - plp->_construct_idx_start;
             plp->allowed_ips =
-                &g_array_index(allowed_ips, NMPWireGuardAllowedIP, plp->_construct_idx_start);
+                &nm_g_array_index(allowed_ips, NMPWireGuardAllowedIP, plp->_construct_idx_start);
             plp->allowed_ips_len = l;
         }
     }

@@ -6259,11 +6259,11 @@ static NM_UTILS_LOOKUP_STR_DEFINE(
     NM_UTILS_LOOKUP_ITEM_IGNORE(DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_ROUTING_RULES_ALL),
     NM_UTILS_LOOKUP_ITEM_IGNORE(__DELAYED_ACTION_TYPE_MAX), );
 
-#define delayed_action_get_list_wait_for_resonse(priv, netlink_protocol, idx)                   \
-    (&g_array_index((priv)->delayed_action.list_wait_for_response_x[nmp_netlink_protocol_check( \
-                        (netlink_protocol))],                                                   \
-                    DelayedActionWaitForNlResponseData,                                         \
-                    (idx)))
+#define delayed_action_get_list_wait_for_resonse(priv, netlink_protocol, idx)                      \
+    (&nm_g_array_index((priv)->delayed_action.list_wait_for_response_x[nmp_netlink_protocol_check( \
+                           (netlink_protocol))],                                                   \
+                       DelayedActionWaitForNlResponseData,                                         \
+                       (idx)))
 
 static const char *
 delayed_action_to_string_full(DelayedActionType action_type,

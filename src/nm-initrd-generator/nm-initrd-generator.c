@@ -241,7 +241,7 @@ main(int argc, char *argv[])
             g_print("\n*** Hostname '%s' ***\n", hostname);
 
         for (i = 0; i < confs->len; i++) {
-            NMUtilsNamedValue *v    = &g_array_index(confs, NMUtilsNamedValue, i);
+            NMUtilsNamedValue *v    = &nm_g_array_index(confs, NMUtilsNamedValue, i);
             gs_free char      *name = g_path_get_basename(v->name);
 
             g_print("\n*** Configuration '%s' ***\n\n%s\n", name, v->value_str);
@@ -277,7 +277,7 @@ main(int argc, char *argv[])
         }
 
         for (i = 0; i < confs->len; i++) {
-            NMUtilsNamedValue *v = &g_array_index(confs, NMUtilsNamedValue, i);
+            NMUtilsNamedValue *v = &nm_g_array_index(confs, NMUtilsNamedValue, i);
 
             if (!g_file_set_contents(v->name, v->value_str, strlen(v->value_str), &error)) {
                 _LOGW(LOGD_CORE, "%s: %s", v->name, error->message);

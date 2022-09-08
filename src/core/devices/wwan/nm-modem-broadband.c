@@ -636,7 +636,7 @@ connect_context_step(NMModemBroadband *self)
         if (ctx->ip_types_i < ctx->ip_types->len) {
             NMModemIPType current;
 
-            current = g_array_index(ctx->ip_types, NMModemIPType, ctx->ip_types_i);
+            current = nm_g_array_index(ctx->ip_types, NMModemIPType, ctx->ip_types_i);
 
             if (current == NM_MODEM_IP_TYPE_IPV4)
                 mm_simple_connect_properties_set_ip_type(ctx->connect_properties,

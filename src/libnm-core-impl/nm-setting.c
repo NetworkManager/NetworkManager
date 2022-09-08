@@ -317,7 +317,7 @@ _nm_setting_class_commit(NMSettingClass             *setting_class,
         override_len = properties_override->len;
 
         for (i = 0; i < override_len; i++) {
-            NMSettInfoProperty *p = &g_array_index(properties_override, NMSettInfoProperty, i);
+            NMSettInfoProperty *p = &nm_g_array_index(properties_override, NMSettInfoProperty, i);
 
             nm_assert((!!p->name) != (!!p->param_spec));
 
@@ -332,7 +332,7 @@ _nm_setting_class_commit(NMSettingClass             *setting_class,
 #if NM_MORE_ASSERTS > 10
     /* assert that properties_override is constructed consistently. */
     for (i = 0; i < override_len; i++) {
-        const NMSettInfoProperty *p = &g_array_index(properties_override, NMSettInfoProperty, i);
+        const NMSettInfoProperty *p = &nm_g_array_index(properties_override, NMSettInfoProperty, i);
         gboolean                  found = FALSE;
         guint                     k;
 
@@ -367,7 +367,7 @@ _nm_setting_class_commit(NMSettingClass             *setting_class,
     }
 
     for (i = 0; i < properties_override->len; i++) {
-        NMSettInfoProperty *p = &g_array_index(properties_override, NMSettInfoProperty, i);
+        NMSettInfoProperty *p = &nm_g_array_index(properties_override, NMSettInfoProperty, i);
         GType               vtype;
 
         if (p->property_type)

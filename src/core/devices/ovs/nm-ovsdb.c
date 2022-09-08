@@ -1539,8 +1539,8 @@ _external_ids_equal(const GArray *arr1, const GArray *arr2)
     if (n != nm_g_array_len(arr2))
         return FALSE;
     for (i = 0; i < n; i++) {
-        const NMUtilsNamedValue *n1 = &g_array_index(arr1, NMUtilsNamedValue, i);
-        const NMUtilsNamedValue *n2 = &g_array_index(arr2, NMUtilsNamedValue, i);
+        const NMUtilsNamedValue *n1 = &nm_g_array_index(arr1, NMUtilsNamedValue, i);
+        const NMUtilsNamedValue *n2 = &nm_g_array_index(arr2, NMUtilsNamedValue, i);
 
         if (!nm_streq0(n1->name, n2->name))
             return FALSE;
@@ -1562,7 +1562,7 @@ _external_ids_to_string(const GArray *arr)
     strbuf = NM_STR_BUF_INIT(NM_UTILS_GET_NEXT_REALLOC_SIZE_104, FALSE);
     nm_str_buf_append(&strbuf, "[");
     for (i = 0; i < arr->len; i++) {
-        const NMUtilsNamedValue *n = &g_array_index(arr, NMUtilsNamedValue, i);
+        const NMUtilsNamedValue *n = &nm_g_array_index(arr, NMUtilsNamedValue, i);
 
         if (i > 0)
             nm_str_buf_append_c(&strbuf, ',');

@@ -2858,7 +2858,7 @@ nm_strvarray_add(GArray *array, const char *str)
 static inline const char *
 nm_strvarray_get_idx(GArray *array, guint idx)
 {
-    return *nm_g_array_index_p(array, const char *, idx);
+    return nm_g_array_index(array, const char *, idx);
 }
 
 static inline const char *const *

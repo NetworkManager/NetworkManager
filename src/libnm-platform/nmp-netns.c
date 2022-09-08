@@ -194,7 +194,7 @@ _stack_current_netns(GArray *netns_stack, int ns_types)
     for (j = netns_stack->len; ns_types && j >= 1;) {
         NetnsInfo *info;
 
-        info = &g_array_index(netns_stack, NetnsInfo, --j);
+        info = &nm_g_array_index(netns_stack, NetnsInfo, --j);
 
         if (NM_FLAGS_ALL(info->ns_types, ns_types))
             return info->netns;
@@ -218,7 +218,7 @@ _stack_current_ns_types(GArray *netns_stack, NMPNetns *netns, int ns_types)
     for (j = netns_stack->len; ns_types && j >= 1;) {
         NetnsInfo *info;
 
-        info = &g_array_index(netns_stack, NetnsInfo, --j);
+        info = &nm_g_array_index(netns_stack, NetnsInfo, --j);
         if (info->netns != netns) {
             ns_types = NM_FLAGS_UNSET(ns_types, info->ns_types);
             continue;
@@ -240,7 +240,7 @@ static NetnsInfo *
 _stack_peek(GArray *netns_stack)
 {
     if (netns_stack->len > 0)
-        return &g_array_index(netns_stack, NetnsInfo, (netns_stack->len - 1));
+        return &nm_g_array_last(netns_stack, NetnsInfo);
     return NULL;
 }
 
@@ -248,7 +248,7 @@ static NetnsInfo *
 _stack_bottom(GArray *netns_stack)
 {
     if (netns_stack->len > 0)
-        return &g_array_index(netns_stack, NetnsInfo, 0);
+        return &nm_g_array_first(netns_stack, NetnsInfo);
     return NULL;
 }
 
@@ -278,7 +278,7 @@ _stack_pop(GArray *netns_stack)
     nm_assert(netns_stack);
     nm_assert(netns_stack->len > 1);
 
-    info = &g_array_index(netns_stack, NetnsInfo, (netns_stack->len - 1));
+    info = &nm_g_array_last(netns_stack, NetnsInfo);
 
     nm_assert(NMP_IS_NETNS(info->netns));
     nm_assert(info->count == 1);

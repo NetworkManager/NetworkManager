@@ -528,27 +528,29 @@ test_nm_utils_array_remove_at_indexes(void)
                 _remove_at_indexes_init_random_idx(idx, i_len, i_idx_len);
                 g_array_set_size(array, i_len);
                 for (i = 0; i < i_len; i++)
-                    g_array_index(array, gssize, i) = i;
+                    nm_g_array_index(array, gssize, i) = i;
 
-                nm_utils_array_remove_at_indexes(array, &g_array_index(idx, guint, 0), i_idx_len);
+                nm_utils_array_remove_at_indexes(array,
+                                                 nm_g_array_index_p(idx, guint, 0),
+                                                 i_idx_len);
 
                 g_hash_table_remove_all(unique);
                 /* ensure that all the indexes are still unique */
                 for (i = 0; i < array->len; i++)
-                    g_hash_table_add(unique, GUINT_TO_POINTER(g_array_index(array, gssize, i)));
+                    g_hash_table_add(unique, GUINT_TO_POINTER(nm_g_array_index(array, gssize, i)));
                 g_assert_cmpint(g_hash_table_size(unique), ==, array->len);
 
                 for (i = 0; i < idx->len; i++)
-                    g_hash_table_add(unique, GUINT_TO_POINTER(g_array_index(idx, guint, i)));
+                    g_hash_table_add(unique, GUINT_TO_POINTER(nm_g_array_index(idx, guint, i)));
                 g_assert_cmpint(g_hash_table_size(unique), ==, i_len);
 
                 /* ensure proper sort order in array */
                 for (i = 0; i < array->len; i++) {
-                    gssize i1 = g_array_index(array, gssize, i);
+                    gssize i1 = nm_g_array_index(array, gssize, i);
 
                     g_assert(i1 >= 0 && i1 < i_len);
                     if (i > 0) {
-                        gsize i0 = g_array_index(array, gssize, i - 1);
+                        gsize i0 = nm_g_array_index(array, gssize, i - 1);
                         g_assert_cmpint(i0, <, i1);
                     }
                 }

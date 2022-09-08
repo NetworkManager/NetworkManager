@@ -1642,7 +1642,7 @@ show_device_info(NMDevice *device, NmCli *nmc)
 
     /* Loop through the required sections and print them. */
     for (k = 0; k < sections_array->len; k++) {
-        int   section_idx = g_array_index(sections_array, int, k);
+        int   section_idx = nm_g_array_index(sections_array, int, k);
         char *section_fld = (char *) g_ptr_array_index(fields_in_section, k);
 
         if (NM_IN_SET(nmc->nmc_config.print_output, NMC_PRINT_NORMAL, NMC_PRINT_PRETTY)

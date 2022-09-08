@@ -759,7 +759,7 @@ update(NMDnsPlugin             *plugin,
     if (dirty_array) {
         g_array_sort_with_data(dirty_array, nm_cmp_int2ptr_p_with_data, NULL);
         for (i = 0; i < dirty_array->len; i++) {
-            int             ifindex = g_array_index(dirty_array, int, i);
+            int             ifindex = nm_g_array_index(dirty_array, int, i);
             InterfaceConfig ic;
 
             _LOGT("clear previously configured ifindex %d", ifindex);
@@ -968,7 +968,7 @@ _resolve_handle_call_cb(GObject *source, GAsyncResult *result, gpointer user_dat
     g_variant_iter_free(v_names_iter);
 
     _resolve_complete(handle,
-                      &g_array_index(v_names, NMDnsSystemdResolvedAddressResult, 0),
+                      nm_g_array_index_p(v_names, NMDnsSystemdResolvedAddressResult, 0),
                       v_names->len,
                       v_flags,
                       NULL);

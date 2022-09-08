@@ -438,7 +438,7 @@ _acd_complete_on_idle_cb(gpointer user_data)
 }
 
 #define _acd_reglist_data_get(priv, idx) \
-    nm_g_array_index_p((priv)->v4.acd.reglist, AcdRegListData, (idx))
+    (&nm_g_array_index((priv)->v4.acd.reglist, AcdRegListData, (idx)))
 
 static guint
 _acd_reglist_data_find(NMDhcpClientPrivate *priv, in_addr_t addr_needle)

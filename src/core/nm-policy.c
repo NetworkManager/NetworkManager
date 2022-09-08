@@ -187,7 +187,7 @@ expire_ip6_delegations(NMPolicy *self)
     guint                i;
 
     for (i = 0; i < priv->ip6_prefix_delegations->len; i++) {
-        delegation = &g_array_index(priv->ip6_prefix_delegations, IP6PrefixDelegation, i);
+        delegation = &nm_g_array_index(priv->ip6_prefix_delegations, IP6PrefixDelegation, i);
         if (delegation->prefix.timestamp + delegation->prefix.lifetime < now)
             g_array_remove_index_fast(priv->ip6_prefix_delegations, i);
     }
@@ -267,7 +267,7 @@ ip6_subnet_from_device(NMPolicy *self, NMDevice *from_device, NMDevice *device)
     expire_ip6_delegations(self);
 
     for (i = 0; i < priv->ip6_prefix_delegations->len; i++) {
-        delegation = &g_array_index(priv->ip6_prefix_delegations, IP6PrefixDelegation, i);
+        delegation = &nm_g_array_index(priv->ip6_prefix_delegations, IP6PrefixDelegation, i);
 
         if (delegation->device != from_device)
             continue;
@@ -295,7 +295,7 @@ ip6_remove_device_prefix_delegations(NMPolicy *self, NMDevice *device)
     guint                i;
 
     for (i = 0; i < priv->ip6_prefix_delegations->len; i++) {
-        delegation = &g_array_index(priv->ip6_prefix_delegations, IP6PrefixDelegation, i);
+        delegation = &nm_g_array_index(priv->ip6_prefix_delegations, IP6PrefixDelegation, i);
         if (delegation->device == device)
             g_array_remove_index_fast(priv->ip6_prefix_delegations, i);
     }
@@ -324,7 +324,7 @@ device_ip6_prefix_delegated(NMDevice                   *device,
 
     for (i = 0; i < priv->ip6_prefix_delegations->len; i++) {
         /* Look for an already known prefix to update. */
-        delegation = &g_array_index(priv->ip6_prefix_delegations, IP6PrefixDelegation, i);
+        delegation = &nm_g_array_index(priv->ip6_prefix_delegations, IP6PrefixDelegation, i);
         if (IN6_ARE_ADDR_EQUAL(&delegation->prefix.address, &prefix->address))
             break;
     }
@@ -769,10 +769,10 @@ build_device_hostname_infos(NMPolicy *self)
 
         g_array_sort(array, device_hostname_info_compare);
 
-        info0 = &g_array_index(array, DeviceHostnameInfo, 0);
+        info0 = &nm_g_array_index(array, DeviceHostnameInfo, 0);
         if (info0->priority < 0) {
             for (i = 1; i < array->len; i++) {
-                const DeviceHostnameInfo *info = &g_array_index(array, DeviceHostnameInfo, i);
+                const DeviceHostnameInfo *info = &nm_g_array_index(array, DeviceHostnameInfo, i);
 
                 if (info->priority > info0->priority) {
                     g_array_set_size(array, i);
@@ -863,7 +863,7 @@ update_system_hostname(NMPolicy *self, const char *msg)
     if (infos && _LOGT_ENABLED(LOGD_DNS)) {
         _LOGT(LOGD_DNS, "device hostname info:");
         for (i = 0; i < infos->len; i++) {
-            info = &g_array_index(infos, DeviceHostnameInfo, i);
+            info = &nm_g_array_index(infos, DeviceHostnameInfo, i);
             _LOGT(LOGD_DNS,
                   "  - prio:%5d ipv%c%s %s %s dev:%s",
                   info->priority,
@@ -876,7 +876,7 @@ update_system_hostname(NMPolicy *self, const char *msg)
     }
 
     for (i = 0; infos && i < infos->len; i++) {
-        info        = &g_array_index(infos, DeviceHostnameInfo, i);
+        info        = &nm_g_array_index(infos, DeviceHostnameInfo, i);
         addr_family = info->IS_IPv4 ? AF_INET : AF_INET6;
         g_signal_handlers_disconnect_by_func(info->device, device_dns_lookup_done, self);
 

@@ -1610,7 +1610,7 @@ nmc_connection_profile_details(NMConnection *connection, NmCli *nmc)
     /* Loop through the required settings and print them. */
     for (i = 0; i < print_settings_array->len; i++) {
         NMSetting  *setting;
-        int         section_idx = g_array_index(print_settings_array, int, i);
+        int         section_idx = nm_g_array_index(print_settings_array, int, i);
         const char *prop_name   = (const char *) g_ptr_array_index(prop_array, i);
 
         if (NM_IN_SET(nmc->nmc_config.print_output, NMC_PRINT_NORMAL, NMC_PRINT_PRETTY)
@@ -1716,7 +1716,7 @@ nmc_active_connection_details(NMActiveConnection *acon, NmCli *nmc)
 
     /* Loop through the groups and print them. */
     for (i = 0; i < print_groups->len; i++) {
-        int   group_idx = g_array_index(print_groups, int, i);
+        int   group_idx = nm_g_array_index(print_groups, int, i);
         char *group_fld = (char *) g_ptr_array_index(group_fields, i);
 
         if (NM_IN_SET(nmc->nmc_config.print_output, NMC_PRINT_NORMAL, NMC_PRINT_PRETTY)
@@ -1983,7 +1983,7 @@ con_show_get_items_cmp(gconstpointer pa, gconstpointer pb, gpointer user_data)
             nmc_print_output_to_accessor_get_type(sort_info->nmc->nmc_config.print_output);
 
         if (sort_info->order) {
-            order_arr = &g_array_index(sort_info->order, NmcSortOrder, 0);
+            order_arr = nm_g_array_index_p(sort_info->order, NmcSortOrder, 0);
             order_len = sort_info->order->len;
         } else {
             static const NmcSortOrder def[] = {NMC_SORT_ACTIVE, NMC_SORT_NAME, NMC_SORT_PATH};
@@ -2206,7 +2206,7 @@ parse_preferred_connection_order(const char *order, GError **error)
         /* Check for duplicates and ignore them. */
         unique = TRUE;
         for (i = 0; i < order_arr->len; i++) {
-            if (abs(g_array_index(order_arr, NmcSortOrder, i)) - abs(val) == 0) {
+            if (abs(nm_g_array_index(order_arr, NmcSortOrder, i)) - abs(val) == 0) {
                 unique = FALSE;
                 break;
             }
