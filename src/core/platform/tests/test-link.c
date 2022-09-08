@@ -1301,19 +1301,19 @@ test_software_detect(gconstpointer user_data)
             nmtstp_kernel_support_get(NM_PLATFORM_KERNEL_SUPPORT_TYPE_IFLA_BR_VLAN_STATS_ENABLED)
                 ? TRUE
                 : FALSE;
-        lnk_bridge.group_fwd_mask             = 8;
-        lnk_bridge.group_addr                 = (NMEtherAddr){{0x01, 0x80, 0xC2, 0x00, 0x00, 0x08}};
-        lnk_bridge.mcast_snooping             = TRUE;
-        lnk_bridge.mcast_router               = 1;
-        lnk_bridge.mcast_query_use_ifaddr     = TRUE;
-        lnk_bridge.mcast_querier              = TRUE;
-        lnk_bridge.mcast_hash_max             = 1024;
-        lnk_bridge.mcast_last_member_count    = 2;
-        lnk_bridge.mcast_startup_query_count  = 3;
-        lnk_bridge.mcast_last_member_interval = 5000;
-        lnk_bridge.mcast_membership_interval  = 25000;
-        lnk_bridge.mcast_querier_interval     = 26000;
-        lnk_bridge.mcast_query_interval       = 12000;
+        lnk_bridge.group_fwd_mask          = 8;
+        lnk_bridge.group_addr              = NM_ETHER_ADDR_INIT(0x01, 0x80, 0xC2, 0x00, 0x00, 0x08);
+        lnk_bridge.mcast_snooping          = TRUE;
+        lnk_bridge.mcast_router            = 1;
+        lnk_bridge.mcast_query_use_ifaddr  = TRUE;
+        lnk_bridge.mcast_querier           = TRUE;
+        lnk_bridge.mcast_hash_max          = 1024;
+        lnk_bridge.mcast_last_member_count = 2;
+        lnk_bridge.mcast_startup_query_count     = 3;
+        lnk_bridge.mcast_last_member_interval    = 5000;
+        lnk_bridge.mcast_membership_interval     = 25000;
+        lnk_bridge.mcast_querier_interval        = 26000;
+        lnk_bridge.mcast_query_interval          = 12000;
         lnk_bridge.mcast_query_response_interval = 5200;
         lnk_bridge.mcast_startup_query_interval  = 3000;
 

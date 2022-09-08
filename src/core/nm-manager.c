@@ -7087,7 +7087,7 @@ nm_manager_write_device_state(NMManager *self, NMDevice *device, int *out_ifinde
     ifindex = nm_device_get_ip_ifindex(device);
     if (ifindex <= 0)
         return FALSE;
-    if (ifindex == 1) {
+    if (ifindex == NM_LOOPBACK_IFINDEX) {
         /* ignore loopback */
         return FALSE;
     }

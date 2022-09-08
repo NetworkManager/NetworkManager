@@ -948,9 +948,9 @@ _link_get_all_presort(gconstpointer p_a, gconstpointer p_b, gpointer sort_by_nam
     const NMPlatformLink *b = NMP_OBJECT_CAST_LINK(*((const NMPObject **) p_b));
 
     /* Loopback always first */
-    if (a->ifindex == 1)
+    if (a->ifindex == NM_LOOPBACK_IFINDEX)
         return -1;
-    if (b->ifindex == 1)
+    if (b->ifindex == NM_LOOPBACK_IFINDEX)
         return 1;
 
     if (GPOINTER_TO_INT(sort_by_name)) {
@@ -4105,6 +4105,9 @@ ip6_address_scope_cmp_descending(gconstpointer p_a, gconstpointer p_b, gpointer 
  *   by the function.
  *   Addresses that are both contained in @known_addresses and @addresses_prune
  *   will be configured.
+ * @flags: #NMPIPAddressSyncFlags to affect the sync. If "with-noprefixroute"
+ *   flag is set, the method will automatically set IFA_F_NOPREFIXROUTE for
+ *   all addresses.
  *
  * A convenience function to synchronize addresses for a specific interface
  * with the least possible disturbance. It simply removes addresses that are
@@ -4113,11 +4116,12 @@ ip6_address_scope_cmp_descending(gconstpointer p_a, gconstpointer p_b, gpointer 
  * Returns: %TRUE on success.
  */
 gboolean
-nm_platform_ip_address_sync(NMPlatform *self,
-                            int         addr_family,
-                            int         ifindex,
-                            GPtrArray  *known_addresses,
-                            GPtrArray  *addresses_prune)
+nm_platform_ip_address_sync(NMPlatform           *self,
+                            int                   addr_family,
+                            int                   ifindex,
+                            GPtrArray            *known_addresses,
+                            GPtrArray            *addresses_prune,
+                            NMPIPAddressSyncFlags flags)
 {
     gint32                         now     = 0;
     const int                      IS_IPv4 = NM_IS_IPv4(addr_family);
@@ -4529,18 +4533,24 @@ next_plat:;
                     nm_platform_ip4_broadcast_address_from_addr(&known_address->a4),
                     lifetime,
                     preferred,
-                    IFA_F_NOPREFIXROUTE,
+                    NM_FLAGS_HAS(flags, NMP_IP_ADDRESS_SYNC_FLAGS_WITH_NOPREFIXROUTE)
+                        ? IFA_F_NOPREFIXROUTE
+                        : 0,
                     known_address->a4.label))
                 success = FALSE;
         } else {
-            if (!nm_platform_ip6_address_add(self,
-                                             ifindex,
-                                             known_address->a6.address,
-                                             known_address->a6.plen,
-                                             known_address->a6.peer_address,
-                                             lifetime,
-                                             preferred,
-                                             IFA_F_NOPREFIXROUTE | known_address->a6.n_ifa_flags))
+            if (!nm_platform_ip6_address_add(
+                    self,
+                    ifindex,
+                    known_address->a6.address,
+                    known_address->a6.plen,
+                    known_address->a6.peer_address,
+                    lifetime,
+                    preferred,
+                    (NM_FLAGS_HAS(flags, NMP_IP_ADDRESS_SYNC_FLAGS_WITH_NOPREFIXROUTE)
+                         ? IFA_F_NOPREFIXROUTE
+                         : 0)
+                        | known_address->a6.n_ifa_flags))
                 success = FALSE;
         }
     }
@@ -4568,7 +4578,12 @@ nm_platform_ip_address_flush(NMPlatform *self, int addr_family, int ifindex)
         addresses_prune =
             nm_platform_ip_address_get_prune_list(self, addr_family2, ifindex, NULL, 0);
 
-        if (!nm_platform_ip_address_sync(self, addr_family2, ifindex, NULL, addresses_prune))
+        if (!nm_platform_ip_address_sync(self,
+                                         addr_family2,
+                                         ifindex,
+                                         NULL,
+                                         addresses_prune,
+                                         NMP_IP_ADDRESS_SYNC_FLAGS_NONE))
             success = FALSE;
     }
     return success;
@@ -4706,9 +4721,6 @@ nm_platform_ip_route_get_prune_list(NMPlatform            *self,
     GPtrArray                   *routes_prune = NULL;
     const NMDedupMultiHeadEntry *head_entry;
     CList                       *iter;
-    NMPlatformIP4Route           rt_local4;
-    NMPlatformIP6Route           rt_local6;
-    NMPlatformIP6Route           rt_mcast6;
     const NMPlatformLink        *pllink;
     const NMPlatformLnkVrf      *lnk_vrf;
     guint32                      local_table;
@@ -4732,10 +4744,6 @@ nm_platform_ip_route_get_prune_list(NMPlatform            *self,
     if (!lnk_vrf && pllink && pllink->master > 0)
         lnk_vrf = nm_platform_link_get_lnk_vrf(self, pllink->master, NULL);
     local_table = lnk_vrf ? lnk_vrf->table : RT_TABLE_LOCAL;
-
-    rt_local4.plen = 0;
-    rt_local6.plen = 0;
-    rt_mcast6.plen = 0;
 
     c_list_for_each (iter, &head_entry->lst_entries_head) {
         const NMPObject          *obj = c_list_entry(iter, NMDedupMultiEntry, lst_entries)->obj;
@@ -4768,29 +4776,26 @@ nm_platform_ip_route_get_prune_list(NMPlatform            *self,
                     && rt->rx.metric == 0
                     && rt->r4.scope_inv == nm_platform_route_scope_inv(RT_SCOPE_HOST)
                     && rt->r4.gateway == INADDR_ANY) {
-                    if (rt_local4.plen == 0) {
-                        rt_local4 = (NMPlatformIP4Route){
-                            .ifindex       = ifindex,
-                            .type_coerced  = nm_platform_route_type_coerce(RTN_LOCAL),
-                            .plen          = 32,
-                            .rt_source     = NM_IP_CONFIG_SOURCE_RTPROT_KERNEL,
-                            .metric        = 0,
-                            .table_coerced = nm_platform_route_table_coerce(local_table),
-                            .scope_inv     = nm_platform_route_scope_inv(RT_SCOPE_HOST),
-                            .gateway       = INADDR_ANY,
-                        };
-                    }
-
-                    /* the possible "network" depends on the addresses we have. We don't check that
-                     * carefully. If the other parameters match, we assume that this route is the one
-                     * generated by kernel. */
-                    rt_local4.network  = rt->r4.network;
-                    rt_local4.pref_src = rt->r4.pref_src;
+                    const NMPlatformIP4Route r = {
+                        .ifindex       = ifindex,
+                        .type_coerced  = nm_platform_route_type_coerce(RTN_LOCAL),
+                        .plen          = 32,
+                        .rt_source     = NM_IP_CONFIG_SOURCE_RTPROT_KERNEL,
+                        .metric        = 0,
+                        .table_coerced = nm_platform_route_table_coerce(local_table),
+                        .scope_inv     = nm_platform_route_scope_inv(RT_SCOPE_HOST),
+                        .gateway       = INADDR_ANY,
+                        /* the possible "network" depends on the addresses we have. We don't check that
+                         * carefully. If the other parameters match, we assume that this route is the one
+                         * generated by kernel. */
+                        .network  = rt->r4.network,
+                        .pref_src = rt->r4.pref_src,
+                    };
 
                     /* to be more confident about comparing the value, use our nm_platform_ip4_route_cmp()
                      * implementation. That will also consider parameters that we leave unspecified here. */
                     if (nm_platform_ip4_route_cmp(&rt->r4,
-                                                  &rt_local4,
+                                                  &r,
                                                   NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY)
                         == 0)
                         continue;
@@ -4805,23 +4810,20 @@ nm_platform_ip_route_get_prune_list(NMPlatform            *self,
                     && rt->rx.plen == 128 && rt->rx.rt_source == NM_IP_CONFIG_SOURCE_RTPROT_KERNEL
                     && rt->rx.metric == 0 && rt->r6.rt_pref == NM_ICMPV6_ROUTER_PREF_MEDIUM
                     && IN6_IS_ADDR_UNSPECIFIED(&rt->r6.gateway)) {
-                    if (rt_local6.plen == 0) {
-                        rt_local6 = (NMPlatformIP6Route){
-                            .ifindex       = ifindex,
-                            .type_coerced  = nm_platform_route_type_coerce(RTN_LOCAL),
-                            .plen          = 128,
-                            .rt_source     = NM_IP_CONFIG_SOURCE_RTPROT_KERNEL,
-                            .metric        = 0,
-                            .table_coerced = nm_platform_route_table_coerce(local_table),
-                            .rt_pref       = NM_ICMPV6_ROUTER_PREF_MEDIUM,
-                            .gateway       = IN6ADDR_ANY_INIT,
-                        };
-                    }
-
-                    rt_local6.network = rt->r6.network;
+                    const NMPlatformIP6Route r = {
+                        .ifindex       = ifindex,
+                        .type_coerced  = nm_platform_route_type_coerce(RTN_LOCAL),
+                        .plen          = 128,
+                        .rt_source     = NM_IP_CONFIG_SOURCE_RTPROT_KERNEL,
+                        .metric        = 0,
+                        .table_coerced = nm_platform_route_table_coerce(local_table),
+                        .rt_pref       = NM_ICMPV6_ROUTER_PREF_MEDIUM,
+                        .gateway       = IN6ADDR_ANY_INIT,
+                        .network       = rt->r6.network,
+                    };
 
                     if (nm_platform_ip6_route_cmp(&rt->r6,
-                                                  &rt_local6,
+                                                  &r,
                                                   NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY)
                         == 0)
                         continue;
@@ -4843,22 +4845,21 @@ nm_platform_ip_route_get_prune_list(NMPlatform            *self,
                     && rt->rx.plen == 8 && rt->rx.rt_source == NM_IP_CONFIG_SOURCE_RTPROT_BOOT
                     && rt->rx.metric == 256 && rt->r6.rt_pref == NM_ICMPV6_ROUTER_PREF_MEDIUM
                     && IN6_IS_ADDR_UNSPECIFIED(&rt->r6.gateway)) {
-                    if (rt_mcast6.plen == 0) {
-                        rt_mcast6 = (NMPlatformIP6Route){
-                            .ifindex       = ifindex,
-                            .type_coerced  = nm_platform_route_type_coerce(RTN_UNICAST),
-                            .plen          = 8,
-                            .rt_source     = NM_IP_CONFIG_SOURCE_RTPROT_BOOT,
-                            .metric        = 256,
-                            .table_coerced = nm_platform_route_table_coerce(local_table),
-                            .rt_pref       = NM_ICMPV6_ROUTER_PREF_MEDIUM,
-                            .gateway       = IN6ADDR_ANY_INIT,
-                            .network = {{{0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}}},
-                        };
-                    }
+                    const NMPlatformIP6Route r = {
+                        .ifindex       = ifindex,
+                        .type_coerced  = nm_platform_route_type_coerce(RTN_UNICAST),
+                        .plen          = 8,
+                        .rt_source     = NM_IP_CONFIG_SOURCE_RTPROT_BOOT,
+                        .metric        = 256,
+                        .table_coerced = nm_platform_route_table_coerce(local_table),
+                        .rt_pref       = NM_ICMPV6_ROUTER_PREF_MEDIUM,
+                        .gateway       = IN6ADDR_ANY_INIT,
+                        .network =
+                            NM_IN6ADDR_INIT(0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+                    };
 
                     if (nm_platform_ip6_route_cmp(&rt->r6,
-                                                  &rt_mcast6,
+                                                  &r,
                                                   NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY)
                         == 0)
                         continue;
@@ -8633,7 +8634,8 @@ nm_platform_ip4_address_cmp(const NMPlatformIP4Address *a,
              * NetworkManager actively sets.
              *
              * NM actively only sets IFA_F_NOPREFIXROUTE (and IFA_F_MANAGETEMPADDR for IPv6),
-             * where nm_platform_ip_address_sync() always sets IFA_F_NOPREFIXROUTE.
+             * where nm_platform_ip_address_sync() sets IFA_F_NOPREFIXROUTE depending on
+             * NMP_IP_ADDRESS_SYNC_FLAGS_WITH_NOPREFIXROUTE.
              * There are thus no flags to compare for IPv4. */
 
             NM_CMP_DIRECT(nm_platform_ip4_broadcast_address_from_addr(a),
@@ -8701,7 +8703,8 @@ nm_platform_ip6_address_cmp(const NMPlatformIP6Address *a,
              * NetworkManager actively sets.
              *
              * NM actively only sets IFA_F_NOPREFIXROUTE and IFA_F_MANAGETEMPADDR,
-             * where nm_platform_ip_address_sync() always sets IFA_F_NOPREFIXROUTE.
+             * where nm_platform_ip_address_sync() sets IFA_F_NOPREFIXROUTE depending on
+             * NMP_IP_ADDRESS_SYNC_FLAGS_WITH_NOPREFIXROUTE.
              * We thus only care about IFA_F_MANAGETEMPADDR. */
             NM_CMP_DIRECT(a->n_ifa_flags & IFA_F_MANAGETEMPADDR,
                           b->n_ifa_flags & IFA_F_MANAGETEMPADDR);
