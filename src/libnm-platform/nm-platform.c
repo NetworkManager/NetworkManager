@@ -4853,7 +4853,8 @@ nm_platform_ip_route_get_prune_list(NMPlatform            *self,
                             .table_coerced = nm_platform_route_table_coerce(local_table),
                             .rt_pref       = NM_ICMPV6_ROUTER_PREF_MEDIUM,
                             .gateway       = IN6ADDR_ANY_INIT,
-                            .network = {{{0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}}},
+                            .network =
+                                NM_IN6ADDR_INIT(0xff, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
                         };
                     }
 

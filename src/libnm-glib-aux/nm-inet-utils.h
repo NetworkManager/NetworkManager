@@ -25,6 +25,30 @@ typedef struct _NMIPAddr {
         .array = { 0 }  \
     }
 
+#define _NM_IN6ADDR_INIT(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, aa, ab, ac, ad, ae, af) \
+    {                                                                                    \
+        .s6_addr = {                                                                     \
+            (a0),                                                                        \
+            (a1),                                                                        \
+            (a2),                                                                        \
+            (a3),                                                                        \
+            (a4),                                                                        \
+            (a5),                                                                        \
+            (a6),                                                                        \
+            (a7),                                                                        \
+            (a8),                                                                        \
+            (a9),                                                                        \
+            (aa),                                                                        \
+            (ab),                                                                        \
+            (ac),                                                                        \
+            (ad),                                                                        \
+            (ae),                                                                        \
+            (af),                                                                        \
+        }                                                                                \
+    }
+
+#define NM_IN6ADDR_INIT(...) ((struct in6_addr) _NM_IN6ADDR_INIT(__VA_ARGS__))
+
 extern const NMIPAddr nm_ip_addr_zero;
 
 /* This doesn't really belong here, but since it's convenient to re-use nm_ip_addr_zero.ether_addr
