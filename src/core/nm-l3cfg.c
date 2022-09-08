@@ -2990,7 +2990,7 @@ nm_l3cfg_check_ready(NML3Cfg               *self,
                      const NML3ConfigData  *l3cd,
                      int                    addr_family,
                      NML3CfgCheckReadyFlags flags,
-                     gboolean              *acd_used)
+                     GArray               **conflicts)
 {
     NMDedupMultiIter iter;
     const NMPObject *obj;
@@ -2998,8 +2998,7 @@ nm_l3cfg_check_ready(NML3Cfg               *self,
 
     nm_assert(NM_IS_L3CFG(self));
     nm_assert_addr_family(addr_family);
-
-    NM_SET_OUT(acd_used, FALSE);
+    nm_assert(!conflicts || !*conflicts);
 
     if (!l3cd)
         return TRUE;
@@ -3019,7 +3018,13 @@ nm_l3cfg_check_ready(NML3Cfg               *self,
                         /* Still probing. Not ready. */
                         ready = FALSE;
                     } else if (addr_info->state == NM_L3_ACD_ADDR_STATE_USED) {
-                        NM_SET_OUT(acd_used, TRUE);
+                        if (conflicts) {
+                            if (!*conflicts)
+                                *conflicts = g_array_new(FALSE,
+                                                         FALSE,
+                                                         nm_utils_addr_family_to_size(addr_family));
+                            g_array_append_val(*conflicts, addr_info->addr);
+                        }
                     }
                 }
                 /* we only care that we don't have ACD still pending. Otherwise we are ready,
@@ -3033,6 +3038,7 @@ nm_l3cfg_check_ready(NML3Cfg               *self,
     if (NM_FLAGS_HAS(flags, NM_L3CFG_CHECK_READY_FLAGS_IP6_DAD_READY)) {
         nm_l3_config_data_iter_obj_for_each (&iter, l3cd, &obj, NMP_OBJECT_TYPE_IP6_ADDRESS) {
             ObjStateData *obj_state;
+            gboolean      dadfailed = FALSE;
 
             obj_state = g_hash_table_lookup(self->priv.p->obj_state_hash, &obj);
 
@@ -3046,6 +3052,32 @@ nm_l3cfg_check_ready(NML3Cfg               *self,
                 /* We didn't (yet) configure this address and it also is not in platform.
                  * Not ready. */
                 ready = FALSE;
+                continue;
+            }
+
+            if (obj_state->os_plobj
+                && NM_FLAGS_HAS(NMP_OBJECT_CAST_IP6_ADDRESS(obj_state->os_plobj)->n_ifa_flags,
+                                IFA_F_DADFAILED)) {
+                /* The address is still present with DADFAILED flag. */
+                dadfailed = TRUE;
+            } else if (obj_state->os_nm_configured && !obj_state->os_plobj
+                       && nm_platform_ip6_dadfailed_check(
+                           self->priv.platform,
+                           self->priv.ifindex,
+                           &NMP_OBJECT_CAST_IP6_ADDRESS(obj_state->obj)->address)) {
+                /* We configured the address and kernel removed it with DADFAILED flag. */
+                dadfailed = TRUE;
+            }
+
+            if (dadfailed) {
+                if (conflicts) {
+                    if (!*conflicts) {
+                        *conflicts =
+                            g_array_new(FALSE, FALSE, nm_utils_addr_family_to_size(addr_family));
+                    }
+                    g_array_append_val(*conflicts,
+                                       NMP_OBJECT_CAST_IP6_ADDRESS(obj_state->obj)->address);
+                }
                 continue;
             }
 

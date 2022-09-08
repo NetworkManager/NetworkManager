@@ -10079,7 +10079,7 @@ _dev_ipmanual_check_ready(NMDevice *self)
     gboolean               has_carrier;
     NML3CfgCheckReadyFlags flags;
     gboolean               ready;
-    gboolean               acd_used = FALSE;
+    gs_unref_array GArray *conflicts = NULL;
     int                    IS_IPv4;
 
     if (priv->ipmanual_data.state_4 != NM_DEVICE_IP_STATE_PENDING
@@ -10122,8 +10122,8 @@ _dev_ipmanual_check_ready(NMDevice *self)
                                      priv->l3cds[L3_CONFIG_DATA_TYPE_MANUALIP].d,
                                      addr_family,
                                      flags,
-                                     &acd_used);
-        if (acd_used) {
+                                     &conflicts);
+        if (conflicts) {
             _dev_ipmanual_set_state(self, addr_family, NM_DEVICE_IP_STATE_FAILED);
             _dev_ip_state_check_async(self, AF_UNSPEC);
         } else if (ready) {
