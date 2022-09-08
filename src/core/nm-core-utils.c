@@ -3022,7 +3022,7 @@ nmtst_utils_host_id_pop(void)
             &host_id_static,
             h,
             nmtst_host_id_stack->len == 0u ? nmtst_host_id_static_0
-                                           : nm_g_array_last(nmtst_host_id_stack, HostIdData)))
+                                           : &nm_g_array_last(nmtst_host_id_stack, HostIdData)))
         g_assert_not_reached();
 }
 
