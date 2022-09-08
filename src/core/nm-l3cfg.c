@@ -2994,43 +2994,43 @@ nm_l3cfg_check_ready(NML3Cfg               *self,
 {
     NMDedupMultiIter iter;
     const NMPObject *obj;
+    gboolean         ready = TRUE;
 
     nm_assert(NM_IS_L3CFG(self));
-    nm_assert_addr_family_or_unspec(addr_family);
+    nm_assert_addr_family(addr_family);
 
     NM_SET_OUT(acd_used, FALSE);
 
     if (!l3cd)
         return TRUE;
 
-    if (NM_IN_SET(addr_family, AF_UNSPEC, AF_INET)
-        && NM_FLAGS_HAS(flags, NM_L3CFG_CHECK_READY_FLAGS_IP4_ACD_READY)) {
-        gboolean pending = FALSE;
+    if (addr_family == AF_INET) {
+        if (NM_FLAGS_HAS(flags, NM_L3CFG_CHECK_READY_FLAGS_IP4_ACD_READY)) {
+            nm_l3_config_data_iter_obj_for_each (&iter, l3cd, &obj, NMP_OBJECT_TYPE_IP4_ADDRESS) {
+                const NML3AcdAddrInfo *addr_info;
 
-        nm_l3_config_data_iter_obj_for_each (&iter, l3cd, &obj, NMP_OBJECT_TYPE_IP4_ADDRESS) {
-            const NML3AcdAddrInfo *addr_info;
-
-            addr_info = nm_l3cfg_get_acd_addr_info(self, NMP_OBJECT_CAST_IP4_ADDRESS(obj)->address);
-            if (!addr_info) {
-                /* We don't track the this address? That's odd. Not ready. */
-                pending = TRUE;
-            } else {
-                if (addr_info->state <= NM_L3_ACD_ADDR_STATE_PROBING) {
-                    /* Still probing. Not ready. */
-                    pending = TRUE;
-                } else if (addr_info->state == NM_L3_ACD_ADDR_STATE_USED) {
-                    NM_SET_OUT(acd_used, TRUE);
+                addr_info =
+                    nm_l3cfg_get_acd_addr_info(self, NMP_OBJECT_CAST_IP4_ADDRESS(obj)->address);
+                if (!addr_info) {
+                    /* We don't track the this address? That's odd. Not ready. */
+                    ready = FALSE;
+                } else {
+                    if (addr_info->state <= NM_L3_ACD_ADDR_STATE_PROBING) {
+                        /* Still probing. Not ready. */
+                        ready = FALSE;
+                    } else if (addr_info->state == NM_L3_ACD_ADDR_STATE_USED) {
+                        NM_SET_OUT(acd_used, TRUE);
+                    }
                 }
+                /* we only care that we don't have ACD still pending. Otherwise we are ready,
+                 * including if we have no addr_info about this address or the address is in use. */
             }
-            /* we only care that we don't have ACD still pending. Otherwise we are ready,
-             * including if we have no addr_info about this address or the address is in use. */
         }
-        if (pending)
-            return FALSE;
+        return ready;
     }
 
-    if (NM_IN_SET(addr_family, AF_UNSPEC, AF_INET6)
-        && NM_FLAGS_HAS(flags, NM_L3CFG_CHECK_READY_FLAGS_IP6_DAD_READY)) {
+    /* AF_INET6 */
+    if (NM_FLAGS_HAS(flags, NM_L3CFG_CHECK_READY_FLAGS_IP6_DAD_READY)) {
         nm_l3_config_data_iter_obj_for_each (&iter, l3cd, &obj, NMP_OBJECT_TYPE_IP6_ADDRESS) {
             ObjStateData *obj_state;
 
@@ -3038,20 +3038,23 @@ nm_l3cfg_check_ready(NML3Cfg               *self,
 
             if (!obj_state) {
                 /* Hm, we don't track this object? That is odd. Not ready. */
-                return FALSE;
+                ready = FALSE;
+                continue;
             }
 
             if (!obj_state->os_nm_configured && !obj_state->os_plobj) {
                 /* We didn't (yet) configure this address and it also is not in platform.
                  * Not ready. */
-                return FALSE;
+                ready = FALSE;
+                continue;
             }
 
             if (obj_state->os_plobj
                 && NM_FLAGS_HAS(NMP_OBJECT_CAST_IP6_ADDRESS(obj_state->os_plobj)->n_ifa_flags,
                                 IFA_F_TENTATIVE)) {
                 /* The address is configured in kernel, but still tentative. Not ready. */
-                return FALSE;
+                ready = FALSE;
+                continue;
             }
 
             /* This address is ready. Even if it is not (not anymore) configured in kernel (as
@@ -3060,7 +3063,7 @@ nm_l3cfg_check_ready(NML3Cfg               *self,
         }
     }
 
-    return TRUE;
+    return ready;
 }
 
 /*****************************************************************************/
