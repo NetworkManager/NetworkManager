@@ -166,9 +166,17 @@
       </varlistentry>
       <varlistentry>
         <term><option>--print-config</option></term>
-        <listitem><para>
-          Print the NetworkManager configuration to stdout and exit.
-        </para></listitem>
+        <listitem>
+        <para>
+          Print the NetworkManager configuration to stdout and exit. See
+          <link linkend='NetworkManager.conf'><citerefentry><refentrytitle>NetworkManager.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry></link>.
+          This does not include connection profiles. View them with <command>nmcli connection</command>.
+        </para>
+        <para>
+          This reads configuration files from disk. If NetworkManager is currently running,
+          make sure that it has the same configuration loaded.
+        </para>
+        </listitem>
       </varlistentry>
     </variablelist>
   </refsect1>
