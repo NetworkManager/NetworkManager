@@ -255,6 +255,9 @@ match-device=interface-name:net*,interface-name:eth*
 managed=1
 EOF
 
+    cat <<EOF | tmp_file "$BASEDIR/data-95-user.conf"
+EOF
+
     cat <<EOF | tmp_file "$BASEDIR/data-bash_history" 600
 NM-log
 NM-log /tmp/nm-log.txt
@@ -382,18 +385,20 @@ RUN dnf debuginfo-install --skip-broken \$(ldd /usr/sbin/NetworkManager | sed -n
 
 RUN pip3 install --user behave_html_formatter || true
 
-RUN systemctl enable NetworkManager
-
 COPY data-NM-log "/usr/bin/NM-log"
 COPY data-nm-env-prepare.sh "/usr/bin/nm-env-prepare.sh"
+COPY data-_nm-in-container-setup.sh "/usr/bin/_nm-in-container-setup.sh"
+COPY data-etc-rc.local "/etc/rc.d/rc.local"
 COPY data-motd /etc/motd
 COPY data-bashrc.my /etc/bashrc.my
 COPY data-90-my.conf /etc/NetworkManager/conf.d/90-my.conf
-RUN echo -n "" > /etc/NetworkManager/conf.d/95-user.conf
+COPY data-95-user.conf /etc/NetworkManager/conf.d/95-user.conf
 COPY data-bash_history /root/.bash_history
 COPY data-gdbinit /root/.gdbinit
 COPY data-gdb_history /root/.gdb_history
 COPY data-behaverc /root/.behaverc
+
+RUN systemctl enable NetworkManager
 
 # Generate a stable machine id.
 RUN echo "10001000100010001000100010001000" > /etc/machine-id
@@ -445,7 +450,7 @@ do_build() {
 
     CONTAINERFILE="$BASEDIR/containerfile"
     create_dockerfile "$CONTAINERFILE" "$BASE_IMAGE"
-    podman build --tag "$CONTAINER_NAME_REPOSITORY:$CONTAINER_NAME_TAG" -f "$CONTAINERFILE"
+    podman build --squash-all --tag "$CONTAINER_NAME_REPOSITORY:$CONTAINER_NAME_TAG" -f "$CONTAINERFILE"
 }
 
 do_run() {

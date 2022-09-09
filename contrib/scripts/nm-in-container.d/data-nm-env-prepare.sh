@@ -116,26 +116,7 @@ do_redo() {
     do_setup "$@"
 }
 
-do_one_time_setup() {
-    if [ ! -d /tmp/sys2 ]; then
-        # `ip -netns t exec ...` will try to mount sysfs. But kernel rejects that in
-        # the container, unless a writable sysfs is already mounted. Due to --priviledged,
-        # we have /sys mounted rw, however, ip will first unmount /sys before trying to
-        # remount it. We thus need it mounted as rw one additional time.
-        #
-        # Let's do this setup step once, and never clean it up.
-        # https://github.com/containers/podman/issues/11887#issuecomment-938706628
-        mkdir /tmp/sys2
-        mount -t sysfs --make-private /tmp/sys2
-    fi
-}
-
 ###############################################################################
-
-# We do this one-time-setup always when the script runs, and never clean it
-# up.
-do_one_time_setup
-
 
 IDX=1
 NAME_PREFIX=net
