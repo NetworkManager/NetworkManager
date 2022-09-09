@@ -442,7 +442,7 @@ nm_key_file_db_prune(NMKeyFileDB *self,
     _LOGD("prune keyfile of old entries: \"%s\"", self->filename);
 
     if (!self->groups_pruned) {
-        /* When we prune the first time, we swap the GKeyfile instance.
+        /* When we prune the first time, we swap the GKeyFile instance.
          * The instance loaded from disk might have unrelated groups and
          * comments. Let's get rid of them by creating a new instance.
          *
