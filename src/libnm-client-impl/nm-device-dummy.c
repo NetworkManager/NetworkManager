@@ -23,9 +23,6 @@ struct _NMDeviceDummyClass {
 
 G_DEFINE_TYPE(NMDeviceDummy, nm_device_dummy, NM_TYPE_DEVICE)
 
-#define NM_DEVICE_DUMMY_GET_PRIVATE(self) \
-    _NM_GET_PRIVATE(self, NMDeviceDummy, NM_IS_DEVICE_DUMMY, NMObject, NMDevice)
-
 /*****************************************************************************/
 
 /**
