@@ -1125,10 +1125,13 @@ load_global_dns(GKeyFile *keyfile, gboolean internal)
     gboolean           default_found = FALSE;
     char             **strv;
 
-    group =
-        internal ? NM_CONFIG_KEYFILE_GROUP_INTERN_GLOBAL_DNS : NM_CONFIG_KEYFILE_GROUP_GLOBAL_DNS;
-    domain_prefix     = internal ? NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN_GLOBAL_DNS_DOMAIN
-                                 : NM_CONFIG_KEYFILE_GROUPPREFIX_GLOBAL_DNS_DOMAIN;
+    if (internal) {
+        group         = NM_CONFIG_KEYFILE_GROUP_INTERN_GLOBAL_DNS;
+        domain_prefix = NM_CONFIG_KEYFILE_GROUPPREFIX_INTERN_GLOBAL_DNS_DOMAIN;
+    } else {
+        group         = NM_CONFIG_KEYFILE_GROUP_GLOBAL_DNS;
+        domain_prefix = NM_CONFIG_KEYFILE_GROUPPREFIX_GLOBAL_DNS_DOMAIN;
+    }
     domain_prefix_len = strlen(domain_prefix);
 
     if (!nm_config_keyfile_has_global_dns_config(keyfile, internal))
