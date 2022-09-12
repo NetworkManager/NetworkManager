@@ -1509,8 +1509,8 @@ nm_config_keyfile_has_global_dns_config(GKeyFile *keyfile, gboolean internal)
     if (!keyfile)
         return FALSE;
     if (g_key_file_has_group(keyfile,
-                             internal ? NM_CONFIG_KEYFILE_GROUP_GLOBAL_DNS
-                                      : NM_CONFIG_KEYFILE_GROUP_INTERN_GLOBAL_DNS))
+                             internal ? NM_CONFIG_KEYFILE_GROUP_INTERN_GLOBAL_DNS
+                                      : NM_CONFIG_KEYFILE_GROUP_GLOBAL_DNS))
         return TRUE;
 
     groups = g_key_file_get_groups(keyfile, NULL);
