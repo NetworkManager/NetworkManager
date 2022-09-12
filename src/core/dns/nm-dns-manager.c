@@ -1311,9 +1311,9 @@ _collect_resolv_conf_data(NMDnsManager      *self,
 
     priv = NM_DNS_MANAGER_GET_PRIVATE(self);
 
-    if (global_config)
+    if (global_config) {
         merge_global_dns_config(&rc, global_config);
-    else {
+    } else {
         nm_auto_str_buf NMStrBuf tmp_strbuf = NM_STR_BUF_INIT(0, FALSE);
         int                      first_prio = 0;
         const NMDnsConfigIPData *ip_data;
