@@ -328,6 +328,8 @@ connection_setting_add(GHashTable   *nic,
                  id,
                  NM_SETTING_CONNECTION_INTERFACE_NAME,
                  NULL,
+                 NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY,
+                 NMI_AUTOCONNECT_PRIORITY_FIRMWARE,
                  NULL);
 
     g_free(uuid);

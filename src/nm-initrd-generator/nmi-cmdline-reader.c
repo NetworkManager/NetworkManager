@@ -99,6 +99,7 @@ reader_create_connection(Reader                  *reader,
                          const char              *ifname,
                          const char              *mac,
                          const char              *type_name,
+                         int                      autoconnect_priority,
                          NMConnectionMultiConnect multi_connect)
 {
     NMConnection *connection;
@@ -155,6 +156,8 @@ reader_create_connection(Reader                  *reader,
                  multi_connect,
                  NM_SETTING_CONNECTION_AUTOCONNECT_RETRIES,
                  1,
+                 NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY,
+                 autoconnect_priority,
                  NULL);
 
     if (nm_streq0(type_name, NM_SETTING_INFINIBAND_SETTING_NAME)) {
@@ -189,6 +192,7 @@ reader_get_default_connection(Reader *reader)
                                        NULL,
                                        NULL,
                                        NM_SETTING_WIRED_SETTING_NAME,
+                                       NMI_AUTOCONNECT_PRIORITY_CMDLINE,
                                        NM_CONNECTION_MULTI_CONNECT_MULTIPLE);
         nm_connection_add_setting(con, nm_setting_wired_new());
         reader->default_connection = con;
@@ -264,6 +268,7 @@ reader_get_connection(Reader     *reader,
                                               ifname,
                                               mac,
                                               type_name,
+                                              NMI_AUTOCONNECT_PRIORITY_CMDLINE,
                                               NM_CONNECTION_MULTI_CONNECT_SINGLE);
     }
     setting = (NMSetting *) nm_connection_get_setting_connection(connection);
@@ -1526,6 +1531,7 @@ nmi_cmdline_reader_parse(const char        *etc_connections_dir,
                                                   NULL,
                                                   bootif,
                                                   NM_SETTING_WIRED_SETTING_NAME,
+                                                  NMI_AUTOCONNECT_PRIORITY_FIRMWARE,
                                                   NM_CONNECTION_MULTI_CONNECT_SINGLE);
         } else {
             g_object_set(s_wired, NM_SETTING_WIRED_MAC_ADDRESS, bootif, NULL);

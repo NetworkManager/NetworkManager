@@ -12,6 +12,9 @@
 #define NMI_WAIT_DEVICE_TIMEOUT_MSEC 60000
 #define NMI_IP_REQUIRED_TIMEOUT_MSEC 20000
 
+#define NMI_AUTOCONNECT_PRIORITY_CMDLINE  -100
+#define NMI_AUTOCONNECT_PRIORITY_FIRMWARE -200
+
 static inline int
 get_ip_address_family(const char *str, gboolean with_prefix)
 {
