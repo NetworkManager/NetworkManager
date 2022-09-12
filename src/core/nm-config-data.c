@@ -1233,7 +1233,7 @@ load_global_dns(GKeyFile *keyfile, gboolean internal)
             default_found = TRUE;
     }
 
-    if (!default_found) {
+    if (!default_found && g_hash_table_size(dns_config->domains)) {
         nm_log_dbg(LOGD_CORE,
                    "%s global DNS configuration is missing default domain, ignore it",
                    internal ? "internal" : "user");
