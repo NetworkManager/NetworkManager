@@ -1201,7 +1201,8 @@ compute_hash(NMDnsManager *self, const NMGlobalDnsConfig *global, guint8 buffer[
 
     if (global)
         nm_global_dns_config_update_checksum(global, sum);
-    else {
+
+    if (!global || !nm_global_dns_config_lookup_domain(global, "*")) {
         const CList *head;
 
         /* FIXME(ip-config-checksum): this relies on the fact that an IP
@@ -1244,13 +1245,15 @@ merge_global_dns_config(NMResolvConfData *rc, NMGlobalDnsConfig *global_conf)
     }
 
     default_domain = nm_global_dns_config_lookup_domain(global_conf, "*");
-    nm_assert(default_domain);
+    if (!default_domain)
+        return TRUE;
 
     servers = nm_global_dns_domain_get_servers(default_domain);
-    if (servers) {
-        for (i = 0; servers[i]; i++)
-            add_string_item(rc->nameservers, servers[i], TRUE);
-    }
+    if (!servers)
+        return TRUE;
+
+    for (i = 0; servers[i]; i++)
+        add_string_item(rc->nameservers, servers[i], TRUE);
 
     return TRUE;
 }
@@ -1311,9 +1314,10 @@ _collect_resolv_conf_data(NMDnsManager      *self,
 
     priv = NM_DNS_MANAGER_GET_PRIVATE(self);
 
-    if (global_config) {
+    if (global_config)
         merge_global_dns_config(&rc, global_config);
-    } else {
+
+    if (!global_config || !nm_global_dns_config_lookup_domain(global_config, "*")) {
         nm_auto_str_buf NMStrBuf tmp_strbuf = NM_STR_BUF_INIT(0, FALSE);
         int                      first_prio = 0;
         const NMDnsConfigIPData *ip_data;
@@ -2556,14 +2560,12 @@ config_changed_cb(NMConfig           *config,
     }
 }
 
-static GVariant *
-_get_global_config_variant(NMGlobalDnsConfig *global)
+static void
+_get_global_config_variant(GVariantBuilder *builder, NMGlobalDnsConfig *global)
 {
     NMGlobalDnsDomain *domain;
-    GVariantBuilder    builder;
     guint              i, num;
 
-    g_variant_builder_init(&builder, G_VARIANT_TYPE("aa{sv}"));
     num = nm_global_dns_config_get_num_domains(global);
     for (i = 0; i < num; i++) {
         GVariantBuilder    conf_builder;
@@ -2599,10 +2601,8 @@ _get_global_config_variant(NMGlobalDnsConfig *global)
                               "priority",
                               g_variant_new_int32(NM_DNS_PRIORITY_DEFAULT_NORMAL));
 
-        g_variant_builder_add(&builder, "a{sv}", &conf_builder);
+        g_variant_builder_add(builder, "a{sv}", &conf_builder);
     }
-
-    return g_variant_ref_sink(g_variant_builder_end(&builder));
 }
 
 static GVariant *
@@ -2619,14 +2619,11 @@ _get_config_variant(NMDnsManager *self)
     if (priv->config_variant)
         return priv->config_variant;
 
-    global_config = nm_config_data_get_global_dns_config(nm_config_get_data(priv->config));
-    if (global_config) {
-        priv->config_variant = _get_global_config_variant(global_config);
-        _LOGT("current configuration: %s", (str = g_variant_print(priv->config_variant, TRUE)));
-        return priv->config_variant;
-    }
-
     g_variant_builder_init(&builder, G_VARIANT_TYPE("aa{sv}"));
+
+    global_config = nm_config_data_get_global_dns_config(nm_config_get_data(priv->config));
+    if (global_config)
+        _get_global_config_variant(&builder, global_config);
 
     head = _mgr_get_ip_data_lst_head(self);
     c_list_for_each_entry (ip_data, head, ip_data_lst) {
