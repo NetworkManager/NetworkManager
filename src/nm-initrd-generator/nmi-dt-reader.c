@@ -248,6 +248,8 @@ nmi_dt_reader_parse(const char *sysfs_dir)
                                            NM_SETTING_WIRED_SETTING_NAME,
                                            NM_SETTING_CONNECTION_ID,
                                            "OpenFirmware Connection",
+                                           NM_SETTING_CONNECTION_AUTOCONNECT_PRIORITY,
+                                           NMI_AUTOCONNECT_PRIORITY_FIRMWARE,
                                            NULL));
 
     s_ip4 = nm_setting_ip4_config_new();
