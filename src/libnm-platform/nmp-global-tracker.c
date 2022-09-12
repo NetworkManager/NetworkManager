@@ -198,7 +198,7 @@ _track_data_hash(gconstpointer data)
     _track_data_assert(track_data, FALSE);
 
     nm_hash_init(&h, 269297543u);
-    nmp_object_id_hash_update(track_data->obj, &h);
+    nmp_object_hash_update(track_data->obj, &h);
     nm_hash_update_val(&h, track_data->user_tag);
     return nm_hash_complete(&h);
 }
@@ -213,7 +213,7 @@ _track_data_equal(gconstpointer data_a, gconstpointer data_b)
     _track_data_assert(track_data_b, FALSE);
 
     return track_data_a->user_tag == track_data_b->user_tag
-           && nmp_object_id_equal(track_data_a->obj, track_data_b->obj);
+           && nmp_object_equal(track_data_a->obj, track_data_b->obj);
 }
 
 static void
@@ -252,6 +252,22 @@ _track_obj_data_get_best_data(TrackObjData *obj_data)
 
         td_best = track_data;
     }
+
+    if (!td_best)
+        return NULL;
+
+    /* Always copy the object from the best TrackData to the TrackObjData. It is
+     * a bit odd that this getter modifies TrackObjData. However, it gives the
+     * nice property that after calling _track_obj_data_get_best_data() you can
+     * use obj_data->obj (and get the same as td_best->obj).
+     *
+     * This is actually important, because the previous obj_data->obj will have
+     * the same ID, but it might have minor differences to td_best->obj.
+     *
+     * Note that at this point obj_data->obj also might be an object that is no longer
+     * tracked. Updating the reference will ensure that we don't have such old references
+     * around and update to use the most appropriate one. */
+    nmp_object_ref_set(&obj_data->obj, td_best->obj);
 
     return td_best;
 }
