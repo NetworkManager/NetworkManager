@@ -171,7 +171,7 @@ _share_iptables_chain_add(const char *table, const char *chain)
 }
 
 static void
-_share_iptables_set_masquerade(gboolean up, const char *ip_iface, in_addr_t addr, guint8 plen)
+_share_iptables_set_masquerade_sync(gboolean up, const char *ip_iface, in_addr_t addr, guint8 plen)
 {
     char          str_subnet[_SHARE_IPTABLES_SUBNET_TO_STR_LEN];
     gs_free char *comment_name = NULL;
@@ -309,8 +309,8 @@ _share_iptables_set_shared_chains_delete(const char *chain_input, const char *ch
     _share_iptables_chain_delete("filter", chain_forward);
 }
 
-_nm_unused static void
-_share_iptables_set_shared(gboolean up, const char *ip_iface, in_addr_t addr, guint plen)
+static void
+_share_iptables_set_shared_sync(gboolean up, const char *ip_iface, in_addr_t addr, guint plen)
 {
     gs_free char *comment_name  = NULL;
     gs_free char *chain_input   = NULL;
@@ -598,11 +598,10 @@ _fw_nft_call_sync(GBytes *stdin_buf, GError **error)
 
 /*****************************************************************************/
 
-static void
-_fw_nft_set_shared(gboolean up, const char *ip_iface, in_addr_t addr, guint8 plen)
+static GBytes *
+_fw_nft_set_shared_construct(gboolean up, const char *ip_iface, in_addr_t addr, guint8 plen)
 {
     nm_auto_str_buf NMStrBuf strbuf = NM_STR_BUF_INIT(NM_UTILS_GET_NEXT_REALLOC_SIZE_1000, FALSE);
-    gs_unref_bytes GBytes   *stdin_buf  = NULL;
     gs_free char            *table_name = NULL;
     gs_free char            *ss1        = NULL;
     char                     str_subnet[_SHARE_IPTABLES_SUBNET_TO_STR_LEN];
@@ -679,8 +678,7 @@ _fw_nft_set_shared(gboolean up, const char *ip_iface, in_addr_t addr, guint8 ple
                                               NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL,
                                               &ss1));
 
-    stdin_buf = nm_str_buf_finalize_to_gbytes(&strbuf);
-    _fw_nft_call_sync(stdin_buf, NULL);
+    return nm_str_buf_finalize_to_gbytes(&strbuf);
 }
 
 /*****************************************************************************/
@@ -724,12 +722,17 @@ nm_firewall_config_apply(NMFirewallConfig *self, gboolean up)
 {
     switch (nm_firewall_utils_get_backend()) {
     case NM_FIREWALL_BACKEND_IPTABLES:
-        _share_iptables_set_masquerade(up, self->ip_iface, self->addr, self->plen);
-        _share_iptables_set_shared(up, self->ip_iface, self->addr, self->plen);
+        _share_iptables_set_masquerade_sync(up, self->ip_iface, self->addr, self->plen);
+        _share_iptables_set_shared_sync(up, self->ip_iface, self->addr, self->plen);
         break;
     case NM_FIREWALL_BACKEND_NFTABLES:
-        _fw_nft_set_shared(up, self->ip_iface, self->addr, self->plen);
+    {
+        gs_unref_bytes GBytes *stdin_buf = NULL;
+
+        stdin_buf = _fw_nft_set_shared_construct(up, self->ip_iface, self->addr, self->plen);
+        _fw_nft_call_sync(stdin_buf, NULL);
         break;
+    }
     case NM_FIREWALL_BACKEND_NONE:
         break;
     default:
