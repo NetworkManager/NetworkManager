@@ -35,4 +35,10 @@ void nm_firewall_nft_call(GBytes             *stdin_buf,
 
 gboolean nm_firewall_nft_call_finish(GAsyncResult *result, GError **error);
 
+GBytes *nm_firewall_nft_stdio_mlag(gboolean           up,
+                                   const char        *bond_ifname,
+                                   const char *const *bond_ifnames_down,
+                                   const char *const *active_members,
+                                   const char *const *previous_members);
+
 #endif /* __NM_FIREWALL_UTILS_H__ */

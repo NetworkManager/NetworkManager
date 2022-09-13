@@ -39,6 +39,71 @@ static const struct {
 
 /*****************************************************************************/
 
+static const char *
+_nft_ifname_valid(const char *str)
+{
+    gsize i;
+
+    /* `nft -f -` takes certain strings, like "device $IFNAME", but
+     * those strings are from a limited character set. Check that
+     * @str is valid according to those rules.
+     *
+     * src/scanner.l:
+     *   digit   [0-9]
+     *   letter  [a-zA-Z]
+     *   string  ({letter}|[_.])({letter}|{digit}|[/\-_\.])*
+     **/
+
+    if (!str || !str[0])
+        return NULL;
+
+    for (i = 0; str[i]; i++) {
+        switch (str[i]) {
+        case 'a' ... 'z':
+        case 'A' ... 'Z':
+        case '_':
+        case '.':
+            continue;
+        case '0' ... '9':
+        case '/':
+        case '-':
+            if (i == 0)
+                return NULL;
+            continue;
+        default:
+            return NULL;
+        }
+    }
+    if (i >= NMP_IFNAMSIZ)
+        return NULL;
+
+    return str;
+}
+
+static const char *
+_strbuf_set_sanitized(NMStrBuf *strbuf, const char *prefix, const char *str_to_sanitize)
+{
+    nm_str_buf_reset(strbuf);
+
+    if (prefix)
+        nm_str_buf_append(strbuf, prefix);
+
+    for (; str_to_sanitize[0] != '\0'; str_to_sanitize++) {
+        const char ch = str_to_sanitize[0];
+
+        if (g_ascii_isalpha(ch) || g_ascii_isdigit(ch)) {
+            nm_str_buf_append_c(strbuf, ch);
+            continue;
+        }
+        nm_str_buf_append_c(strbuf, '_');
+        nm_str_buf_append_c_hex(strbuf, ch, FALSE);
+    }
+
+    return nm_str_buf_get_str(strbuf);
+}
+
+/*****************************************************************************/
+
 #define _SHARE_IPTABLES_SUBNET_TO_STR_LEN (INET_ADDRSTRLEN + 1 + 2 + 1)
 
 static const char *
@@ -696,6 +761,189 @@ _fw_nft_set_shared_construct(gboolean up, const char *ip_iface, in_addr_t addr, 
                 ip_iface);
     }
 
+    return nm_str_buf_finalize_to_gbytes(&strbuf);
+}
+
+/*****************************************************************************/
+
+GBytes *
+nm_firewall_nft_stdio_mlag(gboolean           up,
+                           const char        *bond_ifname,
+                           const char *const *bond_ifnames_down,
+                           const char *const *active_members,
+                           const char *const *previous_members)
+{
+    nm_auto_str_buf NMStrBuf strbuf_table_name =
+        NM_STR_BUF_INIT_A(NM_UTILS_GET_NEXT_REALLOC_SIZE_32, FALSE);
+    nm_auto_str_buf NMStrBuf strbuf = NM_STR_BUF_INIT(NM_UTILS_GET_NEXT_REALLOC_SIZE_1000, FALSE);
+    const char              *table_name;
+    gsize                    i;
+
+    if (NM_MORE_ASSERTS > 10 && active_members) {
+        /* No duplicates. We make certain assumptions here, and we don't
+         * want to check that there are no duplicates. The caller must take
+         * care of this. */
+        for (i = 0; active_members[i]; i++)
+            nm_assert(!nm_strv_contains(&active_members[i + 1], -1, active_members[i]));
+    }
+
+    /* If an interface gets renamed, we need to update the nft tables. Since one nft
+     * invocation is atomic, it is reasonable to drop the previous tables(s) at the
+     * same time when creating the new one. */
+    for (; bond_ifnames_down && bond_ifnames_down[0]; bond_ifnames_down++) {
+        if (nm_streq(bond_ifname, bond_ifnames_down[0]))
+            continue;
+        table_name = _strbuf_set_sanitized(&strbuf_table_name, "nm-mlag-", bond_ifnames_down[0]);
+        _fw_nft_append_cmd_table(&strbuf, "netdev", table_name, FALSE);
+    }
+
+    table_name = _strbuf_set_sanitized(&strbuf_table_name, "nm-mlag-", bond_ifname);
+
+    _fw_nft_append_cmd_table(&strbuf, "netdev", table_name, up);
+
+    if (up) {
+        nm_auto_str_buf NMStrBuf strbuf_1 =
+            NM_STR_BUF_INIT_A(NM_UTILS_GET_NEXT_REALLOC_SIZE_232, FALSE);
+        const gsize n_active_members = NM_PTRARRAY_LEN(active_members);
+
+        if (!_nft_ifname_valid(bond_ifname)) {
+            /* We cannot meaningfully express this interface name. Ignore all chains
+             * and only create an empty table. */
+            goto out;
+        }
+
+        for (; previous_members && previous_members[0]; previous_members++) {
+            const char *previous_member = previous_members[0];
+            const char *chain_name;
+
+            /* The caller already ensures that the previous member is not part of the new
+             * active members. Avoid the overhead of checking, and assert against that. */
+            nm_assert(!nm_strv_contains(active_members, n_active_members, previous_member));
+
+            if (!_nft_ifname_valid(previous_member))
+                continue;
+
+            chain_name = _strbuf_set_sanitized(&strbuf_1, "rx-drop-bc-mc-", previous_member);
+
+            /* We want atomically update our table, however, we don't want to delete
+             * and recreate it, because then the sets get lost (which we don't want).
+             *
+             * Instead, we only "add && flush" the table, which removes all rules from
+             * the chain. However, as our active-members change, we want to delete
+             * the obsolete chains too.
+             *
+             * nft has no way to delete all chains in a table, we have to name
+             * them one by one. So we keep track of active members that we had
+             * in the past, and which are now no longer in use. For those previous
+             * members we delete the chains (again, with the "add && delete" dance
+             * to avoid failure deleting a non-existing chain (in case our tracking
+             * is wrong or somebody else modified the table in the meantime).
+             *
+             * We need to track the previous members, because we don't want to first
+             * ask nft which chains exist. Doing that would be cumbersome as we would
+             * have to do one async program invocation and parse stdout. */
+            _append(&strbuf,
+                    "add chain netdev %s %s {"
+                    " type filter hook ingress device %s priority filter; "
+                    "}",
+                    table_name,
+                    chain_name,
+                    previous_member);
+            _append(&strbuf, "delete chain netdev %s %s", table_name, chain_name);
+        }
+
+        /* OVS SLB rule 1
+         *
+         * "Open vSwitch avoids packet duplication by accepting multicast and broadcast
+         *  packets on only the active member, and dropping multicast and broadcast
+         *  packets on all other members."
+         *
+         * primary is first member, we drop on all others */
+        for (i = 0; i < n_active_members; i++) {
+            const char *active_member = active_members[i];
+            const char *chain_name;
+
+            if (!_nft_ifname_valid(active_member))
+                continue;
+
+            chain_name = _strbuf_set_sanitized(&strbuf_1, "rx-drop-bc-mc-", active_member);
+
+            _append(&strbuf,
+                    "add chain netdev %s %s {"
+                    " type filter hook ingress device %s priority filter; "
+                    "}",
+                    table_name,
+                    chain_name,
+                    active_member);
+
+            if (i == 0) {
+                _append(&strbuf, "delete chain netdev %s %s", table_name, chain_name);
+                continue;
+            }
+
+            _append(&strbuf,
+                    "add rule netdev %s %s pkttype {"
+                    " broadcast, multicast "
+                    "} counter drop",
+                    table_name,
+                    chain_name);
+        }
+
+        /* OVS SLB rule 2
+         *
+         * "Open vSwitch deals with this case by dropping packets received on any SLB
+         * bonded link that have a source MAC+VLAN that has been learned on any other
+         * port."
+         */
+        _append(&strbuf,
+                "add set netdev %s macset-tagged {"
+                " typeof ether saddr . vlan id; flags timeout; "
+                "}",
+                table_name);
+        _append(&strbuf,
+                "add set netdev %s macset-untagged {"
+                " typeof ether saddr; flags timeout;"
+                "}",
+                table_name);
+
+        _append(&strbuf,
+                "add chain netdev %s tx-snoop-source-mac {"
+                " type filter hook egress device %s priority filter; "
+                "}",
+                table_name,
+                bond_ifname);
+        _append(&strbuf,
+                "add rule netdev %s tx-snoop-source-mac set update ether saddr . vlan id"
+                " timeout 5s @macset-tagged counter return"
+                "", /* tagged */
+                table_name);
+        _append(&strbuf,
+                "add rule netdev %s tx-snoop-source-mac set update ether saddr"
+                " timeout 5s @macset-untagged counter"
+                "", /* untagged*/
+                table_name);
+
+        _append(&strbuf,
+                "add chain netdev %s rx-drop-looped-packets {"
+                " type filter hook ingress device %s priority filter; "
+                "}",
+                table_name,
+                bond_ifname);
+        _append(&strbuf,
+                "add rule netdev %s rx-drop-looped-packets ether saddr . vlan id"
+                " @macset-tagged counter drop",
+                table_name);
+        _append(&strbuf,
+                "add rule netdev %s rx-drop-looped-packets ether type vlan counter return"
+                "", /* avoid looking up tagged packets in untagged table */
+                table_name);
+        _append(&strbuf,
+                "add rule netdev %s rx-drop-looped-packets ether saddr @macset-untagged"
+                " counter drop",
+                table_name);
+    }
+
+out:
     return nm_str_buf_finalize_to_gbytes(&strbuf);
 }
 
