@@ -889,6 +889,7 @@ extern const NMPlatformLnkBridge nm_platform_lnk_bridge_default;
 #define NM_BOND_MAX_ARP_TARGETS 16
 
 typedef struct {
+    int         primary;
     in_addr_t   arp_ip_target[NM_BOND_MAX_ARP_TARGETS];
     guint32     arp_all_targets;
     guint32     arp_interval;
@@ -899,7 +900,6 @@ typedef struct {
     guint32     min_links;
     guint32     packets_per_port;
     guint32     peer_notif_delay;
-    guint32     primary;
     guint32     resend_igmp;
     guint32     updelay;
     guint16     ad_actor_sys_prio;

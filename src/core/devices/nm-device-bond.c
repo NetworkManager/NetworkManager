@@ -493,6 +493,10 @@ act_stage1_prepare(NMDevice *device, NMDeviceStateReason *out_failure_reason)
         if (!nm_device_hw_addr_set_cloned(device, nm_device_get_applied_connection(device), FALSE))
             ret = NM_ACT_STAGE_RETURN_FAILURE;
     }
+
+    /* This is a workaround because netlink do not support ifname as primary */
+    set_bond_attr_or_default(device, s_bond, NM_SETTING_BOND_OPTION_PRIMARY);
+
     nm_device_bring_up(device, TRUE, NULL);
 
     return ret;
