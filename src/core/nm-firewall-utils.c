@@ -717,8 +717,10 @@ nm_firewall_config_free(NMFirewallConfig *self)
     nm_g_slice_free(self);
 }
 
+/*****************************************************************************/
+
 void
-nm_firewall_config_apply(NMFirewallConfig *self, gboolean up)
+nm_firewall_config_apply_sync(NMFirewallConfig *self, gboolean up)
 {
     switch (nm_firewall_utils_get_backend()) {
     case NM_FIREWALL_BACKEND_IPTABLES:
