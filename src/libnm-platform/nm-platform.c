@@ -6096,7 +6096,7 @@ nm_platform_lnk_bond_to_string(const NMPlatformLnkBond *lnk, char *buf, gsize le
         &len,
         "bond"
         " mode %u"
-        " primary %u"
+        " primary %d"
         "%s" /* miimon */
         "%s" /* updelay */
         "%s" /* downdelay */
