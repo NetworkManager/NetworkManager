@@ -24,6 +24,6 @@ NMFirewallConfig *nm_firewall_config_new_shared(const char *ip_iface, in_addr_t 
 
 void nm_firewall_config_free(NMFirewallConfig *self);
 
-void nm_firewall_config_apply(NMFirewallConfig *self, gboolean up);
+void nm_firewall_config_apply_sync(NMFirewallConfig *self, gboolean up);
 
 #endif /* __NM_FIREWALL_UTILS_H__ */
