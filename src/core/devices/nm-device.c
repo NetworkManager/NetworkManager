@@ -12357,7 +12357,7 @@ _dev_ipshared4_start(NMDevice *self)
         goto out_fail;
 
     priv->ipshared_data_4.v4.firewall_config =
-        nm_firewall_config_new(ip_iface, ip4_addr.address, ip4_addr.plen);
+        nm_firewall_config_new_shared(ip_iface, ip4_addr.address, ip4_addr.plen);
     nm_firewall_config_apply(priv->ipshared_data_4.v4.firewall_config, TRUE);
 
     priv->ipshared_data_4.v4.l3cd = nm_l3_config_data_ref(l3cd);
