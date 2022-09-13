@@ -7884,13 +7884,13 @@ test_nm_utils_uuid_generate_from_string(void)
                NM_UUID_NS_DNS);
 
     for (i = 0; i < G_N_ELEMENTS(zero_uuids); i++) {
-        nm_sprintf_buf(i_str, "%u", i),
-            _test_uuid(NM_UUID_TYPE_VERSION3, zero_uuids[i].uuid3, i_str, -1, NULL);
+        nm_sprintf_buf(i_str, "%u", i);
+        _test_uuid(NM_UUID_TYPE_VERSION3, zero_uuids[i].uuid3, i_str, -1, NULL);
         _test_uuid(NM_UUID_TYPE_VERSION5, zero_uuids[i].uuid5, i_str, -1, NULL);
     }
     for (i = 0; i < G_N_ELEMENTS(dns_uuids); i++) {
-        nm_sprintf_buf(i_str, "%u", i),
-            _test_uuid(NM_UUID_TYPE_VERSION3, dns_uuids[i].uuid3, i_str, -1, NM_UUID_NS_DNS);
+        nm_sprintf_buf(i_str, "%u", i);
+        _test_uuid(NM_UUID_TYPE_VERSION3, dns_uuids[i].uuid3, i_str, -1, NM_UUID_NS_DNS);
         _test_uuid(NM_UUID_TYPE_VERSION5, dns_uuids[i].uuid5, i_str, -1, NM_UUID_NS_DNS);
     }
 
