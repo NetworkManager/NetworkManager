@@ -65,6 +65,7 @@ typedef enum { /*< underscore_name=nm_setting_802_1x_ck_scheme >*/
  * @NM_SETTING_802_1X_AUTH_FLAGS_TLS_1_0_DISABLE: Disable TLSv1.0
  * @NM_SETTING_802_1X_AUTH_FLAGS_TLS_1_1_DISABLE: Disable TLSv1.1
  * @NM_SETTING_802_1X_AUTH_FLAGS_TLS_1_2_DISABLE: Disable TLSv1.2
+ * @NM_SETTING_802_1X_AUTH_FLAGS_TLS_DISABLE_TIME_CHECKS: Disable TLS time checks. Since 1.42.
  * @NM_SETTING_802_1X_AUTH_FLAGS_ALL: All supported flags
  *
  * #NMSetting8021xAuthFlags values indicate which authentication settings
@@ -76,12 +77,13 @@ typedef enum { /*< underscore_name=nm_setting_802_1x_ck_scheme >*/
  * Since: 1.8
  */
 typedef enum /*< underscore_name=nm_setting_802_1x_auth_flags, flags >*/ {
-    NM_SETTING_802_1X_AUTH_FLAGS_NONE            = 0,
-    NM_SETTING_802_1X_AUTH_FLAGS_TLS_1_0_DISABLE = 0x1,
-    NM_SETTING_802_1X_AUTH_FLAGS_TLS_1_1_DISABLE = 0x2,
-    NM_SETTING_802_1X_AUTH_FLAGS_TLS_1_2_DISABLE = 0x4,
+    NM_SETTING_802_1X_AUTH_FLAGS_NONE                    = 0,
+    NM_SETTING_802_1X_AUTH_FLAGS_TLS_1_0_DISABLE         = 0x1,
+    NM_SETTING_802_1X_AUTH_FLAGS_TLS_1_1_DISABLE         = 0x2,
+    NM_SETTING_802_1X_AUTH_FLAGS_TLS_1_2_DISABLE         = 0x4,
+    NM_SETTING_802_1X_AUTH_FLAGS_TLS_DISABLE_TIME_CHECKS = 0x8,
 
-    NM_SETTING_802_1X_AUTH_FLAGS_ALL = 0x7,
+    NM_SETTING_802_1X_AUTH_FLAGS_ALL = 0xF,
 } NMSetting8021xAuthFlags;
 
 #define NM_TYPE_SETTING_802_1X (nm_setting_802_1x_get_type())
