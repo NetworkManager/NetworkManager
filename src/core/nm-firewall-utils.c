@@ -599,7 +599,7 @@ _fw_nft_call_sync(GBytes *stdin_buf, GError **error)
 /*****************************************************************************/
 
 static void
-_fw_nft_set(gboolean up, const char *ip_iface, in_addr_t addr, guint8 plen)
+_fw_nft_set_shared(gboolean up, const char *ip_iface, in_addr_t addr, guint8 plen)
 {
     nm_auto_str_buf NMStrBuf strbuf = NM_STR_BUF_INIT(NM_UTILS_GET_NEXT_REALLOC_SIZE_1000, FALSE);
     gs_unref_bytes GBytes   *stdin_buf  = NULL;
@@ -692,7 +692,7 @@ struct _NMFirewallConfig {
 };
 
 NMFirewallConfig *
-nm_firewall_config_new(const char *ip_iface, in_addr_t addr, guint8 plen)
+nm_firewall_config_new_shared(const char *ip_iface, in_addr_t addr, guint8 plen)
 {
     NMFirewallConfig *self;
 
@@ -728,7 +728,7 @@ nm_firewall_config_apply(NMFirewallConfig *self, gboolean up)
         _share_iptables_set_shared(up, self->ip_iface, self->addr, self->plen);
         break;
     case NM_FIREWALL_BACKEND_NFTABLES:
-        _fw_nft_set(up, self->ip_iface, self->addr, self->plen);
+        _fw_nft_set_shared(up, self->ip_iface, self->addr, self->plen);
         break;
     case NM_FIREWALL_BACKEND_NONE:
         break;
