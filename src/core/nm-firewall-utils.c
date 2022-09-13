@@ -171,7 +171,7 @@ _share_iptables_chain_add(const char *table, const char *chain)
 }
 
 static void
-_share_iptables_set_masquerade(gboolean add, const char *ip_iface, in_addr_t addr, guint8 plen)
+_share_iptables_set_masquerade(gboolean up, const char *ip_iface, in_addr_t addr, guint8 plen)
 {
     char          str_subnet[_SHARE_IPTABLES_SUBNET_TO_STR_LEN];
     gs_free char *comment_name = NULL;
@@ -182,7 +182,7 @@ _share_iptables_set_masquerade(gboolean add, const char *ip_iface, in_addr_t add
     _share_iptables_call("" IPTABLES_PATH "",
                          "--table",
                          "nat",
-                         add ? "--insert" : "--delete",
+                         up ? "--insert" : "--delete",
                          "POSTROUTING",
                          "--source",
                          str_subnet,
@@ -310,7 +310,7 @@ _share_iptables_set_shared_chains_delete(const char *chain_input, const char *ch
 }
 
 _nm_unused static void
-_share_iptables_set_shared(gboolean add, const char *ip_iface, in_addr_t addr, guint plen)
+_share_iptables_set_shared(gboolean up, const char *ip_iface, in_addr_t addr, guint plen)
 {
     gs_free char *comment_name  = NULL;
     gs_free char *chain_input   = NULL;
@@ -320,13 +320,13 @@ _share_iptables_set_shared(gboolean add, const char *ip_iface, in_addr_t addr, g
     chain_input   = _share_iptables_get_name(TRUE, "nm-sh-in", ip_iface);
     chain_forward = _share_iptables_get_name(TRUE, "nm-sh-fw", ip_iface);
 
-    if (add)
+    if (up)
         _share_iptables_set_shared_chains_add(chain_input, chain_forward, ip_iface, addr, plen);
 
     _share_iptables_call("" IPTABLES_PATH "",
                          "--table",
                          "filter",
-                         add ? "--insert" : "--delete",
+                         up ? "--insert" : "--delete",
                          "INPUT",
                          "--in-interface",
                          ip_iface,
@@ -340,7 +340,7 @@ _share_iptables_set_shared(gboolean add, const char *ip_iface, in_addr_t addr, g
     _share_iptables_call("" IPTABLES_PATH "",
                          "--table",
                          "filter",
-                         add ? "--insert" : "--delete",
+                         up ? "--insert" : "--delete",
                          "FORWARD",
                          "--jump",
                          chain_forward,
@@ -349,7 +349,7 @@ _share_iptables_set_shared(gboolean add, const char *ip_iface, in_addr_t addr, g
                          "--comment",
                          comment_name);
 
-    if (!add)
+    if (!up)
         _share_iptables_set_shared_chains_delete(chain_input, chain_forward);
 }
 
@@ -599,7 +599,7 @@ _fw_nft_call_sync(GBytes *stdin_buf, GError **error)
 /*****************************************************************************/
 
 static void
-_fw_nft_set(gboolean add, const char *ip_iface, in_addr_t addr, guint8 plen)
+_fw_nft_set(gboolean up, const char *ip_iface, in_addr_t addr, guint8 plen)
 {
     nm_auto_str_buf NMStrBuf strbuf = NM_STR_BUF_INIT(NM_UTILS_GET_NEXT_REALLOC_SIZE_1000, FALSE);
     gs_unref_bytes GBytes   *stdin_buf  = NULL;
@@ -614,9 +614,9 @@ _fw_nft_set(gboolean add, const char *ip_iface, in_addr_t addr, guint8 plen)
 #define _append(p_strbuf, fmt, ...) nm_str_buf_append_printf((p_strbuf), "" fmt "\n", ##__VA_ARGS__)
 
     _append(&strbuf, "add table ip %s", table_name);
-    _append(&strbuf, "%s table ip %s", add ? "flush" : "delete", table_name);
+    _append(&strbuf, "%s table ip %s", up ? "flush" : "delete", table_name);
 
-    if (add) {
+    if (up) {
         _append(&strbuf,
                 "add chain ip %s nat_postrouting {"
                 " type nat hook postrouting priority 100; policy accept; "
@@ -720,15 +720,15 @@ nm_firewall_config_free(NMFirewallConfig *self)
 }
 
 void
-nm_firewall_config_apply(NMFirewallConfig *self, gboolean shared)
+nm_firewall_config_apply(NMFirewallConfig *self, gboolean up)
 {
     switch (nm_firewall_utils_get_backend()) {
     case NM_FIREWALL_BACKEND_IPTABLES:
-        _share_iptables_set_masquerade(shared, self->ip_iface, self->addr, self->plen);
-        _share_iptables_set_shared(shared, self->ip_iface, self->addr, self->plen);
+        _share_iptables_set_masquerade(up, self->ip_iface, self->addr, self->plen);
+        _share_iptables_set_shared(up, self->ip_iface, self->addr, self->plen);
         break;
     case NM_FIREWALL_BACKEND_NFTABLES:
-        _fw_nft_set(shared, self->ip_iface, self->addr, self->plen);
+        _fw_nft_set(up, self->ip_iface, self->addr, self->plen);
         break;
     case NM_FIREWALL_BACKEND_NONE:
         break;
