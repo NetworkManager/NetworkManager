@@ -56,6 +56,7 @@ typedef struct {
     char *imsi;
 
     gboolean modem_online;
+    gboolean connman_powered;
     gboolean gprs_attached;
 
     NML3ConfigData *l3cd_4;
@@ -150,13 +151,16 @@ update_modem_state(NMModemOfono *self)
     NMModemState         new_state = NM_MODEM_STATE_DISABLED;
     const char          *reason    = NULL;
 
-    _LOGI("'Attached': %s 'Online': %s 'IMSI': %s",
+    _LOGI("'Attached': %s 'Online': %s 'Powered': %s 'IMSI': %s",
           priv->gprs_attached ? "true" : "false",
           priv->modem_online ? "true" : "false",
+          priv->connman_powered ? "true" : "false",
           priv->imsi);
 
     if (priv->modem_online == FALSE) {
         reason = "modem 'Online=false'";
+    } else if (priv->connman_powered == FALSE) {
+        reason = "ConnectionManager 'Powered=false'";
     } else if (priv->imsi == NULL && state != NM_MODEM_STATE_ENABLING) {
         reason = "modem not ready";
     } else if (priv->gprs_attached == FALSE) {
@@ -515,6 +519,19 @@ handle_connman_property(GDBusProxy *proxy, const char *property, GVariant *v, gp
             _LOGI("Attached %s -> %s",
                   old_attached ? "true" : "false",
                   attached ? "true" : "false");
+
+            update_modem_state(self);
+        }
+    } else if (nm_streq(property, "Powered") && VARIANT_IS_OF_TYPE_BOOLEAN(v)) {
+        gboolean powered     = g_variant_get_boolean(v);
+        gboolean old_powered = priv->connman_powered;
+
+        _LOGD("Powered: %s", powered ? "True" : "False");
+
+        if (old_powered != powered) {
+            priv->connman_powered = powered;
+
+            _LOGI("Powered %s -> %s", old_powered ? "true" : "false", powered ? "true" : "false");
 
             update_modem_state(self);
         }
