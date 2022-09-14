@@ -2434,6 +2434,8 @@ src_core_libNetworkManagerBase_la_SOURCES = \
 	src/core/nm-l3cfg.h \
 	src/core/nm-ip-config.c \
 	src/core/nm-ip-config.h \
+	src/core/nm-bond-manager.c \
+	src/core/nm-bond-manager.h \
 	\
 	src/core/dhcp/nm-dhcp-client.c \
 	src/core/dhcp/nm-dhcp-client.h \
