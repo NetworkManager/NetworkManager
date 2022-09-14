@@ -598,6 +598,8 @@ _fw_nft_call_sync(GBytes *stdin_buf, GError **error)
 
 /*****************************************************************************/
 
+#define _append(p_strbuf, fmt, ...) nm_str_buf_append_printf((p_strbuf), "" fmt "\n", ##__VA_ARGS__)
+
 static GBytes *
 _fw_nft_set_shared_construct(gboolean up, const char *ip_iface, in_addr_t addr, guint8 plen)
 {
@@ -609,8 +611,6 @@ _fw_nft_set_shared_construct(gboolean up, const char *ip_iface, in_addr_t addr, 
     table_name = _share_iptables_get_name(FALSE, "nm-shared", ip_iface);
 
     _share_iptables_subnet_to_str(str_subnet, addr, plen);
-
-#define _append(p_strbuf, fmt, ...) nm_str_buf_append_printf((p_strbuf), "" fmt "\n", ##__VA_ARGS__)
 
     _append(&strbuf, "add table ip %s", table_name);
     _append(&strbuf, "%s table ip %s", up ? "flush" : "delete", table_name);
@@ -630,16 +630,15 @@ _fw_nft_set_shared_construct(gboolean up, const char *ip_iface, in_addr_t addr, 
         /* This filter_input chain serves no real purpose, because "accept" only stops
          * evaluation of the current rule. It cannot fully accept the packet. Since
          * this chain has no other rules, it is useless in this form.
+         *
+         * _append(&strbuf,
+         *         "add chain ip %s filter_input {"
+         *         " type filter hook input priority 0; policy accept; "
+         *         "};",
+         *         table_name);
+         * _append(&strbuf, "add rule ip %s filter_input tcp dport { 67, 53 } accept;", table_name);
+         * _append(&strbuf, "add rule ip %s filter_input udp dport { 67, 53 } accept;", table_name);
          */
-        /*
-        _append(&strbuf,
-                "add chain ip %s filter_input {"
-                " type filter hook input priority 0; policy accept; "
-                "};",
-                table_name);
-        _append(&strbuf, "add rule ip %s filter_input tcp dport { 67, 53 } accept;", table_name);
-        _append(&strbuf, "add rule ip %s filter_input udp dport { 67, 53 } accept;", table_name);
-        */
 
         _append(&strbuf,
                 "add chain ip %s filter_forward {"
