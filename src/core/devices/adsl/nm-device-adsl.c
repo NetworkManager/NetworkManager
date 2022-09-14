@@ -214,12 +214,12 @@ error:
 }
 
 static void
-link_changed_cb(NMPlatform     *platform,
-                int             obj_type_i,
-                int             ifindex,
-                NMPlatformLink *info,
-                int             change_type_i,
-                NMDeviceAdsl   *self)
+link_changed_cb(NMPlatform           *platform,
+                int                   obj_type_i,
+                int                   ifindex,
+                const NMPlatformLink *info,
+                int                   change_type_i,
+                NMDeviceAdsl         *self)
 {
     const NMPlatformSignalChangeType change_type = change_type_i;
 
