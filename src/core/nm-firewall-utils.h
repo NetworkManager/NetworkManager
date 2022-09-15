@@ -26,4 +26,13 @@ void nm_firewall_config_free(NMFirewallConfig *self);
 
 void nm_firewall_config_apply_sync(NMFirewallConfig *self, gboolean up);
 
+/*****************************************************************************/
+
+void nm_firewall_nft_call(GBytes             *stdin_buf,
+                          GCancellable       *cancellable,
+                          GAsyncReadyCallback callback,
+                          gpointer            callback_user_data);
+
+gboolean nm_firewall_nft_call_finish(GAsyncResult *result, GError **error);
+
 #endif /* __NM_FIREWALL_UTILS_H__ */
