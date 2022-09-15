@@ -1175,7 +1175,7 @@ usage_connection_add(void)
                  "([+|-]<setting>.<property> <value>)+]\n\n"
                  "  COMMON_OPTIONS:\n"
                  "                  type <type>\n"
-                 "                  ifname <interface name> | \"*\"\n"
+                 "                  [ifname <interface name> | \"*\"]\n"
                  "                  [con-name <connection name>]\n"
                  "                  [autoconnect yes|no]\n"
                  "                  [save yes|no]\n"
