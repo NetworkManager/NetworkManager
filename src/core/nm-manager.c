@@ -4713,8 +4713,10 @@ find_slaves(NMManager            *manager,
             }
 
             nm_assert(n_slaves < n_all_connections);
-            slaves[n_slaves].connection = candidate, slaves[n_slaves].device = slave_device,
-            n_slaves++;
+            slaves[n_slaves++] = (SlaveConnectionInfo){
+                .connection = candidate,
+                .device     = slave_device,
+            };
 
             if (slave_device)
                 g_hash_table_add(devices, slave_device);
