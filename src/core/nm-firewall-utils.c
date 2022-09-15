@@ -497,6 +497,7 @@ nm_firewall_nft_call(GBytes             *stdin_buf,
     gs_unref_object GSubprocessLauncher *subprocess_launcher = NULL;
     gs_free_error GError                *error               = NULL;
     FwNftCallData                       *call_data;
+    gs_free char                        *ss1 = NULL;
 
     call_data  = g_slice_new(FwNftCallData);
     *call_data = (FwNftCallData){
@@ -505,6 +506,12 @@ nm_firewall_nft_call(GBytes             *stdin_buf,
         .subprocess     = NULL,
         .timeout_source = NULL,
     };
+
+    nm_log_trace(LOGD_SHARING,
+                 "firewall: nft: call command: [ '%s' ]",
+                 nm_utils_buf_utf8safe_escape_bytes(stdin_buf,
+                                                    NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL,
+                                                    &ss1));
 
     if (cancellable) {
         call_data->cancellable_id = g_cancellable_connect(cancellable,
@@ -608,7 +615,6 @@ _fw_nft_set_shared_construct(gboolean up, const char *ip_iface, in_addr_t addr, 
 {
     nm_auto_str_buf NMStrBuf strbuf = NM_STR_BUF_INIT(NM_UTILS_GET_NEXT_REALLOC_SIZE_1000, FALSE);
     gs_free char            *table_name = NULL;
-    gs_free char            *ss1        = NULL;
     char                     str_subnet[_SHARE_IPTABLES_SUBNET_TO_STR_LEN];
 
     table_name = _share_iptables_get_name(FALSE, "nm-shared", ip_iface);
@@ -673,12 +679,6 @@ _fw_nft_set_shared_construct(gboolean up, const char *ip_iface, in_addr_t addr, 
                 table_name,
                 ip_iface);
     }
-
-    nm_log_trace(LOGD_SHARING,
-                 "firewall: nft command: [ %s ]",
-                 nm_utils_str_utf8safe_escape(nm_str_buf_get_str(&strbuf),
-                                              NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL,
-                                              &ss1));
 
     return nm_str_buf_finalize_to_gbytes(&strbuf);
 }
