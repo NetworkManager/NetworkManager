@@ -2511,7 +2511,7 @@ test_create_many_links_do(guint n_devices)
         if (EX == 2)
             nmtstp_run_command_check("ip link delete %s", name);
         else
-            nmtstp_link_delete(NULL, EX, g_array_index(ifindexes, int, i), name, TRUE);
+            nmtstp_link_delete(NULL, EX, nm_g_array_index(ifindexes, int, i), name, TRUE);
     }
 
     _LOGI(">>> process events after deleting devices...");

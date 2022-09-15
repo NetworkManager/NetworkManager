@@ -170,7 +170,7 @@ link_get(NMPlatform *platform, int ifindex)
     if (idx >= priv->links->len)
         goto not_found;
 
-    device = &g_array_index(priv->links, NMFakePlatformLink, idx);
+    device = &nm_g_array_index(priv->links, NMFakePlatformLink, idx);
     if (!device->obj)
         goto not_found;
 
@@ -234,8 +234,7 @@ link_add_pre(NMPlatform *platform,
 
     g_assert(!name || strlen(name) < IFNAMSIZ);
 
-    g_array_set_size(priv->links, priv->links->len + 1);
-    device  = &g_array_index(priv->links, NMFakePlatformLink, priv->links->len - 1);
+    device  = nm_g_array_append_new(priv->links, NMFakePlatformLink);
     ifindex = priv->links->len;
 
     memset(device, 0, sizeof(*device));
@@ -1292,7 +1291,7 @@ finalize(GObject *object)
 
     g_hash_table_unref(priv->options);
     for (i = 0; i < priv->links->len; i++) {
-        NMFakePlatformLink *device = &g_array_index(priv->links, NMFakePlatformLink, i);
+        NMFakePlatformLink *device = &nm_g_array_index(priv->links, NMFakePlatformLink, i);
 
         nm_clear_pointer(&device->obj, nmp_object_unref);
     }

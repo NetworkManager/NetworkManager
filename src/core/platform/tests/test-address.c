@@ -118,7 +118,7 @@ test_ip4_address_general(void)
     addresses = nmtstp_platform_ip4_address_get_all(NM_PLATFORM_GET, ifindex);
     g_assert(addresses);
     g_assert_cmpint(addresses->len, ==, 1);
-    address = &g_array_index(addresses, NMPlatformIP4Address, 0);
+    address = &nm_g_array_index(addresses, NMPlatformIP4Address, 0);
     g_assert_cmpint(address->ifindex, ==, ifindex);
     g_assert_cmphex(address->address, ==, addr);
     g_assert_cmphex(address->peer_address, ==, addr);
@@ -193,7 +193,7 @@ test_ip6_address_general(void)
     addresses = nmtstp_platform_ip6_address_get_all(NM_PLATFORM_GET, ifindex);
     g_assert(addresses);
     g_assert_cmpint(addresses->len, ==, 1);
-    address = &g_array_index(addresses, NMPlatformIP6Address, 0);
+    address = &nm_g_array_index(addresses, NMPlatformIP6Address, 0);
     g_assert_cmpint(address->ifindex, ==, ifindex);
     g_assert(!memcmp(&address->address, &addr, sizeof(addr)));
     g_assert_cmpint(address->plen, ==, IP6_PLEN);

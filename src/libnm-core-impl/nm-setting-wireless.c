@@ -508,7 +508,7 @@ nm_setting_wireless_get_mac_blacklist_item(NMSettingWireless *setting, guint32 i
     priv = NM_SETTING_WIRELESS_GET_PRIVATE(setting);
     g_return_val_if_fail(idx <= priv->mac_address_blacklist->len, NULL);
 
-    return g_array_index(priv->mac_address_blacklist, const char *, idx);
+    return nm_g_array_index(priv->mac_address_blacklist, const char *, idx);
 }
 
 /**
@@ -536,7 +536,7 @@ nm_setting_wireless_add_mac_blacklist_item(NMSettingWireless *setting, const cha
 
     priv = NM_SETTING_WIRELESS_GET_PRIVATE(setting);
     for (i = 0; i < priv->mac_address_blacklist->len; i++) {
-        candidate = g_array_index(priv->mac_address_blacklist, char *, i);
+        candidate = nm_g_array_index(priv->mac_address_blacklist, char *, i);
         if (nm_utils_hwaddr_matches(mac, -1, candidate, -1))
             return FALSE;
     }
@@ -590,7 +590,7 @@ nm_setting_wireless_remove_mac_blacklist_item_by_value(NMSettingWireless *settin
 
     priv = NM_SETTING_WIRELESS_GET_PRIVATE(setting);
     for (i = 0; i < priv->mac_address_blacklist->len; i++) {
-        candidate = g_array_index(priv->mac_address_blacklist, char *, i);
+        candidate = nm_g_array_index(priv->mac_address_blacklist, char *, i);
         if (!nm_utils_hwaddr_matches(mac, -1, candidate, -1)) {
             g_array_remove_index(priv->mac_address_blacklist, i);
             _notify(setting, PROP_MAC_ADDRESS_BLACKLIST);
@@ -988,7 +988,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
     }
 
     for (i = 0; i < priv->mac_address_blacklist->len; i++) {
-        const char *mac = g_array_index(priv->mac_address_blacklist, const char *, i);
+        const char *mac = nm_g_array_index(priv->mac_address_blacklist, const char *, i);
 
         if (!nm_utils_hwaddr_valid(mac, ETH_ALEN)) {
             g_set_error(error,

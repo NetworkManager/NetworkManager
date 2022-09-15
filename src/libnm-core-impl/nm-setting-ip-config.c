@@ -5649,14 +5649,14 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
         for (i = 0; i < priv->dhcp_reject_servers->len; i++) {
             if (!nm_inet_parse_with_prefix_str(
                     NM_SETTING_IP_CONFIG_GET_FAMILY(setting),
-                    g_array_index(priv->dhcp_reject_servers, const char *, i),
+                    nm_g_array_index(priv->dhcp_reject_servers, const char *, i),
                     NULL,
                     NULL)) {
                 g_set_error(error,
                             NM_CONNECTION_ERROR,
                             NM_CONNECTION_ERROR_INVALID_PROPERTY,
                             _("'%s' is not a valid IP or subnet"),
-                            g_array_index(priv->dhcp_reject_servers, const char *, i));
+                            nm_g_array_index(priv->dhcp_reject_servers, const char *, i));
                 g_prefix_error(error,
                                "%s.%s: ",
                                nm_setting_get_name(setting),

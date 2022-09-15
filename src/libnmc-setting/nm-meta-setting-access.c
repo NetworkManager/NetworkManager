@@ -416,7 +416,7 @@ _output_selection_pack(const NMMetaAbstractInfo *const *fields_array, GArray *ar
         if (str)
             memcpy(pdata, str->str, str->len);
         for (i = 0; i < len; i++) {
-            const OutputSelectionItem *a = &g_array_index(array, OutputSelectionItem, i);
+            const OutputSelectionItem *a = &nm_g_array_index(array, OutputSelectionItem, i);
             NMMetaSelectionItem       *p = (NMMetaSelectionItem *) &result->items[i];
 
             p->info = fields_array[a->idx];

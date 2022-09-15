@@ -324,11 +324,11 @@ _ASSERT_data_gateways(const NMNDiscDataInternal *data)
         return;
 
     for (i = 0; i < data->gateways->len; i++) {
-        const NMNDiscGateway *item = &g_array_index(data->gateways, NMNDiscGateway, i);
+        const NMNDiscGateway *item = &nm_g_array_index(data->gateways, NMNDiscGateway, i);
 
         nm_assert(!IN6_IS_ADDR_UNSPECIFIED(&item->address));
         for (j = 0; j < i; j++) {
-            const NMNDiscGateway *item2 = &g_array_index(data->gateways, NMNDiscGateway, j);
+            const NMNDiscGateway *item2 = &nm_g_array_index(data->gateways, NMNDiscGateway, j);
 
             nm_assert(!IN6_ARE_ADDR_EQUAL(&item->address, &item2->address));
         }
@@ -402,7 +402,7 @@ nm_ndisc_add_gateway(NMNDisc *ndisc, const NMNDiscGateway *new_item, gint64 now_
     guint                insert_idx = G_MAXUINT;
 
     for (i = 0; i < rdata->gateways->len;) {
-        NMNDiscGateway *item = &g_array_index(rdata->gateways, NMNDiscGateway, i);
+        NMNDiscGateway *item = &nm_g_array_index(rdata->gateways, NMNDiscGateway, i);
 
         if (IN6_ARE_ADDR_EQUAL(&item->address, &new_item->address)) {
             if (new_item->expiry_msec <= now_msec) {
@@ -519,7 +519,7 @@ nm_ndisc_add_address(NMNDisc              *ndisc,
     nm_assert((!!from_ra) == (now_msec > 0));
 
     for (i = 0; i < rdata->addresses->len; i++) {
-        NMNDiscAddress *item = &g_array_index(rdata->addresses, NMNDiscAddress, i);
+        NMNDiscAddress *item = &nm_g_array_index(rdata->addresses, NMNDiscAddress, i);
 
         if (from_ra) {
             /* RFC4862 5.5.3.d, we find an existing address with the same prefix.
@@ -651,7 +651,7 @@ nm_ndisc_add_route(NMNDisc *ndisc, const NMNDiscRoute *new_item, gint64 now_msec
     rdata = &priv->rdata;
 
     for (i = 0; i < rdata->routes->len;) {
-        NMNDiscRoute *item = &g_array_index(rdata->routes, NMNDiscRoute, i);
+        NMNDiscRoute *item = &nm_g_array_index(rdata->routes, NMNDiscRoute, i);
 
         if (IN6_ARE_ADDR_EQUAL(&item->network, &new_item->network)
             && item->plen == new_item->plen) {
@@ -707,7 +707,7 @@ nm_ndisc_add_dns_server(NMNDisc *ndisc, const NMNDiscDNSServer *new_item, gint64
     rdata = &priv->rdata;
 
     for (i = 0; i < rdata->dns_servers->len; i++) {
-        NMNDiscDNSServer *item = &g_array_index(rdata->dns_servers, NMNDiscDNSServer, i);
+        NMNDiscDNSServer *item = &nm_g_array_index(rdata->dns_servers, NMNDiscDNSServer, i);
 
         if (IN6_ARE_ADDR_EQUAL(&item->address, &new_item->address)) {
             if (new_item->expiry_msec <= now_msec) {
@@ -746,7 +746,7 @@ nm_ndisc_add_dns_domain(NMNDisc *ndisc, const NMNDiscDNSDomain *new_item, gint64
     rdata = &priv->rdata;
 
     for (i = 0; i < rdata->dns_domains->len; i++) {
-        item = &g_array_index(rdata->dns_domains, NMNDiscDNSDomain, i);
+        item = &nm_g_array_index(rdata->dns_domains, NMNDiscDNSDomain, i);
 
         if (nm_streq(item->domain, new_item->domain)) {
             if (new_item->expiry_msec <= now_msec) {
@@ -1230,7 +1230,7 @@ nm_ndisc_dad_failed(NMNDisc *ndisc, const struct in6_addr *address, gboolean emi
     rdata = &NM_NDISC_GET_PRIVATE(ndisc)->rdata;
 
     for (i = 0; i < rdata->addresses->len;) {
-        NMNDiscAddress *item = &g_array_index(rdata->addresses, NMNDiscAddress, i);
+        NMNDiscAddress *item = &nm_g_array_index(rdata->addresses, NMNDiscAddress, i);
 
         if (IN6_ARE_ADDR_EQUAL(&item->address, address)) {
             char sbuf[NM_INET_ADDRSTRLEN];
@@ -1303,7 +1303,7 @@ _config_changed_log(NMNDisc *ndisc, NMNDiscConfigMap changed)
         _LOGD("  retrans timer  : %u", (guint) rdata->public.retrans_timer_ms);
 
     for (i = 0; i < rdata->gateways->len; i++) {
-        const NMNDiscGateway *gateway = &g_array_index(rdata->gateways, NMNDiscGateway, i);
+        const NMNDiscGateway *gateway = &nm_g_array_index(rdata->gateways, NMNDiscGateway, i);
 
         _LOGD("  gateway %s pref %s exp %s",
               nm_inet6_ntop(&gateway->address, addrstr),
@@ -1311,14 +1311,14 @@ _config_changed_log(NMNDisc *ndisc, NMNDiscConfigMap changed)
               get_exp(str_exp, now_msec, gateway));
     }
     for (i = 0; i < rdata->addresses->len; i++) {
-        const NMNDiscAddress *address = &g_array_index(rdata->addresses, NMNDiscAddress, i);
+        const NMNDiscAddress *address = &nm_g_array_index(rdata->addresses, NMNDiscAddress, i);
 
         _LOGD("  address %s exp %s",
               nm_inet6_ntop(&address->address, addrstr),
               get_exp(str_exp, now_msec, address));
     }
     for (i = 0; i < rdata->routes->len; i++) {
-        const NMNDiscRoute *route = &g_array_index(rdata->routes, NMNDiscRoute, i);
+        const NMNDiscRoute *route = &nm_g_array_index(rdata->routes, NMNDiscRoute, i);
         char                sbuf[NM_INET_ADDRSTRLEN];
 
         _LOGD("  route %s/%u via %s pref %s exp %s",
@@ -1330,7 +1330,7 @@ _config_changed_log(NMNDisc *ndisc, NMNDiscConfigMap changed)
     }
     for (i = 0; i < rdata->dns_servers->len; i++) {
         const NMNDiscDNSServer *dns_server =
-            &g_array_index(rdata->dns_servers, NMNDiscDNSServer, i);
+            &nm_g_array_index(rdata->dns_servers, NMNDiscDNSServer, i);
 
         _LOGD("  dns_server %s exp %s",
               nm_inet6_ntop(&dns_server->address, addrstr),
@@ -1338,7 +1338,7 @@ _config_changed_log(NMNDisc *ndisc, NMNDiscConfigMap changed)
     }
     for (i = 0; i < rdata->dns_domains->len; i++) {
         const NMNDiscDNSDomain *dns_domain =
-            &g_array_index(rdata->dns_domains, NMNDiscDNSDomain, i);
+            &nm_g_array_index(rdata->dns_domains, NMNDiscDNSDomain, i);
 
         _LOGD("  dns_domain %s exp %s", dns_domain->domain, get_exp(str_exp, now_msec, dns_domain));
     }
@@ -1370,7 +1370,7 @@ clean_gateways(NMNDisc *ndisc, gint64 now_msec, NMNDiscConfigMap *changed, gint6
     if (rdata->gateways->len == 0)
         return;
 
-    arr = &g_array_index(rdata->gateways, NMNDiscGateway, 0);
+    arr = &nm_g_array_index(rdata->gateways, NMNDiscGateway, 0);
 
     for (i = 0, j = 0; i < rdata->gateways->len; i++) {
         if (!expiry_next(now_msec, arr[i].expiry_msec, next_msec))
@@ -1403,7 +1403,7 @@ clean_addresses(NMNDisc *ndisc, gint64 now_msec, NMNDiscConfigMap *changed, gint
     if (rdata->addresses->len == 0)
         return;
 
-    arr = &g_array_index(rdata->addresses, NMNDiscAddress, 0);
+    arr = &nm_g_array_index(rdata->addresses, NMNDiscAddress, 0);
 
     for (i = 0, j = 0; i < rdata->addresses->len; i++) {
         if (!expiry_next(now_msec, arr[i].expiry_msec, next_msec))
@@ -1433,7 +1433,7 @@ clean_routes(NMNDisc *ndisc, gint64 now_msec, NMNDiscConfigMap *changed, gint64 
     if (rdata->routes->len == 0)
         return;
 
-    arr = &g_array_index(rdata->routes, NMNDiscRoute, 0);
+    arr = &nm_g_array_index(rdata->routes, NMNDiscRoute, 0);
 
     for (i = 0, j = 0; i < rdata->routes->len; i++) {
         if (!expiry_next(now_msec, arr[i].expiry_msec, next_msec))
@@ -1463,7 +1463,7 @@ clean_dns_servers(NMNDisc *ndisc, gint64 now_msec, NMNDiscConfigMap *changed, gi
     if (rdata->dns_servers->len == 0)
         return;
 
-    arr = &g_array_index(rdata->dns_servers, NMNDiscDNSServer, 0);
+    arr = &nm_g_array_index(rdata->dns_servers, NMNDiscDNSServer, 0);
 
     for (i = 0, j = 0; i < rdata->dns_servers->len; i++) {
         if (!expiry_next(now_msec, arr[i].expiry_msec, next_msec))
@@ -1493,7 +1493,7 @@ clean_dns_domains(NMNDisc *ndisc, gint64 now_msec, NMNDiscConfigMap *changed, gi
     if (rdata->dns_domains->len == 0)
         return;
 
-    arr = &g_array_index(rdata->dns_domains, NMNDiscDNSDomain, 0);
+    arr = &nm_g_array_index(rdata->dns_domains, NMNDiscDNSDomain, 0);
 
     for (i = 0, j = 0; i < rdata->dns_domains->len; i++) {
         if (!expiry_next(now_msec, arr[i].expiry_msec, next_msec))
@@ -1602,34 +1602,35 @@ calc_pre_expiry_rs_msec(NMNDisc *ndisc)
         _calc_pre_expiry_rs_msec_worker(
             &expiry_msec,
             priv->last_rs_msec,
-            g_array_index(rdata->gateways, NMNDiscGateway, i).expiry_msec);
+            nm_g_array_index(rdata->gateways, NMNDiscGateway, i).expiry_msec);
     }
 
     for (i = 0; i < rdata->addresses->len; i++) {
         _calc_pre_expiry_rs_msec_worker(
             &expiry_msec,
             priv->last_rs_msec,
-            g_array_index(rdata->addresses, NMNDiscAddress, 0).expiry_msec);
+            nm_g_array_index(rdata->addresses, NMNDiscAddress, 0).expiry_msec);
     }
 
     for (i = 0; i < rdata->routes->len; i++) {
-        _calc_pre_expiry_rs_msec_worker(&expiry_msec,
-                                        priv->last_rs_msec,
-                                        g_array_index(rdata->routes, NMNDiscRoute, 0).expiry_msec);
+        _calc_pre_expiry_rs_msec_worker(
+            &expiry_msec,
+            priv->last_rs_msec,
+            nm_g_array_index(rdata->routes, NMNDiscRoute, 0).expiry_msec);
     }
 
     for (i = 0; i < rdata->dns_servers->len; i++) {
         _calc_pre_expiry_rs_msec_worker(
             &expiry_msec,
             priv->last_rs_msec,
-            g_array_index(rdata->dns_servers, NMNDiscDNSServer, 0).expiry_msec);
+            nm_g_array_index(rdata->dns_servers, NMNDiscDNSServer, 0).expiry_msec);
     }
 
     for (i = 0; i < rdata->dns_domains->len; i++) {
         _calc_pre_expiry_rs_msec_worker(
             &expiry_msec,
             priv->last_rs_msec,
-            g_array_index(rdata->dns_domains, NMNDiscDNSDomain, 0).expiry_msec);
+            nm_g_array_index(rdata->dns_domains, NMNDiscDNSDomain, 0).expiry_msec);
     }
 
     return expiry_msec - solicit_retransmit_time_jitter(NM_NDISC_PRE_EXPIRY_TIME_MSEC);

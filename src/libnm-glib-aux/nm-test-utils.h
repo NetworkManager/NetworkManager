@@ -661,7 +661,7 @@ __nmtst_init(int        *argc,
 
     /* Delay messages until we setup logging. */
     for (i = 0; i < debug_messages->len; i++)
-        __NMTST_LOG(g_message, "%s", g_array_index(debug_messages, const char *, i));
+        __NMTST_LOG(g_message, "%s", nm_g_array_index(debug_messages, const char *, i));
 
     g_strfreev((char **) g_array_free(debug_messages, FALSE));
     g_free(c_log_level);

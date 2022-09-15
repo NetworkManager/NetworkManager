@@ -413,7 +413,7 @@ send_ra(NMNDisc *ndisc, GError **error)
     /* The device let us know about all addresses that the device got
      * whose prefixes are suitable for delegating. Let's announce them. */
     for (i = 0; i < rdata->addresses->len; i++) {
-        const NMNDiscAddress      *address = &g_array_index(rdata->addresses, NMNDiscAddress, i);
+        const NMNDiscAddress      *address = &nm_g_array_index(rdata->addresses, NMNDiscAddress, i);
         struct nd_opt_prefix_info *prefix;
 
         prefix = _ndp_msg_add_option(msg, sizeof(*prefix));
@@ -458,7 +458,7 @@ send_ra(NMNDisc *ndisc, GError **error)
 
         for (i = 0; i < rdata->dns_servers->len; i++) {
             const NMNDiscDNSServer *dns_server =
-                &g_array_index(rdata->dns_servers, NMNDiscDNSServer, i);
+                &nm_g_array_index(rdata->dns_servers, NMNDiscDNSServer, i);
 
             option->addrs[i] = dns_server->address;
         }
@@ -474,7 +474,7 @@ dns_servers_done:
 
         for (i = 0; i < rdata->dns_domains->len; i++) {
             const NMNDiscDNSDomain *dns_domain =
-                &g_array_index(rdata->dns_domains, NMNDiscDNSDomain, i);
+                &nm_g_array_index(rdata->dns_domains, NMNDiscDNSDomain, i);
             const char *domain = dns_domain->domain;
             gsize       domain_l;
             gsize       n_reserved;

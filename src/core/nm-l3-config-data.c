@@ -276,8 +276,8 @@ _garray_inaddr_at(GArray *arr, gboolean IS_IPv4, guint idx)
     nm_assert(idx < arr->len);
 
     if (IS_IPv4)
-        return &g_array_index(arr, in_addr_t, idx);
-    return &g_array_index(arr, struct in6_addr, idx);
+        return &nm_g_array_index(arr, in_addr_t, idx);
+    return &nm_g_array_index(arr, struct in6_addr, idx);
 }
 
 static gboolean
@@ -514,12 +514,12 @@ nm_l3_config_data_log(const NML3ConfigData *self,
             for (i = 0; i < nm_g_array_len(self->wins); i++) {
                 _L("wins[%u]: %s",
                    i,
-                   nm_inet4_ntop(g_array_index(self->wins, in_addr_t, i), sbuf_addr));
+                   nm_inet4_ntop(nm_g_array_index(self->wins, in_addr_t, i), sbuf_addr));
             }
             for (i = 0; i < nm_g_array_len(self->nis_servers); i++) {
                 _L("nis-server[%u]: %s",
                    i,
-                   nm_inet4_ntop(g_array_index(self->nis_servers, in_addr_t, i), sbuf_addr));
+                   nm_inet4_ntop(nm_g_array_index(self->nis_servers, in_addr_t, i), sbuf_addr));
             }
             if (self->nis_domain)
                 _L("nis-domain: %s", self->nis_domain->str);
