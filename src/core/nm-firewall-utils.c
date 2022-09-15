@@ -111,6 +111,8 @@ _share_iptables_get_name(gboolean is_iptables_chain, const char *prefix, const c
     return nm_str_buf_finalize(&strbuf, NULL);
 }
 
+/*****************************************************************************/
+
 static gboolean
 _share_iptables_call_v(const char *const *argv)
 {
@@ -486,11 +488,11 @@ _fw_nft_call_timeout_cb(gpointer user_data)
     return G_SOURCE_CONTINUE;
 }
 
-static void
-_fw_nft_call(GBytes             *stdin_buf,
-             GCancellable       *cancellable,
-             GAsyncReadyCallback callback,
-             gpointer            callback_user_data)
+void
+nm_firewall_nft_call(GBytes             *stdin_buf,
+                     GCancellable       *cancellable,
+                     GAsyncReadyCallback callback,
+                     gpointer            callback_user_data)
 {
     gs_unref_object GSubprocessLauncher *subprocess_launcher = NULL;
     gs_free_error GError                *error               = NULL;
@@ -498,8 +500,9 @@ _fw_nft_call(GBytes             *stdin_buf,
 
     call_data  = g_slice_new(FwNftCallData);
     *call_data = (FwNftCallData){
-        .task       = nm_g_task_new(NULL, cancellable, _fw_nft_call, callback, callback_user_data),
-        .subprocess = NULL,
+        .task =
+            nm_g_task_new(NULL, cancellable, nm_firewall_nft_call, callback, callback_user_data),
+        .subprocess     = NULL,
         .timeout_source = NULL,
     };
 
@@ -554,10 +557,10 @@ _fw_nft_call(GBytes             *stdin_buf,
                            g_task_get_context(call_data->task));
 }
 
-static gboolean
-_fw_nft_call_finish(GAsyncResult *result, GError **error)
+gboolean
+nm_firewall_nft_call_finish(GAsyncResult *result, GError **error)
 {
-    g_return_val_if_fail(nm_g_task_is_valid(result, NULL, _fw_nft_call), FALSE);
+    g_return_val_if_fail(nm_g_task_is_valid(result, NULL, nm_firewall_nft_call), FALSE);
 
     return g_task_propagate_boolean(G_TASK(result), error);
 }
@@ -575,7 +578,7 @@ _fw_nft_call_sync_done(GObject *source, GAsyncResult *result, gpointer user_data
 {
     FwNftCallSyncData *data = user_data;
 
-    data->success = _fw_nft_call_finish(result, data->error);
+    data->success = nm_firewall_nft_call_finish(result, data->error);
     g_main_loop_quit(data->loop);
 }
 
@@ -590,7 +593,7 @@ _fw_nft_call_sync(GBytes *stdin_buf, GError **error)
                               .error = error,
     };
 
-    _fw_nft_call(stdin_buf, NULL, _fw_nft_call_sync_done, &data);
+    nm_firewall_nft_call(stdin_buf, NULL, _fw_nft_call_sync_done, &data);
 
     g_main_loop_run(main_loop);
     return data.success;
