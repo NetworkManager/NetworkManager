@@ -4247,13 +4247,13 @@ _nm_utils_generate_mac_address_mask_parse(const char         *value,
         ouis = g_array_sized_new(FALSE, FALSE, sizeof(struct ether_addr), 4);
 
         do {
+            struct ether_addr *new;
+
             s      = s_next;
             s_next = _split_word(s);
 
-            g_array_set_size(ouis, ouis->len + 1);
-            if (!nm_utils_hwaddr_aton(s,
-                                      &g_array_index(ouis, struct ether_addr, ouis->len - 1),
-                                      ETH_ALEN)) {
+            new = nm_g_array_append_new(ouis, struct ether_addr);
+            if (!nm_utils_hwaddr_aton(s, new, ETH_ALEN)) {
                 g_set_error(error,
                             NM_UTILS_ERROR,
                             NM_UTILS_ERROR_UNKNOWN,

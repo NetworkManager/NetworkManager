@@ -339,7 +339,7 @@ nm_setting_connection_get_permission(NMSettingConnection *setting,
 
     g_return_val_if_fail(idx < nm_g_array_len(priv->permissions), FALSE);
 
-    permission = &g_array_index(priv->permissions, Permission, idx);
+    permission = &nm_g_array_index(priv->permissions, Permission, idx);
     switch (permission->ptype) {
     case PERM_TYPE_USER:
         NM_SET_OUT(out_ptype, NM_SETTINGS_CONNECTION_PERMISSION_USER);
@@ -384,7 +384,7 @@ nm_setting_connection_permissions_user_allowed(NMSettingConnection *setting, con
     }
 
     for (i = 0; i < priv->permissions->len; i++) {
-        const Permission *permission = &g_array_index(priv->permissions, Permission, i);
+        const Permission *permission = &nm_g_array_index(priv->permissions, Permission, i);
 
         if (permission->ptype == PERM_TYPE_USER && nm_streq(permission->item, uname))
             return TRUE;
@@ -440,7 +440,7 @@ nm_setting_connection_add_permission(NMSettingConnection *setting,
     }
 
     for (i = 0; i < priv->permissions->len; i++) {
-        const Permission *permission = &g_array_index(priv->permissions, Permission, i);
+        const Permission *permission = &nm_g_array_index(priv->permissions, Permission, i);
 
         if (permission->ptype == PERM_TYPE_USER && nm_streq(permission->item, pitem))
             return TRUE;
@@ -511,7 +511,7 @@ nm_setting_connection_remove_permission_by_value(NMSettingConnection *setting,
     priv = NM_SETTING_CONNECTION_GET_PRIVATE(setting);
     if (priv->permissions) {
         for (i = 0; i < priv->permissions->len; i++) {
-            const Permission *permission = &g_array_index(priv->permissions, Permission, i);
+            const Permission *permission = &nm_g_array_index(priv->permissions, Permission, i);
 
             if (permission->ptype == PERM_TYPE_USER && nm_streq(permission->item, pitem)) {
                 g_array_remove_index(priv->permissions, i);
@@ -1490,7 +1490,7 @@ after_interface_name:
         guint i;
 
         for (i = 0; i < priv->permissions->len; i++) {
-            const Permission *permissions = &g_array_index(priv->permissions, Permission, i);
+            const Permission *permissions = &nm_g_array_index(priv->permissions, Permission, i);
 
             if (permissions->ptype != PERM_TYPE_USER) {
                 g_set_error_literal(error,
@@ -1709,7 +1709,7 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
         strv = g_new(char *, l + 1u);
 
         for (i = 0; i < l; i++)
-            strv[i] = _permission_to_string(&g_array_index(priv->permissions, Permission, i));
+            strv[i] = _permission_to_string(&nm_g_array_index(priv->permissions, Permission, i));
         strv[i] = NULL;
 
         g_value_take_boxed(value, strv);

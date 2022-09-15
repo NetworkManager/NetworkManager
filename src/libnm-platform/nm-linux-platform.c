@@ -2541,16 +2541,15 @@ _wireguard_update_from_peers_nla(CList *peers, GArray **p_allowed_ips, struct nl
         GArray        *allowed_ips = *p_allowed_ips;
 
         nla_for_each_nested (attr, tb[WGPEER_A_ALLOWEDIPS], rem) {
+            NMPWireGuardAllowedIP *new;
+
             if (!allowed_ips) {
                 allowed_ips    = g_array_new(FALSE, FALSE, sizeof(NMPWireGuardAllowedIP));
                 *p_allowed_ips = allowed_ips;
-                g_array_set_size(allowed_ips, 1);
-            } else
-                g_array_set_size(allowed_ips, allowed_ips->len + 1);
+            }
 
-            if (!_wireguard_update_from_allowed_ips_nla(
-                    &g_array_index(allowed_ips, NMPWireGuardAllowedIP, allowed_ips->len - 1),
-                    attr)) {
+            new = nm_g_array_append_new(allowed_ips, NMPWireGuardAllowedIP);
+            if (!_wireguard_update_from_allowed_ips_nla(new, attr)) {
                 /* we ignore the error of parsing one allowed-ip. */
                 g_array_set_size(allowed_ips, allowed_ips->len - 1);
                 continue;
@@ -6260,11 +6259,11 @@ static NM_UTILS_LOOKUP_STR_DEFINE(
     NM_UTILS_LOOKUP_ITEM_IGNORE(DELAYED_ACTION_TYPE_REFRESH_ALL_RTNL_ROUTING_RULES_ALL),
     NM_UTILS_LOOKUP_ITEM_IGNORE(__DELAYED_ACTION_TYPE_MAX), );
 
-#define delayed_action_get_list_wait_for_resonse(priv, netlink_protocol, idx)                   \
-    (&g_array_index((priv)->delayed_action.list_wait_for_response_x[nmp_netlink_protocol_check( \
-                        (netlink_protocol))],                                                   \
-                    DelayedActionWaitForNlResponseData,                                         \
-                    (idx)))
+#define delayed_action_get_list_wait_for_resonse(priv, netlink_protocol, idx)                      \
+    (&nm_g_array_index((priv)->delayed_action.list_wait_for_response_x[nmp_netlink_protocol_check( \
+                           (netlink_protocol))],                                                   \
+                       DelayedActionWaitForNlResponseData,                                         \
+                       (idx)))
 
 static const char *
 delayed_action_to_string_full(DelayedActionType action_type,

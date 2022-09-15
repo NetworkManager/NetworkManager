@@ -691,7 +691,7 @@ _output_selection_append(GArray                    *cols,
             if (parent_idx != PRINT_DATA_COL_PARENT_NIL) {
                 const NMMetaSelectionItem *si;
 
-                si = g_array_index(cols, PrintDataCol, parent_idx).selection_item;
+                si = nm_g_array_index(cols, PrintDataCol, parent_idx).selection_item;
                 allowed_fields =
                     nm_meta_abstract_info_get_nested_names_str(si->info, si->self_selection);
             }
@@ -741,7 +741,7 @@ _output_selection_append(GArray                    *cols,
         if (!NM_IN_SET(selection_item->info->meta_type,
                        &nm_meta_type_setting_info_editor,
                        &nmc_meta_type_generic_info))
-            g_array_index(cols, PrintDataCol, col_idx).is_leaf = FALSE;
+            nm_g_array_index(cols, PrintDataCol, col_idx).is_leaf = FALSE;
     }
 
     return TRUE;
@@ -756,13 +756,13 @@ _output_selection_complete(GArray *cols)
     nm_assert(g_array_get_element_size(cols) == sizeof(PrintDataCol));
 
     for (i = 0; i < cols->len; i++) {
-        PrintDataCol *col = &g_array_index(cols, PrintDataCol, i);
+        PrintDataCol *col = &nm_g_array_index(cols, PrintDataCol, i);
 
         if (col->_parent_idx == PRINT_DATA_COL_PARENT_NIL)
             col->parent_col = NULL;
         else {
             nm_assert(col->_parent_idx < i);
-            col->parent_col = &g_array_index(cols, PrintDataCol, col->_parent_idx);
+            col->parent_col = &nm_g_array_index(cols, PrintDataCol, col->_parent_idx);
         }
     }
 }
@@ -1026,7 +1026,7 @@ _print_fill(const NmcConfig    *nmc_config,
         col_idx = header_row->len;
         g_array_set_size(header_row, col_idx + 1);
 
-        header_cell = &g_array_index(header_row, PrintDataHeaderCell, col_idx);
+        header_cell = &nm_g_array_index(header_row, PrintDataHeaderCell, col_idx);
 
         header_cell->col_idx = col_idx;
         header_cell->col     = col;
@@ -1060,8 +1060,9 @@ _print_fill(const NmcConfig    *nmc_config,
         text_get_flags |= NM_META_ACCESSOR_GET_FLAGS_SHOW_SECRETS;
 
     for (i_row = 0; i_row < targets_len; i_row++) {
-        gpointer       target     = targets[i_row];
-        PrintDataCell *cells_line = &g_array_index(cells, PrintDataCell, i_row * header_row->len);
+        gpointer       target = targets[i_row];
+        PrintDataCell *cells_line =
+            &nm_g_array_index(cells, PrintDataCell, i_row * header_row->len);
 
         for (i_col = 0; i_col < header_row->len; i_col++) {
             char                     *to_free = NULL;
@@ -1072,7 +1073,7 @@ _print_fill(const NmcConfig    *nmc_config,
             gconstpointer             value;
             gboolean                  is_default;
 
-            header_cell = &g_array_index(header_row, PrintDataHeaderCell, i_col);
+            header_cell = &nm_g_array_index(header_row, PrintDataHeaderCell, i_col);
             info        = header_cell->col->selection_item->info;
 
             cell->row_idx     = i_row;
@@ -1147,13 +1148,14 @@ _print_fill(const NmcConfig    *nmc_config,
     }
 
     for (i_col = 0; i_col < header_row->len; i_col++) {
-        PrintDataHeaderCell *header_cell = &g_array_index(header_row, PrintDataHeaderCell, i_col);
+        PrintDataHeaderCell *header_cell =
+            &nm_g_array_index(header_row, PrintDataHeaderCell, i_col);
 
         header_cell->width = nmc_string_screen_width(header_cell->title, NULL);
 
         for (i_row = 0; i_row < targets_len; i_row++) {
             const PrintDataCell *cells_line =
-                &g_array_index(cells, PrintDataCell, i_row * header_row->len);
+                &nm_g_array_index(cells, PrintDataCell, i_row * header_row->len);
             const PrintDataCell *cell = &cells_line[i_col];
             const char *const   *i_strv;
 
@@ -1408,8 +1410,8 @@ nmc_print(const NmcConfig                 *nmc_config,
               header_name_no_l10n,
               header_row->len,
               cells->len / header_row->len,
-              &g_array_index(header_row, PrintDataHeaderCell, 0),
-              &g_array_index(cells, PrintDataCell, 0));
+              nm_g_array_index_p(header_row, PrintDataHeaderCell, 0),
+              nm_g_array_index_p(cells, PrintDataCell, 0));
 
     return TRUE;
 }
@@ -1624,7 +1626,7 @@ print_required_fields(const NmcConfig      *nmc_config,
 
     if (nmc_config->multiline_output) {
         for (i = 0; i < indices->len; i++) {
-            int      idx      = g_array_index(indices, int, i);
+            int      idx      = nm_g_array_index(indices, int, i);
             gboolean is_array = field_values[idx].value_is_array;
 
             /* section prefix can't be an array */
@@ -1705,7 +1707,7 @@ print_required_fields(const NmcConfig      *nmc_config,
         int           idx;
         const char   *value;
 
-        idx = g_array_index(indices, int, i);
+        idx = nm_g_array_index(indices, int, i);
 
         value = get_value_to_print(nmc_config,
                                    (NmcOutputField *) field_values + idx,

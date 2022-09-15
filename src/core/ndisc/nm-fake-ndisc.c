@@ -247,14 +247,14 @@ receive_ra(gpointer user_data)
     }
 
     for (i = 0; i < ra->gateways->len; i++) {
-        const NMNDiscGateway *item = &g_array_index(ra->gateways, NMNDiscGateway, i);
+        const NMNDiscGateway *item = &nm_g_array_index(ra->gateways, NMNDiscGateway, i);
 
         if (nm_ndisc_add_gateway(ndisc, item, now_msec))
             changed |= NM_NDISC_CONFIG_GATEWAYS;
     }
 
     for (i = 0; i < ra->prefixes->len; i++) {
-        FakePrefix        *item  = &g_array_index(ra->prefixes, FakePrefix, i);
+        FakePrefix        *item  = &nm_g_array_index(ra->prefixes, FakePrefix, i);
         const NMNDiscRoute route = {
             .network     = item->network,
             .plen        = item->plen,
@@ -282,14 +282,14 @@ receive_ra(gpointer user_data)
     }
 
     for (i = 0; i < ra->dns_servers->len; i++) {
-        const NMNDiscDNSServer *item = &g_array_index(ra->dns_servers, NMNDiscDNSServer, i);
+        const NMNDiscDNSServer *item = &nm_g_array_index(ra->dns_servers, NMNDiscDNSServer, i);
 
         if (nm_ndisc_add_dns_server(ndisc, item, now_msec))
             changed |= NM_NDISC_CONFIG_DNS_SERVERS;
     }
 
     for (i = 0; i < ra->dns_domains->len; i++) {
-        const NMNDiscDNSDomain *item = &g_array_index(ra->dns_domains, NMNDiscDNSDomain, i);
+        const NMNDiscDNSDomain *item = &nm_g_array_index(ra->dns_domains, NMNDiscDNSDomain, i);
 
         if (nm_ndisc_add_dns_domain(ndisc, item, now_msec))
             changed |= NM_NDISC_CONFIG_DNS_DOMAINS;

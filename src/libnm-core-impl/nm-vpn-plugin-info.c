@@ -296,7 +296,7 @@ _nm_vpn_plugin_info_list_load_dir(const char               *dirname,
     g_array_sort(array, (GCompareFunc) _sort_files);
 
     for (i = 0; i < array->len; i++)
-        res = g_slist_prepend(res, g_array_index(array, LoadDirInfo, i).plugin_info);
+        res = g_slist_prepend(res, nm_g_array_index(array, LoadDirInfo, i).plugin_info);
 
     g_array_unref(array);
 

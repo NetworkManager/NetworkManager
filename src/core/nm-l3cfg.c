@@ -3144,7 +3144,7 @@ nm_l3cfg_commit_on_idle_is_scheduled(NML3Cfg *self)
 /*****************************************************************************/
 
 #define _l3_config_datas_at(l3_config_datas, idx) \
-    (&g_array_index((l3_config_datas), L3ConfigData, (idx)))
+    (&nm_g_array_index((l3_config_datas), L3ConfigData, (idx)))
 
 static gssize
 _l3_config_datas_find_next(GArray               *l3_config_datas,

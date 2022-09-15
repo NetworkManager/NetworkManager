@@ -2218,6 +2218,38 @@ test_inet_utils(void)
 
 /*****************************************************************************/
 
+static void
+test_garray(void)
+{
+    gs_unref_array GArray *arr = NULL;
+    int                    v;
+
+    arr = g_array_new(FALSE, FALSE, sizeof(int));
+    g_assert(nm_g_array_index_p(arr, int, 0) == (gpointer) arr->data);
+
+    v = 1;
+    g_array_append_val(arr, v);
+    g_assert(nm_g_array_index_p(arr, int, 0) == (gpointer) arr->data);
+    g_assert(nm_g_array_index_p(arr, int, 1) == ((int *) ((gpointer) arr->data)) + 1);
+    g_assert(&nm_g_array_index(arr, int, 0) == (gpointer) arr->data);
+    g_assert(&nm_g_array_first(arr, int) == (gpointer) arr->data);
+    g_assert(&nm_g_array_last(arr, int) == (gpointer) arr->data);
+    g_assert(nm_g_array_index(arr, int, 0) == 1);
+
+    v = 2;
+    g_array_append_val(arr, v);
+    g_assert(nm_g_array_index_p(arr, int, 0) == (gpointer) arr->data);
+    g_assert(nm_g_array_index_p(arr, int, 1) == ((int *) ((gpointer) arr->data)) + 1);
+    g_assert(nm_g_array_index_p(arr, int, 2) == ((int *) ((gpointer) arr->data)) + 2);
+    g_assert(&nm_g_array_index(arr, int, 0) == (gpointer) arr->data);
+    g_assert(&nm_g_array_first(arr, int) == (gpointer) arr->data);
+    g_assert(&nm_g_array_last(arr, int) == ((int *) ((gpointer) arr->data)) + 1);
+    g_assert(nm_g_array_index(arr, int, 0) == 1);
+    g_assert(nm_g_array_index(arr, int, 1) == 2);
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE();
 
 int
@@ -2263,6 +2295,7 @@ main(int argc, char **argv)
     g_test_add_func("/general/test_path_simplify", test_path_simplify);
     g_test_add_func("/general/test_hostname_is_valid", test_hostname_is_valid);
     g_test_add_func("/general/test_inet_utils", test_inet_utils);
+    g_test_add_func("/general/test_garray", test_garray);
 
     return g_test_run();
 }

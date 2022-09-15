@@ -1866,42 +1866,60 @@ nm_g_array_unref(GArray *arr)
         g_array_unref(arr);
 }
 
-#define nm_g_array_first(arr, Type)                                \
-    ({                                                             \
-        GArray *const _arr = (arr);                                \
-                                                                   \
-        nm_assert(_arr);                                           \
-        nm_assert(sizeof(Type) == g_array_get_element_size(_arr)); \
-        nm_assert(_arr->len > 0);                                  \
-                                                                   \
-        &g_array_index(arr, Type, 0);                              \
-    })
-
-#define nm_g_array_last(arr, Type)                                 \
-    ({                                                             \
-        GArray *const _arr = (arr);                                \
-                                                                   \
-        nm_assert(_arr);                                           \
-        nm_assert(sizeof(Type) == g_array_get_element_size(_arr)); \
-        nm_assert(_arr->len > 0);                                  \
-                                                                   \
-        &g_array_index(arr, Type, _arr->len - 1u);                 \
-    })
-
 /* Similar to g_array_index(). The differences are
  * - this does nm_assert() checks that the arguments are valid.
- * - returns a pointer to the element. */
-#define nm_g_array_index_p(arr, Type, idx)                            \
-    ({                                                                \
-        GArray *const _arr_55 = (arr);                                \
-        const guint   _idx_55 = (idx);                                \
-                                                                      \
-        nm_assert(_arr_55);                                           \
-        nm_assert(sizeof(Type) == g_array_get_element_size(_arr_55)); \
-        nm_assert(_idx_55 < _arr_55->len);                            \
-                                                                      \
-        &g_array_index(_arr_55, Type, _idx_55);                       \
+ * - returns a pointer to the element.
+ * - it asserts that @idx is <= arr->len. That is, it allows
+ *   to get a pointer after the data, of course, you are not
+ *   allowed to dereference in that case. */
+#define nm_g_array_index_p(arr, Type, idx)                                       \
+    ({                                                                           \
+        const GArray *const _arr_55 = (arr);                                     \
+        const guint         _idx_55 = (idx);                                     \
+                                                                                 \
+        nm_assert(_arr_55);                                                      \
+        nm_assert(sizeof(Type) == g_array_get_element_size((GArray *) _arr_55)); \
+        nm_assert(_idx_55 <= _arr_55->len);                                      \
+                                                                                 \
+        /* If arr->len is zero, arr->data might be NULL. The macro
+         * allows to access at index [arr->len] (one past the data).
+         * We need to take care of undefined behavior, but (NULL + 0)
+         * should work mostly fine for us. */               \
+        ((Type *) ((gpointer) _arr_55->data)) + (_idx_55);                       \
     })
+
+/* Very similar to g_array_index().
+ * - nm_assert() that arguments are valid.
+ * - returns an lvalue to the element.
+ * - similar to nm_g_array_index_p(), but dereferences the pointer.
+ * - one difference to nm_g_array_index_p() is that it @idx MUST be
+ *   smaller than arr->len (unlike nm_g_array_index_p() which allows
+ *   access one element past the buffer. */
+#define nm_g_array_index(arr, Type, idx)                                         \
+    (*({                                                                         \
+        const GArray *const _arr_55 = (arr);                                     \
+        const guint         _idx_55 = (idx);                                     \
+                                                                                 \
+        nm_assert(_arr_55);                                                      \
+        nm_assert(sizeof(Type) == g_array_get_element_size((GArray *) _arr_55)); \
+        nm_assert(_idx_55 < _arr_55->len);                                       \
+                                                                                 \
+        &g_array_index((GArray *) _arr_55, Type, _idx_55);                       \
+    }))
+
+#define nm_g_array_first(arr, Type) nm_g_array_index(arr, Type, 0)
+
+/* Same as g_array_index(arr, Type, arr->len-1). */
+#define nm_g_array_last(arr, Type)                                            \
+    (*({                                                                      \
+        const GArray *const _arr = (arr);                                     \
+                                                                              \
+        nm_assert(_arr);                                                      \
+        nm_assert(sizeof(Type) == g_array_get_element_size((GArray *) _arr)); \
+        nm_assert(_arr->len > 0);                                             \
+                                                                              \
+        &g_array_index((GArray *) arr, Type, _arr->len - 1u);                 \
+    }))
 
 #define nm_g_array_append_new(arr, Type)                           \
     ({                                                             \
@@ -2840,7 +2858,7 @@ nm_strvarray_add(GArray *array, const char *str)
 static inline const char *
 nm_strvarray_get_idx(GArray *array, guint idx)
 {
-    return *nm_g_array_index_p(array, const char *, idx);
+    return nm_g_array_index(array, const char *, idx);
 }
 
 static inline const char *const *
