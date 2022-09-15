@@ -5206,7 +5206,30 @@ nm_platform_ip_route_add(NMPlatform *self, NMPNlmFlags flags, const NMPObject *r
 int
 nm_platform_ip4_route_add(NMPlatform *self, NMPNlmFlags flags, const NMPlatformIP4Route *route)
 {
-    return _ip_route_add(self, flags, AF_INET, route);
+    gs_free NMPlatformIP4RtNextHop *extra_nexthops_free = NULL;
+    NMPObject                       obj;
+
+    nm_assert(route);
+    nm_assert(route->n_nexthops <= 1u || extra_nexthops);
+
+    nmp_object_stackinit(&obj, NMP_OBJECT_TYPE_IP4_ROUTE, (const NMPlatformObject *) route);
+
+    if (route->n_nexthops > 1u) {
+        nm_assert(extra_nexthops);
+        /* we need to ensure that @extra_nexthops stays alive until the function returns.
+         * Copy the buffer.
+         *
+         * This is probably not necessary, because likely the caller will somehow ensure that
+         * the extra_nexthops stay alive. Still do it, because it is a very unusual case and
+         * likely cheap. */
+        obj._ip4_route.extra_nexthops =
+            nm_memdup_maybe_a(500u,
+                              extra_nexthops,
+                              sizeof(extra_nexthops[0]) * (route->n_nexthops - 1u),
+                              &extra_nexthops_free);
+    }
+
+    return _ip_route_add(self, flags, &obj);
 }
 
 int
@@ -6606,6 +6629,10 @@ _rtm_flags_to_string_full(char *buf, gsize buf_size, unsigned rtm_flags)
 /**
  * nm_platform_ip4_route_to_string:
  * @route: pointer to NMPlatformIP4Route route structure
+ * @extra_nexthops: (allow-none): the route might be a ECMP multihop route
+ *   (with n_nexthops > 1). In that case, provide the list of extra hops
+ *   to print too. It is allowed for a multihop route to omit the extra hops
+ *   by passing NULL.
  * @buf: (allow-none): an optional buffer. If %NULL, a static buffer is used.
  * @len: the size of the @buf. If @buf is %NULL, this argument is ignored.
  *
@@ -6616,29 +6643,39 @@ _rtm_flags_to_string_full(char *buf, gsize buf_size, unsigned rtm_flags)
  * Returns: a string representation of the route.
  */
 const char *
-nm_platform_ip4_route_to_string(const NMPlatformIP4Route *route, char *buf, gsize len)
+nm_platform_ip4_route_to_string_full(const NMPlatformIP4Route     *route,
+                                     const NMPlatformIP4RtNextHop *extra_nexthops,
+                                     char                         *buf,
+                                     gsize                         len)
 {
-    char s_network[INET_ADDRSTRLEN];
-    char s_gateway[INET_ADDRSTRLEN];
-    char s_pref_src[INET_ADDRSTRLEN];
-    char str_dev[30];
-    char str_mss[32];
-    char str_table[30];
-    char str_scope[30];
-    char s_source[50];
-    char str_tos[32];
-    char str_window[32];
-    char str_cwnd[32];
-    char str_initcwnd[32];
-    char str_initrwnd[32];
-    char str_rto_min[32];
-    char str_mtu[32];
-    char str_rtm_flags[_RTM_FLAGS_TO_STRING_MAXLEN];
-    char str_type[30];
-    char str_metric[30];
+    char *buf0;
+    char  s_network[INET_ADDRSTRLEN];
+    char  s_gateway[INET_ADDRSTRLEN];
+    char  s_pref_src[INET_ADDRSTRLEN];
+    char  str_dev[30];
+    char  str_mss[32];
+    char  str_table[30];
+    char  str_scope[30];
+    char  s_source[50];
+    char  str_tos[32];
+    char  str_window[32];
+    char  str_cwnd[32];
+    char  str_initcwnd[32];
+    char  str_initrwnd[32];
+    char  str_rto_min[32];
+    char  str_mtu[32];
+    char  str_rtm_flags[_RTM_FLAGS_TO_STRING_MAXLEN];
+    char  str_type[30];
+    char  str_metric[30];
+    char  weight_str[20];
+    guint n_nexthops;
 
     if (!nm_utils_to_string_buffer_init_null(route, &buf, &len))
         return buf;
+
+    buf0 = buf;
+
+    n_nexthops = nm_platform_ip4_route_get_n_nexthops(route);
 
     inet_ntop(AF_INET, &route->network, s_network, sizeof(s_network));
 
@@ -6647,14 +6684,15 @@ nm_platform_ip4_route_to_string(const NMPlatformIP4Route *route, char *buf, gsiz
     else
         inet_ntop(AF_INET, &route->gateway, s_gateway, sizeof(s_gateway));
 
-    g_snprintf(
-        buf,
-        len,
+    nm_strbuf_append(
+        &buf,
+        &len,
         "type %s " /* type */
         "%s"       /* table */
         "%s/%d"
         "%s%s" /* gateway */
-        "%s"
+        "%s%s" /* weight */
+        "%s"   /* dev/ifindex */
         " metric %s"
         "%s"         /* mss */
         " rt-src %s" /* protocol */
@@ -6682,9 +6720,13 @@ nm_platform_ip4_route_to_string(const NMPlatformIP4Route *route, char *buf, gsiz
                    : ""),
         s_network,
         route->plen,
-        s_gateway[0] ? " via " : "",
-        s_gateway,
-        _to_string_dev(str_dev, route->ifindex),
+        n_nexthops <= 1 && s_gateway[0] ? " via " : "",
+        n_nexthops <= 1 ? s_gateway : "",
+        NM_PRINT_FMT_QUOTED2(n_nexthops <= 1 && route->weight != 0,
+                             " weight ",
+                             nm_sprintf_buf(weight_str, "%u", route->weight),
+                             ""),
+        n_nexthops <= 1 ? _to_string_dev(str_dev, route->ifindex) : "",
         route->metric_any
             ? (route->metric ? nm_sprintf_buf(str_metric, "??+%u", route->metric) : "??")
             : nm_sprintf_buf(str_metric, "%u", route->metric),
@@ -6734,7 +6776,56 @@ nm_platform_ip4_route_to_string(const NMPlatformIP4Route *route, char *buf, gsiz
                                                        route->mtu)
                                       : "",
         route->r_force_commit ? " force-commit" : "");
-    return buf;
+
+    if ((n_nexthops == 1 && route->ifindex > 0) || n_nexthops == 0) {
+        /* A plain single hop route. Nothing extra to remark. */
+    } else {
+        nm_strbuf_append(&buf, &len, " n_nexthops %u", n_nexthops);
+        if (n_nexthops > 1) {
+            nm_strbuf_append(&buf,
+                             &len,
+                             " nexthop"
+                             "%s%s" /* gateway */
+                             "%s%s" /* weight */
+                             "%s"   /* dev/ifindex */
+                             "",
+                             s_gateway[0] ? " via " : "",
+                             s_gateway,
+                             NM_PRINT_FMT_QUOTED2(route->weight != 1,
+                                                  " weight ",
+                                                  nm_sprintf_buf(weight_str, "%u", route->weight),
+                                                  ""),
+                             _to_string_dev(str_dev, route->ifindex));
+            if (!extra_nexthops)
+                nm_strbuf_append_str(&buf, &len, " nexthops [...]");
+            else {
+                guint i;
+
+                for (i = 1; i < n_nexthops; i++) {
+                    const NMPlatformIP4RtNextHop *nexthop = &extra_nexthops[i - 1];
+
+                    nm_strbuf_append(
+                        &buf,
+                        &len,
+                        " nexthop"
+                        "%s"   /* ifindex */
+                        "%s%s" /* gateway */
+                        "%s%s" /* weight */
+                        "",
+                        NM_PRINT_FMT_QUOTED2(nexthop->gateway != 0 || nexthop->ifindex <= 0,
+                                             " via ",
+                                             nm_inet4_ntop(nexthop->gateway, s_gateway),
+                                             ""),
+                        _to_string_dev(str_dev, nexthop->ifindex),
+                        NM_PRINT_FMT_QUOTED2(nexthop->weight != 1,
+                                             " weight ",
+                                             nm_sprintf_buf(weight_str, "%u", nexthop->weight),
+                                             ""));
+                }
+            }
+        }
+    }
+    return buf0;
 }
 
 /**
@@ -8073,6 +8164,20 @@ nm_platform_lnk_wireguard_cmp(const NMPlatformLnkWireGuard *a, const NMPlatformL
 }
 
 void
+nm_platform_ip4_rt_nexthop_hash_update(const NMPlatformIP4RtNextHop *obj,
+                                       gboolean                      for_id,
+                                       NMHashState                  *h)
+{
+    guint8 w;
+
+    nm_assert(obj);
+
+    w = for_id ? NM_MAX(obj->weight, 1u) : obj->weight;
+
+    nm_hash_update_vals(h, obj->ifindex, obj->gateway, w);
+}
+
+void
 nm_platform_ip4_route_hash_update(const NMPlatformIP4Route *obj,
                                   NMPlatformIPRouteCmpType  cmp_type,
                                   NMHashState              *h)
@@ -8101,7 +8206,9 @@ nm_platform_ip4_route_hash_update(const NMPlatformIP4Route *obj,
             obj->ifindex,
             nmp_utils_ip_config_source_round_trip_rtprot(obj->rt_source),
             _ip_route_scope_inv_get_normalized(obj),
+            nm_platform_ip4_route_get_n_nexthops(obj),
             obj->gateway,
+            (guint8) NM_MAX(obj->weight, 1u),
             obj->mss,
             obj->pref_src,
             obj->window,
@@ -8131,7 +8238,9 @@ nm_platform_ip4_route_hash_update(const NMPlatformIP4Route *obj,
             nm_ip4_addr_clear_host_address(obj->network, obj->plen),
             obj->plen,
             obj->metric,
+            nm_platform_ip4_route_get_n_nexthops(obj),
             obj->gateway,
+            (guint8) NM_MAX(obj->weight, 1u),
             nmp_utils_ip_config_source_round_trip_rtprot(obj->rt_source),
             _ip_route_scope_inv_get_normalized(obj),
             obj->tos,
@@ -8164,6 +8273,8 @@ nm_platform_ip4_route_hash_update(const NMPlatformIP4Route *obj,
                             obj->plen,
                             obj->metric,
                             obj->gateway,
+                            obj->n_nexthops,
+                            obj->weight,
                             obj->rt_source,
                             obj->scope_inv,
                             obj->tos,
@@ -8192,6 +8303,30 @@ nm_platform_ip4_route_hash_update(const NMPlatformIP4Route *obj,
 }
 
 int
+nm_platform_ip4_rt_nexthop_cmp(const NMPlatformIP4RtNextHop *a,
+                               const NMPlatformIP4RtNextHop *b,
+                               gboolean                      for_id)
+{
+    guint8 w_a;
+    guint8 w_b;
+
+    /* Note that weight zero is not valid (in kernel). We thus treat
+     * weight zero usually the same as 1.
+     *
+     * Not here for cmp/hash_update functions. These functions check for the exact
+     * bit-pattern, and not the it means at other places. */
+    NM_CMP_SELF(a, b);
+    NM_CMP_FIELD(a, b, ifindex);
+    NM_CMP_FIELD(a, b, gateway);
+
+    w_a = for_id ? NM_MAX(a->weight, 1u) : a->weight;
+    w_b = for_id ? NM_MAX(b->weight, 1u) : b->weight;
+    NM_CMP_DIRECT(w_a, w_b);
+
+    return 0;
+}
+
+int
 nm_platform_ip4_route_cmp(const NMPlatformIP4Route *a,
                           const NMPlatformIP4Route *b,
                           NMPlatformIPRouteCmpType  cmp_type)
@@ -8215,7 +8350,10 @@ nm_platform_ip4_route_cmp(const NMPlatformIP4Route *a,
                           nmp_utils_ip_config_source_round_trip_rtprot(b->rt_source));
             NM_CMP_DIRECT(_ip_route_scope_inv_get_normalized(a),
                           _ip_route_scope_inv_get_normalized(b));
+            NM_CMP_DIRECT(nm_platform_ip4_route_get_n_nexthops(a),
+                          nm_platform_ip4_route_get_n_nexthops(b));
             NM_CMP_FIELD(a, b, gateway);
+            NM_CMP_DIRECT(NM_MAX(a->weight, 1u), NM_MAX(b->weight, 1u));
             NM_CMP_FIELD(a, b, mss);
             NM_CMP_FIELD(a, b, pref_src);
             NM_CMP_FIELD(a, b, window);
@@ -8251,7 +8389,16 @@ nm_platform_ip4_route_cmp(const NMPlatformIP4Route *a,
         NM_CMP_FIELD(a, b, plen);
         NM_CMP_FIELD_UNSAFE(a, b, metric_any);
         NM_CMP_FIELD(a, b, metric);
+        if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY) {
+            NM_CMP_DIRECT(nm_platform_ip4_route_get_n_nexthops(a),
+                          nm_platform_ip4_route_get_n_nexthops(b));
+        } else
+            NM_CMP_FIELD(a, b, n_nexthops);
         NM_CMP_FIELD(a, b, gateway);
+        if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY)
+            NM_CMP_DIRECT(NM_MAX(a->weight, 1u), NM_MAX(b->weight, 1u));
+        else
+            NM_CMP_FIELD(a, b, weight);
         if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY) {
             NM_CMP_DIRECT(nmp_utils_ip_config_source_round_trip_rtprot(a->rt_source),
                           nmp_utils_ip_config_source_round_trip_rtprot(b->rt_source));
@@ -8913,7 +9060,10 @@ log_ip4_route(NMPlatform                *self,
 
     _LOG3D("signal: route   4 %7s: %s",
            nm_platform_signal_change_type_to_string(change_type),
-           nm_platform_ip4_route_to_string(route, sbuf, sizeof(sbuf)));
+           nmp_object_to_string(NMP_OBJECT_UP_CAST(route),
+                                NMP_OBJECT_TO_STRING_PUBLIC,
+                                sbuf,
+                                sizeof(sbuf)));
 }
 
 static void
@@ -8928,7 +9078,10 @@ log_ip6_route(NMPlatform                *self,
 
     _LOG3D("signal: route   6 %7s: %s",
            nm_platform_signal_change_type_to_string(change_type),
-           nm_platform_ip6_route_to_string(route, sbuf, sizeof(sbuf)));
+           nmp_object_to_string(NMP_OBJECT_UP_CAST(route),
+                                NMP_OBJECT_TO_STRING_PUBLIC,
+                                sbuf,
+                                sizeof(sbuf)));
 }
 
 static void

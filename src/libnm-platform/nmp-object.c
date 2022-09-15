@@ -735,6 +735,12 @@ _vt_cmd_obj_dispose_link(NMPObject *obj)
 }
 
 static void
+_vt_cmd_obj_dispose_ip4_route(NMPObject *obj)
+{
+    nm_clear_g_free((gpointer *) &obj->_ip4_route.extra_nexthops);
+}
+
+static void
 _vt_cmd_obj_dispose_lnk_vlan(NMPObject *obj)
 {
     g_free((gpointer) obj->_lnk_vlan.ingress_qos_map);
@@ -848,14 +854,12 @@ nmp_object_stackinit_id(NMPObject *obj, const NMPObject *src)
     if (klass->cmd_plobj_id_copy)
         klass->cmd_plobj_id_copy(&obj->object, &src->object);
     else {
-        /* This object must not implement cmd_obj_copy().
-         * If it would, it would mean that we require a deep copy
-         * of the data. As @obj is stack-allocated, it cannot track
-         * ownership. The caller must not use nmp_object_stackinit_id()
-         * with an object of such a type. */
-        nm_assert(!klass->cmd_obj_copy);
-
-        /* plain memcpy of the public part suffices. */
+        /* plain memcpy.
+         *
+         * Note that for NMPObjectIP4Route this also copies extra_nexthops
+         * pointer, aliasing it without taking ownership. That is potentially
+         * dangerous, but when using a stack allocated instance, you must
+         * always take care of ownership. */
         memcpy(&obj->object, &src->object, klass->sizeof_data);
     }
     return obj;
@@ -986,6 +990,41 @@ _vt_cmd_obj_to_string_link(const NMPObject      *obj,
             nm_strbuf_append_str(&b, &buf_size, "; ");
             nmp_object_to_string(obj->_link.netlink.lnk, NMP_OBJECT_TO_STRING_PUBLIC, b, buf_size);
         }
+        return buf;
+    default:
+        g_return_val_if_reached("ERROR");
+    }
+}
+
+static const char *
+_vt_cmd_obj_to_string_ip4_route(const NMPObject      *obj,
+                                NMPObjectToStringMode to_string_mode,
+                                char                 *buf,
+                                gsize                 buf_size)
+{
+    const NMPClass *klass;
+    char            buf2[NM_UTILS_TO_STRING_BUFFER_SIZE];
+
+    klass = NMP_OBJECT_GET_CLASS(obj);
+
+    switch (to_string_mode) {
+    case NMP_OBJECT_TO_STRING_PUBLIC:
+    case NMP_OBJECT_TO_STRING_ID:
+        nm_platform_ip4_route_to_string_full(&obj->ip4_route,
+                                             obj->_ip4_route.extra_nexthops,
+                                             buf,
+                                             buf_size);
+        return buf;
+    case NMP_OBJECT_TO_STRING_ALL:
+        g_snprintf(buf,
+                   buf_size,
+                   "[%s," NM_HASH_OBFUSCATE_PTR_FMT ",%u,%calive,%cvisible; %s]",
+                   klass->obj_type_name,
+                   NM_HASH_OBFUSCATE_PTR(obj),
+                   obj->parent._ref_count,
+                   nmp_object_is_alive(obj) ? '+' : '-',
+                   nmp_object_is_visible(obj) ? '+' : '-',
+                   nmp_object_to_string(obj, NMP_OBJECT_TO_STRING_PUBLIC, buf2, sizeof(buf2)));
         return buf;
     default:
         g_return_val_if_reached("ERROR");
@@ -1198,6 +1237,21 @@ _vt_cmd_obj_hash_update_link(const NMPObject *obj, gboolean for_id, NMHashState 
 }
 
 static void
+_vt_cmd_obj_hash_update_ip4_route(const NMPObject *obj, gboolean for_id, NMHashState *h)
+{
+    guint i;
+
+    nm_assert(NMP_OBJECT_GET_TYPE(obj) == NMP_OBJECT_TYPE_IP4_ROUTE);
+
+    nm_platform_ip4_route_hash_update(&obj->ip4_route,
+                                      for_id ? NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID
+                                             : NM_PLATFORM_IP_ROUTE_CMP_TYPE_FULL,
+                                      h);
+    for (i = 1u; i < obj->ip4_route.n_nexthops; i++)
+        nm_platform_ip4_rt_nexthop_hash_update(&obj->_ip4_route.extra_nexthops[i - 1u], for_id, h);
+}
+
+static void
 _vt_cmd_obj_hash_update_lnk_vlan(const NMPObject *obj, gboolean for_id, NMHashState *h)
 {
     nm_assert(NMP_OBJECT_GET_TYPE(obj) == NMP_OBJECT_TYPE_LNK_VLAN);
@@ -1298,7 +1352,9 @@ nmp_object_cmp_full(const NMPObject *obj1, const NMPObject *obj2, NMPObjectCmpFl
         } else if (obj1->obj_with_ifindex.ifindex != obj2->obj_with_ifindex.ifindex) {
             nmp_object_stackinit(&obj_stackcopy, klass->obj_type, &obj2->obj_with_ifindex);
             obj_stackcopy.obj_with_ifindex.ifindex = obj1->obj_with_ifindex.ifindex;
-            obj2                                   = &obj_stackcopy;
+            if (klass->obj_type == NMP_OBJECT_TYPE_IP4_ROUTE)
+                obj_stackcopy._ip4_route.extra_nexthops = obj2->_ip4_route.extra_nexthops;
+            obj2 = &obj_stackcopy;
         }
     }
 
@@ -1330,6 +1386,28 @@ _vt_cmd_obj_cmp_link(const NMPObject *obj1, const NMPObject *obj2, gboolean for_
          *
          * Have this check as very last. */
         return (obj1->_link.udev.device < obj2->_link.udev.device) ? -1 : 1;
+    }
+
+    return 0;
+}
+
+static int
+_vt_cmd_obj_cmp_ip4_route(const NMPObject *obj1, const NMPObject *obj2, gboolean for_id)
+{
+    int   c;
+    guint i;
+
+    c = nm_platform_ip4_route_cmp(&obj1->ip4_route,
+                                  &obj2->ip4_route,
+                                  for_id ? NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID
+                                         : NM_PLATFORM_IP_ROUTE_CMP_TYPE_FULL);
+    NM_CMP_RETURN_DIRECT(c);
+
+    for (i = 1u; i < obj1->ip4_route.n_nexthops; i++) {
+        c = nm_platform_ip4_rt_nexthop_cmp(&obj1->_ip4_route.extra_nexthops[i - 1u],
+                                           &obj2->_ip4_route.extra_nexthops[i - 1u],
+                                           for_id);
+        NM_CMP_RETURN_DIRECT(c);
     }
 
     return 0;
@@ -1436,6 +1514,28 @@ _vt_cmd_obj_copy_link(NMPObject *dst, const NMPObject *src)
             dst->_link.ext_data = g_object_ref(src->_link.ext_data);
     }
     dst->_link = src->_link;
+}
+
+static void
+_vt_cmd_obj_copy_ip4_route(NMPObject *dst, const NMPObject *src)
+{
+    nm_assert(dst != src);
+
+    if (src->ip4_route.n_nexthops <= 1) {
+        nm_clear_g_free((gpointer *) &dst->_ip4_route.extra_nexthops);
+    } else if (src->ip4_route.n_nexthops != dst->ip4_route.n_nexthops
+               || !nm_memeq_n(src->_ip4_route.extra_nexthops,
+                              src->ip4_route.n_nexthops - 1u,
+                              dst->_ip4_route.extra_nexthops,
+                              dst->ip4_route.n_nexthops - 1u,
+                              sizeof(NMPlatformIP4RtNextHop))) {
+        nm_clear_g_free((gpointer *) &dst->_ip4_route.extra_nexthops);
+        dst->_ip4_route.extra_nexthops =
+            nm_memdup(src->_ip4_route.extra_nexthops,
+                      sizeof(NMPlatformIP4RtNextHop) * (src->ip4_route.n_nexthops - 1u));
+    }
+
+    dst->ip4_route = src->ip4_route;
 }
 
 static void
@@ -1578,14 +1678,6 @@ _vt_cmd_plobj_id_cmp(tfilter, NMPlatformTfilter, {
 });
 
 static int
-_vt_cmd_plobj_id_cmp_ip4_route(const NMPlatformObject *obj1, const NMPlatformObject *obj2)
-{
-    return nm_platform_ip4_route_cmp((const NMPlatformIP4Route *) obj1,
-                                     (const NMPlatformIP4Route *) obj2,
-                                     NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID);
-}
-
-static int
 _vt_cmd_plobj_id_cmp_ip6_route(const NMPlatformObject *obj1, const NMPlatformObject *obj2)
 {
     return nm_platform_ip6_route_cmp((const NMPlatformIP6Route *) obj1,
@@ -1673,10 +1765,6 @@ _vt_cmd_plobj_id_hash_update(ip6_address, NMPlatformIP6Address, {
         obj->address);
 });
 
-_vt_cmd_plobj_id_hash_update(ip4_route, NMPlatformIP4Route, {
-    nm_platform_ip4_route_hash_update(obj, NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID, h);
-});
-
 _vt_cmd_plobj_id_hash_update(ip6_route, NMPlatformIP6Route, {
     nm_platform_ip6_route_hash_update(obj, NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID, h);
 });
@@ -1698,14 +1786,6 @@ _vt_cmd_plobj_id_hash_update(mptcp_addr, NMPlatformMptcpAddr, {
     nm_hash_update_vals(h, obj->addr_family, obj->port, obj->ifindex);
     nm_hash_update(h, &obj->addr, nm_utils_addr_family_to_size_untrusted(obj->addr_family));
 });
-
-static void
-_vt_cmd_plobj_hash_update_ip4_route(const NMPlatformObject *obj, NMHashState *h)
-{
-    return nm_platform_ip4_route_hash_update((const NMPlatformIP4Route *) obj,
-                                             NM_PLATFORM_IP_ROUTE_CMP_TYPE_FULL,
-                                             h);
-}
 
 static void
 _vt_cmd_plobj_hash_update_ip6_route(const NMPlatformObject *obj, NMHashState *h)
@@ -3218,23 +3298,22 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
         },
     [NMP_OBJECT_TYPE_IP4_ROUTE - 1] =
         {
-            .parent                   = DEDUP_MULTI_OBJ_CLASS_INIT(),
-            .obj_type                 = NMP_OBJECT_TYPE_IP4_ROUTE,
-            .sizeof_data              = sizeof(NMPObjectIP4Route),
-            .sizeof_public            = sizeof(NMPlatformIP4Route),
-            .obj_type_name            = "ip4-route",
-            .addr_family              = AF_INET,
-            .rtm_gettype              = RTM_GETROUTE,
-            .signal_type_id           = NM_PLATFORM_SIGNAL_ID_IP4_ROUTE,
-            .signal_type              = NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED,
-            .supported_cache_ids      = _supported_cache_ids_ipx_route,
-            .cmd_obj_is_alive         = _vt_cmd_obj_is_alive_ipx_route,
-            .cmd_plobj_id_cmp         = _vt_cmd_plobj_id_cmp_ip4_route,
-            .cmd_plobj_id_hash_update = _vt_cmd_plobj_id_hash_update_ip4_route,
-            .cmd_plobj_to_string_id   = (CmdPlobjToStringIdFunc) nm_platform_ip4_route_to_string,
-            .cmd_plobj_to_string      = (CmdPlobjToStringFunc) nm_platform_ip4_route_to_string,
-            .cmd_plobj_hash_update    = _vt_cmd_plobj_hash_update_ip4_route,
-            .cmd_plobj_cmp            = (CmdPlobjCmpFunc) nm_platform_ip4_route_cmp_full,
+            .parent              = DEDUP_MULTI_OBJ_CLASS_INIT(),
+            .obj_type            = NMP_OBJECT_TYPE_IP4_ROUTE,
+            .sizeof_data         = sizeof(NMPObjectIP4Route),
+            .sizeof_public       = sizeof(NMPlatformIP4Route),
+            .obj_type_name       = "ip4-route",
+            .addr_family         = AF_INET,
+            .rtm_gettype         = RTM_GETROUTE,
+            .signal_type_id      = NM_PLATFORM_SIGNAL_ID_IP4_ROUTE,
+            .signal_type         = NM_PLATFORM_SIGNAL_IP4_ROUTE_CHANGED,
+            .supported_cache_ids = _supported_cache_ids_ipx_route,
+            .cmd_obj_is_alive    = _vt_cmd_obj_is_alive_ipx_route,
+            .cmd_obj_hash_update = _vt_cmd_obj_hash_update_ip4_route,
+            .cmd_obj_cmp         = _vt_cmd_obj_cmp_ip4_route,
+            .cmd_obj_copy        = _vt_cmd_obj_copy_ip4_route,
+            .cmd_obj_dispose     = _vt_cmd_obj_dispose_ip4_route,
+            .cmd_obj_to_string   = _vt_cmd_obj_to_string_ip4_route,
         },
     [NMP_OBJECT_TYPE_IP6_ROUTE - 1] =
         {

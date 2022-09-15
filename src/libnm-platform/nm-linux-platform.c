@@ -3640,21 +3640,27 @@ _new_from_nl_route(const struct nlmsghdr *nlh, gboolean id_only, ParseNlmsgIter 
     struct {
         gboolean found;
         gboolean has_more;
+        guint8   weight;
         int      ifindex;
         NMIPAddr gateway;
     } nh = {
         .found    = FALSE,
         .has_more = FALSE,
     };
-    guint32  mss;
-    guint32  window   = 0;
-    guint32  cwnd     = 0;
-    guint32  initcwnd = 0;
-    guint32  initrwnd = 0;
-    guint32  mtu      = 0;
-    guint32  rto_min  = 0;
-    guint32  lock     = 0;
-    gboolean quickack = FALSE;
+    guint                           v4_n_nexthops = 0;
+    NMPlatformIP4RtNextHop          v4_nh_extra_nexthops_stack[10];
+    gs_free NMPlatformIP4RtNextHop *v4_nh_extra_nexthops_heap = NULL;
+    NMPlatformIP4RtNextHop         *v4_nh_extra_nexthops      = v4_nh_extra_nexthops_stack;
+    guint                           v4_nh_extra_alloc = G_N_ELEMENTS(v4_nh_extra_nexthops_stack);
+    guint32                         mss;
+    guint32                         window   = 0;
+    guint32                         cwnd     = 0;
+    guint32                         initcwnd = 0;
+    guint32                         initrwnd = 0;
+    guint32                         mtu      = 0;
+    guint32                         rto_min  = 0;
+    guint32                         lock     = 0;
+    gboolean                        quickack = FALSE;
 
     nm_assert((parse_nlmsg_iter->iter_more && parse_nlmsg_iter->ip6_route.next_multihop > 0)
               || (!parse_nlmsg_iter->iter_more && parse_nlmsg_iter->ip6_route.next_multihop == 0));
@@ -3712,9 +3718,57 @@ _new_from_nl_route(const struct nlmsghdr *nlh, gboolean id_only, ParseNlmsgIter 
 
         idx = 0;
         while (TRUE) {
-            if (idx == multihop_idx) {
+            if (nh.found && IS_IPv4) {
+                NMPlatformIP4RtNextHop *new_nexthop;
+
+                /* we parsed the first IPv4 nexthop in "nh", let's parse the following ones.
+                 *
+                 * At this point, v4_n_nexthops still counts how many hops we already added,
+                 * now we are about to add the (v4_n_nexthops+1) hop.
+                 *
+                 * Note that the first hop (of then v4_n_nexthops) is tracked in "nh".
+                 * v4_nh_extra_nexthops tracks the additional hops.
+                 *
+                 * v4_nh_extra_alloc is how many space is allocated for
+                 * v4_nh_extra_nexthops (note that in the end we will only add (v4_n_nexthops-1)
+                 * hops in this list). */
+                nm_assert(v4_n_nexthops > 0u);
+                if (v4_n_nexthops - 1u >= v4_nh_extra_alloc) {
+                    v4_nh_extra_alloc = NM_MAX(4, v4_nh_extra_alloc * 2u);
+                    if (!v4_nh_extra_nexthops_heap) {
+                        v4_nh_extra_nexthops_heap =
+                            g_new(NMPlatformIP4RtNextHop, v4_nh_extra_alloc);
+                        memcpy(v4_nh_extra_nexthops_heap,
+                               v4_nh_extra_nexthops_stack,
+                               G_N_ELEMENTS(v4_nh_extra_nexthops_stack));
+                    } else {
+                        v4_nh_extra_nexthops_heap = g_renew(NMPlatformIP4RtNextHop,
+                                                            v4_nh_extra_nexthops_heap,
+                                                            v4_nh_extra_alloc);
+                    }
+                    v4_nh_extra_nexthops = v4_nh_extra_nexthops_heap;
+                }
+                nm_assert(v4_n_nexthops - 1u < v4_nh_extra_alloc);
+                new_nexthop          = &v4_nh_extra_nexthops[v4_n_nexthops - 1u];
+                new_nexthop->ifindex = rtnh->rtnh_ifindex;
+                new_nexthop->weight  = NM_MAX(rtnh->rtnh_hops, 1u);
+                if (rtnh->rtnh_len > sizeof(*rtnh)) {
+                    struct nlattr *ntb[RTA_MAX + 1];
+
+                    if (nla_parse_arr(ntb,
+                                      (struct nlattr *) RTNH_DATA(rtnh),
+                                      rtnh->rtnh_len - sizeof(*rtnh),
+                                      NULL)
+                        < 0)
+                        return NULL;
+
+                    if (_check_addr_or_return_null(ntb, RTA_GATEWAY, addr_len))
+                        memcpy(&new_nexthop->gateway, nla_data(ntb[RTA_GATEWAY]), addr_len);
+                }
+            } else if (IS_IPv4 || idx == multihop_idx) {
                 nh.found   = TRUE;
                 nh.ifindex = rtnh->rtnh_ifindex;
+                nh.weight  = NM_MAX(rtnh->rtnh_hops, 1u);
                 if (rtnh->rtnh_len > sizeof(*rtnh)) {
                     struct nlattr *ntb[RTA_MAX + 1];
 
@@ -3731,21 +3785,15 @@ _new_from_nl_route(const struct nlmsghdr *nlh, gboolean id_only, ParseNlmsgIter 
             } else if (nh.found) {
                 /* we just parsed a nexthop, but there is yet another hop afterwards. */
                 nm_assert(idx == multihop_idx + 1);
-                if (IS_IPv4) {
-                    /* for IPv4, multihop routes are currently not supported.
-                     *
-                     * If we ever support them, then the next-hop list is part of the NMPlatformIPRoute,
-                     * that is, for IPv4 we truly have multihop routes. Unlike for IPv6.
-                     *
-                     * For now, just error out. */
-                    return NULL;
-                }
 
                 /* For IPv6 multihop routes, we need to remember to iterate again.
                  * For each next-hop, we will create a distinct single-hop NMPlatformIP6Route. */
                 nh.has_more = TRUE;
                 break;
             }
+
+            if (IS_IPv4)
+                v4_n_nexthops++;
 
             if (tlen < RTNH_ALIGN(rtnh->rtnh_len) + sizeof(*rtnh))
                 break;
@@ -3780,6 +3828,9 @@ rta_multipath_done:
             nh.ifindex = ifindex;
             nh.gateway = gateway;
             nh.found   = TRUE;
+            nm_assert(v4_n_nexthops == 0);
+            if (IS_IPv4)
+                v4_n_nexthops = 1;
         } else {
             /* Kernel supports new style nexthop configuration,
              * verify that it is a duplicate and ignore old-style nexthop. */
@@ -3869,6 +3920,23 @@ rta_multipath_done:
         tb[RTA_TABLE] ? nla_get_u32(tb[RTA_TABLE]) : (guint32) rtm->rtm_table);
 
     obj->ip_route.ifindex = nh.ifindex;
+
+    if (IS_IPv4) {
+        nm_assert((!!nh.found) == (v4_n_nexthops > 0u));
+        obj->ip4_route.n_nexthops = v4_n_nexthops;
+        if (v4_n_nexthops > 1) {
+            /* We only set the weight for multihop routes. I think that corresponds to what kernel
+             * does. The weight is mostly undefined for single-hop. */
+            obj->ip4_route.weight = NM_MAX(nh.weight, 1u);
+
+            obj->_ip4_route.extra_nexthops =
+                (v4_nh_extra_alloc == v4_n_nexthops - 1u
+                 && v4_nh_extra_nexthops == v4_nh_extra_nexthops_heap)
+                    ? g_steal_pointer(&v4_nh_extra_nexthops_heap)
+                    : nm_memdup(v4_nh_extra_nexthops,
+                                sizeof(v4_nh_extra_nexthops[0]) * (v4_n_nexthops - 1u));
+        }
+    }
 
     if (_check_addr_or_return_null(tb, RTA_DST, addr_len))
         memcpy(obj->ip_route.network_ptr, nla_data(tb[RTA_DST]), addr_len);
@@ -5178,6 +5246,39 @@ _nl_msg_new_route(uint16_t nlmsg_type, uint16_t nlmsg_flags, const NMPObject *ob
     } else {
         if (!IN6_IS_ADDR_UNSPECIFIED(&NMP_OBJECT_CAST_IP6_ROUTE(obj)->pref_src))
             NLA_PUT(msg, RTA_PREFSRC, addr_len, &obj->ip6_route.pref_src);
+    }
+
+    if (IS_IPv4 && obj->ip4_route.n_nexthops > 1u) {
+        struct nlattr *multipath;
+        guint          i;
+
+        if (!(multipath = nla_nest_start(msg, RTA_MULTIPATH)))
+            goto nla_put_failure;
+
+        for (i = 0u; i < obj->ip4_route.n_nexthops; i++) {
+            struct rtnexthop *rtnh;
+
+            rtnh = nlmsg_reserve(msg, sizeof(*rtnh), NLMSG_ALIGNTO);
+            if (!rtnh)
+                goto nla_put_failure;
+
+            if (i == 0u) {
+                rtnh->rtnh_hops    = NM_MAX(obj->ip4_route.weight, 1u);
+                rtnh->rtnh_ifindex = obj->ip4_route.ifindex;
+                NLA_PUT_U32(msg, RTA_GATEWAY, obj->ip4_route.gateway);
+            } else {
+                const NMPlatformIP4RtNextHop *n = &obj->_ip4_route.extra_nexthops[i - 1u];
+
+                rtnh->rtnh_hops    = NM_MAX(n->weight, 1u);
+                rtnh->rtnh_ifindex = n->ifindex;
+                NLA_PUT_U32(msg, RTA_GATEWAY, n->gateway);
+            }
+
+            rtnh->rtnh_flags = 0;
+            rtnh->rtnh_len   = (char *) nlmsg_tail(nlmsg_hdr(msg)) - (char *) rtnh;
+        }
+
+        nla_nest_end(msg, multipath);
     }
 
     if (obj->ip_route.mss || obj->ip_route.window || obj->ip_route.cwnd || obj->ip_route.initcwnd

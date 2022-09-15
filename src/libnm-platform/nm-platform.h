@@ -382,9 +382,27 @@ typedef struct {
 
 struct _NMPlatformIP4Route {
     __NMPlatformIPRoute_COMMON;
+
     in_addr_t network;
 
-    /* RTA_GATEWAY. The gateway is part of the primary key for a route */
+    /* If n_nexthops is zero, the the address has no next hops. That applies
+     *    to certain route types like blackhole.
+     * If n_nexthops is 1, then the fields "ifindex", "gateway" and "weight"
+     *   are the first next-hop. There are no further nexthops.
+     * If n_nexthops is greater than 1, the first next hop is in the fields
+     *   "ifindex", "gateway", "weight", and the (n_nexthops-1) hops are in
+     *   NMPObjectIP4Route.extra_nexthops field (outside the NMPlatformIP4Route
+     *   struct).
+     *
+     * For convenience, if ifindex > 0 and n_nexthops == 0, we assume that n_nexthops
+     * is in fact 1. If ifindex is <= 0, n_nexthops must be zero.
+     * See nm_platform_ip4_route_get_n_nexthops(). */
+    guint n_nexthops;
+
+    /* RTA_GATEWAY. The gateway is part of the primary key for a route.
+     * If n_nexthops is zero, this value is undefined (should be zero).
+     * If n_nexthops is greater or equal to one, this is the gateway of
+     * the first hop. */
     in_addr_t gateway;
 
     /* RTA_PREFSRC (called "src" by iproute2).
@@ -412,6 +430,21 @@ struct _NMPlatformIP4Route {
      * For IPv6 routes, the scope is ignored and kernel always assumes global scope.
      * Hence, this field is only in NMPlatformIP4Route. */
     guint8 scope_inv;
+
+    /* This is the weight of for the first next-hop, in case of n_nexthops > 1.
+     *
+     * If n_nexthops is zero, this value is undefined (should be zero).
+     * If n_nexthops is 1, this also doesn't matter, but it's usually set to
+     * zero.
+     * If n_nexthops is greater or equal to one, this is the weight of
+     * the first hop.
+     *
+     * Note that upper layers use this flag to indicate whether this is a multihop route.
+     * Single-hop, non-ECMP routes will have a weight of zero.
+     *
+     * The valid range for weight is 1-255. For convenience, we treat 0 the same
+     * as 1 for multihop routes. */
+    guint8 weight;
 };
 
 struct _NMPlatformIP6Route {
@@ -635,6 +668,14 @@ typedef struct {
     guint32 qos;
     bool    proto_ad : 1;
 } NMPlatformVFVlan;
+
+typedef struct {
+    int       ifindex;
+    in_addr_t gateway;
+    /* The valid range for weight is 1-255. For convenience, we treat 0 the same
+     * as 1 for multihop routes. */
+    guint8 weight;
+} NMPlatformIP4RtNextHop;
 
 typedef struct {
     guint             num_vlans;
@@ -2129,6 +2170,23 @@ nm_platform_ip4_route_get_effective_metric(const NMPlatformIP4Route *r)
                          : r->metric;
 }
 
+static inline guint
+nm_platform_ip4_route_get_n_nexthops(const NMPlatformIP4Route *r)
+{
+    /* The first hop of the "n_nexthops" is in NMPlatformIP4Route
+     * itself. Thus, if the caller only sets ifindex and leaves
+     * n_nexthops at zero, the number of next hops is still 1
+     * (for convenience of the user who wants to initialize a
+     * single hop route). */
+    if (r->n_nexthops >= 1) {
+        nm_assert(r->ifindex > 0);
+        return r->n_nexthops;
+    }
+    if (r->ifindex > 0)
+        return 1;
+    return 0;
+}
+
 static inline guint32
 nm_platform_ip6_route_get_effective_metric(const NMPlatformIP6Route *r)
 {
@@ -2216,7 +2274,18 @@ const char *nm_platform_lnk_vrf_to_string(const NMPlatformLnkVrf *lnk, char *buf
 const char *nm_platform_lnk_vxlan_to_string(const NMPlatformLnkVxlan *lnk, char *buf, gsize len);
 const char *
 nm_platform_lnk_wireguard_to_string(const NMPlatformLnkWireGuard *lnk, char *buf, gsize len);
-const char *nm_platform_ip4_route_to_string(const NMPlatformIP4Route *route, char *buf, gsize len);
+
+const char *nm_platform_ip4_route_to_string_full(const NMPlatformIP4Route     *route,
+                                                 const NMPlatformIP4RtNextHop *extra_nexthops,
+                                                 char                         *buf,
+                                                 gsize                         len);
+
+static inline const char *
+nm_platform_ip4_route_to_string(const NMPlatformIP4Route *route, char *buf, gsize len)
+{
+    return nm_platform_ip4_route_to_string_full(route, NULL, buf, len);
+}
+
 const char *nm_platform_ip6_route_to_string(const NMPlatformIP6Route *route, char *buf, gsize len);
 const char *
 nm_platform_routing_rule_to_string(const NMPlatformRoutingRule *routing_rule, char *buf, gsize len);
@@ -2260,6 +2329,9 @@ GHashTable *nm_platform_ip4_address_addr_to_hash(NMPlatform *self, int ifindex);
 int nm_platform_ip4_route_cmp(const NMPlatformIP4Route *a,
                               const NMPlatformIP4Route *b,
                               NMPlatformIPRouteCmpType  cmp_type);
+int nm_platform_ip4_rt_nexthop_cmp(const NMPlatformIP4RtNextHop *a,
+                                   const NMPlatformIP4RtNextHop *b,
+                                   gboolean                      for_id);
 int nm_platform_ip6_route_cmp(const NMPlatformIP6Route *a,
                               const NMPlatformIP6Route *b,
                               NMPlatformIPRouteCmpType  cmp_type);
@@ -2298,6 +2370,9 @@ void nm_platform_link_hash_update(const NMPlatformLink *obj, NMHashState *h);
 void nm_platform_ip4_route_hash_update(const NMPlatformIP4Route *obj,
                                        NMPlatformIPRouteCmpType  cmp_type,
                                        NMHashState              *h);
+void nm_platform_ip4_rt_nexthop_hash_update(const NMPlatformIP4RtNextHop *obj,
+                                            gboolean                      for_id,
+                                            NMHashState                  *h);
 void nm_platform_ip6_route_hash_update(const NMPlatformIP6Route *obj,
                                        NMPlatformIPRouteCmpType  cmp_type,
                                        NMHashState              *h);
