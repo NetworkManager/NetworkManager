@@ -70,6 +70,7 @@ static const char *const valid_options_lst[] = {
     NM_SETTING_BOND_OPTION_ARP_INTERVAL,
     NM_SETTING_BOND_OPTION_ARP_IP_TARGET,
     NM_SETTING_BOND_OPTION_ARP_VALIDATE,
+    NM_SETTING_BOND_OPTION_BALANCE_SLB,
     NM_SETTING_BOND_OPTION_PRIMARY,
     NM_SETTING_BOND_OPTION_PRIMARY_RESELECT,
     NM_SETTING_BOND_OPTION_FAIL_OVER_MAC,
@@ -195,6 +196,7 @@ static NM_UTILS_STRING_TABLE_LOOKUP_STRUCT_DEFINE(
     {NM_SETTING_BOND_OPTION_ARP_IP_TARGET, {"", NM_BOND_OPTION_TYPE_IP}},
     {NM_SETTING_BOND_OPTION_ARP_VALIDATE,
      {"none", NM_BOND_OPTION_TYPE_BOTH, 0, 6, _option_default_strv_arp_validate}},
+    {NM_SETTING_BOND_OPTION_BALANCE_SLB, {"0", NM_BOND_OPTION_TYPE_INT, 0, 1}},
     {NM_SETTING_BOND_OPTION_DOWNDELAY, {"0", NM_BOND_OPTION_TYPE_INT, 0, G_MAXINT}},
     {NM_SETTING_BOND_OPTION_FAIL_OVER_MAC,
      {"none", NM_BOND_OPTION_TYPE_BOTH, 0, 2, _option_default_strv_fail_over_mac}},
@@ -344,6 +346,17 @@ _bond_get_option_normalized(NMSettingBond *self, const char *option, gboolean ge
             value = _bond_get_option(self, NM_SETTING_BOND_OPTION_PRIMARY);
             if (!value)
                 value = _bond_get_option(self, NM_SETTING_BOND_OPTION_ACTIVE_SLAVE);
+        } else if (nm_streq(option, NM_SETTING_BOND_OPTION_XMIT_HASH_POLICY)) {
+            if (_nm_utils_ascii_str_to_int64(
+                    _bond_get_option(self, NM_SETTING_BOND_OPTION_BALANCE_SLB),
+                    10,
+                    0,
+                    1,
+                    -1)
+                == 1) {
+                /* balance-slb implies vlan+srcmac */
+                return "5";
+            }
         } else
             value = _bond_get_option(self, option);
 
@@ -840,6 +853,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
     const char              *arp_ip_target = NULL;
     const char              *lacp_rate;
     const char              *primary;
+    const char              *s;
     NMBondMode               bond_mode;
     guint                    i;
     const NMUtilsNamedValue *n;
@@ -1065,6 +1079,32 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
                     NM_SETTING_BOND_OPTION_NUM_UNSOL_NA);
         g_prefix_error(error, "%s.%s: ", NM_SETTING_BOND_SETTING_NAME, NM_SETTING_BOND_OPTIONS);
         return FALSE;
+    }
+
+    s = _bond_get_option(self, NM_SETTING_BOND_OPTION_BALANCE_SLB);
+    if (s && _atoi(s) > 0) {
+        if (bond_mode != NM_BOND_MODE_XOR) {
+            g_set_error(error,
+                        NM_CONNECTION_ERROR,
+                        NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                        _("%s requires bond mode \"%s\""),
+                        NM_SETTING_BOND_OPTION_BALANCE_SLB,
+                        "balance-xor");
+            g_prefix_error(error, "%s.%s: ", NM_SETTING_BOND_SETTING_NAME, NM_SETTING_BOND_OPTIONS);
+            return FALSE;
+        }
+        s = _bond_get_option(self, NM_SETTING_BOND_OPTION_XMIT_HASH_POLICY);
+        if (s
+            && _nm_setting_bond_xmit_hash_policy_from_string(s)
+                   != NM_BOND_XMIT_HASH_POLICY_VLAN_SRCMAC) {
+            g_set_error(error,
+                        NM_CONNECTION_ERROR,
+                        NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                        _("%s requires xmit_hash_policy \"vlan+srcmac\""),
+                        NM_SETTING_BOND_OPTION_BALANCE_SLB);
+            g_prefix_error(error, "%s.%s: ", NM_SETTING_BOND_SETTING_NAME, NM_SETTING_BOND_OPTIONS);
+            return FALSE;
+        }
     }
 
     if (!_nm_connection_verify_required_interface_name(connection, error))

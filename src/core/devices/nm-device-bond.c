@@ -20,6 +20,7 @@
 #include "libnm-core-intern/nm-core-internal.h"
 #include "nm-manager.h"
 #include "nm-setting-bond-port.h"
+#include "nm-bond-manager.h"
 
 #define _NMLOG_DEVICE_TYPE NMDeviceBond
 #include "nm-device-logging.h"
@@ -59,7 +60,8 @@
 /*****************************************************************************/
 
 struct _NMDeviceBond {
-    NMDevice parent;
+    NMDevice       parent;
+    NMBondManager *bond_manager;
 };
 
 struct _NMDeviceBondClass {
@@ -178,7 +180,9 @@ update_connection(NMDevice *device, NMConnection *connection)
         gs_free char *value  = NULL;
         char         *p;
 
-        if (NM_IN_STRSET(option, NM_SETTING_BOND_OPTION_ACTIVE_SLAVE))
+        if (NM_IN_STRSET(option,
+                         NM_SETTING_BOND_OPTION_ACTIVE_SLAVE,
+                         NM_SETTING_BOND_OPTION_BALANCE_SLB))
             continue;
 
         value =
@@ -460,10 +464,97 @@ _platform_lnk_bond_init_from_setting(NMSettingBond *s_bond, NMPlatformLnkBond *p
     props->tlb_dynamic_lb_has   = NM_IN_SET(props->mode, NM_BOND_MODE_TLB, NM_BOND_MODE_ALB);
 }
 
+static void
+_balance_slb_cb(NMBondManager *bond_manager, NMBondManagerEventType event_type, gpointer user_data)
+{
+    NMDevice     *device = user_data;
+    NMDeviceBond *self   = NM_DEVICE_BOND(device);
+
+    nm_assert(NM_IS_DEVICE_BOND(self));
+    nm_assert(self->bond_manager == bond_manager);
+
+    switch (event_type) {
+    case NM_BOND_MANAGER_EVENT_TYPE_STATE:
+        switch (nm_bond_manager_get_state(bond_manager)) {
+        case NM_OPTION_BOOL_FALSE:
+            if (nm_device_get_state(device) <= NM_DEVICE_STATE_ACTIVATED) {
+                _LOGD(LOGD_BOND, "balance-slb: failed");
+                nm_device_state_changed(device,
+                                        NM_DEVICE_STATE_FAILED,
+                                        NM_DEVICE_STATE_REASON_CONFIG_FAILED);
+            }
+            return;
+        case NM_OPTION_BOOL_TRUE:
+            if (nm_device_get_state(device) <= NM_DEVICE_STATE_ACTIVATED
+                && nm_device_devip_get_state(device, AF_UNSPEC) <= NM_DEVICE_IP_STATE_PENDING) {
+                nm_device_devip_set_state(device, AF_UNSPEC, NM_DEVICE_IP_STATE_READY, NULL);
+            }
+            return;
+        case NM_OPTION_BOOL_DEFAULT:
+            if (nm_device_get_state(device) <= NM_DEVICE_STATE_ACTIVATED
+                && nm_device_devip_get_state(device, AF_UNSPEC) == NM_DEVICE_IP_STATE_READY) {
+                /* We are again busy. We can also go back to "pending" from "ready".
+                 * If ip-config state is not yet complete, this will further delay it.
+                 * Otherwise, it should have no effect. */
+                nm_device_devip_set_state(device, AF_UNSPEC, NM_DEVICE_IP_STATE_PENDING, NULL);
+            }
+            return;
+        }
+        nm_assert_not_reached();
+        return;
+    }
+
+    nm_assert_not_reached();
+}
+
+static void
+_balance_slb_setup(NMDeviceBond *self, NMConnection *connection)
+{
+    int            ifindex     = nm_device_get_ifindex(NM_DEVICE(self));
+    gboolean       balance_slb = FALSE;
+    const char    *uuid;
+    NMSettingBond *s_bond;
+
+    if (ifindex > 0 && connection && (s_bond = nm_connection_get_setting_bond(connection)))
+        balance_slb = _v_intbool(s_bond, NM_SETTING_BOND_OPTION_BALANCE_SLB);
+
+    if (!balance_slb) {
+        if (nm_clear_pointer(&self->bond_manager, nm_bond_manager_destroy)) {
+            _LOGD(LOGD_BOND, "balance-slb: stopped");
+            nm_device_devip_set_state(NM_DEVICE(self), AF_UNSPEC, NM_DEVICE_IP_STATE_NONE, NULL);
+        }
+        return;
+    }
+
+    uuid = nm_connection_get_uuid(connection);
+
+    if (self->bond_manager) {
+        if (nm_bond_manager_get_ifindex(self->bond_manager) == ifindex
+            && nm_streq0(nm_bond_manager_get_connection_uuid(self->bond_manager), uuid)) {
+            _LOGD(LOGD_BOND, "balance-slb: reapply");
+            nm_bond_manager_reapply(self->bond_manager);
+            return;
+        }
+        nm_clear_pointer(&self->bond_manager, nm_bond_manager_destroy);
+        _LOGD(LOGD_BOND, "balance-slb: restart");
+    }
+
+    _LOGD(LOGD_BOND, "balance-slb: start");
+    if (nm_device_devip_get_state(NM_DEVICE(self), AF_UNSPEC) < NM_DEVICE_IP_STATE_PENDING)
+        nm_device_devip_set_state(NM_DEVICE(self), AF_UNSPEC, NM_DEVICE_IP_STATE_PENDING, NULL);
+    self->bond_manager = nm_bond_manager_new(nm_device_get_platform(NM_DEVICE(self)),
+                                             ifindex,
+                                             uuid,
+                                             _balance_slb_cb,
+                                             self);
+    nm_assert(nm_bond_manager_get_state(self->bond_manager) == NM_OPTION_BOOL_DEFAULT);
+}
+
 static NMActStageReturn
 act_stage1_prepare(NMDevice *device, NMDeviceStateReason *out_failure_reason)
 {
-    NMActStageReturn  ret = NM_ACT_STAGE_RETURN_SUCCESS;
+    NMDeviceBond     *self = NM_DEVICE_BOND(device);
+    NMActStageReturn  ret  = NM_ACT_STAGE_RETURN_SUCCESS;
     NMConnection     *connection;
     NMSettingBond    *s_bond;
     NMPlatformLnkBond props;
@@ -475,6 +566,14 @@ act_stage1_prepare(NMDevice *device, NMDeviceStateReason *out_failure_reason)
 
     s_bond = nm_connection_get_setting_bond(connection);
     g_return_val_if_fail(s_bond, NM_ACT_STAGE_RETURN_FAILURE);
+
+    if (nm_device_sys_iface_state_is_external(device))
+        return NM_ACT_STAGE_RETURN_SUCCESS;
+
+    _balance_slb_setup(self, connection);
+
+    if (nm_device_sys_iface_state_is_external_or_assume(device))
+        return NM_ACT_STAGE_RETURN_SUCCESS;
 
     _platform_lnk_bond_init_from_setting(s_bond, &props);
 
@@ -684,7 +783,7 @@ can_reapply_change(NMDevice   *device,
             const char *name = *option_list;
 
             /* We support changes to these */
-            if (NM_IN_STRSET(name, OPTIONS_REAPPLY_FULL))
+            if (NM_IN_STRSET(name, OPTIONS_REAPPLY_FULL, NM_SETTING_BOND_OPTION_BALANCE_SLB))
                 continue;
 
             /* Reject any other changes */
@@ -730,6 +829,16 @@ reapply_connection(NMDevice *device, NMConnection *con_old, NMConnection *con_ne
     set_bond_arp_ip_targets(device, s_bond);
 
     set_bond_attrs_or_default(device, s_bond, NM_MAKE_STRV(OPTIONS_REAPPLY_SUBSET));
+
+    _balance_slb_setup(self, con_new);
+}
+
+static void
+deactivate(NMDevice *device)
+{
+    NMDeviceBond *self = NM_DEVICE_BOND(device);
+
+    _balance_slb_setup(self, NULL);
 }
 
 /*****************************************************************************/
@@ -768,13 +877,15 @@ nm_device_bond_class_init(NMDeviceBondClass *klass)
     device_class->update_connection              = update_connection;
     device_class->master_update_slave_connection = controller_update_port_connection;
 
-    device_class->create_and_realize = create_and_realize;
-    device_class->act_stage1_prepare = act_stage1_prepare;
+    device_class->create_and_realize                             = create_and_realize;
+    device_class->act_stage1_prepare                             = act_stage1_prepare;
+    device_class->act_stage1_prepare_also_for_external_or_assume = TRUE;
     device_class->get_configured_mtu = nm_device_get_configured_mtu_for_wired;
     device_class->attach_port        = attach_port;
     device_class->detach_port        = detach_port;
     device_class->can_reapply_change = can_reapply_change;
     device_class->reapply_connection = reapply_connection;
+    device_class->deactivate         = deactivate;
 }
 
 /*****************************************************************************/
