@@ -14,6 +14,10 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   in `nmcli connection $operator uuid $uuid`.
 * nmtui now supports editing Wi-Fi WPA-Enterprise, Ethernet with 802.1X
   authentication and MACsec connection profiles.
+* bond: add "balance-slb" option which implements source load balancing
+  with "balance-xor" mode and "vlan-srcmac" xmit_hash_policy. In this
+  mode, NetworkManager configures nftables to prevent loops in the
+  switch.
 
 =============================================
 NetworkManager-1.40

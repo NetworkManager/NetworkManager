@@ -37,6 +37,7 @@ G_BEGIN_DECLS
 #define NM_SETTING_BOND_OPTION_ARP_IP_TARGET     "arp_ip_target"
 #define NM_SETTING_BOND_OPTION_ARP_VALIDATE      "arp_validate"
 #define NM_SETTING_BOND_OPTION_PRIMARY           "primary"
+#define NM_SETTING_BOND_OPTION_BALANCE_SLB       "balance-slb"
 #define NM_SETTING_BOND_OPTION_PRIMARY_RESELECT  "primary_reselect"
 #define NM_SETTING_BOND_OPTION_FAIL_OVER_MAC     "fail_over_mac"
 #define NM_SETTING_BOND_OPTION_USE_CARRIER       "use_carrier"
