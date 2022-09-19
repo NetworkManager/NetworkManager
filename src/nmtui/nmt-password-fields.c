@@ -193,8 +193,7 @@ nmt_password_fields_set_property(GObject      *object,
             nmt_newt_checkbox_set_active(priv->always_ask, g_value_get_boolean(value));
         break;
     case PROP_SHOW_PASSWORD:
-        if (priv->show_password)
-            nmt_newt_checkbox_set_active(priv->show_password, g_value_get_boolean(value));
+        nmt_newt_checkbox_set_active(priv->show_password, g_value_get_boolean(value));
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
@@ -223,8 +222,7 @@ nmt_password_fields_get_property(GObject *object, guint prop_id, GValue *value, 
             g_value_set_boolean(value, nmt_newt_checkbox_get_active(priv->always_ask));
         break;
     case PROP_SHOW_PASSWORD:
-        if (priv->show_password)
-            g_value_set_boolean(value, nmt_newt_checkbox_get_active(priv->show_password));
+        g_value_set_boolean(value, nmt_newt_checkbox_get_active(priv->show_password));
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
