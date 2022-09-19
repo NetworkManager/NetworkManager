@@ -85,13 +85,15 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
         }
 
         slave_type = nm_setting_connection_get_slave_type(s_con);
-        if (!nm_streq0(slave_type, NM_SETTING_BOND_SETTING_NAME)) {
+        if (slave_type && !nm_streq(slave_type, NM_SETTING_BOND_SETTING_NAME)) {
             g_set_error(error,
                         NM_CONNECTION_ERROR,
                         NM_CONNECTION_ERROR_INVALID_PROPERTY,
-                        _("A connection with a '%s' setting must have the slave-type set to '%s'"),
+                        _("A connection with a '%s' setting must have the slave-type set to '%s'. "
+                          "Instead it is '%s'"),
                         NM_SETTING_BOND_PORT_SETTING_NAME,
-                        NM_SETTING_BOND_SETTING_NAME);
+                        NM_SETTING_BOND_SETTING_NAME,
+                        slave_type);
             g_prefix_error(error,
                            "%s.%s: ",
                            NM_SETTING_CONNECTION_SETTING_NAME,
