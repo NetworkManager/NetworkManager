@@ -399,6 +399,7 @@ _platform_lnk_bond_init_from_setting(NMSettingBond *s_bond, NMPlatformLnkBond *p
 #define _v_u8(s_bond, opt)       _nm_setting_bond_opt_value_as_u8((s_bond), (opt))
 #define _v_u16(s_bond, opt)      _nm_setting_bond_opt_value_as_u16((s_bond), (opt))
 #define _v_u32(s_bond, opt)      _nm_setting_bond_opt_value_as_u32((s_bond), (opt))
+#define _v_intbool(s_bond, opt)  _nm_setting_bond_opt_value_as_intbool((s_bond), (opt))
 
     *props = (NMPlatformLnkBond){
         .mode      = _v_fcn(_nm_setting_bond_mode_from_string, s_bond, NM_SETTING_BOND_OPTION_MODE),
@@ -437,20 +438,13 @@ _platform_lnk_bond_init_from_setting(NMSettingBond *s_bond, NMPlatformLnkBond *p
         .ad_select         = _v_fcn(_nm_setting_bond_ad_select_from_string,
                             s_bond,
                             NM_SETTING_BOND_OPTION_AD_SELECT),
+        .use_carrier       = _v_intbool(s_bond, NM_SETTING_BOND_OPTION_USE_CARRIER),
+        .tlb_dynamic_lb    = _v_intbool(s_bond, NM_SETTING_BOND_OPTION_TLB_DYNAMIC_LB),
     };
 
     nm_ether_addr_from_string(
         &props->ad_actor_system,
         nm_setting_bond_get_option_normalized(s_bond, NM_SETTING_BOND_OPTION_AD_ACTOR_SYSTEM));
-
-    opt_value = nm_setting_bond_get_option_normalized(s_bond, NM_SETTING_BOND_OPTION_USE_CARRIER);
-    if (opt_value != NULL)
-        props->use_carrier = _nm_utils_ascii_str_to_bool(opt_value, FALSE);
-
-    opt_value =
-        nm_setting_bond_get_option_normalized(s_bond, NM_SETTING_BOND_OPTION_TLB_DYNAMIC_LB);
-    if (opt_value != NULL)
-        props->tlb_dynamic_lb = _nm_utils_ascii_str_to_bool(opt_value, FALSE);
 
     opt_value = nm_setting_bond_get_option_normalized(s_bond, NM_SETTING_BOND_OPTION_ARP_IP_TARGET);
     if (opt_value != NULL)
