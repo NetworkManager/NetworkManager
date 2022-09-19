@@ -764,37 +764,64 @@ _nm_setting_bond_get_option_type(NMSettingBond *setting, const char *name)
     return option_meta->opt_type;
 }
 
-guint32
-_nm_setting_bond_opt_value_as_u32(NMSettingBond *s_bond, const char *opt)
+#define _opt_value_as_u64(s_bond, opt, v_max)                                            \
+    ({                                                                                   \
+        const OptionMeta *_meta;                                                         \
+        NMSettingBond    *_s_bond = (s_bond);                                            \
+        const char       *_opt    = (opt);                                               \
+        const guint64     _v_max  = (v_max);                                             \
+        const char       *_s;                                                            \
+        guint64           _val;                                                          \
+                                                                                         \
+        nm_assert(NM_IS_SETTING_BOND(_s_bond));                                          \
+        nm_assert(_opt);                                                                 \
+                                                                                         \
+        _meta = _get_option_meta(_opt);                                                  \
+                                                                                         \
+        nm_assert(_meta);                                                                \
+        nm_assert(_meta->opt_type == NM_BOND_OPTION_TYPE_INT);                           \
+        nm_assert(_meta->min < _meta->max);                                              \
+        nm_assert(_meta->max <= _v_max);                                                 \
+        nm_assert(_meta->val);                                                           \
+                                                                                         \
+        _s = nm_setting_bond_get_option_normalized(_s_bond, _opt);                       \
+        if (_s) {                                                                        \
+            _val = _nm_utils_ascii_str_to_uint64(_s, 10, _meta->min, _meta->max, 0);     \
+            /* Note that _s is only a valid integer, if the profile verifies. We require
+             * that the caller only calls these functions on valid profile. */ \
+            nm_assert(errno == 0);                                                       \
+        } else {                                                                         \
+            _val  = 0;                                                                   \
+            errno = EINVAL;                                                              \
+        }                                                                                \
+                                                                                         \
+        _val;                                                                            \
+    })
+
+guint8
+_nm_setting_bond_opt_value_as_u8(NMSettingBond *s_bond, const char *opt)
 {
-    nm_assert(_get_option_meta(opt)->opt_type == NM_BOND_OPTION_TYPE_INT);
-    return _nm_utils_ascii_str_to_uint64(nm_setting_bond_get_option_normalized(s_bond, opt),
-                                         10,
-                                         0,
-                                         G_MAXUINT32,
-                                         0);
+    return _opt_value_as_u64(s_bond, opt, G_MAXUINT8);
 }
 
 guint16
 _nm_setting_bond_opt_value_as_u16(NMSettingBond *s_bond, const char *opt)
 {
-    nm_assert(_get_option_meta(opt)->opt_type == NM_BOND_OPTION_TYPE_INT);
-    return _nm_utils_ascii_str_to_uint64(nm_setting_bond_get_option_normalized(s_bond, opt),
-                                         10,
-                                         0,
-                                         G_MAXUINT16,
-                                         0);
+    return _opt_value_as_u64(s_bond, opt, G_MAXUINT16);
 }
 
-guint8
-_nm_setting_bond_opt_value_as_u8(NMSettingBond *s_bond, const char *opt)
+guint32
+_nm_setting_bond_opt_value_as_u32(NMSettingBond *s_bond, const char *opt)
 {
-    nm_assert(_get_option_meta(opt)->opt_type == NM_BOND_OPTION_TYPE_INT);
-    return _nm_utils_ascii_str_to_uint64(nm_setting_bond_get_option_normalized(s_bond, opt),
-                                         10,
-                                         0,
-                                         G_MAXUINT8,
-                                         0);
+    return _opt_value_as_u64(s_bond, opt, G_MAXUINT32);
+}
+
+bool
+_nm_setting_bond_opt_value_as_intbool(NMSettingBond *s_bond, const char *opt)
+{
+    /* This does not parse the value as a boolean string, instead, it requires
+     * that it's a number, either "0" or "1". */
+    return _opt_value_as_u64(s_bond, opt, 1);
 }
 
 /*****************************************************************************/
