@@ -816,6 +816,14 @@ _nm_setting_bond_opt_value_as_u32(NMSettingBond *s_bond, const char *opt)
     return _opt_value_as_u64(s_bond, opt, G_MAXUINT32);
 }
 
+bool
+_nm_setting_bond_opt_value_as_intbool(NMSettingBond *s_bond, const char *opt)
+{
+    /* This does not parse the value as a boolean string, instead, it requires
+     * that it's a number, either "0" or "1". */
+    return _opt_value_as_u64(s_bond, opt, 1);
+}
+
 /*****************************************************************************/
 
 static gboolean
