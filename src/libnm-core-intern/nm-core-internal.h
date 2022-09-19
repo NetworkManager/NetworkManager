@@ -517,9 +517,10 @@ NMConnectionMultiConnect _nm_connection_get_multi_connect(NMConnection *connecti
 
 gboolean _nm_setting_bond_option_supported(const char *option, NMBondMode mode);
 
-guint32 _nm_setting_bond_opt_value_as_u32(NMSettingBond *s_bond, const char *opt);
-guint16 _nm_setting_bond_opt_value_as_u16(NMSettingBond *s_bond, const char *opt);
 guint8  _nm_setting_bond_opt_value_as_u8(NMSettingBond *s_bond, const char *opt);
+guint16 _nm_setting_bond_opt_value_as_u16(NMSettingBond *s_bond, const char *opt);
+guint32 _nm_setting_bond_opt_value_as_u32(NMSettingBond *s_bond, const char *opt);
+bool    _nm_setting_bond_opt_value_as_intbool(NMSettingBond *s_bond, const char *opt);
 
 /*****************************************************************************/
 

@@ -5068,6 +5068,65 @@ test_6lowpan_1(void)
 
 /*****************************************************************************/
 
+static void
+test_bond_meta(void)
+{
+    gs_unref_object NMConnection *con = NULL;
+    NMSettingBond                *set;
+    char                          sbuf[200];
+
+    create_bond_connection(&con, &set);
+
+    g_assert_cmpstr(nm_setting_bond_get_option_normalized(set, NM_SETTING_BOND_OPTION_MODE),
+                    ==,
+                    "balance-rr");
+
+#define _A(_nm_setting_bond_opt_value_as_xxx, set, opt, value, errsv)                  \
+    G_STMT_START                                                                       \
+    {                                                                                  \
+        g_assert_cmpint(_nm_setting_bond_opt_value_as_xxx((set), (opt)), ==, (value)); \
+        g_assert_cmpint(errno, ==, (errsv));                                           \
+    }                                                                                  \
+    G_STMT_END
+
+    _A(_nm_setting_bond_opt_value_as_u32, set, NM_SETTING_BOND_OPTION_MIIMON, 100, 0);
+    _A(_nm_setting_bond_opt_value_as_u32, set, NM_SETTING_BOND_OPTION_UPDELAY, 0, 0);
+    _A(_nm_setting_bond_opt_value_as_u32, set, NM_SETTING_BOND_OPTION_DOWNDELAY, 0, 0);
+    _A(_nm_setting_bond_opt_value_as_u32, set, NM_SETTING_BOND_OPTION_ARP_INTERVAL, 0, 0);
+    _A(_nm_setting_bond_opt_value_as_u32, set, NM_SETTING_BOND_OPTION_RESEND_IGMP, 1, 0);
+    _A(_nm_setting_bond_opt_value_as_u32, set, NM_SETTING_BOND_OPTION_MIN_LINKS, 0, 0);
+    _A(_nm_setting_bond_opt_value_as_u32, set, NM_SETTING_BOND_OPTION_LP_INTERVAL, 1, 0);
+    _A(_nm_setting_bond_opt_value_as_u32, set, NM_SETTING_BOND_OPTION_PACKETS_PER_SLAVE, 1, 0);
+    _A(_nm_setting_bond_opt_value_as_u32, set, NM_SETTING_BOND_OPTION_PEER_NOTIF_DELAY, 0, 0);
+    _A(_nm_setting_bond_opt_value_as_u16, set, NM_SETTING_BOND_OPTION_AD_ACTOR_SYS_PRIO, 0, EINVAL);
+    _A(_nm_setting_bond_opt_value_as_u16, set, NM_SETTING_BOND_OPTION_AD_USER_PORT_KEY, 0, EINVAL);
+    _A(_nm_setting_bond_opt_value_as_u8, set, NM_SETTING_BOND_OPTION_NUM_GRAT_ARP, 1, 0);
+    _A(_nm_setting_bond_opt_value_as_u8, set, NM_SETTING_BOND_OPTION_ALL_SLAVES_ACTIVE, 0, 0);
+    _A(_nm_setting_bond_opt_value_as_intbool, set, NM_SETTING_BOND_OPTION_USE_CARRIER, 1, 0);
+    _A(_nm_setting_bond_opt_value_as_intbool,
+       set,
+       NM_SETTING_BOND_OPTION_TLB_DYNAMIC_LB,
+       0,
+       EINVAL);
+
+    nm_setting_bond_add_option(set, NM_SETTING_BOND_OPTION_ARP_INTERVAL, "5");
+    _A(_nm_setting_bond_opt_value_as_u32, set, NM_SETTING_BOND_OPTION_ARP_INTERVAL, 5, 0);
+
+    nm_setting_bond_add_option(set,
+                               NM_SETTING_BOND_OPTION_ARP_INTERVAL,
+                               nm_sprintf_buf(sbuf, "%d", G_MAXINT));
+    _A(_nm_setting_bond_opt_value_as_u32, set, NM_SETTING_BOND_OPTION_ARP_INTERVAL, G_MAXINT, 0);
+
+    nm_setting_bond_add_option(set, NM_SETTING_BOND_OPTION_MODE, "802.3ad");
+    _A(_nm_setting_bond_opt_value_as_u16, set, NM_SETTING_BOND_OPTION_AD_ACTOR_SYS_PRIO, 65535, 0);
+    _A(_nm_setting_bond_opt_value_as_u16, set, NM_SETTING_BOND_OPTION_AD_USER_PORT_KEY, 0, 0);
+
+    nm_setting_bond_add_option(set, NM_SETTING_BOND_OPTION_MODE, "balance-tlb");
+    _A(_nm_setting_bond_opt_value_as_intbool, set, NM_SETTING_BOND_OPTION_TLB_DYNAMIC_LB, 1, 0);
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE();
 
 int
@@ -5184,6 +5243,8 @@ main(int argc, char **argv)
     g_test_add_func("/libnm/test_empty_setting", test_empty_setting);
 
     g_test_add_func("/libnm/test_setting_metadata", test_setting_metadata);
+
+    g_test_add_func("/libnm/test_bond_meta", test_bond_meta);
 
     return g_test_run();
 }
