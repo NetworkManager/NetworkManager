@@ -68,16 +68,10 @@
 #include "n-acd.h"
 #include "n-acd-private.h"
 
-enum {
-        N_ACD_EPOLL_TIMER,
-        N_ACD_EPOLL_SOCKET,
-};
+enum{N_ACD_EPOLL_TIMER,N_ACD_EPOLL_SOCKET,};
 
 static int n_acd_get_random(unsigned int *random) {
-        uint8_t hash_seed[] = {
-                0x3a, 0x0c, 0xa6, 0xdd, 0x44, 0xef, 0x5f, 0x7a,
-                0x5e, 0xd7, 0x25, 0x37, 0xbf, 0x4e, 0x80, 0xa1,
-        };
+        uint8_t hash_seed[]={0x3a,0x0c,0xa6,0xdd,0x44,0xef,0x5f,0x7a,0x5e,0xd7,0x25,0x37,0xbf,0x4e,0x80,0xa1,};
         CSipHash hash = C_SIPHASH_NULL;
         struct timespec ts;
         const uint8_t *p;
@@ -110,13 +104,7 @@ static int n_acd_get_random(unsigned int *random) {
 }
 
 static int n_acd_socket_new(int *fdp, int fd_bpf_prog, NAcdConfig *config) {
-        const struct sockaddr_ll address = {
-                .sll_family = AF_PACKET,
-                .sll_protocol = htobe16(ETH_P_ARP),
-                .sll_ifindex = config->ifindex,
-                .sll_halen = ETH_ALEN,
-                .sll_addr = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff },
-        };
+        const struct sockaddr_ll address={.sll_family=AF_PACKET,.sll_protocol=htobe16(ETH_P_ARP),.sll_ifindex=config->ifindex,.sll_halen=ETH_ALEN,.sll_addr={0xff,0xff,0xff,0xff,0xff,0xff},};
         int r, s = -1;
 
         s = socket(PF_PACKET, SOCK_DGRAM | SOCK_CLOEXEC | SOCK_NONBLOCK, 0);
@@ -209,9 +197,7 @@ _c_public_ NAcdConfig *n_acd_config_free(NAcdConfig *config) {
  * The ifindex corresponds to the interface index provided by the linux kernel.
  * It specifies the network device to be used.
  */
-_c_public_ void n_acd_config_set_ifindex(NAcdConfig *config, int ifindex) {
-        config->ifindex = ifindex;
-}
+_c_public_ void n_acd_config_set_ifindex(NAcdConfig*config,int ifindex){config->ifindex=ifindex;}
 
 /**
  * n_acd_config_set_transport() - set transport property
@@ -222,9 +208,7 @@ _c_public_ void n_acd_config_set_ifindex(NAcdConfig *config, int ifindex) {
  * `N_ACD_TRANSPORT_*` identifiers. It selects which transport protocol `n-acd`
  * will run on.
  */
-_c_public_ void n_acd_config_set_transport(NAcdConfig *config, unsigned int transport) {
-        config->transport = transport;
-}
+_c_public_ void n_acd_config_set_transport(NAcdConfig*config,unsigned int transport){config->transport=transport;}
 
 /**
  * n_acd_config_set_mac() - set mac property
@@ -371,18 +355,12 @@ _c_public_ int n_acd_new(NAcd **acdp, NAcdConfig *config) {
         if (r)
                 return r;
 
-        eevent = (struct epoll_event){
-                .events = EPOLLIN,
-                .data.u32 = N_ACD_EPOLL_TIMER,
-        };
+        eevent=(struct epoll_event){.events=EPOLLIN,.data.u32=N_ACD_EPOLL_TIMER,};
         r = epoll_ctl(acd->fd_epoll, EPOLL_CTL_ADD, acd->timer.fd, &eevent);
         if (r < 0)
                 return -c_errno();
 
-        eevent = (struct epoll_event){
-                .events = EPOLLIN,
-                .data.u32 = N_ACD_EPOLL_SOCKET,
-        };
+        eevent=(struct epoll_event){.events=EPOLLIN,.data.u32=N_ACD_EPOLL_SOCKET,};
         r = epoll_ctl(acd->fd_epoll, EPOLL_CTL_ADD, acd->fd_socket, &eevent);
         if (r < 0)
                 return -c_errno();
@@ -398,8 +376,7 @@ static void n_acd_free_internal(NAcd *acd) {
         if (!acd)
                 return;
 
-        c_list_for_each_entry_safe(node, t_node, &acd->event_list, acd_link)
-                n_acd_event_node_free(node);
+        c_list_for_each_entry_safe(node,t_node,&acd->event_list,acd_link)n_acd_event_node_free(node);
 
         c_assert(c_rbtree_is_empty(&acd->ip_tree));
 
@@ -476,22 +453,8 @@ int n_acd_raise(NAcd *acd, NAcdEventNode **nodep, unsigned int event) {
 }
 
 int n_acd_send(NAcd *acd, const struct in_addr *tpa, const struct in_addr *spa) {
-        struct sockaddr_ll address = {
-                .sll_family = AF_PACKET,
-                .sll_protocol = htobe16(ETH_P_ARP),
-                .sll_ifindex = acd->ifindex,
-                .sll_halen = ETH_ALEN,
-                .sll_addr = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff },
-        };
-        struct ether_arp arp = {
-                .ea_hdr = {
-                        .ar_hrd = htobe16(ARPHRD_ETHER),
-                        .ar_pro = htobe16(ETHERTYPE_IP),
-                        .ar_hln = sizeof(acd->mac),
-                        .ar_pln = sizeof(uint32_t),
-                        .ar_op = htobe16(ARPOP_REQUEST),
-                },
-        };
+        struct sockaddr_ll address={.sll_family=AF_PACKET,.sll_protocol=htobe16(ETH_P_ARP),.sll_ifindex=acd->ifindex,.sll_halen=ETH_ALEN,.sll_addr={0xff,0xff,0xff,0xff,0xff,0xff},};
+        struct ether_arp arp={.ea_hdr={.ar_hrd=htobe16(ARPHRD_ETHER),.ar_pro=htobe16(ETHERTYPE_IP),.ar_hln=sizeof(acd->mac),.ar_pln=sizeof(uint32_t),.ar_op=htobe16(ARPOP_REQUEST),},};
         ssize_t l;
         int r;
 
@@ -501,12 +464,7 @@ int n_acd_send(NAcd *acd, const struct in_addr *tpa, const struct in_addr *spa) 
         if (spa)
                 memcpy(arp.arp_spa, &spa->s_addr, sizeof(spa->s_addr));
 
-        l = sendto(acd->fd_socket,
-                   &arp,
-                   sizeof(arp),
-                   MSG_NOSIGNAL,
-                   (struct sockaddr *)&address,
-                   sizeof(address));
+        l=sendto(acd->fd_socket,&arp,sizeof(arp),MSG_NOSIGNAL,(struct sockaddr*)&address,sizeof(address));
         if (l < 0) {
                 if (errno == EAGAIN || errno == ENOBUFS) {
                         /*
@@ -568,9 +526,7 @@ int n_acd_send(NAcd *acd, const struct in_addr *tpa, const struct in_addr *spa) 
  *
  * Currently, the file-descriptor is an epoll-fd.
  */
-_c_public_ void n_acd_get_fd(NAcd *acd, int *fdp) {
-        *fdp = acd->fd_epoll;
-}
+_c_public_ void n_acd_get_fd(NAcd*acd,int*fdp){*fdp=acd->fd_epoll;}
 
 static int n_acd_handle_timeout(NAcd *acd) {
         NAcdProbe *probe;
@@ -906,12 +862,8 @@ _c_public_ int n_acd_dispatch(NAcd *acd) {
 
         for (i = 0; i < n; ++i) {
                 switch (events[i].data.u32) {
-                case N_ACD_EPOLL_TIMER:
-                        r = n_acd_dispatch_timer(acd, events + i);
-                        break;
-                case N_ACD_EPOLL_SOCKET:
-                        r = n_acd_dispatch_socket(acd, events + i);
-                        break;
+                case N_ACD_EPOLL_TIMER:r=n_acd_dispatch_timer(acd,events+i);break;
+                case N_ACD_EPOLL_SOCKET:r=n_acd_dispatch_socket(acd,events+i);break;
                 default:
                         c_assert(0);
                         r = 0;
@@ -1022,6 +974,4 @@ _c_public_ int n_acd_pop_event(NAcd *acd, NAcdEvent **eventp) {
  * Return: 0 on success, N_ACD_E_INVALID_ARGUMENT on invalid configuration
  *         parameters, negative error code on failure.
  */
-_c_public_ int n_acd_probe(NAcd *acd, NAcdProbe **probep, NAcdProbeConfig *config) {
-        return n_acd_probe_new(probep, acd, config);
-}
+_c_public_ int n_acd_probe(NAcd*acd,NAcdProbe**probep,NAcdProbeConfig*config){return n_acd_probe_new(probep,acd,config);}
