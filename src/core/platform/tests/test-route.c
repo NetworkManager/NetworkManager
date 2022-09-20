@@ -691,17 +691,16 @@ test_ip4_route_options(gconstpointer test_data)
         const NMPlatformIP4Address *a = &addr[i];
 
         g_assert(a->ifindex == IFINDEX);
-        g_assert(nm_platform_ip4_address_add(
-            NM_PLATFORM_GET,
-            a->ifindex,
-            a->address,
-            a->plen,
-            a->peer_address,
-            nm_platform_ip4_broadcast_address_create(a->address, a->plen),
-            a->lifetime,
-            a->preferred,
-            a->n_ifa_flags,
-            a->label));
+        g_assert(nm_platform_ip4_address_add(NM_PLATFORM_GET,
+                                             a->ifindex,
+                                             a->address,
+                                             a->plen,
+                                             a->peer_address,
+                                             nm_ip4_addr_get_broadcast_address(a->address, a->plen),
+                                             a->lifetime,
+                                             a->preferred,
+                                             a->n_ifa_flags,
+                                             a->label));
         if (a->peer_address == a->address)
             _wait_for_ipv4_addr_device_route(NM_PLATFORM_GET, 200, a->ifindex, a->address, a->plen);
     }

@@ -1423,12 +1423,6 @@ GType nm_platform_get_type(void);
 /*****************************************************************************/
 
 static inline in_addr_t
-nm_platform_ip4_broadcast_address_create(in_addr_t address, guint8 plen)
-{
-    return address | ~nm_ip4_addr_netmask_from_prefix(plen);
-}
-
-static inline in_addr_t
 nm_platform_ip4_broadcast_address_from_addr(const NMPlatformIP4Address *addr)
 {
     nm_assert(addr);
@@ -1439,7 +1433,7 @@ nm_platform_ip4_broadcast_address_from_addr(const NMPlatformIP4Address *addr)
     /* the set broadcast-address gets ignored, and we determine a default brd base
      * on the peer IFA_ADDRESS. */
     if (addr->peer_address != 0u && addr->plen < 31 /* RFC3021 */)
-        return nm_platform_ip4_broadcast_address_create(addr->peer_address, addr->plen);
+        return nm_ip4_addr_get_broadcast_address(addr->peer_address, addr->plen);
     return 0u;
 }
 

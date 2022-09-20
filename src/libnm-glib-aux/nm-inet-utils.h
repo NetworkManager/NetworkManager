@@ -174,6 +174,12 @@ nm_ip4_addr_netmask_from_prefix(guint32 prefix)
 guint32 nm_ip4_addr_get_default_prefix0(in_addr_t ip);
 guint32 nm_ip4_addr_get_default_prefix(in_addr_t ip);
 
+static inline in_addr_t
+nm_ip4_addr_get_broadcast_address(in_addr_t address, guint8 plen)
+{
+    return address | ~nm_ip4_addr_netmask_from_prefix(plen);
+}
+
 gconstpointer
 nm_ip_addr_clear_host_address(int family, gpointer dst, gconstpointer src, guint32 plen);
 
