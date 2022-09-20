@@ -7,6 +7,7 @@ libnm_platform = static_library(
     'nm-netlink.c',
     'nm-platform-utils.c',
     'nm-platform.c',
+    'nmp-base.c',
     'nmp-global-tracker.c',
     'nmp-netns.c',
     'nmp-object.c',

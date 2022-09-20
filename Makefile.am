@@ -607,6 +607,7 @@ src_libnm_platform_libnm_platform_la_SOURCES = \
 	src/libnm-platform/nm-platform-utils.h \
 	src/libnm-platform/nm-platform.c \
 	src/libnm-platform/nm-platform.h \
+	src/libnm-platform/nmp-base.c \
 	src/libnm-platform/nmp-base.h \
 	src/libnm-platform/nmp-global-tracker.c \
 	src/libnm-platform/nmp-global-tracker.h \
