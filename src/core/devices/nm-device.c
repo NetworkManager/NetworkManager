@@ -18,7 +18,7 @@
 #include <netinet/in.h>
 #include <netinet/if_ether.h>
 #include <linux/if.h>
-#include <linux/if_addr.h>
+#include "nm-compat-headers/linux/if_addr.h"
 #include <linux/rtnetlink.h>
 #include <linux/if_ether.h>
 #include <linux/if_infiniband.h>

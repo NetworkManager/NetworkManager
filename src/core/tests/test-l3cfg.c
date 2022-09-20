@@ -2,7 +2,7 @@
 
 #include "src/core/nm-default-daemon.h"
 
-#include <linux/if_addr.h>
+#include "nm-compat-headers/linux/if_addr.h"
 
 #include "nm-l3cfg.h"
 #include "nm-l3-ipv4ll.h"
