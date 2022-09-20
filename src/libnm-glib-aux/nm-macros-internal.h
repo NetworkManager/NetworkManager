@@ -496,6 +496,17 @@ nm_strdup_not_empty(const char *str)
 }
 
 static inline char *
+nm_str_truncate(char *str)
+{
+    /* This is trivial, and is only useful in a macro, to
+     * ensure that we access the macro argument only once. */
+    nm_assert(str);
+
+    str[0] = '\0';
+    return str;
+}
+
+static inline char *
 nm_str_realloc(char *str)
 {
     gs_free char *s = str;
