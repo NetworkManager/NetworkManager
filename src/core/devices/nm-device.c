@@ -96,6 +96,8 @@
 #define NM_DEVICE_AUTH_RETRIES_INFINITY -2
 #define NM_DEVICE_AUTH_RETRIES_DEFAULT  3
 
+#define AUTOCONNECT_RESET_RETRIES_TIMER 300
+
 /*****************************************************************************/
 
 typedef void (*ActivationHandleFunc)(NMDevice *self);
@@ -761,6 +763,9 @@ typedef struct _NMDevicePrivate {
 
     GVariant *ports_variant; /* Array of port devices D-Bus path */
     char     *prop_ip_iface; /* IP interface D-Bus property */
+
+    int    autoconnect_retries;
+    gint32 autoconnect_retries_blocked_until;
 } NMDevicePrivate;
 
 G_DEFINE_ABSTRACT_TYPE(NMDevice, nm_device, NM_TYPE_DBUS_OBJECT)
@@ -16876,6 +16881,49 @@ nm_device_get_initial_hw_address(NMDevice *self)
     return NM_DEVICE_GET_PRIVATE(self)->hw_addr_initial;
 }
 
+void
+nm_device_set_autoconnect_retries(NMDevice *self, int tries)
+{
+    NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
+
+    if (priv->autoconnect_retries != tries) {
+        _LOGT(LOGD_DEVICE, "autoconnect: retries set %d", tries);
+        priv->autoconnect_retries = tries;
+    }
+
+    if (tries)
+        priv->autoconnect_retries_blocked_until = 0; /* we are not blocked anymore */
+    else
+        priv->autoconnect_retries_blocked_until =
+            nm_utils_get_monotonic_timestamp_sec() + AUTOCONNECT_RESET_RETRIES_TIMER;
+}
+
+int
+nm_device_get_autoconnect_retries(NMDevice *self)
+{
+    NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
+
+    return priv->autoconnect_retries;
+}
+
+gint32
+nm_device_autoconnect_retries_blocked_until(NMDevice *self)
+{
+    NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
+
+    return priv->autoconnect_retries_blocked_until;
+}
+
+void
+nm_device_autoconnect_retries_reset(NMDevice *self)
+{
+    NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
+
+    /* default value, we will sync. with connection value when needed */
+    priv->autoconnect_retries               = -2;
+    priv->autoconnect_retries_blocked_until = 0;
+}
+
 /**
  * nm_device_spec_match_list:
  * @self: an #NMDevice
@@ -17627,6 +17675,8 @@ nm_device_init(NMDevice *self)
     priv->sys_iface_state_      = NM_DEVICE_SYS_IFACE_STATE_EXTERNAL;
 
     priv->promisc_reset = NM_OPTION_BOOL_DEFAULT;
+
+    priv->autoconnect_retries = -2;
 }
 
 static GObject *
