@@ -3305,30 +3305,14 @@ nm_platform_wpan_set_channel(NMPlatform *self, int ifindex, guint8 page, guint8 
     return klass->wpan_set_channel(self, ifindex, page, channel);
 }
 
-#define TO_STRING_DEV_BUF_SIZE (5 + 15 + 1)
-static const char *
-_to_string_dev(NMPlatform *self, int ifindex, char *buf, size_t size)
-{
-    nm_assert(buf);
-    nm_assert(size >= TO_STRING_DEV_BUF_SIZE);
+/*****************************************************************************/
 
-    if (ifindex) {
-        const char *name = ifindex > 0 && self ? nm_platform_link_get_name(self, ifindex) : NULL;
-        char       *buf2;
-
-        strcpy(buf, " dev ");
-        buf2 = buf + 5;
-        size -= 5;
-
-        if (name)
-            g_strlcpy(buf2, name, size);
-        else
-            g_snprintf(buf2, size, "%d", ifindex);
-    } else
-        buf[0] = 0;
-
-    return buf;
-}
+#define _to_string_dev(arr, ifindex)                                                   \
+    ({                                                                                 \
+        const int _ifindex = (ifindex);                                                \
+                                                                                       \
+        _ifindex ? nm_sprintf_buf((arr), " dev %d", ifindex) : nm_str_truncate((arr)); \
+    })
 
 #define TO_STRING_IFA_FLAGS_BUF_SIZE 256
 
@@ -3722,7 +3706,7 @@ nm_platform_ip4_address_delete(NMPlatform *self,
                                guint8      plen,
                                in_addr_t   peer_address)
 {
-    char str_dev[TO_STRING_DEV_BUF_SIZE];
+    char str_dev[30];
     char b1[NM_INET_ADDRSTRLEN];
     char b2[NM_INET_ADDRSTRLEN];
     char str_peer[INET_ADDRSTRLEN + 50];
@@ -3738,14 +3722,14 @@ nm_platform_ip4_address_delete(NMPlatform *self,
            peer_address != address
                ? nm_sprintf_buf(str_peer, "peer %s, ", nm_inet4_ntop(peer_address, b2))
                : "",
-           _to_string_dev(self, ifindex, str_dev, sizeof(str_dev)));
+           _to_string_dev(str_dev, ifindex));
     return klass->ip4_address_delete(self, ifindex, address, plen, peer_address);
 }
 
 gboolean
 nm_platform_ip6_address_delete(NMPlatform *self, int ifindex, struct in6_addr address, guint8 plen)
 {
-    char str_dev[TO_STRING_DEV_BUF_SIZE];
+    char str_dev[30];
     char sbuf[NM_INET_ADDRSTRLEN];
 
     _CHECK_SELF(self, klass, FALSE);
@@ -3756,7 +3740,7 @@ nm_platform_ip6_address_delete(NMPlatform *self, int ifindex, struct in6_addr ad
     _LOG3D("address: deleting IPv6 address %s/%d, %s",
            nm_inet6_ntop(&address, sbuf),
            plen,
-           _to_string_dev(self, ifindex, str_dev, sizeof(str_dev)));
+           _to_string_dev(str_dev, ifindex));
     return klass->ip6_address_delete(self, ifindex, address, plen);
 }
 
@@ -6532,7 +6516,7 @@ nm_platform_lnk_vxlan_to_string(const NMPlatformLnkVxlan *lnk, char *buf, gsize 
     char str_group6[100];
     char str_local[100];
     char str_local6[100];
-    char str_dev[25];
+    char str_dev[30];
     char str_limit[25];
     char str_src_port[35];
     char str_dst_port[25];
@@ -6603,7 +6587,7 @@ nm_platform_lnk_vxlan_to_string(const NMPlatformLnkVxlan *lnk, char *buf, gsize 
         str_group6,
         str_local,
         str_local6,
-        lnk->parent_ifindex ? nm_sprintf_buf(str_dev, " dev %d", lnk->parent_ifindex) : "",
+        _to_string_dev(str_dev, lnk->parent_ifindex),
         lnk->src_port_min || lnk->src_port_max
             ? nm_sprintf_buf(str_src_port, " srcport %u %u", lnk->src_port_min, lnk->src_port_max)
             : "",
@@ -6725,9 +6709,12 @@ nm_platform_ip4_address_to_string(const NMPlatformIP4Address *address, char *buf
     char        s_flags[TO_STRING_IFA_FLAGS_BUF_SIZE];
     char        s_address[INET_ADDRSTRLEN];
     char        s_peer[INET_ADDRSTRLEN];
-    char        str_dev[TO_STRING_DEV_BUF_SIZE];
+    char        str_dev[30];
     char        str_label[32];
-    char        str_lft[30], str_pref[30], str_time[50], s_source[50];
+    char        str_lft[30];
+    char        str_pref[30];
+    char        str_time[50];
+    char        s_source[50];
     char       *str_peer = NULL;
     const char *str_lft_p, *str_pref_p, *str_time_p;
     gint32      now = nm_utils_get_monotonic_timestamp_sec();
@@ -6743,8 +6730,6 @@ nm_platform_ip4_address_to_string(const NMPlatformIP4Address *address, char *buf
         inet_ntop(AF_INET, &address->peer_address, s_peer, sizeof(s_peer));
         str_peer = g_strconcat(" ptp ", s_peer, NULL);
     }
-
-    _to_string_dev(NULL, address->ifindex, str_dev, sizeof(str_dev));
 
     if (*address->label)
         g_snprintf(str_label, sizeof(str_label), " label %s", address->label);
@@ -6802,7 +6787,7 @@ nm_platform_ip4_address_to_string(const NMPlatformIP4Address *address, char *buf
         str_pref_p,
         str_time_p,
         str_peer ?: "",
-        str_dev,
+        _to_string_dev(str_dev, address->ifindex),
         _to_string_ifa_flags(address->n_ifa_flags, s_flags, sizeof(s_flags)),
         str_label,
         nmp_utils_ip_config_source_to_string(address->addr_source, s_source, sizeof(s_source)),
@@ -6884,8 +6869,11 @@ nm_platform_ip6_address_to_string(const NMPlatformIP6Address *address, char *buf
     char        s_flags[TO_STRING_IFA_FLAGS_BUF_SIZE];
     char        s_address[INET6_ADDRSTRLEN];
     char        s_peer[INET6_ADDRSTRLEN];
-    char        str_lft[30], str_pref[30], str_time[50], s_source[50];
-    char        str_dev[TO_STRING_DEV_BUF_SIZE];
+    char        str_lft[30];
+    char        str_pref[30];
+    char        str_time[50];
+    char        s_source[50];
+    char        str_dev[30];
     char       *str_peer = NULL;
     const char *str_lft_p, *str_pref_p, *str_time_p;
     gint32      now = nm_utils_get_monotonic_timestamp_sec();
@@ -6899,8 +6887,6 @@ nm_platform_ip6_address_to_string(const NMPlatformIP6Address *address, char *buf
         inet_ntop(AF_INET6, &address->peer_address, s_peer, sizeof(s_peer));
         str_peer = g_strconcat(" ptp ", s_peer, NULL);
     }
-
-    _to_string_dev(NULL, address->ifindex, str_dev, sizeof(str_dev));
 
     str_lft_p = _lifetime_to_string(address->timestamp,
                                     address->lifetime ?: NM_PLATFORM_LIFETIME_PERMANENT,
@@ -6935,7 +6921,7 @@ nm_platform_ip6_address_to_string(const NMPlatformIP6Address *address, char *buf
         str_pref_p,
         str_time_p,
         str_peer ?: "",
-        str_dev,
+        _to_string_dev(str_dev, address->ifindex),
         _to_string_ifa_flags(address->n_ifa_flags, s_flags, sizeof(s_flags)),
         nmp_utils_ip_config_source_to_string(address->addr_source, s_source, sizeof(s_source)),
         address->a_force_commit ? " force-commit" : "");
@@ -6995,7 +6981,7 @@ nm_platform_ip4_route_to_string(const NMPlatformIP4Route *route, char *buf, gsiz
     char s_network[INET_ADDRSTRLEN];
     char s_gateway[INET_ADDRSTRLEN];
     char s_pref_src[INET_ADDRSTRLEN];
-    char str_dev[TO_STRING_DEV_BUF_SIZE];
+    char str_dev[30];
     char str_mss[32];
     char str_table[30];
     char str_scope[30];
@@ -7020,8 +7006,6 @@ nm_platform_ip4_route_to_string(const NMPlatformIP4Route *route, char *buf, gsiz
         s_gateway[0] = '\0';
     else
         inet_ntop(AF_INET, &route->gateway, s_gateway, sizeof(s_gateway));
-
-    _to_string_dev(NULL, route->ifindex, str_dev, sizeof(str_dev));
 
     g_snprintf(
         buf,
@@ -7060,7 +7044,7 @@ nm_platform_ip4_route_to_string(const NMPlatformIP4Route *route, char *buf, gsiz
         route->plen,
         s_gateway[0] ? " via " : "",
         s_gateway,
-        str_dev,
+        _to_string_dev(str_dev, route->ifindex),
         route->metric_any
             ? (route->metric ? nm_sprintf_buf(str_metric, "??+%u", route->metric) : "??")
             : nm_sprintf_buf(str_metric, "%u", route->metric),
@@ -7137,7 +7121,7 @@ nm_platform_ip6_route_to_string(const NMPlatformIP6Route *route, char *buf, gsiz
     char str_table[30];
     char str_pref[40];
     char str_pref2[30];
-    char str_dev[TO_STRING_DEV_BUF_SIZE];
+    char str_dev[30];
     char str_mss[32];
     char s_source[50];
     char str_window[32];
@@ -7163,8 +7147,6 @@ nm_platform_ip6_route_to_string(const NMPlatformIP6Route *route, char *buf, gsiz
         s_pref_src[0] = 0;
     else
         inet_ntop(AF_INET6, &route->pref_src, s_pref_src, sizeof(s_pref_src));
-
-    _to_string_dev(NULL, route->ifindex, str_dev, sizeof(str_dev));
 
     g_snprintf(
         buf,
@@ -7203,7 +7185,7 @@ nm_platform_ip6_route_to_string(const NMPlatformIP6Route *route, char *buf, gsiz
         route->plen,
         s_gateway[0] ? " via " : "",
         s_gateway,
-        str_dev,
+        _to_string_dev(str_dev, route->ifindex),
         route->metric_any
             ? (route->metric ? nm_sprintf_buf(str_metric, "??+%u", route->metric) : "??")
             : nm_sprintf_buf(str_metric, "%u", route->metric),
@@ -7485,7 +7467,7 @@ nm_platform_routing_rule_to_string(const NMPlatformRoutingRule *routing_rule, ch
 const char *
 nm_platform_qdisc_to_string(const NMPlatformQdisc *qdisc, char *buf, gsize len)
 {
-    char        str_dev[TO_STRING_DEV_BUF_SIZE];
+    char        str_dev[30];
     const char *buf0;
 
     if (!nm_utils_to_string_buffer_init_null(qdisc, &buf, &len))
@@ -7497,7 +7479,7 @@ nm_platform_qdisc_to_string(const NMPlatformQdisc *qdisc, char *buf, gsize len)
                      &len,
                      "%s%s family %u handle %x parent %x info %x",
                      qdisc->kind,
-                     _to_string_dev(NULL, qdisc->ifindex, str_dev, sizeof(str_dev)),
+                     _to_string_dev(str_dev, qdisc->ifindex),
                      qdisc->addr_family,
                      qdisc->handle,
                      qdisc->parent,
@@ -7622,7 +7604,7 @@ nm_platform_qdisc_cmp(const NMPlatformQdisc *a, const NMPlatformQdisc *b)
 const char *
 nm_platform_tfilter_to_string(const NMPlatformTfilter *tfilter, char *buf, gsize len)
 {
-    char  str_dev[TO_STRING_DEV_BUF_SIZE];
+    char  str_dev[30];
     char  act_buf[300];
     char *p;
     gsize l;
@@ -7663,7 +7645,7 @@ nm_platform_tfilter_to_string(const NMPlatformTfilter *tfilter, char *buf, gsize
                len,
                "%s%s family %u handle %x parent %x info %x%s",
                tfilter->kind,
-               _to_string_dev(NULL, tfilter->ifindex, str_dev, sizeof(str_dev)),
+               _to_string_dev(str_dev, tfilter->ifindex),
                tfilter->addr_family,
                tfilter->handle,
                tfilter->parent,
