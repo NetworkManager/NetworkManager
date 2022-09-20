@@ -73,7 +73,7 @@ test_cleanup_internal(void)
                                          addr4,
                                          plen4,
                                          addr4,
-                                         nm_platform_ip4_broadcast_address_create(addr4, plen4),
+                                         nm_ip4_addr_get_broadcast_address(addr4, plen4),
                                          lifetime,
                                          preferred,
                                          0,
