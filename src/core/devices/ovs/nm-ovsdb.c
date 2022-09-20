@@ -18,6 +18,7 @@
 #include "nm-manager.h"
 #include "nm-setting-ovs-external-ids.h"
 #include "nm-priv-helper-call.h"
+#include "libnm-platform/nm-platform.h"
 
 /*****************************************************************************/
 
@@ -120,6 +121,7 @@ enum {
 static guint signals[LAST_SIGNAL] = {0};
 
 typedef struct {
+    NMPlatform        *platform;
     GSocketConnection *conn;
     GCancellable      *conn_cancellable;
     char               buf[4096]; /* Input buffer */
@@ -135,8 +137,14 @@ typedef struct {
     GHashTable *bridges;    /* bridge uuid => OpenvswitchBridge */
     char       *db_uuid;
     guint       num_failures;
-    guint       num_pending_deletions;
     bool        ready : 1;
+    struct {
+        GPtrArray *interfaces;      /* Interface names we are waiting to go away */
+        GSource   *timeout_source;  /* After all deletions complete, wait this
+                                    * timeout for interfaces to disappear */
+        gulong     link_changed_id; /* Platform link-changed signal handle */
+        guint      num_pending_del; /* Number of ovsdb deletions pending */
+    } cleanup;
 } NMOvsdbPrivate;
 
 struct _NMOvsdb {
@@ -161,6 +169,7 @@ static void ovsdb_disconnect(NMOvsdb *self, gboolean retry, gboolean is_disposin
 static void ovsdb_read(NMOvsdb *self);
 static void ovsdb_write(NMOvsdb *self);
 static void ovsdb_next_command(NMOvsdb *self);
+static void cleanup_check_ready(NMOvsdb *self);
 
 /*****************************************************************************/
 
@@ -2283,21 +2292,114 @@ ovsdb_disconnect(NMOvsdb *self, gboolean retry, gboolean is_disposing)
 }
 
 static void
-_check_ready(NMOvsdb *self)
+cleanup_emit_ready(NMOvsdb *self, const char *reason)
 {
     NMOvsdbPrivate *priv = NM_OVSDB_GET_PRIVATE(self);
 
-    nm_assert(!priv->ready);
+    _LOGT("cleanup: ready (%s)", reason);
 
-    if (priv->num_pending_deletions == 0) {
-        priv->ready = TRUE;
-        g_signal_emit(self, signals[READY], 0);
-        nm_manager_unblock_failed_ovs_interfaces(nm_manager_get());
-    }
+    nm_clear_pointer(&priv->cleanup.interfaces, g_ptr_array_unref);
+    nm_clear_g_source_inst(&priv->cleanup.timeout_source);
+    nm_clear_g_signal_handler(priv->platform, &priv->cleanup.link_changed_id);
+
+    priv->ready = TRUE;
+    g_signal_emit(self, signals[READY], 0);
+    nm_manager_unblock_failed_ovs_interfaces(nm_manager_get());
+}
+
+static gboolean
+cleanup_timeout(NMOvsdb *self)
+{
+    cleanup_emit_ready(self, "timeout");
+    return G_SOURCE_CONTINUE;
 }
 
 static void
-_del_initial_iface_cb(GError *error, gpointer user_data)
+cleanup_link_cb(NMPlatform     *platform,
+                int             obj_type_i,
+                int             ifindex,
+                NMPlatformLink *plink,
+                int             change_type_i,
+                gpointer        user_data)
+{
+    const NMPlatformSignalChangeType change_type = change_type_i;
+
+    if (change_type != NM_PLATFORM_SIGNAL_REMOVED)
+        return;
+
+    cleanup_check_ready(user_data);
+}
+
+static void
+cleanup_check_ready(NMOvsdb *self)
+{
+    NMOvsdbPrivate *priv = NM_OVSDB_GET_PRIVATE(self);
+    guint           i    = 0;
+
+    nm_assert(!priv->ready);
+
+    if (priv->cleanup.num_pending_del > 0)
+        return;
+
+    /* After we have deleted an interface from ovsdb, the link will stay
+     * in platform until ovs-vswitch removes it. To avoid race conditions,
+     * we need to wait until the link goes away; otherwise, after adding the
+     * interface again, these race conditions can happen:
+     * 1) we see the link in platform, and proceed with activation. But after
+     *    that, ovs-vswitchd reads the updates from ovsdb-server and deletes/recreates
+     *    the link.
+     * 2) ovs-vswitch combines the delete/insert of the interface to a no-op. NM sees
+     *    the link staying in platform, but doesn't know whether the link is ready
+     *    or we are again in case 1)
+     * In other words, it's necessary to wait that the link goes away before inserting
+     * the interface again.
+     */
+    while (i < nm_g_ptr_array_len(priv->cleanup.interfaces)) {
+        const char                  *ifname;
+        const NMDedupMultiHeadEntry *pl_links_head_entry;
+        NMDedupMultiIter             pliter;
+        const NMPlatformLink        *link;
+        gboolean                     found = FALSE;
+
+        ifname              = priv->cleanup.interfaces->pdata[i];
+        pl_links_head_entry = nm_platform_lookup_link_by_ifname(priv->platform, ifname);
+        nmp_cache_iter_for_each_link (&pliter, pl_links_head_entry, &link) {
+            if (link->type == NM_LINK_TYPE_OPENVSWITCH
+                && nmp_object_is_visible(NMP_OBJECT_UP_CAST(link))) {
+                found = TRUE;
+                break;
+            }
+        }
+
+        if (!found) {
+            g_ptr_array_remove_index_fast(priv->cleanup.interfaces, i);
+            continue;
+        }
+        i++;
+    }
+
+    if (nm_g_ptr_array_len(priv->cleanup.interfaces) == 0) {
+        cleanup_emit_ready(self, "all interfaces deleted");
+        return;
+    }
+
+    _LOGT("cleanup: still waiting for %d interfaces", priv->cleanup.interfaces->len);
+
+    if (priv->cleanup.timeout_source) {
+        /* We already registered the timeout/change-callback */
+        return;
+    }
+
+    priv->cleanup.timeout_source =
+        nm_g_timeout_add_seconds_source(6, G_SOURCE_FUNC(cleanup_timeout), self);
+    priv->cleanup.link_changed_id = g_signal_connect(priv->platform,
+                                                     NM_PLATFORM_SIGNAL_LINK_CHANGED,
+                                                     G_CALLBACK(cleanup_link_cb),
+                                                     self);
+}
+
+static void
+cleanup_del_iface_cb(GError *error, gpointer user_data)
 {
     NMOvsdb        *self;
     gs_free char   *ifname = NULL;
@@ -2309,18 +2411,18 @@ _del_initial_iface_cb(GError *error, gpointer user_data)
         return;
 
     priv = NM_OVSDB_GET_PRIVATE(self);
-    nm_assert(priv->num_pending_deletions > 0);
-    priv->num_pending_deletions--;
+    nm_assert(priv->cleanup.num_pending_del > 0);
+    priv->cleanup.num_pending_del--;
 
-    _LOGD("delete initial interface '%s': %s %s%s%s, pending %u",
+    _LOGD("cleanup: deleted interface '%s': %s %s%s%s, pending %u",
           ifname,
           error ? "error" : "success",
           error ? "(" : "",
           error ? error->message : "",
           error ? ")" : "",
-          priv->num_pending_deletions);
+          priv->cleanup.num_pending_del);
 
-    _check_ready(self);
+    cleanup_check_ready(self);
 }
 
 static void
@@ -2331,7 +2433,7 @@ ovsdb_cleanup_initial_interfaces(NMOvsdb *self)
     NMUtilsUserData            *data;
     GHashTableIter              iter;
 
-    if (priv->ready || priv->num_pending_deletions != 0)
+    if (priv->ready || priv->cleanup.num_pending_del > 0 || priv->cleanup.interfaces)
         return;
 
     /* Delete OVS interfaces added by NM. Bridges and ports and
@@ -2339,17 +2441,22 @@ ovsdb_cleanup_initial_interfaces(NMOvsdb *self)
      * when no interface is present. */
     g_hash_table_iter_init(&iter, self->_priv.interfaces);
     while (g_hash_table_iter_next(&iter, NULL, (gpointer *) &interface)) {
-        if (interface->connection_uuid) {
-            priv->num_pending_deletions++;
-            _LOGD("deleting initial interface '%s' (pending: %u)",
-                  interface->name,
-                  priv->num_pending_deletions);
-            data = nm_utils_user_data_pack(self, g_strdup(interface->name));
-            nm_ovsdb_del_interface(self, interface->name, _del_initial_iface_cb, data);
+        if (!interface->connection_uuid) {
+            /* not created by NM, ignore */
+            continue;
         }
+
+        if (!priv->cleanup.interfaces)
+            priv->cleanup.interfaces = g_ptr_array_new_with_free_func(g_free);
+        g_ptr_array_add(priv->cleanup.interfaces, g_strdup(interface->name));
+
+        _LOGD("cleanup: deleting interface '%s'", interface->name);
+        priv->cleanup.num_pending_del++;
+        data = nm_utils_user_data_pack(self, g_strdup(interface->name));
+        nm_ovsdb_del_interface(self, interface->name, cleanup_del_iface_cb, data);
     }
 
-    _check_ready(self);
+    cleanup_check_ready(self);
 }
 
 static void
@@ -2622,8 +2729,9 @@ nm_ovsdb_init(NMOvsdb *self)
 
     c_list_init(&priv->calls_lst_head);
 
-    priv->input  = g_string_new(NULL);
-    priv->output = g_string_new(NULL);
+    priv->platform = g_object_ref(NM_PLATFORM_GET);
+    priv->input    = g_string_new(NULL);
+    priv->output   = g_string_new(NULL);
     priv->bridges =
         g_hash_table_new_full(nm_pstr_hash, nm_pstr_equal, (GDestroyNotify) _free_bridge, NULL);
     priv->ports =
@@ -2653,6 +2761,7 @@ dispose(GObject *object)
         priv->output = NULL;
     }
 
+    g_clear_object(&priv->platform);
     nm_clear_pointer(&priv->bridges, g_hash_table_destroy);
     nm_clear_pointer(&priv->ports, g_hash_table_destroy);
     nm_clear_pointer(&priv->interfaces, g_hash_table_destroy);
