@@ -10,6 +10,7 @@ libnm_platform = static_library(
     'nmp-global-tracker.c',
     'nmp-netns.c',
     'nmp-object.c',
+    'nmp-plobj.c',
     'wifi/nm-wifi-utils-nl80211.c',
     'wifi/nm-wifi-utils.c',
     'wpan/nm-wpan-utils.c',
