@@ -464,6 +464,11 @@ const char *nm_device_get_permanent_hw_address_full(NMDevice *self,
                                                     gboolean *out_is_fake);
 const char *nm_device_get_initial_hw_address(NMDevice *dev);
 
+void   nm_device_set_autoconnect_retries(NMDevice *self, int tries);
+int    nm_device_get_autoconnect_retries(NMDevice *self);
+gint32 nm_device_autoconnect_retries_blocked_until(NMDevice *self);
+void   nm_device_autoconnect_retries_reset(NMDevice *self);
+
 NMDhcpConfig *nm_device_get_dhcp_config(NMDevice *dev, int addr_family);
 
 NML3Cfg *nm_device_get_l3cfg(NMDevice *self);
