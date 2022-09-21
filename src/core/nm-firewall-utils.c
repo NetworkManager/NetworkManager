@@ -111,6 +111,8 @@ _share_iptables_get_name(gboolean is_iptables_chain, const char *prefix, const c
     return nm_str_buf_finalize(&strbuf, NULL);
 }
 
+/*****************************************************************************/
+
 static gboolean
 _share_iptables_call_v(const char *const *argv)
 {
@@ -171,7 +173,7 @@ _share_iptables_chain_add(const char *table, const char *chain)
 }
 
 static void
-_share_iptables_set_masquerade(gboolean add, const char *ip_iface, in_addr_t addr, guint8 plen)
+_share_iptables_set_masquerade_sync(gboolean up, const char *ip_iface, in_addr_t addr, guint8 plen)
 {
     char          str_subnet[_SHARE_IPTABLES_SUBNET_TO_STR_LEN];
     gs_free char *comment_name = NULL;
@@ -182,7 +184,7 @@ _share_iptables_set_masquerade(gboolean add, const char *ip_iface, in_addr_t add
     _share_iptables_call("" IPTABLES_PATH "",
                          "--table",
                          "nat",
-                         add ? "--insert" : "--delete",
+                         up ? "--insert" : "--delete",
                          "POSTROUTING",
                          "--source",
                          str_subnet,
@@ -309,8 +311,8 @@ _share_iptables_set_shared_chains_delete(const char *chain_input, const char *ch
     _share_iptables_chain_delete("filter", chain_forward);
 }
 
-_nm_unused static void
-_share_iptables_set_shared(gboolean add, const char *ip_iface, in_addr_t addr, guint plen)
+static void
+_share_iptables_set_shared_sync(gboolean up, const char *ip_iface, in_addr_t addr, guint plen)
 {
     gs_free char *comment_name  = NULL;
     gs_free char *chain_input   = NULL;
@@ -320,13 +322,13 @@ _share_iptables_set_shared(gboolean add, const char *ip_iface, in_addr_t addr, g
     chain_input   = _share_iptables_get_name(TRUE, "nm-sh-in", ip_iface);
     chain_forward = _share_iptables_get_name(TRUE, "nm-sh-fw", ip_iface);
 
-    if (add)
+    if (up)
         _share_iptables_set_shared_chains_add(chain_input, chain_forward, ip_iface, addr, plen);
 
     _share_iptables_call("" IPTABLES_PATH "",
                          "--table",
                          "filter",
-                         add ? "--insert" : "--delete",
+                         up ? "--insert" : "--delete",
                          "INPUT",
                          "--in-interface",
                          ip_iface,
@@ -340,7 +342,7 @@ _share_iptables_set_shared(gboolean add, const char *ip_iface, in_addr_t addr, g
     _share_iptables_call("" IPTABLES_PATH "",
                          "--table",
                          "filter",
-                         add ? "--insert" : "--delete",
+                         up ? "--insert" : "--delete",
                          "FORWARD",
                          "--jump",
                          chain_forward,
@@ -349,7 +351,7 @@ _share_iptables_set_shared(gboolean add, const char *ip_iface, in_addr_t addr, g
                          "--comment",
                          comment_name);
 
-    if (!add)
+    if (!up)
         _share_iptables_set_shared_chains_delete(chain_input, chain_forward);
 }
 
@@ -486,22 +488,30 @@ _fw_nft_call_timeout_cb(gpointer user_data)
     return G_SOURCE_CONTINUE;
 }
 
-static void
-_fw_nft_call(GBytes             *stdin_buf,
-             GCancellable       *cancellable,
-             GAsyncReadyCallback callback,
-             gpointer            callback_user_data)
+void
+nm_firewall_nft_call(GBytes             *stdin_buf,
+                     GCancellable       *cancellable,
+                     GAsyncReadyCallback callback,
+                     gpointer            callback_user_data)
 {
     gs_unref_object GSubprocessLauncher *subprocess_launcher = NULL;
     gs_free_error GError                *error               = NULL;
     FwNftCallData                       *call_data;
+    gs_free char                        *ss1 = NULL;
 
     call_data  = g_slice_new(FwNftCallData);
     *call_data = (FwNftCallData){
-        .task       = nm_g_task_new(NULL, cancellable, _fw_nft_call, callback, callback_user_data),
-        .subprocess = NULL,
+        .task =
+            nm_g_task_new(NULL, cancellable, nm_firewall_nft_call, callback, callback_user_data),
+        .subprocess     = NULL,
         .timeout_source = NULL,
     };
+
+    nm_log_trace(LOGD_SHARING,
+                 "firewall: nft: call command: [ '%s' ]",
+                 nm_utils_buf_utf8safe_escape_bytes(stdin_buf,
+                                                    NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL,
+                                                    &ss1));
 
     if (cancellable) {
         call_data->cancellable_id = g_cancellable_connect(cancellable,
@@ -554,10 +564,10 @@ _fw_nft_call(GBytes             *stdin_buf,
                            g_task_get_context(call_data->task));
 }
 
-static gboolean
-_fw_nft_call_finish(GAsyncResult *result, GError **error)
+gboolean
+nm_firewall_nft_call_finish(GAsyncResult *result, GError **error)
 {
-    g_return_val_if_fail(nm_g_task_is_valid(result, NULL, _fw_nft_call), FALSE);
+    g_return_val_if_fail(nm_g_task_is_valid(result, NULL, nm_firewall_nft_call), FALSE);
 
     return g_task_propagate_boolean(G_TASK(result), error);
 }
@@ -575,7 +585,7 @@ _fw_nft_call_sync_done(GObject *source, GAsyncResult *result, gpointer user_data
 {
     FwNftCallSyncData *data = user_data;
 
-    data->success = _fw_nft_call_finish(result, data->error);
+    data->success = nm_firewall_nft_call_finish(result, data->error);
     g_main_loop_quit(data->loop);
 }
 
@@ -590,7 +600,7 @@ _fw_nft_call_sync(GBytes *stdin_buf, GError **error)
                               .error = error,
     };
 
-    _fw_nft_call(stdin_buf, NULL, _fw_nft_call_sync_done, &data);
+    nm_firewall_nft_call(stdin_buf, NULL, _fw_nft_call_sync_done, &data);
 
     g_main_loop_run(main_loop);
     return data.success;
@@ -598,25 +608,23 @@ _fw_nft_call_sync(GBytes *stdin_buf, GError **error)
 
 /*****************************************************************************/
 
-static void
-_fw_nft_set(gboolean add, const char *ip_iface, in_addr_t addr, guint8 plen)
+#define _append(p_strbuf, fmt, ...) nm_str_buf_append_printf((p_strbuf), "" fmt "\n", ##__VA_ARGS__)
+
+static GBytes *
+_fw_nft_set_shared_construct(gboolean up, const char *ip_iface, in_addr_t addr, guint8 plen)
 {
     nm_auto_str_buf NMStrBuf strbuf = NM_STR_BUF_INIT(NM_UTILS_GET_NEXT_REALLOC_SIZE_1000, FALSE);
-    gs_unref_bytes GBytes   *stdin_buf  = NULL;
     gs_free char            *table_name = NULL;
-    gs_free char            *ss1        = NULL;
     char                     str_subnet[_SHARE_IPTABLES_SUBNET_TO_STR_LEN];
 
     table_name = _share_iptables_get_name(FALSE, "nm-shared", ip_iface);
 
     _share_iptables_subnet_to_str(str_subnet, addr, plen);
 
-#define _append(p_strbuf, fmt, ...) nm_str_buf_append_printf((p_strbuf), "" fmt "\n", ##__VA_ARGS__)
-
     _append(&strbuf, "add table ip %s", table_name);
-    _append(&strbuf, "%s table ip %s", add ? "flush" : "delete", table_name);
+    _append(&strbuf, "%s table ip %s", up ? "flush" : "delete", table_name);
 
-    if (add) {
+    if (up) {
         _append(&strbuf,
                 "add chain ip %s nat_postrouting {"
                 " type nat hook postrouting priority 100; policy accept; "
@@ -631,16 +639,15 @@ _fw_nft_set(gboolean add, const char *ip_iface, in_addr_t addr, guint8 plen)
         /* This filter_input chain serves no real purpose, because "accept" only stops
          * evaluation of the current rule. It cannot fully accept the packet. Since
          * this chain has no other rules, it is useless in this form.
+         *
+         * _append(&strbuf,
+         *         "add chain ip %s filter_input {"
+         *         " type filter hook input priority 0; policy accept; "
+         *         "};",
+         *         table_name);
+         * _append(&strbuf, "add rule ip %s filter_input tcp dport { 67, 53 } accept;", table_name);
+         * _append(&strbuf, "add rule ip %s filter_input udp dport { 67, 53 } accept;", table_name);
          */
-        /*
-        _append(&strbuf,
-                "add chain ip %s filter_input {"
-                " type filter hook input priority 0; policy accept; "
-                "};",
-                table_name);
-        _append(&strbuf, "add rule ip %s filter_input tcp dport { 67, 53 } accept;", table_name);
-        _append(&strbuf, "add rule ip %s filter_input udp dport { 67, 53 } accept;", table_name);
-        */
 
         _append(&strbuf,
                 "add chain ip %s filter_forward {"
@@ -673,14 +680,7 @@ _fw_nft_set(gboolean add, const char *ip_iface, in_addr_t addr, guint8 plen)
                 ip_iface);
     }
 
-    nm_log_trace(LOGD_SHARING,
-                 "firewall: nft command: [ %s ]",
-                 nm_utils_str_utf8safe_escape(nm_str_buf_get_str(&strbuf),
-                                              NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL,
-                                              &ss1));
-
-    stdin_buf = nm_str_buf_finalize_to_gbytes(&strbuf);
-    _fw_nft_call_sync(stdin_buf, NULL);
+    return nm_str_buf_finalize_to_gbytes(&strbuf);
 }
 
 /*****************************************************************************/
@@ -692,7 +692,7 @@ struct _NMFirewallConfig {
 };
 
 NMFirewallConfig *
-nm_firewall_config_new(const char *ip_iface, in_addr_t addr, guint8 plen)
+nm_firewall_config_new_shared(const char *ip_iface, in_addr_t addr, guint8 plen)
 {
     NMFirewallConfig *self;
 
@@ -719,17 +719,24 @@ nm_firewall_config_free(NMFirewallConfig *self)
     nm_g_slice_free(self);
 }
 
+/*****************************************************************************/
+
 void
-nm_firewall_config_apply(NMFirewallConfig *self, gboolean shared)
+nm_firewall_config_apply_sync(NMFirewallConfig *self, gboolean up)
 {
     switch (nm_firewall_utils_get_backend()) {
     case NM_FIREWALL_BACKEND_IPTABLES:
-        _share_iptables_set_masquerade(shared, self->ip_iface, self->addr, self->plen);
-        _share_iptables_set_shared(shared, self->ip_iface, self->addr, self->plen);
+        _share_iptables_set_masquerade_sync(up, self->ip_iface, self->addr, self->plen);
+        _share_iptables_set_shared_sync(up, self->ip_iface, self->addr, self->plen);
         break;
     case NM_FIREWALL_BACKEND_NFTABLES:
-        _fw_nft_set(shared, self->ip_iface, self->addr, self->plen);
+    {
+        gs_unref_bytes GBytes *stdin_buf = NULL;
+
+        stdin_buf = _fw_nft_set_shared_construct(up, self->ip_iface, self->addr, self->plen);
+        _fw_nft_call_sync(stdin_buf, NULL);
         break;
+    }
     case NM_FIREWALL_BACKEND_NONE:
         break;
     default:
