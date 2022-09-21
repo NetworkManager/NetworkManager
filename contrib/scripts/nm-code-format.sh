@@ -47,7 +47,7 @@ FILES=()
 HAS_EXPLICIT_FILES=0
 SHOW_FILENAMES=0
 TEST_ONLY=0
-CHECK_ALL=1
+CHECK_UPSTREAM=
 
 usage() {
     printf "Usage: %s [OPTION]... [FILE]...\n" "$(basename "$0")"
@@ -58,8 +58,10 @@ usage() {
     printf "    -i                 Reformat files (the default).\n"
     printf "    -n|--dry-run       Only check the files (contrary to \"-i\").\n"
     printf "    -a|--all           Check all files (the default).\n"
-    printf "    -F|--fast          Check only files from \`git diff --name-only HEAD^\` (contrary to \"-a\").\n"
+    printf "    -u|--upstream COMMIT Check only files from \`git diff --name-only COMMIT\` (contrary to \"-a\").\n"
     printf "                       This also affects directories given in the [FILE] list, but not files.\n"
+    printf "                       If this is the last parameter and COMMIT is unspecified/empty, it defaults to \"main\".\n"
+    printf "    -F|--fast          Same as \`-u HEAD^\`.\n"
     printf "    --show-filenames   Only print the filenames that would be checked/formatted\n"
     printf "    --                 Separate options from filenames/directories\n"
 }
@@ -84,10 +86,10 @@ g_ls_files() {
     local pattern="$1"
     shift
 
-    if [ $CHECK_ALL = 1 ]; then
+    if [ -z "$CHECK_UPSTREAM" ]; then
         git ls-files -- "$pattern"
     else
-        git diff --name-only HEAD^ -- "$pattern"
+        git diff --name-only "$CHECK_UPSTREAM" -- "$pattern"
     fi | ls_files_filter "$@"
 }
 
@@ -105,12 +107,19 @@ while (( $# )); do
                 continue
                 ;;
             -a|--all)
-                CHECK_ALL=1
+                CHECK_UPSTREAM=
                 shift
                 continue
                 ;;
+            -u|--upstream)
+                shift
+                CHECK_UPSTREAM="$1"
+                test -n "$CHECK_UPSTREAM" || CHECK_UPSTREAM=main
+                shift || :
+                continue
+                ;;
             -F|--fast)
-                CHECK_ALL=0
+                CHECK_UPSTREAM='HEAD^'
                 shift
                 continue
                 ;;
@@ -134,7 +143,7 @@ while (( $# )); do
     if [ -d "$1" ]; then
         while IFS='' read -r line;
             do FILES+=("$line")
-        done < <(CHECK_ALL=$CHECK_ALL g_ls_files "${1}/*.[hc]" "${EXCLUDE_PATHS[@]}")
+        done < <(CHECK_UPSTREAM="$CHECK_UPSTREAM" g_ls_files "${1}/*.[hc]" "${EXCLUDE_PATHS[@]}")
     elif [ -f "$1" ]; then
         FILES+=("$1")
     else
@@ -149,7 +158,7 @@ done
 if [ $HAS_EXPLICIT_FILES = 0 ]; then
     while IFS='' read -r line; do
         FILES+=("$line")
-    done < <(CHECK_ALL=$CHECK_ALL g_ls_files '*.[ch]' "${EXCLUDE_PATHS[@]}")
+    done < <(CHECK_UPSTREAM="$CHECK_UPSTREAM" g_ls_files '*.[ch]' "${EXCLUDE_PATHS[@]}")
 fi
 
 if [ $SHOW_FILENAMES = 1 ]; then
@@ -160,7 +169,7 @@ if [ $SHOW_FILENAMES = 1 ]; then
 fi
 
 if [ "${#FILES[@]}" = 0 ]; then
-    if [ $CHECK_ALL = 1 ]; then
+    if [ -z "$CHECK_UPSTREAM" ]; then
         die "Error: no files to check"
     fi
     exit 0
