@@ -1285,15 +1285,26 @@ _linktype_get_type(NMPlatform       *platform,
                 return NM_LINK_TYPE_WIFI;
         }
 
-        if (arptype == ARPHRD_ETHER) {
-            /* Misc non-upstream WWAN drivers.  rmnet is Qualcomm's proprietary
-             * modem interface, ccmni is MediaTek's.  FIXME: these drivers should
-             * really set devtype=WWAN.
-             */
+        /* Misc non-upstream WWAN drivers.  rmnet is Qualcomm's proprietary
+         * modem interface, ccmni is MediaTek's.  FIXME: these drivers should
+         * really set devtype=WWAN.
+         *
+         * Value "530" is the out-of-tree version of ARPHRD_RAWIP before it's
+         * merged in Linux 4.14. For the mainline version, this has the value
+         * of "519".
+         *
+         * [1] https://github.com/LineageOS/android_kernel_google_msm-4.9/commit/54948008c293fdf48552a5c39c91c09c3eb76ed2
+         */
+        if (NM_IN_SET(arptype,
+                      ARPHRD_ETHER,
+                      519 /* ARPHRD_RAWIP */,
+                      530 /* out-of-tree ARPHRD_RAWIP */)) {
             if (g_str_has_prefix(ifname, "rmnet") || g_str_has_prefix(ifname, "rev_rmnet")
                 || g_str_has_prefix(ifname, "ccmni"))
                 return NM_LINK_TYPE_WWAN_NET;
+        }
 
+        if (arptype == ARPHRD_ETHER) {
             /* Standard wired ethernet interfaces don't report an rtnl_link_type, so
              * only allow fallback to Ethernet if no type is given.  This should
              * prevent future virtual network drivers from being treated as Ethernet
