@@ -11969,7 +11969,7 @@ _dev_ipsharedx_cleanup(NMDevice *self, int addr_family)
         }
 
         if (priv->ipshared_data_4.v4.firewall_config) {
-            nm_firewall_config_apply(priv->ipshared_data_4.v4.firewall_config, FALSE);
+            nm_firewall_config_apply_sync(priv->ipshared_data_4.v4.firewall_config, FALSE);
             nm_clear_pointer(&priv->ipshared_data_4.v4.firewall_config, nm_firewall_config_free);
         }
 
@@ -12116,8 +12116,8 @@ _dev_ipshared4_start(NMDevice *self)
         goto out_fail;
 
     priv->ipshared_data_4.v4.firewall_config =
-        nm_firewall_config_new(ip_iface, ip4_addr.address, ip4_addr.plen);
-    nm_firewall_config_apply(priv->ipshared_data_4.v4.firewall_config, TRUE);
+        nm_firewall_config_new_shared(ip_iface, ip4_addr.address, ip4_addr.plen);
+    nm_firewall_config_apply_sync(priv->ipshared_data_4.v4.firewall_config, TRUE);
 
     priv->ipshared_data_4.v4.l3cd = nm_l3_config_data_ref(l3cd);
     _dev_l3_register_l3cds_set_one(self, L3_CONFIG_DATA_TYPE_SHARED_4, l3cd, FALSE);
