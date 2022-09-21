@@ -2871,7 +2871,7 @@ dispose(GObject *object)
     }
 
     g_hash_table_iter_init(&h_iter, priv->devices);
-    if (g_hash_table_iter_next(&h_iter, (gpointer *) &device, NULL)) {
+    while (g_hash_table_iter_next(&h_iter, (gpointer *) &device, NULL)) {
         g_hash_table_iter_remove(&h_iter);
         devices_list_unregister(self, device);
     }
