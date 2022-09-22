@@ -317,7 +317,10 @@ The second include is the header that belongs to the C source file. This
 is so that header files are self-contained (aside what default dependencies that
 they get and everybody can rely on).
 
-The next includes are system headers with `<>`.
+The next includes are system headers with `<>`. Exceptions are headers like
+"libnm-std-aux/nm-linux-compat.h" and "nm-compat-headers/\*" which are our small
+wrappers around system headers. These are also to be included together with system
+headers.
 
 Finally, all other headers from our source tree. Note that all build targets
 have `-I. -I./src/` in their build arguments. So to include a header like
