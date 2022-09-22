@@ -70,6 +70,7 @@ if [[ "$INSTALL_DEPENDENCIES" == yes ]]; then
       polkit-devel \
       ppp-devel \
       pygobject3-base \
+      python3-gobject-devel \
       python3 \
       python3-pexpect \
       readline-devel \
