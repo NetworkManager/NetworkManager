@@ -7672,6 +7672,14 @@ _rtnl_handle_msg(NMPlatform *platform, const struct nl_msg_lite *msg)
         }
 
         case RTM_DELADDR:
+            if (NMP_OBJECT_GET_TYPE(obj) == NMP_OBJECT_TYPE_IP6_ADDRESS) {
+                const NMPlatformIP6Address *ip6 = NMP_OBJECT_CAST_IP6_ADDRESS(obj);
+
+                if (ip6->n_ifa_flags & IFA_F_DADFAILED) {
+                    nm_platform_ip6_dadfailed_set(platform, ip6->ifindex, &ip6->address, TRUE);
+                }
+            }
+            /* fall-through */
         case RTM_DELLINK:
         case RTM_DELQDISC:
         case RTM_DELROUTE:

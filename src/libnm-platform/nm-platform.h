@@ -2386,4 +2386,10 @@ nm_platform_mptcp_addr_update(NMPlatform *self, NMOptionBool add, const NMPlatfo
 
 GPtrArray *nm_platform_mptcp_addrs_dump(NMPlatform *self);
 
+gboolean nm_platform_ip6_dadfailed_check(NMPlatform *self, int ifindex, const struct in6_addr *ip6);
+void     nm_platform_ip6_dadfailed_set(NMPlatform            *self,
+                                       int                    ifindex,
+                                       const struct in6_addr *ip6,
+                                       gboolean               failed);
+
 #endif /* __NETWORKMANAGER_PLATFORM_H__ */
