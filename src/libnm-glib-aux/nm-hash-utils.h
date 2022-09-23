@@ -105,33 +105,6 @@ nm_hash_update(NMHashState *state, const void *ptr, gsize n)
     c_siphash_append(&state->_state, ptr, n);
 }
 
-#define nm_hash_update_val(state, val)                \
-    G_STMT_START                                      \
-    {                                                 \
-        typeof(val) _val = (val);                     \
-                                                      \
-        nm_hash_update((state), &_val, sizeof(_val)); \
-    }                                                 \
-    G_STMT_END
-
-#define nm_hash_update_valp(state, val) nm_hash_update((state), (val), sizeof(*(val)))
-
-static inline void
-nm_hash_update_bool(NMHashState *state, bool val)
-{
-    nm_hash_update(state, &val, sizeof(val));
-}
-
-#define _NM_HASH_COMBINE_BOOLS_OP(x, n, op_arg) ((x) ? NM_BIT((n)) : 0ull)
-
-#define NM_HASH_COMBINE_BOOLS(type, ...)                                                 \
-    ((type) (NM_STATIC_ASSERT_EXPR_1(NM_NARG(__VA_ARGS__) <= 8 * sizeof(type))           \
-                 ? (NM_VA_ARGS_FOREACH(, , |, _NM_HASH_COMBINE_BOOLS_OP, , __VA_ARGS__)) \
-                 : 0ull))
-
-#define nm_hash_update_bools(state, ...) \
-    nm_hash_update_val(state, NM_HASH_COMBINE_BOOLS(guint8, __VA_ARGS__))
-
 #define _NM_HASH_COMBINE_VALS_TYPE_OP(x, idx, op_arg) typeof(x) _v##idx;
 #define _NM_HASH_COMBINE_VALS_INIT_OP(x, idx, op_arg) ._v##idx = (x),
 
@@ -153,6 +126,26 @@ nm_hash_update_bool(NMHashState *state, bool val)
         nm_hash_update((state), &_val, sizeof(_val)); \
     }                                                 \
     G_STMT_END
+
+#define nm_hash_update_val(state, val) nm_hash_update_vals((state), (val))
+
+#define nm_hash_update_valp(state, val) nm_hash_update((state), (val), sizeof(*(val)))
+
+static inline void
+nm_hash_update_bool(NMHashState *state, bool val)
+{
+    nm_hash_update(state, &val, sizeof(val));
+}
+
+#define _NM_HASH_COMBINE_BOOLS_OP(x, n, op_arg) ((x) ? NM_BIT((n)) : 0ull)
+
+#define NM_HASH_COMBINE_BOOLS(type, ...)                                                 \
+    ((type) (NM_STATIC_ASSERT_EXPR_1(NM_NARG(__VA_ARGS__) <= 8 * sizeof(type))           \
+                 ? (NM_VA_ARGS_FOREACH(, , |, _NM_HASH_COMBINE_BOOLS_OP, , __VA_ARGS__)) \
+                 : 0ull))
+
+#define nm_hash_update_bools(state, ...) \
+    nm_hash_update_val(state, NM_HASH_COMBINE_BOOLS(guint8, __VA_ARGS__))
 
 static inline void
 nm_hash_update_mem(NMHashState *state, const void *ptr, gsize n)
@@ -206,14 +199,16 @@ guint nm_hash_ptr(gconstpointer ptr);
 guint nm_hash_str(const char *str);
 #define nm_str_hash ((guint(*)(gconstpointer str)) nm_hash_str)
 
-#define nm_hash_val(static_seed, val)     \
-    ({                                    \
-        NMHashState _h;                   \
-                                          \
-        nm_hash_init(&_h, (static_seed)); \
-        nm_hash_update_val(&_h, (val));   \
-        nm_hash_complete(&_h);            \
+#define nm_hash_vals(static_seed, ...)         \
+    ({                                         \
+        NMHashState _h;                        \
+                                               \
+        nm_hash_init(&_h, (static_seed));      \
+        nm_hash_update_vals(&_h, __VA_ARGS__); \
+        nm_hash_complete(&_h);                 \
     })
+
+#define nm_hash_val(static_seed, val) nm_hash_vals((static_seed), (val))
 
 static inline guint
 nm_hash_mem(guint static_seed, const void *ptr, gsize n)
