@@ -632,11 +632,8 @@ static guint
 _device_route_metric_data_by_ifindex_hash(gconstpointer p)
 {
     const DeviceRouteMetricData *data = p;
-    NMHashState                  h;
 
-    nm_hash_init(&h, 1030338191);
-    nm_hash_update_vals(&h, data->ifindex);
-    return nm_hash_complete(&h);
+    return nm_hash_val(1030338191, data->ifindex);
 }
 
 static gboolean

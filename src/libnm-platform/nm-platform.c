@@ -3836,11 +3836,10 @@ static guint
 _ip4_addr_subnets_hash(gconstpointer ptr)
 {
     const NMPlatformIP4Address *addr = NMP_OBJECT_CAST_IP4_ADDRESS(ptr);
-    NMHashState                 h;
 
-    nm_hash_init(&h, 3282159733);
-    nm_hash_update_vals(&h, addr->plen, nm_ip4_addr_clear_host_address(addr->address, addr->plen));
-    return nm_hash_complete(&h);
+    return nm_hash_vals(3282159733,
+                        addr->plen,
+                        nm_ip4_addr_clear_host_address(addr->address, addr->plen));
 }
 
 static gboolean
