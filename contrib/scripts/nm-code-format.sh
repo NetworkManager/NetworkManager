@@ -66,8 +66,20 @@ usage() {
     printf "    --                 Separate options from filenames/directories\n"
 }
 
+ls_files_exist() {
+    local OLD_IFS="$IFS"
+    local f
+
+    IFS=$'\n'
+    for f in $(cat) ; do
+        test -f "$f" && printf '%s\n' "$f"
+    done
+    IFS="$OLD_IFS"
+}
+
 ls_files_filter() {
     local OLD_IFS="$IFS"
+    local f
 
     IFS=$'\n'
     for f in $(cat) ; do
@@ -89,7 +101,8 @@ g_ls_files() {
     if [ -z "$CHECK_UPSTREAM" ]; then
         git ls-files -- "$pattern"
     else
-        git diff --name-only "$CHECK_UPSTREAM" -- "$pattern"
+        git diff --no-renames --name-only "$CHECK_UPSTREAM" -- "$pattern" \
+            | ls_files_exist
     fi | ls_files_filter "$@"
 }
 
