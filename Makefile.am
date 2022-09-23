@@ -596,6 +596,8 @@ src_libnm_platform_libnm_platform_la_SOURCES = \
 	src/linux-headers/nl80211-vnd-intel.h \
 	src/linux-headers/nl802154.h \
 	\
+	src/nm-compat-headers/linux/if_addr.h \
+	\
 	src/libnm-platform/nm-linux-platform.c \
 	src/libnm-platform/nm-linux-platform.h \
 	src/libnm-platform/nm-netlink.c \
@@ -605,6 +607,7 @@ src_libnm_platform_libnm_platform_la_SOURCES = \
 	src/libnm-platform/nm-platform-utils.h \
 	src/libnm-platform/nm-platform.c \
 	src/libnm-platform/nm-platform.h \
+	src/libnm-platform/nmp-base.c \
 	src/libnm-platform/nmp-base.h \
 	src/libnm-platform/nmp-global-tracker.c \
 	src/libnm-platform/nmp-global-tracker.h \
@@ -612,6 +615,8 @@ src_libnm_platform_libnm_platform_la_SOURCES = \
 	src/libnm-platform/nmp-netns.h \
 	src/libnm-platform/nmp-object.c \
 	src/libnm-platform/nmp-object.h \
+	src/libnm-platform/nmp-plobj.c \
+	src/libnm-platform/nmp-plobj.h \
 	src/libnm-platform/wifi/nm-wifi-utils-nl80211.c \
 	src/libnm-platform/wifi/nm-wifi-utils-nl80211.h \
 	src/libnm-platform/wifi/nm-wifi-utils-private.h \

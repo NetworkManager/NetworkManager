@@ -4,7 +4,7 @@
 
 #include "nm-l3-ipv6ll.h"
 
-#include <linux/if_addr.h>
+#include "nm-compat-headers/linux/if_addr.h"
 
 #include "nm-core-utils.h"
 
