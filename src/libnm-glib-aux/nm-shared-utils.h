@@ -771,6 +771,8 @@ gssize _nm_strv_find_first(const char *const *list, gssize len, const char *need
 #define nm_strv_find_first(list, len, needle) \
     _nm_strv_find_first(NM_CAST_STRV_CC(list), (len), (needle))
 
+#define nm_strv_contains(list, len, needle) (nm_strv_find_first((list), (len), (needle)) >= 0)
+
 gboolean nm_strv_has_duplicate(const char *const *list, gssize len, gboolean is_sorted);
 
 const char **nm_strv_cleanup_const(const char **strv, gboolean skip_empty, gboolean skip_repeated);
