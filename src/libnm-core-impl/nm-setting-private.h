@@ -20,13 +20,15 @@
 
 /*****************************************************************************/
 
+struct _NMRefString;
+
 typedef struct {
     NMConnection *self;
 
     NMSetting *settings[_NM_META_SETTING_TYPE_NUM];
 
     /* D-Bus path of the connection, if any */
-    char *path;
+    struct _NMRefString *path;
 } NMConnectionPrivate;
 
 extern GTypeClass *_nm_simple_connection_class_instance;

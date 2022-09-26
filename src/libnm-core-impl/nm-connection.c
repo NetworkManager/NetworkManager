@@ -11,6 +11,7 @@
 #include <arpa/inet.h>
 
 #include "libnm-glib-aux/nm-uuid.h"
+#include "libnm-glib-aux/nm-ref-string.h"
 #include "nm-connection-private.h"
 #include "nm-utils.h"
 #include "nm-setting-private.h"
@@ -59,7 +60,7 @@ _nm_connection_private_clear(NMConnectionPrivate *priv)
 {
     if (priv->self) {
         _nm_connection_clear_settings(priv->self, priv);
-        nm_clear_g_free(&priv->path);
+        nm_clear_pointer(&priv->path, nm_ref_string_unref);
         priv->self = NULL;
     }
 }
@@ -2913,14 +2914,15 @@ nm_connection_dump(NMConnection *connection)
 void
 nm_connection_set_path(NMConnection *connection, const char *path)
 {
-    NMConnectionPrivate *priv;
-
     g_return_if_fail(NM_IS_CONNECTION(connection));
 
-    priv = NM_CONNECTION_GET_PRIVATE(connection);
+    nm_ref_string_reset_str(&NM_CONNECTION_GET_PRIVATE(connection)->path, path);
+}
 
-    g_free(priv->path);
-    priv->path = g_strdup(path);
+void
+_nm_connection_set_path_rstr(NMConnection *connection, NMRefString *path)
+{
+    nm_ref_string_reset(&NM_CONNECTION_GET_PRIVATE(connection)->path, path);
 }
 
 /**
@@ -2937,6 +2939,12 @@ nm_connection_get_path(NMConnection *connection)
 {
     g_return_val_if_fail(NM_IS_CONNECTION(connection), NULL);
 
+    return nm_ref_string_get_str(NM_CONNECTION_GET_PRIVATE(connection)->path);
+}
+
+NMRefString *
+_nm_connection_get_path_rstr(NMConnection *connection)
+{
     return NM_CONNECTION_GET_PRIVATE(connection)->path;
 }
 

@@ -11081,6 +11081,43 @@ test_direct_string_is_refstr(void)
 
 /*****************************************************************************/
 
+static void
+test_connection_path(void)
+{
+    gs_unref_object NMConnection *conn = NULL;
+    const char *const             PATH = "/org/freedesktop/NetworkManager/Settings/171950003017";
+    const char                   *path;
+    NMRefString                  *rstr;
+
+    g_assert(!nmtst_ref_string_find(PATH));
+
+    conn = nmtst_create_minimal_connection("test_setting_ip6_gateway",
+                                           NULL,
+                                           NM_SETTING_WIRED_SETTING_NAME,
+                                           NULL);
+
+    g_assert(!nm_connection_get_path(conn));
+    g_assert(!nmtst_ref_string_find(PATH));
+
+    nm_connection_set_path(conn, PATH);
+
+    path = nm_connection_get_path(conn);
+    g_assert_cmpstr(path, ==, PATH);
+
+    /* nm_connection_get_path() gives a NMRefString. This is an
+     * implementation detail, but libnm (which statically links with
+     * libnm-core) may choose to rely on that. */
+    rstr = nmtst_ref_string_find(PATH);
+    g_assert(rstr);
+    g_assert(NM_REF_STRING_UPCAST(path) == rstr);
+
+    g_clear_object(&conn);
+
+    g_assert(!nmtst_ref_string_find(PATH));
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE();
 
 int
@@ -11426,6 +11463,7 @@ main(int argc, char **argv)
 
     g_test_add_func("/core/general/test_system_encodings", test_system_encodings);
     g_test_add_func("/core/general/test_direct_string_is_refstr", test_direct_string_is_refstr);
+    g_test_add_func("/core/general/test_connection_path", test_connection_path);
 
     return g_test_run();
 }
