@@ -93,6 +93,23 @@ nm_ref_string_unref(NMRefString *rstr)
 NM_AUTO_DEFINE_FCN_VOID(NMRefString *, _nm_auto_ref_string, nm_ref_string_unref);
 #define nm_auto_ref_string nm_auto(_nm_auto_ref_string)
 
+static inline gboolean
+nm_ref_string_reset(NMRefString **ptr, NMRefString *str)
+{
+    NMRefString *rstr;
+
+    nm_assert(ptr);
+
+    rstr = *ptr;
+
+    if (rstr == str)
+        return FALSE;
+
+    *ptr = nm_ref_string_ref(str);
+    nm_ref_string_unref(rstr);
+    return TRUE;
+}
+
 /*****************************************************************************/
 
 static inline const char *
