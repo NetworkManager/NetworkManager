@@ -620,6 +620,8 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
     setting_class->verify = verify;
 
     setting_ip_config_class->private_offset = g_type_class_get_instance_private_offset(klass);
+    setting_ip_config_class->is_ipv4        = TRUE;
+    setting_ip_config_class->addr_family    = AF_INET;
 
     /* ---ifcfg-rh---
      * property: method

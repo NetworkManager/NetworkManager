@@ -3987,9 +3987,6 @@ _NM_SETTING_IP_CONFIG_GET_PRIVATE(NMSettingIPConfig *self)
 
 /*****************************************************************************/
 
-#define NM_SETTING_IP_CONFIG_GET_FAMILY(setting) \
-    (NM_IS_SETTING_IP4_CONFIG(setting) ? AF_INET : AF_INET6)
-
 /**
  * nm_setting_ip_config_get_method:
  * @setting: the #NMSettingIPConfig
@@ -4061,7 +4058,7 @@ nm_setting_ip_config_add_dns(NMSettingIPConfig *setting, const char *dns)
 
     g_return_val_if_fail(NM_IS_SETTING_IP_CONFIG(setting), FALSE);
 
-    addr_family = NM_SETTING_IP_CONFIG_GET_FAMILY(setting);
+    addr_family = NM_SETTING_IP_CONFIG_GET_ADDR_FAMILY(setting);
 
     if (!valid_ip(addr_family, dns, &dns_bin, NULL)) {
         g_return_val_if_fail(dns != NULL, FALSE);
@@ -4124,7 +4121,7 @@ nm_setting_ip_config_remove_dns_by_value(NMSettingIPConfig *setting, const char 
 
     g_return_val_if_fail(NM_IS_SETTING_IP_CONFIG(setting), FALSE);
 
-    addr_family = NM_SETTING_IP_CONFIG_GET_FAMILY(setting);
+    addr_family = NM_SETTING_IP_CONFIG_GET_ADDR_FAMILY(setting);
 
     if (!valid_ip(addr_family, dns, &dns_bin, NULL)) {
         g_return_val_if_fail(dns != NULL, FALSE);
@@ -4604,7 +4601,7 @@ nm_setting_ip_config_add_address(NMSettingIPConfig *setting, NMIPAddress *addres
 
     g_return_val_if_fail(NM_IS_SETTING_IP_CONFIG(setting), FALSE);
     g_return_val_if_fail(address != NULL, FALSE);
-    g_return_val_if_fail(address->family == NM_SETTING_IP_CONFIG_GET_FAMILY(setting), FALSE);
+    g_return_val_if_fail(address->family == NM_SETTING_IP_CONFIG_GET_ADDR_FAMILY(setting), FALSE);
 
     priv = NM_SETTING_IP_CONFIG_GET_PRIVATE(setting);
     for (i = 0; i < priv->addresses->len; i++) {
@@ -4761,7 +4758,7 @@ nm_setting_ip_config_add_route(NMSettingIPConfig *setting, NMIPRoute *route)
 
     g_return_val_if_fail(NM_IS_SETTING_IP_CONFIG(setting), FALSE);
     g_return_val_if_fail(route != NULL, FALSE);
-    g_return_val_if_fail(route->family == NM_SETTING_IP_CONFIG_GET_FAMILY(setting), FALSE);
+    g_return_val_if_fail(route->family == NM_SETTING_IP_CONFIG_GET_ADDR_FAMILY(setting), FALSE);
 
     priv = NM_SETTING_IP_CONFIG_GET_PRIVATE(setting);
     for (i = 0; i < priv->routes->len; i++) {
@@ -4957,7 +4954,7 @@ nm_setting_ip_config_add_routing_rule(NMSettingIPConfig *setting, NMIPRoutingRul
     g_return_if_fail(NM_IS_SETTING_IP_CONFIG(setting));
     g_return_if_fail(NM_IS_IP_ROUTING_RULE(routing_rule, TRUE));
     g_return_if_fail(_ip_routing_rule_get_addr_family(routing_rule)
-                     == NM_SETTING_IP_CONFIG_GET_FAMILY(setting));
+                     == NM_SETTING_IP_CONFIG_GET_ADDR_FAMILY(setting));
 
     priv = NM_SETTING_IP_CONFIG_GET_PRIVATE(setting);
 
@@ -5439,7 +5436,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
     for (i = 0; i < priv->dns->len; i++) {
         const char *dns = priv->dns->pdata[i];
 
-        if (!nm_inet_is_valid(NM_SETTING_IP_CONFIG_GET_FAMILY(setting), dns)) {
+        if (!nm_inet_is_valid(NM_SETTING_IP_CONFIG_GET_ADDR_FAMILY(setting), dns)) {
             g_set_error(error,
                         NM_CONNECTION_ERROR,
                         NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -5458,7 +5455,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
         NMIPAddress *addr = (NMIPAddress *) priv->addresses->pdata[i];
         GVariant    *label;
 
-        if (nm_ip_address_get_family(addr) != NM_SETTING_IP_CONFIG_GET_FAMILY(setting)) {
+        if (nm_ip_address_get_family(addr) != NM_SETTING_IP_CONFIG_GET_ADDR_FAMILY(setting)) {
             g_set_error(error,
                         NM_CONNECTION_ERROR,
                         NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -5515,7 +5512,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
             return FALSE;
         }
 
-        if (!nm_inet_is_valid(NM_SETTING_IP_CONFIG_GET_FAMILY(setting), priv->gateway)) {
+        if (!nm_inet_is_valid(NM_SETTING_IP_CONFIG_GET_ADDR_FAMILY(setting), priv->gateway)) {
             g_set_error_literal(error,
                                 NM_CONNECTION_ERROR,
                                 NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -5533,7 +5530,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
         gs_free_error GError *local = NULL;
         NMIPRoute            *route = (NMIPRoute *) priv->routes->pdata[i];
 
-        if (nm_ip_route_get_family(route) != NM_SETTING_IP_CONFIG_GET_FAMILY(setting)) {
+        if (nm_ip_route_get_family(route) != NM_SETTING_IP_CONFIG_GET_ADDR_FAMILY(setting)) {
             g_set_error(error,
                         NM_CONNECTION_ERROR,
                         NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -5566,7 +5563,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
             gs_free_error GError *local = NULL;
 
             if (_ip_routing_rule_get_addr_family(rule)
-                != NM_SETTING_IP_CONFIG_GET_FAMILY(setting)) {
+                != NM_SETTING_IP_CONFIG_GET_ADDR_FAMILY(setting)) {
                 g_set_error(error,
                             NM_CONNECTION_ERROR,
                             NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -5623,7 +5620,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 
     if (priv->dhcp_hostname_flags != (NMDhcpHostnameFlags) priv->dhcp_hostname_flags
         || !_nm_utils_validate_dhcp_hostname_flags(priv->dhcp_hostname_flags,
-                                                   NM_SETTING_IP_CONFIG_GET_FAMILY(setting),
+                                                   NM_SETTING_IP_CONFIG_GET_ADDR_FAMILY(setting),
                                                    error)) {
         g_prefix_error(error,
                        "%s.%s: ",
@@ -5634,7 +5631,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 
     /* Validate reject servers */
     if (priv->dhcp_reject_servers && priv->dhcp_reject_servers->len != 0) {
-        if (NM_SETTING_IP_CONFIG_GET_FAMILY(setting) != AF_INET) {
+        if (NM_SETTING_IP_CONFIG_GET_ADDR_FAMILY(setting) != AF_INET) {
             g_set_error_literal(error,
                                 NM_CONNECTION_ERROR,
                                 NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -5648,7 +5645,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 
         for (i = 0; i < priv->dhcp_reject_servers->len; i++) {
             if (!nm_inet_parse_with_prefix_str(
-                    NM_SETTING_IP_CONFIG_GET_FAMILY(setting),
+                    NM_SETTING_IP_CONFIG_GET_ADDR_FAMILY(setting),
                     nm_g_array_index(priv->dhcp_reject_servers, const char *, i),
                     NULL,
                     NULL)) {

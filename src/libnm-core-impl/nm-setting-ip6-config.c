@@ -559,6 +559,8 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
     setting_class->verify = verify;
 
     setting_ip_config_class->private_offset = g_type_class_get_instance_private_offset(klass);
+    setting_ip_config_class->is_ipv4        = FALSE;
+    setting_ip_config_class->addr_family    = AF_INET6;
 
     /* ---ifcfg-rh---
      * property: method

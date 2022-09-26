@@ -165,11 +165,23 @@ struct _NMSettingIPConfigClass {
     NMSettingClass parent;
 
     /* In the past, this struct was public API. Preserve ABI! */
+
     union {
-        gpointer _dummy;
+        gpointer _dummy1;
         int      private_offset;
     };
-    gpointer padding[7];
+
+    union {
+        gpointer _dummy2;
+        gint8    addr_family;
+    };
+
+    union {
+        gpointer _dummy3;
+        bool     is_ipv4;
+    };
+
+    gpointer padding[5];
 };
 
 typedef struct {
@@ -199,6 +211,11 @@ typedef struct {
 } NMSettingIPConfigPrivate;
 
 void _nm_setting_ip_config_private_init(gpointer self, NMSettingIPConfigPrivate *priv);
+
+#define NM_SETTING_IP_CONFIG_GET_ADDR_FAMILY(setting) \
+    (NM_SETTING_IP_CONFIG_GET_CLASS(setting)->addr_family)
+
+#define NM_SETTING_IP_CONFIG_IS_IPv4(setting) (NM_SETTING_IP_CONFIG_GET_CLASS(setting)->is_ipv4)
 
 /*****************************************************************************/
 
