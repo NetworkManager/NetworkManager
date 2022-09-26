@@ -455,6 +455,12 @@ nmc_find_connection(const GPtrArray *connections,
                 match_by_uuid = TRUE;
                 goto found;
             }
+            if (filter_type && !nm_str_is_empty(filter_val) && g_str_has_prefix(v, filter_val)) {
+                /* If the selector is qualified by "uuid", prefix matches for the UUID are
+                 * also OK. At least, if they result in a unique match. */
+                nm_assert(must_match_uniquely);
+                goto found;
+            }
         }
 
         if (NM_IN_STRSET(filter_type, NULL, "id")) {
