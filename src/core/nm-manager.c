@@ -1887,8 +1887,11 @@ find_parent_device_for_connection(NMManager       *self,
      * with some known device.
      */
     c_list_for_each_entry (candidate, &priv->devices_lst_head, devices_lst) {
-        /* Unmanaged devices are not compatible with any connection */
-        if (!nm_device_get_managed(candidate, FALSE))
+        /* For a realized device, check that it's managed; otherwise it's not
+         * compatible with any connection. If the device is unrealized then
+         * the managed state is meaningless.
+         */
+        if (nm_device_is_real(candidate) && !nm_device_get_managed(candidate, FALSE))
             continue;
 
         if (nm_device_get_settings_connection(candidate) == parent_connection)
@@ -4710,8 +4713,10 @@ find_slaves(NMManager            *manager,
             }
 
             nm_assert(n_slaves < n_all_connections);
-            slaves[n_slaves].connection = candidate, slaves[n_slaves].device = slave_device,
-            n_slaves++;
+            slaves[n_slaves++] = (SlaveConnectionInfo){
+                .connection = candidate,
+                .device     = slave_device,
+            };
 
             if (slave_device)
                 g_hash_table_add(devices, slave_device);
