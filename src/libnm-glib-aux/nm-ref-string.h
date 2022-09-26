@@ -156,7 +156,7 @@ nm_ref_string_equal_str(NMRefString *rstr, const char *str)
     /* We don't use streq() here, because an NMRefString might have embedded NUL characters
      * (as the length is tracked separately). The NUL terminated C string @str must not
      * compare equal to such a @rstr, thus we first explicitly check strlen(). */
-    return rstr->len == strlen(str) && (rstr->str == str || memcmp(rstr->str, str, rstr->len) == 0);
+    return rstr->str == str || (rstr->len == strlen(str) && memcmp(rstr->str, str, rstr->len) == 0);
 }
 
 static inline gboolean
