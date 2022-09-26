@@ -5104,6 +5104,8 @@ src_nmtui_nmtui_SOURCES = \
 	src/nmtui/nmt-page-ip4.h \
 	src/nmtui/nmt-page-ip6.c \
 	src/nmtui/nmt-page-ip6.h \
+	src/nmtui/nmt-page-macsec.c \
+	src/nmtui/nmt-page-macsec.h \
 	src/nmtui/nmt-page-ppp.c \
 	src/nmtui/nmt-page-ppp.h \
 	src/nmtui/nmt-page-team-port.c \
