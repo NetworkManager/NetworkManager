@@ -432,9 +432,12 @@ nmc_find_connection(const GPtrArray *connections,
     GPtrArray                   *result              = out_result ? *out_result : NULL;
     const guint                  result_inital_len   = result ? result->len : 0u;
     guint                        i, j;
+    gboolean                     must_match_uniquely;
 
     nm_assert(connections);
     nm_assert(filter_val);
+
+    must_match_uniquely = NM_IN_STRSET(filter_type, "uuid", "path");
 
     for (i = 0; i < connections->len; i++) {
         gboolean      match_by_uuid = FALSE;
@@ -483,14 +486,26 @@ nmc_find_connection(const GPtrArray *connections,
         continue;
 
 found:
+
+        if (must_match_uniquely && (best_candidate || best_candidate_uuid)) {
+            /* We found duplicates. This is wrong. */
+            if (out_result && *out_result) {
+                /* Remove the element that we added before. */
+                g_ptr_array_set_size(*out_result, result_inital_len);
+            }
+            return NULL;
+        }
+
         if (match_by_uuid) {
             if (!complete && !out_result)
                 return connection;
-            best_candidate_uuid = connection;
+            if (!best_candidate_uuid)
+                best_candidate_uuid = connection;
         } else {
             if (!best_candidate)
                 best_candidate = connection;
         }
+
         if (out_result) {
             gboolean already_tracked = FALSE;
 
