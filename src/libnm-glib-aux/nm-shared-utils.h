@@ -1320,6 +1320,8 @@ typedef enum {
     NM_UTILS_ERROR_INVALID_ARGUMENT,    /*< nick=InvalidArgument >*/
     NM_UTILS_ERROR_NOT_READY,           /*< nick=NotReady >*/
 
+    NM_UTILS_ERROR_COMMAND_FAILED, /*< nick=CommandFailed >*/
+
     NM_UTILS_ERROR_AMBIGUOUS, /*< nick=Ambiguous >*/
 
     /* the following codes have a special meaning and are exactly used for
