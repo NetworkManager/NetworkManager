@@ -31,6 +31,23 @@ typedef struct {
 extern GTypeClass *_nm_simple_connection_class_instance;
 extern int         _nm_simple_connection_private_offset;
 
+#define _NM_SIMPLE_CONNECTION_GET_CONNECTION_PRIVATE(connection)                                \
+    ({                                                                                          \
+        gpointer             _connection_1 = (connection);                                      \
+        NMConnectionPrivate *_priv_1;                                                           \
+                                                                                                \
+        nm_assert(NM_IS_SIMPLE_CONNECTION(_connection_1));                                      \
+                                                                                                \
+        _priv_1 = (void *) (&(((char *) _connection_1)[_nm_simple_connection_private_offset])); \
+                                                                                                \
+        nm_assert(_priv_1                                                                       \
+                  == G_TYPE_INSTANCE_GET_PRIVATE(_connection_1,                                 \
+                                                 NM_TYPE_SIMPLE_CONNECTION,                     \
+                                                 NMConnectionPrivate));                         \
+                                                                                                \
+        _priv_1;                                                                                \
+    })
+
 void _nm_connection_private_clear(NMConnectionPrivate *priv);
 
 /*****************************************************************************/

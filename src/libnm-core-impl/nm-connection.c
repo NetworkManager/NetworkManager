@@ -124,19 +124,19 @@ _nm_connection_get_private_from_qdata(NMConnection *connection)
     return priv;
 }
 
-#define NM_CONNECTION_GET_PRIVATE(connection)                                                     \
-    ({                                                                                            \
-        NMConnection        *_connection = (connection);                                          \
-        NMConnectionPrivate *_priv;                                                               \
-                                                                                                  \
-        if (G_LIKELY(NM_IS_SIMPLE_CONNECTION(_connection)))                                       \
-            _priv = (gpointer) (&(((char *) _connection)[_nm_simple_connection_private_offset])); \
-        else                                                                                      \
-            _priv = _nm_connection_get_private_from_qdata(_connection);                           \
-                                                                                                  \
-        nm_assert(_priv && _priv->self == _connection);                                           \
-                                                                                                  \
-        _priv;                                                                                    \
+#define NM_CONNECTION_GET_PRIVATE(connection)                                  \
+    ({                                                                         \
+        NMConnection        *_connection = (connection);                       \
+        NMConnectionPrivate *_priv;                                            \
+                                                                               \
+        if (G_LIKELY(NM_IS_SIMPLE_CONNECTION(_connection)))                    \
+            _priv = _NM_SIMPLE_CONNECTION_GET_CONNECTION_PRIVATE(_connection); \
+        else                                                                   \
+            _priv = _nm_connection_get_private_from_qdata(_connection);        \
+                                                                               \
+        nm_assert(_priv && _priv->self == _connection);                        \
+                                                                               \
+        _priv;                                                                 \
     })
 
 /*****************************************************************************/
