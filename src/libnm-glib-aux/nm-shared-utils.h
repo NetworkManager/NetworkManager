@@ -3260,6 +3260,10 @@ void nm_crypto_md5_hash(const guint8 *salt,
 
 /*****************************************************************************/
 
+#define NM_UTILS_GET_PROCESS_EXIT_STATUS_BUF_LEN 41
+
+const char *nm_utils_get_process_exit_status_desc_buf(int status, char *buf, gsize buf_len);
+
 char *nm_utils_get_process_exit_status_desc(int status);
 
 gboolean nm_utils_validate_hostname(const char *hostname);
