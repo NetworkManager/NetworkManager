@@ -430,14 +430,21 @@ _fw_nft_call_communicate_cb(GObject *source, GAsyncResult *result, gpointer user
     } else if (g_subprocess_get_successful(call_data->subprocess)) {
         nm_log_dbg(LOGD_SHARING, "firewall: nft[%s]: command successful", call_data->identifier);
     } else {
+        char          buf[NM_UTILS_GET_PROCESS_EXIT_STATUS_BUF_LEN];
         gs_free char *ss_stdout    = NULL;
         gs_free char *ss_stderr    = NULL;
         gboolean      print_stdout = (stdout_buf && g_bytes_get_size(stdout_buf) > 0);
         gboolean      print_stderr = (stderr_buf && g_bytes_get_size(stderr_buf) > 0);
+        int           status;
+
+        status = g_subprocess_get_status(call_data->subprocess);
+
+        nm_utils_get_process_exit_status_desc_buf(status, buf, sizeof(buf));
 
         nm_log_warn(LOGD_SHARING,
-                    "firewall: nft[%s]: command failed:%s%s%s%s%s%s%s",
+                    "firewall: nft[%s]: command %s:%s%s%s%s%s%s%s",
                     call_data->identifier,
+                    buf,
                     print_stdout || print_stderr ? "" : " unknown reason",
                     NM_PRINT_FMT_QUOTED(
                         print_stdout,
@@ -455,6 +462,8 @@ _fw_nft_call_communicate_cb(GObject *source, GAsyncResult *result, gpointer user
                                                            &ss_stderr),
                         "\")",
                         ""));
+
+        nm_utils_error_set(&error, NM_UTILS_ERROR_COMMAND_FAILED, "nft command %s", buf);
     }
 
     _fw_nft_call_data_free(call_data, g_steal_pointer(&error));
