@@ -1628,12 +1628,8 @@ _parse_lnk_bond(const char *kind, struct nlattr *info_data)
     }
     if (tb[IFLA_BOND_ARP_VALIDATE])
         props->arp_validate = nla_get_u32(tb[IFLA_BOND_ARP_VALIDATE]);
-    if (tb[IFLA_BOND_ARP_ALL_TARGETS]) {
-        props->arp_all_targets     = nla_get_u32(tb[IFLA_BOND_ARP_ALL_TARGETS]);
-        props->arp_all_targets_has = TRUE;
-    } else {
-        props->arp_all_targets_has = FALSE;
-    }
+    if (tb[IFLA_BOND_ARP_ALL_TARGETS])
+        props->arp_all_targets = nla_get_u32(tb[IFLA_BOND_ARP_ALL_TARGETS]);
     if (tb[IFLA_BOND_PRIMARY_RESELECT])
         props->primary_reselect = nla_get_u8(tb[IFLA_BOND_PRIMARY_RESELECT]);
     if (tb[IFLA_BOND_FAIL_OVER_MAC])
@@ -4517,7 +4513,7 @@ _nl_msg_new_link_set_linkinfo(struct nl_msg *msg, NMLinkType link_type, gconstpo
             nla_nest_end(msg, targets);
         }
 
-        if (props->arp_all_targets_has)
+        if (props->arp_all_targets)
             NLA_PUT_U32(msg, IFLA_BOND_ARP_ALL_TARGETS, props->arp_all_targets);
         if (props->arp_interval)
             NLA_PUT_U32(msg, IFLA_BOND_ARP_INTERVAL, props->arp_interval);
