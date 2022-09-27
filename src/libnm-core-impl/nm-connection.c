@@ -54,33 +54,6 @@ static gboolean _nm_connection_clear_settings(NMConnection *connection, NMConnec
 
 /*****************************************************************************/
 
-#undef NM_IS_SIMPLE_CONNECTION
-#define NM_IS_SIMPLE_CONNECTION(self)                                                           \
-    ({                                                                                          \
-        gconstpointer _self1 = (self);                                                          \
-        gboolean      _result;                                                                  \
-                                                                                                \
-        _result =                                                                               \
-            (_self1                                                                             \
-             && (((GTypeInstance *) _self1)->g_class == _nm_simple_connection_class_instance)); \
-                                                                                                \
-        nm_assert(_result == G_TYPE_CHECK_INSTANCE_TYPE(_self1, NM_TYPE_SIMPLE_CONNECTION));    \
-                                                                                                \
-        _result;                                                                                \
-    })
-
-#undef NM_IS_CONNECTION
-#define NM_IS_CONNECTION(self)                                            \
-    ({                                                                    \
-        gconstpointer _self0 = (self);                                    \
-                                                                          \
-        (_self0                                                           \
-         && (NM_IS_SIMPLE_CONNECTION(_self0)                              \
-             || G_TYPE_CHECK_INSTANCE_TYPE(_self0, NM_TYPE_CONNECTION))); \
-    })
-
-/*****************************************************************************/
-
 void
 _nm_connection_private_clear(NMConnectionPrivate *priv)
 {
