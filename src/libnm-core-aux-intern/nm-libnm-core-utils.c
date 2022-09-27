@@ -349,12 +349,12 @@ nm_auth_permission_from_string(const char *str)
 
     if (!NM_STR_HAS_PREFIX(str, AUTH_PERMISSION_PREFIX))
         return NM_CLIENT_PERMISSION_NONE;
-    idx = nm_utils_array_find_binary_search(nm_auth_permission_sorted,
-                                            sizeof(nm_auth_permission_sorted[0]),
-                                            G_N_ELEMENTS(nm_auth_permission_sorted),
-                                            &str[NM_STRLEN(AUTH_PERMISSION_PREFIX)],
-                                            _nm_auth_permission_from_string_cmp,
-                                            NULL);
+    idx = nm_array_find_bsearch(nm_auth_permission_sorted,
+                                sizeof(nm_auth_permission_sorted[0]),
+                                G_N_ELEMENTS(nm_auth_permission_sorted),
+                                &str[NM_STRLEN(AUTH_PERMISSION_PREFIX)],
+                                _nm_auth_permission_from_string_cmp,
+                                NULL);
     if (idx < 0)
         return NM_CLIENT_PERMISSION_NONE;
     return nm_auth_permission_sorted[idx];

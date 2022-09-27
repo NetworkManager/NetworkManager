@@ -752,11 +752,11 @@ nml_dbus_meta_iface_get(const char *dbus_iface_name)
 
     if (NM_STR_HAS_PREFIX(dbus_iface_name, COMMON_PREFIX)) {
         /* optimize, that in fact all our interfaces have the same prefix. */
-        idx = nm_utils_ptrarray_find_binary_search((gconstpointer *) _nml_dbus_meta_ifaces,
-                                                   G_N_ELEMENTS(_nml_dbus_meta_ifaces),
-                                                   &dbus_iface_name[NM_STRLEN(COMMON_PREFIX)],
-                                                   _strcmp_common_prefix,
-                                                   NULL);
+        idx = nm_ptrarray_find_bsearch((gconstpointer *) _nml_dbus_meta_ifaces,
+                                       G_N_ELEMENTS(_nml_dbus_meta_ifaces),
+                                       &dbus_iface_name[NM_STRLEN(COMMON_PREFIX)],
+                                       _strcmp_common_prefix,
+                                       NULL);
     } else
         return NULL;
 
@@ -775,12 +775,12 @@ nml_dbus_meta_property_get(const NMLDBusMetaIface *meta_iface,
     nm_assert(meta_iface);
     nm_assert(dbus_property_name);
 
-    idx = nm_utils_array_find_binary_search(meta_iface->dbus_properties,
-                                            sizeof(meta_iface->dbus_properties[0]),
-                                            meta_iface->n_dbus_properties,
-                                            &dbus_property_name,
-                                            nm_strcmp_p_with_data,
-                                            NULL);
+    idx = nm_array_find_bsearch(meta_iface->dbus_properties,
+                                sizeof(meta_iface->dbus_properties[0]),
+                                meta_iface->n_dbus_properties,
+                                &dbus_property_name,
+                                nm_strcmp_p_with_data,
+                                NULL);
     if (idx < 0) {
         NM_SET_OUT(out_idx, meta_iface->n_dbus_properties);
         return NULL;

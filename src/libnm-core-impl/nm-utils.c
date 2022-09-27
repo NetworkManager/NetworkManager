@@ -5020,11 +5020,8 @@ _nm_variant_attribute_spec_find_binary_search(const NMVariantAttributeSpec *cons
 
     G_STATIC_ASSERT_EXPR(G_STRUCT_OFFSET(NMVariantAttributeSpec, name) == 0);
 
-    idx = nm_utils_ptrarray_find_binary_search((gconstpointer *) array,
-                                               len,
-                                               &name,
-                                               nm_strcmp_p_with_data,
-                                               NULL);
+    idx =
+        nm_ptrarray_find_bsearch((gconstpointer *) array, len, &name, nm_strcmp_p_with_data, NULL);
     if (idx < 0)
         return NULL;
     return array[idx];

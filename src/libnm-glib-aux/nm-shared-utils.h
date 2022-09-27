@@ -2103,42 +2103,42 @@ gboolean nm_utils_ptrarray_is_sorted(gconstpointer   *list,
                                      GCompareDataFunc cmpfcn,
                                      gpointer         user_data);
 
-gssize nm_utils_ptrarray_find_binary_search(gconstpointer   *list,
-                                            gsize            len,
-                                            gconstpointer    needle,
-                                            GCompareDataFunc cmpfcn,
-                                            gpointer         user_data);
+gssize nm_ptrarray_find_bsearch(gconstpointer   *list,
+                                gsize            len,
+                                gconstpointer    needle,
+                                GCompareDataFunc cmpfcn,
+                                gpointer         user_data);
 
-gssize nm_utils_ptrarray_find_binary_search_range(gconstpointer   *list,
-                                                  gsize            len,
-                                                  gconstpointer    needle,
-                                                  GCompareDataFunc cmpfcn,
-                                                  gpointer         user_data,
-                                                  gssize          *out_idx_first,
-                                                  gssize          *out_idx_last);
+gssize nm_ptrarray_find_bsearch_range(gconstpointer   *list,
+                                      gsize            len,
+                                      gconstpointer    needle,
+                                      GCompareDataFunc cmpfcn,
+                                      gpointer         user_data,
+                                      gssize          *out_idx_first,
+                                      gssize          *out_idx_last);
 
-#define nm_strv_find_binary_search(strv, len, needle)                 \
-    ({                                                                \
-        const char *const *const _strv   = NM_CAST_STRV_CC(strv);     \
-        const gsize              _len    = (len);                     \
-        const char *const        _needle = (needle);                  \
-                                                                      \
-        nm_assert(_len == 0 || _strv);                                \
-        nm_assert(_needle);                                           \
-                                                                      \
-        nm_utils_ptrarray_find_binary_search((gconstpointer *) _strv, \
-                                             _len,                    \
-                                             _needle,                 \
-                                             nm_strcmp_with_data,     \
-                                             NULL);                   \
+#define nm_strv_find_binary_search(strv, len, needle)             \
+    ({                                                            \
+        const char *const *const _strv   = NM_CAST_STRV_CC(strv); \
+        const gsize              _len    = (len);                 \
+        const char *const        _needle = (needle);              \
+                                                                  \
+        nm_assert(_len == 0 || _strv);                            \
+        nm_assert(_needle);                                       \
+                                                                  \
+        nm_ptrarray_find_bsearch((gconstpointer *) _strv,         \
+                                 _len,                            \
+                                 _needle,                         \
+                                 nm_strcmp_with_data,             \
+                                 NULL);                           \
     })
 
-gssize nm_utils_array_find_binary_search(gconstpointer    list,
-                                         gsize            elem_size,
-                                         gsize            len,
-                                         gconstpointer    needle,
-                                         GCompareDataFunc cmpfcn,
-                                         gpointer         user_data);
+gssize nm_array_find_bsearch(gconstpointer    list,
+                             gsize            elem_size,
+                             gsize            len,
+                             gconstpointer    needle,
+                             GCompareDataFunc cmpfcn,
+                             gpointer         user_data);
 
 gssize nm_utils_ptrarray_find_first(gconstpointer *list, gssize len, gconstpointer needle);
 
