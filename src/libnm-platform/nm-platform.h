@@ -714,7 +714,6 @@ typedef struct {
     guint8      mode;
     guint8      primary_reselect;
     guint8      xmit_hash_policy;
-    bool        arp_all_targets_has : 1;
     bool        downdelay_has : 1;
     bool        lp_interval_has : 1;
     bool        miimon_has : 1;

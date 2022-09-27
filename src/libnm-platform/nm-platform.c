@@ -5943,7 +5943,6 @@ nm_platform_lnk_bond_to_string(const NMPlatformLnkBond *lnk, char *buf, gsize le
     char sbuf_updelay[30];
     char sbuf_downdelay[30];
     char sbuf_peer_notif_delay[60];
-    char sbuf_arp_all_targets[30];
     char sbuf_resend_igmp[30];
     char sbuf_lp_interval[30];
     char sbuf_tlb_dynamic_lb[30];
@@ -5967,7 +5966,7 @@ nm_platform_lnk_bond_to_string(const NMPlatformLnkBond *lnk, char *buf, gsize le
         "%s" /* lp_interval */
         " packets_per_port %u"
         "%s" /* peer_notif_delay */
-        "%s" /* arp_all_targets */
+        " arp_all_targets %u"
         " arp_validate %u"
         " ad_actor_sys_prio %u"
         " ad_user_port_key %u"
@@ -6017,12 +6016,7 @@ nm_platform_lnk_bond_to_string(const NMPlatformLnkBond *lnk, char *buf, gsize le
                              !lnk->peer_notif_delay_has ? "?" : "",
                              lnk->peer_notif_delay)
             : "",
-        lnk->arp_all_targets_has || lnk->arp_all_targets != 0
-            ? nm_sprintf_buf(sbuf_arp_all_targets,
-                             " arp_all_targets%s %u",
-                             !lnk->arp_all_targets_has ? "?" : "",
-                             lnk->arp_all_targets)
-            : "",
+        lnk->arp_all_targets,
         lnk->arp_validate,
         lnk->ad_actor_sys_prio,
         lnk->ad_user_port_key,
@@ -7651,7 +7645,6 @@ nm_platform_lnk_bond_hash_update(const NMPlatformLnkBond *obj, NMHashState *h)
                         obj->primary_reselect,
                         obj->xmit_hash_policy,
                         NM_HASH_COMBINE_BOOLS(guint16,
-                                              obj->arp_all_targets_has,
                                               obj->downdelay_has,
                                               obj->lp_interval_has,
                                               obj->miimon_has,
@@ -7697,7 +7690,6 @@ nm_platform_lnk_bond_cmp(const NMPlatformLnkBond *a, const NMPlatformLnkBond *b)
     NM_CMP_FIELD(a, b, mode);
     NM_CMP_FIELD(a, b, primary_reselect);
     NM_CMP_FIELD(a, b, xmit_hash_policy);
-    NM_CMP_FIELD_BOOL(a, b, arp_all_targets_has);
     NM_CMP_FIELD_BOOL(a, b, downdelay_has);
     NM_CMP_FIELD_BOOL(a, b, lp_interval_has);
     NM_CMP_FIELD_BOOL(a, b, miimon_has);
