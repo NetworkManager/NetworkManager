@@ -8858,8 +8858,8 @@ _test_find_binary_search_do_uint32(const int *int_array, gsize len)
     }
 
     idx = nm_array_find_bsearch(array,
-                                sizeof(guint32),
                                 len,
+                                sizeof(guint32),
                                 &NEEDLE,
                                 nm_cmp_uint32_p_with_data,
                                 NULL);
@@ -8967,8 +8967,8 @@ test_nm_utils_ptrarray_find_binary_search_with_duplicates(void)
                 idx_first2 = nm_utils_ptrarray_find_first(arr, i_len, p);
 
                 idx2 = nm_array_find_bsearch(arr,
-                                             sizeof(gpointer),
                                              i_len,
+                                             sizeof(gpointer),
                                              &p,
                                              _test_bin_search2_cmp_p,
                                              NULL);

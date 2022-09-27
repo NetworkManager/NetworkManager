@@ -2134,8 +2134,8 @@ gssize nm_ptrarray_find_bsearch_range(gconstpointer   *list,
     })
 
 gssize nm_array_find_bsearch(gconstpointer    list,
-                             gsize            elem_size,
                              gsize            len,
+                             gsize            elem_size,
                              gconstpointer    needle,
                              GCompareDataFunc cmpfcn,
                              gpointer         user_data);

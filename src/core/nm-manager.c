@@ -7905,8 +7905,8 @@ nm_manager_set_capability(NMManager *self, NMCapability cap)
     priv = NM_MANAGER_GET_PRIVATE(self);
 
     idx = nm_array_find_bsearch(nm_g_array_index_p(priv->capabilities, guint32, 0),
-                                sizeof(guint32),
                                 priv->capabilities->len,
+                                sizeof(guint32),
                                 &cap_i,
                                 nm_cmp_uint32_p_with_data,
                                 NULL);

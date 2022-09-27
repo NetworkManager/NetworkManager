@@ -776,8 +776,8 @@ nml_dbus_meta_property_get(const NMLDBusMetaIface *meta_iface,
     nm_assert(dbus_property_name);
 
     idx = nm_array_find_bsearch(meta_iface->dbus_properties,
-                                sizeof(meta_iface->dbus_properties[0]),
                                 meta_iface->n_dbus_properties,
+                                sizeof(meta_iface->dbus_properties[0]),
                                 &dbus_property_name,
                                 nm_strcmp_p_with_data,
                                 NULL);

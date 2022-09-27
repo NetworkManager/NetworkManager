@@ -694,8 +694,8 @@ nm_meta_setting_infos_by_name(const char *name)
 
     G_STATIC_ASSERT_EXPR(G_STRUCT_OFFSET(NMMetaSettingInfo, setting_name) == 0);
     idx = nm_array_find_bsearch(nm_meta_setting_infos,
-                                sizeof(NMMetaSettingInfo),
                                 _NM_META_SETTING_TYPE_NUM,
+                                sizeof(NMMetaSettingInfo),
                                 &name,
                                 nm_strcmp_p_with_data,
                                 NULL);

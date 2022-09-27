@@ -272,8 +272,8 @@ nm_ethtool_data_get_by_optname(const char *optname)
     _ASSERT_data();
 
     idx = nm_array_find_bsearch((gconstpointer *) _by_name,
-                                sizeof(_by_name[0]),
                                 _NM_ETHTOOL_ID_NUM,
+                                sizeof(_by_name[0]),
                                 optname,
                                 _by_name_cmp,
                                 NULL);

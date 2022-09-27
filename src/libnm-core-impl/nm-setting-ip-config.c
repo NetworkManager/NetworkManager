@@ -2935,8 +2935,8 @@ _rr_dbus_attr_from_name(const char *name)
     }
 
     idx = nm_array_find_bsearch(rr_dbus_data,
-                                sizeof(rr_dbus_data[0]),
                                 _RR_DBUS_ATTR_NUM,
+                                sizeof(rr_dbus_data[0]),
                                 &name,
                                 nm_strcmp_p_with_data,
                                 NULL);

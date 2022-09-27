@@ -280,8 +280,8 @@ nm_supplicant_settings_verify_setting(const char *key, const char *value, const 
     }
 
     opt_idx = nm_array_find_bsearch(opt_table,
-                                    sizeof(opt_table[0]),
                                     G_N_ELEMENTS(opt_table),
+                                    sizeof(opt_table[0]),
                                     &key,
                                     nm_strcmp_p_with_data,
                                     NULL);

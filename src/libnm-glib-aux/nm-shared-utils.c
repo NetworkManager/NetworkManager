@@ -3094,8 +3094,8 @@ nm_utils_named_value_list_find(const NMUtilsNamedValue *arr,
 
     if (sorted) {
         return nm_array_find_bsearch(arr,
-                                     sizeof(NMUtilsNamedValue),
                                      len,
+                                     sizeof(NMUtilsNamedValue),
                                      &name,
                                      nm_strcmp_p_with_data,
                                      NULL);
@@ -3906,8 +3906,8 @@ nm_ptrarray_find_bsearch_range(gconstpointer   *list,
 /**
  * nm_array_find_bsearch:
  * @list: the list to search. It must be sorted according to @cmpfcn ordering.
- * @elem_size: the size in bytes of each element in the list
  * @len: the number of elements in @list
+ * @elem_size: the size in bytes of each element in the list
  * @needle: the value that is searched
  * @cmpfcn: the compare function. The elements @list are passed as first
  *   argument to @cmpfcn, while @needle is passed as second. Usually, the
@@ -3929,8 +3929,8 @@ nm_ptrarray_find_bsearch_range(gconstpointer   *list,
  */
 gssize
 nm_array_find_bsearch(gconstpointer    list,
-                      gsize            elem_size,
                       gsize            len,
+                      gsize            elem_size,
                       gconstpointer    needle,
                       GCompareDataFunc cmpfcn,
                       gpointer         user_data)

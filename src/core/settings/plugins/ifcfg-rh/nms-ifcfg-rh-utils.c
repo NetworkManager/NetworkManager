@@ -1081,8 +1081,8 @@ nms_ifcfg_well_known_key_find_info(const char *key, gssize *out_idx)
     G_STATIC_ASSERT(G_STRUCT_OFFSET(NMSIfcfgKeyTypeInfo, key_name) == 0);
 
     idx = nm_array_find_bsearch(nms_ifcfg_well_known_keys,
-                                sizeof(nms_ifcfg_well_known_keys[0]),
                                 G_N_ELEMENTS(nms_ifcfg_well_known_keys),
+                                sizeof(nms_ifcfg_well_known_keys[0]),
                                 &key,
                                 nm_strcmp_p_with_data,
                                 NULL);
