@@ -6621,19 +6621,38 @@ nm_crypto_md5_hash(const guint8 *salt,
 
 /*****************************************************************************/
 
+const char *
+nm_utils_get_process_exit_status_desc_buf(int status, char *buf, gsize buf_len)
+{
+    const char *buf0 = buf;
+
+    nm_assert(buf_len == 0 || buf);
+
+    /* This should give a partial sentence, it it can be combined with
+     * prinft("command XYZ %s.\n", desc) */
+
+    if (WIFEXITED(status))
+        nm_strbuf_append(&buf, &buf_len, "exited with status %d", WEXITSTATUS(status));
+    else if (WIFSIGNALED(status))
+        nm_strbuf_append(&buf, &buf_len, "killed by signal %d", WTERMSIG(status));
+    else if (WIFSTOPPED(status))
+        nm_strbuf_append(&buf, &buf_len, "stopped by signal %d", WSTOPSIG(status));
+    else if (WIFCONTINUED(status))
+        nm_strbuf_append(&buf, &buf_len, "resumed by SIGCONT");
+    else
+        nm_strbuf_append(&buf, &buf_len, "exited with unknown status 0x%x", status);
+
+    return buf0;
+}
+
 char *
 nm_utils_get_process_exit_status_desc(int status)
 {
-    if (WIFEXITED(status))
-        return g_strdup_printf("exited with status %d", WEXITSTATUS(status));
-    else if (WIFSIGNALED(status))
-        return g_strdup_printf("killed by signal %d", WTERMSIG(status));
-    else if (WIFSTOPPED(status))
-        return g_strdup_printf("stopped by signal %d", WSTOPSIG(status));
-    else if (WIFCONTINUED(status))
-        return g_strdup("resumed by SIGCONT)");
-    else
-        return g_strdup_printf("exited with unknown status 0x%x", status);
+    char buf[NM_UTILS_GET_PROCESS_EXIT_STATUS_BUF_LEN];
+
+    nm_utils_get_process_exit_status_desc_buf(status, buf, sizeof(buf));
+
+    return g_strdup(buf);
 }
 
 /*****************************************************************************/
