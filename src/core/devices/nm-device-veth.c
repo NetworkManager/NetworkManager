@@ -101,8 +101,8 @@ create_and_realize(NMDevice              *device,
     peer        = nm_setting_veth_get_peer(s_veth);
     peer_device = nm_manager_get_device(NM_MANAGER_GET, peer, NM_DEVICE_TYPE_VETH);
     if (peer_device) {
-        /* The veth device and its peer already exist. No need to create it again. */
-        if (nm_streq0(nm_device_get_iface(nm_device_parent_get_device(peer_device)), iface))
+        if (nm_device_parent_get_device(peer_device))
+            /* The veth device and its peer already exist. No need to create it again. */
             return TRUE;
     }
 
