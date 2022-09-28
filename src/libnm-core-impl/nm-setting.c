@@ -477,12 +477,12 @@ _nm_sett_info_setting_get_property_info(const NMSettInfoSetting *sett_info,
         return NULL;
 
     G_STATIC_ASSERT_EXPR(G_STRUCT_OFFSET(NMSettInfoProperty, name) == 0);
-    idx = nm_utils_array_find_binary_search(sett_info->property_infos,
-                                            sizeof(NMSettInfoProperty),
-                                            sett_info->property_infos_len,
-                                            &property_name,
-                                            nm_strcmp_p_with_data,
-                                            NULL);
+    idx = nm_array_find_bsearch(sett_info->property_infos,
+                                sett_info->property_infos_len,
+                                sizeof(NMSettInfoProperty),
+                                &property_name,
+                                nm_strcmp_p_with_data,
+                                NULL);
 
     if (idx < 0)
         return NULL;

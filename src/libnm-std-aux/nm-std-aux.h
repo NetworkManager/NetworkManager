@@ -507,7 +507,7 @@ nm_memeq(const void *s1, const void *s2, size_t len)
 /*
  * Very similar to g_str_has_prefix() with the obvious meaning.
  * Differences:
- * 1) suffix is enforced to be a C string literal
+ * 1) prefix is enforced to be a C string literal
  *   (it is thus more restricted, but you'll know it at compile time).
  * 2) it accepts str==NULL
  *   (it is thus more forgiving than g_str_has_prefix())

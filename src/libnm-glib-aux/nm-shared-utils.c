@@ -3093,12 +3093,12 @@ nm_utils_named_value_list_find(const NMUtilsNamedValue *arr,
 #endif
 
     if (sorted) {
-        return nm_utils_array_find_binary_search(arr,
-                                                 sizeof(NMUtilsNamedValue),
-                                                 len,
-                                                 &name,
-                                                 nm_strcmp_p_with_data,
-                                                 NULL);
+        return nm_array_find_bsearch(arr,
+                                     len,
+                                     sizeof(NMUtilsNamedValue),
+                                     &name,
+                                     nm_strcmp_p_with_data,
+                                     NULL);
     }
     for (i = 0; i < len; i++) {
         if (nm_streq(arr[i].name, name))
@@ -3786,11 +3786,11 @@ nm_utils_ptrarray_is_sorted(gconstpointer   *list,
 }
 
 gssize
-nm_utils_ptrarray_find_binary_search(gconstpointer   *list,
-                                     gsize            len,
-                                     gconstpointer    needle,
-                                     GCompareDataFunc cmpfcn,
-                                     gpointer         user_data)
+nm_ptrarray_find_bsearch(gconstpointer   *list,
+                         gsize            len,
+                         gconstpointer    needle,
+                         GCompareDataFunc cmpfcn,
+                         gpointer         user_data)
 {
     gssize imin, imax, imid;
     int    cmp;
@@ -3823,13 +3823,13 @@ nm_utils_ptrarray_find_binary_search(gconstpointer   *list,
 }
 
 gssize
-nm_utils_ptrarray_find_binary_search_range(gconstpointer   *list,
-                                           gsize            len,
-                                           gconstpointer    needle,
-                                           GCompareDataFunc cmpfcn,
-                                           gpointer         user_data,
-                                           gssize          *out_idx_first,
-                                           gssize          *out_idx_last)
+nm_ptrarray_find_bsearch_range(gconstpointer   *list,
+                               gsize            len,
+                               gconstpointer    needle,
+                               GCompareDataFunc cmpfcn,
+                               gpointer         user_data,
+                               gssize          *out_idx_first,
+                               gssize          *out_idx_last)
 {
     gssize imin, imax, imid, i2min, i2max, i2mid;
     int    cmp;
@@ -3904,10 +3904,10 @@ nm_utils_ptrarray_find_binary_search_range(gconstpointer   *list,
 /*****************************************************************************/
 
 /**
- * nm_utils_array_find_binary_search:
+ * nm_array_find_bsearch:
  * @list: the list to search. It must be sorted according to @cmpfcn ordering.
- * @elem_size: the size in bytes of each element in the list
  * @len: the number of elements in @list
+ * @elem_size: the size in bytes of each element in the list
  * @needle: the value that is searched
  * @cmpfcn: the compare function. The elements @list are passed as first
  *   argument to @cmpfcn, while @needle is passed as second. Usually, the
@@ -3928,12 +3928,12 @@ nm_utils_ptrarray_find_binary_search_range(gconstpointer   *list,
  *   position where it should be.
  */
 gssize
-nm_utils_array_find_binary_search(gconstpointer    list,
-                                  gsize            elem_size,
-                                  gsize            len,
-                                  gconstpointer    needle,
-                                  GCompareDataFunc cmpfcn,
-                                  gpointer         user_data)
+nm_array_find_bsearch(gconstpointer    list,
+                      gsize            len,
+                      gsize            elem_size,
+                      gconstpointer    needle,
+                      GCompareDataFunc cmpfcn,
+                      gpointer         user_data)
 {
     gssize imin, imax, imid;
     int    cmp;
