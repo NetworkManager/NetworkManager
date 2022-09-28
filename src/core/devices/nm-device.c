@@ -16114,7 +16114,7 @@ nm_device_queue_state(NMDevice *self, NMDeviceState state, NMDeviceStateReason r
 
     /* We should only ever have one delayed state transition at a time */
     if (priv->queued_state.id) {
-        _LOGW(LOGD_DEVICE,
+        _LOGD(LOGD_DEVICE,
               "queue-state[%s, reason:%s, id:%u]: %s",
               nm_device_state_to_string(priv->queued_state.state),
               nm_device_state_reason_to_string_a(priv->queued_state.reason),
