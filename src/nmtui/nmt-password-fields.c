@@ -25,7 +25,7 @@ typedef struct {
     NmtPasswordFieldsExtras extras;
 
     NmtNewtEntry    *entry;
-    NmtNewtCheckbox *always_ask;
+    NmtNewtPopup    *secret_flags;
     NmtNewtCheckbox *show_password;
 
     char *init_password;
@@ -37,7 +37,7 @@ enum {
     PROP_WIDTH,
     PROP_EXTRAS,
     PROP_PASSWORD,
-    PROP_ALWAYS_ASK,
+    PROP_SECRET_FLAGS,
     PROP_SHOW_PASSWORD,
 
     LAST_PROP
@@ -45,8 +45,9 @@ enum {
 
 /**
  * NmtPasswordFieldsExtras:
- * @NMT_PASSWORD_FIELDS_ALWAYS_ASK: show an "Always ask" checkbox
+ * @NMT_PASSWORD_FIELDS_SHOW_SECRET_FLAGS: show the secret flags popup
  * @NMT_PASSWORD_FIELDS_SHOW_PASSWORD: show a "Show password" checkbox
+ * @NMT_PASSWORD_FIELDS_NOT_EMPTY: return NULL instead of empty string
  *
  * Extra widgets to include in an #NmtPasswordFields
  */
@@ -82,14 +83,13 @@ static const char *
 nmt_password_fields_get_password(NmtPasswordFields *fields)
 {
     NmtPasswordFieldsPrivate *priv = NMT_PASSWORD_FIELDS_GET_PRIVATE(fields);
+    const char               *text;
 
-    return nmt_newt_entry_get_text(priv->entry);
-}
+    text = nmt_newt_entry_get_text(priv->entry);
+    if (priv->extras & NMT_PASSWORD_FIELDS_NOT_EMPTY)
+        return nm_str_not_empty(text);
 
-static void
-always_ask_changed(GObject *object, GParamSpec *pspec, gpointer fields)
-{
-    g_object_notify(fields, "always-ask");
+    return text;
 }
 
 static void
@@ -99,13 +99,48 @@ show_password_changed(GObject *object, GParamSpec *pspec, gpointer fields)
 }
 
 static void
+secret_flags_changed(GObject *object, GParamSpec *pspec, gpointer fields)
+{
+    g_object_notify(fields, "secret-flags");
+}
+
+static guint
+secret_flags_from_popup_idx(guint idx)
+{
+    switch (idx) {
+    case 1:
+        return NM_SETTING_SECRET_FLAG_AGENT_OWNED;
+    case 2:
+        return NM_SETTING_SECRET_FLAG_NOT_SAVED;
+    default:
+    case 0:
+        return NM_SETTING_SECRET_FLAG_NONE;
+    }
+}
+
+static guint
+secret_flags_to_popup_idx(guint flags)
+{
+    if (flags & NM_SETTING_SECRET_FLAG_AGENT_OWNED)
+        return 1;
+    if (flags & NM_SETTING_SECRET_FLAG_NOT_SAVED)
+        return 2;
+    return 0;
+}
+
+static void
 nmt_password_fields_init(NmtPasswordFields *fields)
 {
-    NmtPasswordFieldsPrivate *priv = NMT_PASSWORD_FIELDS_GET_PRIVATE(fields);
+    NmtPasswordFieldsPrivate *priv      = NMT_PASSWORD_FIELDS_GET_PRIVATE(fields);
+    NmtNewtPopupEntry         entries[] = {
+                {_("Store password for all users"), NULL},
+                {_("Store password only for this user"), NULL},
+                {_("Ask password every time"), NULL},
+                {},
+    };
 
-    priv->entry = NMT_NEWT_ENTRY(nmt_newt_entry_new(-1, 0));
-    priv->always_ask =
-        NMT_NEWT_CHECKBOX(nmt_newt_checkbox_new(_("Ask for this password every time")));
+    priv->entry         = NMT_NEWT_ENTRY(nmt_newt_entry_new(-1, 0));
+    priv->secret_flags  = NMT_NEWT_POPUP(nmt_newt_popup_new(entries));
     priv->show_password = NMT_NEWT_CHECKBOX(nmt_newt_checkbox_new(_("Show password")));
 }
 
@@ -114,20 +149,12 @@ nmt_password_fields_constructed(GObject *object)
 {
     NmtPasswordFieldsPrivate *priv = NMT_PASSWORD_FIELDS_GET_PRIVATE(object);
     NmtNewtGrid              *grid = NMT_NEWT_GRID(object);
+    guint                     row  = 0;
 
-    nmt_newt_grid_add(grid, NMT_NEWT_WIDGET(priv->entry), 0, 0);
-
-    if (priv->extras & NMT_PASSWORD_FIELDS_ALWAYS_ASK) {
-        nmt_newt_grid_add(grid, NMT_NEWT_WIDGET(priv->always_ask), 0, 1);
-        g_signal_connect(priv->always_ask,
-                         "notify::active",
-                         G_CALLBACK(always_ask_changed),
-                         object);
-    } else
-        g_clear_object(&priv->always_ask);
+    nmt_newt_grid_add(grid, NMT_NEWT_WIDGET(priv->entry), 0, row++);
 
     if (priv->extras & NMT_PASSWORD_FIELDS_SHOW_PASSWORD) {
-        nmt_newt_grid_add(grid, NMT_NEWT_WIDGET(priv->show_password), 0, 2);
+        nmt_newt_grid_add(grid, NMT_NEWT_WIDGET(priv->show_password), 0, row++);
         g_signal_connect(priv->show_password,
                          "notify::active",
                          G_CALLBACK(show_password_changed),
@@ -139,6 +166,15 @@ nmt_password_fields_constructed(GObject *object)
                                G_BINDING_INVERT_BOOLEAN | G_BINDING_SYNC_CREATE);
     } else
         g_clear_object(&priv->show_password);
+
+    if (priv->extras & NMT_PASSWORD_FIELDS_SHOW_SECRET_FLAGS) {
+        nmt_newt_grid_add(grid, NMT_NEWT_WIDGET(priv->secret_flags), 0, row++);
+        g_signal_connect(priv->secret_flags,
+                         "notify::active-id",
+                         G_CALLBACK(secret_flags_changed),
+                         object);
+    } else
+        g_clear_object(&priv->secret_flags);
 
     g_object_bind_property(priv->entry,
                            "text",
@@ -154,9 +190,9 @@ nmt_password_fields_finalize(GObject *object)
 {
     NmtPasswordFieldsPrivate *priv = NMT_PASSWORD_FIELDS_GET_PRIVATE(object);
 
-    if (priv->always_ask) {
-        g_signal_handlers_disconnect_by_func(priv->always_ask,
-                                             G_CALLBACK(always_ask_changed),
+    if (priv->secret_flags) {
+        g_signal_handlers_disconnect_by_func(priv->secret_flags,
+                                             G_CALLBACK(secret_flags_changed),
                                              object);
     }
     if (priv->show_password) {
@@ -188,13 +224,12 @@ nmt_password_fields_set_property(GObject      *object,
     case PROP_PASSWORD:
         nmt_password_fields_set_password(fields, g_value_get_string(value));
         break;
-    case PROP_ALWAYS_ASK:
-        if (priv->always_ask)
-            nmt_newt_checkbox_set_active(priv->always_ask, g_value_get_boolean(value));
+    case PROP_SECRET_FLAGS:
+        nmt_newt_popup_set_active(priv->secret_flags,
+                                  secret_flags_to_popup_idx(g_value_get_uint(value)));
         break;
     case PROP_SHOW_PASSWORD:
-        if (priv->show_password)
-            nmt_newt_checkbox_set_active(priv->show_password, g_value_get_boolean(value));
+        nmt_newt_checkbox_set_active(priv->show_password, g_value_get_boolean(value));
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
@@ -218,13 +253,13 @@ nmt_password_fields_get_property(GObject *object, guint prop_id, GValue *value, 
     case PROP_PASSWORD:
         g_value_set_string(value, nmt_password_fields_get_password(entry));
         break;
-    case PROP_ALWAYS_ASK:
-        if (priv->always_ask)
-            g_value_set_boolean(value, nmt_newt_checkbox_get_active(priv->always_ask));
+    case PROP_SECRET_FLAGS:
+        g_value_set_uint(
+            value,
+            secret_flags_from_popup_idx(nmt_newt_popup_get_active(priv->secret_flags)));
         break;
     case PROP_SHOW_PASSWORD:
-        if (priv->show_password)
-            g_value_set_boolean(value, nmt_newt_checkbox_get_active(priv->show_password));
+        g_value_set_boolean(value, nmt_newt_checkbox_get_active(priv->show_password));
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
@@ -279,18 +314,19 @@ nmt_password_fields_class_init(NmtPasswordFieldsClass *entry_class)
         PROP_PASSWORD,
         g_param_spec_string("password", "", "", NULL, G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
     /**
-     * NmtPasswordFields:always-ask:
+     * NmtPasswordFields:secret-flags:
      *
-     * The current state of the "Always ask" checkbox.
+     * The current state of the "Secret flags" popup.
      */
-    g_object_class_install_property(
-        object_class,
-        PROP_ALWAYS_ASK,
-        g_param_spec_boolean("always-ask",
-                             "",
-                             "",
-                             FALSE,
-                             G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+    g_object_class_install_property(object_class,
+                                    PROP_SECRET_FLAGS,
+                                    g_param_spec_uint("secret-flags",
+                                                      "",
+                                                      "",
+                                                      0,
+                                                      G_MAXUINT,
+                                                      0,
+                                                      G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
     /**
      * NmtPasswordFields:show-password:
      *

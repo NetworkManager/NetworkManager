@@ -8,6 +8,16 @@
 
 void nm_editor_bindings_init(void);
 
+gboolean certificate_from_string(GBinding     *binding,
+                                 const GValue *source_value,
+                                 GValue       *target_value,
+                                 gpointer      user_data);
+
+gboolean certificate_to_string(GBinding     *binding,
+                               const GValue *source_value,
+                               GValue       *target_value,
+                               gpointer      user_data);
+
 void nm_editor_bind_ip_addresses_with_prefix_to_strv(int           family,
                                                      gpointer      source,
                                                      const char   *source_property,
@@ -41,6 +51,7 @@ void nm_editor_bind_ip_route_to_strings(int           family,
 
 void nm_editor_bind_wireless_security_method(NMConnection              *connection,
                                              NMSettingWirelessSecurity *s_wsec,
+                                             NMSetting8021x            *s_8021x,
                                              gpointer                   target,
                                              const char                *target_property,
                                              GBindingFlags              flags);

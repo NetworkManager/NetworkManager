@@ -5058,6 +5058,8 @@ src_nmtui_nmtui_SOURCES = \
 	src/nmtui/nm-editor-utils.c \
 	src/nmtui/nm-editor-utils.h \
 	\
+	src/nmtui/nmt-8021x-fields.c \
+	src/nmtui/nmt-8021x-fields.h \
 	src/nmtui/nmt-address-list.c \
 	src/nmtui/nmt-address-list.h \
 	src/nmtui/nmt-connect-connection-list.c \
@@ -5068,10 +5070,10 @@ src_nmtui_nmtui_SOURCES = \
 	src/nmtui/nmt-edit-connection-list.h \
 	src/nmtui/nmt-editor-grid.c \
 	src/nmtui/nmt-editor-grid.h \
-	src/nmtui/nmt-editor-page.c \
-	src/nmtui/nmt-editor-page.h \
 	src/nmtui/nmt-editor-page-device.c \
 	src/nmtui/nmt-editor-page-device.h \
+	src/nmtui/nmt-editor-page.c \
+	src/nmtui/nmt-editor-page.h \
 	src/nmtui/nmt-editor-section.c \
 	src/nmtui/nmt-editor-section.h \
 	src/nmtui/nmt-editor.c \
@@ -5102,6 +5104,8 @@ src_nmtui_nmtui_SOURCES = \
 	src/nmtui/nmt-page-ip4.h \
 	src/nmtui/nmt-page-ip6.c \
 	src/nmtui/nmt-page-ip6.h \
+	src/nmtui/nmt-page-macsec.c \
+	src/nmtui/nmt-page-macsec.h \
 	src/nmtui/nmt-page-ppp.c \
 	src/nmtui/nmt-page-ppp.h \
 	src/nmtui/nmt-page-team-port.c \
@@ -5128,12 +5132,12 @@ src_nmtui_nmtui_SOURCES = \
 	src/nmtui/nmt-slave-list.h \
 	src/nmtui/nmt-utils.c \
 	src/nmtui/nmt-utils.h \
+	src/nmtui/nmt-widget-list.c \
+	src/nmtui/nmt-widget-list.h \
 	src/nmtui/nmt-wireguard-peer-editor.c \
 	src/nmtui/nmt-wireguard-peer-editor.h \
 	src/nmtui/nmt-wireguard-peer-list.c \
 	src/nmtui/nmt-wireguard-peer-list.h \
-	src/nmtui/nmt-widget-list.c \
-	src/nmtui/nmt-widget-list.h \
 	$(NULL)
 
 src_nmtui_nmtui_CPPFLAGS = \

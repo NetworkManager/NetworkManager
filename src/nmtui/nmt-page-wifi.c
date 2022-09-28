@@ -23,6 +23,7 @@
 #include "nmt-mac-entry.h"
 #include "nmt-mtu-entry.h"
 #include "nmt-password-fields.h"
+#include "nmt-8021x-fields.h"
 
 #include "nm-editor-bindings.h"
 
@@ -33,6 +34,7 @@ G_DEFINE_TYPE(NmtPageWifi, nmt_page_wifi, NMT_TYPE_EDITOR_PAGE_DEVICE)
 
 typedef struct {
     NMSettingWirelessSecurity *s_wsec;
+    NMSetting8021x            *s_8021x;
 
 } NmtPageWifiPrivate;
 
@@ -166,6 +168,7 @@ nmt_page_wifi_constructed(GObject *object)
     NmtEditorGrid             *grid;
     NMSettingWireless         *s_wireless;
     NMSettingWirelessSecurity *s_wsec;
+    NMSetting8021x            *s_8021x;
     NmtNewtWidget             *widget, *hbox, *subgrid;
     NmtNewtWidget             *mode, *band, *security, *entry;
     NmtNewtStack              *stack;
@@ -181,7 +184,14 @@ nmt_page_wifi_constructed(GObject *object)
          */
         s_wsec = NM_SETTING_WIRELESS_SECURITY(nm_setting_wireless_security_new());
     }
-    priv->s_wsec = g_object_ref_sink(s_wsec);
+    priv->s_wsec = g_object_ref(s_wsec);
+
+    s_8021x = nm_connection_get_setting_802_1x(conn);
+    if (!s_8021x) {
+        s_8021x = NM_SETTING_802_1X(nm_setting_802_1x_new());
+        nm_setting_802_1x_add_eap_method(s_8021x, "TLS");
+    }
+    priv->s_8021x = g_object_ref(s_8021x);
 
     deventry = nmt_editor_page_device_get_device_entry(NMT_EDITOR_PAGE_DEVICE(object));
     g_object_bind_property(s_wireless,
@@ -279,9 +289,7 @@ nmt_page_wifi_constructed(GObject *object)
     nmt_newt_stack_add(stack, "wpa3-personal", subgrid);
 
     /* "wpa-enterprise" */
-    // FIXME
-    widget = nmt_newt_label_new(_("(No support for wpa-enterprise yet...)"));
-    nmt_newt_stack_add(stack, "wpa-enterprise", widget);
+    nmt_newt_stack_add(stack, "wpa-enterprise", nmt_8021x_fields_new(s_8021x, FALSE));
 
     /* wep-key */
     subgrid = nmt_editor_grid_new();
@@ -355,6 +363,7 @@ nmt_page_wifi_constructed(GObject *object)
     g_object_bind_property(security, "active-id", stack, "active-id", G_BINDING_SYNC_CREATE);
     nm_editor_bind_wireless_security_method(conn,
                                             s_wsec,
+                                            s_8021x,
                                             security,
                                             "active-id",
                                             G_BINDING_BIDIRECTIONAL | G_BINDING_SYNC_CREATE);

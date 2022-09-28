@@ -5,6 +5,7 @@ executable(
   files(
     'nm-editor-bindings.c',
     'nm-editor-utils.c',
+    'nmt-8021x-fields.c',
     'nmt-address-list.c',
     'nmt-connect-connection-list.c',
     'nmt-device-entry.c',
@@ -27,6 +28,7 @@ executable(
     'nmt-page-ip4.c',
     'nmt-page-ip6.c',
     'nmt-page-ip-tunnel.c',
+    'nmt-page-macsec.c',
     'nmt-page-ppp.c',
     'nmt-page-team.c',
     'nmt-page-team-port.c',
