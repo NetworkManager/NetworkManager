@@ -406,47 +406,6 @@ nm_uuid_generate_from_string_str(const char   *s,
 }
 
 /**
- * nm_uuid_generate_from_strings_v3:
- * @string1: a variadic list of strings. Must be NULL terminated.
- *
- * Returns a variant3 UUID based on the concatenated C strings.
- * It does not simply concatenate them, but also includes the
- * terminating '\0' character. For example "a", "b", gives
- * "a\0b\0".
- *
- * This has the advantage, that the following invocations
- * all give different UUIDs: (NULL), (""), ("",""), ("","a"), ("a",""),
- * ("aa"), ("aa", ""), ("", "aa"), ...
- */
-char *
-nm_uuid_generate_from_strings_v3(const char *string1, ...)
-{
-    if (!string1)
-        return nm_uuid_generate_from_string_str(NULL, 0, NM_UUID_TYPE_VERSION3, &nm_uuid_ns_1);
-
-    {
-        nm_auto_str_buf NMStrBuf str = NM_STR_BUF_INIT_A(NM_UTILS_GET_NEXT_REALLOC_SIZE_232, FALSE);
-        va_list                  args;
-        const char              *s;
-
-        nm_str_buf_append_len(&str, string1, strlen(string1) + 1u);
-
-        va_start(args, string1);
-        s = va_arg(args, const char *);
-        while (s) {
-            nm_str_buf_append_len(&str, s, strlen(s) + 1u);
-            s = va_arg(args, const char *);
-        }
-        va_end(args);
-
-        return nm_uuid_generate_from_string_str(nm_str_buf_get_str_unsafe(&str),
-                                                str.len,
-                                                NM_UUID_TYPE_VERSION3,
-                                                &nm_uuid_ns_1);
-    }
-}
-
-/**
  * nm_uuid_generate_from_strings_strv:
  * @uuid_type: the UUID type to use. Prefer version 5 unless you have
  *   good reasons.
