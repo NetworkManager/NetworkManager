@@ -89,7 +89,10 @@ nm_device_devip_set_state(NMDevice             *self,
     nm_assert(NM_IS_DEVICE(self));
     nm_assert_addr_family_or_unspec(addr_family);
     nm_assert(!l3cd || NM_IS_L3_CONFIG_DATA(l3cd));
-    nm_assert(NM_IN_SET(ip_state, NM_DEVICE_IP_STATE_PENDING, NM_DEVICE_IP_STATE_READY));
+    nm_assert(NM_IN_SET(ip_state,
+                        NM_DEVICE_IP_STATE_NONE,
+                        NM_DEVICE_IP_STATE_PENDING,
+                        NM_DEVICE_IP_STATE_READY));
 
     nm_device_devip_set_state_full(self, addr_family, ip_state, l3cd, NM_DEVICE_STATE_REASON_NONE);
 }
