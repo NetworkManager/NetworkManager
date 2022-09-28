@@ -7946,42 +7946,6 @@ test_nm_utils_uuid_generate_from_string(void)
 /*****************************************************************************/
 
 static void
-_check_uuid_v3(const char *expected_uuid, const char *str, gssize slen, char *uuid_test)
-{
-    g_assert(uuid_test);
-    g_assert(nm_uuid_is_normalized(uuid_test));
-
-    if (strcmp(uuid_test, expected_uuid)) {
-        g_error("UUID test failed (1): text=%s, len=%lld, expected=%s, uuid_test=%s",
-                str,
-                (long long) slen,
-                expected_uuid,
-                uuid_test);
-    }
-    g_free(uuid_test);
-
-    uuid_test = nm_uuid_generate_from_string_str(str, slen, NM_UUID_TYPE_VERSION3, &nm_uuid_ns_1);
-
-    g_assert(uuid_test);
-    g_assert(nm_utils_is_uuid(uuid_test));
-
-    if (strcmp(uuid_test, expected_uuid)) {
-        g_error("UUID test failed (2): text=%s; len=%lld, expected=%s, uuid2=%s",
-                str,
-                (long long) slen,
-                expected_uuid,
-                uuid_test);
-    }
-    g_free(uuid_test);
-}
-
-#define check_uuid_v3(expected_uuid, str, ...) \
-    _check_uuid_v3(expected_uuid,              \
-                   str,                        \
-                   NM_STRLEN(str),             \
-                   nm_uuid_generate_from_strings_v3(__VA_ARGS__, NULL))
-
-static void
 _check_uuid(NMUuidType    uuid_type,
             const NMUuid *type_arg,
             const char   *expected_uuid,
@@ -8046,6 +8010,9 @@ _check_uuid(NMUuidType    uuid_type,
             nm_uuid_generate_from_strings_strv(_uuid_type, _type_arg, NM_MAKE_STRV(__VA_ARGS__)), \
             nm_uuid_generate_from_strings_v3(__VA_ARGS__, NULL));                                 \
     })
+
+#define check_uuid_v3(expected_uuid, str, ...) \
+    check_uuid(NM_UUID_TYPE_VERSION3, &nm_uuid_ns_1, expected_uuid, str, __VA_ARGS__)
 
 static void
 test_nm_utils_uuid_generate_from_strings(void)
