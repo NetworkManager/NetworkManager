@@ -7946,7 +7946,7 @@ test_nm_utils_uuid_generate_from_string(void)
 /*****************************************************************************/
 
 static void
-__test_uuid(const char *expected_uuid, const char *str, gssize slen, char *uuid_test)
+_check_uuid_v3(const char *expected_uuid, const char *str, gssize slen, char *uuid_test)
 {
     g_assert(uuid_test);
     g_assert(nm_uuid_is_normalized(uuid_test));
@@ -7975,8 +7975,8 @@ __test_uuid(const char *expected_uuid, const char *str, gssize slen, char *uuid_
     g_free(uuid_test);
 }
 
-#define _test_uuid(expected_uuid, str, strlen, ...) \
-    __test_uuid(expected_uuid, str, strlen, nm_uuid_generate_from_strings(__VA_ARGS__, NULL))
+#define check_uuid_v3(expected_uuid, str, strlen, ...) \
+    _check_uuid_v3(expected_uuid, str, strlen, nm_uuid_generate_from_strings_v3(__VA_ARGS__, NULL))
 
 static void
 test_nm_utils_uuid_generate_from_strings(void)
@@ -7998,20 +7998,20 @@ test_nm_utils_uuid_generate_from_strings(void)
     g_assert_cmpstr(NM_UUID_NS_1, ==, nm_uuid_unparse(&nm_uuid_ns_1, buf));
     g_assert_cmpstr(NM_UUID_NS_ZERO, ==, nm_uuid_unparse(&nm_uuid_ns_zero, buf));
 
-    _test_uuid("b07c334a-399b-32de-8d50-58e4e08f98e3", "", 0, NULL);
-    _test_uuid("b8a426cb-bcb5-30a3-bd8f-6786fea72df9", "\0", 1, "");
-    _test_uuid("12a4a982-7aae-39e1-951e-41aeb1250959", "a\0", 2, "a");
-    _test_uuid("69e22c7e-f89f-3a43-b239-1cb52ed8db69", "aa\0", 3, "aa");
-    _test_uuid("59829fd3-5ad5-3d90-a7b0-4911747e4088", "\0\0", 2, "", "");
-    _test_uuid("01ad0e06-6c50-3384-8d86-ddab81421425", "a\0\0", 3, "a", "");
-    _test_uuid("e1ed8647-9ed3-3ec8-8c6d-e8204524d71d", "aa\0\0", 4, "aa", "");
-    _test_uuid("fb1c7cd6-275c-3489-9382-83b900da8af0", "\0a\0", 3, "", "a");
-    _test_uuid("5d79494e-c4ba-31a6-80a2-d6016ccd7e17", "a\0a\0", 4, "a", "a");
-    _test_uuid("fd698d86-1b60-3ebe-855f-7aada9950a8d", "aa\0a\0", 5, "aa", "a");
-    _test_uuid("8c573b48-0f01-30ba-bb94-c5f59f4fe517", "\0aa\0", 4, "", "aa");
-    _test_uuid("2bdd3d46-eb83-3c53-a41b-a724d04b5544", "a\0aa\0", 5, "a", "aa");
-    _test_uuid("13d4b780-07c1-3ba7-b449-81c4844ef039", "aa\0aa\0", 6, "aa", "aa");
-    _test_uuid("dd265bf7-c05a-3037-9939-b9629858a477", "a\0b\0", 4, "a", "b");
+    check_uuid_v3("b07c334a-399b-32de-8d50-58e4e08f98e3", "", 0, NULL);
+    check_uuid_v3("b8a426cb-bcb5-30a3-bd8f-6786fea72df9", "\0", 1, "");
+    check_uuid_v3("12a4a982-7aae-39e1-951e-41aeb1250959", "a\0", 2, "a");
+    check_uuid_v3("69e22c7e-f89f-3a43-b239-1cb52ed8db69", "aa\0", 3, "aa");
+    check_uuid_v3("59829fd3-5ad5-3d90-a7b0-4911747e4088", "\0\0", 2, "", "");
+    check_uuid_v3("01ad0e06-6c50-3384-8d86-ddab81421425", "a\0\0", 3, "a", "");
+    check_uuid_v3("e1ed8647-9ed3-3ec8-8c6d-e8204524d71d", "aa\0\0", 4, "aa", "");
+    check_uuid_v3("fb1c7cd6-275c-3489-9382-83b900da8af0", "\0a\0", 3, "", "a");
+    check_uuid_v3("5d79494e-c4ba-31a6-80a2-d6016ccd7e17", "a\0a\0", 4, "a", "a");
+    check_uuid_v3("fd698d86-1b60-3ebe-855f-7aada9950a8d", "aa\0a\0", 5, "aa", "a");
+    check_uuid_v3("8c573b48-0f01-30ba-bb94-c5f59f4fe517", "\0aa\0", 4, "", "aa");
+    check_uuid_v3("2bdd3d46-eb83-3c53-a41b-a724d04b5544", "a\0aa\0", 5, "a", "aa");
+    check_uuid_v3("13d4b780-07c1-3ba7-b449-81c4844ef039", "aa\0aa\0", 6, "aa", "aa");
+    check_uuid_v3("dd265bf7-c05a-3037-9939-b9629858a477", "a\0b\0", 4, "a", "b");
 }
 
 static void

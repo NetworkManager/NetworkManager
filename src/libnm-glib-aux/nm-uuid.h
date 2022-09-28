@@ -123,7 +123,7 @@ char *nm_uuid_generate_from_string_str(const char   *s,
                                        NMUuidType    uuid_type,
                                        const NMUuid *type_args);
 
-char *nm_uuid_generate_from_strings(const char *string1, ...) G_GNUC_NULL_TERMINATED;
+char *nm_uuid_generate_from_strings_v3(const char *string1, ...) G_GNUC_NULL_TERMINATED;
 
 /*****************************************************************************/
 

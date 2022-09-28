@@ -307,13 +307,13 @@ connection_setting_add(GHashTable   *nic,
                          s_index ? " " : "",
                          s_index ? s_index : "");
 
-    uuid = nm_uuid_generate_from_strings("ibft",
-                                         s_hwaddr,
-                                         s_vlanid ? "V" : "v",
-                                         s_vlanid ? s_vlanid : "",
-                                         s_ipaddr ? "A" : "DHCP",
-                                         s_ipaddr ? s_ipaddr : "",
-                                         NULL);
+    uuid = nm_uuid_generate_from_strings_v3("ibft",
+                                            s_hwaddr,
+                                            s_vlanid ? "V" : "v",
+                                            s_vlanid ? s_vlanid : "",
+                                            s_ipaddr ? "A" : "DHCP",
+                                            s_ipaddr ? s_ipaddr : "",
+                                            NULL);
 
     s_con = (NMSetting *) nm_connection_get_setting_connection(connection);
     if (!s_con) {

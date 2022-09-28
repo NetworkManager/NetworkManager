@@ -12,7 +12,7 @@
 const NMUuid nm_uuid_ns_zero =
     NM_UUID_INIT(00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00);
 
-/* arbitrarily chosen namespace UUID for nm_uuid_generate_from_strings() */
+/* arbitrarily chosen namespace UUID for nm_uuid_generate_from_strings_v3() */
 const NMUuid nm_uuid_ns_1 =
     NM_UUID_INIT(b4, 25, e9, fb, 75, 98, 44, b4, 9e, 3b, 5a, 2e, 3a, aa, 49, 05);
 
@@ -406,7 +406,7 @@ nm_uuid_generate_from_string_str(const char   *s,
 }
 
 /**
- * nm_uuid_generate_from_strings:
+ * nm_uuid_generate_from_strings_v3:
  * @string1: a variadic list of strings. Must be NULL terminated.
  *
  * Returns a variant3 UUID based on the concatenated C strings.
@@ -419,7 +419,7 @@ nm_uuid_generate_from_string_str(const char   *s,
  * ("aa"), ("aa", ""), ("", "aa"), ...
  */
 char *
-nm_uuid_generate_from_strings(const char *string1, ...)
+nm_uuid_generate_from_strings_v3(const char *string1, ...)
 {
     if (!string1)
         return nm_uuid_generate_from_string_str(NULL, 0, NM_UUID_TYPE_VERSION3, &nm_uuid_ns_1);
