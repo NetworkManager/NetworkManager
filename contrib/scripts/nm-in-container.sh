@@ -282,6 +282,7 @@ nm-env-prepare.sh --prefix eth -i 1
 nm-env-prepare.sh --prefix eth -i 1 && nmcli device connect eth1
 nm_run_gdb
 nm_run_normal
+gdb /usr/sbin/NetworkManager /tmp/core.NetworkManager.
 nmcli connection add type pppoe con-name ppp-net1 ifname ppp-net1 pppoe.parent net1 service isp username test password networkmanager autoconnect no
 nmcli device connect eth1
 systemctl stop NetworkManager; /opt/test/sbin/NetworkManager --debug 2>&1 | tee -a ./nm-log.txt
