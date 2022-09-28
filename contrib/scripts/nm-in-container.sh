@@ -217,6 +217,11 @@ Cat-Timestamp() {
     done
 }
 
+Journald-clear() {
+    rm -rf /var/log/journal/????????????????????????????????/*
+    systemctl restart systemd-journald
+}
+
 nm_run_gdb() {
     systemctl stop NetworkManager.service
     gdb --args "\${1:-/opt/test/sbin/NetworkManager}" --debug
@@ -265,7 +270,9 @@ behave -f html --stop -t ipv4_method_static_with_IP ./features/scenarios/ipv4.fe
 behave -f html --stop ./features/scenarios/vrf.feature
 cd $BASEDIR_NM
 for i in {1..9}; do nm-env-prepare.sh --prefix eth -i \$i; done
+Journald-clear
 journalctl | NM-log
+journalctl --since '3 min ago' | NM-log
 m
 make
 make install
@@ -277,11 +284,11 @@ nm_run_gdb
 nm_run_normal
 nmcli connection add type pppoe con-name ppp-net1 ifname ppp-net1 pppoe.parent net1 service isp username test password networkmanager autoconnect no
 nmcli device connect eth1
-systemctl daemon-reload ; systemctl restart NetworkManager
-systemctl status NetworkManager
-systemctl stop NetworkManager
 systemctl stop NetworkManager; /opt/test/sbin/NetworkManager --debug 2>&1 | tee -a ./nm-log.txt
 systemctl stop NetworkManager; gdb -ex run --args /opt/test/sbin/NetworkManager --debug
+systemctl stop NetworkManager
+systemctl daemon-reload ; systemctl restart NetworkManager
+systemctl status NetworkManager
 EOF
 
     cat <<EOF | tmp_file "$BASEDIR/data-gdbinit"
