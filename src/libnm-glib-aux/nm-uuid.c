@@ -12,7 +12,8 @@
 const NMUuid nm_uuid_ns_zero =
     NM_UUID_INIT(00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00);
 
-/* arbitrarily chosen namespace UUID for nm_uuid_generate_from_strings_v3() */
+/* arbitrarily chosen namespace UUID for some uses of nm_uuid_generate_from_strings().
+ * Try not to re-use this namespace, instead, generate a unique one. */
 const NMUuid nm_uuid_ns_1 =
     NM_UUID_INIT(b4, 25, e9, fb, 75, 98, 44, b4, 9e, 3b, 5a, 2e, 3a, aa, 49, 05);
 

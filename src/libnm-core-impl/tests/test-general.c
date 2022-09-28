@@ -7951,8 +7951,7 @@ _check_uuid(NMUuidType    uuid_type,
             const char   *expected_uuid,
             const char   *str,
             gssize        slen,
-            char         *uuid_test,
-            char         *uuid_test_v3)
+            char         *uuid_test)
 {
     g_assert(uuid_test);
     g_assert(nm_uuid_is_normalized(uuid_test));
@@ -7980,35 +7979,23 @@ _check_uuid(NMUuidType    uuid_type,
                 uuid_test);
     }
     g_free(uuid_test);
-
-    if (!uuid_test_v3) {
-        /* The special case of NULL argument. This cannot be represented by
-         * nm_uuid_generate_from_strings_v3(). */
-        g_assert_cmpmem(str, slen, "x", 1);
-    } else if (uuid_type == NM_UUID_TYPE_VERSION3 && type_arg == &nm_uuid_ns_1)
-        g_assert_cmpstr(expected_uuid, ==, uuid_test_v3);
-    else
-        g_assert_cmpstr(expected_uuid, !=, uuid_test_v3);
-
-    g_free(uuid_test_v3);
 }
 
-#define check_uuid(uuid_type, type_arg, expected_uuid, str, ...)                                  \
-    ({                                                                                            \
-        const NMUuidType _uuid_type     = (uuid_type);                                            \
-        const NMUuid    *_type_arg      = type_arg;                                               \
-        const char      *_expected_uuid = (expected_uuid);                                        \
-        const char      *_str           = (str);                                                  \
-        const gsize      _strlen        = NM_STRLEN(str);                                         \
-                                                                                                  \
-        _check_uuid(                                                                              \
-            _uuid_type,                                                                           \
-            _type_arg,                                                                            \
-            _expected_uuid,                                                                       \
-            _str,                                                                                 \
-            _strlen,                                                                              \
-            nm_uuid_generate_from_strings_strv(_uuid_type, _type_arg, NM_MAKE_STRV(__VA_ARGS__)), \
-            nm_uuid_generate_from_strings_v3(__VA_ARGS__, NULL));                                 \
+#define check_uuid(uuid_type, type_arg, expected_uuid, str, ...)                                   \
+    ({                                                                                             \
+        const NMUuidType _uuid_type     = (uuid_type);                                             \
+        const NMUuid    *_type_arg      = type_arg;                                                \
+        const char      *_expected_uuid = (expected_uuid);                                         \
+        const char      *_str           = (str);                                                   \
+        const gsize      _strlen        = NM_STRLEN(str);                                          \
+                                                                                                   \
+        _check_uuid(                                                                               \
+            _uuid_type,                                                                            \
+            _type_arg,                                                                             \
+            _expected_uuid,                                                                        \
+            _str,                                                                                  \
+            _strlen,                                                                               \
+            nm_uuid_generate_from_strings_strv(_uuid_type, _type_arg, NM_MAKE_STRV(__VA_ARGS__))); \
     })
 
 static void
@@ -8036,8 +8023,7 @@ test_nm_utils_uuid_generate_from_strings(void)
                 "457229f4-fe49-32f5-8b09-c531d81f44d9",
                 "x",
                 1,
-                nm_uuid_generate_from_strings_strv(NM_UUID_TYPE_VERSION3, &nm_uuid_ns_1, NULL),
-                NULL);
+                nm_uuid_generate_from_strings_strv(NM_UUID_TYPE_VERSION3, &nm_uuid_ns_1, NULL));
     check_uuid(NM_UUID_TYPE_VERSION3,
                &nm_uuid_ns_1,
                "b07c334a-399b-32de-8d50-58e4e08f98e3",
