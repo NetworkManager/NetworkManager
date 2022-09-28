@@ -7982,6 +7982,72 @@ _check_uuid_v3(const char *expected_uuid, const char *str, gssize slen, char *uu
                    nm_uuid_generate_from_strings_v3(__VA_ARGS__, NULL))
 
 static void
+_check_uuid(NMUuidType    uuid_type,
+            const NMUuid *type_arg,
+            const char   *expected_uuid,
+            const char   *str,
+            gssize        slen,
+            char         *uuid_test,
+            char         *uuid_test_v3)
+{
+    g_assert(uuid_test);
+    g_assert(nm_uuid_is_normalized(uuid_test));
+    g_assert(str);
+
+    if (!nm_streq(uuid_test, expected_uuid)) {
+        g_error("UUID test failed (1): text=%s, len=%lld, expected=%s, uuid_test=%s",
+                str,
+                (long long) slen,
+                expected_uuid,
+                uuid_test);
+    }
+    g_free(uuid_test);
+
+    uuid_test = nm_uuid_generate_from_string_str(str, slen, uuid_type, type_arg);
+
+    g_assert(uuid_test);
+    g_assert(nm_utils_is_uuid(uuid_test));
+
+    if (strcmp(uuid_test, expected_uuid)) {
+        g_error("UUID test failed (2): text=%s; len=%lld, expected=%s, uuid2=%s",
+                str,
+                (long long) slen,
+                expected_uuid,
+                uuid_test);
+    }
+    g_free(uuid_test);
+
+    if (!uuid_test_v3) {
+        /* The special case of NULL argument. This cannot be represented by
+         * nm_uuid_generate_from_strings_v3(). */
+        g_assert_cmpmem(str, slen, "x", 1);
+    } else if (uuid_type == NM_UUID_TYPE_VERSION3 && type_arg == &nm_uuid_ns_1)
+        g_assert_cmpstr(expected_uuid, ==, uuid_test_v3);
+    else
+        g_assert_cmpstr(expected_uuid, !=, uuid_test_v3);
+
+    g_free(uuid_test_v3);
+}
+
+#define check_uuid(uuid_type, type_arg, expected_uuid, str, ...)                                  \
+    ({                                                                                            \
+        const NMUuidType _uuid_type     = (uuid_type);                                            \
+        const NMUuid    *_type_arg      = type_arg;                                               \
+        const char      *_expected_uuid = (expected_uuid);                                        \
+        const char      *_str           = (str);                                                  \
+        const gsize      _strlen        = NM_STRLEN(str);                                         \
+                                                                                                  \
+        _check_uuid(                                                                              \
+            _uuid_type,                                                                           \
+            _type_arg,                                                                            \
+            _expected_uuid,                                                                       \
+            _str,                                                                                 \
+            _strlen,                                                                              \
+            nm_uuid_generate_from_strings_strv(_uuid_type, _type_arg, NM_MAKE_STRV(__VA_ARGS__)), \
+            nm_uuid_generate_from_strings_v3(__VA_ARGS__, NULL));                                 \
+    })
+
+static void
 test_nm_utils_uuid_generate_from_strings(void)
 {
     const NMUuid uuid0 = NM_UUID_INIT_ZERO();
@@ -8015,6 +8081,143 @@ test_nm_utils_uuid_generate_from_strings(void)
     check_uuid_v3("2bdd3d46-eb83-3c53-a41b-a724d04b5544", "a\0aa\0", "a", "aa");
     check_uuid_v3("13d4b780-07c1-3ba7-b449-81c4844ef039", "aa\0aa\0", "aa", "aa");
     check_uuid_v3("dd265bf7-c05a-3037-9939-b9629858a477", "a\0b\0", "a", "b");
+
+    _check_uuid(NM_UUID_TYPE_VERSION3,
+                &nm_uuid_ns_1,
+                "457229f4-fe49-32f5-8b09-c531d81f44d9",
+                "x",
+                1,
+                nm_uuid_generate_from_strings_strv(NM_UUID_TYPE_VERSION3, &nm_uuid_ns_1, NULL),
+                NULL);
+    check_uuid(NM_UUID_TYPE_VERSION3,
+               &nm_uuid_ns_1,
+               "b07c334a-399b-32de-8d50-58e4e08f98e3",
+               "",
+               NULL);
+    check_uuid(NM_UUID_TYPE_VERSION3,
+               &nm_uuid_ns_1,
+               "b8a426cb-bcb5-30a3-bd8f-6786fea72df9",
+               "\0",
+               "");
+    check_uuid(NM_UUID_TYPE_VERSION3,
+               &nm_uuid_ns_1,
+               "12a4a982-7aae-39e1-951e-41aeb1250959",
+               "a\0",
+               "a");
+    check_uuid(NM_UUID_TYPE_VERSION3,
+               &nm_uuid_ns_1,
+               "69e22c7e-f89f-3a43-b239-1cb52ed8db69",
+               "aa\0",
+               "aa");
+    check_uuid(NM_UUID_TYPE_VERSION3,
+               &nm_uuid_ns_1,
+               "59829fd3-5ad5-3d90-a7b0-4911747e4088",
+               "\0\0",
+               "",
+               "");
+    check_uuid(NM_UUID_TYPE_VERSION3,
+               &nm_uuid_ns_1,
+               "01ad0e06-6c50-3384-8d86-ddab81421425",
+               "a\0\0",
+               "a",
+               "");
+    check_uuid(NM_UUID_TYPE_VERSION3,
+               &nm_uuid_ns_1,
+               "e1ed8647-9ed3-3ec8-8c6d-e8204524d71d",
+               "aa\0\0",
+               "aa",
+               "");
+    check_uuid(NM_UUID_TYPE_VERSION3,
+               &nm_uuid_ns_1,
+               "fb1c7cd6-275c-3489-9382-83b900da8af0",
+               "\0a\0",
+               "",
+               "a");
+    check_uuid(NM_UUID_TYPE_VERSION3,
+               &nm_uuid_ns_1,
+               "5d79494e-c4ba-31a6-80a2-d6016ccd7e17",
+               "a\0a\0",
+               "a",
+               "a");
+    check_uuid(NM_UUID_TYPE_VERSION3,
+               &nm_uuid_ns_1,
+               "fd698d86-1b60-3ebe-855f-7aada9950a8d",
+               "aa\0a\0",
+               "aa",
+               "a");
+    check_uuid(NM_UUID_TYPE_VERSION3,
+               &nm_uuid_ns_1,
+               "8c573b48-0f01-30ba-bb94-c5f59f4fe517",
+               "\0aa\0",
+               "",
+               "aa");
+    check_uuid(NM_UUID_TYPE_VERSION3,
+               &nm_uuid_ns_1,
+               "2bdd3d46-eb83-3c53-a41b-a724d04b5544",
+               "a\0aa\0",
+               "a",
+               "aa");
+    check_uuid(NM_UUID_TYPE_VERSION3,
+               &nm_uuid_ns_1,
+               "13d4b780-07c1-3ba7-b449-81c4844ef039",
+               "aa\0aa\0",
+               "aa",
+               "aa");
+    check_uuid(NM_UUID_TYPE_VERSION3,
+               &nm_uuid_ns_1,
+               "dd265bf7-c05a-3037-9939-b9629858a477",
+               "a\0b\0",
+               "a",
+               "b");
+
+    check_uuid(NM_UUID_TYPE_VERSION5,
+               _uuid(NM_UUID_NS_URL),
+               "dd247a64-df22-5d30-8087-0bd709f6941a",
+               "a\0b\0",
+               "a",
+               "b");
+    check_uuid(NM_UUID_TYPE_VERSION5,
+               _uuid(NM_UUID_NS_URL),
+               "cbb93d73-085d-5072-94cd-a394b8149993",
+               "\0b\0",
+               "",
+               "b");
+    check_uuid(NM_UUID_TYPE_VERSION3,
+               _uuid(NM_UUID_NS_URL),
+               "916dcdd8-5042-3b9b-9763-4312a31e5735",
+               "aa\0a\0",
+               "aa",
+               "a");
+    check_uuid(NM_UUID_TYPE_VERSION3,
+               NULL,
+               "1700bb72-7116-3d1f-8cd2-6d074a40a3a9",
+               "aa\0a\0",
+               "aa",
+               "a");
+    check_uuid(NM_UUID_TYPE_VERSION3,
+               &nm_uuid_ns_zero,
+               "1700bb72-7116-3d1f-8cd2-6d074a40a3a9",
+               "aa\0a\0",
+               "aa",
+               "a");
+    check_uuid(NM_UUID_TYPE_VERSION5,
+               NULL,
+               "03c5de66-28ad-5a2e-8ed3-e256f3218900",
+               "aa\0a\0",
+               "aa",
+               "a");
+    check_uuid(NM_UUID_TYPE_VERSION5,
+               &nm_uuid_ns_zero,
+               "03c5de66-28ad-5a2e-8ed3-e256f3218900",
+               "aa\0a\0",
+               "aa",
+               "a");
+    check_uuid(NM_UUID_TYPE_LEGACY,
+               NULL,
+               "c38f63cf-1e50-ad7f-ae26-50f85cc5da47",
+               "aa\0a\0",
+               "aa",
+               "a");
 }
 
 static void

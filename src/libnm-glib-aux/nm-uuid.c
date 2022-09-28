@@ -445,3 +445,53 @@ nm_uuid_generate_from_strings_v3(const char *string1, ...)
                                                 &nm_uuid_ns_1);
     }
 }
+
+/**
+ * nm_uuid_generate_from_strings_strv:
+ * @uuid_type: the UUID type to use. Prefer version 5 unless you have
+ *   good reasons.
+ * @type_args: the namespace UUID.
+ * @strv: (allow-none): the strv list to hash. Can be NULL, in which
+ *   case the result is different from an empty array.
+ *
+ * Returns a @uuid_type UUID based on the concatenated C strings.
+ * It does not simply concatenate them, but also includes the
+ * terminating '\0' character. For example "a", "b", gives
+ * "a\0b\0".
+ * This has the advantage, that the following invocations
+ * all give different UUIDs: (NULL), (""), ("",""), ("","a"), ("a",""),
+ * ("aa"), ("aa", ""), ("", "aa"), ...
+ */
+char *
+nm_uuid_generate_from_strings_strv(NMUuidType         uuid_type,
+                                   const NMUuid      *type_args,
+                                   const char *const *strv)
+{
+    nm_auto_str_buf NMStrBuf str = NM_STR_BUF_INIT_A(NM_UTILS_GET_NEXT_REALLOC_SIZE_232, FALSE);
+    gsize                    slen;
+    const char              *s;
+
+    if (!strv) {
+        /* NULL is treated differently from an empty strv. We achieve that
+         * by using a non-empty, non-NUL terminated string (which cannot happen
+         * in the other cases). */
+        slen = 1;
+        s    = "x";
+    } else if (!strv[0]) {
+        slen = 0;
+        s    = "";
+    } else if (!strv[1]) {
+        slen = strlen(strv[0]) + 1u;
+        s    = strv[0];
+    } else {
+        /* We concatenate the NUL termiated string, including the NUL
+         * character. This way, ("a","a"), ("aa"), ("aa","") all hash
+         * differently. */
+        for (; strv[0]; strv++)
+            nm_str_buf_append_len(&str, strv[0], strlen(strv[0]) + 1u);
+        slen = str.len;
+        s    = nm_str_buf_get_str_unsafe(&str);
+    }
+
+    return nm_uuid_generate_from_string_str(s, slen, uuid_type, type_args);
+}

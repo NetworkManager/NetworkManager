@@ -123,6 +123,13 @@ char *nm_uuid_generate_from_string_str(const char   *s,
                                        NMUuidType    uuid_type,
                                        const NMUuid *type_args);
 
+char *nm_uuid_generate_from_strings_strv(NMUuidType         uuid_type,
+                                         const NMUuid      *type_args,
+                                         const char *const *strv);
+
+#define nm_uuid_generate_from_strings(uuid_type, type_args, ...) \
+    nm_uuid_generate_from_strings_strv((uuid_type), (type_args), NM_MAKE_STRV(__VA_ARGS__))
+
 char *nm_uuid_generate_from_strings_v3(const char *string1, ...) G_GNUC_NULL_TERMINATED;
 
 /*****************************************************************************/
