@@ -10,6 +10,8 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 
 * nmcli: allow changing "connection.uuid" and "connection.type"
   in offline mode and setting the UUID when creating a connection.
+* nmtui now supports editing Wi-Fi WPA-Enterprise, Ethernet with 802.1X
+  authentication and MACsec connection profiles.
 
 =============================================
 NetworkManager-1.40
