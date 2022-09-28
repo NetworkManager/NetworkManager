@@ -279,12 +279,12 @@ nm_supplicant_settings_verify_setting(const char *key, const char *value, const 
         }
     }
 
-    opt_idx = nm_utils_array_find_binary_search(opt_table,
-                                                sizeof(opt_table[0]),
-                                                G_N_ELEMENTS(opt_table),
-                                                &key,
-                                                nm_strcmp_p_with_data,
-                                                NULL);
+    opt_idx = nm_array_find_bsearch(opt_table,
+                                    G_N_ELEMENTS(opt_table),
+                                    sizeof(opt_table[0]),
+                                    &key,
+                                    nm_strcmp_p_with_data,
+                                    NULL);
     if (opt_idx < 0) {
         if (nm_streq(key, "mode")) {
             if (len != 1)

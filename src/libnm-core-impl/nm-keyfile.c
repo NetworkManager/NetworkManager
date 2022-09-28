@@ -3188,11 +3188,11 @@ _parse_info_find(NMSetting                *setting,
 
         G_STATIC_ASSERT_EXPR(G_STRUCT_OFFSET(ParseInfoProperty, property_name) == 0);
 
-        idx = nm_utils_ptrarray_find_binary_search((gconstpointer *) pis->properties,
-                                                   NM_PTRARRAY_LEN(pis->properties),
-                                                   &property_name,
-                                                   nm_strcmp_p_with_data,
-                                                   NULL);
+        idx = nm_ptrarray_find_bsearch((gconstpointer *) pis->properties,
+                                       NM_PTRARRAY_LEN(pis->properties),
+                                       &property_name,
+                                       nm_strcmp_p_with_data,
+                                       NULL);
         if (idx >= 0)
             pip = pis->properties[idx];
     }

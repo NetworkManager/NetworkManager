@@ -693,12 +693,12 @@ nm_meta_setting_infos_by_name(const char *name)
     }
 
     G_STATIC_ASSERT_EXPR(G_STRUCT_OFFSET(NMMetaSettingInfo, setting_name) == 0);
-    idx = nm_utils_array_find_binary_search(nm_meta_setting_infos,
-                                            sizeof(NMMetaSettingInfo),
-                                            _NM_META_SETTING_TYPE_NUM,
-                                            &name,
-                                            nm_strcmp_p_with_data,
-                                            NULL);
+    idx = nm_array_find_bsearch(nm_meta_setting_infos,
+                                _NM_META_SETTING_TYPE_NUM,
+                                sizeof(NMMetaSettingInfo),
+                                &name,
+                                nm_strcmp_p_with_data,
+                                NULL);
 
     return idx >= 0 ? &nm_meta_setting_infos[idx] : NULL;
 }

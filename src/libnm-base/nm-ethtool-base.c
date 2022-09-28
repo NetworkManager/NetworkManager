@@ -271,12 +271,12 @@ nm_ethtool_data_get_by_optname(const char *optname)
 
     _ASSERT_data();
 
-    idx = nm_utils_array_find_binary_search((gconstpointer *) _by_name,
-                                            sizeof(_by_name[0]),
-                                            _NM_ETHTOOL_ID_NUM,
-                                            optname,
-                                            _by_name_cmp,
-                                            NULL);
+    idx = nm_array_find_bsearch((gconstpointer *) _by_name,
+                                _NM_ETHTOOL_ID_NUM,
+                                sizeof(_by_name[0]),
+                                optname,
+                                _by_name_cmp,
+                                NULL);
     return (idx < 0) ? NULL : nm_ethtool_data[_by_name[idx]];
 }
 
