@@ -778,7 +778,9 @@ static void _dev_l3_cfg_commit_type_reset(NMDevice *self);
 
 static gboolean nm_device_master_add_slave(NMDevice *self, NMDevice *slave, gboolean configure);
 static void     nm_device_slave_notify_enslave(NMDevice *self, gboolean success);
-static void     nm_device_slave_notify_release(NMDevice *self, NMDeviceStateReason reason);
+static void     nm_device_slave_notify_release(NMDevice           *self,
+                                               NMDeviceStateReason reason,
+                                               ReleaseSlaveType    release_type);
 
 static void _dev_ipll6_start(NMDevice *self);
 
@@ -6236,7 +6238,7 @@ nm_device_master_release_slave(NMDevice           *self,
                                                release_type >= RELEASE_SLAVE_TYPE_CONFIG);
 
     /* raise notifications about the release, including clearing is_enslaved. */
-    nm_device_slave_notify_release(slave, reason);
+    nm_device_slave_notify_release(slave, reason, release_type);
 
     /* keep both alive until the end of the function.
      * Transfers ownership from slave_priv->master.  */
@@ -8028,7 +8030,9 @@ nm_device_slave_notify_enslave(NMDevice *self, gboolean success)
  * Notifies a slave that it has been released, and why.
  */
 static void
-nm_device_slave_notify_release(NMDevice *self, NMDeviceStateReason reason)
+nm_device_slave_notify_release(NMDevice           *self,
+                               NMDeviceStateReason reason,
+                               ReleaseSlaveType    release_type)
 {
     NMDevicePrivate *priv       = NM_DEVICE_GET_PRIVATE(self);
     NMConnection    *connection = nm_device_get_applied_connection(self);
@@ -8036,7 +8040,7 @@ nm_device_slave_notify_release(NMDevice *self, NMDeviceStateReason reason)
 
     g_return_if_fail(priv->master);
 
-    if (!priv->is_enslaved)
+    if (!priv->is_enslaved && release_type == RELEASE_SLAVE_TYPE_NO_CONFIG)
         return;
 
     if (priv->state > NM_DEVICE_STATE_DISCONNECTED && priv->state <= NM_DEVICE_STATE_ACTIVATED) {
