@@ -9726,6 +9726,7 @@ nm_device_devip_set_state_full(NMDevice             *self,
 
     nm_assert_addr_family_or_unspec(addr_family);
     nm_assert(NM_IN_SET(ip_state,
+                        NM_DEVICE_IP_STATE_NONE,
                         NM_DEVICE_IP_STATE_PENDING,
                         NM_DEVICE_IP_STATE_READY,
                         NM_DEVICE_IP_STATE_FAILED));
@@ -9733,7 +9734,7 @@ nm_device_devip_set_state_full(NMDevice             *self,
 
     nm_assert((ip_state != NM_DEVICE_IP_STATE_FAILED)
               == (failed_reason == NM_DEVICE_STATE_REASON_NONE));
-    nm_assert((ip_state != NM_DEVICE_IP_STATE_FAILED) || !l3cd);
+    nm_assert(NM_IN_SET(ip_state, NM_DEVICE_IP_STATE_PENDING, NM_DEVICE_IP_STATE_READY) || !l3cd);
 
     p = _dev_ipdev_data(self, addr_family);
 
