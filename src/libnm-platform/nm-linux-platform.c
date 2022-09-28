@@ -1155,7 +1155,7 @@ _linktype_read_devtype(int dirfd)
         end = strpbrk(cont, "\r\n");
         if (end)
             *end++ = '\0';
-        if (strncmp(cont, DEVTYPE_PREFIX, NM_STRLEN(DEVTYPE_PREFIX)) == 0) {
+        if (NM_STR_HAS_PREFIX(cont, DEVTYPE_PREFIX)) {
             cont += NM_STRLEN(DEVTYPE_PREFIX);
             memmove(contents, cont, strlen(cont) + 1);
             return g_steal_pointer(&contents);
@@ -1310,8 +1310,8 @@ _linktype_get_type(NMPlatform       *platform,
                       ARPHRD_ETHER,
                       519 /* ARPHRD_RAWIP */,
                       530 /* out-of-tree ARPHRD_RAWIP */)) {
-            if (g_str_has_prefix(ifname, "rmnet") || g_str_has_prefix(ifname, "rev_rmnet")
-                || g_str_has_prefix(ifname, "ccmni"))
+            if (NM_STR_HAS_PREFIX(ifname, "rmnet") || NM_STR_HAS_PREFIX(ifname, "rev_rmnet")
+                || NM_STR_HAS_PREFIX(ifname, "ccmni"))
                 return NM_LINK_TYPE_WWAN_NET;
         }
 
@@ -5520,25 +5520,25 @@ nla_put_failure:
 
 /*****************************************************************************/
 
-#define ASSERT_SYSCTL_ARGS(pathid, dirfd, path)                                                 \
-    G_STMT_START                                                                                \
-    {                                                                                           \
-        const char *const _pathid = (pathid);                                                   \
-        const int         _dirfd  = (dirfd);                                                    \
-        const char *const _path   = (path);                                                     \
-                                                                                                \
-        nm_assert(_path &&_path[0]);                                                            \
-        g_assert(!strstr(_path, "/../"));                                                       \
-        if (_dirfd < 0) {                                                                       \
-            nm_assert(!_pathid);                                                                \
-            nm_assert(_path[0] == '/');                                                         \
-            nm_assert(g_str_has_prefix(_path, "/proc/sys/") || g_str_has_prefix(_path, "/sys/") \
-                      || g_str_has_prefix(_path, "/proc/net"));                                 \
-        } else {                                                                                \
-            nm_assert(_pathid &&_pathid[0] && _pathid[0] != '/');                               \
-            nm_assert(_path[0] != '/');                                                         \
-        }                                                                                       \
-    }                                                                                           \
+#define ASSERT_SYSCTL_ARGS(pathid, dirfd, path)                                                   \
+    G_STMT_START                                                                                  \
+    {                                                                                             \
+        const char *const _pathid = (pathid);                                                     \
+        const int         _dirfd  = (dirfd);                                                      \
+        const char *const _path   = (path);                                                       \
+                                                                                                  \
+        nm_assert(_path &&_path[0]);                                                              \
+        g_assert(!strstr(_path, "/../"));                                                         \
+        if (_dirfd < 0) {                                                                         \
+            nm_assert(!_pathid);                                                                  \
+            nm_assert(_path[0] == '/');                                                           \
+            nm_assert(NM_STR_HAS_PREFIX(_path, "/proc/sys/") || NM_STR_HAS_PREFIX(_path, "/sys/") \
+                      || NM_STR_HAS_PREFIX(_path, "/proc/net"));                                  \
+        } else {                                                                                  \
+            nm_assert(_pathid &&_pathid[0] && _pathid[0] != '/');                                 \
+            nm_assert(_path[0] != '/');                                                           \
+        }                                                                                         \
+    }                                                                                             \
     G_STMT_END
 
 /*****************************************************************************/
