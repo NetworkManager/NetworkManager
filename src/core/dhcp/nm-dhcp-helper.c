@@ -196,13 +196,13 @@ do_notify:
 
     s_err = g_dbus_error_get_remote_error(error);
 
-    if (NM_IN_STRSET(s_err, "org.freedesktop.NetworkManager.Device.Failed")) {
+    if (nm_streq(s_err, "org.freedesktop.NetworkManager.Device.Failed")) {
         _LOGi("notify failed with reason: %s", error->message);
         success = FALSE;
         goto out;
     }
 
-    if (!NM_IN_STRSET(s_err, "org.freedesktop.DBus.Error.UnknownMethod")) {
+    if (!nm_streq(s_err, "org.freedesktop.DBus.Error.UnknownMethod")) {
         /* Some unexpected error. We treat that as a failure. In particular,
          * the daemon will fail the request if ACD fails. This causes nm-dhcp-helper
          * to fail, which in turn causes dhclient to send a DECLINE. */

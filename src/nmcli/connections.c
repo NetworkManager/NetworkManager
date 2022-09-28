@@ -4775,7 +4775,7 @@ set_bluetooth_type(NmCli            *nmc,
             &nm_meta_setting_infos_editor[NM_META_SETTING_TYPE_GSM],
             NM_META_ACCESSOR_SETTING_INIT_TYPE_CLI);
         nm_connection_add_setting(con, setting);
-    } else if (NM_IN_STRSET(value, NM_SETTING_BLUETOOTH_TYPE_DUN "-cdma")) {
+    } else if (nm_streq(value, NM_SETTING_BLUETOOTH_TYPE_DUN "-cdma")) {
         value   = NM_SETTING_BLUETOOTH_TYPE_DUN;
         setting = nm_setting_cdma_new();
         nm_connection_add_setting(con, setting);

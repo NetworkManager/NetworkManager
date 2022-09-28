@@ -1096,9 +1096,9 @@ test_in_strset_ascii_case(void)
     g_assert(!NM_IN_STRSET_ASCII_CASE(x, "b"));
 
     x = "b";
-    g_assert(NM_IN_STRSET(x, "b"));
+    g_assert(nm_streq(x, "b"));
     g_assert(NM_IN_STRSET_ASCII_CASE(x, "b"));
-    g_assert(!NM_IN_STRSET(x, "B"));
+    g_assert(!nm_streq(x, "B"));
     g_assert(NM_IN_STRSET_ASCII_CASE(x, "B"));
 }
 

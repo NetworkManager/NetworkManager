@@ -293,7 +293,7 @@ security_from_vardict(GVariant *security)
                 flags |= NM_802_11_AP_SEC_KEY_MGMT_802_1X;
             else if (NM_IN_STRSET(v, "sae", "ft-sae"))
                 flags |= NM_802_11_AP_SEC_KEY_MGMT_SAE;
-            else if (NM_IN_STRSET(v, "owe"))
+            else if (nm_streq(v, "owe"))
                 flags |= NM_802_11_AP_SEC_KEY_MGMT_OWE;
             else if (NM_IN_STRSET(v, "wpa-eap-suite-b-192", "wpa-ft-eap-sha384"))
                 flags |= NM_802_11_AP_SEC_KEY_MGMT_EAP_SUITE_B_192;
@@ -303,9 +303,9 @@ security_from_vardict(GVariant *security)
 
     if (g_variant_lookup(security, "Pairwise", "^a&s", &array)) {
         for (i = 0; (v = array[i]); i++) {
-            if (NM_IN_STRSET(v, "tkip"))
+            if (nm_streq(v, "tkip"))
                 flags |= NM_802_11_AP_SEC_PAIR_TKIP;
-            else if (NM_IN_STRSET(v, "ccmp"))
+            else if (nm_streq(v, "ccmp"))
                 flags |= NM_802_11_AP_SEC_PAIR_CCMP;
         }
         g_free(array);

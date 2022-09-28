@@ -1276,7 +1276,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
                 if (connection)
                     goto after_interface_name;
                 iface_type = NMU_IFACE_ANY;
-            } else if (NM_IN_STRSET(ovs_iface_type, "patch")) {
+            } else if (nm_streq(ovs_iface_type, "patch")) {
                 /* this interface type is internal to OVS. */
                 iface_type = NMU_IFACE_OVS;
             } else {

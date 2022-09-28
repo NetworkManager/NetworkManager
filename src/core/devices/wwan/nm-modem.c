@@ -721,7 +721,7 @@ _stage3_ip_config_start_on_idle(NMModem *self, int addr_family)
 
     method = nm_utils_get_ip_config_method(connection, addr_family);
 
-    if (IS_IPv4 ? NM_IN_STRSET(method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED)
+    if (IS_IPv4 ? nm_streq(method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED)
                 : NM_IN_STRSET(method,
                                NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
                                NM_SETTING_IP6_CONFIG_METHOD_DISABLED)) {

@@ -3404,7 +3404,7 @@ act_stage3_ip_config(NMDevice *device, int addr_family)
 
     method = nm_utils_get_ip_config_method(nm_device_get_applied_connection(device), addr_family);
     if (NM_IS_IPv4(addr_family))
-        indicate_addressing_running = NM_IN_STRSET(method, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
+        indicate_addressing_running = nm_streq(method, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
     else {
         indicate_addressing_running = NM_IN_STRSET(method,
                                                    NM_SETTING_IP6_CONFIG_METHOD_AUTO,

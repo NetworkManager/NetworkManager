@@ -9192,7 +9192,7 @@ _svUnescape(const char *str, char **to_free)
             g_assert(!to_free2);
             g_assert_cmpstr(s, ==, "");
             g_assert(!*to_free);
-        } else if (NM_IN_STRSET(str, "$'x\\U0'")) {
+        } else if (nm_streq(str, "$'x\\U0'")) {
             g_assert_cmpstr(s2, ==, NULL);
             g_assert(!to_free2);
             g_assert_cmpstr(s, ==, "x");

@@ -566,7 +566,7 @@ act_stage3_ip_config(NMDevice *device, int addr_family)
     method = nm_utils_get_ip_config_method(connection, addr_family);
 
     /* We may have an address assigned by the group owner */
-    if (IS_IPv4 && NM_IN_STRSET(method, NM_SETTING_IP4_CONFIG_METHOD_AUTO) && priv->group_iface
+    if (IS_IPv4 && nm_streq(method, NM_SETTING_IP4_CONFIG_METHOD_AUTO) && priv->group_iface
         && !nm_supplicant_interface_get_p2p_group_owner(priv->group_iface)) {
         in_addr_t addr;
         guint8    plen;
@@ -590,7 +590,7 @@ act_stage3_ip_config(NMDevice *device, int addr_family)
     }
 
     if (IS_IPv4)
-        indicate_addressing_running = NM_IN_STRSET(method, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
+        indicate_addressing_running = nm_streq(method, NM_SETTING_IP4_CONFIG_METHOD_AUTO);
     else {
         indicate_addressing_running = NM_IN_STRSET(method,
                                                    NM_SETTING_IP6_CONFIG_METHOD_AUTO,

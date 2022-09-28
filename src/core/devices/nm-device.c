@@ -8929,8 +8929,8 @@ unmanaged_on_quit(NMDevice *self)
     /* the only exception are IPv4 shared connections. We unmanage them on quit. */
     connection = nm_device_get_applied_connection(self);
     if (connection) {
-        if (NM_IN_STRSET(nm_utils_get_ip_config_method(connection, AF_INET),
-                         NM_SETTING_IP4_CONFIG_METHOD_SHARED)) {
+        if (nm_streq(nm_utils_get_ip_config_method(connection, AF_INET),
+                     NM_SETTING_IP4_CONFIG_METHOD_SHARED)) {
             /* shared connections are to be unmangaed. */
             return TRUE;
         }
@@ -11933,9 +11933,9 @@ activate_stage3_ip_config_for_addr_family(NMDevice *self, int addr_family, const
         } else {
             _dev_ipll6_start(self);
 
-            if (NM_IN_STRSET(method, NM_SETTING_IP6_CONFIG_METHOD_AUTO))
+            if (nm_streq(method, NM_SETTING_IP6_CONFIG_METHOD_AUTO))
                 _dev_ipac6_start(self);
-            else if (NM_IN_STRSET(method, NM_SETTING_IP6_CONFIG_METHOD_SHARED))
+            else if (nm_streq(method, NM_SETTING_IP6_CONFIG_METHOD_SHARED))
                 _dev_ipshared6_start(self);
             else if (nm_streq(method, NM_SETTING_IP6_CONFIG_METHOD_DHCP)) {
                 priv->ipdhcp_data_6.v6.mode = NM_NDISC_DHCP_LEVEL_MANAGED;
@@ -16684,7 +16684,7 @@ _hw_addr_get_cloned(NMDevice     *self,
         }
         addr_out = g_strdup(addr);
         type_out = HW_ADDR_TYPE_PERMANENT;
-    } else if (NM_IN_STRSET(addr, NM_CLONED_MAC_RANDOM)) {
+    } else if (nm_streq(addr, NM_CLONED_MAC_RANDOM)) {
         if (priv->hw_addr_type == HW_ADDR_TYPE_GENERATED) {
             /* hm, we already use a generate MAC address. Most certainly, that is from the same
              * activation request, so we should not create a new random address, instead keep
@@ -16705,7 +16705,7 @@ _hw_addr_get_cloned(NMDevice     *self,
 
         addr_out = g_steal_pointer(&hw_addr_generated);
         type_out = HW_ADDR_TYPE_GENERATED;
-    } else if (NM_IN_STRSET(addr, NM_CLONED_MAC_STABLE)) {
+    } else if (nm_streq(addr, NM_CLONED_MAC_STABLE)) {
         NMUtilsStableType stable_type;
         const char       *stable_id;
 
@@ -17178,7 +17178,7 @@ nm_device_get_hostname_from_dns_lookup(NMDevice *self, int addr_family, gboolean
 
     method = nm_device_get_effective_ip_config_method(self, addr_family);
     if (IS_IPv4) {
-        if (NM_IN_STRSET(method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED)) {
+        if (nm_streq(method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED)) {
             nm_clear_pointer(&priv->hostname_resolver_x[IS_IPv4], _hostname_resolver_free);
             NM_SET_OUT(out_wait, FALSE);
             return NULL;

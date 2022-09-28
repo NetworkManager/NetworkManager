@@ -178,7 +178,7 @@ update_connection(NMDevice *device, NMConnection *connection)
         gs_free char *value  = NULL;
         char         *p;
 
-        if (NM_IN_STRSET(option, NM_SETTING_BOND_OPTION_ACTIVE_SLAVE))
+        if (nm_streq(option, NM_SETTING_BOND_OPTION_ACTIVE_SLAVE))
             continue;
 
         value =

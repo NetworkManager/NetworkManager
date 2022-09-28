@@ -3415,7 +3415,7 @@ nm_ip_routing_rule_from_string(const char                  *str,
         /* iproute2 matches keywords with any partial prefix. We don't allow
          * for that flexibility. */
 
-        if (NM_IN_STRSET(word0, "from")) {
+        if (nm_streq(word0, "from")) {
             if (!word1)
                 continue;
             if (word_from)
@@ -3423,7 +3423,7 @@ nm_ip_routing_rule_from_string(const char                  *str,
             word_from = word1;
             goto next_words_consumed;
         }
-        if (NM_IN_STRSET(word0, "to")) {
+        if (nm_streq(word0, "to")) {
             if (!word1)
                 continue;
             if (word_to)
@@ -3431,7 +3431,7 @@ nm_ip_routing_rule_from_string(const char                  *str,
             word_to = word1;
             goto next_words_consumed;
         }
-        if (NM_IN_STRSET(word0, "not")) {
+        if (nm_streq(word0, "not")) {
             /* we accept multiple "not" specifiers. "not not" still means
              * not. */
             val_invert = TRUE;
@@ -3475,7 +3475,7 @@ nm_ip_routing_rule_from_string(const char                  *str,
                 goto next_fail_word1_invalid_value;
             goto next_words_consumed;
         }
-        if (NM_IN_STRSET(word0, "ipproto")) {
+        if (nm_streq(word0, "ipproto")) {
             if (!word1)
                 continue;
             if (i64_ipproto != -1)
@@ -3485,7 +3485,7 @@ nm_ip_routing_rule_from_string(const char                  *str,
                 goto next_fail_word1_invalid_value;
             goto next_words_consumed;
         }
-        if (NM_IN_STRSET(word0, "sport")) {
+        if (nm_streq(word0, "sport")) {
             if (!word1)
                 continue;
             if (i64_sport_start != -1)
@@ -3494,7 +3494,7 @@ nm_ip_routing_rule_from_string(const char                  *str,
                 goto next_fail_word1_invalid_value;
             goto next_words_consumed;
         }
-        if (NM_IN_STRSET(word0, "dport")) {
+        if (nm_streq(word0, "dport")) {
             if (!word1)
                 continue;
             if (i64_dport_start != -1)
@@ -3503,7 +3503,7 @@ nm_ip_routing_rule_from_string(const char                  *str,
                 goto next_fail_word1_invalid_value;
             goto next_words_consumed;
         }
-        if (NM_IN_STRSET(word0, "fwmark")) {
+        if (nm_streq(word0, "fwmark")) {
             if (!word1)
                 continue;
             if (i64_fwmark != -1)
@@ -3530,7 +3530,7 @@ nm_ip_routing_rule_from_string(const char                  *str,
             word_iifname = word1;
             goto next_words_consumed;
         }
-        if (NM_IN_STRSET(word0, "oif")) {
+        if (nm_streq(word0, "oif")) {
             if (!word1)
                 continue;
             if (word_oifname)
@@ -3548,7 +3548,7 @@ nm_ip_routing_rule_from_string(const char                  *str,
                 goto next_fail_word1_invalid_value;
             goto next_words_consumed;
         }
-        if (NM_IN_STRSET(word0, "uidrange")) {
+        if (nm_streq(word0, "uidrange")) {
             if (!word1)
                 continue;
             if (uid_range_has)
@@ -3570,7 +3570,7 @@ nm_ip_routing_rule_from_string(const char                  *str,
             uid_range_has = TRUE;
             goto next_words_consumed;
         }
-        if (NM_IN_STRSET(word0, "type")) {
+        if (nm_streq(word0, "type")) {
             if (!word1)
                 continue;
             if (i_action >= 0)
