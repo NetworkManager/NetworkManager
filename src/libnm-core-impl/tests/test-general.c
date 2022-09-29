@@ -2501,6 +2501,9 @@ test_setting_ip_route_attributes(void)
     TEST_ATTR("tos", byte, 127, AF_INET, TRUE, TRUE);
     TEST_ATTR("tos", string, "0x28", AF_INET, FALSE, TRUE);
 
+    TEST_ATTR("weight", byte, 100, AF_INET, TRUE, TRUE);
+    TEST_ATTR("weight", string, "100", AF_INET, FALSE, TRUE);
+
     TEST_ATTR("advmss", uint32, 1400, AF_INET, TRUE, TRUE);
     TEST_ATTR("advmss", string, "1400", AF_INET, FALSE, TRUE);
 
@@ -9971,7 +9974,7 @@ test_route_attributes_parse(void)
     g_assert(!ht);
     g_clear_error(&error);
 
-    ht = nm_utils_parse_variant_attributes("mtu.1400 src.1\\.2\\.3\\.4 ",
+    ht = nm_utils_parse_variant_attributes("mtu.1400 weight.5 src.1\\.2\\.3\\.4 ",
                                            ' ',
                                            '.',
                                            FALSE,
@@ -9983,6 +9986,11 @@ test_route_attributes_parse(void)
     g_assert(variant);
     g_assert(g_variant_is_of_type(variant, G_VARIANT_TYPE_UINT32));
     g_assert_cmpuint(g_variant_get_uint32(variant), ==, 1400);
+
+    variant = g_hash_table_lookup(ht, NM_IP_ROUTE_ATTRIBUTE_WEIGHT);
+    g_assert(variant);
+    g_assert(g_variant_is_of_type(variant, G_VARIANT_TYPE_BYTE));
+    g_assert_cmpuint(g_variant_get_byte(variant), ==, 5);
 
     variant = g_hash_table_lookup(ht, NM_IP_ROUTE_ATTRIBUTE_SRC);
     g_assert(variant);

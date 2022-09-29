@@ -887,6 +887,7 @@ enum {
     PARSE_LINE_ATTR_ROUTE_ADVMSS,
     PARSE_LINE_ATTR_ROUTE_RTO_MIN,
     PARSE_LINE_ATTR_ROUTE_QUICKACK,
+    PARSE_LINE_ATTR_ROUTE_WEIGHT,
 
     /* iproute2 arguments that only matter when parsing the file. */
     PARSE_LINE_ATTR_ROUTE_TO,
@@ -965,6 +966,12 @@ parse_route_line(const char *line,
                 .type        = PARSE_LINE_TYPE_UINT8,
                 .int_base_16 = TRUE,
                 .ignore      = PARSE_LINE_AF_FLAG_FOR_IPV6,
+            },
+        [PARSE_LINE_ATTR_ROUTE_WEIGHT] =
+            {
+                .key      = NM_IP_ROUTE_ATTRIBUTE_WEIGHT,
+                .type     = PARSE_LINE_TYPE_UINT8,
+                .disabled = PARSE_LINE_AF_FLAG_FOR_IPV6,
             },
         [PARSE_LINE_ATTR_ROUTE_SCOPE] =
             {

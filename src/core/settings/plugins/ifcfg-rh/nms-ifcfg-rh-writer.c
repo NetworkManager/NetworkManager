@@ -2360,7 +2360,9 @@ get_route_attributes_string(NMIPRoute *route, int family)
                 /* we also have a corresponding attribute with the numeric value. The
                  * lock setting is handled above. */
             }
-        } else if (nm_streq(names[i], NM_IP_ROUTE_ATTRIBUTE_SCOPE)) {
+        } else if (NM_IN_STRSET(names[i],
+                                NM_IP_ROUTE_ATTRIBUTE_SCOPE,
+                                NM_IP_ROUTE_ATTRIBUTE_WEIGHT)) {
             g_string_append_printf(str, "%s %u", names[i], (unsigned) g_variant_get_byte(attr));
         } else if (nm_streq(names[i], NM_IP_ROUTE_ATTRIBUTE_TOS)) {
             g_string_append_printf(str, "%s 0x%02x", names[i], (unsigned) g_variant_get_byte(attr));
