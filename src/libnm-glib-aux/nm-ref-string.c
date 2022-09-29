@@ -157,8 +157,7 @@ nm_ref_string_new_len(const char *cstr, gsize len)
         g_atomic_int_inc(&rstr->_ref_count);
     } else {
         rstr = g_malloc((G_STRUCT_OFFSET(NMRefString, str) + 1u) + len);
-        if (len > 0)
-            memcpy((char *) rstr->str, cstr, len);
+        nm_memcpy((char *) rstr->str, cstr, len);
         ((char *) rstr->str)[len] = '\0';
         *((gsize *) &rstr->len)   = len;
         rstr->_ref_count          = 1;
