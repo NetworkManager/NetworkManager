@@ -970,6 +970,16 @@ test_nm_str_buf(void)
         } else
             g_assert(stack_buf != nm_str_buf_get_str(&strbuf));
     }
+
+    {
+        nm_auto_str_buf NMStrBuf s1  = NM_STR_BUF_INIT_A(10, nmtst_get_rand_bool());
+        gs_free char            *str = NULL;
+        gsize                    l;
+
+        nm_str_buf_append_len(&s1, "a\0b", 3);
+        str = nm_str_buf_finalize(&s1, &l);
+        g_assert_cmpmem(str, l + 1, "a\0b", 4);
+    }
 }
 
 /*****************************************************************************/
