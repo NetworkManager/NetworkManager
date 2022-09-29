@@ -430,14 +430,21 @@ _fw_nft_call_communicate_cb(GObject *source, GAsyncResult *result, gpointer user
     } else if (g_subprocess_get_successful(call_data->subprocess)) {
         nm_log_dbg(LOGD_SHARING, "firewall: nft[%s]: command successful", call_data->identifier);
     } else {
+        char          buf[NM_UTILS_GET_PROCESS_EXIT_STATUS_BUF_LEN];
         gs_free char *ss_stdout    = NULL;
         gs_free char *ss_stderr    = NULL;
         gboolean      print_stdout = (stdout_buf && g_bytes_get_size(stdout_buf) > 0);
         gboolean      print_stderr = (stderr_buf && g_bytes_get_size(stderr_buf) > 0);
+        int           status;
+
+        status = g_subprocess_get_status(call_data->subprocess);
+
+        nm_utils_get_process_exit_status_desc_buf(status, buf, sizeof(buf));
 
         nm_log_warn(LOGD_SHARING,
-                    "firewall: nft[%s]: command failed:%s%s%s%s%s%s%s",
+                    "firewall: nft[%s]: command %s:%s%s%s%s%s%s%s",
                     call_data->identifier,
+                    buf,
                     print_stdout || print_stderr ? "" : " unknown reason",
                     NM_PRINT_FMT_QUOTED(
                         print_stdout,
@@ -455,6 +462,8 @@ _fw_nft_call_communicate_cb(GObject *source, GAsyncResult *result, gpointer user
                                                            &ss_stderr),
                         "\")",
                         ""));
+
+        nm_utils_error_set(&error, NM_UTILS_ERROR_COMMAND_FAILED, "nft command %s", buf);
     }
 
     _fw_nft_call_data_free(call_data, g_steal_pointer(&error));
@@ -610,6 +619,14 @@ _fw_nft_call_sync(GBytes *stdin_buf, GError **error)
 
 #define _append(p_strbuf, fmt, ...) nm_str_buf_append_printf((p_strbuf), "" fmt "\n", ##__VA_ARGS__)
 
+static void
+_fw_nft_append_cmd_table(NMStrBuf *strbuf, const char *family, const char *table_name, gboolean up)
+{
+    /* Either delete the table, or create/flush it. */
+    _append(strbuf, "add table %s %s", family, table_name);
+    _append(strbuf, "%s table %s %s", up ? "flush" : "delete", family, table_name);
+}
+
 static GBytes *
 _fw_nft_set_shared_construct(gboolean up, const char *ip_iface, in_addr_t addr, guint8 plen)
 {
@@ -621,8 +638,7 @@ _fw_nft_set_shared_construct(gboolean up, const char *ip_iface, in_addr_t addr, 
 
     _share_iptables_subnet_to_str(str_subnet, addr, plen);
 
-    _append(&strbuf, "add table ip %s", table_name);
-    _append(&strbuf, "%s table ip %s", up ? "flush" : "delete", table_name);
+    _fw_nft_append_cmd_table(&strbuf, "ip", table_name, up);
 
     if (up) {
         _append(&strbuf,

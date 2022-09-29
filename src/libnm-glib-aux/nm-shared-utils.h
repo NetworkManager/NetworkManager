@@ -960,6 +960,8 @@ typedef enum {
     NM_UTILS_ERROR_INVALID_ARGUMENT,    /*< nick=InvalidArgument >*/
     NM_UTILS_ERROR_NOT_READY,           /*< nick=NotReady >*/
 
+    NM_UTILS_ERROR_COMMAND_FAILED, /*< nick=CommandFailed >*/
+
     NM_UTILS_ERROR_AMBIGUOUS, /*< nick=Ambiguous >*/
 
     /* the following codes have a special meaning and are exactly used for
@@ -3066,6 +3068,10 @@ void nm_crypto_md5_hash(const guint8 *salt,
                         gsize         buflen);
 
 /*****************************************************************************/
+
+#define NM_UTILS_GET_PROCESS_EXIT_STATUS_BUF_LEN 41
+
+const char *nm_utils_get_process_exit_status_desc_buf(int status, char *buf, gsize buf_len);
 
 char *nm_utils_get_process_exit_status_desc(int status);
 
