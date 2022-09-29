@@ -25,7 +25,7 @@ do_clean() {
     git checkout -- po/
 
     git status
-    git diff
+    git diff --exit-code
 }
 
 ARTIFACT_DIR=/tmp/nm-artifact
