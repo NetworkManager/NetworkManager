@@ -6198,7 +6198,8 @@ nm_device_master_release_slave(NMDevice           *self,
     NMDevicePrivate          *priv;
     NMDevicePrivate          *slave_priv;
     SlaveInfo                *info;
-    gs_unref_object NMDevice *self_free = NULL;
+    gs_unref_object NMDevice *self_free  = NULL;
+    gs_unref_object NMDevice *slave_free = NULL;
 
     g_return_if_fail(NM_DEVICE(self));
     g_return_if_fail(NM_DEVICE(slave));
@@ -6241,14 +6242,15 @@ nm_device_master_release_slave(NMDevice           *self,
 
     /* keep both alive until the end of the function.
      * Transfers ownership from slave_priv->master.  */
-    self_free = self;
+    nm_assert(self == slave_priv->master);
+    self_free = g_steal_pointer(&slave_priv->master);
+
+    nm_assert(slave == info->slave);
+    slave_free = g_steal_pointer(&info->slave);
 
     c_list_unlink(&info->lst_slave);
-    slave_priv->master = NULL;
-
     g_signal_handler_disconnect(slave, info->watch_id);
-    g_object_unref(slave);
-    g_slice_free(SlaveInfo, info);
+    nm_g_slice_free(info);
 
     if (c_list_is_empty(&priv->slaves)) {
         _active_connection_set_state_flags_full(self,
@@ -16112,7 +16114,7 @@ nm_device_queue_state(NMDevice *self, NMDeviceState state, NMDeviceStateReason r
 
     /* We should only ever have one delayed state transition at a time */
     if (priv->queued_state.id) {
-        _LOGW(LOGD_DEVICE,
+        _LOGD(LOGD_DEVICE,
               "queue-state[%s, reason:%s, id:%u]: %s",
               nm_device_state_to_string(priv->queued_state.state),
               nm_device_state_reason_to_string_a(priv->queued_state.reason),

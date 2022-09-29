@@ -116,22 +116,22 @@ static void auth_complete(NMActiveConnection *self, gboolean result, const char 
 
 #define _NMLOG_DOMAIN      LOGD_DEVICE
 #define _NMLOG_PREFIX_NAME "active-connection"
-#define _NMLOG(level, ...)                                                                         \
-    G_STMT_START                                                                                   \
-    {                                                                                              \
-        char                       _sbuf[64];                                                      \
-        NMActiveConnectionPrivate *_priv = self ? NM_ACTIVE_CONNECTION_GET_PRIVATE(self) : NULL;   \
-                                                                                                   \
-        nm_log((level),                                                                            \
-               _NMLOG_DOMAIN,                                                                      \
-               (_priv && _priv->device) ? nm_device_get_iface(_priv->device) : NULL,               \
-               (_priv && _priv->applied_connection)                                                \
-                   ? nm_connection_get_uuid(_priv->applied_connection)                             \
-                   : NULL,                                                                         \
-               "%s%s: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__),                                        \
-               _NMLOG_PREFIX_NAME,                                                                 \
-               self ? nm_sprintf_buf(_sbuf, "[%p]", self) : "" _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
-    }                                                                                              \
+#define _NMLOG(level, ...)                                                                       \
+    G_STMT_START                                                                                 \
+    {                                                                                            \
+        char                       _sbuf[64];                                                    \
+        NMActiveConnectionPrivate *_priv = self ? NM_ACTIVE_CONNECTION_GET_PRIVATE(self) : NULL; \
+                                                                                                 \
+        nm_log((level),                                                                          \
+               _NMLOG_DOMAIN,                                                                    \
+               (_priv && _priv->device) ? nm_device_get_iface(_priv->device) : NULL,             \
+               (_priv && _priv->applied_connection)                                              \
+                   ? nm_connection_get_uuid(_priv->applied_connection)                           \
+                   : NULL,                                                                       \
+               "%s%s: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__),                                      \
+               _NMLOG_PREFIX_NAME,                                                               \
+               NM_HASH_OBFUSCATE_PTR_STR(self, _sbuf) _NM_UTILS_MACRO_REST(__VA_ARGS__));        \
+    }                                                                                            \
     G_STMT_END
 
 /*****************************************************************************/
