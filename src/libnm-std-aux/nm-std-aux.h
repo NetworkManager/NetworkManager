@@ -501,6 +501,17 @@ nm_memeq(const void *s1, const void *s2, size_t len)
     return nm_memcmp(s1, s2, len) == 0;
 }
 
+static inline void *
+nm_memcpy(void *restrict dest, const void *restrict src, size_t n)
+{
+    /* Workaround undefined behavior in memcpy() with NULL pointers. */
+    if (n == 0)
+        return dest;
+
+    nm_assert(src);
+    return memcpy(dest, src, n);
+}
+
 /*
  * Very similar to g_str_has_prefix() with the obvious meaning.
  * Differences:
