@@ -6608,6 +6608,8 @@ device_ifindex_changed_cb(NMManager *manager, NMDevice *device_changed, NMDevice
 {
     NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
 
+    g_return_if_fail(priv->master_ifindex > 0);
+
     if (priv->master_ifindex != nm_device_get_ifindex(device_changed))
         return;
 
