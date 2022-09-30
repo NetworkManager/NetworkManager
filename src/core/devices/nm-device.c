@@ -6573,27 +6573,30 @@ device_recheck_slave_status(NMDevice *self, const NMPlatformLink *plink)
                                        NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
     }
 
-    if (master && NM_DEVICE_GET_CLASS(master)->attach_port) {
-        nm_device_master_add_slave(master, self, FALSE);
+    if (master) {
+        if (NM_DEVICE_GET_CLASS(master)->attach_port) {
+            nm_device_master_add_slave(master, self, FALSE);
+        } else {
+            _LOGD(LOGD_DEVICE,
+                  "enslaved to non-master-type device %s; ignoring",
+                  nm_device_get_iface(master));
+        }
         goto out;
     }
 
-    if (master) {
-        _LOGD(LOGD_DEVICE,
-              "enslaved to non-master-type device %s; ignoring",
-              nm_device_get_iface(master));
-    } else {
+    if (plink->master) {
         _LOGD(LOGD_DEVICE,
               "enslaved to unknown device %d (%s%s%s)",
               plink->master,
               NM_PRINT_FMT_QUOTED(plink_master, "\"", plink_master->name, "\"", "??"));
+        if (!priv->ifindex_changed_id) {
+            priv->ifindex_changed_id = g_signal_connect(nm_device_get_manager(self),
+                                                        NM_MANAGER_DEVICE_IFINDEX_CHANGED,
+                                                        G_CALLBACK(device_ifindex_changed_cb),
+                                                        self);
+        }
     }
-    if (!priv->ifindex_changed_id) {
-        priv->ifindex_changed_id = g_signal_connect(nm_device_get_manager(self),
-                                                    NM_MANAGER_DEVICE_IFINDEX_CHANGED,
-                                                    G_CALLBACK(device_ifindex_changed_cb),
-                                                    self);
-    }
+
     return;
 
 out:
