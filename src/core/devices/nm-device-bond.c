@@ -224,9 +224,10 @@ controller_update_port_connection(NMDevice     *self,
                                   GError      **error)
 {
     NMSettingBondPort *s_port;
-    int                ifindex_port = nm_device_get_ifindex(port);
-    uint               queue_id     = NM_BOND_PORT_QUEUE_ID_DEF;
-    gs_free char      *queue_id_str = NULL;
+    int                ifindex_port       = nm_device_get_ifindex(port);
+    NMConnection      *applied_connection = nm_device_get_applied_connection(self);
+    uint               queue_id           = NM_BOND_PORT_QUEUE_ID_DEF;
+    gs_free char      *queue_id_str       = NULL;
 
     g_return_val_if_fail(ifindex_port > 0, FALSE);
 
@@ -243,7 +244,7 @@ controller_update_port_connection(NMDevice     *self,
 
     g_object_set(nm_connection_get_setting_connection(connection),
                  NM_SETTING_CONNECTION_MASTER,
-                 nm_device_get_iface(self),
+                 nm_connection_get_uuid(applied_connection),
                  NM_SETTING_CONNECTION_SLAVE_TYPE,
                  NM_SETTING_BOND_SETTING_NAME,
                  NULL);
