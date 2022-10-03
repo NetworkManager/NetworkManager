@@ -2133,8 +2133,7 @@ connected_state_cb(AddAndActivateInfo *info)
     } else if (state <= NM_DEVICE_STATE_DISCONNECTED || state >= NM_DEVICE_STATE_DEACTIVATING) {
         reason = nm_device_get_state_reason(info->device);
         g_string_printf(info->nmc->return_text,
-                        _("Error: Connection activation failed: (%d) %s."),
-                        reason,
+                        _("Error: Connection activation failed: %s."),
                         gettext(nmc_device_reason_to_string(reason)));
         info->nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
     } else {
