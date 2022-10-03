@@ -13,6 +13,7 @@
 #include "nm-setting.h"
 #include "nm-setting-bridge.h"
 #include "nm-connection.h"
+#include "nm-simple-connection.h"
 #include "nm-core-enum-types.h"
 
 #include "libnm-core-intern/nm-core-internal.h"
@@ -30,6 +31,48 @@ typedef struct {
 
 extern GTypeClass *_nm_simple_connection_class_instance;
 extern int         _nm_simple_connection_private_offset;
+
+#undef NM_IS_SIMPLE_CONNECTION
+#define NM_IS_SIMPLE_CONNECTION(self)                                                           \
+    ({                                                                                          \
+        gconstpointer _self1 = (self);                                                          \
+        gboolean      _result;                                                                  \
+                                                                                                \
+        _result =                                                                               \
+            (_self1                                                                             \
+             && (((GTypeInstance *) _self1)->g_class == _nm_simple_connection_class_instance)); \
+                                                                                                \
+        nm_assert(_result == G_TYPE_CHECK_INSTANCE_TYPE(_self1, NM_TYPE_SIMPLE_CONNECTION));    \
+                                                                                                \
+        _result;                                                                                \
+    })
+
+#undef NM_IS_CONNECTION
+#define NM_IS_CONNECTION(self)                                            \
+    ({                                                                    \
+        gconstpointer _self0 = (self);                                    \
+                                                                          \
+        (_self0                                                           \
+         && (NM_IS_SIMPLE_CONNECTION(_self0)                              \
+             || G_TYPE_CHECK_INSTANCE_TYPE(_self0, NM_TYPE_CONNECTION))); \
+    })
+
+#define _NM_SIMPLE_CONNECTION_GET_CONNECTION_PRIVATE(connection)                                \
+    ({                                                                                          \
+        gpointer             _connection_1 = (connection);                                      \
+        NMConnectionPrivate *_priv_1;                                                           \
+                                                                                                \
+        nm_assert(NM_IS_SIMPLE_CONNECTION(_connection_1));                                      \
+                                                                                                \
+        _priv_1 = (void *) (&(((char *) _connection_1)[_nm_simple_connection_private_offset])); \
+                                                                                                \
+        nm_assert(_priv_1                                                                       \
+                  == G_TYPE_INSTANCE_GET_PRIVATE(_connection_1,                                 \
+                                                 NM_TYPE_SIMPLE_CONNECTION,                     \
+                                                 NMConnectionPrivate));                         \
+                                                                                                \
+        _priv_1;                                                                                \
+    })
 
 void _nm_connection_private_clear(NMConnectionPrivate *priv);
 

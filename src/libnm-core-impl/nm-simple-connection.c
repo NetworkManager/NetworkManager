@@ -47,9 +47,6 @@ G_DEFINE_TYPE_WITH_CODE(NMSimpleConnection,
                         G_IMPLEMENT_INTERFACE(NM_TYPE_CONNECTION,
                                               nm_simple_connection_interface_init);)
 
-#define _GET_PRIVATE(self) \
-    G_TYPE_INSTANCE_GET_PRIVATE(self, NM_TYPE_SIMPLE_CONNECTION, NMConnectionPrivate)
-
 /*****************************************************************************/
 
 static void
@@ -57,7 +54,7 @@ nm_simple_connection_init(NMSimpleConnection *self)
 {
     NMConnectionPrivate *priv;
 
-    priv = _GET_PRIVATE(self);
+    priv = _NM_SIMPLE_CONNECTION_GET_CONNECTION_PRIVATE(self);
 
     priv->self = (NMConnection *) self;
 }
@@ -157,14 +154,12 @@ nm_simple_connection_new_clone(NMConnection *connection)
 static void
 dispose(GObject *object)
 {
-    NMConnection *connection = NM_CONNECTION(object);
-
 #if NM_MORE_ASSERTS
     g_signal_handlers_disconnect_by_data(object,
                                          (gpointer) &_nm_assert_connection_unchanging_user_data);
 #endif
 
-    _nm_connection_private_clear(_GET_PRIVATE(connection));
+    _nm_connection_private_clear(_NM_SIMPLE_CONNECTION_GET_CONNECTION_PRIVATE(object));
 
     G_OBJECT_CLASS(nm_simple_connection_parent_class)->dispose(object);
 }
