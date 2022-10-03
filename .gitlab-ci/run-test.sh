@@ -20,12 +20,9 @@ fi
 
 do_clean() {
     git clean -fdx
-    # "make -C update-po", run on "make dist" has a silly habit of
-    # modifying files in-tree. Lets undo that.
-    git checkout -- po/
 
     git status
-    git diff
+    git diff --exit-code
 }
 
 ARTIFACT_DIR=/tmp/nm-artifact
