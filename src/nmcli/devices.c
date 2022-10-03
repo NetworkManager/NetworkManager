@@ -2132,9 +2132,11 @@ connected_state_cb(AddAndActivateInfo *info)
                 _("Hint: \"nmcli dev wifi show-password\" shows the Wi-Fi name and password.\n"));
     } else if (state <= NM_DEVICE_STATE_DISCONNECTED || state >= NM_DEVICE_STATE_DEACTIVATING) {
         reason = nm_device_get_state_reason(info->device);
-        g_print(_("Error: Connection activation failed: (%d) %s.\n"),
-                reason,
-                gettext(nmc_device_reason_to_string(reason)));
+        g_string_printf(info->nmc->return_text,
+                        _("Error: Connection activation failed: (%d) %s."),
+                        reason,
+                        gettext(nmc_device_reason_to_string(reason)));
+        info->nmc->return_value = NMC_RESULT_ERROR_CON_ACTIVATION;
     } else {
         return;
     }
