@@ -130,7 +130,7 @@
         parameters. At this time the following options are supported:
 
          * persist: A string value of either "disk" (default), "memory" or "volatile". If "memory" is passed, the connection will not be saved to disk. If "volatile" is passed, the connection will not be saved to disk and will be destroyed when disconnected.
-         * bind-activation: Bind the activation lifetime. Set to "dbus-name" to automatically disconnect when the requesting process disappears from the bus. The default of "none" means the connection is kept activated normally.
+         * bind-activation: Bind the activation lifetime. Set to "dbus-client" to automatically disconnect when the requesting process disappears from the bus. The default of "none" means the connection is kept activated normally.
     -->
     <method name="AddAndActivateConnection2">
       <arg name="connection" type="a{sa{sv}}" direction="in"/>
