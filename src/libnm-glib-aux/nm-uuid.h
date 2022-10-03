@@ -9,6 +9,9 @@ typedef struct _NMUuid {
 
 #define NM_UUID_INIT_ZERO() ((NMUuid){.uuid = {0}})
 
+/* Beware, the 16 macro arguments are two hex-digits, not plain numbers. The macro
+ * will automatically add the "0x". In particular, "09" is not an octal number, it's
+ * 0x09. This oddity is so that the arguments look very much like the UUID in string form. */
 #define NM_UUID_INIT(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15) \
     ((NMUuid){                                                                             \
         .uuid = {(0x##a0),                                                                 \
@@ -120,7 +123,12 @@ char *nm_uuid_generate_from_string_str(const char   *s,
                                        NMUuidType    uuid_type,
                                        const NMUuid *type_args);
 
-char *nm_uuid_generate_from_strings(const char *string1, ...) G_GNUC_NULL_TERMINATED;
+char *nm_uuid_generate_from_strings_strv(NMUuidType         uuid_type,
+                                         const NMUuid      *type_args,
+                                         const char *const *strv);
+
+#define nm_uuid_generate_from_strings(uuid_type, type_args, ...) \
+    nm_uuid_generate_from_strings_strv((uuid_type), (type_args), NM_MAKE_STRV(__VA_ARGS__))
 
 /*****************************************************************************/
 

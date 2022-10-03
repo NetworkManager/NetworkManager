@@ -12,7 +12,8 @@
 const NMUuid nm_uuid_ns_zero =
     NM_UUID_INIT(00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00);
 
-/* arbitrarily chosen namespace UUID for nm_uuid_generate_from_strings() */
+/* arbitrarily chosen namespace UUID for some uses of nm_uuid_generate_from_strings().
+ * Try not to re-use this namespace, instead, generate a unique one. */
 const NMUuid nm_uuid_ns_1 =
     NM_UUID_INIT(b4, 25, e9, fb, 75, 98, 44, b4, 9e, 3b, 5a, 2e, 3a, aa, 49, 05);
 
@@ -406,42 +407,51 @@ nm_uuid_generate_from_string_str(const char   *s,
 }
 
 /**
- * nm_uuid_generate_from_strings:
- * @string1: a variadic list of strings. Must be NULL terminated.
+ * nm_uuid_generate_from_strings_strv:
+ * @uuid_type: the UUID type to use. Prefer version 5 unless you have
+ *   good reasons.
+ * @type_args: the namespace UUID.
+ * @strv: (allow-none): the strv list to hash. Can be NULL, in which
+ *   case the result is different from an empty array.
  *
- * Returns a variant3 UUID based on the concatenated C strings.
+ * Returns a @uuid_type UUID based on the concatenated C strings.
  * It does not simply concatenate them, but also includes the
  * terminating '\0' character. For example "a", "b", gives
  * "a\0b\0".
- *
  * This has the advantage, that the following invocations
  * all give different UUIDs: (NULL), (""), ("",""), ("","a"), ("a",""),
  * ("aa"), ("aa", ""), ("", "aa"), ...
  */
 char *
-nm_uuid_generate_from_strings(const char *string1, ...)
+nm_uuid_generate_from_strings_strv(NMUuidType         uuid_type,
+                                   const NMUuid      *type_args,
+                                   const char *const *strv)
 {
-    if (!string1)
-        return nm_uuid_generate_from_string_str(NULL, 0, NM_UUID_TYPE_VERSION3, &nm_uuid_ns_1);
+    nm_auto_str_buf NMStrBuf str = NM_STR_BUF_INIT_A(NM_UTILS_GET_NEXT_REALLOC_SIZE_232, TRUE);
+    gsize                    slen;
+    const char              *s;
 
-    {
-        nm_auto_str_buf NMStrBuf str = NM_STR_BUF_INIT_A(NM_UTILS_GET_NEXT_REALLOC_SIZE_232, FALSE);
-        va_list                  args;
-        const char              *s;
-
-        nm_str_buf_append_len(&str, string1, strlen(string1) + 1u);
-
-        va_start(args, string1);
-        s = va_arg(args, const char *);
-        while (s) {
-            nm_str_buf_append_len(&str, s, strlen(s) + 1u);
-            s = va_arg(args, const char *);
-        }
-        va_end(args);
-
-        return nm_uuid_generate_from_string_str(nm_str_buf_get_str_unsafe(&str),
-                                                str.len,
-                                                NM_UUID_TYPE_VERSION3,
-                                                &nm_uuid_ns_1);
+    if (!strv) {
+        /* NULL is treated differently from an empty strv. We achieve that
+         * by using a non-empty, non-NUL terminated string (which cannot happen
+         * in the other cases). */
+        slen = 1;
+        s    = "x";
+    } else if (!strv[0]) {
+        slen = 0;
+        s    = "";
+    } else if (!strv[1]) {
+        slen = strlen(strv[0]) + 1u;
+        s    = strv[0];
+    } else {
+        /* We concatenate the NUL termiated string, including the NUL
+         * character. This way, ("a","a"), ("aa"), ("aa","") all hash
+         * differently. */
+        for (; strv[0]; strv++)
+            nm_str_buf_append_len(&str, strv[0], strlen(strv[0]) + 1u);
+        slen = str.len;
+        s    = nm_str_buf_get_str_unsafe(&str);
     }
+
+    return nm_uuid_generate_from_string_str(s, slen, uuid_type, type_args);
 }
