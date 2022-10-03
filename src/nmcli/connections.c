@@ -9650,10 +9650,7 @@ do_connection_import(const NMCCommand *cmd, NmCli *nmc, int argc, const char *co
                                 NULL);
             }
 
-            if (!type)
-                type = *argv;
-            else
-                g_printerr(_("Warning: 'type' already specified, ignoring extra one.\n"));
+            type = *argv;
 
         } else if (nm_streq(*argv, "file")) {
             argc--;
@@ -9665,10 +9662,8 @@ do_connection_import(const NMCCommand *cmd, NmCli *nmc, int argc, const char *co
             }
             if (argc == 1 && nmc->complete)
                 nmc->return_value = NMC_RESULT_COMPLETE_FILE;
-            if (!filename)
-                filename = *argv;
-            else
-                g_printerr(_("Warning: 'file' already specified, ignoring extra one.\n"));
+
+            filename = *argv;
         } else {
             g_string_printf(nmc->return_text, _("Error: invalid extra argument '%s'."), *argv);
             nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
