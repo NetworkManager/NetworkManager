@@ -563,7 +563,7 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
     /* ---ifcfg-rh---
      * property: method
      * variable: IPV6INIT, IPV6FORWARDING, IPV6_AUTOCONF, DHCPV6C, IPV6_DISABLED
-     * default:  IPV6INIT=yes; IPV6FORWARDING=no; IPV6_AUTOCONF=!IPV6FORWARDING, DHCPV6=no
+     * default: IPV6INIT=yes; IPV6FORWARDING=no; IPV6_AUTOCONF=!IPV6FORWARDING, DHCPV6=no
      * description: Method used for IPv6 protocol configuration.
      *   ignore ~ IPV6INIT=no; auto ~ IPV6_AUTOCONF=yes; dhcp ~ IPV6_AUTOCONF=no and DHCPV6C=yes;
      *   disabled ~ IPV6_DISABLED=yes
@@ -580,7 +580,7 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
     /* ---ifcfg-rh---
      * property: dns
      * variable: DNS1, DNS2, ...
-     * format:   string
+     * format: string
      * description: List of DNS servers. NetworkManager uses the variables both
      *   for IPv4 and IPv6.
      * ---end---
@@ -589,7 +589,7 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
     /* ---ifcfg-rh---
      * property: dns-search
      * variable: IPV6_DOMAIN(+)
-     * format:   string (space-separated domains)
+     * format: string (space-separated domains)
      * description: List of DNS search domains.
      * ---end---
      */
