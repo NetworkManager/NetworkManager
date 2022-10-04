@@ -53,6 +53,7 @@ libNetworkManagerBase = static_library(
     'nm-l3-ipv4ll.c',
     'nm-l3-ipv6ll.c',
     'nm-l3cfg.c',
+    'nm-bond-manager.c',
     'nm-ip-config.c',
   ),
   dependencies: [
