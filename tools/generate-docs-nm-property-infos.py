@@ -60,7 +60,7 @@ def get_setting_names(source_file):
 
     if file_base == "nm-setting-ip-config":
         # Special case ip-config, which is a base class.
-        return None
+        return 0, ("ipv4", "ipv6")
 
     header_file = "%s/libnm-core-public/%s.h" % (path_prefix, file_base)
 
@@ -75,7 +75,7 @@ def get_setting_names(source_file):
         for line in f:
             m = re.search(r"^#define +NM_SETTING_.+SETTING_NAME\s+\"(\S+)\"$", line)
             if m:
-                return m.group(1)
+                return 1, (m.group(1),)
 
     raise Exception(
         'Can\'t find setting name in header file "%s" for "%s"'
@@ -84,10 +84,35 @@ def get_setting_names(source_file):
 
 
 def get_file_infos(source_files):
+    # This function parses the source files and detects the
+    # used setting name. The returned sections are sorted by setting
+    # name.
+    #
+    # The file "nm-setting-ip-config.c" can contain information
+    # for "ipv4" and "ipv6" settings. Thus, to sort the files
+    # is a bit more involved.
+
+    # First, get a list of priority and setting-names that belong
+    # to the source file. Sort by priority,setting-names. It's
+    # important that "nm-setting-ip-config.c" gets parsed before
+    # "nm-setting-ip[46]-config.c".
+    file_infos = []
     for source_file in source_files:
-        setting_name = get_setting_names(source_file)
-        if setting_name:
-            yield setting_name, source_file
+        priority, setting_names = get_setting_names(source_file)
+        file_infos.append((priority, setting_names, source_file))
+    file_infos.sort()
+
+    d = {}
+    for priority, setting_names, source_file in file_infos:
+        for setting_name in setting_names:
+            l = d.get(setting_name, None)
+            if l is None:
+                l = list()
+                d[setting_name] = l
+            l.append(source_file)
+    for key in sorted(d.keys()):
+        for f in d[key]:
+            yield key, f
 
 
 KEYWORD_XML_TYPE_NESTED = "nested"
@@ -368,13 +393,13 @@ def test_file_location():
 
 
 def test_get_setting_names():
-    assert "connection" == get_setting_names(
+    assert (1, ("connection",)) == get_setting_names(
         t_srcdir() + "/src/libnm-core-impl/nm-setting-connection.c"
     )
-    assert "ipv4" == get_setting_names(
+    assert (1, ("ipv4",)) == get_setting_names(
         t_srcdir() + "/src/libnm-core-impl/nm-setting-ip4-config.c"
     )
-    assert None == get_setting_names(
+    assert (0, ("ipv4", "ipv6")) == get_setting_names(
         t_srcdir() + "/src/libnm-core-impl/nm-setting-ip-config.c"
     )
 
@@ -385,18 +410,26 @@ def test_get_file_infos():
 
     assert [
         (
+            "802-3-ethernet",
+            t_setting_c("wired"),
+        ),
+        (
             "connection",
             t_setting_c("connection"),
         ),
         (
             "ipv4",
+            t_setting_c("ip-config"),
+        ),
+        (
+            "ipv4",
             t_setting_c("ip4-config"),
         ),
-        ("proxy", t_setting_c("proxy")),
         (
-            "802-3-ethernet",
-            t_setting_c("wired"),
+            "ipv6",
+            t_setting_c("ip-config"),
         ),
+        ("proxy", t_setting_c("proxy")),
     ] == list(get_file_infos([t_setting_c(x) for x in t]))
 
 
