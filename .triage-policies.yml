@@ -3,36 +3,58 @@ host_url: https://gitlab.freedesktop.org
 resource_rules:
   issues:
     rules:
-      - name: Close issues with no activity for 6 months
+      - name: Mark as stale issues without recent activity
         conditions:
+          state: opened
+          forbidden_labels:
+            - stale
+            - enhancement
           date:
             attribute: updated_at
             condition: older_than
             interval_type: months
             interval: 6
-          state: opened
         actions:
-            comment: |
-                This issue has been inactive for 6 months, closing automatically, please reopen if you think the issue is still relevant.
-            status: close
-            labels:
-                - auto-closed
-      - name: Close RFE with no activity for 12 months
+          comment: |
+            This issue was marked as stale as it didn't get any activity in the last 6 months.
+
+            If the issue is still relevant please remove the "stale" label and add a comment explaining what the current status is. If needed, also provide any missing information that was requested.
+
+            The lack of activity indicates that the issue was either fixed, or there aren't enough resources to further investigate and fix the problem. If you are a developer, please consider becoming a contributor and open a merge request. After 30 days with the "stale" label set the issue will be closed automatically.
+          labels:
+            - stale
+      - name: Mark as stale enhancement issues without recent activity
         conditions:
+          state: opened
+          forbidden_labels:
+            - stale
+            - enhancement
           date:
             attribute: updated_at
             condition: older_than
             interval_type: months
             interval: 12
+        actions:
+          comment: |
+            This enhancement issue was marked as stale as it didn't get any activity in the last 12 months.
+
+            If the issue is still relevant please remove the "stale" label and add a comment explaining what the current status is. If needed, also provide any missing information that was requested.
+
+            The lack of activity indicates that there aren't enough resources to implement this feature. If you are a developer, please consider becoming a contributor and open a merge request. After 30 days with the "stale" label set the issue will be closed automatically.
+          labels:
+            - stale
+      - name: Close stale issues
+        conditions:
           state: opened
           labels:
-              - enhancement
+            - stale
+          ruby: labels_with_details.any? {|label| label.name == "stale" and label.added_at < (Time.now - 30 * 24 * 3600)}
         actions:
-            comment: |
-                This enhancement issue has been inactive for 12 months, closing automatically, please reopen if you think the issue is still relevant.
-            status: close
-            labels:
-                - auto-closed
+          status: close
+          remove_labels:
+            - stale
+          labels:
+            - auto-closed
       - name: Clear auto-closed label for open issues
         conditions:
           state: opened
