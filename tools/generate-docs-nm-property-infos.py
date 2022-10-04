@@ -211,7 +211,7 @@ def parse_data(tag, line_no, lines):
                 # No separator to add. This is a blank line
                 pass
             else:
-                parsed_data[keyword] = parsed_data[keyword] + separator + text.strip()
+                parsed_data[keyword] = parsed_data[keyword] + separator + text
 
         if keywords[keyword] == KEYWORD_XML_TYPE_NESTED:
             # This is plain XML. They lines are joined by newlines.
@@ -223,7 +223,7 @@ def parse_data(tag, line_no, lines):
         elif not text:
             # A blank line is used to mark a line break, while otherwise
             # lines are joined by space.
-            separator = "  "
+            separator = "\n"
         else:
             separator = " "
     if "property" not in parsed_data:
