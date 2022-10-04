@@ -246,8 +246,6 @@ def process_setting(tag, root_node, source_file, setting_name):
     end_tag = "---end---"
 
     setting_node, created = xnode_get_or_create(root_node, "setting", setting_name)
-    if created:
-        setting_node.text = "\n"
 
     try:
         f = open(source_file, "r")
