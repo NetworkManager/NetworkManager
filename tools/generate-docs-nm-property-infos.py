@@ -132,12 +132,7 @@ def write_data(tag, setting_node, line_no, parsed_data):
 
         v = parsed_data.get(k, None)
         if v is None:
-            if k == "variable":
-                v = name
-            elif k == 'description-docbook':
-                continue
-            else:
-                v = ""
+            continue
 
         if xmltype == KEYWORD_XML_TYPE_NESTED:
             # Set as XML nodes. The input data is XML itself.
