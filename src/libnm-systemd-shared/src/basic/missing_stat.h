@@ -49,6 +49,8 @@ struct statx STATX_DEFINITION;
 /* Always define the newest version we are aware of as a distinct type, so that we can use it even if glibc
  * defines an older definition */
 struct new_statx STATX_DEFINITION;
+#else /* NM_IGNORED */
+struct new_statx;
 #endif /* NM_IGNORED */
 
 /* a528d35e8bfcc521d7cb70aaf03e1bd296c8493f (4.11) */

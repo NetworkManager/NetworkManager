@@ -1192,7 +1192,7 @@ static int resize_buckets(HashmapBase *h, unsigned entries_add) {
                 } while (rehash_next);
         }
 
-        assert(n_rehashed == n_entries(h));
+        assert_se(n_rehashed == n_entries(h));
 
         return 1;
 }
@@ -1886,11 +1886,10 @@ int _set_put_strdupv_full(Set **s, const struct hash_ops *hash_ops, char **l  HA
 }
 
 int set_put_strsplit(Set *s, const char *v, const char *separators, ExtractFlags flags) {
-        const char *p = v;
+        const char *p = ASSERT_PTR(v);
         int r;
 
         assert(s);
-        assert(v);
 
         for (;;) {
                 char *word;
@@ -2082,6 +2081,8 @@ static bool set_fnmatch_one(Set *patterns, const char *needle) {
         const char *p;
 
         assert(needle);
+
+        /* Any failure of fnmatch() is treated as equivalent to FNM_NOMATCH, i.e. as non-matching pattern */
 
         SET_FOREACH(p, patterns)
                 if (fnmatch(p, needle, 0) == 0)
