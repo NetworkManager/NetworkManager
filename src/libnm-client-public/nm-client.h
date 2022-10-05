@@ -508,6 +508,18 @@ gboolean nm_utils_file_is_certificate(const char *filename);
 gboolean nm_utils_file_is_private_key(const char *filename, gboolean *out_encrypted);
 gboolean nm_utils_file_is_pkcs12(const char *filename);
 
+/*****************************************************************************/
+
+NM_AVAILABLE_IN_1_42
+void nm_client_wait_shutdown(NMClient           *client,
+                             gboolean            integrate_maincontext,
+                             GCancellable       *cancellable,
+                             GAsyncReadyCallback callback,
+                             gpointer            user_data);
+
+NM_AVAILABLE_IN_1_42
+gboolean nm_client_wait_shutdown_finish(GAsyncResult *result, GError **error);
+
 G_END_DECLS
 
 #endif /* __NM_CLIENT_H__ */

@@ -8,7 +8,10 @@
 #include <sys/types.h>
 #include <signal.h>
 
+#include "libnm-client-impl/nm-dbus-helpers.h"
+
 #include "libnm-client-test/nm-test-libnm-utils.h"
+#include "libnm-glib-aux/nm-time-utils.h"
 
 static struct {
     GMainLoop *loop;
@@ -1349,6 +1352,240 @@ test_connection_invalid(void)
 
 /*****************************************************************************/
 
+typedef struct {
+    NMClient    *nmc;
+    NMOptionBool completed;
+} WaitShutdownNmcInitData;
+
+static void
+_wait_shutdown_cb(GObject *source, GAsyncResult *result, gpointer user_data)
+{
+    gs_free_error GError *error = NULL;
+    gboolean              b;
+    guint                *p_pending_ops = user_data;
+
+    g_assert(!source);
+
+    if (nmtst_get_rand_bool()) {
+        b = nm_client_wait_shutdown_finish(result, &error);
+        g_assert(b == !error);
+    }
+
+    g_assert_cmpint(*p_pending_ops, >, 0);
+    (*p_pending_ops)--;
+}
+
+static void
+_wait_shutdown_nmc_init_cb(GObject *source, GAsyncResult *result, gpointer user_data)
+{
+    WaitShutdownNmcInitData *data  = user_data;
+    gs_free_error GError    *error = NULL;
+    gboolean                 b;
+
+    g_assert(data->nmc == NM_CLIENT(source));
+    g_assert(data->completed == NM_OPTION_BOOL_DEFAULT);
+
+    b = g_async_initable_init_finish(G_ASYNC_INITABLE(source), result, &error);
+    nmtst_assert_success(b, error);
+    g_assert(b == TRUE);
+
+    g_assert(NM_FLAGS_HAS(nm_client_get_instance_flags(data->nmc),
+                          NM_CLIENT_INSTANCE_FLAGS_INITIALIZED_GOOD));
+
+    data->completed = TRUE;
+}
+
+static void
+test_client_wait_shutdown(void)
+{
+    gs_unref_ptrarray GPtrArray *contexts =
+        g_ptr_array_new_with_free_func((GDestroyNotify) g_main_context_unref);
+    nmtstc_auto_service_cleanup NMTstcServiceInfo *sinfo = NULL;
+    int                                            i_run;
+    const int                                      N_RUN           = 50;
+    gs_free_error GError                          *error           = NULL;
+    gs_unref_object GDBusConnection               *dbus_connection = NULL;
+    guint                                          pending_ops     = 0;
+    int                                            i;
+    gint64                                         until_msec;
+
+    /* The test creates NMClient instances in various ways (with different
+     * context of g_main_context_default()) and with sync/asnyc/no initialization.
+     *
+     * Then it calls nm_client_wait_shutdown() and checks that all callbacks
+     * got invoked.
+     *
+     * You can also manually bump N_RUN and convince yourself that there are no
+     * leaks.
+     */
+
+    sinfo = nmtstc_service_init();
+    if (!nmtstc_service_available(sinfo))
+        return;
+
+    /* Have 5 contexts for creating clients (+ the default one). */
+    g_ptr_array_add(contexts, g_main_context_ref(g_main_context_default()));
+    for (i = 0; i < 5; i++)
+        g_ptr_array_add(contexts, g_main_context_new());
+
+    dbus_connection = g_bus_get_sync(_nm_dbus_bus_type(), NULL, &error);
+    nmtst_assert_success(dbus_connection, error);
+
+    for (i_run = 0; i_run < N_RUN; i_run++) {
+        gs_unref_object GCancellable          *init_cancellable = g_cancellable_new();
+        gs_unref_object NMClient              *nmc              = NULL;
+        nm_auto_pop_gmaincontext GMainContext *client_context   = NULL;
+        gboolean                               b;
+        gboolean                               context_integrated = FALSE;
+        gs_unref_object GCancellable          *cancellable_1      = NULL;
+        GMainContext                          *ctx;
+
+        /* Choose a random context for the client. */
+        ctx = contexts->pdata[nmtst_get_rand_uint32() % contexts->len];
+        if (ctx == g_main_context_default()) {
+            /* don't use the main context explicitly. */
+        } else if (!g_main_context_acquire(ctx)) {
+            /* the context is in use, we cannot use it. */
+        } else {
+            g_main_context_release(ctx);
+            client_context = g_main_context_ref(ctx);
+            g_main_context_push_thread_default(client_context);
+        }
+
+        nmc = g_object_new(
+            NM_TYPE_CLIENT,
+            NM_CLIENT_INSTANCE_FLAGS,
+            nmtst_get_rand_one_case_in(5) ? NM_CLIENT_INSTANCE_FLAGS_NO_AUTO_FETCH_PERMISSIONS : 0,
+            NM_CLIENT_DBUS_CONNECTION,
+            nmtst_get_rand_one_case_in(3) ? NULL : dbus_connection,
+            NULL);
+
+        if (nmtst_get_rand_bool()) {
+            /* randomly already pop the context before initializing nmc. */
+            nm_clear_pointer(&client_context, nm_g_main_context_pop_and_unref);
+        }
+
+        if (nmtst_get_rand_bool()) {
+            nm_auto_pop_gmaincontext GMainContext *context =
+                nm_g_main_context_push_thread_default(NULL);
+
+            /* It is also allowed to start waiting before initialization started. Randomly do that. */
+            pending_ops++;
+            nm_client_wait_shutdown(
+                nmc,
+                nmtst_true_once(&context_integrated, nmtst_get_rand_bool()),
+                (cancellable_1 = nmtst_get_rand_bool() ? g_cancellable_new() : NULL),
+                _wait_shutdown_cb,
+                &pending_ops);
+        }
+
+        /* randomly do some initialization... */
+        switch (nmtst_get_rand_uint32() % 4) {
+        case 0:
+            /* Don't start initialization. */
+            break;
+        case 1:
+            /* Do sync initialization. */
+            b = g_initable_init(G_INITABLE(nmc),
+                                nmtst_get_rand_bool() ? init_cancellable : NULL,
+                                &error);
+            nmtst_assert_success(b, error);
+            break;
+        case 2:
+            /* Start async initialization in the background, but don't wait for it complete. */
+            g_async_initable_init_async(G_ASYNC_INITABLE(nmc),
+                                        G_PRIORITY_DEFAULT,
+                                        nmtst_get_rand_bool() ? init_cancellable : NULL,
+                                        NULL,
+                                        NULL);
+            break;
+        default:
+        {
+            /* Do async initialization, and iterate the main context until done. */
+            WaitShutdownNmcInitData data = {
+                .completed = NM_OPTION_BOOL_DEFAULT,
+                .nmc       = nmc,
+            };
+
+            g_async_initable_init_async(G_ASYNC_INITABLE(nmc),
+                                        G_PRIORITY_DEFAULT,
+                                        nmtst_get_rand_bool() ? init_cancellable : NULL,
+                                        _wait_shutdown_nmc_init_cb,
+                                        &data);
+
+            while (data.completed != TRUE) {
+                g_main_context_iteration(context_integrated ? g_main_context_default()
+                                                            : nm_client_get_main_context(nmc),
+                                         TRUE);
+            }
+            break;
+        }
+        }
+
+        if (!context_integrated && nmtst_get_rand_bool()) {
+            nm_clear_g_cancellable(&cancellable_1);
+        }
+
+        if (nmtst_get_rand_bool())
+            nm_clear_pointer(&client_context, nm_g_main_context_pop_and_unref);
+
+        {
+            gs_unref_object GCancellable *cancellable = NULL;
+
+            pending_ops++;
+            nm_client_wait_shutdown(
+                nmc,
+                nmtst_true_once(&context_integrated, nmtst_get_rand_bool()),
+                (cancellable = nmtst_get_rand_bool() ? g_cancellable_new() : NULL),
+                _wait_shutdown_cb,
+                &pending_ops);
+        }
+
+        if (nmtst_get_rand_bool())
+            g_clear_object(&nmc);
+
+        for (i = 0; i < (int) contexts->len; i++) {
+            GMainContext *context = contexts->pdata[i];
+
+            if (nmtst_get_rand_bool()) {
+                /* iterate next time. */
+                continue;
+            }
+
+            if (!g_main_context_acquire(context)) {
+                /* It's integrated, skip. */
+                continue;
+            }
+            g_main_context_release(context);
+
+            while (g_main_context_iteration(context, FALSE)) {
+                /* pass */
+            }
+        }
+    }
+
+    until_msec = nm_utils_get_monotonic_timestamp_msec() + 10000;
+    while (pending_ops > 0 && nm_utils_get_monotonic_timestamp_msec() < until_msec) {
+        for (i = contexts->len; i > 0; i--) {
+            GMainContext *context = contexts->pdata[i - 1];
+
+            if (!g_main_context_acquire(context)) {
+                /* integrated, skip. */
+                continue;
+            }
+            g_main_context_release(context);
+
+            while (g_main_context_iteration(context, FALSE)) {
+                /* pass */
+            }
+        }
+    }
+
+    g_assert_cmpint(pending_ops, ==, 0);
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE();
 
 int
@@ -1369,6 +1606,7 @@ main(int argc, char **argv)
     g_test_add_func("/libnm/activate-virtual", test_activate_virtual);
     g_test_add_func("/libnm/device-connection-compatibility", test_device_connection_compatibility);
     g_test_add_func("/libnm/connection/invalid", test_connection_invalid);
+    g_test_add_func("/libnm/test_client_wait_shutdown", test_client_wait_shutdown);
 
     return g_test_run();
 }
