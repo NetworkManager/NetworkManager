@@ -4965,7 +4965,8 @@ _nl_msg_new_link_full(uint16_t    nlmsg_type,
                       const char *ifname,
                       guint8      family,
                       unsigned    flags_mask,
-                      unsigned    flags_set)
+                      unsigned    flags_set,
+                      size_t      len)
 {
     nm_auto_nlmsg struct nl_msg *msg = NULL;
     const struct ifinfomsg       ifi = {
@@ -4977,7 +4978,7 @@ _nl_msg_new_link_full(uint16_t    nlmsg_type,
 
     nm_assert(NM_IN_SET(nlmsg_type, RTM_DELLINK, RTM_NEWLINK, RTM_GETLINK, RTM_SETLINK));
 
-    msg = nlmsg_alloc_simple(nlmsg_type, nlmsg_flags);
+    msg = nlmsg_alloc_new(len ? nlmsg_total_size(NLMSG_HDRLEN + len) : 0, nlmsg_type, nlmsg_flags);
 
     if (nlmsg_append_struct(msg, &ifi) < 0)
         goto nla_put_failure;
@@ -4994,7 +4995,7 @@ nla_put_failure:
 static struct nl_msg *
 _nl_msg_new_link(uint16_t nlmsg_type, uint16_t nlmsg_flags, int ifindex, const char *ifname)
 {
-    return _nl_msg_new_link_full(nlmsg_type, nlmsg_flags, ifindex, ifname, AF_UNSPEC, 0, 0);
+    return _nl_msg_new_link_full(nlmsg_type, nlmsg_flags, ifindex, ifname, AF_UNSPEC, 0, 0, 0);
 }
 
 /* Copied and modified from libnl3's build_addr_msg(). */
@@ -8088,7 +8089,8 @@ link_change_flags(NMPlatform *platform, int ifindex, unsigned flags_mask, unsign
           nm_platform_link_flags2str(flags_set, s_flags, sizeof(s_flags)),
           nm_platform_link_flags2str(flags_mask, s_flags2, sizeof(s_flags2)));
 
-    nlmsg = _nl_msg_new_link_full(RTM_NEWLINK, 0, ifindex, NULL, AF_UNSPEC, flags_mask, flags_set);
+    nlmsg =
+        _nl_msg_new_link_full(RTM_NEWLINK, 0, ifindex, NULL, AF_UNSPEC, flags_mask, flags_set, 0);
     if (!nlmsg)
         return -NME_UNSPEC;
     return do_change_link(platform, CHANGE_LINK_TYPE_UNSPEC, ifindex, nlmsg, NULL);
@@ -8499,8 +8501,14 @@ link_set_bridge_vlans(NMPlatform                        *platform,
     struct bridge_vlan_info      vinfo = {};
     guint                        i;
 
-    nlmsg =
-        _nl_msg_new_link_full(vlans ? RTM_SETLINK : RTM_DELLINK, 0, ifindex, NULL, AF_BRIDGE, 0, 0);
+    nlmsg = _nl_msg_new_link_full(vlans ? RTM_SETLINK : RTM_DELLINK,
+                                  0,
+                                  ifindex,
+                                  NULL,
+                                  AF_BRIDGE,
+                                  0,
+                                  0,
+                                  0);
     if (!nlmsg)
         g_return_val_if_reached(-NME_BUG);
 
