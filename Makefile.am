@@ -2233,7 +2233,6 @@ src_libnm_systemd_shared_libnm_systemd_shared_la_SOURCES = \
 	src/libnm-systemd-shared/sd-adapt-shared/sysctl-util.h \
 	src/libnm-systemd-shared/sd-adapt-shared/terminal-util.h \
 	src/libnm-systemd-shared/sd-adapt-shared/unaligned.h \
-	src/libnm-systemd-shared/sd-adapt-shared/user-util.h \
 	src/libnm-systemd-shared/sd-adapt-shared/virt.h \
 	src/libnm-systemd-shared/src/basic/alloc-util.c \
 	src/libnm-systemd-shared/src/basic/alloc-util.h \
@@ -2328,6 +2327,7 @@ src_libnm_systemd_shared_libnm_systemd_shared_la_SOURCES = \
 	src/libnm-systemd-shared/src/basic/tmpfile-util.c \
 	src/libnm-systemd-shared/src/basic/tmpfile-util.h \
 	src/libnm-systemd-shared/src/basic/umask-util.h \
+	src/libnm-systemd-shared/src/basic/user-util.h \
 	src/libnm-systemd-shared/src/basic/utf8.c \
 	src/libnm-systemd-shared/src/basic/utf8.h \
 	src/libnm-systemd-shared/src/basic/util.c \

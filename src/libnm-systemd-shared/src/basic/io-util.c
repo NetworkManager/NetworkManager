@@ -53,11 +53,10 @@ int flush_fd(int fd) {
 #endif /* NM_IGNORED */
 
 ssize_t loop_read(int fd, void *buf, size_t nbytes, bool do_poll) {
-        uint8_t *p = buf;
+        uint8_t *p = ASSERT_PTR(buf);
         ssize_t n = 0;
 
         assert(fd >= 0);
-        assert(buf);
 
         /* If called with nbytes == 0, let's call read() at least
          * once, to validate the operation */
@@ -113,10 +112,9 @@ int loop_read_exact(int fd, void *buf, size_t nbytes, bool do_poll) {
 
 #if 0 /* NM_IGNORED */
 int loop_write(int fd, const void *buf, size_t nbytes, bool do_poll) {
-        const uint8_t *p = buf;
+        const uint8_t *p = ASSERT_PTR(buf);
 
         assert(fd >= 0);
-        assert(buf);
 
         if (_unlikely_(nbytes > (size_t) SSIZE_MAX))
                 return -EINVAL;
