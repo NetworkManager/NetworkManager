@@ -82,7 +82,6 @@ struct _NMConnectivityCheckHandle {
         gsize response_good_cnt;
 
         guint curl_timer;
-        int   ch_ifindex;
     } concheck;
 #endif
 
@@ -1049,8 +1048,6 @@ nm_connectivity_check_start(NMConnectivity             *self,
         NMConnectivityState state;
         const char         *reason;
 
-        cb_data->concheck.ch_ifindex = ifindex;
-
         if (platform) {
             state = check_platform_config(self, platform, ifindex, addr_family, &reason);
             nm_assert((state == NM_CONNECTIVITY_UNKNOWN) == !reason);
@@ -1106,7 +1103,7 @@ nm_connectivity_check_start(NMConnectivity             *self,
                                    "org.freedesktop.resolve1.Manager",
                                    "ResolveHostname",
                                    g_variant_new("(isit)",
-                                                 (gint32) cb_data->concheck.ch_ifindex,
+                                                 0,
                                                  cb_data->concheck.con_config->host,
                                                  (gint32) cb_data->addr_family,
                                                  SD_RESOLVED_DNS),
