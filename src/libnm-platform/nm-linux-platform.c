@@ -8417,16 +8417,23 @@ link_set_sriov_vfs(NMPlatform *platform, int ifindex, const NMPlatformVF *const 
 {
     nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
     struct nlattr               *list, *info, *vlan_list;
-    guint                        i;
+    guint                        i      = 0;
+    guint                        num    = 0;
+    size_t                       buflen = 0;
 
-    nlmsg = _nl_msg_new_link(RTM_NEWLINK, 0, ifindex, NULL);
+    while (vfs[num])
+        num++;
+
+    /* A single IFLA_VF_INFO shouldn't take more than 200 bytes. */
+    buflen = (num + 1) * 200;
+    nlmsg  = _nl_msg_new_link_full(RTM_NEWLINK, 0, ifindex, NULL, AF_UNSPEC, 0, 0, buflen);
     if (!nlmsg)
         g_return_val_if_reached(-NME_BUG);
 
     if (!(list = nla_nest_start(nlmsg, IFLA_VFINFO_LIST)))
         goto nla_put_failure;
 
-    for (i = 0; vfs[i]; i++) {
+    for (; vfs[i]; i++) {
         const NMPlatformVF *vf = vfs[i];
 
         if (!(info = nla_nest_start(nlmsg, IFLA_VF_INFO)))
@@ -8499,6 +8506,11 @@ link_set_sriov_vfs(NMPlatform *platform, int ifindex, const NMPlatformVF *const 
 
     return (do_change_link(platform, CHANGE_LINK_TYPE_UNSPEC, ifindex, nlmsg, NULL) >= 0);
 nla_put_failure:
+    _LOGE("error building SR-IOV VFs netlink message: used %u/%zu bytes for %u/%u VFs",
+          nlmsg_hdr(nlmsg)->nlmsg_len,
+          buflen,
+          i,
+          num);
     g_return_val_if_reached(FALSE);
 }
 
