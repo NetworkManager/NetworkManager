@@ -258,9 +258,10 @@ master_update_slave_connection(NMDevice     *device,
     gs_free_error GError *connect_error = NULL;
     int                   err           = 0;
     struct teamdctl      *tdc;
-    const char           *team_port_config = NULL;
-    const char           *iface            = nm_device_get_iface(device);
-    const char           *iface_slave      = nm_device_get_iface(slave);
+    const char           *team_port_config   = NULL;
+    const char           *iface              = nm_device_get_iface(device);
+    const char           *iface_slave        = nm_device_get_iface(slave);
+    NMConnection         *applied_connection = nm_device_get_applied_connection(device);
 
     tdc = _tdc_connect_new(self, iface, &connect_error);
     if (!tdc) {
@@ -299,7 +300,7 @@ master_update_slave_connection(NMDevice     *device,
 
     g_object_set(nm_connection_get_setting_connection(connection),
                  NM_SETTING_CONNECTION_MASTER,
-                 iface,
+                 nm_connection_get_uuid(applied_connection),
                  NM_SETTING_CONNECTION_SLAVE_TYPE,
                  NM_SETTING_TEAM_SETTING_NAME,
                  NULL);

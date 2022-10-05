@@ -416,10 +416,10 @@ activate:
             }
         } else {
             /* The device was initially disconnected, deactivate any existing connection */
-            _LOGD("rollback: disconnecting device");
 
             if (nm_device_get_state(device) > NM_DEVICE_STATE_DISCONNECTED
                 && nm_device_get_state(device) < NM_DEVICE_STATE_DEACTIVATING) {
+                _LOGD("rollback: disconnecting device");
                 nm_device_state_changed(device,
                                         NM_DEVICE_STATE_DEACTIVATING,
                                         NM_DEVICE_STATE_REASON_USER_REQUESTED);
