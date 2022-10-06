@@ -696,7 +696,7 @@ static void
 register_client(NMObject *nmobj, NMClient *client, NMLDBusObject *dbobj)
 {
     NM_OBJECT_CLASS(nm_remote_connection_parent_class)->register_client(nmobj, client, dbobj);
-    nm_connection_set_path(NM_CONNECTION(nmobj), dbobj->dbus_path->str);
+    _nm_connection_set_path_rstr(NM_CONNECTION(nmobj), dbobj->dbus_path);
     _nm_client_get_settings_call(client, dbobj);
 }
 
