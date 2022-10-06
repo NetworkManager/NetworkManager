@@ -88,7 +88,7 @@ _storage_data_new_stale(NMSettingsStorage *storage, NMConnection *connection)
 {
     StorageData *sd;
 
-    sd             = g_slice_new(StorageData);
+    sd             = nm_slice_new(StorageData);
     sd->storage    = g_object_ref(storage);
     sd->connection = nm_g_object_ref(connection);
     sd->prioritize = FALSE;
@@ -101,7 +101,7 @@ _storage_data_destroy(StorageData *sd)
     c_list_unlink_stale(&sd->sd_lst);
     g_object_unref(sd->storage);
     nm_g_object_unref(sd->connection);
-    g_slice_free(StorageData, sd);
+    nm_slice_free_typed(StorageData, sd);
 }
 
 static StorageData *
@@ -692,7 +692,7 @@ _startup_complete_notify_connection(NMSettings           *self,
     if (!scd) {
         if (timeout_msec == 0)
             return;
-        scd  = g_slice_new(StartupCompleteData);
+        scd  = nm_slice_new(StartupCompleteData);
         *scd = (StartupCompleteData){
             .sett_conn    = g_object_ref(sett_conn),
             .timeout_msec = timeout_msec,

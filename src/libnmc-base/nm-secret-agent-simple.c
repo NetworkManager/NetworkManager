@@ -84,7 +84,7 @@ _request_data_free(gpointer data)
     g_object_unref(request->connection);
     g_strfreev(request->hints);
 
-    g_slice_free(RequestData, request);
+    nm_slice_free_typed(RequestData, request);
 }
 
 static void
@@ -140,7 +140,7 @@ _secret_real_free(NMSecretAgentSimpleSecret *secret)
     g_free(real->property);
     g_clear_object(&real->setting);
 
-    g_slice_free(SecretReal, real);
+    nm_slice_free_typed(SecretReal, real);
 }
 
 static NMSecretAgentSimpleSecret *
@@ -163,7 +163,7 @@ _secret_real_new_plain(NMSecretAgentSecretType secret_type,
 
     g_object_get(setting, property, &value, NULL);
 
-    real  = g_slice_new(SecretReal);
+    real  = nm_slice_new(SecretReal);
     *real = (SecretReal){
         .base.secret_type = secret_type,
         .base.pretty_name = g_strdup(pretty_name),
@@ -191,7 +191,7 @@ _secret_real_new_vpn_secret(const char *pretty_name,
 
     value = nm_setting_vpn_get_secret(NM_SETTING_VPN(setting), property);
 
-    real  = g_slice_new(SecretReal);
+    real  = nm_slice_new(SecretReal);
     *real = (SecretReal){
         .base.secret_type = NM_SECRET_AGENT_SECRET_TYPE_VPN_SECRET,
         .base.pretty_name = g_strdup(pretty_name),
@@ -216,7 +216,7 @@ _secret_real_new_wireguard_peer_psk(NMSettingWireGuard *s_wg,
     nm_assert(NM_IS_SETTING_WIREGUARD(s_wg));
     nm_assert(public_key);
 
-    real  = g_slice_new(SecretReal);
+    real  = nm_slice_new(SecretReal);
     *real = (SecretReal){
         .base.secret_type        = NM_SECRET_AGENT_SECRET_TYPE_WIREGUARD_PEER_PSK,
         .base.pretty_name        = g_strdup_printf(_("Preshared-key for %s"), public_key),
@@ -538,7 +538,7 @@ _auth_dialog_data_free(AuthDialogData *data)
     g_string_free(data->auth_dialog_response, TRUE);
     g_object_unref(data->input_stream);
     g_object_unref(data->output_stream);
-    g_slice_free(AuthDialogData, data);
+    nm_slice_free_typed(AuthDialogData, data);
 }
 
 static void
@@ -808,7 +808,7 @@ try_spawn_vpn_auth_helper(RequestData *request, GPtrArray *secrets)
     auth_dialog_request_len = auth_dialog_request->len;
     auth_dialog_request_str = g_string_free(auth_dialog_request, FALSE);
 
-    data  = g_slice_new(AuthDialogData);
+    data  = nm_slice_new(AuthDialogData);
     *data = (AuthDialogData){
         .auth_dialog_response = g_string_new_len(NULL, sizeof(data->read_buf)),
         .auth_dialog_pid      = auth_dialog_pid,
@@ -1062,7 +1062,7 @@ get_secrets(NMSecretAgentOld              *agent,
     request_id_setting_name = &request_id[strlen(request_id) - strlen(setting_name)];
     nm_assert(nm_streq(request_id_setting_name, setting_name));
 
-    request  = g_slice_new(RequestData);
+    request  = nm_slice_new(RequestData);
     *request = (RequestData){
         .self          = self,
         .connection    = g_object_ref(connection),

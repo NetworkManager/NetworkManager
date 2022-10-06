@@ -349,7 +349,7 @@ finish_parse_context(ParseContext *parse_context, GError *error)
     g_free(parse_context->auth_method);
     g_slist_free_full(parse_context->dns, g_free);
 
-    g_slice_free(ParseContext, parse_context);
+    nm_slice_free_typed(ParseContext, parse_context);
 }
 
 static void read_next_chunk(GInputStream *stream, ParseContext *parse_context);
@@ -440,7 +440,7 @@ nm_service_providers_find_gsm_apn(const char                      *service_provi
     GFile        *file;
     ParseContext *parse_context;
 
-    parse_context              = g_slice_new0(ParseContext);
+    parse_context              = nm_slice_new0(ParseContext);
     parse_context->mccmnc      = g_strdup(mccmnc);
     parse_context->cancellable = cancellable;
     parse_context->callback    = callback;

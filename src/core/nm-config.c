@@ -2174,7 +2174,7 @@ state_new(void)
 {
     State *state;
 
-    state                 = g_slice_new0(State);
+    state                 = nm_slice_new0(State);
     state->p.net_enabled  = TRUE;
     state->p.wifi_enabled = TRUE;
     state->p.wwan_enabled = TRUE;
@@ -2187,7 +2187,7 @@ state_free(State *state)
 {
     if (!state)
         return;
-    g_slice_free(State, state);
+    nm_slice_free_typed(State, state);
 }
 
 static State *

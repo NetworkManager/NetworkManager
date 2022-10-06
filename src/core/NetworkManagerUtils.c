@@ -1004,7 +1004,7 @@ _shutdown_waitobj_unregister(NMShutdownWaitObjHandle *handle)
     c_list_unlink_stale(&handle->lst);
     if (handle->free_msg_reason)
         g_free(handle->msg_reason);
-    g_slice_free(NMShutdownWaitObjHandle, handle);
+    nm_slice_free_typed(NMShutdownWaitObjHandle, handle);
 
     /* FIXME(shutdown): check whether the object list is empty, and
      * signal shutdown-complete */
@@ -1087,7 +1087,7 @@ nm_shutdown_wait_obj_register_full(gpointer           watched_obj,
      * If you schedule any sources or async operations, you probably need to
      * make sure to use the default context. */
 
-    handle  = g_slice_new(NMShutdownWaitObjHandle);
+    handle  = nm_slice_new(NMShutdownWaitObjHandle);
     *handle = (NMShutdownWaitObjHandle){
         /* depending on @free_msg_reason, we take ownership of @msg_reason.
          * In either case, we just reference the string without cloning

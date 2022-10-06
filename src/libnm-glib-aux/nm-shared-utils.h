@@ -853,7 +853,7 @@ void _nm_slice_assert_usable_size(gsize mem_size, gpointer mem_block);
 #define _nm_g_slice_free_fcn_define(mem_size)                              \
     static inline void _nm_g_slice_free_fcn_##mem_size(gpointer mem_block) \
     {                                                                      \
-        g_slice_free1(mem_size, mem_block);                                \
+        nm_slice_free_sized(mem_size, mem_block);                          \
     }                                                                      \
     _NM_DUMMY_STRUCT_FOR_TRAILING_SEMICOLON
 
@@ -919,10 +919,10 @@ _nm_get_warn_unused_result_gdestroynotify(GDestroyNotify f)
 /**
  * nm_g_slice_free_fcn:
  * @type: type argument for sizeof() operator that you would
- *   pass to g_slice_new().
+ *   pass to nm_slice_new().
  *
  * Returns: a function pointer with GDestroyNotify signature
- *   for g_slice_free(type,*).
+ *   for nm_slice_free_typed(type,*).
  *
  * Only certain types are implemented. You'll get a compile time
  * error for the wrong types. */

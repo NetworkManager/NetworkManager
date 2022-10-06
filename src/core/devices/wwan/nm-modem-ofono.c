@@ -151,7 +151,7 @@ disconnect_context_complete(DisconnectContext *ctx, GError *error)
         ctx->callback(NM_MODEM(ctx->self), error, ctx->callback_user_data);
     nm_g_object_unref(ctx->cancellable);
     g_object_unref(ctx->self);
-    g_slice_free(DisconnectContext, ctx);
+    nm_slice_free_typed(DisconnectContext, ctx);
 }
 
 static void
@@ -206,7 +206,7 @@ disconnect(NMModem                   *modem,
 
     _LOGD("warn: %s modem_state: %s", warn ? "TRUE" : "FALSE", nm_modem_state_to_string(state));
 
-    ctx                     = g_slice_new0(DisconnectContext);
+    ctx                     = nm_slice_new0(DisconnectContext);
     ctx->self               = g_object_ref(self);
     ctx->cancellable        = nm_g_object_ref(cancellable);
     ctx->warn               = warn;

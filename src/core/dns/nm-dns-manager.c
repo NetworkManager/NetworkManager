@@ -365,7 +365,7 @@ _dns_config_ip_data_new(NMDnsConfigData      *data,
     nm_assert(NM_IS_L3_CONFIG_DATA(l3cd));
     nm_assert(ip_config_type != NM_DNS_IP_CONFIG_TYPE_REMOVED);
 
-    ip_data  = g_slice_new(NMDnsConfigIPData);
+    ip_data  = nm_slice_new(NMDnsConfigIPData);
     *ip_data = (NMDnsConfigIPData){
         .data           = data,
         .source_tag     = source_tag,
@@ -2025,7 +2025,7 @@ nm_dns_manager_set_ip_config(NMDnsManager         *self,
     }
 
     if (!data) {
-        data  = g_slice_new(NMDnsConfigData);
+        data  = nm_slice_new(NMDnsConfigData);
         *data = (NMDnsConfigData){
             .ifindex       = ifindex,
             .self          = self,

@@ -232,7 +232,7 @@ _registration_update(NML3IPv4LL             *self,
     }
 
     if (!reg) {
-        reg  = g_slice_new(NML3IPv4LLRegistration);
+        reg  = nm_slice_new(NML3IPv4LLRegistration);
         *reg = (NML3IPv4LLRegistration){
             .self         = self,
             .timeout_msec = timeout_msec,
@@ -961,7 +961,7 @@ nm_l3_ipv4ll_new(NML3Cfg *l3cfg)
 
     g_return_val_if_fail(NM_IS_L3CFG(l3cfg), NULL);
 
-    self  = g_slice_new(NML3IPv4LL);
+    self  = nm_slice_new(NML3IPv4LL);
     *self = (NML3IPv4LL){
         .l3cfg                       = g_object_ref(l3cfg),
         .ref_count                   = 1,

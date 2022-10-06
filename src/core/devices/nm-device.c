@@ -5813,7 +5813,7 @@ concheck_handle_complete(NMDeviceConnectivityHandle *handle, GError *error)
                          handle->user_data);
     }
 
-    g_slice_free(NMDeviceConnectivityHandle, handle);
+    nm_slice_free_typed(NMDeviceConnectivityHandle, handle);
 }
 
 static void
@@ -5965,7 +5965,7 @@ concheck_start(NMDevice                    *self,
 
     priv = NM_DEVICE_GET_PRIVATE(self);
 
-    handle                               = g_slice_new0(NMDeviceConnectivityHandle);
+    handle                               = nm_slice_new0(NMDeviceConnectivityHandle);
     handle->seq                          = ++seq_counter;
     handle->self                         = self;
     handle->callback                     = callback;
@@ -7257,7 +7257,7 @@ sriov_op_queue(NMDevice               *self,
      * we register a way to abort the last call during shutdown, and after NM_SHUTDOWN_TIMEOUT_MAX_MSEC
      * grace period we pull the plug and cancel it. */
 
-    op  = g_slice_new(SriovOp);
+    op  = nm_slice_new(SriovOp);
     *op = (SriovOp){
         .num_vfs       = num_vfs,
         .autoprobe     = autoprobe,
@@ -7832,7 +7832,7 @@ nm_device_master_add_slave(NMDevice *self, NMDevice *slave, gboolean configure)
         g_return_val_if_fail(!slave_priv->master, FALSE);
         g_return_val_if_fail(!slave_priv->is_enslaved, FALSE);
 
-        info            = g_slice_new0(SlaveInfo);
+        info            = nm_slice_new0(SlaveInfo);
         info->slave     = g_object_ref(slave);
         info->configure = configure;
         info->watch_id =
@@ -13017,7 +13017,7 @@ reapply_cb(NMDevice              *self,
     if (reapply_data) {
         connection = reapply_data->connection;
         version_id = reapply_data->version_id;
-        g_slice_free(ReapplyData, reapply_data);
+        nm_slice_free_typed(ReapplyData, reapply_data);
     }
 
     if (error) {
@@ -13127,7 +13127,7 @@ impl_device_reapply(NMDBusObject                      *obj,
     }
 
     if (connection || version_id) {
-        reapply_data             = g_slice_new(ReapplyData);
+        reapply_data             = nm_slice_new(ReapplyData);
         reapply_data->connection = connection;
         reapply_data->version_id = version_id;
     } else
@@ -17210,7 +17210,7 @@ nm_device_get_hostname_from_dns_lookup(NMDevice *self, int addr_family, gboolean
 
     resolver = priv->hostname_resolver_x[IS_IPv4];
     if (!resolver) {
-        resolver  = g_slice_new(HostnameResolver);
+        resolver  = nm_slice_new(HostnameResolver);
         *resolver = (HostnameResolver){
             .device      = self,
             .addr_family = addr_family,

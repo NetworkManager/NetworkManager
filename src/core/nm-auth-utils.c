@@ -443,7 +443,7 @@ nm_auth_chain_add_call_unsafe(NMAuthChain *self, const char *permission, gboolea
         }
     }
 
-    call  = g_slice_new(AuthCall);
+    call  = nm_slice_new(AuthCall);
     *call = (AuthCall){
         .chain   = self,
         .call_id = NULL,
@@ -518,7 +518,7 @@ nm_auth_chain_new_subject(NMAuthSubject         *subject,
                         NM_AUTH_SUBJECT_TYPE_INTERNAL));
     nm_assert(done_func);
 
-    self  = g_slice_new(NMAuthChain);
+    self  = nm_slice_new(NMAuthChain);
     *self = (NMAuthChain){
         .done_func          = done_func,
         .user_data          = user_data,

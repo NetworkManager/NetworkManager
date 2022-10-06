@@ -77,7 +77,7 @@ _seen_bssid_entry_init_stale(SeenBssidEntry *entry, const NMEtherAddr *bssid_bin
 static inline SeenBssidEntry *
 _seen_bssid_entry_new_stale_bin(const NMEtherAddr *bssid_bin)
 {
-    return _seen_bssid_entry_init_stale(g_slice_new(SeenBssidEntry), bssid_bin);
+    return _seen_bssid_entry_init_stale(nm_slice_new(SeenBssidEntry), bssid_bin);
 }
 
 static inline SeenBssidEntry *
@@ -85,7 +85,7 @@ _seen_bssid_entry_new_stale_copy(const SeenBssidEntry *src)
 {
     SeenBssidEntry *entry;
 
-    entry = g_slice_new(SeenBssidEntry);
+    entry = nm_slice_new(SeenBssidEntry);
     memcpy(entry->bssid, src->bssid, sizeof(entry->bssid));
     return entry;
 }
@@ -696,7 +696,7 @@ _get_secrets_info_free(NMSettingsConnectionCallId *call_id)
         g_clear_error(&call_id->t.idle.error);
 
     memset(call_id, 0, sizeof(*call_id));
-    g_slice_free(NMSettingsConnectionCallId, call_id);
+    nm_slice_free_typed(NMSettingsConnectionCallId, call_id);
 }
 
 typedef struct {
@@ -1095,7 +1095,7 @@ nm_settings_connection_get_secrets(NMSettingsConnection           *self,
                 && (nm_settings_connection_get_connection(self) != applied_connection)),
         NULL);
 
-    call_id       = g_slice_new0(NMSettingsConnectionCallId);
+    call_id       = nm_slice_new0(NMSettingsConnectionCallId);
     call_id->self = self;
     if (applied_connection) {
         call_id->had_applied_connection = TRUE;
@@ -1267,7 +1267,7 @@ pk_auth_cb(NMAuthManager       *auth_manager,
 
     g_object_unref(auth_data->invocation);
     g_object_unref(auth_data->subject);
-    g_slice_free(AuthData, auth_data);
+    nm_slice_free_typed(AuthData, auth_data);
 }
 
 /**
@@ -1328,7 +1328,7 @@ auth_start(NMSettingsConnection  *self,
         return;
     }
 
-    auth_data                = g_slice_new(AuthData);
+    auth_data                = nm_slice_new(AuthData);
     auth_data->self          = self;
     auth_data->callback      = callback;
     auth_data->callback_data = callback_data;
@@ -1442,7 +1442,7 @@ update_complete(NMSettingsConnection *self, UpdateInfo *info, GError *error)
     g_clear_object(&info->new_settings);
     g_free(info->audit_args);
     g_free(info->plugin_name);
-    g_slice_free(UpdateInfo, info);
+    nm_slice_free_typed(UpdateInfo, info);
 }
 
 static int
@@ -1697,7 +1697,7 @@ settings_connection_update(NMSettingsConnection  *self,
                                              &error))
         goto error;
 
-    info               = g_slice_new0(UpdateInfo);
+    info               = nm_slice_new0(UpdateInfo);
     info->is_update2   = is_update2;
     info->context      = context;
     info->agent_mgr    = g_object_ref(priv->agent_mgr);

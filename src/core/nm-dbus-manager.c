@@ -195,7 +195,7 @@ _object_mgr_data_free(ObjectMgrData *obj_mgr_data)
 
     g_free(obj_mgr_data->fake_sender);
 
-    g_slice_free(ObjectMgrData, obj_mgr_data);
+    nm_slice_free_typed(ObjectMgrData, obj_mgr_data);
 }
 
 /*****************************************************************************/
@@ -234,7 +234,7 @@ close_connection_in_idle(gpointer user_data)
     }
 
     g_object_unref(server->manager);
-    g_slice_free(CloseConnectionInfo, info);
+    nm_slice_free_typed(CloseConnectionInfo, info);
 
     return G_SOURCE_REMOVE;
 }
@@ -253,7 +253,7 @@ private_server_closed_connection(GDBusConnection *conn,
           s->tag,
           NM_HASH_OBFUSCATE_PTR(conn));
 
-    info                       = g_slice_new0(CloseConnectionInfo);
+    info                       = nm_slice_new0(CloseConnectionInfo);
     info->connection           = conn;
     info->server               = s;
     info->remote_peer_vanished = remote_peer_vanished;
@@ -282,7 +282,7 @@ private_server_new_connection(GDBusServer *server, GDBusConnection *conn, gpoint
     manager = g_dbus_object_manager_server_new(OBJECT_MANAGER_SERVER_BASE_PATH);
     g_dbus_object_manager_server_set_connection(manager, conn);
 
-    obj_mgr_data              = g_slice_new(ObjectMgrData);
+    obj_mgr_data              = nm_slice_new(ObjectMgrData);
     obj_mgr_data->manager     = manager;
     obj_mgr_data->fake_sender = sender;
     c_list_link_tail(&s->object_mgr_lst_head, &obj_mgr_data->object_mgr_lst);
@@ -340,7 +340,7 @@ private_server_free(gpointer ptr)
 
     g_object_unref(s->server);
 
-    g_slice_free(PrivateServer, s);
+    nm_slice_free_typed(PrivateServer, s);
 }
 
 void
@@ -394,7 +394,7 @@ nm_dbus_manager_private_server_register(NMDBusManager *self, const char *path, c
         return;
     }
 
-    s          = g_slice_new0(PrivateServer);
+    s          = nm_slice_new0(PrivateServer);
     s->address = g_steal_pointer(&address);
     s->server  = server;
     g_signal_connect(server, "new-connection", G_CALLBACK(private_server_new_connection), s);

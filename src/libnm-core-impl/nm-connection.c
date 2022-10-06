@@ -88,7 +88,7 @@ _nm_connection_get_private_from_qdata(NMConnection *connection)
 
     priv = g_object_get_qdata((GObject *) connection, key);
     if (G_UNLIKELY(!priv)) {
-        priv  = g_slice_new(NMConnectionPrivate);
+        priv  = nm_slice_new(NMConnectionPrivate);
         *priv = (NMConnectionPrivate){
             .self = connection,
         };

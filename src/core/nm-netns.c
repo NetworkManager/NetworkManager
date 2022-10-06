@@ -160,7 +160,7 @@ nm_netns_l3cfg_acquire(NMNetns *self, int ifindex)
         return g_object_ref(l3cfg_data->l3cfg);
     }
 
-    l3cfg_data  = g_slice_new(L3CfgData);
+    l3cfg_data  = nm_slice_new(L3CfgData);
     *l3cfg_data = (L3CfgData){
         .ifindex            = ifindex,
         .l3cfg              = nm_l3cfg_new(self, ifindex),
@@ -295,7 +295,7 @@ nm_netns_shared_ip_reserve(NMNetns *self)
         }
     }
 
-    handle  = g_slice_new(NMNetnsSharedIPHandle);
+    handle  = nm_slice_new(NMNetnsSharedIPHandle);
     *handle = (NMNetnsSharedIPHandle){
         .addr       = addr,
         ._ref_count = 1,

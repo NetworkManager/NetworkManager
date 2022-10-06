@@ -194,7 +194,7 @@ script_info_free(gpointer ptr)
 
     g_free(info->script);
     g_free(info->error);
-    g_slice_free(ScriptInfo, info);
+    nm_slice_free_typed(ScriptInfo, info);
 }
 
 static void
@@ -208,7 +208,7 @@ request_free(Request *request)
     g_strfreev(request->envp);
     g_ptr_array_free(request->scripts, TRUE);
 
-    g_slice_free(Request, request);
+    nm_slice_free_typed(Request, request);
 }
 
 /*****************************************************************************/
@@ -762,7 +762,7 @@ _handle_action(GDBusMethodInvocation *invocation, GVariant *parameters)
                   &vpn_ip6_config,
                   &debug);
 
-    request             = g_slice_new0(Request);
+    request             = nm_slice_new0(Request);
     request->request_id = ++gl.request_id_counter;
     request->debug      = debug || gl.log_verbose;
     request->context    = invocation;
@@ -791,7 +791,7 @@ _handle_action(GDBusMethodInvocation *invocation, GVariant *parameters)
     for (iter = sorted_scripts; iter; iter = g_slist_next(iter)) {
         ScriptInfo *s;
 
-        s          = g_slice_new0(ScriptInfo);
+        s          = nm_slice_new0(ScriptInfo);
         s->request = request;
         s->script  = iter->data;
         s->wait    = script_must_wait(s->script);

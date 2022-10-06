@@ -548,7 +548,7 @@ nm_g_subprocess_terminate_in_background(GSubprocess *subprocess, int timeout_mse
 
     main_context = g_main_context_get_thread_default();
 
-    term_data  = g_slice_new(SubprocessTerminateData);
+    term_data  = nm_slice_new(SubprocessTerminateData);
     *term_data = (SubprocessTerminateData){
         .subprocess     = g_object_ref(subprocess),
         .timeout_source = NULL,

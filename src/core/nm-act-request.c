@@ -87,7 +87,7 @@ _get_secrets_call_id_free(NMActRequestGetSecretsCallId *call_id)
 
     if (call_id->has_ref)
         g_object_unref(call_id->self);
-    g_slice_free(NMActRequestGetSecretsCallId, call_id);
+    nm_slice_free_typed(NMActRequestGetSecretsCallId, call_id);
 }
 
 static void
@@ -162,7 +162,7 @@ nm_act_request_get_secrets(NMActRequest                *self,
     settings_connection = nm_act_request_get_settings_connection(self);
     applied_connection  = nm_act_request_get_applied_connection(self);
 
-    call_id                = g_slice_new0(NMActRequestGetSecretsCallId);
+    call_id                = nm_slice_new0(NMActRequestGetSecretsCallId);
     call_id->has_ref       = ref_self;
     call_id->self          = ref_self ? g_object_ref(self) : self;
     call_id->callback      = callback;

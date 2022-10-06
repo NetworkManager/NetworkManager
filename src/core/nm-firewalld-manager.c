@@ -189,7 +189,7 @@ _cb_info_create(NMFirewalldManager                 *self,
     NMFirewalldManagerPrivate *priv = NM_FIREWALLD_MANAGER_GET_PRIVATE(self);
     NMFirewalldManagerCallId  *call_id;
 
-    call_id = g_slice_new0(NMFirewalldManagerCallId);
+    call_id = nm_slice_new0(NMFirewalldManagerCallId);
 
     call_id->self      = g_object_ref(self);
     call_id->ops_type  = ops_type;

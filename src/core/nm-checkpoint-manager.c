@@ -325,7 +325,7 @@ nm_checkpoint_manager_new(NMManager *manager, GParamSpec *spec)
 
     g_return_val_if_fail(NM_IS_MANAGER(manager), FALSE);
 
-    self = g_slice_new0(NMCheckpointManager);
+    self = nm_slice_new0(NMCheckpointManager);
 
     /* the NMCheckpointManager instance is actually owned by NMManager.
      * Thus, we cannot take a reference to it, and we also don't bother
@@ -346,5 +346,5 @@ nm_checkpoint_manager_free(NMCheckpointManager *self)
         return;
 
     nm_checkpoint_manager_destroy_all(self);
-    g_slice_free(NMCheckpointManager, self);
+    nm_slice_free_typed(NMCheckpointManager, self);
 }

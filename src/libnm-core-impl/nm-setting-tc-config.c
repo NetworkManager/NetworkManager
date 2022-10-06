@@ -72,7 +72,7 @@ nm_tc_qdisc_new(const char *kind, guint32 parent, GError **error)
         return NULL;
     }
 
-    qdisc           = g_slice_new0(NMTCQdisc);
+    qdisc           = nm_slice_new0(NMTCQdisc);
     qdisc->refcount = 1;
 
     qdisc->kind   = g_strdup(kind);
@@ -118,7 +118,7 @@ nm_tc_qdisc_unref(NMTCQdisc *qdisc)
         g_free(qdisc->kind);
         if (qdisc->attributes)
             g_hash_table_unref(qdisc->attributes);
-        g_slice_free(NMTCQdisc, qdisc);
+        nm_slice_free_typed(NMTCQdisc, qdisc);
     }
 }
 
@@ -430,7 +430,7 @@ nm_tc_action_new(const char *kind, GError **error)
         return NULL;
     }
 
-    action           = g_slice_new0(NMTCAction);
+    action           = nm_slice_new0(NMTCAction);
     action->refcount = 1;
 
     action->kind = g_strdup(kind);
@@ -475,7 +475,7 @@ nm_tc_action_unref(NMTCAction *action)
         g_free(action->kind);
         if (action->attributes)
             g_hash_table_unref(action->attributes);
-        g_slice_free(NMTCAction, action);
+        nm_slice_free_typed(NMTCAction, action);
     }
 }
 
@@ -715,7 +715,7 @@ nm_tc_tfilter_new(const char *kind, guint32 parent, GError **error)
         return NULL;
     }
 
-    tfilter           = g_slice_new0(NMTCTfilter);
+    tfilter           = nm_slice_new0(NMTCTfilter);
     tfilter->refcount = 1;
 
     tfilter->kind   = g_strdup(kind);
@@ -761,7 +761,7 @@ nm_tc_tfilter_unref(NMTCTfilter *tfilter)
         g_free(tfilter->kind);
         if (tfilter->action)
             nm_tc_action_unref(tfilter->action);
-        g_slice_free(NMTCTfilter, tfilter);
+        nm_slice_free_typed(NMTCTfilter, tfilter);
     }
 }
 

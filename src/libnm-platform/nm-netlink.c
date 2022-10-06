@@ -374,7 +374,7 @@ nlmsg_alloc_size(size_t len)
     else if (len > UINT32_MAX)
         g_return_val_if_reached(NULL);
 
-    nm  = g_slice_new(struct nl_msg);
+    nm  = nm_slice_new(struct nl_msg);
     *nm = (struct nl_msg){
         .nm_protocol = -1,
         .nm_size     = len,
@@ -429,7 +429,7 @@ nlmsg_free(struct nl_msg *msg)
         return;
 
     g_free(msg->nm_nlh);
-    g_slice_free(struct nl_msg, msg);
+    nm_slice_free_typed(struct nl_msg, msg);
 }
 
 /*****************************************************************************/
@@ -1124,7 +1124,7 @@ nl_socket_new(struct nl_sock **out_sk,
 
     t = time(NULL);
 
-    sk  = g_slice_new(struct nl_sock);
+    sk  = nm_slice_new(struct nl_sock);
     *sk = (struct nl_sock){
         .s_fd = nm_steal_fd(&fd),
         .s_local =

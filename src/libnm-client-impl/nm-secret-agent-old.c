@@ -475,7 +475,7 @@ impl_get_secrets(NMSecretAgentOld *self, GVariant *parameters, GDBusMethodInvoca
     if (info)
         _cancel_get_secret_request(self, info, "Request aborted due to new request");
 
-    info  = g_slice_new(GetSecretsInfo);
+    info  = nm_slice_new(GetSecretsInfo);
     *info = (GetSecretsInfo){
         .context         = context,
         .connection_path = g_strdup(arg_connection_path),

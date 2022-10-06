@@ -1235,7 +1235,7 @@ _NM_IN_STRSET_EVAL_op_streq_ascii_case(const char *x1, const char *x)
 
 /*****************************************************************************/
 
-#define nm_g_slice_free(ptr) g_slice_free(typeof(*(ptr)), ptr)
+#define nm_g_slice_free(ptr) nm_slice_free_typed(typeof(*(ptr)), ptr)
 
 /*****************************************************************************/
 

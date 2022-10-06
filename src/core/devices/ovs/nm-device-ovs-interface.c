@@ -418,7 +418,7 @@ deactivate_async(NMDevice                  *device,
      * ovsdb and wait that changes are picked up.
      */
 
-    data  = g_slice_new(DeactivateData);
+    data  = nm_slice_new(DeactivateData);
     *data = (DeactivateData){
         .self               = g_object_ref(self),
         .cancellable        = g_object_ref(cancellable),

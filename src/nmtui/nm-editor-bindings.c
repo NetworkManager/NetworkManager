@@ -1067,7 +1067,7 @@ wireless_security_target_destroyed(gpointer user_data, GObject *ex_target)
 
     g_free(binding->target_property);
 
-    g_slice_free(NMEditorWirelessSecurityMethodBinding, binding);
+    nm_slice_free_typed(NMEditorWirelessSecurityMethodBinding, binding);
 }
 
 /**
@@ -1101,7 +1101,7 @@ nm_editor_bind_wireless_security_method(NMConnection              *connection,
     NMEditorWirelessSecurityMethodBinding *binding;
     char                                  *notify;
 
-    binding = g_slice_new0(NMEditorWirelessSecurityMethodBinding);
+    binding = nm_slice_new0(NMEditorWirelessSecurityMethodBinding);
 
     binding->target          = target;
     binding->target_property = g_strdup(target_property);
@@ -1224,7 +1224,7 @@ wep_key_target_destroyed(gpointer user_data, GObject *ex_target)
     g_free(binding->entry_property);
     g_free(binding->key_selector_property);
 
-    g_slice_free(NMEditorWepKeyBinding, binding);
+    nm_slice_free_typed(NMEditorWepKeyBinding, binding);
 }
 
 /**
@@ -1253,7 +1253,7 @@ nm_editor_bind_wireless_security_wep_key(NMSettingWirelessSecurity *s_wsec,
     NMEditorWepKeyBinding *binding;
     char                  *notify;
 
-    binding                        = g_slice_new0(NMEditorWepKeyBinding);
+    binding                        = nm_slice_new0(NMEditorWepKeyBinding);
     binding->s_wsec                = g_object_ref(s_wsec);
     binding->entry                 = entry;
     binding->entry_property        = g_strdup(entry_property);
@@ -1389,7 +1389,7 @@ vlan_target_destroyed(gpointer user_data, GObject *ex_target)
     NMEditorVlanWidgetBinding *binding = user_data;
 
     g_free(binding->last_ifname_parent);
-    g_slice_free(NMEditorVlanWidgetBinding, binding);
+    nm_slice_free_typed(NMEditorVlanWidgetBinding, binding);
 }
 
 /**
@@ -1408,7 +1408,7 @@ nm_editor_bind_vlan_name(NMSettingVlan *s_vlan, NMSettingConnection *s_con)
     NMEditorVlanWidgetBinding *binding;
     const char                *ifname;
 
-    binding         = g_slice_new0(NMEditorVlanWidgetBinding);
+    binding         = nm_slice_new0(NMEditorVlanWidgetBinding);
     binding->s_vlan = s_vlan;
     binding->s_con  = s_con;
 

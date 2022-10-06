@@ -171,7 +171,7 @@ nm_ip_address_new(int family, const char *addr, guint prefix, GError **error)
     if (!valid_prefix(family, prefix, error))
         return NULL;
 
-    address  = g_slice_new(NMIPAddress);
+    address  = nm_slice_new(NMIPAddress);
     *address = (NMIPAddress){
         .refcount = 1,
         .family   = family,
@@ -206,7 +206,7 @@ nm_ip_address_new_binary(int family, gconstpointer addr, guint prefix, GError **
     if (!valid_prefix(family, prefix, error))
         return NULL;
 
-    address  = g_slice_new(NMIPAddress);
+    address  = nm_slice_new(NMIPAddress);
     *address = (NMIPAddress){
         .refcount = 1,
         .family   = family,
@@ -631,7 +631,7 @@ nm_ip_route_new(int         family,
     if (!valid_metric(metric, error))
         return NULL;
 
-    route  = g_slice_new(NMIPRoute);
+    route  = nm_slice_new(NMIPRoute);
     *route = (NMIPRoute){
         .refcount = 1,
         .family   = family,
@@ -677,7 +677,7 @@ nm_ip_route_new_binary(int           family,
     if (!valid_metric(metric, error))
         return NULL;
 
-    route  = g_slice_new0(NMIPRoute);
+    route  = nm_slice_new0(NMIPRoute);
     *route = (NMIPRoute){
         .refcount = 1,
         .family   = family,
@@ -1619,7 +1619,7 @@ nm_ip_routing_rule_new(int addr_family)
 
     g_return_val_if_fail(NM_IN_SET(addr_family, AF_INET, AF_INET6), NULL);
 
-    self  = g_slice_new(NMIPRoutingRule);
+    self  = nm_slice_new(NMIPRoutingRule);
     *self = (NMIPRoutingRule){
         .ref_count             = 1,
         .is_v4                 = (addr_family == AF_INET),
@@ -1647,7 +1647,7 @@ nm_ip_routing_rule_new_clone(const NMIPRoutingRule *rule)
 
     g_return_val_if_fail(NM_IS_IP_ROUTING_RULE(rule, TRUE), NULL);
 
-    self  = g_slice_new(NMIPRoutingRule);
+    self  = nm_slice_new(NMIPRoutingRule);
     *self = (NMIPRoutingRule){
         .ref_count = 1,
         .sealed    = FALSE,

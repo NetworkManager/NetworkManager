@@ -184,7 +184,7 @@ nmcs_provider_get_config_iface_data_create(NMCSProviderGetConfigTaskData *get_co
     nm_assert(get_config_data);
     nm_assert(NMCS_IS_PROVIDER(get_config_data->self));
 
-    iface_data  = g_slice_new(NMCSProviderGetConfigIfaceData);
+    iface_data  = nm_slice_new(NMCSProviderGetConfigIfaceData);
     *iface_data = (NMCSProviderGetConfigIfaceData){
         .get_config_data = get_config_data,
         .hwaddr          = g_strdup(hwaddr),
@@ -292,7 +292,7 @@ nmcs_provider_get_config(NMCSProvider       *self,
 
     _LOGD("get-config: starting");
 
-    get_config_data  = g_slice_new(NMCSProviderGetConfigTaskData);
+    get_config_data  = nm_slice_new(NMCSProviderGetConfigTaskData);
     *get_config_data = (NMCSProviderGetConfigTaskData){
         /* "self" is kept alive by "task". */
         .self = self,

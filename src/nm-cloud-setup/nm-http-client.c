@@ -200,7 +200,7 @@ _ehandle_complete(EHandleData *edata, GError *error_take)
 
     _ehandle_free_ehandle(edata);
 
-    get_result  = g_slice_new(GetResult);
+    get_result  = nm_slice_new(GetResult);
     *get_result = (GetResult){
         .response_code = response_code,
         /* This ensures that response_data is always NUL terminated. This is an important guarantee
@@ -278,7 +278,7 @@ nm_http_client_get(NMHttpClient       *self,
 
     priv = NM_HTTP_CLIENT_GET_PRIVATE(self);
 
-    edata  = g_slice_new(EHandleData);
+    edata  = nm_slice_new(EHandleData);
     *edata = (EHandleData){
         .task      = nm_g_task_new(self, cancellable, nm_http_client_get, callback, user_data),
         .recv_data = NM_STR_BUF_INIT(0, FALSE),
@@ -538,7 +538,7 @@ nm_http_client_poll_get(NMHttpClient               *self,
     g_return_if_fail(ratelimit_timeout_ms >= -1);
     g_return_if_fail(!cancellable || G_CANCELLABLE(cancellable));
 
-    poll_get_data  = g_slice_new(PollGetData);
+    poll_get_data  = nm_slice_new(PollGetData);
     *poll_get_data = (PollGetData){
         .task = nm_g_task_new(self, cancellable, nm_http_client_poll_get, callback, user_data),
         .uri  = g_strdup(uri),

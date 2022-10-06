@@ -687,7 +687,7 @@ nm_l3_config_data_new(NMDedupMultiIndex *multi_idx, int ifindex, NMIPConfigSourc
     nm_assert(source == NM_IP_CONFIG_SOURCE_UNKNOWN
               || (source >= NM_IP_CONFIG_SOURCE_KERNEL && source <= NM_IP_CONFIG_SOURCE_USER));
 
-    self  = g_slice_new(NML3ConfigData);
+    self  = nm_slice_new(NML3ConfigData);
     *self = (NML3ConfigData){
         .ref_count                     = 1,
         .ifindex                       = ifindex,

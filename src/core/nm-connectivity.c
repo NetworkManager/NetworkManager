@@ -185,7 +185,7 @@ _con_config_unref(ConConfig *con_config)
     g_free(con_config->host);
     g_free(con_config->port);
     g_free(con_config->response);
-    g_slice_free(ConConfig, con_config);
+    nm_slice_free_typed(ConConfig, con_config);
 }
 
 #if WITH_CONCHECK
@@ -262,7 +262,7 @@ cb_data_complete(NMConnectivityCheckHandle *cb_data,
     g_free(cb_data->ifspec);
     if (cb_data->completed_log_message_free)
         g_free(cb_data->completed_log_message_free);
-    g_slice_free(NMConnectivityCheckHandle, cb_data);
+    nm_slice_free_typed(NMConnectivityCheckHandle, cb_data);
 }
 
 /*****************************************************************************/
@@ -487,13 +487,13 @@ multi_socket_cb(CURL *e_handle, curl_socket_t fd, int what, void *userdata, void
                 *fdp->destroy_notify = TRUE;
             nm_clear_g_source_inst(&fdp->source);
             curl_multi_assign(cb_data->concheck.curl_mhandle, fd, NULL);
-            g_slice_free(ConCurlSockData, fdp);
+            nm_slice_free_typed(ConCurlSockData, fdp);
         }
     } else {
         GIOCondition condition;
 
         if (!fdp) {
-            fdp  = g_slice_new(ConCurlSockData);
+            fdp  = nm_slice_new(ConCurlSockData);
             *fdp = (ConCurlSockData){
                 .cb_data = cb_data,
             };
@@ -1029,7 +1029,7 @@ nm_connectivity_check_start(NMConnectivity             *self,
 
     priv = NM_CONNECTIVITY_GET_PRIVATE(self);
 
-    cb_data                  = g_slice_new0(NMConnectivityCheckHandle);
+    cb_data                  = nm_slice_new0(NMConnectivityCheckHandle);
     cb_data->self            = self;
     cb_data->request_counter = ++request_counter;
     c_list_link_tail(&priv->handles_lst_head, &cb_data->handles_lst);
@@ -1283,7 +1283,7 @@ update_config(NMConnectivity *self, NMConfigData *config_data)
             new_port = priv->con_config ? g_strdup(priv->con_config->port) : NULL;
         }
         _con_config_unref(priv->con_config);
-        priv->con_config  = g_slice_new(ConConfig);
+        priv->con_config  = nm_slice_new(ConConfig);
         *priv->con_config = (ConConfig){
             .ref_count = 1,
             .uri       = g_strdup(new_uri),

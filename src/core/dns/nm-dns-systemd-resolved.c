@@ -245,7 +245,7 @@ _request_item_append(NMDnsSystemdResolved *self,
     NMDnsSystemdResolvedPrivate *priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE(self);
     RequestItem                 *request_item;
 
-    request_item  = g_slice_new(RequestItem);
+    request_item  = nm_slice_new(RequestItem);
     *request_item = (RequestItem){
         .ref_count = 1,
         .operation = operation,
@@ -710,7 +710,7 @@ update(NMDnsPlugin             *plugin,
 
         ic = g_hash_table_lookup(interfaces, GINT_TO_POINTER(ifindex));
         if (!ic) {
-            ic  = g_slice_new(InterfaceConfig);
+            ic  = nm_slice_new(InterfaceConfig);
             *ic = (InterfaceConfig){
                 .ifindex      = ifindex,
                 .ip_data_list = g_ptr_array_sized_new(4),
@@ -1073,7 +1073,7 @@ nm_dns_systemd_resolved_resolve_address(NMDnsSystemdResolved                    
     nm_assert(addr);
     nm_assert(callback);
 
-    handle  = g_slice_new(NMDnsSystemdResolvedResolveHandle);
+    handle  = nm_slice_new(NMDnsSystemdResolvedResolveHandle);
     *handle = (NMDnsSystemdResolvedResolveHandle){
         .self               = self,
         .timeout_msec       = timeout_msec,

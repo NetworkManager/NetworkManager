@@ -296,7 +296,7 @@ ifparser_parse(const char *eni_file, int quiet)
 {
     if_parser *parser;
 
-    parser = g_slice_new(if_parser);
+    parser = nm_slice_new(if_parser);
     c_list_init(&parser->block_lst_head);
     _recursive_ifparser(parser, eni_file, quiet);
     return parser;
@@ -327,7 +327,7 @@ ifparser_destroy(if_parser *parser)
 
     while ((ifb = c_list_first_entry(&parser->block_lst_head, if_block, block_lst)))
         _destroy_block(ifb);
-    g_slice_free(if_parser, parser);
+    nm_slice_free_typed(if_parser, parser);
 }
 
 if_block *

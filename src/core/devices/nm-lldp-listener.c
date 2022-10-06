@@ -466,7 +466,7 @@ lldp_neighbor_new(sd_lldp_neighbor *neighbor_sd)
         s_port_id = nm_utils_bin2hexstr_full(port_id, port_id_len, '\0', FALSE, NULL);
     }
 
-    neigh  = g_slice_new(LldpNeighbor);
+    neigh  = nm_slice_new(LldpNeighbor);
     *neigh = (LldpNeighbor){
         .neighbor_sd     = sd_lldp_neighbor_ref(neighbor_sd),
         .chassis_id_type = chassis_id_type,
@@ -964,7 +964,7 @@ nm_lldp_listener_new(int                  ifindex,
     r = sd_lldp_rx_set_neighbors_max(lldp_handle, MAX_NEIGHBORS);
     nm_assert(r == 0);
 
-    self  = g_slice_new(NMLldpListener);
+    self  = nm_slice_new(NMLldpListener);
     *self = (NMLldpListener){
         .ifindex          = ifindex,
         .notify_callback  = notify_callback,

@@ -148,7 +148,7 @@ nm_bridge_vlan_new(guint16 vid_start, guint16 vid_end)
     g_return_val_if_fail(vid_end <= NM_BRIDGE_VLAN_VID_MAX, NULL);
     g_return_val_if_fail(vid_start <= vid_end, NULL);
 
-    vlan            = g_slice_new0(NMBridgeVlan);
+    vlan            = nm_slice_new0(NMBridgeVlan);
     vlan->refcount  = 1;
     vlan->vid_start = vid_start;
     vlan->vid_end   = vid_end;
@@ -192,7 +192,7 @@ nm_bridge_vlan_unref(NMBridgeVlan *vlan)
     g_return_if_fail(NM_IS_BRIDGE_VLAN(vlan, TRUE));
 
     if (--vlan->refcount == 0)
-        g_slice_free(NMBridgeVlan, vlan);
+        nm_slice_free_typed(NMBridgeVlan, vlan);
 }
 
 /**

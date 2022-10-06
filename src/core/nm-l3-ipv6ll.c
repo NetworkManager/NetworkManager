@@ -637,7 +637,7 @@ _nm_l3_ipv6ll_new(NML3Cfg                  *l3cfg,
             || (stable_type != NM_UTILS_STABLE_TYPE_NONE && ifname && network_id && !token_iid),
         NULL);
 
-    self  = g_slice_new(NML3IPv6LL);
+    self  = nm_slice_new(NML3IPv6LL);
     *self = (NML3IPv6LL){
         .l3cfg                   = g_object_ref(l3cfg),
         .notify_fcn              = notify_fcn,

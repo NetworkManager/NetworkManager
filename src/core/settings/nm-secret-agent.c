@@ -141,7 +141,7 @@ _call_id_new(NMSecretAgent        *self,
     NMSecretAgentPrivate *priv = NM_SECRET_AGENT_GET_PRIVATE(self);
     NMSecretAgentCallId  *call_id;
 
-    call_id  = g_slice_new(NMSecretAgentCallId);
+    call_id  = nm_slice_new(NMSecretAgentCallId);
     *call_id = (NMSecretAgentCallId){
         .self          = g_object_ref(self),
         .path          = g_strdup(path),

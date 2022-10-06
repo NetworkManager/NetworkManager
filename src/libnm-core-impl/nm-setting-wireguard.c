@@ -76,7 +76,7 @@ nm_wireguard_peer_new(void)
 {
     NMWireGuardPeer *self;
 
-    self  = g_slice_new(NMWireGuardPeer);
+    self  = nm_slice_new(NMWireGuardPeer);
     *self = (NMWireGuardPeer){
         .refcount            = 1,
         .preshared_key_flags = NM_SETTING_SECRET_FLAG_NOT_REQUIRED,
@@ -103,7 +103,7 @@ nm_wireguard_peer_new_clone(const NMWireGuardPeer *self, gboolean with_secrets)
 
     g_return_val_if_fail(NM_IS_WIREGUARD_PEER(self, TRUE), NULL);
 
-    new  = g_slice_new(NMWireGuardPeer);
+    new  = nm_slice_new(NMWireGuardPeer);
     *new = (NMWireGuardPeer){
         .refcount             = 1,
         .public_key           = g_strdup(self->public_key),
@@ -175,7 +175,7 @@ nm_wireguard_peer_unref(NMWireGuardPeer *self)
         g_ptr_array_unref(self->allowed_ips);
     g_free(self->public_key);
     nm_free_secret(self->preshared_key);
-    g_slice_free(NMWireGuardPeer, self);
+    nm_slice_free_typed(NMWireGuardPeer, self);
 }
 
 /**
@@ -1099,7 +1099,7 @@ _peer_free(PeerData *pd)
     nm_assert(pd);
 
     nm_wireguard_peer_unref(pd->peer);
-    g_slice_free(PeerData, pd);
+    nm_slice_free_typed(PeerData, pd);
 }
 
 /*****************************************************************************/
@@ -1309,7 +1309,7 @@ _peers_set(NMSettingWireGuardPrivate *priv,
     }
 
     if (!pd_same_key)
-        pd_same_key = g_slice_new(PeerData);
+        pd_same_key = nm_slice_new(PeerData);
 
     *pd_same_key = (PeerData){
         .peer       = peer,

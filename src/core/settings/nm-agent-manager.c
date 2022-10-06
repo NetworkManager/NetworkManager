@@ -554,7 +554,7 @@ request_new(NMAgentManager *self,
 {
     Request *req;
 
-    req               = g_slice_new0(Request);
+    req               = nm_slice_new0(Request);
     req->self         = g_object_ref(self);
     req->request_type = request_type;
     req->detail       = g_strdup(detail);
@@ -603,7 +603,7 @@ request_free(Request *req)
         g_object_unref(req->current);
 
     memset(req, 0, sizeof(Request));
-    g_slice_free(Request, req);
+    nm_slice_free_typed(Request, req);
 }
 
 static void

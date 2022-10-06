@@ -1216,7 +1216,7 @@ deactivate_context_complete(DeactivateContext *ctx, GError *error)
     nm_g_object_unref(ctx->cancellable);
     g_object_unref(ctx->device);
     g_object_unref(ctx->self);
-    g_slice_free(DeactivateContext, ctx);
+    nm_slice_free_typed(DeactivateContext, ctx);
 }
 
 static void
@@ -1273,7 +1273,7 @@ nm_modem_deactivate_async(NMModem                  *self,
     g_return_if_fail(NM_IS_DEVICE(device));
     g_return_if_fail(G_IS_CANCELLABLE(cancellable));
 
-    ctx                     = g_slice_new(DeactivateContext);
+    ctx                     = nm_slice_new(DeactivateContext);
     ctx->self               = g_object_ref(self);
     ctx->device             = g_object_ref(device);
     ctx->cancellable        = g_object_ref(cancellable);

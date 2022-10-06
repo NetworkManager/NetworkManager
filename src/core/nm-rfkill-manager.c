@@ -147,7 +147,7 @@ killswitch_new(struct udev_device *device, NMRfkillType rtype)
         || nm_streq0(subsys, "acpi") || nm_streq0(parent_subsys, "acpi"))
         platform = TRUE;
 
-    ks  = g_slice_new(Killswitch);
+    ks  = nm_slice_new(Killswitch);
     *ks = (Killswitch){
         .name     = g_strdup(udev_device_get_sysname(device)),
         .seqnum   = udev_device_get_seqnum(device),

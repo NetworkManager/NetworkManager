@@ -573,7 +573,7 @@ nm_firewall_nft_call(GBytes             *stdin_buf,
     FwNftCallData                       *call_data;
     gs_free char                        *ss1 = NULL;
 
-    call_data  = g_slice_new(FwNftCallData);
+    call_data  = nm_slice_new(FwNftCallData);
     *call_data = (FwNftCallData){
         .task =
             nm_g_task_new(NULL, cancellable, nm_firewall_nft_call, callback, callback_user_data),
@@ -964,7 +964,7 @@ nm_firewall_config_new_shared(const char *ip_iface, in_addr_t addr, guint8 plen)
     nm_assert(addr != 0u);
     nm_assert(plen <= 32);
 
-    self  = g_slice_new(NMFirewallConfig);
+    self  = nm_slice_new(NMFirewallConfig);
     *self = (NMFirewallConfig){
         .ip_iface = g_strdup(ip_iface),
         .addr     = addr,

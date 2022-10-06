@@ -74,8 +74,8 @@
    Memcheck:Leak
    fun:malloc
    fun:g_malloc
-   fun:g_slice_alloc
-   fun:g_slice_alloc0
+   fun:nm_slice_alloc
+   fun:nm_slice_alloc0
    fun:g_type_create_instance
    fun:g_object_constructor
    ...
@@ -175,7 +175,7 @@
    match-leak-kinds: definite
    fun:malloc
    fun:g_malloc
-   fun:g_slice_alloc
+   fun:nm_slice_alloc
    fun:g_variant_new_from_bytes
    fun:g_variant_new_from_trusted
    fun:parse_dhcp
@@ -192,8 +192,8 @@
    match-leak-kinds: definite
    fun:malloc
    fun:g_malloc
-   fun:g_slice_alloc
-   fun:g_slice_alloc0
+   fun:nm_slice_alloc
+   fun:nm_slice_alloc0
    fun:get_dispatch
    fun:g_main_context_dispatch
    ...
@@ -210,8 +210,8 @@
    match-leak-kinds: definite
    fun:malloc
    fun:g_malloc
-   fun:g_slice_alloc
-   fun:g_slice_alloc0
+   fun:nm_slice_alloc
+   fun:nm_slice_alloc0
    fun:g_main_context_push_thread_default
    fun:gdbus_shared_thread_func
    fun:g_thread_proxy
@@ -245,8 +245,8 @@
    fun:calloc
    fun:g_malloc0
    ...
-   fun:g_slice_alloc
-   fun:g_slice_alloc0
+   fun:nm_slice_alloc
+   fun:nm_slice_alloc0
    fun:g_main_context_push_thread_default
    fun:gdbus_shared_thread_func
    fun:g_thread_proxy
@@ -269,8 +269,8 @@
    match-leak-kinds: definite
    fun:malloc
    fun:g_malloc
-   fun:g_slice_alloc
-   fun:g_slice_alloc0
+   fun:nm_slice_alloc
+   fun:nm_slice_alloc0
    fun:get_dispatch
    fun:g_main_current_source
    fun:g_task_return
@@ -287,8 +287,8 @@
    match-leak-kinds: definite
    fun:malloc
    fun:g_malloc
-   fun:g_slice_alloc
-   fun:g_slice_alloc0
+   fun:nm_slice_alloc
+   fun:nm_slice_alloc0
    fun:g_system_thread_new
    fun:g_thread_new_internal
    ...
@@ -307,8 +307,8 @@
    fun:calloc
    fun:g_malloc0
    ...
-   fun:g_slice_alloc
-   fun:g_slice_alloc0
+   fun:nm_slice_alloc
+   fun:nm_slice_alloc0
    fun:get_dispatch
    fun:g_main_current_source
    fun:g_task_return
@@ -324,7 +324,7 @@
    match-leak-kinds: definite
    fun:malloc
    fun:g_malloc
-   fun:g_slice_alloc
+   fun:nm_slice_alloc
    fun:g_error_new_valist
    fun:g_error_new
    fun:g_dbus_error_new_for_dbus_error
@@ -342,7 +342,7 @@
    match-leak-kinds: definite
    fun:malloc
    fun:g_malloc
-   fun:g_slice_alloc
+   fun:nm_slice_alloc
    fun:g_hash_table_new_full
    fun:demarshal_map
    fun:_dbus_gvalue_demarshal
@@ -375,8 +375,8 @@
    fun:calloc
    fun:g_malloc0
    fun:thread_memory_from_self
-   fun:g_slice_alloc
-   fun:g_slice_alloc0
+   fun:nm_slice_alloc
+   fun:nm_slice_alloc0
    fun:g_main_context_push_thread_default
    fun:gdbus_shared_thread_func
    fun:g_thread_proxy
@@ -390,8 +390,8 @@
    match-leak-kinds: definite
    fun:malloc
    fun:g_malloc
-   fun:g_slice_alloc
-   fun:g_slice_alloc0
+   fun:nm_slice_alloc
+   fun:nm_slice_alloc0
    fun:get_dispatch
    fun:g_main_dispatch
    fun:g_main_context_dispatch
@@ -419,8 +419,8 @@
    match-leak-kinds: definite
    fun:malloc
    fun:g_malloc
-   fun:g_slice_alloc
-   fun:g_slice_alloc0
+   fun:nm_slice_alloc
+   fun:nm_slice_alloc0
    fun:g_type_create_instance
    fun:g_object_new_internal
    fun:g_object_new*
@@ -446,8 +446,8 @@
    match-leak-kinds: definite
    fun:malloc
    fun:g_malloc
-   fun:g_slice_alloc
-   fun:g_slice_alloc0
+   fun:nm_slice_alloc
+   fun:nm_slice_alloc0
    fun:g_system_thread_new
    fun:g_thread_new_internal
    fun:g_thread_new
@@ -478,8 +478,8 @@
    match-leak-kinds: definite
    fun:malloc
    fun:g_malloc
-   fun:g_slice_alloc
-   fun:g_slice_alloc0
+   fun:nm_slice_alloc
+   fun:nm_slice_alloc0
    fun:g_system_thread_new
    fun:g_thread_new_internal
    fun:g_thread_pool_start_thread.part.1

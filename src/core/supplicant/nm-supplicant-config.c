@@ -77,7 +77,7 @@ static void
 config_option_free(ConfigOption *opt)
 {
     g_free(opt->value);
-    g_slice_free(ConfigOption, opt);
+    nm_slice_free_typed(ConfigOption, opt);
 }
 
 static void
@@ -153,7 +153,7 @@ nm_supplicant_config_add_option_with_type(NMSupplicantConfig *self,
         return FALSE;
     }
 
-    opt        = g_slice_new0(ConfigOption);
+    opt        = nm_slice_new0(ConfigOption);
     opt->value = g_malloc(len + 1);
     memcpy(opt->value, value, len);
     opt->value[len] = '\0';
@@ -237,7 +237,7 @@ nm_supplicant_config_add_blob(NMSupplicantConfig *self,
         return FALSE;
     }
 
-    opt        = g_slice_new0(ConfigOption);
+    opt        = nm_slice_new0(ConfigOption);
     opt->value = g_strdup_printf("blob://%s", blobid);
     opt->len   = strlen(opt->value);
     opt->type  = type;

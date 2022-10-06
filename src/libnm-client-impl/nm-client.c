@@ -412,7 +412,7 @@ nml_init_data_new_sync(GCancellable *cancellable, GMainLoop *main_loop, GError *
 {
     NMLInitData *init_data;
 
-    init_data  = g_slice_new(NMLInitData);
+    init_data  = nm_slice_new(NMLInitData);
     *init_data = (NMLInitData){
         .cancellable = nm_g_object_ref(cancellable),
         .is_sync     = TRUE,
@@ -430,7 +430,7 @@ nml_init_data_new_async(GCancellable *cancellable, GTask *task_take)
 {
     NMLInitData *init_data;
 
-    init_data  = g_slice_new(NMLInitData);
+    init_data  = nm_slice_new(NMLInitData);
     *init_data = (NMLInitData){
         .cancellable = nm_g_object_ref(cancellable),
         .is_sync     = FALSE,
@@ -1096,7 +1096,7 @@ nml_dbus_object_new(NMRefString *dbus_path_take)
 
     nm_assert(NM_IS_REF_STRING(dbus_path_take));
 
-    dbobj  = g_slice_new(NMLDBusObject);
+    dbobj  = nm_slice_new(NMLDBusObject);
     *dbobj = (NMLDBusObject){
         .dbus_path        = g_steal_pointer(&dbus_path_take),
         .ref_count        = 1,
@@ -3895,7 +3895,7 @@ _request_wait_start(GTask      *task_take,
         return;
     }
 
-    request_data  = g_slice_new(RequestWaitData);
+    request_data  = nm_slice_new(RequestWaitData);
     *request_data = (RequestWaitData){
         .task           = g_steal_pointer(&task),
         .op_name        = op_name,

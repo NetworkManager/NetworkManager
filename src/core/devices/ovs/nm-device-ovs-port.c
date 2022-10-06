@@ -171,7 +171,7 @@ attach_port(NMDevice                  *device,
         return FALSE;
     }
 
-    data  = g_slice_new(AttachPortData);
+    data  = nm_slice_new(AttachPortData);
     *data = (AttachPortData){
         .device             = g_object_ref(device),
         .port               = g_object_ref(port),

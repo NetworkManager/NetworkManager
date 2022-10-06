@@ -462,7 +462,7 @@ known_network_data_free(KnownNetworkData *network)
 
     g_object_unref(network->known_network);
     mirror_connection_take_and_delete(network->mirror_connection, network);
-    g_slice_free(KnownNetworkData, network);
+    nm_slice_free_typed(KnownNetworkData, network);
 }
 
 /*****************************************************************************/
@@ -1114,7 +1114,7 @@ interface_added(GDBusObjectManager *object_manager,
             g_free(id);
             id = orig_id;
         } else {
-            data                = g_slice_new0(KnownNetworkData);
+            data                = nm_slice_new0(KnownNetworkData);
             data->known_network = g_object_ref(proxy);
             data->id            = id;
             g_hash_table_insert(priv->known_networks, id, data);

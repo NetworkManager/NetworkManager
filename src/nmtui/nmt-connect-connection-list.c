@@ -78,7 +78,7 @@ nmt_connect_connection_free(NmtConnectConnection *nmtconn)
     g_clear_object(&nmtconn->ap);
     g_clear_object(&nmtconn->active);
     g_free(nmtconn->ssid);
-    g_slice_free(NmtConnectConnection, nmtconn);
+    nm_slice_free_typed(NmtConnectConnection, nmtconn);
 }
 
 static void
@@ -88,7 +88,7 @@ nmt_connect_device_free(NmtConnectDevice *nmtdev)
     g_clear_object(&nmtdev->device);
 
     g_slist_free_full(nmtdev->conns, (GDestroyNotify) nmt_connect_connection_free);
-    g_slice_free(NmtConnectDevice, nmtdev);
+    nm_slice_free_typed(NmtConnectDevice, nmtdev);
 }
 
 static const char *device_sort_order[]   = {"NMDeviceEthernet",
@@ -188,7 +188,7 @@ add_connections_for_device(NmtConnectDevice *nmtdev, const GPtrArray *connection
             continue;
 
         if (nm_device_connection_valid(nmtdev->device, conn)) {
-            NmtConnectConnection *nmtconn = g_slice_new0(NmtConnectConnection);
+            NmtConnectConnection *nmtconn = nm_slice_new0(NmtConnectConnection);
 
             nmtconn->name   = nm_connection_get_id(conn);
             nmtconn->device = nmtdev->device;
@@ -275,7 +275,7 @@ add_connections_for_aps(NmtConnectDevice *nmtdev, const GPtrArray *connections)
         }
         g_hash_table_add(seen_ssids, ap_hash);
 
-        nmtconn         = g_slice_new0(NmtConnectConnection);
+        nmtconn         = nm_slice_new0(NmtConnectConnection);
         nmtconn->device = nmtdev->device;
         nmtconn->ap     = g_object_ref(ap);
         ssid            = nm_access_point_get_ssid(ap);
@@ -319,7 +319,7 @@ append_nmt_devices_for_devices(GSList          *nmt_devices,
         if (sort_order == -1)
             continue;
 
-        nmtdev             = g_slice_new0(NmtConnectDevice);
+        nmtdev             = nm_slice_new0(NmtConnectDevice);
         nmtdev->name       = g_strdup(names[i]);
         nmtdev->device     = g_object_ref(device);
         nmtdev->sort_order = sort_order;
@@ -361,7 +361,7 @@ append_nmt_devices_for_virtual_devices(GSList *nmt_devices, const GPtrArray *con
         if (nmtdev)
             g_free(name);
         else {
-            nmtdev             = g_slice_new0(NmtConnectDevice);
+            nmtdev             = nm_slice_new0(NmtConnectDevice);
             nmtdev->name       = name ?: g_strdup("Unknown");
             nmtdev->sort_order = sort_order;
 
@@ -369,7 +369,7 @@ append_nmt_devices_for_virtual_devices(GSList *nmt_devices, const GPtrArray *con
             nmt_devices = g_slist_prepend(nmt_devices, nmtdev);
         }
 
-        nmtconn       = g_slice_new0(NmtConnectConnection);
+        nmtconn       = nm_slice_new0(NmtConnectConnection);
         nmtconn->name = nm_connection_get_id(conn);
         nmtconn->conn = g_object_ref(conn);
 
@@ -388,7 +388,7 @@ append_nmt_devices_for_vpns(GSList *nmt_devices, const GPtrArray *connections)
     NMConnection         *conn;
     NmtConnectConnection *nmtconn;
 
-    nmtdev             = g_slice_new0(NmtConnectDevice);
+    nmtdev             = nm_slice_new0(NmtConnectDevice);
     nmtdev->name       = g_strdup(_("VPN"));
     nmtdev->sort_order = 100;
 
@@ -397,7 +397,7 @@ append_nmt_devices_for_vpns(GSList *nmt_devices, const GPtrArray *connections)
         if (!nm_connection_is_type(conn, NM_SETTING_VPN_SETTING_NAME))
             continue;
 
-        nmtconn       = g_slice_new0(NmtConnectConnection);
+        nmtconn       = nm_slice_new0(NmtConnectConnection);
         nmtconn->name = nm_connection_get_id(conn);
         nmtconn->conn = g_object_ref(conn);
 

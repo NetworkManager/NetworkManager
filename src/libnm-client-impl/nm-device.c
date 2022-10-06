@@ -2993,7 +2993,7 @@ nm_lldp_neighbor_new(void)
 {
     NMLldpNeighbor *neigh;
 
-    neigh  = g_slice_new(NMLldpNeighbor);
+    neigh  = nm_slice_new(NMLldpNeighbor);
     *neigh = (NMLldpNeighbor){
         .refcount = 1,
         .attrs    = g_hash_table_new_full(nm_str_hash,

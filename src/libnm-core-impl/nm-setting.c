@@ -3650,7 +3650,7 @@ _gendata_hash(NMSetting *setting, gboolean create_if_necessary)
     if (G_UNLIKELY(!priv->gendata)) {
         if (!create_if_necessary)
             return NULL;
-        priv->gendata         = g_slice_new(GenData);
+        priv->gendata         = nm_slice_new(GenData);
         priv->gendata->hash   = g_hash_table_new_full(nm_str_hash,
                                                     g_str_equal,
                                                     g_free,
@@ -4108,7 +4108,7 @@ finalize(GObject *object)
         g_free(priv->gendata->names);
         g_free(priv->gendata->values);
         g_hash_table_unref(priv->gendata->hash);
-        g_slice_free(GenData, priv->gendata);
+        nm_slice_free_typed(GenData, priv->gendata);
     }
 
     G_OBJECT_CLASS(nm_setting_parent_class)->finalize(object);

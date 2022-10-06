@@ -1167,7 +1167,7 @@ _stop_handle_destroy(NMPPPManagerStopHandle *handle, gboolean was_cancelled)
     _stop_handle_complete(handle, was_cancelled);
     nm_clear_g_source(&handle->idle_id);
     g_clear_object(&handle->shutdown_waitobj);
-    g_slice_free(NMPPPManagerStopHandle, handle);
+    nm_slice_free_typed(NMPPPManagerStopHandle, handle);
 }
 
 static void
@@ -1218,7 +1218,7 @@ _ppp_manager_stop(NMPPPManager            *self,
         return NULL;
     }
 
-    handle            = g_slice_new0(NMPPPManagerStopHandle);
+    handle            = nm_slice_new0(NMPPPManagerStopHandle);
     handle->self      = g_object_ref(self);
     handle->callback  = callback;
     handle->user_data = user_data;

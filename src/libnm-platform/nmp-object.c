@@ -771,7 +771,7 @@ _nmp_object_new_from_class(const NMPClass *klass)
     nm_assert(klass->sizeof_data > 0);
     nm_assert(klass->sizeof_public > 0 && klass->sizeof_public <= klass->sizeof_data);
 
-    obj         = g_slice_alloc0(klass->sizeof_data + G_STRUCT_OFFSET(NMPObject, object));
+    obj         = nm_slice_alloc0(klass->sizeof_data + G_STRUCT_OFFSET(NMPObject, object));
     obj->_class = klass;
     obj->parent._ref_count = 1;
     return obj;
@@ -1859,7 +1859,7 @@ _vt_dedup_obj_destroy(NMDedupMultiObj *obj)
     klass = o->_class;
     if (klass->cmd_obj_dispose)
         klass->cmd_obj_dispose(o);
-    g_slice_free1(klass->sizeof_data + G_STRUCT_OFFSET(NMPObject, object), o);
+    nm_slice_free_sized(klass->sizeof_data + G_STRUCT_OFFSET(NMPObject, object), o);
 }
 
 static const NMDedupMultiObj *
@@ -3086,7 +3086,7 @@ nmp_cache_dirty_set_all_main(NMPCache *cache, const NMPLookup *lookup)
 NMPCache *
 nmp_cache_new(NMDedupMultiIndex *multi_idx, gboolean use_udev)
 {
-    NMPCache *cache = g_slice_new0(NMPCache);
+    NMPCache *cache = nm_slice_new0(NMPCache);
     guint     i;
 
     for (i = NMP_CACHE_ID_TYPE_NONE + 1; i <= NMP_CACHE_ID_TYPE_MAX; i++)
@@ -3108,7 +3108,7 @@ nmp_cache_free(NMPCache *cache)
 
     nm_dedup_multi_index_unref(cache->multi_idx);
 
-    g_slice_free(NMPCache, cache);
+    nm_slice_free_typed(NMPCache, cache);
 }
 
 /*****************************************************************************/

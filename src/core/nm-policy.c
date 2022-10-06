@@ -160,7 +160,7 @@ _clear_ip6_subnet(gpointer key, gpointer value, gpointer user_data)
         subnet->preferred = 0;
         nm_device_use_ip6_subnet(device, subnet);
     }
-    g_slice_free(NMPlatformIP6Address, subnet);
+    nm_slice_free_typed(NMPlatformIP6Address, subnet);
 }
 
 static void
@@ -218,7 +218,7 @@ ip6_subnet_from_delegation(IP6PrefixDelegation *delegation, NMDevice *device)
         }
 
         /* Allocate a new subnet. */
-        subnet = g_slice_new0(NMPlatformIP6Address);
+        subnet = nm_slice_new0(NMPlatformIP6Address);
         g_hash_table_insert(delegation->subnets, GINT_TO_POINTER(ifindex), subnet);
 
         subnet->plen = 64;
@@ -1292,7 +1292,7 @@ activate_data_free(ActivateData *data)
     c_list_unlink_stale(&data->pending_lst);
     nm_clear_g_source(&data->autoactivate_id);
     g_object_unref(data->device);
-    g_slice_free(ActivateData, data);
+    nm_slice_free_typed(ActivateData, data);
 }
 
 static void
@@ -1483,7 +1483,7 @@ pending_secondary_data_new(NMDevice *device, GSList *secondaries)
 {
     PendingSecondaryData *data;
 
-    data              = g_slice_new(PendingSecondaryData);
+    data              = nm_slice_new(PendingSecondaryData);
     data->device      = g_object_ref(device);
     data->secondaries = secondaries;
     return data;
@@ -1494,7 +1494,7 @@ pending_secondary_data_free(PendingSecondaryData *data)
 {
     g_object_unref(data->device);
     g_slist_free_full(data->secondaries, g_object_unref);
-    g_slice_free(PendingSecondaryData, data);
+    nm_slice_free_typed(PendingSecondaryData, data);
 }
 
 static void
@@ -1694,7 +1694,7 @@ schedule_activate_check(NMPolicy *self, NMDevice *device)
 
     nm_device_add_pending_action(device, NM_PENDING_ACTION_AUTOACTIVATE, TRUE);
 
-    data                  = g_slice_new0(ActivateData);
+    data                  = nm_slice_new0(ActivateData);
     data->policy          = self;
     data->device          = g_object_ref(device);
     data->autoactivate_id = g_idle_add(auto_activate_device_cb, data);

@@ -873,7 +873,7 @@ nm_bond_manager_new(struct _NMPlatform   *platform,
     nm_assert(NM_IS_PLATFORM(platform));
     nm_assert(ifindex > 0);
 
-    self  = g_slice_new(NMBondManager);
+    self  = nm_slice_new(NMBondManager);
     *self = (NMBondManager){
         .platform           = g_object_ref(platform),
         .ifindex            = ifindex,

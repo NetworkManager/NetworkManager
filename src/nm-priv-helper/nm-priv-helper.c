@@ -483,7 +483,7 @@ _pending_job_register_object(GlobalData *gl, GObject *obj)
     if (nm_clear_g_source_inst(&gl->source_idle_timeout))
         _LOGT("idle-timeout: suspend timeout for pending request");
 
-    idle_data = g_slice_new(PendingJobData);
+    idle_data = nm_slice_new(PendingJobData);
 
     idle_data->gl = gl;
     c_list_link_tail(&gl->pending_jobs_lst_head, &idle_data->pending_jobs_lst);
