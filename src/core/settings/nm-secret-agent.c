@@ -176,7 +176,7 @@ _call_id_free(NMSecretAgentCallId *call_id)
     g_free(call_id->setting_name);
     nm_g_object_unref(call_id->cancellable);
     g_object_unref(call_id->self);
-    nm_g_slice_free(call_id);
+    nm_slice_free(call_id);
 }
 
 static void

@@ -349,7 +349,7 @@ _gl_pid_spawn_notify(GlPidSpawnAsyncData *sdata, GPid pid, const int *p_exit_cod
 
     if (destroy) {
         g_clear_object(&sdata->cancellable);
-        nm_g_slice_free(sdata);
+        nm_slice_free(sdata);
     }
 }
 

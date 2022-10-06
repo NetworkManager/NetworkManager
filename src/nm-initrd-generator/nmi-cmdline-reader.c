@@ -73,7 +73,7 @@ reader_destroy(Reader *reader, gboolean free_hash)
     nm_clear_g_free(&reader->hostname);
     g_hash_table_unref(reader->znet_ifnames);
     nm_clear_g_free(&reader->dhcp4_vci);
-    nm_g_slice_free(reader);
+    nm_slice_free(reader);
     if (!free_hash)
         return g_steal_pointer(&hash);
     return NULL;

@@ -107,7 +107,7 @@ _l3cfg_data_free(gpointer ptr)
 
     c_list_unlink_stale(&l3cfg_data->signal_pending_lst);
 
-    nm_g_slice_free(l3cfg_data);
+    nm_slice_free(l3cfg_data);
 }
 
 static void
@@ -346,7 +346,7 @@ nm_netns_shared_ip_release(NMNetnsSharedIPHandle *handle)
     _LOGD("shared-ip4: release IP address range %s/24", nm_inet4_ntop(handle->addr, sbuf_addr));
 
     handle->_self = NULL;
-    nm_g_slice_free(handle);
+    nm_slice_free(handle);
 }
 
 /*****************************************************************************/

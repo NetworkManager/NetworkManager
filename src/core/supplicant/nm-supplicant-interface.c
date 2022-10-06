@@ -586,7 +586,7 @@ _bss_info_destroy(NMSupplicantBssInfo *bss_info)
     nm_clear_g_cancellable(&bss_info->_init_cancellable);
     g_bytes_unref(bss_info->ssid);
     nm_ref_string_unref(bss_info->bss_path);
-    nm_g_slice_free(bss_info);
+    nm_slice_free(bss_info);
 }
 
 static void
@@ -891,7 +891,7 @@ _peer_info_destroy(NMSupplicantPeerInfo *peer_info)
 
     nm_ref_string_unref(peer_info->peer_path);
 
-    nm_g_slice_free(peer_info);
+    nm_slice_free(peer_info);
 }
 
 static void
@@ -1622,7 +1622,7 @@ _wps_data_free(WpsData *wps_data, GDBusConnection *dbus_connection)
     g_free(wps_data->type);
     g_free(wps_data->pin);
     g_free(wps_data->bssid);
-    nm_g_slice_free(wps_data);
+    nm_slice_free(wps_data);
 }
 
 static void
@@ -2288,7 +2288,7 @@ assoc_add_network_cb(GObject *source, GAsyncResult *result, gpointer user_data)
         assoc_data->add_network_data = NULL;
     name_owner  = g_steal_pointer(&add_network_data->name_owner);
     object_path = g_steal_pointer(&add_network_data->object_path);
-    nm_g_slice_free(add_network_data);
+    nm_slice_free(add_network_data);
 
     res = g_dbus_connection_call_finish(G_DBUS_CONNECTION(source), result, &error);
 
@@ -2628,7 +2628,7 @@ scan_request_cb(GObject *source, GAsyncResult *result, gpointer user_data)
         if (!data->callback) {
             /* the self instance was not kept alive. We also must not touch it. Return. */
             nm_g_object_unref(data->cancellable);
-            nm_g_slice_free(data);
+            nm_slice_free(data);
             return;
         }
         cancelled = TRUE;
@@ -2661,7 +2661,7 @@ scan_request_cb(GObject *source, GAsyncResult *result, gpointer user_data)
         data->callback(self, data->cancellable, data->user_data);
 
     nm_g_object_unref(data->cancellable);
-    nm_g_slice_free(data);
+    nm_slice_free(data);
 }
 
 void

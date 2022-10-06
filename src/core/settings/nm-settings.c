@@ -491,7 +491,7 @@ _startup_complete_data_destroy(StartupCompleteData *scd)
 {
     c_list_unlink_stale(&scd->scd_lst);
     g_object_unref(scd->sett_conn);
-    nm_g_slice_free(scd);
+    nm_slice_free(scd);
 }
 
 static gboolean

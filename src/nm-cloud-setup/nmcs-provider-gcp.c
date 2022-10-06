@@ -99,7 +99,7 @@ typedef struct {
 static void
 _gcp_iface_data_destroy(GCPIfaceData *iface_data)
 {
-    nm_g_slice_free(iface_data);
+    nm_slice_free(iface_data);
 }
 
 static void

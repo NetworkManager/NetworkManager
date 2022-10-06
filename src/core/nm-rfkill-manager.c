@@ -167,7 +167,7 @@ killswitch_destroy(Killswitch *ks)
     g_free(ks->name);
     g_free(ks->path);
     g_free(ks->driver);
-    nm_g_slice_free(ks);
+    nm_slice_free(ks);
 }
 
 static NMRfkillState

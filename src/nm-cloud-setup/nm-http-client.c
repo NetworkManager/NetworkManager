@@ -109,7 +109,7 @@ _get_result_free(gpointer data)
     GetResult *get_result = data;
 
     g_bytes_unref(get_result->response_data);
-    nm_g_slice_free(get_result);
+    nm_slice_free(get_result);
 }
 
 typedef struct {
@@ -148,7 +148,7 @@ _ehandle_free(EHandleData *edata)
     if (edata->headers)
         curl_slist_free_all(edata->headers);
     g_free(edata->url);
-    nm_g_slice_free(edata);
+    nm_slice_free(edata);
 }
 
 static void
@@ -416,7 +416,7 @@ _poll_get_data_free(gpointer data)
     nm_clear_pointer(&poll_get_data->response_data, g_bytes_unref);
     g_strfreev((char **) poll_get_data->http_headers);
 
-    nm_g_slice_free(poll_get_data);
+    nm_slice_free(poll_get_data);
 }
 
 static void

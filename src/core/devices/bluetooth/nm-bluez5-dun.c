@@ -762,7 +762,7 @@ _context_cleanup_connect_data(NMBluez5DunContext *context)
 
     g_clear_error(&cdat->rfcomm_sdp_search_error);
 
-    nm_g_slice_free(cdat);
+    nm_slice_free(cdat);
 }
 
 static void

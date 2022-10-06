@@ -2100,7 +2100,7 @@ add_and_activate_info_free(AddAndActivateInfo *info)
     g_object_unref(info->device);
     g_clear_object(&info->active);
     g_free(info->specific_object);
-    nm_g_slice_free(info);
+    nm_slice_free(info);
 }
 
 NM_AUTO_DEFINE_FCN0(AddAndActivateInfo *,
@@ -2488,7 +2488,7 @@ static void
 modify_info_free(ModifyInfo *info)
 {
     g_strfreev(info->argv);
-    nm_g_slice_free(info);
+    nm_slice_free(info);
 }
 
 NM_AUTO_DEFINE_FCN_VOID0(ModifyInfo *, _auto_free_modify_info, modify_info_free);
@@ -3176,7 +3176,7 @@ wifi_list_finish(WifiListData *wifi_list_data, gboolean force_finished)
     nm_clear_g_signal_handler(wifi_list_data->wifi, &wifi_list_data->last_scan_id);
     nm_clear_g_source(&wifi_list_data->timeout_id);
     nm_clear_g_cancellable(&wifi_list_data->scan_cancellable);
-    nm_g_slice_free(wifi_list_data);
+    nm_slice_free(wifi_list_data);
 
     if (--scan_info->pending > 0)
         return;
@@ -3202,7 +3202,7 @@ wifi_list_finish(WifiListData *wifi_list_data, gboolean force_finished)
     g_free(scan_info->devices);
     g_array_unref(scan_info->out_indices);
     g_free(scan_info->bssid_user);
-    nm_g_slice_free(scan_info);
+    nm_slice_free(scan_info);
 
     nmc->should_wait--;
     g_main_loop_quit(loop);

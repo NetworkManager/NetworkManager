@@ -462,7 +462,7 @@ nml_init_data_return(NMLInitData *init_data, GError *error_take)
         g_object_unref(init_data->data.async.task);
     }
     nm_g_object_unref(init_data->cancellable);
-    nm_g_slice_free(init_data);
+    nm_slice_free(init_data);
 }
 
 /*****************************************************************************/
@@ -1134,7 +1134,7 @@ nml_dbus_object_unref(NMLDBusObject *dbobj)
     nm_assert(!dbobj->nmobj);
 
     nm_ref_string_unref(dbobj->dbus_path);
-    nm_g_slice_free(dbobj);
+    nm_slice_free(dbobj);
 }
 
 static NMLDBusObjIfaceData *
@@ -3738,7 +3738,7 @@ _request_wait_data_free(RequestWaitData *request_data)
     nm_g_variant_unref(request_data->extra_results);
     if (request_data->dbobj)
         nml_dbus_object_unref(request_data->dbobj);
-    nm_g_slice_free(request_data);
+    nm_slice_free(request_data);
 }
 
 static void

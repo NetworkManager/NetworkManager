@@ -194,7 +194,7 @@ _poll_task_data_free(gpointer data)
 
     g_main_context_unref(poll_task_data->context);
 
-    nm_g_slice_free(poll_task_data);
+    nm_slice_free(poll_task_data);
 }
 
 static void

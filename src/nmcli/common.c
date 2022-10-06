@@ -1295,7 +1295,7 @@ got_client(GObject *source_object, GAsyncResult *res, gpointer user_data)
     }
 
     g_strfreev(call->argv);
-    nm_g_slice_free(call);
+    nm_slice_free(call);
 }
 
 typedef struct {
@@ -1363,9 +1363,9 @@ read_offline_connection_chunk(GObject *source_object, GAsyncResult *res, gpointe
 
 finish:
     g_strfreev(call->argv);
-    nm_g_slice_free(call);
+    nm_slice_free(call);
     g_string_free(data->str, TRUE);
-    nm_g_slice_free(data);
+    nm_slice_free(data);
 }
 
 static void

@@ -447,7 +447,7 @@ _fw_nft_call_data_free(FwNftCallData *call_data, GError *error_take)
     nm_g_object_unref(call_data->subprocess);
     g_free(call_data->identifier);
 
-    nm_g_slice_free(call_data);
+    nm_slice_free(call_data);
 }
 
 static void
@@ -980,7 +980,7 @@ nm_firewall_config_free(NMFirewallConfig *self)
         return;
 
     g_free(self->ip_iface);
-    nm_g_slice_free(self);
+    nm_slice_free(self);
 }
 
 /*****************************************************************************/

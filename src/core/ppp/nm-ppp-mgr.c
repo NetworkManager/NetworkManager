@@ -616,5 +616,5 @@ nm_ppp_mgr_destroy(NMPppMgr *self)
 
     g_object_unref(self->config.netns);
 
-    nm_g_slice_free(self);
+    nm_slice_free(self);
 }

@@ -943,7 +943,7 @@ _hostname_resolver_free(HostnameResolver *resolver)
     nm_clear_g_cancellable(&resolver->cancellable);
     nm_g_object_unref(resolver->address);
     g_free(resolver->hostname);
-    nm_g_slice_free(resolver);
+    nm_slice_free(resolver);
 }
 
 /*****************************************************************************/
@@ -6250,7 +6250,7 @@ nm_device_master_release_slave(NMDevice           *self,
 
     c_list_unlink(&info->lst_slave);
     g_signal_handler_disconnect(slave, info->watch_id);
-    nm_g_slice_free(info);
+    nm_slice_free(info);
 
     if (c_list_is_empty(&priv->slaves)) {
         _active_connection_set_state_flags_full(self,
@@ -7190,7 +7190,7 @@ sriov_op_cb(GError *error, gpointer user_data)
         op->callback(error, op->callback_data);
 
     priv->sriov.pending = NULL;
-    nm_g_slice_free(op);
+    nm_slice_free(op);
 
     if (priv->sriov.next) {
         sriov_op_start(self, g_steal_pointer(&priv->sriov.next));
@@ -7215,7 +7215,7 @@ sriov_op_queue_op(NMDevice *self, SriovOp *op)
             op_next->callback(error, op_next->callback_data);
         }
 
-        nm_g_slice_free(op_next);
+        nm_slice_free(op_next);
         return;
     }
 
@@ -17791,7 +17791,7 @@ dispose(GObject *object)
 
     nm_assert(!priv->sriov.pending);
     if (priv->sriov.next) {
-        nm_g_slice_free(priv->sriov.next);
+        nm_slice_free(priv->sriov.next);
         priv->sriov.next = NULL;
     }
 

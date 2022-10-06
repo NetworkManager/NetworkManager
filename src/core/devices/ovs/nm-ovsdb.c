@@ -290,7 +290,7 @@ _call_complete(OvsdbMethodCall *call, json_t *response, GError *error)
         break;
     }
 
-    nm_g_slice_free(call);
+    nm_slice_free(call);
 }
 
 /*****************************************************************************/
@@ -303,7 +303,7 @@ _free_bridge(OpenvswitchBridge *ovs_bridge)
     g_free(ovs_bridge->connection_uuid);
     g_ptr_array_free(ovs_bridge->ports, TRUE);
     nm_g_array_unref(ovs_bridge->external_ids);
-    nm_g_slice_free(ovs_bridge);
+    nm_slice_free(ovs_bridge);
 }
 
 static void
@@ -314,7 +314,7 @@ _free_port(OpenvswitchPort *ovs_port)
     g_free(ovs_port->connection_uuid);
     g_ptr_array_free(ovs_port->interfaces, TRUE);
     nm_g_array_unref(ovs_port->external_ids);
-    nm_g_slice_free(ovs_port);
+    nm_slice_free(ovs_port);
 }
 
 static void
@@ -325,7 +325,7 @@ _free_interface(OpenvswitchInterface *ovs_interface)
     g_free(ovs_interface->connection_uuid);
     g_free(ovs_interface->type);
     nm_g_array_unref(ovs_interface->external_ids);
-    nm_g_slice_free(ovs_interface);
+    nm_slice_free(ovs_interface);
 }
 
 /*****************************************************************************/
@@ -2516,7 +2516,7 @@ _transact_cb(NMOvsdb *self, json_t *result, GError *error, gpointer user_data)
     }
 
     call->callback(local ?: error, call->user_data);
-    nm_g_slice_free(call);
+    nm_slice_free(call);
 }
 
 static OvsdbCall *

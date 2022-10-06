@@ -107,7 +107,7 @@ add_iface_cb(GError *error, gpointer user_data)
     g_object_unref(data->port);
     nm_clear_g_cancellable(&data->cancellable);
 
-    nm_g_slice_free(data);
+    nm_slice_free(data);
 }
 
 static gboolean

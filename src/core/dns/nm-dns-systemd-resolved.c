@@ -233,7 +233,7 @@ _request_item_unref(RequestItem *request_item)
     nm_assert(c_list_is_empty(&request_item->request_queue_lst));
 
     g_variant_unref(request_item->argument);
-    nm_g_slice_free(request_item);
+    nm_slice_free(request_item);
 }
 
 static void
@@ -262,7 +262,7 @@ static void
 _interface_config_free(InterfaceConfig *config)
 {
     nm_g_ptr_array_unref(config->ip_data_list);
-    nm_g_slice_free(config);
+    nm_slice_free(config);
 }
 
 static void
@@ -898,7 +898,7 @@ _resolve_complete(NMDnsSystemdResolvedResolveHandle       *handle,
     handle->r_address
         .callback(self, handle, names, names_len, flags, error, handle->callback_user_data);
 
-    nm_g_slice_free(handle);
+    nm_slice_free(handle);
 }
 
 static void

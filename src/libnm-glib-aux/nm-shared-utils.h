@@ -850,21 +850,21 @@ void _nm_slice_assert_usable_size(gsize mem_size, gpointer mem_block);
 
 /*****************************************************************************/
 
-#define _nm_g_slice_free_fcn_define(mem_size)                              \
-    static inline void _nm_g_slice_free_fcn_##mem_size(gpointer mem_block) \
-    {                                                                      \
-        nm_slice_free_sized(mem_size, mem_block);                          \
-    }                                                                      \
+#define _nm_slice_free_fcn_define(mem_size)                              \
+    static inline void _nm_slice_free_fcn_##mem_size(gpointer mem_block) \
+    {                                                                    \
+        nm_slice_free_sized(mem_size, mem_block);                        \
+    }                                                                    \
     _NM_DUMMY_STRUCT_FOR_TRAILING_SEMICOLON
 
-_nm_g_slice_free_fcn_define(1);
-_nm_g_slice_free_fcn_define(2);
-_nm_g_slice_free_fcn_define(4);
-_nm_g_slice_free_fcn_define(8);
-_nm_g_slice_free_fcn_define(10);
-_nm_g_slice_free_fcn_define(12);
-_nm_g_slice_free_fcn_define(16);
-_nm_g_slice_free_fcn_define(32);
+_nm_slice_free_fcn_define(1);
+_nm_slice_free_fcn_define(2);
+_nm_slice_free_fcn_define(4);
+_nm_slice_free_fcn_define(8);
+_nm_slice_free_fcn_define(10);
+_nm_slice_free_fcn_define(12);
+_nm_slice_free_fcn_define(16);
+_nm_slice_free_fcn_define(32);
 
 _nm_warn_unused_result static inline GDestroyNotify
 _nm_get_warn_unused_result_gdestroynotify(GDestroyNotify f)
@@ -872,7 +872,7 @@ _nm_get_warn_unused_result_gdestroynotify(GDestroyNotify f)
     return f;
 }
 
-#define nm_g_slice_free_fcn1(mem_size)                                                        \
+#define nm_slice_free_fcn1(mem_size)                                                          \
     _nm_get_warn_unused_result_gdestroynotify(({                                              \
         void (*_fcn)(gpointer);                                                               \
                                                                                               \
@@ -884,28 +884,28 @@ _nm_get_warn_unused_result_gdestroynotify(GDestroyNotify f)
                              || ((mem_size) == 16) || ((mem_size) == 32));                    \
         switch ((mem_size)) {                                                                 \
         case 1:                                                                               \
-            _fcn = _nm_g_slice_free_fcn_1;                                                    \
+            _fcn = _nm_slice_free_fcn_1;                                                      \
             break;                                                                            \
         case 2:                                                                               \
-            _fcn = _nm_g_slice_free_fcn_2;                                                    \
+            _fcn = _nm_slice_free_fcn_2;                                                      \
             break;                                                                            \
         case 4:                                                                               \
-            _fcn = _nm_g_slice_free_fcn_4;                                                    \
+            _fcn = _nm_slice_free_fcn_4;                                                      \
             break;                                                                            \
         case 8:                                                                               \
-            _fcn = _nm_g_slice_free_fcn_8;                                                    \
+            _fcn = _nm_slice_free_fcn_8;                                                      \
             break;                                                                            \
         case 10:                                                                              \
-            _fcn = _nm_g_slice_free_fcn_10;                                                   \
+            _fcn = _nm_slice_free_fcn_10;                                                     \
             break;                                                                            \
         case 12:                                                                              \
-            _fcn = _nm_g_slice_free_fcn_12;                                                   \
+            _fcn = _nm_slice_free_fcn_12;                                                     \
             break;                                                                            \
         case 16:                                                                              \
-            _fcn = _nm_g_slice_free_fcn_16;                                                   \
+            _fcn = _nm_slice_free_fcn_16;                                                     \
             break;                                                                            \
         case 32:                                                                              \
-            _fcn = _nm_g_slice_free_fcn_32;                                                   \
+            _fcn = _nm_slice_free_fcn_32;                                                     \
             break;                                                                            \
         default:                                                                              \
             g_assert_not_reached();                                                           \
@@ -917,7 +917,7 @@ _nm_get_warn_unused_result_gdestroynotify(GDestroyNotify f)
     }))
 
 /**
- * nm_g_slice_free_fcn:
+ * nm_slice_free_fcn:
  * @type: type argument for sizeof() operator that you would
  *   pass to nm_slice_new().
  *
@@ -926,9 +926,9 @@ _nm_get_warn_unused_result_gdestroynotify(GDestroyNotify f)
  *
  * Only certain types are implemented. You'll get a compile time
  * error for the wrong types. */
-#define nm_g_slice_free_fcn(type) (nm_g_slice_free_fcn1(sizeof(type)))
+#define nm_slice_free_fcn(type) (nm_slice_free_fcn1(sizeof(type)))
 
-#define nm_g_slice_free_fcn_gint64 (nm_g_slice_free_fcn(gint64))
+#define nm_slice_free_fcn_gint64 (nm_slice_free_fcn(gint64))
 
 /*****************************************************************************/
 

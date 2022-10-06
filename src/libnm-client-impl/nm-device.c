@@ -3053,7 +3053,7 @@ nm_lldp_neighbor_unref(NMLldpNeighbor *neighbor)
 
     if (g_atomic_int_dec_and_test(&neighbor->refcount)) {
         g_hash_table_unref(neighbor->attrs);
-        nm_g_slice_free(neighbor);
+        nm_slice_free(neighbor);
     }
 }
 

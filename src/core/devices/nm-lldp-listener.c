@@ -240,7 +240,7 @@ lldp_neighbor_free(LldpNeighbor *neighbor)
     g_free(neighbor->port_id);
     nm_g_variant_unref(neighbor->variant);
     sd_lldp_neighbor_unref(neighbor->neighbor_sd);
-    nm_g_slice_free(neighbor);
+    nm_slice_free(neighbor);
 }
 
 static void
@@ -1002,7 +1002,7 @@ fail_attached:
     sd_lldp_rx_detach_event(lldp_handle);
 fail_handle:
     if (self)
-        nm_g_slice_free(self);
+        nm_slice_free(self);
     sd_lldp_rx_unref(lldp_handle);
     return NULL;
 }
@@ -1024,5 +1024,5 @@ nm_lldp_listener_destroy(NMLldpListener *self)
 
     _LOGT("lldp listener destroyed");
 
-    nm_g_slice_free(self);
+    nm_slice_free(self);
 }

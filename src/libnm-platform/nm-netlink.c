@@ -965,7 +965,7 @@ nl_socket_free(struct nl_sock *sk)
         return;
 
     nm_close(sk->s_fd);
-    nm_g_slice_free(sk);
+    nm_slice_free(sk);
 }
 
 int

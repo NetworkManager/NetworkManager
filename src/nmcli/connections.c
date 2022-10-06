@@ -128,7 +128,7 @@ _add_connection_info_free(AddConnectionInfo *info)
     g_free(info->orig_id);
     g_free(info->orig_uuid);
     g_free(info->new_id);
-    nm_g_slice_free(info);
+    nm_slice_free(info);
 }
 
 NM_AUTO_DEFINE_FCN(AddConnectionInfo *,

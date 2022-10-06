@@ -510,7 +510,7 @@ _subprocess_terminate_wait_cb(GObject *source, GAsyncResult *result, gpointer us
 
     nm_clear_g_source_inst(&term_data->timeout_source);
     g_object_unref(term_data->subprocess);
-    nm_g_slice_free(term_data);
+    nm_slice_free(term_data);
 }
 
 static gboolean

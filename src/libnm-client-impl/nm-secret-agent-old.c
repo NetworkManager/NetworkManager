@@ -268,7 +268,7 @@ get_secret_info_free(GetSecretsInfo *info)
     c_list_unlink_stale(&info->gsi_lst);
     g_free(info->connection_path);
     g_free(info->setting_name);
-    nm_g_slice_free(info);
+    nm_slice_free(info);
 }
 
 static void

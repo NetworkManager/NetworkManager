@@ -288,7 +288,7 @@ _network_server_register_req_data_complete(NetworkServerRegisterReqData *r_req_d
     }
 
     g_object_unref(r_req_data->ext_cancellable);
-    nm_g_slice_free(r_req_data);
+    nm_slice_free(r_req_data);
 }
 
 static void
@@ -318,7 +318,7 @@ _device_connect_req_data_complete(DeviceConnectReqData *c_req_data,
 
     g_object_unref(c_req_data->ext_cancellable);
     nm_clear_g_free(&c_req_data->device_name);
-    nm_g_slice_free(c_req_data);
+    nm_slice_free(c_req_data);
 }
 
 /*****************************************************************************/
@@ -2826,7 +2826,7 @@ nm_bluez_manager_init(NMBluezManager *self)
         g_hash_table_new_full(_conn_data_head_hash, _conn_data_head_equal, g_free, NULL);
     priv->conn_data_elems = g_hash_table_new_full(nm_pdirect_hash,
                                                   nm_pdirect_equal,
-                                                  nm_g_slice_free_fcn(ConnDataElem),
+                                                  nm_slice_free_fcn(ConnDataElem),
                                                   NULL);
 
     priv->bzobjs = g_hash_table_new_full(nm_pstr_hash,

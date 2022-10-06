@@ -810,7 +810,7 @@ nm_l3_config_data_unref(const NML3ConfigData *self)
     nm_ref_string_unref(mutable->proxy_pac_url);
     nm_ref_string_unref(mutable->proxy_pac_script);
 
-    nm_g_slice_free(mutable);
+    nm_slice_free(mutable);
 }
 
 /*****************************************************************************/

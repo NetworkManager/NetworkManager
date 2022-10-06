@@ -715,5 +715,5 @@ nm_l3_ipv6ll_destroy(NML3IPv6LL *self)
         g_free((char *) self->addrgen.stable_privacy.network_id);
     }
 
-    nm_g_slice_free(self);
+    nm_slice_free(self);
 }

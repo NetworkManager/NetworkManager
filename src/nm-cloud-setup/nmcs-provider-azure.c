@@ -102,7 +102,7 @@ typedef struct {
 static void
 _azure_iface_data_destroy(AzureIfaceData *iface_data)
 {
-    nm_g_slice_free(iface_data);
+    nm_slice_free(iface_data);
 }
 
 static void

@@ -963,5 +963,5 @@ _bond_manager_destroy(NMBondManager *self)
     g_hash_table_unref(self->previous_ifindexes);
     g_hash_table_unref(self->previous_members);
     g_free(self->connection_uuid);
-    nm_g_slice_free(self);
+    nm_slice_free(self);
 }

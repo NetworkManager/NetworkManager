@@ -219,7 +219,7 @@ _scan_request_ssids_remove(ScanRequestSsidData *srs_data)
 {
     c_list_unlink_stale(&srs_data->lst);
     g_bytes_unref(srs_data->ssid);
-    nm_g_slice_free(srs_data);
+    nm_slice_free(srs_data);
 }
 
 static void

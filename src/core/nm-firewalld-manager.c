@@ -224,7 +224,7 @@ _cb_info_complete(NMFirewalldManagerCallId *call_id, GError *error)
     }
     g_free(call_id->iface);
     g_object_unref(call_id->self);
-    nm_g_slice_free(call_id);
+    nm_slice_free(call_id);
 }
 
 static gboolean

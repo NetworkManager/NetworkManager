@@ -457,7 +457,7 @@ _pending_job_register_object_release_on_idle_cb(gpointer data)
     GlobalData     *gl        = idle_data->gl;
 
     c_list_unlink_stale(&idle_data->pending_jobs_lst);
-    nm_g_slice_free(idle_data);
+    nm_slice_free(idle_data);
 
     _idle_timeout_restart(gl);
     return G_SOURCE_REMOVE;

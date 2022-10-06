@@ -5526,7 +5526,7 @@ nm_platform_ip4_dev_route_blacklist_set(NMPlatform *self,
                 g_hash_table_new_full((GHashFunc) nmp_object_id_hash,
                                       (GEqualFunc) nmp_object_id_equal,
                                       (GDestroyNotify) nmp_object_unref,
-                                      nm_g_slice_free_fcn_gint64);
+                                      nm_slice_free_fcn_gint64);
         }
 
         timeout_msec = nm_utils_get_monotonic_timestamp_msec() + IP4_DEV_ROUTE_BLACKLIST_TIMEOUT_MS;

@@ -829,7 +829,7 @@ _obj_state_data_free(gpointer data)
     c_list_unlink_stale(&obj_state->os_temporary_not_available_lst);
     nmp_object_unref(obj_state->obj);
     nmp_object_unref(obj_state->os_plobj);
-    nm_g_slice_free(obj_state);
+    nm_slice_free(obj_state);
 }
 
 static const char *
@@ -1426,7 +1426,7 @@ _acd_data_free(AcdData *acd_data)
     c_list_unlink_stale(&acd_data->acd_lst);
     c_list_unlink_stale(&acd_data->acd_event_notify_lst);
     g_free((NML3AcdAddrTrackInfo *) acd_data->info.track_infos);
-    nm_g_slice_free(acd_data);
+    nm_slice_free(acd_data);
 }
 
 static guint
@@ -4713,7 +4713,7 @@ nm_l3cfg_unblock_obj_pruning(NML3CfgBlockHandle *handle)
           IS_IPv4 ? '4' : '6',
           c_list_length(&self->priv.p->blocked_lst_head_x[IS_IPv4]));
 
-    nm_g_slice_free(handle);
+    nm_slice_free(handle);
 }
 
 /* See DOC(l3cfg:commit-type) */
@@ -4836,7 +4836,7 @@ nm_l3cfg_commit_type_unregister(NML3Cfg *self, NML3CfgCommitTypeHandle *handle)
     c_list_unlink_stale(&handle->commit_type_lst);
     if (c_list_is_empty(&self->priv.p->commit_type_lst_head))
         g_object_unref(self);
-    nm_g_slice_free(handle);
+    nm_slice_free(handle);
 }
 
 void

@@ -516,7 +516,7 @@ test_nm_hash(void)
 /*****************************************************************************/
 
 static void
-test_nm_g_slice_free_fcn(void)
+test_nm_slice_free_fcn(void)
 {
     gpointer p;
     struct {
@@ -525,19 +525,19 @@ test_nm_g_slice_free_fcn(void)
     } xx;
 
     p = nm_slice_new(gint64);
-    (nm_g_slice_free_fcn(gint64))(p);
+    (nm_slice_free_fcn(gint64))(p);
 
     p = nm_slice_new(gint32);
-    (nm_g_slice_free_fcn(gint32))(p);
+    (nm_slice_free_fcn(gint32))(p);
 
     p = nm_slice_new(int);
-    (nm_g_slice_free_fcn(int))(p);
+    (nm_slice_free_fcn(int))(p);
 
     p = nm_slice_new(gint64);
-    nm_g_slice_free_fcn_gint64(p);
+    nm_slice_free_fcn_gint64(p);
 
     p = nm_slice_alloc(sizeof(xx));
-    (nm_g_slice_free_fcn(xx))(p);
+    (nm_slice_free_fcn(xx))(p);
 }
 
 /*****************************************************************************/
@@ -11133,7 +11133,7 @@ main(int argc, char **argv)
     g_test_add_func("/core/general/test_80211_mode", test_80211_mode);
     g_test_add_func("/core/general/test_vlan_flags", test_vlan_flags);
     g_test_add_func("/core/general/test_nm_hash", test_nm_hash);
-    g_test_add_func("/core/general/test_nm_g_slice_free_fcn", test_nm_g_slice_free_fcn);
+    g_test_add_func("/core/general/test_nm_slice_free_fcn", test_nm_slice_free_fcn);
     g_test_add_func("/core/general/test_c_list_sort", test_c_list_sort);
     g_test_add_func("/core/general/test_c_list_insert_sorted", test_c_list_insert_sorted);
     g_test_add_func("/core/general/test_dedup_multi", test_dedup_multi);

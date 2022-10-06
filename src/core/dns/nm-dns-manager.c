@@ -395,7 +395,7 @@ _dns_config_ip_data_free(NMDnsConfigIPData *ip_data)
     g_strfreev(ip_data->domains.reverse);
 
     nm_l3_config_data_unref(ip_data->l3cd);
-    nm_g_slice_free(ip_data);
+    nm_slice_free(ip_data);
 }
 
 static void
@@ -405,7 +405,7 @@ _dns_config_data_free(NMDnsConfigData *data)
 
     nm_assert(c_list_is_empty(&data->data_lst_head));
     c_list_unlink_stale(&data->configs_lst);
-    nm_g_slice_free(data);
+    nm_slice_free(data);
 }
 
 static int

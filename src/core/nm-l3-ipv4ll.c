@@ -226,7 +226,7 @@ _registration_update(NML3IPv4LL             *self,
         c_list_unlink_stale(&reg->reg_lst);
         if (c_list_is_empty(&self->reg_lst_head))
             self_unref_on_exit = self;
-        nm_g_slice_free(reg);
+        nm_slice_free(reg);
         reg = NULL;
         goto out;
     }
@@ -1037,5 +1037,5 @@ nm_l3_ipv4ll_unref(NML3IPv4LL *self)
 
     g_clear_object(&self->l3cfg);
     nmp_object_unref(self->plobj);
-    nm_g_slice_free(self);
+    nm_slice_free(self);
 }

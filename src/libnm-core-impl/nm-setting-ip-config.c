@@ -249,7 +249,7 @@ nm_ip_address_unref(NMIPAddress *address)
     if (address->refcount == 0) {
         g_free(address->address);
         nm_g_hash_table_unref(address->attributes);
-        nm_g_slice_free(address);
+        nm_slice_free(address);
     }
 }
 
@@ -723,7 +723,7 @@ nm_ip_route_unref(NMIPRoute *route)
         g_free(route->dest);
         g_free(route->next_hop);
         nm_g_hash_table_unref(route->attributes);
-        nm_g_slice_free(route);
+        nm_slice_free(route);
     }
 }
 
@@ -1748,7 +1748,7 @@ nm_ip_routing_rule_unref(NMIPRoutingRule *self)
     g_free(self->iifname);
     g_free(self->oifname);
 
-    nm_g_slice_free(self);
+    nm_slice_free(self);
 }
 
 /**

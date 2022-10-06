@@ -219,7 +219,7 @@ _iface_data_free(gpointer data)
     g_free(iface_data->iproutes_arr);
     g_free((char *) iface_data->hwaddr);
 
-    nm_g_slice_free(iface_data);
+    nm_slice_free(iface_data);
 }
 
 static void
@@ -260,7 +260,7 @@ _get_config_task_maybe_return(NMCSProviderGetConfigTaskData *get_config_data, GE
 
     nm_g_object_unref(get_config_data->intern_cancellable);
     g_object_unref(get_config_data->task);
-    nm_g_slice_free(get_config_data);
+    nm_slice_free(get_config_data);
 }
 
 void

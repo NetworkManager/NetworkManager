@@ -96,7 +96,7 @@ _seen_bssid_entry_free(gpointer data)
     SeenBssidEntry *entry = data;
 
     c_list_unlink_stale(&entry->seen_bssids_lst);
-    nm_g_slice_free(entry);
+    nm_slice_free(entry);
 }
 
 /*****************************************************************************/

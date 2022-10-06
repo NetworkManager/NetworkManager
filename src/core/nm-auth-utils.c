@@ -170,7 +170,7 @@ auth_call_free(AuthCall *call)
         call->chain->num_pending_auth_calls--;
         nm_auth_manager_check_authorization_cancel(call->call_id);
     }
-    nm_g_slice_free(call);
+    nm_slice_free(call);
 }
 
 static AuthCall *
@@ -592,7 +592,7 @@ _auth_chain_destroy(NMAuthChain *self)
 
     nm_g_object_unref(self->cancellable);
 
-    nm_g_slice_free(self);
+    nm_slice_free(self);
 }
 
 /******************************************************************************

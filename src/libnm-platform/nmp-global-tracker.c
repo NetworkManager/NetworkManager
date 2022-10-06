@@ -226,7 +226,7 @@ _track_data_destroy(gpointer data)
     c_list_unlink_stale(&track_data->obj_lst);
     c_list_unlink_stale(&track_data->user_tag_lst);
     nmp_object_unref(track_data->obj);
-    nm_g_slice_free(track_data);
+    nm_slice_free(track_data);
 }
 
 static const TrackData *
@@ -297,7 +297,7 @@ _track_obj_data_destroy(gpointer data)
     c_list_unlink_stale(&obj_data->obj_lst_head);
     c_list_unlink_stale(&obj_data->by_obj_lst);
     nmp_object_unref(obj_data->obj);
-    nm_g_slice_free(obj_data);
+    nm_slice_free(obj_data);
 }
 
 static void
@@ -306,7 +306,7 @@ _track_user_tag_data_destroy(gpointer data)
     TrackUserTagData *user_tag_data = data;
 
     c_list_unlink_stale(&user_tag_data->user_tag_lst_head);
-    nm_g_slice_free(user_tag_data);
+    nm_slice_free(user_tag_data);
 }
 
 static TrackData *
@@ -1273,5 +1273,5 @@ nmp_global_tracker_unref(NMPGlobalTracker *self)
     nm_assert(c_list_is_empty(&self->by_obj_lst_heads[2]));
     nm_assert(c_list_is_empty(&self->by_obj_lst_heads[3]));
     g_object_unref(self->platform);
-    nm_g_slice_free(self);
+    nm_slice_free(self);
 }

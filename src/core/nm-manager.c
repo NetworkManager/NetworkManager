@@ -688,7 +688,7 @@ _device_route_metric_get(NMManager   *self,
             g_hash_table_new_full(_device_route_metric_data_by_ifindex_hash,
                                   _device_route_metric_data_by_ifindex_equal,
                                   NULL,
-                                  nm_g_slice_free_fcn(DeviceRouteMetricData));
+                                  nm_slice_free_fcn(DeviceRouteMetricData));
         cleaned = TRUE;
 
         /* we need to pre-populate the cache for all (still existing) devices from the state-file */

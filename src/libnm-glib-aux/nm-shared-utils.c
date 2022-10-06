@@ -4270,7 +4270,7 @@ _nm_utils_invoke_on_idle_complete(InvokeOnIdleData *data)
 
     nm_g_object_unref(data->cancellable);
     g_source_destroy(data->source);
-    nm_g_slice_free(data);
+    nm_slice_free(data);
 }
 
 static gboolean
@@ -4934,7 +4934,7 @@ _poll_data_free(gpointer user_data)
 
     if (poll_data->has_many_idx)
         g_free(poll_data->idx.many);
-    nm_g_slice_free(poll_data);
+    nm_slice_free(poll_data);
 }
 
 static void
@@ -6199,10 +6199,10 @@ _tls_reg_destroy(gpointer data)
     while ((entry = c_list_last_entry(lst_head, TlsRegData, lst))) {
         c_list_unlink_stale(&entry->lst);
         entry->destroy_notify(entry->tls_data);
-        nm_g_slice_free(entry);
+        nm_slice_free(entry);
     }
 
-    nm_g_slice_free(lst_head);
+    nm_slice_free(lst_head);
 }
 
 static void
