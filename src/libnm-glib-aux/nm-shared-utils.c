@@ -53,6 +53,7 @@ nm_ether_addr_from_string(NMEtherAddr *addr, const char *str)
 
     return addr;
 }
+
 /*****************************************************************************/
 
 /**
