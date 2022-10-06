@@ -287,7 +287,7 @@ typedef struct {
     guint dbsid_nm_vpn_connection_state_changed;
     guint dbsid_nm_check_permissions;
 
-    NMClientInstanceFlags instance_flags : 3;
+    NMClientInstanceFlags instance_flags : 5;
 
     NMTernary permissions_state : 3;
 
@@ -7277,13 +7277,19 @@ nml_cleanup_context_busy_watcher_on_idle(GObject *context_busy_watcher_take, GMa
 static void
 _init_start_complete(NMClient *self, GError *error_take)
 {
-    NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE(self);
+    gs_unref_object NMClient *self_keep_alive = g_object_ref(self);
+    NMClientPrivate          *priv            = NM_CLIENT_GET_PRIVATE(self);
 
     NML_NMCLIENT_LOG_D(
         self,
         "%s init complete with %s%s%s",
         priv->init_data->is_sync ? "sync" : "async",
         NM_PRINT_FMT_QUOTED(error_take, "error: ", error_take->message, "", "success"));
+
+    priv->instance_flags |= (error_take ? NM_CLIENT_INSTANCE_FLAGS_INITIALIZED_BAD
+                                        : NM_CLIENT_INSTANCE_FLAGS_INITIALIZED_GOOD);
+
+    _notify(self, PROP_INSTANCE_FLAGS);
 
     nml_init_data_return(g_steal_pointer(&priv->init_data), error_take);
 }
@@ -7585,8 +7591,18 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
         /* construct */
 
         v_uint = g_value_get_uint(value);
-        g_return_if_fail(!NM_FLAGS_ANY(v_uint, ~((guint) NM_CLIENT_INSTANCE_FLAGS_ALL)));
-        v_uint &= ((guint) NM_CLIENT_INSTANCE_FLAGS_ALL);
+
+        /* Silently ignore "initialized-{good,bad}" flags. They are only set internally
+         * and cannot be change by the user. However, accept the caller to set them,
+         * so that
+         *   nmc.props.instance_flags = nmc.props.instance_flags | NM.ClientInstanceFlags.NO_AUTO_FETCH_PERMISSIONS
+         * works. */
+        v_uint &= ~((guint) (NM_CLIENT_INSTANCE_FLAGS_INITIALIZED_GOOD
+                             | NM_CLIENT_INSTANCE_FLAGS_INITIALIZED_BAD));
+
+        g_return_if_fail(!NM_FLAGS_ANY(v_uint, ~((guint) NM_CLIENT_INSTANCE_FLAGS_ALL_WRITABLE)));
+
+        v_uint &= ((guint) NM_CLIENT_INSTANCE_FLAGS_ALL_WRITABLE);
 
         if (!priv->instance_flags_constructed) {
             priv->instance_flags_constructed = TRUE;
@@ -8174,6 +8190,9 @@ nm_client_class_init(NMClientClass *client_class)
      * even after constructing the instance. Note that you may want to watch NMClient:permissions-state
      * property to know whether permissions are ready. Note that permissions are only fetched
      * when NMClient has a D-Bus name owner.
+     *
+     * The flags %NM_CLIENT_INSTANCE_FLAGS_INITIALIZED_GOOD and %NM_CLIENT_INSTANCE_FLAGS_INITIALIZED_BAD
+     * cannot be set, however they will be returned by the getter after initialization completes.
      *
      * Since: 1.24
      */
