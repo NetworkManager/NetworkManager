@@ -93,6 +93,23 @@ nm_ref_string_unref(NMRefString *rstr)
 NM_AUTO_DEFINE_FCN_VOID(NMRefString *, _nm_auto_ref_string, nm_ref_string_unref);
 #define nm_auto_ref_string nm_auto(_nm_auto_ref_string)
 
+static inline gboolean
+nm_ref_string_reset(NMRefString **ptr, NMRefString *str)
+{
+    NMRefString *rstr;
+
+    nm_assert(ptr);
+
+    rstr = *ptr;
+
+    if (rstr == str)
+        return FALSE;
+
+    *ptr = nm_ref_string_ref(str);
+    nm_ref_string_unref(rstr);
+    return TRUE;
+}
+
 /*****************************************************************************/
 
 static inline const char *
@@ -139,7 +156,7 @@ nm_ref_string_equal_str(NMRefString *rstr, const char *str)
     /* We don't use streq() here, because an NMRefString might have embedded NUL characters
      * (as the length is tracked separately). The NUL terminated C string @str must not
      * compare equal to such a @rstr, thus we first explicitly check strlen(). */
-    return rstr->len == strlen(str) && (rstr->str == str || memcmp(rstr->str, str, rstr->len) == 0);
+    return rstr->str == str || (rstr->len == strlen(str) && memcmp(rstr->str, str, rstr->len) == 0);
 }
 
 static inline gboolean

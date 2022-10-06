@@ -481,6 +481,14 @@ NMSettingIPConfig *nm_connection_get_setting_ip_config(NMConnection *connection,
 
 /*****************************************************************************/
 
+struct _NMRefString;
+
+void _nm_connection_set_path_rstr(NMConnection *connection, struct _NMRefString *path);
+
+struct _NMRefString *_nm_connection_get_path_rstr(NMConnection *connection);
+
+/*****************************************************************************/
+
 typedef enum {
     NM_BOND_OPTION_TYPE_INT,
     NM_BOND_OPTION_TYPE_BOTH,
