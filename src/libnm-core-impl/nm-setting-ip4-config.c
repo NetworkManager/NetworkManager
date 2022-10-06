@@ -624,9 +624,9 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
     /* ---ifcfg-rh---
      * property: method
      * variable: BOOTPROTO
-     * format:   string
-     * values:   none, dhcp (bootp), static, ibft, autoip, shared
-     * default:  none
+     * format: string
+     * values: none, dhcp (bootp), static, ibft, autoip, shared
+     * default: none
      * description: Method used for IPv4 protocol configuration.
      * ---end---
      */
@@ -641,7 +641,7 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
     /* ---ifcfg-rh---
      * property: dns
      * variable: DNS1, DNS2, ...
-     * format:   string
+     * format: string
      * description: List of DNS servers. Even if NetworkManager supports many DNS
      *   servers, initscripts and resolver only care about the first three, usually.
      * example: DNS1=1.2.3.4 DNS2=10.0.0.254 DNS3=8.8.8.8
@@ -651,7 +651,7 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
     /* ---ifcfg-rh---
      * property: dns-search
      * variable: DOMAIN
-     * format:   string (space-separated domains)
+     * format: string (space-separated domains)
      * description: List of DNS search domains.
      * ---end---
      */
