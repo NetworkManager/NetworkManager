@@ -807,6 +807,49 @@ const char *nm_utils_flags2str(const NMUtilsFlags2StrDesc *descs,
 
 /*****************************************************************************/
 
+void _nm_slice_assert_usable_size(gsize mem_size, gpointer mem_block);
+
+#if NM_MORE_ASSERTS < 10
+#define _nm_slice_assert_usable_size(mem_size, mem_block)    \
+    G_STMT_START                                             \
+    {                                                        \
+        _nm_unused const gsize    _mem_size2  = (mem_size);  \
+        _nm_unused gpointer const _mem_block2 = (mem_block); \
+    }                                                        \
+    G_STMT_END
+#endif
+
+#define nm_slice_alloc(mem_size)  g_malloc(mem_size)
+#define nm_slice_alloc0(mem_size) g_malloc0(mem_size)
+
+#define nm_slice_free_sized(mem_size, mem_block)                 \
+    G_STMT_START                                                 \
+    {                                                            \
+        const gsize    _mem_size  = (mem_size);                  \
+        gpointer const _mem_block = (mem_block);                 \
+                                                                 \
+        if (_mem_block) {                                        \
+            _nm_slice_assert_usable_size(_mem_size, _mem_block); \
+            g_free(_mem_block);                                  \
+        }                                                        \
+    }                                                            \
+    G_STMT_END
+
+#define nm_slice_free_typed(type, mem)                \
+    G_STMT_START                                      \
+    {                                                 \
+        if (1)                                        \
+            nm_slice_free_sized(sizeof(type), (mem)); \
+        else                                          \
+            (void) ((type *) 0 == (mem));             \
+    }                                                 \
+    G_STMT_END
+
+#define nm_slice_new(type)  ((type *) nm_slice_alloc(sizeof(type)))
+#define nm_slice_new0(type) ((type *) nm_slice_alloc0(sizeof(type)))
+
+/*****************************************************************************/
+
 #define _nm_g_slice_free_fcn_define(mem_size)                              \
     static inline void _nm_g_slice_free_fcn_##mem_size(gpointer mem_block) \
     {                                                                      \

@@ -10,6 +10,7 @@
 #include <pwd.h>
 #include <arpa/inet.h>
 #include <poll.h>
+#include <malloc.h>
 #include <fcntl.h>
 #include <sys/syscall.h>
 #include <net/if.h>
@@ -32,6 +33,15 @@ const char _nm_hexchar_table_lower[16] = "0123456789abcdef";
 const char _nm_hexchar_table_upper[16] = "0123456789ABCDEF";
 
 const void *const _NM_PTRARRAY_EMPTY[1] = {NULL};
+
+/*****************************************************************************/
+
+void
+_nm_slice_assert_usable_size(gsize mem_size, gpointer mem_block)
+{
+    nm_assert(mem_block);
+    nm_assert(mem_size <= malloc_usable_size(mem_block));
+}
 
 /*****************************************************************************/
 
