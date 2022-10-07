@@ -801,7 +801,7 @@ set_secret_flags(NMSetting           *setting,
 }
 
 static GPtrArray *
-need_secrets(NMSetting *setting)
+need_secrets(NMSetting *setting, gboolean check_rerequest)
 {
     /* Assume that VPN connections need secrets since they almost always will */
     return g_ptr_array_sized_new(1);

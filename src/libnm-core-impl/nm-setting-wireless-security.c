@@ -815,7 +815,7 @@ nm_setting_wireless_security_get_fils(NMSettingWirelessSecurity *setting)
 }
 
 static GPtrArray *
-need_secrets(NMSetting *setting)
+need_secrets(NMSetting *setting, gboolean check_rerequest)
 {
     NMSettingWirelessSecurity        *self = NM_SETTING_WIRELESS_SECURITY(setting);
     NMSettingWirelessSecurityPrivate *priv = NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE(self);
@@ -828,22 +828,22 @@ need_secrets(NMSetting *setting)
     /* Static WEP */
     if (strcmp(priv->key_mgmt, "none") == 0) {
         if ((priv->wep_tx_keyidx == 0)
-            && !nm_utils_wep_key_valid(priv->wep_key0, priv->wep_key_type)) {
+            && (check_rerequest || !nm_utils_wep_key_valid(priv->wep_key0, priv->wep_key_type))) {
             g_ptr_array_add(secrets, NM_SETTING_WIRELESS_SECURITY_WEP_KEY0);
             return secrets;
         }
         if ((priv->wep_tx_keyidx == 1)
-            && !nm_utils_wep_key_valid(priv->wep_key1, priv->wep_key_type)) {
+            && (check_rerequest || !nm_utils_wep_key_valid(priv->wep_key1, priv->wep_key_type))) {
             g_ptr_array_add(secrets, NM_SETTING_WIRELESS_SECURITY_WEP_KEY1);
             return secrets;
         }
         if ((priv->wep_tx_keyidx == 2)
-            && !nm_utils_wep_key_valid(priv->wep_key2, priv->wep_key_type)) {
+            && (check_rerequest || !nm_utils_wep_key_valid(priv->wep_key2, priv->wep_key_type))) {
             g_ptr_array_add(secrets, NM_SETTING_WIRELESS_SECURITY_WEP_KEY2);
             return secrets;
         }
         if ((priv->wep_tx_keyidx == 3)
-            && !nm_utils_wep_key_valid(priv->wep_key3, priv->wep_key_type)) {
+            && (check_rerequest || !nm_utils_wep_key_valid(priv->wep_key3, priv->wep_key_type))) {
             g_ptr_array_add(secrets, NM_SETTING_WIRELESS_SECURITY_WEP_KEY3);
             return secrets;
         }
@@ -852,7 +852,7 @@ need_secrets(NMSetting *setting)
 
     /* WPA-PSK infrastructure */
     if (strcmp(priv->key_mgmt, "wpa-psk") == 0) {
-        if (!nm_utils_wpa_psk_valid(priv->psk)) {
+        if (check_rerequest || !nm_utils_wpa_psk_valid(priv->psk)) {
             g_ptr_array_add(secrets, NM_SETTING_WIRELESS_SECURITY_PSK);
             return secrets;
         }
@@ -861,7 +861,7 @@ need_secrets(NMSetting *setting)
 
     /* SAE, used in MESH and WPA3-Personal */
     if (strcmp(priv->key_mgmt, "sae") == 0) {
-        if (!priv->psk || !*priv->psk) {
+        if (check_rerequest || !priv->psk || !*priv->psk) {
             g_ptr_array_add(secrets, NM_SETTING_WIRELESS_SECURITY_PSK);
             return secrets;
         }
@@ -870,7 +870,7 @@ need_secrets(NMSetting *setting)
 
     /* LEAP */
     if (priv->auth_alg && !strcmp(priv->auth_alg, "leap") && !strcmp(priv->key_mgmt, "ieee8021x")) {
-        if (!priv->leap_password || !*priv->leap_password) {
+        if (check_rerequest || !priv->leap_password || !*priv->leap_password) {
             g_ptr_array_add(secrets, NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD);
             return secrets;
         }

@@ -178,12 +178,12 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 }
 
 static GPtrArray *
-need_secrets(NMSetting *setting)
+need_secrets(NMSetting *setting, gboolean check_rerequest)
 {
     NMSettingPppoePrivate *priv    = NM_SETTING_PPPOE_GET_PRIVATE(setting);
     GPtrArray             *secrets = NULL;
 
-    if (priv->password)
+    if (!check_rerequest && priv->password)
         return NULL;
 
     if (!(priv->password_flags & NM_SETTING_SECRET_FLAG_NOT_REQUIRED)) {
