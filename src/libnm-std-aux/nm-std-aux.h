@@ -42,8 +42,8 @@
 #endif
 #endif
 
-#if defined(__clang__) && __clang_major__ == 13
-/* Clang 13 can emit -Wunused-but-set-variable warning for cleanup variables
+#if defined(__clang__) && (__clang_major__ == 13 || __clang_major__ == 14)
+/* Clang 13/14 can emit -Wunused-but-set-variable warning for cleanup variables
  * that are only assigned (never used otherwise). Hack around */
 #define _nm_auto_extra _nm_unused
 #else
