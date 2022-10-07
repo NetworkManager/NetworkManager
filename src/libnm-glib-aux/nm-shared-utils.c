@@ -3,6 +3,8 @@
  * Copyright (C) 2016 Red Hat, Inc.
  */
 
+#define NM_WANT_NM_ARRAY_FIND_BSEARCH_INLINE
+
 #include "libnm-glib-aux/nm-default-glib-i18n-lib.h"
 
 #include "nm-shared-utils.h"
@@ -3943,37 +3945,7 @@ nm_array_find_bsearch(gconstpointer    list,
                       GCompareDataFunc cmpfcn,
                       gpointer         user_data)
 {
-    gssize imax;
-    gssize imid;
-    gssize imin;
-    int    cmp;
-
-    nm_assert(list || len == 0);
-    nm_assert(cmpfcn);
-    nm_assert(elem_size > 0);
-
-    imin = 0;
-    if (len == 0)
-        return ~imin;
-
-    imax = len - 1;
-
-    while (imin <= imax) {
-        imid = imin + (imax - imin) / 2;
-
-        cmp = cmpfcn(&((const char *) list)[elem_size * imid], needle, user_data);
-        if (cmp == 0)
-            return imid;
-
-        if (cmp < 0)
-            imin = imid + 1;
-        else
-            imax = imid - 1;
-    }
-
-    /* return the inverse of @imin. This is a negative number, but
-     * also is ~imin the position where the value should be inserted. */
-    return ~imin;
+    return nm_array_find_bsearch_inline(list, len, elem_size, needle, cmpfcn, user_data);
 }
 
 /*****************************************************************************/
