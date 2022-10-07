@@ -1725,12 +1725,10 @@ new_default_connection(NMDevice *self)
 
     /* Create a stable UUID. The UUID is also the Network_ID for stable-privacy addr-gen-mode,
      * thus when it changes we will also generate different IPv6 addresses. */
-    uuid = nm_uuid_generate_from_strings(NM_UUID_TYPE_VERSION3,
-                                         &nm_uuid_ns_1,
-                                         "default-wired",
-                                         nm_utils_machine_id_str(),
-                                         defname,
-                                         perm_hw_addr ?: iface);
+    uuid = nm_uuid_generate_from_strings_old("default-wired",
+                                             nm_utils_machine_id_str(),
+                                             defname,
+                                             perm_hw_addr ?: iface);
 
     g_object_set(setting,
                  NM_SETTING_CONNECTION_ID,

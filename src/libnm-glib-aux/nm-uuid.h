@@ -130,6 +130,12 @@ char *nm_uuid_generate_from_strings_strv(NMUuidType         uuid_type,
 #define nm_uuid_generate_from_strings(uuid_type, type_args, ...) \
     nm_uuid_generate_from_strings_strv((uuid_type), (type_args), NM_MAKE_STRV(__VA_ARGS__))
 
+/* Legacy function. Don't use for new code. */
+#define nm_uuid_generate_from_strings_old(uuid_type, type_args, ...) \
+    nm_uuid_generate_from_strings_strv(NM_UUID_TYPE_VERSION3,        \
+                                       &nm_uuid_ns_1,                \
+                                       NM_MAKE_STRV(__VA_ARGS__))
+
 /*****************************************************************************/
 
 #endif /* __NM_UUID_H__ */
