@@ -125,16 +125,21 @@ char *nm_uuid_generate_from_string_str(const char   *s,
 
 char *nm_uuid_generate_from_strings_strv(NMUuidType         uuid_type,
                                          const NMUuid      *type_args,
-                                         const char *const *strv);
+                                         const char *const *strv,
+                                         gssize             len);
 
-#define nm_uuid_generate_from_strings(uuid_type, type_args, ...) \
-    nm_uuid_generate_from_strings_strv((uuid_type), (type_args), NM_MAKE_STRV(__VA_ARGS__))
+#define nm_uuid_generate_from_strings(uuid_type, type_args, ...)  \
+    nm_uuid_generate_from_strings_strv((uuid_type),               \
+                                       (type_args),               \
+                                       NM_MAKE_STRV(__VA_ARGS__), \
+                                       NM_NARG(__VA_ARGS__))
 
 /* Legacy function. Don't use for new code. */
 #define nm_uuid_generate_from_strings_old(uuid_type, type_args, ...) \
     nm_uuid_generate_from_strings_strv(NM_UUID_TYPE_VERSION3,        \
                                        &nm_uuid_ns_1,                \
-                                       NM_MAKE_STRV(__VA_ARGS__))
+                                       NM_MAKE_STRV(__VA_ARGS__),    \
+                                       -1)
 
 /*****************************************************************************/
 

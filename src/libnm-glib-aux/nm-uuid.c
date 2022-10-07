@@ -413,6 +413,10 @@ nm_uuid_generate_from_string_str(const char   *s,
  * @type_args: the namespace UUID.
  * @strv: (allow-none): the strv list to hash. Can be NULL, in which
  *   case the result is different from an empty array.
+ * @len: if negative, @strv is a NULL terminated array. Otherwise,
+ *   it is the length of the strv array. In the latter case it may
+ *   also contain NULL strings. The result hashes differently depending
+ *   on whether we have a NULL terminated strv array or given length.
  *
  * Returns a @uuid_type UUID based on the concatenated C strings.
  * It does not simply concatenate them, but also includes the
@@ -425,13 +429,43 @@ nm_uuid_generate_from_string_str(const char   *s,
 char *
 nm_uuid_generate_from_strings_strv(NMUuidType         uuid_type,
                                    const NMUuid      *type_args,
-                                   const char *const *strv)
+                                   const char *const *strv,
+                                   gssize             len)
 {
     nm_auto_str_buf NMStrBuf str = NM_STR_BUF_INIT_A(NM_UTILS_GET_NEXT_REALLOC_SIZE_232, TRUE);
     gsize                    slen;
     const char              *s;
 
-    if (!strv) {
+    if (len >= 0) {
+        gboolean has_nulls = FALSE;
+        gssize   i;
+
+        nm_assert(len == 0 || strv);
+
+        for (i = 0; i < len; i++) {
+            if (strv[i])
+                nm_str_buf_append_len(&str, strv[i], strlen(strv[i]) + 1u);
+            else
+                has_nulls = TRUE;
+        }
+        if (has_nulls) {
+            /* We either support a NULL terminated strv array, or a ptr array of fixed
+             * length (@len argument).
+             *
+             * If there are no NULLs within the first @len strings, then the result
+             * is the same. If there are any NULL strings, we need to encode that
+             * in a unique way. We do that by appending a bitmap of the elements
+             * whether they were set, plus one 'n' character (without NUL termination).
+             * None of the other branches below hashes to that, so this will uniquely
+             * encoded the NULL strings.
+             */
+            for (i = 0; i < len; i++)
+                nm_str_buf_append_c(&str, strv[i] ? '1' : '_');
+            nm_str_buf_append_c(&str, 'n');
+        }
+        slen = str.len;
+        s    = nm_str_buf_get_str_unsafe(&str);
+    } else if (!strv) {
         /* NULL is treated differently from an empty strv. We achieve that
          * by using a non-empty, non-NUL terminated string (which cannot happen
          * in the other cases). */
