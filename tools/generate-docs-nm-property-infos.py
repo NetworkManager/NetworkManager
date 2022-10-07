@@ -380,7 +380,7 @@ def t_srcdir():
 
 
 def t_setting_c(name):
-    return t_srcdir() + f"/src/libnm-core-impl/nm-setting-{name}.c"
+    return t_srcdir() + "/src/libnm-core-impl/nm-setting-" + name + ".c"
 
 
 def test_file_location():
