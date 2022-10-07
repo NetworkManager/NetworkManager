@@ -3793,11 +3793,13 @@ nm_ptrarray_find_bsearch(gconstpointer   *list,
                          GCompareDataFunc cmpfcn,
                          gpointer         user_data)
 {
-    gssize imin, imax, imid;
+    gssize imax;
+    gssize imid;
+    gssize imin;
     int    cmp;
 
-    g_return_val_if_fail(list || !len, ~((gssize) 0));
-    g_return_val_if_fail(cmpfcn, ~((gssize) 0));
+    nm_assert(list || len == 0);
+    nm_assert(cmpfcn);
 
     imin = 0;
     if (len > 0) {
@@ -3832,11 +3834,16 @@ nm_ptrarray_find_bsearch_range(gconstpointer   *list,
                                gssize          *out_idx_first,
                                gssize          *out_idx_last)
 {
-    gssize imin, imax, imid, i2min, i2max, i2mid;
+    gssize imax;
+    gssize imid;
+    gssize imin;
+    gssize i2max;
+    gssize i2mid;
+    gssize i2min;
     int    cmp;
 
-    g_return_val_if_fail(list || !len, ~((gssize) 0));
-    g_return_val_if_fail(cmpfcn, ~((gssize) 0));
+    nm_assert(list || len == 0);
+    nm_assert(cmpfcn);
 
     imin = 0;
     if (len > 0) {
@@ -3936,12 +3943,14 @@ nm_array_find_bsearch(gconstpointer    list,
                       GCompareDataFunc cmpfcn,
                       gpointer         user_data)
 {
-    gssize imin, imax, imid;
+    gssize imax;
+    gssize imid;
+    gssize imin;
     int    cmp;
 
-    g_return_val_if_fail(list || !len, ~((gssize) 0));
-    g_return_val_if_fail(cmpfcn, ~((gssize) 0));
-    g_return_val_if_fail(elem_size > 0, ~((gssize) 0));
+    nm_assert(list || len == 0);
+    nm_assert(cmpfcn);
+    nm_assert(elem_size > 0);
 
     imin = 0;
     if (len == 0)
