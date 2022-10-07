@@ -331,6 +331,7 @@ struct NDhcp4CConnection {
 
         NDhcp4Outgoing *request;        /* current request */
 
+        uint64_t ns_drain_timeout;      /* timeout for closing packet socket */
         uint32_t client_ip;             /* client IP address, or 0 */
         uint32_t server_ip;             /* server IP address, or 0 */
         uint16_t mtu;                   /* client mtu, or 0 */
