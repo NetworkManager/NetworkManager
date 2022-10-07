@@ -48,11 +48,11 @@ variables:
   #
   # This is done by running `ci-fairy generate-template` and possibly bumping
   # ".default_tag".
-  FEDORA_TAG:  '2022-07-06.0-fa9b72c30822'
-  UBUNTU_TAG:  '2022-07-06.0-4b75c457c847'
-  DEBIAN_TAG:  '2022-07-06.0-4b75c457c847'
-  CENTOS_TAG:  '2022-07-06.0-fa9b72c30822'
-  ALPINE_TAG:  '2022-07-06.0-a2327031454c'
+  FEDORA_TAG:  '2022-10-07.0-2f8d7f7c18cb'
+  UBUNTU_TAG:  '2022-10-07.0-25f2a8708cc8'
+  DEBIAN_TAG:  '2022-10-07.0-25f2a8708cc8'
+  CENTOS_TAG:  '2022-10-07.0-2f8d7f7c18cb'
+  ALPINE_TAG:  '2022-10-07.0-3e4fecdd883f'
 
   FEDORA_EXEC: 'bash .gitlab-ci/fedora-install.sh'
   UBUNTU_EXEC: 'bash .gitlab-ci/debian-install.sh'
@@ -165,6 +165,16 @@ fedora:37@container-prep:
   variables:
     GIT_STRATEGY: none
     FDO_DISTRIBUTION_VERSION: '37'
+    FDO_DISTRIBUTION_TAG: $FEDORA_TAG
+    FDO_DISTRIBUTION_EXEC: $FEDORA_EXEC
+
+fedora:38@container-prep:
+  extends:
+    - .fdo.container-build@fedora
+  stage: prep
+  variables:
+    GIT_STRATEGY: none
+    FDO_DISTRIBUTION_VERSION: '38'
     FDO_DISTRIBUTION_TAG: $FEDORA_TAG
     FDO_DISTRIBUTION_EXEC: $FEDORA_EXEC
 
@@ -464,6 +474,15 @@ fedora:37@container-clean:
     FDO_DISTRIBUTION_VERSION: '37'
     FDO_DISTRIBUTION_TAG: $FEDORA_TAG
 
+fedora:38@container-clean:
+  extends:
+    - .container-clean
+  variables:
+    GIT_STRATEGY: none
+    CURRENT_CONTAINER_IMAGE: $CI_REGISTRY_IMAGE/fedora/$FDO_DISTRIBUTION_VERSION:$FDO_DISTRIBUTION_TAG
+    FDO_DISTRIBUTION_VERSION: '38'
+    FDO_DISTRIBUTION_TAG: $FEDORA_TAG
+
 ubuntu:18.04@container-clean:
   extends:
     - .container-clean
@@ -753,6 +772,18 @@ t_fedora:37:
     FDO_DISTRIBUTION_TAG: $FEDORA_TAG
   needs:
     - "fedora:37@container-prep"
+  when: manual
+
+t_fedora:38:
+  extends:
+    - .build@template
+    - .fdo.distribution-image@fedora
+    - .nm_artifacts_debug
+  variables:
+    FDO_DISTRIBUTION_VERSION: '38'
+    FDO_DISTRIBUTION_TAG: $FEDORA_TAG
+  needs:
+    - "fedora:38@container-prep"
   when: manual
 
 t_ubuntu:18.04:
