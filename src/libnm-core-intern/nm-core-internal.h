@@ -1051,4 +1051,6 @@ gboolean _nm_ip_tunnel_mode_is_layer2(NMIPTunnelMode mode);
 
 GPtrArray *_nm_setting_ip_config_get_dns_array(NMSettingIPConfig *setting);
 
+gboolean nm_connection_need_secrets_for_rerequest(NMConnection *connection);
+
 #endif

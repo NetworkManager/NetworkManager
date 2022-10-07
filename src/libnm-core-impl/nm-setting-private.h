@@ -100,7 +100,7 @@ struct _NMSettingClass {
 
     gboolean (*verify_secrets)(NMSetting *setting, NMConnection *connection, GError **error);
 
-    GPtrArray *(*need_secrets)(NMSetting *setting);
+    GPtrArray *(*need_secrets)(NMSetting *setting, gboolean check_rerequest);
 
     int (*update_one_secret)(NMSetting *setting, const char *key, GVariant *value, GError **error);
 
@@ -1046,7 +1046,7 @@ gboolean _nm_setting_use_legacy_property(NMSetting  *setting,
                                          const char *legacy_property,
                                          const char *new_property);
 
-GPtrArray *_nm_setting_need_secrets(NMSetting *setting);
+GPtrArray *_nm_setting_need_secrets(NMSetting *setting, gboolean check_rerequest);
 
 gboolean _nm_setting_should_compare_secret_property(NMSetting            *setting,
                                                     NMSetting            *other,

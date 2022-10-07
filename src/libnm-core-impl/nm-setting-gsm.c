@@ -460,12 +460,12 @@ verify_secrets(NMSetting *setting, NMConnection *connection, GError **error)
 }
 
 static GPtrArray *
-need_secrets(NMSetting *setting)
+need_secrets(NMSetting *setting, gboolean check_rerequest)
 {
     NMSettingGsmPrivate *priv    = NM_SETTING_GSM_GET_PRIVATE(setting);
     GPtrArray           *secrets = NULL;
 
-    if (priv->password && *priv->password)
+    if (!check_rerequest && priv->password && *priv->password)
         return NULL;
 
     if (priv->username) {
