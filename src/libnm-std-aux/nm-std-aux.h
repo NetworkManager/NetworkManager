@@ -16,6 +16,7 @@
 
 #define _nm_packed             __attribute__((__packed__))
 #define _nm_unused             __attribute__((__unused__))
+#define _nm_always_inline      __attribute__((__always_inline__))
 #define _nm_used               __attribute__((__used__))
 #define _nm_pure               __attribute__((__pure__))
 #define _nm_const              __attribute__((__const__))
