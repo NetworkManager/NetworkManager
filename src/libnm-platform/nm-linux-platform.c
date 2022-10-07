@@ -1285,6 +1285,17 @@ _linktype_get_type(NMPlatform       *platform,
                 return NM_LINK_TYPE_WIFI;
         }
 
+        if (arptype == ARPHRD_ETHER) {
+            /* The USB gadget interfaces behave and look like ordinary ethernet devices
+             * aside from the DEVTYPE. */
+            if (nm_streq0(devtype, "gadget"))
+                return NM_LINK_TYPE_ETHERNET;
+
+            /* Distributed Switch Architecture switch chips */
+            if (nm_streq0(devtype, "dsa"))
+                return NM_LINK_TYPE_ETHERNET;
+        }
+
         /* Misc non-upstream WWAN drivers.  rmnet is Qualcomm's proprietary
          * modem interface, ccmni is MediaTek's.  FIXME: these drivers should
          * really set devtype=WWAN.
@@ -1311,15 +1322,6 @@ _linktype_get_type(NMPlatform       *platform,
              * when they should be Generic instead.
              */
             if (!kind && !devtype)
-                return NM_LINK_TYPE_ETHERNET;
-
-            /* The USB gadget interfaces behave and look like ordinary ethernet devices
-             * aside from the DEVTYPE. */
-            if (nm_streq0(devtype, "gadget"))
-                return NM_LINK_TYPE_ETHERNET;
-
-            /* Distributed Switch Architecture switch chips */
-            if (nm_streq0(devtype, "dsa"))
                 return NM_LINK_TYPE_ETHERNET;
         }
     }
