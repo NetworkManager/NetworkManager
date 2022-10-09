@@ -1200,7 +1200,7 @@ handle_settings(NMModemOfono *self, GVariant *v_dict)
     gboolean             ret = FALSE;
     const char          *interface;
     const char          *s;
-    const char         **array;
+    gs_free const char **array = NULL;
     guint32              address_network, gateway_network;
     int                  ifindex;
     GError              *error = NULL;
@@ -1307,14 +1307,15 @@ handle_settings(NMModemOfono *self, GVariant *v_dict)
     }
     if (array) {
         gboolean any_good = FALSE;
+        gsize    i;
 
-        for (; array[0]; array++) {
+        for (i = 0; array[i]; i++) {
             if (!nm_inet_parse_bin(AF_INET, *array, NULL, &address_network) || !address_network) {
                 _LOGW("invalid NameServer: %s", *array);
                 continue;
             }
             any_good = TRUE;
-            _LOGI("DNS: %s", *array);
+            _LOGI("DNS: %s", array[i]);
             nm_l3_config_data_add_nameserver_detail(priv->l3cd_4, AF_INET, &address_network, NULL);
         }
         if (!any_good) {
