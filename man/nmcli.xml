@@ -2253,8 +2253,47 @@
           unset or null.</para>
         </listitem>
       </varlistentry>
-    </variablelist>
 
+      <varlistentry>
+        <term><envar>NO_COLOR</envar></term>
+        <listitem>
+          <para>Default to not producing colored and paged output. The
+          <option>--colors</option> option, if used, takes precedence.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><envar>PAGER</envar></term>
+        <listitem>
+          <para>Filter to pipe the output through if it doesn't fit on a screen.
+          Can be a file name of an executable or a shell command. Empty string to
+          disable the functionality.</para>
+
+          <para>Note that the pager command is expected to handle wide characters
+          and ANSI escape sequences for changing colors (unless they're disabled).
+          <command>nmcli</command> sets up the environment variables
+          <envar>LESS</envar> and <envar>LESSCHARSET</envar> appropriately for the
+          <citerefentry><refentrytitle>less</refentrytitle><manvolnum>1</manvolnum></citerefentry>
+          pager, other pagers may or may not need extra configuration.</para>
+
+          <para>If unspecified,
+          <citerefentry><refentrytitle>pager</refentrytitle><manvolnum>1</manvolnum></citerefentry>,
+          <citerefentry><refentrytitle>less</refentrytitle><manvolnum>1</manvolnum></citerefentry>
+          and <citerefentry><refentrytitle>more</refentrytitle><manvolnum>1</manvolnum></citerefentry>
+          will be tried (in that order).</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><envar>TERM</envar></term>
+        <listitem>
+          <para>Terminal type. If <literal>dumb</literal>, <command>nmcli</command>
+          will not use a pager or produce ANSI escape sequences for coloring.</para>
+          <para>Terminal types other than <literal>dumb</literal> are assumed to
+          support ASCII escape sequences for setting the output color.</para>
+        </listitem>
+      </varlistentry>
+    </variablelist>
   </refsect1>
 
   <refsect1 id='internationalization_notes'><title>Internationalization notes</title>
