@@ -7946,16 +7946,50 @@ test_nm_utils_uuid_generate_from_string(void)
 /*****************************************************************************/
 
 static void
-_check_uuid(NMUuidType    uuid_type,
-            const NMUuid *type_arg,
-            const char   *expected_uuid,
-            const char   *str,
-            gssize        slen,
-            char         *uuid_test)
+_check_uuid(NMUuidType         uuid_type,
+            const NMUuid      *type_arg,
+            const char        *expected_uuid,
+            const char        *str,
+            gssize             slen,
+            const char *const *strv,
+            gssize             strv_len)
 {
+    gs_free char *uuid_test        = NULL;
+    gs_free char *uuid_test2       = NULL;
+    gboolean      uuid_test2_valid = TRUE;
+
+    g_assert(str);
+    g_assert(strv_len < 0 || strv);
+
+    uuid_test = nm_uuid_generate_from_strings_strv(uuid_type, type_arg, strv, strv_len);
+
     g_assert(uuid_test);
     g_assert(nm_uuid_is_normalized(uuid_test));
-    g_assert(str);
+
+    if (strv_len < 0 && strv) {
+        uuid_test2 =
+            nm_uuid_generate_from_strings_strv(uuid_type, type_arg, strv, NM_PTRARRAY_LEN(strv));
+    } else if (strv_len >= 0) {
+        gssize               l     = nm_strv_find_first(strv, strv_len, NULL);
+        gs_free const char **strv2 = nm_strv_dup_packed(strv, l < 0 ? strv_len : l);
+
+        uuid_test2 = nm_uuid_generate_from_strings_strv(uuid_type,
+                                                        type_arg,
+                                                        strv2 ?: NM_STRV_EMPTY_CC(),
+                                                        -1);
+        if (l >= 0) {
+            /* there are NULL strings. The result won't be match. */
+            uuid_test2_valid = FALSE;
+        }
+    }
+    if (uuid_test2) {
+        if (uuid_test2_valid)
+            g_assert_cmpstr(uuid_test, ==, uuid_test2);
+        else {
+            g_assert(nm_uuid_is_normalized(uuid_test));
+            g_assert_cmpstr(uuid_test, !=, uuid_test2);
+        }
+    }
 
     if (!nm_streq(uuid_test, expected_uuid)) {
         g_error("UUID test failed (1): text=%s, len=%lld, expected=%s, uuid_test=%s",
@@ -7978,24 +8012,19 @@ _check_uuid(NMUuidType    uuid_type,
                 expected_uuid,
                 uuid_test);
     }
-    g_free(uuid_test);
 }
 
-#define check_uuid(uuid_type, type_arg, expected_uuid, str, ...)                                   \
-    ({                                                                                             \
-        const NMUuidType _uuid_type     = (uuid_type);                                             \
-        const NMUuid    *_type_arg      = type_arg;                                                \
-        const char      *_expected_uuid = (expected_uuid);                                         \
-        const char      *_str           = (str);                                                   \
-        const gsize      _strlen        = NM_STRLEN(str);                                          \
-                                                                                                   \
-        _check_uuid(                                                                               \
-            _uuid_type,                                                                            \
-            _type_arg,                                                                             \
-            _expected_uuid,                                                                        \
-            _str,                                                                                  \
-            _strlen,                                                                               \
-            nm_uuid_generate_from_strings_strv(_uuid_type, _type_arg, NM_MAKE_STRV(__VA_ARGS__))); \
+#define check_uuid(uuid_type, type_arg, expected_uuid, str, ...)                             \
+    ({                                                                                       \
+        const NMUuidType   _uuid_type     = (uuid_type);                                     \
+        const NMUuid      *_type_arg      = type_arg;                                        \
+        const char        *_expected_uuid = (expected_uuid);                                 \
+        const char        *_str           = (str);                                           \
+        const gsize        _strlen        = NM_STRLEN(str);                                  \
+        const char *const *_strv          = NM_MAKE_STRV(__VA_ARGS__);                       \
+        const gssize       _strv_len      = NM_NARG(__VA_ARGS__);                            \
+                                                                                             \
+        _check_uuid(_uuid_type, _type_arg, _expected_uuid, _str, _strlen, _strv, _strv_len); \
     })
 
 static void
@@ -8023,17 +8052,19 @@ test_nm_utils_uuid_generate_from_strings(void)
                 "457229f4-fe49-32f5-8b09-c531d81f44d9",
                 "x",
                 1,
-                nm_uuid_generate_from_strings_strv(NM_UUID_TYPE_VERSION3, &nm_uuid_ns_1, NULL));
-    check_uuid(NM_UUID_TYPE_VERSION3,
-               &nm_uuid_ns_1,
-               "b07c334a-399b-32de-8d50-58e4e08f98e3",
-               "",
-               NULL);
+                NULL,
+                -1);
+    check_uuid(NM_UUID_TYPE_VERSION3, &nm_uuid_ns_1, "b07c334a-399b-32de-8d50-58e4e08f98e3", "");
     check_uuid(NM_UUID_TYPE_VERSION3,
                &nm_uuid_ns_1,
                "b8a426cb-bcb5-30a3-bd8f-6786fea72df9",
                "\0",
                "");
+    check_uuid(NM_UUID_TYPE_VERSION3,
+               &nm_uuid_ns_1,
+               "9232afda-85fc-3b8f-8736-4f99c8d5db9c",
+               "_n",
+               NULL);
     check_uuid(NM_UUID_TYPE_VERSION3,
                &nm_uuid_ns_1,
                "12a4a982-7aae-39e1-951e-41aeb1250959",
@@ -8073,6 +8104,13 @@ test_nm_utils_uuid_generate_from_strings(void)
                "5d79494e-c4ba-31a6-80a2-d6016ccd7e17",
                "a\0a\0",
                "a",
+               "a");
+    check_uuid(NM_UUID_TYPE_VERSION3,
+               &nm_uuid_ns_1,
+               "f36cec99-1db8-3baa-8c3f-13e13d980318",
+               "a\0a\0001_1n",
+               "a",
+               NULL,
                "a");
     check_uuid(NM_UUID_TYPE_VERSION3,
                &nm_uuid_ns_1,
@@ -8117,6 +8155,13 @@ test_nm_utils_uuid_generate_from_strings(void)
                "\0b\0",
                "",
                "b");
+    check_uuid(NM_UUID_TYPE_VERSION5,
+               _uuid(NM_UUID_NS_URL),
+               "db3dfd17-c785-509d-a0ca-740fdd68dc68",
+               "\0b\00011_n",
+               "",
+               "b",
+               NULL);
     check_uuid(NM_UUID_TYPE_VERSION3,
                _uuid(NM_UUID_NS_URL),
                "916dcdd8-5042-3b9b-9763-4312a31e5735",
