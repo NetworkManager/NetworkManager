@@ -15796,12 +15796,12 @@ _set_state_full(NMDevice *self, NMDeviceState state, NMDeviceStateReason reason,
     case NM_DEVICE_STATE_UNMANAGED:
         nm_device_set_firmware_missing(self, FALSE);
         if (old_state > NM_DEVICE_STATE_UNMANAGED) {
-            if (priv->sys_iface_state != NM_DEVICE_SYS_IFACE_STATE_MANAGED) {
-                nm_device_cleanup(self,
-                                  reason,
-                                  priv->sys_iface_state == NM_DEVICE_SYS_IFACE_STATE_REMOVED
-                                      ? CLEANUP_TYPE_REMOVED
-                                      : CLEANUP_TYPE_KEEP);
+            if (priv->sys_iface_state == NM_DEVICE_SYS_IFACE_STATE_REMOVED) {
+                nm_device_cleanup(self, reason, CLEANUP_TYPE_REMOVED);
+                _dev_addrgenmode6_set(self, NM_IN6_ADDR_GEN_MODE_EUI64);
+                _dev_sysctl_restore_ip6_properties(self);
+            } else if (priv->sys_iface_state != NM_DEVICE_SYS_IFACE_STATE_MANAGED) {
+                nm_device_cleanup(self, reason, CLEANUP_TYPE_KEEP);
             } else {
                 /* Clean up if the device is now unmanaged but was activated */
                 if (nm_device_get_act_request(self))
@@ -15856,7 +15856,8 @@ _set_state_full(NMDevice *self, NMDeviceState state, NMDeviceStateReason reason,
 
             nm_device_cleanup(self, reason, CLEANUP_TYPE_DECONFIGURE);
         } else if (old_state < NM_DEVICE_STATE_DISCONNECTED) {
-            if (priv->sys_iface_state == NM_DEVICE_SYS_IFACE_STATE_MANAGED) {
+            if (priv->sys_iface_state == NM_DEVICE_SYS_IFACE_STATE_MANAGED
+                || priv->sys_iface_state == NM_DEVICE_SYS_IFACE_STATE_ASSUME) {
                 /* Ensure IPv6 is set up as it may not have been done when
                  * entering the UNAVAILABLE state depending on the reason.
                  */
@@ -17586,7 +17587,6 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
                 reason = NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED;
                 if (NM_IN_SET_TYPED(NMDeviceSysIfaceState,
                                     priv->sys_iface_state,
-                                    NM_DEVICE_SYS_IFACE_STATE_EXTERNAL,
                                     NM_DEVICE_SYS_IFACE_STATE_REMOVED))
                     nm_device_sys_iface_state_set(self, NM_DEVICE_SYS_IFACE_STATE_ASSUME);
             } else {
