@@ -1421,7 +1421,7 @@ nmc_print(const NmcConfig                 *nmc_config,
 static void
 pager_fallback(void)
 {
-    char buf[64];
+    char buf[1024];
     int  rb;
 
     /* We are still in the child process (after fork() and before exec()).
