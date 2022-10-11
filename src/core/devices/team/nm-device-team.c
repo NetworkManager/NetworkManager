@@ -865,22 +865,20 @@ attach_port(NMDevice                  *device,
 
         s_team_port = nm_connection_get_setting_team_port(connection);
         if (s_team_port) {
-            const char *config = nm_setting_team_port_get_config(s_team_port);
+            char *sanitized_config;
 
-            if (config) {
-                char *sanitized_config = g_strdup(config);
-                g_strdelimit(sanitized_config, "\r\n", ' ');
+            sanitized_config = g_strdup(nm_setting_team_port_get_config(s_team_port) ?: "{}");
+            g_strdelimit(sanitized_config, "\r\n", ' ');
 
-                g_hash_table_insert(priv->port_configs, g_strdup(port_iface), sanitized_config);
+            g_hash_table_insert(priv->port_configs, g_strdup(port_iface), sanitized_config);
 
-                if (!priv->tdc) {
-                    _LOGW(LOGD_TEAM,
-                          "attached team port %s config not changed, not connected to teamd",
-                          port_iface);
-                } else {
-                    if (!_update_port_config(self, port_iface, sanitized_config))
-                        return FALSE;
-                }
+            if (!priv->tdc) {
+                _LOGW(LOGD_TEAM,
+                      "attached team port %s config not changed, not connected to teamd",
+                      port_iface);
+            } else {
+                if (!_update_port_config(self, port_iface, sanitized_config))
+                    return FALSE;
             }
         }
         success = nm_platform_link_enslave(nm_device_get_platform(device),
