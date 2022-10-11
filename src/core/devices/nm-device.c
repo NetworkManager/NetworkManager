@@ -8784,6 +8784,14 @@ check_connection_compatible(NMDevice *self, NMConnection *connection, GError **e
         return FALSE;
     }
 
+    if (!nm_device_has_capability(self, NM_DEVICE_CAP_SRIOV)
+        && nm_connection_get_setting(connection, NM_TYPE_SETTING_SRIOV)) {
+        nm_utils_error_set_literal(error,
+                                   NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                   "device does not support SR-IOV");
+        return FALSE;
+    }
+
     conn_iface = nm_manager_get_connection_iface(NM_MANAGER_GET, connection, NULL, NULL, &local);
 
     /* We always need a interface name for virtual devices, but for
@@ -9367,20 +9375,25 @@ activate_stage1_device_prepare(NMDevice *self)
     nm_device_state_changed(self, NM_DEVICE_STATE_PREPARE, NM_DEVICE_STATE_REASON_NONE);
 
     if (priv->stage1_sriov_state != NM_DEVICE_STAGE_STATE_COMPLETED) {
-        NMSettingSriov *s_sriov;
+        NMSettingSriov *s_sriov = NULL;
 
         if (nm_device_sys_iface_state_is_external_or_assume(self)) {
             /* pass */
-        } else if (priv->stage1_sriov_state == NM_DEVICE_STAGE_STATE_PENDING)
+        } else if (priv->stage1_sriov_state == NM_DEVICE_STAGE_STATE_PENDING) {
             return;
-        else if (priv->ifindex > 0 && nm_device_has_capability(self, NM_DEVICE_CAP_SRIOV)
-                 && (s_sriov = nm_device_get_applied_setting(self, NM_TYPE_SETTING_SRIOV))) {
+        } else if (priv->ifindex > 0) {
+            s_sriov = nm_device_get_applied_setting(self, NM_TYPE_SETTING_SRIOV);
+        }
+
+        if (s_sriov) {
             nm_auto_freev NMPlatformVF **plat_vfs = NULL;
             gs_free_error GError        *error    = NULL;
             NMSriovVF                   *vf;
             NMTernary                    autoprobe;
             guint                        num;
             guint                        i;
+
+            nm_assert(nm_device_has_capability(self, NM_DEVICE_CAP_SRIOV));
 
             autoprobe = nm_setting_sriov_get_autoprobe_drivers(s_sriov);
             if (autoprobe == NM_TERNARY_DEFAULT) {
