@@ -2296,8 +2296,7 @@ test_read_missing_id_uuid(void)
     gs_free char                 *expected_uuid = NULL;
     const char                   *FILENAME      = TEST_KEYFILES_DIR "/Test_Missing_ID_UUID";
 
-    expected_uuid =
-        nm_uuid_generate_from_strings(NM_UUID_TYPE_VERSION3, &nm_uuid_ns_1, "keyfile", FILENAME);
+    expected_uuid = nm_uuid_generate_from_strings_old("keyfile", FILENAME);
 
     connection = keyfile_read_connection_from_file(FILENAME);
 
