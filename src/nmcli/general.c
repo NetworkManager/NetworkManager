@@ -1301,6 +1301,7 @@ device_overview(NmCli *nmc, NMDevice *device)
     GString         *outbuf = g_string_sized_new(80);
     char            *tmp;
     const GPtrArray *activatable;
+    NMDeviceCapabilities caps;
 
     activatable = nm_device_get_available_connections(device);
 
@@ -1378,10 +1379,13 @@ device_overview(NmCli *nmc, NMDevice *device)
         break;
     }
 
-    if (nm_device_is_software(device))
+    caps = nm_device_get_capabilities(device);
+    if (caps & NM_DEVICE_CAP_IS_SOFTWARE)
         g_string_append_printf(outbuf, "%s, ", _("sw"));
     else
         g_string_append_printf(outbuf, "%s, ", _("hw"));
+    if (caps & NM_DEVICE_CAP_SRIOV)
+        g_string_append_printf(outbuf, "%s, ", _("sriov"));
 
     if (!NM_IN_STRSET(nm_device_get_ip_iface(device), NULL, nm_device_get_iface(device)))
         g_string_append_printf(outbuf, "%s %s, ", _("iface"), nm_device_get_ip_iface(device));
