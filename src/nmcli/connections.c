@@ -4343,8 +4343,9 @@ set_property(NMClient              *client,
         g_set_error(error,
                     NMCLI_ERROR,
                     NMC_RESULT_ERROR_USER_INPUT,
-                    _("Error: failed to %s %s.%s: %s."),
-                    (modifier != NM_META_ACCESSOR_MODIFIER_DEL ? "modify" : "remove a value from"),
+                    modifier != NM_META_ACCESSOR_MODIFIER_DEL
+                        ? _("Error: failed to modify %s.%s: %s.")
+                        : _("Error: failed to remove a value from %s.%s: %s."),
                     setting_name,
                     property,
                     local->message);
