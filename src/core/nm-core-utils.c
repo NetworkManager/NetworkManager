@@ -58,7 +58,7 @@ G_STATIC_ASSERT(sizeof(NMUtilsTestFlags) <= sizeof(int));
 static int _nm_utils_testing = 0;
 
 gboolean
-nm_utils_get_testing_initialized()
+nm_utils_get_testing_initialized(void)
 {
     NMUtilsTestFlags flags;
 
@@ -69,7 +69,7 @@ nm_utils_get_testing_initialized()
 }
 
 NMUtilsTestFlags
-nm_utils_get_testing()
+nm_utils_get_testing(void)
 {
     NMUtilsTestFlags flags;
 

@@ -1834,7 +1834,7 @@ nm_platform_setup(NMPlatform *instance)
  * Returns: (transfer none): The #NMPlatform singleton reference.
  */
 NMPlatform *
-nm_platform_get()
+nm_platform_get(void)
 {
     g_assert(singleton_instance);
 

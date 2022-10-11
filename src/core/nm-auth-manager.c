@@ -524,7 +524,7 @@ _name_owner_get_cb(const char *name_owner, GError *error, gpointer user_data)
 /*****************************************************************************/
 
 NMAuthManager *
-nm_auth_manager_get()
+nm_auth_manager_get(void)
 {
     g_return_val_if_fail(singleton_instance, NULL);
 

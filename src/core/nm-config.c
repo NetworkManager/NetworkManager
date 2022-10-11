@@ -680,7 +680,7 @@ nm_config_cmd_line_options_add_to_entries(NMConfigCmdLineOptions *cli, GOptionCo
 /*****************************************************************************/
 
 GKeyFile *
-nm_config_create_keyfile()
+nm_config_create_keyfile(void)
 {
     GKeyFile *keyfile;
 
