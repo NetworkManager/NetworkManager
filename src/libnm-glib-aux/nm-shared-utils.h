@@ -975,6 +975,7 @@ typedef enum {
      * message from the device that returned the *highest* error code,
      * in the hope that this message makes the most sense for the caller.
      * */
+    NM_UTILS_ERROR_CONNECTION_AVAILABLE_STRICTLY_UNMANAGED_DEVICE,
     NM_UTILS_ERROR_CONNECTION_AVAILABLE_INCOMPATIBLE,
     NM_UTILS_ERROR_CONNECTION_AVAILABLE_UNMANAGED_DEVICE,
     NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
