@@ -144,6 +144,7 @@ _update_port_config(NMDeviceTeam *self, const char *port_iface, const char *sani
     NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE(self);
     int                  err;
 
+    _LOGT(LOGD_TEAM, "setting port config: %s", sanitized_config);
     err = teamdctl_port_config_update_raw(priv->tdc, port_iface, sanitized_config);
     if (err != 0) {
         _LOGE(LOGD_TEAM, "failed to update config for port %s (err=%d)", port_iface, err);
