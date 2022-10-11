@@ -1423,20 +1423,18 @@ pager_fallback(void)
 {
     char buf[64];
     int  rb;
-    int  errsv;
+
+    /* We are still in the child process (after fork() and before exec()).
+     * We must only used functions listed in `man signal-safety`. */
 
     do {
         rb = read(STDIN_FILENO, buf, sizeof(buf));
         if (rb == -1) {
-            errsv = errno;
-            if (errsv == EINTR)
+            if (errno == EINTR)
                 continue;
-            g_printerr(_("Error reading nmcli output: %s\n"), nm_strerror_native(errsv));
             _exit(EXIT_FAILURE);
         }
         if (write(STDOUT_FILENO, buf, rb) == -1) {
-            errsv = errno;
-            g_printerr(_("Error writing nmcli output: %s\n"), nm_strerror_native(errsv));
             _exit(EXIT_FAILURE);
         }
     } while (rb > 0);
