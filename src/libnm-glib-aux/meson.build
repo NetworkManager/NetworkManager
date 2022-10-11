@@ -13,6 +13,7 @@ libnm_glib_aux = static_library(
     'nm-json-aux.c',
     'nm-keyfile-aux.c',
     'nm-logging-base.c',
+    'nm-prioq.c',
     'nm-random-utils.c',
     'nm-ref-string.c',
     'nm-secret-utils.c',
