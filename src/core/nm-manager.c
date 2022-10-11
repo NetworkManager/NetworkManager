@@ -6612,7 +6612,7 @@ do_sleep_wake(NMManager *self, gboolean sleeping_changed)
         }
 
         /* Give the connections a chance to recreate the virtual devices.
-	 * We've torn them down on sleep. */
+         * We've torn them down on sleep. */
         connections_changed(self);
     }
 

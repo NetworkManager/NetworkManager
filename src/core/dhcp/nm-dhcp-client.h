@@ -120,7 +120,7 @@ typedef struct {
     const char *uuid;
 
     /* Set to reduce the number of broadcast packets when the
-	 * anycast hardware address of the DHCP service is known. */
+     * anycast hardware address of the DHCP service is known. */
     const char *anycast_address;
 
     /* The hostname or FQDN to send. */
