@@ -154,23 +154,20 @@ _update_port_config(NMDeviceTeam *self, const char *port_iface, const char *sani
 }
 
 static gboolean
-ensure_teamd_connection(NMDevice *device)
+ensure_teamd_connection(NMDevice *device, GError **error)
 {
-    NMDeviceTeam         *self  = NM_DEVICE_TEAM(device);
-    NMDeviceTeamPrivate  *priv  = NM_DEVICE_TEAM_GET_PRIVATE(self);
-    gs_free_error GError *error = NULL;
-    const char           *port_iface;
-    const char           *port_config;
-    GHashTableIter        iter;
+    NMDeviceTeam        *self = NM_DEVICE_TEAM(device);
+    NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE(self);
+    const char          *port_iface;
+    const char          *port_config;
+    GHashTableIter       iter;
 
     if (priv->tdc)
         return TRUE;
 
-    priv->tdc = _tdc_connect_new(self, nm_device_get_iface(device), &error);
-    if (!priv->tdc) {
-        _LOGE(LOGD_TEAM, "failed to connect to teamd: %s", error->message);
+    priv->tdc = _tdc_connect_new(self, nm_device_get_iface(device), error);
+    if (!priv->tdc)
         return FALSE;
-    }
 
     g_hash_table_iter_init(&iter, priv->port_configs);
     while (g_hash_table_iter_next(&iter, (gpointer *) &port_iface, (gpointer *) &port_config))
@@ -229,10 +226,17 @@ update_connection(NMDevice *device, NMConnection *connection)
     NMSettingTeam       *s_team = _nm_connection_ensure_setting(connection, NM_TYPE_SETTING_TEAM);
     NMDeviceTeamPrivate *priv   = NM_DEVICE_TEAM_GET_PRIVATE(self);
     struct teamdctl     *tdc    = priv->tdc;
+    GError              *error  = NULL;
 
     /* Read the configuration only if not already set */
-    if (!priv->config && ensure_teamd_connection(device))
-        teamd_read_config(self);
+    if (!priv->config) {
+        if (ensure_teamd_connection(device, &error)) {
+            teamd_read_config(self);
+        } else {
+            _LOGD(LOGD_TEAM, "could not connect to teamd: %s", error->message);
+            g_clear_error(&error);
+        }
+    }
 
     /* Restore previous tdc state */
     if (priv->tdc && !tdc) {
@@ -398,6 +402,7 @@ teamd_ready(NMDeviceTeam *self)
     NMDeviceTeamPrivate *priv   = NM_DEVICE_TEAM_GET_PRIVATE(self);
     NMDevice            *device = NM_DEVICE(self);
     gboolean             success;
+    GError              *error = NULL;
 
     if (priv->kill_in_progress) {
         /* If we are currently killing teamd, we are not
@@ -411,7 +416,11 @@ teamd_ready(NMDeviceTeam *self)
      * immediately.  But if we are, and grabbing it failed, fail the
      * device activation.
      */
-    success = ensure_teamd_connection(device);
+    success = ensure_teamd_connection(device, &error);
+    if (!success) {
+        _LOGW(LOGD_TEAM, "could not connect to teamd: %s", error->message);
+        g_clear_error(&error);
+    }
 
     if (nm_device_get_state(device) != NM_DEVICE_STATE_PREPARE
         || priv->stage1_state != NM_DEVICE_STAGE_STATE_PENDING)
@@ -760,18 +769,20 @@ teamd_start(NMDeviceTeam *self)
 static NMActStageReturn
 act_stage1_prepare(NMDevice *device, NMDeviceStateReason *out_failure_reason)
 {
-    NMDeviceTeam         *self  = NM_DEVICE_TEAM(device);
-    NMDeviceTeamPrivate  *priv  = NM_DEVICE_TEAM_GET_PRIVATE(self);
-    gs_free_error GError *error = NULL;
-    NMSettingTeam        *s_team;
-    const char           *cfg;
+    NMDeviceTeam        *self  = NM_DEVICE_TEAM(device);
+    NMDeviceTeamPrivate *priv  = NM_DEVICE_TEAM_GET_PRIVATE(self);
+    GError              *error = NULL;
+    NMSettingTeam       *s_team;
+    const char          *cfg;
 
     if (nm_device_sys_iface_state_is_external(device))
         return NM_ACT_STAGE_RETURN_SUCCESS;
 
     if (nm_device_sys_iface_state_is_external_or_assume(device)) {
-        if (ensure_teamd_connection(device))
+        if (ensure_teamd_connection(device, &error))
             return NM_ACT_STAGE_RETURN_SUCCESS;
+        _LOGD(LOGD_TEAM, "could not connect to teamd: %s", error->message);
+        g_clear_error(&error);
     }
 
     s_team = nm_device_get_applied_setting(device, NM_TYPE_SETTING_TEAM);
@@ -804,6 +815,7 @@ act_stage1_prepare(NMDevice *device, NMDeviceStateReason *out_failure_reason)
                 _LOGW(LOGD_TEAM,
                       "existing teamd config mismatch; failed to kill existing teamd: %s",
                       error->message);
+                g_clear_error(&error);
                 NM_SET_OUT(out_failure_reason, NM_DEVICE_STATE_REASON_TEAMD_CONTROL_FAILED);
                 return NM_ACT_STAGE_RETURN_FAILURE;
             }
