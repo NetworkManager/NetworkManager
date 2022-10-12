@@ -393,13 +393,11 @@ nla_parse_nested(struct nlattr           *tb[],
 
 /*****************************************************************************/
 
-struct nl_msg *nlmsg_alloc(void);
-
-struct nl_msg *nlmsg_alloc_size(size_t max);
+struct nl_msg *nlmsg_alloc(size_t len);
 
 struct nl_msg *nlmsg_alloc_convert(struct nlmsghdr *hdr);
 
-struct nl_msg *nlmsg_alloc_simple(uint16_t nlmsgtype, uint16_t flags);
+struct nl_msg *nlmsg_alloc_new(size_t size, uint16_t nlmsgtype, uint16_t flags);
 
 void *nlmsg_reserve(struct nl_msg *n, uint32_t len, uint32_t pad);
 
