@@ -3083,10 +3083,9 @@ recheck_assume_connection(NMManager *self, NMDevice *device)
     g_return_val_if_fail(NM_IS_DEVICE(device), FALSE);
 
     if (!nm_device_get_managed(device, FALSE)) {
-        /* If the device is unmanaged by NM_UNMANAGED_PLATFORM_INIT or NM_UNMANAGED_PARENT,
+        /* If the device is unmanaged by NM_UNMANAGED_PLATFORM_INIT,
          * don't reset the state now but wait until it becomes managed. */
-        if (nm_device_get_unmanaged_flags(device, NM_UNMANAGED_ALL)
-            & ~(NM_UNMANAGED_PLATFORM_INIT | NM_UNMANAGED_PARENT))
+        if (nm_device_get_unmanaged_flags(device, NM_UNMANAGED_ALL) & ~NM_UNMANAGED_PLATFORM_INIT)
             nm_device_assume_state_reset(device);
         _LOG2D(LOGD_DEVICE, device, "assume: don't assume because device is not managed");
         return FALSE;
@@ -3410,10 +3409,9 @@ _device_realize_finish(NMManager *self, NMDevice *device, const NMPlatformLink *
     nm_device_realize_finish(device, plink);
 
     if (!nm_device_get_managed(device, FALSE)) {
-        /* If the device is unmanaged by NM_UNMANAGED_PLATFORM_INIT or NM_UNMANAGED_PARENT,
+        /* If the device is unmanaged by NM_UNMANAGED_PLATFORM_INIT,
          * don't reset the state now but wait until it becomes managed. */
-        if (nm_device_get_unmanaged_flags(device, NM_UNMANAGED_ALL)
-            & ~(NM_UNMANAGED_PLATFORM_INIT | NM_UNMANAGED_PARENT))
+        if (nm_device_get_unmanaged_flags(device, NM_UNMANAGED_ALL) & ~NM_UNMANAGED_PLATFORM_INIT)
             nm_device_assume_state_reset(device);
         return;
     }
