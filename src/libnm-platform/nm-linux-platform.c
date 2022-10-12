@@ -2682,7 +2682,7 @@ _wireguard_read_info(NMPlatform     *platform /* used only as logging context */
           ifindex,
           wireguard_family_id);
 
-    msg = nlmsg_alloc();
+    msg = nlmsg_alloc(0);
 
     if (!genlmsg_put(msg,
                      NL_AUTO_PORT,
@@ -2891,7 +2891,7 @@ _wireguard_create_change_nlmsgs(NMPlatform                               *platfo
 
 again:
 
-    msg = nlmsg_alloc();
+    msg = nlmsg_alloc(0);
     if (!genlmsg_put(msg,
                      NL_AUTO_PORT,
                      NL_AUTO_SEQ,
@@ -5038,7 +5038,7 @@ _nl_msg_new_address(uint16_t      nlmsg_type,
     nm_assert(NM_IN_SET(family, AF_INET, AF_INET6));
     nm_assert(NM_IN_SET(nlmsg_type, RTM_NEWADDR, RTM_DELADDR));
 
-    msg = nlmsg_alloc_simple(nlmsg_type, nlmsg_flags);
+    msg = nlmsg_alloc_new(0, nlmsg_type, nlmsg_flags);
 
     addr_len = family == AF_INET ? sizeof(in_addr_t) : sizeof(struct in6_addr);
 
@@ -5145,7 +5145,7 @@ _nl_msg_new_route(uint16_t nlmsg_type, uint16_t nlmsg_flags, const NMPObject *ob
         NM_IN_SET(NMP_OBJECT_GET_TYPE(obj), NMP_OBJECT_TYPE_IP4_ROUTE, NMP_OBJECT_TYPE_IP6_ROUTE));
     nm_assert(NM_IN_SET(nlmsg_type, RTM_NEWROUTE, RTM_DELROUTE));
 
-    msg = nlmsg_alloc_simple(nlmsg_type, nlmsg_flags);
+    msg = nlmsg_alloc_new(0, nlmsg_type, nlmsg_flags);
 
     if (nlmsg_append_struct(msg, &rtmsg) < 0)
         goto nla_put_failure;
@@ -5237,7 +5237,7 @@ _nl_msg_new_routing_rule(uint16_t                     nlmsg_type,
     const guint8 addr_size           = nm_utils_addr_family_to_size(routing_rule->addr_family);
     guint32      table;
 
-    msg = nlmsg_alloc_simple(nlmsg_type, nlmsg_flags);
+    msg = nlmsg_alloc_new(0, nlmsg_type, nlmsg_flags);
 
     table = routing_rule->table;
 
@@ -5356,7 +5356,7 @@ _nl_msg_new_qdisc(uint16_t nlmsg_type, uint16_t nlmsg_flags, const NMPlatformQdi
                   .tcm_info    = qdisc->info,
     };
 
-    msg = nlmsg_alloc_simple(nlmsg_type, nlmsg_flags | NMP_NLM_FLAG_F_ECHO);
+    msg = nlmsg_alloc_new(0, nlmsg_type, nlmsg_flags | NMP_NLM_FLAG_F_ECHO);
 
     if (nlmsg_append_struct(msg, &tcm) < 0)
         goto nla_put_failure;
@@ -5444,7 +5444,7 @@ _nl_msg_new_tfilter(uint16_t nlmsg_type, uint16_t nlmsg_flags, const NMPlatformT
                   .tcm_info    = tfilter->info,
     };
 
-    msg = nlmsg_alloc_simple(nlmsg_type, nlmsg_flags | NMP_NLM_FLAG_F_ECHO);
+    msg = nlmsg_alloc_new(0, nlmsg_type, nlmsg_flags | NMP_NLM_FLAG_F_ECHO);
 
     if (nlmsg_append_struct(msg, &tcm) < 0)
         goto nla_put_failure;
@@ -7239,7 +7239,7 @@ _nl_msg_new_dump_rtnl(NMPObjectType obj_type, int preferred_addr_family)
     nm_assert(klass);
     nm_assert(klass->rtm_gettype > 0);
 
-    nlmsg = nlmsg_alloc_simple(klass->rtm_gettype, NLM_F_DUMP);
+    nlmsg = nlmsg_alloc_new(0, klass->rtm_gettype, NLM_F_DUMP);
 
     if (klass->addr_family != AF_UNSPEC) {
         /* if the class specifies a particular address family, then it is preferred. */
@@ -7284,7 +7284,7 @@ _nl_msg_new_dump_genl_families(void)
 {
     nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
 
-    nlmsg = nlmsg_alloc_size(nlmsg_total_size(GENL_HDRLEN));
+    nlmsg = nlmsg_alloc(nlmsg_total_size(GENL_HDRLEN));
 
     if (!genlmsg_put(nlmsg,
                      NL_AUTO_PORT,
@@ -9540,7 +9540,7 @@ tc_delete(NMPlatform *platform,
         log_tag = "do-delete-tc";
     }
 
-    msg = nlmsg_alloc_simple(nlmsg_type, NMP_NLM_FLAG_F_ECHO);
+    msg = nlmsg_alloc_new(0, nlmsg_type, NMP_NLM_FLAG_F_ECHO);
 
     if (nlmsg_append_struct(msg, &tcm) < 0)
         goto nla_put_failure;
@@ -10264,7 +10264,7 @@ mptcp_addr_update(NMPlatform *platform, NMOptionBool add, const NMPlatformMptcpA
           cmd_str,
           nm_platform_mptcp_addr_to_string(addr, sbuf, sizeof(sbuf)));
 
-    nlmsg = nlmsg_alloc_size(nlmsg_total_size(GENL_HDRLEN) + 200);
+    nlmsg = nlmsg_alloc(nlmsg_total_size(GENL_HDRLEN) + 200);
 
     if (!genlmsg_put(nlmsg,
                      NL_AUTO_PORT,
@@ -10355,7 +10355,7 @@ mptcp_addrs_dump(NMPlatform *platform)
         return NULL;
     }
 
-    nlmsg = nlmsg_alloc_size(nlmsg_total_size(GENL_HDRLEN));
+    nlmsg = nlmsg_alloc(nlmsg_total_size(GENL_HDRLEN));
 
     if (!genlmsg_put(nlmsg,
                      NL_AUTO_PORT,
