@@ -385,7 +385,7 @@ _set_fcn_precheck_connection_secondaries(NMClient   *client,
         } else {
             con = nmc_find_connection(connections, "id", *iter, NULL, FALSE);
             if (!con) {
-                g_set_error(error, 1, 0, _("'%s' is not a name of any exiting profile"), *iter);
+                g_set_error(error, 1, 0, _("'%s' is not a name of any existing profile"), *iter);
                 return FALSE;
             }
 
