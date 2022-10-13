@@ -301,8 +301,13 @@ nm_utils_monotonic_timestamp_from_boottime(guint64 boottime, gint64 timestamp_ns
 
     nm_assert(offset <= 0 && offset > G_MININT64);
 
-    /* check for overflow (note that offset is non-positive). */
-    g_return_val_if_fail(boottime < G_MAXINT64, G_MAXINT64);
+    if (boottime >= (guint64) G_MAXINT64) {
+        /* This indicates infinity. We keep it at such. */
+        return G_MAXINT64;
+    }
+
+    /* Note that overflow cannot happen, because bootime is non-negative, and
+     * offset is non-positive. */
 
     return (gint64) boottime + offset;
 }
