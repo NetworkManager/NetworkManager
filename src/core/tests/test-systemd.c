@@ -6,25 +6,9 @@
 #include "libnm-systemd-core/nm-default-systemd-core.h"
 
 #include "libnm-systemd-core/nm-sd.h"
-#include "libnm-systemd-core/src/systemd/sd-lldp-rx.h"
 #include "libnm-systemd-shared/nm-sd-utils-shared.h"
 
 #include "libnm-glib-aux/nm-test-utils.h"
-
-/*****************************************************************************/
-
-static void
-test_lldp_create(void)
-{
-    sd_lldp_rx *lldp = NULL;
-    int         r;
-
-    r = sd_lldp_rx_new(&lldp);
-    g_assert(r == 0);
-    g_assert(lldp);
-
-    sd_lldp_rx_unref(lldp);
-}
 
 /*****************************************************************************/
 
@@ -106,7 +90,6 @@ main(int argc, char **argv)
 {
     nmtst_init(&argc, &argv, TRUE);
 
-    g_test_add_func("/systemd/lldp/create", test_lldp_create);
     g_test_add_func("/systemd/sd-event", test_sd_event);
 
     return g_test_run();
