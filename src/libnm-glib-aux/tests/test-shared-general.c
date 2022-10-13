@@ -91,6 +91,38 @@ test_monotonic_timestamp(void)
 /*****************************************************************************/
 
 static void
+test_timespect_to(void)
+{
+    struct timespec ts;
+    int             i;
+
+    for (i = 0; i < 1000; i++) {
+        gint64 t_msec;
+        gint64 t_usec;
+        gint64 t_nsec;
+
+        nmtst_rand_buf(NULL, &ts, sizeof(ts));
+        ts.tv_sec  = llabs(ts.tv_sec % 100000);
+        ts.tv_nsec = llabs(ts.tv_nsec % NM_UTILS_NSEC_PER_SEC);
+
+        t_msec = nm_utils_timespec_to_msec(&ts);
+        t_usec = nm_utils_timespec_to_usec(&ts);
+        t_nsec = nm_utils_timespec_to_nsec(&ts);
+
+        g_assert_cmpint(t_msec, <=, t_usec / 1000);
+        g_assert_cmpint(t_msec + 1, >=, t_usec / 1000);
+
+        g_assert_cmpint(t_msec, <=, t_nsec / 1000000);
+        g_assert_cmpint(t_msec + 1, >=, t_nsec / 1000000);
+
+        g_assert_cmpint(t_usec, <=, t_nsec / 1000);
+        g_assert_cmpint(t_usec + 1, >=, t_nsec / 1000);
+    }
+}
+
+/*****************************************************************************/
+
+static void
 test_nmhash(void)
 {
     int rnd;
@@ -2344,6 +2376,7 @@ main(int argc, char **argv)
     g_test_add_func("/general/test_nm_static_assert", test_nm_static_assert);
     g_test_add_func("/general/test_gpid", test_gpid);
     g_test_add_func("/general/test_monotonic_timestamp", test_monotonic_timestamp);
+    g_test_add_func("/general/test_timespect_to", test_timespect_to);
     g_test_add_func("/general/test_nmhash", test_nmhash);
     g_test_add_func("/general/test_nm_make_strv", test_make_strv);
     g_test_add_func("/general/test_nm_strdup_int", test_nm_strdup_int);
