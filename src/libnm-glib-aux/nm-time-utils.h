@@ -75,6 +75,7 @@ nm_utils_get_monotonic_timestamp_sec_cached(gint32 *cache_now)
 }
 
 gint64 nm_utils_clock_gettime_nsec(clockid_t clockid);
+gint64 nm_utils_clock_gettime_usec(clockid_t clockid);
 gint64 nm_utils_clock_gettime_msec(clockid_t clockid);
 
 #endif /* __NM_TIME_UTILS_H__ */

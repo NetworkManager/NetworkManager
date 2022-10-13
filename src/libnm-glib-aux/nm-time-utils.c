@@ -323,6 +323,16 @@ nm_utils_clock_gettime_nsec(clockid_t clockid)
 }
 
 gint64
+nm_utils_clock_gettime_usec(clockid_t clockid)
+{
+    struct timespec tp;
+
+    if (clock_gettime(clockid, &tp) != 0)
+        return -NM_ERRNO_NATIVE(errno);
+    return nm_utils_timespec_to_usec(&tp);
+}
+
+gint64
 nm_utils_clock_gettime_msec(clockid_t clockid)
 {
     struct timespec tp;
