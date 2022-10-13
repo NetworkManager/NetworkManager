@@ -410,6 +410,24 @@ nm_mult_clamped_u(unsigned a, unsigned b)
 
 /*****************************************************************************/
 
+static inline size_t
+NM_ALIGN_TO(size_t l, size_t ali)
+{
+    nm_assert(nm_utils_is_power_of_two(ali));
+
+    if (l > SIZE_MAX - (ali - 1))
+        return SIZE_MAX; /* indicate overflow */
+
+    return ((l + ali - 1) & ~(ali - 1));
+}
+
+#define NM_ALIGN4(l)    NM_ALIGN_TO(l, 4)
+#define NM_ALIGN8(l)    NM_ALIGN_TO(l, 8)
+#define NM_ALIGN(l)     NM_ALIGN_TO(l, sizeof(void *))
+#define NM_ALIGN_PTR(p) ((void *) NM_ALIGN((uintptr_t) (p)))
+
+/*****************************************************************************/
+
 #define NM_SWAP(p_a, p_b)                   \
     do {                                    \
         typeof(*(p_a)) *const _p_a = (p_a); \
