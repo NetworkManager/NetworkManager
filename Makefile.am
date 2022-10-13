@@ -2716,6 +2716,7 @@ src_core_libNetworkManager_la_LIBADD = \
 	src/libnm-platform/libnm-platform.la \
 	src/libnm-base/libnm-base.la \
 	src/libnm-log-core/libnm-log-core.la \
+	src/libnm-lldp/libnm-lldp.la \
 	src/libnm-udev-aux/libnm-udev-aux.la \
 	src/libnm-glib-aux/libnm-glib-aux.la \
 	src/libnm-std-aux/libnm-std-aux.la \

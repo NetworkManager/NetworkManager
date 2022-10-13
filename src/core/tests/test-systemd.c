@@ -6,6 +6,7 @@
 #include "libnm-systemd-core/nm-default-systemd-core.h"
 
 #include "libnm-systemd-core/nm-sd.h"
+#include "libnm-systemd-core/src/systemd/sd-lldp-rx.h"
 #include "libnm-systemd-shared/nm-sd-utils-shared.h"
 
 #include "libnm-glib-aux/nm-test-utils.h"

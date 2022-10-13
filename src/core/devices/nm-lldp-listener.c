@@ -15,24 +15,20 @@
 #include "libnm-std-aux/unaligned.h"
 #include "libnm-platform/nm-platform.h"
 #include "libnm-glib-aux/nm-c-list.h"
+#include "libnm-lldp/nm-lldp-rx.h"
 #include "nm-utils.h"
-
-#include "libnm-systemd-core/nm-sd.h"
 
 #define MAX_NEIGHBORS            128
 #define MIN_UPDATE_INTERVAL_NSEC (2 * NM_UTILS_NSEC_PER_SEC)
 
-#define LLDP_MAC_NEAREST_BRIDGE \
-    (&((struct ether_addr){.ether_addr_octet = {0x01, 0x80, 0xc2, 0x00, 0x00, 0x0e}}))
-#define LLDP_MAC_NEAREST_NON_TPMR_BRIDGE \
-    (&((struct ether_addr){.ether_addr_octet = {0x01, 0x80, 0xc2, 0x00, 0x00, 0x03}}))
-#define LLDP_MAC_NEAREST_CUSTOMER_BRIDGE \
-    (&((struct ether_addr){.ether_addr_octet = {0x01, 0x80, 0xc2, 0x00, 0x00, 0x00}}))
+#define LLDP_MAC_NEAREST_BRIDGE          (&NM_ETHER_ADDR_INIT(0x01, 0x80, 0xc2, 0x00, 0x00, 0x0e))
+#define LLDP_MAC_NEAREST_NON_TPMR_BRIDGE (&NM_ETHER_ADDR_INIT(0x01, 0x80, 0xc2, 0x00, 0x00, 0x03))
+#define LLDP_MAC_NEAREST_CUSTOMER_BRIDGE (&NM_ETHER_ADDR_INIT(0x01, 0x80, 0xc2, 0x00, 0x00, 0x00))
 
 /*****************************************************************************/
 
 struct _NMLldpListener {
-    sd_lldp_rx *lldp_handle;
+    NMLldpRX   *lldp_rx;
     GHashTable *lldp_neighbors;
     GVariant   *variant;
 
@@ -49,12 +45,12 @@ struct _NMLldpListener {
 /*****************************************************************************/
 
 typedef struct {
-    GVariant         *variant;
-    sd_lldp_neighbor *neighbor_sd;
-    char             *chassis_id;
-    char             *port_id;
-    guint8            chassis_id_type;
-    guint8            port_id_type;
+    GVariant       *variant;
+    NMLldpNeighbor *neighbor_nm;
+    char           *chassis_id;
+    char           *port_id;
+    guint8          chassis_id_type;
+    guint8          port_id_type;
 } LldpNeighbor;
 
 /*****************************************************************************/
@@ -100,7 +96,7 @@ lldp_neighbor_get_raw(LldpNeighbor *neigh, const guint8 **out_raw_data, gsize *o
 
     nm_assert(neigh);
 
-    r = sd_lldp_neighbor_get_raw(neigh->neighbor_sd, &raw_data, &raw_len);
+    r = nm_lldp_neighbor_get_raw(neigh->neighbor_nm, &raw_data, &raw_len);
 
     nm_assert(r >= 0);
     nm_assert(raw_data);
@@ -111,24 +107,24 @@ lldp_neighbor_get_raw(LldpNeighbor *neigh, const guint8 **out_raw_data, gsize *o
 }
 
 static gboolean
-lldp_neighbor_id_get(struct sd_lldp_neighbor *neighbor_sd,
-                     guint8                  *out_chassis_id_type,
-                     const guint8           **out_chassis_id,
-                     gsize                   *out_chassis_id_len,
-                     guint8                  *out_port_id_type,
-                     const guint8           **out_port_id,
-                     gsize                   *out_port_id_len)
+lldp_neighbor_id_get(NMLldpNeighbor *neighbor_nm,
+                     guint8         *out_chassis_id_type,
+                     const guint8  **out_chassis_id,
+                     gsize          *out_chassis_id_len,
+                     guint8         *out_port_id_type,
+                     const guint8  **out_port_id,
+                     gsize          *out_port_id_len)
 {
     int r;
 
-    r = sd_lldp_neighbor_get_chassis_id(neighbor_sd,
+    r = nm_lldp_neighbor_get_chassis_id(neighbor_nm,
                                         out_chassis_id_type,
                                         (gconstpointer *) out_chassis_id,
                                         out_chassis_id_len);
     if (r < 0)
         return FALSE;
 
-    r = sd_lldp_neighbor_get_port_id(neighbor_sd,
+    r = nm_lldp_neighbor_get_port_id(neighbor_nm,
                                      out_port_id_type,
                                      (gconstpointer *) out_port_id,
                                      out_port_id_len);
@@ -150,7 +146,7 @@ lldp_neighbor_id_hash(gconstpointer ptr)
     gsize               port_id_len;
     NMHashState         h;
 
-    if (!lldp_neighbor_id_get(neigh->neighbor_sd,
+    if (!lldp_neighbor_id_get(neigh->neighbor_nm,
                               &chassis_id_type,
                               &chassis_id,
                               &chassis_id_len,
@@ -186,7 +182,7 @@ lldp_neighbor_id_cmp(const LldpNeighbor *a, const LldpNeighbor *b)
 
     NM_CMP_SELF(a, b);
 
-    if (!lldp_neighbor_id_get(a->neighbor_sd,
+    if (!lldp_neighbor_id_get(a->neighbor_nm,
                               &a_chassis_id_type,
                               &a_chassis_id,
                               &a_chassis_id_len,
@@ -197,7 +193,7 @@ lldp_neighbor_id_cmp(const LldpNeighbor *a, const LldpNeighbor *b)
         return FALSE;
     }
 
-    if (!lldp_neighbor_id_get(b->neighbor_sd,
+    if (!lldp_neighbor_id_get(b->neighbor_nm,
                               &b_chassis_id_type,
                               &b_chassis_id,
                               &b_chassis_id_len,
@@ -239,7 +235,7 @@ lldp_neighbor_free(LldpNeighbor *neighbor)
     g_free(neighbor->chassis_id);
     g_free(neighbor->port_id);
     nm_g_variant_unref(neighbor->variant);
-    sd_lldp_neighbor_unref(neighbor->neighbor_sd);
+    nm_lldp_neighbor_unref(neighbor->neighbor_nm);
     nm_g_slice_free(neighbor);
 }
 
@@ -257,7 +253,7 @@ lldp_neighbor_equal(LldpNeighbor *a, LldpNeighbor *b)
     gsize         raw_len_a;
     gsize         raw_len_b;
 
-    if (a->neighbor_sd == b->neighbor_sd)
+    if (a->neighbor_nm == b->neighbor_nm)
         return TRUE;
 
     lldp_neighbor_get_raw(a, &raw_data_a, &raw_len_a);
@@ -293,7 +289,7 @@ parse_management_address_tlv(const uint8_t *data, gsize len)
     if (len < 11)
         return NULL;
 
-    nm_assert((data[0] >> 1) == SD_LLDP_TYPE_MGMT_ADDRESS);
+    nm_assert((data[0] >> 1) == NM_LLDP_TYPE_MGMT_ADDRESS);
     nm_assert((((data[0] & 1) << 8) + data[1]) + 2 == len);
 
     data += 2;
@@ -402,7 +398,7 @@ format_string_cp(const guint8 *data, gsize len, gboolean allow_trim)
 }
 
 static LldpNeighbor *
-lldp_neighbor_new(sd_lldp_neighbor *neighbor_sd)
+lldp_neighbor_new(NMLldpNeighbor *neighbor_nm)
 {
     LldpNeighbor *neigh;
     guint8        chassis_id_type;
@@ -414,7 +410,7 @@ lldp_neighbor_new(sd_lldp_neighbor *neighbor_sd)
     gs_free char *s_chassis_id = NULL;
     gs_free char *s_port_id    = NULL;
 
-    if (!lldp_neighbor_id_get(neighbor_sd,
+    if (!lldp_neighbor_id_get(neighbor_nm,
                               &chassis_id_type,
                               &chassis_id,
                               &chassis_id_len,
@@ -424,17 +420,17 @@ lldp_neighbor_new(sd_lldp_neighbor *neighbor_sd)
         return NULL;
 
     switch (chassis_id_type) {
-    case SD_LLDP_CHASSIS_SUBTYPE_CHASSIS_COMPONENT:
-    case SD_LLDP_CHASSIS_SUBTYPE_INTERFACE_ALIAS:
-    case SD_LLDP_CHASSIS_SUBTYPE_PORT_COMPONENT:
-    case SD_LLDP_CHASSIS_SUBTYPE_INTERFACE_NAME:
-    case SD_LLDP_CHASSIS_SUBTYPE_LOCALLY_ASSIGNED:
+    case NM_LLDP_CHASSIS_SUBTYPE_CHASSIS_COMPONENT:
+    case NM_LLDP_CHASSIS_SUBTYPE_INTERFACE_ALIAS:
+    case NM_LLDP_CHASSIS_SUBTYPE_PORT_COMPONENT:
+    case NM_LLDP_CHASSIS_SUBTYPE_INTERFACE_NAME:
+    case NM_LLDP_CHASSIS_SUBTYPE_LOCALLY_ASSIGNED:
         s_chassis_id = format_string_cp(chassis_id, chassis_id_len, FALSE);
         break;
-    case SD_LLDP_CHASSIS_SUBTYPE_MAC_ADDRESS:
+    case NM_LLDP_CHASSIS_SUBTYPE_MAC_ADDRESS:
         s_chassis_id = nm_utils_hwaddr_ntoa(chassis_id, chassis_id_len);
         break;
-    case SD_LLDP_CHASSIS_SUBTYPE_NETWORK_ADDRESS:
+    case NM_LLDP_CHASSIS_SUBTYPE_NETWORK_ADDRESS:
         s_chassis_id = format_network_address(chassis_id, chassis_id_len);
         break;
     }
@@ -446,16 +442,16 @@ lldp_neighbor_new(sd_lldp_neighbor *neighbor_sd)
     }
 
     switch (port_id_type) {
-    case SD_LLDP_PORT_SUBTYPE_INTERFACE_ALIAS:
-    case SD_LLDP_PORT_SUBTYPE_PORT_COMPONENT:
-    case SD_LLDP_PORT_SUBTYPE_INTERFACE_NAME:
-    case SD_LLDP_PORT_SUBTYPE_LOCALLY_ASSIGNED:
+    case NM_LLDP_PORT_SUBTYPE_INTERFACE_ALIAS:
+    case NM_LLDP_PORT_SUBTYPE_PORT_COMPONENT:
+    case NM_LLDP_PORT_SUBTYPE_INTERFACE_NAME:
+    case NM_LLDP_PORT_SUBTYPE_LOCALLY_ASSIGNED:
         s_port_id = format_string_cp(port_id, port_id_len, FALSE);
         break;
-    case SD_LLDP_PORT_SUBTYPE_MAC_ADDRESS:
+    case NM_LLDP_PORT_SUBTYPE_MAC_ADDRESS:
         s_port_id = nm_utils_hwaddr_ntoa(port_id, port_id_len);
         break;
-    case SD_LLDP_PORT_SUBTYPE_NETWORK_ADDRESS:
+    case NM_LLDP_PORT_SUBTYPE_NETWORK_ADDRESS:
         s_port_id = format_network_address(port_id, port_id_len);
         break;
     }
@@ -468,7 +464,7 @@ lldp_neighbor_new(sd_lldp_neighbor *neighbor_sd)
 
     neigh  = g_slice_new(LldpNeighbor);
     *neigh = (LldpNeighbor){
-        .neighbor_sd     = sd_lldp_neighbor_ref(neighbor_sd),
+        .neighbor_nm     = nm_lldp_neighbor_ref(neighbor_nm),
         .chassis_id_type = chassis_id_type,
         .chassis_id      = g_steal_pointer(&s_chassis_id),
         .port_id_type    = port_id_type,
@@ -480,15 +476,15 @@ lldp_neighbor_new(sd_lldp_neighbor *neighbor_sd)
 static GVariant *
 lldp_neighbor_to_variant(LldpNeighbor *neigh)
 {
-    struct ether_addr destination_address;
-    GVariantBuilder   builder;
-    const char       *str;
-    const guint8     *raw_data;
-    gsize             raw_len;
-    uint16_t          u16;
-    uint8_t          *data8;
-    gsize             len;
-    int               r;
+    NMEtherAddr     destination_address;
+    GVariantBuilder builder;
+    const char     *str;
+    const guint8   *raw_data;
+    gsize           raw_len;
+    uint16_t        u16;
+    uint8_t        *data8;
+    gsize           len;
+    int             r;
 
     if (neigh->variant)
         return neigh->variant;
@@ -505,33 +501,33 @@ lldp_neighbor_to_variant(LldpNeighbor *neigh)
     nm_g_variant_builder_add_sv_uint32(&builder, NM_LLDP_ATTR_PORT_ID_TYPE, neigh->port_id_type);
     nm_g_variant_builder_add_sv_str(&builder, NM_LLDP_ATTR_PORT_ID, neigh->port_id);
 
-    r = sd_lldp_neighbor_get_destination_address(neigh->neighbor_sd, &destination_address);
+    r = nm_lldp_neighbor_get_destination_address(neigh->neighbor_nm, &destination_address);
     if (r < 0)
         str = NULL;
-    else if (nm_utils_ether_addr_equal(&destination_address, LLDP_MAC_NEAREST_BRIDGE))
+    else if (nm_ether_addr_equal(&destination_address, LLDP_MAC_NEAREST_BRIDGE))
         str = NM_LLDP_DEST_NEAREST_BRIDGE;
-    else if (nm_utils_ether_addr_equal(&destination_address, LLDP_MAC_NEAREST_NON_TPMR_BRIDGE))
+    else if (nm_ether_addr_equal(&destination_address, LLDP_MAC_NEAREST_NON_TPMR_BRIDGE))
         str = NM_LLDP_DEST_NEAREST_NON_TPMR_BRIDGE;
-    else if (nm_utils_ether_addr_equal(&destination_address, LLDP_MAC_NEAREST_CUSTOMER_BRIDGE))
+    else if (nm_ether_addr_equal(&destination_address, LLDP_MAC_NEAREST_CUSTOMER_BRIDGE))
         str = NM_LLDP_DEST_NEAREST_CUSTOMER_BRIDGE;
     else
         str = NULL;
     if (str)
         nm_g_variant_builder_add_sv_str(&builder, NM_LLDP_ATTR_DESTINATION, str);
 
-    if (sd_lldp_neighbor_get_port_description(neigh->neighbor_sd, &str) == 0)
+    if (nm_lldp_neighbor_get_port_description(neigh->neighbor_nm, &str) == 0)
         nm_g_variant_builder_add_sv_str(&builder, NM_LLDP_ATTR_PORT_DESCRIPTION, str);
 
-    if (sd_lldp_neighbor_get_system_name(neigh->neighbor_sd, &str) == 0)
+    if (nm_lldp_neighbor_get_system_name(neigh->neighbor_nm, &str) == 0)
         nm_g_variant_builder_add_sv_str(&builder, NM_LLDP_ATTR_SYSTEM_NAME, str);
 
-    if (sd_lldp_neighbor_get_system_description(neigh->neighbor_sd, &str) == 0)
+    if (nm_lldp_neighbor_get_system_description(neigh->neighbor_nm, &str) == 0)
         nm_g_variant_builder_add_sv_str(&builder, NM_LLDP_ATTR_SYSTEM_DESCRIPTION, str);
 
-    if (sd_lldp_neighbor_get_system_capabilities(neigh->neighbor_sd, &u16) == 0)
+    if (nm_lldp_neighbor_get_system_capabilities(neigh->neighbor_nm, &u16) == 0)
         nm_g_variant_builder_add_sv_uint32(&builder, NM_LLDP_ATTR_SYSTEM_CAPABILITIES, u16);
 
-    r = sd_lldp_neighbor_tlv_rewind(neigh->neighbor_sd);
+    r = nm_lldp_neighbor_tlv_rewind(neigh->neighbor_nm);
     if (r < 0)
         nm_assert_not_reached();
     else {
@@ -556,14 +552,14 @@ lldp_neighbor_to_variant(LldpNeighbor *neigh)
             guint8 type;
             guint8 subtype;
 
-            if (sd_lldp_neighbor_tlv_get_type(neigh->neighbor_sd, &type) < 0)
+            if (nm_lldp_neighbor_tlv_get_type(neigh->neighbor_nm, &type) < 0)
                 continue;
 
-            if (sd_lldp_neighbor_tlv_get_raw(neigh->neighbor_sd, (void *) &data8, &len) < 0)
+            if (nm_lldp_neighbor_tlv_get_raw(neigh->neighbor_nm, (void *) &data8, &len) < 0)
                 continue;
 
             switch (type) {
-            case SD_LLDP_TYPE_MGMT_ADDRESS:
+            case NM_LLDP_TYPE_MGMT_ADDRESS:
                 tmp_variant = parse_management_address_tlv(data8, len);
                 if (tmp_variant) {
                     if (!v_management_addresses_has) {
@@ -573,13 +569,13 @@ lldp_neighbor_to_variant(LldpNeighbor *neigh)
                     g_variant_builder_add_value(&v_management_addresses, tmp_variant);
                 }
                 continue;
-            case SD_LLDP_TYPE_PRIVATE:
+            case NM_LLDP_TYPE_PRIVATE:
                 break;
             default:
                 continue;
             }
 
-            r = sd_lldp_neighbor_tlv_get_oui(neigh->neighbor_sd, oui, &subtype);
+            r = nm_lldp_neighbor_tlv_get_oui(neigh->neighbor_nm, oui, &subtype);
             if (r < 0) {
                 if (r == -ENXIO)
                     continue;
@@ -609,15 +605,15 @@ lldp_neighbor_to_variant(LldpNeighbor *neigh)
             data8 += 6;
             len -= 6;
 
-            if (memcmp(oui, SD_LLDP_OUI_802_1, sizeof(oui)) == 0) {
+            if (memcmp(oui, NM_LLDP_OUI_802_1, sizeof(oui)) == 0) {
                 switch (subtype) {
-                case SD_LLDP_OUI_802_1_SUBTYPE_PORT_VLAN_ID:
+                case NM_LLDP_OUI_802_1_SUBTYPE_PORT_VLAN_ID:
                     if (len != 2)
                         continue;
                     if (!v_ieee_802_1_pvid)
                         v_ieee_802_1_pvid = g_variant_new_uint32(unaligned_read_be16(data8));
                     break;
-                case SD_LLDP_OUI_802_1_SUBTYPE_PORT_PROTOCOL_VLAN_ID:
+                case NM_LLDP_OUI_802_1_SUBTYPE_PORT_PROTOCOL_VLAN_ID:
                     if (len != 3)
                         continue;
                     if (!v_ieee_802_1_ppvid) {
@@ -633,7 +629,7 @@ lldp_neighbor_to_variant(LldpNeighbor *neigh)
                     g_variant_builder_add_value(&v_ieee_802_1_ppvids,
                                                 g_variant_builder_end(&tmp_builder));
                     break;
-                case SD_LLDP_OUI_802_1_SUBTYPE_VLAN_NAME:
+                case NM_LLDP_OUI_802_1_SUBTYPE_VLAN_NAME:
                 {
                     gs_free char *name_to_free = NULL;
                     const char   *name;
@@ -669,9 +665,9 @@ lldp_neighbor_to_variant(LldpNeighbor *neigh)
                 default:
                     continue;
                 }
-            } else if (memcmp(oui, SD_LLDP_OUI_802_3, sizeof(oui)) == 0) {
+            } else if (memcmp(oui, NM_LLDP_OUI_802_3, sizeof(oui)) == 0) {
                 switch (subtype) {
-                case SD_LLDP_OUI_802_3_SUBTYPE_MAC_PHY_CONFIG_STATUS:
+                case NM_LLDP_OUI_802_3_SUBTYPE_MAC_PHY_CONFIG_STATUS:
                     if (len != 5)
                         continue;
 
@@ -687,7 +683,7 @@ lldp_neighbor_to_variant(LldpNeighbor *neigh)
                         v_ieee_802_3_mac_phy_conf = g_variant_builder_end(&tmp_builder);
                     }
                     break;
-                case SD_LLDP_OUI_802_3_SUBTYPE_POWER_VIA_MDI:
+                case NM_LLDP_OUI_802_3_SUBTYPE_POWER_VIA_MDI:
                     if (len != 3)
                         continue;
 
@@ -703,7 +699,7 @@ lldp_neighbor_to_variant(LldpNeighbor *neigh)
                         v_ieee_802_3_power_via_mdi = g_variant_builder_end(&tmp_builder);
                     }
                     break;
-                case SD_LLDP_OUI_802_3_SUBTYPE_MAXIMUM_FRAME_SIZE:
+                case NM_LLDP_OUI_802_3_SUBTYPE_MAXIMUM_FRAME_SIZE:
                     if (len != 2)
                         continue;
                     if (!v_ieee_802_3_max_frame_size)
@@ -711,9 +707,9 @@ lldp_neighbor_to_variant(LldpNeighbor *neigh)
                             g_variant_new_uint32(unaligned_read_be16(data8));
                     break;
                 }
-            } else if (memcmp(oui, SD_LLDP_OUI_IANA, sizeof(oui)) == 0) {
+            } else if (memcmp(oui, NM_LLDP_OUI_IANA, sizeof(oui)) == 0) {
                 switch (subtype) {
-                case SD_LLDP_OUI_IANA_SUBTYPE_MUD:
+                case NM_LLDP_OUI_IANA_SUBTYPE_MUD:
                     if (!v_mud_url) {
                         gs_free char *s_free = NULL;
                         const char   *s;
@@ -725,7 +721,7 @@ lldp_neighbor_to_variant(LldpNeighbor *neigh)
                     break;
                 }
             }
-        } while (sd_lldp_neighbor_tlv_next(neigh->neighbor_sd) > 0);
+        } while (nm_lldp_neighbor_tlv_next(neigh->neighbor_nm) > 0);
 
         if (v_management_addresses_has)
             nm_g_variant_builder_add_sv(&builder,
@@ -777,18 +773,17 @@ lldp_neighbor_to_variant(LldpNeighbor *neigh)
 GVariant *
 nmtst_lldp_parse_from_raw(const guint8 *raw_data, gsize raw_len)
 {
-    nm_auto(sd_lldp_neighbor_unrefp) sd_lldp_neighbor *neighbor_sd = NULL;
-    nm_auto(lldp_neighbor_freep) LldpNeighbor         *neigh       = NULL;
-    GVariant                                          *variant;
-    int                                                r;
+    nm_auto(nm_lldp_neighbor_unrefp) NMLldpNeighbor *neighbor_nm = NULL;
+    nm_auto(lldp_neighbor_freep) LldpNeighbor       *neigh       = NULL;
+    GVariant                                        *variant;
 
     g_assert(raw_data);
     g_assert(raw_len > 0);
 
-    r = sd_lldp_neighbor_from_raw(&neighbor_sd, raw_data, raw_len);
-    g_assert(r >= 0);
+    neighbor_nm = nm_lldp_neighbor_new_from_raw(raw_data, raw_len);
+    g_assert(neighbor_nm);
 
-    neigh = lldp_neighbor_new(neighbor_sd);
+    neigh = lldp_neighbor_new(neighbor_nm);
     g_assert(neigh);
 
     variant = lldp_neighbor_to_variant(neigh);
@@ -843,18 +838,18 @@ data_changed_schedule(NMLldpListener *self)
 }
 
 static void
-process_lldp_neighbor(NMLldpListener *self, sd_lldp_neighbor *neighbor_sd, gboolean remove)
+process_lldp_neighbor(NMLldpListener *self, NMLldpNeighbor *neighbor_nm, gboolean remove)
 {
     nm_auto(lldp_neighbor_freep) LldpNeighbor *neigh = NULL;
     LldpNeighbor                              *neigh_old;
 
     nm_assert(self);
-    nm_assert(self->lldp_handle);
+    nm_assert(self->lldp_rx);
     nm_assert(self->lldp_neighbors);
 
-    g_return_if_fail(neighbor_sd);
+    g_return_if_fail(neighbor_nm);
 
-    neigh = lldp_neighbor_new(neighbor_sd);
+    neigh = lldp_neighbor_new(neighbor_nm);
     if (!neigh) {
         _LOGT("process: failed to parse neighbor");
         return;
@@ -884,14 +879,17 @@ handle_changed:
 }
 
 static void
-lldp_event_handler(sd_lldp_rx *lldp, sd_lldp_rx_event_t event, sd_lldp_neighbor *n, void *userdata)
+lldp_event_handler(NMLldpRX *lldp, NMLldpRXEvent event, NMLldpNeighbor *n, void *user_data)
 {
-    process_lldp_neighbor(userdata,
+    NMLldpListener *self = user_data;
+
+    _LOGD("event: %s", nm_lldp_rx_event_to_string(event));
+    process_lldp_neighbor(self,
                           n,
                           !NM_IN_SET(event,
-                                     SD_LLDP_RX_EVENT_ADDED,
-                                     SD_LLDP_RX_EVENT_UPDATED,
-                                     SD_LLDP_RX_EVENT_REFRESHED));
+                                     NM_LLDP_RX_EVENT_ADDED,
+                                     NM_LLDP_RX_EVENT_UPDATED,
+                                     NM_LLDP_RX_EVENT_REFRESHED));
 }
 
 /*****************************************************************************/
@@ -935,34 +933,13 @@ nm_lldp_listener_new(int                  ifindex,
                      gpointer             notify_user_data,
                      GError             **error)
 {
-    NMLldpListener *self = NULL;
-    sd_lldp_rx     *lldp_handle;
-    int             r;
+    NMLldpListener                      *self    = NULL;
+    nm_auto(nm_lldp_rx_unrefp) NMLldpRX *lldp_rx = NULL;
+    int                                  r;
 
     g_return_val_if_fail(ifindex > 0, FALSE);
     g_return_val_if_fail(!error || !*error, FALSE);
     g_return_val_if_fail(notify_callback, FALSE);
-
-    r = sd_lldp_rx_new(&lldp_handle);
-    if (r < 0) {
-        g_set_error_literal(error,
-                            NM_DEVICE_ERROR,
-                            NM_DEVICE_ERROR_FAILED,
-                            "initialization failed");
-        return FALSE;
-    }
-
-    r = sd_lldp_rx_set_ifindex(lldp_handle, ifindex);
-    if (r < 0) {
-        g_set_error_literal(error,
-                            NM_DEVICE_ERROR,
-                            NM_DEVICE_ERROR_FAILED,
-                            "failed setting ifindex");
-        goto fail_handle;
-    }
-
-    r = sd_lldp_rx_set_neighbors_max(lldp_handle, MAX_NEIGHBORS);
-    nm_assert(r == 0);
 
     self  = g_slice_new(NMLldpListener);
     *self = (NMLldpListener){
@@ -971,39 +948,34 @@ nm_lldp_listener_new(int                  ifindex,
         .notify_user_data = notify_user_data,
     };
 
-    r = sd_lldp_rx_set_callback(lldp_handle, lldp_event_handler, self);
-    if (r < 0) {
-        g_set_error_literal(error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED, "set callback failed");
-        goto fail_handle;
-    }
+    nm_assert(nm_g_main_context_is_thread_default(g_main_context_default()));
 
-    r = sd_lldp_rx_attach_event(lldp_handle, NULL, 0);
-    if (r < 0) {
-        g_set_error_literal(error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED, "attach event failed");
-        goto fail_attached;
-    }
+    lldp_rx = nm_lldp_rx_new(&((NMLldpRXConfig){
+        .ifindex       = ifindex,
+        .neighbors_max = MAX_NEIGHBORS,
+        .callback      = lldp_event_handler,
+        .userdata      = self,
+    }));
 
-    r = sd_lldp_rx_start(lldp_handle);
+    r = nm_lldp_rx_start(lldp_rx);
     if (r < 0) {
         g_set_error_literal(error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED, "start failed");
-        goto fail_attached;
+        goto fail;
     }
 
     self->lldp_neighbors = g_hash_table_new_full(lldp_neighbor_id_hash,
                                                  lldp_neighbor_id_equal,
                                                  (GDestroyNotify) lldp_neighbor_free,
                                                  NULL);
-    self->lldp_handle    = lldp_handle;
+
+    self->lldp_rx = g_steal_pointer(&lldp_rx);
 
     _LOGD("start lldp listener");
     return self;
 
-fail_attached:
-    sd_lldp_rx_detach_event(lldp_handle);
-fail_handle:
+fail:
     if (self)
         nm_g_slice_free(self);
-    sd_lldp_rx_unref(lldp_handle);
     return NULL;
 }
 
@@ -1012,9 +984,8 @@ nm_lldp_listener_destroy(NMLldpListener *self)
 {
     g_return_if_fail(self);
 
-    sd_lldp_rx_stop(self->lldp_handle);
-    sd_lldp_rx_detach_event(self->lldp_handle);
-    sd_lldp_rx_unref(self->lldp_handle);
+    nm_lldp_rx_stop(self->lldp_rx);
+    nm_lldp_rx_unref(self->lldp_rx);
 
     nm_clear_g_source_inst(&self->ratelimit_source);
 
