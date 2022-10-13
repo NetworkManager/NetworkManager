@@ -57,6 +57,12 @@ nm_utils_get_monotonic_timestamp_nsec_cached(gint64 *cache_now)
 }
 
 static inline gint64
+nm_utils_get_monotonic_timestamp_usec_cached(gint64 *cache_now)
+{
+    return (*cache_now) ?: (*cache_now = nm_utils_get_monotonic_timestamp_usec());
+}
+
+static inline gint64
 nm_utils_get_monotonic_timestamp_msec_cached(gint64 *cache_now)
 {
     return (*cache_now) ?: (*cache_now = nm_utils_get_monotonic_timestamp_msec());
