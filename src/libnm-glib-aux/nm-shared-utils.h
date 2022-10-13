@@ -198,6 +198,13 @@ typedef struct {
 
 #define NM_ETHER_ADDR_INIT(...) ((NMEtherAddr) _NM_ETHER_ADDR_INIT(__VA_ARGS__))
 
+struct _NMIPAddr;
+extern const struct _NMIPAddr nm_ip_addr_zero;
+
+/* Let's reuse nm_ip_addr_zero also for nm_ether_addr_zero. It's a union that
+ * also contains a NMEtherAddr field. */
+#define nm_ether_addr_zero (*((const NMEtherAddr *) ((gconstpointer) &nm_ip_addr_zero)))
+
 static inline int
 nm_ether_addr_cmp(const NMEtherAddr *a, const NMEtherAddr *b)
 {
@@ -221,6 +228,7 @@ nm_utils_ether_addr_cmp(const struct ether_addr *a1, const struct ether_addr *a2
 {
     nm_assert(a1);
     nm_assert(a2);
+
     return memcmp(a1, a2, 6 /*ETH_ALEN*/);
 }
 
