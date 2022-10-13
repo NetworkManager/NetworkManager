@@ -52,6 +52,8 @@ struct _NMStrBuf;
 
 gssize nm_utils_fd_read(int fd, struct _NMStrBuf *out_string);
 
+gssize nm_fd_next_datagram_size(int fd);
+
 struct stat;
 
 int nm_utils_file_stat(const char *filename, struct stat *out_st);
