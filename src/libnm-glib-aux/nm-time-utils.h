@@ -78,4 +78,6 @@ gint64 nm_utils_clock_gettime_nsec(clockid_t clockid);
 gint64 nm_utils_clock_gettime_usec(clockid_t clockid);
 gint64 nm_utils_clock_gettime_msec(clockid_t clockid);
 
+gint64 nm_time_map_clock(gint64 from, gint64 from_base, gint64 to_base);
+
 #endif /* __NM_TIME_UTILS_H__ */

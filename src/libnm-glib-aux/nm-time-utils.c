@@ -341,3 +341,36 @@ nm_utils_clock_gettime_msec(clockid_t clockid)
         return -NM_ERRNO_NATIVE(errno);
     return nm_utils_timespec_to_msec(&tp);
 }
+
+/*****************************************************************************/
+
+/* Taken from systemd's map_clock_usec_internal(). */
+gint64
+nm_time_map_clock(gint64 from, gint64 from_base, gint64 to_base)
+{
+    /* Maps the time 'from' between two clocks, based on a common reference point where the first clock
+     * is at 'from_base' and the second clock at 'to_base'. Basically calculates:
+     *
+     *         from - from_base + to_base
+     *
+     * But takes care of overflows/underflows and avoids signed operations. */
+
+    if (from >= from_base) {
+        gint64 delta = from - from_base;
+
+        /* In the future */
+        if (to_base >= G_MAXINT64 - delta)
+            return G_MAXINT64;
+
+        return to_base + delta;
+
+    } else {
+        gint64 delta = from_base - from;
+
+        /* In the past */
+        if (to_base <= G_MININT64 + delta)
+            return G_MININT64;
+
+        return to_base - delta;
+    }
+}
