@@ -219,6 +219,12 @@ nm_ether_addr_equal(const NMEtherAddr *a, const NMEtherAddr *b)
     return nm_ether_addr_cmp(a, b) == 0;
 }
 
+static inline gboolean
+nm_ether_addr_is_zero(const NMEtherAddr *a)
+{
+    return nm_memeq(a, &nm_ether_addr_zero, sizeof(NMEtherAddr));
+}
+
 /*****************************************************************************/
 
 struct ether_addr;
