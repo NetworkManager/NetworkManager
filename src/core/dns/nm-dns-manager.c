@@ -2039,8 +2039,15 @@ nm_dns_manager_set_ip_config(NMDnsManager         *self,
 
     if (!ip_data) {
         ip_data = _dns_config_ip_data_new(data, addr_family, source_tag, l3cd, ip_config_type);
-        if (!any_removed)
+        priv->ip_data_lst_need_sort = TRUE;
+        if (!any_removed) {
+            /* `any_removed` tracks whether we deleted any ip_data. If that happened,
+             * we already compared the old and new l3cds and set `changed` accordingly.
+             * Here we only need to set `changed` if we are adding a new ip_data without
+             * removing the old one.
+             */
             changed = TRUE;
+        }
     } else {
         ip_data->ip_config_type = ip_config_type;
         changed                 = TRUE;
