@@ -4,15 +4,15 @@ Upstream backports
 There are situations where it is necessary to backport a patch to an earlier
 version of NetworkManager.
 
-In order to do the backport, use  `git cherry-pick -x`. Please use the commit
-from the later branch. If the commit is not on that branch then it is also
+In order to do the backport, use `git cherry-pick -x`. Please use the commit
+from the next stable branch. If the commit is not on that branch then it is also
 necessary to backport to that branch.
 
 Example:
 
-We want to backport commit `323e18276894591712a5e29f6e907562c79c5216` from
-`main` (1.33) branch to `nm-1-30` branch. In order to do that, we must search
-if this bug has been backported to 1.32.
+We want to backport commit 323e18276894591712a5e29f6e907562c79c5216 from `main`
+(1.33) branch to `nm-1-30` branch. In order to do that, we must search if this
+bug has been backported to 1.32.
 
 `git log --all --grep "323e18276894591712a5e29f6e907562c79c5216"`
 
@@ -38,7 +38,7 @@ Date:   Wed Sep 1 09:30:29 2021 +0200
 ```
 
 In this case, the commit that should be backported is
-`c94b1c43d4b5c5b88d67d7966d23a005028e78d8`.
+c94b1c43d4b5c5b88d67d7966d23a005028e78d8.
 
 ### Resolving conflicts
 
@@ -52,15 +52,26 @@ unnecessary changes or excesive code changes which is not common.
 
 ### Backporting API
 
-NetworkManager allow the users to build their application against latest stable
-release and then run it against a newer release without relinking. If we want
-to backport a new API from main (1.33) to nm-1-30, we need to do something
-similar to `57c1982867609bf759fce202a172ceeb51a21d5f` in main and nm-1-32
-branch.
+NetworkManager allows the users to build their application against the latest
+stable release and then run it against a newer release without relinking. To
+allow this, we need to guarantee that after we release a version that includes a
+new libnm linker version, then any release done after that point with a higher
+version number contains that linker version with the same symbols.
 
-Example:
+In practice when we want to backport new API from main we have two options:
 
-An user wants to backport `05f2a0b0247ee4aa3da371658f310bc655cbf1af` from main
-branch to `nm-1-30` branch. In this case, the user will need to write
-`ec8df200f682c6726c1da624b5ae3984c4991056` and
-`af00e39dd24644b8c979258e5579b43b88364d2f`.
+- if the new API hasn't been included in a stable release of NetworkManager,
+  then we can just backport the API to the old branch and pretend it was
+  introduced there. For example, 8763e6da9c5adb3c4ccf3b2713dbcc25a91c5ede
+  introduces new API on main during the 1.21 development cycle; 1.22 is not
+  released yet. Then the symbol is backported to nm-1-20 before 1.20.6 with
+  commit 90671a30b771d418953bd021d50c3cc43f253e6e. The symbol on main branch is
+  then adjusted with 551fd3e28f6b142bd57eefacfaf96b8fb8e309dd. Note that at this
+  point 1.20.6 must be released before 1.22.0.
+
+- if the new API is already included in a stable release, we backport the API to
+  the old branch and then duplicate the symbol on main with both versions. For
+  example, 2e2ff6f27aa1bfa7a27d49980b319873240ec84b introduces new API on main,
+  which is released as 1.12.0. The API is backported to 1.10.14 in commit
+  19d7e66099ee43f47d6be0e740dc710fc365d200. Then, on main we add duplicate
+  symbols with commit 5eade4da11ee38a0e7faf4a87b2c2b5af07c5eeb.
