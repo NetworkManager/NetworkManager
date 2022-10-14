@@ -135,82 +135,16 @@ lldp_neighbor_id_get(NMLldpNeighbor *neighbor_nm,
 }
 
 static guint
-lldp_neighbor_id_hash(gconstpointer ptr)
+lldp_neighbor_id_hash(const LldpNeighbor *neigh)
 {
-    const LldpNeighbor *neigh = ptr;
-    guint8              chassis_id_type;
-    guint8              port_id_type;
-    const guint8       *chassis_id;
-    const guint8       *port_id;
-    gsize               chassis_id_len;
-    gsize               port_id_len;
-    NMHashState         h;
-
-    if (!lldp_neighbor_id_get(neigh->neighbor_nm,
-                              &chassis_id_type,
-                              &chassis_id,
-                              &chassis_id_len,
-                              &port_id_type,
-                              &port_id,
-                              &port_id_len)) {
-        nm_assert_not_reached();
-        return 0;
-    }
-
-    nm_hash_init(&h, 23423423u);
-    nm_hash_update_vals(&h, chassis_id_len, port_id_len, chassis_id_type, port_id_type);
-    nm_hash_update(&h, chassis_id, chassis_id_len);
-    nm_hash_update(&h, port_id, port_id_len);
-    return nm_hash_complete(&h);
+    return nm_lldp_neighbor_id_hash(nm_lldp_neighbor_get_id(neigh->neighbor_nm));
 }
 
 static int
 lldp_neighbor_id_cmp(const LldpNeighbor *a, const LldpNeighbor *b)
 {
-    guint8        a_chassis_id_type;
-    guint8        b_chassis_id_type;
-    guint8        a_port_id_type;
-    guint8        b_port_id_type;
-    const guint8 *a_chassis_id;
-    const guint8 *b_chassis_id;
-    const guint8 *a_port_id;
-    const guint8 *b_port_id;
-    gsize         a_chassis_id_len;
-    gsize         b_chassis_id_len;
-    gsize         a_port_id_len;
-    gsize         b_port_id_len;
-
-    NM_CMP_SELF(a, b);
-
-    if (!lldp_neighbor_id_get(a->neighbor_nm,
-                              &a_chassis_id_type,
-                              &a_chassis_id,
-                              &a_chassis_id_len,
-                              &a_port_id_type,
-                              &a_port_id,
-                              &a_port_id_len)) {
-        nm_assert_not_reached();
-        return FALSE;
-    }
-
-    if (!lldp_neighbor_id_get(b->neighbor_nm,
-                              &b_chassis_id_type,
-                              &b_chassis_id,
-                              &b_chassis_id_len,
-                              &b_port_id_type,
-                              &b_port_id,
-                              &b_port_id_len)) {
-        nm_assert_not_reached();
-        return FALSE;
-    }
-
-    NM_CMP_DIRECT(a_chassis_id_type, b_chassis_id_type);
-    NM_CMP_DIRECT(a_port_id_type, b_port_id_type);
-    NM_CMP_DIRECT(a_chassis_id_len, b_chassis_id_len);
-    NM_CMP_DIRECT(a_port_id_len, b_port_id_len);
-    NM_CMP_DIRECT_MEMCMP(a_chassis_id, b_chassis_id, a_chassis_id_len);
-    NM_CMP_DIRECT_MEMCMP(a_port_id, b_port_id, a_port_id_len);
-    return 0;
+    return nm_lldp_neighbor_id_cmp(nm_lldp_neighbor_get_id(a->neighbor_nm),
+                                   nm_lldp_neighbor_get_id(b->neighbor_nm));
 }
 
 static int
@@ -221,7 +155,7 @@ lldp_neighbor_id_cmp_p(gconstpointer a, gconstpointer b, gpointer user_data)
 }
 
 static gboolean
-lldp_neighbor_id_equal(gconstpointer a, gconstpointer b)
+lldp_neighbor_id_equal(const LldpNeighbor *a, const LldpNeighbor *b)
 {
     return lldp_neighbor_id_cmp(a, b) == 0;
 }
@@ -963,8 +897,8 @@ nm_lldp_listener_new(int                  ifindex,
         goto fail;
     }
 
-    self->lldp_neighbors = g_hash_table_new_full(lldp_neighbor_id_hash,
-                                                 lldp_neighbor_id_equal,
+    self->lldp_neighbors = g_hash_table_new_full((GHashFunc) lldp_neighbor_id_hash,
+                                                 (GEqualFunc) lldp_neighbor_id_equal,
                                                  (GDestroyNotify) lldp_neighbor_free,
                                                  NULL);
 
