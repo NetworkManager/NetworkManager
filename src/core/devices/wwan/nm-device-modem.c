@@ -615,6 +615,11 @@ set_enabled(NMDevice *device, gboolean enabled)
 
     if (enabled == FALSE) {
         nm_device_state_changed(device, NM_DEVICE_STATE_UNAVAILABLE, NM_DEVICE_STATE_REASON_NONE);
+    } else {
+        /* It's possible that the modem is enabled outside of NM. Need to recheck. */
+        nm_device_queue_recheck_available(device,
+                                          NM_DEVICE_STATE_REASON_MODEM_AVAILABLE,
+                                          NM_DEVICE_STATE_REASON_MODEM_FAILED);
     }
 }
 
