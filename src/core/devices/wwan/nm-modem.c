@@ -353,6 +353,12 @@ nm_modem_set_mm_enabled(NMModem *self, gboolean enabled)
     NMModemPrivate *priv       = NM_MODEM_GET_PRIVATE(self);
     NMModemState    prev_state = priv->state;
 
+    /* Not all modem classes support set_mm_enabled */
+    if (!NM_MODEM_GET_CLASS(self)->set_mm_enabled) {
+        _LOGD("cannot enable modem: not implemented");
+        return;
+    }
+
     if (enabled && priv->state >= NM_MODEM_STATE_ENABLING) {
         _LOGD("cannot enable modem: already enabled");
         return;
@@ -375,9 +381,7 @@ nm_modem_set_mm_enabled(NMModem *self, gboolean enabled)
         return;
     }
 
-    /* Not all modem classes support set_mm_enabled */
-    if (NM_MODEM_GET_CLASS(self)->set_mm_enabled)
-        NM_MODEM_GET_CLASS(self)->set_mm_enabled(self, enabled);
+    NM_MODEM_GET_CLASS(self)->set_mm_enabled(self, enabled);
 
     /* Pre-empt the state change signal */
     nm_modem_set_state(self,
