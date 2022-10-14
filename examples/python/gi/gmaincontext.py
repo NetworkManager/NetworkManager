@@ -329,7 +329,7 @@ def make_call(nmc):
 ###############################################################################
 
 
-def destroy_nmc(nmc_holder):
+def destroy_nmc(nmc_holder, destroy_mode):
     # The way to shutdown an NMClient is just by unrefing it.
     #
     # At any moment, can an NMClient instance have pending async operations.
@@ -362,53 +362,77 @@ def destroy_nmc(nmc_holder):
     (nmc,) = nmc_holder
     nmc_holder.clear()
 
-    if not nmc:
-        log(f"[destroy_nmc]: nothing to destroy")
-        return
-
     log(
-        f"[destroy_nmc]: destroying NMClient {nmc}: pyref={sys.getrefcount(nmc)}, ref_count={nmc.ref_count}"
+        f"[destroy_nmc]: destroying NMClient {nmc}: pyref={sys.getrefcount(nmc)}, ref_count={nmc.ref_count}, destroy_mode={destroy_mode}"
     )
 
-    ctx = nmc.get_main_context()
+    if destroy_mode == 0:
+        ctx = nmc.get_main_context()
 
-    finished = []
+        finished = []
 
-    def _weak_ref_cb():
-        log(f"[destroy_nmc]: context busy watcher is gone")
-        finished.clear()
-        finished.append(True)
+        def _weak_ref_cb():
+            log(f"[destroy_nmc]: context busy watcher is gone")
+            finished.clear()
+            finished.append(True)
 
-    # We take a weak ref on the context-busy-watcher object and give up
-    # our reference on nmc. This must be the last reference, which initiates
-    # the shutdown of the NMClient.
-    weak_ref = nmc.get_context_busy_watcher().weak_ref(_weak_ref_cb)
-    del nmc
+        # We take a weak ref on the context-busy-watcher object and give up
+        # our reference on nmc. This must be the last reference, which initiates
+        # the shutdown of the NMClient.
+        weak_ref = nmc.get_context_busy_watcher().weak_ref(_weak_ref_cb)
+        del nmc
 
-    def _timeout_cb(unused):
-        if not finished:
-            # Somebody else holds a reference to the NMClient and keeps
-            # it alive. We cannot properly clean up.
-            log(
-                f"[destroy_nmc]: ERROR: timeout waiting for context busy watcher to be gone"
-            )
-            finished.append(False)
-        return False
+        def _timeout_cb(unused):
+            if not finished:
+                # Somebody else holds a reference to the NMClient and keeps
+                # it alive. We cannot properly clean up.
+                log(
+                    f"[destroy_nmc]: ERROR: timeout waiting for context busy watcher to be gone"
+                )
+                finished.append(False)
+            return False
 
-    timeout_source = GLib.timeout_source_new(1000)
-    timeout_source.set_callback(_timeout_cb)
-    timeout_source.attach(ctx)
+        timeout_source = GLib.timeout_source_new(1000)
+        timeout_source.set_callback(_timeout_cb)
+        timeout_source.attach(ctx)
 
-    while not finished:
-        log(f"[destroy_nmc]: iterating main context")
-        ctx.iteration(True)
+        while not finished:
+            log(f"[destroy_nmc]: iterating main context")
+            ctx.iteration(True)
 
-    timeout_source.destroy()
+        timeout_source.destroy()
 
-    log(f"[destroy_nmc]: done: {finished[0]}")
-    if not finished[0]:
-        weak_ref.unref()
-        raise Exception("Failure to destroy NMClient: something keeps it alive")
+        log(f"[destroy_nmc]: done: {finished[0]}")
+        if not finished[0]:
+            weak_ref.unref()
+            raise Exception("Failure to destroy NMClient: something keeps it alive")
+
+    else:
+
+        if destroy_mode == 1:
+            ctx = GLib.MainContext.default()
+        else:
+            # Run the maincontext of the NMClient.
+            ctx = nmc.get_main_context()
+        with MainLoopRun("destroy_nmc", ctx, 2) as r:
+
+            def _wait_shutdown_cb(source_unused, result, r):
+                try:
+                    NM.Client.wait_shutdown_finish(result)
+                except Exception as e:
+                    if error_is_cancelled(e):
+                        log(
+                            f"[destroy_nmc]: wait_shutdown() completed with cancellation after timeout"
+                        )
+                    else:
+                        log(f"[destroy_nmc]: wait_shutdown() completed with error: {e}")
+                else:
+                    log(f"[destroy_nmc]: wait_shutdown() completed with success")
+
+                r.quit()
+
+            nmc.wait_shutdown(True, r.cancellable, _wait_shutdown_cb, r)
+            del nmc
 
 
 ###############################################################################
@@ -425,11 +449,18 @@ def run1():
         make_call(nmc)
         log()
 
-        # To cleanup the NMClient, we need to give up the reference. Move
-        # it to a list, and destroy_nmc() will take care of it.
-        nmc_holder = [nmc]
-        del nmc
-        destroy_nmc(nmc_holder)
+        if not nmc:
+            log(f"[destroy_nmc]: nothing to destroy")
+        else:
+            # To cleanup the NMClient, we need to give up the reference. Move
+            # it to a list, and destroy_nmc() will take care of it.
+            nmc_holder = [nmc]
+            del nmc
+
+            # In the example, there are three modes how the destroy is
+            # implemented.
+            destroy_nmc(nmc_holder, destroy_mode=1)
+
         log()
         log("done")
     except Exception as e:

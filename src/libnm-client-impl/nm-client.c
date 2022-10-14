@@ -287,7 +287,7 @@ typedef struct {
     guint dbsid_nm_vpn_connection_state_changed;
     guint dbsid_nm_check_permissions;
 
-    NMClientInstanceFlags instance_flags : 3;
+    NMClientInstanceFlags instance_flags : 5;
 
     NMTernary permissions_state : 3;
 
@@ -7277,13 +7277,19 @@ nml_cleanup_context_busy_watcher_on_idle(GObject *context_busy_watcher_take, GMa
 static void
 _init_start_complete(NMClient *self, GError *error_take)
 {
-    NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE(self);
+    gs_unref_object NMClient *self_keep_alive = g_object_ref(self);
+    NMClientPrivate          *priv            = NM_CLIENT_GET_PRIVATE(self);
 
     NML_NMCLIENT_LOG_D(
         self,
         "%s init complete with %s%s%s",
         priv->init_data->is_sync ? "sync" : "async",
         NM_PRINT_FMT_QUOTED(error_take, "error: ", error_take->message, "", "success"));
+
+    priv->instance_flags |= (error_take ? NM_CLIENT_INSTANCE_FLAGS_INITIALIZED_BAD
+                                        : NM_CLIENT_INSTANCE_FLAGS_INITIALIZED_GOOD);
+
+    _notify(self, PROP_INSTANCE_FLAGS);
 
     nml_init_data_return(g_steal_pointer(&priv->init_data), error_take);
 }
@@ -7585,8 +7591,18 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
         /* construct */
 
         v_uint = g_value_get_uint(value);
-        g_return_if_fail(!NM_FLAGS_ANY(v_uint, ~((guint) NM_CLIENT_INSTANCE_FLAGS_ALL)));
-        v_uint &= ((guint) NM_CLIENT_INSTANCE_FLAGS_ALL);
+
+        /* Silently ignore "initialized-{good,bad}" flags. They are only set internally
+         * and cannot be change by the user. However, accept the caller to set them,
+         * so that
+         *   nmc.props.instance_flags = nmc.props.instance_flags | NM.ClientInstanceFlags.NO_AUTO_FETCH_PERMISSIONS
+         * works. */
+        v_uint &= ~((guint) (NM_CLIENT_INSTANCE_FLAGS_INITIALIZED_GOOD
+                             | NM_CLIENT_INSTANCE_FLAGS_INITIALIZED_BAD));
+
+        g_return_if_fail(!NM_FLAGS_ANY(v_uint, ~((guint) NM_CLIENT_INSTANCE_FLAGS_ALL_WRITABLE)));
+
+        v_uint &= ((guint) NM_CLIENT_INSTANCE_FLAGS_ALL_WRITABLE);
 
         if (!priv->instance_flags_constructed) {
             priv->instance_flags_constructed = TRUE;
@@ -8174,6 +8190,9 @@ nm_client_class_init(NMClientClass *client_class)
      * even after constructing the instance. Note that you may want to watch NMClient:permissions-state
      * property to know whether permissions are ready. Note that permissions are only fetched
      * when NMClient has a D-Bus name owner.
+     *
+     * The flags %NM_CLIENT_INSTANCE_FLAGS_INITIALIZED_GOOD and %NM_CLIENT_INSTANCE_FLAGS_INITIALIZED_BAD
+     * cannot be set, however they will be returned by the getter after initialization completes.
      *
      * Since: 1.24
      */
@@ -8811,6 +8830,299 @@ nm_client_async_initable_iface_init(GAsyncInitableIface *iface)
 {
     iface->init_async  = init_async;
     iface->init_finish = init_finish;
+}
+
+/*****************************************************************************/
+
+typedef struct {
+    GCancellable *cancellable;
+    GSource      *integration_source;
+    GTask        *task;
+    GSource      *idle_source;
+
+    /* A weakref to nm_client_get_context_busy_watcher() */
+    GWeakRef weak_ref;
+
+    gulong cancellable_id;
+
+    guint64 log_ptr;
+
+    int result;
+} WaitShutdownData;
+
+G_LOCK_DEFINE_STATIC(wait_shutdown_mutex);
+
+static NM_CACHED_QUARK_FCN("nm.client.wait-shutdown", _wait_shutdown_get_quark);
+
+static void
+_wait_shutdown_data_free(gpointer user_data)
+{
+    WaitShutdownData *data = user_data;
+
+    nm_g_slice_free(data);
+}
+
+static gboolean
+_wait_shutdown_idle_cb(gpointer user_data)
+{
+    WaitShutdownData      *data = user_data;
+    gs_unref_object GTask *task = NULL;
+    int                    result;
+
+    nm_clear_g_source_inst(&data->idle_source);
+
+    task = g_steal_pointer(&data->task);
+
+    result = g_atomic_int_get(&data->result);
+    nm_assert(NM_IN_SET(result, 0, 1));
+
+    NML_DBUS_LOG(_NML_NMCLIENT_LOG_LEVEL_COERCE(NML_DBUS_LOG_LEVEL_TRACE),
+                 "nmclient[" NM_HASH_OBFUSCATE_PTR_FMT
+                 "]: wait-shutdown (" NM_HASH_OBFUSCATE_PTR_FMT ")"
+                 "%s",
+                 data->log_ptr,
+                 NM_HASH_OBFUSCATE_PTR(data),
+                 !result ? " cancelled" : " completed");
+
+    if (!result) {
+        GError *error = NULL;
+
+        nm_utils_error_set_cancelled(&error, FALSE, NULL);
+        g_task_return_error(task, error);
+    } else
+        g_task_return_boolean(task, TRUE);
+
+    return G_SOURCE_CONTINUE;
+}
+
+static void
+_wait_shutdown_data_clear(WaitShutdownData *data, gboolean result)
+{
+    gs_unref_object GObject *context_busy_watcher = NULL;
+
+    if (!g_atomic_int_compare_and_exchange(&data->result, -1, !!result)) {
+        /* There was a race and the result is already provided. Nothing to
+         * do, except, if "result" indicates cancellation (FALSE), set data->result
+         * to FALSE to. Aside that, the completion is already in progress. */
+        if (!result)
+            g_atomic_int_compare_and_exchange(&data->result, TRUE, FALSE);
+        return;
+    }
+
+    nm_clear_g_signal_handler(data->cancellable, &data->cancellable_id);
+    nm_clear_g_source_inst(&data->integration_source);
+    g_clear_object(&data->cancellable);
+
+    if (!result) {
+        /* This was a cancellation. We likely still have the qdata tracked.
+         * We need to remove it. */
+
+        context_busy_watcher = g_weak_ref_get(&data->weak_ref);
+        if (context_busy_watcher) {
+            GPtrArray *qdata_arr;
+
+            G_LOCK(wait_shutdown_mutex);
+            qdata_arr = g_object_get_qdata(context_busy_watcher, _wait_shutdown_get_quark());
+            if (qdata_arr && g_ptr_array_remove_fast(qdata_arr, data)) {
+                /* data->task had an additional reference, we return it now. */
+                g_object_unref(data->task);
+            }
+            G_UNLOCK(wait_shutdown_mutex);
+        }
+    }
+
+    g_weak_ref_clear(&data->weak_ref);
+
+    /* We don't complete right away, instead always schedule an idle action
+     * on the caller's context. */
+    data->idle_source = nm_g_source_attach(
+        nm_g_idle_source_new(G_PRIORITY_DEFAULT_IDLE, _wait_shutdown_idle_cb, data, NULL),
+        g_task_get_context(data->task));
+}
+
+static void
+_wait_shutdown_qdata_cb(gpointer user_data)
+{
+    gs_unref_ptrarray GPtrArray *qdata_arr = user_data;
+
+    while (qdata_arr->len > 0) {
+        WaitShutdownData *data;
+
+        data = g_ptr_array_remove_index_fast(qdata_arr, qdata_arr->len - 1);
+        _wait_shutdown_data_clear(data, TRUE);
+
+        /* data->task had an additional reference, we return it now. */
+        g_object_unref(data->task);
+    }
+}
+
+static void
+_wait_shutdown_cancelled_cb(GCancellable *cancellable, gpointer user_data)
+{
+    _wait_shutdown_data_clear(g_task_get_task_data(user_data), FALSE);
+}
+
+/**
+ * nm_client_wait_shutdown:
+ * @client: the #NMClient to shutdown.
+ * @integrate_maincontext: whether to hook the client's maincontext
+ *   in the current thread default. Otherwise, you must ensure
+ *   that the client's maincontext gets iterated so that it can complete.
+ *   By integrating the maincontext in the current thread default, you
+ *   may instead only iterate the latter.
+ * @cancellable: (allow-none): the #GCancellable to abort the shutdown.
+ * @callback: (nullable): a #GAsyncReadyCallback to call when the request
+ *   is satisfied or %NULL if you don't care about the result of the
+ *   method invocation.
+ * @user_data: the data to pass to @callback
+ *
+ * The way to stop #NMClient is by unrefing it. That will cancel all
+ * internally pending async operations. However, as async operations in
+ * NMClient use GTask, hence they cannot complete right away. Instead,
+ * their (internal) result callback still needs to be dispatched by iterating
+ * the client's main context.
+ *
+ * You thus cannot stop iterating the client's main context until
+ * everything is wrapped up. nm_client_get_context_busy_watcher()
+ * helps to watch how long that will be.
+ *
+ * This function automates that waiting. Like all glib async operations
+ * this honors the current g_main_context_get_thread_default().
+ *
+ * In any case, to complete the shutdown, nm_client_get_main_context()
+ * must be iterated. If the current g_main_context_get_thread_default() is
+ * the same as nm_client_get_main_context(), then @integrate_maincontext
+ * is ignored. In that case, the caller is required to iterate the context
+ * for shutdown to complete. Otherwise, if g_main_context_get_thread_default()
+ * differs from nm_client_get_main_context() and @integrate_maincontext
+ * is %FALSE, the caller must make sure that both contexts are iterated
+ * until completion. Otherwise, if @integrate_maincontext is %TRUE, then
+ * nm_client_get_main_context() will be integrated in g_main_context_get_thread_default().
+ * This means, the caller gives nm_client_get_main_context() up until the waiting
+ * completes, the function will acquire the context and hook it into
+ * g_main_context_get_thread_default().
+ * It is a bug to request @integrate_maincontext while having nm_client_get_main_context()
+ * acquired or iterated otherwise because a context can only be acquired once
+ * at a time.
+ *
+ * Shutdown can only complete after all references to @client were released.
+ *
+ * It is possible to call this function multiple times for the same client.
+ * But note that with @integrate_maincontext the client's context is acquired,
+ * which can only be done once at a time.
+ *
+ * It is permissible to start waiting before the objects is fully initialized.
+ *
+ * The function really allows two separate things. To get a notification (callback) when
+ * shutdown is complete, and to integrate the client's context in another context.
+ * The latter case is useful if the client has a separate context and you hand it
+ * over to another GMainContext to wrap up.
+ *
+ * The main use is to have a NMClient and a separate GMainContext on a worker
+ * thread. When being done, you can hand over the cleanup of the context
+ * to g_main_context_default(), assuming that the main thread iterates
+ * the default context. In that case, you don't need to care about passing
+ * a callback to know when shutdown completed.
+ *
+ * Since: 1.42
+ */
+void
+nm_client_wait_shutdown(NMClient           *client,
+                        gboolean            integrate_maincontext,
+                        GCancellable       *cancellable,
+                        GAsyncReadyCallback callback,
+                        gpointer            user_data)
+{
+    NMClientPrivate       *priv;
+    WaitShutdownData      *data;
+    gs_unref_object GTask *task  = NULL;
+    GQuark                 quark = _wait_shutdown_get_quark();
+    GPtrArray             *qdata_arr;
+    GSource               *integration_source = NULL;
+
+    g_return_if_fail(NM_IS_CLIENT(client));
+    g_return_if_fail(!cancellable || G_IS_CANCELLABLE(cancellable));
+
+    priv = NM_CLIENT_GET_PRIVATE(client);
+
+    task = nm_g_task_new(NULL, cancellable, nm_client_wait_shutdown, callback, user_data);
+
+    if (integrate_maincontext && g_task_get_context(task) != priv->main_context) {
+        integration_source = nm_utils_g_main_context_create_integrate_source(priv->main_context);
+        g_return_if_fail(integration_source);
+        g_source_attach(integration_source, g_task_get_context(task));
+    }
+
+    data  = g_slice_new(WaitShutdownData);
+    *data = (WaitShutdownData){
+        .cancellable        = nm_g_object_ref(cancellable),
+        .task               = g_object_ref(task),
+        .result             = -1,
+        .integration_source = integration_source,
+        .log_ptr            = NM_HASH_OBFUSCATE_PTR(client),
+    };
+    /* The "data" itself stays alive as long as the task lives. That's important, because
+     * the callbacks _wait_shutdown_weak_ref_cb and _wait_shutdown_cancelled_cb
+     * rely on accessing "data", which must live long enough. */
+    g_task_set_task_data(task, data, _wait_shutdown_data_free);
+
+    g_weak_ref_init(&data->weak_ref, priv->context_busy_watcher);
+
+    NML_DBUS_LOG(_NML_NMCLIENT_LOG_LEVEL_COERCE(NML_DBUS_LOG_LEVEL_TRACE),
+                 "nmclient[" NM_HASH_OBFUSCATE_PTR_FMT
+                 "]: wait-shutdown (" NM_HASH_OBFUSCATE_PTR_FMT ")"
+                 "%s",
+                 data->log_ptr,
+                 NM_HASH_OBFUSCATE_PTR(data),
+                 integration_source ? " (integrated main source)" : "");
+
+    /* I don't think g_object_weak_ref() + GWeakRef can actually be used in
+     * a race-free way here, because g_object_weak_ref() has no GDestroyNotify
+     * and cannot keep task alive to avoid races. Instead, implement a weak pointer
+     * notification via the qdata.
+     *
+     * Yes, getting cancellation thread-safe is rather complicated here! I think
+     * the code is correct though, and you can cancel the operation from
+     * any thread without races. */
+    G_LOCK(wait_shutdown_mutex);
+    qdata_arr = g_object_get_qdata(priv->context_busy_watcher, quark);
+    if (!qdata_arr) {
+        qdata_arr = g_ptr_array_new();
+        g_object_set_qdata_full(priv->context_busy_watcher,
+                                quark,
+                                qdata_arr,
+                                _wait_shutdown_qdata_cb);
+    }
+    /* data->task gets an additional reference, take it now. */
+    g_object_ref(data->task);
+    g_ptr_array_add(qdata_arr, data);
+    G_UNLOCK(wait_shutdown_mutex);
+
+    if (data->cancellable) {
+        /* Take an additional reference on task. */
+        data->cancellable_id = g_cancellable_connect(data->cancellable,
+                                                     G_CALLBACK(_wait_shutdown_cancelled_cb),
+                                                     g_object_ref(task),
+                                                     g_object_unref);
+    }
+}
+
+/**
+ * nm_client_wait_shutdown_finish:
+ * @result: a #GAsyncResult obtained from the #GAsyncReadyCallback passed to nm_client_wait_shutdown()
+ * @error: return location for error or %NULL
+ *
+ * Returns: %TRUE if waiting is complete successfully. In that case, all resources of the
+ *   nmclient are wrapped up and released. This can only fail by user cancellation.
+ *
+ * Since: 1.42.
+ */
+gboolean
+nm_client_wait_shutdown_finish(GAsyncResult *result, GError **error)
+{
+    g_return_val_if_fail(nm_g_task_is_valid(result, NULL, nm_client_wait_shutdown), FALSE);
+
+    return g_task_propagate_boolean(G_TASK(result), error);
 }
 
 /*****************************************************************************

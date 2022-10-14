@@ -227,7 +227,16 @@ typedef enum {
 
 /*****************************************************************************/
 
-#define NM_CLIENT_INSTANCE_FLAGS_ALL ((NMClientInstanceFlags) 0x1)
+#define NM_CLIENT_INSTANCE_FLAGS_ALL                                             \
+    ((NMClientInstanceFlags) (NM_CLIENT_INSTANCE_FLAGS_NO_AUTO_FETCH_PERMISSIONS \
+                              | NM_CLIENT_INSTANCE_FLAGS_INITIALIZED_GOOD        \
+                              | NM_CLIENT_INSTANCE_FLAGS_INITIALIZED_BAD))
+
+#define NM_CLIENT_INSTANCE_FLAGS_ALL_WRITABLE                                                       \
+    ((NMClientInstanceFlags) (NM_CLIENT_INSTANCE_FLAGS_ALL                                          \
+                              & ~((                                                                 \
+                                  NMClientInstanceFlags) (NM_CLIENT_INSTANCE_FLAGS_INITIALIZED_GOOD \
+                                                          | NM_CLIENT_INSTANCE_FLAGS_INITIALIZED_BAD))))
 
 typedef struct {
     GType (*get_o_type_fcn)(void);
