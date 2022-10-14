@@ -957,38 +957,6 @@ _NM_IN_STRSET_EVAL_op_streq(const char *x1, const char *x)
 
 /*****************************************************************************/
 
-/**
- * nm_close:
- *
- * Like close() but throws an assertion if the input fd is
- * invalid.  Closing an invalid fd is a programming error, so
- * it's better to catch it early.
- */
-static inline int
-nm_close(int fd)
-{
-    int r;
-
-    r = close(fd);
-    nm_assert(r != -1 || fd < 0 || errno != EBADF);
-    return r;
-}
-
-static inline bool
-nm_clear_fd(int *p_fd)
-{
-    int fd;
-
-    if (!p_fd || (fd = *p_fd) < 0)
-        return false;
-
-    *p_fd = -1;
-    nm_close(fd);
-    return true;
-}
-
-/*****************************************************************************/
-
 /* Note: @value is only evaluated when *out_val is present.
  * Thus,
  *    NM_SET_OUT (out_str, g_strdup ("hallo"));
@@ -1066,13 +1034,96 @@ _nm_auto_protect_errno(const int *p_saved_errno)
 
 /*****************************************************************************/
 
+/**
+ * nm_close_with_error:
+ *
+ * Wrapper around close().
+ *
+ * This fails an nm_assert() for EBADF with a non-negative file descriptor. Trying
+ * to close an invalid file descriptor is always a serious bug. Never use close()
+ * directly, because we want to catch such bugs.
+ *
+ * This also suppresses any EINTR and pretends success. That is appropriate
+ * on Linux (but not necessarily on other POSIX systems).
+ *
+ * In no case is it appropriate to use @fd afterwards (or retry).
+ *
+ * This function returns 0 on success, or a negative errno value.
+ * On success, errno is undefined afterwards. On failure, errno is
+ * the same as the (negative) return value.
+ *
+ * In the common case, when you don't intend to handle the error from close(),
+ * prefer nm_close() over nm_close_with_error(). Never use close() directly.
+ *
+ * The function is also async-signal-safe (unless an assertion fails).
+ *
+ * Returns: 0 on success or the negative errno from close().
+ */
+static inline int
+nm_close_with_error(int fd)
+{
+    int r;
+
+    r = close(fd);
+
+    if (r != 0) {
+        int errsv = errno;
+
+        nm_assert(r == -1);
+        nm_assert((fd < 0 && errsv == EBADF) || (fd >= 0 && errsv != EBADF));
+
+        if (errsv == EINTR) {
+            /* There isn't really much we can do about EINTR. On Linux, always this means
+             * the FD was closed. On some POSIX systems that may be different and retry
+             * would be appropriate.
+             *
+             * Whether there was any IO error is unknown. Assume not and signal success. */
+            return 0;
+        }
+
+        return -errsv;
+    }
+
+    return 0;
+}
+
+/**
+ * nm_close:
+ *
+ * Wrapper around nm_close_with_error(), which ignores any error and preserves the
+ * caller's errno.
+ *
+ * We usually don't care about errors from close, so this is usually preferable over
+ * nm_close_with_error(). Never use close() directly.
+ *
+ * Everything from nm_close_with_error() applies.
+ */
+static inline void
+nm_close(int fd)
+{
+    NM_AUTO_PROTECT_ERRNO(errsv);
+
+    nm_close_with_error(fd);
+}
+
+static inline bool
+nm_clear_fd(int *p_fd)
+{
+    int fd;
+
+    if (!p_fd || (fd = *p_fd) < 0)
+        return false;
+
+    *p_fd = -1;
+    nm_close(fd);
+    return true;
+}
+
 static inline void
 _nm_auto_close(int *pfd)
 {
-    if (*pfd >= 0) {
-        NM_AUTO_PROTECT_ERRNO(errsv);
-        (void) nm_close(*pfd);
-    }
+    if (*pfd >= 0)
+        nm_close(*pfd);
 }
 #define nm_auto_close nm_auto(_nm_auto_close)
 

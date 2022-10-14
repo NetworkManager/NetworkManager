@@ -80,6 +80,7 @@ nm_main_utils_write_pidfile(const char *pidfile)
     int      fd;
     int      errsv;
     gboolean success = FALSE;
+    int      r;
 
     if ((fd = open(pidfile, O_CREAT | O_WRONLY | O_TRUNC | O_CLOEXEC, 00644)) < 0) {
         errsv = errno;
@@ -94,9 +95,9 @@ nm_main_utils_write_pidfile(const char *pidfile)
     } else
         success = TRUE;
 
-    if (nm_close(fd)) {
-        errsv = errno;
-        fprintf(stderr, _("Closing %s failed: %s\n"), pidfile, nm_strerror_native(errsv));
+    r = nm_close_with_error(fd);
+    if (r < 0) {
+        fprintf(stderr, _("Closing %s failed: %s\n"), pidfile, nm_strerror_native(-r));
     }
 
     return success;
