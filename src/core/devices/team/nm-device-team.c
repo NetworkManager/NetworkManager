@@ -168,7 +168,7 @@ ensure_teamd_connection(NMDevice *device)
 
     priv->tdc = _tdc_connect_new(self, nm_device_get_iface(device), &error);
     if (!priv->tdc) {
-        _LOGE(LOGD_TEAM, "failed to connect to teamd: %s", error->message);
+        _LOGD(LOGD_TEAM, "failed to connect to teamd: %s", error->message);
         return FALSE;
     }
 
@@ -412,6 +412,8 @@ teamd_ready(NMDeviceTeam *self)
      * device activation.
      */
     success = ensure_teamd_connection(device);
+    if (!success)
+        _LOGE(LOGD_TEAM, "Could not connect to teamd");
 
     if (nm_device_get_state(device) != NM_DEVICE_STATE_PREPARE
         || priv->stage1_state != NM_DEVICE_STAGE_STATE_PENDING)
