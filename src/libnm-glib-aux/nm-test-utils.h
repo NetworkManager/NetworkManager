@@ -1192,6 +1192,28 @@ nmtst_get_rand_word_length(GRand *rand)
 /*****************************************************************************/
 
 static inline gboolean
+nmtst_true_once(gboolean *state, gboolean new_val)
+{
+    /* Returns only once a TRUE flag. When returning TRUE,
+     * it will be remembered in "state" and future invocations
+     * return FALSE.
+     *
+     * Also, if "new_val" is FALSE, it won't return TRUE.
+     *
+     * The point is to do an action once (depending on "new_val"),
+     * and remember it in "state".
+     */
+    if (!new_val)
+        return FALSE;
+    if (*state)
+        return FALSE;
+    *state = TRUE;
+    return TRUE;
+}
+
+/*****************************************************************************/
+
+static inline gboolean
 nmtst_g_source_assert_not_called(gpointer user_data)
 {
     g_assert_not_reached();
