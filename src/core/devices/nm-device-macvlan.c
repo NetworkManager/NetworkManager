@@ -29,7 +29,6 @@
 NM_GOBJECT_PROPERTIES_DEFINE(NMDeviceMacvlan, PROP_MODE, PROP_NO_PROMISC, PROP_TAP, );
 
 typedef struct {
-    gulong               parent_state_id;
     gulong               parent_mtu_id;
     NMPlatformLnkMacvlan props;
 } NMDeviceMacvlanPrivate;
@@ -103,25 +102,6 @@ platform_mode_to_string(guint mode)
 /*****************************************************************************/
 
 static void
-parent_state_changed(NMDevice           *parent,
-                     NMDeviceState       new_state,
-                     NMDeviceState       old_state,
-                     NMDeviceStateReason reason,
-                     gpointer            user_data)
-{
-    NMDeviceMacvlan *self = NM_DEVICE_MACVLAN(user_data);
-
-    /* We'll react to our own carrier state notifications. Ignore the parent's. */
-    if (nm_device_state_reason_check(reason) == NM_DEVICE_STATE_REASON_CARRIER)
-        return;
-
-    nm_device_set_unmanaged_by_flags(NM_DEVICE(self),
-                                     NM_UNMANAGED_PARENT,
-                                     !nm_device_get_managed(parent, FALSE),
-                                     reason);
-}
-
-static void
 parent_mtu_maybe_changed(NMDevice *parent, GParamSpec *pspec, gpointer user_data)
 {
     /* the MTU of a macvlan/macvtap device is limited by the parent's MTU.
@@ -143,27 +123,13 @@ parent_changed_notify(NMDevice *device,
     NM_DEVICE_CLASS(nm_device_macvlan_parent_class)
         ->parent_changed_notify(device, old_ifindex, old_parent, new_ifindex, new_parent);
 
-    /*  note that @self doesn't have to clear @parent_state_id on dispose,
-     *  because NMDevice's dispose() will unset the parent, which in turn calls
-     *  parent_changed_notify(). */
-    nm_clear_g_signal_handler(old_parent, &priv->parent_state_id);
     nm_clear_g_signal_handler(old_parent, &priv->parent_mtu_id);
 
     if (new_parent) {
-        priv->parent_state_id = g_signal_connect(new_parent,
-                                                 NM_DEVICE_STATE_CHANGED,
-                                                 G_CALLBACK(parent_state_changed),
-                                                 device);
-        priv->parent_mtu_id   = g_signal_connect(new_parent,
+        priv->parent_mtu_id = g_signal_connect(new_parent,
                                                "notify::" NM_DEVICE_MTU,
                                                G_CALLBACK(parent_mtu_maybe_changed),
                                                device);
-
-        /* Set parent-dependent unmanaged flag */
-        nm_device_set_unmanaged_by_flags(device,
-                                         NM_UNMANAGED_PARENT,
-                                         !nm_device_get_managed(new_parent, FALSE),
-                                         NM_DEVICE_STATE_REASON_PARENT_MANAGED_CHANGED);
     }
 
     if (new_ifindex > 0) {
@@ -490,7 +456,6 @@ dispose(GObject *object)
 {
     G_OBJECT_CLASS(nm_device_macvlan_parent_class)->dispose(object);
 
-    nm_assert(NM_DEVICE_MACVLAN_GET_PRIVATE(object)->parent_state_id == 0);
     nm_assert(NM_DEVICE_MACVLAN_GET_PRIVATE(object)->parent_mtu_id == 0);
 }
 #endif
