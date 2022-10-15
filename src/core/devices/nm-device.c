@@ -7667,9 +7667,9 @@ nm_device_unrealize(NMDevice *self, gboolean remove_resources, GError **error)
     nm_device_set_unmanaged_flags(self, NM_UNMANAGED_PLATFORM_INIT, TRUE);
 
     nm_device_set_unmanaged_flags(self,
-                                  NM_UNMANAGED_PARENT | NM_UNMANAGED_BY_TYPE
-                                      | NM_UNMANAGED_USER_UDEV | NM_UNMANAGED_USER_EXPLICIT
-                                      | NM_UNMANAGED_EXTERNAL_DOWN | NM_UNMANAGED_IS_SLAVE,
+                                  NM_UNMANAGED_BY_TYPE | NM_UNMANAGED_USER_UDEV
+                                      | NM_UNMANAGED_USER_EXPLICIT | NM_UNMANAGED_EXTERNAL_DOWN
+                                      | NM_UNMANAGED_IS_SLAVE,
                                   NM_UNMAN_FLAG_OP_FORGET);
 
     nm_device_state_changed(self,
@@ -14142,7 +14142,6 @@ NM_UTILS_FLAGS2STR_DEFINE(nm_unmanaged_flags2str,
                           NMUnmanagedFlags,
                           NM_UTILS_FLAGS2STR(NM_UNMANAGED_SLEEPING, "sleeping"),
                           NM_UTILS_FLAGS2STR(NM_UNMANAGED_QUITTING, "quitting"),
-                          NM_UTILS_FLAGS2STR(NM_UNMANAGED_PARENT, "parent"),
                           NM_UTILS_FLAGS2STR(NM_UNMANAGED_BY_TYPE, "by-type"),
                           NM_UTILS_FLAGS2STR(NM_UNMANAGED_PLATFORM_INIT, "platform-init"),
                           NM_UTILS_FLAGS2STR(NM_UNMANAGED_USER_EXPLICIT, "user-explicit"),

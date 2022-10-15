@@ -21,7 +21,6 @@
 /*****************************************************************************/
 
 typedef struct {
-    gulong parent_state_id;
 } NMDevice6LowpanPrivate;
 
 struct _NMDevice6Lowpan {
@@ -41,50 +40,14 @@ G_DEFINE_TYPE(NMDevice6Lowpan, nm_device_6lowpan, NM_TYPE_DEVICE)
 /*****************************************************************************/
 
 static void
-parent_state_changed(NMDevice           *parent,
-                     NMDeviceState       new_state,
-                     NMDeviceState       old_state,
-                     NMDeviceStateReason reason,
-                     gpointer            user_data)
-{
-    NMDevice6Lowpan *self = NM_DEVICE_6LOWPAN(user_data);
-
-    nm_device_set_unmanaged_by_flags(NM_DEVICE(self),
-                                     NM_UNMANAGED_PARENT,
-                                     !nm_device_get_managed(parent, FALSE),
-                                     reason);
-}
-
-static void
 parent_changed_notify(NMDevice *device,
                       int       old_ifindex,
                       NMDevice *old_parent,
                       int       new_ifindex,
                       NMDevice *new_parent)
 {
-    NMDevice6Lowpan        *self = NM_DEVICE_6LOWPAN(device);
-    NMDevice6LowpanPrivate *priv = NM_DEVICE_6LOWPAN_GET_PRIVATE(self);
-
     NM_DEVICE_CLASS(nm_device_6lowpan_parent_class)
         ->parent_changed_notify(device, old_ifindex, old_parent, new_ifindex, new_parent);
-
-    /*  note that @self doesn't have to clear @parent_state_id on dispose,
-     *  because NMDevice's dispose() will unset the parent, which in turn calls
-     *  parent_changed_notify(). */
-    nm_clear_g_signal_handler(old_parent, &priv->parent_state_id);
-
-    if (new_parent) {
-        priv->parent_state_id = g_signal_connect(new_parent,
-                                                 NM_DEVICE_STATE_CHANGED,
-                                                 G_CALLBACK(parent_state_changed),
-                                                 device);
-
-        /* Set parent-dependent unmanaged flag */
-        nm_device_set_unmanaged_by_flags(device,
-                                         NM_UNMANAGED_PARENT,
-                                         !nm_device_get_managed(new_parent, FALSE),
-                                         NM_DEVICE_STATE_REASON_PARENT_MANAGED_CHANGED);
-    }
 
     if (new_ifindex > 0) {
         /* Recheck availability now that the parent has changed */

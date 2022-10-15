@@ -31,7 +31,6 @@
 NM_GOBJECT_PROPERTIES_DEFINE(NMDeviceVlan, PROP_VLAN_ID, );
 
 typedef struct {
-    gulong parent_state_id;
     gulong parent_hwaddr_id;
     gulong parent_mtu_id;
     guint  vlan_id;
@@ -52,25 +51,6 @@ G_DEFINE_TYPE(NMDeviceVlan, nm_device_vlan, NM_TYPE_DEVICE)
     _NM_GET_PRIVATE(self, NMDeviceVlan, NM_IS_DEVICE_VLAN, NMDevice)
 
 /*****************************************************************************/
-
-static void
-parent_state_changed(NMDevice           *parent,
-                     NMDeviceState       new_state,
-                     NMDeviceState       old_state,
-                     NMDeviceStateReason reason,
-                     gpointer            user_data)
-{
-    NMDeviceVlan *self = NM_DEVICE_VLAN(user_data);
-
-    /* We'll react to our own carrier state notifications. Ignore the parent's. */
-    if (nm_device_state_reason_check(reason) == NM_DEVICE_STATE_REASON_CARRIER)
-        return;
-
-    nm_device_set_unmanaged_by_flags(NM_DEVICE(self),
-                                     NM_UNMANAGED_PARENT,
-                                     !nm_device_get_managed(parent, FALSE),
-                                     reason);
-}
 
 static void
 parent_mtu_maybe_changed(NMDevice *parent, GParamSpec *pspec, gpointer user_data)
@@ -132,19 +112,10 @@ parent_changed_notify(NMDevice *device,
     NM_DEVICE_CLASS(nm_device_vlan_parent_class)
         ->parent_changed_notify(device, old_ifindex, old_parent, new_ifindex, new_parent);
 
-    /*  note that @self doesn't have to clear @parent_state_id on dispose,
-     *  because NMDevice's dispose() will unset the parent, which in turn calls
-     *  parent_changed_notify(). */
-    nm_clear_g_signal_handler(old_parent, &priv->parent_state_id);
     nm_clear_g_signal_handler(old_parent, &priv->parent_hwaddr_id);
     nm_clear_g_signal_handler(old_parent, &priv->parent_mtu_id);
 
     if (new_parent) {
-        priv->parent_state_id = g_signal_connect(new_parent,
-                                                 NM_DEVICE_STATE_CHANGED,
-                                                 G_CALLBACK(parent_state_changed),
-                                                 device);
-
         priv->parent_hwaddr_id = g_signal_connect(new_parent,
                                                   "notify::" NM_DEVICE_HW_ADDRESS,
                                                   G_CALLBACK(parent_hwaddr_maybe_changed),
@@ -156,12 +127,6 @@ parent_changed_notify(NMDevice *device,
                                                G_CALLBACK(parent_mtu_maybe_changed),
                                                device);
         parent_mtu_maybe_changed(new_parent, NULL, self);
-
-        /* Set parent-dependent unmanaged flag */
-        nm_device_set_unmanaged_by_flags(device,
-                                         NM_UNMANAGED_PARENT,
-                                         !nm_device_get_managed(new_parent, FALSE),
-                                         NM_DEVICE_STATE_REASON_PARENT_MANAGED_CHANGED);
     }
 
     /* Recheck availability now that the parent has changed */
