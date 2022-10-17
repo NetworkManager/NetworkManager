@@ -6224,7 +6224,8 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
      * Array of IP addresses of DNS servers.
      *
      * For DoT (DNS over TLS), the SNI server name can be specified by appending
-     * "#example.com" to the IP address of the DNS server.
+     * "#example.com" to the IP address of the DNS server. This currently only has
+     * effect when using systemd-resolved.
      **/
     obj_properties[PROP_DNS] =
         g_param_spec_boxed(NM_SETTING_IP_CONFIG_DNS,
