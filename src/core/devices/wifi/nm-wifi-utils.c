@@ -11,6 +11,7 @@
 #include <netinet/if_ether.h>
 #include <stdlib.h>
 
+#include "libnm-glib-aux/nm-str-buf.h"
 #include "nm-utils.h"
 #include "libnm-core-intern/nm-core-internal.h"
 #include "libnm-core-aux-intern/nm-libnm-core-utils.h"
@@ -1549,10 +1550,16 @@ eap_setting_to_iwd_config(GKeyFile *file, NMSetting8021x *s_8021x, GError **erro
 }
 
 static gboolean
-ip4_config_to_iwd_config(GKeyFile *file, NMSettingIPConfig *s_ip, GError **error)
+ip_config_to_iwd_config(int addr_family, GKeyFile *file, NMSettingIPConfig *s_ip, GError **error)
 {
-    guint          num;
-    struct in_addr ip;
+    const int                IS_IPv4 = NM_IS_IPv4(addr_family);
+    nm_auto_str_buf NMStrBuf strbuf  = NM_STR_BUF_INIT_A(NM_UTILS_GET_NEXT_REALLOC_SIZE_488, FALSE);
+    NMIPAddress             *addr;
+    guint                    num;
+    guint                    i;
+    char                     buf[NM_INET_ADDRSTRLEN + 10];
+    const char              *kf_group = IS_IPv4 ? "IPv4" : "IPv6";
+    const char              *gw;
 
     /* These settings are not acutally used unless global
      * [General].EnableNetworkConfiguration is true, which we don't support.
@@ -1564,15 +1571,16 @@ ip4_config_to_iwd_config(GKeyFile *file, NMSettingIPConfig *s_ip, GError **error
     if (!s_ip)
         return TRUE;
 
+    nm_assert(NM_IS_IPv4(addr_family) ? NM_IS_SETTING_IP4_CONFIG(s_ip)
+                                      : NM_IS_SETTING_IP6_CONFIG(s_ip));
+
     num = nm_setting_ip_config_get_num_dns(s_ip);
     if (num) {
-        nm_auto_free_gstring GString *s = g_string_sized_new(128);
-        guint                         i;
-
+        nm_str_buf_reset(&strbuf);
         for (i = 0; i < num; i++) {
-            if (s->len)
-                g_string_append_c(s, ' ');
-            g_string_append(s, nm_setting_ip_config_get_dns(s_ip, i));
+            if (strbuf.len > 0)
+                nm_str_buf_append_c(&strbuf, ' ');
+            nm_str_buf_append(&strbuf, nm_setting_ip_config_get_dns(s_ip, i));
         }
         /* It doesn't matter whether we add the DNS under [IPv4] or [IPv6]
          * except that with method=auto the list will override the
@@ -1581,97 +1589,61 @@ ip4_config_to_iwd_config(GKeyFile *file, NMSettingIPConfig *s_ip, GError **error
          * Note ignore-auto-dns=false isn't supported, this list always
          * overrides the DHCP DNSes.
          */
-        g_key_file_set_string(file, "IPv4", "DNS", s->str);
+        g_key_file_set_string(file, kf_group, "DNS", nm_str_buf_get_str(&strbuf));
     }
 
-    if (!nm_streq0(nm_setting_ip_config_get_method(s_ip), NM_SETTING_IP4_CONFIG_METHOD_MANUAL))
-        return TRUE;
+    if (!IS_IPv4) {
+        if (!NM_IN_STRSET(nm_setting_ip_config_get_method(s_ip),
+                          NM_SETTING_IP6_CONFIG_METHOD_AUTO,
+                          NM_SETTING_IP6_CONFIG_METHOD_DHCP,
+                          NM_SETTING_IP6_CONFIG_METHOD_MANUAL))
+            return TRUE;
+        g_key_file_set_boolean(file, kf_group, "Enabled", TRUE);
+    }
 
     num = nm_setting_ip_config_get_num_addresses(s_ip);
-    if (num) {
-        NMIPAddress *addr    = nm_setting_ip_config_get_address(s_ip, 0);
-        guint        prefix  = nm_ip_address_get_prefix(addr);
-        in_addr_t    netmask = nm_ip4_addr_netmask_from_prefix(prefix);
-        char         buf[INET_ADDRSTRLEN];
-
-        nm_ip_address_get_address_binary(addr, &ip);
-        g_key_file_set_string(file, "IPv4", "Address", nm_ip_address_get_address(addr));
-        g_key_file_set_string(file, "IPv4", "Netmask", nm_inet4_ntop(netmask, buf));
-    } else {
-        inet_pton(AF_INET, "10.42.0.100", &ip);
-        g_key_file_set_string(file, "IPv4", "Address", "10.42.0.100");
-    }
-
-    if (nm_setting_ip_config_get_gateway(s_ip)) {
-        g_key_file_set_string(file, "IPv4", "Gateway", nm_setting_ip_config_get_gateway(s_ip));
-    } else {
-        uint32_t val;
-        char     buf[INET_ADDRSTRLEN];
-
-        /* IWD won't enable static IP unless both Address and Gateway are
-         * set so generate a gateway address if not known.
-         */
-        val = (ntohl(ip.s_addr) & 0xfffffff0) + 1;
-        if (val == ntohl(ip.s_addr))
-            val += 1;
-        g_key_file_set_string(file, "IPv4", "Gateway", nm_inet4_ntop(htonl(val), buf));
-    }
-
-    return TRUE;
-}
-
-static gboolean
-ip6_config_to_iwd_config(GKeyFile *file, NMSettingIPConfig *s_ip, GError **error)
-{
-    guint        num;
-    NMIPAddress *addr;
-    char         buf[INET6_ADDRSTRLEN + 10];
-
-    if (!s_ip)
+    if (num == 0)
         return TRUE;
-
-    num = nm_setting_ip_config_get_num_dns(s_ip);
-    if (num) {
-        nm_auto_free_gstring GString *s = g_string_sized_new(128);
-        guint                         i;
-
-        for (i = 0; i < num; i++) {
-            if (s->len)
-                g_string_append_c(s, ' ');
-            g_string_append(s, nm_setting_ip_config_get_dns(s_ip, i));
-        }
-        g_key_file_set_string(file, "IPv6", "DNS", s->str);
-    }
-
-    if (!NM_IN_STRSET(nm_setting_ip_config_get_method(s_ip),
-                      NM_SETTING_IP6_CONFIG_METHOD_AUTO,
-                      NM_SETTING_IP6_CONFIG_METHOD_DHCP,
-                      NM_SETTING_IP6_CONFIG_METHOD_MANUAL))
-        return TRUE;
-
-    g_key_file_set_boolean(file, "IPv6", "Enabled", TRUE);
-
-    if (!nm_streq0(nm_setting_ip_config_get_method(s_ip), NM_SETTING_IP6_CONFIG_METHOD_MANUAL))
-        return TRUE;
-
-    if (!nm_setting_ip_config_get_num_addresses(s_ip)) {
-        g_set_error_literal(error,
-                            NM_CONNECTION_ERROR,
-                            NM_CONNECTION_ERROR_INVALID_PROPERTY,
-                            "IP address required for IPv6 manual config");
-        return FALSE;
-    }
 
     addr = nm_setting_ip_config_get_address(s_ip, 0);
-    g_key_file_set_string(file,
-                          "IPv6",
-                          "Address",
-                          nm_sprintf_buf(buf,
-                                         "%s/%u",
-                                         nm_ip_address_get_address(addr),
-                                         nm_ip_address_get_prefix(addr)));
-    if (nm_setting_ip_config_get_gateway(s_ip))
-        g_key_file_set_string(file, "IPv6", "Gateway", nm_setting_ip_config_get_gateway(s_ip));
+    gw   = nm_setting_ip_config_get_gateway(s_ip);
+
+    if (IS_IPv4) {
+        in_addr_t ip;
+
+        nm_ip_address_get_address_binary(addr, &ip);
+
+        g_key_file_set_string(file, kf_group, "Address", nm_ip_address_get_address(addr));
+        g_key_file_set_string(
+            file,
+            kf_group,
+            "Netmask",
+            nm_inet4_ntop(nm_ip4_addr_netmask_from_prefix(nm_ip_address_get_prefix(addr)), buf));
+
+        if (!gw) {
+            guint32 val;
+
+            /* IWD won't enable static IP unless both Address and Gateway are
+             * set so generate a gateway address if not known.
+             */
+            val = (ntohl(ip) & 0xfffffff0) + 1;
+            if (val == ntohl(ip))
+                val += 1;
+            gw = nm_inet4_ntop(htonl(val), buf);
+        }
+        g_key_file_set_string(file, kf_group, "Gateway", gw);
+    } else {
+        g_key_file_set_string(file,
+                              kf_group,
+                              "Address",
+                              nm_sprintf_buf(buf,
+                                             "%s/%u",
+                                             nm_ip_address_get_address(addr),
+                                             nm_ip_address_get_prefix(addr)));
+        if (gw)
+            g_key_file_set_string(file, kf_group, "Gateway", gw);
+    }
+
     return TRUE;
 }
 
@@ -1759,13 +1731,15 @@ nm_wifi_utils_connection_to_iwd_config(NMConnection *connection,
     else if (cloned_mac_addr && nm_utils_hwaddr_valid(cloned_mac_addr, ETH_ALEN))
         g_key_file_set_string(file, "Settings", "AddressOverride", cloned_mac_addr);
 
-    if (!ip4_config_to_iwd_config(
+    if (!ip_config_to_iwd_config(
+            AF_INET,
             file,
             NM_SETTING_IP_CONFIG(nm_connection_get_setting_ip4_config(connection)),
             error))
         return NULL;
 
-    if (!ip6_config_to_iwd_config(
+    if (!ip_config_to_iwd_config(
+            AF_INET6,
             file,
             NM_SETTING_IP_CONFIG(nm_connection_get_setting_ip6_config(connection)),
             error))
