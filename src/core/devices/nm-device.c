@@ -14850,9 +14850,10 @@ _nm_device_check_connection_available(NMDevice                      *self,
         } else {
             if (!nm_device_get_managed(self, TRUE)) {
                 /* device is strictly unmanaged by authoritative unmanaged reasons. */
-                nm_utils_error_set_literal(error,
-                                           NM_UTILS_ERROR_CONNECTION_AVAILABLE_STRICTLY_UNMANAGED_DEVICE,
-                                           "device is strictly unmanaged");
+                nm_utils_error_set_literal(
+                    error,
+                    NM_UTILS_ERROR_CONNECTION_AVAILABLE_STRICTLY_UNMANAGED_DEVICE,
+                    "device is strictly unmanaged");
                 return FALSE;
             }
             if (!NM_FLAGS_HAS(flags,
