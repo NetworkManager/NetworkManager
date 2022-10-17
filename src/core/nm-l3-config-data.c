@@ -2844,12 +2844,16 @@ _init_from_connection_ip(NML3ConfigData *self, int addr_family, NMConnection *co
 
     nnameservers = nm_setting_ip_config_get_num_dns(s_ip);
     for (i = 0; i < nnameservers; i++) {
+        const char *server_name;
         const char *s;
         NMIPAddr    ip;
 
         s = nm_setting_ip_config_get_dns(s_ip, i);
-        if (!nm_inet_parse_bin(addr_family, s, NULL, &ip))
+
+        if (!nm_utils_dnsname_parse_assert(addr_family, s, NULL, &ip, &server_name))
             continue;
+
+        /* TODO: handle server_name. */
         nm_l3_config_data_add_nameserver(self, addr_family, &ip);
     }
 

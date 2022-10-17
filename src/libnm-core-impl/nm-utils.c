@@ -1317,8 +1317,12 @@ _nm_utils_ip4_dns_to_variant(const char *const *dns, gssize len)
     for (i = 0; i < l; i++) {
         in_addr_t ip;
 
-        if (inet_pton(AF_INET, dns[i], &ip) == 1)
-            g_variant_builder_add(&builder, "u", ip);
+        /* We can only represent the IP address on the legacy property "ipv4.dns".
+         * Expose what we can. */
+        if (!nm_utils_dnsname_parse(AF_INET, dns[i], NULL, &ip, NULL))
+            continue;
+
+        g_variant_builder_add(&builder, "u", ip);
     }
 
     return g_variant_builder_end(&builder);
@@ -1639,8 +1643,11 @@ _nm_utils_ip6_dns_to_variant(const char *const *dns, gssize len)
     for (i = 0; i < l; i++) {
         struct in6_addr ip;
 
-        if (inet_pton(AF_INET6, dns[i], &ip) != 1)
+        /* We can only represent the IP address on the legacy property "ipv6.dns".
+         * Expose what we can. */
+        if (!nm_utils_dnsname_parse(AF_INET6, dns[i], NULL, &ip, NULL))
             continue;
+
         g_variant_builder_add(&builder, "@ay", nm_g_variant_new_ay_in6addr(&ip));
     }
     return g_variant_builder_end(&builder);

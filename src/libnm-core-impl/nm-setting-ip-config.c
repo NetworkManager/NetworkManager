@@ -4041,22 +4041,23 @@ static gboolean
 _ip_config_add_dns(NMSettingIPConfig *setting, const char *dns)
 {
     NMSettingIPConfigPrivate *priv;
-    const int                 addr_family = NM_SETTING_IP_CONFIG_GET_ADDR_FAMILY(setting);
-    NMIPAddr                  dns_bin;
-    char                      dns_canonical[NM_INET_ADDRSTRLEN];
+    gs_free char             *s_free = NULL;
+    const char               *s;
 
     nm_assert(NM_IS_SETTING_IP_CONFIG(setting));
     nm_assert(dns);
 
     priv = NM_SETTING_IP_CONFIG_GET_PRIVATE(setting);
 
-    if (valid_ip(addr_family, dns, &dns_bin, NULL))
-        dns = nm_inet_ntop(addr_family, &dns_bin, dns_canonical);
+    s = nm_utils_dnsname_normalize(NM_SETTING_IP_CONFIG_GET_ADDR_FAMILY(setting), dns, &s_free);
+    if (!s)
+        s = dns;
 
-    if (nm_strv_ptrarray_contains(priv->dns, dns))
+    if (nm_strv_ptrarray_contains(priv->dns, s))
         return FALSE;
 
-    nm_strv_ptrarray_add_string_dup(nm_strv_ptrarray_ensure(&priv->dns), dns);
+    nm_strv_ptrarray_add_string_take(nm_strv_ptrarray_ensure(&priv->dns),
+                                     g_steal_pointer(&s_free) ?: g_strdup(s));
     return TRUE;
 }
 
@@ -4124,9 +4125,6 @@ gboolean
 nm_setting_ip_config_remove_dns_by_value(NMSettingIPConfig *setting, const char *dns)
 {
     NMSettingIPConfigPrivate *priv;
-    int                       addr_family;
-    NMIPAddr                  dns_bin;
-    char                      dns_canonical[NM_INET_ADDRSTRLEN];
     gssize                    idx;
 
     g_return_val_if_fail(NM_IS_SETTING_IP_CONFIG(setting), FALSE);
@@ -4134,16 +4132,23 @@ nm_setting_ip_config_remove_dns_by_value(NMSettingIPConfig *setting, const char 
 
     priv = NM_SETTING_IP_CONFIG_GET_PRIVATE(setting);
 
-    addr_family = NM_SETTING_IP_CONFIG_GET_ADDR_FAMILY(setting);
-
-    if (valid_ip(addr_family, dns, &dns_bin, NULL))
-        dns = nm_inet_ntop(addr_family, &dns_bin, dns_canonical);
-
+    /* "priv->dns" can only contain normalized or invalid values. Expect that
+     * "dns" is normalized already, so lookup first for that string. Only
+     * if that fails, fallback to normalize "dns". */
     idx = nm_strv_ptrarray_find_first(priv->dns, dns);
+    if (idx < 0) {
+        gs_free char *s_free = NULL;
+        const char   *s;
+
+        s = nm_utils_dnsname_normalize(NM_SETTING_IP_CONFIG_GET_ADDR_FAMILY(setting), dns, &s_free);
+        if (s && !nm_streq(dns, s))
+            idx = nm_strv_ptrarray_find_first(priv->dns, dns);
+    }
+
     if (idx < 0)
         return FALSE;
 
-    g_ptr_array_remove_index(nm_strv_ptrarray_ensure(&priv->dns), idx);
+    g_ptr_array_remove_index(priv->dns, idx);
     _notify(setting, PROP_DNS);
     return TRUE;
 }
@@ -5442,12 +5447,16 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
         for (i = 0; i < priv->dns->len; i++) {
             const char *dns = priv->dns->pdata[i];
 
-            if (!nm_inet_is_valid(NM_SETTING_IP_CONFIG_GET_ADDR_FAMILY(setting), dns)) {
+            if (!nm_utils_dnsname_parse(NM_SETTING_IP_CONFIG_GET_ADDR_FAMILY(setting),
+                                        dns,
+                                        NULL,
+                                        NULL,
+                                        NULL)) {
                 g_set_error(error,
                             NM_CONNECTION_ERROR,
                             NM_CONNECTION_ERROR_INVALID_PROPERTY,
-                            _("%d. DNS server address is invalid"),
-                            (int) (i + 1));
+                            _("%u. DNS server address is invalid"),
+                            (i + 1u));
                 g_prefix_error(error,
                                "%s.%s: ",
                                nm_setting_get_name(setting),
@@ -6213,6 +6222,9 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
      * NMSettingIPConfig:dns:
      *
      * Array of IP addresses of DNS servers.
+     *
+     * For DoT (DNS over TLS), the SNI server name can be specified by appending
+     * "#example.com" to the IP address of the DNS server.
      **/
     obj_properties[PROP_DNS] =
         g_param_spec_boxed(NM_SETTING_IP_CONFIG_DNS,
