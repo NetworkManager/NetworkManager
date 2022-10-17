@@ -79,7 +79,7 @@ _nl802154_alloc_msg(guint16 genl_family_id, int ifindex, uint8_t cmd, uint16_t f
 {
     nm_auto_nlmsg struct nl_msg *msg = NULL;
 
-    msg = nlmsg_alloc();
+    msg = nlmsg_alloc(0);
     if (!genlmsg_put(msg, NL_AUTO_PORT, NL_AUTO_SEQ, genl_family_id, 0, flags, cmd, 0))
         goto nla_put_failure;
     NLA_PUT_U32(msg, NL802154_ATTR_IFINDEX, ifindex);

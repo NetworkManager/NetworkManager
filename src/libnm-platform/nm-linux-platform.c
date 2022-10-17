@@ -2682,7 +2682,7 @@ _wireguard_read_info(NMPlatform     *platform /* used only as logging context */
           ifindex,
           wireguard_family_id);
 
-    msg = nlmsg_alloc();
+    msg = nlmsg_alloc(0);
 
     if (!genlmsg_put(msg,
                      NL_AUTO_PORT,
@@ -2891,7 +2891,7 @@ _wireguard_create_change_nlmsgs(NMPlatform                               *platfo
 
 again:
 
-    msg = nlmsg_alloc();
+    msg = nlmsg_alloc(0);
     if (!genlmsg_put(msg,
                      NL_AUTO_PORT,
                      NL_AUTO_SEQ,
@@ -4977,7 +4977,8 @@ _nl_msg_new_link_full(uint16_t    nlmsg_type,
                       const char *ifname,
                       guint8      family,
                       unsigned    flags_mask,
-                      unsigned    flags_set)
+                      unsigned    flags_set,
+                      size_t      len)
 {
     nm_auto_nlmsg struct nl_msg *msg = NULL;
     const struct ifinfomsg       ifi = {
@@ -4989,7 +4990,7 @@ _nl_msg_new_link_full(uint16_t    nlmsg_type,
 
     nm_assert(NM_IN_SET(nlmsg_type, RTM_DELLINK, RTM_NEWLINK, RTM_GETLINK, RTM_SETLINK));
 
-    msg = nlmsg_alloc_simple(nlmsg_type, nlmsg_flags);
+    msg = nlmsg_alloc_new(len ? nlmsg_total_size(NLMSG_HDRLEN + len) : 0, nlmsg_type, nlmsg_flags);
 
     if (nlmsg_append_struct(msg, &ifi) < 0)
         goto nla_put_failure;
@@ -5006,7 +5007,7 @@ nla_put_failure:
 static struct nl_msg *
 _nl_msg_new_link(uint16_t nlmsg_type, uint16_t nlmsg_flags, int ifindex, const char *ifname)
 {
-    return _nl_msg_new_link_full(nlmsg_type, nlmsg_flags, ifindex, ifname, AF_UNSPEC, 0, 0);
+    return _nl_msg_new_link_full(nlmsg_type, nlmsg_flags, ifindex, ifname, AF_UNSPEC, 0, 0, 0);
 }
 
 /* Copied and modified from libnl3's build_addr_msg(). */
@@ -5038,7 +5039,7 @@ _nl_msg_new_address(uint16_t      nlmsg_type,
     nm_assert(NM_IN_SET(family, AF_INET, AF_INET6));
     nm_assert(NM_IN_SET(nlmsg_type, RTM_NEWADDR, RTM_DELADDR));
 
-    msg = nlmsg_alloc_simple(nlmsg_type, nlmsg_flags);
+    msg = nlmsg_alloc_new(0, nlmsg_type, nlmsg_flags);
 
     addr_len = family == AF_INET ? sizeof(in_addr_t) : sizeof(struct in6_addr);
 
@@ -5145,7 +5146,7 @@ _nl_msg_new_route(uint16_t nlmsg_type, uint16_t nlmsg_flags, const NMPObject *ob
         NM_IN_SET(NMP_OBJECT_GET_TYPE(obj), NMP_OBJECT_TYPE_IP4_ROUTE, NMP_OBJECT_TYPE_IP6_ROUTE));
     nm_assert(NM_IN_SET(nlmsg_type, RTM_NEWROUTE, RTM_DELROUTE));
 
-    msg = nlmsg_alloc_simple(nlmsg_type, nlmsg_flags);
+    msg = nlmsg_alloc_new(0, nlmsg_type, nlmsg_flags);
 
     if (nlmsg_append_struct(msg, &rtmsg) < 0)
         goto nla_put_failure;
@@ -5237,7 +5238,7 @@ _nl_msg_new_routing_rule(uint16_t                     nlmsg_type,
     const guint8 addr_size           = nm_utils_addr_family_to_size(routing_rule->addr_family);
     guint32      table;
 
-    msg = nlmsg_alloc_simple(nlmsg_type, nlmsg_flags);
+    msg = nlmsg_alloc_new(0, nlmsg_type, nlmsg_flags);
 
     table = routing_rule->table;
 
@@ -5356,7 +5357,7 @@ _nl_msg_new_qdisc(uint16_t nlmsg_type, uint16_t nlmsg_flags, const NMPlatformQdi
                   .tcm_info    = qdisc->info,
     };
 
-    msg = nlmsg_alloc_simple(nlmsg_type, nlmsg_flags | NMP_NLM_FLAG_F_ECHO);
+    msg = nlmsg_alloc_new(0, nlmsg_type, nlmsg_flags | NMP_NLM_FLAG_F_ECHO);
 
     if (nlmsg_append_struct(msg, &tcm) < 0)
         goto nla_put_failure;
@@ -5444,7 +5445,7 @@ _nl_msg_new_tfilter(uint16_t nlmsg_type, uint16_t nlmsg_flags, const NMPlatformT
                   .tcm_info    = tfilter->info,
     };
 
-    msg = nlmsg_alloc_simple(nlmsg_type, nlmsg_flags | NMP_NLM_FLAG_F_ECHO);
+    msg = nlmsg_alloc_new(0, nlmsg_type, nlmsg_flags | NMP_NLM_FLAG_F_ECHO);
 
     if (nlmsg_append_struct(msg, &tcm) < 0)
         goto nla_put_failure;
@@ -7239,7 +7240,7 @@ _nl_msg_new_dump_rtnl(NMPObjectType obj_type, int preferred_addr_family)
     nm_assert(klass);
     nm_assert(klass->rtm_gettype > 0);
 
-    nlmsg = nlmsg_alloc_simple(klass->rtm_gettype, NLM_F_DUMP);
+    nlmsg = nlmsg_alloc_new(0, klass->rtm_gettype, NLM_F_DUMP);
 
     if (klass->addr_family != AF_UNSPEC) {
         /* if the class specifies a particular address family, then it is preferred. */
@@ -7284,7 +7285,7 @@ _nl_msg_new_dump_genl_families(void)
 {
     nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
 
-    nlmsg = nlmsg_alloc_size(nlmsg_total_size(GENL_HDRLEN));
+    nlmsg = nlmsg_alloc(nlmsg_total_size(GENL_HDRLEN));
 
     if (!genlmsg_put(nlmsg,
                      NL_AUTO_PORT,
@@ -8100,7 +8101,8 @@ link_change_flags(NMPlatform *platform, int ifindex, unsigned flags_mask, unsign
           nm_platform_link_flags2str(flags_set, s_flags, sizeof(s_flags)),
           nm_platform_link_flags2str(flags_mask, s_flags2, sizeof(s_flags2)));
 
-    nlmsg = _nl_msg_new_link_full(RTM_NEWLINK, 0, ifindex, NULL, AF_UNSPEC, flags_mask, flags_set);
+    nlmsg =
+        _nl_msg_new_link_full(RTM_NEWLINK, 0, ifindex, NULL, AF_UNSPEC, flags_mask, flags_set, 0);
     if (!nlmsg)
         return -NME_UNSPEC;
     return do_change_link(platform, CHANGE_LINK_TYPE_UNSPEC, ifindex, nlmsg, NULL);
@@ -8415,16 +8417,23 @@ link_set_sriov_vfs(NMPlatform *platform, int ifindex, const NMPlatformVF *const 
 {
     nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
     struct nlattr               *list, *info, *vlan_list;
-    guint                        i;
+    guint                        i      = 0;
+    guint                        num    = 0;
+    size_t                       buflen = 0;
 
-    nlmsg = _nl_msg_new_link(RTM_NEWLINK, 0, ifindex, NULL);
+    while (vfs[num])
+        num++;
+
+    /* A single IFLA_VF_INFO shouldn't take more than 200 bytes. */
+    buflen = (num + 1) * 200;
+    nlmsg  = _nl_msg_new_link_full(RTM_NEWLINK, 0, ifindex, NULL, AF_UNSPEC, 0, 0, buflen);
     if (!nlmsg)
         g_return_val_if_reached(-NME_BUG);
 
     if (!(list = nla_nest_start(nlmsg, IFLA_VFINFO_LIST)))
         goto nla_put_failure;
 
-    for (i = 0; vfs[i]; i++) {
+    for (; vfs[i]; i++) {
         const NMPlatformVF *vf = vfs[i];
 
         if (!(info = nla_nest_start(nlmsg, IFLA_VF_INFO)))
@@ -8497,6 +8506,11 @@ link_set_sriov_vfs(NMPlatform *platform, int ifindex, const NMPlatformVF *const 
 
     return (do_change_link(platform, CHANGE_LINK_TYPE_UNSPEC, ifindex, nlmsg, NULL) >= 0);
 nla_put_failure:
+    _LOGE("error building SR-IOV VFs netlink message: used %u/%zu bytes for %u/%u VFs",
+          nlmsg_hdr(nlmsg)->nlmsg_len,
+          buflen,
+          i,
+          num);
     g_return_val_if_reached(FALSE);
 }
 
@@ -8511,8 +8525,14 @@ link_set_bridge_vlans(NMPlatform                        *platform,
     struct bridge_vlan_info      vinfo = {};
     guint                        i;
 
-    nlmsg =
-        _nl_msg_new_link_full(vlans ? RTM_SETLINK : RTM_DELLINK, 0, ifindex, NULL, AF_BRIDGE, 0, 0);
+    nlmsg = _nl_msg_new_link_full(vlans ? RTM_SETLINK : RTM_DELLINK,
+                                  0,
+                                  ifindex,
+                                  NULL,
+                                  AF_BRIDGE,
+                                  0,
+                                  0,
+                                  0);
     if (!nlmsg)
         g_return_val_if_reached(-NME_BUG);
 
@@ -9540,7 +9560,7 @@ tc_delete(NMPlatform *platform,
         log_tag = "do-delete-tc";
     }
 
-    msg = nlmsg_alloc_simple(nlmsg_type, NMP_NLM_FLAG_F_ECHO);
+    msg = nlmsg_alloc_new(0, nlmsg_type, NMP_NLM_FLAG_F_ECHO);
 
     if (nlmsg_append_struct(msg, &tcm) < 0)
         goto nla_put_failure;
@@ -10264,7 +10284,7 @@ mptcp_addr_update(NMPlatform *platform, NMOptionBool add, const NMPlatformMptcpA
           cmd_str,
           nm_platform_mptcp_addr_to_string(addr, sbuf, sizeof(sbuf)));
 
-    nlmsg = nlmsg_alloc_size(nlmsg_total_size(GENL_HDRLEN) + 200);
+    nlmsg = nlmsg_alloc(nlmsg_total_size(GENL_HDRLEN) + 200);
 
     if (!genlmsg_put(nlmsg,
                      NL_AUTO_PORT,
@@ -10355,7 +10375,7 @@ mptcp_addrs_dump(NMPlatform *platform)
         return NULL;
     }
 
-    nlmsg = nlmsg_alloc_size(nlmsg_total_size(GENL_HDRLEN));
+    nlmsg = nlmsg_alloc(nlmsg_total_size(GENL_HDRLEN));
 
     if (!genlmsg_put(nlmsg,
                      NL_AUTO_PORT,
