@@ -478,7 +478,7 @@ bound4_handle(NMDhcpSystemd *self, gboolean extended)
 
     if (sd_dhcp_client_get_lease(priv->client4, &lease) < 0 || !lease) {
         _LOGW("no lease!");
-        nm_dhcp_client_set_state(NM_DHCP_CLIENT(self), NM_DHCP_STATE_FAIL, NULL);
+        _nm_dhcp_client_notify(NM_DHCP_CLIENT(self), NM_DHCP_CLIENT_EVENT_TYPE_FAIL, NULL);
         return;
     }
 
@@ -492,15 +492,16 @@ bound4_handle(NMDhcpSystemd *self, gboolean extended)
     if (!l3cd) {
         _LOGW("%s", error->message);
         g_clear_error(&error);
-        nm_dhcp_client_set_state(NM_DHCP_CLIENT(self), NM_DHCP_STATE_FAIL, NULL);
+        _nm_dhcp_client_notify(NM_DHCP_CLIENT(self), NM_DHCP_CLIENT_EVENT_TYPE_FAIL, NULL);
         return;
     }
 
     dhcp_lease_save(lease, priv->lease_file);
 
-    nm_dhcp_client_set_state(NM_DHCP_CLIENT(self),
-                             extended ? NM_DHCP_STATE_EXTENDED : NM_DHCP_STATE_BOUND,
-                             l3cd);
+    _nm_dhcp_client_notify(NM_DHCP_CLIENT(self),
+                           extended ? NM_DHCP_CLIENT_EVENT_TYPE_EXTENDED
+                                    : NM_DHCP_CLIENT_EVENT_TYPE_BOUND,
+                           l3cd);
 }
 
 static int
@@ -519,10 +520,10 @@ dhcp_event_cb(sd_dhcp_client *client, int event, gpointer user_data)
 
     switch (event) {
     case SD_DHCP_CLIENT_EVENT_EXPIRED:
-        nm_dhcp_client_set_state(NM_DHCP_CLIENT(user_data), NM_DHCP_STATE_EXPIRE, NULL);
+        _nm_dhcp_client_notify(NM_DHCP_CLIENT(user_data), NM_DHCP_CLIENT_EVENT_TYPE_EXPIRE, NULL);
         break;
     case SD_DHCP_CLIENT_EVENT_STOP:
-        nm_dhcp_client_set_state(NM_DHCP_CLIENT(user_data), NM_DHCP_STATE_FAIL, NULL);
+        _nm_dhcp_client_notify(NM_DHCP_CLIENT(user_data), NM_DHCP_CLIENT_EVENT_TYPE_FAIL, NULL);
         break;
     case SD_DHCP_CLIENT_EVENT_RENEW:
     case SD_DHCP_CLIENT_EVENT_IP_CHANGE:
@@ -895,7 +896,7 @@ bound6_handle(NMDhcpSystemd *self)
 
     if (sd_dhcp6_client_get_lease(priv->client6, &lease) < 0 || !lease) {
         _LOGW(" no lease!");
-        nm_dhcp_client_set_state(NM_DHCP_CLIENT(self), NM_DHCP_STATE_FAIL, NULL);
+        _nm_dhcp_client_notify(NM_DHCP_CLIENT(self), NM_DHCP_CLIENT_EVENT_TYPE_FAIL, NULL);
         return;
     }
 
@@ -911,11 +912,11 @@ bound6_handle(NMDhcpSystemd *self)
 
     if (!l3cd) {
         _LOGW("%s", error->message);
-        nm_dhcp_client_set_state(NM_DHCP_CLIENT(self), NM_DHCP_STATE_FAIL, NULL);
+        _nm_dhcp_client_notify(NM_DHCP_CLIENT(self), NM_DHCP_CLIENT_EVENT_TYPE_FAIL, NULL);
         return;
     }
 
-    nm_dhcp_client_set_state(NM_DHCP_CLIENT(self), NM_DHCP_STATE_BOUND, l3cd);
+    _nm_dhcp_client_notify(NM_DHCP_CLIENT(self), NM_DHCP_CLIENT_EVENT_TYPE_BOUND, l3cd);
 
     sd_dhcp6_lease_reset_pd_prefix_iter(lease);
     while (!sd_dhcp6_lease_get_pd(lease,
@@ -940,11 +941,11 @@ dhcp6_event_cb(sd_dhcp6_client *client, int event, gpointer user_data)
 
     switch (event) {
     case SD_DHCP6_CLIENT_EVENT_RETRANS_MAX:
-        nm_dhcp_client_set_state(NM_DHCP_CLIENT(user_data), NM_DHCP_STATE_TIMEOUT, NULL);
+        _nm_dhcp_client_notify(NM_DHCP_CLIENT(user_data), NM_DHCP_CLIENT_EVENT_TYPE_TIMEOUT, NULL);
         break;
     case SD_DHCP6_CLIENT_EVENT_RESEND_EXPIRE:
     case SD_DHCP6_CLIENT_EVENT_STOP:
-        nm_dhcp_client_set_state(NM_DHCP_CLIENT(user_data), NM_DHCP_STATE_FAIL, NULL);
+        _nm_dhcp_client_notify(NM_DHCP_CLIENT(user_data), NM_DHCP_CLIENT_EVENT_TYPE_FAIL, NULL);
         break;
     case SD_DHCP6_CLIENT_EVENT_IP_ACQUIRE:
     case SD_DHCP6_CLIENT_EVENT_INFORMATION_REQUEST:

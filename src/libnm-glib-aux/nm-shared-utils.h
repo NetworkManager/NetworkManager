@@ -623,6 +623,16 @@ nm_utils_is_separator(const char c)
 
 /*****************************************************************************/
 
+static inline GBytes *
+nm_g_bytes_ref(GBytes *b)
+{
+    if (b)
+        g_bytes_ref(b);
+    return b;
+}
+
+/*****************************************************************************/
+
 GBytes *nm_g_bytes_get_empty(void);
 
 GBytes *nm_g_bytes_new_from_str(const char *str);
