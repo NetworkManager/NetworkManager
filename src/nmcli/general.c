@@ -1298,9 +1298,9 @@ client_state(NMClient *client, GParamSpec *param, NmCli *nmc)
 static void
 device_overview(NmCli *nmc, NMDevice *device)
 {
-    GString         *outbuf = g_string_sized_new(80);
-    char            *tmp;
-    const GPtrArray *activatable;
+    GString             *outbuf = g_string_sized_new(80);
+    char                *tmp;
+    const GPtrArray     *activatable;
     NMDeviceCapabilities caps;
 
     activatable = nm_device_get_available_connections(device);
