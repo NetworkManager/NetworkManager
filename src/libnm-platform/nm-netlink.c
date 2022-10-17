@@ -364,10 +364,21 @@ nla_reserve(struct nl_msg *msg, int attrtype, int attrlen)
 
 /*****************************************************************************/
 
+/**
+ * Allocate a new netlink message.
+ *
+ * Allocates a new netlink message without any further payload. If @len is zero,
+ * the maximum payload size is set to the size of one memory page.
+ *
+ * @return Newly allocated netlink message or NULL.
+ */
 struct nl_msg *
-nlmsg_alloc_size(size_t len)
+nlmsg_alloc(size_t len)
 {
     struct nl_msg *nm;
+
+    if (len == 0)
+        len = nm_utils_getpagesize();
 
     if (len < sizeof(struct nlmsghdr))
         len = sizeof(struct nlmsghdr);
@@ -384,38 +395,23 @@ nlmsg_alloc_size(size_t len)
     return nm;
 }
 
-/**
- * Allocate a new netlink message with the default maximum payload size.
- *
- * Allocates a new netlink message without any further payload. The
- * maximum payload size defaults to PAGESIZE or as otherwise specified
- * with nlmsg_set_default_size().
- *
- * @return Newly allocated netlink message or NULL.
- */
-struct nl_msg *
-nlmsg_alloc(void)
-{
-    return nlmsg_alloc_size(nm_utils_getpagesize());
-}
-
 struct nl_msg *
 nlmsg_alloc_convert(struct nlmsghdr *hdr)
 {
     struct nl_msg *nm;
 
-    nm = nlmsg_alloc_size(NLMSG_ALIGN(hdr->nlmsg_len));
+    nm = nlmsg_alloc(NLMSG_ALIGN(hdr->nlmsg_len));
     memcpy(nm->nm_nlh, hdr, hdr->nlmsg_len);
     return nm;
 }
 
 struct nl_msg *
-nlmsg_alloc_simple(uint16_t nlmsgtype, uint16_t flags)
+nlmsg_alloc_new(size_t size, uint16_t nlmsgtype, uint16_t flags)
 {
     struct nl_msg *nm;
     struct nlmsghdr *new;
 
-    nm               = nlmsg_alloc();
+    nm               = nlmsg_alloc(size);
     new              = nm->nm_nlh;
     new->nlmsg_type  = nlmsgtype;
     new->nlmsg_flags = flags;
@@ -928,7 +924,7 @@ genl_ctrl_resolve(struct nl_sock *sk, const char *name)
                              .valid_arg = &response_data,
     };
 
-    msg = nlmsg_alloc();
+    msg = nlmsg_alloc(0);
 
     if (!genlmsg_put(msg, NL_AUTO_PORT, NL_AUTO_SEQ, GENL_ID_CTRL, 0, 0, CTRL_CMD_GETFAMILY, 1))
         return -ENOMEM;
