@@ -88,7 +88,6 @@ test_generic_options(void)
     const char                              *expected_route2_dest = "100.99.88.56";
     const char                              *expected_route2_gw   = "10.1.1.1";
     const char *const                       *strarr;
-    const in_addr_t                         *ia_arr;
     guint                                    u;
 
     options = fill_table(generic_options, NULL);
@@ -115,10 +114,10 @@ test_generic_options(void)
     g_assert_cmpstr(strarr[0], ==, expected_search1);
     g_assert_cmpstr(strarr[1], ==, expected_search2);
 
-    ia_arr = nm_l3_config_data_get_nameservers(l3cd, AF_INET, &u);
+    strarr = nm_l3_config_data_get_nameservers(l3cd, AF_INET, &u);
     g_assert_cmpint(u, ==, 2);
-    nmtst_assert_ip4_address(ia_arr[0], expected_dns1);
-    nmtst_assert_ip4_address(ia_arr[1], expected_dns2);
+    g_assert_cmpstr(strarr[0], ==, expected_dns1);
+    g_assert_cmpstr(strarr[1], ==, expected_dns2);
 
     g_assert_cmpint(nm_l3_config_data_get_num_routes(l3cd, AF_INET), ==, 3);
 

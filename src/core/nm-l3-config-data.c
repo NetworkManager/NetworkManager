@@ -67,10 +67,10 @@ struct _NML3ConfigData {
 
     union {
         struct {
-            GArray *nameservers_6;
-            GArray *nameservers_4;
+            GPtrArray *nameservers_6;
+            GPtrArray *nameservers_4;
         };
-        GArray *nameservers_x[2];
+        GPtrArray *nameservers_x[2];
     };
 
     union {
@@ -267,17 +267,6 @@ _garray_inaddr_get(GArray *arr, guint *out_len)
     }
     *out_len = arr->len;
     return arr->data;
-}
-
-static gconstpointer
-_garray_inaddr_at(GArray *arr, gboolean IS_IPv4, guint idx)
-{
-    nm_assert(arr);
-    nm_assert(idx < arr->len);
-
-    if (IS_IPv4)
-        return &nm_g_array_index(arr, in_addr_t, idx);
-    return &nm_g_array_index(arr, struct in6_addr, idx);
 }
 
 static gboolean
@@ -480,13 +469,11 @@ nm_l3_config_data_log(const NML3ConfigData *self,
                self->dns_priority_x[IS_IPv4]);
         }
 
-        for (i = 0; i < nm_g_array_len(self->nameservers_x[IS_IPv4]); i++) {
+        for (i = 0; i < nm_g_ptr_array_len(self->nameservers_x[IS_IPv4]); i++) {
             _L("nameserver%c[%u]: %s",
                nm_utils_addr_family_to_char(addr_family),
                i,
-               nm_inet_ntop(addr_family,
-                            _garray_inaddr_at(self->nameservers_x[IS_IPv4], IS_IPv4, i),
-                            sbuf_addr));
+               (char *) self->nameservers_x[IS_IPv4]->pdata[i]);
         }
 
         for (i = 0; i < nm_g_ptr_array_len(self->domains_x[IS_IPv4]); i++) {
@@ -792,8 +779,8 @@ nm_l3_config_data_unref(const NML3ConfigData *self)
     nm_clear_pointer(&mutable->dhcp_lease_4, nm_dhcp_lease_unref);
     nm_clear_pointer(&mutable->dhcp_lease_6, nm_dhcp_lease_unref);
 
-    nm_clear_pointer(&mutable->nameservers_4, g_array_unref);
-    nm_clear_pointer(&mutable->nameservers_6, g_array_unref);
+    nm_clear_pointer(&mutable->nameservers_4, g_ptr_array_unref);
+    nm_clear_pointer(&mutable->nameservers_6, g_ptr_array_unref);
 
     nm_clear_pointer(&mutable->domains_4, g_ptr_array_unref);
     nm_clear_pointer(&mutable->domains_6, g_ptr_array_unref);
@@ -1421,7 +1408,7 @@ _check_and_add_domain(GPtrArray **p_arr, const char *domain)
     return TRUE;
 }
 
-gconstpointer
+const char *const *
 nm_l3_config_data_get_nameservers(const NML3ConfigData *self, int addr_family, guint *out_len)
 {
     nm_assert(!self || _NM_IS_L3_CONFIG_DATA(self, TRUE));
@@ -1433,33 +1420,68 @@ nm_l3_config_data_get_nameservers(const NML3ConfigData *self, int addr_family, g
         return NULL;
     }
 
-    return _garray_inaddr_get(self->nameservers_x[NM_IS_IPv4(addr_family)], out_len);
+    return nm_strv_ptrarray_get_unsafe(self->nameservers_x[NM_IS_IPv4(addr_family)], out_len);
 }
 
 gboolean
-nm_l3_config_data_add_nameserver(NML3ConfigData                        *self,
-                                 int                                    addr_family,
-                                 gconstpointer /* (const NMIPAddr *) */ nameserver)
+nm_l3_config_data_add_nameserver(NML3ConfigData *self, int addr_family, const char *nameserver)
 {
+    GPtrArray **p_arr;
+
     nm_assert(_NM_IS_L3_CONFIG_DATA(self, FALSE));
     nm_assert_addr_family(addr_family);
     nm_assert(nameserver);
 
-    return _garray_inaddr_add(&self->nameservers_x[NM_IS_IPv4(addr_family)],
-                              addr_family,
-                              nameserver);
+    if (NM_MORE_ASSERTS > 5) {
+        gs_free char *s_free = NULL;
+
+        nm_assert(
+            nm_streq0(nm_utils_dnsname_normalize(addr_family, nameserver, &s_free), nameserver));
+    }
+
+    p_arr = &self->nameservers_x[NM_IS_IPv4(addr_family)];
+
+    if (nm_strv_ptrarray_contains(*p_arr, nameserver))
+        return FALSE;
+
+    nm_strv_ptrarray_add_string_dup(nm_strv_ptrarray_ensure(p_arr), nameserver);
+    return TRUE;
+}
+
+gboolean
+nm_l3_config_data_add_nameserver_detail(NML3ConfigData *self,
+                                        int             addr_family,
+                                        gconstpointer   addr_bin,
+                                        const char     *server_name)
+{
+    gs_free char *s_free = NULL;
+    char         *s;
+    gsize         l;
+
+    nm_assert(_NM_IS_L3_CONFIG_DATA(self, FALSE));
+    nm_assert_addr_family(addr_family);
+    nm_assert(addr_bin);
+
+    l = (NM_INET_ADDRSTRLEN + 2u) + (server_name ? strlen(server_name) : 0u);
+
+    s = nm_malloc_maybe_a(300, l, &s_free);
+
+    if (!nm_utils_dnsname_construct(addr_family, addr_bin, server_name, s, l))
+        nm_assert_not_reached();
+
+    return nm_l3_config_data_add_nameserver(self, addr_family, s);
 }
 
 gboolean
 nm_l3_config_data_clear_nameservers(NML3ConfigData *self, int addr_family)
 {
-    gs_unref_array GArray *old = NULL;
+    gs_unref_ptrarray GPtrArray *old = NULL;
 
     nm_assert(_NM_IS_L3_CONFIG_DATA(self, FALSE));
     nm_assert_addr_family(addr_family);
 
     old = g_steal_pointer(&self->nameservers_x[NM_IS_IPv4(addr_family)]);
-    return (nm_g_array_len(old) > 0);
+    return (nm_g_ptr_array_len(old) > 0);
 }
 
 const in_addr_t *
@@ -2272,7 +2294,6 @@ nm_l3_config_data_cmp_full(const NML3ConfigData *a,
     }
 
     for (IS_IPv4 = 1; IS_IPv4 >= 0; IS_IPv4--) {
-        const int        addr_family = IS_IPv4 ? AF_INET : AF_INET6;
         const NMPObject *def_route_a = a->best_default_route_x[IS_IPv4];
         const NMPObject *def_route_b = b->best_default_route_x[IS_IPv4];
 
@@ -2311,9 +2332,8 @@ nm_l3_config_data_cmp_full(const NML3ConfigData *a,
         if (NM_FLAGS_HAS(flags, NM_L3_CONFIG_CMP_FLAGS_DNS)) {
             const NML3ConfigDatFlags FLAG = NM_L3_CONFIG_DAT_FLAGS_HAS_DNS_PRIORITY(IS_IPv4);
 
-            NM_CMP_RETURN(_garray_inaddr_cmp(a->nameservers_x[IS_IPv4],
-                                             b->nameservers_x[IS_IPv4],
-                                             addr_family));
+            NM_CMP_RETURN(
+                nm_strv_ptrarray_cmp(a->nameservers_x[IS_IPv4], b->nameservers_x[IS_IPv4]));
             NM_CMP_RETURN(nm_strv_ptrarray_cmp(a->domains_x[IS_IPv4], b->domains_x[IS_IPv4]));
             NM_CMP_RETURN(nm_strv_ptrarray_cmp(a->searches_x[IS_IPv4], b->searches_x[IS_IPv4]));
             NM_CMP_RETURN(
@@ -2843,19 +2863,8 @@ _init_from_connection_ip(NML3ConfigData *self, int addr_family, NMConnection *co
     }
 
     nnameservers = nm_setting_ip_config_get_num_dns(s_ip);
-    for (i = 0; i < nnameservers; i++) {
-        const char *server_name;
-        const char *s;
-        NMIPAddr    ip;
-
-        s = nm_setting_ip_config_get_dns(s_ip, i);
-
-        if (!nm_utils_dnsname_parse_assert(addr_family, s, NULL, &ip, &server_name))
-            continue;
-
-        /* TODO: handle server_name. */
-        nm_l3_config_data_add_nameserver(self, addr_family, &ip);
-    }
+    for (i = 0; i < nnameservers; i++)
+        nm_l3_config_data_add_nameserver(self, addr_family, nm_setting_ip_config_get_dns(s_ip, i));
 
     nsearches = nm_setting_ip_config_get_num_dns_searches(s_ip);
     for (i = 0; i < nsearches; i++) {
@@ -3210,9 +3219,7 @@ nm_l3_config_data_merge(NML3ConfigData       *self,
         }
 
         if (!NM_FLAGS_HAS(merge_flags, NM_L3_CONFIG_MERGE_FLAGS_NO_DNS))
-            _garray_inaddr_merge(&self->nameservers_x[IS_IPv4],
-                                 src->nameservers_x[IS_IPv4],
-                                 addr_family);
+            _strv_ptrarray_merge(&self->nameservers_x[IS_IPv4], src->nameservers_x[IS_IPv4]);
 
         if (!NM_FLAGS_HAS(merge_flags, NM_L3_CONFIG_MERGE_FLAGS_NO_DNS))
             _strv_ptrarray_merge(&self->domains_x[IS_IPv4], src->domains_x[IS_IPv4]);

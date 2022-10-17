@@ -868,22 +868,24 @@ add_global_config(NMDnsDnsmasq            *self,
 static void
 add_ip_config(NMDnsDnsmasq *self, GVariantBuilder *servers, const NMDnsConfigIPData *ip_data)
 {
-    const char   *iface;
-    const char   *domain;
-    char          ip_addr_to_string_buf[IP_ADDR_TO_STRING_BUFLEN];
-    gconstpointer nameservers;
-    guint         num;
-    guint         i;
-    guint         j;
+    const char        *iface;
+    const char        *domain;
+    char               ip_addr_to_string_buf[IP_ADDR_TO_STRING_BUFLEN];
+    const char *const *strarr;
+    guint              num;
+    guint              i;
+    guint              j;
 
     iface = nm_platform_link_get_name(NM_PLATFORM_GET, ip_data->data->ifindex);
 
-    nameservers = nm_l3_config_data_get_nameservers(ip_data->l3cd, ip_data->addr_family, &num);
+    strarr = nm_l3_config_data_get_nameservers(ip_data->l3cd, ip_data->addr_family, &num);
     for (i = 0; i < num; i++) {
-        gconstpointer addr;
+        NMIPAddr a;
 
-        addr = nm_ip_addr_from_packed_array(ip_data->addr_family, nameservers, i);
-        ip_addr_to_string(ip_data->addr_family, addr, iface, ip_addr_to_string_buf);
+        if (!nm_utils_dnsname_parse_assert(ip_data->addr_family, strarr[i], NULL, &a, NULL))
+            continue;
+
+        ip_addr_to_string(ip_data->addr_family, &a, iface, ip_addr_to_string_buf);
 
         if (!ip_data->domains.has_default_route_explicit && ip_data->domains.has_default_route)
             add_dnsmasq_nameserver(self, servers, ip_addr_to_string_buf, NULL);

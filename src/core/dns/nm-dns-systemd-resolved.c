@@ -343,13 +343,13 @@ update_add_ip_config(NMDnsSystemdResolved    *self,
                      GVariantBuilder         *domains,
                      const NMDnsConfigIPData *ip_data)
 {
-    gsize         addr_size;
-    guint         n;
-    guint         i;
-    gboolean      is_routing;
-    const char   *domain;
-    gboolean      has_config = FALSE;
-    gconstpointer nameservers;
+    gsize              addr_size;
+    guint              n;
+    guint              i;
+    gboolean           is_routing;
+    const char        *domain;
+    gboolean           has_config = FALSE;
+    const char *const *strarr;
 
     addr_size = nm_utils_addr_family_to_size(ip_data->addr_family);
 
@@ -361,14 +361,16 @@ update_add_ip_config(NMDnsSystemdResolved    *self,
         return FALSE;
     }
 
-    nameservers = nm_l3_config_data_get_nameservers(ip_data->l3cd, ip_data->addr_family, &n);
+    strarr = nm_l3_config_data_get_nameservers(ip_data->l3cd, ip_data->addr_family, &n);
     for (i = 0; i < n; i++) {
+        NMIPAddr a;
+
+        if (!nm_utils_dnsname_parse_assert(ip_data->addr_family, strarr[i], NULL, &a, NULL))
+            continue;
+
         g_variant_builder_open(dns, G_VARIANT_TYPE("(iay)"));
         g_variant_builder_add(dns, "i", ip_data->addr_family);
-        g_variant_builder_add_value(
-            dns,
-            nm_g_variant_new_ay(nm_ip_addr_from_packed_array(ip_data->addr_family, nameservers, i),
-                                addr_size));
+        g_variant_builder_add_value(dns, nm_g_variant_new_ay((gconstpointer) &a, addr_size));
         g_variant_builder_close(dns);
         has_config = TRUE;
     }
