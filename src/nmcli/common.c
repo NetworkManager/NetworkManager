@@ -1007,14 +1007,14 @@ nmc_secret_redisplay(void)
 
     rl_point       = g_utf8_strlen(save_line_buffer, save_point) * subst_len;
     rl_end         = g_utf8_strlen(rl_line_buffer, -1) * subst_len;
-    rl_line_buffer = g_slice_alloc(rl_end + 1);
+    rl_line_buffer = nm_slice_alloc(rl_end + 1);
 
     for (i = 0; i + subst_len <= rl_end; i += subst_len)
         memcpy(&rl_line_buffer[i], subst, subst_len);
     rl_line_buffer[i] = '\0';
 
     rl_redisplay();
-    g_slice_free1(rl_end + 1, rl_line_buffer);
+    nm_slice_free_sized(rl_end + 1, rl_line_buffer);
     rl_line_buffer = save_line_buffer;
     rl_end         = save_end;
     rl_point       = save_point;
@@ -1295,7 +1295,7 @@ got_client(GObject *source_object, GAsyncResult *res, gpointer user_data)
     }
 
     g_strfreev(call->argv);
-    nm_g_slice_free(call);
+    nm_slice_free(call);
 }
 
 typedef struct {
@@ -1363,9 +1363,9 @@ read_offline_connection_chunk(GObject *source_object, GAsyncResult *res, gpointe
 
 finish:
     g_strfreev(call->argv);
-    nm_g_slice_free(call);
+    nm_slice_free(call);
     g_string_free(data->str, TRUE);
-    nm_g_slice_free(data);
+    nm_slice_free(data);
 }
 
 static void
@@ -1387,7 +1387,7 @@ read_offline_connection(CmdCall *call)
     CmdStdinData                 *data;
 
     stream     = g_unix_input_stream_new(STDIN_FILENO, TRUE);
-    data       = g_slice_new(CmdStdinData);
+    data       = nm_slice_new(CmdStdinData);
     data->call = call;
     data->str  = g_string_new_len(NULL, sizeof(data->buf));
 
@@ -1434,7 +1434,7 @@ call_cmd(NmCli *nmc, GTask *task, const NMCCommand *cmd, int argc, const char *c
             }
 
             nmc->should_wait++;
-            call  = g_slice_new(CmdCall);
+            call  = nm_slice_new(CmdCall);
             *call = (CmdCall){
                 .cmd  = cmd,
                 .argc = argc,
@@ -1465,7 +1465,7 @@ call_cmd(NmCli *nmc, GTask *task, const NMCCommand *cmd, int argc, const char *c
         nm_assert(nmc->client == NULL);
 
         nmc->should_wait++;
-        call  = g_slice_new(CmdCall);
+        call  = nm_slice_new(CmdCall);
         *call = (CmdCall){
             .cmd  = cmd,
             .argc = argc,

@@ -146,7 +146,7 @@ auth_request_complete(AuthRequest *request, gboolean success)
         request->child_stdin = -1;
     }
 
-    nm_g_slice_free(request);
+    nm_slice_free(request);
 }
 
 static gboolean
@@ -577,7 +577,7 @@ create_request(NMPolkitListener      *listener,
 {
     AuthRequest *request;
 
-    request  = g_slice_new(AuthRequest);
+    request  = nm_slice_new(AuthRequest);
     *request = (AuthRequest){
         .listener             = listener,
         .dbus_invocation      = invocation,

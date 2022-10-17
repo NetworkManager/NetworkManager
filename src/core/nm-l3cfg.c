@@ -806,7 +806,7 @@ _obj_state_data_new(const NMPObject *obj, const NMPObject *plobj)
 {
     ObjStateData *obj_state;
 
-    obj_state  = g_slice_new(ObjStateData);
+    obj_state  = nm_slice_new(ObjStateData);
     *obj_state = (ObjStateData){
         .obj                            = nmp_object_ref(obj),
         .os_plobj                       = nmp_object_ref(plobj),
@@ -829,7 +829,7 @@ _obj_state_data_free(gpointer data)
     c_list_unlink_stale(&obj_state->os_temporary_not_available_lst);
     nmp_object_unref(obj_state->obj);
     nmp_object_unref(obj_state->os_plobj);
-    nm_g_slice_free(obj_state);
+    nm_slice_free(obj_state);
 }
 
 static const char *
@@ -1426,7 +1426,7 @@ _acd_data_free(AcdData *acd_data)
     c_list_unlink_stale(&acd_data->acd_lst);
     c_list_unlink_stale(&acd_data->acd_event_notify_lst);
     g_free((NML3AcdAddrTrackInfo *) acd_data->info.track_infos);
-    nm_g_slice_free(acd_data);
+    nm_slice_free(acd_data);
 }
 
 static guint
@@ -1912,7 +1912,7 @@ _l3_acd_data_add(NML3Cfg              *self,
             self->priv.p->acd_lst_hash = g_hash_table_new(nm_puint32_hash, nm_puint32_equal);
         }
 
-        acd_data  = g_slice_new(AcdData);
+        acd_data  = nm_slice_new(AcdData);
         *acd_data = (AcdData){
             .info =
                 {
@@ -4685,7 +4685,7 @@ nm_l3cfg_block_obj_pruning(NML3Cfg *self, int addr_family)
 
     nm_assert(NM_IS_L3CFG(self));
 
-    handle          = g_slice_new(NML3CfgBlockHandle);
+    handle          = nm_slice_new(NML3CfgBlockHandle);
     handle->self    = g_object_ref(self);
     handle->is_ipv4 = IS_IPv4;
     c_list_link_tail(&self->priv.p->blocked_lst_head_x[IS_IPv4], &handle->lst);
@@ -4713,7 +4713,7 @@ nm_l3cfg_unblock_obj_pruning(NML3CfgBlockHandle *handle)
           IS_IPv4 ? '4' : '6',
           c_list_length(&self->priv.p->blocked_lst_head_x[IS_IPv4]));
 
-    nm_g_slice_free(handle);
+    nm_slice_free(handle);
 }
 
 /* See DOC(l3cfg:commit-type) */
@@ -4792,7 +4792,7 @@ nm_l3cfg_commit_type_register(NML3Cfg                 *self,
     } else {
         if (commit_type == NM_L3_CFG_COMMIT_TYPE_NONE)
             goto out;
-        handle = g_slice_new(NML3CfgCommitTypeHandle);
+        handle = nm_slice_new(NML3CfgCommitTypeHandle);
         if (c_list_is_empty(&self->priv.p->commit_type_lst_head))
             g_object_ref(self);
     }
@@ -4836,7 +4836,7 @@ nm_l3cfg_commit_type_unregister(NML3Cfg *self, NML3CfgCommitTypeHandle *handle)
     c_list_unlink_stale(&handle->commit_type_lst);
     if (c_list_is_empty(&self->priv.p->commit_type_lst_head))
         g_object_unref(self);
-    nm_g_slice_free(handle);
+    nm_slice_free(handle);
 }
 
 void

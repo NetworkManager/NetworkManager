@@ -299,7 +299,7 @@ _call_complete(OvsdbMethodCall *call, json_t *response, GError *error)
         break;
     }
 
-    nm_g_slice_free(call);
+    nm_slice_free(call);
 }
 
 /*****************************************************************************/
@@ -312,7 +312,7 @@ _free_bridge(OpenvswitchBridge *ovs_bridge)
     g_free(ovs_bridge->connection_uuid);
     g_ptr_array_free(ovs_bridge->ports, TRUE);
     nm_g_array_unref(ovs_bridge->external_ids);
-    nm_g_slice_free(ovs_bridge);
+    nm_slice_free(ovs_bridge);
 }
 
 static void
@@ -323,7 +323,7 @@ _free_port(OpenvswitchPort *ovs_port)
     g_free(ovs_port->connection_uuid);
     g_ptr_array_free(ovs_port->interfaces, TRUE);
     nm_g_array_unref(ovs_port->external_ids);
-    nm_g_slice_free(ovs_port);
+    nm_slice_free(ovs_port);
 }
 
 static void
@@ -334,7 +334,7 @@ _free_interface(OpenvswitchInterface *ovs_interface)
     g_free(ovs_interface->connection_uuid);
     g_free(ovs_interface->type);
     nm_g_array_unref(ovs_interface->external_ids);
-    nm_g_slice_free(ovs_interface);
+    nm_slice_free(ovs_interface);
 }
 
 /*****************************************************************************/
@@ -391,7 +391,7 @@ ovsdb_call_method(NMOvsdb                  *self,
     /* Ensure we're not unsynchronized before we queue the method call. */
     ovsdb_try_connect(self);
 
-    call  = g_slice_new(OvsdbMethodCall);
+    call  = nm_slice_new(OvsdbMethodCall);
     *call = (OvsdbMethodCall){
         .self              = self,
         .call_id           = CALL_ID_UNSPEC,
@@ -1726,7 +1726,7 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
         } else {
             gs_free char *strtmp = NULL;
 
-            ovs_interface  = g_slice_new(OpenvswitchInterface);
+            ovs_interface  = nm_slice_new(OpenvswitchInterface);
             *ovs_interface = (OpenvswitchInterface){
                 .interface_uuid  = g_strdup(key),
                 .name            = g_strdup(name),
@@ -1840,7 +1840,7 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
         } else {
             gs_free char *strtmp = NULL;
 
-            ovs_port  = g_slice_new(OpenvswitchPort);
+            ovs_port  = nm_slice_new(OpenvswitchPort);
             *ovs_port = (OpenvswitchPort){
                 .port_uuid       = g_strdup(key),
                 .name            = g_strdup(name),
@@ -1945,7 +1945,7 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
         } else {
             gs_free char *strtmp = NULL;
 
-            ovs_bridge  = g_slice_new(OpenvswitchBridge);
+            ovs_bridge  = nm_slice_new(OpenvswitchBridge);
             *ovs_bridge = (OpenvswitchBridge){
                 .bridge_uuid     = g_strdup(key),
                 .name            = g_strdup(name),
@@ -2623,7 +2623,7 @@ _transact_cb(NMOvsdb *self, json_t *result, GError *error, gpointer user_data)
     }
 
     call->callback(local ?: error, call->user_data);
-    nm_g_slice_free(call);
+    nm_slice_free(call);
 }
 
 static OvsdbCall *
@@ -2631,7 +2631,7 @@ ovsdb_call_new(NMOvsdbCallback callback, gpointer user_data)
 {
     OvsdbCall *call;
 
-    call  = g_slice_new(OvsdbCall);
+    call  = nm_slice_new(OvsdbCall);
     *call = (OvsdbCall){
         .callback  = callback,
         .user_data = user_data,

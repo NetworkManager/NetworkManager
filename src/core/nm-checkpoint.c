@@ -485,7 +485,7 @@ device_checkpoint_destroy(gpointer data)
     g_free(dev_checkpoint->original_dev_path);
     g_free(dev_checkpoint->original_dev_name);
 
-    g_slice_free(DeviceCheckpoint, dev_checkpoint);
+    nm_slice_free_typed(DeviceCheckpoint, dev_checkpoint);
 }
 
 static void
@@ -532,7 +532,7 @@ device_checkpoint_create(NMCheckpoint *checkpoint, NMDevice *device)
 
     path = nm_dbus_object_get_path(NM_DBUS_OBJECT(device));
 
-    dev_checkpoint                         = g_slice_new0(DeviceCheckpoint);
+    dev_checkpoint                         = nm_slice_new0(DeviceCheckpoint);
     dev_checkpoint->device                 = g_object_ref(device);
     dev_checkpoint->original_dev_path      = g_strdup(path);
     dev_checkpoint->original_dev_name      = g_strdup(nm_device_get_iface(device));

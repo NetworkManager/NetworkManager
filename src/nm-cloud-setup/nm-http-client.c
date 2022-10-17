@@ -109,7 +109,7 @@ _get_result_free(gpointer data)
     GetResult *get_result = data;
 
     g_bytes_unref(get_result->response_data);
-    nm_g_slice_free(get_result);
+    nm_slice_free(get_result);
 }
 
 typedef struct {
@@ -148,7 +148,7 @@ _ehandle_free(EHandleData *edata)
     if (edata->headers)
         curl_slist_free_all(edata->headers);
     g_free(edata->url);
-    nm_g_slice_free(edata);
+    nm_slice_free(edata);
 }
 
 static void
@@ -200,7 +200,7 @@ _ehandle_complete(EHandleData *edata, GError *error_take)
 
     _ehandle_free_ehandle(edata);
 
-    get_result  = g_slice_new(GetResult);
+    get_result  = nm_slice_new(GetResult);
     *get_result = (GetResult){
         .response_code = response_code,
         /* This ensures that response_data is always NUL terminated. This is an important guarantee
@@ -278,7 +278,7 @@ nm_http_client_get(NMHttpClient       *self,
 
     priv = NM_HTTP_CLIENT_GET_PRIVATE(self);
 
-    edata  = g_slice_new(EHandleData);
+    edata  = nm_slice_new(EHandleData);
     *edata = (EHandleData){
         .task      = nm_g_task_new(self, cancellable, nm_http_client_get, callback, user_data),
         .recv_data = NM_STR_BUF_INIT(0, FALSE),
@@ -416,7 +416,7 @@ _poll_get_data_free(gpointer data)
     nm_clear_pointer(&poll_get_data->response_data, g_bytes_unref);
     g_strfreev((char **) poll_get_data->http_headers);
 
-    nm_g_slice_free(poll_get_data);
+    nm_slice_free(poll_get_data);
 }
 
 static void
@@ -538,7 +538,7 @@ nm_http_client_poll_get(NMHttpClient               *self,
     g_return_if_fail(ratelimit_timeout_ms >= -1);
     g_return_if_fail(!cancellable || G_CANCELLABLE(cancellable));
 
-    poll_get_data  = g_slice_new(PollGetData);
+    poll_get_data  = nm_slice_new(PollGetData);
     *poll_get_data = (PollGetData){
         .task = nm_g_task_new(self, cancellable, nm_http_client_poll_get, callback, user_data),
         .uri  = g_strdup(uri),

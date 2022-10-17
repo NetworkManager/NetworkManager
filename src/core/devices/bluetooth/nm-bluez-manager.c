@@ -288,7 +288,7 @@ _network_server_register_req_data_complete(NetworkServerRegisterReqData *r_req_d
     }
 
     g_object_unref(r_req_data->ext_cancellable);
-    nm_g_slice_free(r_req_data);
+    nm_slice_free(r_req_data);
 }
 
 static void
@@ -318,7 +318,7 @@ _device_connect_req_data_complete(DeviceConnectReqData *c_req_data,
 
     g_object_unref(c_req_data->ext_cancellable);
     nm_clear_g_free(&c_req_data->device_name);
-    nm_g_slice_free(c_req_data);
+    nm_slice_free(c_req_data);
 }
 
 /*****************************************************************************/
@@ -935,7 +935,7 @@ _conn_track_update(NMBluezManager       *self,
                 nm_assert_not_reached();
             _conn_track_schedule_notify(self, bt_type, bdaddr);
         }
-        cdata_el            = g_slice_new(ConnDataElem);
+        cdata_el            = nm_slice_new(ConnDataElem);
         cdata_el->sett_conn = sett_conn;
         cdata_el->cdata_hd  = cdata_hd;
         c_list_link_tail(&cdata_hd->lst_head, &cdata_el->lst);
@@ -1141,7 +1141,7 @@ _network_server_vt_register_bridge(const NMBtVTableNetworkServer *vtable,
           ifname,
           bzobj->d_adapter.address);
 
-    r_req_data  = g_slice_new(NetworkServerRegisterReqData);
+    r_req_data  = nm_slice_new(NetworkServerRegisterReqData);
     *r_req_data = (NetworkServerRegisterReqData){
         .int_cancellable    = g_cancellable_new(),
         .ext_cancellable    = g_object_ref(cancellable),
@@ -2747,7 +2747,7 @@ nm_bluez_manager_connect(NMBluezManager         *self,
                                bzobj);
     }
 
-    c_req_data  = g_slice_new(DeviceConnectReqData);
+    c_req_data  = nm_slice_new(DeviceConnectReqData);
     *c_req_data = (DeviceConnectReqData){
         .int_cancellable    = g_steal_pointer(&int_cancellable),
         .ext_cancellable    = g_object_ref(cancellable),
@@ -2826,7 +2826,7 @@ nm_bluez_manager_init(NMBluezManager *self)
         g_hash_table_new_full(_conn_data_head_hash, _conn_data_head_equal, g_free, NULL);
     priv->conn_data_elems = g_hash_table_new_full(nm_pdirect_hash,
                                                   nm_pdirect_equal,
-                                                  nm_g_slice_free_fcn(ConnDataElem),
+                                                  nm_slice_free_fcn(ConnDataElem),
                                                   NULL);
 
     priv->bzobjs = g_hash_table_new_full(nm_pstr_hash,

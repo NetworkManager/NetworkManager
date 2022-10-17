@@ -147,7 +147,7 @@ killswitch_new(struct udev_device *device, NMRfkillType rtype)
         || nm_streq0(subsys, "acpi") || nm_streq0(parent_subsys, "acpi"))
         platform = TRUE;
 
-    ks  = g_slice_new(Killswitch);
+    ks  = nm_slice_new(Killswitch);
     *ks = (Killswitch){
         .name     = g_strdup(udev_device_get_sysname(device)),
         .seqnum   = udev_device_get_seqnum(device),
@@ -167,7 +167,7 @@ killswitch_destroy(Killswitch *ks)
     g_free(ks->name);
     g_free(ks->path);
     g_free(ks->driver);
-    nm_g_slice_free(ks);
+    nm_slice_free(ks);
 }
 
 static NMRfkillState

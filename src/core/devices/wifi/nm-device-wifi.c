@@ -219,7 +219,7 @@ _scan_request_ssids_remove(ScanRequestSsidData *srs_data)
 {
     c_list_unlink_stale(&srs_data->lst);
     g_bytes_unref(srs_data->ssid);
-    nm_g_slice_free(srs_data);
+    nm_slice_free(srs_data);
 }
 
 static void
@@ -339,7 +339,7 @@ _scan_request_ssids_track(NMDeviceWifiPrivate *priv, const GPtrArray *ssids)
         G_STATIC_ASSERT_EXPR(G_STRUCT_OFFSET(ScanRequestSsidData, ssid) == 0);
         d = g_hash_table_lookup(priv->scan_request_ssids_hash, &ssid);
         if (!d) {
-            d  = g_slice_new(ScanRequestSsidData);
+            d  = nm_slice_new(ScanRequestSsidData);
             *d = (ScanRequestSsidData){
                 .lst            = C_LIST_INIT(d->lst),
                 .timestamp_msec = now_msec,

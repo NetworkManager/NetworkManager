@@ -457,7 +457,7 @@ _pending_job_register_object_release_on_idle_cb(gpointer data)
     GlobalData     *gl        = idle_data->gl;
 
     c_list_unlink_stale(&idle_data->pending_jobs_lst);
-    nm_g_slice_free(idle_data);
+    nm_slice_free(idle_data);
 
     _idle_timeout_restart(gl);
     return G_SOURCE_REMOVE;
@@ -483,7 +483,7 @@ _pending_job_register_object(GlobalData *gl, GObject *obj)
     if (nm_clear_g_source_inst(&gl->source_idle_timeout))
         _LOGT("idle-timeout: suspend timeout for pending request");
 
-    idle_data = g_slice_new(PendingJobData);
+    idle_data = nm_slice_new(PendingJobData);
 
     idle_data->gl = gl;
     c_list_link_tail(&gl->pending_jobs_lst_head, &idle_data->pending_jobs_lst);

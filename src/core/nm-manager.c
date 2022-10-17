@@ -489,7 +489,7 @@ _async_op_data_new_authorize_activate_internal(NMManager *self, NMActiveConnecti
 {
     AsyncOpData *async_op_data;
 
-    async_op_data                 = g_slice_new0(AsyncOpData);
+    async_op_data                 = nm_slice_new0(AsyncOpData);
     async_op_data->async_op_type  = ASYNC_OP_TYPE_AC_AUTH_ACTIVATE_INTERNAL;
     async_op_data->self           = g_object_ref(self);
     async_op_data->ac_auth.active = active_take;
@@ -505,7 +505,7 @@ _async_op_data_new_ac_auth_activate_user(NMManager             *self,
 {
     AsyncOpData *async_op_data;
 
-    async_op_data                                   = g_slice_new0(AsyncOpData);
+    async_op_data                                   = nm_slice_new0(AsyncOpData);
     async_op_data->async_op_type                    = ASYNC_OP_TYPE_AC_AUTH_ACTIVATE_USER;
     async_op_data->self                             = g_object_ref(self);
     async_op_data->ac_auth.active                   = active_take;
@@ -530,7 +530,7 @@ _async_op_data_new_ac_auth_add_and_activate(NMManager                      *self
                         ASYNC_OP_TYPE_AC_AUTH_ADD_AND_ACTIVATE,
                         ASYNC_OP_TYPE_AC_AUTH_ADD_AND_ACTIVATE2));
 
-    async_op_data                                        = g_slice_new0(AsyncOpData);
+    async_op_data                                        = nm_slice_new0(AsyncOpData);
     async_op_data->async_op_type                         = async_op_type;
     async_op_data->self                                  = g_object_ref(self);
     async_op_data->ac_auth.active                        = active_take;
@@ -596,7 +596,7 @@ _async_op_complete_ac_auth_cb(NMActiveConnection *active,
 
     g_object_unref(async_op_data->ac_auth.active);
     g_object_unref(async_op_data->self);
-    g_slice_free(AsyncOpData, async_op_data);
+    nm_slice_free_typed(AsyncOpData, async_op_data);
 }
 
 /*****************************************************************************/
@@ -621,7 +621,7 @@ _device_route_metric_data_new(int ifindex, guint32 aspired_metric, guint32 effec
     nm_assert(aspired_metric > 0);
     nm_assert(effective_metric == 0 || aspired_metric <= effective_metric);
 
-    data                   = g_slice_new0(DeviceRouteMetricData);
+    data                   = nm_slice_new0(DeviceRouteMetricData);
     data->ifindex          = ifindex;
     data->aspired_metric   = aspired_metric;
     data->effective_metric = effective_metric ?: aspired_metric;
@@ -688,7 +688,7 @@ _device_route_metric_get(NMManager   *self,
             g_hash_table_new_full(_device_route_metric_data_by_ifindex_hash,
                                   _device_route_metric_data_by_ifindex_equal,
                                   NULL,
-                                  nm_g_slice_free_fcn(DeviceRouteMetricData));
+                                  nm_slice_free_fcn(DeviceRouteMetricData));
         cleaned = TRUE;
 
         /* we need to pre-populate the cache for all (still existing) devices from the state-file */
@@ -3808,7 +3808,7 @@ _platform_link_cb_idle(PlatformLinkCbData *data)
     const NMPlatformLink *plink;
 
     c_list_unlink_stale(&data->lst);
-    g_slice_free(PlatformLinkCbData, data);
+    nm_slice_free_typed(PlatformLinkCbData, data);
 
     plink = nm_platform_link_get(priv->platform, ifindex);
     if (plink) {
@@ -3863,7 +3863,7 @@ platform_link_cb(NMPlatform     *platform,
         self = NM_MANAGER(user_data);
         priv = NM_MANAGER_GET_PRIVATE(self);
 
-        data          = g_slice_new(PlatformLinkCbData);
+        data          = nm_slice_new(PlatformLinkCbData);
         data->self    = self;
         data->ifindex = ifindex;
         c_list_link_tail(&priv->link_cb_lst, &data->lst);
@@ -6986,7 +6986,7 @@ device_connectivity_done(NMDevice                   *device,
 
     if (data->remaining == 0) {
         g_object_unref(self);
-        g_slice_free(ConnectivityCheckData, data);
+        nm_slice_free_typed(ConnectivityCheckData, data);
     }
 }
 
@@ -7016,7 +7016,7 @@ check_connectivity_auth_done_cb(NMAuthChain           *chain,
         return;
     }
 
-    data            = g_slice_new(ConnectivityCheckData);
+    data            = nm_slice_new(ConnectivityCheckData);
     data->self      = g_object_ref(self);
     data->context   = context;
     data->remaining = 0;
@@ -7503,7 +7503,7 @@ _dbus_set_property_auth_cb(NMAuthChain           *chain,
     const char                        *error_message = NULL;
     GValue                             gvalue;
 
-    g_slice_free(DBusSetPropertyHandle, handle_data);
+    nm_slice_free_typed(DBusSetPropertyHandle, handle_data);
 
     c_list_unlink(nm_auth_chain_parent_lst_list(chain));
     result = nm_auth_chain_get_result(chain, property_info->writable.permission);
@@ -7594,7 +7594,7 @@ nm_manager_dbus_set_property_handle(NMDBusObject                      *obj,
         return;
     }
 
-    handle_data                    = g_slice_new0(DBusSetPropertyHandle);
+    handle_data                    = nm_slice_new0(DBusSetPropertyHandle);
     handle_data->self              = g_object_ref(self);
     handle_data->obj               = g_object_ref(obj);
     handle_data->interface_info    = interface_info;
@@ -8308,7 +8308,7 @@ dispose(GObject *object)
 
         g_source_remove(data->idle_id);
         c_list_unlink_stale(&data->lst);
-        g_slice_free(PlatformLinkCbData, data);
+        nm_slice_free_typed(PlatformLinkCbData, data);
     }
 
     while ((iter = c_list_first(&priv->auth_lst_head)))

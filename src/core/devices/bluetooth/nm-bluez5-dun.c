@@ -682,7 +682,7 @@ nm_bluez5_dun_connect(const char                  *adapter,
     src_l = strlen(adapter) + 1;
     dst_l = strlen(remote) + 1;
 
-    cdat  = g_slice_new(ConnectData);
+    cdat  = nm_slice_new(ConnectData);
     *cdat = (ConnectData){
         .callback              = callback,
         .callback_user_data    = callback_user_data,
@@ -762,7 +762,7 @@ _context_cleanup_connect_data(NMBluez5DunContext *context)
 
     g_clear_error(&cdat->rfcomm_sdp_search_error);
 
-    nm_g_slice_free(cdat);
+    nm_slice_free(cdat);
 }
 
 static void

@@ -170,7 +170,7 @@ auth_call_free(AuthCall *call)
         call->chain->num_pending_auth_calls--;
         nm_auth_manager_check_authorization_cancel(call->call_id);
     }
-    nm_g_slice_free(call);
+    nm_slice_free(call);
 }
 
 static AuthCall *
@@ -443,7 +443,7 @@ nm_auth_chain_add_call_unsafe(NMAuthChain *self, const char *permission, gboolea
         }
     }
 
-    call  = g_slice_new(AuthCall);
+    call  = nm_slice_new(AuthCall);
     *call = (AuthCall){
         .chain   = self,
         .call_id = NULL,
@@ -518,7 +518,7 @@ nm_auth_chain_new_subject(NMAuthSubject         *subject,
                         NM_AUTH_SUBJECT_TYPE_INTERNAL));
     nm_assert(done_func);
 
-    self  = g_slice_new(NMAuthChain);
+    self  = nm_slice_new(NMAuthChain);
     *self = (NMAuthChain){
         .done_func          = done_func,
         .user_data          = user_data,
@@ -592,7 +592,7 @@ _auth_chain_destroy(NMAuthChain *self)
 
     nm_g_object_unref(self->cancellable);
 
-    nm_g_slice_free(self);
+    nm_slice_free(self);
 }
 
 /******************************************************************************

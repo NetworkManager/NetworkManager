@@ -381,7 +381,7 @@ _create_iface_complete(NMSupplMgrCreateIfaceHandle *handle,
     nm_clear_g_cancellable(&handle->cancellable);
     nm_ref_string_unref(handle->name_owner);
 
-    nm_g_slice_free(handle);
+    nm_slice_free(handle);
 }
 
 static void
@@ -692,7 +692,7 @@ nm_supplicant_manager_create_interface(NMSupplicantManager                 *self
 
     priv = NM_SUPPLICANT_MANAGER_GET_PRIVATE(self);
 
-    handle  = g_slice_new(NMSupplMgrCreateIfaceHandle);
+    handle  = nm_slice_new(NMSupplMgrCreateIfaceHandle);
     *handle = (NMSupplMgrCreateIfaceHandle){
         .self               = g_object_ref(self),
         .callback           = callback,

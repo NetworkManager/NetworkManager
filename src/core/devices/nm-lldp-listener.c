@@ -240,7 +240,7 @@ lldp_neighbor_free(LldpNeighbor *neighbor)
     g_free(neighbor->port_id);
     nm_g_variant_unref(neighbor->variant);
     sd_lldp_neighbor_unref(neighbor->neighbor_sd);
-    nm_g_slice_free(neighbor);
+    nm_slice_free(neighbor);
 }
 
 static void
@@ -466,7 +466,7 @@ lldp_neighbor_new(sd_lldp_neighbor *neighbor_sd)
         s_port_id = nm_utils_bin2hexstr_full(port_id, port_id_len, '\0', FALSE, NULL);
     }
 
-    neigh  = g_slice_new(LldpNeighbor);
+    neigh  = nm_slice_new(LldpNeighbor);
     *neigh = (LldpNeighbor){
         .neighbor_sd     = sd_lldp_neighbor_ref(neighbor_sd),
         .chassis_id_type = chassis_id_type,
@@ -964,7 +964,7 @@ nm_lldp_listener_new(int                  ifindex,
     r = sd_lldp_rx_set_neighbors_max(lldp_handle, MAX_NEIGHBORS);
     nm_assert(r == 0);
 
-    self  = g_slice_new(NMLldpListener);
+    self  = nm_slice_new(NMLldpListener);
     *self = (NMLldpListener){
         .ifindex          = ifindex,
         .notify_callback  = notify_callback,
@@ -1002,7 +1002,7 @@ fail_attached:
     sd_lldp_rx_detach_event(lldp_handle);
 fail_handle:
     if (self)
-        nm_g_slice_free(self);
+        nm_slice_free(self);
     sd_lldp_rx_unref(lldp_handle);
     return NULL;
 }
@@ -1024,5 +1024,5 @@ nm_lldp_listener_destroy(NMLldpListener *self)
 
     _LOGT("lldp listener destroyed");
 
-    nm_g_slice_free(self);
+    nm_slice_free(self);
 }

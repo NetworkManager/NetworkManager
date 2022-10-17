@@ -18,7 +18,7 @@ dbus_signal_data_free(gpointer data, GClosure *closure)
     NMDBusSignalData *sd = data;
 
     g_free(sd->signal_name);
-    g_slice_free(NMDBusSignalData, sd);
+    nm_slice_free_typed(NMDBusSignalData, sd);
 }
 
 static void
@@ -128,7 +128,7 @@ _nm_dbus_signal_connect_data(GDBusProxy         *proxy,
     g_return_val_if_fail(signature == NULL || g_variant_type_is_tuple(signature), 0);
     g_return_val_if_fail(c_handler != NULL, 0);
 
-    sd              = g_slice_new(NMDBusSignalData);
+    sd              = nm_slice_new(NMDBusSignalData);
     sd->signal_name = g_strdup(signal_name);
     sd->signature   = signature;
 

@@ -2083,7 +2083,7 @@ add_and_activate_info_new(NmCli      *nmc,
 {
     AddAndActivateInfo *info;
 
-    info  = g_slice_new(AddAndActivateInfo);
+    info  = nm_slice_new(AddAndActivateInfo);
     *info = (AddAndActivateInfo){
         .nmc             = nmc,
         .device          = g_object_ref(device),
@@ -2100,7 +2100,7 @@ add_and_activate_info_free(AddAndActivateInfo *info)
     g_object_unref(info->device);
     g_clear_object(&info->active);
     g_free(info->specific_object);
-    nm_g_slice_free(info);
+    nm_slice_free(info);
 }
 
 NM_AUTO_DEFINE_FCN0(AddAndActivateInfo *,
@@ -2407,7 +2407,7 @@ device_cb_info_finish(DeviceCbInfo *info, NMDevice *device)
     g_signal_handlers_disconnect_by_func(info->nmc->client, device_removed_cb, info);
     nm_clear_g_cancellable(&info->cancellable);
 
-    g_slice_free(DeviceCbInfo, info);
+    nm_slice_free_typed(DeviceCbInfo, info);
     quit();
 }
 
@@ -2468,7 +2468,7 @@ do_device_reapply(const NMCCommand *cmd, NmCli *nmc, int argc, const char *const
     nmc->nowait_flag = (nmc->timeout == 0);
     nmc->should_wait++;
 
-    info      = g_slice_new0(DeviceCbInfo);
+    info      = nm_slice_new0(DeviceCbInfo);
     info->nmc = nmc;
 
     info->queue = g_ptr_array_new_with_free_func(destroy_queue_element);
@@ -2488,7 +2488,7 @@ static void
 modify_info_free(ModifyInfo *info)
 {
     g_strfreev(info->argv);
-    nm_g_slice_free(info);
+    nm_slice_free(info);
 }
 
 NM_AUTO_DEFINE_FCN_VOID0(ModifyInfo *, _auto_free_modify_info, modify_info_free);
@@ -2588,7 +2588,7 @@ do_device_modify(const NMCCommand *cmd, NmCli *nmc, int argc, const char *const 
     nmc->nowait_flag = (nmc->timeout == 0);
     nmc->should_wait++;
 
-    info  = g_slice_new(ModifyInfo);
+    info  = nm_slice_new(ModifyInfo);
     *info = (ModifyInfo){
         .nmc  = nmc,
         .argc = argc,
@@ -2658,7 +2658,7 @@ do_devices_disconnect(const NMCCommand *cmd, NmCli *nmc, int argc, const char *c
     if (nmc->complete)
         return;
 
-    info                 = g_slice_new0(DeviceCbInfo);
+    info                 = nm_slice_new0(DeviceCbInfo);
     info->queue          = g_steal_pointer(&queue);
     info->nmc            = nmc;
     info->cmd_disconnect = TRUE;
@@ -2725,7 +2725,7 @@ do_devices_delete(const NMCCommand *cmd, NmCli *nmc, int argc, const char *const
     if (nmc->complete)
         return;
 
-    info        = g_slice_new0(DeviceCbInfo);
+    info        = nm_slice_new0(DeviceCbInfo);
     info->queue = g_steal_pointer(&queue);
     info->nmc   = nmc;
     if (nmc->timeout > 0)
@@ -3176,7 +3176,7 @@ wifi_list_finish(WifiListData *wifi_list_data, gboolean force_finished)
     nm_clear_g_signal_handler(wifi_list_data->wifi, &wifi_list_data->last_scan_id);
     nm_clear_g_source(&wifi_list_data->timeout_id);
     nm_clear_g_cancellable(&wifi_list_data->scan_cancellable);
-    nm_g_slice_free(wifi_list_data);
+    nm_slice_free(wifi_list_data);
 
     if (--scan_info->pending > 0)
         return;
@@ -3202,7 +3202,7 @@ wifi_list_finish(WifiListData *wifi_list_data, gboolean force_finished)
     g_free(scan_info->devices);
     g_array_unref(scan_info->out_indices);
     g_free(scan_info->bssid_user);
-    nm_g_slice_free(scan_info);
+    nm_slice_free(scan_info);
 
     nmc->should_wait--;
     g_main_loop_quit(loop);
@@ -3481,7 +3481,7 @@ do_device_wifi_list(const NMCCommand *cmd, NmCli *nmc, int argc, const char *con
         return;
     }
 
-    scan_info  = g_slice_new(ScanInfo);
+    scan_info  = nm_slice_new(ScanInfo);
     *scan_info = (ScanInfo){
         .out_indices        = g_array_ref(out_indices),
         .tmpl               = tmpl,
@@ -3503,7 +3503,7 @@ do_device_wifi_list(const NMCCommand *cmd, NmCli *nmc, int argc, const char *con
         else
             timeout_msec = 15000;
 
-        wifi_list_data  = g_slice_new(WifiListData);
+        wifi_list_data  = nm_slice_new(WifiListData);
         *wifi_list_data = (WifiListData){
             .wifi       = wifi,
             .scan_info  = scan_info,
@@ -5039,7 +5039,7 @@ free_checkpoint_info(CheckpointCbInfo *info)
 {
     g_clear_object(&info->checkpoint);
     g_strfreev(info->argv);
-    g_slice_free(CheckpointCbInfo, info);
+    nm_slice_free_typed(CheckpointCbInfo, info);
 }
 
 static void
@@ -5215,7 +5215,7 @@ do_device_checkpoint(const NMCCommand *cmd, NmCli *nmc, int argc, const char *co
     if (nmc->complete)
         return;
 
-    info       = g_slice_new0(CheckpointCbInfo);
+    info       = nm_slice_new0(CheckpointCbInfo);
     info->nmc  = nmc;
     info->argv = nm_strv_dup(argv, argc, TRUE);
 

@@ -78,7 +78,7 @@ _private_destroy(gpointer data)
         g_object_remove_weak_pointer((GObject *) priv->plugin_info,
                                      (gpointer *) &priv->plugin_info);
 
-    g_slice_free(NMVpnEditorPluginPrivate, priv);
+    nm_slice_free_typed(NMVpnEditorPluginPrivate, priv);
 }
 
 static NMVpnEditorPluginPrivate *
@@ -97,7 +97,7 @@ _private_get(NMVpnEditorPlugin *plugin, gboolean create)
         return priv;
     if (!create)
         return NULL;
-    priv = g_slice_new0(NMVpnEditorPluginPrivate);
+    priv = nm_slice_new0(NMVpnEditorPluginPrivate);
     g_object_set_qdata_full((GObject *) plugin, quark, priv, _private_destroy);
     return priv;
 }

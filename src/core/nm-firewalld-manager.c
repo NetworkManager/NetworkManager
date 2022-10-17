@@ -189,7 +189,7 @@ _cb_info_create(NMFirewalldManager                 *self,
     NMFirewalldManagerPrivate *priv = NM_FIREWALLD_MANAGER_GET_PRIVATE(self);
     NMFirewalldManagerCallId  *call_id;
 
-    call_id = g_slice_new0(NMFirewalldManagerCallId);
+    call_id = nm_slice_new0(NMFirewalldManagerCallId);
 
     call_id->self      = g_object_ref(self);
     call_id->ops_type  = ops_type;
@@ -224,7 +224,7 @@ _cb_info_complete(NMFirewalldManagerCallId *call_id, GError *error)
     }
     g_free(call_id->iface);
     g_object_unref(call_id->self);
-    nm_g_slice_free(call_id);
+    nm_slice_free(call_id);
 }
 
 static gboolean

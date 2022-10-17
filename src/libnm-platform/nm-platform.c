@@ -5526,7 +5526,7 @@ nm_platform_ip4_dev_route_blacklist_set(NMPlatform *self,
                 g_hash_table_new_full((GHashFunc) nmp_object_id_hash,
                                       (GEqualFunc) nmp_object_id_equal,
                                       (GDestroyNotify) nmp_object_unref,
-                                      nm_g_slice_free_fcn_gint64);
+                                      nm_slice_free_fcn_gint64);
         }
 
         timeout_msec = nm_utils_get_monotonic_timestamp_msec() + IP4_DEV_ROUTE_BLACKLIST_TIMEOUT_MS;
@@ -5554,7 +5554,7 @@ nm_platform_ip4_dev_route_blacklist_set(NMPlatform *self,
 
             _LOGT("ip4-dev-route: register %s",
                   nmp_object_to_string(o, NMP_OBJECT_TO_STRING_PUBLIC, sbuf, sizeof(sbuf)));
-            p_timeout_ms  = g_slice_new(gint64);
+            p_timeout_ms  = nm_slice_new(gint64);
             *p_timeout_ms = timeout_msec_val;
             g_hash_table_replace(priv->ip4_dev_route_blacklist_hash,
                                  (gpointer) nmp_object_ref(o),

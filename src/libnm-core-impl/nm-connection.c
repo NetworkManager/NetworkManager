@@ -72,7 +72,7 @@ _nm_connection_private_free(gpointer data)
 
     _nm_connection_private_clear(priv);
 
-    nm_g_slice_free(priv);
+    nm_slice_free(priv);
 }
 
 static NMConnectionPrivate *
@@ -88,7 +88,7 @@ _nm_connection_get_private_from_qdata(NMConnection *connection)
 
     priv = g_object_get_qdata((GObject *) connection, key);
     if (G_UNLIKELY(!priv)) {
-        priv  = g_slice_new(NMConnectionPrivate);
+        priv  = nm_slice_new(NMConnectionPrivate);
         *priv = (NMConnectionPrivate){
             .self = connection,
         };

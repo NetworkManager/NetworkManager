@@ -561,7 +561,7 @@ nm_ppp_mgr_start(const NMPppMgrConfig *config, GError **error)
     if (!ppp_manager)
         return NULL;
 
-    self = g_slice_new(NMPppMgr);
+    self = nm_slice_new(NMPppMgr);
 
     *self = (NMPppMgr){
         .config      = *config,
@@ -616,5 +616,5 @@ nm_ppp_mgr_destroy(NMPppMgr *self)
 
     g_object_unref(self->config.netns);
 
-    nm_g_slice_free(self);
+    nm_slice_free(self);
 }

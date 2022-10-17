@@ -226,13 +226,13 @@ _registration_update(NML3IPv4LL             *self,
         c_list_unlink_stale(&reg->reg_lst);
         if (c_list_is_empty(&self->reg_lst_head))
             self_unref_on_exit = self;
-        nm_g_slice_free(reg);
+        nm_slice_free(reg);
         reg = NULL;
         goto out;
     }
 
     if (!reg) {
-        reg  = g_slice_new(NML3IPv4LLRegistration);
+        reg  = nm_slice_new(NML3IPv4LLRegistration);
         *reg = (NML3IPv4LLRegistration){
             .self         = self,
             .timeout_msec = timeout_msec,
@@ -961,7 +961,7 @@ nm_l3_ipv4ll_new(NML3Cfg *l3cfg)
 
     g_return_val_if_fail(NM_IS_L3CFG(l3cfg), NULL);
 
-    self  = g_slice_new(NML3IPv4LL);
+    self  = nm_slice_new(NML3IPv4LL);
     *self = (NML3IPv4LL){
         .l3cfg                       = g_object_ref(l3cfg),
         .ref_count                   = 1,
@@ -1037,5 +1037,5 @@ nm_l3_ipv4ll_unref(NML3IPv4LL *self)
 
     g_clear_object(&self->l3cfg);
     nmp_object_unref(self->plobj);
-    nm_g_slice_free(self);
+    nm_slice_free(self);
 }

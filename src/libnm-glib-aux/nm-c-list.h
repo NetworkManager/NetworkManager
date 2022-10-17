@@ -29,7 +29,7 @@ nm_c_list_elem_new_stale(void *data)
 {
     NMCListElem *elem;
 
-    elem       = g_slice_new(NMCListElem);
+    elem       = nm_slice_new(NMCListElem);
     elem->data = data;
     return elem;
 }
@@ -42,7 +42,7 @@ nm_c_list_elem_free_full(NMCListElem *elem, GDestroyNotify free_fcn)
     c_list_unlink_stale(&elem->lst);
     if (free_fcn)
         free_fcn(elem->data);
-    g_slice_free(NMCListElem, elem);
+    nm_slice_free_typed(NMCListElem, elem);
     return TRUE;
 }
 

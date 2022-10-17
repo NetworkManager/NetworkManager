@@ -112,7 +112,7 @@ conf_id_unref(NMPacrunnerConfId *conf_id)
         g_free(conf_id->path);
         c_list_unlink_stale(&conf_id->conf_id_lst);
         g_object_unref(conf_id->self);
-        g_slice_free(NMPacrunnerConfId, conf_id);
+        nm_slice_free_typed(NMPacrunnerConfId, conf_id);
     } else
         conf_id->refcount--;
 }
@@ -364,7 +364,7 @@ nm_pacrunner_manager_add(NMPacrunnerManager *self, const char *iface, const NML3
 
     priv = NM_PACRUNNER_MANAGER_GET_PRIVATE(self);
 
-    conf_id  = g_slice_new(NMPacrunnerConfId);
+    conf_id  = nm_slice_new(NMPacrunnerConfId);
     *conf_id = (NMPacrunnerConfId){
         .log_id     = ++priv->log_id_counter,
         .refcount   = 1,

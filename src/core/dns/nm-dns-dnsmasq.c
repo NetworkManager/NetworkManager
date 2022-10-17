@@ -154,7 +154,7 @@ _gl_pid_kill_external_timeout_cb(gpointer user_data)
 
 process_gone:
     nm_shutdown_wait_obj_unregister(gl_pid.kill_external_data->shutdown_wait_handle);
-    g_slice_free(GlPidKillExternalData, g_steal_pointer(&gl_pid.kill_external_data));
+    nm_slice_free_typed(GlPidKillExternalData, g_steal_pointer(&gl_pid.kill_external_data));
 
     _gl_pid_unlink_pidfile(TRUE);
 
@@ -262,7 +262,7 @@ handle_kill:
           pid,
           PIDFILE);
 
-    gl_pid.kill_external_data  = g_slice_new(GlPidKillExternalData);
+    gl_pid.kill_external_data  = nm_slice_new(GlPidKillExternalData);
     *gl_pid.kill_external_data = (GlPidKillExternalData){
         .shutdown_wait_handle = nm_shutdown_wait_obj_register_handle_full(
             g_strdup_printf("kill-external-dnsmasq-process-%" G_PID_FORMAT, pid),
@@ -349,7 +349,7 @@ _gl_pid_spawn_notify(GlPidSpawnAsyncData *sdata, GPid pid, const int *p_exit_cod
 
     if (destroy) {
         g_clear_object(&sdata->cancellable);
-        nm_g_slice_free(sdata);
+        nm_slice_free(sdata);
     }
 }
 
@@ -623,7 +623,7 @@ _gl_pid_spawn(const char           *dm_binary,
     if (dm_binary) {
         nm_assert(notify);
         nm_assert(G_IS_CANCELLABLE(cancellable));
-        gl_pid.spawn_data  = g_slice_new(GlPidSpawnAsyncData);
+        gl_pid.spawn_data  = nm_slice_new(GlPidSpawnAsyncData);
         *gl_pid.spawn_data = (GlPidSpawnAsyncData){
             .dm_binary        = dm_binary,
             .notify           = notify,

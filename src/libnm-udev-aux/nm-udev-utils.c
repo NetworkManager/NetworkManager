@@ -197,7 +197,7 @@ nm_udev_client_new(const char *const *subsystems,
     NMUdevClient *self;
     guint         n;
 
-    self = g_slice_new0(NMUdevClient);
+    self = nm_slice_new0(NMUdevClient);
 
     self->event_handler   = event_handler;
     self->event_user_data = event_user_data;
@@ -259,7 +259,7 @@ nm_udev_client_destroy(NMUdevClient *self)
 
     g_strfreev(self->subsystems);
 
-    g_slice_free(NMUdevClient, self);
+    nm_slice_free_typed(NMUdevClient, self);
 
     return NULL;
 }

@@ -166,7 +166,7 @@ _call_id_free(NMAuthManagerCallId *call_id)
     }
 
     g_object_unref(call_id->self);
-    g_slice_free(NMAuthManagerCallId, call_id);
+    nm_slice_free_typed(NMAuthManagerCallId, call_id);
 }
 
 static void
@@ -326,7 +326,7 @@ nm_auth_manager_check_authorization(NMAuthManager                          *self
     flags = allow_user_interaction ? POLKIT_CHECK_AUTHORIZATION_FLAGS_ALLOW_USER_INTERACTION
                                    : POLKIT_CHECK_AUTHORIZATION_FLAGS_NONE;
 
-    call_id  = g_slice_new(NMAuthManagerCallId);
+    call_id  = nm_slice_new(NMAuthManagerCallId);
     *call_id = (NMAuthManagerCallId){
         .self               = g_object_ref(self),
         .callback           = callback,

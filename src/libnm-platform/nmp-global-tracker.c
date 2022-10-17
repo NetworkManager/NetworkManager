@@ -226,7 +226,7 @@ _track_data_destroy(gpointer data)
     c_list_unlink_stale(&track_data->obj_lst);
     c_list_unlink_stale(&track_data->user_tag_lst);
     nmp_object_unref(track_data->obj);
-    nm_g_slice_free(track_data);
+    nm_slice_free(track_data);
 }
 
 static const TrackData *
@@ -297,7 +297,7 @@ _track_obj_data_destroy(gpointer data)
     c_list_unlink_stale(&obj_data->obj_lst_head);
     c_list_unlink_stale(&obj_data->by_obj_lst);
     nmp_object_unref(obj_data->obj);
-    nm_g_slice_free(obj_data);
+    nm_slice_free(obj_data);
 }
 
 static void
@@ -306,7 +306,7 @@ _track_user_tag_data_destroy(gpointer data)
     TrackUserTagData *user_tag_data = data;
 
     c_list_unlink_stale(&user_tag_data->user_tag_lst_head);
-    nm_g_slice_free(user_tag_data);
+    nm_slice_free(user_tag_data);
 }
 
 static TrackData *
@@ -421,7 +421,7 @@ nmp_global_tracker_track(NMPGlobalTracker *self,
     track_data = _track_data_lookup(self->by_data, p_obj_stack, user_tag);
 
     if (!track_data) {
-        track_data  = g_slice_new(TrackData);
+        track_data  = nm_slice_new(TrackData);
         *track_data = (TrackData){
             .obj      = nm_dedup_multi_index_obj_intern(nm_platform_get_multi_idx(self->platform),
                                                    p_obj_stack),
@@ -434,7 +434,7 @@ nmp_global_tracker_track(NMPGlobalTracker *self,
 
         obj_data = g_hash_table_lookup(self->by_obj, &track_data->obj);
         if (!obj_data) {
-            obj_data  = g_slice_new(TrackObjData);
+            obj_data  = nm_slice_new(TrackObjData);
             *obj_data = (TrackObjData){
                 .obj          = nmp_object_ref(track_data->obj),
                 .obj_lst_head = C_LIST_INIT(obj_data->obj_lst_head),
@@ -447,7 +447,7 @@ nmp_global_tracker_track(NMPGlobalTracker *self,
 
         user_tag_data = g_hash_table_lookup(self->by_user_tag, &track_data->user_tag);
         if (!user_tag_data) {
-            user_tag_data  = g_slice_new(TrackUserTagData);
+            user_tag_data  = nm_slice_new(TrackUserTagData);
             *user_tag_data = (TrackUserTagData){
                 .user_tag          = user_tag,
                 .user_tag_lst_head = C_LIST_INIT(user_tag_data->user_tag_lst_head),
@@ -1226,7 +1226,7 @@ nmp_global_tracker_new(NMPlatform *platform)
 
     G_STATIC_ASSERT_EXPR(G_STRUCT_OFFSET(TrackUserTagData, user_tag) == 0);
 
-    self  = g_slice_new(NMPGlobalTracker);
+    self  = nm_slice_new(NMPGlobalTracker);
     *self = (NMPGlobalTracker){
         .ref_count = 1,
         .platform  = g_object_ref(platform),
@@ -1273,5 +1273,5 @@ nmp_global_tracker_unref(NMPGlobalTracker *self)
     nm_assert(c_list_is_empty(&self->by_obj_lst_heads[2]));
     nm_assert(c_list_is_empty(&self->by_obj_lst_heads[3]));
     g_object_unref(self->platform);
-    nm_g_slice_free(self);
+    nm_slice_free(self);
 }

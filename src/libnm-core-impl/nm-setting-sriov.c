@@ -74,7 +74,7 @@ static GHashTable *
 _vf_vlan_create_hash(void)
 {
     G_STATIC_ASSERT_EXPR(G_STRUCT_OFFSET(VFVlan, id) == 0);
-    return g_hash_table_new_full(_vf_vlan_hash, _vf_vlan_equal, NULL, nm_g_slice_free_fcn(VFVlan));
+    return g_hash_table_new_full(_vf_vlan_hash, _vf_vlan_equal, NULL, nm_slice_free_fcn(VFVlan));
 }
 
 /**
@@ -92,7 +92,7 @@ nm_sriov_vf_new(guint index)
 {
     NMSriovVF *vf;
 
-    vf  = g_slice_new(NMSriovVF);
+    vf  = nm_slice_new(NMSriovVF);
     *vf = (NMSriovVF){
         .refcount   = 1,
         .index      = index,
@@ -142,7 +142,7 @@ nm_sriov_vf_unref(NMSriovVF *vf)
         if (vf->vlans)
             g_hash_table_unref(vf->vlans);
         g_free(vf->vlan_ids);
-        nm_g_slice_free(vf);
+        nm_slice_free(vf);
     }
 }
 
@@ -212,7 +212,7 @@ vf_add_vlan(NMSriovVF *vf, guint vlan_id, guint qos, NMSriovVFVlanProtocol proto
 {
     VFVlan *vlan;
 
-    vlan  = g_slice_new(VFVlan);
+    vlan  = nm_slice_new(VFVlan);
     *vlan = (VFVlan){
         .id       = vlan_id,
         .qos      = qos,

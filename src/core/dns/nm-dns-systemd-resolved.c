@@ -233,7 +233,7 @@ _request_item_unref(RequestItem *request_item)
     nm_assert(c_list_is_empty(&request_item->request_queue_lst));
 
     g_variant_unref(request_item->argument);
-    nm_g_slice_free(request_item);
+    nm_slice_free(request_item);
 }
 
 static void
@@ -245,7 +245,7 @@ _request_item_append(NMDnsSystemdResolved *self,
     NMDnsSystemdResolvedPrivate *priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE(self);
     RequestItem                 *request_item;
 
-    request_item  = g_slice_new(RequestItem);
+    request_item  = nm_slice_new(RequestItem);
     *request_item = (RequestItem){
         .ref_count = 1,
         .operation = operation,
@@ -262,7 +262,7 @@ static void
 _interface_config_free(InterfaceConfig *config)
 {
     nm_g_ptr_array_unref(config->ip_data_list);
-    nm_g_slice_free(config);
+    nm_slice_free(config);
 }
 
 static void
@@ -710,7 +710,7 @@ update(NMDnsPlugin             *plugin,
 
         ic = g_hash_table_lookup(interfaces, GINT_TO_POINTER(ifindex));
         if (!ic) {
-            ic  = g_slice_new(InterfaceConfig);
+            ic  = nm_slice_new(InterfaceConfig);
             *ic = (InterfaceConfig){
                 .ifindex      = ifindex,
                 .ip_data_list = g_ptr_array_sized_new(4),
@@ -898,7 +898,7 @@ _resolve_complete(NMDnsSystemdResolvedResolveHandle       *handle,
     handle->r_address
         .callback(self, handle, names, names_len, flags, error, handle->callback_user_data);
 
-    nm_g_slice_free(handle);
+    nm_slice_free(handle);
 }
 
 static void
@@ -1073,7 +1073,7 @@ nm_dns_systemd_resolved_resolve_address(NMDnsSystemdResolved                    
     nm_assert(addr);
     nm_assert(callback);
 
-    handle  = g_slice_new(NMDnsSystemdResolvedResolveHandle);
+    handle  = nm_slice_new(NMDnsSystemdResolvedResolveHandle);
     *handle = (NMDnsSystemdResolvedResolveHandle){
         .self               = self,
         .timeout_msec       = timeout_msec,

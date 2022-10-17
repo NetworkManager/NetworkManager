@@ -314,7 +314,7 @@ _add(NMDedupMultiIndex        *self,
         head_entry = head_existing;
 
     if (!head_entry) {
-        head_entry           = g_slice_new0(NMDedupMultiHeadEntry);
+        head_entry           = nm_slice_new0(NMDedupMultiHeadEntry);
         head_entry->is_head  = TRUE;
         head_entry->idx_type = idx_type;
         c_list_init(&head_entry->lst_entries_head);
@@ -330,7 +330,7 @@ _add(NMDedupMultiIndex        *self,
         nm_assert(c_list_contains(&entry_order->lst_entries, &head_entry->lst_entries_head));
     }
 
-    entry       = g_slice_new0(NMDedupMultiEntry);
+    entry       = nm_slice_new0(NMDedupMultiEntry);
     entry->obj  = obj_new;
     entry->head = head_entry;
 
@@ -507,12 +507,12 @@ _remove_entry(NMDedupMultiIndex *self, NMDedupMultiEntry *entry, gboolean *out_h
         nm_assert_not_reached();
 
     c_list_unlink_stale(&entry->lst_entries);
-    g_slice_free(NMDedupMultiEntry, entry);
+    nm_slice_free_typed(NMDedupMultiEntry, entry);
 
     if (head_entry) {
         nm_assert(c_list_is_empty(&head_entry->lst_entries_head));
         c_list_unlink_stale(&head_entry->lst_idx);
-        g_slice_free(NMDedupMultiHeadEntry, head_entry);
+        nm_slice_free_typed(NMDedupMultiHeadEntry, head_entry);
     }
 
     nm_dedup_multi_obj_unref(obj);
@@ -1004,7 +1004,7 @@ nm_dedup_multi_index_new(void)
 {
     NMDedupMultiIndex *self;
 
-    self            = g_slice_new0(NMDedupMultiIndex);
+    self            = nm_slice_new0(NMDedupMultiIndex);
     self->ref_count = 1;
     self->idx_entries =
         g_hash_table_new((GHashFunc) _dict_idx_entries_hash, (GEqualFunc) _dict_idx_entries_equal);
@@ -1060,6 +1060,6 @@ more:
     g_hash_table_unref(self->idx_entries);
     g_hash_table_unref(self->idx_objs);
 
-    g_slice_free(NMDedupMultiIndex, self);
+    nm_slice_free_typed(NMDedupMultiIndex, self);
     return NULL;
 }

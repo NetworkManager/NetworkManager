@@ -112,7 +112,7 @@ _add_connection_info_new(NmCli *nmc, NMConnection *orig_connection, NMConnection
 {
     AddConnectionInfo *info;
 
-    info  = g_slice_new(AddConnectionInfo);
+    info  = nm_slice_new(AddConnectionInfo);
     *info = (AddConnectionInfo){
         .nmc       = nmc,
         .orig_id   = orig_connection ? g_strdup(nm_connection_get_id(orig_connection)) : NULL,
@@ -128,7 +128,7 @@ _add_connection_info_free(AddConnectionInfo *info)
     g_free(info->orig_id);
     g_free(info->orig_uuid);
     g_free(info->new_id);
-    nm_g_slice_free(info);
+    nm_slice_free(info);
 }
 
 NM_AUTO_DEFINE_FCN(AddConnectionInfo *,
@@ -188,7 +188,7 @@ print_connection_done(GObject *source_object, GAsyncResult *res, gpointer user_d
     }
 
     g_free(print_conn_data->data);
-    g_slice_free(PrintConnData, print_conn_data);
+    nm_slice_free_typed(PrintConnData, print_conn_data);
 
     nmc->should_wait--;
     quit();
@@ -222,7 +222,7 @@ nmc_print_connection_and_quit(NmCli *nmc, NMConnection *connection)
         goto error;
 
     stream                   = g_unix_output_stream_new(STDOUT_FILENO, FALSE);
-    print_conn_data          = g_slice_new(PrintConnData);
+    print_conn_data          = nm_slice_new(PrintConnData);
     print_conn_data->data    = g_key_file_to_data(keyfile, &print_conn_data->length, NULL);
     print_conn_data->written = 0;
     print_conn_data->nmc     = nmc;
@@ -526,7 +526,7 @@ _metagen_con_show_row_data_new_for_connection(NMRemoteConnection *connection,
 {
     MetagenConShowRowData *row_data;
 
-    row_data                     = g_slice_new0(MetagenConShowRowData);
+    row_data                     = nm_slice_new0(MetagenConShowRowData);
     row_data->connection         = g_object_ref(NM_CONNECTION(connection));
     row_data->show_active_fields = show_active_fields;
     return row_data;
@@ -539,7 +539,7 @@ _metagen_con_show_row_data_new_for_active_connection(NMRemoteConnection *connect
 {
     MetagenConShowRowData *row_data;
 
-    row_data = g_slice_new0(MetagenConShowRowData);
+    row_data = nm_slice_new0(MetagenConShowRowData);
     if (connection)
         row_data->connection = g_object_ref(NM_CONNECTION(connection));
     row_data->primary_active     = g_object_ref(active);
@@ -597,7 +597,7 @@ _metagen_con_show_row_data_destroy(gpointer data)
     g_clear_object(&row_data->connection);
     g_clear_object(&row_data->primary_active);
     nm_clear_pointer(&row_data->all_active, g_ptr_array_unref);
-    g_slice_free(MetagenConShowRowData, row_data);
+    nm_slice_free_typed(MetagenConShowRowData, row_data);
 }
 
 static const char *
@@ -3314,7 +3314,7 @@ connection_cb_info_finish(ConnectionCbInfo *info, gpointer obj)
 
     g_signal_handlers_disconnect_by_func(info->nmc->client, connection_removed_cb, info);
 
-    g_slice_free(ConnectionCbInfo, info);
+    nm_slice_free_typed(ConnectionCbInfo, info);
 
     quit();
 }
@@ -3444,7 +3444,7 @@ do_connection_down(const NMCCommand *cmd, NmCli *nmc, int argc, const char *cons
     if (nmc->timeout > 0) {
         nmc->should_wait++;
 
-        info           = g_slice_new0(ConnectionCbInfo);
+        info           = nm_slice_new0(ConnectionCbInfo);
         info->nmc      = nmc;
         info->obj_list = g_ptr_array_sized_new(found_active_cons->len);
         for (i = 0; i < found_active_cons->len; i++) {
@@ -9368,7 +9368,7 @@ do_connection_delete(const NMCCommand *cmd, NmCli *nmc, int argc, const char *co
     if (nmc->complete)
         goto finish;
 
-    info           = g_slice_new0(ConnectionCbInfo);
+    info           = nm_slice_new0(ConnectionCbInfo);
     info->nmc      = nmc;
     info->obj_list = g_ptr_array_sized_new(found_cons->len);
     for (i = 0; i < found_cons->len; i++) {
@@ -9962,7 +9962,7 @@ do_connection_migrate(const NMCCommand *cmd, NmCli *nmc, int argc, const char *c
         }
     }
 
-    info           = g_slice_new0(ConnectionCbInfo);
+    info           = nm_slice_new0(ConnectionCbInfo);
     info->nmc      = nmc;
     info->obj_list = g_ptr_array_sized_new(found_cons->len);
     for (i = 0; i < found_cons->len; i++) {

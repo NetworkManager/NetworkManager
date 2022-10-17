@@ -567,7 +567,7 @@ _peers_remove(NMDeviceWireGuard *self, PeerData *peer_data)
     nm_wireguard_peer_unref(peer_data->peer);
     if (nm_clear_g_cancellable(&peer_data->ep_resolv.cancellable))
         _peers_resolving_cnt_decrement(self);
-    g_slice_free(PeerData, peer_data);
+    nm_slice_free_typed(PeerData, peer_data);
 
     if (c_list_is_empty(&priv->lst_peers_head)) {
         nm_clear_g_source(&priv->resolve_next_try_id);
@@ -587,7 +587,7 @@ _peers_add(NMDeviceWireGuard *self, NMWireGuardPeer *peer)
     nm_assert(nm_wireguard_peer_is_sealed(peer));
     nm_assert(!_peers_find(priv, peer));
 
-    peer_data  = g_slice_new(PeerData);
+    peer_data  = nm_slice_new(PeerData);
     *peer_data = (PeerData){
         .self = self,
         .peer = nm_wireguard_peer_ref(peer),

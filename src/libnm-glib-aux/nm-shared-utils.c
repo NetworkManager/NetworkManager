@@ -12,6 +12,7 @@
 #include <pwd.h>
 #include <arpa/inet.h>
 #include <poll.h>
+#include <malloc.h>
 #include <fcntl.h>
 #include <sys/syscall.h>
 #include <net/if.h>
@@ -34,6 +35,15 @@ const char _nm_hexchar_table_lower[16] = "0123456789abcdef";
 const char _nm_hexchar_table_upper[16] = "0123456789ABCDEF";
 
 const void *const _NM_PTRARRAY_EMPTY[1] = {NULL};
+
+/*****************************************************************************/
+
+void
+_nm_slice_assert_usable_size(gsize mem_size, gpointer mem_block)
+{
+    nm_assert(mem_block);
+    nm_assert(mem_size <= malloc_usable_size(mem_block));
+}
 
 /*****************************************************************************/
 
@@ -4192,7 +4202,7 @@ _nm_utils_user_data_pack(int nargs, gconstpointer *args)
     nm_assert(nargs > 0);
     nm_assert(args);
 
-    data = g_slice_alloc(((gsize) nargs) * sizeof(gconstpointer));
+    data = nm_slice_alloc(((gsize) nargs) * sizeof(gconstpointer));
     for (i = 0; i < nargs; i++)
         data[i] = (gpointer) args[i];
     return (NMUtilsUserData *) data;
@@ -4219,7 +4229,7 @@ _nm_utils_user_data_unpack(NMUtilsUserData *user_data, int nargs, ...)
     }
     va_end(ap);
 
-    g_slice_free1(((gsize) nargs) * sizeof(gconstpointer), data);
+    nm_slice_free_sized(((gsize) nargs) * sizeof(gconstpointer), data);
 }
 
 /*****************************************************************************/
@@ -4241,7 +4251,7 @@ _nm_utils_invoke_on_idle_complete(InvokeOnIdleData *data)
 
     nm_g_object_unref(data->cancellable);
     g_source_destroy(data->source);
-    nm_g_slice_free(data);
+    nm_slice_free(data);
 }
 
 static gboolean
@@ -4281,7 +4291,7 @@ _nm_utils_invoke_on_idle_start(gboolean                    use_timeout,
 
     g_return_if_fail(callback);
 
-    data  = g_slice_new(InvokeOnIdleData);
+    data  = nm_slice_new(InvokeOnIdleData);
     *data = (InvokeOnIdleData){
         .callback           = callback,
         .callback_user_data = callback_user_data,
@@ -4905,7 +4915,7 @@ _poll_data_free(gpointer user_data)
 
     if (poll_data->has_many_idx)
         g_free(poll_data->idx.many);
-    nm_g_slice_free(poll_data);
+    nm_slice_free(poll_data);
 }
 
 static void
@@ -5014,7 +5024,7 @@ _ctx_integ_source_prepare(GSource *source, int *out_timeout)
             poll_data = g_hash_table_lookup(ctx_src->fds, &fd->fd);
 
             if (G_UNLIKELY(!poll_data)) {
-                poll_data  = g_slice_new(PollData);
+                poll_data  = nm_slice_new(PollData);
                 *poll_data = (PollData){
                     .fd                = fd->fd,
                     .idx.one           = i,
@@ -6170,10 +6180,10 @@ _tls_reg_destroy(gpointer data)
     while ((entry = c_list_last_entry(lst_head, TlsRegData, lst))) {
         c_list_unlink_stale(&entry->lst);
         entry->destroy_notify(entry->tls_data);
-        nm_g_slice_free(entry);
+        nm_slice_free(entry);
     }
 
-    nm_g_slice_free(lst_head);
+    nm_slice_free(lst_head);
 }
 
 static void
@@ -6210,13 +6220,13 @@ nm_utils_thread_local_register_destroy(gpointer tls_data, GDestroyNotify destroy
         g_return_if_reached();
 
     if ((lst_head = pthread_getspecific(_tls_reg_key)) == NULL) {
-        lst_head = g_slice_new(CList);
+        lst_head = nm_slice_new(CList);
         c_list_init(lst_head);
         if (pthread_setspecific(_tls_reg_key, lst_head) != 0)
             g_return_if_reached();
     }
 
-    entry                 = g_slice_new(TlsRegData);
+    entry                 = nm_slice_new(TlsRegData);
     entry->tls_data       = tls_data;
     entry->destroy_notify = destroy_notify;
     c_list_link_tail(lst_head, &entry->lst);

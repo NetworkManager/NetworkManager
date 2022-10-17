@@ -47,7 +47,7 @@ nm_dns_entry_new(const char        *interface,
     NMDnsEntry *entry;
     guint       i, len;
 
-    entry           = g_slice_new0(NMDnsEntry);
+    entry           = nm_slice_new0(NMDnsEntry);
     entry->refcount = 1;
 
     entry->interface = g_strdup(interface);
@@ -117,7 +117,7 @@ nm_dns_entry_unref(NMDnsEntry *entry)
         g_free(entry->interface);
         g_strfreev(entry->nameservers);
         g_strfreev(entry->domains);
-        g_slice_free(NMDnsEntry, entry);
+        nm_slice_free_typed(NMDnsEntry, entry);
     }
 }
 

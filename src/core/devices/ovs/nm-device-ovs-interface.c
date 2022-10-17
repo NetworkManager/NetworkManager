@@ -346,7 +346,7 @@ deactivate_invoke_cb(DeactivateData *data, GError *error)
     nm_clear_g_source(&data->link_timeout_id);
     g_object_unref(data->self);
     g_object_unref(data->cancellable);
-    nm_g_slice_free(data);
+    nm_slice_free(data);
 }
 
 static void
@@ -418,7 +418,7 @@ deactivate_async(NMDevice                  *device,
      * ovsdb and wait that changes are picked up.
      */
 
-    data  = g_slice_new(DeactivateData);
+    data  = nm_slice_new(DeactivateData);
     *data = (DeactivateData){
         .self               = g_object_ref(self),
         .cancellable        = g_object_ref(cancellable),

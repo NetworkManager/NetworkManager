@@ -2759,7 +2759,7 @@ nmtstp_acd_defender_new(int ifindex, in_addr_t ip_addr, const NMEtherAddr *mac_a
     g_assert_cmpint(r, ==, 0);
     g_assert(probe);
 
-    defender  = g_slice_new(NMTstpAcdDefender);
+    defender  = nm_slice_new(NMTstpAcdDefender);
     *defender = (NMTstpAcdDefender){
         .ifindex = ifindex,
         .ip_addr = ip_addr,
@@ -2796,5 +2796,5 @@ nmtstp_acd_defender_destroy(NMTstpAcdDefender *defender)
     nm_clear_pointer(&defender->nacd, n_acd_unref);
     nm_clear_pointer(&defender->probe, n_acd_probe_free);
 
-    nm_g_slice_free(defender);
+    nm_slice_free(defender);
 }

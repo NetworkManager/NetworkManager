@@ -81,7 +81,7 @@ _storage_data_destroy(StorageData *sd)
         return;
     nm_g_object_unref(sd->connection);
     nm_g_object_unref(sd->storage);
-    g_slice_free(StorageData, sd);
+    nm_slice_free_typed(StorageData, sd);
 }
 
 /*****************************************************************************/
@@ -329,7 +329,7 @@ load_eni_ifaces(NMSIfupdownPlugin *self)
                 if (!storage)
                     storage = nm_settings_storage_new(NM_SETTINGS_PLUGIN(self), uuid, NULL);
 
-                sd  = g_slice_new(StorageData);
+                sd  = nm_slice_new(StorageData);
                 *sd = (StorageData){
                     .connection = g_steal_pointer(&connection),
                     .storage    = g_steal_pointer(&storage),

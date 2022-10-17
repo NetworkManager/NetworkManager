@@ -351,7 +351,7 @@ connect_context_clear(NMModemBroadband *self)
         g_clear_object(&ctx->connection);
         g_clear_object(&ctx->connect_properties);
         g_clear_object(&ctx->self);
-        g_slice_free(ConnectContext, ctx);
+        nm_slice_free_typed(ConnectContext, ctx);
         self->_priv.ctx = NULL;
     }
 }
@@ -709,7 +709,7 @@ modem_act_stage1_prepare(NMModem             *_self,
     connect_context_clear(self);
 
     /* Allocate new context for this connect stage attempt */
-    self->_priv.ctx              = g_slice_new0(ConnectContext);
+    self->_priv.ctx              = nm_slice_new0(ConnectContext);
     self->_priv.ctx->caps        = mm_modem_get_current_capabilities(self->_priv.modem_iface);
     self->_priv.ctx->cancellable = g_cancellable_new();
     self->_priv.ctx->connection  = g_object_ref(connection);
@@ -1209,7 +1209,7 @@ disconnect_context_complete(DisconnectContext *ctx, GError *error)
         ctx->callback(NM_MODEM(ctx->self), error, ctx->callback_user_data);
     nm_g_object_unref(ctx->cancellable);
     g_object_unref(ctx->self);
-    g_slice_free(DisconnectContext, ctx);
+    nm_slice_free_typed(DisconnectContext, ctx);
 }
 
 static void
@@ -1253,7 +1253,7 @@ disconnect(NMModem                   *modem,
     connect_context_clear(self);
     _nm_modem_set_apn(NM_MODEM(self), NULL);
 
-    ctx                     = g_slice_new0(DisconnectContext);
+    ctx                     = nm_slice_new0(DisconnectContext);
     ctx->self               = g_object_ref(self);
     ctx->cancellable        = nm_g_object_ref(cancellable);
     ctx->callback           = callback;

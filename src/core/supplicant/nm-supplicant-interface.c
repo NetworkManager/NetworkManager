@@ -586,7 +586,7 @@ _bss_info_destroy(NMSupplicantBssInfo *bss_info)
     nm_clear_g_cancellable(&bss_info->_init_cancellable);
     g_bytes_unref(bss_info->ssid);
     nm_ref_string_unref(bss_info->bss_path);
-    nm_g_slice_free(bss_info);
+    nm_slice_free(bss_info);
 }
 
 static void
@@ -831,7 +831,7 @@ _bss_info_add(NMSupplicantInterface *self, const char *object_path)
         return;
     }
 
-    bss_info  = g_slice_new(NMSupplicantBssInfo);
+    bss_info  = nm_slice_new(NMSupplicantBssInfo);
     *bss_info = (NMSupplicantBssInfo){
         ._self             = self,
         .bss_path          = g_steal_pointer(&bss_path),
@@ -891,7 +891,7 @@ _peer_info_destroy(NMSupplicantPeerInfo *peer_info)
 
     nm_ref_string_unref(peer_info->peer_path);
 
-    nm_g_slice_free(peer_info);
+    nm_slice_free(peer_info);
 }
 
 static void
@@ -1029,7 +1029,7 @@ _peer_info_add(NMSupplicantInterface *self, const char *object_path)
         return;
     }
 
-    peer_info  = g_slice_new(NMSupplicantPeerInfo);
+    peer_info  = nm_slice_new(NMSupplicantPeerInfo);
     *peer_info = (NMSupplicantPeerInfo){
         ._self             = self,
         .peer_path         = g_steal_pointer(&peer_path),
@@ -1622,7 +1622,7 @@ _wps_data_free(WpsData *wps_data, GDBusConnection *dbus_connection)
     g_free(wps_data->type);
     g_free(wps_data->pin);
     g_free(wps_data->bssid);
-    nm_g_slice_free(wps_data);
+    nm_slice_free(wps_data);
 }
 
 static void
@@ -1823,7 +1823,7 @@ _wps_start(NMSupplicantInterface *self, const char *type, const char *bssid, con
             return;
         }
 
-        wps_data  = g_slice_new(WpsData);
+        wps_data  = nm_slice_new(WpsData);
         *wps_data = (WpsData){
             .self  = self,
             .type  = g_strdup(type),
@@ -2123,7 +2123,7 @@ assoc_return(NMSupplicantInterface *self, GError *error, const char *message)
         assoc_data->callback(self, error, assoc_data->user_data);
 
     g_object_unref(assoc_data->cfg);
-    g_slice_free(AssocData, assoc_data);
+    nm_slice_free_typed(AssocData, assoc_data);
 }
 
 void
@@ -2288,7 +2288,7 @@ assoc_add_network_cb(GObject *source, GAsyncResult *result, gpointer user_data)
         assoc_data->add_network_data = NULL;
     name_owner  = g_steal_pointer(&add_network_data->name_owner);
     object_path = g_steal_pointer(&add_network_data->object_path);
-    nm_g_slice_free(add_network_data);
+    nm_slice_free(add_network_data);
 
     res = g_dbus_connection_call_finish(G_DBUS_CONNECTION(source), result, &error);
 
@@ -2373,7 +2373,7 @@ add_network(NMSupplicantInterface *self)
      *
      * For that we also have a shutdown_wait_obj so that on exit we still wait
      * to handle the response. */
-    add_network_data  = g_slice_new(AddNetworkData);
+    add_network_data  = nm_slice_new(AddNetworkData);
     *add_network_data = (AddNetworkData){
         .assoc_data        = priv->assoc_data,
         .name_owner        = nm_ref_string_ref(priv->name_owner),
@@ -2526,7 +2526,7 @@ nm_supplicant_interface_assoc(NMSupplicantInterface       *self,
 
     nm_supplicant_interface_disconnect(self);
 
-    assoc_data  = g_slice_new(AssocData);
+    assoc_data  = nm_slice_new(AssocData);
     *assoc_data = (AssocData){
         .self      = self,
         .cfg       = g_object_ref(cfg),
@@ -2628,7 +2628,7 @@ scan_request_cb(GObject *source, GAsyncResult *result, gpointer user_data)
         if (!data->callback) {
             /* the self instance was not kept alive. We also must not touch it. Return. */
             nm_g_object_unref(data->cancellable);
-            nm_g_slice_free(data);
+            nm_slice_free(data);
             return;
         }
         cancelled = TRUE;
@@ -2661,7 +2661,7 @@ scan_request_cb(GObject *source, GAsyncResult *result, gpointer user_data)
         data->callback(self, data->cancellable, data->user_data);
 
     nm_g_object_unref(data->cancellable);
-    nm_g_slice_free(data);
+    nm_slice_free(data);
 }
 
 void
@@ -2699,7 +2699,7 @@ nm_supplicant_interface_request_scan(NMSupplicantInterface                   *se
         g_variant_builder_add(&builder, "{sv}", "SSIDs", g_variant_builder_end(&ssids_builder));
     }
 
-    data  = g_slice_new(ScanRequestData);
+    data  = nm_slice_new(ScanRequestData);
     *data = (ScanRequestData){
         .self        = self,
         .callback    = callback,

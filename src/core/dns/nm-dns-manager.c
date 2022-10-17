@@ -365,7 +365,7 @@ _dns_config_ip_data_new(NMDnsConfigData      *data,
     nm_assert(NM_IS_L3_CONFIG_DATA(l3cd));
     nm_assert(ip_config_type != NM_DNS_IP_CONFIG_TYPE_REMOVED);
 
-    ip_data  = g_slice_new(NMDnsConfigIPData);
+    ip_data  = nm_slice_new(NMDnsConfigIPData);
     *ip_data = (NMDnsConfigIPData){
         .data           = data,
         .source_tag     = source_tag,
@@ -395,7 +395,7 @@ _dns_config_ip_data_free(NMDnsConfigIPData *ip_data)
     g_strfreev(ip_data->domains.reverse);
 
     nm_l3_config_data_unref(ip_data->l3cd);
-    nm_g_slice_free(ip_data);
+    nm_slice_free(ip_data);
 }
 
 static void
@@ -405,7 +405,7 @@ _dns_config_data_free(NMDnsConfigData *data)
 
     nm_assert(c_list_is_empty(&data->data_lst_head));
     c_list_unlink_stale(&data->configs_lst);
-    nm_g_slice_free(data);
+    nm_slice_free(data);
 }
 
 static int
@@ -2025,7 +2025,7 @@ nm_dns_manager_set_ip_config(NMDnsManager         *self,
     }
 
     if (!data) {
-        data  = g_slice_new(NMDnsConfigData);
+        data  = nm_slice_new(NMDnsConfigData);
         *data = (NMDnsConfigData){
             .ifindex       = ifindex,
             .self          = self,

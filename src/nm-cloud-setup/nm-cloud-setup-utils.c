@@ -194,7 +194,7 @@ _poll_task_data_free(gpointer data)
 
     g_main_context_unref(poll_task_data->context);
 
-    nm_g_slice_free(poll_task_data);
+    nm_slice_free(poll_task_data);
 }
 
 static void
@@ -336,7 +336,7 @@ nmcs_utils_poll(int                         poll_timeout_ms,
 {
     PollTaskData *poll_task_data;
 
-    poll_task_data  = g_slice_new(PollTaskData);
+    poll_task_data  = nm_slice_new(PollTaskData);
     *poll_task_data = (PollTaskData){
         .task             = nm_g_task_new(NULL, cancellable, nmcs_utils_poll, callback, user_data),
         .probe_start_fcn  = probe_start_fcn,

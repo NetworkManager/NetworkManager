@@ -2507,7 +2507,7 @@ _wireguard_update_from_peers_nla(CList *peers, GArray **p_allowed_ips, struct nl
          * Only parse WGPEER_A_ALLOWEDIPS below. */
     } else {
         /* otherwise, start a new peer */
-        peer_c = g_slice_new0(WireGuardPeerConstruct);
+        peer_c = nm_slice_new0(WireGuardPeerConstruct);
         c_list_link_tail(peers, &peer_c->lst);
 
         nla_memcpy(&peer_c->data.public_key,
@@ -2717,7 +2717,7 @@ _wireguard_read_info(NMPlatform     *platform /* used only as logging context */
         while ((peer_c = c_list_first_entry(&parse_data.peers, WireGuardPeerConstruct, lst))) {
             c_list_unlink_stale(&peer_c->lst);
             nm_explicit_bzero(&peer_c->data.preshared_key, sizeof(peer_c->data.preshared_key));
-            g_slice_free(WireGuardPeerConstruct, peer_c);
+            nm_slice_free_typed(WireGuardPeerConstruct, peer_c);
         }
         return NULL;
     }
@@ -2764,7 +2764,7 @@ _wireguard_read_info(NMPlatform     *platform /* used only as logging context */
 
         c_list_unlink_stale(&peer_c->lst);
         nm_explicit_bzero(&peer_c->data.preshared_key, sizeof(peer_c->data.preshared_key));
-        g_slice_free(WireGuardPeerConstruct, peer_c);
+        nm_slice_free_typed(WireGuardPeerConstruct, peer_c);
 
         if (peer->_construct_idx_end != 0) {
             guint len;
@@ -5770,7 +5770,7 @@ sysctl_async_info_free(SysctlAsyncInfo *info)
     g_free(info->path);
     g_strfreev(info->values);
     g_object_unref(info->cancellable);
-    g_slice_free(SysctlAsyncInfo, info);
+    nm_slice_free_typed(SysctlAsyncInfo, info);
 }
 
 static void
@@ -5892,7 +5892,7 @@ sysctl_set_async(NMPlatform             *platform,
     } else
         dirfd_dup = -1;
 
-    info                = g_slice_new0(SysctlAsyncInfo);
+    info                = nm_slice_new0(SysctlAsyncInfo);
     info->platform      = g_object_ref(platform);
     info->pathid        = g_strdup(pathid);
     info->dirfd         = dirfd_dup;

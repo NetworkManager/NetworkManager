@@ -712,7 +712,7 @@ svFile_new(const char *name, int fd, const char *content)
     nm_assert(name);
     nm_assert(fd >= -1);
 
-    s  = g_slice_new(shvarFile);
+    s  = nm_slice_new(shvarFile);
     *s = (shvarFile){
         .fileName = g_strdup(name),
         .fd       = fd,
@@ -786,7 +786,7 @@ line_new_parse(const char *value, gsize len)
 
     nm_assert(value);
 
-    line  = g_slice_new(shvarLine);
+    line  = nm_slice_new(shvarLine);
     *line = (shvarLine){
         .lst   = C_LIST_INIT(line->lst),
         .dirty = TRUE,
@@ -826,7 +826,7 @@ line_new_build(const char *key, const char *value)
 
     value = svEscape(value, &value_escaped);
 
-    line    = g_slice_new(shvarLine);
+    line    = nm_slice_new(shvarLine);
     new_key = g_strdup(key), *line = (shvarLine){
                                  .lst             = C_LIST_INIT(line->lst),
                                  .line            = value_escaped ?: g_strdup(value),
@@ -878,7 +878,7 @@ line_free(shvarLine *line)
     c_list_unlink_stale(&line->lst);
     g_free(line->line);
     g_free(line->key_with_prefix);
-    g_slice_free(shvarLine, line);
+    nm_slice_free_typed(shvarLine, line);
 }
 
 /*****************************************************************************/
@@ -1723,5 +1723,5 @@ svCloseFile(shvarFile *s)
     g_hash_table_destroy(s->lst_idx);
     while ((line = c_list_first_entry(&s->lst_head, shvarLine, lst)))
         line_free(line);
-    g_slice_free(shvarFile, s);
+    nm_slice_free_typed(shvarFile, s);
 }

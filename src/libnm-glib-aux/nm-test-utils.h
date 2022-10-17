@@ -1028,7 +1028,7 @@ nmtst_rand_perm(GRand *rand, void *dst, const void *src, gsize elmt_size, gsize 
     if (!rand)
         rand = nmtst_get_rand();
 
-    bu = g_slice_alloc(elmt_size);
+    bu = nm_slice_alloc(elmt_size);
 
     p_ = dst;
     for (i = n_elmt; i > 1; i--) {
@@ -1045,7 +1045,7 @@ nmtst_rand_perm(GRand *rand, void *dst, const void *src, gsize elmt_size, gsize 
         p_ += elmt_size;
     }
 
-    g_slice_free1(elmt_size, bu);
+    nm_slice_free_sized(elmt_size, bu);
     return dst;
 }
 
