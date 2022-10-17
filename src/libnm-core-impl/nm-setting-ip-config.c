@@ -4014,7 +4014,7 @@ nm_setting_ip_config_get_num_dns(NMSettingIPConfig *setting)
 {
     g_return_val_if_fail(NM_IS_SETTING_IP_CONFIG(setting), 0);
 
-    return NM_SETTING_IP_CONFIG_GET_PRIVATE(setting)->dns->len;
+    return nm_g_ptr_array_len(NM_SETTING_IP_CONFIG_GET_PRIVATE(setting)->dns);
 }
 
 /**
@@ -4032,9 +4032,32 @@ nm_setting_ip_config_get_dns(NMSettingIPConfig *setting, int idx)
     g_return_val_if_fail(NM_IS_SETTING_IP_CONFIG(setting), NULL);
 
     priv = NM_SETTING_IP_CONFIG_GET_PRIVATE(setting);
-    g_return_val_if_fail(idx >= 0 && idx < priv->dns->len, NULL);
+    g_return_val_if_fail(idx >= 0 && ((guint) idx) < nm_g_ptr_array_len(priv->dns), NULL);
 
     return priv->dns->pdata[idx];
+}
+
+static gboolean
+_ip_config_add_dns(NMSettingIPConfig *setting, const char *dns)
+{
+    NMSettingIPConfigPrivate *priv;
+    const int                 addr_family = NM_SETTING_IP_CONFIG_GET_ADDR_FAMILY(setting);
+    NMIPAddr                  dns_bin;
+    char                      dns_canonical[NM_INET_ADDRSTRLEN];
+
+    nm_assert(NM_IS_SETTING_IP_CONFIG(setting));
+    nm_assert(dns);
+
+    priv = NM_SETTING_IP_CONFIG_GET_PRIVATE(setting);
+
+    if (valid_ip(addr_family, dns, &dns_bin, NULL))
+        dns = nm_inet_ntop(addr_family, &dns_bin, dns_canonical);
+
+    if (nm_strv_ptrarray_contains(priv->dns, dns))
+        return FALSE;
+
+    nm_strv_ptrarray_add_string_dup(nm_strv_ptrarray_ensure(&priv->dns), dns);
+    return TRUE;
 }
 
 /**
@@ -4046,36 +4069,20 @@ nm_setting_ip_config_get_dns(NMSettingIPConfig *setting, int idx)
  *
  * Returns: %TRUE if the DNS server was added; %FALSE if the server was already
  * known
+ *
+ * Before 1.42, setting @dns to an invalid string was treated as user-error.
+ * Now, also invalid DNS values can be set, but will be rejected later during
+ * nm_connection_verify().
  **/
 gboolean
 nm_setting_ip_config_add_dns(NMSettingIPConfig *setting, const char *dns)
 {
-    NMSettingIPConfigPrivate *priv;
-    int                       addr_family;
-    NMIPAddr                  dns_bin;
-    char                      dns_canonical[NM_INET_ADDRSTRLEN];
-    guint                     i;
-
     g_return_val_if_fail(NM_IS_SETTING_IP_CONFIG(setting), FALSE);
+    g_return_val_if_fail(dns, FALSE);
 
-    addr_family = NM_SETTING_IP_CONFIG_GET_ADDR_FAMILY(setting);
+    if (!_ip_config_add_dns(setting, dns))
+        return FALSE;
 
-    if (!valid_ip(addr_family, dns, &dns_bin, NULL)) {
-        g_return_val_if_fail(dns != NULL, FALSE);
-        g_return_val_if_fail(nm_inet_is_valid(addr_family, dns), FALSE);
-        nm_assert_not_reached();
-    }
-
-    priv = NM_SETTING_IP_CONFIG_GET_PRIVATE(setting);
-
-    nm_inet_ntop(addr_family, &dns_bin, dns_canonical);
-
-    for (i = 0; i < priv->dns->len; i++) {
-        if (nm_streq(dns_canonical, priv->dns->pdata[i]))
-            return FALSE;
-    }
-
-    g_ptr_array_add(priv->dns, g_strdup(dns_canonical));
     _notify(setting, PROP_DNS);
     return TRUE;
 }
@@ -4095,7 +4102,8 @@ nm_setting_ip_config_remove_dns(NMSettingIPConfig *setting, int idx)
     g_return_if_fail(NM_IS_SETTING_IP_CONFIG(setting));
 
     priv = NM_SETTING_IP_CONFIG_GET_PRIVATE(setting);
-    g_return_if_fail(idx >= 0 && idx < priv->dns->len);
+
+    g_return_if_fail(idx >= 0 && ((guint) idx) < nm_g_ptr_array_len(priv->dns));
 
     g_ptr_array_remove_index(priv->dns, idx);
     _notify(setting, PROP_DNS);
@@ -4109,6 +4117,8 @@ nm_setting_ip_config_remove_dns(NMSettingIPConfig *setting, int idx)
  * Removes the DNS server @dns.
  *
  * Returns: %TRUE if the DNS server was found and removed; %FALSE if it was not.
+ *
+ * Before 1.42, setting @dns to an invalid string was treated as user-error.
  **/
 gboolean
 nm_setting_ip_config_remove_dns_by_value(NMSettingIPConfig *setting, const char *dns)
@@ -4117,30 +4127,25 @@ nm_setting_ip_config_remove_dns_by_value(NMSettingIPConfig *setting, const char 
     int                       addr_family;
     NMIPAddr                  dns_bin;
     char                      dns_canonical[NM_INET_ADDRSTRLEN];
-    guint                     i;
+    gssize                    idx;
 
     g_return_val_if_fail(NM_IS_SETTING_IP_CONFIG(setting), FALSE);
-
-    addr_family = NM_SETTING_IP_CONFIG_GET_ADDR_FAMILY(setting);
-
-    if (!valid_ip(addr_family, dns, &dns_bin, NULL)) {
-        g_return_val_if_fail(dns != NULL, FALSE);
-        g_return_val_if_fail(nm_inet_is_valid(addr_family, dns), FALSE);
-        nm_assert_not_reached();
-    }
+    g_return_val_if_fail(dns, FALSE);
 
     priv = NM_SETTING_IP_CONFIG_GET_PRIVATE(setting);
 
-    nm_inet_ntop(addr_family, &dns_bin, dns_canonical);
+    addr_family = NM_SETTING_IP_CONFIG_GET_ADDR_FAMILY(setting);
 
-    for (i = 0; i < priv->dns->len; i++) {
-        if (nm_streq(dns_canonical, priv->dns->pdata[i])) {
-            g_ptr_array_remove_index(priv->dns, i);
-            _notify(setting, PROP_DNS);
-            return TRUE;
-        }
-    }
-    return FALSE;
+    if (valid_ip(addr_family, dns, &dns_bin, NULL))
+        dns = nm_inet_ntop(addr_family, &dns_bin, dns_canonical);
+
+    idx = nm_strv_ptrarray_find_first(priv->dns, dns);
+    if (idx < 0)
+        return FALSE;
+
+    g_ptr_array_remove_index(nm_strv_ptrarray_ensure(&priv->dns), idx);
+    _notify(setting, PROP_DNS);
+    return TRUE;
 }
 
 /**
@@ -4158,7 +4163,7 @@ nm_setting_ip_config_clear_dns(NMSettingIPConfig *setting)
 
     priv = NM_SETTING_IP_CONFIG_GET_PRIVATE(setting);
 
-    if (priv->dns->len != 0) {
+    if (nm_g_ptr_array_len(priv->dns) != 0) {
         g_ptr_array_set_size(priv->dns, 0);
         _notify(setting, PROP_DNS);
     }
@@ -5433,20 +5438,22 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
     }
 
     /* Validate DNS */
-    for (i = 0; i < priv->dns->len; i++) {
-        const char *dns = priv->dns->pdata[i];
+    if (priv->dns) {
+        for (i = 0; i < priv->dns->len; i++) {
+            const char *dns = priv->dns->pdata[i];
 
-        if (!nm_inet_is_valid(NM_SETTING_IP_CONFIG_GET_ADDR_FAMILY(setting), dns)) {
-            g_set_error(error,
-                        NM_CONNECTION_ERROR,
-                        NM_CONNECTION_ERROR_INVALID_PROPERTY,
-                        _("%d. DNS server address is invalid"),
-                        (int) (i + 1));
-            g_prefix_error(error,
-                           "%s.%s: ",
-                           nm_setting_get_name(setting),
-                           NM_SETTING_IP_CONFIG_DNS);
-            return FALSE;
+            if (!nm_inet_is_valid(NM_SETTING_IP_CONFIG_GET_ADDR_FAMILY(setting), dns)) {
+                g_set_error(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                            _("%d. DNS server address is invalid"),
+                            (int) (i + 1));
+                g_prefix_error(error,
+                               "%s.%s: ",
+                               nm_setting_get_name(setting),
+                               NM_SETTING_IP_CONFIG_DNS);
+                return FALSE;
+            }
         }
     }
 
@@ -6068,9 +6075,17 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
 
     switch (prop_id) {
     case PROP_DNS:
-        g_ptr_array_unref(priv->dns);
-        priv->dns = nm_strv_to_ptrarray(g_value_get_boxed(value));
+    {
+        gs_unref_ptrarray GPtrArray *dns_old = NULL;
+
+        dns_old = g_steal_pointer(&priv->dns);
+        strv    = g_value_get_boxed(value);
+        if (strv) {
+            for (i = 0; strv[i]; i++)
+                _ip_config_add_dns(setting, strv[i]);
+        }
         break;
+    }
     case PROP_DNS_SEARCH:
         g_ptr_array_unref(priv->dns_search);
         priv->dns_search = nm_strv_to_ptrarray(g_value_get_boxed(value));
@@ -6122,7 +6137,6 @@ _nm_setting_ip_config_private_init(gpointer self, NMSettingIPConfigPrivate *priv
 {
     nm_assert(NM_IS_SETTING_IP_CONFIG(self));
 
-    priv->dns        = g_ptr_array_new_with_free_func(g_free);
     priv->dns_search = g_ptr_array_new_with_free_func(g_free);
     priv->addresses  = g_ptr_array_new_with_free_func((GDestroyNotify) nm_ip_address_unref);
     priv->routes     = g_ptr_array_new_with_free_func((GDestroyNotify) nm_ip_route_unref);
@@ -6140,7 +6154,7 @@ finalize(GObject *object)
     NMSettingIPConfig        *self = NM_SETTING_IP_CONFIG(object);
     NMSettingIPConfigPrivate *priv = NM_SETTING_IP_CONFIG_GET_PRIVATE(self);
 
-    g_ptr_array_unref(priv->dns);
+    nm_g_ptr_array_unref(priv->dns);
     g_ptr_array_unref(priv->dns_search);
     nm_g_ptr_array_unref(priv->dns_options);
     g_ptr_array_unref(priv->addresses);

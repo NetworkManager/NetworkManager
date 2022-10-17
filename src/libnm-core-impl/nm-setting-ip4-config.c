@@ -388,7 +388,6 @@ ip4_dns_to_dbus(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
     GPtrArray *dns;
 
     dns = _nm_setting_ip_config_get_dns_array(NM_SETTING_IP_CONFIG(setting));
-
     if (nm_g_ptr_array_len(dns) == 0)
         return NULL;
 

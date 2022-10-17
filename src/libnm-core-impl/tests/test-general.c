@@ -5247,7 +5247,8 @@ test_setting_ip4_changed_signal(void)
     ASSERT_CHANGED(nm_setting_ip_config_add_dns(s_ip4, "11.22.0.0"));
     ASSERT_CHANGED(nm_setting_ip_config_remove_dns(s_ip4, 0));
 
-    NMTST_EXPECT_LIBNM_CRITICAL(NMTST_G_RETURN_MSG(idx >= 0 && idx < priv->dns->len));
+    NMTST_EXPECT_LIBNM_CRITICAL(
+        NMTST_G_RETURN_MSG(idx >= 0 && ((guint) idx) < nm_g_ptr_array_len(priv->dns)));
     ASSERT_UNCHANGED(nm_setting_ip_config_remove_dns(s_ip4, 1));
     g_test_assert_expected_messages();
 
@@ -5323,7 +5324,8 @@ test_setting_ip6_changed_signal(void)
     ASSERT_CHANGED(nm_setting_ip_config_add_dns(s_ip6, "1:2:3::4:5:6"));
     ASSERT_CHANGED(nm_setting_ip_config_remove_dns(s_ip6, 0));
 
-    NMTST_EXPECT_LIBNM_CRITICAL(NMTST_G_RETURN_MSG(idx >= 0 && idx < priv->dns->len));
+    NMTST_EXPECT_LIBNM_CRITICAL(
+        NMTST_G_RETURN_MSG(idx >= 0 && ((guint) idx) < nm_g_ptr_array_len(priv->dns)));
     ASSERT_UNCHANGED(nm_setting_ip_config_remove_dns(s_ip6, 1));
     g_test_assert_expected_messages();
 
