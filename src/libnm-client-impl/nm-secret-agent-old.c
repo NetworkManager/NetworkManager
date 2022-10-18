@@ -818,7 +818,7 @@ nm_secret_agent_old_register_async(NMSecretAgentOld   *self,
             cancelled_id =
                 g_cancellable_connect(cancellable, G_CALLBACK(_register_cancelled_cb), task, NULL);
             if (cancelled_id != 0) {
-                g_task_set_task_data(task, g_memdup(&cancelled_id, sizeof(cancelled_id)), g_free);
+                g_task_set_task_data(task, nm_memdup(&cancelled_id, sizeof(cancelled_id)), g_free);
             }
         }
     }

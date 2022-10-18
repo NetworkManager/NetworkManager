@@ -1939,7 +1939,7 @@ nmtst_logging_disable(gboolean always)
         return NULL;
     }
 
-    p = g_memdup(_nm_logging_enabled_state, sizeof(_nm_logging_enabled_state));
+    p = nm_memdup(_nm_logging_enabled_state, sizeof(_nm_logging_enabled_state));
     memset(_nm_logging_enabled_state, 0, sizeof(_nm_logging_enabled_state));
     return p;
 }
