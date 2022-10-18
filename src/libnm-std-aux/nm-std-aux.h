@@ -1070,7 +1070,17 @@ nm_close_with_error(int fd)
         int errsv = errno;
 
         nm_assert(r == -1);
-        nm_assert((fd < 0 && errsv == EBADF) || (fd >= 0 && errsv != EBADF));
+
+        /* EBADF indicates a bug.
+         *
+         * - if fd is non-negative, this means the tracking of the descriptor
+         *   got messed up. That's very bad, somebody closed a wrong FD or we
+         *   might do so. On a multi threaded application, messing up the tracking
+         *   of the file descriptor means we race against closing an unrelated FD.
+         * - if fd is negative, it may not be a bug but intentional. However, our callers
+         *   are not supposed to call close() on a negative FD either. Assert
+         *   against that too. */
+        nm_assert(errsv != EBADF);
 
         if (errsv == EINTR) {
             /* There isn't really much we can do about EINTR. On Linux, always this means
