@@ -1206,10 +1206,7 @@ typedef struct {
                                    struct in6_addr address,
                                    guint8          plen);
 
-    int (*ip_route_add)(NMPlatform              *self,
-                        NMPNlmFlags              flags,
-                        int                      addr_family,
-                        const NMPlatformIPRoute *route);
+    int (*ip_route_add)(NMPlatform *self, NMPNlmFlags flags, NMPObject *obj_stack);
     int (*ip_route_get)(NMPlatform   *self,
                         int           addr_family,
                         gconstpointer address,
@@ -2220,7 +2217,10 @@ nm_platform_ip_route_get_gateway(int addr_family, const NMPlatformIPRoute *route
 }
 
 int nm_platform_ip_route_add(NMPlatform *self, NMPNlmFlags flags, const NMPObject *route);
-int nm_platform_ip4_route_add(NMPlatform *self, NMPNlmFlags flags, const NMPlatformIP4Route *route);
+int nm_platform_ip4_route_add(NMPlatform                   *self,
+                              NMPNlmFlags                   flags,
+                              const NMPlatformIP4Route     *route,
+                              const NMPlatformIP4RtNextHop *extra_nexthops);
 int nm_platform_ip6_route_add(NMPlatform *self, NMPNlmFlags flags, const NMPlatformIP6Route *route);
 
 GPtrArray *nm_platform_ip_route_get_prune_list(NMPlatform            *self,

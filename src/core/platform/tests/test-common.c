@@ -1250,8 +1250,8 @@ nmtstp_ip4_route_add(NMPlatform      *platform,
     route.metric    = metric;
     route.mss       = mss;
 
-    g_assert(
-        NMTST_NM_ERR_SUCCESS(nm_platform_ip4_route_add(platform, NMP_NLM_FLAG_REPLACE, &route)));
+    g_assert(NMTST_NM_ERR_SUCCESS(
+        nm_platform_ip4_route_add(platform, NMP_NLM_FLAG_REPLACE, &route, NULL)));
 }
 
 void

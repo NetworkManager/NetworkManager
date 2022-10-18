@@ -5164,47 +5164,73 @@ nm_platform_ip_route_normalize(int addr_family, NMPlatformIPRoute *route)
 }
 
 static int
-_ip_route_add(NMPlatform *self, NMPNlmFlags flags, int addr_family, gconstpointer route)
+_ip_route_add(NMPlatform *self, NMPNlmFlags flags, NMPObject *obj_stack)
 {
     char sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
     int  ifindex;
 
     _CHECK_SELF(self, klass, FALSE);
 
-    nm_assert(route);
-    nm_assert(NM_IN_SET(addr_family, AF_INET, AF_INET6));
+    /* The caller already ensures that this is a stack allocated copy, that
+     * - stays alive for the duration of the call.
+     * - that the ip_route_add() implementation is allowed to modify.
+     */
+    nm_assert(obj_stack);
+    nm_assert(NMP_OBJECT_IS_STACKINIT(obj_stack));
+    nm_assert(NM_IN_SET(NMP_OBJECT_GET_TYPE(obj_stack),
+                        NMP_OBJECT_TYPE_IP4_ROUTE,
+                        NMP_OBJECT_TYPE_IP6_ROUTE));
 
-    ifindex = ((const NMPlatformIPRoute *) route)->ifindex;
+    nm_assert(NMP_OBJECT_GET_TYPE(obj_stack) != NMP_OBJECT_TYPE_IP4_ROUTE
+              || obj_stack->ip4_route.n_nexthops <= 1u || obj_stack->_ip4_route.extra_nexthops);
+
+    nm_platform_ip_route_normalize(NMP_OBJECT_GET_ADDR_FAMILY((obj_stack)),
+                                   NMP_OBJECT_CAST_IP_ROUTE(obj_stack));
+
+    ifindex = obj_stack->ip_route.ifindex;
+
     _LOG3D("route: %-10s IPv%c route: %s",
            _nmp_nlm_flag_to_string(flags & NMP_NLM_FLAG_FMASK),
-           nm_utils_addr_family_to_char(addr_family),
-           NM_IS_IPv4(addr_family) ? nm_platform_ip4_route_to_string(route, sbuf, sizeof(sbuf))
-                                   : nm_platform_ip6_route_to_string(route, sbuf, sizeof(sbuf)));
+           nm_utils_addr_family_to_char(NMP_OBJECT_GET_ADDR_FAMILY(obj_stack)),
+           nmp_object_to_string(obj_stack, NMP_OBJECT_TO_STRING_PUBLIC, sbuf, sizeof(sbuf)));
 
-    return klass->ip_route_add(self, flags, addr_family, route);
+    /* At this point, we pass "obj_stack" to the klass->ip_route_add() implementation.
+     * The callee can rely on:
+     * - the object being normalized and validated.
+     * - staying fully alive until the function returns. In this case it
+     *   is stack allocated (and the potential "extra_nexthops" array is
+     *   guaranteed to stay alive too).
+     */
+    return klass->ip_route_add(self, flags, obj_stack);
 }
 
 int
-nm_platform_ip_route_add(NMPlatform *self, NMPNlmFlags flags, const NMPObject *route)
+nm_platform_ip_route_add(NMPlatform *self, NMPNlmFlags flags, const NMPObject *obj)
 {
-    int addr_family;
+    nm_auto_nmpobj const NMPObject *obj_keep_alive = NULL;
+    NMPObject                       obj_stack;
 
-    switch (NMP_OBJECT_GET_TYPE(route)) {
-    case NMP_OBJECT_TYPE_IP4_ROUTE:
-        addr_family = AF_INET;
-        break;
-    case NMP_OBJECT_TYPE_IP6_ROUTE:
-        addr_family = AF_INET6;
-        break;
-    default:
-        g_return_val_if_reached(FALSE);
+    nm_assert(
+        NM_IN_SET(NMP_OBJECT_GET_TYPE(obj), NMP_OBJECT_TYPE_IP4_ROUTE, NMP_OBJECT_TYPE_IP6_ROUTE));
+
+    nmp_object_stackinit(&obj_stack, NMP_OBJECT_GET_TYPE(obj), &obj->ip_route);
+
+    if (NMP_OBJECT_GET_TYPE(obj) == NMP_OBJECT_TYPE_IP4_ROUTE && obj->ip4_route.n_nexthops > 1u) {
+        /* Ensure @obj stays alive, so we can alias extra_nexthops from the stackallocated
+         * @obj_stack. */
+        nm_assert(obj->_ip4_route.extra_nexthops);
+        obj_keep_alive                      = nmp_object_ref(obj);
+        obj_stack._ip4_route.extra_nexthops = obj->_ip4_route.extra_nexthops;
     }
 
-    return _ip_route_add(self, flags, addr_family, NMP_OBJECT_CAST_IP_ROUTE(route));
+    return _ip_route_add(self, flags, &obj_stack);
 }
 
 int
-nm_platform_ip4_route_add(NMPlatform *self, NMPNlmFlags flags, const NMPlatformIP4Route *route)
+nm_platform_ip4_route_add(NMPlatform                   *self,
+                          NMPNlmFlags                   flags,
+                          const NMPlatformIP4Route     *route,
+                          const NMPlatformIP4RtNextHop *extra_nexthops)
 {
     gs_free NMPlatformIP4RtNextHop *extra_nexthops_free = NULL;
     NMPObject                       obj;
@@ -5235,7 +5261,10 @@ nm_platform_ip4_route_add(NMPlatform *self, NMPNlmFlags flags, const NMPlatformI
 int
 nm_platform_ip6_route_add(NMPlatform *self, NMPNlmFlags flags, const NMPlatformIP6Route *route)
 {
-    return _ip_route_add(self, flags, AF_INET6, route);
+    NMPObject obj;
+
+    nmp_object_stackinit(&obj, NMP_OBJECT_TYPE_IP6_ROUTE, (const NMPlatformObject *) route);
+    return _ip_route_add(self, flags, &obj);
 }
 
 gboolean

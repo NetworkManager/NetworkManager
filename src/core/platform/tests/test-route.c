@@ -713,7 +713,7 @@ test_ip4_route_options(gconstpointer test_data)
 
     for (i = 0; i < rts_n; i++)
         g_assert(NMTST_NM_ERR_SUCCESS(
-            nm_platform_ip4_route_add(NM_PLATFORM_GET, NMP_NLM_FLAG_REPLACE, &rts_add[i])));
+            nm_platform_ip4_route_add(NM_PLATFORM_GET, NMP_NLM_FLAG_REPLACE, &rts_add[i], NULL)));
 
     for (i = 0; i < rts_n; i++) {
         rts_cmp[i] = rts_add[i];
@@ -988,8 +988,8 @@ again_find_idx:
             order_idx[order_len++] = idx;
 
             r->ifindex = iface_data[idx].ifindex;
-            g_assert(
-                NMTST_NM_ERR_SUCCESS(nm_platform_ip4_route_add(platform, NMP_NLM_FLAG_APPEND, r)));
+            g_assert(NMTST_NM_ERR_SUCCESS(
+                nm_platform_ip4_route_add(platform, NMP_NLM_FLAG_APPEND, r, NULL)));
         } else {
             i   = nmtst_get_rand_uint32() % order_len;
             idx = order_idx[i];
@@ -1936,7 +1936,7 @@ test_blackhole(gconstpointer test_data)
     nm_platform_ip_route_normalize(addr_family, &rr.rx);
 
     if (IS_IPv4)
-        r = nm_platform_ip4_route_add(NM_PLATFORM_GET, NMP_NLM_FLAG_APPEND, &rr.r4);
+        r = nm_platform_ip4_route_add(NM_PLATFORM_GET, NMP_NLM_FLAG_APPEND, &rr.r4, NULL);
     else
         r = nm_platform_ip6_route_add(NM_PLATFORM_GET, NMP_NLM_FLAG_APPEND, &rr.r6);
 

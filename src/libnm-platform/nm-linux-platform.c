@@ -9427,25 +9427,15 @@ ip6_address_delete(NMPlatform *platform, int ifindex, struct in6_addr addr, guin
 /*****************************************************************************/
 
 static int
-ip_route_add(NMPlatform              *platform,
-             NMPNlmFlags              flags,
-             int                      addr_family,
-             const NMPlatformIPRoute *route)
+ip_route_add(NMPlatform *platform, NMPNlmFlags flags, NMPObject *obj_stack)
 {
     nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
-    NMPObject                    obj;
 
-    nmp_object_stackinit(&obj,
-                         NMP_OBJECT_TYPE_IP_ROUTE(NM_IS_IPv4(addr_family)),
-                         (const NMPlatformObject *) route);
-
-    nm_platform_ip_route_normalize(addr_family, NMP_OBJECT_CAST_IP_ROUTE(&obj));
-
-    nlmsg = _nl_msg_new_route(RTM_NEWROUTE, flags & NMP_NLM_FLAG_FMASK, &obj);
+    nlmsg = _nl_msg_new_route(RTM_NEWROUTE, flags & NMP_NLM_FLAG_FMASK, obj_stack);
     if (!nlmsg)
         g_return_val_if_reached(-NME_BUG);
     return do_add_addrroute(platform,
-                            &obj,
+                            obj_stack,
                             nlmsg,
                             NM_FLAGS_HAS(flags, NMP_NLM_FLAG_SUPPRESS_NETLINK_FAILURE));
 }
