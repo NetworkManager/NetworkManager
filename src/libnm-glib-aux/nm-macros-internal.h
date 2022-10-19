@@ -43,6 +43,27 @@
 
 /*****************************************************************************/
 
+/* Historically, our cleanup macros come from a long gone library
+ * libgsystem, hence the "gs_" prefix. We still keep using them,
+ * although maybe we should drop them and use our respective nm_auto*
+ * macros (TODO).
+ *
+ * GLib also has g_auto() since 2.44. First of all, we still don't
+ * depend on 2.44, so we would have add compat implementations to
+ * "nm-glib.h" or bump the version.
+ * Also, they work differently (nm_auto_unref_hashtable vs g_auto(GHashTable)).
+ * If we were to switch to g_auto(), the change would be slightly more complicated
+ * than replacing one macro with another (but still easy).
+ * However, the reason for using our nm_auto* macros is that we also want cleanup
+ * macros in libnm-std-aux, which has no glib dependency. So we still would have
+ * some nm_auto* macros mixed with g_auto(). Instead, we consistently use
+ * nm_auto* macros (and the gs_* aliases).
+ *
+ * Note that c-stdaux also brings cleanup macros like _c_cleanup_(c_freep).
+ * We use c-stdaux like a proper internal library, so we could instead switch
+ * from nm_auto* macros to _c_cleanup_(). Unlike glib, c-stdaux is used by
+ * libnm-std-aux. Again, _c_cleanup_ follows a different pattern both from
+ * nm_auto* and g_auto(). */
 #define gs_free            nm_auto_g_free
 #define gs_unref_object    nm_auto_unref_object
 #define gs_unref_variant   nm_auto_unref_variant
