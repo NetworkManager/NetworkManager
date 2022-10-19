@@ -1,4 +1,13 @@
 ===============================================
+NetworkManager-1.38.6
+Overview of changes since NetworkManager-1.38.4
+===============================================
+
+* Fix honoring DNS priority.
+* Decline DHCPv6 lease when DAD fails.
+* Various bugfixes.
+
+===============================================
 NetworkManager-1.38.4
 Overview of changes since NetworkManager-1.38.2
 ===============================================
