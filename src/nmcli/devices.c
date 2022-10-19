@@ -2919,6 +2919,8 @@ do_devices_monitor(const NMCCommand *cmd, NmCli *nmc, int argc, const char *cons
             nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
             return;
         }
+        if (!devices)
+            return;
     } else {
         /* No devices specified. Monitor all. */
         devices = nm_client_get_devices(nmc->client);
