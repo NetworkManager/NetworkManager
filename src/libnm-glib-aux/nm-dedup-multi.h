@@ -101,21 +101,21 @@ nm_dedup_multi_index_obj_find(NMDedupMultiIndex                          *self,
  * The NMDedupMultiIdxTypeClass determines its behavior, but you can have
  * multiple instances (of the same class).
  *
- * For example, NMIP4Config can have idx-type to put there all IPv4 Routes.
- * This idx-type instance is private to the NMIP4Config instance. Basically,
- * the NMIP4Config instance uses the idx-type to maintain an ordered list
+ * For example, NML3ConfigData can have idx-type to put there all IPv4 Routes.
+ * This idx-type instance is private to the NML3ConfigData instance. Basically,
+ * the NML3ConfigData instance uses the idx-type to maintain an ordered list
  * of routes in NMDedupMultiIndex.
  *
  * However, a NMDedupMultiIdxType may also partition the set of objects
- * in multiple distinct lists. NMIP4Config doesn't do that (because instead
- * of creating one idx-type for IPv4 and IPv6 routes, it just cretaes
- * to distinct idx-types, one for each address family.
+ * in multiple distinct lists. NML3ConfigData doesn't do that (because instead
+ * of creating one idx-type for IPv4 and IPv6 routes, it just creates
+ * distinct idx-types, one for each object type and address family.
  * This partitioning is used by NMPlatform to maintain a lookup index for
  * routes by ifindex. As the ifindex is dynamic, it does not create an
  * idx-type instance for each ifindex. Instead, it has one idx-type for
  * all routes. But whenever accessing NMDedupMultiIndex with an NMDedupMultiObj,
- * the partitioning NMDedupMultiIdxType takes into account the NMDedupMultiObj
- * instance to associate it with the right list.
+ * the NMDedupMultiIdxType can partition the object and assign it to the right
+ * list.
  *
  * Hence, a NMDedupMultiIdxEntry has a list of possibly multiple NMDedupMultiHeadEntry
  * instances, which each is the head for a list of NMDedupMultiEntry instances.
