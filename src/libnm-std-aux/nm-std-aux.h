@@ -194,6 +194,25 @@ typedef uint64_t _nm_bitwise nm_be64_t;
 #define NM_MORE_ASSERTS 0
 #endif
 
+#if NM_MORE_ASSERTS == 0
+/* The string with the assertion check and the function name blows up the
+ * binary size. In production mode, let's drop those, similar to
+ * g_assertion_message_expr.
+ *
+ * Note that <assert.h> can be included multiple times. We can thus
+ * not redefine __assert_fail(...). Instead, just redefine the name
+ * __assert_fail. */
+_nm_noreturn static inline void
+_nm_assert_fail_internal(const char  *assertion,
+                         const char  *file,
+                         unsigned int line,
+                         const char  *function)
+{
+    __assert_fail("<dropped>", file, line, "<unknown-fcn>");
+}
+#define __assert_fail _nm_assert_fail_internal
+#endif
+
 #define _nm_assert_fail(msg) __assert_fail((msg), __FILE__, __LINE__, __func__)
 #ifndef NDEBUG
 #define _NM_ASSERT_FAIL_ENABLED 1
