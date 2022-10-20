@@ -131,6 +131,9 @@ NM_AUTO_DEFINE_FCN_VOID0(void *, _nm_auto_unref_gtypeclass, g_type_class_unref);
 NM_AUTO_DEFINE_FCN0(GByteArray *, _nm_auto_unref_bytearray, g_byte_array_unref);
 #define nm_auto_unref_bytearray nm_auto(_nm_auto_unref_bytearray)
 
+NM_AUTO_DEFINE_FCN0(GDateTime *, _nm_auto_unref_gdatetime, g_date_time_unref);
+#define nm_auto_unref_gdatetime nm_auto(_nm_auto_unref_gdatetime)
+
 static inline void
 _nm_auto_free_gstring(GString **str)
 {
