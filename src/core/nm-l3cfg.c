@@ -4010,7 +4010,7 @@ _l3_commit_ndisc_params(NML3Cfg *self, NML3CfgCommitType commit_type)
 
     if (retrans_set
         && (!self->priv.p->ndisc_retrans_timer_msec_set
-            || self->priv.p->ndisc_reachable_time_msec != retrans)) {
+            || self->priv.p->ndisc_retrans_timer_msec != retrans)) {
         self->priv.p->ndisc_retrans_timer_msec     = retrans;
         self->priv.p->ndisc_retrans_timer_msec_set = TRUE;
         if (ifname) {
