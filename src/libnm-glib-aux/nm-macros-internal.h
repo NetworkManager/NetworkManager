@@ -525,16 +525,22 @@ nm_str_realloc(char *str)
 /*****************************************************************************/
 
 /* redefine assertions to use g_assert*() */
-#undef _nm_assert_call
-#undef _nm_assert_call_not_reached
-#define _nm_assert_call(cond)         g_assert(cond)
-#define _nm_assert_call_not_reached() g_assert_not_reached()
+#undef _nm_assert_fail
+#define _nm_assert_fail(msg) \
+    g_assertion_message_expr(G_LOG_DOMAIN, __FILE__, __LINE__, G_STRFUNC, msg)
+
+#undef _NM_ASSERT_FAIL_ENABLED
+#ifndef G_DISABLE_ASSERT
+#define _NM_ASSERT_FAIL_ENABLED 1
+#else
+#define _NM_ASSERT_FAIL_ENABLED 0
+#endif
 
 /* Usage:
  *
  *   if (NM_MORE_ASSERT_ONCE (5)) { extra_check (); }
  *
- * This will only run the check once, and only if NM_MORE_ASSERT is >= than
+ * This will only run the check once, and only if NM_MORE_ASSERTS is >= than
  * more_assert_level.
  */
 #define NM_MORE_ASSERT_ONCE(more_assert_level)                                                    \

@@ -194,60 +194,69 @@ typedef uint64_t _nm_bitwise nm_be64_t;
 #define NM_MORE_ASSERTS 0
 #endif
 
-#ifndef _nm_assert_call
-#define _nm_assert_call(cond)         assert(cond)
-#define _nm_assert_call_not_reached() assert(0)
+#define _nm_assert_fail(msg) __assert_fail((msg), __FILE__, __LINE__, __func__)
+#ifndef NDEBUG
+#define _NM_ASSERT_FAIL_ENABLED 1
+#else
+#define _NM_ASSERT_FAIL_ENABLED 1
 #endif
 
-#if NM_MORE_ASSERTS
-#define nm_assert(cond)        \
-    ({                         \
-        _nm_assert_call(cond); \
-        1;                     \
+#define NM_MORE_ASSERTS_EFFECTIVE (_NM_ASSERT_FAIL_ENABLED ? NM_MORE_ASSERTS : 0)
+
+#define nm_assert(cond)                                               \
+    ({                                                                \
+        /* nm_assert() must do *nothing* of effect, except evaluating
+         * @cond (0 or 1 times).
+         *
+         * As such, nm_assert() is async-signal-safe (provided @cond is, and
+         * the assertion does not fail). */ \
+        if (NM_MORE_ASSERTS_EFFECTIVE == 0) {                         \
+            /* pass */                                                \
+        } else if NM_LIKELY (cond) {                                  \
+            /* pass */                                                \
+        } else {                                                      \
+            _nm_assert_fail(#cond);                                   \
+        }                                                             \
+        1;                                                            \
     })
-#define nm_assert_se(cond)                \
-    ({                                    \
-        if (NM_LIKELY(cond)) {            \
-            ;                             \
-        } else {                          \
-            _nm_assert_call(0 && (cond)); \
-        }                                 \
-        1;                                \
+
+#define nm_assert_se(cond)                                            \
+    ({                                                                \
+        /* nm_assert() must do *nothing* of effect, except evaluating
+         * @cond (exactly 1 times).
+         *
+         * As such, nm_assert() is async-signal-safe (provided @cond is, and
+         * the assertion does not fail). */ \
+        if NM_LIKELY (cond) {                                         \
+            /* pass */                                                \
+        } else if (NM_MORE_ASSERTS_EFFECTIVE == 0) {                  \
+            /* pass */                                                \
+        } else {                                                      \
+            _nm_assert_fail(#cond);                                   \
+        }                                                             \
+        1;                                                            \
     })
-#define nm_assert_not_reached()        \
-    ({                                 \
-        _nm_assert_call_not_reached(); \
-        1;                             \
+
+#define nm_assert_not_reached()         \
+    ({                                  \
+        _nm_assert_fail("unreachable"); \
+        1;                              \
     })
-#else
-#define nm_assert(cond)  \
-    ({                   \
-        if (0) {         \
-            if (cond) {} \
-        }                \
-        1;               \
-    })
-#define nm_assert_se(cond)     \
-    ({                         \
-        if (NM_LIKELY(cond)) { \
-            ;                  \
-        }                      \
-        1;                     \
-    })
-#define nm_assert_not_reached() ({ 1; })
-#endif
 
 /* This is similar nm_assert_not_reached(), but it's supposed to be used only during
  * development. Like _XXX_ comments, they can be used as a marker that something still
  * needs to be done. */
-#define XXX(msg)   \
-    nm_assert(!"X" \
-               "XX error: " msg "")
+#define XXX(msg)                              \
+    ({                                        \
+        _nm_assert_fail("X"                   \
+                        "XX error: " msg ""); \
+        1;                                    \
+    })
 
-#define nm_assert_unreachable_val(val) \
-    ({                                 \
-        nm_assert_not_reached();       \
-        (val);                         \
+#define nm_assert_unreachable_val(val)              \
+    ({                                              \
+        _nm_assert_fail("unreachable value " #val); \
+        (val);                                      \
     })
 
 #define NM_STATIC_ASSERT(cond) static_assert(cond, "")
