@@ -416,8 +416,8 @@ ip6_addresses_to_dbus(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 static gboolean
 ip6_addresses_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 {
-    GPtrArray *addrs;
-    char      *gateway = NULL;
+    gs_unref_ptrarray GPtrArray *addrs   = NULL;
+    gs_free char                *gateway = NULL;
 
     if (!_nm_setting_use_legacy_property(setting, connection_dict, "addresses", "address-data")) {
         *out_is_modified = FALSE;
@@ -432,8 +432,6 @@ ip6_addresses_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
                  NM_SETTING_IP_CONFIG_GATEWAY,
                  gateway,
                  NULL);
-    g_ptr_array_unref(addrs);
-    g_free(gateway);
     return TRUE;
 }
 
@@ -452,7 +450,7 @@ ip6_address_data_to_dbus(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 static gboolean
 ip6_address_data_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 {
-    GPtrArray *addrs;
+    gs_unref_ptrarray GPtrArray *addrs = NULL;
 
     /* Ignore 'address-data' if we're going to process 'addresses' */
     if (_nm_setting_use_legacy_property(setting, connection_dict, "addresses", "address-data")) {
@@ -462,7 +460,6 @@ ip6_address_data_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 
     addrs = nm_utils_ip_addresses_from_variant(value, AF_INET6);
     g_object_set(setting, NM_SETTING_IP_CONFIG_ADDRESSES, addrs, NULL);
-    g_ptr_array_unref(addrs);
     return TRUE;
 }
 
@@ -478,7 +475,7 @@ ip6_routes_to_dbus(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 static gboolean
 ip6_routes_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 {
-    GPtrArray *routes;
+    gs_unref_ptrarray GPtrArray *routes = NULL;
 
     if (!_nm_setting_use_legacy_property(setting, connection_dict, "routes", "route-data")) {
         *out_is_modified = FALSE;
@@ -487,7 +484,6 @@ ip6_routes_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 
     routes = nm_utils_ip6_routes_from_variant(value);
     g_object_set(setting, property_info->name, routes, NULL);
-    g_ptr_array_unref(routes);
     return TRUE;
 }
 
@@ -506,7 +502,7 @@ ip6_route_data_to_dbus(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 static gboolean
 ip6_route_data_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 {
-    GPtrArray *routes;
+    gs_unref_ptrarray GPtrArray *routes = NULL;
 
     /* Ignore 'route-data' if we're going to process 'routes' */
     if (_nm_setting_use_legacy_property(setting, connection_dict, "routes", "route-data")) {
@@ -516,7 +512,6 @@ ip6_route_data_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 
     routes = nm_utils_ip_routes_from_variant(value, AF_INET6);
     g_object_set(setting, NM_SETTING_IP_CONFIG_ROUTES, routes, NULL);
-    g_ptr_array_unref(routes);
     return TRUE;
 }
 

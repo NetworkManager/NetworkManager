@@ -415,10 +415,11 @@ ip4_addresses_to_dbus(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 static gboolean
 ip4_addresses_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 {
-    GPtrArray *addrs;
-    GVariant  *s_ip4;
-    char     **labels, *gateway = NULL;
-    int        i;
+    gs_unref_ptrarray GPtrArray *addrs   = NULL;
+    gs_unref_variant GVariant   *s_ip4   = NULL;
+    gs_free const char         **labels  = NULL;
+    gs_free char                *gateway = NULL;
+    guint                        i;
 
     /* FIXME: properly handle errors */
 
@@ -432,15 +433,15 @@ ip4_addresses_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
     s_ip4 = g_variant_lookup_value(connection_dict,
                                    NM_SETTING_IP4_CONFIG_SETTING_NAME,
                                    NM_VARIANT_TYPE_SETTING);
-    if (g_variant_lookup(s_ip4, "address-labels", "^as", &labels)) {
-        for (i = 0; i < addrs->len && labels[i]; i++)
-            if (*labels[i])
+    if (g_variant_lookup(s_ip4, "address-labels", "^a&s", &labels)) {
+        for (i = 0; i < addrs->len && labels[i]; i++) {
+            if (*labels[i]) {
                 nm_ip_address_set_attribute(addrs->pdata[i],
                                             NM_IP_ADDRESS_ATTRIBUTE_LABEL,
                                             g_variant_new_string(labels[i]));
-        g_strfreev(labels);
+            }
+        }
     }
-    g_variant_unref(s_ip4);
 
     g_object_set(setting,
                  NM_SETTING_IP_CONFIG_ADDRESSES,
@@ -448,8 +449,6 @@ ip4_addresses_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
                  NM_SETTING_IP_CONFIG_GATEWAY,
                  gateway,
                  NULL);
-    g_ptr_array_unref(addrs);
-    g_free(gateway);
     return TRUE;
 }
 
@@ -458,38 +457,38 @@ ip4_address_labels_to_dbus(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 {
     NMSettingIPConfig *s_ip        = NM_SETTING_IP_CONFIG(setting);
     gboolean           have_labels = FALSE;
-    GPtrArray         *labels;
-    GVariant          *ret;
-    int                num_addrs, i;
+    gs_free GVariant **labels_free = NULL;
+    GVariant          *s_empty;
+    GVariant         **labels;
+    guint              num_addrs;
+    guint              i;
 
     if (!_nm_connection_serialize_non_secret(flags))
         return NULL;
 
     num_addrs = nm_setting_ip_config_get_num_addresses(s_ip);
+    if (num_addrs == 0)
+        return NULL;
+
+    labels = nm_malloc_maybe_a(500, sizeof(gpointer) * num_addrs, &labels_free);
+
+    s_empty = nm_g_variant_singleton_s_empty();
+
     for (i = 0; i < num_addrs; i++) {
         NMIPAddress *addr  = nm_setting_ip_config_get_address(s_ip, i);
         GVariant    *label = nm_ip_address_get_attribute(addr, NM_IP_ADDRESS_ATTRIBUTE_LABEL);
 
         if (label) {
             have_labels = TRUE;
-            break;
-        }
+            labels[i]   = label;
+        } else
+            labels[i] = s_empty;
     }
+
     if (!have_labels)
         return NULL;
 
-    labels = g_ptr_array_sized_new(num_addrs);
-    for (i = 0; i < num_addrs; i++) {
-        NMIPAddress *addr  = nm_setting_ip_config_get_address(s_ip, i);
-        GVariant    *label = nm_ip_address_get_attribute(addr, NM_IP_ADDRESS_ATTRIBUTE_LABEL);
-
-        g_ptr_array_add(labels, (char *) (label ? g_variant_get_string(label, NULL) : ""));
-    }
-
-    ret = g_variant_new_strv((const char *const *) labels->pdata, labels->len);
-    g_ptr_array_unref(labels);
-
-    return ret;
+    return g_variant_new_array(G_VARIANT_TYPE_STRING, labels, num_addrs);
 }
 
 static GVariant *
@@ -507,7 +506,7 @@ ip4_address_data_to_dbus(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 static gboolean
 ip4_address_data_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 {
-    GPtrArray *addrs;
+    gs_unref_ptrarray GPtrArray *addrs = NULL;
 
     /* FIXME: properly handle errors */
 
@@ -519,7 +518,6 @@ ip4_address_data_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 
     addrs = nm_utils_ip_addresses_from_variant(value, AF_INET);
     g_object_set(setting, NM_SETTING_IP_CONFIG_ADDRESSES, addrs, NULL);
-    g_ptr_array_unref(addrs);
     return TRUE;
 }
 
@@ -535,7 +533,7 @@ ip4_routes_to_dbus(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 static gboolean
 ip4_routes_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 {
-    GPtrArray *routes;
+    gs_unref_ptrarray GPtrArray *routes = NULL;
 
     /* FIXME: properly handle errors */
 
@@ -546,7 +544,6 @@ ip4_routes_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 
     routes = nm_utils_ip4_routes_from_variant(value);
     g_object_set(setting, property_info->name, routes, NULL);
-    g_ptr_array_unref(routes);
     return TRUE;
 }
 
@@ -565,7 +562,7 @@ ip4_route_data_to_dbus(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 static gboolean
 ip4_route_data_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 {
-    GPtrArray *routes;
+    gs_unref_ptrarray GPtrArray *routes = NULL;
 
     /* FIXME: properly handle errors */
 
@@ -577,7 +574,6 @@ ip4_route_data_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 
     routes = nm_utils_ip_routes_from_variant(value, AF_INET);
     g_object_set(setting, NM_SETTING_IP_CONFIG_ROUTES, routes, NULL);
-    g_ptr_array_unref(routes);
     return TRUE;
 }
 
