@@ -3504,7 +3504,7 @@ nm_setting_to_string(NMSetting *setting)
 }
 
 static GVariant *
-_nm_setting_get_deprecated_virtual_interface_name(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
+depreated_interface_name_to_dbus(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 {
     NMSettingConnection *s_con;
 
@@ -3524,8 +3524,9 @@ _nm_setting_get_deprecated_virtual_interface_name(_NM_SETT_INFO_PROP_TO_DBUS_FCN
 const NMSettInfoPropertType nm_sett_info_propert_type_deprecated_interface_name =
     NM_SETT_INFO_PROPERT_TYPE_DBUS_INIT(G_VARIANT_TYPE_STRING,
                                         .compare_fcn = _nm_setting_property_compare_fcn_ignore,
-                                        .to_dbus_fcn =
-                                            _nm_setting_get_deprecated_virtual_interface_name, );
+                                        .to_dbus_fcn = depreated_interface_name_to_dbus,
+                                        /* from_dbus_fcn() is handled by the connection.interface-name setter.
+                                         * See nm_setting_connection_no_interface_name(). */ );
 
 const NMSettInfoPropertType nm_sett_info_propert_type_setting_name =
     NM_SETT_INFO_PROPERT_TYPE_DBUS_INIT(G_VARIANT_TYPE_STRING,

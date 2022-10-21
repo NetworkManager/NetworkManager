@@ -402,7 +402,7 @@ ip4_dns_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_GPROP_FCN_ARGS _nm_nil)
 }
 
 static GVariant *
-ip4_addresses_get(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
+ip4_addresses_to_dbus(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 {
     gs_unref_ptrarray GPtrArray *addrs = NULL;
     const char                  *gateway;
@@ -413,7 +413,7 @@ ip4_addresses_get(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 }
 
 static gboolean
-ip4_addresses_set(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
+ip4_addresses_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 {
     GPtrArray *addrs;
     GVariant  *s_ip4;
@@ -454,7 +454,7 @@ ip4_addresses_set(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 }
 
 static GVariant *
-ip4_address_labels_get(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
+ip4_address_labels_to_dbus(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 {
     NMSettingIPConfig *s_ip        = NM_SETTING_IP_CONFIG(setting);
     gboolean           have_labels = FALSE;
@@ -493,7 +493,7 @@ ip4_address_labels_get(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 }
 
 static GVariant *
-ip4_address_data_get(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
+ip4_address_data_to_dbus(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 {
     gs_unref_ptrarray GPtrArray *addrs = NULL;
 
@@ -505,7 +505,7 @@ ip4_address_data_get(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 }
 
 static gboolean
-ip4_address_data_set(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
+ip4_address_data_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 {
     GPtrArray *addrs;
 
@@ -524,7 +524,7 @@ ip4_address_data_set(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 }
 
 static GVariant *
-ip4_routes_get(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
+ip4_routes_to_dbus(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 {
     gs_unref_ptrarray GPtrArray *routes = NULL;
 
@@ -533,7 +533,7 @@ ip4_routes_get(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 }
 
 static gboolean
-ip4_routes_set(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
+ip4_routes_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 {
     GPtrArray *routes;
 
@@ -551,7 +551,7 @@ ip4_routes_set(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 }
 
 static GVariant *
-ip4_route_data_get(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
+ip4_route_data_to_dbus(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 {
     gs_unref_ptrarray GPtrArray *routes = NULL;
 
@@ -563,7 +563,7 @@ ip4_route_data_get(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 }
 
 static gboolean
-ip4_route_data_set(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
+ip4_route_data_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 {
     GPtrArray *routes;
 
@@ -1002,15 +1002,17 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
         properties_override,
         g_object_class_find_property(G_OBJECT_CLASS(setting_class), NM_SETTING_IP_CONFIG_ADDRESSES),
         NM_SETT_INFO_PROPERT_TYPE_DBUS(NM_G_VARIANT_TYPE("aau"),
-                                       .to_dbus_fcn   = ip4_addresses_get,
+                                       .to_dbus_fcn   = ip4_addresses_to_dbus,
                                        .compare_fcn   = _nm_setting_ip_config_compare_fcn_addresses,
-                                       .from_dbus_fcn = ip4_addresses_set, ));
+                                       .from_dbus_fcn = ip4_addresses_from_dbus, ));
     _nm_properties_override_dbus(
         properties_override,
         "address-labels",
         NM_SETT_INFO_PROPERT_TYPE_DBUS(G_VARIANT_TYPE_STRING_ARRAY,
-                                       .to_dbus_fcn = ip4_address_labels_get,
-                                       .compare_fcn = _nm_setting_property_compare_fcn_ignore, ));
+                                       .to_dbus_fcn = ip4_address_labels_to_dbus,
+                                       .compare_fcn = _nm_setting_property_compare_fcn_ignore,
+                                       /* from_dbus() is handled by ip4_addresses_from_dbus(). */
+                                       ));
 
     /* ---dbus---
      * property: address-data
@@ -1025,9 +1027,9 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
         properties_override,
         "address-data",
         NM_SETT_INFO_PROPERT_TYPE_DBUS(NM_G_VARIANT_TYPE("aa{sv}"),
-                                       .to_dbus_fcn   = ip4_address_data_get,
+                                       .to_dbus_fcn   = ip4_address_data_to_dbus,
                                        .compare_fcn   = _nm_setting_property_compare_fcn_ignore,
-                                       .from_dbus_fcn = ip4_address_data_set, ));
+                                       .from_dbus_fcn = ip4_address_data_from_dbus, ));
 
     /* ---dbus---
      * property: routes
@@ -1137,9 +1139,9 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
         properties_override,
         g_object_class_find_property(G_OBJECT_CLASS(setting_class), NM_SETTING_IP_CONFIG_ROUTES),
         NM_SETT_INFO_PROPERT_TYPE_DBUS(NM_G_VARIANT_TYPE("aau"),
-                                       .to_dbus_fcn   = ip4_routes_get,
+                                       .to_dbus_fcn   = ip4_routes_to_dbus,
                                        .compare_fcn   = _nm_setting_ip_config_compare_fcn_routes,
-                                       .from_dbus_fcn = ip4_routes_set, ));
+                                       .from_dbus_fcn = ip4_routes_from_dbus, ));
 
     /* ---dbus---
      * property: route-data
@@ -1158,9 +1160,9 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
         properties_override,
         "route-data",
         NM_SETT_INFO_PROPERT_TYPE_DBUS(NM_G_VARIANT_TYPE("aa{sv}"),
-                                       .to_dbus_fcn   = ip4_route_data_get,
+                                       .to_dbus_fcn   = ip4_route_data_to_dbus,
                                        .compare_fcn   = _nm_setting_property_compare_fcn_ignore,
-                                       .from_dbus_fcn = ip4_route_data_set, ));
+                                       .from_dbus_fcn = ip4_route_data_from_dbus, ));
 
     /* ---nmcli---
      * property: routing-rules

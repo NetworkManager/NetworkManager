@@ -1064,11 +1064,14 @@ NMTernary _nm_setting_ip_config_compare_fcn_addresses(_NM_SETT_INFO_PROP_COMPARE
 
 NMTernary _nm_setting_ip_config_compare_fcn_routes(_NM_SETT_INFO_PROP_COMPARE_FCN_ARGS _nm_nil);
 
-gboolean _nm_utils_hwaddr_cloned_not_set(_NM_SETT_INFO_PROP_MISSING_FROM_DBUS_FCN_ARGS _nm_nil);
+gboolean _nm_sett_info_prop_missing_from_dbus_fcn_cloned_mac_address(
+    _NM_SETT_INFO_PROP_MISSING_FROM_DBUS_FCN_ARGS _nm_nil);
 
-GVariant *_nm_utils_hwaddr_cloned_get(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil);
+GVariant *
+_nm_sett_info_prop_to_dbus_fcn_cloned_mac_address(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil);
 
-gboolean _nm_utils_hwaddr_cloned_set(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil);
+gboolean
+_nm_sett_info_prop_from_dbus_fcn_cloned_mac_address(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil);
 
 /*****************************************************************************/
 

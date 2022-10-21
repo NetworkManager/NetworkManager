@@ -1475,7 +1475,7 @@ next:
 }
 
 static GVariant *
-tc_qdiscs_get(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
+qdiscs_to_dbus(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 {
     gs_unref_ptrarray GPtrArray *qdiscs = NULL;
 
@@ -1484,7 +1484,7 @@ tc_qdiscs_get(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 }
 
 static gboolean
-tc_qdiscs_set(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
+qdiscs_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 {
     gs_unref_ptrarray GPtrArray *qdiscs = NULL;
 
@@ -1661,7 +1661,7 @@ next:
 }
 
 static GVariant *
-tc_tfilters_get(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
+tfilters_to_dbus(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 {
     gs_unref_ptrarray GPtrArray *tfilters = NULL;
 
@@ -1670,7 +1670,7 @@ tc_tfilters_get(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 }
 
 static gboolean
-tc_tfilters_set(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
+tfilters_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 {
     gs_unref_ptrarray GPtrArray *tfilters = NULL;
 
@@ -2083,12 +2083,13 @@ nm_setting_tc_config_class_init(NMSettingTCConfigClass *klass)
                                                      G_TYPE_PTR_ARRAY,
                                                      G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE
                                                          | G_PARAM_STATIC_STRINGS);
-    _nm_properties_override_gobj(properties_override,
-                                 obj_properties[PROP_QDISCS],
-                                 NM_SETT_INFO_PROPERT_TYPE_DBUS(NM_G_VARIANT_TYPE("aa{sv}"),
-                                                                .to_dbus_fcn   = tc_qdiscs_get,
-                                                                .compare_fcn   = compare_fcn_qdiscs,
-                                                                .from_dbus_fcn = tc_qdiscs_set, ));
+    _nm_properties_override_gobj(
+        properties_override,
+        obj_properties[PROP_QDISCS],
+        NM_SETT_INFO_PROPERT_TYPE_DBUS(NM_G_VARIANT_TYPE("aa{sv}"),
+                                       .to_dbus_fcn   = qdiscs_to_dbus,
+                                       .compare_fcn   = compare_fcn_qdiscs,
+                                       .from_dbus_fcn = qdiscs_from_dbus, ));
 
     /**
      * NMSettingTCConfig:tfilters: (type GPtrArray(NMTCTfilter))
@@ -2225,9 +2226,9 @@ nm_setting_tc_config_class_init(NMSettingTCConfigClass *klass)
         properties_override,
         obj_properties[PROP_TFILTERS],
         NM_SETT_INFO_PROPERT_TYPE_DBUS(NM_G_VARIANT_TYPE("aa{sv}"),
-                                       .to_dbus_fcn   = tc_tfilters_get,
+                                       .to_dbus_fcn   = tfilters_to_dbus,
                                        .compare_fcn   = compare_fcn_tfilter,
-                                       .from_dbus_fcn = tc_tfilters_set, ));
+                                       .from_dbus_fcn = tfilters_from_dbus, ));
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 

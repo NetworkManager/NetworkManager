@@ -5012,7 +5012,7 @@ nm_setting_ip_config_clear_routing_rules(NMSettingIPConfig *setting)
 }
 
 static GVariant *
-_routing_rules_dbus_only_synth(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
+routing_rules_to_dbus(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 {
     NMSettingIPConfig        *self = NM_SETTING_IP_CONFIG(setting);
     NMSettingIPConfigPrivate *priv;
@@ -5043,7 +5043,7 @@ _routing_rules_dbus_only_synth(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 }
 
 static gboolean
-_routing_rules_dbus_only_set(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
+routing_rules_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 {
     GVariantIter iter_rules;
     GVariant    *rule_var;
@@ -5883,9 +5883,9 @@ _nm_sett_info_property_override_create_array_ip_config(int addr_family)
         properties_override,
         NM_SETTING_IP_CONFIG_ROUTING_RULES,
         NM_SETT_INFO_PROPERT_TYPE_DBUS(NM_G_VARIANT_TYPE("aa{sv}"),
-                                       .to_dbus_fcn   = _routing_rules_dbus_only_synth,
+                                       .to_dbus_fcn   = routing_rules_to_dbus,
                                        .compare_fcn   = compare_fcn_routing_rules,
-                                       .from_dbus_fcn = _routing_rules_dbus_only_set, ));
+                                       .from_dbus_fcn = routing_rules_from_dbus, ));
 
     _nm_properties_override_gobj(
         properties_override,

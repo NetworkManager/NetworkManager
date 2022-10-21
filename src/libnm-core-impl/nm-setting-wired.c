@@ -1385,11 +1385,13 @@ nm_setting_wired_class_init(NMSettingWiredClass *klass)
     _nm_properties_override_gobj(
         properties_override,
         obj_properties[PROP_CLONED_MAC_ADDRESS],
-        NM_SETT_INFO_PROPERT_TYPE_DBUS(G_VARIANT_TYPE_BYTESTRING,
-                                       .compare_fcn           = compare_fcn_cloned_mac_address,
-                                       .to_dbus_fcn           = _nm_utils_hwaddr_cloned_get,
-                                       .from_dbus_fcn         = _nm_utils_hwaddr_cloned_set,
-                                       .missing_from_dbus_fcn = _nm_utils_hwaddr_cloned_not_set, ));
+        NM_SETT_INFO_PROPERT_TYPE_DBUS(
+            G_VARIANT_TYPE_BYTESTRING,
+            .compare_fcn   = compare_fcn_cloned_mac_address,
+            .to_dbus_fcn   = _nm_sett_info_prop_to_dbus_fcn_cloned_mac_address,
+            .from_dbus_fcn = _nm_sett_info_prop_from_dbus_fcn_cloned_mac_address,
+            .missing_from_dbus_fcn =
+                _nm_sett_info_prop_missing_from_dbus_fcn_cloned_mac_address, ));
 
     /* ---dbus---
      * property: assigned-mac-address

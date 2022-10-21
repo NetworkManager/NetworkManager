@@ -403,7 +403,7 @@ ip6_dns_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_GPROP_FCN_ARGS _nm_nil)
 }
 
 static GVariant *
-ip6_addresses_get(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
+ip6_addresses_to_dbus(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 {
     gs_unref_ptrarray GPtrArray *addrs = NULL;
     const char                  *gateway;
@@ -414,7 +414,7 @@ ip6_addresses_get(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 }
 
 static gboolean
-ip6_addresses_set(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
+ip6_addresses_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 {
     GPtrArray *addrs;
     char      *gateway = NULL;
@@ -438,7 +438,7 @@ ip6_addresses_set(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 }
 
 static GVariant *
-ip6_address_data_get(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
+ip6_address_data_to_dbus(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 {
     gs_unref_ptrarray GPtrArray *addrs = NULL;
 
@@ -450,7 +450,7 @@ ip6_address_data_get(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 }
 
 static gboolean
-ip6_address_data_set(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
+ip6_address_data_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 {
     GPtrArray *addrs;
 
@@ -467,7 +467,7 @@ ip6_address_data_set(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 }
 
 static GVariant *
-ip6_routes_get(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
+ip6_routes_to_dbus(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 {
     gs_unref_ptrarray GPtrArray *routes = NULL;
 
@@ -476,7 +476,7 @@ ip6_routes_get(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 }
 
 static gboolean
-ip6_routes_set(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
+ip6_routes_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 {
     GPtrArray *routes;
 
@@ -492,7 +492,7 @@ ip6_routes_set(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 }
 
 static GVariant *
-ip6_route_data_get(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
+ip6_route_data_to_dbus(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 {
     gs_unref_ptrarray GPtrArray *routes = NULL;
 
@@ -504,7 +504,7 @@ ip6_route_data_get(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 }
 
 static gboolean
-ip6_route_data_set(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
+ip6_route_data_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 {
     GPtrArray *routes;
 
@@ -1012,9 +1012,9 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
         properties_override,
         g_object_class_find_property(G_OBJECT_CLASS(setting_class), NM_SETTING_IP_CONFIG_ADDRESSES),
         NM_SETT_INFO_PROPERT_TYPE_DBUS(NM_G_VARIANT_TYPE("a(ayuay)"),
-                                       .to_dbus_fcn   = ip6_addresses_get,
+                                       .to_dbus_fcn   = ip6_addresses_to_dbus,
                                        .compare_fcn   = _nm_setting_ip_config_compare_fcn_addresses,
-                                       .from_dbus_fcn = ip6_addresses_set, ));
+                                       .from_dbus_fcn = ip6_addresses_from_dbus, ));
 
     /* ---dbus---
      * property: address-data
@@ -1029,9 +1029,9 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
         properties_override,
         "address-data",
         NM_SETT_INFO_PROPERT_TYPE_DBUS(NM_G_VARIANT_TYPE("aa{sv}"),
-                                       .to_dbus_fcn   = ip6_address_data_get,
+                                       .to_dbus_fcn   = ip6_address_data_to_dbus,
                                        .compare_fcn   = _nm_setting_property_compare_fcn_ignore,
-                                       .from_dbus_fcn = ip6_address_data_set, ));
+                                       .from_dbus_fcn = ip6_address_data_from_dbus, ));
 
     /* ---dbus---
      * property: routes
@@ -1130,9 +1130,9 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
         properties_override,
         g_object_class_find_property(G_OBJECT_CLASS(setting_class), NM_SETTING_IP_CONFIG_ROUTES),
         NM_SETT_INFO_PROPERT_TYPE_DBUS(NM_G_VARIANT_TYPE("a(ayuayu)"),
-                                       .to_dbus_fcn   = ip6_routes_get,
+                                       .to_dbus_fcn   = ip6_routes_to_dbus,
                                        .compare_fcn   = _nm_setting_ip_config_compare_fcn_routes,
-                                       .from_dbus_fcn = ip6_routes_set, ));
+                                       .from_dbus_fcn = ip6_routes_from_dbus, ));
 
     /* ---dbus---
      * property: route-data
@@ -1151,9 +1151,9 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
         properties_override,
         "route-data",
         NM_SETT_INFO_PROPERT_TYPE_DBUS(NM_G_VARIANT_TYPE("aa{sv}"),
-                                       .to_dbus_fcn   = ip6_route_data_get,
+                                       .to_dbus_fcn   = ip6_route_data_to_dbus,
                                        .compare_fcn   = _nm_setting_property_compare_fcn_ignore,
-                                       .from_dbus_fcn = ip6_route_data_set, ));
+                                       .from_dbus_fcn = ip6_route_data_from_dbus, ));
 
     /* ---nmcli---
      * property: routing-rules

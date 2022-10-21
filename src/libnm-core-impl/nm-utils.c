@@ -3980,7 +3980,7 @@ nm_utils_hwaddr_to_dbus(const char *str)
 }
 
 GVariant *
-_nm_utils_hwaddr_cloned_get(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
+_nm_sett_info_prop_to_dbus_fcn_cloned_mac_address(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 {
     gs_free char *addr = NULL;
 
@@ -3991,7 +3991,7 @@ _nm_utils_hwaddr_cloned_get(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 }
 
 gboolean
-_nm_utils_hwaddr_cloned_set(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
+_nm_sett_info_prop_from_dbus_fcn_cloned_mac_address(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 {
     gsize         length;
     const guint8 *array;
@@ -4022,14 +4022,15 @@ _nm_utils_hwaddr_cloned_set(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 }
 
 gboolean
-_nm_utils_hwaddr_cloned_not_set(_NM_SETT_INFO_PROP_MISSING_FROM_DBUS_FCN_ARGS _nm_nil)
+_nm_sett_info_prop_missing_from_dbus_fcn_cloned_mac_address(
+    _NM_SETT_INFO_PROP_MISSING_FROM_DBUS_FCN_ARGS _nm_nil)
 {
     nm_assert(nm_streq0(property, "cloned-mac-address"));
     return TRUE;
 }
 
 static GVariant *
-_nm_utils_hwaddr_cloned_data_synth(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
+assigned_mac_address_to_dbus(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 {
     gs_free char *addr = NULL;
 
@@ -4058,7 +4059,7 @@ _nm_utils_hwaddr_cloned_data_synth(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 }
 
 static gboolean
-_nm_utils_hwaddr_cloned_data_set(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
+assigned_mac_address_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 {
     nm_assert(nm_streq0(property_info->name, "assigned-mac-address"));
 
@@ -4080,8 +4081,8 @@ _nm_utils_hwaddr_cloned_data_set(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 const NMSettInfoPropertType nm_sett_info_propert_type_assigned_mac_address =
     NM_SETT_INFO_PROPERT_TYPE_DBUS_INIT(G_VARIANT_TYPE_STRING,
                                         .compare_fcn   = _nm_setting_property_compare_fcn_ignore,
-                                        .to_dbus_fcn   = _nm_utils_hwaddr_cloned_data_synth,
-                                        .from_dbus_fcn = _nm_utils_hwaddr_cloned_data_set, );
+                                        .to_dbus_fcn   = assigned_mac_address_to_dbus,
+                                        .from_dbus_fcn = assigned_mac_address_from_dbus, );
 
 /*****************************************************************************/
 

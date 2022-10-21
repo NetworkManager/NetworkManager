@@ -678,13 +678,13 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 }
 
 static GVariant *
-_override_flags_get(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
+vlan_flags_to_dbus(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 {
     return g_variant_new_uint32(nm_setting_vlan_get_flags((NMSettingVlan *) setting));
 }
 
 static gboolean
-_override_flags_not_set(_NM_SETT_INFO_PROP_MISSING_FROM_DBUS_FCN_ARGS _nm_nil)
+vlan_flags_missing_from_dbus(_NM_SETT_INFO_PROP_MISSING_FROM_DBUS_FCN_ARGS _nm_nil)
 {
     /* we changed the default value for FLAGS. When an older client
      * doesn't serialize the property, we assume it is the old default. */
@@ -909,9 +909,9 @@ nm_setting_vlan_class_init(NMSettingVlanClass *klass)
         properties_override,
         obj_properties[PROP_FLAGS],
         NM_SETT_INFO_PROPERT_TYPE_DBUS(G_VARIANT_TYPE_UINT32,
-                                       .to_dbus_fcn = _override_flags_get,
+                                       .to_dbus_fcn = vlan_flags_to_dbus,
                                        .compare_fcn = _nm_setting_property_compare_fcn_default,
-                                       .missing_from_dbus_fcn = _override_flags_not_set,
+                                       .missing_from_dbus_fcn = vlan_flags_missing_from_dbus,
                                        .from_dbus_fcn = _nm_setting_property_from_dbus_fcn_gprop,
                                        .from_dbus_is_full = TRUE));
 
