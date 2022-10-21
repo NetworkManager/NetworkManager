@@ -395,10 +395,19 @@ ip4_dns_to_dbus(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
     return _nm_utils_ip4_dns_to_variant((const char *const *) dns->pdata, dns->len);
 }
 
-static void
-ip4_dns_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_GPROP_FCN_ARGS _nm_nil)
+static gboolean
+ip4_dns_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 {
-    g_value_take_boxed(to, nm_utils_ip4_dns_from_variant(from));
+    gs_strfreev char **strv = NULL;
+
+    if (!_nm_setting_use_legacy_property(setting, connection_dict, "dns", "dns-data")) {
+        *out_is_modified = FALSE;
+        return TRUE;
+    }
+
+    strv = nm_utils_ip4_dns_from_variant(value);
+    g_object_set(setting, NM_SETTING_IP_CONFIG_DNS, strv, NULL);
+    return TRUE;
 }
 
 static GVariant *
@@ -964,11 +973,11 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
         properties_override,
         g_object_class_find_property(G_OBJECT_CLASS(setting_class), NM_SETTING_IP_CONFIG_DNS),
         NM_SETT_INFO_PROPERT_TYPE_DBUS(NM_G_VARIANT_TYPE("au"),
-                                       .compare_fcn = _nm_setting_property_compare_fcn_default,
-                                       .to_dbus_fcn = ip4_dns_to_dbus,
-                                       .typdata_from_dbus.gprop_fcn = ip4_dns_from_dbus,
-                                       .from_dbus_fcn = _nm_setting_property_from_dbus_fcn_gprop,
-                                       .from_dbus_is_full = TRUE), );
+                                       .compare_fcn   = _nm_setting_property_compare_fcn_default,
+                                       .to_dbus_fcn   = ip4_dns_to_dbus,
+                                       .from_dbus_fcn = ip4_dns_from_dbus, ),
+        .to_dbus_only_in_manager_process = TRUE,
+        .dbus_deprecated                 = TRUE, );
 
     /* ---dbus---
      * property: addresses

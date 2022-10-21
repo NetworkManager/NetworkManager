@@ -5829,6 +5829,35 @@ _nm_setting_property_from_dbus_fcn_direct_ip_config_gateway(
                                                      error);
 }
 
+static GVariant *
+dns_data_to_dbus(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
+{
+    GPtrArray *arr;
+
+    if (!_nm_connection_serialize_non_secret(flags))
+        return NULL;
+
+    arr = _nm_setting_ip_config_get_dns_array(NM_SETTING_IP_CONFIG(setting));
+    if (nm_g_ptr_array_len(arr) == 0)
+        return NULL;
+    return g_variant_new_strv((const char *const *) arr->pdata, arr->len);
+}
+
+static gboolean
+dns_data_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
+{
+    gs_free const char **strv = NULL;
+
+    if (_nm_setting_use_legacy_property(setting, connection_dict, "dns", "dns-data")) {
+        *out_is_modified = FALSE;
+        return TRUE;
+    }
+
+    strv = g_variant_get_strv(value, NULL);
+    g_object_set(setting, NM_SETTING_IP_CONFIG_DNS, strv, NULL);
+    return TRUE;
+}
+
 GArray *
 _nm_sett_info_property_override_create_array_ip_config(int addr_family)
 {
@@ -5914,6 +5943,21 @@ _nm_sett_info_property_override_create_array_ip_config(int addr_family)
         &nm_sett_info_propert_type_direct_boolean,
         .direct_offset =
             NM_STRUCT_OFFSET_ENSURE_TYPE(bool, NMSettingIPConfigPrivate, ignore_auto_dns));
+
+    /* ---dbus---
+     * property: dns-data
+     * format: array of strings
+     * description: Array of DNS name servers. This replaces the deprecated
+     *   "dns" property. Each name server can also contain a DoT server name.
+     * ---end---
+     */
+    _nm_properties_override_dbus(
+        properties_override,
+        "dns-data",
+        NM_SETT_INFO_PROPERT_TYPE_DBUS(NM_G_VARIANT_TYPE("as"),
+                                       .to_dbus_fcn   = dns_data_to_dbus,
+                                       .compare_fcn   = _nm_setting_property_compare_fcn_ignore,
+                                       .from_dbus_fcn = dns_data_from_dbus, ));
 
     _nm_properties_override_gobj(
         properties_override,
@@ -6156,11 +6200,13 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
      *
      * Array of IP addresses of DNS servers.
      **/
-    obj_properties[PROP_DNS] = g_param_spec_boxed(NM_SETTING_IP_CONFIG_DNS,
-                                                  "",
-                                                  "",
-                                                  G_TYPE_STRV,
-                                                  G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    obj_properties[PROP_DNS] =
+        g_param_spec_boxed(NM_SETTING_IP_CONFIG_DNS,
+                           "",
+                           "",
+                           G_TYPE_STRV,
+                           /* On D-Bus, "dns" is deprecated for "dns-data". */
+                           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     /**
      * NMSettingIPConfig:dns-search:
