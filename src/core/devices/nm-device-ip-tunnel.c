@@ -163,7 +163,8 @@ update_properties_from_ifindex(NMDevice *device, int ifindex)
     gboolean                 pmtud          = FALSE;
     guint32                  flow_label     = 0;
     NMIPTunnelFlags          flags          = NM_IP_TUNNEL_FLAG_NONE;
-    char                    *key;
+    gs_free char            *input_key      = NULL;
+    gs_free char            *output_key     = NULL;
 
     if (ifindex <= 0) {
 clear:
@@ -207,35 +208,10 @@ clear:
         tos            = lnk->tos;
         pmtud          = lnk->path_mtu_discovery;
 
-        if (NM_FLAGS_HAS(lnk->input_flags, NM_GRE_KEY)) {
-            key = g_strdup_printf("%u", lnk->input_key);
-            if (g_strcmp0(priv->input_key, key)) {
-                g_free(priv->input_key);
-                priv->input_key = key;
-                _notify(self, PROP_INPUT_KEY);
-            } else
-                g_free(key);
-        } else {
-            if (priv->input_key) {
-                nm_clear_g_free(&priv->input_key);
-                _notify(self, PROP_INPUT_KEY);
-            }
-        }
-
-        if (NM_FLAGS_HAS(lnk->output_flags, NM_GRE_KEY)) {
-            key = g_strdup_printf("%u", lnk->output_key);
-            if (g_strcmp0(priv->output_key, key)) {
-                g_free(priv->output_key);
-                priv->output_key = key;
-                _notify(self, PROP_OUTPUT_KEY);
-            } else
-                g_free(key);
-        } else {
-            if (priv->output_key) {
-                nm_clear_g_free(&priv->output_key);
-                _notify(self, PROP_OUTPUT_KEY);
-            }
-        }
+        if (NM_FLAGS_HAS(lnk->input_flags, NM_GRE_KEY))
+            input_key = g_strdup_printf("%u", lnk->input_key);
+        if (NM_FLAGS_HAS(lnk->output_flags, NM_GRE_KEY))
+            output_key = g_strdup_printf("%u", lnk->output_key);
     } else if (priv->mode == NM_IP_TUNNEL_MODE_SIT) {
         const NMPlatformLnkSit *lnk;
 
@@ -296,35 +272,10 @@ clear:
         flags          = ip6tnl_flags_plat_to_setting(lnk->flags);
 
         if (NM_IN_SET(priv->mode, NM_IP_TUNNEL_MODE_IP6GRE, NM_IP_TUNNEL_MODE_IP6GRETAP)) {
-            if (NM_FLAGS_HAS(lnk->input_flags, NM_GRE_KEY)) {
-                key = g_strdup_printf("%u", lnk->input_key);
-                if (g_strcmp0(priv->input_key, key)) {
-                    g_free(priv->input_key);
-                    priv->input_key = key;
-                    _notify(self, PROP_INPUT_KEY);
-                } else
-                    g_free(key);
-            } else {
-                if (priv->input_key) {
-                    nm_clear_g_free(&priv->input_key);
-                    _notify(self, PROP_INPUT_KEY);
-                }
-            }
-
-            if (NM_FLAGS_HAS(lnk->output_flags, NM_GRE_KEY)) {
-                key = g_strdup_printf("%u", lnk->output_key);
-                if (g_strcmp0(priv->output_key, key)) {
-                    g_free(priv->output_key);
-                    priv->output_key = key;
-                    _notify(self, PROP_OUTPUT_KEY);
-                } else
-                    g_free(key);
-            } else {
-                if (priv->output_key) {
-                    nm_clear_g_free(&priv->output_key);
-                    _notify(self, PROP_OUTPUT_KEY);
-                }
-            }
+            if (NM_FLAGS_HAS(lnk->input_flags, NM_GRE_KEY))
+                input_key = g_strdup_printf("%u", lnk->input_key);
+            if (NM_FLAGS_HAS(lnk->output_flags, NM_GRE_KEY))
+                output_key = g_strdup_printf("%u", lnk->output_key);
         }
     } else
         g_return_if_reached();
@@ -337,7 +288,6 @@ clear:
         _notify(self, PROP_REMOTE);
 
 out:
-
     if (priv->ttl != ttl) {
         priv->ttl = ttl;
         _notify(self, PROP_TTL);
@@ -361,6 +311,18 @@ out:
     if (priv->flow_label != flow_label) {
         priv->flow_label = flow_label;
         _notify(self, PROP_FLOW_LABEL);
+    }
+
+    if (!nm_streq0(priv->input_key, input_key)) {
+        g_free(priv->input_key);
+        priv->input_key = g_steal_pointer(&input_key);
+        _notify(self, PROP_INPUT_KEY);
+    }
+
+    if (!nm_streq0(priv->output_key, output_key)) {
+        g_free(priv->output_key);
+        priv->output_key = g_steal_pointer(&output_key);
+        _notify(self, PROP_OUTPUT_KEY);
     }
 
     if (priv->flags != flags) {
