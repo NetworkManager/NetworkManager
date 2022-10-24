@@ -1142,8 +1142,10 @@ _con_get_try_complete_early(Request *req)
     gs_unref_variant GVariant    *setting_secrets = NULL;
     gs_unref_object NMConnection *tmp             = NULL;
     GError                       *error           = NULL;
+    gboolean                      only_system;
 
-    self = req->self;
+    self        = req->self;
+    only_system = NM_FLAGS_HAS(req->con.get.flags, NM_SECRET_AGENT_GET_SECRETS_FLAG_ONLY_SYSTEM);
 
     /* Check if there are any existing secrets */
     if (req->con.get.existing_secrets)
@@ -1171,13 +1173,24 @@ _con_get_try_complete_early(Request *req)
         return TRUE;
     }
     /* Do we have everything we need? */
-    if (NM_FLAGS_HAS(req->con.get.flags, NM_SECRET_AGENT_GET_SECRETS_FLAG_ONLY_SYSTEM)
+    if (only_system
         || ((nm_connection_need_secrets(tmp, NULL) == NULL)
             && !NM_FLAGS_HAS(req->con.get.flags, NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW))) {
+        GVariant                  *secrets;
+        gs_unref_variant GVariant *secrets_free = NULL;
+
         _LOGD(NULL, "(" LOG_REQ_FMT ") system settings secrets sufficient", LOG_REQ_ARG(req));
 
+        if (only_system)
+            secrets = req->con.get.existing_secrets;
+        else {
+            secrets = g_variant_ref_sink(
+                nm_connection_to_dbus(tmp, NM_CONNECTION_SERIALIZE_ONLY_SECRETS));
+            secrets_free = secrets;
+        }
+
         /* Got everything, we're done */
-        req_complete(req, req->con.get.existing_secrets, NULL, NULL, NULL);
+        req_complete(req, secrets, NULL, NULL, NULL);
         return TRUE;
     }
 
