@@ -1370,6 +1370,12 @@ nm_platform_link_add(NMPlatform            *self,
                                                      buf_p,
                                                      buf_len);
                    break;
+               case NM_LINK_TYPE_VTI:
+                   nm_strbuf_append_str(&buf_p, &buf_len, ", ");
+                   nm_platform_lnk_vti_to_string((const NMPlatformLnkVti *) extra_data,
+                                                 buf_p,
+                                                 buf_len);
+                   break;
                case NM_LINK_TYPE_BOND:
                    nm_strbuf_append_str(&buf_p, &buf_len, ", ");
                    nm_platform_lnk_bond_to_string((const NMPlatformLnkBond *) extra_data,
@@ -2416,6 +2422,12 @@ const NMPlatformLnkVrf *
 nm_platform_link_get_lnk_vrf(NMPlatform *self, int ifindex, const NMPlatformLink **out_link)
 {
     return _link_get_lnk(self, ifindex, NM_LINK_TYPE_VRF, out_link);
+}
+
+const NMPlatformLnkVti *
+nm_platform_link_get_lnk_vti(NMPlatform *self, int ifindex, const NMPlatformLink **out_link)
+{
+    return _link_get_lnk(self, ifindex, NM_LINK_TYPE_VTI, out_link);
 }
 
 const NMPlatformLnkVxlan *
@@ -6497,6 +6509,45 @@ nm_platform_lnk_vlan_to_string(const NMPlatformLnkVlan *lnk, char *buf, gsize le
 }
 
 const char *
+nm_platform_lnk_vti_to_string(const NMPlatformLnkVti *lnk, char *buf, gsize len)
+{
+    char str_local[30 + NM_INET_ADDRSTRLEN];
+    char str_local1[NM_INET_ADDRSTRLEN];
+    char str_remote[30 + NM_INET_ADDRSTRLEN];
+    char str_remote1[NM_INET_ADDRSTRLEN];
+    char str_ikey[30];
+    char str_okey[30];
+    char str_fwmark[30];
+    char str_parent_ifindex[30];
+
+    if (!nm_utils_to_string_buffer_init_null(lnk, &buf, &len))
+        return buf;
+
+    g_snprintf(
+        buf,
+        len,
+        "vti"
+        "%s" /* remote */
+        "%s" /* local */
+        "%s" /* parent_ifindex */
+        "%s" /* ikey */
+        "%s" /* okey */
+        "%s" /* fwmark */
+        "",
+        lnk->remote
+            ? nm_sprintf_buf(str_remote, " remote %s", nm_inet4_ntop(lnk->remote, str_remote1))
+            : "",
+        lnk->local ? nm_sprintf_buf(str_local, " local %s", nm_inet4_ntop(lnk->local, str_local1))
+                   : "",
+        lnk->parent_ifindex ? nm_sprintf_buf(str_parent_ifindex, " dev %d", lnk->parent_ifindex)
+                            : "",
+        lnk->ikey ? nm_sprintf_buf(str_ikey, " ikey %u", lnk->ikey) : "",
+        lnk->okey ? nm_sprintf_buf(str_okey, " okey %u", lnk->okey) : "",
+        lnk->fwmark ? nm_sprintf_buf(str_fwmark, " fwmark 0x%x", lnk->fwmark) : "");
+    return buf;
+}
+
+const char *
 nm_platform_lnk_vrf_to_string(const NMPlatformLnkVrf *lnk, char *buf, gsize len)
 {
     char *b;
@@ -8182,6 +8233,31 @@ nm_platform_lnk_vrf_cmp(const NMPlatformLnkVrf *a, const NMPlatformLnkVrf *b)
 {
     NM_CMP_SELF(a, b);
     NM_CMP_FIELD(a, b, table);
+    return 0;
+}
+
+void
+nm_platform_lnk_vti_hash_update(const NMPlatformLnkVti *obj, NMHashState *h)
+{
+    nm_hash_update_vals(h,
+                        obj->local,
+                        obj->remote,
+                        obj->parent_ifindex,
+                        obj->ikey,
+                        obj->okey,
+                        obj->fwmark);
+}
+
+int
+nm_platform_lnk_vti_cmp(const NMPlatformLnkVti *a, const NMPlatformLnkVti *b)
+{
+    NM_CMP_SELF(a, b);
+    NM_CMP_FIELD(a, b, parent_ifindex);
+    NM_CMP_FIELD(a, b, local);
+    NM_CMP_FIELD(a, b, remote);
+    NM_CMP_FIELD(a, b, ikey);
+    NM_CMP_FIELD(a, b, okey);
+    NM_CMP_FIELD(a, b, fwmark);
     return 0;
 }
 

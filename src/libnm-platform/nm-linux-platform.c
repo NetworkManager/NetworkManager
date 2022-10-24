@@ -808,6 +808,7 @@ static const LinkDesc link_descs[] = {
     [NM_LINK_TYPE_VETH]        = {"veth", "veth", NULL},
     [NM_LINK_TYPE_VLAN]        = {"vlan", "vlan", "vlan"},
     [NM_LINK_TYPE_VRF]         = {"vrf", "vrf", "vrf"},
+    [NM_LINK_TYPE_VTI]         = {"vti", "vti", NULL},
     [NM_LINK_TYPE_VXLAN]       = {"vxlan", "vxlan", "vxlan"},
     [NM_LINK_TYPE_WIREGUARD]   = {"wireguard", "wireguard", "wireguard"},
 
@@ -850,6 +851,7 @@ _link_type_from_rtnl_type(const char *name)
         NM_LINK_TYPE_VETH,        /* "veth"        */
         NM_LINK_TYPE_VLAN,        /* "vlan"        */
         NM_LINK_TYPE_VRF,         /* "vrf"         */
+        NM_LINK_TYPE_VTI,         /* "vti"         */
         NM_LINK_TYPE_VXLAN,       /* "vxlan"       */
         NM_LINK_TYPE_WIMAX,       /* "wimax"       */
         NM_LINK_TYPE_WIREGUARD,   /* "wireguard"   */
@@ -2405,6 +2407,40 @@ _parse_lnk_vxlan(const char *kind, struct nlattr *info_data)
 }
 
 static NMPObject *
+_parse_lnk_vti(const char *kind, struct nlattr *info_data)
+{
+    static const struct nla_policy policy[] = {
+        [IFLA_VTI_LINK]   = {.type = NLA_U32},
+        [IFLA_VTI_LOCAL]  = {.type = NLA_U32},
+        [IFLA_VTI_REMOTE] = {.type = NLA_U32},
+        [IFLA_VTI_IKEY]   = {.type = NLA_U32},
+        [IFLA_VTI_OKEY]   = {.type = NLA_U32},
+        [IFLA_VTI_FWMARK] = {.type = NLA_U32},
+    };
+    struct nlattr    *tb[G_N_ELEMENTS(policy)];
+    NMPObject        *obj;
+    NMPlatformLnkVti *props;
+
+    if (!info_data || !nm_streq0(kind, "vti"))
+        return NULL;
+
+    if (nla_parse_nested_arr(tb, info_data, policy) < 0)
+        return NULL;
+
+    obj   = nmp_object_new(NMP_OBJECT_TYPE_LNK_VTI, NULL);
+    props = &obj->lnk_vti;
+
+    props->parent_ifindex = tb[IFLA_VTI_LINK] ? nla_get_u32(tb[IFLA_VTI_LINK]) : 0;
+    props->local          = tb[IFLA_VTI_LOCAL] ? nla_get_u32(tb[IFLA_VTI_LOCAL]) : 0;
+    props->remote         = tb[IFLA_VTI_REMOTE] ? nla_get_u32(tb[IFLA_VTI_REMOTE]) : 0;
+    props->ikey           = tb[IFLA_VTI_IKEY] ? ntohl(nla_get_u32(tb[IFLA_VTI_IKEY])) : 0;
+    props->okey           = tb[IFLA_VTI_OKEY] ? ntohl(nla_get_u32(tb[IFLA_VTI_OKEY])) : 0;
+    props->fwmark         = tb[IFLA_VTI_FWMARK] ? nla_get_u32(tb[IFLA_VTI_FWMARK]) : 0;
+
+    return obj;
+}
+
+static NMPObject *
 _parse_lnk_vrf(const char *kind, struct nlattr *info_data)
 {
     static const struct nla_policy policy[] = {
@@ -3393,6 +3429,9 @@ _new_from_nl_link(NMPlatform            *platform,
         break;
     case NM_LINK_TYPE_VRF:
         lnk_data = _parse_lnk_vrf(nl_info_kind, nl_info_data);
+        break;
+    case NM_LINK_TYPE_VTI:
+        lnk_data = _parse_lnk_vti(nl_info_kind, nl_info_data);
         break;
     case NM_LINK_TYPE_VXLAN:
         lnk_data = _parse_lnk_vxlan(nl_info_kind, nl_info_data);
@@ -4918,6 +4957,24 @@ _nl_msg_new_link_set_linkinfo(struct nl_msg *msg, NMLinkType link_type, gconstpo
 
         NLA_PUT_U32(msg, IFLA_MACVLAN_MODE, props->mode);
         NLA_PUT_U16(msg, IFLA_MACVLAN_FLAGS, props->no_promisc ? MACVLAN_FLAG_NOPROMISC : 0);
+        break;
+    }
+    case NM_LINK_TYPE_VTI:
+    {
+        const NMPlatformLnkVti *props = extra_data;
+
+        nm_assert(props);
+
+        if (!(data = nla_nest_start(msg, IFLA_INFO_DATA)))
+            goto nla_put_failure;
+
+        if (props->parent_ifindex > 0)
+            NLA_PUT_U32(msg, IFLA_VTI_LINK, props->parent_ifindex);
+        NLA_PUT_U32(msg, IFLA_VTI_LOCAL, props->local);
+        NLA_PUT_U32(msg, IFLA_VTI_REMOTE, props->remote);
+        NLA_PUT_U32(msg, IFLA_VTI_IKEY, htonl(props->ikey));
+        NLA_PUT_U32(msg, IFLA_VTI_OKEY, htonl(props->okey));
+        NLA_PUT_U32(msg, IFLA_VTI_FWMARK, props->fwmark);
         break;
     }
     default:

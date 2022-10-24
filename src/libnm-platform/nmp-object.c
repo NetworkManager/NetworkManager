@@ -3601,6 +3601,18 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
             .cmd_plobj_hash_update = (CmdPlobjHashUpdateFunc) nm_platform_lnk_vrf_hash_update,
             .cmd_plobj_cmp         = (CmdPlobjCmpFunc) nm_platform_lnk_vrf_cmp,
         },
+    [NMP_OBJECT_TYPE_LNK_VTI - 1] =
+        {
+            .parent                = DEDUP_MULTI_OBJ_CLASS_INIT(),
+            .obj_type              = NMP_OBJECT_TYPE_LNK_VTI,
+            .sizeof_data           = sizeof(NMPObjectLnkVti),
+            .sizeof_public         = sizeof(NMPlatformLnkVti),
+            .obj_type_name         = "vti",
+            .lnk_link_type         = NM_LINK_TYPE_VTI,
+            .cmd_plobj_to_string   = (CmdPlobjToStringFunc) nm_platform_lnk_vti_to_string,
+            .cmd_plobj_hash_update = (CmdPlobjHashUpdateFunc) nm_platform_lnk_vti_hash_update,
+            .cmd_plobj_cmp         = (CmdPlobjCmpFunc) nm_platform_lnk_vti_cmp,
+        },
     [NMP_OBJECT_TYPE_LNK_VXLAN - 1] =
         {
             .parent                = DEDUP_MULTI_OBJ_CLASS_INIT(),

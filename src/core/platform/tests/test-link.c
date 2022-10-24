@@ -1287,6 +1287,7 @@ test_software_detect(gconstpointer user_data)
     NMPlatformLnkBridge              lnk_bridge = {};
     NMPlatformLnkTun                 lnk_tun;
     NMPlatformLnkGre                 lnk_gre = {};
+    NMPlatformLnkVti                 lnk_vti = {};
     nm_auto_close int                tun_fd  = -1;
 
     nmtstp_run_command_check("ip link add %s type dummy", PARENT_NAME);
@@ -1612,6 +1613,32 @@ test_software_detect(gconstpointer user_data)
                 goto out_delete_parent;
             }
             g_error("Failed adding VRF interface");
+        }
+        break;
+    }
+    case NM_LINK_TYPE_VTI:
+    {
+        gboolean gracefully_skip = FALSE;
+
+        if (!nm_platform_link_get_by_ifname(NM_PLATFORM_GET, "ip_vti0")) {
+            /* Seems that the ip_vti module is not loaded... try to load it. */
+            gracefully_skip = nmp_utils_modprobe(NULL, TRUE, "ip_vti", NULL) != 0;
+        }
+
+        lnk_vti.local          = nmtst_inet4_from_string("192.168.212.204");
+        lnk_vti.remote         = nmtst_inet4_from_string("172.168.11.25");
+        lnk_vti.parent_ifindex = ifindex_parent;
+        lnk_vti.fwmark         = 0x42;
+        lnk_vti.ikey           = 12;
+        lnk_vti.okey           = 13;
+
+        if (!nmtstp_link_vti_add(NULL, ext, DEVICE_NAME, &lnk_vti)) {
+            if (gracefully_skip) {
+                g_test_skip(
+                    "Cannot create vti tunnel because of missing vti module (modprobe ip_vti)");
+                goto out_delete_parent;
+            }
+            g_error("Failed adding VTI tunnel");
         }
         break;
     }
@@ -1955,6 +1982,14 @@ test_software_detect(gconstpointer user_data)
 
             g_assert(plnk == nm_platform_link_get_lnk_vrf(NM_PLATFORM_GET, ifindex, NULL));
             g_assert_cmpint(plnk->table, ==, 9876);
+            break;
+        }
+        case NM_LINK_TYPE_VTI:
+        {
+            const NMPlatformLnkVti *plnk = &lnk->lnk_vti;
+
+            g_assert(plnk == nm_platform_link_get_lnk_vti(NM_PLATFORM_GET, ifindex, NULL));
+            g_assert(nm_platform_lnk_vti_cmp(plnk, &lnk_vti) == 0);
             break;
         }
         case NM_LINK_TYPE_VXLAN:
@@ -3861,6 +3896,7 @@ _nmtstp_setup_tests(void)
         test_software_detect_add("/link/software/detect/tun", NM_LINK_TYPE_TUN, 0);
         test_software_detect_add("/link/software/detect/vlan/0", NM_LINK_TYPE_VLAN, 0);
         test_software_detect_add("/link/software/detect/vlan/1", NM_LINK_TYPE_VLAN, 1);
+        test_software_detect_add("/link/software/detect/vti", NM_LINK_TYPE_VTI, 0);
         test_software_detect_add("/link/software/detect/vrf", NM_LINK_TYPE_VRF, 0);
         test_software_detect_add("/link/software/detect/vxlan/0", NM_LINK_TYPE_VXLAN, 0);
         test_software_detect_add("/link/software/detect/vxlan/1", NM_LINK_TYPE_VXLAN, 1);
