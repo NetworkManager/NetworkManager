@@ -10630,6 +10630,7 @@ _dev_ipdhcpx_start(NMDevice *self, int addr_family)
         gboolean               iaid_explicit;
         guint32                iaid;
         NMDhcpClientConfig     config;
+        const char            *pd_hint;
 
         iaid = _prop_get_ipvx_dhcp_iaid(self, AF_INET6, connection, FALSE, &iaid_explicit);
         duid = _prop_get_ipv6_dhcp_duid(self, connection, hwaddr, &enforce_duid);
@@ -10655,6 +10656,21 @@ _dev_ipdhcpx_start(NMDevice *self, int addr_family)
                     .needed_prefixes = priv->ipdhcp_data_6.v6.needed_prefixes,
                 },
         };
+
+        pd_hint = nm_setting_ip6_config_get_dhcp_pd_hint(NM_SETTING_IP6_CONFIG(s_ip));
+        if (pd_hint) {
+            int      pd_hint_length;
+            gboolean res;
+
+            res = nm_inet_parse_with_prefix_bin(AF_INET6,
+                                                pd_hint,
+                                                NULL,
+                                                &config.v6.pd_hint_addr,
+                                                &pd_hint_length);
+            nm_assert(res);
+            nm_assert(pd_hint_length > 0 || pd_hint_length <= 128);
+            config.v6.pd_hint_length = pd_hint_length;
+        }
 
         priv->ipdhcp_data_6.client =
             nm_dhcp_manager_start_client(nm_dhcp_manager_get(), &config, &error);

@@ -463,6 +463,19 @@ dhclient_start(NMDhcpClient *client,
 
         if (mode_opt)
             g_ptr_array_add(argv, (gpointer) mode_opt);
+
+        if (prefixes > 0 && client_config->v6.pd_hint_length > 0) {
+            char buf[16];
+
+            if (!IN6_IS_ADDR_UNSPECIFIED(&client_config->v6.pd_hint_addr)) {
+                _LOGW("dhclient only supports a length as prefix delegation hint, not a prefix");
+            }
+
+            nm_sprintf_buf(buf, "%u", client_config->v6.pd_hint_length);
+            g_ptr_array_add(argv, "--prefix-len-hint");
+            g_ptr_array_add(argv, buf);
+        }
+
         while (prefixes--)
             g_ptr_array_add(argv, (gpointer) "-P");
     }

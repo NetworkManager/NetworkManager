@@ -160,6 +160,10 @@ typedef struct {
 
         } v4;
         struct {
+            /* A hint to send to server for prefix delegation (IA_PD). */
+            struct in6_addr pd_hint_addr;
+            guint           pd_hint_length;
+
             /* If set, the DUID from the connection is used; otherwise
              * the one from an existing lease is used. */
             gboolean enforce_duid;
