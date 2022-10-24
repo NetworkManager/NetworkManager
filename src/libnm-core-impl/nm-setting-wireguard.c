@@ -1800,13 +1800,13 @@ verify_secrets(NMSetting *setting, NMConnection *connection, GError **error)
 }
 
 static GPtrArray *
-need_secrets(NMSetting *setting)
+need_secrets(NMSetting *setting, gboolean check_rerequest)
 {
     NMSettingWireGuardPrivate *priv    = NM_SETTING_WIREGUARD_GET_PRIVATE(setting);
     GPtrArray                 *secrets = NULL;
     guint                      i;
 
-    if (!priv->private_key_valid) {
+    if (check_rerequest || !priv->private_key_valid) {
         secrets = g_ptr_array_new_full(1, g_free);
         g_ptr_array_add(secrets, g_strdup(NM_SETTING_WIREGUARD_PRIVATE_KEY));
     }

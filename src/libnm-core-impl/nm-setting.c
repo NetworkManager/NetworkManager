@@ -3181,6 +3181,12 @@ _nm_setting_clear_secrets(NMSetting                       *setting,
 /**
  * _nm_setting_need_secrets:
  * @setting: the #NMSetting
+ * @check_rerequest: If %TRUE: the stored secrets might be wrong and the agent
+ *   should query the user for the correct credentials. If an #NMSetting knows
+ *   that this cannot be the case it should *not* return the corresponding
+ *   setting object. Otherwise it should always return it, even if it is not
+ *   missing.
+ *   If %FALSE: only return it when it is missing.
  *
  * Returns an array of property names for each secret which may be required
  * to make a successful connection.  The returned hints are only intended as a
@@ -3193,14 +3199,14 @@ _nm_setting_clear_secrets(NMSetting                       *setting,
  * free the elements.
  **/
 GPtrArray *
-_nm_setting_need_secrets(NMSetting *setting)
+_nm_setting_need_secrets(NMSetting *setting, gboolean check_rerequest)
 {
     GPtrArray *secrets = NULL;
 
     g_return_val_if_fail(NM_IS_SETTING(setting), NULL);
 
     if (NM_SETTING_GET_CLASS(setting)->need_secrets)
-        secrets = NM_SETTING_GET_CLASS(setting)->need_secrets(setting);
+        secrets = NM_SETTING_GET_CLASS(setting)->need_secrets(setting, check_rerequest);
 
     return secrets;
 }

@@ -174,12 +174,12 @@ verify_secrets(NMSetting *setting, NMConnection *connection, GError **error)
 }
 
 static GPtrArray *
-need_secrets(NMSetting *setting)
+need_secrets(NMSetting *setting, gboolean check_rerequest)
 {
     NMSettingCdmaPrivate *priv    = NM_SETTING_CDMA_GET_PRIVATE(setting);
     GPtrArray            *secrets = NULL;
 
-    if (!nm_str_is_empty(priv->password))
+    if (!check_rerequest && !nm_str_is_empty(priv->password))
         return NULL;
 
     if (priv->username) {
