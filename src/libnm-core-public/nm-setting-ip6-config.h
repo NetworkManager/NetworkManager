@@ -40,6 +40,8 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_IP6_CONFIG_MTU "mtu"
 
+#define NM_SETTING_IP6_CONFIG_DHCP_PD_HINT "dhcp-pd-hint"
+
 /**
  * NM_SETTING_IP6_CONFIG_METHOD_IGNORE:
  *
@@ -164,6 +166,8 @@ NM_AVAILABLE_IN_1_24
 gint32 nm_setting_ip6_config_get_ra_timeout(NMSettingIP6Config *setting);
 NM_AVAILABLE_IN_1_40
 guint32 nm_setting_ip6_config_get_mtu(NMSettingIP6Config *setting);
+NM_AVAILABLE_IN_1_44
+const char *nm_setting_ip6_config_get_dhcp_pd_hint(NMSettingIP6Config *setting);
 
 G_END_DECLS
 
