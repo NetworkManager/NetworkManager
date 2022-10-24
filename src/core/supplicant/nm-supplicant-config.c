@@ -153,16 +153,16 @@ nm_supplicant_config_add_option_with_type(NMSupplicantConfig *self,
         return FALSE;
     }
 
-    opt        = g_slice_new0(ConfigOption);
-    opt->value = g_malloc(len + 1);
-    memcpy(opt->value, value, len);
-    opt->value[len] = '\0';
-
-    opt->len  = len;
-    opt->type = type;
+    opt  = g_slice_new(ConfigOption);
+    *opt = (ConfigOption){
+        .value = nm_memdup_nul(value, len),
+        .len   = len,
+        .type  = type,
+    };
 
     {
         char buf[255];
+
         memset(&buf[0], 0, sizeof(buf));
         memcpy(&buf[0], opt->value, opt->len > 254 ? 254 : opt->len);
         nm_log_info(LOGD_SUPPLICANT,

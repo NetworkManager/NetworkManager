@@ -530,10 +530,7 @@ nm_str_buf_finalize(NMStrBuf *strbuf, gsize *out_len)
         char *str = g_steal_pointer(&strbuf->_priv_str);
         char *result;
 
-        result = g_new(char, strbuf->_priv_len + 1u);
-        memcpy(result, str, strbuf->_priv_len);
-        result[strbuf->_priv_len] = '\0';
-
+        result = nm_memdup_nul(str, strbuf->_priv_len);
         if (strbuf->_priv_do_bzero_mem)
             nm_explicit_bzero(str, strbuf->_priv_len);
         return result;
