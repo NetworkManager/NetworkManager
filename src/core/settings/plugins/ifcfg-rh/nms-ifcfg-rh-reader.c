@@ -2481,6 +2481,11 @@ make_ip6_setting(shvarFile *ifcfg, shvarFile *network_ifcfg, gboolean routes_rea
         g_object_set(s_ip6, NM_SETTING_IP_CONFIG_DHCP_IAID, v, NULL);
 
     nm_clear_g_free(&value);
+    v = svGetValueStr(ifcfg, "DHCPV6_PD_HINT", &value);
+    if (v)
+        g_object_set(s_ip6, NM_SETTING_IP6_CONFIG_DHCP_PD_HINT, v, NULL);
+
+    nm_clear_g_free(&value);
     v = svGetValueStr(ifcfg, "DHCPV6_HOSTNAME", &value);
     /* Use DHCP_HOSTNAME as fallback if it is in FQDN format and ipv6.method is
      * auto or dhcp: this is required to support old ifcfg files
