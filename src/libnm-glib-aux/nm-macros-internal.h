@@ -1274,6 +1274,36 @@ nm_memdup(gconstpointer data, gsize size)
     return p;
 }
 
+static inline gpointer
+nm_memdup_nul(gconstpointer data, gsize size)
+{
+    gpointer p;
+
+    /* Like systemd's memdup_suffix0() and kernel's kmemdup_nul().
+     *
+     * This:
+     * - never returns NULL
+     * - always has one NUL byte after the @size data. Thus,
+     *   the actually allocated buffer is size+1.
+     *
+     * This is like nm_memdup() except:
+     * - never returns NULL
+     * - always returns one NUL character appended to the data.
+     *
+     * This is like g_strndup(), except
+     * - never returns NULL.
+     * - g_strndup() treats the src pointer as a NUL terminated string,
+     *   so if src is shorter than size, the rest is filled with padding.
+     *   Essentially, it uses strncpy() to copy the input which does the
+     *   truncation. If @data contains no NUL byte in teh first @size bytes,
+     *   it behaves the same as g_strndup(). */
+
+    p = g_malloc(size + 1u);
+    nm_memcpy(p, data, size);
+    ((char *) p)[size] = '\0';
+    return p;
+}
+
 #define nm_malloc_maybe_a(alloca_maxlen, bytes, to_free)  \
     ({                                                    \
         const gsize       _bytes   = (bytes);             \
