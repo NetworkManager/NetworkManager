@@ -1829,7 +1829,8 @@ nm_setting_team_class_init(NMSettingTeamClass *klass)
      */
     _nm_properties_override_dbus(properties_override,
                                  "interface-name",
-                                 &nm_sett_info_propert_type_deprecated_interface_name);
+                                 &nm_sett_info_propert_type_deprecated_interface_name,
+                                 .dbus_deprecated = TRUE);
 
     g_object_class_install_properties(object_class, G_N_ELEMENTS(obj_properties), obj_properties);
 

@@ -1569,11 +1569,11 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
         obj_properties[PROP_CLONED_MAC_ADDRESS],
         NM_SETT_INFO_PROPERT_TYPE_DBUS(
             G_VARIANT_TYPE_BYTESTRING,
-            .compare_fcn   = compare_fcn_cloned_mac_address,
-            .to_dbus_fcn   = _nm_sett_info_prop_to_dbus_fcn_cloned_mac_address,
-            .from_dbus_fcn = _nm_sett_info_prop_from_dbus_fcn_cloned_mac_address,
-            .missing_from_dbus_fcn =
-                _nm_sett_info_prop_missing_from_dbus_fcn_cloned_mac_address, ));
+            .compare_fcn           = compare_fcn_cloned_mac_address,
+            .to_dbus_fcn           = _nm_sett_info_prop_to_dbus_fcn_cloned_mac_address,
+            .from_dbus_fcn         = _nm_sett_info_prop_from_dbus_fcn_cloned_mac_address,
+            .missing_from_dbus_fcn = _nm_sett_info_prop_missing_from_dbus_fcn_cloned_mac_address, ),
+        .dbus_deprecated = TRUE, );
 
     /* ---dbus---
      * property: assigned-mac-address
@@ -1811,7 +1811,8 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
                                               NM_SETTING_MAC_RANDOMIZATION_DEFAULT,
                                               NM_SETTING_PARAM_NONE,
                                               NMSettingWirelessPrivate,
-                                              mac_address_randomization);
+                                              mac_address_randomization,
+                                              .is_deprecated = TRUE, );
 
     /* Compatibility for deprecated property */
     /* ---ifcfg-rh---
@@ -1833,7 +1834,8 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
         "security",
         NM_SETT_INFO_PROPERT_TYPE_DBUS(G_VARIANT_TYPE_STRING,
                                        .to_dbus_fcn = security_to_dbus,
-                                       .compare_fcn = _nm_setting_property_compare_fcn_ignore, ));
+                                       .compare_fcn = _nm_setting_property_compare_fcn_ignore, ),
+        .dbus_deprecated = TRUE, );
 
     /**
      * NMSettingWireless:wake-on-wlan:

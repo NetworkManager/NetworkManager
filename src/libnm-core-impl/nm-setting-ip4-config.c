@@ -1004,15 +1004,16 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
         NM_SETT_INFO_PROPERT_TYPE_DBUS(NM_G_VARIANT_TYPE("aau"),
                                        .to_dbus_fcn   = ip4_addresses_to_dbus,
                                        .compare_fcn   = _nm_setting_ip_config_compare_fcn_addresses,
-                                       .from_dbus_fcn = ip4_addresses_from_dbus, ));
+                                       .from_dbus_fcn = ip4_addresses_from_dbus, ),
+        .dbus_deprecated = TRUE, );
     _nm_properties_override_dbus(
         properties_override,
         "address-labels",
         NM_SETT_INFO_PROPERT_TYPE_DBUS(G_VARIANT_TYPE_STRING_ARRAY,
                                        .to_dbus_fcn = ip4_address_labels_to_dbus,
                                        .compare_fcn = _nm_setting_property_compare_fcn_ignore,
-                                       /* from_dbus() is handled by ip4_addresses_from_dbus(). */
-                                       ));
+                                       /* from_dbus() is handled by ip4_addresses_from_dbus(). */),
+        .dbus_deprecated = TRUE, );
 
     /* ---dbus---
      * property: address-data
@@ -1141,7 +1142,8 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
         NM_SETT_INFO_PROPERT_TYPE_DBUS(NM_G_VARIANT_TYPE("aau"),
                                        .to_dbus_fcn   = ip4_routes_to_dbus,
                                        .compare_fcn   = _nm_setting_ip_config_compare_fcn_routes,
-                                       .from_dbus_fcn = ip4_routes_from_dbus, ));
+                                       .from_dbus_fcn = ip4_routes_from_dbus, ),
+        .dbus_deprecated = TRUE, );
 
     /* ---dbus---
      * property: route-data

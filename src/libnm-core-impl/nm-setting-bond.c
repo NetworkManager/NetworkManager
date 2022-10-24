@@ -1313,7 +1313,8 @@ nm_setting_bond_class_init(NMSettingBondClass *klass)
      */
     _nm_properties_override_dbus(properties_override,
                                  "interface-name",
-                                 &nm_sett_info_propert_type_deprecated_interface_name);
+                                 &nm_sett_info_propert_type_deprecated_interface_name,
+                                 .dbus_deprecated = TRUE, );
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 

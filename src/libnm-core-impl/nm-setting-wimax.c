@@ -178,7 +178,8 @@ nm_setting_wimax_class_init(NMSettingWimaxClass *klass)
                                               PROP_NETWORK_NAME,
                                               NM_SETTING_PARAM_NONE,
                                               NMSettingWimaxPrivate,
-                                              network_name);
+                                              network_name,
+                                              .is_deprecated = TRUE, );
 
     /**
      * NMSettingWimax:mac-address:
@@ -196,7 +197,8 @@ nm_setting_wimax_class_init(NMSettingWimaxClass *klass)
                                                    NM_SETTING_PARAM_NONE,
                                                    NMSettingWimaxPrivate,
                                                    mac_address,
-                                                   .direct_set_string_mac_address_len = ETH_ALEN);
+                                                   .direct_set_string_mac_address_len = ETH_ALEN,
+                                                   .is_deprecated                     = TRUE, );
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 

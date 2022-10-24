@@ -1014,7 +1014,8 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
         NM_SETT_INFO_PROPERT_TYPE_DBUS(NM_G_VARIANT_TYPE("a(ayuay)"),
                                        .to_dbus_fcn   = ip6_addresses_to_dbus,
                                        .compare_fcn   = _nm_setting_ip_config_compare_fcn_addresses,
-                                       .from_dbus_fcn = ip6_addresses_from_dbus, ));
+                                       .from_dbus_fcn = ip6_addresses_from_dbus, ),
+        .dbus_deprecated = TRUE, );
 
     /* ---dbus---
      * property: address-data
@@ -1132,7 +1133,8 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
         NM_SETT_INFO_PROPERT_TYPE_DBUS(NM_G_VARIANT_TYPE("a(ayuayu)"),
                                        .to_dbus_fcn   = ip6_routes_to_dbus,
                                        .compare_fcn   = _nm_setting_ip_config_compare_fcn_routes,
-                                       .from_dbus_fcn = ip6_routes_from_dbus, ));
+                                       .from_dbus_fcn = ip6_routes_from_dbus, ),
+        .dbus_deprecated = TRUE, );
 
     /* ---dbus---
      * property: route-data
