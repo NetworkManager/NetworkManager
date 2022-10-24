@@ -38,6 +38,7 @@ G_BEGIN_DECLS
 #define NM_SETTING_IP_TUNNEL_OUTPUT_KEY          "output-key"
 #define NM_SETTING_IP_TUNNEL_ENCAPSULATION_LIMIT "encapsulation-limit"
 #define NM_SETTING_IP_TUNNEL_FLOW_LABEL          "flow-label"
+#define NM_SETTING_IP_TUNNEL_FWMARK              "fwmark"
 #define NM_SETTING_IP_TUNNEL_MTU                 "mtu"
 #define NM_SETTING_IP_TUNNEL_FLAGS               "flags"
 
@@ -98,6 +99,8 @@ NM_AVAILABLE_IN_1_42
 guint nm_setting_ip_tunnel_get_encapsulation_limit(NMSettingIPTunnel *setting);
 NM_AVAILABLE_IN_1_42
 guint nm_setting_ip_tunnel_get_flow_label(NMSettingIPTunnel *setting);
+NM_AVAILABLE_IN_1_42
+guint32 nm_setting_ip_tunnel_get_fwmark(NMSettingIPTunnel *setting);
 NM_AVAILABLE_IN_1_2
 guint nm_setting_ip_tunnel_get_mtu(NMSettingIPTunnel *setting);
 NM_AVAILABLE_IN_1_12
