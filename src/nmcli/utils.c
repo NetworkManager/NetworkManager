@@ -1421,22 +1421,20 @@ nmc_print(const NmcConfig                 *nmc_config,
 static void
 pager_fallback(void)
 {
-    char buf[64];
+    char buf[1024];
     int  rb;
-    int  errsv;
+
+    /* We are still in the child process (after fork() and before exec()).
+     * We must only used functions listed in `man signal-safety`. */
 
     do {
         rb = read(STDIN_FILENO, buf, sizeof(buf));
         if (rb == -1) {
-            errsv = errno;
-            if (errsv == EINTR)
+            if (errno == EINTR)
                 continue;
-            g_printerr(_("Error reading nmcli output: %s\n"), nm_strerror_native(errsv));
             _exit(EXIT_FAILURE);
         }
         if (write(STDOUT_FILENO, buf, rb) == -1) {
-            errsv = errno;
-            g_printerr(_("Error writing nmcli output: %s\n"), nm_strerror_native(errsv));
             _exit(EXIT_FAILURE);
         }
     } while (rb > 0);
@@ -1447,11 +1445,12 @@ pager_fallback(void)
 pid_t
 nmc_terminal_spawn_pager(const NmcConfig *nmc_config)
 {
-    const char *pager = getenv("PAGER");
-    pid_t       pager_pid;
-    pid_t       parent_pid;
-    int         fd[2];
-    int         errsv;
+    const char        *pager = getenv("PAGER");
+    pid_t              pager_pid;
+    pid_t              parent_pid;
+    int                fd[2];
+    int                errsv;
+    gs_strfreev char **ev = NULL;
 
     if (nmc_config->in_editor || nmc_config->print_output == NMC_PRINT_TERSE
         || !nmc_config->use_colors || g_strcmp0(pager, "") == 0 || getauxval(AT_SECURE))
@@ -1464,6 +1463,10 @@ nmc_terminal_spawn_pager(const NmcConfig *nmc_config)
     }
 
     parent_pid = getpid();
+
+    ev = g_get_environ();
+    ev = g_environ_setenv(ev, "LESS", "FRSXMK", TRUE);
+    ev = g_environ_setenv(ev, "LESSCHARSET", "utf-8", TRUE);
 
     pager_pid = fork();
     if (pager_pid == -1) {
@@ -1480,9 +1483,6 @@ nmc_terminal_spawn_pager(const NmcConfig *nmc_config)
         nm_close(fd[0]);
         nm_close(fd[1]);
 
-        setenv("LESS", "FRSXMK", 1);
-        setenv("LESSCHARSET", "utf-8", 1);
-
         /* Make sure the pager goes away when the parent dies */
         if (prctl(PR_SET_PDEATHSIG, SIGTERM) < 0)
             _exit(EXIT_FAILURE);
@@ -1493,8 +1493,8 @@ nmc_terminal_spawn_pager(const NmcConfig *nmc_config)
             _exit(EXIT_SUCCESS);
 
         if (pager) {
-            execlp(pager, pager, NULL);
-            execl("/bin/sh", "sh", "-c", pager, NULL);
+            execvpe(pager, (char **) NM_MAKE_STRV(pager), ev);
+            execvpe("/bin/sh", (char **) NM_MAKE_STRV("sh", "-c", pager), ev);
         }
 
         /* Debian's alternatives command for pagers is
@@ -1503,10 +1503,10 @@ nmc_terminal_spawn_pager(const NmcConfig *nmc_config)
          * shell script that implements a logic that
          * is similar to this one anyway, but is
          * Debian-specific. */
-        execlp("pager", "pager", NULL);
+        execvpe("pager", (char **) NM_MAKE_STRV("pager"), ev);
 
-        execlp("less", "less", NULL);
-        execlp("more", "more", NULL);
+        execvpe("less", (char **) NM_MAKE_STRV("less"), ev);
+        execvpe("more", (char **) NM_MAKE_STRV("more"), ev);
 
         pager_fallback();
         /* not reached */
