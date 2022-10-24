@@ -5871,7 +5871,12 @@ _nm_sett_info_property_override_create_array_ip_config(int addr_family)
     /* ---dbus---
      * property: routing-rules
      * format: array of 'a{sv}'
-     * description: Array of dictionaries for routing rules.
+     * description: Array of dictionaries for routing rules. Each routing rule
+     *  supports the following options: action (y), dport-end (q),
+     *  dport-start (q), family (i), from (s), from-len (y), fwmark (u),
+     *  fwmask (u), iifname (s), invert (b), ipproto (s), oifname (s),
+     *  priority (u), sport-end (q), sport-start (q), supress-prefixlength (i),
+     *  table (u), to (s), tos (y), to-len (y), range-end (u), range-start (u).
      * ---end---
      */
     _nm_properties_override_dbus(
