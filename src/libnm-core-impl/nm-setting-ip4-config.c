@@ -1001,7 +1001,8 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
                                        .to_dbus_fcn   = ip4_addresses_to_dbus,
                                        .compare_fcn   = _nm_setting_ip_config_compare_fcn_addresses,
                                        .from_dbus_fcn = ip4_addresses_from_dbus, ),
-        .dbus_deprecated = TRUE, );
+        .to_dbus_only_in_manager_process = TRUE,
+        .dbus_deprecated                 = TRUE, );
     _nm_properties_override_dbus(
         properties_override,
         "address-labels",
@@ -1139,7 +1140,8 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
                                        .to_dbus_fcn   = ip4_routes_to_dbus,
                                        .compare_fcn   = _nm_setting_ip_config_compare_fcn_routes,
                                        .from_dbus_fcn = ip4_routes_from_dbus, ),
-        .dbus_deprecated = TRUE, );
+        .to_dbus_only_in_manager_process = TRUE,
+        .dbus_deprecated                 = TRUE, );
 
     /* ---dbus---
      * property: route-data

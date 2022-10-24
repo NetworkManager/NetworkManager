@@ -318,8 +318,9 @@ typedef struct {
  */
 #define NM_SETTING_PARAM_INFERRABLE (1 << (4 + G_PARAM_USER_SHIFT))
 
-/* This is a legacy property, which clients should not send to the daemon. */
-#define NM_SETTING_PARAM_LEGACY (1 << (5 + G_PARAM_USER_SHIFT))
+/* This flag has no meaning (anymore). It's only kept, because we used it
+ * on some older versions of libnm. */
+#define NM_SETTING_PARAM_UNUSED1 (1 << (5 + G_PARAM_USER_SHIFT))
 
 /* When a connection is active and gets modified, usually the change
  * to the settings-connection does not propagate automatically to the

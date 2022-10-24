@@ -827,6 +827,13 @@ struct _NMSettInfoProperty {
      * is the default. */
     bool to_dbus_including_default : 1;
 
+    /* This indicates, that the property is deprecated (on D-Bus) for another property.
+     * See also _nm_setting_use_legacy_property() how that works.
+     *
+     * The to_dbus_fcn() will be skipped for such properties, if _nm_utils_is_manager_process
+     * is FALSE. */
+    bool to_dbus_only_in_manager_process : 1;
+
     /* Whether the property is deprecated.
      *
      * Note that we have various representations of profiles, e.g. on D-Bus, keyfile,

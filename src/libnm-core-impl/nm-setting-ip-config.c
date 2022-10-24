@@ -6291,12 +6291,9 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
                            "",
                            "",
                            G_TYPE_PTR_ARRAY,
-                           /* "addresses" is a legacy D-Bus property, because the
-                            * "addresses" GObject property normally gets set from
-                            * the "address-data" D-Bus property...
-                            */
-                           G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | NM_SETTING_PARAM_LEGACY
-                               | G_PARAM_STATIC_STRINGS);
+                           /* On D-Bus, "addresses" is deprecated for "address-data". */
+                           G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE
+                               | NM_SETTING_PARAM_UNUSED1 | G_PARAM_STATIC_STRINGS);
 
     /**
      * NMSettingIPConfig:gateway:
@@ -6318,6 +6315,8 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
         "",
         "",
         NULL,
+        /* On D-Bus, the legacy property "addresses" contains the gateway.
+         * This was replaced by "address-data" and "gateway". */
         G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
 
     /**
@@ -6330,9 +6329,9 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
                            "",
                            "",
                            G_TYPE_PTR_ARRAY,
-                           G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE |
-                               /* See :addresses above Re: LEGACY */
-                               NM_SETTING_PARAM_LEGACY | G_PARAM_STATIC_STRINGS);
+                           /* On D-Bus, "routes" is deprecated for "route-data". */
+                           G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE
+                               | NM_SETTING_PARAM_UNUSED1 | G_PARAM_STATIC_STRINGS);
 
     /**
      * NMSettingIPConfig:route-metric:

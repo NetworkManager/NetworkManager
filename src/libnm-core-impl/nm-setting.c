@@ -1737,12 +1737,11 @@ property_to_dbus(const NMSettInfoSetting                *sett_info,
               || NM_FLAGS_HAS(property_info->param_spec->flags, G_PARAM_WRITABLE)
               || property_info->property_type == &nm_sett_info_propert_type_setting_name);
 
+    if (property_info->to_dbus_only_in_manager_process && !_nm_utils_is_manager_process)
+        return NULL;
+
     if (property_info->param_spec && !ignore_flags
         && !NM_FLAGS_HAS(property_info->param_spec->flags, NM_SETTING_PARAM_TO_DBUS_IGNORE_FLAGS)) {
-        if (NM_FLAGS_HAS(property_info->param_spec->flags, NM_SETTING_PARAM_LEGACY)
-            && !_nm_utils_is_manager_process)
-            return NULL;
-
         if (NM_FLAGS_HAS(property_info->param_spec->flags, NM_SETTING_PARAM_SECRET)) {
             NMSettingSecretFlags f = NM_SETTING_SECRET_FLAG_NONE;
 
