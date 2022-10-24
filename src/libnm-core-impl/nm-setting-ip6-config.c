@@ -392,7 +392,7 @@ ip6_dns_to_dbus(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
     if (nm_g_ptr_array_len(dns) == 0)
         return NULL;
 
-    return _nm_utils_ip6_dns_to_variant((const char *const *) dns->pdata, dns->len);
+    return nm_utils_dns_to_variant(AF_INET6, (const char *const *) dns->pdata, dns->len);
 }
 
 static gboolean
