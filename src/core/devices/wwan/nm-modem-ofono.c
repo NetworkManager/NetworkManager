@@ -290,6 +290,8 @@ disconnect(NMModem                   *modem,
                       ctx->cancellable,
                       disconnect_done,
                       ctx);
+
+    priv->current_octx = NULL;
 }
 
 static void
