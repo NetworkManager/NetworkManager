@@ -8,7 +8,6 @@
 
 #include "hash-funcs.h"
 #include "macro.h"
-#include "util.h"
 
 union in_addr_union {
         struct in_addr in;
@@ -154,7 +153,6 @@ int in_addr_prefix_from_string(const char *p, int family, union in_addr_union *r
 typedef enum InAddrPrefixLenMode {
         PREFIXLEN_FULL,   /* Default to prefixlen of address size, 32 for IPv4 or 128 for IPv6, if not specified. */
         PREFIXLEN_REFUSE, /* Fail with -ENOANO if prefixlen is not specified. */
-        PREFIXLEN_LEGACY, /* Default to legacy default prefixlen calculation from address if not specified. */
 } InAddrPrefixLenMode;
 
 int in_addr_prefix_from_string_auto_internal(const char *p, InAddrPrefixLenMode mode, int *ret_family, union in_addr_union *ret_prefix, unsigned char *ret_prefixlen);
@@ -178,10 +176,13 @@ static inline size_t FAMILY_ADDRESS_SIZE(int family) {
  * See also oss-fuzz#11344. */
 #define IN_ADDR_NULL ((union in_addr_union) { .in6 = {} })
 
+void in_addr_data_hash_func(const struct in_addr_data *a, struct siphash *state);
+int in_addr_data_compare_func(const struct in_addr_data *x, const struct in_addr_data *y);
 void in6_addr_hash_func(const struct in6_addr *addr, struct siphash *state);
 int in6_addr_compare_func(const struct in6_addr *a, const struct in6_addr *b);
 
 extern const struct hash_ops in_addr_data_hash_ops;
+extern const struct hash_ops in_addr_data_hash_ops_free;
 extern const struct hash_ops in6_addr_hash_ops;
 extern const struct hash_ops in6_addr_hash_ops_free;
 

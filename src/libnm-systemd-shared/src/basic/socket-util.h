@@ -175,15 +175,17 @@ int flush_accept(int fd);
 #define CMSG_FOREACH(cmsg, mh)                                          \
         for ((cmsg) = CMSG_FIRSTHDR(mh); (cmsg); (cmsg) = CMSG_NXTHDR((mh), (cmsg)))
 
+#define CMSG_TYPED_DATA(cmsg, type)                                     \
+        ({                                                              \
+                struct cmsghdr *_cmsg = cmsg;                           \
+                _cmsg ? CAST_ALIGN_PTR(type, CMSG_DATA(_cmsg)) : (type*) NULL; \
+        })
+
 struct cmsghdr* cmsg_find(struct msghdr *mh, int level, int type, socklen_t length);
 
 /* Type-safe, dereferencing version of cmsg_find() */
-#define CMSG_FIND_DATA(mh, level, type, ctype) \
-        ({                                                            \
-                struct cmsghdr *_found;                               \
-                _found = cmsg_find(mh, level, type, CMSG_LEN(sizeof(ctype))); \
-                (ctype*) (_found ? CMSG_DATA(_found) : NULL);         \
-        })
+#define CMSG_FIND_DATA(mh, level, type, ctype)                          \
+        CMSG_TYPED_DATA(cmsg_find(mh, level, type, CMSG_LEN(sizeof(ctype))), ctype)
 
 /* Resolves to a type that can carry cmsghdr structures. Make sure things are properly aligned, i.e. the type
  * itself is placed properly in memory and the size is also aligned to what's appropriate for "cmsghdr"
@@ -334,3 +336,9 @@ int socket_get_mtu(int fd, int af, size_t *ret);
 #define UCRED_INVALID { .pid = 0, .uid = UID_INVALID, .gid = GID_INVALID }
 
 int connect_unix_path(int fd, int dir_fd, const char *path);
+
+/* Parses AF_UNIX and AF_VSOCK addresses. AF_INET[6] require some netlink calls, so it cannot be in
+ * src/basic/ and is done from 'socket_local_address from src/shared/. Return -EPROTO in case of
+ * protocol mismatch. */
+int socket_address_parse_unix(SocketAddress *ret_address, const char *s);
+int socket_address_parse_vsock(SocketAddress *ret_address, const char *s);

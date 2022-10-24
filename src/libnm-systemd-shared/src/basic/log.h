@@ -7,8 +7,10 @@
 #include <string.h>
 #include <syslog.h>
 
+#include "list.h"
 #include "macro.h"
 #include "ratelimit.h"
+#include "stdio-util.h"
 
 /* Some structures we reference but don't want to pull in headers for */
 struct iovec;
@@ -296,6 +298,7 @@ int log_emergency_level(void);
 
 #define log_oom() log_oom_internal(LOG_ERR, PROJECT_FILE, __LINE__, __func__)
 #define log_oom_debug() log_oom_internal(LOG_DEBUG, PROJECT_FILE, __LINE__, __func__)
+#define log_oom_warning() log_oom_internal(LOG_WARNING, PROJECT_FILE, __LINE__, __func__)
 
 bool log_on_console(void) _pure_;
 
@@ -375,15 +378,12 @@ typedef struct LogRateLimit {
         RateLimit ratelimit;
 } LogRateLimit;
 
-#define log_ratelimit_internal(_level, _error, _format, _file, _line, _func, ...)        \
+#define log_ratelimit_internal(_level, _error, _ratelimit, _format, _file, _line, _func, ...)        \
 ({                                                                              \
         int _log_ratelimit_error = (_error);                                    \
         int _log_ratelimit_level = (_level);                                    \
         static LogRateLimit _log_ratelimit = {                                  \
-                .ratelimit = {                                                  \
-                        .interval = 1 * USEC_PER_SEC,                           \
-                        .burst = 1,                                             \
-                },                                                              \
+                .ratelimit = (_ratelimit),                                      \
         };                                                                      \
         unsigned _num_dropped_errors = ratelimit_num_dropped(&_log_ratelimit.ratelimit); \
         if (_log_ratelimit_error != _log_ratelimit.error || _log_ratelimit_level != _log_ratelimit.level) { \
@@ -391,18 +391,115 @@ typedef struct LogRateLimit {
                 _log_ratelimit.error = _log_ratelimit_error;                    \
                 _log_ratelimit.level = _log_ratelimit_level;                    \
         }                                                                       \
-        if (ratelimit_below(&_log_ratelimit.ratelimit))                         \
+        if (log_get_max_level() == LOG_DEBUG || ratelimit_below(&_log_ratelimit.ratelimit)) \
                 _log_ratelimit_error = _num_dropped_errors > 0                  \
-                ? log_internal(_log_ratelimit_level, _log_ratelimit_error, _file, _line, _func, _format " (Dropped %u similar message(s))", __VA_ARGS__, _num_dropped_errors) \
-                : log_internal(_log_ratelimit_level, _log_ratelimit_error, _file, _line, _func, _format, __VA_ARGS__); \
+                ? log_internal(_log_ratelimit_level, _log_ratelimit_error, _file, _line, _func, _format " (Dropped %u similar message(s))", ##__VA_ARGS__, _num_dropped_errors) \
+                : log_internal(_log_ratelimit_level, _log_ratelimit_error, _file, _line, _func, _format, ##__VA_ARGS__); \
         _log_ratelimit_error;                                                   \
 })
 
-#define log_ratelimit_full_errno(level, error, format, ...)             \
+#define log_ratelimit_full_errno(level, error, _ratelimit, format, ...)             \
         ({                                                              \
                 int _level = (level), _e = (error);                     \
                 _e = (log_get_max_level() >= LOG_PRI(_level))           \
-                        ? log_ratelimit_internal(_level, _e, format, PROJECT_FILE, __LINE__, __func__, __VA_ARGS__) \
+                        ? log_ratelimit_internal(_level, _e, _ratelimit, format, PROJECT_FILE, __LINE__, __func__, ##__VA_ARGS__) \
                         : -ERRNO_VALUE(_e);                             \
                 _e < 0 ? _e : -ESTRPIPE;                                \
         })
+
+#define log_ratelimit_full(level, _ratelimit, format, ...)                          \
+        log_ratelimit_full_errno(level, 0, _ratelimit, format, ##__VA_ARGS__)
+
+/* Normal logging */
+#define log_ratelimit_info(...)      log_ratelimit_full(LOG_INFO,    __VA_ARGS__)
+#define log_ratelimit_notice(...)    log_ratelimit_full(LOG_NOTICE,  __VA_ARGS__)
+#define log_ratelimit_warning(...)   log_ratelimit_full(LOG_WARNING, __VA_ARGS__)
+#define log_ratelimit_error(...)     log_ratelimit_full(LOG_ERR,     __VA_ARGS__)
+#define log_ratelimit_emergency(...) log_ratelimit_full(log_emergency_level(), __VA_ARGS__)
+
+/* Logging triggered by an errno-like error */
+#define log_ratelimit_info_errno(error, ...)      log_ratelimit_full_errno(LOG_INFO,    error, __VA_ARGS__)
+#define log_ratelimit_notice_errno(error, ...)    log_ratelimit_full_errno(LOG_NOTICE,  error, __VA_ARGS__)
+#define log_ratelimit_warning_errno(error, ...)   log_ratelimit_full_errno(LOG_WARNING, error, __VA_ARGS__)
+#define log_ratelimit_error_errno(error, ...)     log_ratelimit_full_errno(LOG_ERR,     error, __VA_ARGS__)
+#define log_ratelimit_emergency_errno(error, ...) log_ratelimit_full_errno(log_emergency_level(), error, __VA_ARGS__)
+
+/*
+ * The log context allows attaching extra metadata to log messages written to the journal via log.h. We keep
+ * track of a thread local log context onto which we can push extra metadata fields that should be logged.
+ *
+ * LOG_CONTEXT_PUSH() will add the provided field to the log context and will remove it again when the
+ * current block ends. LOG_CONTEXT_PUSH_STRV() will do the same but for all fields in the given strv.
+ * LOG_CONTEXT_PUSHF() is like LOG_CONTEXT_PUSH() but takes a format string and arguments.
+ *
+ * Using the macros is as simple as putting them anywhere inside a block to add a field to all following log
+ * messages logged from inside that block.
+ *
+ * void myfunction(...) {
+ *         ...
+ *
+ *         LOG_CONTEXT_PUSHF("MYMETADATA=%s", "abc");
+ *
+ *         // Every journal message logged will now have the MYMETADATA=abc
+ *         // field included.
+ * }
+ *
+ * One special case to note is async code, where we use callbacks that are invoked to continue processing
+ * when some event occurs. For async code, there's usually an associated "userdata" struct containing all the
+ * information associated with the async operation. In this "userdata" struct, we can store a log context
+ * allocated with log_context_new() and freed with log_context_free(). We can then add and remove fields to
+ * the `fields` member of the log context object and all those fields will be logged along with each log
+ * message.
+ */
+
+typedef struct LogContext LogContext;
+
+bool log_context_enabled(void);
+
+LogContext* log_context_attach(LogContext *c);
+LogContext* log_context_detach(LogContext *c);
+
+LogContext* log_context_new(char **fields, bool owned);
+LogContext* log_context_free(LogContext *c);
+
+/* Same as log_context_new(), but frees the given fields strv on failure. */
+LogContext* log_context_new_consume(char **fields);
+
+/* Returns the number of attached log context objects. */
+size_t log_context_num_contexts(void);
+/* Returns the number of fields in all attached log contexts. */
+size_t log_context_num_fields(void);
+
+DEFINE_TRIVIAL_CLEANUP_FUNC(LogContext*, log_context_detach);
+DEFINE_TRIVIAL_CLEANUP_FUNC(LogContext*, log_context_free);
+
+#define LOG_CONTEXT_PUSH(...) \
+        LOG_CONTEXT_PUSH_STRV(STRV_MAKE(__VA_ARGS__))
+
+#define LOG_CONTEXT_PUSHF(...) \
+        LOG_CONTEXT_PUSH(snprintf_ok((char[LINE_MAX]) {}, LINE_MAX, __VA_ARGS__))
+
+#define _LOG_CONTEXT_PUSH_STRV(strv, c) \
+        _unused_ _cleanup_(log_context_freep) LogContext *c = log_context_new(strv, /*owned=*/ false);
+
+#define LOG_CONTEXT_PUSH_STRV(strv) \
+        _LOG_CONTEXT_PUSH_STRV(strv, UNIQ_T(c, UNIQ))
+
+/* LOG_CONTEXT_CONSUME_STR()/LOG_CONTEXT_CONSUME_STRV() are identical to
+ * LOG_CONTEXT_PUSH_STR()/LOG_CONTEXT_PUSH_STRV() except they take ownership of the given str/strv argument.
+ */
+
+#define _LOG_CONTEXT_CONSUME_STR(s, c, strv) \
+        _unused_ _cleanup_strv_free_ strv = strv_new(s);                                                \
+        if (!strv)                                                                                      \
+                free(s);                                                                                \
+        _unused_ _cleanup_(log_context_freep) LogContext *c = log_context_new_consume(TAKE_PTR(strv))
+
+#define LOG_CONTEXT_CONSUME_STR(s) \
+        _LOG_CONTEXT_CONSUME_STR(s, UNIQ_T(c, UNIQ), UNIQ_T(sv, UNIQ))
+
+#define _LOG_CONTEXT_CONSUME_STRV(strv, c) \
+        _unused_ _cleanup_(log_context_freep) LogContext *c = log_context_new_consume(strv);
+
+#define LOG_CONTEXT_CONSUME_STRV(strv) \
+        _LOG_CONTEXT_CONSUME_STRV(strv, UNIQ_T(c, UNIQ))

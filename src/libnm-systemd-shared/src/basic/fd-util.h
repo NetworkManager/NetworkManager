@@ -15,14 +15,15 @@
 /* Make sure we can distinguish fd 0 and NULL */
 #define FD_TO_PTR(fd) INT_TO_PTR((fd)+1)
 #define PTR_TO_FD(p) (PTR_TO_INT(p)-1)
+#define PIPE_EBADF { -EBADF, -EBADF }
 
 int close_nointr(int fd);
 int safe_close(int fd);
 void safe_close_pair(int p[static 2]);
 
 static inline int safe_close_above_stdio(int fd) {
-        if (fd < 3) /* Don't close stdin/stdout/stderr, but still invalidate the fd by returning -1 */
-                return -1;
+        if (fd < 3) /* Don't close stdin/stdout/stderr, but still invalidate the fd by returning -EBADF. */
+                return -EBADF;
 
         return safe_close(fd);
 }
@@ -56,6 +57,7 @@ DEFINE_TRIVIAL_CLEANUP_FUNC_FULL(DIR*, closedir, NULL);
 
 int fd_nonblock(int fd, bool nonblock);
 int fd_cloexec(int fd, bool cloexec);
+int fd_cloexec_many(const int fds[], size_t n_fds, bool cloexec);
 
 int get_max_fd(void);
 
@@ -85,17 +87,11 @@ int fd_move_above_stdio(int fd);
 int rearrange_stdio(int original_input_fd, int original_output_fd, int original_error_fd);
 
 static inline int make_null_stdio(void) {
-        return rearrange_stdio(-1, -1, -1);
+        return rearrange_stdio(-EBADF, -EBADF, -EBADF);
 }
 
-/* Like TAKE_PTR() but for file descriptors, resetting them to -1 */
-#define TAKE_FD(fd)                             \
-        ({                                      \
-                int *_fd_ = &(fd);              \
-                int _ret_ = *_fd_;              \
-                *_fd_ = -1;                     \
-                _ret_;                          \
-        })
+/* Like TAKE_PTR() but for file descriptors, resetting them to -EBADF */
+#define TAKE_FD(fd) TAKE_GENERIC(fd, int, -EBADF)
 
 /* Like free_and_replace(), but for file descriptors */
 #define close_and_replace(a, b)                 \
@@ -107,6 +103,7 @@ static inline int make_null_stdio(void) {
         })
 
 int fd_reopen(int fd, int flags);
+int fd_reopen_condition(int fd, int flags, int mask, int *ret_new_fd);
 int read_nr_open(void);
 int fd_get_diskseq(int fd, uint64_t *ret);
 

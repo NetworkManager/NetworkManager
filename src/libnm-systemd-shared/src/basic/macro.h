@@ -9,31 +9,8 @@
 #include <sys/sysmacros.h>
 #include <sys/types.h>
 
+#include "constants.h"
 #include "macro-fundamental.h"
-
-#if !defined(HAS_FEATURE_MEMORY_SANITIZER)
-#  if defined(__has_feature)
-#    if __has_feature(memory_sanitizer)
-#      define HAS_FEATURE_MEMORY_SANITIZER 1
-#    endif
-#  endif
-#  if !defined(HAS_FEATURE_MEMORY_SANITIZER)
-#    define HAS_FEATURE_MEMORY_SANITIZER 0
-#  endif
-#endif
-
-#if !defined(HAS_FEATURE_ADDRESS_SANITIZER)
-#  ifdef __SANITIZE_ADDRESS__
-#      define HAS_FEATURE_ADDRESS_SANITIZER 1
-#  elif defined(__has_feature)
-#    if __has_feature(address_sanitizer)
-#      define HAS_FEATURE_ADDRESS_SANITIZER 1
-#    endif
-#  endif
-#  if !defined(HAS_FEATURE_ADDRESS_SANITIZER)
-#    define HAS_FEATURE_ADDRESS_SANITIZER 0
-#  endif
-#endif
 
 /* Note: on GCC "no_sanitize_address" is a function attribute only, on llvm it may also be applied to global
  * variables. We define a specific macro which knows this. Note that on GCC we don't need this decorator so much, since
@@ -87,9 +64,13 @@
         _Pragma("GCC diagnostic push")
 #endif
 
-#define DISABLE_WARNING_TYPE_LIMITS \
+#define DISABLE_WARNING_TYPE_LIMITS                                     \
         _Pragma("GCC diagnostic push");                                 \
         _Pragma("GCC diagnostic ignored \"-Wtype-limits\"")
+
+#define DISABLE_WARNING_ADDRESS                                         \
+        _Pragma("GCC diagnostic push");                                 \
+        _Pragma("GCC diagnostic ignored \"-Waddress\"")
 
 #define REENABLE_WARNING                                                \
         _Pragma("GCC diagnostic pop")
@@ -194,12 +175,12 @@ static inline int __coverity_check_and_return__(int condition) {
 #define assert_message_se(expr, message)                                \
         do {                                                            \
                 if (_unlikely_(!(expr)))                                \
-                        log_assert_failed(message, PROJECT_FILE, __LINE__, __PRETTY_FUNCTION__); \
+                        log_assert_failed(message, PROJECT_FILE, __LINE__, __func__); \
         } while (false)
 
 #define assert_log(expr, message) ((_likely_(expr))                     \
         ? (true)                                                        \
-        : (log_assert_failed_return(message, PROJECT_FILE, __LINE__, __PRETTY_FUNCTION__), false))
+        : (log_assert_failed_return(message, PROJECT_FILE, __LINE__, __func__), false))
 
 #endif  /* __COVERITY__ */
 
@@ -214,7 +195,7 @@ static inline int __coverity_check_and_return__(int condition) {
 #endif
 
 #define assert_not_reached()                                            \
-        log_assert_failed_unreachable(PROJECT_FILE, __LINE__, __PRETTY_FUNCTION__)
+        log_assert_failed_unreachable(PROJECT_FILE, __LINE__, __func__)
 
 #define assert_return(expr, r)                                          \
         do {                                                            \
@@ -341,10 +322,14 @@ static inline int __coverity_check_and_return__(int condition) {
                         *p = func(*p);                          \
         }
 
-/* When func() doesn't return the appropriate type, set variable to empty afterwards */
+/* When func() doesn't return the appropriate type, set variable to empty afterwards.
+ * The func() may be provided by a dynamically loaded shared library, hence add an assertion. */
 #define DEFINE_TRIVIAL_CLEANUP_FUNC_FULL(type, func, empty)     \
         static inline void func##p(type *p) {                   \
                 if (*p != (empty)) {                            \
+                        DISABLE_WARNING_ADDRESS;                \
+                        assert(func);                           \
+                        REENABLE_WARNING;                       \
                         func(*p);                               \
                         *p = (empty);                           \
                 }                                               \

@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: LGPL-2.1-or-later */
 #pragma once
 
-#ifndef SD_BOOT
+#if !SD_BOOT
 #  include <assert.h>
 #endif
 
@@ -20,6 +20,7 @@
 #define _hidden_ __attribute__((__visibility__("hidden")))
 #define _likely_(x) (__builtin_expect(!!(x), 1))
 #define _malloc_ __attribute__((__malloc__))
+#define _noinline_ __attribute__((noinline))
 #define _noreturn_ _Noreturn
 #define _packed_ __attribute__((__packed__))
 #define _printf_(a, b) __attribute__((__format__(printf, a, b)))
@@ -66,18 +67,18 @@
 #define XCONCATENATE(x, y) x ## y
 #define CONCATENATE(x, y) XCONCATENATE(x, y)
 
-#ifdef SD_BOOT
+#if SD_BOOT
         _noreturn_ void efi_assert(const char *expr, const char *file, unsigned line, const char *function);
 
         #ifdef NDEBUG
                 #define assert(expr)
                 #define assert_not_reached() __builtin_unreachable()
         #else
-                #define assert(expr) ({ _likely_(expr) ? VOID_0 : efi_assert(#expr, __FILE__, __LINE__, __PRETTY_FUNCTION__); })
-                #define assert_not_reached() efi_assert("Code should not be reached", __FILE__, __LINE__, __PRETTY_FUNCTION__)
+                #define assert(expr) ({ _likely_(expr) ? VOID_0 : efi_assert(#expr, __FILE__, __LINE__, __func__); })
+                #define assert_not_reached() efi_assert("Code should not be reached", __FILE__, __LINE__, __func__)
         #endif
         #define static_assert _Static_assert
-        #define assert_se(expr) ({ _likely_(expr) ? VOID_0 : efi_assert(#expr, __FILE__, __LINE__, __PRETTY_FUNCTION__); })
+        #define assert_se(expr) ({ _likely_(expr) ? VOID_0 : efi_assert(#expr, __FILE__, __LINE__, __func__); })
 #endif
 
 /* This passes the argument through after (if asserts are enabled) checking that it is not null. */
@@ -251,47 +252,44 @@
                 (UNIQ_T(X, xq) / UNIQ_T(Y, yq) + !!(UNIQ_T(X, xq) % UNIQ_T(Y, yq))); \
         })
 
-#define CASE_F(X) case X:
-#define CASE_F_1(CASE, X) CASE_F(X)
-#define CASE_F_2(CASE, X, ...)  CASE(X) CASE_F_1(CASE, __VA_ARGS__)
-#define CASE_F_3(CASE, X, ...)  CASE(X) CASE_F_2(CASE, __VA_ARGS__)
-#define CASE_F_4(CASE, X, ...)  CASE(X) CASE_F_3(CASE, __VA_ARGS__)
-#define CASE_F_5(CASE, X, ...)  CASE(X) CASE_F_4(CASE, __VA_ARGS__)
-#define CASE_F_6(CASE, X, ...)  CASE(X) CASE_F_5(CASE, __VA_ARGS__)
-#define CASE_F_7(CASE, X, ...)  CASE(X) CASE_F_6(CASE, __VA_ARGS__)
-#define CASE_F_8(CASE, X, ...)  CASE(X) CASE_F_7(CASE, __VA_ARGS__)
-#define CASE_F_9(CASE, X, ...)  CASE(X) CASE_F_8(CASE, __VA_ARGS__)
-#define CASE_F_10(CASE, X, ...) CASE(X) CASE_F_9(CASE, __VA_ARGS__)
-#define CASE_F_11(CASE, X, ...) CASE(X) CASE_F_10(CASE, __VA_ARGS__)
-#define CASE_F_12(CASE, X, ...) CASE(X) CASE_F_11(CASE, __VA_ARGS__)
-#define CASE_F_13(CASE, X, ...) CASE(X) CASE_F_12(CASE, __VA_ARGS__)
-#define CASE_F_14(CASE, X, ...) CASE(X) CASE_F_13(CASE, __VA_ARGS__)
-#define CASE_F_15(CASE, X, ...) CASE(X) CASE_F_14(CASE, __VA_ARGS__)
-#define CASE_F_16(CASE, X, ...) CASE(X) CASE_F_15(CASE, __VA_ARGS__)
-#define CASE_F_17(CASE, X, ...) CASE(X) CASE_F_16(CASE, __VA_ARGS__)
-#define CASE_F_18(CASE, X, ...) CASE(X) CASE_F_17(CASE, __VA_ARGS__)
-#define CASE_F_19(CASE, X, ...) CASE(X) CASE_F_18(CASE, __VA_ARGS__)
-#define CASE_F_20(CASE, X, ...) CASE(X) CASE_F_19(CASE, __VA_ARGS__)
+#define  CASE_F_1(X)      case X:
+#define  CASE_F_2(X, ...) case X:  CASE_F_1( __VA_ARGS__)
+#define  CASE_F_3(X, ...) case X:  CASE_F_2( __VA_ARGS__)
+#define  CASE_F_4(X, ...) case X:  CASE_F_3( __VA_ARGS__)
+#define  CASE_F_5(X, ...) case X:  CASE_F_4( __VA_ARGS__)
+#define  CASE_F_6(X, ...) case X:  CASE_F_5( __VA_ARGS__)
+#define  CASE_F_7(X, ...) case X:  CASE_F_6( __VA_ARGS__)
+#define  CASE_F_8(X, ...) case X:  CASE_F_7( __VA_ARGS__)
+#define  CASE_F_9(X, ...) case X:  CASE_F_8( __VA_ARGS__)
+#define CASE_F_10(X, ...) case X:  CASE_F_9( __VA_ARGS__)
+#define CASE_F_11(X, ...) case X: CASE_F_10( __VA_ARGS__)
+#define CASE_F_12(X, ...) case X: CASE_F_11( __VA_ARGS__)
+#define CASE_F_13(X, ...) case X: CASE_F_12( __VA_ARGS__)
+#define CASE_F_14(X, ...) case X: CASE_F_13( __VA_ARGS__)
+#define CASE_F_15(X, ...) case X: CASE_F_14( __VA_ARGS__)
+#define CASE_F_16(X, ...) case X: CASE_F_15( __VA_ARGS__)
+#define CASE_F_17(X, ...) case X: CASE_F_16( __VA_ARGS__)
+#define CASE_F_18(X, ...) case X: CASE_F_17( __VA_ARGS__)
+#define CASE_F_19(X, ...) case X: CASE_F_18( __VA_ARGS__)
+#define CASE_F_20(X, ...) case X: CASE_F_19( __VA_ARGS__)
 
 #define GET_CASE_F(_1,_2,_3,_4,_5,_6,_7,_8,_9,_10,_11,_12,_13,_14,_15,_16,_17,_18,_19,_20,NAME,...) NAME
 #define FOR_EACH_MAKE_CASE(...) \
         GET_CASE_F(__VA_ARGS__,CASE_F_20,CASE_F_19,CASE_F_18,CASE_F_17,CASE_F_16,CASE_F_15,CASE_F_14,CASE_F_13,CASE_F_12,CASE_F_11, \
                                CASE_F_10,CASE_F_9,CASE_F_8,CASE_F_7,CASE_F_6,CASE_F_5,CASE_F_4,CASE_F_3,CASE_F_2,CASE_F_1) \
-                   (CASE_F,__VA_ARGS__)
+                   (__VA_ARGS__)
 
-#define IN_SET(x, ...)                                                  \
+#define IN_SET(x, first, ...)                                           \
         ({                                                              \
                 bool _found = false;                                    \
-                /* If the build breaks in the line below, you need to extend the case macros. (We use "long double" as  \
-                 * type for the array, in the hope that checkers such as ubsan don't complain that the initializers for \
-                 * the array are not representable by the base type. Ideally we'd use typeof(x) as base type, but that  \
-                 * doesn't work, as we want to use this on bitfields and gcc refuses typeof() on bitfields.) */         \
-                static const long double __assert_in_set[] _unused_ = { __VA_ARGS__ }; \
+                /* If the build breaks in the line below, you need to extend the case macros. We use typeof(+x) \
+                 * here to widen the type of x if it is a bit-field as this would otherwise be illegal. */      \
+                static const typeof(+x) __assert_in_set[] _unused_ = { first, __VA_ARGS__ }; \
                 assert_cc(ELEMENTSOF(__assert_in_set) <= 20);           \
                 switch (x) {                                            \
-                FOR_EACH_MAKE_CASE(__VA_ARGS__)                         \
+                FOR_EACH_MAKE_CASE(first, __VA_ARGS__)                  \
                         _found = true;                                  \
-                       break;                                           \
+                        break;                                          \
                 default:                                                \
                         break;                                          \
                 }                                                       \
@@ -300,13 +298,18 @@
 
 /* Takes inspiration from Rust's Option::take() method: reads and returns a pointer, but at the same time
  * resets it to NULL. See: https://doc.rust-lang.org/std/option/enum.Option.html#method.take */
-#define TAKE_PTR(ptr)                           \
-        ({                                      \
-                typeof(ptr) *_pptr_ = &(ptr);   \
-                typeof(ptr) _ptr_ = *_pptr_;    \
-                *_pptr_ = NULL;                 \
-                _ptr_;                          \
+#define TAKE_GENERIC(var, type, nullvalue)                       \
+        ({                                                       \
+                type *_pvar_ = &(var);                           \
+                type _var_ = *_pvar_;                            \
+                type _nullvalue_ = nullvalue;                    \
+                *_pvar_ = _nullvalue_;                           \
+                _var_;                                           \
         })
+#define TAKE_PTR_TYPE(ptr, type) TAKE_GENERIC(ptr, type, NULL)
+#define TAKE_PTR(ptr) TAKE_PTR_TYPE(ptr, typeof(ptr))
+#define TAKE_STRUCT_TYPE(s, type) TAKE_GENERIC(s, type, {})
+#define TAKE_STRUCT(s) TAKE_STRUCT_TYPE(s, typeof(s))
 
 /*
  * STRLEN - return the length of a string literal, minus the trailing NUL byte.
@@ -330,13 +333,22 @@ static inline size_t ALIGN_TO(size_t l, size_t ali) {
         return ((l + ali - 1) & ~(ali - 1));
 }
 
+#define ALIGN2(l) ALIGN_TO(l, 2)
 #define ALIGN4(l) ALIGN_TO(l, 4)
 #define ALIGN8(l) ALIGN_TO(l, 8)
-#ifndef SD_BOOT
+#define ALIGN2_PTR(p) ((void*) ALIGN2((uintptr_t) p))
+#define ALIGN4_PTR(p) ((void*) ALIGN4((uintptr_t) p))
+#define ALIGN8_PTR(p) ((void*) ALIGN8((uintptr_t) p))
+#if !SD_BOOT
 /* libefi also provides ALIGN, and we do not use them in sd-boot explicitly. */
 #define ALIGN(l)  ALIGN_TO(l, sizeof(void*))
 #define ALIGN_PTR(p) ((void*) ALIGN((uintptr_t) (p)))
 #endif
+
+/* Checks if the specified pointer is aligned as appropriate for the specific type */
+#define IS_ALIGNED16(p) (((uintptr_t) p) % __alignof__(uint16_t) == 0)
+#define IS_ALIGNED32(p) (((uintptr_t) p) % __alignof__(uint32_t) == 0)
+#define IS_ALIGNED64(p) (((uintptr_t) p) % __alignof__(uint64_t) == 0)
 
 /* Same as ALIGN_TO but callable in constant contexts. */
 #define CONST_ALIGN_TO(l, ali)                                         \
@@ -348,9 +360,31 @@ static inline size_t ALIGN_TO(size_t l, size_t ali) {
                 ((l) + (ali) - 1) & ~((ali) - 1),                      \
                 VOID_0)
 
+/* Similar to ((t *) (void *) (p)) to cast a pointer. The macro asserts that the pointer has a suitable
+ * alignment for type "t". This exists for places where otherwise "-Wcast-align=strict" would issue a
+ * warning or if you want to assert that the cast gives a pointer of suitable alignment. */
+#define CAST_ALIGN_PTR(t, p)                                    \
+        ({                                                      \
+                const void *_p = (p);                           \
+                assert(((uintptr_t) _p) % __alignof__(t) == 0); \
+                (t *) _p;                                       \
+        })
+
 #define UPDATE_FLAG(orig, flag, b)                      \
         ((b) ? ((orig) | (flag)) : ((orig) & ~(flag)))
 #define SET_FLAG(v, flag, b) \
         (v) = UPDATE_FLAG(v, flag, b)
 #define FLAGS_SET(v, flags) \
         ((~(v) & (flags)) == 0)
+
+/* Declare a flexible array usable in a union.
+ * This is essentially a work-around for a pointless constraint in C99
+ * and might go away in some future version of the standard.
+ *
+ * See https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?id=3080ea5553cc909b000d1f1d964a9041962f2c5b
+ */
+#define DECLARE_FLEX_ARRAY(type, name)                 \
+        struct {                                       \
+                dummy_t __empty__ ## name;             \
+                type name[];                           \
+        }

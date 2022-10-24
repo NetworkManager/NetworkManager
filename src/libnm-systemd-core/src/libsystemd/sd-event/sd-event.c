@@ -16,6 +16,7 @@
 #include "glyph-util.h"
 #include "hashmap.h"
 #include "list.h"
+#include "logarithm.h"
 #include "macro.h"
 #include "memory-util.h"
 #include "missing_syscall.h"
@@ -377,22 +378,22 @@ _public_ int sd_event_new(sd_event** ret) {
 
         *e = (sd_event) {
                 .n_ref = 1,
-                .epoll_fd = -1,
-                .watchdog_fd = -1,
+                .epoll_fd = -EBADF,
+                .watchdog_fd = -EBADF,
                 .realtime.wakeup = WAKEUP_CLOCK_DATA,
-                .realtime.fd = -1,
+                .realtime.fd = -EBADF,
                 .realtime.next = USEC_INFINITY,
                 .boottime.wakeup = WAKEUP_CLOCK_DATA,
-                .boottime.fd = -1,
+                .boottime.fd = -EBADF,
                 .boottime.next = USEC_INFINITY,
                 .monotonic.wakeup = WAKEUP_CLOCK_DATA,
-                .monotonic.fd = -1,
+                .monotonic.fd = -EBADF,
                 .monotonic.next = USEC_INFINITY,
                 .realtime_alarm.wakeup = WAKEUP_CLOCK_DATA,
-                .realtime_alarm.fd = -1,
+                .realtime_alarm.fd = -EBADF,
                 .realtime_alarm.next = USEC_INFINITY,
                 .boottime_alarm.wakeup = WAKEUP_CLOCK_DATA,
-                .boottime_alarm.fd = -1,
+                .boottime_alarm.fd = -EBADF,
                 .boottime_alarm.next = USEC_INFINITY,
                 .perturb = USEC_INFINITY,
                 .original_pid = getpid_cached(),
@@ -642,7 +643,7 @@ static int event_make_signal_data(
 
                 *d = (struct signal_data) {
                         .wakeup = WAKEUP_SIGNAL_DATA,
-                        .fd = -1,
+                        .fd = -EBADF,
                         .priority = priority,
                 };
 
@@ -658,7 +659,9 @@ static int event_make_signal_data(
         ss_copy = d->sigset;
         assert_se(sigaddset(&ss_copy, sig) >= 0);
 
-        r = signalfd(d->fd, &ss_copy, SFD_NONBLOCK|SFD_CLOEXEC);
+        r = signalfd(d->fd >= 0 ? d->fd : -1,   /* the first arg must be -1 or a valid signalfd */
+                     &ss_copy,
+                     SFD_NONBLOCK|SFD_CLOEXEC);
         if (r < 0) {
                 r = -errno;
                 goto fail;
@@ -1177,7 +1180,7 @@ static int event_setup_timer_fd(
         if (_likely_(d->fd >= 0))
                 return 0;
 
-        _cleanup_close_ int fd = -1;
+        _cleanup_close_ int fd = -EBADF;
 
         fd = timerfd_create(clock, TFD_NONBLOCK|TFD_CLOEXEC);
         if (fd < 0)
@@ -1513,7 +1516,7 @@ _public_ int sd_event_add_child(
                 } else
                         s->child.pidfd_owned = true; /* If we allocate the pidfd we own it by default */
         } else
-                s->child.pidfd = -1;
+                s->child.pidfd = -EBADF;
 
         if (EVENT_SOURCE_WATCH_PIDFD(s)) {
                 /* We have a pidfd and we only want to watch for exit */
@@ -1776,7 +1779,7 @@ static int event_make_inotify_data(
                 int64_t priority,
                 struct inotify_data **ret) {
 
-        _cleanup_close_ int fd = -1;
+        _cleanup_close_ int fd = -EBADF;
         struct inotify_data *d;
         int r;
 
@@ -1973,7 +1976,7 @@ static int event_make_inode_data(
                 .dev = dev,
                 .ino = ino,
                 .wd = -1,
-                .fd = -1,
+                .fd = -EBADF,
                 .inotify_data = inotify_data,
         };
 
@@ -2069,7 +2072,7 @@ static int event_add_inotify_fd_internal(
                 sd_event_inotify_handler_t callback,
                 void *userdata) {
 
-        _cleanup_close_ int donated_fd = donate ? fd : -1;
+        _cleanup_close_ int donated_fd = donate ? fd : -EBADF;
         _cleanup_(source_freep) sd_event_source *s = NULL;
         struct inotify_data *inotify_data = NULL;
         struct inode_data *inode_data = NULL;
@@ -2171,9 +2174,9 @@ _public_ int sd_event_add_inotify(
 
         assert_return(path, -EINVAL);
 
-        fd = open(path, O_PATH|O_CLOEXEC|
-                  (mask & IN_ONLYDIR ? O_DIRECTORY : 0)|
-                  (mask & IN_DONT_FOLLOW ? O_NOFOLLOW : 0));
+        fd = open(path, O_PATH | O_CLOEXEC |
+                        (mask & IN_ONLYDIR ? O_DIRECTORY : 0) |
+                        (mask & IN_DONT_FOLLOW ? O_NOFOLLOW : 0));
         if (fd < 0)
                 return -errno;
 
@@ -2723,6 +2726,9 @@ _public_ int sd_event_source_set_time_relative(sd_event_source *s, uint64_t usec
         assert_return(s, -EINVAL);
         assert_return(EVENT_SOURCE_IS_TIME(s->type), -EDOM);
 
+        if (usec == USEC_INFINITY)
+                return sd_event_source_set_time(s, USEC_INFINITY);
+
         r = sd_event_now(s->event, event_source_type_to_clock(s->type), &t);
         if (r < 0)
                 return r;
@@ -3176,7 +3182,7 @@ static int event_arm_timer(
         assert_se(d->fd >= 0);
 
         if (t == 0) {
-                /* We don' want to disarm here, just mean some time looooong ago. */
+                /* We don't want to disarm here, just mean some time looooong ago. */
                 its.it_value.tv_sec = 0;
                 its.it_value.tv_nsec = 1;
         } else
@@ -3773,12 +3779,9 @@ static int event_prepare(sd_event *e) {
                         break;
 
                 s->prepare_iteration = e->iteration;
-                r = prioq_reshuffle(e->prepare, s, &s->prepare_index);
-                if (r < 0)
-                        return r;
+                prioq_reshuffle(e->prepare, s, &s->prepare_index);
 
                 assert(s->prepare);
-
                 s->dispatching = true;
                 r = s->prepare(s, s->userdata);
                 s->dispatching = false;
@@ -3968,15 +3971,18 @@ static int epoll_wait_usec(
                 usec_t timeout) {
 
         int msec;
-#if 0
+        /* A wrapper that uses epoll_pwait2() if available, and falls back to epoll_wait() if not. */
+
+#if HAVE_EPOLL_PWAIT2
         static bool epoll_pwait2_absent = false;
         int r;
 
-        /* A wrapper that uses epoll_pwait2() if available, and falls back to epoll_wait() if not.
-         *
-         * FIXME: this is temporarily disabled until epoll_pwait2() becomes more widely available.
-         * See https://github.com/systemd/systemd/pull/18973 and
-         * https://github.com/systemd/systemd/issues/19052. */
+        /* epoll_pwait2() was added to Linux 5.11 (2021-02-14) and to glibc in 2.35 (2022-02-03). In contrast
+         * to other syscalls we don't bother with our own fallback syscall wrappers on old libcs, since this
+         * is not that obvious to implement given the libc and kernel definitions differ in the last
+         * argument. Moreover, the only reason to use it is the more accurate time-outs (which is not a
+         * biggie), let's hence rely on glibc's definitions, and fallback to epoll_pwait() when that's
+         * missing. */
 
         if (!epoll_pwait2_absent && timeout != USEC_INFINITY) {
                 r = epoll_pwait2(fd,

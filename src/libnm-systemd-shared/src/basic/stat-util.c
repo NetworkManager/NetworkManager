@@ -15,6 +15,7 @@
 #include "fileio.h"
 #include "filesystems.h"
 #include "fs-util.h"
+#include "hash-funcs.h"
 #include "macro.h"
 #include "missing_fs.h"
 #include "missing_magic.h"
@@ -64,7 +65,7 @@ int is_device_node(const char *path) {
 }
 
 int dir_is_empty_at(int dir_fd, const char *path, bool ignore_hidden_or_backup) {
-        _cleanup_close_ int fd = -1;
+        _cleanup_close_ int fd = -EBADF;
         struct dirent *buf;
         size_t m;
 
@@ -162,24 +163,35 @@ int null_or_empty_fd(int fd) {
         return null_or_empty(&st);
 }
 
-int path_is_read_only_fs(const char *path) {
+static int fd_is_read_only_fs(int fd) {
         struct statvfs st;
 
-        assert(path);
+        assert(fd >= 0);
 
-        if (statvfs(path, &st) < 0)
+        if (fstatvfs(fd, &st) < 0)
                 return -errno;
 
         if (st.f_flag & ST_RDONLY)
                 return true;
 
-        /* On NFS, statvfs() might not reflect whether we can actually
-         * write to the remote share. Let's try again with
-         * access(W_OK) which is more reliable, at least sometimes. */
-        if (access(path, W_OK) < 0 && errno == EROFS)
+        /* On NFS, fstatvfs() might not reflect whether we can actually write to the remote share. Let's try
+         * again with access(W_OK) which is more reliable, at least sometimes. */
+        if (access_fd(fd, W_OK) == -EROFS)
                 return true;
 
         return false;
+}
+
+int path_is_read_only_fs(const char *path) {
+        _cleanup_close_ int fd = -EBADF;
+
+        assert(path);
+
+        fd = open(path, O_CLOEXEC | O_PATH);
+        if (fd < 0)
+                return -errno;
+
+        return fd_is_read_only_fs(fd);
 }
 
 int files_same(const char *filea, const char *fileb, int flags) {
@@ -441,3 +453,20 @@ int statx_fallback(int dfd, const char *path, int flags, unsigned mask, struct s
 
         return 0;
 }
+
+void inode_hash_func(const struct stat *q, struct siphash *state) {
+        siphash24_compress(&q->st_dev, sizeof(q->st_dev), state);
+        siphash24_compress(&q->st_ino, sizeof(q->st_ino), state);
+}
+
+int inode_compare_func(const struct stat *a, const struct stat *b) {
+        int r;
+
+        r = CMP(a->st_dev, b->st_dev);
+        if (r != 0)
+                return r;
+
+        return CMP(a->st_ino, b->st_ino);
+}
+
+DEFINE_HASH_OPS_WITH_KEY_DESTRUCTOR(inode_hash_ops, struct stat, inode_hash_func, inode_compare_func, free);

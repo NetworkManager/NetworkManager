@@ -50,6 +50,8 @@ int get_process_environ(pid_t pid, char **ret);
 int get_process_ppid(pid_t pid, pid_t *ret);
 int get_process_umask(pid_t pid, mode_t *ret);
 
+int container_get_leader(const char *machine, pid_t *pid);
+
 int wait_for_terminate(pid_t pid, siginfo_t *status);
 
 typedef enum WaitFlags {
@@ -66,10 +68,11 @@ int wait_for_terminate_with_timeout(pid_t pid, usec_t timeout);
 void sigkill_wait(pid_t pid);
 void sigkill_waitp(pid_t *pid);
 void sigterm_wait(pid_t pid);
+void sigkill_nowait(pid_t pid);
+void sigkill_nowaitp(pid_t *pid);
 
 int kill_and_sigcont(pid_t pid, int sig);
 
-int rename_process(const char name[]);
 int is_kernel_thread(pid_t pid);
 
 int getenv_for_pid(pid_t pid, const char *field, char **_value);
@@ -146,10 +149,12 @@ typedef enum ForkFlags {
         FORK_WAIT               = 1 <<  7, /* Wait until child exited */
         FORK_NEW_MOUNTNS        = 1 <<  8, /* Run child in its own mount namespace */
         FORK_MOUNTNS_SLAVE      = 1 <<  9, /* Make child's mount namespace MS_SLAVE */
-        FORK_RLIMIT_NOFILE_SAFE = 1 << 10, /* Set RLIMIT_NOFILE soft limit to 1K for select() compat */
-        FORK_STDOUT_TO_STDERR   = 1 << 11, /* Make stdout a copy of stderr */
-        FORK_FLUSH_STDIO        = 1 << 12, /* fflush() stdout (and stderr) before forking */
-        FORK_NEW_USERNS         = 1 << 13, /* Run child in its own user namespace */
+        FORK_PRIVATE_TMP        = 1 << 10, /* Mount new /tmp/ in the child (combine with FORK_NEW_MOUNTNS!) */
+        FORK_RLIMIT_NOFILE_SAFE = 1 << 11, /* Set RLIMIT_NOFILE soft limit to 1K for select() compat */
+        FORK_STDOUT_TO_STDERR   = 1 << 12, /* Make stdout a copy of stderr */
+        FORK_FLUSH_STDIO        = 1 << 13, /* fflush() stdout (and stderr) before forking */
+        FORK_NEW_USERNS         = 1 << 14, /* Run child in its own user namespace */
+        FORK_CLOEXEC_OFF        = 1 << 15, /* In the child: turn off O_CLOEXEC on all fds in except_fds[] */
 } ForkFlags;
 
 int safe_fork_full(const char *name, const int except_fds[], size_t n_except_fds, ForkFlags flags, pid_t *ret_pid);
@@ -175,23 +180,12 @@ int get_oom_score_adjust(int *ret);
 
 assert_cc(TASKS_MAX <= (unsigned long) PID_T_MAX);
 
-/* Like TAKE_PTR() but for child PIDs, resetting them to 0 */
-#define TAKE_PID(pid)                           \
-        ({                                      \
-                pid_t *_ppid_ = &(pid);         \
-                pid_t _pid_ = *_ppid_;          \
-                *_ppid_ = 0;                    \
-                _pid_;                          \
-        })
+/* Like TAKE_PTR() but for pid_t, resetting them to 0 */
+#define TAKE_PID(pid) TAKE_GENERIC(pid, pid_t, 0)
 
 int pidfd_get_pid(int fd, pid_t *ret);
+int pidfd_verify_pid(int pidfd, pid_t pid);
 
 int setpriority_closest(int priority);
 
-bool invoked_as(char *argv[], const char *token);
-
-bool invoked_by_systemd(void);
-
 _noreturn_ void freeze(void);
-
-bool argv_looks_like_help(int argc, char **argv);

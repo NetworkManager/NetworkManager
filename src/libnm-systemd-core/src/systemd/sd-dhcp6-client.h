@@ -23,6 +23,7 @@
 #include <net/ethernet.h>
 #include <sys/types.h>
 
+#include "sd-device.h"
 #include "sd-dhcp6-lease.h"
 #include "sd-dhcp6-option.h"
 #include "sd-event.h"
@@ -263,6 +264,7 @@ int sd_dhcp6_client_set_address_request(sd_dhcp6_client *client,
 int sd_dhcp6_client_add_vendor_option(sd_dhcp6_client *client,
                                       sd_dhcp6_option *v);
 int sd_dhcp6_client_set_rapid_commit(sd_dhcp6_client *client, int enable);
+int sd_dhcp6_client_set_send_release(sd_dhcp6_client *client, int enable);
 
 int sd_dhcp6_client_get_lease(
                 sd_dhcp6_client *client,
@@ -279,6 +281,7 @@ int sd_dhcp6_client_attach_event(
                 int64_t priority);
 int sd_dhcp6_client_detach_event(sd_dhcp6_client *client);
 sd_event *sd_dhcp6_client_get_event(sd_dhcp6_client *client);
+int sd_dhcp6_client_attach_device(sd_dhcp6_client *client, sd_device *dev);
 sd_dhcp6_client *sd_dhcp6_client_ref(sd_dhcp6_client *client);
 sd_dhcp6_client *sd_dhcp6_client_unref(sd_dhcp6_client *client);
 int sd_dhcp6_client_new(sd_dhcp6_client **ret);
