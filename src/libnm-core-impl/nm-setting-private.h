@@ -504,10 +504,14 @@ _nm_properties_override(GArray *properties_override, const NMSettInfoProperty *p
                                                   .property_type = (p_property_type), \
                                                   __VA_ARGS__))
 
-#define _nm_properties_override_dbus(properties_override, p_name, p_property_type) \
-    _nm_properties_override(                                                       \
-        (properties_override),                                                     \
-        NM_SETT_INFO_PROPERTY(.name = ("" p_name ""), .property_type = (p_property_type), ))
+#define _nm_properties_override_dbus(properties_override,                             \
+                                     p_name,                                          \
+                                     p_property_type,                                 \
+                                     ... /* extra NMSettInfoProperty fields */)       \
+    _nm_properties_override((properties_override),                                    \
+                            NM_SETT_INFO_PROPERTY(.name          = ("" p_name ""),    \
+                                                  .property_type = (p_property_type), \
+                                                  __VA_ARGS__))
 
 /*****************************************************************************/
 
