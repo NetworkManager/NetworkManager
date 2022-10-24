@@ -552,7 +552,6 @@ static void
 connman_get_properties_done(GObject *source, GAsyncResult *result, gpointer user_data)
 {
     NMModemOfono              *self;
-    NMModemOfonoPrivate       *priv;
     gs_free_error GError      *error        = NULL;
     gs_unref_variant GVariant *v_properties = NULL;
     gs_unref_variant GVariant *v_dict       = NULL;
@@ -566,7 +565,6 @@ connman_get_properties_done(GObject *source, GAsyncResult *result, gpointer user
         return;
 
     self = NM_MODEM_OFONO(user_data);
-    priv = NM_MODEM_OFONO_GET_PRIVATE(self);
 
     if (!v_properties) {
         g_dbus_error_strip_remote_error(error);
@@ -1205,8 +1203,6 @@ handle_settings(NMModemOfono *self, GVariant *v_dict)
     int                  ifindex;
     GError              *error = NULL;
 
-    //_LOGD("PropertyChanged: %s", property);
-
     /*
      * TODO: might be a good idea and re-factor this to mimic bluez-device,
      * ie. have this function just check the key, and call a sub-func to
@@ -1395,7 +1391,6 @@ static void
 context_properties_cb(GDBusProxy *proxy, GAsyncResult *result, gpointer user_data)
 {
     NMModemOfono              *self       = user_data;
-    NMModemOfonoPrivate       *priv       = NM_MODEM_OFONO_GET_PRIVATE(self);
     gs_free_error GError      *error      = NULL;
     gs_unref_variant GVariant *properties = NULL;
     gs_unref_variant GVariant *settings   = NULL;
