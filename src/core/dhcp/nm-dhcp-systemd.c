@@ -366,6 +366,15 @@ ip6_start(NMDhcpClient *client, const struct in6_addr *ll_addr, GError **error)
             _LOGW("dhcp-client6: only one prefix request is supported");
         }
         prefix_delegation = TRUE;
+        if (client_config->v6.pd_hint_length > 0) {
+            r = sd_dhcp6_client_set_prefix_delegation_hint(sd_client,
+                                                           client_config->v6.pd_hint_length,
+                                                           &client_config->v6.pd_hint_addr);
+            if (r < 0) {
+                nm_utils_error_set_errno(error, r, "failed to set prefix delegation hint: %s");
+                return FALSE;
+            }
+        }
     }
     r = sd_dhcp6_client_set_prefix_delegation(sd_client, prefix_delegation);
     if (r < 0) {
