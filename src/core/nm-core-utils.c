@@ -2717,11 +2717,17 @@ _host_id_hash_v2(const guint8 *seed_arr,
     const UuidData                  *machine_id_data;
     char                             slen[100];
 
-    /*
-        (stat -c '%s' /var/lib/NetworkManager/secret_key;
-         echo -n ' ';
-         cat /var/lib/NetworkManager/secret_key;
-         cat /etc/machine-id | tr -d '\n' | sed -n 's/[a-f0-9-]/\0/pg') | sha256sum
+    /* The following snippet generates the same (binary) host-id:
+
+        (
+          stat -c '%s' /var/lib/NetworkManager/secret_key | tr -d '\n';
+          echo -n ' ';
+          cat /var/lib/NetworkManager/secret_key;
+          cat /etc/machine-id | tr -d '\n' | sed -n 's/[a-f0-9-]/\0/pg'
+        ) \
+        | sha256sum \
+        | awk '{print $1}' \
+        | xxd -r -p
     */
 
     nm_sprintf_buf(slen, "%" G_GSIZE_FORMAT " ", seed_len);
