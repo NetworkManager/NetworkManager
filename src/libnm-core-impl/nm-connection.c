@@ -2333,6 +2333,45 @@ nm_connection_update_secrets(NMConnection *connection,
     return success;
 }
 
+static const char *
+_need_secrets(NMConnection *connection, gboolean check_rerequest, GPtrArray **hints)
+{
+    NMSetting           *setting_before = NULL;
+    NMConnectionPrivate *priv;
+    int                  i;
+
+    nm_assert(NM_IS_CONNECTION(connection));
+    nm_assert(!hints || !*hints);
+
+    priv = NM_CONNECTION_GET_PRIVATE(connection);
+
+    /* Get list of settings in priority order */
+    for (i = 0; i < (int) _NM_META_SETTING_TYPE_NUM; i++) {
+        NMSetting *setting = priv->settings[nm_meta_setting_types_by_priority[i]];
+        GPtrArray *secrets;
+
+        if (!setting)
+            continue;
+
+        nm_assert(!setting_before || _nm_setting_sort_for_nm_assert(setting_before, setting) < 0);
+        nm_assert(!setting_before || _nm_setting_compare_priority(setting_before, setting) <= 0);
+        setting_before = setting;
+
+        secrets = _nm_setting_need_secrets(setting, check_rerequest);
+        if (!secrets)
+            continue;
+
+        if (hints)
+            *hints = secrets;
+        else
+            g_ptr_array_free(secrets, TRUE);
+
+        return nm_setting_get_name(setting);
+    }
+
+    return NULL;
+}
+
 /**
  * nm_connection_need_secrets:
  * @connection: the #NMConnection
@@ -2355,41 +2394,24 @@ nm_connection_update_secrets(NMConnection *connection,
 const char *
 nm_connection_need_secrets(NMConnection *connection, GPtrArray **hints)
 {
-    NMSetting           *setting_before = NULL;
-    NMConnectionPrivate *priv;
-    int                  i;
-
     g_return_val_if_fail(NM_IS_CONNECTION(connection), NULL);
-    if (hints)
-        g_return_val_if_fail(*hints == NULL, NULL);
+    g_return_val_if_fail(!hints || !*hints, NULL);
 
-    priv = NM_CONNECTION_GET_PRIVATE(connection);
+    return _need_secrets(connection, FALSE, hints);
+}
 
-    /* Get list of settings in priority order */
-    for (i = 0; i < (int) _NM_META_SETTING_TYPE_NUM; i++) {
-        NMSetting *setting = priv->settings[nm_meta_setting_types_by_priority[i]];
-        GPtrArray *secrets;
+/**
+ * nm_connection_need_secrets_for_rerequest:
+ * @connection: the #NMConnection
+ *
+ * Returns TRUE if some secret needs to be re-requested
+ **/
+gboolean
+nm_connection_need_secrets_for_rerequest(NMConnection *connection)
+{
+    g_return_val_if_fail(NM_IS_CONNECTION(connection), FALSE);
 
-        if (!setting)
-            continue;
-
-        nm_assert(!setting_before || _nm_setting_sort_for_nm_assert(setting_before, setting) < 0);
-        nm_assert(!setting_before || _nm_setting_compare_priority(setting_before, setting) <= 0);
-        setting_before = setting;
-
-        secrets = _nm_setting_need_secrets(setting);
-        if (!secrets)
-            continue;
-
-        if (hints)
-            *hints = secrets;
-        else
-            g_ptr_array_free(secrets, TRUE);
-
-        return nm_setting_get_name(setting);
-    }
-
-    return NULL;
+    return !!_need_secrets(connection, TRUE, NULL);
 }
 
 /**

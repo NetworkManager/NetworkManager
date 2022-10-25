@@ -215,13 +215,13 @@ nm_setting_macsec_get_send_sci(NMSettingMacsec *setting)
 }
 
 static GPtrArray *
-need_secrets(NMSetting *setting)
+need_secrets(NMSetting *setting, gboolean check_rerequest)
 {
     NMSettingMacsecPrivate *priv    = NM_SETTING_MACSEC_GET_PRIVATE(setting);
     GPtrArray              *secrets = NULL;
 
     if (priv->mode == NM_SETTING_MACSEC_MODE_PSK) {
-        if (!priv->mka_cak
+        if ((check_rerequest || !priv->mka_cak)
             && !NM_FLAGS_HAS(priv->mka_cak_flags, NM_SETTING_SECRET_FLAG_NOT_REQUIRED)) {
             secrets = g_ptr_array_sized_new(1);
             g_ptr_array_add(secrets, NM_SETTING_MACSEC_MKA_CAK);

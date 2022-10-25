@@ -1172,8 +1172,10 @@ _con_get_try_complete_early(Request *req)
     }
     /* Do we have everything we need? */
     if (NM_FLAGS_HAS(req->con.get.flags, NM_SECRET_AGENT_GET_SECRETS_FLAG_ONLY_SYSTEM)
-        || ((nm_connection_need_secrets(tmp, NULL) == NULL)
-            && !NM_FLAGS_HAS(req->con.get.flags, NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW))) {
+        || (NM_FLAGS_HAS(req->con.get.flags, NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW)
+            && !nm_connection_need_secrets_for_rerequest(tmp))
+        || (!NM_FLAGS_HAS(req->con.get.flags, NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW)
+            && !nm_connection_need_secrets(tmp, NULL))) {
         _LOGD(NULL, "(" LOG_REQ_FMT ") system settings secrets sufficient", LOG_REQ_ARG(req));
 
         /* Got everything, we're done */

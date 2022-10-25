@@ -67,7 +67,10 @@ _crypto_format_to_ck(NMCryptoFileFormat format)
 
 /*****************************************************************************/
 
-typedef void (*EAPMethodNeedSecretsFunc)(NMSetting8021x *self, GPtrArray *secrets, gboolean phase2);
+typedef void (*EAPMethodNeedSecretsFunc)(NMSetting8021x *self,
+                                         GPtrArray      *secrets,
+                                         gboolean        phase2,
+                                         gboolean        check_rerequest);
 
 typedef gboolean (*EAPMethodValidateFunc)(NMSetting8021x *self, gboolean phase2, GError **error);
 
@@ -2500,31 +2503,44 @@ nm_setting_802_1x_get_optional(NMSetting8021x *setting)
 /*****************************************************************************/
 
 static void
-need_secrets_password(NMSetting8021x *self, GPtrArray *secrets, gboolean phase2)
+need_secrets_password(NMSetting8021x *self,
+                      GPtrArray      *secrets,
+                      gboolean        phase2,
+                      gboolean        check_rerequest)
 {
     NMSetting8021xPrivate *priv = NM_SETTING_802_1X_GET_PRIVATE(self);
 
-    if (nm_str_is_empty(priv->password)
-        && (!priv->password_raw || !g_bytes_get_size(priv->password_raw))) {
+    if (check_rerequest
+        || (nm_str_is_empty(priv->password)
+            && (!priv->password_raw || !g_bytes_get_size(priv->password_raw)))) {
         g_ptr_array_add(secrets, NM_SETTING_802_1X_PASSWORD);
         g_ptr_array_add(secrets, NM_SETTING_802_1X_PASSWORD_RAW);
     }
 }
 
 static void
-need_secrets_sim(NMSetting8021x *self, GPtrArray *secrets, gboolean phase2)
+need_secrets_sim(NMSetting8021x *self,
+                 GPtrArray      *secrets,
+                 gboolean        phase2,
+                 gboolean        check_rerequest)
 {
     NMSetting8021xPrivate *priv = NM_SETTING_802_1X_GET_PRIVATE(self);
 
-    if (nm_str_is_empty(priv->pin))
+    if (check_rerequest || nm_str_is_empty(priv->pin))
         g_ptr_array_add(secrets, NM_SETTING_802_1X_PIN);
 }
 
 static void
-need_secrets_tls(NMSetting8021x *self, GPtrArray *secrets, gboolean phase2)
+need_secrets_tls(NMSetting8021x *self,
+                 GPtrArray      *secrets,
+                 gboolean        phase2,
+                 gboolean        check_rerequest)
 {
     NMSetting8021xPrivate *priv = NM_SETTING_802_1X_GET_PRIVATE(self);
     NMSetting8021xCKScheme scheme;
+
+    /* If check_rerequest is TRUE do not return secrets, unless missing.
+     * This secret cannot be wrong. */
 
     if (!NM_FLAGS_HAS(phase2 ? priv->phase2_private_key_password_flags
                              : priv->private_key_password_flags,
@@ -2719,7 +2735,10 @@ verify_ttls(NMSetting8021x *self, gboolean phase2, GError **error)
 }
 
 static void
-need_secrets_phase2(NMSetting8021x *self, GPtrArray *secrets, gboolean phase2)
+need_secrets_phase2(NMSetting8021x *self,
+                    GPtrArray      *secrets,
+                    gboolean        phase2,
+                    gboolean        check_rerequest)
 {
     NMSetting8021xPrivate *priv   = NM_SETTING_802_1X_GET_PRIVATE(self);
     char                  *method = NULL;
@@ -2740,7 +2759,7 @@ need_secrets_phase2(NMSetting8021x *self, GPtrArray *secrets, gboolean phase2)
         if (!eap_methods_table[i].ns_func)
             continue;
         if (nm_streq(eap_methods_table[i].method, method)) {
-            (*eap_methods_table[i].ns_func)(self, secrets, TRUE);
+            (*eap_methods_table[i].ns_func)(self, secrets, TRUE, check_rerequest);
             break;
         }
     }
@@ -3030,7 +3049,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 /*****************************************************************************/
 
 static GPtrArray *
-need_secrets(NMSetting *setting)
+need_secrets(NMSetting *setting, gboolean check_rerequest)
 {
     NMSetting8021x        *self = NM_SETTING_802_1X(setting);
     NMSetting8021xPrivate *priv = NM_SETTING_802_1X_GET_PRIVATE(self);
@@ -3049,7 +3068,7 @@ need_secrets(NMSetting *setting)
             if (eap_methods_table[i].ns_func == NULL)
                 continue;
             if (!strcmp(eap_methods_table[i].method, method)) {
-                (*eap_methods_table[i].ns_func)(self, secrets, FALSE);
+                (*eap_methods_table[i].ns_func)(self, secrets, FALSE, check_rerequest);
 
                 /* Only break out of the outer loop if this EAP method
                  * needed secrets.
