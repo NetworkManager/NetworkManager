@@ -1589,7 +1589,7 @@ nmtst_inet4_from_string(const char *str)
 }
 
 static inline const struct in6_addr *
-nmtst_inet6_from_string(const char *str)
+nmtst_inet6_from_string_p(const char *str)
 {
     static _nm_thread_local struct in6_addr addr;
     int                                     success;
@@ -1614,7 +1614,7 @@ nmtst_inet_from_string(int addr_family, const char *str)
         return &a;
     }
     if (addr_family == AF_INET6)
-        return nmtst_inet6_from_string(str);
+        return nmtst_inet6_from_string_p(str);
 
     g_assert_not_reached();
     return NULL;
@@ -1673,7 +1673,7 @@ _nmtst_assert_ip6_address(const char            *file,
     if (!addr)
         addr = &any;
 
-    if (memcmp(nmtst_inet6_from_string(str_expected), addr, sizeof(*addr)) != 0) {
+    if (memcmp(nmtst_inet6_from_string_p(str_expected), addr, sizeof(*addr)) != 0) {
         char buf[100];
 
         g_error("%s:%d: Unexpected IPv6 address: expected %s, got %s",

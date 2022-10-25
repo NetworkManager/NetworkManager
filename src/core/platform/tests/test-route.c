@@ -746,7 +746,7 @@ test_ip6_route_get(void)
         nmtstp_wait_for_signal(NM_PLATFORM_GET, 10);
         if (nmtstp_ip6_route_get(NM_PLATFORM_GET,
                                  ifindex,
-                                 nmtst_inet6_from_string("fd01:abcd::"),
+                                 nmtst_inet6_from_string_p("fd01:abcd::"),
                                  64,
                                  NM_PLATFORM_ROUTE_METRIC_DEFAULT_IP6,
                                  NULL,
@@ -754,7 +754,7 @@ test_ip6_route_get(void)
             break;
     });
 
-    a      = nmtst_inet6_from_string("fd01:abcd::42");
+    a      = nmtst_inet6_from_string_p("fd01:abcd::42");
     result = nm_platform_ip_route_get(NM_PLATFORM_GET,
                                       AF_INET6,
                                       a,
@@ -796,7 +796,7 @@ test_ip6_route_options(gconstpointer test_data)
         rts_add[rts_n++] = ((NMPlatformIP6Route){
             .ifindex   = IFINDEX,
             .rt_source = NM_IP_CONFIG_SOURCE_USER,
-            .network   = *nmtst_inet6_from_string("2001:db8:a:b:0:0:0:0"),
+            .network   = *nmtst_inet6_from_string_p("2001:db8:a:b:0:0:0:0"),
             .plen      = 64,
             .gateway   = in6addr_any,
             .metric    = 1024,
@@ -811,7 +811,7 @@ test_ip6_route_options(gconstpointer test_data)
     case 2:
         addr[addr_n++]   = ((NMPlatformIP6Address){
               .ifindex      = IFINDEX,
-              .address      = *nmtst_inet6_from_string("2000::2"),
+              .address      = *nmtst_inet6_from_string_p("2000::2"),
               .plen         = 128,
               .peer_address = in6addr_any,
               .lifetime     = NM_PLATFORM_LIFETIME_PERMANENT,
@@ -821,17 +821,17 @@ test_ip6_route_options(gconstpointer test_data)
         rts_add[rts_n++] = ((NMPlatformIP6Route){
             .ifindex   = IFINDEX,
             .rt_source = NM_IP_CONFIG_SOURCE_USER,
-            .network   = *nmtst_inet6_from_string("1010::1"),
+            .network   = *nmtst_inet6_from_string_p("1010::1"),
             .plen      = 128,
             .gateway   = in6addr_any,
             .metric    = 256,
-            .pref_src  = *nmtst_inet6_from_string("2000::2"),
+            .pref_src  = *nmtst_inet6_from_string_p("2000::2"),
         });
         break;
     case 3:
         addr[addr_n++]   = ((NMPlatformIP6Address){
               .ifindex      = IFINDEX,
-              .address      = *nmtst_inet6_from_string("2001:db8:8086::5"),
+              .address      = *nmtst_inet6_from_string_p("2001:db8:8086::5"),
               .plen         = 128,
               .peer_address = in6addr_any,
               .lifetime     = NM_PLATFORM_LIFETIME_PERMANENT,
@@ -841,7 +841,7 @@ test_ip6_route_options(gconstpointer test_data)
         rts_add[rts_n++] = ((NMPlatformIP6Route){
             .ifindex   = IFINDEX,
             .rt_source = nmp_utils_ip_config_source_round_trip_rtprot(NM_IP_CONFIG_SOURCE_USER),
-            .network   = *nmtst_inet6_from_string("2001:db8:8086::"),
+            .network   = *nmtst_inet6_from_string_p("2001:db8:8086::"),
             .plen      = 110,
             .metric    = 10021,
             .mss       = 0,
@@ -849,9 +849,9 @@ test_ip6_route_options(gconstpointer test_data)
         rts_add[rts_n++] = ((NMPlatformIP6Route){
             .ifindex   = IFINDEX,
             .rt_source = nmp_utils_ip_config_source_round_trip_rtprot(NM_IP_CONFIG_SOURCE_USER),
-            .network   = *nmtst_inet6_from_string("2001:db8:abad:c0de::"),
+            .network   = *nmtst_inet6_from_string_p("2001:db8:abad:c0de::"),
             .plen      = 64,
-            .gateway   = *nmtst_inet6_from_string("2001:db8:8086::1"),
+            .gateway   = *nmtst_inet6_from_string_p("2001:db8:8086::1"),
             .metric    = 21,
             .mss       = 0,
         });
@@ -1330,7 +1330,7 @@ _rule_create_random(NMPlatform *platform)
                     p_addr->addr4 =
                         nmtst_inet4_from_string(nm_sprintf_buf(saddr, "192.192.5.%u", (~p) % 256u));
                 else
-                    p_addr->addr6 = *nmtst_inet6_from_string(
+                    p_addr->addr6 = *nmtst_inet6_from_string_p(
                         nm_sprintf_buf(saddr, "1:2:3:4::f:%02x", (~p) % 256u));
             } else if ((p % 3u) == 1)
                 nmtst_rand_buf(NULL, p_addr, addr_size);
