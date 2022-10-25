@@ -51,10 +51,6 @@ typedef struct _NMIPAddr {
 
 extern const NMIPAddr nm_ip_addr_zero;
 
-/* This doesn't really belong here, but since it's convenient to re-use nm_ip_addr_zero.ether_addr
- * for NMEtherAddr, it is. */
-#define nm_ether_addr_zero (nm_ip_addr_zero.ether_addr)
-
 static inline int
 nm_ip_addr_cmp(int addr_family, gconstpointer a, gconstpointer b)
 {

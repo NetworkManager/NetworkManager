@@ -52,9 +52,54 @@ struct _NMStrBuf;
 
 gssize nm_utils_fd_read(int fd, struct _NMStrBuf *out_string);
 
+gssize nm_fd_next_datagram_size(int fd);
+
 struct stat;
 
 int nm_utils_file_stat(const char *filename, struct stat *out_st);
+
+/*****************************************************************************/
+
+/* From systemd's ERRNO_IS_TRANSIENT().
+ *
+ * For send()/recv() or read()/write(). */
+static inline gboolean
+NM_ERRNO_IS_TRANSIENT(int r)
+{
+    return NM_IN_SET((r < 0 ? -r : r), EAGAIN, EINTR);
+}
+
+/* From systemd's ERRNO_IS_DISCONNECT().
+ *
+ * Hint #1: ENETUNREACH happens if we try to connect to "non-existing" special IP addresses, such as ::5.
+ *
+ * Hint #2: The kernel sends e.g., EHOSTUNREACH or ENONET to userspace in some ICMP error cases.  See the
+ *          icmp_err_convert[] in net/ipv4/icmp.c in the kernel sources.
+ *
+ * Hint #3: When asynchronous connect() on TCP fails because the host never acknowledges a single packet,
+ *          kernel tells us that with ETIMEDOUT, see tcp(7). */
+static inline gboolean
+NM_ERRNO_IS_DISCONNECT(int r)
+{
+    return NM_IN_SET((r < 0 ? -r : r),
+                     ECONNABORTED,
+                     ECONNREFUSED,
+                     ECONNRESET,
+                     EHOSTDOWN,
+                     EHOSTUNREACH,
+                     ENETDOWN,
+                     ENETRESET,
+                     ENETUNREACH,
+                     ENONET,
+                     ENOPROTOOPT,
+                     ENOTCONN,
+                     EPIPE,
+                     EPROTO,
+                     ESHUTDOWN,
+                     ETIMEDOUT);
+}
+
+/*****************************************************************************/
 
 void nm_g_subprocess_terminate_in_background(GSubprocess *subprocess, int timeout_msec_before_kill);
 

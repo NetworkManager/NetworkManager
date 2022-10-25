@@ -454,6 +454,8 @@ src_libnm_glib_aux_libnm_glib_aux_la_SOURCES = \
 	src/libnm-glib-aux/nm-logging-syslog.h \
 	src/libnm-glib-aux/nm-macros-internal.h \
 	src/libnm-glib-aux/nm-obj.h \
+	src/libnm-glib-aux/nm-prioq.c \
+	src/libnm-glib-aux/nm-prioq.h \
 	src/libnm-glib-aux/nm-random-utils.c \
 	src/libnm-glib-aux/nm-random-utils.h \
 	src/libnm-glib-aux/nm-ref-string.c \
@@ -507,6 +509,36 @@ src_libnm_udev_aux_libnm_udev_aux_la_LIBADD = \
 	$(NULL)
 
 EXTRA_DIST += src/libnm-udev-aux/meson.build
+
+###############################################################################
+
+noinst_LTLIBRARIES += src/libnm-lldp/libnm-lldp.la
+
+src_libnm_lldp_libnm_lldp_la_CFLAGS = \
+	$(src_libnm_glib_aux_cppflags) \
+	-I$(srcdir)/src \
+	-I$(builddir)/src \
+	$(NULL)
+
+src_libnm_lldp_libnm_lldp_la_CPPFLAGS = \
+	$(CODE_COVERAGE_CFLAGS) \
+	$(SANITIZER_LIB_CFLAGS) \
+	$(NULL)
+
+src_libnm_lldp_libnm_lldp_la_LDFLAGS = \
+	$(SANITIZER_LIB_LDFLAGS) \
+	$(NULL)
+
+src_libnm_lldp_libnm_lldp_la_SOURCES = \
+	src/libnm-lldp/nm-lldp-neighbor.c \
+	src/libnm-lldp/nm-lldp-neighbor.h \
+	src/libnm-lldp/nm-lldp-network.c \
+	src/libnm-lldp/nm-lldp-network.h \
+	src/libnm-lldp/nm-lldp-rx-internal.h \
+	src/libnm-lldp/nm-lldp-rx.c \
+	src/libnm-lldp/nm-lldp-rx.h \
+	src/libnm-lldp/nm-lldp.h \
+	$(NULL)
 
 ###############################################################################
 
@@ -2389,16 +2421,10 @@ src_libnm_systemd_core_libnm_systemd_core_la_SOURCES = \
 	src/libnm-systemd-core/src/libsystemd-network/dhcp6-option.h \
 	src/libnm-systemd-core/src/libsystemd-network/dhcp6-protocol.c \
 	src/libnm-systemd-core/src/libsystemd-network/dhcp6-protocol.h \
-	src/libnm-systemd-core/src/libsystemd-network/lldp-neighbor.c \
-	src/libnm-systemd-core/src/libsystemd-network/lldp-neighbor.h \
-	src/libnm-systemd-core/src/libsystemd-network/lldp-network.c \
-	src/libnm-systemd-core/src/libsystemd-network/lldp-network.h \
-	src/libnm-systemd-core/src/libsystemd-network/lldp-rx-internal.h \
 	src/libnm-systemd-core/src/libsystemd-network/network-common.c \
 	src/libnm-systemd-core/src/libsystemd-network/network-common.h \
 	src/libnm-systemd-core/src/libsystemd-network/sd-dhcp6-client.c \
 	src/libnm-systemd-core/src/libsystemd-network/sd-dhcp6-lease.c \
-	src/libnm-systemd-core/src/libsystemd-network/sd-lldp-rx.c \
 	src/libnm-systemd-core/src/libsystemd/sd-event/event-source.h \
 	src/libnm-systemd-core/src/libsystemd/sd-event/event-util.c \
 	src/libnm-systemd-core/src/libsystemd/sd-event/event-util.h \
@@ -2412,8 +2438,6 @@ src_libnm_systemd_core_libnm_systemd_core_la_SOURCES = \
 	src/libnm-systemd-core/src/systemd/sd-dhcp6-option.h \
 	src/libnm-systemd-core/src/systemd/sd-event.h \
 	src/libnm-systemd-core/src/systemd/sd-id128.h \
-	src/libnm-systemd-core/src/systemd/sd-lldp-rx.h \
-	src/libnm-systemd-core/src/systemd/sd-lldp.h \
 	src/libnm-systemd-core/src/systemd/sd-ndisc.h \
 	$(NULL)
 
@@ -2684,6 +2708,7 @@ src_core_libNetworkManager_la_LIBADD = \
 	src/libnm-platform/libnm-platform.la \
 	src/libnm-base/libnm-base.la \
 	src/libnm-log-core/libnm-log-core.la \
+	src/libnm-lldp/libnm-lldp.la \
 	src/libnm-udev-aux/libnm-udev-aux.la \
 	src/libnm-glib-aux/libnm-glib-aux.la \
 	src/libnm-std-aux/libnm-std-aux.la \
