@@ -1028,7 +1028,16 @@ nmtstp_assert_platform(NMPlatform *platform, guint32 obj_type_flags)
                      * doesn't work. We now always request a new dump. */
                 } else if (obj_type == NMP_OBJECT_TYPE_IP4_ROUTE) {
                     /* For IPv4, it also does not reliably always work. This may
-                     * be a bug we want to fix. For now, ignore the check. */
+                     * be a bug we want to fix. For now, ignore the check.
+                     *
+                     * This is probably caused by kernel bug
+                     * https://bugzilla.redhat.com/show_bug.cgi?id=2162315
+                     * for which I think there is no workaround.
+                     *
+                     * Also, rhbz#2162315 means NMPlatform will merge two different
+                     * routes together, if one of them were deleted, the RTM_DELROUTE
+                     * message would wrongly delete single entry, leading to cache
+                     * inconsistency. */
                 } else {
                     /* Assert that also the original, not-sorted lists agree. */
                     _assert_platform_compare_arr(obj_type,
