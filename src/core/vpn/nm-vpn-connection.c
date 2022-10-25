@@ -2838,17 +2838,11 @@ device_changed(NMActiveConnection *active, NMDevice *new_device, NMDevice *old_d
     _l3cfg_clear(self, l3cfg_old);
 
     priv->ifindex_dev = ifindex;
-    if (ifindex > 0) {
-        priv->l3cfg_dev = nm_netns_l3cfg_acquire(priv->netns, ifindex);
-        g_signal_connect(priv->l3cfg_dev,
-                         NM_L3CFG_SIGNAL_NOTIFY,
-                         G_CALLBACK(_l3cfg_notify_cb),
-                         self);
-        priv->l3cfg_commit_type_dev = nm_l3cfg_commit_type_register(priv->l3cfg_dev,
-                                                                    NM_L3_CFG_COMMIT_TYPE_UPDATE,
-                                                                    NULL,
-                                                                    "vpn");
-    }
+
+    priv->l3cfg_dev = nm_netns_l3cfg_acquire(priv->netns, ifindex);
+    g_signal_connect(priv->l3cfg_dev, NM_L3CFG_SIGNAL_NOTIFY, G_CALLBACK(_l3cfg_notify_cb), self);
+    priv->l3cfg_commit_type_dev =
+        nm_l3cfg_commit_type_register(priv->l3cfg_dev, NM_L3_CFG_COMMIT_TYPE_UPDATE, NULL, "vpn");
 
     if (_l3cfg_l3cd_gw_extern_update(self))
         nm_l3cfg_commit_on_idle_schedule(priv->l3cfg_dev, NM_L3_CFG_COMMIT_TYPE_AUTO);
