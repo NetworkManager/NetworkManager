@@ -1175,7 +1175,7 @@ _con_get_try_complete_early(Request *req)
         || (NM_FLAGS_HAS(req->con.get.flags, NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW)
             && !nm_connection_need_secrets_for_rerequest(tmp))
         || (!NM_FLAGS_HAS(req->con.get.flags, NM_SECRET_AGENT_GET_SECRETS_FLAG_REQUEST_NEW)
-            && nm_connection_need_secrets(tmp, NULL) == NULL)) {
+            && !nm_connection_need_secrets(tmp, NULL))) {
         _LOGD(NULL, "(" LOG_REQ_FMT ") system settings secrets sufficient", LOG_REQ_ARG(req));
 
         /* Got everything, we're done */

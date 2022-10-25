@@ -2536,10 +2536,11 @@ need_secrets_tls(NMSetting8021x *self,
                  gboolean        phase2,
                  gboolean        check_rerequest)
 {
-    // If check_rerequest is TRUE do not return secrets, unless missing.
-    // This secret cannot be wrong.
     NMSetting8021xPrivate *priv = NM_SETTING_802_1X_GET_PRIVATE(self);
     NMSetting8021xCKScheme scheme;
+
+    /* If check_rerequest is TRUE do not return secrets, unless missing.
+     * This secret cannot be wrong. */
 
     if (!NM_FLAGS_HAS(phase2 ? priv->phase2_private_key_password_flags
                              : priv->private_key_password_flags,
