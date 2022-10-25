@@ -1604,6 +1604,22 @@ nmtst_inet6_from_string_p(const char *str)
     return &addr;
 }
 
+static inline struct in6_addr
+nmtst_inet6_from_string(const char *str)
+{
+    struct in6_addr addr;
+    int             success;
+
+    if (!str)
+        addr = in6addr_any;
+    else {
+        success = inet_pton(AF_INET6, str, &addr);
+        g_assert(success == 1);
+    }
+
+    return addr;
+}
+
 static inline gconstpointer
 nmtst_inet_from_string(int addr_family, const char *str)
 {
