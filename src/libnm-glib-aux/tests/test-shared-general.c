@@ -78,6 +78,9 @@ test_gpid(void)
      * the case. */
     int_ptr = &pid;
     g_assert_cmpint(*int_ptr, ==, 42);
+
+    /* also check how assert() works. */
+    assert(*int_ptr == 42);
 }
 
 /*****************************************************************************/

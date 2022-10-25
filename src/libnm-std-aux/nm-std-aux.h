@@ -20,6 +20,7 @@
 #define _nm_used               __attribute__((__used__))
 #define _nm_pure               __attribute__((__pure__))
 #define _nm_const              __attribute__((__const__))
+#define _nm_noreturn           __attribute__((__noreturn__))
 #define _nm_warn_unused_result __attribute__((__warn_unused_result__))
 #define _nm_printf(a, b)       __attribute__((__format__(__printf__, a, b)))
 #define _nm_align(s)           __attribute__((__aligned__(s)))
@@ -193,60 +194,88 @@ typedef uint64_t _nm_bitwise nm_be64_t;
 #define NM_MORE_ASSERTS 0
 #endif
 
-#ifndef _nm_assert_call
-#define _nm_assert_call(cond)         assert(cond)
-#define _nm_assert_call_not_reached() assert(0)
+#if NM_MORE_ASSERTS == 0
+/* The string with the assertion check and the function name blows up the
+ * binary size. In production mode, let's drop those, similar to
+ * g_assertion_message_expr.
+ *
+ * Note that <assert.h> can be included multiple times. We can thus
+ * not redefine __assert_fail(...). Instead, just redefine the name
+ * __assert_fail. */
+_nm_noreturn static inline void
+_nm_assert_fail_internal(const char  *assertion,
+                         const char  *file,
+                         unsigned int line,
+                         const char  *function)
+{
+    __assert_fail("<dropped>", file, line, "<unknown-fcn>");
+}
+#define __assert_fail _nm_assert_fail_internal
 #endif
 
-#if NM_MORE_ASSERTS
-#define nm_assert(cond)        \
-    ({                         \
-        _nm_assert_call(cond); \
-        1;                     \
-    })
-#define nm_assert_se(cond)                \
-    ({                                    \
-        if (NM_LIKELY(cond)) {            \
-            ;                             \
-        } else {                          \
-            _nm_assert_call(0 && (cond)); \
-        }                                 \
-        1;                                \
-    })
-#define nm_assert_not_reached()        \
-    ({                                 \
-        _nm_assert_call_not_reached(); \
-        1;                             \
-    })
+#define _nm_assert_fail(msg) __assert_fail((msg), __FILE__, __LINE__, __func__)
+#ifndef NDEBUG
+#define _NM_ASSERT_FAIL_ENABLED 1
 #else
-#define nm_assert(cond)  \
-    ({                   \
-        if (0) {         \
-            if (cond) {} \
-        }                \
-        1;               \
-    })
-#define nm_assert_se(cond)     \
-    ({                         \
-        if (NM_LIKELY(cond)) { \
-            ;                  \
-        }                      \
-        1;                     \
-    })
-#define nm_assert_not_reached() ({ 1; })
+#define _NM_ASSERT_FAIL_ENABLED 1
 #endif
+
+#define NM_MORE_ASSERTS_EFFECTIVE (_NM_ASSERT_FAIL_ENABLED ? NM_MORE_ASSERTS : 0)
+
+#define nm_assert(cond)                                               \
+    ({                                                                \
+        /* nm_assert() must do *nothing* of effect, except evaluating
+         * @cond (0 or 1 times).
+         *
+         * As such, nm_assert() is async-signal-safe (provided @cond is, and
+         * the assertion does not fail). */ \
+        if (NM_MORE_ASSERTS_EFFECTIVE == 0) {                         \
+            /* pass */                                                \
+        } else if NM_LIKELY (cond) {                                  \
+            /* pass */                                                \
+        } else {                                                      \
+            _nm_assert_fail(#cond);                                   \
+        }                                                             \
+        1;                                                            \
+    })
+
+#define nm_assert_se(cond)                                            \
+    ({                                                                \
+        /* nm_assert() must do *nothing* of effect, except evaluating
+         * @cond (exactly 1 times).
+         *
+         * As such, nm_assert() is async-signal-safe (provided @cond is, and
+         * the assertion does not fail). */ \
+        if NM_LIKELY (cond) {                                         \
+            /* pass */                                                \
+        } else if (NM_MORE_ASSERTS_EFFECTIVE == 0) {                  \
+            /* pass */                                                \
+        } else {                                                      \
+            _nm_assert_fail(#cond);                                   \
+        }                                                             \
+        1;                                                            \
+    })
+
+#define nm_assert_not_reached()         \
+    ({                                  \
+        _nm_assert_fail("unreachable"); \
+        1;                              \
+    })
 
 /* This is similar nm_assert_not_reached(), but it's supposed to be used only during
  * development. Like _XXX_ comments, they can be used as a marker that something still
  * needs to be done. */
-#define XXX(msg)   \
-    nm_assert(!"X" \
-               "XX error: " msg "")
+#define XXX(msg)                              \
+    ({                                        \
+        _nm_assert_fail("X"                   \
+                        "XX error: " msg ""); \
+        1;                                    \
+    })
 
-#define nm_assert_unreachable_val(val) \
-    ({                                 \
-        nm_assert_not_reached();       \
-        (val);                         \
+#define nm_assert_unreachable_val(val)              \
+    ({                                              \
+        _nm_assert_fail("unreachable value " #val); \
+        (val);                                      \
     })
 
 #define NM_STATIC_ASSERT(cond) static_assert(cond, "")
@@ -928,38 +957,6 @@ _NM_IN_STRSET_EVAL_op_streq(const char *x1, const char *x)
 
 /*****************************************************************************/
 
-/**
- * nm_close:
- *
- * Like close() but throws an assertion if the input fd is
- * invalid.  Closing an invalid fd is a programming error, so
- * it's better to catch it early.
- */
-static inline int
-nm_close(int fd)
-{
-    int r;
-
-    r = close(fd);
-    nm_assert(r != -1 || fd < 0 || errno != EBADF);
-    return r;
-}
-
-static inline bool
-nm_clear_fd(int *p_fd)
-{
-    int fd;
-
-    if (!p_fd || (fd = *p_fd) < 0)
-        return false;
-
-    *p_fd = -1;
-    nm_close(fd);
-    return true;
-}
-
-/*****************************************************************************/
-
 /* Note: @value is only evaluated when *out_val is present.
  * Thus,
  *    NM_SET_OUT (out_str, g_strdup ("hallo"));
@@ -1037,13 +1034,106 @@ _nm_auto_protect_errno(const int *p_saved_errno)
 
 /*****************************************************************************/
 
+/**
+ * nm_close_with_error:
+ *
+ * Wrapper around close().
+ *
+ * This fails an nm_assert() for EBADF with a non-negative file descriptor. Trying
+ * to close an invalid file descriptor is always a serious bug. Never use close()
+ * directly, because we want to catch such bugs.
+ *
+ * This also suppresses any EINTR and pretends success. That is appropriate
+ * on Linux (but not necessarily on other POSIX systems).
+ *
+ * In no case is it appropriate to use @fd afterwards (or retry).
+ *
+ * This function returns 0 on success, or a negative errno value.
+ * On success, errno is undefined afterwards. On failure, errno is
+ * the same as the (negative) return value.
+ *
+ * In the common case, when you don't intend to handle the error from close(),
+ * prefer nm_close() over nm_close_with_error(). Never use close() directly.
+ *
+ * The function is also async-signal-safe (unless an assertion fails).
+ *
+ * Returns: 0 on success or the negative errno from close().
+ */
+static inline int
+nm_close_with_error(int fd)
+{
+    int r;
+
+    r = close(fd);
+
+    if (r != 0) {
+        int errsv = errno;
+
+        nm_assert(r == -1);
+
+        /* EBADF indicates a bug.
+         *
+         * - if fd is non-negative, this means the tracking of the descriptor
+         *   got messed up. That's very bad, somebody closed a wrong FD or we
+         *   might do so. On a multi threaded application, messing up the tracking
+         *   of the file descriptor means we race against closing an unrelated FD.
+         * - if fd is negative, it may not be a bug but intentional. However, our callers
+         *   are not supposed to call close() on a negative FD either. Assert
+         *   against that too. */
+        nm_assert(errsv != EBADF);
+
+        if (errsv == EINTR) {
+            /* There isn't really much we can do about EINTR. On Linux, always this means
+             * the FD was closed. On some POSIX systems that may be different and retry
+             * would be appropriate.
+             *
+             * Whether there was any IO error is unknown. Assume not and signal success. */
+            return 0;
+        }
+
+        return -errsv;
+    }
+
+    return 0;
+}
+
+/**
+ * nm_close:
+ *
+ * Wrapper around nm_close_with_error(), which ignores any error and preserves the
+ * caller's errno.
+ *
+ * We usually don't care about errors from close, so this is usually preferable over
+ * nm_close_with_error(). Never use close() directly.
+ *
+ * Everything from nm_close_with_error() applies.
+ */
+static inline void
+nm_close(int fd)
+{
+    NM_AUTO_PROTECT_ERRNO(errsv);
+
+    nm_close_with_error(fd);
+}
+
+static inline bool
+nm_clear_fd(int *p_fd)
+{
+    int fd;
+
+    if (!p_fd || (fd = *p_fd) < 0)
+        return false;
+
+    *p_fd = -1;
+    nm_close(fd);
+    return true;
+}
+
 static inline void
 _nm_auto_close(int *pfd)
 {
-    if (*pfd >= 0) {
-        NM_AUTO_PROTECT_ERRNO(errsv);
-        (void) nm_close(*pfd);
-    }
+    if (*pfd >= 0)
+        nm_close(*pfd);
 }
 #define nm_auto_close nm_auto(_nm_auto_close)
 
