@@ -5608,12 +5608,14 @@ sysctl_set_internal(NMPlatform *platform,
                     const char *path,
                     const char *value)
 {
-    int           fd, tries;
+    int           fd;
+    int           tries;
     gssize        nwrote;
     gssize        len;
     char         *actual;
     gs_free char *actual_free = NULL;
     int           errsv;
+    int           r;
 
     if (dirfd < 0) {
         pathid = path;
@@ -5707,18 +5709,13 @@ sysctl_set_internal(NMPlatform *platform,
         _LOGE("sysctl: failed to set '%s' to '%s' after three attempts", path, value);
     }
 
-    if (nwrote < len - 1) {
-        if (nm_close(fd) != 0) {
-            if (errsv != 0)
-                errno = errsv;
-        } else if (errsv != 0)
-            errno = errsv;
-        else
-            errno = EIO;
-        return FALSE;
-    }
-    if (nm_close(fd) != 0) {
-        /* errno is already properly set. */
+    r = nm_close_with_error(fd);
+    if (r < 0 || nwrote < len - 1) {
+        if (errsv == 0) {
+            /* propagate the error from nm_close_with_error(). */
+            errsv = (r < 0) ? -r : EIO;
+        }
+        errno = errsv;
         return FALSE;
     }
 

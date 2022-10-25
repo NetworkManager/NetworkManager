@@ -352,6 +352,7 @@ nm_utils_file_set_contents(const char            *filename,
     int           errsv;
     gssize        s;
     int           fd;
+    int           r;
 
     g_return_val_if_fail(filename, FALSE);
     g_return_val_if_fail(contents || !length, FALSE);
@@ -415,7 +416,16 @@ nm_utils_file_set_contents(const char            *filename,
                                    tmp_name);
     }
 
-    nm_close(fd);
+    r = nm_close_with_error(fd);
+    if (r < 0) {
+        errsv = NM_ERRNO_NATIVE(-r);
+        unlink(tmp_name);
+        return _get_contents_error(error,
+                                   errsv,
+                                   out_errsv,
+                                   "failed close() after writing file %s",
+                                   tmp_name);
+    }
 
     if (rename(tmp_name, filename)) {
         errsv = NM_ERRNO_NATIVE(errno);

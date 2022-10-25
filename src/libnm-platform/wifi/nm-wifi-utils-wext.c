@@ -90,7 +90,7 @@ dispose(GObject *object)
 {
     NMWifiUtilsWext *wext = NM_WIFI_UTILS_WEXT(object);
 
-    wext->fd = nm_close(wext->fd);
+    nm_clear_fd(&wext->fd);
 }
 
 static gboolean
