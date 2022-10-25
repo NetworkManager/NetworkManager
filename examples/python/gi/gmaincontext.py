@@ -259,7 +259,6 @@ def create_nmc(dbus_connection):
     # This actually should not happen. There is no other reason why
     # initialization can fail.
     assert False, "NMClient initialization is not supposed to fail"
-    return nmc
 
 
 ###############################################################################
@@ -296,12 +295,11 @@ def make_call(nmc):
                 else:
                     log(f"[make_call]: dbus_call() completed with error: {e}")
 
-                if False:
-                    # I don't understand why, but if you hit this exception (e.g. by setting a low
-                    # timeout) and pass the exception to the out context, then an additional reference
-                    # to nmc is leaked, and destroy_nmc() will fail. Workaround
-                    r.error = e
-
+                # I don't understand why, but if you hit this exception (e.g. by setting a low
+                # timeout) and pass the exception to the out context, then an additional reference
+                # to nmc is leaked, and destroy_nmc() will fail. Workaround
+                #
+                #r.error = e
                 r.error = str(e)
             else:
                 log(
