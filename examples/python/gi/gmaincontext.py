@@ -299,7 +299,7 @@ def make_call(nmc):
                 # timeout) and pass the exception to the out context, then an additional reference
                 # to nmc is leaked, and destroy_nmc() will fail. Workaround
                 #
-                #r.error = e
+                # r.error = e
                 r.error = str(e)
             else:
                 log(
