@@ -3,7 +3,7 @@
  * Copyright (C) 2018 Red Hat, Inc.
  */
 
-#ifndef __NM_ETHTOOL_UTILS_H__ /* lgtm[cpp/duplicate-include-guard] */
+#ifndef __NM_ETHTOOL_UTILS_H__
 #define __NM_ETHTOOL_UTILS_H__
 
 G_BEGIN_DECLS
