@@ -198,6 +198,13 @@ typedef struct {
 
 #define NM_ETHER_ADDR_INIT(...) ((NMEtherAddr) _NM_ETHER_ADDR_INIT(__VA_ARGS__))
 
+struct _NMIPAddr;
+extern const struct _NMIPAddr nm_ip_addr_zero;
+
+/* Let's reuse nm_ip_addr_zero also for nm_ether_addr_zero. It's a union that
+ * also contains a NMEtherAddr field. */
+#define nm_ether_addr_zero (*((const NMEtherAddr *) ((gconstpointer) &nm_ip_addr_zero)))
+
 static inline int
 nm_ether_addr_cmp(const NMEtherAddr *a, const NMEtherAddr *b)
 {
@@ -212,6 +219,12 @@ nm_ether_addr_equal(const NMEtherAddr *a, const NMEtherAddr *b)
     return nm_ether_addr_cmp(a, b) == 0;
 }
 
+static inline gboolean
+nm_ether_addr_is_zero(const NMEtherAddr *a)
+{
+    return nm_memeq(a, &nm_ether_addr_zero, sizeof(NMEtherAddr));
+}
+
 /*****************************************************************************/
 
 struct ether_addr;
@@ -221,6 +234,7 @@ nm_utils_ether_addr_cmp(const struct ether_addr *a1, const struct ether_addr *a2
 {
     nm_assert(a1);
     nm_assert(a2);
+
     return memcmp(a1, a2, 6 /*ETH_ALEN*/);
 }
 
@@ -2598,6 +2612,9 @@ nm_ether_addr_to_string(const NMEtherAddr *ether_addr, char sbuf[static(sizeof(N
 
 #define nm_ether_addr_to_string_a(ether_addr) \
     nm_ether_addr_to_string((ether_addr), g_alloca(sizeof(NMEtherAddr) * 3))
+
+#define nm_ether_addr_to_string_dup(ether_addr) \
+    ((char *) nm_ether_addr_to_string((ether_addr), g_malloc(sizeof(NMEtherAddr) * 3)))
 
 NMEtherAddr *nm_ether_addr_from_string(NMEtherAddr *addr, const char *str);
 

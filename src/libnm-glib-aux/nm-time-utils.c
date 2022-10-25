@@ -301,8 +301,13 @@ nm_utils_monotonic_timestamp_from_boottime(guint64 boottime, gint64 timestamp_ns
 
     nm_assert(offset <= 0 && offset > G_MININT64);
 
-    /* check for overflow (note that offset is non-positive). */
-    g_return_val_if_fail(boottime < G_MAXINT64, G_MAXINT64);
+    if (boottime >= (guint64) G_MAXINT64) {
+        /* This indicates infinity. We keep it at such. */
+        return G_MAXINT64;
+    }
+
+    /* Note that overflow cannot happen, because bootime is non-negative, and
+     * offset is non-positive. */
 
     return (gint64) boottime + offset;
 }
@@ -318,6 +323,16 @@ nm_utils_clock_gettime_nsec(clockid_t clockid)
 }
 
 gint64
+nm_utils_clock_gettime_usec(clockid_t clockid)
+{
+    struct timespec tp;
+
+    if (clock_gettime(clockid, &tp) != 0)
+        return -NM_ERRNO_NATIVE(errno);
+    return nm_utils_timespec_to_usec(&tp);
+}
+
+gint64
 nm_utils_clock_gettime_msec(clockid_t clockid)
 {
     struct timespec tp;
@@ -325,4 +340,37 @@ nm_utils_clock_gettime_msec(clockid_t clockid)
     if (clock_gettime(clockid, &tp) != 0)
         return -NM_ERRNO_NATIVE(errno);
     return nm_utils_timespec_to_msec(&tp);
+}
+
+/*****************************************************************************/
+
+/* Taken from systemd's map_clock_usec_internal(). */
+gint64
+nm_time_map_clock(gint64 from, gint64 from_base, gint64 to_base)
+{
+    /* Maps the time 'from' between two clocks, based on a common reference point where the first clock
+     * is at 'from_base' and the second clock at 'to_base'. Basically calculates:
+     *
+     *         from - from_base + to_base
+     *
+     * But takes care of overflows/underflows and avoids signed operations. */
+
+    if (from >= from_base) {
+        gint64 delta = from - from_base;
+
+        /* In the future */
+        if (to_base >= G_MAXINT64 - delta)
+            return G_MAXINT64;
+
+        return to_base + delta;
+
+    } else {
+        gint64 delta = from_base - from;
+
+        /* In the past */
+        if (to_base <= G_MININT64 + delta)
+            return G_MININT64;
+
+        return to_base - delta;
+    }
 }

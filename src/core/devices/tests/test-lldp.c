@@ -12,9 +12,8 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+#include "libnm-lldp/nm-lldp.h"
 #include "devices/nm-lldp-listener.h"
-#include "libnm-systemd-core/nm-sd.h"
-
 #include "platform/tests/test-common.h"
 
 #include "nm-test-utils-core.h"
@@ -191,9 +190,9 @@ _test_recv_data0_check_do(GMainLoop *loop, NMLldpListener *listener, const TestR
     g_assert_cmpint(g_variant_n_children(neighbors), ==, 1);
 
     neighbor = get_lldp_neighbor(neighbors,
-                                 SD_LLDP_CHASSIS_SUBTYPE_MAC_ADDRESS,
+                                 NM_LLDP_CHASSIS_SUBTYPE_MAC_ADDRESS,
                                  "00:01:02:03:04:05",
-                                 SD_LLDP_PORT_SUBTYPE_INTERFACE_NAME,
+                                 NM_LLDP_PORT_SUBTYPE_INTERFACE_NAME,
                                  "1/3");
     g_assert(neighbor);
     g_assert_cmpint(g_variant_n_children(neighbor), ==, 1 + 4 + 4);
@@ -547,9 +546,9 @@ _test_recv_data1_check(GMainLoop *loop, NMLldpListener *listener, TestRecvCallba
     g_assert_cmpint(g_variant_n_children(neighbors), ==, 1);
 
     neighbor = get_lldp_neighbor(neighbors,
-                                 SD_LLDP_CHASSIS_SUBTYPE_MAC_ADDRESS,
+                                 NM_LLDP_CHASSIS_SUBTYPE_MAC_ADDRESS,
                                  "00:01:30:F9:AD:A0",
-                                 SD_LLDP_PORT_SUBTYPE_INTERFACE_NAME,
+                                 NM_LLDP_PORT_SUBTYPE_INTERFACE_NAME,
                                  "1/1");
     g_assert(neighbor);
     g_assert_cmpint(g_variant_n_children(neighbor), ==, 1 + 4 + 16);
@@ -874,7 +873,6 @@ test_recv(TestRecvFixture *fixture, gconstpointer user_data)
     TestRecvCallbackInfo info = {};
     gsize                i_frames;
     GError              *error = NULL;
-    guint                sd_id;
 
     if (fixture->ifindex == 0) {
         g_test_skip("Tun device not available");
@@ -884,8 +882,7 @@ test_recv(TestRecvFixture *fixture, gconstpointer user_data)
     listener = nm_lldp_listener_new(fixture->ifindex, lldp_neighbors_changed, &info, &error);
     nmtst_assert_success(listener, error);
 
-    loop  = g_main_loop_new(NULL, FALSE);
-    sd_id = nm_sd_event_attach_default();
+    loop = g_main_loop_new(NULL, FALSE);
 
     for (i_frames = 0; i_frames < data->frames_len; i_frames++) {
         const TestRecvFrame *f = data->frames[i_frames];
@@ -902,7 +899,6 @@ test_recv(TestRecvFixture *fixture, gconstpointer user_data)
 
     nm_clear_pointer(&listener, nm_lldp_listener_destroy);
 
-    nm_clear_g_source(&sd_id);
     nm_clear_pointer(&loop, g_main_loop_unref);
 }
 

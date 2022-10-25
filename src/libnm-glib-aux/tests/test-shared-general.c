@@ -11,6 +11,7 @@
 #include "libnm-glib-aux/nm-time-utils.h"
 #include "libnm-glib-aux/nm-ref-string.h"
 #include "libnm-glib-aux/nm-io-utils.h"
+#include "libnm-glib-aux/nm-prioq.h"
 
 #include "libnm-glib-aux/nm-test-utils.h"
 
@@ -85,6 +86,38 @@ static void
 test_monotonic_timestamp(void)
 {
     g_assert(nm_utils_get_monotonic_timestamp_sec() > 0);
+}
+
+/*****************************************************************************/
+
+static void
+test_timespect_to(void)
+{
+    struct timespec ts;
+    int             i;
+
+    for (i = 0; i < 1000; i++) {
+        gint64 t_msec;
+        gint64 t_usec;
+        gint64 t_nsec;
+
+        nmtst_rand_buf(NULL, &ts, sizeof(ts));
+        ts.tv_sec  = llabs(ts.tv_sec % 100000);
+        ts.tv_nsec = llabs(ts.tv_nsec % NM_UTILS_NSEC_PER_SEC);
+
+        t_msec = nm_utils_timespec_to_msec(&ts);
+        t_usec = nm_utils_timespec_to_usec(&ts);
+        t_nsec = nm_utils_timespec_to_nsec(&ts);
+
+        g_assert_cmpint(t_msec, <=, t_usec / 1000);
+        g_assert_cmpint(t_msec + 1, >=, t_usec / 1000);
+
+        g_assert_cmpint(t_msec, <=, t_nsec / 1000000);
+        g_assert_cmpint(t_msec + 1, >=, t_nsec / 1000000);
+
+        g_assert_cmpint(t_usec, <=, t_nsec / 1000);
+        g_assert_cmpint(t_usec + 1, >=, t_nsec / 1000);
+    }
 }
 
 /*****************************************************************************/
@@ -2260,6 +2293,79 @@ test_garray(void)
 
 /*****************************************************************************/
 
+static int
+_prioq_cmp(gconstpointer a, gconstpointer b)
+{
+    NM_CMP_DIRECT(GPOINTER_TO_UINT(a), GPOINTER_TO_UINT(b));
+    return 0;
+}
+
+static int
+_prioq_cmp_with_data(gconstpointer a, gconstpointer b, gpointer user_data)
+{
+    return _prioq_cmp(a, b);
+}
+
+static void
+test_nm_prioq(void)
+{
+    nm_auto_prioq NMPrioq q = NM_PRIOQ_ZERO;
+    gpointer              data[200];
+    gpointer              data_pop[200];
+    guint                 data_idx[G_N_ELEMENTS(data)];
+    guint                 i;
+    guint                 n;
+    gpointer              p;
+
+    if (nmtst_get_rand_one_case_in(10))
+        return;
+
+    if (nmtst_get_rand_bool())
+        nm_prioq_init(&q, _prioq_cmp);
+    else
+        nm_prioq_init_with_data(&q, _prioq_cmp_with_data, NULL);
+
+    g_assert(nm_prioq_size(&q) == 0);
+
+    if (nmtst_get_rand_one_case_in(10))
+        return;
+
+    for (i = 0; i < G_N_ELEMENTS(data); i++) {
+        data[i]     = GUINT_TO_POINTER((nmtst_get_rand_uint32() % G_N_ELEMENTS(data)) + 1u);
+        data_idx[i] = NM_PRIOQ_IDX_NULL;
+    }
+
+    nm_prioq_put(&q, data[0], NULL);
+    g_assert(nm_prioq_size(&q) == 1);
+
+    p = nm_prioq_pop(&q);
+    g_assert(p == data[0]);
+    g_assert(nm_prioq_size(&q) == 0);
+
+    g_assert(!nm_prioq_pop(&q));
+
+    n = nmtst_get_rand_uint32() % G_N_ELEMENTS(data);
+    for (i = 0; i < n; i++)
+        nm_prioq_put(&q, data[i], &data_idx[i]);
+
+    g_assert_cmpint(nm_prioq_size(&q), ==, n);
+
+    if (nmtst_get_rand_one_case_in(10))
+        return;
+
+    for (i = 0; i < n; i++) {
+        data_pop[i] = nm_prioq_pop(&q);
+        g_assert(data_pop[i]);
+        if (i > 0)
+            g_assert(_prioq_cmp(data_pop[i - 1], data_pop[i]) <= 0);
+    }
+
+    g_assert(!nm_prioq_pop(&q));
+    g_assert(nm_prioq_size(&q) == 0);
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE();
 
 int
@@ -2270,6 +2376,7 @@ main(int argc, char **argv)
     g_test_add_func("/general/test_nm_static_assert", test_nm_static_assert);
     g_test_add_func("/general/test_gpid", test_gpid);
     g_test_add_func("/general/test_monotonic_timestamp", test_monotonic_timestamp);
+    g_test_add_func("/general/test_timespect_to", test_timespect_to);
     g_test_add_func("/general/test_nmhash", test_nmhash);
     g_test_add_func("/general/test_nm_make_strv", test_make_strv);
     g_test_add_func("/general/test_nm_strdup_int", test_nm_strdup_int);
@@ -2306,6 +2413,7 @@ main(int argc, char **argv)
     g_test_add_func("/general/test_hostname_is_valid", test_hostname_is_valid);
     g_test_add_func("/general/test_inet_utils", test_inet_utils);
     g_test_add_func("/general/test_garray", test_garray);
+    g_test_add_func("/general/test_nm_prioq", test_nm_prioq);
 
     return g_test_run();
 }
