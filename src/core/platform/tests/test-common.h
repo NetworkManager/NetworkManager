@@ -508,6 +508,10 @@ const NMPlatformLink *nmtstp_link_vti_add(NMPlatform             *platform,
                                           gboolean                external_command,
                                           const char             *name,
                                           const NMPlatformLnkVti *lnk);
+const NMPlatformLink *nmtstp_link_vti6_add(NMPlatform              *platform,
+                                           gboolean                 external_command,
+                                           const char              *name,
+                                           const NMPlatformLnkVti6 *lnk);
 const NMPlatformLink *nmtstp_link_vrf_add(NMPlatform             *platform,
                                           int                     external_command,
                                           const char             *name,

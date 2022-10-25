@@ -1286,9 +1286,10 @@ test_software_detect(gconstpointer user_data)
     const gboolean                   ext        = test_data->external_command;
     NMPlatformLnkBridge              lnk_bridge = {};
     NMPlatformLnkTun                 lnk_tun;
-    NMPlatformLnkGre                 lnk_gre = {};
-    NMPlatformLnkVti                 lnk_vti = {};
-    nm_auto_close int                tun_fd  = -1;
+    NMPlatformLnkGre                 lnk_gre  = {};
+    NMPlatformLnkVti                 lnk_vti  = {};
+    NMPlatformLnkVti6                lnk_vti6 = {};
+    nm_auto_close int                tun_fd   = -1;
 
     nmtstp_run_command_check("ip link add %s type dummy", PARENT_NAME);
     ifindex_parent =
@@ -1642,6 +1643,32 @@ test_software_detect(gconstpointer user_data)
         }
         break;
     }
+    case NM_LINK_TYPE_VTI6:
+    {
+        gboolean gracefully_skip = FALSE;
+
+        if (!nm_platform_link_get_by_ifname(NM_PLATFORM_GET, "ip6_vti0")) {
+            /* Seems that the ip6_vti module is not loaded... try to load it. */
+            gracefully_skip = nmp_utils_modprobe(NULL, TRUE, "ip6_vti", NULL) != 0;
+        }
+
+        lnk_vti6.local          = nmtst_inet6_from_string("fd01::1");
+        lnk_vti6.remote         = nmtst_inet6_from_string("fd02::2");
+        lnk_vti6.parent_ifindex = ifindex_parent;
+        lnk_vti6.fwmark         = 0x43;
+        lnk_vti6.ikey           = 13;
+        lnk_vti6.okey           = 14;
+
+        if (!nmtstp_link_vti6_add(NULL, ext, DEVICE_NAME, &lnk_vti6)) {
+            if (gracefully_skip) {
+                g_test_skip(
+                    "Cannot create vti6 tunnel because of missing vti module (modprobe ip_vti)");
+                goto out_delete_parent;
+            }
+            g_error("Failed adding VTI6 tunnel");
+        }
+        break;
+    }
     case NM_LINK_TYPE_VXLAN:
     {
         NMPlatformLnkVxlan lnk_vxlan = {};
@@ -1990,6 +2017,14 @@ test_software_detect(gconstpointer user_data)
 
             g_assert(plnk == nm_platform_link_get_lnk_vti(NM_PLATFORM_GET, ifindex, NULL));
             g_assert(nm_platform_lnk_vti_cmp(plnk, &lnk_vti) == 0);
+            break;
+        }
+        case NM_LINK_TYPE_VTI6:
+        {
+            const NMPlatformLnkVti6 *plnk = &lnk->lnk_vti6;
+
+            g_assert(plnk == nm_platform_link_get_lnk_vti6(NM_PLATFORM_GET, ifindex, NULL));
+            g_assert(nm_platform_lnk_vti6_cmp(plnk, &lnk_vti6) == 0);
             break;
         }
         case NM_LINK_TYPE_VXLAN:
@@ -3897,6 +3932,7 @@ _nmtstp_setup_tests(void)
         test_software_detect_add("/link/software/detect/vlan/0", NM_LINK_TYPE_VLAN, 0);
         test_software_detect_add("/link/software/detect/vlan/1", NM_LINK_TYPE_VLAN, 1);
         test_software_detect_add("/link/software/detect/vti", NM_LINK_TYPE_VTI, 0);
+        test_software_detect_add("/link/software/detect/vti6", NM_LINK_TYPE_VTI6, 0);
         test_software_detect_add("/link/software/detect/vrf", NM_LINK_TYPE_VRF, 0);
         test_software_detect_add("/link/software/detect/vxlan/0", NM_LINK_TYPE_VXLAN, 0);
         test_software_detect_add("/link/software/detect/vxlan/1", NM_LINK_TYPE_VXLAN, 1);

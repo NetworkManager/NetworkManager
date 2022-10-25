@@ -823,6 +823,15 @@ typedef struct {
 } _nm_alignas(NMPlatformObject) NMPlatformLnkVti;
 
 typedef struct {
+    int             parent_ifindex;
+    struct in6_addr local;
+    struct in6_addr remote;
+    guint32         ikey;
+    guint32         okey;
+    guint32         fwmark;
+} _nm_alignas(NMPlatformObject) NMPlatformLnkVti6;
+
+typedef struct {
     int     parent_ifindex;
     guint64 sci; /* host byte order */
     guint64 cipher_suite;
@@ -1697,6 +1706,15 @@ nm_platform_link_vti_add(NMPlatform             *self,
 }
 
 static inline int
+nm_platform_link_vti6_add(NMPlatform              *self,
+                          const char              *name,
+                          const NMPlatformLnkVti6 *props,
+                          const NMPlatformLink   **out_link)
+{
+    return nm_platform_link_add(self, NM_LINK_TYPE_VTI6, name, 0, NULL, 0, 0, props, out_link);
+}
+
+static inline int
 nm_platform_link_vxlan_add(NMPlatform               *self,
                            const char               *name,
                            const NMPlatformLnkVxlan *props,
@@ -1987,6 +2005,8 @@ const NMPlatformLnkVrf *
 nm_platform_link_get_lnk_vrf(NMPlatform *self, int ifindex, const NMPlatformLink **out_link);
 const NMPlatformLnkVti *
 nm_platform_link_get_lnk_vti(NMPlatform *self, int ifindex, const NMPlatformLink **out_link);
+const NMPlatformLnkVti6 *
+nm_platform_link_get_lnk_vti6(NMPlatform *self, int ifindex, const NMPlatformLink **out_link);
 const NMPlatformLnkVxlan *
 nm_platform_link_get_lnk_vxlan(NMPlatform *self, int ifindex, const NMPlatformLink **out_link);
 const NMPlatformLnkWireGuard *
@@ -2276,6 +2296,7 @@ const char *nm_platform_lnk_tun_to_string(const NMPlatformLnkTun *lnk, char *buf
 const char *nm_platform_lnk_vlan_to_string(const NMPlatformLnkVlan *lnk, char *buf, gsize len);
 const char *nm_platform_lnk_vrf_to_string(const NMPlatformLnkVrf *lnk, char *buf, gsize len);
 const char *nm_platform_lnk_vti_to_string(const NMPlatformLnkVti *lnk, char *buf, gsize len);
+const char *nm_platform_lnk_vti6_to_string(const NMPlatformLnkVti6 *lnk, char *buf, gsize len);
 const char *nm_platform_lnk_vxlan_to_string(const NMPlatformLnkVxlan *lnk, char *buf, gsize len);
 const char *
 nm_platform_lnk_wireguard_to_string(const NMPlatformLnkWireGuard *lnk, char *buf, gsize len);
@@ -2327,6 +2348,7 @@ int nm_platform_lnk_tun_cmp(const NMPlatformLnkTun *a, const NMPlatformLnkTun *b
 int nm_platform_lnk_vlan_cmp(const NMPlatformLnkVlan *a, const NMPlatformLnkVlan *b);
 int nm_platform_lnk_vrf_cmp(const NMPlatformLnkVrf *a, const NMPlatformLnkVrf *b);
 int nm_platform_lnk_vti_cmp(const NMPlatformLnkVti *a, const NMPlatformLnkVti *b);
+int nm_platform_lnk_vti6_cmp(const NMPlatformLnkVti6 *a, const NMPlatformLnkVti6 *b);
 int nm_platform_lnk_vxlan_cmp(const NMPlatformLnkVxlan *a, const NMPlatformLnkVxlan *b);
 int nm_platform_lnk_wireguard_cmp(const NMPlatformLnkWireGuard *a, const NMPlatformLnkWireGuard *b);
 
@@ -2390,6 +2412,7 @@ void nm_platform_lnk_tun_hash_update(const NMPlatformLnkTun *obj, NMHashState *h
 void nm_platform_lnk_vlan_hash_update(const NMPlatformLnkVlan *obj, NMHashState *h);
 void nm_platform_lnk_vrf_hash_update(const NMPlatformLnkVrf *obj, NMHashState *h);
 void nm_platform_lnk_vti_hash_update(const NMPlatformLnkVti *obj, NMHashState *h);
+void nm_platform_lnk_vti6_hash_update(const NMPlatformLnkVti6 *obj, NMHashState *h);
 void nm_platform_lnk_vxlan_hash_update(const NMPlatformLnkVxlan *obj, NMHashState *h);
 void nm_platform_lnk_wireguard_hash_update(const NMPlatformLnkWireGuard *obj, NMHashState *h);
 

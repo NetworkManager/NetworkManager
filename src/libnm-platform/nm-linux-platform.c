@@ -809,6 +809,7 @@ static const LinkDesc link_descs[] = {
     [NM_LINK_TYPE_VLAN]        = {"vlan", "vlan", "vlan"},
     [NM_LINK_TYPE_VRF]         = {"vrf", "vrf", "vrf"},
     [NM_LINK_TYPE_VTI]         = {"vti", "vti", NULL},
+    [NM_LINK_TYPE_VTI6]        = {"vti6", "vti6", NULL},
     [NM_LINK_TYPE_VXLAN]       = {"vxlan", "vxlan", "vxlan"},
     [NM_LINK_TYPE_WIREGUARD]   = {"wireguard", "wireguard", "wireguard"},
 
@@ -852,6 +853,7 @@ _link_type_from_rtnl_type(const char *name)
         NM_LINK_TYPE_VLAN,        /* "vlan"        */
         NM_LINK_TYPE_VRF,         /* "vrf"         */
         NM_LINK_TYPE_VTI,         /* "vti"         */
+        NM_LINK_TYPE_VTI6,        /* "vti6"        */
         NM_LINK_TYPE_VXLAN,       /* "vxlan"       */
         NM_LINK_TYPE_WIMAX,       /* "wimax"       */
         NM_LINK_TYPE_WIREGUARD,   /* "wireguard"   */
@@ -2441,6 +2443,42 @@ _parse_lnk_vti(const char *kind, struct nlattr *info_data)
 }
 
 static NMPObject *
+_parse_lnk_vti6(const char *kind, struct nlattr *info_data)
+{
+    static const struct nla_policy policy[] = {
+        [IFLA_VTI_LINK]   = {.type = NLA_U32},
+        [IFLA_VTI_LOCAL]  = {.minlen = sizeof(struct in6_addr)},
+        [IFLA_VTI_REMOTE] = {.minlen = sizeof(struct in6_addr)},
+        [IFLA_VTI_IKEY]   = {.type = NLA_U32},
+        [IFLA_VTI_OKEY]   = {.type = NLA_U32},
+        [IFLA_VTI_FWMARK] = {.type = NLA_U32},
+    };
+    struct nlattr     *tb[G_N_ELEMENTS(policy)];
+    NMPObject         *obj;
+    NMPlatformLnkVti6 *props;
+
+    if (!info_data || !nm_streq0(kind, "vti6"))
+        return NULL;
+
+    if (nla_parse_nested_arr(tb, info_data, policy) < 0)
+        return NULL;
+
+    obj   = nmp_object_new(NMP_OBJECT_TYPE_LNK_VTI6, NULL);
+    props = &obj->lnk_vti6;
+
+    props->parent_ifindex = tb[IFLA_VTI_LINK] ? nla_get_u32(tb[IFLA_VTI_LINK]) : 0;
+    if (tb[IFLA_VTI_LOCAL])
+        props->local = *nla_data_as(struct in6_addr, tb[IFLA_VTI_LOCAL]);
+    if (tb[IFLA_VTI_REMOTE])
+        props->remote = *nla_data_as(struct in6_addr, tb[IFLA_VTI_REMOTE]);
+    props->ikey   = tb[IFLA_VTI_IKEY] ? ntohl(nla_get_u32(tb[IFLA_VTI_IKEY])) : 0;
+    props->okey   = tb[IFLA_VTI_OKEY] ? ntohl(nla_get_u32(tb[IFLA_VTI_OKEY])) : 0;
+    props->fwmark = tb[IFLA_VTI_FWMARK] ? nla_get_u32(tb[IFLA_VTI_FWMARK]) : 0;
+
+    return obj;
+}
+
+static NMPObject *
 _parse_lnk_vrf(const char *kind, struct nlattr *info_data)
 {
     static const struct nla_policy policy[] = {
@@ -3432,6 +3470,9 @@ _new_from_nl_link(NMPlatform            *platform,
         break;
     case NM_LINK_TYPE_VTI:
         lnk_data = _parse_lnk_vti(nl_info_kind, nl_info_data);
+        break;
+    case NM_LINK_TYPE_VTI6:
+        lnk_data = _parse_lnk_vti6(nl_info_kind, nl_info_data);
         break;
     case NM_LINK_TYPE_VXLAN:
         lnk_data = _parse_lnk_vxlan(nl_info_kind, nl_info_data);
@@ -4972,6 +5013,26 @@ _nl_msg_new_link_set_linkinfo(struct nl_msg *msg, NMLinkType link_type, gconstpo
             NLA_PUT_U32(msg, IFLA_VTI_LINK, props->parent_ifindex);
         NLA_PUT_U32(msg, IFLA_VTI_LOCAL, props->local);
         NLA_PUT_U32(msg, IFLA_VTI_REMOTE, props->remote);
+        NLA_PUT_U32(msg, IFLA_VTI_IKEY, htonl(props->ikey));
+        NLA_PUT_U32(msg, IFLA_VTI_OKEY, htonl(props->okey));
+        NLA_PUT_U32(msg, IFLA_VTI_FWMARK, props->fwmark);
+        break;
+    }
+    case NM_LINK_TYPE_VTI6:
+    {
+        const NMPlatformLnkVti6 *props = extra_data;
+
+        nm_assert(props);
+
+        if (!(data = nla_nest_start(msg, IFLA_INFO_DATA)))
+            goto nla_put_failure;
+
+        if (props->parent_ifindex > 0)
+            NLA_PUT_U32(msg, IFLA_VTI_LINK, props->parent_ifindex);
+        if (!IN6_IS_ADDR_UNSPECIFIED(&props->local))
+            NLA_PUT(msg, IFLA_VTI_LOCAL, sizeof(props->local), &props->local);
+        if (!IN6_IS_ADDR_UNSPECIFIED(&props->remote))
+            NLA_PUT(msg, IFLA_VTI_REMOTE, sizeof(props->remote), &props->remote);
         NLA_PUT_U32(msg, IFLA_VTI_IKEY, htonl(props->ikey));
         NLA_PUT_U32(msg, IFLA_VTI_OKEY, htonl(props->okey));
         NLA_PUT_U32(msg, IFLA_VTI_FWMARK, props->fwmark);

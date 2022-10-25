@@ -301,6 +301,10 @@ typedef struct {
 } NMPObjectLnkVti;
 
 typedef struct {
+    NMPlatformLnkVti6 _public;
+} NMPObjectLnkVti6;
+
+typedef struct {
     NMPlatformLnkVxlan _public;
 } NMPObjectLnkVxlan;
 
@@ -402,6 +406,9 @@ struct _NMPObject {
 
         NMPlatformLnkVti lnk_vti;
         NMPObjectLnkVti  _lnk_vti;
+
+        NMPlatformLnkVti6 lnk_vti6;
+        NMPObjectLnkVti6  _lnk_vti6;
 
         NMPlatformLnkVxlan lnk_vxlan;
         NMPObjectLnkVxlan  _lnk_vxlan;
@@ -536,6 +543,7 @@ _NMP_OBJECT_TYPE_IS_OBJ_WITH_IFINDEX(NMPObjectType obj_type)
     case NMP_OBJECT_TYPE_LNK_VLAN:
     case NMP_OBJECT_TYPE_LNK_VRF:
     case NMP_OBJECT_TYPE_LNK_VTI:
+    case NMP_OBJECT_TYPE_LNK_VTI6:
     case NMP_OBJECT_TYPE_LNK_VXLAN:
     case NMP_OBJECT_TYPE_LNK_WIREGUARD:
 
