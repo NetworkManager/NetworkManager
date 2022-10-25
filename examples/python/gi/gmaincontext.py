@@ -467,7 +467,7 @@ def run1():
         log()
         log("EXCEPTION:")
         log(f"{e}")
-        for tb in traceback.format_exception(e):
+        for tb in traceback.format_exception(None, e, e.__traceback__):
             for l in tb.split("\n"):
                 log(f">>> {l}")
         return False
