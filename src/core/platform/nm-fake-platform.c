@@ -271,7 +271,7 @@ link_add_pre(NMPlatform *platform,
         g_assert(address_len == 0);
 
     device->obj        = o;
-    device->ip6_lladdr = *nmtst_inet6_from_string_p(ip6_lladdr);
+    device->ip6_lladdr = nmtst_inet6_from_string(ip6_lladdr);
 
     return device;
 }

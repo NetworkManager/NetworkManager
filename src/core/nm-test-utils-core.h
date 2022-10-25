@@ -72,8 +72,8 @@ nmtst_platform_ip6_address(const char *address, const char *peer_address, guint 
     g_assert(plen <= 128);
 
     memset(&addr, 0, sizeof(addr));
-    addr.address      = *nmtst_inet6_from_string_p(address);
-    addr.peer_address = *nmtst_inet6_from_string_p(peer_address);
+    addr.address      = nmtst_inet6_from_string(address);
+    addr.peer_address = nmtst_inet6_from_string(peer_address);
     addr.plen         = plen;
 
     return &addr;
@@ -148,10 +148,10 @@ nmtst_platform_ip6_route(const char *network, guint plen, const char *gateway, c
     nm_assert(plen <= 128);
 
     memset(&route, 0, sizeof(route));
-    route.network  = *nmtst_inet6_from_string_p(network);
+    route.network  = nmtst_inet6_from_string(network);
     route.plen     = plen;
-    route.gateway  = *nmtst_inet6_from_string_p(gateway);
-    route.pref_src = *nmtst_inet6_from_string_p(pref_src);
+    route.gateway  = nmtst_inet6_from_string(gateway);
+    route.pref_src = nmtst_inet6_from_string(pref_src);
 
     return &route;
 }
