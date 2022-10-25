@@ -297,6 +297,23 @@ clear:
             input_key = g_strdup_printf("%u", lnk->ikey);
         if (lnk->okey)
             input_key = g_strdup_printf("%u", lnk->okey);
+    } else if (priv->mode == NM_IP_TUNNEL_MODE_VTI6) {
+        const NMPlatformLnkVti6 *lnk;
+
+        lnk = nm_platform_link_get_lnk_vti6(nm_device_get_platform(device), ifindex, NULL);
+        if (!lnk) {
+            _LOGW(LOGD_PLATFORM, "could not read %s properties", "vti6");
+            goto clear;
+        }
+
+        parent_ifindex = lnk->parent_ifindex;
+        local.addr6    = lnk->local;
+        remote.addr6   = lnk->remote;
+        fwmark         = lnk->fwmark;
+        if (lnk->ikey)
+            input_key = g_strdup_printf("%u", lnk->ikey);
+        if (lnk->okey)
+            input_key = g_strdup_printf("%u", lnk->okey);
     } else
         g_return_if_reached();
 
@@ -463,7 +480,8 @@ update_connection(NMDevice *device, NMConnection *connection)
                   NM_IP_TUNNEL_MODE_GRETAP,
                   NM_IP_TUNNEL_MODE_IP6GRE,
                   NM_IP_TUNNEL_MODE_IP6GRETAP,
-                  NM_IP_TUNNEL_MODE_VTI)) {
+                  NM_IP_TUNNEL_MODE_VTI,
+                  NM_IP_TUNNEL_MODE_VTI6)) {
         if (g_strcmp0(nm_setting_ip_tunnel_get_input_key(s_ip_tunnel), priv->input_key)) {
             g_object_set(G_OBJECT(s_ip_tunnel),
                          NM_SETTING_IP_TUNNEL_INPUT_KEY,
@@ -530,7 +548,7 @@ check_connection_compatible(NMDevice *device, NMConnection *connection, GError *
             return FALSE;
         }
 
-        if (mode != NM_IP_TUNNEL_MODE_VTI
+        if (!NM_IN_SET(mode, NM_IP_TUNNEL_MODE_VTI, NM_IP_TUNNEL_MODE_VTI6)
             && nm_setting_ip_tunnel_get_ttl(s_ip_tunnel) != priv->ttl) {
             nm_utils_error_set_literal(error,
                                        NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
@@ -538,7 +556,7 @@ check_connection_compatible(NMDevice *device, NMConnection *connection, GError *
             return FALSE;
         }
 
-        if (mode != NM_IP_TUNNEL_MODE_VTI
+        if (!NM_IN_SET(mode, NM_IP_TUNNEL_MODE_VTI, NM_IP_TUNNEL_MODE_VTI6)
             && nm_setting_ip_tunnel_get_tos(s_ip_tunnel) != priv->tos) {
             nm_utils_error_set_literal(error,
                                        NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
@@ -547,7 +565,7 @@ check_connection_compatible(NMDevice *device, NMConnection *connection, GError *
         }
 
         if (priv->addr_family == AF_INET) {
-            if (mode != NM_IP_TUNNEL_MODE_VTI
+            if (!NM_IN_SET(mode, NM_IP_TUNNEL_MODE_VTI, NM_IP_TUNNEL_MODE_VTI6)
                 && nm_setting_ip_tunnel_get_path_mtu_discovery(s_ip_tunnel)
                        != priv->path_mtu_discovery) {
                 nm_utils_error_set(error,
@@ -606,6 +624,8 @@ platform_link_to_tunnel_mode(const NMPlatformLink *link)
         return NM_IP_TUNNEL_MODE_SIT;
     case NM_LINK_TYPE_VTI:
         return NM_IP_TUNNEL_MODE_VTI;
+    case NM_LINK_TYPE_VTI6:
+        return NM_IP_TUNNEL_MODE_VTI6;
     default:
         g_return_val_if_reached(NM_IP_TUNNEL_MODE_UNKNOWN);
     }
@@ -633,6 +653,7 @@ tunnel_mode_to_link_type(NMIPTunnelMode tunnel_mode)
     case NM_IP_TUNNEL_MODE_VTI:
         return NM_LINK_TYPE_VTI;
     case NM_IP_TUNNEL_MODE_VTI6:
+        return NM_LINK_TYPE_VTI6;
     case NM_IP_TUNNEL_MODE_ISATAP:
         return NM_LINK_TYPE_UNKNOWN;
     case NM_IP_TUNNEL_MODE_UNKNOWN:
@@ -657,6 +678,7 @@ create_and_realize(NMDevice              *device,
     NMPlatformLnkIpIp   lnk_ipip   = {};
     NMPlatformLnkIp6Tnl lnk_ip6tnl = {};
     NMPlatformLnkVti    lnk_vti    = {};
+    NMPlatformLnkVti6   lnk_vti6   = {};
     const char         *str;
     gint64              val;
     NMIPTunnelMode      mode;
@@ -911,6 +933,44 @@ create_and_realize(NMDevice              *device,
             return FALSE;
         }
         break;
+    case NM_IP_TUNNEL_MODE_VTI6:
+        if (parent)
+            lnk_vti6.parent_ifindex = nm_device_get_ifindex(parent);
+
+        str = nm_setting_ip_tunnel_get_local(s_ip_tunnel);
+        if (str)
+            inet_pton(AF_INET6, str, &lnk_vti6.local);
+
+        str = nm_setting_ip_tunnel_get_remote(s_ip_tunnel);
+        nm_assert(str);
+        inet_pton(AF_INET6, str, &lnk_vti6.remote);
+
+        lnk_vti6.ikey =
+            _nm_utils_ascii_str_to_int64(nm_setting_ip_tunnel_get_input_key(s_ip_tunnel),
+                                         10,
+                                         0,
+                                         G_MAXUINT32,
+                                         0);
+        lnk_vti6.okey =
+            _nm_utils_ascii_str_to_int64(nm_setting_ip_tunnel_get_output_key(s_ip_tunnel),
+                                         10,
+                                         0,
+                                         G_MAXUINT32,
+                                         0);
+        lnk_vti6.fwmark = nm_setting_ip_tunnel_get_fwmark(s_ip_tunnel);
+
+        r = nm_platform_link_vti6_add(nm_device_get_platform(device), iface, &lnk_vti6, out_plink);
+        if (r < 0) {
+            g_set_error(error,
+                        NM_DEVICE_ERROR,
+                        NM_DEVICE_ERROR_CREATION_FAILED,
+                        "Failed to create VTI6 interface '%s' for '%s': %s",
+                        iface,
+                        nm_connection_get_id(connection),
+                        nm_strerror(r));
+            return FALSE;
+        }
+        break;
     default:
         g_set_error(error,
                     NM_DEVICE_ERROR,
@@ -1064,7 +1124,8 @@ constructed(GObject *object)
                   NM_IP_TUNNEL_MODE_IPIP6,
                   NM_IP_TUNNEL_MODE_IP6IP6,
                   NM_IP_TUNNEL_MODE_IP6GRE,
-                  NM_IP_TUNNEL_MODE_IP6GRETAP))
+                  NM_IP_TUNNEL_MODE_IP6GRETAP,
+                  NM_IP_TUNNEL_MODE_VTI6))
         priv->addr_family = AF_INET6;
     else
         priv->addr_family = AF_INET;
@@ -1144,7 +1205,8 @@ nm_device_ip_tunnel_class_init(NMDeviceIPTunnelClass *klass)
                                                            NM_LINK_TYPE_IP6GRETAP,
                                                            NM_LINK_TYPE_IPIP,
                                                            NM_LINK_TYPE_SIT,
-                                                           NM_LINK_TYPE_VTI);
+                                                           NM_LINK_TYPE_VTI,
+                                                           NM_LINK_TYPE_VTI6);
 
     device_class->act_stage1_prepare          = act_stage1_prepare;
     device_class->link_changed                = link_changed;
@@ -1340,7 +1402,8 @@ NM_DEVICE_FACTORY_DEFINE_INTERNAL(
                                          NM_LINK_TYPE_IP6TNL,
                                          NM_LINK_TYPE_IP6GRE,
                                          NM_LINK_TYPE_IP6GRETAP,
-                                         NM_LINK_TYPE_VTI)
+                                         NM_LINK_TYPE_VTI,
+                                         NM_LINK_TYPE_VTI6)
         NM_DEVICE_FACTORY_DECLARE_SETTING_TYPES(NM_SETTING_IP_TUNNEL_SETTING_NAME),
     factory_class->create_device         = create_device;
     factory_class->get_connection_parent = get_connection_parent;
