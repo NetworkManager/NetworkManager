@@ -180,7 +180,6 @@ def parse_data(tag, line_no, lines):
     assert lines
     parsed_data = {}
     keyword = ""
-    first_line = True
     indent = None
     for line in lines:
         assert "\n" not in line
@@ -207,7 +206,6 @@ def parse_data(tag, line_no, lines):
             if parsed_data and keyword == "property":
                 raise LineError(line_no, 'The "property:" keywork must be first')
             parsed_data[keyword] = text
-            new_keyword_stated = True
             indent = None
         else:
             if content == "":
