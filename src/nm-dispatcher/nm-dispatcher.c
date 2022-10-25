@@ -62,7 +62,7 @@ typedef struct {
     bool shutdown_quitting;
 } GlobalData;
 
-GlobalData gl;
+static GlobalData gl;
 
 typedef struct {
     Request *request;
