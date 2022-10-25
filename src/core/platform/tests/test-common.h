@@ -261,7 +261,7 @@ void     nmtstp_ip_address_assert_lifetime(const NMPlatformIPAddress *addr,
                                            guint32                    expected_preferred);
 
 void nmtstp_ip4_address_add(NMPlatform *platform,
-                            gboolean    external_command,
+                            int         external_command,
                             int         ifindex,
                             in_addr_t   address,
                             int         plen,
@@ -271,7 +271,7 @@ void nmtstp_ip4_address_add(NMPlatform *platform,
                             guint32     flags,
                             const char *label);
 void nmtstp_ip6_address_add(NMPlatform     *platform,
-                            gboolean        external_command,
+                            int             external_command,
                             int             ifindex,
                             struct in6_addr address,
                             int             plen,
@@ -280,13 +280,13 @@ void nmtstp_ip6_address_add(NMPlatform     *platform,
                             guint32         preferred,
                             guint32         flags);
 void nmtstp_ip4_address_del(NMPlatform *platform,
-                            gboolean    external_command,
+                            int         external_command,
                             int         ifindex,
                             in_addr_t   address,
                             int         plen,
                             in_addr_t   peer_address);
 void nmtstp_ip6_address_del(NMPlatform     *platform,
-                            gboolean        external_command,
+                            int             external_command,
                             int             ifindex,
                             struct in6_addr address,
                             int             plen);
@@ -452,8 +452,7 @@ const NMPlatformLink *nmtstp_link_get(NMPlatform *platform, int ifindex, const c
 
 gboolean nmtstp_kernel_support_get(NMPlatformKernelSupportType type);
 
-void
-nmtstp_link_set_updown(NMPlatform *platform, gboolean external_command, int ifindex, gboolean up);
+void nmtstp_link_set_updown(NMPlatform *platform, int external_command, int ifindex, gboolean up);
 
 const NMPlatformLnkBridge *
 nmtstp_link_bridge_normalize_jiffies_time(const NMPlatformLnkBridge *requested,
@@ -461,57 +460,57 @@ nmtstp_link_bridge_normalize_jiffies_time(const NMPlatformLnkBridge *requested,
                                           NMPlatformLnkBridge       *dst);
 
 const NMPlatformLink *nmtstp_link_bridge_add(NMPlatform                *platform,
-                                             gboolean                   external_command,
+                                             int                        external_command,
                                              const char                *name,
                                              const NMPlatformLnkBridge *lnk);
 const NMPlatformLink *nmtstp_link_veth_add(NMPlatform *platform,
-                                           gboolean    external_command,
+                                           int         external_command,
                                            const char *name,
                                            const char *peer);
 const NMPlatformLink *
-nmtstp_link_dummy_add(NMPlatform *platform, gboolean external_command, const char *name);
+nmtstp_link_dummy_add(NMPlatform *platform, int external_command, const char *name);
 const NMPlatformLink *nmtstp_link_gre_add(NMPlatform             *platform,
-                                          gboolean                external_command,
+                                          int                     external_command,
                                           const char             *name,
                                           const NMPlatformLnkGre *lnk);
 const NMPlatformLink *nmtstp_link_ip6tnl_add(NMPlatform                *platform,
-                                             gboolean                   external_command,
+                                             int                        external_command,
                                              const char                *name,
                                              const NMPlatformLnkIp6Tnl *lnk);
 const NMPlatformLink *nmtstp_link_ip6gre_add(NMPlatform                *platform,
-                                             gboolean                   external_command,
+                                             int                        external_command,
                                              const char                *name,
                                              const NMPlatformLnkIp6Tnl *lnk);
 const NMPlatformLink *nmtstp_link_ipip_add(NMPlatform              *platform,
-                                           gboolean                 external_command,
+                                           int                      external_command,
                                            const char              *name,
                                            const NMPlatformLnkIpIp *lnk);
 const NMPlatformLink *nmtstp_link_macvlan_add(NMPlatform                 *platform,
-                                              gboolean                    external_command,
+                                              int                         external_command,
                                               const char                 *name,
                                               int                         parent,
                                               const NMPlatformLnkMacvlan *lnk);
 const NMPlatformLink *nmtstp_link_sit_add(NMPlatform             *platform,
-                                          gboolean                external_command,
+                                          int                     external_command,
                                           const char             *name,
                                           const NMPlatformLnkSit *lnk);
 const NMPlatformLink *nmtstp_link_tun_add(NMPlatform             *platform,
-                                          gboolean                external_command,
+                                          int                     external_command,
                                           const char             *name,
                                           const NMPlatformLnkTun *lnk,
                                           int                    *out_fd);
 const NMPlatformLink *nmtstp_link_vrf_add(NMPlatform             *platform,
-                                          gboolean                external_command,
+                                          int                     external_command,
                                           const char             *name,
                                           const NMPlatformLnkVrf *lnk,
                                           gboolean               *out_not_supported);
 const NMPlatformLink *nmtstp_link_vxlan_add(NMPlatform               *platform,
-                                            gboolean                  external_command,
+                                            int                       external_command,
                                             const char               *name,
                                             const NMPlatformLnkVxlan *lnk);
 
 void nmtstp_link_delete(NMPlatform *platform,
-                        gboolean    external_command,
+                        int         external_command,
                         int         ifindex,
                         const char *name,
                         gboolean    require_exist);
