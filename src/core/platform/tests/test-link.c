@@ -1203,7 +1203,7 @@ _test_wireguard_change(NMPlatform *platform, int ifindex, int test_mode)
                     .in6 =
                         {
                             .sin6_family = AF_INET6,
-                            .sin6_addr   = *nmtst_inet6_from_string(
+                            .sin6_addr   = *nmtst_inet6_from_string_p(
                                 nm_sprintf_buf(s_addr, "a:b:c:e::1:%d", i)),
                             .sin6_port = htons(16000 + i),
                         },
@@ -1225,7 +1225,7 @@ _test_wireguard_change(NMPlatform *platform, int ifindex, int test_mode)
                         nm_sprintf_buf(s_addr, "10.%u.%u.0", i, i_allowed_ips));
                     aip->mask = 32 - (i_allowed_ips % 8);
                 } else {
-                    aip->addr.addr6 = *nmtst_inet6_from_string(
+                    aip->addr.addr6 = *nmtst_inet6_from_string_p(
                         nm_sprintf_buf(s_addr, "a:d:f:%02x:%02x::", i, i_allowed_ips));
                     aip->mask = 128 - (i_allowed_ips % 10);
                 }
@@ -1412,8 +1412,8 @@ test_software_detect(gconstpointer user_data)
 
         switch (test_data->test_mode) {
         case 0:
-            lnk_ip6tnl.local          = *nmtst_inet6_from_string("fd01::15");
-            lnk_ip6tnl.remote         = *nmtst_inet6_from_string("fd01::16");
+            lnk_ip6tnl.local          = *nmtst_inet6_from_string_p("fd01::15");
+            lnk_ip6tnl.remote         = *nmtst_inet6_from_string_p("fd01::16");
             lnk_ip6tnl.parent_ifindex = ifindex_parent;
             lnk_ip6tnl.tclass         = 20;
             lnk_ip6tnl.encap_limit    = 6;
@@ -1421,8 +1421,8 @@ test_software_detect(gconstpointer user_data)
             lnk_ip6tnl.proto          = IPPROTO_IPV6;
             break;
         case 1:
-            lnk_ip6tnl.local          = *nmtst_inet6_from_string("fd01::17");
-            lnk_ip6tnl.remote         = *nmtst_inet6_from_string("fd01::18");
+            lnk_ip6tnl.local          = *nmtst_inet6_from_string_p("fd01::17");
+            lnk_ip6tnl.remote         = *nmtst_inet6_from_string_p("fd01::18");
             lnk_ip6tnl.parent_ifindex = ifindex_parent;
             lnk_ip6tnl.tclass         = 0;
             lnk_ip6tnl.encap_limit    = 0;
@@ -1452,8 +1452,8 @@ test_software_detect(gconstpointer user_data)
             gracefully_skip = nmp_utils_modprobe(NULL, TRUE, "ip6_gre", NULL) != 0;
         }
 
-        lnk_ip6tnl.local          = *nmtst_inet6_from_string("fd01::42");
-        lnk_ip6tnl.remote         = *nmtst_inet6_from_string("fd01::aaaa");
+        lnk_ip6tnl.local          = *nmtst_inet6_from_string_p("fd01::42");
+        lnk_ip6tnl.remote         = *nmtst_inet6_from_string_p("fd01::aaaa");
         lnk_ip6tnl.parent_ifindex = ifindex_parent;
         lnk_ip6tnl.tclass         = 21;
         lnk_ip6tnl.flow_label     = 1338;
@@ -1479,8 +1479,8 @@ test_software_detect(gconstpointer user_data)
             gracefully_skip = nmp_utils_modprobe(NULL, TRUE, "ip6_gre", NULL) != 0;
         }
 
-        lnk_ip6tnl.local          = *nmtst_inet6_from_string("fe80::abcd");
-        lnk_ip6tnl.remote         = *nmtst_inet6_from_string("fc01::bbbb");
+        lnk_ip6tnl.local          = *nmtst_inet6_from_string_p("fe80::abcd");
+        lnk_ip6tnl.remote         = *nmtst_inet6_from_string_p("fc01::bbbb");
         lnk_ip6tnl.parent_ifindex = ifindex_parent;
         lnk_ip6tnl.ttl            = 10;
         lnk_ip6tnl.tclass         = 22;
@@ -1608,8 +1608,8 @@ test_software_detect(gconstpointer user_data)
         case 1:
             lnk_vxlan.parent_ifindex = nm_platform_link_get_ifindex(NM_PLATFORM_GET, PARENT_NAME);
             lnk_vxlan.id             = 11214423;
-            lnk_vxlan.local6         = *nmtst_inet6_from_string("1:2:3:4:334:23::23");
-            lnk_vxlan.group6         = *nmtst_inet6_from_string("ff0e::115");
+            lnk_vxlan.local6         = *nmtst_inet6_from_string_p("1:2:3:4:334:23::23");
+            lnk_vxlan.group6         = *nmtst_inet6_from_string_p("ff0e::115");
             lnk_vxlan.ttl            = 32;
             lnk_vxlan.dst_port       = 57412;
             lnk_vxlan.src_port_min   = 1000;

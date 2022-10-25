@@ -418,7 +418,7 @@ test_l3cfg(gconstpointer test_data)
 
         nm_l3_config_data_add_address_6(
             l3cd,
-            NM_PLATFORM_IP6_ADDRESS_INIT(.address = *nmtst_inet6_from_string("1:2:3:4::45"),
+            NM_PLATFORM_IP6_ADDRESS_INIT(.address = *nmtst_inet6_from_string_p("1:2:3:4::45"),
                                          .plen    = 64, ));
 
         if (nmtst_get_rand_one_case_in(2))
@@ -985,7 +985,7 @@ test_l3_ipv6ll(gconstpointer test_data)
         nmtstp_ip6_address_add(tdata->f->platform,
                                -1,
                                tdata->f->ifindex1,
-                               *nmtst_inet6_from_string(_LLADDR_TEST1),
+                               *nmtst_inet6_from_string_p(_LLADDR_TEST1),
                                64,
                                in6addr_any,
                                NM_PLATFORM_LIFETIME_PERMANENT,
