@@ -1213,6 +1213,14 @@ handle_settings(NMModemOfono *self, GVariant *v_dict)
      * handle the action.
      */
 
+    if (nm_modem_get_state(NM_MODEM(self)) < NM_MODEM_STATE_REGISTERED) {
+        /*
+         * Connection definitely isn't happening. Avoid trigering bogus
+         * failure which would put device in a wrong state.
+         */
+        return;
+    }
+
     _LOGI("IPv4 static Settings:");
 
     if (!g_variant_lookup(v_dict, "Interface", "&s", &interface)) {
