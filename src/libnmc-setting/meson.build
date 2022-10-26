@@ -31,9 +31,8 @@ if enable_docs
     'check-settings-docs',
     find_program(join_paths(source_root, 'tools', 'check-compare-generated.sh')),
     args: [
-      source_root,
-      build_root,
-      'src/libnmc-setting/settings-docs.h',
+      source_root + '/src/libnmc-setting/settings-docs.h.in',
+      settings_docs_source,
     ],
   )
 else

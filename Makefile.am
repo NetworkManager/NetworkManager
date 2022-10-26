@@ -2001,7 +2001,7 @@ if BUILD_DOCS
 src/nmcli/generate-docs-nm-settings-nmcli.xml: src/nmcli/generate-docs-nm-settings-nmcli
 	$(AM_V_GEN) src/nmcli/generate-docs-nm-settings-nmcli > "$@"
 check-local-generate-docs-nm-settings-nmcli: src/nmcli/generate-docs-nm-settings-nmcli.xml
-	$(srcdir)/tools/check-compare-generated.sh "$(srcdir)" "$(builddir)" "$<"
+	$(srcdir)/tools/check-compare-generated.sh "$(srcdir)/src/nmcli/generate-docs-nm-settings-nmcli.xml.in" "$(builddir)/src/nmcli/generate-docs-nm-settings-nmcli.xml"
 check_local += check-local-generate-docs-nm-settings-nmcli
 DISTCLEANFILES += src/nmcli/generate-docs-nm-settings-nmcli.xml
 else
@@ -4832,7 +4832,7 @@ $(libnmc_setting_settings_doc_h): src/libnmc-setting/settings-docs-input.xml src
 	$(AM_V_GEN) "$(PYTHON)" $(srcdir)/tools/generate-docs-settings-docs.py --output $@ --xml $<
 DISTCLEANFILES += $(libnmc_setting_settings_doc_h)
 check-local-settings-docs: $(libnmc_setting_settings_doc_h)
-	$(srcdir)/tools/check-compare-generated.sh "$(srcdir)" "$(builddir)" "$(libnmc_setting_settings_doc_h)"
+	$(srcdir)/tools/check-compare-generated.sh "$(srcdir)/$(libnmc_setting_settings_doc_h).in" "$(builddir)/$(libnmc_setting_settings_doc_h)"
 check_local += check-local-settings-docs
 else
 $(libnmc_setting_settings_doc_h): $(libnmc_setting_settings_doc_h).in src/libnmc-setting/.dirstamp
