@@ -176,8 +176,8 @@ test-*.trs
 /src/nm-cloud-setup/tests/test-cloud-setup-general
 
 /src/nmcli/nmcli
-/src/nmcli/generate-docs-nm-settings-nmcli
-/src/nmcli/generate-docs-nm-settings-nmcli.xml
+/src/nmcli/gen-metadata-nm-settings-nmcli
+/src/nmcli/gen-metadata-nm-settings-nmcli.xml
 
 /src/nm-online/nm-online
 
@@ -341,6 +341,7 @@ test-*.trs
 /include/
 /initscript/*/[Nn]etwork[Mm]anager
 /initscript/Slackware/rc.networkmanager
+/intltool-*
 /introspection/nmdbus-*.c
 /introspection/nmdbus-*.h
 /introspection/nmdbus-*.xml
@@ -393,7 +394,9 @@ test-*.trs
 /libnm/tests/test-nm-client
 /libnm/tests/test-remote-settings-client
 /libnm/tests/test-secret-agent
+/m4/intltool.m4
 /man/nm-settings.xml
+/po/.intltool-merge-cache
 /policy/org.freedesktop.NetworkManager.policy
 /policy/org.freedesktop.NetworkManager.policy.in
 /shared/nm-glib-aux/tests/test-json-aux
@@ -439,6 +442,8 @@ test-*.trs
 /src/nm-priv-helper/org.freedesktop.nm-priv-helper.service
 /src/nm-sudo/nm-sudo
 /src/nm-sudo/org.freedesktop.nm.sudo.service
+/src/nmcli/generate-docs-nm-settings-nmcli
+/src/nmcli/generate-docs-nm-settings-nmcli.xml
 /src/platform/tests/dump
 /src/platform/tests/monitor
 /src/platform/tests/platform
@@ -482,6 +487,3 @@ test-*.trs
 /src/tests/test-systemd
 /src/tests/test-utils
 /src/tests/test-wired-defname
-/intltool-*
-/m4/intltool.m4
-/po/.intltool-merge-cache

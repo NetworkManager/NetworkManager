@@ -45,10 +45,10 @@ executable(
 
 endif
 
-generate_docs_nm_settings_nmcli = executable(
-  'generate-docs-nm-settings-nmcli',
+gen_metadata_nm_settings_nmcli = executable(
+  'gen-metadata-nm-settings-nmcli',
   files(
-    'generate-docs-nm-settings-nmcli.c',
+    'gen-metadata-nm-settings-nmcli.c',
   ),
   dependencies: [
     libnm_dep,
@@ -70,24 +70,24 @@ generate_docs_nm_settings_nmcli = executable(
 )
 
 if enable_docs
-  generate_docs_nm_settings_nmcli_xml = custom_target(
-    'generate-docs-nm-settings-nmcli.xml',
-    output: 'generate-docs-nm-settings-nmcli.xml',
-    command: [ generate_docs_nm_settings_nmcli ],
+  gen_metadata_nm_settings_nmcli_xml = custom_target(
+    'gen-metadata-nm-settings-nmcli.xml',
+    output: 'gen-metadata-nm-settings-nmcli.xml',
+    command: [ gen_metadata_nm_settings_nmcli ],
     capture: true,
   )
 
   test(
-    'check-local-generate-docs-nm-settings-nmcli',
+    'check-local-gen-metadata-nm-settings-nmcli',
     find_program(join_paths(source_root, 'tools', 'check-compare-generated.sh')),
     args: [
-      source_root + '/src/nmcli/generate-docs-nm-settings-nmcli.xml.in',
-      generate_docs_nm_settings_nmcli_xml,
+      source_root + '/src/nmcli/gen-metadata-nm-settings-nmcli.xml.in',
+      gen_metadata_nm_settings_nmcli_xml,
     ],
   )
 else
   gen_metadata_nm_settings_nmcli_xml = configure_file(
-    input: 'generate-docs-nm-settings-nmcli.xml.in',
+    input: 'gen-metadata-nm-settings-nmcli.xml.in',
     output: '@BASENAME@',
     configuration: configuration_data(),
   )

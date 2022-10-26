@@ -1982,7 +1982,7 @@ src/libnm-client-impl/libnm.typelib: src/libnm-client-impl/libnm.gir
 INTROSPECTION_GIRS += src/libnm-client-impl/NM-1.0.gir
 
 libnm_noinst_data = \
-	src/nmcli/generate-docs-nm-settings-nmcli.xml \
+	src/nmcli/gen-metadata-nm-settings-nmcli.xml \
 	man/nm-settings-docs-dbus.xml \
 	man/nm-settings-docs-nmcli.xml \
 	src/libnm-client-impl/nm-property-infos-dbus.xml \
@@ -1995,19 +1995,19 @@ libnm_noinst_data = \
 
 noinst_DATA += $(libnm_noinst_data)
 
-EXTRA_DIST += src/nmcli/generate-docs-nm-settings-nmcli.xml.in
+EXTRA_DIST += src/nmcli/gen-metadata-nm-settings-nmcli.xml.in
 
 if BUILD_DOCS
-src/nmcli/generate-docs-nm-settings-nmcli.xml: src/nmcli/generate-docs-nm-settings-nmcli
-	$(AM_V_GEN) src/nmcli/generate-docs-nm-settings-nmcli > "$@"
-check-local-generate-docs-nm-settings-nmcli: src/nmcli/generate-docs-nm-settings-nmcli.xml
-	$(srcdir)/tools/check-compare-generated.sh "$(srcdir)/src/nmcli/generate-docs-nm-settings-nmcli.xml.in" "$(builddir)/src/nmcli/generate-docs-nm-settings-nmcli.xml"
-check_local += check-local-generate-docs-nm-settings-nmcli
-DISTCLEANFILES += src/nmcli/generate-docs-nm-settings-nmcli.xml
+src/nmcli/gen-metadata-nm-settings-nmcli.xml: src/nmcli/gen-metadata-nm-settings-nmcli
+	$(AM_V_GEN) src/nmcli/gen-metadata-nm-settings-nmcli > "$@"
+check-local-gen-metadata-nm-settings-nmcli: src/nmcli/gen-metadata-nm-settings-nmcli.xml
+	$(srcdir)/tools/check-compare-generated.sh "$(srcdir)/src/nmcli/gen-metadata-nm-settings-nmcli.xml.in" "$(builddir)/src/nmcli/gen-metadata-nm-settings-nmcli.xml"
+check_local += check-local-gen-metadata-nm-settings-nmcli
+DISTCLEANFILES += src/nmcli/gen-metadata-nm-settings-nmcli.xml
 else
-src/nmcli/generate-docs-nm-settings-nmcli.xml: src/nmcli/generate-docs-nm-settings-nmcli.xml.in
+src/nmcli/gen-metadata-nm-settings-nmcli.xml: src/nmcli/gen-metadata-nm-settings-nmcli.xml.in
 	$(AM_V_GEN) cp $^ $@
-check-local-generate-docs-nm-settings-nmcli:
+check-local-gen-metadata-nm-settings-nmcli:
 endif
 
 libnm_docs_sources = $(src_libnm_core_impl_lib_c_settings_real)
@@ -2030,7 +2030,7 @@ src/libnm-client-impl/nm-settings-docs-gir.xml: tools/generate-docs-nm-settings-
 		--gir $(builddir)/src/libnm-client-impl/NM-1.0.gir \
 		--output $@
 
-man/nm-settings-docs-nmcli.xml: src/nmcli/generate-docs-nm-settings-nmcli.xml src/libnm-client-impl/nm-property-infos-nmcli.xml src/libnm-client-impl/nm-settings-docs-gir.xml tools/generate-docs-nm-settings-docs-merge.py man/common.ent
+man/nm-settings-docs-nmcli.xml: src/nmcli/gen-metadata-nm-settings-nmcli.xml src/libnm-client-impl/nm-property-infos-nmcli.xml src/libnm-client-impl/nm-settings-docs-gir.xml tools/generate-docs-nm-settings-docs-merge.py man/common.ent
 	$(AM_V_GEN) "$(PYTHON)" $(srcdir)/tools/generate-docs-nm-settings-docs-merge.py --only-from-first $@ $(wordlist 1,3,$^)
 
 src/libnmc-setting/settings-docs-input.xml: src/libnm-client-impl/nm-property-infos-nmcli.xml src/libnm-client-impl/nm-settings-docs-gir.xml tools/generate-docs-nm-settings-docs-merge.py
@@ -4973,17 +4973,17 @@ endif
 
 ###############################################################################
 
-noinst_PROGRAMS += src/nmcli/generate-docs-nm-settings-nmcli
+noinst_PROGRAMS += src/nmcli/gen-metadata-nm-settings-nmcli
 
-src_nmcli_generate_docs_nm_settings_nmcli_SOURCES = \
-	src/nmcli/generate-docs-nm-settings-nmcli.c \
+src_nmcli_gen_metadata_nm_settings_nmcli_SOURCES = \
+	src/nmcli/gen-metadata-nm-settings-nmcli.c \
 	$(NULL)
 
-src_nmcli_generate_docs_nm_settings_nmcli_CPPFLAGS = \
+src_nmcli_gen_metadata_nm_settings_nmcli_CPPFLAGS = \
 	$(clients_cppflags) \
 	$(NULL)
 
-src_nmcli_generate_docs_nm_settings_nmcli_LDADD = \
+src_nmcli_gen_metadata_nm_settings_nmcli_LDADD = \
 	src/libnmc-setting/libnmc-setting.la \
 	src/libnmc-base/libnmc-base.la \
 	src/libnm-client-aux-extern/libnm-client-aux-extern.la \
@@ -4998,13 +4998,13 @@ src_nmcli_generate_docs_nm_settings_nmcli_LDADD = \
 	$(GLIB_LIBS) \
 	$(NULL)
 
-src_nmcli_generate_docs_nm_settings_nmcli_LDFLAGS = \
+src_nmcli_gen_metadata_nm_settings_nmcli_LDFLAGS = \
 	-Wl,--version-script="$(srcdir)/linker-script-binary.ver" \
 	$(SANITIZER_EXEC_LDFLAGS) \
 	$(NULL)
 
-$(src_nmcli_generate_docs_nm_settings_nmcli_OBJECTS): $(src_libnm_core_public_mkenums_h)
-$(src_nmcli_generate_docs_nm_settings_nmcli_OBJECTS): $(src_libnm_client_public_mkenums_h)
+$(src_nmcli_gen_metadata_nm_settings_nmcli_OBJECTS): $(src_libnm_core_public_mkenums_h)
+$(src_nmcli_gen_metadata_nm_settings_nmcli_OBJECTS): $(src_libnm_client_public_mkenums_h)
 
 ###############################################################################
 
