@@ -195,6 +195,7 @@ typedef struct _NMPlatformPrivate {
     guint              ip4_dev_route_blacklist_check_id;
     guint              ip4_dev_route_blacklist_gc_timeout_id;
     GHashTable        *ip4_dev_route_blacklist_hash;
+    CList              ip6_dadfailed_lst_head;
     NMDedupMultiIndex *multi_idx;
     NMPCache          *cache;
 } NMPlatformPrivate;
@@ -3607,6 +3608,9 @@ nm_platform_ip6_address_add(NMPlatform     *self,
         _LOG3D("address: adding or updating IPv6 address: %s",
                nm_platform_ip6_address_to_string(&addr, sbuf, sizeof(sbuf)));
     }
+
+    nm_platform_ip6_dadfailed_set(self, ifindex, &address, FALSE);
+
     return klass
         ->ip6_address_add(self, ifindex, address, plen, peer_address, lifetime, preferred, flags);
 }
@@ -9089,6 +9093,92 @@ nm_platform_netns_push(NMPlatform *self, NMPNetns **netns)
 
 /*****************************************************************************/
 
+typedef struct {
+    struct in6_addr address;
+    CList           lst;
+    gint64          timestamp_nsec;
+    int             ifindex;
+} IP6DadFailedAddr;
+
+static void
+ip6_dadfailed_addr_free(IP6DadFailedAddr *addr)
+{
+    c_list_unlink_stale(&addr->lst);
+    nm_g_slice_free(addr);
+}
+
+static void
+ip6_dadfailed_prune_old(NMPlatform *self, gint64 now_nsec)
+{
+    NMPlatformPrivate *priv = NM_PLATFORM_GET_PRIVATE(self);
+    IP6DadFailedAddr  *addr;
+    IP6DadFailedAddr  *safe;
+
+    c_list_for_each_entry_safe (addr, safe, &priv->ip6_dadfailed_lst_head, lst) {
+        if (addr->timestamp_nsec + (10 * NM_UTILS_NSEC_PER_SEC) > now_nsec)
+            break;
+        ip6_dadfailed_addr_free(addr);
+    }
+}
+
+gboolean
+nm_platform_ip6_dadfailed_check(NMPlatform *self, int ifindex, const struct in6_addr *ip6)
+{
+    NMPlatformPrivate *priv = NM_PLATFORM_GET_PRIVATE(self);
+    IP6DadFailedAddr  *addr;
+
+    ip6_dadfailed_prune_old(self, nm_utils_get_monotonic_timestamp_nsec());
+
+    c_list_for_each_entry_prev (addr, &priv->ip6_dadfailed_lst_head, lst) {
+        if (addr->ifindex == ifindex && IN6_ARE_ADDR_EQUAL(&addr->address, ip6)) {
+            return TRUE;
+        }
+    }
+    return FALSE;
+}
+
+/*
+ * If an IPv6 address fails DAD and has infinite lifetime, kernel just
+ * sets the DADFAILED flag. However when the address has a finite
+ * lifetime kernel deletes it immediately and the RTM_DELLINK netlink
+ * message contains the DADFAILED flag. In the second case, we remove
+ * the address from the platform cache and there is no way for
+ * platform's clients to check whether DAD failed. To work around
+ * this, we store all deleted-with-DADFAILED addresses and provide a
+ * mechanism to access them.
+ */
+void
+nm_platform_ip6_dadfailed_set(NMPlatform            *self,
+                              int                    ifindex,
+                              const struct in6_addr *ip6,
+                              gboolean               failed)
+{
+    NMPlatformPrivate *priv     = NM_PLATFORM_GET_PRIVATE(self);
+    gint64             now_nsec = nm_utils_get_monotonic_timestamp_nsec();
+    IP6DadFailedAddr  *addr;
+    IP6DadFailedAddr  *safe;
+
+    ip6_dadfailed_prune_old(self, now_nsec);
+
+    if (failed) {
+        addr  = g_slice_new(IP6DadFailedAddr);
+        *addr = (IP6DadFailedAddr){
+            .address        = *ip6,
+            .ifindex        = ifindex,
+            .timestamp_nsec = now_nsec,
+        };
+        c_list_link_tail(&priv->ip6_dadfailed_lst_head, &addr->lst);
+    } else {
+        c_list_for_each_entry_safe (addr, safe, &priv->ip6_dadfailed_lst_head, lst) {
+            if (addr->ifindex == ifindex && IN6_ARE_ADDR_EQUAL(&addr->address, ip6)) {
+                ip6_dadfailed_addr_free(addr);
+            }
+        }
+    }
+}
+
+/*****************************************************************************/
+
 const _NMPlatformVTableRouteUnion nm_platform_vtable_route = {
     .v4 =
         {
@@ -9174,8 +9264,8 @@ constructor(GType type, guint n_construct_params, GObjectConstructParam *constru
     priv = NM_PLATFORM_GET_PRIVATE(self);
 
     priv->multi_idx = nm_dedup_multi_index_new();
-
-    priv->cache = nmp_cache_new(priv->multi_idx, priv->use_udev);
+    priv->cache     = nmp_cache_new(priv->multi_idx, priv->use_udev);
+    c_list_init(&priv->ip6_dadfailed_lst_head);
 
     return object;
 }
@@ -9185,6 +9275,7 @@ finalize(GObject *object)
 {
     NMPlatform        *self = NM_PLATFORM(object);
     NMPlatformPrivate *priv = NM_PLATFORM_GET_PRIVATE(self);
+    IP6DadFailedAddr  *addr;
 
     nm_clear_g_source(&priv->ip4_dev_route_blacklist_check_id);
     nm_clear_g_source(&priv->ip4_dev_route_blacklist_gc_timeout_id);
@@ -9192,6 +9283,10 @@ finalize(GObject *object)
     g_clear_object(&self->_netns);
     nm_dedup_multi_index_unref(priv->multi_idx);
     nmp_cache_free(priv->cache);
+
+    while ((addr = c_list_first_entry(&priv->ip6_dadfailed_lst_head, IP6DadFailedAddr, lst))) {
+        ip6_dadfailed_addr_free(addr);
+    }
 
     G_OBJECT_CLASS(nm_platform_parent_class)->finalize(object);
 }

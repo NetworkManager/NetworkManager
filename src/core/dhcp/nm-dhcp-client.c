@@ -1039,35 +1039,33 @@ ipv6_lladdr_find(NMDhcpClient *self)
 static void
 ipv6_tentative_addr_check(NMDhcpClient                *self,
                           GPtrArray                  **tentative,
-                          GPtrArray                  **missing,
+                          GPtrArray                  **dadfailed,
                           const NMPlatformIP6Address **valid)
 {
     NMDhcpClientPrivate        *priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
     NMDedupMultiIter            iter;
     const NMPlatformIP6Address *addr;
-    NML3Cfg                    *l3cfg = priv->config.l3cfg;
+    NML3Cfg                    *l3cfg    = priv->config.l3cfg;
+    NMPlatform                 *platform = nm_l3cfg_get_platform(l3cfg);
+    int                         ifindex  = nm_l3cfg_get_ifindex(l3cfg);
 
     /* For each address in the lease, check whether it's tentative
-     * in platform. */
+     * or dad-failed in platform. */
     nm_l3_config_data_iter_ip6_address_for_each (&iter, priv->l3cd_curr, &addr) {
         const NMPlatformIP6Address *pladdr;
-        NMPObject                   needle;
 
-        nmp_object_stackinit_id_ip6_address(&needle, nm_l3cfg_get_ifindex(l3cfg), &addr->address);
-        pladdr = NMP_OBJECT_CAST_IP6_ADDRESS(nm_platform_lookup_obj(nm_l3cfg_get_platform(l3cfg),
-                                                                    NMP_CACHE_ID_TYPE_OBJECT_TYPE,
-                                                                    &needle));
-        if (!pladdr) {
-            /* address removed: we assume that's because DAD failed */
-            if (missing) {
-                if (!*missing)
-                    *missing = g_ptr_array_new();
-                g_ptr_array_add(*missing, (gpointer) addr);
+        pladdr = nm_platform_ip6_address_get(platform, ifindex, &addr->address);
+        if ((pladdr && NM_FLAGS_HAS(pladdr->n_ifa_flags, IFA_F_DADFAILED))
+            || (!pladdr && nm_platform_ip6_dadfailed_check(platform, ifindex, &addr->address))) {
+            if (dadfailed) {
+                if (!*dadfailed)
+                    *dadfailed = g_ptr_array_new();
+                g_ptr_array_add(*dadfailed, (gpointer) addr);
             }
             continue;
         }
 
-        if (NM_FLAGS_HAS(pladdr->n_ifa_flags, IFA_F_TENTATIVE)
+        if (pladdr && NM_FLAGS_HAS(pladdr->n_ifa_flags, IFA_F_TENTATIVE)
             && !NM_FLAGS_HAS(pladdr->n_ifa_flags, IFA_F_OPTIMISTIC)) {
             if (tentative) {
                 if (!*tentative)
@@ -1076,6 +1074,9 @@ ipv6_tentative_addr_check(NMDhcpClient                *self,
             }
         }
 
+        /* Here the address is non-tentative or it was removed externally by the user.
+         * In both cases it has completed DAD.
+         */
         NM_SET_OUT(valid, addr);
     }
 }
@@ -1115,13 +1116,13 @@ l3_cfg_notify_cb(NML3Cfg *l3cfg, const NML3ConfigNotifyData *notify_data, NMDhcp
     if (notify_data->notify_type == NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE_ON_IDLE
         && priv->l3cfg_notify.wait_ipv6_dad) {
         gs_unref_ptrarray GPtrArray *tentative = NULL;
-        gs_unref_ptrarray GPtrArray *missing   = NULL;
+        gs_unref_ptrarray GPtrArray *dadfailed = NULL;
         const NMPlatformIP6Address  *valid     = NULL;
         char                         str[NM_UTILS_TO_STRING_BUFFER_SIZE];
         guint                        i;
         gs_free_error GError        *error = NULL;
 
-        ipv6_tentative_addr_check(self, &tentative, &missing, &valid);
+        ipv6_tentative_addr_check(self, &tentative, &dadfailed, &valid);
         if (tentative) {
             for (i = 0; i < tentative->len; i++) {
                 _LOGD("still waiting DAD for address: %s",
@@ -1134,10 +1135,10 @@ l3_cfg_notify_cb(NML3Cfg *l3cfg, const NML3ConfigNotifyData *notify_data, NMDhcp
             nm_clear_g_source_inst(&priv->v6.dad_timeout_source);
             l3_cfg_notify_check_connected(self);
 
-            if (missing) {
-                for (i = 0; i < missing->len; i++) {
+            if (dadfailed) {
+                for (i = 0; i < dadfailed->len; i++) {
                     _LOGE("DAD failed for address: %s",
-                          nm_platform_ip6_address_to_string(missing->pdata[i], str, sizeof(str)));
+                          nm_platform_ip6_address_to_string(dadfailed->pdata[i], str, sizeof(str)));
                 }
             }
 
