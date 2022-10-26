@@ -87,7 +87,7 @@ if enable_docs
     ],
   )
 else
-  settings_docs_source = configure_file(
+  gen_metadata_nm_settings_nmcli_xml = configure_file(
     input: 'generate-docs-nm-settings-nmcli.xml.in',
     output: '@BASENAME@',
     configuration: configuration_data(),
