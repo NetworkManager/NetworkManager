@@ -467,9 +467,10 @@ any_devices_active(NMPolicy *self)
         NMDeviceState state;
 
         state = nm_device_get_state(device);
-        if (state <= NM_DEVICE_STATE_DISCONNECTED || state >= NM_DEVICE_STATE_DEACTIVATING) {
+        if (state <= NM_DEVICE_STATE_DISCONNECTED || state >= NM_DEVICE_STATE_DEACTIVATING)
             continue;
-        }
+        if (nm_device_sys_iface_state_is_external(device))
+            continue;
         return TRUE;
     }
     return FALSE;
