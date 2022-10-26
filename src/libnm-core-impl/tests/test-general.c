@@ -10430,7 +10430,7 @@ static void
 test_nm_ip_addr_zero(void)
 {
     in_addr_t       a4 = nmtst_inet4_from_string("0.0.0.0");
-    struct in6_addr a6 = *nmtst_inet6_from_string("::");
+    struct in6_addr a6 = nmtst_inet6_from_string("::");
     char            buf[NM_INET_ADDRSTRLEN];
     NMIPAddr        a = NM_IP_ADDR_INIT;
 
