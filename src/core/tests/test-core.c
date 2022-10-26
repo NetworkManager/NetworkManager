@@ -152,8 +152,8 @@ test_logging_error(void)
 static void
 _test_same_prefix(const char *a1, const char *a2, guint8 plen)
 {
-    struct in6_addr a = *nmtst_inet6_from_string(a1);
-    struct in6_addr b = *nmtst_inet6_from_string(a2);
+    struct in6_addr a = nmtst_inet6_from_string(a1);
+    struct in6_addr b = nmtst_inet6_from_string(a2);
 
     g_assert(nm_ip6_addr_same_prefix(&a, &b, plen));
 }
