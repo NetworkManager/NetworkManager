@@ -81,9 +81,8 @@ if enable_docs
     'check-local-generate-docs-nm-settings-nmcli',
     find_program(join_paths(source_root, 'tools', 'check-compare-generated.sh')),
     args: [
-      source_root,
-      build_root,
-      'src/nmcli/generate-docs-nm-settings-nmcli.xml',
+      source_root + '/src/nmcli/generate-docs-nm-settings-nmcli.xml.in',
+      generate_docs_nm_settings_nmcli_xml,
     ],
   )
 else
