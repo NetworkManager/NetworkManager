@@ -88,3 +88,52 @@ libnm_core_impl = static_library(
     uuid_dep,
   ],
 )
+
+###############################################################################
+
+gen_metadata_nm_settings_libnm_core = executable(
+  'gen-metadata-nm-settings-libnm-core',
+  files(
+    'gen-metadata-nm-settings-libnm-core.c',
+  ),
+  dependencies: [
+    libnm_core_public_dep,
+  ],
+  link_with: [
+    libnm_core_aux_intern,
+    libnm_core_impl,
+    libnm_crypto,
+    libnm_base,
+    libnm_systemd_shared,
+    libnm_log_null,
+    libnm_glib_aux,
+    libnm_std_aux,
+    libc_siphash,
+  ],
+  link_args: ldflags_linker_script_binary,
+  link_depends: linker_script_binary,
+)
+
+if enable_docs
+  gen_metadata_nm_settings_libnm_core_xml = custom_target(
+    'gen-metadata-nm-settings-libnm-core.xml',
+    output: 'gen-metadata-nm-settings-libnm-core.xml',
+    command: [ gen_metadata_nm_settings_libnm_core ],
+    capture: true,
+  )
+
+  test(
+    'check-local-gen-metadata-nm-settings-libnm-core',
+    find_program(join_paths(source_root, 'tools', 'check-compare-generated.sh')),
+    args: [
+      source_root + '/src/libnm-core-impl/gen-metadata-nm-settings-libnm-core.xml.in',
+      gen_metadata_nm_settings_libnm_core_xml,
+    ],
+  )
+else
+  gen_metadata_nm_settings_libnm_core_xml = configure_file(
+    input: 'gen-metadata-nm-settings-libnm-core.xml.in',
+    output: '@BASENAME@',
+    configuration: configuration_data(),
+  )
+endif

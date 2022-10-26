@@ -1848,6 +1848,39 @@ EXTRA_DIST += src/libnm-client-public/meson.build
 
 ###############################################################################
 
+noinst_PROGRAMS += src/libnm-core-impl/gen-metadata-nm-settings-libnm-core
+
+src_libnm_core_impl_gen_metadata_nm_settings_libnm_core_SOURCES = \
+	src/libnm-core-impl/gen-metadata-nm-settings-libnm-core.c \
+	$(NULL)
+
+src_libnm_core_impl_gen_metadata_nm_settings_libnm_core_CPPFLAGS = \
+	$(clients_cppflags) \
+	$(NULL)
+
+src_libnm_core_impl_gen_metadata_nm_settings_libnm_core_LDADD = \
+	src/libnm-core-impl/libnm-core-impl.la \
+	src/libnm-crypto/libnm-crypto.la \
+	$(libnm_crypto_lib) \
+	src/libnm-core-aux-intern/libnm-core-aux-intern.la \
+	src/libnm-base/libnm-base.la \
+	src/libnm-systemd-shared/libnm-systemd-shared.la \
+	src/libnm-log-null/libnm-log-null.la \
+	src/libnm-glib-aux/libnm-glib-aux.la \
+	src/libnm-std-aux/libnm-std-aux.la \
+	src/c-siphash/libc-siphash.la \
+	$(GLIB_LIBS) \
+	$(NULL)
+
+src_libnm_core_impl_gen_metadata_nm_settings_libnm_core_LDFLAGS = \
+	-Wl,--version-script="$(srcdir)/linker-script-binary.ver" \
+	$(SANITIZER_EXEC_LDFLAGS) \
+	$(NULL)
+
+$(src_libnm_core_impl_gen_metadata_nm_settings_libnm_core_OBJECTS): $(src_libnm_core_public_mkenums_h)
+
+###############################################################################
+
 noinst_LTLIBRARIES += src/libnm-client-impl/libnm-client-impl.la
 
 src_libnm_client_impl_libnm_client_impl_la_CPPFLAGS = \
@@ -1982,6 +2015,7 @@ src/libnm-client-impl/libnm.typelib: src/libnm-client-impl/libnm.gir
 INTROSPECTION_GIRS += src/libnm-client-impl/NM-1.0.gir
 
 libnm_noinst_data = \
+	src/libnm-core-impl/gen-metadata-nm-settings-libnm-core.xml \
 	src/nmcli/gen-metadata-nm-settings-nmcli.xml \
 	man/nm-settings-docs-dbus.xml \
 	man/nm-settings-docs-nmcli.xml \
@@ -2008,6 +2042,21 @@ else
 src/nmcli/gen-metadata-nm-settings-nmcli.xml: src/nmcli/gen-metadata-nm-settings-nmcli.xml.in
 	$(AM_V_GEN) cp $^ $@
 check-local-gen-metadata-nm-settings-nmcli:
+endif
+
+EXTRA_DIST += src/libnm-core-impl/gen-metadata-nm-settings-libnm-core.xml.in
+
+if BUILD_DOCS
+src/libnm-core-impl/gen-metadata-nm-settings-libnm-core.xml: src/libnm-core-impl/gen-metadata-nm-settings-libnm-core
+	$(AM_V_GEN) src/libnm-core-impl/gen-metadata-nm-settings-libnm-core > "$@"
+check-local-gen-metadata-nm-settings-libnm-core: src/libnm-core-impl/gen-metadata-nm-settings-libnm-core.xml
+	$(srcdir)/tools/check-compare-generated.sh "$(srcdir)/src/libnm-core-impl/gen-metadata-nm-settings-libnm-core.xml.in" "$(builddir)/src/libnm-core-impl/gen-metadata-nm-settings-libnm-core.xml"
+check_local += check-local-gen-metadata-nm-settings-libnm-core
+DISTCLEANFILES += src/libnm-core-impl/gen-metadata-nm-settings-libnm-core.xml
+else
+src/libnm-core-impl/gen-metadata-nm-settings-libnm-core.xml: src/libnm-core-impl/gen-metadata-nm-settings-libnm-core.xml.in
+	$(AM_V_GEN) cp $^ $@
+check-local-gen-metadata-nm-settings-libnm-core:
 endif
 
 libnm_docs_sources = $(src_libnm_core_impl_lib_c_settings_real)
