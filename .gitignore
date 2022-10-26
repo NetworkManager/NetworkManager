@@ -145,6 +145,8 @@ test-*.trs
 /src/libnm-core-impl/tests/test-need-secrets
 /src/libnm-core-impl/tests/test-secrets
 /src/libnm-core-impl/tests/test-setting
+/src/libnm-core-impl/gen-metadata-nm-settings-libnm-core
+/src/libnm-core-impl/gen-metadata-nm-settings-libnm-core.xml
 /src/libnm-glib-aux/tests/test-json-aux
 /src/libnm-glib-aux/tests/test-shared-general
 /src/libnm-platform/tests/test-nm-platform
