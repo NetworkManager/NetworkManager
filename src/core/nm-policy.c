@@ -457,7 +457,7 @@ get_best_active_connection(NMPolicy *self, int addr_family, gboolean fully_activ
 }
 
 static gboolean
-all_devices_not_active(NMPolicy *self)
+any_devices_active(NMPolicy *self)
 {
     NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE(self);
     const CList     *tmp_lst;
@@ -470,9 +470,9 @@ all_devices_not_active(NMPolicy *self)
         if (state <= NM_DEVICE_STATE_DISCONNECTED || state >= NM_DEVICE_STATE_DEACTIVATING) {
             continue;
         }
-        return FALSE;
+        return TRUE;
     }
-    return TRUE;
+    return FALSE;
 }
 
 #define FALLBACK_HOSTNAME4 "localhost.localdomain"
@@ -606,7 +606,7 @@ _set_hostname(NMPolicy *self, const char *new_hostname, const char *msg)
         priv->updating_dns = TRUE;
         nm_dns_manager_set_hostname(priv->dns_manager,
                                     priv->cur_hostname_full,
-                                    all_devices_not_active(self));
+                                    !any_devices_active(self));
         priv->updating_dns = FALSE;
     }
 
