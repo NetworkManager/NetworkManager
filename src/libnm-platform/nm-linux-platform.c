@@ -6759,6 +6759,14 @@ cache_prune_one_type(NMPlatform *platform, const NMPLookup *lookup)
 
         obj = main_entry->obj;
 
+        if (NMP_OBJECT_GET_TYPE(obj) == NMP_OBJECT_TYPE_IP6_ADDRESS) {
+            const NMPlatformIP6Address *pladdr = NMP_OBJECT_CAST_IP6_ADDRESS(obj);
+
+            if (pladdr->n_ifa_flags & IFA_F_TENTATIVE) {
+                nm_platform_ip6_dadfailed_set(platform, pladdr->ifindex, &pladdr->address, TRUE);
+            }
+        }
+
         _LOGt("cache-prune: prune %s",
               nmp_object_to_string(obj, NMP_OBJECT_TO_STRING_ALL, sbuf, sizeof(sbuf)));
 
@@ -7672,6 +7680,14 @@ _rtnl_handle_msg(NMPlatform *platform, const struct nl_msg_lite *msg)
         }
 
         case RTM_DELADDR:
+            if (NMP_OBJECT_GET_TYPE(obj) == NMP_OBJECT_TYPE_IP6_ADDRESS) {
+                const NMPlatformIP6Address *ip6 = NMP_OBJECT_CAST_IP6_ADDRESS(obj);
+
+                if (ip6->n_ifa_flags & IFA_F_DADFAILED) {
+                    nm_platform_ip6_dadfailed_set(platform, ip6->ifindex, &ip6->address, TRUE);
+                }
+            }
+            /* fall-through */
         case RTM_DELLINK:
         case RTM_DELQDISC:
         case RTM_DELROUTE:

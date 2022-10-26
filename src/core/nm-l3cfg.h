@@ -400,7 +400,7 @@ gboolean nm_l3cfg_check_ready(NML3Cfg               *self,
                               const NML3ConfigData  *l3cd,
                               int                    addr_family,
                               NML3CfgCheckReadyFlags flags,
-                              gboolean              *acd_used);
+                              GArray               **conflicts);
 
 gboolean nm_l3cfg_has_temp_not_available_obj(NML3Cfg *self, int addr_family);
 

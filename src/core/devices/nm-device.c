@@ -4135,18 +4135,30 @@ _dev_l3_cfg_notify_cb(NML3Cfg *l3cfg, const NML3ConfigNotifyData *notify_data, N
         /* Check if AC6 addresses completed DAD */
         if (NM_FLAGS_ANY(notify_data->platform_change_on_idle.obj_type_flags,
                          nmp_object_type_to_flags(NMP_OBJECT_TYPE_IP6_ADDRESS))
-            && priv->ipac6_data.state == NM_DEVICE_IP_STATE_PENDING && priv->ipac6_data.l3cd
-            && nm_l3cfg_check_ready(l3cfg,
-                                    priv->ipac6_data.l3cd,
-                                    AF_INET6,
-                                    NM_L3CFG_CHECK_READY_FLAGS_IP6_DAD_READY,
-                                    NULL)) {
-            if (nm_l3cfg_has_temp_not_available_obj(priv->l3cfg, AF_INET6))
-                _dev_l3_cfg_commit(self, FALSE);
+            && priv->ipac6_data.state == NM_DEVICE_IP_STATE_PENDING && priv->ipac6_data.l3cd) {
+            gs_unref_array GArray *conflicts = NULL;
+            gboolean               ready;
 
-            nm_clear_l3cd(&priv->ipac6_data.l3cd);
-            _dev_ipac6_set_state(self, NM_DEVICE_IP_STATE_READY);
-            _dev_ip_state_check_async(self, AF_INET6);
+            ready = nm_l3cfg_check_ready(l3cfg,
+                                         priv->ipac6_data.l3cd,
+                                         AF_INET6,
+                                         NM_L3CFG_CHECK_READY_FLAGS_IP6_DAD_READY,
+                                         &conflicts);
+            if (conflicts) {
+                /* nm_ndisc_dad_failed() will emit a new "NDisc:config-received"
+                 * signal; _dev_ipac6_ndisc_config_changed() will be called
+                 * synchronously to update the current state and schedule a commit. */
+                nm_ndisc_dad_failed(priv->ipac6_data.ndisc, conflicts, TRUE);
+            } else if (ready) {
+                if (nm_l3cfg_has_temp_not_available_obj(priv->l3cfg, AF_INET6))
+                    _dev_l3_cfg_commit(self, FALSE);
+
+                nm_clear_l3cd(&priv->ipac6_data.l3cd);
+                _dev_ipac6_set_state(self, NM_DEVICE_IP_STATE_READY);
+                _dev_ip_state_check_async(self, AF_INET6);
+            } else {
+                /* wait */
+            }
         }
 
         _dev_ipmanual_check_ready(self);
@@ -10079,7 +10091,7 @@ _dev_ipmanual_check_ready(NMDevice *self)
     gboolean               has_carrier;
     NML3CfgCheckReadyFlags flags;
     gboolean               ready;
-    gboolean               acd_used = FALSE;
+    gs_unref_array GArray *conflicts = NULL;
     int                    IS_IPv4;
 
     if (priv->ipmanual_data.state_4 != NM_DEVICE_IP_STATE_PENDING
@@ -10122,8 +10134,8 @@ _dev_ipmanual_check_ready(NMDevice *self)
                                      priv->l3cds[L3_CONFIG_DATA_TYPE_MANUALIP].d,
                                      addr_family,
                                      flags,
-                                     &acd_used);
-        if (acd_used) {
+                                     &conflicts);
+        if (conflicts) {
             _dev_ipmanual_set_state(self, addr_family, NM_DEVICE_IP_STATE_FAILED);
             _dev_ip_state_check_async(self, AF_UNSPEC);
         } else if (ready) {
@@ -11432,10 +11444,14 @@ _dev_ipac6_ndisc_config_changed(NMNDisc              *ndisc,
                                 const NML3ConfigData *l3cd,
                                 NMDevice             *self)
 {
-    NMDevicePrivate *priv  = NM_DEVICE_GET_PRIVATE(self);
-    gboolean         ready = TRUE;
-    NMDedupMultiIter iter;
-    const NMPObject *obj;
+    NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
+    gboolean         ready;
+
+    /* The ndisc configuration changes when we receive a new RA or
+     * when a lifetime expires; but also when DAD fails for a
+     * SLAAC address and we need to regenerate new stable-privacy
+     * addresses. In all these cases we update the AC6 configuration,
+     * schedule a commit and update the AC state. */
 
     _dev_ipac6_grace_period_start(self, 0, TRUE);
 
@@ -11446,22 +11462,11 @@ _dev_ipac6_ndisc_config_changed(NMNDisc              *ndisc,
                                         FALSE);
 
     nm_clear_l3cd(&priv->ipac6_data.l3cd);
-
-    /* wait that addresses are committed to platform and
-     * become non-tentative before declaring AC6 is ready.*/
-    nm_l3_config_data_iter_obj_for_each (&iter, l3cd, &obj, NMP_OBJECT_TYPE_IP6_ADDRESS) {
-        const NMPlatformIP6Address *addr = NMP_OBJECT_CAST_IP6_ADDRESS(obj);
-        const NMPlatformIP6Address *plat_addr;
-
-        plat_addr = nm_platform_ip6_address_get(nm_device_get_platform(self),
-                                                nm_device_get_ip_ifindex(self),
-                                                &addr->address);
-        if (!plat_addr || (plat_addr->n_ifa_flags & IFA_F_TENTATIVE)) {
-            ready = FALSE;
-            break;
-        }
-    }
-
+    ready = nm_l3cfg_check_ready(priv->l3cfg,
+                                 l3cd,
+                                 AF_INET6,
+                                 NM_L3CFG_CHECK_READY_FLAGS_IP6_DAD_READY,
+                                 NULL);
     if (ready) {
         _dev_ipac6_set_state(self, NM_DEVICE_IP_STATE_READY);
     } else {
