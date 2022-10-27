@@ -5069,6 +5069,84 @@ test_6lowpan_1(void)
 /*****************************************************************************/
 
 static void
+test_settings_dns(void)
+{
+    int i_run;
+
+    for (i_run = 0; i_run < 10; i_run++) {
+        gs_unref_object NMConnection *con1 = NULL;
+        gs_unref_object NMConnection *con2 = NULL;
+        int                           IS_IPv4;
+        guint                         n_dns;
+        guint                         i;
+        gboolean                      same = TRUE;
+
+        con1 =
+            nmtst_create_minimal_connection("test-dns", NULL, NM_SETTING_WIRED_SETTING_NAME, NULL);
+        nmtst_connection_normalize(con1);
+
+        con2 = nmtst_connection_duplicate_and_normalize(con1);
+
+        nmtst_assert_connection_equals(con1, nmtst_get_rand_bool(), con2, nmtst_get_rand_bool());
+
+        for (IS_IPv4 = 1; IS_IPv4 >= 0; IS_IPv4--) {
+            const char *nameservers[2][7] = {
+                [0] =
+                    {
+                        "11:22::b:0",
+                        "11:22::b:1#hello1",
+                        "11:22::b:2",
+                        "11:22::b:3#hello2",
+                        "11:22::b:4",
+                        "11:22::b:5",
+                        "bogus6",
+                    },
+                [1] =
+                    {
+                        "1.1.1.0",
+                        "1.1.1.1#foo1",
+                        "1.1.1.2",
+                        "1.1.1.3#foo2",
+                        "1.1.1.4",
+                        "1.1.1.5",
+                        "bogus4",
+                    },
+            };
+            GType gtype = IS_IPv4 ? NM_TYPE_SETTING_IP4_CONFIG : NM_TYPE_SETTING_IP6_CONFIG;
+            NMSettingIPConfig *s_ip1 = _nm_connection_get_setting(con1, gtype);
+            NMSettingIPConfig *s_ip2 = _nm_connection_get_setting(con2, gtype);
+
+            n_dns = nmtst_get_rand_uint32() % G_N_ELEMENTS(nameservers[0]);
+            for (i = 0; i < n_dns; i++) {
+                const char *d =
+                    nameservers[IS_IPv4][nmtst_get_rand_uint32() % G_N_ELEMENTS(nameservers[0])];
+
+                if (!nmtst_get_rand_one_case_in(4))
+                    nm_setting_ip_config_add_dns(s_ip1, d);
+                if (!nmtst_get_rand_one_case_in(4))
+                    nm_setting_ip_config_add_dns(s_ip2, d);
+            }
+
+            if (nm_strv_ptrarray_cmp(_nm_setting_ip_config_get_dns_array(s_ip1),
+                                     _nm_setting_ip_config_get_dns_array(s_ip2))
+                != 0)
+                same = FALSE;
+        }
+
+        _nm_utils_is_manager_process = nmtst_get_rand_bool();
+        if (same) {
+            nmtst_assert_connection_equals(con1, FALSE, con2, FALSE);
+            g_assert(nm_connection_compare(con1, con2, NM_SETTING_COMPARE_FLAG_EXACT));
+        } else {
+            //TODO: g_assert(!nm_connection_compare(con1, con2, NM_SETTING_COMPARE_FLAG_EXACT));
+        }
+        _nm_utils_is_manager_process = FALSE;
+    }
+}
+
+/*****************************************************************************/
+
+static void
 test_bond_meta(void)
 {
     gs_unref_object NMConnection *con = NULL;
@@ -5169,6 +5247,8 @@ main(int argc, char **argv)
     g_test_add_func("/libnm/settings/ethtool/pause", test_ethtool_pause);
 
     g_test_add_func("/libnm/settings/6lowpan/1", test_6lowpan_1);
+
+    g_test_add_func("/libnm/settings/dns", test_settings_dns);
 
     g_test_add_func("/libnm/settings/sriov/vf", test_sriov_vf);
     g_test_add_func("/libnm/settings/sriov/vf-dup", test_sriov_vf_dup);
