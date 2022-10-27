@@ -18,6 +18,8 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   with "balance-xor" mode and "vlan-srcmac" xmit_hash_policy. In this
   mode, NetworkManager configures nftables to prevent loops in the
   switch.
+* dns: support specifying DNS-over-TLS server name (SNI) for static
+  name servers. Only works with systemd-resolved plugin.
 
 =============================================
 NetworkManager-1.40
