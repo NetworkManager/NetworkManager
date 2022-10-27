@@ -5138,7 +5138,7 @@ test_settings_dns(void)
             nmtst_assert_connection_equals(con1, FALSE, con2, FALSE);
             g_assert(nm_connection_compare(con1, con2, NM_SETTING_COMPARE_FLAG_EXACT));
         } else {
-            //TODO: g_assert(!nm_connection_compare(con1, con2, NM_SETTING_COMPARE_FLAG_EXACT));
+            g_assert(!nm_connection_compare(con1, con2, NM_SETTING_COMPARE_FLAG_EXACT));
         }
         _nm_utils_is_manager_process = FALSE;
     }

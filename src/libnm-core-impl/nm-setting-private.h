@@ -1069,6 +1069,8 @@ NMTernary _nm_setting_ip_config_compare_fcn_addresses(_NM_SETT_INFO_PROP_COMPARE
 
 NMTernary _nm_setting_ip_config_compare_fcn_routes(_NM_SETT_INFO_PROP_COMPARE_FCN_ARGS _nm_nil);
 
+NMTernary _nm_setting_ip_config_compare_fcn_dns(_NM_SETT_INFO_PROP_COMPARE_FCN_ARGS _nm_nil);
+
 gboolean _nm_sett_info_prop_missing_from_dbus_fcn_cloned_mac_address(
     _NM_SETT_INFO_PROP_MISSING_FROM_DBUS_FCN_ARGS _nm_nil);
 
