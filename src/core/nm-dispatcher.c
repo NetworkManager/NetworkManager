@@ -179,7 +179,6 @@ dump_ip_to_props(const NML3ConfigData *l3cd, int addr_family, GVariantBuilder *b
     const NMPObject   *default_route;
     const char *const *strarr;
     const in_addr_t   *ip4arr;
-    gconstpointer      iparr;
 
     if (IS_IPv4)
         g_variant_builder_init(&int_builder, G_VARIANT_TYPE("aau"));
@@ -223,14 +222,17 @@ dump_ip_to_props(const NML3ConfigData *l3cd, int addr_family, GVariantBuilder *b
         g_variant_builder_init(&int_builder, G_VARIANT_TYPE("au"));
     else
         g_variant_builder_init(&int_builder, G_VARIANT_TYPE("aay"));
-    iparr = nm_l3_config_data_get_nameservers(l3cd, addr_family, &n);
+    strarr = nm_l3_config_data_get_nameservers(l3cd, addr_family, &n);
     for (i = 0; i < n; i++) {
+        NMIPAddr a;
+
+        if (!nm_utils_dnsname_parse_assert(addr_family, strarr[i], NULL, &a, NULL))
+            continue;
+
         if (IS_IPv4)
-            g_variant_builder_add(&int_builder, "u", ((const in_addr_t *) iparr)[i]);
-        else {
-            var1 = nm_g_variant_new_ay_in6addr(&(((const struct in6_addr *) iparr)[i]));
-            g_variant_builder_add(&int_builder, "@ay", var1);
-        }
+            g_variant_builder_add(&int_builder, "u", &a);
+        else
+            g_variant_builder_add(&int_builder, "@ay", nm_g_variant_new_ay_in6addr(&a.addr6));
     }
     g_variant_builder_add(builder, "{sv}", "nameservers", g_variant_builder_end(&int_builder));
 

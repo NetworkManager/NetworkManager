@@ -104,7 +104,6 @@ create_dm_cmd_line(const char           *iface,
     gs_free char                 *error_desc = NULL;
     const char                   *dm_binary;
     const NMPlatformIP4Address   *listen_address;
-    const in_addr_t              *ipv4arr;
     const char *const            *strarr;
     guint                         n;
     guint                         i;
@@ -163,13 +162,18 @@ create_dm_cmd_line(const char           *iface,
         nm_strv_ptrarray_add_string_concat(cmd, "--dhcp-option=option:router,", listen_address_s);
     }
 
-    ipv4arr = nm_l3_config_data_get_nameservers(l3cd, AF_INET, &n);
+    strarr = nm_l3_config_data_get_nameservers(l3cd, AF_INET, &n);
     if (n > 0) {
         nm_gstring_prepare(&s);
         g_string_append(s, "--dhcp-option=option:dns-server");
         for (i = 0; i < n; i++) {
+            in_addr_t a;
+
+            if (!nm_utils_dnsname_parse_assert(AF_INET, strarr[i], NULL, &a, NULL))
+                continue;
+
             g_string_append_c(s, ',');
-            g_string_append(s, nm_inet4_ntop(ipv4arr[i], sbuf_addr));
+            g_string_append(s, nm_inet4_ntop(a, sbuf_addr));
         }
         nm_strv_ptrarray_take_gstring(cmd, &s);
     }

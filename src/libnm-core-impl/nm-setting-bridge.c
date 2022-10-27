@@ -1454,7 +1454,8 @@ nm_setting_bridge_class_init(NMSettingBridgeClass *klass)
                                                    NM_SETTING_PARAM_INFERRABLE,
                                                    NMSettingBridge,
                                                    _priv.mac_address,
-                                                   .direct_set_string_mac_address_len = ETH_ALEN);
+                                                   .direct_set_string_mac_address_len = ETH_ALEN,
+                                                   .is_deprecated                     = TRUE, );
 
     /**
      * NMSettingBridge:stp:
@@ -1748,7 +1749,8 @@ nm_setting_bridge_class_init(NMSettingBridgeClass *klass)
      */
     _nm_properties_override_dbus(properties_override,
                                  "interface-name",
-                                 &nm_sett_info_propert_type_deprecated_interface_name);
+                                 &nm_sett_info_propert_type_deprecated_interface_name,
+                                 .dbus_deprecated = TRUE, );
 
     /**
      * NMSettingBridge:group-address:

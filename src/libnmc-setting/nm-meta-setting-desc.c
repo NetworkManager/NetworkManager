@@ -3449,23 +3449,6 @@ _set_fcn_ip_config_method(ARGS_SET_FCN)
     return TRUE;
 }
 
-static const char *
-_multilist_validate2_fcn_ip_config_dns(NMSetting *setting, const char *value, GError **error)
-{
-    int addr_family = nm_setting_ip_config_get_addr_family(NM_SETTING_IP_CONFIG(setting));
-
-    if (!nm_inet_parse_str(addr_family, value, NULL)) {
-        nm_utils_error_set(error,
-                           NM_UTILS_ERROR_INVALID_ARGUMENT,
-                           _("invalid IPv%c address '%s'"),
-                           nm_utils_addr_family_to_char(addr_family),
-                           value);
-        return NULL;
-    }
-
-    return value;
-}
-
 static gboolean
 _multilist_add_fcn_ip_config_dns_options(NMSetting *setting, const char *item)
 {
@@ -6040,7 +6023,6 @@ static const NMMetaPropertyInfo *const property_infos_IP4_CONFIG[] = {
                 .add_fcn =              MULTILIST_ADD_FCN             (NMSettingIPConfig, nm_setting_ip_config_add_dns),
                 .remove_by_idx_fcn_s =  MULTILIST_REMOVE_BY_IDX_FCN_S (NMSettingIPConfig, nm_setting_ip_config_remove_dns),
                 .remove_by_value_fcn =  MULTILIST_REMOVE_BY_VALUE_FCN (NMSettingIPConfig, nm_setting_ip_config_remove_dns_by_value),
-                .validate2_fcn =        _multilist_validate2_fcn_ip_config_dns,
                 .strsplit_plain =       TRUE,
             ),
         ),
@@ -6293,7 +6275,6 @@ static const NMMetaPropertyInfo *const property_infos_IP6_CONFIG[] = {
                 .add_fcn =              MULTILIST_ADD_FCN             (NMSettingIPConfig, nm_setting_ip_config_add_dns),
                 .remove_by_idx_fcn_s =  MULTILIST_REMOVE_BY_IDX_FCN_S (NMSettingIPConfig, nm_setting_ip_config_remove_dns),
                 .remove_by_value_fcn =  MULTILIST_REMOVE_BY_VALUE_FCN (NMSettingIPConfig, nm_setting_ip_config_remove_dns_by_value),
-                .validate2_fcn =        _multilist_validate2_fcn_ip_config_dns,
                 .strsplit_plain =       TRUE,
             ),
         ),

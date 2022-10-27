@@ -3384,7 +3384,8 @@ nm_setting_802_1x_class_init(NMSetting8021xClass *klass)
                                               PROP_SUBJECT_MATCH,
                                               NM_SETTING_PARAM_NONE,
                                               NMSetting8021xPrivate,
-                                              subject_match);
+                                              subject_match,
+                                              .is_deprecated = TRUE, );
 
     /**
      * NMSetting8021x:altsubject-matches:
@@ -3797,7 +3798,8 @@ nm_setting_802_1x_class_init(NMSetting8021xClass *klass)
                                               PROP_PHASE2_SUBJECT_MATCH,
                                               NM_SETTING_PARAM_NONE,
                                               NMSetting8021xPrivate,
-                                              phase2_subject_match);
+                                              phase2_subject_match,
+                                              .is_deprecated = TRUE, );
 
     /**
      * NMSetting8021x:phase2-altsubject-matches:

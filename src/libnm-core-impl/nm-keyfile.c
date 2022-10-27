@@ -1102,7 +1102,9 @@ ip_dns_parser(KeyfileReaderInfo *info, NMSetting *setting, const char *key)
 {
     int                addr_family;
     gs_strfreev char **list = NULL;
-    gsize              i, n, length;
+    gsize              length;
+    gsize              n;
+    gsize              i;
 
     nm_assert(NM_IS_SETTING_IP4_CONFIG(setting) || NM_IS_SETTING_IP6_CONFIG(setting));
 
@@ -1115,13 +1117,10 @@ ip_dns_parser(KeyfileReaderInfo *info, NMSetting *setting, const char *key)
     if (length == 0)
         return;
 
-    addr_family = NM_IS_SETTING_IP4_CONFIG(setting) ? AF_INET : AF_INET6;
+    addr_family = NM_SETTING_IP_CONFIG_GET_ADDR_FAMILY(setting);
 
-    n = 0;
-    for (i = 0; i < length; i++) {
-        NMIPAddr addr;
-
-        if (inet_pton(addr_family, list[i], &addr) <= 0) {
+    for (i = 0, n = 0; i < length; i++) {
+        if (!nm_utils_dnsname_parse(addr_family, list[i], NULL, NULL, NULL)) {
             if (!read_handle_warn(info,
                                   key,
                                   key,

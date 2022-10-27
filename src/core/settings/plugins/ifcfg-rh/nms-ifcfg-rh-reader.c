@@ -2047,7 +2047,9 @@ make_ip4_setting(shvarFile *ifcfg,
          * Pick up just IPv4 addresses (IPv6 addresses are taken by make_ip6_setting())
          */
         for (i = 1; i < 10000; i++) {
-            char tag[256];
+            int      af;
+            NMIPAddr ip;
+            char     tag[256];
 
             numbered_tag(tag, "DNS", i);
             nm_clear_g_free(&value);
@@ -2055,18 +2057,18 @@ make_ip4_setting(shvarFile *ifcfg,
             if (!v)
                 break;
 
-            if (nm_inet_is_valid(AF_INET, v)) {
-                if (!nm_setting_ip_config_add_dns(s_ip4, v))
-                    PARSE_WARNING("duplicate DNS server %s", tag);
-            } else if (nm_inet_is_valid(AF_INET6, v)) {
-                /* Ignore IPv6 addresses */
-            } else {
+            if (!nm_utils_dnsname_parse(AF_UNSPEC, v, &af, &ip, NULL)) {
                 g_set_error(error,
                             NM_SETTINGS_ERROR,
                             NM_SETTINGS_ERROR_INVALID_CONNECTION,
                             "Invalid DNS server address '%s'",
                             v);
                 return NULL;
+            } else if (af == AF_INET) {
+                if (!nm_setting_ip_config_add_dns(s_ip4, v))
+                    PARSE_WARNING("duplicate DNS server %s", tag);
+            } else {
+                /* Ignore IPv6 addresses */
             }
         }
 
@@ -2586,7 +2588,9 @@ make_ip6_setting(shvarFile *ifcfg, shvarFile *network_ifcfg, gboolean routes_rea
      * Pick up just IPv6 addresses (IPv4 addresses are taken by make_ip4_setting())
      */
     for (i = 1; i < 10000; i++) {
-        char tag[256];
+        int      af;
+        NMIPAddr ip;
+        char     tag[256];
 
         numbered_tag(tag, "DNS", i);
         nm_clear_g_free(&value);
@@ -2594,16 +2598,7 @@ make_ip6_setting(shvarFile *ifcfg, shvarFile *network_ifcfg, gboolean routes_rea
         if (!v)
             break;
 
-        if (nm_inet_is_valid(AF_INET6, v)) {
-            if (is_disabled) {
-                PARSE_WARNING("ignore DNS server addresses with method disabled/ignore");
-                break;
-            }
-            if (!nm_setting_ip_config_add_dns(s_ip6, v))
-                PARSE_WARNING("duplicate DNS server %s", tag);
-        } else if (nm_inet_is_valid(AF_INET, v)) {
-            /* Ignore IPv4 addresses */
-        } else {
+        if (!nm_utils_dnsname_parse(AF_UNSPEC, v, &af, &ip, NULL)) {
             if (is_disabled)
                 continue;
             g_set_error(error,
@@ -2612,6 +2607,15 @@ make_ip6_setting(shvarFile *ifcfg, shvarFile *network_ifcfg, gboolean routes_rea
                         "Invalid DNS server address '%s'",
                         v);
             return NULL;
+        } else if (af == AF_INET6) {
+            if (is_disabled) {
+                PARSE_WARNING("ignore DNS server addresses with method disabled/ignore");
+                break;
+            }
+            if (!nm_setting_ip_config_add_dns(s_ip6, v))
+                PARSE_WARNING("duplicate DNS server %s", tag);
+        } else {
+            /* Ignore IPv4 addresses */
         }
     }
 

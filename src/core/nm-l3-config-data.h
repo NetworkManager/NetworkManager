@@ -495,12 +495,16 @@ const in_addr_t *nm_l3_config_data_get_wins(const NML3ConfigData *self, guint *o
 
 gboolean nm_l3_config_data_add_wins(NML3ConfigData *self, in_addr_t wins);
 
-gconstpointer
+const char *const *
 nm_l3_config_data_get_nameservers(const NML3ConfigData *self, int addr_family, guint *out_len);
 
-gboolean nm_l3_config_data_add_nameserver(NML3ConfigData                        *self,
-                                          int                                    addr_family,
-                                          gconstpointer /* (const NMIPAddr *) */ nameserver);
+gboolean
+nm_l3_config_data_add_nameserver(NML3ConfigData *self, int addr_family, const char *nameserver);
+
+gboolean nm_l3_config_data_add_nameserver_detail(NML3ConfigData *self,
+                                                 int             addr_family,
+                                                 gconstpointer   addr_bin,
+                                                 const char     *server_name);
 
 gboolean nm_l3_config_data_clear_nameservers(NML3ConfigData *self, int addr_family);
 

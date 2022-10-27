@@ -1460,7 +1460,7 @@ nm_setting_wireguard_clear_peers(NMSettingWireGuard *self)
 /*****************************************************************************/
 
 static GVariant *
-_peers_dbus_only_synth(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
+peers_to_dbus(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 {
     NMSettingWireGuard        *self = NM_SETTING_WIREGUARD(setting);
     NMSettingWireGuardPrivate *priv;
@@ -1558,7 +1558,7 @@ _peers_dbus_only_synth(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 }
 
 static gboolean
-_peers_dbus_only_set(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
+peers_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 {
     GVariantIter iter_peers;
     GVariant    *peer_var;
@@ -2526,9 +2526,9 @@ nm_setting_wireguard_class_init(NMSettingWireGuardClass *klass)
         properties_override,
         NM_SETTING_WIREGUARD_PEERS,
         NM_SETT_INFO_PROPERT_TYPE_DBUS(NM_G_VARIANT_TYPE("aa{sv}"),
-                                       .to_dbus_fcn   = _peers_dbus_only_synth,
+                                       .to_dbus_fcn   = peers_to_dbus,
                                        .compare_fcn   = compare_fcn_peers,
-                                       .from_dbus_fcn = _peers_dbus_only_set, ));
+                                       .from_dbus_fcn = peers_from_dbus, ));
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 

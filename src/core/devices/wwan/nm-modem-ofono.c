@@ -846,7 +846,7 @@ handle_settings(GVariant *v_dict, gpointer user_data)
             }
             any_good = TRUE;
             _LOGI("DNS: %s", *array);
-            nm_l3_config_data_add_nameserver(priv->l3cd_4, AF_INET, &address_network);
+            nm_l3_config_data_add_nameserver_detail(priv->l3cd_4, AF_INET, &address_network, NULL);
         }
         if (!any_good) {
             _LOGW("Settings: 'DomainNameServers': none specified");

@@ -5247,7 +5247,8 @@ test_setting_ip4_changed_signal(void)
     ASSERT_CHANGED(nm_setting_ip_config_add_dns(s_ip4, "11.22.0.0"));
     ASSERT_CHANGED(nm_setting_ip_config_remove_dns(s_ip4, 0));
 
-    NMTST_EXPECT_LIBNM_CRITICAL(NMTST_G_RETURN_MSG(idx >= 0 && idx < priv->dns->len));
+    NMTST_EXPECT_LIBNM_CRITICAL(
+        NMTST_G_RETURN_MSG(idx >= 0 && ((guint) idx) < nm_g_ptr_array_len(priv->dns)));
     ASSERT_UNCHANGED(nm_setting_ip_config_remove_dns(s_ip4, 1));
     g_test_assert_expected_messages();
 
@@ -5323,7 +5324,8 @@ test_setting_ip6_changed_signal(void)
     ASSERT_CHANGED(nm_setting_ip_config_add_dns(s_ip6, "1:2:3::4:5:6"));
     ASSERT_CHANGED(nm_setting_ip_config_remove_dns(s_ip6, 0));
 
-    NMTST_EXPECT_LIBNM_CRITICAL(NMTST_G_RETURN_MSG(idx >= 0 && idx < priv->dns->len));
+    NMTST_EXPECT_LIBNM_CRITICAL(
+        NMTST_G_RETURN_MSG(idx >= 0 && ((guint) idx) < nm_g_ptr_array_len(priv->dns)));
     ASSERT_UNCHANGED(nm_setting_ip_config_remove_dns(s_ip6, 1));
     g_test_assert_expected_messages();
 
@@ -11163,6 +11165,181 @@ test_connection_path(void)
 
 /*****************************************************************************/
 
+static void
+_t_dnsname_1(const char *str, const char *exp_addr, const char *exp_server_name)
+{
+    int           addr_family;
+    NMIPAddr      exp_addr_bin;
+    gboolean      addr_family_request;
+    gboolean      r;
+    int           detect_addr_family;
+    NMIPAddr      detect_addr;
+    const char   *detect_server_name;
+    int          *p_detect_addr_family = &detect_addr_family;
+    NMIPAddr     *p_detect_addr        = &detect_addr;
+    const char  **p_detect_server_name = &detect_server_name;
+    char          str_construct_buf[100];
+    char          str_construct_buf2[100];
+    const char   *str_construct;
+    const char   *str_construct2;
+    gsize         l;
+    const char   *str_normalized;
+    gs_free char *str_normalized_alloc = NULL;
+
+    g_assert(str);
+    g_assert(exp_addr);
+
+    r = nm_inet_parse_bin(AF_UNSPEC, exp_addr, &addr_family, &exp_addr_bin);
+    g_assert(r);
+    g_assert(NM_IN_SET(addr_family, AF_INET, AF_INET6));
+
+    addr_family_request = nmtst_get_rand_bool();
+    if (nmtst_get_rand_bool())
+        p_detect_addr = NULL;
+    if ((addr_family_request || !p_detect_addr) && nmtst_get_rand_bool())
+        p_detect_addr_family = NULL;
+    if (nmtst_get_rand_bool())
+        p_detect_server_name = NULL;
+
+    r = nm_utils_dnsname_parse(addr_family_request ? addr_family : AF_UNSPEC,
+                               str,
+                               p_detect_addr_family,
+                               p_detect_addr,
+                               p_detect_server_name);
+    g_assert(r);
+
+    if (p_detect_addr_family)
+        g_assert_cmpint(addr_family, ==, detect_addr_family);
+    if (p_detect_addr)
+        g_assert_cmpstr(nmtst_inet_to_string(addr_family, &detect_addr), ==, exp_addr);
+    if (p_detect_server_name)
+        g_assert_cmpstr(detect_server_name, ==, exp_server_name);
+
+    r = nm_utils_dnsname_parse(addr_family == AF_INET ? AF_INET6 : AF_INET,
+                               str,
+                               p_detect_addr_family,
+                               p_detect_addr,
+                               p_detect_server_name);
+    g_assert(!r);
+
+    /* Construct the expected value. */
+    str_construct = nm_utils_dnsname_construct(addr_family,
+                                               &exp_addr_bin,
+                                               exp_server_name,
+                                               str_construct_buf,
+                                               sizeof(str_construct_buf));
+    g_assert(str_construct);
+    g_assert(str_construct == str_construct_buf);
+    g_assert(strlen(str_construct) < sizeof(str_construct_buf));
+
+    /* Check that a too short buffer causes truncation. */
+    l              = nmtst_get_rand_uint32() % (strlen(str_construct) + 10);
+    str_construct2 = nm_utils_dnsname_construct(addr_family,
+                                                &exp_addr_bin,
+                                                exp_server_name,
+                                                str_construct_buf2,
+                                                l);
+    if (str_construct2) {
+        g_assert(str_construct2 == str_construct_buf2);
+        g_assert_cmpstr(str_construct2, ==, str_construct);
+        g_assert(l > strlen(str_construct));
+    } else
+        g_assert(l <= strlen(str_construct));
+
+    if (!nm_streq(str_construct, str)) {
+        _t_dnsname_1(str_construct, exp_addr, exp_server_name);
+    }
+
+    str_normalized = nm_utils_dnsname_normalize(nmtst_get_rand_bool() ? addr_family : AF_UNSPEC,
+                                                str,
+                                                &str_normalized_alloc);
+    g_assert(str_normalized);
+    if (str_normalized_alloc) {
+        g_assert(str_normalized == str_normalized_alloc);
+        g_assert_cmpstr(str_normalized, !=, str);
+    } else {
+        g_assert(str == str_normalized);
+    }
+    g_assert_cmpstr(str_normalized, ==, str_construct);
+
+    nm_clear_g_free(&str_normalized_alloc);
+    str_normalized = nm_utils_dnsname_normalize(addr_family == AF_INET ? AF_INET6 : AF_INET,
+                                                str,
+                                                &str_normalized_alloc);
+    g_assert(!str_normalized);
+    g_assert(!str_normalized_alloc);
+}
+
+static void
+_t_dnsname_0(const char *str)
+{
+    gboolean      addr_family_request;
+    int           detect_addr_family;
+    NMIPAddr      detect_addr;
+    const char   *detect_server_name;
+    int          *p_detect_addr_family = &detect_addr_family;
+    NMIPAddr     *p_detect_addr        = &detect_addr;
+    const char  **p_detect_server_name = &detect_server_name;
+    const char   *str_normalized;
+    gs_free char *str_normalized_alloc = NULL;
+    gboolean      r;
+
+    g_assert(str);
+
+    addr_family_request = nmtst_get_rand_bool();
+    if (nmtst_get_rand_bool())
+        p_detect_addr = NULL;
+    if ((addr_family_request || !p_detect_addr) && nmtst_get_rand_bool())
+        p_detect_addr_family = NULL;
+    if (nmtst_get_rand_bool())
+        p_detect_server_name = NULL;
+
+    r = nm_utils_dnsname_parse(addr_family_request ? nmtst_rand_select(AF_INET, AF_INET6)
+                                                   : AF_UNSPEC,
+                               str,
+                               p_detect_addr_family,
+                               p_detect_addr,
+                               p_detect_server_name);
+    g_assert(!r);
+
+    str_normalized = nm_utils_dnsname_normalize(nmtst_rand_select(AF_UNSPEC, AF_INET, AF_INET6),
+                                                str,
+                                                &str_normalized_alloc);
+    g_assert(!str_normalized);
+    g_assert(!str_normalized_alloc);
+}
+
+static void
+test_dnsname(void)
+{
+    _t_dnsname_1("1.2.3.4", "1.2.3.4", NULL);
+    _t_dnsname_1("1.2.3.4#foo", "1.2.3.4", "foo");
+    _t_dnsname_1("1::#x", "1::", "x");
+    _t_dnsname_1("1::0#x", "1::", "x");
+    _t_dnsname_1("192.168.0.1", "192.168.0.1", NULL);
+    _t_dnsname_1("192.168.0.1#test.com", "192.168.0.1", "test.com");
+    _t_dnsname_1("fe80::18", "fe80::18", NULL);
+    _t_dnsname_1("fe80::18#hoge.com", "fe80::18", "hoge.com");
+
+    _t_dnsname_0("1.2.3.4#");
+    _t_dnsname_0("1::0#");
+    _t_dnsname_0("192.168.0.1:53");
+    _t_dnsname_0("192.168.0.1:53#example.com");
+    _t_dnsname_0("fe80::18%19");
+    _t_dnsname_0("fe80::18%lo");
+    _t_dnsname_0("[fe80::18]:53");
+    _t_dnsname_0("[fe80::18]:53%19");
+    _t_dnsname_0("[fe80::18]:53%lo");
+    _t_dnsname_0("fe80::18%19#hoge.com");
+    _t_dnsname_0("[fe80::18]:53#hoge.com");
+    _t_dnsname_0("[fe80::18]:53%19");
+    _t_dnsname_0("[fe80::18]:53%19#hoge.com");
+    _t_dnsname_0("[fe80::18]:53%lo");
+    _t_dnsname_0("[fe80::18]:53%lo#hoge.com");
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE();
 
 int
@@ -11509,6 +11686,7 @@ main(int argc, char **argv)
     g_test_add_func("/core/general/test_system_encodings", test_system_encodings);
     g_test_add_func("/core/general/test_direct_string_is_refstr", test_direct_string_is_refstr);
     g_test_add_func("/core/general/test_connection_path", test_connection_path);
+    g_test_add_func("/core/general/test_dnsname", test_dnsname);
 
     return g_test_run();
 }

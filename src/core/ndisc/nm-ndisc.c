@@ -13,6 +13,7 @@
 #include "libnm-platform/nm-platform-utils.h"
 #include "libnm-platform/nm-platform.h"
 #include "libnm-platform/nmp-netns.h"
+#include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 #include "nm-l3-config-data.h"
 #include "nm-l3cfg.h"
 #include "nm-ndisc-private.h"
@@ -186,8 +187,12 @@ nm_ndisc_data_to_l3cd(NMDedupMultiIndex        *multi_idx,
         }
     }
 
-    for (i = 0; i < rdata->dns_servers_n; i++)
-        nm_l3_config_data_add_nameserver(l3cd, AF_INET6, &rdata->dns_servers[i].address);
+    for (i = 0; i < rdata->dns_servers_n; i++) {
+        nm_l3_config_data_add_nameserver_detail(l3cd,
+                                                AF_INET6,
+                                                &rdata->dns_servers[i].address,
+                                                NULL);
+    }
 
     for (i = 0; i < rdata->dns_domains_n; i++)
         nm_l3_config_data_add_search(l3cd, AF_INET6, rdata->dns_domains[i].domain);
@@ -989,14 +994,13 @@ announce_router_solicited(NMNDisc *ndisc)
 void
 nm_ndisc_set_config(NMNDisc *ndisc, const NML3ConfigData *l3cd)
 {
-    gboolean               changed = FALSE;
-    const struct in6_addr *in6arr;
-    const char *const     *strvarr;
-    NMDedupMultiIter       iter;
-    const NMPObject       *obj;
-    guint                  len;
-    guint                  i;
-    gint32                 fake_now = NM_NDISC_EXPIRY_BASE_TIMESTAMP / 1000;
+    gboolean           changed = FALSE;
+    const char *const *strvarr;
+    NMDedupMultiIter   iter;
+    const NMPObject   *obj;
+    guint              len;
+    guint              i;
+    gint32             fake_now = NM_NDISC_EXPIRY_BASE_TIMESTAMP / 1000;
 
     nm_assert(NM_IS_NDISC(ndisc));
     nm_assert(nm_ndisc_get_node_type(ndisc) == NM_NDISC_NODE_TYPE_ROUTER);
@@ -1035,15 +1039,19 @@ nm_ndisc_set_config(NMNDisc *ndisc, const NML3ConfigData *l3cd)
             changed = TRUE;
     }
 
-    in6arr = NULL;
-    len    = 0;
+    strvarr = NULL;
+    len     = 0;
     if (l3cd)
-        in6arr = nm_l3_config_data_get_nameservers(l3cd, AF_INET6, &len);
+        strvarr = nm_l3_config_data_get_nameservers(l3cd, AF_INET6, &len);
     for (i = 0; i < len; i++) {
+        struct in6_addr  a;
         NMNDiscDNSServer n;
 
+        if (!nm_utils_dnsname_parse_assert(AF_INET6, strvarr[i], NULL, &a, NULL))
+            continue;
+
         n = (NMNDiscDNSServer){
-            .address     = in6arr[i],
+            .address     = a,
             .expiry_msec = _nm_ndisc_lifetime_to_expiry(NM_NDISC_EXPIRY_BASE_TIMESTAMP,
                                                         NM_NDISC_ROUTER_LIFETIME),
         };
