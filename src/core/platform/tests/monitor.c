@@ -55,8 +55,8 @@ read_argv(int *argc, char ***argv)
             0,
             G_OPTION_ARG_FILENAME,
             &global_opt.state_file,
-            N_("Dump the platform cache to this file"),
-            N_("FILE")},
+            "Dump the platform cache to this file",
+            "FILE"},
            {0},
     };
     gs_free_error GError *error = NULL;
