@@ -589,7 +589,48 @@ _nm_setting_use_legacy_property(NMSetting  *setting,
                                 const char *new_property)
 {
     gs_unref_variant GVariant *setting_dict = NULL;
-    gs_unref_variant GVariant *value        = NULL;
+    gs_unref_variant GVariant *val_leg      = NULL;
+    gs_unref_variant GVariant *val_new      = NULL;
+
+    /* We want to be both forward and backward compatible (both the client or the daemon
+     * can be newer).
+     *
+     * For the most part, we achieve that by ignoring unknown properties (to be forward
+     * compatible). That of course has the downside, that we don't do strong validation
+     * of the input.
+     *
+     * In some cases, we deprecated a D-Bus property for another one (e.g. the legacy property
+     * "ipv4.routes" became the new property "ipv4.route-data"). In that case, the to/from D-Bus
+     * methods behave differently on the client and the daemon.
+     *
+     * The daemon will serialize both the legacy property and the new property to D-Bus.
+     * The client, will prefer the newer property (if it exists) when deserializing from D-Bus.
+     *
+     * Usually that scheme would fully suffice to support forward and backward compatibility.
+     * However, there is a problem. An old client (unaware of the new property) might get
+     * the profile, modify the old property, and send the entire profile back to the daemon.
+     * In this case, the old client does not know that the new property conflicts with the
+     * old property. The client also might try to preserve any unknown properties and send
+     * them back to the daemon. If the daemon now would prefer the new property, it would be wrong.
+     *
+     * The solution to this is that the daemon -- when both old and new property is set --
+     * will prefer the old property. This is what _nm_setting_use_legacy_property() checks
+     * for. Consequently, a new client will not serialize both the old and the new property.
+     * This is done via "to_dbus_only_in_manager_process" flag.
+     *
+     * The downside of this scheme is that:
+     *
+     * - to/from D-Bus just got more complicated and behaves differently on the client
+     *   and the daemon.
+     * - backward compatibility does not work with a newer client vs. and older daemon.
+     *   This is the major downside. It's only not that severe, because we only deprecate
+     *   properties seldom and only on major versions. Major version updates happen not
+     *   often and they user might reboot (restart the daemon).
+     *
+     * The benefit is that the case with an older client and a newer daemon works, even
+     * if the client fetches a (new) profile, modifies only parts that it understands,
+     * and sends back the complete profile (including the new, unmodified properties).
+     */
 
     if (!connection_dict) {
         /* we also allow the caller to provide no connection_dict.
@@ -611,19 +652,24 @@ _nm_setting_use_legacy_property(NMSetting  *setting,
 
     g_return_val_if_fail(setting_dict != NULL, FALSE);
 
-    /* If the new property isn't set, we have to use the legacy property. */
-    value = g_variant_lookup_value(setting_dict, new_property, NULL);
-    if (!value)
-        return TRUE;
-    nm_clear_pointer(&value, g_variant_unref);
+    if (!_nm_utils_is_manager_process) {
+        /* The client will prefer the new property, unless it does not exist and
+         * the legacy property exists. */
+        val_new = g_variant_lookup_value(setting_dict, new_property, NULL);
+        if (!val_new) {
+            val_leg = g_variant_lookup_value(setting_dict, legacy_property, NULL);
+            if (val_leg)
+                return TRUE;
+        }
 
-    /* Otherwise, clients always prefer new properties sent from the daemon. */
-    if (!_nm_utils_is_manager_process)
         return FALSE;
+    }
 
-    /* The daemon prefers the legacy property if it exists. */
-    value = g_variant_lookup_value(setting_dict, legacy_property, NULL);
-    return !!value;
+    /* The daemon prefers the old property (if it exists). */
+    val_leg = g_variant_lookup_value(setting_dict, legacy_property, NULL);
+    if (val_leg)
+        return TRUE;
+    return FALSE;
 }
 
 /*****************************************************************************/
@@ -1737,12 +1783,11 @@ property_to_dbus(const NMSettInfoSetting                *sett_info,
               || NM_FLAGS_HAS(property_info->param_spec->flags, G_PARAM_WRITABLE)
               || property_info->property_type == &nm_sett_info_propert_type_setting_name);
 
+    if (property_info->to_dbus_only_in_manager_process && !_nm_utils_is_manager_process)
+        return NULL;
+
     if (property_info->param_spec && !ignore_flags
         && !NM_FLAGS_HAS(property_info->param_spec->flags, NM_SETTING_PARAM_TO_DBUS_IGNORE_FLAGS)) {
-        if (NM_FLAGS_HAS(property_info->param_spec->flags, NM_SETTING_PARAM_LEGACY)
-            && !_nm_utils_is_manager_process)
-            return NULL;
-
         if (NM_FLAGS_HAS(property_info->param_spec->flags, NM_SETTING_PARAM_SECRET)) {
             NMSettingSecretFlags f = NM_SETTING_SECRET_FLAG_NONE;
 
@@ -3504,7 +3549,7 @@ nm_setting_to_string(NMSetting *setting)
 }
 
 static GVariant *
-_nm_setting_get_deprecated_virtual_interface_name(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
+depreated_interface_name_to_dbus(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 {
     NMSettingConnection *s_con;
 
@@ -3524,8 +3569,9 @@ _nm_setting_get_deprecated_virtual_interface_name(_NM_SETT_INFO_PROP_TO_DBUS_FCN
 const NMSettInfoPropertType nm_sett_info_propert_type_deprecated_interface_name =
     NM_SETT_INFO_PROPERT_TYPE_DBUS_INIT(G_VARIANT_TYPE_STRING,
                                         .compare_fcn = _nm_setting_property_compare_fcn_ignore,
-                                        .to_dbus_fcn =
-                                            _nm_setting_get_deprecated_virtual_interface_name, );
+                                        .to_dbus_fcn = depreated_interface_name_to_dbus,
+                                        /* from_dbus_fcn() is handled by the connection.interface-name setter.
+                                         * See nm_setting_connection_no_interface_name(). */ );
 
 const NMSettInfoPropertType nm_sett_info_propert_type_setting_name =
     NM_SETT_INFO_PROPERT_TYPE_DBUS_INIT(G_VARIANT_TYPE_STRING,

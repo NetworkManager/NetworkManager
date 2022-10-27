@@ -1297,12 +1297,30 @@ nm_utils_wpa_psk_valid(const char *psk)
 GVariant *
 nm_utils_ip4_dns_to_variant(char **dns)
 {
-    return _nm_utils_ip4_dns_to_variant(NM_CAST_STRV_CC(dns), -1);
+    return nm_utils_dns_to_variant(AF_INET, NM_CAST_STRV_CC(dns), -1);
+}
+
+/**
+ * nm_utils_ip6_dns_to_variant:
+ * @dns: (type utf8): an array of IP address strings
+ *
+ * Utility function to convert an array of IP address strings int a #GVariant of
+ * type 'aay' representing an array of IPv6 addresses.
+ *
+ * If a string cannot be parsed, it will be silently ignored.
+ *
+ * Returns: (transfer none): a new floating #GVariant representing @dns.
+ **/
+GVariant *
+nm_utils_ip6_dns_to_variant(char **dns)
+{
+    return nm_utils_dns_to_variant(AF_INET6, NM_CAST_STRV_CC(dns), -1);
 }
 
 GVariant *
-_nm_utils_ip4_dns_to_variant(const char *const *dns, gssize len)
+nm_utils_dns_to_variant(int addr_family, const char *const *dns, gssize len)
 {
+    const int       IS_IPv4 = NM_IS_IPv4(addr_family);
     GVariantBuilder builder;
     gsize           l;
     gsize           i;
@@ -1312,13 +1330,20 @@ _nm_utils_ip4_dns_to_variant(const char *const *dns, gssize len)
     else
         l = len;
 
-    g_variant_builder_init(&builder, G_VARIANT_TYPE("au"));
+    g_variant_builder_init(&builder, IS_IPv4 ? G_VARIANT_TYPE("au") : G_VARIANT_TYPE("aay"));
 
     for (i = 0; i < l; i++) {
-        in_addr_t ip;
+        NMIPAddr ip;
 
-        if (inet_pton(AF_INET, dns[i], &ip) == 1)
+        /* We can only represent the IP address on the legacy property "ipv[46].dns".
+         * Expose what we can. */
+        if (!nm_utils_dnsname_parse(addr_family, dns[i], NULL, &ip, NULL))
+            continue;
+
+        if (IS_IPv4)
             g_variant_builder_add(&builder, "u", ip);
+        else
+            g_variant_builder_add(&builder, "@ay", nm_g_variant_new_ay_in6addr(&ip.addr6));
     }
 
     return g_variant_builder_end(&builder);
@@ -1604,46 +1629,6 @@ guint32
 nm_utils_ip4_get_default_prefix(guint32 ip)
 {
     return nm_ip4_addr_get_default_prefix(ip);
-}
-
-/**
- * nm_utils_ip6_dns_to_variant:
- * @dns: (type utf8): an array of IP address strings
- *
- * Utility function to convert an array of IP address strings int a #GVariant of
- * type 'aay' representing an array of IPv6 addresses.
- *
- * If a string cannot be parsed, it will be silently ignored.
- *
- * Returns: (transfer none): a new floating #GVariant representing @dns.
- **/
-GVariant *
-nm_utils_ip6_dns_to_variant(char **dns)
-{
-    return _nm_utils_ip6_dns_to_variant(NM_CAST_STRV_CC(dns), -1);
-}
-
-GVariant *
-_nm_utils_ip6_dns_to_variant(const char *const *dns, gssize len)
-{
-    GVariantBuilder builder;
-    gsize           i;
-    gsize           l;
-
-    if (len < 0)
-        l = NM_PTRARRAY_LEN(dns);
-    else
-        l = len;
-
-    g_variant_builder_init(&builder, G_VARIANT_TYPE("aay"));
-    for (i = 0; i < l; i++) {
-        struct in6_addr ip;
-
-        if (inet_pton(AF_INET6, dns[i], &ip) != 1)
-            continue;
-        g_variant_builder_add(&builder, "@ay", nm_g_variant_new_ay_in6addr(&ip));
-    }
-    return g_variant_builder_end(&builder);
 }
 
 /**
@@ -3980,7 +3965,7 @@ nm_utils_hwaddr_to_dbus(const char *str)
 }
 
 GVariant *
-_nm_utils_hwaddr_cloned_get(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
+_nm_sett_info_prop_to_dbus_fcn_cloned_mac_address(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 {
     gs_free char *addr = NULL;
 
@@ -3991,7 +3976,7 @@ _nm_utils_hwaddr_cloned_get(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 }
 
 gboolean
-_nm_utils_hwaddr_cloned_set(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
+_nm_sett_info_prop_from_dbus_fcn_cloned_mac_address(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 {
     gsize         length;
     const guint8 *array;
@@ -4022,14 +4007,15 @@ _nm_utils_hwaddr_cloned_set(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 }
 
 gboolean
-_nm_utils_hwaddr_cloned_not_set(_NM_SETT_INFO_PROP_MISSING_FROM_DBUS_FCN_ARGS _nm_nil)
+_nm_sett_info_prop_missing_from_dbus_fcn_cloned_mac_address(
+    _NM_SETT_INFO_PROP_MISSING_FROM_DBUS_FCN_ARGS _nm_nil)
 {
     nm_assert(nm_streq0(property, "cloned-mac-address"));
     return TRUE;
 }
 
 static GVariant *
-_nm_utils_hwaddr_cloned_data_synth(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
+assigned_mac_address_to_dbus(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 {
     gs_free char *addr = NULL;
 
@@ -4058,7 +4044,7 @@ _nm_utils_hwaddr_cloned_data_synth(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
 }
 
 static gboolean
-_nm_utils_hwaddr_cloned_data_set(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
+assigned_mac_address_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 {
     nm_assert(nm_streq0(property_info->name, "assigned-mac-address"));
 
@@ -4080,8 +4066,8 @@ _nm_utils_hwaddr_cloned_data_set(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 const NMSettInfoPropertType nm_sett_info_propert_type_assigned_mac_address =
     NM_SETT_INFO_PROPERT_TYPE_DBUS_INIT(G_VARIANT_TYPE_STRING,
                                         .compare_fcn   = _nm_setting_property_compare_fcn_ignore,
-                                        .to_dbus_fcn   = _nm_utils_hwaddr_cloned_data_synth,
-                                        .from_dbus_fcn = _nm_utils_hwaddr_cloned_data_set, );
+                                        .to_dbus_fcn   = assigned_mac_address_to_dbus,
+                                        .from_dbus_fcn = assigned_mac_address_from_dbus, );
 
 /*****************************************************************************/
 

@@ -318,8 +318,9 @@ typedef struct {
  */
 #define NM_SETTING_PARAM_INFERRABLE (1 << (4 + G_PARAM_USER_SHIFT))
 
-/* This is a legacy property, which clients should not send to the daemon. */
-#define NM_SETTING_PARAM_LEGACY (1 << (5 + G_PARAM_USER_SHIFT))
+/* This flag has no meaning (anymore). It's only kept, because we used it
+ * on some older versions of libnm. */
+#define NM_SETTING_PARAM_UNUSED1 (1 << (5 + G_PARAM_USER_SHIFT))
 
 /* When a connection is active and gets modified, usually the change
  * to the settings-connection does not propagate automatically to the
@@ -504,10 +505,14 @@ _nm_properties_override(GArray *properties_override, const NMSettInfoProperty *p
                                                   .property_type = (p_property_type), \
                                                   __VA_ARGS__))
 
-#define _nm_properties_override_dbus(properties_override, p_name, p_property_type) \
-    _nm_properties_override(                                                       \
-        (properties_override),                                                     \
-        NM_SETT_INFO_PROPERTY(.name = ("" p_name ""), .property_type = (p_property_type), ))
+#define _nm_properties_override_dbus(properties_override,                             \
+                                     p_name,                                          \
+                                     p_property_type,                                 \
+                                     ... /* extra NMSettInfoProperty fields */)       \
+    _nm_properties_override((properties_override),                                    \
+                            NM_SETT_INFO_PROPERTY(.name          = ("" p_name ""),    \
+                                                  .property_type = (p_property_type), \
+                                                  __VA_ARGS__))
 
 /*****************************************************************************/
 
@@ -1064,11 +1069,14 @@ NMTernary _nm_setting_ip_config_compare_fcn_addresses(_NM_SETT_INFO_PROP_COMPARE
 
 NMTernary _nm_setting_ip_config_compare_fcn_routes(_NM_SETT_INFO_PROP_COMPARE_FCN_ARGS _nm_nil);
 
-gboolean _nm_utils_hwaddr_cloned_not_set(_NM_SETT_INFO_PROP_MISSING_FROM_DBUS_FCN_ARGS _nm_nil);
+gboolean _nm_sett_info_prop_missing_from_dbus_fcn_cloned_mac_address(
+    _NM_SETT_INFO_PROP_MISSING_FROM_DBUS_FCN_ARGS _nm_nil);
 
-GVariant *_nm_utils_hwaddr_cloned_get(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil);
+GVariant *
+_nm_sett_info_prop_to_dbus_fcn_cloned_mac_address(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil);
 
-gboolean _nm_utils_hwaddr_cloned_set(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil);
+gboolean
+_nm_sett_info_prop_from_dbus_fcn_cloned_mac_address(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil);
 
 /*****************************************************************************/
 

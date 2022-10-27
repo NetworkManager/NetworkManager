@@ -461,6 +461,7 @@ test_read_netmask_1(void)
     gs_free char                 *content    = NULL;
     NMSettingConnection          *s_con;
     NMSettingIPConfig            *s_ip4;
+    NMSettingIPConfig            *s_ip6;
     NMIPAddress                  *ip4_addr;
     const char                   *FILENAME = TEST_IFCFG_DIR "/ifcfg-netmask-1";
 
@@ -470,11 +471,19 @@ test_read_netmask_1(void)
     g_assert_cmpstr(nm_setting_connection_get_id(s_con), ==, "System netmask-1");
 
     s_ip4 = nmtst_connection_assert_setting(connection, NM_TYPE_SETTING_IP4_CONFIG);
-    g_assert_cmpuint(nm_setting_ip_config_get_num_dns(s_ip4), ==, 1);
+    g_assert_cmpuint(nm_setting_ip_config_get_num_dns(s_ip4), ==, 2);
+    g_assert_cmpstr(nm_setting_ip_config_get_dns(s_ip4, 0), ==, "192.0.2.1");
+    g_assert_cmpstr(nm_setting_ip_config_get_dns(s_ip4, 1), ==, "192.0.2.2#adfs.afddsaf");
+
     ip4_addr = nm_setting_ip_config_get_address(s_ip4, 0);
     g_assert(ip4_addr);
     g_assert_cmpstr(nm_ip_address_get_address(ip4_addr), ==, "102.0.2.2");
     g_assert_cmpint(nm_ip_address_get_prefix(ip4_addr), ==, 15);
+
+    s_ip6 = nmtst_connection_assert_setting(connection, NM_TYPE_SETTING_IP6_CONFIG);
+    g_assert_cmpuint(nm_setting_ip_config_get_num_dns(s_ip6), ==, 2);
+    g_assert_cmpstr(nm_setting_ip_config_get_dns(s_ip6, 0), ==, "1::2");
+    g_assert_cmpstr(nm_setting_ip_config_get_dns(s_ip6, 1), ==, "1::3#dfdf.er");
 
     nmtst_assert_connection_verifies_without_normalization(connection);
 
@@ -1390,6 +1399,10 @@ test_read_wired_static_routes(void)
     g_assert_cmpint(nm_ip_route_get_prefix(ip4_route), ==, 32);
     nmtst_assert_route_attribute_string(ip4_route, NM_IP_ROUTE_ATTRIBUTE_TYPE, "local");
     nmtst_assert_route_attribute_byte(ip4_route, NM_IP_ROUTE_ATTRIBUTE_SCOPE, 254);
+
+    g_assert_cmpint(nm_setting_ip_config_get_num_dns(s_ip4), ==, 2);
+    g_assert_cmpstr(nm_setting_ip_config_get_dns(s_ip4, 0), ==, "4.2.2.1");
+    g_assert_cmpstr(nm_setting_ip_config_get_dns(s_ip4, 1), ==, "4.2.2.2#dns.name");
 }
 
 static void

@@ -36,6 +36,7 @@
 /* define a variable, so that we can compare the operation with pointer equality. */
 static const char *const DBUS_OP_SET_LINK_DEFAULT_ROUTE = "SetLinkDefaultRoute";
 static const char *const DBUS_OP_SET_LINK_DNS_OVER_TLS  = "SetLinkDNSOverTLS";
+static const char *const DBUS_OP_SET_LINK_DNS_EX        = "SetLinkDNSEx";
 
 /*****************************************************************************/
 
@@ -90,12 +91,11 @@ typedef struct {
     bool             dbus_initied : 1;
     bool             send_updates_waiting : 1;
     bool             update_pending : 1;
-    /* These two variables ensure that the log is not spammed with
-     * API (not) supported messages.
-     * They can be removed when no distro uses systemd-resolved < v240 anymore
-     */
-    NMTernary has_link_default_route : 3;
-    NMTernary has_link_dns_over_tls : 3;
+
+    /* Detect support for the respective D-Bus API. */
+    NMTernary has_set_link_default_route : 3;
+    NMTernary has_set_link_dns_over_tls : 3;
+    NMTernary has_set_link_dns_ex : 3;
 } NMDnsSystemdResolvedPrivate;
 
 struct _NMDnsSystemdResolved {
@@ -147,6 +147,8 @@ G_DEFINE_TYPE(NMDnsSystemdResolved, nm_dns_systemd_resolved, NM_TYPE_DNS_PLUGIN)
 static void _resolve_complete_error(NMDnsSystemdResolvedResolveHandle *handle, GError *error);
 
 static void _resolve_start(NMDnsSystemdResolved *self, NMDnsSystemdResolvedResolveHandle *handle);
+
+static void send_updates(NMDnsSystemdResolved *self);
 
 /*****************************************************************************/
 
@@ -276,6 +278,7 @@ call_done(GObject *source, GAsyncResult *r, gpointer user_data)
     NMLogLevel                   log_level;
     const char                  *operation;
     int                          ifindex;
+    gboolean                     reconfigure = FALSE;
 
     request_item = user_data;
     self         = request_item->self;
@@ -290,30 +293,52 @@ call_done(GObject *source, GAsyncResult *r, gpointer user_data)
         goto out_dec_pending;
 
     if (v) {
-        if (operation == DBUS_OP_SET_LINK_DEFAULT_ROUTE
-            && priv->has_link_default_route == NM_TERNARY_DEFAULT) {
-            priv->has_link_default_route = NM_TERNARY_TRUE;
-            _LOGD("systemd-resolved support for SetLinkDefaultRoute(): API supported");
-        }
-        if (operation == DBUS_OP_SET_LINK_DNS_OVER_TLS
-            && priv->has_link_dns_over_tls == NM_TERNARY_DEFAULT) {
-            priv->has_link_dns_over_tls = NM_TERNARY_TRUE;
-            _LOGD("systemd-resolved support for SetLinkDNSOverTLS(): API supported");
+        if (operation == DBUS_OP_SET_LINK_DEFAULT_ROUTE) {
+            if (priv->has_set_link_default_route == NM_TERNARY_DEFAULT) {
+                priv->has_set_link_default_route = NM_TERNARY_TRUE;
+                _LOGD("systemd-resolved support for SetLinkDefaultRoute(): API supported");
+            }
+        } else if (operation == DBUS_OP_SET_LINK_DNS_OVER_TLS) {
+            if (priv->has_set_link_dns_over_tls == NM_TERNARY_DEFAULT) {
+                priv->has_set_link_dns_over_tls = NM_TERNARY_TRUE;
+                _LOGD("systemd-resolved support for SetLinkDNSOverTLS(): API supported");
+            }
+        } else if (operation == DBUS_OP_SET_LINK_DNS_EX) {
+            if (priv->has_set_link_dns_ex == NM_TERNARY_DEFAULT) {
+                priv->has_set_link_dns_ex = NM_TERNARY_TRUE;
+                _LOGD("systemd-resolved support for SetLinkDNSEx(): API supported");
+            }
         }
         priv->send_updates_warn_ratelimited = FALSE;
         goto out_dec_pending;
     }
 
     if (nm_g_error_matches(error, G_DBUS_ERROR, G_DBUS_ERROR_UNKNOWN_METHOD)) {
-        if (priv->has_link_default_route == NM_TERNARY_DEFAULT
-            && operation == DBUS_OP_SET_LINK_DEFAULT_ROUTE) {
-            priv->has_link_default_route = NM_TERNARY_FALSE;
-            _LOGD("systemd-resolved support for SetLinkDefaultRoute(): API not supported");
-        }
-        if (priv->has_link_dns_over_tls == NM_TERNARY_DEFAULT
-            && operation == DBUS_OP_SET_LINK_DNS_OVER_TLS) {
-            priv->has_link_dns_over_tls = NM_TERNARY_FALSE;
-            _LOGD("systemd-resolved support for SetLinkDNSOverTLS(): API not supported");
+        if (operation == DBUS_OP_SET_LINK_DEFAULT_ROUTE) {
+            if (priv->has_set_link_default_route == NM_TERNARY_DEFAULT) {
+                priv->has_set_link_default_route = NM_TERNARY_FALSE;
+                _LOGD("systemd-resolved support for SetLinkDefaultRoute(): API not supported");
+            }
+        } else if (operation == DBUS_OP_SET_LINK_DNS_OVER_TLS) {
+            if (priv->has_set_link_dns_over_tls == NM_TERNARY_DEFAULT) {
+                priv->has_set_link_dns_over_tls = NM_TERNARY_FALSE;
+                _LOGD("systemd-resolved support for SetLinkDNSOverTLS(): API not supported");
+            }
+        } else if (operation == DBUS_OP_SET_LINK_DNS_EX) {
+            if (priv->has_set_link_dns_ex == NM_TERNARY_DEFAULT) {
+                priv->has_set_link_dns_ex = NM_TERNARY_FALSE;
+                _LOGD("systemd-resolved support for SetLinkDNSEx(): API not supported");
+
+                _LOGW("systemd-resolved does not support SetLinkDNSEx API (v246). "
+                      "Cannot set DoT server name (SNI)");
+
+                /* We need to reconfigure with the SetLinkDNS fallback.
+                 *
+                 * In the other cases above, there is no need to reconfigure anything.
+                 * We won't retry SetLinkDefaultRoute/SetLinkDNSOverTLS anymore, but there
+                 * is nothing else we can do about that. */
+                reconfigure = TRUE;
+            }
         }
         goto out_dec_pending;
     }
@@ -335,21 +360,29 @@ out_dec_pending:
          * we must wrap up fast, and not hang an undefined amount time. */
         g_object_unref(self);
     }
+
+    if (reconfigure) {
+        priv->send_updates_waiting = TRUE;
+        send_updates(self);
+    }
 }
 
 static gboolean
 update_add_ip_config(NMDnsSystemdResolved    *self,
+                     const NMDnsConfigIPData *ip_data,
                      GVariantBuilder         *dns,
+                     GVariantBuilder         *dns_ex,
                      GVariantBuilder         *domains,
-                     const NMDnsConfigIPData *ip_data)
+                     gboolean                *out_require_dns_ex)
 {
-    gsize         addr_size;
-    guint         n;
-    guint         i;
-    gboolean      is_routing;
-    const char   *domain;
-    gboolean      has_config = FALSE;
-    gconstpointer nameservers;
+    NMDnsSystemdResolvedPrivate *priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE(self);
+    gsize                        addr_size;
+    guint                        n;
+    guint                        i;
+    gboolean                     is_routing;
+    const char                  *domain;
+    gboolean                     has_config = FALSE;
+    const char *const           *strarr;
 
     addr_size = nm_utils_addr_family_to_size(ip_data->addr_family);
 
@@ -361,28 +394,51 @@ update_add_ip_config(NMDnsSystemdResolved    *self,
         return FALSE;
     }
 
-    nameservers = nm_l3_config_data_get_nameservers(ip_data->l3cd, ip_data->addr_family, &n);
+    strarr = nm_l3_config_data_get_nameservers(ip_data->l3cd, ip_data->addr_family, &n);
     for (i = 0; i < n; i++) {
-        g_variant_builder_open(dns, G_VARIANT_TYPE("(iay)"));
-        g_variant_builder_add(dns, "i", ip_data->addr_family);
-        g_variant_builder_add_value(
-            dns,
-            nm_g_variant_new_ay(nm_ip_addr_from_packed_array(ip_data->addr_family, nameservers, i),
-                                addr_size));
-        g_variant_builder_close(dns);
+        const char *server_name;
+        NMIPAddr    a;
+
+        if (!nm_utils_dnsname_parse_assert(ip_data->addr_family, strarr[i], NULL, &a, &server_name))
+            continue;
+
+        if (server_name) {
+            NM_SET_OUT(out_require_dns_ex, TRUE);
+            if (priv->has_set_link_dns_ex == FALSE) {
+                /* The caller won't care about this result anymore. We can skip setting it. */
+                dns = NULL;
+            }
+        }
+
+        if (dns_ex) {
+            g_variant_builder_open(dns_ex, G_VARIANT_TYPE("(iayqs)"));
+            g_variant_builder_add(dns_ex, "i", ip_data->addr_family);
+            g_variant_builder_add_value(dns_ex, nm_g_variant_new_ay((gconstpointer) &a, addr_size));
+            g_variant_builder_add(dns_ex, "q", 0);
+            g_variant_builder_add(dns_ex, "s", server_name ?: "");
+            g_variant_builder_close(dns_ex);
+        }
+        if (dns) {
+            g_variant_builder_open(dns, G_VARIANT_TYPE("(iay)"));
+            g_variant_builder_add(dns, "i", ip_data->addr_family);
+            g_variant_builder_add_value(dns, nm_g_variant_new_ay((gconstpointer) &a, addr_size));
+            g_variant_builder_close(dns);
+        }
         has_config = TRUE;
     }
 
-    if (!ip_data->domains.has_default_route_explicit
-        && ip_data->domains.has_default_route_exclusive) {
-        g_variant_builder_add(domains, "(sb)", ".", TRUE);
-        has_config = TRUE;
-    }
-    if (ip_data->domains.search) {
-        for (i = 0; ip_data->domains.search[i]; i++) {
-            domain = nm_utils_parse_dns_domain(ip_data->domains.search[i], &is_routing);
-            g_variant_builder_add(domains, "(sb)", domain[0] ? domain : ".", is_routing);
+    if (!has_config || domains) {
+        if (!ip_data->domains.has_default_route_explicit
+            && ip_data->domains.has_default_route_exclusive) {
+            g_variant_builder_add(domains, "(sb)", ".", TRUE);
             has_config = TRUE;
+        }
+        if (ip_data->domains.search) {
+            for (i = 0; ip_data->domains.search[i]; i++) {
+                domain = nm_utils_parse_dns_domain(ip_data->domains.search[i], &is_routing);
+                g_variant_builder_add(domains, "(sb)", domain[0] ? domain : ".", is_routing);
+                has_config = TRUE;
+            }
         }
     }
 
@@ -406,7 +462,9 @@ free_pending_updates(NMDnsSystemdResolved *self)
 static gboolean
 prepare_one_interface(NMDnsSystemdResolved *self, const InterfaceConfig *ic)
 {
+    NMDnsSystemdResolvedPrivate  *priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE(self);
     GVariantBuilder               dns;
+    GVariantBuilder               dns_ex;
     GVariantBuilder               domains;
     NMSettingConnectionMdns       mdns              = NM_SETTING_CONNECTION_MDNS_DEFAULT;
     NMSettingConnectionLlmnr      llmnr             = NM_SETTING_CONNECTION_LLMNR_DEFAULT;
@@ -417,6 +475,7 @@ prepare_one_interface(NMDnsSystemdResolved *self, const InterfaceConfig *ic)
     gboolean                      has_config        = FALSE;
     gboolean                      has_default_route = FALSE;
     guint                         i;
+    gboolean                      require_dns_ex = FALSE;
 
     g_variant_builder_init(&dns, G_VARIANT_TYPE("(ia(iay))"));
     g_variant_builder_add(&dns, "i", ic->ifindex);
@@ -430,7 +489,7 @@ prepare_one_interface(NMDnsSystemdResolved *self, const InterfaceConfig *ic)
         for (i = 0; i < ic->ip_data_list->len; i++) {
             const NMDnsConfigIPData *ip_data = ic->ip_data_list->pdata[i];
 
-            if (update_add_ip_config(self, &dns, &domains, ip_data))
+            if (update_add_ip_config(self, ip_data, &dns, NULL, &domains, &require_dns_ex))
                 has_config = TRUE;
 
             if (ip_data->domains.has_default_route)
@@ -447,6 +506,23 @@ prepare_one_interface(NMDnsSystemdResolved *self, const InterfaceConfig *ic)
 
     g_variant_builder_close(&dns);
     g_variant_builder_close(&domains);
+
+    if (!require_dns_ex) {
+        /* No need to use the new API. SetLinkDNS() is sufficient. */
+    } else if (!priv->has_set_link_dns_ex) {
+        /* API to set server name is not supported. Nothing we can do. */
+        require_dns_ex = FALSE;
+    } else {
+        g_variant_builder_init(&dns_ex, G_VARIANT_TYPE("(ia(iayqs))"));
+        g_variant_builder_add(&dns_ex, "i", ic->ifindex);
+        g_variant_builder_open(&dns_ex, G_VARIANT_TYPE("a(iayqs)"));
+        for (i = 0; i < ic->ip_data_list->len; i++) {
+            const NMDnsConfigIPData *ip_data = ic->ip_data_list->pdata[i];
+
+            update_add_ip_config(self, ip_data, NULL, &dns_ex, NULL, NULL);
+        }
+        g_variant_builder_close(&dns_ex);
+    }
 
     switch (mdns) {
     case NM_SETTING_CONNECTION_MDNS_NO:
@@ -513,7 +589,14 @@ prepare_one_interface(NMDnsSystemdResolved *self, const InterfaceConfig *ic)
                          "SetLinkLLMNR",
                          ic->ifindex,
                          g_variant_new("(is)", ic->ifindex, llmnr_arg ?: ""));
-    _request_item_append(self, "SetLinkDNS", ic->ifindex, g_variant_builder_end(&dns));
+    if (require_dns_ex) {
+        _request_item_append(self,
+                             DBUS_OP_SET_LINK_DNS_EX,
+                             ic->ifindex,
+                             g_variant_builder_end(&dns_ex));
+        g_variant_builder_clear(&dns);
+    } else
+        _request_item_append(self, "SetLinkDNS", ic->ifindex, g_variant_builder_end(&dns));
     _request_item_append(self,
                          DBUS_OP_SET_LINK_DNS_OVER_TLS,
                          ic->ifindex,
@@ -631,9 +714,9 @@ send_updates(NMDnsSystemdResolved *self)
         gs_free char *ss = NULL;
 
         if ((request_item->operation == DBUS_OP_SET_LINK_DEFAULT_ROUTE
-             && priv->has_link_default_route == NM_TERNARY_FALSE)
+             && priv->has_set_link_default_route == NM_TERNARY_FALSE)
             || (request_item->operation == DBUS_OP_SET_LINK_DNS_OVER_TLS
-                && priv->has_link_dns_over_tls == NM_TERNARY_FALSE)) {
+                && priv->has_set_link_dns_over_tls == NM_TERNARY_FALSE)) {
             /* The "SetLinkDefaultRoute" API is only supported since v240.
              * The "SetLinkDNSOverTLS" API is only supported since v239.
              * We detected whether they are supported, and skip the calls. There
@@ -798,8 +881,9 @@ name_owner_changed(NMDnsSystemdResolved *self, const char *owner)
         priv->try_start_blocked    = FALSE;
         priv->send_updates_waiting = TRUE;
     } else {
-        priv->has_link_default_route = NM_TERNARY_DEFAULT;
-        priv->has_link_dns_over_tls  = NM_TERNARY_DEFAULT;
+        priv->has_set_link_default_route = NM_TERNARY_DEFAULT;
+        priv->has_set_link_dns_over_tls  = NM_TERNARY_DEFAULT;
+        priv->has_set_link_dns_ex        = NM_TERNARY_DEFAULT;
     }
 
     send_updates(self);
@@ -1158,8 +1242,9 @@ nm_dns_systemd_resolved_init(NMDnsSystemdResolved *self)
 {
     NMDnsSystemdResolvedPrivate *priv = NM_DNS_SYSTEMD_RESOLVED_GET_PRIVATE(self);
 
-    priv->has_link_default_route = NM_TERNARY_DEFAULT;
-    priv->has_link_dns_over_tls  = NM_TERNARY_DEFAULT;
+    priv->has_set_link_default_route = NM_TERNARY_DEFAULT;
+    priv->has_set_link_dns_over_tls  = NM_TERNARY_DEFAULT;
+    priv->has_set_link_dns_ex        = NM_TERNARY_DEFAULT;
 
     c_list_init(&priv->request_queue_lst_head);
     c_list_init(&priv->handle_lst_head);

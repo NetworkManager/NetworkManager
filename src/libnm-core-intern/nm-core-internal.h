@@ -826,6 +826,44 @@ struct _NMSettInfoProperty {
      * Set this flag to force always converting the property even if the value
      * is the default. */
     bool to_dbus_including_default : 1;
+
+    /* This indicates, that the property is deprecated (on D-Bus) for another property.
+     * See also _nm_setting_use_legacy_property() how that works.
+     *
+     * The to_dbus_fcn() will be skipped for such properties, if _nm_utils_is_manager_process
+     * is FALSE. */
+    bool to_dbus_only_in_manager_process : 1;
+
+    /* Whether the property is deprecated.
+     *
+     * Note that we have various representations of profiles, e.g. on D-Bus, keyfile,
+     * nmcli, libnm/NMSetting. Usually a property (in the general sense) is named and
+     * applies similarly to all those. But not always, for example, on D-Bus we
+     * have the field "ethernet.assigned-mac-address", but that exists nowhere
+     * as a property in the other parts (the real property is called
+     * "ethernet.cloned-mac-address").
+     *
+     * This flag indicates whether a property is deprecated. Here "property" means
+     * no specific representation. When a property is deprecated this way, it will
+     * also indirectly apply to setting the property on D-Bus, keyfile, nmcli, etc.
+     * It means the general concept of this thing is no longer useful/recommended.
+     */
+    bool is_deprecated : 1;
+
+    /* Whether the property is deprecated in the D-Bus API.
+     *
+     * This has no real effect (for now). It is only self-documenting code that
+     * this property is discouraged on D-Bus. We might honor this when generating
+     * documentation, or we might use it to find properties that are deprecated.
+     *
+     * Note what this means. For example, "802-1x.phase2-subject-match" is deprecated
+     * as a property altogether, but that does not mean it's deprecated specifically on
+     * D-Bus.
+     * "ethernet.cloned-mac-address" is deprecated on D-Bus in favor of
+     * "ethernet.assigned-mac-address", but the property clone-mac-address itself
+     * is not deprecated. This flag is about the deprecation of the D-Bus representation
+     * of a property. */
+    bool dbus_deprecated : 1;
 };
 
 typedef struct {
