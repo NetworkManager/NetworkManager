@@ -3479,7 +3479,7 @@ _save_hostname_write_cb(GObject *source, GAsyncResult *result, gpointer user_dat
 
     nm_utils_user_data_unpack(user_data, &self, &context, &auth_subject, &hostname, &cancellable);
 
-    nm_hostname_manager_write_hostname_finish(NM_HOSTNAME_MANAGER(source), result, &error);
+    nm_hostname_manager_set_static_hostname_finish(NM_HOSTNAME_MANAGER(source), result, &error);
 
     nm_audit_log_control_op(NM_AUDIT_OP_HOSTNAME_SAVE,
                             hostname ?: "",
@@ -3544,7 +3544,7 @@ _save_hostname_pk_cb(NMAuthChain *chain, GDBusMethodInvocation *context, gpointe
                                   (gpointer *) &priv->shutdown_cancellable);
     }
 
-    nm_hostname_manager_write_hostname(
+    nm_hostname_manager_set_static_hostname(
         priv->hostname_manager,
         hostname,
         priv->shutdown_cancellable,

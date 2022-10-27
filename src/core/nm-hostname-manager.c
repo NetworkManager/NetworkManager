@@ -433,11 +433,11 @@ _write_hostname_on_idle_cb(gpointer user_data, GCancellable *cancellable)
 }
 
 void
-nm_hostname_manager_write_hostname(NMHostnameManager  *self,
-                                   const char         *hostname,
-                                   GCancellable       *cancellable,
-                                   GAsyncReadyCallback callback,
-                                   gpointer            user_data)
+nm_hostname_manager_set_static_hostname(NMHostnameManager  *self,
+                                        const char         *hostname,
+                                        GCancellable       *cancellable,
+                                        GAsyncReadyCallback callback,
+                                        gpointer            user_data)
 {
     NMHostnameManagerPrivate *priv;
     GTask                    *task;
@@ -446,8 +446,11 @@ nm_hostname_manager_write_hostname(NMHostnameManager  *self,
 
     priv = NM_HOSTNAME_MANAGER_GET_PRIVATE(self);
 
-    task =
-        nm_g_task_new(self, cancellable, nm_hostname_manager_write_hostname, callback, user_data);
+    task = nm_g_task_new(self,
+                         cancellable,
+                         nm_hostname_manager_set_static_hostname,
+                         callback,
+                         user_data);
 
     g_task_set_task_data(task, g_strdup(hostname), g_free);
 
@@ -467,12 +470,12 @@ nm_hostname_manager_write_hostname(NMHostnameManager  *self,
 }
 
 gboolean
-nm_hostname_manager_write_hostname_finish(NMHostnameManager *self,
-                                          GAsyncResult      *result,
-                                          GError           **error)
+nm_hostname_manager_set_static_hostname_finish(NMHostnameManager *self,
+                                               GAsyncResult      *result,
+                                               GError           **error)
 {
     g_return_val_if_fail(NM_IS_HOSTNAME_MANAGER(self), FALSE);
-    g_return_val_if_fail(nm_g_task_is_valid(result, self, nm_hostname_manager_write_hostname),
+    g_return_val_if_fail(nm_g_task_is_valid(result, self, nm_hostname_manager_set_static_hostname),
                          FALSE);
 
     return g_task_propagate_boolean(G_TASK(result), error);
