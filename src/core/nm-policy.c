@@ -738,6 +738,9 @@ build_device_hostname_infos(NMPolicy *self)
         if (!device)
             continue;
 
+        if (nm_device_sys_iface_state_is_external(device))
+            continue;
+
         only_from_default =
             device_get_hostname_property_boolean(device, NM_SETTING_HOSTNAME_ONLY_FROM_DEFAULT);
 
