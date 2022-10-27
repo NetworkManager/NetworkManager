@@ -1783,31 +1783,36 @@ property_to_dbus(const NMSettInfoSetting                *sett_info,
               || NM_FLAGS_HAS(property_info->param_spec->flags, G_PARAM_WRITABLE)
               || property_info->property_type == &nm_sett_info_propert_type_setting_name);
 
-    if (!ignore_flags && property_info->to_dbus_only_in_manager_process
-        && !_nm_utils_is_manager_process)
-        return NULL;
+    if (ignore_flags) {
+        /* We are called from _nm_setting_property_compare_fcn_default(). We want
+         * to serialize the property, and ignore the flags. */
+    } else {
+        if (property_info->to_dbus_only_in_manager_process && !_nm_utils_is_manager_process)
+            return NULL;
 
-    if (property_info->param_spec && !ignore_flags
-        && !NM_FLAGS_HAS(property_info->param_spec->flags, NM_SETTING_PARAM_TO_DBUS_IGNORE_FLAGS)) {
-        if (NM_FLAGS_HAS(property_info->param_spec->flags, NM_SETTING_PARAM_SECRET)) {
-            NMSettingSecretFlags f = NM_SETTING_SECRET_FLAG_NONE;
+        if (property_info->param_spec
+            && !NM_FLAGS_HAS(property_info->param_spec->flags,
+                             NM_SETTING_PARAM_TO_DBUS_IGNORE_FLAGS)) {
+            if (NM_FLAGS_HAS(property_info->param_spec->flags, NM_SETTING_PARAM_SECRET)) {
+                NMSettingSecretFlags f = NM_SETTING_SECRET_FLAG_NONE;
 
-            if (NM_FLAGS_ANY(flags,
-                             NM_CONNECTION_SERIALIZE_WITH_SECRETS_AGENT_OWNED
-                                 | NM_CONNECTION_SERIALIZE_WITH_SECRETS_SYSTEM_OWNED
-                                 | NM_CONNECTION_SERIALIZE_WITH_SECRETS_NOT_SAVED)) {
-                if (!nm_setting_get_secret_flags(setting,
-                                                 property_info->param_spec->name,
-                                                 &f,
-                                                 NULL))
+                if (NM_FLAGS_ANY(flags,
+                                 NM_CONNECTION_SERIALIZE_WITH_SECRETS_AGENT_OWNED
+                                     | NM_CONNECTION_SERIALIZE_WITH_SECRETS_SYSTEM_OWNED
+                                     | NM_CONNECTION_SERIALIZE_WITH_SECRETS_NOT_SAVED)) {
+                    if (!nm_setting_get_secret_flags(setting,
+                                                     property_info->param_spec->name,
+                                                     &f,
+                                                     NULL))
+                        return NULL;
+                }
+
+                if (!_nm_connection_serialize_secrets(flags, f))
+                    return NULL;
+            } else {
+                if (!_nm_connection_serialize_non_secret(flags))
                     return NULL;
             }
-
-            if (!_nm_connection_serialize_secrets(flags, f))
-                return NULL;
-        } else {
-            if (!_nm_connection_serialize_non_secret(flags))
-                return NULL;
         }
     }
 
