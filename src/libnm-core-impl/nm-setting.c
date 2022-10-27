@@ -1783,7 +1783,8 @@ property_to_dbus(const NMSettInfoSetting                *sett_info,
               || NM_FLAGS_HAS(property_info->param_spec->flags, G_PARAM_WRITABLE)
               || property_info->property_type == &nm_sett_info_propert_type_setting_name);
 
-    if (property_info->to_dbus_only_in_manager_process && !_nm_utils_is_manager_process)
+    if (!ignore_flags && property_info->to_dbus_only_in_manager_process
+        && !_nm_utils_is_manager_process)
         return NULL;
 
     if (property_info->param_spec && !ignore_flags
