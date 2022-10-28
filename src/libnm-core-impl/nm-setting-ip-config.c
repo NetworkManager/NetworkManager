@@ -5743,6 +5743,20 @@ _nm_setting_ip_config_compare_fcn_routes(_NM_SETT_INFO_PROP_COMPARE_FCN_ARGS _nm
     return TRUE;
 }
 
+NMTernary
+_nm_setting_ip_config_compare_fcn_dns(_NM_SETT_INFO_PROP_COMPARE_FCN_ARGS _nm_nil)
+{
+    if (NM_FLAGS_HAS(flags, NM_SETTING_COMPARE_FLAG_INFERRABLE))
+        return NM_TERNARY_DEFAULT;
+
+    if (!set_b)
+        return TRUE;
+
+    return (nm_strv_ptrarray_cmp(NM_SETTING_IP_CONFIG_GET_PRIVATE(set_a)->dns,
+                                 NM_SETTING_IP_CONFIG_GET_PRIVATE(set_b)->dns)
+            == 0);
+}
+
 static NMTernary
 compare_fcn_routing_rules(_NM_SETT_INFO_PROP_COMPARE_FCN_ARGS _nm_nil)
 {
@@ -5972,8 +5986,8 @@ _nm_sett_info_property_override_create_array_ip_config(int addr_family)
         "dns-data",
         NM_SETT_INFO_PROPERT_TYPE_DBUS(NM_G_VARIANT_TYPE("as"),
                                        .to_dbus_fcn   = dns_data_to_dbus,
-                                       .compare_fcn   = _nm_setting_property_compare_fcn_ignore,
-                                       .from_dbus_fcn = dns_data_from_dbus, ));
+                                       .from_dbus_fcn = dns_data_from_dbus,
+                                       .compare_fcn   = _nm_setting_property_compare_fcn_ignore, ));
 
     _nm_properties_override_gobj(
         properties_override,
