@@ -176,7 +176,8 @@ endif
 #   https://gitlab.freedesktop.org/NetworkManager/NetworkManager/-/merge_requests/1405
 po/.Makefile.patched:
 	sed -i \
-	    's#^dist2: \$$(srcdir)/stamp-po \$$(DISTFILES)#dist2: \$$(srcdir)/stamp-po\n\t\$$(MAKE) \$$(DISTFILES)#' \
+	    -e 's#^dist2: \$$(srcdir)/stamp-po \$$(DISTFILES)#dist2: \$$(srcdir)/stamp-po\n\t\$$(MAKE) \$$(DISTFILES)#' \
+	    -e 's#^dist2: stamp-po \$$(DISTFILES)#dist2: stamp-po\n\t\$$(MAKE) \$$(DISTFILES)#' \
 	    "$(builddir)/po/Makefile" && \
 	touch "$(builddir)/po/.Makefile.patched"
 
