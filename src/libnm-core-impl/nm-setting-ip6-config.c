@@ -981,7 +981,7 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
         properties_override,
         g_object_class_find_property(G_OBJECT_CLASS(setting_class), NM_SETTING_IP_CONFIG_DNS),
         NM_SETT_INFO_PROPERT_TYPE_DBUS(NM_G_VARIANT_TYPE("aay"),
-                                       .compare_fcn   = _nm_setting_property_compare_fcn_default,
+                                       .compare_fcn   = _nm_setting_ip_config_compare_fcn_dns,
                                        .to_dbus_fcn   = ip6_dns_to_dbus,
                                        .from_dbus_fcn = ip6_dns_from_dbus, ),
         .to_dbus_only_in_manager_process = TRUE,

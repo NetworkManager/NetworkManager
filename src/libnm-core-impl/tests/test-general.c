@@ -3897,7 +3897,7 @@ ensure_diffs(GHashTable *diffs, const DiffSetting *check, gsize n_check)
 {
     guint i;
 
-    g_assert(g_hash_table_size(diffs) == n_check);
+    g_assert_cmpint(g_hash_table_size(diffs), ==, n_check);
 
     /* Loop through the settings */
     for (i = 0; i < n_check; i++) {
@@ -3910,14 +3910,14 @@ ensure_diffs(GHashTable *diffs, const DiffSetting *check, gsize n_check)
         /* Get the number of keys to check */
         while (check[i].keys[z].key_name)
             z++;
-        g_assert(g_hash_table_size(setting_hash) == z);
+        g_assert_cmpint(g_hash_table_size(setting_hash), ==, z);
 
         /* Now compare the actual keys */
         for (z = 0; check[i].keys[z].key_name; z++) {
             NMSettingDiffResult result;
 
             result = GPOINTER_TO_UINT(g_hash_table_lookup(setting_hash, check[i].keys[z].key_name));
-            g_assert(result == check[i].keys[z].result);
+            g_assert_cmpint(result, ==, check[i].keys[z].result);
         }
     }
 }
