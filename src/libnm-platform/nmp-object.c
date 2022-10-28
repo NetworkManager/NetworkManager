@@ -2979,16 +2979,15 @@ nmp_cache_update_netlink_route(NMPCache         *cache,
 
     NM_SET_OUT(out_obj_old, nmp_object_ref(nm_dedup_multi_entry_get_obj(entry_old)));
 
-    if (!entry_old) {
-        if (!nmp_object_is_alive(obj_hand_over))
-            goto update_done;
+    is_alive = nmp_object_is_alive(obj_hand_over);
 
-        _idxcache_update(cache, NULL, obj_hand_over, is_dump, &entry_new);
-        ops_type = NMP_CACHE_OPS_ADDED;
+    if (!entry_old) {
+        if (is_alive) {
+            _idxcache_update(cache, NULL, obj_hand_over, is_dump, &entry_new);
+            ops_type = NMP_CACHE_OPS_ADDED;
+        }
         goto update_done;
     }
-
-    is_alive = nmp_object_is_alive(obj_hand_over);
 
     if (!is_alive) {
         /* the update would make @entry_old invalid. Remove it. */
