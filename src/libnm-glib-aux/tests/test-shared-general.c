@@ -14,6 +14,7 @@
 #include "libnm-glib-aux/nm-ref-string.h"
 #include "libnm-glib-aux/nm-io-utils.h"
 #include "libnm-glib-aux/nm-prioq.h"
+#include "libnm-glib-aux/nm-ptr-array.h"
 
 #include "libnm-glib-aux/nm-test-utils.h"
 
@@ -2630,6 +2631,69 @@ test_uid_to_name(void)
 
 /*****************************************************************************/
 
+static void
+test_nm_ptr_array(void)
+{
+    const int N_RUN = 100;
+    int       i_run;
+
+    for (i_run = 0; i_run < N_RUN; i_run++) {
+        NMPtrArrayStack              arr_stack = NM_PTR_ARRAY_STACK_INIT(g_free);
+        char                         sbuf_num[64];
+        nm_auto_ptrarray NMPtrArray *arr = NULL;
+        int                          n_add;
+        int                          i_add;
+        guint                        counter;
+        guint                        n_ptr;
+        guint                        i_ptr;
+
+        counter = 0;
+        if (nmtst_get_rand_bool())
+            arr = nm_ptr_array_new(g_free, nmtst_get_rand_uint32() % 10);
+        else {
+            /* NMPtrArray can also start with using a stack allocated array,
+             * via NMPtrArrayStack/NM_PTR_ARRAY_STACK_INIT(). */
+            arr = &arr_stack.arr;
+        }
+
+        n_add = nmtst_get_rand_uint32() % 10u;
+        for (i_add = 0; i_add < n_add; i_add++) {
+            gpointer ptrs[NM_PTR_ARRAY_STACK_RESERVED + 10];
+
+            n_ptr = nmtst_get_rand_uint32() % G_N_ELEMENTS(ptrs);
+            for (i_ptr = 0; i_ptr < n_ptr; i_ptr++)
+                ptrs[i_ptr] = g_strdup(nm_sprintf_buf(sbuf_num, "%u", counter++));
+
+            if (n_ptr == 1 && nmtst_get_rand_bool())
+                nm_ptr_array_add(&arr, ptrs[0]);
+            else
+                nm_ptr_array_add_n(&arr, n_ptr, ptrs);
+
+            if (i_add == n_add - 1 || nmtst_get_rand_one_case_in(5)) {
+                g_assert_cmpint(arr->len, ==, counter);
+                g_assert_cmpint(arr->_reserved, >=, counter);
+                g_assert(arr->_destroy_fcn == g_free);
+                for (i_ptr = 0; i_ptr < counter; i_ptr++) {
+                    nm_sprintf_buf(sbuf_num, "%u", i_ptr);
+                    g_assert_cmpstr(arr->ptrs[i_ptr], ==, sbuf_num);
+                }
+                g_assert(!arr->ptrs[counter]);
+            }
+        }
+
+        if (nmtst_get_rand_bool()) {
+            nm_ptr_array_set_free_func(arr, NULL);
+            for (i_ptr = 0; i_ptr < arr->len; i_ptr++)
+                nm_clear_g_free(&arr->ptrs[i_ptr]);
+        }
+
+        if (nmtst_get_rand_bool())
+            nm_clear_pointer(&arr, nm_ptr_array_destroy);
+    }
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE();
 
 int
@@ -2682,6 +2746,7 @@ main(int argc, char **argv)
     g_test_add_func("/general/test_nm_prioq", test_nm_prioq);
     g_test_add_func("/general/test_nm_random", test_nm_random);
     g_test_add_func("/general/test_uid_to_name", test_uid_to_name);
+    g_test_add_func("/general/test_nm_ptr_array", test_nm_ptr_array);
 
     return g_test_run();
 }

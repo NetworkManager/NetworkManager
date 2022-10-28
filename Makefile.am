@@ -462,6 +462,8 @@ src_libnm_glib_aux_libnm_glib_aux_la_SOURCES = \
 	src/libnm-glib-aux/nm-obj.h \
 	src/libnm-glib-aux/nm-prioq.c \
 	src/libnm-glib-aux/nm-prioq.h \
+	src/libnm-glib-aux/nm-ptr-array.c \
+	src/libnm-glib-aux/nm-ptr-array.h \
 	src/libnm-glib-aux/nm-random-utils.c \
 	src/libnm-glib-aux/nm-random-utils.h \
 	src/libnm-glib-aux/nm-ref-string.c \
