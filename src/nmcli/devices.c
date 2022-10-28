@@ -2108,8 +2108,10 @@ NM_AUTO_DEFINE_FCN0(AddAndActivateInfo *,
                     add_and_activate_info_free);
 #define nm_auto_free_add_and_activate_info nm_auto(_nm_auto_free_add_and_activate_info)
 
+static void add_and_activate_notify_state_cb(GObject *src, GParamSpec *pspec, gpointer user_data);
+
 static void
-connected_state_cb(AddAndActivateInfo *info)
+add_and_activate_check_state(AddAndActivateInfo *info)
 {
     NMDeviceState           state;
     NMDeviceStateReason     reason;
@@ -2140,11 +2142,22 @@ connected_state_cb(AddAndActivateInfo *info)
         return;
     }
 
-    g_signal_handlers_disconnect_by_func(info->active, G_CALLBACK(connected_state_cb), info);
-    g_signal_handlers_disconnect_by_func(info->device, G_CALLBACK(connected_state_cb), info);
+    g_signal_handlers_disconnect_by_func(info->active,
+                                         G_CALLBACK(add_and_activate_notify_state_cb),
+                                         info);
+    g_signal_handlers_disconnect_by_func(info->device,
+                                         G_CALLBACK(add_and_activate_notify_state_cb),
+                                         info);
     add_and_activate_info_free(info);
 
     quit();
+}
+
+static void
+add_and_activate_notify_state_cb(GObject *src, GParamSpec *pspec, gpointer user_data)
+
+{
+    add_and_activate_check_state(user_data);
 }
 
 static void
@@ -2194,9 +2207,15 @@ add_and_activate_cb(GObject *client, GAsyncResult *result, gpointer user_data)
         progress_id = g_timeout_add(120, progress_cb, info->device);
 
     info->active = g_steal_pointer(&active);
-    g_signal_connect_swapped(info->device, "notify::state", G_CALLBACK(connected_state_cb), info);
-    g_signal_connect_swapped(info->active, "notify::state", G_CALLBACK(connected_state_cb), info);
-    connected_state_cb(g_steal_pointer(&info));
+    g_signal_connect(info->device,
+                     "notify::" NM_DEVICE_STATE,
+                     G_CALLBACK(add_and_activate_notify_state_cb),
+                     info);
+    g_signal_connect(info->active,
+                     "notify::" NM_ACTIVE_CONNECTION_STATE,
+                     G_CALLBACK(add_and_activate_notify_state_cb),
+                     info);
+    add_and_activate_check_state(g_steal_pointer(&info));
 
     g_timeout_add_seconds(nmc->timeout, timeout_cb, nmc); /* Exit if timeout expires */
 }
@@ -2262,9 +2281,15 @@ connect_device_cb(GObject *client, GAsyncResult *result, gpointer user_data)
     }
 
     info->active = g_steal_pointer(&active);
-    g_signal_connect_swapped(info->device, "notify::state", G_CALLBACK(connected_state_cb), info);
-    g_signal_connect_swapped(info->active, "notify::state", G_CALLBACK(connected_state_cb), info);
-    connected_state_cb(g_steal_pointer(&info));
+    g_signal_connect(info->device,
+                     "notify::" NM_DEVICE_STATE,
+                     G_CALLBACK(add_and_activate_notify_state_cb),
+                     info);
+    g_signal_connect(info->active,
+                     "notify::" NM_ACTIVE_CONNECTION_STATE,
+                     G_CALLBACK(add_and_activate_notify_state_cb),
+                     info);
+    add_and_activate_check_state(g_steal_pointer(&info));
 
     /* Start timer not to loop forever if "notify::state" signal is not issued */
     g_timeout_add_seconds(nmc->timeout, timeout_cb, nmc);
