@@ -2969,9 +2969,6 @@ nmp_cache_update_netlink_route(NMPCache         *cache,
     nm_assert(cache);
     nm_assert(NMP_OBJECT_IS_VALID(obj_hand_over));
     nm_assert(!NMP_OBJECT_IS_STACKINIT(obj_hand_over));
-    /* A link object from netlink must have the udev related fields unset.
-     * We could implement to handle that, but there is no need to support such
-     * a use-case */
     nm_assert(NM_IN_SET(NMP_OBJECT_GET_TYPE(obj_hand_over),
                         NMP_OBJECT_TYPE_IP4_ROUTE,
                         NMP_OBJECT_TYPE_IP6_ROUTE));
@@ -3036,8 +3033,8 @@ update_done:
         goto out;
     }
 
-    /* FIXME: for routes, we only maintain the order correctly for the BY_WEAK_ID
-     * index. For all other indexes their order becomes messed up. */
+    /* For routes, we only maintain the order correctly for the BY_WEAK_ID
+     * index. For all other indexes, their order is not preserved. */
     entry_cur =
         _lookup_entry_with_idx_type(cache, NMP_CACHE_ID_TYPE_ROUTES_BY_WEAK_ID, entry_new->obj);
     if (!entry_cur) {
