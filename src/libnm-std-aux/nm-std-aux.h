@@ -213,11 +213,15 @@ _nm_assert_fail_internal(const char  *assertion,
 #define __assert_fail _nm_assert_fail_internal
 #endif
 
-#define _nm_assert_fail(msg) __assert_fail((msg), __FILE__, __LINE__, __func__)
 #ifndef NDEBUG
 #define _NM_ASSERT_FAIL_ENABLED 1
+#define _nm_assert_fail(msg)    __assert_fail((msg), __FILE__, __LINE__, __func__)
 #else
 #define _NM_ASSERT_FAIL_ENABLED 1
+#define _nm_assert_fail(msg)                 \
+    do {                                     \
+        _nm_unused const char *_msg = (msg); \
+    } while (0)
 #endif
 
 #define NM_MORE_ASSERTS_EFFECTIVE (_NM_ASSERT_FAIL_ENABLED ? NM_MORE_ASSERTS : 0)
