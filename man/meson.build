@@ -87,7 +87,7 @@ if enable_introspection
       join_paths(meson.source_root(), 'tools', 'generate-docs-nm-settings-docs-merge.py'),
       '--only-from-first',
       '@OUTPUT@',
-      generate_docs_nm_settings_nmcli_xml,
+      gen_metadata_nm_settings_nmcli_xml,
       nm_property_infos_xml[name],
       nm_settings_docs_xml_gir,
     ],
