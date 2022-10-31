@@ -134,6 +134,8 @@ test-*.trs
 
 /introspection/org.freedesktop.NetworkManager*.[ch]
 
+/po/.Makefile.patched
+
 /src/libnm-core-public/nm-version-macros.h
 /src/libnm-core-public/nm-dbus-types.xml
 /src/libnm-core-public/nm-vpn-dbus-types.xml
