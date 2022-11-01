@@ -92,9 +92,8 @@ typedef struct {
      * NMDhcpClient is supposed to run. */
     NML3Cfg *l3cfg;
 
-    /* FIXME(l3cfg:dhcp:previous-lease): most parameters of NMDhcpClient are immutable,
-     * so to change them (during reapply), we need to create and start
-     * a new NMDhcpClient instance.
+    /* Most parameters of NMDhcpClient are immutable, so to change them (during
+     * reapply), we need to create and start a new NMDhcpClient instance.
      *
      * However, while the restart happens, we want to stick to the previous
      * lease (if any). Allow the caller to provide such a previous lease,
@@ -225,18 +224,7 @@ const NMDhcpClientConfig *nm_dhcp_client_get_config(NMDhcpClient *self);
 
 pid_t nm_dhcp_client_get_pid(NMDhcpClient *self);
 
-static inline const NML3ConfigData *
-nm_dhcp_client_get_lease(NMDhcpClient *self)
-{
-    /* FIXME(l3cfg:dhcp:previous-lease): this function returns the currently
-     * valid, exposed lease.
-     *
-     * Note that NMDhcpClient should accept as construct argument a *previous* lease,
-     * and (if that lease is still valid), pretend that it's good to use. The point is
-     * so that during reapply we keep using the current address, until a new lease
-     * was received. */
-    return NULL;
-}
+const NML3ConfigData *nm_dhcp_client_get_lease(NMDhcpClient *self);
 
 void nm_dhcp_client_stop(NMDhcpClient *self, gboolean release);
 
