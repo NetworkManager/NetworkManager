@@ -84,6 +84,7 @@ typedef struct _NMDhcpClientPrivate {
      * and is set from l3cd_next. */
     const NML3ConfigData *l3cd_curr;
 
+    GSource *previous_lease_timeout_source;
     GSource *no_lease_timeout_source;
     GSource *watch_source;
     GBytes  *effective_client_id;
@@ -235,6 +236,12 @@ nm_dhcp_client_create_l3cd(NMDhcpClient *self)
     return nm_l3_config_data_new(nm_l3cfg_get_multi_idx(priv->config.l3cfg),
                                  nm_l3cfg_get_ifindex(priv->config.l3cfg),
                                  NM_IP_CONFIG_SOURCE_DHCP);
+}
+
+const NML3ConfigData *
+nm_dhcp_client_get_lease(NMDhcpClient *self)
+{
+    return NM_DHCP_CLIENT_GET_PRIVATE(self)->l3cd_curr;
 }
 
 /*****************************************************************************/
@@ -828,6 +835,9 @@ _nm_dhcp_client_notify(NMDhcpClient         *self,
         return;
     }
 
+    if (priv->l3cd_next)
+        nm_clear_g_source_inst(&priv->previous_lease_timeout_source);
+
     nm_l3_config_data_reset(&priv->l3cd_curr, priv->l3cd_next);
 
     if (client_event_type == NM_DHCP_CLIENT_EVENT_TYPE_BOUND && priv->l3cd_curr
@@ -1299,6 +1309,19 @@ wait_dhcp_commit_done:
     }
 }
 
+static gboolean
+_previous_lease_timeout_cb(gpointer user_data)
+{
+    NMDhcpClient        *self = user_data;
+    NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
+
+    nm_clear_g_source_inst(&priv->previous_lease_timeout_source);
+
+    _nm_dhcp_client_notify(self, NM_DHCP_CLIENT_EVENT_TYPE_TIMEOUT, NULL);
+
+    return G_SOURCE_CONTINUE;
+}
+
 gboolean
 nm_dhcp_client_start(NMDhcpClient *self, GError **error)
 {
@@ -1335,6 +1358,14 @@ nm_dhcp_client_start(NMDhcpClient *self, GError **error)
     }
 
     _no_lease_timeout_schedule(self);
+
+    if (priv->config.previous_lease) {
+        /* We got passed a previous lease (during a reapply). For a few seconds, we
+         * will pretend that this is current lease. */
+        priv->l3cd_curr = g_steal_pointer(&priv->config.previous_lease);
+        priv->previous_lease_timeout_source =
+            nm_g_timeout_add_seconds_source(15, _previous_lease_timeout_cb, self);
+    }
 
     if (IS_IPv4)
         return NM_DHCP_CLIENT_GET_CLASS(self)->ip4_start(self, error);
@@ -1415,6 +1446,8 @@ nm_dhcp_client_stop(NMDhcpClient *self, gboolean release)
 
     if (priv->is_stopped)
         return;
+
+    nm_clear_g_source_inst(&priv->previous_lease_timeout_source);
 
     priv->is_stopped = TRUE;
 
@@ -1738,6 +1771,8 @@ config_init(NMDhcpClientConfig *config, const NMDhcpClientConfig *src)
 
     g_object_ref(config->l3cfg);
 
+    nm_l3_config_data_ref_and_seal(config->previous_lease);
+
     nm_g_bytes_ref(config->hwaddr);
     nm_g_bytes_ref(config->bcast_hwaddr);
     nm_g_bytes_ref(config->vendor_class_identifier);
@@ -1797,6 +1832,8 @@ static void
 config_clear(NMDhcpClientConfig *config)
 {
     g_object_unref(config->l3cfg);
+
+    nm_clear_l3cd(&config->previous_lease);
 
     nm_clear_pointer(&config->hwaddr, g_bytes_unref);
     nm_clear_pointer(&config->bcast_hwaddr, g_bytes_unref);
@@ -1874,6 +1911,7 @@ dispose(GObject *object)
 
     watch_cleanup(self);
 
+    nm_clear_g_source_inst(&priv->previous_lease_timeout_source);
     nm_clear_g_source_inst(&priv->no_lease_timeout_source);
 
     if (!NM_IS_IPv4(priv->config.addr_family)) {

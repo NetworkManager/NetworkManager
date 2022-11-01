@@ -10419,6 +10419,8 @@ _dev_ipdhcpx_start(NMDevice *self, int addr_family)
 
     no_lease_timeout_sec = _prop_get_ipvx_dhcp_timeout(self, addr_family);
 
+    previous_lease = priv->l3cds[L3_CONFIG_DATA_TYPE_DHCP_X(IS_IPv4)].d;
+
     if (IS_IPv4) {
         NMDhcpClientConfig     config;
         gs_unref_bytes GBytes *bcast_hwaddr            = NULL;
@@ -10465,6 +10467,7 @@ _dev_ipdhcpx_start(NMDevice *self, int addr_family)
                     .request_broadcast = request_broadcast,
                     .acd_timeout_msec  = _prop_get_ipv4_dad_timeout(self),
                 },
+            .previous_lease = previous_lease,
         };
 
         priv->ipdhcp_data_4.client =
@@ -10515,16 +10518,16 @@ _dev_ipdhcpx_start(NMDevice *self, int addr_family)
                          G_CALLBACK(_dev_ipdhcpx_notify),
                          self);
 
-    /* FIXME(l3cfg:dhcp:previous-lease): take the NML3ConfigData from the previous lease (if any)
-     * and pass it on to NMDhcpClient. This is a fake lease that we use initially (until
-     * NMDhcpClient got a real lease). Note that NMDhcpClient needs to check whether the
-     * lease already expired. */
-
+    /* Take the NML3ConfigData from the previous lease (if any) that was passed to the NMDhcpClient.
+     * This may be the old lease only used during the duration of a reapply until we get the
+     * new lease. */
     previous_lease = nm_dhcp_client_get_lease(priv->ipdhcp_data_x[IS_IPv4].client);
+
     if (!priv->ipdhcp_data_x[IS_IPv4].config) {
         priv->ipdhcp_data_x[IS_IPv4].config = nm_dhcp_config_new(addr_family, previous_lease);
         _notify(self, PROP_DHCPX_CONFIG(IS_IPv4));
     }
+
     if (previous_lease) {
         nm_dhcp_config_set_lease(priv->ipdhcp_data_x[IS_IPv4].config, previous_lease);
         _dev_l3_register_l3cds_set_one_full(self,
@@ -12114,10 +12117,12 @@ activate_stage3_ip_config(NMDevice *self)
 
     if (priv->ip_data_4.do_reapply) {
         _LOGD_ip(AF_INET, "reapply...");
+        priv->ip_data_4.do_reapply = FALSE;
         _cleanup_ip_pre(self, AF_INET, CLEANUP_TYPE_KEEP_REAPPLY);
     }
     if (priv->ip_data_6.do_reapply) {
         _LOGD_ip(AF_INET6, "reapply...");
+        priv->ip_data_6.do_reapply = FALSE;
         _cleanup_ip_pre(self, AF_INET6, CLEANUP_TYPE_KEEP_REAPPLY);
     }
 
@@ -12645,7 +12650,7 @@ _cleanup_ip_pre(NMDevice *self, int addr_family, CleanupType cleanup_type)
     _dev_ipdev_cleanup(self, AF_UNSPEC);
     _dev_ipdev_cleanup(self, addr_family);
 
-    _dev_ipdhcpx_cleanup(self, addr_family, TRUE, FALSE);
+    _dev_ipdhcpx_cleanup(self, addr_family, !keep_reapply, FALSE);
 
     if (!IS_IPv4)
         _dev_ipac6_cleanup(self);
