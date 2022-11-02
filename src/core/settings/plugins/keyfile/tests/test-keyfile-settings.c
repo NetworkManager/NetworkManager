@@ -2292,14 +2292,19 @@ test_read_missing_vlan_flags(void)
 static void
 test_read_missing_id_uuid(void)
 {
-    gs_unref_object NMConnection *connection    = NULL;
-    gs_free char                 *expected_uuid = NULL;
-    const char                   *FILENAME      = TEST_KEYFILES_DIR "/Test_Missing_ID_UUID";
+    gs_unref_object NMConnection *connection     = NULL;
+    gs_free char                 *expected_uuid  = NULL;
+    gs_free char                 *expected_uuid2 = NULL;
+    const char                   *FILENAME       = TEST_KEYFILES_DIR "/Test_Missing_ID_UUID";
+    const char                    F[] = "keyfile\0" TEST_KEYFILES_DIR "/Test_Missing_ID_UUID";
 
     expected_uuid = nm_uuid_generate_from_strings("keyfile", FILENAME, NULL);
 
-    connection = keyfile_read_connection_from_file(FILENAME);
+    expected_uuid2 =
+        nm_uuid_generate_from_string_str(F, sizeof(F), NM_UUID_TYPE_VERSION3, &nm_uuid_ns_1);
+    g_assert_cmpstr(expected_uuid, ==, expected_uuid2);
 
+    connection = keyfile_read_connection_from_file(FILENAME);
     g_assert_cmpstr(nm_connection_get_id(connection), ==, "Test_Missing_ID_UUID");
     g_assert_cmpstr(nm_connection_get_uuid(connection), ==, expected_uuid);
 }
