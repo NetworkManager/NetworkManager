@@ -480,7 +480,7 @@ NM_AVAILABLE_IN_1_2
 int nm_setting_ip_config_get_dhcp_timeout(NMSettingIPConfig *setting);
 NM_AVAILABLE_IN_1_34
 int nm_setting_ip_config_get_required_timeout(NMSettingIPConfig *setting);
-NM_AVAILABLE_IN_1_22
+NM_AVAILABLE_IN_1_40_4
 const char *nm_setting_ip_config_get_dhcp_iaid(NMSettingIPConfig *setting);
 
 NM_AVAILABLE_IN_1_22

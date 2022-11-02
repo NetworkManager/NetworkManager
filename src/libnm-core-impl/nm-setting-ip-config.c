@@ -5291,7 +5291,7 @@ nm_setting_ip_config_get_required_timeout(NMSettingIPConfig *setting)
  *
  * Returns: the configured DHCP IAID (Identity Association Identifier)
  *
- * Since: 1.22
+ * Since: 1.42, 1.40.4
  **/
 const char *
 nm_setting_ip_config_get_dhcp_iaid(NMSettingIPConfig *setting)
