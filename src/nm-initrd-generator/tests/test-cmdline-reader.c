@@ -114,6 +114,9 @@ test_auto(void)
     g_assert_cmpint(nm_setting_connection_get_wait_device_timeout(s_con), ==, -1);
 
     g_assert(nm_setting_connection_get_autoconnect(s_con));
+    g_assert_cmpint(nm_setting_connection_get_autoconnect_priority(s_con),
+                    ==,
+                    NMI_AUTOCONNECT_PRIORITY_CMDLINE);
 
     s_wired = nm_connection_get_setting_wired(connection);
     g_assert(s_wired);
@@ -174,6 +177,9 @@ test_dhcp_with_hostname(void)
     g_assert_cmpint(nm_setting_connection_get_wait_device_timeout(s_con), ==, -1);
 
     g_assert(nm_setting_connection_get_autoconnect(s_con));
+    g_assert_cmpint(nm_setting_connection_get_autoconnect_priority(s_con),
+                    ==,
+                    NMI_AUTOCONNECT_PRIORITY_CMDLINE);
 
     s_wired = nm_connection_get_setting_wired(connection);
     g_assert(s_wired);
@@ -219,6 +225,9 @@ test_dhcp_with_mtu(void)
         g_assert_cmpint(nm_setting_connection_get_wait_device_timeout(s_con), ==, -1);
 
         g_assert(nm_setting_connection_get_autoconnect(s_con));
+        g_assert_cmpint(nm_setting_connection_get_autoconnect_priority(s_con),
+                        ==,
+                        NMI_AUTOCONNECT_PRIORITY_CMDLINE);
 
         s_wired = nm_connection_get_setting_wired(connection);
         g_assert(s_wired);
@@ -279,6 +288,9 @@ test_dhcp_timeout(void)
         g_assert_cmpint(nm_setting_connection_get_wait_device_timeout(s_con), ==, -1);
         g_assert_cmpint(nm_setting_connection_get_autoconnect_retries(s_con), ==, 1);
         g_assert(nm_setting_connection_get_autoconnect(s_con));
+        g_assert_cmpint(nm_setting_connection_get_autoconnect_priority(s_con),
+                        ==,
+                        NMI_AUTOCONNECT_PRIORITY_CMDLINE);
 
         s_ip4 = nm_connection_get_setting_ip4_config(connection);
         g_assert(s_ip4);

@@ -72,6 +72,9 @@ test_read_ibft_dhcp(void)
     g_assert_cmpstr(nm_setting_connection_get_interface_name(s_con), ==, NULL);
     g_assert_cmpint(nm_setting_connection_get_timestamp(s_con), ==, 0);
     g_assert(nm_setting_connection_get_autoconnect(s_con));
+    g_assert_cmpint(nm_setting_connection_get_autoconnect_priority(s_con),
+                    ==,
+                    NMI_AUTOCONNECT_PRIORITY_FIRMWARE);
 
     s_wired = nm_connection_get_setting_wired(connection);
     g_assert(s_wired);
@@ -121,6 +124,9 @@ test_read_ibft_static(void)
     g_assert_cmpstr(nm_setting_connection_get_interface_name(s_con), ==, NULL);
     g_assert_cmpint(nm_setting_connection_get_timestamp(s_con), ==, 0);
     g_assert(nm_setting_connection_get_autoconnect(s_con));
+    g_assert_cmpint(nm_setting_connection_get_autoconnect_priority(s_con),
+                    ==,
+                    NMI_AUTOCONNECT_PRIORITY_FIRMWARE);
 
     s_wired = nm_connection_get_setting_wired(connection);
     g_assert(s_wired);
