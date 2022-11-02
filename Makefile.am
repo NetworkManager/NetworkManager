@@ -324,17 +324,12 @@ src_n_acd_libn_acd_la_LDFLAGS = \
 src_n_acd_libn_acd_la_SOURCES = \
 	src/n-acd/src/n-acd.c \
 	src/n-acd/src/n-acd.h \
+	src/n-acd/src/n-acd-bpf.c \
 	src/n-acd/src/n-acd-private.h \
 	src/n-acd/src/n-acd-probe.c \
 	src/n-acd/src/util/timer.c \
 	src/n-acd/src/util/timer.h \
 	$(NULL)
-
-if WITH_EBPF
-src_n_acd_libn_acd_la_SOURCES += src/n-acd/src/n-acd-bpf.c
-else
-src_n_acd_libn_acd_la_SOURCES += src/n-acd/src/n-acd-bpf-fallback.c
-endif
 
 ###############################################################################
 
