@@ -1849,5 +1849,6 @@ libnm_1_42_0 {
 global:
 	nm_client_wait_shutdown;
 	nm_client_wait_shutdown_finish;
+	nm_setting_ip_config_get_dhcp_iaid;
 	nm_setting_ovs_interface_get_ofport_request;
 } libnm_1_40_0;
