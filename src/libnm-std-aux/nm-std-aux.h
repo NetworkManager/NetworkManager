@@ -170,8 +170,8 @@ typedef uint64_t _nm_bitwise nm_be64_t;
 #define NM_LIKELY(expr)   (__builtin_expect(NM_BOOLEAN_EXPR(expr), 1))
 #define NM_UNLIKELY(expr) (__builtin_expect(NM_BOOLEAN_EXPR(expr), 0))
 #else
-#define NM_LIKELY(expr)   NM_BOOLEAN_EXPR(expr)
-#define NM_UNLIKELY(expr) NM_BOOLEAN_EXPR(expr)
+#define NM_LIKELY(expr)   (NM_BOOLEAN_EXPR(expr))
+#define NM_UNLIKELY(expr) (NM_BOOLEAN_EXPR(expr))
 #endif
 
 /*****************************************************************************/
