@@ -1,0 +1,2 @@
+Ignore-Backport: dc26e6592874 ('tests: add tests for generating stable UUIDs for keyfile/initrd')
+Fixes: b5e7e48bc185 ('glib-aux: add and use nm_uuid_generate_from_strings_old()')
