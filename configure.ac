@@ -707,7 +707,7 @@ fi
 AM_CONDITIONAL(WITH_FIREWALLD_ZONE, test "${enable_firewalld_zone}" = "yes")
 
 PKG_CHECK_MODULES(GNUTLS, [gnutls >= 2.12], [have_crypto_gnutls=yes], [have_crypto_gnutls=no])
-PKG_CHECK_MODULES(NSS, [nss], [have_crypto_nss=yes], [have_crypto_nss=yes])
+PKG_CHECK_MODULES(NSS, [nss], [have_crypto_nss=yes], [have_crypto_nss=no])
 if test "${have_crypto_nss}" = "yes"; then
 	# Work around a pkg-config bug (fdo #29801) where exists != usable
 	FOO=`$PKG_CONFIG --cflags --libs nss`
@@ -715,11 +715,14 @@ if test "${have_crypto_nss}" = "yes"; then
 		have_crypto_nss=no
 	fi
 fi
+PKG_CHECK_MODULES(OPENSSL, [libcrypto >= 1.0.1a], [have_crypto_openssl=yes], [have_crypto_openssl=no])
+
 AM_CONDITIONAL(HAVE_CRYPTO_GNUTLS, test "${have_crypto_gnutls}" = 'yes')
 AM_CONDITIONAL(HAVE_CRYPTO_NSS, test "${have_crypto_nss}" = 'yes')
+AM_CONDITIONAL(HAVE_CRYPTO_OPENSSL, test "${have_crypto_openssl}" = 'yes')
 
 AC_ARG_WITH(crypto,
-            AS_HELP_STRING([--with-crypto=nss|gnutls|null],
+            AS_HELP_STRING([--with-crypto=nss|gnutls|openssl|null],
                            [Cryptography library to use for certificate and key operations]),
             with_crypto=$withval,
             with_crypto=nss)
@@ -731,13 +734,18 @@ elif test "$with_crypto" = 'gnutls'; then
 	if test "${have_crypto_gnutls}" != "yes"; then
 		AC_MSG_ERROR([No usable gnutls found for --with-crypto=gnutls])
 	fi
+elif test "$with_crypto" = 'openssl'; then
+	if test "${have_crypto_openssl}" != "yes"; then
+		AC_MSG_ERROR([No usable openssl found for --with-crypto=openssl])
+	fi
 elif test "$with_crypto" = 'null'; then
 	:
 else
-	AC_MSG_ERROR([Please choose either 'nss', 'gnutls' or 'null' for certificate and crypto operations])
+	AC_MSG_ERROR([Please choose either 'nss', 'gnutls', 'openssl' or 'null' for certificate and crypto operations])
 fi
 AM_CONDITIONAL(WITH_NSS, test "$with_crypto" = 'nss')
 AM_CONDITIONAL(WITH_GNUTLS, test "$with_crypto" = 'gnutls')
+AM_CONDITIONAL(WITH_OPENSSL, test "$with_crypto" = 'openssl')
 
 GLIB_MAKEFILE='$(top_srcdir)/Makefile.glib'
 AC_SUBST(GLIB_MAKEFILE)
@@ -1439,7 +1447,7 @@ echo "  valgrind: $with_valgrind   $with_valgrind_suppressions"
 echo "  code coverage: $enable_code_coverage"
 echo "  LTO: $enable_lto"
 echo "  linker garbage collection: $enable_ld_gc"
-echo "  crypto: $with_crypto (have-gnutls: $have_crypto_gnutls, have-nss: $have_crypto_nss)"
+echo "  crypto: $with_crypto (have-gnutls: $have_crypto_gnutls, have-nss: $have_crypto_nss, have-openssl $have_crypto_openssl)"
 echo "  sanitizers: $sanitizers"
 echo "  Mozilla Public Suffix List: $with_libpsl"
 echo "  eBPF: $have_ebpf"

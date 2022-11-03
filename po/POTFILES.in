@@ -131,6 +131,7 @@ src/libnm-core-impl/nm-vpn-plugin-info.c
 src/libnm-crypto/nm-crypto-gnutls.c
 src/libnm-crypto/nm-crypto-nss.c
 src/libnm-crypto/nm-crypto-null.c
+src/libnm-crypto/nm-crypto-openssl.c
 src/libnm-crypto/nm-crypto.c
 src/libnm-glib-aux/nm-shared-utils.c
 src/libnm-log-core/nm-logging.c
