@@ -88,6 +88,7 @@ if test "$GCC" = "yes" -a "$set_more_warnings" != "no"; then
 
 	for option in \
 		      $_CFLAGS_MORE_WARNINGS_DISABLE_LTO \
+		      -Wall \
 		      -Wextra \
 		      -Wdeclaration-after-statement \
 		      -Wfloat-equal \
@@ -99,15 +100,19 @@ if test "$GCC" = "yes" -a "$set_more_warnings" != "no"; then
 		      -Wmissing-declarations \
 		      -Wmissing-include-dirs \
 		      -Wmissing-prototypes \
+		      -Wparentheses-equality \
 		      -Wpointer-arith \
 		      -Wshadow \
 		      -Wshift-negative-value \
 		      -Wstrict-prototypes \
+		      -Wtypedef-redefinition \
 		      -Wundef \
+		      -Wunknown-attributes \
 		      -Wvla \
 		      -Wno-duplicate-decl-specifier \
 		      -Wno-format-truncation \
 		      -Wno-format-y2k \
+		      -Wno-gnu-variable-sized-type-not-at-end \
 		      -Wno-missing-field-initializers \
 		      -Wno-pragmas \
 		      -Wno-sign-compare \
