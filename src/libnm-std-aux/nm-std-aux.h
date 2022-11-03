@@ -169,8 +169,8 @@ typedef uint64_t _nm_bitwise nm_be64_t;
 #define NM_BOOLEAN_EXPR(expr) _NM_BOOLEAN_EXPR_IMPL(NM_UNIQ, expr)
 
 #if defined(__GNUC__) && (__GNUC__ > 2) && defined(__OPTIMIZE__)
-#define NM_LIKELY(expr)   (__builtin_expect(NM_BOOLEAN_EXPR(expr), 1))
-#define NM_UNLIKELY(expr) (__builtin_expect(NM_BOOLEAN_EXPR(expr), 0))
+#define NM_LIKELY(expr)   __builtin_expect(NM_BOOLEAN_EXPR(expr), 1)
+#define NM_UNLIKELY(expr) __builtin_expect(NM_BOOLEAN_EXPR(expr), 0)
 #else
 #define NM_LIKELY(expr)   NM_BOOLEAN_EXPR(expr)
 #define NM_UNLIKELY(expr) NM_BOOLEAN_EXPR(expr)
@@ -235,7 +235,7 @@ _nm_assert_fail_internal(const char  *assertion,
          * the assertion does not fail). */ \
         if (NM_MORE_ASSERTS_EFFECTIVE == 0) {                         \
             /* pass */                                                \
-        } else if NM_LIKELY (cond) {                                  \
+        } else if (NM_LIKELY(cond)) {                                 \
             /* pass */                                                \
         } else {                                                      \
             _nm_assert_fail(#cond);                                   \
@@ -250,7 +250,7 @@ _nm_assert_fail_internal(const char  *assertion,
          *
          * As such, nm_assert() is async-signal-safe (provided @cond is, and
          * the assertion does not fail). */ \
-        if NM_LIKELY (cond) {                                         \
+        if (NM_LIKELY(cond)) {                                        \
             /* pass */                                                \
         } else if (NM_MORE_ASSERTS_EFFECTIVE == 0) {                  \
             /* pass */                                                \
