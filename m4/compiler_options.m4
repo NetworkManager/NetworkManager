@@ -95,11 +95,14 @@ if test "$GCC" = "yes" -a "$set_more_warnings" != "no"; then
 		      -Wformat-nonliteral \
 		      -Wformat-security \
 		      -Wimplicit-function-declaration \
+		      -Wimplicit-int \
 		      -Winit-self \
+		      -Wint-conversion \
 		      -Wlogical-op \
 		      -Wmissing-declarations \
 		      -Wmissing-include-dirs \
 		      -Wmissing-prototypes \
+		      -Wold-style-definition \
 		      -Wparentheses-equality \
 		      -Wpointer-arith \
 		      -Wshadow \
