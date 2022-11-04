@@ -19,7 +19,11 @@
   NetworkManager. Whether and how it is represented in nmcli or keyfile, may differ.
   The XML however aims to provide information for various backends.
 
-  Attributes:
+  <setting> Attributes:
+   "name": the name of the setting.
+   "gtype": the typename of the NMSetting class in libnm.
+
+  <property> Attributes:
    "name": the name of the property.
    "is-deprecated": whether this property is deprecated.
    "is-secret": whether this property is a secret.
@@ -33,7 +37,9 @@
        is the GParamSpec.value_type of the property.
  -->
 <nm-setting-docs>
-    <setting name="6lowpan" >
+    <setting name="6lowpan"
+             gtype="NMSetting6Lowpan"
+             >
         <property name="name"
                   dbus-type="s"
                   gprop-type="gchararray"
@@ -43,7 +49,9 @@
                   gprop-type="gchararray"
                   />
     </setting>
-    <setting name="802-11-olpc-mesh" >
+    <setting name="802-11-olpc-mesh"
+             gtype="NMSettingOlpcMesh"
+             >
         <property name="channel"
                   dbus-type="u"
                   gprop-type="guint"
@@ -61,7 +69,9 @@
                   gprop-type="GBytes"
                   />
     </setting>
-    <setting name="802-11-wireless" >
+    <setting name="802-11-wireless"
+             gtype="NMSettingWireless"
+             >
         <property name="ap-isolation"
                   dbus-type="i"
                   gprop-type="NMTernary"
@@ -148,7 +158,9 @@
                   gprop-type="guint"
                   />
     </setting>
-    <setting name="802-11-wireless-security" >
+    <setting name="802-11-wireless-security"
+             gtype="NMSettingWirelessSecurity"
+             >
         <property name="auth-alg"
                   dbus-type="s"
                   gprop-type="gchararray"
@@ -243,7 +255,9 @@
                   gprop-type="guint"
                   />
     </setting>
-    <setting name="802-1x" >
+    <setting name="802-1x"
+             gtype="NMSetting8021x"
+             >
         <property name="altsubject-matches"
                   dbus-type="as"
                   gprop-type="GStrv"
@@ -457,7 +471,9 @@
                   gprop-type="gboolean"
                   />
     </setting>
-    <setting name="802-3-ethernet" >
+    <setting name="802-3-ethernet"
+             gtype="NMSettingWired"
+             >
         <property name="accept-all-mac-addresses"
                   dbus-type="i"
                   gprop-type="NMTernary"
@@ -527,7 +543,9 @@
                   gprop-type="gchararray"
                   />
     </setting>
-    <setting name="adsl" >
+    <setting name="adsl"
+             gtype="NMSettingAdsl"
+             >
         <property name="encapsulation"
                   dbus-type="s"
                   gprop-type="gchararray"
@@ -563,7 +581,9 @@
                   gprop-type="guint"
                   />
     </setting>
-    <setting name="bluetooth" >
+    <setting name="bluetooth"
+             gtype="NMSettingBluetooth"
+             >
         <property name="bdaddr"
                   dbus-type="ay"
                   gprop-type="gchararray"
@@ -577,7 +597,9 @@
                   gprop-type="gchararray"
                   />
     </setting>
-    <setting name="bond" >
+    <setting name="bond"
+             gtype="NMSettingBond"
+             >
         <property name="interface-name"
                   dbus-type="s"
                   dbus-deprecated="1"
@@ -591,7 +613,9 @@
                   gprop-type="GHashTable"
                   />
     </setting>
-    <setting name="bond-port" >
+    <setting name="bond-port"
+             gtype="NMSettingBondPort"
+             >
         <property name="name"
                   dbus-type="s"
                   gprop-type="gchararray"
@@ -601,7 +625,9 @@
                   gprop-type="guint"
                   />
     </setting>
-    <setting name="bridge" >
+    <setting name="bridge"
+             gtype="NMSettingBridge"
+             >
         <property name="ageing-time"
                   dbus-type="u"
                   gprop-type="guint"
@@ -720,7 +746,9 @@
                   gprop-type="GPtrArray"
                   />
     </setting>
-    <setting name="bridge-port" >
+    <setting name="bridge-port"
+             gtype="NMSettingBridgePort"
+             >
         <property name="hairpin-mode"
                   dbus-type="b"
                   gprop-type="gboolean"
@@ -742,7 +770,9 @@
                   gprop-type="GPtrArray"
                   />
     </setting>
-    <setting name="cdma" >
+    <setting name="cdma"
+             gtype="NMSettingCdma"
+             >
         <property name="mtu"
                   dbus-type="u"
                   gprop-type="guint"
@@ -770,7 +800,9 @@
                   gprop-type="gchararray"
                   />
     </setting>
-    <setting name="connection" >
+    <setting name="connection"
+             gtype="NMSettingConnection"
+             >
         <property name="auth-retries"
                   dbus-type="i"
                   gprop-type="gint"
@@ -888,7 +920,9 @@
                   gprop-type="gchararray"
                   />
     </setting>
-    <setting name="dcb" >
+    <setting name="dcb"
+             gtype="NMSettingDcb"
+             >
         <property name="app-fcoe-flags"
                   dbus-type="u"
                   gprop-type="NMSettingDcbFlags"
@@ -954,25 +988,33 @@
                   gprop-type="GArray"
                   />
     </setting>
-    <setting name="dummy" >
+    <setting name="dummy"
+             gtype="NMSettingDummy"
+             >
         <property name="name"
                   dbus-type="s"
                   gprop-type="gchararray"
                   />
     </setting>
-    <setting name="ethtool" >
+    <setting name="ethtool"
+             gtype="NMSettingEthtool"
+             >
         <property name="name"
                   dbus-type="s"
                   gprop-type="gchararray"
                   />
     </setting>
-    <setting name="generic" >
+    <setting name="generic"
+             gtype="NMSettingGeneric"
+             >
         <property name="name"
                   dbus-type="s"
                   gprop-type="gchararray"
                   />
     </setting>
-    <setting name="gsm" >
+    <setting name="gsm"
+             gtype="NMSettingGsm"
+             >
         <property name="allowed-bands"
                   dbus-type="u"
                   dbus-deprecated="1"
@@ -1047,7 +1089,9 @@
                   gprop-type="gchararray"
                   />
     </setting>
-    <setting name="hostname" >
+    <setting name="hostname"
+             gtype="NMSettingHostname"
+             >
         <property name="from-dhcp"
                   dbus-type="i"
                   gprop-type="NMTernary"
@@ -1069,7 +1113,9 @@
                   gprop-type="gint"
                   />
     </setting>
-    <setting name="infiniband" >
+    <setting name="infiniband"
+             gtype="NMSettingInfiniband"
+             >
         <property name="mac-address"
                   dbus-type="ay"
                   gprop-type="gchararray"
@@ -1095,7 +1141,9 @@
                   gprop-type="gchararray"
                   />
     </setting>
-    <setting name="ip-tunnel" >
+    <setting name="ip-tunnel"
+             gtype="NMSettingIPTunnel"
+             >
         <property name="encapsulation-limit"
                   dbus-type="u"
                   gprop-type="guint"
@@ -1153,7 +1201,9 @@
                   gprop-type="guint"
                   />
     </setting>
-    <setting name="ipv4" >
+    <setting name="ipv4"
+             gtype="NMSettingIP4Config"
+             >
         <property name="address-data"
                   dbus-type="aa{sv}"
                   />
@@ -1282,7 +1332,9 @@
                   dbus-type="aa{sv}"
                   />
     </setting>
-    <setting name="ipv6" >
+    <setting name="ipv6"
+             gtype="NMSettingIP6Config"
+             >
         <property name="addr-gen-mode"
                   dbus-type="i"
                   gprop-type="gint"
@@ -1415,7 +1467,9 @@
                   gprop-type="gchararray"
                   />
     </setting>
-    <setting name="macsec" >
+    <setting name="macsec"
+             gtype="NMSettingMacsec"
+             >
         <property name="encrypt"
                   dbus-type="b"
                   gprop-type="gboolean"
@@ -1459,7 +1513,9 @@
                   gprop-type="gint"
                   />
     </setting>
-    <setting name="macvlan" >
+    <setting name="macvlan"
+             gtype="NMSettingMacvlan"
+             >
         <property name="mode"
                   dbus-type="u"
                   gprop-type="guint"
@@ -1481,7 +1537,9 @@
                   gprop-type="gboolean"
                   />
     </setting>
-    <setting name="match" >
+    <setting name="match"
+             gtype="NMSettingMatch"
+             >
         <property name="driver"
                   dbus-type="as"
                   gprop-type="GStrv"
@@ -1503,7 +1561,9 @@
                   gprop-type="GStrv"
                   />
     </setting>
-    <setting name="ovs-bridge" >
+    <setting name="ovs-bridge"
+             gtype="NMSettingOvsBridge"
+             >
         <property name="datapath-type"
                   dbus-type="s"
                   gprop-type="gchararray"
@@ -1529,7 +1589,9 @@
                   gprop-type="gboolean"
                   />
     </setting>
-    <setting name="ovs-dpdk" >
+    <setting name="ovs-dpdk"
+             gtype="NMSettingOvsDpdk"
+             >
         <property name="devargs"
                   dbus-type="s"
                   gprop-type="gchararray"
@@ -1543,7 +1605,9 @@
                   gprop-type="gchararray"
                   />
     </setting>
-    <setting name="ovs-external-ids" >
+    <setting name="ovs-external-ids"
+             gtype="NMSettingOvsExternalIDs"
+             >
         <property name="data"
                   dbus-type="a{ss}"
                   gprop-type="GHashTable"
@@ -1553,7 +1617,9 @@
                   gprop-type="gchararray"
                   />
     </setting>
-    <setting name="ovs-interface" >
+    <setting name="ovs-interface"
+             gtype="NMSettingOvsInterface"
+             >
         <property name="name"
                   dbus-type="s"
                   gprop-type="gchararray"
@@ -1567,7 +1633,9 @@
                   gprop-type="gchararray"
                   />
     </setting>
-    <setting name="ovs-patch" >
+    <setting name="ovs-patch"
+             gtype="NMSettingOvsPatch"
+             >
         <property name="name"
                   dbus-type="s"
                   gprop-type="gchararray"
@@ -1577,7 +1645,9 @@
                   gprop-type="gchararray"
                   />
     </setting>
-    <setting name="ovs-port" >
+    <setting name="ovs-port"
+             gtype="NMSettingOvsPort"
+             >
         <property name="bond-downdelay"
                   dbus-type="u"
                   gprop-type="guint"
@@ -1607,7 +1677,9 @@
                   gprop-type="gchararray"
                   />
     </setting>
-    <setting name="ppp" >
+    <setting name="ppp"
+             gtype="NMSettingPpp"
+             >
         <property name="baud"
                   dbus-type="u"
                   gprop-type="guint"
@@ -1685,7 +1757,9 @@
                   gprop-type="gboolean"
                   />
     </setting>
-    <setting name="pppoe" >
+    <setting name="pppoe"
+             gtype="NMSettingPppoe"
+             >
         <property name="name"
                   dbus-type="s"
                   gprop-type="gchararray"
@@ -1713,7 +1787,9 @@
                   gprop-type="gchararray"
                   />
     </setting>
-    <setting name="proxy" >
+    <setting name="proxy"
+             gtype="NMSettingProxy"
+             >
         <property name="browser-only"
                   dbus-type="b"
                   gprop-type="gboolean"
@@ -1735,7 +1811,9 @@
                   gprop-type="gchararray"
                   />
     </setting>
-    <setting name="serial" >
+    <setting name="serial"
+             gtype="NMSettingSerial"
+             >
         <property name="baud"
                   dbus-type="u"
                   gprop-type="guint"
@@ -1761,7 +1839,9 @@
                   gprop-type="guint"
                   />
     </setting>
-    <setting name="sriov" >
+    <setting name="sriov"
+             gtype="NMSettingSriov"
+             >
         <property name="autoprobe-drivers"
                   dbus-type="i"
                   gprop-type="NMTernary"
@@ -1779,7 +1859,9 @@
                   gprop-type="GPtrArray"
                   />
     </setting>
-    <setting name="tc" >
+    <setting name="tc"
+             gtype="NMSettingTCConfig"
+             >
         <property name="name"
                   dbus-type="s"
                   gprop-type="gchararray"
@@ -1793,7 +1875,9 @@
                   gprop-type="GPtrArray"
                   />
     </setting>
-    <setting name="team" >
+    <setting name="team"
+             gtype="NMSettingTeam"
+             >
         <property name="config"
                   dbus-type="s"
                   gprop-type="gchararray"
@@ -1867,7 +1951,9 @@
                   gprop-type="GStrv"
                   />
     </setting>
-    <setting name="team-port" >
+    <setting name="team-port"
+             gtype="NMSettingTeamPort"
+             >
         <property name="config"
                   dbus-type="s"
                   gprop-type="gchararray"
@@ -1901,7 +1987,9 @@
                   gprop-type="gboolean"
                   />
     </setting>
-    <setting name="tun" >
+    <setting name="tun"
+             gtype="NMSettingTun"
+             >
         <property name="group"
                   dbus-type="s"
                   gprop-type="gchararray"
@@ -1931,7 +2019,9 @@
                   gprop-type="gboolean"
                   />
     </setting>
-    <setting name="user" >
+    <setting name="user"
+             gtype="NMSettingUser"
+             >
         <property name="data"
                   dbus-type="a{ss}"
                   gprop-type="GHashTable"
@@ -1941,7 +2031,9 @@
                   gprop-type="gchararray"
                   />
     </setting>
-    <setting name="veth" >
+    <setting name="veth"
+             gtype="NMSettingVeth"
+             >
         <property name="name"
                   dbus-type="s"
                   gprop-type="gchararray"
@@ -1951,7 +2043,9 @@
                   gprop-type="gchararray"
                   />
     </setting>
-    <setting name="vlan" >
+    <setting name="vlan"
+             gtype="NMSettingVlan"
+             >
         <property name="egress-priority-map"
                   dbus-type="as"
                   gprop-type="GStrv"
@@ -1981,7 +2075,9 @@
                   gprop-type="gchararray"
                   />
     </setting>
-    <setting name="vpn" >
+    <setting name="vpn"
+             gtype="NMSettingVpn"
+             >
         <property name="data"
                   dbus-type="a{ss}"
                   gprop-type="GHashTable"
@@ -2012,7 +2108,9 @@
                   gprop-type="gchararray"
                   />
     </setting>
-    <setting name="vrf" >
+    <setting name="vrf"
+             gtype="NMSettingVrf"
+             >
         <property name="name"
                   dbus-type="s"
                   gprop-type="gchararray"
@@ -2022,7 +2120,9 @@
                   gprop-type="guint"
                   />
     </setting>
-    <setting name="vxlan" >
+    <setting name="vxlan"
+             gtype="NMSettingVxlan"
+             >
         <property name="ageing"
                   dbus-type="u"
                   gprop-type="guint"
@@ -2092,7 +2192,9 @@
                   gprop-type="guint"
                   />
     </setting>
-    <setting name="wifi-p2p" >
+    <setting name="wifi-p2p"
+             gtype="NMSettingWifiP2P"
+             >
         <property name="name"
                   dbus-type="s"
                   gprop-type="gchararray"
@@ -2110,7 +2212,9 @@
                   gprop-type="guint"
                   />
     </setting>
-    <setting name="wimax" >
+    <setting name="wimax"
+             gtype="NMSettingWimax"
+             >
         <property name="mac-address"
                   is-deprecated="1"
                   dbus-type="ay"
@@ -2126,7 +2230,9 @@
                   gprop-type="gchararray"
                   />
     </setting>
-    <setting name="wireguard" >
+    <setting name="wireguard"
+             gtype="NMSettingWireGuard"
+             >
         <property name="fwmark"
                   dbus-type="u"
                   gprop-type="guint"
@@ -2169,7 +2275,9 @@
                   gprop-type="NMSettingSecretFlags"
                   />
     </setting>
-    <setting name="wpan" >
+    <setting name="wpan"
+             gtype="NMSettingWpan"
+             >
         <property name="channel"
                   dbus-type="i"
                   gprop-type="gint"

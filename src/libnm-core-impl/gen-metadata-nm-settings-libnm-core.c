@@ -59,7 +59,11 @@ main(int argc, char *argv[])
             "  NetworkManager. Whether and how it is represented in nmcli or keyfile, may differ.\n"
             "  The XML however aims to provide information for various backends.\n"
             "\n"
-            "  Attributes:\n"
+            "  <setting> Attributes:\n"
+            "   \"name\": the name of the setting.\n"
+            "   \"gtype\": the typename of the NMSetting class in libnm.\n"
+            "\n"
+            "  <property> Attributes:\n"
             "   \"name\": the name of the property.\n"
             "   \"is-deprecated\": whether this property is deprecated.\n"
             "   \"is-secret\": whether this property is a secret.\n"
@@ -85,7 +89,10 @@ main(int argc, char *argv[])
 
         g_print("%s<setting", _indent_level(INDENT));
         g_print(" name=%s", _xml_escape_attr(&sbuf1, msi->setting_name));
-        g_print(" >\n");
+        g_print("\n%sgtype=%s",
+                _indent_level(INDENT + 9),
+                _xml_escape_attr(&sbuf1, g_type_name(gtype)));
+        g_print("\n%s>\n", _indent_level(INDENT + 9));
 
         for (prop_idx = 0; prop_idx < sis->property_infos_len; prop_idx++) {
             const NMSettInfoProperty *sip = &sis->property_infos[prop_idx];
