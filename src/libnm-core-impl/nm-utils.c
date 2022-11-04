@@ -5633,3 +5633,24 @@ _nm_utils_validate_dhcp_hostname_flags(NMDhcpHostnameFlags flags, int addr_famil
 
     return TRUE;
 }
+
+/*****************************************************************************/
+
+/**
+ * nm_utils_ensure_gtypes:
+ *
+ * This ensures that all NMSetting GTypes are created. For example,
+ * after this call, g_type_from_name("NMSettingConnection") will work.
+ *
+ * This cannot fail and does nothing if the type already exists.
+ *
+ * Since: 1.42
+ */
+void
+nm_utils_ensure_gtypes(void)
+{
+    NMMetaSettingType meta_type;
+
+    for (meta_type = 0; meta_type < _NM_META_SETTING_TYPE_NUM; meta_type++)
+        nm_meta_setting_infos[meta_type].get_setting_gtype();
+}

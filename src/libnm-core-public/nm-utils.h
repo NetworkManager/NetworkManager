@@ -250,6 +250,9 @@ NM_AVAILABLE_IN_1_16
 gboolean
 nm_utils_base64secret_decode(const char *base64_key, gsize required_key_len, guint8 *out_key);
 
+NM_AVAILABLE_IN_1_42
+void nm_utils_ensure_gtypes(void);
+
 G_END_DECLS
 
 #endif /* __NM_UTILS_H__ */
