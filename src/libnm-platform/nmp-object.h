@@ -183,25 +183,26 @@ typedef struct {
     /* Only for NMPObjectLnk* types. */
     NMLinkType lnk_link_type;
 
-    void (*cmd_obj_hash_update)(const NMPObject *obj, NMHashState *h);
-    int (*cmd_obj_cmp)(const NMPObject *obj1, const NMPObject *obj2);
-    void (*cmd_obj_copy)(NMPObject *dst, const NMPObject *src);
-    void (*cmd_obj_dispose)(NMPObject *obj);
     gboolean (*cmd_obj_is_alive)(const NMPObject *obj);
     gboolean (*cmd_obj_is_visible)(const NMPObject *obj);
+    void (*cmd_obj_copy)(NMPObject *dst, const NMPObject *src);
+    void (*cmd_obj_dispose)(NMPObject *obj);
+
+    void (*cmd_obj_hash_update)(const NMPObject *obj, NMHashState *h);
+    int (*cmd_obj_cmp)(const NMPObject *obj1, const NMPObject *obj2);
     const char *(*cmd_obj_to_string)(const NMPObject      *obj,
                                      NMPObjectToStringMode to_string_mode,
                                      char                 *buf,
                                      gsize                 buf_size);
 
     /* functions that operate on NMPlatformObject */
+    void (*cmd_plobj_hash_update)(const NMPlatformObject *obj, NMHashState *h);
+    int (*cmd_plobj_cmp)(const NMPlatformObject *obj1, const NMPlatformObject *obj2);
     void (*cmd_plobj_id_copy)(NMPlatformObject *dst, const NMPlatformObject *src);
     int (*cmd_plobj_id_cmp)(const NMPlatformObject *obj1, const NMPlatformObject *obj2);
     void (*cmd_plobj_id_hash_update)(const NMPlatformObject *obj, NMHashState *h);
     const char *(*cmd_plobj_to_string_id)(const NMPlatformObject *obj, char *buf, gsize buf_size);
     const char *(*cmd_plobj_to_string)(const NMPlatformObject *obj, char *buf, gsize len);
-    void (*cmd_plobj_hash_update)(const NMPlatformObject *obj, NMHashState *h);
-    int (*cmd_plobj_cmp)(const NMPlatformObject *obj1, const NMPlatformObject *obj2);
 } NMPClass;
 
 extern const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX];
