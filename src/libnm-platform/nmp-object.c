@@ -1318,10 +1318,9 @@ nmp_object_copy(NMPObject *dst, const NMPObject *src, gboolean id_only)
 
         g_return_if_fail(klass == NMP_OBJECT_GET_CLASS(src));
 
-        if (id_only) {
-            if (klass->cmd_plobj_id_copy)
-                klass->cmd_plobj_id_copy(&dst->object, &src->object);
-        } else if (klass->cmd_obj_copy)
+        if (id_only && klass->cmd_plobj_id_copy)
+            klass->cmd_plobj_id_copy(&dst->object, &src->object);
+        else if (klass->cmd_obj_copy)
             klass->cmd_obj_copy(dst, src);
         else
             memcpy(&dst->object, &src->object, klass->sizeof_data);
