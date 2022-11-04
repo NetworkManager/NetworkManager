@@ -1,3 +1,33 @@
+<!--
+  This file is generated.
+
+  This XML contains meta data of NetworkManager connection profiles.
+
+  NetworkManager's connection profiles are a bunch of settings, and this
+  contains the known properties. See also `man nm-settings-{dbus,nmcli,keyfile}`.
+
+  Note that there are different manifestations of these properties. We have them
+  on the D-Bus API (`man nm-settings-dbus`), in keyfile format (`man nm-settings-keyfile`)
+  in libnm's NMConnection and NMSetting API, and in nmcli (`man nm-settings-nmcli`).
+  There are similarities between these, but also subtle differencs. For example,
+  a property might not be shown in nmcli, or a property might be named different
+  on D-Bus or keyfile. Also, the data types may differ due to the differences of the
+  technology.
+
+  This list of properties is not directly the properties as they are in any of
+  those manifestations. Instead, it's a general idea that this property exists in
+  NetworkManager. Whether and how it is represented in nmcli or keyfile, may differ.
+  The XML however aims to provide information for various backends.
+
+  Attributes:
+   "name": the name of the property.
+   "is-deprecated": whether this property is deprecated.
+   "dbus-type": if this property is exposed on D-Bus. In that case, this
+       is the D-Bus type format. Also, "name" is the actual name of the field
+   "dbus-deprecated": if this property is on D-Bus and that representation is
+       deprecated. This usually means, that there is a replacement D-Bus property
+       that should be used instead.
+ -->
 <nm-setting-docs>
     <setting name="6lowpan" >
         <property name="name"

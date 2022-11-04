@@ -37,6 +37,37 @@ main(int argc, char *argv[])
     const NMSettInfoSetting *sett_info_settings = nmtst_sett_info_settings();
     NMMetaSettingType        meta_type;
 
+    g_print("<!--\n"
+            "  This file is generated.\n"
+            "\n"
+            "  This XML contains meta data of NetworkManager connection profiles.\n"
+            "\n"
+            "  NetworkManager's connection profiles are a bunch of settings, and this\n"
+            "  contains the known properties. See also `man nm-settings-{dbus,nmcli,keyfile}`.\n"
+            "\n"
+            "  Note that there are different manifestations of these properties. We have them\n"
+            "  on the D-Bus API (`man nm-settings-dbus`), in keyfile format (`man "
+            "nm-settings-keyfile`)\n"
+            "  in libnm's NMConnection and NMSetting API, and in nmcli (`man nm-settings-nmcli`).\n"
+            "  There are similarities between these, but also subtle differencs. For example,\n"
+            "  a property might not be shown in nmcli, or a property might be named different\n"
+            "  on D-Bus or keyfile. Also, the data types may differ due to the differences of the\n"
+            "  technology.\n"
+            "\n"
+            "  This list of properties is not directly the properties as they are in any of\n"
+            "  those manifestations. Instead, it's a general idea that this property exists in\n"
+            "  NetworkManager. Whether and how it is represented in nmcli or keyfile, may differ.\n"
+            "  The XML however aims to provide information for various backends.\n"
+            "\n"
+            "  Attributes:\n"
+            "   \"name\": the name of the property.\n"
+            "   \"is-deprecated\": whether this property is deprecated.\n"
+            "   \"dbus-type\": if this property is exposed on D-Bus. In that case, this\n"
+            "       is the D-Bus type format. Also, \"name\" is the actual name of the field\n"
+            "   \"dbus-deprecated\": if this property is on D-Bus and that representation is\n"
+            "       deprecated. This usually means, that there is a replacement D-Bus property\n"
+            "       that should be used instead.\n"
+            " -->\n");
     g_print("<nm-setting-docs>\n");
     for (meta_type = 0; meta_type < _NM_META_SETTING_TYPE_NUM; meta_type++) {
         const NMSettInfoSetting                 *sis   = &sett_info_settings[meta_type];
