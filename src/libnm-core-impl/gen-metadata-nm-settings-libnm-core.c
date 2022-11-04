@@ -62,11 +62,15 @@ main(int argc, char *argv[])
             "  Attributes:\n"
             "   \"name\": the name of the property.\n"
             "   \"is-deprecated\": whether this property is deprecated.\n"
+            "   \"is-secret\": whether this property is a secret.\n"
+            "   \"is-secret-flags\": whether this property is a secret flags property.\n"
             "   \"dbus-type\": if this property is exposed on D-Bus. In that case, this\n"
             "       is the D-Bus type format. Also, \"name\" is the actual name of the field\n"
             "   \"dbus-deprecated\": if this property is on D-Bus and that representation is\n"
             "       deprecated. This usually means, that there is a replacement D-Bus property\n"
             "       that should be used instead.\n"
+            "   \"gprop-type\": if this is a GObject property in the NMSetting class, this\n"
+            "       is the GParamSpec.value_type of the property.\n"
             " -->\n");
     g_print("<nm-setting-docs>\n");
     for (meta_type = 0; meta_type < _NM_META_SETTING_TYPE_NUM; meta_type++) {
@@ -90,6 +94,13 @@ main(int argc, char *argv[])
             g_print(" name=%s", _xml_escape_attr(&sbuf1, sip->name));
             if (sip->is_deprecated)
                 g_print("\n%sis-deprecated=\"1\"", _indent_level(2 * INDENT + 10));
+            if (sip->param_spec && NM_FLAGS_HAS(sip->param_spec->flags, NM_SETTING_PARAM_SECRET)) {
+                g_print("\n%sis-secret=\"1\"", _indent_level(2 * INDENT + 10));
+            }
+            if (sip->param_spec
+                && G_PARAM_SPEC_VALUE_TYPE(sip->param_spec) == NM_TYPE_SETTING_SECRET_FLAGS) {
+                g_print("\n%sis-secret-flags=\"1\"", _indent_level(2 * INDENT + 10));
+            }
             if (sip->property_type->dbus_type) {
                 g_print("\n%sdbus-type=%s",
                         _indent_level(2 * INDENT + 10),
@@ -99,7 +110,14 @@ main(int argc, char *argv[])
                 nm_assert(sip->property_type->dbus_type);
                 g_print("\n%sdbus-deprecated=\"1\"", _indent_level(2 * INDENT + 10));
             }
-            g_print(" />\n");
+            if (sip->param_spec) {
+                nm_assert(nm_streq(sip->name, sip->param_spec->name));
+                g_print("\n%sgprop-type=%s",
+                        _indent_level(2 * INDENT + 10),
+                        _xml_escape_attr(&sbuf1,
+                                         g_type_name(G_PARAM_SPEC_VALUE_TYPE(sip->param_spec))));
+            }
+            g_print("\n%s/>\n", _indent_level(2 * INDENT + 10));
         }
 
         g_print("%s</setting>\n", _indent_level(INDENT));
