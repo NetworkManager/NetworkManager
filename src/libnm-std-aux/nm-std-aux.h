@@ -156,6 +156,15 @@ typedef uint64_t _nm_bitwise nm_be64_t;
 
 /*****************************************************************************/
 
+/* NM_BOOLEAN_EXPR(expr) exists to ensure that there is still a compiler
+ * warning when accidentally(?) using assignments like `NM_BOOLEAN_EXPR(x = 1)`
+ * Compiler will warn about that and suggest either == or additional parentheses
+ * `NM_BOOLEAN_EXPR((x = 1))`.
+ *
+ * This also is true for users of this macro, like `NM_LIKELY(x = 1)` and further
+ * up `nm_assert(x = 1)`. Those users must make sure not themselves adding additional
+ * parentheses around the condition.
+ */
 #define _NM_BOOLEAN_EXPR_IMPL(v, expr) \
     ({                                 \
         int NM_UNIQ_T(V, v);           \
