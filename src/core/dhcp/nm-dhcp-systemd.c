@@ -155,6 +155,26 @@ lease_to_ip6_config(NMDhcpSystemd *self, sd_dhcp6_lease *lease, gint32 ts, GErro
                                   str->str);
     }
 
+    {
+        struct in6_addr prefix;
+        uint8_t         prefix_len;
+
+        nm_gstring_prepare(&str);
+        sd_dhcp6_lease_reset_pd_prefix_iter(lease);
+        while (!sd_dhcp6_lease_get_pd(lease, &prefix, &prefix_len, NULL, NULL)) {
+            nm_gstring_add_space_delimiter(str);
+            nm_inet6_ntop(&prefix, addr_str);
+            g_string_append_printf(str, "%s/%u", addr_str, prefix_len);
+        }
+        if (str->len > 0) {
+            nm_dhcp_option_add_option(options,
+                                      TRUE,
+                                      AF_INET6,
+                                      NM_DHCP_OPTION_DHCP6_IA_PD,
+                                      str->str);
+        }
+    }
+
     num = sd_dhcp6_lease_get_domains(lease, &domains);
     if (num > 0) {
         nm_gstring_prepare(&str);
