@@ -2904,10 +2904,35 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
     }
 
     if (NM_FLAGS_ANY(priv->phase1_auth_flags, ~((guint32) NM_SETTING_802_1X_AUTH_FLAGS_ALL))) {
-        g_set_error_literal(error,
-                            NM_CONNECTION_ERROR,
-                            NM_CONNECTION_ERROR_INVALID_PROPERTY,
-                            _("invalid auth flags"));
+        g_set_error(error,
+                    NM_CONNECTION_ERROR,
+                    NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                    _("invalid auth flags: '%d' contains unknown flags"),
+                    priv->phase1_auth_flags);
+        g_prefix_error(error,
+                       "%s.%s: ",
+                       NM_SETTING_802_1X_SETTING_NAME,
+                       NM_SETTING_802_1X_PHASE1_AUTH_FLAGS);
+        return FALSE;
+    }
+
+    if (NM_FLAGS_ALL(priv->phase1_auth_flags,
+                     NM_SETTING_802_1X_AUTH_FLAGS_TLS_1_0_ENABLE
+                         | NM_SETTING_802_1X_AUTH_FLAGS_TLS_1_0_DISABLE)
+        || NM_FLAGS_ALL(priv->phase1_auth_flags,
+                        NM_SETTING_802_1X_AUTH_FLAGS_TLS_1_1_ENABLE
+                            | NM_SETTING_802_1X_AUTH_FLAGS_TLS_1_1_DISABLE)
+        || NM_FLAGS_ALL(priv->phase1_auth_flags,
+                        NM_SETTING_802_1X_AUTH_FLAGS_TLS_1_2_ENABLE
+                            | NM_SETTING_802_1X_AUTH_FLAGS_TLS_1_2_DISABLE)
+        || NM_FLAGS_ALL(priv->phase1_auth_flags,
+                        NM_SETTING_802_1X_AUTH_FLAGS_TLS_1_3_ENABLE
+                            | NM_SETTING_802_1X_AUTH_FLAGS_TLS_1_3_DISABLE)) {
+        g_set_error_literal(
+            error,
+            NM_CONNECTION_ERROR,
+            NM_CONNECTION_ERROR_INVALID_PROPERTY,
+            _("invalid auth flags: both enable and disable are set for the same TLS version"));
         g_prefix_error(error,
                        "%s.%s: ",
                        NM_SETTING_802_1X_SETTING_NAME,

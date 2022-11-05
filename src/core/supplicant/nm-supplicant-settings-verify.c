@@ -114,6 +114,8 @@ static const struct Opt opt_table[] = {
                              "tls_disable_tlsv1_1=1",
                              "tls_disable_tlsv1_2=0",
                              "tls_disable_tlsv1_2=1",
+                             "tls_disable_tlsv1_3=0",
+                             "tls_disable_tlsv1_3=1",
                              "tls_disable_time_checks=0",
                              "tls_disable_time_checks=1", )),
     OPT_KEYWORD("phase2",
