@@ -1369,12 +1369,22 @@ nm_supplicant_config_add_setting_8021x(NMSupplicantConfig *self,
     }
 
     phase1_auth_flags = nm_setting_802_1x_get_phase1_auth_flags(setting);
-    if (NM_FLAGS_HAS(phase1_auth_flags, NM_SETTING_802_1X_AUTH_FLAGS_TLS_1_0_DISABLE))
+    if (NM_FLAGS_HAS(phase1_auth_flags, NM_SETTING_802_1X_AUTH_FLAGS_TLS_1_0_ENABLE))
+        g_string_append_printf(phase1, "%stls_disable_tlsv1_0=0", (phase1->len ? " " : ""));
+    else if (NM_FLAGS_HAS(phase1_auth_flags, NM_SETTING_802_1X_AUTH_FLAGS_TLS_1_0_DISABLE))
         g_string_append_printf(phase1, "%stls_disable_tlsv1_0=1", (phase1->len ? " " : ""));
-    if (NM_FLAGS_HAS(phase1_auth_flags, NM_SETTING_802_1X_AUTH_FLAGS_TLS_1_1_DISABLE))
+    if (NM_FLAGS_HAS(phase1_auth_flags, NM_SETTING_802_1X_AUTH_FLAGS_TLS_1_1_ENABLE))
+        g_string_append_printf(phase1, "%stls_disable_tlsv1_1=0", (phase1->len ? " " : ""));
+    else if (NM_FLAGS_HAS(phase1_auth_flags, NM_SETTING_802_1X_AUTH_FLAGS_TLS_1_1_DISABLE))
         g_string_append_printf(phase1, "%stls_disable_tlsv1_1=1", (phase1->len ? " " : ""));
-    if (NM_FLAGS_HAS(phase1_auth_flags, NM_SETTING_802_1X_AUTH_FLAGS_TLS_1_2_DISABLE))
+    if (NM_FLAGS_HAS(phase1_auth_flags, NM_SETTING_802_1X_AUTH_FLAGS_TLS_1_2_ENABLE))
+        g_string_append_printf(phase1, "%stls_disable_tlsv1_2=0", (phase1->len ? " " : ""));
+    else if (NM_FLAGS_HAS(phase1_auth_flags, NM_SETTING_802_1X_AUTH_FLAGS_TLS_1_2_DISABLE))
         g_string_append_printf(phase1, "%stls_disable_tlsv1_2=1", (phase1->len ? " " : ""));
+    if (NM_FLAGS_HAS(phase1_auth_flags, NM_SETTING_802_1X_AUTH_FLAGS_TLS_1_3_ENABLE))
+        g_string_append_printf(phase1, "%stls_disable_tlsv1_3=0", (phase1->len ? " " : ""));
+    else if (NM_FLAGS_HAS(phase1_auth_flags, NM_SETTING_802_1X_AUTH_FLAGS_TLS_1_3_DISABLE))
+        g_string_append_printf(phase1, "%stls_disable_tlsv1_3=1", (phase1->len ? " " : ""));
     if (NM_FLAGS_HAS(phase1_auth_flags, NM_SETTING_802_1X_AUTH_FLAGS_TLS_DISABLE_TIME_CHECKS))
         g_string_append_printf(phase1, "%stls_disable_time_checks=1", (phase1->len ? " " : ""));
 
