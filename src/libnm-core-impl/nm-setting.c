@@ -16,12 +16,6 @@
 #include "nm-utils-private.h"
 #include "nm-utils.h"
 
-/* We rely on this in src/libnm-core-public/nm-setting.h */
-G_STATIC_ASSERT(G_PARAM_USER_SHIFT == 8);
-G_STATIC_ASSERT(NM_SETTING_PARAM_REQUIRED, (1 << (1 + G_PARAM_USER_SHIFT)));
-G_STATIC_ASSERT(NM_SETTING_PARAM_SECRET, (1 << (2 + G_PARAM_USER_SHIFT)));
-G_STATIC_ASSERT(NM_SETTING_PARAM_FUZZY_IGNORE, (1 << (3 + G_PARAM_USER_SHIFT)));
-
 /**
  * SECTION:nm-setting
  * @short_description: Describes related configuration information
@@ -33,6 +27,20 @@ G_STATIC_ASSERT(NM_SETTING_PARAM_FUZZY_IGNORE, (1 << (3 + G_PARAM_USER_SHIFT)));
  * a number of allowed values.  See each #NMSetting subclass for a description
  * of properties and allowed values.
  */
+
+/*****************************************************************************/
+
+/*
+ * We use literal numbers in the header (as opposed to e.g.
+ * (1 << (1 + G_PARAM_USER_SHIFT))), because g-ir-scanner sometimes gets
+ * confused by unknown tokens and silently treats them as zero:
+ * https://gitlab.gnome.org/GNOME/gobject-introspection/-/merge_requests/366
+ */
+
+G_STATIC_ASSERT(G_PARAM_USER_SHIFT == 8);
+G_STATIC_ASSERT(NM_SETTING_PARAM_REQUIRED == (1 << (1 + G_PARAM_USER_SHIFT)));
+G_STATIC_ASSERT(NM_SETTING_PARAM_SECRET == (1 << (2 + G_PARAM_USER_SHIFT)));
+G_STATIC_ASSERT(NM_SETTING_PARAM_FUZZY_IGNORE == (1 << (3 + G_PARAM_USER_SHIFT)));
 
 /*****************************************************************************/
 
