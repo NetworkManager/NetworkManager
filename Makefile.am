@@ -1984,10 +1984,7 @@ EXTRA_DIST += \
 	src/libnm-client-impl/libnm.pc.in \
 	src/libnm-client-impl/libnm.ver
 
-src_libnm_client_impl_NM_1_0_typelib =
-
-if HAVE_INTROSPECTION
-src_libnm_client_impl_NM_1_0_typelib += src/libnm-client-impl/NM-1.0.typelib
+###############################################################################
 
 src/libnm-client-impl/NM-1.0.gir: src/libnm-client-impl/libnm.la
 src_libnm_client_impl_NM_1_0_gir_INCLUDES = Gio-2.0
@@ -2012,7 +2009,6 @@ src_libnm_client_impl_NM_1_0_gir_SCANNERFLAGS = --warn-all --identifier-prefix=N
 src/libnm-client-impl/libnm.typelib: src/libnm-client-impl/libnm.gir
 	$(INTROSPECTION_COMPILER) --includedir=$(srcdir)/src/libnm-core-public --includedir=$(builddir)/src/libnm-core-public --includedir=$(srcdir)/libnm-client-public --includedir=$(builddir)/libnm-client-public $< -o $@
 
-INTROSPECTION_GIRS += src/libnm-client-impl/NM-1.0.gir
 
 libnm_noinst_data = \
 	src/libnm-core-impl/gen-metadata-nm-settings-libnm-core.xml \
@@ -2027,9 +2023,21 @@ libnm_noinst_data = \
 	src/libnmc-setting/settings-docs-input.xml \
 	$(NULL)
 
+if HAVE_INTROSPECTION
+INTROSPECTION_GIRS += src/libnm-client-impl/NM-1.0.gir
 noinst_DATA += $(libnm_noinst_data)
+DISTCLEANFILES += $(libnm_noinst_data)
 
-EXTRA_DIST += src/nmcli/gen-metadata-nm-settings-nmcli.xml.in
+EXTRA_DIST += \
+	src/nmcli/gen-metadata-nm-settings-nmcli.xml.in \
+	src/libnm-core-impl/gen-metadata-nm-settings-libnm-core.xml.in
+
+src_libnm_client_impl_NM_1_0_typelib = src/libnm-client-impl/NM-1.0.typelib
+else
+src_libnm_client_impl_NM_1_0_typelib =
+endif
+
+###############################################################################
 
 if BUILD_DOCS
 src/nmcli/gen-metadata-nm-settings-nmcli.xml: src/nmcli/gen-metadata-nm-settings-nmcli
@@ -2038,15 +2046,7 @@ check-local-gen-metadata-nm-settings-nmcli: src/nmcli/gen-metadata-nm-settings-n
 	$(srcdir)/tools/check-compare-generated.sh "$(srcdir)/src/nmcli/gen-metadata-nm-settings-nmcli.xml.in" "$(builddir)/src/nmcli/gen-metadata-nm-settings-nmcli.xml"
 check_local += check-local-gen-metadata-nm-settings-nmcli
 DISTCLEANFILES += src/nmcli/gen-metadata-nm-settings-nmcli.xml
-else
-src/nmcli/gen-metadata-nm-settings-nmcli.xml: src/nmcli/gen-metadata-nm-settings-nmcli.xml.in
-	$(AM_V_GEN) cp $^ $@
-check-local-gen-metadata-nm-settings-nmcli:
-endif
 
-EXTRA_DIST += src/libnm-core-impl/gen-metadata-nm-settings-libnm-core.xml.in
-
-if BUILD_DOCS
 src/libnm-core-impl/gen-metadata-nm-settings-libnm-core.xml: src/libnm-core-impl/gen-metadata-nm-settings-libnm-core
 	$(AM_V_GEN) src/libnm-core-impl/gen-metadata-nm-settings-libnm-core > "$@"
 check-local-gen-metadata-nm-settings-libnm-core: src/libnm-core-impl/gen-metadata-nm-settings-libnm-core.xml
@@ -2054,6 +2054,10 @@ check-local-gen-metadata-nm-settings-libnm-core: src/libnm-core-impl/gen-metadat
 check_local += check-local-gen-metadata-nm-settings-libnm-core
 DISTCLEANFILES += src/libnm-core-impl/gen-metadata-nm-settings-libnm-core.xml
 else
+src/nmcli/gen-metadata-nm-settings-nmcli.xml: src/nmcli/gen-metadata-nm-settings-nmcli.xml.in
+	$(AM_V_GEN) cp $^ $@
+check-local-gen-metadata-nm-settings-nmcli:
+
 src/libnm-core-impl/gen-metadata-nm-settings-libnm-core.xml: src/libnm-core-impl/gen-metadata-nm-settings-libnm-core.xml.in
 	$(AM_V_GEN) cp $^ $@
 check-local-gen-metadata-nm-settings-libnm-core:
@@ -2088,10 +2092,6 @@ src/libnmc-setting/settings-docs-input.xml: src/libnm-client-impl/nm-property-in
 man/nm-settings-docs-%.xml: src/libnm-client-impl/nm-property-infos-%.xml src/libnm-client-impl/nm-settings-docs-gir.xml tools/generate-docs-nm-settings-docs-merge.py man/common.ent
 	$(AM_V_GEN) "$(PYTHON)" $(srcdir)/tools/generate-docs-nm-settings-docs-merge.py $@ $(wordlist 1,2,$^)
 
-EXTRA_DIST += $(libnm_noinst_data)
-DISTCLEANFILES += $(libnm_noinst_data)
-
-endif
 
 EXTRA_DIST += \
 	tools/generate-docs-nm-property-infos.py \
