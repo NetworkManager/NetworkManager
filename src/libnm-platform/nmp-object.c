@@ -1140,7 +1140,7 @@ _vt_cmd_plobj_to_string_id(qdisc, NMPlatformQdisc, "%d: %d", obj->ifindex, obj->
 _vt_cmd_plobj_to_string_id(tfilter, NMPlatformTfilter, "%d: %d", obj->ifindex, obj->parent);
 
 void
-nmp_object_hash_update(const NMPObject *obj, NMHashState *h)
+nmp_object_hash_update_full(const NMPObject *obj, gboolean for_id, NMHashState *h)
 {
     const NMPClass *klass;
 
@@ -1148,9 +1148,24 @@ nmp_object_hash_update(const NMPObject *obj, NMHashState *h)
 
     klass = NMP_OBJECT_GET_CLASS(obj);
 
+    nm_assert((!!klass->cmd_plobj_id_cmp) == (!!klass->cmd_plobj_id_hash_update));
     nm_assert((!!klass->cmd_obj_cmp) == (!!klass->cmd_obj_hash_update));
     nm_assert((!!klass->cmd_plobj_cmp) == (!!klass->cmd_plobj_hash_update));
-    nm_assert((!!klass->cmd_obj_cmp) ^ (!!klass->cmd_plobj_cmp));
+
+    nm_assert((!!klass->cmd_obj_hash_update) ^ (!!klass->cmd_plobj_hash_update));
+
+    if (for_id) {
+        if (!klass->cmd_plobj_id_hash_update) {
+            /* The klass doesn't implement ID compare. It means, to use pointer
+             * equality. */
+            nm_hash_update_val(h, obj);
+            return;
+        }
+
+        nm_hash_update_val(h, klass->obj_type);
+        klass->cmd_plobj_id_hash_update(&obj->object, h);
+        return;
+    }
 
     nm_hash_update_val(h, klass->obj_type);
     if (klass->cmd_obj_hash_update)
@@ -1201,46 +1216,72 @@ _vt_cmd_obj_hash_update_lnk_wireguard(const NMPObject *obj, NMHashState *h)
 int
 nmp_object_cmp_full(const NMPObject *obj1, const NMPObject *obj2, NMPObjectCmpFlags flags)
 {
-    const NMPClass *klass1;
+    const NMPClass *klass;
     const NMPClass *klass2;
     NMPObject       obj_stackcopy;
+
+    nm_assert(!NM_FLAGS_ANY(flags,
+                            ~(NMP_OBJECT_CMP_FLAGS_ID | NMP_OBJECT_CMP_FLAGS_IGNORE_IFINDEX)));
+
+    /* The ID flag (currently) cannot be combined with other flags. That's partly because
+     * it's not implemented, but also because some objects use only pointer equality. So it's
+     * not clear how that combines with other flags (well, they'd be ignored). */
+    nm_assert(!NM_FLAGS_HAS(flags, NMP_OBJECT_CMP_FLAGS_ID)
+              || flags == NMP_OBJECT_CMP_FLAGS_ID);
 
     NM_CMP_SELF(obj1, obj2);
 
     g_return_val_if_fail(NMP_OBJECT_IS_VALID(obj1), -1);
     g_return_val_if_fail(NMP_OBJECT_IS_VALID(obj2), 1);
 
-    klass1 = NMP_OBJECT_GET_CLASS(obj1);
+    klass = NMP_OBJECT_GET_CLASS(obj1);
+
+    nm_assert(klass);
+
+    nm_assert((!!klass->cmd_plobj_id_cmp) == (!!klass->cmd_plobj_id_hash_update));
+    nm_assert((!!klass->cmd_obj_cmp) == (!!klass->cmd_obj_hash_update));
+    nm_assert((!!klass->cmd_plobj_cmp) == (!!klass->cmd_plobj_hash_update));
+
+    nm_assert((!!klass->cmd_obj_cmp) ^ (!!klass->cmd_plobj_cmp));
+
     klass2 = NMP_OBJECT_GET_CLASS(obj2);
 
-    if (klass1 != klass2) {
-        nm_assert(klass1->obj_type != klass2->obj_type);
-        return klass1->obj_type < klass2->obj_type ? -1 : 1;
+    if (klass != klass2) {
+        nm_assert(klass2);
+        NM_CMP_DIRECT(klass->obj_type, klass2->obj_type);
+        return nm_assert_unreachable_val(0);
+    }
+
+    if (NM_FLAGS_HAS(flags, NMP_OBJECT_CMP_FLAGS_ID)) {
+        if (!klass->cmd_plobj_id_cmp) {
+            /* the klass doesn't implement ID cmp(). That means, different objects
+             * never compare equal, but the cmp() according to their pointer value. */
+            NM_CMP_DIRECT_PTR(obj1, obj2);
+            return nm_assert_unreachable_val(0);
+        }
+
+        return klass->cmd_plobj_id_cmp(&obj1->object, &obj2->object);
     }
 
     if (NM_FLAGS_HAS(flags, NMP_OBJECT_CMP_FLAGS_IGNORE_IFINDEX)) {
-        if (!NM_IN_SET(klass1,
-                       nmp_class_from_type(NMP_OBJECT_TYPE_IP4_ADDRESS),
-                       nmp_class_from_type(NMP_OBJECT_TYPE_IP6_ADDRESS),
-                       nmp_class_from_type(NMP_OBJECT_TYPE_IP4_ROUTE),
-                       nmp_class_from_type(NMP_OBJECT_TYPE_IP6_ROUTE))) {
+        if (!NM_IN_SET(klass->obj_type,
+                       NMP_OBJECT_TYPE_IP4_ADDRESS,
+                       NMP_OBJECT_TYPE_IP6_ADDRESS,
+                       NMP_OBJECT_TYPE_IP4_ROUTE,
+                       NMP_OBJECT_TYPE_IP6_ROUTE)) {
             /* This flag is currently only implemented for certain types.
              * That is, because we just create a stack copy, and that naive
              * approach only knows for types where we know that it works. */
         } else if (obj1->obj_with_ifindex.ifindex != obj2->obj_with_ifindex.ifindex) {
-            nmp_object_stackinit(&obj_stackcopy, klass1->obj_type, &obj2->obj_with_ifindex);
+            nmp_object_stackinit(&obj_stackcopy, klass->obj_type, &obj2->obj_with_ifindex);
             obj_stackcopy.obj_with_ifindex.ifindex = obj1->obj_with_ifindex.ifindex;
             obj2                                   = &obj_stackcopy;
         }
     }
 
-    nm_assert((!!klass1->cmd_obj_cmp) == (!!klass1->cmd_obj_hash_update));
-    nm_assert((!!klass1->cmd_plobj_cmp) == (!!klass1->cmd_plobj_hash_update));
-    nm_assert((!!klass1->cmd_obj_cmp) ^ (!!klass1->cmd_plobj_cmp));
-
-    if (klass1->cmd_obj_cmp)
-        return klass1->cmd_obj_cmp(obj1, obj2);
-    return klass1->cmd_plobj_cmp(&obj1->object, &obj2->object);
+    if (klass->cmd_obj_cmp)
+        return klass->cmd_obj_cmp(obj1, obj2);
+    return klass->cmd_plobj_cmp(&obj1->object, &obj2->object);
 }
 
 static int
@@ -1457,39 +1498,6 @@ nmp_object_clone(const NMPObject *obj, gboolean id_only)
     return dst;
 }
 
-int
-nmp_object_id_cmp(const NMPObject *obj1, const NMPObject *obj2)
-{
-    const NMPClass *klass, *klass2;
-
-    NM_CMP_SELF(obj1, obj2);
-
-    g_return_val_if_fail(NMP_OBJECT_IS_VALID(obj1), FALSE);
-    g_return_val_if_fail(NMP_OBJECT_IS_VALID(obj2), FALSE);
-
-    klass = NMP_OBJECT_GET_CLASS(obj1);
-    nm_assert(!klass->cmd_plobj_id_hash_update == !klass->cmd_plobj_id_cmp);
-
-    klass2 = NMP_OBJECT_GET_CLASS(obj2);
-    nm_assert(klass);
-    if (klass != klass2) {
-        nm_assert(klass2);
-        NM_CMP_DIRECT(klass->obj_type, klass2->obj_type);
-        /* resort to pointer comparison */
-        NM_CMP_DIRECT_PTR(klass, klass2);
-        return 0;
-    }
-
-    if (!klass->cmd_plobj_id_cmp) {
-        /* the klass doesn't implement ID cmp(). That means, different objects
-         * never compare equal, but the cmp() according to their pointer value. */
-        NM_CMP_DIRECT_PTR(obj1, obj2);
-        return 0;
-    }
-
-    return klass->cmd_plobj_id_cmp(&obj1->object, &obj2->object);
-}
-
 #define _vt_cmd_plobj_id_cmp(type, plat_type, cmd)                        \
     static int _vt_cmd_plobj_id_cmp_##type(const NMPlatformObject *_obj1, \
                                            const NMPlatformObject *_obj2) \
@@ -1587,28 +1595,6 @@ _vt_cmd_plobj_id_cmp(mptcp_addr, NMPlatformMptcpAddr, {
                             nm_utils_addr_family_to_size_untrusted(obj1->addr_family));
     NM_CMP_FIELD(obj1, obj2, port);
 });
-
-void
-nmp_object_id_hash_update(const NMPObject *obj, NMHashState *h)
-{
-    const NMPClass *klass;
-
-    g_return_if_fail(NMP_OBJECT_IS_VALID(obj));
-
-    klass = NMP_OBJECT_GET_CLASS(obj);
-
-    nm_assert(!klass->cmd_plobj_id_hash_update == !klass->cmd_plobj_id_cmp);
-
-    if (!klass->cmd_plobj_id_hash_update) {
-        /* The klass doesn't implement ID compare. It means, to use pointer
-         * equality. */
-        nm_hash_update_val(h, obj);
-        return;
-    }
-
-    nm_hash_update_val(h, klass->obj_type);
-    klass->cmd_plobj_id_hash_update(&obj->object, h);
-}
 
 guint
 nmp_object_id_hash(const NMPObject *obj)

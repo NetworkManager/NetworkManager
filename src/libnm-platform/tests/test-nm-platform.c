@@ -153,6 +153,7 @@ test_nmpclass_consistency(void)
 
         g_assert((!!klass->cmd_obj_cmp) == (!!klass->cmd_obj_hash_update));
         g_assert((!!klass->cmd_plobj_cmp) == (!!klass->cmd_plobj_hash_update));
+        g_assert((!!klass->cmd_plobj_id_cmp) == (!!klass->cmd_plobj_id_hash_update));
 
         g_assert((!!klass->cmd_obj_cmp) != (!!klass->cmd_plobj_cmp));
         g_assert((!!klass->cmd_obj_hash_update) != (!!klass->cmd_plobj_hash_update));
