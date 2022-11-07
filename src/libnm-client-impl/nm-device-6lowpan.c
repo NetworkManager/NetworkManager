@@ -49,27 +49,6 @@ nm_device_6lowpan_get_parent(NMDevice6Lowpan *device)
     return nml_dbus_property_o_get_obj(&NM_DEVICE_6LOWPAN_GET_PRIVATE(device)->parent);
 }
 
-/**
- * nm_device_6lowpan_get_hw_address: (skip)
- * @device: a #NMDevice6Lowpan
- *
- * Gets the hardware (MAC) address of the #NMDevice6Lowpan
- *
- * Returns: the hardware address. This is the internal string used by the
- * device, and must not be modified.
- *
- * Since: 1.14
- *
- * Deprecated: 1.24: Use nm_device_get_hw_address() instead.
- **/
-const char *
-nm_device_6lowpan_get_hw_address(NMDevice6Lowpan *device)
-{
-    g_return_val_if_fail(NM_IS_DEVICE_6LOWPAN(device), NULL);
-
-    return nm_device_get_hw_address(NM_DEVICE(device));
-}
-
 /*****************************************************************************/
 
 static void
