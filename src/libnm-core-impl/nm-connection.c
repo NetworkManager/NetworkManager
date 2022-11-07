@@ -3487,7 +3487,7 @@ nm_connection_get_setting_olpc_mesh(NMConnection *connection)
  *
  * Returns: (transfer none): an #NMSettingOvsBridge if the connection contains one, otherwise %NULL
  *
- * Since: 1.10
+ * Since: 1.14
  **/
 NMSettingOvsBridge *
 nm_connection_get_setting_ovs_bridge(NMConnection *connection)
@@ -3503,7 +3503,7 @@ nm_connection_get_setting_ovs_bridge(NMConnection *connection)
  *
  * Returns: (transfer none): an #NMSettingOvsInterface if the connection contains one, otherwise %NULL
  *
- * Since: 1.10
+ * Since: 1.14
  **/
 NMSettingOvsInterface *
 nm_connection_get_setting_ovs_interface(NMConnection *connection)
@@ -3520,7 +3520,7 @@ nm_connection_get_setting_ovs_interface(NMConnection *connection)
  *
  * Returns: (transfer none): an #NMSettingOvsPatch if the connection contains one, otherwise %NULL
  *
- * Since: 1.10
+ * Since: 1.14
  **/
 NMSettingOvsPatch *
 nm_connection_get_setting_ovs_patch(NMConnection *connection)
@@ -3536,7 +3536,7 @@ nm_connection_get_setting_ovs_patch(NMConnection *connection)
  *
  * Returns: (transfer none): an #NMSettingOvsPort if the connection contains one, otherwise %NULL
  *
- * Since: 1.10
+ * Since: 1.14
  **/
 NMSettingOvsPort *
 nm_connection_get_setting_ovs_port(NMConnection *connection)
@@ -3626,7 +3626,7 @@ nm_connection_get_setting_tc_config(NMConnection *connection)
  *
  * Returns: (transfer none): an #NMSettingTun if the connection contains one, otherwise %NULL
  *
- * Since: 1.2
+ * Since: 1.14
  **/
 NMSettingTun *
 nm_connection_get_setting_tun(NMConnection *connection)
