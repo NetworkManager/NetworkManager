@@ -221,7 +221,7 @@ NMSettingConnectionLlmnr nm_setting_connection_get_llmnr(NMSettingConnection *se
 NM_AVAILABLE_IN_1_34
 NMSettingConnectionDnsOverTls nm_setting_connection_get_dns_over_tls(NMSettingConnection *setting);
 
-NM_AVAILABLE_IN_1_40
+NM_AVAILABLE_IN_1_40_4
 NMMptcpFlags nm_setting_connection_get_mptcp_flags(NMSettingConnection *setting);
 
 NM_AVAILABLE_IN_1_20

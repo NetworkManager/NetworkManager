@@ -372,7 +372,7 @@ const NMVariantAttributeSpec *const _nm_sriov_vf_attribute_spec[] = {
  *
  * Returns: %TRUE if the attribute is valid, %FALSE otherwise
  *
- * Since: 1.14
+ * Since: 1.42, 1.40.4
  */
 gboolean
 nm_sriov_vf_attribute_validate(const char *name, GVariant *value, gboolean *known, GError **error)

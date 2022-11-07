@@ -39,7 +39,7 @@ G_DEFINE_TYPE(NMDevice6Lowpan, nm_device_6lowpan, NM_TYPE_DEVICE)
  *
  * Returns: (transfer none): the device's parent device
  *
- * Since: 1.14
+ * Since: 1.42, 1.40.4
  **/
 NMDevice *
 nm_device_6lowpan_get_parent(NMDevice6Lowpan *device)

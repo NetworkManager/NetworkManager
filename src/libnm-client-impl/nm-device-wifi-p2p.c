@@ -100,7 +100,7 @@ nm_device_wifi_p2p_get_peers(NMDeviceWifiP2P *device)
  *
  * Returns: (transfer none): the peer or %NULL if none is found.
  *
- * Since: 1.16
+ * Since: 1.42, 1.40.4
  **/
 NMWifiP2PPeer *
 nm_device_wifi_p2p_get_peer_by_path(NMDeviceWifiP2P *device, const char *path)

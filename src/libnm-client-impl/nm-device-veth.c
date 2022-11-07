@@ -44,7 +44,7 @@ G_DEFINE_TYPE(NMDeviceVeth, nm_device_veth, NM_TYPE_DEVICE_ETHERNET)
  *
  * Returns: (transfer none): the device's peer device
  *
- * Since: 1.30
+ * Since: 1.42, 1.40.4
  **/
 NMDevice *
 nm_device_veth_get_peer(NMDeviceVeth *device)

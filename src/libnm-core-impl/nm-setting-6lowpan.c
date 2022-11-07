@@ -53,7 +53,7 @@ G_DEFINE_TYPE(NMSetting6Lowpan, nm_setting_6lowpan, NM_TYPE_SETTING)
  *
  * Returns: the #NMSetting6Lowpan:parent property of the setting
  *
- * Since: 1.14
+ * Since: 1.42, 1.40.4
  **/
 const char *
 nm_setting_6lowpan_get_parent(NMSetting6Lowpan *setting)
@@ -141,7 +141,7 @@ nm_setting_6lowpan_init(NMSetting6Lowpan *setting)
  *
  * Returns: (transfer full): the new empty #NMSetting6Lowpan object
  *
- * Since: 1.14
+ * Since: 1.42, 1.40.4
  **/
 NMSetting *
 nm_setting_6lowpan_new(void)

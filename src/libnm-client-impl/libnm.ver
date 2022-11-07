@@ -1847,9 +1847,34 @@ global:
 
 libnm_1_40_4 {
 global:
+	nm_device_6lowpan_get_parent;
+	nm_device_macsec_get_parent;
+	nm_device_veth_get_peer;
+	nm_device_vxlan_get_carrier;
+	nm_device_vxlan_get_rsc;
+	nm_device_wifi_p2p_get_peer_by_path;
+	nm_setting_6lowpan_get_parent;
+	nm_setting_6lowpan_new;
+	nm_setting_connection_get_mptcp_flags;
+	nm_setting_hostname_new;
+	nm_setting_ip4_config_get_link_local;
 	nm_setting_ip_config_get_dhcp_iaid;
+	nm_setting_ip_tunnel_get_encapsulation_limit;
+	nm_setting_ip_tunnel_get_flow_label;
+	nm_setting_ovs_bridge_get_datapath_type;
+	nm_setting_vpn_get_persistent;
+	nm_setting_wpan_get_channel;
+	nm_setting_wpan_get_mac_address;
+	nm_setting_wpan_get_page;
+	nm_setting_wpan_get_pan_id;
+	nm_setting_wpan_get_short_address;
+	nm_setting_wpan_new;
+	nm_sriov_vf_attribute_validate;
+	nm_tc_tfilter_get_action;
+	nm_tc_tfilter_set_action;
 	nm_utils_ip_addresses_from_variant;
 	nm_utils_ip_addresses_to_variant;
 	nm_utils_ip_routes_from_variant;
 	nm_utils_ip_routes_to_variant;
+	nm_vpn_plugin_info_supports_multiple;
 } libnm_1_40_0;

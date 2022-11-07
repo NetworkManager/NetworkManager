@@ -898,7 +898,7 @@ nm_vpn_plugin_info_get_program(NMVpnPluginInfo *self)
  *
  * Returns: %TRUE if the service supports multiple instances with different bus names, otherwise %FALSE
  *
- * Since: 1.2
+ * Since: 1.42, 1.40.4
  */
 gboolean
 nm_vpn_plugin_info_supports_multiple(NMVpnPluginInfo *self)

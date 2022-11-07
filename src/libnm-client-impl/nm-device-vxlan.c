@@ -99,7 +99,7 @@ nm_device_vxlan_get_hw_address(NMDeviceVxlan *device)
  * This property is not implemented yet, and the function always returns
  * FALSE.
  *
- * Since: 1.2
+ * Since: 1.42, 1.40.4
  **/
 gboolean
 nm_device_vxlan_get_carrier(NMDeviceVxlan *device)
@@ -325,7 +325,7 @@ nm_device_vxlan_get_proxy(NMDeviceVxlan *device)
  *
  * Returns: whether route short circuit is turned on
  *
- * Since: 1.2
+ * Since: 1.42, 1.40.4
  **/
 gboolean
 nm_device_vxlan_get_rsc(NMDeviceVxlan *device)

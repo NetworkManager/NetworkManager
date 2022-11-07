@@ -38,7 +38,7 @@ typedef struct _NMDevice6LowpanClass NMDevice6LowpanClass;
 NM_AVAILABLE_IN_1_14
 GType nm_device_6lowpan_get_type(void);
 
-NM_AVAILABLE_IN_1_14
+NM_AVAILABLE_IN_1_40_4
 NMDevice *nm_device_6lowpan_get_parent(NMDevice6Lowpan *device);
 
 G_END_DECLS

@@ -113,7 +113,7 @@ const char *nm_setting_ip4_config_get_dhcp_fqdn(NMSettingIP4Config *setting);
 NM_AVAILABLE_IN_1_28
 const char *nm_setting_ip4_config_get_dhcp_vendor_class_identifier(NMSettingIP4Config *setting);
 
-NM_AVAILABLE_IN_1_40
+NM_AVAILABLE_IN_1_40_4
 NMSettingIP4LinkLocal nm_setting_ip4_config_get_link_local(NMSettingIP4Config *setting);
 
 G_END_DECLS

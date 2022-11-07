@@ -134,7 +134,7 @@ nm_setting_hostname_init(NMSettingHostname *setting)
  *
  * Returns: (transfer full): the new empty #NMSettingHostname object
  *
- * Since: 1.30
+ * Since: 1.42, 1.40.4
  **/
 NMSetting *
 nm_setting_hostname_new(void)

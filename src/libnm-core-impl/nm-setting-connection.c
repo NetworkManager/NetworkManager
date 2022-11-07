@@ -1023,7 +1023,7 @@ nm_setting_connection_get_dns_over_tls(NMSettingConnection *setting)
  *
  * Returns: the #NMSettingConnection:mptcp-flags property of the setting.
  *
- * Since: 1.40
+ * Since: 1.42, 1.40.4
  **/
 NMMptcpFlags
 nm_setting_connection_get_mptcp_flags(NMSettingConnection *setting)

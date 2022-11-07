@@ -935,7 +935,7 @@ nm_tc_tfilter_get_parent(NMTCTfilter *tfilter)
  *
  * Returns: the action associated with a traffic filter.
  *
- * Since: 1.12
+ * Since: 1.42, 1.40.4
  **/
 NMTCAction *
 nm_tc_tfilter_get_action(NMTCTfilter *tfilter)
@@ -956,7 +956,7 @@ nm_tc_tfilter_get_action(NMTCTfilter *tfilter)
  *
  * Sets the action associated with a traffic filter.
  *
- * Since: 1.12
+ * Since: 1.42, 1.40.4
  **/
 void
 nm_tc_tfilter_set_action(NMTCTfilter *tfilter, NMTCAction *action)
