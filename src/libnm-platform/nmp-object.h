@@ -188,8 +188,8 @@ typedef struct {
     void (*cmd_obj_copy)(NMPObject *dst, const NMPObject *src);
     void (*cmd_obj_dispose)(NMPObject *obj);
 
-    void (*cmd_obj_hash_update)(const NMPObject *obj, NMHashState *h);
-    int (*cmd_obj_cmp)(const NMPObject *obj1, const NMPObject *obj2);
+    void (*cmd_obj_hash_update)(const NMPObject *obj, gboolean for_id, NMHashState *h);
+    int (*cmd_obj_cmp)(const NMPObject *obj1, const NMPObject *obj2, gboolean for_id);
     const char *(*cmd_obj_to_string)(const NMPObject      *obj,
                                      NMPObjectToStringMode to_string_mode,
                                      char                 *buf,
