@@ -2016,8 +2016,16 @@ src_libnm_client_impl_tests_programs_req_introspection = \
 	src/libnm-client-impl/tests/test-remote-settings-client \
 	src/libnm-client-impl/tests/test-secret-agent
 
+check-local-libnm-gir: $(builddir)/src/libnm-client-impl/NM-1.0.gir
+check-local-libnm-gir: $(srcdir)/src/libnm-client-impl/libnm.ver
+check-local-libnm-gir:
+	"$(PYTHON)" $(srcdir)/src/libnm-client-impl/tests/test-gir.py \
+		--gir $(builddir)/src/libnm-client-impl/NM-1.0.gir \
+		--ver $(srcdir)/src/libnm-client-impl/libnm.ver
+
 if HAVE_INTROSPECTION
 check_programs += $(src_libnm_client_impl_tests_programs_req_introspection)
+check_local += check-local-libnm-gir
 else
 check_programs_norun += $(src_libnm_client_impl_tests_programs_req_introspection)
 endif
@@ -2071,7 +2079,8 @@ $(src_libnm_client_impl_tests_test_remote_settings_client_OBJECTS): $(src_libnm_
 $(src_libnm_client_impl_tests_test_secret_agent_OBJECTS):           $(src_libnm_client_impl_NM_1_0_typelib)
 
 EXTRA_DIST += \
-	src/libnm-client-impl/tests/meson.build
+	src/libnm-client-impl/tests/meson.build \
+	src/libnm-client-impl/tests/test-gir.py
 
 ###############################################################################
 
