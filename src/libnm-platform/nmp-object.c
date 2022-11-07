@@ -762,17 +762,23 @@ _vt_cmd_obj_dispose_lnk_wireguard(NMPObject *obj)
     _wireguard_clear(&obj->_lnk_wireguard);
 }
 
+static gsize
+_NMP_OBJECT_STRUCT_SIZE(const NMPClass *klass)
+{
+    nm_assert(klass);
+    nm_assert(klass->sizeof_public > 0);
+    nm_assert(klass->sizeof_public <= klass->sizeof_data);
+
+    return klass->sizeof_data + G_STRUCT_OFFSET(NMPObject, object);
+}
+
 static NMPObject *
 _nmp_object_new_from_class(const NMPClass *klass)
 {
     NMPObject *obj;
 
-    nm_assert(klass);
-    nm_assert(klass->sizeof_data > 0);
-    nm_assert(klass->sizeof_public > 0 && klass->sizeof_public <= klass->sizeof_data);
-
-    obj         = g_slice_alloc0(klass->sizeof_data + G_STRUCT_OFFSET(NMPObject, object));
-    obj->_class = klass;
+    obj                    = g_slice_alloc0(_NMP_OBJECT_STRUCT_SIZE(klass));
+    obj->_class            = klass;
     obj->parent._ref_count = 1;
     return obj;
 }
@@ -1880,7 +1886,7 @@ _vt_dedup_obj_destroy(NMDedupMultiObj *obj)
     klass = o->_class;
     if (klass->cmd_obj_dispose)
         klass->cmd_obj_dispose(o);
-    g_slice_free1(klass->sizeof_data + G_STRUCT_OFFSET(NMPObject, object), o);
+    g_slice_free1(_NMP_OBJECT_STRUCT_SIZE(klass), o);
 }
 
 static const NMDedupMultiObj *
