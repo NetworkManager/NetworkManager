@@ -1942,6 +1942,8 @@ next:
  * include additional attributes.
  *
  * Returns: (transfer none): a new floating #GVariant representing @addresses.
+ *
+ * Since: 1.42, 1.40.4
  **/
 GVariant *
 nm_utils_ip_addresses_to_variant(GPtrArray *addresses)
@@ -1995,6 +1997,8 @@ nm_utils_ip_addresses_to_variant(GPtrArray *addresses)
  *
  * Returns: (transfer full) (element-type NMIPAddress): a newly allocated
  *   #GPtrArray of #NMIPAddress objects
+ *
+ * Since: 1.42, 1.40.4
  **/
 GPtrArray *
 nm_utils_ip_addresses_from_variant(GVariant *value, int family)
@@ -2054,6 +2058,8 @@ nm_utils_ip_addresses_from_variant(GVariant *value, int family)
  * prefix, next hop, metric, and additional attributes).
  *
  * Returns: (transfer none): a new floating #GVariant representing @routes.
+ *
+ * Since: 1.42, 1.40.4
  **/
 GVariant *
 nm_utils_ip_routes_to_variant(GPtrArray *routes)
@@ -2120,6 +2126,8 @@ nm_utils_ip_routes_to_variant(GPtrArray *routes)
  *
  * Returns: (transfer full) (element-type NMIPRoute): a newly allocated
  *   #GPtrArray of #NMIPRoute objects
+ *
+ * Since: 1.42, 1.40.4
  **/
 GPtrArray *
 nm_utils_ip_routes_from_variant(GVariant *value, int family)

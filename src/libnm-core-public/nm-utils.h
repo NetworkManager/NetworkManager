@@ -104,9 +104,13 @@ GPtrArray *nm_utils_ip6_addresses_from_variant(GVariant *value, char **out_gatew
 GVariant  *nm_utils_ip6_routes_to_variant(GPtrArray *routes);
 GPtrArray *nm_utils_ip6_routes_from_variant(GVariant *value);
 
-GVariant  *nm_utils_ip_addresses_to_variant(GPtrArray *addresses);
+NM_AVAILABLE_IN_1_40_4
+GVariant *nm_utils_ip_addresses_to_variant(GPtrArray *addresses);
+NM_AVAILABLE_IN_1_40_4
 GPtrArray *nm_utils_ip_addresses_from_variant(GVariant *value, int family);
-GVariant  *nm_utils_ip_routes_to_variant(GPtrArray *routes);
+NM_AVAILABLE_IN_1_40_4
+GVariant *nm_utils_ip_routes_to_variant(GPtrArray *routes);
+NM_AVAILABLE_IN_1_40_4
 GPtrArray *nm_utils_ip_routes_from_variant(GVariant *value, int family);
 
 char *nm_utils_uuid_generate(void);

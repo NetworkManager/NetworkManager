@@ -1848,4 +1848,8 @@ global:
 libnm_1_40_4 {
 global:
 	nm_setting_ip_config_get_dhcp_iaid;
+	nm_utils_ip_addresses_from_variant;
+	nm_utils_ip_addresses_to_variant;
+	nm_utils_ip_routes_from_variant;
+	nm_utils_ip_routes_to_variant;
 } libnm_1_40_0;
