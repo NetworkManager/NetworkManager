@@ -62,7 +62,7 @@ How to Track Consent/Disapproval?
 The consent/disapproval is tracked in this file for the copyright holders
 who made their wish known. In the list below [Y] indicates consent while [N]
 indicates disapproval. [?] indicates yet unknown data.
-To express the wish either send an email to our mailing list <networkmanager@list.freedesktop.org>
+To express the wish either send an email to our mailing list <networkmanager@lists.freedesktop.org>
 or open a merge request against this file, adding your name to the list. Then this
 file will be updated to track the information. The git commit messages in the history
 of this file will give details when/how an entry was added.
