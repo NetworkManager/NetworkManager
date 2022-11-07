@@ -29,6 +29,8 @@ typedef struct {
  * NMSetting6Lowpan:
  *
  * 6LoWPAN Settings
+ *
+ * Since: 1.14
  */
 struct _NMSetting6Lowpan {
     NMSetting parent;

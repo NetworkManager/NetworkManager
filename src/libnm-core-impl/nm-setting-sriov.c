@@ -649,7 +649,7 @@ nm_sriov_vf_get_vlan_qos(const NMSriovVF *vf, guint vlan_id)
     return vlan->qos;
 }
 
-/*
+/**
  * nm_sriov_vf_get_vlan_protocol:
  * @vf: the #NMSriovVF
  * @vlan_id: the VLAN id

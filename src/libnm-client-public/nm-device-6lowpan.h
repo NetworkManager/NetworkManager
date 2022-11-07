@@ -29,6 +29,8 @@ G_BEGIN_DECLS
 
 /**
  * NMDevice6Lowpan:
+ *
+ * Since: 1.14
  */
 typedef struct _NMDevice6Lowpan      NMDevice6Lowpan;
 typedef struct _NMDevice6LowpanClass NMDevice6LowpanClass;

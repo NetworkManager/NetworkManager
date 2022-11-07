@@ -124,7 +124,7 @@ nm_device_tun_get_group(NMDeviceTun *device)
 }
 
 /**
- * nm_device_tun_get_pi:
+ * nm_device_tun_get_no_pi:
  * @device: a #NMDeviceTun
  *
  * Returns whether the #NMDeviceTun has the IFF_NO_PI flag.

@@ -42,6 +42,8 @@ typedef struct _NMSettingMacvlanClass NMSettingMacvlanClass;
  * @NM_SETTING_MACVLAN_MODE_PRIVATE: private mode
  * @NM_SETTING_MACVLAN_MODE_PASSTHRU: passthru mode
  * @NM_SETTING_MACVLAN_MODE_SOURCE: source mode
+ *
+ * Since: 1.2
  **/
 typedef enum {
     NM_SETTING_MACVLAN_MODE_UNKNOWN  = 0,

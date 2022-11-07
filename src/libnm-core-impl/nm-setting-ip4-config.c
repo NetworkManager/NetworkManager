@@ -909,7 +909,7 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
      * a global connection default gets consulted.
      * If still unspecified, the DHCP option is not sent to the server.
      *
-     * Since 1.28
+     * Since: 1.28
      */
     /* ---ifcfg-rh---
      * property: dhcp-vendor-class-identifier
@@ -939,7 +939,7 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
      * falling back to "auto". Note that if "ipv4.method" is "disabled", then
      * link local addressing is always disabled too. The default is "default".
      *
-     * Since 1.40
+     * Since: 1.40
      */
     /* ---ifcfg-rh---
      * property: link-local

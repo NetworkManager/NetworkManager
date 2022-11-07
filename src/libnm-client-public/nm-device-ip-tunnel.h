@@ -41,6 +41,8 @@ G_BEGIN_DECLS
 
 /**
  * NMDeviceIPTunnel:
+ *
+ * Since: 1.2
  */
 typedef struct _NMDeviceIPTunnel      NMDeviceIPTunnel;
 typedef struct _NMDeviceIPTunnelClass NMDeviceIPTunnelClass;

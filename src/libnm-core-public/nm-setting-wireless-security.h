@@ -74,6 +74,8 @@ typedef enum {
  * @NM_SETTING_WIRELESS_SECURITY_PMF_REQUIRED: require PMF and fail if not available
  *
  * These flags indicate whether PMF must be enabled.
+ *
+ * Since: 1.10
  **/
 typedef enum {
     NM_SETTING_WIRELESS_SECURITY_PMF_DEFAULT  = 0,

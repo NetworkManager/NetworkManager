@@ -136,6 +136,11 @@ nm_vpn_service_plugin_set_state(NMVpnServicePlugin *plugin, NMVpnServiceState st
     }
 }
 
+/**
+ * nm_vpn_service_plugin_set_login_banner:
+ *
+ * Since: 1.2
+ */
 void
 nm_vpn_service_plugin_set_login_banner(NMVpnServicePlugin *plugin, const char *banner)
 {
@@ -160,6 +165,11 @@ _emit_failure(NMVpnServicePlugin *plugin, NMVpnPluginFailure reason)
         nmdbus_vpn_plugin_emit_failure(priv->dbus_vpn_service_plugin, reason);
 }
 
+/**
+ * nm_vpn_service_plugin_failure:
+ *
+ * Since: 1.2
+ */
 void
 nm_vpn_service_plugin_failure(NMVpnServicePlugin *plugin, NMVpnPluginFailure reason)
 {
@@ -169,6 +179,11 @@ nm_vpn_service_plugin_failure(NMVpnServicePlugin *plugin, NMVpnPluginFailure rea
     nm_vpn_service_plugin_disconnect(plugin, NULL);
 }
 
+/**
+ * nm_vpn_service_plugin_disconnect:
+ *
+ * Since: 1.2
+ */
 gboolean
 nm_vpn_service_plugin_disconnect(NMVpnServicePlugin *plugin, GError **err)
 {
@@ -326,6 +341,11 @@ schedule_fail_stop(NMVpnServicePlugin *plugin, guint timeout_secs)
         priv->fail_stop_id = g_idle_add(fail_stop, plugin);
 }
 
+/**
+ * nm_vpn_service_plugin_set_config:
+ *
+ * Since: 1.2
+ */
 void
 nm_vpn_service_plugin_set_config(NMVpnServicePlugin *plugin, GVariant *config)
 {
@@ -364,6 +384,11 @@ nm_vpn_service_plugin_set_config(NMVpnServicePlugin *plugin, GVariant *config)
         nm_vpn_service_plugin_set_state(plugin, NM_VPN_SERVICE_STATE_STARTED);
 }
 
+/**
+ * nm_vpn_service_plugin_set_ip4_config:
+ *
+ * Since: 1.2
+ */
 void
 nm_vpn_service_plugin_set_ip4_config(NMVpnServicePlugin *plugin, GVariant *ip4_config)
 {
@@ -422,6 +447,11 @@ nm_vpn_service_plugin_set_ip4_config(NMVpnServicePlugin *plugin, GVariant *ip4_c
         nm_vpn_service_plugin_set_state(plugin, NM_VPN_SERVICE_STATE_STARTED);
 }
 
+/**
+ * nm_vpn_service_plugin_set_ip6_config:
+ *
+ * Since: 1.2
+ */
 void
 nm_vpn_service_plugin_set_ip6_config(NMVpnServicePlugin *plugin, GVariant *ip6_config)
 {

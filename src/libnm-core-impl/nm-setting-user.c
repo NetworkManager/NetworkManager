@@ -35,6 +35,8 @@ typedef struct {
  * NMSettingUser:
  *
  * General User Profile Settings
+ *
+ * Since: 1.8
  */
 struct _NMSettingUser {
     NMSetting            parent;
@@ -216,6 +218,8 @@ _create_data_hash(void)
  *
  * Returns: (array length=out_len) (transfer none): a
  *   %NULL-terminated array containing each key from the table.
+ *
+ * Since: 1.8
   **/
 const char *const *
 nm_setting_user_get_keys(NMSettingUser *setting, guint *out_len)
@@ -498,6 +502,8 @@ nm_setting_user_init(NMSettingUser *self)
  * Creates a new #NMSettingUser object with default values.
  *
  * Returns: the new empty #NMSettingUser object
+ *
+ * Since: 1.8
  **/
 NMSetting *
 nm_setting_user_new(void)

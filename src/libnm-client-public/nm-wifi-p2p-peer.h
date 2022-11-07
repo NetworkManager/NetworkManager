@@ -37,6 +37,8 @@ G_BEGIN_DECLS
 
 /**
  * NMWifiP2PPeer:
+ *
+ * Since: 1.16
  */
 typedef struct _NMWifiP2PPeer      NMWifiP2PPeer;
 typedef struct _NMWifiP2PPeerClass NMWifiP2PPeerClass;

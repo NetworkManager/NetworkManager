@@ -1437,7 +1437,7 @@ _peers_clear(NMSettingWireGuardPrivate *priv)
 }
 
 /**
- * nm_setting_wireguard_:
+ * nm_setting_wireguard_clear_peers:
  * @self: the #NMSettingWireGuard instance
  *
  * Returns: the number of cleared peers.

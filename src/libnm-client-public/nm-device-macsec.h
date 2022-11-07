@@ -41,6 +41,8 @@ G_BEGIN_DECLS
 
 /**
  * NMDeviceMacsec:
+ *
+ * Since: 1.6
  */
 typedef struct _NMDeviceMacsec      NMDeviceMacsec;
 typedef struct _NMDeviceMacsecClass NMDeviceMacsecClass;
