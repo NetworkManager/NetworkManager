@@ -94,9 +94,9 @@ NM_AVAILABLE_IN_1_2
 const char *nm_setting_ip_tunnel_get_input_key(NMSettingIPTunnel *setting);
 NM_AVAILABLE_IN_1_2
 const char *nm_setting_ip_tunnel_get_output_key(NMSettingIPTunnel *setting);
-NM_AVAILABLE_IN_1_2
+NM_AVAILABLE_IN_1_42
 guint nm_setting_ip_tunnel_get_encapsulation_limit(NMSettingIPTunnel *setting);
-NM_AVAILABLE_IN_1_2
+NM_AVAILABLE_IN_1_42
 guint nm_setting_ip_tunnel_get_flow_label(NMSettingIPTunnel *setting);
 NM_AVAILABLE_IN_1_2
 guint nm_setting_ip_tunnel_get_mtu(NMSettingIPTunnel *setting);

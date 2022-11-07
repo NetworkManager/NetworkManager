@@ -65,7 +65,7 @@ G_DEFINE_TYPE(NMDeviceMacsec, nm_device_macsec, NM_TYPE_DEVICE)
  *
  * Returns: (transfer none): the device's parent device
  *
- * Since: 1.6
+ * Since: 1.42
  **/
 NMDevice *
 nm_device_macsec_get_parent(NMDeviceMacsec *device)

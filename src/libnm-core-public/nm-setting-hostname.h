@@ -36,7 +36,7 @@ typedef struct _NMSettingHostnameClass NMSettingHostnameClass;
 
 NM_AVAILABLE_IN_1_30
 GType nm_setting_hostname_get_type(void);
-NM_AVAILABLE_IN_1_30
+NM_AVAILABLE_IN_1_42
 NMSetting *nm_setting_hostname_new(void);
 
 NM_AVAILABLE_IN_1_30

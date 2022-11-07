@@ -240,7 +240,7 @@ nm_setting_ip_tunnel_get_output_key(NMSettingIPTunnel *setting)
  *
  * Returns: the encapsulation limit value
  *
- * Since: 1.2
+ * Since: 1.42
  **/
 guint
 nm_setting_ip_tunnel_get_encapsulation_limit(NMSettingIPTunnel *setting)
@@ -258,7 +258,7 @@ nm_setting_ip_tunnel_get_encapsulation_limit(NMSettingIPTunnel *setting)
  *
  * Returns: the flow label value
  *
- * Since: 1.2
+ * Since: 1.42
  **/
 guint
 nm_setting_ip_tunnel_get_flow_label(NMSettingIPTunnel *setting)

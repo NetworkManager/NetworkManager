@@ -138,7 +138,7 @@ nm_setting_ip4_config_get_dhcp_vendor_class_identifier(NMSettingIP4Config *setti
  *
  * Returns: the link-local configuration
  *
- * Since: 1.40
+ * Since: 1.42
  **/
 NMSettingIP4LinkLocal
 nm_setting_ip4_config_get_link_local(NMSettingIP4Config *setting)

@@ -62,7 +62,7 @@ NM_AVAILABLE_IN_1_4
 const char *nm_vpn_plugin_info_get_auth_dialog(NMVpnPluginInfo *self);
 NM_AVAILABLE_IN_1_4
 gboolean nm_vpn_plugin_info_supports_hints(NMVpnPluginInfo *self);
-NM_AVAILABLE_IN_1_2
+NM_AVAILABLE_IN_1_42
 gboolean nm_vpn_plugin_info_supports_multiple(NMVpnPluginInfo *self);
 NM_AVAILABLE_IN_1_4
 const char *const *nm_vpn_plugin_info_get_aliases(NMVpnPluginInfo *self);
