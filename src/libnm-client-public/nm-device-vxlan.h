@@ -45,6 +45,8 @@ G_BEGIN_DECLS
 
 /**
  * NMDeviceVxlan:
+ *
+ * Since: 1.2
  */
 typedef struct _NMDeviceVxlan      NMDeviceVxlan;
 typedef struct _NMDeviceVxlanClass NMDeviceVxlanClass;

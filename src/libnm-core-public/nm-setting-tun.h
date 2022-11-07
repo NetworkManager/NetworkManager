@@ -39,6 +39,8 @@ G_BEGIN_DECLS
  * @NM_SETTING_TUN_MODE_TAP: a TAP device
  *
  * #NMSettingTunMode values indicate the device type (TUN/TAP)
+ *
+ * Since: 1.2
  */
 typedef enum {
     NM_SETTING_TUN_MODE_UNKNOWN = 0,

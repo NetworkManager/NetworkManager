@@ -53,6 +53,8 @@ typedef struct {
  * NMSettingWpan:
  *
  * IEEE 802.15.4 (WPAN) MAC Settings
+ *
+ * Since: 1.14
  */
 struct _NMSettingWpan {
     NMSetting parent;

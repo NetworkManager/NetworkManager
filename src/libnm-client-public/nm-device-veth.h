@@ -27,6 +27,8 @@ G_BEGIN_DECLS
 
 /**
  * NMDeviceVeth:
+ *
+ * Since: 1.30
  */
 typedef struct _NMDeviceVeth      NMDeviceVeth;
 typedef struct _NMDeviceVethClass NMDeviceVethClass;

@@ -5396,6 +5396,8 @@ nm_client_add_and_activate_connection2(NMClient           *client,
  *
  * Returns: (transfer full): the new #NMActiveConnection on success, %NULL on
  *   failure, in which case @error will be set.
+ *
+ * Since: 1.16
  **/
 NMActiveConnection *
 nm_client_add_and_activate_connection2_finish(NMClient     *client,

@@ -286,7 +286,7 @@ nm_setting_ip_tunnel_get_mtu(NMSettingIPTunnel *setting)
     return NM_SETTING_IP_TUNNEL_GET_PRIVATE(setting)->mtu;
 }
 
-/*
+/**
  * nm_setting_ip_tunnel_get_flags:
  * @setting: the #NMSettingIPTunnel
  *

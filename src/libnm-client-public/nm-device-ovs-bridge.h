@@ -29,6 +29,8 @@ G_BEGIN_DECLS
 
 /**
  * NMDeviceOvsBridge:
+ *
+ * Since: 1.10
  */
 typedef struct _NMDeviceOvsBridge      NMDeviceOvsBridge;
 typedef struct _NMDeviceOvsBridgeClass NMDeviceOvsBridgeClass;

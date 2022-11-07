@@ -926,7 +926,7 @@ _nm_setting_bridge_get_vlans(NMSettingBridge *setting)
  *
  * Returns: the #NMSettingBridge:group-address property of the setting
  *
- * Since 1.24
+ * Since: 1.24
  **/
 const char *
 nm_setting_bridge_get_group_address(const NMSettingBridge *setting)
@@ -942,7 +942,7 @@ nm_setting_bridge_get_group_address(const NMSettingBridge *setting)
  *
  * Returns: the #NMSettingBridge:vlan-protocol property of the setting
  *
- * Since 1.24
+ * Since: 1.24
  **/
 const char *
 nm_setting_bridge_get_vlan_protocol(const NMSettingBridge *setting)
@@ -958,7 +958,7 @@ nm_setting_bridge_get_vlan_protocol(const NMSettingBridge *setting)
  *
  * Returns: the #NMSettingBridge:vlan-stats-enabled property of the setting
  *
- * Since 1.24
+ * Since: 1.24
  **/
 gboolean
 nm_setting_bridge_get_vlan_stats_enabled(const NMSettingBridge *setting)
@@ -974,7 +974,7 @@ nm_setting_bridge_get_vlan_stats_enabled(const NMSettingBridge *setting)
  *
  * Returns: the #NMSettingBridge:multicast-router property of the setting
  *
- * Since 1.24
+ * Since: 1.24
  **/
 const char *
 nm_setting_bridge_get_multicast_router(const NMSettingBridge *setting)
@@ -990,7 +990,7 @@ nm_setting_bridge_get_multicast_router(const NMSettingBridge *setting)
  *
  * Returns: the #NMSettingBridge:multicast-query-use-ifaddr property of the setting
  *
- * Since 1.24
+ * Since: 1.24
  **/
 gboolean
 nm_setting_bridge_get_multicast_query_use_ifaddr(const NMSettingBridge *setting)
@@ -1006,7 +1006,7 @@ nm_setting_bridge_get_multicast_query_use_ifaddr(const NMSettingBridge *setting)
  *
  * Returns: the #NMSettingBridge:multicast-querier property of the setting
  *
- * Since 1.24
+ * Since: 1.24
  **/
 gboolean
 nm_setting_bridge_get_multicast_querier(const NMSettingBridge *setting)
@@ -1022,7 +1022,7 @@ nm_setting_bridge_get_multicast_querier(const NMSettingBridge *setting)
  *
  * Returns: the #NMSettingBridge:multicast-hash-max property of the setting
  *
- * Since 1.26
+ * Since: 1.26
  **/
 guint32
 nm_setting_bridge_get_multicast_hash_max(const NMSettingBridge *setting)
@@ -1038,7 +1038,7 @@ nm_setting_bridge_get_multicast_hash_max(const NMSettingBridge *setting)
  *
  * Returns: the #NMSettingBridge:multicast-last-member-count property of the setting
  *
- * Since 1.26
+ * Since: 1.26
  **/
 guint32
 nm_setting_bridge_get_multicast_last_member_count(const NMSettingBridge *setting)
@@ -1054,7 +1054,7 @@ nm_setting_bridge_get_multicast_last_member_count(const NMSettingBridge *setting
  *
  * Returns: the #NMSettingBridge:multicast-last-member-interval property of the setting
  *
- * Since 1.26
+ * Since: 1.26
  **/
 guint64
 nm_setting_bridge_get_multicast_last_member_interval(const NMSettingBridge *setting)
@@ -1070,7 +1070,7 @@ nm_setting_bridge_get_multicast_last_member_interval(const NMSettingBridge *sett
  *
  * Returns: the #NMSettingBridge:multicast-membership-interval property of the setting
  *
- * Since 1.26
+ * Since: 1.26
  **/
 guint64
 nm_setting_bridge_get_multicast_membership_interval(const NMSettingBridge *setting)
@@ -1086,7 +1086,7 @@ nm_setting_bridge_get_multicast_membership_interval(const NMSettingBridge *setti
  *
  * Returns: the #NMSettingBridge:multicast-querier-interval property of the setting
  *
- * Since 1.26
+ * Since: 1.26
  **/
 guint64
 nm_setting_bridge_get_multicast_querier_interval(const NMSettingBridge *setting)
@@ -1102,7 +1102,7 @@ nm_setting_bridge_get_multicast_querier_interval(const NMSettingBridge *setting)
  *
  * Returns: the #NMSettingBridge:multicast-query-interval property of the setting
  *
- * Since 1.26
+ * Since: 1.26
  **/
 guint64
 nm_setting_bridge_get_multicast_query_interval(const NMSettingBridge *setting)
@@ -1118,7 +1118,7 @@ nm_setting_bridge_get_multicast_query_interval(const NMSettingBridge *setting)
  *
  * Returns: the #NMSettingBridge:multicast-query-response-interval property of the setting
  *
- * Since 1.26
+ * Since: 1.26
  **/
 guint64
 nm_setting_bridge_get_multicast_query_response_interval(const NMSettingBridge *setting)
@@ -1134,7 +1134,7 @@ nm_setting_bridge_get_multicast_query_response_interval(const NMSettingBridge *s
  *
  * Returns: the #NMSettingBridge:multicast-query-response-interval property of the setting
  *
- * Since 1.26
+ * Since: 1.26
  **/
 guint32
 nm_setting_bridge_get_multicast_startup_query_count(const NMSettingBridge *setting)
@@ -1150,7 +1150,7 @@ nm_setting_bridge_get_multicast_startup_query_count(const NMSettingBridge *setti
  *
  * Returns: the #NMSettingBridge:multicast-startup-query-interval property of the setting
  *
- * Since 1.26
+ * Since: 1.26
  **/
 guint64
 nm_setting_bridge_get_multicast_startup_query_interval(const NMSettingBridge *setting)

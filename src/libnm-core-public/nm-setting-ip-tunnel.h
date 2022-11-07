@@ -43,7 +43,7 @@ G_BEGIN_DECLS
 
 typedef struct _NMSettingIPTunnelClass NMSettingIPTunnelClass;
 
-/*
+/**
  * NMIPTunnelFlags:
  * @NM_IP_TUNNEL_FLAG_NONE: no flag
  * @NM_IP_TUNNEL_FLAG_IP6_IGN_ENCAP_LIMIT: don't add encapsulation limit

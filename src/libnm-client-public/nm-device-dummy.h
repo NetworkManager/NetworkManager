@@ -28,6 +28,8 @@ G_BEGIN_DECLS
 
 /**
  * NMDeviceDummy:
+ *
+ * Since: 1.8
  */
 typedef struct _NMDeviceDummy      NMDeviceDummy;
 typedef struct _NMDeviceDummyClass NMDeviceDummyClass;

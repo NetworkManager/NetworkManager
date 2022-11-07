@@ -147,6 +147,8 @@ nm_setting_vpn_get_user_name(NMSettingVpn *setting)
  * @setting: the #NMSettingVpn
  *
  * Returns: the #NMSettingVpn:persistent property of the setting
+ *
+ * Since: 1.42, 1.40.4
  **/
 gboolean
 nm_setting_vpn_get_persistent(NMSettingVpn *setting)

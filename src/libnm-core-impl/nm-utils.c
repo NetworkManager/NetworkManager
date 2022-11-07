@@ -4314,6 +4314,8 @@ nm_utils_is_valid_iface_name_utf8safe(const char *utf8safe_name)
  *
  * Before 1.20, this function did not accept %NULL as @name argument. If you
  *   want to run against older versions of libnm, don't pass %NULL.
+ *
+ * Since: 1.6
  */
 gboolean
 nm_utils_is_valid_iface_name(const char *name, GError **error)
@@ -5249,7 +5251,7 @@ next:
     return g_steal_pointer(&ht);
 }
 
-/*
+/**
  * nm_utils_format_variant_attributes:
  * @attributes: (element-type utf8 GVariant): a #GHashTable mapping attribute names to #GVariant values
  * @attr_separator: the attribute separator character
@@ -5275,8 +5277,8 @@ nm_utils_format_variant_attributes(GHashTable *attributes,
 
 /*****************************************************************************/
 
-/*
- * nm_utils_get_timestamp_msec():
+/**
+ * nm_utils_get_timestamp_msec:
  *
  * Gets current time in milliseconds of CLOCK_BOOTTIME.
  *
@@ -5314,7 +5316,7 @@ nm_utils_get_timestamp_msec(void)
  * Returns: the version ID of the libnm version. That is, the %NM_VERSION
  *   at runtime.
  *
- * Since: 1.6.0
+ * Since: 1.6
  */
 guint
 nm_utils_version(void)

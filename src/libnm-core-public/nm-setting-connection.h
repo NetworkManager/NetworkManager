@@ -73,6 +73,8 @@ G_BEGIN_DECLS
  *
  * #NMSettingConnectionAutoconnectSlaves values indicate whether slave connections
  * should be activated when master is activated.
+ *
+ * Since: 1.2
  */
 typedef enum {
     NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES_DEFAULT = -1,
@@ -87,6 +89,8 @@ typedef enum {
  * @NM_SETTING_CONNECTION_LLDP_ENABLE_RX: enable reception of LLDP frames
  *
  * #NMSettingConnectionLldp values indicate whether LLDP should be enabled.
+ *
+ * Since: 1.2
  */
 typedef enum {
     NM_SETTING_CONNECTION_LLDP_DEFAULT   = -1,

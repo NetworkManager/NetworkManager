@@ -195,6 +195,8 @@ _nm_setting_ovs_external_ids_get_data(NMSettingOvsExternalIDs *self)
  *
  * Returns: (array length=out_len) (transfer none): a
  *   %NULL-terminated array containing each key from the table.
+ *
+ * Since: 1.30
   **/
 const char *const *
 nm_setting_ovs_external_ids_get_data_keys(NMSettingOvsExternalIDs *setting, guint *out_len)

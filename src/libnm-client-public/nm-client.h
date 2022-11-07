@@ -120,6 +120,11 @@ GQuark nm_client_error_quark(void);
 
 /* DNS stuff */
 
+/**
+ * NMDnsEntry:
+ *
+ * Since: 1.6
+ */
 typedef struct NMDnsEntry NMDnsEntry;
 
 NM_AVAILABLE_IN_1_6

@@ -27,6 +27,8 @@ G_BEGIN_DECLS
 
 /**
  * NMDeviceWpan:
+ *
+ * Since: 1.14
  */
 typedef struct _NMDeviceWpan      NMDeviceWpan;
 typedef struct _NMDeviceWpanClass NMDeviceWpanClass;
