@@ -1,1135 +1,2306 @@
+<!--
+  This file is generated.
+
+  This XML contains meta data of NetworkManager connection profiles.
+
+  NetworkManager's connection profiles are a bunch of settings, and this
+  contains the known properties. See also `man nm-settings-{dbus,nmcli,keyfile}`.
+
+  Note that there are different manifestations of these properties. We have them
+  on the D-Bus API (`man nm-settings-dbus`), in keyfile format (`man nm-settings-keyfile`)
+  in libnm's NMConnection and NMSetting API, and in nmcli (`man nm-settings-nmcli`).
+  There are similarities between these, but also subtle differencs. For example,
+  a property might not be shown in nmcli, or a property might be named different
+  on D-Bus or keyfile. Also, the data types may differ due to the differences of the
+  technology.
+
+  This list of properties is not directly the properties as they are in any of
+  those manifestations. Instead, it's a general idea that this property exists in
+  NetworkManager. Whether and how it is represented in nmcli or keyfile, may differ.
+  The XML however aims to provide information for various backends.
+
+  <setting> Attributes:
+   "name": the name of the setting.
+   "gtype": the typename of the NMSetting class in libnm.
+
+  <property> Attributes:
+   "name": the name of the property.
+   "is-deprecated": whether this property is deprecated.
+   "is-secret": whether this property is a secret.
+   "is-secret-flags": whether this property is a secret flags property.
+   "dbus-type": if this property is exposed on D-Bus. In that case, this
+       is the D-Bus type format. Also, "name" is the actual name of the field
+   "dbus-deprecated": if this property is on D-Bus and that representation is
+       deprecated. This usually means, that there is a replacement D-Bus property
+       that should be used instead.
+   "gprop-type": if this is a GObject property in the NMSetting class, this
+       is the GParamSpec.value_type of the property.
+ -->
 <nm-setting-docs>
-    <setting name="6lowpan" >
+    <setting name="6lowpan"
+             gtype="NMSetting6Lowpan"
+             >
         <property name="name"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="parent"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
     </setting>
-    <setting name="802-11-olpc-mesh" >
+    <setting name="802-11-olpc-mesh"
+             gtype="NMSettingOlpcMesh"
+             >
         <property name="channel"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
         <property name="dhcp-anycast-address"
-                  dbus-type="ay" />
+                  dbus-type="ay"
+                  gprop-type="gchararray"
+                  />
         <property name="name"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="ssid"
-                  dbus-type="ay" />
+                  dbus-type="ay"
+                  gprop-type="GBytes"
+                  />
     </setting>
-    <setting name="802-11-wireless" >
+    <setting name="802-11-wireless"
+             gtype="NMSettingWireless"
+             >
         <property name="ap-isolation"
-                  dbus-type="i" />
+                  dbus-type="i"
+                  gprop-type="NMTernary"
+                  />
         <property name="assigned-mac-address"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  />
         <property name="band"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="bssid"
-                  dbus-type="ay" />
+                  dbus-type="ay"
+                  gprop-type="gchararray"
+                  />
         <property name="channel"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
         <property name="cloned-mac-address"
                   dbus-type="ay"
-                  dbus-deprecated="1" />
+                  dbus-deprecated="1"
+                  gprop-type="gchararray"
+                  />
         <property name="generate-mac-address-mask"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="hidden"
-                  dbus-type="b" />
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
         <property name="mac-address"
-                  dbus-type="ay" />
+                  dbus-type="ay"
+                  gprop-type="gchararray"
+                  />
         <property name="mac-address-blacklist"
-                  dbus-type="as" />
+                  dbus-type="as"
+                  gprop-type="GStrv"
+                  />
         <property name="mac-address-randomization"
                   is-deprecated="1"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
         <property name="mode"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="mtu"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
         <property name="name"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="powersave"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
         <property name="rate"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
         <property name="security"
                   dbus-type="s"
-                  dbus-deprecated="1" />
+                  dbus-deprecated="1"
+                  />
         <property name="seen-bssids"
-                  dbus-type="as" />
+                  dbus-type="as"
+                  gprop-type="GStrv"
+                  />
         <property name="ssid"
-                  dbus-type="ay" />
+                  dbus-type="ay"
+                  gprop-type="GBytes"
+                  />
         <property name="tx-power"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
         <property name="wake-on-wlan"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
     </setting>
-    <setting name="802-11-wireless-security" >
+    <setting name="802-11-wireless-security"
+             gtype="NMSettingWirelessSecurity"
+             >
         <property name="auth-alg"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="fils"
-                  dbus-type="i" />
+                  dbus-type="i"
+                  gprop-type="gint"
+                  />
         <property name="group"
-                  dbus-type="as" />
+                  dbus-type="as"
+                  gprop-type="GStrv"
+                  />
         <property name="key-mgmt"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="leap-password"
-                  dbus-type="s" />
+                  is-secret="1"
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="leap-password-flags"
-                  dbus-type="u" />
+                  is-secret-flags="1"
+                  dbus-type="u"
+                  gprop-type="NMSettingSecretFlags"
+                  />
         <property name="leap-username"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="name"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="pairwise"
-                  dbus-type="as" />
+                  dbus-type="as"
+                  gprop-type="GStrv"
+                  />
         <property name="pmf"
-                  dbus-type="i" />
+                  dbus-type="i"
+                  gprop-type="gint"
+                  />
         <property name="proto"
-                  dbus-type="as" />
+                  dbus-type="as"
+                  gprop-type="GStrv"
+                  />
         <property name="psk"
-                  dbus-type="s" />
+                  is-secret="1"
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="psk-flags"
-                  dbus-type="u" />
+                  is-secret-flags="1"
+                  dbus-type="u"
+                  gprop-type="NMSettingSecretFlags"
+                  />
         <property name="wep-key-flags"
-                  dbus-type="u" />
+                  is-secret-flags="1"
+                  dbus-type="u"
+                  gprop-type="NMSettingSecretFlags"
+                  />
         <property name="wep-key-type"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="NMWepKeyType"
+                  />
         <property name="wep-key0"
-                  dbus-type="s" />
+                  is-secret="1"
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="wep-key1"
-                  dbus-type="s" />
+                  is-secret="1"
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="wep-key2"
-                  dbus-type="s" />
+                  is-secret="1"
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="wep-key3"
-                  dbus-type="s" />
+                  is-secret="1"
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="wep-tx-keyidx"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
         <property name="wps-method"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
     </setting>
-    <setting name="802-1x" >
+    <setting name="802-1x"
+             gtype="NMSetting8021x"
+             >
         <property name="altsubject-matches"
-                  dbus-type="as" />
+                  dbus-type="as"
+                  gprop-type="GStrv"
+                  />
         <property name="anonymous-identity"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="auth-timeout"
-                  dbus-type="i" />
+                  dbus-type="i"
+                  gprop-type="gint"
+                  />
         <property name="ca-cert"
-                  dbus-type="ay" />
+                  dbus-type="ay"
+                  gprop-type="GBytes"
+                  />
         <property name="ca-cert-password"
-                  dbus-type="s" />
+                  is-secret="1"
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="ca-cert-password-flags"
-                  dbus-type="u" />
+                  is-secret-flags="1"
+                  dbus-type="u"
+                  gprop-type="NMSettingSecretFlags"
+                  />
         <property name="ca-path"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="client-cert"
-                  dbus-type="ay" />
+                  dbus-type="ay"
+                  gprop-type="GBytes"
+                  />
         <property name="client-cert-password"
-                  dbus-type="s" />
+                  is-secret="1"
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="client-cert-password-flags"
-                  dbus-type="u" />
+                  is-secret-flags="1"
+                  dbus-type="u"
+                  gprop-type="NMSettingSecretFlags"
+                  />
         <property name="domain-match"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="domain-suffix-match"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="eap"
-                  dbus-type="as" />
+                  dbus-type="as"
+                  gprop-type="GStrv"
+                  />
         <property name="identity"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="name"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="optional"
-                  dbus-type="b" />
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
         <property name="pac-file"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="password"
-                  dbus-type="s" />
+                  is-secret="1"
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="password-flags"
-                  dbus-type="u" />
+                  is-secret-flags="1"
+                  dbus-type="u"
+                  gprop-type="NMSettingSecretFlags"
+                  />
         <property name="password-raw"
-                  dbus-type="ay" />
+                  is-secret="1"
+                  dbus-type="ay"
+                  gprop-type="GBytes"
+                  />
         <property name="password-raw-flags"
-                  dbus-type="u" />
+                  is-secret-flags="1"
+                  dbus-type="u"
+                  gprop-type="NMSettingSecretFlags"
+                  />
         <property name="phase1-auth-flags"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
         <property name="phase1-fast-provisioning"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="phase1-peaplabel"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="phase1-peapver"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="phase2-altsubject-matches"
-                  dbus-type="as" />
+                  dbus-type="as"
+                  gprop-type="GStrv"
+                  />
         <property name="phase2-auth"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="phase2-autheap"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="phase2-ca-cert"
-                  dbus-type="ay" />
+                  dbus-type="ay"
+                  gprop-type="GBytes"
+                  />
         <property name="phase2-ca-cert-password"
-                  dbus-type="s" />
+                  is-secret="1"
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="phase2-ca-cert-password-flags"
-                  dbus-type="u" />
+                  is-secret-flags="1"
+                  dbus-type="u"
+                  gprop-type="NMSettingSecretFlags"
+                  />
         <property name="phase2-ca-path"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="phase2-client-cert"
-                  dbus-type="ay" />
+                  dbus-type="ay"
+                  gprop-type="GBytes"
+                  />
         <property name="phase2-client-cert-password"
-                  dbus-type="s" />
+                  is-secret="1"
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="phase2-client-cert-password-flags"
-                  dbus-type="u" />
+                  is-secret-flags="1"
+                  dbus-type="u"
+                  gprop-type="NMSettingSecretFlags"
+                  />
         <property name="phase2-domain-match"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="phase2-domain-suffix-match"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="phase2-private-key"
-                  dbus-type="ay" />
+                  dbus-type="ay"
+                  gprop-type="GBytes"
+                  />
         <property name="phase2-private-key-password"
-                  dbus-type="s" />
+                  is-secret="1"
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="phase2-private-key-password-flags"
-                  dbus-type="u" />
+                  is-secret-flags="1"
+                  dbus-type="u"
+                  gprop-type="NMSettingSecretFlags"
+                  />
         <property name="phase2-subject-match"
                   is-deprecated="1"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="pin"
-                  dbus-type="s" />
+                  is-secret="1"
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="pin-flags"
-                  dbus-type="u" />
+                  is-secret-flags="1"
+                  dbus-type="u"
+                  gprop-type="NMSettingSecretFlags"
+                  />
         <property name="private-key"
-                  dbus-type="ay" />
+                  dbus-type="ay"
+                  gprop-type="GBytes"
+                  />
         <property name="private-key-password"
-                  dbus-type="s" />
+                  is-secret="1"
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="private-key-password-flags"
-                  dbus-type="u" />
+                  is-secret-flags="1"
+                  dbus-type="u"
+                  gprop-type="NMSettingSecretFlags"
+                  />
         <property name="subject-match"
                   is-deprecated="1"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="system-ca-certs"
-                  dbus-type="b" />
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
     </setting>
-    <setting name="802-3-ethernet" >
+    <setting name="802-3-ethernet"
+             gtype="NMSettingWired"
+             >
         <property name="accept-all-mac-addresses"
-                  dbus-type="i" />
+                  dbus-type="i"
+                  gprop-type="NMTernary"
+                  />
         <property name="assigned-mac-address"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  />
         <property name="auto-negotiate"
-                  dbus-type="b" />
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
         <property name="cloned-mac-address"
                   dbus-type="ay"
-                  dbus-deprecated="1" />
+                  dbus-deprecated="1"
+                  gprop-type="gchararray"
+                  />
         <property name="duplex"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="generate-mac-address-mask"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="mac-address"
-                  dbus-type="ay" />
+                  dbus-type="ay"
+                  gprop-type="gchararray"
+                  />
         <property name="mac-address-blacklist"
-                  dbus-type="as" />
+                  dbus-type="as"
+                  gprop-type="GStrv"
+                  />
         <property name="mtu"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
         <property name="name"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="port"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="s390-nettype"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="s390-options"
-                  dbus-type="a{ss}" />
+                  dbus-type="a{ss}"
+                  gprop-type="GHashTable"
+                  />
         <property name="s390-subchannels"
-                  dbus-type="as" />
+                  dbus-type="as"
+                  gprop-type="GStrv"
+                  />
         <property name="speed"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
         <property name="wake-on-lan"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
         <property name="wake-on-lan-password"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
     </setting>
-    <setting name="adsl" >
+    <setting name="adsl"
+             gtype="NMSettingAdsl"
+             >
         <property name="encapsulation"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="name"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="password"
-                  dbus-type="s" />
+                  is-secret="1"
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="password-flags"
-                  dbus-type="u" />
+                  is-secret-flags="1"
+                  dbus-type="u"
+                  gprop-type="NMSettingSecretFlags"
+                  />
         <property name="protocol"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="username"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="vci"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
         <property name="vpi"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
     </setting>
-    <setting name="bluetooth" >
+    <setting name="bluetooth"
+             gtype="NMSettingBluetooth"
+             >
         <property name="bdaddr"
-                  dbus-type="ay" />
+                  dbus-type="ay"
+                  gprop-type="gchararray"
+                  />
         <property name="name"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="type"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
     </setting>
-    <setting name="bond" >
+    <setting name="bond"
+             gtype="NMSettingBond"
+             >
         <property name="interface-name"
                   dbus-type="s"
-                  dbus-deprecated="1" />
+                  dbus-deprecated="1"
+                  />
         <property name="name"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="options"
-                  dbus-type="a{ss}" />
+                  dbus-type="a{ss}"
+                  gprop-type="GHashTable"
+                  />
     </setting>
-    <setting name="bond-port" >
+    <setting name="bond-port"
+             gtype="NMSettingBondPort"
+             >
         <property name="name"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="queue-id"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
     </setting>
-    <setting name="bridge" >
+    <setting name="bridge"
+             gtype="NMSettingBridge"
+             >
         <property name="ageing-time"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
         <property name="forward-delay"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
         <property name="group-address"
-                  dbus-type="ay" />
+                  dbus-type="ay"
+                  gprop-type="gchararray"
+                  />
         <property name="group-forward-mask"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
         <property name="hello-time"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
         <property name="interface-name"
                   dbus-type="s"
-                  dbus-deprecated="1" />
+                  dbus-deprecated="1"
+                  />
         <property name="mac-address"
                   is-deprecated="1"
-                  dbus-type="ay" />
+                  dbus-type="ay"
+                  gprop-type="gchararray"
+                  />
         <property name="max-age"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
         <property name="multicast-hash-max"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
         <property name="multicast-last-member-count"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
         <property name="multicast-last-member-interval"
-                  dbus-type="t" />
+                  dbus-type="t"
+                  gprop-type="guint64"
+                  />
         <property name="multicast-membership-interval"
-                  dbus-type="t" />
+                  dbus-type="t"
+                  gprop-type="guint64"
+                  />
         <property name="multicast-querier"
-                  dbus-type="b" />
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
         <property name="multicast-querier-interval"
-                  dbus-type="t" />
+                  dbus-type="t"
+                  gprop-type="guint64"
+                  />
         <property name="multicast-query-interval"
-                  dbus-type="t" />
+                  dbus-type="t"
+                  gprop-type="guint64"
+                  />
         <property name="multicast-query-response-interval"
-                  dbus-type="t" />
+                  dbus-type="t"
+                  gprop-type="guint64"
+                  />
         <property name="multicast-query-use-ifaddr"
-                  dbus-type="b" />
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
         <property name="multicast-router"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="multicast-snooping"
-                  dbus-type="b" />
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
         <property name="multicast-startup-query-count"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
         <property name="multicast-startup-query-interval"
-                  dbus-type="t" />
+                  dbus-type="t"
+                  gprop-type="guint64"
+                  />
         <property name="name"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="priority"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
         <property name="stp"
-                  dbus-type="b" />
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
         <property name="vlan-default-pvid"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
         <property name="vlan-filtering"
-                  dbus-type="b" />
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
         <property name="vlan-protocol"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="vlan-stats-enabled"
-                  dbus-type="b" />
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
         <property name="vlans"
-                  dbus-type="aa{sv}" />
+                  dbus-type="aa{sv}"
+                  gprop-type="GPtrArray"
+                  />
     </setting>
-    <setting name="bridge-port" >
+    <setting name="bridge-port"
+             gtype="NMSettingBridgePort"
+             >
         <property name="hairpin-mode"
-                  dbus-type="b" />
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
         <property name="name"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="path-cost"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
         <property name="priority"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
         <property name="vlans"
-                  dbus-type="aa{sv}" />
+                  dbus-type="aa{sv}"
+                  gprop-type="GPtrArray"
+                  />
     </setting>
-    <setting name="cdma" >
+    <setting name="cdma"
+             gtype="NMSettingCdma"
+             >
         <property name="mtu"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
         <property name="name"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="number"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="password"
-                  dbus-type="s" />
+                  is-secret="1"
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="password-flags"
-                  dbus-type="u" />
+                  is-secret-flags="1"
+                  dbus-type="u"
+                  gprop-type="NMSettingSecretFlags"
+                  />
         <property name="username"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
     </setting>
-    <setting name="connection" >
+    <setting name="connection"
+             gtype="NMSettingConnection"
+             >
         <property name="auth-retries"
-                  dbus-type="i" />
+                  dbus-type="i"
+                  gprop-type="gint"
+                  />
         <property name="autoconnect"
-                  dbus-type="b" />
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
         <property name="autoconnect-priority"
-                  dbus-type="i" />
+                  dbus-type="i"
+                  gprop-type="gint"
+                  />
         <property name="autoconnect-retries"
-                  dbus-type="i" />
+                  dbus-type="i"
+                  gprop-type="gint"
+                  />
         <property name="autoconnect-slaves"
-                  dbus-type="i" />
+                  dbus-type="i"
+                  gprop-type="NMSettingConnectionAutoconnectSlaves"
+                  />
         <property name="dns-over-tls"
-                  dbus-type="i" />
+                  dbus-type="i"
+                  gprop-type="gint"
+                  />
         <property name="gateway-ping-timeout"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
         <property name="id"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="interface-name"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="lldp"
-                  dbus-type="i" />
+                  dbus-type="i"
+                  gprop-type="gint"
+                  />
         <property name="llmnr"
-                  dbus-type="i" />
+                  dbus-type="i"
+                  gprop-type="gint"
+                  />
         <property name="master"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="mdns"
-                  dbus-type="i" />
+                  dbus-type="i"
+                  gprop-type="gint"
+                  />
         <property name="metered"
-                  dbus-type="i" />
+                  dbus-type="i"
+                  gprop-type="NMMetered"
+                  />
         <property name="mptcp-flags"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
         <property name="mud-url"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="multi-connect"
-                  dbus-type="i" />
+                  dbus-type="i"
+                  gprop-type="gint"
+                  />
         <property name="name"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="permissions"
-                  dbus-type="as" />
+                  dbus-type="as"
+                  gprop-type="GStrv"
+                  />
         <property name="read-only"
-                  dbus-type="b" />
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
         <property name="secondaries"
-                  dbus-type="as" />
+                  dbus-type="as"
+                  gprop-type="GStrv"
+                  />
         <property name="slave-type"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="stable-id"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="timestamp"
-                  dbus-type="t" />
+                  dbus-type="t"
+                  gprop-type="guint64"
+                  />
         <property name="type"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="uuid"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="wait-activation-delay"
-                  dbus-type="i" />
+                  dbus-type="i"
+                  gprop-type="gint"
+                  />
         <property name="wait-device-timeout"
-                  dbus-type="i" />
+                  dbus-type="i"
+                  gprop-type="gint"
+                  />
         <property name="zone"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
     </setting>
-    <setting name="dcb" >
+    <setting name="dcb"
+             gtype="NMSettingDcb"
+             >
         <property name="app-fcoe-flags"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="NMSettingDcbFlags"
+                  />
         <property name="app-fcoe-mode"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="app-fcoe-priority"
-                  dbus-type="i" />
+                  dbus-type="i"
+                  gprop-type="gint"
+                  />
         <property name="app-fip-flags"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="NMSettingDcbFlags"
+                  />
         <property name="app-fip-priority"
-                  dbus-type="i" />
+                  dbus-type="i"
+                  gprop-type="gint"
+                  />
         <property name="app-iscsi-flags"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="NMSettingDcbFlags"
+                  />
         <property name="app-iscsi-priority"
-                  dbus-type="i" />
+                  dbus-type="i"
+                  gprop-type="gint"
+                  />
         <property name="name"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="priority-bandwidth"
-                  dbus-type="au" />
+                  dbus-type="au"
+                  gprop-type="GArray"
+                  />
         <property name="priority-flow-control"
-                  dbus-type="au" />
+                  dbus-type="au"
+                  gprop-type="GArray"
+                  />
         <property name="priority-flow-control-flags"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="NMSettingDcbFlags"
+                  />
         <property name="priority-group-bandwidth"
-                  dbus-type="au" />
+                  dbus-type="au"
+                  gprop-type="GArray"
+                  />
         <property name="priority-group-flags"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="NMSettingDcbFlags"
+                  />
         <property name="priority-group-id"
-                  dbus-type="au" />
+                  dbus-type="au"
+                  gprop-type="GArray"
+                  />
         <property name="priority-strict-bandwidth"
-                  dbus-type="au" />
+                  dbus-type="au"
+                  gprop-type="GArray"
+                  />
         <property name="priority-traffic-class"
-                  dbus-type="au" />
+                  dbus-type="au"
+                  gprop-type="GArray"
+                  />
     </setting>
-    <setting name="dummy" >
+    <setting name="dummy"
+             gtype="NMSettingDummy"
+             >
         <property name="name"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
     </setting>
-    <setting name="ethtool" >
+    <setting name="ethtool"
+             gtype="NMSettingEthtool"
+             >
         <property name="name"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
     </setting>
-    <setting name="generic" >
+    <setting name="generic"
+             gtype="NMSettingGeneric"
+             >
         <property name="name"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
     </setting>
-    <setting name="gsm" >
+    <setting name="gsm"
+             gtype="NMSettingGsm"
+             >
         <property name="allowed-bands"
                   dbus-type="u"
-                  dbus-deprecated="1" />
+                  dbus-deprecated="1"
+                  />
         <property name="apn"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="auto-config"
-                  dbus-type="b" />
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
         <property name="device-id"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="home-only"
-                  dbus-type="b" />
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
         <property name="mtu"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
         <property name="name"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="network-id"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="network-type"
                   dbus-type="i"
-                  dbus-deprecated="1" />
+                  dbus-deprecated="1"
+                  />
         <property name="number"
                   is-deprecated="1"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="password"
-                  dbus-type="s" />
+                  is-secret="1"
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="password-flags"
-                  dbus-type="u" />
+                  is-secret-flags="1"
+                  dbus-type="u"
+                  gprop-type="NMSettingSecretFlags"
+                  />
         <property name="pin"
-                  dbus-type="s" />
+                  is-secret="1"
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="pin-flags"
-                  dbus-type="u" />
+                  is-secret-flags="1"
+                  dbus-type="u"
+                  gprop-type="NMSettingSecretFlags"
+                  />
         <property name="sim-id"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="sim-operator-id"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="username"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
     </setting>
-    <setting name="hostname" >
+    <setting name="hostname"
+             gtype="NMSettingHostname"
+             >
         <property name="from-dhcp"
-                  dbus-type="i" />
+                  dbus-type="i"
+                  gprop-type="NMTernary"
+                  />
         <property name="from-dns-lookup"
-                  dbus-type="i" />
+                  dbus-type="i"
+                  gprop-type="NMTernary"
+                  />
         <property name="name"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="only-from-default"
-                  dbus-type="i" />
+                  dbus-type="i"
+                  gprop-type="NMTernary"
+                  />
         <property name="priority"
-                  dbus-type="i" />
+                  dbus-type="i"
+                  gprop-type="gint"
+                  />
     </setting>
-    <setting name="infiniband" >
+    <setting name="infiniband"
+             gtype="NMSettingInfiniband"
+             >
         <property name="mac-address"
-                  dbus-type="ay" />
+                  dbus-type="ay"
+                  gprop-type="gchararray"
+                  />
         <property name="mtu"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
         <property name="name"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="p-key"
-                  dbus-type="i" />
+                  dbus-type="i"
+                  gprop-type="gint"
+                  />
         <property name="parent"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="transport-mode"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
     </setting>
-    <setting name="ip-tunnel" >
+    <setting name="ip-tunnel"
+             gtype="NMSettingIPTunnel"
+             >
         <property name="encapsulation-limit"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
         <property name="flags"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
         <property name="flow-label"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
         <property name="input-key"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="local"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="mode"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
         <property name="mtu"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
         <property name="name"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="output-key"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="parent"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="path-mtu-discovery"
-                  dbus-type="b" />
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
         <property name="remote"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="tos"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
         <property name="ttl"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
     </setting>
-    <setting name="ipv4" >
+    <setting name="ipv4"
+             gtype="NMSettingIP4Config"
+             >
         <property name="address-data"
-                  dbus-type="aa{sv}" />
+                  dbus-type="aa{sv}"
+                  />
         <property name="address-labels"
                   dbus-type="as"
-                  dbus-deprecated="1" />
+                  dbus-deprecated="1"
+                  />
         <property name="addresses"
                   dbus-type="aau"
-                  dbus-deprecated="1" />
+                  dbus-deprecated="1"
+                  gprop-type="GPtrArray"
+                  />
         <property name="dad-timeout"
-                  dbus-type="i" />
+                  dbus-type="i"
+                  gprop-type="gint"
+                  />
         <property name="dhcp-client-id"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="dhcp-fqdn"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="dhcp-hostname"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="dhcp-hostname-flags"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
         <property name="dhcp-iaid"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="dhcp-reject-servers"
-                  dbus-type="as" />
+                  dbus-type="as"
+                  gprop-type="GStrv"
+                  />
         <property name="dhcp-send-hostname"
-                  dbus-type="b" />
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
         <property name="dhcp-timeout"
-                  dbus-type="i" />
+                  dbus-type="i"
+                  gprop-type="gint"
+                  />
         <property name="dhcp-vendor-class-identifier"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="dns"
                   dbus-type="au"
-                  dbus-deprecated="1" />
+                  dbus-deprecated="1"
+                  gprop-type="GStrv"
+                  />
         <property name="dns-data"
-                  dbus-type="as" />
+                  dbus-type="as"
+                  />
         <property name="dns-options"
-                  dbus-type="as" />
+                  dbus-type="as"
+                  gprop-type="GStrv"
+                  />
         <property name="dns-priority"
-                  dbus-type="i" />
+                  dbus-type="i"
+                  gprop-type="gint"
+                  />
         <property name="dns-search"
-                  dbus-type="as" />
+                  dbus-type="as"
+                  gprop-type="GStrv"
+                  />
         <property name="gateway"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="ignore-auto-dns"
-                  dbus-type="b" />
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
         <property name="ignore-auto-routes"
-                  dbus-type="b" />
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
         <property name="link-local"
-                  dbus-type="i" />
+                  dbus-type="i"
+                  gprop-type="gint"
+                  />
         <property name="may-fail"
-                  dbus-type="b" />
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
         <property name="method"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="name"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="never-default"
-                  dbus-type="b" />
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
         <property name="required-timeout"
-                  dbus-type="i" />
+                  dbus-type="i"
+                  gprop-type="gint"
+                  />
         <property name="route-data"
-                  dbus-type="aa{sv}" />
+                  dbus-type="aa{sv}"
+                  />
         <property name="route-metric"
-                  dbus-type="x" />
+                  dbus-type="x"
+                  gprop-type="gint64"
+                  />
         <property name="route-table"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
         <property name="routes"
                   dbus-type="aau"
-                  dbus-deprecated="1" />
+                  dbus-deprecated="1"
+                  gprop-type="GPtrArray"
+                  />
         <property name="routing-rules"
-                  dbus-type="aa{sv}" />
+                  dbus-type="aa{sv}"
+                  />
     </setting>
-    <setting name="ipv6" >
+    <setting name="ipv6"
+             gtype="NMSettingIP6Config"
+             >
         <property name="addr-gen-mode"
-                  dbus-type="i" />
+                  dbus-type="i"
+                  gprop-type="gint"
+                  />
         <property name="address-data"
-                  dbus-type="aa{sv}" />
+                  dbus-type="aa{sv}"
+                  />
         <property name="addresses"
                   dbus-type="a(ayuay)"
-                  dbus-deprecated="1" />
+                  dbus-deprecated="1"
+                  gprop-type="GPtrArray"
+                  />
         <property name="dad-timeout"
-                  dbus-type="i" />
+                  dbus-type="i"
+                  gprop-type="gint"
+                  />
         <property name="dhcp-duid"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="dhcp-hostname"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="dhcp-hostname-flags"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
         <property name="dhcp-iaid"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="dhcp-reject-servers"
-                  dbus-type="as" />
+                  dbus-type="as"
+                  gprop-type="GStrv"
+                  />
         <property name="dhcp-send-hostname"
-                  dbus-type="b" />
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
         <property name="dhcp-timeout"
-                  dbus-type="i" />
+                  dbus-type="i"
+                  gprop-type="gint"
+                  />
         <property name="dns"
                   dbus-type="aay"
-                  dbus-deprecated="1" />
+                  dbus-deprecated="1"
+                  gprop-type="GStrv"
+                  />
         <property name="dns-data"
-                  dbus-type="as" />
+                  dbus-type="as"
+                  />
         <property name="dns-options"
-                  dbus-type="as" />
+                  dbus-type="as"
+                  gprop-type="GStrv"
+                  />
         <property name="dns-priority"
-                  dbus-type="i" />
+                  dbus-type="i"
+                  gprop-type="gint"
+                  />
         <property name="dns-search"
-                  dbus-type="as" />
+                  dbus-type="as"
+                  gprop-type="GStrv"
+                  />
         <property name="gateway"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="ignore-auto-dns"
-                  dbus-type="b" />
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
         <property name="ignore-auto-routes"
-                  dbus-type="b" />
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
         <property name="ip6-privacy"
-                  dbus-type="i" />
+                  dbus-type="i"
+                  gprop-type="NMSettingIP6ConfigPrivacy"
+                  />
         <property name="may-fail"
-                  dbus-type="b" />
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
         <property name="method"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="mtu"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
         <property name="name"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="never-default"
-                  dbus-type="b" />
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
         <property name="ra-timeout"
-                  dbus-type="i" />
+                  dbus-type="i"
+                  gprop-type="gint"
+                  />
         <property name="required-timeout"
-                  dbus-type="i" />
+                  dbus-type="i"
+                  gprop-type="gint"
+                  />
         <property name="route-data"
-                  dbus-type="aa{sv}" />
+                  dbus-type="aa{sv}"
+                  />
         <property name="route-metric"
-                  dbus-type="x" />
+                  dbus-type="x"
+                  gprop-type="gint64"
+                  />
         <property name="route-table"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
         <property name="routes"
                   dbus-type="a(ayuayu)"
-                  dbus-deprecated="1" />
+                  dbus-deprecated="1"
+                  gprop-type="GPtrArray"
+                  />
         <property name="routing-rules"
-                  dbus-type="aa{sv}" />
+                  dbus-type="aa{sv}"
+                  />
         <property name="token"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
     </setting>
-    <setting name="macsec" >
+    <setting name="macsec"
+             gtype="NMSettingMacsec"
+             >
         <property name="encrypt"
-                  dbus-type="b" />
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
         <property name="mka-cak"
-                  dbus-type="s" />
+                  is-secret="1"
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="mka-cak-flags"
-                  dbus-type="u" />
+                  is-secret-flags="1"
+                  dbus-type="u"
+                  gprop-type="NMSettingSecretFlags"
+                  />
         <property name="mka-ckn"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="mode"
-                  dbus-type="i" />
+                  dbus-type="i"
+                  gprop-type="gint"
+                  />
         <property name="name"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="parent"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="port"
-                  dbus-type="i" />
+                  dbus-type="i"
+                  gprop-type="gint"
+                  />
         <property name="send-sci"
-                  dbus-type="b" />
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
         <property name="validation"
-                  dbus-type="i" />
+                  dbus-type="i"
+                  gprop-type="gint"
+                  />
     </setting>
-    <setting name="macvlan" >
+    <setting name="macvlan"
+             gtype="NMSettingMacvlan"
+             >
         <property name="mode"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
         <property name="name"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="parent"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="promiscuous"
-                  dbus-type="b" />
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
         <property name="tap"
-                  dbus-type="b" />
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
     </setting>
-    <setting name="match" >
+    <setting name="match"
+             gtype="NMSettingMatch"
+             >
         <property name="driver"
-                  dbus-type="as" />
+                  dbus-type="as"
+                  gprop-type="GStrv"
+                  />
         <property name="interface-name"
-                  dbus-type="as" />
+                  dbus-type="as"
+                  gprop-type="GStrv"
+                  />
         <property name="kernel-command-line"
-                  dbus-type="as" />
+                  dbus-type="as"
+                  gprop-type="GStrv"
+                  />
         <property name="name"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="path"
-                  dbus-type="as" />
+                  dbus-type="as"
+                  gprop-type="GStrv"
+                  />
     </setting>
-    <setting name="ovs-bridge" >
+    <setting name="ovs-bridge"
+             gtype="NMSettingOvsBridge"
+             >
         <property name="datapath-type"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="fail-mode"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="mcast-snooping-enable"
-                  dbus-type="b" />
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
         <property name="name"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="rstp-enable"
-                  dbus-type="b" />
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
         <property name="stp-enable"
-                  dbus-type="b" />
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
     </setting>
-    <setting name="ovs-dpdk" >
+    <setting name="ovs-dpdk"
+             gtype="NMSettingOvsDpdk"
+             >
         <property name="devargs"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="n-rxq"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
         <property name="name"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
     </setting>
-    <setting name="ovs-external-ids" >
+    <setting name="ovs-external-ids"
+             gtype="NMSettingOvsExternalIDs"
+             >
         <property name="data"
-                  dbus-type="a{ss}" />
+                  dbus-type="a{ss}"
+                  gprop-type="GHashTable"
+                  />
         <property name="name"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
     </setting>
-    <setting name="ovs-interface" >
+    <setting name="ovs-interface"
+             gtype="NMSettingOvsInterface"
+             >
         <property name="name"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="ofport-request"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
         <property name="type"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
     </setting>
-    <setting name="ovs-patch" >
+    <setting name="ovs-patch"
+             gtype="NMSettingOvsPatch"
+             >
         <property name="name"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="peer"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
     </setting>
-    <setting name="ovs-port" >
+    <setting name="ovs-port"
+             gtype="NMSettingOvsPort"
+             >
         <property name="bond-downdelay"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
         <property name="bond-mode"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="bond-updelay"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
         <property name="lacp"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="name"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="tag"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
         <property name="vlan-mode"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
     </setting>
-    <setting name="ppp" >
+    <setting name="ppp"
+             gtype="NMSettingPpp"
+             >
         <property name="baud"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
         <property name="crtscts"
-                  dbus-type="b" />
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
         <property name="lcp-echo-failure"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
         <property name="lcp-echo-interval"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
         <property name="mppe-stateful"
-                  dbus-type="b" />
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
         <property name="mru"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
         <property name="mtu"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
         <property name="name"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="no-vj-comp"
-                  dbus-type="b" />
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
         <property name="noauth"
-                  dbus-type="b" />
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
         <property name="nobsdcomp"
-                  dbus-type="b" />
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
         <property name="nodeflate"
-                  dbus-type="b" />
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
         <property name="refuse-chap"
-                  dbus-type="b" />
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
         <property name="refuse-eap"
-                  dbus-type="b" />
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
         <property name="refuse-mschap"
-                  dbus-type="b" />
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
         <property name="refuse-mschapv2"
-                  dbus-type="b" />
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
         <property name="refuse-pap"
-                  dbus-type="b" />
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
         <property name="require-mppe"
-                  dbus-type="b" />
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
         <property name="require-mppe-128"
-                  dbus-type="b" />
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
     </setting>
-    <setting name="pppoe" >
+    <setting name="pppoe"
+             gtype="NMSettingPppoe"
+             >
         <property name="name"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="parent"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="password"
-                  dbus-type="s" />
+                  is-secret="1"
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="password-flags"
-                  dbus-type="u" />
+                  is-secret-flags="1"
+                  dbus-type="u"
+                  gprop-type="NMSettingSecretFlags"
+                  />
         <property name="service"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="username"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
     </setting>
-    <setting name="proxy" >
+    <setting name="proxy"
+             gtype="NMSettingProxy"
+             >
         <property name="browser-only"
-                  dbus-type="b" />
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
         <property name="method"
-                  dbus-type="i" />
+                  dbus-type="i"
+                  gprop-type="gint"
+                  />
         <property name="name"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="pac-script"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="pac-url"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
     </setting>
-    <setting name="serial" >
+    <setting name="serial"
+             gtype="NMSettingSerial"
+             >
         <property name="baud"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
         <property name="bits"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
         <property name="name"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="parity"
-                  dbus-type="y" />
+                  dbus-type="y"
+                  gprop-type="NMSettingSerialParity"
+                  />
         <property name="send-delay"
-                  dbus-type="t" />
+                  dbus-type="t"
+                  gprop-type="guint64"
+                  />
         <property name="stopbits"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
     </setting>
-    <setting name="sriov" >
+    <setting name="sriov"
+             gtype="NMSettingSriov"
+             >
         <property name="autoprobe-drivers"
-                  dbus-type="i" />
+                  dbus-type="i"
+                  gprop-type="NMTernary"
+                  />
         <property name="name"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="total-vfs"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
         <property name="vfs"
-                  dbus-type="aa{sv}" />
+                  dbus-type="aa{sv}"
+                  gprop-type="GPtrArray"
+                  />
     </setting>
-    <setting name="tc" >
+    <setting name="tc"
+             gtype="NMSettingTCConfig"
+             >
         <property name="name"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="qdiscs"
-                  dbus-type="aa{sv}" />
+                  dbus-type="aa{sv}"
+                  gprop-type="GPtrArray"
+                  />
         <property name="tfilters"
-                  dbus-type="aa{sv}" />
+                  dbus-type="aa{sv}"
+                  gprop-type="GPtrArray"
+                  />
     </setting>
-    <setting name="team" >
+    <setting name="team"
+             gtype="NMSettingTeam"
+             >
         <property name="config"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="interface-name"
                   dbus-type="s"
-                  dbus-deprecated="1" />
+                  dbus-deprecated="1"
+                  />
         <property name="link-watchers"
-                  dbus-type="aa{sv}" />
+                  dbus-type="aa{sv}"
+                  gprop-type="GPtrArray"
+                  />
         <property name="mcast-rejoin-count"
-                  dbus-type="i" />
+                  dbus-type="i"
+                  gprop-type="gint"
+                  />
         <property name="mcast-rejoin-interval"
-                  dbus-type="i" />
+                  dbus-type="i"
+                  gprop-type="gint"
+                  />
         <property name="name"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="notify-peers-count"
-                  dbus-type="i" />
+                  dbus-type="i"
+                  gprop-type="gint"
+                  />
         <property name="notify-peers-interval"
-                  dbus-type="i" />
+                  dbus-type="i"
+                  gprop-type="gint"
+                  />
         <property name="runner"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="runner-active"
-                  dbus-type="b" />
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
         <property name="runner-agg-select-policy"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="runner-fast-rate"
-                  dbus-type="b" />
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
         <property name="runner-hwaddr-policy"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="runner-min-ports"
-                  dbus-type="i" />
+                  dbus-type="i"
+                  gprop-type="gint"
+                  />
         <property name="runner-sys-prio"
-                  dbus-type="i" />
+                  dbus-type="i"
+                  gprop-type="gint"
+                  />
         <property name="runner-tx-balancer"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="runner-tx-balancer-interval"
-                  dbus-type="i" />
+                  dbus-type="i"
+                  gprop-type="gint"
+                  />
         <property name="runner-tx-hash"
-                  dbus-type="as" />
+                  dbus-type="as"
+                  gprop-type="GStrv"
+                  />
     </setting>
-    <setting name="team-port" >
+    <setting name="team-port"
+             gtype="NMSettingTeamPort"
+             >
         <property name="config"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="lacp-key"
-                  dbus-type="i" />
+                  dbus-type="i"
+                  gprop-type="gint"
+                  />
         <property name="lacp-prio"
-                  dbus-type="i" />
+                  dbus-type="i"
+                  gprop-type="gint"
+                  />
         <property name="link-watchers"
-                  dbus-type="aa{sv}" />
+                  dbus-type="aa{sv}"
+                  gprop-type="GPtrArray"
+                  />
         <property name="name"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="prio"
-                  dbus-type="i" />
+                  dbus-type="i"
+                  gprop-type="gint"
+                  />
         <property name="queue-id"
-                  dbus-type="i" />
+                  dbus-type="i"
+                  gprop-type="gint"
+                  />
         <property name="sticky"
-                  dbus-type="b" />
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
     </setting>
-    <setting name="tun" >
+    <setting name="tun"
+             gtype="NMSettingTun"
+             >
         <property name="group"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="mode"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
         <property name="multi-queue"
-                  dbus-type="b" />
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
         <property name="name"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="owner"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="pi"
-                  dbus-type="b" />
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
         <property name="vnet-hdr"
-                  dbus-type="b" />
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
     </setting>
-    <setting name="user" >
+    <setting name="user"
+             gtype="NMSettingUser"
+             >
         <property name="data"
-                  dbus-type="a{ss}" />
+                  dbus-type="a{ss}"
+                  gprop-type="GHashTable"
+                  />
         <property name="name"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
     </setting>
-    <setting name="veth" >
+    <setting name="veth"
+             gtype="NMSettingVeth"
+             >
         <property name="name"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="peer"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
     </setting>
-    <setting name="vlan" >
+    <setting name="vlan"
+             gtype="NMSettingVlan"
+             >
         <property name="egress-priority-map"
-                  dbus-type="as" />
+                  dbus-type="as"
+                  gprop-type="GStrv"
+                  />
         <property name="flags"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="NMVlanFlags"
+                  />
         <property name="id"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
         <property name="ingress-priority-map"
-                  dbus-type="as" />
+                  dbus-type="as"
+                  gprop-type="GStrv"
+                  />
         <property name="interface-name"
                   dbus-type="s"
-                  dbus-deprecated="1" />
+                  dbus-deprecated="1"
+                  />
         <property name="name"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="parent"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
     </setting>
-    <setting name="vpn" >
+    <setting name="vpn"
+             gtype="NMSettingVpn"
+             >
         <property name="data"
-                  dbus-type="a{ss}" />
+                  dbus-type="a{ss}"
+                  gprop-type="GHashTable"
+                  />
         <property name="name"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="persistent"
-                  dbus-type="b" />
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
         <property name="secrets"
-                  dbus-type="a{ss}" />
+                  is-secret="1"
+                  dbus-type="a{ss}"
+                  gprop-type="GHashTable"
+                  />
         <property name="service-type"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="timeout"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
         <property name="user-name"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
     </setting>
-    <setting name="vrf" >
+    <setting name="vrf"
+             gtype="NMSettingVrf"
+             >
         <property name="name"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="table"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
     </setting>
-    <setting name="vxlan" >
+    <setting name="vxlan"
+             gtype="NMSettingVxlan"
+             >
         <property name="ageing"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
         <property name="destination-port"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
         <property name="id"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
         <property name="l2-miss"
-                  dbus-type="b" />
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
         <property name="l3-miss"
-                  dbus-type="b" />
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
         <property name="learning"
-                  dbus-type="b" />
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
         <property name="limit"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
         <property name="local"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="name"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="parent"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="proxy"
-                  dbus-type="b" />
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
         <property name="remote"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="rsc"
-                  dbus-type="b" />
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
         <property name="source-port-max"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
         <property name="source-port-min"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
         <property name="tos"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
         <property name="ttl"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
     </setting>
-    <setting name="wifi-p2p" >
+    <setting name="wifi-p2p"
+             gtype="NMSettingWifiP2P"
+             >
         <property name="name"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="peer"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="wfd-ies"
-                  dbus-type="ay" />
+                  dbus-type="ay"
+                  gprop-type="GBytes"
+                  />
         <property name="wps-method"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
     </setting>
-    <setting name="wimax" >
+    <setting name="wimax"
+             gtype="NMSettingWimax"
+             >
         <property name="mac-address"
                   is-deprecated="1"
-                  dbus-type="ay" />
+                  dbus-type="ay"
+                  gprop-type="gchararray"
+                  />
         <property name="name"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="network-name"
                   is-deprecated="1"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
     </setting>
-    <setting name="wireguard" >
+    <setting name="wireguard"
+             gtype="NMSettingWireGuard"
+             >
         <property name="fwmark"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
         <property name="ip4-auto-default-route"
-                  dbus-type="i" />
+                  dbus-type="i"
+                  gprop-type="NMTernary"
+                  />
         <property name="ip6-auto-default-route"
-                  dbus-type="i" />
+                  dbus-type="i"
+                  gprop-type="NMTernary"
+                  />
         <property name="listen-port"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
         <property name="mtu"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
         <property name="name"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="peer-routes"
-                  dbus-type="b" />
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
         <property name="peers"
-                  dbus-type="aa{sv}" />
+                  dbus-type="aa{sv}"
+                  />
         <property name="private-key"
-                  dbus-type="s" />
+                  is-secret="1"
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="private-key-flags"
-                  dbus-type="u" />
+                  is-secret-flags="1"
+                  dbus-type="u"
+                  gprop-type="NMSettingSecretFlags"
+                  />
     </setting>
-    <setting name="wpan" >
+    <setting name="wpan"
+             gtype="NMSettingWpan"
+             >
         <property name="channel"
-                  dbus-type="i" />
+                  dbus-type="i"
+                  gprop-type="gint"
+                  />
         <property name="mac-address"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="name"
-                  dbus-type="s" />
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="page"
-                  dbus-type="i" />
+                  dbus-type="i"
+                  gprop-type="gint"
+                  />
         <property name="pan-id"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
         <property name="short-address"
-                  dbus-type="u" />
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
     </setting>
 </nm-setting-docs>
