@@ -2370,6 +2370,17 @@ void nm_platform_link_hash_update(const NMPlatformLink *obj, NMHashState *h);
 void nm_platform_ip4_route_hash_update(const NMPlatformIP4Route *obj,
                                        NMPlatformIPRouteCmpType  cmp_type,
                                        NMHashState              *h);
+
+static inline guint
+nm_platform_ip4_route_hash(const NMPlatformIP4Route *obj, NMPlatformIPRouteCmpType cmp_type)
+{
+    NMHashState h;
+
+    nm_hash_init(&h, 1118769853u);
+    nm_platform_ip4_route_hash_update(obj, cmp_type, &h);
+    return nm_hash_complete(&h);
+}
+
 void nm_platform_ip4_rt_nexthop_hash_update(const NMPlatformIP4RtNextHop *obj,
                                             gboolean                      for_id,
                                             NMHashState                  *h);
