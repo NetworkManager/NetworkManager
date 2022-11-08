@@ -661,6 +661,8 @@
                   dbus-type="u" />
         <property name="dhcp-iaid"
                   dbus-type="s" />
+        <property name="dhcp-pd-hint"
+                  dbus-type="s" />
         <property name="dhcp-reject-servers"
                   dbus-type="as" />
         <property name="dhcp-send-hostname"
