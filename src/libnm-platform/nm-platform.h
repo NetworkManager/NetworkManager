@@ -102,6 +102,11 @@ typedef enum {
      */
     NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID,
 
+    /* IPv4 route can have multiple hops. This is the ID, by which multiple
+     * routes are merged according to the next hop. This is basically NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID
+     * which ignores the next hops. */
+    NM_PLATFORM_IP_ROUTE_CMP_TYPE_ECMP_ID,
+
     /* compare all fields as they make sense for kernel. For example,
      * a route destination 192.168.1.5/24 is not accepted by kernel and
      * we treat it identical to 192.168.1.0/24. Semantically these

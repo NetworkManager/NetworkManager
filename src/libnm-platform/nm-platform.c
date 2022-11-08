@@ -8213,6 +8213,8 @@ nm_platform_ip4_route_hash_update(const NMPlatformIP4Route *obj,
 {
     switch (cmp_type) {
     case NM_PLATFORM_IP_ROUTE_CMP_TYPE_WEAK_ID:
+    case NM_PLATFORM_IP_ROUTE_CMP_TYPE_ECMP_ID:
+    case NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID:
         nm_hash_update_vals(
             h,
             nm_platform_ip_route_get_effective_table(NM_PLATFORM_IP_ROUTE_CAST(obj)),
@@ -8221,42 +8223,38 @@ nm_platform_ip4_route_hash_update(const NMPlatformIP4Route *obj,
             obj->metric,
             obj->tos,
             NM_HASH_COMBINE_BOOLS(guint8, obj->metric_any, obj->table_any));
-        break;
-    case NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID:
-        nm_hash_update_vals(
-            h,
-            obj->type_coerced,
-            nm_platform_ip_route_get_effective_table(NM_PLATFORM_IP_ROUTE_CAST(obj)),
-            nm_ip4_addr_clear_host_address(obj->network, obj->plen),
-            obj->plen,
-            obj->metric,
-            obj->tos,
-            /* on top of WEAK_ID: */
-            obj->ifindex,
-            nmp_utils_ip_config_source_round_trip_rtprot(obj->rt_source),
-            _ip_route_scope_inv_get_normalized(obj),
-            nm_platform_ip4_route_get_n_nexthops(obj),
-            obj->gateway,
-            (guint8) NM_MAX(obj->weight, 1u),
-            obj->mss,
-            obj->pref_src,
-            obj->window,
-            obj->cwnd,
-            obj->initcwnd,
-            obj->initrwnd,
-            obj->mtu,
-            obj->rto_min,
-            obj->r_rtm_flags & RTNH_F_ONLINK,
-            NM_HASH_COMBINE_BOOLS(guint16,
-                                  obj->metric_any,
-                                  obj->table_any,
-                                  obj->quickack,
-                                  obj->lock_window,
-                                  obj->lock_cwnd,
-                                  obj->lock_initcwnd,
-                                  obj->lock_initrwnd,
-                                  obj->lock_mtu,
-                                  obj->lock_mss));
+        if (NM_IN_SET(cmp_type,
+                      NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID,
+                      NM_PLATFORM_IP_ROUTE_CMP_TYPE_ECMP_ID)) {
+            nm_hash_update_vals(h,
+                                obj->type_coerced,
+                                nmp_utils_ip_config_source_round_trip_rtprot(obj->rt_source),
+                                _ip_route_scope_inv_get_normalized(obj),
+                                obj->mss,
+                                obj->pref_src,
+                                obj->window,
+                                obj->cwnd,
+                                obj->initcwnd,
+                                obj->initrwnd,
+                                obj->mtu,
+                                obj->rto_min,
+                                obj->r_rtm_flags & RTNH_F_ONLINK,
+                                NM_HASH_COMBINE_BOOLS(guint16,
+                                                      obj->quickack,
+                                                      obj->lock_window,
+                                                      obj->lock_cwnd,
+                                                      obj->lock_initcwnd,
+                                                      obj->lock_initrwnd,
+                                                      obj->lock_mtu,
+                                                      obj->lock_mss));
+            if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID) {
+                nm_hash_update_vals(h,
+                                    obj->ifindex,
+                                    nm_platform_ip4_route_get_n_nexthops(obj),
+                                    obj->gateway,
+                                    (guint8) NM_MAX(obj->weight, 1u));
+            }
+        }
         break;
     case NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY:
         nm_hash_update_vals(
@@ -8362,6 +8360,7 @@ nm_platform_ip4_route_cmp(const NMPlatformIP4Route *a,
 {
     NM_CMP_SELF(a, b);
     switch (cmp_type) {
+    case NM_PLATFORM_IP_ROUTE_CMP_TYPE_ECMP_ID:
     case NM_PLATFORM_IP_ROUTE_CMP_TYPE_WEAK_ID:
     case NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID:
         NM_CMP_FIELD_UNSAFE(a, b, table_any);
@@ -8372,17 +8371,14 @@ nm_platform_ip4_route_cmp(const NMPlatformIP4Route *a,
         NM_CMP_FIELD_UNSAFE(a, b, metric_any);
         NM_CMP_FIELD(a, b, metric);
         NM_CMP_FIELD(a, b, tos);
-        if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID) {
-            NM_CMP_FIELD(a, b, ifindex);
+        if (NM_IN_SET(cmp_type,
+                      NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID,
+                      NM_PLATFORM_IP_ROUTE_CMP_TYPE_ECMP_ID)) {
             NM_CMP_FIELD(a, b, type_coerced);
             NM_CMP_DIRECT(nmp_utils_ip_config_source_round_trip_rtprot(a->rt_source),
                           nmp_utils_ip_config_source_round_trip_rtprot(b->rt_source));
             NM_CMP_DIRECT(_ip_route_scope_inv_get_normalized(a),
                           _ip_route_scope_inv_get_normalized(b));
-            NM_CMP_DIRECT(nm_platform_ip4_route_get_n_nexthops(a),
-                          nm_platform_ip4_route_get_n_nexthops(b));
-            NM_CMP_FIELD(a, b, gateway);
-            NM_CMP_DIRECT(NM_MAX(a->weight, 1u), NM_MAX(b->weight, 1u));
             NM_CMP_FIELD(a, b, mss);
             NM_CMP_FIELD(a, b, pref_src);
             NM_CMP_FIELD(a, b, window);
@@ -8399,6 +8395,13 @@ nm_platform_ip4_route_cmp(const NMPlatformIP4Route *a,
             NM_CMP_FIELD_UNSAFE(a, b, lock_initrwnd);
             NM_CMP_FIELD_UNSAFE(a, b, lock_mtu);
             NM_CMP_FIELD_UNSAFE(a, b, lock_mss);
+            if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID) {
+                NM_CMP_FIELD(a, b, ifindex);
+                NM_CMP_FIELD(a, b, gateway);
+                NM_CMP_DIRECT(NM_MAX(a->weight, 1u), NM_MAX(b->weight, 1u));
+                NM_CMP_DIRECT(nm_platform_ip4_route_get_n_nexthops(a),
+                              nm_platform_ip4_route_get_n_nexthops(b));
+            }
         }
         break;
     case NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY:
@@ -8484,6 +8487,9 @@ nm_platform_ip6_route_hash_update(const NMPlatformIP6Route *obj,
             obj->src_plen,
             NM_HASH_COMBINE_BOOLS(guint8, obj->metric_any, obj->table_any));
         break;
+    case NM_PLATFORM_IP_ROUTE_CMP_TYPE_ECMP_ID:
+        nm_assert_not_reached();
+        /* fall-through */
     case NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID:
         nm_hash_update_vals(
             h,
@@ -8576,6 +8582,9 @@ nm_platform_ip6_route_cmp(const NMPlatformIP6Route *a,
 {
     NM_CMP_SELF(a, b);
     switch (cmp_type) {
+    case NM_PLATFORM_IP_ROUTE_CMP_TYPE_ECMP_ID:
+        nm_assert_not_reached();
+        /* fall-through */
     case NM_PLATFORM_IP_ROUTE_CMP_TYPE_WEAK_ID:
     case NM_PLATFORM_IP_ROUTE_CMP_TYPE_ID:
         NM_CMP_FIELD_UNSAFE(a, b, table_any);
