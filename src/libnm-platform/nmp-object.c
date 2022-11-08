@@ -762,17 +762,23 @@ _vt_cmd_obj_dispose_lnk_wireguard(NMPObject *obj)
     _wireguard_clear(&obj->_lnk_wireguard);
 }
 
+static gsize
+_NMP_OBJECT_STRUCT_SIZE(const NMPClass *klass)
+{
+    nm_assert(klass);
+    nm_assert(klass->sizeof_public > 0);
+    nm_assert(klass->sizeof_public <= klass->sizeof_data);
+
+    return klass->sizeof_data + G_STRUCT_OFFSET(NMPObject, object);
+}
+
 static NMPObject *
 _nmp_object_new_from_class(const NMPClass *klass)
 {
     NMPObject *obj;
 
-    nm_assert(klass);
-    nm_assert(klass->sizeof_data > 0);
-    nm_assert(klass->sizeof_public > 0 && klass->sizeof_public <= klass->sizeof_data);
-
-    obj         = g_slice_alloc0(klass->sizeof_data + G_STRUCT_OFFSET(NMPObject, object));
-    obj->_class = klass;
+    obj                    = g_slice_alloc0(_NMP_OBJECT_STRUCT_SIZE(klass));
+    obj->_class            = klass;
     obj->parent._ref_count = 1;
     return obj;
 }
@@ -805,9 +811,8 @@ static NMPObject *
 _nmp_object_stackinit_from_class(NMPObject *obj, const NMPClass *klass)
 {
     nm_assert(obj);
-    nm_assert(klass);
 
-    memset(obj, 0, sizeof(NMPObject));
+    memset(obj, 0, _NMP_OBJECT_STRUCT_SIZE(klass));
     obj->_class            = klass;
     obj->parent._ref_count = NM_OBJ_REF_COUNT_STACKINIT;
     return obj;
@@ -907,30 +912,33 @@ nmp_object_to_string(const NMPObject      *obj,
 
     klass = NMP_OBJECT_GET_CLASS(obj);
 
-    if (klass->cmd_obj_to_string)
+    if (klass->cmd_obj_to_string) {
+        nm_assert(!klass->cmd_plobj_to_string);
+        nm_assert(!klass->cmd_plobj_to_string_id);
         return klass->cmd_obj_to_string(obj, to_string_mode, buf, buf_size);
+    }
+
+    nm_assert(klass->cmd_plobj_to_string);
 
     switch (to_string_mode) {
     case NMP_OBJECT_TO_STRING_ID:
-        if (!klass->cmd_plobj_to_string_id) {
-            g_snprintf(buf, buf_size, NM_HASH_OBFUSCATE_PTR_FMT, NM_HASH_OBFUSCATE_PTR(obj));
-            return buf;
-        }
-        return klass->cmd_plobj_to_string_id(&obj->object, buf, buf_size);
+        if (!klass->cmd_plobj_to_string_id)
+            return klass->cmd_plobj_to_string_id(&obj->object, buf, buf_size);
+        g_snprintf(buf, buf_size, NM_HASH_OBFUSCATE_PTR_FMT, NM_HASH_OBFUSCATE_PTR(obj));
+        return buf;
     case NMP_OBJECT_TO_STRING_ALL:
-        g_snprintf(
-            buf,
-            buf_size,
-            "[%s," NM_HASH_OBFUSCATE_PTR_FMT ",%u,%calive,%cvisible; %s]",
-            klass->obj_type_name,
-            NM_HASH_OBFUSCATE_PTR(obj),
-            obj->parent._ref_count,
-            nmp_object_is_alive(obj) ? '+' : '-',
-            nmp_object_is_visible(obj) ? '+' : '-',
-            NMP_OBJECT_GET_CLASS(obj)->cmd_plobj_to_string(&obj->object, buf2, sizeof(buf2)));
+        g_snprintf(buf,
+                   buf_size,
+                   "[%s," NM_HASH_OBFUSCATE_PTR_FMT ",%u,%calive,%cvisible; %s]",
+                   klass->obj_type_name,
+                   NM_HASH_OBFUSCATE_PTR(obj),
+                   obj->parent._ref_count,
+                   nmp_object_is_alive(obj) ? '+' : '-',
+                   nmp_object_is_visible(obj) ? '+' : '-',
+                   klass->cmd_plobj_to_string(&obj->object, buf2, sizeof(buf2)));
         return buf;
     case NMP_OBJECT_TO_STRING_PUBLIC:
-        NMP_OBJECT_GET_CLASS(obj)->cmd_plobj_to_string(&obj->object, buf, buf_size);
+        klass->cmd_plobj_to_string(&obj->object, buf, buf_size);
         return buf;
     default:
         g_return_val_if_reached("ERROR");
@@ -948,7 +956,8 @@ _vt_cmd_obj_to_string_link(const NMPObject      *obj,
 
     switch (to_string_mode) {
     case NMP_OBJECT_TO_STRING_ID:
-        return klass->cmd_plobj_to_string_id(&obj->object, buf, buf_size);
+        g_snprintf(buf, buf_size, "%d", obj->link.ifindex);
+        return buf;
     case NMP_OBJECT_TO_STRING_ALL:
         nm_strbuf_append(&b,
                          &buf_size,
@@ -961,7 +970,7 @@ _vt_cmd_obj_to_string_link(const NMPObject      *obj,
                          nmp_object_is_visible(obj) ? '+' : '-',
                          obj->_link.netlink.is_in_netlink ? '+' : '-',
                          NM_HASH_OBFUSCATE_PTR(obj->_link.udev.device));
-        NMP_OBJECT_GET_CLASS(obj)->cmd_plobj_to_string(&obj->object, b, buf_size);
+        nm_platform_link_to_string(&obj->link, b, buf_size);
         nm_strbuf_seek_end(&b, &buf_size);
         if (obj->_link.netlink.lnk) {
             nm_strbuf_append_str(&b, &buf_size, "; ");
@@ -971,7 +980,7 @@ _vt_cmd_obj_to_string_link(const NMPObject      *obj,
         nm_strbuf_append_c(&b, &buf_size, ']');
         return buf;
     case NMP_OBJECT_TO_STRING_PUBLIC:
-        NMP_OBJECT_GET_CLASS(obj)->cmd_plobj_to_string(&obj->object, b, buf_size);
+        nm_platform_link_to_string(&obj->link, b, buf_size);
         if (obj->_link.netlink.lnk) {
             nm_strbuf_seek_end(&b, &buf_size);
             nm_strbuf_append_str(&b, &buf_size, "; ");
@@ -1013,7 +1022,7 @@ _vt_cmd_obj_to_string_lnk_vlan(const NMPObject      *obj,
                    nmp_object_to_string(obj, NMP_OBJECT_TO_STRING_PUBLIC, buf2, sizeof(buf2)));
         return buf;
     case NMP_OBJECT_TO_STRING_PUBLIC:
-        NMP_OBJECT_GET_CLASS(obj)->cmd_plobj_to_string(&obj->object, buf, buf_size);
+        nm_platform_lnk_vlan_to_string(&obj->lnk_vlan, buf, buf_size);
 
         b = buf;
         l = strlen(b);
@@ -1092,8 +1101,7 @@ _vt_cmd_obj_to_string_lnk_wireguard(const NMPObject      *obj,
 
         return buf;
     case NMP_OBJECT_TO_STRING_PUBLIC:
-        NMP_OBJECT_GET_CLASS(obj)->cmd_plobj_to_string(&obj->object, buf, buf_size);
-
+        nm_platform_lnk_wireguard_to_string(&obj->lnk_wireguard, buf, buf_size);
         return buf;
     default:
         g_return_val_if_reached("ERROR");
@@ -1113,8 +1121,6 @@ _vt_cmd_obj_to_string_lnk_wireguard(const NMPObject      *obj,
         return buf;                                                                       \
     }                                                                                     \
     _NM_DUMMY_STRUCT_FOR_TRAILING_SEMICOLON
-
-_vt_cmd_plobj_to_string_id(link, NMPlatformLink, "%d", obj->ifindex);
 
 _vt_cmd_plobj_to_string_id(
     ip4_address,
@@ -1139,7 +1145,7 @@ _vt_cmd_plobj_to_string_id(qdisc, NMPlatformQdisc, "%d: %d", obj->ifindex, obj->
 _vt_cmd_plobj_to_string_id(tfilter, NMPlatformTfilter, "%d: %d", obj->ifindex, obj->parent);
 
 void
-nmp_object_hash_update(const NMPObject *obj, NMHashState *h)
+nmp_object_hash_update_full(const NMPObject *obj, gboolean for_id, NMHashState *h)
 {
     const NMPClass *klass;
 
@@ -1147,19 +1153,43 @@ nmp_object_hash_update(const NMPObject *obj, NMHashState *h)
 
     klass = NMP_OBJECT_GET_CLASS(obj);
 
+    nm_assert((!!klass->cmd_plobj_id_cmp) == (!!klass->cmd_plobj_id_hash_update));
+    nm_assert((!!klass->cmd_obj_cmp) == (!!klass->cmd_obj_hash_update));
+    nm_assert((!!klass->cmd_plobj_cmp) == (!!klass->cmd_plobj_hash_update));
+
+    nm_assert((!!klass->cmd_obj_hash_update) ^ (!!klass->cmd_plobj_hash_update));
+    nm_assert((!klass->cmd_obj_hash_update) || (!klass->cmd_plobj_id_hash_update));
+
     nm_hash_update_val(h, klass->obj_type);
+
+    if (for_id) {
+        if (klass->cmd_obj_hash_update)
+            klass->cmd_obj_hash_update(obj, TRUE, h);
+        else if (klass->cmd_plobj_id_hash_update)
+            klass->cmd_plobj_id_hash_update(&obj->object, h);
+        else {
+            /* The klass doesn't implement ID compare. It means, to use pointer
+             * equality. */
+            nm_hash_update_val(h, obj);
+        }
+        return;
+    }
+
     if (klass->cmd_obj_hash_update)
-        klass->cmd_obj_hash_update(obj, h);
-    else if (klass->cmd_plobj_hash_update)
-        klass->cmd_plobj_hash_update(&obj->object, h);
+        klass->cmd_obj_hash_update(obj, FALSE, h);
     else
-        nm_hash_update_val(h, obj);
+        klass->cmd_plobj_hash_update(&obj->object, h);
 }
 
 static void
-_vt_cmd_obj_hash_update_link(const NMPObject *obj, NMHashState *h)
+_vt_cmd_obj_hash_update_link(const NMPObject *obj, gboolean for_id, NMHashState *h)
 {
     nm_assert(NMP_OBJECT_GET_TYPE(obj) == NMP_OBJECT_TYPE_LINK);
+
+    if (for_id) {
+        nm_hash_update_val(h, obj->link.ifindex);
+        return;
+    }
 
     nm_platform_link_hash_update(&obj->link, h);
     nm_hash_update_vals(h, obj->_link.netlink.is_in_netlink, obj->_link.udev.device);
@@ -1168,9 +1198,14 @@ _vt_cmd_obj_hash_update_link(const NMPObject *obj, NMHashState *h)
 }
 
 static void
-_vt_cmd_obj_hash_update_lnk_vlan(const NMPObject *obj, NMHashState *h)
+_vt_cmd_obj_hash_update_lnk_vlan(const NMPObject *obj, gboolean for_id, NMHashState *h)
 {
     nm_assert(NMP_OBJECT_GET_TYPE(obj) == NMP_OBJECT_TYPE_LNK_VLAN);
+
+    if (for_id) {
+        nm_hash_update_val(h, obj);
+        return;
+    }
 
     nm_platform_lnk_vlan_hash_update(&obj->lnk_vlan, h);
     _vlan_xgress_qos_mappings_hash_update(obj->_lnk_vlan.n_ingress_qos_map,
@@ -1182,11 +1217,16 @@ _vt_cmd_obj_hash_update_lnk_vlan(const NMPObject *obj, NMHashState *h)
 }
 
 static void
-_vt_cmd_obj_hash_update_lnk_wireguard(const NMPObject *obj, NMHashState *h)
+_vt_cmd_obj_hash_update_lnk_wireguard(const NMPObject *obj, gboolean for_id, NMHashState *h)
 {
     guint i;
 
     nm_assert(NMP_OBJECT_GET_TYPE(obj) == NMP_OBJECT_TYPE_LNK_WIREGUARD);
+
+    if (for_id) {
+        nm_hash_update_val(h, obj);
+        return;
+    }
 
     nm_platform_lnk_wireguard_hash_update(&obj->lnk_wireguard, h);
 
@@ -1198,47 +1238,83 @@ _vt_cmd_obj_hash_update_lnk_wireguard(const NMPObject *obj, NMHashState *h)
 int
 nmp_object_cmp_full(const NMPObject *obj1, const NMPObject *obj2, NMPObjectCmpFlags flags)
 {
-    const NMPClass *klass1;
+    const NMPClass *klass;
     const NMPClass *klass2;
     NMPObject       obj_stackcopy;
+
+    nm_assert(
+        !NM_FLAGS_ANY(flags, ~(NMP_OBJECT_CMP_FLAGS_ID | NMP_OBJECT_CMP_FLAGS_IGNORE_IFINDEX)));
+
+    /* The ID flag (currently) cannot be combined with other flags. That's partly because
+     * it's not implemented, but also because some objects use only pointer equality. So it's
+     * not clear how that combines with other flags (well, they'd be ignored). */
+    nm_assert(!NM_FLAGS_HAS(flags, NMP_OBJECT_CMP_FLAGS_ID) || flags == NMP_OBJECT_CMP_FLAGS_ID);
 
     NM_CMP_SELF(obj1, obj2);
 
     g_return_val_if_fail(NMP_OBJECT_IS_VALID(obj1), -1);
     g_return_val_if_fail(NMP_OBJECT_IS_VALID(obj2), 1);
 
-    klass1 = NMP_OBJECT_GET_CLASS(obj1);
+    klass = NMP_OBJECT_GET_CLASS(obj1);
+
+    nm_assert(klass);
+
+    nm_assert((!!klass->cmd_plobj_id_cmp) == (!!klass->cmd_plobj_id_hash_update));
+    nm_assert((!!klass->cmd_obj_cmp) == (!!klass->cmd_obj_hash_update));
+    nm_assert((!!klass->cmd_plobj_cmp) == (!!klass->cmd_plobj_hash_update));
+
+    nm_assert((!!klass->cmd_obj_cmp) ^ (!!klass->cmd_plobj_cmp));
+    nm_assert((!klass->cmd_obj_cmp) || (!klass->cmd_plobj_id_cmp));
+
     klass2 = NMP_OBJECT_GET_CLASS(obj2);
 
-    if (klass1 != klass2) {
-        nm_assert(klass1->obj_type != klass2->obj_type);
-        return klass1->obj_type < klass2->obj_type ? -1 : 1;
+    if (klass != klass2) {
+        nm_assert(klass2);
+        NM_CMP_DIRECT(klass->obj_type, klass2->obj_type);
+        return nm_assert_unreachable_val(0);
+    }
+
+    if (NM_FLAGS_HAS(flags, NMP_OBJECT_CMP_FLAGS_ID)) {
+        if (klass->cmd_obj_cmp)
+            return klass->cmd_obj_cmp(obj1, obj2, TRUE);
+        if (klass->cmd_plobj_id_cmp)
+            return klass->cmd_plobj_id_cmp(&obj1->object, &obj2->object);
+
+        /* the klass doesn't implement ID cmp(). That means, different objects
+         * never compare equal, but the cmp() according to their pointer value. */
+        NM_CMP_DIRECT_PTR(obj1, obj2);
+        return nm_assert_unreachable_val(0);
     }
 
     if (NM_FLAGS_HAS(flags, NMP_OBJECT_CMP_FLAGS_IGNORE_IFINDEX)) {
-        if (!NM_IN_SET(klass1,
-                       nmp_class_from_type(NMP_OBJECT_TYPE_IP4_ADDRESS),
-                       nmp_class_from_type(NMP_OBJECT_TYPE_IP6_ADDRESS),
-                       nmp_class_from_type(NMP_OBJECT_TYPE_IP4_ROUTE),
-                       nmp_class_from_type(NMP_OBJECT_TYPE_IP6_ROUTE))) {
+        if (!NM_IN_SET(klass->obj_type,
+                       NMP_OBJECT_TYPE_IP4_ADDRESS,
+                       NMP_OBJECT_TYPE_IP6_ADDRESS,
+                       NMP_OBJECT_TYPE_IP4_ROUTE,
+                       NMP_OBJECT_TYPE_IP6_ROUTE)) {
             /* This flag is currently only implemented for certain types.
              * That is, because we just create a stack copy, and that naive
              * approach only knows for types where we know that it works. */
         } else if (obj1->obj_with_ifindex.ifindex != obj2->obj_with_ifindex.ifindex) {
-            nmp_object_stackinit(&obj_stackcopy, klass1->obj_type, &obj2->obj_with_ifindex);
+            nmp_object_stackinit(&obj_stackcopy, klass->obj_type, &obj2->obj_with_ifindex);
             obj_stackcopy.obj_with_ifindex.ifindex = obj1->obj_with_ifindex.ifindex;
             obj2                                   = &obj_stackcopy;
         }
     }
 
-    if (klass1->cmd_obj_cmp)
-        return klass1->cmd_obj_cmp(obj1, obj2);
-    return klass1->cmd_plobj_cmp(&obj1->object, &obj2->object);
+    if (klass->cmd_obj_cmp)
+        return klass->cmd_obj_cmp(obj1, obj2, FALSE);
+    return klass->cmd_plobj_cmp(&obj1->object, &obj2->object);
 }
 
 static int
-_vt_cmd_obj_cmp_link(const NMPObject *obj1, const NMPObject *obj2)
+_vt_cmd_obj_cmp_link(const NMPObject *obj1, const NMPObject *obj2, gboolean for_id)
 {
+    if (for_id) {
+        NM_CMP_FIELD(obj1, obj2, link.ifindex);
+        return 0;
+    }
+
     NM_CMP_RETURN(nm_platform_link_cmp(&obj1->link, &obj2->link));
     NM_CMP_DIRECT(obj1->_link.netlink.is_in_netlink, obj2->_link.netlink.is_in_netlink);
     NM_CMP_RETURN(nmp_object_cmp(obj1->_link.netlink.lnk, obj2->_link.netlink.lnk));
@@ -1260,9 +1336,14 @@ _vt_cmd_obj_cmp_link(const NMPObject *obj1, const NMPObject *obj2)
 }
 
 static int
-_vt_cmd_obj_cmp_lnk_vlan(const NMPObject *obj1, const NMPObject *obj2)
+_vt_cmd_obj_cmp_lnk_vlan(const NMPObject *obj1, const NMPObject *obj2, gboolean for_id)
 {
     int c;
+
+    if (for_id) {
+        NM_CMP_DIRECT_PTR(obj1, obj2);
+        return nm_assert_unreachable_val(0);
+    }
 
     c = nm_platform_lnk_vlan_cmp(&obj1->lnk_vlan, &obj2->lnk_vlan);
     if (c)
@@ -1286,9 +1367,14 @@ _vt_cmd_obj_cmp_lnk_vlan(const NMPObject *obj1, const NMPObject *obj2)
 }
 
 static int
-_vt_cmd_obj_cmp_lnk_wireguard(const NMPObject *obj1, const NMPObject *obj2)
+_vt_cmd_obj_cmp_lnk_wireguard(const NMPObject *obj1, const NMPObject *obj2, gboolean for_id)
 {
     guint i;
+
+    if (for_id) {
+        NM_CMP_DIRECT_PTR(obj1, obj2);
+        return nm_assert_unreachable_val(0);
+    }
 
     NM_CMP_RETURN(nm_platform_lnk_wireguard_cmp(&obj1->lnk_wireguard, &obj2->lnk_wireguard));
 
@@ -1317,10 +1403,9 @@ nmp_object_copy(NMPObject *dst, const NMPObject *src, gboolean id_only)
 
         g_return_if_fail(klass == NMP_OBJECT_GET_CLASS(src));
 
-        if (id_only) {
-            if (klass->cmd_plobj_id_copy)
-                klass->cmd_plobj_id_copy(&dst->object, &src->object);
-        } else if (klass->cmd_obj_copy)
+        if (id_only && klass->cmd_plobj_id_copy)
+            klass->cmd_plobj_id_copy(&dst->object, &src->object);
+        else if (klass->cmd_obj_copy)
             klass->cmd_obj_copy(dst, src);
         else
             memcpy(&dst->object, &src->object, klass->sizeof_data);
@@ -1451,39 +1536,6 @@ nmp_object_clone(const NMPObject *obj, gboolean id_only)
     return dst;
 }
 
-int
-nmp_object_id_cmp(const NMPObject *obj1, const NMPObject *obj2)
-{
-    const NMPClass *klass, *klass2;
-
-    NM_CMP_SELF(obj1, obj2);
-
-    g_return_val_if_fail(NMP_OBJECT_IS_VALID(obj1), FALSE);
-    g_return_val_if_fail(NMP_OBJECT_IS_VALID(obj2), FALSE);
-
-    klass = NMP_OBJECT_GET_CLASS(obj1);
-    nm_assert(!klass->cmd_plobj_id_hash_update == !klass->cmd_plobj_id_cmp);
-
-    klass2 = NMP_OBJECT_GET_CLASS(obj2);
-    nm_assert(klass);
-    if (klass != klass2) {
-        nm_assert(klass2);
-        NM_CMP_DIRECT(klass->obj_type, klass2->obj_type);
-        /* resort to pointer comparison */
-        NM_CMP_DIRECT_PTR(klass, klass2);
-        return 0;
-    }
-
-    if (!klass->cmd_plobj_id_cmp) {
-        /* the klass doesn't implement ID cmp(). That means, different objects
-         * never compare equal, but the cmp() according to their pointer value. */
-        NM_CMP_DIRECT_PTR(obj1, obj2);
-        return 0;
-    }
-
-    return klass->cmd_plobj_id_cmp(&obj1->object, &obj2->object);
-}
-
 #define _vt_cmd_plobj_id_cmp(type, plat_type, cmd)                        \
     static int _vt_cmd_plobj_id_cmp_##type(const NMPlatformObject *_obj1, \
                                            const NMPlatformObject *_obj2) \
@@ -1498,8 +1550,6 @@ nmp_object_id_cmp(const NMPObject *obj1, const NMPObject *obj2)
         return 0;                                                         \
     }                                                                     \
     _NM_DUMMY_STRUCT_FOR_TRAILING_SEMICOLON
-
-_vt_cmd_plobj_id_cmp(link, NMPlatformLink, { NM_CMP_FIELD(obj1, obj2, ifindex); });
 
 static int
 _vt_cmd_plobj_id_cmp_ip4_address(const NMPlatformObject *obj1, const NMPlatformObject *obj2)
@@ -1582,28 +1632,6 @@ _vt_cmd_plobj_id_cmp(mptcp_addr, NMPlatformMptcpAddr, {
     NM_CMP_FIELD(obj1, obj2, port);
 });
 
-void
-nmp_object_id_hash_update(const NMPObject *obj, NMHashState *h)
-{
-    const NMPClass *klass;
-
-    g_return_if_fail(NMP_OBJECT_IS_VALID(obj));
-
-    klass = NMP_OBJECT_GET_CLASS(obj);
-
-    nm_assert(!klass->cmd_plobj_id_hash_update == !klass->cmd_plobj_id_cmp);
-
-    if (!klass->cmd_plobj_id_hash_update) {
-        /* The klass doesn't implement ID compare. It means, to use pointer
-         * equality. */
-        nm_hash_update_val(h, obj);
-        return;
-    }
-
-    nm_hash_update_val(h, klass->obj_type);
-    klass->cmd_plobj_id_hash_update(&obj->object, h);
-}
-
 guint
 nmp_object_id_hash(const NMPObject *obj)
 {
@@ -1626,8 +1654,6 @@ nmp_object_id_hash(const NMPObject *obj)
         }                                                                                         \
     }                                                                                             \
     _NM_DUMMY_STRUCT_FOR_TRAILING_SEMICOLON
-
-_vt_cmd_plobj_id_hash_update(link, NMPlatformLink, { nm_hash_update_val(h, obj->ifindex); });
 
 _vt_cmd_plobj_id_hash_update(ip4_address, NMPlatformIP4Address, {
     nm_hash_update_vals(
@@ -1859,7 +1885,7 @@ _vt_dedup_obj_destroy(NMDedupMultiObj *obj)
     klass = o->_class;
     if (klass->cmd_obj_dispose)
         klass->cmd_obj_dispose(o);
-    g_slice_free1(klass->sizeof_data + G_STRUCT_OFFSET(NMPObject, object), o);
+    g_slice_free1(_NMP_OBJECT_STRUCT_SIZE(klass), o);
 }
 
 static const NMDedupMultiObj *
@@ -3130,29 +3156,23 @@ typedef int (*CmdPlobjCmpFunc)(const NMPlatformObject *obj1, const NMPlatformObj
 const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
     [NMP_OBJECT_TYPE_LINK - 1] =
         {
-            .parent                   = DEDUP_MULTI_OBJ_CLASS_INIT(),
-            .obj_type                 = NMP_OBJECT_TYPE_LINK,
-            .sizeof_data              = sizeof(NMPObjectLink),
-            .sizeof_public            = sizeof(NMPlatformLink),
-            .obj_type_name            = "link",
-            .rtm_gettype              = RTM_GETLINK,
-            .signal_type_id           = NM_PLATFORM_SIGNAL_ID_LINK,
-            .signal_type              = NM_PLATFORM_SIGNAL_LINK_CHANGED,
-            .supported_cache_ids      = _supported_cache_ids_link,
-            .cmd_obj_hash_update      = _vt_cmd_obj_hash_update_link,
-            .cmd_obj_cmp              = _vt_cmd_obj_cmp_link,
-            .cmd_obj_copy             = _vt_cmd_obj_copy_link,
-            .cmd_obj_dispose          = _vt_cmd_obj_dispose_link,
-            .cmd_obj_is_alive         = _vt_cmd_obj_is_alive_link,
-            .cmd_obj_is_visible       = _vt_cmd_obj_is_visible_link,
-            .cmd_obj_to_string        = _vt_cmd_obj_to_string_link,
-            .cmd_plobj_id_copy        = _vt_cmd_plobj_id_copy_link,
-            .cmd_plobj_id_cmp         = _vt_cmd_plobj_id_cmp_link,
-            .cmd_plobj_id_hash_update = _vt_cmd_plobj_id_hash_update_link,
-            .cmd_plobj_to_string_id   = _vt_cmd_plobj_to_string_id_link,
-            .cmd_plobj_to_string      = (CmdPlobjToStringFunc) nm_platform_link_to_string,
-            .cmd_plobj_hash_update    = (CmdPlobjHashUpdateFunc) nm_platform_link_hash_update,
-            .cmd_plobj_cmp            = (CmdPlobjCmpFunc) nm_platform_link_cmp,
+            .parent              = DEDUP_MULTI_OBJ_CLASS_INIT(),
+            .obj_type            = NMP_OBJECT_TYPE_LINK,
+            .sizeof_data         = sizeof(NMPObjectLink),
+            .sizeof_public       = sizeof(NMPlatformLink),
+            .obj_type_name       = "link",
+            .rtm_gettype         = RTM_GETLINK,
+            .signal_type_id      = NM_PLATFORM_SIGNAL_ID_LINK,
+            .signal_type         = NM_PLATFORM_SIGNAL_LINK_CHANGED,
+            .supported_cache_ids = _supported_cache_ids_link,
+            .cmd_obj_hash_update = _vt_cmd_obj_hash_update_link,
+            .cmd_obj_cmp         = _vt_cmd_obj_cmp_link,
+            .cmd_obj_copy        = _vt_cmd_obj_copy_link,
+            .cmd_obj_dispose     = _vt_cmd_obj_dispose_link,
+            .cmd_obj_is_alive    = _vt_cmd_obj_is_alive_link,
+            .cmd_obj_is_visible  = _vt_cmd_obj_is_visible_link,
+            .cmd_obj_to_string   = _vt_cmd_obj_to_string_link,
+            .cmd_plobj_id_copy   = _vt_cmd_plobj_id_copy_link,
         },
     [NMP_OBJECT_TYPE_IP4_ADDRESS - 1] =
         {
@@ -3452,20 +3472,17 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
         },
     [NMP_OBJECT_TYPE_LNK_VLAN - 1] =
         {
-            .parent                = DEDUP_MULTI_OBJ_CLASS_INIT(),
-            .obj_type              = NMP_OBJECT_TYPE_LNK_VLAN,
-            .sizeof_data           = sizeof(NMPObjectLnkVlan),
-            .sizeof_public         = sizeof(NMPlatformLnkVlan),
-            .obj_type_name         = "vlan",
-            .lnk_link_type         = NM_LINK_TYPE_VLAN,
-            .cmd_obj_hash_update   = _vt_cmd_obj_hash_update_lnk_vlan,
-            .cmd_obj_cmp           = _vt_cmd_obj_cmp_lnk_vlan,
-            .cmd_obj_copy          = _vt_cmd_obj_copy_lnk_vlan,
-            .cmd_obj_dispose       = _vt_cmd_obj_dispose_lnk_vlan,
-            .cmd_obj_to_string     = _vt_cmd_obj_to_string_lnk_vlan,
-            .cmd_plobj_to_string   = (CmdPlobjToStringFunc) nm_platform_lnk_vlan_to_string,
-            .cmd_plobj_hash_update = (CmdPlobjHashUpdateFunc) nm_platform_lnk_vlan_hash_update,
-            .cmd_plobj_cmp         = (CmdPlobjCmpFunc) nm_platform_lnk_vlan_cmp,
+            .parent              = DEDUP_MULTI_OBJ_CLASS_INIT(),
+            .obj_type            = NMP_OBJECT_TYPE_LNK_VLAN,
+            .sizeof_data         = sizeof(NMPObjectLnkVlan),
+            .sizeof_public       = sizeof(NMPlatformLnkVlan),
+            .obj_type_name       = "vlan",
+            .lnk_link_type       = NM_LINK_TYPE_VLAN,
+            .cmd_obj_hash_update = _vt_cmd_obj_hash_update_lnk_vlan,
+            .cmd_obj_cmp         = _vt_cmd_obj_cmp_lnk_vlan,
+            .cmd_obj_copy        = _vt_cmd_obj_copy_lnk_vlan,
+            .cmd_obj_dispose     = _vt_cmd_obj_dispose_lnk_vlan,
+            .cmd_obj_to_string   = _vt_cmd_obj_to_string_lnk_vlan,
         },
     [NMP_OBJECT_TYPE_LNK_VRF - 1] =
         {
@@ -3493,20 +3510,17 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
         },
     [NMP_OBJECT_TYPE_LNK_WIREGUARD - 1] =
         {
-            .parent                = DEDUP_MULTI_OBJ_CLASS_INIT(),
-            .obj_type              = NMP_OBJECT_TYPE_LNK_WIREGUARD,
-            .sizeof_data           = sizeof(NMPObjectLnkWireGuard),
-            .sizeof_public         = sizeof(NMPlatformLnkWireGuard),
-            .obj_type_name         = "wireguard",
-            .lnk_link_type         = NM_LINK_TYPE_WIREGUARD,
-            .cmd_obj_hash_update   = _vt_cmd_obj_hash_update_lnk_wireguard,
-            .cmd_obj_cmp           = _vt_cmd_obj_cmp_lnk_wireguard,
-            .cmd_obj_copy          = _vt_cmd_obj_copy_lnk_wireguard,
-            .cmd_obj_dispose       = _vt_cmd_obj_dispose_lnk_wireguard,
-            .cmd_obj_to_string     = _vt_cmd_obj_to_string_lnk_wireguard,
-            .cmd_plobj_to_string   = (CmdPlobjToStringFunc) nm_platform_lnk_wireguard_to_string,
-            .cmd_plobj_hash_update = (CmdPlobjHashUpdateFunc) nm_platform_lnk_wireguard_hash_update,
-            .cmd_plobj_cmp         = (CmdPlobjCmpFunc) nm_platform_lnk_wireguard_cmp,
+            .parent              = DEDUP_MULTI_OBJ_CLASS_INIT(),
+            .obj_type            = NMP_OBJECT_TYPE_LNK_WIREGUARD,
+            .sizeof_data         = sizeof(NMPObjectLnkWireGuard),
+            .sizeof_public       = sizeof(NMPlatformLnkWireGuard),
+            .obj_type_name       = "wireguard",
+            .lnk_link_type       = NM_LINK_TYPE_WIREGUARD,
+            .cmd_obj_hash_update = _vt_cmd_obj_hash_update_lnk_wireguard,
+            .cmd_obj_cmp         = _vt_cmd_obj_cmp_lnk_wireguard,
+            .cmd_obj_copy        = _vt_cmd_obj_copy_lnk_wireguard,
+            .cmd_obj_dispose     = _vt_cmd_obj_dispose_lnk_wireguard,
+            .cmd_obj_to_string   = _vt_cmd_obj_to_string_lnk_wireguard,
         },
     [NMP_OBJECT_TYPE_LNK_BOND - 1] =
         {
