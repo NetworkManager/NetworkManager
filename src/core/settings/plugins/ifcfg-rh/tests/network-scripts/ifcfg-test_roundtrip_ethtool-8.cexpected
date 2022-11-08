@@ -1,7 +1,7 @@
 TYPE=Ethernet
 PROXY_METHOD=none
 BROWSER_ONLY=no
-ETHTOOL_OPTS="autoneg on ; -A net0 pause-autoneg off"
+ETHTOOL_OPTS="autoneg on ; -A net0"
 BOOTPROTO=dhcp
 DEFROUTE=yes
 IPV4_FAILURE_FATAL=no

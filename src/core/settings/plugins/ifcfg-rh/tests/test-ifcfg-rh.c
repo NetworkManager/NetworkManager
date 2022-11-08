@@ -3540,8 +3540,6 @@ test_roundtrip_ethtool(void)
     g_object_set(s_wired, NM_SETTING_WIRED_AUTO_NEGOTIATE, TRUE, NULL);
 
     s_ethtool = _nm_connection_new_setting(connection, NM_TYPE_SETTING_ETHTOOL);
-    /* FIXME: ensure proper round-trip with no ethtool settings set. */
-    nm_setting_option_set_boolean(s_ethtool, NM_ETHTOOL_OPTNAME_PAUSE_AUTONEG, FALSE);
     _writer_new_connec_exp(connection,
                            TEST_SCRATCH_DIR,
                            TEST_IFCFG_DIR "/ifcfg-test_roundtrip_ethtool-8.cexpected",
@@ -3644,11 +3642,6 @@ test_roundtrip_ethtool(void)
             nm_setting_option_set(s_ethtool,
                                   NM_ETHTOOL_OPTNAME_PAUSE_AUTONEG,
                                   nmtst_get_rand_bool() ? g_variant_new_boolean(FALSE) : NULL);
-        }
-
-        if (!nm_setting_option_get_all_names(s_ethtool, NULL)) {
-            // FIXME.
-            continue;
         }
 
 check_roundtrip:
