@@ -21,6 +21,8 @@ const NMEthtoolData *nm_ethtool_data_get_by_optname(const char *optname);
 
 NMEthtoolType nm_ethtool_id_to_type(NMEthtoolID id);
 
+const GVariantType *nm_ethtool_id_get_variant_type(NMEthtoolID ethtool_id);
+
 /****************************************************************************/
 
 static inline NMEthtoolID

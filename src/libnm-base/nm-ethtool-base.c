@@ -294,3 +294,15 @@ nm_ethtool_id_to_type(NMEthtoolID id)
 
     return NM_ETHTOOL_TYPE_UNKNOWN;
 }
+
+const GVariantType *
+nm_ethtool_id_get_variant_type(NMEthtoolID ethtool_id)
+{
+    if (nm_ethtool_id_is_feature(ethtool_id) || nm_ethtool_id_is_pause(ethtool_id))
+        return G_VARIANT_TYPE_BOOLEAN;
+
+    if (nm_ethtool_id_is_coalesce(ethtool_id) || nm_ethtool_id_is_ring(ethtool_id))
+        return G_VARIANT_TYPE_UINT32;
+
+    return NULL;
+}
