@@ -3544,7 +3544,7 @@ test_roundtrip_ethtool(void)
 
     s_ethtool = _nm_connection_new_setting(connection, NM_TYPE_SETTING_ETHTOOL);
     nm_setting_option_set_boolean(s_ethtool, NM_ETHTOOL_OPTNAME_PAUSE_AUTONEG, FALSE);
-    //FIXME: nm_setting_option_set_uint32(s_ethtool, NM_ETHTOOL_OPTNAME_RING_RX, 512);
+    nm_setting_option_set_uint32(s_ethtool, NM_ETHTOOL_OPTNAME_RING_RX, 512);
     _writer_new_connec_exp(connection,
                            TEST_SCRATCH_DIR,
                            TEST_IFCFG_DIR "/ifcfg-test_roundtrip_ethtool-9.cexpected",
@@ -3602,8 +3602,6 @@ test_roundtrip_ethtool(void)
         for (i = 0; i < (int) G_N_ELEMENTS(ethtool_ids); i++)
             ethtool_ids[i] = i;
         nmtst_rand_perm(NULL, ethtool_ids, NULL, sizeof(ethtool_ids[0]), G_N_ELEMENTS(ethtool_ids));
-
-        l = 1; /* FIXME */
 
         for (i = 0; i < l; i++) {
             NMEthtoolID         ethtool_id = ethtool_ids[i];
