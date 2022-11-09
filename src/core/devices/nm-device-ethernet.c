@@ -1354,6 +1354,11 @@ wake_on_lan_enable(NMDevice *device)
     if (s_wired) {
         wol      = nm_setting_wired_get_wake_on_lan(s_wired);
         password = nm_setting_wired_get_wake_on_lan_password(s_wired);
+
+        /* NMSettingWired does not reject invalid flags. Filter them out here. */
+        wol = (wol
+               & (NM_SETTING_WIRED_WAKE_ON_LAN_ALL | NM_SETTING_WIRED_WAKE_ON_LAN_EXCLUSIVE_FLAGS));
+
         if (wol != NM_SETTING_WIRED_WAKE_ON_LAN_DEFAULT)
             goto found;
     }
@@ -1370,9 +1375,14 @@ wake_on_lan_enable(NMDevice *device)
         nm_log_dbg(LOGD_ETHER, "invalid default value %u for wake-on-lan", (guint) wol);
         wol = NM_SETTING_WIRED_WAKE_ON_LAN_DEFAULT;
     }
+
+    wol = wol & (NM_SETTING_WIRED_WAKE_ON_LAN_ALL | NM_SETTING_WIRED_WAKE_ON_LAN_EXCLUSIVE_FLAGS);
+
     if (wol != NM_SETTING_WIRED_WAKE_ON_LAN_DEFAULT)
         goto found;
+
     wol = NM_SETTING_WIRED_WAKE_ON_LAN_IGNORE;
+
 found:
     return nm_platform_ethtool_set_wake_on_lan(nm_device_get_platform(device),
                                                nm_device_get_ifindex(device),
