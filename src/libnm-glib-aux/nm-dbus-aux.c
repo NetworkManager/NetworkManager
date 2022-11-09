@@ -550,16 +550,18 @@ dbus_signal_meta_marshal(GClosure     *closure,
 {
     NMDBusSignalData *sd = marshal_data;
     const char       *signal_name;
-    GVariant         *parameters, *param;
+    GVariant         *parameters;
+    gs_free GValue   *closure_params_free = NULL;
     GValue           *closure_params;
-    gsize             n_params, i;
+    gsize             n_params;
+    gsize             i;
 
     g_return_if_fail(n_param_values == 4);
 
     signal_name = g_value_get_string(&param_values[2]);
     parameters  = g_value_get_variant(&param_values[3]);
 
-    if (strcmp(signal_name, sd->signal_name) != 0)
+    if (!nm_streq(signal_name, sd->signal_name))
         return;
 
     if (sd->signature) {
@@ -576,11 +578,13 @@ dbus_signal_meta_marshal(GClosure     *closure,
     } else
         n_params = 1;
 
-    closure_params = g_new0(GValue, n_params);
+    closure_params = nm_malloc0_maybe_a(240, sizeof(GValue) * n_params, &closure_params_free);
     g_value_init(&closure_params[0], G_TYPE_OBJECT);
     g_value_copy(&param_values[0], &closure_params[0]);
 
     for (i = 1; i < n_params; i++) {
+        gs_unref_variant GVariant *param = NULL;
+
         param = g_variant_get_child_value(parameters, i - 1);
         if (g_variant_is_of_type(param, G_VARIANT_TYPE("ay"))
             || g_variant_is_of_type(param, G_VARIANT_TYPE("aay"))) {
@@ -589,14 +593,12 @@ dbus_signal_meta_marshal(GClosure     *closure,
             g_value_set_variant(&closure_params[i], param);
         } else
             g_dbus_gvariant_to_gvalue(param, &closure_params[i]);
-        g_variant_unref(param);
     }
 
     g_cclosure_marshal_generic(closure, NULL, n_params, closure_params, invocation_hint, NULL);
 
     for (i = 0; i < n_params; i++)
         g_value_unset(&closure_params[i]);
-    g_free(closure_params);
 }
 
 /**
