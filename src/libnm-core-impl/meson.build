@@ -60,7 +60,6 @@ libnm_core_settings_sources = files(
 
 libnm_core_impl_sources = files(
   'nm-connection.c',
-  'nm-dbus-utils.c',
   'nm-errors.c',
   'nm-keyfile-utils.c',
   'nm-keyfile.c',

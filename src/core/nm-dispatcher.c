@@ -8,6 +8,7 @@
 
 #include "nm-dispatcher.h"
 
+#include "libnm-glib-aux/nm-dbus-aux.h"
 #include "libnm-core-aux-extern/nm-dispatcher-api.h"
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"

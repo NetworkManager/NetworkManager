@@ -1370,7 +1370,6 @@ src_libnm_core_impl_lib_c_settings_real = \
 src_libnm_core_impl_lib_c_real = \
 	$(src_libnm_core_impl_lib_c_settings_real) \
 	src/libnm-core-impl/nm-connection.c \
-	src/libnm-core-impl/nm-dbus-utils.c \
 	src/libnm-core-impl/nm-errors.c \
 	src/libnm-core-impl/nm-keyfile-utils.c \
 	src/libnm-core-impl/nm-keyfile.c \

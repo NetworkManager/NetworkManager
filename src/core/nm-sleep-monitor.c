@@ -11,6 +11,7 @@
 #include <sys/stat.h>
 #include <gio/gunixfdlist.h>
 
+#include "libnm-glib-aux/nm-dbus-aux.h"
 #include "libnm-core-intern/nm-core-internal.h"
 #include "NetworkManagerUtils.h"
 

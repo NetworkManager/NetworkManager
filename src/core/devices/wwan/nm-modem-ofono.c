@@ -7,6 +7,7 @@
 
 #include "nm-modem-ofono.h"
 
+#include "libnm-glib-aux/nm-dbus-aux.h"
 #include "libnm-core-intern/nm-core-internal.h"
 #include "libnm-glib-aux/nm-uuid.h"
 #include "devices/nm-device-private.h"
