@@ -414,6 +414,12 @@ _nm_dbus_error_is(GError *error, ...)
     gs_free char *dbus_error = NULL;
     const char   *name;
     va_list       ap;
+    gboolean      found = FALSE;
+
+    /* This should only be used for "foreign" D-Bus errors (eg, errors
+     * from BlueZ or wpa_supplicant). All NetworkManager D-Bus errors
+     * should be properly mapped by gdbus to one of the domains/codes in
+     * nm-errors.h. */
 
     dbus_error = g_dbus_error_get_remote_error(error);
     if (!dbus_error)
@@ -422,13 +428,13 @@ _nm_dbus_error_is(GError *error, ...)
     va_start(ap, error);
     while ((name = va_arg(ap, const char *))) {
         if (nm_streq(dbus_error, name)) {
-            va_end(ap);
-            return TRUE;
+            found = TRUE;
+            break;
         }
     }
     va_end(ap);
 
-    return FALSE;
+    return found;
 }
 
 /*****************************************************************************/
@@ -730,34 +736,4 @@ _nm_dbus_connection_call_finish(GDBusConnection    *dbus_connection,
     if (variant && !_nm_dbus_typecheck_response(variant, reply_type, error))
         nm_clear_pointer(&variant, g_variant_unref);
     return variant;
-}
-
-/**
- * _nm_dbus_error_has_name:
- * @error: (allow-none): a #GError, or %NULL
- * @dbus_error_name: a D-Bus error name
- *
- * Checks if @error is set and corresponds to the D-Bus error @dbus_error_name.
- *
- * This should only be used for "foreign" D-Bus errors (eg, errors
- * from BlueZ or wpa_supplicant). All NetworkManager D-Bus errors
- * should be properly mapped by gdbus to one of the domains/codes in
- * nm-errors.h.
- *
- * Returns: %TRUE or %FALSE
- */
-gboolean
-_nm_dbus_error_has_name(GError *error, const char *dbus_error_name)
-{
-    gboolean has_name = FALSE;
-
-    if (error && g_dbus_error_is_remote_error(error)) {
-        char *error_name;
-
-        error_name = g_dbus_error_get_remote_error(error);
-        has_name   = !g_strcmp0(error_name, dbus_error_name);
-        g_free(error_name);
-    }
-
-    return has_name;
 }

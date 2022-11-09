@@ -312,6 +312,4 @@ GVariant *_nm_dbus_connection_call_finish(GDBusConnection    *dbus_connection,
                                           const GVariantType *reply_type,
                                           GError            **error);
 
-gboolean _nm_dbus_error_has_name(GError *error, const char *dbus_error_name);
-
 #endif /* __NM_DBUS_AUX_H__ */

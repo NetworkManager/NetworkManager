@@ -429,7 +429,7 @@ dispatcher_done_cb(GObject *source, GAsyncResult *result, gpointer user_data)
     if (!ret) {
         NMLogLevel log_level = LOGL_DEBUG;
 
-        if (_nm_dbus_error_has_name(error, "org.freedesktop.systemd1.LoadFailed")) {
+        if (nm_dbus_error_is(error, "org.freedesktop.systemd1.LoadFailed")) {
             g_dbus_error_strip_remote_error(error);
             log_level = LOGL_WARN;
         }
