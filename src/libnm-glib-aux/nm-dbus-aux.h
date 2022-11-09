@@ -279,28 +279,34 @@ nm_g_variant_tuple_get_u(GVariant *v, guint32 *out_u)
 gboolean
 _nm_dbus_typecheck_response(GVariant *response, const GVariantType *reply_type, GError **error);
 
-gulong _nm_dbus_signal_connect_data(GDBusProxy         *proxy,
-                                    const char         *signal_name,
-                                    const GVariantType *signature,
-                                    GCallback           c_handler,
-                                    gpointer            data,
-                                    GClosureNotify      destroy_data,
-                                    GConnectFlags       connect_flags);
+gulong _nm_dbus_proxy_signal_connect_data(GDBusProxy         *proxy,
+                                          const char         *signal_name,
+                                          const GVariantType *signature,
+                                          GCallback           c_handler,
+                                          gpointer            data,
+                                          GClosureNotify      destroy_data,
+                                          GConnectFlags       connect_flags);
 
 /**
- * _nm_dbus_signal_connect:
+ * _nm_dbus_proxy_signal_connect:
  * @proxy: a #GDBusProxy
  * @signal_name: the D-Bus signal to connect to
  * @signature: the signal's type signature (must be a tuple)
  * @c_handler: the signal handler function
  * @data: (allow-none): data to pass to @c_handler
  *
- * Simplified version of _nm_dbus_signal_connect_data() with fewer arguments.
+ * Simplified version of _nm_dbus_proxy_signal_connect_data() with fewer arguments.
  *
  * Returns: the signal handler ID, as with _nm_signal_connect_data().
  */
-#define _nm_dbus_signal_connect(proxy, name, signature, handler, data) \
-    _nm_dbus_signal_connect_data(proxy, name, signature, handler, data, NULL, (GConnectFlags) 0)
+#define _nm_dbus_proxy_signal_connect(proxy, name, signature, handler, data) \
+    _nm_dbus_proxy_signal_connect_data(proxy,                                \
+                                       name,                                 \
+                                       signature,                            \
+                                       handler,                              \
+                                       data,                                 \
+                                       NULL,                                 \
+                                       (GConnectFlags) 0)
 
 GVariant *_nm_dbus_proxy_call_finish(GDBusProxy         *proxy,
                                      GAsyncResult       *res,

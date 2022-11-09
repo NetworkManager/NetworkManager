@@ -454,11 +454,11 @@ _sim_proxy_new_cb(GObject *source, GAsyncResult *result, gpointer user_data)
     priv->sim_proxy = proxy;
 
     /* Watch for custom ofono PropertyChanged signals */
-    _nm_dbus_signal_connect(priv->sim_proxy,
-                            "PropertyChanged",
-                            G_VARIANT_TYPE("(sv)"),
-                            G_CALLBACK(sim_property_changed),
-                            self);
+    _nm_dbus_proxy_signal_connect(priv->sim_proxy,
+                                  "PropertyChanged",
+                                  G_VARIANT_TYPE("(sv)"),
+                                  G_CALLBACK(sim_property_changed),
+                                  self);
 
     g_dbus_proxy_call(priv->sim_proxy,
                       "GetProperties",
@@ -834,11 +834,11 @@ _context_proxy_new_cb(GObject *source, GAsyncResult *result, gpointer user_data)
     _LOGD("recieved proxy for %s", g_dbus_proxy_get_object_path(proxy));
     octx->proxy = proxy;
 
-    _nm_dbus_signal_connect(proxy,
-                            "PropertyChanged",
-                            G_VARIANT_TYPE("(sv)"),
-                            G_CALLBACK(context_property_changed),
-                            octx);
+    _nm_dbus_proxy_signal_connect(proxy,
+                                  "PropertyChanged",
+                                  G_VARIANT_TYPE("(sv)"),
+                                  G_CALLBACK(context_property_changed),
+                                  octx);
 
     uuid = _generate_uuid(priv->imsi, g_dbus_proxy_get_object_path(proxy));
     g_hash_table_insert(priv->contexts, uuid, octx);
@@ -973,23 +973,23 @@ _connman_proxy_new_cb(GObject *source, GAsyncResult *result, gpointer user_data)
 
     priv->connman_proxy = proxy;
 
-    _nm_dbus_signal_connect(priv->connman_proxy,
-                            "PropertyChanged",
-                            G_VARIANT_TYPE("(sv)"),
-                            G_CALLBACK(connman_property_changed),
-                            self);
+    _nm_dbus_proxy_signal_connect(priv->connman_proxy,
+                                  "PropertyChanged",
+                                  G_VARIANT_TYPE("(sv)"),
+                                  G_CALLBACK(connman_property_changed),
+                                  self);
 
-    _nm_dbus_signal_connect(priv->connman_proxy,
-                            "ContextAdded",
-                            G_VARIANT_TYPE("(oa{sv})"),
-                            G_CALLBACK(connman_context_added),
-                            self);
+    _nm_dbus_proxy_signal_connect(priv->connman_proxy,
+                                  "ContextAdded",
+                                  G_VARIANT_TYPE("(oa{sv})"),
+                                  G_CALLBACK(connman_context_added),
+                                  self);
 
-    _nm_dbus_signal_connect(priv->connman_proxy,
-                            "ContextRemoved",
-                            G_VARIANT_TYPE("(o)"),
-                            G_CALLBACK(connman_context_removed),
-                            self);
+    _nm_dbus_proxy_signal_connect(priv->connman_proxy,
+                                  "ContextRemoved",
+                                  G_VARIANT_TYPE("(o)"),
+                                  G_CALLBACK(connman_context_removed),
+                                  self);
 
     g_dbus_proxy_call(priv->connman_proxy,
                       "GetProperties",
@@ -1576,11 +1576,11 @@ modem_proxy_new_cb(GObject *source, GAsyncResult *result, gpointer user_data)
 
     priv->modem_proxy = proxy;
 
-    _nm_dbus_signal_connect(priv->modem_proxy,
-                            "PropertyChanged",
-                            G_VARIANT_TYPE("(sv)"),
-                            G_CALLBACK(modem_property_changed),
-                            self);
+    _nm_dbus_proxy_signal_connect(priv->modem_proxy,
+                                  "PropertyChanged",
+                                  G_VARIANT_TYPE("(sv)"),
+                                  G_CALLBACK(modem_property_changed),
+                                  self);
 
     g_dbus_proxy_call(priv->modem_proxy,
                       "GetProperties",

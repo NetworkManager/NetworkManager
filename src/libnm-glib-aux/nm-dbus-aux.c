@@ -633,7 +633,7 @@ dbus_signal_meta_marshal(GClosure     *closure,
 }
 
 /**
- * _nm_dbus_signal_connect_data:
+ * _nm_dbus_proxy_signal_connect_data:
  * @proxy: a #GDBusProxy
  * @signal_name: the D-Bus signal to connect to
  * @signature: (allow-none): the signal's type signature (must be a tuple)
@@ -662,13 +662,13 @@ dbus_signal_meta_marshal(GClosure     *closure,
  *   g_signal_handlers_disconnect_by_data() will work correctly.
  */
 gulong
-_nm_dbus_signal_connect_data(GDBusProxy         *proxy,
-                             const char         *signal_name,
-                             const GVariantType *signature,
-                             GCallback           c_handler,
-                             gpointer            data,
-                             GClosureNotify      destroy_data,
-                             GConnectFlags       connect_flags)
+_nm_dbus_proxy_signal_connect_data(GDBusProxy         *proxy,
+                                   const char         *signal_name,
+                                   const GVariantType *signature,
+                                   GCallback           c_handler,
+                                   gpointer            data,
+                                   GClosureNotify      destroy_data,
+                                   GConnectFlags       connect_flags)
 {
     NMDBusSignalData *sd;
     GClosure         *closure;
