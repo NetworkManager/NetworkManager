@@ -40,10 +40,6 @@
     <setting name="6lowpan"
              gtype="NMSetting6Lowpan"
              >
-        <property name="name"
-                  dbus-type="s"
-                  gprop-type="gchararray"
-                  />
         <property name="parent"
                   dbus-type="s"
                   gprop-type="gchararray"
@@ -58,10 +54,6 @@
                   />
         <property name="dhcp-anycast-address"
                   dbus-type="ay"
-                  gprop-type="gchararray"
-                  />
-        <property name="name"
-                  dbus-type="s"
                   gprop-type="gchararray"
                   />
         <property name="ssid"
@@ -125,10 +117,6 @@
                   dbus-type="u"
                   gprop-type="guint"
                   />
-        <property name="name"
-                  dbus-type="s"
-                  gprop-type="gchararray"
-                  />
         <property name="powersave"
                   dbus-type="u"
                   gprop-type="guint"
@@ -188,10 +176,6 @@
                   gprop-type="NMSettingSecretFlags"
                   />
         <property name="leap-username"
-                  dbus-type="s"
-                  gprop-type="gchararray"
-                  />
-        <property name="name"
                   dbus-type="s"
                   gprop-type="gchararray"
                   />
@@ -315,10 +299,6 @@
                   gprop-type="GStrv"
                   />
         <property name="identity"
-                  dbus-type="s"
-                  gprop-type="gchararray"
-                  />
-        <property name="name"
                   dbus-type="s"
                   gprop-type="gchararray"
                   />
@@ -510,10 +490,6 @@
                   dbus-type="u"
                   gprop-type="guint"
                   />
-        <property name="name"
-                  dbus-type="s"
-                  gprop-type="gchararray"
-                  />
         <property name="port"
                   dbus-type="s"
                   gprop-type="gchararray"
@@ -547,10 +523,6 @@
              gtype="NMSettingAdsl"
              >
         <property name="encapsulation"
-                  dbus-type="s"
-                  gprop-type="gchararray"
-                  />
-        <property name="name"
                   dbus-type="s"
                   gprop-type="gchararray"
                   />
@@ -588,10 +560,6 @@
                   dbus-type="ay"
                   gprop-type="gchararray"
                   />
-        <property name="name"
-                  dbus-type="s"
-                  gprop-type="gchararray"
-                  />
         <property name="type"
                   dbus-type="s"
                   gprop-type="gchararray"
@@ -604,10 +572,6 @@
                   dbus-type="s"
                   dbus-deprecated="1"
                   />
-        <property name="name"
-                  dbus-type="s"
-                  gprop-type="gchararray"
-                  />
         <property name="options"
                   dbus-type="a{ss}"
                   gprop-type="GHashTable"
@@ -616,10 +580,6 @@
     <setting name="bond-port"
              gtype="NMSettingBondPort"
              >
-        <property name="name"
-                  dbus-type="s"
-                  gprop-type="gchararray"
-                  />
         <property name="queue-id"
                   dbus-type="u"
                   gprop-type="guint"
@@ -713,10 +673,6 @@
                   dbus-type="t"
                   gprop-type="guint64"
                   />
-        <property name="name"
-                  dbus-type="s"
-                  gprop-type="gchararray"
-                  />
         <property name="priority"
                   dbus-type="u"
                   gprop-type="guint"
@@ -753,10 +709,6 @@
                   dbus-type="b"
                   gprop-type="gboolean"
                   />
-        <property name="name"
-                  dbus-type="s"
-                  gprop-type="gchararray"
-                  />
         <property name="path-cost"
                   dbus-type="u"
                   gprop-type="guint"
@@ -776,10 +728,6 @@
         <property name="mtu"
                   dbus-type="u"
                   gprop-type="guint"
-                  />
-        <property name="name"
-                  dbus-type="s"
-                  gprop-type="gchararray"
                   />
         <property name="number"
                   dbus-type="s"
@@ -871,10 +819,6 @@
                   dbus-type="i"
                   gprop-type="gint"
                   />
-        <property name="name"
-                  dbus-type="s"
-                  gprop-type="gchararray"
-                  />
         <property name="permissions"
                   dbus-type="as"
                   gprop-type="GStrv"
@@ -951,10 +895,6 @@
                   dbus-type="i"
                   gprop-type="gint"
                   />
-        <property name="name"
-                  dbus-type="s"
-                  gprop-type="gchararray"
-                  />
         <property name="priority-bandwidth"
                   dbus-type="au"
                   gprop-type="GArray"
@@ -991,26 +931,14 @@
     <setting name="dummy"
              gtype="NMSettingDummy"
              >
-        <property name="name"
-                  dbus-type="s"
-                  gprop-type="gchararray"
-                  />
     </setting>
     <setting name="ethtool"
              gtype="NMSettingEthtool"
              >
-        <property name="name"
-                  dbus-type="s"
-                  gprop-type="gchararray"
-                  />
     </setting>
     <setting name="generic"
              gtype="NMSettingGeneric"
              >
-        <property name="name"
-                  dbus-type="s"
-                  gprop-type="gchararray"
-                  />
     </setting>
     <setting name="gsm"
              gtype="NMSettingGsm"
@@ -1038,10 +966,6 @@
         <property name="mtu"
                   dbus-type="u"
                   gprop-type="guint"
-                  />
-        <property name="name"
-                  dbus-type="s"
-                  gprop-type="gchararray"
                   />
         <property name="network-id"
                   dbus-type="s"
@@ -1100,10 +1024,6 @@
                   dbus-type="i"
                   gprop-type="NMTernary"
                   />
-        <property name="name"
-                  dbus-type="s"
-                  gprop-type="gchararray"
-                  />
         <property name="only-from-default"
                   dbus-type="i"
                   gprop-type="NMTernary"
@@ -1123,10 +1043,6 @@
         <property name="mtu"
                   dbus-type="u"
                   gprop-type="guint"
-                  />
-        <property name="name"
-                  dbus-type="s"
-                  gprop-type="gchararray"
                   />
         <property name="p-key"
                   dbus-type="i"
@@ -1171,10 +1087,6 @@
         <property name="mtu"
                   dbus-type="u"
                   gprop-type="guint"
-                  />
-        <property name="name"
-                  dbus-type="s"
-                  gprop-type="gchararray"
                   />
         <property name="output-key"
                   dbus-type="s"
@@ -1297,10 +1209,6 @@
                   gprop-type="gboolean"
                   />
         <property name="method"
-                  dbus-type="s"
-                  gprop-type="gchararray"
-                  />
-        <property name="name"
                   dbus-type="s"
                   gprop-type="gchararray"
                   />
@@ -1427,10 +1335,6 @@
                   dbus-type="u"
                   gprop-type="guint"
                   />
-        <property name="name"
-                  dbus-type="s"
-                  gprop-type="gchararray"
-                  />
         <property name="never-default"
                   dbus-type="b"
                   gprop-type="gboolean"
@@ -1492,10 +1396,6 @@
                   dbus-type="i"
                   gprop-type="gint"
                   />
-        <property name="name"
-                  dbus-type="s"
-                  gprop-type="gchararray"
-                  />
         <property name="parent"
                   dbus-type="s"
                   gprop-type="gchararray"
@@ -1519,10 +1419,6 @@
         <property name="mode"
                   dbus-type="u"
                   gprop-type="guint"
-                  />
-        <property name="name"
-                  dbus-type="s"
-                  gprop-type="gchararray"
                   />
         <property name="parent"
                   dbus-type="s"
@@ -1552,10 +1448,6 @@
                   dbus-type="as"
                   gprop-type="GStrv"
                   />
-        <property name="name"
-                  dbus-type="s"
-                  gprop-type="gchararray"
-                  />
         <property name="path"
                   dbus-type="as"
                   gprop-type="GStrv"
@@ -1575,10 +1467,6 @@
         <property name="mcast-snooping-enable"
                   dbus-type="b"
                   gprop-type="gboolean"
-                  />
-        <property name="name"
-                  dbus-type="s"
-                  gprop-type="gchararray"
                   />
         <property name="rstp-enable"
                   dbus-type="b"
@@ -1600,10 +1488,6 @@
                   dbus-type="u"
                   gprop-type="guint"
                   />
-        <property name="name"
-                  dbus-type="s"
-                  gprop-type="gchararray"
-                  />
     </setting>
     <setting name="ovs-external-ids"
              gtype="NMSettingOvsExternalIDs"
@@ -1612,18 +1496,10 @@
                   dbus-type="a{ss}"
                   gprop-type="GHashTable"
                   />
-        <property name="name"
-                  dbus-type="s"
-                  gprop-type="gchararray"
-                  />
     </setting>
     <setting name="ovs-interface"
              gtype="NMSettingOvsInterface"
              >
-        <property name="name"
-                  dbus-type="s"
-                  gprop-type="gchararray"
-                  />
         <property name="ofport-request"
                   dbus-type="u"
                   gprop-type="guint"
@@ -1636,10 +1512,6 @@
     <setting name="ovs-patch"
              gtype="NMSettingOvsPatch"
              >
-        <property name="name"
-                  dbus-type="s"
-                  gprop-type="gchararray"
-                  />
         <property name="peer"
                   dbus-type="s"
                   gprop-type="gchararray"
@@ -1661,10 +1533,6 @@
                   gprop-type="guint"
                   />
         <property name="lacp"
-                  dbus-type="s"
-                  gprop-type="gchararray"
-                  />
-        <property name="name"
                   dbus-type="s"
                   gprop-type="gchararray"
                   />
@@ -1707,10 +1575,6 @@
         <property name="mtu"
                   dbus-type="u"
                   gprop-type="guint"
-                  />
-        <property name="name"
-                  dbus-type="s"
-                  gprop-type="gchararray"
                   />
         <property name="no-vj-comp"
                   dbus-type="b"
@@ -1760,10 +1624,6 @@
     <setting name="pppoe"
              gtype="NMSettingPppoe"
              >
-        <property name="name"
-                  dbus-type="s"
-                  gprop-type="gchararray"
-                  />
         <property name="parent"
                   dbus-type="s"
                   gprop-type="gchararray"
@@ -1798,10 +1658,6 @@
                   dbus-type="i"
                   gprop-type="gint"
                   />
-        <property name="name"
-                  dbus-type="s"
-                  gprop-type="gchararray"
-                  />
         <property name="pac-script"
                   dbus-type="s"
                   gprop-type="gchararray"
@@ -1821,10 +1677,6 @@
         <property name="bits"
                   dbus-type="u"
                   gprop-type="guint"
-                  />
-        <property name="name"
-                  dbus-type="s"
-                  gprop-type="gchararray"
                   />
         <property name="parity"
                   dbus-type="y"
@@ -1846,10 +1698,6 @@
                   dbus-type="i"
                   gprop-type="NMTernary"
                   />
-        <property name="name"
-                  dbus-type="s"
-                  gprop-type="gchararray"
-                  />
         <property name="total-vfs"
                   dbus-type="u"
                   gprop-type="guint"
@@ -1862,10 +1710,6 @@
     <setting name="tc"
              gtype="NMSettingTCConfig"
              >
-        <property name="name"
-                  dbus-type="s"
-                  gprop-type="gchararray"
-                  />
         <property name="qdiscs"
                   dbus-type="aa{sv}"
                   gprop-type="GPtrArray"
@@ -1897,10 +1741,6 @@
         <property name="mcast-rejoin-interval"
                   dbus-type="i"
                   gprop-type="gint"
-                  />
-        <property name="name"
-                  dbus-type="s"
-                  gprop-type="gchararray"
                   />
         <property name="notify-peers-count"
                   dbus-type="i"
@@ -1970,10 +1810,6 @@
                   dbus-type="aa{sv}"
                   gprop-type="GPtrArray"
                   />
-        <property name="name"
-                  dbus-type="s"
-                  gprop-type="gchararray"
-                  />
         <property name="prio"
                   dbus-type="i"
                   gprop-type="gint"
@@ -2002,10 +1838,6 @@
                   dbus-type="b"
                   gprop-type="gboolean"
                   />
-        <property name="name"
-                  dbus-type="s"
-                  gprop-type="gchararray"
-                  />
         <property name="owner"
                   dbus-type="s"
                   gprop-type="gchararray"
@@ -2026,18 +1858,10 @@
                   dbus-type="a{ss}"
                   gprop-type="GHashTable"
                   />
-        <property name="name"
-                  dbus-type="s"
-                  gprop-type="gchararray"
-                  />
     </setting>
     <setting name="veth"
              gtype="NMSettingVeth"
              >
-        <property name="name"
-                  dbus-type="s"
-                  gprop-type="gchararray"
-                  />
         <property name="peer"
                   dbus-type="s"
                   gprop-type="gchararray"
@@ -2066,10 +1890,6 @@
                   dbus-type="s"
                   dbus-deprecated="1"
                   />
-        <property name="name"
-                  dbus-type="s"
-                  gprop-type="gchararray"
-                  />
         <property name="parent"
                   dbus-type="s"
                   gprop-type="gchararray"
@@ -2081,10 +1901,6 @@
         <property name="data"
                   dbus-type="a{ss}"
                   gprop-type="GHashTable"
-                  />
-        <property name="name"
-                  dbus-type="s"
-                  gprop-type="gchararray"
                   />
         <property name="persistent"
                   dbus-type="b"
@@ -2111,10 +1927,6 @@
     <setting name="vrf"
              gtype="NMSettingVrf"
              >
-        <property name="name"
-                  dbus-type="s"
-                  gprop-type="gchararray"
-                  />
         <property name="table"
                   dbus-type="u"
                   gprop-type="guint"
@@ -2155,10 +1967,6 @@
                   dbus-type="s"
                   gprop-type="gchararray"
                   />
-        <property name="name"
-                  dbus-type="s"
-                  gprop-type="gchararray"
-                  />
         <property name="parent"
                   dbus-type="s"
                   gprop-type="gchararray"
@@ -2195,10 +2003,6 @@
     <setting name="wifi-p2p"
              gtype="NMSettingWifiP2P"
              >
-        <property name="name"
-                  dbus-type="s"
-                  gprop-type="gchararray"
-                  />
         <property name="peer"
                   dbus-type="s"
                   gprop-type="gchararray"
@@ -2218,10 +2022,6 @@
         <property name="mac-address"
                   is-deprecated="1"
                   dbus-type="ay"
-                  gprop-type="gchararray"
-                  />
-        <property name="name"
-                  dbus-type="s"
                   gprop-type="gchararray"
                   />
         <property name="network-name"
@@ -2253,10 +2053,6 @@
                   dbus-type="u"
                   gprop-type="guint"
                   />
-        <property name="name"
-                  dbus-type="s"
-                  gprop-type="gchararray"
-                  />
         <property name="peer-routes"
                   dbus-type="b"
                   gprop-type="gboolean"
@@ -2283,10 +2079,6 @@
                   gprop-type="gint"
                   />
         <property name="mac-address"
-                  dbus-type="s"
-                  gprop-type="gchararray"
-                  />
-        <property name="name"
                   dbus-type="s"
                   gprop-type="gchararray"
                   />

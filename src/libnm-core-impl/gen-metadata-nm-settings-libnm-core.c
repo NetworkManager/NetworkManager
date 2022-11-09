@@ -97,6 +97,9 @@ main(int argc, char *argv[])
         for (prop_idx = 0; prop_idx < sis->property_infos_len; prop_idx++) {
             const NMSettInfoProperty *sip = &sis->property_infos[prop_idx];
 
+            if (nm_streq(sip->name, NM_SETTING_NAME))
+                continue;
+
             g_print("%s<property", _indent_level(2 * INDENT));
             g_print(" name=%s", _xml_escape_attr(&sbuf1, sip->name));
             if (sip->is_deprecated)
