@@ -35,6 +35,8 @@
        that should be used instead.
    "gprop-type": if this is a GObject property in the NMSetting class, this
        is the GParamSpec.value_type of the property.
+   "is-setting-option": whether the property is implemented in libnm's NMSetting
+       via the nm_setting_option_*() API.
  -->
 <nm-setting-docs>
     <setting name="6lowpan"
@@ -935,6 +937,354 @@
     <setting name="ethtool"
              gtype="NMSettingEthtool"
              >
+        <property name="coalesce-adaptive-rx"
+                  dbus-type="u"
+                  is-setting-option="1"
+                  />
+        <property name="coalesce-adaptive-tx"
+                  dbus-type="u"
+                  is-setting-option="1"
+                  />
+        <property name="coalesce-pkt-rate-high"
+                  dbus-type="u"
+                  is-setting-option="1"
+                  />
+        <property name="coalesce-pkt-rate-low"
+                  dbus-type="u"
+                  is-setting-option="1"
+                  />
+        <property name="coalesce-rx-frames"
+                  dbus-type="u"
+                  is-setting-option="1"
+                  />
+        <property name="coalesce-rx-frames-high"
+                  dbus-type="u"
+                  is-setting-option="1"
+                  />
+        <property name="coalesce-rx-frames-irq"
+                  dbus-type="u"
+                  is-setting-option="1"
+                  />
+        <property name="coalesce-rx-frames-low"
+                  dbus-type="u"
+                  is-setting-option="1"
+                  />
+        <property name="coalesce-rx-usecs"
+                  dbus-type="u"
+                  is-setting-option="1"
+                  />
+        <property name="coalesce-rx-usecs-high"
+                  dbus-type="u"
+                  is-setting-option="1"
+                  />
+        <property name="coalesce-rx-usecs-irq"
+                  dbus-type="u"
+                  is-setting-option="1"
+                  />
+        <property name="coalesce-rx-usecs-low"
+                  dbus-type="u"
+                  is-setting-option="1"
+                  />
+        <property name="coalesce-sample-interval"
+                  dbus-type="u"
+                  is-setting-option="1"
+                  />
+        <property name="coalesce-stats-block-usecs"
+                  dbus-type="u"
+                  is-setting-option="1"
+                  />
+        <property name="coalesce-tx-frames"
+                  dbus-type="u"
+                  is-setting-option="1"
+                  />
+        <property name="coalesce-tx-frames-high"
+                  dbus-type="u"
+                  is-setting-option="1"
+                  />
+        <property name="coalesce-tx-frames-irq"
+                  dbus-type="u"
+                  is-setting-option="1"
+                  />
+        <property name="coalesce-tx-frames-low"
+                  dbus-type="u"
+                  is-setting-option="1"
+                  />
+        <property name="coalesce-tx-usecs"
+                  dbus-type="u"
+                  is-setting-option="1"
+                  />
+        <property name="coalesce-tx-usecs-high"
+                  dbus-type="u"
+                  is-setting-option="1"
+                  />
+        <property name="coalesce-tx-usecs-irq"
+                  dbus-type="u"
+                  is-setting-option="1"
+                  />
+        <property name="coalesce-tx-usecs-low"
+                  dbus-type="u"
+                  is-setting-option="1"
+                  />
+        <property name="feature-esp-hw-offload"
+                  dbus-type="b"
+                  is-setting-option="1"
+                  />
+        <property name="feature-esp-tx-csum-hw-offload"
+                  dbus-type="b"
+                  is-setting-option="1"
+                  />
+        <property name="feature-fcoe-mtu"
+                  dbus-type="b"
+                  is-setting-option="1"
+                  />
+        <property name="feature-gro"
+                  dbus-type="b"
+                  is-setting-option="1"
+                  />
+        <property name="feature-gso"
+                  dbus-type="b"
+                  is-setting-option="1"
+                  />
+        <property name="feature-highdma"
+                  dbus-type="b"
+                  is-setting-option="1"
+                  />
+        <property name="feature-hw-tc-offload"
+                  dbus-type="b"
+                  is-setting-option="1"
+                  />
+        <property name="feature-l2-fwd-offload"
+                  dbus-type="b"
+                  is-setting-option="1"
+                  />
+        <property name="feature-loopback"
+                  dbus-type="b"
+                  is-setting-option="1"
+                  />
+        <property name="feature-lro"
+                  dbus-type="b"
+                  is-setting-option="1"
+                  />
+        <property name="feature-macsec-hw-offload"
+                  dbus-type="b"
+                  is-setting-option="1"
+                  />
+        <property name="feature-ntuple"
+                  dbus-type="b"
+                  is-setting-option="1"
+                  />
+        <property name="feature-rx"
+                  dbus-type="b"
+                  is-setting-option="1"
+                  />
+        <property name="feature-rxhash"
+                  dbus-type="b"
+                  is-setting-option="1"
+                  />
+        <property name="feature-rxvlan"
+                  dbus-type="b"
+                  is-setting-option="1"
+                  />
+        <property name="feature-rx-all"
+                  dbus-type="b"
+                  is-setting-option="1"
+                  />
+        <property name="feature-rx-fcs"
+                  dbus-type="b"
+                  is-setting-option="1"
+                  />
+        <property name="feature-rx-gro-hw"
+                  dbus-type="b"
+                  is-setting-option="1"
+                  />
+        <property name="feature-rx-gro-list"
+                  dbus-type="b"
+                  is-setting-option="1"
+                  />
+        <property name="feature-rx-udp-gro-forwarding"
+                  dbus-type="b"
+                  is-setting-option="1"
+                  />
+        <property name="feature-rx-udp_tunnel-port-offload"
+                  dbus-type="b"
+                  is-setting-option="1"
+                  />
+        <property name="feature-rx-vlan-filter"
+                  dbus-type="b"
+                  is-setting-option="1"
+                  />
+        <property name="feature-rx-vlan-stag-filter"
+                  dbus-type="b"
+                  is-setting-option="1"
+                  />
+        <property name="feature-rx-vlan-stag-hw-parse"
+                  dbus-type="b"
+                  is-setting-option="1"
+                  />
+        <property name="feature-sg"
+                  dbus-type="b"
+                  is-setting-option="1"
+                  />
+        <property name="feature-tls-hw-record"
+                  dbus-type="b"
+                  is-setting-option="1"
+                  />
+        <property name="feature-tls-hw-rx-offload"
+                  dbus-type="b"
+                  is-setting-option="1"
+                  />
+        <property name="feature-tls-hw-tx-offload"
+                  dbus-type="b"
+                  is-setting-option="1"
+                  />
+        <property name="feature-tso"
+                  dbus-type="b"
+                  is-setting-option="1"
+                  />
+        <property name="feature-tx"
+                  dbus-type="b"
+                  is-setting-option="1"
+                  />
+        <property name="feature-txvlan"
+                  dbus-type="b"
+                  is-setting-option="1"
+                  />
+        <property name="feature-tx-checksum-fcoe-crc"
+                  dbus-type="b"
+                  is-setting-option="1"
+                  />
+        <property name="feature-tx-checksum-ipv4"
+                  dbus-type="b"
+                  is-setting-option="1"
+                  />
+        <property name="feature-tx-checksum-ipv6"
+                  dbus-type="b"
+                  is-setting-option="1"
+                  />
+        <property name="feature-tx-checksum-ip-generic"
+                  dbus-type="b"
+                  is-setting-option="1"
+                  />
+        <property name="feature-tx-checksum-sctp"
+                  dbus-type="b"
+                  is-setting-option="1"
+                  />
+        <property name="feature-tx-esp-segmentation"
+                  dbus-type="b"
+                  is-setting-option="1"
+                  />
+        <property name="feature-tx-fcoe-segmentation"
+                  dbus-type="b"
+                  is-setting-option="1"
+                  />
+        <property name="feature-tx-gre-csum-segmentation"
+                  dbus-type="b"
+                  is-setting-option="1"
+                  />
+        <property name="feature-tx-gre-segmentation"
+                  dbus-type="b"
+                  is-setting-option="1"
+                  />
+        <property name="feature-tx-gso-list"
+                  dbus-type="b"
+                  is-setting-option="1"
+                  />
+        <property name="feature-tx-gso-partial"
+                  dbus-type="b"
+                  is-setting-option="1"
+                  />
+        <property name="feature-tx-gso-robust"
+                  dbus-type="b"
+                  is-setting-option="1"
+                  />
+        <property name="feature-tx-ipxip4-segmentation"
+                  dbus-type="b"
+                  is-setting-option="1"
+                  />
+        <property name="feature-tx-ipxip6-segmentation"
+                  dbus-type="b"
+                  is-setting-option="1"
+                  />
+        <property name="feature-tx-nocache-copy"
+                  dbus-type="b"
+                  is-setting-option="1"
+                  />
+        <property name="feature-tx-scatter-gather"
+                  dbus-type="b"
+                  is-setting-option="1"
+                  />
+        <property name="feature-tx-scatter-gather-fraglist"
+                  dbus-type="b"
+                  is-setting-option="1"
+                  />
+        <property name="feature-tx-sctp-segmentation"
+                  dbus-type="b"
+                  is-setting-option="1"
+                  />
+        <property name="feature-tx-tcp6-segmentation"
+                  dbus-type="b"
+                  is-setting-option="1"
+                  />
+        <property name="feature-tx-tcp-ecn-segmentation"
+                  dbus-type="b"
+                  is-setting-option="1"
+                  />
+        <property name="feature-tx-tcp-mangleid-segmentation"
+                  dbus-type="b"
+                  is-setting-option="1"
+                  />
+        <property name="feature-tx-tcp-segmentation"
+                  dbus-type="b"
+                  is-setting-option="1"
+                  />
+        <property name="feature-tx-tunnel-remcsum-segmentation"
+                  dbus-type="b"
+                  is-setting-option="1"
+                  />
+        <property name="feature-tx-udp-segmentation"
+                  dbus-type="b"
+                  is-setting-option="1"
+                  />
+        <property name="feature-tx-udp_tnl-csum-segmentation"
+                  dbus-type="b"
+                  is-setting-option="1"
+                  />
+        <property name="feature-tx-udp_tnl-segmentation"
+                  dbus-type="b"
+                  is-setting-option="1"
+                  />
+        <property name="feature-tx-vlan-stag-hw-insert"
+                  dbus-type="b"
+                  is-setting-option="1"
+                  />
+        <property name="pause-autoneg"
+                  dbus-type="b"
+                  is-setting-option="1"
+                  />
+        <property name="pause-rx"
+                  dbus-type="b"
+                  is-setting-option="1"
+                  />
+        <property name="pause-tx"
+                  dbus-type="b"
+                  is-setting-option="1"
+                  />
+        <property name="ring-rx"
+                  dbus-type="u"
+                  is-setting-option="1"
+                  />
+        <property name="ring-rx-jumbo"
+                  dbus-type="u"
+                  is-setting-option="1"
+                  />
+        <property name="ring-rx-mini"
+                  dbus-type="u"
+                  is-setting-option="1"
+                  />
+        <property name="ring-tx"
+                  dbus-type="u"
+                  is-setting-option="1"
+                  />
     </setting>
     <setting name="generic"
              gtype="NMSettingGeneric"
