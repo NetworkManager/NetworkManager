@@ -813,13 +813,12 @@ nm_wifi_utils_complete_connection(GBytes       *ap_ssid,
          * setting.  Since there's so much configuration required for it, there's
          * no way it can be automatically completed.
          */
-    } else if (nm_streq0(key_mgmt, "wpa-psk")
-               || (ap_rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_SAE
-                   && (ap_wpa_flags & NM_802_11_AP_SEC_KEY_MGMT_PSK
-                       || ap_rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_PSK))) {
+    } else if (ap_rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_SAE
+               && (ap_wpa_flags & NM_802_11_AP_SEC_KEY_MGMT_PSK
+                   || ap_rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_PSK)) {
         g_object_set(s_wsec,
                      NM_SETTING_WIRELESS_SECURITY_KEY_MGMT,
-                     "wpa-psk",
+                     nm_streq0(key_mgmt, "sae") ? "sae" : "wpa-psk",
                      NM_SETTING_WIRELESS_SECURITY_AUTH_ALG,
                      "open",
                      NULL);
@@ -829,7 +828,7 @@ nm_wifi_utils_complete_connection(GBytes       *ap_ssid,
                || NM_FLAGS_ANY(ap_rsn_flags,
                                NM_802_11_AP_SEC_KEY_MGMT_OWE | NM_802_11_AP_SEC_KEY_MGMT_OWE_TM)) {
         g_object_set(s_wsec, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "owe", NULL);
-    } else if (ap_wpa_flags & NM_802_11_AP_SEC_KEY_MGMT_PSK
+    } else if (nm_streq0(key_mgmt, "wpa-psk") || ap_wpa_flags & NM_802_11_AP_SEC_KEY_MGMT_PSK
                || ap_rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_PSK) {
         g_object_set(s_wsec,
                      NM_SETTING_WIRELESS_SECURITY_KEY_MGMT,
