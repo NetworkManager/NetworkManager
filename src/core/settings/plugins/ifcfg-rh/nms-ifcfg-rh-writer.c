@@ -1312,6 +1312,7 @@ write_ethtool_setting(NMConnection *connection, shvarFile *ifcfg, GError **error
         gboolean             is_first;
         guint32              u32;
         gboolean             b;
+        gboolean             any_option = FALSE;
 
         s_con = nm_connection_get_setting_connection(connection);
         if (s_con) {
@@ -1341,6 +1342,7 @@ write_ethtool_setting(NMConnection *connection, shvarFile *ifcfg, GError **error
             g_string_append_c(str, ' ');
             g_string_append(str, nms_ifcfg_rh_utils_get_ethtool_name(ethtool_id));
             g_string_append(str, b ? " on" : " off");
+            any_option = TRUE;
         }
 
         is_first = TRUE;
@@ -1356,6 +1358,7 @@ write_ethtool_setting(NMConnection *connection, shvarFile *ifcfg, GError **error
             g_string_append_c(str, ' ');
             g_string_append(str, nms_ifcfg_rh_utils_get_ethtool_name(ethtool_id));
             g_string_append_printf(str, " %" G_GUINT32_FORMAT, u32);
+            any_option = TRUE;
         }
 
         is_first = TRUE;
@@ -1371,7 +1374,10 @@ write_ethtool_setting(NMConnection *connection, shvarFile *ifcfg, GError **error
             g_string_append_c(str, ' ');
             g_string_append(str, nms_ifcfg_rh_utils_get_ethtool_name(ethtool_id));
             g_string_append_printf(str, " %" G_GUINT32_FORMAT, u32);
+            any_option = TRUE;
         }
+
+        is_first = TRUE;
         for (ethtool_id = _NM_ETHTOOL_ID_PAUSE_FIRST; ethtool_id <= _NM_ETHTOOL_ID_PAUSE_LAST;
              ethtool_id++) {
             nm_assert(nms_ifcfg_rh_utils_get_ethtool_name(ethtool_id));
@@ -1384,9 +1390,10 @@ write_ethtool_setting(NMConnection *connection, shvarFile *ifcfg, GError **error
             g_string_append_c(str, ' ');
             g_string_append(str, nms_ifcfg_rh_utils_get_ethtool_name(ethtool_id));
             g_string_append(str, b ? " on" : " off");
+            any_option = TRUE;
         }
 
-        if (!str) {
+        if (!any_option) {
             /* Write an empty dummy "-A" option without arguments. This is to
              * ensure that the reader will create an (all default) NMSettingEthtool.
              * Also, it seems that `ethtool -A "$IFACE"` is silently accepted. */

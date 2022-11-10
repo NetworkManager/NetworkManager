@@ -1,0 +1,15 @@
+TYPE=Ethernet
+PROXY_METHOD=none
+BROWSER_ONLY=no
+ETHTOOL_OPTS="autoneg on ; -A net0 pause-autoneg off"
+BOOTPROTO=dhcp
+DEFROUTE=yes
+IPV4_FAILURE_FATAL=no
+IPV6INIT=yes
+IPV6_AUTOCONF=yes
+IPV6_DEFROUTE=yes
+IPV6_FAILURE_FATAL=no
+IPV6_ADDR_GEN_MODE=default
+NAME=test_roundtrip_ethtool
+UUID=${UUID}
+ONBOOT=yes
