@@ -287,6 +287,71 @@ nm_setting_gsm_get_mtu(NMSettingGsm *setting)
 }
 
 static gboolean
+_verify_apn(const char *apn, gboolean allow_empty, const char *property_name, GError **error)
+{
+    gsize apn_len;
+    gsize i;
+
+    if (!apn)
+        return TRUE;
+
+    apn_len = strlen(apn);
+
+    if (!allow_empty && apn_len == 0) {
+        g_set_error(error,
+                    NM_CONNECTION_ERROR,
+                    NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                    _("property value is empty"));
+        g_prefix_error(error, "%s.%s: ", NM_SETTING_GSM_SETTING_NAME, property_name);
+        return FALSE;
+    }
+
+    if (apn_len > 64) {
+        g_set_error(error,
+                    NM_CONNECTION_ERROR,
+                    NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                    _("property value is too long (>64)"));
+        g_prefix_error(error, "%s.%s: ", NM_SETTING_GSM_SETTING_NAME, property_name);
+        return FALSE;
+    }
+
+    /* APNs roughly follow the same rules as DNS domain names.  Allowed
+     * characters are a-z, 0-9, . and -.  GSM 03.03 Section 9.1 states:
+     *
+     *   The syntax of the APN shall follow the Name Syntax defined in
+     *   RFC 2181 [14] and RFC 1035 [15]. The APN consists of one or
+     *   more labels. Each label is coded as one octet length field
+     *   followed by that number of octets coded as 8 bit ASCII characters.
+     *   Following RFC 1035 [15] the labels should consist only of the
+     *   alphabetic characters (A-Z and a-z), digits (0-9) and the
+     *   dash (-). The case of alphabetic characters is not significant.
+     *
+     * A dot (.) is commonly used to separate parts of the APN, and
+     * apparently the underscore (_) is used as well.  RFC 2181 indicates
+     * that no restrictions of any kind are placed on DNS labels, and thus
+     * it would appear that none are placed on APNs either, but many modems
+     * and networks will fail to accept APNs that include odd characters
+     * like space ( ) and such.
+     */
+    for (i = 0; i < apn_len; i++) {
+        if (g_ascii_isalnum(apn[i]))
+            continue;
+        if (NM_IN_SET(apn[i], '.', '_', '-'))
+            continue;
+
+        g_set_error(error,
+                    NM_CONNECTION_ERROR,
+                    NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                    _("'%s' contains invalid char(s) (use [A-Za-z._-])"),
+                    apn);
+        g_prefix_error(error, "%s.%s: ", NM_SETTING_GSM_SETTING_NAME, property_name);
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
+static gboolean
 verify(NMSetting *setting, NMConnection *connection, GError **error)
 {
     NMSettingGsmPrivate *priv = NM_SETTING_GSM_GET_PRIVATE(setting);
@@ -300,51 +365,8 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
         return FALSE;
     }
 
-    if (priv->apn) {
-        gsize apn_len = strlen(priv->apn);
-        gsize i;
-
-        if (apn_len > 64) {
-            g_set_error(error,
-                        NM_CONNECTION_ERROR,
-                        NM_CONNECTION_ERROR_INVALID_PROPERTY,
-                        _("property value '%s' is empty or too long (>64)"),
-                        priv->apn);
-            g_prefix_error(error, "%s.%s: ", NM_SETTING_GSM_SETTING_NAME, NM_SETTING_GSM_APN);
-            return FALSE;
-        }
-
-        /* APNs roughly follow the same rules as DNS domain names.  Allowed
-         * characters are a-z, 0-9, . and -.  GSM 03.03 Section 9.1 states:
-         *
-         *   The syntax of the APN shall follow the Name Syntax defined in
-         *   RFC 2181 [14] and RFC 1035 [15]. The APN consists of one or
-         *   more labels. Each label is coded as one octet length field
-         *   followed by that number of octets coded as 8 bit ASCII characters.
-         *   Following RFC 1035 [15] the labels should consist only of the
-         *   alphabetic characters (A-Z and a-z), digits (0-9) and the
-         *   dash (-). The case of alphabetic characters is not significant.
-         *
-         * A dot (.) is commonly used to separate parts of the APN, and
-         * apparently the underscore (_) is used as well.  RFC 2181 indicates
-         * that no restrictions of any kind are placed on DNS labels, and thus
-         * it would appear that none are placed on APNs either, but many modems
-         * and networks will fail to accept APNs that include odd characters
-         * like space ( ) and such.
-         */
-        for (i = 0; i < apn_len; i++) {
-            if (!g_ascii_isalnum(priv->apn[i]) && (priv->apn[i] != '.') && (priv->apn[i] != '_')
-                && (priv->apn[i] != '-')) {
-                g_set_error(error,
-                            NM_CONNECTION_ERROR,
-                            NM_CONNECTION_ERROR_INVALID_PROPERTY,
-                            _("'%s' contains invalid char(s) (use [A-Za-z._-])"),
-                            priv->apn);
-                g_prefix_error(error, "%s.%s: ", NM_SETTING_GSM_SETTING_NAME, NM_SETTING_GSM_APN);
-                return FALSE;
-            }
-        }
-    }
+    if (!_verify_apn(priv->apn, TRUE, NM_SETTING_GSM_APN, error))
+        return FALSE;
 
     if (priv->username && priv->username[0] == '\0') {
         g_set_error_literal(error,
