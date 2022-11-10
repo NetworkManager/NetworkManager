@@ -110,6 +110,7 @@ import random
 import dbus.service
 import dbus.mainloop.glib
 import io
+from signal import SIGINT
 
 import gi
 
@@ -851,7 +852,7 @@ class TestNmcli(NmTestBase):
             )
 
     def call_nmcli_pexpect(self, args):
-        env = self._env()
+        env = self._env(extra_env={"NO_COLOR": "1"})
         return pexpect.spawn(
             conf.get(ENV_NM_TEST_CLIENT_NMCLI_PATH), args, timeout=5, env=env
         )
@@ -1884,6 +1885,41 @@ class TestNmcli(NmTestBase):
         nmc.sendline("no")
         nmc.expect("Connection 'ethernet' \(.*\) successfully added.")
         nmc.expect(pexpect.EOF)
+
+    @skip_without_pexpect
+    @nm_test
+    def test_monitor(self):
+        def start_mon():
+            nmc = self.call_nmcli_pexpect(["monitor"])
+            nmc.expect("NetworkManager is running")
+            return nmc
+
+        def end_mon(nmc):
+            nmc.kill(SIGINT)
+            nmc.expect(pexpect.EOF)
+
+        nmc = start_mon()
+
+        self.srv.op_AddObj("WiredDevice", iface="eth0")
+        nmc.expect("eth0: device created\r\n")
+
+        self.srv.addConnection(
+            {"connection": {"type": "802-3-ethernet", "id": "con-1"}}
+        )
+        nmc.expect("con-1: connection profile created\r\n")
+
+        end_mon(nmc)
+
+        nmc = start_mon()
+        self.srv.shutdown()
+        self.srv = None
+        nmc.expect("\(null\): device removed")
+        nmc.expect("con-1: connection profile removed")
+        nmc.expect("Hostname set to '\(null\)'")
+        nmc.expect("Networkmanager is now in the 'unknown' state")
+        nmc.expect("Connectivity is now 'unknown'")
+        nmc.expect("NetworkManager is stopped")
+        end_mon(nmc)
 
 
 ###############################################################################
