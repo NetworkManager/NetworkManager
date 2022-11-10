@@ -132,6 +132,8 @@ typedef enum /*< flags >*/ {
  * @NM_SETTING_WIRELESS_POWERSAVE_ENABLE: enable powersave
  *
  * These flags indicate whether wireless powersave must be enabled.
+ *
+ * Since: 1.2
  **/
 typedef enum {
     NM_SETTING_WIRELESS_POWERSAVE_DEFAULT = 0,

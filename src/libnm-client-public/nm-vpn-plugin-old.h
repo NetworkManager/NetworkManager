@@ -108,13 +108,7 @@ NM_DEPRECATED_IN_1_2
 void nm_vpn_plugin_old_failure(NMVpnPluginOld *plugin, NMVpnPluginFailure reason);
 
 NM_DEPRECATED_IN_1_2
-void nm_vpn_plugin_old_set_config(NMVpnPluginOld *plugin, GVariant *config);
-
-NM_DEPRECATED_IN_1_2
 void nm_vpn_plugin_old_set_ip4_config(NMVpnPluginOld *plugin, GVariant *ip4_config);
-
-NM_DEPRECATED_IN_1_2
-void nm_vpn_plugin_old_set_ip6_config(NMVpnPluginOld *plugin, GVariant *ip6_config);
 
 NM_DEPRECATED_IN_1_2
 gboolean nm_vpn_plugin_old_disconnect(NMVpnPluginOld *plugin, GError **err);

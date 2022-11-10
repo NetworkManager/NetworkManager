@@ -3918,7 +3918,7 @@ nm_setting_option_clear_by_name(NMSetting *setting, NMUtilsPredicateStr predicat
  * Returns: (transfer none): the #GVariant or %NULL if the option
  *   is not set.
  *
- * Since: 1.26.
+ * Since: 1.26
  */
 GVariant *
 nm_setting_option_get(NMSetting *setting, const char *opt_name)

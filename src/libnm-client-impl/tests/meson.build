@@ -44,3 +44,15 @@ foreach test_unit: test_units
     args: test_args + [exe.full_path()],
   )
 endforeach
+
+if enable_introspection
+  test(
+    'check-local-libnm-gir',
+    python,
+    args: [
+      join_paths(meson.source_root(), 'src', 'libnm-client-impl', 'tests', 'test-gir.py'),
+      '--gir', libnm_gir[0],
+      '--ver', join_paths(meson.source_root(), 'src', 'libnm-client-impl', 'libnm.ver'),
+    ],
+  )
+endif

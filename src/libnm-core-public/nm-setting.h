@@ -122,6 +122,8 @@ typedef enum {
  * @NM_SETTING_MAC_RANDOMIZATION_ALWAYS: a random MAC address is used.
  *
  * Controls if and how the MAC address of a device is randomzied.
+ *
+ * Since: 1.2
  **/
 typedef enum {
     NM_SETTING_MAC_RANDOMIZATION_DEFAULT = 0,

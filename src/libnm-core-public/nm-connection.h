@@ -220,12 +220,13 @@ NMSettingMacsec *nm_connection_get_setting_macsec(NMConnection *connection);
 NM_AVAILABLE_IN_1_2
 NMSettingMacvlan  *nm_connection_get_setting_macvlan(NMConnection *connection);
 NMSettingOlpcMesh *nm_connection_get_setting_olpc_mesh(NMConnection *connection);
-NM_AVAILABLE_IN_1_10
+NM_AVAILABLE_IN_1_14
 NMSettingOvsBridge *nm_connection_get_setting_ovs_bridge(NMConnection *connection);
-NM_AVAILABLE_IN_1_10
+NM_AVAILABLE_IN_1_14
 NMSettingOvsInterface *nm_connection_get_setting_ovs_interface(NMConnection *connection);
-NMSettingOvsPatch     *nm_connection_get_setting_ovs_patch(NMConnection *connection);
-NM_AVAILABLE_IN_1_10
+NM_AVAILABLE_IN_1_14
+NMSettingOvsPatch *nm_connection_get_setting_ovs_patch(NMConnection *connection);
+NM_AVAILABLE_IN_1_14
 NMSettingOvsPort *nm_connection_get_setting_ovs_port(NMConnection *connection);
 NMSettingPpp     *nm_connection_get_setting_ppp(NMConnection *connection);
 NMSettingPppoe   *nm_connection_get_setting_pppoe(NMConnection *connection);
@@ -234,7 +235,7 @@ NMSettingProxy  *nm_connection_get_setting_proxy(NMConnection *connection);
 NMSettingSerial *nm_connection_get_setting_serial(NMConnection *connection);
 NM_AVAILABLE_IN_1_12
 NMSettingTCConfig *nm_connection_get_setting_tc_config(NMConnection *connection);
-NM_AVAILABLE_IN_1_2
+NM_AVAILABLE_IN_1_14
 NMSettingTun              *nm_connection_get_setting_tun(NMConnection *connection);
 NMSettingVpn              *nm_connection_get_setting_vpn(NMConnection *connection);
 NMSettingWimax            *nm_connection_get_setting_wimax(NMConnection *connection);

@@ -125,6 +125,8 @@ nm_remote_connection_update2(NMRemoteConnection    *connection,
  *
  * Returns: (transfer full): on success, a #GVariant of type "a{sv}" with the result. On failure,
  *   %NULL.
+ *
+ * Since: 1.12
  **/
 GVariant *
 nm_remote_connection_update2_finish(NMRemoteConnection *connection,

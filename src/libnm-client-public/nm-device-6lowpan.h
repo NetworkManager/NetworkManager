@@ -29,6 +29,8 @@ G_BEGIN_DECLS
 
 /**
  * NMDevice6Lowpan:
+ *
+ * Since: 1.14
  */
 typedef struct _NMDevice6Lowpan      NMDevice6Lowpan;
 typedef struct _NMDevice6LowpanClass NMDevice6LowpanClass;
@@ -36,12 +38,8 @@ typedef struct _NMDevice6LowpanClass NMDevice6LowpanClass;
 NM_AVAILABLE_IN_1_14
 GType nm_device_6lowpan_get_type(void);
 
-NM_AVAILABLE_IN_1_14
+NM_AVAILABLE_IN_1_42
 NMDevice *nm_device_6lowpan_get_parent(NMDevice6Lowpan *device);
-
-NM_AVAILABLE_IN_1_14
-NM_DEPRECATED_IN_1_24_FOR(nm_device_get_hw_address)
-const char *nm_device_6lowpan_get_hw_address(NMDevice6Lowpan *device);
 
 G_END_DECLS
 

@@ -23,10 +23,13 @@ G_BEGIN_DECLS
 
 /**
  * NMDevicePpp:
+ *
+ * Since: 1.10
  */
 typedef struct _NMDevicePpp      NMDevicePpp;
 typedef struct _NMDevicePppClass NMDevicePppClass;
 
+NM_AVAILABLE_IN_1_10
 GType nm_device_ppp_get_type(void);
 
 G_END_DECLS

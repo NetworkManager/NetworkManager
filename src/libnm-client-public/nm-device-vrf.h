@@ -24,6 +24,8 @@ G_BEGIN_DECLS
 
 /**
  * NMDeviceVrf:
+ *
+ * Since: 1.24
  */
 typedef struct _NMDeviceVrf      NMDeviceVrf;
 typedef struct _NMDeviceVrfClass NMDeviceVrfClass;

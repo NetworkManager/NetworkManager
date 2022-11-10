@@ -38,18 +38,18 @@ typedef struct _NMSettingWpanClass NMSettingWpanClass;
 
 NM_AVAILABLE_IN_1_14
 GType nm_setting_wpan_get_type(void);
-NM_AVAILABLE_IN_1_14
+NM_AVAILABLE_IN_1_42
 NMSetting *nm_setting_wpan_new(void);
 
-NM_AVAILABLE_IN_1_14
+NM_AVAILABLE_IN_1_42
 const char *nm_setting_wpan_get_mac_address(NMSettingWpan *setting);
-NM_AVAILABLE_IN_1_14
+NM_AVAILABLE_IN_1_42
 guint16 nm_setting_wpan_get_pan_id(NMSettingWpan *setting);
-NM_AVAILABLE_IN_1_14
+NM_AVAILABLE_IN_1_42
 guint16 nm_setting_wpan_get_short_address(NMSettingWpan *setting);
-NM_AVAILABLE_IN_1_16
+NM_AVAILABLE_IN_1_42
 gint16 nm_setting_wpan_get_page(NMSettingWpan *setting);
-NM_AVAILABLE_IN_1_16
+NM_AVAILABLE_IN_1_42
 gint16 nm_setting_wpan_get_channel(NMSettingWpan *setting);
 
 G_END_DECLS

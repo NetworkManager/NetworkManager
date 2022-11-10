@@ -236,5 +236,4 @@ if enable_introspection
     ],
     depends: libnm_gir,
   )
-
 endif
