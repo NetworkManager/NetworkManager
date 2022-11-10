@@ -23,20 +23,6 @@
 
 /*****************************************************************************/
 
-static const GVariantType *
-get_variant_type_from_ethtool_id(NMEthtoolID ethtool_id)
-{
-    if (nm_ethtool_id_is_feature(ethtool_id) || nm_ethtool_id_is_pause(ethtool_id))
-        return G_VARIANT_TYPE_BOOLEAN;
-
-    if (nm_ethtool_id_is_coalesce(ethtool_id) || nm_ethtool_id_is_ring(ethtool_id))
-        return G_VARIANT_TYPE_UINT32;
-
-    return NULL;
-}
-
-/*****************************************************************************/
-
 /**
  * nm_ethtool_optname_is_feature:
  * @optname: (allow-none): the option name to check
@@ -302,7 +288,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
         NMEthtoolID         ethtool_id;
 
         ethtool_id   = nm_ethtool_id_get_by_name(optname);
-        variant_type = get_variant_type_from_ethtool_id(ethtool_id);
+        variant_type = nm_ethtool_id_get_variant_type(ethtool_id);
 
         if (!variant_type) {
             g_set_error_literal(error,
@@ -365,7 +351,7 @@ get_variant_type(const NMSettInfoSetting *sett_info, const char *name, GError **
 {
     const GVariantType *variant_type;
 
-    variant_type = get_variant_type_from_ethtool_id(nm_ethtool_id_get_by_name(name));
+    variant_type = nm_ethtool_id_get_variant_type(nm_ethtool_id_get_by_name(name));
 
     if (!variant_type) {
         g_set_error(error,
