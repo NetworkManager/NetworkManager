@@ -110,11 +110,6 @@ typedef struct {
     /* Whether this address family is enabled. If not, then we won't have a l3cd instance,
      * but the activation for this address family is still complete. */
     bool enabled : 1;
-
-    /* Whether this address family is ready. This means we received the IP configuration.
-     * Usually this implies we also have a corresponding l3cd, but that might not be the
-     * case if this address family is disabled. */
-    bool conf_ready : 1;
 } IPData;
 
 typedef struct {
