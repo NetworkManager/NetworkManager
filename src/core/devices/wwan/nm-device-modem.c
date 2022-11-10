@@ -273,6 +273,15 @@ modem_state_cb(NMModem *modem, int new_state_i, int old_state_i, gpointer user_d
         /* Called when the ModemManager modem enabled state is changed externally
          * to NetworkManager (eg something using MM's D-Bus API directly).
          */
+
+        if (!NM_MODEM_GET_CLASS(priv->modem)->set_mm_enabled) {
+            /* We cannot re-enable this modem, thus device becomes unavailable. */
+            nm_device_state_changed(device,
+                                    NM_DEVICE_STATE_UNAVAILABLE,
+                                    NM_DEVICE_STATE_REASON_USER_REQUESTED);
+            return;
+        }
+
         if (nm_device_is_activating(device) || dev_state == NM_DEVICE_STATE_ACTIVATED) {
             /* user-initiated action, hence DISCONNECTED not FAILED */
             nm_device_state_changed(device,
@@ -432,6 +441,13 @@ check_connection_available(NMDevice                      *device,
         nm_utils_error_set_literal(error,
                                    NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
                                    "modem not initialized");
+        return FALSE;
+    }
+
+    if (!NM_MODEM_GET_CLASS(priv->modem)->set_mm_enabled && state <= NM_MODEM_STATE_DISABLING) {
+        nm_utils_error_set_literal(error,
+                                   NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,
+                                   "modem is disabled and NM cannot enable it");
         return FALSE;
     }
 
@@ -599,6 +615,11 @@ set_enabled(NMDevice *device, gboolean enabled)
 
     if (enabled == FALSE) {
         nm_device_state_changed(device, NM_DEVICE_STATE_UNAVAILABLE, NM_DEVICE_STATE_REASON_NONE);
+    } else {
+        /* It's possible that the modem is enabled outside of NM. Need to recheck. */
+        nm_device_queue_recheck_available(device,
+                                          NM_DEVICE_STATE_REASON_MODEM_AVAILABLE,
+                                          NM_DEVICE_STATE_REASON_MODEM_FAILED);
     }
 }
 
@@ -615,6 +636,9 @@ is_available(NMDevice *device, NMDeviceCheckDevAvailableFlags flags)
     g_assert(priv->modem);
     modem_state = nm_modem_get_state(priv->modem);
     if (modem_state <= NM_MODEM_STATE_INITIALIZING)
+        return FALSE;
+
+    if (!NM_MODEM_GET_CLASS(priv->modem)->set_mm_enabled && modem_state <= NM_MODEM_STATE_DISABLING)
         return FALSE;
 
     return TRUE;
