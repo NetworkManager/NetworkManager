@@ -3438,6 +3438,7 @@ test_roundtrip_ethtool(void)
     gs_unref_object NMConnection *connection = NULL;
     NMSetting                    *s_ethtool;
     NMSetting                    *s_wired;
+    int                           i_run;
 
     connection = nmtst_create_minimal_connection("test_roundtrip_ethtool",
                                                  NULL,
@@ -3500,6 +3501,159 @@ test_roundtrip_ethtool(void)
                            TEST_IFCFG_DIR "/ifcfg-test_roundtrip_ethtool-5.cexpected",
                            NULL);
     g_clear_object(&connection);
+
+    connection = nmtst_create_minimal_connection("test_roundtrip_ethtool",
+                                                 NULL,
+                                                 NM_SETTING_WIRED_SETTING_NAME,
+                                                 NULL);
+    s_wired    = nmtst_connection_assert_setting(connection, NM_TYPE_SETTING_WIRED);
+    g_object_set(s_wired, NM_SETTING_WIRED_AUTO_NEGOTIATE, TRUE, NULL);
+
+    s_ethtool = _nm_connection_new_setting(connection, NM_TYPE_SETTING_ETHTOOL);
+    nm_setting_option_set_boolean(s_ethtool, NM_ETHTOOL_OPTNAME_PAUSE_AUTONEG, FALSE);
+    _writer_new_connec_exp(connection,
+                           TEST_SCRATCH_DIR,
+                           TEST_IFCFG_DIR "/ifcfg-test_roundtrip_ethtool-6.cexpected",
+                           NULL);
+    g_clear_object(&connection);
+
+    connection = nmtst_create_minimal_connection("test_roundtrip_ethtool",
+                                                 NULL,
+                                                 NM_SETTING_WIRED_SETTING_NAME,
+                                                 NULL);
+    s_wired    = nmtst_connection_assert_setting(connection, NM_TYPE_SETTING_WIRED);
+    g_object_set(s_wired, NM_SETTING_WIRED_AUTO_NEGOTIATE, TRUE, NULL);
+
+    s_ethtool = _nm_connection_new_setting(connection, NM_TYPE_SETTING_ETHTOOL);
+    nm_setting_option_set_uint32(s_ethtool, NM_ETHTOOL_OPTNAME_RING_RX, 512);
+    _writer_new_connec_exp(connection,
+                           TEST_SCRATCH_DIR,
+                           TEST_IFCFG_DIR "/ifcfg-test_roundtrip_ethtool-7.cexpected",
+                           NULL);
+    g_clear_object(&connection);
+
+    connection = nmtst_create_minimal_connection("test_roundtrip_ethtool",
+                                                 NULL,
+                                                 NM_SETTING_WIRED_SETTING_NAME,
+                                                 NULL);
+    s_wired    = nmtst_connection_assert_setting(connection, NM_TYPE_SETTING_WIRED);
+    g_object_set(s_wired, NM_SETTING_WIRED_AUTO_NEGOTIATE, TRUE, NULL);
+
+    s_ethtool = _nm_connection_new_setting(connection, NM_TYPE_SETTING_ETHTOOL);
+    _writer_new_connec_exp(connection,
+                           TEST_SCRATCH_DIR,
+                           TEST_IFCFG_DIR "/ifcfg-test_roundtrip_ethtool-8.cexpected",
+                           NULL);
+    g_clear_object(&connection);
+
+    connection = nmtst_create_minimal_connection("test_roundtrip_ethtool",
+                                                 NULL,
+                                                 NM_SETTING_WIRED_SETTING_NAME,
+                                                 NULL);
+    s_wired    = nmtst_connection_assert_setting(connection, NM_TYPE_SETTING_WIRED);
+    g_object_set(s_wired, NM_SETTING_WIRED_AUTO_NEGOTIATE, TRUE, NULL);
+
+    s_ethtool = _nm_connection_new_setting(connection, NM_TYPE_SETTING_ETHTOOL);
+    nm_setting_option_set_boolean(s_ethtool, NM_ETHTOOL_OPTNAME_PAUSE_AUTONEG, FALSE);
+    nm_setting_option_set_uint32(s_ethtool, NM_ETHTOOL_OPTNAME_RING_RX, 512);
+    _writer_new_connec_exp(connection,
+                           TEST_SCRATCH_DIR,
+                           TEST_IFCFG_DIR "/ifcfg-test_roundtrip_ethtool-9.cexpected",
+                           NULL);
+    g_clear_object(&connection);
+
+    for (i_run = 0; i_run < 20; i_run++) {
+        gs_unref_object NMConnection *con2     = NULL;
+        gs_unref_object NMConnection *reread   = NULL;
+        nmtst_auto_unlinkfile char   *testfile = NULL;
+        gboolean                      reread_same;
+        gboolean                      v_bool;
+        NMEthtoolID                   ethtool_ids[_NM_ETHTOOL_ID_NUM];
+        guint                         i;
+        guint                         l;
+        NMSettingWiredWakeOnLan       wake_on_lan;
+
+        con2    = nmtst_create_minimal_connection("test_roundtrip_ethtool",
+                                               NULL,
+                                               NM_SETTING_WIRED_SETTING_NAME,
+                                               NULL);
+        s_wired = nmtst_connection_assert_setting(con2, NM_TYPE_SETTING_WIRED);
+        g_object_set(s_wired, NM_SETTING_WIRED_AUTO_NEGOTIATE, nmtst_get_rand_bool(), NULL);
+
+        if (nmtst_get_rand_bool()) {
+            g_object_set(s_wired,
+                         NM_SETTING_WIRED_SPEED,
+                         1000u,
+                         NM_SETTING_WIRED_DUPLEX,
+                         nmtst_get_rand_bool() ? "full" : "half",
+                         NULL);
+        }
+
+        wake_on_lan = nmtst_get_rand_uint32();
+        wake_on_lan = wake_on_lan & NM_SETTING_WIRED_WAKE_ON_LAN_ALL;
+        wake_on_lan = nmtst_rand_select(wake_on_lan,
+                                        NM_SETTING_WIRED_WAKE_ON_LAN_DEFAULT,
+                                        NM_SETTING_WIRED_WAKE_ON_LAN_IGNORE);
+        g_object_set(s_wired, NM_SETTING_WIRED_WAKE_ON_LAN, (guint) wake_on_lan, NULL);
+
+        if (NM_FLAGS_HAS(wake_on_lan, NM_SETTING_WIRED_WAKE_ON_LAN_MAGIC)
+            && nmtst_get_rand_bool()) {
+            g_object_set(s_wired, NM_SETTING_WIRED_WAKE_ON_LAN_PASSWORD, "aa:bb:cc:dd:ee:ff", NULL);
+        }
+
+        l = nmtst_get_rand_uint32() % (G_N_ELEMENTS(ethtool_ids) + 2);
+        if (l == 0) {
+            /* pass. No ethtool setting. */
+            goto check_roundtrip;
+        }
+        l--;
+
+        s_ethtool = _nm_connection_new_setting(con2, NM_TYPE_SETTING_ETHTOOL);
+
+        for (i = 0; i < (int) G_N_ELEMENTS(ethtool_ids); i++)
+            ethtool_ids[i] = i;
+        nmtst_rand_perm(NULL, ethtool_ids, NULL, sizeof(ethtool_ids[0]), G_N_ELEMENTS(ethtool_ids));
+
+        for (i = 0; i < l; i++) {
+            NMEthtoolID         ethtool_id = ethtool_ids[i];
+            const GVariantType *vtype;
+            const char         *optname;
+
+            optname = nm_ethtool_data[ethtool_id]->optname;
+            vtype   = nm_ethtool_id_get_variant_type(ethtool_id);
+
+            if (NM_IN_SET(ethtool_id,
+                          NM_ETHTOOL_ID_COALESCE_ADAPTIVE_RX,
+                          NM_ETHTOOL_ID_COALESCE_ADAPTIVE_TX)) {
+                nm_setting_option_set_uint32(s_ethtool, optname, nmtst_get_rand_uint32() % 2);
+            } else if (g_variant_type_equal(vtype, G_VARIANT_TYPE_BOOLEAN))
+                nm_setting_option_set_boolean(s_ethtool, optname, nmtst_get_rand_bool());
+            else if (g_variant_type_equal(vtype, G_VARIANT_TYPE_UINT32))
+                nm_setting_option_set_uint32(s_ethtool, optname, nmtst_get_rand_uint32());
+            else
+                g_assert_not_reached();
+        }
+
+        if ((nm_setting_option_get_boolean(s_ethtool, NM_ETHTOOL_OPTNAME_PAUSE_RX, NULL)
+             || nm_setting_option_get_boolean(s_ethtool, NM_ETHTOOL_OPTNAME_PAUSE_TX, NULL))
+            && nm_setting_option_get_boolean(s_ethtool, NM_ETHTOOL_OPTNAME_PAUSE_AUTONEG, &v_bool)
+            && v_bool) {
+            /* don't accidentally create an invalid profile. */
+            nm_setting_option_set(s_ethtool,
+                                  NM_ETHTOOL_OPTNAME_PAUSE_AUTONEG,
+                                  nmtst_get_rand_bool() ? g_variant_new_boolean(FALSE) : NULL);
+        }
+
+check_roundtrip:
+        _writer_new_connection_reread(con2,
+                                      TEST_SCRATCH_DIR,
+                                      &testfile,
+                                      NO_EXPECTED,
+                                      &reread,
+                                      &reread_same);
+        g_assert(NM_IS_CONNECTION(reread));
+        g_assert(reread_same);
+    }
 }
 
 static void
