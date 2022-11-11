@@ -891,9 +891,8 @@ _dev_eth0_1_state_changed_cb(NMDevice           *device,
     g_assert(!nm_device_get_active_connection(device));
 }
 
-
 static void
-test_activate_virtual_teardown(void)
+test_activate_virtual_teardown(gconstpointer user_data)
 {
     nmtstc_auto_service_cleanup NMTstcServiceInfo *sinfo  = NULL;
     gs_unref_object NMClient                      *client = NULL;
@@ -901,8 +900,9 @@ test_activate_virtual_teardown(void)
     NMActiveConnection                            *ac;
     const GPtrArray                               *arr;
     gulong                                         sig_id;
-    int                                            call_count = 0;
-    gboolean                                       take_ref   = nmtst_get_rand_bool();
+    int                                            call_count       = 0;
+    gboolean                                       take_ref         = nmtst_get_rand_bool();
+    gboolean                                       teardown_service = GPOINTER_TO_INT(user_data);
 
     if (nmtst_test_skip_slow())
         return;
@@ -933,7 +933,12 @@ test_activate_virtual_teardown(void)
                               G_CALLBACK(_dev_eth0_1_state_changed_cb),
                               &call_count);
 
-    g_clear_object(&client);
+    if (teardown_service) {
+        nmtstc_service_cleanup(g_steal_pointer(&sinfo));
+        nmtst_main_loop_run(gl.loop, 50);
+    } else {
+        g_clear_object(&client);
+    }
 
     g_assert_cmpint(call_count, ==, 1);
 
@@ -1621,7 +1626,12 @@ main(int argc, char **argv)
     g_test_add_func("/libnm/client-nm-running", test_client_nm_running);
     g_test_add_func("/libnm/active-connections", test_active_connections);
     g_test_add_func("/libnm/activate-virtual/without-teardown", test_activate_virtual);
-    g_test_add_func("/libnm/activate-virtual/with-teardown", test_activate_virtual_teardown);
+    g_test_add_data_func("/libnm/activate-virtual/with-teardown/service",
+                         GINT_TO_POINTER(true),
+                         test_activate_virtual_teardown);
+    g_test_add_data_func("/libnm/activate-virtual/with-teardown/client",
+                         GINT_TO_POINTER(false),
+                         test_activate_virtual_teardown);
     g_test_add_func("/libnm/device-connection-compatibility", test_device_connection_compatibility);
     g_test_add_func("/libnm/connection/invalid", test_connection_invalid);
     g_test_add_func("/libnm/test_client_wait_shutdown", test_client_wait_shutdown);
