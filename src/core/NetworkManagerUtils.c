@@ -978,6 +978,7 @@ nm_ip_routing_rule_to_platform(const NMIPRoutingRule *rule, NMPlatformRoutingRul
                 .start = uid_range_start,
                 .end   = uid_range_end,
             },
+        .protocol = RTPROT_STATIC,
     };
 
     nm_ip_routing_rule_get_xifname_bin(rule, TRUE, out_pl->iifname);
