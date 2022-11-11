@@ -561,7 +561,7 @@ nm_setting_wireless_security_clear_groups(NMSettingWirelessSecurity *setting)
     _notify(setting, PROP_GROUP);
 }
 
-/*
+/**
  * nm_setting_wireless_security_get_pmf:
  * @setting: the #NMSettingWirelessSecurity
  *
@@ -798,7 +798,7 @@ nm_setting_wireless_security_get_wps_method(NMSettingWirelessSecurity *setting)
     return NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE(setting)->wps_method;
 }
 
-/*
+/**
  * nm_setting_wireless_security_get_fils:
  * @setting: the #NMSettingWirelessSecurity
  *

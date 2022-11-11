@@ -33,10 +33,10 @@ typedef struct _NMSetting6LowpanClass NMSetting6LowpanClass;
 
 NM_AVAILABLE_IN_1_14
 GType nm_setting_6lowpan_get_type(void);
-NM_AVAILABLE_IN_1_14
+NM_AVAILABLE_IN_1_42
 NMSetting *nm_setting_6lowpan_new(void);
 
-NM_AVAILABLE_IN_1_14
+NM_AVAILABLE_IN_1_42
 const char *nm_setting_6lowpan_get_parent(NMSetting6Lowpan *setting);
 
 G_END_DECLS

@@ -43,7 +43,7 @@ G_BEGIN_DECLS
 
 typedef struct _NMSettingIPTunnelClass NMSettingIPTunnelClass;
 
-/*
+/**
  * NMIPTunnelFlags:
  * @NM_IP_TUNNEL_FLAG_NONE: no flag
  * @NM_IP_TUNNEL_FLAG_IP6_IGN_ENCAP_LIMIT: don't add encapsulation limit
@@ -94,9 +94,9 @@ NM_AVAILABLE_IN_1_2
 const char *nm_setting_ip_tunnel_get_input_key(NMSettingIPTunnel *setting);
 NM_AVAILABLE_IN_1_2
 const char *nm_setting_ip_tunnel_get_output_key(NMSettingIPTunnel *setting);
-NM_AVAILABLE_IN_1_2
+NM_AVAILABLE_IN_1_42
 guint nm_setting_ip_tunnel_get_encapsulation_limit(NMSettingIPTunnel *setting);
-NM_AVAILABLE_IN_1_2
+NM_AVAILABLE_IN_1_42
 guint nm_setting_ip_tunnel_get_flow_label(NMSettingIPTunnel *setting);
 NM_AVAILABLE_IN_1_2
 guint nm_setting_ip_tunnel_get_mtu(NMSettingIPTunnel *setting);

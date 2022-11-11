@@ -45,6 +45,8 @@ G_BEGIN_DECLS
 
 /**
  * NMDeviceVxlan:
+ *
+ * Since: 1.2
  */
 typedef struct _NMDeviceVxlan      NMDeviceVxlan;
 typedef struct _NMDeviceVxlanClass NMDeviceVxlanClass;
@@ -56,7 +58,7 @@ NM_AVAILABLE_IN_1_2
 NM_DEPRECATED_IN_1_24_FOR(nm_device_get_hw_address)
 const char *nm_device_vxlan_get_hw_address(NMDeviceVxlan *device);
 
-NM_AVAILABLE_IN_1_2
+NM_AVAILABLE_IN_1_42
 gboolean nm_device_vxlan_get_carrier(NMDeviceVxlan *device);
 NM_AVAILABLE_IN_1_2
 NMDevice *nm_device_vxlan_get_parent(NMDeviceVxlan *device);
@@ -84,7 +86,7 @@ NM_AVAILABLE_IN_1_2
 guint nm_device_vxlan_get_limit(NMDeviceVxlan *device);
 NM_AVAILABLE_IN_1_2
 gboolean nm_device_vxlan_get_proxy(NMDeviceVxlan *device);
-NM_AVAILABLE_IN_1_2
+NM_AVAILABLE_IN_1_42
 gboolean nm_device_vxlan_get_rsc(NMDeviceVxlan *device);
 NM_AVAILABLE_IN_1_2
 gboolean nm_device_vxlan_get_l2miss(NMDeviceVxlan *device);

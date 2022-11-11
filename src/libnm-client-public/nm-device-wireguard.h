@@ -27,6 +27,8 @@ G_BEGIN_DECLS
 
 /**
  * NMDeviceWireGuard:
+ *
+ * Since: 1.14
  */
 typedef struct _NMDeviceWireGuard      NMDeviceWireGuard;
 typedef struct _NMDeviceWireGuardClass NMDeviceWireGuardClass;

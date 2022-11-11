@@ -24,25 +24,6 @@ struct _NMDeviceWpanClass {
 G_DEFINE_TYPE(NMDeviceWpan, nm_device_wpan, NM_TYPE_DEVICE)
 /*****************************************************************************/
 
-/**
- * nm_device_wpan_get_hw_address: (skip)
- * @device: a #NMDeviceWpan
- *
- * Gets the active hardware (MAC) address of the #NMDeviceWpan
- *
- * Returns: the active hardware address. This is the internal string used by the
- * device, and must not be modified.
- *
- * Deprecated: 1.24: Use nm_device_get_hw_address() instead.
- **/
-const char *
-nm_device_wpan_get_hw_address(NMDeviceWpan *device)
-{
-    g_return_val_if_fail(NM_IS_DEVICE_WPAN(device), NULL);
-
-    return nm_device_get_hw_address(NM_DEVICE(device));
-}
-
 static gboolean
 connection_compatible(NMDevice *device, NMConnection *connection, GError **error)
 {

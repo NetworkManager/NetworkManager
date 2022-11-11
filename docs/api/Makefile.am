@@ -2,24 +2,11 @@ AUTOMAKE_OPTIONS = 1.7
 
 XSLTPROC = xsltproc --xinclude --nonet
 XMLS = $(wildcard $(top_srcdir)/introspection/nm-*.xml)
-
 GENERATED_FILES =
 
 if BUILD_DOCS
-
-settings-spec.xml: settings-spec.xsl $(top_builddir)/man/nm-settings-docs-dbus.xml
-	$(AM_V_GEN) (! test -f $@ || chmod u+w $@) && xsltproc --output $@ $^
-
-# Top-level SGML file includes (depends on) settings-spec.xml
-$(DOC_MAIN_SGML_FILE): settings-spec.xml
-
 GENERATED_FILES += settings-spec.xml
-
-all: $(GENERATED_FILES)
-
 endif
-
-####################################
 
 # The name of the module.
 DOC_MODULE=NetworkManager
@@ -130,7 +117,8 @@ setup-build.stamp:
 	fi
 	$(AM_V_at)touch setup-build.stamp
 
-####################################
+settings-spec.xml: settings-spec.xsl $(top_builddir)/man/nm-settings-docs-dbus.xml
+	$(AM_V_GEN) (! test -f $@ || chmod u+w $@) && xsltproc --output $@ $^
 
 EXTRA_DIST += \
 	version.xml.in \

@@ -25,6 +25,8 @@ G_BEGIN_DECLS
  *    option 'validate_inactive' is enabled (set to true).
  * @NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_SEND_ALWAYS: the arp_ping link watcher option
  *    'send_always' is enabled (set to true).
+ *
+ * Since: 1.12
  */
 typedef enum /*< flags >*/ {
     NM_TEAM_LINK_WATCHER_ARP_PING_FLAG_NONE              = 0, /*< skip >*/

@@ -35,6 +35,8 @@ G_BEGIN_DECLS
 
 /**
  * NMVpnServicePlugin:
+ *
+ * Since: 1.2
  */
 typedef struct {
     NM_AVAILABLE_IN_1_2

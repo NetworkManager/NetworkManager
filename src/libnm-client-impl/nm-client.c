@@ -5396,6 +5396,8 @@ nm_client_add_and_activate_connection2(NMClient           *client,
  *
  * Returns: (transfer full): the new #NMActiveConnection on success, %NULL on
  *   failure, in which case @error will be set.
+ *
+ * Since: 1.16
  **/
 NMActiveConnection *
 nm_client_add_and_activate_connection2_finish(NMClient     *client,
@@ -9115,7 +9117,7 @@ nm_client_wait_shutdown(NMClient           *client,
  * Returns: %TRUE if waiting is complete successfully. In that case, all resources of the
  *   nmclient are wrapped up and released. This can only fail by user cancellation.
  *
- * Since: 1.42.
+ * Since: 1.42
  */
 gboolean
 nm_client_wait_shutdown_finish(GAsyncResult *result, GError **error)

@@ -33,6 +33,8 @@ G_BEGIN_DECLS
 
 /**
  * NMDeviceTun:
+ *
+ * Since: 1.2
  */
 typedef struct _NMDeviceTun      NMDeviceTun;
 typedef struct _NMDeviceTunClass NMDeviceTunClass;

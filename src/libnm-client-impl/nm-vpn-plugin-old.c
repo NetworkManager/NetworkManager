@@ -281,13 +281,8 @@ schedule_fail_stop(NMVpnPluginOld *plugin, guint timeout_secs)
         priv->fail_stop_id = g_idle_add(fail_stop, plugin);
 }
 
-/**
- * nm_vpn_plugin_old_set_config:
- *
- * Deprecated: 1.2: Replaced by NMVpnServicePlugin.
- */
-void
-nm_vpn_plugin_old_set_config(NMVpnPluginOld *plugin, GVariant *config)
+static void
+set_config(NMVpnPluginOld *plugin, GVariant *config)
 {
     NMVpnPluginOldPrivate *priv = NM_VPN_PLUGIN_OLD_GET_PRIVATE(plugin);
 
@@ -382,13 +377,8 @@ nm_vpn_plugin_old_set_ip4_config(NMVpnPluginOld *plugin, GVariant *ip4_config)
         nm_vpn_plugin_old_set_state(plugin, NM_VPN_SERVICE_STATE_STARTED);
 }
 
-/**
- * nm_vpn_plugin_old_set_ip6_config:
- *
- * Deprecated: 1.2: Replaced by NMVpnServicePlugin.
- */
-void
-nm_vpn_plugin_old_set_ip6_config(NMVpnPluginOld *plugin, GVariant *ip6_config)
+static void
+set_ip6_config(NMVpnPluginOld *plugin, GVariant *ip6_config)
 {
     NMVpnPluginOldPrivate *priv = NM_VPN_PLUGIN_OLD_GET_PRIVATE(plugin);
 
@@ -721,7 +711,7 @@ impl_vpn_plugin_old_set_config(NMVpnPluginOld        *plugin,
                                GVariant              *config,
                                gpointer               user_data)
 {
-    nm_vpn_plugin_old_set_config(plugin, config);
+    set_config(plugin, config);
     g_dbus_method_invocation_return_value(context, NULL);
 }
 
@@ -741,7 +731,7 @@ impl_vpn_plugin_old_set_ip6_config(NMVpnPluginOld        *plugin,
                                    GVariant              *config,
                                    gpointer               user_data)
 {
-    nm_vpn_plugin_old_set_ip6_config(plugin, config);
+    set_ip6_config(plugin, config);
     g_dbus_method_invocation_return_value(context, NULL);
 }
 

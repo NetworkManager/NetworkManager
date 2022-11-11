@@ -27,6 +27,8 @@ G_BEGIN_DECLS
 
 /**
  * NMDeviceVeth:
+ *
+ * Since: 1.30
  */
 typedef struct _NMDeviceVeth      NMDeviceVeth;
 typedef struct _NMDeviceVethClass NMDeviceVethClass;
@@ -34,7 +36,7 @@ typedef struct _NMDeviceVethClass NMDeviceVethClass;
 NM_AVAILABLE_IN_1_30
 GType nm_device_veth_get_type(void);
 
-NM_AVAILABLE_IN_1_30
+NM_AVAILABLE_IN_1_42
 NMDevice *nm_device_veth_get_peer(NMDeviceVeth *device);
 
 G_END_DECLS

@@ -53,6 +53,8 @@ typedef struct {
  * NMSettingWpan:
  *
  * IEEE 802.15.4 (WPAN) MAC Settings
+ *
+ * Since: 1.14
  */
 struct _NMSettingWpan {
     NMSetting parent;
@@ -75,7 +77,7 @@ G_DEFINE_TYPE(NMSettingWpan, nm_setting_wpan, NM_TYPE_SETTING)
  *
  * Returns: the #NMSettingWpan:mac-address property of the setting
  *
- * Since: 1.14
+ * Since: 1.42
  **/
 const char *
 nm_setting_wpan_get_mac_address(NMSettingWpan *setting)
@@ -91,7 +93,7 @@ nm_setting_wpan_get_mac_address(NMSettingWpan *setting)
  *
  * Returns: the #NMSettingWpan:pan-id property of the setting
  *
- * Since: 1.14
+ * Since: 1.42
  **/
 guint16
 nm_setting_wpan_get_pan_id(NMSettingWpan *setting)
@@ -107,7 +109,7 @@ nm_setting_wpan_get_pan_id(NMSettingWpan *setting)
  *
  * Returns: the #NMSettingWpan:short-address property of the setting
  *
- * Since: 1.14
+ * Since: 1.42
  **/
 guint16
 nm_setting_wpan_get_short_address(NMSettingWpan *setting)
@@ -123,7 +125,7 @@ nm_setting_wpan_get_short_address(NMSettingWpan *setting)
  *
  * Returns: the #NMSettingWpan:page property of the setting
  *
- * Since: 1.16
+ * Since: 1.42
  **/
 gint16
 nm_setting_wpan_get_page(NMSettingWpan *setting)
@@ -139,7 +141,7 @@ nm_setting_wpan_get_page(NMSettingWpan *setting)
  *
  * Returns: the #NMSettingWpan:channel property of the setting
  *
- * Since: 1.16
+ * Since: 1.42
  **/
 gint16
 nm_setting_wpan_get_channel(NMSettingWpan *setting)
@@ -211,7 +213,7 @@ nm_setting_wpan_init(NMSettingWpan *setting)
  *
  * Returns: (transfer full): the new empty #NMSettingWpan object
  *
- * Since: 1.14
+ * Since: 1.42
  **/
 NMSetting *
 nm_setting_wpan_new(void)

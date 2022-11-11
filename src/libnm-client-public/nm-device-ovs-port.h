@@ -29,6 +29,8 @@ G_BEGIN_DECLS
 
 /**
  * NMDeviceOvsPort:
+ *
+ * Since: 1.10
  */
 typedef struct _NMDeviceOvsPort      NMDeviceOvsPort;
 typedef struct _NMDeviceOvsPortClass NMDeviceOvsPortClass;
