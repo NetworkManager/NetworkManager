@@ -107,8 +107,14 @@ typedef struct {
     NMIPAddr gw_internal;
     NMIPAddr gw_external;
 
-    /* Whether this address family is enabled. If not, then we won't have a l3cd instance,
-     * but the activation for this address family is still complete. */
+    /* Whether VPN auto-configuration is enabled in the connection profile for
+     * this address family. */
+    bool method_auto : 1;
+
+    /* Whether VPN auto-configuration is enabled, in the connection profile AND
+     * in the configuration reported by the VPN. If not, then we won't have a
+     * l3cd instance, but the activation for this address family is still
+     * complete. */
     bool enabled : 1;
 } IPData;
 
@@ -1865,9 +1871,16 @@ _dbus_signal_config_cb(NMVpnConnection *self, GVariant *dict)
     else
         priv->ip_data_6.enabled = FALSE;
 
-    _LOGD("config: reply received (IPv4:%s, IPv6:%s)",
+    _LOGD("config: reply received (IPv4:%s(%s), IPv6:%s(%s))",
           priv->ip_data_4.enabled ? "on" : "off",
-          priv->ip_data_6.enabled ? "on" : "off");
+          priv->ip_data_4.method_auto ? "auto" : "disabled",
+          priv->ip_data_4.enabled ? "on" : "off",
+          priv->ip_data_6.method_auto ? "auto" : "disabled");
+
+    if (!priv->ip_data_4.method_auto)
+        priv->ip_data_4.enabled = FALSE;
+    if (!priv->ip_data_6.method_auto)
+        priv->ip_data_6.enabled = FALSE;
 
     if (priv->vpn_state == STATE_CONNECT)
         _set_vpn_state(self, STATE_IP_CONFIG_GET, NM_ACTIVE_CONNECTION_STATE_REASON_NONE, FALSE);
@@ -1931,7 +1944,8 @@ _dbus_signal_ip_config_cb(NMVpnConnection *self, int addr_family, GVariant *dict
                 return;
             }
 
-            priv->ip_data_4.enabled = TRUE;
+            if (priv->ip_data_4.method_auto)
+                priv->ip_data_4.enabled = TRUE;
             priv->ip_data_6.enabled = FALSE;
         }
     } else {
@@ -1946,6 +1960,11 @@ _dbus_signal_ip_config_cb(NMVpnConnection *self, int addr_family, GVariant *dict
 
     if (priv->vpn_state == STATE_CONNECT) {
         _set_vpn_state(self, STATE_IP_CONFIG_GET, NM_ACTIVE_CONNECTION_STATE_REASON_NONE, FALSE);
+    }
+
+    if (!priv->ip_data_x[IS_IPv4].enabled) {
+        _check_complete(self, TRUE);
+        return;
     }
 
     ip_ifindex = nm_vpn_connection_get_ip_ifindex(self, TRUE);
@@ -2752,6 +2771,11 @@ nm_vpn_connection_activate(NMVpnConnection *self, NMVpnPluginInfo *plugin_info)
         priv->dbus.bus_name = g_strdup(service);
 
     _LOGI("starting %s", nm_vpn_plugin_info_get_name(plugin_info));
+
+    priv->ip_data_4.method_auto = nm_streq0(nm_utils_get_ip_config_method(connection, AF_INET),
+                                            NM_SETTING_IP4_CONFIG_METHOD_AUTO);
+    priv->ip_data_6.method_auto = nm_streq0(nm_utils_get_ip_config_method(connection, AF_INET6),
+                                            NM_SETTING_IP6_CONFIG_METHOD_AUTO);
 
     priv->connection_can_persist = nm_setting_vpn_get_persistent(s_vpn);
     priv->plugin_info            = g_object_ref(plugin_info);
