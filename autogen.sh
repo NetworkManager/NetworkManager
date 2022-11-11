@@ -40,40 +40,51 @@ PYTHON="${PYTHON}" \
 --with-systemd-logind=yes \
 --with-consolekit=yes
 
-make -j20
-make check -k
+make -j10 src/libnm-client-impl/tests/test-nm-client
+
+#make check -k
+#
+#echo ===================================
+#make check -k
+#
+#echo ===================================
+#src/libnm-client-impl/tests/test-nm-client
 
 echo ===================================
-make check -k
+G_DBUS_DEBUG=message LIBNM_CLIENT_DEBUG=trace \
+src/libnm-client-impl/tests/test-nm-client -p /libnm/activate-virtual
 
 echo ===================================
+env -i XDG_RUNTIME_DIR=$XDG_RUNTIME_DIR \
+G_DBUS_DEBUG=message LIBNM_CLIENT_DEBUG=trace \
 src/libnm-client-impl/tests/test-nm-client
 
 echo ===================================
+env -i XDG_RUNTIME_DIR=$XDG_RUNTIME_DIR \
+G_DBUS_DEBUG=message LIBNM_CLIENT_DEBUG=trace \
 src/libnm-client-impl/tests/test-nm-client -p /libnm/activate-virtual
-
-
-echo ===================================
-env -i XDG_RUNTIME_DIR=$XDG_RUNTIME_DIR src/libnm-client-impl/tests/test-nm-client
-
-echo ===================================
-env -i XDG_RUNTIME_DIR=$XDG_RUNTIME_DIR src/libnm-client-impl/tests/test-nm-client -p /libnm/activate-virtual
 
 
 echo ===================================
 dnf -y install strace
 
 echo ===================================
+G_DBUS_DEBUG=message LIBNM_CLIENT_DEBUG=trace \
 strace -s4096 -f -otest1 src/libnm-client-impl/tests/test-nm-client
 
 echo ===================================
+G_DBUS_DEBUG=message LIBNM_CLIENT_DEBUG=trace \
 strace -s4096 -f -otest2 src/libnm-client-impl/tests/test-nm-client -p /libnm/activate-virtual
 
 echo ===================================
-strace -s4096 -f -otest3 env -i XDG_RUNTIME_DIR=$XDG_RUNTIME_DIR src/libnm-client-impl/tests/test-nm-client
+strace -s4096 -f -otest3 env -i XDG_RUNTIME_DIR=$XDG_RUNTIME_DIR \
+G_DBUS_DEBUG=message LIBNM_CLIENT_DEBUG=trace \
+src/libnm-client-impl/tests/test-nm-client
 
 echo ===================================
-strace -s4096 -f -otest4 env -i XDG_RUNTIME_DIR=$XDG_RUNTIME_DIR src/libnm-client-impl/tests/test-nm-client -p /libnm/activate-virtual
+strace -s4096 -f -otest4 env -i XDG_RUNTIME_DIR=$XDG_RUNTIME_DIR \
+G_DBUS_DEBUG=message LIBNM_CLIENT_DEBUG=trace \
+src/libnm-client-impl/tests/test-nm-client -p /libnm/activate-virtual
 
 
 grep '' test?
