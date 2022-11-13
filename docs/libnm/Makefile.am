@@ -24,7 +24,7 @@ DOC_SOURCE_DIR= \
 	$(NULL)
 
 # Extra options to supply to gtkdoc-scan.
-SCAN_OPTIONS=--rebuild-types --rebuild-sections --ignore-decorators="NM_AVAILABLE_IN_\d_\d\d?|NM_DEPRECATED_IN_\d_\d\d?"
+SCAN_OPTIONS=--rebuild-types --rebuild-sections --ignore-decorators='NM_AVAILABLE_IN_\d+_\d+|NM_DEPRECATED_IN_\d+_\d+|NM_DEPRECATED_IN_\d+_\d+_FOR\(\)'
 
 # Extra options to supply to gtkdoc-mkdb.
 MKDB_OPTIONS=--sgml-mode --output-format=xml
