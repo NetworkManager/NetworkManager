@@ -122,6 +122,7 @@
 #include "nm-device-tun.h"
 #include "nm-device-veth.h"
 #include "nm-device-vlan.h"
+#include "nm-device-vrf.h"
 #include "nm-device-vxlan.h"
 #include "nm-device-wifi.h"
 #include "nm-device-wifi-p2p.h"
