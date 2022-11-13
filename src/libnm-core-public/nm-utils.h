@@ -172,6 +172,7 @@ gboolean nm_utils_iface_valid_name(const char *name);
 NM_AVAILABLE_IN_1_6
 gboolean nm_utils_is_valid_iface_name(const char *name, GError **error);
 
+NM_DEPRECATED_IN_1_32
 gboolean nm_utils_is_uuid(const char *str);
 
 /**

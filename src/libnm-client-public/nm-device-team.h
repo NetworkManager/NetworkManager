@@ -39,8 +39,11 @@ GType nm_device_team_get_type(void);
 NM_DEPRECATED_IN_1_24_FOR(nm_device_get_hw_address)
 const char *nm_device_team_get_hw_address(NMDeviceTeam *device);
 
-gboolean         nm_device_team_get_carrier(NMDeviceTeam *device);
+gboolean nm_device_team_get_carrier(NMDeviceTeam *device);
+
+NM_DEPRECATED_IN_1_34_FOR(nm_device_get_ports)
 const GPtrArray *nm_device_team_get_slaves(NMDeviceTeam *device);
+
 NM_AVAILABLE_IN_1_4
 const char *nm_device_team_get_config(NMDeviceTeam *device);
 
