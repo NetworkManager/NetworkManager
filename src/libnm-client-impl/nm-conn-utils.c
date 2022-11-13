@@ -14,6 +14,13 @@
 #include "libnm-glib-aux/nm-secret-utils.h"
 #include "nm-simple-connection.h"
 
+/**
+ * SECTION:nm-conn-utils
+ * @short_description: Connection utilities
+ *
+ * Extra connection functionality.
+ */
+
 static gboolean
 _wg_complete_peer(GPtrArray      **p_peers,
                   NMWireGuardPeer *peer_take,
