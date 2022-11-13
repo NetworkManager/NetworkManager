@@ -69,12 +69,35 @@ F2="$(grep -l "$(sed -n 's/^[\t ]*\(.*_get_type\);/\1/p' "$SOURCEDIR/src/libnm-c
 F2_EXTRA="
 annotation-glossary
 api-index-full
+nm-conn-utils
 nm-dbus-interface
 nm-errors
+nm-ethtool-utils
 nm-keyfile
 nm-utils
 nm-version
+nm-version-macros
+nm-vpn-dbus-interface
 "
 if ! same_lines "$F1"$'\n'"$F1_EXTRA" "$F2"$'\n'"$F2_EXTRA"; then
     die "*** Error: libnm classes not included in docs/libnm/libnm-docs.xml ***"
+fi
+
+F1="$(sed -n 's/^#include "\(nm-.*\).h"$/xml\/\1.xml/p' "$SOURCEDIR/src/libnm-client-public/NetworkManager.h")"
+F1_EXTRA="
+xml/annotation-glossary.xml
+xml/api-index-full.xml
+xml/nm-setting-ovs-external-ids.xml
+xml/nm-version-macros.xml
+xml/nm-secret-agent-old.xml
+xml/nm-vpn-plugin-old.xml
+"
+F2="$(sed -n 's/.*<xi:include href="\(xml\/.*.xml\)".*/\1/p' "$SOURCEDIR/docs/libnm/libnm-docs.xml")"
+F2_EXTRA="
+xml/nm-autoptr.xml
+xml/nm-core-enum-types.xml
+xml/nm-enum-types.xml
+"
+if ! same_lines "$F1"$'\n'"$F1_EXTRA" "$F2"$'\n'"$F2_EXTRA"; then
+    die "*** Error: documentation from public headers not included in docs/libnm/libnm-docs.xml ***"
 fi
