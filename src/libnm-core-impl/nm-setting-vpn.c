@@ -1132,7 +1132,7 @@ nm_setting_vpn_class_init(NMSettingVpnClass *klass)
                                                persistent);
 
     /**
-     * NMSettingVpn:data: (type GHashTable(utf8,utf8)):
+     * NMSettingVpn:data: (type GHashTable(utf8,utf8))
      *
      * Dictionary of key/value pairs of VPN plugin specific data.  Both keys and
      * values must be strings.
@@ -1155,7 +1155,7 @@ nm_setting_vpn_class_init(NMSettingVpnClass *klass)
                                  &nm_sett_info_propert_type_strdict);
 
     /**
-     * NMSettingVpn:secrets: (type GHashTable(utf8,utf8)):
+     * NMSettingVpn:secrets: (type GHashTable(utf8,utf8))
      *
      * Dictionary of key/value pairs of VPN plugin specific secrets like
      * passwords or private keys.  Both keys and values must be strings.
