@@ -2630,7 +2630,16 @@ _obj_handle_dbus_iface_changes(NMClient            *self,
 
     if (is_removed) {
         for (i_prop = 0; i_prop < db_iface_data->dbus_iface.meta->n_dbus_properties; i_prop++) {
-            _obj_handle_dbus_prop_changes(self, dbobj, db_iface_data, i_prop, NULL);
+            const GVariantType *dbus_type =
+                db_iface_data->dbus_iface.meta->dbus_properties[i_prop].dbus_type;
+
+            /* Unset properties that can potentially contain objects, to release them,
+             * but keep the rest around, because it might still make sense to know what
+             * they were (e.g. when a device has been removed we'd like know what interface
+             * name it had, or keep the state to avoid spurious state change into UNKNOWN). */
+            if (g_variant_type_is_array(dbus_type)
+                || g_variant_type_equal(dbus_type, G_VARIANT_TYPE_OBJECT_PATH))
+                _obj_handle_dbus_prop_changes(self, dbobj, db_iface_data, i_prop, NULL);
         }
     } else {
         while ((db_prop_data = c_list_first_entry(&db_iface_data->changed_prop_lst_head,

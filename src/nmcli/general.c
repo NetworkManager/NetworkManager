@@ -1233,7 +1233,7 @@ networkmanager_running(NMClient *client, GParamSpec *param, NmCli *nmc)
     running = nm_client_get_nm_running(client);
     str     = nmc_colorize(&nmc->nmc_config,
                        running ? NM_META_COLOR_MANAGER_RUNNING : NM_META_COLOR_MANAGER_STOPPED,
-                       running ? _("NetworkManager has started") : _("NetworkManager has stopped"));
+                       running ? _("NetworkManager is running") : _("NetworkManager is stopped"));
     g_print("%s\n", str);
     g_free(str);
 }
@@ -1613,15 +1613,7 @@ nmc_command_func_monitor(const NMCCommand *cmd, NmCli *nmc, int argc, const char
         return;
     }
 
-    if (!nm_client_get_nm_running(nmc->client)) {
-        char *str;
-
-        str = nmc_colorize(&nmc->nmc_config,
-                           NM_META_COLOR_MANAGER_STOPPED,
-                           _("Networkmanager is not running (waiting for it)\n"));
-        g_print("%s", str);
-        g_free(str);
-    }
+    networkmanager_running(nmc->client, NULL, nmc);
 
     g_signal_connect(nmc->client,
                      "notify::" NM_CLIENT_NM_RUNNING,
