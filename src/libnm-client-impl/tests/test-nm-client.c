@@ -498,7 +498,8 @@ nm_running_changed(GObject *client, GParamSpec *pspec, gpointer user_data)
 {
     int *running_changed = user_data;
 
-    (*running_changed)++;
+    if (running_changed)
+        (*running_changed)++;
     g_main_loop_quit(gl.loop);
 }
 
@@ -791,50 +792,15 @@ activate_cb(GObject *object, GAsyncResult *result, gpointer user_data)
         g_main_loop_quit(info->loop);
 }
 
-static void
-_dev_eth0_1_state_changed_cb(NMDevice           *device,
-                             NMDeviceState       new_state,
-                             NMDeviceState       old_state,
-                             NMDeviceStateReason reason,
-                             int                *p_count_call)
+static NMClient *
+_activate_virtual(NMTstcServiceInfo *sinfo)
 {
-    const GPtrArray *arr;
-
-    g_assert(p_count_call);
-    g_assert_cmpint(*p_count_call, ==, 0);
-
-    (*p_count_call)++;
-
-    g_assert(NM_IS_DEVICE_VLAN(device));
-
-    g_assert_cmpint(old_state, >=, NM_DEVICE_STATE_PREPARE);
-    g_assert_cmpint(old_state, <=, NM_DEVICE_STATE_ACTIVATED);
-    g_assert_cmpint(new_state, ==, NM_DEVICE_STATE_UNKNOWN);
-
-    arr = nm_device_get_available_connections(device);
-    g_assert(arr);
-    g_assert_cmpint(arr->len, ==, 0);
-
-    g_assert(!nm_device_get_active_connection(device));
-}
-
-static void
-test_activate_virtual(void)
-{
-    nmtstc_auto_service_cleanup NMTstcServiceInfo *sinfo  = NULL;
-    gs_unref_object NMClient                      *client = NULL;
-    NMConnection                                  *conn;
-    NMSettingConnection                           *s_con;
-    NMSettingVlan                                 *s_vlan;
-    TestACInfo                                     info      = {gl.loop, NULL, 0};
-    TestConnectionInfo                             conn_info = {gl.loop, NULL};
-
-    if (nmtst_test_skip_slow())
-        return;
-
-    sinfo = nmtstc_service_init();
-    if (!nmtstc_service_available(sinfo))
-        return;
+    NMClient            *client = NULL;
+    NMConnection        *conn;
+    NMSettingConnection *s_con;
+    NMSettingVlan       *s_vlan;
+    TestACInfo           info      = {gl.loop, NULL, 0};
+    TestConnectionInfo   conn_info = {gl.loop, NULL};
 
     client = nmtstc_client_new(TRUE);
 
@@ -881,55 +847,97 @@ test_activate_virtual(void)
         nm_clear_g_signal_handler(info.device, &info.ac_signal_id);
     }
 
-    if (nmtst_get_rand_bool()) {
-        /* OK, enough for this run. Let's see whether we can tear down
-         * successfully at this point. */
+    return client;
+}
+
+static void
+test_activate_virtual(void)
+{
+    nmtstc_auto_service_cleanup NMTstcServiceInfo *sinfo = NULL;
+
+    if (nmtst_test_skip_slow())
         return;
+
+    sinfo = nmtstc_service_init();
+    if (!nmtstc_service_available(sinfo))
+        return;
+
+    g_object_unref(_activate_virtual(sinfo));
+}
+
+static void
+_client_dev_removed(NMClient *client, NMDevice *device, int *p_count_call)
+{
+    const GPtrArray *arr;
+
+    (*p_count_call)++;
+
+    arr = nm_device_get_available_connections(device);
+    g_assert(arr);
+    g_assert_cmpint(arr->len, ==, 0);
+
+    g_assert(!nm_device_get_active_connection(device));
+}
+
+static void
+test_activate_virtual_teardown(gconstpointer user_data)
+{
+    nmtstc_auto_service_cleanup NMTstcServiceInfo *sinfo  = NULL;
+    gs_unref_object NMClient                      *client = NULL;
+    NMDevice                                      *dev_eth0_1;
+    NMActiveConnection                            *ac;
+    const GPtrArray                               *arr;
+    int                                            call_count       = 0;
+    gboolean                                       take_ref         = nmtst_get_rand_bool();
+    gboolean                                       teardown_service = GPOINTER_TO_INT(user_data);
+
+    if (nmtst_test_skip_slow())
+        return;
+
+    sinfo = nmtstc_service_init();
+    if (!nmtstc_service_available(sinfo))
+        return;
+
+    client = _activate_virtual(sinfo);
+
+    /* ensure we got all the necessary events in place. */
+    nmtst_main_loop_run(gl.loop, 50);
+
+    dev_eth0_1 = nm_client_get_device_by_iface(client, "eth0.1");
+    g_assert(NM_IS_DEVICE_VLAN(dev_eth0_1));
+    if (take_ref)
+        g_object_ref(dev_eth0_1);
+
+    arr = nm_device_get_available_connections(dev_eth0_1);
+    g_assert(arr);
+    g_assert_cmpint(arr->len, ==, 1);
+
+    ac = nm_device_get_active_connection(dev_eth0_1);
+    g_assert(NM_IS_ACTIVE_CONNECTION(ac));
+
+    g_signal_connect(client, "device-removed", G_CALLBACK(_client_dev_removed), &call_count);
+
+    if (teardown_service) {
+        g_signal_connect(client,
+                         "notify::" NM_CLIENT_NM_RUNNING,
+                         G_CALLBACK(nm_running_changed),
+                         NULL);
+        nm_clear_pointer(&sinfo, nmtstc_service_cleanup);
+        nmtst_main_loop_run(gl.loop, 1000);
+        g_assert_cmpint(call_count, ==, 2);
+    } else {
+        g_clear_object(&client);
+        g_assert_cmpint(call_count, ==, 0);
     }
 
-    {
-        NMDevice           *dev_eth0_1;
-        NMActiveConnection *ac;
-        const GPtrArray    *arr;
-        gulong              sig_id;
-        int                 call_count = 0;
-        gboolean            take_ref   = nmtst_get_rand_bool();
-
-        /* ensure we got all the necessary events in place. */
-        nmtst_main_loop_run(gl.loop, 50);
-
-        dev_eth0_1 = nm_client_get_device_by_iface(client, "eth0.1");
-        g_assert(NM_IS_DEVICE_VLAN(dev_eth0_1));
-        if (take_ref)
-            g_object_ref(dev_eth0_1);
-
+    if (take_ref) {
         arr = nm_device_get_available_connections(dev_eth0_1);
         g_assert(arr);
-        g_assert_cmpint(arr->len, ==, 1);
+        g_assert_cmpint(arr->len, ==, 0);
 
-        ac = nm_device_get_active_connection(dev_eth0_1);
-        g_assert(NM_IS_ACTIVE_CONNECTION(ac));
+        g_assert(!nm_device_get_active_connection(dev_eth0_1));
 
-        sig_id = g_signal_connect(dev_eth0_1,
-                                  "state-changed",
-                                  G_CALLBACK(_dev_eth0_1_state_changed_cb),
-                                  &call_count);
-
-        g_clear_object(&client);
-
-        g_assert_cmpint(call_count, ==, 1);
-
-        if (take_ref) {
-            arr = nm_device_get_available_connections(dev_eth0_1);
-            g_assert(arr);
-            g_assert_cmpint(arr->len, ==, 0);
-
-            g_assert(!nm_device_get_active_connection(dev_eth0_1));
-
-            nm_clear_g_signal_handler(dev_eth0_1, &sig_id);
-
-            g_object_unref(dev_eth0_1);
-        }
+        g_object_unref(dev_eth0_1);
     }
 }
 
@@ -1603,7 +1611,13 @@ main(int argc, char **argv)
     g_test_add_func("/libnm/devices-array", test_devices_array);
     g_test_add_func("/libnm/client-nm-running", test_client_nm_running);
     g_test_add_func("/libnm/active-connections", test_active_connections);
-    g_test_add_func("/libnm/activate-virtual", test_activate_virtual);
+    g_test_add_func("/libnm/activate-virtual/without-teardown", test_activate_virtual);
+    g_test_add_data_func("/libnm/activate-virtual/with-teardown/service",
+                         GINT_TO_POINTER(true),
+                         test_activate_virtual_teardown);
+    g_test_add_data_func("/libnm/activate-virtual/with-teardown/client",
+                         GINT_TO_POINTER(false),
+                         test_activate_virtual_teardown);
     g_test_add_func("/libnm/device-connection-compatibility", test_device_connection_compatibility);
     g_test_add_func("/libnm/connection/invalid", test_connection_invalid);
     g_test_add_func("/libnm/test_client_wait_shutdown", test_client_wait_shutdown);
