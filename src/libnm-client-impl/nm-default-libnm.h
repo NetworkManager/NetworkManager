@@ -27,6 +27,7 @@
 #include "nm-client.h"
 #include "nm-vpn-connection.h"
 #include "nm-libnm-utils.h"
+#include "nm-errors.h"
 
 /*****************************************************************************/
 

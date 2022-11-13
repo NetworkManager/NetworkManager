@@ -15,6 +15,8 @@
 
 #include "nm-core-enum-types.h"
 
+#include "nm-errors.h"
+
 #include "nm-connection.h"
 #include "nm-simple-connection.h"
 #include "nm-keyfile.h"

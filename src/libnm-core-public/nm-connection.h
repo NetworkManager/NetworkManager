@@ -13,7 +13,6 @@
 
 #include "nm-core-types.h"
 #include "nm-setting.h"
-#include "nm-errors.h"
 
 G_BEGIN_DECLS
 
