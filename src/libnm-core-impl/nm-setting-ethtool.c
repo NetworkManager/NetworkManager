@@ -29,7 +29,7 @@
  *
  * Checks whether @optname is a valid option name for an offload feature.
  *
- * %Returns: %TRUE, if @optname is valid
+ * Returns: %TRUE, if @optname is valid
  *
  * Note that nm_ethtool_optname_is_feature() was first added to the libnm header files
  * in 1.14.0 but forgot to actually add to the library. This happened belatedly in 1.20.0 and
@@ -49,7 +49,7 @@ nm_ethtool_optname_is_feature(const char *optname)
  *
  * Checks whether @optname is a valid option name for a coalesce setting.
  *
- * %Returns: %TRUE, if @optname is valid
+ * Returns: %TRUE, if @optname is valid
  *
  * Since: 1.26
  */
@@ -65,7 +65,7 @@ nm_ethtool_optname_is_coalesce(const char *optname)
  *
  * Checks whether @optname is a valid option name for a ring setting.
  *
- * %Returns: %TRUE, if @optname is valid
+ * Returns: %TRUE, if @optname is valid
  *
  * Since: 1.26
  */
@@ -81,7 +81,7 @@ nm_ethtool_optname_is_ring(const char *optname)
  *
  * Checks whether @optname is a valid option name for a pause setting.
  *
- * %Returns: %TRUE, if @optname is valid
+ * Returns: %TRUE, if @optname is valid
  *
  * Since: 1.32
  */
