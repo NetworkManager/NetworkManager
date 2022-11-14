@@ -4690,6 +4690,23 @@ nmp_object_new_from_nl(NMPlatform               *platform,
     }
 }
 
+static gboolean
+_nlmsg_is_del(guint16 nlmsg_type)
+{
+    if (NM_IN_SET(nlmsg_type,
+                  RTM_DELLINK,
+                  RTM_DELADDR,
+                  RTM_DELROUTE,
+                  RTM_DELRULE,
+                  RTM_DELQDISC,
+                  RTM_DELTFILTER)) {
+        /* The event notifies about a deleted object. We don't need to initialize all
+         * fields of the object. */
+        return TRUE;
+    }
+    return FALSE;
+}
+
 /*****************************************************************************/
 
 static gboolean
@@ -7921,17 +7938,7 @@ _rtnl_handle_msg(NMPlatform *platform, const struct nl_msg_lite *msg)
 
     msghdr = msg->nm_nlh;
 
-    if (NM_IN_SET(msghdr->nlmsg_type,
-                  RTM_DELLINK,
-                  RTM_DELADDR,
-                  RTM_DELROUTE,
-                  RTM_DELRULE,
-                  RTM_DELQDISC,
-                  RTM_DELTFILTER)) {
-        /* The event notifies about a deleted object. We don't need to initialize all
-         * fields of the object. */
-        is_del = TRUE;
-    }
+    is_del = _nlmsg_is_del(msghdr->nlmsg_type);
 
     parse_nlmsg_iter = (ParseNlmsgIter){
         .iter_more = FALSE,
