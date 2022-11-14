@@ -176,10 +176,10 @@ act_stage1_prepare(NMDevice *device, NMDeviceStateReason *out_failure_reason)
     ret = NM_ACT_STAGE_RETURN_SUCCESS;
 
 out:
-    nm_device_bring_up(device, TRUE, NULL);
+    nm_device_bring_up(device);
 
     if (lowpan_device)
-        nm_device_bring_up(lowpan_device, TRUE, NULL);
+        nm_device_bring_up(lowpan_device);
 
     return ret;
 }

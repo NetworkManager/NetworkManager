@@ -198,7 +198,7 @@ act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
                                         nm_device_get_ifindex(device),
                                         g_bytes_get_data(ssid, NULL),
                                         g_bytes_get_size(ssid));
-    nm_device_bring_up(NM_DEVICE(self), TRUE, NULL);
+    nm_device_bring_up(NM_DEVICE(self));
     if (!success) {
         _LOGW(LOGD_WIFI, "Unable to set the mesh ID");
         return NM_ACT_STAGE_RETURN_FAILURE;

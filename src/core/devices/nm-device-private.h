@@ -37,7 +37,8 @@ gboolean nm_device_set_ip_ifindex(NMDevice *self, int ifindex);
 
 gboolean nm_device_set_ip_iface(NMDevice *self, const char *iface);
 
-gboolean nm_device_bring_up(NMDevice *self, gboolean wait, gboolean *no_firmware);
+gboolean nm_device_bring_up(NMDevice *self);
+gboolean nm_device_bring_up_full(NMDevice *self, gboolean block, gboolean *no_firmware);
 
 void nm_device_take_down(NMDevice *self, gboolean block);
 

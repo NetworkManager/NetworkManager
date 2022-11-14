@@ -402,7 +402,7 @@ supplicant_iface_state_is_completed(NMDeviceMacsec *self, NMSupplicantInterfaceS
         nm_clear_g_source(&priv->supplicant.lnk_timeout_id);
         nm_clear_g_source(&priv->supplicant.con_timeout_id);
 
-        nm_device_bring_up(NM_DEVICE(self), TRUE, NULL);
+        nm_device_bring_up(NM_DEVICE(self));
 
         /* If this is the initial association during device activation,
          * schedule the next activation stage.
