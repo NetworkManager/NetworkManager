@@ -450,7 +450,7 @@ _create_iface_dbus_call_get_interface_cb(GObject *source, GAsyncResult *result, 
         char ifname[NMP_IFNAMSIZ];
 
         if (handle->create_iface_try_count < CREATE_IFACE_TRY_COUNT_MAX
-            && _nm_dbus_error_has_name(error, NM_WPAS_ERROR_UNKNOWN_IFACE)
+            && nm_dbus_error_is(error, NM_WPAS_ERROR_UNKNOWN_IFACE)
             && nm_platform_if_indextoname(NM_PLATFORM_GET, handle->ifindex, ifname)) {
             /* Before, supplicant told us the interface existed. Was there a race?
              * Try again. */
@@ -500,7 +500,7 @@ _create_iface_dbus_call_create_interface_cb(GObject      *source,
                 nm_assert(handle->self);
                 TRUE;
             })
-            && _nm_dbus_error_has_name(error, NM_WPAS_ERROR_EXISTS_ERROR)
+            && nm_dbus_error_is(error, NM_WPAS_ERROR_EXISTS_ERROR)
             && nm_platform_if_indextoname(NM_PLATFORM_GET, handle->ifindex, ifname)) {
             self = handle->self;
             _LOGT("create-iface[" NM_HASH_OBFUSCATE_PTR_FMT

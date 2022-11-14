@@ -367,31 +367,6 @@ void _nm_dbus_errors_init(void);
 
 extern gboolean _nm_utils_is_manager_process;
 
-gboolean
-_nm_dbus_typecheck_response(GVariant *response, const GVariantType *reply_type, GError **error);
-
-gulong _nm_dbus_signal_connect_data(GDBusProxy         *proxy,
-                                    const char         *signal_name,
-                                    const GVariantType *signature,
-                                    GCallback           c_handler,
-                                    gpointer            data,
-                                    GClosureNotify      destroy_data,
-                                    GConnectFlags       connect_flags);
-#define _nm_dbus_signal_connect(proxy, name, signature, handler, data) \
-    _nm_dbus_signal_connect_data(proxy, name, signature, handler, data, NULL, (GConnectFlags) 0)
-
-GVariant *_nm_dbus_proxy_call_finish(GDBusProxy         *proxy,
-                                     GAsyncResult       *res,
-                                     const GVariantType *reply_type,
-                                     GError            **error);
-
-GVariant *_nm_dbus_connection_call_finish(GDBusConnection    *dbus_connection,
-                                          GAsyncResult       *result,
-                                          const GVariantType *reply_type,
-                                          GError            **error);
-
-gboolean _nm_dbus_error_has_name(GError *error, const char *dbus_error_name);
-
 /*****************************************************************************/
 
 char *_nm_utils_ssid_to_utf8(GBytes *ssid);

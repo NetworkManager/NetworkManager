@@ -2647,7 +2647,7 @@ scan_request_cb(GObject *source, GAsyncResult *result, gpointer user_data)
         _LOGD("request-scan: request cancelled");
     else {
         if (error) {
-            if (_nm_dbus_error_has_name(error, "fi.w1.wpa_supplicant1.Interface.ScanError"))
+            if (nm_dbus_error_is(error, "fi.w1.wpa_supplicant1.Interface.ScanError"))
                 _LOGD("request-scan: could not get scan request result: %s", error->message);
             else {
                 g_dbus_error_strip_remote_error(error);

@@ -11,6 +11,7 @@
 #include <sys/stat.h>
 #include <gio/gunixfdlist.h>
 
+#include "libnm-glib-aux/nm-dbus-aux.h"
 #include "libnm-core-intern/nm-core-internal.h"
 #include "NetworkManagerUtils.h"
 
@@ -294,24 +295,24 @@ on_proxy_acquired(GObject *object, GAsyncResult *res, NMSleepMonitor *self)
     g_clear_object(&self->cancellable);
 
 #if USE_UPOWER
-    self->sig_id_1 = _nm_dbus_signal_connect(self->proxy,
-                                             "Sleeping",
-                                             NULL,
-                                             G_CALLBACK(upower_sleeping_cb),
-                                             self);
-    self->sig_id_2 = _nm_dbus_signal_connect(self->proxy,
-                                             "Resuming",
-                                             NULL,
-                                             G_CALLBACK(upower_resuming_cb),
-                                             self);
+    self->sig_id_1 = _nm_dbus_proxy_signal_connect(self->proxy,
+                                                   "Sleeping",
+                                                   NULL,
+                                                   G_CALLBACK(upower_sleeping_cb),
+                                                   self);
+    self->sig_id_2 = _nm_dbus_proxy_signal_connect(self->proxy,
+                                                   "Resuming",
+                                                   NULL,
+                                                   G_CALLBACK(upower_resuming_cb),
+                                                   self);
 #else
     self->sig_id_1 =
         g_signal_connect(self->proxy, "notify::g-name-owner", G_CALLBACK(name_owner_cb), self);
-    self->sig_id_2 = _nm_dbus_signal_connect(self->proxy,
-                                             "PrepareForSleep",
-                                             G_VARIANT_TYPE("(b)"),
-                                             G_CALLBACK(prepare_for_sleep_cb),
-                                             self);
+    self->sig_id_2 = _nm_dbus_proxy_signal_connect(self->proxy,
+                                                   "PrepareForSleep",
+                                                   G_VARIANT_TYPE("(b)"),
+                                                   G_CALLBACK(prepare_for_sleep_cb),
+                                                   self);
     {
         gs_free char *owner = NULL;
 
