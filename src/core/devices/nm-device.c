@@ -15823,7 +15823,7 @@ _set_state_full(NMDevice *self, NMDeviceState state, NMDeviceStateReason reason,
 
         if (priv->sys_iface_state == NM_DEVICE_SYS_IFACE_STATE_MANAGED) {
             if (old_state == NM_DEVICE_STATE_UNMANAGED || priv->firmware_missing) {
-                if (!nm_device_bring_up_full(self, TRUE, TRUE, &no_firmware) && no_firmware)
+                if (!nm_device_bring_up_full(self, TRUE, FALSE, &no_firmware) && no_firmware)
                     _LOGW(LOGD_PLATFORM, "firmware may be missing.");
                 nm_device_set_firmware_missing(self, no_firmware ? TRUE : FALSE);
             }
