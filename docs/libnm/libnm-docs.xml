@@ -301,6 +301,7 @@ print ("NetworkManager version " + client.get_version())]]></programlisting></in
     <xi:include href="xml/nm-object.xml"/>
     <xi:include href="xml/nm-errors.xml"/>
     <xi:include href="xml/nm-dbus-interface.xml"/>
+    <xi:include href="xml/nm-vpn-dbus-interface.xml"/>
   </chapter>
 
   <chapter>
@@ -414,7 +415,10 @@ print ("NetworkManager version " + client.get_version())]]></programlisting></in
     <title>Utility API Reference</title>
     <xi:include href="xml/nm-keyfile.xml"/>
     <xi:include href="xml/nm-utils.xml"/>
+    <xi:include href="xml/nm-conn-utils.xml"/>
+    <xi:include href="xml/nm-ethtool-utils.xml"/>
     <xi:include href="xml/nm-version.xml"/>
+    <xi:include href="xml/nm-version-macros.xml"/>
   </chapter>
 
   <chapter>

@@ -601,7 +601,7 @@ handle_error:
 /**
  * nm_setting_bond_validate_option:
  * @name: the name of the option to validate
- * @value (allow-none): the value of the option to validate.
+ * @value: (allow-none): the value of the option to validate.
  *
  * Checks whether @name is a valid bond option and @value is a valid value for
  * the @name. If @value is %NULL, the function only validates the option name.
@@ -1273,7 +1273,7 @@ nm_setting_bond_class_init(NMSettingBondClass *klass)
     setting_class->verify = verify;
 
     /**
-     * NMSettingBond:options: (type GHashTable(utf8,utf8)):
+     * NMSettingBond:options: (type GHashTable(utf8,utf8))
      *
      * Dictionary of key/value pairs of bonding options.  Both keys and values
      * must be strings. Option names must contain only alphanumeric characters

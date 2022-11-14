@@ -1,44 +1,35 @@
 # SPDX-License-Identifier: LGPL-2.1-or-later
 
 private_headers = [
-  'common.h',
-  'nm-core-internal.h',
-  'nm-core-tests-enum-types.h',
-  'nm-crypto-impl.h',
-  'nm-crypto.h',
+  'nm-core-types.h',
+
   'nm-dbus-helpers.h',
-  'nm-default-libnm-core.h',
+  'nm-default-libnm.h',
   'nm-device-private.h',
   'nm-dhcp4-config.h',
   'nm-dhcp6-config.h',
   'nm-dns-manager.h',
   'nm-ip4-config.h',
   'nm-ip6-config.h',
-  'nm-manager.h',
+  'nm-libnm-utils.h',
   'nm-object-private.h',
-  'nm-property-compare.h',
   'nm-remote-connection-private.h',
+
+  'nm-connection-private.h',
+  'nm-default-libnm-core.h',
+  'nm-property-compare.h',
   'nm-setting-private.h',
+  'nm-team-utils.h',
   'nm-utils-private.h',
 
+  'nm-core-tests-enum-types.h',
   'test-general-enums.h',
-
-  'nm-keyfile-internal.h',
-  'nm-keyfile-utils.h',
-
-  'nm-auth-subject.h',
-  'nm-common-macros.h',
-  'nm-ethtool-base.h',
-  'nm-libnm-core-utils.h',
-
-  'nm-dispatcher-api.h',
-  'nm-libnm-core-aux.h',
 ]
 
 scan_args = [
   '--rebuild-types',
   '--rebuild-sections',
-  '--ignore-decorators=NM_AVAILABLE_IN_\d_\d\d?|NM_DEPRECATED_IN_\d_\d\d?',
+  '--ignore-decorators=NM_AVAILABLE_IN_\d+_\d+|NM_DEPRECATED_IN_\d+_\d+|NM_DEPRECATED_IN_\d+_\d+_FOR\(\)',
   '--ignore-headers=' + ' '.join(private_headers),
 ]
 

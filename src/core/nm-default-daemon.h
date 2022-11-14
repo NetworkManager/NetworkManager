@@ -18,6 +18,7 @@
 #include "nm-version.h"
 
 #include "nm-core-types.h"
+#include "nm-errors.h"
 #include "nm-types.h"
 #include "libnm-log-core/nm-logging.h"
 

@@ -20,7 +20,7 @@
 
 G_DEFINE_BOXED_TYPE(NMDnsEntry, nm_dns_entry, nm_dns_entry_dup, nm_dns_entry_unref)
 
-struct NMDnsEntry {
+struct _NMDnsEntry {
     guint refcount;
 
     char    *interface;

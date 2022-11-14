@@ -1604,7 +1604,7 @@ nm_setting_802_1x_get_phase2_ca_cert_path(NMSetting8021x *setting)
  * nm_setting_802_1x_get_phase2_ca_cert_blob() and
  * nm_setting_802_1x_get_phase2_ca_cert_path().
  *
- * Currently, it's limited to PKCS#11 URIs ('pkcs11' scheme as defined by RFC
+ * Currently, it's limited to PKCS#<!-- -->11 URIs ('pkcs11' scheme as defined by RFC
  * 7512), but may be extended to other schemes in future (such as 'file' URIs
  * for local files and 'data' URIs for inline certificate data).
  *
@@ -1940,7 +1940,7 @@ nm_setting_802_1x_get_phase2_client_cert_path(NMSetting8021x *setting)
  * nm_setting_802_1x_get_phase2_ca_cert_blob() and
  * nm_setting_802_1x_get_phase2_ca_cert_path().
  *
- * Currently, it's limited to PKCS#11 URIs ('pkcs11' scheme as defined by RFC
+ * Currently, it's limited to PKCS#<!-- -->11 URIs ('pkcs11' scheme as defined by RFC
  * 7512), but may be extended to other schemes in future (such as 'file' URIs
  * for local files and 'data' URIs for inline certificate data).
  *
@@ -2176,7 +2176,7 @@ nm_setting_802_1x_get_private_key_path(NMSetting8021x *setting)
  * nm_setting_802_1x_get_private_key_blob() and
  * nm_setting_802_1x_get_private_key_path().
  *
- * Currently, it's limited to PKCS#11 URIs ('pkcs11' scheme as defined by RFC
+ * Currently, it's limited to PKCS#<!-- -->11 URIs ('pkcs11' scheme as defined by RFC
  * 7512), but may be extended to other schemes in future (such as 'file' URIs
  * for local files and 'data' URIs for inline certificate data).
  *
@@ -2379,7 +2379,7 @@ nm_setting_802_1x_get_phase2_private_key_path(NMSetting8021x *setting)
  * nm_setting_802_1x_get_phase2_private_key_blob() and
  * nm_setting_802_1x_get_phase2_private_key_path().
  *
- * Currently, it's limited to PKCS#11 URIs ('pkcs11' scheme as defined by RFC
+ * Currently, it's limited to PKCS#<!-- -->11 URIs ('pkcs11' scheme as defined by RFC
  * 7512), but may be extended to other schemes in future (such as 'file' URIs
  * for local files and 'data' URIs for inline certificate data).
  *

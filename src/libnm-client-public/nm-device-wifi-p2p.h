@@ -40,8 +40,8 @@ typedef struct _NMDeviceWifiP2PClass NMDeviceWifiP2PClass;
 NM_AVAILABLE_IN_1_16
 GType nm_device_wifi_p2p_get_type(void);
 
-NM_AVAILABLE_IN_1_16
 NM_DEPRECATED_IN_1_24_FOR(nm_device_get_hw_address)
+NM_AVAILABLE_IN_1_16
 const char *nm_device_wifi_p2p_get_hw_address(NMDeviceWifiP2P *device);
 
 NM_AVAILABLE_IN_1_42

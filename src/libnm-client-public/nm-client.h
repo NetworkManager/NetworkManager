@@ -134,7 +134,7 @@ GQuark nm_client_error_quark(void);
  *
  * Since: 1.6
  */
-typedef struct NMDnsEntry NMDnsEntry;
+typedef struct _NMDnsEntry NMDnsEntry;
 
 NM_AVAILABLE_IN_1_6
 GType nm_dns_entry_get_type(void);
