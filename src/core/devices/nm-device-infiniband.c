@@ -89,7 +89,7 @@ act_stage1_prepare(NMDevice *device, NMDeviceStateReason *out_failure_reason)
     ok = nm_platform_sysctl_set(nm_device_get_platform(device),
                                 NMP_SYSCTL_PATHID_NETDIR(dirfd, ifname_verified, "mode"),
                                 transport_mode);
-    nm_device_bring_up(device, TRUE, NULL);
+    nm_device_bring_up(device);
 
     if (!ok) {
         NM_SET_OUT(out_failure_reason, NM_DEVICE_STATE_REASON_CONFIG_FAILED);
