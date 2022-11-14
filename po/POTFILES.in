@@ -72,7 +72,6 @@ src/libnm-client-impl/nm-vpn-service-plugin.c
 src/libnm-core-aux-extern/nm-libnm-core-aux.c
 src/libnm-core-aux-intern/nm-libnm-core-utils.c
 src/libnm-core-impl/nm-connection.c
-src/libnm-core-impl/nm-dbus-utils.c
 src/libnm-core-impl/nm-keyfile-utils.c
 src/libnm-core-impl/nm-keyfile.c
 src/libnm-core-impl/nm-setting-6lowpan.c
@@ -132,6 +131,7 @@ src/libnm-crypto/nm-crypto-gnutls.c
 src/libnm-crypto/nm-crypto-nss.c
 src/libnm-crypto/nm-crypto-null.c
 src/libnm-crypto/nm-crypto.c
+src/libnm-glib-aux/nm-dbus-aux.c
 src/libnm-glib-aux/nm-shared-utils.c
 src/libnm-log-core/nm-logging.c
 src/libnmc-base/nm-client-utils.c
