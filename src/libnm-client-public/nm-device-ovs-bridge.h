@@ -38,6 +38,7 @@ typedef struct _NMDeviceOvsBridgeClass NMDeviceOvsBridgeClass;
 NM_AVAILABLE_IN_1_10
 GType nm_device_ovs_bridge_get_type(void);
 
+NM_DEPRECATED_IN_1_34_FOR(nm_device_get_ports)
 NM_AVAILABLE_IN_1_14
 const GPtrArray *nm_device_ovs_bridge_get_slaves(NMDeviceOvsBridge *device);
 

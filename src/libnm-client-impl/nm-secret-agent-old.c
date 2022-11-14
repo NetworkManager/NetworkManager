@@ -964,7 +964,7 @@ nm_secret_agent_old_unregister_finish(NMSecretAgentOld *self, GAsyncResult *resu
 /*****************************************************************************/
 
 /**
- * nm_secret_agent_old_get_secrets: (virtual get_secrets):
+ * nm_secret_agent_old_get_secrets: (virtual get_secrets)
  * @self: a #NMSecretAgentOld
  * @connection: the #NMConnection for which we're asked secrets
  * @setting_name: the name of the secret setting
@@ -1007,7 +1007,7 @@ nm_secret_agent_old_get_secrets(NMSecretAgentOld              *self,
 }
 
 /**
- * nm_secret_agent_old_save_secrets: (virtual save_secrets):
+ * nm_secret_agent_old_save_secrets: (virtual save_secrets)
  * @self: a #NMSecretAgentOld
  * @connection: a #NMConnection
  * @callback: (scope async): a callback, to be invoked when the operation is done
@@ -1034,7 +1034,7 @@ nm_secret_agent_old_save_secrets(NMSecretAgentOld               *self,
 }
 
 /**
- * nm_secret_agent_old_delete_secrets: (virtual delete_secrets):
+ * nm_secret_agent_old_delete_secrets: (virtual delete_secrets)
  * @self: a #NMSecretAgentOld
  * @connection: a #NMConnection
  * @callback: (scope async): a callback, to be invoked when the operation is done

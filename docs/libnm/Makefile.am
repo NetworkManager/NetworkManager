@@ -24,7 +24,7 @@ DOC_SOURCE_DIR= \
 	$(NULL)
 
 # Extra options to supply to gtkdoc-scan.
-SCAN_OPTIONS=--rebuild-types --rebuild-sections --ignore-decorators="NM_AVAILABLE_IN_\d_\d\d?|NM_DEPRECATED_IN_\d_\d\d?"
+SCAN_OPTIONS=--rebuild-types --rebuild-sections --ignore-decorators='NM_AVAILABLE_IN_\d+_\d+|NM_DEPRECATED_IN_\d+_\d+|NM_DEPRECATED_IN_\d+_\d+_FOR\(\)'
 
 # Extra options to supply to gtkdoc-mkdb.
 MKDB_OPTIONS=--sgml-mode --output-format=xml
@@ -38,40 +38,29 @@ CFILE_GLOB=$(top_srcdir)/src/libnm-core-impl/*.c $(top_srcdir)/src/libnm-client-
 
 # Header files to ignore when scanning.
 IGNORE_HFILES= \
-	common.h \
-	nm-core-internal.h \
-	nm-core-tests-enum-types.h \
-	nm-crypto-impl.h \
-	nm-crypto.h \
+	nm-core-types.h \
+	\
 	nm-dbus-helpers.h \
-	nm-default-libnm-core.h \
+	nm-default-libnm.h \
 	nm-device-private.h \
 	nm-dhcp4-config.h \
 	nm-dhcp6-config.h \
 	nm-dns-manager.h \
 	nm-ip4-config.h \
 	nm-ip6-config.h \
-	nm-manager.h \
+	nm-libnm-utils.h \
 	nm-object-private.h \
-	nm-property-compare.h \
 	nm-remote-connection-private.h \
+	\
+	nm-connection-private.h \
+	nm-default-libnm-core.h \
+	nm-property-compare.h \
 	nm-setting-private.h \
+	nm-team-utils.h \
 	nm-utils-private.h \
 	\
+	nm-core-tests-enum-types.h \
 	test-general-enums.h \
-	\
-	nm-keyfile-internal.h \
-	nm-keyfile-utils.h \
-	\
-	nm-auth-subject.h \
-	nm-common-macros.h \
-	nm-ethtool-base.h \
-	nm-libnm-core-utils.h \
-	\
-	nm-dispatcher-api.h \
-	nm-libnm-core-aux.h \
-	\
-	nm-libnm-aux.h \
 	\
 	$(NULL)
 

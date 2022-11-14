@@ -15,6 +15,8 @@
 
 #include "nm-core-enum-types.h"
 
+#include "nm-errors.h"
+
 #include "nm-connection.h"
 #include "nm-simple-connection.h"
 #include "nm-keyfile.h"
@@ -120,6 +122,7 @@
 #include "nm-device-tun.h"
 #include "nm-device-veth.h"
 #include "nm-device-vlan.h"
+#include "nm-device-vrf.h"
 #include "nm-device-vxlan.h"
 #include "nm-device-wifi.h"
 #include "nm-device-wifi-p2p.h"
