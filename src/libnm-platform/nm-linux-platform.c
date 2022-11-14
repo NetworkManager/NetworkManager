@@ -34,6 +34,7 @@
 #include <unistd.h>
 
 #include "libnm-glib-aux/nm-c-list.h"
+#include "libnm-glib-aux/nm-ptr-array.h"
 #include "libnm-glib-aux/nm-io-utils.h"
 #include "libnm-glib-aux/nm-secret-utils.h"
 #include "libnm-glib-aux/nm-time-utils.h"
@@ -4707,6 +4708,42 @@ _nlmsg_is_del(guint16 nlmsg_type)
     return FALSE;
 }
 
+static void
+nmp_object_new_from_nl_v(NMPlatform               *platform,
+                         const NMPCache           *cache,
+                         const struct nl_msg_lite *msg,
+                         gboolean                  id_only,
+                         NMPtrArray              **out_objs)
+{
+    ParseNlmsgIter parse_nlmsg_iter = {
+        .iter_more = FALSE,
+    };
+    NMPObject *obj;
+
+    nm_assert(out_objs);
+    nm_assert(*out_objs);
+    nm_assert((*out_objs)->len == 0);
+    nm_assert((*out_objs)->_destroy_fcn == (GDestroyNotify) nmp_object_unref);
+
+    while (TRUE) {
+        obj = nmp_object_new_from_nl(platform, cache, msg, id_only, &parse_nlmsg_iter);
+        if (!obj)
+            return;
+
+        nm_ptr_array_add(out_objs, obj);
+
+        if (!parse_nlmsg_iter.iter_more)
+            return;
+
+        /* There is a special case here. For IPv6 routes, kernel will merge/mangle routes
+         * that only differ by their next-hop, and pretend they are multi-hop routes. We
+         * untangle them, and pretend there are only single-hop routes. Hence, one RTM_{NEW,DEL}ROUTE
+         * message might be about multiple IPv6 routes (NMPObject). So, now let's parse the next... */
+
+        nm_assert(NM_IN_SET(msg->nm_nlh->nlmsg_type, RTM_NEWROUTE, RTM_DELROUTE));
+    }
+}
+
 /*****************************************************************************/
 
 static gboolean
@@ -7925,27 +7962,24 @@ event_seq_check(NMPlatform             *platform,
 static void
 _rtnl_handle_msg(NMPlatform *platform, const struct nl_msg_lite *msg)
 {
-    char                      sbuf1[NM_UTILS_TO_STRING_BUFFER_SIZE];
-    NMLinuxPlatformPrivate   *priv;
-    nm_auto_nmpobj NMPObject *obj = NULL;
-    NMPCacheOpsType           cache_op;
-    const struct nlmsghdr    *msghdr;
-    char                      buf_nlmsghdr[400];
-    gboolean                  is_del  = FALSE;
-    gboolean                  is_dump = FALSE;
-    NMPCache                 *cache   = nm_platform_get_cache(platform);
-    ParseNlmsgIter            parse_nlmsg_iter;
+    NMLinuxPlatformPrivate      *priv;
+    NMPtrArrayStack              objs_stack = NM_PTR_ARRAY_STACK_INIT(nmp_object_unref);
+    nm_auto_ptrarray NMPtrArray *objs       = &objs_stack.arr;
+    gsize                        i_objs;
+    NMPCacheOpsType              cache_op;
+    const struct nlmsghdr       *msghdr;
+    char                         buf_nlmsghdr[400];
+    gboolean                     is_del  = FALSE;
+    gboolean                     is_dump = FALSE;
+    NMPCache                    *cache   = nm_platform_get_cache(platform);
 
     msghdr = msg->nm_nlh;
 
     is_del = _nlmsg_is_del(msghdr->nlmsg_type);
 
-    parse_nlmsg_iter = (ParseNlmsgIter){
-        .iter_more = FALSE,
-    };
+    nmp_object_new_from_nl_v(platform, cache, msg, is_del, &objs);
 
-    obj = nmp_object_new_from_nl(platform, cache, msg, is_del, &parse_nlmsg_iter);
-    if (!obj) {
+    if (objs->len == 0) {
         _LOGT("event-notification: %s: ignore",
               nl_nlmsghdr_to_str(NETLINK_ROUTE, 0, msghdr, buf_nlmsghdr, sizeof(buf_nlmsghdr)));
         return;
@@ -7959,22 +7993,26 @@ _rtnl_handle_msg(NMPlatform *platform, const struct nl_msg_lite *msg)
                      RTM_NEWRULE,
                      RTM_NEWQDISC,
                      RTM_NEWTFILTER)) {
-        is_dump =
-            delayed_action_refresh_all_in_progress(platform,
-                                                   delayed_action_refresh_from_needle_object(obj));
+        is_dump = delayed_action_refresh_all_in_progress(
+            platform,
+            delayed_action_refresh_from_needle_object(objs->ptrs[0]));
     }
 
-    _LOGT("event-notification: %s%s: %s",
-          nl_nlmsghdr_to_str(NETLINK_ROUTE, 0, msghdr, buf_nlmsghdr, sizeof(buf_nlmsghdr)),
-          is_dump ? ", in-dump" : "",
-          nmp_object_to_string(obj,
-                               is_del ? NMP_OBJECT_TO_STRING_ID : NMP_OBJECT_TO_STRING_PUBLIC,
-                               sbuf1,
-                               sizeof(sbuf1)));
-
-    while (TRUE) {
+    for (i_objs = 0; i_objs < objs->len; i_objs++) {
+        NMPObject                      *obj     = objs->ptrs[i_objs];
         nm_auto_nmpobj const NMPObject *obj_old = NULL;
         nm_auto_nmpobj const NMPObject *obj_new = NULL;
+        char                            sbuf1[NM_UTILS_TO_STRING_BUFFER_SIZE];
+        char                            sbuf2[100];
+
+        _LOGT("event-notification: %s%s%s: %s",
+              nl_nlmsghdr_to_str(NETLINK_ROUTE, 0, msghdr, buf_nlmsghdr, sizeof(buf_nlmsghdr)),
+              is_dump ? ", in-dump" : "",
+              objs->len > 1u ? nm_sprintf_buf(sbuf2, ", [%zu]", i_objs) : "",
+              nmp_object_to_string(obj,
+                                   is_del ? NMP_OBJECT_TO_STRING_ID : NMP_OBJECT_TO_STRING_PUBLIC,
+                                   sbuf1,
+                                   sizeof(sbuf1)));
 
         switch (msghdr->nlmsg_type) {
         case RTM_GETLINK:
@@ -7983,6 +8021,7 @@ _rtnl_handle_msg(NMPlatform *platform, const struct nl_msg_lite *msg)
         case RTM_NEWQDISC:
         case RTM_NEWRULE:
         case RTM_NEWTFILTER:
+            nm_assert(objs->len == 1u);
             cache_op = nmp_cache_update_netlink(cache, obj, is_dump, &obj_old, &obj_new);
             if (cache_op != NMP_CACHE_OPS_UNCHANGED) {
                 cache_on_change(platform, cache_op, obj_old, obj_new);
@@ -8099,6 +8138,7 @@ _rtnl_handle_msg(NMPlatform *platform, const struct nl_msg_lite *msg)
         case RTM_DELROUTE:
         case RTM_DELRULE:
         case RTM_DELTFILTER:
+            nm_assert(objs->len == 1u || msghdr->nlmsg_type == RTM_DELROUTE);
             cache_op = nmp_cache_remove_netlink(cache, obj, &obj_old, &obj_new);
             if (cache_op != NMP_CACHE_OPS_UNCHANGED) {
                 cache_on_change(platform, cache_op, obj_old, obj_new);
@@ -8107,31 +8147,6 @@ _rtnl_handle_msg(NMPlatform *platform, const struct nl_msg_lite *msg)
             break;
         default:
             break;
-        }
-
-        if (!parse_nlmsg_iter.iter_more) {
-            /* we are done. */
-            return;
-        }
-
-        /* There is a special case here. For IPv6 routes, kernel will merge/mangle routes
-         * that only differ by their next-hop, and pretend they are multi-hop routes. We
-         * untangle them, and pretend there are only single-hop routes. Hence, one RTM_{NEW,DEL}ROUTE
-         * message might be about multiple IPv6 routes (NMPObject). So, now let's parse the next... */
-
-        nm_assert(NM_IN_SET(msghdr->nlmsg_type, RTM_NEWROUTE, RTM_DELROUTE));
-
-        nm_clear_pointer(&obj, nmp_object_unref);
-
-        obj = nmp_object_new_from_nl(platform, cache, msg, is_del, &parse_nlmsg_iter);
-        if (!obj) {
-            /* we are done. Usually we don't expect this, because we were told that
-             * there would be another object to collect, but there isn't one. Something
-             * unusual happened.
-             *
-             * the only reason why this actually could happen is if the next-hop data
-             * is invalid -- we didn't verify that it would be valid when we set iter_more. */
-            return;
         }
     }
 }
