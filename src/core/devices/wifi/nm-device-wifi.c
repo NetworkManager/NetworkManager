@@ -3591,7 +3591,7 @@ set_enabled(NMDevice *device, gboolean enabled)
         if (state != NM_DEVICE_STATE_UNAVAILABLE)
             _LOGW(LOGD_CORE, "not in expected unavailable state!");
 
-        if (!nm_device_bring_up_full(NM_DEVICE(self), TRUE, &no_firmware)) {
+        if (!nm_device_bring_up_full(NM_DEVICE(self), TRUE, TRUE, &no_firmware)) {
             _LOGD(LOGD_WIFI, "enable blocked by failure to bring device up");
 
             if (no_firmware)
