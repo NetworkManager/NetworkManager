@@ -10039,7 +10039,7 @@ msgstr "访问遭到拒绝"
 
 #: src/nmcli/common.c:1617
 msgid "NetworkManager is not running"
-msgstr "NetworkManaer 未运行"
+msgstr "NetworkManager 未运行"
 
 #: src/nmcli/common.c:1627
 msgid "none"
@@ -13387,7 +13387,7 @@ msgstr "错误：只允许使用这些字段：%s"
 #. NetworkManager quit while we were waiting.
 #: src/nmcli/general.c:554 src/nmtui/nmtui.c:246
 msgid "NetworkManager is not running."
-msgstr "NetworkManaer 未运行。"
+msgstr "NetworkManager 未运行。"
 
 #: src/nmcli/general.c:576
 msgid "NetworkManager permissions"
