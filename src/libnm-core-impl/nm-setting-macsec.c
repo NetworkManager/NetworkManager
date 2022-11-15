@@ -501,7 +501,7 @@ nm_setting_macsec_class_init(NMSettingMacsecClass *klass)
      * NMSettingMacsec:mka-cak:
      *
      * The pre-shared CAK (Connectivity Association Key) for MACsec
-     * Key Agreement.
+     * Key Agreement. Must be a string of 32 hexadecimal characters.
      *
      * Since: 1.6
      **/
@@ -532,7 +532,8 @@ nm_setting_macsec_class_init(NMSettingMacsecClass *klass)
      * NMSettingMacsec:mka-ckn:
      *
      * The pre-shared CKN (Connectivity-association Key Name) for
-     * MACsec Key Agreement.
+     * MACsec Key Agreement. Must be a string of hexadecimal characters
+     * with a even length between 2 and 64.
      *
      * Since: 1.6
      **/
