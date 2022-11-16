@@ -470,8 +470,20 @@ nm_vpn_editor_plugin_import(NMVpnEditorPlugin *plugin, const char *path, GError 
     g_return_val_if_fail(NM_IS_VPN_EDITOR_PLUGIN(plugin), NULL);
 
     if (nm_vpn_editor_plugin_get_capabilities(plugin) & NM_VPN_EDITOR_PLUGIN_CAPABILITY_IMPORT) {
+        gs_free_error GError *error2 = NULL;
+
         g_return_val_if_fail(NM_VPN_EDITOR_PLUGIN_GET_INTERFACE(plugin)->import_from_file != NULL,
                              NULL);
+
+        if (!error) {
+            /* Some VPN plugins crash if error argument is omitted. Work around that
+             * in libnm by always requesting an error.
+             *
+             * https://gitlab.gnome.org/GNOME/NetworkManager-vpnc/-/blob/c7d197477c94c5bae0396f0ef826db4d835e487d/properties/nm-vpnc-editor-plugin.c#L281
+             **/
+            error = &error2;
+        }
+
         return NM_VPN_EDITOR_PLUGIN_GET_INTERFACE(plugin)->import_from_file(plugin, path, error);
     }
 
