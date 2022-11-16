@@ -403,6 +403,7 @@ nm_supplicant_config_add_setting_macsec(NMSupplicantConfig *self,
     const char *value;
     char        buf[32];
     int         port;
+    gsize       key_len;
 
     g_return_val_if_fail(NM_IS_SUPPLICANT_CONFIG(self), FALSE);
     g_return_val_if_fail(setting != NULL, FALSE);
@@ -446,7 +447,16 @@ nm_supplicant_config_add_setting_macsec(NMSupplicantConfig *self,
             return FALSE;
 
         value = nm_setting_macsec_get_mka_ckn(setting);
-        if (!value || !nm_utils_hexstr2bin_buf(value, FALSE, FALSE, NULL, buffer_ckn)) {
+        if (!value
+            || !nm_utils_hexstr2bin_full(value,
+                                         FALSE,
+                                         FALSE,
+                                         FALSE,
+                                         NULL,
+                                         0,
+                                         buffer_ckn,
+                                         G_N_ELEMENTS(buffer_ckn),
+                                         &key_len)) {
             g_set_error_literal(error,
                                 NM_SUPPLICANT_ERROR,
                                 NM_SUPPLICANT_ERROR_CONFIG,
@@ -456,7 +466,7 @@ nm_supplicant_config_add_setting_macsec(NMSupplicantConfig *self,
         if (!nm_supplicant_config_add_option(self,
                                              "mka_ckn",
                                              (char *) buffer_ckn,
-                                             sizeof(buffer_ckn),
+                                             key_len,
                                              value,
                                              error))
             return FALSE;
