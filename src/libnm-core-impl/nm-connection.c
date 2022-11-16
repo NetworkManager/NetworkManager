@@ -202,8 +202,10 @@ _nm_connection_add_setting(NMConnection *connection, NMSetting *setting)
     priv = NM_CONNECTION_GET_PRIVATE(connection);
 
     s_old = priv->settings[setting_info->meta_type];
-    if (s_old == setting)
+    if (s_old == setting) {
+        g_object_unref(s_old);
         return;
+    }
 
     priv->settings[setting_info->meta_type] = setting;
 
