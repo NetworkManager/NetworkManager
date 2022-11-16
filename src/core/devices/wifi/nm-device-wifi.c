@@ -960,7 +960,7 @@ deactivate(NMDevice *device)
         != _NM_802_11_MODE_INFRA) {
         nm_device_take_down(NM_DEVICE(self), TRUE);
         nm_platform_wifi_set_mode(nm_device_get_platform(device), ifindex, _NM_802_11_MODE_INFRA);
-        nm_device_bring_up(NM_DEVICE(self), TRUE, NULL);
+        nm_device_bring_up(NM_DEVICE(self));
     }
 
     if (priv->mode != _NM_802_11_MODE_INFRA) {
@@ -3586,7 +3586,7 @@ set_enabled(NMDevice *device, gboolean enabled)
         if (state != NM_DEVICE_STATE_UNAVAILABLE)
             _LOGW(LOGD_CORE, "not in expected unavailable state!");
 
-        if (!nm_device_bring_up(NM_DEVICE(self), TRUE, &no_firmware)) {
+        if (!nm_device_bring_up_full(NM_DEVICE(self), TRUE, TRUE, &no_firmware)) {
             _LOGD(LOGD_WIFI, "enable blocked by failure to bring device up");
 
             if (no_firmware)

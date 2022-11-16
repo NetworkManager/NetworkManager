@@ -492,7 +492,7 @@ act_stage1_prepare(NMDevice *device, NMDeviceStateReason *out_failure_reason)
     /* This is a workaround because netlink do not support ifname as primary */
     set_bond_attr_or_default(device, s_bond, NM_SETTING_BOND_OPTION_PRIMARY);
 
-    nm_device_bring_up(device, TRUE, NULL);
+    nm_device_bring_up(device);
 
     return ret;
 }
@@ -540,7 +540,7 @@ attach_port(NMDevice                  *device,
         success = nm_platform_link_enslave(nm_device_get_platform(device),
                                            nm_device_get_ip_ifindex(device),
                                            nm_device_get_ip_ifindex(port));
-        nm_device_bring_up(port, TRUE, NULL);
+        nm_device_bring_up(port);
 
         if (!success) {
             _LOGI(LOGD_BOND, "attaching bond port %s: failed", nm_device_get_ip_iface(port));
@@ -613,7 +613,7 @@ detach_port(NMDevice *device, NMDevice *port, gboolean configure)
          * other state is noticed by the now-released slave.
          */
         if (ifindex_slave > 0) {
-            if (!nm_device_bring_up(port, TRUE, NULL))
+            if (!nm_device_bring_up(port))
                 _LOGW(LOGD_BOND, "detached bond port could not be brought up.");
         }
     } else {

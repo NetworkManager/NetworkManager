@@ -884,7 +884,7 @@ attach_port(NMDevice                  *device,
         success = nm_platform_link_enslave(nm_device_get_platform(device),
                                            nm_device_get_ip_ifindex(device),
                                            nm_device_get_ip_ifindex(port));
-        nm_device_bring_up(port, TRUE, NULL);
+        nm_device_bring_up(port);
 
         if (!success)
             return FALSE;
@@ -934,7 +934,7 @@ detach_port(NMDevice *device, NMDevice *port, gboolean configure)
          * IFF_UP), so we must bring it back up here to ensure carrier changes and
          * other state is noticed by the now-released port.
          */
-        if (!nm_device_bring_up(port, TRUE, NULL)) {
+        if (!nm_device_bring_up(port)) {
             _LOGW(LOGD_TEAM, "detached team port %s could not be brought up", port_iface);
         }
 
