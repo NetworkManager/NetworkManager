@@ -132,7 +132,7 @@ link_changed(NMDevice *device, const NMPlatformLink *pllink)
             nm_device_devip_set_failed(device, AF_INET6, NM_DEVICE_STATE_REASON_CONFIG_FAILED);
             return;
         }
-        nm_device_bring_up(device, TRUE, NULL);
+        nm_device_bring_up(device);
 
         nm_device_devip_set_state(device, AF_INET, NM_DEVICE_IP_STATE_PENDING, NULL);
         nm_device_devip_set_state(device, AF_INET6, NM_DEVICE_IP_STATE_PENDING, NULL);

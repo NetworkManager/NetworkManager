@@ -226,7 +226,7 @@ attach_port(NMDevice                  *device,
         success = nm_platform_link_enslave(nm_device_get_platform(device),
                                            nm_device_get_ip_ifindex(device),
                                            nm_device_get_ip_ifindex(port));
-        nm_device_bring_up(port, TRUE, NULL);
+        nm_device_bring_up(port);
 
         if (!success)
             return FALSE;
