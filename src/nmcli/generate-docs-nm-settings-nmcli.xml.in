@@ -774,12 +774,12 @@
                   description="Whether the transmitted traffic must be encrypted." />
         <property name="mka-cak"
                   alias="cak"
-                  description="The pre-shared CAK (Connectivity Association Key) for MACsec Key Agreement." />
+                  description="The pre-shared CAK (Connectivity Association Key) for MACsec Key Agreement. Must be a string of 32 hexadecimal characters." />
         <property name="mka-cak-flags"
                   description="Flags indicating how to handle the &quot;mka-cak&quot; property." />
         <property name="mka-ckn"
                   alias="ckn"
-                  description="The pre-shared CKN (Connectivity-association Key Name) for MACsec Key Agreement." />
+                  description="The pre-shared CKN (Connectivity-association Key Name) for MACsec Key Agreement. Must be a string of hexadecimal characters with a even length between 2 and 64." />
         <property name="port"
                   alias="port"
                   description="The port component of the SCI (Secure Channel Identifier), between 1 and 65534." />

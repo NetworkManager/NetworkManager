@@ -236,7 +236,7 @@ need_secrets(NMSetting *setting)
 static gboolean
 verify_macsec_key(const char *key, gboolean cak, GError **error)
 {
-    int req_len;
+    size_t len;
 
     /* CAK is a connection secret and can be NULL for various
      * reasons (agent-owned, no permissions to get secrets, etc.)
@@ -252,14 +252,25 @@ verify_macsec_key(const char *key, gboolean cak, GError **error)
         return FALSE;
     }
 
-    req_len = cak ? NM_SETTING_MACSEC_MKA_CAK_LENGTH : NM_SETTING_MACSEC_MKA_CKN_LENGTH;
-    if (strlen(key) != (gsize) req_len) {
-        g_set_error(error,
-                    NM_CONNECTION_ERROR,
-                    NM_CONNECTION_ERROR_INVALID_PROPERTY,
-                    _("the key must be %d characters"),
-                    req_len);
-        return FALSE;
+    len = strlen(key);
+    if (cak) {
+        if (len != NM_SETTING_MACSEC_MKA_CAK_LENGTH) {
+            g_set_error(error,
+                        NM_CONNECTION_ERROR,
+                        NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                        _("the key must be %d characters"),
+                        NM_SETTING_MACSEC_MKA_CAK_LENGTH);
+            return FALSE;
+        }
+    } else {
+        if (len < 2 || len > 64 || len % 2 != 0) {
+            g_set_error_literal(
+                error,
+                NM_CONNECTION_ERROR,
+                NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                _("the key must have an even number of characters between 2 and 64"));
+            return FALSE;
+        }
     }
 
     if (!NM_STRCHAR_ALL(key, ch, g_ascii_isxdigit(ch))) {
@@ -490,7 +501,7 @@ nm_setting_macsec_class_init(NMSettingMacsecClass *klass)
      * NMSettingMacsec:mka-cak:
      *
      * The pre-shared CAK (Connectivity Association Key) for MACsec
-     * Key Agreement.
+     * Key Agreement. Must be a string of 32 hexadecimal characters.
      *
      * Since: 1.6
      **/
@@ -521,7 +532,8 @@ nm_setting_macsec_class_init(NMSettingMacsecClass *klass)
      * NMSettingMacsec:mka-ckn:
      *
      * The pre-shared CKN (Connectivity-association Key Name) for
-     * MACsec Key Agreement.
+     * MACsec Key Agreement. Must be a string of hexadecimal characters
+     * with a even length between 2 and 64.
      *
      * Since: 1.6
      **/
