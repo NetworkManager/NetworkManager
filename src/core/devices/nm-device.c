@@ -240,6 +240,7 @@ typedef struct {
     NMDhcpConfig   *config;
     gulong          notify_sigid;
     NMDeviceIPState state;
+    bool            client_id_fixed : 1;
     union {
         struct {
         } v4;
@@ -802,7 +803,8 @@ static gint64 _get_carrier_wait_ms(NMDevice *self);
 static GBytes *_prop_get_ipv6_dhcp_duid(NMDevice     *self,
                                         NMConnection *connection,
                                         GBytes       *hwaddr,
-                                        gboolean     *out_enforce);
+                                        gboolean     *out_enforce,
+                                        gboolean     *out_is_fixed);
 
 static const char *_activation_func_to_string(ActivationHandleFunc func);
 
@@ -1094,7 +1096,8 @@ static GBytes *
 _prop_get_ipv6_dhcp_duid(NMDevice     *self,
                          NMConnection *connection,
                          GBytes       *hwaddr,
-                         gboolean     *out_enforce)
+                         gboolean     *out_enforce,
+                         gboolean     *out_is_fixed)
 {
     NMSettingIPConfig *s_ip6;
     const char        *duid;
@@ -1108,6 +1111,7 @@ _prop_get_ipv6_dhcp_duid(NMDevice     *self,
 
     s_ip6 = nm_connection_get_setting_ip6_config(connection);
     duid  = nm_setting_ip6_config_get_dhcp_duid(NM_SETTING_IP6_CONFIG(s_ip6));
+    NM_SET_OUT(out_is_fixed, FALSE);
 
     if (!duid) {
         duid = nm_config_data_get_connection_default(NM_CONFIG_GET_DATA,
@@ -1128,8 +1132,10 @@ _prop_get_ipv6_dhcp_duid(NMDevice     *self,
         goto out_fail;
     }
 
-    if (duid_out)
+    if (duid_out) {
+        NM_SET_OUT(out_is_fixed, TRUE);
         goto out_good;
+    }
 
     if (NM_IN_STRSET(duid, "ll", "llt")) {
         if (!hwaddr) {
@@ -1800,7 +1806,8 @@ _prop_get_ipvx_dhcp_iaid(NMDevice     *self,
                          int           addr_family,
                          NMConnection *connection,
                          gboolean      log_silent,
-                         gboolean     *out_is_explicit)
+                         gboolean     *out_is_explicit,
+                         gboolean     *out_is_fixed)
 {
     const int          IS_IPv4 = NM_IS_IPv4(addr_family);
     NMSettingIPConfig *s_ip;
@@ -1810,6 +1817,7 @@ _prop_get_ipvx_dhcp_iaid(NMDevice     *self,
     const char        *fail_reason;
     gboolean           is_explicit = TRUE;
 
+    NM_SET_OUT(out_is_fixed, FALSE);
     s_ip     = nm_connection_get_setting_ip_config(connection, addr_family);
     iaid_str = nm_setting_ip_config_get_dhcp_iaid(s_ip);
     if (!iaid_str) {
@@ -1891,6 +1899,7 @@ _prop_get_ipvx_dhcp_iaid(NMDevice     *self,
         iaid = unaligned_read_be32(digest);
         goto out_good;
     } else if ((iaid = _nm_utils_ascii_str_to_int64(iaid_str, 10, 0, G_MAXUINT32, -1)) != -1) {
+        NM_SET_OUT(out_is_fixed, TRUE);
         goto out_good;
     } else {
         iface = nm_device_get_ip_iface(self);
@@ -2000,7 +2009,10 @@ _prop_get_connection_mud_url(NMDevice *self, NMSettingConnection *s_con)
 }
 
 static GBytes *
-_prop_get_ipv4_dhcp_client_id(NMDevice *self, NMConnection *connection, GBytes *hwaddr)
+_prop_get_ipv4_dhcp_client_id(NMDevice     *self,
+                              NMConnection *connection,
+                              GBytes       *hwaddr,
+                              gboolean     *out_is_fixed)
 {
     NMSettingIPConfig *s_ip4;
     const char        *client_id;
@@ -2015,6 +2027,7 @@ _prop_get_ipv4_dhcp_client_id(NMDevice *self, NMConnection *connection, GBytes *
 
     s_ip4     = nm_connection_get_setting_ip4_config(connection);
     client_id = nm_setting_ip4_config_get_dhcp_client_id(NM_SETTING_IP4_CONFIG(s_ip4));
+    NM_SET_OUT(out_is_fixed, FALSE);
 
     if (!client_id) {
         client_id = nm_config_data_get_connection_default(NM_CONFIG_GET_DATA,
@@ -2072,7 +2085,7 @@ _prop_get_ipv4_dhcp_client_id(NMDevice *self, NMConnection *connection, GBytes *
     }
 
     if (nm_streq(client_id, "duid")) {
-        guint32 iaid = _prop_get_ipvx_dhcp_iaid(self, AF_INET, connection, FALSE, NULL);
+        guint32 iaid = _prop_get_ipvx_dhcp_iaid(self, AF_INET, connection, FALSE, NULL, NULL);
 
         result = nm_utils_dhcp_client_id_systemd_node_specific(iaid);
         goto out_good;
@@ -2085,11 +2098,16 @@ _prop_get_ipv4_dhcp_client_id(NMDevice *self, NMConnection *connection, GBytes *
         const guint8          *duid_arr;
         gsize                  duid_len;
 
-        iaid = _prop_get_ipvx_dhcp_iaid(self, AF_INET, connection, FALSE, &iaid_is_explicit);
+        iaid = _prop_get_ipvx_dhcp_iaid(self, AF_INET, connection, FALSE, &iaid_is_explicit, NULL);
         if (!iaid_is_explicit)
-            iaid = _prop_get_ipvx_dhcp_iaid(self, AF_INET6, connection, FALSE, &iaid_is_explicit);
+            iaid = _prop_get_ipvx_dhcp_iaid(self,
+                                            AF_INET6,
+                                            connection,
+                                            FALSE,
+                                            &iaid_is_explicit,
+                                            NULL);
 
-        duid = _prop_get_ipv6_dhcp_duid(self, connection, hwaddr, NULL);
+        duid = _prop_get_ipv6_dhcp_duid(self, connection, hwaddr, NULL, NULL);
 
         nm_assert(duid);
 
@@ -2130,6 +2148,7 @@ _prop_get_ipv4_dhcp_client_id(NMDevice *self, NMConnection *connection, GBytes *
     }
 
     result = nm_dhcp_utils_client_id_string_to_bytes(client_id);
+    NM_SET_OUT(out_is_fixed, TRUE);
     goto out_good;
 
 out_fail:
@@ -10429,8 +10448,9 @@ _dev_ipdhcpx_start(NMDevice *self, int addr_family)
         const char *const     *reject_servers;
         const char            *hostname;
         gboolean               hostname_is_fqdn;
+        gboolean               client_id_fixed;
 
-        client_id = _prop_get_ipv4_dhcp_client_id(self, connection, hwaddr);
+        client_id = _prop_get_ipv4_dhcp_client_id(self, connection, hwaddr, &client_id_fixed);
         vendor_class_identifier =
             _prop_get_ipv4_dhcp_vendor_class_identifier(self, NM_SETTING_IP4_CONFIG(s_ip));
         reject_servers = nm_setting_ip_config_get_dhcp_reject_servers(s_ip, NULL);
@@ -10471,14 +10491,22 @@ _dev_ipdhcpx_start(NMDevice *self, int addr_family)
 
         priv->ipdhcp_data_4.client =
             nm_dhcp_manager_start_client(nm_dhcp_manager_get(), &config, &error);
+        priv->ipdhcp_data_4.client_id_fixed = client_id_fixed;
     } else {
         gs_unref_bytes GBytes *duid = NULL;
         gboolean               iaid_explicit;
+        gboolean               iaid_fixed;
+        gboolean               duid_fixed;
         guint32                iaid;
         NMDhcpClientConfig     config;
 
-        iaid = _prop_get_ipvx_dhcp_iaid(self, AF_INET6, connection, FALSE, &iaid_explicit);
-        duid = _prop_get_ipv6_dhcp_duid(self, connection, hwaddr, &enforce_duid);
+        iaid = _prop_get_ipvx_dhcp_iaid(self,
+                                        AF_INET6,
+                                        connection,
+                                        FALSE,
+                                        &iaid_explicit,
+                                        &iaid_fixed);
+        duid = _prop_get_ipv6_dhcp_duid(self, connection, hwaddr, &enforce_duid, &duid_fixed);
 
         config = (NMDhcpClientConfig){
             .addr_family     = AF_INET6,
@@ -10504,6 +10532,7 @@ _dev_ipdhcpx_start(NMDevice *self, int addr_family)
 
         priv->ipdhcp_data_6.client =
             nm_dhcp_manager_start_client(nm_dhcp_manager_get(), &config, &error);
+        priv->ipdhcp_data_6.client_id_fixed = (duid_fixed && iaid_fixed);
     }
 
     if (!priv->ipdhcp_data_x[IS_IPv4].client) {
