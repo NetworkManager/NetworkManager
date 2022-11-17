@@ -1,0 +1,1 @@
+Fixes: 91aacbef416f ('libnm: refactor tracking of NMSetting in NMConnection')
