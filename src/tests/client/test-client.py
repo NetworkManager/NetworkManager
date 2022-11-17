@@ -854,7 +854,7 @@ class TestNmcli(NmTestBase):
     def call_nmcli_pexpect(self, args):
         env = self._env(extra_env={"NO_COLOR": "1"})
         return pexpect.spawn(
-            conf.get(ENV_NM_TEST_CLIENT_NMCLI_PATH), args, timeout=5, env=env
+            conf.get(ENV_NM_TEST_CLIENT_NMCLI_PATH), args, timeout=10, env=env
         )
 
     def _env(
