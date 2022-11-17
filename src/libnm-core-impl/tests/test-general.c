@@ -3139,6 +3139,9 @@ test_setting_new_from_dbus_bad(void)
                  NULL);
     nm_connection_add_setting(conn, setting);
 
+    /* Test assignment of same setting again. */
+    nm_connection_add_setting(conn, g_object_ref(setting));
+
     setting = nm_setting_wireless_new();
     ssid    = g_bytes_new("my-ssid", 7);
     g_object_set(setting,
