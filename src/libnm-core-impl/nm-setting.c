@@ -4123,6 +4123,233 @@ nm_setting_option_set_uint32(NMSetting *setting, const char *opt_name, guint32 v
 
 /*****************************************************************************/
 
+G_DEFINE_BOXED_TYPE(NMRange, nm_range, nm_range_ref, (GBoxedFreeFunc) nm_range_unref)
+
+static gboolean
+NM_IS_RANGE(const NMRange *self)
+{
+    return self && self->refcount > 0;
+}
+
+/**
+ * nm_range_new:
+ * @start: the first element of the range
+ * @end: the last element of the range, must be greater than or equal
+ * to @start.
+ *
+ * Creates a new #NMRange object for the given range. Setting @end
+ * equal to @start creates a single-element range.
+ *
+ * Returns: (transfer full): the new #NMRange object.
+ *
+ * Since: 1.42
+ **/
+NMRange *
+nm_range_new(guint64 start, guint64 end)
+{
+    NMRange *range;
+
+    g_return_val_if_fail(start <= end, NULL);
+
+    range  = g_slice_new(NMRange);
+    *range = (NMRange){
+        .refcount = 1,
+        .start    = start,
+        .end      = end,
+    };
+
+    return range;
+}
+
+/**
+ * nm_range_ref:
+ * @range: the #NMRange
+ *
+ * Increases the reference count of the object.
+ *
+ * Returns: the input argument @range object.
+ *
+ * Since: 1.42
+ **/
+NMRange *
+nm_range_ref(const NMRange *range)
+{
+    g_return_val_if_fail(NM_IS_RANGE(range), NULL);
+
+    nm_assert(range->refcount < G_MAXUINT);
+
+    ((NMRange *) range)->refcount++;
+    return (NMRange *) range;
+}
+
+/**
+ * nm_range_unref:
+ * @range: the #NMRange
+ *
+ * Decreases the reference count of the object.  If the reference count
+ * reaches zero the object will be destroyed.
+ *
+ * Since: 1.42
+ **/
+void
+nm_range_unref(const NMRange *range)
+{
+    g_return_if_fail(NM_IS_RANGE(range));
+
+    nm_assert(range->refcount != 0);
+
+    if (--((NMRange *) range)->refcount == 0)
+        g_slice_free(NMRange, (NMRange *) range);
+}
+
+/**
+ * nm_range_cmp:
+ * @a: a #NMRange
+ * @b: another #NMRange
+ *
+ * Compare two ranges.
+ *
+ * Returns: zero if the two instances are equivalent or
+ *   a non-zero integer otherwise. This defines a total ordering
+ *   over the ranges.
+ *
+ * Since: 1.42
+ **/
+int
+nm_range_cmp(const NMRange *a, const NMRange *b)
+{
+    NM_CMP_SELF(a, b);
+    NM_CMP_FIELD(a, b, start);
+    NM_CMP_FIELD(a, b, end);
+
+    return 0;
+}
+
+/**
+ * nm_range_get_range:
+ * @range: the #NMRange
+ * @start: (out): location to store the start value
+ * @end: (out): location to store the end value
+ *
+ * Gets the start and end values for the range.
+ *
+ * Returns: %TRUE if the range contains more than one
+ * element, %FALSE otherwise.
+ *
+ * Since: 1.42
+ **/
+gboolean
+nm_range_get_range(const NMRange *range, guint64 *start, guint64 *end)
+{
+    /* with LTO and optimization, the compiler complains that the
+     * output variables are not initialized. In practice, the function
+     * only sets the output on success. But make the compiler happy.
+     */
+    NM_SET_OUT(start, 0);
+    NM_SET_OUT(end, 0);
+
+    g_return_val_if_fail(NM_IS_RANGE(range), 0);
+
+    NM_SET_OUT(start, range->start);
+    NM_SET_OUT(end, range->end);
+
+    return range->start != range->end;
+}
+
+/**
+ * nm_range_to_str:
+ * @range: the %NMRange
+ *
+ * Convert a %NMRange to a string.
+ *
+ * Returns: (transfer full): a string representing the range.
+ *
+ * Since: 1.42
+ */
+char *
+nm_range_to_str(const NMRange *range)
+{
+    char  buf[200];
+    char *b = buf;
+    gsize l = sizeof(buf);
+
+    g_return_val_if_fail(NM_IS_RANGE(range), NULL);
+
+    nm_strbuf_append(&b, &l, "%" G_GUINT64_FORMAT, range->start);
+    if (range->start != range->end)
+        nm_strbuf_append(&b, &l, "-%" G_GUINT64_FORMAT, range->end);
+
+    nm_assert(l > 0);
+    return nm_memdup_nul(buf, sizeof(buf) - l);
+}
+
+/**
+ * nm_range_from_str:
+ * @str: the string representation of a range
+ * @error: (out) (allow-none): location to store the error on failure
+ *
+ * Parses the string representation of the range to create a %NMRange
+ * instance.
+ *
+ * Returns: (transfer full): the %NMRange or %NULL
+ *
+ * Since: 1.42
+ */
+NMRange *
+nm_range_from_str(const char *str, GError **error)
+{
+    gs_free char *str_free = NULL;
+    guint64       start;
+    guint64       end = 0;
+    char         *c;
+
+    g_return_val_if_fail(str, NULL);
+    g_return_val_if_fail(!error || !*error, NULL);
+
+    c = strchr(str, '-');
+    if (c) {
+        str = nm_strndup_a(300, str, c - str, &str_free);
+        c++;
+    }
+
+    start = _nm_utils_ascii_str_to_uint64(str, 10, 0, G_MAXUINT64, 0);
+    if (errno != 0) {
+        g_set_error(error,
+                    NM_CONNECTION_ERROR,
+                    NM_CONNECTION_ERROR_FAILED,
+                    "invalid range start '%s'",
+                    str);
+        return NULL;
+    }
+
+    if (c) {
+        end = _nm_utils_ascii_str_to_uint64(c, 10, 0, G_MAXUINT64, 0);
+        if (errno != 0) {
+            g_set_error(error,
+                        NM_CONNECTION_ERROR,
+                        NM_CONNECTION_ERROR_FAILED,
+                        "invalid range end '%s'",
+                        c);
+            return NULL;
+        }
+        if (end < start) {
+            g_set_error(error,
+                        NM_CONNECTION_ERROR,
+                        NM_CONNECTION_ERROR_FAILED,
+                        "invalid range %" G_GUINT64_FORMAT "-%" G_GUINT64_FORMAT
+                        ", start must be less than or equal to end",
+                        start,
+                        end);
+            return NULL;
+        }
+    } else
+        end = start;
+
+    return nm_range_new(start, end);
+}
+
+/*****************************************************************************/
+
 static void
 get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 {

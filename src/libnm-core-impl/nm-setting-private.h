@@ -302,6 +302,14 @@ typedef struct {
 
 /*****************************************************************************/
 
+struct _NMRange {
+    guint   refcount;
+    guint64 start;
+    guint64 end;
+};
+
+/*****************************************************************************/
+
 #define NM_SETTING_PARAM_NONE 0
 
 /* The property of the #NMSetting should be considered during comparisons that

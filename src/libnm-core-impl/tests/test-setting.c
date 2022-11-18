@@ -4166,6 +4166,88 @@ test_routing_rule(gconstpointer test_data)
 /*****************************************************************************/
 
 static void
+test_ranges(void)
+{
+    GError  *error = NULL;
+    NMRange *r1;
+    NMRange *r2;
+    guint64  start;
+    guint64  end;
+    char    *str  = NULL;
+    char    *str2 = NULL;
+
+    r1 = nm_range_from_str("99", &error);
+    nmtst_assert_success(r1, error);
+    nm_range_get_range(r1, &start, &end);
+    g_assert_cmpint(start, ==, 99);
+    g_assert_cmpint(end, ==, 99);
+    str = nm_range_to_str(r1);
+    g_assert_cmpstr(str, ==, "99");
+    nm_clear_g_free(&str);
+    nm_range_unref(r1);
+
+    r1 = nm_range_from_str("1000-2000", &error);
+    nmtst_assert_success(r1, error);
+    nm_range_get_range(r1, &start, &end);
+    g_assert_cmpint(start, ==, 1000);
+    g_assert_cmpint(end, ==, 2000);
+    str = nm_range_to_str(r1);
+    g_assert_cmpstr(str, ==, "1000-2000");
+    nm_clear_g_free(&str);
+    nm_range_unref(r1);
+
+    r1 = nm_range_from_str("0", &error);
+    nmtst_assert_success(r1, error);
+    nm_range_unref(r1);
+
+    r1 = nm_range_from_str("-1", &error);
+    nmtst_assert_no_success(r1, error);
+    g_clear_error(&error);
+
+    r1 = nm_range_from_str("foobar", &error);
+    nmtst_assert_no_success(r1, error);
+    g_clear_error(&error);
+
+    r1 = nm_range_from_str("200-100", &error);
+    nmtst_assert_no_success(r1, error);
+    g_clear_error(&error);
+
+    r1 = nm_range_from_str("100-200", &error);
+    nmtst_assert_success(r1, error);
+    r2 = nm_range_from_str("100-200", &error);
+    nmtst_assert_success(r2, error);
+    g_assert_cmpint(nm_range_cmp(r1, r2), ==, 0);
+    nm_range_unref(r1);
+    nm_range_unref(r2);
+
+    r1 = nm_range_from_str("100-200", &error);
+    nmtst_assert_success(r1, error);
+    r2 = nm_range_from_str("1", &error);
+    nmtst_assert_success(r2, error);
+    g_assert_cmpint(nm_range_cmp(r1, r2), ==, 1);
+    nm_range_ref(r1);
+    nm_range_unref(r1);
+    nm_range_unref(r1);
+    nm_range_unref(r2);
+
+    r1 = nm_range_new(G_MAXUINT64 - 1, G_MAXUINT64);
+    g_assert(r1);
+    str = nm_range_to_str(r1);
+    g_assert_cmpstr(str, ==, "18446744073709551614-18446744073709551615");
+    r2 = nm_range_from_str(str, &error);
+    nmtst_assert_success(r2, error);
+    str2 = nm_range_to_str(r2);
+    g_assert_cmpstr(str, ==, str2);
+    g_assert_cmpint(nm_range_cmp(r1, r2), ==, 0);
+    nm_range_unref(r1);
+    nm_range_unref(r2);
+    nm_clear_g_free(&str);
+    nm_clear_g_free(&str2);
+}
+
+/*****************************************************************************/
+
+static void
 test_parse_tc_handle(void)
 {
 #define _parse_tc_handle(str, exp)                                              \
@@ -5315,6 +5397,8 @@ main(int argc, char **argv)
                          test_roundtrip_conversion);
 
     g_test_add_data_func("/libnm/settings/routing-rule/1", GINT_TO_POINTER(0), test_routing_rule);
+
+    g_test_add_func("/libnm/settings/ranges", test_ranges);
 
     g_test_add_func("/libnm/parse-tc-handle", test_parse_tc_handle);
 

@@ -260,6 +260,25 @@ const GVariantType *nm_setting_get_dbus_property_type(NMSetting  *setting,
 
 /*****************************************************************************/
 
+typedef struct _NMRange NMRange;
+
+NM_AVAILABLE_IN_1_42
+GType nm_range_get_type(void);
+NM_AVAILABLE_IN_1_42
+NMRange *nm_range_new(guint64 start, guint64 end);
+NM_AVAILABLE_IN_1_42
+NMRange *nm_range_ref(const NMRange *range);
+NM_AVAILABLE_IN_1_42
+void nm_range_unref(const NMRange *range);
+NM_AVAILABLE_IN_1_42
+int nm_range_cmp(const NMRange *a, const NMRange *b);
+NM_AVAILABLE_IN_1_42
+gboolean nm_range_get_range(const NMRange *range, guint64 *start, guint64 *end);
+NM_AVAILABLE_IN_1_42
+char *nm_range_to_str(const NMRange *range);
+NM_AVAILABLE_IN_1_42
+NMRange *nm_range_from_str(const char *str, GError **error);
+
 G_END_DECLS
 
 #endif /* __NM_SETTING_H__ */
