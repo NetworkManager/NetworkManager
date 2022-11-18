@@ -7876,6 +7876,7 @@ _rtnl_handle_msg(NMPlatform *platform, const struct nl_msg_lite *msg)
             gboolean                        resync_required = FALSE;
             gboolean                        only_dirty      = FALSE;
             gboolean                        is_ipv6;
+            gboolean                        ignore_route;
 
             /* IPv4 routes that are a response to RTM_GETROUTE must have
              * the cloned flag while IPv6 routes don't have to. */
@@ -7905,24 +7906,24 @@ _rtnl_handle_msg(NMPlatform *platform, const struct nl_msg_lite *msg)
                 }
             }
 
-            if (ip_route_ignored_protocol(NMP_OBJECT_CAST_IP_ROUTE(obj))) {
-                /* We ignore certain rtm_protocol, because NetworkManager would only ever
-                 * configure certain protocols. Other routes were not added by NetworkManager
-                 * and we don't need to track them in the platform cache.
-                 *
-                 * This is to help with the performance overhead of a huge number of
-                 * routes, for example with the bird BGP software, that adds routes
-                 * with RTPROT_BIRD protocol.
-                 *
-                 * Even if this is a IPv6 multipath route, we abort (parse_nlmsg_iter). There
-                 * is nothing for us to do. */
-                return;
-            }
+            /* We ignore certain rtm_protocol, because NetworkManager would only ever
+             * configure certain protocols. Other routes were not added by NetworkManager
+             * and we don't need to track them in the platform cache.
+             *
+             * This is to help with the performance overhead of a huge number of
+             * routes, for example with the bird BGP software, that adds routes
+             * with RTPROT_BIRD protocol.
+             *
+             * Note that we still need to pass the ignored route to nmp_cache_update_netlink_route(),
+             * because the user might have called `ip route replace`, which would kill a unrelaed route
+             * from our cache. */
+            ignore_route = ip_route_ignored_protocol(NMP_OBJECT_CAST_IP_ROUTE(obj));
 
             cache_op = nmp_cache_update_netlink_route(cache,
                                                       obj,
                                                       is_dump,
                                                       msghdr->nlmsg_flags,
+                                                      ignore_route,
                                                       &obj_old,
                                                       &obj_new,
                                                       &obj_replace,

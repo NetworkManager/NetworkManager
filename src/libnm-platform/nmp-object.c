@@ -2951,6 +2951,7 @@ nmp_cache_update_netlink_route(NMPCache         *cache,
                                NMPObject        *obj_hand_over,
                                gboolean          is_dump,
                                guint16           nlmsgflags,
+                               gboolean          ignore_route,
                                const NMPObject **out_obj_old,
                                const NMPObject **out_obj_new,
                                const NMPObject **out_obj_replace,
@@ -2979,7 +2980,7 @@ nmp_cache_update_netlink_route(NMPCache         *cache,
 
     NM_SET_OUT(out_obj_old, nmp_object_ref(nm_dedup_multi_entry_get_obj(entry_old)));
 
-    is_alive = nmp_object_is_alive(obj_hand_over);
+    is_alive = !ignore_route && nmp_object_is_alive(obj_hand_over);
 
     if (!entry_old) {
         if (is_alive) {
