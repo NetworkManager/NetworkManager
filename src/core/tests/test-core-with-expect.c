@@ -282,7 +282,7 @@ do_test_nm_utils_kill_child(void)
     pid4a   = test_nm_utils_kill_child_spawn(argv4, TRUE);
 
     /* give processes time to start (and potentially block signals) ... */
-    g_usleep(G_USEC_PER_SEC / 10);
+    g_usleep(G_USEC_PER_SEC / 5);
 
     fatal_mask = g_log_set_always_fatal(G_LOG_FATAL_MASK);
 
@@ -338,12 +338,12 @@ do_test_nm_utils_kill_child(void)
         "(No child process*, 10) after sending no signal (0)");
     test_nm_utils_kill_child_sync_do("test-s-3-2", pid3s, 0, 0, FALSE, NULL);
 
-    NMTST_EXPECT_NM_DEBUG("kill child process 'test-s-4' (*): waiting up to 1 milliseconds for "
+    NMTST_EXPECT_NM_DEBUG("kill child process 'test-s-4' (*): waiting up to 50 milliseconds for "
                           "process to terminate normally after sending SIGTERM (15)...");
     NMTST_EXPECT_NM_DEBUG("kill child process 'test-s-4' (*): sending SIGKILL...");
     NMTST_EXPECT_NM_DEBUG("kill child process 'test-s-4' (*): after sending SIGTERM (15) and "
                           "SIGKILL, process * exited by signal 9 (* usec elapsed)");
-    test_nm_utils_kill_child_sync_do("test-s-4", pid4s, SIGTERM, 1, TRUE, &expected_signal_KILL);
+    test_nm_utils_kill_child_sync_do("test-s-4", pid4s, SIGTERM, 50, TRUE, &expected_signal_KILL);
 
     NMTST_EXPECT_NM_DEBUG("kill child process 'test-a-1-1' (*): wait for process to terminate "
                           "after sending SIGTERM (15) (send SIGKILL in 3000 milliseconds)...");
