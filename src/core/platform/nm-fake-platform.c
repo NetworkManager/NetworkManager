@@ -1232,6 +1232,7 @@ ip_route_add(NMPlatform *platform, NMPNlmFlags flags, NMPObject *obj_stack)
                                               obj,
                                               FALSE,
                                               nlmsgflags,
+                                              TRUE,
                                               &obj_old,
                                               &obj_new,
                                               &obj_replace,
