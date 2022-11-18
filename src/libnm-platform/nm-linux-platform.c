@@ -5308,7 +5308,7 @@ ip_route_get_lock_flag(const NMPlatformIPRoute *route)
 }
 
 static gboolean
-ip_route_ignored_protocol(const NMPlatformIPRoute *route)
+ip_route_is_alive(const NMPlatformIPRoute *route)
 {
     guint8 prot;
 
@@ -5320,12 +5320,18 @@ ip_route_ignored_protocol(const NMPlatformIPRoute *route)
 
     nm_assert(nmp_utils_ip_config_source_from_rtprot(prot) == route->rt_source);
 
-    /* We ignore all routes outside a certain subest of rtm_protocol. NetworkManager
-     * itself wouldn't configure those, so they are always configured by somebody
-     * external. We thus ignore them to avoid the overhead that processing them brings.
-     * For example, the BGP daemon "bird"  might configure a huge number of RTPROT_BIRD routes. */
+    if (prot > RTPROT_STATIC && !NM_IN_SET(prot, RTPROT_DHCP, RTPROT_RA)) {
+        /* We ignore certain rtm_protocol, because NetworkManager would only ever
+         * configure certain protocols. Other routes are not configured by NetworkManager
+         * and we don't track them in the platform cache.
+         *
+         * This is to help with the performance overhead of a huge number of
+         * routes, for example with the bird BGP software, that adds routes
+         * with RTPROT_BIRD protocol. */
+        return FALSE;
+    }
 
-    return prot > RTPROT_STATIC && !NM_IN_SET(prot, RTPROT_DHCP, RTPROT_RA);
+    return TRUE;
 }
 
 /* Copied and modified from libnl3's build_route_msg() and rtnl_route_build_msg(). */
@@ -7829,6 +7835,7 @@ _rtnl_handle_msg(NMPlatform *platform, const struct nl_msg_lite *msg)
             gboolean                        resync_required = FALSE;
             gboolean                        only_dirty      = FALSE;
             gboolean                        is_ipv6;
+            gboolean                        route_is_alive;
 
             /* IPv4 routes that are a response to RTM_GETROUTE must have
              * the cloned flag while IPv6 routes don't have to. */
@@ -7858,24 +7865,13 @@ _rtnl_handle_msg(NMPlatform *platform, const struct nl_msg_lite *msg)
                 }
             }
 
-            if (ip_route_ignored_protocol(NMP_OBJECT_CAST_IP_ROUTE(obj))) {
-                /* We ignore certain rtm_protocol, because NetworkManager would only ever
-                 * configure certain protocols. Other routes were not added by NetworkManager
-                 * and we don't need to track them in the platform cache.
-                 *
-                 * This is to help with the performance overhead of a huge number of
-                 * routes, for example with the bird BGP software, that adds routes
-                 * with RTPROT_BIRD protocol.
-                 *
-                 * Even if this is a IPv6 multipath route, we abort (parse_nlmsg_iter). There
-                 * is nothing for us to do. */
-                return;
-            }
+            route_is_alive = ip_route_is_alive(NMP_OBJECT_CAST_IP_ROUTE(obj));
 
             cache_op = nmp_cache_update_netlink_route(cache,
                                                       obj,
                                                       is_dump,
                                                       msghdr->nlmsg_flags,
+                                                      route_is_alive,
                                                       &obj_old,
                                                       &obj_new,
                                                       &obj_replace,
