@@ -1898,5 +1898,11 @@ global:
 	nm_setting_loopback_get_type;
 	nm_setting_loopback_new;
 	nm_setting_ovs_interface_get_ofport_request;
+	nm_setting_ovs_port_add_trunk;
+	nm_setting_ovs_port_clear_trunks;
+	nm_setting_ovs_port_get_num_trunks;
+	nm_setting_ovs_port_get_trunk;
+	nm_setting_ovs_port_remove_trunk;
+	nm_setting_ovs_port_remove_trunk_by_value;
 	nm_utils_ensure_gtypes;
 } libnm_1_40_0;

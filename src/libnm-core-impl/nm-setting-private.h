@@ -1073,6 +1073,12 @@ gboolean _nm_utils_bridge_vlans_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS 
 
 GVariant *_nm_utils_bridge_vlans_to_dbus(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil);
 
+gboolean _nm_utils_ranges_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil);
+
+NMTernary _nm_utils_ranges_cmp(_NM_SETT_INFO_PROP_COMPARE_FCN_ARGS _nm_nil);
+
+GVariant *_nm_utils_ranges_to_dbus(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil);
+
 NMTernary _nm_setting_ip_config_compare_fcn_addresses(_NM_SETT_INFO_PROP_COMPARE_FCN_ARGS _nm_nil);
 
 NMTernary _nm_setting_ip_config_compare_fcn_routes(_NM_SETT_INFO_PROP_COMPARE_FCN_ARGS _nm_nil);

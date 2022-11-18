@@ -29,6 +29,7 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_OVS_PORT_VLAN_MODE      "vlan-mode"
 #define NM_SETTING_OVS_PORT_TAG            "tag"
+#define NM_SETTING_OVS_PORT_TRUNKS         "trunks"
 #define NM_SETTING_OVS_PORT_LACP           "lacp"
 #define NM_SETTING_OVS_PORT_BOND_MODE      "bond-mode"
 #define NM_SETTING_OVS_PORT_BOND_UPDELAY   "bond-updelay"
@@ -53,6 +54,20 @@ NM_AVAILABLE_IN_1_10
 guint nm_setting_ovs_port_get_bond_updelay(NMSettingOvsPort *self);
 NM_AVAILABLE_IN_1_10
 guint nm_setting_ovs_port_get_bond_downdelay(NMSettingOvsPort *self);
+
+NM_AVAILABLE_IN_1_42
+void nm_setting_ovs_port_add_trunk(NMSettingOvsPort *setting, NMRange *trunk);
+NM_AVAILABLE_IN_1_42
+guint nm_setting_ovs_port_get_num_trunks(NMSettingOvsPort *setting);
+NM_AVAILABLE_IN_1_42
+NMRange *nm_setting_ovs_port_get_trunk(NMSettingOvsPort *setting, guint idx);
+NM_AVAILABLE_IN_1_42
+void nm_setting_ovs_port_remove_trunk(NMSettingOvsPort *setting, guint idx);
+NM_AVAILABLE_IN_1_42
+gboolean
+nm_setting_ovs_port_remove_trunk_by_value(NMSettingOvsPort *setting, guint start, guint end);
+NM_AVAILABLE_IN_1_42
+void nm_setting_ovs_port_clear_trunks(NMSettingOvsPort *setting);
 
 G_END_DECLS
 

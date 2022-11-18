@@ -3768,6 +3768,20 @@ _objlist_obj_to_str_fcn_tc_config_qdiscs(NMMetaAccessorGetType get_type,
 }
 
 static void
+_objlist_obj_to_str_fcn_ovs_port_trunks(NMMetaAccessorGetType get_type,
+                                        NMSetting            *setting,
+                                        guint                 idx,
+                                        GString              *str)
+{
+    gs_free char *s = NULL;
+    NMRange      *trunk;
+
+    trunk = nm_setting_ovs_port_get_trunk(NM_SETTING_OVS_PORT(setting), idx);
+    s     = nm_range_to_str(trunk);
+    nm_utils_escaped_tokens_escape_gstr_assert(s, ESCAPED_TOKENS_DELIMITERS, str);
+}
+
+static void
 _objlist_obj_to_str_fcn_bridge_vlans(NMMetaAccessorGetType get_type,
                                      NMSetting            *setting,
                                      guint                 idx,
@@ -3832,6 +3846,37 @@ _objlist_set_fcn_tc_config_qdiscs(NMSetting  *setting,
         nm_setting_tc_config_add_qdisc(NM_SETTING_TC_CONFIG(setting), tc_qdisc);
     else
         nm_setting_tc_config_remove_qdisc_by_value(NM_SETTING_TC_CONFIG(setting), tc_qdisc);
+    return TRUE;
+}
+
+static gboolean
+_objlist_set_fcn_ovs_port_trunks(NMSetting  *setting,
+                                 gboolean    do_add,
+                                 const char *value,
+                                 GError    **error)
+{
+    NMRange              *range;
+    gs_free_error GError *local = NULL;
+    guint64               start;
+    guint64               end;
+
+    range = nm_range_from_str(value, &local);
+    if (!range) {
+        nm_utils_error_set(error,
+                           NM_UTILS_ERROR_INVALID_ARGUMENT,
+                           "%s. %s",
+                           local->message,
+                           _("The valid syntax is: '<value>' or '<start>-<end>"));
+        return FALSE;
+    }
+
+    if (do_add)
+        nm_setting_ovs_port_add_trunk(NM_SETTING_OVS_PORT(setting), range);
+    else {
+        nm_range_get_range(range, &start, &end);
+        nm_setting_ovs_port_remove_trunk_by_value(NM_SETTING_OVS_PORT(setting), start, end);
+    }
+
     return TRUE;
 }
 
@@ -6834,6 +6879,17 @@ static const NMMetaPropertyInfo *const property_infos_OVS_PORT[] = {
         .property_type =                &_pt_gobject_string,
         .property_typ_data = DEFINE_PROPERTY_TYP_DATA (
             .values_static =            NM_MAKE_STRV ("access", "native-tagged", "native-untagged", "trunk"),
+        ),
+    ),
+    PROPERTY_INFO_WITH_DESC (NM_SETTING_OVS_PORT_TRUNKS,
+        .property_type =                &_pt_objlist,
+        .property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+            PROPERTY_TYP_DATA_SUBTYPE (objlist,
+                .get_num_fcn =          OBJLIST_GET_NUM_FCN         (NMSettingOvsPort, nm_setting_ovs_port_get_num_trunks),
+                .clear_all_fcn =        OBJLIST_CLEAR_ALL_FCN       (NMSettingOvsPort, nm_setting_ovs_port_clear_trunks),
+                .obj_to_str_fcn =       _objlist_obj_to_str_fcn_ovs_port_trunks,
+                .set_fcn =              _objlist_set_fcn_ovs_port_trunks,
+            ),
         ),
     ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_OVS_PORT_TAG,
