@@ -1,4 +1,19 @@
 ===============================================
+NetworkManager-1.40.4
+Overview of changes since NetworkManager-1.40.2
+===============================================
+
+* dhcp: revert restarting DHCP when MAC address changes,
+  for example during a bond fail over.
+* various documentation fixes.
+* fix non-exported ABI in libnm which was wrongly present
+  in the header files but unusable so far.
+* ifcfg-rh: fix writing ethtool pause settings to file.
+* core: set "proto static" for manual routing rules configured
+  by NetworkManager.
+* Various minor bugfixes.
+
+===============================================
 NetworkManager-1.40.2
 Overview of changes since NetworkManager-1.40.0
 ===============================================
