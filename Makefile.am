@@ -541,6 +541,8 @@ src_libnm_lldp_libnm_lldp_la_SOURCES = \
 	src/libnm-lldp/nm-lldp.h \
 	$(NULL)
 
+EXTRA_DIST += src/libnm-lldp/meson.build
+
 ###############################################################################
 
 noinst_LTLIBRARIES += src/libnm-base/libnm-base.la
