@@ -449,6 +449,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
                       "native-tagged",
                       "native-untagged",
                       "trunk",
+                      "dot1q-tunnel",
                       NULL)) {
         g_set_error(error,
                     NM_CONNECTION_ERROR,
@@ -603,7 +604,7 @@ nm_setting_ovs_port_class_init(NMSettingOvsPortClass *klass)
      * NMSettingOvsPort:vlan-mode:
      *
      * The VLAN mode. One of "access", "native-tagged", "native-untagged",
-     * "trunk" or unset.
+     * "trunk", "dot1q-tunnel" or unset.
      *
      * Since: 1.10
      **/

@@ -6878,7 +6878,7 @@ static const NMMetaPropertyInfo *const property_infos_OVS_PORT[] = {
     PROPERTY_INFO_WITH_DESC (NM_SETTING_OVS_PORT_VLAN_MODE,
         .property_type =                &_pt_gobject_string,
         .property_typ_data = DEFINE_PROPERTY_TYP_DATA (
-            .values_static =            NM_MAKE_STRV ("access", "native-tagged", "native-untagged", "trunk"),
+            .values_static =            NM_MAKE_STRV ("access", "native-tagged", "native-untagged", "trunk", "dot1q-tunnel"),
         ),
     ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_OVS_PORT_TRUNKS,

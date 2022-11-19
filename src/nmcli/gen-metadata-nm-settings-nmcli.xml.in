@@ -848,7 +848,7 @@
     </setting>
     <setting name="ovs-port" >
         <property name="vlan-mode"
-                  description="The VLAN mode. One of &quot;access&quot;, &quot;native-tagged&quot;, &quot;native-untagged&quot;, &quot;trunk&quot; or unset." />
+                  description="The VLAN mode. One of &quot;access&quot;, &quot;native-tagged&quot;, &quot;native-untagged&quot;, &quot;trunk&quot;, &quot;dot1q-tunnel&quot; or unset." />
         <property name="trunks"
                   description="A list of VLAN ranges that this port trunks. The property is valid only for ports with mode &quot;trunk&quot;, &quot;native-tagged&quot;, or &quot;native-untagged port&quot;. If it is empty, the port trunks all VLANs." />
         <property name="tag"
