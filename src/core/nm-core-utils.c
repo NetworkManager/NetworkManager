@@ -3863,7 +3863,7 @@ nm_utils_dhcp_client_id_duid(guint32 iaid, const guint8 *duid, gsize duid_len)
         guint8  type;
         guint32 iaid;
         guint8  duid[];
-    } * client_id;
+    }    *client_id;
     gsize total_size;
 
     /* the @duid must include the 16 bit duid-type and the data (of max 128 bytes). */
@@ -3913,7 +3913,7 @@ nm_utils_dhcp_client_id_systemd_node_specific_full(guint32       iaid,
                 } en;
             };
         } duid;
-    } * client_id;
+    }      *client_id;
     guint64 u64;
 
     g_return_val_if_fail(machine_id, NULL);

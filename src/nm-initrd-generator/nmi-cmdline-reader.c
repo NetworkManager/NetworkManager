@@ -539,8 +539,8 @@ reader_parse_ip(Reader *reader, const char *sysfs_dir, char *argument)
     int                            client_ip_prefix           = -1;
     gboolean                       clear_ip4_required_timeout = TRUE;
     const char                    *dns[2]                     = {
-                                               NULL,
-                                               NULL,
+        NULL,
+        NULL,
     };
     int dns_addr_family[2] = {
         AF_UNSPEC,

@@ -153,8 +153,8 @@ test_make_strv(void)
     const char *const *v2a  = NM_MAKE_STRV("a", "b");
     const char *const *v2b  = NM_MAKE_STRV("a", "b", );
     const char *const  v3[] = {
-         "a",
-         "b",
+        "a",
+        "b",
     };
     const char *const *v4b = NM_MAKE_STRV("a", _make_strv_foo(), );
 

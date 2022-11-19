@@ -1010,15 +1010,15 @@ nm_g_variant_equal(GVariant *a, GVariant *b)
         const typeof(flags) _flags = (flags); \
         const typeof(flags) _val   = (val);   \
                                               \
-        _flags &(~_val);                      \
+        _flags & (~_val);                     \
     })
 
-#define NM_FLAGS_ASSIGN(flags, val, assign)           \
-    ({                                                \
-        const typeof(flags) _flags = (flags);         \
-        const typeof(flags) _val   = (val);           \
-                                                      \
-        (assign) ? _flags | (_val) : _flags &(~_val); \
+#define NM_FLAGS_ASSIGN(flags, val, assign)            \
+    ({                                                 \
+        const typeof(flags) _flags = (flags);          \
+        const typeof(flags) _val   = (val);            \
+                                                       \
+        (assign) ? _flags | (_val) : _flags & (~_val); \
     })
 
 #define NM_FLAGS_ASSIGN_MASK(flags, mask, val) \
