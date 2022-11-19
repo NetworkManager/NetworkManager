@@ -48,11 +48,11 @@ variables:
   #
   # This is done by running `ci-fairy generate-template` and possibly bumping
   # ".default_tag".
-  FEDORA_TAG:  '2022-10-07.0-55ff1429889e'
-  UBUNTU_TAG:  '2022-10-07.0-f43ecfa19992'
-  DEBIAN_TAG:  '2022-10-07.0-f43ecfa19992'
-  CENTOS_TAG:  '2022-10-07.0-55ff1429889e'
-  ALPINE_TAG:  '2022-10-07.0-5aae55ae295b'
+  FEDORA_TAG:  '2022-10-07.0-75e43eda0912'
+  UBUNTU_TAG:  '2022-10-07.0-a0df5d1804c4'
+  DEBIAN_TAG:  '2022-10-07.0-a0df5d1804c4'
+  CENTOS_TAG:  '2022-10-07.0-75e43eda0912'
+  ALPINE_TAG:  '2022-10-07.0-a5ef6173593f'
 
   FEDORA_EXEC: 'bash .gitlab-ci/fedora-install.sh'
   UBUNTU_EXEC: 'bash .gitlab-ci/debian-install.sh'
@@ -755,24 +755,24 @@ t_fedora:36:
   extends:
     - .build@template
     - .fdo.distribution-image@fedora
-    - .nm_artifacts
+    - .nm_artifacts_debug
   variables:
     FDO_DISTRIBUTION_VERSION: '36'
     FDO_DISTRIBUTION_TAG: $FEDORA_TAG
   needs:
     - "fedora:36@container-prep"
+  when: manual
 
 t_fedora:37:
   extends:
     - .build@template
     - .fdo.distribution-image@fedora
-    - .nm_artifacts_debug
+    - .nm_artifacts
   variables:
     FDO_DISTRIBUTION_VERSION: '37'
     FDO_DISTRIBUTION_TAG: $FEDORA_TAG
   needs:
     - "fedora:37@container-prep"
-  when: manual
 
 t_fedora:38:
   extends:
@@ -1024,10 +1024,10 @@ check-patch:
   extends:
     - .fdo.distribution-image@fedora
   variables:
-    FDO_DISTRIBUTION_VERSION: '36'
+    FDO_DISTRIBUTION_VERSION: '37'
     FDO_DISTRIBUTION_TAG: $FEDORA_TAG
   needs:
-    - "fedora:36@container-prep"
+    - "fedora:37@container-prep"
   stage: test
   script:
     - date '+%Y%m%d-%H%M%S'; NM_CHECKPATCH_FETCH_UPSTREAM=1 contrib/scripts/checkpatch-feature-branch.sh
@@ -1037,10 +1037,10 @@ check-tree:
   extends:
     - .fdo.distribution-image@fedora
   variables:
-    FDO_DISTRIBUTION_VERSION: '36'
+    FDO_DISTRIBUTION_VERSION: '37'
     FDO_DISTRIBUTION_TAG: $FEDORA_TAG
   needs:
-    - "fedora:36@container-prep"
+    - "fedora:37@container-prep"
   stage: test
   script:
     - date '+%Y%m%d-%H%M%S'; contrib/scripts/nm-python-black-format.sh --check
@@ -1059,9 +1059,9 @@ pages:
   only:
     - main
   dependencies:
-    - t_fedora:36
+    - t_fedora:37
   needs:
-    - t_fedora:36
+    - t_fedora:37
 
 triage:issues:
   stage: triage
