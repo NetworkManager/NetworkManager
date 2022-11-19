@@ -233,15 +233,15 @@ main(int argc, char *argv[])
     GOptionContext *opt_ctx = NULL;
     gboolean        success;
     GOptionEntry    options[] = {
-           {"quiet", 'q', 0, G_OPTION_ARG_NONE, &data.quiet, N_("Don't print anything"), NULL},
-           {"wait-for-startup",
+        {"quiet", 'q', 0, G_OPTION_ARG_NONE, &data.quiet, N_("Don't print anything"), NULL},
+        {"wait-for-startup",
             's',
             0,
             G_OPTION_ARG_NONE,
             &data.wait_startup,
             N_("Wait for NetworkManager startup instead of a connection"),
             NULL},
-           {"timeout",
+        {"timeout",
             't',
             0,
             G_OPTION_ARG_INT,
@@ -249,14 +249,14 @@ main(int argc, char *argv[])
             N_("Time to wait for a connection, in seconds (without the option, default value is 30). "
                "Maximum value is 2073600 seconds."),
             "<timeout>"},
-           {"exit",
+        {"exit",
             'x',
             0,
             G_OPTION_ARG_NONE,
             &data.exit_no_nm,
             N_("Exit immediately if NetworkManager is not running or connecting"),
             NULL},
-           {NULL},
+        {NULL},
     };
 
     /* Set locale to be able to use environment variables */

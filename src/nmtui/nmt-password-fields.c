@@ -133,10 +133,10 @@ nmt_password_fields_init(NmtPasswordFields *fields)
 {
     NmtPasswordFieldsPrivate *priv      = NMT_PASSWORD_FIELDS_GET_PRIVATE(fields);
     NmtNewtPopupEntry         entries[] = {
-                {_("Store password for all users"), NULL},
-                {_("Store password only for this user"), NULL},
-                {_("Ask password every time"), NULL},
-                {},
+        {_("Store password for all users"), NULL},
+        {_("Store password only for this user"), NULL},
+        {_("Ask password every time"), NULL},
+        {},
     };
 
     priv->entry         = NMT_NEWT_ENTRY(nmt_newt_entry_new(-1, 0));

@@ -43,21 +43,21 @@ read_argv(int *argc, char ***argv)
 {
     GOptionContext *context;
     GOptionEntry    options[] = {
-           {"no-persist",
+        {"no-persist",
             'P',
             G_OPTION_FLAG_REVERSE,
             G_OPTION_ARG_NONE,
             &global_opt.persist,
             "Exit after processing netlink messages",
             NULL},
-           {"state-file",
+        {"state-file",
             'S',
             0,
             G_OPTION_ARG_FILENAME,
             &global_opt.state_file,
             "Dump the platform cache to this file",
             "FILE"},
-           {0},
+        {0},
     };
     gs_free_error GError *error = NULL;
 

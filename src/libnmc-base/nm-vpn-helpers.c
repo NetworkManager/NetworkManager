@@ -199,13 +199,13 @@ nm_vpn_openconnect_authenticate_helper(const char *host,
     const char *const   *iter;
     const char          *path;
     const char *const    DEFAULT_PATHS[] = {
-           "/sbin/",
-           "/usr/sbin/",
-           "/usr/local/sbin/",
-           "/bin/",
-           "/usr/bin/",
-           "/usr/local/bin/",
-           NULL,
+        "/sbin/",
+        "/usr/sbin/",
+        "/usr/local/sbin/",
+        "/bin/",
+        "/usr/bin/",
+        "/usr/local/bin/",
+        NULL,
     };
 
     path = nm_utils_file_search_in_paths("openconnect",

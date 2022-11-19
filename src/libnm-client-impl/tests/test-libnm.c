@@ -3099,7 +3099,7 @@ check_dbus_properties:
             const struct {
                 const char *dbus_type;
                 GType       default_gtype;
-            } * p_expected_type, *p_expected_type_2,
+            } *p_expected_type, *p_expected_type_2,
                 expected_types[] = {
                     {"b", G_TYPE_BOOLEAN},        {"q", G_TYPE_UINT},
                     {"y", G_TYPE_UCHAR},          {"i", G_TYPE_INT},
