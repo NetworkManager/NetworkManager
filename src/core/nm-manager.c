@@ -3100,6 +3100,14 @@ recheck_assume_connection(NMManager *self, NMDevice *device)
         return FALSE;
     }
 
+    if (nm_device_get_act_request(device)) {
+	/* The device might might not have progressed beyond
+	 * NM_DEVICE_STATE_DISCONNECTED (checked above), because it might
+	 * be pending a carrier check. */
+        _LOG2D(LOGD_DEVICE, device, "assume: don't assume because there's an activation request");
+        return FALSE;
+    }
+
     sett_conn = get_existing_connection(self, device, &generated);
     /* log  no reason. get_existing_connection() already does it. */
     if (!sett_conn)
