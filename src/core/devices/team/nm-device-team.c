@@ -629,16 +629,14 @@ teamd_kill(NMDeviceTeam *self, GError **error)
     envp = teamd_env();
 
     _LOGD(LOGD_TEAM, "running: %s", (tmp_str = g_strjoinv(" ", (char **) argv->pdata)));
-    return g_spawn_sync("/",
-                        (char **) argv->pdata,
-                        (char **) envp,
-                        0,
-                        teamd_child_setup,
-                        NULL,
-                        NULL,
-                        NULL,
-                        NULL,
-                        error);
+    return g_spawn_async("/",
+                         (char **) argv->pdata,
+                         (char **) envp,
+                         0,
+                         teamd_child_setup,
+                         NULL,
+                         NULL,
+                         error);
 }
 
 static gboolean
