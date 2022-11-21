@@ -333,30 +333,33 @@ test_ip4_route(void)
     /* Test route listing */
     routes = nmtstp_ip4_route_get_all(NM_PLATFORM_GET, ifindex);
     memset(rts, 0, sizeof(rts));
-    rts[0].rt_source = nmp_utils_ip_config_source_round_trip_rtprot(NM_IP_CONFIG_SOURCE_USER);
-    rts[0].network   = gateway;
-    rts[0].plen      = 32;
-    rts[0].ifindex   = ifindex;
-    rts[0].gateway   = INADDR_ANY;
-    rts[0].metric    = metric;
-    rts[0].mss       = mss;
-    rts[0].scope_inv = nm_platform_route_scope_inv(RT_SCOPE_LINK);
-    rts[1].rt_source = nmp_utils_ip_config_source_round_trip_rtprot(NM_IP_CONFIG_SOURCE_USER);
-    rts[1].network   = network;
-    rts[1].plen      = plen;
-    rts[1].ifindex   = ifindex;
-    rts[1].gateway   = gateway;
-    rts[1].metric    = metric;
-    rts[1].mss       = mss;
-    rts[1].scope_inv = nm_platform_route_scope_inv(RT_SCOPE_UNIVERSE);
-    rts[2].rt_source = nmp_utils_ip_config_source_round_trip_rtprot(NM_IP_CONFIG_SOURCE_USER);
-    rts[2].network   = 0;
-    rts[2].plen      = 0;
-    rts[2].ifindex   = ifindex;
-    rts[2].gateway   = gateway;
-    rts[2].metric    = metric;
-    rts[2].mss       = mss;
-    rts[2].scope_inv = nm_platform_route_scope_inv(RT_SCOPE_UNIVERSE);
+    rts[0].rt_source  = nmp_utils_ip_config_source_round_trip_rtprot(NM_IP_CONFIG_SOURCE_USER);
+    rts[0].network    = gateway;
+    rts[0].plen       = 32;
+    rts[0].ifindex    = ifindex;
+    rts[0].gateway    = INADDR_ANY;
+    rts[0].metric     = metric;
+    rts[0].mss        = mss;
+    rts[0].scope_inv  = nm_platform_route_scope_inv(RT_SCOPE_LINK);
+    rts[0].n_nexthops = 1;
+    rts[1].rt_source  = nmp_utils_ip_config_source_round_trip_rtprot(NM_IP_CONFIG_SOURCE_USER);
+    rts[1].network    = network;
+    rts[1].plen       = plen;
+    rts[1].ifindex    = ifindex;
+    rts[1].gateway    = gateway;
+    rts[1].metric     = metric;
+    rts[1].mss        = mss;
+    rts[1].scope_inv  = nm_platform_route_scope_inv(RT_SCOPE_UNIVERSE);
+    rts[1].n_nexthops = 1;
+    rts[2].rt_source  = nmp_utils_ip_config_source_round_trip_rtprot(NM_IP_CONFIG_SOURCE_USER);
+    rts[2].network    = 0;
+    rts[2].plen       = 0;
+    rts[2].ifindex    = ifindex;
+    rts[2].gateway    = gateway;
+    rts[2].metric     = metric;
+    rts[2].mss        = mss;
+    rts[2].scope_inv  = nm_platform_route_scope_inv(RT_SCOPE_UNIVERSE);
+    rts[2].n_nexthops = 1;
     g_assert_cmpint(routes->len, ==, 3);
     nmtst_platform_ip4_routes_equal_aptr((const NMPObject *const *) routes->pdata,
                                          rts,
@@ -635,21 +638,22 @@ test_ip4_route_options(gconstpointer test_data)
     switch (TEST_IDX) {
     case 1:
         rts_add[rts_n++] = ((NMPlatformIP4Route){
-            .ifindex   = IFINDEX,
-            .rt_source = NM_IP_CONFIG_SOURCE_USER,
-            .network   = nmtst_inet4_from_string("172.16.1.0"),
-            .plen      = 24,
-            .metric    = 20,
-            .tos       = 0x28,
-            .window    = 10000,
-            .cwnd      = 16,
-            .initcwnd  = 30,
-            .initrwnd  = 50,
-            .mtu       = 1350,
-            .lock_cwnd = TRUE,
-            .mss       = 1300,
-            .quickack  = TRUE,
-            .rto_min   = 1000,
+            .ifindex    = IFINDEX,
+            .rt_source  = NM_IP_CONFIG_SOURCE_USER,
+            .network    = nmtst_inet4_from_string("172.16.1.0"),
+            .plen       = 24,
+            .metric     = 20,
+            .tos        = 0x28,
+            .window     = 10000,
+            .cwnd       = 16,
+            .initcwnd   = 30,
+            .initrwnd   = 50,
+            .mtu        = 1350,
+            .lock_cwnd  = TRUE,
+            .mss        = 1300,
+            .quickack   = TRUE,
+            .rto_min    = 1000,
+            .n_nexthops = 1,
         });
         break;
     case 2:
@@ -663,12 +667,13 @@ test_ip4_route_options(gconstpointer test_data)
               .n_ifa_flags  = 0,
         });
         rts_add[rts_n++] = ((NMPlatformIP4Route){
-            .ifindex   = IFINDEX,
-            .rt_source = NM_IP_CONFIG_SOURCE_USER,
-            .network   = nmtst_inet4_from_string("172.17.1.0"),
-            .gateway   = nmtst_inet4_from_string("172.16.1.1"),
-            .plen      = 24,
-            .metric    = 20,
+            .ifindex    = IFINDEX,
+            .rt_source  = NM_IP_CONFIG_SOURCE_USER,
+            .network    = nmtst_inet4_from_string("172.17.1.0"),
+            .gateway    = nmtst_inet4_from_string("172.16.1.1"),
+            .plen       = 24,
+            .metric     = 20,
+            .n_nexthops = 1,
         });
         rts_add[rts_n++] = ((NMPlatformIP4Route){
             .ifindex     = IFINDEX,
@@ -678,6 +683,7 @@ test_ip4_route_options(gconstpointer test_data)
             .r_rtm_flags = RTNH_F_ONLINK,
             .plen        = 24,
             .metric      = 20,
+            .n_nexthops  = 1,
         });
         break;
     default:
@@ -707,7 +713,7 @@ test_ip4_route_options(gconstpointer test_data)
 
     for (i = 0; i < rts_n; i++)
         g_assert(NMTST_NM_ERR_SUCCESS(
-            nm_platform_ip4_route_add(NM_PLATFORM_GET, NMP_NLM_FLAG_REPLACE, &rts_add[i])));
+            nm_platform_ip4_route_add(NM_PLATFORM_GET, NMP_NLM_FLAG_REPLACE, &rts_add[i], NULL)));
 
     for (i = 0; i < rts_n; i++) {
         rts_cmp[i] = rts_add[i];
@@ -982,8 +988,8 @@ again_find_idx:
             order_idx[order_len++] = idx;
 
             r->ifindex = iface_data[idx].ifindex;
-            g_assert(
-                NMTST_NM_ERR_SUCCESS(nm_platform_ip4_route_add(platform, NMP_NLM_FLAG_APPEND, r)));
+            g_assert(NMTST_NM_ERR_SUCCESS(
+                nm_platform_ip4_route_add(platform, NMP_NLM_FLAG_APPEND, r, NULL)));
         } else {
             i   = nmtst_get_rand_uint32() % order_len;
             idx = order_idx[i];
@@ -1930,7 +1936,7 @@ test_blackhole(gconstpointer test_data)
     nm_platform_ip_route_normalize(addr_family, &rr.rx);
 
     if (IS_IPv4)
-        r = nm_platform_ip4_route_add(NM_PLATFORM_GET, NMP_NLM_FLAG_APPEND, &rr.r4);
+        r = nm_platform_ip4_route_add(NM_PLATFORM_GET, NMP_NLM_FLAG_APPEND, &rr.r4, NULL);
     else
         r = nm_platform_ip6_route_add(NM_PLATFORM_GET, NMP_NLM_FLAG_APPEND, &rr.r6);
 
