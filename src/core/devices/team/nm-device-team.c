@@ -41,7 +41,6 @@ typedef struct {
     guint              teamd_dbus_timeout;
     guint              teamd_read_timeout;
     guint              teamd_dbus_watch;
-    bool               kill_in_progress : 1;
     NMDeviceStageState stage1_state : 3;
     GHashTable        *port_configs;
 } NMDeviceTeamPrivate;
@@ -294,27 +293,6 @@ master_update_slave_connection(NMDevice     *device,
 /*****************************************************************************/
 
 static void
-teamd_kill_cb(pid_t pid, gboolean success, int child_status, void *user_data)
-{
-    gs_unref_object NMDeviceTeam *self = user_data;
-    NMDeviceTeamPrivate          *priv = NM_DEVICE_TEAM_GET_PRIVATE(self);
-
-    priv->kill_in_progress = FALSE;
-
-    if (nm_device_get_state(NM_DEVICE(self)) != NM_DEVICE_STATE_PREPARE) {
-        _LOGI(LOGD_TEAM, "kill terminated");
-        return;
-    }
-
-    _LOGI(LOGD_TEAM, "kill terminated, starting teamd...");
-    if (!teamd_start(self)) {
-        nm_device_state_changed(NM_DEVICE(self),
-                                NM_DEVICE_STATE_FAILED,
-                                NM_DEVICE_STATE_REASON_TEAMD_CONTROL_FAILED);
-    }
-}
-
-static void
 teamd_cleanup(NMDeviceTeam *self, gboolean free_tdc)
 {
     NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE(self);
@@ -325,14 +303,7 @@ teamd_cleanup(NMDeviceTeam *self, gboolean free_tdc)
 
     if (priv->teamd_pid > 0) {
         _LOGI(LOGD_TEAM, "terminating our teamd instance");
-        priv->kill_in_progress = TRUE;
-        nm_utils_kill_child_async(priv->teamd_pid,
-                                  SIGTERM,
-                                  LOGD_TEAM,
-                                  "teamd",
-                                  2000,
-                                  teamd_kill_cb,
-                                  g_object_ref(self));
+        nm_utils_kill_child_async(priv->teamd_pid, SIGTERM, LOGD_TEAM, "teamd", 2000, NULL, NULL);
         priv->teamd_pid = 0;
     }
 
@@ -392,12 +363,6 @@ teamd_dbus_appeared(GDBusConnection *connection,
     GError              *error = NULL;
 
     g_return_if_fail(priv->teamd_dbus_watch);
-
-    if (priv->kill_in_progress) {
-        /* If we are currently killing teamd, we are not
-         * interested in knowing when it becomes ready. */
-        return;
-    }
 
     nm_device_queue_recheck_assume(device);
 
@@ -682,11 +647,6 @@ act_stage1_prepare(NMDevice *device, NMDeviceStateReason *out_failure_reason)
 
     if (priv->config)
         return NM_ACT_STAGE_RETURN_SUCCESS;
-
-    if (priv->kill_in_progress) {
-        _LOGT(LOGD_TEAM, "kill in progress, wait before starting teamd");
-        return NM_ACT_STAGE_RETURN_POSTPONE;
-    }
 
     if (!teamd_start(self))
         return NM_ACT_STAGE_RETURN_FAILURE;
