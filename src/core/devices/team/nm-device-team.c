@@ -379,25 +379,6 @@ teamd_dbus_timeout_cb(gpointer user_data)
 }
 
 static void
-teamd_gone(NMDeviceTeam *self)
-{
-    NMDevice     *device = NM_DEVICE(self);
-    NMDeviceState state;
-
-    teamd_cleanup(self, TRUE);
-    state = nm_device_get_state(device);
-
-    /* Attempt to respawn teamd */
-    if (state >= NM_DEVICE_STATE_PREPARE && state <= NM_DEVICE_STATE_ACTIVATED) {
-        if (!teamd_start(self)) {
-            nm_device_state_changed(device,
-                                    NM_DEVICE_STATE_FAILED,
-                                    NM_DEVICE_STATE_REASON_TEAMD_CONTROL_FAILED);
-        }
-    }
-}
-
-static void
 teamd_dbus_appeared(GDBusConnection *connection,
                     const char      *name,
                     const char      *name_owner,
@@ -488,8 +469,10 @@ teamd_dbus_appeared(GDBusConnection *connection,
 static void
 teamd_dbus_vanished(GDBusConnection *dbus_connection, const char *name, gpointer user_data)
 {
-    NMDeviceTeam        *self = NM_DEVICE_TEAM(user_data);
-    NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE(self);
+    NMDeviceTeam        *self   = NM_DEVICE_TEAM(user_data);
+    NMDeviceTeamPrivate *priv   = NM_DEVICE_TEAM_GET_PRIVATE(self);
+    NMDevice            *device = NM_DEVICE(self);
+    NMDeviceState        state;
 
     g_return_if_fail(priv->teamd_dbus_watch);
 
@@ -504,7 +487,17 @@ teamd_dbus_vanished(GDBusConnection *dbus_connection, const char *name, gpointer
 
     _LOGI(LOGD_TEAM, "teamd vanished from D-Bus");
 
-    teamd_gone(self);
+    teamd_cleanup(self, TRUE);
+    state = nm_device_get_state(device);
+
+    /* Attempt to respawn teamd */
+    if (state >= NM_DEVICE_STATE_PREPARE && state <= NM_DEVICE_STATE_ACTIVATED) {
+        if (!teamd_start(self)) {
+            nm_device_state_changed(device,
+                                    NM_DEVICE_STATE_FAILED,
+                                    NM_DEVICE_STATE_REASON_TEAMD_CONTROL_FAILED);
+        }
+    }
 }
 
 static void
