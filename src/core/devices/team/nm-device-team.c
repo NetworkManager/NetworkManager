@@ -695,7 +695,6 @@ act_stage1_prepare(NMDevice *device, NMDeviceStateReason *out_failure_reason)
     NMDeviceTeamPrivate *priv  = NM_DEVICE_TEAM_GET_PRIVATE(self);
     GError              *error = NULL;
     NMSettingTeam       *s_team;
-    const char          *cfg;
 
     if (nm_device_sys_iface_state_is_external(device))
         return NM_ACT_STAGE_RETURN_SUCCESS;
@@ -718,33 +717,8 @@ act_stage1_prepare(NMDevice *device, NMDeviceStateReason *out_failure_reason)
 
     priv->stage1_state = NM_DEVICE_STAGE_STATE_PENDING;
 
-    if (priv->tdc) {
-        /* If the existing teamd config is the same as we're about to use,
-         * then we can proceed.  If it's not the same, and we have a PID,
-         * kill it so we can respawn it with the right config.  If we don't
-         * have a PID, then we must fail.
-         */
-        cfg = teamdctl_config_get_raw(priv->tdc);
-        if (cfg && nm_streq0(cfg, nm_setting_team_get_config(s_team))) {
-            _LOGD(LOGD_TEAM, "using existing matching teamd config");
-            return NM_ACT_STAGE_RETURN_SUCCESS;
-        }
-
-        if (!priv->teamd_pid) {
-            _LOGD(LOGD_TEAM, "existing teamd config mismatch; killing existing via teamdctl");
-            if (!teamd_kill(self, &error)) {
-                _LOGW(LOGD_TEAM,
-                      "existing teamd config mismatch; failed to kill existing teamd: %s",
-                      error->message);
-                g_clear_error(&error);
-                NM_SET_OUT(out_failure_reason, NM_DEVICE_STATE_REASON_TEAMD_CONTROL_FAILED);
-                return NM_ACT_STAGE_RETURN_FAILURE;
-            }
-        }
-
-        _LOGD(LOGD_TEAM, "existing teamd config mismatch; respawning...");
-        teamd_cleanup(self, TRUE);
-    }
+    if (priv->config)
+        return NM_ACT_STAGE_RETURN_SUCCESS;
 
     if (priv->kill_in_progress) {
         _LOGT(LOGD_TEAM, "kill in progress, wait before starting teamd");
