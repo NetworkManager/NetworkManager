@@ -4191,7 +4191,6 @@ src_core_devices_team_libnm_device_plugin_team_la_SOURCES = \
 
 src_core_devices_team_libnm_device_plugin_team_la_CPPFLAGS = \
 	$(src_core_cppflags_device_plugin) \
-	$(LIBTEAMDCTL_CFLAGS) \
 	$(JANSSON_CFLAGS) \
 	$(NULL)
 
@@ -4201,7 +4200,6 @@ src_core_devices_team_libnm_device_plugin_team_la_LDFLAGS = \
 	$(NULL)
 
 src_core_devices_team_libnm_device_plugin_team_la_LIBADD = \
-	$(LIBTEAMDCTL_LIBS) \
 	$(JANSSON_LIBS) \
 	$(GLIB_LIBS) \
 	$(NULL)

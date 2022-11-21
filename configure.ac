@@ -624,25 +624,11 @@ else
 fi
 AM_CONDITIONAL(WITH_JANSSON, test "${have_jansson}" = "yes")
 
-PKG_CHECK_MODULES(LIBTEAMDCTL, [libteamdctl >= 1.9], [have_teamdctl=yes],[have_teamdctl=no])
-if test "$have_jansson" = "yes" -a "$have_teamdctl" = "yes"; then
-	have_team_prereq=yes
-else
-	have_team_prereq=no
-fi
-
 AC_ARG_ENABLE(teamdctl,
               AS_HELP_STRING([--enable-teamdctl], [enable Teamd control support]),
-              [enable_teamdctl=${enableval}], [enable_teamdctl=${have_team_prereq}])
-if test "${enable_teamdctl}" = "yes"; then
-	if test "$have_teamdctl" = "no"; then
-		AC_MSG_ERROR(Libteamdctl is required for team support)
-	fi
-	if test "$have_jansson" = "no"; then
-		AC_MSG_ERROR(Jansson is required for team support)
-	fi
-	# temporary bug workaround
-	LIBTEAMDCTL_CFLAGS=`echo $LIBTEAMDCTL_CFLAGS | sed -e 's:/teamdctl.h::'`
+              [enable_teamdctl=${enableval}], [enable_teamdctl=${have_jansson}])
+if test "${enable_teamdctl}" = "yes" -a "{$have_jansson}" = "no"; then
+	AC_MSG_ERROR(Jansson is required for team support)
 fi
 AM_CONDITIONAL(WITH_TEAMDCTL, test "${enable_teamdctl}" = "yes")
 
@@ -1398,7 +1384,7 @@ echo "  ppp: $enable_ppp ${PPPD_PATH} plugins:${PPPD_PLUGIN_DIR}"
 echo "  modemmanager-1: $with_modem_manager_1"
 echo "  ofono: $with_ofono"
 echo "  concheck: $enable_concheck"
-echo "  libteamdctl: $enable_teamdctl"
+echo "  teamdctl: $enable_teamdctl"
 echo "  ovs: $enable_ovs"
 echo "  nmcli: $build_nmcli"
 echo "  nmtui: $build_nmtui"

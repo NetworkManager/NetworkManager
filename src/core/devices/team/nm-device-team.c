@@ -33,7 +33,7 @@
 NM_GOBJECT_PROPERTIES_DEFINE(NMDeviceTeam, PROP_CONFIG, );
 
 typedef struct {
-    struct teamdctl   *tdc;
+    GDBusConnection   *dbus_connection;
     char              *dbus_name;
     char              *config;
     GPid               teamd_pid;
@@ -64,32 +64,6 @@ G_DEFINE_TYPE(NMDeviceTeam, nm_device_team, NM_TYPE_DEVICE)
 static gboolean teamd_start(NMDeviceTeam *self);
 
 /*****************************************************************************/
-
-static struct teamdctl *
-_tdc_connect_new(NMDeviceTeam *self, const char *iface, GError **error)
-{
-    struct teamdctl *tdc;
-    int              r;
-
-    tdc = teamdctl_alloc();
-    if (!tdc) {
-        nm_utils_error_set(error, NM_UTILS_ERROR_UNKNOWN, "failure to allocate teamdctl structure");
-        return NULL;
-    }
-
-    r = teamdctl_connect(tdc, iface, NULL, "dbus");
-    if (r != 0) {
-        _LOGD(LOGD_TEAM, "failure to connect to teamdctl, err=%d", r);
-        teamdctl_free(tdc);
-        nm_utils_error_set(error,
-                           NM_UTILS_ERROR_UNKNOWN,
-                           "failure to connect to teamd (err=%d)",
-                           r);
-        return NULL;
-    }
-
-    return tdc;
-}
 
 static NMDeviceCapabilities
 get_generic_capabilities(NMDevice *device)
@@ -122,38 +96,28 @@ complete_connection(NMDevice            *device,
 static gboolean
 _update_port_config(NMDeviceTeam *self, const char *port_iface, const char *sanitized_config)
 {
-    NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE(self);
-    int                  err;
+    NMDeviceTeamPrivate       *priv  = NM_DEVICE_TEAM_GET_PRIVATE(self);
+    gs_unref_variant GVariant *res   = NULL;
+    GError                    *error = NULL;
 
     _LOGT(LOGD_TEAM, "setting port config: %s", sanitized_config);
-    err = teamdctl_port_config_update_raw(priv->tdc, port_iface, sanitized_config);
-    if (err != 0) {
-        _LOGE(LOGD_TEAM, "failed to update config for port %s (err=%d)", port_iface, err);
+    res = g_dbus_connection_call_sync(priv->dbus_connection,
+                                      priv->dbus_name,
+                                      "/org/libteam/teamd",
+                                      "org.libteam.teamd",
+                                      "PortConfigUpdate",
+                                      g_variant_new("(ss)", port_iface, sanitized_config),
+                                      NULL,
+                                      G_DBUS_CALL_FLAGS_NO_AUTO_START,
+                                      -1,
+                                      NULL,
+                                      &error);
+
+    if (!res) {
+        _LOGE(LOGD_TEAM, "failed to update config for port %s: %s", port_iface, error->message);
+        g_clear_error(&error);
         return FALSE;
     }
-
-    return TRUE;
-}
-
-static gboolean
-ensure_teamd_connection(NMDevice *device, GError **error)
-{
-    NMDeviceTeam        *self = NM_DEVICE_TEAM(device);
-    NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE(self);
-    const char          *port_iface;
-    const char          *port_config;
-    GHashTableIter       iter;
-
-    if (priv->tdc)
-        return TRUE;
-
-    priv->tdc = _tdc_connect_new(self, nm_device_get_iface(device), error);
-    if (!priv->tdc)
-        return FALSE;
-
-    g_hash_table_iter_init(&iter, priv->port_configs);
-    while (g_hash_table_iter_next(&iter, (gpointer *) &port_iface, (gpointer *) &port_config))
-        _update_port_config(self, port_iface, port_config);
 
     return TRUE;
 }
@@ -161,23 +125,34 @@ ensure_teamd_connection(NMDevice *device, GError **error)
 static gboolean
 teamd_read_config(NMDeviceTeam *self)
 {
-    NMDeviceTeamPrivate *priv   = NM_DEVICE_TEAM_GET_PRIVATE(self);
-    const char          *config = NULL;
-    int                  err;
+    NMDeviceTeamPrivate       *priv   = NM_DEVICE_TEAM_GET_PRIVATE(self);
+    gs_unref_variant GVariant *res    = NULL;
+    gs_free char              *config = NULL;
+    GError                    *error  = NULL;
 
-    if (priv->tdc) {
-        err = teamdctl_config_actual_get_raw_direct(priv->tdc, (char **) &config);
-        if (err)
-            return FALSE;
-        if (!config) {
-            /* set "" to distinguish an empty result from no config at all. */
-            config = "";
+    if (priv->dbus_connection) {
+        res = g_dbus_connection_call_sync(priv->dbus_connection,
+                                          priv->dbus_name,
+                                          "/org/libteam/teamd",
+                                          "org.libteam.teamd",
+                                          "ConfigDumpActual",
+                                          NULL,
+                                          NULL,
+                                          G_DBUS_CALL_FLAGS_NO_AUTO_START,
+                                          -1,
+                                          NULL,
+                                          &error);
+        if (res) {
+            g_variant_get_child(res, 0, "s", &config);
+        } else {
+            g_printerr("ConfigDumpActual: %s\n", error->message);
+            g_error_free(error);
         }
     }
 
     if (!nm_streq0(config, priv->config)) {
         g_free(priv->config);
-        priv->config = g_strdup(config);
+        priv->config = g_steal_pointer(&config);
         _notify(self, PROP_CONFIG);
     }
 
@@ -198,28 +173,8 @@ teamd_read_timeout_cb(gpointer user_data)
 static void
 update_connection(NMDevice *device, NMConnection *connection)
 {
-    NMDeviceTeam        *self   = NM_DEVICE_TEAM(device);
-    NMSettingTeam       *s_team = _nm_connection_ensure_setting(connection, NM_TYPE_SETTING_TEAM);
-    NMDeviceTeamPrivate *priv   = NM_DEVICE_TEAM_GET_PRIVATE(self);
-    struct teamdctl     *tdc    = priv->tdc;
-    GError              *error  = NULL;
-
-    /* Read the configuration only if not already set */
-    if (!priv->config) {
-        if (ensure_teamd_connection(device, &error)) {
-            teamd_read_config(self);
-        } else {
-            _LOGD(LOGD_TEAM, "could not connect to teamd: %s", error->message);
-            g_clear_error(&error);
-        }
-    }
-
-    /* Restore previous tdc state */
-    if (priv->tdc && !tdc) {
-        teamdctl_disconnect(priv->tdc);
-        teamdctl_free(priv->tdc);
-        priv->tdc = NULL;
-    }
+    NMDeviceTeam  *self   = NM_DEVICE_TEAM(device);
+    NMSettingTeam *s_team = _nm_connection_ensure_setting(connection, NM_TYPE_SETTING_TEAM);
 
     g_object_set(G_OBJECT(s_team),
                  NM_SETTING_TEAM_CONFIG,
@@ -235,49 +190,49 @@ master_update_slave_connection(NMDevice     *device,
                                NMConnection *connection,
                                GError      **error)
 {
-    NMDeviceTeam         *self = NM_DEVICE_TEAM(device);
-    NMSettingTeamPort    *s_port;
-    char                 *port_config   = NULL;
-    gs_free_error GError *connect_error = NULL;
-    int                   err           = 0;
-    struct teamdctl      *tdc;
-    const char           *team_port_config   = NULL;
-    const char           *iface              = nm_device_get_iface(device);
-    const char           *iface_slave        = nm_device_get_iface(slave);
-    NMConnection         *applied_connection = nm_device_get_applied_connection(device);
+    NMDeviceTeam              *self = NM_DEVICE_TEAM(device);
+    NMDeviceTeamPrivate       *priv = NM_DEVICE_TEAM_GET_PRIVATE(self);
+    NMSettingTeamPort         *s_port;
+    char                      *port_config        = NULL;
+    gs_unref_variant GVariant *res                = NULL;
+    const char                *iface              = nm_device_get_iface(device);
+    const char                *iface_slave        = nm_device_get_iface(slave);
+    NMConnection              *applied_connection = nm_device_get_applied_connection(device);
 
-    tdc = _tdc_connect_new(self, iface, &connect_error);
-    if (!tdc) {
-        g_set_error(error,
-                    NM_DEVICE_ERROR,
-                    NM_DEVICE_ERROR_FAILED,
-                    "update slave connection for slave '%s' failed to connect to teamd for master "
-                    "%s (%s)",
-                    iface_slave,
-                    iface,
-                    connect_error->message);
+    if (!priv->dbus_connection) {
+        g_set_error(
+            error,
+            NM_DEVICE_ERROR,
+            NM_DEVICE_ERROR_FAILED,
+            "update slave connection for slave '%s' failed to connect to teamd for master %s",
+            iface_slave,
+            iface);
         return FALSE;
     }
 
-    err = teamdctl_port_config_get_raw_direct(tdc, iface_slave, (char **) &team_port_config);
-    port_config = g_strdup(team_port_config);
-    teamdctl_disconnect(tdc);
-    teamdctl_free(tdc);
-    if (err) {
-        g_set_error(error,
-                    NM_DEVICE_ERROR,
-                    NM_DEVICE_ERROR_FAILED,
-                    "update slave connection for slave '%s' failed to get configuration from teamd "
-                    "master %s (err=%d)",
-                    iface_slave,
-                    iface,
-                    err);
-        g_free(port_config);
+    res = g_dbus_connection_call_sync(priv->dbus_connection,
+                                      priv->dbus_name,
+                                      "/org/libteam/teamd",
+                                      "org.libteam.teamd",
+                                      "PortConfigDump",
+                                      g_variant_new("(s)", iface_slave),
+                                      NULL,
+                                      G_DBUS_CALL_FLAGS_NO_AUTO_START,
+                                      -1,
+                                      NULL,
+                                      error);
+    if (!res) {
+        g_prefix_error(
+            error,
+            "update slave connection for slave '%s' failed to get configuration from teamd "
+            "master %s: ",
+            iface_slave,
+            iface);
         return FALSE;
     }
 
+    g_variant_get_child(res, 0, "s", &port_config);
     s_port = _nm_connection_ensure_setting(connection, NM_TYPE_SETTING_TEAM_PORT);
-
     g_object_set(G_OBJECT(s_port), NM_SETTING_TEAM_PORT_CONFIG, port_config, NULL);
     g_free(port_config);
 
@@ -293,7 +248,7 @@ master_update_slave_connection(NMDevice     *device,
 /*****************************************************************************/
 
 static void
-teamd_cleanup(NMDeviceTeam *self, gboolean free_tdc)
+teamd_cleanup(NMDeviceTeam *self)
 {
     NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE(self);
 
@@ -305,12 +260,6 @@ teamd_cleanup(NMDeviceTeam *self, gboolean free_tdc)
         _LOGI(LOGD_TEAM, "terminating our teamd instance");
         nm_utils_kill_child_async(priv->teamd_pid, SIGTERM, LOGD_TEAM, "teamd", 2000, NULL, NULL);
         priv->teamd_pid = 0;
-    }
-
-    if (priv->tdc && free_tdc) {
-        teamdctl_disconnect(priv->tdc);
-        teamdctl_free(priv->tdc);
-        priv->tdc = NULL;
     }
 }
 
@@ -328,7 +277,7 @@ teamd_dbus_timeout_cb(gpointer user_data)
 
     /* Timed out launching our own teamd process */
     _LOGW(LOGD_TEAM, "teamd timed out");
-    teamd_cleanup(self, TRUE);
+    teamd_cleanup(self);
 
     g_warn_if_fail(nm_device_is_activating(device));
     nm_device_state_changed(device,
@@ -348,31 +297,35 @@ teamd_dbus_appeared(GDBusConnection *connection,
     NMDeviceTeamPrivate *priv   = NM_DEVICE_TEAM_GET_PRIVATE(self);
     NMDevice            *device = NM_DEVICE(self);
     gboolean             success;
-    GError              *error = NULL;
+    const char          *port_iface;
+    const char          *port_config;
+    GHashTableIter       iter;
+
+    _LOGI(LOGD_TEAM, "teamd appeared on D-Bus");
 
     g_return_if_fail(priv->teamd_dbus_watch);
 
+    nm_clear_g_source(&priv->teamd_dbus_timeout);
+
+    g_clear_object(&priv->dbus_connection);
+    priv->dbus_connection = nm_g_object_ref(connection);
+
     nm_device_queue_recheck_assume(device);
 
-    /* Grab a teamd control handle even if we aren't going to use it
-     * immediately.  But if we are, and grabbing it failed, fail the
-     * device activation.
+    /* This might have been an respawn. Ensure previously configured port
+     * configs are applied to the new teamd as well.
      */
-    success = ensure_teamd_connection(device, &error);
-    if (!success) {
-        _LOGW(LOGD_TEAM, "could not connect to teamd: %s", error->message);
-        g_clear_error(&error);
-    }
+    g_hash_table_iter_init(&iter, priv->port_configs);
+    while (g_hash_table_iter_next(&iter, (gpointer *) &port_iface, (gpointer *) &port_config))
+        _update_port_config(self, port_iface, port_config);
 
     if (nm_device_get_state(device) != NM_DEVICE_STATE_PREPARE
         || priv->stage1_state != NM_DEVICE_STAGE_STATE_PENDING)
         return;
 
-    if (success)
-        success = teamd_read_config(self);
-
+    success = teamd_read_config(self);
     if (!success) {
-        teamd_cleanup(self, TRUE);
+        teamd_cleanup(self);
         nm_device_state_changed(device,
                                 NM_DEVICE_STATE_FAILED,
                                 NM_DEVICE_STATE_REASON_TEAMD_CONTROL_FAILED);
@@ -393,7 +346,7 @@ teamd_dbus_vanished(GDBusConnection *dbus_connection, const char *name, gpointer
 
     g_return_if_fail(priv->teamd_dbus_watch);
 
-    if (!priv->tdc) {
+    if (!priv->dbus_connection) {
         /* g_bus_watch_name will always raise an initial signal, to indicate whether the
          * name exists/not exists initially. Do not take this as a failure if it hadn't
          * previously appeared.
@@ -403,8 +356,8 @@ teamd_dbus_vanished(GDBusConnection *dbus_connection, const char *name, gpointer
     }
 
     _LOGI(LOGD_TEAM, "teamd vanished from D-Bus");
-
-    teamd_cleanup(self, TRUE);
+    g_clear_object(&priv->dbus_connection);
+    teamd_cleanup(self);
     state = nm_device_get_state(device);
 
     /* Attempt to respawn teamd */
@@ -500,7 +453,7 @@ teamd_start(NMDeviceTeam *self)
     gs_free char                *cloned_mac = NULL;
     gs_free const char         **envp       = NULL;
 
-    g_return_val_if_fail(!priv->tdc, FALSE);
+    g_return_val_if_fail(!priv->dbus_connection, FALSE);
     g_return_val_if_fail(!priv->teamd_process_watch, FALSE);
     g_return_val_if_fail(priv->teamd_pid <= 0, FALSE);
 
@@ -522,8 +475,7 @@ teamd_start(NMDeviceTeam *self)
     g_ptr_array_add(argv, (gpointer) "-o");
     g_ptr_array_add(argv, (gpointer) "-n");
     g_ptr_array_add(argv, (gpointer) "-U");
-    if (priv->teamd_dbus_watch)
-        g_ptr_array_add(argv, (gpointer) "-D");
+    g_ptr_array_add(argv, (gpointer) "-D");
     g_ptr_array_add(argv, (gpointer) "-N");
     g_ptr_array_add(argv, (gpointer) "-t");
     g_ptr_array_add(argv, (gpointer) iface);
@@ -589,7 +541,7 @@ teamd_start(NMDeviceTeam *self)
                        &priv->teamd_pid,
                        &error)) {
         _LOGW(LOGD_TEAM, "Activation: (team) failed to start teamd: %s", error->message);
-        teamd_cleanup(self, TRUE);
+        teamd_cleanup(self);
         return FALSE;
     }
 
@@ -607,20 +559,12 @@ teamd_start(NMDeviceTeam *self)
 static NMActStageReturn
 act_stage1_prepare(NMDevice *device, NMDeviceStateReason *out_failure_reason)
 {
-    NMDeviceTeam        *self  = NM_DEVICE_TEAM(device);
-    NMDeviceTeamPrivate *priv  = NM_DEVICE_TEAM_GET_PRIVATE(self);
-    GError              *error = NULL;
+    NMDeviceTeam        *self = NM_DEVICE_TEAM(device);
+    NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE(self);
     NMSettingTeam       *s_team;
 
     if (nm_device_sys_iface_state_is_external(device))
         return NM_ACT_STAGE_RETURN_SUCCESS;
-
-    if (nm_device_sys_iface_state_is_external_or_assume(device)) {
-        if (ensure_teamd_connection(device, &error))
-            return NM_ACT_STAGE_RETURN_SUCCESS;
-        _LOGD(LOGD_TEAM, "could not connect to teamd: %s", error->message);
-        g_clear_error(&error);
-    }
 
     s_team = nm_device_get_applied_setting(device, NM_TYPE_SETTING_TEAM);
     g_return_val_if_fail(s_team, FALSE);
@@ -636,7 +580,7 @@ act_stage1_prepare(NMDevice *device, NMDeviceStateReason *out_failure_reason)
     if (priv->config)
         return NM_ACT_STAGE_RETURN_SUCCESS;
 
-    if (!teamd_start(self))
+    if (!priv->dbus_connection && !teamd_start(self))
         return NM_ACT_STAGE_RETURN_FAILURE;
 
     return NM_ACT_STAGE_RETURN_POSTPONE;
@@ -650,16 +594,21 @@ deactivate(NMDevice *device)
 
     priv->stage1_state = NM_DEVICE_STAGE_STATE_INIT;
 
+    if (priv->config) {
+        nm_clear_g_free(&priv->config);
+        _notify(self, PROP_CONFIG);
+    }
+
     if (nm_device_sys_iface_state_is_external(device))
         return;
 
-    if (priv->teamd_pid || priv->tdc)
+    if (priv->teamd_pid || priv->dbus_connection)
         _LOGI(LOGD_TEAM, "deactivation: stopping teamd...");
 
     if (!priv->teamd_pid)
         teamd_kill(self, NULL);
 
-    teamd_cleanup(self, TRUE);
+    teamd_cleanup(self);
 }
 
 static NMTernary
@@ -691,7 +640,7 @@ attach_port(NMDevice                  *device,
 
             g_hash_table_insert(priv->port_configs, g_strdup(port_iface), sanitized_config);
 
-            if (!priv->tdc) {
+            if (!priv->dbus_connection) {
                 _LOGW(LOGD_TEAM,
                       "attached team port %s config not changed, not connected to teamd",
                       port_iface);
@@ -763,7 +712,7 @@ detach_port(NMDevice *device, NMDevice *port, gboolean configure)
         _LOGI(LOGD_TEAM, "team port %s was detached", port_iface);
 
     /* Delete any port configuration we previously set */
-    if (configure && priv->tdc
+    if (configure && priv->dbus_connection
         && (s_port = nm_device_get_applied_setting(port, NM_TYPE_SETTING_TEAM_PORT))
         && (nm_setting_team_port_get_config(s_port))) {
         _update_port_config(self, port_iface, "{}");
@@ -874,7 +823,7 @@ dispose(GObject *object)
         priv->teamd_dbus_watch = 0;
     }
 
-    teamd_cleanup(self, TRUE);
+    teamd_cleanup(self);
     nm_clear_g_free(&priv->dbus_name);
     nm_clear_g_free(&priv->config);
     nm_clear_pointer(&priv->port_configs, g_hash_table_destroy);

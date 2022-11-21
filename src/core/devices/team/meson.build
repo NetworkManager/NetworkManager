@@ -9,7 +9,6 @@ libnm_device_plugin_team = shared_module(
   dependencies: [
     core_plugin_dep,
     jansson_dep,
-    libteamdctl_dep,
   ],
   link_args: ldflags_linker_script_devices,
   link_depends: linker_script_devices,

@@ -490,8 +490,6 @@ config_h.set10('HAVE_LIBAUDIT', enable_libaudit)
 enable_teamdctl = get_option('teamdctl')
 if enable_teamdctl
   assert(jansson_dep.found(), 'You must have jansson installed to build. Use -Dteamdctl=false to disable it')
-  libteamdctl_dep = dependency('libteamdctl', version: '>= 1.9')
-  assert(libteamdctl_dep.found(), 'You must have libteamdctl installed to build. Use -Dteamdctl=false to disable it')
 endif
 
 # polkit
@@ -1055,7 +1053,7 @@ output += '  nft: ' + config_h.get('NFT_PATH') + '\n'
 output += '  modemmanager-1: ' + enable_modem_manager.to_string() + '\n'
 output += '  ofono: ' + enable_ofono.to_string() + '\n'
 output += '  concheck: ' + enable_concheck.to_string() + '\n'
-output += '  libteamdctl: ' + enable_teamdctl.to_string() + '\n'
+output += '  teamdctl: ' + enable_teamdctl.to_string() + '\n'
 output += '  ovs: ' + enable_ovs.to_string() + '\n'
 output += '  nmcli: ' + enable_nmcli.to_string() + '\n'
 output += '  nmtui: ' + enable_nmtui.to_string() + '\n'

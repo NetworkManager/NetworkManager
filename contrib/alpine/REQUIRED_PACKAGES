@@ -29,7 +29,6 @@ apk add \
     'libnl3-dev' \
     'libpsl-dev' \
     'libsoup-dev' \
-    'libteam-dev' \
     'libtool' \
     'linux-headers' \
     'make' \

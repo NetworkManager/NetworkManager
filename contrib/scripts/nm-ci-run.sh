@@ -62,7 +62,7 @@ fi
 
 _WITH_CRYPTO="gnutls"
 _WITH_WERROR=1
-_WITH_LIBTEAM="$_TRUE"
+_WITH_TEAMDCTL="$_TRUE"
 _WITH_DOCS="$_TRUE"
 _WITH_SYSTEMD_LOGIND="$_TRUE"
 if [ $IS_ALPINE = 1 ]; then
@@ -173,7 +173,7 @@ run_autotools() {
             \
             --with-iwd=yes \
             --with-ofono=yes \
-            --enable-teamdctl=$_WITH_LIBTEAM \
+            --enable-teamdctl=$_WITH_TEAMDCTL \
             \
             --with-dhcpcanon=yes \
             --with-dhcpcd=yes \
@@ -245,7 +245,7 @@ run_meson() {
         \
         -D iwd=true \
         -D ofono=true \
-        -D teamdctl=$_WITH_LIBTEAM \
+        -D teamdctl=$_WITH_TEAMDCTL \
         \
         -D dhclient=/bin/nowhere/dhclient \
         -D dhcpcanon=/bin/nowhere/dhcpcanon \
