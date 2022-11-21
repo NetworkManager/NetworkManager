@@ -122,41 +122,56 @@ _update_port_config(NMDeviceTeam *self, const char *port_iface, const char *sani
     return TRUE;
 }
 
-static gboolean
-teamd_read_config(NMDeviceTeam *self)
+static void
+config_dump_cb(GObject *source_object, GAsyncResult *res, gpointer user_data)
 {
-    NMDeviceTeamPrivate       *priv   = NM_DEVICE_TEAM_GET_PRIVATE(self);
-    gs_unref_variant GVariant *res    = NULL;
-    gs_free char              *config = NULL;
-    GError                    *error  = NULL;
+    GDBusConnection           *connection = G_DBUS_CONNECTION(source_object);
+    NMDeviceTeam              *self       = NM_DEVICE_TEAM(user_data);
+    NMDeviceTeamPrivate       *priv       = NM_DEVICE_TEAM_GET_PRIVATE(self);
+    NMDevice                  *device     = NM_DEVICE(self);
+    gs_unref_variant GVariant *ret        = NULL;
+    gs_free char              *config     = NULL;
+    GError                    *error      = NULL;
 
-    if (priv->dbus_connection) {
-        res = g_dbus_connection_call_sync(priv->dbus_connection,
-                                          priv->dbus_name,
-                                          "/org/libteam/teamd",
-                                          "org.libteam.teamd",
-                                          "ConfigDumpActual",
-                                          NULL,
-                                          NULL,
-                                          G_DBUS_CALL_FLAGS_NO_AUTO_START,
-                                          -1,
-                                          NULL,
-                                          &error);
-        if (res) {
-            g_variant_get_child(res, 0, "s", &config);
-        } else {
-            g_printerr("ConfigDumpActual: %s\n", error->message);
-            g_error_free(error);
-        }
+    ret = g_dbus_connection_call_finish(connection, res, &error);
+    if (!ret) {
+        _LOGW(LOGD_TEAM, "Failed to read configuration: %s", error->message);
+        g_error_free(error);
+        nm_device_state_changed(device,
+                                NM_DEVICE_STATE_FAILED,
+                                NM_DEVICE_STATE_REASON_TEAMD_CONTROL_FAILED);
+        return;
     }
 
+    g_variant_get_child(ret, 0, "s", &config);
     if (!nm_streq0(config, priv->config)) {
         g_free(priv->config);
         priv->config = g_steal_pointer(&config);
         _notify(self, PROP_CONFIG);
     }
 
-    return TRUE;
+    if (nm_device_get_state(NM_DEVICE(self)) == NM_DEVICE_STATE_PREPARE) {
+        priv->stage1_state = NM_DEVICE_STAGE_STATE_COMPLETED;
+        nm_device_activate_schedule_stage1_device_prepare(device, FALSE);
+    }
+}
+
+static void
+teamd_read_config(NMDeviceTeam *self)
+{
+    NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE(self);
+    g_dbus_connection_call(priv->dbus_connection,
+                           priv->dbus_name,
+                           "/org/libteam/teamd",
+                           "org.libteam.teamd",
+                           "ConfigDumpActual",
+                           NULL,
+                           NULL,
+                           G_DBUS_CALL_FLAGS_NO_AUTO_START,
+                           -1,
+                           NULL,
+                           config_dump_cb,
+                           self);
 }
 
 static gboolean
@@ -275,11 +290,6 @@ teamd_dbus_timeout_cb(gpointer user_data)
     g_return_val_if_fail(priv->teamd_dbus_timeout, FALSE);
     priv->teamd_dbus_timeout = 0;
 
-    /* Timed out launching our own teamd process */
-    _LOGW(LOGD_TEAM, "teamd timed out");
-    teamd_cleanup(self);
-
-    g_warn_if_fail(nm_device_is_activating(device));
     nm_device_state_changed(device,
                             NM_DEVICE_STATE_FAILED,
                             NM_DEVICE_STATE_REASON_TEAMD_CONTROL_FAILED);
@@ -296,7 +306,6 @@ teamd_dbus_appeared(GDBusConnection *connection,
     NMDeviceTeam        *self   = NM_DEVICE_TEAM(user_data);
     NMDeviceTeamPrivate *priv   = NM_DEVICE_TEAM_GET_PRIVATE(self);
     NMDevice            *device = NM_DEVICE(self);
-    gboolean             success;
     const char          *port_iface;
     const char          *port_config;
     GHashTableIter       iter;
@@ -312,28 +321,14 @@ teamd_dbus_appeared(GDBusConnection *connection,
 
     nm_device_queue_recheck_assume(device);
 
+    teamd_read_config(self);
+
     /* This might have been an respawn. Ensure previously configured port
      * configs are applied to the new teamd as well.
      */
     g_hash_table_iter_init(&iter, priv->port_configs);
     while (g_hash_table_iter_next(&iter, (gpointer *) &port_iface, (gpointer *) &port_config))
         _update_port_config(self, port_iface, port_config);
-
-    if (nm_device_get_state(device) != NM_DEVICE_STATE_PREPARE
-        || priv->stage1_state != NM_DEVICE_STAGE_STATE_PENDING)
-        return;
-
-    success = teamd_read_config(self);
-    if (!success) {
-        teamd_cleanup(self);
-        nm_device_state_changed(device,
-                                NM_DEVICE_STATE_FAILED,
-                                NM_DEVICE_STATE_REASON_TEAMD_CONTROL_FAILED);
-        return;
-    }
-
-    priv->stage1_state = NM_DEVICE_STAGE_STATE_COMPLETED;
-    nm_device_activate_schedule_stage1_device_prepare(device, FALSE);
 }
 
 static void
