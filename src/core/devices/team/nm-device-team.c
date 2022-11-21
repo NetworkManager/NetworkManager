@@ -393,43 +393,6 @@ teamd_dbus_appeared(GDBusConnection *connection,
 
     g_return_if_fail(priv->teamd_dbus_watch);
 
-    _LOGI(LOGD_TEAM, "teamd appeared on D-Bus");
-
-    /* If another teamd grabbed the bus name while our teamd was starting,
-     * just ignore the death of our teamd and run with the existing one.
-     */
-    if (priv->teamd_process_watch) {
-        gs_unref_variant GVariant *ret = NULL;
-        guint32                    pid;
-
-        ret = g_dbus_connection_call_sync(connection,
-                                          DBUS_SERVICE_DBUS,
-                                          DBUS_PATH_DBUS,
-                                          DBUS_INTERFACE_DBUS,
-                                          "GetConnectionUnixProcessID",
-                                          g_variant_new("(s)", name_owner),
-                                          NULL,
-                                          G_DBUS_CALL_FLAGS_NO_AUTO_START,
-                                          2000,
-                                          NULL,
-                                          NULL);
-
-        if (ret) {
-            g_variant_get(ret, "(u)", &pid);
-            if (pid != priv->teamd_pid)
-                teamd_cleanup(self, FALSE);
-        } else {
-            /* The process that registered on the bus died. If it's
-             * the teamd instance we just started, ignore the event
-             * as we already detect the failure through the process
-             * watch. If it's a previous instance that got killed,
-             * also ignore that as our new instance will register
-             * again. */
-            _LOGI(LOGD_TEAM, "failed to determine D-Bus name owner, ignoring");
-            return;
-        }
-    }
-
     if (priv->kill_in_progress) {
         /* If we are currently killing teamd, we are not
          * interested in knowing when it becomes ready. */
