@@ -326,26 +326,14 @@ teamd_dbus_timeout_cb(gpointer user_data)
     g_return_val_if_fail(priv->teamd_dbus_timeout, FALSE);
     priv->teamd_dbus_timeout = 0;
 
-    if (priv->teamd_pid && !priv->tdc) {
-        /* Timed out launching our own teamd process */
-        _LOGW(LOGD_TEAM, "teamd timed out");
-        teamd_cleanup(self, TRUE);
+    /* Timed out launching our own teamd process */
+    _LOGW(LOGD_TEAM, "teamd timed out");
+    teamd_cleanup(self, TRUE);
 
-        g_warn_if_fail(nm_device_is_activating(device));
-        nm_device_state_changed(device,
-                                NM_DEVICE_STATE_FAILED,
-                                NM_DEVICE_STATE_REASON_TEAMD_CONTROL_FAILED);
-    } else {
-        /* Read again the configuration after the timeout since it might
-         * have changed.
-         */
-        if (!teamd_read_config(self)) {
-            _LOGW(LOGD_TEAM, "failed to read teamd configuration");
-            nm_device_state_changed(device,
-                                    NM_DEVICE_STATE_FAILED,
-                                    NM_DEVICE_STATE_REASON_TEAMD_CONTROL_FAILED);
-        }
-    }
+    g_warn_if_fail(nm_device_is_activating(device));
+    nm_device_state_changed(device,
+                            NM_DEVICE_STATE_FAILED,
+                            NM_DEVICE_STATE_REASON_TEAMD_CONTROL_FAILED);
 
     return G_SOURCE_REMOVE;
 }
