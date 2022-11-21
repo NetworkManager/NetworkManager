@@ -77,7 +77,7 @@ _tdc_connect_new(NMDeviceTeam *self, const char *iface, GError **error)
     tdc = teamdctl_alloc();
     if (!tdc) {
         nm_utils_error_set(error, NM_UTILS_ERROR_UNKNOWN, "failure to allocate teamdctl structure");
-        g_return_val_if_reached(NULL);
+        return NULL;
     }
 
     if (priv->teamd_dbus_watch)
