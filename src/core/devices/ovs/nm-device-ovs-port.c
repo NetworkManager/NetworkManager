@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- * Copyright (C) 2017 Red Hat, Inc.
+ * Copyright (C) 2017,2022 Red Hat, Inc.
  */
 
 #include "src/core/nm-default-daemon.h"
@@ -48,7 +48,7 @@ create_and_realize(NMDevice              *device,
                    const NMPlatformLink **out_plink,
                    GError               **error)
 {
-    /* The port will be added to ovsdb when an interface is enslaved,
+    /* The port will be added to ovsdb when an interface is attached,
      * because there's no such thing like an empty port. */
 
     return TRUE;
@@ -73,17 +73,17 @@ act_stage3_ip_config(NMDevice *device, int addr_family)
 }
 
 typedef struct {
-    NMDevice                  *device;
-    NMDevice                  *port;
+    NMDevice                  *ovs_port;
+    NMDevice                  *ovs_iface;
     GCancellable              *cancellable;
     NMDeviceAttachPortCallback callback;
     gpointer                   callback_user_data;
-} AttachPortData;
+} AttachIfaceData;
 
 static void
-add_iface_cb(GError *error, gpointer user_data)
+add_ovs_iface_cb(GError *error, gpointer user_data)
 {
-    AttachPortData       *data = user_data;
+    AttachIfaceData      *data = user_data;
     NMDeviceOvsPort      *self;
     gs_free_error GError *local = NULL;
 
@@ -91,27 +91,27 @@ add_iface_cb(GError *error, gpointer user_data)
         local = nm_utils_error_new_cancelled(FALSE, NULL);
         error = local;
     } else if (error && !nm_utils_error_is_cancelled_or_disposing(error)) {
-        self = NM_DEVICE_OVS_PORT(data->device);
+        self = NM_DEVICE_OVS_PORT(data->ovs_port);
         _LOGW(LOGD_DEVICE,
               "device %s could not be added to a ovs port: %s",
-              nm_device_get_iface(data->port),
+              nm_device_get_iface(data->ovs_iface),
               error->message);
-        nm_device_state_changed(data->port,
+        nm_device_state_changed(data->ovs_iface,
                                 NM_DEVICE_STATE_FAILED,
                                 NM_DEVICE_STATE_REASON_OVSDB_FAILED);
     }
 
-    data->callback(data->device, error, data->callback_user_data);
+    data->callback(data->ovs_port, error, data->callback_user_data);
 
-    g_object_unref(data->device);
-    g_object_unref(data->port);
+    g_object_unref(data->ovs_port);
+    g_object_unref(data->ovs_iface);
     nm_clear_g_cancellable(&data->cancellable);
 
     nm_g_slice_free(data);
 }
 
 static gboolean
-_ovs_interface_is_dpdk(NMDevice *device)
+_ovs_iface_is_dpdk(NMDevice *device)
 {
     NMSettingOvsInterface *s_ovs_iface;
 
@@ -138,43 +138,45 @@ set_mtu_cb(GError *error, gpointer user_data)
 }
 
 static NMTernary
-attach_port(NMDevice                  *device,
-            NMDevice                  *port,
-            NMConnection              *connection,
-            gboolean                   configure,
-            GCancellable              *cancellable,
-            NMDeviceAttachPortCallback callback,
-            gpointer                   user_data)
+attach_ovs_iface(NMDevice                  *ovs_port,
+                 NMDevice                  *ovs_iface,
+                 NMConnection              *connection,
+                 gboolean                   configure,
+                 GCancellable              *cancellable,
+                 NMDeviceAttachPortCallback callback,
+                 gpointer                   user_data)
 {
-    NMDeviceOvsPort    *self      = NM_DEVICE_OVS_PORT(device);
+    NMDeviceOvsPort    *self      = NM_DEVICE_OVS_PORT(ovs_port);
     NMActiveConnection *ac_port   = NULL;
     NMActiveConnection *ac_bridge = NULL;
-    NMDevice           *bridge_device;
+    NMDevice           *ovs_bridge;
     NMSettingWired     *s_wired;
-    AttachPortData     *data;
+    AttachIfaceData    *data;
 
     if (!configure)
         return TRUE;
 
-    ac_port   = NM_ACTIVE_CONNECTION(nm_device_get_act_request(device));
+    ac_port   = NM_ACTIVE_CONNECTION(nm_device_get_act_request(ovs_port));
     ac_bridge = nm_active_connection_get_master(ac_port);
     if (!ac_bridge) {
         _LOGW(LOGD_DEVICE,
               "can't attach %s: bridge active-connection not found",
-              nm_device_get_iface(port));
+              nm_device_get_iface(ovs_iface));
         return FALSE;
     }
 
-    bridge_device = nm_active_connection_get_device(ac_bridge);
-    if (!bridge_device) {
-        _LOGW(LOGD_DEVICE, "can't attach %s: bridge device not found", nm_device_get_iface(port));
+    ovs_bridge = nm_active_connection_get_device(ac_bridge);
+    if (!ovs_bridge) {
+        _LOGW(LOGD_DEVICE,
+              "can't attach %s: bridge device not found",
+              nm_device_get_iface(ovs_iface));
         return FALSE;
     }
 
-    data  = g_slice_new(AttachPortData);
-    *data = (AttachPortData){
-        .device             = g_object_ref(device),
-        .port               = g_object_ref(port),
+    data  = g_slice_new(AttachIfaceData);
+    *data = (AttachIfaceData){
+        .ovs_port           = g_object_ref(ovs_port),
+        .ovs_iface          = g_object_ref(ovs_iface),
         .cancellable        = g_object_ref(cancellable),
         .callback           = callback,
         .callback_user_data = user_data,
@@ -182,23 +184,23 @@ attach_port(NMDevice                  *device,
 
     nm_ovsdb_add_interface(nm_ovsdb_get(),
                            nm_active_connection_get_applied_connection(ac_bridge),
-                           nm_device_get_applied_connection(device),
-                           nm_device_get_applied_connection(port),
-                           bridge_device,
-                           port,
-                           add_iface_cb,
+                           nm_device_get_applied_connection(ovs_port),
+                           nm_device_get_applied_connection(ovs_iface),
+                           ovs_bridge,
+                           ovs_iface,
+                           add_ovs_iface_cb,
                            data);
 
-    /* DPDK ports does not have a link after the devbind, so the MTU must be
+    /* DPDK ovs_ifaces does not have a link after the devbind, so the MTU must be
      * set on ovsdb after adding the interface. */
-    if (NM_IS_DEVICE_OVS_INTERFACE(port) && _ovs_interface_is_dpdk(port)) {
-        s_wired = nm_device_get_applied_setting(port, NM_TYPE_SETTING_WIRED);
+    if (NM_IS_DEVICE_OVS_INTERFACE(ovs_iface) && _ovs_iface_is_dpdk(ovs_iface)) {
+        s_wired = nm_device_get_applied_setting(ovs_iface, NM_TYPE_SETTING_WIRED);
         if (s_wired && nm_setting_wired_get_mtu(s_wired)) {
             nm_ovsdb_set_interface_mtu(nm_ovsdb_get(),
-                                       nm_device_get_ip_iface(port),
+                                       nm_device_get_ip_iface(ovs_iface),
                                        nm_setting_wired_get_mtu(s_wired),
                                        set_mtu_cb,
-                                       g_object_ref(port));
+                                       g_object_ref(ovs_iface));
         }
     }
 
@@ -206,47 +208,49 @@ attach_port(NMDevice                  *device,
 }
 
 static void
-del_iface_cb(GError *error, gpointer user_data)
+del_ovs_iface_cb(GError *error, gpointer user_data)
 {
-    NMDevice *slave = user_data;
+    NMDevice *ovs_iface = user_data;
 
     if (error && !g_error_matches(error, NM_UTILS_ERROR, NM_UTILS_ERROR_CANCELLED_DISPOSING)) {
         nm_log_warn(LOGD_DEVICE,
-                    "device %s could not be removed from a ovs port: %s",
-                    nm_device_get_iface(slave),
+                    "interface %s could not be removed from a ovs port: %s",
+                    nm_device_get_iface(ovs_iface),
                     error->message);
-        nm_device_state_changed(slave, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_OVSDB_FAILED);
+        nm_device_state_changed(ovs_iface,
+                                NM_DEVICE_STATE_FAILED,
+                                NM_DEVICE_STATE_REASON_OVSDB_FAILED);
     }
 
-    g_object_unref(slave);
+    g_object_unref(ovs_iface);
 }
 
 static void
-detach_port(NMDevice *device, NMDevice *port, gboolean configure)
+detach_ovs_iface(NMDevice *ovs_port, NMDevice *ovs_iface, gboolean configure)
 {
-    NMDeviceOvsPort *self             = NM_DEVICE_OVS_PORT(device);
-    bool             port_not_managed = !NM_IN_SET(nm_device_sys_iface_state_get(port),
-                                       NM_DEVICE_SYS_IFACE_STATE_MANAGED,
-                                       NM_DEVICE_SYS_IFACE_STATE_ASSUME);
+    NMDeviceOvsPort *self                  = NM_DEVICE_OVS_PORT(ovs_port);
+    bool             ovs_iface_not_managed = !NM_IN_SET(nm_device_sys_iface_state_get(ovs_iface),
+                                            NM_DEVICE_SYS_IFACE_STATE_MANAGED,
+                                            NM_DEVICE_SYS_IFACE_STATE_ASSUME);
 
-    _LOGI(LOGD_DEVICE, "detaching ovs interface %s", nm_device_get_ip_iface(port));
+    _LOGI(LOGD_DEVICE, "detaching ovs interface %s", nm_device_get_ip_iface(ovs_iface));
 
     /* Even if the an interface's device has gone away (e.g. externally
      * removed and thus we're called with configure=FALSE), we still need
      * to make sure its OVSDB entry is gone.
      */
-    if (configure || port_not_managed) {
+    if (configure || ovs_iface_not_managed) {
         nm_ovsdb_del_interface(nm_ovsdb_get(),
-                               nm_device_get_iface(port),
-                               del_iface_cb,
-                               g_object_ref(port));
+                               nm_device_get_iface(ovs_iface),
+                               del_ovs_iface_cb,
+                               g_object_ref(ovs_iface));
     }
 
     if (configure) {
         /* Open VSwitch is going to delete this one. We must ignore what happens
          * next with the interface. */
-        if (NM_IS_DEVICE_OVS_INTERFACE(port))
-            nm_device_update_from_platform_link(port, NULL);
+        if (NM_IS_DEVICE_OVS_INTERFACE(ovs_iface))
+            nm_device_update_from_platform_link(ovs_iface, NULL);
     }
 }
 
@@ -281,8 +285,8 @@ nm_device_ovs_port_class_init(NMDeviceOvsPortClass *klass)
     device_class->get_generic_capabilities            = get_generic_capabilities;
     device_class->act_stage3_ip_config                = act_stage3_ip_config;
     device_class->ready_for_ip_config                 = ready_for_ip_config;
-    device_class->attach_port                         = attach_port;
-    device_class->detach_port                         = detach_port;
+    device_class->attach_port                         = attach_ovs_iface;
+    device_class->detach_port                         = detach_ovs_iface;
     device_class->can_reapply_change_ovs_external_ids = TRUE;
     device_class->reapply_connection                  = nm_device_ovs_reapply_connection;
 }
