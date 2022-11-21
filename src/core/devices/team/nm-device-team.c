@@ -663,8 +663,7 @@ teamd_start(NMDeviceTeam *self)
 
     connection = nm_device_get_applied_connection(NM_DEVICE(self));
     s_team     = nm_connection_get_setting_team(connection);
-    if (!s_team)
-        g_return_val_if_reached(FALSE);
+    g_return_val_if_fail(s_team, FALSE);
 
     nm_assert(iface);
 
@@ -782,8 +781,7 @@ act_stage1_prepare(NMDevice *device, NMDeviceStateReason *out_failure_reason)
     }
 
     s_team = nm_device_get_applied_setting(device, NM_TYPE_SETTING_TEAM);
-    if (!s_team)
-        g_return_val_if_reached(NM_ACT_STAGE_RETURN_FAILURE);
+    g_return_val_if_fail(s_team, FALSE);
 
     if (priv->stage1_state == NM_DEVICE_STAGE_STATE_PENDING)
         return NM_ACT_STAGE_RETURN_POSTPONE;
