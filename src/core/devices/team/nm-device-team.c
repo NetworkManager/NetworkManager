@@ -658,9 +658,12 @@ teamd_start(NMDeviceTeam *self)
     gs_free char                *cloned_mac = NULL;
     gs_free const char         **envp       = NULL;
 
-    connection = nm_device_get_applied_connection(NM_DEVICE(self));
+    g_return_val_if_fail(!priv->tdc, FALSE);
+    g_return_val_if_fail(!priv->teamd_process_watch, FALSE);
+    g_return_val_if_fail(priv->teamd_pid <= 0, FALSE);
 
-    s_team = nm_connection_get_setting_team(connection);
+    connection = nm_device_get_applied_connection(NM_DEVICE(self));
+    s_team     = nm_connection_get_setting_team(connection);
     if (!s_team)
         g_return_val_if_reached(FALSE);
 
@@ -670,13 +673,6 @@ teamd_start(NMDeviceTeam *self)
     if (!teamd_binary) {
         _LOGW(LOGD_TEAM, "Activation: (team) failed to start teamd: teamd binary not found");
         return FALSE;
-    }
-
-    if (priv->teamd_process_watch || priv->teamd_pid > 0 || priv->tdc) {
-        g_warn_if_reached();
-        if (!priv->teamd_pid)
-            teamd_kill(self, teamd_binary, NULL);
-        teamd_cleanup(self, TRUE);
     }
 
     /* Start teamd now */
