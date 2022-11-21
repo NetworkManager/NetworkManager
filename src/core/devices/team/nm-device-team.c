@@ -34,6 +34,7 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMDeviceTeam, PROP_CONFIG, );
 
 typedef struct {
     struct teamdctl   *tdc;
+    char              *dbus_name;
     char              *config;
     GPid               teamd_pid;
     guint              teamd_process_watch;
@@ -503,30 +504,14 @@ teamd_dbus_vanished(GDBusConnection *dbus_connection, const char *name, gpointer
 static void
 teamd_process_watch_cb(GPid pid, int status, gpointer user_data)
 {
-    NMDeviceTeam        *self   = NM_DEVICE_TEAM(user_data);
-    NMDeviceTeamPrivate *priv   = NM_DEVICE_TEAM_GET_PRIVATE(self);
-    NMDevice            *device = NM_DEVICE(self);
-    NMDeviceState        state  = nm_device_get_state(device);
+    NMDeviceTeam        *self = NM_DEVICE_TEAM(user_data);
+    NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE(self);
 
     g_return_if_fail(priv->teamd_process_watch);
 
     _LOGI(LOGD_TEAM, "teamd %lld died with status %d", (long long) pid, status);
     priv->teamd_pid           = 0;
     priv->teamd_process_watch = 0;
-
-    /* If teamd quit within 5 seconds of starting, it's probably hosed
-     * and will just die again, so fail the activation.
-     */
-    if (priv->teamd_dbus_timeout && (state >= NM_DEVICE_STATE_PREPARE)
-        && (state <= NM_DEVICE_STATE_ACTIVATED)) {
-        _LOGW(LOGD_TEAM,
-              "teamd process %lld quit unexpectedly; failing activation",
-              (long long) pid);
-        teamd_cleanup(self, TRUE);
-        nm_device_state_changed(device,
-                                NM_DEVICE_STATE_FAILED,
-                                NM_DEVICE_STATE_REASON_TEAMD_CONTROL_FAILED);
-    }
 }
 
 static void
@@ -955,20 +940,19 @@ nm_device_team_init(NMDeviceTeam *self)
 static void
 constructed(GObject *object)
 {
-    NMDevice              *device  = NM_DEVICE(object);
-    NMDeviceTeamPrivate   *priv    = NM_DEVICE_TEAM_GET_PRIVATE(device);
-    gs_free char          *tmp_str = NULL;
-    gs_unref_object GFile *file    = NULL;
-    gs_free_error GError  *error   = NULL;
+    NMDevice              *device = NM_DEVICE(object);
+    NMDeviceTeamPrivate   *priv   = NM_DEVICE_TEAM_GET_PRIVATE(device);
+    gs_unref_object GFile *file   = NULL;
+    gs_free_error GError  *error  = NULL;
 
     G_OBJECT_CLASS(nm_device_team_parent_class)->constructed(object);
 
     priv->port_configs = g_hash_table_new_full(nm_str_hash, g_str_equal, g_free, g_free);
+    priv->dbus_name    = g_strdup_printf("org.libteam.teamd.%s", nm_device_get_ip_iface(device));
 
     /* Register D-Bus name watcher */
-    tmp_str = g_strdup_printf("org.libteam.teamd.%s", nm_device_get_ip_iface(device));
     priv->teamd_dbus_watch = g_bus_watch_name(G_BUS_TYPE_SYSTEM,
-                                              tmp_str,
+                                              priv->dbus_name,
                                               G_BUS_NAME_WATCHER_FLAGS_NONE,
                                               teamd_dbus_appeared,
                                               teamd_dbus_vanished,
@@ -1006,6 +990,7 @@ dispose(GObject *object)
     }
 
     teamd_cleanup(self, TRUE);
+    nm_clear_g_free(&priv->dbus_name);
     nm_clear_g_free(&priv->config);
     nm_clear_pointer(&priv->port_configs, g_hash_table_destroy);
 
