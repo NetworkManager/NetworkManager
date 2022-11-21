@@ -2341,32 +2341,13 @@ int nm_platform_ip6_route_cmp(const NMPlatformIP6Route *a,
                               const NMPlatformIP6Route *b,
                               NMPlatformIPRouteCmpType  cmp_type);
 
-static inline int
-nm_platform_ip4_route_cmp_full(const NMPlatformIP4Route *a, const NMPlatformIP4Route *b)
-{
-    return nm_platform_ip4_route_cmp(a, b, NM_PLATFORM_IP_ROUTE_CMP_TYPE_FULL);
-}
-
-static inline int
-nm_platform_ip6_route_cmp_full(const NMPlatformIP6Route *a, const NMPlatformIP6Route *b)
-{
-    return nm_platform_ip6_route_cmp(a, b, NM_PLATFORM_IP_ROUTE_CMP_TYPE_FULL);
-}
-
 int nm_platform_routing_rule_cmp(const NMPlatformRoutingRule *a,
                                  const NMPlatformRoutingRule *b,
                                  NMPlatformRoutingRuleCmpType cmp_type);
 
-static inline int
-nm_platform_routing_rule_cmp_full(const NMPlatformRoutingRule *a, const NMPlatformRoutingRule *b)
-{
-    return nm_platform_routing_rule_cmp(a, b, NM_PLATFORM_ROUTING_RULE_CMP_TYPE_FULL);
-}
+int
+nm_platform_qdisc_cmp(const NMPlatformQdisc *a, const NMPlatformQdisc *b, gboolean compare_handle);
 
-int nm_platform_qdisc_cmp(const NMPlatformQdisc *a, const NMPlatformQdisc *b);
-int nm_platform_qdisc_cmp_full(const NMPlatformQdisc *a,
-                               const NMPlatformQdisc *b,
-                               gboolean               compare_handle);
 int nm_platform_tfilter_cmp(const NMPlatformTfilter *a, const NMPlatformTfilter *b);
 
 int nm_platform_mptcp_addr_cmp(const NMPlatformMptcpAddr *a, const NMPlatformMptcpAddr *b);

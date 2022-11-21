@@ -1795,6 +1795,14 @@ _vt_cmd_plobj_hash_update_ip6_route(const NMPlatformObject *obj, NMHashState *h)
                                              h);
 }
 
+static int
+_vt_cmd_plobj_cmp_ip6_route(const NMPlatformObject *obj1, const NMPlatformObject *obj2)
+{
+    return nm_platform_ip6_route_cmp((const NMPlatformIP6Route *) obj1,
+                                     (const NMPlatformIP6Route *) obj2,
+                                     NM_PLATFORM_IP_ROUTE_CMP_TYPE_FULL);
+}
+
 static void
 _vt_cmd_plobj_hash_update_routing_rule(const NMPlatformObject *obj, NMHashState *h)
 {
@@ -1802,6 +1810,24 @@ _vt_cmd_plobj_hash_update_routing_rule(const NMPlatformObject *obj, NMHashState 
                                                 NM_PLATFORM_ROUTING_RULE_CMP_TYPE_FULL,
                                                 h);
 }
+
+static inline int
+_vt_cmd_plobj_cmp_routing_rule(const NMPlatformObject *obj1, const NMPlatformObject *obj2)
+{
+    return nm_platform_routing_rule_cmp((const NMPlatformRoutingRule *) obj1,
+                                        (const NMPlatformRoutingRule *) obj2,
+                                        NM_PLATFORM_ROUTING_RULE_CMP_TYPE_FULL);
+}
+
+static int
+_vt_cmd_plobj_cmp_qdisc(const NMPlatformObject *obj1, const NMPlatformObject *obj2)
+{
+    return nm_platform_qdisc_cmp((const NMPlatformQdisc *) obj1,
+                                 (const NMPlatformQdisc *) obj2,
+                                 TRUE);
+}
+
+/*****************************************************************************/
 
 guint
 nmp_object_indirect_id_hash(gconstpointer a)
@@ -3333,7 +3359,7 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
             .cmd_plobj_to_string_id   = (CmdPlobjToStringIdFunc) nm_platform_ip6_route_to_string,
             .cmd_plobj_to_string      = (CmdPlobjToStringFunc) nm_platform_ip6_route_to_string,
             .cmd_plobj_hash_update    = _vt_cmd_plobj_hash_update_ip6_route,
-            .cmd_plobj_cmp            = (CmdPlobjCmpFunc) nm_platform_ip6_route_cmp_full,
+            .cmd_plobj_cmp            = _vt_cmd_plobj_cmp_ip6_route,
         },
     [NMP_OBJECT_TYPE_ROUTING_RULE - 1] =
         {
@@ -3352,7 +3378,7 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
             .cmd_plobj_to_string_id   = (CmdPlobjToStringIdFunc) nm_platform_routing_rule_to_string,
             .cmd_plobj_to_string      = (CmdPlobjToStringFunc) nm_platform_routing_rule_to_string,
             .cmd_plobj_hash_update    = _vt_cmd_plobj_hash_update_routing_rule,
-            .cmd_plobj_cmp            = (CmdPlobjCmpFunc) nm_platform_routing_rule_cmp_full,
+            .cmd_plobj_cmp            = _vt_cmd_plobj_cmp_routing_rule,
         },
     [NMP_OBJECT_TYPE_QDISC - 1] =
         {
@@ -3371,7 +3397,7 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
             .cmd_plobj_to_string_id   = _vt_cmd_plobj_to_string_id_qdisc,
             .cmd_plobj_to_string      = (CmdPlobjToStringFunc) nm_platform_qdisc_to_string,
             .cmd_plobj_hash_update    = (CmdPlobjHashUpdateFunc) nm_platform_qdisc_hash_update,
-            .cmd_plobj_cmp            = (CmdPlobjCmpFunc) nm_platform_qdisc_cmp,
+            .cmd_plobj_cmp            = _vt_cmd_plobj_cmp_qdisc,
         },
     [NMP_OBJECT_TYPE_TFILTER - 1] =
         {

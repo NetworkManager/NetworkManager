@@ -7316,9 +7316,7 @@ nm_platform_qdisc_hash_update(const NMPlatformQdisc *obj, NMHashState *h)
 }
 
 int
-nm_platform_qdisc_cmp_full(const NMPlatformQdisc *a,
-                           const NMPlatformQdisc *b,
-                           gboolean               compare_handle)
+nm_platform_qdisc_cmp(const NMPlatformQdisc *a, const NMPlatformQdisc *b, gboolean compare_handle)
 {
     NM_CMP_SELF(a, b);
     NM_CMP_FIELD(a, b, ifindex);
@@ -7353,12 +7351,6 @@ nm_platform_qdisc_cmp_full(const NMPlatformQdisc *a,
     }
 
     return 0;
-}
-
-int
-nm_platform_qdisc_cmp(const NMPlatformQdisc *a, const NMPlatformQdisc *b)
-{
-    return nm_platform_qdisc_cmp_full(a, b, TRUE);
 }
 
 const char *
