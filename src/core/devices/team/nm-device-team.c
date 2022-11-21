@@ -177,12 +177,6 @@ ensure_teamd_connection(NMDevice *device, GError **error)
     return TRUE;
 }
 
-static const char *
-_get_config(NMDeviceTeam *self)
-{
-    return nm_str_not_empty(NM_DEVICE_TEAM_GET_PRIVATE(self)->config);
-}
-
 static gboolean
 teamd_read_config(NMDeviceTeam *self)
 {
@@ -246,7 +240,10 @@ update_connection(NMDevice *device, NMConnection *connection)
         priv->tdc = NULL;
     }
 
-    g_object_set(G_OBJECT(s_team), NM_SETTING_TEAM_CONFIG, _get_config(self), NULL);
+    g_object_set(G_OBJECT(s_team),
+                 NM_SETTING_TEAM_CONFIG,
+                 nm_str_not_empty(NM_DEVICE_TEAM_GET_PRIVATE(self)->config),
+                 NULL);
 }
 
 /*****************************************************************************/
@@ -999,11 +996,12 @@ create_and_realize(NMDevice              *device,
 static void
 get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 {
-    NMDeviceTeam *self = NM_DEVICE_TEAM(object);
+    NMDeviceTeam        *self = NM_DEVICE_TEAM(object);
+    NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE(self);
 
     switch (prop_id) {
     case PROP_CONFIG:
-        g_value_set_string(value, _get_config(self));
+        g_value_set_string(value, priv->config);
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
