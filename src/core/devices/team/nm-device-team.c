@@ -37,7 +37,7 @@ typedef struct {
     char              *config;
     GPid               teamd_pid;
     guint              teamd_process_watch;
-    guint              teamd_timeout;
+    guint              teamd_dbus_timeout;
     guint              teamd_read_timeout;
     guint              teamd_dbus_watch;
     bool               kill_in_progress : 1;
@@ -338,7 +338,7 @@ teamd_cleanup(NMDeviceTeam *self, gboolean free_tdc)
     NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE(self);
 
     nm_clear_g_source(&priv->teamd_process_watch);
-    nm_clear_g_source(&priv->teamd_timeout);
+    nm_clear_g_source(&priv->teamd_dbus_timeout);
     nm_clear_g_source(&priv->teamd_read_timeout);
 
     if (priv->teamd_pid > 0) {
@@ -362,7 +362,7 @@ teamd_cleanup(NMDeviceTeam *self, gboolean free_tdc)
 }
 
 static gboolean
-teamd_timeout_cb(gpointer user_data)
+teamd_dbus_timeout_cb(gpointer user_data)
 {
     NMDeviceTeam        *self   = NM_DEVICE_TEAM(user_data);
     NMDevice            *device = NM_DEVICE(self);
@@ -370,8 +370,8 @@ teamd_timeout_cb(gpointer user_data)
 
     _LOGW(LOGD_TEAM, "timed out waiting for teamd to appear on D-Bus");
 
-    g_return_val_if_fail(priv->teamd_timeout, FALSE);
-    priv->teamd_timeout = 0;
+    g_return_val_if_fail(priv->teamd_dbus_timeout, FALSE);
+    priv->teamd_dbus_timeout = 0;
 
     if (priv->teamd_pid && !priv->tdc) {
         /* Timed out launching our own teamd process */
@@ -573,7 +573,7 @@ teamd_process_watch_cb(GPid pid, int status, gpointer user_data)
     /* If teamd quit within 5 seconds of starting, it's probably hosed
      * and will just die again, so fail the activation.
      */
-    if (priv->teamd_timeout && (state >= NM_DEVICE_STATE_PREPARE)
+    if (priv->teamd_dbus_timeout && (state >= NM_DEVICE_STATE_PREPARE)
         && (state <= NM_DEVICE_STATE_ACTIVATED)) {
         _LOGW(LOGD_TEAM,
               "teamd process %lld quit unexpectedly; failing activation",
@@ -757,8 +757,8 @@ teamd_start(NMDeviceTeam *self)
     }
 
     /* Start a timeout for teamd to appear at D-Bus */
-    if (!priv->teamd_timeout)
-        priv->teamd_timeout = g_timeout_add_seconds(5, teamd_timeout_cb, self);
+    if (!priv->teamd_dbus_timeout)
+        priv->teamd_dbus_timeout = g_timeout_add_seconds(5, teamd_dbus_timeout_cb, self);
 
     /* Monitor the child process so we know when it dies */
     priv->teamd_process_watch = g_child_watch_add(priv->teamd_pid, teamd_process_watch_cb, self);
