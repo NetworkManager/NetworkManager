@@ -379,51 +379,6 @@ teamd_dbus_timeout_cb(gpointer user_data)
 }
 
 static void
-teamd_ready(NMDeviceTeam *self)
-{
-    NMDeviceTeamPrivate *priv   = NM_DEVICE_TEAM_GET_PRIVATE(self);
-    NMDevice            *device = NM_DEVICE(self);
-    gboolean             success;
-    GError              *error = NULL;
-
-    if (priv->kill_in_progress) {
-        /* If we are currently killing teamd, we are not
-         * interested in knowing when it becomes ready. */
-        return;
-    }
-
-    nm_device_queue_recheck_assume(device);
-
-    /* Grab a teamd control handle even if we aren't going to use it
-     * immediately.  But if we are, and grabbing it failed, fail the
-     * device activation.
-     */
-    success = ensure_teamd_connection(device, &error);
-    if (!success) {
-        _LOGW(LOGD_TEAM, "could not connect to teamd: %s", error->message);
-        g_clear_error(&error);
-    }
-
-    if (nm_device_get_state(device) != NM_DEVICE_STATE_PREPARE
-        || priv->stage1_state != NM_DEVICE_STAGE_STATE_PENDING)
-        return;
-
-    if (success)
-        success = teamd_read_config(self);
-
-    if (!success) {
-        teamd_cleanup(self, TRUE);
-        nm_device_state_changed(device,
-                                NM_DEVICE_STATE_FAILED,
-                                NM_DEVICE_STATE_REASON_TEAMD_CONTROL_FAILED);
-        return;
-    }
-
-    priv->stage1_state = NM_DEVICE_STAGE_STATE_COMPLETED;
-    nm_device_activate_schedule_stage1_device_prepare(device, FALSE);
-}
-
-static void
 teamd_gone(NMDeviceTeam *self)
 {
     NMDevice     *device = NM_DEVICE(self);
@@ -448,8 +403,11 @@ teamd_dbus_appeared(GDBusConnection *connection,
                     const char      *name_owner,
                     gpointer         user_data)
 {
-    NMDeviceTeam        *self = NM_DEVICE_TEAM(user_data);
-    NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE(self);
+    NMDeviceTeam        *self   = NM_DEVICE_TEAM(user_data);
+    NMDeviceTeamPrivate *priv   = NM_DEVICE_TEAM_GET_PRIVATE(self);
+    NMDevice            *device = NM_DEVICE(self);
+    gboolean             success;
+    GError              *error = NULL;
 
     g_return_if_fail(priv->teamd_dbus_watch);
 
@@ -490,7 +448,41 @@ teamd_dbus_appeared(GDBusConnection *connection,
         }
     }
 
-    teamd_ready(self);
+    if (priv->kill_in_progress) {
+        /* If we are currently killing teamd, we are not
+         * interested in knowing when it becomes ready. */
+        return;
+    }
+
+    nm_device_queue_recheck_assume(device);
+
+    /* Grab a teamd control handle even if we aren't going to use it
+     * immediately.  But if we are, and grabbing it failed, fail the
+     * device activation.
+     */
+    success = ensure_teamd_connection(device, &error);
+    if (!success) {
+        _LOGW(LOGD_TEAM, "could not connect to teamd: %s", error->message);
+        g_clear_error(&error);
+    }
+
+    if (nm_device_get_state(device) != NM_DEVICE_STATE_PREPARE
+        || priv->stage1_state != NM_DEVICE_STAGE_STATE_PENDING)
+        return;
+
+    if (success)
+        success = teamd_read_config(self);
+
+    if (!success) {
+        teamd_cleanup(self, TRUE);
+        nm_device_state_changed(device,
+                                NM_DEVICE_STATE_FAILED,
+                                NM_DEVICE_STATE_REASON_TEAMD_CONTROL_FAILED);
+        return;
+    }
+
+    priv->stage1_state = NM_DEVICE_STAGE_STATE_COMPLETED;
+    nm_device_activate_schedule_stage1_device_prepare(device, FALSE);
 }
 
 static void
