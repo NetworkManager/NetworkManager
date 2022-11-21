@@ -606,18 +606,17 @@ teamd_env(void)
 }
 
 static gboolean
-teamd_kill(NMDeviceTeam *self, const char *teamd_binary, GError **error)
+teamd_kill(NMDeviceTeam *self, GError **error)
 {
     gs_unref_ptrarray GPtrArray *argv    = NULL;
     gs_free char                *tmp_str = NULL;
     gs_free const char         **envp    = NULL;
+    const char                  *teamd_binary;
 
+    teamd_binary = nm_utils_find_helper("teamd", NULL, error);
     if (!teamd_binary) {
-        teamd_binary = nm_utils_find_helper("teamd", NULL, error);
-        if (!teamd_binary) {
-            _LOGW(LOGD_TEAM, "Activation: (team) failed to start teamd: teamd binary not found");
-            return FALSE;
-        }
+        _LOGW(LOGD_TEAM, "Activation: (team) failed to start teamd: teamd binary not found");
+        return FALSE;
     }
 
     argv = g_ptr_array_new();
@@ -808,7 +807,7 @@ act_stage1_prepare(NMDevice *device, NMDeviceStateReason *out_failure_reason)
 
         if (!priv->teamd_pid) {
             _LOGD(LOGD_TEAM, "existing teamd config mismatch; killing existing via teamdctl");
-            if (!teamd_kill(self, NULL, &error)) {
+            if (!teamd_kill(self, &error)) {
                 _LOGW(LOGD_TEAM,
                       "existing teamd config mismatch; failed to kill existing teamd: %s",
                       error->message);
@@ -848,7 +847,7 @@ deactivate(NMDevice *device)
         _LOGI(LOGD_TEAM, "deactivation: stopping teamd...");
 
     if (!priv->teamd_pid)
-        teamd_kill(self, NULL, NULL);
+        teamd_kill(self, NULL);
 
     teamd_cleanup(self, TRUE);
 }
