@@ -41,7 +41,6 @@ typedef struct {
     guint              teamd_read_timeout;
     guint              teamd_dbus_watch;
     bool               kill_in_progress : 1;
-    GFileMonitor      *usock_monitor;
     NMDeviceStageState stage1_state : 3;
     GHashTable        *port_configs;
 } NMDeviceTeamPrivate;
@@ -69,10 +68,8 @@ static gboolean teamd_start(NMDeviceTeam *self);
 static struct teamdctl *
 _tdc_connect_new(NMDeviceTeam *self, const char *iface, GError **error)
 {
-    NMDeviceTeamPrivate *priv = NM_DEVICE_TEAM_GET_PRIVATE(self);
-    struct teamdctl     *tdc;
-    const char          *cli_type;
-    int                  r;
+    struct teamdctl *tdc;
+    int              r;
 
     tdc = teamdctl_alloc();
     if (!tdc) {
@@ -80,25 +77,9 @@ _tdc_connect_new(NMDeviceTeam *self, const char *iface, GError **error)
         return NULL;
     }
 
-    if (priv->teamd_dbus_watch)
-        cli_type = "dbus";
-    else if (priv->usock_monitor)
-        cli_type = "usock";
-    else
-        cli_type = NULL;
-
-again:
-    r = teamdctl_connect(tdc, iface, NULL, cli_type);
+    r = teamdctl_connect(tdc, iface, NULL, "dbus");
     if (r != 0) {
-        _LOGD(LOGD_TEAM,
-              "failure to connect to teamdctl%s%s, err=%d",
-              NM_PRINT_FMT_QUOTED2(cli_type, " with cli_type=", cli_type, ""),
-              r);
-        if (cli_type) {
-            /* How odd. Let's retry with any CLI type. */
-            cli_type = NULL;
-            goto again;
-        }
+        _LOGD(LOGD_TEAM, "failure to connect to teamdctl, err=%d", r);
         teamdctl_free(tdc);
         nm_utils_error_set(error,
                            NM_UTILS_ERROR_UNKNOWN,
@@ -532,28 +513,6 @@ teamd_dbus_vanished(GDBusConnection *dbus_connection, const char *name, gpointer
     _LOGI(LOGD_TEAM, "teamd vanished from D-Bus");
 
     teamd_gone(self);
-}
-
-static void
-monitor_changed_cb(GFileMonitor     *monitor,
-                   GFile            *file,
-                   GFile            *other_file,
-                   GFileMonitorEvent event_type,
-                   gpointer          user_data)
-{
-    NMDeviceTeam *self = NM_DEVICE_TEAM(user_data);
-
-    switch (event_type) {
-    case G_FILE_MONITOR_EVENT_CREATED:
-        _LOGI(LOGD_TEAM, "file %s was created", g_file_get_path(file));
-        teamd_ready(self);
-        break;
-    case G_FILE_MONITOR_EVENT_DELETED:
-        _LOGI(LOGD_TEAM, "file %s was deleted", g_file_get_path(file));
-        teamd_gone(self);
-        break;
-    default:;
-    }
 }
 
 static void
@@ -1021,28 +980,16 @@ constructed(GObject *object)
 
     priv->port_configs = g_hash_table_new_full(nm_str_hash, g_str_equal, g_free, g_free);
 
-    if (nm_dbus_manager_get_dbus_connection(nm_dbus_manager_get())) {
-        /* Register D-Bus name watcher */
-        tmp_str = g_strdup_printf("org.libteam.teamd.%s", nm_device_get_ip_iface(device));
-        priv->teamd_dbus_watch = g_bus_watch_name(G_BUS_TYPE_SYSTEM,
-                                                  tmp_str,
-                                                  G_BUS_NAME_WATCHER_FLAGS_NONE,
-                                                  teamd_dbus_appeared,
-                                                  teamd_dbus_vanished,
-                                                  NM_DEVICE(device),
-                                                  NULL);
-        return;
-    }
-
-    /* No D-Bus, watch unix socket */
-    tmp_str             = g_strdup_printf("/run/teamd/%s.sock", nm_device_get_ip_iface(device));
-    file                = g_file_new_for_path(tmp_str);
-    priv->usock_monitor = g_file_monitor_file(file, G_FILE_MONITOR_NONE, NULL, &error);
-    if (!priv->usock_monitor) {
-        nm_log_warn(LOGD_TEAM, "error monitoring %s: %s", tmp_str, error->message);
-    } else {
-        g_signal_connect(priv->usock_monitor, "changed", G_CALLBACK(monitor_changed_cb), object);
-    }
+    /* Register D-Bus name watcher */
+    tmp_str = g_strdup_printf("org.libteam.teamd.%s", nm_device_get_ip_iface(device));
+    priv->teamd_dbus_watch = g_bus_watch_name(G_BUS_TYPE_SYSTEM,
+                                              tmp_str,
+                                              G_BUS_NAME_WATCHER_FLAGS_NONE,
+                                              teamd_dbus_appeared,
+                                              teamd_dbus_vanished,
+                                              NM_DEVICE(device),
+                                              NULL);
+    return;
 }
 
 NMDevice *
@@ -1071,11 +1018,6 @@ dispose(GObject *object)
     if (priv->teamd_dbus_watch) {
         g_bus_unwatch_name(priv->teamd_dbus_watch);
         priv->teamd_dbus_watch = 0;
-    }
-
-    if (priv->usock_monitor) {
-        g_signal_handlers_disconnect_by_data(priv->usock_monitor, object);
-        g_clear_object(&priv->usock_monitor);
     }
 
     teamd_cleanup(self, TRUE);
