@@ -323,11 +323,11 @@ teamd_kill_cb(pid_t pid, gboolean success, int child_status, void *user_data)
     priv->kill_in_progress = FALSE;
 
     if (nm_device_get_state(NM_DEVICE(self)) != NM_DEVICE_STATE_PREPARE) {
-        _LOGT(LOGD_TEAM, "kill terminated");
+        _LOGI(LOGD_TEAM, "kill terminated");
         return;
     }
 
-    _LOGT(LOGD_TEAM, "kill terminated, starting teamd...");
+    _LOGI(LOGD_TEAM, "kill terminated, starting teamd...");
     if (!teamd_start(self)) {
         nm_device_state_changed(NM_DEVICE(self),
                                 NM_DEVICE_STATE_FAILED,
@@ -345,6 +345,7 @@ teamd_cleanup(NMDeviceTeam *self, gboolean free_tdc)
     nm_clear_g_source(&priv->teamd_read_timeout);
 
     if (priv->teamd_pid > 0) {
+        _LOGI(LOGD_TEAM, "terminating our teamd instance");
         priv->kill_in_progress = TRUE;
         nm_utils_kill_child_async(priv->teamd_pid,
                                   SIGTERM,
@@ -369,6 +370,8 @@ teamd_timeout_cb(gpointer user_data)
     NMDeviceTeam        *self   = NM_DEVICE_TEAM(user_data);
     NMDevice            *device = NM_DEVICE(self);
     NMDeviceTeamPrivate *priv   = NM_DEVICE_TEAM_GET_PRIVATE(self);
+
+    _LOGW(LOGD_TEAM, "timed out waiting for teamd to appear on D-Bus");
 
     g_return_val_if_fail(priv->teamd_timeout, FALSE);
     priv->teamd_timeout = 0;
@@ -504,7 +507,7 @@ teamd_dbus_appeared(GDBusConnection *connection,
              * watch. If it's a previous instance that got killed,
              * also ignore that as our new instance will register
              * again. */
-            _LOGD(LOGD_TEAM, "failed to determine D-Bus name owner, ignoring");
+            _LOGI(LOGD_TEAM, "failed to determine D-Bus name owner, ignoring");
             return;
         }
     }
@@ -566,7 +569,7 @@ teamd_process_watch_cb(GPid pid, int status, gpointer user_data)
 
     g_return_if_fail(priv->teamd_process_watch);
 
-    _LOGD(LOGD_TEAM, "teamd %lld died with status %d", (long long) pid, status);
+    _LOGI(LOGD_TEAM, "teamd %lld died with status %d", (long long) pid, status);
     priv->teamd_pid           = 0;
     priv->teamd_process_watch = 0;
 
