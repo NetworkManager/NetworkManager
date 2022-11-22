@@ -1092,10 +1092,7 @@ object_delete(NMPlatform *platform, const NMPObject *obj)
 }
 
 static int
-ip_route_add(NMPlatform              *platform,
-             NMPNlmFlags              flags,
-             int                      addr_family,
-             const NMPlatformIPRoute *route)
+ip_route_add(NMPlatform *platform, NMPNlmFlags flags, NMPObject *obj_stack)
 {
     NMDedupMultiIter                iter;
     nm_auto_nmpobj NMPObject       *obj = NULL;
@@ -1109,23 +1106,29 @@ ip_route_add(NMPlatform              *platform,
     NMPlatformIPRoute              *r           = NULL;
     NMPlatformIP4Route             *r4          = NULL;
     NMPlatformIP6Route             *r6          = NULL;
+    int                             addr_family;
     gboolean                        has_same_weak_id;
     gboolean                        only_dirty;
     guint16                         nlmsgflags;
 
-    g_assert(NM_IN_SET(addr_family, AF_INET, AF_INET6));
+    g_assert(NM_IN_SET(NMP_OBJECT_GET_TYPE(obj_stack),
+                       NMP_OBJECT_TYPE_IP4_ROUTE,
+                       NMP_OBJECT_TYPE_IP6_ROUTE));
+
+    addr_family = NMP_OBJECT_GET_ADDR_FAMILY(obj_stack);
 
     flags = NM_FLAGS_UNSET(flags, NMP_NLM_FLAG_SUPPRESS_NETLINK_FAILURE);
 
     /* currently, only replace is implemented. */
     g_assert(flags == NMP_NLM_FLAG_REPLACE);
 
-    obj = nmp_object_new(addr_family == AF_INET ? NMP_OBJECT_TYPE_IP4_ROUTE
-                                                : NMP_OBJECT_TYPE_IP6_ROUTE,
-                         (const NMPlatformObject *) route);
-    r = NMP_OBJECT_CAST_IP_ROUTE(obj);
+    if (NMP_OBJECT_GET_TYPE(obj_stack) == NMP_OBJECT_TYPE_IP4_ROUTE
+        && obj_stack->ip4_route.n_nexthops == 0 && obj_stack->ip4_route.ifindex > 0)
+        obj_stack->ip4_route.n_nexthops = 1;
 
-    nm_platform_ip_route_normalize(addr_family, r);
+    obj = nmp_object_clone(obj_stack, FALSE);
+
+    r = NMP_OBJECT_CAST_IP_ROUTE(obj);
 
     switch (addr_family) {
     case AF_INET:

@@ -314,6 +314,13 @@ typedef struct {
 
 typedef struct {
     NMPlatformIP4Route _public;
+
+    /* The first hop is embedded in _public (in the
+     * ifindex, gateway and weight fields).
+     * Only if _public.n_nexthops is greater than 1, then
+     * this contains the remaining(!!) (_public.n_nexthops - 1)
+     * extra hops for ECMP multihop routes. */
+    const NMPlatformIP4RtNextHop *extra_nexthops;
 } NMPObjectIP4Route;
 
 typedef struct {
