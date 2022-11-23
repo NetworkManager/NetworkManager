@@ -7,3 +7,10 @@ global:
 local:
        *;
 };
+
+LIBCSIPHASH_2 {
+global:
+        c_siphash_append_13;
+        c_siphash_finalize_13;
+        c_siphash_hash_13;
+} LIBCSIPHASH_1;
