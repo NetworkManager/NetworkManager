@@ -217,6 +217,7 @@ struct _NML3Cfg {
     struct {
         guint32 signal_pending_obj_type_flags;
         CList   signal_pending_lst;
+        CList   ecmp_track_ifindex_lst_head;
     } internal_netns;
 };
 
