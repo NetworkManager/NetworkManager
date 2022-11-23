@@ -43,19 +43,38 @@ meson --version
 # to run that test as part of the build. Disable it.
 export NMTST_SKIP_CHECK_GITLAB_CI=1
 
-do_clean; BUILD_TYPE=autotools CC=gcc   WITH_DOCS=1 WITH_VALGRIND=1 contrib/scripts/nm-ci-run.sh
-mv build/INST/share/gtk-doc/html "$ARTIFACT_DIR/docs-html"
-do_clean; BUILD_TYPE=meson     CC=gcc   WITH_DOCS=1 WITH_VALGRIND=1 contrib/scripts/nm-ci-run.sh
-do_clean; BUILD_TYPE=autotools CC=clang WITH_DOCS=0                 contrib/scripts/nm-ci-run.sh
-do_clean; BUILD_TYPE=meson     CC=clang WITH_DOCS=0                 contrib/scripts/nm-ci-run.sh
+check_run() {
+    local test_no="$1"
 
-do_clean; test $IS_CENTOS_7 = 1 && PYTHON=python2 BUILD_TYPE=autotools CC=gcc WITH_DOCS=1 contrib/scripts/nm-ci-run.sh
+    # Usually, we run the build several times. However, for testing
+    # the build script manually, it can be useful to explicitly select
+    # one step to run. For example, if step 3 is known to fail, you
+    # can still manually run step 4 by setting NM_TEST_SELECT_RUN=4.
 
-do_clean; test $IS_FEDORA = 1 -o $IS_CENTOS = 1 && ./contrib/fedora/rpm/build_clean.sh -g -w crypto_gnutls -w debug -w iwd -w test -W meson
-do_clean; test $IS_FEDORA = 1                   && ./contrib/fedora/rpm/build_clean.sh -g -w crypto_gnutls -w debug -w iwd -w test -w meson
+    test -z "$NM_TEST_SELECT_RUN" -o "$NM_TEST_SELECT_RUN" = "$test_no"
+}
 
-do_clean
-if [ "$NM_BUILD_TARBALL" = 1 ]; then
+
+check_run_clean() {
+    if ! check_run "$1" ; then
+        return 1
+    fi
+    do_clean
+    return 0
+}
+
+check_run_clean 1 && BUILD_TYPE=autotools CC=gcc   WITH_DOCS=1 WITH_VALGRIND=1 contrib/scripts/nm-ci-run.sh \
+                      && mv build/INST/share/gtk-doc/html "$ARTIFACT_DIR/docs-html"
+check_run_clean 2 && BUILD_TYPE=meson     CC=gcc   WITH_DOCS=1 WITH_VALGRIND=1 contrib/scripts/nm-ci-run.sh
+check_run_clean 3 && BUILD_TYPE=autotools CC=clang WITH_DOCS=0                 contrib/scripts/nm-ci-run.sh
+check_run_clean 4 && BUILD_TYPE=meson     CC=clang WITH_DOCS=0                 contrib/scripts/nm-ci-run.sh
+
+check_run_clean 5 && test $IS_CENTOS_7 = 1 && PYTHON=python2 BUILD_TYPE=autotools CC=gcc WITH_DOCS=1 contrib/scripts/nm-ci-run.sh
+
+check_run_clean 6 && test $IS_FEDORA = 1 -o $IS_CENTOS = 1 && ./contrib/fedora/rpm/build_clean.sh -g -w crypto_gnutls -w debug -w iwd -w test -W meson
+check_run_clean 7 && test $IS_FEDORA = 1                   && ./contrib/fedora/rpm/build_clean.sh -g -w crypto_gnutls -w debug -w iwd -w test -w meson
+
+if check_run_clean 8 && [ "$NM_BUILD_TARBALL" = 1 ]; then
     SIGN_SOURCE=0 ./contrib/fedora/rpm/build_clean.sh -r
     mv ./NetworkManager-1*.tar.xz "$ARTIFACT_DIR/"
     mv ./contrib/fedora/rpm/latest/SRPMS/NetworkManager-1*.src.rpm "$ARTIFACT_DIR/"
@@ -87,21 +106,28 @@ test_subtree() {
     popd
 }
 
-for d in c-list c-rbtree c-siphash c-stdaux n-acd n-dhcp4 ; do
-    for cc in gcc clang; do
-        test_subtree "$d" "$cc"
+if check_run_clean 10; then
+    for d in c-list c-rbtree c-siphash c-stdaux n-acd n-dhcp4 ; do
+        for cc in gcc clang; do
+            test_subtree "$d" "$cc"
+        done
     done
-done
+fi
 
 ###############################################################################
 
 do_clean
 
 if [ "$NM_BUILD_TARBALL" = 1 ]; then
-    mv "$ARTIFACT_DIR/docs-html/" \
-       "$ARTIFACT_DIR"/NetworkManager-1*.tar.xz \
-       "$ARTIFACT_DIR"/NetworkManager-1*.src.rpm \
-       ./
+    if check_run 1 ; then
+        mv "$ARTIFACT_DIR/docs-html/" ./
+    fi
+    if check_run 8 ; then
+        mv \
+           "$ARTIFACT_DIR"/NetworkManager-1*.tar.xz \
+           "$ARTIFACT_DIR"/NetworkManager-1*.src.rpm \
+           ./
+    fi
 fi
 
 echo "BUILD SUCCESSFUL!!"
