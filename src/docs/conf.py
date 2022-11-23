@@ -30,15 +30,9 @@ extensions = [
 
 # Hawkmoth Options
 
-import pathlib
-def _hawkmoth_glob_includes(path, glob):
-    entries = []
-    for entry in pathlib.Path(path).glob(glob):
-        entries += ["-I" + os.path.abspath(str(entry))]
-    return entries
-
 cautodoc_clang = capidocs.kerneldoc.hawkmoth_include_args()
-cautodoc_clang += _hawkmoth_glob_includes("../../subprojects", "libc*/src")
+cautodoc_clang += ["-I" + os.path.abspath("..")]
+cautodoc_clang += capidocs.kerneldoc.hawkmoth_glob_includes("../../subprojects", "libc*/src")
 
 cautodoc_root = os.path.abspath('..')
 
