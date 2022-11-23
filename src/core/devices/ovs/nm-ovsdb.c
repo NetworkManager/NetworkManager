@@ -1602,7 +1602,7 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
     json_t         *items;
     json_t         *external_ids;
     json_error_t    json_error = {
-           0,
+        0,
     };
     void       *iter;
     const char *name;
@@ -2003,7 +2003,7 @@ ovsdb_got_msg(NMOvsdb *self, json_t *msg)
 {
     NMOvsdbPrivate *priv       = NM_OVSDB_GET_PRIVATE(self);
     json_error_t    json_error = {
-           0,
+        0,
     };
     json_t     *json_id = NULL;
     json_int_t  id      = (json_int_t) -1;
@@ -2145,7 +2145,7 @@ ovsdb_read_cb(GObject *source_object, GAsyncResult *res, gpointer user_data)
     gssize          size;
     json_t         *msg;
     json_error_t    json_error = {
-           0,
+        0,
     };
 
     size = g_input_stream_read_finish(stream, res, &error);

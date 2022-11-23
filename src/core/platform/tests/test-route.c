@@ -1176,7 +1176,7 @@ _rule_check_kernel_support(NMPlatform *platform, int attribute)
                  .addr_family = AF_INET,
                  .priority    = PROBE_PRORITY,
                  .uid_range =
-                     {
+                {
                          .start = 0,
                          .end   = 0,
                 },

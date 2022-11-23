@@ -2049,11 +2049,11 @@ test_read_wired_aliases_good(gconstpointer test_data)
                                                           NULL};
     const char                   *expected_address_3[] = {"192.168.1.5", "192.168.1.6", NULL};
     const char                   *expected_label_0[]   = {
-                            NULL,
-                            "aliasem0:1",
-                            "aliasem0:2",
-                            "aliasem0:99",
-                            NULL,
+        NULL,
+        "aliasem0:1",
+        "aliasem0:2",
+        "aliasem0:99",
+        NULL,
     };
     const char *expected_label_3[] = {
         NULL,
