@@ -240,6 +240,9 @@ DISTCLEANFILES += $(polkit_policy_DATA)
 ###############################################################################
 
 EXTRA_DIST += \
+	src/c-stdaux/src/c-stdaux-generic.h \
+	src/c-stdaux/src/c-stdaux-gnuc.h \
+	src/c-stdaux/src/c-stdaux-unix.h \
 	src/c-stdaux/src/c-stdaux.h \
 	$(NULL)
 

@@ -9,22 +9,9 @@
 #include <stdlib.h>
 #include "c-stdaux.h"
 
-/*
- * Tests for all remaining helpers
- */
-static void test_misc(int non_constant_expr) {
-        int foo;
+#if defined(C_MODULE_GENERIC)
 
-        /*
-         * Test the C_EXPR_ASSERT() macro to work in static and non-static
-         * environments, and evaluate exactly to its passed expression.
-         */
-        {
-                static int v = C_EXPR_ASSERT(1, true, "");
-
-                c_assert(v == 1);
-        }
-
+static void test_basic_generic(void) {
         /*
          * Test stringify/concatenation helpers. Also make sure to test that
          * the passed arguments are evaluated first, before they're stringified
@@ -78,13 +65,6 @@ static void test_misc(int non_constant_expr) {
                         c_assert(sub == UNIQUEsub);
                 }
                 {
-                        /*
-                         * Make sure both produce different names, even though they're
-                         * exactly the same expression.
-                         */
-                        _c_unused_ int C_VAR(sub, __COUNTER__), C_VAR(sub, __COUNTER__);
-                }
-                {
                         /* verify C_VAR() with single argument works line-based */
                         int C_VAR(sub); C_VAR(sub) = 5; c_assert(C_VAR(sub) == 5);
                 }
@@ -92,182 +72,96 @@ static void test_misc(int non_constant_expr) {
                         /* verify C_VAR() with no argument works line-based */
                         int C_VAR(); C_VAR() = 5; c_assert(C_VAR() == 5);
                 }
+#if defined(C_MODULE_GNUC)
+                {
+                        /*
+                         * Make sure both produce different names, even though they're
+                         * exactly the same expression.
+                         */
+                        _c_unused_ int C_VAR(sub, __COUNTER__), C_VAR(sub, __COUNTER__);
+                }
+#endif
         }
 
+#if defined(C_MODULE_GNUC)
         /*
-         * Test array-size helper. This simply computes the number of elements
-         * of an array, instead of the binary size.
+         * Verify that c_free*() works as expected. Since we want to support
+         * running under valgrind, there is no easy way to verify the
+         * correctness of free(). Hence, we simply rely on valgrind to catch
+         * the leaks.
          */
         {
-                int bar[8];
+                int i;
 
-                static_assert(C_ARRAY_SIZE(bar) == 8, "");
-                c_assert(__builtin_constant_p(C_ARRAY_SIZE(bar)));
-        }
+                for (i = 0; i < 16; ++i) {
+                        _c_cleanup_(c_freep) void *foo;
+                        _c_cleanup_(c_freep) int **bar; /* supports any type */
+                        size_t sz = 128 * 1024;
 
-        /*
-         * Test decimal-representation calculator. Make sure it is
-         * type-independent and just uses the size of the type to calculate how
-         * many bytes are needed to print that integer in decimal form. Also
-         * verify that it is a constant expression.
-         */
-        {
-                static_assert(C_DECIMAL_MAX(char) == 4, "");
-                static_assert(C_DECIMAL_MAX(signed char) == 4, "");
-                static_assert(C_DECIMAL_MAX(unsigned char) == 4, "");
-                static_assert(C_DECIMAL_MAX(unsigned long) == (sizeof(long) == 8 ? 21 : 11), "");
-                static_assert(C_DECIMAL_MAX(unsigned long long) == 21, "");
-                static_assert(C_DECIMAL_MAX(int32_t) == 11, "");
-                static_assert(C_DECIMAL_MAX(uint32_t) == 11, "");
-                static_assert(C_DECIMAL_MAX(uint64_t) == 21, "");
-        }
+                        foo = malloc(sz);
+                        c_assert(foo);
 
-        /*
-         * Test c_container_of(). We cannot test for type-safety, nor for
-         * other invalid uses, as they'd require negative compile-testing.
-         * However, we can test that the macro yields the correct values under
-         * normal use.
-         */
-        {
-                struct foobar {
-                        int a;
-                        char b;
-                } sub = {};
-
-                c_assert(&sub == c_container_of(&sub.a, struct foobar, a));
-                c_assert(&sub == c_container_of(&sub.b, struct foobar, b));
-                c_assert(&sub == c_container_of((const char *)&sub.b, struct foobar, b));
-
-                c_assert(!c_container_of(NULL, struct foobar, b));
-        }
-
-        /*
-         * Test min/max macros. Especially check that macro arguments are never
-         * evaluated multiple times, and if both arguments are constant, the
-         * return value is constant as well.
-         */
-        {
-                foo = 0;
-                c_assert(c_max(1, 5) == 5);
-                c_assert(c_max(-1, 5) == 5);
-                c_assert(c_max(-1, -5) == -1);
-                c_assert(c_max(foo++, -1) == 0);
-                c_assert(foo == 1);
-                c_assert(c_max(foo++, foo++) > 0);
-                c_assert(foo == 3);
-
-                c_assert(__builtin_constant_p(c_max(1, 5)));
-                c_assert(!__builtin_constant_p(c_max(1, non_constant_expr)));
-
-                foo = 0;
-                c_assert(c_min(1, 5) == 1);
-                c_assert(c_min(-1, 5) == -1);
-                c_assert(c_min(-1, -5) == -5);
-                c_assert(c_min(foo++, 1) == 0);
-                c_assert(foo == 1);
-                c_assert(c_min(foo++, foo++) > 0);
-                c_assert(foo == 3);
-
-                c_assert(__builtin_constant_p(c_min(1, 5)));
-                c_assert(!__builtin_constant_p(c_min(1, non_constant_expr)));
-        }
-
-        /*
-         * Test c_less_by(), c_clamp(). Make sure they
-         * evaluate arguments exactly once, and yield a constant expression,
-         * if all arguments are constant.
-         */
-        {
-                foo = 8;
-                c_assert(c_less_by(1, 5) == 0);
-                c_assert(c_less_by(5, 1) == 4);
-                c_assert(c_less_by(foo++, 1) == 7);
-                c_assert(foo == 9);
-                c_assert(c_less_by(foo++, foo++) >= 0);
-                c_assert(foo == 11);
-
-                c_assert(__builtin_constant_p(c_less_by(1, 5)));
-                c_assert(!__builtin_constant_p(c_less_by(1, non_constant_expr)));
-
-                foo = 8;
-                c_assert(c_clamp(foo, 1, 5) == 5);
-                c_assert(c_clamp(foo, 9, 20) == 9);
-                c_assert(c_clamp(foo++, 1, 5) == 5);
-                c_assert(foo == 9);
-                c_assert(c_clamp(foo++, foo++, foo++) >= 0);
-                c_assert(foo == 12);
-
-                c_assert(__builtin_constant_p(c_clamp(0, 1, 5)));
-                c_assert(!__builtin_constant_p(c_clamp(1, 0, non_constant_expr)));
-        }
-
-        /*
-         * Div Round Up: Normal division, but round up to next integer, instead
-         * of clipping. Also verify that it does not suffer from the integer
-         * overflow in the prevalent, alternative implementation:
-         *      [(x + y - 1) / y].
-         */
-        {
-                int i, j;
-
-#define TEST_ALT_DIV(_x, _y) (((_x) + (_y) - 1) / (_y))
-                foo = 8;
-                c_assert(c_div_round_up(0, 5) == 0);
-                c_assert(c_div_round_up(1, 5) == 1);
-                c_assert(c_div_round_up(5, 5) == 1);
-                c_assert(c_div_round_up(6, 5) == 2);
-                c_assert(c_div_round_up(foo++, 1) == 8);
-                c_assert(foo == 9);
-                c_assert(c_div_round_up(foo++, foo++) >= 0);
-                c_assert(foo == 11);
-
-                c_assert(__builtin_constant_p(c_div_round_up(1, 5)));
-                c_assert(!__builtin_constant_p(c_div_round_up(1, non_constant_expr)));
-
-                /* alternative calculation is [(x + y - 1) / y], but it may overflow */
-                for (i = 0; i <= 0xffff; ++i) {
-                        for (j = 1; j <= 0xff; ++j)
-                                c_assert(c_div_round_up(i, j) == TEST_ALT_DIV(i, j));
-                        for (j = 0xff00; j <= 0xffff; ++j)
-                                c_assert(c_div_round_up(i, j) == TEST_ALT_DIV(i, j));
+                        bar = malloc(sz);
+                        c_assert(bar);
+                        bar = c_free(bar);
+                        c_assert(!bar);
                 }
 
-                /* make sure it doesn't suffer from high overflow */
-                c_assert(UINT32_C(0xfffffffa) % 10 == 0);
-                c_assert(UINT32_C(0xfffffffa) / 10 == UINT32_C(429496729));
-                c_assert(c_div_round_up(UINT32_C(0xfffffffa), 10) == UINT32_C(429496729));
-                c_assert(TEST_ALT_DIV(UINT32_C(0xfffffffa), 10) == 0); /* overflow */
-
-                c_assert(UINT32_C(0xfffffffd) % 10 == 3);
-                c_assert(UINT32_C(0xfffffffd) / 10 == UINT32_C(429496729));
-                c_assert(c_div_round_up(UINT32_C(0xfffffffd), 10) == UINT32_C(429496730));
-                c_assert(TEST_ALT_DIV(UINT32_C(0xfffffffd), 10) == 0);
-#undef TEST_ALT_DIV
+                c_assert(c_free(NULL) == NULL);
         }
+#endif
 
+#if defined(C_MODULE_UNIX)
         /*
-         * Align to multiple of: Test the alignment macro. Check that it does
-         * not suffer from incorrect integer overflows, neither should it
-         * exceed the boundaries of the input type.
+         * Test c_fclose() and c_fclosep(). This uses the same logic as the
+         * tests for c_close() (i.e., sparse FD allocation).
          */
         {
-                c_assert(c_align_to(UINT32_C(0), 1) == 0);
-                c_assert(c_align_to(UINT32_C(0), 2) == 0);
-                c_assert(c_align_to(UINT32_C(0), 4) == 0);
-                c_assert(c_align_to(UINT32_C(0), 8) == 0);
-                c_assert(c_align_to(UINT32_C(1), 8) == 8);
+                int r, i, fd, tmp[2];
+                FILE *f;
 
-                c_assert(c_align_to(UINT32_C(0xffffffff), 8) == 0);
-                c_assert(c_align_to(UINT32_C(0xfffffff1), 8) == 0xfffffff8);
-                c_assert(c_align_to(UINT32_C(0xfffffff1), 8) == 0xfffffff8);
+                r = pipe(tmp);
+                c_assert(r >= 0);
+                fd = tmp[0];
+                c_close(tmp[1]);
 
-                c_assert(__builtin_constant_p(c_align_to(16, 8)));
-                c_assert(!__builtin_constant_p(c_align_to(non_constant_expr, 8)));
-                c_assert(!__builtin_constant_p(c_align_to(16, non_constant_expr)));
-                c_assert(!__builtin_constant_p(c_align_to(16, non_constant_expr ? 8 : 16)));
-                c_assert(__builtin_constant_p(c_align_to(16, 7 + 1)));
-                c_assert(c_align_to(15, non_constant_expr ? 8 : 16) == 16);
+                f = fdopen(fd, "r");
+                c_assert(f);
+
+                /* verify c_fclose() returns NULL */
+                f = c_fclose(f);
+                c_assert(!f);
+
+                /* verify c_fclose() deals fine with NULL */
+                c_assert(!c_fclose(NULL));
+
+                /* make sure c_flosep() deals fine with NULL */
+                {
+                        _c_cleanup_(c_fclosep) _c_unused_ FILE *t = (void *)0xdeadbeef;
+                        t = NULL;
+                }
+
+                /*
+                 * Make sure the c_fclose() earlier worked, by allocating the
+                 * FD again and relying on the same FD number to be reused. Do
+                 * this twice, to verify that the c_fclosep() in the cleanup
+                 * path works as well.
+                 */
+                for (i = 0; i < 2; ++i) {
+                        _c_cleanup_(c_fclosep) _c_unused_ FILE *t = NULL;
+                        int tfd;
+
+                        r = pipe(tmp);
+                        c_assert(r >= 0);
+                        tfd = tmp[0];
+                        c_close(tmp[1]);
+
+                        c_assert(tfd == fd); /* the same as before */
+                        t = fdopen(tfd, "r");
+                        c_assert(t);
+                }
         }
+#endif
 
         /*
          * Test c_assert(). Make sure side-effects are always evaluated, and
@@ -299,7 +193,8 @@ static void test_misc(int non_constant_expr) {
         {
                 c_assert(c_errno() > 0);
 
-                close(-1);
+                strtol("0xfffffffffffffffffffffffffffffffff", NULL, 0);
+                c_assert(errno == ERANGE);
                 c_assert(c_errno() == errno);
 
                 errno = 0;
@@ -370,46 +265,223 @@ static void test_misc(int non_constant_expr) {
         }
 }
 
-/*
- * Tests for:
- *  - c_free*()
- *  - c_close*()
- *  - c_fclose*()
- *  - c_closedir*()
- */
-static void test_destructors(void) {
-        int i;
+#else /* C_MODULE_GENERIC */
 
+static void test_basic_generic(void) {
+}
+
+#endif /* C_MODULE_GENERIC */
+
+#if defined(C_MODULE_GNUC)
+
+static void test_basic_gnuc(int non_constant_expr) {
         /*
-         * Verify that c_free*() works as expected. Since we want to support
-         * running under valgrind, there is no easy way to verify the
-         * correctness of free(). Hence, we simply rely on valgrind to catch
-         * the leaks.
+         * Test the C_EXPR_ASSERT() macro to work in static and non-static
+         * environments, and evaluate exactly to its passed expression.
          */
         {
-                for (i = 0; i < 16; ++i) {
-                        _c_cleanup_(c_freep) void *foo;
-                        _c_cleanup_(c_freep) int **bar; /* supports any type */
-                        size_t sz = 128 * 1024;
+                static int v = C_EXPR_ASSERT(1, true, "");
 
-                        foo = malloc(sz);
-                        c_assert(foo);
-
-                        bar = malloc(sz);
-                        c_assert(bar);
-                        bar = c_free(bar);
-                        c_assert(!bar);
-                }
-
-                c_assert(c_free(NULL) == NULL);
+                c_assert(v == 1);
         }
 
+        /*
+         * Test array-size helper. This simply computes the number of elements
+         * of an array, instead of the binary size.
+         */
+        {
+                int bar[8];
+
+                static_assert(C_ARRAY_SIZE(bar) == 8, "");
+                c_assert(__builtin_constant_p(C_ARRAY_SIZE(bar)));
+        }
+
+        /*
+         * Test decimal-representation calculator. Make sure it is
+         * type-independent and just uses the size of the type to calculate how
+         * many bytes are needed to print that integer in decimal form. Also
+         * verify that it is a constant expression.
+         */
+        {
+                static_assert(C_DECIMAL_MAX(char) == 4, "");
+                static_assert(C_DECIMAL_MAX(signed char) == 4, "");
+                static_assert(C_DECIMAL_MAX(unsigned char) == 4, "");
+                static_assert(C_DECIMAL_MAX(unsigned long) == (sizeof(long) == 8 ? 21 : 11), "");
+                static_assert(C_DECIMAL_MAX(unsigned long long) == 21, "");
+                static_assert(C_DECIMAL_MAX(int32_t) == 11, "");
+                static_assert(C_DECIMAL_MAX(uint32_t) == 11, "");
+                static_assert(C_DECIMAL_MAX(uint64_t) == 21, "");
+        }
+
+        /*
+         * Test c_container_of(). We cannot test for type-safety, nor for
+         * other invalid uses, as they'd require negative compile-testing.
+         * However, we can test that the macro yields the correct values under
+         * normal use.
+         */
+        {
+                struct foobar {
+                        int a;
+                        char b;
+                } sub = {};
+
+                c_assert(&sub == c_container_of(&sub.a, struct foobar, a));
+                c_assert(&sub == c_container_of(&sub.b, struct foobar, b));
+                c_assert(&sub == c_container_of((const char *)&sub.b, struct foobar, b));
+
+                c_assert(!c_container_of(NULL, struct foobar, b));
+        }
+
+        /*
+         * Test min/max macros. Especially check that macro arguments are never
+         * evaluated multiple times, and if both arguments are constant, the
+         * return value is constant as well.
+         */
+        {
+                int foo;
+
+                foo = 0;
+                c_assert(c_max(1, 5) == 5);
+                c_assert(c_max(-1, 5) == 5);
+                c_assert(c_max(-1, -5) == -1);
+                c_assert(c_max(foo++, -1) == 0);
+                c_assert(foo == 1);
+                c_assert(c_max(foo++, foo++) > 0);
+                c_assert(foo == 3);
+
+                c_assert(__builtin_constant_p(c_max(1, 5)));
+                c_assert(!__builtin_constant_p(c_max(1, non_constant_expr)));
+
+                foo = 0;
+                c_assert(c_min(1, 5) == 1);
+                c_assert(c_min(-1, 5) == -1);
+                c_assert(c_min(-1, -5) == -5);
+                c_assert(c_min(foo++, 1) == 0);
+                c_assert(foo == 1);
+                c_assert(c_min(foo++, foo++) > 0);
+                c_assert(foo == 3);
+
+                c_assert(__builtin_constant_p(c_min(1, 5)));
+                c_assert(!__builtin_constant_p(c_min(1, non_constant_expr)));
+        }
+
+        /*
+         * Test c_less_by(), c_clamp(). Make sure they
+         * evaluate arguments exactly once, and yield a constant expression,
+         * if all arguments are constant.
+         */
+        {
+                int foo;
+
+                foo = 8;
+                c_assert(c_less_by(1, 5) == 0);
+                c_assert(c_less_by(5, 1) == 4);
+                c_assert(c_less_by(foo++, 1) == 7);
+                c_assert(foo == 9);
+                c_assert(c_less_by(foo++, foo++) >= 0);
+                c_assert(foo == 11);
+
+                c_assert(__builtin_constant_p(c_less_by(1, 5)));
+                c_assert(!__builtin_constant_p(c_less_by(1, non_constant_expr)));
+
+                foo = 8;
+                c_assert(c_clamp(foo, 1, 5) == 5);
+                c_assert(c_clamp(foo, 9, 20) == 9);
+                c_assert(c_clamp(foo++, 1, 5) == 5);
+                c_assert(foo == 9);
+                c_assert(c_clamp(foo++, foo++, foo++) >= 0);
+                c_assert(foo == 12);
+
+                c_assert(__builtin_constant_p(c_clamp(0, 1, 5)));
+                c_assert(!__builtin_constant_p(c_clamp(1, 0, non_constant_expr)));
+        }
+
+        /*
+         * Div Round Up: Normal division, but round up to next integer, instead
+         * of clipping. Also verify that it does not suffer from the integer
+         * overflow in the prevalent, alternative implementation:
+         *      [(x + y - 1) / y].
+         */
+        {
+                int i, j, foo;
+
+#define TEST_ALT_DIV(_x, _y) (((_x) + (_y) - 1) / (_y))
+                foo = 8;
+                c_assert(c_div_round_up(0, 5) == 0);
+                c_assert(c_div_round_up(1, 5) == 1);
+                c_assert(c_div_round_up(5, 5) == 1);
+                c_assert(c_div_round_up(6, 5) == 2);
+                c_assert(c_div_round_up(foo++, 1) == 8);
+                c_assert(foo == 9);
+                c_assert(c_div_round_up(foo++, foo++) >= 0);
+                c_assert(foo == 11);
+
+                c_assert(__builtin_constant_p(c_div_round_up(1, 5)));
+                c_assert(!__builtin_constant_p(c_div_round_up(1, non_constant_expr)));
+
+                /* alternative calculation is [(x + y - 1) / y], but it may overflow */
+                for (i = 0; i <= 0xffff; ++i) {
+                        for (j = 1; j <= 0xff; ++j)
+                                c_assert(c_div_round_up(i, j) == TEST_ALT_DIV(i, j));
+                        for (j = 0xff00; j <= 0xffff; ++j)
+                                c_assert(c_div_round_up(i, j) == TEST_ALT_DIV(i, j));
+                }
+
+                /* make sure it doesn't suffer from high overflow */
+                c_assert(UINT32_C(0xfffffffa) % 10 == 0);
+                c_assert(UINT32_C(0xfffffffa) / 10 == UINT32_C(429496729));
+                c_assert(c_div_round_up(UINT32_C(0xfffffffa), 10) == UINT32_C(429496729));
+                c_assert(TEST_ALT_DIV(UINT32_C(0xfffffffa), 10) == 0); /* overflow */
+
+                c_assert(UINT32_C(0xfffffffd) % 10 == 3);
+                c_assert(UINT32_C(0xfffffffd) / 10 == UINT32_C(429496729));
+                c_assert(c_div_round_up(UINT32_C(0xfffffffd), 10) == UINT32_C(429496730));
+                c_assert(TEST_ALT_DIV(UINT32_C(0xfffffffd), 10) == 0);
+#undef TEST_ALT_DIV
+        }
+
+        /*
+         * Align to multiple of: Test the alignment macro. Check that it does
+         * not suffer from incorrect integer overflows, neither should it
+         * exceed the boundaries of the input type.
+         */
+        {
+                c_assert(c_align_to(UINT32_C(0), 1) == 0);
+                c_assert(c_align_to(UINT32_C(0), 2) == 0);
+                c_assert(c_align_to(UINT32_C(0), 4) == 0);
+                c_assert(c_align_to(UINT32_C(0), 8) == 0);
+                c_assert(c_align_to(UINT32_C(1), 8) == 8);
+
+                c_assert(c_align_to(UINT32_C(0xffffffff), 8) == 0);
+                c_assert(c_align_to(UINT32_C(0xfffffff1), 8) == 0xfffffff8);
+                c_assert(c_align_to(UINT32_C(0xfffffff1), 8) == 0xfffffff8);
+
+                c_assert(__builtin_constant_p(c_align_to(16, 8)));
+                c_assert(!__builtin_constant_p(c_align_to(non_constant_expr, 8)));
+                c_assert(!__builtin_constant_p(c_align_to(16, non_constant_expr)));
+                c_assert(!__builtin_constant_p(c_align_to(16, non_constant_expr ? 8 : 16)));
+                c_assert(__builtin_constant_p(c_align_to(16, 7 + 1)));
+                c_assert(c_align_to(15, non_constant_expr ? 8 : 16) == 16);
+        }
+}
+
+#else /* C_MODULE_GNUC */
+
+static void test_basic_gnuc(int unused0) {
+        (void)unused0;
+}
+
+#endif /* C_MODULE_GNUC */
+
+#if defined(C_MODULE_UNIX)
+
+static void test_basic_unix(void) {
         /*
          * Test c_close*(), rely on sparse FD allocation. Make sure all the
          * helpers actually close the fd, and cope fine with negative numbers.
          */
         {
-                int r, fd1, fd2, tmp[2];
+                int r, i, fd1, fd2, tmp[2];
 
                 r = pipe(tmp);
                 c_assert(r >= 0);
@@ -448,60 +520,19 @@ static void test_destructors(void) {
                         c_assert(t2 == fd2);
                 }
         }
-
-        /*
-         * Test c_fclose() and c_fclosep(). This uses the same logic as the
-         * tests for c_close() (i.e., sparse FD allocation).
-         */
-        {
-                int r, fd, tmp[2];
-                FILE *f;
-
-                r = pipe(tmp);
-                c_assert(r >= 0);
-                fd = tmp[0];
-                c_close(tmp[1]);
-
-                f = fdopen(fd, "r");
-                c_assert(f);
-
-                /* verify c_fclose() returns NULL */
-                f = c_fclose(f);
-                c_assert(!f);
-
-                /* verify c_fclose() deals fine with NULL */
-                c_assert(!c_fclose(NULL));
-
-                /* make sure c_flosep() deals fine with NULL */
-                {
-                        _c_cleanup_(c_fclosep) _c_unused_ FILE *t = (void *)0xdeadbeef;
-                        t = NULL;
-                }
-
-                /*
-                 * Make sure the c_fclose() earlier worked, by allocating the
-                 * FD again and relying on the same FD number to be reused. Do
-                 * this twice, to verify that the c_fclosep() in the cleanup
-                 * path works as well.
-                 */
-                for (i = 0; i < 2; ++i) {
-                        _c_cleanup_(c_fclosep) _c_unused_ FILE *t = NULL;
-                        int tfd;
-
-                        r = pipe(tmp);
-                        c_assert(r >= 0);
-                        tfd = tmp[0];
-                        c_close(tmp[1]);
-
-                        c_assert(tfd == fd); /* the same as before */
-                        t = fdopen(tfd, "r");
-                        c_assert(t);
-                }
-        }
 }
 
-int main(int argc, _c_unused_ char **argv) {
-        test_misc(argc);
-        test_destructors();
+#else /* C_MODULE_UNIX */
+
+static void test_basic_unix(void) {
+}
+
+#endif /* C_MODULE_UNIX */
+
+int main(int argc, char **argv) {
+        (void)argv;
+        test_basic_generic();
+        test_basic_gnuc(argc);
+        test_basic_unix();
         return 0;
 }

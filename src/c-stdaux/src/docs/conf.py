@@ -31,6 +31,8 @@ extensions = [
 # Hawkmoth Options
 
 cautodoc_clang = capidocs.kerneldoc.hawkmoth_include_args()
+cautodoc_clang += ["-I" + os.path.abspath("..")]
+cautodoc_clang += ["-DC_COMPILER_DOCS"]
 
 cautodoc_root = os.path.abspath('..')
 
