@@ -14,7 +14,7 @@
 
 /* See https://131002.net/siphash/siphash.pdf, Appendix A. */
 static void do_reference_test(const uint8_t *in, size_t len, const uint8_t *key) {
-        CSipHash state = {};
+        CSipHash state = C_SIPHASH_NULL;
         uint64_t out;
         unsigned i, j;
 
@@ -77,9 +77,9 @@ static void test_short_hashes(void) {
                                 0x09, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16 };
         const uint8_t  key[16] = { 0x22, 0x24, 0x41, 0x22, 0x55, 0x77, 0x88, 0x07,
                                    0x23, 0x09, 0x23, 0x14, 0x0c, 0x33, 0x0e, 0x0f};
-        uint8_t two[sizeof one] = {};
+        uint8_t two[sizeof one] = {0};
 
-        CSipHash state1 = {}, state2 = {};
+        CSipHash state1 = C_SIPHASH_NULL, state2 = C_SIPHASH_NULL;
         unsigned i, j;
 
         c_siphash_init(&state1, key);

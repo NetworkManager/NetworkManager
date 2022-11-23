@@ -8,7 +8,7 @@
  *
  * So far, only SipHash24 is implemented, since there was no need for other
  * parameters. However, adjusted c_siphash_append_X() and
- * C_siphash_finalize_Y() can be easily provided, if required.
+ * c_siphash_finalize_Y() can be easily provided, if required.
  */
 
 #include <c-stdaux.h>
@@ -88,23 +88,8 @@ _c_public_ void c_siphash_init(CSipHash *state, const uint8_t seed[16]) {
         };
 }
 
-/**
- * c_siphash_append() - hash stream of data
- * @state:              context object
- * @bytes:              array of input bytes
- * @n_bytes:            number of input bytes
- *
- * This feeds an array of bytes into the SipHash state machine. This is a
- * streaming-capable API. That is, the resulting hash is the same, regardless
- * of the way you chunk the input.
- * This function simply feeds the given bytes into the SipHash state machine.
- * It does not produce a final hash. You can call this function many times to
- * append more data. To retrieve the final hash, call c_siphash_finalize().
- *
- * Note that this implementation works best when used with chunk-sizes of
- * multiples of 64bit (8-bytes). This is not a requirement, though.
- */
-_c_public_ void c_siphash_append(CSipHash *state, const uint8_t *bytes, size_t n_bytes) {
+
+static inline _c_always_inline_ void c_siphash_append_N(CSipHash *state, const uint8_t *bytes, size_t n_bytes, unsigned N) {
         const uint8_t *end = bytes + n_bytes;
         size_t left = state->n_bytes & 7;
         uint64_t m;
@@ -123,8 +108,8 @@ _c_public_ void c_siphash_append(CSipHash *state, const uint8_t *bytes, size_t n
                         return;
 
                 state->v3 ^= state->padding;
-                c_siphash_sipround(state);
-                c_siphash_sipround(state);
+                for (unsigned i = 0; i < N; i++)
+                        c_siphash_sipround(state);
                 state->v0 ^= state->padding;
 
                 state->padding = 0;
@@ -141,8 +126,8 @@ _c_public_ void c_siphash_append(CSipHash *state, const uint8_t *bytes, size_t n
                 m = c_siphash_read_le64(bytes);
 
                 state->v3 ^= m;
-                c_siphash_sipround(state);
-                c_siphash_sipround(state);
+                for (unsigned i = 0; i < N; i++)
+                        c_siphash_sipround(state);
                 state->v0 ^= m;
         }
 
@@ -179,6 +164,50 @@ _c_public_ void c_siphash_append(CSipHash *state, const uint8_t *bytes, size_t n
         }
 }
 
+static inline _c_always_inline_ uint64_t c_siphash_finalize_NM(CSipHash *state, unsigned N, unsigned M) {
+        uint64_t b;
+
+        b = state->padding | (((uint64_t) state->n_bytes) << 56);
+
+        state->v3 ^= b;
+        for (unsigned i = 0; i < N; i++)
+                c_siphash_sipround(state);
+        state->v0 ^= b;
+
+        state->v2 ^= 0xff;
+
+        for (unsigned i = 0; i < M; i++)
+                c_siphash_sipround(state);
+
+        return state->v0 ^ state->v1 ^ state->v2  ^ state->v3;
+}
+
+/**
+ * c_siphash_append() - hash stream of data
+ * @state:              context object
+ * @bytes:              array of input bytes
+ * @n_bytes:            number of input bytes
+ *
+ * This feeds an array of bytes into the SipHash state machine. This is a
+ * streaming-capable API. That is, the resulting hash is the same, regardless
+ * of the way you chunk the input.
+ * This function simply feeds the given bytes into the SipHash state machine.
+ * It does not produce a final hash. You can call this function many times to
+ * append more data. To retrieve the final hash, call c_siphash_finalize().
+ *
+ * Note that this implementation works best when used with chunk-sizes of
+ * multiples of 64bit (8-bytes). This is not a requirement, though.
+ *
+ * This uses the SipHash-2-4 variant.
+ */
+_c_public_ void c_siphash_append(CSipHash *state, const uint8_t *bytes, size_t n_bytes) {
+        c_siphash_append_N(state, bytes, n_bytes, 2);
+}
+
+_c_public_ void c_siphash_append_13(CSipHash *state, const uint8_t *bytes, size_t n_bytes) {
+        c_siphash_append_N(state, bytes, n_bytes, 1);
+}
+
 /**
  * c_siphash_finalize() - finalize hash
  * @state:              context object
@@ -192,26 +221,16 @@ _c_public_ void c_siphash_append(CSipHash *state, const uint8_t *bytes, size_t n
  * the object, anymore, you can release it any time. There is no need to
  * destroy the object explicitly.
  *
+ * This uses the SipHash-2-4 variant.
+ *
  * Return: 64bit hash value
  */
 _c_public_ uint64_t c_siphash_finalize(CSipHash *state) {
-        uint64_t b;
+        return c_siphash_finalize_NM(state, 2, 4);
+}
 
-        b = state->padding | (((uint64_t) state->n_bytes) << 56);
-
-        state->v3 ^= b;
-        c_siphash_sipround(state);
-        c_siphash_sipround(state);
-        state->v0 ^= b;
-
-        state->v2 ^= 0xff;
-
-        c_siphash_sipround(state);
-        c_siphash_sipround(state);
-        c_siphash_sipround(state);
-        c_siphash_sipround(state);
-
-        return state->v0 ^ state->v1 ^ state->v2  ^ state->v3;
+_c_public_ uint64_t c_siphash_finalize_13(CSipHash *state) {
+        return c_siphash_finalize_NM(state, 1, 3);
 }
 
 /**
@@ -233,13 +252,24 @@ _c_public_ uint64_t c_siphash_finalize(CSipHash *state) {
  * Unlike the streaming API, this is a one-shot call suitable for any data that
  * is available in-memory at the same time.
  *
+ * This uses the SipHash-2-4 variant.
+ *
  * Return: 64bit hash value
  */
 _c_public_ uint64_t c_siphash_hash(const uint8_t seed[16], const uint8_t *bytes, size_t n_bytes) {
         CSipHash state;
 
         c_siphash_init(&state, seed);
-        c_siphash_append(&state, bytes, n_bytes);
+        c_siphash_append_24(&state, bytes, n_bytes);
 
-        return c_siphash_finalize(&state);
+        return c_siphash_finalize_24(&state);
+}
+
+_c_public_ uint64_t c_siphash_hash_13(const uint8_t seed[16], const uint8_t *bytes, size_t n_bytes) {
+        CSipHash state;
+
+        c_siphash_init(&state, seed);
+        c_siphash_append_13(&state, bytes, n_bytes);
+
+        return c_siphash_finalize_13(&state);
 }

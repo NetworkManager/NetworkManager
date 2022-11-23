@@ -2,6 +2,7 @@
 # target: libcsiphash.so
 #
 
+libcsiphash_deffile = join_paths(meson.current_source_dir(), 'libcsiphash.def')
 libcsiphash_symfile = join_paths(meson.current_source_dir(), 'libcsiphash.sym')
 
 libcsiphash_deps = [
@@ -23,6 +24,7 @@ libcsiphash_both = both_libraries(
                 '-Wl,--version-script=@0@'.format(libcsiphash_symfile),
         ] : [],
         link_depends: libcsiphash_symfile,
+        vs_module_defs: libcsiphash_deffile,
         soversion: 0,
 )
 
