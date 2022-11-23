@@ -4052,11 +4052,11 @@ test_connection_diff_different(void)
     NMSettingIPConfig *s_ip4;
     gboolean           same;
     const DiffSetting  settings[] = {
-         {NM_SETTING_IP4_CONFIG_SETTING_NAME,
+        {NM_SETTING_IP4_CONFIG_SETTING_NAME,
           {
-              {NM_SETTING_IP_CONFIG_METHOD,
+             {NM_SETTING_IP_CONFIG_METHOD,
                NM_SETTING_DIFF_RESULT_IN_A | NM_SETTING_DIFF_RESULT_IN_B},
-              {NULL, NM_SETTING_DIFF_RESULT_UNKNOWN},
+             {NULL, NM_SETTING_DIFF_RESULT_UNKNOWN},
          }},
     };
 
@@ -4137,10 +4137,10 @@ test_connection_diff_inferrable(void)
     NMSettingIPConfig   *s_ip4;
     char                *uuid;
     const DiffSetting    settings[] = {
-           {NM_SETTING_CONNECTION_SETTING_NAME,
+        {NM_SETTING_CONNECTION_SETTING_NAME,
             {
-                {NM_SETTING_CONNECTION_INTERFACE_NAME, NM_SETTING_DIFF_RESULT_IN_A},
-                {NULL, NM_SETTING_DIFF_RESULT_UNKNOWN},
+             {NM_SETTING_CONNECTION_INTERFACE_NAME, NM_SETTING_DIFF_RESULT_IN_A},
+             {NULL, NM_SETTING_DIFF_RESULT_UNKNOWN},
          }},
     };
 
@@ -8475,7 +8475,7 @@ test_nm_utils_strstrdictkey(void)
         const char           *v1;
         const char           *v2;
         NMUtilsStrStrDictKey *v_static;
-    } * val1, *val2,
+    } *val1, *val2,
         values[] = {
             {NULL, NULL},
             {"", NULL},
