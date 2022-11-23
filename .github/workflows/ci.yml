@@ -23,6 +23,13 @@ jobs:
       cabuild_ref: "v1"
       linux: false
       macos: true
+  ci-windows:
+    name: Windows CI
+    uses: bus1/cabuild/.github/workflows/ci-c-util.yml@v1
+    with:
+      cabuild_ref: "v1"
+      linux: false
+      windows: true
   ci-docs:
     name: Documentation CI
     uses: bus1/cabuild/.github/workflows/ci-sphinx.yml@v1
