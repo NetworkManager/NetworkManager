@@ -293,9 +293,8 @@ _nm_assert_fail_internal(const char  *assertion,
 
 #define NM_STATIC_ASSERT(cond) static_assert(cond, "")
 #define NM_STATIC_ASSERT_EXPR_1(cond) \
-    (sizeof(struct { char __static_assert_expr_1[(cond) ? 1 : -1]; }) == 1)
-#define NM_STATIC_ASSERT_EXPR_VOID(cond) \
-    ((void) (sizeof(struct { char __static_assert_expr_void[(cond) ? 1 : -1]; }) == 1))
+    (!!sizeof(struct { unsigned __static_assert_expr_1 : ((cond) ? 2 : -1); }))
+#define NM_STATIC_ASSERT_EXPR_VOID(cond) ((void) NM_STATIC_ASSERT_EXPR_1(cond))
 
 /*****************************************************************************/
 
