@@ -20,6 +20,12 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   switch.
 * dns: support specifying DNS-over-TLS server name (SNI) for static
   name servers. Only works with systemd-resolved plugin.
+* Add support of loopback interface and a new connection type "loopback". On D-Bus,
+  the loopback interface now has the "org.freedesktop.NetworkManager.Device.Loopback"
+  interface instead of org.freedesktop.NetworkManager.Device.Generic".
+  Loopback handling is special in that when the NetworkManager profile is
+  deactivated, the interfaces will still be up and configured with a 127.0.0.1
+  address.
 
 =============================================
 NetworkManager-1.40

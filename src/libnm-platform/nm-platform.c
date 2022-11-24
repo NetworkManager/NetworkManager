@@ -4564,7 +4564,26 @@ nm_platform_ip_address_get_prune_list(NMPlatform            *self,
     c_list_for_each (iter, &head_entry->lst_entries_head) {
         const NMPObject *obj = c_list_entry(iter, NMDedupMultiEntry, lst_entries)->obj;
 
-        if (!IS_IPv4) {
+        if (IS_IPv4) {
+            const NMPlatformIP4Address *a4 = NMP_OBJECT_CAST_IP4_ADDRESS(obj);
+
+            if (a4->address == NM_IPV4LO_ADDR1 && a4->plen == NM_IPV4LO_PREFIXLEN) {
+                const NMPlatformIP4Address addr = (NMPlatformIP4Address){
+                    .ifindex                   = NM_LOOPBACK_IFINDEX,
+                    .address                   = NM_IPV4LO_ADDR1,
+                    .peer_address              = NM_IPV4LO_ADDR1,
+                    .plen                      = NM_IPV4LO_PREFIXLEN,
+                    .use_ip4_broadcast_address = TRUE,
+                };
+
+                if (nm_platform_ip4_address_cmp(a4,
+                                                &addr,
+                                                NM_PLATFORM_IP_ADDRESS_CMP_TYPE_SEMANTICALLY)
+                    == 0) {
+                    continue;
+                }
+            }
+        } else {
             const NMPlatformIP6Address *a6 = NMP_OBJECT_CAST_IP6_ADDRESS(obj);
 
             if (NM_FLAGS_HAS(a6->n_ifa_flags, IFA_F_SECONDARY)
@@ -4665,6 +4684,44 @@ nm_platform_ip_route_get_prune_list(NMPlatform            *self,
              * pruning them. */
 
             if (NM_IS_IPv4(addr_family)) {
+                if (ifindex == NM_LOOPBACK_IFINDEX
+                    && NM_IN_SET(rt->r4.network, NM_IPV4LO_ADDR1, NM_IPV4LO_NETWORK)) {
+                    NMPlatformIP4Route r;
+
+                    if (rt->r4.network == NM_IPV4LO_ADDR1) {
+                        r = (NMPlatformIP4Route){
+                            .ifindex       = NM_LOOPBACK_IFINDEX,
+                            .type_coerced  = nm_platform_route_type_coerce(RTN_LOCAL),
+                            .table_coerced = nm_platform_route_table_coerce(local_table),
+                            .network       = NM_IPV4LO_ADDR1,
+                            .plen          = 32,
+                            .metric        = 0,
+                            .rt_source     = NM_IPV4LO_ADDR1,
+                            .scope_inv     = nm_platform_route_scope_inv(RT_SCOPE_HOST),
+                            .pref_src      = NM_IPV4LO_ADDR1,
+                        };
+                    } else {
+                        r = (NMPlatformIP4Route){
+                            .ifindex       = NM_LOOPBACK_IFINDEX,
+                            .type_coerced  = nm_platform_route_type_coerce(RTN_LOCAL),
+                            .table_coerced = nm_platform_route_table_coerce(local_table),
+                            .network       = NM_IPV4LO_NETWORK,
+                            .plen          = NM_IPV4LO_PREFIXLEN,
+                            .metric        = 0,
+                            .rt_source     = NM_IPV4LO_ADDR1,
+                            .scope_inv     = nm_platform_route_scope_inv(RT_SCOPE_HOST),
+                            .pref_src      = NM_IPV4LO_ADDR1,
+                        };
+                    }
+
+                    if (nm_platform_ip4_route_cmp(&rt->r4,
+                                                  &r,
+                                                  NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY)
+                        == 0) {
+                        continue;
+                    }
+                }
+
                 /* for each IPv4 address kernel adds a route like
                  *
                  *  local $ADDR dev $IFACE table local proto kernel scope host src $PRIMARY_ADDR

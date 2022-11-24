@@ -1883,6 +1883,12 @@ libnm_1_42_0 {
 global:
 	nm_client_wait_shutdown;
 	nm_client_wait_shutdown_finish;
+	nm_device_loopback_get_type;
+	nm_setting_ip_config_get_dhcp_iaid;
+	nm_setting_ip_config_get_dhcp_iaid;
+	nm_setting_loopback_get_mtu;
+	nm_setting_loopback_get_type;
+	nm_setting_loopback_new;
 	nm_setting_ovs_interface_get_ofport_request;
 	nm_utils_ensure_gtypes;
 } libnm_1_40_0;

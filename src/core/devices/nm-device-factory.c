@@ -398,6 +398,7 @@ nm_device_factory_manager_load_factories(NMDeviceFactoryManagerFactoryFunc callb
     _ADD_INTERNAL(nm_ethernet_device_factory_get_type);
     _ADD_INTERNAL(nm_infiniband_device_factory_get_type);
     _ADD_INTERNAL(nm_ip_tunnel_device_factory_get_type);
+    _ADD_INTERNAL(nm_loopback_device_factory_get_type);
     _ADD_INTERNAL(nm_macsec_device_factory_get_type);
     _ADD_INTERNAL(nm_macvlan_device_factory_get_type);
     _ADD_INTERNAL(nm_ppp_device_factory_get_type);

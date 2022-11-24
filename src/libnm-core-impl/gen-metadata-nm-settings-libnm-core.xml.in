@@ -1721,6 +1721,14 @@
                   gprop-type="gchararray"
                   />
     </setting>
+    <setting name="loopback"
+             gtype="NMSettingLoopback"
+             >
+        <property name="mtu"
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
+    </setting>
     <setting name="macsec"
              gtype="NMSettingMacsec"
              >

@@ -13,6 +13,7 @@ src/core/devices/nm-device-ethernet-utils.c
 src/core/devices/nm-device-ethernet.c
 src/core/devices/nm-device-infiniband.c
 src/core/devices/nm-device-ip-tunnel.c
+src/core/devices/nm-device-loopback.c
 src/core/devices/nm-device-macvlan.c
 src/core/devices/nm-device-tun.c
 src/core/devices/nm-device-veth.c
@@ -47,6 +48,7 @@ src/libnm-client-impl/nm-device-ethernet.c
 src/libnm-client-impl/nm-device-generic.c
 src/libnm-client-impl/nm-device-infiniband.c
 src/libnm-client-impl/nm-device-ip-tunnel.c
+src/libnm-client-impl/nm-device-loopback.c
 src/libnm-client-impl/nm-device-macvlan.c
 src/libnm-client-impl/nm-device-modem.c
 src/libnm-client-impl/nm-device-olpc-mesh.c
