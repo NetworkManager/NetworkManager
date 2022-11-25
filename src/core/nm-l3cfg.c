@@ -1430,7 +1430,8 @@ _acd_data_free(AcdData *acd_data)
 }
 
 static guint
-_acd_data_collect_tracks_data(const AcdData     *acd_data,
+_acd_data_collect_tracks_data(NML3Cfg           *self,
+                              const AcdData     *acd_data,
                               NMTernary          dirty_selector,
                               guint32           *out_best_acd_timeout_msec,
                               NML3AcdDefendType *out_best_acd_defend_type)
@@ -1465,6 +1466,12 @@ _acd_data_collect_tracks_data(const AcdData     *acd_data,
 
     nm_assert(n == 0 || best_acd_defend_type > _NM_L3_ACD_DEFEND_TYPE_NONE);
     nm_assert(best_acd_defend_type <= NM_L3_ACD_DEFEND_TYPE_ALWAYS);
+
+    if (self->priv.ifindex == NM_LOOPBACK_IFINDEX) {
+        /* On loopback interface, ACD makes no sense. We always force the
+         * timeout to zero, which means no ACD. */
+        best_acd_timeout_msec = 0;
+    }
 
     NM_SET_OUT(out_best_acd_timeout_msec, n > 0 ? best_acd_timeout_msec : 0u);
     NM_SET_OUT(out_best_acd_defend_type, best_acd_defend_type);
@@ -2313,7 +2320,8 @@ _l3_acd_data_state_change(NML3Cfg           *self,
         return;
 
 handle_init:
-        if (_acd_data_collect_tracks_data(acd_data,
+        if (_acd_data_collect_tracks_data(self,
+                                          acd_data,
                                           NM_TERNARY_FALSE,
                                           &acd_timeout_msec,
                                           &acd_defend_type)
@@ -2362,7 +2370,8 @@ handle_init:
 
         /* we just did a commit of the IP configuration and now visit all ACD states
          * and kick off the necessary actions... */
-        if (_acd_data_collect_tracks_data(acd_data,
+        if (_acd_data_collect_tracks_data(self,
+                                          acd_data,
                                           NM_TERNARY_TRUE,
                                           &acd_timeout_msec,
                                           &acd_defend_type)
@@ -2465,7 +2474,8 @@ handle_init:
             /* after a timeout, re-probe the address. This only happens if the caller
              * does not deconfigure the address after USED/CONFLICT. But in that case,
              * we eventually want to retry. */
-            if (_acd_data_collect_tracks_data(acd_data,
+            if (_acd_data_collect_tracks_data(self,
+                                              acd_data,
                                               NM_TERNARY_TRUE,
                                               &acd_timeout_msec,
                                               &acd_defend_type)
@@ -3748,6 +3758,38 @@ _l3cfg_update_combined_config(NML3Cfg               *self,
                                     &hook_data);
         }
 
+        if (self->priv.ifindex == NM_LOOPBACK_IFINDEX) {
+            NMPlatformIPXAddress ax;
+            NMPlatformIPXRoute   rx;
+
+            if (!nm_l3_config_data_lookup_address_4(l3cd,
+                                                    NM_IPV4LO_ADDR1,
+                                                    NM_IPV4LO_PREFIXLEN,
+                                                    NM_IPV4LO_ADDR1)) {
+                nm_l3_config_data_add_address_4(
+                    l3cd,
+                    nm_platform_ip4_address_init_loopback_addr1(&ax.a4));
+            }
+            if (!nm_l3_config_data_lookup_address_6(l3cd, &in6addr_loopback)) {
+                nm_l3_config_data_add_address_6(l3cd,
+                                                nm_platform_ip6_address_init_loopback(&ax.a6));
+            }
+
+            rx.r4 = (NMPlatformIP4Route){
+                .ifindex       = NM_LOOPBACK_IFINDEX,
+                .rt_source     = NM_IP_CONFIG_SOURCE_KERNEL,
+                .network       = NM_IPV4LO_ADDR1,
+                .plen          = NM_IPV4LO_PREFIXLEN,
+                .table_coerced = nm_platform_route_table_coerce(RT_TABLE_LOCAL),
+                .scope_inv     = nm_platform_route_scope_inv(RT_SCOPE_HOST),
+                .type_coerced  = nm_platform_route_type_coerce(RTN_LOCAL),
+                .pref_src      = NM_IPV4LO_ADDR1,
+            };
+            nm_platform_ip_route_normalize(AF_INET, &rx.rx);
+            if (!nm_l3_config_data_lookup_route(l3cd, AF_INET, &rx.rx)) {
+                nm_l3_config_data_add_route_4(l3cd, &rx.r4);
+            }
+        }
         for (i = 0; i < l3_config_datas_len; i++) {
             const L3ConfigData *l3cd_data = l3_config_datas_arr[i];
             int                 IS_IPv4;
@@ -4587,6 +4629,23 @@ _l3_commit_one(NML3Cfg              *self,
         }
     }
 
+    if (self->priv.ifindex == NM_LOOPBACK_IFINDEX) {
+        if (!addresses) {
+            NMPlatformIPXAddress ax;
+
+            addresses = g_ptr_array_new_with_free_func((GDestroyNotify) nmp_object_unref);
+            if (IS_IPv4) {
+                g_ptr_array_add(
+                    addresses,
+                    nmp_object_new(NMP_OBJECT_TYPE_IP4_ADDRESS,
+                                   nm_platform_ip4_address_init_loopback_addr1(&ax.a4)));
+            } else {
+                g_ptr_array_add(addresses,
+                                nmp_object_new(NMP_OBJECT_TYPE_IP6_ADDRESS,
+                                               nm_platform_ip6_address_init_loopback(&ax.a6)));
+            }
+        }
+    }
     /* FIXME(l3cfg): need to honor and set nm_l3_config_data_get_ndisc_*(). */
     /* FIXME(l3cfg): need to honor and set nm_l3_config_data_get_mtu(). */
 
@@ -4595,7 +4654,9 @@ _l3_commit_one(NML3Cfg              *self,
                                 self->priv.ifindex,
                                 addresses,
                                 addresses_prune,
-                                NMP_IP_ADDRESS_SYNC_FLAGS_WITH_NOPREFIXROUTE);
+                                self->priv.ifindex == NM_LOOPBACK_IFINDEX
+                                    ? NMP_IP_ADDRESS_SYNC_FLAGS_NONE
+                                    : NMP_IP_ADDRESS_SYNC_FLAGS_WITH_NOPREFIXROUTE);
 
     _nodev_routes_sync(self, addr_family, commit_type, routes_nodev);
 
