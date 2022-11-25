@@ -1898,6 +1898,10 @@
                   dbus-type="u"
                   gprop-type="guint"
                   />
+        <property name="trunks"
+                  dbus-type="aa{sv}"
+                  gprop-type="GPtrArray"
+                  />
         <property name="vlan-mode"
                   dbus-type="s"
                   gprop-type="gchararray"

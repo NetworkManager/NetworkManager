@@ -1598,6 +1598,18 @@ _normalize_bridge_port_vlan_order(NMConnection *self)
 }
 
 static gboolean
+_normalize_ovs_port_trunks(NMConnection *self)
+{
+    NMSettingOvsPort *s_ovs_port;
+
+    s_ovs_port = nm_connection_get_setting_ovs_port(self);
+    if (!s_ovs_port)
+        return FALSE;
+
+    return _nm_setting_ovs_port_sort_trunks(s_ovs_port);
+}
+
+static gboolean
 _normalize_gsm_auto_config(NMConnection *self)
 {
     NMSettingGsm *s_gsm;
@@ -1989,6 +2001,7 @@ _connection_normalize(NMConnection *connection,
     was_modified |= _normalize_bridge_port_vlan_order(connection);
     was_modified |= _normalize_gsm_auto_config(connection);
     was_modified |= _normalize_802_1x_empty_strings(connection);
+    was_modified |= _normalize_ovs_port_trunks(connection);
 
     was_modified = !!was_modified;
 

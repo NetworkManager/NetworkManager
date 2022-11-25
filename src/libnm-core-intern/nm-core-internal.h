@@ -566,6 +566,7 @@ gboolean _nm_utils_dhcp_duid_valid(const char *duid, GBytes **out_duid_bin);
 gboolean _nm_setting_sriov_sort_vfs(NMSettingSriov *setting);
 gboolean _nm_setting_bridge_port_sort_vlans(NMSettingBridgePort *setting);
 gboolean _nm_setting_bridge_sort_vlans(NMSettingBridge *setting);
+gboolean _nm_setting_ovs_port_sort_trunks(NMSettingOvsPort *self);
 
 /*****************************************************************************/
 
@@ -1066,5 +1067,7 @@ gboolean _nm_ip_tunnel_mode_is_layer2(NMIPTunnelMode mode);
 GPtrArray *_nm_setting_ip_config_get_dns_array(NMSettingIPConfig *setting);
 
 gboolean nm_connection_need_secrets_for_rerequest(NMConnection *connection);
+
+const GPtrArray *_nm_setting_ovs_port_get_trunks_arr(NMSettingOvsPort *self);
 
 #endif

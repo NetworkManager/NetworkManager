@@ -2008,6 +2008,44 @@ bridge_vlan_parser(KeyfileReaderInfo *info, NMSetting *setting, const char *key)
 }
 
 static void
+range_list_parser(KeyfileReaderInfo *info, NMSetting *setting, const char *key)
+{
+    gs_unref_ptrarray GPtrArray *ranges = NULL;
+    gs_free char                *value  = NULL;
+    gs_free const char         **strv   = NULL;
+    const char *const           *iter;
+    GError                      *local = NULL;
+    NMRange                     *range;
+
+    value = nm_keyfile_plugin_kf_get_string(info->keyfile, nm_setting_get_name(setting), key, NULL);
+    if (!value || !value[0])
+        return;
+
+    ranges = g_ptr_array_new_with_free_func((GDestroyNotify) nm_range_unref);
+
+    strv = nm_utils_escaped_tokens_split(value, ",");
+    if (strv) {
+        for (iter = strv; *iter; iter++) {
+            range = nm_range_from_str(*iter, &local);
+            if (!range) {
+                read_handle_warn(info,
+                                 key,
+                                 key,
+                                 NM_KEYFILE_WARN_SEVERITY_WARN,
+                                 "invalid range: %s",
+                                 local->message);
+                g_clear_error(&local);
+                continue;
+            }
+            g_ptr_array_add(ranges, range);
+        }
+    }
+
+    if (ranges->len > 0)
+        g_object_set(setting, key, ranges, NULL);
+}
+
+static void
 qdisc_parser(KeyfileReaderInfo *info, NMSetting *setting, const char *key)
 {
     const char                  *setting_name = nm_setting_get_name(setting);
@@ -2340,6 +2378,33 @@ bridge_vlan_writer(KeyfileWriterInfo *info,
         nm_keyfile_plugin_kf_set_string(info->keyfile,
                                         nm_setting_get_name(setting),
                                         "vlans",
+                                        nm_str_buf_get_str(&string));
+    }
+}
+
+static void
+range_list_writer(KeyfileWriterInfo *info, NMSetting *setting, const char *key, const GValue *value)
+{
+    GPtrArray *ranges;
+
+    ranges = g_value_get_boxed(value);
+    if (ranges && ranges->len > 0) {
+        const guint              string_initial_size = ranges->len * 10u;
+        nm_auto_str_buf NMStrBuf string              = NM_STR_BUF_INIT(string_initial_size, FALSE);
+        guint                    i;
+
+        for (i = 0; i < ranges->len; i++) {
+            gs_free char *range_str = NULL;
+
+            range_str = nm_range_to_str(ranges->pdata[i]);
+            if (i > 0)
+                nm_str_buf_append_c(&string, ',');
+            nm_utils_escaped_tokens_escape_strbuf_assert(range_str, ",", &string);
+        }
+
+        nm_keyfile_plugin_kf_set_string(info->keyfile,
+                                        nm_setting_get_name(setting),
+                                        key,
                                         nm_str_buf_get_str(&string));
     }
 }
@@ -2933,6 +2998,12 @@ static const ParseInfoSetting *const parse_infos[_NM_META_SETTING_TYPE_NUM] = {
                                                   .parser_no_check_key = TRUE,
                                                   .parser              = bridge_vlan_parser,
                                                   .writer = bridge_vlan_writer, ), ), ),
+    PARSE_INFO_SETTING(
+        NM_META_SETTING_TYPE_OVS_PORT,
+        PARSE_INFO_PROPERTIES(PARSE_INFO_PROPERTY(NM_SETTING_OVS_PORT_TRUNKS,
+                                                  .parser_no_check_key = TRUE,
+                                                  .parser              = range_list_parser,
+                                                  .writer              = range_list_writer, ), ), ),
     PARSE_INFO_SETTING(
         NM_META_SETTING_TYPE_BRIDGE_PORT,
         PARSE_INFO_PROPERTIES(PARSE_INFO_PROPERTY(NM_SETTING_BRIDGE_PORT_VLANS,

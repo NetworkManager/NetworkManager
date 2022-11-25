@@ -302,6 +302,14 @@ typedef struct {
 
 /*****************************************************************************/
 
+struct _NMRange {
+    guint   refcount;
+    guint64 start;
+    guint64 end;
+};
+
+/*****************************************************************************/
+
 #define NM_SETTING_PARAM_NONE 0
 
 /* The property of the #NMSetting should be considered during comparisons that
@@ -1064,6 +1072,12 @@ NMBridgeVlan *_nm_bridge_vlan_dup_and_seal(const NMBridgeVlan *vlan);
 gboolean _nm_utils_bridge_vlans_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil);
 
 GVariant *_nm_utils_bridge_vlans_to_dbus(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil);
+
+gboolean _nm_utils_ranges_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil);
+
+NMTernary _nm_utils_ranges_cmp(_NM_SETT_INFO_PROP_COMPARE_FCN_ARGS _nm_nil);
+
+GVariant *_nm_utils_ranges_to_dbus(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil);
 
 NMTernary _nm_setting_ip_config_compare_fcn_addresses(_NM_SETT_INFO_PROP_COMPARE_FCN_ARGS _nm_nil);
 

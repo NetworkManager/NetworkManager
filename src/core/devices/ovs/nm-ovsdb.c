@@ -865,6 +865,7 @@ _insert_port(json_t *params, NMConnection *port, json_t *new_interfaces)
 {
     NMSettingOvsPort *s_ovs_port;
     const char       *vlan_mode      = NULL;
+    json_t           *trunks         = NULL;
     guint             tag            = 0;
     const char       *lacp           = NULL;
     const char       *bond_mode      = NULL;
@@ -877,18 +878,34 @@ _insert_port(json_t *params, NMConnection *port, json_t *new_interfaces)
     row = json_object();
 
     if (s_ovs_port) {
+        const GPtrArray *ranges;
+        guint            i;
+        guint64          start;
+        guint64          end;
+
         vlan_mode      = nm_setting_ovs_port_get_vlan_mode(s_ovs_port);
         tag            = nm_setting_ovs_port_get_tag(s_ovs_port);
         lacp           = nm_setting_ovs_port_get_lacp(s_ovs_port);
         bond_mode      = nm_setting_ovs_port_get_bond_mode(s_ovs_port);
         bond_updelay   = nm_setting_ovs_port_get_bond_updelay(s_ovs_port);
         bond_downdelay = nm_setting_ovs_port_get_bond_downdelay(s_ovs_port);
+
+        ranges = _nm_setting_ovs_port_get_trunks_arr(s_ovs_port);
+        for (i = 0; i < ranges->len; i++) {
+            if (!trunks)
+                trunks = json_array();
+            nm_range_get_range(ranges->pdata[i], &start, &end);
+            for (; start <= end; start++)
+                json_array_append_new(trunks, json_integer(start));
+        }
     }
 
     if (vlan_mode)
         json_object_set_new(row, "vlan_mode", json_string(vlan_mode));
     if (tag)
         json_object_set_new(row, "tag", json_integer(tag));
+    if (trunks)
+        json_object_set_new(row, "trunks", json_pack("[s, o]", "set", trunks));
     if (lacp)
         json_object_set_new(row, "lacp", json_string(lacp));
     if (bond_mode)

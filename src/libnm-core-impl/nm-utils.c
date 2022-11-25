@@ -5572,6 +5572,97 @@ _nm_utils_bridge_vlan_verify_list(GPtrArray  *vlans,
     return TRUE;
 }
 
+GVariant *
+_nm_utils_ranges_to_dbus(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
+{
+    gs_unref_ptrarray GPtrArray *ranges = NULL;
+    GVariantBuilder              builder;
+    const char                  *property_name = property_info->name;
+    guint                        i;
+
+    nm_assert(property_name);
+
+    g_object_get(setting, property_name, &ranges, NULL);
+    g_variant_builder_init(&builder, G_VARIANT_TYPE("aa{sv}"));
+
+    if (ranges) {
+        for (i = 0; i < ranges->len; i++) {
+            NMRange        *range = ranges->pdata[i];
+            GVariantBuilder range_builder;
+
+            g_variant_builder_init(&range_builder, G_VARIANT_TYPE_VARDICT);
+            g_variant_builder_add(&range_builder,
+                                  "{sv}",
+                                  "start",
+                                  g_variant_new_uint64(range->start));
+            g_variant_builder_add(&range_builder, "{sv}", "end", g_variant_new_uint64(range->end));
+
+            g_variant_builder_add(&builder, "a{sv}", &range_builder);
+        }
+    }
+
+    return g_variant_builder_end(&builder);
+}
+
+gboolean
+_nm_utils_ranges_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
+{
+    gs_unref_ptrarray GPtrArray *ranges = NULL;
+    GVariantIter                 iter;
+    GVariant                    *range_var;
+
+    g_return_val_if_fail(g_variant_is_of_type(value, G_VARIANT_TYPE("aa{sv}")), FALSE);
+
+    ranges = g_ptr_array_new_with_free_func((GDestroyNotify) nm_range_unref);
+    g_variant_iter_init(&iter, value);
+    while (g_variant_iter_next(&iter, "@a{sv}", &range_var)) {
+        _nm_unused gs_unref_variant GVariant *var_unref = range_var;
+        gint64                                start;
+        gint64                                end;
+
+        if (!g_variant_lookup(range_var, "start", "t", &start))
+            continue;
+        if (!g_variant_lookup(range_var, "end", "t", &end))
+            continue;
+        if (start > end)
+            continue;
+
+        g_ptr_array_add(ranges, nm_range_new(start, end));
+    }
+
+    g_object_set(setting, property_info->name, ranges, NULL);
+
+    return TRUE;
+}
+
+NMTernary
+_nm_utils_ranges_cmp(_NM_SETT_INFO_PROP_COMPARE_FCN_ARGS _nm_nil)
+{
+    const GPtrArray *ranges_a = NULL;
+    const GPtrArray *ranges_b = NULL;
+    guint            len;
+    guint            i;
+
+    if (nm_streq0(nm_setting_get_name(set_a), NM_SETTING_OVS_PORT_SETTING_NAME)
+        && nm_streq0(property_info->name, NM_SETTING_OVS_PORT_TRUNKS)) {
+        ranges_a = _nm_setting_ovs_port_get_trunks_arr(NM_SETTING_OVS_PORT(set_a));
+        if (set_b)
+            ranges_b = _nm_setting_ovs_port_get_trunks_arr(NM_SETTING_OVS_PORT(set_b));
+    } else {
+        nm_assert_not_reached();
+    }
+
+    len = nm_g_ptr_array_len(ranges_a);
+    if (len != nm_g_ptr_array_len(ranges_b))
+        return FALSE;
+    for (i = 0; i < len; i++) {
+        if (nm_range_cmp(ranges_a->pdata[i], ranges_b->pdata[i]))
+            return FALSE;
+    }
+
+    return TRUE;
+}
+
 gboolean
 _nm_utils_iaid_verify(const char *str, gint64 *out_value)
 {
