@@ -94,6 +94,7 @@ src/libnm-core-impl/nm-setting-ip-config.c
 src/libnm-core-impl/nm-setting-ip-tunnel.c
 src/libnm-core-impl/nm-setting-ip4-config.c
 src/libnm-core-impl/nm-setting-ip6-config.c
+src/libnm-core-impl/nm-setting-loopback.c
 src/libnm-core-impl/nm-setting-macsec.c
 src/libnm-core-impl/nm-setting-macvlan.c
 src/libnm-core-impl/nm-setting-match.c
