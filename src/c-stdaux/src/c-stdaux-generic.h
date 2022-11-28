@@ -120,6 +120,41 @@ extern "C" {
 #endif
 
 /**
+ * _c_boolean_expr_() - Evaluate a boolean expression
+ * @_x:                 Expression to evaluate
+ *
+ * Evaluate the given expression and convert the result to 1 or 0. In most
+ * cases this is equivalent to ``(!!(_x))``. However, for given compilers this
+ * avoids the parentheses to improve diagnostics with ``-Wparentheses``.
+ *
+ * Outside of macros, this has no added value.
+ *
+ * Return: Evaluates to the value of ``!!_x``.
+ */
+#define _c_boolean_expr_(_x) _c_internal_boolean_expr_(__COUNTER__, _x)
+#if defined(C_COMPILER_GNUC)
+#  define _c_internal_boolean_expr_(_uniq, _x)                                  \
+        __extension__ ({                                                        \
+                int C_VAR(b, _uniq);                                            \
+                                                                                \
+                /*                                                              \
+                 * Avoid any extra parentheses around the evaluation of `_x` to \
+                 * allow `-Wparentheses` to warn about use of `x = ...` and     \
+                 * instead suggest `(x = ...)` or `x == ...`.                   \
+                 */                                                             \
+                                                                                \
+                if (_x)                                                         \
+                        C_VAR(b, _uniq) = 1;                                    \
+                else                                                            \
+                        C_VAR(b, _uniq) = 0;                                    \
+                                                                                \
+                C_VAR(b, _uniq);                                                \
+        })
+#else
+#  define _c_internal_boolean_expr_(_uniq, _x) (!!(_x))
+#endif
+
+/**
  * _c_likely_() - Likely attribute
  * @_x:                 Expression to evaluate
  *
@@ -129,9 +164,9 @@ extern "C" {
  */
 #define _c_likely_(_x) _c_internal_likely_(_x)
 #if defined(C_COMPILER_GNUC)
-#  define _c_internal_likely_(_x) (__builtin_expect(!!(_x), 1))
+#  define _c_internal_likely_(_x) (__builtin_expect(_c_boolean_expr_(_x), 1))
 #else
-#  define _c_internal_likely_(_x) (!!(_x))
+#  define _c_internal_likely_(_x) (_c_boolean_expr_(_x))
 #endif
 
 /**
@@ -165,9 +200,9 @@ extern "C" {
  */
 #define _c_unlikely_(_x) _c_internal_unlikely_(_x)
 #if defined(C_COMPILER_GNUC)
-#  define _c_internal_unlikely_(_x) (__builtin_expect(!!(_x), 0))
+#  define _c_internal_unlikely_(_x) (__builtin_expect(_c_boolean_expr_(_x), 0))
 #else
-#  define _c_internal_unlikely_(_x) (!!(_x))
+#  define _c_internal_unlikely_(_x) (_c_boolean_expr_(_x))
 #endif
 
 /**
@@ -264,7 +299,7 @@ extern "C" {
  * optimize it away.
  */
 #define c_assert(_x) (                                                          \
-                (bool)(_x)                                                      \
+                _c_likely_(_x)                                                  \
                         ? assert(true && #_x)                                   \
                         : assert(false && #_x)                                  \
         )
