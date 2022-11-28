@@ -59,7 +59,6 @@ install \
     libpolkit-gobject-1-dev \
     libreadline-dev \
     libsystemd-dev \
-    libteam-dev \
     libtool \
     libudev-dev \
     locales \
