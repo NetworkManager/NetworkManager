@@ -5,6 +5,11 @@
 # THIS FILE IS GENERATED, DO NOT EDIT  #
 # Edit .gitlab-ci/ci.template instead  #
 #                                      #
+# Regenerate with:
+#   TEMPLATE_SHA="$(sed -n 's/^.templates_sha: *\&template_sha *\([0-9a-f]\+\) .*/\1/p' ./.gitlab-ci/ci.template)"
+#   pip3 install "git+http://gitlab.freedesktop.org/freedesktop/ci-templates@$TEMPLATE_SHA"
+#   ci-fairy generate-template
+#
 ########################################
 
 
@@ -48,11 +53,11 @@ variables:
   #
   # This is done by running `ci-fairy generate-template` and possibly bumping
   # ".default_tag".
-  FEDORA_TAG:  '2022-10-07.0-75e43eda0912'
-  UBUNTU_TAG:  '2022-10-07.0-a0df5d1804c4'
-  DEBIAN_TAG:  '2022-10-07.0-a0df5d1804c4'
-  CENTOS_TAG:  '2022-10-07.0-75e43eda0912'
-  ALPINE_TAG:  '2022-10-07.0-a5ef6173593f'
+  FEDORA_TAG:  '2022-10-07.0-192f1fb71e29'
+  UBUNTU_TAG:  '2022-10-07.0-8acbcc45f1a8'
+  DEBIAN_TAG:  '2022-10-07.0-8acbcc45f1a8'
+  CENTOS_TAG:  '2022-10-07.0-192f1fb71e29'
+  ALPINE_TAG:  '2022-10-07.0-e38255cda228'
 
   FEDORA_EXEC: 'bash .gitlab-ci/fedora-install.sh'
   UBUNTU_EXEC: 'bash .gitlab-ci/debian-install.sh'
