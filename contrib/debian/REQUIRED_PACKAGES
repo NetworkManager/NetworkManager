@@ -70,7 +70,6 @@ install \
     policykit-1 \
     ppp \
     ppp-dev \
-    python-setuptools \
     python3-dbus \
     python3-gi \
     python3-pip \
@@ -79,6 +78,11 @@ install \
     udev \
     uuid-dev \
     valgrind \
+    \
+    #end
+
+install_ignore_missing \
+    python-setuptools \
     \
     #end
 
