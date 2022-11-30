@@ -175,7 +175,15 @@ typedef uint64_t _nm_bitwise nm_be64_t;
             NM_UNIQ_T(V, v) = 0;       \
         NM_UNIQ_T(V, v);               \
     })
-#define NM_BOOLEAN_EXPR(expr) _NM_BOOLEAN_EXPR_IMPL(NM_UNIQ, expr)
+
+#if defined(__GNUC__) && (__GNUC__ > 4)
+#define NM_BOOLEAN_EXPR(expr)                         \
+    __builtin_choose_expr(__builtin_constant_p(expr), \
+                          (!!(expr)),                 \
+                          _NM_BOOLEAN_EXPR_IMPL(NM_UNIQ, expr))
+#else
+#define NM_BOOLEAN_EXPR(expr) (!!(expr))
+#endif
 
 #if defined(__GNUC__) && (__GNUC__ > 2) && defined(__OPTIMIZE__)
 #define NM_LIKELY(expr)   __builtin_expect(NM_BOOLEAN_EXPR(expr), 1)
