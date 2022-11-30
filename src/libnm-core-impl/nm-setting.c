@@ -4351,6 +4351,39 @@ nm_range_from_str(const char *str, GError **error)
 
 /*****************************************************************************/
 
+gboolean
+_nm_range_list_is_sorted_and_non_overlapping(const NMRange *const *ranges, gsize len)
+{
+    gsize i;
+
+    for (i = 1; i < len; i++) {
+        if (ranges[i - 1]->end >= ranges[i]->start)
+            return FALSE;
+    }
+
+    return TRUE;
+}
+
+static int
+range_cmp(gconstpointer a, gconstpointer b, gpointer unused)
+{
+    return nm_range_cmp((*(const NMRange *const *) a), (*(const NMRange *const *) b));
+}
+
+void
+_nm_range_list_sort(const NMRange **ranges, gsize len)
+{
+    if (len <= 1)
+        return;
+
+    /* Of course, g_qsort_with_data() has len of type "int". Had one job. */
+    nm_assert(len <= G_MAXINT);
+
+    g_qsort_with_data(ranges, len, sizeof(gpointer), range_cmp, NULL);
+}
+
+/*****************************************************************************/
+
 static void
 get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 {

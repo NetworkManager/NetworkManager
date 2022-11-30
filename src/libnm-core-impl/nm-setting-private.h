@@ -309,6 +309,10 @@ struct _NMRange {
     guint64 end;
 };
 
+gboolean _nm_range_list_is_sorted_and_non_overlapping(const NMRange *const *ranges, gsize len);
+
+void _nm_range_list_sort(const NMRange **ranges, gsize len);
+
 /*****************************************************************************/
 
 #define NM_SETTING_PARAM_NONE 0
