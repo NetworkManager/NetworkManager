@@ -5279,6 +5279,183 @@ test_settings_dns(void)
 
 /*****************************************************************************/
 
+static gboolean
+_ranges_all_strict_cmp(const NMRange *const *ranges, gsize len)
+{
+    gsize i;
+
+    for (i = 1; i < len; i++) {
+        if (nm_range_cmp(ranges[i - 1], ranges[i]) > 0)
+            return FALSE;
+    }
+    return TRUE;
+}
+
+static gboolean
+_ranges_has_overlapping(const NMRange *const *ranges, gsize len)
+{
+    gs_unref_hashtable GHashTable *unique = g_hash_table_new(nm_direct_hash, NULL);
+    gsize                          i;
+
+    for (i = 0; i < len; i++) {
+        const NMRange *range = ranges[i];
+        guint64        j;
+
+        g_assert(range);
+        g_assert_cmpint(range->start, <=, range->end);
+        for (j = range->start; j <= range->end; j++) {
+            g_assert_cmpint(j, <=, 4095);
+            if (!g_hash_table_add(unique, GINT_TO_POINTER((int) j))) {
+                return TRUE;
+            }
+        }
+    }
+    return FALSE;
+}
+
+static void
+test_ovs_port_trunks(void)
+{
+    const guint                   N_RUN = 10;
+    guint                         i_run;
+    gs_unref_object NMConnection *con = NULL;
+    NMSettingConnection          *s_con;
+
+    con = nmtst_create_minimal_connection("test", NULL, NM_SETTING_OVS_PORT_SETTING_NAME, &s_con);
+
+    g_object_set(s_con,
+                 NM_SETTING_CONNECTION_INTERFACE_NAME,
+                 "iface",
+                 NM_SETTING_CONNECTION_MASTER,
+                 "master",
+                 NULL);
+
+    nmtst_connection_normalize(con);
+
+    for (i_run = 0; i_run < N_RUN; i_run++) {
+        gs_unref_ptrarray GPtrArray *ranges =
+            g_ptr_array_new_with_free_func((GDestroyNotify) nm_range_unref);
+        gs_unref_object NMSettingOvsPort *s = NULL;
+        const GPtrArray                  *ranges2;
+        int                               n_ranges;
+        int                               i;
+        gboolean                          is_valid;
+        gboolean                          is_normalized;
+        gboolean                          has_overlapping;
+        gboolean                          has_all_strict_cmp;
+        gboolean                          is_hacked = FALSE;
+
+        n_ranges = nmtst_get_rand_uint32() % 20;
+        for (i = 0; i < n_ranges; i++) {
+            nm_auto_unref_range const NMRange *range = NULL;
+            guint64                            start;
+            guint64                            end;
+
+            start = nmtst_get_rand_uint32() % 4096;
+            end   = start + (nmtst_get_rand_uint32() % (4096 - start));
+            g_assert_cmpint(start, <=, end);
+            g_assert_cmpint(end, <=, 4095);
+            range = nm_range_new(start, end);
+
+            g_ptr_array_add(ranges, nm_range_ref(range));
+        }
+
+        has_overlapping    = _ranges_has_overlapping((gpointer) ranges->pdata, ranges->len);
+        has_all_strict_cmp = _ranges_all_strict_cmp((gpointer) ranges->pdata, ranges->len);
+
+        if (_nm_range_list_is_sorted_and_non_overlapping((gpointer) ranges->pdata, ranges->len)) {
+            g_assert(!has_overlapping);
+            g_assert(has_all_strict_cmp);
+            is_valid      = TRUE;
+            is_normalized = TRUE;
+        } else {
+            gs_free const NMRange **arr = NULL;
+
+            if (has_overlapping) {
+                /* "has_all_strict_cmp" is meaningless with overlapping entries.  */
+            } else
+                g_assert(!has_all_strict_cmp);
+
+            arr = nm_memdup(ranges->pdata, sizeof(NMRange *) * ranges->len);
+
+            _nm_range_list_sort(arr, ranges->len);
+
+            if (nmtst_get_rand_one_case_in(10))
+                g_assert(has_overlapping == _ranges_has_overlapping(arr, ranges->len));
+
+            g_assert(_ranges_all_strict_cmp((gpointer) arr, ranges->len));
+
+            if (_nm_range_list_is_sorted_and_non_overlapping(arr, ranges->len)) {
+                g_assert(!has_overlapping);
+                is_valid      = TRUE;
+                is_normalized = FALSE;
+            } else {
+                g_assert(has_overlapping);
+                is_valid      = FALSE;
+                is_normalized = FALSE;
+            }
+        }
+
+        g_assert(has_overlapping == ((!is_valid)));
+
+        s = (NMSettingOvsPort *) nm_setting_ovs_port_new();
+
+        g_object_set(s, NM_SETTING_OVS_PORT_TRUNKS, ranges, NULL);
+
+        nm_connection_add_setting(con, g_object_ref((NMSetting *) s));
+
+again:
+        if (is_normalized)
+            nmtst_assert_connection_verifies_without_normalization(con);
+        else if (is_valid)
+            nmtst_assert_connection_verifies_and_normalizable(con);
+        else
+            nmtst_assert_connection_unnormalizable(con, 0, 0);
+
+        ranges2 = _nm_setting_ovs_port_get_trunks_arr(s);
+        g_assert(ranges != ranges2);
+        if (!ranges2) {
+            g_assert(is_valid && is_normalized);
+            g_assert_cmpint(ranges->len, ==, 0);
+        } else {
+            g_assert_cmpint(ranges2->len, >, 0);
+            g_assert_cmpint(ranges2->len, ==, ranges->len);
+            if (!is_hacked) {
+                g_assert_cmpmem(ranges2->pdata,
+                                sizeof(gpointer) * ranges2->len,
+                                ranges->pdata,
+                                sizeof(gpointer) * ranges->len);
+            }
+
+            if (is_normalized) {
+                g_assert(!_ranges_has_overlapping((gpointer) ranges2->pdata, ranges2->len));
+                g_assert(_ranges_all_strict_cmp((gpointer) ranges2->pdata, ranges2->len));
+                g_assert(_nm_range_list_is_sorted_and_non_overlapping((gpointer) ranges2->pdata,
+                                                                      ranges2->len));
+            } else if (is_valid) {
+                g_assert(!_ranges_has_overlapping((gpointer) ranges2->pdata, ranges2->len));
+                g_assert(!_ranges_all_strict_cmp((gpointer) ranges2->pdata, ranges2->len));
+                g_assert(!_nm_range_list_is_sorted_and_non_overlapping((gpointer) ranges2->pdata,
+                                                                       ranges2->len));
+
+                /* We hack the setting and sort the internal property. Then check again
+                 * whether it's now normalized. */
+                _nm_range_list_sort((gpointer) ranges2->pdata, ranges2->len);
+
+                is_hacked     = TRUE;
+                is_normalized = TRUE;
+                goto again;
+            } else {
+                g_assert(_ranges_has_overlapping((gpointer) ranges2->pdata, ranges2->len));
+                g_assert(!_nm_range_list_is_sorted_and_non_overlapping((gpointer) ranges2->pdata,
+                                                                       ranges2->len));
+            }
+        }
+    }
+}
+
+/*****************************************************************************/
+
 static void
 test_bond_meta(void)
 {
@@ -5460,6 +5637,8 @@ main(int argc, char **argv)
     g_test_add_func("/libnm/test_setting_metadata", test_setting_metadata);
 
     g_test_add_func("/libnm/test_bond_meta", test_bond_meta);
+
+    g_test_add_func("/libnm/test_ovs_port_trunks", test_ovs_port_trunks);
 
     return g_test_run();
 }
