@@ -4175,6 +4175,7 @@ test_ranges(void)
     guint64  end;
     char    *str  = NULL;
     char    *str2 = NULL;
+    int      i_rand;
 
     r1 = nm_range_from_str("99", &error);
     nmtst_assert_success(r1, error);
@@ -4243,6 +4244,56 @@ test_ranges(void)
     nm_range_unref(r2);
     nm_clear_g_free(&str);
     nm_clear_g_free(&str2);
+
+    for (i_rand = 0; i_rand < 20; i_rand++) {
+        GError                            *error1 = NULL;
+        nm_auto_unref_range const NMRange *range  = NULL;
+        nm_auto_unref_range const NMRange *range1 = NULL;
+        guint64                            s;
+        guint64                            e;
+        guint64                           *p_s;
+        guint64                           *p_e;
+        gboolean                           vbool;
+        gs_free char                      *str1 = NULL;
+
+        start = nmtst_rand_select((guint64) 0,
+                                  1,
+                                  2,
+                                  G_MAXUINT64 - 2,
+                                  G_MAXUINT64 - 1,
+                                  G_MAXUINT64,
+                                  nmtst_get_rand_uint64());
+
+        end = nmtst_rand_select((guint64) 0,
+                                1,
+                                2,
+                                G_MAXUINT64 - 2,
+                                G_MAXUINT64 - 1,
+                                G_MAXUINT64,
+                                nmtst_get_rand_uint64());
+        if (end < start)
+            NM_SWAP(&end, &start);
+
+        range = nm_range_new(start, end);
+        g_assert(range);
+
+        p_s   = nmtst_get_rand_bool() ? &s : NULL;
+        p_e   = nmtst_get_rand_bool() ? &e : NULL;
+        vbool = nm_range_get_range(range, p_s, p_e);
+
+        g_assert(vbool == (start != end));
+        if (p_s)
+            g_assert_cmpint(s, ==, start);
+        if (p_e)
+            g_assert_cmpint(e, ==, end);
+
+        str1 = nm_range_to_str(range);
+        g_assert(str1);
+
+        range1 = nm_range_from_str(str1, &error1);
+        nmtst_assert_success(range1, error1);
+        g_assert_cmpint(nm_range_cmp(range, range1), ==, 0);
+    }
 }
 
 /*****************************************************************************/
