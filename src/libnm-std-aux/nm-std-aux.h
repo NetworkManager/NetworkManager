@@ -253,21 +253,26 @@ _nm_assert_fail_internal(const char  *assertion,
 
 #define NM_MORE_ASSERTS_EFFECTIVE (_NM_ASSERT_FAIL_ENABLED ? NM_MORE_ASSERTS : 0)
 
-#define nm_assert(cond)                                               \
-    ({                                                                \
+#define nm_assert(cond)                                                \
+    ({                                                                 \
         /* nm_assert() must do *nothing* of effect, except evaluating
          * @cond (0 or 1 times).
          *
          * As such, nm_assert() is async-signal-safe (provided @cond is, and
-         * the assertion does not fail). */ \
-        if (NM_MORE_ASSERTS_EFFECTIVE == 0) {                         \
-            /* pass */                                                \
-        } else if (NM_LIKELY(cond)) {                                 \
-            /* pass */                                                \
-        } else {                                                      \
-            _nm_assert_fail(#cond);                                   \
-        }                                                             \
-        1;                                                            \
+         * the assertion does not fail). */  \
+        if (NM_MORE_ASSERTS_EFFECTIVE == 0) {                          \
+            if (__builtin_constant_p(cond) && !(cond)) {               \
+                /* Constant expressions are still evaluated and result
+                 * in unreachable code. This handles nm_assert(FALSE). */ \
+                _nm_unreachable_code();                                \
+            }                                                          \
+            /* pass */                                                 \
+        } else if (NM_LIKELY(cond)) {                                  \
+            /* pass */                                                 \
+        } else {                                                       \
+            _nm_assert_fail(#cond);                                    \
+        }                                                              \
+        1;                                                             \
     })
 
 #define nm_assert_se(cond)                                            \
@@ -279,10 +284,11 @@ _nm_assert_fail_internal(const char  *assertion,
          * the assertion does not fail). */ \
         if (NM_LIKELY(cond)) {                                        \
             /* pass */                                                \
-        } else if (NM_MORE_ASSERTS_EFFECTIVE == 0) {                  \
-            /* pass */                                                \
         } else {                                                      \
-            _nm_assert_fail(#cond);                                   \
+            if (NM_MORE_ASSERTS_EFFECTIVE != 0) {                     \
+                _nm_assert_fail(#cond);                               \
+            }                                                         \
+            _nm_unreachable_code();                                   \
         }                                                             \
         1;                                                            \
     })
