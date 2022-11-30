@@ -89,6 +89,14 @@ nm_setting_ovs_port_get_tag(NMSettingOvsPort *self)
 
 /*****************************************************************************/
 
+static GPtrArray *
+_trunks_array_ensure(GPtrArray **p_array)
+{
+    if (!*p_array)
+        *p_array = g_ptr_array_new_with_free_func((GDestroyNotify) nm_range_unref);
+    return *p_array;
+}
+
 /**
  * nm_setting_ovs_port_add_trunk:
  * @setting: the #NMSettingOvsPort
@@ -105,7 +113,7 @@ nm_setting_ovs_port_add_trunk(NMSettingOvsPort *self, NMRange *trunk)
     g_return_if_fail(NM_IS_SETTING_OVS_PORT(self));
     g_return_if_fail(trunk);
 
-    g_ptr_array_add(self->trunks, nm_range_ref(trunk));
+    g_ptr_array_add(_trunks_array_ensure(&self->trunks), nm_range_ref(trunk));
     _notify(self, PROP_TRUNKS);
 }
 
@@ -122,7 +130,7 @@ nm_setting_ovs_port_get_num_trunks(NMSettingOvsPort *self)
 {
     g_return_val_if_fail(NM_IS_SETTING_OVS_PORT(self), 0);
 
-    return self->trunks->len;
+    return nm_g_ptr_array_len(self->trunks);
 }
 
 /**
@@ -138,8 +146,7 @@ NMRange *
 nm_setting_ovs_port_get_trunk(NMSettingOvsPort *self, guint idx)
 {
     g_return_val_if_fail(NM_IS_SETTING_OVS_PORT(self), NULL);
-
-    g_return_val_if_fail(idx < self->trunks->len, NULL);
+    g_return_val_if_fail(idx < nm_g_ptr_array_len(self->trunks), NULL);
 
     return self->trunks->pdata[idx];
 }
@@ -157,8 +164,7 @@ void
 nm_setting_ovs_port_remove_trunk(NMSettingOvsPort *self, guint idx)
 {
     g_return_if_fail(NM_IS_SETTING_OVS_PORT(self));
-
-    g_return_if_fail(idx < self->trunks->len);
+    g_return_if_fail(idx < nm_g_ptr_array_len(self->trunks));
 
     g_ptr_array_remove_index(self->trunks, idx);
     _notify(self, PROP_TRUNKS);
@@ -184,6 +190,9 @@ nm_setting_ovs_port_remove_trunk_by_value(NMSettingOvsPort *self, guint start, g
 
     g_return_val_if_fail(NM_IS_SETTING_OVS_PORT(self), FALSE);
 
+    if (!self->trunks)
+        return FALSE;
+
     for (i = 0; i < self->trunks->len; i++) {
         trunk = (NMRange *) self->trunks->pdata[i];
         if (trunk->start == start && trunk->end == end) {
@@ -208,7 +217,7 @@ nm_setting_ovs_port_clear_trunks(NMSettingOvsPort *self)
 {
     g_return_if_fail(NM_IS_SETTING_OVS_PORT(self));
 
-    if (self->trunks->len != 0) {
+    if (nm_g_ptr_array_len(self->trunks) != 0) {
         g_ptr_array_set_size(self->trunks, 0);
         _notify(self, PROP_TRUNKS);
     }
@@ -304,6 +313,9 @@ _nm_setting_ovs_port_sort_trunks(NMSettingOvsPort *self)
 {
     gboolean need_sort = FALSE;
     guint    i;
+
+    if (!self->trunks)
+        return FALSE;
 
     for (i = 1; i < self->trunks->len; i++) {
         NMRange *range_prev = self->trunks->pdata[i - 1];
@@ -545,11 +557,19 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
 
     switch (prop_id) {
     case PROP_TRUNKS:
-        g_ptr_array_unref(self->trunks);
-        self->trunks = _nm_utils_copy_array(g_value_get_boxed(value),
-                                            (NMUtilsCopyFunc) nm_range_ref,
-                                            (GDestroyNotify) nm_range_unref);
+    {
+        gs_unref_ptrarray GPtrArray *arr_old = NULL;
+        GPtrArray                   *arr;
+
+        arr_old = g_steal_pointer(&self->trunks);
+        arr     = g_value_get_boxed(value);
+        if (nm_g_ptr_array_len(arr) > 0) {
+            self->trunks = _nm_utils_copy_array(arr,
+                                                (NMUtilsCopyFunc) nm_range_ref,
+                                                (GDestroyNotify) nm_range_unref);
+        }
         break;
+    }
     default:
         _nm_setting_property_set_property_direct(object, prop_id, value, pspec);
         break;
@@ -558,9 +578,7 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
 
 static void
 nm_setting_ovs_port_init(NMSettingOvsPort *self)
-{
-    self->trunks = g_ptr_array_new_with_free_func((GDestroyNotify) nm_range_unref);
-}
+{}
 
 /**
  * nm_setting_ovs_port_new:
@@ -582,7 +600,7 @@ finalize(GObject *object)
 {
     NMSettingOvsPort *self = NM_SETTING_OVS_PORT(object);
 
-    g_ptr_array_unref(self->trunks);
+    nm_g_ptr_array_unref(self->trunks);
 
     G_OBJECT_CLASS(nm_setting_ovs_port_parent_class)->finalize(object);
 }
