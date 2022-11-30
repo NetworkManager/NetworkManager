@@ -1,6 +1,6 @@
 # translation of NetworkManager.master.po to Marathi
 # Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
-# This file is distributed under the same license as the PACKAGE package.
+# This file is distributed under the same license as the NetworkManager package.
 # Sandeep Shedmake <sshedmak@redhat.com>, 2009, 2013.
 # Sandeep Shedmake <sshedmak@redhat.com>, 2010, 2011, 2012, 2013, 2014.
 # Lubomir Rintel <lkundrak@v3.sk>, 2016. #zanata

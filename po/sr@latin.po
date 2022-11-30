@@ -1,6 +1,6 @@
 # Serbian Cyrillic and Latin translations for NetworkManager
 # Copyright (C) 2004-2005 GNOME Foundation
-# This file is distributed under the same licence as the NetworkManager package.
+# This file is distributed under the same license as the NetworkManager package.
 # Miloš Popović <gpopac@gmail.com>, 2010.
 #
 msgid ""

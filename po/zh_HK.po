@@ -1,4 +1,5 @@
 # Chinese (Hong Kong) translation of Network Manager.
+# This file is distributed under the same license as the NetworkManager package.
 # Copyright (C) 2005 Free Software Foundation, Inc.
 # Woodman Tuen <wmtuen@gmail.com>, 2005.
 # Chao-Hsiung Liao <j_h_liau@yahoo.com.tw>, 2008.

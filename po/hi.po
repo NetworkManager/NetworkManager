@@ -1,5 +1,5 @@
 # translation of NetworkManager.po to Hindi
-# This file is distributed under the same license as the PACKAGE package.
+# This file is distributed under the same license as the NetworkManager package.
 # Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER.
 # rajesh <rajesh>, 2012.
 # Rajesh Ranjan <rajeshkajha@yahoo.com>, 2012, 2013, 2014.

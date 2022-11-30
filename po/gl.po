@@ -1,6 +1,6 @@
 # translation of gl.po to Galego
 # Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
-# This file is distributed under the same license as the PACKAGE package.
+# This file is distributed under the same license as the NetworkManager package.
 # Ignacio Casal Quinteiro <icq@cvs.gnome.org>, 2007, 2008.
 # Miguel Anxo Bouzada <mbouzada@gmail.com>, 2010.
 # Fran Diéguez <frandieguez@gnome.org>, 2011.

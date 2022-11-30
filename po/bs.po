@@ -1,5 +1,5 @@
 # translation of NetworkManager.HEAD.po to Bosnian
-# This file is distributed under the same license as the PACKAGE package.
+# This file is distributed under the same license as the NetworkManager package.
 # Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER.
 # Kemal Šanjta <gomez@lugzdk.ba>, 2004.
 # Lubomir Rintel <lkundrak@v3.sk>, 2016. #zanata
