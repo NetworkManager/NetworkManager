@@ -109,7 +109,7 @@ G_DEFINE_TYPE(NMSettingBridge, nm_setting_bridge, NM_TYPE_SETTING)
 G_DEFINE_BOXED_TYPE(NMBridgeVlan, nm_bridge_vlan, _nm_bridge_vlan_dup, nm_bridge_vlan_unref)
 
 struct _NMBridgeVlan {
-    guint   refcount;
+    int     refcount;
     guint16 vid_start;
     guint16 vid_end;
     bool    untagged : 1;
@@ -131,6 +131,8 @@ NM_IS_BRIDGE_VLAN(const NMBridgeVlan *self, gboolean also_sealed)
  * Creates a new #NMBridgeVlan object for the given VLAN id range.
  * Setting @vid_end to 0 is equivalent to setting it to @vid_start
  * and creates a single-id VLAN.
+ *
+ * Since 1.42, ref-counting of #NMBridgeVlan is thread-safe.
  *
  * Returns: (transfer full): the new #NMBridgeVlan object.
  *
@@ -165,6 +167,8 @@ nm_bridge_vlan_new(guint16 vid_start, guint16 vid_end)
  *
  * Returns: the input argument @vlan object.
  *
+ * Since 1.42, ref-counting of #NMBridgeVlan is thread-safe.
+ *
  * Since: 1.18
  **/
 NMBridgeVlan *
@@ -172,9 +176,9 @@ nm_bridge_vlan_ref(NMBridgeVlan *vlan)
 {
     g_return_val_if_fail(NM_IS_BRIDGE_VLAN(vlan, TRUE), NULL);
 
-    nm_assert(vlan->refcount < G_MAXUINT);
+    nm_assert(vlan->refcount < G_MAXINT);
 
-    vlan->refcount++;
+    g_atomic_int_inc(&vlan->refcount);
     return vlan;
 }
 
@@ -185,6 +189,8 @@ nm_bridge_vlan_ref(NMBridgeVlan *vlan)
  * Decreases the reference count of the object.  If the reference count
  * reaches zero the object will be destroyed.
  *
+ * Since 1.42, ref-counting of #NMBridgeVlan is thread-safe.
+ *
  * Since: 1.18
  **/
 void
@@ -192,7 +198,7 @@ nm_bridge_vlan_unref(NMBridgeVlan *vlan)
 {
     g_return_if_fail(NM_IS_BRIDGE_VLAN(vlan, TRUE));
 
-    if (--vlan->refcount == 0)
+    if (g_atomic_int_dec_and_test(&vlan->refcount))
         g_slice_free(NMBridgeVlan, vlan);
 }
 

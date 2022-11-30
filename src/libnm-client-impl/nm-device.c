@@ -2982,7 +2982,8 @@ NM_IS_LLDP_NEIGHBOR(const NMLldpNeighbor *self)
  * Note that #NMLldpNeighbor has no public API for mutating
  * an instance. Also, libnm will not internally mutate a
  * once exposed object. They are guaranteed to be immutable.
- * Since 1.32, ref-counting is thread-safe.
+ *
+ * Since 1.32, ref-counting of #NMLldpNeighbor is thread-safe.
  *
  * This function is not useful, as there is no public API to
  * actually modify the (empty) instance.
