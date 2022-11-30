@@ -21,8 +21,14 @@
         (data)->ifname ? " ifname '" : "", (data)->ifname ?: "", (data)->ifname ? "'" : "",       \
         (data)->received_count
 
-int NMTSTP_ENV1_IFINDEX = -1;
-int NMTSTP_ENV1_EX      = -1;
+int NMTSTP_ENV1_IFINDEXES[];
+
+const char *const NMTSTP_ENV1_DEVICE_NAME[] = {
+    "nm-test-device0",
+    "nm-test-device1",
+};
+
+int NMTSTP_ENV1_EX = -1;
 
 /*****************************************************************************/
 

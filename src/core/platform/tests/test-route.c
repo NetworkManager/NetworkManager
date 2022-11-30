@@ -2171,9 +2171,9 @@ _nmtstp_init_tests(int *argc, char ***argv)
 void
 _nmtstp_setup_tests(void)
 {
-#define add_test_func(testpath, test_func) nmtstp_env1_add_test_func(testpath, test_func, TRUE)
+#define add_test_func(testpath, test_func) nmtstp_env1_add_test_func(testpath, test_func, 1, TRUE)
 #define add_test_func_data(testpath, test_func, arg) \
-    nmtstp_env1_add_test_func_data(testpath, test_func, arg, TRUE)
+    nmtstp_env1_add_test_func_data(testpath, test_func, arg, 1, TRUE)
 
     add_test_func("/route/ip4", test_ip4_route);
     add_test_func("/route/ip6", test_ip6_route);
