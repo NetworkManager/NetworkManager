@@ -1,4 +1,13 @@
 ===============================================
+NetworkManager-1.40.6
+Overview of changes since NetworkManager-1.40.4
+===============================================
+
+* team: also set empty port configuration so teamd
+  knows about the port.
+* team: restore port configuration after teamd respawn.
+
+===============================================
 NetworkManager-1.40.4
 Overview of changes since NetworkManager-1.40.2
 ===============================================
