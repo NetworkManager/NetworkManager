@@ -246,6 +246,8 @@ _nm_assert_fail_internal(const char  *assertion,
 #define _nm_assert_fail(msg)                 \
     do {                                     \
         _nm_unused const char *_msg = (msg); \
+                                             \
+        _nm_unreachable_code();              \
     } while (0)
 #endif
 
