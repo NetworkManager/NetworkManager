@@ -147,7 +147,7 @@ nm_sock_addr_endpoint_new(const char *endpoint)
     gsize               i;
     gs_free char       *host_clone = NULL;
     const char         *host;
-    guint16             port;
+    guint16             port = 0;
 
     g_return_val_if_fail(endpoint, NULL);
 
