@@ -75,6 +75,14 @@
 
 /*****************************************************************************/
 
+/* This is mainly used in case of failed assertions. Usually assert() itself
+ * already ensures that the code path is marked as unreachable, however with
+ * NDEBUG that might not be the case. We want to mark the code as unreachable
+ * even with NDEBUG/G_DISABLE_ASSERT. */
+#define _nm_unreachable_code() __builtin_unreachable()
+
+/*****************************************************************************/
+
 #ifndef _NM_CC_SUPPORT_AUTO_TYPE
 #if (defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 9)))
 #define _NM_CC_SUPPORT_AUTO_TYPE 1
