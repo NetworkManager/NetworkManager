@@ -299,114 +299,28 @@ nm_setting_ovs_port_get_bond_downdelay(NMSettingOvsPort *self)
 
 /*****************************************************************************/
 
-static int
-range_cmp(gconstpointer a, gconstpointer b)
-{
-    const NMRange *range_a = *(const NMRange **) a;
-    const NMRange *range_b = *(const NMRange **) b;
-
-    return nm_range_cmp(range_a, range_b);
-}
-
 gboolean
 _nm_setting_ovs_port_sort_trunks(NMSettingOvsPort *self)
 {
-    gboolean need_sort = FALSE;
-    guint    i;
-
-    if (!self->trunks)
+    if (nm_g_ptr_array_len(self->trunks) <= 1)
         return FALSE;
 
-    for (i = 1; i < self->trunks->len; i++) {
-        NMRange *range_prev = self->trunks->pdata[i - 1];
-        NMRange *range      = self->trunks->pdata[i];
+    if (_nm_range_list_is_sorted_and_non_overlapping((const NMRange *const *) self->trunks->pdata,
+                                                     self->trunks->len))
+        return FALSE;
 
-        if (nm_range_cmp(range_prev, range) > 0) {
-            need_sort = TRUE;
-            break;
-        }
-    }
-
-    if (need_sort) {
-        g_ptr_array_sort(self->trunks, range_cmp);
-        _notify(self, PROP_TRUNKS);
-    }
-
-    return need_sort;
-}
-
-static gboolean
-verify_trunks(GPtrArray *ranges, GError **error)
-{
-    gs_unref_hashtable GHashTable *h = NULL;
-    NMRange                       *range;
-    guint                          i;
-    guint                          vlan;
-
-    if (!ranges)
-        return TRUE;
-
-    h = g_hash_table_new(nm_direct_hash, NULL);
-
-    for (i = 0; i < ranges->len; i++) {
-        range = ranges->pdata[i];
-        nm_assert(range->start <= range->end);
-
-        if (range->start > 4095 || range->end > 4095) {
-            g_set_error_literal(error,
-                                NM_CONNECTION_ERROR,
-                                NM_CONNECTION_ERROR_INVALID_PROPERTY,
-                                _("VLANs must be between 0 and 4095"));
-            return FALSE;
-        }
-
-        for (vlan = range->start; vlan <= range->end; vlan++) {
-            if (!nm_g_hash_table_add(h, GUINT_TO_POINTER(vlan))) {
-                g_set_error(error,
-                            NM_CONNECTION_ERROR,
-                            NM_CONNECTION_ERROR_INVALID_PROPERTY,
-                            _("duplicate VLAN %u"),
-                            vlan);
-                return FALSE;
-            }
-        }
-    }
-
+    _nm_range_list_sort((const NMRange **) self->trunks->pdata, self->trunks->len);
+    _notify(self, PROP_TRUNKS);
     return TRUE;
 }
 
-static gboolean
-verify_trunks_normalizable(GPtrArray *ranges, GError **error)
-{
-    guint i;
-
-    nm_assert(verify_trunks(ranges, NULL));
-
-    if (!ranges || ranges->len <= 1)
-        return TRUE;
-
-    for (i = 1; i < ranges->len; i++) {
-        NMRange *range_prev = ranges->pdata[i - 1];
-        NMRange *range      = ranges->pdata[i];
-
-        if (nm_range_cmp(range_prev, range) > 0) {
-            g_set_error(error,
-                        NM_CONNECTION_ERROR,
-                        NM_CONNECTION_ERROR_INVALID_PROPERTY,
-                        _("VLANs %u and %u are not sorted in ascending order"),
-                        (guint) range_prev->start,
-                        (guint) range->start);
-            return FALSE;
-        }
-    }
-
-    return TRUE;
-}
+/*****************************************************************************/
 
 static int
 verify(NMSetting *setting, NMConnection *connection, GError **error)
 {
-    NMSettingOvsPort *self = NM_SETTING_OVS_PORT(setting);
+    NMSettingOvsPort *self                       = NM_SETTING_OVS_PORT(setting);
+    gboolean          trunks_needs_normalization = FALSE;
 
     if (!_nm_connection_verify_required_interface_name(connection, error))
         return FALSE;
@@ -511,15 +425,61 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
         return FALSE;
     }
 
-    if (!verify_trunks(self->trunks, error)) {
-        g_prefix_error(error,
-                       "%s.%s: ",
-                       NM_SETTING_OVS_PORT_SETTING_NAME,
-                       NM_SETTING_OVS_PORT_TRUNKS);
-        return FALSE;
+    if (nm_g_ptr_array_len(self->trunks) > 0) {
+        guint i;
+
+        for (i = 0; i < self->trunks->len; i++) {
+            const NMRange *range = self->trunks->pdata[i];
+
+            nm_assert(range->start <= range->end);
+
+            if (range->end > 4095) {
+                g_set_error_literal(error,
+                                    NM_CONNECTION_ERROR,
+                                    NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                                    _("VLANs must be between 0 and 4095"));
+                g_prefix_error(error,
+                               "%s.%s: ",
+                               NM_SETTING_OVS_PORT_SETTING_NAME,
+                               NM_SETTING_OVS_PORT_TRUNKS);
+                return FALSE;
+            }
+        }
+
+        if (!_nm_range_list_is_sorted_and_non_overlapping(
+                (const NMRange *const *) self->trunks->pdata,
+                self->trunks->len)) {
+            gs_free const NMRange **ranges_to_free = NULL;
+            const NMRange         **ranges;
+
+            ranges = nm_memdup_maybe_a(500,
+                                       self->trunks->pdata,
+                                       sizeof(NMRange *) * self->trunks->len,
+                                       &ranges_to_free);
+
+            _nm_range_list_sort(ranges, self->trunks->len);
+
+            if (!_nm_range_list_is_sorted_and_non_overlapping(ranges, self->trunks->len)) {
+                g_set_error(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                            _("duplicate or overlapping VLANs"));
+                g_prefix_error(error,
+                               "%s.%s: ",
+                               NM_SETTING_OVS_PORT_SETTING_NAME,
+                               NM_SETTING_OVS_PORT_TRUNKS);
+                return FALSE;
+            }
+
+            trunks_needs_normalization = TRUE;
+        }
     }
 
-    if (!verify_trunks_normalizable(self->trunks, error)) {
+    if (trunks_needs_normalization) {
+        g_set_error(error,
+                    NM_CONNECTION_ERROR,
+                    NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                    _("VLANs are not sorted in ascending order"));
         g_prefix_error(error,
                        "%s.%s: ",
                        NM_SETTING_OVS_PORT_SETTING_NAME,
