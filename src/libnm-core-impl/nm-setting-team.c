@@ -375,6 +375,8 @@ _nm_team_link_watcher_ref(NMTeamLinkWatcher *watcher)
  *
  * Increases the reference count of the object.
  *
+ * Since 1.20, ref-counting of #NMTeamLinkWatcher is thread-safe.
+ *
  * Since: 1.12
  **/
 void
@@ -389,6 +391,8 @@ nm_team_link_watcher_ref(NMTeamLinkWatcher *watcher)
  *
  * Decreases the reference count of the object.  If the reference count
  * reaches zero, the object will be destroyed.
+ *
+ * Since 1.20, ref-counting of #NMTeamLinkWatcher is thread-safe.
  *
  * Since: 1.12
  **/
