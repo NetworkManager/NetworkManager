@@ -12,6 +12,14 @@
 
 /*****************************************************************************/
 
+struct _NMPlatformObject {
+    /* the object type has no fields of its own, it is only used to having
+     * a special pointer type that can be used to indicate "any" type. */
+    char _dummy_don_t_use_me;
+};
+
+/*****************************************************************************/
+
 #define __NMPlatformObjWithIfindex_COMMON \
     int ifindex;                          \
     ;

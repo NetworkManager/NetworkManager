@@ -149,12 +149,6 @@ GBytes       *nmp_link_address_get_as_bytes(const NMPLinkAddress *addr);
 
 #define NM_PLATFORM_LINK_OTHER_NETNS (-1)
 
-struct _NMPlatformObject {
-    /* the object type has no fields of its own, it is only used to having
-     * a special pointer type that can be used to indicate "any" type. */
-    char _dummy_don_t_use_me;
-};
-
 struct _NMPlatformObjWithIfindex {
     __NMPlatformObjWithIfindex_COMMON;
 };
