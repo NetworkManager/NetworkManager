@@ -1385,7 +1385,7 @@ clean_gateways(NMNDisc *ndisc, gint64 now_msec, NMNDiscConfigMap *changed, gint6
     if (rdata->gateways->len == 0)
         return;
 
-    arr = &nm_g_array_index(rdata->gateways, NMNDiscGateway, 0);
+    arr = &nm_g_array_first(rdata->gateways, NMNDiscGateway);
 
     for (i = 0, j = 0; i < rdata->gateways->len; i++) {
         if (!expiry_next(now_msec, arr[i].expiry_msec, next_msec))
@@ -1418,7 +1418,7 @@ clean_addresses(NMNDisc *ndisc, gint64 now_msec, NMNDiscConfigMap *changed, gint
     if (rdata->addresses->len == 0)
         return;
 
-    arr = &nm_g_array_index(rdata->addresses, NMNDiscAddress, 0);
+    arr = &nm_g_array_first(rdata->addresses, NMNDiscAddress);
 
     for (i = 0, j = 0; i < rdata->addresses->len; i++) {
         if (!expiry_next(now_msec, arr[i].expiry_msec, next_msec))
@@ -1448,7 +1448,7 @@ clean_routes(NMNDisc *ndisc, gint64 now_msec, NMNDiscConfigMap *changed, gint64 
     if (rdata->routes->len == 0)
         return;
 
-    arr = &nm_g_array_index(rdata->routes, NMNDiscRoute, 0);
+    arr = &nm_g_array_first(rdata->routes, NMNDiscRoute);
 
     for (i = 0, j = 0; i < rdata->routes->len; i++) {
         if (!expiry_next(now_msec, arr[i].expiry_msec, next_msec))
@@ -1478,7 +1478,7 @@ clean_dns_servers(NMNDisc *ndisc, gint64 now_msec, NMNDiscConfigMap *changed, gi
     if (rdata->dns_servers->len == 0)
         return;
 
-    arr = &nm_g_array_index(rdata->dns_servers, NMNDiscDNSServer, 0);
+    arr = &nm_g_array_first(rdata->dns_servers, NMNDiscDNSServer);
 
     for (i = 0, j = 0; i < rdata->dns_servers->len; i++) {
         if (!expiry_next(now_msec, arr[i].expiry_msec, next_msec))
@@ -1508,7 +1508,7 @@ clean_dns_domains(NMNDisc *ndisc, gint64 now_msec, NMNDiscConfigMap *changed, gi
     if (rdata->dns_domains->len == 0)
         return;
 
-    arr = &nm_g_array_index(rdata->dns_domains, NMNDiscDNSDomain, 0);
+    arr = &nm_g_array_first(rdata->dns_domains, NMNDiscDNSDomain);
 
     for (i = 0, j = 0; i < rdata->dns_domains->len; i++) {
         if (!expiry_next(now_msec, arr[i].expiry_msec, next_msec))

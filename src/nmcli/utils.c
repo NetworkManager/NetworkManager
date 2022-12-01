@@ -1410,8 +1410,8 @@ nmc_print(const NmcConfig                 *nmc_config,
               header_name_no_l10n,
               header_row->len,
               cells->len / header_row->len,
-              nm_g_array_index_p(header_row, PrintDataHeaderCell, 0),
-              nm_g_array_index_p(cells, PrintDataCell, 0));
+              nm_g_array_first_p(header_row, PrintDataHeaderCell),
+              nm_g_array_first_p(cells, PrintDataCell));
 
     return TRUE;
 }

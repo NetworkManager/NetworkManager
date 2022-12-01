@@ -773,7 +773,7 @@ build_device_hostname_infos(NMPolicy *self)
 
         g_array_sort(array, device_hostname_info_compare);
 
-        info0 = &nm_g_array_index(array, DeviceHostnameInfo, 0);
+        info0 = &nm_g_array_first(array, DeviceHostnameInfo);
         if (info0->priority < 0) {
             for (i = 1; i < array->len; i++) {
                 const DeviceHostnameInfo *info = &nm_g_array_index(array, DeviceHostnameInfo, i);

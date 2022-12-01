@@ -1061,7 +1061,7 @@ _resolve_handle_call_cb(GObject *source, GAsyncResult *result, gpointer user_dat
     g_variant_iter_free(v_names_iter);
 
     _resolve_complete(handle,
-                      nm_g_array_index_p(v_names, NMDnsSystemdResolvedAddressResult, 0),
+                      nm_g_array_first_p(v_names, NMDnsSystemdResolvedAddressResult),
                       v_names->len,
                       v_flags,
                       NULL);
