@@ -1869,6 +1869,8 @@ char *nm_utils_g_slist_strlist_join(const GSList *a, const char *separator);
 static inline gpointer
 nm_g_array_data(const GArray *arr)
 {
+    /* You may want to use nm_g_array_first_p() instead, which can assert
+     * for the expected type. */
     return arr ? arr->data : NULL;
 }
 
@@ -1890,21 +1892,25 @@ nm_g_array_unref(GArray *arr)
  * - returns a pointer to the element.
  * - it asserts that @idx is <= arr->len. That is, it allows
  *   to get a pointer after the data, of course, you are not
- *   allowed to dereference in that case. */
-#define nm_g_array_index_p(arr, Type, idx)                                       \
-    ({                                                                           \
-        const GArray *const _arr_55 = (arr);                                     \
-        const guint         _idx_55 = (idx);                                     \
-                                                                                 \
-        nm_assert(_arr_55);                                                      \
-        nm_assert(sizeof(Type) == g_array_get_element_size((GArray *) _arr_55)); \
-        nm_assert(_idx_55 <= _arr_55->len);                                      \
-                                                                                 \
-        /* If arr->len is zero, arr->data might be NULL. The macro
-         * allows to access at index [arr->len] (one past the data).
-         * We need to take care of undefined behavior, but (NULL + 0)
-         * should work mostly fine for us. */               \
-        ((Type *) ((gpointer) _arr_55->data)) + (_idx_55);                       \
+ *   allowed to dereference in that case.
+ * - in particular, unlike nm_g_array_index(), you are allowed to call this
+ *   with "arr" NULL (for index zero) or with "arr->data" NULL
+ *   (for index zero). In that case, NULL is returned.
+ *
+ * When accessing index zero, then this returns NULL if-and-only-if
+ * "arr" is NULL or "arr->data" is NULL. In all other cases, this
+ * returns the pointer &((Type*) arr->data)[idx]. Note that the pointer
+ * may not be followed, if "idx" is equal to "arr->len". */
+#define nm_g_array_index_p(arr, Type, idx)                                                       \
+    ({                                                                                           \
+        const GArray *const _arr_55 = (arr);                                                     \
+        const guint         _idx_55 = (idx);                                                     \
+                                                                                                 \
+        nm_assert(_arr_55 || _idx_55 == 0);                                                      \
+        nm_assert(_idx_55 <= (_arr_55 ? _arr_55->len : 0u));                                     \
+        nm_assert(!_arr_55 || sizeof(Type) == g_array_get_element_size((GArray *) _arr_55));     \
+                                                                                                 \
+        ((_arr_55 && _arr_55->data) ? &(((Type *) ((gpointer) _arr_55->data))[_idx_55]) : NULL); \
     })
 
 /* Very similar to g_array_index().
@@ -1927,6 +1933,8 @@ nm_g_array_unref(GArray *arr)
     }))
 
 #define nm_g_array_first(arr, Type) nm_g_array_index(arr, Type, 0)
+
+#define nm_g_array_first_p(arr, Type) nm_g_array_index_p(arr, Type, 0)
 
 /* Same as g_array_index(arr, Type, arr->len-1). */
 #define nm_g_array_last(arr, Type)                                            \
