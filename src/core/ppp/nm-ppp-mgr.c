@@ -68,7 +68,7 @@ NM_UTILS_LOOKUP_STR_DEFINE(nm_ppp_mgr_callback_type_to_string,
 #define SELF_TO_USERDATA(self) (&(self)->idle_start)
 
 #define SELF_FROM_USERDATA(user_data) \
-    ((NMPppMgr *) (((const char *) (user_data)) - G_STRUCT_OFFSET(NMPppMgr, idle_start)))
+    NM_CAST_ALIGN(NMPppMgr, (((char *) (user_data)) - G_STRUCT_OFFSET(NMPppMgr, idle_start)))
 
 /*****************************************************************************/
 

@@ -108,9 +108,10 @@ _PRIV_TO_SELF(NMPolicyPrivate *priv)
 
     nm_assert(priv);
 
-    self = (NMPolicy *) (((char *) priv) - G_STRUCT_OFFSET(NMPolicy, _priv));
+    self = NM_CAST_ALIGN(NMPolicy, (((char *) priv) - G_STRUCT_OFFSET(NMPolicy, _priv)));
 
     nm_assert(NM_IS_POLICY(self));
+
     return self;
 }
 

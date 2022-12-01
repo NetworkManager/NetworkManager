@@ -450,10 +450,17 @@ _nm_crypto_verify_pkcs12(const guint8 *data, gsize data_len, const char *passwor
 
 #if __BYTE_ORDER == __LITTLE_ENDIAN
         {
-            guint16 *p, *p_end;
+            const guint16 *p_end;
+            guint16       *p;
 
-            p_end = (guint16 *) &(((guint8 *) pw.data)[ucs2_password.len]);
-            for (p = (guint16 *) pw.data; p < p_end; p++)
+            /* we cast here to guint16 pointers (which would trigger a "-Wcast-align").
+             * But this is safe, because ucs2_password.len is a multiple of 2 and
+             * because pw.data was an allocated buffer (that is presumably aligned
+             * correctly). */
+            nm_assert(ucs2_password.len % 2 == 0);
+
+            p_end = NM_CAST_ALIGN(guint16, &(((guint8 *) pw.data)[ucs2_password.len]));
+            for (p = NM_CAST_ALIGN(guint16, pw.data); p < p_end; p++)
                 *p = GUINT16_SWAP_LE_BE(*p);
         }
 #endif

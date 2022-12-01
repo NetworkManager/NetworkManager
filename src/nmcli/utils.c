@@ -1116,7 +1116,7 @@ _print_fill(const NmcConfig    *nmc_config,
                         cell->text_to_free = TRUE;
                     }
                     if (to_free)
-                        g_strfreev((char **) to_free);
+                        g_strfreev(NM_CAST_ALIGN(char *, to_free));
                 }
             } else {
                 cell->text.plain   = value;
