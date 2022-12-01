@@ -12,11 +12,18 @@
 
 /*****************************************************************************/
 
+/* This is used with _nm_align() on the platform structs. Note that
+ * "align" attribute can only increase the natural alignment, unless
+ * also "packed" is specified. That's what we want.
+ * https://gcc.gnu.org/onlinedocs/gcc/Common-Type-Attributes.html#Common-Type-Attributes.
+ */
+#define _NMPlatformObject_Align (MAX(_nm_alignof(void *), _nm_alignof(gint64)))
+
 struct _NMPlatformObject {
     /* the object type has no fields of its own, it is only used to having
      * a special pointer type that can be used to indicate "any" type. */
     char _dummy_don_t_use_me;
-};
+} _nm_align(_NMPlatformObject_Align);
 
 /*****************************************************************************/
 
@@ -77,7 +84,7 @@ struct _NMPlatformObject {
 typedef struct {
     __NMPlatformIPAddress_COMMON;
     _nm_alignas(NMIPAddr) guint8 address_ptr[];
-} NMPlatformIPAddress;
+} _nm_alignas(NMPlatformObject) NMPlatformIPAddress;
 
 /**
  * NMPlatformIP4Address:
@@ -112,7 +119,7 @@ struct _NMPlatformIP4Address {
      * flag may indicate that the address is just for tracking purpose only, but the ACD
      * state is not yet ready for the address to be configured. */
     bool a_acd_not_ready : 1;
-};
+} _nm_alignas(NMPlatformObject);
 
 /**
  * NMPlatformIP6Address:
@@ -122,7 +129,7 @@ struct _NMPlatformIP6Address {
     __NMPlatformIPAddress_COMMON;
     _nm_alignas(NMIPAddr) struct in6_addr address;
     struct in6_addr peer_address;
-};
+} _nm_alignas(NMPlatformObject);
 
 typedef union {
     NMPlatformIPAddress  ax;

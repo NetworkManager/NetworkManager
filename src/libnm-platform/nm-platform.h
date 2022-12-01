@@ -151,7 +151,7 @@ GBytes       *nmp_link_address_get_as_bytes(const NMPLinkAddress *addr);
 
 struct _NMPlatformObjWithIfindex {
     __NMPlatformObjWithIfindex_COMMON;
-};
+} _nm_alignas(NMPlatformObject);
 
 struct _NMPlatformLink {
     __NMPlatformObjWithIfindex_COMMON;
@@ -208,7 +208,7 @@ struct _NMPlatformLink {
     bool connected : 1;
 
     bool initialized : 1;
-};
+} _nm_alignas(NMPlatformObject);
 
 typedef enum {
     NM_PLATFORM_SIGNAL_ID_NONE,
@@ -368,7 +368,7 @@ typedef enum {
 typedef struct {
     __NMPlatformIPRoute_COMMON;
     _nm_alignas(NMIPAddr) guint8 network_ptr[];
-} NMPlatformIPRoute;
+} _nm_alignas(NMPlatformObject) NMPlatformIPRoute;
 
 #define NM_PLATFORM_IP_ROUTE_CAST(route) \
     NM_CONSTCAST(NMPlatformIPRoute,      \
@@ -444,7 +444,7 @@ struct _NMPlatformIP4Route {
      * The valid range for weight is 1-255. For convenience, we treat 0 the same
      * as 1 for multihop routes. */
     guint8 weight;
-};
+} _nm_alignas(NMPlatformObject);
 
 struct _NMPlatformIP6Route {
     __NMPlatformIPRoute_COMMON;
@@ -477,7 +477,7 @@ struct _NMPlatformIP6Route {
      * The type is guint8 to keep the struct size small. But the values are compatible with
      * the NMIcmpv6RouterPref enum. */
     guint8 rt_pref;
-};
+} _nm_alignas(NMPlatformObject);
 
 typedef union {
     NMPlatformIPRoute  rx;
@@ -721,7 +721,7 @@ typedef struct {
     bool        mcast_snooping : 1;
     bool        stp_state : 1;
     bool        vlan_stats_enabled : 1;
-} NMPlatformLnkBridge;
+} _nm_alignas(NMPlatformObject) NMPlatformLnkBridge;
 
 extern const NMPlatformLnkBridge nm_platform_lnk_bridge_default;
 
@@ -763,7 +763,7 @@ typedef struct {
     bool        tlb_dynamic_lb_has : 1;
     bool        updelay_has : 1;
     bool        use_carrier : 1;
-} NMPlatformLnkBond;
+} _nm_alignas(NMPlatformObject) NMPlatformLnkBond;
 
 typedef struct {
     int       parent_ifindex;
@@ -777,12 +777,12 @@ typedef struct {
     guint8    tos;
     bool      path_mtu_discovery : 1;
     bool      is_tap : 1;
-} NMPlatformLnkGre;
+} _nm_alignas(NMPlatformObject) NMPlatformLnkGre;
 
 typedef struct {
     int         p_key;
     const char *mode;
-} NMPlatformLnkInfiniband;
+} _nm_alignas(NMPlatformObject) NMPlatformLnkInfiniband;
 
 typedef struct {
     struct in6_addr local;
@@ -802,7 +802,7 @@ typedef struct {
     guint16 output_flags;
     bool    is_tap : 1;
     bool    is_gre : 1;
-} NMPlatformLnkIp6Tnl;
+} _nm_alignas(NMPlatformObject) NMPlatformLnkIp6Tnl;
 
 typedef struct {
     int       parent_ifindex;
@@ -811,7 +811,7 @@ typedef struct {
     guint8    ttl;
     guint8    tos;
     bool      path_mtu_discovery : 1;
-} NMPlatformLnkIpIp;
+} _nm_alignas(NMPlatformObject) NMPlatformLnkIpIp;
 
 typedef struct {
     int     parent_ifindex;
@@ -827,13 +827,13 @@ typedef struct {
     bool    es : 1;
     bool    scb : 1;
     bool    replay_protect : 1;
-} NMPlatformLnkMacsec;
+} _nm_alignas(NMPlatformObject) NMPlatformLnkMacsec;
 
 typedef struct {
     guint mode;
     bool  no_promisc : 1;
     bool  tap : 1;
-} NMPlatformLnkMacvlan;
+} _nm_alignas(NMPlatformObject) NMPlatformLnkMacvlan;
 
 typedef struct {
     int       parent_ifindex;
@@ -844,7 +844,7 @@ typedef struct {
     guint8    tos;
     guint8    proto;
     bool      path_mtu_discovery : 1;
-} NMPlatformLnkSit;
+} _nm_alignas(NMPlatformObject) NMPlatformLnkSit;
 
 typedef struct {
     guint32 owner;
@@ -859,17 +859,17 @@ typedef struct {
     bool vnet_hdr : 1;
     bool multi_queue : 1;
     bool persist : 1;
-} NMPlatformLnkTun;
+} _nm_alignas(NMPlatformObject) NMPlatformLnkTun;
 
 typedef struct {
     /* rtnl_link_vlan_get_id(), IFLA_VLAN_ID */
     guint16      id;
     _NMVlanFlags flags;
-} NMPlatformLnkVlan;
+} _nm_alignas(NMPlatformObject) NMPlatformLnkVlan;
 
 typedef struct {
     guint32 table;
-} NMPlatformLnkVrf;
+} _nm_alignas(NMPlatformObject) NMPlatformLnkVrf;
 
 typedef struct {
     struct in6_addr group6;
@@ -890,7 +890,7 @@ typedef struct {
     bool            rsc : 1;
     bool            l2miss : 1;
     bool            l3miss : 1;
-} NMPlatformLnkVxlan;
+} _nm_alignas(NMPlatformObject) NMPlatformLnkVxlan;
 
 #define NMP_WIREGUARD_PUBLIC_KEY_LEN    32
 #define NMP_WIREGUARD_SYMMETRIC_KEY_LEN 32
@@ -900,7 +900,7 @@ typedef struct {
     guint16 listen_port;
     guint8  private_key[NMP_WIREGUARD_PUBLIC_KEY_LEN];
     guint8  public_key[NMP_WIREGUARD_PUBLIC_KEY_LEN];
-} NMPlatformLnkWireGuard;
+} _nm_alignas(NMPlatformObject) NMPlatformLnkWireGuard;
 
 typedef enum {
     NM_PLATFORM_WIREGUARD_CHANGE_FLAG_NONE            = 0,
