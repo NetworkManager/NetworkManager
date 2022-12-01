@@ -1609,27 +1609,27 @@ calc_pre_expiry_rs_msec(NMNDisc *ndisc)
         _calc_pre_expiry_rs_msec_worker(
             &expiry_msec,
             priv->last_rs_msec,
-            g_array_index(rdata->addresses, NMNDiscAddress, 0).expiry_msec);
+            g_array_index(rdata->addresses, NMNDiscAddress, i).expiry_msec);
     }
 
     for (i = 0; i < rdata->routes->len; i++) {
         _calc_pre_expiry_rs_msec_worker(&expiry_msec,
                                         priv->last_rs_msec,
-                                        g_array_index(rdata->routes, NMNDiscRoute, 0).expiry_msec);
+                                        g_array_index(rdata->routes, NMNDiscRoute, i).expiry_msec);
     }
 
     for (i = 0; i < rdata->dns_servers->len; i++) {
         _calc_pre_expiry_rs_msec_worker(
             &expiry_msec,
             priv->last_rs_msec,
-            g_array_index(rdata->dns_servers, NMNDiscDNSServer, 0).expiry_msec);
+            g_array_index(rdata->dns_servers, NMNDiscDNSServer, i).expiry_msec);
     }
 
     for (i = 0; i < rdata->dns_domains->len; i++) {
         _calc_pre_expiry_rs_msec_worker(
             &expiry_msec,
             priv->last_rs_msec,
-            g_array_index(rdata->dns_domains, NMNDiscDNSDomain, 0).expiry_msec);
+            g_array_index(rdata->dns_domains, NMNDiscDNSDomain, i).expiry_msec);
     }
 
     return expiry_msec - solicit_retransmit_time_jitter(NM_NDISC_PRE_EXPIRY_TIME_MSEC);
