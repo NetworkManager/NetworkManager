@@ -70,9 +70,10 @@ static gboolean
 verify(NMSetting *setting, NMConnection *connection, GError **error)
 {
     if (connection) {
-        NMSettingIPConfig *s_ip4;
-        NMSettingIPConfig *s_ip6;
-        const char        *method;
+        NMSettingIPConfig   *s_ip4;
+        NMSettingIPConfig   *s_ip6;
+        NMSettingConnection *s_con;
+        const char          *method;
 
         if ((s_ip4 = nm_connection_get_setting_ip4_config(connection))) {
             if ((method = nm_setting_ip_config_get_method(s_ip4))
@@ -119,6 +120,23 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
                                "%s.%s: ",
                                NM_SETTING_IP6_CONFIG_SETTING_NAME,
                                NM_SETTING_IP_CONFIG_METHOD);
+                return FALSE;
+            }
+        }
+
+        if ((s_con = nm_connection_get_setting_connection(connection))) {
+            if (nm_setting_connection_get_slave_type(s_con)
+                || nm_setting_connection_get_master(s_con)) {
+                g_set_error(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                            _("a loopback profile cannot be a port"));
+                g_prefix_error(error,
+                               "%s.%s: ",
+                               NM_SETTING_CONNECTION_SETTING_NAME,
+                               nm_setting_connection_get_slave_type(s_con)
+                                   ? NM_SETTING_CONNECTION_SLAVE_TYPE
+                                   : NM_SETTING_CONNECTION_MASTER);
                 return FALSE;
             }
         }
