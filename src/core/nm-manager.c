@@ -8135,7 +8135,7 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
         break;
     case PROP_CAPABILITIES:
         g_value_set_variant(value,
-                            nm_g_variant_new_au((const guint32 *) priv->capabilities->data,
+                            nm_g_variant_new_au(nm_g_array_first_p(priv->capabilities, guint32),
                                                 priv->capabilities->len));
         break;
     case PROP_STATE:

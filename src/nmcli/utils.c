@@ -825,7 +825,7 @@ _output_selection_parse(const NMMetaAbstractInfo *const *fields,
     _output_selection_complete(cols);
 
     *out_cols_len     = cols->len;
-    *out_cols_data    = (PrintDataCol *) g_array_free(g_steal_pointer(&cols), FALSE);
+    *out_cols_data    = (PrintDataCol *) ((gpointer) g_array_free(g_steal_pointer(&cols), FALSE));
     *out_gfree_keeper = g_steal_pointer(&gfree_keeper);
     return TRUE;
 }

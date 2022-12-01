@@ -350,10 +350,10 @@ _nm_setting_class_commit(NMSettingClass             *setting_class,
         gboolean                  found = FALSE;
         guint                     k;
 
-        nm_assert(
-            !_nm_sett_info_property_find_in_array((NMSettInfoProperty *) properties_override->data,
-                                                  i,
-                                                  p->name));
+        nm_assert(!_nm_sett_info_property_find_in_array(
+            nm_g_array_index_p(properties_override, NMSettInfoProperty, 0),
+            i,
+            p->name));
         for (k = 0; k < n_property_specs; k++) {
             if (!nm_streq(property_specs[k]->name, p->name))
                 continue;
@@ -369,9 +369,10 @@ _nm_setting_class_commit(NMSettingClass             *setting_class,
         const char         *name = property_specs[i]->name;
         NMSettInfoProperty *p;
 
-        if (_nm_sett_info_property_find_in_array((NMSettInfoProperty *) properties_override->data,
-                                                 override_len,
-                                                 name))
+        if (_nm_sett_info_property_find_in_array(
+                nm_g_array_index_p(properties_override, NMSettInfoProperty, 0),
+                override_len,
+                name))
             continue;
 
         p = nm_g_array_append_new(properties_override, NMSettInfoProperty);
@@ -1301,7 +1302,7 @@ _nm_setting_property_to_dbus_fcn_direct(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_
             (const NMValueStrv *) _nm_setting_get_private_field(setting, sett_info, property_info);
         if (!val->arr)
             return NULL;
-        return g_variant_new_strv((const char *const *) val->arr->data, val->arr->len);
+        return g_variant_new_strv(nm_g_array_data(val->arr), val->arr->len);
     }
     default:
         return nm_assert_unreachable_val(NULL);
@@ -1355,7 +1356,7 @@ _nm_setting_property_to_dbus_fcn_gprop(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_n
         nm_assert(G_VALUE_HOLDS(&prop_value, G_TYPE_ARRAY));
         tmp_array = g_value_get_boxed(&prop_value);
         nm_assert(tmp_array);
-        return nm_g_variant_new_au((const guint32 *) tmp_array->data, tmp_array->len);
+        return nm_g_variant_new_au(nm_g_array_data(tmp_array), tmp_array->len);
     case NM_SETTING_PROPERTY_TO_DBUS_FCN_GPROP_TYPE_STRDICT:
         nm_assert(G_VALUE_HOLDS(&prop_value, G_TYPE_HASH_TABLE));
         return nm_strdict_to_variant_ass(g_value_get_boxed(&prop_value));

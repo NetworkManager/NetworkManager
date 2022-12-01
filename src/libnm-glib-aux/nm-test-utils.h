@@ -312,7 +312,7 @@ BREAK_INNER_LOOPS:
         str = &str[i];
     }
 
-    return (char **) g_array_free(result, FALSE);
+    return (char **) ((gpointer) g_array_free(result, FALSE));
 }
 
 /* free instances allocated by nmtst (especially nmtst_init()) on shutdown
@@ -666,7 +666,7 @@ __nmtst_init(int        *argc,
     for (i = 0; i < debug_messages->len; i++)
         __NMTST_LOG(g_message, "%s", nm_g_array_index(debug_messages, const char *, i));
 
-    g_strfreev((char **) g_array_free(debug_messages, FALSE));
+    g_strfreev((char **) ((gpointer) g_array_free(debug_messages, FALSE)));
     g_free(c_log_level);
     g_free(c_log_domains);
 

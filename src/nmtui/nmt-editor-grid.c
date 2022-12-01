@@ -147,7 +147,7 @@ static int
 nmt_editor_grid_find_widget(NmtEditorGrid *grid, NmtNewtWidget *widget)
 {
     NmtEditorGridPrivate *priv = NMT_EDITOR_GRID_GET_PRIVATE(grid);
-    NmtEditorGridRow     *rows = (NmtEditorGridRow *) priv->rows->data;
+    NmtEditorGridRow     *rows = nm_g_array_first_p(priv->rows, NmtEditorGridRow);
     int                   i;
 
     for (i = 0; i < priv->rows->len; i++) {
@@ -182,7 +182,7 @@ nmt_editor_grid_set_row_flags(NmtEditorGrid        *grid,
                               NmtEditorGridRowFlags flags)
 {
     NmtEditorGridPrivate *priv = NMT_EDITOR_GRID_GET_PRIVATE(grid);
-    NmtEditorGridRow     *rows = (NmtEditorGridRow *) priv->rows->data;
+    NmtEditorGridRow     *rows = nm_g_array_first_p(priv->rows, NmtEditorGridRow);
     int                   i;
 
     i = nmt_editor_grid_find_widget(grid, widget);
@@ -196,7 +196,7 @@ nmt_editor_grid_remove(NmtNewtContainer *container, NmtNewtWidget *widget)
     NmtEditorGrid         *grid         = NMT_EDITOR_GRID(container);
     NmtEditorGridPrivate  *priv         = NMT_EDITOR_GRID_GET_PRIVATE(grid);
     NmtNewtContainerClass *parent_class = NMT_NEWT_CONTAINER_CLASS(nmt_editor_grid_parent_class);
-    NmtEditorGridRow      *rows         = (NmtEditorGridRow *) priv->rows->data;
+    NmtEditorGridRow      *rows         = nm_g_array_first_p(priv->rows, NmtEditorGridRow);
     int                    i;
 
     i = nmt_editor_grid_find_widget(grid, widget);
@@ -219,7 +219,7 @@ static newtComponent *
 nmt_editor_grid_get_components(NmtNewtWidget *widget)
 {
     NmtEditorGridPrivate *priv = NMT_EDITOR_GRID_GET_PRIVATE(widget);
-    NmtEditorGridRow     *rows = (NmtEditorGridRow *) priv->rows->data;
+    NmtEditorGridRow     *rows = nm_g_array_first_p(priv->rows, NmtEditorGridRow);
     newtComponent        *child_cos;
     GPtrArray            *cos;
     int                   i, c;
@@ -308,7 +308,7 @@ static void
 nmt_editor_grid_size_request(NmtNewtWidget *widget, int *width, int *height)
 {
     NmtEditorGridPrivate   *priv        = NMT_EDITOR_GRID_GET_PRIVATE(widget);
-    NmtEditorGridRow       *rows        = (NmtEditorGridRow *) priv->rows->data;
+    NmtEditorGridRow       *rows        = nm_g_array_first_p(priv->rows, NmtEditorGridRow);
     NmtEditorGridFormState *state       = get_form_state(widget);
     gboolean                add_padding = FALSE;
     int                     i;
@@ -356,7 +356,7 @@ static void
 nmt_editor_grid_size_allocate(NmtNewtWidget *widget, int x, int y, int width, int height)
 {
     NmtEditorGridPrivate   *priv  = NMT_EDITOR_GRID_GET_PRIVATE(widget);
-    NmtEditorGridRow       *rows  = (NmtEditorGridRow *) priv->rows->data;
+    NmtEditorGridRow       *rows  = nm_g_array_first_p(priv->rows, NmtEditorGridRow);
     NmtEditorGridFormState *state = get_form_state(widget);
     int                     col0_width, col1_width, col2_width;
     int                     i, row;
