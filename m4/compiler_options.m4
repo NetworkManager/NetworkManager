@@ -90,6 +90,7 @@ if test "$GCC" = "yes" -a "$set_more_warnings" != "no"; then
 		      $_CFLAGS_MORE_WARNINGS_DISABLE_LTO \
 		      -Wall \
 		      -Wextra \
+		      -Wcast-align=strict \
 		      -Wdeclaration-after-statement \
 		      -Wfloat-equal \
 		      -Wformat-nonliteral \
