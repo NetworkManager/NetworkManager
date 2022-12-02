@@ -953,6 +953,13 @@ nm_setting_vlan_class_init(NMSettingVlanClass *klass)
      *
      * Since: 1.42
      **/
+    /* ---ifcfg-rh---
+     * property: protocol
+     * variable: VLAN_PROTOCOL
+     * description: VLAN protocol.
+     * example: VLAN_PROTOCOL="802.1ad"
+     * ---end---
+     */
     _nm_setting_property_define_direct_string(properties_override,
                                               obj_properties,
                                               NM_SETTING_VLAN_PROTOCOL,
