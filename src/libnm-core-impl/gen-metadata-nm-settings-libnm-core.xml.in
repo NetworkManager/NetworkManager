@@ -2256,6 +2256,10 @@
                   dbus-type="s"
                   gprop-type="gchararray"
                   />
+        <property name="protocol"
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
     </setting>
     <setting name="vpn"
              gtype="NMSettingVpn"

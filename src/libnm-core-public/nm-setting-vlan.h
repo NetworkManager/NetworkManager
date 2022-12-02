@@ -29,6 +29,7 @@ G_BEGIN_DECLS
 #define NM_SETTING_VLAN_PARENT               "parent"
 #define NM_SETTING_VLAN_ID                   "id"
 #define NM_SETTING_VLAN_FLAGS                "flags"
+#define NM_SETTING_VLAN_PROTOCOL             "protocol"
 #define NM_SETTING_VLAN_INGRESS_PRIORITY_MAP "ingress-priority-map"
 #define NM_SETTING_VLAN_EGRESS_PRIORITY_MAP  "egress-priority-map"
 
@@ -84,6 +85,8 @@ NMSetting *nm_setting_vlan_new(void);
 const char *nm_setting_vlan_get_parent(NMSettingVlan *setting);
 guint32     nm_setting_vlan_get_id(NMSettingVlan *setting);
 guint32     nm_setting_vlan_get_flags(NMSettingVlan *setting);
+NM_AVAILABLE_IN_1_42
+const char *nm_setting_vlan_get_protocol(NMSettingVlan *setting);
 
 gint32 nm_setting_vlan_get_num_priorities(NMSettingVlan *setting, NMVlanPriorityMap map);
 
