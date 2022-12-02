@@ -193,6 +193,8 @@ create_and_realize(NMDevice              *device,
     int                  parent_ifindex;
     guint                vlan_id;
     int                  r;
+    const char          *protocol_str;
+    guint16              protocol = ETH_P_8021Q;
 
     s_vlan = nm_connection_get_setting_vlan(connection);
     g_assert(s_vlan);
@@ -228,13 +230,21 @@ create_and_realize(NMDevice              *device,
 
     vlan_id = nm_setting_vlan_get_id(s_vlan);
 
+    protocol_str = nm_setting_vlan_get_protocol(s_vlan);
+    if (protocol_str) {
+        if (nm_streq(protocol_str, "802.1ad"))
+            protocol = ETH_P_8021AD;
+        else
+            nm_assert(nm_streq(protocol_str, "802.1Q"));
+    }
+
     r = nm_platform_link_vlan_add(nm_device_get_platform(device),
                                   iface,
                                   parent_ifindex,
                                   &((NMPlatformLnkVlan){
                                       .id       = vlan_id,
                                       .flags    = nm_setting_vlan_get_flags(s_vlan),
-                                      .protocol = ETH_P_8021Q,
+                                      .protocol = protocol,
                                   }),
                                   out_plink);
     if (r < 0) {
@@ -442,6 +452,9 @@ update_connection(NMDevice *device, NMConnection *connection)
         _nm_setting_vlan_set_priorities(s_vlan, NM_VLAN_INGRESS_MAP, NULL, 0);
         _nm_setting_vlan_set_priorities(s_vlan, NM_VLAN_EGRESS_MAP, NULL, 0);
     }
+
+    if (polnk && polnk->lnk_vlan.protocol == ETH_P_8021AD)
+        g_object_set(s_vlan, NM_SETTING_VLAN_PROTOCOL, "802.1ad", NULL);
 }
 
 static NMActStageReturn
