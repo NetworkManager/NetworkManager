@@ -499,6 +499,11 @@ const NMPlatformLink *nmtstp_link_tun_add(NMPlatform             *platform,
                                           const char             *name,
                                           const NMPlatformLnkTun *lnk,
                                           int                    *out_fd);
+const NMPlatformLink *nmtstp_link_vlan_add(NMPlatform              *platform,
+                                           int                      external_command,
+                                           const char              *name,
+                                           int                      parent,
+                                           const NMPlatformLnkVlan *lnk);
 const NMPlatformLink *nmtstp_link_vrf_add(NMPlatform             *platform,
                                           int                     external_command,
                                           const char             *name,

@@ -8,6 +8,7 @@
 #include "nm-device-vlan.h"
 
 #include <sys/socket.h>
+#include <linux/if_ether.h>
 
 #include "nm-manager.h"
 #include "nm-utils.h"
@@ -230,8 +231,11 @@ create_and_realize(NMDevice              *device,
     r = nm_platform_link_vlan_add(nm_device_get_platform(device),
                                   iface,
                                   parent_ifindex,
-                                  vlan_id,
-                                  nm_setting_vlan_get_flags(s_vlan),
+                                  &((NMPlatformLnkVlan){
+                                      .id       = vlan_id,
+                                      .flags    = nm_setting_vlan_get_flags(s_vlan),
+                                      .protocol = ETH_P_8021Q,
+                                  }),
                                   out_plink);
     if (r < 0) {
         g_set_error(error,

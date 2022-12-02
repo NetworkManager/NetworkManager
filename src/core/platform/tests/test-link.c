@@ -161,8 +161,14 @@ software_add(NMLinkType link_type, const char *name)
                 accept_signals(parent_changed, 1, 2);
             free_signal(parent_changed);
 
-            return NMTST_NM_ERR_SUCCESS(
-                nm_platform_link_vlan_add(NM_PLATFORM_GET, name, parent_ifindex, VLAN_ID, 0, NULL));
+            return NMTST_NM_ERR_SUCCESS(nm_platform_link_vlan_add(NM_PLATFORM_GET,
+                                                                  name,
+                                                                  parent_ifindex,
+                                                                  &((NMPlatformLnkVlan){
+                                                                      .id       = VLAN_ID,
+                                                                      .protocol = ETH_P_8021Q,
+                                                                  }),
+                                                                  NULL));
         }
     }
     default:
@@ -1296,7 +1302,7 @@ test_software_detect(gconstpointer user_data)
         lnk_bridge.ageing_time   = 2200;
         lnk_bridge.stp_state     = TRUE;
         lnk_bridge.priority      = 22;
-        lnk_bridge.vlan_protocol = 0x8100;
+        lnk_bridge.vlan_protocol = ETH_P_8021Q;
         lnk_bridge.vlan_stats_enabled =
             nmtstp_kernel_support_get(NM_PLATFORM_KERNEL_SUPPORT_TYPE_IFLA_BR_VLAN_STATS_ENABLED)
                 ? TRUE
@@ -1571,10 +1577,28 @@ test_software_detect(gconstpointer user_data)
         break;
     }
     case NM_LINK_TYPE_VLAN:
-        nmtstp_run_command_check("ip link add name %s link %s type vlan id 1242",
-                                 DEVICE_NAME,
-                                 PARENT_NAME);
+    {
+        NMPlatformLnkVlan lnk_vlan = {};
+
+        switch (test_data->test_mode) {
+        case 0:
+            lnk_vlan.id       = 1242;
+            lnk_vlan.protocol = ETH_P_8021Q;
+            lnk_vlan.flags    = _NM_VLAN_FLAG_REORDER_HEADERS;
+            break;
+        case 1:
+            lnk_vlan.id       = 4094;
+            lnk_vlan.protocol = ETH_P_8021AD;
+            lnk_vlan.flags    = _NM_VLAN_FLAG_GVRP | _NM_VLAN_FLAG_MVRP;
+            break;
+        default:
+            nm_assert_not_reached();
+        }
+
+        if (!nmtstp_link_vlan_add(NULL, ext, DEVICE_NAME, ifindex_parent, &lnk_vlan))
+            g_error("Failed adding VLAN interface");
         break;
+    }
     case NM_LINK_TYPE_VRF:
     {
         NMPlatformLnkVrf lnk_vrf = {};
@@ -1727,7 +1751,7 @@ test_software_detect(gconstpointer user_data)
             g_assert_cmpint(plnk->ageing_time, ==, lnk_bridge_norm->ageing_time);
             g_assert_cmpint(plnk->stp_state, ==, TRUE);
             g_assert_cmpint(plnk->priority, ==, 22);
-            g_assert_cmpint(plnk->vlan_protocol, ==, 0x8100);
+            g_assert_cmpint(plnk->vlan_protocol, ==, ETH_P_8021Q);
             g_assert_cmpint(plnk->vlan_stats_enabled, ==, lnk_bridge_norm->vlan_stats_enabled);
             g_assert_cmpint(plnk->group_fwd_mask, ==, 8);
             g_assert_cmpint(plnk->mcast_snooping, ==, TRUE);
@@ -1910,7 +1934,19 @@ test_software_detect(gconstpointer user_data)
             const NMPlatformLnkVlan *plnk = &lnk->lnk_vlan;
 
             g_assert(plnk == nm_platform_link_get_lnk_vlan(NM_PLATFORM_GET, ifindex, NULL));
-            g_assert_cmpint(plnk->id, ==, 1242);
+
+            switch (test_data->test_mode) {
+            case 0:
+                g_assert_cmpint(plnk->id, ==, 1242);
+                g_assert_cmpint(plnk->protocol, ==, ETH_P_8021Q);
+                g_assert_cmpint(plnk->flags, ==, _NM_VLAN_FLAG_REORDER_HEADERS);
+                break;
+            case 1:
+                g_assert_cmpint(plnk->id, ==, 4094);
+                g_assert_cmpint(plnk->protocol, ==, ETH_P_8021AD);
+                g_assert_cmpint(plnk->flags, ==, _NM_VLAN_FLAG_GVRP | _NM_VLAN_FLAG_MVRP);
+                break;
+            }
             break;
         }
         case NM_LINK_TYPE_VRF:
@@ -3823,7 +3859,8 @@ _nmtstp_setup_tests(void)
         test_software_detect_add("/link/software/detect/macvtap", NM_LINK_TYPE_MACVTAP, 0);
         test_software_detect_add("/link/software/detect/sit", NM_LINK_TYPE_SIT, 0);
         test_software_detect_add("/link/software/detect/tun", NM_LINK_TYPE_TUN, 0);
-        test_software_detect_add("/link/software/detect/vlan", NM_LINK_TYPE_VLAN, 0);
+        test_software_detect_add("/link/software/detect/vlan/0", NM_LINK_TYPE_VLAN, 0);
+        test_software_detect_add("/link/software/detect/vlan/1", NM_LINK_TYPE_VLAN, 1);
         test_software_detect_add("/link/software/detect/vrf", NM_LINK_TYPE_VRF, 0);
         test_software_detect_add("/link/software/detect/vxlan/0", NM_LINK_TYPE_VXLAN, 0);
         test_software_detect_add("/link/software/detect/vxlan/1", NM_LINK_TYPE_VXLAN, 1);
