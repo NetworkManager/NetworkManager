@@ -3271,25 +3271,32 @@ nm_utils_get_ipv6_interface_identifier(NMLinkType          link_type,
          * making sure to set the 'u' bit to 1.  The GUID is the lower 64 bits
          * of the IPoIB interface's hardware address.
          */
-        g_return_val_if_fail(hwaddr_len == INFINIBAND_ALEN, FALSE);
-        memcpy(out_iid->id_u8, hwaddr + INFINIBAND_ALEN - 8, 8);
-        out_iid->id_u8[0] |= 0x02;
-        return TRUE;
+        if (hwaddr_len == INFINIBAND_ALEN) {
+            memcpy(out_iid->id_u8, hwaddr + INFINIBAND_ALEN - 8, 8);
+            out_iid->id_u8[0] |= 0x02;
+            return TRUE;
+        }
+        break;
     case NM_LINK_TYPE_GRE:
         /* Hardware address is the network-endian IPv4 address */
-        g_return_val_if_fail(hwaddr_len == 4, FALSE);
-        addr              = unaligned_read_ne32(hwaddr);
-        out_iid->id_u8[0] = get_gre_eui64_u_bit(addr);
-        out_iid->id_u8[1] = 0x00;
-        out_iid->id_u8[2] = 0x5E;
-        out_iid->id_u8[3] = 0xFE;
-        memcpy(out_iid->id_u8 + 4, &addr, 4);
-        return TRUE;
+        if (hwaddr_len == 4) {
+            addr              = unaligned_read_ne32(hwaddr);
+            out_iid->id_u8[0] = get_gre_eui64_u_bit(addr);
+            out_iid->id_u8[1] = 0x00;
+            out_iid->id_u8[2] = 0x5E;
+            out_iid->id_u8[3] = 0xFE;
+            memcpy(out_iid->id_u8 + 4, &addr, 4);
+            return TRUE;
+        }
+        break;
     case NM_LINK_TYPE_6LOWPAN:
         /* The hardware address is already 64-bit. This is the case for
          * IEEE 802.15.4 networks. */
-        memcpy(out_iid->id_u8, hwaddr, sizeof(out_iid->id_u8));
-        return TRUE;
+        if (hwaddr_len == sizeof(out_iid->id_u8)) {
+            memcpy(out_iid->id_u8, hwaddr, sizeof(out_iid->id_u8));
+            return TRUE;
+        }
+        break;
     default:
         if (hwaddr_len == ETH_ALEN) {
             /* Translate 48-bit MAC address to a 64-bit Modified EUI-64.  See
