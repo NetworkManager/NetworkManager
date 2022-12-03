@@ -3272,7 +3272,7 @@ nm_utils_get_ipv6_interface_identifier(NMLinkType          link_type,
     case NM_LINK_TYPE_GRE:
         /* Hardware address is the network-endian IPv4 address */
         g_return_val_if_fail(hwaddr_len == 4, FALSE);
-        addr              = *(guint32 *) hwaddr;
+        addr              = unaligned_read_ne32(hwaddr);
         out_iid->id_u8[0] = get_gre_eui64_u_bit(addr);
         out_iid->id_u8[1] = 0x00;
         out_iid->id_u8[2] = 0x5E;
