@@ -252,7 +252,7 @@ do_notify:
     success = FALSE;
 
 out:
-    if (!g_dbus_connection_flush_sync(connection, NULL, &error_flush)) {
+    if (connection && !g_dbus_connection_flush_sync(connection, NULL, &error_flush)) {
         _LOGE("could not flush D-Bus connection: %s", error_flush->message);
         /* if we considered this a success so far, don't fail because of this. */
     }
