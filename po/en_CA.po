@@ -1,6 +1,6 @@
 # Canadian English translation for NetworkManager
 # Copyright (C) 2004-2006 Adam Weinberger and the GNOME Foundation
-# This file is distributed under the same licence as the NetworkManager package.
+# This file is distributed under the same license as the NetworkManager package.
 # Adam Weinberger, <adamw@gnome.org>, 2004, 2005, 2006.
 #
 #

@@ -1,7 +1,6 @@
 # Catalan translation for NetworkManager
 # Copyright © 2005, 2006, The Free Software Foundation, Inc.
-# This file is distributed under the same license as the
-#   NetworkManager package.
+# This file is distributed under the same license as the NetworkManager package.
 # Josep Puigdemont Casamajó <josep.puigdemont@gmail.com>, 2005, 2006.
 # David Planella <david.planella@gmail.com>, 2009.
 # Joan Duran <jodufi@gmail.com>, 2010.

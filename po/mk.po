@@ -1,7 +1,7 @@
 # translation of NetworkManager.HEAD.po to Macedonian
 # translation of mk.po.
 # Copyright (C) 2005 THE mk.po'S COPYRIGHT HOLDER
-# This file is distributed under the same license as the mk.po package.
+# This file is distributed under the same license as the NetworkManager package.
 #
 # Арангел Ангов <ufo@linux.net.mk>, 2005.
 # <>, 2005.

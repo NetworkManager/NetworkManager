@@ -1,5 +1,5 @@
 # translation of wa.po to Walloon
-# This file is distributed under the same license as the PACKAGE package.
+# This file is distributed under the same license as the NetworkManager package.
 # Copyright (C) 2004 Free Software Foundation, Inc.
 # Pablo Saratxaga <pablo@walon.org>, 2004.
 #

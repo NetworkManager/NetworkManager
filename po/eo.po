@@ -1,6 +1,6 @@
 # Esperanto translation for NetworkManager.
 # Copyright (C) 2010 Free Software Foundation, Inc.
-# This file is distributed under the same license as the networkmanager package.
+# This file is distributed under the same license as the NetworkManager package.
 # Patrick (Petriko) OUDEJANS < >, 2010.
 # Aisano < >, 2010.
 # Kim RIBEIRO < >, 2010.

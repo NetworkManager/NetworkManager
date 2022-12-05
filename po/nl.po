@@ -1,7 +1,6 @@
 # Dutch translation of Network Manager
 #
-# This file is distributed under the same license as the
-# NetworkManager package.
+# This file is distributed under the same license as the NetworkManager package.
 #
 #
 #

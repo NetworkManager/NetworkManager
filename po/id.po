@@ -1,6 +1,6 @@
 # Indonesian translation for network-manager
 # Copyright (C) 2010 THE network-manager'S COPYRIGHT HOLDER
-# This file is distributed under the same license as the network-manager package.
+# This file is distributed under the same license as the NetworkManager package.
 # Andika Triwidada <andika@gmail.com>, 2010-2013, 2019.
 # Lubomir Rintel <lkundrak@v3.sk>, 2016. #zanata
 # Lubomir Rintel <lkundrak@v3.sk>, 2017. #zanata
