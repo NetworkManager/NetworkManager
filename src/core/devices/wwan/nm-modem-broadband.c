@@ -1123,8 +1123,8 @@ stage3_ip_config_start(NMModem *modem, int addr_family, NMModemIPMethod ip_metho
         address.plen = mm_bearer_ip_config_get_prefix(self->_priv.ipv6_config);
         if (address.plen <= 128) {
             if (IN6_IS_ADDR_LINKLOCAL(&address.address)) {
-                iid_data.id = ((guint64 *) (&address.address.s6_addr))[1];
-                iid         = &iid_data;
+                nm_utils_ipv6_interface_identifier_get_from_addr(&iid_data, &address.address);
+                iid = &iid_data;
             } else
                 do_auto = FALSE;
             nm_l3_config_data_add_address_6(l3cd, &address);
