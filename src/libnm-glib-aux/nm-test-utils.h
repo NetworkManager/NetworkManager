@@ -2141,7 +2141,7 @@ _nmtst_connection_normalize_v(NMConnection *connection, va_list args)
     while ((p_name = va_arg(args, const char *))) {
         if (!parameters)
             parameters = g_hash_table_new(g_str_hash, g_str_equal);
-        g_hash_table_insert(parameters, (gpointer *) p_name, va_arg(args, gpointer));
+        g_hash_table_insert(parameters, (gpointer) p_name, va_arg(args, gpointer));
     }
 
     success = nm_connection_normalize(connection, parameters, &was_modified, &error);
