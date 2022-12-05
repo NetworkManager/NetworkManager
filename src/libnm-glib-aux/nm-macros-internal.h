@@ -1376,13 +1376,17 @@ nm_memdup_nul(gconstpointer data, gsize size)
 static inline char *
 _nm_strndup_a_step(char *s, const char *str, gsize len)
 {
+#if defined(__GNUC__) && (__GNUC__ > 8 || (__GNUC__ == 8 && __GNUC_MINOR__ >= 1))
     NM_PRAGMA_WARNING_DISABLE("-Wstringop-truncation");
+#endif
     NM_PRAGMA_WARNING_DISABLE("-Wstringop-overflow");
     if (len > 0)
         strncpy(s, str, len);
     s[len] = '\0';
     return s;
+#if defined(__GNUC__) && (__GNUC__ > 8 || (__GNUC__ == 8 && __GNUC_MINOR__ >= 1))
     NM_PRAGMA_WARNING_REENABLE;
+#endif
     NM_PRAGMA_WARNING_REENABLE;
 }
 
