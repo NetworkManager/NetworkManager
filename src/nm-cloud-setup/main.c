@@ -494,6 +494,8 @@ _config_one(GCancellable                      *sigterm_cancellable,
     try_count = 0;
 
 try_again:
+    g_clear_object(&applied_connection);
+    g_clear_error(&error);
 
     applied_connection = nmcs_device_get_applied_connection(device,
                                                             sigterm_cancellable,
@@ -567,8 +569,6 @@ try_again:
                              &error)) {
         if (version_id_changed && try_count < 5) {
             _LOGD("config device %s: applied connection changed in the meantime. Retry...", hwaddr);
-            g_clear_object(&applied_connection);
-            g_clear_error(&error);
             try_count++;
             goto try_again;
         }
