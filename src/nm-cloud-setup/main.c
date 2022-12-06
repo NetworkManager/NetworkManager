@@ -450,6 +450,7 @@ _config_one(GCancellable                      *sigterm_cancellable,
     gboolean                              version_id_changed;
     guint                                 try_count;
     gboolean                              any_changes = FALSE;
+    gboolean                              maybe_no_preserved_external_ip;
 
     g_main_context_iteration(NULL, FALSE);
 
@@ -538,10 +539,17 @@ try_again:
     /* we are about to call Reapply(). Even if that fails, it counts as if we changed something. */
     any_changes = TRUE;
 
+    /* "preserve-external-ip" flag was only introduced in 1.41.6 (but maybe backported!).
+     * If we run 1.41.6+, we are sure that it's gonna work. Otherwise, we take into account
+     * that the call might fail due to the invalid flag and we retry. */
+    maybe_no_preserved_external_ip =
+        (nmc_client_has_version_info_v(nmc) < NM_ENCODE_VERSION(1, 41, 6));
+
     if (!nmcs_device_reapply(device,
                              sigterm_cancellable,
                              applied_connection,
                              applied_version_id,
+                             maybe_no_preserved_external_ip,
                              &version_id_changed,
                              &error)) {
         if (version_id_changed && try_count < 5) {
