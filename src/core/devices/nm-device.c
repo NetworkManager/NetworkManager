@@ -17841,7 +17841,7 @@ dispose(GObject *object)
         priv->sriov.next = NULL;
     }
 
-    g_clear_object(&priv->l3cfg);
+    g_clear_object(&priv->l3cfg_);
     g_clear_object(&priv->l3ipdata_4.ip_config);
     g_clear_object(&priv->l3ipdata_6.ip_config);
 
