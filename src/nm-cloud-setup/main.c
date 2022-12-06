@@ -451,6 +451,7 @@ _config_one(GCancellable                      *sigterm_cancellable,
     gboolean                              version_id_changed;
     guint                                 try_count;
     gboolean                              any_changes = FALSE;
+    gboolean                              maybe_no_preserved_external_ip;
 
     g_main_context_iteration(NULL, FALSE);
 
@@ -539,10 +540,18 @@ try_again:
     /* we are about to call Reapply(). Even if that fails, it counts as if we changed something. */
     any_changes = TRUE;
 
+    /* "preserve-external-ip" flag was only introduced in 1.41.6 and 1.40.9.
+     * We have no convenient way to check the daemon version (short of parsing the "Version"
+     * string). Hence, we don't know it. Take into account, that the daemon that we
+     * talk to might not support the flag yet. This is to support backward compatibility
+     * during package upgrade. */
+    maybe_no_preserved_external_ip = TRUE;
+
     if (!nmcs_device_reapply(device,
                              sigterm_cancellable,
                              applied_connection,
                              applied_version_id,
+                             maybe_no_preserved_external_ip,
                              &version_id_changed,
                              &error)) {
         if (version_id_changed && try_count < 5) {
