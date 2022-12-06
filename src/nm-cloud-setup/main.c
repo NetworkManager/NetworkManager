@@ -251,24 +251,38 @@ _get_config(GCancellable *sigterm_cancellable, NMCSProvider *provider, NMClient 
 /*****************************************************************************/
 
 static gboolean
-_nmc_skip_connection(NMConnection *connection)
+_nmc_skip_connection_by_user_data(NMConnection *connection)
 {
     NMSettingUser *s_user;
     const char    *v;
-
-    s_user = NM_SETTING_USER(nm_connection_get_setting(connection, NM_TYPE_SETTING_USER));
-    if (!s_user)
-        return FALSE;
 
 #define USER_TAG_SKIP "org.freedesktop.nm-cloud-setup.skip"
 
     nm_assert(nm_setting_user_check_key(USER_TAG_SKIP, NULL));
 
-    v = nm_setting_user_get_data(s_user, USER_TAG_SKIP);
-    return _nm_utils_ascii_str_to_bool(v, FALSE);
+    s_user = NM_SETTING_USER(nm_connection_get_setting(connection, NM_TYPE_SETTING_USER));
+    if (s_user) {
+        v = nm_setting_user_get_data(s_user, USER_TAG_SKIP);
+        if (_nm_utils_ascii_str_to_bool(v, FALSE))
+            return TRUE;
+    }
+
+    return FALSE;
 }
 
 static gboolean
+_nmc_skip_connection_by_type(NMConnection *connection)
+{
+    if (!nm_streq0(nm_connection_get_connection_type(connection), NM_SETTING_WIRED_SETTING_NAME))
+        return TRUE;
+
+    if (!nm_connection_get_setting_ip4_config(connection))
+        return TRUE;
+
+    return FALSE;
+}
+
+static void
 _nmc_mangle_connection(NMDevice                             *device,
                        NMConnection                         *connection,
                        const NMCSProviderGetConfigResult    *result,
@@ -291,12 +305,8 @@ _nmc_mangle_connection(NMDevice                             *device,
     NM_SET_OUT(out_skipped_single_addr, FALSE);
     NM_SET_OUT(out_changed, FALSE);
 
-    if (!nm_streq0(nm_connection_get_connection_type(connection), NM_SETTING_WIRED_SETTING_NAME))
-        return FALSE;
-
     s_ip = nm_connection_get_setting_ip4_config(connection);
-    if (!s_ip)
-        return FALSE;
+    nm_assert(NM_IS_SETTING_IP4_CONFIG(s_ip));
 
     if ((ac = nm_device_get_active_connection(device))
         && (remote_connection = NM_CONNECTION(nm_active_connection_get_connection(ac))))
@@ -428,7 +438,6 @@ _nmc_mangle_connection(NMDevice                             *device,
                                                        rules_new->len);
 
     NM_SET_OUT(out_changed, addrs_changed || routes_changed || rules_changed);
-    return TRUE;
 }
 
 /*****************************************************************************/
@@ -497,22 +506,24 @@ try_again:
         return any_changes;
     }
 
-    if (_nmc_skip_connection(applied_connection)) {
+    if (_nmc_skip_connection_by_user_data(applied_connection)) {
         _LOGD("config device %s: skip applied connection due to user data %s",
               hwaddr,
               USER_TAG_SKIP);
         return any_changes;
     }
 
-    if (!_nmc_mangle_connection(device,
-                                applied_connection,
-                                result,
-                                config_data,
-                                &skipped_single_addr,
-                                &changed)) {
+    if (_nmc_skip_connection_by_type(applied_connection)) {
         _LOGD("config device %s: device has no suitable applied connection. Skip", hwaddr);
         return any_changes;
     }
+
+    _nmc_mangle_connection(device,
+                           applied_connection,
+                           result,
+                           config_data,
+                           &skipped_single_addr,
+                           &changed);
 
     if (!changed) {
         if (skipped_single_addr) {
