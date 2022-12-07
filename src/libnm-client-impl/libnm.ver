@@ -1885,6 +1885,7 @@ global:
 	nm_client_wait_shutdown;
 	nm_client_wait_shutdown_finish;
 	nm_device_loopback_get_type;
+	nm_device_reapply_flags_get_type;
 	nm_range_cmp;
 	nm_range_from_str;
 	nm_range_get_range;
