@@ -1878,3 +1878,7 @@ global:
 	nm_utils_ip_routes_to_variant;
 	nm_vpn_plugin_info_supports_multiple;
 } libnm_1_40_0;
+
+libnm_1_40_10 {
+	nm_device_reapply_flags_get_type;
+} libnm_1_40_4;
