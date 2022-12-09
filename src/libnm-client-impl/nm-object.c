@@ -43,10 +43,10 @@ _nm_object_get_private(NMObjectClass *klass, NMObject *self, guint16 extra_offse
 
     nm_assert(klass->priv_ptr_offset > 0);
 
-    ptr = (char *) self;
+    ptr = ((gpointer) self);
     ptr += klass->priv_ptr_offset;
     if (klass->priv_ptr_indirect)
-        ptr = *((gpointer *) ptr);
+        ptr = *NM_CAST_ALIGN(gpointer, ptr);
     return ptr + extra_offset;
 }
 

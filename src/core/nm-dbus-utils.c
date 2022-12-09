@@ -166,7 +166,7 @@ nm_dbus_utils_get_paths_for_clist(const CList *lst_head,
     i    = 0;
     strv = g_new(const char *, n + 1);
     c_list_for_each (iter, lst_head) {
-        NMDBusObject *obj = (NMDBusObject *) (((const char *) iter) - member_offset);
+        NMDBusObject *obj = NM_CAST_ALIGN(NMDBusObject, (((char *) iter) - member_offset));
 
         path = nm_dbus_object_get_path(obj);
         if (!path) {

@@ -269,11 +269,36 @@ typedef struct _NMUtilsIPv6IfaceId {
         }                           \
     }
 
-void nm_utils_ipv6_addr_set_interface_identifier(struct in6_addr          *addr,
-                                                 const NMUtilsIPv6IfaceId *iid);
+/**
+ * nm_utils_ipv6_addr_set_interface_identifier:
+ * @addr: output token encoded as %in6_addr
+ * @iid: %NMUtilsIPv6IfaceId interface identifier
+ *
+ * Converts the %NMUtilsIPv6IfaceId to an %in6_addr (suitable for use
+ * with Linux platform). This only copies the lower 8 bytes, ignoring
+ * the /64 network prefix which is expected to be all-zero for a valid
+ * token.
+ */
+static inline void
+nm_utils_ipv6_addr_set_interface_identifier(struct in6_addr *addr, const NMUtilsIPv6IfaceId *iid)
+{
+    memcpy(addr->s6_addr + 8, &iid->id_u8, 8);
+}
 
-void nm_utils_ipv6_interface_identifier_get_from_addr(NMUtilsIPv6IfaceId    *iid,
-                                                      const struct in6_addr *addr);
+/**
+ * nm_utils_ipv6_interface_identifier_get_from_addr:
+ * @iid: output %NMUtilsIPv6IfaceId interface identifier set from the token
+ * @addr: token encoded as %in6_addr
+ *
+ * Converts the %in6_addr encoded token (as used by Linux platform) to
+ * the interface identifier.
+ */
+static inline void
+nm_utils_ipv6_interface_identifier_get_from_addr(NMUtilsIPv6IfaceId    *iid,
+                                                 const struct in6_addr *addr)
+{
+    memcpy(iid, addr->s6_addr + 8, 8);
+}
 
 gboolean nm_utils_ipv6_interface_identifier_get_from_token(NMUtilsIPv6IfaceId *iid,
                                                            const char         *token);
@@ -1869,6 +1894,8 @@ char *nm_utils_g_slist_strlist_join(const GSList *a, const char *separator);
 static inline gpointer
 nm_g_array_data(const GArray *arr)
 {
+    /* You may want to use nm_g_array_first_p() instead, which can assert
+     * for the expected type. */
     return arr ? arr->data : NULL;
 }
 
@@ -1890,21 +1917,25 @@ nm_g_array_unref(GArray *arr)
  * - returns a pointer to the element.
  * - it asserts that @idx is <= arr->len. That is, it allows
  *   to get a pointer after the data, of course, you are not
- *   allowed to dereference in that case. */
-#define nm_g_array_index_p(arr, Type, idx)                                       \
-    ({                                                                           \
-        const GArray *const _arr_55 = (arr);                                     \
-        const guint         _idx_55 = (idx);                                     \
-                                                                                 \
-        nm_assert(_arr_55);                                                      \
-        nm_assert(sizeof(Type) == g_array_get_element_size((GArray *) _arr_55)); \
-        nm_assert(_idx_55 <= _arr_55->len);                                      \
-                                                                                 \
-        /* If arr->len is zero, arr->data might be NULL. The macro
-         * allows to access at index [arr->len] (one past the data).
-         * We need to take care of undefined behavior, but (NULL + 0)
-         * should work mostly fine for us. */               \
-        ((Type *) ((gpointer) _arr_55->data)) + (_idx_55);                       \
+ *   allowed to dereference in that case.
+ * - in particular, unlike nm_g_array_index(), you are allowed to call this
+ *   with "arr" NULL (for index zero) or with "arr->data" NULL
+ *   (for index zero). In that case, NULL is returned.
+ *
+ * When accessing index zero, then this returns NULL if-and-only-if
+ * "arr" is NULL or "arr->data" is NULL. In all other cases, this
+ * returns the pointer &((Type*) arr->data)[idx]. Note that the pointer
+ * may not be followed, if "idx" is equal to "arr->len". */
+#define nm_g_array_index_p(arr, Type, idx)                                                       \
+    ({                                                                                           \
+        const GArray *const _arr_55 = (arr);                                                     \
+        const guint         _idx_55 = (idx);                                                     \
+                                                                                                 \
+        nm_assert(_arr_55 || _idx_55 == 0);                                                      \
+        nm_assert(_idx_55 <= (_arr_55 ? _arr_55->len : 0u));                                     \
+        nm_assert(!_arr_55 || sizeof(Type) == g_array_get_element_size((GArray *) _arr_55));     \
+                                                                                                 \
+        ((_arr_55 && _arr_55->data) ? &(((Type *) ((gpointer) _arr_55->data))[_idx_55]) : NULL); \
     })
 
 /* Very similar to g_array_index().
@@ -1927,6 +1958,8 @@ nm_g_array_unref(GArray *arr)
     }))
 
 #define nm_g_array_first(arr, Type) nm_g_array_index(arr, Type, 0)
+
+#define nm_g_array_first_p(arr, Type) nm_g_array_index_p(arr, Type, 0)
 
 /* Same as g_array_index(arr, Type, arr->len-1). */
 #define nm_g_array_last(arr, Type)                                            \
@@ -3032,12 +3065,12 @@ nm_strvarray_remove_first(GArray *strv, const char *needle)
 static inline int
 nm_strvarray_cmp(const GArray *a, const GArray *b)
 {
+    nm_assert(!a || sizeof(const char *const *) == g_array_get_element_size((GArray *) a));
+    nm_assert(!b || sizeof(const char *const *) == g_array_get_element_size((GArray *) b));
+
     NM_CMP_SELF(a, b);
 
-    return nm_strv_cmp_n((const char *const *) a->data,
-                         a->len,
-                         (const char *const *) b->data,
-                         b->len);
+    return nm_strv_cmp_n(nm_g_array_data(a), a->len, nm_g_array_data(b), b->len);
 }
 
 #define nm_strvarray_equal(a, b) (nm_strvarray_cmp((a), (b)) == 0)
@@ -3045,10 +3078,9 @@ nm_strvarray_cmp(const GArray *a, const GArray *b)
 static inline int
 _nm_strvarray_cmp_strv(const GArray *strv, const char *const *ss, gsize ss_len)
 {
-    return nm_strv_cmp_n(strv ? (const char *const *) strv->data : NULL,
-                         strv ? ((gssize) strv->len) : -1,
-                         ss,
-                         ss_len);
+    nm_assert(!strv || sizeof(const char *const *) == g_array_get_element_size((GArray *) strv));
+
+    return nm_strv_cmp_n(nm_g_array_data(strv), strv ? ((gssize) strv->len) : -1, ss, ss_len);
 }
 #define nm_strvarray_cmp_strv(strv, ss, ss_len) \
     _nm_strvarray_cmp_strv((strv), NM_CAST_STRV_CC(ss), (ss_len))

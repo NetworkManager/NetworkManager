@@ -106,7 +106,7 @@ nm_hash_static(guint static_seed)
      *
      * Also, ensure that we don't return zero (like for nm_hash_complete()).
      */
-    return ((*((const guint *) _get_hash_key())) ^ static_seed) ?: 3679500967u;
+    return ((*NM_CAST_ALIGN(guint, _get_hash_key())) ^ static_seed) ?: 3679500967u;
 }
 
 void

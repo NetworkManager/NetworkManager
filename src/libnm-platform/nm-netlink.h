@@ -340,7 +340,7 @@ nla_next(const struct nlattr *nla, int *remaining)
     int totlen = NLA_ALIGN(nla->nla_len);
 
     *remaining -= totlen;
-    return (struct nlattr *) ((char *) nla + totlen);
+    return NM_CAST_ALIGN(struct nlattr, (((char *) nla) + totlen));
 }
 
 #define nla_for_each_attr(pos, head, len, rem) \
@@ -434,7 +434,7 @@ nlmsg_next(struct nlmsghdr *nlh, int *remaining)
 
     *remaining -= totlen;
 
-    return (struct nlmsghdr *) ((unsigned char *) nlh + totlen);
+    return NM_CAST_ALIGN(struct nlmsghdr, (((char *) nlh) + totlen));
 }
 
 int  nlmsg_get_proto(struct nl_msg *msg);
@@ -493,8 +493,9 @@ nlmsg_attrlen(const struct nlmsghdr *nlh, int hdrlen)
 static inline struct nlattr *
 nlmsg_attrdata(const struct nlmsghdr *nlh, int hdrlen)
 {
-    unsigned char *data = nlmsg_data(nlh);
-    return (struct nlattr *) (data + NLMSG_ALIGN(hdrlen));
+    char *data = nlmsg_data(nlh);
+
+    return NM_CAST_ALIGN(struct nlattr, (data + NLMSG_ALIGN(hdrlen)));
 }
 
 static inline struct nlattr *

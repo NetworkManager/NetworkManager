@@ -45,7 +45,7 @@ NM_IS_L3_IPV4LL(const NML3IPv4LL *self)
 {
     nm_assert(!self
               || (NM_IS_L3CFG(*((NML3Cfg **) self))
-                  && (*((int *) (((char *) self) + sizeof(gpointer)))) > 0));
+                  && *(NM_CAST_ALIGN(int, (((char *) self) + sizeof(gpointer)))) > 0));
     return !!self;
 }
 

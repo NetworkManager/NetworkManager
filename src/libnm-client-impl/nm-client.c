@@ -1254,9 +1254,9 @@ nml_dbus_object_get_property_location(NMLDBusObject             *dbobj,
 {
     char *target_c;
 
-    target_c = (char *) dbobj->nmobj;
+    target_c = ((gpointer) dbobj->nmobj);
     if (meta_iface->base_struct_offset > 0)
-        target_c = *((gpointer *) (&target_c[meta_iface->base_struct_offset]));
+        target_c = *NM_CAST_ALIGN(gpointer, &target_c[meta_iface->base_struct_offset]);
     return &target_c[meta_property->prop_struct_offset];
 }
 

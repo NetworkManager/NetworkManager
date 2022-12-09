@@ -1983,7 +1983,7 @@ con_show_get_items_cmp(gconstpointer pa, gconstpointer pb, gpointer user_data)
             nmc_print_output_to_accessor_get_type(sort_info->nmc->nmc_config.print_output);
 
         if (sort_info->order) {
-            order_arr = nm_g_array_index_p(sort_info->order, NmcSortOrder, 0);
+            order_arr = nm_g_array_first_p(sort_info->order, NmcSortOrder);
             order_len = sort_info->order->len;
         } else {
             static const NmcSortOrder def[] = {NMC_SORT_ACTIVE, NMC_SORT_NAME, NMC_SORT_PATH};

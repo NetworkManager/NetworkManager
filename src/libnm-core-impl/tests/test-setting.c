@@ -4385,7 +4385,7 @@ _PROP_IDX_OWNER(GHashTable *h_property_types, const NMSettInfoPropertType *prope
     g_assert(arr);
     g_assert(arr->len > 0);
 
-    idx = nm_g_array_index(arr, guint, 0);
+    idx = nm_g_array_first(arr, guint);
 
     meta_type = (idx & 0xFFu);
     prop_idx  = idx >> 8;

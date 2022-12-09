@@ -107,7 +107,7 @@ static newtComponent
 nmt_newt_popup_build_component(NmtNewtComponent *component, gboolean sensitive)
 {
     NmtNewtPopupPrivate *priv    = NMT_NEWT_POPUP_GET_PRIVATE(component);
-    NmtNewtPopupEntry   *entries = (NmtNewtPopupEntry *) priv->entries->data;
+    NmtNewtPopupEntry   *entries = nm_g_array_first_p(priv->entries, NmtNewtPopupEntry);
 
     nmt_newt_button_set_label(NMT_NEWT_BUTTON(component), entries[priv->active].label);
     return NMT_NEWT_COMPONENT_CLASS(nmt_newt_popup_parent_class)
@@ -118,7 +118,7 @@ static void
 nmt_newt_popup_activated(NmtNewtWidget *widget)
 {
     NmtNewtPopupPrivate *priv    = NMT_NEWT_POPUP_GET_PRIVATE(widget);
-    NmtNewtPopupEntry   *entries = (NmtNewtPopupEntry *) priv->entries->data;
+    NmtNewtPopupEntry   *entries = nm_g_array_first_p(priv->entries, NmtNewtPopupEntry);
     NmtNewtForm         *form;
     NmtNewtWidget       *listbox, *ret;
     int                  button_x, button_y;
@@ -232,7 +232,7 @@ const char *
 nmt_newt_popup_get_active_id(NmtNewtPopup *popup)
 {
     NmtNewtPopupPrivate *priv    = NMT_NEWT_POPUP_GET_PRIVATE(popup);
-    NmtNewtPopupEntry   *entries = (NmtNewtPopupEntry *) priv->entries->data;
+    NmtNewtPopupEntry   *entries = nm_g_array_first_p(priv->entries, NmtNewtPopupEntry);
 
     return entries[priv->active].id;
 }
@@ -248,7 +248,7 @@ void
 nmt_newt_popup_set_active_id(NmtNewtPopup *popup, const char *active_id)
 {
     NmtNewtPopupPrivate *priv    = NMT_NEWT_POPUP_GET_PRIVATE(popup);
-    NmtNewtPopupEntry   *entries = (NmtNewtPopupEntry *) priv->entries->data;
+    NmtNewtPopupEntry   *entries = nm_g_array_first_p(priv->entries, NmtNewtPopupEntry);
     int                  i;
 
     for (i = 0; i < priv->entries->len; i++) {

@@ -454,9 +454,12 @@ NMP_OBJECT_UP_CAST(const NMPlatformObject *plobj)
 {
     NMPObject *obj;
 
-    obj = plobj ? (NMPObject *) (&(((char *) plobj)[-((int) G_STRUCT_OFFSET(NMPObject, object))]))
+    obj = plobj ? NM_CAST_ALIGN(NMPObject,
+                                &(((char *) plobj)[-((int) G_STRUCT_OFFSET(NMPObject, object))]))
                 : NULL;
+
     nm_assert(!obj || (obj->parent._ref_count > 0 && NMP_CLASS_IS_VALID(obj->_class)));
+
     return obj;
 }
 #define NMP_OBJECT_UP_CAST(plobj) (NMP_OBJECT_UP_CAST((const NMPlatformObject *) (plobj)))

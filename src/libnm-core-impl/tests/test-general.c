@@ -6959,7 +6959,7 @@ test_setting_ip6_gateway(void)
 
         gateway_bytes = g_variant_get_fixed_array(gateway_var, &length, 1);
         g_assert_cmpint(length, ==, 16);
-        nmtst_assert_ip6_address((struct in6_addr *) gateway_bytes, "abcd::1");
+        nmtst_assert_ip6_address(NM_CAST_ALIGN(struct in6_addr, gateway_bytes), "abcd::1");
         g_variant_unref(gateway_var);
     }
     g_variant_unref(value);
