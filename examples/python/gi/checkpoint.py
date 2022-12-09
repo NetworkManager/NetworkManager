@@ -80,10 +80,10 @@ def find_checkpoint_last(nmc):
 
 def validate_path(path, nmc):
     if path == "--last":
-        path = find_checkpoint_last(nmc)
-        if path is None:
+        c = find_checkpoint_last(nmc)
+        if c is None:
             sys.exit("Has no checkpoint")
-        return path
+        return c.get_path()
 
     try:
         num = int(path)
