@@ -93,21 +93,22 @@ nm_netns_get_multi_idx(NMNetns *self)
 
 /*****************************************************************************/
 
-typedef struct {
-    int      ifindex;
-    guint32  signal_pending_obj_type_flags;
-    NML3Cfg *l3cfg;
-    CList    signal_pending_lst;
-} L3CfgData;
+static NML3Cfg *
+_l3cfg_hashed_to_l3cfg(gpointer ptr)
+{
+    gpointer l3cfg;
+
+    l3cfg = &(((char *) ptr)[-G_STRUCT_OFFSET(NML3Cfg, priv.ifindex)]);
+    nm_assert(NM_IS_L3CFG(l3cfg));
+    return l3cfg;
+}
 
 static void
-_l3cfg_data_free(gpointer ptr)
+_l3cfg_hashed_free(gpointer ptr)
 {
-    L3CfgData *l3cfg_data = ptr;
+    NML3Cfg *l3cfg = _l3cfg_hashed_to_l3cfg(ptr);
 
-    c_list_unlink_stale(&l3cfg_data->signal_pending_lst);
-
-    nm_g_slice_free(l3cfg_data);
+    c_list_unlink(&l3cfg->internal_netns.signal_pending_lst);
 }
 
 static void
@@ -128,58 +129,48 @@ _l3cfg_weak_notify(gpointer data, GObject *where_the_object_was)
 NML3Cfg *
 nm_netns_l3cfg_get(NMNetns *self, int ifindex)
 {
-    NMNetnsPrivate *priv;
-    L3CfgData      *l3cfg_data;
+    NMNetnsPrivate *priv = NM_NETNS_GET_PRIVATE(self);
+    gpointer        ptr;
 
-    g_return_val_if_fail(NM_IS_NETNS(self), NULL);
-    g_return_val_if_fail(ifindex > 0, NULL);
+    nm_assert(ifindex > 0);
 
-    priv = NM_NETNS_GET_PRIVATE(self);
-
-    l3cfg_data = g_hash_table_lookup(priv->l3cfgs, &ifindex);
-
-    return l3cfg_data ? l3cfg_data->l3cfg : NULL;
+    ptr = g_hash_table_lookup(priv->l3cfgs, &ifindex);
+    return ptr ? _l3cfg_hashed_to_l3cfg(ptr) : NULL;
 }
 
 NML3Cfg *
 nm_netns_l3cfg_acquire(NMNetns *self, int ifindex)
 {
     NMNetnsPrivate *priv;
-    L3CfgData      *l3cfg_data;
+    NML3Cfg        *l3cfg;
 
     g_return_val_if_fail(NM_IS_NETNS(self), NULL);
     g_return_val_if_fail(ifindex > 0, NULL);
 
     priv = NM_NETNS_GET_PRIVATE(self);
 
-    l3cfg_data = g_hash_table_lookup(priv->l3cfgs, &ifindex);
-
-    if (l3cfg_data) {
+    l3cfg = nm_netns_l3cfg_get(self, ifindex);
+    if (l3cfg) {
         nm_log_trace(LOGD_CORE,
                      "l3cfg[" NM_HASH_OBFUSCATE_PTR_FMT ",ifindex=%d] %s",
-                     NM_HASH_OBFUSCATE_PTR(l3cfg_data->l3cfg),
+                     NM_HASH_OBFUSCATE_PTR(l3cfg),
                      ifindex,
                      "referenced");
-        return g_object_ref(l3cfg_data->l3cfg);
+        return g_object_ref(l3cfg);
     }
 
-    l3cfg_data  = g_slice_new(L3CfgData);
-    *l3cfg_data = (L3CfgData){
-        .ifindex            = ifindex,
-        .l3cfg              = nm_l3cfg_new(self, ifindex),
-        .signal_pending_lst = C_LIST_INIT(l3cfg_data->signal_pending_lst),
-    };
+    l3cfg = nm_l3cfg_new(self, ifindex);
 
-    if (!g_hash_table_add(priv->l3cfgs, l3cfg_data))
+    if (!g_hash_table_add(priv->l3cfgs, &l3cfg->priv.ifindex))
         nm_assert_not_reached();
 
     if (NM_UNLIKELY(g_hash_table_size(priv->l3cfgs) == 1))
         g_object_ref(self);
 
-    g_object_weak_ref(G_OBJECT(l3cfg_data->l3cfg), _l3cfg_weak_notify, self);
+    g_object_weak_ref(G_OBJECT(l3cfg), _l3cfg_weak_notify, self);
 
     /* Transfer ownership! We keep only a weak ref. */
-    return l3cfg_data->l3cfg;
+    return l3cfg;
 }
 
 /*****************************************************************************/
@@ -189,7 +180,7 @@ _platform_signal_on_idle_cb(gpointer user_data)
 {
     gs_unref_object NMNetns *self = g_object_ref(NM_NETNS(user_data));
     NMNetnsPrivate          *priv = NM_NETNS_GET_PRIVATE(self);
-    L3CfgData               *l3cfg_data;
+    NML3Cfg                 *l3cfg;
     CList                    work_list;
 
     nm_clear_g_source_inst(&priv->signal_pending_idle_source);
@@ -205,12 +196,12 @@ _platform_signal_on_idle_cb(gpointer user_data)
     c_list_init(&work_list);
     c_list_splice(&work_list, &priv->l3cfg_signal_pending_lst_head);
 
-    while ((l3cfg_data = c_list_first_entry(&work_list, L3CfgData, signal_pending_lst))) {
-        nm_assert(NM_IS_L3CFG(l3cfg_data->l3cfg));
-        c_list_unlink(&l3cfg_data->signal_pending_lst);
+    while ((l3cfg = c_list_first_entry(&work_list, NML3Cfg, internal_netns.signal_pending_lst))) {
+        nm_assert(NM_IS_L3CFG(l3cfg));
+        c_list_unlink(&l3cfg->internal_netns.signal_pending_lst);
         _nm_l3cfg_notify_platform_change_on_idle(
-            l3cfg_data->l3cfg,
-            nm_steal_int(&l3cfg_data->signal_pending_obj_type_flags));
+            l3cfg,
+            nm_steal_int(&l3cfg->internal_netns.signal_pending_obj_type_flags));
     }
 
     return G_SOURCE_CONTINUE;
@@ -228,29 +219,28 @@ _platform_signal_cb(NMPlatform   *platform,
     NMNetnsPrivate                  *priv        = NM_NETNS_GET_PRIVATE(self);
     const NMPObjectType              obj_type    = obj_type_i;
     const NMPlatformSignalChangeType change_type = change_type_i;
-    L3CfgData                       *l3cfg_data;
+    NML3Cfg                         *l3cfg       = NULL;
 
     if (ifindex <= 0) {
         /* platform signal callback could be triggered by nodev routes, skip them */
         return;
     }
 
-    l3cfg_data = g_hash_table_lookup(priv->l3cfgs, &ifindex);
-    if (!l3cfg_data)
+    l3cfg = nm_netns_l3cfg_get(self, ifindex);
+    if (!l3cfg)
         return;
 
-    l3cfg_data->signal_pending_obj_type_flags |= nmp_object_type_to_flags(obj_type);
+    l3cfg->internal_netns.signal_pending_obj_type_flags |= nmp_object_type_to_flags(obj_type);
 
-    if (c_list_is_empty(&l3cfg_data->signal_pending_lst)) {
-        c_list_link_tail(&priv->l3cfg_signal_pending_lst_head, &l3cfg_data->signal_pending_lst);
+    if (c_list_is_empty(&l3cfg->internal_netns.signal_pending_lst)) {
+        c_list_link_tail(&priv->l3cfg_signal_pending_lst_head,
+                         &l3cfg->internal_netns.signal_pending_lst);
         if (!priv->signal_pending_idle_source)
             priv->signal_pending_idle_source =
                 nm_g_idle_add_source(_platform_signal_on_idle_cb, self);
     }
 
-    _nm_l3cfg_notify_platform_change(l3cfg_data->l3cfg,
-                                     change_type,
-                                     NMP_OBJECT_UP_CAST(platform_object));
+    _nm_l3cfg_notify_platform_change(l3cfg, change_type, NMP_OBJECT_UP_CAST(platform_object));
 }
 
 /*****************************************************************************/
@@ -399,7 +389,7 @@ constructed(GObject *object)
     if (!priv->platform)
         g_return_if_reached();
 
-    priv->l3cfgs = g_hash_table_new_full(nm_pint_hash, nm_pint_equal, _l3cfg_data_free, NULL);
+    priv->l3cfgs = g_hash_table_new_full(nm_pint_hash, nm_pint_equal, _l3cfg_hashed_free, NULL);
 
     priv->platform_netns = nm_platform_netns_get(priv->platform);
 

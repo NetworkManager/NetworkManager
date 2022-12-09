@@ -5121,6 +5121,8 @@ nm_l3cfg_init(NML3Cfg *self)
     c_list_init(&self->priv.p->blocked_lst_head_4);
     c_list_init(&self->priv.p->blocked_lst_head_6);
 
+    c_list_init(&self->internal_netns.signal_pending_lst);
+
     self->priv.p->obj_state_hash = g_hash_table_new_full(nmp_object_indirect_id_hash,
                                                          nmp_object_indirect_id_equal,
                                                          _obj_state_data_free,
@@ -5162,6 +5164,8 @@ finalize(GObject *object)
 {
     NML3Cfg *self = NM_L3CFG(object);
     gboolean changed;
+
+    nm_assert(c_list_is_empty(&self->internal_netns.signal_pending_lst));
 
     nm_assert(!self->priv.p->ipconfig_4);
     nm_assert(!self->priv.p->ipconfig_6);
