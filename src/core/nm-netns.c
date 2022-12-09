@@ -129,13 +129,16 @@ NML3Cfg *
 nm_netns_l3cfg_get(NMNetns *self, int ifindex)
 {
     NMNetnsPrivate *priv;
+    L3CfgData      *l3cfg_data;
 
     g_return_val_if_fail(NM_IS_NETNS(self), NULL);
     g_return_val_if_fail(ifindex > 0, NULL);
 
     priv = NM_NETNS_GET_PRIVATE(self);
 
-    return g_hash_table_lookup(priv->l3cfgs, &ifindex);
+    l3cfg_data = g_hash_table_lookup(priv->l3cfgs, &ifindex);
+
+    return l3cfg_data ? l3cfg_data->l3cfg : NULL;
 }
 
 NML3Cfg *
