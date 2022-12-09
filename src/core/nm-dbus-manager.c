@@ -1077,7 +1077,7 @@ nm_dbus_manager_lookup_object(NMDBusManager *self, const char *path)
     if (!ptr)
         return NULL;
 
-    obj = (NMDBusObject *) (((char *) ptr) - G_STRUCT_OFFSET(NMDBusObject, internal));
+    obj = NM_CAST_ALIGN(NMDBusObject, (((char *) ptr) - G_STRUCT_OFFSET(NMDBusObject, internal)));
     nm_assert(NM_IS_DBUS_OBJECT(obj));
     return obj;
 }

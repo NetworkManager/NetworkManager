@@ -174,6 +174,7 @@ endif
 common_flags += cc.get_supported_arguments([
   '-Wall',
   '-Wextra',
+  '-Wcast-align=strict',
   '-Wdeclaration-after-statement',
   '-Wfloat-equal',
   '-Wformat-nonliteral',

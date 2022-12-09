@@ -1490,4 +1490,20 @@ nm_utils_addr_family_from_size(size_t len)
     return NM_AF_UNSPEC;
 }
 
+/* We build with "-Wcast-align=strict", which can warn about alignment problems
+ * with casting. In some cases, we know that the pointer has the suitable
+ * alignment and the cast is in fact correct. The way to disable the warning
+ * would be to cast ((Type *) ((void *) (ptr))).
+ *
+ * This macro does essentially that, but it also does an nm_assert() that the
+ * alignment of the pointer is suitable to cast to (Type *). */
+#define NM_CAST_ALIGN(Type, ptr)                                   \
+    ({                                                             \
+        const void *const _ptr = (ptr);                            \
+                                                                   \
+        nm_assert((((uintptr_t) _ptr) % _nm_alignof(Type)) == 0u); \
+                                                                   \
+        ((Type *) _ptr);                                           \
+    })
+
 #endif /* __NM_STD_AUX_H__ */

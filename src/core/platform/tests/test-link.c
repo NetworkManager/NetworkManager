@@ -1250,7 +1250,7 @@ _test_wireguard_change(NMPlatform *platform, int ifindex, int test_mode)
     r = nm_platform_link_wireguard_change(platform,
                                           ifindex,
                                           &lnk_wireguard,
-                                          (const NMPWireGuardPeer *) peers->data,
+                                          nm_g_array_first_p(peers, const NMPWireGuardPeer),
                                           NULL,
                                           peers->len,
                                           NM_PLATFORM_WIREGUARD_CHANGE_FLAG_HAS_PRIVATE_KEY

@@ -4848,6 +4848,7 @@ get_ip_iface_identifier(NMDevice *self, NMUtilsIPv6IfaceId *out_iid)
     NMDevicePrivate      *priv     = NM_DEVICE_GET_PRIVATE(self);
     NMPlatform           *platform = nm_device_get_platform(self);
     const NMPlatformLink *pllink;
+    NMLinkType            link_type;
     const guint8         *hwaddr;
     guint8                pseudo_hwaddr[ETH_ALEN];
     gsize                 hwaddr_len;
@@ -4865,6 +4866,8 @@ get_ip_iface_identifier(NMDevice *self, NMUtilsIPv6IfaceId *out_iid)
     hwaddr = nmp_link_address_get(&pllink->l_address, &hwaddr_len);
     if (hwaddr_len <= 0)
         return FALSE;
+
+    link_type = pllink->type;
 
     if (pllink->type == NM_LINK_TYPE_6LOWPAN) {
         /* If the underlying IEEE 802.15.4 device has a short address we generate
@@ -4886,10 +4889,11 @@ get_ip_iface_identifier(NMDevice *self, NMUtilsIPv6IfaceId *out_iid)
 
             hwaddr     = pseudo_hwaddr;
             hwaddr_len = G_N_ELEMENTS(pseudo_hwaddr);
+            link_type  = NM_LINK_TYPE_ETHERNET;
         }
     }
 
-    success = nm_utils_get_ipv6_interface_identifier(pllink->type,
+    success = nm_utils_get_ipv6_interface_identifier(link_type,
                                                      hwaddr,
                                                      hwaddr_len,
                                                      priv->dev_id,

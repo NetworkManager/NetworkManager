@@ -1348,7 +1348,8 @@ typedef struct {
     };
 } ParseNlmsgIter;
 
-#define NLMSG_TAIL(nmsg) ((struct rtattr *) (((char *) (nmsg)) + NLMSG_ALIGN((nmsg)->nlmsg_len)))
+#define NLMSG_TAIL(nmsg) \
+    NM_CAST_ALIGN(struct rtattr, ((char *) (nmsg)) + NLMSG_ALIGN((nmsg)->nlmsg_len))
 
 /* copied from iproute2's addattr_l(). */
 static gboolean
@@ -9927,7 +9928,7 @@ continue_reading:
         goto stop;
     }
 
-    hdr = (struct nlmsghdr *) priv->netlink_recv_buf.buf;
+    hdr = NM_CAST_ALIGN(struct nlmsghdr, priv->netlink_recv_buf.buf);
     while (nlmsg_ok(hdr, n)) {
         WaitForNlResponseResult  seq_result;
         gboolean                 process_valid_msg = FALSE;

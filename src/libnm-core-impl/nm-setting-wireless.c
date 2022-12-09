@@ -473,7 +473,7 @@ nm_setting_wireless_get_mac_address_blacklist(NMSettingWireless *setting)
     g_return_val_if_fail(NM_IS_SETTING_WIRELESS(setting), NULL);
 
     priv = NM_SETTING_WIRELESS_GET_PRIVATE(setting);
-    return (const char *const *) priv->mac_address_blacklist->data;
+    return nm_g_array_data(priv->mac_address_blacklist);
 }
 
 /**
@@ -1174,7 +1174,7 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
         g_value_set_string(value, nm_setting_wireless_get_cloned_mac_address(setting));
         break;
     case PROP_MAC_ADDRESS_BLACKLIST:
-        g_value_set_boxed(value, (char **) priv->mac_address_blacklist->data);
+        g_value_set_boxed(value, nm_g_array_data(priv->mac_address_blacklist));
         break;
     case PROP_SEEN_BSSIDS:
         g_value_take_boxed(

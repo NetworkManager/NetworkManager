@@ -82,37 +82,6 @@ _nm_utils_inet6_is_token(const struct in6_addr *in6addr)
 }
 
 /**
- * nm_utils_ipv6_addr_set_interface_identifier:
- * @addr: output token encoded as %in6_addr
- * @iid: %NMUtilsIPv6IfaceId interface identifier
- *
- * Converts the %NMUtilsIPv6IfaceId to an %in6_addr (suitable for use
- * with Linux platform). This only copies the lower 8 bytes, ignoring
- * the /64 network prefix which is expected to be all-zero for a valid
- * token.
- */
-void
-nm_utils_ipv6_addr_set_interface_identifier(struct in6_addr *addr, const NMUtilsIPv6IfaceId *iid)
-{
-    memcpy(addr->s6_addr + 8, &iid->id_u8, 8);
-}
-
-/**
- * nm_utils_ipv6_interface_identifier_get_from_addr:
- * @iid: output %NMUtilsIPv6IfaceId interface identifier set from the token
- * @addr: token encoded as %in6_addr
- *
- * Converts the %in6_addr encoded token (as used by Linux platform) to
- * the interface identifier.
- */
-void
-nm_utils_ipv6_interface_identifier_get_from_addr(NMUtilsIPv6IfaceId    *iid,
-                                                 const struct in6_addr *addr)
-{
-    memcpy(iid, addr->s6_addr + 8, 8);
-}
-
-/**
  * nm_utils_ipv6_interface_identifier_get_from_token:
  * @iid: output %NMUtilsIPv6IfaceId interface identifier set from the token
  * @token: token encoded as string

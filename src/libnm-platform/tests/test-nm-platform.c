@@ -12,6 +12,54 @@
 
 /*****************************************************************************/
 
+G_STATIC_ASSERT(_nm_alignof(NMPlatformObject) == _nm_alignof(NMPObjectIP4Address));
+G_STATIC_ASSERT(_nm_alignof(NMPlatformObject) == _nm_alignof(NMPObjectIP4Route));
+G_STATIC_ASSERT(_nm_alignof(NMPlatformObject) == _nm_alignof(NMPObjectIP6Address));
+G_STATIC_ASSERT(_nm_alignof(NMPlatformObject) == _nm_alignof(NMPObjectIP6Route));
+G_STATIC_ASSERT(_nm_alignof(NMPlatformObject) == _nm_alignof(NMPObjectLink));
+G_STATIC_ASSERT(_nm_alignof(NMPlatformObject) == _nm_alignof(NMPObjectLnkBond));
+G_STATIC_ASSERT(_nm_alignof(NMPlatformObject) == _nm_alignof(NMPObjectLnkBridge));
+G_STATIC_ASSERT(_nm_alignof(NMPlatformObject) == _nm_alignof(NMPObjectLnkGre));
+G_STATIC_ASSERT(_nm_alignof(NMPlatformObject) == _nm_alignof(NMPObjectLnkInfiniband));
+G_STATIC_ASSERT(_nm_alignof(NMPlatformObject) == _nm_alignof(NMPObjectLnkIp6Tnl));
+G_STATIC_ASSERT(_nm_alignof(NMPlatformObject) == _nm_alignof(NMPObjectLnkIpIp));
+G_STATIC_ASSERT(_nm_alignof(NMPlatformObject) == _nm_alignof(NMPObjectLnkMacsec));
+G_STATIC_ASSERT(_nm_alignof(NMPlatformObject) == _nm_alignof(NMPObjectLnkMacvlan));
+G_STATIC_ASSERT(_nm_alignof(NMPlatformObject) == _nm_alignof(NMPObjectLnkSit));
+G_STATIC_ASSERT(_nm_alignof(NMPlatformObject) == _nm_alignof(NMPObjectLnkTun));
+G_STATIC_ASSERT(_nm_alignof(NMPlatformObject) == _nm_alignof(NMPObjectLnkVlan));
+G_STATIC_ASSERT(_nm_alignof(NMPlatformObject) == _nm_alignof(NMPObjectLnkVrf));
+G_STATIC_ASSERT(_nm_alignof(NMPlatformObject) == _nm_alignof(NMPObjectLnkVxlan));
+G_STATIC_ASSERT(_nm_alignof(NMPlatformObject) == _nm_alignof(NMPObjectLnkWireGuard));
+
+G_STATIC_ASSERT(_nm_alignof(NMPlatformObject) == _nm_alignof(NMPlatformIP4Address));
+G_STATIC_ASSERT(_nm_alignof(NMPlatformObject) == _nm_alignof(NMPlatformIP4Route));
+G_STATIC_ASSERT(_nm_alignof(NMPlatformObject) == _nm_alignof(NMPlatformIP6Address));
+G_STATIC_ASSERT(_nm_alignof(NMPlatformObject) == _nm_alignof(NMPlatformIP6Route));
+G_STATIC_ASSERT(_nm_alignof(NMPlatformObject) == _nm_alignof(NMPlatformIPAddress));
+G_STATIC_ASSERT(_nm_alignof(NMPlatformObject) == _nm_alignof(NMPlatformIPAddress));
+G_STATIC_ASSERT(_nm_alignof(NMPlatformObject) == _nm_alignof(NMPlatformIPRoute));
+G_STATIC_ASSERT(_nm_alignof(NMPlatformObject) == _nm_alignof(NMPlatformIPXAddress));
+G_STATIC_ASSERT(_nm_alignof(NMPlatformObject) == _nm_alignof(NMPlatformIPXRoute));
+G_STATIC_ASSERT(_nm_alignof(NMPlatformObject) == _nm_alignof(NMPlatformLink));
+G_STATIC_ASSERT(_nm_alignof(NMPlatformObject) == _nm_alignof(NMPlatformLnkBond));
+G_STATIC_ASSERT(_nm_alignof(NMPlatformObject) == _nm_alignof(NMPlatformLnkBridge));
+G_STATIC_ASSERT(_nm_alignof(NMPlatformObject) == _nm_alignof(NMPlatformLnkGre));
+G_STATIC_ASSERT(_nm_alignof(NMPlatformObject) == _nm_alignof(NMPlatformLnkInfiniband));
+G_STATIC_ASSERT(_nm_alignof(NMPlatformObject) == _nm_alignof(NMPlatformLnkIp6Tnl));
+G_STATIC_ASSERT(_nm_alignof(NMPlatformObject) == _nm_alignof(NMPlatformLnkIpIp));
+G_STATIC_ASSERT(_nm_alignof(NMPlatformObject) == _nm_alignof(NMPlatformLnkMacsec));
+G_STATIC_ASSERT(_nm_alignof(NMPlatformObject) == _nm_alignof(NMPlatformLnkMacvlan));
+G_STATIC_ASSERT(_nm_alignof(NMPlatformObject) == _nm_alignof(NMPlatformLnkSit));
+G_STATIC_ASSERT(_nm_alignof(NMPlatformObject) == _nm_alignof(NMPlatformLnkTun));
+G_STATIC_ASSERT(_nm_alignof(NMPlatformObject) == _nm_alignof(NMPlatformLnkVlan));
+G_STATIC_ASSERT(_nm_alignof(NMPlatformObject) == _nm_alignof(NMPlatformLnkVrf));
+G_STATIC_ASSERT(_nm_alignof(NMPlatformObject) == _nm_alignof(NMPlatformLnkVxlan));
+G_STATIC_ASSERT(_nm_alignof(NMPlatformObject) == _nm_alignof(NMPlatformLnkWireGuard));
+G_STATIC_ASSERT(_nm_alignof(NMPlatformObject) == _nm_alignof(NMPlatformObjWithIfindex));
+
+/*****************************************************************************/
+
 static void
 test_use_symbols(void)
 {

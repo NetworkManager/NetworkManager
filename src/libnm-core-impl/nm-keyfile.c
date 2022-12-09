@@ -2210,7 +2210,7 @@ write_array_of_uint(GKeyFile *file, NMSetting *setting, const char *key, const G
     nm_keyfile_plugin_kf_set_integer_list_uint(file,
                                                nm_setting_get_name(setting),
                                                key,
-                                               (const guint *) array->data,
+                                               &nm_g_array_first(array, const guint),
                                                array->len);
 }
 

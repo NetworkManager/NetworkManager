@@ -530,9 +530,7 @@ test_nm_utils_array_remove_at_indexes(void)
                 for (i = 0; i < i_len; i++)
                     nm_g_array_index(array, gssize, i) = i;
 
-                nm_utils_array_remove_at_indexes(array,
-                                                 nm_g_array_index_p(idx, guint, 0),
-                                                 i_idx_len);
+                nm_utils_array_remove_at_indexes(array, nm_g_array_first_p(idx, guint), i_idx_len);
 
                 g_hash_table_remove_all(unique);
                 /* ensure that all the indexes are still unique */

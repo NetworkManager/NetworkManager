@@ -325,7 +325,8 @@ nlmsg_parse_error(const struct nlmsghdr *nlh, const char **out_extack_msg)
         struct nlattr *tb[G_N_ELEMENTS(policy)];
         struct nlattr *tlvs;
 
-        tlvs = (struct nlattr *) ((char *) e + sizeof(*e) + e->msg.nlmsg_len - NLMSG_HDRLEN);
+        tlvs = NM_CAST_ALIGN(struct nlattr,
+                             (((char *) e) + sizeof(*e) + e->msg.nlmsg_len - NLMSG_HDRLEN));
         if (nla_parse_arr(tb, tlvs, nlh->nlmsg_len - sizeof(*e) - e->msg.nlmsg_len, policy) >= 0) {
             if (tb[NLMSGERR_ATTR_MSG])
                 *out_extack_msg = nla_get_string(tb[NLMSGERR_ATTR_MSG]);
@@ -842,7 +843,7 @@ genlmsg_len(const struct genlmsghdr *gnlh)
 {
     const struct nlmsghdr *nlh;
 
-    nlh = (const struct nlmsghdr *) ((const unsigned char *) gnlh - NLMSG_HDRLEN);
+    nlh = NM_CAST_ALIGN(const struct nlmsghdr, (((char *) gnlh) - NLMSG_HDRLEN));
     return (nlh->nlmsg_len - GENL_HDRLEN - NLMSG_HDRLEN);
 }
 
@@ -1253,7 +1254,7 @@ continue_reading:
     if (n <= 0)
         return n;
 
-    hdr = (struct nlmsghdr *) buf;
+    hdr = NM_CAST_ALIGN(struct nlmsghdr, buf);
     while (nlmsg_ok(hdr, n)) {
         nm_auto_nlmsg struct nl_msg *msg = NULL;
 

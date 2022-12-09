@@ -292,7 +292,7 @@ nm_setting_wired_get_mac_address_blacklist(NMSettingWired *setting)
     g_return_val_if_fail(NM_IS_SETTING_WIRED(setting), NULL);
 
     priv = NM_SETTING_WIRED_GET_PRIVATE(setting);
-    return (const char *const *) priv->mac_address_blacklist->data;
+    return nm_g_array_data(priv->mac_address_blacklist);
 }
 
 /**
@@ -1007,7 +1007,7 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
         g_value_set_string(value, nm_setting_wired_get_cloned_mac_address(setting));
         break;
     case PROP_MAC_ADDRESS_BLACKLIST:
-        g_value_set_boxed(value, (char **) priv->mac_address_blacklist->data);
+        g_value_set_boxed(value, nm_g_array_data(priv->mac_address_blacklist));
         break;
     case PROP_S390_SUBCHANNELS:
         g_value_set_boxed(value, priv->s390_subchannels);

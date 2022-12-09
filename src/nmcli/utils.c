@@ -825,7 +825,7 @@ _output_selection_parse(const NMMetaAbstractInfo *const *fields,
     _output_selection_complete(cols);
 
     *out_cols_len     = cols->len;
-    *out_cols_data    = (PrintDataCol *) g_array_free(g_steal_pointer(&cols), FALSE);
+    *out_cols_data    = (PrintDataCol *) ((gpointer) g_array_free(g_steal_pointer(&cols), FALSE));
     *out_gfree_keeper = g_steal_pointer(&gfree_keeper);
     return TRUE;
 }
@@ -1116,7 +1116,7 @@ _print_fill(const NmcConfig    *nmc_config,
                         cell->text_to_free = TRUE;
                     }
                     if (to_free)
-                        g_strfreev((char **) to_free);
+                        g_strfreev(NM_CAST_ALIGN(char *, to_free));
                 }
             } else {
                 cell->text.plain   = value;
@@ -1410,8 +1410,8 @@ nmc_print(const NmcConfig                 *nmc_config,
               header_name_no_l10n,
               header_row->len,
               cells->len / header_row->len,
-              nm_g_array_index_p(header_row, PrintDataHeaderCell, 0),
-              nm_g_array_index_p(cells, PrintDataCell, 0));
+              nm_g_array_first_p(header_row, PrintDataHeaderCell),
+              nm_g_array_first_p(cells, PrintDataCell));
 
     return TRUE;
 }
