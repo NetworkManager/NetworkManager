@@ -271,7 +271,7 @@ ip6_start(NMDhcpClient *client, const struct in6_addr *ll_addr, GError **error)
 
     /* TODO: honor nm_dhcp_client_get_anycast_address() */
 
-    duid = nm_dhcp_client_get_effective_client_id(client);
+    duid = client_config->client_id;
     if (!duid || !(duid_arr = g_bytes_get_data(duid, &duid_len)) || duid_len < 2) {
         nm_utils_error_set_literal(error, NM_UTILS_ERROR_UNKNOWN, "missing DUID");
         g_return_val_if_reached(FALSE);
