@@ -399,6 +399,7 @@ nm_dhcp_dhclient_create_config(const char         *interface,
                 if (out_new_client_id)
                     nm_clear_pointer(out_new_client_id, g_bytes_unref);
                 NM_SET_OUT(out_new_client_id, read_client_id(p));
+                /* fall-through. We keep the line... */
             }
 
             /* Override config file hostname and use one from the connection */
@@ -656,6 +657,7 @@ nm_dhcp_dhclient_save_duid(const char *leasefile, GBytes *duid, GError **error)
     gsize                         len = 0;
 
     g_return_val_if_fail(leasefile != NULL, FALSE);
+
     if (!duid) {
         nm_utils_error_set_literal(error, NM_UTILS_ERROR_UNKNOWN, "missing duid");
         g_return_val_if_reached(FALSE);
