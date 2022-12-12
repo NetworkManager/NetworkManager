@@ -624,7 +624,7 @@ lease_to_ip4_config(NMDhcpNettools *self, NDhcp4ClientLease *lease, GError **err
 
     l3cd = nm_dhcp_client_create_l3cd(NM_DHCP_CLIENT(self));
 
-    options = nm_dhcp_option_create_options_dict(TRUE);
+    options = nm_dhcp_client_create_options_dict(NM_DHCP_CLIENT(self), TRUE);
 
     if (!lease_parse_address(self, lease, l3cd, iface, options, &lease_address, error))
         return NULL;

@@ -237,6 +237,16 @@ nm_dhcp_client_create_l3cd(NMDhcpClient *self)
                                  NM_IP_CONFIG_SOURCE_DHCP);
 }
 
+GHashTable *
+nm_dhcp_client_create_options_dict(NMDhcpClient *self, gboolean static_keys)
+{
+    GHashTable *options;
+
+    options = nm_dhcp_option_create_options_dict(static_keys);
+
+    return options;
+}
+
 /*****************************************************************************/
 
 void
@@ -1612,7 +1622,7 @@ nm_dhcp_client_handle_event(gpointer               unused,
         GVariant                      *value;
 
         /* Copy options */
-        str_options = nm_dhcp_option_create_options_dict(FALSE);
+        str_options = nm_dhcp_client_create_options_dict(self, FALSE);
         g_variant_iter_init(&iter, options);
         while (g_variant_iter_next(&iter, "{&sv}", &name, &value)) {
             maybe_add_option(self, str_options, name, value);
