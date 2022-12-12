@@ -554,11 +554,11 @@ ip4_start(NMDhcpClient *client, GError **error)
         return FALSE;
     }
 
-    if (new_client_id) {
-        nm_assert(!client_config->client_id);
-        nm_dhcp_client_set_effective_client_id(client, new_client_id);
-    }
-    return dhclient_start(client, FALSE, FALSE, NULL, error);
+    /* Note that the effective-client-id for IPv4 here might be unknown/NULL. */
+    nm_assert(!new_client_id || !client_config->client_id);
+    nm_dhcp_client_set_effective_client_id(client, client_config->client_id ?: new_client_id);
+
+    return dhclient_start(client, FALSE, FALSE, FALSE, NULL, error);
 }
 
 static gboolean

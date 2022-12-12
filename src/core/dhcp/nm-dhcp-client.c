@@ -256,7 +256,7 @@ nm_dhcp_client_set_effective_client_id(NMDhcpClient *self, GBytes *client_id)
     g_bytes_unref(priv->effective_client_id);
     priv->effective_client_id = nm_g_bytes_ref(client_id);
 
-    _LOGT("%s: set %s",
+    _LOGT("%s: set effective %s",
           priv->config.addr_family == AF_INET6 ? "duid" : "client-id",
           priv->effective_client_id
               ? (tmp_str = nm_dhcp_utils_duid_to_string(priv->effective_client_id))

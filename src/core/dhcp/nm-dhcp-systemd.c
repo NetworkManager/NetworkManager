@@ -379,6 +379,8 @@ ip6_start(NMDhcpClient *client, const struct in6_addr *ll_addr, GError **error)
         return FALSE;
     }
 
+    nm_dhcp_client_set_effective_client_id(client, duid);
+
     return TRUE;
 }
 
