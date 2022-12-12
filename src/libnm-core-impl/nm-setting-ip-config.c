@@ -3791,8 +3791,8 @@ nm_ip_routing_rule_to_string(const NMIPRoutingRule       *self,
                              GHashTable                  *extra_args,
                              GError                     **error)
 {
-    int      addr_family;
-    NMStrBuf str;
+    int                      addr_family;
+    nm_auto_str_buf NMStrBuf str = NM_STR_BUF_INIT_A(NM_UTILS_GET_NEXT_REALLOC_SIZE_488, FALSE);
 
     g_return_val_if_fail(NM_IS_IP_ROUTING_RULE(self, TRUE), NULL);
 
@@ -3829,8 +3829,6 @@ nm_ip_routing_rule_to_string(const NMIPRoutingRule       *self,
             return NULL;
         }
     }
-
-    str = NM_STR_BUF_INIT(NM_UTILS_GET_NEXT_REALLOC_SIZE_32, FALSE);
 
     if (self->priority_has) {
         nm_str_buf_append_printf(nm_str_buf_append_required_delimiter(&str, ' '),
@@ -3938,7 +3936,7 @@ nm_ip_routing_rule_to_string(const NMIPRoutingRule       *self,
                                  nm_net_aux_rtnl_rtntype_n2a_maybe_buf(self->action, sbuf));
     }
 
-    return nm_str_buf_finalize(&str, NULL);
+    return nm_str_buf_dup_str(&str);
 }
 
 /*****************************************************************************/
