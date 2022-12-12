@@ -967,12 +967,6 @@ _dhcp_client_decline(NMDhcpClient         *self,
     return klass->decline(self, l3cd, error_message, error);
 }
 
-static GBytes *
-get_duid(NMDhcpClient *self)
-{
-    return NULL;
-}
-
 static gboolean
 ipv6_lladdr_timeout(gpointer user_data)
 {
@@ -1318,11 +1312,6 @@ nm_dhcp_client_start(NMDhcpClient *self, GError **error)
     IS_IPv4 = NM_IS_IPv4(priv->config.addr_family);
 
     if (!IS_IPv4) {
-        if (!priv->config.v6.enforce_duid)
-            own_client_id = NM_DHCP_CLIENT_GET_CLASS(self)->get_duid(self);
-
-        nm_dhcp_client_set_effective_client_id(self, own_client_id ?: priv->config.client_id);
-
         addr = ipv6_lladdr_find(self);
         if (!addr) {
             _LOGD("waiting for IPv6LL address");
@@ -1915,8 +1904,7 @@ nm_dhcp_client_class_init(NMDhcpClientClass *client_class)
     client_class->accept       = _accept;
     client_class->decline      = decline;
 
-    client_class->stop     = stop;
-    client_class->get_duid = get_duid;
+    client_class->stop = stop;
 
     obj_properties[PROP_CONFIG] =
         g_param_spec_pointer(NM_DHCP_CLIENT_CONFIG,
