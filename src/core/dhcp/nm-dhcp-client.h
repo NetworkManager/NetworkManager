@@ -280,6 +280,8 @@ GBytes *nm_dhcp_client_get_effective_client_id(NMDhcpClient *self);
 
 NML3ConfigData *nm_dhcp_client_create_l3cd(NMDhcpClient *self);
 
+GHashTable *nm_dhcp_client_create_options_dict(NMDhcpClient *self, gboolean static_keys);
+
 /*****************************************************************************
  * Client data
  *****************************************************************************/
