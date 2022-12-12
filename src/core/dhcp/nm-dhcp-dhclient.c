@@ -627,7 +627,7 @@ stop(NMDhcpClient *client, gboolean release)
     }
 }
 
-static GBytes *
+_nm_unused static GBytes *
 get_duid(NMDhcpClient *client)
 {
     NMDhcpDhclient           *self = NM_DHCP_DHCLIENT(client);
@@ -724,7 +724,6 @@ nm_dhcp_dhclient_class_init(NMDhcpDhclientClass *dhclient_class)
     client_class->ip4_start = ip4_start;
     client_class->ip6_start = ip6_start;
     client_class->stop      = stop;
-    client_class->get_duid  = get_duid;
 }
 
 const NMDhcpClientFactory _nm_dhcp_client_factory_dhclient = {
