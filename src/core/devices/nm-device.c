@@ -13202,7 +13202,7 @@ impl_device_get_applied_connection(NMDBusObject                      *obj,
     if (flags != 0) {
         g_dbus_method_invocation_return_error_literal(invocation,
                                                       NM_DEVICE_ERROR,
-                                                      NM_DEVICE_ERROR_FAILED,
+                                                      NM_DEVICE_ERROR_INVALID_ARGUMENT,
                                                       "Invalid flags specified");
         return;
     }
