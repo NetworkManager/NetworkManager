@@ -86,7 +86,7 @@ lease_to_ip6_config(NMDhcpSystemd *self, sd_dhcp6_lease *lease, gint32 ts, GErro
 
     l3cd = nm_dhcp_client_create_l3cd(NM_DHCP_CLIENT(self));
 
-    options = nm_dhcp_option_create_options_dict();
+    options = nm_dhcp_option_create_options_dict(TRUE);
 
     if (!nm_dhcp_client_get_config(NM_DHCP_CLIENT(self))->v6.info_only) {
         gboolean has_any_addresses = FALSE;

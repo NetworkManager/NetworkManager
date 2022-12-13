@@ -460,7 +460,7 @@ nm_dhcp_option_add_requests_to_options(GHashTable *options, int addr_family)
 }
 
 GHashTable *
-nm_dhcp_option_create_options_dict(void)
+nm_dhcp_option_create_options_dict(gboolean static_keys)
 {
-    return g_hash_table_new_full(nm_str_hash, g_str_equal, NULL, g_free);
+    return g_hash_table_new_full(nm_str_hash, g_str_equal, static_keys ? NULL : g_free, g_free);
 }
