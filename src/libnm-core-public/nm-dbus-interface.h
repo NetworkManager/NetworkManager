@@ -91,6 +91,20 @@
 #define NM_DBUS_PATH_DNS_MANAGER      "/org/freedesktop/NetworkManager/DnsManager"
 
 /**
+ * NMVersionInfoCapability:
+ * %_NM_VERSION_INFO_CAPABILITY_UNUSED: a dummy capability. It has no meaning,
+ *   don't use it.
+ *
+ * Currently no enum values are defined. These capabilities are exposed
+ * on D-Bus in the "VersionInfo" bit field.
+ *
+ * Since: 1.42
+ */
+typedef enum {
+    _NM_VERSION_INFO_CAPABILITY_UNUSED = 0x7FFFFFFFu,
+} NMVersionInfoCapability;
+
+/**
  * NMCapability:
  * @NM_CAPABILITY_TEAM: Teams can be managed. This means the team device plugin
  *   is loaded.

@@ -1881,6 +1881,7 @@ global:
 
 libnm_1_42_0 {
 global:
+	nm_client_get_version_info;
 	nm_client_wait_shutdown;
 	nm_client_wait_shutdown_finish;
 	nm_device_loopback_get_type;
@@ -1906,4 +1907,5 @@ global:
 	nm_setting_ovs_port_remove_trunk_by_value;
 	nm_setting_vlan_get_protocol;
 	nm_utils_ensure_gtypes;
+	nm_version_info_capability_get_type;
 } libnm_1_40_0;
