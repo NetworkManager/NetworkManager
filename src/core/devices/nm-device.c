@@ -111,6 +111,7 @@ typedef enum {
     CLEANUP_TYPE_KEEP,
     CLEANUP_TYPE_REMOVED,
     CLEANUP_TYPE_DECONFIGURE,
+    CLEANUP_TYPE_KEEP_REAPPLY,
 } CleanupType;
 
 typedef enum _nm_packed {
@@ -848,8 +849,7 @@ static void _dev_ipshared4_spawn_dnsmasq(NMDevice *self);
 
 static void _dev_ipshared6_start(NMDevice *self);
 
-static void
-_cleanup_ip_pre(NMDevice *self, int addr_family, CleanupType cleanup_type, gboolean from_reapply);
+static void _cleanup_ip_pre(NMDevice *self, int addr_family, CleanupType cleanup_type);
 
 static void concheck_update_state(NMDevice           *self,
                                   int                 addr_family,
@@ -3576,7 +3576,7 @@ _dev_ip_state_check_async(NMDevice *self, int addr_family)
 }
 
 static void
-_dev_ip_state_cleanup(NMDevice *self, int addr_family, gboolean from_reapply)
+_dev_ip_state_cleanup(NMDevice *self, int addr_family, gboolean keep_reapply)
 {
     NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
     int              IS_IPv4;
@@ -3584,7 +3584,7 @@ _dev_ip_state_cleanup(NMDevice *self, int addr_family, gboolean from_reapply)
     if (addr_family == AF_UNSPEC) {
         _dev_ip_state_set_state(self,
                                 addr_family,
-                                from_reapply ? NM_DEVICE_IP_STATE_PENDING : NM_DEVICE_IP_STATE_NONE,
+                                keep_reapply ? NM_DEVICE_IP_STATE_PENDING : NM_DEVICE_IP_STATE_NONE,
                                 "ip-state-clear");
         return;
     }
@@ -3595,7 +3595,7 @@ _dev_ip_state_cleanup(NMDevice *self, int addr_family, gboolean from_reapply)
     nm_clear_g_source_inst(&priv->ip_data_x[IS_IPv4].req_timeout_source);
     _dev_ip_state_set_state(self,
                             addr_family,
-                            from_reapply ? NM_DEVICE_IP_STATE_PENDING : NM_DEVICE_IP_STATE_NONE,
+                            keep_reapply ? NM_DEVICE_IP_STATE_PENDING : NM_DEVICE_IP_STATE_NONE,
                             "ip-state-clear");
     priv->ip_data_x[IS_IPv4].wait_for_carrier = FALSE;
     priv->ip_data_x[IS_IPv4].wait_for_ports   = FALSE;
@@ -4278,8 +4278,8 @@ _set_ifindex(NMDevice *self, int ifindex, gboolean is_ip_ifindex)
     }
 
     if (!priv->l3cfg) {
-        _cleanup_ip_pre(self, AF_INET, CLEANUP_TYPE_KEEP, FALSE);
-        _cleanup_ip_pre(self, AF_INET6, CLEANUP_TYPE_KEEP, FALSE);
+        _cleanup_ip_pre(self, AF_INET, CLEANUP_TYPE_KEEP);
+        _cleanup_ip_pre(self, AF_INET6, CLEANUP_TYPE_KEEP);
     }
 
     _LOGD(LOGD_DEVICE,
@@ -12110,11 +12110,11 @@ activate_stage3_ip_config(NMDevice *self)
 
     if (priv->ip_data_4.do_reapply) {
         _LOGD_ip(AF_INET, "reapply...");
-        _cleanup_ip_pre(self, AF_INET, CLEANUP_TYPE_DECONFIGURE, TRUE);
+        _cleanup_ip_pre(self, AF_INET, CLEANUP_TYPE_KEEP_REAPPLY);
     }
     if (priv->ip_data_6.do_reapply) {
         _LOGD_ip(AF_INET6, "reapply...");
-        _cleanup_ip_pre(self, AF_INET6, CLEANUP_TYPE_DECONFIGURE, TRUE);
+        _cleanup_ip_pre(self, AF_INET6, CLEANUP_TYPE_KEEP_REAPPLY);
     }
 
     /* Add the interface to the specified firewall zone */
@@ -12630,10 +12630,11 @@ delete_on_deactivate_check_and_schedule(NMDevice *self)
 }
 
 static void
-_cleanup_ip_pre(NMDevice *self, int addr_family, CleanupType cleanup_type, gboolean from_reapply)
+_cleanup_ip_pre(NMDevice *self, int addr_family, CleanupType cleanup_type)
 {
-    const int        IS_IPv4 = NM_IS_IPv4(addr_family);
-    NMDevicePrivate *priv    = NM_DEVICE_GET_PRIVATE(self);
+    const int        IS_IPv4      = NM_IS_IPv4(addr_family);
+    NMDevicePrivate *priv         = NM_DEVICE_GET_PRIVATE(self);
+    gboolean         keep_reapply = (cleanup_type == CLEANUP_TYPE_KEEP_REAPPLY);
 
     _dev_ipsharedx_cleanup(self, addr_family);
 
@@ -12652,8 +12653,8 @@ _cleanup_ip_pre(NMDevice *self, int addr_family, CleanupType cleanup_type, gbool
     nm_clear_g_signal_handler(nm_manager_get_dns_manager(priv->manager),
                               &priv->ip_data.dnsmgr_update_pending_signal_id);
 
-    _dev_ip_state_cleanup(self, AF_UNSPEC, from_reapply);
-    _dev_ip_state_cleanup(self, addr_family, from_reapply);
+    _dev_ip_state_cleanup(self, AF_UNSPEC, keep_reapply);
+    _dev_ip_state_cleanup(self, addr_family, keep_reapply);
 }
 
 gboolean
@@ -15405,8 +15406,8 @@ _cleanup_generic_pre(NMDevice *self, CleanupType cleanup_type)
     for (i = 0; i < 2; i++)
         nm_clear_pointer(&priv->hostname_resolver_x[i], _hostname_resolver_free);
 
-    _cleanup_ip_pre(self, AF_INET, cleanup_type, FALSE);
-    _cleanup_ip_pre(self, AF_INET6, cleanup_type, FALSE);
+    _cleanup_ip_pre(self, AF_INET, cleanup_type);
+    _cleanup_ip_pre(self, AF_INET6, cleanup_type);
 
     _dev_ip_state_req_timeout_cancel(self, AF_UNSPEC);
 }
@@ -15919,8 +15920,8 @@ _set_state_full(NMDevice *self, NMDeviceState state, NMDeviceStateReason reason,
             /* Clean up any half-done IP operations if the device's layer2
              * finds out it needs authentication during IP config.
              */
-            _cleanup_ip_pre(self, AF_INET, CLEANUP_TYPE_DECONFIGURE, FALSE);
-            _cleanup_ip_pre(self, AF_INET6, CLEANUP_TYPE_DECONFIGURE, FALSE);
+            _cleanup_ip_pre(self, AF_INET, CLEANUP_TYPE_DECONFIGURE);
+            _cleanup_ip_pre(self, AF_INET6, CLEANUP_TYPE_DECONFIGURE);
         }
         break;
     default:
