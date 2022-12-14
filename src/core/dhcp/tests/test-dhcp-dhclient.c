@@ -895,122 +895,79 @@ test_read_commented_duid_from_leasefile(void)
 /*****************************************************************************/
 
 static void
-_save_duid(const char *path, const guint8 *duid_bin, gsize duid_len)
+_check_duid_impl(const guint8 *duid_bin,
+                 gsize         duid_len,
+                 gboolean      enforce_duid, /* Unused at the moment. */
+                 const char   *old_content,
+                 const char   *new_content)
 {
-    gs_unref_bytes GBytes *duid  = NULL;
-    GError                *error = NULL;
+    gs_free_error GError  *error    = NULL;
+    gs_free char          *contents = NULL;
     gboolean               success;
+    const char            *path = NM_BUILD_SRCDIR "/src/core/dhcp/tests/check-duid.lease";
+    gs_unref_bytes GBytes *duid = NULL;
+    gsize                  contents_len;
 
-    g_assert(path);
     g_assert(duid_bin);
     g_assert(duid_len > 0);
 
-    duid    = g_bytes_new(duid_bin, duid_len);
+    if (!nm_str_is_empty(old_content) || nmtst_get_rand_bool()) {
+        success = g_file_set_contents(path, old_content ?: "", -1, &error);
+        nmtst_assert_success(success, error);
+    } else
+        nmtst_file_unlink_if_exists(path);
+
+    duid = g_bytes_new(duid_bin, duid_len);
+
     success = nm_dhcp_dhclient_save_duid(path, duid, &error);
     nmtst_assert_success(success, error);
+
+    success = g_file_get_contents(path, &contents, &contents_len, &error);
+    nmtst_assert_success(success, error);
+    g_assert(contents);
+
+    nmtst_file_unlink(path);
+
+    if (!nm_streq0(new_content, contents))
+        g_error("FAILING:\n\nEXPECTED:\n%s\nACTUAL:\n%s\n\n", new_content, contents);
+
+    g_assert_cmpstr(new_content, ==, contents);
+    g_assert_cmpint(contents_len, ==, strlen(contents));
 }
+
+#define _DUID(...) ((const guint8[]){__VA_ARGS__})
+
+#define _check_duid(duid, enforce_duid, old_content, new_content) \
+    _check_duid_impl((duid), sizeof(duid), (enforce_duid), (old_content), (new_content))
 
 static void
 test_write_duid(void)
 {
-    const guint8 duid[] = {000, 001, 000, 001, 027, 'X', 0350, 'X', 0, '#', 025, 010, '~', 0254};
-    const char  *expected_contents =
-        "default-duid \"\\000\\001\\000\\001\\027X\\350X\\000#\\025\\010~\\254\";\n";
-    GError       *error    = NULL;
-    gs_free char *contents = NULL;
-    gboolean      success;
-    const char   *path = "test-dhclient-write-duid.leases";
+    _check_duid(_DUID(000, 001, 000, 001, 027, 'X', 0350, 'X', 0, '#', 025, 010, '~', 0254),
+                FALSE,
+                NULL,
+                "default-duid \"\\000\\001\\000\\001\\027X\\350X\\000#\\025\\010~\\254\";\n");
 
-    _save_duid(path, duid, G_N_ELEMENTS(duid));
+    _check_duid(
+        _DUID(000, 001, 000, 001, 023, 'o', 023, 'n', 000, '"', 0372, 0214, 0326, 0302),
+        FALSE,
+        "default-duid \"\\000\\001\\000\\001\\027X\\350X\\000#\\025\\010~\\254\";\n",
+        "default-duid \"\\000\\001\\000\\001\\023o\\023n\\000\\\"\\372\\214\\326\\302\";\n");
 
-    success = g_file_get_contents(path, &contents, NULL, &error);
-    nmtst_assert_success(success, error);
-
-    unlink(path);
-
-    g_assert_cmpstr(expected_contents, ==, contents);
-}
-
-static void
-test_write_existing_duid(void)
-{
-    const guint8 duid[] =
-        {000, 001, 000, 001, 023, 'o', 023, 'n', 000, '"', 0372, 0214, 0326, 0302};
-    const char *original_contents =
-        "default-duid \"\\000\\001\\000\\001\\027X\\350X\\000#\\025\\010~\\254\";\n";
-    const char *expected_contents =
-        "default-duid \"\\000\\001\\000\\001\\023o\\023n\\000\\\"\\372\\214\\326\\302\";\n";
-    GError       *error    = NULL;
-    gs_free char *contents = NULL;
-    gboolean      success;
-    const char   *path = "test-dhclient-write-existing-duid.leases";
-
-    success = g_file_set_contents(path, original_contents, -1, &error);
-    nmtst_assert_success(success, error);
-
-    /* Save other DUID; should be overwritten */
-    _save_duid(path, duid, G_N_ELEMENTS(duid));
-
-    /* reread original contents */
-    success = g_file_get_contents(path, &contents, NULL, &error);
-    nmtst_assert_success(success, error);
-
-    unlink(path);
-    g_assert_cmpstr(expected_contents, ==, contents);
-}
-
-static const guint8 DUID_BIN[] =
-    {000, 001, 000, 001, 023, 'o', 023, 'n', 000, '"', 0372, 0214, 0326, 0302};
-#define DUID "\\000\\001\\000\\001\\023o\\023n\\000\\\"\\372\\214\\326\\302"
-
-static void
-test_write_existing_commented_duid(void)
-{
-#define ORIG_CONTENTS "#default-duid \"\\000\\001\\000\\001\\027X\\350X\\000#\\025\\010~\\254\";\n"
-    const char   *expected_contents = "default-duid \"" DUID "\";\n" ORIG_CONTENTS;
-    GError       *error             = NULL;
-    gs_free char *contents          = NULL;
-    gboolean      success;
-    const char   *path = "test-dhclient-write-existing-commented-duid.leases";
-
-    success = g_file_set_contents(path, ORIG_CONTENTS, -1, &error);
-    nmtst_assert_success(success, error);
-
-    /* Save other DUID; should be saved on top */
-    _save_duid(path, DUID_BIN, G_N_ELEMENTS(DUID_BIN));
-
-    /* reread original contents */
-    success = g_file_get_contents(path, &contents, NULL, &error);
-    nmtst_assert_success(success, error);
-
-    unlink(path);
-    g_assert_cmpstr(expected_contents, ==, contents);
-#undef ORIG_CONTENTS
-}
-
-static void
-test_write_existing_multiline_duid(void)
-{
-#define ORIG_CONTENTS              \
-    "### Commented old DUID ###\n" \
-    "#default-duid \"\\000\\001\\000\\001\\027X\\350X\\000#\\025\\010~\\254\";\n"
-    const char                 *expected_contents = "default-duid \"" DUID "\";\n" ORIG_CONTENTS;
-    GError                     *error             = NULL;
-    gs_free char               *contents          = NULL;
-    gboolean                    success;
-    nmtst_auto_unlinkfile char *path =
-        g_strdup("test-dhclient-write-existing-multiline-duid.leases");
-
-    success = g_file_set_contents(path, ORIG_CONTENTS, -1, &error);
-    nmtst_assert_success(success, error);
-
-    _save_duid(path, DUID_BIN, G_N_ELEMENTS(DUID_BIN));
-
-    success = g_file_get_contents(path, &contents, NULL, &error);
-    nmtst_assert_success(success, error);
-
-    g_assert_cmpstr(expected_contents, ==, contents);
-#undef ORIG_CONTENTS
+    _check_duid(_DUID(000, 001, 000, 001, 023, 'o', 023, 'n', 000, '"', 0372, 0214, 0326, 0302),
+                FALSE,
+                "#default-duid \"\\000\\001\\000\\001\\027X\\350X\\000#\\025\\010~\\254\";\n",
+                "default-duid "
+                "\"\\000\\001\\000\\001\\023o\\023n\\000\\\"\\372\\214\\326\\302\";\n#default-duid "
+                "\"\\000\\001\\000\\001\\027X\\350X\\000#\\025\\010~\\254\";\n");
+    _check_duid(
+        _DUID(000, 001, 000, 001, 023, 'o', 023, 'n', 000, '"', 0372, 0214, 0326, 0302),
+        FALSE,
+        "### Commented old DUID ###\n#default-duid "
+        "\"\\000\\001\\000\\001\\027X\\350X\\000#\\025\\010~\\254\";\n",
+        "default-duid \"\\000\\001\\000\\001\\023o\\023n\\000\\\"\\372\\214\\326\\302\";\n### "
+        "Commented old DUID ###\n#default-duid "
+        "\"\\000\\001\\000\\001\\027X\\350X\\000#\\025\\010~\\254\";\n");
 }
 
 /*****************************************************************************/
@@ -1329,12 +1286,7 @@ main(int argc, char **argv)
     g_test_add_func("/dhcp/dhclient/read_commented_duid_from_leasefile",
                     test_read_commented_duid_from_leasefile);
 
-    g_test_add_func("/dhcp/dhclient/write_duid", test_write_duid);
-    g_test_add_func("/dhcp/dhclient/write_existing_duid", test_write_existing_duid);
-    g_test_add_func("/dhcp/dhclient/write_existing_commented_duid",
-                    test_write_existing_commented_duid);
-    g_test_add_func("/dhcp/dhclient/write_existing_multiline_duid",
-                    test_write_existing_multiline_duid);
+    g_test_add_func("/dhcp/dhclient/test_write_duid", test_write_duid);
 
     return g_test_run();
 }
