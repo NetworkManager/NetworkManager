@@ -524,6 +524,20 @@ nm_dhcp_dhclient_create_config(const char         *interface,
     return g_string_free(g_steal_pointer(&new_contents), FALSE);
 }
 
+/* In the lease file, dhclient will write "option dhcp6.client-id $HEXSTR". This
+ * function does the same. */
+static char *
+nm_dhcp_dhclient_escape_duid_as_hex(GBytes *duid)
+{
+    const guint8 *s;
+    gsize         len;
+
+    nm_assert(duid);
+
+    s = g_bytes_get_data(duid, &len);
+    return nm_utils_bin2hexstr_fuller(s, len, ':', FALSE, FALSE, NULL);
+}
+
 /* Roughly follow what dhclient's quotify_buf() and pretty_escape() functions do */
 char *
 nm_dhcp_dhclient_escape_duid(GBytes *duid)
@@ -648,14 +662,18 @@ nm_dhcp_dhclient_read_duid(const char *leasefile, GError **error)
 }
 
 gboolean
-nm_dhcp_dhclient_save_duid(const char *leasefile, GBytes *duid, GError **error)
+nm_dhcp_dhclient_save_duid(const char *leasefile,
+                           GBytes     *duid,
+                           gboolean    enforce_duid,
+                           GError    **error)
 {
     gs_free char                 *escaped_duid = NULL;
     gs_free const char          **lines        = NULL;
     nm_auto_free_gstring GString *s            = NULL;
     const char *const            *iter;
-    gs_free char                 *contents     = NULL;
-    gsize                         contents_len = 0;
+    gs_free char                 *conflicting_duid_line = NULL;
+    gs_free char                 *contents              = NULL;
+    gsize                         contents_len          = 0;
 
     g_return_val_if_fail(leasefile != NULL, FALSE);
 
@@ -700,6 +718,17 @@ nm_dhcp_dhclient_save_duid(const char *leasefile, GBytes *duid, GError **error)
             if (NM_STR_HAS_PREFIX(l, DEFAULT_DUID_PREFIX)) {
                 /* We always add our line on top. This line can be skipped. */
                 continue;
+            }
+
+            if (enforce_duid & NM_STR_HAS_PREFIX(l, "option dhcp6.client-id ")) {
+                /* we want to use our duid. Skip the per-lease client-id. */
+                if (!conflicting_duid_line) {
+                    gs_free char *duid_hex = nm_dhcp_dhclient_escape_duid_as_hex(duid);
+
+                    conflicting_duid_line = g_strdup_printf("option dhcp6.client-id %s;", duid_hex);
+                }
+                /* We adjust the duid line and set what we want. */
+                l = conflicting_duid_line;
             }
 
             g_string_append_len(s, str, prefix_len);

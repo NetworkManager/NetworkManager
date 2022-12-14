@@ -897,7 +897,7 @@ test_read_commented_duid_from_leasefile(void)
 static void
 _check_duid_impl(const guint8 *duid_bin,
                  gsize         duid_len,
-                 gboolean      enforce_duid, /* Unused at the moment. */
+                 gboolean      enforce_duid,
                  const char   *old_content,
                  const char   *new_content)
 {
@@ -919,7 +919,7 @@ _check_duid_impl(const guint8 *duid_bin,
 
     duid = g_bytes_new(duid_bin, duid_len);
 
-    success = nm_dhcp_dhclient_save_duid(path, duid, &error);
+    success = nm_dhcp_dhclient_save_duid(path, duid, enforce_duid, &error);
     nmtst_assert_success(success, error);
 
     success = g_file_get_contents(path, &contents, &contents_len, &error);
@@ -1060,7 +1060,7 @@ test_write_duid(void)
         "     max-life 120;\n    }\n  }\n  option fqdn.encoded true;\n  option "
         "fqdn.server-update true;\n  option fqdn.no-client-update false;\n  option fqdn.fqdn "
         "\"dff6de4fcb0f\";\n  option fqdn.hostname \"dff6de4fcb0f\";\n  option dhcp6.client-id "
-        "aa:b:cc:d:ee:f;\n  option dhcp6.server-id 0:1:0:1:2b:2c:4d:1d:0:0:0:0:0:0;\n  option "
+        "aa:b:cc:d:ee:e;\n  option dhcp6.server-id 0:1:0:1:2b:2c:4d:1d:0:0:0:0:0:0;\n  option "
         "dhcp6.name-servers 192:168:121:0:ce0f:f1ff:fece:1;\n  option dhcp6.fqdn "
         "1:c:64:66:66:36:64:65:34:66:63:62:30:66;\n  option dhcp6.status-code success "
         "\"success\";\n}\n");

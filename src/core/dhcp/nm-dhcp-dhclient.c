@@ -418,6 +418,7 @@ dhclient_start(NMDhcpClient *client,
     if (set_duid && addr_family == AF_INET6) {
         if (!nm_dhcp_dhclient_save_duid(priv->lease_file,
                                         nm_dhcp_client_get_effective_client_id(client),
+                                        client_config->v6.enforce_duid,
                                         &local)) {
             nm_utils_error_set(error,
                                NM_UTILS_ERROR_UNKNOWN,

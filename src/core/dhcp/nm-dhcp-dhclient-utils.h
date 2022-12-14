@@ -29,6 +29,9 @@ GBytes *nm_dhcp_dhclient_unescape_duid(const char *duid);
 
 GBytes *nm_dhcp_dhclient_read_duid(const char *leasefile, GError **error);
 
-gboolean nm_dhcp_dhclient_save_duid(const char *leasefile, GBytes *duid, GError **error);
+gboolean nm_dhcp_dhclient_save_duid(const char *leasefile,
+                                    GBytes     *duid,
+                                    gboolean    enforce_duid,
+                                    GError    **error);
 
 #endif /* __NETWORKMANAGER_DHCP_DHCLIENT_UTILS_H__ */
