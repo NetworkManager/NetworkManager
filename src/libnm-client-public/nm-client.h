@@ -47,6 +47,7 @@ typedef enum /*< flags >*/ {
 #define NM_CLIENT_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS((obj), NM_TYPE_CLIENT, NMClientClass))
 
 #define NM_CLIENT_VERSION         "version"
+#define NM_CLIENT_VERSION_INFO    "version-info"
 #define NM_CLIENT_STATE           "state"
 #define NM_CLIENT_STARTUP         "startup"
 #define NM_CLIENT_NM_RUNNING      "nm-running"
@@ -187,9 +188,13 @@ NM_AVAILABLE_IN_1_22
 const char *nm_client_get_dbus_name_owner(NMClient *client);
 
 const char *nm_client_get_version(NMClient *client);
-NMState     nm_client_get_state(NMClient *client);
-gboolean    nm_client_get_startup(NMClient *client);
-gboolean    nm_client_get_nm_running(NMClient *client);
+
+NM_AVAILABLE_IN_1_42
+const guint32 *nm_client_get_version_info(NMClient *client, gsize *length);
+
+NMState  nm_client_get_state(NMClient *client);
+gboolean nm_client_get_startup(NMClient *client);
+gboolean nm_client_get_nm_running(NMClient *client);
 
 NMObject *nm_client_get_object_by_path(NMClient *client, const char *dbus_path);
 

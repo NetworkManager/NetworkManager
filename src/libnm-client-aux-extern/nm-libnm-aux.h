@@ -21,4 +21,8 @@ gboolean nmc_client_new_waitsync(GCancellable *cancellable,
                                  const char   *first_property_name,
                                  ...);
 
+guint32  nmc_client_has_version_info_v(NMClient *nmc);
+gboolean nmc_client_has_version_info_capability(NMClient *nmc, NMVersionInfoCapability capability);
+gboolean nmc_client_has_capability(NMClient *nmc, NMCapability capability);
+
 #endif /* __NM_LIBNM_AUX_H__ */

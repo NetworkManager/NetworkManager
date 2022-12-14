@@ -182,6 +182,7 @@ EXTRA_DIST += \
 	examples/python/gi/add_connection.py \
 	examples/python/gi/checkpoint.py \
 	examples/python/gi/deactivate-all.py \
+	examples/python/gi/device-reapply.py \
 	examples/python/gi/device-state-ip4config.py \
 	examples/python/gi/dns.py \
 	examples/python/gi/firewall-zone.py \

@@ -91,6 +91,20 @@
 #define NM_DBUS_PATH_DNS_MANAGER      "/org/freedesktop/NetworkManager/DnsManager"
 
 /**
+ * NMVersionInfoCapability:
+ * %_NM_VERSION_INFO_CAPABILITY_UNUSED: a dummy capability. It has no meaning,
+ *   don't use it.
+ *
+ * Currently no enum values are defined. These capabilities are exposed
+ * on D-Bus in the "VersionInfo" bit field.
+ *
+ * Since: 1.42
+ */
+typedef enum {
+    _NM_VERSION_INFO_CAPABILITY_UNUSED = 0x7FFFFFFFu,
+} NMVersionInfoCapability;
+
+/**
  * NMCapability:
  * @NM_CAPABILITY_TEAM: Teams can be managed. This means the team device plugin
  *   is loaded.
@@ -1146,6 +1160,22 @@ typedef enum /*< flags >*/ {
     NM_SETTINGS_UPDATE2_FLAG_BLOCK_AUTOCONNECT  = 0x20,
     NM_SETTINGS_UPDATE2_FLAG_NO_REAPPLY         = 0x40,
 } NMSettingsUpdate2Flags;
+
+/**
+ * NMDeviceReapplyFlags:
+ * @NM_DEVICE_REAPPLY_FLAGS_NONE: no flag set.
+ * @NM_DEVICE_REAPPLY_FLAGS_PRESERVE_EXTERNAL_IP: during reapply,
+ *   preserve external IP addresses and routes.
+ *
+ * Flags for the Reapply() D-Bus call of a device and
+ * nm_device_reapply_async().
+ *
+ * Since: 1.42
+ */
+typedef enum /*< flags >*/ {
+    NM_DEVICE_REAPPLY_FLAGS_NONE                 = 0,
+    NM_DEVICE_REAPPLY_FLAGS_PRESERVE_EXTERNAL_IP = 0x1,
+} NMDeviceReapplyFlags;
 
 /**
  * NMTernary:

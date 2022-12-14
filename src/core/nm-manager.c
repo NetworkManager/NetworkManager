@@ -115,6 +115,7 @@ static guint signals[LAST_SIGNAL] = {0};
 
 NM_GOBJECT_PROPERTIES_DEFINE(NMManager,
                              PROP_VERSION,
+                             PROP_VERSION_INFO,
                              PROP_CAPABILITIES,
                              PROP_STATE,
                              PROP_STARTUP,
@@ -417,6 +418,31 @@ static void _rfkill_update(NMManager *self, NMRfkillType rtype);
 /*****************************************************************************/
 
 static NM_CACHED_QUARK_FCN("autoconnect-root", autoconnect_root_quark);
+
+/*****************************************************************************/
+
+static GVariant *
+_version_info_get(void)
+{
+    const guint32 arr[] = {
+        NM_VERSION,
+    };
+
+    /* The array contains as first element NM_VERSION, which can be
+     * used to numerically compare the version (see also NM_ENCODE_VERSION,
+     * nm_utils_version(), nm_encode_version() and nm_decode_version().
+     *
+     * The following elements of the array are a bitfield of capabilities.
+     * These capabilities should only depend on compile-time abilities
+     * (unlike NM_MANAGER_CAPABILITIES, NMCapability). The supported values
+     * are from NMVersionInfoCapability enum. This way to expose capabilities
+     * is more cumbersome but more efficient compared to NM_MANAGER_CAPABILITIES.
+     * As such, it is cheap to add capabilities for something, where you would
+     * avoid it as NM_MANAGER_CAPABILITIES due to the overhead.
+     */
+
+    return nm_g_variant_new_au(arr, G_N_ELEMENTS(arr));
+}
 
 /*****************************************************************************/
 
@@ -8133,6 +8159,9 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
     case PROP_VERSION:
         g_value_set_string(value, VERSION);
         break;
+    case PROP_VERSION_INFO:
+        g_value_set_variant(value, _version_info_get());
+        break;
     case PROP_CAPABILITIES:
         g_value_set_variant(value,
                             nm_g_variant_new_au(nm_g_array_first_p(priv->capabilities, guint32),
@@ -8646,6 +8675,9 @@ static const NMDBusInterfaceInfoExtended interface_info_manager = {
                                                            NM_MANAGER_ACTIVATING_CONNECTION),
             NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("Startup", "b", NM_MANAGER_STARTUP),
             NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("Version", "s", NM_MANAGER_VERSION),
+            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("VersionInfo",
+                                                           "au",
+                                                           NM_MANAGER_VERSION_INFO),
             NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("Capabilities",
                                                            "au",
                                                            NM_MANAGER_CAPABILITIES),
@@ -8703,6 +8735,14 @@ nm_manager_class_init(NMManagerClass *manager_class)
                                                        "",
                                                        NULL,
                                                        G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+
+    obj_properties[PROP_VERSION_INFO] =
+        g_param_spec_variant(NM_MANAGER_VERSION_INFO,
+                             "",
+                             "",
+                             G_VARIANT_TYPE("au"),
+                             NULL,
+                             G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     obj_properties[PROP_CAPABILITIES] =
         g_param_spec_variant(NM_MANAGER_CAPABILITIES,
