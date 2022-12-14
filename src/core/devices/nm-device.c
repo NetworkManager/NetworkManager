@@ -12214,6 +12214,9 @@ activate_stage3_ip_config(NMDevice *self)
         _dev_ipmanual_start(self);
     }
 
+    if (!nm_streq(ipv4_method, NM_SETTING_IP4_CONFIG_METHOD_AUTO))
+        nm_clear_l3cd(priv->l3cds[L3_CONFIG_DATA_TYPE_DHCP_X(TRUE)].d);
+
     activate_stage3_ip_config_for_addr_family(self, AF_INET, ipv4_method);
     activate_stage3_ip_config_for_addr_family(self, AF_INET6, ipv6_method);
 }
