@@ -353,7 +353,6 @@ RUN dnf install -y \\
     libuuid-devel \\
     make \\
     meson \\
-    meson \\
     mlocate \\
     mobile-broadband-provider-info-devel \\
     newt-devel \\
