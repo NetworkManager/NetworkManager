@@ -1497,13 +1497,14 @@ nm_utils_addr_family_from_size(size_t len)
  *
  * This macro does essentially that, but it also does an nm_assert() that the
  * alignment of the pointer is suitable to cast to (Type *). */
-#define NM_CAST_ALIGN(Type, ptr)                                   \
-    ({                                                             \
-        const void *const _ptr = (ptr);                            \
-                                                                   \
-        nm_assert((((uintptr_t) _ptr) % _nm_alignof(Type)) == 0u); \
-                                                                   \
-        ((Type *) _ptr);                                           \
+#define _NM_CAST_ALIGN(uniq, Type, ptr)                                             \
+    ({                                                                              \
+        const void *const NM_UNIQ_T(_ptr, uniq) = (ptr);                            \
+                                                                                    \
+        nm_assert((((uintptr_t) NM_UNIQ_T(_ptr, uniq)) % _nm_alignof(Type)) == 0u); \
+                                                                                    \
+        ((Type *) NM_UNIQ_T(_ptr, uniq));                                           \
     })
+#define NM_CAST_ALIGN(Type, ptr) _NM_CAST_ALIGN(NM_UNIQ, Type, ptr)
 
 #endif /* __NM_STD_AUX_H__ */
