@@ -12791,6 +12791,7 @@ reapply_connection(NMDevice *self, NMConnection *con_old, NMConnection *con_new)
  *   the current settings connection
  * @version_id: either zero, or the current version id for the applied
  *   connection.
+ * @reapply_flags: the #NMDeviceReapplyFlags.
  * @audit_args: on return, a string representing the changes
  * @error: the error if %FALSE is returned
  *
@@ -12800,11 +12801,12 @@ reapply_connection(NMDevice *self, NMConnection *con_old, NMConnection *con_new)
  * Return: %FALSE if the new configuration can not be reapplied.
  */
 static gboolean
-check_and_reapply_connection(NMDevice     *self,
-                             NMConnection *connection,
-                             guint64       version_id,
-                             char        **audit_args,
-                             GError      **error)
+check_and_reapply_connection(NMDevice            *self,
+                             NMConnection        *connection,
+                             guint64              version_id,
+                             NMDeviceReapplyFlags reapply_flags,
+                             char               **audit_args,
+                             GError             **error)
 {
     NMDeviceClass                 *klass         = NM_DEVICE_GET_CLASS(self);
     NMDevicePrivate               *priv          = NM_DEVICE_GET_PRIVATE(self);
@@ -12972,7 +12974,12 @@ check_and_reapply_connection(NMDevice     *self,
 
         reactivate_proxy_config(self);
 
-        nm_device_l3cfg_commit(self, NM_L3_CFG_COMMIT_TYPE_REAPPLY, FALSE);
+        nm_device_l3cfg_commit(
+            self,
+            NM_FLAGS_HAS(reapply_flags, NM_DEVICE_REAPPLY_FLAGS_PRESERVE_EXTERNAL_IP)
+                ? NM_L3_CFG_COMMIT_TYPE_UPDATE
+                : NM_L3_CFG_COMMIT_TYPE_REAPPLY,
+            FALSE);
     }
 
     if (priv->state >= NM_DEVICE_STATE_IP_CHECK)
@@ -12989,12 +12996,18 @@ nm_device_reapply(NMDevice *self, NMConnection *connection, GError **error)
 {
     g_return_val_if_fail(NM_IS_DEVICE(self), FALSE);
 
-    return check_and_reapply_connection(self, connection, 0, NULL, error);
+    return check_and_reapply_connection(self,
+                                        connection,
+                                        0,
+                                        NM_DEVICE_REAPPLY_FLAGS_NONE,
+                                        NULL,
+                                        error);
 }
 
 typedef struct {
-    NMConnection *connection;
-    guint64       version_id;
+    NMConnection        *connection;
+    guint64              version_id;
+    NMDeviceReapplyFlags reapply_flags;
 } ReapplyData;
 
 static void
@@ -13005,16 +13018,16 @@ reapply_cb(NMDevice              *self,
            gpointer               user_data)
 {
     ReapplyData                  *reapply_data = user_data;
-    guint64                       version_id   = 0;
-    gs_unref_object NMConnection *connection   = NULL;
-    GError                       *local        = NULL;
-    gs_free char                 *audit_args   = NULL;
+    guint64                       version_id;
+    gs_unref_object NMConnection *connection = NULL;
+    NMDeviceReapplyFlags          reapply_flags;
+    GError                       *local      = NULL;
+    gs_free char                 *audit_args = NULL;
 
-    if (reapply_data) {
-        connection = reapply_data->connection;
-        version_id = reapply_data->version_id;
-        g_slice_free(ReapplyData, reapply_data);
-    }
+    connection    = reapply_data->connection;
+    version_id    = reapply_data->version_id;
+    reapply_flags = reapply_data->reapply_flags;
+    nm_g_slice_free(reapply_data);
 
     if (error) {
         nm_audit_log_device_op(NM_AUDIT_OP_DEVICE_REAPPLY,
@@ -13034,6 +13047,7 @@ reapply_cb(NMDevice              *self,
                                       connection
                                           ?: nm_device_get_settings_connection_get_connection(self),
                                       version_id,
+                                      reapply_flags,
                                       &audit_args,
                                       &local)) {
         nm_audit_log_device_op(NM_AUDIT_OP_DEVICE_REAPPLY,
@@ -13067,12 +13081,12 @@ impl_device_reapply(NMDBusObject                      *obj,
     ReapplyData               *reapply_data;
     gs_unref_variant GVariant *settings = NULL;
     guint64                    version_id;
-    guint32                    flags;
+    guint32                    reapply_flags_u;
+    NMDeviceReapplyFlags       reapply_flags;
 
-    g_variant_get(parameters, "(@a{sa{sv}}tu)", &settings, &version_id, &flags);
+    g_variant_get(parameters, "(@a{sa{sv}}tu)", &settings, &version_id, &reapply_flags_u);
 
-    /* No flags supported as of now. */
-    if (flags != 0) {
+    if (NM_FLAGS_ANY(reapply_flags_u, ~((guint32) NM_DEVICE_REAPPLY_FLAGS_PRESERVE_EXTERNAL_IP))) {
         error =
             g_error_new_literal(NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED, "Invalid flags specified");
         nm_audit_log_device_op(NM_AUDIT_OP_DEVICE_REAPPLY,
@@ -13084,6 +13098,9 @@ impl_device_reapply(NMDBusObject                      *obj,
         g_dbus_method_invocation_take_error(invocation, error);
         return;
     }
+
+    reapply_flags = reapply_flags_u;
+    nm_assert(reapply_flags_u == reapply_flags);
 
     if (priv->state < NM_DEVICE_STATE_PREPARE || priv->state > NM_DEVICE_STATE_ACTIVATED) {
         error = g_error_new_literal(NM_DEVICE_ERROR,
@@ -13122,12 +13139,12 @@ impl_device_reapply(NMDBusObject                      *obj,
         nm_connection_clear_secrets(connection);
     }
 
-    if (connection || version_id) {
-        reapply_data             = g_slice_new(ReapplyData);
-        reapply_data->connection = connection;
-        reapply_data->version_id = version_id;
-    } else
-        reapply_data = NULL;
+    reapply_data  = g_slice_new(ReapplyData);
+    *reapply_data = (ReapplyData){
+        .connection    = connection,
+        .version_id    = version_id,
+        .reapply_flags = reapply_flags,
+    };
 
     nm_device_auth_request(self,
                            invocation,
@@ -13163,7 +13180,7 @@ impl_device_get_applied_connection(NMDBusObject                      *obj,
     if (flags != 0) {
         g_dbus_method_invocation_return_error_literal(invocation,
                                                       NM_DEVICE_ERROR,
-                                                      NM_DEVICE_ERROR_FAILED,
+                                                      NM_DEVICE_ERROR_INVALID_ARGUMENT,
                                                       "Invalid flags specified");
         return;
     }

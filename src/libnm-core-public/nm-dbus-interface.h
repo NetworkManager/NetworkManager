@@ -1145,6 +1145,24 @@ typedef enum /*< flags >*/ {
 } NMSettingsUpdate2Flags;
 
 /**
+ * NMDeviceReapplyFlags:
+ * @NM_DEVICE_REAPPLY_FLAGS_NONE: no flag set.
+ * @NM_DEVICE_REAPPLY_FLAGS_PRESERVE_EXTERNAL_IP: during reapply,
+ *   preserve external IP addresses and routes.
+ *
+ * Flags for the Reapply() D-Bus call of a device and
+ * nm_device_reapply_async().
+ *
+ * Since: 1.42, 1.40.10
+ *
+ * On 1.40.10+, no GFlags type is created.
+ */
+typedef enum /*< skip >*/ {
+    NM_DEVICE_REAPPLY_FLAGS_NONE                 = 0,
+    NM_DEVICE_REAPPLY_FLAGS_PRESERVE_EXTERNAL_IP = 0x1,
+} NMDeviceReapplyFlags;
+
+/**
  * NMTernary:
  * @NM_TERNARY_DEFAULT: use the globally-configured default value.
  * @NM_TERNARY_FALSE: the option is disabled.

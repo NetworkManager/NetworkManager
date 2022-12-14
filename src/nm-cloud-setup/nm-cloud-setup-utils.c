@@ -822,6 +822,7 @@ nmcs_device_reapply(NMDevice     *device,
                     GCancellable *sigterm_cancellable,
                     NMConnection *connection,
                     guint64       version_id,
+                    gboolean      maybe_no_preserved_external_ip,
                     gboolean     *out_version_id_changed,
                     GError      **error)
 {
@@ -829,11 +830,13 @@ nmcs_device_reapply(NMDevice     *device,
     DeviceReapplyData                  data      = {
                               .main_loop = main_loop,
     };
+    NMDeviceReapplyFlags reapply_flags = NM_DEVICE_REAPPLY_FLAGS_PRESERVE_EXTERNAL_IP;
 
+again:
     nm_device_reapply_async(device,
                             connection,
                             version_id,
-                            0,
+                            reapply_flags,
                             sigterm_cancellable,
                             _nmcs_device_reapply_cb,
                             &data);
@@ -841,6 +844,17 @@ nmcs_device_reapply(NMDevice     *device,
     g_main_loop_run(main_loop);
 
     if (data.error) {
+        if (maybe_no_preserved_external_ip
+            && reapply_flags == NM_DEVICE_REAPPLY_FLAGS_PRESERVE_EXTERNAL_IP
+            && nm_g_error_matches(data.error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_FAILED)) {
+            /* Hm? Maybe we running against an older version of NetworkManager that
+             * doesn't support "preserve-external-ip" flags? Retry without the flag.
+             *
+             * Note that recent version would reject invalid flags with NM_DEVICE_ERROR_INVALID_ARGUMENT,
+             * but we want to detect old daemon versions here. */
+            reapply_flags = NM_DEVICE_REAPPLY_FLAGS_NONE;
+            goto again;
+        }
         NM_SET_OUT(
             out_version_id_changed,
             g_error_matches(data.error, NM_DEVICE_ERROR, NM_DEVICE_ERROR_VERSION_ID_MISMATCH));
