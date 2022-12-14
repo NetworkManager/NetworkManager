@@ -1989,6 +1989,20 @@ nm_g_array_unref(GArray *arr)
         &g_array_index(arr, Type, _len);                           \
     })
 
+#define nm_g_array_append_simple(arr, val)                               \
+    G_STMT_START                                                         \
+    {                                                                    \
+        /* Similar to `g_array_append_val()`, but `g_array_append_val()`
+         * only works with lvalues. That makes sense if the value is a larger
+         * struct and you anyway have a pointer to it. It doesn't make sense
+         * if you have a list of int and want to append a number literal.
+         *
+         * nm_g_array_append_simple() is different. It depends on typeof(val)
+         * to be compatible. */ \
+        (*nm_g_array_append_new((arr), typeof(val))) = (val);            \
+    }                                                                    \
+    G_STMT_END
+
 /*****************************************************************************/
 
 static inline GPtrArray *

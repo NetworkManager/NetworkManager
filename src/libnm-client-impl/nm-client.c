@@ -217,6 +217,7 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMClient,
                              PROP_DNS_RC_MANAGER,
                              PROP_DNS_CONFIGURATION,
                              PROP_CHECKPOINTS,
+                             PROP_VERSION_INFO,
                              PROP_CAPABILITIES,
                              PROP_PERMISSIONS_STATE, );
 
@@ -305,7 +306,9 @@ typedef struct {
         char             *connectivity_check_uri;
         char             *version;
         guint32          *capabilities_arr;
+        guint32          *version_info_arr;
         gsize             capabilities_len;
+        gsize             version_info_len;
         guint32           connectivity;
         guint32           state;
         guint32           metered;
@@ -6300,6 +6303,57 @@ nm_client_get_capabilities(NMClient *client, gsize *length)
     return priv->nm.capabilities_arr;
 }
 
+/**
+ * nm_client_get_version_info:
+ * @client: the #NMClient instance
+ * @length: (out): the number of returned capabilities.
+ *
+ * If available, the first element in the array is NM_VERSION which
+ * encodes the daemon version as "(major << 16 | minor << 8 | micro)".
+ * The following elements are a bitfield of %NMVersionInfoCapabilities
+ * that indicate that the daemon supports a certain capability.
+ *
+ * Returns: (transfer none) (array length=length): the
+ *   list of capabilities reported by the server or %NULL
+ *   if the capabilities are unknown.
+ *
+ * Since: 1.42
+ */
+const guint32 *
+nm_client_get_version_info(NMClient *client, gsize *length)
+{
+    NMClientPrivate *priv;
+
+    g_return_val_if_fail(NM_IS_CLIENT(client), NULL);
+    g_return_val_if_fail(length, NULL);
+
+    priv = NM_CLIENT_GET_PRIVATE(client);
+
+    *length = priv->nm.version_info_len;
+    return priv->nm.version_info_arr;
+}
+
+static NMLDBusNotifyUpdatePropFlags
+_notify_update_prop_nm_au(guint32 **p_arr, gsize *p_len, GVariant *value)
+{
+    nm_clear_g_free(p_arr);
+    *p_len = 0;
+
+    if (value) {
+        const guint32 *arr;
+        gsize          len;
+
+        arr    = g_variant_get_fixed_array(value, &len, sizeof(guint32));
+        *p_len = len;
+        *p_arr = g_new(guint32, len + 1);
+        if (len > 0)
+            memcpy(*p_arr, arr, len * sizeof(guint32));
+        (*p_arr)[len] = 0;
+    }
+
+    return NML_DBUS_NOTIFY_UPDATE_PROP_FLAGS_NOTIFY;
+}
+
 static NMLDBusNotifyUpdatePropFlags
 _notify_update_prop_nm_capabilities(NMClient               *self,
                                     NMLDBusObject          *dbobj,
@@ -6311,22 +6365,21 @@ _notify_update_prop_nm_capabilities(NMClient               *self,
 
     nm_assert(G_OBJECT(self) == dbobj->nmobj);
 
-    nm_clear_g_free(&priv->nm.capabilities_arr);
-    priv->nm.capabilities_len = 0;
+    return _notify_update_prop_nm_au(&priv->nm.capabilities_arr, &priv->nm.capabilities_len, value);
+}
 
-    if (value) {
-        const guint32 *arr;
-        gsize          len;
+static NMLDBusNotifyUpdatePropFlags
+_notify_update_prop_nm_version_info(NMClient               *self,
+                                    NMLDBusObject          *dbobj,
+                                    const NMLDBusMetaIface *meta_iface,
+                                    guint                   dbus_property_idx,
+                                    GVariant               *value)
+{
+    NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE(self);
 
-        arr                       = g_variant_get_fixed_array(value, &len, sizeof(guint32));
-        priv->nm.capabilities_len = len;
-        priv->nm.capabilities_arr = g_new(guint32, len + 1);
-        if (len > 0)
-            memcpy(priv->nm.capabilities_arr, arr, len * sizeof(guint32));
-        priv->nm.capabilities_arr[len] = 0;
-    }
+    nm_assert(G_OBJECT(self) == dbobj->nmobj);
 
-    return NML_DBUS_NOTIFY_UPDATE_PROP_FLAGS_NOTIFY;
+    return _notify_update_prop_nm_au(&priv->nm.version_info_arr, &priv->nm.version_info_len, value);
 }
 
 /*****************************************************************************/
@@ -7541,13 +7594,15 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
     case PROP_CHECKPOINTS:
         g_value_take_boxed(value, _nm_utils_copy_object_array(nm_client_get_checkpoints(self)));
         break;
+    case PROP_VERSION_INFO:
     case PROP_CAPABILITIES:
     {
         const guint32 *arr;
         GArray        *out;
         gsize          len;
 
-        arr = nm_client_get_capabilities(self, &len);
+        arr = (prop_id == PROP_VERSION_INFO) ? nm_client_get_version_info(self, &len)
+                                             : nm_client_get_capabilities(self, &len);
         if (arr) {
             out = g_array_new(TRUE, FALSE, sizeof(guint32));
             g_array_append_vals(out, arr, len);
@@ -8104,6 +8159,10 @@ const NMLDBusMetaIface _nml_dbus_meta_iface_nm = NML_DBUS_META_IFACE_INIT_PROP(
         NML_DBUS_META_PROPERTY_INIT_B("Startup", PROP_STARTUP, NMClient, _priv.nm.startup),
         NML_DBUS_META_PROPERTY_INIT_U("State", PROP_STATE, NMClient, _priv.nm.state),
         NML_DBUS_META_PROPERTY_INIT_S("Version", PROP_VERSION, NMClient, _priv.nm.version),
+        NML_DBUS_META_PROPERTY_INIT_FCN("VersionInfo",
+                                        PROP_VERSION_INFO,
+                                        "au",
+                                        _notify_update_prop_nm_version_info, ),
         NML_DBUS_META_PROPERTY_INIT_IGNORE("WimaxEnabled", "b"),
         NML_DBUS_META_PROPERTY_INIT_IGNORE("WimaxHardwareEnabled", "b"),
         NML_DBUS_META_PROPERTY_INIT_B("WirelessEnabled",
@@ -8241,6 +8300,24 @@ nm_client_class_init(NMClientClass *client_class)
                                                        "",
                                                        NULL,
                                                        G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+
+    /**
+     * NMClient:version-info: (type GArray(guint32))
+     *
+     * Expose version info and capabilities of NetworkManager. If non-empty,
+     * the first element is NM_VERSION, which encodes the version of the
+     * daemon as "(major << 16 | minor << 8 | micro)". The following elements
+     * is a bitfields of %NMVersionInfoCapabilities. If a bit is set, then
+     * the running NetworkManager has the respective capability.
+     *
+     * Since: 1.42
+     */
+    obj_properties[PROP_VERSION_INFO] =
+        g_param_spec_boxed(NM_CLIENT_VERSION_INFO,
+                           "",
+                           "",
+                           G_TYPE_ARRAY,
+                           G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
      * NMClient:state:

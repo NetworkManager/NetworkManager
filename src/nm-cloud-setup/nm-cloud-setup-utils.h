@@ -136,6 +136,7 @@ gboolean nmcs_device_reapply(NMDevice     *device,
                              GCancellable *sigterm_cancellable,
                              NMConnection *connection,
                              guint64       version_id,
+                             gboolean      maybe_no_preserved_external_ip,
                              gboolean     *out_version_id_changed,
                              GError      **error);
 

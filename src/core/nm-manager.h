@@ -20,6 +20,7 @@
     (G_TYPE_INSTANCE_GET_CLASS((obj), NM_TYPE_MANAGER, NMManagerClass))
 
 #define NM_MANAGER_VERSION                      "version"
+#define NM_MANAGER_VERSION_INFO                 "version-info"
 #define NM_MANAGER_CAPABILITIES                 "capabilities"
 #define NM_MANAGER_STATE                        "state"
 #define NM_MANAGER_STARTUP                      "startup"
