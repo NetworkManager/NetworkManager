@@ -606,7 +606,7 @@ error:
     return NULL;
 }
 
-#define DUID_PREFIX "default-duid \""
+#define DEFAULT_DUID_PREFIX "default-duid \""
 
 /* Beware: @error may be unset even if the function returns %NULL. */
 GBytes *
@@ -627,10 +627,10 @@ nm_dhcp_dhclient_read_duid(const char *leasefile, GError **error)
         const char *p = nm_str_skip_leading_spaces(contents_v[i]);
         GBytes     *duid;
 
-        if (!NM_STR_HAS_PREFIX(p, DUID_PREFIX))
+        if (!NM_STR_HAS_PREFIX(p, DEFAULT_DUID_PREFIX))
             continue;
 
-        p += NM_STRLEN(DUID_PREFIX);
+        p += NM_STRLEN(DEFAULT_DUID_PREFIX);
 
         g_strchomp((char *) p);
 
@@ -678,7 +678,7 @@ nm_dhcp_dhclient_save_duid(const char *leasefile, GBytes *duid, GError **error)
     }
 
     s = g_string_sized_new(len + 50);
-    g_string_append_printf(s, DUID_PREFIX "%s\";\n", escaped_duid);
+    g_string_append_printf(s, DEFAULT_DUID_PREFIX "%s\";\n", escaped_duid);
 
     /* Preserve existing leasefile contents */
     if (lines) {
@@ -691,7 +691,7 @@ nm_dhcp_dhclient_save_duid(const char *leasefile, GBytes *duid, GError **error)
              * to update the lease file, otherwise skip the old DUID.
              */
             l = nm_str_skip_leading_spaces(str);
-            if (g_str_has_prefix(l, DUID_PREFIX)) {
+            if (g_str_has_prefix(l, DEFAULT_DUID_PREFIX)) {
                 gs_strfreev char **split = NULL;
 
                 split = g_strsplit(l, "\"", -1);
