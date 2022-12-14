@@ -37,6 +37,8 @@ typedef enum _NMDedupMultiIdxMode {
 
 /*****************************************************************************/
 
+#define _NMDedupMultiObj_Align (MAX(_nm_alignof(void *), _nm_alignof(gint64)))
+
 struct _NMDedupMultiObj {
     union {
         NMObjBaseInst               parent;
@@ -44,7 +46,7 @@ struct _NMDedupMultiObj {
     };
     NMDedupMultiIndex *_multi_idx;
     guint              _ref_count;
-};
+} _nm_align(_NMDedupMultiObj_Align);
 
 struct _NMDedupMultiObjClass {
     NMObjBaseClass parent;

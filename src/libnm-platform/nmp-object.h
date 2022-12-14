@@ -427,7 +427,7 @@ struct _NMPObject {
         NMPlatformMptcpAddr mptcp_addr;
         NMPObjectMptcpAddr  _mptcp_addr;
     };
-};
+} _nm_alignas(NMDedupMultiObj);
 
 /*****************************************************************************/
 
