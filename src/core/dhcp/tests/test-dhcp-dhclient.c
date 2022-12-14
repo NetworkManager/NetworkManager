@@ -968,6 +968,102 @@ test_write_duid(void)
         "default-duid \"\\000\\001\\000\\001\\023o\\023n\\000\\\"\\372\\214\\326\\302\";\n### "
         "Commented old DUID ###\n#default-duid "
         "\"\\000\\001\\000\\001\\027X\\350X\\000#\\025\\010~\\254\";\n");
+
+    _check_duid(
+        _DUID(0xaa, 0xb, 0xcc, 0xd, 0xee, 0xf),
+        FALSE,
+        "default-duid \"\\252\\013\\314\\015\\356\\017\";\nlease6 {\n  interface \"eth1\";\n "
+        " ia-na f1:ce:00:01 {\n    starts 1671015678;\n    renew 60;\n    rebind 105;\n    "
+        "iaaddr 192:168:121::1:112c {\n      starts 1671015678;\n      preferred-life 120;\n "
+        "     max-life 120;\n    }\n  }\n  option fqdn.encoded true;\n  option "
+        "fqdn.server-update true;\n  option fqdn.no-client-update false;\n  option fqdn.fqdn "
+        "\"dff6de4fcb0f\";\n  option fqdn.hostname \"dff6de4fcb0f\";\n  option dhcp6.client-id "
+        "aa:b:cc:d:ee:f;\n  option dhcp6.server-id 0:1:0:1:2b:2c:4d:1d:0:0:0:0:0:0;\n  option "
+        "dhcp6.name-servers 192:168:121:0:ce0f:f1ff:fece:1;\n  option dhcp6.fqdn "
+        "1:c:64:66:66:36:64:65:34:66:63:62:30:66;\n  option dhcp6.status-code success "
+        "\"success\";\n}\n",
+        "default-duid \"\\252\\013\\314\\015\\356\\017\";\nlease6 {\n  interface \"eth1\";\n "
+        " ia-na f1:ce:00:01 {\n    starts 1671015678;\n    renew 60;\n    rebind 105;\n    "
+        "iaaddr 192:168:121::1:112c {\n      starts 1671015678;\n      preferred-life 120;\n "
+        "     max-life 120;\n    }\n  }\n  option fqdn.encoded true;\n  option "
+        "fqdn.server-update true;\n  option fqdn.no-client-update false;\n  option fqdn.fqdn "
+        "\"dff6de4fcb0f\";\n  option fqdn.hostname \"dff6de4fcb0f\";\n  option dhcp6.client-id "
+        "aa:b:cc:d:ee:f;\n  option dhcp6.server-id 0:1:0:1:2b:2c:4d:1d:0:0:0:0:0:0;\n  option "
+        "dhcp6.name-servers 192:168:121:0:ce0f:f1ff:fece:1;\n  option dhcp6.fqdn "
+        "1:c:64:66:66:36:64:65:34:66:63:62:30:66;\n  option dhcp6.status-code success "
+        "\"success\";\n}\n");
+
+    _check_duid(
+        _DUID(0xaa, 0xb, 0xcc, 0xd, 0xee, 0xf),
+        FALSE,
+        "default-duid \"\\252\\013\\314\\015\\356\\017\";\nlease6 {\n  interface \"eth1\";\n "
+        " ia-na f1:ce:00:01 {\n    starts 1671015678;\n    renew 60;\n    rebind 105;\n    "
+        "iaaddr 192:168:121::1:112c {\n      starts 1671015678;\n      preferred-life 120;\n "
+        "     max-life 120;\n    }\n  }\n  option fqdn.encoded true;\n  option "
+        "fqdn.server-update true;\n  option fqdn.no-client-update false;\n  option fqdn.fqdn "
+        "\"dff6de4fcb0f\";\n  option fqdn.hostname \"dff6de4fcb0f\";\n  option dhcp6.client-id "
+        "aa:b:cc:d:ee:f;\n  option dhcp6.server-id 0:1:0:1:2b:2c:4d:1d:0:0:0:0:0:0;\n  option "
+        "dhcp6.name-servers 192:168:121:0:ce0f:f1ff:fece:1;\n  option dhcp6.fqdn "
+        "1:c:64:66:66:36:64:65:34:66:63:62:30:66;\n  option dhcp6.status-code success "
+        "\"success\";\r\n}\n",
+        "default-duid \"\\252\\013\\314\\015\\356\\017\";\nlease6 {\n  interface \"eth1\";\n "
+        " ia-na f1:ce:00:01 {\n    starts 1671015678;\n    renew 60;\n    rebind 105;\n    "
+        "iaaddr 192:168:121::1:112c {\n      starts 1671015678;\n      preferred-life 120;\n "
+        "     max-life 120;\n    }\n  }\n  option fqdn.encoded true;\n  option "
+        "fqdn.server-update true;\n  option fqdn.no-client-update false;\n  option fqdn.fqdn "
+        "\"dff6de4fcb0f\";\n  option fqdn.hostname \"dff6de4fcb0f\";\n  option dhcp6.client-id "
+        "aa:b:cc:d:ee:f;\n  option dhcp6.server-id 0:1:0:1:2b:2c:4d:1d:0:0:0:0:0:0;\n  option "
+        "dhcp6.name-servers 192:168:121:0:ce0f:f1ff:fece:1;\n  option dhcp6.fqdn "
+        "1:c:64:66:66:36:64:65:34:66:63:62:30:66;\n  option dhcp6.status-code success "
+        "\"success\";\r\n}\n");
+
+    _check_duid(
+        _DUID(0xaa, 0xb, 0xcc, 0xd, 0xee, 0xe),
+        FALSE,
+        "default-duid \"\\252\\013\\314\\015\\356\\017\";\nlease6 {\n  interface \"eth1\";\n "
+        " ia-na f1:ce:00:01 {\n    starts 1671015678;\n    renew 60;\n    rebind 105;\n    "
+        "iaaddr 192:168:121::1:112c {\n      starts 1671015678;\n      preferred-life 120;\n "
+        "     max-life 120;\n    }\n  }\n  option fqdn.encoded true;\n  option "
+        "fqdn.server-update true;\n  option fqdn.no-client-update false;\n  option fqdn.fqdn "
+        "\"dff6de4fcb0f\";\n  option fqdn.hostname \"dff6de4fcb0f\";\n  option dhcp6.client-id "
+        "aa:b:cc:d:ee:f;\n  option dhcp6.server-id 0:1:0:1:2b:2c:4d:1d:0:0:0:0:0:0;\n  option "
+        "dhcp6.name-servers 192:168:121:0:ce0f:f1ff:fece:1;\n  option dhcp6.fqdn "
+        "1:c:64:66:66:36:64:65:34:66:63:62:30:66;\n  option dhcp6.status-code success "
+        "\"success\";\r\n}\n",
+        "default-duid \"\\252\\013\\314\\015\\356\\016\";\nlease6 {\n  interface \"eth1\";\n "
+        " ia-na f1:ce:00:01 {\n    starts 1671015678;\n    renew 60;\n    rebind 105;\n    "
+        "iaaddr 192:168:121::1:112c {\n      starts 1671015678;\n      preferred-life 120;\n "
+        "     max-life 120;\n    }\n  }\n  option fqdn.encoded true;\n  option "
+        "fqdn.server-update true;\n  option fqdn.no-client-update false;\n  option fqdn.fqdn "
+        "\"dff6de4fcb0f\";\n  option fqdn.hostname \"dff6de4fcb0f\";\n  option dhcp6.client-id "
+        "aa:b:cc:d:ee:f;\n  option dhcp6.server-id 0:1:0:1:2b:2c:4d:1d:0:0:0:0:0:0;\n  option "
+        "dhcp6.name-servers 192:168:121:0:ce0f:f1ff:fece:1;\n  option dhcp6.fqdn "
+        "1:c:64:66:66:36:64:65:34:66:63:62:30:66;\n  option dhcp6.status-code success "
+        "\"success\";\n\n}\n");
+
+    _check_duid(
+        _DUID(0xaa, 0xb, 0xcc, 0xd, 0xee, 0xe),
+        TRUE,
+        "default-duid \"\\252\\013\\314\\015\\356\\017\";\nlease6 {\n  interface \"eth1\";\n "
+        " ia-na f1:ce:00:01 {\n    starts 1671015678;\n    renew 60;\n    rebind 105;\n    "
+        "iaaddr 192:168:121::1:112c {\n      starts 1671015678;\n      preferred-life 120;\n "
+        "     max-life 120;\n    }\n  }\n  option fqdn.encoded true;\n  option "
+        "fqdn.server-update true;\n  option fqdn.no-client-update false;\n  option fqdn.fqdn "
+        "\"dff6de4fcb0f\";\n  option fqdn.hostname \"dff6de4fcb0f\";\n  option dhcp6.client-id "
+        "aa:b:cc:d:ee:f;\n  option dhcp6.server-id 0:1:0:1:2b:2c:4d:1d:0:0:0:0:0:0;\n  option "
+        "dhcp6.name-servers 192:168:121:0:ce0f:f1ff:fece:1;\n  option dhcp6.fqdn "
+        "1:c:64:66:66:36:64:65:34:66:63:62:30:66;\n  option dhcp6.status-code success "
+        "\"success\";\n}\n",
+        "default-duid \"\\252\\013\\314\\015\\356\\016\";\nlease6 {\n  interface \"eth1\";\n "
+        " ia-na f1:ce:00:01 {\n    starts 1671015678;\n    renew 60;\n    rebind 105;\n    "
+        "iaaddr 192:168:121::1:112c {\n      starts 1671015678;\n      preferred-life 120;\n "
+        "     max-life 120;\n    }\n  }\n  option fqdn.encoded true;\n  option "
+        "fqdn.server-update true;\n  option fqdn.no-client-update false;\n  option fqdn.fqdn "
+        "\"dff6de4fcb0f\";\n  option fqdn.hostname \"dff6de4fcb0f\";\n  option dhcp6.client-id "
+        "aa:b:cc:d:ee:f;\n  option dhcp6.server-id 0:1:0:1:2b:2c:4d:1d:0:0:0:0:0:0;\n  option "
+        "dhcp6.name-servers 192:168:121:0:ce0f:f1ff:fece:1;\n  option dhcp6.fqdn "
+        "1:c:64:66:66:36:64:65:34:66:63:62:30:66;\n  option dhcp6.status-code success "
+        "\"success\";\n}\n");
 }
 
 /*****************************************************************************/
