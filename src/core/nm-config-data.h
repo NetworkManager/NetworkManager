@@ -31,7 +31,8 @@ typedef enum {
 /*****************************************************************************/
 
 #define NM_TYPE_CONFIG_DATA (nm_config_data_get_type())
-#define NM_CONFIG_DATA(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_CONFIG_DATA, NMConfigData))
+#define NM_CONFIG_DATA(obj) \
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_CONFIG_DATA, NMConfigData))
 #define NM_CONFIG_DATA_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_CONFIG_DATA, NMConfigDataClass))
 #define NM_IS_CONFIG_DATA(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_CONFIG_DATA))

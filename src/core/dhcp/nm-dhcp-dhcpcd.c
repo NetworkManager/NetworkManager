@@ -23,7 +23,8 @@
 /*****************************************************************************/
 
 #define NM_TYPE_DHCP_DHCPCD (nm_dhcp_dhcpcd_get_type())
-#define NM_DHCP_DHCPCD(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_DHCP_DHCPCD, NMDhcpDhcpcd))
+#define NM_DHCP_DHCPCD(obj) \
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_DHCP_DHCPCD, NMDhcpDhcpcd))
 #define NM_DHCP_DHCPCD_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_DHCP_DHCPCD, NMDhcpDhcpcdClass))
 #define NM_IS_DHCP_DHCPCD(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_DHCP_DHCPCD))

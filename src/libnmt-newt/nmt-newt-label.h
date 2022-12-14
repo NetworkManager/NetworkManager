@@ -9,7 +9,8 @@
 #include "nmt-newt-component.h"
 
 #define NMT_TYPE_NEWT_LABEL (nmt_newt_label_get_type())
-#define NMT_NEWT_LABEL(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), NMT_TYPE_NEWT_LABEL, NmtNewtLabel))
+#define NMT_NEWT_LABEL(obj) \
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NMT_TYPE_NEWT_LABEL, NmtNewtLabel))
 #define NMT_NEWT_LABEL_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NMT_TYPE_NEWT_LABEL, NmtNewtLabelClass))
 #define NMT_IS_NEWT_LABEL(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NMT_TYPE_NEWT_LABEL))

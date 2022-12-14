@@ -11,7 +11,7 @@
 
 #define NM_TYPE_DEVICE_IWD_P2P (nm_device_iwd_p2p_get_type())
 #define NM_DEVICE_IWD_P2P(obj) \
-    (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_DEVICE_IWD_P2P, NMDeviceIwdP2P))
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_DEVICE_IWD_P2P, NMDeviceIwdP2P))
 #define NM_DEVICE_IWD_P2P_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_DEVICE_IWD_P2P, NMDeviceIwdP2PClass))
 #define NM_IS_DEVICE_IWD_P2P(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_DEVICE_IWD_P2P))

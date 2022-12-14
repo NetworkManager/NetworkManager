@@ -130,7 +130,7 @@ nmcs_provider_get_config_iface_data_create(NMCSProviderGetConfigTaskData *get_co
 /*****************************************************************************/
 
 #define NMCS_TYPE_PROVIDER (nmcs_provider_get_type())
-#define NMCS_PROVIDER(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), NMCS_TYPE_PROVIDER, NMCSProvider))
+#define NMCS_PROVIDER(obj) (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NMCS_TYPE_PROVIDER, NMCSProvider))
 #define NMCS_PROVIDER_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NMCS_TYPE_PROVIDER, NMCSProviderClass))
 #define NMCS_IS_PROVIDER(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NMCS_TYPE_PROVIDER))

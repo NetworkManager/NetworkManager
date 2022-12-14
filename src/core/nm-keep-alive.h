@@ -7,7 +7,7 @@
 #define __NETWORKMANAGER_KEEP_ALIVE_H__
 
 #define NM_TYPE_KEEP_ALIVE     (nm_keep_alive_get_type())
-#define NM_KEEP_ALIVE(o)       (G_TYPE_CHECK_INSTANCE_CAST((o), NM_TYPE_KEEP_ALIVE, NMKeepAlive))
+#define NM_KEEP_ALIVE(o)       (_NM_G_TYPE_CHECK_INSTANCE_CAST((o), NM_TYPE_KEEP_ALIVE, NMKeepAlive))
 #define NM_KEEP_ALIVE_CLASS(k) (G_TYPE_CHECK_CLASS_CAST((k), NM_TYPE_KEEP_ALIVE, NMKeepAliveClass))
 #define NM_KEEP_ALIVE_GET_CLASS(o) \
     (G_TYPE_INSTANCE_GET_CLASS((o), NM_TYPE_KEEP_ALIVE, NMKeepAliveClass))

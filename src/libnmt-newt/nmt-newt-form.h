@@ -9,7 +9,7 @@
 #include "nmt-newt-container.h"
 
 #define NMT_TYPE_NEWT_FORM (nmt_newt_form_get_type())
-#define NMT_NEWT_FORM(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), NMT_TYPE_NEWT_FORM, NmtNewtForm))
+#define NMT_NEWT_FORM(obj) (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NMT_TYPE_NEWT_FORM, NmtNewtForm))
 #define NMT_NEWT_FORM_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NMT_TYPE_NEWT_FORM, NmtNewtFormClass))
 #define NMT_IS_NEWT_FORM(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NMT_TYPE_NEWT_FORM))

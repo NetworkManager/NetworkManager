@@ -10,7 +10,7 @@
 
 #define NMT_TYPE_PAGE_TEAM_PORT (nmt_page_team_port_get_type())
 #define NMT_PAGE_TEAM_PORT(obj) \
-    (G_TYPE_CHECK_INSTANCE_CAST((obj), NMT_TYPE_PAGE_TEAM_PORT, NmtPageTeamPort))
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NMT_TYPE_PAGE_TEAM_PORT, NmtPageTeamPort))
 #define NMT_PAGE_TEAM_PORT_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NMT_TYPE_PAGE_TEAM_PORT, NmtPageTeamPortClass))
 #define NMT_IS_PAGE_TEAM_PORT(obj) (G_TYPE_CHECK_INSTANCE_TYPE((obj), NMT_TYPE_PAGE_TEAM_PORT))

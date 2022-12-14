@@ -9,7 +9,7 @@
 #include "nmt-editor-page-device.h"
 
 #define NMT_TYPE_PAGE_BOND (nmt_page_bond_get_type())
-#define NMT_PAGE_BOND(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), NMT_TYPE_PAGE_BOND, NmtPageBond))
+#define NMT_PAGE_BOND(obj) (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NMT_TYPE_PAGE_BOND, NmtPageBond))
 #define NMT_PAGE_BOND_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NMT_TYPE_PAGE_BOND, NmtPageBondClass))
 #define NMT_IS_PAGE_BOND(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NMT_TYPE_PAGE_BOND))

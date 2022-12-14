@@ -11,7 +11,7 @@
 #include "nm-config-data.h"
 
 #define NM_TYPE_DNS_PLUGIN (nm_dns_plugin_get_type())
-#define NM_DNS_PLUGIN(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_DNS_PLUGIN, NMDnsPlugin))
+#define NM_DNS_PLUGIN(obj) (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_DNS_PLUGIN, NMDnsPlugin))
 #define NM_DNS_PLUGIN_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_DNS_PLUGIN, NMDnsPluginClass))
 #define NM_IS_DNS_PLUGIN(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_DNS_PLUGIN))

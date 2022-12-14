@@ -10,7 +10,7 @@
 
 #define NMT_TYPE_PAGE_MACSEC (nmt_page_macsec_get_type())
 #define NMT_PAGE_MACSEC(obj) \
-    (G_TYPE_CHECK_INSTANCE_CAST((obj), NMT_TYPE_PAGE_MACSEC, NmtPageMacsec))
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NMT_TYPE_PAGE_MACSEC, NmtPageMacsec))
 #define NMT_PAGE_MACSEC_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NMT_TYPE_PAGE_MACSEC, NmtPageMacsecClass))
 #define NMT_IS_PAGE_MACSEC(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NMT_TYPE_PAGE_MACSEC))

@@ -9,7 +9,7 @@
 #include "nmt-editor-page-device.h"
 
 #define NMT_TYPE_PAGE_TEAM (nmt_page_team_get_type())
-#define NMT_PAGE_TEAM(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), NMT_TYPE_PAGE_TEAM, NmtPageTeam))
+#define NMT_PAGE_TEAM(obj) (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NMT_TYPE_PAGE_TEAM, NmtPageTeam))
 #define NMT_PAGE_TEAM_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NMT_TYPE_PAGE_TEAM, NmtPageTeamClass))
 #define NMT_IS_PAGE_TEAM(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NMT_TYPE_PAGE_TEAM))

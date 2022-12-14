@@ -9,7 +9,7 @@
 #include "libnm-platform/nmp-base.h"
 
 #define NM_TYPE_NETNS            (nm_netns_get_type())
-#define NM_NETNS(obj)            (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_NETNS, NMNetns))
+#define NM_NETNS(obj)            (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_NETNS, NMNetns))
 #define NM_NETNS_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_NETNS, NMNetnsClass))
 #define NM_IS_NETNS(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_NETNS))
 #define NM_IS_NETNS_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE((klass), NM_TYPE_NETNS))

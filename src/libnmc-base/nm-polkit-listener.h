@@ -17,7 +17,7 @@ typedef struct _NMPolkitListenerClass NMPolkitListenerClass;
 
 #define NM_TYPE_POLKIT_LISTENER (nm_polkit_listener_get_type())
 #define NM_POLKIT_LISTENER(obj) \
-    (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_POLKIT_LISTENER, NMPolkitListener))
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_POLKIT_LISTENER, NMPolkitListener))
 #define NM_POLKIT_LISTENER_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_POLKIT_LISTENER, NMPolkitListenerClass))
 #define NM_IS_POLKIT_LISTENER(obj) (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_POLKIT_LISTENER))

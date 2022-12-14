@@ -122,7 +122,7 @@ typedef enum {
 
 #define NM_TYPE_SETTINGS_CONNECTION (nm_settings_connection_get_type())
 #define NM_SETTINGS_CONNECTION(obj) \
-    (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_SETTINGS_CONNECTION, NMSettingsConnection))
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_SETTINGS_CONNECTION, NMSettingsConnection))
 #define NM_SETTINGS_CONNECTION_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_SETTINGS_CONNECTION, NMSettingsConnectionClass))
 #define NM_IS_SETTINGS_CONNECTION(obj) \

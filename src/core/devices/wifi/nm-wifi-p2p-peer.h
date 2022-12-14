@@ -12,7 +12,7 @@
 
 #define NM_TYPE_WIFI_P2P_PEER (nm_wifi_p2p_peer_get_type())
 #define NM_WIFI_P2P_PEER(obj) \
-    (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_WIFI_P2P_PEER, NMWifiP2PPeer))
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_WIFI_P2P_PEER, NMWifiP2PPeer))
 #define NM_WIFI_P2P_PEER_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_WIFI_P2P_PEER, NMWifiP2PPeerClass))
 #define NM_IS_WIFI_P2P_PEER(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_WIFI_P2P_PEER))

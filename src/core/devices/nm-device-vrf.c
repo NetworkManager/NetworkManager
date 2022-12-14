@@ -347,7 +347,7 @@ nm_device_vrf_class_init(NMDeviceVrfClass *klass)
 
 #define NM_TYPE_VRF_DEVICE_FACTORY (nm_vrf_device_factory_get_type())
 #define NM_VRF_DEVICE_FACTORY(obj) \
-    (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_VRF_DEVICE_FACTORY, NMVrfDeviceFactory))
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_VRF_DEVICE_FACTORY, NMVrfDeviceFactory))
 
 static NMDevice *
 create_device(NMDeviceFactory      *factory,

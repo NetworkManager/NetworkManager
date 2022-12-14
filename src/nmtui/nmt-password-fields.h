@@ -10,7 +10,7 @@
 
 #define NMT_TYPE_PASSWORD_FIELDS (nmt_password_fields_get_type())
 #define NMT_PASSWORD_FIELDS(obj) \
-    (G_TYPE_CHECK_INSTANCE_CAST((obj), NMT_TYPE_PASSWORD_FIELDS, NmtPasswordFields))
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NMT_TYPE_PASSWORD_FIELDS, NmtPasswordFields))
 #define NMT_PASSWORD_FIELDS_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NMT_TYPE_PASSWORD_FIELDS, NmtPasswordFieldsClass))
 #define NMT_IS_PASSWORD_FIELDS(obj) (G_TYPE_CHECK_INSTANCE_TYPE((obj), NMT_TYPE_PASSWORD_FIELDS))

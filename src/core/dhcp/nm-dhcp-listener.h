@@ -8,7 +8,7 @@
 
 #define NM_TYPE_DHCP_LISTENER (nm_dhcp_listener_get_type())
 #define NM_DHCP_LISTENER(obj) \
-    (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_DHCP_LISTENER, NMDhcpListener))
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_DHCP_LISTENER, NMDhcpListener))
 #define NM_IS_DHCP_LISTENER(obj) (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_DHCP_LISTENER))
 #define NM_DHCP_LISTENER_GET_CLASS(obj) \
     (G_TYPE_INSTANCE_GET_CLASS((obj), NM_TYPE_DHCP_LISTENER, NMDhcpListenerClass))

@@ -403,10 +403,10 @@ nm_device_infiniband_class_init(NMDeviceInfinibandClass *klass)
 /*****************************************************************************/
 
 #define NM_TYPE_INFINIBAND_DEVICE_FACTORY (nm_infiniband_device_factory_get_type())
-#define NM_INFINIBAND_DEVICE_FACTORY(obj)                          \
-    (G_TYPE_CHECK_INSTANCE_CAST((obj),                             \
-                                NM_TYPE_INFINIBAND_DEVICE_FACTORY, \
-                                NMInfinibandDeviceFactory))
+#define NM_INFINIBAND_DEVICE_FACTORY(obj)                              \
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj),                             \
+                                    NM_TYPE_INFINIBAND_DEVICE_FACTORY, \
+                                    NMInfinibandDeviceFactory))
 
 static NMDevice *
 create_device(NMDeviceFactory      *factory,

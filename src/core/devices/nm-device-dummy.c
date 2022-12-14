@@ -136,7 +136,7 @@ nm_device_dummy_class_init(NMDeviceDummyClass *klass)
 
 #define NM_TYPE_DUMMY_DEVICE_FACTORY (nm_dummy_device_factory_get_type())
 #define NM_DUMMY_DEVICE_FACTORY(obj) \
-    (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_DUMMY_DEVICE_FACTORY, NMDummyDeviceFactory))
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_DUMMY_DEVICE_FACTORY, NMDummyDeviceFactory))
 
 static NMDevice *
 create_device(NMDeviceFactory      *factory,

@@ -10,7 +10,7 @@
 
 #define NMT_TYPE_NEWT_COMPONENT (nmt_newt_component_get_type())
 #define NMT_NEWT_COMPONENT(obj) \
-    (G_TYPE_CHECK_INSTANCE_CAST((obj), NMT_TYPE_NEWT_COMPONENT, NmtNewtComponent))
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NMT_TYPE_NEWT_COMPONENT, NmtNewtComponent))
 #define NMT_NEWT_COMPONENT_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NMT_TYPE_NEWT_COMPONENT, NmtNewtComponentClass))
 #define NMT_IS_NEWT_COMPONENT(obj) (G_TYPE_CHECK_INSTANCE_TYPE((obj), NMT_TYPE_NEWT_COMPONENT))

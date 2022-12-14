@@ -10,7 +10,7 @@
 
 #define NMT_TYPE_NEWT_CHECKBOX (nmt_newt_checkbox_get_type())
 #define NMT_NEWT_CHECKBOX(obj) \
-    (G_TYPE_CHECK_INSTANCE_CAST((obj), NMT_TYPE_NEWT_CHECKBOX, NmtNewtCheckbox))
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NMT_TYPE_NEWT_CHECKBOX, NmtNewtCheckbox))
 #define NMT_NEWT_CHECKBOX_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NMT_TYPE_NEWT_CHECKBOX, NmtNewtCheckboxClass))
 #define NMT_IS_NEWT_CHECKBOX(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NMT_TYPE_NEWT_CHECKBOX))

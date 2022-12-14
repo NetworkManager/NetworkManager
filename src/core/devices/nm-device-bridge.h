@@ -10,7 +10,7 @@
 
 #define NM_TYPE_DEVICE_BRIDGE (nm_device_bridge_get_type())
 #define NM_DEVICE_BRIDGE(obj) \
-    (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_DEVICE_BRIDGE, NMDeviceBridge))
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_DEVICE_BRIDGE, NMDeviceBridge))
 #define NM_DEVICE_BRIDGE_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_DEVICE_BRIDGE, NMDeviceBridgeClass))
 #define NM_IS_DEVICE_BRIDGE(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_DEVICE_BRIDGE))

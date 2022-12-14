@@ -11,7 +11,7 @@
 #include "nmp-plobj.h"
 
 #define NM_TYPE_PLATFORM (nm_platform_get_type())
-#define NM_PLATFORM(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_PLATFORM, NMPlatform))
+#define NM_PLATFORM(obj) (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_PLATFORM, NMPlatform))
 #define NM_PLATFORM_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_PLATFORM, NMPlatformClass))
 #define NM_IS_PLATFORM(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_PLATFORM))

@@ -10,7 +10,7 @@
 
 #define NMT_TYPE_WIREGUARD_PEER_EDITOR (nmt_wireguard_peer_editor_get_type())
 #define NMT_WIREGUARD_PEER_EDITOR(obj) \
-    (G_TYPE_CHECK_INSTANCE_CAST((obj), NMT_TYPE_WIREGUARD_PEER_EDITOR, NmtWireguardPeerEditor))
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NMT_TYPE_WIREGUARD_PEER_EDITOR, NmtWireguardPeerEditor))
 #define NMT_WIREGUARD_PEER_EDITOR_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NMT_TYPE_WIREGUARD_PEER_EDITOR, NmtWireguardPeerEditorClass))
 #define NMT_IS_WIREGUARD_PEER_EDITOR(obj) \

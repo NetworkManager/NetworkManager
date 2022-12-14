@@ -7,7 +7,7 @@
 #define __NETWORKMANAGER_DEVICE_PPP_H__
 
 #define NM_TYPE_DEVICE_PPP (nm_device_ppp_get_type())
-#define NM_DEVICE_PPP(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_DEVICE_PPP, NMDevicePpp))
+#define NM_DEVICE_PPP(obj) (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_DEVICE_PPP, NMDevicePpp))
 #define NM_DEVICE_PPP_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_DEVICE_PPP, NMDevicePppClass))
 #define NM_IS_DEVICE_PPP(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_DEVICE_PPP))

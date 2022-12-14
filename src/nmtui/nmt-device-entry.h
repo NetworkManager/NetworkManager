@@ -10,7 +10,7 @@
 
 #define NMT_TYPE_DEVICE_ENTRY (nmt_device_entry_get_type())
 #define NMT_DEVICE_ENTRY(obj) \
-    (G_TYPE_CHECK_INSTANCE_CAST((obj), NMT_TYPE_DEVICE_ENTRY, NmtDeviceEntry))
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NMT_TYPE_DEVICE_ENTRY, NmtDeviceEntry))
 #define NMT_DEVICE_ENTRY_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NMT_TYPE_DEVICE_ENTRY, NmtDeviceEntryClass))
 #define NMT_IS_DEVICE_ENTRY(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NMT_TYPE_DEVICE_ENTRY))

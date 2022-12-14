@@ -15,7 +15,7 @@
 #include "nm-settings-connection.h"
 
 #define NM_TYPE_SETTINGS (nm_settings_get_type())
-#define NM_SETTINGS(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_SETTINGS, NMSettings))
+#define NM_SETTINGS(obj) (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_SETTINGS, NMSettings))
 #define NM_SETTINGS_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_SETTINGS, NMSettingsClass))
 #define NM_IS_SETTINGS(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_SETTINGS))

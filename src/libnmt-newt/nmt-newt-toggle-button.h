@@ -10,7 +10,7 @@
 
 #define NMT_TYPE_NEWT_TOGGLE_BUTTON (nmt_newt_toggle_button_get_type())
 #define NMT_NEWT_TOGGLE_BUTTON(obj) \
-    (G_TYPE_CHECK_INSTANCE_CAST((obj), NMT_TYPE_NEWT_TOGGLE_BUTTON, NmtNewtToggleButton))
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NMT_TYPE_NEWT_TOGGLE_BUTTON, NmtNewtToggleButton))
 #define NMT_NEWT_TOGGLE_BUTTON_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NMT_TYPE_NEWT_TOGGLE_BUTTON, NmtNewtToggleButtonClass))
 #define NMT_IS_NEWT_TOGGLE_BUTTON(obj) \

@@ -10,7 +10,7 @@
 
 #define NMT_TYPE_NEWT_BUTTON (nmt_newt_button_get_type())
 #define NMT_NEWT_BUTTON(obj) \
-    (G_TYPE_CHECK_INSTANCE_CAST((obj), NMT_TYPE_NEWT_BUTTON, NmtNewtButton))
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NMT_TYPE_NEWT_BUTTON, NmtNewtButton))
 #define NMT_NEWT_BUTTON_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NMT_TYPE_NEWT_BUTTON, NmtNewtButtonClass))
 #define NMT_IS_NEWT_BUTTON(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NMT_TYPE_NEWT_BUTTON))

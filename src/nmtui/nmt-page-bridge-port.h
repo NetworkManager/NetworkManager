@@ -10,7 +10,7 @@
 
 #define NMT_TYPE_PAGE_BRIDGE_PORT (nmt_page_bridge_port_get_type())
 #define NMT_PAGE_BRIDGE_PORT(obj) \
-    (G_TYPE_CHECK_INSTANCE_CAST((obj), NMT_TYPE_PAGE_BRIDGE_PORT, NmtPageBridgePort))
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NMT_TYPE_PAGE_BRIDGE_PORT, NmtPageBridgePort))
 #define NMT_PAGE_BRIDGE_PORT_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NMT_TYPE_PAGE_BRIDGE_PORT, NmtPageBridgePortClass))
 #define NMT_IS_PAGE_BRIDGE_PORT(obj) (G_TYPE_CHECK_INSTANCE_TYPE((obj), NMT_TYPE_PAGE_BRIDGE_PORT))

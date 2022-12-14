@@ -337,7 +337,7 @@ nm_device_ppp_class_init(NMDevicePppClass *klass)
 
 #define NM_TYPE_PPP_DEVICE_FACTORY (nm_ppp_device_factory_get_type())
 #define NM_PPP_DEVICE_FACTORY(obj) \
-    (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_PPP_DEVICE_FACTORY, NMPppDeviceFactory))
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_PPP_DEVICE_FACTORY, NMPppDeviceFactory))
 
 static NMDevice *
 create_device(NMDeviceFactory      *factory,
