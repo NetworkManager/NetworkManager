@@ -2255,6 +2255,11 @@ _parse_lnk_vlan(const char *kind, struct nlattr *info_data)
     obj              = nmp_object_new(NMP_OBJECT_TYPE_LNK_VLAN, NULL);
     obj->lnk_vlan.id = nla_get_u16(tb[IFLA_VLAN_ID]);
 
+    if (tb[IFLA_VLAN_PROTOCOL])
+        obj->lnk_vlan.protocol = ntohs(nla_get_u16(tb[IFLA_VLAN_PROTOCOL]));
+    else
+        obj->lnk_vlan.protocol = ETH_P_8021Q;
+
     if (tb[IFLA_VLAN_FLAGS]) {
         struct ifla_vlan_flags flags;
 
@@ -4658,11 +4663,13 @@ _nl_msg_new_link_set_linkinfo(struct nl_msg *msg, NMLinkType link_type, gconstpo
         const NMPlatformLnkVlan *props = extra_data;
 
         nm_assert(extra_data);
+        nm_assert(props->protocol != 0);
 
         if (!(data = nla_nest_start(msg, IFLA_INFO_DATA)))
             goto nla_put_failure;
 
         NLA_PUT_U16(msg, IFLA_VLAN_ID, props->id);
+        NLA_PUT_U16(msg, IFLA_VLAN_PROTOCOL, htons(props->protocol));
 
         {
             struct ifla_vlan_flags flags = {

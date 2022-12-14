@@ -1453,6 +1453,7 @@ write_vlan_setting(NMConnection *connection, shvarFile *ifcfg, gboolean *wired, 
     svSetValueStr(ifcfg, "TYPE", TYPE_VLAN);
     svSetValueStr(ifcfg, "PHYSDEV", nm_setting_vlan_get_parent(s_vlan));
     svSetValueInt64(ifcfg, "VLAN_ID", nm_setting_vlan_get_id(s_vlan));
+    svSetValueStr(ifcfg, "VLAN_PROTOCOL", nm_setting_vlan_get_protocol(s_vlan));
 
     vlan_flags = nm_setting_vlan_get_flags(s_vlan);
     svSetValueBoolean(ifcfg, "REORDER_HDR", NM_FLAGS_HAS(vlan_flags, NM_VLAN_FLAG_REORDER_HEADERS));

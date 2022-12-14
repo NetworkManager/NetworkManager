@@ -6470,13 +6470,27 @@ const char *
 nm_platform_lnk_vlan_to_string(const NMPlatformLnkVlan *lnk, char *buf, gsize len)
 {
     char *b;
+    char  protocol[32];
 
     if (!nm_utils_to_string_buffer_init_null(lnk, &buf, &len))
         return buf;
 
     b = buf;
 
+    switch (lnk->protocol) {
+    case ETH_P_8021AD:
+        nm_sprintf_buf(protocol, "802.1ad");
+        break;
+    case ETH_P_8021Q:
+        nm_sprintf_buf(protocol, "802.1Q");
+        break;
+    default:
+        nm_sprintf_buf(protocol, "0x%04hx", lnk->protocol);
+        break;
+    }
+
     nm_strbuf_append(&b, &len, "vlan %u", lnk->id);
+    nm_strbuf_append(&b, &len, " protocol %s", protocol);
     if (lnk->flags)
         nm_strbuf_append(&b, &len, " flags 0x%x", lnk->flags);
     return buf;
@@ -8146,7 +8160,7 @@ nm_platform_lnk_tun_cmp(const NMPlatformLnkTun *a, const NMPlatformLnkTun *b)
 void
 nm_platform_lnk_vlan_hash_update(const NMPlatformLnkVlan *obj, NMHashState *h)
 {
-    nm_hash_update_vals(h, obj->id, obj->flags);
+    nm_hash_update_vals(h, obj->id, obj->protocol, obj->flags);
 }
 
 int
@@ -8154,6 +8168,7 @@ nm_platform_lnk_vlan_cmp(const NMPlatformLnkVlan *a, const NMPlatformLnkVlan *b)
 {
     NM_CMP_SELF(a, b);
     NM_CMP_FIELD(a, b, id);
+    NM_CMP_FIELD(a, b, protocol);
     NM_CMP_FIELD(a, b, flags);
     return 0;
 }
