@@ -274,8 +274,9 @@ nm_dhcp_client_create_options_dict(NMDhcpClient *self, gboolean static_keys)
 gboolean
 nm_dhcp_client_set_effective_client_id(NMDhcpClient *self, GBytes *client_id)
 {
-    NMDhcpClientPrivate *priv    = NM_DHCP_CLIENT_GET_PRIVATE(self);
-    gs_free char        *tmp_str = NULL;
+    NMDhcpClientPrivate   *priv              = NM_DHCP_CLIENT_GET_PRIVATE(self);
+    gs_free char          *tmp_str           = NULL;
+    gs_unref_bytes GBytes *client_id_to_free = NULL;
 
     g_return_val_if_fail(NM_IS_DHCP_CLIENT(self), FALSE);
     g_return_val_if_fail(!client_id || g_bytes_get_size(client_id) >= 2, FALSE);
@@ -285,7 +286,7 @@ nm_dhcp_client_set_effective_client_id(NMDhcpClient *self, GBytes *client_id)
     if (nm_g_bytes_equal0(priv->effective_client_id, client_id))
         return FALSE;
 
-    g_bytes_unref(priv->effective_client_id);
+    client_id_to_free         = g_steal_pointer(&priv->effective_client_id);
     priv->effective_client_id = nm_g_bytes_ref(client_id);
 
     _LOGT("%s: set effective %s",
