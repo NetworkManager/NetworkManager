@@ -531,7 +531,7 @@ typedef struct {
     guint8             ip_proto;                   /* FRA_IP_PROTO */
 
     bool uid_range_has : 1; /* has(FRA_UID_RANGE) */
-} NMPlatformRoutingRule;
+} _nm_alignas(NMPlatformObject) NMPlatformRoutingRule;
 
 #define NM_PLATFORM_FQ_CODEL_MEMORY_LIMIT_UNSET (~((guint32) 0))
 
@@ -599,7 +599,7 @@ typedef struct {
         NMPlatformQdiscSfq     sfq;
         NMPlatformQdiscTbf     tbf;
     };
-} NMPlatformQdisc;
+} _nm_alignas(NMPlatformObject) NMPlatformQdisc;
 
 typedef struct {
     char sdata[32];
@@ -639,7 +639,7 @@ typedef struct {
     guint32          parent;
     guint32          info;
     NMPlatformAction action;
-} NMPlatformTfilter;
+} _nm_alignas(NMPlatformObject) NMPlatformTfilter;
 
 typedef struct {
     bool          is_ip4;
