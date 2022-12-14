@@ -6231,6 +6231,11 @@ make_vlan_setting(shvarFile *ifcfg, const char *file, GError **error)
     }
     g_object_set(s_vlan, NM_SETTING_VLAN_PARENT, parent, NULL);
 
+    v = svGetValueStr(ifcfg, "VLAN_PROTOCOL", &value);
+    if (v) {
+        g_object_set(s_vlan, NM_SETTING_VLAN_PROTOCOL, v, NULL);
+    }
+
     vlan_flags |= NM_VLAN_FLAG_REORDER_HEADERS;
 
     gvrp = svGetValueBoolean(ifcfg, "GVRP", -1);

@@ -7530,6 +7530,12 @@ static const NMMetaPropertyInfo *const property_infos_VLAN[] = {
             .set_fcn =                  _set_fcn_gobject_flags,
         ),
     ),
+    PROPERTY_INFO_WITH_DESC (NM_SETTING_VLAN_PROTOCOL,
+        .property_type =                &_pt_gobject_string,
+        .property_typ_data = DEFINE_PROPERTY_TYP_DATA (
+            .values_static =            NM_MAKE_STRV ("802.1Q", "802.1ad"),
+        ),
+    ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_VLAN_INGRESS_PRIORITY_MAP,
         .is_cli_option =                TRUE,
         .property_alias =               "ingress",

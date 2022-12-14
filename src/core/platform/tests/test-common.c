@@ -2074,6 +2074,50 @@ nmtstp_link_tun_add(NMPlatform             *platform,
 }
 
 const NMPlatformLink *
+nmtstp_link_vlan_add(NMPlatform              *platform,
+                     int                      external_command,
+                     const char              *name,
+                     int                      parent,
+                     const NMPlatformLnkVlan *lnk)
+{
+    const NMPlatformLink *pllink = NULL;
+    gboolean              success;
+
+    g_assert(nm_utils_ifname_valid_kernel(name, NULL));
+
+    external_command = nmtstp_run_command_check_external(external_command);
+
+    _init_platform(&platform, external_command);
+
+    if (external_command) {
+        const char *dev;
+
+        dev = nm_platform_link_get_name(platform, parent);
+        g_assert(dev);
+        g_assert(NM_IN_SET(lnk->protocol, ETH_P_8021Q, ETH_P_8021AD));
+
+        success = !nmtstp_run_command(
+            "ip link add name %s link %s type vlan id %hu protocol %s%s%s%s%s",
+            name,
+            dev,
+            lnk->id,
+            lnk->protocol == ETH_P_8021Q ? "802.1Q" : "802.1ad",
+            !(lnk->flags & _NM_VLAN_FLAG_REORDER_HEADERS) ? " reorder_hdr off" : "",
+            (lnk->flags & _NM_VLAN_FLAG_GVRP) ? " gvrp on" : "",
+            (lnk->flags & _NM_VLAN_FLAG_MVRP) ? " mvrp on" : "",
+            (lnk->flags & _NM_VLAN_FLAG_LOOSE_BINDING) ? " loose_binding on" : "");
+        if (success)
+            pllink = nmtstp_assert_wait_for_link(platform, name, NM_LINK_TYPE_VLAN, 100);
+    } else
+        success =
+            NMTST_NM_ERR_SUCCESS(nm_platform_link_vlan_add(platform, name, parent, lnk, &pllink));
+
+    _assert_pllink(platform, success, pllink, name, NM_LINK_TYPE_VLAN);
+
+    return pllink;
+}
+
+const NMPlatformLink *
 nmtstp_link_vrf_add(NMPlatform             *platform,
                     int                     external_command,
                     const char             *name,

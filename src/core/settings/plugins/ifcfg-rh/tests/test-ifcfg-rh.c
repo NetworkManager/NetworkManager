@@ -7767,6 +7767,7 @@ test_read_vlan_interface(void)
 
     g_assert_cmpstr(nm_setting_vlan_get_parent(s_vlan), ==, "eth9");
     g_assert_cmpint(nm_setting_vlan_get_id(s_vlan), ==, 43);
+    g_assert_cmpstr(nm_setting_vlan_get_protocol(s_vlan), ==, "802.1ad");
     g_assert_cmpint(nm_setting_vlan_get_flags(s_vlan),
                     ==,
                     NM_VLAN_FLAG_GVRP | NM_VLAN_FLAG_LOOSE_BINDING | NM_VLAN_FLAG_REORDER_HEADERS);
@@ -7943,6 +7944,7 @@ test_read_vlan_flags_1(void)
 
     g_assert_cmpstr(nm_setting_vlan_get_parent(s_vlan), ==, "eth9");
     g_assert_cmpint(nm_setting_vlan_get_id(s_vlan), ==, 44);
+    g_assert_cmpstr(nm_setting_vlan_get_protocol(s_vlan), ==, NULL);
     g_assert_cmpint(nm_setting_vlan_get_flags(s_vlan),
                     ==,
                     NM_VLAN_FLAG_LOOSE_BINDING | NM_VLAN_FLAG_REORDER_HEADERS);

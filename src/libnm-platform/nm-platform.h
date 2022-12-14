@@ -862,8 +862,8 @@ typedef struct {
 } _nm_alignas(NMPlatformObject) NMPlatformLnkTun;
 
 typedef struct {
-    /* rtnl_link_vlan_get_id(), IFLA_VLAN_ID */
     guint16      id;
+    guint16      protocol;
     _NMVlanFlags flags;
 } _nm_alignas(NMPlatformObject) NMPlatformLnkVlan;
 
@@ -1660,28 +1660,13 @@ nm_platform_link_sit_add(NMPlatform             *self,
 }
 
 static inline int
-nm_platform_link_vlan_add(NMPlatform            *self,
-                          const char            *name,
-                          int                    parent,
-                          int                    vlanid,
-                          guint32                vlanflags,
-                          const NMPlatformLink **out_link)
+nm_platform_link_vlan_add(NMPlatform              *self,
+                          const char              *name,
+                          int                      parent,
+                          const NMPlatformLnkVlan *props,
+                          const NMPlatformLink   **out_link)
 {
-    g_return_val_if_fail(parent >= 0, -NME_BUG);
-    g_return_val_if_fail(vlanid >= 0, -NME_BUG);
-
-    return nm_platform_link_add(self,
-                                NM_LINK_TYPE_VLAN,
-                                name,
-                                parent,
-                                NULL,
-                                0,
-                                0,
-                                &((NMPlatformLnkVlan){
-                                    .id    = vlanid,
-                                    .flags = vlanflags,
-                                }),
-                                out_link);
+    return nm_platform_link_add(self, NM_LINK_TYPE_VLAN, name, parent, NULL, 0, 0, props, out_link);
 }
 
 static inline int

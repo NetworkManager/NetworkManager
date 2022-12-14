@@ -1045,6 +1045,8 @@
         <property name="flags"
                   alias="flags"
                   description="One or more flags which control the behavior and features of the VLAN interface.  Flags include NM_VLAN_FLAG_REORDER_HEADERS (0x1) (reordering of output packet headers), NM_VLAN_FLAG_GVRP (0x2) (use of the GVRP protocol), and NM_VLAN_FLAG_LOOSE_BINDING (0x4) (loose binding of the interface to its master device&apos;s operating state). NM_VLAN_FLAG_MVRP (0x8) (use of the MVRP protocol). The default value of this property is NM_VLAN_FLAG_REORDER_HEADERS, but it used to be 0. To preserve backward compatibility, the default-value in the D-Bus API continues to be 0 and a missing property on D-Bus is still considered as 0." />
+        <property name="protocol"
+                  description="Specifies the VLAN protocol to use for encapsulation. Supported values are: &apos;802.1Q&apos;, &apos;802.1ad&apos;. If not specified the default value is &apos;802.1Q&apos;." />
         <property name="ingress-priority-map"
                   alias="ingress"
                   description="For incoming packets, a list of mappings from 802.1p priorities to Linux SKB priorities.  The mapping is given in the format &quot;from:to&quot; where both &quot;from&quot; and &quot;to&quot; are unsigned integers, ie &quot;7:3&quot;." />
