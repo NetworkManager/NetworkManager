@@ -8249,7 +8249,6 @@ void
 nm_platform_lnk_macsec_hash_update(const NMPlatformLnkMacsec *obj, NMHashState *h)
 {
     nm_hash_update_vals(h,
-                        obj->parent_ifindex,
                         obj->sci,
                         obj->cipher_suite,
                         obj->window,
@@ -8269,7 +8268,6 @@ int
 nm_platform_lnk_macsec_cmp(const NMPlatformLnkMacsec *a, const NMPlatformLnkMacsec *b)
 {
     NM_CMP_SELF(a, b);
-    NM_CMP_FIELD(a, b, parent_ifindex);
     NM_CMP_FIELD(a, b, sci);
     NM_CMP_FIELD(a, b, icv_length);
     NM_CMP_FIELD(a, b, cipher_suite);
