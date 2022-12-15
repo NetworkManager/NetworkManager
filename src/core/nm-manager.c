@@ -1979,7 +1979,7 @@ nm_manager_get_connection_iface(NMManager    *self,
 
         g_set_error(error,
                     NM_MANAGER_ERROR,
-                    NM_MANAGER_ERROR_FAILED,
+                    NM_MANAGER_ERROR_MISSING_PLUGIN,
                     "NetworkManager plugin for '%s' unavailable",
                     nm_connection_get_connection_type(connection));
         return NULL;
