@@ -230,6 +230,11 @@ _platform_signal_cb(NMPlatform   *platform,
     const NMPlatformSignalChangeType change_type = change_type_i;
     L3CfgData                       *l3cfg_data;
 
+    if (ifindex <= 0) {
+        /* platform signal callback could be triggered by nodev routes, skip them */
+        return;
+    }
+
     l3cfg_data = g_hash_table_lookup(priv->l3cfgs, &ifindex);
     if (!l3cfg_data)
         return;
