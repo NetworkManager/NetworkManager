@@ -153,8 +153,7 @@ update_properties(NMDevice *device)
 
     g_object_freeze_notify((GObject *) device);
 
-    if (priv->props.parent_ifindex != props->parent_ifindex)
-        nm_device_parent_set_ifindex(device, props->parent_ifindex);
+    nm_device_parent_set_ifindex(device, plink->parent);
 
 #define CHECK_PROPERTY_CHANGED(field, prop)      \
     G_STMT_START                                 \

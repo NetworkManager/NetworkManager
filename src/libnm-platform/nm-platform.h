@@ -814,7 +814,6 @@ typedef struct {
 } _nm_alignas(NMPlatformObject) NMPlatformLnkIpIp;
 
 typedef struct {
-    int     parent_ifindex;
     guint64 sci; /* host byte order */
     guint64 cipher_suite;
     guint32 window;
