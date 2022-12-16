@@ -184,6 +184,7 @@ static guint signals[_NM_PLATFORM_SIGNAL_ID_LAST] = {0};
 
 enum {
     PROP_0,
+    PROP_MULTI_IDX,
     PROP_NETNS_SUPPORT,
     PROP_USE_UDEV,
     PROP_LOG_WITH_PTR,
@@ -9621,6 +9622,20 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
     NMPlatformPrivate *priv = NM_PLATFORM_GET_PRIVATE(self);
 
     switch (prop_id) {
+    case PROP_MULTI_IDX:
+        /* construct-only */
+        {
+            NMDedupMultiIndex *multi_idx;
+
+            multi_idx = g_value_get_pointer(value);
+            if (!multi_idx)
+                multi_idx = nm_dedup_multi_index_new();
+            else
+                multi_idx = nm_dedup_multi_index_ref(multi_idx);
+
+            priv->multi_idx = multi_idx;
+            break;
+        }
     case PROP_NETNS_SUPPORT:
         /* construct-only */
         if (g_value_get_boolean(value)) {
@@ -9667,8 +9682,9 @@ constructor(GType type, guint n_construct_params, GObjectConstructParam *constru
     self = NM_PLATFORM(object);
     priv = NM_PLATFORM_GET_PRIVATE(self);
 
-    priv->multi_idx = nm_dedup_multi_index_new();
-    priv->cache     = nmp_cache_new(priv->multi_idx, priv->use_udev);
+    nm_assert(priv->multi_idx);
+
+    priv->cache = nmp_cache_new(priv->multi_idx, priv->use_udev);
     c_list_init(&priv->ip6_dadfailed_lst_head);
 
     return object;
@@ -9707,6 +9723,14 @@ nm_platform_class_init(NMPlatformClass *platform_class)
     object_class->finalize     = finalize;
 
     platform_class->wifi_set_powersave = wifi_set_powersave;
+
+    g_object_class_install_property(
+        object_class,
+        PROP_MULTI_IDX,
+        g_param_spec_pointer(NM_PLATFORM_MULTI_IDX,
+                             "",
+                             "",
+                             G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS));
 
     g_object_class_install_property(
         object_class,
