@@ -10,7 +10,7 @@
 
 #define NM_TYPE_SESSION_MONITOR (nm_session_monitor_get_type())
 #define NM_SESSION_MONITOR(o) \
-    (G_TYPE_CHECK_INSTANCE_CAST((o), NM_TYPE_SESSION_MONITOR, NMSessionMonitor))
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((o), NM_TYPE_SESSION_MONITOR, NMSessionMonitor))
 #define NM_SESSION_MONITOR_CLASS(k) \
     (G_TYPE_CHECK_CLASS_CAST((k), NM_TYPE_SESSION_MONITOR, NMSessionMonitorClass))
 #define NM_SESSION_MONITOR_GET_CLASS(o) \

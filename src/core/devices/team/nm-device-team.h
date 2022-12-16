@@ -9,7 +9,8 @@
 #include "devices/nm-device.h"
 
 #define NM_TYPE_DEVICE_TEAM (nm_device_team_get_type())
-#define NM_DEVICE_TEAM(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_DEVICE_TEAM, NMDeviceTeam))
+#define NM_DEVICE_TEAM(obj) \
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_DEVICE_TEAM, NMDeviceTeam))
 #define NM_DEVICE_TEAM_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_DEVICE_TEAM, NMDeviceTeamClass))
 #define NM_IS_DEVICE_TEAM(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_DEVICE_TEAM))

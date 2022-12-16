@@ -6,7 +6,7 @@
 #include "nm-device-generic.h"
 
 #define NM_TYPE_DEVICE_VRF (nm_device_vrf_get_type())
-#define NM_DEVICE_VRF(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_DEVICE_VRF, NMDeviceVrf))
+#define NM_DEVICE_VRF(obj) (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_DEVICE_VRF, NMDeviceVrf))
 #define NM_DEVICE_VRF_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_DEVICE_VRF, NMDeviceVrfClass))
 #define NM_IS_DEVICE_VRF(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_DEVICE_VRF))

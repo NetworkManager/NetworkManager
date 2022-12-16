@@ -17,7 +17,7 @@
 
 #define NM_TYPE_DEVICE_FACTORY (nm_device_factory_get_type())
 #define NM_DEVICE_FACTORY(obj) \
-    (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_DEVICE_FACTORY, NMDeviceFactory))
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_DEVICE_FACTORY, NMDeviceFactory))
 #define NM_DEVICE_FACTORY_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_DEVICE_FACTORY, NMDeviceFactoryClass))
 #define NM_IS_DEVICE_FACTORY(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_DEVICE_FACTORY))

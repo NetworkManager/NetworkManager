@@ -12,7 +12,7 @@ typedef struct _NMCSProviderEC2Class NMCSProviderEC2Class;
 
 #define NMCS_TYPE_PROVIDER_EC2 (nmcs_provider_ec2_get_type())
 #define NMCS_PROVIDER_EC2(obj) \
-    (G_TYPE_CHECK_INSTANCE_CAST((obj), NMCS_TYPE_PROVIDER_EC2, NMCSProviderEC2))
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NMCS_TYPE_PROVIDER_EC2, NMCSProviderEC2))
 #define NMCS_PROVIDER_EC2_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NMCS_TYPE_PROVIDER_EC2, NMCSProviderEC2Class))
 #define NMCS_IS_PROVIDER_EC2(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NMCS_TYPE_PROVIDER_EC2))

@@ -741,7 +741,7 @@ nm_device_vxlan_class_init(NMDeviceVxlanClass *klass)
 
 #define NM_TYPE_VXLAN_DEVICE_FACTORY (nm_vxlan_device_factory_get_type())
 #define NM_VXLAN_DEVICE_FACTORY(obj) \
-    (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_VXLAN_DEVICE_FACTORY, NMVxlanDeviceFactory))
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_VXLAN_DEVICE_FACTORY, NMVxlanDeviceFactory))
 
 static NMDevice *
 create_device(NMDeviceFactory      *factory,

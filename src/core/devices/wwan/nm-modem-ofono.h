@@ -8,8 +8,9 @@
 
 #include "nm-modem.h"
 
-#define NM_TYPE_MODEM_OFONO    (nm_modem_ofono_get_type())
-#define NM_MODEM_OFONO(obj)    (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_MODEM_OFONO, NMModemOfono))
+#define NM_TYPE_MODEM_OFONO (nm_modem_ofono_get_type())
+#define NM_MODEM_OFONO(obj) \
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_MODEM_OFONO, NMModemOfono))
 #define NM_IS_MODEM_OFONO(obj) (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_MODEM_OFONO))
 #define NM_MODEM_OFONO_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_MODEM_OFONO, NMModemOfonoClass))

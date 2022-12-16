@@ -976,7 +976,7 @@ nm_device_macsec_class_init(NMDeviceMacsecClass *klass)
 
 #define NM_TYPE_MACSEC_DEVICE_FACTORY (nm_macsec_device_factory_get_type())
 #define NM_MACSEC_DEVICE_FACTORY(obj) \
-    (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_MACSEC_DEVICE_FACTORY, NMMacsecDeviceFactory))
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_MACSEC_DEVICE_FACTORY, NMMacsecDeviceFactory))
 
 static NMDevice *
 create_device(NMDeviceFactory      *factory,

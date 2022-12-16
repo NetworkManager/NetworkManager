@@ -9,7 +9,8 @@
 #include "devices/nm-device.h"
 
 #define NM_TYPE_TEST_DEVICE (nm_test_device_get_type())
-#define NM_TEST_DEVICE(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_TEST_DEVICE, NMTestDevice))
+#define NM_TEST_DEVICE(obj) \
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_TEST_DEVICE, NMTestDevice))
 #define NM_TEST_DEVICE_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_TEST_DEVICE, NMTestDeviceClass))
 #define NM_IS_TEST_DEVICE(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_TEST_DEVICE))

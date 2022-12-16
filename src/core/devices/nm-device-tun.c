@@ -527,7 +527,7 @@ nm_device_tun_class_init(NMDeviceTunClass *klass)
 
 #define NM_TYPE_TUN_DEVICE_FACTORY (nm_tun_device_factory_get_type())
 #define NM_TUN_DEVICE_FACTORY(obj) \
-    (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_TUN_DEVICE_FACTORY, NMTunDeviceFactory))
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_TUN_DEVICE_FACTORY, NMTunDeviceFactory))
 
 static NMDevice *
 create_device(NMDeviceFactory      *factory,

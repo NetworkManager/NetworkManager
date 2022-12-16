@@ -11,7 +11,7 @@
 typedef struct NMWpanUtils NMWpanUtils;
 
 #define NM_TYPE_WPAN_UTILS (nm_wpan_utils_get_type())
-#define NM_WPAN_UTILS(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_WPAN_UTILS, NMWpanUtils))
+#define NM_WPAN_UTILS(obj) (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_WPAN_UTILS, NMWpanUtils))
 #define NM_WPAN_UTILS_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_WPAN_UTILS, NMWpanUtilsClass))
 #define NM_IS_WPAN_UTILS(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_WPAN_UTILS))

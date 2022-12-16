@@ -9,7 +9,8 @@
 #include "nm-device.h"
 
 #define NM_TYPE_DEVICE_BOND (nm_device_bond_get_type())
-#define NM_DEVICE_BOND(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_DEVICE_BOND, NMDeviceBond))
+#define NM_DEVICE_BOND(obj) \
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_DEVICE_BOND, NMDeviceBond))
 #define NM_DEVICE_BOND_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_DEVICE_BOND, NMDeviceBondClass))
 #define NM_IS_DEVICE_BOND(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_DEVICE_BOND))

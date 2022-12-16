@@ -31,6 +31,9 @@ G_STATIC_ASSERT(_nm_alignof(NMPlatformObject) == _nm_alignof(NMPObjectLnkVlan));
 G_STATIC_ASSERT(_nm_alignof(NMPlatformObject) == _nm_alignof(NMPObjectLnkVrf));
 G_STATIC_ASSERT(_nm_alignof(NMPlatformObject) == _nm_alignof(NMPObjectLnkVxlan));
 G_STATIC_ASSERT(_nm_alignof(NMPlatformObject) == _nm_alignof(NMPObjectLnkWireGuard));
+G_STATIC_ASSERT(_nm_alignof(NMPlatformObject) == _nm_alignof(NMPObjectQdisc));
+G_STATIC_ASSERT(_nm_alignof(NMPlatformObject) == _nm_alignof(NMPObjectRoutingRule));
+G_STATIC_ASSERT(_nm_alignof(NMPlatformObject) == _nm_alignof(NMPObjectTfilter));
 
 G_STATIC_ASSERT(_nm_alignof(NMPlatformObject) == _nm_alignof(NMPlatformIP4Address));
 G_STATIC_ASSERT(_nm_alignof(NMPlatformObject) == _nm_alignof(NMPlatformIP4Route));
@@ -57,6 +60,9 @@ G_STATIC_ASSERT(_nm_alignof(NMPlatformObject) == _nm_alignof(NMPlatformLnkVrf));
 G_STATIC_ASSERT(_nm_alignof(NMPlatformObject) == _nm_alignof(NMPlatformLnkVxlan));
 G_STATIC_ASSERT(_nm_alignof(NMPlatformObject) == _nm_alignof(NMPlatformLnkWireGuard));
 G_STATIC_ASSERT(_nm_alignof(NMPlatformObject) == _nm_alignof(NMPlatformObjWithIfindex));
+G_STATIC_ASSERT(_nm_alignof(NMPlatformObject) == _nm_alignof(NMPlatformQdisc));
+G_STATIC_ASSERT(_nm_alignof(NMPlatformObject) == _nm_alignof(NMPlatformRoutingRule));
+G_STATIC_ASSERT(_nm_alignof(NMPlatformObject) == _nm_alignof(NMPlatformTfilter));
 
 /*****************************************************************************/
 

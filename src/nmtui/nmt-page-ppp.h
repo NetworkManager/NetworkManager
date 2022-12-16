@@ -9,7 +9,7 @@
 #include "nmt-editor-page.h"
 
 #define NMT_TYPE_PAGE_PPP (nmt_page_ppp_get_type())
-#define NMT_PAGE_PPP(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), NMT_TYPE_PAGE_PPP, NmtPagePpp))
+#define NMT_PAGE_PPP(obj) (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NMT_TYPE_PAGE_PPP, NmtPagePpp))
 #define NMT_PAGE_PPP_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NMT_TYPE_PAGE_PPP, NmtPagePppClass))
 #define NMT_IS_PAGE_PPP(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NMT_TYPE_PAGE_PPP))

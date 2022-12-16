@@ -10,7 +10,7 @@
 
 #define NM_TYPE_DEVICE_MACSEC (nm_device_macsec_get_type())
 #define NM_DEVICE_MACSEC(obj) \
-    (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_DEVICE_MACSEC, NMDeviceMacsec))
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_DEVICE_MACSEC, NMDeviceMacsec))
 #define NM_DEVICE_MACSEC_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_DEVICE_MACSEC, NMDeviceMacsecClass))
 #define NM_IS_DEVICE_MACSEC(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_DEVICE_MACSEC))

@@ -33,7 +33,7 @@ typedef struct {
 
 #define NM_TYPE_SECRET_AGENT_SIMPLE (nm_secret_agent_simple_get_type())
 #define NM_SECRET_AGENT_SIMPLE(obj) \
-    (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_SECRET_AGENT_SIMPLE, NMSecretAgentSimple))
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_SECRET_AGENT_SIMPLE, NMSecretAgentSimple))
 #define NM_SECRET_AGENT_SIMPLE_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_SECRET_AGENT_SIMPLE, NMSecretAgentSimpleClass))
 #define NM_IS_SECRET_AGENT_SIMPLE(obj) \

@@ -10,7 +10,7 @@
 
 #define NMT_TYPE_PAGE_IP_TUNNEL (nmt_page_ip_tunnel_get_type())
 #define NMT_PAGE_IP_TUNNEL(obj) \
-    (G_TYPE_CHECK_INSTANCE_CAST((obj), NMT_TYPE_PAGE_IP_TUNNEL, NmtPageIPTunnel))
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NMT_TYPE_PAGE_IP_TUNNEL, NmtPageIPTunnel))
 #define NMT_PAGE_IP_TUNNEL_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NMT_TYPE_PAGE_IP_TUNNEL, NmtPageIPTunnelClass))
 #define NMT_IS_PAGE_IP_TUNNEL(obj) (G_TYPE_CHECK_INSTANCE_TYPE((obj), NMT_TYPE_PAGE_IP_TUNNEL))

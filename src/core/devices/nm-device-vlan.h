@@ -9,7 +9,8 @@
 #include "nm-device.h"
 
 #define NM_TYPE_DEVICE_VLAN (nm_device_vlan_get_type())
-#define NM_DEVICE_VLAN(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_DEVICE_VLAN, NMDeviceVlan))
+#define NM_DEVICE_VLAN(obj) \
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_DEVICE_VLAN, NMDeviceVlan))
 #define NM_DEVICE_VLAN_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_DEVICE_VLAN, NMDeviceVlanClass))
 #define NM_IS_DEVICE_VLAN(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_DEVICE_VLAN))

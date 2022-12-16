@@ -14,7 +14,7 @@
 
 #define NM_TYPE_DHCP6_CONFIG (nm_dhcp6_config_get_type())
 #define NM_DHCP6_CONFIG(obj) \
-    (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_DHCP6_CONFIG, NMDhcp6Config))
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_DHCP6_CONFIG, NMDhcp6Config))
 #define NM_DHCP6_CONFIG_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_DHCP6_CONFIG, NMDhcp6ConfigClass))
 #define NM_IS_DHCP6_CONFIG(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_DHCP6_CONFIG))

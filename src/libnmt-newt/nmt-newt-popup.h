@@ -9,7 +9,8 @@
 #include "nmt-newt-button.h"
 
 #define NMT_TYPE_NEWT_POPUP (nmt_newt_popup_get_type())
-#define NMT_NEWT_POPUP(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), NMT_TYPE_NEWT_POPUP, NmtNewtPopup))
+#define NMT_NEWT_POPUP(obj) \
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NMT_TYPE_NEWT_POPUP, NmtNewtPopup))
 #define NMT_NEWT_POPUP_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NMT_TYPE_NEWT_POPUP, NmtNewtPopupClass))
 #define NMT_IS_NEWT_POPUP(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NMT_TYPE_NEWT_POPUP))

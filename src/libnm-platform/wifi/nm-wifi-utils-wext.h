@@ -10,7 +10,7 @@
 
 #define NM_TYPE_WIFI_UTILS_WEXT (nm_wifi_utils_wext_get_type())
 #define NM_WIFI_UTILS_WEXT(obj) \
-    (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_WIFI_UTILS_WEXT, NMWifiUtilsWext))
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_WIFI_UTILS_WEXT, NMWifiUtilsWext))
 #define NM_WIFI_UTILS_WEXT_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_WIFI_UTILS_WEXT, NMWifiUtilsWextClass))
 #define NM_IS_WIFI_UTILS_WEXT(obj) (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_WIFI_UTILS_WEXT))

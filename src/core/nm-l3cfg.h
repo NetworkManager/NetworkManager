@@ -13,7 +13,7 @@
 #define NM_ACD_TIMEOUT_MAX_MSEC         30000u
 
 #define NM_TYPE_L3CFG            (nm_l3cfg_get_type())
-#define NM_L3CFG(obj)            (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_L3CFG, NML3Cfg))
+#define NM_L3CFG(obj)            (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_L3CFG, NML3Cfg))
 #define NM_L3CFG_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_L3CFG, NML3CfgClass))
 #define NM_IS_L3CFG(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_L3CFG))
 #define NM_IS_L3CFG_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE((klass), NM_TYPE_L3CFG))

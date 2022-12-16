@@ -43,7 +43,7 @@ _addr_family_to_path_part(int addr_family)
 
 #define NM_TYPE_DHCP_DHCLIENT (nm_dhcp_dhclient_get_type())
 #define NM_DHCP_DHCLIENT(obj) \
-    (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_DHCP_DHCLIENT, NMDhcpDhclient))
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_DHCP_DHCLIENT, NMDhcpDhclient))
 #define NM_DHCP_DHCLIENT_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_DHCP_DHCLIENT, NMDhcpDhclientClass))
 #define NM_IS_DHCP_DHCLIENT(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_DHCP_DHCLIENT))

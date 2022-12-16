@@ -10,7 +10,7 @@
 
 #define NMT_TYPE_NEWT_ENTRY_NUMERIC (nmt_newt_entry_numeric_get_type())
 #define NMT_NEWT_ENTRY_NUMERIC(obj) \
-    (G_TYPE_CHECK_INSTANCE_CAST((obj), NMT_TYPE_NEWT_ENTRY_NUMERIC, NmtNewtEntryNumeric))
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NMT_TYPE_NEWT_ENTRY_NUMERIC, NmtNewtEntryNumeric))
 #define NMT_NEWT_ENTRY_NUMERIC_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NMT_TYPE_NEWT_ENTRY_NUMERIC, NmtNewtEntryNumericClass))
 #define NMT_IS_NEWT_ENTRY_NUMERIC(obj) \

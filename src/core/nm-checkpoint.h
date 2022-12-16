@@ -10,7 +10,7 @@
 #include "nm-dbus-interface.h"
 
 #define NM_TYPE_CHECKPOINT (nm_checkpoint_get_type())
-#define NM_CHECKPOINT(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_CHECKPOINT, NMCheckpoint))
+#define NM_CHECKPOINT(obj) (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_CHECKPOINT, NMCheckpoint))
 #define NM_CHECKPOINT_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_CHECKPOINT, NMCheckpointClass))
 #define NM_IS_CHECKPOINT(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_CHECKPOINT))

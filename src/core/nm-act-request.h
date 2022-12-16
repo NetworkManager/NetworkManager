@@ -10,7 +10,8 @@
 #include "nm-active-connection.h"
 
 #define NM_TYPE_ACT_REQUEST (nm_act_request_get_type())
-#define NM_ACT_REQUEST(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_ACT_REQUEST, NMActRequest))
+#define NM_ACT_REQUEST(obj) \
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_ACT_REQUEST, NMActRequest))
 #define NM_ACT_REQUEST_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_ACT_REQUEST, NMActRequestClass))
 #define NM_IS_ACT_REQUEST(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_ACT_REQUEST))

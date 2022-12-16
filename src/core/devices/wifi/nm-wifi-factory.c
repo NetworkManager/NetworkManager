@@ -24,7 +24,7 @@
 
 #define NM_TYPE_WIFI_FACTORY (nm_wifi_factory_get_type())
 #define NM_WIFI_FACTORY(obj) \
-    (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_WIFI_FACTORY, NMWifiFactory))
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_WIFI_FACTORY, NMWifiFactory))
 #define NM_WIFI_FACTORY_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_WIFI_FACTORY, NMWifiFactoryClass))
 #define NM_IS_WIFI_FACTORY(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_WIFI_FACTORY))

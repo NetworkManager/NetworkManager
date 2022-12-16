@@ -58,7 +58,7 @@ typedef enum {
 
 #define NM_TYPE_SUPPLICANT_INTERFACE (nm_supplicant_interface_get_type())
 #define NM_SUPPLICANT_INTERFACE(obj) \
-    (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_SUPPLICANT_INTERFACE, NMSupplicantInterface))
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_SUPPLICANT_INTERFACE, NMSupplicantInterface))
 #define NM_SUPPLICANT_INTERFACE_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_SUPPLICANT_INTERFACE, NMSupplicantInterfaceClass))
 #define NM_IS_SUPPLICANT_INTERFACE(obj) \

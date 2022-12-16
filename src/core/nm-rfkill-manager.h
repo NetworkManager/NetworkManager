@@ -37,7 +37,7 @@ const char *nm_rfkill_type_to_string(NMRfkillType rtype);
 
 #define NM_TYPE_RFKILL_MANAGER (nm_rfkill_manager_get_type())
 #define NM_RFKILL_MANAGER(obj) \
-    (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_RFKILL_MANAGER, NMRfkillManager))
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_RFKILL_MANAGER, NMRfkillManager))
 #define NM_RFKILL_MANAGER_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_RFKILL_MANAGER, NMRfkillManagerClass))
 #define NM_IS_RFKILL_MANAGER(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_RFKILL_MANAGER))

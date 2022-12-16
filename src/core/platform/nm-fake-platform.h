@@ -10,7 +10,7 @@
 
 #define NM_TYPE_FAKE_PLATFORM (nm_fake_platform_get_type())
 #define NM_FAKE_PLATFORM(obj) \
-    (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_FAKE_PLATFORM, NMFakePlatform))
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_FAKE_PLATFORM, NMFakePlatform))
 #define NM_FAKE_PLATFORM_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_FAKE_PLATFORM, NMFakePlatformClass))
 #define NM_IS_FAKE_PLATFORM(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_FAKE_PLATFORM))

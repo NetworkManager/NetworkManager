@@ -26,7 +26,7 @@ typedef struct {
 
 #define NM_TYPE_SETTINGS_PLUGIN (nm_settings_plugin_get_type())
 #define NM_SETTINGS_PLUGIN(obj) \
-    (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_SETTINGS_PLUGIN, NMSettingsPlugin))
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_SETTINGS_PLUGIN, NMSettingsPlugin))
 #define NM_SETTINGS_PLUGIN_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_SETTINGS_PLUGIN, NMSettingsPluginClass))
 #define NM_IS_SETTINGS_PLUGIN(obj) (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_SETTINGS_PLUGIN))

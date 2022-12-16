@@ -893,7 +893,7 @@ nm_device_bond_class_init(NMDeviceBondClass *klass)
 
 #define NM_TYPE_BOND_DEVICE_FACTORY (nm_bond_device_factory_get_type())
 #define NM_BOND_DEVICE_FACTORY(obj) \
-    (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_BOND_DEVICE_FACTORY, NMBondDeviceFactory))
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_BOND_DEVICE_FACTORY, NMBondDeviceFactory))
 
 static NMDevice *
 create_device(NMDeviceFactory      *factory,

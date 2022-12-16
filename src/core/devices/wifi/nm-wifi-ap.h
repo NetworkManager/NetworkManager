@@ -13,7 +13,7 @@
 #include "libnm-base/nm-base.h"
 
 #define NM_TYPE_WIFI_AP            (nm_wifi_ap_get_type())
-#define NM_WIFI_AP(obj)            (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_WIFI_AP, NMWifiAP))
+#define NM_WIFI_AP(obj)            (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_WIFI_AP, NMWifiAP))
 #define NM_WIFI_AP_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_WIFI_AP, NMWifiAPClass))
 #define NM_IS_WIFI_AP(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_WIFI_AP))
 #define NM_IS_WIFI_AP_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE((klass), NM_TYPE_WIFI_AP))

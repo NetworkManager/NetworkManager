@@ -10,7 +10,8 @@
 #include "devices/nm-device.h"
 
 #define NM_TYPE_DEVICE_ADSL (nm_device_adsl_get_type())
-#define NM_DEVICE_ADSL(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_DEVICE_ADSL, NMDeviceAdsl))
+#define NM_DEVICE_ADSL(obj) \
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_DEVICE_ADSL, NMDeviceAdsl))
 #define NM_DEVICE_ADSL_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_DEVICE_ADSL, NMDeviceAdslClass))
 #define NM_IS_DEVICE_ADSL(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_DEVICE_ADSL))

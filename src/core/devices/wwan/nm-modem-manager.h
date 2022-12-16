@@ -12,7 +12,7 @@
 
 #define NM_TYPE_MODEM_MANAGER (nm_modem_manager_get_type())
 #define NM_MODEM_MANAGER(obj) \
-    (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_MODEM_MANAGER, NMModemManager))
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_MODEM_MANAGER, NMModemManager))
 #define NM_MODEM_MANAGER_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_MODEM_MANAGER, NMModemManagerClass))
 #define NM_IS_MODEM_MANAGER(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_MODEM_MANAGER))

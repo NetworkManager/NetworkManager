@@ -11,7 +11,7 @@
 #include "nmp-plobj.h"
 
 #define NM_TYPE_PLATFORM (nm_platform_get_type())
-#define NM_PLATFORM(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_PLATFORM, NMPlatform))
+#define NM_PLATFORM(obj) (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_PLATFORM, NMPlatform))
 #define NM_PLATFORM_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_PLATFORM, NMPlatformClass))
 #define NM_IS_PLATFORM(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_PLATFORM))
@@ -531,7 +531,7 @@ typedef struct {
     guint8             ip_proto;                   /* FRA_IP_PROTO */
 
     bool uid_range_has : 1; /* has(FRA_UID_RANGE) */
-} NMPlatformRoutingRule;
+} _nm_alignas(NMPlatformObject) NMPlatformRoutingRule;
 
 #define NM_PLATFORM_FQ_CODEL_MEMORY_LIMIT_UNSET (~((guint32) 0))
 
@@ -599,7 +599,7 @@ typedef struct {
         NMPlatformQdiscSfq     sfq;
         NMPlatformQdiscTbf     tbf;
     };
-} NMPlatformQdisc;
+} _nm_alignas(NMPlatformObject) NMPlatformQdisc;
 
 typedef struct {
     char sdata[32];
@@ -639,7 +639,7 @@ typedef struct {
     guint32          parent;
     guint32          info;
     NMPlatformAction action;
-} NMPlatformTfilter;
+} _nm_alignas(NMPlatformObject) NMPlatformTfilter;
 
 typedef struct {
     bool          is_ip4;

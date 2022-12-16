@@ -10,7 +10,7 @@
 
 #define NMT_TYPE_NEWT_TEXTBOX (nmt_newt_textbox_get_type())
 #define NMT_NEWT_TEXTBOX(obj) \
-    (G_TYPE_CHECK_INSTANCE_CAST((obj), NMT_TYPE_NEWT_TEXTBOX, NmtNewtTextbox))
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NMT_TYPE_NEWT_TEXTBOX, NmtNewtTextbox))
 #define NMT_NEWT_TEXTBOX_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NMT_TYPE_NEWT_TEXTBOX, NmtNewtTextboxClass))
 #define NMT_IS_NEWT_TEXTBOX(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NMT_TYPE_NEWT_TEXTBOX))
