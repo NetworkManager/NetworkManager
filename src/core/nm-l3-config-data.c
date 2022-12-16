@@ -2231,14 +2231,21 @@ static const NML3ConfigData *
 get_empty_l3cd(void)
 {
     static NML3ConfigData *empty_l3cd;
+    NML3ConfigData        *l3cd;
 
-    if (!empty_l3cd) {
-        empty_l3cd =
-            nm_l3_config_data_new(nm_dedup_multi_index_new(), 1, NM_IP_CONFIG_SOURCE_UNKNOWN);
-        empty_l3cd->ifindex = 0;
+again:
+    l3cd = g_atomic_pointer_get(&empty_l3cd);
+    if (G_UNLIKELY(!l3cd)) {
+        l3cd = nm_l3_config_data_new(nm_dedup_multi_index_new(), 1, NM_IP_CONFIG_SOURCE_UNKNOWN);
+        l3cd->ifindex = 0;
+
+        if (!g_atomic_pointer_compare_and_exchange(&empty_l3cd, NULL, l3cd)) {
+            nm_l3_config_data_unref(l3cd);
+            goto again;
+        }
     }
 
-    return empty_l3cd;
+    return l3cd;
 }
 
 int
