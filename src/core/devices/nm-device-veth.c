@@ -98,11 +98,14 @@ create_and_realize(NMDevice              *device,
         return FALSE;
     }
 
+    /* For veths, users can define two connection profiles referencing each
+     * other as 'veth.peer'. Only the first to be activated will actually
+     * create the veth pair; the other must detect that interfaces already
+     * exist and proceed. */
     peer        = nm_setting_veth_get_peer(s_veth);
     peer_device = nm_manager_get_device(NM_MANAGER_GET, peer, NM_DEVICE_TYPE_VETH);
     if (peer_device) {
         if (nm_device_parent_get_device(peer_device))
-            /* The veth device and its peer already exist. No need to create it again. */
             return TRUE;
     }
 
