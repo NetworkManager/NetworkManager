@@ -12,7 +12,7 @@
 
 #define NM_TYPE_DNS_SYSTEMD_RESOLVED (nm_dns_systemd_resolved_get_type())
 #define NM_DNS_SYSTEMD_RESOLVED(obj) \
-    (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_DNS_SYSTEMD_RESOLVED, NMDnsSystemdResolved))
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_DNS_SYSTEMD_RESOLVED, NMDnsSystemdResolved))
 #define NM_DNS_SYSTEMD_RESOLVED_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_DNS_SYSTEMD_RESOLVED, NMDnsSystemdResolvedClass))
 #define NM_IS_DNS_SYSTEMD_RESOLVED(obj) \

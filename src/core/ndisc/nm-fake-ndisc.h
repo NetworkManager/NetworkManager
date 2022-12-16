@@ -9,7 +9,7 @@
 #include "nm-ndisc.h"
 
 #define NM_TYPE_FAKE_NDISC (nm_fake_ndisc_get_type())
-#define NM_FAKE_NDISC(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_FAKE_NDISC, NMFakeNDisc))
+#define NM_FAKE_NDISC(obj) (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_FAKE_NDISC, NMFakeNDisc))
 #define NM_FAKE_NDISC_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_FAKE_NDISC, NMFakeNDiscClass))
 #define NM_IS_FAKE_NDISC(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_FAKE_NDISC))

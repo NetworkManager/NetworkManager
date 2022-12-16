@@ -10,7 +10,7 @@
 
 #define NM_TYPE_DEVICE_MACVLAN (nm_device_macvlan_get_type())
 #define NM_DEVICE_MACVLAN(obj) \
-    (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_DEVICE_MACVLAN, NMDeviceMacvlan))
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_DEVICE_MACVLAN, NMDeviceMacvlan))
 #define NM_DEVICE_MACVLAN_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_DEVICE_MACVLAN, NMDeviceMacvlanClass))
 #define NM_IS_DEVICE_MACVLAN(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_DEVICE_MACVLAN))

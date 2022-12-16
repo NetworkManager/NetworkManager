@@ -9,7 +9,7 @@
 #include "nmt-editor-page-device.h"
 
 #define NMT_TYPE_PAGE_VLAN (nmt_page_vlan_get_type())
-#define NMT_PAGE_VLAN(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), NMT_TYPE_PAGE_VLAN, NmtPageVlan))
+#define NMT_PAGE_VLAN(obj) (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NMT_TYPE_PAGE_VLAN, NmtPageVlan))
 #define NMT_PAGE_VLAN_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NMT_TYPE_PAGE_VLAN, NmtPageVlanClass))
 #define NMT_IS_PAGE_VLAN(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NMT_TYPE_PAGE_VLAN))

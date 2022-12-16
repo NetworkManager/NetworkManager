@@ -10,7 +10,7 @@
 
 #define NM_TYPE_DEVICE_VXLAN (nm_device_vxlan_get_type())
 #define NM_DEVICE_VXLAN(obj) \
-    (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_DEVICE_VXLAN, NMDeviceVxlan))
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_DEVICE_VXLAN, NMDeviceVxlan))
 #define NM_DEVICE_VXLAN_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_DEVICE_VXLAN, NMDeviceVxlanClass))
 #define NM_IS_DEVICE_VXLAN(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_DEVICE_VXLAN))

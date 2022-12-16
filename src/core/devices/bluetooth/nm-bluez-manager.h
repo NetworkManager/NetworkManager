@@ -8,7 +8,7 @@
 
 #define NM_TYPE_BLUEZ_MANAGER (nm_bluez_manager_get_type())
 #define NM_BLUEZ_MANAGER(obj) \
-    (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_BLUEZ_MANAGER, NMBluezManager))
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_BLUEZ_MANAGER, NMBluezManager))
 #define NM_BLUEZ_MANAGER_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_BLUEZ_MANAGER, NMBluezManagerClass))
 #define NM_IS_BLUEZ_MANAGER(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_BLUEZ_MANAGER))

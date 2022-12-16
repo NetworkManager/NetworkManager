@@ -11,7 +11,7 @@
 /*****************************************************************************/
 
 #define NMP_TYPE_NETNS            (nmp_netns_get_type())
-#define NMP_NETNS(obj)            (G_TYPE_CHECK_INSTANCE_CAST((obj), NMP_TYPE_NETNS, NMPNetns))
+#define NMP_NETNS(obj)            (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NMP_TYPE_NETNS, NMPNetns))
 #define NMP_NETNS_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST((klass), NMP_TYPE_NETNS, NMPNetnsClass))
 #define NMP_IS_NETNS(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NMP_TYPE_NETNS))
 #define NMP_IS_NETNS_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE((klass), NMP_TYPE_NETNS))

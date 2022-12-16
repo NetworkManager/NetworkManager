@@ -17,7 +17,8 @@
 /*****************************************************************************/
 
 #define NM_TYPE_ATM_MANAGER (nm_atm_manager_get_type())
-#define NM_ATM_MANAGER(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_ATM_MANAGER, NMAtmManager))
+#define NM_ATM_MANAGER(obj) \
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_ATM_MANAGER, NMAtmManager))
 #define NM_ATM_MANAGER_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_ATM_MANAGER, NMAtmManagerClass))
 #define NM_IS_ATM_MANAGER(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_ATM_MANAGER))

@@ -10,7 +10,7 @@
 
 #define NMT_TYPE_NEWT_SECTION (nmt_newt_section_get_type())
 #define NMT_NEWT_SECTION(obj) \
-    (G_TYPE_CHECK_INSTANCE_CAST((obj), NMT_TYPE_NEWT_SECTION, NmtNewtSection))
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NMT_TYPE_NEWT_SECTION, NmtNewtSection))
 #define NMT_NEWT_SECTION_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NMT_TYPE_NEWT_SECTION, NmtNewtSectionClass))
 #define NMT_IS_NEWT_SECTION(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NMT_TYPE_NEWT_SECTION))

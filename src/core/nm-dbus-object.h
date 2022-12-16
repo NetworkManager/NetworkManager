@@ -46,7 +46,8 @@ typedef struct {
 /*****************************************************************************/
 
 #define NM_TYPE_DBUS_OBJECT (nm_dbus_object_get_type())
-#define NM_DBUS_OBJECT(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_DBUS_OBJECT, NMDBusObject))
+#define NM_DBUS_OBJECT(obj) \
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_DBUS_OBJECT, NMDBusObject))
 #define NM_DBUS_OBJECT_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_DBUS_OBJECT, NMDBusObjectClass))
 #define NM_IS_DBUS_OBJECT(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_DBUS_OBJECT))

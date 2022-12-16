@@ -8,7 +8,7 @@
 
 #define NM_TYPE_DEVICE_OVS_PORT (nm_device_ovs_port_get_type())
 #define NM_DEVICE_OVS_PORT(obj) \
-    (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_DEVICE_OVS_PORT, NMDeviceOvsPort))
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_DEVICE_OVS_PORT, NMDeviceOvsPort))
 #define NM_DEVICE_OVS_PORT_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_DEVICE_OVS_PORT, NMDeviceOvsPortClass))
 #define NM_IS_DEVICE_OVS_PORT(obj) (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_DEVICE_OVS_PORT))

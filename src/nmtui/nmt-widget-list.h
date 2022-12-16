@@ -10,7 +10,7 @@
 
 #define NMT_TYPE_WIDGET_LIST (nmt_widget_list_get_type())
 #define NMT_WIDGET_LIST(obj) \
-    (G_TYPE_CHECK_INSTANCE_CAST((obj), NMT_TYPE_WIDGET_LIST, NmtWidgetList))
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NMT_TYPE_WIDGET_LIST, NmtWidgetList))
 #define NMT_WIDGET_LIST_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NMT_TYPE_WIDGET_LIST, NmtWidgetListClass))
 #define NMT_IS_WIDGET_LIST(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NMT_TYPE_WIDGET_LIST))

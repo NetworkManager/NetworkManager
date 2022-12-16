@@ -10,7 +10,7 @@
 
 #define NMT_TYPE_ROUTE_EDITOR (nmt_route_editor_get_type())
 #define NMT_ROUTE_EDITOR(obj) \
-    (G_TYPE_CHECK_INSTANCE_CAST((obj), NMT_TYPE_ROUTE_EDITOR, NmtRouteEditor))
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NMT_TYPE_ROUTE_EDITOR, NmtRouteEditor))
 #define NMT_ROUTE_EDITOR_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NMT_TYPE_ROUTE_EDITOR, NmtRouteEditorClass))
 #define NMT_IS_ROUTE_EDITOR(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NMT_TYPE_ROUTE_EDITOR))

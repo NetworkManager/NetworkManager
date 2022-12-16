@@ -9,7 +9,7 @@
 #include "nmt-editor-page-device.h"
 
 #define NMT_TYPE_PAGE_DSL (nmt_page_dsl_get_type())
-#define NMT_PAGE_DSL(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), NMT_TYPE_PAGE_DSL, NmtPageDsl))
+#define NMT_PAGE_DSL(obj) (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NMT_TYPE_PAGE_DSL, NmtPageDsl))
 #define NMT_PAGE_DSL_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NMT_TYPE_PAGE_DSL, NmtPageDslClass))
 #define NMT_IS_PAGE_DSL(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NMT_TYPE_PAGE_DSL))

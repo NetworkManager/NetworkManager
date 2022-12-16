@@ -15,7 +15,7 @@
 
 #define NM_TYPE_VPN_CONNECTION (nm_vpn_connection_get_type())
 #define NM_VPN_CONNECTION(obj) \
-    (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_VPN_CONNECTION, NMVpnConnection))
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_VPN_CONNECTION, NMVpnConnection))
 #define NM_VPN_CONNECTION_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_VPN_CONNECTION, NMVpnConnectionClass))
 #define NM_IS_VPN_CONNECTION(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_VPN_CONNECTION))

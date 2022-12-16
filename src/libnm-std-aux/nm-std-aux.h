@@ -1490,6 +1490,18 @@ nm_utils_addr_family_from_size(size_t len)
     return NM_AF_UNSPEC;
 }
 
+#define _NM_PTR_IS_ALIGNED_(uniq, type, ptr)                                            \
+    ({                                                                                  \
+        const void *const NM_UNIQ_T(_ptr, uniq) = (ptr);                                \
+                                                                                        \
+        /* NULL is accepted too. */                                                     \
+                                                                                        \
+        (!NM_UNIQ_T(_ptr, uniq)                                                         \
+         || ((((uintptr_t) (void *) NM_UNIQ_T(_ptr, uniq)) % _nm_alignof(type)) == 0)); \
+    })
+
+#define _NM_PTR_IS_ALIGNED(type, ptr) _NM_PTR_IS_ALIGNED_(NM_UNIQ, type, (ptr))
+
 /* We build with "-Wcast-align=strict", which can warn about alignment problems
  * with casting. In some cases, we know that the pointer has the suitable
  * alignment and the cast is in fact correct. The way to disable the warning
@@ -1497,13 +1509,13 @@ nm_utils_addr_family_from_size(size_t len)
  *
  * This macro does essentially that, but it also does an nm_assert() that the
  * alignment of the pointer is suitable to cast to (Type *). */
-#define _NM_CAST_ALIGN(uniq, Type, ptr)                                             \
-    ({                                                                              \
-        const void *const NM_UNIQ_T(_ptr, uniq) = (ptr);                            \
-                                                                                    \
-        nm_assert((((uintptr_t) NM_UNIQ_T(_ptr, uniq)) % _nm_alignof(Type)) == 0u); \
-                                                                                    \
-        ((Type *) NM_UNIQ_T(_ptr, uniq));                                           \
+#define _NM_CAST_ALIGN(uniq, Type, ptr)                             \
+    ({                                                              \
+        const void *const NM_UNIQ_T(_ptr, uniq) = (ptr);            \
+                                                                    \
+        nm_assert(_NM_PTR_IS_ALIGNED(Type, NM_UNIQ_T(_ptr, uniq))); \
+                                                                    \
+        ((Type *) NM_UNIQ_T(_ptr, uniq));                           \
     })
 #define NM_CAST_ALIGN(Type, ptr) _NM_CAST_ALIGN(NM_UNIQ, Type, ptr)
 

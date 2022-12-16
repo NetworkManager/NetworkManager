@@ -10,7 +10,7 @@
 
 #define NM_TYPE_DEVICE_GENERIC (nm_device_generic_get_type())
 #define NM_DEVICE_GENERIC(obj) \
-    (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_DEVICE_GENERIC, NMDeviceGeneric))
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_DEVICE_GENERIC, NMDeviceGeneric))
 #define NM_DEVICE_GENERIC_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_DEVICE_GENERIC, NMDeviceGenericClass))
 #define NM_IS_DEVICE_GENERIC(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_DEVICE_GENERIC))

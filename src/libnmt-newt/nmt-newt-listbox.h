@@ -10,7 +10,7 @@
 
 #define NMT_TYPE_NEWT_LISTBOX (nmt_newt_listbox_get_type())
 #define NMT_NEWT_LISTBOX(obj) \
-    (G_TYPE_CHECK_INSTANCE_CAST((obj), NMT_TYPE_NEWT_LISTBOX, NmtNewtListbox))
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NMT_TYPE_NEWT_LISTBOX, NmtNewtListbox))
 #define NMT_NEWT_LISTBOX_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NMT_TYPE_NEWT_LISTBOX, NmtNewtListboxClass))
 #define NMT_IS_NEWT_LISTBOX(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NMT_TYPE_NEWT_LISTBOX))

@@ -10,7 +10,7 @@
 
 #define NMT_TYPE_PAGE_INFINIBAND (nmt_page_infiniband_get_type())
 #define NMT_PAGE_INFINIBAND(obj) \
-    (G_TYPE_CHECK_INSTANCE_CAST((obj), NMT_TYPE_PAGE_INFINIBAND, NmtPageInfiniband))
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NMT_TYPE_PAGE_INFINIBAND, NmtPageInfiniband))
 #define NMT_PAGE_INFINIBAND_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NMT_TYPE_PAGE_INFINIBAND, NmtPageInfinibandClass))
 #define NMT_IS_PAGE_INFINIBAND(obj) (G_TYPE_CHECK_INSTANCE_TYPE((obj), NMT_TYPE_PAGE_INFINIBAND))

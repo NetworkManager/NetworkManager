@@ -15,7 +15,7 @@
 
 #define NM_TYPE_DEVICE_OLPC_MESH (nm_device_olpc_mesh_get_type())
 #define NM_DEVICE_OLPC_MESH(obj) \
-    (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_DEVICE_OLPC_MESH, NMDeviceOlpcMesh))
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_DEVICE_OLPC_MESH, NMDeviceOlpcMesh))
 #define NM_DEVICE_OLPC_MESH_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_DEVICE_OLPC_MESH, NMDeviceOlpcMeshClass))
 #define NM_IS_DEVICE_OLPC_MESH(obj) (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_DEVICE_OLPC_MESH))

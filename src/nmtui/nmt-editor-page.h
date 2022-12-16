@@ -11,7 +11,7 @@
 
 #define NMT_TYPE_EDITOR_PAGE (nmt_editor_page_get_type())
 #define NMT_EDITOR_PAGE(obj) \
-    (G_TYPE_CHECK_INSTANCE_CAST((obj), NMT_TYPE_EDITOR_PAGE, NmtEditorPage))
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NMT_TYPE_EDITOR_PAGE, NmtEditorPage))
 #define NMT_EDITOR_PAGE_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NMT_TYPE_EDITOR_PAGE, NmtEditorPageClass))
 #define NMT_IS_EDITOR_PAGE(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NMT_TYPE_EDITOR_PAGE))

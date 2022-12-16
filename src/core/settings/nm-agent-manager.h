@@ -13,7 +13,7 @@
 
 #define NM_TYPE_AGENT_MANAGER (nm_agent_manager_get_type())
 #define NM_AGENT_MANAGER(obj) \
-    (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_AGENT_MANAGER, NMAgentManager))
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_AGENT_MANAGER, NMAgentManager))
 #define NM_AGENT_MANAGER_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_AGENT_MANAGER, NMAgentManagerClass))
 #define NM_IS_AGENT_MANAGER(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_AGENT_MANAGER))

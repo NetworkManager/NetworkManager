@@ -10,7 +10,8 @@
 #include "nm-dbus-utils.h"
 
 #define NM_TYPE_DBUS_MANAGER (nm_dbus_manager_get_type())
-#define NM_DBUS_MANAGER(o)   (G_TYPE_CHECK_INSTANCE_CAST((o), NM_TYPE_DBUS_MANAGER, NMDBusManager))
+#define NM_DBUS_MANAGER(o) \
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((o), NM_TYPE_DBUS_MANAGER, NMDBusManager))
 #define NM_DBUS_MANAGER_CLASS(k) \
     (G_TYPE_CHECK_CLASS_CAST((k), NM_TYPE_DBUS_MANAGER, NMDBusManagerClass))
 #define NM_IS_DBUS_MANAGER(o)       (G_TYPE_CHECK_INSTANCE_TYPE((o), NM_TYPE_DBUS_MANAGER))

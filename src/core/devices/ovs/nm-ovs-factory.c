@@ -27,7 +27,8 @@ typedef struct {
 } NMOvsFactoryClass;
 
 #define NM_TYPE_OVS_FACTORY (nm_ovs_factory_get_type())
-#define NM_OVS_FACTORY(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_OVS_FACTORY, NMOvsFactory))
+#define NM_OVS_FACTORY(obj) \
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_OVS_FACTORY, NMOvsFactory))
 #define NM_OVS_FACTORY_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_OVS_FACTORY, NMOvsFactoryClass))
 #define NM_IS_OVS_FACTORY(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_OVS_FACTORY))

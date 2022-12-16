@@ -10,7 +10,7 @@
 
 #define NM_TYPE_LINUX_PLATFORM (nm_linux_platform_get_type())
 #define NM_LINUX_PLATFORM(obj) \
-    (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_LINUX_PLATFORM, NMLinuxPlatform))
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_LINUX_PLATFORM, NMLinuxPlatform))
 #define NM_LINUX_PLATFORM_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_LINUX_PLATFORM, NMLinuxPlatformClass))
 #define NM_IS_LINUX_PLATFORM(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_LINUX_PLATFORM))

@@ -2061,8 +2061,10 @@ nm_device_wireguard_class_init(NMDeviceWireGuardClass *klass)
 /*************************************************************/
 
 #define NM_TYPE_WIREGUARD_DEVICE_FACTORY (nm_wireguard_device_factory_get_type())
-#define NM_WIREGUARD_DEVICE_FACTORY(obj) \
-    (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_WIREGUARD_DEVICE_FACTORY, NMWireGuardDeviceFactory))
+#define NM_WIREGUARD_DEVICE_FACTORY(obj)                              \
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj),                            \
+                                    NM_TYPE_WIREGUARD_DEVICE_FACTORY, \
+                                    NMWireGuardDeviceFactory))
 
 static NMDevice *
 create_device(NMDeviceFactory      *factory,

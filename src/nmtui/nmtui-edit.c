@@ -113,7 +113,7 @@ nmt_edit_main_connection_list(gboolean is_top)
 
 #define NMT_TYPE_ADD_CONNECTION (nmt_add_connection_get_type())
 #define NMT_ADD_CONNECTION(obj) \
-    (G_TYPE_CHECK_INSTANCE_CAST((obj), NMT_TYPE_ADD_CONNECTION, NmtAddConnection))
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NMT_TYPE_ADD_CONNECTION, NmtAddConnection))
 #define NMT_IS_ADD_CONNECTION(obj) (G_TYPE_CHECK_INSTANCE_TYPE((obj), NMT_TYPE_ADD_CONNECTION))
 
 typedef NmtNewtForm      NmtAddConnection;

@@ -33,7 +33,8 @@
 #define NM_IWD_AGENT_PATH NM_DBUS_PATH "/iwd/agent"
 
 #define NM_TYPE_IWD_MANAGER (nm_iwd_manager_get_type())
-#define NM_IWD_MANAGER(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_IWD_MANAGER, NMIwdManager))
+#define NM_IWD_MANAGER(obj) \
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_IWD_MANAGER, NMIwdManager))
 #define NM_IWD_MANAGER_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_IWD_MANAGER, NMIwdManagerClass))
 #define NM_IS_IWD_MANAGER(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_IWD_MANAGER))

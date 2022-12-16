@@ -12,7 +12,7 @@
 
 #define NM_TYPE_SUPPLICANT_MANAGER (nm_supplicant_manager_get_type())
 #define NM_SUPPLICANT_MANAGER(obj) \
-    (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_SUPPLICANT_MANAGER, NMSupplicantManager))
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_SUPPLICANT_MANAGER, NMSupplicantManager))
 #define NM_SUPPLICANT_MANAGER_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_SUPPLICANT_MANAGER, NMSupplicantManagerClass))
 #define NM_IS_SUPPLICANT_MANAGER(obj) \

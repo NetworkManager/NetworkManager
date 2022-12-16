@@ -15,7 +15,7 @@ typedef enum {
 } NmtMacEntryType;
 
 #define NMT_TYPE_MAC_ENTRY (nmt_mac_entry_get_type())
-#define NMT_MAC_ENTRY(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), NMT_TYPE_MAC_ENTRY, NmtMacEntry))
+#define NMT_MAC_ENTRY(obj) (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NMT_TYPE_MAC_ENTRY, NmtMacEntry))
 #define NMT_MAC_ENTRY_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NMT_TYPE_MAC_ENTRY, NmtMacEntryClass))
 #define NMT_IS_MAC_ENTRY(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NMT_TYPE_MAC_ENTRY))

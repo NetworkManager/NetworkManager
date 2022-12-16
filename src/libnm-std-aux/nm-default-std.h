@@ -41,7 +41,7 @@
 #endif
 
 #if NM_MORE_ASSERTS == 0
-/* The cast macros like NM_TYPE() are implemented via G_TYPE_CHECK_INSTANCE_CAST()
+/* The cast macros like NM_TYPE() are implemented via _NM_G_TYPE_CHECK_INSTANCE_CAST()
  * and _G_TYPE_CIC(). The latter, by default performs runtime checks of the type
  * by calling g_type_check_instance_cast().
  * This check has a certain overhead without being helpful.

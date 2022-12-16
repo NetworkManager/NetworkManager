@@ -205,7 +205,7 @@ nm_device_veth_class_init(NMDeviceVethClass *klass)
 
 #define NM_TYPE_VETH_DEVICE_FACTORY (nm_veth_device_factory_get_type())
 #define NM_VETH_DEVICE_FACTORY(obj) \
-    (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_VETH_DEVICE_FACTORY, NMVethDeviceFactory))
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_VETH_DEVICE_FACTORY, NMVethDeviceFactory))
 
 static NMDevice *
 create_device(NMDeviceFactory      *factory,

@@ -10,7 +10,7 @@
 
 #define NMT_TYPE_ROUTE_TABLE (nmt_route_table_get_type())
 #define NMT_ROUTE_TABLE(obj) \
-    (G_TYPE_CHECK_INSTANCE_CAST((obj), NMT_TYPE_ROUTE_TABLE, NmtRouteTable))
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NMT_TYPE_ROUTE_TABLE, NmtRouteTable))
 #define NMT_ROUTE_TABLE_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NMT_TYPE_ROUTE_TABLE, NmtRouteTableClass))
 #define NMT_IS_ROUTE_TABLE(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NMT_TYPE_ROUTE_TABLE))

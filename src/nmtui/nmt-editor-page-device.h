@@ -11,7 +11,7 @@
 
 #define NMT_TYPE_EDITOR_PAGE_DEVICE (nmt_editor_page_device_get_type())
 #define NMT_EDITOR_PAGE_DEVICE(obj) \
-    (G_TYPE_CHECK_INSTANCE_CAST((obj), NMT_TYPE_EDITOR_PAGE_DEVICE, NmtEditorPageDevice))
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NMT_TYPE_EDITOR_PAGE_DEVICE, NmtEditorPageDevice))
 #define NMT_EDITOR_PAGE_DEVICE_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NMT_TYPE_EDITOR_PAGE_DEVICE, NmtEditorPageDeviceClass))
 #define NMT_IS_EDITOR_PAGE_DEVICE(obj) \

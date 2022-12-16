@@ -17,7 +17,7 @@
 
 #define NM_TYPE_TEAM_FACTORY (nm_team_factory_get_type())
 #define NM_TEAM_FACTORY(obj) \
-    (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_TEAM_FACTORY, NMTeamFactory))
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_TEAM_FACTORY, NMTeamFactory))
 #define NM_TEAM_FACTORY_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_TEAM_FACTORY, NMTeamFactoryClass))
 #define NM_IS_TEAM_FACTORY(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_TEAM_FACTORY))

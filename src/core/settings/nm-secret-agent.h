@@ -12,7 +12,7 @@
 
 #define NM_TYPE_SECRET_AGENT (nm_secret_agent_get_type())
 #define NM_SECRET_AGENT(obj) \
-    (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_SECRET_AGENT, NMSecretAgent))
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_SECRET_AGENT, NMSecretAgent))
 #define NM_SECRET_AGENT_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_SECRET_AGENT, NMSecretAgentClass))
 #define NM_IS_SECRET_AGENT(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_SECRET_AGENT))

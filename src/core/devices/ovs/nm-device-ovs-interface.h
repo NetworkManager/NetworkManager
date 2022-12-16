@@ -8,7 +8,7 @@
 
 #define NM_TYPE_DEVICE_OVS_INTERFACE (nm_device_ovs_interface_get_type())
 #define NM_DEVICE_OVS_INTERFACE(obj) \
-    (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_DEVICE_OVS_INTERFACE, NMDeviceOvsInterface))
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_DEVICE_OVS_INTERFACE, NMDeviceOvsInterface))
 #define NM_DEVICE_OVS_INTERFACE_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_DEVICE_OVS_INTERFACE, NMDeviceOvsInterfaceClass))
 #define NM_IS_DEVICE_OVS_INTERFACE(obj) \

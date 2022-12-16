@@ -9,7 +9,7 @@
 #include "devices/nm-device.h"
 
 #define NM_TYPE_DEVICE_BT (nm_device_bt_get_type())
-#define NM_DEVICE_BT(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_DEVICE_BT, NMDeviceBt))
+#define NM_DEVICE_BT(obj) (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_DEVICE_BT, NMDeviceBt))
 #define NM_DEVICE_BT_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_DEVICE_BT, NMDeviceBtClass))
 #define NM_IS_DEVICE_BT(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_DEVICE_BT))

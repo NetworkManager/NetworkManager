@@ -9,7 +9,7 @@
 #include "libnmt-newt/nmt-newt.h"
 
 #define NMT_TYPE_MTU_ENTRY (nmt_mtu_entry_get_type())
-#define NMT_MTU_ENTRY(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), NMT_TYPE_MTU_ENTRY, NmtMtuEntry))
+#define NMT_MTU_ENTRY(obj) (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NMT_TYPE_MTU_ENTRY, NmtMtuEntry))
 #define NMT_MTU_ENTRY_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NMT_TYPE_MTU_ENTRY, NmtMtuEntryClass))
 #define NMT_IS_MTU_ENTRY(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NMT_TYPE_MTU_ENTRY))

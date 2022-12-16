@@ -30,7 +30,7 @@
 
 #define NM_TYPE_DHCP_SYSTEMD (nm_dhcp_systemd_get_type())
 #define NM_DHCP_SYSTEMD(obj) \
-    (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_DHCP_SYSTEMD, NMDhcpSystemd))
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_DHCP_SYSTEMD, NMDhcpSystemd))
 #define NM_DHCP_SYSTEMD_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_DHCP_SYSTEMD, NMDhcpSystemdClass))
 #define NM_IS_DHCP_SYSTEMD(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_DHCP_SYSTEMD))

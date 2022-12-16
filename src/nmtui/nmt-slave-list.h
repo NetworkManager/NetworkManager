@@ -10,7 +10,8 @@
 #include "nmtui-edit.h"
 
 #define NMT_TYPE_SLAVE_LIST (nmt_slave_list_get_type())
-#define NMT_SLAVE_LIST(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), NMT_TYPE_SLAVE_LIST, NmtSlaveList))
+#define NMT_SLAVE_LIST(obj) \
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NMT_TYPE_SLAVE_LIST, NmtSlaveList))
 #define NMT_SLAVE_LIST_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NMT_TYPE_SLAVE_LIST, NmtSlaveListClass))
 #define NMT_IS_SLAVE_LIST(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NMT_TYPE_SLAVE_LIST))

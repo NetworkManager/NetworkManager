@@ -11,7 +11,7 @@
 #include "devices/nm-device.h"
 
 #define NM_TYPE_MODEM            (nm_modem_get_type())
-#define NM_MODEM(obj)            (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_MODEM, NMModem))
+#define NM_MODEM(obj)            (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_MODEM, NMModem))
 #define NM_MODEM_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_MODEM, NMModemClass))
 #define NM_IS_MODEM(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_MODEM))
 #define NM_IS_MODEM_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE((klass), NM_TYPE_MODEM))

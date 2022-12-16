@@ -66,7 +66,8 @@ static NM_CACHED_QUARK_FCN("ppp-manager-secret-tries", ppp_manager_secret_tries_
 /*****************************************************************************/
 
 #define NM_TYPE_PPP_MANAGER (nm_ppp_manager_get_type())
-#define NM_PPP_MANAGER(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_PPP_MANAGER, NMPPPManager))
+#define NM_PPP_MANAGER(obj) \
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_PPP_MANAGER, NMPPPManager))
 #define NM_PPP_MANAGER_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_PPP_MANAGER, NMPPPManagerClass))
 #define NM_IS_PPP_MANAGER(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_PPP_MANAGER))

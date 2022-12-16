@@ -9,7 +9,7 @@
 #include "nm-device-generic.h"
 
 #define NM_TYPE_DEVICE_TUN (nm_device_tun_get_type())
-#define NM_DEVICE_TUN(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_DEVICE_TUN, NMDeviceTun))
+#define NM_DEVICE_TUN(obj) (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_DEVICE_TUN, NMDeviceTun))
 #define NM_DEVICE_TUN_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_DEVICE_TUN, NMDeviceTunClass))
 #define NM_IS_DEVICE_TUN(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_DEVICE_TUN))

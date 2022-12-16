@@ -10,7 +10,7 @@
 
 #define NMT_TYPE_EDITOR_GRID (nmt_editor_grid_get_type())
 #define NMT_EDITOR_GRID(obj) \
-    (G_TYPE_CHECK_INSTANCE_CAST((obj), NMT_TYPE_EDITOR_GRID, NmtEditorGrid))
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NMT_TYPE_EDITOR_GRID, NmtEditorGrid))
 #define NMT_EDITOR_GRID_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NMT_TYPE_EDITOR_GRID, NmtEditorGridClass))
 #define NMT_IS_EDITOR_GRID(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NMT_TYPE_EDITOR_GRID))

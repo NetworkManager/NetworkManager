@@ -12,7 +12,7 @@ typedef struct _NMCSProviderAliyunClass NMCSProviderAliyunClass;
 
 #define NMCS_TYPE_PROVIDER_ALIYUN (nmcs_provider_aliyun_get_type())
 #define NMCS_PROVIDER_ALIYUN(obj) \
-    (G_TYPE_CHECK_INSTANCE_CAST((obj), NMCS_TYPE_PROVIDER_ALIYUN, NMCSProviderAliyun))
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NMCS_TYPE_PROVIDER_ALIYUN, NMCSProviderAliyun))
 #define NMCS_PROVIDER_ALIYUN_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NMCS_TYPE_PROVIDER_ALIYUN, NMCSProviderAliyunClass))
 #define NMCS_IS_PROVIDER_ALIYUN(obj) (G_TYPE_CHECK_INSTANCE_TYPE((obj), NMCS_TYPE_PROVIDER_ALIYUN))

@@ -9,7 +9,7 @@
 #include "nmt-newt-container.h"
 
 #define NMT_TYPE_NEWT_GRID (nmt_newt_grid_get_type())
-#define NMT_NEWT_GRID(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), NMT_TYPE_NEWT_GRID, NmtNewtGrid))
+#define NMT_NEWT_GRID(obj) (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NMT_TYPE_NEWT_GRID, NmtNewtGrid))
 #define NMT_NEWT_GRID_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NMT_TYPE_NEWT_GRID, NmtNewtGridClass))
 #define NMT_IS_NEWT_GRID(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NMT_TYPE_NEWT_GRID))

@@ -13,7 +13,7 @@
 typedef struct NMWifiUtils NMWifiUtils;
 
 #define NM_TYPE_WIFI_UTILS (nm_wifi_utils_get_type())
-#define NM_WIFI_UTILS(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_WIFI_UTILS, NMWifiUtils))
+#define NM_WIFI_UTILS(obj) (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_WIFI_UTILS, NMWifiUtils))
 #define NM_WIFI_UTILS_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_WIFI_UTILS, NMWifiUtilsClass))
 #define NM_IS_WIFI_UTILS(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_WIFI_UTILS))

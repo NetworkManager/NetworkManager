@@ -664,6 +664,24 @@ nm_str_realloc(char *str)
 
 /*****************************************************************************/
 
+/* Unfortunately, G_TYPE_CHECK_INSTANCE_CAST() just does a direct cast,
+ * which can trigger a "-Wcast-align" warning, especially when casting
+ * a GObject pointer to the desired type.
+ *
+ * _NM_G_TYPE_CHECK_INSTANCE_CAST() avoids that warning.
+ *
+ * Since the entire point of G_TYPE_CHECK_INSTANCE_CAST_() is to do a
+ * runtime check on the type (with conditional assertions via G_DISABLE_CAST_CHECKS),
+ * we already assert that the gtype is right, and the alignment is also
+ * expected to be right.
+ *
+ * See https://gitlab.gnome.org/GNOME/glib/-/merge_requests/3139
+ */
+#define _NM_G_TYPE_CHECK_INSTANCE_CAST(instance, g_type, c_type) \
+    G_TYPE_CHECK_INSTANCE_CAST(((void *) (instance)), (g_type), c_type)
+
+/*****************************************************************************/
+
 static inline gpointer
 nm_g_object_ref(gpointer obj)
 {

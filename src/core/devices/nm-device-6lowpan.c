@@ -235,7 +235,7 @@ nm_device_6lowpan_class_init(NMDevice6LowpanClass *klass)
 
 #define NM_TYPE_6LOWPAN_DEVICE_FACTORY (nm_6lowpan_device_factory_get_type())
 #define NM_6LOWPAN_DEVICE_FACTORY(obj) \
-    (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_6LOWPAN_DEVICE_FACTORY, NM6LowpanDeviceFactory))
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_6LOWPAN_DEVICE_FACTORY, NM6LowpanDeviceFactory))
 
 static NMDevice *
 create_device(NMDeviceFactory      *factory,

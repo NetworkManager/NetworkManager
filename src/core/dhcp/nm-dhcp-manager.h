@@ -12,7 +12,7 @@
 
 #define NM_TYPE_DHCP_MANAGER (nm_dhcp_manager_get_type())
 #define NM_DHCP_MANAGER(obj) \
-    (G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_DHCP_MANAGER, NMDhcpManager))
+    (_NM_G_TYPE_CHECK_INSTANCE_CAST((obj), NM_TYPE_DHCP_MANAGER, NMDhcpManager))
 #define NM_DHCP_MANAGER_CLASS(klass) \
     (G_TYPE_CHECK_CLASS_CAST((klass), NM_TYPE_DHCP_MANAGER, NMDhcpManagerClass))
 #define NM_IS_DHCP_MANAGER(obj)         (G_TYPE_CHECK_INSTANCE_TYPE((obj), NM_TYPE_DHCP_MANAGER))
