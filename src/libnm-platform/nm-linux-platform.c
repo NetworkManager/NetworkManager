@@ -11009,7 +11009,10 @@ path_is_read_only_fs(const char *path)
 }
 
 NMPlatform *
-nm_linux_platform_new(gboolean log_with_ptr, gboolean netns_support, gboolean cache_tc)
+nm_linux_platform_new(NMDedupMultiIndex *multi_idx,
+                      gboolean           log_with_ptr,
+                      gboolean           netns_support,
+                      gboolean           cache_tc)
 {
     gboolean use_udev = FALSE;
 
@@ -11017,6 +11020,8 @@ nm_linux_platform_new(gboolean log_with_ptr, gboolean netns_support, gboolean ca
         use_udev = TRUE;
 
     return g_object_new(NM_TYPE_LINUX_PLATFORM,
+                        NM_PLATFORM_MULTI_IDX,
+                        multi_idx,
                         NM_PLATFORM_LOG_WITH_PTR,
                         log_with_ptr,
                         NM_PLATFORM_USE_UDEV,
