@@ -11,6 +11,7 @@
 
 #if defined(C_MODULE_GENERIC)
 
+static inline _c_always_inline_ int always_inline_fn(void) { return 0; }
 _c_public_ int c_internal_public_fn(void);
 _c_public_ int c_internal_public_fn(void) { return 0; }
 
@@ -44,6 +45,16 @@ static void test_api_generic(void) {
 #ifdef _WIN32
                 c_assert(C_OS_WINDOWS);
 #endif
+        }
+
+        /* _c_always_inline_ */
+        {
+                c_assert(!always_inline_fn());
+        }
+
+        /* _c_boolean_expr_ */
+        {
+                c_assert(_c_boolean_expr_(true));
         }
 
         /* _c_likely_ */
@@ -128,7 +139,6 @@ static void test_api_generic(void) {
 
 #if defined(C_MODULE_GNUC)
 
-static inline _c_always_inline_ int always_inline_fn(void) { return 0; }
 static _c_const_ int const_fn(void) { return 0; }
 static _c_deprecated_ _c_unused_ int deprecated_fn(void) { return 0; }
 _c_hidden_ int c_internal_hidden_fn(void);
@@ -139,11 +149,6 @@ static _c_sentinel_ int sentinel_fn(const _c_unused_ char *f, ...) { return 0; }
 static _c_unused_ int unused_fn(void) { return 0; }
 
 static void test_api_gnuc(void) {
-        /* _c_always_inline_ */
-        {
-                c_assert(!always_inline_fn());
-        }
-
         /* _c_cleanup_ */
         {
                 _c_cleanup_(c_freep) void *foo = NULL;

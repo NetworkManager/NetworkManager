@@ -10,7 +10,7 @@ project(
         ],
         license: 'Apache',
         meson_version: '>=0.60.0',
-        version: '1.2.0',
+        version: '1.3.0',
 )
 major = meson.project_version().split('.')[0]
 project_description = 'Auxiliary macros and functions for the C standard library'
