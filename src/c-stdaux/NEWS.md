@@ -1,5 +1,38 @@
 # c-stdaux - Auxiliary macros and functions for the C standard library
 
+## CHANGES WITH 1.3.0:
+
+        * Microsoft Windows is now supported as a target platform.
+
+        * The `C_COMPILER_*` and `C_OS_*` pre-processor constants now
+          allow identifying the used compiler as well as the target OS.
+
+        * The new `_c_always_inline_` annotation allows telling compilers
+          to inline a function unless technically not possible.
+
+        * Split c-stdaux.h into modules and include them from the root
+          header for backwards compatibility. Inclusion of the new modules
+          is guarded by the `C_COMPILER_*` and `C_OS_*` macros to prevent
+          them from being used on unspported platforms. A direct include
+          of the respective modules allows overriding that behavior.
+
+          The new modules provide the same functionality as before on the
+          previously supported linux platforms. With the support of other
+          platforms, individual modules might not be available, or generic
+          functions might provide a stub that provides the same runtime
+          behavior, but possibly with fewer diagnostics.
+
+        * Rework `c_assert()` to avoid context-expressions and instead use
+          the ternary-operator to check for the assertion.
+
+        * Improve `c_{un,}likely()` to support constant-folding as well as
+          -Wparantheses diagnostics if supported by the compiler. This adds
+          `_c_boolean_expr_()` as a helper to achieve this.
+
+        Contributions from: David Rheinsberg, Thomas Haller
+
+        - Dußlingen, 2022-12-15
+
 ## CHANGES WITH 1.2.0:
 
         * Add c_memcmp() as a safe wrapper around memcmp(3) that supports

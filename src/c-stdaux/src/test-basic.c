@@ -11,7 +11,57 @@
 
 #if defined(C_MODULE_GENERIC)
 
-static void test_basic_generic(void) {
+static int check_cassert_unreachable(int switch_val) {
+    int result;
+
+    /* Check whether this triggers a "-Wsometimes-uninitialized" warning or
+     * whether the compiler recognizes c_assert(0) as unreachable code. */
+    switch (switch_val) {
+    case 1: result = 1; break;
+    case 2: result = 2; break;
+    default: c_assert(0);
+    }
+
+    return result;
+}
+
+static void test_basic_generic(int non_constant_expr) {
+        /*
+         * Verify `_c_boolean_expr_` evaluates expressions to a boolean value
+         * and correctly works on all platforms.
+         */
+        {
+                int v = 0;
+
+                c_assert(_c_boolean_expr_(0) == 0);
+                c_assert(_c_boolean_expr_(1) == 1);
+                c_assert(_c_boolean_expr_(2) == 1);
+                c_assert(_c_boolean_expr_(INT_MIN) == 1);
+                c_assert(_c_boolean_expr_(INT_MAX) == 1);
+
+                /* verify no double-evaluation takes place */
+                c_assert(_c_boolean_expr_(v++) == 0);
+                c_assert(_c_boolean_expr_(v) == 1);
+
+#if defined(C_COMPILER_GNUC)
+                c_assert(__builtin_constant_p(_c_boolean_expr_(1)));
+                c_assert(!__builtin_constant_p(_c_boolean_expr_(non_constant_expr)));
+#endif
+        }
+
+        /*
+         * Test that _c_likely_() and _c_unlikely_() can deal with constant
+         * expressions.
+         */
+        {
+#if defined(C_COMPILER_GNUC)
+                c_assert(__builtin_constant_p(_c_likely_(1)));
+                c_assert(__builtin_constant_p(_c_unlikely_(1)));
+                c_assert(!__builtin_constant_p(_c_likely_(non_constant_expr)));
+                c_assert(!__builtin_constant_p(_c_unlikely_(non_constant_expr)));
+#endif
+        }
+
         /*
          * Test stringify/concatenation helpers. Also make sure to test that
          * the passed arguments are evaluated first, before they're stringified
@@ -184,6 +234,14 @@ static void test_basic_generic(void) {
                 c_assert(++v2);
                 if (v2 != 1)
                         abort();
+
+                /*
+                 * Use the `check_cassert_unreachable()` helper to verify the
+                 * compiler does not complain about unreachable code when
+                 * `c_assert(0)` is used.
+                 */
+                c_assert(check_cassert_unreachable(1) == 1);
+                c_assert(check_cassert_unreachable(2) == 2);
         }
 
         /*
@@ -267,7 +325,8 @@ static void test_basic_generic(void) {
 
 #else /* C_MODULE_GENERIC */
 
-static void test_basic_generic(void) {
+static void test_basic_generic(int non_constant_expr) {
+        (void)non_constant_expr;
 }
 
 #endif /* C_MODULE_GENERIC */
@@ -531,7 +590,7 @@ static void test_basic_unix(void) {
 
 int main(int argc, char **argv) {
         (void)argv;
-        test_basic_generic();
+        test_basic_generic(argc);
         test_basic_gnuc(argc);
         test_basic_unix();
         return 0;

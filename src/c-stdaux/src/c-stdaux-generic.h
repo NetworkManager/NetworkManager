@@ -132,24 +132,28 @@ extern "C" {
  * Return: Evaluates to the value of ``!!_x``.
  */
 #define _c_boolean_expr_(_x) _c_internal_boolean_expr_(__COUNTER__, _x)
-#if defined(C_COMPILER_GNUC)
+#if defined(C_COMPILER_GNUC) && __GNUC__ > 4
 #  define _c_internal_boolean_expr_(_uniq, _x)                                  \
-        __extension__ ({                                                        \
-                int C_VAR(b, _uniq);                                            \
+        __builtin_choose_expr(                                                  \
+                __builtin_constant_p(_x),                                       \
+                (!!(_x)),                                                       \
+                (__extension__ ({                                               \
+                        int C_VAR(b, _uniq);                                    \
                                                                                 \
-                /*                                                              \
-                 * Avoid any extra parentheses around the evaluation of `_x` to \
-                 * allow `-Wparentheses` to warn about use of `x = ...` and     \
-                 * instead suggest `(x = ...)` or `x == ...`.                   \
-                 */                                                             \
+                        /*                                                      \
+                         * Avoid any extra parentheses around the evaluation of \
+                         * `_x` to allow `-Wparentheses` to warn about use of   \
+                         * `x = ...` and instead suggest `(x = ...)` or         \
+                         * `x == ...`.                                          \
+                         */                                                     \
                                                                                 \
-                if (_x)                                                         \
-                        C_VAR(b, _uniq) = 1;                                    \
-                else                                                            \
-                        C_VAR(b, _uniq) = 0;                                    \
+                        if (_x)                                                 \
+                                C_VAR(b, _uniq) = 1;                            \
+                        else                                                    \
+                                C_VAR(b, _uniq) = 0;                            \
                                                                                 \
-                C_VAR(b, _uniq);                                                \
-        })
+                        C_VAR(b, _uniq);                                        \
+                })))
 #else
 #  define _c_internal_boolean_expr_(_uniq, _x) (!!(_x))
 #endif
@@ -299,7 +303,7 @@ extern "C" {
  * optimize it away.
  */
 #define c_assert(_x) (                                                          \
-                (bool)(_x)                                                      \
+                _c_likely_(_x)                                                  \
                         ? assert(true && #_x)                                   \
                         : assert(false && #_x)                                  \
         )
