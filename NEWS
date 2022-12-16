@@ -1,4 +1,22 @@
 ===============================================
+NetworkManager-1.40.8
+Overview of changes since NetworkManager-1.40.6
+===============================================
+
+* Fixed a bug that caused devices (MACsec in particular) to be stuck in
+  UNAVAILABLE state and not transition to DISCONNECTED if the carrier was
+  ready too early.
+* Improved interoperability of MACsec with some Aruba switches by allowing
+  CKN shorter than 64 characters.
+* Fixed an assertion failure when restarting NetworkManager with MACsec
+  links configured.
+* Fixed a possible DHCP helper crash when handling failure to connect to
+  D-Bus.
+* Corrected calculation of expiration time for items configured from IPv6
+  neighbor discovery messages.
+* Various fixes for platforms that don't allow unaligned memory access.
+
+===============================================
 NetworkManager-1.40.6
 Overview of changes since NetworkManager-1.40.4
 ===============================================
