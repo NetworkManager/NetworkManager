@@ -1039,7 +1039,7 @@ test_write_duid(void)
         "aa:b:cc:d:ee:f;\n  option dhcp6.server-id 0:1:0:1:2b:2c:4d:1d:0:0:0:0:0:0;\n  option "
         "dhcp6.name-servers 192:168:121:0:ce0f:f1ff:fece:1;\n  option dhcp6.fqdn "
         "1:c:64:66:66:36:64:65:34:66:63:62:30:66;\n  option dhcp6.status-code success "
-        "\"success\";\n\n}\n");
+        "\"success\";\r\n}\n");
 
     _check_duid(
         _DUID(0xaa, 0xb, 0xcc, 0xd, 0xee, 0xe),

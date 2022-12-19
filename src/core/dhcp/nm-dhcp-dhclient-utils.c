@@ -673,7 +673,7 @@ nm_dhcp_dhclient_save_duid(const char *leasefile, GBytes *duid, GError **error)
             return FALSE;
         }
 
-        lines = nm_strsplit_set_with_empty(contents, "\n\r");
+        lines = nm_strsplit_set_with_empty(contents, "\n");
     }
 
     s = g_string_sized_new(contents_len + 50);
@@ -684,27 +684,33 @@ nm_dhcp_dhclient_save_duid(const char *leasefile, GBytes *duid, GError **error)
         for (iter = lines; *iter; iter++) {
             const char *str = *iter;
             const char *l;
+            gboolean    ends_with_r;
+            gsize       l_len;
+            gsize       prefix_len;
 
-            /* If we find an uncommented DUID in the file, check if
-             * equal to the one we are going to write: if so, no need
-             * to update the lease file, otherwise skip the old DUID.
-             */
-            l = nm_str_skip_leading_spaces(str);
-            if (g_str_has_prefix(l, DEFAULT_DUID_PREFIX)) {
-                gs_strfreev char **split = NULL;
+            l          = nm_str_skip_leading_spaces(str);
+            l_len      = strlen(l);
+            prefix_len = l - str;
 
-                split = g_strsplit(l, "\"", -1);
-                if (split[0] && nm_streq0(split[1], escaped_duid))
-                    return TRUE;
+            ends_with_r = l_len > 0 && l[l_len - 1u] == '\r';
+            if (ends_with_r) {
+                ((char *) l)[--l_len] = '\0';
+            }
 
+            if (NM_STR_HAS_PREFIX(l, DEFAULT_DUID_PREFIX)) {
+                /* We always add our line on top. This line can be skipped. */
                 continue;
             }
 
-            if (str)
-                g_string_append(s, str);
-            /* avoid to add an extra '\n' at the end of file */
-            if ((iter[1]) != NULL)
+            g_string_append_len(s, str, prefix_len);
+            g_string_append(s, l);
+            if (ends_with_r) {
+                g_string_append_c(s, '\r');
                 g_string_append_c(s, '\n');
+            } else if ((iter[1]) != NULL) {
+                /* avoid to add an extra '\n' at the end of file */
+                g_string_append_c(s, '\n');
+            }
         }
     }
 
