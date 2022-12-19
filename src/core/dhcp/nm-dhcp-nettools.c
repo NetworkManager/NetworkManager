@@ -624,7 +624,7 @@ lease_to_ip4_config(NMDhcpNettools *self, NDhcp4ClientLease *lease, GError **err
 
     l3cd = nm_dhcp_client_create_l3cd(NM_DHCP_CLIENT(self));
 
-    options = nm_dhcp_option_create_options_dict();
+    options = nm_dhcp_client_create_options_dict(NM_DHCP_CLIENT(self), TRUE);
 
     if (!lease_parse_address(self, lease, l3cd, iface, options, &lease_address, error))
         return NULL;
@@ -1100,7 +1100,7 @@ dhcp4_event_cb(int fd, GIOCondition condition, gpointer user_data)
 }
 
 static gboolean
-nettools_create(NMDhcpNettools *self, GError **error)
+nettools_create(NMDhcpNettools *self, GBytes **out_effective_client_id, GError **error)
 {
     NMDhcpNettoolsPrivate *priv = NM_DHCP_NETTOOLS_GET_PRIVATE(self);
     nm_auto(n_dhcp4_client_config_freep) NDhcp4ClientConfig *config = NULL;
@@ -1197,6 +1197,9 @@ nettools_create(NMDhcpNettools *self, GError **error)
 
     priv->event_source = nm_g_unix_fd_add_source(fd, G_IO_IN, dhcp4_event_cb, self);
 
+    *out_effective_client_id =
+        (client_id == client_id_new) ? g_steal_pointer(&client_id_new) : g_bytes_ref(client_id);
+
     return TRUE;
 }
 
@@ -1287,8 +1290,9 @@ static gboolean
 ip4_start(NMDhcpClient *client, GError **error)
 {
     nm_auto(n_dhcp4_client_probe_config_freep) NDhcp4ClientProbeConfig *config = NULL;
-    NMDhcpNettools           *self = NM_DHCP_NETTOOLS(client);
-    NMDhcpNettoolsPrivate    *priv = NM_DHCP_NETTOOLS_GET_PRIVATE(self);
+    NMDhcpNettools           *self                = NM_DHCP_NETTOOLS(client);
+    NMDhcpNettoolsPrivate    *priv                = NM_DHCP_NETTOOLS_GET_PRIVATE(self);
+    gs_unref_bytes GBytes    *effective_client_id = NULL;
     const NMDhcpClientConfig *client_config;
     gs_free char             *lease_file = NULL;
     struct in_addr            last_addr  = {0};
@@ -1299,7 +1303,7 @@ ip4_start(NMDhcpClient *client, GError **error)
     g_return_val_if_fail(!priv->probe, FALSE);
     g_return_val_if_fail(client_config, FALSE);
 
-    if (!nettools_create(self, error))
+    if (!nettools_create(self, &effective_client_id, error))
         return FALSE;
 
     r = n_dhcp4_client_probe_config_new(&config);
@@ -1445,6 +1449,9 @@ ip4_start(NMDhcpClient *client, GError **error)
     }
 
     _LOGT("dhcp-client4: start " NM_HASH_OBFUSCATE_PTR_FMT, NM_HASH_OBFUSCATE_PTR(priv->client));
+
+    nm_dhcp_client_set_effective_client_id(client, effective_client_id);
+
     return TRUE;
 }
 

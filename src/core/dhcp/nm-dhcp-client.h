@@ -214,17 +214,6 @@ typedef struct {
     gboolean (*ip6_start)(NMDhcpClient *self, const struct in6_addr *ll_addr, GError **error);
 
     void (*stop)(NMDhcpClient *self, gboolean release);
-
-    /**
-     * get_duid:
-     * @self: the #NMDhcpClient
-     *
-     * Attempts to find an existing DHCPv6 DUID for this client in the DHCP
-     * client's persistent configuration.  Returned DUID should be the binary
-     * representation of the DUID.  If no DUID is found, %NULL should be
-     * returned.
-     */
-    GBytes *(*get_duid)(NMDhcpClient *self);
 } NMDhcpClientClass;
 
 GType nm_dhcp_client_get_type(void);
@@ -285,10 +274,12 @@ const char        *nm_dhcp_client_get_iface(NMDhcpClient *self);
 NMDedupMultiIndex *nm_dhcp_client_get_multi_idx(NMDhcpClient *self);
 int                nm_dhcp_client_get_ifindex(NMDhcpClient *self);
 
-void    nm_dhcp_client_set_effective_client_id(NMDhcpClient *self, GBytes *client_id);
-GBytes *nm_dhcp_client_get_effective_client_id(NMDhcpClient *self);
+gboolean nm_dhcp_client_set_effective_client_id(NMDhcpClient *self, GBytes *client_id);
+GBytes  *nm_dhcp_client_get_effective_client_id(NMDhcpClient *self);
 
 NML3ConfigData *nm_dhcp_client_create_l3cd(NMDhcpClient *self);
+
+GHashTable *nm_dhcp_client_create_options_dict(NMDhcpClient *self, gboolean static_keys);
 
 /*****************************************************************************
  * Client data

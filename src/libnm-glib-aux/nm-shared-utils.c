@@ -4846,7 +4846,7 @@ nm_utils_memeqzero(gconstpointer data, gsize length)
 }
 
 /**
- * nm_utils_bin2hexstr_full:
+ * nm_utils_bin2hexstr_fuller:
  * @addr: pointer of @length bytes. If @length is zero, this may
  *   also be %NULL.
  * @length: number of bytes in @addr. May also be zero, in which
@@ -4854,12 +4854,17 @@ nm_utils_memeqzero(gconstpointer data, gsize length)
  * @delimiter: either '\0', otherwise the output string will have the
  *   given delimiter character between each two hex numbers.
  * @upper_case: if TRUE, use upper case ASCII characters for hex.
+ * @with_leading_zero: if TRUE, then the hex values from 0 to 0xf
+ *   are written as "00" to "0f", respectively. Otherwise, the leading
+ *   zero is dropped. With @with_leading_zero set to FALSE, the resulting
+ *   string may be shorter than expected. @delimiter must be set
+ *   if @with_leading_zero is FALSE.
  * @out: if %NULL, the function will allocate a new buffer of
- *   either (@length*2+1) or (@length*3) bytes, depending on whether
+ *   either (@length*2+1) or MAX(1, (@length*3)) bytes, depending on whether
  *   a @delimiter is specified. In that case, the allocated buffer will
  *   be returned and must be freed by the caller.
  *   If not %NULL, the buffer must already be preallocated and contain
- *   at least (@length*2+1) or (@length*3) bytes, depending on the delimiter.
+ *   at least (@length*2+1) or MAX(1, (@length*3)) bytes, depending on the delimiter.
  *   If @length is zero, then of course at least one byte will be allocated
  *   or @out (if given) must contain at least room for the trailing NUL byte.
  *
@@ -4869,37 +4874,43 @@ nm_utils_memeqzero(gconstpointer data, gsize length)
  *   an empty string is returned.
  */
 char *
-nm_utils_bin2hexstr_full(gconstpointer addr,
-                         gsize         length,
-                         char          delimiter,
-                         gboolean      upper_case,
-                         char         *out)
+nm_utils_bin2hexstr_fuller(gconstpointer addr,
+                           gsize         length,
+                           char          delimiter,
+                           gboolean      upper_case,
+                           gboolean      with_leading_zero,
+                           char         *out)
 {
     const guint8 *in     = addr;
     const char   *LOOKUP = upper_case ? "0123456789ABCDEF" : "0123456789abcdef";
     char         *out0;
 
-    if (out)
-        out0 = out;
-    else {
-        out0 = out =
-            g_new(char, length == 0 ? 1u : (delimiter == '\0' ? length * 2u + 1u : length * 3u));
-    }
+    nm_assert(with_leading_zero || delimiter != '\0');
 
-    /* @out must contain at least @length*3 bytes if @delimiter is set,
+    /* @out must contain at least (MAX(1, @length*3)) bytes if @delimiter is set,
      * otherwise, @length*2+1. */
+
+    if (!out)
+        out = g_new(char, length == 0 ? 1u : (delimiter == '\0' ? length * 2u + 1u : length * 3u));
+
+    out0 = out;
 
     if (length > 0) {
         nm_assert(in);
         for (;;) {
             const guint8 v = *in++;
+            guint8       v_hi;
 
-            *out++ = LOOKUP[v >> 4];
+            v_hi = (v >> 4);
+            if (v_hi != 0 || with_leading_zero) {
+                nm_assert(v_hi < 16);
+                *out++ = LOOKUP[v_hi];
+            }
             *out++ = LOOKUP[v & 0x0F];
             length--;
-            if (!length)
+            if (length == 0)
                 break;
-            if (delimiter)
+            if (delimiter != '\0')
                 *out++ = delimiter;
         }
     }

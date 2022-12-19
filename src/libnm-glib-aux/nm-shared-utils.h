@@ -2842,11 +2842,22 @@ nm_ascii_is_regular(char ch)
     return ch >= ' ' && ch < 127;
 }
 
-char *nm_utils_bin2hexstr_full(gconstpointer addr,
-                               gsize         length,
-                               char          delimiter,
-                               gboolean      upper_case,
-                               char         *out);
+char *nm_utils_bin2hexstr_fuller(gconstpointer addr,
+                                 gsize         length,
+                                 char          delimiter,
+                                 gboolean      upper_case,
+                                 gboolean      with_leading_zero,
+                                 char         *out);
+
+static inline char *
+nm_utils_bin2hexstr_full(gconstpointer addr,
+                         gsize         length,
+                         char          delimiter,
+                         gboolean      upper_case,
+                         char         *out)
+{
+    return nm_utils_bin2hexstr_fuller(addr, length, delimiter, upper_case, TRUE, out);
+}
 
 char *_nm_utils_bin2hexstr(gconstpointer src, gsize len, int final_len);
 

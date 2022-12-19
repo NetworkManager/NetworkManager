@@ -86,7 +86,7 @@ lease_to_ip6_config(NMDhcpSystemd *self, sd_dhcp6_lease *lease, gint32 ts, GErro
 
     l3cd = nm_dhcp_client_create_l3cd(NM_DHCP_CLIENT(self));
 
-    options = nm_dhcp_option_create_options_dict();
+    options = nm_dhcp_client_create_options_dict(NM_DHCP_CLIENT(self), TRUE);
 
     if (!nm_dhcp_client_get_config(NM_DHCP_CLIENT(self))->v6.info_only) {
         gboolean has_any_addresses = FALSE;
@@ -271,7 +271,7 @@ ip6_start(NMDhcpClient *client, const struct in6_addr *ll_addr, GError **error)
 
     /* TODO: honor nm_dhcp_client_get_anycast_address() */
 
-    duid = nm_dhcp_client_get_effective_client_id(client);
+    duid = client_config->client_id;
     if (!duid || !(duid_arr = g_bytes_get_data(duid, &duid_len)) || duid_len < 2) {
         nm_utils_error_set_literal(error, NM_UTILS_ERROR_UNKNOWN, "missing DUID");
         g_return_val_if_reached(FALSE);
@@ -378,6 +378,8 @@ ip6_start(NMDhcpClient *client, const struct in6_addr *ll_addr, GError **error)
         nm_utils_error_set_errno(error, r, "failed to start client: %s");
         return FALSE;
     }
+
+    nm_dhcp_client_set_effective_client_id(client, duid);
 
     return TRUE;
 }

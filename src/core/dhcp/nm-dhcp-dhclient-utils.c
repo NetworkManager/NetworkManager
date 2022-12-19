@@ -399,6 +399,7 @@ nm_dhcp_dhclient_create_config(const char         *interface,
                 if (out_new_client_id)
                     nm_clear_pointer(out_new_client_id, g_bytes_unref);
                 NM_SET_OUT(out_new_client_id, read_client_id(p));
+                /* fall-through. We keep the line... */
             }
 
             /* Override config file hostname and use one from the connection */
@@ -523,6 +524,20 @@ nm_dhcp_dhclient_create_config(const char         *interface,
     return g_string_free(g_steal_pointer(&new_contents), FALSE);
 }
 
+/* In the lease file, dhclient will write "option dhcp6.client-id $HEXSTR". This
+ * function does the same. */
+static char *
+nm_dhcp_dhclient_escape_duid_as_hex(GBytes *duid)
+{
+    const guint8 *s;
+    gsize         len;
+
+    nm_assert(duid);
+
+    s = g_bytes_get_data(duid, &len);
+    return nm_utils_bin2hexstr_fuller(s, len, ':', FALSE, FALSE, NULL);
+}
+
 /* Roughly follow what dhclient's quotify_buf() and pretty_escape() functions do */
 char *
 nm_dhcp_dhclient_escape_duid(GBytes *duid)
@@ -605,7 +620,7 @@ error:
     return NULL;
 }
 
-#define DUID_PREFIX "default-duid \""
+#define DEFAULT_DUID_PREFIX "default-duid \""
 
 /* Beware: @error may be unset even if the function returns %NULL. */
 GBytes *
@@ -626,10 +641,10 @@ nm_dhcp_dhclient_read_duid(const char *leasefile, GError **error)
         const char *p = nm_str_skip_leading_spaces(contents_v[i]);
         GBytes     *duid;
 
-        if (!NM_STR_HAS_PREFIX(p, DUID_PREFIX))
+        if (!NM_STR_HAS_PREFIX(p, DEFAULT_DUID_PREFIX))
             continue;
 
-        p += NM_STRLEN(DUID_PREFIX);
+        p += NM_STRLEN(DEFAULT_DUID_PREFIX);
 
         g_strchomp((char *) p);
 
@@ -647,15 +662,21 @@ nm_dhcp_dhclient_read_duid(const char *leasefile, GError **error)
 }
 
 gboolean
-nm_dhcp_dhclient_save_duid(const char *leasefile, GBytes *duid, GError **error)
+nm_dhcp_dhclient_save_duid(const char *leasefile,
+                           GBytes     *duid,
+                           gboolean    enforce_duid,
+                           GError    **error)
 {
     gs_free char                 *escaped_duid = NULL;
     gs_free const char          **lines        = NULL;
     nm_auto_free_gstring GString *s            = NULL;
     const char *const            *iter;
-    gsize                         len = 0;
+    gs_free char                 *conflicting_duid_line = NULL;
+    gs_free char                 *contents              = NULL;
+    gsize                         contents_len          = 0;
 
     g_return_val_if_fail(leasefile != NULL, FALSE);
+
     if (!duid) {
         nm_utils_error_set_literal(error, NM_UTILS_ERROR_UNKNOWN, "missing duid");
         g_return_val_if_reached(FALSE);
@@ -665,46 +686,66 @@ nm_dhcp_dhclient_save_duid(const char *leasefile, GBytes *duid, GError **error)
     nm_assert(escaped_duid);
 
     if (g_file_test(leasefile, G_FILE_TEST_EXISTS)) {
-        gs_free char *contents = NULL;
-
-        if (!g_file_get_contents(leasefile, &contents, &len, error)) {
+        if (!g_file_get_contents(leasefile, &contents, &contents_len, error)) {
             g_prefix_error(error, "failed to read lease file %s: ", leasefile);
             return FALSE;
         }
 
-        lines = nm_strsplit_set_with_empty(contents, "\n\r");
+        lines = nm_strsplit_set_with_empty(contents, "\n");
     }
 
-    s = g_string_sized_new(len + 50);
-    g_string_append_printf(s, DUID_PREFIX "%s\";\n", escaped_duid);
+    s = g_string_sized_new(contents_len + 50);
+    g_string_append_printf(s, DEFAULT_DUID_PREFIX "%s\";\n", escaped_duid);
 
     /* Preserve existing leasefile contents */
     if (lines) {
         for (iter = lines; *iter; iter++) {
             const char *str = *iter;
             const char *l;
+            gboolean    ends_with_r;
+            gsize       l_len;
+            gsize       prefix_len;
 
-            /* If we find an uncommented DUID in the file, check if
-             * equal to the one we are going to write: if so, no need
-             * to update the lease file, otherwise skip the old DUID.
-             */
-            l = nm_str_skip_leading_spaces(str);
-            if (g_str_has_prefix(l, DUID_PREFIX)) {
-                gs_strfreev char **split = NULL;
+            l          = nm_str_skip_leading_spaces(str);
+            l_len      = strlen(l);
+            prefix_len = l - str;
 
-                split = g_strsplit(l, "\"", -1);
-                if (split[0] && nm_streq0(split[1], escaped_duid))
-                    return TRUE;
+            ends_with_r = l_len > 0 && l[l_len - 1u] == '\r';
+            if (ends_with_r) {
+                ((char *) l)[--l_len] = '\0';
+            }
 
+            if (NM_STR_HAS_PREFIX(l, DEFAULT_DUID_PREFIX)) {
+                /* We always add our line on top. This line can be skipped. */
                 continue;
             }
 
-            if (str)
-                g_string_append(s, str);
-            /* avoid to add an extra '\n' at the end of file */
-            if ((iter[1]) != NULL)
+            if (enforce_duid & NM_STR_HAS_PREFIX(l, "option dhcp6.client-id ")) {
+                /* we want to use our duid. Skip the per-lease client-id. */
+                if (!conflicting_duid_line) {
+                    gs_free char *duid_hex = nm_dhcp_dhclient_escape_duid_as_hex(duid);
+
+                    conflicting_duid_line = g_strdup_printf("option dhcp6.client-id %s;", duid_hex);
+                }
+                /* We adjust the duid line and set what we want. */
+                l = conflicting_duid_line;
+            }
+
+            g_string_append_len(s, str, prefix_len);
+            g_string_append(s, l);
+            if (ends_with_r) {
+                g_string_append_c(s, '\r');
                 g_string_append_c(s, '\n');
+            } else if ((iter[1]) != NULL) {
+                /* avoid to add an extra '\n' at the end of file */
+                g_string_append_c(s, '\n');
+            }
         }
+    }
+
+    if (contents && strlen(contents) == contents_len && nm_streq(contents, s->str)) {
+        /* The file is already as we want it. We are done. */
+        return TRUE;
     }
 
     if (!g_file_set_contents(leasefile, s->str, -1, error)) {
