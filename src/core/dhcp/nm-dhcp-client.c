@@ -1331,8 +1331,7 @@ gboolean
 nm_dhcp_client_start(NMDhcpClient *self, GError **error)
 {
     NMDhcpClientPrivate        *priv;
-    gs_unref_bytes GBytes      *own_client_id = NULL;
-    const NMPlatformIP6Address *addr          = NULL;
+    const NMPlatformIP6Address *addr = NULL;
     int                         IS_IPv4;
 
     g_return_val_if_fail(NM_IS_DHCP_CLIENT(self), FALSE);
