@@ -654,7 +654,8 @@ nm_dhcp_dhclient_save_duid(const char *leasefile, GBytes *duid, GError **error)
     gs_free const char          **lines        = NULL;
     nm_auto_free_gstring GString *s            = NULL;
     const char *const            *iter;
-    gsize                         len = 0;
+    gs_free char                 *contents     = NULL;
+    gsize                         contents_len = 0;
 
     g_return_val_if_fail(leasefile != NULL, FALSE);
 
@@ -667,9 +668,7 @@ nm_dhcp_dhclient_save_duid(const char *leasefile, GBytes *duid, GError **error)
     nm_assert(escaped_duid);
 
     if (g_file_test(leasefile, G_FILE_TEST_EXISTS)) {
-        gs_free char *contents = NULL;
-
-        if (!g_file_get_contents(leasefile, &contents, &len, error)) {
+        if (!g_file_get_contents(leasefile, &contents, &contents_len, error)) {
             g_prefix_error(error, "failed to read lease file %s: ", leasefile);
             return FALSE;
         }
@@ -677,7 +676,7 @@ nm_dhcp_dhclient_save_duid(const char *leasefile, GBytes *duid, GError **error)
         lines = nm_strsplit_set_with_empty(contents, "\n\r");
     }
 
-    s = g_string_sized_new(len + 50);
+    s = g_string_sized_new(contents_len + 50);
     g_string_append_printf(s, DEFAULT_DUID_PREFIX "%s\";\n", escaped_duid);
 
     /* Preserve existing leasefile contents */
@@ -707,6 +706,11 @@ nm_dhcp_dhclient_save_duid(const char *leasefile, GBytes *duid, GError **error)
             if ((iter[1]) != NULL)
                 g_string_append_c(s, '\n');
         }
+    }
+
+    if (contents && strlen(contents) == contents_len && nm_streq(contents, s->str)) {
+        /* The file is already as we want it. We are done. */
+        return TRUE;
     }
 
     if (!g_file_set_contents(leasefile, s->str, -1, error)) {
