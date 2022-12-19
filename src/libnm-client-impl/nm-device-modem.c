@@ -145,12 +145,14 @@ get_type_description(NMDevice *device)
     NMDeviceModemCapabilities caps;
 
     caps = nm_device_modem_get_current_capabilities(NM_DEVICE_MODEM(device));
-    if (caps & NM_DEVICE_MODEM_CAPABILITY_GSM_UMTS)
+    if (NM_FLAGS_ANY(caps,
+                     NM_DEVICE_MODEM_CAPABILITY_GSM_UMTS | NM_DEVICE_MODEM_CAPABILITY_LTE
+                         | NM_DEVICE_MODEM_CAPABILITY_5GNR))
         return "gsm";
-    else if (caps & NM_DEVICE_MODEM_CAPABILITY_CDMA_EVDO)
+    if (NM_FLAGS_HAS(caps, NM_DEVICE_MODEM_CAPABILITY_CDMA_EVDO))
         return "cdma";
-    else
-        return NULL;
+
+    return "modem";
 }
 
 #define MODEM_CAPS_3GPP(caps)                                                          \
