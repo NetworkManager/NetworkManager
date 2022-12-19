@@ -4167,6 +4167,7 @@ nm_range_new(guint64 start, guint64 end)
  * @range: the #NMRange
  *
  * Increases the reference count of the object.
+ * This is thread-safe.
  *
  * Returns: the input argument @range object.
  *
@@ -4177,9 +4178,9 @@ nm_range_ref(const NMRange *range)
 {
     g_return_val_if_fail(NM_IS_RANGE(range), NULL);
 
-    nm_assert(range->refcount < G_MAXUINT);
+    nm_assert(range->refcount < G_MAXINT);
 
-    ((NMRange *) range)->refcount++;
+    g_atomic_int_inc(&((NMRange *) range)->refcount);
     return (NMRange *) range;
 }
 
@@ -4189,6 +4190,7 @@ nm_range_ref(const NMRange *range)
  *
  * Decreases the reference count of the object.  If the reference count
  * reaches zero the object will be destroyed.
+ * This is thread-safe.
  *
  * Since: 1.42
  **/
@@ -4197,10 +4199,8 @@ nm_range_unref(const NMRange *range)
 {
     g_return_if_fail(NM_IS_RANGE(range));
 
-    nm_assert(range->refcount != 0);
-
-    if (--((NMRange *) range)->refcount == 0)
-        g_slice_free(NMRange, (NMRange *) range);
+    if (g_atomic_int_dec_and_test(&((NMRange *) range)->refcount))
+        nm_g_slice_free((NMRange *) range);
 }
 
 /**
