@@ -237,30 +237,65 @@ nm_dhcp_client_create_l3cd(NMDhcpClient *self)
                                  NM_IP_CONFIG_SOURCE_DHCP);
 }
 
+GHashTable *
+nm_dhcp_client_create_options_dict(NMDhcpClient *self, gboolean static_keys)
+{
+    NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
+    GHashTable          *options;
+    GBytes              *effective_client_id;
+
+    options = nm_dhcp_option_create_options_dict(static_keys);
+
+    effective_client_id = nm_dhcp_client_get_effective_client_id(self);
+    if (effective_client_id) {
+        guint         option = NM_IS_IPv4(priv->config.addr_family) ? NM_DHCP_OPTION_DHCP4_CLIENT_ID
+                                                                    : NM_DHCP_OPTION_DHCP6_CLIENT_ID;
+        gs_free char *str    = nm_dhcp_utils_duid_to_string(effective_client_id);
+
+        /* Note that for the nm-dhcp-helper based plugins (dhclient), the plugin
+         * may send the used client-id/DUID via the environment variables and
+         * overwrite them yet again. */
+
+        if (static_keys) {
+            nm_dhcp_option_add_option(options, priv->config.addr_family, option, str);
+        } else {
+            g_hash_table_insert(
+                options,
+                g_strdup(nm_dhcp_option_request_string(priv->config.addr_family, option)),
+                g_steal_pointer(&str));
+        }
+    }
+
+    return options;
+}
+
 /*****************************************************************************/
 
-void
+gboolean
 nm_dhcp_client_set_effective_client_id(NMDhcpClient *self, GBytes *client_id)
 {
-    NMDhcpClientPrivate *priv    = NM_DHCP_CLIENT_GET_PRIVATE(self);
-    gs_free char        *tmp_str = NULL;
+    NMDhcpClientPrivate   *priv              = NM_DHCP_CLIENT_GET_PRIVATE(self);
+    gs_free char          *tmp_str           = NULL;
+    gs_unref_bytes GBytes *client_id_to_free = NULL;
 
-    g_return_if_fail(NM_IS_DHCP_CLIENT(self));
-    g_return_if_fail(!client_id || g_bytes_get_size(client_id) >= 2);
+    g_return_val_if_fail(NM_IS_DHCP_CLIENT(self), FALSE);
+    g_return_val_if_fail(!client_id || g_bytes_get_size(client_id) >= 2, FALSE);
 
     priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
 
     if (nm_g_bytes_equal0(priv->effective_client_id, client_id))
-        return;
+        return FALSE;
 
-    g_bytes_unref(priv->effective_client_id);
+    client_id_to_free         = g_steal_pointer(&priv->effective_client_id);
     priv->effective_client_id = nm_g_bytes_ref(client_id);
 
-    _LOGT("%s: set %s",
+    _LOGT("%s: set effective %s",
           priv->config.addr_family == AF_INET6 ? "duid" : "client-id",
           priv->effective_client_id
               ? (tmp_str = nm_dhcp_utils_duid_to_string(priv->effective_client_id))
               : "default");
+
+    return TRUE;
 }
 
 /*****************************************************************************/
@@ -967,12 +1002,6 @@ _dhcp_client_decline(NMDhcpClient         *self,
     return klass->decline(self, l3cd, error_message, error);
 }
 
-static GBytes *
-get_duid(NMDhcpClient *self)
-{
-    return NULL;
-}
-
 static gboolean
 ipv6_lladdr_timeout(gpointer user_data)
 {
@@ -1318,11 +1347,6 @@ nm_dhcp_client_start(NMDhcpClient *self, GError **error)
     IS_IPv4 = NM_IS_IPv4(priv->config.addr_family);
 
     if (!IS_IPv4) {
-        if (!priv->config.v6.enforce_duid)
-            own_client_id = NM_DHCP_CLIENT_GET_CLASS(self)->get_duid(self);
-
-        nm_dhcp_client_set_effective_client_id(self, own_client_id ?: priv->config.client_id);
-
         addr = ipv6_lladdr_find(self);
         if (!addr) {
             _LOGD("waiting for IPv6LL address");
@@ -1450,7 +1474,7 @@ nm_dhcp_client_stop(NMDhcpClient *self, gboolean release)
 /*****************************************************************************/
 
 static char *
-bytearray_variant_to_string(NMDhcpClient *self, GVariant *value, const char *key)
+bytearray_variant_to_string(GVariant *value)
 {
     const guint8 *array;
     char         *str;
@@ -1500,8 +1524,9 @@ label_is_unknown_xyz(const char *label)
 static void
 maybe_add_option(NMDhcpClient *self, GHashTable *hash, const char *key, GVariant *value)
 {
-    char *str_value;
-    int   priv_opt_num;
+    const int IS_IPv4 = NM_IS_IPv4(NM_DHCP_CLIENT_GET_PRIVATE(self)->config.addr_family);
+    char     *str_value;
+    int       priv_opt_num;
 
     if (!g_variant_is_of_type(value, G_VARIANT_TYPE_BYTESTRING))
         return;
@@ -1518,27 +1543,49 @@ maybe_add_option(NMDhcpClient *self, GHashTable *hash, const char *key, GVariant
     if (NM_STR_HAS_PREFIX(key, "private_") || !key[0])
         return;
 
-    str_value = bytearray_variant_to_string(self, value, key);
+    str_value = bytearray_variant_to_string(value);
     if (!str_value)
         return;
+
+    if ((IS_IPv4 && nm_streq(key, "dhcp_client_identifier"))
+        || (!IS_IPv4 && nm_streq(key, "dhcp6_client_id"))) {
+        gs_free char          *str   = g_steal_pointer(&str_value);
+        gs_unref_bytes GBytes *bytes = NULL;
+
+        /* Validate and normalize the client-id/DUID. */
+
+        bytes = nm_utils_hexstr2bin(str);
+        if (!bytes || g_bytes_get_size(bytes) < 2) {
+            /* Seems invalid. Ignore */
+            return;
+        }
+
+        if (!nm_dhcp_client_set_effective_client_id(self, bytes)) {
+            /* the client-id is identical and we already set it. Nothing to do. */
+            return;
+        }
+
+        /* The effective-client-id was (re)set. Update "hash" with the new value... */
+        str_value = nm_dhcp_utils_duid_to_string(bytes);
+    }
 
     g_hash_table_insert(hash, g_strdup(key), str_value);
 
     /* dhclient has no special labels for private dhcp options: it uses "unknown_xyz"
-         * labels for that. We need to identify those to alias them to our "private_xyz"
-         * format unused in the internal dchp plugins.
-         */
+     * labels for that. We need to identify those to alias them to our "private_xyz"
+     * format unused in the internal dchp plugins.
+     */
     if ((priv_opt_num = label_is_unknown_xyz(key)) > 0) {
         gs_free guint8 *check_val = NULL;
         char           *hex_str   = NULL;
         gsize           len;
 
         /* dhclient passes values from dhcp private options in its own "string" format:
-             * if the raw values are printable as ascii strings, it will pass the string
-             * representation; if the values are not printable as an ascii string, it will
-             * pass a string displaying the hex values (hex string). Try to enforce passing
-             * always an hex string, converting string representation if needed.
-             */
+         * if the raw values are printable as ascii strings, it will pass the string
+         * representation; if the values are not printable as an ascii string, it will
+         * pass a string displaying the hex values (hex string). Try to enforce passing
+         * always an hex string, converting string representation if needed.
+         */
         check_val = nm_utils_hexstr2bin_alloc(str_value, FALSE, TRUE, ":", 0, &len);
         hex_str   = nm_utils_bin2hexstr_full(check_val ?: (guint8 *) str_value,
                                            check_val ? len : strlen(str_value),
@@ -1624,7 +1671,7 @@ nm_dhcp_client_handle_event(gpointer               unused,
         GVariant                      *value;
 
         /* Copy options */
-        str_options = g_hash_table_new_full(nm_str_hash, g_str_equal, g_free, g_free);
+        str_options = nm_dhcp_client_create_options_dict(self, FALSE);
         g_variant_iter_init(&iter, options);
         while (g_variant_iter_next(&iter, "{&sv}", &name, &value)) {
             maybe_add_option(self, str_options, name, value);
@@ -1915,8 +1962,7 @@ nm_dhcp_client_class_init(NMDhcpClientClass *client_class)
     client_class->accept       = _accept;
     client_class->decline      = decline;
 
-    client_class->stop     = stop;
-    client_class->get_duid = get_duid;
+    client_class->stop = stop;
 
     obj_properties[PROP_CONFIG] =
         g_param_spec_pointer(NM_DHCP_CLIENT_CONFIG,

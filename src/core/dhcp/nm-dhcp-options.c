@@ -190,12 +190,12 @@ static const NMDhcpOption *const _sorted_options_4[G_N_ELEMENTS(_nm_dhcp_option_
 };
 
 const NMDhcpOption _nm_dhcp_option_dhcp6_options[] = {
-    REQ(NM_DHCP_OPTION_DHCP6_CLIENTID, "dhcp6_client_id", FALSE),
+    REQ(NM_DHCP_OPTION_DHCP6_CLIENT_ID, "dhcp6_client_id", FALSE),
 
     /* Don't request server ID by default; some servers don't reply to
      * Information Requests that request the Server ID.
      */
-    REQ(NM_DHCP_OPTION_DHCP6_SERVERID, "dhcp6_server_id", FALSE),
+    REQ(NM_DHCP_OPTION_DHCP6_SERVER_ID, "dhcp6_server_id", FALSE),
 
     REQ(NM_DHCP_OPTION_DHCP6_DNS_SERVERS, "dhcp6_name_servers", TRUE),
     REQ(NM_DHCP_OPTION_DHCP6_DOMAIN_LIST, "dhcp6_domain_search", TRUE),
@@ -460,7 +460,7 @@ nm_dhcp_option_add_requests_to_options(GHashTable *options, int addr_family)
 }
 
 GHashTable *
-nm_dhcp_option_create_options_dict(void)
+nm_dhcp_option_create_options_dict(gboolean static_keys)
 {
-    return g_hash_table_new_full(nm_str_hash, g_str_equal, NULL, g_free);
+    return g_hash_table_new_full(nm_str_hash, g_str_equal, static_keys ? NULL : g_free, g_free);
 }

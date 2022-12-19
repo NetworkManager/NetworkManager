@@ -157,8 +157,8 @@ typedef enum {
 } NMDhcpOptionDhcp4Options;
 
 typedef enum {
-    NM_DHCP_OPTION_DHCP6_CLIENTID     = 1,
-    NM_DHCP_OPTION_DHCP6_SERVERID     = 2,
+    NM_DHCP_OPTION_DHCP6_CLIENT_ID    = 1,
+    NM_DHCP_OPTION_DHCP6_SERVER_ID    = 2,
     NM_DHCP_OPTION_DHCP6_DNS_SERVERS  = 23,
     NM_DHCP_OPTION_DHCP6_DOMAIN_LIST  = 24,
     NM_DHCP_OPTION_DHCP6_SNTP_SERVERS = 31,
@@ -222,7 +222,8 @@ void nm_dhcp_option_add_option_in_addr(GHashTable *options,
                                        in_addr_t   value);
 void
 nm_dhcp_option_add_option_u64(GHashTable *options, int addr_family, guint option, guint64 value);
-void        nm_dhcp_option_add_requests_to_options(GHashTable *options, int addr_family);
-GHashTable *nm_dhcp_option_create_options_dict(void);
+void nm_dhcp_option_add_requests_to_options(GHashTable *options, int addr_family);
+
+GHashTable *nm_dhcp_option_create_options_dict(gboolean static_keys);
 
 #endif /* __NM_DHCP_OPTIONS_H__ */
