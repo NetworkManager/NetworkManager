@@ -81,11 +81,13 @@ create_and_realize(NMDevice              *device,
                    const NMPlatformLink **out_plink,
                    GError               **error)
 {
-    const char    *iface = nm_device_get_iface(device);
-    const char    *peer;
-    NMDevice      *peer_device;
-    NMSettingVeth *s_veth;
-    int            r;
+    NMPlatform           *platform = nm_device_get_platform(device);
+    const char           *iface    = nm_device_get_iface(device);
+    NMSettingVeth        *s_veth;
+    const NMPlatformLink *plink;
+    const NMPlatformLink *peer_plink;
+    int                   peer_ifindex;
+    int                   r;
 
     s_veth = _nm_connection_get_setting(connection, NM_TYPE_SETTING_VETH);
     if (!s_veth) {
@@ -98,15 +100,23 @@ create_and_realize(NMDevice              *device,
         return FALSE;
     }
 
-    peer        = nm_setting_veth_get_peer(s_veth);
-    peer_device = nm_manager_get_device(NM_MANAGER_GET, peer, NM_DEVICE_TYPE_VETH);
-    if (peer_device) {
-        if (nm_device_parent_get_device(peer_device))
-            /* The veth device and its peer already exist. No need to create it again. */
+    /* For veths, users can define two connection profiles referencing each
+     * other as 'veth.peer'. Only the first to be activated will actually
+     * create the veth pair; the other must detect that interfaces already
+     * exist and proceed. */
+    plink = nm_platform_link_get_by_ifname(platform, iface);
+    if (plink && nm_platform_link_veth_get_properties(platform, plink->ifindex, &peer_ifindex)) {
+        peer_plink = nm_platform_link_get(platform, peer_ifindex);
+        if (peer_plink && peer_plink->type == NM_LINK_TYPE_VETH
+            && nm_streq0(peer_plink->name, nm_setting_veth_get_peer(s_veth))) {
             return TRUE;
+        }
     }
 
-    r = nm_platform_link_veth_add(nm_device_get_platform(device), iface, peer, out_plink);
+    r = nm_platform_link_veth_add(nm_device_get_platform(device),
+                                  iface,
+                                  nm_setting_veth_get_peer(s_veth),
+                                  out_plink);
     if (r < 0) {
         g_set_error(error,
                     NM_DEVICE_ERROR,
