@@ -6392,7 +6392,8 @@ carrier_changed(NMDevice *self, gboolean carrier)
         if (carrier) {
             /* If needed, also resume IP configuration that is
              * waiting for carrier. */
-            if (priv->state == NM_DEVICE_STATE_IP_CONFIG)
+            if (priv->state >= NM_DEVICE_STATE_IP_CONFIG
+                && priv->state <= NM_DEVICE_STATE_ACTIVATED)
                 nm_device_activate_schedule_stage3_ip_config(self, FALSE);
             return;
         }
