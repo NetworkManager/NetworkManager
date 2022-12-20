@@ -1579,7 +1579,6 @@ nm_policy_unblock_failed_ovs_interfaces(NMPolicy *self)
     NMPolicyPrivate             *priv        = NM_POLICY_GET_PRIVATE(self);
     NMSettingsConnection *const *connections = NULL;
     guint                        i;
-    gboolean                     multiconnect = FALSE;
 
     _LOGT(LOGD_DEVICE, "unblocking failed OVS interfaces");
 
@@ -1587,13 +1586,6 @@ nm_policy_unblock_failed_ovs_interfaces(NMPolicy *self)
     for (i = 0; connections[i]; i++) {
         NMSettingsConnection *sett_conn  = connections[i];
         NMConnection         *connection = nm_settings_connection_get_connection(sett_conn);
-        NMSettingConnection  *s_con      = nm_connection_get_setting_connection(connection);
-
-        /* Check if any connection is connect multiple */
-        if (s_con
-            && nm_setting_connection_get_multi_connect(s_con)
-                   == NM_CONNECTION_MULTI_CONNECT_MULTIPLE)
-            multiconnect = TRUE;
 
         if (nm_connection_get_setting_ovs_interface(connection)) {
             nm_settings_connection_autoconnect_retries_reset(sett_conn);
@@ -1601,18 +1593,6 @@ nm_policy_unblock_failed_ovs_interfaces(NMPolicy *self)
                 sett_conn,
                 NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_FAILED,
                 FALSE);
-        }
-    }
-
-    /* There is, at least, one multiconnect connection with an OVS setting.
-     * Let's check the OVS devices retries */
-    if (multiconnect) {
-        NMDevice      *device;
-        GHashTableIter h_iter;
-        g_hash_table_iter_init(&h_iter, priv->devices);
-        while (g_hash_table_iter_next(&h_iter, (gpointer *) &device, NULL)) {
-            if (nm_device_get_device_type(device) == NM_DEVICE_TYPE_OVS_INTERFACE)
-                nm_device_autoconnect_retries_reset(device);
         }
     }
 }
@@ -1626,8 +1606,7 @@ reset_autoconnect_all(
     NMPolicyPrivate             *priv        = NM_POLICY_GET_PRIVATE(self);
     NMSettingsConnection *const *connections = NULL;
     guint                        i;
-    gboolean                     changed      = FALSE;
-    gboolean                     multiconnect = FALSE;
+    gboolean                     changed = FALSE;
 
     _LOGD(LOGD_DEVICE,
           "re-enabling autoconnect for all connections%s%s%s",
@@ -1638,8 +1617,6 @@ reset_autoconnect_all(
     connections = nm_settings_get_connections(priv->settings, NULL);
     for (i = 0; connections[i]; i++) {
         NMSettingsConnection *sett_conn = connections[i];
-        NMSettingConnection  *s_con =
-            nm_connection_get_setting_connection(nm_settings_connection_get_connection(sett_conn));
 
         if (device
             && !nm_device_check_connection_compatible(
@@ -1647,11 +1624,6 @@ reset_autoconnect_all(
                 nm_settings_connection_get_connection(sett_conn),
                 NULL))
             continue;
-
-        if (s_con
-            && nm_setting_connection_get_multi_connect(s_con)
-                   == NM_CONNECTION_MULTI_CONNECT_MULTIPLE)
-            multiconnect = TRUE;
 
         if (only_no_secrets) {
             /* we only reset the no-secrets blocked flag. */
@@ -1681,20 +1653,6 @@ reset_autoconnect_all(
             }
         }
     }
-
-    /* There is, at least, one multiconnect connection. Let's check the devices retries */
-    if (multiconnect) {
-        NMDevice      *device_iter;
-        GHashTableIter h_iter;
-        g_hash_table_iter_init(&h_iter, priv->devices);
-        while (g_hash_table_iter_next(&h_iter, (gpointer *) &device_iter, NULL)) {
-            if (nm_device_get_autoconnect_retries(device_iter) != -2) {
-                nm_device_autoconnect_retries_reset(device_iter);
-                changed = TRUE;
-            }
-        }
-    }
-
     return changed;
 }
 
@@ -1752,8 +1710,7 @@ reset_connections_retries(gpointer user_data)
     NMSettingsConnection *const *connections = NULL;
     guint                        i;
     gint32                       con_stamp, min_stamp, now;
-    gboolean                     changed      = FALSE;
-    gboolean                     multiconnect = FALSE;
+    gboolean                     changed = FALSE;
 
     priv->reset_retries_id = 0;
 
@@ -1762,14 +1719,6 @@ reset_connections_retries(gpointer user_data)
     connections = nm_settings_get_connections(priv->settings, NULL);
     for (i = 0; connections[i]; i++) {
         NMSettingsConnection *connection = connections[i];
-        NMSettingConnection  *s_con =
-            nm_connection_get_setting_connection(nm_settings_connection_get_connection(connection));
-
-        /* Check if any connection is connect multiple */
-        if (s_con
-            && nm_setting_connection_get_multi_connect(s_con)
-                   == NM_CONNECTION_MULTI_CONNECT_MULTIPLE)
-            multiconnect = TRUE;
 
         con_stamp = nm_settings_connection_autoconnect_retries_blocked_until(connection);
         if (con_stamp == 0)
@@ -1780,25 +1729,6 @@ reset_connections_retries(gpointer user_data)
             changed = TRUE;
         } else if (min_stamp == 0 || min_stamp > con_stamp)
             min_stamp = con_stamp;
-    }
-
-    /* There is, at least, one multiconnect connection. Let's check the devices retries */
-    if (multiconnect) {
-        NMDevice      *device;
-        GHashTableIter h_iter;
-        g_hash_table_iter_init(&h_iter, priv->devices);
-        while (g_hash_table_iter_next(&h_iter, (gpointer *) &device, NULL)) {
-            con_stamp = nm_device_autoconnect_retries_blocked_until(device);
-
-            /* default value in device is -2, which means, we do not care */
-            if (con_stamp <= 0)
-                continue;
-            if (con_stamp <= now) {
-                nm_device_autoconnect_retries_reset(device);
-                changed = TRUE;
-            } else if (min_stamp == 0 || min_stamp > con_stamp)
-                min_stamp = con_stamp;
-        }
     }
 
     /* Schedule the handler again if there are some stamps left */
@@ -1814,31 +1744,21 @@ reset_connections_retries(gpointer user_data)
 }
 
 static void
-_connection_autoconnect_retries_set(NMPolicy             *self,
-                                    NMSettingsConnection *connection,
-                                    NMDevice             *device,
-                                    int                   tries)
+_connection_autoconnect_retries_set(NMPolicy *self, NMSettingsConnection *connection, int tries)
 {
-    NMPolicyPrivate     *priv = NM_POLICY_GET_PRIVATE(self);
-    NMSettingConnection *s_con;
-    gint32               retry_time;
+    NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE(self);
 
     nm_assert(NM_IS_SETTINGS_CONNECTION(connection));
     nm_assert(tries >= 0);
 
-    s_con = nm_connection_get_setting_connection(nm_settings_connection_get_connection(connection));
-    if (s_con
-        && nm_setting_connection_get_multi_connect(s_con) == NM_CONNECTION_MULTI_CONNECT_MULTIPLE) {
-        nm_device_set_autoconnect_retries(device, tries);
-        retry_time = nm_device_autoconnect_retries_blocked_until(device);
-    } else {
-        nm_settings_connection_autoconnect_retries_set(connection, tries);
-        retry_time = nm_settings_connection_autoconnect_retries_blocked_until(connection);
-    }
+    nm_settings_connection_autoconnect_retries_set(connection, tries);
 
     if (tries == 0) {
         /* Schedule a handler to reset retries count */
         if (!priv->reset_retries_id) {
+            gint32 retry_time =
+                nm_settings_connection_autoconnect_retries_blocked_until(connection);
+
             g_warn_if_fail(retry_time != 0);
             priv->reset_retries_id =
                 g_timeout_add_seconds(MAX(0, retry_time - nm_utils_get_monotonic_timestamp_sec()),
@@ -2100,25 +2020,13 @@ device_state_changed(NMDevice           *device,
             }
 
             if (!blocked) {
-                s_con = nm_connection_get_setting_connection(
-                    nm_settings_connection_get_connection(sett_conn));
-                if (s_con
-                    && nm_setting_connection_get_multi_connect(s_con)
-                           == NM_CONNECTION_MULTI_CONNECT_MULTIPLE) {
-                    if (nm_device_get_autoconnect_retries(device) == -2)
-                        nm_device_set_autoconnect_retries(
-                            device,
-                            nm_settings_connection_autoconnect_retries_get(sett_conn));
-
-                    tries = nm_device_get_autoconnect_retries(device);
-                } else
-                    tries = nm_settings_connection_autoconnect_retries_get(sett_conn);
+                tries = nm_settings_connection_autoconnect_retries_get(sett_conn);
                 if (tries > 0) {
                     _LOGD(LOGD_DEVICE,
                           "connection '%s' failed to autoconnect; %d tries left",
                           nm_settings_connection_get_id(sett_conn),
                           tries - 1);
-                    _connection_autoconnect_retries_set(self, sett_conn, device, tries - 1);
+                    _connection_autoconnect_retries_set(self, sett_conn, tries - 1);
                 } else if (tries != 0) {
                     _LOGD(LOGD_DEVICE,
                           "connection '%s' failed to autoconnect; infinite tries left",
