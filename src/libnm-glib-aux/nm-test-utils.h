@@ -873,7 +873,7 @@ _nmtst_test_data_unpack(const NmtstTestData *test_data, gsize n_args, ...)
     _nmtst_test_data_unpack(test_data, NM_NARG(__VA_ARGS__), ##__VA_ARGS__)
 
 static inline void
-_nmtst_test_data_free(gpointer data)
+_nmtst_test_data_destroy(gpointer data)
 {
     NmtstTestData *test_data = data;
 
@@ -881,6 +881,13 @@ _nmtst_test_data_free(gpointer data)
 
     g_free(test_data->_testpath);
     g_free(test_data);
+}
+
+static inline void
+_nmtst_test_data_free(gpointer data)
+{
+    _nmtst_testdata_track_steal(data);
+    _nmtst_test_data_destroy(data);
 }
 
 static inline void
@@ -928,6 +935,8 @@ _nmtst_add_test_func_full(const char      *testpath,
         data->args[i] = va_arg(ap, gpointer);
     data->args[i] = NULL;
     va_end(ap);
+
+    _nmtst_testdata_track_add(data, _nmtst_test_data_destroy);
 
     g_test_add_data_func_full(testpath, data, _nmtst_test_run, _nmtst_test_data_free);
 }
