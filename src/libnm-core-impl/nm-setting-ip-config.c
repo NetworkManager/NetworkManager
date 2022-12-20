@@ -1537,7 +1537,7 @@ struct NMIPRoutingRule {
     char    *to_str;
     char    *iifname;
     char    *oifname;
-    guint    ref_count;
+    int      ref_count;
     guint32  priority;
     guint32  table;
     gint32   suppress_prefixlength;
@@ -1636,9 +1636,11 @@ nm_ip_routing_rule_new(int addr_family)
  * nm_ip_routing_rule_new_clone:
  * @rule: the #NMIPRoutingRule to clone.
  *
+ * Since 1.42, ref-counting of #NMIPRoutingRule is thread-safe.
+ *
  * Returns: (transfer full): a newly created rule instance with
  *   the same settings as @rule. Note that the instance will
- *   always be unsealred.
+ *   always be unsealed.
  *
  * Since: 1.18
  */
@@ -1704,10 +1706,11 @@ nm_ip_routing_rule_new_clone(const NMIPRoutingRule *rule)
  * @self: (allow-none): the #NMIPRoutingRule instance
  *
  * Increases the reference count of the instance.
- * This is not thread-safe.
  *
  * Returns: (transfer full): the @self argument with incremented
  *  reference count.
+ *
+ * Since 1.42, ref-counting of #NMIPRoutingRule is thread-safe.
  *
  * Since: 1.18
  */
@@ -1719,8 +1722,9 @@ nm_ip_routing_rule_ref(NMIPRoutingRule *self)
 
     g_return_val_if_fail(NM_IS_IP_ROUTING_RULE(self, TRUE), NULL);
 
-    nm_assert(self->ref_count < G_MAXUINT);
-    self->ref_count++;
+    nm_assert(self->ref_count < G_MAXINT);
+
+    g_atomic_int_inc(&self->ref_count);
     return self;
 }
 
@@ -1730,7 +1734,8 @@ nm_ip_routing_rule_ref(NMIPRoutingRule *self)
  *
  * Decreases the reference count of the instance and destroys
  * the instance if the reference count reaches zero.
- * This is not thread-safe.
+ *
+ * Since 1.42, ref-counting of #NMIPRoutingRule is thread-safe.
  *
  * Since: 1.18
  */
@@ -1742,7 +1747,7 @@ nm_ip_routing_rule_unref(NMIPRoutingRule *self)
 
     g_return_if_fail(NM_IS_IP_ROUTING_RULE(self, TRUE));
 
-    if (--self->ref_count > 0)
+    if (!g_atomic_int_dec_and_test(&self->ref_count))
         return;
 
     g_free(self->from_str);

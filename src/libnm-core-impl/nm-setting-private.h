@@ -303,7 +303,7 @@ typedef struct {
 /*****************************************************************************/
 
 struct _NMRange {
-    guint   refcount;
+    int     refcount;
     guint64 start;
     guint64 end;
 };

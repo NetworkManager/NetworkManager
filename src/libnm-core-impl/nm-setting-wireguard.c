@@ -50,7 +50,7 @@ struct _NMWireGuardPeer {
     char                *public_key;
     char                *preshared_key;
     GPtrArray           *allowed_ips;
-    guint                refcount;
+    int                  refcount;
     NMSettingSecretFlags preshared_key_flags;
     guint16              persistent_keepalive;
     bool                 public_key_valid : 1;
@@ -127,10 +127,10 @@ nm_wireguard_peer_new_clone(const NMWireGuardPeer *self, gboolean with_secrets)
  * nm_wireguard_peer_ref:
  * @self: (allow-none): the #NMWireGuardPeer instance
  *
- * This is not thread-safe.
- *
  * Returns: returns the input argument @self after incrementing
  *   the reference count.
+ *
+ * Since 1.42, ref-counting of #NMWireGuardPeer is thread-safe.
  *
  * Since: 1.16
  */
@@ -142,9 +142,9 @@ nm_wireguard_peer_ref(NMWireGuardPeer *self)
 
     g_return_val_if_fail(NM_IS_WIREGUARD_PEER(self, TRUE), NULL);
 
-    nm_assert(self->refcount < G_MAXUINT);
+    nm_assert(self->refcount < G_MAXINT);
 
-    self->refcount++;
+    g_atomic_int_inc(&self->refcount);
     return self;
 }
 
@@ -155,7 +155,7 @@ nm_wireguard_peer_ref(NMWireGuardPeer *self)
  * Drop a reference to @self. If the last reference is dropped,
  * the instance is freed and all associate data released.
  *
- * This is not thread-safe.
+ * Since 1.42, ref-counting of #NMWireGuardPeer is thread-safe.
  *
  * Since: 1.16
  */
@@ -167,7 +167,7 @@ nm_wireguard_peer_unref(NMWireGuardPeer *self)
 
     g_return_if_fail(NM_IS_WIREGUARD_PEER(self, TRUE));
 
-    if (--self->refcount > 0)
+    if (!g_atomic_int_dec_and_test(&self->refcount))
         return;
 
     nm_sock_addr_endpoint_unref(self->endpoint);
