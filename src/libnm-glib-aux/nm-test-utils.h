@@ -783,10 +783,10 @@ struct _NmtstTestData {
         char       *_testpath;
     };
     gsize            n_args;
-    gpointer        *args;
     NmtstTestHandler _func_setup;
     GTestDataFunc    _func_test;
     NmtstTestHandler _func_teardown;
+    gpointer         args[];
 };
 
 static inline void
@@ -878,14 +878,13 @@ _nmtst_add_test_func_full(const char      *testpath,
     g_assert(testpath && testpath[0]);
     g_assert(func_test);
 
-    data = g_malloc0(sizeof(NmtstTestData) + (sizeof(gpointer) * (n_args + 1)));
+    data = g_malloc0(G_STRUCT_OFFSET(NmtstTestData, args) + (sizeof(gpointer) * (n_args + 1u)));
 
     data->_testpath      = g_strdup(testpath);
     data->_func_test     = func_test;
     data->_func_setup    = func_setup;
     data->_func_teardown = func_teardown;
     data->n_args         = n_args;
-    data->args           = (gpointer) &data[1];
     va_start(ap, n_args);
     for (i = 0; i < n_args; i++)
         data->args[i] = va_arg(ap, gpointer);
