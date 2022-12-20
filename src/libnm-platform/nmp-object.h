@@ -561,6 +561,8 @@ _NMP_OBJECT_TYPE_IS_OBJ_WITH_IFINDEX(NMPObjectType obj_type)
     return FALSE;
 }
 
+#define NMP_OBJECT_TYPE_NAME(obj_type) (nmp_class_from_type(obj_type)->obj_type_name)
+
 #define NMP_OBJECT_CAST_OBJECT(obj)                                       \
     ({                                                                    \
         typeof(obj) _obj = (obj);                                         \
