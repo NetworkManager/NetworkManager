@@ -846,18 +846,21 @@ _nmtst_add_test_func_full(const char      *testpath,
     gsize          i;
     NmtstTestData *data;
     va_list        ap;
+    gsize          ALIGNED_SIZE =
+        ((sizeof(NmtstTestData) + (sizeof(gpointer) - 1)) / sizeof(gpointer)) * sizeof(gpointer);
 
+    g_assert(ALIGNED_SIZE >= sizeof(NmtstTestData));
     g_assert(testpath && testpath[0]);
     g_assert(func_test);
 
-    data = g_malloc0(sizeof(NmtstTestData) + (sizeof(gpointer) * (n_args + 1)));
+    data = g_malloc0(ALIGNED_SIZE + (sizeof(gpointer) * (n_args + 1)));
 
     data->_testpath      = g_strdup(testpath);
     data->_func_test     = func_test;
     data->_func_setup    = func_setup;
     data->_func_teardown = func_teardown;
     data->n_args         = n_args;
-    data->args           = (gpointer) &data[1];
+    data->args           = NM_CAST_ALIGN(gpointer, &((char *) data)[ALIGNED_SIZE]);
     va_start(ap, n_args);
     for (i = 0; i < n_args; i++)
         data->args[i] = va_arg(ap, gpointer);
