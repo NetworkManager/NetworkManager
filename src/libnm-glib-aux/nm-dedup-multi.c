@@ -1004,12 +1004,14 @@ nm_dedup_multi_index_new(void)
 {
     NMDedupMultiIndex *self;
 
-    self            = g_slice_new0(NMDedupMultiIndex);
-    self->ref_count = 1;
-    self->idx_entries =
-        g_hash_table_new((GHashFunc) _dict_idx_entries_hash, (GEqualFunc) _dict_idx_entries_equal);
-    self->idx_objs =
-        g_hash_table_new((GHashFunc) _dict_idx_objs_hash, (GEqualFunc) _dict_idx_objs_equal);
+    self  = g_slice_new(NMDedupMultiIndex);
+    *self = (NMDedupMultiIndex){
+        .ref_count   = 1,
+        .idx_entries = g_hash_table_new((GHashFunc) _dict_idx_entries_hash,
+                                        (GEqualFunc) _dict_idx_entries_equal),
+        .idx_objs =
+            g_hash_table_new((GHashFunc) _dict_idx_objs_hash, (GEqualFunc) _dict_idx_objs_equal),
+    };
     return self;
 }
 
@@ -1018,6 +1020,7 @@ nm_dedup_multi_index_ref(NMDedupMultiIndex *self)
 {
     g_return_val_if_fail(self, NULL);
     g_return_val_if_fail(self->ref_count > 0, NULL);
+    nm_assert(self->ref_count < G_MAXINT32);
 
     self->ref_count++;
     return self;
