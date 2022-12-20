@@ -957,7 +957,11 @@ _nmtst_add_test_func_full(const char      *testpath,
 
     memcpy((char *) data->testpath, testpath, testpath_len);
 
-    g_test_add_data_func_full(testpath, data, _nmtst_test_run, g_free);
+    _nmtst_testdata_track_add(data, g_free);
+    g_test_add_data_func_full(testpath,
+                              data,
+                              _nmtst_test_run,
+                              _nmtst_testdata_track_steal_and_free);
 }
 
 #define nmtst_add_test_func_full(testpath, func_test, func_setup, func_teardown, ...) \
