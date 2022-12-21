@@ -2118,6 +2118,88 @@ nmtstp_link_vlan_add(NMPlatform              *platform,
 }
 
 const NMPlatformLink *
+nmtstp_link_vti_add(NMPlatform             *platform,
+                    gboolean                external_command,
+                    const char             *name,
+                    const NMPlatformLnkVti *lnk)
+{
+    const NMPlatformLink *pllink = NULL;
+    gboolean              success;
+    char                  b1[INET_ADDRSTRLEN];
+    char                  b2[INET_ADDRSTRLEN];
+
+    g_assert(nm_utils_ifname_valid_kernel(name, NULL));
+    external_command = nmtstp_run_command_check_external(external_command);
+    _init_platform(&platform, external_command);
+
+    if (external_command) {
+        gs_free char *dev = NULL;
+
+        if (lnk->parent_ifindex)
+            dev =
+                g_strdup_printf("dev %s", nm_platform_link_get_name(platform, lnk->parent_ifindex));
+
+        success = !nmtstp_run_command(
+            "ip link add %s type vti %s local %s remote %s ikey %u okey %u fwmark 0x%x",
+            name,
+            dev ?: "",
+            nm_inet4_ntop(lnk->local, b1),
+            nm_inet4_ntop(lnk->remote, b2),
+            lnk->ikey,
+            lnk->okey,
+            lnk->fwmark);
+        if (success)
+            pllink = nmtstp_assert_wait_for_link(platform, name, NM_LINK_TYPE_VTI, 100);
+    } else
+        success = NMTST_NM_ERR_SUCCESS(nm_platform_link_vti_add(platform, name, lnk, &pllink));
+
+    _assert_pllink(platform, success, pllink, name, NM_LINK_TYPE_VTI);
+
+    return pllink;
+}
+
+const NMPlatformLink *
+nmtstp_link_vti6_add(NMPlatform              *platform,
+                     gboolean                 external_command,
+                     const char              *name,
+                     const NMPlatformLnkVti6 *lnk)
+{
+    const NMPlatformLink *pllink = NULL;
+    gboolean              success;
+    char                  b1[INET6_ADDRSTRLEN];
+    char                  b2[INET6_ADDRSTRLEN];
+
+    g_assert(nm_utils_ifname_valid_kernel(name, NULL));
+    external_command = nmtstp_run_command_check_external(external_command);
+    _init_platform(&platform, external_command);
+
+    if (external_command) {
+        gs_free char *dev = NULL;
+
+        if (lnk->parent_ifindex)
+            dev =
+                g_strdup_printf("dev %s", nm_platform_link_get_name(platform, lnk->parent_ifindex));
+
+        success = !nmtstp_run_command(
+            "ip link add %s type vti6 %s local %s remote %s ikey %u okey %u fwmark 0x%x",
+            name,
+            dev ?: "",
+            nm_inet6_ntop(&lnk->local, b1),
+            nm_inet6_ntop(&lnk->remote, b2),
+            lnk->ikey,
+            lnk->okey,
+            lnk->fwmark);
+        if (success)
+            pllink = nmtstp_assert_wait_for_link(platform, name, NM_LINK_TYPE_VTI6, 100);
+    } else
+        success = NMTST_NM_ERR_SUCCESS(nm_platform_link_vti6_add(platform, name, lnk, &pllink));
+
+    _assert_pllink(platform, success, pllink, name, NM_LINK_TYPE_VTI6);
+
+    return pllink;
+}
+
+const NMPlatformLink *
 nmtstp_link_vrf_add(NMPlatform             *platform,
                     int                     external_command,
                     const char             *name,

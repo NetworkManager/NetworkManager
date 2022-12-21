@@ -89,6 +89,14 @@
     <property name="FlowLabel" type="u" access="read"/>
 
     <!--
+        FwMark:
+
+        The fwmark value to assign to tunnel packets. This property applies only to
+        VTI tunnels.
+    -->
+    <property name="FwMark" type="u" access="read"/>
+
+    <!--
         Flags:
 
         Tunnel flags.
