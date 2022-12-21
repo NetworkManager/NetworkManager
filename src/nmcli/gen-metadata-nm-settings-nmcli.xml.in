@@ -643,6 +643,8 @@
                   description="How many additional levels of encapsulation are permitted to be prepended to packets. This property applies only to IPv6 tunnels." />
         <property name="flow-label"
                   description="The flow label to assign to tunnel packets. This property applies only to IPv6 tunnels." />
+        <property name="fwmark"
+                  description="The fwmark value to assign to tunnel packets. This property can be set to a non zero value only on VTI and VTI6 tunnels." />
         <property name="mtu"
                   description="If non-zero, only transmit packets of the specified size or smaller, breaking larger packets up into multiple fragments." />
         <property name="flags"

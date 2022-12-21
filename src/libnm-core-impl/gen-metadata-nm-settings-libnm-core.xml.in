@@ -1422,6 +1422,10 @@
                   dbus-type="u"
                   gprop-type="guint"
                   />
+        <property name="fwmark"
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
         <property name="input-key"
                   dbus-type="s"
                   gprop-type="gchararray"

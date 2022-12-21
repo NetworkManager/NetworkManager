@@ -28,6 +28,7 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_PARENT,
                                   PROP_OUTPUT_KEY,
                                   PROP_ENCAPSULATION_LIMIT,
                                   PROP_FLOW_LABEL,
+                                  PROP_FWMARK,
                                   PROP_MTU,
                                   PROP_FLAGS, );
 
@@ -41,6 +42,7 @@ typedef struct {
     guint32 tos;
     guint32 encapsulation_limit;
     guint32 flow_label;
+    guint32 fwmark;
     guint32 mode;
     guint32 mtu;
     guint32 flags;
@@ -269,6 +271,24 @@ nm_setting_ip_tunnel_get_flow_label(NMSettingIPTunnel *setting)
 }
 
 /**
+ * nm_setting_ip_tunnel_get_fwmark:
+ * @setting: the #NMSettingIPTunnel
+ *
+ * Returns the #NMSettingIPTunnel:fwmark property of the setting.
+ *
+ * Returns: the fwmark value
+ *
+ * Since: 1.42
+ **/
+guint32
+nm_setting_ip_tunnel_get_fwmark(NMSettingIPTunnel *setting)
+{
+    g_return_val_if_fail(NM_IS_SETTING_IP_TUNNEL(setting), 0);
+
+    return NM_SETTING_IP_TUNNEL_GET_PRIVATE(setting)->fwmark;
+}
+
+/**
  * nm_setting_ip_tunnel_get_mtu:
  * @setting: the #NMSettingIPTunnel
  *
@@ -411,11 +431,13 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
                        NM_IP_TUNNEL_MODE_GRE,
                        NM_IP_TUNNEL_MODE_GRETAP,
                        NM_IP_TUNNEL_MODE_IP6GRE,
-                       NM_IP_TUNNEL_MODE_IP6GRETAP)) {
+                       NM_IP_TUNNEL_MODE_IP6GRETAP,
+                       NM_IP_TUNNEL_MODE_VTI,
+                       NM_IP_TUNNEL_MODE_VTI6)) {
             g_set_error_literal(error,
                                 NM_CONNECTION_ERROR,
                                 NM_CONNECTION_ERROR_INVALID_PROPERTY,
-                                _("tunnel keys can only be specified for GRE tunnels"));
+                                _("tunnel keys can only be specified for GRE and VTI tunnels"));
             return FALSE;
         }
     }
@@ -481,6 +503,18 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
                        "%s.%s: ",
                        NM_SETTING_IP_TUNNEL_SETTING_NAME,
                        NM_SETTING_IP_TUNNEL_FLAGS);
+        return FALSE;
+    }
+
+    if (priv->fwmark && !NM_IN_SET(priv->mode, NM_IP_TUNNEL_MODE_VTI, NM_IP_TUNNEL_MODE_VTI6)) {
+        g_set_error_literal(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                            _("can be set only on VTI tunnels"));
+        g_prefix_error(error,
+                       "%s.%s: ",
+                       NM_SETTING_IP_TUNNEL_SETTING_NAME,
+                       NM_SETTING_IP_TUNNEL_FWMARK);
         return FALSE;
     }
 
@@ -726,6 +760,25 @@ nm_setting_ip_tunnel_class_init(NMSettingIPTunnelClass *klass)
                                               NM_SETTING_PARAM_INFERRABLE,
                                               NMSettingIPTunnelPrivate,
                                               flow_label);
+
+    /**
+     * NMSettingIPTunnel:fwmark:
+     *
+     * The fwmark value to assign to tunnel packets. This property can be set
+     * to a non zero value only on VTI and VTI6 tunnels.
+     *
+     * Since: 1.42
+     **/
+    _nm_setting_property_define_direct_uint32(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_IP_TUNNEL_FWMARK,
+                                              PROP_FWMARK,
+                                              0,
+                                              G_MAXUINT32,
+                                              0,
+                                              NM_SETTING_PARAM_INFERRABLE,
+                                              NMSettingIPTunnelPrivate,
+                                              fwmark);
 
     /**
      * NMSettingIPTunnel:mtu:
