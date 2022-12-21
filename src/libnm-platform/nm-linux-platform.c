@@ -222,6 +222,16 @@ G_STATIC_ASSERT(RTA_MAX == (__RTA_MAX - 1));
 
 /*****************************************************************************/
 
+#define IFLA_VTI_UNSPEC 0
+#define IFLA_VTI_LINK   1
+#define IFLA_VTI_IKEY   2
+#define IFLA_VTI_OKEY   3
+#define IFLA_VTI_LOCAL  4
+#define IFLA_VTI_REMOTE 5
+#define IFLA_VTI_FWMARK 6
+
+/*****************************************************************************/
+
 #define WG_CMD_GET_DEVICE 0
 #define WG_CMD_SET_DEVICE 1
 
