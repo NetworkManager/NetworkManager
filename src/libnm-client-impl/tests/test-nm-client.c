@@ -868,15 +868,7 @@ test_activate_virtual(void)
 static void
 _client_dev_removed(NMClient *client, NMDevice *device, int *p_count_call)
 {
-    const GPtrArray *arr;
-
     (*p_count_call)++;
-
-    arr = nm_device_get_available_connections(device);
-    g_assert(arr);
-    g_assert_cmpint(arr->len, ==, 0);
-
-    g_assert(!nm_device_get_active_connection(device));
 }
 
 static void
