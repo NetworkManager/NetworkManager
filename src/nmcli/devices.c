@@ -1149,7 +1149,7 @@ get_device_list(NmCli *nmc, int *argc, const char *const **argv)
     if (*argc == 0) {
         g_string_printf(nmc->return_text, _("Error: No interface specified."));
         nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
-        goto error;
+        return NULL;
     }
 
     devices = nmc_get_devices_sorted(nmc->client);
@@ -1189,9 +1189,6 @@ get_device_list(NmCli *nmc, int *argc, const char *const **argv)
         next_arg(nmc->ask ? NULL : nmc, argc, argv, NULL);
     }
     g_free(devices);
-
-error:
-    g_strfreev(arg_arr);
 
     return queue;
 }
