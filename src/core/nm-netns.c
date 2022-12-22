@@ -209,7 +209,10 @@ _ecmp_track_init_merged_obj(EcmpTrackEcmpid *track_ecmpid, const NMPObject **out
 out:
     nm_assert(obj_new);
     if (nmp_object_equal(track_ecmpid->merged_obj, obj_new))
-        return FALSE;
+        /* the objects are equal but the update was needed, for example if the
+         * routes were removed from kernel but not from our tracking
+         * dictionaries and therefore we tried to register them again. */
+        return TRUE;
 
     if (track_ecmpid->merged_obj)
         *out_obj_del = g_steal_pointer(&track_ecmpid->merged_obj);
@@ -614,8 +617,10 @@ nm_netns_ip_route_ecmp_register(NMNetns *self, NML3Cfg *l3cfg, const NMPObject *
         _LOGT(
             "ecmp-route: track %s",
             nmp_object_to_string(track_obj->obj, NMP_OBJECT_TO_STRING_PUBLIC, sbuf, sizeof(sbuf)));
-    } else
-        track_obj->dirty = FALSE;
+    } else {
+        track_obj->dirty                             = FALSE;
+        track_obj->parent_track_ecmpid->needs_update = TRUE;
+    }
 }
 
 void
