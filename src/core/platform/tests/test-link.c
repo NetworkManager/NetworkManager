@@ -1629,7 +1629,6 @@ test_software_detect(gconstpointer user_data)
         lnk_vti.local          = nmtst_inet4_from_string("192.168.212.204");
         lnk_vti.remote         = nmtst_inet4_from_string("172.168.11.25");
         lnk_vti.parent_ifindex = ifindex_parent;
-        lnk_vti.fwmark         = 0x42;
         lnk_vti.ikey           = 12;
         lnk_vti.okey           = 13;
 
@@ -1655,7 +1654,6 @@ test_software_detect(gconstpointer user_data)
         lnk_vti6.local          = nmtst_inet6_from_string("fd01::1");
         lnk_vti6.remote         = nmtst_inet6_from_string("fd02::2");
         lnk_vti6.parent_ifindex = ifindex_parent;
-        lnk_vti6.fwmark         = 0x43;
         lnk_vti6.ikey           = 13;
         lnk_vti6.okey           = 14;
 

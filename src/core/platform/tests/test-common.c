@@ -2131,6 +2131,7 @@ nmtstp_link_vti_add(NMPlatform             *platform,
     g_assert(nm_utils_ifname_valid_kernel(name, NULL));
     external_command = nmtstp_run_command_check_external(external_command);
     _init_platform(&platform, external_command);
+    g_assert(lnk->fwmark == 0);
 
     if (external_command) {
         gs_free char *dev = NULL;
@@ -2139,15 +2140,14 @@ nmtstp_link_vti_add(NMPlatform             *platform,
             dev =
                 g_strdup_printf("dev %s", nm_platform_link_get_name(platform, lnk->parent_ifindex));
 
-        success = !nmtstp_run_command(
-            "ip link add %s type vti %s local %s remote %s ikey %u okey %u fwmark 0x%x",
-            name,
-            dev ?: "",
-            nm_inet4_ntop(lnk->local, b1),
-            nm_inet4_ntop(lnk->remote, b2),
-            lnk->ikey,
-            lnk->okey,
-            lnk->fwmark);
+        success =
+            !nmtstp_run_command("ip link add %s type vti %s local %s remote %s ikey %u okey %u",
+                                name,
+                                dev ?: "",
+                                nm_inet4_ntop(lnk->local, b1),
+                                nm_inet4_ntop(lnk->remote, b2),
+                                lnk->ikey,
+                                lnk->okey);
         if (success)
             pllink = nmtstp_assert_wait_for_link(platform, name, NM_LINK_TYPE_VTI, 100);
     } else
@@ -2172,6 +2172,7 @@ nmtstp_link_vti6_add(NMPlatform              *platform,
     g_assert(nm_utils_ifname_valid_kernel(name, NULL));
     external_command = nmtstp_run_command_check_external(external_command);
     _init_platform(&platform, external_command);
+    g_assert(lnk->fwmark == 0);
 
     if (external_command) {
         gs_free char *dev = NULL;
@@ -2180,15 +2181,14 @@ nmtstp_link_vti6_add(NMPlatform              *platform,
             dev =
                 g_strdup_printf("dev %s", nm_platform_link_get_name(platform, lnk->parent_ifindex));
 
-        success = !nmtstp_run_command(
-            "ip link add %s type vti6 %s local %s remote %s ikey %u okey %u fwmark 0x%x",
-            name,
-            dev ?: "",
-            nm_inet6_ntop(&lnk->local, b1),
-            nm_inet6_ntop(&lnk->remote, b2),
-            lnk->ikey,
-            lnk->okey,
-            lnk->fwmark);
+        success =
+            !nmtstp_run_command("ip link add %s type vti6 %s local %s remote %s ikey %u okey %u",
+                                name,
+                                dev ?: "",
+                                nm_inet6_ntop(&lnk->local, b1),
+                                nm_inet6_ntop(&lnk->remote, b2),
+                                lnk->ikey,
+                                lnk->okey);
         if (success)
             pllink = nmtstp_assert_wait_for_link(platform, name, NM_LINK_TYPE_VTI6, 100);
     } else
