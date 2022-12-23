@@ -209,6 +209,16 @@ struct _NML3Cfg {
         const NMPObject          *plobj_next;
         int                       ifindex;
     } priv;
+
+    /* NML3Cfg strongly cooperates with NMNetns. The latter is
+     * the one that creates and manages (also) the lifetime of the
+     * NML3Cfg instance. We track some per-l3cfg-data that is only
+     * relevant to NMNetns here. */
+    struct {
+        guint32 signal_pending_obj_type_flags;
+        CList   signal_pending_lst;
+        CList   ecmp_track_ifindex_lst_head;
+    } internal_netns;
 };
 
 typedef struct _NML3CfgClass NML3CfgClass;

@@ -1382,6 +1382,7 @@ nm_utils_ip_route_attribute_to_platform(int                addr_family,
 
         GET_ATTR(NM_IP_ROUTE_ATTRIBUTE_TOS, r4->tos, BYTE, byte, 0);
         GET_ATTR(NM_IP_ROUTE_ATTRIBUTE_SCOPE, scope, BYTE, byte, RT_SCOPE_NOWHERE);
+        GET_ATTR(NM_IP_ROUTE_ATTRIBUTE_WEIGHT, r4->weight, BYTE, byte, 0);
         r4->scope_inv = nm_platform_route_scope_inv(scope);
     }
 
