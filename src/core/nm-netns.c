@@ -654,10 +654,6 @@ nm_netns_ip_route_ecmp_commit(NMNetns *self, NML3Cfg *l3cfg, GPtrArray **out_sin
             continue;
         }
 
-        /* This entry can be dropped. */
-        if (!g_hash_table_remove(priv->ecmp_track_by_obj, &track_obj->obj))
-            nm_assert_not_reached();
-
         if (c_list_is_empty(&track_ecmpid->ecmpid_lst_head)) {
             if (track_ecmpid->merged_obj) {
                 if (NMP_OBJECT_CAST_IP4_ROUTE(track_ecmpid->merged_obj)->n_nexthops > 1) {
@@ -674,8 +670,17 @@ nm_netns_ip_route_ecmp_commit(NMNetns *self, NML3Cfg *l3cfg, GPtrArray **out_sin
                 }
             }
             g_hash_table_remove(priv->ecmp_track_by_ecmpid, track_ecmpid);
+
+            /* This entry can be dropped. */
+            if (!g_hash_table_remove(priv->ecmp_track_by_obj, &track_obj->obj))
+                nm_assert_not_reached();
+
             continue;
         }
+
+        /* This entry can be dropped. */
+        if (!g_hash_table_remove(priv->ecmp_track_by_obj, &track_obj->obj))
+            nm_assert_not_reached();
 
         /* We need to update the representative obj. */
         nmp_object_ref_set(
