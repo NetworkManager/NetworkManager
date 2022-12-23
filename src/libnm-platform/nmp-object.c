@@ -926,7 +926,7 @@ nmp_object_to_string(const NMPObject      *obj,
 
     switch (to_string_mode) {
     case NMP_OBJECT_TO_STRING_ID:
-        if (!klass->cmd_plobj_to_string_id)
+        if (klass->cmd_plobj_to_string_id)
             return klass->cmd_plobj_to_string_id(&obj->object, buf, buf_size);
         g_snprintf(buf, buf_size, NM_HASH_OBFUSCATE_PTR_FMT, NM_HASH_OBFUSCATE_PTR(obj));
         return buf;

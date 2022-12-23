@@ -908,8 +908,7 @@ nm_lldp_listener_new(int                  ifindex,
     return self;
 
 fail:
-    if (self)
-        nm_g_slice_free(self);
+    nm_g_slice_free(self);
     return NULL;
 }
 

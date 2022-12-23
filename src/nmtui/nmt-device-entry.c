@@ -132,12 +132,14 @@ device_entry_parse(NmtDeviceEntry *deventry,
         && (!words[1] || nm_utils_ifname_valid_kernel(words[1], NULL))) {
         *mac_address    = words[0];
         *interface_name = NULL;
+        g_free(words[1]);
         g_free(words);
         return TRUE;
     } else if (nm_utils_ifname_valid_kernel(words[0], NULL)
                && (!words[1] || nm_utils_hwaddr_aton(words[1], buf, len))) {
         *interface_name = words[0];
         *mac_address    = NULL;
+        g_free(words[1]);
         g_free(words);
         return TRUE;
     }
