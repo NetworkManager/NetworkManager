@@ -311,6 +311,7 @@ test_read_valid_wired_connection(void)
 
     nmtst_assert_route_attribute_uint32(route, NM_IP_ROUTE_ATTRIBUTE_CWND, 10);
     nmtst_assert_route_attribute_uint32(route, NM_IP_ROUTE_ATTRIBUTE_MTU, 1430);
+    nmtst_assert_route_attribute_byte(route, NM_IP_ROUTE_ATTRIBUTE_WEIGHT, 5);
     nmtst_assert_route_attribute_boolean(route, NM_IP_ROUTE_ATTRIBUTE_LOCK_CWND, TRUE);
     nmtst_assert_route_attribute_string(route, NM_IP_ROUTE_ATTRIBUTE_SRC, "7.7.7.7");
     nmtst_assert_route_attribute_string(route, NM_IP_ROUTE_ATTRIBUTE_TYPE, "unicast");
@@ -495,6 +496,7 @@ test_write_wired_connection(void)
     g_assert_no_error(error);
     nm_ip_route_set_attribute(rt, NM_IP_ROUTE_ATTRIBUTE_CWND, g_variant_new_uint32(10));
     nm_ip_route_set_attribute(rt, NM_IP_ROUTE_ATTRIBUTE_MTU, g_variant_new_uint32(1492));
+    nm_ip_route_set_attribute(rt, NM_IP_ROUTE_ATTRIBUTE_WEIGHT, g_variant_new_byte(5));
     nm_ip_route_set_attribute(rt, NM_IP_ROUTE_ATTRIBUTE_SRC, g_variant_new_string("1.2.3.4"));
     g_assert(nm_setting_ip_config_add_route(s_ip4, rt));
     nm_ip_route_unref(rt);

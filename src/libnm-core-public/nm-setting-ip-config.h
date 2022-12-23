@@ -144,6 +144,7 @@ gboolean nm_ip_route_attribute_validate(const char *name,
 #define NM_IP_ROUTE_ATTRIBUTE_TOS           "tos"
 #define NM_IP_ROUTE_ATTRIBUTE_TYPE          "type"
 #define NM_IP_ROUTE_ATTRIBUTE_WINDOW        "window"
+#define NM_IP_ROUTE_ATTRIBUTE_WEIGHT        "weight"
 
 /*****************************************************************************/
 

@@ -1143,7 +1143,7 @@ _commit_collect_routes(NML3Cfg          *self,
                                                NMP_OBJECT_TYPE_IP_ROUTE(IS_IPv4));
 
     if (!head_entry)
-        return;
+        goto loop_done;
 
     c_list_for_each_entry (entry, &head_entry->lst_entries_head, lst_entries) {
         const NMPObject *obj = entry->obj;
@@ -1152,6 +1152,14 @@ _commit_collect_routes(NML3Cfg          *self,
         if (_obj_is_route_nodev(obj))
             r = routes_nodev;
         else {
+            nm_assert(NMP_OBJECT_CAST_IP_ROUTE(obj)->ifindex == self->priv.ifindex);
+
+            if (IS_IPv4 && NMP_OBJECT_CAST_IP4_ROUTE(obj)->weight > 0) {
+                /* This route needs to be registered as ECMP route. */
+                nm_netns_ip_route_ecmp_register(self->priv.netns, self, obj);
+                continue;
+            }
+
             if (!_obj_states_sync_filter(self, obj, commit_type))
                 continue;
             r = routes;
@@ -1161,6 +1169,33 @@ _commit_collect_routes(NML3Cfg          *self,
             *r = g_ptr_array_new_full(head_entry->len, (GDestroyNotify) nm_dedup_multi_obj_unref);
 
         g_ptr_array_add(*r, (gpointer) nmp_object_ref(obj));
+    }
+
+loop_done:
+
+    if (IS_IPv4) {
+        gs_unref_ptrarray GPtrArray *singlehop_routes = NULL;
+        guint                        i;
+
+        /* NMNetns will merge the routes. The ones that found a merge partner are true multihop
+         * routes, with potentially a next hop on different interfaces. The routes
+         * that didn't find a merge partner are returned in "singlehop_routes". */
+        nm_netns_ip_route_ecmp_commit(self->priv.netns, self, &singlehop_routes);
+
+        if (singlehop_routes) {
+            for (i = 0; i < singlehop_routes->len; i++) {
+                const NMPObject *obj = singlehop_routes->pdata[i];
+
+                if (!_obj_states_sync_filter(self, obj, commit_type))
+                    continue;
+
+                if (!*routes)
+                    *routes =
+                        g_ptr_array_new_with_free_func((GDestroyNotify) nm_dedup_multi_obj_unref);
+
+                g_ptr_array_add(*routes, (gpointer) nmp_object_ref(obj));
+            }
+        }
     }
 }
 
@@ -5121,6 +5156,9 @@ nm_l3cfg_init(NML3Cfg *self)
     c_list_init(&self->priv.p->blocked_lst_head_4);
     c_list_init(&self->priv.p->blocked_lst_head_6);
 
+    c_list_init(&self->internal_netns.signal_pending_lst);
+    c_list_init(&self->internal_netns.ecmp_track_ifindex_lst_head);
+
     self->priv.p->obj_state_hash = g_hash_table_new_full(nmp_object_indirect_id_hash,
                                                          nmp_object_indirect_id_equal,
                                                          _obj_state_data_free,
@@ -5162,6 +5200,9 @@ finalize(GObject *object)
 {
     NML3Cfg *self = NM_L3CFG(object);
     gboolean changed;
+
+    nm_assert(c_list_is_empty(&self->internal_netns.signal_pending_lst));
+    nm_assert(c_list_is_empty(&self->internal_netns.ecmp_track_ifindex_lst_head));
 
     nm_assert(!self->priv.p->ipconfig_4);
     nm_assert(!self->priv.p->ipconfig_6);

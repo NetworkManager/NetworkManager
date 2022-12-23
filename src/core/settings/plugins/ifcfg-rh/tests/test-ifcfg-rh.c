@@ -1365,6 +1365,7 @@ test_read_wired_static_routes(void)
     nmtst_assert_route_attribute_byte(ip4_route, NM_IP_ROUTE_ATTRIBUTE_TOS, 0x28);
     nmtst_assert_route_attribute_uint32(ip4_route, NM_IP_ROUTE_ATTRIBUTE_WINDOW, 30000);
     nmtst_assert_route_attribute_uint32(ip4_route, NM_IP_ROUTE_ATTRIBUTE_CWND, 12);
+    nmtst_assert_route_attribute_byte(ip4_route, NM_IP_ROUTE_ATTRIBUTE_WEIGHT, 5);
     nmtst_assert_route_attribute_uint32(ip4_route, NM_IP_ROUTE_ATTRIBUTE_INITCWND, 13);
     nmtst_assert_route_attribute_uint32(ip4_route, NM_IP_ROUTE_ATTRIBUTE_INITRWND, 14);
     nmtst_assert_route_attribute_uint32(ip4_route, NM_IP_ROUTE_ATTRIBUTE_MTU, 9000);
@@ -4279,6 +4280,7 @@ static void
 test_write_wired_static(void)
 {
     nmtst_auto_unlinkfile char   *testfile   = NULL;
+    nmtst_auto_unlinkfile char   *route4file = NULL;
     nmtst_auto_unlinkfile char   *route6file = NULL;
     gs_unref_object NMConnection *connection = NULL;
     gs_unref_object NMConnection *reread     = NULL;
@@ -4288,6 +4290,7 @@ test_write_wired_static(void)
     NMSettingIPConfig            *s_ip6, *reread_s_ip6;
     NMIPAddress                  *addr;
     NMIPAddress                  *addr6;
+    NMIPRoute                    *route4;
     NMIPRoute                    *route6;
     GError                       *error = NULL;
 
@@ -4392,6 +4395,13 @@ test_write_wired_static(void)
     nm_setting_ip_config_add_route(s_ip6, route6);
     nm_ip_route_unref(route6);
 
+    route4 = nm_ip_route_new(AF_INET, "1.1.1.1", 24, "1.2.3.4", 99, &error);
+    g_assert_no_error(error);
+    nm_ip_route_set_attribute(route4, NM_IP_ROUTE_ATTRIBUTE_CWND, g_variant_new_uint32(100));
+    nm_ip_route_set_attribute(route4, NM_IP_ROUTE_ATTRIBUTE_WEIGHT, g_variant_new_byte(5));
+    nm_setting_ip_config_add_route(s_ip4, route4);
+    nm_ip_route_unref(route4);
+
     /* DNS servers */
     nm_setting_ip_config_add_dns(s_ip6, "fade:0102:0103::face");
     nm_setting_ip_config_add_dns(s_ip6, "cafe:ffff:eeee:dddd:cccc:bbbb:aaaa:feed");
@@ -4403,7 +4413,9 @@ test_write_wired_static(void)
     nmtst_assert_connection_verifies(connection);
 
     _writer_new_connection(connection, TEST_SCRATCH_DIR, &testfile);
+
     route6file = utils_get_route6_path(testfile);
+    route4file = utils_get_route_path(testfile);
 
     reread = _connection_from_file(testfile, NULL, TYPE_ETHERNET, NULL);
 
