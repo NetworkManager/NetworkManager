@@ -13455,7 +13455,7 @@ msgstr "nmcli 工具，版本 %s\n"
 #: src/nmcli/nmcli.c:901
 #, c-format
 msgid "Error: Option '%s' is unknown, try 'nmcli -help'."
-msgstr "錯誤：選項 '%s' 不明，請嚐試 'nmcli -help'。"
+msgstr "錯誤：選項 '%s' 不明，請嘗試 'nmcli -help'。"
 
 #: src/nmcli/nmcli.c:959 src/nmcli/nmcli.c:968
 #, c-format
