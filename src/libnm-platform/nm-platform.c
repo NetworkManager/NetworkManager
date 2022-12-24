@@ -6988,16 +6988,13 @@ nm_platform_ip4_route_to_string_full(const NMPlatformIP4Route     *route,
             nm_strbuf_append(&buf,
                              &len,
                              " nexthop"
-                             "%s%s" /* gateway */
-                             "%s%s" /* weight */
-                             "%s"   /* dev/ifindex */
+                             "%s%s"       /* gateway */
+                             " weight %s" /* weight */
+                             "%s"         /* dev/ifindex */
                              "",
                              s_gateway[0] ? " via " : "",
                              s_gateway,
-                             NM_PRINT_FMT_QUOTED2(route->weight != 1,
-                                                  " weight ",
-                                                  nm_sprintf_buf(weight_str, "%u", route->weight),
-                                                  ""),
+                             nm_sprintf_buf(weight_str, "%u", route->weight),
                              _to_string_dev(str_dev, route->ifindex));
             if (!extra_nexthops)
                 nm_strbuf_append_str(&buf, &len, " nexthops [...]");
@@ -7011,19 +7008,16 @@ nm_platform_ip4_route_to_string_full(const NMPlatformIP4Route     *route,
                         &buf,
                         &len,
                         " nexthop"
-                        "%s"   /* ifindex */
-                        "%s%s" /* gateway */
-                        "%s%s" /* weight */
+                        "%s"         /* ifindex */
+                        "%s%s"       /* gateway */
+                        " weight %s" /* weight */
                         "",
                         NM_PRINT_FMT_QUOTED2(nexthop->gateway != 0 || nexthop->ifindex <= 0,
                                              " via ",
                                              nm_inet4_ntop(nexthop->gateway, s_gateway),
                                              ""),
                         _to_string_dev(str_dev, nexthop->ifindex),
-                        NM_PRINT_FMT_QUOTED2(nexthop->weight != 1,
-                                             " weight ",
-                                             nm_sprintf_buf(weight_str, "%u", nexthop->weight),
-                                             ""));
+                        nm_sprintf_buf(weight_str, "%u", nexthop->weight));
                 }
             }
         }

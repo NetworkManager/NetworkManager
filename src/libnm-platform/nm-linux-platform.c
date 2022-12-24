@@ -3847,7 +3847,7 @@ _new_from_nl_route(const struct nlmsghdr *nlh, gboolean id_only, ParseNlmsgIter 
                 nm_assert(v4_n_nexthops - 1u < v4_nh_extra_alloc);
                 new_nexthop          = &v4_nh_extra_nexthops[v4_n_nexthops - 1u];
                 new_nexthop->ifindex = rtnh->rtnh_ifindex;
-                new_nexthop->weight  = NM_MAX(rtnh->rtnh_hops, 1u);
+                new_nexthop->weight  = NM_MAX(((guint) rtnh->rtnh_hops) + 1u, 1u);
                 if (rtnh->rtnh_len > sizeof(*rtnh)) {
                     struct nlattr *ntb[RTA_MAX + 1];
 
@@ -3864,7 +3864,7 @@ _new_from_nl_route(const struct nlmsghdr *nlh, gboolean id_only, ParseNlmsgIter 
             } else if (IS_IPv4 || idx == multihop_idx) {
                 nh.found   = TRUE;
                 nh.ifindex = rtnh->rtnh_ifindex;
-                nh.weight  = NM_MAX(rtnh->rtnh_hops, 1u);
+                nh.weight  = NM_MAX(((guint) rtnh->rtnh_hops) + 1u, 1u);
                 if (rtnh->rtnh_len > sizeof(*rtnh)) {
                     struct nlattr *ntb[RTA_MAX + 1];
 
@@ -5398,14 +5398,17 @@ _nl_msg_new_route(uint16_t nlmsg_type, uint16_t nlmsg_flags, const NMPObject *ob
             if (!rtnh)
                 goto nla_put_failure;
 
+            /* For multihop routes, a valid weight must be in range 1-256 (on netlink's
+             * "rtnh_hops" this is 0-255). We allow that the caller leaves the value unset
+             * at zero. */
             if (i == 0u) {
-                rtnh->rtnh_hops    = NM_MAX(obj->ip4_route.weight, 1u);
+                rtnh->rtnh_hops    = NM_MAX(obj->ip4_route.weight, 1u) - 1u;
                 rtnh->rtnh_ifindex = obj->ip4_route.ifindex;
                 NLA_PUT_U32(msg, RTA_GATEWAY, obj->ip4_route.gateway);
             } else {
                 const NMPlatformIP4RtNextHop *n = &obj->_ip4_route.extra_nexthops[i - 1u];
 
-                rtnh->rtnh_hops    = NM_MAX(n->weight, 1u);
+                rtnh->rtnh_hops    = NM_MAX(n->weight, 1u) - 1u;
                 rtnh->rtnh_ifindex = n->ifindex;
                 NLA_PUT_U32(msg, RTA_GATEWAY, n->gateway);
             }

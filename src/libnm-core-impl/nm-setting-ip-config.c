@@ -1279,8 +1279,9 @@ static const NMVariantAttributeSpec *const ip_route_attribute_spec[] = {
                                      .v6          = TRUE,
                                      .type_detail = 'T', ),
     NM_VARIANT_ATTRIBUTE_SPEC_DEFINE(NM_IP_ROUTE_ATTRIBUTE_WEIGHT,
-                                     G_VARIANT_TYPE_BYTE,
-                                     .v4 = TRUE, ),
+                                     G_VARIANT_TYPE_UINT32,
+                                     .v4          = TRUE,
+                                     .type_detail = 'w'),
     NM_VARIANT_ATTRIBUTE_SPEC_DEFINE(NM_IP_ROUTE_ATTRIBUTE_WINDOW,
                                      G_VARIANT_TYPE_UINT32,
                                      .v4 = TRUE,
@@ -1316,6 +1317,7 @@ _ip_route_attribute_validate(const char           *name,
 {
     const NMVariantAttributeSpec *spec;
     const char                   *string;
+    guint32                       u32;
 
     nm_assert(name);
     nm_assert(value);
@@ -1428,6 +1430,16 @@ _ip_route_attribute_validate(const char           *name,
     case 's': /* scope */
         if (parse_data)
             parse_data->scope = g_variant_get_byte(value);
+        break;
+    case 'w': /* weight */
+        u32 = g_variant_get_uint32(value);
+        if (u32 > 256) {
+            g_set_error_literal(error,
+                                NM_CONNECTION_ERROR,
+                                NM_CONNECTION_ERROR_FAILED,
+                                _("route weight cannot be larger than 256"));
+            return FALSE;
+        }
         break;
     case '\0':
         break;

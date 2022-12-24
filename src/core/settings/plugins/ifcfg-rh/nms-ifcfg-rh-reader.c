@@ -970,7 +970,7 @@ parse_route_line(const char *line,
         [PARSE_LINE_ATTR_ROUTE_WEIGHT] =
             {
                 .key      = NM_IP_ROUTE_ATTRIBUTE_WEIGHT,
-                .type     = PARSE_LINE_TYPE_UINT8,
+                .type     = PARSE_LINE_TYPE_UINT32,
                 .disabled = PARSE_LINE_AF_FLAG_FOR_IPV6,
             },
         [PARSE_LINE_ATTR_ROUTE_SCOPE] =
