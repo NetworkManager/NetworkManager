@@ -154,7 +154,7 @@ and for meson it's
 ```
 meson build $CONFIGURE_OPTIONS
 ninja -C build
-# optional: sudo meson install
+# optional: sudo meson install -C build
 ```
 
 Beware to set the correct `$CONFIGURE_OPTIONS`. In particular, you may
@@ -177,7 +177,7 @@ Unit Tests
 ----------
 
 We have plenty of unit tests. Run them with `make check` or
-`meson -C "$BUILD_DIR" test`.
+`meson test -C build`.
 
 Note that some files in the source tree are both generated and commited
 to git. That means, certain changes to the code also affect these generated
