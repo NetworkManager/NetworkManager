@@ -12,6 +12,7 @@
 #include <sys/wait.h>
 #include <fcntl.h>
 #include <linux/if_tun.h>
+#include <linux/rtnetlink.h>
 
 #include "n-acd/src/n-acd.h"
 
@@ -540,7 +541,7 @@ _ip4_route_get(NMPlatform *platform,
 
     _init_platform(&platform, FALSE);
 
-    nmp_lookup_init_ip4_route_by_weak_id(&lookup, network, plen, metric, tos);
+    nmp_lookup_init_ip4_route_by_weak_id(&lookup, RT_TABLE_MAIN, network, plen, metric, tos);
 
     c = 0;
     nmp_cache_iter_for_each (&iter, nm_platform_lookup(platform, &lookup), &o) {
@@ -633,7 +634,13 @@ _ip6_route_get(NMPlatform            *platform,
 
     _init_platform(&platform, FALSE);
 
-    nmp_lookup_init_ip6_route_by_weak_id(&lookup, network, plen, metric, src, src_plen);
+    nmp_lookup_init_ip6_route_by_weak_id(&lookup,
+                                         RT_TABLE_MAIN,
+                                         network,
+                                         plen,
+                                         metric,
+                                         src,
+                                         src_plen);
 
     c = 0;
     nmp_cache_iter_for_each (&iter, nm_platform_lookup(platform, &lookup), &o) {
