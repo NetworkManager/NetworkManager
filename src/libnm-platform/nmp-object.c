@@ -2204,19 +2204,23 @@ nmp_lookup_init_route_by_weak_id(NMPLookup *lookup, const NMPObject *obj)
     switch (NMP_OBJECT_GET_TYPE(obj)) {
     case NMP_OBJECT_TYPE_IP4_ROUTE:
         r4 = NMP_OBJECT_CAST_IP4_ROUTE(obj);
-        return nmp_lookup_init_ip4_route_by_weak_id(lookup,
-                                                    r4->network,
-                                                    r4->plen,
-                                                    r4->metric,
-                                                    r4->tos);
+        return nmp_lookup_init_ip4_route_by_weak_id(
+            lookup,
+            nm_platform_route_table_uncoerce(r4->table_coerced, TRUE),
+            r4->network,
+            r4->plen,
+            r4->metric,
+            r4->tos);
     case NMP_OBJECT_TYPE_IP6_ROUTE:
         r6 = NMP_OBJECT_CAST_IP6_ROUTE(obj);
-        return nmp_lookup_init_ip6_route_by_weak_id(lookup,
-                                                    &r6->network,
-                                                    r6->plen,
-                                                    r6->metric,
-                                                    &r6->src,
-                                                    r6->src_plen);
+        return nmp_lookup_init_ip6_route_by_weak_id(
+            lookup,
+            nm_platform_route_table_uncoerce(r6->table_coerced, TRUE),
+            &r6->network,
+            r6->plen,
+            r6->metric,
+            &r6->src,
+            r6->src_plen);
     default:
         nm_assert_not_reached();
         return NULL;
@@ -2225,6 +2229,7 @@ nmp_lookup_init_route_by_weak_id(NMPLookup *lookup, const NMPObject *obj)
 
 const NMPLookup *
 nmp_lookup_init_ip4_route_by_weak_id(NMPLookup *lookup,
+                                     guint32    route_table,
                                      in_addr_t  network,
                                      guint      plen,
                                      guint32    metric,
@@ -2235,9 +2240,10 @@ nmp_lookup_init_ip4_route_by_weak_id(NMPLookup *lookup,
     nm_assert(lookup);
 
     o = _nmp_object_stackinit_from_type(&lookup->selector_obj, NMP_OBJECT_TYPE_IP4_ROUTE);
-    o->ip4_route.ifindex = 1;
-    o->ip4_route.plen    = plen;
-    o->ip4_route.metric  = metric;
+    o->ip4_route.ifindex       = 1;
+    o->ip4_route.plen          = plen;
+    o->ip4_route.table_coerced = nm_platform_route_table_coerce(route_table);
+    o->ip4_route.metric        = metric;
     if (network)
         o->ip4_route.network = network;
     o->ip4_route.tos      = tos;
@@ -2247,6 +2253,7 @@ nmp_lookup_init_ip4_route_by_weak_id(NMPLookup *lookup,
 
 const NMPLookup *
 nmp_lookup_init_ip6_route_by_weak_id(NMPLookup             *lookup,
+                                     guint32                route_table,
                                      const struct in6_addr *network,
                                      guint                  plen,
                                      guint32                metric,
@@ -2258,9 +2265,10 @@ nmp_lookup_init_ip6_route_by_weak_id(NMPLookup             *lookup,
     nm_assert(lookup);
 
     o = _nmp_object_stackinit_from_type(&lookup->selector_obj, NMP_OBJECT_TYPE_IP6_ROUTE);
-    o->ip6_route.ifindex = 1;
-    o->ip6_route.plen    = plen;
-    o->ip6_route.metric  = metric;
+    o->ip6_route.ifindex       = 1;
+    o->ip6_route.plen          = plen;
+    o->ip6_route.table_coerced = nm_platform_route_table_coerce(route_table);
+    o->ip6_route.metric        = metric;
     if (network)
         o->ip6_route.network = *network;
     if (src)
