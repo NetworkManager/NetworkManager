@@ -139,6 +139,10 @@ int nmtstp_run_command(const char *format, ...) _nm_printf(1, 2);
 
 /*****************************************************************************/
 
+void nmtstp_assert_platform(NMPlatform *platform, guint32 obj_type_flags);
+
+/*****************************************************************************/
+
 guint                 nmtstp_wait_for_signal(NMPlatform *platform, gint64 timeout_msec);
 guint                 nmtstp_wait_for_signal_until(NMPlatform *platform, gint64 until_ms);
 const NMPlatformLink *nmtstp_wait_for_link(NMPlatform *platform,
