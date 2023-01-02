@@ -2951,6 +2951,7 @@ nmp_cache_update_netlink_route(NMPCache         *cache,
                                NMPObject        *obj_hand_over,
                                gboolean          is_dump,
                                guint16           nlmsgflags,
+                               gboolean          ignore_route,
                                const NMPObject **out_obj_old,
                                const NMPObject **out_obj_new,
                                const NMPObject **out_obj_replace,
@@ -2969,9 +2970,6 @@ nmp_cache_update_netlink_route(NMPCache         *cache,
     nm_assert(cache);
     nm_assert(NMP_OBJECT_IS_VALID(obj_hand_over));
     nm_assert(!NMP_OBJECT_IS_STACKINIT(obj_hand_over));
-    /* A link object from netlink must have the udev related fields unset.
-     * We could implement to handle that, but there is no need to support such
-     * a use-case */
     nm_assert(NM_IN_SET(NMP_OBJECT_GET_TYPE(obj_hand_over),
                         NMP_OBJECT_TYPE_IP4_ROUTE,
                         NMP_OBJECT_TYPE_IP6_ROUTE));
@@ -2982,16 +2980,15 @@ nmp_cache_update_netlink_route(NMPCache         *cache,
 
     NM_SET_OUT(out_obj_old, nmp_object_ref(nm_dedup_multi_entry_get_obj(entry_old)));
 
-    if (!entry_old) {
-        if (!nmp_object_is_alive(obj_hand_over))
-            goto update_done;
+    is_alive = !ignore_route && nmp_object_is_alive(obj_hand_over);
 
-        _idxcache_update(cache, NULL, obj_hand_over, is_dump, &entry_new);
-        ops_type = NMP_CACHE_OPS_ADDED;
+    if (!entry_old) {
+        if (is_alive) {
+            _idxcache_update(cache, NULL, obj_hand_over, is_dump, &entry_new);
+            ops_type = NMP_CACHE_OPS_ADDED;
+        }
         goto update_done;
     }
-
-    is_alive = nmp_object_is_alive(obj_hand_over);
 
     if (!is_alive) {
         /* the update would make @entry_old invalid. Remove it. */
@@ -3036,8 +3033,8 @@ update_done:
         goto out;
     }
 
-    /* FIXME: for routes, we only maintain the order correctly for the BY_WEAK_ID
-     * index. For all other indexes their order becomes messed up. */
+    /* For routes, we only maintain the order correctly for the BY_WEAK_ID
+     * index. For all other indexes, their order is not preserved. */
     entry_cur =
         _lookup_entry_with_idx_type(cache, NMP_CACHE_ID_TYPE_ROUTES_BY_WEAK_ID, entry_new->obj);
     if (!entry_cur) {

@@ -224,6 +224,11 @@
 
 /*****************************************************************************/
 
+struct __nmtst_testdata_track {
+    gpointer       data;
+    GDestroyNotify destroy_notify;
+};
+
 struct __nmtst_internal {
     GRand   *rand0;
     guint32  rand_seed;
@@ -235,6 +240,7 @@ struct __nmtst_internal {
     gboolean test_tap_log;
     char    *sudo_cmd;
     char   **orig_argv;
+    GArray  *testdata_track_array;
 };
 
 extern struct __nmtst_internal __nmtst_internal;
@@ -253,6 +259,55 @@ static inline gboolean
 nmtst_initialized(void)
 {
     return !!__nmtst_internal.rand0;
+}
+
+/*****************************************************************************/
+
+static inline void
+_nmtst_testdata_track_clear_func(gpointer ptr)
+{
+    struct __nmtst_testdata_track *d = ptr;
+
+    if (d->destroy_notify)
+        d->destroy_notify(d->data);
+    memset(d, 0, sizeof(*d));
+}
+
+static inline void
+_nmtst_testdata_track_add(gpointer data, GDestroyNotify destroy_notify)
+{
+    struct __nmtst_testdata_track d = {
+        .data           = data,
+        .destroy_notify = destroy_notify,
+    };
+
+    g_assert(data);
+    g_assert(destroy_notify);
+    g_assert(__nmtst_internal.testdata_track_array);
+
+    g_array_append_val(__nmtst_internal.testdata_track_array, d);
+}
+
+static inline void
+_nmtst_testdata_track_steal(gpointer data)
+{
+    struct __nmtst_testdata_track *d;
+    guint                          i;
+
+    g_assert(data);
+    g_assert(__nmtst_internal.testdata_track_array);
+
+    for (i = 0; i < __nmtst_internal.testdata_track_array->len; i++) {
+        d = &g_array_index(__nmtst_internal.testdata_track_array, struct __nmtst_testdata_track, i);
+
+        if (d->data != data)
+            continue;
+
+        d->destroy_notify = NULL;
+        g_array_remove_index_fast(__nmtst_internal.testdata_track_array, i);
+        return;
+    }
+    g_assert_not_reached();
 }
 
 #define __NMTST_LOG(cmd, ...)                                                                  \
@@ -322,6 +377,9 @@ nmtst_free(void)
 {
     if (!nmtst_initialized())
         return;
+
+    g_array_set_size(__nmtst_internal.testdata_track_array, 0);
+    g_array_unref(__nmtst_internal.testdata_track_array);
 
     g_rand_free(__nmtst_internal.rand0);
     if (__nmtst_internal.rand)
@@ -579,6 +637,10 @@ __nmtst_init(int        *argc,
     __nmtst_internal.sudo_cmd          = sudo_cmd;
     __nmtst_internal.no_expect_message = no_expect_message;
 
+    __nmtst_internal.testdata_track_array =
+        g_array_new(FALSE, FALSE, sizeof(struct __nmtst_testdata_track));
+    g_array_set_clear_func(__nmtst_internal.testdata_track_array, _nmtst_testdata_track_clear_func);
+
     if (!log_level && log_domains) {
         /* if the log level is not specified (but the domain is), we assume
          * the caller wants to set it depending on is_debug */
@@ -811,7 +873,7 @@ _nmtst_test_data_unpack(const NmtstTestData *test_data, gsize n_args, ...)
     _nmtst_test_data_unpack(test_data, NM_NARG(__VA_ARGS__), ##__VA_ARGS__)
 
 static inline void
-_nmtst_test_data_free(gpointer data)
+_nmtst_test_data_destroy(gpointer data)
 {
     NmtstTestData *test_data = data;
 
@@ -819,6 +881,13 @@ _nmtst_test_data_free(gpointer data)
 
     g_free(test_data->_testpath);
     g_free(test_data);
+}
+
+static inline void
+_nmtst_test_data_free(gpointer data)
+{
+    _nmtst_testdata_track_steal(data);
+    _nmtst_test_data_destroy(data);
 }
 
 static inline void
@@ -846,23 +915,28 @@ _nmtst_add_test_func_full(const char      *testpath,
     gsize          i;
     NmtstTestData *data;
     va_list        ap;
+    gsize          ALIGNED_SIZE =
+        ((sizeof(NmtstTestData) + (sizeof(gpointer) - 1)) / sizeof(gpointer)) * sizeof(gpointer);
 
+    g_assert(ALIGNED_SIZE >= sizeof(NmtstTestData));
     g_assert(testpath && testpath[0]);
     g_assert(func_test);
 
-    data = g_malloc0(sizeof(NmtstTestData) + (sizeof(gpointer) * (n_args + 1)));
+    data = g_malloc0(ALIGNED_SIZE + (sizeof(gpointer) * (n_args + 1)));
 
     data->_testpath      = g_strdup(testpath);
     data->_func_test     = func_test;
     data->_func_setup    = func_setup;
     data->_func_teardown = func_teardown;
     data->n_args         = n_args;
-    data->args           = (gpointer) &data[1];
+    data->args           = NM_CAST_ALIGN(gpointer, &((char *) data)[ALIGNED_SIZE]);
     va_start(ap, n_args);
     for (i = 0; i < n_args; i++)
         data->args[i] = va_arg(ap, gpointer);
     data->args[i] = NULL;
     va_end(ap);
+
+    _nmtst_testdata_track_add(data, _nmtst_test_data_destroy);
 
     g_test_add_data_func_full(testpath, data, _nmtst_test_run, _nmtst_test_data_free);
 }
