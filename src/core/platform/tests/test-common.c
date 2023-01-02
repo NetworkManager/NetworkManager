@@ -745,6 +745,322 @@ nmtstp_run_command(const char *format, ...)
 
 /*****************************************************************************/
 
+static int
+_assert_platform_sort_objs(gconstpointer ptr_a, gconstpointer ptr_b)
+{
+    const NMPObject *a = *((const NMPObject *const *) ptr_a);
+    const NMPObject *b = *((const NMPObject *const *) ptr_b);
+
+    g_assert(NMP_OBJECT_IS_VALID(a));
+    g_assert(NMP_OBJECT_IS_VALID(b));
+    g_assert(NMP_OBJECT_GET_TYPE(a) == NMP_OBJECT_GET_TYPE(b));
+
+    NM_CMP_RETURN(nmp_object_id_cmp(a, b));
+    g_assert_not_reached();
+    return 0;
+}
+
+static void
+_assert_platform_printarr(NMPObjectType obj_type, GPtrArray *arr1, GPtrArray *arr2)
+{
+    char  sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
+    guint i;
+
+    _LOGT("compare arrays of %s. In cache %u entries, fetched %u entries",
+          NMP_OBJECT_TYPE_NAME(obj_type),
+          nm_g_ptr_array_len(arr1),
+          nm_g_ptr_array_len(arr2));
+
+    for (i = 0; i < nm_g_ptr_array_len(arr1); i++) {
+        _LOGT("cache[%u] %s",
+              i,
+              nmp_object_to_string(arr1->pdata[i], NMP_OBJECT_TO_STRING_ALL, sbuf, sizeof(sbuf)));
+    }
+    for (i = 0; i < nm_g_ptr_array_len(arr2); i++) {
+        _LOGT("fetch[%u] %s",
+              i,
+              nmp_object_to_string(arr2->pdata[i], NMP_OBJECT_TO_STRING_ALL, sbuf, sizeof(sbuf)));
+    }
+
+    switch (obj_type) {
+    case NMP_OBJECT_TYPE_LINK:
+        nmtstp_run_command("ip -d link");
+        break;
+    case NMP_OBJECT_TYPE_IP4_ADDRESS:
+        nmtstp_run_command("ip -d -4 address");
+        break;
+    case NMP_OBJECT_TYPE_IP6_ADDRESS:
+        nmtstp_run_command("ip -d -6 address");
+        break;
+    case NMP_OBJECT_TYPE_IP4_ROUTE:
+        nmtstp_run_command("ip -d -4 route show table all");
+        break;
+    case NMP_OBJECT_TYPE_IP6_ROUTE:
+        nmtstp_run_command("ip -d -6 route show table all");
+        break;
+    default:
+        g_assert_not_reached();
+        break;
+    }
+}
+
+static gboolean
+_assert_platform_normalize_all(GPtrArray *arr)
+{
+    guint    i;
+    gboolean normalized = FALSE;
+
+    for (i = 0; i < nm_g_ptr_array_len(arr); i++) {
+        const NMPObject **ptr = (gpointer) &arr->pdata[i];
+        NMPObject *new;
+
+        switch (NMP_OBJECT_GET_TYPE(*ptr)) {
+        case NMP_OBJECT_TYPE_LINK:
+            new                  = nmp_object_clone(*ptr, FALSE);
+            new->link.rx_packets = 0;
+            new->link.rx_bytes   = 0;
+            new->link.tx_packets = 0;
+            new->link.tx_bytes   = 0;
+            nmp_object_ref_set(ptr, new);
+            nmp_object_unref(new);
+            normalized = TRUE;
+        default:
+            break;
+        }
+    }
+    return normalized;
+}
+
+static void
+_assert_platform_compare_arr(NMPObjectType obj_type,
+                             const char   *detail_type,
+                             GPtrArray    *arr1,
+                             GPtrArray    *arr2,
+                             gboolean      normalized,
+                             gboolean      share_multi_idx)
+{
+    const NMPClass *obj_class = nmp_class_from_type(obj_type);
+    char            sbuf1[NM_UTILS_TO_STRING_BUFFER_SIZE];
+    char            sbuf2[NM_UTILS_TO_STRING_BUFFER_SIZE];
+    int             idx;
+    int             idx_pointer_comp = -1;
+
+    for (idx = 0; TRUE; idx++) {
+        if (nm_g_ptr_array_len(arr1) == idx && nm_g_ptr_array_len(arr2) == idx)
+            break;
+        if (idx >= nm_g_ptr_array_len(arr1)) {
+            _assert_platform_printarr(obj_type, arr1, arr2);
+            g_error("Comparing %s (%s) for platform fails. Platform now shows entry #%u which is "
+                    "not in the cache but expected %s",
+                    obj_class->obj_type_name,
+                    detail_type,
+                    idx,
+                    nmp_object_to_string(arr2->pdata[idx],
+                                         NMP_OBJECT_TO_STRING_ALL,
+                                         sbuf1,
+                                         sizeof(sbuf1)));
+        }
+        if (idx >= nm_g_ptr_array_len(arr2)) {
+            _assert_platform_printarr(obj_type, arr1, arr2);
+            g_error("Comparing %s (%s) for platform fails. Platform has no more entry #%u which is "
+                    "still in the cache as %s",
+                    obj_class->obj_type_name,
+                    detail_type,
+                    idx,
+                    nmp_object_to_string(arr1->pdata[idx],
+                                         NMP_OBJECT_TO_STRING_ALL,
+                                         sbuf1,
+                                         sizeof(sbuf1)));
+        }
+        if (!nmp_object_equal(arr1->pdata[idx], arr2->pdata[idx])) {
+            _assert_platform_printarr(obj_type, arr1, arr2);
+            g_error("Comparing %s (%s) for platform fails. Platform entry #%u is now %s but in "
+                    "cache is %s",
+                    obj_class->obj_type_name,
+                    detail_type,
+                    idx,
+                    nmp_object_to_string(arr2->pdata[idx],
+                                         NMP_OBJECT_TO_STRING_ALL,
+                                         sbuf1,
+                                         sizeof(sbuf1)),
+                    nmp_object_to_string(arr1->pdata[idx],
+                                         NMP_OBJECT_TO_STRING_ALL,
+                                         sbuf2,
+                                         sizeof(sbuf2)));
+        }
+
+        if (!normalized && (share_multi_idx != (arr1->pdata[idx] == arr2->pdata[idx]))
+            && idx_pointer_comp == -1)
+            idx_pointer_comp = idx;
+    }
+
+    if (idx_pointer_comp != -1) {
+        _assert_platform_printarr(obj_type, arr1, arr2);
+        g_error("Comparing %s (%s) for platform fails for pointer comparison. Platform entry "
+                "#%u is now %s but in cache is %s",
+                obj_class->obj_type_name,
+                detail_type,
+                idx_pointer_comp,
+                nmp_object_to_string(arr2->pdata[idx_pointer_comp],
+                                     NMP_OBJECT_TO_STRING_ALL,
+                                     sbuf1,
+                                     sizeof(sbuf1)),
+                nmp_object_to_string(arr1->pdata[idx_pointer_comp],
+                                     NMP_OBJECT_TO_STRING_ALL,
+                                     sbuf2,
+                                     sizeof(sbuf2)));
+    }
+}
+
+void
+nmtstp_assert_platform(NMPlatform *platform, guint32 obj_type_flags)
+{
+    static const NMPObjectType obj_types[] = {
+        NMP_OBJECT_TYPE_IP4_ADDRESS,
+        NMP_OBJECT_TYPE_IP6_ADDRESS,
+        NMP_OBJECT_TYPE_IP4_ROUTE,
+        NMP_OBJECT_TYPE_IP6_ROUTE,
+        NMP_OBJECT_TYPE_LINK,
+    };
+    gboolean                    obj_type_flags_all = (obj_type_flags == 0u);
+    gs_unref_object NMPlatform *platform2          = NULL;
+    int                         i_obj_types;
+    gboolean                    share_multi_idx = nmtst_get_rand_bool();
+
+    /* This test creates a new NMLinuxPlatform instance. This will fill
+     * the cache with a new dump.
+     *
+     * Then it compares the content with @platform and checks that they
+     * agree. This tests that @platform cache is consistent, as it was
+     * updated based on netlink events. */
+
+    g_assert(NM_IS_LINUX_PLATFORM(platform));
+
+    _LOGD("assert-platform: start");
+
+    nm_platform_process_events(platform);
+
+    platform2 = nm_linux_platform_new(share_multi_idx ? nm_platform_get_multi_idx(platform) : NULL,
+                                      TRUE,
+                                      nmtst_get_rand_bool(),
+                                      nmtst_get_rand_bool());
+    g_assert(NM_IS_LINUX_PLATFORM(platform2));
+
+    for (i_obj_types = 0; i_obj_types < (int) G_N_ELEMENTS(obj_types); i_obj_types++) {
+        const NMPObjectType          obj_type         = obj_types[i_obj_types];
+        const guint32                i_obj_type_flags = nmp_object_type_to_flags(obj_type);
+        gs_unref_ptrarray GPtrArray *arr1             = NULL;
+        gs_unref_ptrarray GPtrArray *arr2             = NULL;
+        NMPLookup                    lookup;
+        gboolean                     check_unordered = TRUE;
+        guint                        idx;
+        gboolean                     normalized;
+
+        if (!obj_type_flags_all) {
+            if (!NM_FLAGS_ANY(obj_type_flags, i_obj_type_flags))
+                continue;
+            obj_type_flags = NM_FLAGS_UNSET(obj_type_flags, i_obj_type_flags);
+        }
+
+        nmp_lookup_init_obj_type(&lookup, obj_type);
+
+        arr1 = nm_platform_lookup_clone(platform, &lookup, NULL, NULL) ?: g_ptr_array_new();
+        arr2 = nm_platform_lookup_clone(platform2, &lookup, NULL, NULL) ?: g_ptr_array_new();
+
+        normalized = _assert_platform_normalize_all(arr1);
+        normalized = _assert_platform_normalize_all(arr2);
+
+        if (check_unordered) {
+            /* We need to sort the two lists. */
+            g_ptr_array_sort(arr1, _assert_platform_sort_objs);
+            g_ptr_array_sort(arr2, _assert_platform_sort_objs);
+        }
+
+        _assert_platform_compare_arr(obj_type, "main", arr1, arr2, normalized, share_multi_idx);
+
+        if (NM_IN_SET(obj_type, NMP_OBJECT_TYPE_IP4_ROUTE, NMP_OBJECT_TYPE_IP6_ROUTE)) {
+            /* For routes, the WEAK_ID needs to be sorted and match the expected order. Check that. */
+            g_assert(!normalized);
+            for (idx = 0; idx < nm_g_ptr_array_len(arr1); idx++) {
+                const NMPObject             *obj1         = arr1->pdata[idx];
+                const NMPObject             *obj2         = arr2->pdata[idx];
+                gs_unref_ptrarray GPtrArray *arr1b        = NULL;
+                gs_unref_ptrarray GPtrArray *arr2b        = NULL;
+                gs_unref_ptrarray GPtrArray *arr1b_sorted = NULL;
+                gs_unref_ptrarray GPtrArray *arr2b_sorted = NULL;
+                guint                        found_obj1   = 0;
+                guint                        found_obj2   = 0;
+                guint                        i;
+
+                nmp_lookup_init_route_by_weak_id(&lookup, obj1);
+                arr1b =
+                    nm_platform_lookup_clone(platform, &lookup, NULL, NULL) ?: g_ptr_array_new();
+                g_assert_cmpint(arr1b->len, >, 0u);
+
+                nmp_lookup_init_route_by_weak_id(&lookup, obj2);
+                arr2b =
+                    nm_platform_lookup_clone(platform2, &lookup, NULL, NULL) ?: g_ptr_array_new();
+                g_assert_cmpint(arr2b->len, ==, arr1b->len);
+
+                /* First check that the lists agree, if we sort them. The list of
+                 * weak-ids was supposed to honor the sort order from `ip route show`,
+                 * but as that is not the case (see blow), first check whether at
+                 * least the same routes are in the list (with wrong sort order). */
+                arr1b_sorted = nm_g_ptr_array_new_clone(arr1b, NULL, NULL, NULL);
+                arr2b_sorted = nm_g_ptr_array_new_clone(arr2b, NULL, NULL, NULL);
+                g_ptr_array_sort(arr1b_sorted, _assert_platform_sort_objs);
+                g_ptr_array_sort(arr2b_sorted, _assert_platform_sort_objs);
+                _assert_platform_compare_arr(obj_type,
+                                             "weak-id-sorted",
+                                             arr1b_sorted,
+                                             arr2b_sorted,
+                                             normalized,
+                                             share_multi_idx);
+
+                if (obj_type == NMP_OBJECT_TYPE_IP6_ROUTE) {
+                    /* For IPv6, the weak-ids are actually not sorted correctly.
+                     * This is because IPv6 multihop/ECMP routes get split into
+                     * multiple objects, and we don't get this right.
+                     *
+                     * This may be a bug. But we probably don't rely on this
+                     * anymore, because the weak-id were used to find which
+                     * route got replaced with `NLM_F_REPLACE`, but that anyway
+                     * doesn't work. We now always request a new dump. */
+                } else if (obj_type == NMP_OBJECT_TYPE_IP4_ROUTE) {
+                    /* For IPv4, it also does not reliably always work. This may
+                     * be a bug we want to fix. For now, ignore the check. */
+                } else {
+                    /* Assert that also the original, not-sorted lists agree. */
+                    _assert_platform_compare_arr(obj_type,
+                                                 "weak-id",
+                                                 arr1b,
+                                                 arr2b,
+                                                 normalized,
+                                                 share_multi_idx);
+                }
+
+                for (i = 0; i < arr1b->len; i++) {
+                    if (arr1b->pdata[i] == obj1)
+                        found_obj1++;
+                    if (arr2b->pdata[i] == obj2)
+                        found_obj2++;
+                }
+
+                g_assert_cmpint(found_obj1, ==, 1u);
+                g_assert_cmpint(found_obj2, ==, 1u);
+            }
+        }
+    }
+
+    g_clear_object(&platform2);
+
+    _LOGD("assert-platform: done");
+
+    g_assert_cmpint(obj_type_flags, ==, 0u);
+}
+
+/*****************************************************************************/
+
 typedef struct {
     GMainLoop *loop;
     guint      signal_counts;
