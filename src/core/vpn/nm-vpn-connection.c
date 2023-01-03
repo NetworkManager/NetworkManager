@@ -1297,6 +1297,17 @@ _l3cfg_l3cd_gw_extern_update(NMVpnConnection *self)
 
     changed = FALSE;
     for (IS_IPv4 = 1; IS_IPv4 >= 0; IS_IPv4--) {
+        const int          addr_family = IS_IPv4 ? AF_INET : AF_INET6;
+        NMSettingIPConfig *s_ip;
+
+        s_ip = nm_connection_get_setting_ip_config(_get_applied_connection(self), addr_family);
+        if (s_ip && nm_setting_ip_config_get_auto_route_ext_gw(s_ip) == NM_TERNARY_FALSE) {
+            _LOGD("IPv%c route to the external gateway have been deactivated via auto-route-ext-gw "
+                  "setting",
+                  nm_utils_addr_family_to_char(addr_family));
+            continue;
+        }
+
         if (_parent_device_l3cd_add_gateway_route(
                 l3cd,
                 IS_IPv4 ? AF_INET : AF_INET6,

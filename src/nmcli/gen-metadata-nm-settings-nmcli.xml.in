@@ -706,6 +706,8 @@
                   description="Enable and disable the IPv4 link-local configuration independently of the ipv4.method configuration. This allows a link-local address (169.254.x.y/16) to be obtained in addition to other addresses, such as those manually configured or obtained from a DHCP server. When set to &quot;auto&quot;, the value is dependent on &quot;ipv4.method&quot;. When set to &quot;default&quot;, it honors the global connection default, before falling back to &quot;auto&quot;. Note that if &quot;ipv4.method&quot; is &quot;disabled&quot;, then link local addressing is always disabled too. The default is &quot;default&quot;." />
         <property name="dhcp-reject-servers"
                   description="Array of servers from which DHCP offers must be rejected. This property is useful to avoid getting a lease from misconfigured or rogue servers. For DHCPv4, each element must be an IPv4 address, optionally followed by a slash and a prefix length (e.g. &quot;192.168.122.0/24&quot;). This property is currently not implemented for DHCPv6." />
+        <property name="auto-route-ext-gw"
+                  description="VPN connections will default to add the route automatically unless this setting is set to FALSE. For other connection types, adding such an automatic route is currently not supported and setting this to TRUE has no effect." />
     </setting>
     <setting name="ipv6" >
         <property name="method"
@@ -761,6 +763,8 @@
                   description="If the &quot;dhcp-send-hostname&quot; property is TRUE, then the specified name will be sent to the DHCP server when acquiring a lease. This property and &quot;dhcp-fqdn&quot; are mutually exclusive and cannot be set at the same time." />
         <property name="dhcp-hostname-flags"
                   description="Flags for the DHCP hostname and FQDN. Currently, this property only includes flags to control the FQDN flags set in the DHCP FQDN option. Supported FQDN flags are NM_DHCP_HOSTNAME_FLAG_FQDN_SERV_UPDATE (0x1), NM_DHCP_HOSTNAME_FLAG_FQDN_ENCODED (0x2) and NM_DHCP_HOSTNAME_FLAG_FQDN_NO_UPDATE (0x4).  When no FQDN flag is set and NM_DHCP_HOSTNAME_FLAG_FQDN_CLEAR_FLAGS (0x8) is set, the DHCP FQDN option will contain no flag. Otherwise, if no FQDN flag is set and NM_DHCP_HOSTNAME_FLAG_FQDN_CLEAR_FLAGS (0x8) is not set, the standard FQDN flags are set in the request: NM_DHCP_HOSTNAME_FLAG_FQDN_SERV_UPDATE (0x1), NM_DHCP_HOSTNAME_FLAG_FQDN_ENCODED (0x2) for IPv4 and NM_DHCP_HOSTNAME_FLAG_FQDN_SERV_UPDATE (0x1) for IPv6. When this property is set to the default value NM_DHCP_HOSTNAME_FLAG_NONE (0x0), a global default is looked up in NetworkManager configuration. If that value is unset or also NM_DHCP_HOSTNAME_FLAG_NONE (0x0), then the standard FQDN flags described above are sent in the DHCP requests." />
+        <property name="auto-route-ext-gw"
+                  description="VPN connections will default to add the route automatically unless this setting is set to FALSE. For other connection types, adding such an automatic route is currently not supported and setting this to TRUE has no effect." />
         <property name="token"
                   description="Configure the token for draft-chown-6man-tokenised-ipv6-identifiers-02 IPv6 tokenized interface identifiers. Useful with eui64 addr-gen-mode." />
     </setting>

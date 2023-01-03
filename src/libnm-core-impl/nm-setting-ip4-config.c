@@ -797,6 +797,17 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
      * ---end---
      */
 
+    /* ---ifcfg-rh---
+     * property: auto-route-ext-gw
+     * variable: IPV4_AUTO_ROUTE_EXT_GW(+)
+     * default: yes
+     * description: VPN connections will default to add the route automatically unless this
+     *     setting is set to %FALSE.
+     *     For other connection types, adding such an automatic route is currently
+     *     not supported and setting this to %TRUE has no effect.
+     * ---end---
+     */
+
     /**
      * NMSettingIP4Config:dhcp-client-id:
      *

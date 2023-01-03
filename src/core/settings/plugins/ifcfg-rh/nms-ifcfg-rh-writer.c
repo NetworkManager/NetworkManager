@@ -2938,6 +2938,10 @@ write_ip4_setting(NMConnection *connection,
         }
         svSetValueStr(ifcfg, "DHCP_REJECT_SERVERS", str->str);
     }
+
+    svSetValueTernary(ifcfg,
+                      "IPV4_AUTO_ROUTE_EXT_GW",
+                      nm_setting_ip_config_get_auto_route_ext_gw(s_ip4));
 }
 
 static void
@@ -3198,6 +3202,10 @@ write_ip6_setting(NMConnection *connection, shvarFile *ifcfg, GString **out_rout
     write_res_options(ifcfg, s_ip6, "IPV6_RES_OPTIONS");
 
     NM_SET_OUT(out_route6_content, write_route_file(s_ip6));
+
+    svSetValueTernary(ifcfg,
+                      "IPV6_AUTO_ROUTE_EXT_GW",
+                      nm_setting_ip_config_get_auto_route_ext_gw(s_ip6));
 }
 
 static void

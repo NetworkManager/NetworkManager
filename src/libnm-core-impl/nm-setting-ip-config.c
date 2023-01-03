@@ -3971,7 +3971,8 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMSettingIPConfig,
                              PROP_DHCP_TIMEOUT,
                              PROP_REQUIRED_TIMEOUT,
                              PROP_DHCP_IAID,
-                             PROP_DHCP_REJECT_SERVERS, );
+                             PROP_DHCP_REJECT_SERVERS,
+                             PROP_AUTO_ROUTE_EXT_GW, );
 
 G_DEFINE_ABSTRACT_TYPE(NMSettingIPConfig, nm_setting_ip_config, NM_TYPE_SETTING)
 
@@ -5401,6 +5402,22 @@ nm_setting_ip_config_clear_dhcp_reject_servers(NMSettingIPConfig *setting)
     }
 }
 
+/**
+ * nm_setting_ip_config_get_auto_route_ext_gw:
+ * @setting: the #NMSettingIPConfig
+ *
+ * Returns: the #NMSettingIPConfig:auto-route-ext-gw property of the setting
+ *
+ * Since: 1.42
+ **/
+NMTernary
+nm_setting_ip_config_get_auto_route_ext_gw(NMSettingIPConfig *setting)
+{
+    g_return_val_if_fail(NM_IS_SETTING_IP_CONFIG(setting), NM_TERNARY_DEFAULT);
+
+    return NM_SETTING_IP_CONFIG_GET_PRIVATE(setting)->auto_route_ext_gw;
+}
+
 static gboolean
 verify_label(const char *label)
 {
@@ -6053,6 +6070,13 @@ _nm_sett_info_property_override_create_array_ip_config(int addr_family)
         obj_properties[PROP_MAY_FAIL],
         &nm_sett_info_propert_type_direct_boolean,
         .direct_offset = NM_STRUCT_OFFSET_ENSURE_TYPE(bool, NMSettingIPConfigPrivate, may_fail));
+
+    _nm_properties_override_gobj(
+        properties_override,
+        obj_properties[PROP_AUTO_ROUTE_EXT_GW],
+        &nm_sett_info_propert_type_direct_enum,
+        .direct_offset =
+            NM_STRUCT_OFFSET_ENSURE_TYPE(int, NMSettingIPConfigPrivate, auto_route_ext_gw));
 
     return properties_override;
 }
@@ -6726,6 +6750,25 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
                            "",
                            G_TYPE_STRV,
                            G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+
+    /**
+     * NMSettingIPConfig:auto-route-ext-gw:
+     *
+     * VPN connections will default to add the route automatically unless this
+     * setting is set to %FALSE.
+     *
+     * For other connection types, adding such an automatic route is currently
+     * not supported and setting this to %TRUE has no effect.
+     *
+     * Since: 1.42
+     */
+    obj_properties[PROP_AUTO_ROUTE_EXT_GW] =
+        g_param_spec_enum(NM_SETTING_IP_CONFIG_AUTO_ROUTE_EXT_GW,
+                          "",
+                          "",
+                          NM_TYPE_TERNARY,
+                          NM_TERNARY_DEFAULT,
+                          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 }

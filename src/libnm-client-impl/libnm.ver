@@ -1908,6 +1908,7 @@ global:
 	nm_setting_ovs_port_remove_trunk;
 	nm_setting_ovs_port_remove_trunk_by_value;
 	nm_setting_vlan_get_protocol;
+	nm_setting_ip_config_get_auto_route_ext_gw;
 	nm_utils_ensure_gtypes;
 	nm_version_info_capability_get_type;
 } libnm_1_40_0;

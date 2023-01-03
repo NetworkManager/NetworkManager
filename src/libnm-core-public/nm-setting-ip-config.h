@@ -339,6 +339,7 @@ char *nm_ip_routing_rule_to_string(const NMIPRoutingRule       *self,
 #define NM_SETTING_IP_CONFIG_REQUIRED_TIMEOUT    "required-timeout"
 #define NM_SETTING_IP_CONFIG_DHCP_IAID           "dhcp-iaid"
 #define NM_SETTING_IP_CONFIG_DHCP_REJECT_SERVERS "dhcp-reject-servers"
+#define NM_SETTING_IP_CONFIG_AUTO_ROUTE_EXT_GW   "auto-route-ext-gw"
 
 /* these are not real GObject properties. */
 #define NM_SETTING_IP_CONFIG_ROUTING_RULES "routing-rules"
@@ -496,6 +497,8 @@ NM_AVAILABLE_IN_1_28
 void nm_setting_ip_config_remove_dhcp_reject_server(NMSettingIPConfig *setting, guint idx);
 NM_AVAILABLE_IN_1_28
 void nm_setting_ip_config_clear_dhcp_reject_servers(NMSettingIPConfig *setting);
+NM_AVAILABLE_IN_1_42
+NMTernary nm_setting_ip_config_get_auto_route_ext_gw(NMSettingIPConfig *setting);
 
 G_END_DECLS
 
