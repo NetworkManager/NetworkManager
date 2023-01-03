@@ -1482,6 +1482,10 @@
                   dbus-deprecated="1"
                   gprop-type="GPtrArray"
                   />
+        <property name="auto-route-ext-gw"
+                  dbus-type="i"
+                  gprop-type="NMTernary"
+                  />
         <property name="dad-timeout"
                   dbus-type="i"
                   gprop-type="gint"
@@ -1608,6 +1612,10 @@
                   dbus-type="a(ayuay)"
                   dbus-deprecated="1"
                   gprop-type="GPtrArray"
+                  />
+        <property name="auto-route-ext-gw"
+                  dbus-type="i"
+                  gprop-type="NMTernary"
                   />
         <property name="dad-timeout"
                   dbus-type="i"

@@ -1942,6 +1942,8 @@ make_ip4_setting(shvarFile *ifcfg,
                  (guint) route_table,
                  NM_SETTING_IP4_CONFIG_LINK_LOCAL,
                  ipv4_link_local,
+                 NM_SETTING_IP_CONFIG_AUTO_ROUTE_EXT_GW,
+                 svGetValueTernary(ifcfg, "IPV4_AUTO_ROUTE_EXT_GW"),
                  NULL);
 
     if (nm_streq(method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED))
@@ -2455,6 +2457,8 @@ make_ip6_setting(shvarFile *ifcfg, shvarFile *network_ifcfg, gboolean routes_rea
                  (guint) route_table,
                  NM_SETTING_IP6_CONFIG_IP6_PRIVACY,
                  ip6_privacy_val,
+                 NM_SETTING_IP_CONFIG_AUTO_ROUTE_EXT_GW,
+                 svGetValueTernary(ifcfg, "IPV6_AUTO_ROUTE_EXT_GW"),
                  NULL);
 
     /* Don't bother to read IP, DNS and routes when IPv6 is disabled */

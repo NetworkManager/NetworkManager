@@ -741,6 +741,17 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
      * ---end---
      */
 
+    /* ---ifcfg-rh---
+     * property: auto-route-ext-gw
+     * variable: IPV6_AUTO_ROUTE_EXT_GW(+)
+     * default: yes
+     * description: VPN connections will default to add the route automatically unless this
+     *     setting is set to %FALSE.
+     *     For other connection types, adding such an automatic route is currently
+     *     not supported and setting this to %TRUE has no effect.
+     * ---end---
+     */
+
     /**
      * NMSettingIP6Config:ip6-privacy:
      *
