@@ -3787,15 +3787,6 @@ _new_from_nl_route(const struct nlmsghdr *nlh, gboolean id_only, ParseNlmsgIter 
     else
         return NULL;
 
-    if (!NM_IN_SET(rtm->rtm_type,
-                   RTN_UNICAST,
-                   RTN_LOCAL,
-                   RTN_BLACKHOLE,
-                   RTN_UNREACHABLE,
-                   RTN_PROHIBIT,
-                   RTN_THROW))
-        return NULL;
-
     if (nlmsg_parse_arr(nlh, sizeof(struct rtmsg), tb, policy) < 0)
         return NULL;
 
@@ -5328,6 +5319,17 @@ ip_route_is_alive(const NMPlatformIPRoute *route)
          * This is to help with the performance overhead of a huge number of
          * routes, for example with the bird BGP software, that adds routes
          * with RTPROT_BIRD protocol. */
+        return FALSE;
+    }
+
+    if (!NM_IN_SET(nm_platform_route_type_uncoerce(route->type_coerced),
+                   RTN_UNICAST,
+                   RTN_LOCAL,
+                   RTN_BLACKHOLE,
+                   RTN_UNREACHABLE,
+                   RTN_PROHIBIT,
+                   RTN_THROW)) {
+        /* Certain route types are ignored and not placed into the cache. */
         return FALSE;
     }
 
