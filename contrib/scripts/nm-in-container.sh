@@ -315,6 +315,8 @@ ENTRYPOINT ["/sbin/init"]
 RUN sed -i 's/^tsflags=.*/tsflags=/' /etc/dnf/dnf.conf
 
 RUN dnf install -y \\
+    --skip-broken \\
+    \\
     /usr/bin/python \\
     ModemManager-devel \\
     ModemManager-glib-devel \\
@@ -386,9 +388,67 @@ RUN dnf install -y \\
     vala-devel \\
     valgrind \\
     vim \\
-    which
+    which \\
+    \\
+    'dbus*' \\
+    'openvswitch2*' \\
+    /usr/bin/debuginfo-install \\
+    NetworkManager-openvpn \\
+    NetworkManager-pptp \\
+    NetworkManager-strongswan \\
+    NetworkManager-vpnc \\
+    NetworkManager-ovs \\
+    NetworkManager-wifi \\
+    NetworkManager-team \\
+    NetworkManager-ppp \\
+    cryptsetup \\
+    dhcp-client \\
+    dhcp-relay \\
+    dhcp-server \\
+    dnsmasq \\
+    dracut-network \\
+    ethtool \\
+    firewalld \\
+    gcc \\
+    gdb \\
+    gdb \\
+    git \\
+    hostapd \\
+    iproute-tc \\
+    ipsec-tools \\
+    iputils \\
+    iscsi-initiator-utils \\
+    iw \\
+    ldns \\
+    libreswan \\
+    libyaml-devel \\
+    logrotate \\
+    lvm2 \\
+    mdadm \\
+    net-tools \\
+    nfs-utils \\
+    nmap-ncat \\
+    nss-tools \\
+    openvpn \\
+    perl-IO-Pty-Easy \\
+    perl-IO-Tty \\
+    psmisc \\
+    python3-dbus \\
+    python3-gobject \\
+    python3-netaddr \\
+    qemu-kvm \\
+    radvd \\
+    rp-pppoe \\
+    scsi-target-utils \\
+    tcpdump \\
+    tcpreplay \\
+    tuned \\
+    wireguard-tools \\
+    wireshark-cli
 
 RUN dnf debuginfo-install --skip-broken \$(ldd /usr/sbin/NetworkManager | sed -n 's/.* => \\(.*\\) (0x[0-9A-Fa-f]*)$/\1/p' | xargs -n1 readlink -f) -y
+
+RUN dnf clean all
 
 RUN pip3 install --user behave_html_formatter || true
 
