@@ -7920,6 +7920,8 @@ _rtnl_handle_msg(NMPlatform *platform, const struct nl_msg_lite *msg)
                 delayed_action_schedule(platform,
                                         delayed_action_refresh_from_needle_object(obj),
                                         NULL);
+                /* We are done here. */
+                return;
             }
             break;
         }
