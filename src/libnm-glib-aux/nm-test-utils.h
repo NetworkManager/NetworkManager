@@ -778,10 +778,7 @@ typedef struct _NmtstTestData NmtstTestData;
 typedef void (*NmtstTestHandler)(const NmtstTestData *test_data);
 
 struct _NmtstTestData {
-    union {
-        const char *testpath;
-        char       *_testpath;
-    };
+    const char      *testpath;
     gsize            n_args;
     NmtstTestHandler _func_setup;
     GTestDataFunc    _func_test;
@@ -828,17 +825,6 @@ nmtst_test_get_path(void)
 }
 
 static inline void
-_nmtst_test_data_free(gpointer data)
-{
-    NmtstTestData *test_data = data;
-
-    g_assert(test_data);
-
-    g_free(test_data->_testpath);
-    g_free(test_data);
-}
-
-static inline void
 _nmtst_test_run(gconstpointer data)
 {
     const NmtstTestData *test_data = data;
@@ -874,14 +860,18 @@ _nmtst_add_test_func_full(const char      *testpath,
     gsize          i;
     NmtstTestData *data;
     va_list        ap;
+    gsize          testpath_len;
 
     g_assert(testpath && testpath[0]);
     g_assert(func_test);
 
-    data = g_malloc(G_STRUCT_OFFSET(NmtstTestData, args) + (sizeof(gpointer) * (n_args + 1u)));
+    testpath_len = strlen(testpath) + 1u;
+
+    data = g_malloc(G_STRUCT_OFFSET(NmtstTestData, args)
+                    + (sizeof(gpointer) * (n_args + 1u) + testpath_len));
 
     *data = (NmtstTestData){
-        ._testpath      = g_strdup(testpath),
+        .testpath       = (gpointer) &data->args[n_args + 1u],
         ._func_test     = func_test,
         ._func_setup    = func_setup,
         ._func_teardown = func_teardown,
@@ -894,8 +884,13 @@ _nmtst_add_test_func_full(const char      *testpath,
     data->args[i] = NULL;
     va_end(ap);
 
-    g_test_add_data_func_full(testpath, data, _nmtst_test_run, _nmtst_test_data_free);
+    g_assert(data->testpath == (gpointer) &data->args[i + 1]);
+
+    memcpy((char *) data->testpath, testpath, testpath_len);
+
+    g_test_add_data_func_full(testpath, data, _nmtst_test_run, g_free);
 }
+
 #define nmtst_add_test_func_full(testpath, func_test, func_setup, func_teardown, ...) \
     _nmtst_add_test_func_full(testpath,                                               \
                               func_test,                                              \
@@ -903,6 +898,7 @@ _nmtst_add_test_func_full(const char      *testpath,
                               func_teardown,                                          \
                               NM_NARG(__VA_ARGS__),                                   \
                               ##__VA_ARGS__)
+
 #define nmtst_add_test_func(testpath, func_test, ...) \
     nmtst_add_test_func_full(testpath, func_test, NULL, NULL, ##__VA_ARGS__)
 
