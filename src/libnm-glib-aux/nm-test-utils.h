@@ -225,16 +225,17 @@
 /*****************************************************************************/
 
 struct __nmtst_internal {
-    GRand   *rand0;
-    guint32  rand_seed;
-    GRand   *rand;
-    gboolean is_debug;
-    gboolean assert_logging;
-    gboolean no_expect_message;
-    gboolean test_quick;
-    gboolean test_tap_log;
-    char    *sudo_cmd;
-    char   **orig_argv;
+    GRand      *rand0;
+    guint32     rand_seed;
+    GRand      *rand;
+    gboolean    is_debug;
+    gboolean    assert_logging;
+    gboolean    no_expect_message;
+    gboolean    test_quick;
+    gboolean    test_tap_log;
+    char       *sudo_cmd;
+    char      **orig_argv;
+    const char *testpath;
 };
 
 extern struct __nmtst_internal __nmtst_internal;
@@ -810,6 +811,22 @@ _nmtst_test_data_unpack(const NmtstTestData *test_data, gsize n_args, ...)
 #define nmtst_test_data_unpack(test_data, ...) \
     _nmtst_test_data_unpack(test_data, NM_NARG(__VA_ARGS__), ##__VA_ARGS__)
 
+static inline const char *
+nmtst_test_get_path(void)
+{
+    g_assert(nmtst_initialized());
+    g_assert(__nmtst_internal.testpath);
+
+    /* Similar to g_test_get_path() (which only exists since glib 2.68).
+     *
+     * This is the test name while running the test added with
+     * nmtst_add_test_func*().
+     *
+     * You are only allowed to call this from inside such a test. */
+
+    return __nmtst_internal.testpath;
+}
+
 static inline void
 _nmtst_test_data_free(gpointer data)
 {
@@ -826,6 +843,13 @@ _nmtst_test_run(gconstpointer data)
 {
     const NmtstTestData *test_data = data;
 
+    g_assert(test_data);
+    g_assert(nmtst_initialized());
+    g_assert(test_data->testpath);
+    g_assert(!__nmtst_internal.testpath);
+
+    __nmtst_internal.testpath = test_data->testpath;
+
     if (test_data->_func_setup)
         test_data->_func_setup(test_data);
 
@@ -833,6 +857,10 @@ _nmtst_test_run(gconstpointer data)
 
     if (test_data->_func_teardown)
         test_data->_func_teardown(test_data);
+
+    g_assert(__nmtst_internal.testpath);
+    g_assert(__nmtst_internal.testpath == test_data->testpath);
+    __nmtst_internal.testpath = NULL;
 }
 
 static inline void
