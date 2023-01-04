@@ -9,6 +9,7 @@
 
 #include "libnm-glib-aux/nm-dedup-multi.h"
 #include "libnm-glib-aux/nm-c-list.h"
+#include "libnm-glib-aux/nm-ptr-array.h"
 
 #include "NetworkManagerUtils.h"
 #include "libnm-core-intern/nm-core-internal.h"
@@ -71,9 +72,9 @@ NM_DEFINE_SINGLETON_GETTER(NMNetns, nm_netns_get, NM_TYPE_NETNS);
 
 /*****************************************************************************/
 
-void _netns_ip_route_ecmp_update_mh(NMNetns         *self,
-                                    const GPtrArray *mhrts_del,
-                                    const GPtrArray *mhrts_add);
+void _netns_ip_route_ecmp_update_mh(NMNetns          *self,
+                                    const NMPtrArray *mhrts_del,
+                                    const NMPtrArray *mhrts_add);
 
 /*****************************************************************************/
 
@@ -626,15 +627,17 @@ nm_netns_ip_route_ecmp_register(NMNetns *self, NML3Cfg *l3cfg, const NMPObject *
 void
 nm_netns_ip_route_ecmp_commit(NMNetns *self, NML3Cfg *l3cfg, GPtrArray **out_singlehop_routes)
 {
-    NMNetnsPrivate              *priv = NM_NETNS_GET_PRIVATE(self);
+    NMPtrArrayStack              mhrts_del_stack = NM_PTR_ARRAY_STACK_INIT(nmp_object_unref);
+    nm_auto_ptrarray NMPtrArray *mhrts_del       = &mhrts_del_stack.arr;
+    NMPtrArrayStack              mhrts_add_stack = NM_PTR_ARRAY_STACK_INIT(NULL);
+    nm_auto_ptrarray NMPtrArray *mhrts_add       = &mhrts_add_stack.arr;
+    NMNetnsPrivate              *priv            = NM_NETNS_GET_PRIVATE(self);
     EcmpTrackObj                *track_obj;
     EcmpTrackObj                *track_obj_safe;
     EcmpTrackEcmpid             *track_ecmpid;
     const NMPObject             *route_obj;
     const NMPlatformIP4Route    *route;
     char                         sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
-    gs_unref_ptrarray GPtrArray *mhrts_del = NULL;
-    gs_unref_ptrarray GPtrArray *mhrts_add = NULL;
 
     nm_assert_l3cfg(self, l3cfg);
 
@@ -666,11 +669,8 @@ nm_netns_ip_route_ecmp_commit(NMNetns *self, NML3Cfg *l3cfg, GPtrArray **out_sin
         if (c_list_is_empty(&track_ecmpid->ecmpid_lst_head)) {
             if (track_ecmpid->merged_obj) {
                 if (NMP_OBJECT_CAST_IP4_ROUTE(track_ecmpid->merged_obj)->n_nexthops > 1) {
-                    if (!mhrts_del)
-                        mhrts_del =
-                            g_ptr_array_new_with_free_func((GDestroyNotify) nmp_object_unref);
-                    g_ptr_array_add(mhrts_del,
-                                    (gpointer) g_steal_pointer(&track_ecmpid->merged_obj));
+                    nm_ptr_array_add(&mhrts_del,
+                                     (gpointer) g_steal_pointer(&track_ecmpid->merged_obj));
                 } else
                     nm_l3cfg_commit_on_idle_schedule(l3cfg, NM_L3_CFG_COMMIT_TYPE_AUTO);
             }
@@ -710,9 +710,7 @@ nm_netns_ip_route_ecmp_commit(NMNetns *self, NML3Cfg *l3cfg, GPtrArray **out_sin
 
         if (obj_del) {
             if (NMP_OBJECT_CAST_IP4_ROUTE(obj_del)->n_nexthops > 1) {
-                if (!mhrts_del)
-                    mhrts_del = g_ptr_array_new_with_free_func((GDestroyNotify) nmp_object_unref);
-                g_ptr_array_add(mhrts_del, (gpointer) g_steal_pointer(&obj_del));
+                nm_ptr_array_add(&mhrts_del, (gpointer) g_steal_pointer(&obj_del));
             } else {
                 if (track_obj->l3cfg != l3cfg) {
                     nm_l3cfg_commit_on_idle_schedule(track_obj->l3cfg, NM_L3_CFG_COMMIT_TYPE_AUTO);
@@ -743,11 +741,7 @@ nm_netns_ip_route_ecmp_commit(NMNetns *self, NML3Cfg *l3cfg, GPtrArray **out_sin
         if (changed) {
             _LOGT("ecmp-route: multi-hop %s",
                   nmp_object_to_string(route_obj, NMP_OBJECT_TO_STRING_PUBLIC, sbuf, sizeof(sbuf)));
-            if (!mhrts_add) {
-                /* mhrts_add doesn't own the pointers. It relies on them being alive long enough. */
-                mhrts_add = g_ptr_array_new();
-            }
-            g_ptr_array_add(mhrts_add, (gpointer) route_obj);
+            nm_ptr_array_add(&mhrts_add, (gpointer) route_obj);
         }
     }
 
@@ -755,74 +749,67 @@ nm_netns_ip_route_ecmp_commit(NMNetns *self, NML3Cfg *l3cfg, GPtrArray **out_sin
 }
 
 void
-_netns_ip_route_ecmp_update_mh(NMNetns         *self,
-                               const GPtrArray *mhrts_del,
-                               const GPtrArray *mhrts_add)
+_netns_ip_route_ecmp_update_mh(NMNetns          *self,
+                               const NMPtrArray *mhrts_del,
+                               const NMPtrArray *mhrts_add)
 {
     NMNetnsPrivate *priv = NM_NETNS_GET_PRIVATE(self);
-    guint           i;
+    gsize           i;
 
-    if (mhrts_del) {
-        for (i = 0; i < mhrts_del->len; i++) {
-            const NMPObject *obj = mhrts_del->pdata[i];
+    for (i = 0; i < mhrts_del->len; i++) {
+        const NMPObject *obj = mhrts_del->ptrs[i];
 
-            if (!g_hash_table_remove(priv->ecmp_routes, obj))
-                nm_assert_not_reached();
+        if (!g_hash_table_remove(priv->ecmp_routes, obj))
+            nm_assert_not_reached();
 
-            nm_platform_object_delete(priv->platform, obj);
-        }
+        nm_platform_object_delete(priv->platform, obj);
     }
 
-    if (mhrts_add) {
-        for (i = 0; i < mhrts_add->len; i++) {
-            const NMPObject                *obj     = mhrts_add->pdata[i];
-            nm_auto_nmpobj const NMPObject *obj_old = NULL;
-            gpointer                        unused;
-            const NMPlatformIP4Route       *route_src;
-            guint                           j;
+    for (i = 0; i < mhrts_add->len; i++) {
+        const NMPObject                *obj     = mhrts_add->ptrs[i];
+        nm_auto_nmpobj const NMPObject *obj_old = NULL;
+        gpointer                        unused;
+        const NMPlatformIP4Route       *route_src;
+        guint                           j;
 
-            if (g_hash_table_steal_extended(priv->ecmp_routes,
-                                            obj,
-                                            (gpointer *) &obj_old,
-                                            &unused)) {
-                if (obj != obj_old)
-                    nm_platform_object_delete(priv->platform, obj_old);
-            }
-
-            if (!g_hash_table_add(priv->ecmp_routes, (gpointer) nmp_object_ref(obj)))
-                nm_assert_not_reached();
-
-            /* for each nexthop we need to configure the onlink route for the gateway */
-            route_src = NMP_OBJECT_CAST_IP4_ROUTE(obj);
-            for (j = 0; j < route_src->n_nexthops; j++) {
-                NMPObject          *new_onlink_obj;
-                NMPlatformIP4Route *new_onlink_route;
-                in_addr_t           gateway;
-                int                 ifindex;
-
-                new_onlink_obj   = nmp_object_clone(obj, TRUE);
-                new_onlink_route = NMP_OBJECT_CAST_IP4_ROUTE(new_onlink_obj);
-                if (j == 0) {
-                    gateway = route_src->gateway;
-                    ifindex = route_src->ifindex;
-                } else {
-                    gateway = obj->_ip4_route.extra_nexthops[j - 1].gateway;
-                    ifindex = obj->_ip4_route.extra_nexthops[j - 1].ifindex;
-                }
-
-                new_onlink_route->network    = gateway;
-                new_onlink_route->plen       = 32;
-                new_onlink_route->gateway    = 0;
-                new_onlink_route->ifindex    = ifindex;
-                new_onlink_route->weight     = 0;
-                new_onlink_route->n_nexthops = 0;
-
-                /* we configure the onlink route and l3cfg will take the ownership and remove it if not needed */
-                nm_platform_ip_route_add(priv->platform, NMP_NLM_FLAG_APPEND, new_onlink_obj);
-            }
-
-            nm_platform_ip_route_add(priv->platform, NMP_NLM_FLAG_APPEND, obj);
+        if (g_hash_table_steal_extended(priv->ecmp_routes, obj, (gpointer *) &obj_old, &unused)) {
+            if (obj != obj_old)
+                nm_platform_object_delete(priv->platform, obj_old);
         }
+
+        if (!g_hash_table_add(priv->ecmp_routes, (gpointer) nmp_object_ref(obj)))
+            nm_assert_not_reached();
+
+        /* for each nexthop we need to configure the onlink route for the gateway */
+        route_src = NMP_OBJECT_CAST_IP4_ROUTE(obj);
+        for (j = 0; j < route_src->n_nexthops; j++) {
+            NMPObject          *new_onlink_obj;
+            NMPlatformIP4Route *new_onlink_route;
+            in_addr_t           gateway;
+            int                 ifindex;
+
+            new_onlink_obj   = nmp_object_clone(obj, TRUE);
+            new_onlink_route = NMP_OBJECT_CAST_IP4_ROUTE(new_onlink_obj);
+            if (j == 0) {
+                gateway = route_src->gateway;
+                ifindex = route_src->ifindex;
+            } else {
+                gateway = obj->_ip4_route.extra_nexthops[j - 1].gateway;
+                ifindex = obj->_ip4_route.extra_nexthops[j - 1].ifindex;
+            }
+
+            new_onlink_route->network    = gateway;
+            new_onlink_route->plen       = 32;
+            new_onlink_route->gateway    = 0;
+            new_onlink_route->ifindex    = ifindex;
+            new_onlink_route->weight     = 0;
+            new_onlink_route->n_nexthops = 0;
+
+            /* we configure the onlink route and l3cfg will take the ownership and remove it if not needed */
+            nm_platform_ip_route_add(priv->platform, NMP_NLM_FLAG_APPEND, new_onlink_obj);
+        }
+
+        nm_platform_ip_route_add(priv->platform, NMP_NLM_FLAG_APPEND, obj);
     }
 }
 
