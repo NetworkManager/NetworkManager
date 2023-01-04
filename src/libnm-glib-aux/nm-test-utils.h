@@ -878,13 +878,16 @@ _nmtst_add_test_func_full(const char      *testpath,
     g_assert(testpath && testpath[0]);
     g_assert(func_test);
 
-    data = g_malloc0(G_STRUCT_OFFSET(NmtstTestData, args) + (sizeof(gpointer) * (n_args + 1u)));
+    data = g_malloc(G_STRUCT_OFFSET(NmtstTestData, args) + (sizeof(gpointer) * (n_args + 1u)));
 
-    data->_testpath      = g_strdup(testpath);
-    data->_func_test     = func_test;
-    data->_func_setup    = func_setup;
-    data->_func_teardown = func_teardown;
-    data->n_args         = n_args;
+    *data = (NmtstTestData){
+        ._testpath      = g_strdup(testpath),
+        ._func_test     = func_test,
+        ._func_setup    = func_setup,
+        ._func_teardown = func_teardown,
+        .n_args         = n_args,
+    };
+
     va_start(ap, n_args);
     for (i = 0; i < n_args; i++)
         data->args[i] = va_arg(ap, gpointer);
