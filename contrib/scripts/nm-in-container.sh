@@ -34,7 +34,14 @@ set -e
 # running a CI test.
 ###############################################################################
 
-BASE_IMAGE="${BASE_IMAGE:-fedora:latest}"
+if [ -z "$BASE_IMAGE" ]; then
+    if grep -q "^ID=fedora$" /etc/os-release 2>/dev/null ; then
+        BASE_IMAGE="$(sed -n 's/^VERSION_ID=\([0-9]\+\)$/fedora:\1/p' /etc/os-release)"
+    fi
+fi
+if [ -z "$BASE_IMAGE" ]; then
+    BASE_IMAGE=fedora:latest
+fi
 
 BASEDIR_NM="$(readlink -f "$(dirname "$(readlink -f "$0")")/../..")"
 BASEDIR="$BASEDIR_NM/contrib/scripts/nm-in-container.d"
