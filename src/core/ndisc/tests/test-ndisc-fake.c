@@ -33,7 +33,6 @@ ndisc_new(void)
     memset(&iid, 0, sizeof(iid));
     iid.id_u8[7] = 1;
     nm_ndisc_set_iid(ndisc, iid, FALSE);
-    g_object_unref(l3cfg);
 
     return NM_FAKE_NDISC(ndisc);
 }

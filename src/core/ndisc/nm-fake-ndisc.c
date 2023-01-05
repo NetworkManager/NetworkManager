@@ -358,7 +358,7 @@ NMNDisc *
 nm_fake_ndisc_new(NML3Cfg *l3cfg)
 {
     const NMNDiscConfig config = {
-        .l3cfg                        = g_object_ref(NM_L3CFG(l3cfg)),
+        .l3cfg                        = NM_L3CFG(l3cfg),
         .ifname                       = nm_l3cfg_get_ifname(l3cfg, TRUE),
         .node_type                    = NM_NDISC_NODE_TYPE_HOST,
         .stable_type                  = NM_UTILS_STABLE_TYPE_UUID,
