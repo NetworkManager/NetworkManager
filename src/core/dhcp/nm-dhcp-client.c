@@ -84,6 +84,7 @@ typedef struct _NMDhcpClientPrivate {
      * and is set from l3cd_next. */
     const NML3ConfigData *l3cd_curr;
 
+    GSource *previous_lease_timeout_source;
     GSource *no_lease_timeout_source;
     GSource *watch_source;
     GBytes  *effective_client_id;
@@ -269,6 +270,12 @@ nm_dhcp_client_create_options_dict(NMDhcpClient *self, gboolean static_keys)
     return options;
 }
 
+const NML3ConfigData *
+nm_dhcp_client_get_lease(NMDhcpClient *self)
+{
+    return NM_DHCP_CLIENT_GET_PRIVATE(self)->l3cd_curr;
+}
+
 /*****************************************************************************/
 
 gboolean
@@ -301,10 +308,15 @@ nm_dhcp_client_set_effective_client_id(NMDhcpClient *self, GBytes *client_id)
 /*****************************************************************************/
 
 static void
-_emit_notify(NMDhcpClient *self, const NMDhcpClientNotifyData *notify_data)
+_emit_notify_data(NMDhcpClient *self, const NMDhcpClientNotifyData *notify_data)
 {
     g_signal_emit(G_OBJECT(self), signals[SIGNAL_NOTIFY], 0, notify_data);
 }
+
+#define _emit_notify(self, _notify_type, ...) \
+    _emit_notify_data(                        \
+        (self),                               \
+        &((const NMDhcpClientNotifyData){.notify_type = (_notify_type), __VA_ARGS__}))
 
 /*****************************************************************************/
 
@@ -392,12 +404,7 @@ _no_lease_timeout(gpointer user_data)
     NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
 
     nm_clear_g_source_inst(&priv->no_lease_timeout_source);
-
-    _emit_notify(self,
-                 &((NMDhcpClientNotifyData){
-                     .notify_type = NM_DHCP_CLIENT_NOTIFY_TYPE_NO_LEASE_TIMEOUT,
-                 }));
-
+    _emit_notify(self, NM_DHCP_CLIENT_NOTIFY_TYPE_NO_LEASE_TIMEOUT);
     return G_SOURCE_CONTINUE;
 }
 
@@ -863,6 +870,9 @@ _nm_dhcp_client_notify(NMDhcpClient         *self,
         return;
     }
 
+    if (priv->l3cd_next)
+        nm_clear_g_source_inst(&priv->previous_lease_timeout_source);
+
     nm_l3_config_data_reset(&priv->l3cd_curr, priv->l3cd_next);
 
     if (client_event_type == NM_DHCP_CLIENT_EVENT_TYPE_BOUND && priv->l3cd_curr
@@ -883,18 +893,12 @@ _nm_dhcp_client_notify(NMDhcpClient         *self,
 
     l3_cfg_notify_check_connected(self);
 
-    {
-        const NMDhcpClientNotifyData notify_data = {
-            .notify_type = NM_DHCP_CLIENT_NOTIFY_TYPE_LEASE_UPDATE,
-            .lease_update =
-                {
-                    .l3cd     = priv->l3cd_curr,
-                    .accepted = !priv->l3cfg_notify.wait_dhcp_commit,
-                },
-        };
-
-        _emit_notify(self, &notify_data);
-    }
+    _emit_notify(self,
+                 NM_DHCP_CLIENT_NOTIFY_TYPE_LEASE_UPDATE,
+                 .lease_update = {
+                     .l3cd     = priv->l3cd_curr,
+                     .accepted = !priv->l3cfg_notify.wait_dhcp_commit,
+                 });
 }
 
 static void
@@ -1010,12 +1014,10 @@ ipv6_lladdr_timeout(gpointer user_data)
 
     nm_clear_g_source_inst(&priv->v6.lladdr_timeout_source);
 
-    _emit_notify(
-        self,
-        &((NMDhcpClientNotifyData){
-            .notify_type         = NM_DHCP_CLIENT_NOTIFY_TYPE_IT_LOOKS_BAD,
-            .it_looks_bad.reason = "timeout reached while waiting for an IPv6 link-local address",
-        }));
+    _emit_notify(self,
+                 NM_DHCP_CLIENT_NOTIFY_TYPE_IT_LOOKS_BAD,
+                 .it_looks_bad.reason =
+                     "timeout reached while waiting for an IPv6 link-local address");
     return G_SOURCE_CONTINUE;
 }
 
@@ -1027,12 +1029,9 @@ ipv6_dad_timeout(gpointer user_data)
 
     nm_clear_g_source_inst(&priv->v6.dad_timeout_source);
 
-    _emit_notify(
-        self,
-        &((NMDhcpClientNotifyData){
-            .notify_type         = NM_DHCP_CLIENT_NOTIFY_TYPE_IT_LOOKS_BAD,
-            .it_looks_bad.reason = "timeout reached while waiting for IPv6 DAD to complete",
-        }));
+    _emit_notify(self,
+                 NM_DHCP_CLIENT_NOTIFY_TYPE_IT_LOOKS_BAD,
+                 .it_looks_bad.reason = "timeout reached while waiting for IPv6 DAD to complete");
     return G_SOURCE_CONTINUE;
 }
 
@@ -1134,10 +1133,8 @@ l3_cfg_notify_cb(NML3Cfg *l3cfg, const NML3ConfigNotifyData *notify_data, NMDhcp
 
             if (!NM_DHCP_CLIENT_GET_CLASS(self)->ip6_start(self, &addr->address, &error)) {
                 _emit_notify(self,
-                             &((NMDhcpClientNotifyData){
-                                 .notify_type         = NM_DHCP_CLIENT_NOTIFY_TYPE_IT_LOOKS_BAD,
-                                 .it_looks_bad.reason = error->message,
-                             }));
+                             NM_DHCP_CLIENT_NOTIFY_TYPE_IT_LOOKS_BAD,
+                             .it_looks_bad.reason = error->message);
             }
         }
     }
@@ -1177,22 +1174,19 @@ l3_cfg_notify_cb(NML3Cfg *l3cfg, const NML3ConfigNotifyData *notify_data, NMDhcp
 
                 if (_dhcp_client_accept(self, priv->l3cd_curr, &error)) {
                     _emit_notify(self,
-                                 &((NMDhcpClientNotifyData){
-                                     .notify_type  = NM_DHCP_CLIENT_NOTIFY_TYPE_LEASE_UPDATE,
-                                     .lease_update = {
-                                         .l3cd     = priv->l3cd_curr,
-                                         .accepted = TRUE,
-                                     }}));
+                                 NM_DHCP_CLIENT_NOTIFY_TYPE_LEASE_UPDATE,
+                                 .lease_update = {
+                                     .l3cd     = priv->l3cd_curr,
+                                     .accepted = TRUE,
+                                 });
                 } else {
                     gs_free char *reason =
                         g_strdup_printf("error accepting lease: %s", error->message);
 
                     _LOGD("accept failed: %s", error->message);
                     _emit_notify(self,
-                                 &((NMDhcpClientNotifyData){
-                                     .notify_type         = NM_DHCP_CLIENT_NOTIFY_TYPE_IT_LOOKS_BAD,
-                                     .it_looks_bad.reason = reason,
-                                 }));
+                                 NM_DHCP_CLIENT_NOTIFY_TYPE_IT_LOOKS_BAD,
+                                 .it_looks_bad.reason = reason);
                 }
             } else {
                 _LOGD("decline the lease");
@@ -1267,20 +1261,17 @@ l3_cfg_notify_cb(NML3Cfg *l3cfg, const NML3ConfigNotifyData *notify_data, NMDhcp
                 _LOGD("accept failed: %s", error->message);
 
                 _emit_notify(self,
-                             &((NMDhcpClientNotifyData){
-                                 .notify_type         = NM_DHCP_CLIENT_NOTIFY_TYPE_IT_LOOKS_BAD,
-                                 .it_looks_bad.reason = reason,
-                             }));
+                             NM_DHCP_CLIENT_NOTIFY_TYPE_IT_LOOKS_BAD,
+                             .it_looks_bad.reason = reason, );
                 goto wait_dhcp_commit_done;
             }
 
-            _emit_notify(
-                self,
-                &((NMDhcpClientNotifyData){.notify_type  = NM_DHCP_CLIENT_NOTIFY_TYPE_LEASE_UPDATE,
-                                           .lease_update = {
-                                               .l3cd     = priv->l3cd_curr,
-                                               .accepted = TRUE,
-                                           }}));
+            _emit_notify(self,
+                         NM_DHCP_CLIENT_NOTIFY_TYPE_LEASE_UPDATE,
+                         .lease_update = {
+                             .l3cd     = priv->l3cd_curr,
+                             .accepted = TRUE,
+                         });
         }
     }
 wait_dhcp_commit_done:
@@ -1328,6 +1319,19 @@ wait_dhcp_commit_done:
     }
 }
 
+static gboolean
+_previous_lease_timeout_cb(gpointer user_data)
+{
+    NMDhcpClient        *self = user_data;
+    NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
+
+    nm_clear_g_source_inst(&priv->previous_lease_timeout_source);
+
+    _nm_dhcp_client_notify(self, NM_DHCP_CLIENT_EVENT_TYPE_TIMEOUT, NULL);
+
+    return G_SOURCE_CONTINUE;
+}
+
 gboolean
 nm_dhcp_client_start(NMDhcpClient *self, GError **error)
 {
@@ -1358,6 +1362,23 @@ nm_dhcp_client_start(NMDhcpClient *self, GError **error)
     }
 
     _no_lease_timeout_schedule(self);
+
+    if (priv->config.previous_lease) {
+        /* We got passed a previous lease (during a reapply). For a few seconds, we
+         * will pretend that this is current lease. */
+        priv->l3cd_curr = g_steal_pointer(&priv->config.previous_lease);
+
+        /* Schedule a timeout for when we give up using this lease. Note
+         * that then we will emit a NM_DHCP_CLIENT_NOTIFY_TYPE_LEASE_UPDATE event
+         * and the lease is gone. Note that NMDevice ignores that and will
+         * keep using the lease.
+         *
+         * At the same time, we have _no_lease_timeout_schedule() ticking, when
+         * that expires, we will emit a NM_DHCP_CLIENT_NOTIFY_TYPE_NO_LEASE_TIMEOUT
+         * signal, which causes NMDevice to clear the lease. */
+        priv->previous_lease_timeout_source =
+            nm_g_timeout_add_seconds_source(15, _previous_lease_timeout_cb, self);
+    }
 
     if (IS_IPv4)
         return NM_DHCP_CLIENT_GET_CLASS(self)->ip4_start(self, error);
@@ -1438,6 +1459,8 @@ nm_dhcp_client_stop(NMDhcpClient *self, gboolean release)
 
     if (priv->is_stopped)
         return;
+
+    nm_clear_g_source_inst(&priv->previous_lease_timeout_source);
 
     priv->is_stopped = TRUE;
 
@@ -1598,15 +1621,11 @@ maybe_add_option(NMDhcpClient *self, GHashTable *hash, const char *key, GVariant
 void
 nm_dhcp_client_emit_ipv6_prefix_delegated(NMDhcpClient *self, const NMPlatformIP6Address *prefix)
 {
-    const NMDhcpClientNotifyData notify_data = {
-        .notify_type = NM_DHCP_CLIENT_NOTIFY_TYPE_PREFIX_DELEGATED,
-        .prefix_delegated =
-            {
-                .prefix = prefix,
-            },
-    };
-
-    _emit_notify(self, &notify_data);
+    _emit_notify(self,
+                 NM_DHCP_CLIENT_NOTIFY_TYPE_PREFIX_DELEGATED,
+                 .prefix_delegated = {
+                     .prefix = prefix,
+                 });
 }
 
 gboolean
@@ -1784,6 +1803,8 @@ config_init(NMDhcpClientConfig *config, const NMDhcpClientConfig *src)
 
     g_object_ref(config->l3cfg);
 
+    nm_l3_config_data_ref_and_seal(config->previous_lease);
+
     nm_g_bytes_ref(config->hwaddr);
     nm_g_bytes_ref(config->bcast_hwaddr);
     nm_g_bytes_ref(config->vendor_class_identifier);
@@ -1843,6 +1864,8 @@ static void
 config_clear(NMDhcpClientConfig *config)
 {
     g_object_unref(config->l3cfg);
+
+    nm_clear_l3cd(&config->previous_lease);
 
     nm_clear_pointer(&config->hwaddr, g_bytes_unref);
     nm_clear_pointer(&config->bcast_hwaddr, g_bytes_unref);
@@ -1920,6 +1943,7 @@ dispose(GObject *object)
 
     watch_cleanup(self);
 
+    nm_clear_g_source_inst(&priv->previous_lease_timeout_source);
     nm_clear_g_source_inst(&priv->no_lease_timeout_source);
 
     if (!NM_IS_IPv4(priv->config.addr_family)) {

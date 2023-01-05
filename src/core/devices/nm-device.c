@@ -111,6 +111,7 @@ typedef enum {
     CLEANUP_TYPE_KEEP,
     CLEANUP_TYPE_REMOVED,
     CLEANUP_TYPE_DECONFIGURE,
+    CLEANUP_TYPE_KEEP_REAPPLY,
 } CleanupType;
 
 typedef enum _nm_packed {
@@ -849,7 +850,7 @@ static void _dev_ipshared4_spawn_dnsmasq(NMDevice *self);
 static void _dev_ipshared6_start(NMDevice *self);
 
 static void
-_cleanup_ip_pre(NMDevice *self, int addr_family, CleanupType cleanup_type, gboolean from_reapply);
+_cleanup_ip_pre(NMDevice *self, int addr_family, CleanupType cleanup_type, gboolean preserve_dhcp);
 
 static void concheck_update_state(NMDevice           *self,
                                   int                 addr_family,
@@ -3576,7 +3577,7 @@ _dev_ip_state_check_async(NMDevice *self, int addr_family)
 }
 
 static void
-_dev_ip_state_cleanup(NMDevice *self, int addr_family, gboolean from_reapply)
+_dev_ip_state_cleanup(NMDevice *self, int addr_family, gboolean keep_reapply)
 {
     NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
     int              IS_IPv4;
@@ -3584,7 +3585,7 @@ _dev_ip_state_cleanup(NMDevice *self, int addr_family, gboolean from_reapply)
     if (addr_family == AF_UNSPEC) {
         _dev_ip_state_set_state(self,
                                 addr_family,
-                                from_reapply ? NM_DEVICE_IP_STATE_PENDING : NM_DEVICE_IP_STATE_NONE,
+                                keep_reapply ? NM_DEVICE_IP_STATE_PENDING : NM_DEVICE_IP_STATE_NONE,
                                 "ip-state-clear");
         return;
     }
@@ -3595,7 +3596,7 @@ _dev_ip_state_cleanup(NMDevice *self, int addr_family, gboolean from_reapply)
     nm_clear_g_source_inst(&priv->ip_data_x[IS_IPv4].req_timeout_source);
     _dev_ip_state_set_state(self,
                             addr_family,
-                            from_reapply ? NM_DEVICE_IP_STATE_PENDING : NM_DEVICE_IP_STATE_NONE,
+                            keep_reapply ? NM_DEVICE_IP_STATE_PENDING : NM_DEVICE_IP_STATE_NONE,
                             "ip-state-clear");
     priv->ip_data_x[IS_IPv4].wait_for_carrier = FALSE;
     priv->ip_data_x[IS_IPv4].wait_for_ports   = FALSE;
@@ -10461,6 +10462,7 @@ _dev_ipdhcpx_start(NMDevice *self, int addr_family)
                     .request_broadcast = request_broadcast,
                     .acd_timeout_msec  = _prop_get_ipv4_dad_timeout(self),
                 },
+            .previous_lease = priv->l3cds[L3_CONFIG_DATA_TYPE_DHCP_X(IS_IPv4)].d,
         };
 
         priv->ipdhcp_data_4.client =
@@ -10511,16 +10513,16 @@ _dev_ipdhcpx_start(NMDevice *self, int addr_family)
                          G_CALLBACK(_dev_ipdhcpx_notify),
                          self);
 
-    /* FIXME(l3cfg:dhcp:previous-lease): take the NML3ConfigData from the previous lease (if any)
-     * and pass it on to NMDhcpClient. This is a fake lease that we use initially (until
-     * NMDhcpClient got a real lease). Note that NMDhcpClient needs to check whether the
-     * lease already expired. */
-
+    /* Take the NML3ConfigData from the previous lease (if any) that was passed to the NMDhcpClient.
+     * This may be the old lease only used during the duration of a reapply until we get the
+     * new lease. */
     previous_lease = nm_dhcp_client_get_lease(priv->ipdhcp_data_x[IS_IPv4].client);
+
     if (!priv->ipdhcp_data_x[IS_IPv4].config) {
         priv->ipdhcp_data_x[IS_IPv4].config = nm_dhcp_config_new(addr_family, previous_lease);
         _notify(self, PROP_DHCPX_CONFIG(IS_IPv4));
     }
+
     if (previous_lease) {
         nm_dhcp_config_set_lease(priv->ipdhcp_data_x[IS_IPv4].config, previous_lease);
         _dev_l3_register_l3cds_set_one_full(self,
@@ -12108,13 +12110,34 @@ activate_stage3_ip_config(NMDevice *self)
 
     ifindex = nm_device_get_ip_ifindex(self);
 
+    ipv4_method = nm_device_get_effective_ip_config_method(self, AF_INET);
+    if (nm_streq(ipv4_method, NM_SETTING_IP4_CONFIG_METHOD_AUTO)) {
+        /* "auto" usually means DHCPv4 or autoconf6, but it doesn't have to be. Subclasses
+         * can overwrite it. For example, you cannot run DHCPv4 on PPP/WireGuard links. */
+        ipv4_method = klass->get_ip_method_auto(self, AF_INET);
+    }
+
+    ipv6_method = nm_device_get_effective_ip_config_method(self, AF_INET6);
+
+    if (nm_streq(ipv6_method, NM_SETTING_IP6_CONFIG_METHOD_AUTO)) {
+        ipv6_method = klass->get_ip_method_auto(self, AF_INET6);
+    }
+
     if (priv->ip_data_4.do_reapply) {
         _LOGD_ip(AF_INET, "reapply...");
-        _cleanup_ip_pre(self, AF_INET, CLEANUP_TYPE_DECONFIGURE, TRUE);
+        priv->ip_data_4.do_reapply = FALSE;
+        _cleanup_ip_pre(self,
+                        AF_INET,
+                        CLEANUP_TYPE_KEEP_REAPPLY,
+                        nm_streq(ipv4_method, NM_SETTING_IP4_CONFIG_METHOD_AUTO));
     }
     if (priv->ip_data_6.do_reapply) {
         _LOGD_ip(AF_INET6, "reapply...");
-        _cleanup_ip_pre(self, AF_INET6, CLEANUP_TYPE_DECONFIGURE, TRUE);
+        priv->ip_data_6.do_reapply = FALSE;
+        _cleanup_ip_pre(self,
+                        AF_INET6,
+                        CLEANUP_TYPE_KEEP_REAPPLY,
+                        nm_streq(ipv6_method, NM_SETTING_IP6_CONFIG_METHOD_AUTO));
     }
 
     /* Add the interface to the specified firewall zone */
@@ -12165,18 +12188,6 @@ activate_stage3_ip_config(NMDevice *self)
      * it might not be a working configuration. But it's what the user asked for, so
      * let's do it! */
     _commit_mtu(self);
-
-    ipv4_method = nm_device_get_effective_ip_config_method(self, AF_INET);
-    if (nm_streq(ipv4_method, NM_SETTING_IP4_CONFIG_METHOD_AUTO)) {
-        /* "auto" usually means DHCPv4 or autoconf6, but it doesn't have to be. Subclasses
-         * can overwrite it. For example, you cannot run DHCPv4 on PPP/WireGuard links. */
-        ipv4_method = klass->get_ip_method_auto(self, AF_INET);
-    }
-
-    ipv6_method = nm_device_get_effective_ip_config_method(self, AF_INET6);
-    if (nm_streq(ipv6_method, NM_SETTING_IP6_CONFIG_METHOD_AUTO)) {
-        ipv6_method = klass->get_ip_method_auto(self, AF_INET6);
-    }
 
     if (!nm_device_sys_iface_state_is_external(self)
         && (!klass->ready_for_ip_config || klass->ready_for_ip_config(self, TRUE))) {
@@ -12630,17 +12641,18 @@ delete_on_deactivate_check_and_schedule(NMDevice *self)
 }
 
 static void
-_cleanup_ip_pre(NMDevice *self, int addr_family, CleanupType cleanup_type, gboolean from_reapply)
+_cleanup_ip_pre(NMDevice *self, int addr_family, CleanupType cleanup_type, gboolean preserve_dhcp)
 {
-    const int        IS_IPv4 = NM_IS_IPv4(addr_family);
-    NMDevicePrivate *priv    = NM_DEVICE_GET_PRIVATE(self);
+    const int        IS_IPv4      = NM_IS_IPv4(addr_family);
+    NMDevicePrivate *priv         = NM_DEVICE_GET_PRIVATE(self);
+    gboolean         keep_reapply = (cleanup_type == CLEANUP_TYPE_KEEP_REAPPLY);
 
     _dev_ipsharedx_cleanup(self, addr_family);
 
     _dev_ipdev_cleanup(self, AF_UNSPEC);
     _dev_ipdev_cleanup(self, addr_family);
 
-    _dev_ipdhcpx_cleanup(self, addr_family, TRUE, FALSE);
+    _dev_ipdhcpx_cleanup(self, addr_family, !preserve_dhcp || !keep_reapply, FALSE);
 
     if (!IS_IPv4)
         _dev_ipac6_cleanup(self);
@@ -12652,8 +12664,8 @@ _cleanup_ip_pre(NMDevice *self, int addr_family, CleanupType cleanup_type, gbool
     nm_clear_g_signal_handler(nm_manager_get_dns_manager(priv->manager),
                               &priv->ip_data.dnsmgr_update_pending_signal_id);
 
-    _dev_ip_state_cleanup(self, AF_UNSPEC, from_reapply);
-    _dev_ip_state_cleanup(self, addr_family, from_reapply);
+    _dev_ip_state_cleanup(self, AF_UNSPEC, keep_reapply);
+    _dev_ip_state_cleanup(self, addr_family, keep_reapply);
 }
 
 gboolean
