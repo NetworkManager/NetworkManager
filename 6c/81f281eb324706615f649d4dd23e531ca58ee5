@@ -1,0 +1,1 @@
+Fixes: b71e695c9b14 ('nm-netns: fix crash due to use of EcmpTrackObj after freeing it')
