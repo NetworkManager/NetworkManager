@@ -647,12 +647,21 @@ nm_netns_ip_route_ecmp_commit(NMNetns *self, NML3Cfg *l3cfg, GPtrArray **out_sin
         track_ecmpid                  = track_obj->parent_track_ecmpid;
         track_ecmpid->already_visited = FALSE;
 
+        nm_assert(g_hash_table_lookup(priv->ecmp_track_by_ecmpid, track_ecmpid) == track_ecmpid);
+        nm_assert(g_hash_table_lookup(priv->ecmp_track_by_obj, track_obj) == track_obj);
+        nm_assert(c_list_contains(&track_ecmpid->ecmpid_lst_head, &track_obj->ecmpid_lst));
+        nm_assert(track_obj->l3cfg == l3cfg);
+
         if (!track_obj->dirty) {
             /* This one is still in used. Keep it, but mark dirty, so that on the
              * next update cycle, it needs to be touched again or will be deleted. */
             track_obj->dirty = TRUE;
             continue;
         }
+
+        /* This entry can be dropped. */
+        if (!g_hash_table_remove(priv->ecmp_track_by_obj, track_obj))
+            nm_assert_not_reached();
 
         if (c_list_is_empty(&track_ecmpid->ecmpid_lst_head)) {
             if (track_ecmpid->merged_obj) {
@@ -662,25 +671,13 @@ nm_netns_ip_route_ecmp_commit(NMNetns *self, NML3Cfg *l3cfg, GPtrArray **out_sin
                             g_ptr_array_new_with_free_func((GDestroyNotify) nmp_object_unref);
                     g_ptr_array_add(mhrts_del,
                                     (gpointer) g_steal_pointer(&track_ecmpid->merged_obj));
-                } else {
-                    if (track_obj->l3cfg != l3cfg) {
-                        nm_l3cfg_commit_on_idle_schedule(track_obj->l3cfg,
-                                                         NM_L3_CFG_COMMIT_TYPE_AUTO);
-                    }
-                }
+                } else
+                    nm_l3cfg_commit_on_idle_schedule(l3cfg, NM_L3_CFG_COMMIT_TYPE_AUTO);
             }
             g_hash_table_remove(priv->ecmp_track_by_ecmpid, track_ecmpid);
 
-            /* This entry can be dropped. */
-            if (!g_hash_table_remove(priv->ecmp_track_by_obj, &track_obj->obj))
-                nm_assert_not_reached();
-
             continue;
         }
-
-        /* This entry can be dropped. */
-        if (!g_hash_table_remove(priv->ecmp_track_by_obj, &track_obj->obj))
-            nm_assert_not_reached();
 
         /* We need to update the representative obj. */
         nmp_object_ref_set(
