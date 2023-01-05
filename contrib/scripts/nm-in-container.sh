@@ -56,7 +56,7 @@ EXEC_ENV=()
 
 usage() {
     cat <<EOF
-$0: build|run|exec|stop|reset|clean|journal [--no-cleanup] [--stop] [-- EXTRA_ARGS]
+$0: build|run|exec|stop|reset|reexec|clean|journal [--no-cleanup] [--stop] [-- EXTRA_ARGS]
 EOF
     echo
     awk '/^####*$/{ if(on) exit; on=1} { if (on) { if (on==2) print(substr($0,3)); on=2; } }' "$BASH_SOURCE"
@@ -576,6 +576,11 @@ do_exec() {
     fi
 }
 
+do_reexec() {
+    do_reset
+    do_exec "$@"
+}
+
 do_journal() {
     EXEC_ENV+=( "SYSTEMD_COLORS=0" )
     do_exec "journalctl" --no-pager "$@"
@@ -604,7 +609,7 @@ for (( i=1 ; i<="$#" ; )) ; do
         j)
             CMD=journal
             ;;
-        build|run|exec|stop|reset|clean|journal)
+        build|run|exec|stop|reset|reexec|clean|journal)
             CMD=$c
             ;;
         --)
@@ -631,8 +636,8 @@ done
 
 test "$UID" != 0 || die "cannot run as root"
 
-if test "$CMD" != exec -a "$CMD" != journal -a "${#EXTRA_ARGS[@]}" != 0 ; then
-    die "Extra arguments are only allowed with exec command"
+if test "$CMD" != exec -a "$CMD" != journal -a "$CMD" != reexec -a "${#EXTRA_ARGS[@]}" != 0 ; then
+    die "Extra arguments are only allowed with exec|journal|reexec command"
 fi
 
 ###############################################################################
