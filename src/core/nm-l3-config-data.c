@@ -8,6 +8,7 @@
 #include "nm-compat-headers/linux/if_addr.h"
 #include <linux/rtnetlink.h>
 
+#include "libnm-glib-aux/nm-ptr-array.h"
 #include "libnm-core-intern/nm-core-internal.h"
 #include "libnm-glib-aux/nm-enum-utils.h"
 #include "libnm-glib-aux/nm-ref-string.h"
@@ -2541,11 +2542,12 @@ nm_l3_config_data_get_blacklisted_ip4_routes(const NML3ConfigData *self, gboolea
 void
 nm_l3_config_data_add_dependent_onlink_routes(NML3ConfigData *self, int addr_family)
 {
-    gs_unref_ptrarray GPtrArray *extra_onlink_routes = NULL;
+    NMPtrArrayStack extra_onlink_routes_stack        = NM_PTR_ARRAY_STACK_INIT(nmp_object_unref);
+    nm_auto_ptrarray NMPtrArray *extra_onlink_routes = &extra_onlink_routes_stack.arr;
     const NMPObject             *obj_src;
     NMDedupMultiIter             iter;
     int                          IS_IPv4;
-    guint                        i;
+    gsize                        i;
 
     if (addr_family == AF_UNSPEC) {
         nm_l3_config_data_add_dependent_onlink_routes(self, AF_INET);
@@ -2591,20 +2593,17 @@ nm_l3_config_data_add_dependent_onlink_routes(NML3ConfigData *self, int addr_fam
         }
 
         /* we cannot add the route right away, because that invalidates the iteration. */
-        if (!extra_onlink_routes)
-            extra_onlink_routes = g_ptr_array_new_with_free_func((GDestroyNotify) nmp_object_unref);
-        g_ptr_array_add(extra_onlink_routes, new_route);
+        nm_ptr_array_add(&extra_onlink_routes, new_route);
     }
-    if (extra_onlink_routes) {
-        for (i = 0; i < extra_onlink_routes->len; i++) {
-            nm_l3_config_data_add_route_full(self,
-                                             addr_family,
-                                             extra_onlink_routes->pdata[i],
-                                             NULL,
-                                             NM_L3_CONFIG_ADD_FLAGS_EXCLUSIVE,
-                                             NULL,
-                                             NULL);
-        }
+
+    for (i = 0; i < extra_onlink_routes->len; i++) {
+        nm_l3_config_data_add_route_full(self,
+                                         addr_family,
+                                         extra_onlink_routes->ptrs[i],
+                                         NULL,
+                                         NM_L3_CONFIG_ADD_FLAGS_EXCLUSIVE,
+                                         NULL,
+                                         NULL);
     }
 }
 
