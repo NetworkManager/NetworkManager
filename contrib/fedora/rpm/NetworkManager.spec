@@ -721,6 +721,7 @@ Preferably use nmcli instead.
 %endif
 	-Dsession_tracking=systemd \
 	-Dsuspend_resume=systemd \
+	-Dsystemdsystemunitdir=%{_unitdir} \
 	-Dsystem_ca_path=/etc/pki/tls/cert.pem \
 	-Ddbus_conf_dir=%{dbus_sys_dir} \
 	-Dtests=yes \
@@ -858,6 +859,7 @@ autoreconf --install --force
 	--with-ebpf=%{ebpf_enabled} \
 	--with-session-tracking=systemd \
 	--with-suspend-resume=systemd \
+	--with-systemdsystemunitdir=%{_unitdir} \
 	--with-system-ca-path=/etc/pki/tls/cert.pem \
 	--with-dbus-sys-dir=%{dbus_sys_dir} \
 	--with-tests=yes \
@@ -930,7 +932,7 @@ rm -f %{buildroot}%{nmplugindir}/*.la
 # Ensure the documentation timestamps are constant to avoid multilib conflicts
 find %{buildroot}%{_datadir}/gtk-doc -exec touch --reference configure.ac '{}' \+
 
-%if 0%{?__debug_package}
+%if 0%{?__debug_package} && ! 0%{?flatpak}
 mkdir -p %{buildroot}%{_prefix}/src/debug/NetworkManager-%{real_version}
 cp valgrind.suppressions %{buildroot}%{_prefix}/src/debug/NetworkManager-%{real_version}
 %endif
@@ -1087,10 +1089,10 @@ fi
 %{_mandir}/man1/*
 %{_mandir}/man5/*
 %{_mandir}/man7/nmcli-examples.7*
-%{_mandir}/man8/nm-initrd-generator.8.gz
-%{_mandir}/man8/NetworkManager.8.gz
-%{_mandir}/man8/NetworkManager-dispatcher.8.gz
-%{_mandir}/man8/NetworkManager-wait-online.service.8.gz
+%{_mandir}/man8/nm-initrd-generator.8*
+%{_mandir}/man8/NetworkManager.8*
+%{_mandir}/man8/NetworkManager-dispatcher.8*
+%{_mandir}/man8/NetworkManager-wait-online.service.8*
 %dir %{_localstatedir}/lib/NetworkManager
 %dir %{_sysconfdir}/sysconfig/network-scripts
 %{_datadir}/dbus-1/system-services/org.freedesktop.nm_dispatcher.service
