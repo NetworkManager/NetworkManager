@@ -331,7 +331,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
         g_set_error(error,
                     NM_CONNECTION_ERROR,
                     NM_CONNECTION_ERROR_INVALID_PROPERTY,
-                    _("maximum number of user data entries reached (%u instead of %u)"),
+                    _("maximum number of entries reached (%u instead of %u)"),
                     g_hash_table_size(priv->data),
                     (unsigned) MAX_NUM_KEYS);
         g_prefix_error(error,
@@ -514,7 +514,7 @@ nm_setting_ovs_external_ids_class_init(NMSettingOvsExternalIDsClass *klass)
     /**
      * NMSettingOvsExternalIDs:data: (type GHashTable(utf8,utf8))
      *
-     * A dictionary of key/value pairs with exernal-ids for OVS.
+     * A dictionary of key/value pairs with external-ids for OVS.
      *
      * Since: 1.30
      **/
