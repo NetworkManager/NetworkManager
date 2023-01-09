@@ -53,15 +53,6 @@ G_DEFINE_TYPE(NMSettingOvsExternalIDs, nm_setting_ovs_external_ids, NM_TYPE_SETT
 
 /*****************************************************************************/
 
-static gboolean
-_exid_key_char_is_regular(char ch)
-{
-    /* allow words of printable characters, plus some
-     * special characters, for example to support base64 encoding. */
-    return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (ch >= '0' && ch <= '9')
-           || NM_IN_SET(ch, '-', '_', '+', '/', '=', '.');
-}
-
 /**
  * nm_setting_ovs_external_ids_check_key:
  * @key: (allow-none): the key to check
@@ -105,7 +96,7 @@ nm_setting_ovs_external_ids_check_key(const char *key, GError **error)
                             _("key must be UTF8"));
         return FALSE;
     }
-    if (!NM_STRCHAR_ALL(key, ch, _exid_key_char_is_regular(ch))) {
+    if (!NM_STRCHAR_ALL(key, ch, nm_ascii_is_regular_char(ch))) {
         /* Probably OVS is more forgiving about what makes a valid key for
          * an external-id. However, we are strict (at least, for now). */
         g_set_error_literal(error,
