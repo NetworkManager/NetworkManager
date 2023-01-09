@@ -293,12 +293,16 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 
     if (priv->data) {
         gs_free_error GError *local = NULL;
-        GHashTableIter        iter;
-        const char           *key;
-        const char           *val;
+        const char *const    *keys;
+        guint                 len;
+        guint                 i;
 
-        g_hash_table_iter_init(&iter, priv->data);
-        while (g_hash_table_iter_next(&iter, (gpointer *) &key, (gpointer *) &val)) {
+        keys = nm_setting_ovs_external_ids_get_data_keys(self, &len);
+
+        for (i = 0; i < len; i++) {
+            const char *key = keys[i];
+            const char *val = g_hash_table_lookup(priv->data, key);
+
             if (!nm_setting_ovs_external_ids_check_key(key, &local)) {
                 g_set_error(error,
                             NM_CONNECTION_ERROR,
