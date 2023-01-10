@@ -148,7 +148,7 @@ _share_iptables_call_v(const char *const *argv)
 }
 
 #define _share_iptables_call(...) \
-    _share_iptables_call_v(NM_MAKE_STRV("" IPTABLES_PATH "", __VA_ARGS__))
+    _share_iptables_call_v(NM_MAKE_STRV("" IPTABLES_PATH "", "--wait", "2", __VA_ARGS__))
 
 static gboolean
 _share_iptables_chain_op(const char *table, const char *chain, const char *op)
