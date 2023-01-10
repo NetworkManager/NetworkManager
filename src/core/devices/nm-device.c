@@ -15043,7 +15043,7 @@ nm_device_recheck_available_connections(NMDevice *self)
 
         if (nm_device_check_connection_available(self,
                                                  nm_settings_connection_get_connection(sett_conn),
-                                                 NM_DEVICE_CHECK_CON_AVAILABLE_NONE,
+                                                 _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST,
                                                  NULL,
                                                  NULL)) {
             if (available_connections_add(self, sett_conn))
