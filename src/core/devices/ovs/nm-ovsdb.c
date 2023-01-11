@@ -592,21 +592,30 @@ _set_bridge_ports(json_t *params, const char *ifname, json_t *new_ports)
 static void
 _set_bridge_mac(json_t *params, const char *ifname, const char *mac)
 {
-    json_array_append_new(params,
-                          json_pack("{s:s, s:s, s:{s:[s, [[s, s]]]}, s:[[s, s, s]]}",
-                                    "op",
-                                    "update",
-                                    "table",
-                                    "Bridge",
-                                    "row",
-                                    "other_config",
-                                    "map",
-                                    "hwaddr",
-                                    mac,
-                                    "where",
-                                    "name",
-                                    "==",
-                                    ifname));
+    json_array_append_new(
+        params,
+        json_pack("{s:s, s:s, s:[[s, s, [s, [s]]], [s, s, [s, [[s, s]]]]], s:[[s, s, s]]}",
+                  "op",
+                  "mutate",
+                  "table",
+                  "Bridge",
+                  "mutations",
+
+                  "other_config",
+                  "delete",
+                  "set",
+                  "hwaddr",
+
+                  "other_config",
+                  "insert",
+                  "map",
+                  "hwaddr",
+                  mac,
+
+                  "where",
+                  "name",
+                  "==",
+                  ifname));
 }
 
 /**
