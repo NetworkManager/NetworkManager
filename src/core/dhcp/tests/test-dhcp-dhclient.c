@@ -904,7 +904,7 @@ _check_duid_impl(const guint8 *duid_bin,
     gs_free_error GError  *error    = NULL;
     gs_free char          *contents = NULL;
     gboolean               success;
-    const char            *path = NM_BUILD_SRCDIR "/src/core/dhcp/tests/check-duid.lease";
+    const char            *path = NM_BUILD_BUILDDIR "/src/core/dhcp/tests/check-duid.lease";
     gs_unref_bytes GBytes *duid = NULL;
     gsize                  contents_len;
 
