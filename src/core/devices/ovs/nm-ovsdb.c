@@ -723,26 +723,27 @@ _j_create_external_ids_array_update(const char *connection_uuid,
 
     mutations = json_array();
 
+    array = json_array();
     if (exid_old) {
-        array = NULL;
         g_hash_table_iter_init(&iter, exid_old);
         while (g_hash_table_iter_next(&iter, (gpointer *) &key, NULL)) {
-            if (nm_g_hash_table_contains(exid_new, key))
-                continue;
-            if (NM_STR_HAS_PREFIX(key, NM_OVS_EXTERNAL_ID_NM_PREFIX))
-                continue;
-
-            if (!array)
-                array = json_array();
-
             json_array_append_new(array, json_string(key));
         }
-        if (array) {
-            json_array_append_new(
-                mutations,
-                json_pack("[s, s, [s, o]]", "external_ids", "delete", "set", array));
+    }
+    if (exid_new) {
+        g_hash_table_iter_init(&iter, exid_new);
+        while (g_hash_table_iter_next(&iter, (gpointer *) &key, NULL)) {
+            if (nm_g_hash_table_contains(exid_old, key))
+                continue;
+            json_array_append_new(array, json_string(key));
         }
     }
+    if (!nm_g_hash_table_contains(exid_old, NM_OVS_EXTERNAL_ID_NM_PREFIX)
+        && !nm_g_hash_table_contains(exid_new, NM_OVS_EXTERNAL_ID_NM_PREFIX)) {
+        json_array_append_new(array, json_string(NM_OVS_EXTERNAL_ID_NM_PREFIX));
+    }
+    json_array_append_new(mutations,
+                          json_pack("[s, s, [s, o]]", "external_ids", "delete", "set", array));
 
     array = json_array();
 
