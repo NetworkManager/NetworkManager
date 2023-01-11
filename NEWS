@@ -1,4 +1,16 @@
 ===============================================
+NetworkManager-1.40.10
+Overview of changes since NetworkManager-1.40.8
+===============================================
+
+* Fix the evaluation of the autoconnect retries.
+* nm-cloud-setup now preserves addresses added externally.
+* Ensure that dnsmasq is stopped after changing the dns backend and
+  restarting the service.
+* Fix honoring an explicit DHCPv6 DUID with dhclient.
+* Other various fixes.
+
+===============================================
 NetworkManager-1.40.8
 Overview of changes since NetworkManager-1.40.6
 ===============================================
