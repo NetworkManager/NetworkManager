@@ -30,6 +30,10 @@
 #warning "requires at least libjansson 2.4"
 #endif
 
+typedef enum {
+    STRDICT_TYPE_EXTERNAL_IDS,
+} StrdictType;
+
 typedef struct {
     char      *port_uuid;
     char      *name;
@@ -676,26 +680,35 @@ _set_port_interfaces(json_t *params, const char *ifname, json_t *new_interfaces)
 }
 
 static json_t *
-_j_create_strdict_new(NMConnection *connection)
+_j_create_strdict_new(NMConnection *connection, StrdictType strdict_type)
 {
+    NMSettingOvsExternalIDs *s_external_ids = NULL;
     json_t                  *array;
     const char *const       *strv   = NULL;
     guint                    n_strv = 0;
     guint                    i;
     const char              *uuid;
-    NMSettingOvsExternalIDs *s_external_ids;
 
     nm_assert(NM_IS_CONNECTION(connection));
+    nm_assert(NM_IN_SET(strdict_type, STRDICT_TYPE_EXTERNAL_IDS));
 
     array = json_array();
 
-    uuid = nm_connection_get_uuid(connection);
-    nm_assert(uuid);
-    json_array_append_new(array, json_pack("[s, s]", NM_OVS_EXTERNAL_ID_NM_CONNECTION_UUID, uuid));
+    if (strdict_type == STRDICT_TYPE_EXTERNAL_IDS) {
+        uuid = nm_connection_get_uuid(connection);
+        nm_assert(uuid);
+        json_array_append_new(array,
+                              json_pack("[s, s]", NM_OVS_EXTERNAL_ID_NM_CONNECTION_UUID, uuid));
+    }
 
-    s_external_ids = _nm_connection_get_setting(connection, NM_TYPE_SETTING_OVS_EXTERNAL_IDS);
-    if (s_external_ids)
-        strv = nm_setting_ovs_external_ids_get_data_keys(s_external_ids, &n_strv);
+    if (strdict_type == STRDICT_TYPE_EXTERNAL_IDS) {
+        s_external_ids = _nm_connection_get_setting(connection, NM_TYPE_SETTING_OVS_EXTERNAL_IDS);
+        if (s_external_ids)
+            strv = nm_setting_ovs_external_ids_get_data_keys(s_external_ids, &n_strv);
+    } else {
+        nm_assert_not_reached();
+    }
+
     for (i = 0; i < n_strv; i++) {
         const char *k = strv[i];
 
@@ -707,23 +720,27 @@ _j_create_strdict_new(NMConnection *connection)
     return json_pack("[s, o]", "map", array);
 }
 
-static json_t *
-_j_create_strv_array_update(const char *connection_uuid, GHashTable *hash_old, GHashTable *hash_new)
+static void
+_j_create_strv_array_update(json_t     *mutations,
+                            StrdictType strdict_type,
+                            const char *connection_uuid,
+                            GHashTable *hash_old,
+                            GHashTable *hash_new)
 {
     GHashTableIter iter;
-    json_t        *mutations;
     json_t        *array;
     const char    *key;
     const char    *val;
 
-    nm_assert(connection_uuid);
+    nm_assert((!!connection_uuid) == (strdict_type == STRDICT_TYPE_EXTERNAL_IDS));
+    nm_assert(NM_IN_SET(strdict_type, STRDICT_TYPE_EXTERNAL_IDS));
 
-    mutations = json_array();
-
-    array = json_array();
+    array = NULL;
     if (hash_old) {
         g_hash_table_iter_init(&iter, hash_old);
         while (g_hash_table_iter_next(&iter, (gpointer *) &key, NULL)) {
+            if (!array)
+                array = json_array();
             json_array_append_new(array, json_string(key));
         }
     }
@@ -732,34 +749,54 @@ _j_create_strv_array_update(const char *connection_uuid, GHashTable *hash_old, G
         while (g_hash_table_iter_next(&iter, (gpointer *) &key, NULL)) {
             if (nm_g_hash_table_contains(hash_old, key))
                 continue;
+            if (!array)
+                array = json_array();
             json_array_append_new(array, json_string(key));
         }
     }
-    if (!nm_g_hash_table_contains(hash_old, NM_OVS_EXTERNAL_ID_NM_PREFIX)
-        && !nm_g_hash_table_contains(hash_new, NM_OVS_EXTERNAL_ID_NM_PREFIX)) {
-        json_array_append_new(array, json_string(NM_OVS_EXTERNAL_ID_NM_PREFIX));
+    if (strdict_type == STRDICT_TYPE_EXTERNAL_IDS) {
+        if (!nm_g_hash_table_contains(hash_old, NM_OVS_EXTERNAL_ID_NM_PREFIX)
+            && !nm_g_hash_table_contains(hash_new, NM_OVS_EXTERNAL_ID_NM_PREFIX)) {
+            if (!array)
+                array = json_array();
+            json_array_append_new(array, json_string(NM_OVS_EXTERNAL_ID_NM_PREFIX));
+        }
     }
-    json_array_append_new(mutations,
-                          json_pack("[s, s, [s, o]]", "external_ids", "delete", "set", array));
+    if (array) {
+        json_array_append_new(
+            mutations,
+            json_pack("[s, s, [s, o]]",
+                      strdict_type == STRDICT_TYPE_EXTERNAL_IDS ? "external_ids" : "other_config",
+                      "delete",
+                      "set",
+                      array));
+    }
 
     array = json_array();
 
-    json_array_append_new(
-        array,
-        json_pack("[s, s]", NM_OVS_EXTERNAL_ID_NM_CONNECTION_UUID, connection_uuid));
-
+    if (strdict_type == STRDICT_TYPE_EXTERNAL_IDS) {
+        json_array_append_new(
+            array,
+            json_pack("[s, s]", NM_OVS_EXTERNAL_ID_NM_CONNECTION_UUID, connection_uuid));
+    }
     if (hash_new) {
         g_hash_table_iter_init(&iter, hash_new);
         while (g_hash_table_iter_next(&iter, (gpointer *) &key, (gpointer *) &val)) {
-            if (NM_STR_HAS_PREFIX(key, NM_OVS_EXTERNAL_ID_NM_PREFIX))
-                continue;
+            if (strdict_type == STRDICT_TYPE_EXTERNAL_IDS) {
+                if (NM_STR_HAS_PREFIX(key, NM_OVS_EXTERNAL_ID_NM_PREFIX))
+                    continue;
+            }
             json_array_append_new(array, json_pack("[s, s]", key, val));
         }
     }
 
-    json_array_append_new(mutations,
-                          json_pack("[s, s, [s, o]]", "external_ids", "insert", "map", array));
-    return mutations;
+    json_array_append_new(
+        mutations,
+        json_pack("[s, s, [s, o]]",
+                  strdict_type == STRDICT_TYPE_EXTERNAL_IDS ? "external_ids" : "other_config",
+                  "insert",
+                  "map",
+                  array));
 }
 
 /**
@@ -839,7 +876,7 @@ _insert_interface(json_t       *params,
                     "options",
                     options,
                     "external_ids",
-                    _j_create_strdict_new(interface));
+                    _j_create_strdict_new(interface, STRDICT_TYPE_EXTERNAL_IDS));
 
     if (cloned_mac)
         json_object_set_new(row, "mac", json_string(cloned_mac));
@@ -924,7 +961,9 @@ _insert_port(json_t *params, NMConnection *port, json_t *new_interfaces)
 
     json_object_set_new(row, "name", json_string(nm_connection_get_interface_name(port)));
     json_object_set_new(row, "interfaces", json_pack("[s, O]", "set", new_interfaces));
-    json_object_set_new(row, "external_ids", _j_create_strdict_new(port));
+    json_object_set_new(row,
+                        "external_ids",
+                        _j_create_strdict_new(port, STRDICT_TYPE_EXTERNAL_IDS));
 
     /* Create a new one. */
     json_array_append_new(params,
@@ -984,7 +1023,9 @@ _insert_bridge(json_t       *params,
 
     json_object_set_new(row, "name", json_string(nm_connection_get_interface_name(bridge)));
     json_object_set_new(row, "ports", json_pack("[s, O]", "set", new_ports));
-    json_object_set_new(row, "external_ids", _j_create_strdict_new(bridge));
+    json_object_set_new(row,
+                        "external_ids",
+                        _j_create_strdict_new(bridge, STRDICT_TYPE_EXTERNAL_IDS));
 
     if (cloned_mac) {
         json_object_set_new(row,
@@ -1419,6 +1460,17 @@ ovsdb_next_command(NMOvsdb *self)
                                             call->payload.set_interface_mtu.ifname));
             break;
         case OVSDB_SET_REAPPLY:
+        {
+            json_t *mutations;
+
+            mutations = json_array();
+
+            _j_create_strv_array_update(mutations,
+                                        STRDICT_TYPE_EXTERNAL_IDS,
+                                        call->payload.set_reapply.connection_uuid,
+                                        call->payload.set_reapply.external_ids_old,
+                                        call->payload.set_reapply.external_ids_new);
+
             json_array_append_new(
                 params,
                 json_pack("{s:s, s:s, s:o, s:[[s, s, s]]}",
@@ -1427,14 +1479,13 @@ ovsdb_next_command(NMOvsdb *self)
                           "table",
                           _device_type_to_table(call->payload.set_reapply.device_type),
                           "mutations",
-                          _j_create_strv_array_update(call->payload.set_reapply.connection_uuid,
-                                                      call->payload.set_reapply.external_ids_old,
-                                                      call->payload.set_reapply.external_ids_new),
+                          mutations,
                           "where",
                           "name",
                           "==",
                           call->payload.set_reapply.ifname));
             break;
+        }
 
         default:
             nm_assert_not_reached();
@@ -1519,14 +1570,13 @@ _uuids_to_array(const json_t *items)
 }
 
 static void
-_strdict_extract(json_t *strdict, GArray **out_array, const char **out_connection_uuid)
+_strdict_extract(json_t *strdict, GArray **out_array)
 {
     json_t *array;
     json_t *value;
     gsize   index;
 
     nm_assert(out_array && !*out_array);
-    nm_assert(!out_connection_uuid || !*out_connection_uuid);
 
     if (!nm_streq0("map", json_string_value(json_array_get(strdict, 0))))
         return;
@@ -1552,16 +1602,26 @@ _strdict_extract(json_t *strdict, GArray **out_array, const char **out_connectio
             .name      = g_strdup(key),
             .value_str = g_strdup(val),
         };
-
-        if (out_connection_uuid && nm_streq(v->name, NM_OVS_EXTERNAL_ID_NM_CONNECTION_UUID)) {
-            *out_connection_uuid = v->value_str;
-            out_connection_uuid  = NULL;
-        }
     }
 }
 
+static const char *
+_strdict_find_key(GArray *array, const char *key)
+{
+    gssize idx;
+
+    idx = nm_utils_named_value_list_find(nm_g_array_first_p(array, NMUtilsNamedValue),
+                                         nm_g_array_len(array),
+                                         key,
+                                         FALSE);
+    if (idx < 0)
+        return NULL;
+
+    return nm_g_array_index(array, NMUtilsNamedValue, idx).value_str;
+}
+
 static gboolean
-_strdict_equal(const GArray *arr1, const GArray *arr2)
+_strdict_equals(const GArray *arr1, const GArray *arr2)
 {
     guint n;
     guint i;
@@ -1574,16 +1634,16 @@ _strdict_equal(const GArray *arr1, const GArray *arr2)
         const NMUtilsNamedValue *n1 = &nm_g_array_index(arr1, NMUtilsNamedValue, i);
         const NMUtilsNamedValue *n2 = &nm_g_array_index(arr2, NMUtilsNamedValue, i);
 
-        if (!nm_streq0(n1->name, n2->name))
+        if (!nm_streq(n1->name, n2->name))
             return FALSE;
-        if (!nm_streq0(n1->value_str, n2->value_str))
+        if (!nm_streq(n1->value_str, n2->value_str))
             return FALSE;
     }
     return TRUE;
 }
 
 static char *
-_external_ids_to_string(const GArray *arr)
+_strdict_to_string(const GArray *arr)
 {
     NMStrBuf strbuf;
     guint    i;
@@ -1720,7 +1780,9 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
             nm_clear_pointer(&ovs_interface, _free_interface);
         }
 
-        _strdict_extract(external_ids, &external_ids_arr, &connection_uuid);
+        _strdict_extract(external_ids, &external_ids_arr);
+        connection_uuid =
+            _strdict_find_key(external_ids_arr, NM_OVS_EXTERNAL_ID_NM_CONNECTION_UUID);
 
         if (ovs_interface) {
             gboolean changed = FALSE;
@@ -1729,7 +1791,7 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
 
             changed |= nm_strdup_reset(&ovs_interface->type, type);
             changed |= nm_strdup_reset(&ovs_interface->connection_uuid, connection_uuid);
-            if (!_strdict_equal(ovs_interface->external_ids, external_ids_arr)) {
+            if (!_strdict_equals(ovs_interface->external_ids, external_ids_arr)) {
                 NM_SWAP(&ovs_interface->external_ids, &external_ids_arr);
                 changed = TRUE;
             }
@@ -1744,7 +1806,7 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
                                            ", ",
                                            ovs_interface->connection_uuid,
                                            ""),
-                      (strtmp1 = _external_ids_to_string(ovs_interface->external_ids)));
+                      (strtmp1 = _strdict_to_string(ovs_interface->external_ids)));
             }
         } else {
             gs_free char *strtmp1 = NULL;
@@ -1766,7 +1828,7 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
                                        ", ",
                                        ovs_interface->connection_uuid,
                                        ""),
-                  (strtmp1 = _external_ids_to_string(ovs_interface->external_ids)));
+                  (strtmp1 = _strdict_to_string(ovs_interface->external_ids)));
             _signal_emit_device_added(self,
                                       ovs_interface->name,
                                       NM_DEVICE_TYPE_OVS_INTERFACE,
@@ -1830,7 +1892,10 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
             nm_clear_pointer(&ovs_port, _free_port);
         }
 
-        _strdict_extract(external_ids, &external_ids_arr, &connection_uuid);
+        _strdict_extract(external_ids, &external_ids_arr);
+        connection_uuid =
+            _strdict_find_key(external_ids_arr, NM_OVS_EXTERNAL_ID_NM_CONNECTION_UUID);
+
         interfaces = _uuids_to_array(items);
 
         if (ovs_port) {
@@ -1844,7 +1909,7 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
                 NM_SWAP(&ovs_port->interfaces, &interfaces);
                 changed = TRUE;
             }
-            if (!_strdict_equal(ovs_port->external_ids, external_ids_arr)) {
+            if (!_strdict_equals(ovs_port->external_ids, external_ids_arr)) {
                 NM_SWAP(&ovs_port->external_ids, &external_ids_arr);
                 changed = TRUE;
             }
@@ -1858,7 +1923,7 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
                                            ", ",
                                            ovs_port->connection_uuid,
                                            ""),
-                      (strtmp1 = _external_ids_to_string(ovs_port->external_ids)));
+                      (strtmp1 = _strdict_to_string(ovs_port->external_ids)));
             }
         } else {
             gs_free char *strtmp1 = NULL;
@@ -1879,7 +1944,7 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
                                        ", ",
                                        ovs_port->connection_uuid,
                                        ""),
-                  (strtmp1 = _external_ids_to_string(ovs_port->external_ids)));
+                  (strtmp1 = _strdict_to_string(ovs_port->external_ids)));
             _signal_emit_device_added(self, ovs_port->name, NM_DEVICE_TYPE_OVS_PORT, NULL);
         }
     }
@@ -1935,7 +2000,10 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
             nm_clear_pointer(&ovs_bridge, _free_bridge);
         }
 
-        _strdict_extract(external_ids, &external_ids_arr, &connection_uuid);
+        _strdict_extract(external_ids, &external_ids_arr);
+        connection_uuid =
+            _strdict_find_key(external_ids_arr, NM_OVS_EXTERNAL_ID_NM_CONNECTION_UUID);
+
         ports = _uuids_to_array(items);
 
         if (ovs_bridge) {
@@ -1949,7 +2017,7 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
                 NM_SWAP(&ovs_bridge->ports, &ports);
                 changed = TRUE;
             }
-            if (!_strdict_equal(ovs_bridge->external_ids, external_ids_arr)) {
+            if (!_strdict_equals(ovs_bridge->external_ids, external_ids_arr)) {
                 NM_SWAP(&ovs_bridge->external_ids, &external_ids_arr);
                 changed = TRUE;
             }
@@ -1963,7 +2031,7 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
                                            ", ",
                                            ovs_bridge->connection_uuid,
                                            ""),
-                      (strtmp1 = _external_ids_to_string(ovs_bridge->external_ids)));
+                      (strtmp1 = _strdict_to_string(ovs_bridge->external_ids)));
             }
         } else {
             gs_free char *strtmp1 = NULL;
@@ -1984,7 +2052,7 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
                                        ", ",
                                        ovs_bridge->connection_uuid,
                                        ""),
-                  (strtmp1 = _external_ids_to_string(ovs_bridge->external_ids)));
+                  (strtmp1 = _strdict_to_string(ovs_bridge->external_ids)));
             _signal_emit_device_added(self, ovs_bridge->name, NM_DEVICE_TYPE_OVS_BRIDGE, NULL);
         }
     }
