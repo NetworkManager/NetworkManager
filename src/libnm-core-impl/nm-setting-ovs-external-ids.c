@@ -118,6 +118,56 @@ nm_setting_ovs_external_ids_check_key(const char *key, GError **error)
     return TRUE;
 }
 
+gboolean
+_nm_setting_ovs_verify_connection_type(GType gtype, NMConnection *connection, GError **error)
+{
+    NMSettingConnection *s_con;
+    const char          *type;
+    const char          *slave_type;
+
+    nm_assert(!connection || NM_IS_CONNECTION(connection));
+    nm_assert(NM_IN_SET(gtype, NM_TYPE_SETTING_OVS_EXTERNAL_IDS));
+    nm_assert(!error || !*error);
+
+    if (!connection) {
+        /* We don't know. It's valid. */
+        return TRUE;
+    }
+
+    type = nm_connection_get_connection_type(connection);
+    if (!type) {
+        NMSetting *s_base;
+
+        s_base = _nm_connection_find_base_type_setting(connection);
+        if (s_base)
+            type = nm_setting_get_name(s_base);
+    }
+    if (NM_IN_STRSET(type,
+                     NM_SETTING_OVS_BRIDGE_SETTING_NAME,
+                     NM_SETTING_OVS_PORT_SETTING_NAME,
+                     NM_SETTING_OVS_INTERFACE_SETTING_NAME))
+        return TRUE;
+
+    if ((s_con = nm_connection_get_setting_connection(connection))
+        && _nm_connection_detect_slave_type_full(s_con,
+                                                 connection,
+                                                 &slave_type,
+                                                 NULL,
+                                                 NULL,
+                                                 NULL,
+                                                 NULL)
+        && nm_streq0(slave_type, NM_SETTING_OVS_PORT_SETTING_NAME))
+        return TRUE;
+
+    g_set_error(error,
+                NM_CONNECTION_ERROR,
+                NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                _("OVS %s can only be added to a profile of type OVS "
+                  "bridge/port/interface or to OVS system interface"),
+                gtype == NM_TYPE_SETTING_OVS_EXTERNAL_IDS ? "external-ids" : "other-config");
+    return FALSE;
+}
+
 /**
  * nm_setting_ovs_external_ids_check_val:
  * @val: (allow-none): the value to check
@@ -341,44 +391,10 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
         return FALSE;
     }
 
-    if (connection) {
-        NMSettingConnection *s_con;
-        const char          *type;
-        const char          *slave_type;
-
-        type = nm_connection_get_connection_type(connection);
-        if (!type) {
-            NMSetting *s_base;
-
-            s_base = _nm_connection_find_base_type_setting(connection);
-            if (s_base)
-                type = nm_setting_get_name(s_base);
-        }
-        if (NM_IN_STRSET(type,
-                         NM_SETTING_OVS_BRIDGE_SETTING_NAME,
-                         NM_SETTING_OVS_PORT_SETTING_NAME,
-                         NM_SETTING_OVS_INTERFACE_SETTING_NAME))
-            goto connection_type_is_good;
-
-        if ((s_con = nm_connection_get_setting_connection(connection))
-            && _nm_connection_detect_slave_type_full(s_con,
-                                                     connection,
-                                                     &slave_type,
-                                                     NULL,
-                                                     NULL,
-                                                     NULL,
-                                                     NULL)
-            && nm_streq0(slave_type, NM_SETTING_OVS_PORT_SETTING_NAME))
-            goto connection_type_is_good;
-
-        g_set_error_literal(error,
-                            NM_CONNECTION_ERROR,
-                            NM_CONNECTION_ERROR_INVALID_PROPERTY,
-                            _("OVS external IDs can only be added to a profile of type OVS "
-                              "bridge/port/interface or to OVS system interface"));
+    if (!_nm_setting_ovs_verify_connection_type(NM_TYPE_SETTING_OVS_EXTERNAL_IDS,
+                                                connection,
+                                                error))
         return FALSE;
-    }
-connection_type_is_good:
 
     return TRUE;
 }
