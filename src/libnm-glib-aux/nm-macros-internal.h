@@ -1101,6 +1101,32 @@ nm_ascii_is_newline(char ch)
     return NM_IN_SET(ch, '\n', '\t');
 }
 
+static inline gboolean
+nm_ascii_is_regular_char(char ch)
+{
+    /* Checks whether "ch" is "regular", which basically
+     * means it's either a digit, a alpha, or some special
+     * characters that are suitable for base64 encoding.
+     *
+     * The meaning of what "regular" means is not well defined,
+     * but it's used to validate the keys for "ovs.external-ids"
+     * dictionary. */
+    switch (ch) {
+    case 'a' ... 'z':
+    case 'A' ... 'Z':
+    case '0' ... '9':
+    case '-':
+    case '_':
+    case '+':
+    case '/':
+    case '=':
+    case '.':
+        return TRUE;
+    default:
+        return FALSE;
+    }
+}
+
 #define nm_str_skip_leading_spaces(str)                          \
     ({                                                           \
         typeof(*(str))              *_str_sls        = (str);    \

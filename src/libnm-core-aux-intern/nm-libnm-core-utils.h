@@ -308,4 +308,9 @@ const char *nm_utils_dnsname_construct(int                                    ad
 
 const char *nm_utils_dnsname_normalize(int addr_family, const char *dns, char **out_free);
 
+/*****************************************************************************/
+
+gboolean nm_setting_ovs_other_config_check_key(const char *key, GError **error);
+gboolean nm_setting_ovs_other_config_check_val(const char *val, GError **error);
+
 #endif /* __NM_LIBNM_SHARED_UTILS_H__ */

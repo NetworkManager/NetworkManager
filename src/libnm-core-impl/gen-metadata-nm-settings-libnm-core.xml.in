@@ -1879,6 +1879,14 @@
                   gprop-type="gchararray"
                   />
     </setting>
+    <setting name="ovs-other-config"
+             gtype="NMSettingOvsOtherConfig"
+             >
+        <property name="data"
+                  dbus-type="a{ss}"
+                  gprop-type="GHashTable"
+                  />
+    </setting>
     <setting name="ovs-patch"
              gtype="NMSettingOvsPatch"
              >

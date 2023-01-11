@@ -28,12 +28,14 @@
 #include "nm-setting-private.h"
 #include "nm-setting-user.h"
 #include "nm-setting-ovs-external-ids.h"
+#include "nm-setting-ovs-other-config.h"
 
 #include "libnm-core-intern/nm-keyfile-utils.h"
 
 #define ETHERNET_S390_OPTIONS_GROUP_NAME "ethernet-s390-options"
 
-#define OVS_EXTERNAL_IDS_DATA_PREFIX "data."
+/* used for "ovs-external-ids.data" and "ovs-other-config.data". */
+#define STRDICT_DATA_PREFIX "data."
 
 /*****************************************************************************/
 
@@ -1060,23 +1062,29 @@ ip_routing_rule_parser_full(KeyfileReaderInfo        *info,
 }
 
 static void
-_parser_full_ovs_external_ids_data(KeyfileReaderInfo        *info,
-                                   const NMMetaSettingInfo  *setting_info,
-                                   const NMSettInfoProperty *property_info,
-                                   const ParseInfoProperty  *pip,
-                                   NMSetting                *setting)
+_parser_full_strdict_data(KeyfileReaderInfo        *info,
+                          const NMMetaSettingInfo  *setting_info,
+                          const NMSettInfoProperty *property_info,
+                          const ParseInfoProperty  *pip,
+                          NMSetting                *setting)
 {
-    const char        *setting_name = NM_SETTING_OVS_EXTERNAL_IDS_SETTING_NAME;
-    gs_strfreev char **keys         = NULL;
+    gs_strfreev char **keys = NULL;
     gsize              n_keys;
     gsize              i;
+    gboolean           is_exid;
 
-    nm_assert(NM_IS_SETTING_OVS_EXTERNAL_IDS(setting));
-    nm_assert(nm_streq(property_info->name, NM_SETTING_OVS_EXTERNAL_IDS_DATA));
-    nm_assert(nm_streq(setting_name, setting_info->setting_name));
-    nm_assert(nm_streq(setting_name, nm_setting_get_name(setting)));
+    if (NM_IS_SETTING_OVS_EXTERNAL_IDS(setting)) {
+        nm_assert(nm_streq(property_info->name, NM_SETTING_OVS_EXTERNAL_IDS_DATA));
+        is_exid = TRUE;
+    } else {
+        nm_assert(NM_IS_SETTING_OVS_OTHER_CONFIG(setting));
+        nm_assert(nm_streq(property_info->name, NM_SETTING_OVS_OTHER_CONFIG_DATA));
+        is_exid = FALSE;
+    }
 
-    keys = nm_keyfile_plugin_kf_get_keys(info->keyfile, setting_name, &n_keys, NULL);
+    nm_assert(nm_streq(setting_info->setting_name, nm_setting_get_name(setting)));
+
+    keys = nm_keyfile_plugin_kf_get_keys(info->keyfile, setting_info->setting_name, &n_keys, NULL);
 
     for (i = 0; i < n_keys; i++) {
         const char   *key          = keys[i];
@@ -1084,16 +1092,20 @@ _parser_full_ovs_external_ids_data(KeyfileReaderInfo        *info,
         gs_free char *value        = NULL;
         const char   *name;
 
-        if (!NM_STR_HAS_PREFIX(key, OVS_EXTERNAL_IDS_DATA_PREFIX))
+        if (!NM_STR_HAS_PREFIX(key, STRDICT_DATA_PREFIX))
             continue;
 
-        value = nm_keyfile_plugin_kf_get_string(info->keyfile, setting_name, key, NULL);
+        value =
+            nm_keyfile_plugin_kf_get_string(info->keyfile, setting_info->setting_name, key, NULL);
         if (!value)
             continue;
 
-        name = &key[NM_STRLEN(OVS_EXTERNAL_IDS_DATA_PREFIX)];
+        name = &key[NM_STRLEN(STRDICT_DATA_PREFIX)];
         name = nm_keyfile_key_decode(name, &name_to_free);
-        nm_setting_ovs_external_ids_set_data(NM_SETTING_OVS_EXTERNAL_IDS(setting), name, value);
+        if (is_exid)
+            nm_setting_ovs_external_ids_set_data(NM_SETTING_OVS_EXTERNAL_IDS(setting), name, value);
+        else
+            nm_setting_ovs_other_config_set_data(NM_SETTING_OVS_OTHER_CONFIG(setting), name, value);
     }
 }
 
@@ -2569,24 +2581,32 @@ tfilter_writer(KeyfileWriterInfo *info, NMSetting *setting, const char *key, con
 }
 
 static void
-_writer_full_ovs_external_ids_data(KeyfileWriterInfo        *info,
-                                   const NMMetaSettingInfo  *setting_info,
-                                   const NMSettInfoProperty *property_info,
-                                   const ParseInfoProperty  *pip,
-                                   NMSetting                *setting)
+_writer_full_strdict_data(KeyfileWriterInfo        *info,
+                          const NMMetaSettingInfo  *setting_info,
+                          const NMSettInfoProperty *property_info,
+                          const ParseInfoProperty  *pip,
+                          NMSetting                *setting)
 {
     GHashTable                *hash;
     NMUtilsNamedValue          data_static[300u / sizeof(NMUtilsNamedValue)];
     gs_free NMUtilsNamedValue *data_free = NULL;
     const NMUtilsNamedValue   *data;
     guint                      data_len;
-    char                       full_key_static[NM_STRLEN(OVS_EXTERNAL_IDS_DATA_PREFIX) + 300u];
+    char                       full_key_static[NM_STRLEN(STRDICT_DATA_PREFIX) + 300u];
     guint                      i;
+    gboolean                   is_exid;
 
-    nm_assert(NM_IS_SETTING_OVS_EXTERNAL_IDS(setting));
-    nm_assert(nm_streq(property_info->name, NM_SETTING_OVS_EXTERNAL_IDS_DATA));
+    if (NM_IS_SETTING_OVS_EXTERNAL_IDS(setting)) {
+        nm_assert(nm_streq(property_info->name, NM_SETTING_OVS_EXTERNAL_IDS_DATA));
+        is_exid = TRUE;
+    } else {
+        nm_assert(NM_IS_SETTING_OVS_OTHER_CONFIG(setting));
+        nm_assert(nm_streq(property_info->name, NM_SETTING_OVS_OTHER_CONFIG_DATA));
+        is_exid = FALSE;
+    }
 
-    hash = _nm_setting_ovs_external_ids_get_data(NM_SETTING_OVS_EXTERNAL_IDS(setting));
+    hash = is_exid ? _nm_setting_ovs_external_ids_get_data(NM_SETTING_OVS_EXTERNAL_IDS(setting))
+                   : _nm_setting_ovs_other_config_get_data(NM_SETTING_OVS_OTHER_CONFIG(setting));
     if (!hash)
         return;
 
@@ -2594,7 +2614,7 @@ _writer_full_ovs_external_ids_data(KeyfileWriterInfo        *info,
     if (data_len == 0)
         return;
 
-    memcpy(full_key_static, OVS_EXTERNAL_IDS_DATA_PREFIX, NM_STRLEN(OVS_EXTERNAL_IDS_DATA_PREFIX));
+    memcpy(full_key_static, STRDICT_DATA_PREFIX, NM_STRLEN(STRDICT_DATA_PREFIX));
 
     for (i = 0; i < data_len; i++) {
         const char   *key                 = data[i].name;
@@ -2608,15 +2628,16 @@ _writer_full_ovs_external_ids_data(KeyfileWriterInfo        *info,
         escaped_key = nm_keyfile_key_encode(key, &escaped_key_to_free);
 
         len = strlen(escaped_key) + 1u;
-        if (len >= G_N_ELEMENTS(full_key_static) - NM_STRLEN(OVS_EXTERNAL_IDS_DATA_PREFIX)) {
-            full_key_free = g_new(char, NM_STRLEN(OVS_EXTERNAL_IDS_DATA_PREFIX) + len);
+        if (len >= G_N_ELEMENTS(full_key_static) - NM_STRLEN(STRDICT_DATA_PREFIX)) {
+            full_key_free = g_new(char, NM_STRLEN(STRDICT_DATA_PREFIX) + len);
             full_key      = full_key_free;
-            memcpy(full_key, OVS_EXTERNAL_IDS_DATA_PREFIX, NM_STRLEN(OVS_EXTERNAL_IDS_DATA_PREFIX));
+            memcpy(full_key, STRDICT_DATA_PREFIX, NM_STRLEN(STRDICT_DATA_PREFIX));
         }
-        memcpy(&full_key[NM_STRLEN(OVS_EXTERNAL_IDS_DATA_PREFIX)], escaped_key, len);
+        memcpy(&full_key[NM_STRLEN(STRDICT_DATA_PREFIX)], escaped_key, len);
 
         nm_keyfile_plugin_kf_set_string(info->keyfile,
-                                        NM_SETTING_OVS_EXTERNAL_IDS_SETTING_NAME,
+                                        is_exid ? NM_SETTING_OVS_EXTERNAL_IDS_SETTING_NAME
+                                                : NM_SETTING_OVS_OTHER_CONFIG_SETTING_NAME,
                                         full_key,
                                         val);
     }
@@ -3077,10 +3098,18 @@ static const ParseInfoSetting *const parse_infos[_NM_META_SETTING_TYPE_NUM] = {
         NM_META_SETTING_TYPE_OVS_EXTERNAL_IDS,
         PARSE_INFO_PROPERTIES(PARSE_INFO_PROPERTY(NM_SETTING_OVS_EXTERNAL_IDS_DATA,
                                                   .parser_no_check_key = TRUE,
-                                                  .parser_full = _parser_full_ovs_external_ids_data,
-                                                  .writer_full = _writer_full_ovs_external_ids_data,
-                                                  .has_parser_full = TRUE,
-                                                  .has_writer_full = TRUE, ), ), ),
+                                                  .parser_full         = _parser_full_strdict_data,
+                                                  .writer_full         = _writer_full_strdict_data,
+                                                  .has_parser_full     = TRUE,
+                                                  .has_writer_full     = TRUE, ), ), ),
+    PARSE_INFO_SETTING(
+        NM_META_SETTING_TYPE_OVS_OTHER_CONFIG,
+        PARSE_INFO_PROPERTIES(PARSE_INFO_PROPERTY(NM_SETTING_OVS_OTHER_CONFIG_DATA,
+                                                  .parser_no_check_key = TRUE,
+                                                  .parser_full         = _parser_full_strdict_data,
+                                                  .writer_full         = _writer_full_strdict_data,
+                                                  .has_parser_full     = TRUE,
+                                                  .has_writer_full     = TRUE, ), ), ),
     PARSE_INFO_SETTING(NM_META_SETTING_TYPE_SERIAL,
                        PARSE_INFO_PROPERTIES(PARSE_INFO_PROPERTY(NM_SETTING_SERIAL_PARITY,
                                                                  .parser = parity_parser, ), ), ),

@@ -1273,6 +1273,7 @@ src_libnm_core_impl_lib_h_pub_real = \
 	src/libnm-core-public/nm-setting-ovs-dpdk.h \
 	src/libnm-core-public/nm-setting-ovs-external-ids.h \
 	src/libnm-core-public/nm-setting-ovs-interface.h \
+	src/libnm-core-public/nm-setting-ovs-other-config.h \
 	src/libnm-core-public/nm-setting-ovs-patch.h \
 	src/libnm-core-public/nm-setting-ovs-port.h \
 	src/libnm-core-public/nm-setting-ppp.h \
@@ -1353,6 +1354,7 @@ src_libnm_core_impl_lib_c_settings_real = \
 	src/libnm-core-impl/nm-setting-ovs-dpdk.c \
 	src/libnm-core-impl/nm-setting-ovs-external-ids.c \
 	src/libnm-core-impl/nm-setting-ovs-interface.c \
+	src/libnm-core-impl/nm-setting-ovs-other-config.c \
 	src/libnm-core-impl/nm-setting-ovs-patch.c \
 	src/libnm-core-impl/nm-setting-ovs-port.c \
 	src/libnm-core-impl/nm-setting-ppp.c \
