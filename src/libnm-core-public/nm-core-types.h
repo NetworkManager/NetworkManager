@@ -42,6 +42,7 @@ typedef struct _NMSettingMatch            NMSettingMatch;
 typedef struct _NMSettingOlpcMesh         NMSettingOlpcMesh;
 typedef struct _NMSettingOvsBridge        NMSettingOvsBridge;
 typedef struct _NMSettingOvsDpdk          NMSettingOvsDpdk;
+typedef struct _NMSettingOvsOtherConfig   NMSettingOvsOtherConfig;
 typedef struct _NMSettingOvsExternalIDs   NMSettingOvsExternalIDs;
 typedef struct _NMSettingOvsInterface     NMSettingOvsInterface;
 typedef struct _NMSettingOvsPatch         NMSettingOvsPatch;

@@ -8413,6 +8413,7 @@ _setting_init_fcn_wireless (ARGS_SETTING_INIT_FCN)
 #define SETTING_PRETTY_NAME_OLPC_MESH           N_("OLPC Mesh connection")
 #define SETTING_PRETTY_NAME_OVS_BRIDGE          N_("Open vSwitch bridge settings")
 #define SETTING_PRETTY_NAME_OVS_DPDK            N_("Open vSwitch DPDK interface settings")
+#define SETTING_PRETTY_NAME_OVS_OTHER_CONFIG    N_("OVS Other Config")
 #define SETTING_PRETTY_NAME_OVS_EXTERNAL_IDS    N_("OVS External IDs")
 #define SETTING_PRETTY_NAME_OVS_INTERFACE       N_("Open vSwitch interface settings")
 #define SETTING_PRETTY_NAME_OVS_PATCH           N_("Open vSwitch patch interface settings")
@@ -8611,6 +8612,7 @@ const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[] = {
             NM_META_SETTING_VALID_PART_ITEM (OVS_DPDK,              TRUE),
         ),
     ),
+    SETTING_INFO_EMPTY (OVS_OTHER_CONFIG),
     SETTING_INFO_EMPTY (OVS_EXTERNAL_IDS),
     SETTING_INFO (OVS_INTERFACE,
         .valid_parts = NM_META_SETTING_VALID_PARTS (

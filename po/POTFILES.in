@@ -102,6 +102,7 @@ src/libnm-core-impl/nm-setting-olpc-mesh.c
 src/libnm-core-impl/nm-setting-ovs-bridge.c
 src/libnm-core-impl/nm-setting-ovs-external-ids.c
 src/libnm-core-impl/nm-setting-ovs-interface.c
+src/libnm-core-impl/nm-setting-ovs-other-config.c
 src/libnm-core-impl/nm-setting-ovs-patch.c
 src/libnm-core-impl/nm-setting-ovs-port.c
 src/libnm-core-impl/nm-setting-ppp.c

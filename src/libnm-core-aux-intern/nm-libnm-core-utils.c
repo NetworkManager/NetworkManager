@@ -630,3 +630,104 @@ nm_utils_dnsname_normalize(int addr_family, const char *dns, char **out_free)
     *out_free = s;
     return s;
 }
+
+/*****************************************************************************/
+
+/**
+ * nm_setting_ovs_other_config_check_key:
+ * @key: (allow-none): the key to check
+ * @error: a #GError, %NULL to ignore.
+ *
+ * Checks whether @key is a valid key for OVS' other-config.
+ * This means, the key cannot be %NULL, not too large and valid ASCII.
+ * Also, only digits and numbers are allowed with a few special
+ * characters.
+ *
+ * Returns: %TRUE if @key is a valid user data key.
+ */
+gboolean
+nm_setting_ovs_other_config_check_key(const char *key, GError **error)
+{
+    gsize len;
+
+    g_return_val_if_fail(!error || !*error, FALSE);
+
+    if (!key || !key[0]) {
+        g_set_error_literal(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                            _("missing key"));
+        return FALSE;
+    }
+    len = strlen(key);
+    if (len > 255u) {
+        g_set_error_literal(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                            _("key is too long"));
+        return FALSE;
+    }
+    if (!g_utf8_validate(key, len, NULL)) {
+        g_set_error_literal(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                            _("key must be UTF8"));
+        return FALSE;
+    }
+    if (!NM_STRCHAR_ALL(key, ch, nm_ascii_is_regular_char(ch))) {
+        /* Probably OVS is more forgiving about what makes a valid key for
+         * an other-key. However, we are strict (at least, for now). */
+        g_set_error_literal(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                            _("key contains invalid characters"));
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
+/**
+ * nm_setting_ovs_other_config_check_val:
+ * @val: (allow-none): the value to check
+ * @error: a #GError, %NULL to ignore.
+ *
+ * Checks whether @val is a valid user data value. This means,
+ * value is not %NULL, not too large and valid UTF-8.
+ *
+ * Returns: %TRUE if @val is a valid user data value.
+ */
+gboolean
+nm_setting_ovs_other_config_check_val(const char *val, GError **error)
+{
+    gsize len;
+
+    g_return_val_if_fail(!error || !*error, FALSE);
+
+    if (!val) {
+        g_set_error_literal(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                            _("value is missing"));
+        return FALSE;
+    }
+
+    len = strlen(val);
+    if (len > (2u * 1024u)) {
+        g_set_error_literal(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                            _("value is too large"));
+        return FALSE;
+    }
+
+    if (!g_utf8_validate(val, len, NULL)) {
+        g_set_error_literal(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                            _("value is not valid UTF8"));
+        return FALSE;
+    }
+
+    return TRUE;
+}

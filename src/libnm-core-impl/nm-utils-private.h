@@ -70,4 +70,7 @@ const char *const *nmtst_system_encodings_for_lang(const char *lang);
 const char *const *nmtst_system_encodings_get_default(void);
 const char *const *nmtst_system_encodings_get(void);
 
+gboolean
+_nm_setting_ovs_verify_connection_type(GType gtype, NMConnection *connection, GError **error);
+
 #endif
