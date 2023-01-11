@@ -88,6 +88,7 @@ F1_EXTRA="
 xml/annotation-glossary.xml
 xml/api-index-full.xml
 xml/nm-setting-ovs-external-ids.xml
+xml/nm-setting-ovs-other-config.xml
 xml/nm-version-macros.xml
 xml/nm-secret-agent-old.xml
 xml/nm-vpn-plugin-old.xml

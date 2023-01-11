@@ -5,14 +5,15 @@
 #
 
 #
-# set and show OVS external-ids for a connection:
+# set and show OVS external-ids and other-config for a connection:
 #
 
-import sys
+import collections
 import os
-import re
 import pprint
+import re
 import subprocess
+import sys
 
 import gi
 
@@ -178,14 +179,14 @@ def device_reapply(device, connection, version_id):
         raise result_error[0]
 
 
-def ovs_print_external_ids(prefix):
+def ovs_print_config(prefix):
     if not can_sudo():
         _print(prefix + ": not running as root and cannot call ovs-vsctl")
         return
 
     cmds = [["ovs-vsctl", "show"]]
     for typ in ["Bridge", "Port", "Interface"]:
-        cmds += [["ovs-vsctl", "--columns=name,external-ids", "list", typ]]
+        cmds += [["ovs-vsctl", "--columns=name,external-ids,other-config", "list", typ]]
 
     out = ""
     for cmd in cmds:
@@ -207,7 +208,11 @@ def usage():
     )
     _print("   DEVICE :=  [iface] STRING")
     _print("   GETTER  := ( KEY | ~REGEX_KEY )  [... GETTER]")
-    _print("   SETTER  := ( + | - | -KEY | [+]KEY VALUE ) [... SETTER]")
+    _print("   SETTER  := ( +[e:|o:] | -[e:|o:] | -KEY | [+]KEY VALUE ) [... SETTER]")
+    _print("")
+    _print(
+        'Prefix KEY with "e:" or "o:" to set external-ids or other-config ("e:" is the default)'
+    )
 
 
 def die(msg, show_usage=False):
@@ -219,6 +224,24 @@ def die(msg, show_usage=False):
 
 def die_usage(msg):
     die(msg, show_usage=True)
+
+
+DataTypeTuple = collections.namedtuple(
+    "DataTypeTuple", ["short", "name", "setting_type", "property_name"]
+)
+
+DataTypeE = DataTypeTuple(
+    "external-ids",
+    "ovs-external-ids",
+    NM.SettingOvsExternalIDs,
+    NM.SETTING_OVS_EXTERNAL_IDS_DATA,
+)
+DataTypeO = DataTypeTuple(
+    "other-config",
+    "ovs-other-config",
+    NM.SettingOvsOtherConfig,
+    NM.SETTING_OVS_OTHER_CONFIG_DATA,
+)
 
 
 def parse_args(argv):
@@ -274,12 +297,14 @@ def parse_args(argv):
             continue
 
         if not a:
-            die_usage("argument should specify a external-id but is empty string")
+            die_usage(
+                "argument should specify a external-id/other-config but is empty string"
+            )
 
         if a[0] == "-":
             v = (a, None)
             i += 1
-        elif a == "+":
+        elif a in ["+", "+o:", "+e:"]:
             v = (a, None)
             i += 1
         else:
@@ -294,7 +319,7 @@ def parse_args(argv):
 
     if args["mode"] == MODE_SET:
         if not args["ids_arg"]:
-            die_usage("Requires one or more external-ids to set or delete")
+            die_usage("Requires one or more external-ids/other-config to set or delete")
 
     return args
 
@@ -319,9 +344,6 @@ def devices_filter(devices, select_arg):
     devices = list(sorted(devices, key=device_to_str))
     if not select_arg:
         return devices
-    # we preserve the order of the selected devices. And
-    # if devices are selected multiple times, we return
-    # them multiple times.
     l = []
     f = select_arg
     for d in devices:
@@ -342,9 +364,6 @@ def connections_filter(connections, select_arg):
     connections = list(sorted(connections, key=connection_to_str))
     if not select_arg:
         return connections
-    # we preserve the order of the selected connections. And
-    # if connections are selected multiple times, we return
-    # them multiple times.
     l = []
     f = select_arg
     for c in connections:
@@ -352,7 +371,7 @@ def connections_filter(connections, select_arg):
             if f[1] == c.get_id():
                 l.append(c)
         elif f[0] == "~id":
-            if re.match(f[1], c.get_id()):
+            if re.search(f[1], c.get_id()):
                 l.append(c)
         elif f[0] == "uuid":
             if f[1] == c.get_uuid():
@@ -361,7 +380,7 @@ def connections_filter(connections, select_arg):
             if f[1] == c.get_connection_type():
                 l.append(c)
         elif f[0] == "~type":
-            if re.match(f[1], c.get_connection_type()):
+            if re.search(f[1], c.get_connection_type()):
                 l.append(c)
         else:
             assert f[0] == "*"
@@ -384,7 +403,7 @@ def ids_select(ids, mode, ids_arg):
         if mode == MODE_GET:
             if d[0] == "~":
                 r = re.compile(d[1:])
-                keys.update([k for k in ids if r.match(k)])
+                keys.update([k for k in ids if r.search(k)])
             else:
                 keys.update([k for k in ids if k == d])
                 if d not in requested:
@@ -400,43 +419,66 @@ def ids_select(ids, mode, ids_arg):
 
 
 def connection_print(connection, mode, ids_arg, dbus_path, prefix=""):
-    sett = connection.get_setting(NM.SettingOvsExternalIDs)
-
-    if sett is not None:
-        all_ids = list(sett.get_data_keys())
-        keys, requested = ids_select(all_ids, mode, ids_arg)
-        num_str = "%s" % (len(all_ids))
-    else:
-        keys = []
-        requested = []
+    def _num_str(connection, data_type):
+        sett = connection.get_setting(data_type.setting_type)
         num_str = "none"
+        if sett is not None:
+            all_ids = list(sett.get_data_keys())
+            num_str = "%s" % (len(all_ids))
+        return num_str
 
     _print(
-        "%s%s [%s]" % (prefix, connection_to_str(connection, show_type=True), num_str)
+        "%s%s [e:%s, o:%s]"
+        % (
+            prefix,
+            connection_to_str(connection, show_type=True),
+            _num_str(connection, DataTypeE),
+            _num_str(connection, DataTypeO),
+        )
     )
     if dbus_path:
         _print("%s   %s" % (prefix, dbus_path))
-    if sett is not None:
-        dd = sett.get_property(NM.SETTING_OVS_EXTERNAL_IDS_DATA)
-    else:
-        dd = {}
-    for k in keys:
-        v = sett.get_data(k)
-        assert v is not None
-        assert v == dd.get(k, None)
-        _print('%s   "%s" = "%s"' % (prefix, k, v))
-    for k in requested:
-        _print('%s   "%s" = <unset>' % (prefix, k))
+
+    for data_type in [DataTypeE, DataTypeO]:
+
+        sett = connection.get_setting(data_type.setting_type)
+        if sett is not None:
+            all_ids = list(sett.get_data_keys())
+            keys, requested = ids_select(all_ids, mode, ids_arg)
+        else:
+            keys = []
+            requested = []
+
+        if sett is not None:
+            dd = sett.get_property(data_type.property_name)
+        else:
+            dd = {}
+        for k in keys:
+            v = sett.get_data(k)
+            assert v is not None
+            assert v == dd.get(k, None)
+            _print('%s   %s: "%s" = "%s"' % (prefix, data_type.short, k, v))
+        for k in requested:
+            _print('%s   %s: "%s" = <unset>' % (prefix, data_type.short, k))
 
 
 def sett_update(connection, ids_arg):
-
-    sett = connection.get_setting(NM.SettingOvsExternalIDs)
 
     for d in ids_arg:
         op = d[0][0]
         key = d[0][1:]
         val = d[1]
+
+        if key == "o" or key.startswith("o:"):
+            data_type = DataTypeO
+            key = key[2:]
+        elif key == "e" or key.startswith("e:"):
+            data_type = DataTypeE
+            key = key[2:]
+        else:
+            data_type = DataTypeE
+
+        sett = connection.get_setting(data_type.setting_type)
 
         oldval = None
         if sett is not None:
@@ -446,15 +488,17 @@ def sett_update(connection, ids_arg):
             assert val is None
             if key == "":
                 if sett is None:
-                    _print(" DEL: setting (ovs-external-ids group was not present)")
+                    _print(
+                        " DEL: setting (%s group was not present)" % (data_type.name,)
+                    )
                 else:
-                    connection.remove_setting(NM.SettingOvsExternalIDs)
+                    connection.remove_setting(data_type.setting_type)
                     sett = None
-                    _print(" DEL: setting")
+                    _print(" DEL: setting (%s)" % (data_type.name,))
                 continue
 
             if sett is None:
-                _print(' DEL: "%s" (ovs-external-ids group was not present)' % (key))
+                _print(' DEL: "%s" (%s group was not present)' % (key, data_type.name))
                 continue
             if oldval is None:
                 _print(' DEL: "%s" (id was unset)' % (key))
@@ -466,21 +510,22 @@ def sett_update(connection, ids_arg):
         if key == "":
             assert val is None
             if sett is None:
-                sett = NM.SettingOvsExternalIDs.new()
+                sett = data_type.setting_type.new()
                 connection.add_setting(sett)
-                _print(" SET: setting (external-ids group was added)")
+                _print(" SET: setting (%s group was added)" % (data_type.name,))
                 continue
 
-            _print(" SET: setting (external-ids group was present)")
+            _print(" SET: setting (%s group was present)" % (data_type.name,))
             continue
 
         assert val is not None
 
         if sett is None:
-            sett = NM.SettingOvsExternalIDs.new()
+            sett = data_type.setting_type.new()
             connection.add_setting(sett)
             _print(
-                ' SET: "%s" = "%s" (external-ids group was not present)' % (key, val)
+                ' SET: "%s" = "%s" (%s group was not present)'
+                % (key, val, data_type.name)
             )
         elif oldval is None:
             _print(' SET: "%s" = "%s" (new)' % (key, val))
@@ -579,7 +624,7 @@ def do_apply(nmc, device, ids_arg, do_test):
     )
     _print()
 
-    ovs_print_external_ids("BEFORE-OVS-VSCTL: ")
+    ovs_print_config("BEFORE-OVS-VSCTL: ")
     _print()
 
     connection = NM.SimpleConnection.new_clone(connection_orig)
@@ -619,7 +664,7 @@ def do_apply(nmc, device, ids_arg, do_test):
     )
     _print()
 
-    ovs_print_external_ids("AFTER-OVS-VSCTL: ")
+    ovs_print_config("AFTER-OVS-VSCTL: ")
 
 
 ###############################################################################
@@ -636,7 +681,7 @@ if __name__ == "__main__":
 
         if len(devices) != 1:
             _print(
-                "To apply the external-ids of a device, exactly one connection must be selected. Instead, %s devices matched ([%s])"
+                "To apply the external-ids/other-config of a device, exactly one connection must be selected. Instead, %s devices matched ([%s])"
                 % (len(devices), ", ".join([device_to_str(c) for c in devices]))
             )
             die_usage("Select unique device to apply")
@@ -649,7 +694,7 @@ if __name__ == "__main__":
         if args["mode"] == MODE_SET:
             if len(connections) != 1:
                 _print(
-                    "To set the external-ids of a connection, exactly one connection must be selected via id|uuid. Instead, %s connection matched ([%s])"
+                    "To set the external-ids/other-config of a connection, exactly one connection must be selected via id|uuid. Instead, %s connection matched ([%s])"
                     % (
                         len(connections),
                         ", ".join([connection_to_str(c) for c in connections]),
@@ -659,6 +704,8 @@ if __name__ == "__main__":
             do_set(nmc, connections[0], args["ids_arg"], do_test=args["do_test"])
         else:
             if len(connections) < 1:
-                _print("No connection selected for printing the external ids")
+                _print(
+                    "No connection selected for printing the external ids/other-config"
+                )
                 die_usage("Select connection to get")
             do_get(connections, args["ids_arg"])

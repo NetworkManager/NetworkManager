@@ -38,6 +38,7 @@ libnm_core_headers = files(
   'nm-setting-ovs-dpdk.h',
   'nm-setting-ovs-external-ids.h',
   'nm-setting-ovs-interface.h',
+  'nm-setting-ovs-other-config.h',
   'nm-setting-ovs-patch.h',
   'nm-setting-ovs-port.h',
   'nm-setting-ppp.h',

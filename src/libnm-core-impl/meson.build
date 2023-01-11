@@ -33,6 +33,7 @@ libnm_core_settings_sources = files(
   'nm-setting-ovs-dpdk.c',
   'nm-setting-ovs-external-ids.c',
   'nm-setting-ovs-interface.c',
+  'nm-setting-ovs-other-config.c',
   'nm-setting-ovs-patch.c',
   'nm-setting-ovs-port.c',
   'nm-setting-ppp.c',

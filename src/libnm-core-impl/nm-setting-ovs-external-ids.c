@@ -10,6 +10,7 @@
 #include "nm-setting-private.h"
 #include "nm-utils-private.h"
 #include "nm-connection-private.h"
+#include "nm-setting-ovs-other-config.h"
 
 #define MAX_NUM_KEYS 256
 
@@ -126,7 +127,7 @@ _nm_setting_ovs_verify_connection_type(GType gtype, NMConnection *connection, GE
     const char          *slave_type;
 
     nm_assert(!connection || NM_IS_CONNECTION(connection));
-    nm_assert(NM_IN_SET(gtype, NM_TYPE_SETTING_OVS_EXTERNAL_IDS));
+    nm_assert(NM_IN_SET(gtype, NM_TYPE_SETTING_OVS_EXTERNAL_IDS, NM_TYPE_SETTING_OVS_OTHER_CONFIG));
     nm_assert(!error || !*error);
 
     if (!connection) {
@@ -244,6 +245,8 @@ nm_setting_ovs_external_ids_get_data_keys(NMSettingOvsExternalIDs *setting, guin
 {
     NMSettingOvsExternalIDs        *self = setting;
     NMSettingOvsExternalIDsPrivate *priv;
+
+    NM_SET_OUT(out_len, 0);
 
     g_return_val_if_fail(NM_IS_SETTING_OVS_EXTERNAL_IDS(self), NULL);
 
