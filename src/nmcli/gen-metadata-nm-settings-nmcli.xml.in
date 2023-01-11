@@ -848,6 +848,8 @@
         <property name="ofport-request"
                   description="Open vSwitch openflow port number. Defaults to zero which means that port number will not be specified and it will be chosen randomly by ovs. OpenFlow ports are the network interfaces for passing packets between OpenFlow processing and the rest of the network. OpenFlow switches connect logically to each other via their OpenFlow ports." />
     </setting>
+    <setting name="ovs-other-config" >
+    </setting>
     <setting name="ovs-patch" >
         <property name="peer"
                   description="Specifies the name of the interface for the other side of the patch. The patch on the other side must also set this interface as peer." />

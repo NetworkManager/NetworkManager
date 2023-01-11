@@ -341,6 +341,7 @@ print ("NetworkManager version " + client.get_version())]]></programlisting></in
     <xi:include href="xml/nm-setting-ovs-dpdk.xml"/>
     <xi:include href="xml/nm-setting-ovs-external-ids.xml"/>
     <xi:include href="xml/nm-setting-ovs-interface.xml"/>
+    <xi:include href="xml/nm-setting-ovs-other-config.xml"/>
     <xi:include href="xml/nm-setting-ovs-patch.xml"/>
     <xi:include href="xml/nm-setting-ovs-port.xml"/>
     <xi:include href="xml/nm-setting-ppp.xml"/>

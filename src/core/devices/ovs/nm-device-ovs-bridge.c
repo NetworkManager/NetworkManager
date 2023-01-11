@@ -16,6 +16,7 @@
 #include "nm-setting-connection.h"
 #include "nm-setting-ovs-bridge.h"
 #include "nm-setting-ovs-external-ids.h"
+#include "nm-setting-ovs-other-config.h"
 #include "libnm-core-intern/nm-core-internal.h"
 
 #define _NMLOG_DEVICE_TYPE NMDeviceOvsBridge
@@ -129,7 +130,9 @@ nm_device_ovs_reapply_connection(NMDevice *self, NMConnection *con_old, NMConnec
                          nm_device_get_ip_iface(self),
                          nm_connection_get_uuid(con_new),
                          _nm_connection_get_setting(con_old, NM_TYPE_SETTING_OVS_EXTERNAL_IDS),
-                         _nm_connection_get_setting(con_new, NM_TYPE_SETTING_OVS_EXTERNAL_IDS));
+                         _nm_connection_get_setting(con_new, NM_TYPE_SETTING_OVS_EXTERNAL_IDS),
+                         _nm_connection_get_setting(con_old, NM_TYPE_SETTING_OVS_OTHER_CONFIG),
+                         _nm_connection_get_setting(con_new, NM_TYPE_SETTING_OVS_OTHER_CONFIG));
 }
 
 /*****************************************************************************/
