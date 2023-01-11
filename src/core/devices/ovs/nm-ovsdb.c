@@ -1592,9 +1592,9 @@ _external_ids_to_string(const GArray *arr)
 
         if (i > 0)
             nm_str_buf_append_c(&strbuf, ',');
-        nm_str_buf_append_printf(&strbuf, " \"%s\" = \"%s\"]", n->name, n->value_str);
+        nm_str_buf_append_printf(&strbuf, " \"%s\" = \"%s\" ", n->name, n->value_str);
     }
-    nm_str_buf_append(&strbuf, " ]");
+    nm_str_buf_append(&strbuf, "]");
 
     return nm_str_buf_finalize(&strbuf, NULL);
 }
