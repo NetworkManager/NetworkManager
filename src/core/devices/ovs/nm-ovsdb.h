@@ -49,12 +49,12 @@ void nm_ovsdb_set_interface_mtu(NMOvsdb        *self,
 
 struct _NMSettingOvsExternalIDs;
 
-void nm_ovsdb_set_external_ids(NMOvsdb                         *self,
-                               NMDeviceType                     device_type,
-                               const char                      *ifname,
-                               const char                      *connection_uuid,
-                               struct _NMSettingOvsExternalIDs *s_exid_old,
-                               struct _NMSettingOvsExternalIDs *s_exid_new);
+void nm_ovsdb_set_reapply(NMOvsdb                         *self,
+                          NMDeviceType                     device_type,
+                          const char                      *ifname,
+                          const char                      *connection_uuid,
+                          struct _NMSettingOvsExternalIDs *s_external_ids_old,
+                          struct _NMSettingOvsExternalIDs *s_external_ids_new);
 
 gboolean nm_ovsdb_is_ready(NMOvsdb *self);
 
