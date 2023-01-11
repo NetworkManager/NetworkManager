@@ -4320,7 +4320,7 @@ _get_fcn_wireless_security_wep_key(ARGS_GET_FCN)
 static gboolean
 _set_fcn_wireless_wep_key(ARGS_SET_FCN)
 {
-    NMWepKeyType guessed_type = NM_WEP_KEY_TYPE_UNKNOWN;
+    NMWepKeyType guessed_type;
     NMWepKeyType type;
     guint32      prev_idx, idx;
 
@@ -4339,14 +4339,15 @@ _set_fcn_wireless_wep_key(ARGS_SET_FCN)
         guessed_type = NM_WEP_KEY_TYPE_KEY;
     else if (nm_utils_wep_key_valid(value, NM_WEP_KEY_TYPE_PASSPHRASE))
         guessed_type = NM_WEP_KEY_TYPE_PASSPHRASE;
-
-    if (guessed_type == NM_WEP_KEY_TYPE_UNKNOWN) {
+    else {
         nm_utils_error_set(error, NM_UTILS_ERROR_UNKNOWN, _("'%s' is not valid"), value);
         return FALSE;
     }
 
-    if (type != NM_WEP_KEY_TYPE_UNKNOWN && type != guessed_type) {
-        if (nm_utils_wep_key_valid(value, type))
+    if (type != guessed_type) {
+        if (type == NM_WEP_KEY_TYPE_UNKNOWN) {
+            /* pass */
+        } else if (nm_utils_wep_key_valid(value, type))
             guessed_type = type;
         else {
             nm_utils_error_set(
@@ -4364,11 +4365,13 @@ _set_fcn_wireless_wep_key(ARGS_SET_FCN)
     prev_idx =
         nm_setting_wireless_security_get_wep_tx_keyidx(NM_SETTING_WIRELESS_SECURITY(setting));
     idx = property_info->property_name[strlen(property_info->property_name) - 1] - '0';
-    _env_warn_fcn(environment,
-                  environment_user_data,
-                  NM_META_ENV_WARN_LEVEL_INFO,
-                  N_("WEP key is guessed to be of '%s'"),
-                  wep_key_type_to_string(guessed_type));
+    if (type == NM_WEP_KEY_TYPE_UNKNOWN) {
+        _env_warn_fcn(environment,
+                      environment_user_data,
+                      NM_META_ENV_WARN_LEVEL_INFO,
+                      N_("WEP key is guessed to be of %s"),
+                      wep_key_type_to_string(guessed_type));
+    }
     if (idx != prev_idx) {
         _env_warn_fcn(environment,
                       environment_user_data,
