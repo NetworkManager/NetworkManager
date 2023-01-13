@@ -867,8 +867,6 @@ _insert_interface(json_t       *params,
     const char            *type = NULL;
     NMSettingOvsInterface *s_ovs_iface;
     NMSettingOvsDpdk      *s_ovs_dpdk;
-    const char            *devargs;
-    guint32                n_rxq;
     char                   sbuf[64];
     json_t                *dpdk_array;
     NMSettingOvsPatch     *s_ovs_patch;
@@ -899,8 +897,15 @@ _insert_interface(json_t       *params,
         s_ovs_patch = nm_connection_get_setting_ovs_patch(interface);
 
     if (s_ovs_dpdk) {
-        devargs = nm_setting_ovs_dpdk_get_devargs(s_ovs_dpdk);
-        n_rxq   = nm_setting_ovs_dpdk_get_n_rxq(s_ovs_dpdk);
+        const char *devargs;
+        guint32     n_rxq;
+        guint32     n_rxq_desc;
+        guint32     n_txq_desc;
+
+        devargs    = nm_setting_ovs_dpdk_get_devargs(s_ovs_dpdk);
+        n_rxq      = nm_setting_ovs_dpdk_get_n_rxq(s_ovs_dpdk);
+        n_rxq_desc = nm_setting_ovs_dpdk_get_n_rxq_desc(s_ovs_dpdk);
+        n_txq_desc = nm_setting_ovs_dpdk_get_n_txq_desc(s_ovs_dpdk);
 
         dpdk_array = json_array();
 
@@ -910,6 +915,16 @@ _insert_interface(json_t       *params,
         if (n_rxq != 0) {
             json_array_append_new(dpdk_array,
                                   json_pack("[s,s]", "n_rxq", nm_sprintf_buf(sbuf, "%u", n_rxq)));
+        }
+        if (n_rxq_desc != 0) {
+            json_array_append_new(
+                dpdk_array,
+                json_pack("[s,s]", "n_rxq_desc", nm_sprintf_buf(sbuf, "%u", n_rxq_desc)));
+        }
+        if (n_txq_desc != 0) {
+            json_array_append_new(
+                dpdk_array,
+                json_pack("[s,s]", "n_txq_desc", nm_sprintf_buf(sbuf, "%u", n_txq_desc)));
         }
 
         json_array_append_new(options, dpdk_array);

@@ -255,6 +255,8 @@
 #define DESCRIBE_DOC_NM_SETTING_OVS_BRIDGE_STP_ENABLE N_("Enable or disable STP.")
 #define DESCRIBE_DOC_NM_SETTING_OVS_DPDK_DEVARGS N_("Open vSwitch DPDK device arguments.")
 #define DESCRIBE_DOC_NM_SETTING_OVS_DPDK_N_RXQ N_("Open vSwitch DPDK number of rx queues. Defaults to zero which means to leave the parameter in OVS unspecified and effectively configures one queue.")
+#define DESCRIBE_DOC_NM_SETTING_OVS_DPDK_N_RXQ_DESC N_("The rx queue size (number of rx descriptors) for DPDK ports. Must be zero or a power of 2 between 1 and 4096, and supported by the hardware. Defaults to zero which means to leave the parameter in OVS unspecified and effectively configures 2048 descriptors.")
+#define DESCRIBE_DOC_NM_SETTING_OVS_DPDK_N_TXQ_DESC N_("The tx queue size (number of tx descriptors) for DPDK ports. Must be zero or a power of 2 between 1 and 4096, and supported by the hardware. Defaults to zero which means to leave the parameter in OVS unspecified and effectively configures 2048 descriptors.")
 #define DESCRIBE_DOC_NM_SETTING_OVS_INTERFACE_OFPORT_REQUEST N_("Open vSwitch openflow port number. Defaults to zero which means that port number will not be specified and it will be chosen randomly by ovs. OpenFlow ports are the network interfaces for passing packets between OpenFlow processing and the rest of the network. OpenFlow switches connect logically to each other via their OpenFlow ports.")
 #define DESCRIBE_DOC_NM_SETTING_OVS_INTERFACE_TYPE N_("The interface type. Either \"internal\", \"system\", \"patch\", \"dpdk\", or empty.")
 #define DESCRIBE_DOC_NM_SETTING_OVS_PATCH_PEER N_("Specifies the name of the interface for the other side of the patch. The patch on the other side must also set this interface as peer.")

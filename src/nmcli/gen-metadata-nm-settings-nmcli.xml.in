@@ -839,6 +839,10 @@
                   description="Open vSwitch DPDK device arguments." />
         <property name="n-rxq"
                   description="Open vSwitch DPDK number of rx queues. Defaults to zero which means to leave the parameter in OVS unspecified and effectively configures one queue." />
+        <property name="n-rxq-desc"
+                  description="The rx queue size (number of rx descriptors) for DPDK ports. Must be zero or a power of 2 between 1 and 4096, and supported by the hardware. Defaults to zero which means to leave the parameter in OVS unspecified and effectively configures 2048 descriptors." />
+        <property name="n-txq-desc"
+                  description="The tx queue size (number of tx descriptors) for DPDK ports. Must be zero or a power of 2 between 1 and 4096, and supported by the hardware. Defaults to zero which means to leave the parameter in OVS unspecified and effectively configures 2048 descriptors." />
     </setting>
     <setting name="ovs-external-ids" >
     </setting>

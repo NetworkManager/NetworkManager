@@ -1858,6 +1858,14 @@
                   dbus-type="u"
                   gprop-type="guint"
                   />
+        <property name="n-rxq-desc"
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
+        <property name="n-txq-desc"
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
     </setting>
     <setting name="ovs-external-ids"
              gtype="NMSettingOvsExternalIDs"
