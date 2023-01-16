@@ -3079,11 +3079,10 @@ _dbus_handle_interface_added(NMClient   *self,
                              const char *object_path,
                              GVariant   *ifaces)
 {
-    gboolean       changed = FALSE;
-    const char    *interface_name;
-    GVariant      *changed_properties;
-    GVariantIter   iter_ifaces;
-    NMLDBusObject *dbobj = NULL;
+    gboolean     changed = FALSE;
+    const char  *interface_name;
+    GVariant    *changed_properties;
+    GVariantIter iter_ifaces;
 
     nm_assert(g_variant_is_of_type(ifaces, G_VARIANT_TYPE("a{sa{sv}}")));
 
@@ -3097,7 +3096,7 @@ _dbus_handle_interface_added(NMClient   *self,
                                             interface_name,
                                             TRUE,
                                             changed_properties,
-                                            &dbobj))
+                                            NULL))
             changed = TRUE;
     }
 
