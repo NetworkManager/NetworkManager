@@ -147,12 +147,13 @@ _share_iptables_call_v(const char *const *argv)
     return TRUE;
 }
 
-#define _share_iptables_call(...) _share_iptables_call_v(NM_MAKE_STRV(__VA_ARGS__))
+#define _share_iptables_call(...) \
+    _share_iptables_call_v(NM_MAKE_STRV("" IPTABLES_PATH "", "--wait", "2", __VA_ARGS__))
 
 static gboolean
 _share_iptables_chain_op(const char *table, const char *chain, const char *op)
 {
-    return _share_iptables_call("" IPTABLES_PATH "", "--table", table, op, chain);
+    return _share_iptables_call("--table", table, op, chain);
 }
 
 static gboolean
@@ -181,8 +182,7 @@ _share_iptables_set_masquerade_sync(gboolean up, const char *ip_iface, in_addr_t
     comment_name = _share_iptables_get_name(FALSE, "nm-shared", ip_iface);
 
     _share_iptables_subnet_to_str(str_subnet, addr, plen);
-    _share_iptables_call("" IPTABLES_PATH "",
-                         "--table",
+    _share_iptables_call("--table",
                          "nat",
                          up ? "--insert" : "--delete",
                          "POSTROUTING",
@@ -232,8 +232,7 @@ _share_iptables_set_shared_chains_add(const char *chain_input,
     _share_iptables_chain_add("filter", chain_input);
 
     for (i = 0; i < (int) G_N_ELEMENTS(input_params); i++) {
-        _share_iptables_call("" IPTABLES_PATH "",
-                             "--table",
+        _share_iptables_call("--table",
                              "filter",
                              "--append",
                              chain_input,
@@ -247,8 +246,7 @@ _share_iptables_set_shared_chains_add(const char *chain_input,
 
     _share_iptables_chain_add("filter", chain_forward);
 
-    _share_iptables_call("" IPTABLES_PATH "",
-                         "--table",
+    _share_iptables_call("--table",
                          "filter",
                          "--append",
                          chain_forward,
@@ -262,8 +260,7 @@ _share_iptables_set_shared_chains_add(const char *chain_input,
                          "ESTABLISHED,RELATED",
                          "--jump",
                          "ACCEPT");
-    _share_iptables_call("" IPTABLES_PATH "",
-                         "--table",
+    _share_iptables_call("--table",
                          "filter",
                          "--append",
                          chain_forward,
@@ -273,8 +270,7 @@ _share_iptables_set_shared_chains_add(const char *chain_input,
                          ip_iface,
                          "--jump",
                          "ACCEPT");
-    _share_iptables_call("" IPTABLES_PATH "",
-                         "--table",
+    _share_iptables_call("--table",
                          "filter",
                          "--append",
                          chain_forward,
@@ -284,8 +280,7 @@ _share_iptables_set_shared_chains_add(const char *chain_input,
                          ip_iface,
                          "--jump",
                          "ACCEPT");
-    _share_iptables_call("" IPTABLES_PATH "",
-                         "--table",
+    _share_iptables_call("--table",
                          "filter",
                          "--append",
                          chain_forward,
@@ -293,8 +288,7 @@ _share_iptables_set_shared_chains_add(const char *chain_input,
                          ip_iface,
                          "--jump",
                          "REJECT");
-    _share_iptables_call("" IPTABLES_PATH "",
-                         "--table",
+    _share_iptables_call("--table",
                          "filter",
                          "--append",
                          chain_forward,
@@ -325,8 +319,7 @@ _share_iptables_set_shared_sync(gboolean up, const char *ip_iface, in_addr_t add
     if (up)
         _share_iptables_set_shared_chains_add(chain_input, chain_forward, ip_iface, addr, plen);
 
-    _share_iptables_call("" IPTABLES_PATH "",
-                         "--table",
+    _share_iptables_call("--table",
                          "filter",
                          up ? "--insert" : "--delete",
                          "INPUT",
@@ -339,8 +332,7 @@ _share_iptables_set_shared_sync(gboolean up, const char *ip_iface, in_addr_t add
                          "--comment",
                          comment_name);
 
-    _share_iptables_call("" IPTABLES_PATH "",
-                         "--table",
+    _share_iptables_call("--table",
                          "filter",
                          up ? "--insert" : "--delete",
                          "FORWARD",
