@@ -8186,39 +8186,37 @@ retry:
 
     nm_assert(seq_result);
 
-    if (NM_IN_SET(-((int) seq_result), EOPNOTSUPP) && nlmsg_hdr(nlmsg)->nlmsg_type == RTM_NEWLINK) {
+    if (NM_IN_SET(seq_result, -EOPNOTSUPP) && nlmsg_hdr(nlmsg)->nlmsg_type == RTM_NEWLINK) {
         nlmsg_hdr(nlmsg)->nlmsg_type = RTM_SETLINK;
         goto retry;
     }
 
     if (seq_result == WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK) {
         log_result = "success";
-    } else if (NM_IN_SET(-((int) seq_result), EEXIST, EADDRINUSE)) {
+    } else if (NM_IN_SET(seq_result, -EEXIST, -EADDRINUSE)) {
         /* */
-    } else if (NM_IN_SET(-((int) seq_result), ESRCH, ENOENT)) {
+    } else if (NM_IN_SET(seq_result, -ESRCH, -ENOENT)) {
         log_detail = ", firmware not found";
         result     = -NME_PL_NO_FIRMWARE;
-    } else if (NM_IN_SET(-((int) seq_result), ERANGE)
-               && change_link_type == CHANGE_LINK_TYPE_SET_MTU) {
+    } else if (NM_IN_SET(seq_result, -ERANGE) && change_link_type == CHANGE_LINK_TYPE_SET_MTU) {
         log_detail = ", setting MTU to requested size is not possible";
         result     = -NME_PL_CANT_SET_MTU;
-    } else if (NM_IN_SET(-((int) seq_result), ENFILE)
-               && change_link_type == CHANGE_LINK_TYPE_SET_ADDRESS
+    } else if (NM_IN_SET(seq_result, -ENFILE) && change_link_type == CHANGE_LINK_TYPE_SET_ADDRESS
                && (obj_cache = nmp_cache_lookup_link(nm_platform_get_cache(platform), ifindex))
                && obj_cache->link.l_address.len == data->set_address.length
                && memcmp(obj_cache->link.l_address.data,
                          data->set_address.address,
                          data->set_address.length)
                       == 0) {
-        /* workaround ENFILE which may be wrongly returned (bgo #770456).
+        /* work around ENFILE which may be wrongly returned (bgo #770456).
          * If the MAC address is as expected, assume success? */
         log_result = "success";
         log_detail = " (assume success changing address)";
         result     = 0;
-    } else if (NM_IN_SET(-((int) seq_result), ENODEV)) {
+    } else if (NM_IN_SET(seq_result, -ENODEV)) {
         log_level = LOGL_DEBUG;
         result    = -NME_PL_NOT_FOUND;
-    } else if (-((int) seq_result) == EAFNOSUPPORT) {
+    } else if (seq_result == -EAFNOSUPPORT) {
         log_level = LOGL_DEBUG;
         result    = -NME_PL_OPNOTSUPP;
     } else {
