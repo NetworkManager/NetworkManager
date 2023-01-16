@@ -7895,7 +7895,6 @@ do_change_link(NMPlatform           *platform,
     char                        s_buf[256];
     int                         result          = 0;
     NMLogLevel                  log_level       = LOGL_DEBUG;
-    const char                 *log_result      = "failure";
     const char                 *log_detail      = "";
     gs_free char               *log_detail_free = NULL;
     const NMPObject            *obj_cache;
@@ -7929,9 +7928,7 @@ retry:
         goto retry;
     }
 
-    if (seq_result == WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK) {
-        log_result = "success";
-    } else if (NM_IN_SET(seq_result, -EEXIST, -EADDRINUSE)) {
+    if (NM_IN_SET(seq_result, WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK, -EEXIST, -EADDRINUSE)) {
         /* */
     } else if (NM_IN_SET(seq_result, -ESRCH, -ENOENT)) {
         log_detail = ", firmware not found";
@@ -7948,7 +7945,6 @@ retry:
                       == 0) {
         /* work around ENFILE which may be wrongly returned (bgo #770456).
          * If the MAC address is as expected, assume success? */
-        log_result = "success";
         log_detail = " (assume success changing address)";
         result     = 0;
     } else if (NM_IN_SET(seq_result, -ENODEV)) {
@@ -7964,9 +7960,8 @@ retry:
 
 out:
     _NMLOG(log_level,
-           "do-change-link[%d]: %s changing link: %s%s",
+           "do-change-link[%d]: %s%s",
            ifindex,
-           log_result,
            wait_for_nl_response_to_string(seq_result, errmsg, s_buf, sizeof(s_buf)),
            log_detail);
     return result;
