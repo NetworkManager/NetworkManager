@@ -721,6 +721,9 @@ wait_for_nl_response_to_string(WaitForNlResponseResult seq_result,
     case WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_UNKNOWN:
         nm_strbuf_append_str(&buf, &buf_size, "failure");
         break;
+    case WAIT_FOR_NL_RESPONSE_RESULT_FAILED_RESYNC:
+        nm_strbuf_append_str(&buf, &buf_size, "failed-resync");
+        break;
     default:
         if (seq_result < 0) {
             nm_strbuf_append(&buf,
