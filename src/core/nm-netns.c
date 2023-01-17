@@ -638,6 +638,8 @@ nm_netns_ip_route_ecmp_commit(NMNetns *self, NML3Cfg *l3cfg, GPtrArray **out_sin
 
     nm_assert_l3cfg(self, l3cfg);
 
+    _LOGT("ecmp-route: committing IPv4 ECMP routes");
+
     /* First, delete all dirty entries, and mark the survivors as dirty, so that on the
      * next update they must be touched again. */
     c_list_for_each_entry_safe (track_obj,
