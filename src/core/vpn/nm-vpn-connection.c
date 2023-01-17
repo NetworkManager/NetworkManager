@@ -99,6 +99,7 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMVpnConnection, PROP_VPN_STATE, PROP_BANNER,
 #define PROP_IP4_CONFIG 2000
 #define PROP_IP6_CONFIG 2001
 #define PROP_MASTER     2002
+#define PROP_CONTROLLER 2003
 );
 
 typedef struct {
@@ -2899,6 +2900,7 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
     case PROP_IP6_CONFIG:
         nm_dbus_utils_g_value_set_object_path(value, priv->ip_data_6.ip_config);
         break;
+    case PROP_CONTROLLER:
     case PROP_MASTER:
         nm_dbus_utils_g_value_set_object_path(
             value,
@@ -3065,6 +3067,9 @@ nm_vpn_connection_class_init(NMVpnConnectionClass *klass)
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
+    g_object_class_override_property(object_class,
+                                     PROP_CONTROLLER,
+                                     NM_ACTIVE_CONNECTION_CONTROLLER);
     g_object_class_override_property(object_class, PROP_MASTER, NM_ACTIVE_CONNECTION_MASTER);
     g_object_class_override_property(object_class,
                                      PROP_IP4_CONFIG,
