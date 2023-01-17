@@ -1918,4 +1918,5 @@ global:
 	nm_setting_vlan_get_protocol;
 	nm_utils_ensure_gtypes;
 	nm_version_info_capability_get_type;
+	nm_setting_connection_get_controller;
 } libnm_1_40_0;
