@@ -50,6 +50,9 @@ NM_AUTO_DEFINE_FCN0(NMTeamLinkWatcher *,
 #define nm_auto_unref_wgpeer nm_auto(_nm_auto_unref_wgpeer)
 NM_AUTO_DEFINE_FCN0(NMWireGuardPeer *, _nm_auto_unref_wgpeer, nm_wireguard_peer_unref);
 
+#define nm_auto_unref_range nm_auto(_nm_auto_unref_range)
+NM_AUTO_DEFINE_FCN0(const NMRange *, _nm_auto_unref_range, nm_range_unref);
+
 /****************************************************************************/
 
 const char **nm_utils_bond_option_arp_ip_targets_split(const char *arp_ip_target);

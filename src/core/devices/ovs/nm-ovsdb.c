@@ -1006,12 +1006,14 @@ _insert_port(json_t *params, NMConnection *port, json_t *new_interfaces)
         bond_downdelay = nm_setting_ovs_port_get_bond_downdelay(s_ovs_port);
 
         ranges = _nm_setting_ovs_port_get_trunks_arr(s_ovs_port);
-        for (i = 0; i < ranges->len; i++) {
-            if (!trunks)
-                trunks = json_array();
-            nm_range_get_range(ranges->pdata[i], &start, &end);
-            for (; start <= end; start++)
-                json_array_append_new(trunks, json_integer(start));
+        if (ranges) {
+            for (i = 0; i < ranges->len; i++) {
+                if (!trunks)
+                    trunks = json_array();
+                nm_range_get_range(ranges->pdata[i], &start, &end);
+                for (; start <= end; start++)
+                    json_array_append_new(trunks, json_integer(start));
+            }
         }
     }
 
