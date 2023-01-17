@@ -221,6 +221,13 @@ source code and navigate it. These tools can integrate with editors like `Vim` a
 - http://cscope.sourceforge.net/cscope_vim_tutorial.html
 - https://www.emacswiki.org/emacs/CScopeAndEmacs
 
+For cscope, you can also set `$SOURCEDIRS` to include other source trees and navigate
+those sources. For example,
+```
+export SOURCEDIRS=/path/to/glib:/path/to/libndp
+cscope -b -q -R -ssrc
+```
+
 
 Miscellaneous
 ---------------------------
