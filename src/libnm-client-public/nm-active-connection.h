@@ -42,6 +42,7 @@ G_BEGIN_DECLS
 #define NM_ACTIVE_CONNECTION_DHCP6_CONFIG         "dhcp6-config"
 #define NM_ACTIVE_CONNECTION_VPN                  "vpn"
 #define NM_ACTIVE_CONNECTION_MASTER               "master"
+#define NM_ACTIVE_CONNECTION_CONTROLLER           "controller"
 
 /**
  * NMActiveConnection:
@@ -66,6 +67,8 @@ NMActiveConnectionStateReason nm_active_connection_get_state_reason(NMActiveConn
 struct _NMDevice;
 
 struct _NMDevice *nm_active_connection_get_master(NMActiveConnection *connection);
+NM_AVAILABLE_IN_1_42_2
+struct _NMDevice *nm_active_connection_get_controller(NMActiveConnection *connection);
 
 gboolean      nm_active_connection_get_default(NMActiveConnection *connection);
 NMIPConfig   *nm_active_connection_get_ip4_config(NMActiveConnection *connection);

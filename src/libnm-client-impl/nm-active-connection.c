@@ -12,6 +12,7 @@
 #include "nm-object-private.h"
 #include "libnm-core-intern/nm-core-internal.h"
 #include "nm-device.h"
+#include "nm-client.h"
 #include "nm-connection.h"
 #include "nm-vpn-connection.h"
 #include "nm-dbus-helpers.h"
@@ -39,7 +40,8 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMActiveConnection,
                              PROP_IP6_CONFIG,
                              PROP_DHCP6_CONFIG,
                              PROP_VPN,
-                             PROP_MASTER, );
+                             PROP_MASTER,
+                             PROP_CONTROLLER, );
 
 enum {
     STATE_CHANGED,
@@ -51,7 +53,7 @@ static guint signals[LAST_SIGNAL];
 
 enum {
     PROPERTY_O_IDX_CONNECTION,
-    PROPERTY_O_IDX_MASTER,
+    PROPERTY_O_IDX_CONTROLLER,
     PROPERTY_O_IDX_IP4_CONFIG,
     PROPERTY_O_IDX_IP6_CONFIG,
     PROPERTY_O_IDX_DHCP4_CONFIG,
@@ -73,6 +75,7 @@ typedef struct _NMActiveConnectionPrivate {
     bool is_default;
     bool is_default6;
     bool is_vpn;
+    bool controller_is_new : 1;
 
     guint32 reason;
 } NMActiveConnectionPrivate;
@@ -380,15 +383,34 @@ nm_active_connection_get_vpn(NMActiveConnection *connection)
  *
  * Gets the master #NMDevice of the connection.
  *
+ * This is replaced by nm_active_connection_get_controller() since 1.44 and 1.42.2.
+ *
  * Returns: (transfer none): the master #NMDevice of the #NMActiveConnection.
  **/
 NMDevice *
 nm_active_connection_get_master(NMActiveConnection *connection)
 {
+    return nm_active_connection_get_controller(connection);
+}
+
+/**
+ * nm_active_connection_get_controller:
+ * @connection: a #NMActiveConnection
+ *
+ * Gets the controller #NMDevice of the connection. This replaces the
+ * deprecated nm_active_connection_get_master() method.
+ *
+ * Returns: (transfer none): the controller #NMDevice of the #NMActiveConnection.
+ *
+ * Since: 1.44, 1.42.2
+ **/
+NMDevice *
+nm_active_connection_get_controller(NMActiveConnection *connection)
+{
     g_return_val_if_fail(NM_IS_ACTIVE_CONNECTION(connection), NULL);
 
     return nml_dbus_property_o_get_obj(
-        &NM_ACTIVE_CONNECTION_GET_PRIVATE(connection)->property_o[PROPERTY_O_IDX_MASTER]);
+        &NM_ACTIVE_CONNECTION_GET_PRIVATE(connection)->property_o[PROPERTY_O_IDX_CONTROLLER]);
 }
 
 /*****************************************************************************/
@@ -451,6 +473,54 @@ is_ready(NMObject *nmobj)
         return FALSE;
 
     return NM_OBJECT_CLASS(nm_active_connection_parent_class)->is_ready(nmobj);
+}
+
+/*****************************************************************************/
+
+static NMLDBusNotifyUpdatePropFlags
+active_connection_update_prop_controller(NMClient               *client,
+                                         NMLDBusObject          *dbobj,
+                                         const NMLDBusMetaIface *meta_iface,
+                                         guint                   dbus_property_idx,
+                                         GVariant               *value)
+{
+    NMActiveConnection          *self          = NM_ACTIVE_CONNECTION(dbobj->nmobj);
+    NMActiveConnectionPrivate   *priv          = NM_ACTIVE_CONNECTION_GET_PRIVATE(self);
+    const NMLDBusMetaProperty   *meta_property = &meta_iface->dbus_properties[dbus_property_idx];
+    gboolean                     is_new = (meta_property->obj_properties_idx == PROP_CONTROLLER);
+    NMLDBusNotifyUpdatePropFlags notify_update_prop_flags;
+    guint                        controller_dbus_property_idx;
+
+    nm_assert(NM_IN_STRSET(meta_property->dbus_property_name, "Controller", "Master"));
+    nm_assert(NM_IN_SET(meta_property->obj_properties_idx, PROP_CONTROLLER, PROP_MASTER));
+
+    if (!is_new && priv->controller_is_new) {
+        /* once the instance is marked to honor the new property, the
+         * changed signal for the old variant gets ignored. */
+        goto out;
+    }
+
+    priv->controller_is_new      = is_new;
+    controller_dbus_property_idx = meta_iface->obj_properties_reverse_idx[PROP_CONTROLLER];
+    nm_assert(nm_streq(meta_iface->dbus_properties[controller_dbus_property_idx].dbus_property_name,
+                       "Controller"));
+
+    notify_update_prop_flags =
+        nml_dbus_property_o_notify(client,
+                                   &priv->property_o[PROPERTY_O_IDX_CONTROLLER],
+                                   dbobj,
+                                   meta_iface,
+                                   controller_dbus_property_idx,
+                                   value);
+    if (notify_update_prop_flags == NML_DBUS_NOTIFY_UPDATE_PROP_FLAGS_NONE)
+        goto out;
+    nm_assert(notify_update_prop_flags == NML_DBUS_NOTIFY_UPDATE_PROP_FLAGS_NOTIFY);
+
+    _nm_client_queue_notify_object(client, self, obj_properties[PROP_MASTER]);
+    _nm_client_queue_notify_object(client, self, obj_properties[PROP_CONTROLLER]);
+
+out:
+    return NML_DBUS_NOTIFY_UPDATE_PROP_FLAGS_NONE;
 }
 
 /*****************************************************************************/
@@ -531,7 +601,8 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
         g_value_set_boolean(value, nm_active_connection_get_vpn(self));
         break;
     case PROP_MASTER:
-        g_value_set_object(value, nm_active_connection_get_master(self));
+    case PROP_CONTROLLER:
+        g_value_set_object(value, nm_active_connection_get_controller(self));
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
@@ -549,6 +620,12 @@ const NMLDBusMetaIface _nml_dbus_meta_iface_nm_connection_active = NML_DBUS_META
                                            NMActiveConnectionPrivate,
                                            property_o[PROPERTY_O_IDX_CONNECTION],
                                            nm_remote_connection_get_type),
+        NML_DBUS_META_PROPERTY_INIT_FCN("Controller",
+                                        PROP_CONTROLLER,
+                                        "o",
+                                        active_connection_update_prop_controller,
+                                        .extra.property_vtable_o = &((const NMLDBusPropertVTableO){
+                                            .get_o_type_fcn = (nm_device_get_type)})),
         NML_DBUS_META_PROPERTY_INIT_B("Default",
                                       PROP_DEFAULT,
                                       NMActiveConnectionPrivate,
@@ -583,11 +660,12 @@ const NMLDBusMetaIface _nml_dbus_meta_iface_nm_connection_active = NML_DBUS_META
                                            NMActiveConnectionPrivate,
                                            property_o[PROPERTY_O_IDX_IP6_CONFIG],
                                            nm_ip6_config_get_type),
-        NML_DBUS_META_PROPERTY_INIT_O_PROP("Master",
-                                           PROP_MASTER,
-                                           NMActiveConnectionPrivate,
-                                           property_o[PROPERTY_O_IDX_MASTER],
-                                           nm_device_get_type),
+        NML_DBUS_META_PROPERTY_INIT_FCN("Master",
+                                        PROP_MASTER,
+                                        "o",
+                                        active_connection_update_prop_controller,
+                                        .extra.property_vtable_o = &((const NMLDBusPropertVTableO){
+                                            .get_o_type_fcn = (nm_device_get_type)})),
         NML_DBUS_META_PROPERTY_INIT_O("SpecificObject",
                                       PROP_SPECIFIC_OBJECT_PATH,
                                       NMActiveConnectionPrivate,
@@ -802,13 +880,29 @@ nm_active_connection_class_init(NMActiveConnectionClass *klass)
     /**
      * NMActiveConnection:master:
      *
-     * The master device if one exists.
+     * The master device if one exists. Replaced by the "controller" property
+     * since 1.44 and 1.42.2.
      **/
     obj_properties[PROP_MASTER] = g_param_spec_object(NM_ACTIVE_CONNECTION_MASTER,
                                                       "",
                                                       "",
                                                       NM_TYPE_DEVICE,
                                                       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+
+    /**
+     * NMActiveConnection:controller:
+     *
+     * The controller device if one exists. This replaces the deprecated
+     * "master" property.
+     *
+     * Since: 1.44, 1.42.2
+     **/
+    obj_properties[PROP_CONTROLLER] =
+        g_param_spec_object(NM_ACTIVE_CONNECTION_CONTROLLER,
+                            "",
+                            "",
+                            NM_TYPE_DEVICE,
+                            G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     _nml_dbus_meta_class_init_with_properties(object_class,
                                               &_nml_dbus_meta_iface_nm_connection_active);
