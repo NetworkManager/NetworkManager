@@ -58,7 +58,7 @@ edit_connection_list_filter(NmtEditConnectionList *list,
     s_con = nm_connection_get_setting_connection(connection);
     g_return_val_if_fail(s_con != NULL, FALSE);
 
-    master = nm_setting_connection_get_master(s_con);
+    master = nm_setting_connection_get_controller(s_con);
     if (!master)
         return TRUE;
     slave_type = nm_setting_connection_get_slave_type(s_con);
@@ -525,7 +525,7 @@ nmt_remove_connection(NMRemoteConnection *connection)
     for (i = 0; i < all_conns->len; i++) {
         slave  = all_conns->pdata[i];
         s_con  = nm_connection_get_setting_connection(NM_CONNECTION(slave));
-        master = nm_setting_connection_get_master(s_con);
+        master = nm_setting_connection_get_controller(s_con);
         if (master) {
             if (!g_strcmp0(master, uuid) || !g_strcmp0(master, iface))
                 slaves = g_slist_prepend(slaves, g_object_ref(slave));

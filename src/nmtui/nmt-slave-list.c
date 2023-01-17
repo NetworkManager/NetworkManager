@@ -107,7 +107,7 @@ nmt_slave_list_connection_filter(NmtEditConnectionList *list,
     if (g_strcmp0(slave_type, priv->master_type) != 0)
         return FALSE;
 
-    master = nm_setting_connection_get_master(s_con);
+    master = nm_setting_connection_get_controller(s_con);
     if (!master)
         return FALSE;
 

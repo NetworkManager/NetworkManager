@@ -153,7 +153,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
             return FALSE;
         }
 
-        if (nm_setting_connection_get_master(s_con)) {
+        if (nm_setting_connection_get_controller(s_con)) {
             g_set_error(error,
                         NM_CONNECTION_ERROR,
                         NM_CONNECTION_ERROR_INVALID_PROPERTY,

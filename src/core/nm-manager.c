@@ -4406,7 +4406,7 @@ find_master(NMManager             *self,
 
     s_con = nm_connection_get_setting_connection(connection);
     g_assert(s_con);
-    master = nm_setting_connection_get_master(s_con);
+    master = nm_setting_connection_get_controller(s_con);
 
     if (master == NULL)
         return TRUE; /* success, but no master */

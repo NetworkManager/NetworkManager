@@ -200,7 +200,7 @@ _nm_keyfile_read(GKeyFile            *keyfile,
              * keyfile reader does not add that (unless a [proxy] section
              * is present. */
             s_con = nm_connection_get_setting_connection(con);
-            if (s_con && !nm_setting_connection_get_master(s_con)
+            if (s_con && !nm_setting_connection_get_controller(s_con)
                 && !nm_connection_get_setting_proxy(con))
                 nm_connection_add_setting(con, nm_setting_proxy_new());
         }

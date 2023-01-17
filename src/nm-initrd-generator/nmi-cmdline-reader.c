@@ -236,7 +236,7 @@ reader_get_connection(Reader     *reader,
             candidate = g_hash_table_lookup(reader->hash, reader->array->pdata[i]);
             s_con     = nm_connection_get_setting_connection(candidate);
 
-            if (type_name == NULL && nm_setting_connection_get_master(s_con) == NULL) {
+            if (type_name == NULL && nm_setting_connection_get_controller(s_con) == NULL) {
                 connection = candidate;
                 break;
             }

@@ -91,7 +91,7 @@ assert_reread(NMConnection *connection, gboolean normalize_connection, const cha
     reread = keyfile_read_connection_from_file(testfile);
 
     if (!normalize_connection && (s_con = nm_connection_get_setting_connection(connection))
-        && !nm_setting_connection_get_master(s_con)
+        && !nm_setting_connection_get_controller(s_con)
         && !nm_connection_get_setting_proxy(connection)) {
         connection_clone = nmtst_clone_connection(connection);
         connection       = connection_clone;
@@ -2003,7 +2003,7 @@ test_read_bridge_component(void)
     g_assert(s_con);
     g_assert_cmpstr(nm_setting_connection_get_id(s_con), ==, expected_id);
     g_assert_cmpstr(nm_setting_connection_get_uuid(s_con), ==, expected_uuid);
-    g_assert_cmpstr(nm_setting_connection_get_master(s_con), ==, "br0");
+    g_assert_cmpstr(nm_setting_connection_get_controller(s_con), ==, "br0");
     g_assert(nm_setting_connection_is_slave_type(s_con, NM_SETTING_BRIDGE_SETTING_NAME));
 
     s_wired = nm_connection_get_setting_wired(connection);

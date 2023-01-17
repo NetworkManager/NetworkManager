@@ -126,7 +126,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 
         if ((s_con = nm_connection_get_setting_connection(connection))) {
             if (nm_setting_connection_get_slave_type(s_con)
-                || nm_setting_connection_get_master(s_con)) {
+                || nm_setting_connection_get_controller(s_con)) {
                 g_set_error(error,
                             NM_CONNECTION_ERROR,
                             NM_CONNECTION_ERROR_INVALID_PROPERTY,

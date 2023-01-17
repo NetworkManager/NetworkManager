@@ -1832,7 +1832,7 @@ activate_slave_connections(NMPolicy *self, NMDevice *device)
 
         s_slave_con =
             nm_connection_get_setting_connection(nm_settings_connection_get_connection(sett_conn));
-        slave_master = nm_setting_connection_get_master(s_slave_con);
+        slave_master = nm_setting_connection_get_controller(s_slave_con);
         if (!slave_master)
             continue;
         if (!NM_IN_STRSET(slave_master, master_device, master_uuid_applied, master_uuid_settings))
