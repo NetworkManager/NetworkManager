@@ -2127,7 +2127,7 @@ write_connection_setting(NMSettingConnection *s_con, shvarFile *ifcfg)
 
     /* Only save the value for master connections */
     type = nm_setting_connection_get_connection_type(s_con);
-    if (_nm_connection_type_is_master(type)) {
+    if (_nm_connection_type_is_controller(type)) {
         NMSettingConnectionAutoconnectSlaves autoconnect_slaves;
         autoconnect_slaves = nm_setting_connection_get_autoconnect_slaves(s_con);
         svSetValueStr(ifcfg,

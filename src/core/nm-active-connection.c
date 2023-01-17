@@ -448,7 +448,7 @@ _set_applied_connection_take(NMActiveConnection *self, NMConnection *applied_con
     if (nm_setting_connection_get_master(s_con))
         flags_val |= NM_ACTIVATION_STATE_FLAG_IS_SLAVE;
 
-    if (_nm_connection_type_is_master(nm_setting_connection_get_connection_type(s_con)))
+    if (_nm_connection_type_is_controller(nm_setting_connection_get_connection_type(s_con)))
         flags_val |= NM_ACTIVATION_STATE_FLAG_IS_MASTER;
 
     nm_active_connection_set_state_flags_full(self,
