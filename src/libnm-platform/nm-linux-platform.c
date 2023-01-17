@@ -721,6 +721,9 @@ wait_for_nl_response_to_string(WaitForNlResponseResult seq_result,
     case WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_UNKNOWN:
         nm_strbuf_append_str(&buf, &buf_size, "failure");
         break;
+    case WAIT_FOR_NL_RESPONSE_RESULT_FAILED_RESYNC:
+        nm_strbuf_append_str(&buf, &buf_size, "failed-resync");
+        break;
     default:
         if (seq_result < 0) {
             nm_strbuf_append(&buf,
@@ -8158,20 +8161,25 @@ do_change_link(NMPlatform           *platform,
     WaitForNlResponseResult     seq_result = WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN;
     gs_free char               *errmsg     = NULL;
     char                        s_buf[256];
-    int                         result          = 0;
-    NMLogLevel                  log_level       = LOGL_DEBUG;
-    const char                 *log_result      = "failure";
-    const char                 *log_detail      = "";
+    int                         result;
+    NMLogLevel                  log_level;
+    const char                 *log_detail;
     gs_free char               *log_detail_free = NULL;
     const NMPObject            *obj_cache;
 
     if (!nm_platform_netns_push(platform, &netns)) {
         log_level  = LOGL_ERR;
         log_detail = ", failure to change network namespace";
+        result     = -NME_UNSPEC;
         goto out;
     }
 
 retry:
+    result     = -NME_UNSPEC;
+    log_level  = LOGL_WARN;
+    log_detail = "";
+    nm_clear_g_free(&log_detail_free);
+
     nle = _netlink_send_nlmsg_rtnl(platform, nlmsg, &seq_result, &errmsg);
     if (nle < 0) {
         log_level = LOGL_ERR;
@@ -8189,53 +8197,54 @@ retry:
 
     nm_assert(seq_result);
 
-    if (NM_IN_SET(-((int) seq_result), EOPNOTSUPP) && nlmsg_hdr(nlmsg)->nlmsg_type == RTM_NEWLINK) {
+    if (NM_IN_SET(seq_result, WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK, -EEXIST, -EADDRINUSE)) {
+        log_level = LOGL_DEBUG;
+        result    = 0;
+    } else if (NM_IN_SET(seq_result, -EOPNOTSUPP) && nlmsg_hdr(nlmsg)->nlmsg_type == RTM_NEWLINK) {
         nlmsg_hdr(nlmsg)->nlmsg_type = RTM_SETLINK;
-        goto retry;
-    }
 
-    if (seq_result == WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK) {
-        log_result = "success";
-    } else if (NM_IN_SET(-((int) seq_result), EEXIST, EADDRINUSE)) {
-        /* */
-    } else if (NM_IN_SET(-((int) seq_result), ESRCH, ENOENT)) {
+        log_level  = LOGL_INFO;
+        log_detail = ", will try SETLINK instead of NEWLINK";
+        result     = -EAGAIN;
+    } else if (seq_result == WAIT_FOR_NL_RESPONSE_RESULT_FAILED_RESYNC) {
+        log_level  = LOGL_INFO;
+        log_detail = ", due to lost synchronization";
+        result     = -EAGAIN;
+    } else if (NM_IN_SET(seq_result, -ESRCH, -ENOENT)) {
         log_detail = ", firmware not found";
         result     = -NME_PL_NO_FIRMWARE;
-    } else if (NM_IN_SET(-((int) seq_result), ERANGE)
-               && change_link_type == CHANGE_LINK_TYPE_SET_MTU) {
+    } else if (NM_IN_SET(seq_result, -ERANGE) && change_link_type == CHANGE_LINK_TYPE_SET_MTU) {
         log_detail = ", setting MTU to requested size is not possible";
         result     = -NME_PL_CANT_SET_MTU;
-    } else if (NM_IN_SET(-((int) seq_result), ENFILE)
-               && change_link_type == CHANGE_LINK_TYPE_SET_ADDRESS
+    } else if (NM_IN_SET(seq_result, -ENFILE) && change_link_type == CHANGE_LINK_TYPE_SET_ADDRESS
                && (obj_cache = nmp_cache_lookup_link(nm_platform_get_cache(platform), ifindex))
                && obj_cache->link.l_address.len == data->set_address.length
                && memcmp(obj_cache->link.l_address.data,
                          data->set_address.address,
                          data->set_address.length)
                       == 0) {
-        /* workaround ENFILE which may be wrongly returned (bgo #770456).
+        /* work around ENFILE which may be wrongly returned (bgo #770456).
          * If the MAC address is as expected, assume success? */
-        log_result = "success";
         log_detail = " (assume success changing address)";
         result     = 0;
-    } else if (NM_IN_SET(-((int) seq_result), ENODEV)) {
+    } else if (NM_IN_SET(seq_result, -ENODEV)) {
         log_level = LOGL_DEBUG;
         result    = -NME_PL_NOT_FOUND;
-    } else if (-((int) seq_result) == EAFNOSUPPORT) {
+    } else if (seq_result == -EAFNOSUPPORT) {
         log_level = LOGL_DEBUG;
         result    = -NME_PL_OPNOTSUPP;
-    } else {
-        log_level = LOGL_WARN;
-        result    = -NME_UNSPEC;
     }
 
 out:
     _NMLOG(log_level,
-           "do-change-link[%d]: %s changing link: %s%s",
+           "do-change-link[%d]: %s%s",
            ifindex,
-           log_result,
            wait_for_nl_response_to_string(seq_result, errmsg, s_buf, sizeof(s_buf)),
            log_detail);
+
+    if (result == -EAGAIN)
+        goto retry;
+
     return result;
 }
 
