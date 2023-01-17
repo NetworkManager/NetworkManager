@@ -523,7 +523,8 @@ _gl_pid_spawn_next_step(void)
     argv[argv_idx++] = "--no-hosts"; /* don't use /etc/hosts to resolve */
     argv[argv_idx++] = "--bind-interfaces";
     argv[argv_idx++] = "--pid-file=" PIDFILE;
-    argv[argv_idx++] = "--listen-address=127.0.0.1"; /* Should work for both 4 and 6 */
+    argv[argv_idx++] = "--listen-address=127.0.0.1";
+    argv[argv_idx++] = "--listen-address=::1";
     argv[argv_idx++] = "--cache-size=400";
     argv[argv_idx++] = "--clear-on-reload";     /* clear cache when dns server changes */
     argv[argv_idx++] = "--conf-file=/dev/null"; /* avoid loading /etc/dnsmasq.conf */
