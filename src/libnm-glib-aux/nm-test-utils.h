@@ -3069,6 +3069,27 @@ nmtst_ip_address_new(int addr_family, const char *str)
 
 /*****************************************************************************/
 
+static inline gpointer
+nmtst_keeper_add(GPtrArray **p_arr, gpointer ptr)
+{
+    if (!p_arr) {
+        /* If not GPtrArray in/out argument is given, track the pointer
+         * via _nmtst_testdata_track_add(), which means it stays alive
+         * until the end of the test. */
+        _nmtst_testdata_track_add(ptr, g_free);
+    } else {
+        if (!*p_arr)
+            *p_arr = g_ptr_array_new_with_free_func(g_free);
+
+        g_ptr_array_add(*p_arr, ptr);
+    }
+    return ptr;
+}
+
+#define nmtst_keeper_printf(p_ptr, ...) nmtst_keeper_add((p_ptr), g_strdup_printf(__VA_ARGS__))
+
+/*****************************************************************************/
+
 #define nmtst_gbytes_from_arr(...)           \
     ({                                       \
         const guint8 _arr[] = {__VA_ARGS__}; \
