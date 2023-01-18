@@ -768,7 +768,13 @@ do_curl_request(NMConnectivityCheckHandle *cb_data, const char *hosts)
     curl_easy_setopt(ehandle, CURLOPT_INTERFACE, cb_data->ifspec);
     curl_easy_setopt(ehandle, CURLOPT_RESOLVE, cb_data->concheck.hosts);
     curl_easy_setopt(ehandle, CURLOPT_IPRESOLVE, resolve);
+
+#if LIBCURL_VERSION_NUM >= 0x075500 /* libcurl 7.85.0 */
+    curl_easy_setopt(ehandle, CURLOPT_PROTOCOLS_STR, "HTTP,HTTPS");
+#else
     curl_easy_setopt(ehandle, CURLOPT_PROTOCOLS, CURLPROTO_HTTP | CURLPROTO_HTTPS);
+#endif
+
     if (_LOGT_ENABLED() && easy_debug_enabled()) {
         curl_easy_setopt(ehandle, CURLOPT_DEBUGFUNCTION, easy_debug_cb);
         curl_easy_setopt(ehandle, CURLOPT_DEBUGDATA, cb_data);
