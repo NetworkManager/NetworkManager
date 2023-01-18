@@ -66,26 +66,28 @@ __ns_types_to_str(int ns_types, int ns_types_already_set, char *buf, gsize len)
 
 #define _NMLOG_DOMAIN      LOGD_PLATFORM
 #define _NMLOG_PREFIX_NAME "netns"
-#define _NMLOG(level, netns, ...)                                     \
-    G_STMT_START                                                      \
-    {                                                                 \
-        NMLogLevel _level = (level);                                  \
-                                                                      \
-        if (nm_logging_enabled(_level, _NMLOG_DOMAIN)) {              \
-            NMPNetns *_netns = (netns);                               \
-            char      _sbuf[20];                                      \
-                                                                      \
-            _nm_log(_level,                                           \
-                    _NMLOG_DOMAIN,                                    \
-                    0,                                                \
-                    NULL,                                             \
-                    NULL,                                             \
-                    "%s%s: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__),      \
-                    _NMLOG_PREFIX_NAME,                               \
-                    (_netns ? nm_sprintf_buf(_sbuf, "[%p]", _netns)   \
-                            : "") _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
-        }                                                             \
-    }                                                                 \
+#define _NMLOG(level, netns, ...)                                               \
+    G_STMT_START                                                                \
+    {                                                                           \
+        NMLogLevel _level = (level);                                            \
+                                                                                \
+        if (nm_logging_enabled(_level, _NMLOG_DOMAIN)) {                        \
+            NMPNetns *_netns = (netns);                                         \
+            char      _sbuf[32];                                                \
+                                                                                \
+            _nm_log(_level,                                                     \
+                    _NMLOG_DOMAIN,                                              \
+                    0,                                                          \
+                    NULL,                                                       \
+                    NULL,                                                       \
+                    "%s%s: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__),                \
+                    _NMLOG_PREFIX_NAME,                                         \
+                    (_netns ? nm_sprintf_buf(_sbuf,                             \
+                                             "[" NM_HASH_OBFUSCATE_PTR_FMT "]", \
+                                             NM_HASH_OBFUSCATE_PTR(_netns))     \
+                            : "") _NM_UTILS_MACRO_REST(__VA_ARGS__));           \
+        }                                                                       \
+    }                                                                           \
     G_STMT_END
 
 /*****************************************************************************/
