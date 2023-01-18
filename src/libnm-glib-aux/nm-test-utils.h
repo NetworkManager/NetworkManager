@@ -652,7 +652,7 @@ __nmtst_init(int        *argc,
     if (!log_level && log_domains) {
         /* if the log level is not specified (but the domain is), we assume
          * the caller wants to set it depending on is_debug */
-        log_level = is_debug ? "DEBUG" : "WARN";
+        log_level = is_debug ? "TRACE" : "WARN";
     }
 
     if (!__nmtst_internal.assert_logging) {
