@@ -453,7 +453,7 @@ _nmtstp_init_tests(int *argc, char ***argv)
 void
 _nmtstp_setup_tests(void)
 {
-#define add_test_func(testpath, test_func) nmtstp_env1_add_test_func(testpath, test_func, FALSE)
+#define add_test_func(testpath, test_func) nmtstp_env1_add_test_func(testpath, test_func, 1, FALSE)
     add_test_func("/address/ipv4/general", test_ip4_address_general);
     add_test_func("/address/ipv6/general", test_ip6_address_general);
 

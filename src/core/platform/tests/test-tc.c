@@ -214,8 +214,8 @@ _nmtstp_init_tests(int *argc, char ***argv)
 void
 _nmtstp_setup_tests(void)
 {
-    nmtstp_env1_add_test_func("/link/qdisc/1", test_qdisc1, TRUE);
-    nmtstp_env1_add_test_func("/link/qdisc/fq_codel", test_qdisc_fq_codel, TRUE);
-    nmtstp_env1_add_test_func("/link/qdisc/sfq", test_qdisc_sfq, TRUE);
-    nmtstp_env1_add_test_func("/link/qdisc/tbf", test_qdisc_tbf, TRUE);
+    nmtstp_env1_add_test_func("/link/qdisc/1", test_qdisc1, 1, TRUE);
+    nmtstp_env1_add_test_func("/link/qdisc/fq_codel", test_qdisc_fq_codel, 1, TRUE);
+    nmtstp_env1_add_test_func("/link/qdisc/sfq", test_qdisc_sfq, 1, TRUE);
+    nmtstp_env1_add_test_func("/link/qdisc/tbf", test_qdisc_tbf, 1, TRUE);
 }

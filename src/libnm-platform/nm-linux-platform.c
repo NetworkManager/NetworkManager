@@ -590,25 +590,29 @@ NM_LINUX_PLATFORM_FROM_PRIVATE(NMLinuxPlatformPrivate *priv)
 #define _NMLOG2(level, ...)            _LOG(level, _NMLOG2_DOMAIN, NULL, __VA_ARGS__)
 #define _NMLOG2_err(errsv, level, ...) _LOG_err(errsv, level, _NMLOG2_DOMAIN, NULL, __VA_ARGS__)
 
-#define _LOG_print(__level, __domain, __errsv, self, ...)                                 \
-    G_STMT_START                                                                          \
-    {                                                                                     \
-        char              __prefix[32];                                                   \
-        const char       *__p_prefix = _NMLOG_PREFIX_NAME;                                \
-        NMPlatform *const __self     = (self);                                            \
-                                                                                          \
-        if (__self && nm_platform_get_log_with_ptr(__self)) {                             \
-            g_snprintf(__prefix, sizeof(__prefix), "%s[%p]", _NMLOG_PREFIX_NAME, __self); \
-            __p_prefix = __prefix;                                                        \
-        }                                                                                 \
-        _nm_log(__level,                                                                  \
-                __domain,                                                                 \
-                __errsv,                                                                  \
-                NULL,                                                                     \
-                NULL,                                                                     \
-                "%s: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__),                                \
-                __p_prefix _NM_UTILS_MACRO_REST(__VA_ARGS__));                            \
-    }                                                                                     \
+#define _LOG_print(__level, __domain, __errsv, self, ...)      \
+    G_STMT_START                                               \
+    {                                                          \
+        char              __prefix[64];                        \
+        const char       *__p_prefix = _NMLOG_PREFIX_NAME;     \
+        NMPlatform *const __self     = (self);                 \
+                                                               \
+        if (__self && nm_platform_get_log_with_ptr(__self)) {  \
+            g_snprintf(__prefix,                               \
+                       sizeof(__prefix),                       \
+                       "%s[" NM_HASH_OBFUSCATE_PTR_FMT "]",    \
+                       _NMLOG_PREFIX_NAME,                     \
+                       NM_HASH_OBFUSCATE_PTR(__self));         \
+            __p_prefix = __prefix;                             \
+        }                                                      \
+        _nm_log(__level,                                       \
+                __domain,                                      \
+                __errsv,                                       \
+                NULL,                                          \
+                NULL,                                          \
+                "%s: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__),     \
+                __p_prefix _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
+    }                                                          \
     G_STMT_END
 
 #define _LOG(level, domain, self, ...)                           \
@@ -3783,15 +3787,6 @@ _new_from_nl_route(const struct nlmsghdr *nlh, gboolean id_only, ParseNlmsgIter 
     else
         return NULL;
 
-    if (!NM_IN_SET(rtm->rtm_type,
-                   RTN_UNICAST,
-                   RTN_LOCAL,
-                   RTN_BLACKHOLE,
-                   RTN_UNREACHABLE,
-                   RTN_PROHIBIT,
-                   RTN_THROW))
-        return NULL;
-
     if (nlmsg_parse_arr(nlh, sizeof(struct rtmsg), tb, policy) < 0)
         return NULL;
 
@@ -5304,7 +5299,7 @@ ip_route_get_lock_flag(const NMPlatformIPRoute *route)
 }
 
 static gboolean
-ip_route_ignored_protocol(const NMPlatformIPRoute *route)
+ip_route_is_alive(const NMPlatformIPRoute *route)
 {
     guint8 prot;
 
@@ -5316,12 +5311,29 @@ ip_route_ignored_protocol(const NMPlatformIPRoute *route)
 
     nm_assert(nmp_utils_ip_config_source_from_rtprot(prot) == route->rt_source);
 
-    /* We ignore all routes outside a certain subest of rtm_protocol. NetworkManager
-     * itself wouldn't configure those, so they are always configured by somebody
-     * external. We thus ignore them to avoid the overhead that processing them brings.
-     * For example, the BGP daemon "bird"  might configure a huge number of RTPROT_BIRD routes. */
+    if (prot > RTPROT_STATIC && !NM_IN_SET(prot, RTPROT_DHCP, RTPROT_RA)) {
+        /* We ignore certain rtm_protocol, because NetworkManager would only ever
+         * configure certain protocols. Other routes are not configured by NetworkManager
+         * and we don't track them in the platform cache.
+         *
+         * This is to help with the performance overhead of a huge number of
+         * routes, for example with the bird BGP software, that adds routes
+         * with RTPROT_BIRD protocol. */
+        return FALSE;
+    }
 
-    return prot > RTPROT_STATIC && !NM_IN_SET(prot, RTPROT_DHCP, RTPROT_RA);
+    if (!NM_IN_SET(nm_platform_route_type_uncoerce(route->type_coerced),
+                   RTN_UNICAST,
+                   RTN_LOCAL,
+                   RTN_BLACKHOLE,
+                   RTN_UNREACHABLE,
+                   RTN_PROHIBIT,
+                   RTN_THROW)) {
+        /* Certain route types are ignored and not placed into the cache. */
+        return FALSE;
+    }
+
+    return TRUE;
 }
 
 /* Copied and modified from libnl3's build_route_msg() and rtnl_route_build_msg(). */
@@ -7825,6 +7837,7 @@ _rtnl_handle_msg(NMPlatform *platform, const struct nl_msg_lite *msg)
             gboolean                        resync_required = FALSE;
             gboolean                        only_dirty      = FALSE;
             gboolean                        is_ipv6;
+            gboolean                        route_is_alive;
 
             /* IPv4 routes that are a response to RTM_GETROUTE must have
              * the cloned flag while IPv6 routes don't have to. */
@@ -7854,24 +7867,13 @@ _rtnl_handle_msg(NMPlatform *platform, const struct nl_msg_lite *msg)
                 }
             }
 
-            if (ip_route_ignored_protocol(NMP_OBJECT_CAST_IP_ROUTE(obj))) {
-                /* We ignore certain rtm_protocol, because NetworkManager would only ever
-                 * configure certain protocols. Other routes were not added by NetworkManager
-                 * and we don't need to track them in the platform cache.
-                 *
-                 * This is to help with the performance overhead of a huge number of
-                 * routes, for example with the bird BGP software, that adds routes
-                 * with RTPROT_BIRD protocol.
-                 *
-                 * Even if this is a IPv6 multipath route, we abort (parse_nlmsg_iter). There
-                 * is nothing for us to do. */
-                return;
-            }
+            route_is_alive = ip_route_is_alive(NMP_OBJECT_CAST_IP_ROUTE(obj));
 
             cache_op = nmp_cache_update_netlink_route(cache,
                                                       obj,
                                                       is_dump,
                                                       msghdr->nlmsg_flags,
+                                                      route_is_alive,
                                                       &obj_old,
                                                       &obj_new,
                                                       &obj_replace,
@@ -7918,6 +7920,8 @@ _rtnl_handle_msg(NMPlatform *platform, const struct nl_msg_lite *msg)
                 delayed_action_schedule(platform,
                                         delayed_action_refresh_from_needle_object(obj),
                                         NULL);
+                /* We are done here. */
+                return;
             }
             break;
         }
@@ -10843,8 +10847,8 @@ constructed(GObject *_object)
               : (!nmp_netns_get_current()
                      ? "no netns support"
                      : nm_sprintf_bufa(100,
-                                       "in netns[%p]%s",
-                                       nmp_netns_get_current(),
+                                       "in netns[" NM_HASH_OBFUSCATE_PTR_FMT "]%s",
+                                       NM_HASH_OBFUSCATE_PTR(nmp_netns_get_current()),
                                        nmp_netns_get_current() == nmp_netns_get_initial() ? "/main"
                                                                                           : "")),
           nm_platform_get_use_udev(platform) ? "use" : "no",
@@ -10987,7 +10991,10 @@ path_is_read_only_fs(const char *path)
 }
 
 NMPlatform *
-nm_linux_platform_new(gboolean log_with_ptr, gboolean netns_support, gboolean cache_tc)
+nm_linux_platform_new(NMDedupMultiIndex *multi_idx,
+                      gboolean           log_with_ptr,
+                      gboolean           netns_support,
+                      gboolean           cache_tc)
 {
     gboolean use_udev = FALSE;
 
@@ -10995,6 +11002,8 @@ nm_linux_platform_new(gboolean log_with_ptr, gboolean netns_support, gboolean ca
         use_udev = TRUE;
 
     return g_object_new(NM_TYPE_LINUX_PLATFORM,
+                        NM_PLATFORM_MULTI_IDX,
+                        multi_idx,
                         NM_PLATFORM_LOG_WITH_PTR,
                         log_with_ptr,
                         NM_PLATFORM_USE_UDEV,

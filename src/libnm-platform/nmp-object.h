@@ -561,6 +561,8 @@ _NMP_OBJECT_TYPE_IS_OBJ_WITH_IFINDEX(NMPObjectType obj_type)
     return FALSE;
 }
 
+#define NMP_OBJECT_TYPE_NAME(obj_type) (nmp_class_from_type(obj_type)->obj_type_name)
+
 #define NMP_OBJECT_CAST_OBJECT(obj)                                       \
     ({                                                                    \
         typeof(obj) _obj = (obj);                                         \
@@ -869,11 +871,13 @@ nmp_lookup_init_object_by_ifindex(NMPLookup *lookup, NMPObjectType obj_type, int
 const NMPLookup *nmp_lookup_init_route_default(NMPLookup *lookup, NMPObjectType obj_type);
 const NMPLookup *nmp_lookup_init_route_by_weak_id(NMPLookup *lookup, const NMPObject *obj);
 const NMPLookup *nmp_lookup_init_ip4_route_by_weak_id(NMPLookup *lookup,
+                                                      guint32    route_table,
                                                       in_addr_t  network,
                                                       guint      plen,
                                                       guint32    metric,
                                                       guint8     tos);
 const NMPLookup *nmp_lookup_init_ip6_route_by_weak_id(NMPLookup             *lookup,
+                                                      guint32                route_table,
                                                       const struct in6_addr *network,
                                                       guint                  plen,
                                                       guint32                metric,
@@ -971,6 +975,7 @@ NMPCacheOpsType nmp_cache_update_netlink_route(NMPCache         *cache,
                                                NMPObject        *obj_hand_over,
                                                gboolean          is_dump,
                                                guint16           nlmsgflags,
+                                               gboolean          route_is_alive,
                                                const NMPObject **out_obj_old,
                                                const NMPObject **out_obj_new,
                                                const NMPObject **out_obj_replace,
@@ -1132,6 +1137,7 @@ nm_platform_lookup_route_default_clone(NMPlatform            *platform,
 
 static inline const NMDedupMultiHeadEntry *
 nm_platform_lookup_ip4_route_by_weak_id(NMPlatform *platform,
+                                        guint32     route_table,
                                         in_addr_t   network,
                                         guint       plen,
                                         guint32     metric,
@@ -1139,12 +1145,13 @@ nm_platform_lookup_ip4_route_by_weak_id(NMPlatform *platform,
 {
     NMPLookup lookup;
 
-    nmp_lookup_init_ip4_route_by_weak_id(&lookup, network, plen, metric, tos);
+    nmp_lookup_init_ip4_route_by_weak_id(&lookup, route_table, network, plen, metric, tos);
     return nm_platform_lookup(platform, &lookup);
 }
 
 static inline const NMDedupMultiHeadEntry *
 nm_platform_lookup_ip6_route_by_weak_id(NMPlatform            *platform,
+                                        guint32                route_table,
                                         const struct in6_addr *network,
                                         guint                  plen,
                                         guint32                metric,
@@ -1153,7 +1160,13 @@ nm_platform_lookup_ip6_route_by_weak_id(NMPlatform            *platform,
 {
     NMPLookup lookup;
 
-    nmp_lookup_init_ip6_route_by_weak_id(&lookup, network, plen, metric, src, src_plen);
+    nmp_lookup_init_ip6_route_by_weak_id(&lookup,
+                                         route_table,
+                                         network,
+                                         plen,
+                                         metric,
+                                         src,
+                                         src_plen);
     return nm_platform_lookup(platform, &lookup);
 }
 
