@@ -695,7 +695,12 @@ do_curl_request(NMConnectivityCheckHandle *cb_data)
     curl_easy_setopt(ehandle, CURLOPT_INTERFACE, cb_data->ifspec);
     curl_easy_setopt(ehandle, CURLOPT_RESOLVE, cb_data->concheck.hosts);
     curl_easy_setopt(ehandle, CURLOPT_IPRESOLVE, resolve);
+
+#if LIBCURL_VERSION_NUM >= 0x075500 /* libcurl 7.85.0 */
+    curl_easy_setopt(ehandle, CURLOPT_PROTOCOLS_STR, "HTTP,HTTPS");
+#else
     curl_easy_setopt(ehandle, CURLOPT_PROTOCOLS, CURLPROTO_HTTP | CURLPROTO_HTTPS);
+#endif
 
     curl_multi_add_handle(mhandle, ehandle);
 }
