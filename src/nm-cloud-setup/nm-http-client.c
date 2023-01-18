@@ -305,7 +305,12 @@ nm_http_client_get(NMHttpClient       *self,
     curl_easy_setopt(edata->ehandle, CURLOPT_WRITEFUNCTION, _get_writefunction_cb);
     curl_easy_setopt(edata->ehandle, CURLOPT_WRITEDATA, edata);
     curl_easy_setopt(edata->ehandle, CURLOPT_PRIVATE, edata);
+
+#if LIBCURL_VERSION_NUM >= 0x075500 /* libcurl 7.85.0 */
+    curl_easy_setopt(edata->ehandle, CURLOPT_PROTOCOLS_STR, "HTTP,HTTPS");
+#else
     curl_easy_setopt(edata->ehandle, CURLOPT_PROTOCOLS, CURLPROTO_HTTP | CURLPROTO_HTTPS);
+#endif
 
     if (http_headers) {
         for (i = 0; http_headers[i]; ++i) {
