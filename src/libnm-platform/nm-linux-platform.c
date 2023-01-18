@@ -590,25 +590,29 @@ NM_LINUX_PLATFORM_FROM_PRIVATE(NMLinuxPlatformPrivate *priv)
 #define _NMLOG2(level, ...)            _LOG(level, _NMLOG2_DOMAIN, NULL, __VA_ARGS__)
 #define _NMLOG2_err(errsv, level, ...) _LOG_err(errsv, level, _NMLOG2_DOMAIN, NULL, __VA_ARGS__)
 
-#define _LOG_print(__level, __domain, __errsv, self, ...)                                 \
-    G_STMT_START                                                                          \
-    {                                                                                     \
-        char              __prefix[32];                                                   \
-        const char       *__p_prefix = _NMLOG_PREFIX_NAME;                                \
-        NMPlatform *const __self     = (self);                                            \
-                                                                                          \
-        if (__self && nm_platform_get_log_with_ptr(__self)) {                             \
-            g_snprintf(__prefix, sizeof(__prefix), "%s[%p]", _NMLOG_PREFIX_NAME, __self); \
-            __p_prefix = __prefix;                                                        \
-        }                                                                                 \
-        _nm_log(__level,                                                                  \
-                __domain,                                                                 \
-                __errsv,                                                                  \
-                NULL,                                                                     \
-                NULL,                                                                     \
-                "%s: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__),                                \
-                __p_prefix _NM_UTILS_MACRO_REST(__VA_ARGS__));                            \
-    }                                                                                     \
+#define _LOG_print(__level, __domain, __errsv, self, ...)      \
+    G_STMT_START                                               \
+    {                                                          \
+        char              __prefix[64];                        \
+        const char       *__p_prefix = _NMLOG_PREFIX_NAME;     \
+        NMPlatform *const __self     = (self);                 \
+                                                               \
+        if (__self && nm_platform_get_log_with_ptr(__self)) {  \
+            g_snprintf(__prefix,                               \
+                       sizeof(__prefix),                       \
+                       "%s[" NM_HASH_OBFUSCATE_PTR_FMT "]",    \
+                       _NMLOG_PREFIX_NAME,                     \
+                       NM_HASH_OBFUSCATE_PTR(__self));         \
+            __p_prefix = __prefix;                             \
+        }                                                      \
+        _nm_log(__level,                                       \
+                __domain,                                      \
+                __errsv,                                       \
+                NULL,                                          \
+                NULL,                                          \
+                "%s: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__),     \
+                __p_prefix _NM_UTILS_MACRO_REST(__VA_ARGS__)); \
+    }                                                          \
     G_STMT_END
 
 #define _LOG(level, domain, self, ...)                           \
@@ -10843,8 +10847,8 @@ constructed(GObject *_object)
               : (!nmp_netns_get_current()
                      ? "no netns support"
                      : nm_sprintf_bufa(100,
-                                       "in netns[%p]%s",
-                                       nmp_netns_get_current(),
+                                       "in netns[" NM_HASH_OBFUSCATE_PTR_FMT "]%s",
+                                       NM_HASH_OBFUSCATE_PTR(nmp_netns_get_current()),
                                        nmp_netns_get_current() == nmp_netns_get_initial() ? "/main"
                                                                                           : "")),
           nm_platform_get_use_udev(platform) ? "use" : "no",
