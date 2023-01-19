@@ -845,11 +845,6 @@ _assert_platform_compare_arr(NMPObjectType obj_type,
     int             idx;
     int             idx_pointer_comp = -1;
 
-    /* Seems there is still an issue, and the test doesn't pass on all environments.
-     * For example, int gitlab-ci with Ubuntu containers. Will fix, but for now
-     * disable the check. */
-    return;
-
     for (idx = 0; TRUE; idx++) {
         if (nm_g_ptr_array_len(arr1) == idx && nm_g_ptr_array_len(arr2) == idx)
             break;
@@ -965,6 +960,12 @@ nmtstp_assert_platform(NMPlatform *platform, guint32 obj_type_flags)
             if (!NM_FLAGS_ANY(obj_type_flags, i_obj_type_flags))
                 continue;
             obj_type_flags = NM_FLAGS_UNSET(obj_type_flags, i_obj_type_flags);
+        }
+
+        if (NM_IN_SET(obj_type, NMP_OBJECT_TYPE_IP4_ROUTE, NMP_OBJECT_TYPE_IP6_ROUTE)) {
+            /* This test is currently unstable. Skip. */
+            g_test_skip("Test is currently known to fail. SKIP");
+            continue;
         }
 
         nmp_lookup_init_obj_type(&lookup, obj_type);
