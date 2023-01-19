@@ -23,10 +23,11 @@
 
 /*****************************************************************************/
 
+#define NM_PLATFORM_CACHE_TC      "cache-tc"
+#define NM_PLATFORM_LOG_WITH_PTR  "log-with-ptr"
+#define NM_PLATFORM_MULTI_IDX     "multi-idx"
 #define NM_PLATFORM_NETNS_SUPPORT "netns-support"
 #define NM_PLATFORM_USE_UDEV      "use-udev"
-#define NM_PLATFORM_LOG_WITH_PTR  "log-with-ptr"
-#define NM_PLATFORM_CACHE_TC      "cache-tc"
 
 /*****************************************************************************/
 

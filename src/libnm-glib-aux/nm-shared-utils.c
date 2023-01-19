@@ -2130,15 +2130,16 @@ nm_strv_cleanup(char **strv, gboolean strip_whitespace, gboolean skip_empty, gbo
 /*****************************************************************************/
 
 GPtrArray *
-_nm_g_ptr_array_copy(GPtrArray     *array,
-                     GCopyFunc      func,
-                     gpointer       user_data,
-                     GDestroyNotify element_free_func)
+nm_g_ptr_array_new_clone(GPtrArray     *array,
+                         GCopyFunc      func,
+                         gpointer       user_data,
+                         GDestroyNotify element_free_func)
 {
     GPtrArray *new_array;
     guint      i;
 
     g_return_val_if_fail(array, NULL);
+    nm_assert((!!func) == (!!element_free_func));
 
     new_array = g_ptr_array_new_full(array->len, element_free_func);
     for (i = 0; i < array->len; i++) {

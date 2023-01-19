@@ -2336,19 +2336,23 @@ nmp_lookup_init_route_by_weak_id(NMPLookup *lookup, const NMPObject *obj)
     switch (NMP_OBJECT_GET_TYPE(obj)) {
     case NMP_OBJECT_TYPE_IP4_ROUTE:
         r4 = NMP_OBJECT_CAST_IP4_ROUTE(obj);
-        return nmp_lookup_init_ip4_route_by_weak_id(lookup,
-                                                    r4->network,
-                                                    r4->plen,
-                                                    r4->metric,
-                                                    r4->tos);
+        return nmp_lookup_init_ip4_route_by_weak_id(
+            lookup,
+            nm_platform_route_table_uncoerce(r4->table_coerced, TRUE),
+            r4->network,
+            r4->plen,
+            r4->metric,
+            r4->tos);
     case NMP_OBJECT_TYPE_IP6_ROUTE:
         r6 = NMP_OBJECT_CAST_IP6_ROUTE(obj);
-        return nmp_lookup_init_ip6_route_by_weak_id(lookup,
-                                                    &r6->network,
-                                                    r6->plen,
-                                                    r6->metric,
-                                                    &r6->src,
-                                                    r6->src_plen);
+        return nmp_lookup_init_ip6_route_by_weak_id(
+            lookup,
+            nm_platform_route_table_uncoerce(r6->table_coerced, TRUE),
+            &r6->network,
+            r6->plen,
+            r6->metric,
+            &r6->src,
+            r6->src_plen);
     default:
         nm_assert_not_reached();
         return NULL;
@@ -2357,6 +2361,7 @@ nmp_lookup_init_route_by_weak_id(NMPLookup *lookup, const NMPObject *obj)
 
 const NMPLookup *
 nmp_lookup_init_ip4_route_by_weak_id(NMPLookup *lookup,
+                                     guint32    route_table,
                                      in_addr_t  network,
                                      guint      plen,
                                      guint32    metric,
@@ -2367,9 +2372,10 @@ nmp_lookup_init_ip4_route_by_weak_id(NMPLookup *lookup,
     nm_assert(lookup);
 
     o = _nmp_object_stackinit_from_type(&lookup->selector_obj, NMP_OBJECT_TYPE_IP4_ROUTE);
-    o->ip4_route.ifindex = 1;
-    o->ip4_route.plen    = plen;
-    o->ip4_route.metric  = metric;
+    o->ip4_route.ifindex       = 1;
+    o->ip4_route.plen          = plen;
+    o->ip4_route.table_coerced = nm_platform_route_table_coerce(route_table);
+    o->ip4_route.metric        = metric;
     if (network)
         o->ip4_route.network = network;
     o->ip4_route.tos      = tos;
@@ -2379,6 +2385,7 @@ nmp_lookup_init_ip4_route_by_weak_id(NMPLookup *lookup,
 
 const NMPLookup *
 nmp_lookup_init_ip6_route_by_weak_id(NMPLookup             *lookup,
+                                     guint32                route_table,
                                      const struct in6_addr *network,
                                      guint                  plen,
                                      guint32                metric,
@@ -2390,9 +2397,10 @@ nmp_lookup_init_ip6_route_by_weak_id(NMPLookup             *lookup,
     nm_assert(lookup);
 
     o = _nmp_object_stackinit_from_type(&lookup->selector_obj, NMP_OBJECT_TYPE_IP6_ROUTE);
-    o->ip6_route.ifindex = 1;
-    o->ip6_route.plen    = plen;
-    o->ip6_route.metric  = metric;
+    o->ip6_route.ifindex       = 1;
+    o->ip6_route.plen          = plen;
+    o->ip6_route.table_coerced = nm_platform_route_table_coerce(route_table);
+    o->ip6_route.metric        = metric;
     if (network)
         o->ip6_route.network = *network;
     if (src)
@@ -2951,6 +2959,7 @@ nmp_cache_update_netlink_route(NMPCache         *cache,
                                NMPObject        *obj_hand_over,
                                gboolean          is_dump,
                                guint16           nlmsgflags,
+                               gboolean          route_is_alive,
                                const NMPObject **out_obj_old,
                                const NMPObject **out_obj_new,
                                const NMPObject **out_obj_replace,
@@ -2969,29 +2978,59 @@ nmp_cache_update_netlink_route(NMPCache         *cache,
     nm_assert(cache);
     nm_assert(NMP_OBJECT_IS_VALID(obj_hand_over));
     nm_assert(!NMP_OBJECT_IS_STACKINIT(obj_hand_over));
-    /* A link object from netlink must have the udev related fields unset.
-     * We could implement to handle that, but there is no need to support such
-     * a use-case */
     nm_assert(NM_IN_SET(NMP_OBJECT_GET_TYPE(obj_hand_over),
                         NMP_OBJECT_TYPE_IP4_ROUTE,
                         NMP_OBJECT_TYPE_IP6_ROUTE));
     nm_assert(nm_dedup_multi_index_obj_find(cache->multi_idx, obj_hand_over) != obj_hand_over);
+
+    if (NM_FLAGS_HAS(nlmsgflags, NLM_F_REPLACE)) {
+        /* This means, that the message indicates that another route was replaced.
+         * Since we don't cache all routes (see "route_is_alive"), we cannot know
+         * with certainty which route was replaced.
+         *
+         * Even if we would cache *all* routes (which we cannot, if kernel adds new
+         * routing features that modify the known nmp_object_id_equal()), it would
+         * be hard to find the right route that was replaced. Well, probably we
+         * would have to keep NMP_CACHE_ID_TYPE_ROUTES_BY_WEAK_ID sorted by order
+         * of notifications, which is hard. The code below actually makes an effort
+         * to do that, but it's not actually used, because we just resync.
+         *
+         * The only proper solution for this would be to improve kernel with [1]
+         * and [2].
+         *
+         * [1] https://bugzilla.redhat.com/show_bug.cgi?id=1337855
+         * [2] https://bugzilla.redhat.com/show_bug.cgi?id=1337860
+         *
+         * We need to resync.
+         */
+        if (NMP_OBJECT_GET_TYPE(obj_hand_over) == NMP_OBJECT_TYPE_IP4_ROUTE
+            && !nmp_cache_lookup_all(cache, NMP_CACHE_ID_TYPE_ROUTES_BY_WEAK_ID, obj_hand_over)) {
+            /* For IPv4, we can do a small optimization. We skip the resync, if we have
+             * no conflicting routes (by weak-id).
+             *
+             * This optimization does not work for IPv6 (maybe should be fixed).
+             */
+        } else {
+            entry_replace   = NULL;
+            resync_required = TRUE;
+            goto out;
+        }
+    }
 
     entry_old = _lookup_entry(cache, obj_hand_over);
     entry_new = NULL;
 
     NM_SET_OUT(out_obj_old, nmp_object_ref(nm_dedup_multi_entry_get_obj(entry_old)));
 
-    if (!entry_old) {
-        if (!nmp_object_is_alive(obj_hand_over))
-            goto update_done;
+    is_alive = route_is_alive && nmp_object_is_alive(obj_hand_over);
 
-        _idxcache_update(cache, NULL, obj_hand_over, is_dump, &entry_new);
-        ops_type = NMP_CACHE_OPS_ADDED;
+    if (!entry_old) {
+        if (is_alive) {
+            _idxcache_update(cache, NULL, obj_hand_over, is_dump, &entry_new);
+            ops_type = NMP_CACHE_OPS_ADDED;
+        }
         goto update_done;
     }
-
-    is_alive = nmp_object_is_alive(obj_hand_over);
 
     if (!is_alive) {
         /* the update would make @entry_old invalid. Remove it. */
@@ -3025,19 +3064,11 @@ update_done:
     if (is_dump)
         goto out;
 
-    if (!entry_new) {
-        if (NM_FLAGS_HAS(nlmsgflags, NLM_F_REPLACE)
-            && nmp_cache_lookup_all(cache, NMP_CACHE_ID_TYPE_ROUTES_BY_WEAK_ID, obj_hand_over)) {
-            /* hm. @obj_hand_over was not added, meaning it was not alive.
-             * However, we track some other objects with the same weak-id.
-             * It's unclear what that means. To be sure, resync. */
-            resync_required = TRUE;
-        }
+    if (!entry_new)
         goto out;
-    }
 
-    /* FIXME: for routes, we only maintain the order correctly for the BY_WEAK_ID
-     * index. For all other indexes their order becomes messed up. */
+    /* For routes, we only maintain the order correctly for the BY_WEAK_ID
+     * index. For all other indexes, their order is not preserved. */
     entry_cur =
         _lookup_entry_with_idx_type(cache, NMP_CACHE_ID_TYPE_ROUTES_BY_WEAK_ID, entry_new->obj);
     if (!entry_cur) {

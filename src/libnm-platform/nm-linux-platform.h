@@ -23,6 +23,11 @@ typedef struct _NMLinuxPlatformClass NMLinuxPlatformClass;
 
 GType nm_linux_platform_get_type(void);
 
-NMPlatform *nm_linux_platform_new(gboolean log_with_ptr, gboolean netns_support, gboolean cache_tc);
+struct _NMDedupMultiIndex;
+
+NMPlatform *nm_linux_platform_new(struct _NMDedupMultiIndex *multi_idx,
+                                  gboolean                   log_with_ptr,
+                                  gboolean                   netns_support,
+                                  gboolean                   cache_tc);
 
 #endif /* __NETWORKMANAGER_LINUX_PLATFORM_H__ */
