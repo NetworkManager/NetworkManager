@@ -842,6 +842,8 @@ struct _NMSettInfoProperty {
      * is not deprecated. This flag is about the deprecation of the D-Bus representation
      * of a property. */
     bool dbus_deprecated : 1;
+
+    const gchar *alias_prop_name;
 };
 
 typedef struct {

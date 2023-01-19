@@ -29,6 +29,8 @@ typedef enum _nm_packed {
     NM_VALUE_TYPE_STRING,
     NM_VALUE_TYPE_BYTES,
     NM_VALUE_TYPE_STRV,
+
+    NM_VALUE_TYPE_ALIAS,
 } NMValueType;
 
 /*****************************************************************************/
@@ -121,6 +123,7 @@ nm_value_type_cmp(NMValueType value_type, gconstpointer p_a, gconstpointer p_b)
 
     case NM_VALUE_TYPE_NONE:
     case NM_VALUE_TYPE_UNSPEC:
+    case NM_VALUE_TYPE_ALIAS:
         break;
     }
     return nm_assert_unreachable_val(0);
@@ -175,6 +178,7 @@ nm_value_type_copy(NMValueType value_type, gpointer dst, gconstpointer src)
 
     case NM_VALUE_TYPE_NONE:
     case NM_VALUE_TYPE_UNSPEC:
+    case NM_VALUE_TYPE_ALIAS:
         break;
     }
     nm_assert_not_reached();
@@ -228,6 +232,7 @@ nm_value_type_get_from_variant(NMValueType value_type,
 
     case NM_VALUE_TYPE_NONE:
     case NM_VALUE_TYPE_UNSPEC:
+    case NM_VALUE_TYPE_ALIAS:
         break;
     }
     nm_assert_not_reached();
@@ -268,6 +273,7 @@ nm_value_type_to_variant(NMValueType value_type, gconstpointer src)
 
     case NM_VALUE_TYPE_NONE:
     case NM_VALUE_TYPE_UNSPEC:
+    case NM_VALUE_TYPE_ALIAS:
         break;
     }
     return nm_assert_unreachable_val(NULL);
@@ -304,6 +310,7 @@ nm_value_type_get_variant_type(NMValueType value_type)
         /* fall-through */
     case NM_VALUE_TYPE_NONE:
     case NM_VALUE_TYPE_UNSPEC:
+    case NM_VALUE_TYPE_ALIAS:
         break;
     }
     nm_assert_not_reached();

@@ -394,6 +394,7 @@ nm_value_type_to_json(NMValueType value_type, GString *gstr, gconstpointer p_fie
     case NM_VALUE_TYPE_STRV:
     case NM_VALUE_TYPE_NONE:
     case NM_VALUE_TYPE_UNSPEC:
+    case NM_VALUE_TYPE_ALIAS:
         break;
     }
     nm_assert_not_reached();
@@ -432,6 +433,7 @@ nm_value_type_from_json(const NMJsonVt  *vt,
     case NM_VALUE_TYPE_STRV:
     case NM_VALUE_TYPE_NONE:
     case NM_VALUE_TYPE_UNSPEC:
+    case NM_VALUE_TYPE_ALIAS:
         break;
     }
     return nm_assert_unreachable_val(FALSE);
