@@ -116,17 +116,18 @@ fi
 
 ###############################################################################
 
-do_clean
-
-if [ "$NM_BUILD_TARBALL" = 1 ]; then
-    if check_run 1 ; then
-        mv "$ARTIFACT_DIR/docs-html/" ./
-    fi
-    if check_run 8 ; then
-        mv \
-           "$ARTIFACT_DIR"/NetworkManager-1*.tar.xz \
-           "$ARTIFACT_DIR"/NetworkManager-1*.src.rpm \
-           ./
+if [ -z "$NM_TEST_SELECT_RUN" ] ; then
+    do_clean
+    if [ "$NM_BUILD_TARBALL" = 1 ]; then
+        if check_run 1 ; then
+            mv "$ARTIFACT_DIR/docs-html/" ./
+        fi
+        if check_run 8 ; then
+            mv \
+               "$ARTIFACT_DIR"/NetworkManager-1*.tar.xz \
+               "$ARTIFACT_DIR"/NetworkManager-1*.src.rpm \
+               ./
+        fi
     fi
 fi
 
