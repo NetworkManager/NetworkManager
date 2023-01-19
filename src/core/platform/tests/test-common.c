@@ -962,12 +962,6 @@ nmtstp_assert_platform(NMPlatform *platform, guint32 obj_type_flags)
             obj_type_flags = NM_FLAGS_UNSET(obj_type_flags, i_obj_type_flags);
         }
 
-        if (NM_IN_SET(obj_type, NMP_OBJECT_TYPE_IP4_ROUTE, NMP_OBJECT_TYPE_IP6_ROUTE)) {
-            /* This test is currently unstable. Skip. */
-            g_test_skip("Test is currently known to fail. SKIP");
-            continue;
-        }
-
         nmp_lookup_init_obj_type(&lookup, obj_type);
 
         arr1 = nm_platform_lookup_clone(platform, &lookup, NULL, NULL) ?: g_ptr_array_new();
