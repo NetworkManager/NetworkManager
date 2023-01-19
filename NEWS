@@ -8,24 +8,109 @@ subject to change and not guaranteed to be compatible with
 the later release.
 USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 
-* nmcli: allow changing "connection.uuid" and "connection.type"
-  in offline mode and setting the UUID when creating a connection.
-* nmcli: accept abbreviations for the UUID with the connection selector
-  in `nmcli connection $operator uuid $uuid`.
-* nmtui now supports editing Wi-Fi WPA-Enterprise, Ethernet with 802.1X
-  authentication and MACsec connection profiles.
 * bond: add "balance-slb" option which implements source load balancing
   with "balance-xor" mode and "vlan-srcmac" xmit_hash_policy. In this
   mode, NetworkManager configures nftables to prevent loops in the
   switch.
 * dns: support specifying DNS-over-TLS server name (SNI) for static
   name servers. Only works with systemd-resolved plugin.
-* Add support of loopback interface and a new connection type "loopback". On D-Bus,
-  the loopback interface now has the "org.freedesktop.NetworkManager.Device.Loopback"
-  interface instead of org.freedesktop.NetworkManager.Device.Generic".
-  Loopback handling is special in that when the NetworkManager profile is
-  deactivated, the interfaces will still be up and configured with a 127.0.0.1
-  address.
+* loopback: add support of loopback interface and a new connection type
+  "loopback". On D-Bus, the loopback interface now has the
+  "org.freedesktop.NetworkManager.Device.Loopback" interface instead of
+  "org.freedesktop.NetworkManager.Device.Generic".  Loopback handling is special
+  in that when the NetworkManager profile is deactivated, the interfaces will
+  still be up and configured with a 127.0.0.1 address.
+* Add support of IPv4 ECMP routes. The ECMP routes will get merged
+  automatically but the user need to configure them as single-hop routes
+  specifying a valid weight.
+* Add support of VTI and VTI6 ip-tunnels. Add a new property "ip-tunnel.fwmark".
+* vlan: add support of "vlan.protocol" property to set 802.1Q (default) or
+  802.1ad.
+* firewall: pass "--wait 2" to iptables invocations to handle races with concurrent
+  calls. This fixes misbehavior with IPv4 shared mode.
+* DHCP: expose used DHCPV4 client-id and DHCPv6 DUID in lease information.
+* VPN: support new "ipv[46].auto-route-ext-gw" option to suppress adding direct
+  route to external VPN gateway.
+* ovs: add support of "ovs-dpdk.n-rxq-desc", "ovs-dpdk.n-txq-desc",
+  "ovs-interface.ofport-request" and "ovs-port.trunks" properties.
+* Add support of "other_config" for OVS bridge, port or interface. This
+  property is not supported by nmcli.
+* nmtui now supports editing Wi-Fi WPA-Enterprise, Ethernet with 802.1X
+  authentication and MACsec connection profiles.
+* nmcli: allow changing "connection.uuid" and "connection.type"
+  in offline mode and setting the UUID when creating a connection.
+* nmcli: accept abbreviations for the UUID with the connection selector
+  in `nmcli connection $operator uuid $uuid`.
+* Many internal improvements and bug fixes.
+
+The following changes were backported to 1.40.x releases between 1.40.0
+and 1.40.10 are also present in NetworkManager-1.42:
+
+- 1.40.10
+
+* Fix the evaluation of the autoconnect retries.
+* nm-cloud-setup now preserves addresses added externally.
+* Ensure that dnsmasq is stopped after changing the dns backend and
+  restarting the service.
+* Fix honoring an explicit DHCPv6 DUID with dhclient.
+* Other various fixes.
+
+- 1.40.8
+
+* Fixed a bug that caused devices (MACsec in particular) to be stuck in
+  UNAVAILABLE state and not transition to DISCONNECTED if the carrier was
+  ready too early.
+* Improved interoperability of MACsec with some Aruba switches by allowing
+  CKN shorter than 64 characters.
+* Fixed an assertion failure when restarting NetworkManager with MACsec
+  links configured.
+* Fixed a possible DHCP helper crash when handling failure to connect to
+  D-Bus.
+* Corrected calculation of expiration time for items configured from IPv6
+  neighbor discovery messages.
+* Various fixes for platforms that don't allow unaligned memory access.
+
+- 1.40.6
+
+* team: also set empty port configuration so teamd
+  knows about the port.
+* team: restore port configuration after teamd respawn.
+
+- 1.40.4
+
+* dhcp: revert restarting DHCP when MAC address changes,
+  for example during a bond fail over.
+* various documentation fixes.
+* fix non-exported ABI in libnm which was wrongly present
+  in the header files but unusable so far.
+* ifcfg-rh: fix writing ethtool pause settings to file.
+* core: set "proto static" for manual routing rules configured
+  by NetworkManager.
+* Various minor bugfixes.
+
+- 1.40.2
+
+* Ensure that resolv.conf gets updated when the configuration changes.
+* Fix setting as bond primary an interface that doesn't exist yet when the
+  bond is activated.
+* The number of autoconnect retries is now accounted independently for each
+  device when there are profiles with multi-connect=multiple.
+* Don't print duplicate entries in the output of "NetworkManager
+  --print-config"
+* Fix the ifcfg-rh plugin to properly read infiniband P-Key connection
+  profiles without an explicit interface name.
+* Allow the removal of a bond port connection profile from the bond via
+  nmcli.
+* Fix race condition during the activation of veth profiles when the peer
+  already exists.
+* Decline the DHCPv6 lease if all addresses fail IPv6 duplicate address
+  detection (DAD).
+* Wait that devices get carrier before trying to resolve the system hostname
+  on them via DNS.
+* Fix race condition during the initial activation of OVS interfaces.
+* Profiles generated by nm-initrd-generator now have lower than default
+  priority.
+* Fix error when adding many SR-IOV virtual functions (VFs).
 
 =============================================
 NetworkManager-1.40
