@@ -3475,8 +3475,10 @@ nm_l3cfg_add_config(NML3Cfg              *self,
 
     nm_assert(l3_config_data->acd_defend_type_confdata == acd_defend_type);
 
-    if (changed)
+    if (changed) {
         _l3_changed_configs_set_dirty(self);
+        nm_l3cfg_commit_on_idle_schedule(self, NM_L3_CFG_COMMIT_TYPE_AUTO);
+    }
 
     return changed;
 }
@@ -3519,6 +3521,9 @@ _l3cfg_remove_config(NML3Cfg              *self,
             break;
         }
     }
+
+    if (changed)
+        nm_l3cfg_commit_on_idle_schedule(self, NM_L3_CFG_COMMIT_TYPE_AUTO);
 
     if (self->priv.p->l3_config_datas->len == 0) {
         nm_assert(changed);
@@ -4582,7 +4587,7 @@ _l3_commit_one(NML3Cfg              *self,
     gs_unref_ptrarray GPtrArray *addresses_prune                    = NULL;
     gs_unref_ptrarray GPtrArray *routes_prune                       = NULL;
     gs_unref_ptrarray GPtrArray *routes_temporary_not_available_arr = NULL;
-    NMIPRouteTableSyncMode       route_table_sync = NM_IP_ROUTE_TABLE_SYNC_MODE_NONE;
+    NMIPRouteTableSyncMode       route_table_sync;
     gboolean                     final_failure_for_temporary_not_available = FALSE;
     char                         sbuf_commit_type[50];
     gboolean                     success = TRUE;
@@ -4599,15 +4604,15 @@ _l3_commit_one(NML3Cfg              *self,
           nm_utils_addr_family_to_char(addr_family),
           _l3_cfg_commit_type_to_string(commit_type, sbuf_commit_type, sizeof(sbuf_commit_type)));
 
-    if (self->priv.p->combined_l3cd_commited) {
-        addresses = _commit_collect_addresses(self, addr_family, commit_type);
+    addresses = _commit_collect_addresses(self, addr_family, commit_type);
 
-        _commit_collect_routes(self, addr_family, commit_type, &routes, &routes_nodev);
+    _commit_collect_routes(self, addr_family, commit_type, &routes, &routes_nodev);
 
-        route_table_sync =
-            nm_l3_config_data_get_route_table_sync(self->priv.p->combined_l3cd_commited,
-                                                   addr_family);
-    }
+    route_table_sync =
+        self->priv.p->combined_l3cd_commited
+            ? nm_l3_config_data_get_route_table_sync(self->priv.p->combined_l3cd_commited,
+                                                     addr_family)
+            : NM_IP_ROUTE_TABLE_SYNC_MODE_NONE;
 
     if (!IS_IPv4) {
         _l3_commit_ip6_privacy(self, commit_type);
@@ -4942,6 +4947,9 @@ nm_l3cfg_commit_type_register(NML3Cfg                 *self,
         c_list_link_tail(&self->priv.p->commit_type_lst_head, &handle->commit_type_lst);
 
     ret = handle;
+
+    nm_l3cfg_commit_on_idle_schedule(self, NM_L3_CFG_COMMIT_TYPE_AUTO);
+
 out:
     _LOGT("commit type register (type \"%s\", source \"%s\", existing " NM_HASH_OBFUSCATE_PTR_FMT
           ") -> " NM_HASH_OBFUSCATE_PTR_FMT "",
@@ -4963,6 +4971,8 @@ nm_l3cfg_commit_type_unregister(NML3Cfg *self, NML3CfgCommitTypeHandle *handle)
     nm_assert(c_list_contains(&self->priv.p->commit_type_lst_head, &handle->commit_type_lst));
 
     _LOGT("commit type unregister " NM_HASH_OBFUSCATE_PTR_FMT "", NM_HASH_OBFUSCATE_PTR(handle));
+
+    nm_l3cfg_commit_on_idle_schedule(self, NM_L3_CFG_COMMIT_TYPE_AUTO);
 
     c_list_unlink_stale(&handle->commit_type_lst);
     if (c_list_is_empty(&self->priv.p->commit_type_lst_head))
