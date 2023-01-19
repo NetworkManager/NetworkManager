@@ -3,6 +3,7 @@
 set -ex
 
 export PAGER=cat
+export OMP_NUM_THREADS=1
 
 IS_FEDORA=0
 IS_CENTOS=0
