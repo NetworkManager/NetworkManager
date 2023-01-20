@@ -79,6 +79,7 @@ if [[ "$INSTALL_DEPENDENCIES" == yes ]]; then
       systemd \
       teamd-devel \
       vala-tools \
+      vala \
       valgrind \
       wireless-tools-devel \
       "${YUM_ARGS[@]}" \
