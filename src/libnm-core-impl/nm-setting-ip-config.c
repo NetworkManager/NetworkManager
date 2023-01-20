@@ -1303,8 +1303,9 @@ nm_ip_route_get_variant_attribute_spec(void)
 }
 
 typedef struct {
-    int type;
-    int scope;
+    int    type;
+    int    scope;
+    gint16 weight;
 } IPRouteAttrParseData;
 
 static gboolean
@@ -1440,6 +1441,8 @@ _ip_route_attribute_validate(const char           *name,
                                 _("route weight cannot be larger than 256"));
             return FALSE;
         }
+        if (parse_data)
+            parse_data->weight = (guint16) u32;
         break;
     case '\0':
         break;
@@ -1490,8 +1493,9 @@ _nm_ip_route_attribute_validate_all(const NMIPRoute *route, GError **error)
     guint                      attrs_len;
     guint                      i;
     IPRouteAttrParseData       parse_data = {
-              .type  = RTN_UNICAST,
-              .scope = -1,
+              .type   = RTN_UNICAST,
+              .scope  = -1,
+              .weight = 0,
     };
 
     g_return_val_if_fail(route, FALSE);
@@ -1538,6 +1542,17 @@ _nm_ip_route_attribute_validate_all(const NMIPRoute *route, GError **error)
             return FALSE;
         }
         break;
+    }
+
+    if (parse_data.weight > 0) {
+        if (parse_data.type != RTN_UNICAST) {
+            g_set_error(error,
+                        NM_CONNECTION_ERROR,
+                        NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                        _("a %s route cannot have a ECMP multi-hop \"weight\""),
+                        nm_net_aux_rtnl_rtntype_n2a(parse_data.type));
+            return FALSE;
+        }
     }
 
     return TRUE;
