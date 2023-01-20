@@ -39,7 +39,7 @@
  *   depending on the test. See nmtst_is_debug().
  *   Known differences:
  *    - a test might leave the logging level unspecified. In this case, running in
- *      debug mode, will turn on DEBUG logging, otherwise WARN logging only.
+ *      debug mode, will turn on TRACE logging, otherwise WARN logging only.
  *    - if G_MESSAGES_DEBUG is unset, nm-test will set G_MESSAGES_DEBUG=all
  *      for tests that don't do assert-logging.
  *   Debug mode is determined as follows (highest priority first):
