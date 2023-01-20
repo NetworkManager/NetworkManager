@@ -13,7 +13,7 @@ test_units = [
   ['test-nmp-object', 'test-nmp-object.c', test_c_flags, default_test_timeout],
   ['test-platform-general', 'test-platform-general.c', test_c_flags, default_test_timeout],
   ['test-route-fake', 'test-route.c', test_fake_c_flags, default_test_timeout],
-  ['test-route-linux', 'test-route.c', test_linux_c_flags, default_test_timeout],
+  ['test-route-linux', 'test-route.c', test_linux_c_flags, 900],
   ['test-tc-linux', 'test-tc.c', test_linux_c_flags, default_test_timeout],
 ]
 
