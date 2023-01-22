@@ -2062,6 +2062,29 @@ nm_platform_link_set_bridge_vlans(NMPlatform                        *self,
     return klass->link_set_bridge_vlans(self, ifindex, on_master, vlans);
 }
 
+gboolean
+nm_platform_link_set_bridge_info(NMPlatform                            *self,
+                                 int                                    ifindex,
+                                 const NMPlatformLinkSetBridgeInfoData *bridge_info)
+{
+    _CHECK_SELF(self, klass, FALSE);
+
+    g_return_val_if_fail(ifindex > 0, FALSE);
+
+    if (_LOGD_ENABLED()) {
+        if (bridge_info->vlan_filtering_has) {
+            _LOG3D("link: setting bridge vlan-filtering %s",
+                   bridge_info->vlan_filtering_val ? "on" : "off");
+        }
+
+        if (bridge_info->vlan_default_pvid_has) {
+            _LOG3D("link: setting bridge vlan-default-pvid %d", bridge_info->vlan_default_pvid_val);
+        }
+    }
+
+    return klass->link_set_bridge_info(self, ifindex, bridge_info);
+}
+
 /**
  * nm_platform_link_change_flags_full:
  * @self: platform instance

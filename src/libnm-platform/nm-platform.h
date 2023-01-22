@@ -725,6 +725,13 @@ typedef struct {
 } NMPlatformBridgeVlan;
 
 typedef struct {
+    guint16 vlan_default_pvid_val;
+    bool    vlan_filtering_val : 1;
+    bool    vlan_default_pvid_has : 1;
+    bool    vlan_filtering_has : 1;
+} NMPlatformLinkSetBridgeInfoData;
+
+typedef struct {
     guint64     mcast_last_member_interval;
     guint64     mcast_membership_interval;
     guint64     mcast_querier_interval;
@@ -1143,6 +1150,9 @@ typedef struct {
                                       int                                ifindex,
                                       gboolean                           on_master,
                                       const NMPlatformBridgeVlan *const *vlans);
+    gboolean (*link_set_bridge_info)(NMPlatform                            *self,
+                                     int                                    ifindex,
+                                     const NMPlatformLinkSetBridgeInfoData *bridge_info);
 
     char *(*link_get_physical_port_id)(NMPlatform *self, int ifindex);
     guint (*link_get_dev_id)(NMPlatform *self, int ifindex);
@@ -1980,6 +1990,9 @@ gboolean nm_platform_link_set_bridge_vlans(NMPlatform                        *se
                                            int                                ifindex,
                                            gboolean                           on_master,
                                            const NMPlatformBridgeVlan *const *vlans);
+gboolean nm_platform_link_set_bridge_info(NMPlatform                            *self,
+                                          int                                    ifindex,
+                                          const NMPlatformLinkSetBridgeInfoData *bridge_info);
 
 char    *nm_platform_link_get_physical_port_id(NMPlatform *self, int ifindex);
 guint    nm_platform_link_get_dev_id(NMPlatform *self, int ifindex);

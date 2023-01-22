@@ -8969,6 +8969,47 @@ nla_put_failure:
     g_return_val_if_reached(FALSE);
 }
 
+static gboolean
+link_set_bridge_info(NMPlatform                            *platform,
+                     int                                    ifindex,
+                     const NMPlatformLinkSetBridgeInfoData *bridge_info)
+{
+    nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
+    struct nlattr               *info;
+    struct nlattr               *data;
+    const char                  *kind;
+
+    nlmsg = _nl_msg_new_link(RTM_NEWLINK, 0, ifindex, NULL);
+    if (!nlmsg)
+        g_return_val_if_reached(-NME_BUG);
+
+    if (!(info = nla_nest_start(nlmsg, IFLA_LINKINFO)))
+        goto nla_put_failure;
+
+    kind = nm_link_type_to_rtnl_type_string(NM_LINK_TYPE_BRIDGE);
+    if (!kind)
+        goto nla_put_failure;
+
+    NLA_PUT_STRING(nlmsg, IFLA_INFO_KIND, kind);
+
+    if (!(data = nla_nest_start(nlmsg, IFLA_INFO_DATA)))
+        goto nla_put_failure;
+
+    if (bridge_info->vlan_filtering_has)
+        NLA_PUT_U8(nlmsg, IFLA_BR_VLAN_FILTERING, bridge_info->vlan_filtering_val);
+
+    if (bridge_info->vlan_default_pvid_has)
+        NLA_PUT_U16(nlmsg, IFLA_BR_VLAN_DEFAULT_PVID, bridge_info->vlan_default_pvid_val);
+
+    nla_nest_end(nlmsg, data);
+    nla_nest_end(nlmsg, info);
+
+    return (do_change_link(platform, CHANGE_LINK_TYPE_UNSPEC, ifindex, nlmsg, NULL) >= 0);
+
+nla_put_failure:
+    g_return_val_if_reached(FALSE);
+}
+
 static char *
 link_get_physical_port_id(NMPlatform *platform, int ifindex)
 {
@@ -11241,6 +11282,7 @@ nm_linux_platform_class_init(NMLinuxPlatformClass *klass)
     platform_class->link_set_sriov_params_async        = link_set_sriov_params_async;
     platform_class->link_set_sriov_vfs                 = link_set_sriov_vfs;
     platform_class->link_set_bridge_vlans              = link_set_bridge_vlans;
+    platform_class->link_set_bridge_info               = link_set_bridge_info;
 
     platform_class->link_get_physical_port_id = link_get_physical_port_id;
     platform_class->link_get_dev_id           = link_get_dev_id;
