@@ -746,8 +746,13 @@ bridge_set_vlan_options(NMDevice *device, NMSettingBridge *s_bridge)
     enabled = nm_setting_bridge_get_vlan_filtering(s_bridge);
 
     if (!enabled) {
-        nm_platform_sysctl_master_set_option(plat, ifindex, "vlan_filtering", "0");
-        nm_platform_sysctl_master_set_option(plat, ifindex, "default_pvid", "1");
+        nm_platform_link_set_bridge_info(
+            plat,
+            ifindex,
+            &((NMPlatformLinkSetBridgeInfoData){.vlan_filtering_has    = TRUE,
+                                                .vlan_filtering_val    = FALSE,
+                                                .vlan_default_pvid_has = TRUE,
+                                                .vlan_default_pvid_val = 1}));
         nm_platform_link_set_bridge_vlans(plat, ifindex, FALSE, NULL);
         return TRUE;
     }
@@ -762,14 +767,17 @@ bridge_set_vlan_options(NMDevice *device, NMSettingBridge *s_bridge)
 
     self->vlan_configured = TRUE;
 
-    /* Filtering must be disabled to change the default PVID */
-    if (!nm_platform_sysctl_master_set_option(plat, ifindex, "vlan_filtering", "0"))
-        return FALSE;
-
-    /* Clear the default PVID so that we later can force the re-creation of
+    /* Filtering must be disabled to change the default PVID.
+     * Clear the default PVID so that we later can force the re-creation of
      * default PVID VLANs by writing the option again. */
-    if (!nm_platform_sysctl_master_set_option(plat, ifindex, "default_pvid", "0"))
-        return FALSE;
+
+    nm_platform_link_set_bridge_info(
+        plat,
+        ifindex,
+        &((NMPlatformLinkSetBridgeInfoData){.vlan_filtering_has    = TRUE,
+                                            .vlan_filtering_val    = FALSE,
+                                            .vlan_default_pvid_has = TRUE,
+                                            .vlan_default_pvid_val = 0}));
 
     /* Clear all existing VLANs */
     if (!nm_platform_link_set_bridge_vlans(plat, ifindex, FALSE, NULL))
@@ -779,11 +787,11 @@ bridge_set_vlan_options(NMDevice *device, NMSettingBridge *s_bridge)
      * a PVID VLAN on each port, including the bridge itself. */
     pvid = nm_setting_bridge_get_vlan_default_pvid(s_bridge);
     if (pvid) {
-        char value[32];
-
-        nm_sprintf_buf(value, "%u", pvid);
-        if (!nm_platform_sysctl_master_set_option(plat, ifindex, "default_pvid", value))
-            return FALSE;
+        nm_platform_link_set_bridge_info(
+            plat,
+            ifindex,
+            &((NMPlatformLinkSetBridgeInfoData){.vlan_default_pvid_has = TRUE,
+                                                .vlan_default_pvid_val = pvid}));
     }
 
     /* Create VLANs only after setting the default PVID, so that
@@ -793,8 +801,12 @@ bridge_set_vlan_options(NMDevice *device, NMSettingBridge *s_bridge)
     if (plat_vlans && !nm_platform_link_set_bridge_vlans(plat, ifindex, FALSE, plat_vlans))
         return FALSE;
 
-    if (!nm_platform_sysctl_master_set_option(plat, ifindex, "vlan_filtering", "1"))
-        return FALSE;
+    nm_platform_link_set_bridge_info(plat,
+                                     ifindex,
+                                     &((NMPlatformLinkSetBridgeInfoData){
+                                         .vlan_filtering_has = TRUE,
+                                         .vlan_filtering_val = TRUE,
+                                     }));
 
     return TRUE;
 }
