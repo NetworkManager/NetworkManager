@@ -297,6 +297,10 @@ BuildRequires: python2
 BuildRequires: pygobject3-base
 BuildRequires: dbus-python
 BuildRequires: pexpect
+%if 0%{?rhel} >= 7 && %{with meson}
+BuildRequires: python36-dbus
+BuildRequires: python36-gobject
+%endif
 %endif
 BuildRequires: libselinux-devel
 BuildRequires: polkit-devel
