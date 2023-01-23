@@ -680,6 +680,7 @@ Preferably use nmcli instead.
 %else
 	-Ddocs=false \
 %endif
+	-Dqt=false \
 %if %{with team}
 	-Dteamdctl=true \
 %else
