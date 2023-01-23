@@ -23,19 +23,21 @@ fi
         localedef -c -i pl_PL -f UTF-8 pl_PL.UTF-8
         locale -a
         yum install -y python36-dbus python36-gobject-base
-    else
-        if [ $IS_CENTOS_8 = 1 ]; then
-            # CentOS Linux 8 is now EOF and plain `dnf upgrade` does not work. We need
-            # to patch the mirror list.
-            sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-*
-            sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-*
-        fi
+    elif [ $IS_CENTOS_8 = 1 ]; then
+        # CentOS Linux 8 is now EOF and plain `dnf upgrade` does not work. We need
+        # to patch the mirror list.
+        sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-*
+        sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-*
 
         dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
         dnf install -y 'dnf-command(config-manager)'
         dnf config-manager --set-enabled powertools || \
           dnf config-manager --set-enabled PowerTools
         curl https://copr.fedorainfracloud.org/coprs/nmstate/nm-build-deps/repo/epel-8/nmstate-nm-build-deps-epel-8.repo > /etc/yum.repos.d/nmstate-nm-build-deps-epel-8.repo
+    else
+        dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
+        dnf install -y 'dnf-command(config-manager)'
+        curl https://copr.fedorainfracloud.org/coprs/nmstate/nm-build-deps/repo/epel-9/nmstate-nm-build-deps-epel-9.repo > /etc/yum.repos.d/nmstate-nm-build-deps-epel-9.repo
     fi
 fi
 
