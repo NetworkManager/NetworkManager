@@ -211,6 +211,7 @@ receive_ra(struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
             const NMNDiscRoute route = {
                 .network = r_network,
                 .plen    = r_plen,
+                .on_link = TRUE,
                 .expiry_msec =
                     _nm_ndisc_lifetime_to_expiry(now_msec,
                                                  ndp_msg_opt_prefix_valid_time(msg, offset)),
@@ -249,6 +250,7 @@ receive_ra(struct ndp *ndp, struct ndp_msg *msg, gpointer user_data)
                 .network = network,
                 .gateway = gateway_addr,
                 .plen    = plen,
+                .on_link = FALSE,
                 .expiry_msec =
                     _nm_ndisc_lifetime_to_expiry(now_msec, ndp_msg_opt_route_lifetime(msg, offset)),
                 .preference = _route_preference_coerce(ndp_msg_opt_route_preference(msg, offset)),
