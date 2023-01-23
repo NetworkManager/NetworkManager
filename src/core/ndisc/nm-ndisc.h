@@ -115,6 +115,8 @@ typedef struct _NMNDiscRoute {
     gint64             expiry_msec;
     NMIcmpv6RouterPref preference;
     guint8             plen;
+    bool               on_link : 1;
+    bool               duplicate : 1;
 } NMNDiscRoute;
 
 typedef struct {
