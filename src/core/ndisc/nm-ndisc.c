@@ -161,8 +161,9 @@ nm_ndisc_data_to_l3cd(NMDedupMultiIndex        *multi_idx,
             .table_any     = TRUE,
             .table_coerced = 0,
             .metric_any    = TRUE,
-            .metric        = 0,
-            .rt_pref       = ndisc_route->preference,
+            /* Non-on_link routes get a small penalty */
+            .metric  = ndisc_route->duplicate && !ndisc_route->on_link ? 5 : 0,
+            .rt_pref = ndisc_route->preference,
         };
         nm_assert((NMIcmpv6RouterPref) r.rt_pref == ndisc_route->preference);
 
@@ -349,12 +350,47 @@ _ASSERT_data_gateways(const NMNDiscDataInternal *data)
 }
 
 /*****************************************************************************/
+static bool
+is_duplicate_route(const NMNDiscRoute *r0, const NMNDiscRoute *r1)
+{
+    return IN6_ARE_ADDR_EQUAL(&r0->network, &r1->network) && r0->plen == r1->plen;
+}
+
+static void
+_data_complete_prepare_routes(GArray *routes)
+{
+    guint i, j;
+
+    for (i = 0; i < routes->len; i++) {
+        NMNDiscRoute *r0 = &nm_g_array_index(routes, NMNDiscRoute, i);
+
+        r0->duplicate = FALSE;
+    }
+    for (i = 0; i < routes->len; i++) {
+        NMNDiscRoute *r0 = &nm_g_array_index(routes, NMNDiscRoute, i);
+
+        for (j = i + 1; j < routes->len; j++) {
+            NMNDiscRoute *r1 = &nm_g_array_index(routes, NMNDiscRoute, j);
+
+            if (!is_duplicate_route(r0, r1))
+                continue;
+
+            r0->duplicate = TRUE;
+            r1->duplicate = TRUE;
+
+            /* Maybe after index j, there is yet another duplicate. But we
+            * will find that later, when i becomes j. */
+            break;
+        }
+    }
+}
 
 static const NMNDiscData *
 _data_complete(NMNDiscDataInternal *data)
 {
     _ASSERT_data_gateways(data);
 
+    _data_complete_prepare_routes(data->routes);
 #define _SET(data, field)                                      \
     G_STMT_START                                               \
     {                                                          \
@@ -658,8 +694,17 @@ nm_ndisc_add_route(NMNDisc *ndisc, const NMNDiscRoute *new_item, gint64 now_msec
     for (i = 0; i < rdata->routes->len;) {
         NMNDiscRoute *item = &nm_g_array_index(rdata->routes, NMNDiscRoute, i);
 
-        if (IN6_ARE_ADDR_EQUAL(&item->network, &new_item->network)
-            && item->plen == new_item->plen) {
+        /*
+         * It is possible that two entries in rdata->routes have
+         * the same prefix as well as the same prefix length.
+         * One of them, however, refers to the on-link prefix,
+         * and the other one to a route from the route information field.
+         * Moreover, they might have different route preferences.
+         * Hence, if both routes differ in the on-link flag,
+         * comparison is aborted, and both routes are added.
+         */
+        if (IN6_ARE_ADDR_EQUAL(&item->network, &new_item->network) && item->plen == new_item->plen
+            && item->on_link == new_item->on_link) {
             if (new_item->expiry_msec <= now_msec) {
                 g_array_remove_index(rdata->routes, i);
                 return TRUE;
