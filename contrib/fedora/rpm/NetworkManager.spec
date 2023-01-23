@@ -714,7 +714,8 @@ Preferably use nmcli instead.
 	-Difcfg_rh=true \
 	-Difupdown=false \
 %if %{with ppp}
-	-Dpppd_plugin_dir=%{_libdir}/pppd/%{ppp_version} \
+	-Dpppd_plugin_dir="%{_libdir}/pppd/%{ppp_version}" \
+	-Dpppd="%{_sbindir}/pppd" \
 	-Dppp=true \
 %endif
 %if %{with firewalld_zone}
@@ -855,8 +856,9 @@ autoreconf --install --force
 	--enable-ifcfg-rh=yes \
 	--enable-ifupdown=no \
 %if %{with ppp}
-	--with-pppd-plugin-dir=%{_libdir}/pppd/%{ppp_version} \
 	--enable-ppp=yes \
+	--with-pppd="%{_sbindir}/pppd" \
+	--with-pppd-plugin-dir="%{_libdir}/pppd/%{ppp_version}" \
 %endif
 %if %{with firewalld_zone}
 	--enable-firewalld-zone=yes \
