@@ -981,7 +981,10 @@ deactivate_reset_hw_addr(NMDevice *device)
 }
 
 static gboolean
-check_connection_compatible(NMDevice *device, NMConnection *connection, GError **error)
+check_connection_compatible(NMDevice     *device,
+                            NMConnection *connection,
+                            gboolean      check_properties,
+                            GError      **error)
 {
     NMDeviceWifi              *self = NM_DEVICE_WIFI(device);
     NMDeviceWifiPrivate       *priv = NM_DEVICE_WIFI_GET_PRIVATE(self);
@@ -995,7 +998,7 @@ check_connection_compatible(NMDevice *device, NMConnection *connection, GError *
     const char                *key_mgmt;
 
     if (!NM_DEVICE_CLASS(nm_device_wifi_parent_class)
-             ->check_connection_compatible(device, connection, error))
+             ->check_connection_compatible(device, connection, check_properties, error))
         return FALSE;
 
     s_wireless = nm_connection_get_setting_wireless(connection);

@@ -91,12 +91,15 @@ can_auto_connect(NMDevice *device, NMSettingsConnection *sett_conn, char **speci
 }
 
 static gboolean
-check_connection_compatible(NMDevice *device, NMConnection *connection, GError **error)
+check_connection_compatible(NMDevice     *device,
+                            NMConnection *connection,
+                            gboolean      check_properties,
+                            GError      **error)
 {
     NMSettingOvsInterface *s_ovs_iface;
 
     if (!NM_DEVICE_CLASS(nm_device_ovs_interface_parent_class)
-             ->check_connection_compatible(device, connection, error))
+             ->check_connection_compatible(device, connection, check_properties, error))
         return FALSE;
 
     s_ovs_iface = nm_connection_get_setting_ovs_interface(connection);

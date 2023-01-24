@@ -142,13 +142,16 @@ create_and_realize(NMDevice              *device,
 }
 
 static gboolean
-check_connection_compatible(NMDevice *device, NMConnection *connection, GError **error)
+check_connection_compatible(NMDevice     *device,
+                            NMConnection *connection,
+                            gboolean      check_properties,
+                            GError      **error)
 {
     NMDeviceVrfPrivate *priv = NM_DEVICE_VRF_GET_PRIVATE(device);
     NMSettingVrf       *s_vrf;
 
     if (!NM_DEVICE_CLASS(nm_device_vrf_parent_class)
-             ->check_connection_compatible(device, connection, error))
+             ->check_connection_compatible(device, connection, check_properties, error))
         return FALSE;
 
     if (nm_device_is_real(device)) {

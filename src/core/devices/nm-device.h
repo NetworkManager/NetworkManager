@@ -322,6 +322,7 @@ typedef struct _NMDeviceClass {
      */
     gboolean (*check_connection_compatible)(NMDevice     *self,
                                             NMConnection *connection,
+                                            gboolean      check_properties,
                                             GError      **error);
 
     /* Checks whether the connection is likely available to be activated,
@@ -531,8 +532,10 @@ gboolean nm_device_complete_connection(NMDevice            *device,
                                        NMConnection *const *existing_connections,
                                        GError             **error);
 
-gboolean
-nm_device_check_connection_compatible(NMDevice *device, NMConnection *connection, GError **error);
+gboolean nm_device_check_connection_compatible(NMDevice     *device,
+                                               NMConnection *connection,
+                                               gboolean      check_properties,
+                                               GError      **error);
 
 gboolean nm_device_check_slave_connection_compatible(NMDevice *device, NMConnection *connection);
 

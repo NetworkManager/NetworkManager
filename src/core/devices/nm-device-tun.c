@@ -284,7 +284,10 @@ _same_og(const char *str, gboolean og_valid, guint32 og_num)
 }
 
 static gboolean
-check_connection_compatible(NMDevice *device, NMConnection *connection, GError **error)
+check_connection_compatible(NMDevice     *device,
+                            NMConnection *connection,
+                            gboolean      check_properties,
+                            GError      **error)
 {
     NMDeviceTun        *self = NM_DEVICE_TUN(device);
     NMDeviceTunPrivate *priv = NM_DEVICE_TUN_GET_PRIVATE(self);
@@ -292,7 +295,7 @@ check_connection_compatible(NMDevice *device, NMConnection *connection, GError *
     NMSettingTun       *s_tun;
 
     if (!NM_DEVICE_CLASS(nm_device_tun_parent_class)
-             ->check_connection_compatible(device, connection, error))
+             ->check_connection_compatible(device, connection, check_properties, error))
         return FALSE;
 
     if (nm_device_is_real(device)) {

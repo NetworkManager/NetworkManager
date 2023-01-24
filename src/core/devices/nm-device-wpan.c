@@ -75,13 +75,16 @@ update_connection(NMDevice *device, NMConnection *connection)
 }
 
 static gboolean
-check_connection_compatible(NMDevice *device, NMConnection *connection, GError **error)
+check_connection_compatible(NMDevice     *device,
+                            NMConnection *connection,
+                            gboolean      check_properties,
+                            GError      **error)
 {
     NMSettingWpan *s_wpan;
     const char    *mac, *hw_addr;
 
     if (!NM_DEVICE_CLASS(nm_device_wpan_parent_class)
-             ->check_connection_compatible(device, connection, error))
+             ->check_connection_compatible(device, connection, check_properties, error))
         return FALSE;
 
     s_wpan = NM_SETTING_WPAN(nm_connection_get_setting(connection, NM_TYPE_SETTING_WPAN));

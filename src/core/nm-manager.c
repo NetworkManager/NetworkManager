@@ -1865,7 +1865,7 @@ find_device_by_iface(NMManager    *self,
     c_list_for_each_entry (candidate, &priv->devices_lst_head, devices_lst) {
         if (!nm_streq(nm_device_get_iface(candidate), iface))
             continue;
-        if (connection && !nm_device_check_connection_compatible(candidate, connection, NULL))
+        if (connection && !nm_device_check_connection_compatible(candidate, connection, TRUE, NULL))
             continue;
         if (slave) {
             if (!nm_device_is_master(candidate))
@@ -2369,6 +2369,7 @@ find_parent_device_for_connection(NMManager       *self,
             && nm_device_check_connection_compatible(
                 candidate,
                 nm_settings_connection_get_connection(parent_connection),
+                TRUE,
                 NULL))
             first_compatible = candidate;
     }
@@ -2548,7 +2549,7 @@ system_create_virtual_device(NMManager *self, NMConnection *connection)
 
     /* See if there's a device that is already compatible with this connection */
     c_list_for_each_entry (dev_candidate, &priv->devices_lst_head, devices_lst) {
-        if (nm_device_check_connection_compatible(dev_candidate, connection, NULL)) {
+        if (nm_device_check_connection_compatible(dev_candidate, connection, TRUE, NULL)) {
             if (nm_device_is_real(dev_candidate)) {
                 _LOG3D(LOGD_DEVICE, connection, "already created virtual interface name %s", iface);
                 return NULL;
@@ -2617,7 +2618,7 @@ system_create_virtual_device(NMManager *self, NMConnection *connection)
         NMConnection        *candidate = nm_settings_connection_get_connection(connections[i]);
         NMSettingConnection *s_con;
 
-        if (!nm_device_check_connection_compatible(device, candidate, NULL))
+        if (!nm_device_check_connection_compatible(device, candidate, TRUE, NULL))
             continue;
 
         s_con = nm_connection_get_setting_connection(candidate);
@@ -3376,6 +3377,7 @@ get_existing_connection(NMManager *self, NMDevice *device, gboolean *out_generat
         && nm_device_check_connection_compatible(
             device,
             nm_settings_connection_get_connection(connection_checked),
+            TRUE,
             NULL)) {
         if (connection) {
             NMConnection *con = nm_settings_connection_get_connection(connection_checked);
@@ -3414,6 +3416,7 @@ get_existing_connection(NMManager *self, NMDevice *device, gboolean *out_generat
                     && nm_device_check_connection_compatible(
                         device,
                         nm_settings_connection_get_connection(sett_conn),
+                        TRUE,
                         NULL))
                     sett_conns[j++] = sett_conn;
             }
@@ -4259,7 +4262,7 @@ _check_remove_dev_on_link_deleted(NMManager *self, NMDevice *device)
                          NM_SETTINGS_CONNECTION_INT_FLAGS_NM_GENERATED))
             continue;
 
-        if (!nm_device_check_connection_compatible(device, con, NULL))
+        if (!nm_device_check_connection_compatible(device, con, TRUE, NULL))
             continue;
 
         /* Found a virtual connection compatible, the device must
