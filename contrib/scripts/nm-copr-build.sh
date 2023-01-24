@@ -66,6 +66,7 @@ git remote remove nm-git-bundle || true
 
 GIT_SHA="$(git show-ref --verify --hash "$GIT_REF" 2>/dev/null ||
            git show-ref --verify --hash "refs/remotes/origin/$GIT_REF" 2>/dev/null ||
+           git rev-parse --verify "refs/remotes/origin/$GIT_REF" 2>/dev/null ||
            git rev-parse --verify "$GIT_REF^{commit}" 2>/dev/null)"
 
 git checkout -b tmp "$GIT_SHA"
