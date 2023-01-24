@@ -7451,6 +7451,7 @@ _dbus_set_property_audit_log_get_args(NMDBusObject *obj,
     if (NM_IS_DEVICE(obj)) {
         nm_assert(NM_IN_STRSET(property_name,
                                NM_DEVICE_MANAGED,
+                               NM_DEVICE_MANAGED2,
                                NM_DEVICE_AUTOCONNECT,
                                NM_DEVICE_STATISTICS_REFRESH_RATE_MS));
         return (*str_to_free = g_variant_print(value, FALSE));

@@ -130,6 +130,47 @@ nmc_string_to_bool(const char *str, gboolean *val_bool, GError **error)
 }
 
 gboolean
+nmc_string_managed_mode_to_uint(const char *str, guint *val_uint, GError **error)
+{
+    gs_free char *str_to_free = NULL;
+
+    nm_assert(!error || !*error);
+    nm_assert(val_uint);
+
+    str = nm_strstrip_avoid_copy_a(300, str, &str_to_free);
+
+    if (nm_streq0(str, "o")) {
+        nm_utils_error_set(error,
+                           NM_UTILS_ERROR_UNKNOWN,
+                           /* TRANSLATORS: the first %s is the partial value entered by
+                            * the user, the second %s a list of compatible values.
+                            */
+                           _("'%s' is ambiguous (%s)"),
+                           str,
+                           "on, off");
+        return FALSE;
+    }
+
+    if (nmc_string_is_valid(str, NM_MAKE_STRV("true", "yes", "on"), NULL))
+        *val_uint = 1;
+    else if (nmc_string_is_valid(str, NM_MAKE_STRV("false", "no", "off"), NULL))
+        *val_uint = 0;
+    else if (nmc_string_is_valid(str, NM_MAKE_STRV("down"), NULL)) {
+        *val_uint = 2;
+    } else {
+        nm_utils_error_set(error,
+                           NM_UTILS_ERROR_UNKNOWN,
+                           _("'%s' is not valid; use [%s], [%s] or [%s]"),
+                           str,
+                           "true, yes, on",
+                           "false, no, off",
+                           "down");
+        return FALSE;
+    }
+    return TRUE;
+}
+
+gboolean
 nmc_string_to_ternary_full(const char             *str,
                            NMCStringToTernaryFlags flags,
                            NMTernary              *val,

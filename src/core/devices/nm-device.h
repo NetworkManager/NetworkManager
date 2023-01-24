@@ -39,6 +39,7 @@
 #define NM_DEVICE_DEVICE_TYPE           "device-type" /* ugh */
 #define NM_DEVICE_LINK_TYPE             "link-type"
 #define NM_DEVICE_MANAGED               "managed"
+#define NM_DEVICE_MANAGED2              "managed2"
 #define NM_DEVICE_AUTOCONNECT           "autoconnect"
 #define NM_DEVICE_FIRMWARE_MISSING      "firmware-missing"
 #define NM_DEVICE_NM_PLUGIN_MISSING     "nm-plugin-missing"
@@ -573,6 +574,8 @@ void nm_device_copy_ip6_dns_config(NMDevice *self, NMDevice *from_device);
  *   the settings plugins, such as NM_CONTROLLED=no in ifcfg-rh), it cannot
  *   be overruled and is authoritative. That is because users may depend on
  *   dropping a ifcfg-rh file to ensure the device is unmanaged.
+ * @NM_UNMANAGED_USER_DOWN: %TRUE when unmanaged by user decision want disable
+ *   the device. It will unset IFF_UP flag of the device.
  * @NM_UNMANAGED_USER_CONF: %TRUE when unmanaged by user decision via
  *   the NetworkManager.conf ("unmanaged" in the [device] section).
  *   Contray to @NM_UNMANAGED_USER_SETTINGS, this can be overwritten via
@@ -595,6 +598,7 @@ typedef enum {
     NM_UNMANAGED_PLATFORM_INIT = (1LL << 2),
     NM_UNMANAGED_USER_EXPLICIT = (1LL << 3),
     NM_UNMANAGED_USER_SETTINGS = (1LL << 4),
+    NM_UNMANAGED_USER_DOWN     = (1LL << 10),
 
     /* These flags can be non-effective and be overwritten
      * by other flags. */
@@ -604,7 +608,7 @@ typedef enum {
     NM_UNMANAGED_EXTERNAL_DOWN = (1LL << 8),
     NM_UNMANAGED_IS_SLAVE      = (1LL << 9),
 
-    NM_UNMANAGED_ALL = ((1LL << 10) - 1),
+    NM_UNMANAGED_ALL = ((1LL << 11) - 1),
 } NMUnmanagedFlags;
 
 typedef enum {
@@ -631,6 +635,8 @@ void nm_device_set_unmanaged_by_user_settings(NMDevice *self, gboolean now);
 void nm_device_set_unmanaged_by_user_udev(NMDevice *self);
 void nm_device_set_unmanaged_by_user_conf(NMDevice *self);
 void nm_device_set_unmanaged_by_quitting(NMDevice *device);
+
+void nm_device_disable(NMDevice *self);
 
 gboolean nm_device_check_unrealized_device_managed(NMDevice *self);
 

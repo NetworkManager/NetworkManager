@@ -179,6 +179,15 @@
     <property name="Managed" type="b" access="readwrite"/>
 
     <!--
+        Managed2:
+
+      Whether or not this device is managed by NetworkManager. Add supports for
+      disabling the device. Changes to this value are not persistent and
+      lost after NetworkManager restart.
+    -->
+    <property name="Managed2" type="u" access="readwrite"/>
+
+    <!--
         Autoconnect:
 
         If TRUE, indicates the device is allowed to autoconnect. If FALSE, manual

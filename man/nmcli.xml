@@ -1446,6 +1446,7 @@
             <group choice='req'>
               <arg choice='plain'>yes</arg>
               <arg choice='plain'>no</arg>
+              <arg choice='plain'>down</arg>
             </group>
           </arg>
         </term>

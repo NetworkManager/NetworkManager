@@ -368,6 +368,7 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMDevice,
                              PROP_DEVICE_TYPE,
                              PROP_LINK_TYPE,
                              PROP_MANAGED,
+                             PROP_MANAGED2,
                              PROP_AUTOCONNECT,
                              PROP_FIRMWARE_MISSING,
                              PROP_NM_PLUGIN_MISSING,
@@ -14183,6 +14184,12 @@ nm_device_take_down(NMDevice *self, gboolean block)
 }
 
 void
+nm_device_take_up(NMDevice *self, gboolean block)
+{
+    nm_device_bring_up_full(self, block, FALSE, NULL);
+}
+
+void
 nm_device_set_firmware_missing(NMDevice *self, gboolean new_missing)
 {
     NMDevicePrivate *priv;
@@ -14212,6 +14219,7 @@ NM_UTILS_FLAGS2STR_DEFINE(nm_unmanaged_flags2str,
                           NM_UTILS_FLAGS2STR(NM_UNMANAGED_USER_EXPLICIT, "user-explicit"),
                           NM_UTILS_FLAGS2STR(NM_UNMANAGED_BY_DEFAULT, "by-default"),
                           NM_UTILS_FLAGS2STR(NM_UNMANAGED_USER_SETTINGS, "user-settings"),
+                          NM_UTILS_FLAGS2STR(NM_UNMANAGED_USER_DOWN, "disable-interface"),
                           NM_UTILS_FLAGS2STR(NM_UNMANAGED_USER_CONF, "user-conf"),
                           NM_UTILS_FLAGS2STR(NM_UNMANAGED_USER_UDEV, "user-udev"),
                           NM_UTILS_FLAGS2STR(NM_UNMANAGED_EXTERNAL_DOWN, "external-down"),
@@ -14324,7 +14332,7 @@ _get_managed_by_flags(NMUnmanagedFlags flags, NMUnmanagedFlags mask, gboolean fo
         /* if the device is managed by user-decision, certain other flags
          * are ignored. */
         flags &= ~(NM_UNMANAGED_BY_DEFAULT | NM_UNMANAGED_USER_UDEV | NM_UNMANAGED_USER_CONF
-                   | NM_UNMANAGED_EXTERNAL_DOWN);
+                   | NM_UNMANAGED_EXTERNAL_DOWN | NM_UNMANAGED_USER_DOWN);
     }
 
     return flags == NM_UNMANAGED_NONE;
@@ -14659,6 +14667,7 @@ nm_device_set_unmanaged_by_user_conf(NMDevice *self)
     switch (value) {
     case TRUE:
         set_op = NM_UNMAN_FLAG_OP_SET_MANAGED;
+        flag |= NM_UNMANAGED_USER_DOWN;
         break;
     case FALSE:
         set_op = NM_UNMAN_FLAG_OP_SET_UNMANAGED;
@@ -14693,6 +14702,12 @@ nm_device_set_unmanaged_by_quitting(NMDevice *self)
                                      NM_UNMAN_FLAG_OP_SET_UNMANAGED,
                                      need_deactivate ? NM_DEVICE_STATE_REASON_REMOVED
                                                      : NM_DEVICE_STATE_REASON_NOW_UNMANAGED);
+}
+
+void
+nm_device_disable(NMDevice *self)
+{
+    nm_device_take_down(self, FALSE);
 }
 
 /*****************************************************************************/
@@ -15878,6 +15893,9 @@ _set_state_full(NMDevice *self, NMDeviceState state, NMDeviceStateReason reason,
             }
         }
         nm_device_sys_iface_state_set(self, NM_DEVICE_SYS_IFACE_STATE_EXTERNAL);
+        if (nm_device_get_unmanaged_flags(self, NM_UNMANAGED_USER_DOWN))
+            nm_device_disable(self);
+
         break;
     case NM_DEVICE_STATE_UNAVAILABLE:
         if (old_state == NM_DEVICE_STATE_UNMANAGED) {
@@ -15944,6 +15962,10 @@ _set_state_full(NMDevice *self, NMDeviceState state, NMDeviceStateReason reason,
     default:
         break;
     }
+
+    /* Enable interface*/
+    if (old_state == NM_DEVICE_STATE_UNMANAGED && state > NM_DEVICE_STATE_UNMANAGED)
+        nm_device_take_up(self, FALSE);
 
     /* Reset intern autoconnect flags when the device is activating or connected. */
     if (state >= NM_DEVICE_STATE_PREPARE && state <= NM_DEVICE_STATE_ACTIVATED)
@@ -16124,8 +16146,10 @@ _set_state_full(NMDevice *self, NMDeviceState state, NMDeviceStateReason reason,
 
     nm_device_remove_pending_action(self, NM_PENDING_ACTION_IN_STATE_CHANGE, TRUE);
 
-    if ((old_state > NM_DEVICE_STATE_UNMANAGED) != (state > NM_DEVICE_STATE_UNMANAGED))
+    if ((old_state > NM_DEVICE_STATE_UNMANAGED) != (state > NM_DEVICE_STATE_UNMANAGED)) {
         _notify(self, PROP_MANAGED);
+        _notify(self, PROP_MANAGED2);
+    }
 }
 
 void
@@ -17507,6 +17531,16 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
         /* The managed state exposed on D-Bus only depends on the current device state alone. */
         g_value_set_boolean(value, nm_device_get_state(self) > NM_DEVICE_STATE_UNMANAGED);
         break;
+    case PROP_MANAGED2:
+    {
+        /* The managed state exposed on D-Bus only depends on the current device state alone. */
+        guint managed;
+        managed = nm_device_get_state(self) > NM_DEVICE_STATE_UNMANAGED ? 1 : 0;
+        if (!managed && nm_device_get_unmanaged_flags(self, NM_UNMANAGED_USER_DOWN)) {
+            managed = 2;
+        }
+        g_value_set_uint(value, managed);
+    } break;
     case PROP_AUTOCONNECT:
         g_value_set_boolean(
             value,
@@ -17628,6 +17662,35 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
                 nm_device_sys_iface_state_set(self, NM_DEVICE_SYS_IFACE_STATE_REMOVED);
             }
             nm_device_set_unmanaged_by_flags(self, NM_UNMANAGED_USER_EXPLICIT, !managed, reason);
+        }
+        break;
+    case PROP_MANAGED2:
+        /* via D-Bus */
+        if (nm_device_is_real(self)) {
+            gboolean            managed;
+            guint               managed_state;
+            NMDeviceStateReason reason;
+            NMUnmanagedFlags    flag;
+
+            managed_state = g_value_get_uint(value);
+            managed       = managed_state == 1 ? TRUE : FALSE;
+            if (managed) {
+                reason = NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED;
+                if (NM_IN_SET_TYPED(NMDeviceSysIfaceState,
+                                    priv->sys_iface_state,
+                                    NM_DEVICE_SYS_IFACE_STATE_EXTERNAL,
+                                    NM_DEVICE_SYS_IFACE_STATE_REMOVED))
+                    nm_device_sys_iface_state_set(self, NM_DEVICE_SYS_IFACE_STATE_ASSUME);
+            } else {
+                reason = NM_DEVICE_STATE_REASON_REMOVED;
+                nm_device_sys_iface_state_set(self, NM_DEVICE_SYS_IFACE_STATE_REMOVED);
+            }
+
+            flag = NM_UNMANAGED_USER_EXPLICIT;
+            if (managed_state > 0) {
+                flag |= NM_UNMANAGED_USER_DOWN;
+            }
+            nm_device_set_unmanaged_by_flags(self, flag, !managed, reason);
         }
         break;
     case PROP_AUTOCONNECT:
@@ -18009,6 +18072,11 @@ static const NMDBusInterfaceInfoExtended interface_info_device = {
                                                                NM_DEVICE_MANAGED,
                                                                NM_AUTH_PERMISSION_NETWORK_CONTROL,
                                                                NM_AUDIT_OP_DEVICE_MANAGED),
+            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READWRITABLE("Managed2",
+                                                               "u",
+                                                               NM_DEVICE_MANAGED2,
+                                                               NM_AUTH_PERMISSION_NETWORK_CONTROL,
+                                                               NM_AUDIT_OP_DEVICE_MANAGED),
             NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READWRITABLE("Autoconnect",
                                                                "b",
                                                                NM_DEVICE_AUTOCONNECT,
@@ -18243,6 +18311,14 @@ nm_device_class_init(NMDeviceClass *klass)
                                                         FALSE,
                                                         G_PARAM_READWRITE | /* via D-Bus */
                                                             G_PARAM_STATIC_STRINGS);
+    obj_properties[PROP_MANAGED2]    = g_param_spec_uint(NM_DEVICE_MANAGED2,
+                                                      "",
+                                                      "",
+                                                      0,
+                                                      2,
+                                                      0,
+                                                      G_PARAM_READWRITE | /* via D-Bus */
+                                                          G_PARAM_STATIC_STRINGS);
     obj_properties[PROP_AUTOCONNECT] = g_param_spec_boolean(NM_DEVICE_AUTOCONNECT,
                                                             "",
                                                             "",
