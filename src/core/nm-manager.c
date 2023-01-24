@@ -2549,7 +2549,7 @@ system_create_virtual_device(NMManager *self, NMConnection *connection)
 
     /* See if there's a device that is already compatible with this connection */
     c_list_for_each_entry (dev_candidate, &priv->devices_lst_head, devices_lst) {
-        if (nm_device_check_connection_compatible(dev_candidate, connection, TRUE, NULL)) {
+        if (nm_device_check_connection_compatible(dev_candidate, connection, FALSE, NULL)) {
             if (nm_device_is_real(dev_candidate)) {
                 _LOG3D(LOGD_DEVICE, connection, "already created virtual interface name %s", iface);
                 return NULL;
