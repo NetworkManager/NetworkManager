@@ -154,7 +154,7 @@ check_connection_compatible(NMDevice     *device,
              ->check_connection_compatible(device, connection, check_properties, error))
         return FALSE;
 
-    if (nm_device_is_real(device)) {
+    if (check_properties && nm_device_is_real(device)) {
         s_vrf = _nm_connection_get_setting(connection, NM_TYPE_SETTING_VRF);
 
         if (priv->props.table != nm_setting_vrf_get_table(s_vrf)) {

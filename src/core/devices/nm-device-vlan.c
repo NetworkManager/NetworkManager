@@ -316,7 +316,7 @@ check_connection_compatible(NMDevice     *device,
              ->check_connection_compatible(device, connection, check_properties, error))
         return FALSE;
 
-    if (nm_device_is_real(device)) {
+    if (check_properties && nm_device_is_real(device)) {
         s_vlan = nm_connection_get_setting_vlan(connection);
 
         if (nm_setting_vlan_get_id(s_vlan) != priv->vlan_id) {

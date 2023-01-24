@@ -311,7 +311,7 @@ check_connection_compatible(NMDevice     *device,
     }
 
     /* Before the device is realized some properties will not be set */
-    if (nm_device_is_real(device)) {
+    if (check_properties && nm_device_is_real(device)) {
         if (setting_mode_to_platform(nm_setting_macvlan_get_mode(s_macvlan)) != priv->props.mode) {
             nm_utils_error_set_literal(error,
                                        NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,

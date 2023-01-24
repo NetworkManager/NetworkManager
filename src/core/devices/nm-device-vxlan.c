@@ -251,7 +251,7 @@ check_connection_compatible(NMDevice     *device,
              ->check_connection_compatible(device, connection, check_properties, error))
         return FALSE;
 
-    if (nm_device_is_real(device)) {
+    if (check_properties && nm_device_is_real(device)) {
         s_vxlan = nm_connection_get_setting_vxlan(connection);
 
         parent = nm_setting_vxlan_get_parent(s_vxlan);

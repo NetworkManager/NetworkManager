@@ -523,7 +523,7 @@ check_connection_compatible(NMDevice     *device,
         return FALSE;
     }
 
-    if (nm_device_is_real(device)) {
+    if (check_properties && nm_device_is_real(device)) {
         /* Check parent interface; could be an interface name or a UUID */
         parent = nm_setting_ip_tunnel_get_parent(s_ip_tunnel);
         if (parent && !nm_device_match_parent(device, parent)) {

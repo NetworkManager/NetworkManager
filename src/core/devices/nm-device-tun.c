@@ -298,7 +298,7 @@ check_connection_compatible(NMDevice     *device,
              ->check_connection_compatible(device, connection, check_properties, error))
         return FALSE;
 
-    if (nm_device_is_real(device)) {
+    if (check_properties && nm_device_is_real(device)) {
         switch (priv->props.type) {
         case IFF_TUN:
             mode = NM_SETTING_TUN_MODE_TUN;
