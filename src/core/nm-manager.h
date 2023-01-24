@@ -207,6 +207,11 @@ struct _NMDnsManager *nm_manager_get_dns_manager(NMManager *self);
 
 /*****************************************************************************/
 
+void nm_manager_notify_delete_settings_connections(NMManager            *self,
+                                                   NMSettingsConnection *sett_conn);
+
+/*****************************************************************************/
+
 void nm_manager_device_auth_request(NMManager                     *self,
                                     NMDevice                      *device,
                                     GDBusMethodInvocation         *context,

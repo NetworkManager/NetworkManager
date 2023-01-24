@@ -2756,6 +2756,7 @@ nm_settings_connection_init(NMSettingsConnection *self)
     self->_priv = priv;
 
     c_list_init(&self->_connections_lst);
+    c_list_init(&self->devcon_con_lst_head);
     c_list_init(&priv->seen_bssids_lst_head);
     c_list_init(&priv->call_ids_lst_head);
     c_list_init(&priv->auth_lst_head);
@@ -2784,6 +2785,7 @@ dispose(GObject *object)
     nm_assert(!priv->default_wired_device);
 
     nm_assert(c_list_is_empty(&self->_connections_lst));
+    nm_assert(c_list_is_empty(&self->devcon_con_lst_head));
     nm_assert(c_list_is_empty(&priv->auth_lst_head));
 
     /* Cancel in-progress secrets requests */

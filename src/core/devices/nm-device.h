@@ -144,6 +144,7 @@ struct _NMDevice {
     NMDBusObject             parent;
     struct _NMDevicePrivate *_priv;
     CList                    devices_lst;
+    CList                    devcon_dev_lst_head;
 };
 
 /* The flags have an relaxing meaning, that means, specifying more flags, can make

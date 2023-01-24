@@ -210,6 +210,7 @@ struct _NMSettingsConnectionPrivate;
 struct _NMSettingsConnection {
     NMDBusObject                         parent;
     CList                                _connections_lst;
+    CList                                devcon_con_lst_head;
     struct _NMSettingsConnectionPrivate *_priv;
 };
 

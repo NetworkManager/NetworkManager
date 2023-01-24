@@ -1247,6 +1247,8 @@ _connection_changed_delete(NMSettings           *self,
                                          | NM_SETTINGS_CONNECTION_INT_FLAGS_EXTERNAL,
                                      FALSE);
 
+    nm_manager_notify_delete_settings_connections(priv->manager, sett_conn);
+
     _emit_connection_removed(self, sett_conn);
 
     _nm_settings_connection_cleanup_after_remove(sett_conn);
