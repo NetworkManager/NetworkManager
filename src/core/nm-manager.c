@@ -69,6 +69,13 @@ typedef struct {
     bool os_owner : 1;
 } RfkillRadioState;
 
+typedef struct {
+    NMDevice             *device;
+    NMSettingsConnection *sett_conn;
+    CList                 dev_lst;
+    CList                 con_lst;
+} DevConData;
+
 typedef enum {
     ASYNC_OP_TYPE_AC_AUTH_ACTIVATE_INTERNAL,
     ASYNC_OP_TYPE_AC_AUTH_ACTIVATE_USER,
@@ -172,6 +179,8 @@ typedef struct {
         guint            id;
     } prop_filter;
     NMRfkillManager *rfkill_mgr;
+
+    GHashTable *devcon_data_dict;
 
     CList link_cb_lst;
 
@@ -414,6 +423,11 @@ static void _activation_auth_done(NMManager             *self,
                                   const char            *error_desc);
 
 static void _rfkill_update(NMManager *self, NMRfkillType rtype);
+
+static DevConData *_devcon_lookup_data(NMManager            *self,
+                                       NMDevice             *device,
+                                       NMSettingsConnection *sett_conn,
+                                       gboolean              create);
 
 /*****************************************************************************/
 
@@ -1212,6 +1226,125 @@ active_connection_get_by_path(NMManager *self, const char *path)
 
 /*****************************************************************************/
 
+static guint
+_devcon_data_hash(gconstpointer ptr)
+{
+    const DevConData *data = ptr;
+
+    nm_assert(NM_IS_DEVICE(data->device));
+    nm_assert(NM_IS_SETTINGS_CONNECTION(data->sett_conn));
+
+    return nm_hash_vals(1832112199u, data->device, data->sett_conn);
+}
+
+static gboolean
+_devcon_data_equal(gconstpointer ptr_a, gconstpointer ptr_b)
+{
+    const DevConData *data_a = ptr_a;
+    const DevConData *data_b = ptr_b;
+
+    nm_assert(NM_IS_DEVICE(data_a->device));
+    nm_assert(NM_IS_SETTINGS_CONNECTION(data_a->sett_conn));
+    nm_assert(NM_IS_DEVICE(data_b->device));
+    nm_assert(NM_IS_SETTINGS_CONNECTION(data_b->sett_conn));
+
+    return data_a->device == data_b->device && data_a->sett_conn == data_b->sett_conn;
+}
+
+static DevConData *
+_devcon_lookup_data(NMManager            *self,
+                    NMDevice             *device,
+                    NMSettingsConnection *sett_conn,
+                    gboolean              create)
+{
+    NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE(self);
+    DevConData       *data;
+    DevConData        needle;
+
+    nm_assert(NM_IS_DEVICE(device));
+    nm_assert(NM_IS_SETTINGS_CONNECTION(sett_conn));
+    nm_assert(self == nm_device_get_manager(device));
+    nm_assert(self == nm_settings_connection_get_manager(sett_conn));
+
+    needle.device    = device;
+    needle.sett_conn = sett_conn;
+
+    data = g_hash_table_lookup(priv->devcon_data_dict, &needle);
+
+    if (data)
+        return data;
+    if (!create)
+        return NULL;
+
+    data  = g_slice_new(DevConData);
+    *data = (DevConData){
+        .device    = device,
+        .sett_conn = sett_conn,
+    };
+    c_list_link_tail(&device->devcon_dev_lst_head, &data->dev_lst);
+    c_list_link_tail(&sett_conn->devcon_con_lst_head, &data->con_lst);
+
+    g_hash_table_add(priv->devcon_data_dict, data);
+
+    return data;
+}
+
+static void
+_devcon_remove_data(NMManager *self, DevConData *data)
+{
+    NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE(self);
+
+    nm_assert(data);
+    nm_assert(NM_IS_DEVICE(data->device));
+    nm_assert(NM_IS_SETTINGS_CONNECTION(data->sett_conn));
+    nm_assert(data == _devcon_lookup_data(self, data->device, data->sett_conn, FALSE));
+
+    c_list_unlink_stale(&data->dev_lst);
+    c_list_unlink_stale(&data->con_lst);
+    g_hash_table_remove(priv->devcon_data_dict, data);
+    nm_g_slice_free(data);
+}
+
+static gboolean
+_devcon_remove_device_all(NMManager *self, NMDevice *device)
+{
+    DevConData *data;
+    gboolean    changed;
+
+    nm_assert(NM_IS_DEVICE(device));
+
+    while ((data = c_list_first_entry(&device->devcon_dev_lst_head, DevConData, dev_lst))) {
+        changed = TRUE;
+        _devcon_remove_data(self, data);
+    }
+
+    return changed;
+}
+
+static gboolean
+_devcon_remove_sett_conn_all(NMManager *self, NMSettingsConnection *sett_conn)
+{
+    DevConData *data;
+    gboolean    changed;
+
+    nm_assert(NM_IS_SETTINGS_CONNECTION(sett_conn));
+
+    while ((data = c_list_first_entry(&sett_conn->devcon_con_lst_head, DevConData, con_lst))) {
+        changed = TRUE;
+        _devcon_remove_data(self, data);
+    }
+
+    return changed;
+}
+
+void
+nm_manager_notify_delete_settings_connections(NMManager *self, NMSettingsConnection *sett_conn)
+{
+    _devcon_remove_sett_conn_all(self, sett_conn);
+}
+
+/*****************************************************************************/
+
 static void
 _config_changed_cb(NMConfig           *config,
                    NMConfigData       *config_data,
@@ -1813,6 +1946,8 @@ remove_device(NMManager *self, NMDevice *device, gboolean quitting)
     g_signal_handlers_disconnect_matched(device, G_SIGNAL_MATCH_DATA, 0, 0, NULL, NULL, self);
 
     nm_settings_device_removed(priv->settings, device, quitting);
+
+    _devcon_remove_device_all(self, device);
 
     c_list_unlink(&device->devices_lst);
 
@@ -8114,6 +8249,8 @@ nm_manager_init(NMManager *self)
     priv->state    = NM_STATE_DISCONNECTED;
     priv->startup  = TRUE;
 
+    priv->devcon_data_dict = g_hash_table_new(_devcon_data_hash, _devcon_data_equal);
+
     /* sleep/wake handling */
     priv->sleep_monitor = nm_sleep_monitor_new();
     g_signal_connect(priv->sleep_monitor, NM_SLEEP_MONITOR_SLEEPING, G_CALLBACK(sleeping_cb), self);
@@ -8446,6 +8583,8 @@ dispose(GObject *object)
     nm_clear_g_source(&priv->timestamp_update_id);
 
     nm_clear_pointer(&priv->device_route_metrics, g_hash_table_destroy);
+
+    nm_clear_pointer(&priv->devcon_data_dict, g_hash_table_destroy);
 
     G_OBJECT_CLASS(nm_manager_parent_class)->dispose(object);
 }
