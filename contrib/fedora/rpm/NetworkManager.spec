@@ -70,7 +70,7 @@
 %else
 %bcond_with    test
 %endif
-%if "%{bcond_default_lto}" == ""
+%if "%{?bcond_default_lto}" == ""
 %if 0%{?fedora} >= 33 || 0%{?rhel} >= 9
 %bcond_without lto
 %else
