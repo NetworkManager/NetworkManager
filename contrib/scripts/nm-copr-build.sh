@@ -18,9 +18,9 @@ else
 fi
 
 if [ "$LTO" = 0 ]; then
-    LTO='--without -lto'
+    LTO='--without lto'
 elif [ "$LTO" = 1 ]; then
-    LTO='--with -lto'
+    LTO='--with lto'
 else
     LTO=
 fi

@@ -19,6 +19,7 @@
 %global snapshot __SNAPSHOT__
 %global git_sha __COMMIT__
 %global bcond_default_debug __BCOND_DEFAULT_DEBUG__
+%global bcond_default_lto __BCOND_DEFAULT_LTO__
 %global bcond_default_test __BCOND_DEFAULT_TEST__
 
 %global obsoletes_device_plugins     1:0.9.9.95-1
@@ -69,10 +70,18 @@
 %else
 %bcond_with    test
 %endif
+%if %{bcond_default_lto} == ''
 %if 0%{?fedora} >= 33 || 0%{?rhel} >= 9
 %bcond_without lto
 %else
 %bcond_with    lto
+%endif
+%else
+%if %{bcond_default_lto}
+%bcond_without lto
+%else
+%bcond_with    lto
+%endif
 %endif
 %bcond_with    sanitizer
 %if 0%{?fedora}
