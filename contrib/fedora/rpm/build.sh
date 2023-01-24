@@ -213,7 +213,7 @@ sed -e "s/__VERSION__/$VERSION/g" \
     -e "s/__SNAPSHOT__/$SNAPSHOT/g" \
     -e "s/__SOURCE1__/$(basename "$SOURCE")/g" \
     -e "s/__BCOND_DEFAULT_DEBUG__/$BCOND_DEFAULT_DEBUG/g" \
-    -e "s/__BCOND_DEFAULT_LTO__/$BCOND_DEFAULT_LTO/g" \
+    -e "s/__BCOND_DEFAULT_LTO__/${BCOND_DEFAULT_LTO:-"%{nil}"}/g" \
     -e "s/__BCOND_DEFAULT_TEST__/$BCOND_DEFAULT_TEST/g" \
    "$SPECFILE" |
 sed -e "/^__CHANGELOG__$/ \
