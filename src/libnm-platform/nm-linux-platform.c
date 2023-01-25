@@ -8217,7 +8217,8 @@ retry:
     } else if (NM_IN_SET(seq_result, -ESRCH, -ENOENT)) {
         log_detail = ", firmware not found";
         result     = -NME_PL_NO_FIRMWARE;
-    } else if (NM_IN_SET(seq_result, -ERANGE) && change_link_type == CHANGE_LINK_TYPE_SET_MTU) {
+    } else if (NM_IN_SET(seq_result, -ERANGE, -EINVAL)
+               && change_link_type == CHANGE_LINK_TYPE_SET_MTU) {
         log_detail = ", setting MTU to requested size is not possible";
         result     = -NME_PL_CANT_SET_MTU;
     } else if (NM_IN_SET(seq_result, -ENFILE) && change_link_type == CHANGE_LINK_TYPE_SET_ADDRESS
