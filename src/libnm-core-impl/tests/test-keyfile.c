@@ -193,17 +193,6 @@ _nm_keyfile_read(GKeyFile            *keyfile,
         nmtst_assert_connection_verifies_after_normalization(con, 0, 0);
         nmtst_connection_normalize(con);
     } else {
-        {
-            NMSettingConnection *s_con;
-
-            /* a non-slave connection must have a proxy setting, but
-             * keyfile reader does not add that (unless a [proxy] section
-             * is present. */
-            s_con = nm_connection_get_setting_connection(con);
-            if (s_con && !nm_setting_connection_get_master(s_con)
-                && !nm_connection_get_setting_proxy(con))
-                nm_connection_add_setting(con, nm_setting_proxy_new());
-        }
         nmtst_assert_connection_verifies_without_normalization(con);
     }
     return con;

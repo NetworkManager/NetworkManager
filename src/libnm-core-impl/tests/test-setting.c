@@ -3598,8 +3598,6 @@ test_roundtrip_conversion(gconstpointer test_data)
                             "[ipv6]\n"
                             "addr-gen-mode=default\n"
                             "method=auto\n"
-                            "\n"
-                            "[proxy]\n"
                             "",
                             ID,
                             UUID,
@@ -3662,8 +3660,6 @@ test_roundtrip_conversion(gconstpointer test_data)
                                         "[ipv6]\n"
                                         "addr-gen-mode=default\n"
                                         "method=disabled\n"
-                                        "\n"
-                                        "[proxy]\n"
                                         "",
                                         ID,
                                         UUID,
@@ -3716,8 +3712,6 @@ test_roundtrip_conversion(gconstpointer test_data)
                 "[ipv6]\n"
                 "addr-gen-mode=default\n"
                 "method=disabled\n"
-                "\n"
-                "[proxy]\n"
                 "",
                 ID,
                 UUID,
@@ -3800,8 +3794,6 @@ test_roundtrip_conversion(gconstpointer test_data)
                             "routing-rule1=priority 1 from ::/0 table 1000\n"
                             "routing-rule2=priority 2 from 1:2:3:b::/65 table 1001\n"
                             "routing-rule3=priority 3 from 1:2:3:c::/66 table 1002\n"
-                            "\n"
-                            "[proxy]\n"
                             "",
                             ID,
                             UUID,

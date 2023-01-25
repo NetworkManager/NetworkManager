@@ -4425,8 +4425,6 @@ test_write_wired_static(void)
     g_assert_cmpint(nm_setting_ip_config_get_route_metric(reread_s_ip4), ==, 204);
     g_assert_cmpint(nm_setting_ip_config_get_route_metric(reread_s_ip6), ==, 206);
 
-    _nm_connection_new_setting(connection, NM_TYPE_SETTING_PROXY);
-
     nmtst_assert_connection_equals(connection, FALSE, reread, FALSE);
 }
 
@@ -4569,8 +4567,6 @@ test_write_wired_static_with_generic(void)
 
     g_assert_cmpint(nm_setting_ip_config_get_route_metric(reread_s_ip4), ==, 204);
     g_assert_cmpint(nm_setting_ip_config_get_route_metric(reread_s_ip6), ==, 206);
-
-    _nm_connection_new_setting(connection, NM_TYPE_SETTING_PROXY);
 
     {
         gs_unref_hashtable GHashTable *diffs = NULL;
@@ -7639,8 +7635,6 @@ test_write_bridge_main(void)
 
     _nm_connection_new_setting(connection, NM_TYPE_SETTING_WIRED);
 
-    _nm_connection_new_setting(connection, NM_TYPE_SETTING_PROXY);
-
     nmtst_assert_connection_verifies_without_normalization(connection);
 
     _writer_new_connection(connection, TEST_SCRATCH_DIR, &testfile);
@@ -8230,8 +8224,6 @@ test_write_bond_main(void)
 
     s_ip6 = _nm_connection_new_setting(connection, NM_TYPE_SETTING_IP6_CONFIG);
     g_object_set(s_ip6, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_IGNORE, NULL);
-
-    _nm_connection_new_setting(connection, NM_TYPE_SETTING_PROXY);
 
     nmtst_assert_connection_verifies_without_normalization(connection);
 
@@ -9022,8 +9014,6 @@ test_write_team_master(void)
 
     s_ip6 = _nm_connection_new_setting(connection, NM_TYPE_SETTING_IP6_CONFIG);
     g_object_set(s_ip6, NM_SETTING_IP_CONFIG_METHOD, NM_SETTING_IP6_CONFIG_METHOD_AUTO, NULL);
-
-    _nm_connection_new_setting(connection, NM_TYPE_SETTING_PROXY);
 
     nmtst_assert_connection_verifies_without_normalization(connection);
 
@@ -10064,8 +10054,6 @@ test_sriov_write(void)
                  NM_TERNARY_TRUE,
                  NULL);
 
-    _nm_connection_new_setting(connection, NM_TYPE_SETTING_PROXY);
-
     nmtst_assert_connection_verifies_without_normalization(connection);
 
     _writer_new_connec_exp(connection,
@@ -10159,8 +10147,6 @@ test_tc_write_empty(void)
 
     _nm_connection_new_setting(connection, NM_TYPE_SETTING_TC_CONFIG);
 
-    _nm_connection_new_setting(connection, NM_TYPE_SETTING_PROXY);
-
     nmtst_assert_connection_verifies_without_normalization(connection);
 
     _writer_new_connec_exp(connection,
@@ -10236,8 +10222,6 @@ test_tc_write(void)
     g_assert_no_error(error);
     nm_setting_tc_config_add_tfilter(s_tc, tfilter);
     nm_tc_tfilter_unref(tfilter);
-
-    _nm_connection_new_setting(connection, NM_TYPE_SETTING_PROXY);
 
     nmtst_assert_connection_verifies_without_normalization(connection);
 

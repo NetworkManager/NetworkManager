@@ -1,6 +1,4 @@
 TYPE=Ethernet
-PROXY_METHOD=none
-BROWSER_ONLY=no
 NM_USER__M_Y___053=val=MY.+
 NM_USER__M_Y___055=val=MY.-
 NM_USER__M_Y___057=val=MY./

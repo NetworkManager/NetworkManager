@@ -1,6 +1,4 @@
 TYPE=Ethernet
-PROXY_METHOD=none
-BROWSER_ONLY=no
 ETHTOOL_OPTS="autoneg on ; -K net0 rxvlan off tx on"
 BOOTPROTO=dhcp
 DEFROUTE=yes

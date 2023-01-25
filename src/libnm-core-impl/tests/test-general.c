@@ -6248,7 +6248,6 @@ test_connection_normalize_gateway_never_default(void)
 
     nm_connection_add_setting(con, (NMSetting *) s_ip4);
     nm_connection_add_setting(con, (NMSetting *) s_ip6);
-    nm_connection_add_setting(con, nm_setting_proxy_new());
 
     nmtst_assert_connection_verifies_without_normalization(con);
     g_assert_cmpstr("1.1.1.254", ==, nm_setting_ip_config_get_gateway(s_ip4));
@@ -6293,7 +6292,7 @@ test_connection_normalize_may_fail(void)
     nm_connection_add_setting(con, (NMSetting *) s_ip4);
     nm_connection_add_setting(con, (NMSetting *) s_ip6);
 
-    nmtst_assert_connection_verifies_and_normalizable(con);
+    nmtst_assert_connection_verifies_without_normalization(con);
 
     /* Now set method=disabled/ignore and check that may-fail becomes TRUE
      * after normalization
@@ -6335,7 +6334,7 @@ test_connection_normalize_shared_addresses(void)
     nm_connection_add_setting(con, (NMSetting *) s_ip4);
     nm_connection_add_setting(con, (NMSetting *) s_ip6);
 
-    nmtst_assert_connection_verifies_and_normalizable(con);
+    nmtst_assert_connection_verifies_without_normalization(con);
 
     /* Now we add other addresses and check that they are
      * removed during normalization
@@ -6547,7 +6546,6 @@ test_connection_normalize_ovs_interface_type_ovs_interface(gconstpointer test_da
                                              NM_SETTING_CONNECTION_SETTING_NAME,
                                              NM_SETTING_IP4_CONFIG_SETTING_NAME,
                                              NM_SETTING_IP6_CONFIG_SETTING_NAME,
-                                             NM_SETTING_PROXY_SETTING_NAME,
                                              NM_SETTING_OVS_INTERFACE_SETTING_NAME);
         g_assert(s_con == nm_connection_get_setting_connection(con));
         g_assert(s_ovs_if == nm_connection_get_setting_ovs_interface(con));
@@ -6571,7 +6569,6 @@ test_connection_normalize_ovs_interface_type_ovs_interface(gconstpointer test_da
                                              NM_SETTING_CONNECTION_SETTING_NAME,
                                              NM_SETTING_IP4_CONFIG_SETTING_NAME,
                                              NM_SETTING_IP6_CONFIG_SETTING_NAME,
-                                             NM_SETTING_PROXY_SETTING_NAME,
                                              NM_SETTING_OVS_INTERFACE_SETTING_NAME);
         g_assert(s_con == nm_connection_get_setting_connection(con));
         g_assert(s_ovs_if == nm_connection_get_setting_ovs_interface(con));
@@ -6591,7 +6588,6 @@ test_connection_normalize_ovs_interface_type_ovs_interface(gconstpointer test_da
                                              NM_SETTING_CONNECTION_SETTING_NAME,
                                              NM_SETTING_IP4_CONFIG_SETTING_NAME,
                                              NM_SETTING_IP6_CONFIG_SETTING_NAME,
-                                             NM_SETTING_PROXY_SETTING_NAME,
                                              NM_SETTING_OVS_INTERFACE_SETTING_NAME);
         g_assert(s_con == nm_connection_get_setting_connection(con));
         g_assert(s_ovs_if == nm_connection_get_setting_ovs_interface(con));
@@ -6610,7 +6606,6 @@ test_connection_normalize_ovs_interface_type_ovs_interface(gconstpointer test_da
         g_object_set(s_ovs_if, NM_SETTING_OVS_INTERFACE_TYPE, "internal", NULL);
         nm_connection_add_setting(con, nm_setting_ip4_config_new());
         nm_connection_add_setting(con, nm_setting_ip6_config_new());
-        nm_connection_add_setting(con, nm_setting_proxy_new());
         s_ip4 = NM_SETTING_IP4_CONFIG(nm_connection_get_setting_ip4_config(con));
         s_ip6 = NM_SETTING_IP6_CONFIG(nm_connection_get_setting_ip6_config(con));
         g_object_set(s_ip4, NM_SETTING_IP_CONFIG_METHOD, "auto", NULL);
@@ -6620,7 +6615,6 @@ test_connection_normalize_ovs_interface_type_ovs_interface(gconstpointer test_da
                                              NM_SETTING_CONNECTION_SETTING_NAME,
                                              NM_SETTING_IP4_CONFIG_SETTING_NAME,
                                              NM_SETTING_IP6_CONFIG_SETTING_NAME,
-                                             NM_SETTING_PROXY_SETTING_NAME,
                                              NM_SETTING_OVS_INTERFACE_SETTING_NAME);
         break;
     case 6:
@@ -6637,7 +6631,6 @@ test_connection_normalize_ovs_interface_type_ovs_interface(gconstpointer test_da
                                              NM_SETTING_CONNECTION_SETTING_NAME,
                                              NM_SETTING_IP4_CONFIG_SETTING_NAME,
                                              NM_SETTING_IP6_CONFIG_SETTING_NAME,
-                                             NM_SETTING_PROXY_SETTING_NAME,
                                              NM_SETTING_OVS_INTERFACE_SETTING_NAME);
         g_assert(s_con == nm_connection_get_setting_connection(con));
         g_assert(s_ovs_if == nm_connection_get_setting_ovs_interface(con));
@@ -6729,7 +6722,6 @@ test_connection_normalize_ovs_interface_type_ovs_interface(gconstpointer test_da
                                              NM_SETTING_CONNECTION_SETTING_NAME,
                                              NM_SETTING_IP4_CONFIG_SETTING_NAME,
                                              NM_SETTING_IP6_CONFIG_SETTING_NAME,
-                                             NM_SETTING_PROXY_SETTING_NAME,
                                              NM_SETTING_OVS_INTERFACE_SETTING_NAME,
                                              NM_SETTING_OVS_PATCH_SETTING_NAME);
         g_assert(s_con == nm_connection_get_setting_connection(con));
