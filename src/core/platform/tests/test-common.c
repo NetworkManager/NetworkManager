@@ -2061,11 +2061,11 @@ nmtstp_link_gre_add(NMPlatform             *platform,
         obj  = lnk->is_tap ? "link" : "tunnel";
         type = lnk->is_tap ? "type gretap" : "mode gre";
 
-        success = !nmtstp_run_command("ip %s add %s %s %s local %s remote %s ttl %u tos %02x %s",
+        success = !nmtstp_run_command("ip %s add %s %s%s%s local %s remote %s ttl %u tos %02x %s",
                                       obj,
                                       name,
                                       type,
-                                      dev ?: "",
+                                      NM_PRINT_FMT_QUOTED2(dev, " ", dev, ""),
                                       nm_inet4_ntop(lnk->local, b1),
                                       nm_inet4_ntop(lnk->remote, b2),
                                       lnk->ttl,
@@ -2127,11 +2127,11 @@ nmtstp_link_ip6tnl_add(NMPlatform                *platform,
         tclass_inherit = NM_FLAGS_HAS(lnk->flags, IP6_TNL_F_USE_ORIG_TCLASS);
 
         success = !nmtstp_run_command(
-            "ip -6 tunnel add %s mode %s %s local %s remote %s ttl %u tclass %s encaplimit %s "
+            "ip -6 tunnel add %s mode %s%s%s local %s remote %s ttl %u tclass %s encaplimit %s "
             "flowlabel %x",
             name,
             mode,
-            dev,
+            NM_PRINT_FMT_QUOTED2(dev, " ", dev, ""),
             nm_inet6_ntop(&lnk->local, b1),
             nm_inet6_ntop(&lnk->remote, b2),
             lnk->ttl,
@@ -2178,10 +2178,10 @@ nmtstp_link_ip6gre_add(NMPlatform                *platform,
         tclass_inherit = NM_FLAGS_HAS(lnk->flags, IP6_TNL_F_USE_ORIG_TCLASS);
 
         success = !nmtstp_run_command(
-            "ip link add %s type %s %s local %s remote %s ttl %u tclass %s flowlabel %x",
+            "ip link add %s type %s%s%s local %s remote %s ttl %u tclass %s flowlabel %x",
             name,
             lnk->is_tap ? "ip6gretap" : "ip6gre",
-            dev,
+            NM_PRINT_FMT_QUOTED2(dev, " ", dev, ""),
             nm_inet6_ntop(&lnk->local, b1),
             nm_inet6_ntop(&lnk->remote, b2),
             lnk->ttl,
@@ -2232,9 +2232,9 @@ nmtstp_link_ipip_add(NMPlatform              *platform,
                 g_strdup_printf("dev %s", nm_platform_link_get_name(platform, lnk->parent_ifindex));
 
         success = !nmtstp_run_command(
-            "ip tunnel add %s mode ipip %s local %s remote %s ttl %u tos %02x %s",
+            "ip tunnel add %s mode ipip%s%s local %s remote %s ttl %u tos %02x %s",
             name,
-            dev,
+            NM_PRINT_FMT_QUOTED2(dev, " ", dev, ""),
             nm_inet4_ntop(lnk->local, b1),
             nm_inet4_ntop(lnk->remote, b2),
             lnk->ttl,
