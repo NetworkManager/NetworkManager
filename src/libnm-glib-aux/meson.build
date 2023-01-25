@@ -18,6 +18,7 @@ libnm_glib_aux = static_library(
     'nm-ref-string.c',
     'nm-secret-utils.c',
     'nm-shared-utils.c',
+    'nm-ptr-array.c',
     'nm-time-utils.c',
     'nm-uuid.c',
   ),
