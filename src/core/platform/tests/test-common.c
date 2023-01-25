@@ -858,23 +858,56 @@ _assert_platform_normalize_all(GPtrArray *arr)
     gboolean normalized = FALSE;
 
     for (i = 0; i < nm_g_ptr_array_len(arr); i++) {
-        const NMPObject **ptr = (gpointer) &arr->pdata[i];
-        NMPObject *new;
+        const NMPObject **ptr         = (gpointer) &arr->pdata[i];
+        nm_auto_nmpobj NMPObject *new = NULL;
+        gboolean skip                 = FALSE;
 
         switch (NMP_OBJECT_GET_TYPE(*ptr)) {
         case NMP_OBJECT_TYPE_LINK:
-            new                  = nmp_object_clone(*ptr, FALSE);
-            new->link.rx_packets = 0;
-            new->link.rx_bytes   = 0;
-            new->link.tx_packets = 0;
-            new->link.tx_bytes   = 0;
-            nmp_object_ref_set(ptr, new);
-            nmp_object_unref(new);
-            normalized = TRUE;
+        {
+            const NMPlatformLink *link = NMP_OBJECT_CAST_LINK(*ptr);
+
+            if (nmtstp_link_is_iptunnel_special(link)) {
+                /* These are special interfaces for the ip tunnel modules, like
+                 * "gre0" created by the "ip_gre" module.
+                 *
+                 * These interfaces can appear at any moment, when the module
+                 * gets loaded (by anybody on the host). We might want to avoid
+                 * that by calling nmtstp_ensure_module(), but it's worse.
+                 * Kernel does not send correct RTM_NEWLINK events when those
+                 * interfaces get created. So the cache content based on the
+                 * events will differ from a new load from a dump.
+                 *
+                 * We need to ignore those interfaces. */
+                skip = TRUE;
+            } else if (link->type == NM_LINK_TYPE_UNKNOWN) {
+                /* The link type is not detected. This might be a generated
+                 * interface like nmtstp_link_is_iptunnel_special(), but for
+                 * kernel modules that we don't know about. Ignore them too. */
+                skip = TRUE;
+            }
+
+            if (!skip) {
+                new                  = nmp_object_clone(*ptr, FALSE);
+                new->link.rx_packets = 0;
+                new->link.rx_bytes   = 0;
+                new->link.tx_packets = 0;
+                new->link.tx_bytes   = 0;
+            }
+            if (nmp_object_ref_set(ptr, new))
+                normalized = TRUE;
+            break;
+        }
         default:
             break;
         }
     }
+
+    while (g_ptr_array_remove(arr, NULL)) {
+        /* Remove NULL values. */
+        normalized = TRUE;
+    }
+
     return normalized;
 }
 
