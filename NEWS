@@ -1,3 +1,16 @@
+================================================
+NetworkManager-1.40.12
+Overview of changes since NetworkManager-1.40.10
+================================================
+
+* Make sure "external-ids" stays up to date in Open vSwitch database on a
+  connection reapply.
+* Retry if a netlink sockets runs out of buffer space before we're able to
+  read results of a link change.
+* Fix a possible race involving concurrent invocation of iptables in IPv4
+  shared mode.
+* Other various fixes.
+
 ===============================================
 NetworkManager-1.40.10
 Overview of changes since NetworkManager-1.40.8
