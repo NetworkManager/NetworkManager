@@ -14585,14 +14585,19 @@ gboolean
 nm_device_check_unrealized_device_managed(NMDevice *self)
 {
     NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
+    guint            state;
 
     nm_assert(!nm_device_is_real(self));
 
-    if (!nm_config_data_get_device_config_boolean(NM_CONFIG_GET_DATA,
-                                                  NM_CONFIG_KEYFILE_KEY_DEVICE_MANAGED,
-                                                  self,
-                                                  TRUE,
-                                                  TRUE))
+    state = nm_config_data_get_device_config_int64(NM_CONFIG_GET_DATA,
+                                                   NM_CONFIG_KEYFILE_KEY_DEVICE_MANAGED,
+                                                   self,
+                                                   10,
+                                                   0,
+                                                   2,
+                                                   1,
+                                                   1);
+    if (state != 1)
         return FALSE;
 
     if (nm_device_spec_match_list(self, nm_settings_get_unmanaged_specs(priv->settings)))
@@ -14656,31 +14661,37 @@ nm_device_set_unmanaged_by_user_udev(NMDevice *self)
 void
 nm_device_set_unmanaged_by_user_conf(NMDevice *self)
 {
-    gboolean      value;
-    NMUnmanFlagOp set_op;
+    guint            value;
+    NMUnmanFlagOp    set_op;
+    NMUnmanagedFlags flag = NM_UNMANAGED_USER_CONF;
 
-    value = nm_config_data_get_device_config_boolean(NM_CONFIG_GET_DATA,
-                                                     NM_CONFIG_KEYFILE_KEY_DEVICE_MANAGED,
-                                                     self,
-                                                     -1,
-                                                     TRUE);
+    value = nm_config_data_get_device_config_int64(NM_CONFIG_GET_DATA,
+                                                   NM_CONFIG_KEYFILE_KEY_DEVICE_MANAGED,
+                                                   self,
+                                                   10,
+                                                   0,
+                                                   2,
+                                                   -1,
+                                                   1);
+
     switch (value) {
-    case TRUE:
+    case 0:
+        set_op = NM_UNMAN_FLAG_OP_SET_UNMANAGED;
+        break;
+    case 1:
         set_op = NM_UNMAN_FLAG_OP_SET_MANAGED;
         flag |= NM_UNMANAGED_USER_DOWN;
         break;
-    case FALSE:
+    case 2:
         set_op = NM_UNMAN_FLAG_OP_SET_UNMANAGED;
+        flag |= NM_UNMANAGED_USER_DOWN;
         break;
     default:
         set_op = NM_UNMAN_FLAG_OP_FORGET;
         break;
     }
 
-    nm_device_set_unmanaged_by_flags(self,
-                                     NM_UNMANAGED_USER_CONF,
-                                     set_op,
-                                     NM_DEVICE_STATE_REASON_USER_REQUESTED);
+    nm_device_set_unmanaged_by_flags(self, flag, set_op, NM_DEVICE_STATE_REASON_USER_REQUESTED);
 }
 
 void
