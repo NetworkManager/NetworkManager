@@ -197,21 +197,18 @@ run_autotools() {
         export NM_TEST_CLIENT_CHECK_L10N=1
 
         if ! make check -j 6 -k ; then
-
             _print_test_logs "first-test"
-
             echo ">>>> RUN SECOND TEST (start)"
             NMTST_DEBUG="debug,TRACE,no-expect-message" make check -k || :
             echo ">>>> RUN SECOND TEST (done)"
-
             _print_test_logs "second-test"
-            die "test failed"
+            die "autotools test failed"
         fi
 
         if _with_valgrind; then
             if ! NMTST_USE_VALGRIND=1 make check -j 3 -k ; then
                 _print_test_logs "(valgrind test)"
-                die "valgrind test failed"
+                die "autotools+valgrind test failed"
             fi
         fi
     popd
@@ -267,12 +264,18 @@ run_meson() {
 
     ninja -C build
     ninja -C build install
-    ninja -C build test
+
+    if ! ninja -C build test ; then
+        echo ">>>> RUN SECOND TEST (start)"
+        NMTST_DEBUG="debug,TRACE,no-expect-message" ninja -C build test || :
+        echo ">>>> RUN SECOND TEST (done)"
+        die "meson test failed"
+    fi
 
     if _with_valgrind; then
         if ! NMTST_USE_VALGRIND=1 ninja -C build test; then
             _print_test_logs "(valgrind test)"
-            die "valgrind test failed"
+            die "meson+valgrind test failed"
         fi
     fi
 }
