@@ -772,6 +772,12 @@ nmtst_init(int *argc, char ***argv, gboolean assert_logging)
 static inline gboolean
 nmtst_is_debug(void)
 {
+    /* This is based on the "debug"/"no-debug" flag in "$NMTST_DEBUG".
+     *
+     * If debugging is enabled, print more information. However, make sure
+     * that the test behaves still in a similar manner and that the same code
+     * path are taken where it matters (it matters for example, if the code path
+     * consumes random numbers). */
     g_assert(nmtst_initialized());
     return __nmtst_internal.is_debug;
 }

@@ -201,7 +201,7 @@ run_autotools() {
             _print_test_logs "first-test"
 
             echo ">>>> RUN SECOND TEST (start)"
-            NMTST_DEBUG=TRACE,no-expect-message make check -k || :
+            NMTST_DEBUG="debug,TRACE,no-expect-message" make check -k || :
             echo ">>>> RUN SECOND TEST (done)"
 
             _print_test_logs "second-test"
