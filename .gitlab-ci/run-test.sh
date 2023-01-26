@@ -64,8 +64,11 @@ check_run_clean() {
     return 0
 }
 
-check_run_clean 1 && BUILD_TYPE=autotools CC=gcc   WITH_DOCS=1 WITH_VALGRIND=1 contrib/scripts/nm-ci-run.sh \
-                      && mv build/INST/share/gtk-doc/html "$ARTIFACT_DIR/docs-html"
+if check_run_clean 1 ; then
+    BUILD_TYPE=autotools CC=gcc WITH_DOCS=1 WITH_VALGRIND=1 contrib/scripts/nm-ci-run.sh
+    mv build/INST/share/gtk-doc/html "$ARTIFACT_DIR/docs-html"
+fi
+
 check_run_clean 2 && BUILD_TYPE=meson     CC=gcc   WITH_DOCS=1 WITH_VALGRIND=1 contrib/scripts/nm-ci-run.sh
 check_run_clean 3 && BUILD_TYPE=autotools CC=clang WITH_DOCS=0                 contrib/scripts/nm-ci-run.sh
 check_run_clean 4 && BUILD_TYPE=meson     CC=clang WITH_DOCS=0                 contrib/scripts/nm-ci-run.sh
