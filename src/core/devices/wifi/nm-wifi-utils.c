@@ -1004,7 +1004,7 @@ psk_setting_to_iwd_config(GKeyFile *file, NMSettingWirelessSecurity *s_wsec, GEr
         if (NM_FLAGS_ANY(psk_flags, SECRETS_DONT_STORE_FLAGS)) {
             nm_log_info(
                 LOGD_WIFI,
-                "IWD network config is being created wihout the PSK but IWD will save the PSK on "
+                "IWD network config is being created without the PSK but IWD will save the PSK on "
                 "successful activation not honoring the psk-flags property");
         }
         return TRUE;
