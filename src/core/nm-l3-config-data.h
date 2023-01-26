@@ -10,7 +10,6 @@
 #include "libnm-platform/nmp-object.h"
 
 typedef enum {
-    NM_PROXY_CONFIG_METHOD_UNKNOWN,
     NM_PROXY_CONFIG_METHOD_NONE,
     NM_PROXY_CONFIG_METHOD_AUTO,
 } NMProxyConfigMethod;

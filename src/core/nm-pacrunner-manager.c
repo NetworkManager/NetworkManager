@@ -172,7 +172,7 @@ _make_request_create_proxy_configuration(const char *iface, const NML3ConfigData
         g_variant_builder_add(&builder, "{sv}", "Interface", g_variant_new_string(iface));
     }
 
-    method = l3cd ? nm_l3_config_data_get_proxy_method(l3cd) : NM_PROXY_CONFIG_METHOD_UNKNOWN;
+    method = l3cd ? nm_l3_config_data_get_proxy_method(l3cd) : NM_PROXY_CONFIG_METHOD_NONE;
 
     switch (method) {
     case NM_PROXY_CONFIG_METHOD_AUTO:
@@ -186,7 +186,6 @@ _make_request_create_proxy_configuration(const char *iface, const NML3ConfigData
         if (s)
             g_variant_builder_add(&builder, "{sv}", "Script", g_variant_new_string(s));
         break;
-    case NM_PROXY_CONFIG_METHOD_UNKNOWN:
     case NM_PROXY_CONFIG_METHOD_NONE:
         g_variant_builder_add(&builder, "{sv}", "Method", g_variant_new_string("direct"));
         break;
