@@ -69,9 +69,13 @@ if [ $IS_ALPINE = 1 ]; then
     _WITH_SYSTEMD_LOGIND="$_FALSE"
 fi
 
-if [ "$NMTST_SEED_RAND" != "" ]; then
-    export NMTST_SEED_RAND=
+if [ -z "${NMTST_SEED_RAND+x}" ]; then
+    NMTST_SEED_RAND="$SRANDOM"
+    if [ -z "$NMTST_SEED_RAND" ]; then
+        NMTST_SEED_RAND="$(( ( (RANDOM<<15|RANDOM)<<15|RANDOM ) % 0xfffffffe ))"
+    fi
 fi
+export NMTST_SEED_RAND
 
 case "$CI" in
     ""|"true"|"default"|"gitlab")
