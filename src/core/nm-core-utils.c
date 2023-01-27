@@ -3673,9 +3673,7 @@ _hw_addr_eth_complete(struct ether_addr *addr,
 
     nm_assert((ouis == NULL) ^ (ouis_len != 0));
     if (ouis) {
-        /* g_random_int() is good enough here. It uses a static GRand instance
-         * that is seeded from /dev/urandom. */
-        oui = ouis[g_random_int() % ouis_len];
+        oui = ouis[nm_random_u64_range(ouis_len)];
         g_free(ouis);
     } else {
         if (!nm_utils_hwaddr_aton(current_mac_address, &oui, ETH_ALEN))
