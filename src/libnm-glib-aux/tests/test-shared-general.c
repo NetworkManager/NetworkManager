@@ -137,6 +137,55 @@ test_nmhash(void)
 
 /*****************************************************************************/
 
+static void
+test_nm_random(void)
+{
+    int i_run;
+
+    for (i_run = 0; i_run < 1000; i_run++) {
+        guint64 begin;
+        guint64 end;
+        guint64 m;
+        guint64 x;
+
+        m = nmtst_get_rand_uint64();
+        m = m >> (nmtst_get_rand_uint32() % 64);
+
+        if (m == 0)
+            continue;
+
+        switch (nmtst_get_rand_uint32() % 4) {
+        case 0:
+            begin = 0;
+            break;
+        case 1:
+            begin = nmtst_get_rand_uint64() % 1000;
+            break;
+        case 2:
+            begin = ((G_MAXUINT64 - m) - 500) + (nmtst_get_rand_uint64() % 1000);
+            break;
+        default:
+            begin = nmtst_get_rand_uint64() % (G_MAXUINT64 - m);
+            break;
+        }
+
+        end = (begin + m) - 10 + (nmtst_get_rand_uint64() % 5);
+
+        if (begin >= end)
+            continue;
+
+        if (begin == 0 && nmtst_get_rand_bool())
+            x = nm_random_u64_range(end);
+        else
+            x = nm_random_u64_range_full(begin, end, nmtst_get_rand_bool());
+
+        g_assert_cmpuint(x, >=, begin);
+        g_assert_cmpuint(x, <, end);
+    }
+}
+
+/*****************************************************************************/
+
 static const char *
 _make_strv_foo(void)
 {
@@ -2417,6 +2466,7 @@ main(int argc, char **argv)
     g_test_add_func("/general/test_inet_utils", test_inet_utils);
     g_test_add_func("/general/test_garray", test_garray);
     g_test_add_func("/general/test_nm_prioq", test_nm_prioq);
+    g_test_add_func("/general/test_nm_random", test_nm_random);
 
     return g_test_run();
 }

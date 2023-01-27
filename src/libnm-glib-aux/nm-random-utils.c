@@ -447,3 +447,53 @@ again_getrandom:
 
     return nm_utils_fd_read_loop_exact(fd, p, n, FALSE);
 }
+
+guint64
+nm_random_u64_range_full(guint64 begin, guint64 end, gboolean crypto_bytes)
+{
+    gboolean bad_crypto_bytes = FALSE;
+    guint64  remainder;
+    guint64  maxvalue;
+    guint64  x;
+    guint64  m;
+
+    /* Returns a random #guint64 equally distributed in the range [@begin..@end-1].
+     *
+     * The function always set errno. It either sets it to zero or to EAGAIN
+     * (if crypto_bytes were requested but not obtained). In any case, the function
+     * will always return a random number in the requested range (worst case, it's
+     * not crypto_bytes despite being requested). Check errno if you care. */
+
+    if (begin >= end) {
+        /* systemd's random_u64_range(0) is an alias for random_u64_range((uint64_t)-1).
+         * Not for us. It's a caller error to request an element from an empty range. */
+        return nm_assert_unreachable_val(begin);
+    }
+
+    m = end - begin;
+
+    if (m == 1) {
+        x = 0;
+        goto out;
+    }
+
+    remainder = G_MAXUINT64 % m;
+    maxvalue  = G_MAXUINT64 - remainder;
+
+    do
+        if (crypto_bytes) {
+            if (nm_random_get_crypto_bytes(&x, sizeof(x)) < 0) {
+                /* Cannot get good crypto numbers. We will try our best, but fail
+                 * and set errno below. */
+                crypto_bytes     = FALSE;
+                bad_crypto_bytes = TRUE;
+                continue;
+            }
+        } else
+            nm_random_get_bytes(&x, sizeof(x));
+    while (x >= maxvalue);
+
+out:
+    errno = bad_crypto_bytes ? EAGAIN : 0;
+    return begin + (x % m);
+}
