@@ -584,7 +584,10 @@ enable_modem_manager = get_option('modem_manager')
 if enable_modem_manager
   mm_glib_dep = dependency('mm-glib', version: '>= 0.7.991')
 
-  mobile_broadband_provider_info_database = dependency('mobile-broadband-provider-info').get_pkgconfig_variable('database')
+  mobile_broadband_provider_info_database = get_option('mobile_broadband_provider_info_database')
+  if mobile_broadband_provider_info_database == ''
+    mobile_broadband_provider_info_database = dependency('mobile-broadband-provider-info').get_pkgconfig_variable('database')
+  endif
   config_h.set_quoted('MOBILE_BROADBAND_PROVIDER_INFO_DATABASE', mobile_broadband_provider_info_database)
 endif
 
@@ -1054,6 +1057,7 @@ output += '  jansson: ' + jansson_msg + '\n'
 output += '  iptables: ' + config_h.get('IPTABLES_PATH') + '\n'
 output += '  nft: ' + config_h.get('NFT_PATH') + '\n'
 output += '  modemmanager-1: ' + enable_modem_manager.to_string() + '\n'
+output += '  mobile-broadband-provider-info-database: ' + mobile_broadband_provider_info_database + '\n'
 output += '  ofono: ' + enable_ofono.to_string() + '\n'
 output += '  concheck: ' + enable_concheck.to_string() + '\n'
 output += '  libteamdctl: ' + enable_teamdctl.to_string() + '\n'

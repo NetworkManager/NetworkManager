@@ -32,6 +32,7 @@ option('ppp', type: 'boolean', value: true, description: 'enable PPP/PPPoE suppo
 option('pppd', type: 'string', value: '', description: 'path to pppd binary')
 option('pppd_plugin_dir', type: 'string', value: '', description: 'path to the pppd plugins directory')
 option('modem_manager', type: 'boolean', value: true, description: 'Enable new ModemManager1 interface support')
+option('mobile_broadband_provider_info_database', type: 'string', value: '', description: 'path to the mobile-broadband-provider-info database')
 option('ofono', type: 'boolean', value: false, description: 'Enable oFono support (experimental)')
 option('concheck', type: 'boolean', value: true, description: 'enable connectivity checking support')
 option('teamdctl', type: 'boolean', value: false, description: 'enable Teamd control support')
