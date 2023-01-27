@@ -1804,7 +1804,7 @@ remove_device(NMManager *self, NMDevice *device, gboolean quitting)
                 nm_device_sys_iface_state_set(device, NM_DEVICE_SYS_IFACE_STATE_REMOVED);
                 nm_device_set_unmanaged_by_flags(device,
                                                  NM_UNMANAGED_PLATFORM_INIT,
-                                                 TRUE,
+                                                 NM_UNMAN_FLAG_OP_SET_UNMANAGED,
                                                  NM_DEVICE_STATE_REASON_REMOVED);
             }
         }
@@ -4942,12 +4942,12 @@ unmanaged_to_disconnected(NMDevice *device)
      * and force the device to be managed. */
     nm_device_set_unmanaged_by_flags(device,
                                      NM_UNMANAGED_PLATFORM_INIT,
-                                     FALSE,
+                                     NM_UNMAN_FLAG_OP_SET_MANAGED,
                                      NM_DEVICE_STATE_REASON_USER_REQUESTED);
 
     nm_device_set_unmanaged_by_flags(device,
                                      NM_UNMANAGED_USER_EXPLICIT,
-                                     FALSE,
+                                     NM_UNMAN_FLAG_OP_SET_MANAGED,
                                      NM_DEVICE_STATE_REASON_USER_REQUESTED);
 
     if (!nm_device_get_managed(device, FALSE)) {
@@ -6500,7 +6500,7 @@ device_sleep_cb(NMDevice *device, GParamSpec *pspec, NMManager *self)
         _LOGD(LOGD_SUSPEND, "sleep: unmanaging device %s", nm_device_get_ip_iface(device));
         nm_device_set_unmanaged_by_flags_queue(device,
                                                NM_UNMANAGED_SLEEPING,
-                                               TRUE,
+                                               NM_UNMAN_FLAG_OP_SET_UNMANAGED,
                                                NM_DEVICE_STATE_REASON_SLEEPING);
         break;
     case NM_DEVICE_STATE_UNMANAGED:
@@ -6562,7 +6562,7 @@ do_sleep_wake(NMManager *self, gboolean sleeping_changed)
             } else {
                 nm_device_set_unmanaged_by_flags(device,
                                                  NM_UNMANAGED_SLEEPING,
-                                                 TRUE,
+                                                 NM_UNMAN_FLAG_OP_SET_UNMANAGED,
                                                  NM_DEVICE_STATE_REASON_SLEEPING);
             }
         }
@@ -6582,7 +6582,7 @@ do_sleep_wake(NMManager *self, gboolean sleeping_changed)
                 if (device_is_wake_on_lan(priv->platform, device))
                     nm_device_set_unmanaged_by_flags(device,
                                                      NM_UNMANAGED_SLEEPING,
-                                                     TRUE,
+                                                     NM_UNMAN_FLAG_OP_SET_UNMANAGED,
                                                      NM_DEVICE_STATE_REASON_SLEEPING);
 
                 /* Check if the device is unmanaged but the state transition is still pending.
@@ -6638,7 +6638,7 @@ do_sleep_wake(NMManager *self, gboolean sleeping_changed)
 
             nm_device_set_unmanaged_by_flags(device,
                                              NM_UNMANAGED_SLEEPING,
-                                             FALSE,
+                                             NM_UNMAN_FLAG_OP_SET_MANAGED,
                                              NM_DEVICE_STATE_REASON_NOW_MANAGED);
         }
 

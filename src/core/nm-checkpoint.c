@@ -368,7 +368,7 @@ nm_checkpoint_rollback(NMCheckpoint *self)
                 _LOGD("rollback: device was not realized, unmanage it");
                 nm_device_set_unmanaged_by_flags_queue(device,
                                                        NM_UNMANAGED_USER_EXPLICIT,
-                                                       TRUE,
+                                                       NM_UNMAN_FLAG_OP_SET_UNMANAGED,
                                                        NM_DEVICE_STATE_REASON_NOW_UNMANAGED);
                 goto next_dev;
             }
@@ -402,7 +402,7 @@ nm_checkpoint_rollback(NMCheckpoint *self)
                 _LOGD("rollback: explicitly unmanage device");
                 nm_device_set_unmanaged_by_flags_queue(device,
                                                        NM_UNMANAGED_USER_EXPLICIT,
-                                                       TRUE,
+                                                       NM_UNMAN_FLAG_OP_SET_UNMANAGED,
                                                        NM_DEVICE_STATE_REASON_NOW_UNMANAGED);
             }
             goto next_dev;

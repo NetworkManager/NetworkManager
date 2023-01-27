@@ -608,9 +608,9 @@ typedef enum {
 } NMUnmanagedFlags;
 
 typedef enum {
-    NM_UNMAN_FLAG_OP_SET_MANAGED   = FALSE,
-    NM_UNMAN_FLAG_OP_SET_UNMANAGED = TRUE,
-    NM_UNMAN_FLAG_OP_FORGET        = 2,
+    NM_UNMAN_FLAG_OP_SET_MANAGED = 0,
+    NM_UNMAN_FLAG_OP_SET_UNMANAGED,
+    NM_UNMAN_FLAG_OP_FORGET,
 } NMUnmanFlagOp;
 
 const char *nm_unmanaged_flags2str(NMUnmanagedFlags flags, char *buf, gsize len);
