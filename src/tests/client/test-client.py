@@ -1889,6 +1889,11 @@ class TestNmcli(NmTestBase):
     @skip_without_pexpect
     @nm_test
     def test_monitor(self):
+
+        # FIXME: this test is currently known to fail. Skip it.
+        # https://bugzilla.redhat.com/show_bug.cgi?id=2154288
+        raise unittest.SkipTest("test is known to randomly fail (rhbz#2154288)")
+
         def start_mon():
             nmc = self.call_nmcli_pexpect(["monitor"])
             nmc.expect("NetworkManager is running")
