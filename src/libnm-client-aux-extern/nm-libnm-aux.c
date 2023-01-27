@@ -4,6 +4,8 @@
 
 #include "nm-libnm-aux.h"
 
+#include "libnm-glib-aux/nm-random-utils.h"
+
 /*****************************************************************************/
 
 NMClient *
@@ -101,7 +103,7 @@ nmc_client_new_waitsync(GCancellable *cancellable,
      * code no longer uses that, we hardly test those code paths. But they should
      * work just the same. Randomly use instead the sync initialization in a debug
      * build... */
-    if ((g_random_int() % 2) == 0) {
+    if (nm_random_bool()) {
         gboolean success;
 
         va_start(ap, first_property_name);
