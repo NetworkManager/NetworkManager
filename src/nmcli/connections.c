@@ -169,9 +169,7 @@ print_connection_done(GObject *source_object, GAsyncResult *res, gpointer user_d
 
     written = g_output_stream_write_finish(stream, res, &error);
     if (written == -1) {
-        g_string_printf(nmc->return_text,
-                        _("Error: Error writing connection: %s"),
-                        error->message);
+        g_string_printf(nmc->return_text, _("Error: Error writing connection: %s"), error->message);
         nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
         nmc->should_wait--;
         quit();
