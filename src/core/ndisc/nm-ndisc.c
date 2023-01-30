@@ -10,6 +10,7 @@
 #include <arpa/inet.h>
 #include <stdlib.h>
 
+#include "libnm-glib-aux/nm-random-utils.h"
 #include "libnm-platform/nm-platform-utils.h"
 #include "libnm-platform/nm-platform.h"
 #include "libnm-platform/nmp-netns.h"
@@ -858,7 +859,7 @@ solicit_retransmit_time_jitter(gint32 solicit_retransmit_time_msec)
     ten_percent = NM_MAX(1, solicit_retransmit_time_msec / 10);
 
     return solicit_retransmit_time_msec - ten_percent
-           + ((gint32) (g_random_int() % (2u * ((guint32) ten_percent))));
+           + ((gint32) (nm_random_u32() % (2u * ((guint32) ten_percent))));
 }
 
 static gboolean
@@ -936,7 +937,7 @@ solicit_timer_start(NMNDisc *ndisc)
      * a suitable delay in 2021. Wait only up to 250 msec instead. */
 
     delay_msec =
-        g_random_int() % ((guint32) (NM_NDISC_RFC4861_MAX_RTR_SOLICITATION_DELAY * 1000 / 4));
+        nm_random_u32() % ((guint32) (NM_NDISC_RFC4861_MAX_RTR_SOLICITATION_DELAY * 1000 / 4));
 
     _LOGD("solicit: schedule sending first solicitation (of %d) in %.3f seconds",
           priv->config.router_solicitations,
@@ -974,8 +975,9 @@ announce_router(NMNDisc *ndisc)
 
         /* Schedule next initial announcement retransmit. */
         priv->send_ra_id =
-            g_timeout_add_seconds(g_random_int_range(NM_NDISC_ROUTER_ADVERT_DELAY,
-                                                     NM_NDISC_ROUTER_ADVERT_INITIAL_INTERVAL),
+            g_timeout_add_seconds(nm_random_u64_range_full(NM_NDISC_ROUTER_ADVERT_DELAY,
+                                                           NM_NDISC_ROUTER_ADVERT_INITIAL_INTERVAL,
+                                                           FALSE),
                                   (GSourceFunc) announce_router,
                                   ndisc);
     } else {
@@ -1009,10 +1011,9 @@ announce_router_initial(NMNDisc *ndisc)
     /* Schedule the initial send rather early. Clamp the delay by minimal
      * delay and not the initial advert internal so that we start fast. */
     if (G_LIKELY(!priv->send_ra_id)) {
-        priv->send_ra_id =
-            g_timeout_add_seconds(g_random_int_range(0, NM_NDISC_ROUTER_ADVERT_DELAY),
-                                  (GSourceFunc) announce_router,
-                                  ndisc);
+        priv->send_ra_id = g_timeout_add_seconds(nm_random_u64_range(NM_NDISC_ROUTER_ADVERT_DELAY),
+                                                 (GSourceFunc) announce_router,
+                                                 ndisc);
     }
 }
 
@@ -1028,7 +1029,7 @@ announce_router_solicited(NMNDisc *ndisc)
         nm_clear_g_source(&priv->send_ra_id);
 
     if (!priv->send_ra_id) {
-        priv->send_ra_id = g_timeout_add(g_random_int_range(0, NM_NDISC_ROUTER_ADVERT_DELAY_MS),
+        priv->send_ra_id = g_timeout_add(nm_random_u64_range(NM_NDISC_ROUTER_ADVERT_DELAY_MS),
                                          (GSourceFunc) announce_router,
                                          ndisc);
     }
