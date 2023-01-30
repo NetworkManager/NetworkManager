@@ -530,6 +530,10 @@ void nmtstp_link_delete(NMPlatform *platform,
                         const char *name,
                         gboolean    require_exist);
 
+gboolean nmtstp_link_is_iptunnel_special(const NMPlatformLink *link);
+
+gboolean nmtstp_ensure_module(const char *module_name);
+
 /*****************************************************************************/
 
 #define nmtst_object_new_mptcp_addr(...) \
