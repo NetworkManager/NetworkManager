@@ -3019,6 +3019,76 @@ nm_l3_config_data_new_from_platform(NMDedupMultiIndex        *multi_idx,
 /*****************************************************************************/
 
 void
+nm_l3_config_data_hash_dns(const NML3ConfigData *l3cd, GChecksum *sum, int addr_family)
+{
+    guint              i;
+    int                val;
+    const char *const *strarr;
+    const in_addr_t   *wins;
+    const char *const *domains;
+    const char *const *searches;
+    const char *const *options;
+    guint              num_nameservers;
+    guint              num_wins;
+    guint              num_domains;
+    guint              num_searches;
+    guint              num_options;
+
+    g_return_if_fail(l3cd);
+    g_return_if_fail(sum);
+
+    strarr = nm_l3_config_data_get_nameservers(l3cd, addr_family, &num_nameservers);
+    for (i = 0; i < num_nameservers; i++)
+        g_checksum_update(sum, (gpointer) strarr[i], strlen(strarr[i]));
+
+    if (addr_family == AF_INET) {
+        wins = nm_l3_config_data_get_wins(l3cd, &num_wins);
+        for (i = 0; i < num_wins; i++)
+            g_checksum_update(sum, (guint8 *) &wins[i], 4);
+    }
+
+    domains = nm_l3_config_data_get_domains(l3cd, addr_family, &num_domains);
+    for (i = 0; i < num_domains; i++) {
+        g_checksum_update(sum, (const guint8 *) domains[i], strlen(domains[i]));
+    }
+
+    searches = nm_l3_config_data_get_searches(l3cd, addr_family, &num_searches);
+    for (i = 0; i < num_searches; i++) {
+        g_checksum_update(sum, (const guint8 *) searches[i], strlen(searches[i]));
+    }
+
+    options = nm_l3_config_data_get_dns_options(l3cd, addr_family, &num_options);
+    for (i = 0; i < num_options; i++) {
+        g_checksum_update(sum, (const guint8 *) options[i], strlen(options[i]));
+    }
+
+    val = nm_l3_config_data_get_mdns(l3cd);
+    if (val != NM_SETTING_CONNECTION_MDNS_DEFAULT)
+        g_checksum_update(sum, (const guint8 *) &val, sizeof(val));
+
+    val = nm_l3_config_data_get_llmnr(l3cd);
+    if (val != NM_SETTING_CONNECTION_LLMNR_DEFAULT)
+        g_checksum_update(sum, (const guint8 *) &val, sizeof(val));
+
+    val = nm_l3_config_data_get_dns_over_tls(l3cd);
+    if (val != NM_SETTING_CONNECTION_DNS_OVER_TLS_DEFAULT)
+        g_checksum_update(sum, (const guint8 *) &val, sizeof(val));
+
+    /* FIXME(ip-config-checksum): the DNS priority should be considered relevant
+     * and added into the checksum as well, but this can't be done right now
+     * because in the DNS manager we rely on the fact that an empty
+     * configuration (i.e. just created) has a zero checksum. This is needed to
+     * avoid rewriting resolv.conf when there is no change.
+     *
+     * The DNS priority initial value depends on the connection type (VPN or
+     * not), so it's a bit difficult to add it to checksum maintaining the
+     * assumption of checksum(empty)=0
+     */
+}
+
+/*****************************************************************************/
+
+void
 nm_l3_config_data_merge(NML3ConfigData       *self,
                         const NML3ConfigData *src,
                         NML3ConfigMergeFlags  merge_flags,
