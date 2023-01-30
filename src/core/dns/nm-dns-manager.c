@@ -1208,7 +1208,7 @@ compute_hash(NMDnsManager *self, const NMGlobalDnsConfig *global, guint8 buffer[
          * configuration without DNS parameters gives a zero checksum. */
         head = _mgr_get_ip_data_lst_head(self);
         c_list_for_each_entry (ip_data, head, ip_data_lst)
-            nm_ip_config_dns_hash(ip_data->l3cd, sum, ip_data->addr_family);
+            nm_l3_config_data_hash_dns(ip_data->l3cd, sum, ip_data->addr_family);
     }
 
     nm_utils_checksum_get_digest_len(sum, buffer, HASH_LEN);
