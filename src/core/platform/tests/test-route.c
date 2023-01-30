@@ -2262,7 +2262,7 @@ test_cache_consistency_routes(gconstpointer test_data)
         if (s) {
             if (nmtst_get_rand_bool()) {
                 s = nm_streq(s, "kernel") ? nmtst_rand_select_str("boot", "static", "ra")
-                                          : nmtst_rand_select_str("babel", "bgp");
+                                          : nmtst_rand_select_str("zebra", "bird");
             }
             extra_options[n_extra_options++] = "proto";
             extra_options[n_extra_options++] = s;
