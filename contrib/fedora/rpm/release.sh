@@ -55,7 +55,14 @@ echo_color() {
 
 print_usage() {
     echo "Usage:"
-    echo "  $BASH_SOURCE [devel|rc1|rc|major|major-post|minor] [--no-test] [--no-find-backports] [--no-cleanup] [--allow-local-branches] [--no-check-gitlab] [--no-check-news]"
+    echo "  $BASH_SOURCE [devel|rc1|rc|major|major-post|minor]"
+    echo "     [--no-test] \\"
+    echo "     [--no-find-backports] \\"
+    echo "     [--no-cleanup] \\"
+    echo "     [--allow-local-branches] \\"
+    echo "     [--no-check-gitlab] \\"
+    echo "     [--no-check-news] \\"
+    echo "     [--no-warn-publish-docs] \\"
 }
 
 die_help() {
@@ -204,6 +211,7 @@ FIND_BACKPORTS=1
 ALLOW_LOCAL_BRANCHES=0
 HELP_AND_EXIT=1
 CHECK_GITLAB=1
+WARN_PUBLISH_DOCS=1
 CHECK_NEWS=1
 while [ "$#" -ge 1 ]; do
     A="$1"
@@ -227,6 +235,9 @@ while [ "$#" -ge 1 ]; do
             ;;
         --no-check-gitlab)
             CHECK_GITLAB=0
+            ;;
+        --no-warn-publish-docs)
+            WARN_PUBLISH_DOCS=0
             ;;
         --no-check-news)
             CHECK_NEWS=0
@@ -364,6 +375,24 @@ if ! check_news "$RELEASE_MODE" "@{VERSION_ARR[@]}" ; then
         die "NEWS file needs update to mention stable release (skip check with --no-check-news)"
     fi
     echo "WARNING: NEWS file needs update to mention stable release (test skipped with --no-check-news)"
+fi
+
+if [ "$RELEASE_MODE" = major -o "$RELEASE_MODE" = minor ]; then
+    echo
+    latest=
+    if [ "$RELEASE_MODE" = major ]; then
+        echo "Note that after the new major you have to publish the new documentation on"
+        latest=" -l"
+    else
+        echo "Note that after the stable release you maybe should publish the new documentation on"
+    fi
+    echo "$(echo_color 36 -n "https://gitlab.freedesktop.org/NetworkManager/networkmanager.pages.freedesktop.org.git") by running"
+    echo "  \`$(echo_color 36 -n "./scripts/import-docs.sh ${VERSION_ARR[0]}.$((${VERSION_ARR[1]} + 1)).0$latest")\`"
+    echo
+    if [ $WARN_PUBLISH_DOCS = 1 ]; then
+        echo "Avoid this prompt via \"--no-warn-publish-docs\""
+        read -p "Please confirm that you know [ENTER] "
+    fi
 fi
 
 if [ $FIND_BACKPORTS = 1 ]; then
