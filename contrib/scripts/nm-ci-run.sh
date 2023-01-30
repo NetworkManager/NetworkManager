@@ -69,9 +69,13 @@ if [ $IS_ALPINE = 1 ]; then
     _WITH_SYSTEMD_LOGIND="$_FALSE"
 fi
 
-if [ "$NMTST_SEED_RAND" != "" ]; then
-    export NMTST_SEED_RAND=
+if [ -z "${NMTST_SEED_RAND+x}" ]; then
+    NMTST_SEED_RAND="$SRANDOM"
+    if [ -z "$NMTST_SEED_RAND" ]; then
+        NMTST_SEED_RAND="$(( ( (RANDOM<<15|RANDOM)<<15|RANDOM ) % 0xfffffffe ))"
+    fi
 fi
+export NMTST_SEED_RAND
 
 case "$CI" in
     ""|"true"|"default"|"gitlab")
@@ -193,21 +197,18 @@ run_autotools() {
         export NM_TEST_CLIENT_CHECK_L10N=1
 
         if ! make check -j 6 -k ; then
-
             _print_test_logs "first-test"
-
             echo ">>>> RUN SECOND TEST (start)"
-            NMTST_DEBUG=TRACE,no-expect-message make check -k || :
+            NMTST_DEBUG="debug,TRACE,no-expect-message" make check -k || :
             echo ">>>> RUN SECOND TEST (done)"
-
             _print_test_logs "second-test"
-            die "test failed"
+            die "autotools test failed"
         fi
 
         if _with_valgrind; then
             if ! NMTST_USE_VALGRIND=1 make check -j 3 -k ; then
                 _print_test_logs "(valgrind test)"
-                die "valgrind test failed"
+                die "autotools+valgrind test failed"
             fi
         fi
     popd
@@ -261,14 +262,21 @@ run_meson() {
 
     export NM_TEST_CLIENT_CHECK_L10N=1
 
-    ninja -C build
+    ninja -C build -v
     ninja -C build install
-    ninja -C build test
+
+    if ! meson test -C build -v --print-errorlogs ; then
+        echo ">>>> RUN SECOND TEST (start)"
+        NMTST_DEBUG="debug,TRACE,no-expect-message" \
+           meson test -C build -v --print-errorlogs || :
+        echo ">>>> RUN SECOND TEST (done)"
+        die "meson test failed"
+    fi
 
     if _with_valgrind; then
-        if ! NMTST_USE_VALGRIND=1 ninja -C build test; then
+        if ! NMTST_USE_VALGRIND=1 meson test -C build -v --print-errorlogs ; then
             _print_test_logs "(valgrind test)"
-            die "valgrind test failed"
+            die "meson+valgrind test failed"
         fi
     fi
 }
