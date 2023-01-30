@@ -2234,10 +2234,12 @@ test_cache_consistency_routes(gconstpointer test_data)
                 continue;
             }
             nmtstp_run_command("ip -%c route flush dev %s"
-                               "%s" /* redirect */
+                               " table %s" /* table */
+                               "%s"        /* redirect */
                                "",
                                addr_family_char[IS_IPv4],
                                ifname,
+                               nmtst_rand_select_str("main", "10222", "10223", "all"),
                                nmtst_is_debug() ? "" : " &>/dev/null");
             _ensure_onlink_routes();
             goto done;
