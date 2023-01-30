@@ -2312,7 +2312,17 @@ test_cache_consistency_routes(gconstpointer test_data)
                 }
                 extra_options[n_extra_options++] = "dev";
                 extra_options[n_extra_options++] = NMTSTP_ENV1_DEVICE_NAME[nmtst_get_rand_bool()];
-                if (nmtst_get_rand_one_case_in(3)) {
+                if (IS_IPv4 && i == 0) {
+                    /* For IPv4, there is a problem if we configure a route with
+                     * only one next-hop and a weight. In that case, kernel allows
+                     * to add duplicates (that only differ by weight), but on netlink
+                     * the weight is not exposed, so the routes look identical and
+                     * are deduplicated by the hash.
+                     * See https://bugzilla.redhat.com/show_bug.cgi?id=2162315
+                     *
+                     * This needs a kernel fix. Workaround that issue here, otherwise the test
+                     * will randomly fail. */
+                } else if (nmtst_get_rand_one_case_in(3)) {
                     extra_options[n_extra_options++] = "weight";
                     extra_options[n_extra_options++] = "5";
                 }

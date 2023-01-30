@@ -1329,14 +1329,23 @@ nmtstp_assert_platform(NMPlatform *platform, guint32 obj_type_flags)
                     /* For IPv4, it also does not reliably always work. This may
                      * be a bug we want to fix. For now, ignore the check.
                      *
-                     * This is probably caused by kernel bug
-                     * https://bugzilla.redhat.com/show_bug.cgi?id=2162315
-                     * for which I think there is no workaround.
+                     * a) Kernel can wrongly allow to configure the same route twice.
+                     * That means, the same route is visible in `ip route` output,
+                     * meaning, it would be added twice to the platform cache.
+                     * At least due to that problem, may the weak-id not be properly sorted.
+                     * See https://bugzilla.redhat.com/show_bug.cgi?id=2165720 which is
+                     * a bug of kernel allowing to configure the exact same route twice.
                      *
-                     * Also, rhbz#2162315 means NMPlatform will merge two different
-                     * routes together, if one of them were deleted, the RTM_DELROUTE
-                     * message would wrongly delete single entry, leading to cache
-                     * inconsistency. */
+                     * b) See https://bugzilla.redhat.com/show_bug.cgi?id=2162315 which is
+                     * a bug where kernel does allow to configure single-hop routes that differ by
+                     * their next-hop weight, but on the netlink API those routes look the same.
+                     *
+                     * Due to a) and b), the platform cache may contain only one instance
+                     * of a route, which is visible more than once in `ip route` output.
+                     * This merging of different routes causes problems, and it also means
+                     * that the RTM_NEWROUTE events are wrongly interpreted and the weak-id
+                     * is not properly sorted.
+                     */
                 } else {
                     /* Assert that also the original, not-sorted lists agree. */
                     _assert_platform_compare_arr(obj_type,
