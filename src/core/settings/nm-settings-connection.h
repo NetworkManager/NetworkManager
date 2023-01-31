@@ -217,6 +217,10 @@ GType nm_settings_connection_get_type(void);
 
 NMSettingsConnection *nm_settings_connection_new(void);
 
+NMSettings *nm_settings_connection_get_settings(NMSettingsConnection *self);
+
+NMManager *nm_settings_connection_get_manager(NMSettingsConnection *self);
+
 NMConnection *nm_settings_connection_get_connection(NMSettingsConnection *self);
 
 void _nm_settings_connection_set_connection(NMSettingsConnection            *self,
