@@ -451,6 +451,16 @@ static void _startup_complete_check(NMSettings *self, gint64 now_msec);
 
 /*****************************************************************************/
 
+NMManager *
+nm_settings_get_manager(NMSettings *self)
+{
+    g_return_val_if_fail(NM_IS_SETTINGS(self), NULL);
+
+    return NM_SETTINGS_GET_PRIVATE(self)->manager;
+}
+
+/*****************************************************************************/
+
 static void
 _emit_connection_added(NMSettings *self, NMSettingsConnection *sett_conn)
 {

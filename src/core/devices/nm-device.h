@@ -421,6 +421,10 @@ typedef struct _NMDeviceClass {
     const char *(*get_dhcp_anycast_address)(NMDevice *self);
 } NMDeviceClass;
 
+NMSettings *nm_device_get_settings(NMDevice *self);
+
+NMManager *nm_device_get_manager(NMDevice *self);
+
 GType nm_device_get_type(void);
 
 struct _NMDedupMultiIndex *nm_device_get_multi_index(NMDevice *self);

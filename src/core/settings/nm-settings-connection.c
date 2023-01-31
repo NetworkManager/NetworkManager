@@ -227,6 +227,22 @@ static guint _get_seen_bssids(NMSettingsConnection *self,
 
 /*****************************************************************************/
 
+NMSettings *
+nm_settings_connection_get_settings(NMSettingsConnection *self)
+{
+    g_return_val_if_fail(NM_IS_SETTINGS_CONNECTION(self), NULL);
+
+    return NM_SETTINGS_CONNECTION_GET_PRIVATE(self)->settings;
+}
+
+NMManager *
+nm_settings_connection_get_manager(NMSettingsConnection *self)
+{
+    return nm_settings_get_manager(nm_settings_connection_get_settings(self));
+}
+
+/*****************************************************************************/
+
 NMDevice *
 nm_settings_connection_default_wired_get_device(NMSettingsConnection *self)
 {
