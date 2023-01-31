@@ -29,7 +29,6 @@ typedef struct {
     NMPGlobalTracker *global_tracker;
     GHashTable       *l3cfgs;
     GHashTable       *shared_ips;
-    GHashTable       *ecmp_routes;
     GHashTable       *ecmp_track_by_obj;
     GHashTable       *ecmp_track_by_ecmpid;
     CList             l3cfg_signal_pending_lst_head;
@@ -71,12 +70,6 @@ NM_DEFINE_SINGLETON_GETTER(NMNetns, nm_netns_get, NM_TYPE_NETNS);
 
 /*****************************************************************************/
 
-void _netns_ip_route_ecmp_update_mh(NMNetns         *self,
-                                    const GPtrArray *mhrts_del,
-                                    const GPtrArray *mhrts_add);
-
-/*****************************************************************************/
-
 #define nm_assert_l3cfg(self, l3cfg)                                                      \
     G_STMT_START                                                                          \
     {                                                                                     \
@@ -112,6 +105,8 @@ typedef struct {
     /* Calling nm_netns_ip_route_ecmp_register() will ensure that the tracked
      * entry is non-dirty. This can be used to remove stale entries. */
     bool dirty : 1;
+    bool is_new : 1;
+    bool is_ready : 1;
 } EcmpTrackObj;
 
 static int
@@ -607,6 +602,8 @@ nm_netns_ip_route_ecmp_register(NMNetns *self, NML3Cfg *l3cfg, const NMPObject *
             .l3cfg               = l3cfg,
             .parent_track_ecmpid = track_ecmpid,
             .dirty               = FALSE,
+            .is_new              = TRUE,
+            .is_ready            = FALSE,
         };
 
         g_hash_table_add(priv->ecmp_track_by_obj, track_obj);
@@ -624,17 +621,19 @@ nm_netns_ip_route_ecmp_register(NMNetns *self, NML3Cfg *l3cfg, const NMPObject *
 }
 
 void
-nm_netns_ip_route_ecmp_commit(NMNetns *self, NML3Cfg *l3cfg, GPtrArray **out_singlehop_routes)
+nm_netns_ip_route_ecmp_commit(NMNetns    *self,
+                              NML3Cfg    *l3cfg,
+                              GPtrArray **out_singlehop_routes,
+                              gboolean    is_reapply)
 {
-    NMNetnsPrivate              *priv = NM_NETNS_GET_PRIVATE(self);
-    EcmpTrackObj                *track_obj;
-    EcmpTrackObj                *track_obj_safe;
-    EcmpTrackEcmpid             *track_ecmpid;
-    const NMPObject             *route_obj;
-    const NMPlatformIP4Route    *route;
-    char                         sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
-    gs_unref_ptrarray GPtrArray *mhrts_del = NULL;
-    gs_unref_ptrarray GPtrArray *mhrts_add = NULL;
+    NMNetnsPrivate           *priv = NM_NETNS_GET_PRIVATE(self);
+    EcmpTrackObj             *track_obj;
+    EcmpTrackObj             *track_obj_safe;
+    EcmpTrackEcmpid          *track_ecmpid;
+    const NMPObject          *route_obj;
+    const NMPlatformIP4Route *route;
+    char                      sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
+    gboolean                  already_notified = FALSE;
 
     nm_assert_l3cfg(self, l3cfg);
 
@@ -658,6 +657,41 @@ nm_netns_ip_route_ecmp_commit(NMNetns *self, NML3Cfg *l3cfg, GPtrArray **out_sin
             /* This one is still in used. Keep it, but mark dirty, so that on the
              * next update cycle, it needs to be touched again or will be deleted. */
             track_obj->dirty = TRUE;
+            if (is_reapply) {
+                track_obj->is_new   = TRUE;
+                track_obj->is_ready = FALSE;
+            }
+            if (track_obj->is_new) {
+                /* This is a new route entry that was just added. Upon first
+                 * addition, the route is not yet ready for configuration,
+                 * because we need to make sure that the gateway is reachable
+                 * via an onlink route. The calling l3cfg will configure that
+                 * route, but only after returning from this function.  So we
+                 * need to go through one more commit.
+                 *
+                 * We also need to make sure that we are called back right
+                 * after l3cfg configured that route. We achieve that by
+                 * scheduling another idle commit on "l3cfg". */
+                track_obj->is_new = FALSE;
+                if (c_list_length_is(&track_ecmpid->ecmpid_lst_head, 1)) {
+                    /* This route has no merge partner and ends up being a
+                     * single hop route. It will be returned and configured by
+                     * the calling "l3cfg".
+                     *
+                     * Unlike for multi-hop routes, we don't need to be called
+                     * again after the onlink route was added. We are done, and
+                     * don't need to schedule an idle commit. */
+                    track_obj->is_ready = TRUE;
+                } else {
+                    if (!already_notified) {
+                        already_notified = TRUE;
+                        nm_l3cfg_commit_on_idle_schedule(l3cfg, NM_L3_CFG_COMMIT_TYPE_AUTO);
+                    }
+                }
+            } else {
+                /* We see this entry the second time (or more) so it's ready. */
+                track_obj->is_ready = TRUE;
+            }
             continue;
         }
 
@@ -667,14 +701,8 @@ nm_netns_ip_route_ecmp_commit(NMNetns *self, NML3Cfg *l3cfg, GPtrArray **out_sin
 
         if (c_list_is_empty(&track_ecmpid->ecmpid_lst_head)) {
             if (track_ecmpid->merged_obj) {
-                if (NMP_OBJECT_CAST_IP4_ROUTE(track_ecmpid->merged_obj)->n_nexthops > 1) {
-                    if (!mhrts_del)
-                        mhrts_del =
-                            g_ptr_array_new_with_free_func((GDestroyNotify) nmp_object_unref);
-                    g_ptr_array_add(mhrts_del,
-                                    (gpointer) g_steal_pointer(&track_ecmpid->merged_obj));
-                } else
-                    nm_l3cfg_commit_on_idle_schedule(l3cfg, NM_L3_CFG_COMMIT_TYPE_AUTO);
+                if (NMP_OBJECT_CAST_IP4_ROUTE(track_ecmpid->merged_obj)->n_nexthops > 1)
+                    nm_platform_object_delete(priv->platform, track_ecmpid->merged_obj);
             }
             g_hash_table_remove(priv->ecmp_track_by_ecmpid, track_ecmpid);
 
@@ -692,8 +720,10 @@ nm_netns_ip_route_ecmp_commit(NMNetns *self, NML3Cfg *l3cfg, GPtrArray **out_sin
     c_list_for_each_entry (track_obj,
                            &l3cfg->internal_netns.ecmp_track_ifindex_lst_head,
                            ifindex_lst) {
+        EcmpTrackObj                   *track_obj2;
         nm_auto_nmpobj const NMPObject *obj_del = NULL;
         gboolean                        changed;
+        gboolean                        all_is_ready;
 
         track_ecmpid = track_obj->parent_track_ecmpid;
         if (track_ecmpid->already_visited) {
@@ -703,23 +733,32 @@ nm_netns_ip_route_ecmp_commit(NMNetns *self, NML3Cfg *l3cfg, GPtrArray **out_sin
         }
         track_ecmpid->already_visited = TRUE;
 
+        all_is_ready = TRUE;
+        c_list_for_each_entry (track_obj2, &track_ecmpid->ecmpid_lst_head, ecmpid_lst) {
+            if (!track_obj2->is_ready) {
+                all_is_ready = FALSE;
+                break;
+            }
+        }
+        if (!all_is_ready) {
+            /* Here we might have a merged_obj already which can have the wrong
+             * setting e.g the wrong nexthops. We leave them for the moment and
+             * then we reconfigure it when this entry is ready. */
+            continue;
+        }
+
         changed = _ecmp_track_init_merged_obj(track_obj->parent_track_ecmpid, &obj_del);
 
         nm_assert(!obj_del || changed);
 
-        route_obj = track_obj->parent_track_ecmpid->merged_obj;
+        route_obj = track_ecmpid->merged_obj;
         route     = NMP_OBJECT_CAST_IP4_ROUTE(route_obj);
 
         if (obj_del) {
-            if (NMP_OBJECT_CAST_IP4_ROUTE(obj_del)->n_nexthops > 1) {
-                if (!mhrts_del)
-                    mhrts_del = g_ptr_array_new_with_free_func((GDestroyNotify) nmp_object_unref);
-                g_ptr_array_add(mhrts_del, (gpointer) g_steal_pointer(&obj_del));
-            } else {
-                if (track_obj->l3cfg != l3cfg) {
-                    nm_l3cfg_commit_on_idle_schedule(track_obj->l3cfg, NM_L3_CFG_COMMIT_TYPE_AUTO);
-                }
-            }
+            if (NMP_OBJECT_CAST_IP4_ROUTE(obj_del)->n_nexthops > 1)
+                nm_platform_object_delete(priv->platform, obj_del);
+            else if (track_obj->l3cfg != l3cfg)
+                nm_l3cfg_commit_on_idle_schedule(track_obj->l3cfg, NM_L3_CFG_COMMIT_TYPE_AUTO);
         }
 
         if (route->n_nexthops <= 1) {
@@ -742,57 +781,10 @@ nm_netns_ip_route_ecmp_commit(NMNetns *self, NML3Cfg *l3cfg, GPtrArray **out_sin
             continue;
         }
 
-        if (changed) {
+        if (changed || is_reapply) {
             _LOGT("ecmp-route: multi-hop %s",
                   nmp_object_to_string(route_obj, NMP_OBJECT_TO_STRING_PUBLIC, sbuf, sizeof(sbuf)));
-            if (!mhrts_add) {
-                /* mhrts_add doesn't own the pointers. It relies on them being alive long enough. */
-                mhrts_add = g_ptr_array_new();
-            }
-            g_ptr_array_add(mhrts_add, (gpointer) route_obj);
-        }
-    }
-
-    _netns_ip_route_ecmp_update_mh(self, mhrts_del, mhrts_add);
-}
-
-void
-_netns_ip_route_ecmp_update_mh(NMNetns         *self,
-                               const GPtrArray *mhrts_del,
-                               const GPtrArray *mhrts_add)
-{
-    NMNetnsPrivate *priv = NM_NETNS_GET_PRIVATE(self);
-    guint           i;
-
-    if (mhrts_del) {
-        for (i = 0; i < mhrts_del->len; i++) {
-            const NMPObject *obj = mhrts_del->pdata[i];
-
-            if (!g_hash_table_remove(priv->ecmp_routes, obj))
-                nm_assert_not_reached();
-
-            nm_platform_object_delete(priv->platform, obj);
-        }
-    }
-
-    if (mhrts_add) {
-        for (i = 0; i < mhrts_add->len; i++) {
-            const NMPObject                *obj     = mhrts_add->pdata[i];
-            nm_auto_nmpobj const NMPObject *obj_old = NULL;
-            gpointer                        unused;
-
-            if (g_hash_table_steal_extended(priv->ecmp_routes,
-                                            obj,
-                                            (gpointer *) &obj_old,
-                                            &unused)) {
-                if (obj != obj_old)
-                    nm_platform_object_delete(priv->platform, obj_old);
-            }
-
-            if (!g_hash_table_add(priv->ecmp_routes, (gpointer) nmp_object_ref(obj)))
-                nm_assert_not_reached();
-
-            nm_platform_ip_route_add(priv->platform, NMP_NLM_FLAG_APPEND, obj);
+            nm_platform_ip_route_add(priv->platform, NMP_NLM_FLAG_APPEND, route_obj);
         }
     }
 }
@@ -828,11 +820,6 @@ nm_netns_init(NMNetns *self)
 
     priv->_self_signal_user_data = self;
     c_list_init(&priv->l3cfg_signal_pending_lst_head);
-
-    priv->ecmp_routes = g_hash_table_new_full((GHashFunc) nmp_object_id_hash,
-                                              (GEqualFunc) nmp_object_id_equal,
-                                              (GDestroyNotify) nmp_object_unref,
-                                              NULL);
 
     G_STATIC_ASSERT_EXPR(G_STRUCT_OFFSET(EcmpTrackObj, obj) == 0);
     priv->ecmp_track_by_obj =
@@ -920,7 +907,6 @@ dispose(GObject *object)
     nm_assert(c_list_is_empty(&priv->l3cfg_signal_pending_lst_head));
     nm_assert(!priv->shared_ips);
 
-    nm_clear_pointer(&priv->ecmp_routes, g_hash_table_destroy);
     nm_clear_pointer(&priv->ecmp_track_by_obj, g_hash_table_destroy);
     nm_clear_pointer(&priv->ecmp_track_by_ecmpid, g_hash_table_destroy);
 
