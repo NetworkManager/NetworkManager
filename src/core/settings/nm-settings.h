@@ -58,6 +58,8 @@ NMSettings *nm_settings_get(void);
 
 NMSettings *nm_settings_new(NMManager *manager);
 
+NMManager *nm_settings_get_manager(NMSettings *self);
+
 gboolean nm_settings_start(NMSettings *self, GError **error);
 
 typedef void (*NMSettingsAddCallback)(NMSettings            *settings,
