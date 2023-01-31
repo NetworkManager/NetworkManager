@@ -2367,7 +2367,7 @@ done:
         nm_platform_process_events(platform);
 
         if (!is_test_quick || (i_run + 1 == N_RUN) || nmtst_get_rand_one_case_in(5)) {
-            nmtstp_assert_platform(
+            nmtstp_check_platform(
                 platform,
                 nmtst_get_rand_one_case_in(5)
                     ? 0u
