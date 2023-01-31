@@ -8565,6 +8565,7 @@ nm_device_generate_connection(NMDevice *self,
                         nm_device_get_iface(master),
                         local->message);
             g_error_free(local);
+            NM_SET_OUT(out_maybe_later, TRUE);
             return NULL;
         }
     } else {
