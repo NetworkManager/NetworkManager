@@ -54,6 +54,9 @@ void nm_netns_shared_ip_release(NMNetnsSharedIPHandle *handle);
 /*****************************************************************************/
 
 void nm_netns_ip_route_ecmp_register(NMNetns *self, NML3Cfg *l3cfg, const NMPObject *obj);
-void nm_netns_ip_route_ecmp_commit(NMNetns *self, NML3Cfg *l3cfg, GPtrArray **routes);
+void nm_netns_ip_route_ecmp_commit(NMNetns    *self,
+                                   NML3Cfg    *l3cfg,
+                                   GPtrArray **routes,
+                                   gboolean    is_reapply);
 
 #endif /* __NM_NETNS_H__ */

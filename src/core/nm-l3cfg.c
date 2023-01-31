@@ -1180,7 +1180,10 @@ loop_done:
         /* NMNetns will merge the routes. The ones that found a merge partner are true multihop
          * routes, with potentially a next hop on different interfaces. The routes
          * that didn't find a merge partner are returned in "singlehop_routes". */
-        nm_netns_ip_route_ecmp_commit(self->priv.netns, self, &singlehop_routes);
+        nm_netns_ip_route_ecmp_commit(self->priv.netns,
+                                      self,
+                                      &singlehop_routes,
+                                      NM_IN_SET(commit_type, NM_L3_CFG_COMMIT_TYPE_REAPPLY));
 
         if (singlehop_routes) {
             for (i = 0; i < singlehop_routes->len; i++) {
