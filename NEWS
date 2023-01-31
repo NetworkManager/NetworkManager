@@ -8,40 +8,37 @@ subject to change and not guaranteed to be compatible with
 the later release.
 USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 
-* bond: add "balance-slb" option which implements source load balancing
-  with "balance-xor" mode and "vlan-srcmac" xmit_hash_policy. In this
-  mode, NetworkManager configures nftables to prevent loops in the
-  switch.
-* dns: support specifying DNS-over-TLS server name (SNI) for static
-  name servers. Only works with systemd-resolved plugin.
-* loopback: add support of loopback interface and a new connection type
-  "loopback". On D-Bus, the loopback interface now has the
-  "org.freedesktop.NetworkManager.Device.Loopback" interface instead of
-  "org.freedesktop.NetworkManager.Device.Generic".  Loopback handling is special
-  in that when the NetworkManager profile is deactivated, the interfaces will
-  still be up and configured with a 127.0.0.1 address.
-* Add support of IPv4 ECMP routes. The ECMP routes will get merged
+* Added support for source load balancing for Ethernet Bonds.
+* Allow specifying vhost name (SNI) for a manually DNS-over-TLS server.
+  Only works with systemd-resolved plugin.
+* Connections can now be activated on a loopback interface.
+* Added support of IPv4 ECMP routes. The ECMP routes will get merged
   automatically but the user need to configure them as single-hop routes
   specifying a valid weight.
 * Add new "reapply" dispatcher event.
-* Add support of VTI and VTI6 ip-tunnels. Add a new property "ip-tunnel.fwmark".
-* vlan: add support of "vlan.protocol" property to set 802.1Q (default) or
-  802.1ad.
-* firewall: pass "--wait 2" to iptables invocations to handle races with concurrent
+* Added support of VTI and VTI6 ip-tunnels along with a new property,
+  "ip-tunnel.fwmark".
+* VLAN can now support 802.1ad tagging instead of 802.1Q.
+* Invocations of iptables now use "--wait 2" to handle races with concurrent
   calls. This fixes misbehavior with IPv4 shared mode.
-* DHCP: expose used DHCPV4 client-id and DHCPv6 DUID in lease information.
-* VPN: support new "ipv[46].auto-route-ext-gw" option to suppress adding direct
-  route to external VPN gateway.
-* ovs: add support of "ovs-dpdk.n-rxq-desc", "ovs-dpdk.n-txq-desc",
-  "ovs-interface.ofport-request" and "ovs-port.trunks" properties.
-* Add support of "other_config" for OVS bridge, port or interface. This
+* The DHCP client-id and DHCPv6 DUID are now exposed along with the lease
+  information.
+* Optionally suppress adding direct route to an external VPN gateway
+  with the new "ipv[46].auto-route-ext-gw" property.
+* Open vSwitch support gained new properties: "ovs-dpdk.n-rxq-desc",
+  "ovs-dpdk.n-txq-desc", "ovs-interface.ofport-request" and
+  "ovs-port.trunks".
+* Added support of "other_config" for OVS bridge, port or interface. This
   property is not supported by nmcli.
 * nmtui now supports editing Wi-Fi WPA-Enterprise, Ethernet with 802.1X
   authentication and MACsec connection profiles.
-* nmcli: allow changing "connection.uuid" and "connection.type"
-  in offline mode and setting the UUID when creating a connection.
-* nmcli: accept abbreviations for the UUID with the connection selector
+* nmcli now allows changing "connection.uuid" and "connection.type"
+  properties in offline mode and setting the UUID when creating a
+  connection.
+* nmcli now accepts abbreviations for the UUID with the connection selector
   in `nmcli connection $operator uuid $uuid`.
+* DHCPv6 leases are now declined when addresses fail DAD.
+* Documentation improvements.
 * Many internal improvements and bug fixes.
 
 The following changes were backported to 1.40.x releases between 1.40.0
