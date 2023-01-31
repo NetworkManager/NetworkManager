@@ -6,9 +6,9 @@ examples = [
   ['change-ipv4-addresses', []],
 ]
 
-moc = find_program('moc-qt4', required: false)
+moc = find_program('moc', required: false)
 if not moc.found()
-  moc = qt_core_dep.get_pkgconfig_variable('moc_location')
+  moc = qt_dep.get_pkgconfig_variable('moc_location')
 endif
 
 example = 'monitor-nm-running'
@@ -30,9 +30,7 @@ foreach example: examples
     include_directories: libnm_core_public_inc,
     dependencies: [
       dbus_dep,
-      qt_core_dep,
-      qt_dbus_dep,
-      qt_network_dep,
+      qt_dep,
     ],
     link_depends: example[1],
   )
