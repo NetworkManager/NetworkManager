@@ -2166,8 +2166,12 @@ _ensure_onlink_routes(void)
     int i;
 
     for (i = 0; i < G_N_ELEMENTS(NMTSTP_ENV1_DEVICE_NAME) && NMTSTP_ENV1_DEVICE_NAME[i]; i++) {
-        nmtstp_run_command("ip route append 7.7.7.0/24 dev %s", NMTSTP_ENV1_DEVICE_NAME[i]);
-        nmtstp_run_command("ip route append 7:7:7::/64 dev %s", NMTSTP_ENV1_DEVICE_NAME[i]);
+        nmtstp_run_command("ip route append 7.7.7.0/24 dev %s%s",
+                           NMTSTP_ENV1_DEVICE_NAME[i],
+                           nmtst_is_debug() ? "" : " &>/dev/null");
+        nmtstp_run_command("ip route append 7:7:7::/64 dev %s%s",
+                           NMTSTP_ENV1_DEVICE_NAME[i],
+                           nmtst_is_debug() ? "" : " &>/dev/null");
     }
 }
 
