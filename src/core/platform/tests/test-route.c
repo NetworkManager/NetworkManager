@@ -2166,8 +2166,12 @@ _ensure_onlink_routes(void)
     int i;
 
     for (i = 0; i < G_N_ELEMENTS(NMTSTP_ENV1_DEVICE_NAME) && NMTSTP_ENV1_DEVICE_NAME[i]; i++) {
-        nmtstp_run_command("ip route append 7.7.7.0/24 dev %s", NMTSTP_ENV1_DEVICE_NAME[i]);
-        nmtstp_run_command("ip route append 7:7:7::/64 dev %s", NMTSTP_ENV1_DEVICE_NAME[i]);
+        nmtstp_run_command("ip route append 7.7.7.0/24 dev %s%s",
+                           NMTSTP_ENV1_DEVICE_NAME[i],
+                           nmtst_is_debug() ? "" : " &>/dev/null");
+        nmtstp_run_command("ip route append 7:7:7::/64 dev %s%s",
+                           NMTSTP_ENV1_DEVICE_NAME[i],
+                           nmtst_is_debug() ? "" : " &>/dev/null");
     }
 }
 
@@ -2180,9 +2184,6 @@ test_cache_consistency_routes(gconstpointer test_data)
     const int                    N_RUN         = is_test_quick ? 50 : 500;
     int                          i_run;
     gs_unref_ptrarray GPtrArray *keeper = g_ptr_array_new_with_free_func(g_free);
-
-    g_test_skip("Test is currently known to fail. TODO. SKIP");
-    return;
 
     _ensure_onlink_routes();
 
@@ -2230,10 +2231,12 @@ test_cache_consistency_routes(gconstpointer test_data)
                 continue;
             }
             nmtstp_run_command("ip -%c route flush dev %s"
-                               "%s" /* redirect */
+                               " table %s" /* table */
+                               "%s"        /* redirect */
                                "",
                                addr_family_char[IS_IPv4],
                                ifname,
+                               nmtst_rand_select_str("main", "10222", "10223", "all"),
                                nmtst_is_debug() ? "" : " &>/dev/null");
             _ensure_onlink_routes();
             goto done;
@@ -2306,7 +2309,17 @@ test_cache_consistency_routes(gconstpointer test_data)
                 }
                 extra_options[n_extra_options++] = "dev";
                 extra_options[n_extra_options++] = NMTSTP_ENV1_DEVICE_NAME[nmtst_get_rand_bool()];
-                if (nmtst_get_rand_one_case_in(3)) {
+                if (IS_IPv4 && i == 0) {
+                    /* For IPv4, there is a problem if we configure a route with
+                     * only one next-hop and a weight. In that case, kernel allows
+                     * to add duplicates (that only differ by weight), but on netlink
+                     * the weight is not exposed, so the routes look identical and
+                     * are deduplicated by the hash.
+                     * See https://bugzilla.redhat.com/show_bug.cgi?id=2162315
+                     *
+                     * This needs a kernel fix. Workaround that issue here, otherwise the test
+                     * will randomly fail. */
+                } else if (nmtst_get_rand_one_case_in(3)) {
                     extra_options[n_extra_options++] = "weight";
                     extra_options[n_extra_options++] = "5";
                 }
@@ -2351,7 +2364,7 @@ done:
         nm_platform_process_events(platform);
 
         if (!is_test_quick || (i_run + 1 == N_RUN) || nmtst_get_rand_one_case_in(5)) {
-            nmtstp_assert_platform(
+            nmtstp_check_platform(
                 platform,
                 nmtst_get_rand_one_case_in(5)
                     ? 0u

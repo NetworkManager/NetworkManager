@@ -139,7 +139,10 @@ int nmtstp_run_command(const char *format, ...) _nm_printf(1, 2);
 
 /*****************************************************************************/
 
-void nmtstp_assert_platform(NMPlatform *platform, guint32 obj_type_flags);
+gboolean
+nmtstp_check_platform_full(NMPlatform *platform, guint32 obj_type_flags, gboolean do_assert);
+
+void nmtstp_check_platform(NMPlatform *platform, guint32 obj_type_flags);
 
 /*****************************************************************************/
 

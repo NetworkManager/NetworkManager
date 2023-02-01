@@ -911,13 +911,14 @@ _assert_platform_normalize_all(GPtrArray *arr)
     return normalized;
 }
 
-static void
+static gboolean
 _assert_platform_compare_arr(NMPObjectType obj_type,
                              const char   *detail_type,
                              GPtrArray    *arr1,
                              GPtrArray    *arr2,
                              gboolean      normalized,
-                             gboolean      share_multi_idx)
+                             gboolean      share_multi_idx,
+                             gboolean      do_assert)
 {
     const NMPClass *obj_class = nmp_class_from_type(obj_type);
     char            sbuf1[NM_UTILS_TO_STRING_BUFFER_SIZE];
@@ -925,48 +926,64 @@ _assert_platform_compare_arr(NMPObjectType obj_type,
     int             idx;
     int             idx_pointer_comp = -1;
 
+#define _fail_msg(do_assert, ...) \
+    G_STMT_START                  \
+    {                             \
+        if (do_assert) {          \
+            g_error(__VA_ARGS__); \
+        } else {                  \
+            _LOGW(__VA_ARGS__);   \
+            return FALSE;         \
+        }                         \
+    }                             \
+    G_STMT_END
+
     for (idx = 0; TRUE; idx++) {
         if (nm_g_ptr_array_len(arr1) == idx && nm_g_ptr_array_len(arr2) == idx)
             break;
         if (idx >= nm_g_ptr_array_len(arr1)) {
             _assert_platform_printarr(obj_type, arr1, arr2);
-            g_error("Comparing %s (%s) for platform fails. Platform now shows entry #%u which is "
-                    "not in the cache but expected %s",
-                    obj_class->obj_type_name,
-                    detail_type,
-                    idx,
-                    nmp_object_to_string(arr2->pdata[idx],
-                                         NMP_OBJECT_TO_STRING_ALL,
-                                         sbuf1,
-                                         sizeof(sbuf1)));
+            _fail_msg(do_assert,
+                      "Comparing %s (%s) for platform fails. Platform now shows entry #%u which is "
+                      "not in the cache but expected %s",
+                      obj_class->obj_type_name,
+                      detail_type,
+                      idx,
+                      nmp_object_to_string(arr2->pdata[idx],
+                                           NMP_OBJECT_TO_STRING_ALL,
+                                           sbuf1,
+                                           sizeof(sbuf1)));
         }
         if (idx >= nm_g_ptr_array_len(arr2)) {
             _assert_platform_printarr(obj_type, arr1, arr2);
-            g_error("Comparing %s (%s) for platform fails. Platform has no more entry #%u which is "
-                    "still in the cache as %s",
-                    obj_class->obj_type_name,
-                    detail_type,
-                    idx,
-                    nmp_object_to_string(arr1->pdata[idx],
-                                         NMP_OBJECT_TO_STRING_ALL,
-                                         sbuf1,
-                                         sizeof(sbuf1)));
+            _fail_msg(
+                do_assert,
+                "Comparing %s (%s) for platform fails. Platform has no more entry #%u which is "
+                "still in the cache as %s",
+                obj_class->obj_type_name,
+                detail_type,
+                idx,
+                nmp_object_to_string(arr1->pdata[idx],
+                                     NMP_OBJECT_TO_STRING_ALL,
+                                     sbuf1,
+                                     sizeof(sbuf1)));
         }
         if (!nmp_object_equal(arr1->pdata[idx], arr2->pdata[idx])) {
             _assert_platform_printarr(obj_type, arr1, arr2);
-            g_error("Comparing %s (%s) for platform fails. Platform entry #%u is now %s but in "
-                    "cache is %s",
-                    obj_class->obj_type_name,
-                    detail_type,
-                    idx,
-                    nmp_object_to_string(arr2->pdata[idx],
-                                         NMP_OBJECT_TO_STRING_ALL,
-                                         sbuf1,
-                                         sizeof(sbuf1)),
-                    nmp_object_to_string(arr1->pdata[idx],
-                                         NMP_OBJECT_TO_STRING_ALL,
-                                         sbuf2,
-                                         sizeof(sbuf2)));
+            _fail_msg(do_assert,
+                      "Comparing %s (%s) for platform fails. Platform entry #%u is now %s but in "
+                      "cache is %s",
+                      obj_class->obj_type_name,
+                      detail_type,
+                      idx,
+                      nmp_object_to_string(arr2->pdata[idx],
+                                           NMP_OBJECT_TO_STRING_ALL,
+                                           sbuf1,
+                                           sizeof(sbuf1)),
+                      nmp_object_to_string(arr1->pdata[idx],
+                                           NMP_OBJECT_TO_STRING_ALL,
+                                           sbuf2,
+                                           sizeof(sbuf2)));
         }
 
         if (!normalized && (share_multi_idx != (arr1->pdata[idx] == arr2->pdata[idx]))
@@ -976,20 +993,23 @@ _assert_platform_compare_arr(NMPObjectType obj_type,
 
     if (idx_pointer_comp != -1) {
         _assert_platform_printarr(obj_type, arr1, arr2);
-        g_error("Comparing %s (%s) for platform fails for pointer comparison. Platform entry "
-                "#%u is now %s but in cache is %s",
-                obj_class->obj_type_name,
-                detail_type,
-                idx_pointer_comp,
-                nmp_object_to_string(arr2->pdata[idx_pointer_comp],
-                                     NMP_OBJECT_TO_STRING_ALL,
-                                     sbuf1,
-                                     sizeof(sbuf1)),
-                nmp_object_to_string(arr1->pdata[idx_pointer_comp],
-                                     NMP_OBJECT_TO_STRING_ALL,
-                                     sbuf2,
-                                     sizeof(sbuf2)));
+        _fail_msg(do_assert,
+                  "Comparing %s (%s) for platform fails for pointer comparison. Platform entry "
+                  "#%u is now %s but in cache is %s",
+                  obj_class->obj_type_name,
+                  detail_type,
+                  idx_pointer_comp,
+                  nmp_object_to_string(arr2->pdata[idx_pointer_comp],
+                                       NMP_OBJECT_TO_STRING_ALL,
+                                       sbuf1,
+                                       sizeof(sbuf1)),
+                  nmp_object_to_string(arr1->pdata[idx_pointer_comp],
+                                       NMP_OBJECT_TO_STRING_ALL,
+                                       sbuf2,
+                                       sizeof(sbuf2)));
     }
+
+    return TRUE;
 }
 
 /*****************************************************************************/
@@ -1211,8 +1231,8 @@ out:
     return result;
 }
 
-void
-nmtstp_assert_platform(NMPlatform *platform, guint32 obj_type_flags)
+gboolean
+nmtstp_check_platform_full(NMPlatform *platform, guint32 obj_type_flags, gboolean do_assert)
 {
     static const NMPObjectType obj_types[] = {
         NMP_OBJECT_TYPE_IP4_ADDRESS,
@@ -1275,7 +1295,14 @@ nmtstp_assert_platform(NMPlatform *platform, guint32 obj_type_flags)
             g_ptr_array_sort(arr2, _assert_platform_sort_objs);
         }
 
-        _assert_platform_compare_arr(obj_type, "main", arr1, arr2, normalized, share_multi_idx);
+        if (!_assert_platform_compare_arr(obj_type,
+                                          "main",
+                                          arr1,
+                                          arr2,
+                                          normalized,
+                                          share_multi_idx,
+                                          do_assert))
+            return FALSE;
 
         if (NM_IN_SET(obj_type, NMP_OBJECT_TYPE_IP4_ROUTE, NMP_OBJECT_TYPE_IP6_ROUTE)) {
             /* For routes, the WEAK_ID needs to be sorted and match the expected order. Check that. */
@@ -1309,12 +1336,14 @@ nmtstp_assert_platform(NMPlatform *platform, guint32 obj_type_flags)
                 arr2b_sorted = nm_g_ptr_array_new_clone(arr2b, NULL, NULL, NULL);
                 g_ptr_array_sort(arr1b_sorted, _assert_platform_sort_objs);
                 g_ptr_array_sort(arr2b_sorted, _assert_platform_sort_objs);
-                _assert_platform_compare_arr(obj_type,
-                                             "weak-id-sorted",
-                                             arr1b_sorted,
-                                             arr2b_sorted,
-                                             normalized,
-                                             share_multi_idx);
+                if (!_assert_platform_compare_arr(obj_type,
+                                                  "weak-id-sorted",
+                                                  arr1b_sorted,
+                                                  arr2b_sorted,
+                                                  normalized,
+                                                  share_multi_idx,
+                                                  do_assert))
+                    return FALSE;
 
                 if (obj_type == NMP_OBJECT_TYPE_IP6_ROUTE) {
                     /* For IPv6, the weak-ids are actually not sorted correctly.
@@ -1329,22 +1358,33 @@ nmtstp_assert_platform(NMPlatform *platform, guint32 obj_type_flags)
                     /* For IPv4, it also does not reliably always work. This may
                      * be a bug we want to fix. For now, ignore the check.
                      *
-                     * This is probably caused by kernel bug
-                     * https://bugzilla.redhat.com/show_bug.cgi?id=2162315
-                     * for which I think there is no workaround.
+                     * a) Kernel can wrongly allow to configure the same route twice.
+                     * That means, the same route is visible in `ip route` output,
+                     * meaning, it would be added twice to the platform cache.
+                     * At least due to that problem, may the weak-id not be properly sorted.
+                     * See https://bugzilla.redhat.com/show_bug.cgi?id=2165720 which is
+                     * a bug of kernel allowing to configure the exact same route twice.
                      *
-                     * Also, rhbz#2162315 means NMPlatform will merge two different
-                     * routes together, if one of them were deleted, the RTM_DELROUTE
-                     * message would wrongly delete single entry, leading to cache
-                     * inconsistency. */
+                     * b) See https://bugzilla.redhat.com/show_bug.cgi?id=2162315 which is
+                     * a bug where kernel does allow to configure single-hop routes that differ by
+                     * their next-hop weight, but on the netlink API those routes look the same.
+                     *
+                     * Due to a) and b), the platform cache may contain only one instance
+                     * of a route, which is visible more than once in `ip route` output.
+                     * This merging of different routes causes problems, and it also means
+                     * that the RTM_NEWROUTE events are wrongly interpreted and the weak-id
+                     * is not properly sorted.
+                     */
                 } else {
                     /* Assert that also the original, not-sorted lists agree. */
-                    _assert_platform_compare_arr(obj_type,
-                                                 "weak-id",
-                                                 arr1b,
-                                                 arr2b,
-                                                 normalized,
-                                                 share_multi_idx);
+                    if (!_assert_platform_compare_arr(obj_type,
+                                                      "weak-id",
+                                                      arr1b,
+                                                      arr2b,
+                                                      normalized,
+                                                      share_multi_idx,
+                                                      do_assert))
+                        return FALSE;
                 }
 
                 for (i = 0; i < arr1b->len; i++) {
@@ -1365,6 +1405,25 @@ nmtstp_assert_platform(NMPlatform *platform, guint32 obj_type_flags)
     _LOGD("assert-platform: done");
 
     g_assert_cmpint(obj_type_flags, ==, 0u);
+
+    return TRUE;
+}
+
+void
+nmtstp_check_platform(NMPlatform *platform, guint32 obj_type_flags)
+{
+    if (!nmtstp_check_platform_full(platform, obj_type_flags, FALSE)) {
+        /* It's unclear why this failure sometimes happens. It happens
+         * on gitlab-ci on Ubuntu/Debian(??).
+         *
+         * Retrying shortly after seems to avoid it. */
+        g_usleep(20 * 1000);
+        nm_platform_process_events(platform);
+        nmtstp_run_command("ip route");
+        nm_platform_process_events(platform);
+
+        nmtstp_check_platform_full(platform, obj_type_flags, TRUE);
+    }
 }
 
 /*****************************************************************************/
