@@ -599,6 +599,7 @@ typedef enum {
     NM_UNMANAGED_USER_EXPLICIT = (1LL << 3),
     NM_UNMANAGED_USER_SETTINGS = (1LL << 4),
     NM_UNMANAGED_USER_DOWN     = (1LL << 10),
+    NM_UNMANAGED_USER_SYNC     = (1LL << 11),
 
     /* These flags can be non-effective and be overwritten
      * by other flags. */
@@ -608,7 +609,7 @@ typedef enum {
     NM_UNMANAGED_EXTERNAL_DOWN = (1LL << 8),
     NM_UNMANAGED_IS_SLAVE      = (1LL << 9),
 
-    NM_UNMANAGED_ALL = ((1LL << 11) - 1),
+    NM_UNMANAGED_ALL = ((1LL << 12) - 1),
 } NMUnmanagedFlags;
 
 typedef enum {
@@ -637,6 +638,7 @@ void nm_device_set_unmanaged_by_user_conf(NMDevice *self);
 void nm_device_set_unmanaged_by_quitting(NMDevice *device);
 
 void nm_device_disable(NMDevice *self);
+void nm_device_enable(NMDevice *self);
 
 gboolean nm_device_check_unrealized_device_managed(NMDevice *self);
 

@@ -3451,8 +3451,12 @@ _device_realize_finish(NMManager *self, NMDevice *device, const NMPlatformLink *
             nm_device_assume_state_reset(device);
 
         /* Disable interface */
-        if (flags & NM_UNMANAGED_USER_DOWN)
+        if (flags & NM_UNMANAGED_USER_DOWN) {
+            if (flags & NM_UNMANAGED_USER_SYNC) {
+                nm_device_enable(device);
+            }
             nm_device_disable(device);
+        }
 
         return;
     }

@@ -14220,6 +14220,7 @@ NM_UTILS_FLAGS2STR_DEFINE(nm_unmanaged_flags2str,
                           NM_UTILS_FLAGS2STR(NM_UNMANAGED_BY_DEFAULT, "by-default"),
                           NM_UTILS_FLAGS2STR(NM_UNMANAGED_USER_SETTINGS, "user-settings"),
                           NM_UTILS_FLAGS2STR(NM_UNMANAGED_USER_DOWN, "disable-interface"),
+                          NM_UTILS_FLAGS2STR(NM_UNMANAGED_USER_SYNC, "enable-interface"),
                           NM_UTILS_FLAGS2STR(NM_UNMANAGED_USER_CONF, "user-conf"),
                           NM_UTILS_FLAGS2STR(NM_UNMANAGED_USER_UDEV, "user-udev"),
                           NM_UTILS_FLAGS2STR(NM_UNMANAGED_EXTERNAL_DOWN, "external-down"),
@@ -14332,7 +14333,7 @@ _get_managed_by_flags(NMUnmanagedFlags flags, NMUnmanagedFlags mask, gboolean fo
         /* if the device is managed by user-decision, certain other flags
          * are ignored. */
         flags &= ~(NM_UNMANAGED_BY_DEFAULT | NM_UNMANAGED_USER_UDEV | NM_UNMANAGED_USER_CONF
-                   | NM_UNMANAGED_EXTERNAL_DOWN | NM_UNMANAGED_USER_DOWN);
+                   | NM_UNMANAGED_EXTERNAL_DOWN | NM_UNMANAGED_USER_DOWN | NM_UNMANAGED_USER_SYNC);
     }
 
     return flags == NM_UNMANAGED_NONE;
@@ -14594,7 +14595,7 @@ nm_device_check_unrealized_device_managed(NMDevice *self)
                                                    self,
                                                    10,
                                                    0,
-                                                   2,
+                                                   3,
                                                    1,
                                                    1);
     if (state != 1)
@@ -14670,7 +14671,7 @@ nm_device_set_unmanaged_by_user_conf(NMDevice *self)
                                                    self,
                                                    10,
                                                    0,
-                                                   2,
+                                                   3,
                                                    -1,
                                                    1);
 
@@ -14680,11 +14681,15 @@ nm_device_set_unmanaged_by_user_conf(NMDevice *self)
         break;
     case 1:
         set_op = NM_UNMAN_FLAG_OP_SET_MANAGED;
-        flag |= NM_UNMANAGED_USER_DOWN;
+        flag |= (NM_UNMANAGED_USER_DOWN | NM_UNMANAGED_USER_SYNC);
         break;
     case 2:
         set_op = NM_UNMAN_FLAG_OP_SET_UNMANAGED;
         flag |= NM_UNMANAGED_USER_DOWN;
+        break;
+    case 3:
+        set_op = NM_UNMAN_FLAG_OP_SET_UNMANAGED;
+        flag |= (NM_UNMANAGED_USER_DOWN | NM_UNMANAGED_USER_SYNC);
         break;
     default:
         set_op = NM_UNMAN_FLAG_OP_FORGET;
@@ -14719,6 +14724,12 @@ void
 nm_device_disable(NMDevice *self)
 {
     nm_device_take_down(self, FALSE);
+}
+
+void
+nm_device_enable(NMDevice *self)
+{
+    nm_device_take_up(self, TRUE);
 }
 
 /*****************************************************************************/
@@ -17698,9 +17709,10 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
             }
 
             flag = NM_UNMANAGED_USER_EXPLICIT;
-            if (managed_state > 0) {
+
+            if (managed_state > 0)
                 flag |= NM_UNMANAGED_USER_DOWN;
-            }
+
             nm_device_set_unmanaged_by_flags(self, flag, !managed, reason);
         }
         break;
