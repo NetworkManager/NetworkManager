@@ -1116,7 +1116,11 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
      *        <para><literal>"mtu"</literal> - an unsigned 32 bit integer.</para>
      *      </listitem>
      *      <listitem>
-     *        <para><literal>"onlink"</literal> - a boolean value.</para>
+     *        <para><literal>"onlink"</literal> - a boolean value. The onlink flag
+     *          is ignored for IPv4 routes without a gateway. That also means,
+     *          with a positive "weight" the route cannot merge with ECMP routes
+     *          which are onlink and have a gateway.
+     *        </para>
      *      </listitem>
      *      <listitem>
      *        <para><literal>"quickack"</literal> - a boolean value.</para>
