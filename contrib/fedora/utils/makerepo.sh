@@ -402,6 +402,12 @@ pushd "$DIRNAME"
         git remote add origin "https://github.com/systemd/systemd.git"
     elif [[ "$BUILD_TYPE" == "vpnc" ]]; then
         git_remote_add_github ndpgroup/vpnc
+    elif [[ "$BUILD_TYPE" == "cloud-init" ]]; then
+        git remote add origin "https://git.launchpad.net/cloud-init"
+    elif [[ "$BUILD_TYPE" == "firewalld" ]]; then
+        git remote add origin "https://github.com/firewalld/firewalld.git"
+    elif [[ "$BUILD_TYPE" == "nftables" ]]; then
+        git remote add origin "git://git.netfilter.org/nftables"
     fi
     LOCAL_MIRROR_URL="$(LANG=C git remote -v | sed -n 's/^origin\t*\([^\t].*\) (fetch)/\1/p')"
     LOCAL_MIRROR="$(get_local_mirror "$LOCAL_MIRROR_URL")"
