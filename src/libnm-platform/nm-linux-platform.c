@@ -5346,7 +5346,7 @@ _nl_msg_new_route(uint16_t nlmsg_type, uint16_t nlmsg_flags, const NMPObject *ob
     const guint32                lock    = ip_route_get_lock_flag(NMP_OBJECT_CAST_IP_ROUTE(obj));
     const guint32                table =
         nm_platform_route_table_uncoerce(NMP_OBJECT_CAST_IP_ROUTE(obj)->table_coerced, TRUE);
-    const struct rtmsg rtmsg = {
+    struct rtmsg rtmsg = {
         .rtm_family   = klass->addr_family,
         .rtm_tos      = IS_IPv4 ? obj->ip4_route.tos : 0,
         .rtm_table    = table <= 0xFF ? table : RT_TABLE_UNSPEC,
@@ -5354,7 +5354,7 @@ _nl_msg_new_route(uint16_t nlmsg_type, uint16_t nlmsg_flags, const NMPObject *ob
         .rtm_scope =
             IS_IPv4 ? nm_platform_route_scope_inv(obj->ip4_route.scope_inv) : RT_SCOPE_NOWHERE,
         .rtm_type    = nm_platform_route_type_uncoerce(NMP_OBJECT_CAST_IP_ROUTE(obj)->type_coerced),
-        .rtm_flags   = obj->ip_route.r_rtm_flags & ((unsigned) (RTNH_F_ONLINK)),
+        .rtm_flags   = 0,
         .rtm_dst_len = obj->ip_route.plen,
         .rtm_src_len = IS_IPv4 ? 0 : NMP_OBJECT_CAST_IP6_ROUTE(obj)->src_plen,
     };
@@ -5364,6 +5364,17 @@ _nl_msg_new_route(uint16_t nlmsg_type, uint16_t nlmsg_flags, const NMPObject *ob
     nm_assert(
         NM_IN_SET(NMP_OBJECT_GET_TYPE(obj), NMP_OBJECT_TYPE_IP4_ROUTE, NMP_OBJECT_TYPE_IP6_ROUTE));
     nm_assert(NM_IN_SET(nlmsg_type, RTM_NEWROUTE, RTM_DELROUTE));
+
+    if (NM_FLAGS_HAS(obj->ip_route.r_rtm_flags, ((unsigned) (RTNH_F_ONLINK)))) {
+        if (IS_IPv4 && obj->ip4_route.gateway == 0) {
+            /* Kernel does not allow setting the onlink flag, if there is no gateway.
+             * We silently don't configure the flag.
+             *
+             * For multi-hop routes, we will set the flag for each next-hop (which
+             * has a gateway set). */
+        } else
+            rtmsg.rtm_flags |= ((unsigned) RTNH_F_ONLINK);
+    }
 
     msg = nlmsg_alloc_new(0, nlmsg_type, nlmsg_flags);
 
