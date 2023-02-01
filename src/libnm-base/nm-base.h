@@ -415,4 +415,12 @@ typedef struct {
 #define _NM_CRYPTO_ERROR _nm_crypto_error_quark()
 GQuark _nm_crypto_error_quark(void);
 
+typedef enum {
+    NM_DNS_IP_CONFIG_TYPE_REMOVED = -1,
+
+    NM_DNS_IP_CONFIG_TYPE_DEFAULT = 0,
+    NM_DNS_IP_CONFIG_TYPE_BEST_DEVICE,
+    NM_DNS_IP_CONFIG_TYPE_VPN,
+} NMDnsIPConfigType;
+
 #endif /* __NM_LIBNM_BASE_H__ */
