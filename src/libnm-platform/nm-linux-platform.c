@@ -5419,6 +5419,7 @@ _nl_msg_new_route(uint16_t nlmsg_type, uint16_t nlmsg_flags, const NMPObject *ob
 
         for (i = 0u; i < obj->ip4_route.n_nexthops; i++) {
             struct rtnexthop *rtnh;
+            in_addr_t         gw;
 
             rtnh = nlmsg_reserve(msg, sizeof(*rtnh), NLMSG_ALIGNTO);
             if (!rtnh)
@@ -5430,17 +5431,28 @@ _nl_msg_new_route(uint16_t nlmsg_type, uint16_t nlmsg_flags, const NMPObject *ob
             if (i == 0u) {
                 rtnh->rtnh_hops    = NM_MAX(obj->ip4_route.weight, 1u) - 1u;
                 rtnh->rtnh_ifindex = obj->ip4_route.ifindex;
-                NLA_PUT_U32(msg, RTA_GATEWAY, obj->ip4_route.gateway);
+                gw                 = obj->ip4_route.gateway;
             } else {
                 const NMPlatformIP4RtNextHop *n = &obj->_ip4_route.extra_nexthops[i - 1u];
 
                 rtnh->rtnh_hops    = NM_MAX(n->weight, 1u) - 1u;
                 rtnh->rtnh_ifindex = n->ifindex;
-                NLA_PUT_U32(msg, RTA_GATEWAY, n->gateway);
+                gw                 = n->gateway;
             }
+            NLA_PUT_U32(msg, RTA_GATEWAY, gw);
 
             rtnh->rtnh_flags = 0;
-            rtnh->rtnh_len   = (char *) nlmsg_tail(nlmsg_hdr(msg)) - (char *) rtnh;
+
+            if (obj->ip4_route.n_nexthops > 1
+                && NM_FLAGS_HAS(obj->ip_route.r_rtm_flags, (unsigned) (RTNH_F_ONLINK)) && gw != 0) {
+                /* Unlike kernel, we only track the onlink flag per NMPlatformIP4Address, and
+                 * not per nexthop. That is fine for NetworkManager configuring addresses.
+                 * It is not fine for tracking addresses from kernel in platform cache,
+                 * because the rtnh_flags of the nexthops need to be part of nmp_object_id_cmp(). */
+                rtnh->rtnh_flags |= RTNH_F_ONLINK;
+            }
+
+            rtnh->rtnh_len = (char *) nlmsg_tail(nlmsg_hdr(msg)) - (char *) rtnh;
         }
 
         nla_nest_end(msg, multipath);

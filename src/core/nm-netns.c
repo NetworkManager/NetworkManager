@@ -7,6 +7,8 @@
 
 #include "nm-netns.h"
 
+#include <linux/rtnetlink.h>
+
 #include "libnm-glib-aux/nm-dedup-multi.h"
 #include "libnm-glib-aux/nm-c-list.h"
 
@@ -687,7 +689,9 @@ nm_netns_ip_route_ecmp_commit(NMNetns    *self,
                  * after l3cfg configured that route. We achieve that by
                  * scheduling another idle commit on "l3cfg". */
                 track_obj->is_new = FALSE;
-                if (route && route->gateway == 0) {
+                if (route
+                    && (route->gateway == 0
+                        || NM_FLAGS_HAS(route->r_rtm_flags, (unsigned) RTNH_F_ONLINK))) {
                     /* This route is onlink. We don't need to configure an onlink route
                      * to the gateway, and the route is immediately ready for configuration. */
                     track_obj->is_ready = TRUE;
