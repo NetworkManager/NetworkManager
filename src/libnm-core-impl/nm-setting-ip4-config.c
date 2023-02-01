@@ -1143,11 +1143,15 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
      *          The default is <literal>unicast</literal>.</para>
      *      </listitem>
      *      <listitem>
-     *        <para><literal>"weight"</literal> - an unsigned 32 bit integer ranging from 0 to 256. This indicates
-     *          that the IPv4 route is a ECMP route and is only allowed for routes that specify a next-hop.
-     *          NetworkManager will automatically merge compatible routes into ECMP multi-hop routes.
-     *          Setting to zero or omitting the attribute configures single hop routes that won't get
-     *          merged. If the route finds no merge partner, it is configured as single hop route.</para>
+     *        <para><literal>"weight"</literal> - an unsigned 32 bit integer
+     *        ranging from 0 to 256. A non-zero weight indicates that the IPv4
+     *        route is an ECMP IPv4 route.  NetworkManager will automatically
+     *        merge compatible ECMP routes into multi-hop routes.  Setting to
+     *        zero or omitting the attribute configures single hop routes that
+     *        won't get merged. If the route finds no merge partner, it is
+     *        configured as single hop route.</para> <para>Note that in
+     *        NetworkManager, currently all nexthops of a ECMP route must share
+     *        the same "onlink" flag in order to be mergable.</para>
      *      </listitem>
      *      <listitem>
      *        <para><literal>"window"</literal> - an unsigned 32 bit integer.</para>
