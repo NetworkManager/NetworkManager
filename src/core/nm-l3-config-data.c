@@ -2851,6 +2851,22 @@ _init_from_connection_ip(NML3ConfigData *self, int addr_family, NMConnection *co
 
         nm_utils_ip_route_attribute_to_platform(addr_family, s_route, &r.rx, -1);
 
+        if (IS_IPv4 && r.r4.gateway == 0) {
+            /* As far as kernel is concerned, an IPv4 without gateway cannot have
+             * the onlink flag set, we need to clear it. If we wouldn't clear it,
+             * then the address we would add in kernel would be entirely different than
+             * the one we create here (because the "onlink" flag is part of the
+             * identifier of a route, see nm_platform_ip4_route_cmp()).
+             *
+             * Note however that for ECMP routes we currently can only merge routes
+             * that agree in their onlink flag. So a route without gateway cannot
+             * merge with an onlink route that has a gateway. That needs fixing,
+             * by not treating the onlink flag as for the entire route, but allowing
+             * to merge ECMP routes with different onlink flag. And first, we need
+             * to track the onlink flag for the nexthop (NMPlatformIP4RtNextHop). */
+            r.r4.r_rtm_flags &= ~((unsigned) RTNH_F_ONLINK);
+        }
+
         nm_l3_config_data_add_route(self, addr_family, NULL, &r.rx);
     }
 
