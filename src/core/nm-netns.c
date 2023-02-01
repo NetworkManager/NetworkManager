@@ -105,7 +105,19 @@ typedef struct {
     /* Calling nm_netns_ip_route_ecmp_register() will ensure that the tracked
      * entry is non-dirty. This can be used to remove stale entries. */
     bool dirty : 1;
+
+    /* This flag is set during nm_netns_ip_route_ecmp_register(), when first tracking the
+     * route. It is cleared on the next nm_netns_ip_route_ecmp_commit(). It thus only
+     * exists for a short time, to know during a commit that the route is new and
+     * we need to do something special. */
     bool is_new : 1;
+
+    /* The entry is ready to be configured. This exists, because the nexthop of
+     * a route must be reachable directly (being onlink). That is, we may need
+     * to add a direct, single-hop route to the gateway, which is done by
+     * the NML3Cfg of that interface. Since the NML3Cfg calls nm_netns_ip_route_ecmp_commit()
+     * and only adds the direct route afterwards, the ECMP route may not be ready
+     * right away, but only upon seeing the entry a second time. */
     bool is_ready : 1;
 } EcmpTrackObj;
 
@@ -626,14 +638,13 @@ nm_netns_ip_route_ecmp_commit(NMNetns    *self,
                               GPtrArray **out_singlehop_routes,
                               gboolean    is_reapply)
 {
-    NMNetnsPrivate           *priv = NM_NETNS_GET_PRIVATE(self);
-    EcmpTrackObj             *track_obj;
-    EcmpTrackObj             *track_obj_safe;
-    EcmpTrackEcmpid          *track_ecmpid;
-    const NMPObject          *route_obj;
-    const NMPlatformIP4Route *route;
-    char                      sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
-    gboolean                  already_notified = FALSE;
+    NMNetnsPrivate  *priv = NM_NETNS_GET_PRIVATE(self);
+    EcmpTrackObj    *track_obj;
+    EcmpTrackObj    *track_obj_safe;
+    EcmpTrackEcmpid *track_ecmpid;
+    const NMPObject *route_obj;
+    char             sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
+    gboolean         already_notified = FALSE;
 
     nm_assert_l3cfg(self, l3cfg);
 
@@ -662,6 +673,9 @@ nm_netns_ip_route_ecmp_commit(NMNetns    *self,
                 track_obj->is_ready = FALSE;
             }
             if (track_obj->is_new) {
+                const NMPlatformIP4Route *route =
+                    NMP_OBJECT_CAST_IP4_ROUTE(track_ecmpid->merged_obj);
+
                 /* This is a new route entry that was just added. Upon first
                  * addition, the route is not yet ready for configuration,
                  * because we need to make sure that the gateway is reachable
@@ -673,7 +687,11 @@ nm_netns_ip_route_ecmp_commit(NMNetns    *self,
                  * after l3cfg configured that route. We achieve that by
                  * scheduling another idle commit on "l3cfg". */
                 track_obj->is_new = FALSE;
-                if (c_list_length_is(&track_ecmpid->ecmpid_lst_head, 1)) {
+                if (route && route->gateway == 0) {
+                    /* This route is onlink. We don't need to configure an onlink route
+                     * to the gateway, and the route is immediately ready for configuration. */
+                    track_obj->is_ready = TRUE;
+                } else if (c_list_length_is(&track_ecmpid->ecmpid_lst_head, 1)) {
                     /* This route has no merge partner and ends up being a
                      * single hop route. It will be returned and configured by
                      * the calling "l3cfg".
@@ -683,7 +701,15 @@ nm_netns_ip_route_ecmp_commit(NMNetns    *self,
                      * don't need to schedule an idle commit. */
                     track_obj->is_ready = TRUE;
                 } else {
+                    /* This is a new route which has a gateway. We need for the "l3cfg"
+                     * to first configure the onlink route. It's not yet ready for configuration.
+                     *
+                     * Instead, schedule an idle commit to make sure we get called back
+                     * again, and then (upon seeing the entry the second time) the onlink
+                     * route is already configured and we will be ready. */
                     if (!already_notified) {
+                        /* Some micro optimization with already_notified to avoid calling
+                         * schedule unnecessarily. */
                         already_notified = TRUE;
                         nm_l3cfg_commit_on_idle_schedule(l3cfg, NM_L3_CFG_COMMIT_TYPE_AUTO);
                     }
@@ -720,6 +746,7 @@ nm_netns_ip_route_ecmp_commit(NMNetns    *self,
     c_list_for_each_entry (track_obj,
                            &l3cfg->internal_netns.ecmp_track_ifindex_lst_head,
                            ifindex_lst) {
+        const NMPlatformIP4Route       *route;
         EcmpTrackObj                   *track_obj2;
         nm_auto_nmpobj const NMPObject *obj_del = NULL;
         gboolean                        changed;
