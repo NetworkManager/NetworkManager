@@ -1,0 +1,58 @@
+#!/bin/bash
+
+# Uses `git cherry-pick -x` to backport a merge commit to an older branch.
+#
+# Usage:
+#   First checkout the old-stable branch, that is the target for the backport.
+#   Then `git-backport-merge MERGE_REF [REFS...]`
+#     MERGE_REF is the merge commit that should be backported.
+#     [REFS...] is the commits that should be backported. If omitted,
+#       it automatically takes the parent commits of the merge commit.
+
+die() {
+    printf '%s\n' "$*" >&2
+    exit 1
+}
+
+backport_merge() {
+    test "$#" -gt 0 || die "Requires the commit ref to backport (and optimally select the commits to include)"
+
+    local M="${@:$#}"
+    local h
+
+    if test "$#" -eq 1; then
+        local C=($(git log --reverse "--pretty=%H" "$M"^1.."$M"^2))
+    else
+        local C=("${@:1:$#-1}")
+    fi
+
+    local OLD_HEAD="$(git rev-parse HEAD)" || die "failed to get current HEAD"
+
+    test -n "$(git status --porcelain --untracked-files=no)" && die "Working directory contains changes. Abort."
+
+    local M_ID="$(git rev-parse "$M"^{commit})" || die "\"$M\" is not a valid commit"
+
+    trap EXIT 'test -z "$OLD_HEAD" || git reset "$OLD_HEAD" --hard'
+
+    for h in "${C[@]}"; do
+        if ! git cherry-pick --allow-empty -x "$h" ; then
+            git cherry-pick --abort
+            die "failed to cherry-pick commit \"$h\" on top of \"$(git rev-parse HEAD)\""
+        fi
+    done
+
+    local NEW_HEAD="$(git rev-parse HEAD)" || die "failed to get new HEAD"
+
+    git reset --hard "$OLD_HEAD" || die "Failed to reset to previous HEAD \"$OLD_HEAD\""
+
+    git merge --no-ff --no-edit "$NEW_HEAD" || die "Failed to merge old HEAD \"$OLD_HEAD\" with new \"$NEW_HEAD\""
+
+    git commit --amend --allow-empty -C "$M" || die "Failed to amend merge commit \"$(git rev-parse HEAD)\" with commit message from \"$M\""
+
+    git rev-parse "$M" | sed 's/.*/(cherry picked from commit \0)/' | GIT_EDITOR='sh -c "cat >> \"$1\""' git commit --allow-empty --amend || \
+         die "Failed to amend merge commit \"$(git rev-parse HEAD)\" with cherry-picked-from message from \"$M\""
+
+    OLD_HEAD=
+}
+
+backport_merge "$@"
