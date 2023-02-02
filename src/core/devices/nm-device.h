@@ -576,6 +576,9 @@ void nm_device_copy_ip6_dns_config(NMDevice *self, NMDevice *from_device);
  *   dropping a ifcfg-rh file to ensure the device is unmanaged.
  * @NM_UNMANAGED_USER_DOWN: %TRUE when unmanaged by user decision want disable
  *   the device. It will unset IFF_UP flag of the device.
+ * @NM_UNMANAGED_USER_SYNC: %TRUE when unmanaged by user decision want sync kernel
+ *   with network driver. It will send IFF_UP flag to signal to sync the kernel.
+ *   It is useful after the device is rebooted.
  * @NM_UNMANAGED_USER_CONF: %TRUE when unmanaged by user decision via
  *   the NetworkManager.conf ("unmanaged" in the [device] section).
  *   Contray to @NM_UNMANAGED_USER_SETTINGS, this can be overwritten via

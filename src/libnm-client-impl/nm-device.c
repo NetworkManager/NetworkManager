@@ -793,7 +793,7 @@ nm_device_class_init(NMDeviceClass *klass)
                                                       "",
                                                       "",
                                                       0,
-                                                      2,
+                                                      3,
                                                       0,
                                                       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 

@@ -1447,6 +1447,7 @@
               <arg choice='plain'>yes</arg>
               <arg choice='plain'>no</arg>
               <arg choice='plain'>down</arg>
+              <arg choice='plain'>updown</arg>
             </group>
           </arg>
         </term>

@@ -155,16 +155,19 @@ nmc_string_managed_mode_to_uint(const char *str, guint *val_uint, GError **error
         *val_uint = 1;
     else if (nmc_string_is_valid(str, NM_MAKE_STRV("false", "no", "off"), NULL))
         *val_uint = 0;
-    else if (nmc_string_is_valid(str, NM_MAKE_STRV("down"), NULL)) {
+    else if (nmc_string_is_valid(str, NM_MAKE_STRV("down"), NULL))
         *val_uint = 2;
+    else if (nmc_string_is_valid(str, NM_MAKE_STRV("updown"), NULL)) {
+        *val_uint = 3;
     } else {
         nm_utils_error_set(error,
                            NM_UTILS_ERROR_UNKNOWN,
-                           _("'%s' is not valid; use [%s], [%s] or [%s]"),
+                           _("'%s' is not valid; use [%s], [%s], [%s] or [%s]"),
                            str,
                            "true, yes, on",
                            "false, no, off",
-                           "down");
+                           "down",
+                           "updown");
         return FALSE;
     }
     return TRUE;

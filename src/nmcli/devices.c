@@ -843,7 +843,7 @@ usage(void)
                  "delete | monitor | wifi | lldp }\n\n"
                  "  status\n\n"
                  "  show [<ifname>]\n\n"
-                 "  set [ifname] <ifname> [autoconnect yes|no] [managed yes|no|down]\n\n"
+                 "  set [ifname] <ifname> [autoconnect yes|no] [managed yes|no|down|updown]\n\n"
                  "  connect <ifname>\n\n"
                  "  reapply <ifname>\n\n"
                  "  modify <ifname> ([+|-]<setting>.<property> <value>)+\n\n"
@@ -966,7 +966,7 @@ usage_device_set(void)
                  "ARGUMENTS := DEVICE { PROPERTY [ PROPERTY ... ] }\n"
                  "DEVICE    := [ifname] <ifname> \n"
                  "PROPERTY  := { autoconnect { yes | no } |\n"
-                 "             { managed { yes | no | down }\n"
+                 "             { managed { yes | no | down | updown }\n"
                  "\n"
                  "Modify device properties.\n\n"));
 }
@@ -2772,7 +2772,7 @@ do_devices_delete(const NMCCommand *cmd, NmCli *nmc, int argc, const char *const
 static void
 nmc_complete_managed(const char *prefix)
 {
-    nmc_complete_strings(prefix, "true", "yes", "on", "false", "no", "off", "down");
+    nmc_complete_strings(prefix, "true", "yes", "on", "false", "no", "off", "down", "updown");
 }
 
 static void

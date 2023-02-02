@@ -15915,8 +15915,12 @@ _set_state_full(NMDevice *self, NMDeviceState state, NMDeviceStateReason reason,
             }
         }
         nm_device_sys_iface_state_set(self, NM_DEVICE_SYS_IFACE_STATE_EXTERNAL);
-        if (nm_device_get_unmanaged_flags(self, NM_UNMANAGED_USER_DOWN))
+        if (nm_device_get_unmanaged_flags(self, NM_UNMANAGED_USER_DOWN)) {
+            if (nm_device_get_unmanaged_flags(self, NM_UNMANAGED_USER_SYNC))
+                nm_device_enable(self);
+
             nm_device_disable(self);
+        }
 
         break;
     case NM_DEVICE_STATE_UNAVAILABLE:
@@ -17559,7 +17563,11 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
         guint managed;
         managed = nm_device_get_state(self) > NM_DEVICE_STATE_UNMANAGED ? 1 : 0;
         if (!managed && nm_device_get_unmanaged_flags(self, NM_UNMANAGED_USER_DOWN)) {
-            managed = 2;
+            if (nm_device_get_unmanaged_flags(self, NM_UNMANAGED_USER_SYNC)) {
+                managed = 3;
+            } else {
+                managed = 2;
+            }
         }
         g_value_set_uint(value, managed);
     } break;
@@ -17710,8 +17718,12 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
 
             flag = NM_UNMANAGED_USER_EXPLICIT;
 
-            if (managed_state > 0)
+            if (managed_state > 0) {
                 flag |= NM_UNMANAGED_USER_DOWN;
+
+                if (managed_state == 1 || managed_state == 3)
+                    flag |= NM_UNMANAGED_USER_SYNC;
+            }
 
             nm_device_set_unmanaged_by_flags(self, flag, !managed, reason);
         }
@@ -18338,7 +18350,7 @@ nm_device_class_init(NMDeviceClass *klass)
                                                       "",
                                                       "",
                                                       0,
-                                                      2,
+                                                      3,
                                                       0,
                                                       G_PARAM_READWRITE | /* via D-Bus */
                                                           G_PARAM_STATIC_STRINGS);
