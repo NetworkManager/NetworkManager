@@ -14,11 +14,14 @@ set -xe
 
 DNF="$(command -v dnf &>/dev/null && echo dnf || echo yum)"
 
+SUDO=
+[ "$EUID" -eq 0 ] || SUDO=sudo
+
 install() {
     if [ "$NM_INSTALL" != "" ]; then
         $NM_INSTALL "$@"
     else
-        sudo "$DNF" install -y "$@"
+        $SUDO "$DNF" install -y "$@"
     fi
 }
 
