@@ -90,7 +90,12 @@ ENV_NM_TEST_ASAN_OPTIONS = "NM_TEST_ASAN_OPTIONS"
 ENV_NM_TEST_LSAN_OPTIONS = "NM_TEST_LSAN_OPTIONS"
 ENV_NM_TEST_UBSAN_OPTIONS = "NM_TEST_UBSAN_OPTIONS"
 
-#
+# Run nmcli under valgrind. If unset, we honor NMTST_USE_VALGRIND instead.
+# Valgrind is always disabled, if NM_TEST_REGENERATE is enabled.
+ENV_NM_TEST_VALGRIND = "NM_TEST_VALGRIND"
+
+ENV_LIBTOOL = "LIBTOOL"
+
 ###############################################################################
 
 import sys
@@ -107,8 +112,10 @@ import fcntl
 import dbus
 import time
 import random
+import tempfile
 import dbus.service
 import dbus.mainloop.glib
+import collections
 import io
 from signal import SIGINT
 
@@ -474,6 +481,38 @@ class Util:
                 for color in [[], ["--color", "yes"]]:
                     yield mode + fmt + color
 
+    @staticmethod
+    def valgrind_check_log(valgrind_log, logname):
+        if valgrind_log is None:
+            return
+
+        fd, name = valgrind_log
+
+        os.close(fd)
+
+        if not os.path.isfile(name):
+            raise Exception("valgrind log %s unexpectedly does not exist" % (name,))
+
+        if os.path.getsize(name) != 0:
+            out = subprocess.run(
+                [
+                    "sed",
+                    "-e",
+                    "/^--[0-9]\+-- WARNING: unhandled .* syscall: /,/^--[0-9]\+-- it at http.*\.$/d",
+                    name,
+                ],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+            )
+            if out.returncode != 0:
+                raise Exception('Calling "sed" to search valgrind log failed')
+            if out.stdout:
+                print("valgrind log %s for %s is not empty:" % (name, logname))
+                print("\n%s\n" % (out.stdout.decode("utf-8", errors="replace"),))
+                raise Exception("valgrind log %s unexpectedly is not empty" % (name,))
+
+        os.remove(name)
+
 
 ###############################################################################
 
@@ -520,6 +559,15 @@ class Configuration:
             v = Util.is_bool(os.environ.get(ENV_NM_TEST_REGENERATE, None))
         elif name == ENV_NM_TEST_WITH_LINENO:
             v = Util.is_bool(os.environ.get(ENV_NM_TEST_WITH_LINENO, None))
+        elif name == ENV_NM_TEST_VALGRIND:
+            if self.get(ENV_NM_TEST_REGENERATE):
+                v = False
+            else:
+                v = os.environ.get(ENV_NM_TEST_VALGRIND, None)
+                if v:
+                    v = Util.is_bool(v)
+                else:
+                    v = Util.is_bool(os.environ.get("NMTST_USE_VALGRIND", None))
         elif name in [
             ENV_NM_TEST_ASAN_OPTIONS,
             ENV_NM_TEST_LSAN_OPTIONS,
@@ -536,6 +584,21 @@ class Configuration:
                     v = "print_stacktrace=1:halt_on_error=1"
                 else:
                     assert False
+        elif name == ENV_LIBTOOL:
+            v = os.environ.get(name, None)
+            if v is None:
+                v = os.path.abspath(
+                    os.path.dirname(self.get(ENV_NM_TEST_CLIENT_NMCLI_PATH))
+                    + "/../../libtool"
+                )
+                if not os.path.isfile(v):
+                    v = None
+                else:
+                    v = [v]
+            elif not v:
+                v = None
+            else:
+                v = shlex.split(v)
         else:
             raise Exception()
         self._values[name] = v
@@ -796,6 +859,39 @@ class TestNmcli(unittest.TestCase):
 
         return content_expect, results_expect
 
+    def nmcli_construct_argv(self, args, with_valgrind=None):
+
+        if with_valgrind is None:
+            with_valgrind = conf.get(ENV_NM_TEST_VALGRIND)
+
+        valgrind_log = None
+        cmd = conf.get(ENV_NM_TEST_CLIENT_NMCLI_PATH)
+        if with_valgrind:
+            valgrind_log = tempfile.mkstemp(prefix="nm-test-client-valgrind.")
+            argv = [
+                "valgrind",
+                "--quiet",
+                "--error-exitcode=37",
+                "--leak-check=full",
+                "--gen-suppressions=all",
+                (
+                    "--suppressions="
+                    + PathConfiguration.top_srcdir()
+                    + "/valgrind.suppressions"
+                ),
+                "--num-callers=100",
+                "--log-file=" + valgrind_log[1],
+                cmd,
+            ]
+            libtool = conf.get(ENV_LIBTOOL)
+            if libtool:
+                argv = list(libtool) + ["--mode=execute"] + argv
+        else:
+            argv = [cmd]
+
+        argv.extend(args)
+        return argv, valgrind_log
+
     def call_nmcli_l(
         self,
         args,
@@ -879,10 +975,14 @@ class TestNmcli(unittest.TestCase):
             )
 
     def call_nmcli_pexpect(self, args):
+
         env = self._env(extra_env={"NO_COLOR": "1"})
-        return pexpect.spawn(
-            conf.get(ENV_NM_TEST_CLIENT_NMCLI_PATH), args, timeout=10, env=env
-        )
+        argv, valgrind_log = self.nmcli_construct_argv(args)
+
+        pexp = pexpect.spawn(argv[0], argv[1:], timeout=10, env=env)
+
+        typ = collections.namedtuple("CallNmcliPexpect", ["pexp", "valgrind_log"])
+        return typ(pexp, valgrind_log)
 
     def _env(
         self, lang="C", calling_num=None, fatal_warnings=_DEFAULT_ARG, extra_env=None
@@ -978,7 +1078,10 @@ class TestNmcli(unittest.TestCase):
         else:
             self.fail("invalid language %s" % (lang))
 
-        args = [conf.get(ENV_NM_TEST_CLIENT_NMCLI_PATH)] + list(args)
+        # Running under valgrind is not yet supported for those tests.
+        args, valgrind_log = self.nmcli_construct_argv(args, with_valgrind=False)
+
+        assert valgrind_log is None
 
         if replace_stdout is not None:
             replace_stdout = list(replace_stdout)
@@ -1892,24 +1995,25 @@ class TestNmcli(unittest.TestCase):
     @nm_test
     def test_ask_mode(self):
         nmc = self.call_nmcli_pexpect(["--ask", "c", "add"])
-        nmc.expect("Connection type:")
-        nmc.sendline("ethernet")
-        nmc.expect("Interface name:")
-        nmc.sendline("eth0")
-        nmc.expect("There are 3 optional settings for Wired Ethernet.")
-        nmc.expect("Do you want to provide them\? \(yes/no\) \[yes]")
-        nmc.sendline("no")
-        nmc.expect("There are 2 optional settings for IPv4 protocol.")
-        nmc.expect("Do you want to provide them\? \(yes/no\) \[yes]")
-        nmc.sendline("no")
-        nmc.expect("There are 2 optional settings for IPv6 protocol.")
-        nmc.expect("Do you want to provide them\? \(yes/no\) \[yes]")
-        nmc.sendline("no")
-        nmc.expect("There are 4 optional settings for Proxy.")
-        nmc.expect("Do you want to provide them\? \(yes/no\) \[yes]")
-        nmc.sendline("no")
-        nmc.expect("Connection 'ethernet' \(.*\) successfully added.")
-        nmc.expect(pexpect.EOF)
+        nmc.pexp.expect("Connection type:")
+        nmc.pexp.sendline("ethernet")
+        nmc.pexp.expect("Interface name:")
+        nmc.pexp.sendline("eth0")
+        nmc.pexp.expect("There are 3 optional settings for Wired Ethernet.")
+        nmc.pexp.expect("Do you want to provide them\? \(yes/no\) \[yes]")
+        nmc.pexp.sendline("no")
+        nmc.pexp.expect("There are 2 optional settings for IPv4 protocol.")
+        nmc.pexp.expect("Do you want to provide them\? \(yes/no\) \[yes]")
+        nmc.pexp.sendline("no")
+        nmc.pexp.expect("There are 2 optional settings for IPv6 protocol.")
+        nmc.pexp.expect("Do you want to provide them\? \(yes/no\) \[yes]")
+        nmc.pexp.sendline("no")
+        nmc.pexp.expect("There are 4 optional settings for Proxy.")
+        nmc.pexp.expect("Do you want to provide them\? \(yes/no\) \[yes]")
+        nmc.pexp.sendline("no")
+        nmc.pexp.expect("Connection 'ethernet' \(.*\) successfully added.")
+        nmc.pexp.expect(pexpect.EOF)
+        Util.valgrind_check_log(nmc.valgrind_log, "test_ask_mode")
 
     @skip_without_pexpect
     @nm_test
@@ -1919,33 +2023,34 @@ class TestNmcli(unittest.TestCase):
         # https://bugzilla.redhat.com/show_bug.cgi?id=2154288
         raise unittest.SkipTest("test is known to randomly fail (rhbz#2154288)")
 
-        def start_mon():
+        def start_mon(self):
             nmc = self.call_nmcli_pexpect(["monitor"])
-            nmc.expect("NetworkManager is running")
+            nmc.pexp.expect("NetworkManager is running")
             return nmc
 
-        def end_mon(nmc):
-            nmc.kill(SIGINT)
-            nmc.expect(pexpect.EOF)
+        def end_mon(self, nmc):
+            nmc.pexp.kill(SIGINT)
+            nmc.pexp.expect(pexpect.EOF)
+            Util.valgrind_check_log(nmc.valgrind_log, "test_monitor")
 
-        nmc = start_mon()
+        nmc = start_mon(self)
 
         self.srv.op_AddObj("WiredDevice", iface="eth0")
-        nmc.expect("eth0: device created\r\n")
+        nmc.pexp.expect("eth0: device created\r\n")
 
         self.srv.addConnection(
             {"connection": {"type": "802-3-ethernet", "id": "con-1"}}
         )
-        nmc.expect("con-1: connection profile created\r\n")
+        nmc.pexp.expect("con-1: connection profile created\r\n")
 
-        end_mon(nmc)
+        end_mon(self, nmc)
 
-        nmc = start_mon()
+        nmc = start_mon(self)
         self.srv_shutdown()
-        nmc.expect("eth0: device removed")
-        nmc.expect("con-1: connection profile removed")
-        nmc.expect("NetworkManager is stopped")
-        end_mon(nmc)
+        nmc.pexp.expect("eth0: device removed")
+        nmc.pexp.expect("con-1: connection profile removed")
+        nmc.pexp.expect("NetworkManager is stopped")
+        end_mon(self, nmc)
 
 
 ###############################################################################
