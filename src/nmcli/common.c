@@ -947,7 +947,6 @@ read_again:
         if (nmc_config->in_editor || (rl_string && *rl_string)) {
             /* In editor, or the line is not empty */
             /* Call readline again to get new prompt (repeat) */
-            g_free(rl_string);
             goto read_again;
         } else {
             /* Not in editor and line is empty, exit */
@@ -960,10 +959,8 @@ read_again:
     }
 
     /* Return NULL, not empty string */
-    if (rl_string && *rl_string == '\0') {
-        g_free(rl_string);
-        rl_string = NULL;
-    }
+    if (rl_string && *rl_string == '\0')
+        nm_clear_free(&rl_string);
 
     nm_clear_g_source_inst(&io_source);
 
