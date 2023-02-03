@@ -7,6 +7,7 @@ test(
     build_root,
     source_root,
     python.path(),
+    '--',
   ],
   timeout: 120,
 )
