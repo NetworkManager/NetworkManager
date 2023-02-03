@@ -229,6 +229,19 @@ class Util:
         return isinstance(s, t)
 
     @staticmethod
+    def is_bool(s, defval=False):
+        if s is None:
+            return defval
+        if isinstance(s, int):
+            return s != 0
+        if isinstance(s, str):
+            if s.lower() in ["1", "y", "yes", "true", "on"]:
+                return True
+            if s.lower() in ["0", "n", "no", "false", "off"]:
+                return False
+        raise ValueError('Argument "%s" is not a boolean' % (s,))
+
+    @staticmethod
     def as_bytes(s):
         if Util.is_string(s):
             return s.encode("utf-8")
@@ -499,14 +512,14 @@ class Configuration:
             #
             # Only by setting NM_TEST_CLIENT_CHECK_L10N=1, these tests are included
             # as well.
-            v = os.environ.get(ENV_NM_TEST_CLIENT_CHECK_L10N, "0") == "1"
+            v = Util.is_bool(os.environ.get(ENV_NM_TEST_CLIENT_CHECK_L10N, None))
         elif name == ENV_NM_TEST_REGENERATE:
             # in the "regenerate" mode, the tests will rewrite the files on disk against
             # which we assert. That is useful, if there are intentional changes and
             # we want to regenerate the expected output.
-            v = os.environ.get(ENV_NM_TEST_REGENERATE, "0") == "1"
+            v = Util.is_bool(os.environ.get(ENV_NM_TEST_REGENERATE, None))
         elif name == ENV_NM_TEST_WITH_LINENO:
-            v = os.environ.get(ENV_NM_TEST_WITH_LINENO, "0") == "1"
+            v = Util.is_bool(os.environ.get(ENV_NM_TEST_WITH_LINENO, None))
         elif name in [
             ENV_NM_TEST_ASAN_OPTIONS,
             ENV_NM_TEST_LSAN_OPTIONS,
