@@ -9,5 +9,8 @@ test(
     python.path(),
     '--',
   ],
+  env: [
+    'LIBTOOL=',
+  ],
   timeout: 120,
 )
