@@ -12,11 +12,14 @@ set -xe
 # Not all of these packages are strictly speaking necessary.
 # This is a generous list of related packages.
 
+SUDO=
+[ "$EUID" -eq 0 ] || SUDO=sudo
+
 install() {
     if [ "$NM_INSTALL" != "" ]; then
         $NM_INSTALL "$@"
     else
-        sudo apt-get install -y "$@"
+        $SUDO apt-get install -y "$@"
     fi
 }
 
