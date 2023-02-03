@@ -874,7 +874,10 @@ static void
 readline_cb(char *line)
 {
     rl_got_line = TRUE;
-    rl_string   = line;
+
+    free(rl_string);
+    rl_string = line;
+
     rl_callback_handler_remove();
 }
 
@@ -889,13 +892,15 @@ static char *
 nmc_readline_helper(const NmcConfig *nmc_config, const char *prompt)
 {
     GSource *io_source;
+    char    *result;
 
     nmc_set_in_readline(TRUE);
 
     io_source = nm_g_unix_fd_add_source(STDIN_FILENO, G_IO_IN, stdin_ready_cb, NULL);
 
 read_again:
-    rl_string   = NULL;
+    nm_clear_free(&rl_string);
+
     rl_got_line = FALSE;
     rl_callback_handler_install(prompt, readline_cb);
 
@@ -943,7 +948,12 @@ read_again:
 
     nmc_set_in_readline(FALSE);
 
-    return rl_string;
+    if (!rl_string)
+        return NULL;
+
+    result = g_strdup(rl_string);
+    nm_clear_free(&rl_string);
+    return result;
 }
 
 /**
