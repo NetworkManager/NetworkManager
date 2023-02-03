@@ -5594,8 +5594,8 @@ next:
 static void
 ask_option(NmCli *nmc, NMConnection *connection, const NMMetaAbstractInfo *abstract_info)
 {
-    char                  *value;
-    GError                *error  = NULL;
+    gs_free char          *value  = NULL;
+    gs_free_error GError  *error  = NULL;
     gs_free char          *prompt = NULL;
     gboolean               multi;
     const char            *setting_name, *property_name;
@@ -5631,11 +5631,13 @@ ask_option(NmCli *nmc, NMConnection *connection, const NMMetaAbstractInfo *abstr
         g_print(_("You can specify this option more than once. Press <Enter> when you're done.\n"));
 
 again:
+    nm_clear_g_free(&value);
+    g_clear_error(&error);
+
     value = nmc_readline(&nmc->nmc_config, "%s", prompt);
 
     if (!set_option(nmc, connection, abstract_info, value, FALSE, &error)) {
         g_printerr("%s\n", error->message);
-        g_clear_error(&error);
         goto again;
     }
 
