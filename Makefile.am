@@ -5456,7 +5456,7 @@ endif
 ###############################################################################
 
 check-local-tests-client: src/nmcli/nmcli src/tests/client/test-client.py
-	"$(srcdir)/src/tests/client/test-client.sh" "$(builddir)" "$(srcdir)" "$(PYTHON)"
+	"$(srcdir)/src/tests/client/test-client.sh" "$(builddir)" "$(srcdir)" "$(PYTHON)" --
 
 check_local += check-local-tests-client
 
