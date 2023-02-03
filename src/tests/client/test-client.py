@@ -251,7 +251,8 @@ class Util:
     ).search
 
     @staticmethod
-    def quote(s):
+    def shlex_quote(s):
+        # Reimplement shlex.quote().
         if Util.python_has_version(3, 3):
             return shlex.quote(s)
         if not s:
@@ -259,6 +260,11 @@ class Util:
         if Util._find_unsafe(s) is None:
             return s
         return "'" + s.replace("'", "'\"'\"'") + "'"
+
+    @staticmethod
+    def shlex_join(args):
+        # Reimplement shlex.join()
+        return " ".join(Util.shlex_quote(s) for s in args)
 
     @staticmethod
     def popen_wait(p, timeout=0):
@@ -1024,7 +1030,7 @@ class TestNmcli(NmTestBase):
                     self.assertEqual(returncode, -5)
 
             if check_on_disk:
-                cmd = "$NMCLI %s" % (" ".join([Util.quote(a) for a in args[1:]]))
+                cmd = "$NMCLI %s" % (Util.shlex_join(args[1:]),)
                 cmd = Util.replace_text(cmd, replace_cmd)
 
                 if returncode < 0:
@@ -1971,16 +1977,13 @@ def main():
                     "eval `dbus-launch --sh-syntax`;\n"
                     + 'trap "kill $DBUS_SESSION_BUS_PID" EXIT;\n'
                     + "\n"
-                    + " ".join(
+                    + Util.shlex_join(
                         [
-                            Util.quote(a)
-                            for a in [
-                                sys.executable,
-                                __file__,
-                                "--started-with-dbus-session",
-                            ]
-                            + sys.argv[1:]
+                            sys.executable,
+                            __file__,
+                            "--started-with-dbus-session",
                         ]
+                        + sys.argv[1:]
                     )
                     + " \n"
                     + "",
