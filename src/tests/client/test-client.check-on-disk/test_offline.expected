@@ -8,12 +8,12 @@ stderr: 136 bytes
 Error: Could not create NMClient object: Key/Value pair 0, 'invalid', in address element 'very:invalid' does not contain an equal sign.
 
 <<<
-size: 312
+size: 303
 location: src/tests/client/test-client.py:test_offline()/2
 cmd: $NMCLI --offline c add type ethernet
 lang: C
 returncode: 0
-stdout: 162 bytes
+stdout: 153 bytes
 >>>
 [connection]
 id=ethernet
@@ -28,8 +28,6 @@ method=auto
 [ipv6]
 addr-gen-mode=default
 method=auto
-
-[proxy]
 
 <<<
 size: 183
@@ -62,12 +60,12 @@ stderr: 47 bytes
 Error: command doesn't support --offline mode.
 
 <<<
-size: 436
+size: 427
 location: src/tests/client/test-client.py:test_offline()/6
 cmd: $NMCLI --offline c add type wifi ssid lala 802-1x.eap pwd 802-1x.identity foo 802-1x.password bar
 lang: C
 returncode: 0
-stdout: 225 bytes
+stdout: 216 bytes
 >>>
 [connection]
 id=wifi
@@ -90,15 +88,13 @@ method=auto
 addr-gen-mode=default
 method=auto
 
-[proxy]
-
 <<<
-size: 474
+size: 465
 location: src/tests/client/test-client.py:test_offline()/7
 cmd: $NMCLI --offline c add type wifi ssid lala 802-1x.eap pwd 802-1x.identity foo 802-1x.password bar 802-1x.password-flags agent-owned
 lang: C
 returncode: 0
-stdout: 229 bytes
+stdout: 220 bytes
 >>>
 [connection]
 id=wifi
@@ -120,8 +116,6 @@ method=auto
 [ipv6]
 addr-gen-mode=default
 method=auto
-
-[proxy]
 
 <<<
 size: 199

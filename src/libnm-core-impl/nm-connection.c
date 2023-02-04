@@ -1315,13 +1315,7 @@ _normalize_ip_config(NMConnection *self, GHashTable *parameters)
         }
     }
 
-    if (_supports_addr_family(self, AF_UNSPEC)) {
-        if (!s_proxy) {
-            setting = nm_setting_proxy_new();
-            nm_connection_add_setting(self, setting);
-            changed = TRUE;
-        }
-    } else {
+    if (!_supports_addr_family(self, AF_UNSPEC)) {
         if (s_proxy) {
             nm_connection_remove_setting(self, NM_TYPE_SETTING_PROXY);
             changed = TRUE;
@@ -1889,19 +1883,7 @@ _nm_connection_verify(NMConnection *connection, GError **error)
             }
         }
 
-        if (_supports_addr_family(connection, AF_UNSPEC)) {
-            if (!s_proxy && normalizable_error_type == NM_SETTING_VERIFY_SUCCESS) {
-                g_set_error_literal(&normalizable_error,
-                                    NM_CONNECTION_ERROR,
-                                    NM_CONNECTION_ERROR_MISSING_SETTING,
-                                    _("setting is required for non-slave connections"));
-                g_prefix_error(&normalizable_error, "%s: ", NM_SETTING_PROXY_SETTING_NAME);
-
-                /* having a master without proxy config was not a verify() error, accept
-                 * it for backward compatibility. */
-                normalizable_error_type = NM_SETTING_VERIFY_NORMALIZABLE;
-            }
-        } else {
+        if (!_supports_addr_family(connection, AF_UNSPEC)) {
             if (s_proxy) {
                 g_clear_error(&normalizable_error);
                 g_set_error_literal(&normalizable_error,

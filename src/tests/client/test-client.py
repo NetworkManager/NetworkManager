@@ -1880,9 +1880,6 @@ class TestNmcli(NmTestBase):
         nmc.expect("There are 2 optional settings for IPv6 protocol.")
         nmc.expect("Do you want to provide them\? \(yes/no\) \[yes]")
         nmc.sendline("no")
-        nmc.expect("There are 4 optional settings for Proxy.")
-        nmc.expect("Do you want to provide them\? \(yes/no\) \[yes]")
-        nmc.sendline("no")
         nmc.expect("Connection 'ethernet' \(.*\) successfully added.")
         nmc.expect(pexpect.EOF)
 

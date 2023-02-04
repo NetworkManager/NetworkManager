@@ -592,8 +592,8 @@ nm_l3_config_data_log(const NML3ConfigData *self,
     if (self->proxy_browser_only != NM_TERNARY_DEFAULT)
         _L("proxy-browser-only: %s", self->proxy_browser_only ? "yes" : "no");
 
-    if (self->proxy_method != NM_PROXY_CONFIG_METHOD_UNKNOWN)
-        _L("proxy-method: %s", self->proxy_method == NM_PROXY_CONFIG_METHOD_AUTO ? "auto" : "none");
+    if (self->proxy_method != NM_PROXY_CONFIG_METHOD_NONE)
+        _L("proxy-method: auto");
 
     if (self->proxy_pac_url)
         _L("proxy-pac-url: %s", self->proxy_pac_url->str);
@@ -685,7 +685,7 @@ nm_l3_config_data_new(NMDedupMultiIndex *multi_idx, int ifindex, NMIPConfigSourc
         .flags                         = NM_L3_CONFIG_DAT_FLAGS_NONE,
         .metered                       = NM_TERNARY_DEFAULT,
         .proxy_browser_only            = NM_TERNARY_DEFAULT,
-        .proxy_method                  = NM_PROXY_CONFIG_METHOD_UNKNOWN,
+        .proxy_method                  = NM_PROXY_CONFIG_METHOD_NONE,
         .route_table_sync_4            = NM_IP_ROUTE_TABLE_SYNC_MODE_NONE,
         .route_table_sync_6            = NM_IP_ROUTE_TABLE_SYNC_MODE_NONE,
         .never_default_6               = NM_OPTION_BOOL_DEFAULT,
@@ -1945,10 +1945,7 @@ gboolean
 nm_l3_config_data_set_proxy_method(NML3ConfigData *self, NMProxyConfigMethod value)
 {
     nm_assert(_NM_IS_L3_CONFIG_DATA(self, FALSE));
-    nm_assert(NM_IN_SET(value,
-                        NM_PROXY_CONFIG_METHOD_UNKNOWN,
-                        NM_PROXY_CONFIG_METHOD_NONE,
-                        NM_PROXY_CONFIG_METHOD_AUTO));
+    nm_assert(NM_IN_SET(value, NM_PROXY_CONFIG_METHOD_NONE, NM_PROXY_CONFIG_METHOD_AUTO));
 
     if (self->proxy_method == value)
         return FALSE;
@@ -3360,7 +3357,7 @@ nm_l3_config_data_merge(NML3ConfigData       *self,
 
     self->metered = NM_MAX((NMTernary) self->metered, (NMTernary) src->metered);
 
-    if (self->proxy_method == NM_PROXY_CONFIG_METHOD_UNKNOWN)
+    if (self->proxy_method == NM_PROXY_CONFIG_METHOD_NONE)
         self->proxy_method = src->proxy_method;
 
     if (self->proxy_browser_only == NM_TERNARY_DEFAULT)

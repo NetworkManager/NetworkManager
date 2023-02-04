@@ -84,19 +84,10 @@ assert_reread(NMConnection *connection, gboolean normalize_connection, const cha
 {
     gs_unref_object NMConnection *reread           = NULL;
     gs_unref_object NMConnection *connection_clone = NULL;
-    NMSettingConnection          *s_con;
 
     g_assert(NM_IS_CONNECTION(connection));
 
     reread = keyfile_read_connection_from_file(testfile);
-
-    if (!normalize_connection && (s_con = nm_connection_get_setting_connection(connection))
-        && !nm_setting_connection_get_master(s_con)
-        && !nm_connection_get_setting_proxy(connection)) {
-        connection_clone = nmtst_clone_connection(connection);
-        connection       = connection_clone;
-        nm_connection_add_setting(connection, nm_setting_proxy_new());
-    }
 
     nmtst_assert_connection_equals(connection, normalize_connection, reread, FALSE);
 }

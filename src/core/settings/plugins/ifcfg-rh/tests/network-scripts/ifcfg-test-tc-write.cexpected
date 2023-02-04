@@ -1,6 +1,4 @@
 TYPE=Ethernet
-PROXY_METHOD=none
-BROWSER_ONLY=no
 QDISC1="parent 2468:2 pfifo_fast"
 FILTER1="parent 1234: matchall action simple sdata Hello"
 BOOTPROTO=none

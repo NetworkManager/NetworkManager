@@ -182,12 +182,12 @@ id
 path
 uuid
 <<<
-size: 4990
+size: 4816
 location: src/tests/client/test-client.py:test_003()/14
 cmd: $NMCLI con s con-gsm1
 lang: C
 returncode: 0
-stdout: 4857 bytes
+stdout: 4683 bytes
 >>>
 connection.id:                          con-gsm1
 connection.uuid:                        UUID-con-gsm1-REPLACED-REPLACED-REPL
@@ -291,18 +291,14 @@ gsm.device-id:                          --
 gsm.sim-id:                             --
 gsm.sim-operator-id:                    --
 gsm.mtu:                                auto
-proxy.method:                           none
-proxy.browser-only:                     no
-proxy.pac-url:                          --
-proxy.pac-script:                       --
 
 <<<
-size: 5028
+size: 4853
 location: src/tests/client/test-client.py:test_003()/15
 cmd: $NMCLI con s con-gsm1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4885 bytes
+stdout: 4710 bytes
 >>>
 connection.id:                          con-gsm1
 connection.uuid:                        UUID-con-gsm1-REPLACED-REPLACED-REPL
@@ -406,48 +402,42 @@ gsm.device-id:                          --
 gsm.sim-id:                             --
 gsm.sim-operator-id:                    --
 gsm.mtu:                                automatyczne
-proxy.method:                           none
-proxy.browser-only:                     nie
-proxy.pac-url:                          --
-proxy.pac-script:                       --
 
 <<<
-size: 499
+size: 483
 location: src/tests/client/test-client.py:test_003()/16
 cmd: $NMCLI -g all con s con-gsm1
 lang: C
 returncode: 0
-stdout: 360 bytes
+stdout: 344 bytes
 >>>
 connection:con-gsm1:UUID-con-gsm1-REPLACED-REPLACED-REPL::gsm::no:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1:0x0:-1:-1
 ipv4:auto::: :0::::-1:0::no:no:::0:yes:::0x0:no:yes:-1:-1::0::-1
 ipv6:auto::::0::::-1:0::no:no:no:yes:-1:-1:default:0:auto:::0:yes::0x0:-1:
 serial:5:8:even:1:100
 gsm:no:::<hidden>:0:xyz.con-gsm1::<hidden>:0:no::::auto
-proxy:none:no::
 
 <<<
-size: 509
+size: 493
 location: src/tests/client/test-client.py:test_003()/17
 cmd: $NMCLI -g all con s con-gsm1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 360 bytes
+stdout: 344 bytes
 >>>
 connection:con-gsm1:UUID-con-gsm1-REPLACED-REPLACED-REPL::gsm::no:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1:0x0:-1:-1
 ipv4:auto::: :0::::-1:0::no:no:::0:yes:::0x0:no:yes:-1:-1::0::-1
 ipv6:auto::::0::::-1:0::no:no:no:yes:-1:-1:default:0:auto:::0:yes::0x0:-1:
 serial:5:8:even:1:100
 gsm:no:::<hidden>:0:xyz.con-gsm1::<hidden>:0:no::::auto
-proxy:none:no::
 
 <<<
-size: 4978
+size: 4804
 location: src/tests/client/test-client.py:test_003()/18
 cmd: $NMCLI con s con-gsm2
 lang: C
 returncode: 0
-stdout: 4845 bytes
+stdout: 4671 bytes
 >>>
 connection.id:                          con-gsm2
 connection.uuid:                        UUID-con-gsm2-REPLACED-REPLACED-REPL
@@ -551,18 +541,14 @@ gsm.device-id:                          --
 gsm.sim-id:                             --
 gsm.sim-operator-id:                    --
 gsm.mtu:                                auto
-proxy.method:                           none
-proxy.browser-only:                     no
-proxy.pac-url:                          --
-proxy.pac-script:                       --
 
 <<<
-size: 5016
+size: 4841
 location: src/tests/client/test-client.py:test_003()/19
 cmd: $NMCLI con s con-gsm2
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4873 bytes
+stdout: 4698 bytes
 >>>
 connection.id:                          con-gsm2
 connection.uuid:                        UUID-con-gsm2-REPLACED-REPLACED-REPL
@@ -666,48 +652,42 @@ gsm.device-id:                          --
 gsm.sim-id:                             --
 gsm.sim-operator-id:                    --
 gsm.mtu:                                automatyczne
-proxy.method:                           none
-proxy.browser-only:                     nie
-proxy.pac-url:                          --
-proxy.pac-script:                       --
 
 <<<
-size: 487
+size: 471
 location: src/tests/client/test-client.py:test_003()/20
 cmd: $NMCLI -g all con s con-gsm2
 lang: C
 returncode: 0
-stdout: 348 bytes
+stdout: 332 bytes
 >>>
 connection:con-gsm2:UUID-con-gsm2-REPLACED-REPLACED-REPL::gsm::no:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1:0x0:-1:-1
 ipv4:auto::: :0::::-1:0::no:no:::0:yes:::0x0:no:yes:-1:-1::0::-1
 ipv6:auto::::0::::-1:0::no:no:no:yes:-1:-1:default:0:auto:::0:yes::0x0:-1:
 serial:5:8:even:1:100
 gsm:no:::<hidden>:0:::<hidden>:0:no::::auto
-proxy:none:no::
 
 <<<
-size: 497
+size: 481
 location: src/tests/client/test-client.py:test_003()/21
 cmd: $NMCLI -g all con s con-gsm2
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 348 bytes
+stdout: 332 bytes
 >>>
 connection:con-gsm2:UUID-con-gsm2-REPLACED-REPLACED-REPL::gsm::no:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1:0x0:-1:-1
 ipv4:auto::: :0::::-1:0::no:no:::0:yes:::0x0:no:yes:-1:-1::0::-1
 ipv6:auto::::0::::-1:0::no:no:no:yes:-1:-1:default:0:auto:::0:yes::0x0:-1:
 serial:5:8:even:1:100
 gsm:no:::<hidden>:0:::<hidden>:0:no::::auto
-proxy:none:no::
 
 <<<
-size: 4978
+size: 4804
 location: src/tests/client/test-client.py:test_003()/22
 cmd: $NMCLI con s con-gsm3
 lang: C
 returncode: 0
-stdout: 4845 bytes
+stdout: 4671 bytes
 >>>
 connection.id:                          con-gsm3
 connection.uuid:                        UUID-con-gsm3-REPLACED-REPLACED-REPL
@@ -811,18 +791,14 @@ gsm.device-id:                          --
 gsm.sim-id:                             --
 gsm.sim-operator-id:                    --
 gsm.mtu:                                auto
-proxy.method:                           none
-proxy.browser-only:                     no
-proxy.pac-url:                          --
-proxy.pac-script:                       --
 
 <<<
-size: 5016
+size: 4841
 location: src/tests/client/test-client.py:test_003()/23
 cmd: $NMCLI con s con-gsm3
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4873 bytes
+stdout: 4698 bytes
 >>>
 connection.id:                          con-gsm3
 connection.uuid:                        UUID-con-gsm3-REPLACED-REPLACED-REPL
@@ -926,40 +902,34 @@ gsm.device-id:                          --
 gsm.sim-id:                             --
 gsm.sim-operator-id:                    --
 gsm.mtu:                                automatyczne
-proxy.method:                           none
-proxy.browser-only:                     nie
-proxy.pac-url:                          --
-proxy.pac-script:                       --
 
 <<<
-size: 488
+size: 472
 location: src/tests/client/test-client.py:test_003()/24
 cmd: $NMCLI -g all con s con-gsm3
 lang: C
 returncode: 0
-stdout: 349 bytes
+stdout: 333 bytes
 >>>
 connection:con-gsm3:UUID-con-gsm3-REPLACED-REPLACED-REPL::gsm::no:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1:0x0:-1:-1
 ipv4:auto::: :0::::-1:0::no:no:::0:yes:::0x0:no:yes:-1:-1::0::-1
 ipv6:auto::::0::::-1:0::no:no:no:yes:-1:-1:default:0:auto:::0:yes::0x0:-1:
 serial:5:8:even:1:100
 gsm:no:::<hidden>:0: ::<hidden>:0:no::::auto
-proxy:none:no::
 
 <<<
-size: 498
+size: 482
 location: src/tests/client/test-client.py:test_003()/25
 cmd: $NMCLI -g all con s con-gsm3
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 349 bytes
+stdout: 333 bytes
 >>>
 connection:con-gsm3:UUID-con-gsm3-REPLACED-REPLACED-REPL::gsm::no:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1:0x0:-1:-1
 ipv4:auto::: :0::::-1:0::no:no:::0:yes:::0x0:no:yes:-1:-1::0::-1
 ipv6:auto::::0::::-1:0::no:no:no:yes:-1:-1:default:0:auto:::0:yes::0x0:-1:
 serial:5:8:even:1:100
 gsm:no:::<hidden>:0: ::<hidden>:0:no::::auto
-proxy:none:no::
 
 <<<
 size: 251
@@ -1102,12 +1072,12 @@ UUID                                  NAME
 UUID-ethernet-REPLACED-REPLACED-REPL  ethernet 
 
 <<<
-size: 4816
+size: 4642
 location: src/tests/client/test-client.py:test_003()/37
 cmd: $NMCLI -f ALL con s ethernet
 lang: C
 returncode: 0
-stdout: 4676 bytes
+stdout: 4502 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -1207,18 +1177,14 @@ ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
 ipv6.token:                             --
-proxy.method:                           none
-proxy.browser-only:                     no
-proxy.pac-url:                          --
-proxy.pac-script:                       --
 
 <<<
-size: 4852
+size: 4677
 location: src/tests/client/test-client.py:test_003()/38
 cmd: $NMCLI -f ALL con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4702 bytes
+stdout: 4527 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -1318,10 +1284,6 @@ ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
 ipv6.token:                             --
-proxy.method:                           none
-proxy.browser-only:                     nie
-proxy.pac-url:                          --
-proxy.pac-script:                       --
 
 <<<
 size: 198
@@ -1344,12 +1306,12 @@ stdout: 51 bytes
 GENERAL.STATE:                          aktywowano
 
 <<<
-size: 5518
+size: 5344
 location: src/tests/client/test-client.py:test_003()/41
 cmd: $NMCLI con s ethernet
 lang: C
 returncode: 0
-stdout: 5385 bytes
+stdout: 5211 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -1449,10 +1411,6 @@ ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
 ipv6.token:                             --
-proxy.method:                           none
-proxy.browser-only:                     no
-proxy.pac-url:                          --
-proxy.pac-script:                       --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth0
@@ -1468,12 +1426,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 5558
+size: 5383
 location: src/tests/client/test-client.py:test_003()/42
 cmd: $NMCLI con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5415 bytes
+stdout: 5240 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -1573,10 +1531,6 @@ ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
 ipv6.token:                             --
-proxy.method:                           none
-proxy.browser-only:                     nie
-proxy.pac-url:                          --
-proxy.pac-script:                       --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth0
@@ -2078,12 +2032,12 @@ UUID                                  NAME
 UUID-ethernet-REPLACED-REPLACED-REPL  ethernet 
 
 <<<
-size: 4816
+size: 4642
 location: src/tests/client/test-client.py:test_003()/62
 cmd: $NMCLI -f ALL con s ethernet
 lang: C
 returncode: 0
-stdout: 4676 bytes
+stdout: 4502 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -2183,18 +2137,14 @@ ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
 ipv6.token:                             --
-proxy.method:                           none
-proxy.browser-only:                     no
-proxy.pac-url:                          --
-proxy.pac-script:                       --
 
 <<<
-size: 4852
+size: 4677
 location: src/tests/client/test-client.py:test_003()/63
 cmd: $NMCLI -f ALL con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4702 bytes
+stdout: 4527 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -2294,10 +2244,6 @@ ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
 ipv6.token:                             --
-proxy.method:                           none
-proxy.browser-only:                     nie
-proxy.pac-url:                          --
-proxy.pac-script:                       --
 
 <<<
 size: 250
@@ -2324,12 +2270,12 @@ GENERAL.STATE:                          aktywowano
 GENERAL.STATE:                          aktywowano
 
 <<<
-size: 6228
+size: 6054
 location: src/tests/client/test-client.py:test_003()/66
 cmd: $NMCLI con s ethernet
 lang: C
 returncode: 0
-stdout: 6095 bytes
+stdout: 5921 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -2429,10 +2375,6 @@ ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
 ipv6.token:                             --
-proxy.method:                           none
-proxy.browser-only:                     no
-proxy.pac-url:                          --
-proxy.pac-script:                       --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth0
@@ -2462,12 +2404,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 6272
+size: 6097
 location: src/tests/client/test-client.py:test_003()/67
 cmd: $NMCLI con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 6129 bytes
+stdout: 5954 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -2567,10 +2509,6 @@ ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
 ipv6.token:                             --
-proxy.method:                           none
-proxy.browser-only:                     nie
-proxy.pac-url:                          --
-proxy.pac-script:                       --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth0
@@ -3078,12 +3016,12 @@ UUID-con-gsm3-REPLACED-REPLACED-REPL  gsm
 UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet 
 
 <<<
-size: 6231
+size: 6057
 location: src/tests/client/test-client.py:test_003()/82
 cmd: $NMCLI con s ethernet
 lang: C
 returncode: 0
-stdout: 6098 bytes
+stdout: 5924 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -3183,10 +3121,6 @@ ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
 ipv6.token:                             --
-proxy.method:                           none
-proxy.browser-only:                     no
-proxy.pac-url:                          --
-proxy.pac-script:                       --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth1
@@ -3216,12 +3150,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 6276
+size: 6101
 location: src/tests/client/test-client.py:test_003()/83
 cmd: $NMCLI con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 6133 bytes
+stdout: 5958 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -3321,10 +3255,6 @@ ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
 ipv6.token:                             --
-proxy.method:                           none
-proxy.browser-only:                     nie
-proxy.pac-url:                          --
-proxy.pac-script:                       --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth1
@@ -3354,12 +3284,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 5561
+size: 5387
 location: src/tests/client/test-client.py:test_003()/84
 cmd: $NMCLI c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 5388 bytes
+stdout: 5214 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -3459,10 +3389,6 @@ ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
 ipv6.token:                             --
-proxy.method:                           none
-proxy.browser-only:                     no
-proxy.pac-url:                          --
-proxy.pac-script:                       --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth0
@@ -3478,12 +3404,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 5602
+size: 5427
 location: src/tests/client/test-client.py:test_003()/85
 cmd: $NMCLI c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5419 bytes
+stdout: 5244 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -3583,10 +3509,6 @@ ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
 ipv6.token:                             --
-proxy.method:                           none
-proxy.browser-only:                     nie
-proxy.pac-url:                          --
-proxy.pac-script:                       --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth0
@@ -3812,12 +3734,12 @@ UUID-con-gsm3-REPLACED-REPLACED-REPL  gsm
 UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet 
 
 <<<
-size: 6243
+size: 6069
 location: src/tests/client/test-client.py:test_003()/92
 cmd: $NMCLI --color yes con s ethernet
 lang: C
 returncode: 0
-stdout: 6098 bytes
+stdout: 5924 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -3917,10 +3839,6 @@ ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
 ipv6.token:                             --
-proxy.method:                           none
-proxy.browser-only:                     no
-proxy.pac-url:                          --
-proxy.pac-script:                       --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth1
@@ -3950,12 +3868,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 6288
+size: 6113
 location: src/tests/client/test-client.py:test_003()/93
 cmd: $NMCLI --color yes con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 6133 bytes
+stdout: 5958 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -4055,10 +3973,6 @@ ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
 ipv6.token:                             --
-proxy.method:                           none
-proxy.browser-only:                     nie
-proxy.pac-url:                          --
-proxy.pac-script:                       --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth1
@@ -4088,12 +4002,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 5573
+size: 5399
 location: src/tests/client/test-client.py:test_003()/94
 cmd: $NMCLI --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 5388 bytes
+stdout: 5214 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -4193,10 +4107,6 @@ ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
 ipv6.token:                             --
-proxy.method:                           none
-proxy.browser-only:                     no
-proxy.pac-url:                          --
-proxy.pac-script:                       --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth0
@@ -4212,12 +4122,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 5614
+size: 5439
 location: src/tests/client/test-client.py:test_003()/95
 cmd: $NMCLI --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5419 bytes
+stdout: 5244 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -4317,10 +4227,6 @@ ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
 ipv6.token:                             --
-proxy.method:                           none
-proxy.browser-only:                     nie
-proxy.pac-url:                          --
-proxy.pac-script:                       --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth0
@@ -4562,12 +4468,12 @@ UUID-con-gsm3-REPLACED-REPLACED-REPL  gsm
 UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet 
 
 <<<
-size: 7484
+size: 7230
 location: src/tests/client/test-client.py:test_003()/102
 cmd: $NMCLI --pretty con s ethernet
 lang: C
 returncode: 0
-stdout: 7341 bytes
+stdout: 7087 bytes
 >>>
 ===============================================================================
                      Connection profile details (ethernet)
@@ -4673,11 +4579,6 @@ ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
 ipv6.token:                             --
--------------------------------------------------------------------------------
-proxy.method:                           none
-proxy.browser-only:                     no
-proxy.pac-url:                          --
-proxy.pac-script:                       --
 -------------------------------------------------------------------------------
 ===============================================================================
        Active connection details (UUID-ethernet-REPLACED-REPLACED-REPL)
@@ -4716,12 +4617,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 7550
+size: 7295
 location: src/tests/client/test-client.py:test_003()/103
 cmd: $NMCLI --pretty con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 7397 bytes
+stdout: 7142 bytes
 >>>
 ===============================================================================
                     Szczegóły profilu połączenia (ethernet)
@@ -4828,11 +4729,6 @@ ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
 ipv6.token:                             --
 -------------------------------------------------------------------------------
-proxy.method:                           none
-proxy.browser-only:                     nie
-proxy.pac-url:                          --
-proxy.pac-script:                       --
--------------------------------------------------------------------------------
 ===============================================================================
     Szczegóły aktywowania połączenia (UUID-ethernet-REPLACED-REPLACED-REPL)
 ===============================================================================
@@ -4870,12 +4766,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 6502
+size: 6248
 location: src/tests/client/test-client.py:test_003()/104
 cmd: $NMCLI --pretty c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 6319 bytes
+stdout: 6065 bytes
 >>>
 ===============================================================================
                      Connection profile details (ethernet)
@@ -4982,11 +4878,6 @@ ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
 ipv6.token:                             --
 -------------------------------------------------------------------------------
-proxy.method:                           none
-proxy.browser-only:                     no
-proxy.pac-url:                          --
-proxy.pac-script:                       --
--------------------------------------------------------------------------------
 ===============================================================================
        Active connection details (UUID-ethernet-REPLACED-REPLACED-REPL)
 ===============================================================================
@@ -5006,12 +4897,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 6556
+size: 6301
 location: src/tests/client/test-client.py:test_003()/105
 cmd: $NMCLI --pretty c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 6363 bytes
+stdout: 6108 bytes
 >>>
 ===============================================================================
                     Szczegóły profilu połączenia (ethernet)
@@ -5117,11 +5008,6 @@ ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
 ipv6.token:                             --
--------------------------------------------------------------------------------
-proxy.method:                           none
-proxy.browser-only:                     nie
-proxy.pac-url:                          --
-proxy.pac-script:                       --
 -------------------------------------------------------------------------------
 ===============================================================================
     Szczegóły aktywowania połączenia (UUID-ethernet-REPLACED-REPLACED-REPL)
@@ -5392,12 +5278,12 @@ UUID-con-gsm3-REPLACED-REPLACED-REPL  gsm
 UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet 
 
 <<<
-size: 7496
+size: 7242
 location: src/tests/client/test-client.py:test_003()/112
 cmd: $NMCLI --pretty --color yes con s ethernet
 lang: C
 returncode: 0
-stdout: 7341 bytes
+stdout: 7087 bytes
 >>>
 ===============================================================================
                      Connection profile details (ethernet)
@@ -5503,11 +5389,6 @@ ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
 ipv6.token:                             --
--------------------------------------------------------------------------------
-proxy.method:                           none
-proxy.browser-only:                     no
-proxy.pac-url:                          --
-proxy.pac-script:                       --
 -------------------------------------------------------------------------------
 ===============================================================================
        Active connection details (UUID-ethernet-REPLACED-REPLACED-REPL)
@@ -5546,12 +5427,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 7562
+size: 7307
 location: src/tests/client/test-client.py:test_003()/113
 cmd: $NMCLI --pretty --color yes con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 7397 bytes
+stdout: 7142 bytes
 >>>
 ===============================================================================
                     Szczegóły profilu połączenia (ethernet)
@@ -5658,11 +5539,6 @@ ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
 ipv6.token:                             --
 -------------------------------------------------------------------------------
-proxy.method:                           none
-proxy.browser-only:                     nie
-proxy.pac-url:                          --
-proxy.pac-script:                       --
--------------------------------------------------------------------------------
 ===============================================================================
     Szczegóły aktywowania połączenia (UUID-ethernet-REPLACED-REPLACED-REPL)
 ===============================================================================
@@ -5700,12 +5576,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 6514
+size: 6260
 location: src/tests/client/test-client.py:test_003()/114
 cmd: $NMCLI --pretty --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 6319 bytes
+stdout: 6065 bytes
 >>>
 ===============================================================================
                      Connection profile details (ethernet)
@@ -5812,11 +5688,6 @@ ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
 ipv6.token:                             --
 -------------------------------------------------------------------------------
-proxy.method:                           none
-proxy.browser-only:                     no
-proxy.pac-url:                          --
-proxy.pac-script:                       --
--------------------------------------------------------------------------------
 ===============================================================================
        Active connection details (UUID-ethernet-REPLACED-REPLACED-REPL)
 ===============================================================================
@@ -5836,12 +5707,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 6568
+size: 6313
 location: src/tests/client/test-client.py:test_003()/115
 cmd: $NMCLI --pretty --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 6363 bytes
+stdout: 6108 bytes
 >>>
 ===============================================================================
                     Szczegóły profilu połączenia (ethernet)
@@ -5947,11 +5818,6 @@ ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
 ipv6.token:                             --
--------------------------------------------------------------------------------
-proxy.method:                           none
-proxy.browser-only:                     nie
-proxy.pac-url:                          --
-proxy.pac-script:                       --
 -------------------------------------------------------------------------------
 ===============================================================================
     Szczegóły aktywowania połączenia (UUID-ethernet-REPLACED-REPLACED-REPL)
@@ -6202,12 +6068,12 @@ UUID-con-gsm3-REPLACED-REPLACED-REPL:gsm
 UUID-con-xx1-REPLACED-REPLACED-REPLA:802-3-ethernet
 
 <<<
-size: 3333
+size: 3260
 location: src/tests/client/test-client.py:test_003()/122
 cmd: $NMCLI --terse con s ethernet
 lang: C
 returncode: 0
-stdout: 3191 bytes
+stdout: 3118 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -6307,10 +6173,6 @@ ipv6.dhcp-hostname:
 ipv6.dhcp-hostname-flags:0x0
 ipv6.auto-route-ext-gw:-1
 ipv6.token:
-proxy.method:none
-proxy.browser-only:no
-proxy.pac-url:
-proxy.pac-script:
 GENERAL.NAME:ethernet
 GENERAL.UUID:UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:eth1
@@ -6340,12 +6202,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 3343
+size: 3270
 location: src/tests/client/test-client.py:test_003()/123
 cmd: $NMCLI --terse con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3191 bytes
+stdout: 3118 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -6445,10 +6307,6 @@ ipv6.dhcp-hostname:
 ipv6.dhcp-hostname-flags:0x0
 ipv6.auto-route-ext-gw:-1
 ipv6.token:
-proxy.method:none
-proxy.browser-only:no
-proxy.pac-url:
-proxy.pac-script:
 GENERAL.NAME:ethernet
 GENERAL.UUID:UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:eth1
@@ -6478,12 +6336,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 2983
+size: 2910
 location: src/tests/client/test-client.py:test_003()/124
 cmd: $NMCLI --terse c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 2801 bytes
+stdout: 2728 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -6583,10 +6441,6 @@ ipv6.dhcp-hostname:
 ipv6.dhcp-hostname-flags:0x0
 ipv6.auto-route-ext-gw:-1
 ipv6.token:
-proxy.method:none
-proxy.browser-only:no
-proxy.pac-url:
-proxy.pac-script:
 GENERAL.NAME:ethernet
 GENERAL.UUID:UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:eth0
@@ -6602,12 +6456,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 2993
+size: 2920
 location: src/tests/client/test-client.py:test_003()/125
 cmd: $NMCLI --terse c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2801 bytes
+stdout: 2728 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -6707,10 +6561,6 @@ ipv6.dhcp-hostname:
 ipv6.dhcp-hostname-flags:0x0
 ipv6.auto-route-ext-gw:-1
 ipv6.token:
-proxy.method:none
-proxy.browser-only:no
-proxy.pac-url:
-proxy.pac-script:
 GENERAL.NAME:ethernet
 GENERAL.UUID:UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:eth0
@@ -6932,12 +6782,12 @@ UUID-con-gsm3-REPLACED-REPLACED-REPL:gsm
 UUID-con-xx1-REPLACED-REPLACED-REPLA:802-3-ethernet
 
 <<<
-size: 3345
+size: 3272
 location: src/tests/client/test-client.py:test_003()/132
 cmd: $NMCLI --terse --color yes con s ethernet
 lang: C
 returncode: 0
-stdout: 3191 bytes
+stdout: 3118 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -7037,10 +6887,6 @@ ipv6.dhcp-hostname:
 ipv6.dhcp-hostname-flags:0x0
 ipv6.auto-route-ext-gw:-1
 ipv6.token:
-proxy.method:none
-proxy.browser-only:no
-proxy.pac-url:
-proxy.pac-script:
 GENERAL.NAME:ethernet
 GENERAL.UUID:UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:eth1
@@ -7070,12 +6916,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 3355
+size: 3282
 location: src/tests/client/test-client.py:test_003()/133
 cmd: $NMCLI --terse --color yes con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3191 bytes
+stdout: 3118 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -7175,10 +7021,6 @@ ipv6.dhcp-hostname:
 ipv6.dhcp-hostname-flags:0x0
 ipv6.auto-route-ext-gw:-1
 ipv6.token:
-proxy.method:none
-proxy.browser-only:no
-proxy.pac-url:
-proxy.pac-script:
 GENERAL.NAME:ethernet
 GENERAL.UUID:UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:eth1
@@ -7208,12 +7050,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 2995
+size: 2922
 location: src/tests/client/test-client.py:test_003()/134
 cmd: $NMCLI --terse --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 2801 bytes
+stdout: 2728 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -7313,10 +7155,6 @@ ipv6.dhcp-hostname:
 ipv6.dhcp-hostname-flags:0x0
 ipv6.auto-route-ext-gw:-1
 ipv6.token:
-proxy.method:none
-proxy.browser-only:no
-proxy.pac-url:
-proxy.pac-script:
 GENERAL.NAME:ethernet
 GENERAL.UUID:UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:eth0
@@ -7332,12 +7170,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 3005
+size: 2932
 location: src/tests/client/test-client.py:test_003()/135
 cmd: $NMCLI --terse --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2801 bytes
+stdout: 2728 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -7437,10 +7275,6 @@ ipv6.dhcp-hostname:
 ipv6.dhcp-hostname-flags:0x0
 ipv6.auto-route-ext-gw:-1
 ipv6.token:
-proxy.method:none
-proxy.browser-only:no
-proxy.pac-url:
-proxy.pac-script:
 GENERAL.NAME:ethernet
 GENERAL.UUID:UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:eth0
@@ -7666,12 +7500,12 @@ UUID-con-gsm3-REPLACED-REPLACED-REPL  gsm
 UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet 
 
 <<<
-size: 4181
+size: 4080
 location: src/tests/client/test-client.py:test_003()/142
 cmd: $NMCLI --mode tabular con s ethernet
 lang: C
 returncode: 0
-stdout: 4032 bytes
+stdout: 3931 bytes
 >>>
 name        id        uuid                                  stable-id  type            interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr         dns-over-tls  mptcp-flags    wait-device-timeout  wait-activation-delay 
 connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              yes          0                     -1 (default)         0 (default)    -1            0          no         --           --    --      --          -1 (default)        --           0                     unknown  default  -1 (default)  -1 (default)  -1 (default)  0x0 (default)  -1                   -1                    
@@ -7684,9 +7518,6 @@ ipv4  auto    --   --          --           0             --         --       --
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   addr-gen-mode  ra-timeout   mtu   dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
 ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             no                  no               no             yes       -1 (default)      -1 (unknown)  default        0 (default)  auto  --         --         0 (default)   yes                 --             0x0 (none)           -1 (default)       --    
-
-name   method  browser-only  pac-url  pac-script 
-proxy  none    no            --       --         
 
 GROUP    NAME      UUID                                  DEVICES  IP-IFACE  STATE      DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
 GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth1     eth1      activated  no       no        --           no   /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/6  --    --          
@@ -7697,12 +7528,12 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     eth0      deac
 
 
 <<<
-size: 4231
+size: 4130
 location: src/tests/client/test-client.py:test_003()/143
 cmd: $NMCLI --mode tabular con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4072 bytes
+stdout: 3971 bytes
 >>>
 name        id        uuid                                  stable-id  type            interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr         dns-over-tls  mptcp-flags    wait-device-timeout  wait-activation-delay 
 connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              tak          0                     -1 (default)         0 (default)    -1            0          nie        --           --    --      --          -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default)  -1 (default)  0x0 (default)  -1                   -1                    
@@ -7716,9 +7547,6 @@ ipv4  auto    --   --          --           0             --         --       --
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   addr-gen-mode  ra-timeout   mtu           dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
 ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             nie                 nie              nie            tak       -1 (default)      -1 (unknown)  default        0 (default)  automatyczne  --         --         0 (default)   tak                 --             0x0 (none)           -1 (default)       --    
 
-name   method  browser-only  pac-url  pac-script 
-proxy  none    nie           --       --         
-
 GROUP    NAME      UUID                                  DEVICES  IP-IFACE  STATE       DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
 GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth1     eth1      aktywowano  nie      nie       --           nie  /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/6  --    --          
 
@@ -7728,12 +7556,12 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     eth0      deza
 
 
 <<<
-size: 3719
+size: 3618
 location: src/tests/client/test-client.py:test_003()/144
 cmd: $NMCLI --mode tabular c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 3530 bytes
+stdout: 3429 bytes
 >>>
 name        id        uuid                                  stable-id  type            interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr         dns-over-tls  mptcp-flags    wait-device-timeout  wait-activation-delay 
 connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              yes          0                     -1 (default)         0 (default)    -1            0          no         --           --    --      --          -1 (default)        --           0                     unknown  default  -1 (default)  -1 (default)  -1 (default)  0x0 (default)  -1                   -1                    
@@ -7747,20 +7575,17 @@ ipv4  auto    --   --          --           0             --         --       --
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   addr-gen-mode  ra-timeout   mtu   dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
 ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             no                  no               no             yes       -1 (default)      -1 (unknown)  default        0 (default)  auto  --         --         0 (default)   yes                 --             0x0 (none)           -1 (default)       --    
 
-name   method  browser-only  pac-url  pac-script 
-proxy  none    no            --       --         
-
 GROUP    NAME      UUID                                  DEVICES  IP-IFACE  STATE         DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
 GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     eth0      deactivating  no       no        --           no   /org/freedesktop/NetworkManager/ActiveConnection/1  /org/freedesktop/NetworkManager/Settings/Connection/6  --    --          
 
 
 <<<
-size: 3767
+size: 3666
 location: src/tests/client/test-client.py:test_003()/145
 cmd: $NMCLI --mode tabular c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3568 bytes
+stdout: 3467 bytes
 >>>
 name        id        uuid                                  stable-id  type            interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr         dns-over-tls  mptcp-flags    wait-device-timeout  wait-activation-delay 
 connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              tak          0                     -1 (default)         0 (default)    -1            0          nie        --           --    --      --          -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default)  -1 (default)  0x0 (default)  -1                   -1                    
@@ -7773,9 +7598,6 @@ ipv4  auto    --   --          --           0             --         --       --
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   addr-gen-mode  ra-timeout   mtu           dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
 ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             nie                 nie              nie            tak       -1 (default)      -1 (unknown)  default        0 (default)  automatyczne  --         --         0 (default)   tak                 --             0x0 (none)           -1 (default)       --    
-
-name   method  browser-only  pac-url  pac-script 
-proxy  none    nie           --       --         
 
 GROUP    NAME      UUID                                  DEVICES  IP-IFACE  STATE           DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
 GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     eth0      dezaktywowanie  nie      nie       --           nie  /org/freedesktop/NetworkManager/ActiveConnection/1  /org/freedesktop/NetworkManager/Settings/Connection/6  --    --          
@@ -7918,12 +7740,12 @@ UUID-con-gsm3-REPLACED-REPLACED-REPL  gsm
 UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet 
 
 <<<
-size: 4193
+size: 4092
 location: src/tests/client/test-client.py:test_003()/152
 cmd: $NMCLI --mode tabular --color yes con s ethernet
 lang: C
 returncode: 0
-stdout: 4032 bytes
+stdout: 3931 bytes
 >>>
 name        id        uuid                                  stable-id  type            interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr         dns-over-tls  mptcp-flags    wait-device-timeout  wait-activation-delay 
 connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              yes          0                     -1 (default)         0 (default)    -1            0          no         --           --    --      --          -1 (default)        --           0                     unknown  default  -1 (default)  -1 (default)  -1 (default)  0x0 (default)  -1                   -1                    
@@ -7936,9 +7758,6 @@ ipv4  auto    --   --          --           0             --         --       --
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   addr-gen-mode  ra-timeout   mtu   dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
 ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             no                  no               no             yes       -1 (default)      -1 (unknown)  default        0 (default)  auto  --         --         0 (default)   yes                 --             0x0 (none)           -1 (default)       --    
-
-name   method  browser-only  pac-url  pac-script 
-proxy  none    no            --       --         
 
 GROUP    NAME      UUID                                  DEVICES  IP-IFACE  STATE      DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
 GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth1     eth1      activated  no       no        --           no   /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/6  --    --          
@@ -7949,12 +7768,12 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     eth0      deac
 
 
 <<<
-size: 4243
+size: 4142
 location: src/tests/client/test-client.py:test_003()/153
 cmd: $NMCLI --mode tabular --color yes con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4072 bytes
+stdout: 3971 bytes
 >>>
 name        id        uuid                                  stable-id  type            interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr         dns-over-tls  mptcp-flags    wait-device-timeout  wait-activation-delay 
 connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              tak          0                     -1 (default)         0 (default)    -1            0          nie        --           --    --      --          -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default)  -1 (default)  0x0 (default)  -1                   -1                    
@@ -7968,9 +7787,6 @@ ipv4  auto    --   --          --           0             --         --       --
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   addr-gen-mode  ra-timeout   mtu           dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
 ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             nie                 nie              nie            tak       -1 (default)      -1 (unknown)  default        0 (default)  automatyczne  --         --         0 (default)   tak                 --             0x0 (none)           -1 (default)       --    
 
-name   method  browser-only  pac-url  pac-script 
-proxy  none    nie           --       --         
-
 GROUP    NAME      UUID                                  DEVICES  IP-IFACE  STATE       DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
 GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth1     eth1      aktywowano  nie      nie       --           nie  /org/freedesktop/NetworkManager/ActiveConnection/2  /org/freedesktop/NetworkManager/Settings/Connection/6  --    --          
 
@@ -7980,12 +7796,12 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     eth0      deza
 
 
 <<<
-size: 3731
+size: 3630
 location: src/tests/client/test-client.py:test_003()/154
 cmd: $NMCLI --mode tabular --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 3530 bytes
+stdout: 3429 bytes
 >>>
 name        id        uuid                                  stable-id  type            interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered  lldp     mdns          llmnr         dns-over-tls  mptcp-flags    wait-device-timeout  wait-activation-delay 
 connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              yes          0                     -1 (default)         0 (default)    -1            0          no         --           --    --      --          -1 (default)        --           0                     unknown  default  -1 (default)  -1 (default)  -1 (default)  0x0 (default)  -1                   -1                    
@@ -7999,20 +7815,17 @@ ipv4  auto    --   --          --           0             --         --       --
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   addr-gen-mode  ra-timeout   mtu   dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
 ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             no                  no               no             yes       -1 (default)      -1 (unknown)  default        0 (default)  auto  --         --         0 (default)   yes                 --             0x0 (none)           -1 (default)       --    
 
-name   method  browser-only  pac-url  pac-script 
-proxy  none    no            --       --         
-
 GROUP    NAME      UUID                                  DEVICES  IP-IFACE  STATE         DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
 GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     eth0      deactivating  no       no        --           no   /org/freedesktop/NetworkManager/ActiveConnection/1  /org/freedesktop/NetworkManager/Settings/Connection/6  --    --          
 
 
 <<<
-size: 3779
+size: 3678
 location: src/tests/client/test-client.py:test_003()/155
 cmd: $NMCLI --mode tabular --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3568 bytes
+stdout: 3467 bytes
 >>>
 name        id        uuid                                  stable-id  type            interface-name  autoconnect  autoconnect-priority  autoconnect-retries  multi-connect  auth-retries  timestamp  read-only  permissions  zone  master  slave-type  autoconnect-slaves  secondaries  gateway-ping-timeout  metered   lldp     mdns          llmnr         dns-over-tls  mptcp-flags    wait-device-timeout  wait-activation-delay 
 connection  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  --         802-3-ethernet  --              tak          0                     -1 (default)         0 (default)    -1            0          nie        --           --    --      --          -1 (default)        --           0                     nieznane  default  -1 (default)  -1 (default)  -1 (default)  0x0 (default)  -1                   -1                    
@@ -8025,9 +7838,6 @@ ipv4  auto    --   --          --           0             --         --       --
 
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   addr-gen-mode  ra-timeout   mtu           dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
 ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             nie                 nie              nie            tak       -1 (default)      -1 (unknown)  default        0 (default)  automatyczne  --         --         0 (default)   tak                 --             0x0 (none)           -1 (default)       --    
-
-name   method  browser-only  pac-url  pac-script 
-proxy  none    nie           --       --         
 
 GROUP    NAME      UUID                                  DEVICES  IP-IFACE  STATE           DEFAULT  DEFAULT6  SPEC-OBJECT  VPN  DBUS-PATH                                           CON-PATH                                               ZONE  MASTER-PATH 
 GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     eth0      dezaktywowanie  nie      nie       --           nie  /org/freedesktop/NetworkManager/ActiveConnection/1  /org/freedesktop/NetworkManager/Settings/Connection/6  --    --          
@@ -8186,12 +7996,12 @@ UUID-con-gsm3-REPLACED-REPLACED-REPL  gsm
 UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet 
 
 <<<
-size: 6743
+size: 6591
 location: src/tests/client/test-client.py:test_003()/162
 cmd: $NMCLI --mode tabular --pretty con s ethernet
 lang: C
 returncode: 0
-stdout: 6585 bytes
+stdout: 6433 bytes
 >>>
 =========================================
   Connection profile details (ethernet)
@@ -8211,10 +8021,6 @@ ipv4  auto    --   --          --           0             --         --       --
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   addr-gen-mode  ra-timeout   mtu   dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             no                  no               no             yes       -1 (default)      -1 (unknown)  default        0 (default)  auto  --         --         0 (default)   yes                 --             0x0 (none)           -1 (default)       --    
-
-name   method  browser-only  pac-url  pac-script 
---------------------------------------------------
-proxy  none    no            --       --         
 
 ====================================================================
   Active connection details (UUID-ethernet-REPLACED-REPLACED-REPL)
@@ -8233,12 +8039,12 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     eth0      deac
 
 
 <<<
-size: 6873
+size: 6721
 location: src/tests/client/test-client.py:test_003()/163
 cmd: $NMCLI --mode tabular --pretty con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 6705 bytes
+stdout: 6553 bytes
 >>>
 ===========================================
   Szczegóły profilu połączenia (ethernet)
@@ -8259,10 +8065,6 @@ name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  ro
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             nie                 nie              nie            tak       -1 (default)      -1 (unknown)  default        0 (default)  automatyczne  --         --         0 (default)   tak                 --             0x0 (none)           -1 (default)       --    
 
-name   method  browser-only  pac-url  pac-script 
---------------------------------------------------
-proxy  none    nie           --       --         
-
 ===========================================================================
   Szczegóły aktywowania połączenia (UUID-ethernet-REPLACED-REPLACED-REPL)
 ===========================================================================
@@ -8280,12 +8082,12 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     eth0      deza
 
 
 <<<
-size: 5825
+size: 5673
 location: src/tests/client/test-client.py:test_003()/164
 cmd: $NMCLI --mode tabular --pretty c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 5627 bytes
+stdout: 5475 bytes
 >>>
 =========================================
   Connection profile details (ethernet)
@@ -8306,10 +8108,6 @@ name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  ro
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             no                  no               no             yes       -1 (default)      -1 (unknown)  default        0 (default)  auto  --         --         0 (default)   yes                 --             0x0 (none)           -1 (default)       --    
 
-name   method  browser-only  pac-url  pac-script 
---------------------------------------------------
-proxy  none    no            --       --         
-
 ====================================================================
   Active connection details (UUID-ethernet-REPLACED-REPLACED-REPL)
 ====================================================================
@@ -8319,12 +8117,12 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     eth0      deac
 
 
 <<<
-size: 5927
+size: 5775
 location: src/tests/client/test-client.py:test_003()/165
 cmd: $NMCLI --mode tabular --pretty c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5719 bytes
+stdout: 5567 bytes
 >>>
 ===========================================
   Szczegóły profilu połączenia (ethernet)
@@ -8344,10 +8142,6 @@ ipv4  auto    --   --          --           0             --         --       --
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   addr-gen-mode  ra-timeout   mtu           dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             nie                 nie              nie            tak       -1 (default)      -1 (unknown)  default        0 (default)  automatyczne  --         --         0 (default)   tak                 --             0x0 (none)           -1 (default)       --    
-
-name   method  browser-only  pac-url  pac-script 
---------------------------------------------------
-proxy  none    nie           --       --         
 
 ===========================================================================
   Szczegóły aktywowania połączenia (UUID-ethernet-REPLACED-REPLACED-REPL)
@@ -8534,12 +8328,12 @@ UUID-con-gsm3-REPLACED-REPLACED-REPL  gsm
 UUID-con-xx1-REPLACED-REPLACED-REPLA  ethernet 
 
 <<<
-size: 6755
+size: 6603
 location: src/tests/client/test-client.py:test_003()/172
 cmd: $NMCLI --mode tabular --pretty --color yes con s ethernet
 lang: C
 returncode: 0
-stdout: 6585 bytes
+stdout: 6433 bytes
 >>>
 =========================================
   Connection profile details (ethernet)
@@ -8559,10 +8353,6 @@ ipv4  auto    --   --          --           0             --         --       --
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   addr-gen-mode  ra-timeout   mtu   dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             no                  no               no             yes       -1 (default)      -1 (unknown)  default        0 (default)  auto  --         --         0 (default)   yes                 --             0x0 (none)           -1 (default)       --    
-
-name   method  browser-only  pac-url  pac-script 
---------------------------------------------------
-proxy  none    no            --       --         
 
 ====================================================================
   Active connection details (UUID-ethernet-REPLACED-REPLACED-REPL)
@@ -8581,12 +8371,12 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     eth0      deac
 
 
 <<<
-size: 6885
+size: 6733
 location: src/tests/client/test-client.py:test_003()/173
 cmd: $NMCLI --mode tabular --pretty --color yes con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 6705 bytes
+stdout: 6553 bytes
 >>>
 ===========================================
   Szczegóły profilu połączenia (ethernet)
@@ -8607,10 +8397,6 @@ name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  ro
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             nie                 nie              nie            tak       -1 (default)      -1 (unknown)  default        0 (default)  automatyczne  --         --         0 (default)   tak                 --             0x0 (none)           -1 (default)       --    
 
-name   method  browser-only  pac-url  pac-script 
---------------------------------------------------
-proxy  none    nie           --       --         
-
 ===========================================================================
   Szczegóły aktywowania połączenia (UUID-ethernet-REPLACED-REPLACED-REPL)
 ===========================================================================
@@ -8628,12 +8414,12 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     eth0      deza
 
 
 <<<
-size: 5837
+size: 5685
 location: src/tests/client/test-client.py:test_003()/174
 cmd: $NMCLI --mode tabular --pretty --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 5627 bytes
+stdout: 5475 bytes
 >>>
 =========================================
   Connection profile details (ethernet)
@@ -8654,10 +8440,6 @@ name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  ro
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             no                  no               no             yes       -1 (default)      -1 (unknown)  default        0 (default)  auto  --         --         0 (default)   yes                 --             0x0 (none)           -1 (default)       --    
 
-name   method  browser-only  pac-url  pac-script 
---------------------------------------------------
-proxy  none    no            --       --         
-
 ====================================================================
   Active connection details (UUID-ethernet-REPLACED-REPLACED-REPL)
 ====================================================================
@@ -8667,12 +8449,12 @@ GENERAL  ethernet  UUID-ethernet-REPLACED-REPLACED-REPL  eth0     eth0      deac
 
 
 <<<
-size: 5939
+size: 5787
 location: src/tests/client/test-client.py:test_003()/175
 cmd: $NMCLI --mode tabular --pretty --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5719 bytes
+stdout: 5567 bytes
 >>>
 ===========================================
   Szczegóły profilu połączenia (ethernet)
@@ -8692,10 +8474,6 @@ ipv4  auto    --   --          --           0             --         --       --
 name  method  dns  dns-search  dns-options  dns-priority  addresses  gateway  routes  route-metric  route-table  routing-rules  ignore-auto-routes  ignore-auto-dns  never-default  may-fail  required-timeout  ip6-privacy   addr-gen-mode  ra-timeout   mtu           dhcp-duid  dhcp-iaid  dhcp-timeout  dhcp-send-hostname  dhcp-hostname  dhcp-hostname-flags  auto-route-ext-gw  token 
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 ipv6  auto    --   --          --           0             --         --       --      -1            0 (unspec)   --             nie                 nie              nie            tak       -1 (default)      -1 (unknown)  default        0 (default)  automatyczne  --         --         0 (default)   tak                 --             0x0 (none)           -1 (default)       --    
-
-name   method  browser-only  pac-url  pac-script 
---------------------------------------------------
-proxy  none    nie           --       --         
 
 ===========================================================================
   Szczegóły aktywowania połączenia (UUID-ethernet-REPLACED-REPLACED-REPL)
@@ -8862,67 +8640,63 @@ UUID-con-gsm3-REPLACED-REPLACED-REPL:gsm
 UUID-con-xx1-REPLACED-REPLACED-REPLA:802-3-ethernet
 
 <<<
-size: 881
+size: 865
 location: src/tests/client/test-client.py:test_003()/182
 cmd: $NMCLI --mode tabular --terse con s ethernet
 lang: C
 returncode: 0
-stdout: 725 bytes
+stdout: 709 bytes
 >>>
 connection:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL::802-3-ethernet::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1:0x0:-1:-1
 802-3-ethernet::0::no:::::auto::::default::-1
 ipv4:auto::::0::::-1:0::no:no:::0:yes:::0x0:no:yes:-1:-1::0::-1
 ipv6:auto::::0::::-1:0::no:no:no:yes:-1:-1:default:0:auto:::0:yes::0x0:-1:
-proxy:none:no::
 GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth1:eth1:activated:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/2:/org/freedesktop/NetworkManager/Settings/Connection/6::
 
 GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth0:eth0:deactivating:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/1:/org/freedesktop/NetworkManager/Settings/Connection/6::
 
 <<<
-size: 891
+size: 875
 location: src/tests/client/test-client.py:test_003()/183
 cmd: $NMCLI --mode tabular --terse con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 725 bytes
+stdout: 709 bytes
 >>>
 connection:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL::802-3-ethernet::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1:0x0:-1:-1
 802-3-ethernet::0::no:::::auto::::default::-1
 ipv4:auto::::0::::-1:0::no:no:::0:yes:::0x0:no:yes:-1:-1::0::-1
 ipv6:auto::::0::::-1:0::no:no:no:yes:-1:-1:default:0:auto:::0:yes::0x0:-1:
-proxy:none:no::
 GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth1:eth1:activated:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/2:/org/freedesktop/NetworkManager/Settings/Connection/6::
 
 GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth0:eth0:deactivating:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/1:/org/freedesktop/NetworkManager/Settings/Connection/6::
 
 <<<
-size: 729
+size: 713
 location: src/tests/client/test-client.py:test_003()/184
 cmd: $NMCLI --mode tabular --terse c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 533 bytes
+stdout: 517 bytes
 >>>
 connection:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL::802-3-ethernet::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1:0x0:-1:-1
 802-3-ethernet::0::no:::::auto::::default::-1
 ipv4:auto::::0::::-1:0::no:no:::0:yes:::0x0:no:yes:-1:-1::0::-1
 ipv6:auto::::0::::-1:0::no:no:no:yes:-1:-1:default:0:auto:::0:yes::0x0:-1:
-proxy:none:no::
 GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth0:eth0:deactivating:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/1:/org/freedesktop/NetworkManager/Settings/Connection/6::
 
 <<<
-size: 739
+size: 723
 location: src/tests/client/test-client.py:test_003()/185
 cmd: $NMCLI --mode tabular --terse c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 533 bytes
+stdout: 517 bytes
 >>>
 connection:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL::802-3-ethernet::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1:0x0:-1:-1
 802-3-ethernet::0::no:::::auto::::default::-1
 ipv4:auto::::0::::-1:0::no:no:::0:yes:::0x0:no:yes:-1:-1::0::-1
 ipv6:auto::::0::::-1:0::no:no:no:yes:-1:-1:default:0:auto:::0:yes::0x0:-1:
-proxy:none:no::
 GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth0:eth0:deactivating:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/1:/org/freedesktop/NetworkManager/Settings/Connection/6::
 
 <<<
@@ -9024,67 +8798,63 @@ UUID-con-gsm3-REPLACED-REPLACED-REPL:gsm
 UUID-con-xx1-REPLACED-REPLACED-REPLA:802-3-ethernet
 
 <<<
-size: 893
+size: 877
 location: src/tests/client/test-client.py:test_003()/192
 cmd: $NMCLI --mode tabular --terse --color yes con s ethernet
 lang: C
 returncode: 0
-stdout: 725 bytes
+stdout: 709 bytes
 >>>
 connection:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL::802-3-ethernet::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1:0x0:-1:-1
 802-3-ethernet::0::no:::::auto::::default::-1
 ipv4:auto::::0::::-1:0::no:no:::0:yes:::0x0:no:yes:-1:-1::0::-1
 ipv6:auto::::0::::-1:0::no:no:no:yes:-1:-1:default:0:auto:::0:yes::0x0:-1:
-proxy:none:no::
 GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth1:eth1:activated:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/2:/org/freedesktop/NetworkManager/Settings/Connection/6::
 
 GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth0:eth0:deactivating:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/1:/org/freedesktop/NetworkManager/Settings/Connection/6::
 
 <<<
-size: 903
+size: 887
 location: src/tests/client/test-client.py:test_003()/193
 cmd: $NMCLI --mode tabular --terse --color yes con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 725 bytes
+stdout: 709 bytes
 >>>
 connection:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL::802-3-ethernet::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1:0x0:-1:-1
 802-3-ethernet::0::no:::::auto::::default::-1
 ipv4:auto::::0::::-1:0::no:no:::0:yes:::0x0:no:yes:-1:-1::0::-1
 ipv6:auto::::0::::-1:0::no:no:no:yes:-1:-1:default:0:auto:::0:yes::0x0:-1:
-proxy:none:no::
 GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth1:eth1:activated:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/2:/org/freedesktop/NetworkManager/Settings/Connection/6::
 
 GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth0:eth0:deactivating:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/1:/org/freedesktop/NetworkManager/Settings/Connection/6::
 
 <<<
-size: 741
+size: 725
 location: src/tests/client/test-client.py:test_003()/194
 cmd: $NMCLI --mode tabular --terse --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 533 bytes
+stdout: 517 bytes
 >>>
 connection:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL::802-3-ethernet::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1:0x0:-1:-1
 802-3-ethernet::0::no:::::auto::::default::-1
 ipv4:auto::::0::::-1:0::no:no:::0:yes:::0x0:no:yes:-1:-1::0::-1
 ipv6:auto::::0::::-1:0::no:no:no:yes:-1:-1:default:0:auto:::0:yes::0x0:-1:
-proxy:none:no::
 GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth0:eth0:deactivating:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/1:/org/freedesktop/NetworkManager/Settings/Connection/6::
 
 <<<
-size: 751
+size: 735
 location: src/tests/client/test-client.py:test_003()/195
 cmd: $NMCLI --mode tabular --terse --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 533 bytes
+stdout: 517 bytes
 >>>
 connection:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL::802-3-ethernet::yes:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1:0x0:-1:-1
 802-3-ethernet::0::no:::::auto::::default::-1
 ipv4:auto::::0::::-1:0::no:no:::0:yes:::0x0:no:yes:-1:-1::0::-1
 ipv6:auto::::0::::-1:0::no:no:no:yes:-1:-1:default:0:auto:::0:yes::0x0:-1:
-proxy:none:no::
 GENERAL:ethernet:UUID-ethernet-REPLACED-REPLACED-REPL:eth0:eth0:deactivating:no:no::no:/org/freedesktop/NetworkManager/ActiveConnection/1:/org/freedesktop/NetworkManager/Settings/Connection/6::
 
 <<<
@@ -9394,12 +9164,12 @@ UUID:                                   UUID-con-xx1-REPLACED-REPLACED-REPLA
 TYPE:                                   ethernet
 
 <<<
-size: 6249
+size: 6075
 location: src/tests/client/test-client.py:test_003()/202
 cmd: $NMCLI --mode multiline con s ethernet
 lang: C
 returncode: 0
-stdout: 6098 bytes
+stdout: 5924 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -9499,10 +9269,6 @@ ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
 ipv6.token:                             --
-proxy.method:                           none
-proxy.browser-only:                     no
-proxy.pac-url:                          --
-proxy.pac-script:                       --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth1
@@ -9532,12 +9298,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 6294
+size: 6119
 location: src/tests/client/test-client.py:test_003()/203
 cmd: $NMCLI --mode multiline con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 6133 bytes
+stdout: 5958 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -9637,10 +9403,6 @@ ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
 ipv6.token:                             --
-proxy.method:                           none
-proxy.browser-only:                     nie
-proxy.pac-url:                          --
-proxy.pac-script:                       --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth1
@@ -9670,12 +9432,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 5579
+size: 5405
 location: src/tests/client/test-client.py:test_003()/204
 cmd: $NMCLI --mode multiline c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 5388 bytes
+stdout: 5214 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -9775,10 +9537,6 @@ ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
 ipv6.token:                             --
-proxy.method:                           none
-proxy.browser-only:                     no
-proxy.pac-url:                          --
-proxy.pac-script:                       --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth0
@@ -9794,12 +9552,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 5620
+size: 5445
 location: src/tests/client/test-client.py:test_003()/205
 cmd: $NMCLI --mode multiline c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5419 bytes
+stdout: 5244 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -9899,10 +9657,6 @@ ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
 ipv6.token:                             --
-proxy.method:                           none
-proxy.browser-only:                     nie
-proxy.pac-url:                          --
-proxy.pac-script:                       --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth0
@@ -10332,12 +10086,12 @@ UUID:                                   UUID-con-xx1-REPLACED-REPLACED-REPLA
 TYPE:                                   ethernet
 
 <<<
-size: 6261
+size: 6087
 location: src/tests/client/test-client.py:test_003()/212
 cmd: $NMCLI --mode multiline --color yes con s ethernet
 lang: C
 returncode: 0
-stdout: 6098 bytes
+stdout: 5924 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -10437,10 +10191,6 @@ ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
 ipv6.token:                             --
-proxy.method:                           none
-proxy.browser-only:                     no
-proxy.pac-url:                          --
-proxy.pac-script:                       --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth1
@@ -10470,12 +10220,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 6306
+size: 6131
 location: src/tests/client/test-client.py:test_003()/213
 cmd: $NMCLI --mode multiline --color yes con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 6133 bytes
+stdout: 5958 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -10575,10 +10325,6 @@ ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
 ipv6.token:                             --
-proxy.method:                           none
-proxy.browser-only:                     nie
-proxy.pac-url:                          --
-proxy.pac-script:                       --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth1
@@ -10608,12 +10354,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 5591
+size: 5417
 location: src/tests/client/test-client.py:test_003()/214
 cmd: $NMCLI --mode multiline --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 5388 bytes
+stdout: 5214 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -10713,10 +10459,6 @@ ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
 ipv6.token:                             --
-proxy.method:                           none
-proxy.browser-only:                     no
-proxy.pac-url:                          --
-proxy.pac-script:                       --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth0
@@ -10732,12 +10474,12 @@ GENERAL.ZONE:                           --
 GENERAL.MASTER-PATH:                    --
 
 <<<
-size: 5632
+size: 5457
 location: src/tests/client/test-client.py:test_003()/215
 cmd: $NMCLI --mode multiline --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5419 bytes
+stdout: 5244 bytes
 >>>
 connection.id:                          ethernet
 connection.uuid:                        UUID-ethernet-REPLACED-REPLACED-REPL
@@ -10837,10 +10579,6 @@ ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
 ipv6.token:                             --
-proxy.method:                           none
-proxy.browser-only:                     nie
-proxy.pac-url:                          --
-proxy.pac-script:                       --
 GENERAL.NAME:                           ethernet
 GENERAL.UUID:                           UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:                        eth0
@@ -11308,12 +11046,12 @@ TYPE:                                   ethernet
 -------------------------------------------------------------------------------
 
 <<<
-size: 7501
+size: 7247
 location: src/tests/client/test-client.py:test_003()/222
 cmd: $NMCLI --mode multiline --pretty con s ethernet
 lang: C
 returncode: 0
-stdout: 7341 bytes
+stdout: 7087 bytes
 >>>
 ===============================================================================
                      Connection profile details (ethernet)
@@ -11419,11 +11157,6 @@ ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
 ipv6.token:                             --
--------------------------------------------------------------------------------
-proxy.method:                           none
-proxy.browser-only:                     no
-proxy.pac-url:                          --
-proxy.pac-script:                       --
 -------------------------------------------------------------------------------
 ===============================================================================
        Active connection details (UUID-ethernet-REPLACED-REPLACED-REPL)
@@ -11462,12 +11195,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 7567
+size: 7312
 location: src/tests/client/test-client.py:test_003()/223
 cmd: $NMCLI --mode multiline --pretty con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 7397 bytes
+stdout: 7142 bytes
 >>>
 ===============================================================================
                     Szczegóły profilu połączenia (ethernet)
@@ -11574,11 +11307,6 @@ ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
 ipv6.token:                             --
 -------------------------------------------------------------------------------
-proxy.method:                           none
-proxy.browser-only:                     nie
-proxy.pac-url:                          --
-proxy.pac-script:                       --
--------------------------------------------------------------------------------
 ===============================================================================
     Szczegóły aktywowania połączenia (UUID-ethernet-REPLACED-REPLACED-REPL)
 ===============================================================================
@@ -11616,12 +11344,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 6519
+size: 6265
 location: src/tests/client/test-client.py:test_003()/224
 cmd: $NMCLI --mode multiline --pretty c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 6319 bytes
+stdout: 6065 bytes
 >>>
 ===============================================================================
                      Connection profile details (ethernet)
@@ -11728,11 +11456,6 @@ ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
 ipv6.token:                             --
 -------------------------------------------------------------------------------
-proxy.method:                           none
-proxy.browser-only:                     no
-proxy.pac-url:                          --
-proxy.pac-script:                       --
--------------------------------------------------------------------------------
 ===============================================================================
        Active connection details (UUID-ethernet-REPLACED-REPLACED-REPL)
 ===============================================================================
@@ -11752,12 +11475,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 6573
+size: 6318
 location: src/tests/client/test-client.py:test_003()/225
 cmd: $NMCLI --mode multiline --pretty c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 6363 bytes
+stdout: 6108 bytes
 >>>
 ===============================================================================
                     Szczegóły profilu połączenia (ethernet)
@@ -11863,11 +11586,6 @@ ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
 ipv6.token:                             --
--------------------------------------------------------------------------------
-proxy.method:                           none
-proxy.browser-only:                     nie
-proxy.pac-url:                          --
-proxy.pac-script:                       --
 -------------------------------------------------------------------------------
 ===============================================================================
     Szczegóły aktywowania połączenia (UUID-ethernet-REPLACED-REPLACED-REPL)
@@ -12364,12 +12082,12 @@ TYPE:                                   ethernet
 -------------------------------------------------------------------------------
 
 <<<
-size: 7513
+size: 7259
 location: src/tests/client/test-client.py:test_003()/232
 cmd: $NMCLI --mode multiline --pretty --color yes con s ethernet
 lang: C
 returncode: 0
-stdout: 7341 bytes
+stdout: 7087 bytes
 >>>
 ===============================================================================
                      Connection profile details (ethernet)
@@ -12475,11 +12193,6 @@ ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
 ipv6.token:                             --
--------------------------------------------------------------------------------
-proxy.method:                           none
-proxy.browser-only:                     no
-proxy.pac-url:                          --
-proxy.pac-script:                       --
 -------------------------------------------------------------------------------
 ===============================================================================
        Active connection details (UUID-ethernet-REPLACED-REPLACED-REPL)
@@ -12518,12 +12231,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 7579
+size: 7324
 location: src/tests/client/test-client.py:test_003()/233
 cmd: $NMCLI --mode multiline --pretty --color yes con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 7397 bytes
+stdout: 7142 bytes
 >>>
 ===============================================================================
                     Szczegóły profilu połączenia (ethernet)
@@ -12630,11 +12343,6 @@ ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
 ipv6.token:                             --
 -------------------------------------------------------------------------------
-proxy.method:                           none
-proxy.browser-only:                     nie
-proxy.pac-url:                          --
-proxy.pac-script:                       --
--------------------------------------------------------------------------------
 ===============================================================================
     Szczegóły aktywowania połączenia (UUID-ethernet-REPLACED-REPLACED-REPL)
 ===============================================================================
@@ -12672,12 +12380,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 6531
+size: 6277
 location: src/tests/client/test-client.py:test_003()/234
 cmd: $NMCLI --mode multiline --pretty --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 6319 bytes
+stdout: 6065 bytes
 >>>
 ===============================================================================
                      Connection profile details (ethernet)
@@ -12784,11 +12492,6 @@ ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
 ipv6.token:                             --
 -------------------------------------------------------------------------------
-proxy.method:                           none
-proxy.browser-only:                     no
-proxy.pac-url:                          --
-proxy.pac-script:                       --
--------------------------------------------------------------------------------
 ===============================================================================
        Active connection details (UUID-ethernet-REPLACED-REPLACED-REPL)
 ===============================================================================
@@ -12808,12 +12511,12 @@ GENERAL.MASTER-PATH:                    --
 -------------------------------------------------------------------------------
 
 <<<
-size: 6585
+size: 6330
 location: src/tests/client/test-client.py:test_003()/235
 cmd: $NMCLI --mode multiline --pretty --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 6363 bytes
+stdout: 6108 bytes
 >>>
 ===============================================================================
                     Szczegóły profilu połączenia (ethernet)
@@ -12919,11 +12622,6 @@ ipv6.dhcp-hostname:                     --
 ipv6.dhcp-hostname-flags:               0x0 (none)
 ipv6.auto-route-ext-gw:                 -1 (default)
 ipv6.token:                             --
--------------------------------------------------------------------------------
-proxy.method:                           none
-proxy.browser-only:                     nie
-proxy.pac-url:                          --
-proxy.pac-script:                       --
 -------------------------------------------------------------------------------
 ===============================================================================
     Szczegóły aktywowania połączenia (UUID-ethernet-REPLACED-REPLACED-REPL)
@@ -13382,12 +13080,12 @@ UUID:UUID-con-xx1-REPLACED-REPLACED-REPLA
 TYPE:802-3-ethernet
 
 <<<
-size: 3350
+size: 3277
 location: src/tests/client/test-client.py:test_003()/242
 cmd: $NMCLI --mode multiline --terse con s ethernet
 lang: C
 returncode: 0
-stdout: 3191 bytes
+stdout: 3118 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -13487,10 +13185,6 @@ ipv6.dhcp-hostname:
 ipv6.dhcp-hostname-flags:0x0
 ipv6.auto-route-ext-gw:-1
 ipv6.token:
-proxy.method:none
-proxy.browser-only:no
-proxy.pac-url:
-proxy.pac-script:
 GENERAL.NAME:ethernet
 GENERAL.UUID:UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:eth1
@@ -13520,12 +13214,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 3360
+size: 3287
 location: src/tests/client/test-client.py:test_003()/243
 cmd: $NMCLI --mode multiline --terse con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3191 bytes
+stdout: 3118 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -13625,10 +13319,6 @@ ipv6.dhcp-hostname:
 ipv6.dhcp-hostname-flags:0x0
 ipv6.auto-route-ext-gw:-1
 ipv6.token:
-proxy.method:none
-proxy.browser-only:no
-proxy.pac-url:
-proxy.pac-script:
 GENERAL.NAME:ethernet
 GENERAL.UUID:UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:eth1
@@ -13658,12 +13348,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 3000
+size: 2927
 location: src/tests/client/test-client.py:test_003()/244
 cmd: $NMCLI --mode multiline --terse c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 2801 bytes
+stdout: 2728 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -13763,10 +13453,6 @@ ipv6.dhcp-hostname:
 ipv6.dhcp-hostname-flags:0x0
 ipv6.auto-route-ext-gw:-1
 ipv6.token:
-proxy.method:none
-proxy.browser-only:no
-proxy.pac-url:
-proxy.pac-script:
 GENERAL.NAME:ethernet
 GENERAL.UUID:UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:eth0
@@ -13782,12 +13468,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 3010
+size: 2937
 location: src/tests/client/test-client.py:test_003()/245
 cmd: $NMCLI --mode multiline --terse c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2801 bytes
+stdout: 2728 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -13887,10 +13573,6 @@ ipv6.dhcp-hostname:
 ipv6.dhcp-hostname-flags:0x0
 ipv6.auto-route-ext-gw:-1
 ipv6.token:
-proxy.method:none
-proxy.browser-only:no
-proxy.pac-url:
-proxy.pac-script:
 GENERAL.NAME:ethernet
 GENERAL.UUID:UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:eth0
@@ -14320,12 +14002,12 @@ UUID:UUID-con-xx1-REPLACED-REPLACED-REPLA
 TYPE:802-3-ethernet
 
 <<<
-size: 3362
+size: 3289
 location: src/tests/client/test-client.py:test_003()/252
 cmd: $NMCLI --mode multiline --terse --color yes con s ethernet
 lang: C
 returncode: 0
-stdout: 3191 bytes
+stdout: 3118 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -14425,10 +14107,6 @@ ipv6.dhcp-hostname:
 ipv6.dhcp-hostname-flags:0x0
 ipv6.auto-route-ext-gw:-1
 ipv6.token:
-proxy.method:none
-proxy.browser-only:no
-proxy.pac-url:
-proxy.pac-script:
 GENERAL.NAME:ethernet
 GENERAL.UUID:UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:eth1
@@ -14458,12 +14136,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 3372
+size: 3299
 location: src/tests/client/test-client.py:test_003()/253
 cmd: $NMCLI --mode multiline --terse --color yes con s ethernet
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 3191 bytes
+stdout: 3118 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -14563,10 +14241,6 @@ ipv6.dhcp-hostname:
 ipv6.dhcp-hostname-flags:0x0
 ipv6.auto-route-ext-gw:-1
 ipv6.token:
-proxy.method:none
-proxy.browser-only:no
-proxy.pac-url:
-proxy.pac-script:
 GENERAL.NAME:ethernet
 GENERAL.UUID:UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:eth1
@@ -14596,12 +14270,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 3012
+size: 2939
 location: src/tests/client/test-client.py:test_003()/254
 cmd: $NMCLI --mode multiline --terse --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: C
 returncode: 0
-stdout: 2801 bytes
+stdout: 2728 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -14701,10 +14375,6 @@ ipv6.dhcp-hostname:
 ipv6.dhcp-hostname-flags:0x0
 ipv6.auto-route-ext-gw:-1
 ipv6.token:
-proxy.method:none
-proxy.browser-only:no
-proxy.pac-url:
-proxy.pac-script:
 GENERAL.NAME:ethernet
 GENERAL.UUID:UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:eth0
@@ -14720,12 +14390,12 @@ GENERAL.ZONE:
 GENERAL.MASTER-PATH:
 
 <<<
-size: 3022
+size: 2949
 location: src/tests/client/test-client.py:test_003()/255
 cmd: $NMCLI --mode multiline --terse --color yes c s /org/freedesktop/NetworkManager/ActiveConnection/1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 2801 bytes
+stdout: 2728 bytes
 >>>
 connection.id:ethernet
 connection.uuid:UUID-ethernet-REPLACED-REPLACED-REPL
@@ -14825,10 +14495,6 @@ ipv6.dhcp-hostname:
 ipv6.dhcp-hostname-flags:0x0
 ipv6.auto-route-ext-gw:-1
 ipv6.token:
-proxy.method:none
-proxy.browser-only:no
-proxy.pac-url:
-proxy.pac-script:
 GENERAL.NAME:ethernet
 GENERAL.UUID:UUID-ethernet-REPLACED-REPLACED-REPL
 GENERAL.DEVICES:eth0

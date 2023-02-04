@@ -1,6 +1,4 @@
 TYPE=Ethernet
-PROXY_METHOD=none
-BROWSER_ONLY=no
 ETHTOOL_OPTS="-K net0 rx on"
 BOOTPROTO=dhcp
 DEFROUTE=yes
