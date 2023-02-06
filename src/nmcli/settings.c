@@ -759,7 +759,7 @@ setting_details(const NmcConfig *nmc_config, NMSetting *setting, const char *one
         fields_str = g_strdup_printf("%s.%s", nm_setting_get_name(setting), one_prop);
     }
 
-    if (!nmc_print(
+    if (!nmc_print_table(
             nmc_config,
             (gpointer[]){setting, NULL},
             NULL,

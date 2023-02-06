@@ -359,13 +359,13 @@ nmc_meta_generic_get_enum_with_detail(NmcMetaGenericGetEnumType get_enum_type,
 
 /*****************************************************************************/
 
-gboolean nmc_print(const NmcConfig                 *nmc_config,
-                   gpointer const                  *targets,
-                   gpointer                         targets_data,
-                   const char                      *header_name_no_l10n,
-                   const NMMetaAbstractInfo *const *fields,
-                   const char                      *fields_str,
-                   GError                         **error);
+gboolean nmc_print_table(const NmcConfig                 *nmc_config,
+                         gpointer const                  *targets,
+                         gpointer                         targets_data,
+                         const char                      *header_name_no_l10n,
+                         const NMMetaAbstractInfo *const *fields,
+                         const char                      *fields_str,
+                         GError                         **error);
 
 /*****************************************************************************/
 

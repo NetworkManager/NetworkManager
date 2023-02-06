@@ -1654,13 +1654,14 @@ show_device_info(NMDevice *device, NmCli *nmc)
         if (nmc_fields_dev_show_sections[section_idx]->nested == metagen_device_detail_general) {
             gs_free char *f = section_fld ? g_strdup_printf("GENERAL.%s", section_fld) : NULL;
 
-            nmc_print(&nmc->nmc_config,
-                      (gpointer[]){device, NULL},
-                      NULL,
-                      NULL,
-                      NMC_META_GENERIC_GROUP("GENERAL", metagen_device_detail_general, N_("NAME")),
-                      f,
-                      NULL);
+            nmc_print_table(
+                &nmc->nmc_config,
+                (gpointer[]){device, NULL},
+                NULL,
+                NULL,
+                NMC_META_GENERIC_GROUP("GENERAL", metagen_device_detail_general, N_("NAME")),
+                f,
+                NULL);
             was_output = TRUE;
             continue;
         }
@@ -1669,15 +1670,15 @@ show_device_info(NMDevice *device, NmCli *nmc)
             == metagen_device_detail_capabilities) {
             gs_free char *f = section_fld ? g_strdup_printf("CAPABILITIES.%s", section_fld) : NULL;
 
-            nmc_print(&nmc->nmc_config,
-                      (gpointer[]){device, NULL},
-                      NULL,
-                      NULL,
-                      NMC_META_GENERIC_GROUP("CAPABILITIES",
-                                             metagen_device_detail_capabilities,
-                                             N_("NAME")),
-                      f,
-                      NULL);
+            nmc_print_table(&nmc->nmc_config,
+                            (gpointer[]){device, NULL},
+                            NULL,
+                            NULL,
+                            NMC_META_GENERIC_GROUP("CAPABILITIES",
+                                                   metagen_device_detail_capabilities,
+                                                   N_("NAME")),
+                            f,
+                            NULL);
             was_output = TRUE;
             continue;
         }
@@ -1687,15 +1688,15 @@ show_device_info(NMDevice *device, NmCli *nmc)
             gs_free char *f =
                 section_fld ? g_strdup_printf("INTERFACE-FLAGS.%s", section_fld) : NULL;
 
-            nmc_print(&nmc->nmc_config,
-                      (gpointer[]){device, NULL},
-                      NULL,
-                      NULL,
-                      NMC_META_GENERIC_GROUP("INTERFACE-FLAGS",
-                                             metagen_device_detail_interface_flags,
-                                             N_("NAME")),
-                      f,
-                      NULL);
+            nmc_print_table(&nmc->nmc_config,
+                            (gpointer[]){device, NULL},
+                            NULL,
+                            NULL,
+                            NMC_META_GENERIC_GROUP("INTERFACE-FLAGS",
+                                                   metagen_device_detail_interface_flags,
+                                                   N_("NAME")),
+                            f,
+                            NULL);
             was_output = TRUE;
             continue;
         }
@@ -1706,15 +1707,15 @@ show_device_info(NMDevice *device, NmCli *nmc)
                 gs_free char *f =
                     section_fld ? g_strdup_printf("WIFI-PROPERTIES.%s", section_fld) : NULL;
 
-                nmc_print(&nmc->nmc_config,
-                          (gpointer[]){device, NULL},
-                          NULL,
-                          NULL,
-                          NMC_META_GENERIC_GROUP("WIFI-PROPERTIES",
-                                                 metagen_device_detail_wifi_properties,
-                                                 N_("NAME")),
-                          f,
-                          NULL);
+                nmc_print_table(&nmc->nmc_config,
+                                (gpointer[]){device, NULL},
+                                NULL,
+                                NULL,
+                                NMC_META_GENERIC_GROUP("WIFI-PROPERTIES",
+                                                       metagen_device_detail_wifi_properties,
+                                                       N_("NAME")),
+                                f,
+                                NULL);
                 was_output = TRUE;
             }
             continue;
@@ -1770,15 +1771,15 @@ show_device_info(NMDevice *device, NmCli *nmc)
                 gs_free char *f =
                     section_fld ? g_strdup_printf("WIRED-PROPERTIES.%s", section_fld) : NULL;
 
-                nmc_print(&nmc->nmc_config,
-                          (gpointer[]){device, NULL},
-                          NULL,
-                          NULL,
-                          NMC_META_GENERIC_GROUP("WIRED-PROPERTIES",
-                                                 metagen_device_detail_wired_properties,
-                                                 N_("NAME")),
-                          f,
-                          NULL);
+                nmc_print_table(&nmc->nmc_config,
+                                (gpointer[]){device, NULL},
+                                NULL,
+                                NULL,
+                                NMC_META_GENERIC_GROUP("WIRED-PROPERTIES",
+                                                       metagen_device_detail_wired_properties,
+                                                       N_("NAME")),
+                                f,
+                                NULL);
                 was_output = TRUE;
             }
             continue;
@@ -1899,15 +1900,15 @@ show_device_info(NMDevice *device, NmCli *nmc)
             == metagen_device_detail_connections) {
             gs_free char *f = section_fld ? g_strdup_printf("CONNECTIONS.%s", section_fld) : NULL;
 
-            nmc_print(&nmc->nmc_config,
-                      (gpointer[]){device, NULL},
-                      NULL,
-                      NULL,
-                      NMC_META_GENERIC_GROUP("CONNECTIONS",
-                                             metagen_device_detail_connections,
-                                             N_("NAME")),
-                      f,
-                      NULL);
+            nmc_print_table(&nmc->nmc_config,
+                            (gpointer[]){device, NULL},
+                            NULL,
+                            NULL,
+                            NMC_META_GENERIC_GROUP("CONNECTIONS",
+                                                   metagen_device_detail_connections,
+                                                   N_("NAME")),
+                            f,
+                            NULL);
             was_output = TRUE;
             continue;
         }
@@ -1976,13 +1977,13 @@ do_devices_status(const NMCCommand *cmd, NmCli *nmc, int argc, const char *const
 
     devices = nmc_get_devices_sorted(nmc->client);
 
-    if (!nmc_print(&nmc->nmc_config,
-                   (gpointer *) devices,
-                   NULL,
-                   N_("Status of devices"),
-                   (const NMMetaAbstractInfo *const *) metagen_device_status,
-                   fields_str,
-                   &error)) {
+    if (!nmc_print_table(&nmc->nmc_config,
+                         (gpointer *) devices,
+                         NULL,
+                         N_("Status of devices"),
+                         (const NMMetaAbstractInfo *const *) metagen_device_status,
+                         fields_str,
+                         &error)) {
         g_string_printf(nmc->return_text, _("Error: 'device status': %s"), error->message);
         g_error_free(error);
         nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
