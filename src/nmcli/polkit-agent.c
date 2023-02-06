@@ -13,6 +13,7 @@
 
 #include "libnmc-base/nm-polkit-listener.h"
 #include "common.h"
+#include "utils.h"
 
 static char *
 polkit_read_passwd(gpointer    instance,
@@ -23,8 +24,8 @@ polkit_read_passwd(gpointer    instance,
 {
     NmCli *nmc = user_data;
 
-    g_print("%s\n", message);
-    g_print("(action_id: %s)\n", action_id);
+    nmc_print("%s\n", message);
+    nmc_print("(action_id: %s)\n", action_id);
 
     /* Ask user for polkit authorization password */
     if (user) {
@@ -36,7 +37,7 @@ polkit_read_passwd(gpointer    instance,
 static void
 polkit_error(gpointer instance, const char *error, gpointer user_data)
 {
-    g_printerr(_("Error: polkit agent failed: %s\n"), error);
+    nmc_printerr(_("Error: polkit agent failed: %s\n"), error);
 }
 
 gboolean
@@ -89,7 +90,7 @@ nmc_start_polkit_agent_start_try(NmCli *nmc)
         return TRUE;
 
     if (!nmc_polkit_agent_init(nmc, FALSE, &error)) {
-        g_printerr(_("Warning: polkit agent initialization failed: %s\n"), error->message);
+        nmc_printerr(_("Warning: polkit agent initialization failed: %s\n"), error->message);
         return FALSE;
     }
     return TRUE;
