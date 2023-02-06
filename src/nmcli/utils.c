@@ -346,7 +346,7 @@ ssid_to_hex(const char *str, gsize len)
 void
 nmc_terminal_erase_line(void)
 {
-    /* We intentionally use printf(), not g_print() here, to ensure that
+    /* We intentionally use printf(), not nmc_print() here, to ensure that
      * GLib doesn't mistakenly try to convert the string.
      */
     printf("\33[2K\r");
@@ -365,7 +365,7 @@ nmc_terminal_show_progress(const char *str)
     const char slashes[4] = {'|', '/', '-', '\\'};
 
     nmc_terminal_erase_line();
-    g_print("%c %s", slashes[idx++], str ?: "");
+    nmc_print("%c %s", slashes[idx++], str ?: "");
     fflush(stdout);
     if (idx == 4)
         idx = 0;
@@ -467,7 +467,7 @@ nmc_get_user_input(const char *ask_str)
     size_t  line_ln = 0;
     ssize_t num;
 
-    g_print("%s", ask_str);
+    nmc_print("%s", ask_str);
     num = getline(&line, &line_ln, stdin);
 
     /* Remove newline from the string */
@@ -1251,9 +1251,9 @@ _print_do(const NmcConfig           *nmc_config,
 
         width1 = strlen(header_name);
         width2 = nmc_string_screen_width(header_name, NULL);
-        g_print("%s\n", line);
-        g_print("%*s\n", (table_width + width2) / 2 + width1 - width2, header_name);
-        g_print("%s\n", line);
+        nmc_print("%s\n", line);
+        nmc_print("%*s\n", (table_width + width2) / 2 + width1 - width2, header_name);
+        nmc_print("%s\n", line);
     }
 
     str = !nmc_config->multiline_output ? g_string_sized_new(100) : NULL;
@@ -1283,14 +1283,14 @@ _print_do(const NmcConfig           *nmc_config,
 
         if (str->len)
             g_string_truncate(str, str->len - 1); /* Chop off last column separator */
-        g_print("%s\n", str->str);
+        nmc_print("%s\n", str->str);
         g_string_truncate(str, 0);
 
         /* Print horizontal separator */
         if (nmc_config->print_output == NMC_PRINT_PRETTY) {
             gs_free char *line = NULL;
 
-            g_print("%s\n", (line = g_strnfill(table_width, '-')));
+            nmc_print("%s\n", (line = g_strnfill(table_width, '-')));
         }
     }
 
@@ -1332,12 +1332,12 @@ _print_do(const NmcConfig           *nmc_config,
                         prefix = g_strdup_printf("%s:", cell->header_cell->title);
                     width1 = strlen(prefix);
                     width2 = nmc_string_screen_width(prefix, NULL);
-                    g_print("%-*s%s\n",
-                            (int) (nmc_config->print_output == NMC_PRINT_TERSE
-                                       ? 0
-                                       : ML_VALUE_INDENT + width1 - width2),
-                            prefix,
-                            text);
+                    nmc_print("%-*s%s\n",
+                              (int) (nmc_config->print_output == NMC_PRINT_TERSE
+                                         ? 0
+                                         : ML_VALUE_INDENT + width1 - width2),
+                              prefix,
+                              text);
                 } else {
                     nm_assert(str);
                     if (nmc_config->print_output == NMC_PRINT_TERSE) {
@@ -1373,7 +1373,7 @@ _print_do(const NmcConfig           *nmc_config,
         if (!nmc_config->multiline_output) {
             if (str->len)
                 g_string_truncate(str, str->len - 1); /* Chop off last column separator */
-            g_print("%s\n", str->str);
+            nmc_print("%s\n", str->str);
 
             g_string_truncate(str, 0);
         }
@@ -1381,7 +1381,7 @@ _print_do(const NmcConfig           *nmc_config,
         if (nmc_config->print_output == NMC_PRINT_PRETTY && nmc_config->multiline_output) {
             gs_free char *line = NULL;
 
-            g_print("%s\n", (line = g_strnfill(ML_HEADER_WIDTH, '-')));
+            nmc_print("%s\n", (line = g_strnfill(ML_HEADER_WIDTH, '-')));
         }
     }
 }
@@ -1458,7 +1458,7 @@ nmc_terminal_spawn_pager(const NmcConfig *nmc_config)
 
     if (pipe(fd) == -1) {
         errsv = errno;
-        g_printerr(_("Failed to create pager pipe: %s\n"), nm_strerror_native(errsv));
+        nmc_printerr(_("Failed to create pager pipe: %s\n"), nm_strerror_native(errsv));
         return 0;
     }
 
@@ -1471,7 +1471,7 @@ nmc_terminal_spawn_pager(const NmcConfig *nmc_config)
     pager_pid = fork();
     if (pager_pid == -1) {
         errsv = errno;
-        g_printerr(_("Failed to fork pager: %s\n"), nm_strerror_native(errsv));
+        nmc_printerr(_("Failed to fork pager: %s\n"), nm_strerror_native(errsv));
         nm_close(fd[0]);
         nm_close(fd[1]);
         return 0;
@@ -1515,11 +1515,11 @@ nmc_terminal_spawn_pager(const NmcConfig *nmc_config)
     /* Return in the parent */
     if (dup2(fd[1], STDOUT_FILENO) < 0) {
         errsv = errno;
-        g_printerr(_("Failed to duplicate pager pipe: %s\n"), nm_strerror_native(errsv));
+        nmc_printerr(_("Failed to duplicate pager pipe: %s\n"), nm_strerror_native(errsv));
     }
     if (dup2(fd[1], STDERR_FILENO) < 0) {
         errsv = errno;
-        g_printerr(_("Failed to duplicate pager pipe: %s\n"), nm_strerror_native(errsv));
+        nmc_printerr(_("Failed to duplicate pager pipe: %s\n"), nm_strerror_native(errsv));
     }
 
     nm_close(fd[0]);
@@ -1608,9 +1608,9 @@ print_required_fields(const NmcConfig      *nmc_config,
 
         width1 = strlen(header_name);
         width2 = nmc_string_screen_width(header_name, NULL);
-        g_print("%s\n", line);
-        g_print("%*s\n", (table_width + width2) / 2 + width1 - width2, header_name);
-        g_print("%s\n", line);
+        nmc_print("%s\n", line);
+        nmc_print("%*s\n", (table_width + width2) / 2 + width1 - width2, header_name);
+        nmc_print("%s\n", line);
     }
 
     if (main_header_only)
@@ -1656,12 +1656,12 @@ print_required_fields(const NmcConfig      *nmc_config,
                         j);
                     width1 = strlen(tmp);
                     width2 = nmc_string_screen_width(tmp, NULL);
-                    g_print("%-*s%s\n",
-                            (int) (nmc_config->print_output == NMC_PRINT_TERSE
-                                       ? 0
-                                       : ML_VALUE_INDENT + width1 - width2),
-                            tmp,
-                            print_val);
+                    nmc_print("%-*s%s\n",
+                              (int) (nmc_config->print_output == NMC_PRINT_TERSE
+                                         ? 0
+                                         : ML_VALUE_INDENT + width1 - width2),
+                              tmp,
+                              print_val);
                 }
             } else {
                 gs_free char *val_to_free = NULL;
@@ -1681,18 +1681,18 @@ print_required_fields(const NmcConfig      *nmc_config,
                                     nm_meta_abstract_info_get_name(field_values[idx].info, FALSE));
                 width1 = strlen(tmp);
                 width2 = nmc_string_screen_width(tmp, NULL);
-                g_print("%-*s%s\n",
-                        (int) (nmc_config->print_output == NMC_PRINT_TERSE
-                                   ? 0
-                                   : ML_VALUE_INDENT + width1 - width2),
-                        tmp,
-                        print_val);
+                nmc_print("%-*s%s\n",
+                          (int) (nmc_config->print_output == NMC_PRINT_TERSE
+                                     ? 0
+                                     : ML_VALUE_INDENT + width1 - width2),
+                          tmp,
+                          print_val);
             }
         }
         if (nmc_config->print_output == NMC_PRINT_PRETTY) {
             gs_free char *line = NULL;
 
-            g_print("%s\n", (line = g_strnfill(ML_HEADER_WIDTH, '-')));
+            nmc_print("%s\n", (line = g_strnfill(ML_HEADER_WIDTH, '-')));
         }
 
         return;
@@ -1749,13 +1749,13 @@ print_required_fields(const NmcConfig      *nmc_config,
             g_string_prepend(str, (indent_str = g_strnfill(indent, ' ')));
         }
 
-        g_print("%s\n", str->str);
+        nmc_print("%s\n", str->str);
 
         /* Print horizontal separator */
         if (nmc_config->print_output == NMC_PRINT_PRETTY && field_names) {
             gs_free char *line = NULL;
 
-            g_print("%s\n", (line = g_strnfill(table_width, '-')));
+            nmc_print("%s\n", (line = g_strnfill(table_width, '-')));
         }
     }
 }
