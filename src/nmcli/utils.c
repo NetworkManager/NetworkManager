@@ -1387,13 +1387,13 @@ _print_do(const NmcConfig           *nmc_config,
 }
 
 gboolean
-nmc_print(const NmcConfig                 *nmc_config,
-          gpointer const                  *targets,
-          gpointer                         targets_data,
-          const char                      *header_name_no_l10n,
-          const NMMetaAbstractInfo *const *fields,
-          const char                      *fields_str,
-          GError                         **error)
+nmc_print_table(const NmcConfig                 *nmc_config,
+                gpointer const                  *targets,
+                gpointer                         targets_data,
+                const char                      *header_name_no_l10n,
+                const NMMetaAbstractInfo *const *fields,
+                const char                      *fields_str,
+                GError                         **error)
 {
     gs_unref_ptrarray GPtrArray *gfree_keeper = NULL;
     gs_free PrintDataCol        *cols_data    = NULL;
