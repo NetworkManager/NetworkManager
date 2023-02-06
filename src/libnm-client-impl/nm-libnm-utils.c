@@ -16,7 +16,13 @@
 
 /*****************************************************************************/
 
-volatile int _nml_dbus_log_level = 0;
+#define LOG_FILE_FD_UNSET   -3
+#define LOG_FILE_FD_NONE    -2
+#define LOG_FILE_FD_DEFUNCT -1
+
+volatile int _nml_dbus_log_level   = 0;
+const char  *_nml_dbus_log_file    = NULL;
+int          _nml_dbus_log_file_fd = LOG_FILE_FD_UNSET;
 
 int
 _nml_dbus_log_level_init(void)
@@ -39,6 +45,97 @@ _nml_dbus_log_level_init(void)
     nm_assert(l & _NML_DBUS_LOG_LEVEL_INITIALIZED);
     return l;
 }
+
+static const char *
+_nml_dbus_log_file_init(void)
+{
+    const char *s;
+
+    s = g_getenv("LIBNM_CLIENT_DEBUG_FILE");
+    if (nm_str_not_empty(s)) {
+        if (strstr(s, "%p")) {
+            gs_strfreev char **tokens = NULL;
+            char               pid_str[100];
+
+            tokens = g_strsplit(s, "%p", -1);
+            nm_sprintf_buf(pid_str, "%lld", (long long) getpid());
+            s = nm_str_realloc(g_strjoinv(pid_str, tokens));
+        } else
+            s = g_strdup(s);
+    } else
+        s = "";
+
+    if (!g_atomic_pointer_compare_and_exchange(&_nml_dbus_log_file, NULL, s)) {
+        if (s[0] != '\0')
+            g_free((gpointer) s);
+        s = g_atomic_pointer_get(&_nml_dbus_log_file);
+    }
+
+    return s;
+}
+
+#define nml_dbus_log_file()                             \
+    ({                                                  \
+        const char *_l;                                 \
+                                                        \
+        _l = g_atomic_pointer_get(&_nml_dbus_log_file); \
+        if (G_UNLIKELY(!_l))                            \
+            _l = _nml_dbus_log_file_init();             \
+                                                        \
+        _l[0] ? _l : NULL;                              \
+    })
+
+static int
+_nml_dbus_log_file_fd_init(void)
+{
+    static GMutex mutex;
+    NM_G_MUTEX_LOCKED(&mutex);
+    int fd;
+
+    fd = g_atomic_int_get(&_nml_dbus_log_file_fd);
+    if (fd == LOG_FILE_FD_UNSET) {
+        const char *name;
+
+        name = nml_dbus_log_file();
+        if (!name)
+            fd = LOG_FILE_FD_NONE;
+        else {
+            fd = open(name, O_WRONLY | O_TRUNC | O_CREAT | O_CLOEXEC, 0600);
+            if (fd < 0)
+                fd = LOG_FILE_FD_DEFUNCT;
+        }
+        g_atomic_int_set(&_nml_dbus_log_file_fd, fd);
+    }
+
+    return fd;
+}
+
+#define nml_dbus_log_file_fd()                                                          \
+    ({                                                                                  \
+        int _fd2;                                                                       \
+                                                                                        \
+        _fd2 = g_atomic_int_get(&_nml_dbus_log_file_fd);                                \
+        if (G_UNLIKELY(_fd2 == LOG_FILE_FD_UNSET))                                      \
+            _fd2 = _nml_dbus_log_file_fd_init();                                        \
+                                                                                        \
+        nm_assert(NM_IN_SET(_fd2, LOG_FILE_FD_NONE, LOG_FILE_FD_DEFUNCT) || _fd2 >= 0); \
+        _fd2;                                                                           \
+    })
+
+#define _log_printf(use_stdout, ...)            \
+    G_STMT_START                                \
+    {                                           \
+        const int _fd = nml_dbus_log_file_fd(); \
+                                                \
+        if (_fd != LOG_FILE_FD_NONE) {          \
+            if (_fd >= 0)                       \
+                dprintf(_fd, __VA_ARGS__);      \
+        } else if (use_stdout)                  \
+            g_print(__VA_ARGS__);               \
+        else                                    \
+            g_printerr(__VA_ARGS__);            \
+    }                                           \
+    G_STMT_END
 
 void
 _nml_dbus_log(NMLDBusLogLevel level, gboolean use_stdout, const char *fmt, ...)
@@ -94,21 +191,13 @@ _nml_dbus_log(NMLDBusLogLevel level, gboolean use_stdout, const char *fmt, ...)
 
     pid = getpid();
 
-    if (use_stdout) {
-        g_print("libnm-dbus[%lld]: %s[%" G_GINT64_FORMAT ".%05" G_GINT64_FORMAT "] %s\n",
+    _log_printf(use_stdout,
+                "libnm-dbus[%lld]: %s[%" G_GINT64_FORMAT ".%05" G_GINT64_FORMAT "] %s\n",
                 (long long) pid,
                 prefix,
                 ts / NM_UTILS_NSEC_PER_SEC,
                 (ts / (NM_UTILS_NSEC_PER_SEC / 100000)) % 100000,
                 msg);
-    } else {
-        g_printerr("libnm-dbus[%lld]: %s[%" G_GINT64_FORMAT ".%05" G_GINT64_FORMAT "] %s\n",
-                   (long long) pid,
-                   prefix,
-                   ts / NM_UTILS_NSEC_PER_SEC,
-                   (ts / (NM_UTILS_NSEC_PER_SEC / 100000)) % 100000,
-                   msg);
-    }
 }
 
 /*****************************************************************************/
@@ -884,8 +973,10 @@ nm_utils_g_param_spec_is_default(const GParamSpec *pspec)
 /**
  * nm_utils_print:
  * @output_mode: if 1 it uses g_print(). If 2, it uses g_printerr().
- *   If 0, it uses either g_print() or g_printerr(), depending
- *   on LIBNM_CLIENT_DEBUG (and the "stdout" flag).
+ *   If 0, it uses the same output as internal libnm debug logging
+ *   does. That is, depending on LIBNM_CLIENT_DEBUG's "stdout" flag
+ *   it uses g_print() or g_printerr() and if LIBNM_CLIENT_DEBUG_FILE is
+ *   set, it writes the output to file instead
  * @msg: the message to print. The function does not append
  *   a trailing newline.
  *
@@ -896,6 +987,11 @@ nm_utils_g_param_spec_is_default(const GParamSpec *pspec)
  * with these functions (it implements additional buffering). By
  * using nm_utils_print(), the same logging mechanisms can be used.
  *
+ * Also, libnm honors LIBNM_CLIENT_DEBUG_FILE environment. If this
+ * is set to a filename pattern (accepting "%p" for the process ID),
+ * then the debug log is written to that file instead. With @output_mode
+ * zero, the same location will be written. Since: 1.44.
+ *
  * Since: 1.30
  */
 void
@@ -905,17 +1001,21 @@ nm_utils_print(int output_mode, const char *msg)
 
     g_return_if_fail(msg);
 
-    if (output_mode == 0) {
+    switch (output_mode) {
+    case 0:
         nml_dbus_log_enabled_full(NML_DBUS_LOG_LEVEL_ANY, &use_stdout);
-        output_mode = use_stdout ? 1 : 2;
-    }
-
-    if (output_mode == 1)
+        _log_printf(use_stdout, "%s", msg);
+        break;
+    case 1:
         g_print("%s", msg);
-    else if (output_mode == 2)
+        break;
+    case 2:
         g_printerr("%s", msg);
-    else
+        break;
+    default:
         g_return_if_reached();
+        break;
+    }
 }
 
 /*****************************************************************************/
