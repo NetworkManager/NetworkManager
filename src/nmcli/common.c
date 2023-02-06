@@ -660,16 +660,16 @@ vpn_openconnect_get_secrets(NMConnection *connection, GPtrArray *secrets)
     /* Interactively authenticate to OpenConnect server and get secrets */
     ret = nm_vpn_openconnect_authenticate_helper(gw, &cookie, &gateway, &gwcert, &status, &error);
     if (!ret) {
-        g_printerr(_("Error: openconnect failed: %s\n"), error->message);
+        nmc_printerr(_("Error: openconnect failed: %s\n"), error->message);
         g_clear_error(&error);
         return FALSE;
     }
 
     if (WIFEXITED(status)) {
         if (WEXITSTATUS(status) != 0)
-            g_printerr(_("Error: openconnect failed with status %d\n"), WEXITSTATUS(status));
+            nmc_printerr(_("Error: openconnect failed with status %d\n"), WEXITSTATUS(status));
     } else if (WIFSIGNALED(status))
-        g_printerr(_("Error: openconnect failed with signal %d\n"), WTERMSIG(status));
+        nmc_printerr(_("Error: openconnect failed with signal %d\n"), WTERMSIG(status));
 
     /* Append port to the host value */
     if (gateway && port) {
@@ -743,7 +743,7 @@ get_secrets_from_user(const NmcConfig *nmc_config,
                     }
                 }
                 if (msg)
-                    g_print("%s\n", msg);
+                    nmc_print("%s\n", msg);
 
                 echo_on = secret->is_secret ? nmc_config->show_secrets : TRUE;
 
@@ -760,10 +760,10 @@ get_secrets_from_user(const NmcConfig *nmc_config,
                     pwd = g_strdup("");
             } else {
                 if (msg)
-                    g_print("%s\n", msg);
-                g_printerr(_("Warning: password for '%s' not given in 'passwd-file' "
-                             "and nmcli cannot ask without '--ask' option.\n"),
-                           secret->entry_id);
+                    nmc_print("%s\n", msg);
+                nmc_printerr(_("Warning: password for '%s' not given in 'passwd-file' "
+                               "and nmcli cannot ask without '--ask' option.\n"),
+                             secret->entry_id);
             }
         }
         /* No password provided, cancel the secrets. */
@@ -1532,7 +1532,7 @@ nmc_do_cmd(NmCli *nmc, const NMCCommand cmds[], const char *cmd, int argc, const
     if (argc == 1 && nmc->complete) {
         for (c = cmds; c->cmd; ++c) {
             if (!*cmd || matches(cmd, c->cmd))
-                g_print("%s\n", c->cmd);
+                nmc_print("%s\n", c->cmd);
         }
         nmc_complete_help(cmd);
         g_task_return_boolean(task, TRUE);
@@ -1612,7 +1612,7 @@ nmc_complete_strv(const char *prefix, gssize nargs, const char *const *args)
         if (prefix && !matches(prefix, candidate))
             continue;
 
-        g_print("%s\n", candidate);
+        nmc_print("%s\n", candidate);
     }
 }
 
