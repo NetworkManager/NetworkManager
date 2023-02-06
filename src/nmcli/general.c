@@ -491,13 +491,13 @@ show_nm_status(NmCli *nmc, const char *pretty_header_name, const char *print_fld
     else
         fields_str = nmc->required_fields;
 
-    if (!nmc_print(&nmc->nmc_config,
-                   (gpointer[]){nmc, NULL},
-                   NULL,
-                   pretty_header_name ?: N_("NetworkManager status"),
-                   (const NMMetaAbstractInfo *const *) metagen_general_status,
-                   fields_str,
-                   &error)) {
+    if (!nmc_print_table(&nmc->nmc_config,
+                         (gpointer[]){nmc, NULL},
+                         NULL,
+                         pretty_header_name ?: N_("NetworkManager status"),
+                         (const NMMetaAbstractInfo *const *) metagen_general_status,
+                         fields_str,
+                         &error)) {
         g_string_printf(nmc->return_text,
                         _("Error: only these fields are allowed: %s"),
                         fields_all);
@@ -570,13 +570,13 @@ print_permissions(void *user_data)
 
     nm_cli_spawn_pager(&nmc->nmc_config, &nmc->pager_data);
 
-    if (!nmc_print(&nmc->nmc_config,
-                   permissions,
-                   NULL,
-                   _("NetworkManager permissions"),
-                   (const NMMetaAbstractInfo *const *) metagen_general_permissions,
-                   fields_str,
-                   &error)) {
+    if (!nmc_print_table(&nmc->nmc_config,
+                         permissions,
+                         NULL,
+                         _("NetworkManager permissions"),
+                         (const NMMetaAbstractInfo *const *) metagen_general_permissions,
+                         fields_str,
+                         &error)) {
         g_string_printf(nmc->return_text, _("Error: 'general permissions': %s"), error->message);
         nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
     }
@@ -724,13 +724,13 @@ show_general_logging(NmCli *nmc)
     } else
         fields_str = nmc->required_fields;
 
-    if (!nmc_print(&nmc->nmc_config,
-                   (gpointer const[]){&d, NULL},
-                   NULL,
-                   _("NetworkManager logging"),
-                   (const NMMetaAbstractInfo *const *) metagen_general_logging,
-                   fields_str,
-                   &error)) {
+    if (!nmc_print_table(&nmc->nmc_config,
+                         (gpointer const[]){&d, NULL},
+                         NULL,
+                         _("NetworkManager logging"),
+                         (const NMMetaAbstractInfo *const *) metagen_general_logging,
+                         fields_str,
+                         &error)) {
         g_string_printf(nmc->return_text, _("Error: 'general logging': %s"), error->message);
         nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
     }

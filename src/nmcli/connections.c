@@ -1729,13 +1729,14 @@ nmc_active_connection_details(NMActiveConnection *acon, NmCli *nmc)
             if (group_fld)
                 f = g_strdup_printf("GENERAL.%s", group_fld);
 
-            nmc_print(&nmc->nmc_config,
-                      (gpointer[]){acon, NULL},
-                      NULL,
-                      NULL,
-                      NMC_META_GENERIC_GROUP("GENERAL", metagen_con_active_general, N_("GROUP")),
-                      f,
-                      NULL);
+            nmc_print_table(
+                &nmc->nmc_config,
+                (gpointer[]){acon, NULL},
+                NULL,
+                NULL,
+                NMC_META_GENERIC_GROUP("GENERAL", metagen_con_active_general, N_("GROUP")),
+                f,
+                NULL);
             was_output = TRUE;
             continue;
         }
@@ -1786,13 +1787,13 @@ nmc_active_connection_details(NMActiveConnection *acon, NmCli *nmc)
 
         if (nmc_fields_con_active_details_groups[group_idx]->nested == metagen_con_active_vpn) {
             if (NM_IS_VPN_CONNECTION(acon)) {
-                nmc_print(&nmc->nmc_config,
-                          (gpointer[]){acon, NULL},
-                          NULL,
-                          NULL,
-                          NMC_META_GENERIC_GROUP("VPN", metagen_con_active_vpn, N_("NAME")),
-                          group_fld,
-                          NULL);
+                nmc_print_table(&nmc->nmc_config,
+                                (gpointer[]){acon, NULL},
+                                NULL,
+                                NULL,
+                                NMC_META_GENERIC_GROUP("VPN", metagen_con_active_vpn, N_("NAME")),
+                                group_fld,
+                                NULL);
                 was_output = TRUE;
             }
             continue;
@@ -2367,14 +2368,14 @@ do_connections_show(const NMCCommand *cmd, NmCli *nmc, int argc, const char *con
 
         items = con_show_get_items(nmc, active_only, show_active_fields, order);
         g_ptr_array_add(items, NULL);
-        if (!nmc_print(&nmc->nmc_config,
-                       items->pdata,
-                       NULL,
-                       active_only ? _("NetworkManager active profiles")
-                                   : _("NetworkManager connection profiles"),
-                       (const NMMetaAbstractInfo *const *) metagen_con_show,
-                       fields_str,
-                       &err))
+        if (!nmc_print_table(&nmc->nmc_config,
+                             items->pdata,
+                             NULL,
+                             active_only ? _("NetworkManager active profiles")
+                                         : _("NetworkManager connection profiles"),
+                             (const NMMetaAbstractInfo *const *) metagen_con_show,
+                             fields_str,
+                             &err))
             goto finish;
     } else {
         gboolean         new_line       = FALSE;
