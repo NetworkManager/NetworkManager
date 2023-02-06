@@ -996,7 +996,12 @@ class TestNmcli(unittest.TestCase):
             self.fail("invalid language %s" % (lang))
 
         env = {}
-        for k in ["LD_LIBRARY_PATH", "DBUS_SESSION_BUS_ADDRESS"]:
+        for k in [
+            "LD_LIBRARY_PATH",
+            "DBUS_SESSION_BUS_ADDRESS",
+            "LIBNM_CLIENT_DEBUG",
+            "LIBNM_CLIENT_DEBUG_FILE",
+        ]:
             val = os.environ.get(k, None)
             if val is not None:
                 env[k] = val
