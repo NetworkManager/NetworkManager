@@ -12,7 +12,7 @@ void nmc_complete_device(NMClient *client, const char *prefix, gboolean wifi_onl
 
 void nmc_complete_bssid(NMClient *client, const char *ifname, const char *bssid_prefix);
 
-void monitor_devices(NmCli *nmc);
+void nmc_monitor_devices(NmCli *nmc);
 
 NMDevice **nmc_get_devices_sorted(NMClient *client);
 

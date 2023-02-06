@@ -1632,6 +1632,6 @@ nmc_command_func_monitor(const NMCCommand *cmd, NmCli *nmc, int argc, const char
 
     nmc->should_wait++;
 
-    monitor_devices(nmc);
-    monitor_connections(nmc);
+    nmc_monitor_devices(nmc);
+    nmc_monitor_connections(nmc);
 }

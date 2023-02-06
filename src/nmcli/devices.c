@@ -5331,7 +5331,7 @@ nmc_command_func_device(const NMCCommand *cmd, NmCli *nmc, int argc, const char 
 }
 
 void
-monitor_devices(NmCli *nmc)
+nmc_monitor_devices(NmCli *nmc)
 {
     do_devices_monitor(NULL, nmc, 0, NULL);
 }
