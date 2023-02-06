@@ -369,4 +369,34 @@ gboolean nmc_print_table(const NmcConfig                 *nmc_config,
 
 /*****************************************************************************/
 
+#if 0
+/* For manual testing to sync output with LIBNM_CLIENT_DEBUG/LIBNM_CLIENT_DEBUG_FILE */
+#define nmc_print(...)                                               \
+    G_STMT_START                                                     \
+    {                                                                \
+        gs_free char *_ss  = g_strdup_printf(__VA_ARGS__);           \
+        gs_free char *_ss1 = g_strdup_printf("nmcli[out]: %s", _ss); \
+                                                                     \
+        nm_utils_print(0, _ss1);                                     \
+        nm_utils_print(1, _ss);                                      \
+    }                                                                \
+    G_STMT_END
+
+#define nmc_printerr(...)                                            \
+    G_STMT_START                                                     \
+    {                                                                \
+        gs_free char *_ss  = g_strdup_printf(__VA_ARGS__);           \
+        gs_free char *_ss1 = g_strdup_printf("nmcli[err]: %s", _ss); \
+                                                                     \
+        nm_utils_print(0, _ss1);                                     \
+        nm_utils_print(2, _ss);                                      \
+    }                                                                \
+    G_STMT_END
+#else
+#define nmc_print(...)    g_print(__VA_ARGS__)
+#define nmc_printerr(...) g_printerr(__VA_ARGS__)
+#endif
+
+/*****************************************************************************/
+
 #endif /* NMC_UTILS_H */
