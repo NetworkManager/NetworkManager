@@ -99,53 +99,32 @@ _file_monitor_new(const char *path)
 
 /*****************************************************************************/
 
-#if defined(HOSTNAME_PERSIST_GENTOO)
 static char *
-read_hostname_gentoo(const char *path)
+read_hostname(const char *path, gboolean is_gentoo)
 {
-    gs_free char      *contents  = NULL;
-    gs_strfreev char **all_lines = NULL;
-    const char        *tmp;
-    guint              i;
+    gs_free char        *contents  = NULL;
+    gs_free const char **all_lines = NULL;
+    const char          *tmp;
+    gsize                i;
 
     if (!g_file_get_contents(path, &contents, NULL, NULL))
         return NULL;
 
-    all_lines = g_strsplit(contents, "\n", 0);
-    for (i = 0; all_lines[i]; i++) {
-        g_strstrip(all_lines[i]);
-        if (all_lines[i][0] == '#' || all_lines[i][0] == '\0')
-            continue;
-        if (g_str_has_prefix(all_lines[i], "hostname=")) {
-            tmp = &all_lines[i][NM_STRLEN("hostname=")];
-            return g_shell_unquote(tmp, NULL);
+    all_lines = nm_strsplit_set_full(contents, "\n", NM_STRSPLIT_SET_FLAGS_STRSTRIP);
+    for (i = 0; (tmp = all_lines[i]); i++) {
+        if (is_gentoo) {
+            if (!NM_STR_HAS_PREFIX(tmp, "hostname="))
+                continue;
+            tmp = &tmp[NM_STRLEN("hostname=")];
+        } else {
+            if (tmp[0] == '#')
+                continue;
         }
+        nm_assert(tmp && tmp[0] != '\0');
+        return g_shell_unquote(tmp, NULL);
     }
     return NULL;
 }
-#endif
-
-#if defined(HOSTNAME_PERSIST_SLACKWARE)
-static char *
-read_hostname_slackware(const char *path)
-{
-    gs_free char      *contents  = NULL;
-    gs_strfreev char **all_lines = NULL;
-    guint              i         = 0;
-
-    if (!g_file_get_contents(path, &contents, NULL, NULL))
-        return NULL;
-
-    all_lines = g_strsplit(contents, "\n", 0);
-    for (i = 0; all_lines[i]; i++) {
-        g_strstrip(all_lines[i]);
-        if (all_lines[i][0] == '#' || all_lines[i][0] == '\0')
-            continue;
-        return g_shell_unquote(&all_lines[i][0], NULL);
-    }
-    return NULL;
-}
-#endif
 
 #if defined(HOSTNAME_PERSIST_SUSE)
 static gboolean
@@ -237,10 +216,11 @@ _set_hostname_read_file(NMHostnameManager *self)
 #endif
 
 #if defined(HOSTNAME_PERSIST_GENTOO)
-    hostname = read_hostname_gentoo(HOSTNAME_FILE);
+    hostname = read_hostname(HOSTNAME_FILE, TRUE);
 #elif defined(HOSTNAME_PERSIST_SLACKWARE)
-    hostname = read_hostname_slackware(HOSTNAME_FILE);
+    hostname = read_hostname(HOSTNAME_FILE, FALSE);
 #else
+    (void) read_hostname;
     if (g_file_get_contents(HOSTNAME_FILE, &hostname, NULL, NULL))
         g_strchomp(hostname);
 #endif
