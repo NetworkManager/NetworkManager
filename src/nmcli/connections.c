@@ -10117,7 +10117,7 @@ nmc_command_func_connection(const NMCCommand *cmd, NmCli *nmc, int argc, const c
 }
 
 void
-monitor_connections(NmCli *nmc)
+nmc_monitor_connections(NmCli *nmc)
 {
     do_connection_monitor(NULL, nmc, 0, NULL);
 }
