@@ -512,6 +512,16 @@ class Util:
 
         os.remove(name)
 
+    @staticmethod
+    def pexpect_expect_all(pexp, *pattern_list):
+        # This will call "pexpect.expect()" on pattern_list,
+        # expecting all entries to match exactly once, in any
+        # order.
+        pattern_list = list(pattern_list)
+        while pattern_list:
+            idx = pexp.expect(pattern_list)
+            del pattern_list[idx]
+
 
 ###############################################################################
 
@@ -2071,8 +2081,11 @@ class TestNmcli(unittest.TestCase):
 
         nmc = start_mon(self)
         self.srv_shutdown()
-        nmc.pexp.expect("eth0: device removed")
-        nmc.pexp.expect("con-1: connection profile removed")
+        Util.pexpect_expect_all(
+            nmc.pexp,
+            "con-1: connection profile removed",
+            "eth0: device removed",
+        )
         nmc.pexp.expect("NetworkManager is stopped")
         end_mon(self, nmc)
 
