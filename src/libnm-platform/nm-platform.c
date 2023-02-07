@@ -8601,7 +8601,13 @@ nm_platform_ip4_route_cmp(const NMPlatformIP4Route *a,
             NM_CMP_FIELD(a, b, initrwnd);
             NM_CMP_FIELD(a, b, mtu);
             NM_CMP_FIELD(a, b, rto_min);
+
+            /* Note that for NetworkManager, the onlink flag is only part of the entire route.
+             * For kernel, each next hop has it's own onlink flag (rtnh_flags). This means,
+             * we can only merge ECMP routes, if they agree with their onlink flag, and then
+             * all next hops are onlink (or not). */
             NM_CMP_DIRECT(a->r_rtm_flags & RTNH_F_ONLINK, b->r_rtm_flags & RTNH_F_ONLINK);
+
             NM_CMP_FIELD_UNSAFE(a, b, quickack);
             NM_CMP_FIELD_UNSAFE(a, b, lock_window);
             NM_CMP_FIELD_UNSAFE(a, b, lock_cwnd);
