@@ -680,6 +680,11 @@ typedef struct {
      * zero.
      */
     guint16 weight;
+
+    /* FIXME: each next hop in kernel also has a rtnh_flags (for example to
+     * set RTNH_F_ONLINK). As the next hop is part of the identifier of an
+     * IPv4 route, so is their flags. We must also track the flag, otherwise
+     * two routes that look different for kernel, get merged by platform cache. */
 } NMPlatformIP4RtNextHop;
 
 typedef struct {
