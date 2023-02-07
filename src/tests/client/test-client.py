@@ -754,6 +754,16 @@ MAX_JOBS = 15
 
 
 class TestNmcli(NmTestBase):
+    def srv_start(self):
+        self.srv_shutdown()
+        self.srv = NMStubServer(self._testMethodName)
+
+    def srv_shutdown(self):
+        if self.srv is not None:
+            srv = self.srv
+            self.srv = None
+            srv.shutdown()
+
     def ReplaceTextConUuid(self, con_name, replacement):
         return Util.ReplaceTextSimple(
             Util.memoize_nullary(lambda: self.srv.findConnectionUuid(con_name)),
@@ -1130,9 +1140,7 @@ class TestNmcli(NmTestBase):
 
         self.async_wait()
 
-        if self.srv is not None:
-            self.srv.shutdown()
-            self.srv = None
+        self.srv_shutdown()
 
         self._calling_num = None
 
@@ -1248,7 +1256,7 @@ class TestNmcli(NmTestBase):
 
     def nm_test(func):
         def f(self):
-            self.srv = NMStubServer(self._testMethodName)
+            self.srv_start()
             func(self)
             self._nm_test_post()
 
@@ -1935,8 +1943,7 @@ class TestNmcli(NmTestBase):
         end_mon(nmc)
 
         nmc = start_mon()
-        self.srv.shutdown()
-        self.srv = None
+        self.srv_shutdown()
         nmc.expect("eth0: device removed")
         nmc.expect("con-1: connection profile removed")
         nmc.expect("NetworkManager is stopped")
