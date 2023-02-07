@@ -98,26 +98,25 @@ ENV_LIBTOOL = "LIBTOOL"
 
 ###############################################################################
 
-import sys
-
-import os
-import errno
-import unittest
-import socket
-import itertools
-import subprocess
-import shlex
-import re
-import fcntl
-import dbus
-import time
-import random
-import tempfile
-import dbus.service
-import dbus.mainloop.glib
 import collections
+import dbus
+import dbus.mainloop.glib
+import dbus.service
+import errno
+import fcntl
 import io
-from signal import SIGINT
+import itertools
+import os
+import random
+import re
+import shlex
+import signal
+import socket
+import subprocess
+import sys
+import tempfile
+import time
+import unittest
 
 import gi
 
@@ -215,10 +214,10 @@ class Util:
     }
 
     @classmethod
-    def signal_no_to_str(cls, signal):
-        s = cls._signal_no_lookup.get(signal, None)
+    def signal_no_to_str(cls, sig):
+        s = cls._signal_no_lookup.get(sig, None)
         if s is None:
-            return "<unknown %d>" % (signal)
+            return "<unknown %d>" % (sig)
         return s
 
     @staticmethod
@@ -2029,7 +2028,7 @@ class TestNmcli(unittest.TestCase):
             return nmc
 
         def end_mon(self, nmc):
-            nmc.pexp.kill(SIGINT)
+            nmc.pexp.kill(signal.SIGINT)
             nmc.pexp.expect(pexpect.EOF)
             Util.valgrind_check_log(nmc.valgrind_log, "test_monitor")
 
