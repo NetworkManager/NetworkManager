@@ -656,17 +656,37 @@ class NMStubServer:
         )
         self._p = p
 
-    def shutdown(self):
+    def shutdown(self, kill_mode="random"):
         conn = self._conn
         p = self._p
         self._nmobj = None
         self._nmiface = None
         self._conn = None
         self._p = None
-        p.stdin.close()
-        p.kill()
+
+        # The test stub service watches stdin and will do a proper
+        # shutdown when it closes. That means, to send signals about
+        # going away.
+        # On the other hand, just killing it will cause the process
+        # from dropping off the bus.
+        if kill_mode == "kill":
+            p.kill()
+        elif kill_mode == "stdin-close":
+            p.stdin.close()
+        else:
+            assert kill_mode == "random"
+            ops = [p.stdin.close, p.kill]
+            random.shuffle(ops)
+            ops[0]()
+            r = random.random()
+            if r < 0.75:
+                if r < 0.5:
+                    time.sleep(r * 0.2)
+                ops[1]()
+
         if Util.popen_wait(p, 1) is None:
             raise Exception("Stub service did not exit in time")
+        p.stdin.close()
         if self._conn_get_main_object(conn) is not None:
             raise Exception(
                 "Stub service is not still here although it should shut down"
