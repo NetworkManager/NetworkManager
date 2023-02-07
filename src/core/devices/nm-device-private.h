@@ -44,6 +44,7 @@ gboolean nm_device_bring_up_full(NMDevice *self,
                                  gboolean *no_firmware);
 
 void nm_device_take_down(NMDevice *self, gboolean block);
+void nm_device_take_up(NMDevice *self, gboolean block);
 
 gboolean nm_device_take_over_link(NMDevice *self, int ifindex, char **old_name, GError **error);
 

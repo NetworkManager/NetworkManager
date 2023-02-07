@@ -23,6 +23,7 @@ gboolean nmc_string_to_uint(const char        *str,
                             unsigned long int  max,
                             unsigned long int *value);
 gboolean nmc_string_to_bool(const char *str, gboolean *val_bool, GError **error);
+gboolean nmc_string_managed_mode_to_uint(const char *str, guint *val_uint, GError **error);
 
 typedef enum {
     NMC_STRING_TO_TERNARY_FLAGS_NONE               = 0,

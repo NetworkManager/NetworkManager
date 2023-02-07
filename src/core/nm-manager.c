@@ -3442,10 +3442,22 @@ _device_realize_finish(NMManager *self, NMDevice *device, const NMPlatformLink *
     nm_device_realize_finish(device, plink);
 
     if (!nm_device_get_managed(device, FALSE)) {
+        NMUnmanagedFlags flags;
+
+        flags = nm_device_get_unmanaged_flags(device, NM_UNMANAGED_ALL);
         /* If the device is unmanaged by NM_UNMANAGED_PLATFORM_INIT,
          * don't reset the state now but wait until it becomes managed. */
-        if (nm_device_get_unmanaged_flags(device, NM_UNMANAGED_ALL) & ~NM_UNMANAGED_PLATFORM_INIT)
+        if (flags & ~NM_UNMANAGED_PLATFORM_INIT)
             nm_device_assume_state_reset(device);
+
+        /* Disable interface */
+        if (flags & NM_UNMANAGED_USER_DOWN) {
+            if (flags & NM_UNMANAGED_USER_SYNC) {
+                nm_device_enable(device);
+            }
+            nm_device_disable(device);
+        }
+
         return;
     }
 
@@ -7451,6 +7463,7 @@ _dbus_set_property_audit_log_get_args(NMDBusObject *obj,
     if (NM_IS_DEVICE(obj)) {
         nm_assert(NM_IN_STRSET(property_name,
                                NM_DEVICE_MANAGED,
+                               NM_DEVICE_MANAGED2,
                                NM_DEVICE_AUTOCONNECT,
                                NM_DEVICE_STATISTICS_REFRESH_RATE_MS));
         return (*str_to_free = g_variant_print(value, FALSE));

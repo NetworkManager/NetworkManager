@@ -39,6 +39,7 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMDevice,
                              PROP_CAPABILITIES,
                              PROP_REAL,
                              PROP_MANAGED,
+                             PROP_MANAGED2,
                              PROP_AUTOCONNECT,
                              PROP_FIRMWARE_MISSING,
                              PROP_NM_PLUGIN_MISSING,
@@ -113,6 +114,7 @@ typedef struct _NMDevicePrivate {
     bool              nm_plugin_missing;
     bool              autoconnect;
     bool              managed;
+    guint             managed2;
     bool              real;
 
     bool hw_address_is_new : 1;
@@ -401,6 +403,9 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
     case PROP_MANAGED:
         g_value_set_boolean(value, nm_device_get_managed(device));
         break;
+    case PROP_MANAGED2:
+        g_value_set_uint(value, nm_device_get_managed2(device));
+        break;
     case PROP_AUTOCONNECT:
         g_value_set_boolean(value, nm_device_get_autoconnect(device));
         break;
@@ -589,6 +594,7 @@ const NMLDBusMetaIface _nml_dbus_meta_iface_nm_device = NML_DBUS_META_IFACE_INIT
                                         "aa{sv}",
                                         _notify_update_prop_lldp_neighbors),
         NML_DBUS_META_PROPERTY_INIT_B("Managed", PROP_MANAGED, NMDevicePrivate, managed),
+        NML_DBUS_META_PROPERTY_INIT_U("Managed2", PROP_MANAGED2, NMDevicePrivate, managed2),
         NML_DBUS_META_PROPERTY_INIT_U("Metered", PROP_METERED, NMDevicePrivate, metered),
         NML_DBUS_META_PROPERTY_INIT_U("Mtu", PROP_MTU, NMDevicePrivate, mtu),
         NML_DBUS_META_PROPERTY_INIT_B("NmPluginMissing",
@@ -778,6 +784,18 @@ nm_device_class_init(NMDeviceClass *klass)
                                                         "",
                                                         FALSE,
                                                         G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+    /**
+     * NMDevice:managed2:
+     *
+     * Whether the device is managed by NetworkManager.
+     **/
+    obj_properties[PROP_MANAGED2] = g_param_spec_uint(NM_DEVICE_MANAGED2,
+                                                      "",
+                                                      "",
+                                                      0,
+                                                      3,
+                                                      0,
+                                                      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
      * NMDevice:autoconnect:
@@ -1435,6 +1453,27 @@ nm_device_get_managed(NMDevice *device)
 }
 
 /**
+ * nm_device_get_managed2:
+ * @device: a #NMDevice
+ *
+ * Whether the #NMDevice is managed by NetworkManager.
+ * Support 4 state: unmanaged, managed,
+ * unmanaged + disable #NMDevice,
+ * unmanaged + sync kernel + disable #NMDevice
+ *
+ * Since: 1.42
+ *
+ * Returns: NetworkManager managed state
+ **/
+guint
+nm_device_get_managed2(NMDevice *device)
+{
+    g_return_val_if_fail(NM_IS_DEVICE(device), 0);
+
+    return NM_DEVICE_GET_PRIVATE(device)->managed2;
+}
+
+/**
  * nm_device_set_managed:
  * @device: a #NMDevice
  * @managed: %TRUE to make the device managed by NetworkManager.
@@ -1451,19 +1490,18 @@ nm_device_get_managed(NMDevice *device)
  * not emit a property changed signal.
  **/
 void
-nm_device_set_managed(NMDevice *device, gboolean managed)
+nm_device_set_managed(NMDevice *device, guint managed)
 {
     g_return_if_fail(NM_IS_DEVICE(device));
 
-    managed = !!managed;
-
-    NM_DEVICE_GET_PRIVATE(device)->managed = managed;
+    NM_DEVICE_GET_PRIVATE(device)->managed  = managed == 1 ? TRUE : FALSE;
+    NM_DEVICE_GET_PRIVATE(device)->managed2 = managed;
 
     _nm_client_set_property_sync_legacy(_nm_object_get_client(device),
                                         _nm_object_get_path(device),
                                         NM_DBUS_INTERFACE_DEVICE,
-                                        "Managed",
-                                        "b",
+                                        "Managed2",
+                                        "u",
                                         managed);
 }
 

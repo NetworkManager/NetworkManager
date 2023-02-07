@@ -841,7 +841,7 @@ struct _NMDeviceClass {
     const GParamSpec *slaves_param_spec;
 };
 
-#define _NML_DEVICE_META_PROPERTY_INDEX_PORTS 27
+#define _NML_DEVICE_META_PROPERTY_INDEX_PORTS 28
 
 /*****************************************************************************/
 

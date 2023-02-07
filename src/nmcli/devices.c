@@ -843,7 +843,7 @@ usage(void)
                  "delete | monitor | wifi | lldp }\n\n"
                  "  status\n\n"
                  "  show [<ifname>]\n\n"
-                 "  set [ifname] <ifname> [autoconnect yes|no] [managed yes|no]\n\n"
+                 "  set [ifname] <ifname> [autoconnect yes|no] [managed yes|no|down|updown]\n\n"
                  "  connect <ifname>\n\n"
                  "  reapply <ifname>\n\n"
                  "  modify <ifname> ([+|-]<setting>.<property> <value>)+\n\n"
@@ -966,7 +966,7 @@ usage_device_set(void)
                  "ARGUMENTS := DEVICE { PROPERTY [ PROPERTY ... ] }\n"
                  "DEVICE    := [ifname] <ifname> \n"
                  "PROPERTY  := { autoconnect { yes | no } |\n"
-                 "             { managed { yes | no }\n"
+                 "             { managed { yes | no | down | updown }\n"
                  "\n"
                  "Modify device properties.\n\n"));
 }
@@ -2762,6 +2762,19 @@ do_devices_delete(const NMCCommand *cmd, NmCli *nmc, int argc, const char *const
     }
 }
 
+/**
+ * nmc_complete_managed:
+ * @prefix: a string to match
+ * @...: a %NULL-terminated list of candidate strings
+ *
+ * Prints all the matching possible managed values for completion.
+ */
+static void
+nmc_complete_managed(const char *prefix)
+{
+    nmc_complete_strings(prefix, "true", "yes", "on", "false", "no", "off", "down", "updown");
+}
+
 static void
 do_device_set(const NMCCommand *cmd, NmCli *nmc, int argc, const char *const *argv)
 {
@@ -2770,8 +2783,8 @@ do_device_set(const NMCCommand *cmd, NmCli *nmc, int argc, const char *const *ar
     NMDevice *device = NULL;
     int       i;
     struct {
-        int      idx;
-        gboolean value;
+        int   idx;
+        guint value;
     } values[2] = {
         [DEV_SET_AUTOCONNECT] = {-1},
         [DEV_SET_MANAGED]     = {-1},
@@ -2797,12 +2810,11 @@ do_device_set(const NMCCommand *cmd, NmCli *nmc, int argc, const char *const *ar
 
     i = 0;
     do {
-        gboolean flag;
-
         if (argc == 1 && nmc->complete)
             nmc_complete_strings(*argv, "managed", "autoconnect");
 
         if (matches(*argv, "managed")) {
+            guint value;
             argc--;
             argv++;
             if (!argc) {
@@ -2813,15 +2825,16 @@ do_device_set(const NMCCommand *cmd, NmCli *nmc, int argc, const char *const *ar
                 return;
             }
             if (argc == 1 && nmc->complete)
-                nmc_complete_bool(*argv);
-            if (!nmc_string_to_bool(*argv, &flag, &error)) {
+                nmc_complete_managed(*argv);
+            if (!nmc_string_managed_mode_to_uint(*argv, &value, &error)) {
                 g_string_printf(nmc->return_text, _("Error: 'managed': %s."), error->message);
                 nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
                 return;
             }
             values[DEV_SET_MANAGED].idx   = ++i;
-            values[DEV_SET_MANAGED].value = flag;
+            values[DEV_SET_MANAGED].value = value;
         } else if (matches(*argv, "autoconnect")) {
+            gboolean flag;
             argc--;
             argv++;
             if (!argc) {

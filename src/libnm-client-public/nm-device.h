@@ -33,6 +33,7 @@ G_BEGIN_DECLS
 #define NM_DEVICE_CAPABILITIES     "capabilities"
 #define NM_DEVICE_REAL             "real"
 #define NM_DEVICE_MANAGED          "managed"
+#define NM_DEVICE_MANAGED2         "managed2"
 
 _NM_DEPRECATED_SYNC_WRITABLE_PROPERTY
 #define NM_DEVICE_AUTOCONNECT "autoconnect"
@@ -142,6 +143,7 @@ const char          *nm_device_get_type_description(NMDevice *device);
 const char          *nm_device_get_hw_address(NMDevice *device);
 NMDeviceCapabilities nm_device_get_capabilities(NMDevice *device);
 gboolean             nm_device_get_managed(NMDevice *device);
+guint                nm_device_get_managed2(NMDevice *device);
 
 NM_AVAILABLE_IN_1_34
 const GPtrArray *nm_device_get_ports(NMDevice *device);
@@ -149,7 +151,7 @@ const GPtrArray *nm_device_get_ports(NMDevice *device);
 NM_AVAILABLE_IN_1_2
 NM_DEPRECATED_IN_1_22
 _NM_DEPRECATED_SYNC_METHOD
-void nm_device_set_managed(NMDevice *device, gboolean managed);
+void nm_device_set_managed(NMDevice *device, guint managed);
 
 gboolean nm_device_get_autoconnect(NMDevice *device);
 
