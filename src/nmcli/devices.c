@@ -1376,6 +1376,10 @@ fill_output_access_point(NMAccessPoint *ap, const APInfo *info)
             || (rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_802_1X)) {
             g_string_append(security_str, "802.1X ");
         }
+        if ((wpa_flags & NM_802_11_AP_SEC_KEY_MGMT_EAP_SUITE_B_192)
+            || (rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_EAP_SUITE_B_192)) {
+            g_string_append(security_str, "WPA-EAP-SUITE-B-192 ");
+        }
     }
 
     if (security_str->len > 0)
