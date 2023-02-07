@@ -740,20 +740,18 @@ class AsyncProcess:
 ###############################################################################
 
 
-class NmTestBase(unittest.TestCase):
+MAX_JOBS = 15
+
+
+class TestNmcli(unittest.TestCase):
     def __init__(self, *args, **kwargs):
         self._calling_num = {}
         self._skip_test_for_l10n_diff = []
         self._async_jobs = []
         self._results = []
         self.srv = None
-        return unittest.TestCase.__init__(self, *args, **kwargs)
+        unittest.TestCase.__init__(self, *args, **kwargs)
 
-
-MAX_JOBS = 15
-
-
-class TestNmcli(NmTestBase):
     def srv_start(self):
         self.srv_shutdown()
         self.srv = NMStubServer(self._testMethodName)
