@@ -48,6 +48,8 @@ struct sd_dhcp6_client {
         int event_priority;
         int fd;
 
+        sd_device *dev;
+
         DHCP6State state;
         bool information_request;
         usec_t information_request_time_usec;
@@ -77,8 +79,9 @@ struct sd_dhcp6_client {
 
         sd_dhcp6_client_callback_t callback;
         void *userdata;
+        bool send_release;
 
-        /* Ignore ifindex when generating iaid. See dhcp_identifier_set_iaid(). */
+        /* Ignore machine-ID when generating DUID. See dhcp_identifier_set_duid_en(). */
         bool test_mode;
 };
 

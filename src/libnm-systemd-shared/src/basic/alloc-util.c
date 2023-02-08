@@ -104,3 +104,7 @@ void* greedy_realloc0(
 
         return q;
 }
+
+void *expand_to_usable(void *ptr, size_t newsize _unused_) {
+        return ptr;
+}

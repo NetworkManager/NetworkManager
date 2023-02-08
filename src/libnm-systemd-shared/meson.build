@@ -42,7 +42,6 @@ libnm_systemd_shared = static_library(
     'src/basic/time-util.c',
     'src/basic/tmpfile-util.c',
     'src/basic/utf8.c',
-    'src/basic/util.c',
     'src/fundamental/sha256.c',
     'src/fundamental/string-util-fundamental.c',
     'src/shared/dns-domain.c',

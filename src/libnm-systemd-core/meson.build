@@ -21,6 +21,7 @@ libnm_systemd_core = static_library(
     include_directories(
       'sd-adapt-core',
       'src/libsystemd-network',
+      'src/libsystemd/sd-device',
       'src/libsystemd/sd-event',
       'src/systemd',
     ),

@@ -12,6 +12,7 @@
 
 bool ratelimit_below(RateLimit *r) {
         usec_t ts;
+        bool good = false;
 
         assert(r);
 
@@ -26,18 +27,12 @@ bool ratelimit_below(RateLimit *r) {
 
                 /* Reset counter */
                 r->num = 0;
-                goto good;
-        }
-
-        if (r->num < r->burst)
-                goto good;
+                good = true;
+        } else if (r->num < r->burst)
+                good = true;
 
         r->num++;
-        return false;
-
-good:
-        r->num++;
-        return true;
+        return good;
 }
 
 unsigned ratelimit_num_dropped(RateLimit *r) {

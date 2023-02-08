@@ -12,6 +12,7 @@ EXCLUDE_PATHS_TOPLEVEL=(
     "src/c-rbtree"
     "src/c-siphash"
     "src/c-stdaux"
+    "src/libnm-std-aux/unaligned-fundamental.h"
     "src/libnm-std-aux/unaligned.h"
     "src/libnm-systemd-core/src"
     "src/libnm-systemd-shared/src"

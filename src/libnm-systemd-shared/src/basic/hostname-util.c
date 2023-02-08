@@ -65,7 +65,7 @@ int gethostname_full(GetHostnameFlags flags, char **ret) {
         }
 
         if (FLAGS_SET(flags, GET_HOSTNAME_SHORT))
-                buf = strndup(s, strcspn(s, "."));
+                buf = strdupcspn(s, ".");
         else
                 buf = strdup(s);
         if (!buf)

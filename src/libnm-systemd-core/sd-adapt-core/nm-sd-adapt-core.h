@@ -40,6 +40,8 @@
 #include <sys/syscall.h>
 #include <sys/ioctl.h>
 
+#define HAVE_EPOLL_PWAIT2 0
+
 /* Missing in Linux 3.2.0, in Ubuntu 12.04 */
 #ifndef BPF_XOR
 #define BPF_XOR 0xa0
@@ -85,8 +87,14 @@ sd_notify(int unset_environment, const char *state)
 #include "sd-id128.h"
 #include "sparse-endian.h"
 #include "async.h"
-#include "util.h"
 
 #endif /* (NETWORKMANAGER_COMPILATION) & NM_NETWORKMANAGER_COMPILATION_WITH_SYSTEMD */
+
+/*****************************************************************************/
+
+struct sd_device;
+
+struct sd_device *sd_device_ref(struct sd_device *self);
+struct sd_device *sd_device_unref(struct sd_device *self);
 
 #endif /* __NM_SD_ADAPT_CORE_H__ */

@@ -61,11 +61,13 @@ char *hexmem(const void *p, size_t l) {
         const uint8_t *x;
         char *r, *z;
 
+        assert(p || l == 0);
+
         z = r = new(char, l * 2 + 1);
         if (!r)
                 return NULL;
 
-        for (x = p; x < (const uint8_t*) p + l; x++) {
+        for (x = p; x && x < (const uint8_t*) p + l; x++) {
                 *(z++) = hexchar(*x >> 4);
                 *(z++) = hexchar(*x & 15);
         }
@@ -110,12 +112,17 @@ static int unhex_next(const char **p, size_t *l) {
         return r;
 }
 
-int unhexmem_full(const char *p, size_t l, bool secure, void **ret, size_t *ret_len) {
+int unhexmem_full(
+                const char *p,
+                size_t l,
+                bool secure,
+                void **ret,
+                size_t *ret_len) {
+
         _cleanup_free_ uint8_t *buf = NULL;
         size_t buf_size;
         const char *x;
         uint8_t *z;
-        int r;
 
         assert(p || l == 0);
 
@@ -128,22 +135,20 @@ int unhexmem_full(const char *p, size_t l, bool secure, void **ret, size_t *ret_
         if (!buf)
                 return -ENOMEM;
 
+        CLEANUP_ERASE_PTR(secure ? &buf : NULL, buf_size);
+
         for (x = p, z = buf;;) {
                 int a, b;
 
                 a = unhex_next(&x, &l);
                 if (a == -EPIPE) /* End of string */
                         break;
-                if (a < 0) {
-                        r = a;
-                        goto on_failure;
-                }
+                if (a < 0)
+                        return a;
 
                 b = unhex_next(&x, &l);
-                if (b < 0) {
-                        r = b;
-                        goto on_failure;
-                }
+                if (b < 0)
+                        return b;
 
                 *(z++) = (uint8_t) a << 4 | (uint8_t) b;
         }
@@ -156,12 +161,6 @@ int unhexmem_full(const char *p, size_t l, bool secure, void **ret, size_t *ret_
                 *ret = TAKE_PTR(buf);
 
         return 0;
-
-on_failure:
-        if (secure)
-                explicit_bzero_safe(buf, buf_size);
-
-        return r;
 }
 
 #if 0 /* NM_IGNORED */
@@ -591,121 +590,136 @@ ssize_t base64mem_full(
                 const void *p,
                 size_t l,
                 size_t line_break,
-                char **out) {
+                char **ret) {
 
         const uint8_t *x;
-        char *r, *z;
+        char *b, *z;
         size_t m;
 
         assert(p || l == 0);
-        assert(out);
         assert(line_break > 0);
+        assert(ret);
 
         /* three input bytes makes four output bytes, padding is added so we must round up */
         m = 4 * (l + 2) / 3 + 1;
-
         if (line_break != SIZE_MAX)
                 m += m / line_break;
 
-        z = r = malloc(m);
-        if (!r)
+        z = b = malloc(m);
+        if (!b)
                 return -ENOMEM;
 
-        for (x = p; x < (const uint8_t*) p + (l / 3) * 3; x += 3) {
+        for (x = p; x && x < (const uint8_t*) p + (l / 3) * 3; x += 3) {
                 /* x[0] == XXXXXXXX; x[1] == YYYYYYYY; x[2] == ZZZZZZZZ */
-                maybe_line_break(&z, r, line_break);
+                maybe_line_break(&z, b, line_break);
                 *(z++) = base64char(x[0] >> 2);                    /* 00XXXXXX */
-                maybe_line_break(&z, r, line_break);
+                maybe_line_break(&z, b, line_break);
                 *(z++) = base64char((x[0] & 3) << 4 | x[1] >> 4);  /* 00XXYYYY */
-                maybe_line_break(&z, r, line_break);
+                maybe_line_break(&z, b, line_break);
                 *(z++) = base64char((x[1] & 15) << 2 | x[2] >> 6); /* 00YYYYZZ */
-                maybe_line_break(&z, r, line_break);
+                maybe_line_break(&z, b, line_break);
                 *(z++) = base64char(x[2] & 63);                    /* 00ZZZZZZ */
         }
 
         switch (l % 3) {
         case 2:
-                maybe_line_break(&z, r, line_break);
+                maybe_line_break(&z, b, line_break);
                 *(z++) = base64char(x[0] >> 2);                   /* 00XXXXXX */
-                maybe_line_break(&z, r, line_break);
+                maybe_line_break(&z, b, line_break);
                 *(z++) = base64char((x[0] & 3) << 4 | x[1] >> 4); /* 00XXYYYY */
-                maybe_line_break(&z, r, line_break);
+                maybe_line_break(&z, b, line_break);
                 *(z++) = base64char((x[1] & 15) << 2);            /* 00YYYY00 */
-                maybe_line_break(&z, r, line_break);
+                maybe_line_break(&z, b, line_break);
                 *(z++) = '=';
-
                 break;
-        case 1:
-                maybe_line_break(&z, r, line_break);
-                *(z++) = base64char(x[0] >> 2);        /* 00XXXXXX */
-                maybe_line_break(&z, r, line_break);
-                *(z++) = base64char((x[0] & 3) << 4);  /* 00XX0000 */
-                maybe_line_break(&z, r, line_break);
-                *(z++) = '=';
-                maybe_line_break(&z, r, line_break);
-                *(z++) = '=';
 
+        case 1:
+                maybe_line_break(&z, b, line_break);
+                *(z++) = base64char(x[0] >> 2);        /* 00XXXXXX */
+                maybe_line_break(&z, b, line_break);
+                *(z++) = base64char((x[0] & 3) << 4);  /* 00XX0000 */
+                maybe_line_break(&z, b, line_break);
+                *(z++) = '=';
+                maybe_line_break(&z, b, line_break);
+                *(z++) = '=';
                 break;
         }
 
         *z = 0;
-        *out = r;
-        assert(z >= r); /* Let static analyzers know that the answer is non-negative. */
-        return z - r;
+        *ret = b;
+
+        assert(z >= b); /* Let static analyzers know that the answer is non-negative. */
+        return z - b;
 }
 
-static int base64_append_width(
-                char **prefix, int plen,
-                char sep, int indent,
-                const void *p, size_t l,
-                int width) {
+static ssize_t base64_append_width(
+                char **prefix,
+                size_t plen,
+                char sep,
+                size_t indent,
+                const void *p,
+                size_t l,
+                size_t width) {
 
         _cleanup_free_ char *x = NULL;
         char *t, *s;
-        ssize_t len, avail, line, lines;
+        size_t lines;
+        ssize_t len;
+
+        assert(prefix);
+        assert(*prefix || plen == 0);
+        assert(p || l == 0);
 
         len = base64mem(p, l, &x);
-        if (len <= 0)
+        if (len < 0)
                 return len;
+        if (len == 0)
+                return plen;
 
         lines = DIV_ROUND_UP(len, width);
 
-        if ((size_t) plen >= SSIZE_MAX - 1 - 1 ||
+        if (plen >= SSIZE_MAX - 1 - 1 ||
             lines > (SSIZE_MAX - plen - 1 - 1) / (indent + width + 1))
                 return -ENOMEM;
 
-        t = realloc(*prefix, (ssize_t) plen + 1 + 1 + (indent + width + 1) * lines);
+        t = realloc(*prefix, plen + 1 + 1 + (indent + width + 1) * lines);
         if (!t)
                 return -ENOMEM;
 
-        t[plen] = sep;
+        s = t + plen;
+        for (size_t line = 0; line < lines; line++) {
+                size_t act = MIN(width, (size_t) len);
 
-        for (line = 0, s = t + plen + 1, avail = len; line < lines; line++) {
-                int act = MIN(width, avail);
+                if (line > 0)
+                        sep = '\n';
 
-                if (line > 0 || sep == '\n') {
-                        memset(s, ' ', indent);
-                        s += indent;
+                if (s > t) {
+                        *s++ = sep;
+                        if (sep == '\n')
+                                s = mempset(s, ' ', indent);
                 }
 
                 s = mempcpy(s, x + width * line, act);
-                *(s++) = line < lines - 1 ? '\n' : '\0';
-                avail -= act;
+                len -= act;
         }
-        assert(avail == 0);
+        assert(len == 0);
 
+        *s = '\0';
         *prefix = t;
-        return 0;
+        return s - t;
 }
 
-int base64_append(
-                char **prefix, int plen,
-                const void *p, size_t l,
-                int indent, int width) {
+ssize_t base64_append(
+                char **prefix,
+                size_t plen,
+                const void *p,
+                size_t l,
+                size_t indent,
+                size_t width) {
 
         if (plen > width / 2 || plen + indent > width)
                 /* leave indent on the left, keep last column free */
-                return base64_append_width(prefix, plen, '\n', indent, p, l, width - indent - 1);
+                return base64_append_width(prefix, plen, '\n', indent, p, l, width - indent);
         else
                 /* leave plen on the left, keep last column free */
                 return base64_append_width(prefix, plen, ' ', plen + 1, p, l, width - plen - 1);
@@ -754,12 +768,17 @@ static int unbase64_next(const char **p, size_t *l) {
         return ret;
 }
 
-int unbase64mem_full(const char *p, size_t l, bool secure, void **ret, size_t *ret_size) {
+int unbase64mem_full(
+                const char *p,
+                size_t l,
+                bool secure,
+                void **ret,
+                size_t *ret_size) {
+
         _cleanup_free_ uint8_t *buf = NULL;
         const char *x;
         uint8_t *z;
         size_t len;
-        int r;
 
         assert(p || l == 0);
 
@@ -774,60 +793,44 @@ int unbase64mem_full(const char *p, size_t l, bool secure, void **ret, size_t *r
         if (!buf)
                 return -ENOMEM;
 
+        CLEANUP_ERASE_PTR(secure ? &buf : NULL, len);
+
         for (x = p, z = buf;;) {
                 int a, b, c, d; /* a == 00XXXXXX; b == 00YYYYYY; c == 00ZZZZZZ; d == 00WWWWWW */
 
                 a = unbase64_next(&x, &l);
                 if (a == -EPIPE) /* End of string */
                         break;
-                if (a < 0) {
-                        r = a;
-                        goto on_failure;
-                }
-                if (a == INT_MAX) { /* Padding is not allowed at the beginning of a 4ch block */
-                        r = -EINVAL;
-                        goto on_failure;
-                }
+                if (a < 0)
+                        return a;
+                if (a == INT_MAX) /* Padding is not allowed at the beginning of a 4ch block */
+                        return -EINVAL;
 
                 b = unbase64_next(&x, &l);
-                if (b < 0) {
-                        r = b;
-                        goto on_failure;
-                }
-                if (b == INT_MAX) { /* Padding is not allowed at the second character of a 4ch block either */
-                        r = -EINVAL;
-                        goto on_failure;
-                }
+                if (b < 0)
+                        return b;
+                if (b == INT_MAX) /* Padding is not allowed at the second character of a 4ch block either */
+                        return -EINVAL;
 
                 c = unbase64_next(&x, &l);
-                if (c < 0) {
-                        r = c;
-                        goto on_failure;
-                }
+                if (c < 0)
+                        return c;
 
                 d = unbase64_next(&x, &l);
-                if (d < 0) {
-                        r = d;
-                        goto on_failure;
-                }
+                if (d < 0)
+                        return d;
 
                 if (c == INT_MAX) { /* Padding at the third character */
 
-                        if (d != INT_MAX) { /* If the third character is padding, the fourth must be too */
-                                r = -EINVAL;
-                                goto on_failure;
-                        }
+                        if (d != INT_MAX) /* If the third character is padding, the fourth must be too */
+                                return -EINVAL;
 
                         /* b == 00YY0000 */
-                        if (b & 15) {
-                                r = -EINVAL;
-                                goto on_failure;
-                        }
+                        if (b & 15)
+                                return -EINVAL;
 
-                        if (l > 0) { /* Trailing rubbish? */
-                                r = -ENAMETOOLONG;
-                                goto on_failure;
-                        }
+                        if (l > 0) /* Trailing rubbish? */
+                                return -ENAMETOOLONG;
 
                         *(z++) = (uint8_t) a << 2 | (uint8_t) (b >> 4); /* XXXXXXYY */
                         break;
@@ -835,15 +838,11 @@ int unbase64mem_full(const char *p, size_t l, bool secure, void **ret, size_t *r
 
                 if (d == INT_MAX) {
                         /* c == 00ZZZZ00 */
-                        if (c & 3) {
-                                r = -EINVAL;
-                                goto on_failure;
-                        }
+                        if (c & 3)
+                                return -EINVAL;
 
-                        if (l > 0) { /* Trailing rubbish? */
-                                r = -ENAMETOOLONG;
-                                goto on_failure;
-                        }
+                        if (l > 0) /* Trailing rubbish? */
+                                return -ENAMETOOLONG;
 
                         *(z++) = (uint8_t) a << 2 | (uint8_t) b >> 4; /* XXXXXXYY */
                         *(z++) = (uint8_t) b << 4 | (uint8_t) c >> 2; /* YYYYZZZZ */
@@ -857,18 +856,14 @@ int unbase64mem_full(const char *p, size_t l, bool secure, void **ret, size_t *r
 
         *z = 0;
 
+        assert((size_t) (z - buf) <= len);
+
         if (ret_size)
                 *ret_size = (size_t) (z - buf);
         if (ret)
                 *ret = TAKE_PTR(buf);
 
         return 0;
-
-on_failure:
-        if (secure)
-                explicit_bzero_safe(buf, len);
-
-        return r;
 }
 
 #if 0 /* NM_IGNORED */

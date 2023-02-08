@@ -2,7 +2,7 @@
 
 #include "nm-sd-adapt-shared.h"
 
-#ifndef SD_BOOT
+#if !SD_BOOT
 #  include <ctype.h>
 #endif
 
@@ -22,7 +22,7 @@ sd_char *startswith(const sd_char *s, const sd_char *prefix) {
         return (sd_char*) s + l;
 }
 
-#ifndef SD_BOOT
+#if !SD_BOOT
 sd_char *startswith_no_case(const sd_char *s, const sd_char *prefix) {
         size_t l;
 

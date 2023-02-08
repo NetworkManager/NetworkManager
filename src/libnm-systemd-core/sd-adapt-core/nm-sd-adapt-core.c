@@ -8,6 +8,7 @@
 #include "nm-sd-adapt-core.h"
 
 #include "fd-util.h"
+#include "sd-device.h"
 
 /*****************************************************************************/
 
@@ -19,3 +20,17 @@ asynchronous_close(int fd)
 }
 
 /*****************************************************************************/
+
+sd_device *
+sd_device_ref(sd_device *self)
+{
+    g_return_val_if_fail(!self, self);
+    return self;
+}
+
+sd_device *
+sd_device_unref(sd_device *self)
+{
+    g_return_val_if_fail(!self, self);
+    return self;
+}

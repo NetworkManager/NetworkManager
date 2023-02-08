@@ -34,6 +34,10 @@
 
 #define ENABLE_DEBUG_HASHMAP 0
 
+#define SD_BOOT 0
+
+#define HAVE_SPLIT_USR 0
+
 /*****************************************************************************
  * The remainder of the header is only enabled when building the systemd code
  * itself.
