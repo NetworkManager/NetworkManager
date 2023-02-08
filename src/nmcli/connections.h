@@ -8,7 +8,7 @@
 
 #include "nmcli.h"
 
-void monitor_connections(NmCli *nmc);
+void nmc_monitor_connections(NmCli *nmc);
 
 const char *nmc_connection_check_deprecated(NMConnection *c);
 

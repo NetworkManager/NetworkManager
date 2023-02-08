@@ -22,36 +22,36 @@
 static void
 usage(void)
 {
-    g_printerr(_("Usage: nmcli agent { COMMAND | help }\n\n"
-                 "COMMAND := { secret | polkit | all }\n\n"));
+    nmc_printerr(_("Usage: nmcli agent { COMMAND | help }\n\n"
+                   "COMMAND := { secret | polkit | all }\n\n"));
 }
 
 static void
 usage_agent_secret(void)
 {
-    g_printerr(_("Usage: nmcli agent secret { help }\n"
-                 "\n"
-                 "Runs nmcli as NetworkManager secret agent. When NetworkManager requires\n"
-                 "a password it asks registered agents for it. This command keeps nmcli running\n"
-                 "and if a password is required asks the user for it.\n\n"));
+    nmc_printerr(_("Usage: nmcli agent secret { help }\n"
+                   "\n"
+                   "Runs nmcli as NetworkManager secret agent. When NetworkManager requires\n"
+                   "a password it asks registered agents for it. This command keeps nmcli running\n"
+                   "and if a password is required asks the user for it.\n\n"));
 }
 
 static void
 usage_agent_polkit(void)
 {
-    g_printerr(_("Usage: nmcli agent polkit { help }\n"
-                 "\n"
-                 "Registers nmcli as a polkit action for the user session.\n"
-                 "When a polkit daemon requires an authorization, nmcli asks the user and gives\n"
-                 "the response back to polkit.\n\n"));
+    nmc_printerr(_("Usage: nmcli agent polkit { help }\n"
+                   "\n"
+                   "Registers nmcli as a polkit action for the user session.\n"
+                   "When a polkit daemon requires an authorization, nmcli asks the user and gives\n"
+                   "the response back to polkit.\n\n"));
 }
 
 static void
 usage_agent_all(void)
 {
-    g_printerr(_("Usage: nmcli agent all { help }\n"
-                 "\n"
-                 "Runs nmcli as both NetworkManager secret and a polkit agent.\n\n"));
+    nmc_printerr(_("Usage: nmcli agent all { help }\n"
+                   "\n"
+                   "Runs nmcli as both NetworkManager secret and a polkit agent.\n\n"));
 }
 
 static char *pre_input_deftext;
@@ -82,7 +82,7 @@ get_secrets_from_user(const NmcConfig *nmc_config,
 
         /* Ask user for the password */
         if (msg)
-            g_print("%s\n", msg);
+            nmc_print("%s\n", msg);
         if (secret->value) {
             /* Prefill the password if we have it. */
             rl_startup_hook = set_deftext;
@@ -138,7 +138,7 @@ do_agent_secret(const NMCCommand *cmd, NmCli *nmc, int argc, const char *const *
                          NM_SECRET_AGENT_SIMPLE_REQUEST_SECRETS,
                          G_CALLBACK(secrets_requested),
                          nmc);
-        g_print(_("nmcli successfully registered as a NetworkManager's secret agent.\n"));
+        nmc_print(_("nmcli successfully registered as a NetworkManager's secret agent.\n"));
     } else {
         g_string_printf(nmc->return_text, _("Error: secret agent initialization failed"));
         nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
@@ -148,7 +148,7 @@ do_agent_secret(const NMCCommand *cmd, NmCli *nmc, int argc, const char *const *
 static void
 polkit_registered(gpointer instance, gpointer user_data)
 {
-    g_print(_("nmcli successfully registered as a polkit agent.\n"));
+    nmc_print(_("nmcli successfully registered as a polkit agent.\n"));
 }
 
 static void
@@ -202,14 +202,14 @@ do_agent_all(const NMCCommand *cmd, NmCli *nmc, int argc, const char *const *arg
     do_agent_secret(cmd, nmc, argc, argv);
     r = nmc->return_value;
     if (r != NMC_RESULT_SUCCESS) {
-        g_printerr("%s\n", nmc->return_text->str);
+        nmc_printerr("%s\n", nmc->return_text->str);
         g_string_truncate(nmc->return_text, 0);
         nmc->return_value = NMC_RESULT_SUCCESS;
     }
 
     do_agent_polkit(cmd, nmc, argc, argv);
     if (nmc->return_value != NMC_RESULT_SUCCESS) {
-        g_printerr("%s\n", nmc->return_text->str);
+        nmc_printerr("%s\n", nmc->return_text->str);
         g_string_truncate(nmc->return_text, 0);
     }
 

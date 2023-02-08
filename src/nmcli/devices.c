@@ -837,34 +837,35 @@ static guint progress_id = 0; /* ID of event source for displaying progress */
 static void
 usage(void)
 {
-    g_printerr(_("Usage: nmcli device { COMMAND | help }\n\n"
-                 "COMMAND := { status | show | set | connect | reapply | modify | disconnect | "
-                 "delete | monitor | wifi | lldp }\n\n"
-                 "  status\n\n"
-                 "  show [<ifname>]\n\n"
-                 "  set [ifname] <ifname> [autoconnect yes|no] [managed yes|no]\n\n"
-                 "  connect <ifname>\n\n"
-                 "  reapply <ifname>\n\n"
-                 "  modify <ifname> ([+|-]<setting>.<property> <value>)+\n\n"
-                 "  disconnect <ifname> ...\n\n"
-                 "  delete <ifname> ...\n\n"
-                 "  monitor <ifname> ...\n\n"
-                 "  wifi [list [ifname <ifname>] [bssid <BSSID>] [--rescan yes|no|auto]]\n\n"
-                 "  wifi connect <(B)SSID> [password <password>] [wep-key-type key|phrase] [ifname "
-                 "<ifname>]\n"
-                 "                         [bssid <BSSID>] [name <name>] [private yes|no] [hidden "
-                 "yes|no]\n\n"
-                 "  wifi hotspot [ifname <ifname>] [con-name <name>] [ssid <SSID>] [band a|bg] "
-                 "[channel <channel>] [password <password>]\n\n"
-                 "  wifi rescan [ifname <ifname>] [[ssid <SSID to scan>] ...]\n\n"
-                 "  wifi show-password [ifname <ifname>]\n\n"
-                 "  lldp [list [ifname <ifname>]]\n\n"));
+    nmc_printerr(
+        _("Usage: nmcli device { COMMAND | help }\n\n"
+          "COMMAND := { status | show | set | connect | reapply | modify | disconnect | "
+          "delete | monitor | wifi | lldp }\n\n"
+          "  status\n\n"
+          "  show [<ifname>]\n\n"
+          "  set [ifname] <ifname> [autoconnect yes|no] [managed yes|no]\n\n"
+          "  connect <ifname>\n\n"
+          "  reapply <ifname>\n\n"
+          "  modify <ifname> ([+|-]<setting>.<property> <value>)+\n\n"
+          "  disconnect <ifname> ...\n\n"
+          "  delete <ifname> ...\n\n"
+          "  monitor <ifname> ...\n\n"
+          "  wifi [list [ifname <ifname>] [bssid <BSSID>] [--rescan yes|no|auto]]\n\n"
+          "  wifi connect <(B)SSID> [password <password>] [wep-key-type key|phrase] [ifname "
+          "<ifname>]\n"
+          "                         [bssid <BSSID>] [name <name>] [private yes|no] [hidden "
+          "yes|no]\n\n"
+          "  wifi hotspot [ifname <ifname>] [con-name <name>] [ssid <SSID>] [band a|bg] "
+          "[channel <channel>] [password <password>]\n\n"
+          "  wifi rescan [ifname <ifname>] [[ssid <SSID to scan>] ...]\n\n"
+          "  wifi show-password [ifname <ifname>]\n\n"
+          "  lldp [list [ifname <ifname>]]\n\n"));
 }
 
 static void
 usage_device_status(void)
 {
-    g_printerr(
+    nmc_printerr(
         _("Usage: nmcli device status { help }\n"
           "\n"
           "Show status for all devices.\n"
@@ -880,41 +881,41 @@ usage_device_status(void)
 static void
 usage_device_show(void)
 {
-    g_printerr(_("Usage: nmcli device show { ARGUMENTS | help }\n"
-                 "\n"
-                 "ARGUMENTS := [<ifname>]\n"
-                 "\n"
-                 "Show details of device(s).\n"
-                 "The command lists details for all devices, or for a given device.\n\n"));
+    nmc_printerr(_("Usage: nmcli device show { ARGUMENTS | help }\n"
+                   "\n"
+                   "ARGUMENTS := [<ifname>]\n"
+                   "\n"
+                   "Show details of device(s).\n"
+                   "The command lists details for all devices, or for a given device.\n\n"));
 }
 
 static void
 usage_device_connect(void)
 {
-    g_printerr(_("Usage: nmcli device connect { ARGUMENTS | help }\n"
-                 "\n"
-                 "ARGUMENTS := <ifname>\n"
-                 "\n"
-                 "Connect the device.\n"
-                 "NetworkManager will try to find a suitable connection that will be activated.\n"
-                 "It will also consider connections that are not set to auto-connect.\n\n"));
+    nmc_printerr(_("Usage: nmcli device connect { ARGUMENTS | help }\n"
+                   "\n"
+                   "ARGUMENTS := <ifname>\n"
+                   "\n"
+                   "Connect the device.\n"
+                   "NetworkManager will try to find a suitable connection that will be activated.\n"
+                   "It will also consider connections that are not set to auto-connect.\n\n"));
 }
 
 static void
 usage_device_reapply(void)
 {
-    g_printerr(_("Usage: nmcli device reapply { ARGUMENTS | help }\n"
-                 "\n"
-                 "ARGUMENTS := <ifname>\n"
-                 "\n"
-                 "Attempts to update device with changes to the currently active connection\n"
-                 "made since it was last applied.\n\n"));
+    nmc_printerr(_("Usage: nmcli device reapply { ARGUMENTS | help }\n"
+                   "\n"
+                   "ARGUMENTS := <ifname>\n"
+                   "\n"
+                   "Attempts to update device with changes to the currently active connection\n"
+                   "made since it was last applied.\n\n"));
 }
 
 static void
 usage_device_modify(void)
 {
-    g_printerr(_(
+    nmc_printerr(_(
         "Usage: nmcli device modify { ARGUMENTS | help }\n"
         "\n"
         "ARGUMENTS := <ifname> ([+|-]<setting>.<property> <value>)+\n"
@@ -935,57 +936,57 @@ usage_device_modify(void)
 static void
 usage_device_disconnect(void)
 {
-    g_printerr(_("Usage: nmcli device disconnect { ARGUMENTS | help }\n"
-                 "\n"
-                 "ARGUMENTS := <ifname> ...\n"
-                 "\n"
-                 "Disconnect devices.\n"
-                 "The command disconnects the device and prevents it from auto-activating\n"
-                 "further connections without user/manual intervention.\n\n"));
+    nmc_printerr(_("Usage: nmcli device disconnect { ARGUMENTS | help }\n"
+                   "\n"
+                   "ARGUMENTS := <ifname> ...\n"
+                   "\n"
+                   "Disconnect devices.\n"
+                   "The command disconnects the device and prevents it from auto-activating\n"
+                   "further connections without user/manual intervention.\n\n"));
 }
 
 static void
 usage_device_delete(void)
 {
-    g_printerr(_("Usage: nmcli device delete { ARGUMENTS | help }\n"
-                 "\n"
-                 "ARGUMENTS := <ifname> ...\n"
-                 "\n"
-                 "Delete the software devices.\n"
-                 "The command removes the interfaces. It only works for software devices\n"
-                 "(like bonds, bridges, etc.). Hardware devices cannot be deleted by the\n"
-                 "command.\n\n"));
+    nmc_printerr(_("Usage: nmcli device delete { ARGUMENTS | help }\n"
+                   "\n"
+                   "ARGUMENTS := <ifname> ...\n"
+                   "\n"
+                   "Delete the software devices.\n"
+                   "The command removes the interfaces. It only works for software devices\n"
+                   "(like bonds, bridges, etc.). Hardware devices cannot be deleted by the\n"
+                   "command.\n\n"));
 }
 
 static void
 usage_device_set(void)
 {
-    g_printerr(_("Usage: nmcli device set { ARGUMENTS | help }\n"
-                 "\n"
-                 "ARGUMENTS := DEVICE { PROPERTY [ PROPERTY ... ] }\n"
-                 "DEVICE    := [ifname] <ifname> \n"
-                 "PROPERTY  := { autoconnect { yes | no } |\n"
-                 "             { managed { yes | no }\n"
-                 "\n"
-                 "Modify device properties.\n\n"));
+    nmc_printerr(_("Usage: nmcli device set { ARGUMENTS | help }\n"
+                   "\n"
+                   "ARGUMENTS := DEVICE { PROPERTY [ PROPERTY ... ] }\n"
+                   "DEVICE    := [ifname] <ifname> \n"
+                   "PROPERTY  := { autoconnect { yes | no } |\n"
+                   "             { managed { yes | no }\n"
+                   "\n"
+                   "Modify device properties.\n\n"));
 }
 
 static void
 usage_device_monitor(void)
 {
-    g_printerr(_("Usage: nmcli device monitor { ARGUMENTS | help }\n"
-                 "\n"
-                 "ARGUMENTS := [<ifname>] ...\n"
-                 "\n"
-                 "Monitor device activity.\n"
-                 "This command prints a line whenever the specified devices change state.\n"
-                 "Monitors all devices in case no interface is specified.\n\n"));
+    nmc_printerr(_("Usage: nmcli device monitor { ARGUMENTS | help }\n"
+                   "\n"
+                   "ARGUMENTS := [<ifname>] ...\n"
+                   "\n"
+                   "Monitor device activity.\n"
+                   "This command prints a line whenever the specified devices change state.\n"
+                   "Monitors all devices in case no interface is specified.\n\n"));
 }
 
 static void
 usage_device_wifi(void)
 {
-    g_printerr(
+    nmc_printerr(
         _("Usage: nmcli device wifi { ARGUMENTS | help }\n"
           "\n"
           "Perform operation on Wi-Fi devices.\n"
@@ -1034,24 +1035,24 @@ usage_device_wifi(void)
 static void
 usage_device_lldp(void)
 {
-    g_printerr(_("Usage: nmcli device lldp { ARGUMENTS | help }\n"
-                 "\n"
-                 "ARGUMENTS := [list [ifname <ifname>]]\n"
-                 "\n"
-                 "List neighboring devices discovered through LLDP. The 'ifname' option can be\n"
-                 "used to list neighbors for a particular interface.\n\n"));
+    nmc_printerr(_("Usage: nmcli device lldp { ARGUMENTS | help }\n"
+                   "\n"
+                   "ARGUMENTS := [list [ifname <ifname>]]\n"
+                   "\n"
+                   "List neighboring devices discovered through LLDP. The 'ifname' option can be\n"
+                   "used to list neighbors for a particular interface.\n\n"));
 }
 
 static void
 usage_device_checkpoint(void)
 {
-    g_printerr(_("Usage: nmcli device checkpoint { ARGUMENTS | help }\n"
-                 "\n"
-                 "ARGUMENTS := [--timeout <seconds>] -- COMMAND...\n"
-                 "\n"
-                 "Runs the command with a configuration checkpoint taken and asks for a\n"
-                 "confirmation when finished. When the confirmation is not given, the\n"
-                 "checkpoint is automatically restored after timeout.\n\n"));
+    nmc_printerr(_("Usage: nmcli device checkpoint { ARGUMENTS | help }\n"
+                   "\n"
+                   "ARGUMENTS := [--timeout <seconds>] -- COMMAND...\n"
+                   "\n"
+                   "Runs the command with a configuration checkpoint taken and asks for a\n"
+                   "confirmation when finished. When the confirmation is not given, the\n"
+                   "checkpoint is automatically restored after timeout.\n\n"));
 }
 
 static void
@@ -1108,7 +1109,7 @@ complete_device(NMDevice **devices, const char *prefix, gboolean wifi_only)
             continue;
 
         if (g_str_has_prefix(iface, prefix))
-            g_print("%s\n", iface);
+            nmc_print("%s\n", iface);
     }
 }
 
@@ -1177,10 +1178,10 @@ get_device_list(NmCli *nmc, int *argc, const char *const **argv)
             if (!g_ptr_array_find(queue, device, NULL))
                 g_ptr_array_add(queue, g_object_ref(device));
             else
-                g_printerr(_("Warning: argument '%s' is duplicated.\n"), **argv);
+                nmc_printerr(_("Warning: argument '%s' is duplicated.\n"), **argv);
         } else {
             if (!nmc->complete)
-                g_printerr(_("Error: Device '%s' not found.\n"), **argv);
+                nmc_printerr(_("Error: Device '%s' not found.\n"), **argv);
             g_string_printf(nmc->return_text, _("Error: not all devices found."));
             nmc->return_value = NMC_RESULT_ERROR_NOT_FOUND;
         }
@@ -1644,7 +1645,7 @@ show_device_info(NMDevice *device, NmCli *nmc)
 
         if (NM_IN_SET(nmc->nmc_config.print_output, NMC_PRINT_NORMAL, NMC_PRINT_PRETTY)
             && !nmc->nmc_config.multiline_output && was_output)
-            g_print("\n"); /* Print empty line between groups in tabular mode */
+            nmc_print("\n"); /* Print empty line between groups in tabular mode */
 
         was_output = FALSE;
 
@@ -1653,13 +1654,14 @@ show_device_info(NMDevice *device, NmCli *nmc)
         if (nmc_fields_dev_show_sections[section_idx]->nested == metagen_device_detail_general) {
             gs_free char *f = section_fld ? g_strdup_printf("GENERAL.%s", section_fld) : NULL;
 
-            nmc_print(&nmc->nmc_config,
-                      (gpointer[]){device, NULL},
-                      NULL,
-                      NULL,
-                      NMC_META_GENERIC_GROUP("GENERAL", metagen_device_detail_general, N_("NAME")),
-                      f,
-                      NULL);
+            nmc_print_table(
+                &nmc->nmc_config,
+                (gpointer[]){device, NULL},
+                NULL,
+                NULL,
+                NMC_META_GENERIC_GROUP("GENERAL", metagen_device_detail_general, N_("NAME")),
+                f,
+                NULL);
             was_output = TRUE;
             continue;
         }
@@ -1668,15 +1670,15 @@ show_device_info(NMDevice *device, NmCli *nmc)
             == metagen_device_detail_capabilities) {
             gs_free char *f = section_fld ? g_strdup_printf("CAPABILITIES.%s", section_fld) : NULL;
 
-            nmc_print(&nmc->nmc_config,
-                      (gpointer[]){device, NULL},
-                      NULL,
-                      NULL,
-                      NMC_META_GENERIC_GROUP("CAPABILITIES",
-                                             metagen_device_detail_capabilities,
-                                             N_("NAME")),
-                      f,
-                      NULL);
+            nmc_print_table(&nmc->nmc_config,
+                            (gpointer[]){device, NULL},
+                            NULL,
+                            NULL,
+                            NMC_META_GENERIC_GROUP("CAPABILITIES",
+                                                   metagen_device_detail_capabilities,
+                                                   N_("NAME")),
+                            f,
+                            NULL);
             was_output = TRUE;
             continue;
         }
@@ -1686,15 +1688,15 @@ show_device_info(NMDevice *device, NmCli *nmc)
             gs_free char *f =
                 section_fld ? g_strdup_printf("INTERFACE-FLAGS.%s", section_fld) : NULL;
 
-            nmc_print(&nmc->nmc_config,
-                      (gpointer[]){device, NULL},
-                      NULL,
-                      NULL,
-                      NMC_META_GENERIC_GROUP("INTERFACE-FLAGS",
-                                             metagen_device_detail_interface_flags,
-                                             N_("NAME")),
-                      f,
-                      NULL);
+            nmc_print_table(&nmc->nmc_config,
+                            (gpointer[]){device, NULL},
+                            NULL,
+                            NULL,
+                            NMC_META_GENERIC_GROUP("INTERFACE-FLAGS",
+                                                   metagen_device_detail_interface_flags,
+                                                   N_("NAME")),
+                            f,
+                            NULL);
             was_output = TRUE;
             continue;
         }
@@ -1705,15 +1707,15 @@ show_device_info(NMDevice *device, NmCli *nmc)
                 gs_free char *f =
                     section_fld ? g_strdup_printf("WIFI-PROPERTIES.%s", section_fld) : NULL;
 
-                nmc_print(&nmc->nmc_config,
-                          (gpointer[]){device, NULL},
-                          NULL,
-                          NULL,
-                          NMC_META_GENERIC_GROUP("WIFI-PROPERTIES",
-                                                 metagen_device_detail_wifi_properties,
-                                                 N_("NAME")),
-                          f,
-                          NULL);
+                nmc_print_table(&nmc->nmc_config,
+                                (gpointer[]){device, NULL},
+                                NULL,
+                                NULL,
+                                NMC_META_GENERIC_GROUP("WIFI-PROPERTIES",
+                                                       metagen_device_detail_wifi_properties,
+                                                       N_("NAME")),
+                                f,
+                                NULL);
                 was_output = TRUE;
             }
             continue;
@@ -1769,15 +1771,15 @@ show_device_info(NMDevice *device, NmCli *nmc)
                 gs_free char *f =
                     section_fld ? g_strdup_printf("WIRED-PROPERTIES.%s", section_fld) : NULL;
 
-                nmc_print(&nmc->nmc_config,
-                          (gpointer[]){device, NULL},
-                          NULL,
-                          NULL,
-                          NMC_META_GENERIC_GROUP("WIRED-PROPERTIES",
-                                                 metagen_device_detail_wired_properties,
-                                                 N_("NAME")),
-                          f,
-                          NULL);
+                nmc_print_table(&nmc->nmc_config,
+                                (gpointer[]){device, NULL},
+                                NULL,
+                                NULL,
+                                NMC_META_GENERIC_GROUP("WIRED-PROPERTIES",
+                                                       metagen_device_detail_wired_properties,
+                                                       N_("NAME")),
+                                f,
+                                NULL);
                 was_output = TRUE;
             }
             continue;
@@ -1898,15 +1900,15 @@ show_device_info(NMDevice *device, NmCli *nmc)
             == metagen_device_detail_connections) {
             gs_free char *f = section_fld ? g_strdup_printf("CONNECTIONS.%s", section_fld) : NULL;
 
-            nmc_print(&nmc->nmc_config,
-                      (gpointer[]){device, NULL},
-                      NULL,
-                      NULL,
-                      NMC_META_GENERIC_GROUP("CONNECTIONS",
-                                             metagen_device_detail_connections,
-                                             N_("NAME")),
-                      f,
-                      NULL);
+            nmc_print_table(&nmc->nmc_config,
+                            (gpointer[]){device, NULL},
+                            NULL,
+                            NULL,
+                            NMC_META_GENERIC_GROUP("CONNECTIONS",
+                                                   metagen_device_detail_connections,
+                                                   N_("NAME")),
+                            f,
+                            NULL);
             was_output = TRUE;
             continue;
         }
@@ -1975,13 +1977,13 @@ do_devices_status(const NMCCommand *cmd, NmCli *nmc, int argc, const char *const
 
     devices = nmc_get_devices_sorted(nmc->client);
 
-    if (!nmc_print(&nmc->nmc_config,
-                   (gpointer *) devices,
-                   NULL,
-                   N_("Status of devices"),
-                   (const NMMetaAbstractInfo *const *) metagen_device_status,
-                   fields_str,
-                   &error)) {
+    if (!nmc_print_table(&nmc->nmc_config,
+                         (gpointer *) devices,
+                         NULL,
+                         N_("Status of devices"),
+                         (const NMMetaAbstractInfo *const *) metagen_device_status,
+                         fields_str,
+                         &error)) {
         g_string_printf(nmc->return_text, _("Error: 'device status': %s"), error->message);
         g_error_free(error);
         nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
@@ -2031,7 +2033,7 @@ do_device_show(const NMCCommand *cmd, NmCli *nmc, int argc, const char *const *a
             if (!show_device_info(devices[i], nmc))
                 break;
             if (devices[i + 1])
-                g_print("\n"); /* Empty line */
+                nmc_print("\n"); /* Empty line */
         }
 
         g_free(devices);
@@ -2122,12 +2124,12 @@ add_and_activate_check_state(AddAndActivateInfo *info)
 
     if (state == NM_DEVICE_STATE_ACTIVATED) {
         nmc_terminal_erase_line();
-        g_print(_("Device '%s' successfully activated with '%s'.\n"),
-                nm_device_get_iface(info->device),
-                nm_active_connection_get_uuid(info->active));
+        nmc_print(_("Device '%s' successfully activated with '%s'.\n"),
+                  nm_device_get_iface(info->device),
+                  nm_active_connection_get_uuid(info->active));
 
         if (info->hotspot)
-            g_print(
+            nmc_print(
                 _("Hint: \"nmcli dev wifi show-password\" shows the Wi-Fi name and password.\n"));
     } else if (state <= NM_DEVICE_STATE_DISCONNECTED || state >= NM_DEVICE_STATE_DEACTIVATING) {
         reason = nm_device_get_state_reason(info->device);
@@ -2193,7 +2195,7 @@ add_and_activate_cb(GObject *client, GAsyncResult *result, gpointer user_data)
     deprecated =
         nmc_connection_check_deprecated(NM_CONNECTION(nm_active_connection_get_connection(active)));
     if (deprecated)
-        g_printerr(_("Warning: %s.\n"), deprecated);
+        nmc_printerr(_("Warning: %s.\n"), deprecated);
 
     if (nmc->nowait_flag) {
         quit();
@@ -2381,9 +2383,9 @@ device_removed_cb(NMClient *client, NMDevice *device, DeviceCbInfo *info)
         return;
 
     if (info->cmd_disconnect)
-        g_print(_("Device '%s' successfully disconnected.\n"), nm_device_get_iface(device));
+        nmc_print(_("Device '%s' successfully disconnected.\n"), nm_device_get_iface(device));
     else
-        g_print(_("Device '%s' successfully removed.\n"), nm_device_get_iface(device));
+        nmc_print(_("Device '%s' successfully removed.\n"), nm_device_get_iface(device));
     device_cb_info_finish(info, device);
 }
 
@@ -2394,7 +2396,7 @@ disconnect_state_cb(NMDevice *device, GParamSpec *pspec, DeviceCbInfo *info)
         return;
 
     if (nm_device_get_state(device) <= NM_DEVICE_STATE_DISCONNECTED) {
-        g_print(_("Device '%s' successfully disconnected.\n"), nm_device_get_iface(device));
+        nmc_print(_("Device '%s' successfully disconnected.\n"), nm_device_get_iface(device));
         device_cb_info_finish(info, device);
     }
 }
@@ -2453,8 +2455,8 @@ reapply_device_cb(GObject *object, GAsyncResult *result, gpointer user_data)
     } else {
         if (nmc->nmc_config.print_output == NMC_PRINT_PRETTY)
             nmc_terminal_erase_line();
-        g_print(_("Connection successfully reapplied to device '%s'.\n"),
-                nm_device_get_iface(device));
+        nmc_print(_("Connection successfully reapplied to device '%s'.\n"),
+                  nm_device_get_iface(device));
         device_cb_info_finish(info, device);
     }
 }
@@ -2534,8 +2536,8 @@ modify_reapply_cb(GObject *object, GAsyncResult *result, gpointer user_data)
     } else {
         if (nmc->nmc_config.print_output == NMC_PRINT_PRETTY)
             nmc_terminal_erase_line();
-        g_print(_("Connection successfully reapplied to device '%s'.\n"),
-                nm_device_get_iface(device));
+        nmc_print(_("Connection successfully reapplied to device '%s'.\n"),
+                  nm_device_get_iface(device));
     }
 
     quit();
@@ -2634,10 +2636,10 @@ disconnect_device_cb(GObject *object, GAsyncResult *result, gpointer user_data)
             return;
         nmc = info->nmc;
         g_string_printf(nmc->return_text, _("Error: not all devices disconnected."));
-        g_printerr(_("Error: Device '%s' (%s) disconnecting failed: %s\n"),
-                   nm_device_get_iface(device),
-                   nm_object_get_path(NM_OBJECT(device)),
-                   error->message);
+        nmc_printerr(_("Error: Device '%s' (%s) disconnecting failed: %s\n"),
+                     nm_device_get_iface(device),
+                     nm_object_get_path(NM_OBJECT(device)),
+                     error->message);
         g_error_free(error);
         nmc->return_value = NMC_RESULT_ERROR_DEV_DISCONNECT;
         device_cb_info_finish(info, device);
@@ -2649,7 +2651,8 @@ disconnect_device_cb(GObject *object, GAsyncResult *result, gpointer user_data)
             if (state <= NM_DEVICE_STATE_DISCONNECTED) {
                 if (nmc->nmc_config.print_output == NMC_PRINT_PRETTY)
                     nmc_terminal_erase_line();
-                g_print(_("Device '%s' successfully disconnected.\n"), nm_device_get_iface(device));
+                nmc_print(_("Device '%s' successfully disconnected.\n"),
+                          nm_device_get_iface(device));
             }
             device_cb_info_finish(info, device);
         }
@@ -2711,15 +2714,15 @@ delete_device_cb(GObject *object, GAsyncResult *result, gpointer user_data)
 
     if (!nm_device_delete_finish(device, result, &error)) {
         g_string_printf(nmc->return_text, _("Error: not all devices deleted."));
-        g_printerr(_("Error: Device '%s' (%s) deletion failed: %s\n"),
-                   nm_device_get_iface(device),
-                   nm_object_get_path(NM_OBJECT(device)),
-                   error->message);
+        nmc_printerr(_("Error: Device '%s' (%s) deletion failed: %s\n"),
+                     nm_device_get_iface(device),
+                     nm_object_get_path(NM_OBJECT(device)),
+                     error->message);
         g_error_free(error);
         nmc->return_value = NMC_RESULT_ERROR_UNKNOWN;
         device_cb_info_finish(info, device);
     } else {
-        g_print(_("Device '%s' successfully removed.\n"), nm_device_get_iface(device));
+        nmc_print(_("Device '%s' successfully removed.\n"), nm_device_get_iface(device));
         device_cb_info_finish(info, device);
     }
 }
@@ -2875,7 +2878,7 @@ device_state(NMDevice *device, GParamSpec *pspec, NmCli *nmc)
                        nm_device_get_iface(device),
                        gettext(nmc_device_state_to_string_with_external(device)));
 
-    g_print("%s", str);
+    nmc_print("%s", str);
 }
 
 static void
@@ -2887,7 +2890,7 @@ device_ac(NMDevice *device, GParamSpec *pspec, NmCli *nmc)
     if (!id)
         return;
 
-    g_print(_("%s: using connection '%s'\n"), nm_device_get_iface(device), id);
+    nmc_print(_("%s: using connection '%s'\n"), nm_device_get_iface(device), id);
 }
 
 static void
@@ -2913,14 +2916,14 @@ device_unwatch(NmCli *nmc, NMDevice *device)
 static void
 device_added(NMClient *client, NMDevice *device, NmCli *nmc)
 {
-    g_print(_("%s: device created\n"), nm_device_get_iface(device));
+    nmc_print(_("%s: device created\n"), nm_device_get_iface(device));
     device_watch(nmc, NM_DEVICE(device));
 }
 
 static void
 device_removed(NMClient *client, NMDevice *device, NmCli *nmc)
 {
-    g_print(_("%s: device removed\n"), nm_device_get_iface(device));
+    nmc_print(_("%s: device removed\n"), nm_device_get_iface(device));
     device_unwatch(nmc, device);
 }
 
@@ -3018,7 +3021,7 @@ find_ap_on_device(NMDevice *device, const char *bssid, const char *ssid, gboolea
             /* Compare BSSIDs */
             if (complete) {
                 if (g_str_has_prefix(candidate_bssid, bssid))
-                    g_print("%s\n", candidate_bssid);
+                    nmc_print("%s\n", candidate_bssid);
             } else if (strcmp(bssid, candidate_bssid) != 0)
                 continue;
         }
@@ -3038,7 +3041,7 @@ find_ap_on_device(NMDevice *device, const char *bssid, const char *ssid, gboolea
             /* Compare SSIDs */
             if (complete) {
                 if (g_str_has_prefix(ssid_tmp, ssid))
-                    g_print("%s\n", ssid_tmp);
+                    nmc_print("%s\n", ssid_tmp);
             } else if (strcmp(ssid, ssid_tmp) != 0) {
                 g_free(ssid_tmp);
                 continue;
@@ -3106,7 +3109,7 @@ wifi_print_aps(NMDeviceWifi                    *wifi,
     static gboolean empty_line  = FALSE;
 
     if (empty_line)
-        g_print("\n"); /* Empty line between devices' APs */
+        nmc_print("\n"); /* Empty line between devices' APs */
 
     /* Main header name */
     header_name = construct_header_name(base_hdr, nm_device_get_iface(NM_DEVICE(wifi)));
@@ -3978,9 +3981,10 @@ do_device_wifi_connect(const NMCCommand *cmd, NmCli *nmc, int argc, const char *
 
                 /* Warn when the provided AP identifier looks like BSSID instead of SSID */
                 if (bssid1_arr)
-                    g_printerr(_("Warning: '%s' should be SSID for hidden APs; but it looks like a "
-                                 "BSSID.\n"),
-                               param_user);
+                    nmc_printerr(
+                        _("Warning: '%s' should be SSID for hidden APs; but it looks like a "
+                          "BSSID.\n"),
+                        param_user);
             }
         }
     }
@@ -4198,7 +4202,7 @@ set_wireless_security_for_hotspot(NMSettingWirelessSecurity *s_wsec,
                      NULL);
     }
     if (show_password)
-        g_print(_("Hotspot password: %s\n"), key);
+        nmc_print(_("Hotspot password: %s\n"), key);
 
     return TRUE;
 }
@@ -4684,7 +4688,7 @@ print_wifi_connection(const NmcConfig *nmc_config, NMConnection *connection)
     g_return_if_fail(ssid_bytes);
     ssid = nm_utils_ssid_to_utf8(g_bytes_get_data(ssid_bytes, NULL), g_bytes_get_size(ssid_bytes));
     g_return_if_fail(ssid);
-    g_print("SSID: %s\n", ssid);
+    nmc_print("SSID: %s\n", ssid);
 
     string = g_string_sized_new(64);
     g_string_append(string, "WIFI:");
@@ -4697,21 +4701,21 @@ print_wifi_connection(const NmcConfig *nmc_config, NMConnection *connection)
 
     if (key_mgmt == NULL) {
         type = "nopass";
-        g_print("%s: %s\n", _("Security"), _("None"));
+        nmc_print("%s: %s\n", _("Security"), _("None"));
     } else if (strcmp(key_mgmt, "none") == 0 || strcmp(key_mgmt, "ieee8021x") == 0) {
         type = "WEP";
-        g_print("%s: WEP\n", _("Security"));
+        nmc_print("%s: WEP\n", _("Security"));
     } else if (strcmp(key_mgmt, "wpa-none") == 0 || strcmp(key_mgmt, "wpa-psk") == 0
                || strcmp(key_mgmt, "sae") == 0) {
         type = "WPA";
-        g_print("%s: WPA\n", _("Security"));
+        nmc_print("%s: WPA\n", _("Security"));
     } else if (strcmp(key_mgmt, "owe") == 0) {
         type = "nopass";
-        g_print("%s: OWE\n", _("Security"));
+        nmc_print("%s: OWE\n", _("Security"));
     }
 
     if (psk)
-        g_print("%s: %s\n", _("Password"), psk);
+        nmc_print("%s: %s\n", _("Password"), psk);
 
     string_append_mecard(string, "T:", type);
     string_append_mecard(string, "S:", ssid);
@@ -4724,7 +4728,7 @@ print_wifi_connection(const NmcConfig *nmc_config, NMConnection *connection)
     if (nmc_config->use_colors)
         nmc_print_qrcode(string->str);
 
-    g_print("\n");
+    nmc_print("\n");
 }
 
 static gboolean
@@ -5087,7 +5091,7 @@ checkpoints_changed_cb(GObject *object, GParamSpec *pspec, CheckpointCbInfo *inf
 
     if (!info->child_id) {
         /* The command is done, we're in the confirmation prompt. */
-        g_print("%s\n", _("No"));
+        nmc_print("%s\n", _("No"));
         g_main_loop_quit(loop);
     }
 }
@@ -5328,7 +5332,7 @@ nmc_command_func_device(const NMCCommand *cmd, NmCli *nmc, int argc, const char 
 }
 
 void
-monitor_devices(NmCli *nmc)
+nmc_monitor_devices(NmCli *nmc)
 {
     do_devices_monitor(NULL, nmc, 0, NULL);
 }

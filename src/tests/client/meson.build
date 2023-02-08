@@ -7,6 +7,10 @@ test(
     build_root,
     source_root,
     python.path(),
+    '--',
+  ],
+  env: [
+    'LIBTOOL=',
   ],
   timeout: 120,
 )
