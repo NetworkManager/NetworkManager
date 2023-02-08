@@ -23,6 +23,7 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 * Add support of IPv4 ECMP routes. The ECMP routes will get merged
   automatically but the user need to configure them as single-hop routes
   specifying a valid weight.
+* Add new "reapply" dispatcher event.
 * Add support of VTI and VTI6 ip-tunnels. Add a new property "ip-tunnel.fwmark".
 * vlan: add support of "vlan.protocol" property to set 802.1Q (default) or
   802.1ad.
