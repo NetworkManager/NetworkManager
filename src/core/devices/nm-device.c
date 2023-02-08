@@ -13038,6 +13038,10 @@ check_and_reapply_connection(NMDevice            *self,
     if (priv->state >= NM_DEVICE_STATE_ACTIVATED)
         nm_device_update_metered(self);
 
+    /* Notify dispatcher when re-applied */
+    _LOGD(LOGD_DEVICE, "Notifying re-apply complete");
+    nm_dispatcher_call_device(NM_DISPATCHER_ACTION_REAPPLY, self, NULL, NULL, NULL, NULL);
+
     return TRUE;
 }
 
