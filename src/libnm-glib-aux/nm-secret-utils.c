@@ -39,24 +39,10 @@ nm_explicit_bzero(void *s, gsize n)
 void
 nm_free_secret(char *secret)
 {
-    gsize len;
-
     if (!secret)
         return;
 
-#if GLIB_CHECK_VERSION(2, 44, 0)
-    /* Here we mix malloc() and g_malloc() API. Usually we avoid this,
-     * however since glib 2.44.0 we are in fact guaranteed that g_malloc()/g_free()
-     * just wraps malloc()/free(), so this is actually fine.
-     *
-     * See https://gitlab.gnome.org/GNOME/glib/commit/3be6ed60aa58095691bd697344765e715a327fc1
-     */
-    len = malloc_usable_size(secret);
-#else
-    len = strlen(secret);
-#endif
-
-    nm_explicit_bzero(secret, len);
+    nm_explicit_bzero(secret, strlen(secret));
     g_free(secret);
 }
 
