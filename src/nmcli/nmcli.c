@@ -166,13 +166,13 @@ complete_one(gpointer key, gpointer value, gpointer user_data)
             /* value prefix was not a standalone argument,
              * it was part of --option=<value> argument.
              * Repeat the part leading to "=". */
-            g_print("%s=", option);
+            nmc_print("%s=", option);
         }
-        g_print("%.*s%s%s\n",
-                (int) (last - prefix),
-                prefix,
-                name,
-                strcmp(last, name) == 0 ? "," : "");
+        nmc_print("%.*s%s%s\n",
+                  (int) (last - prefix),
+                  prefix,
+                  name,
+                  strcmp(last, name) == 0 ? "," : "");
     }
 }
 
@@ -228,9 +228,9 @@ complete_option_with_value(const char *option, const char *prefix, ...)
                 /* value prefix was not a standalone argument,
                  * it was part of --option=<value> argument.
                  * Repeat the part leading to "=". */
-                g_print("%s=", option);
+                nmc_print("%s=", option);
             }
-            g_print("%s\n", candidate);
+            nmc_print("%s\n", candidate);
         }
     }
     va_end(args);
@@ -239,7 +239,7 @@ complete_option_with_value(const char *option, const char *prefix, ...)
 static void
 usage(void)
 {
-    g_printerr(_(
+    nmc_printerr(_(
         "Usage: nmcli [OPTIONS] OBJECT { COMMAND | help }\n"
         "\n"
         "OPTIONS\n"
@@ -889,7 +889,7 @@ process_command_line(NmCli *nmc, int argc, char **argv_orig)
             nmc->timeout = (int) timeout;
         } else if (matches_arg(nmc, &argc, &argv, "-version", NULL)) {
             if (!nmc->complete)
-                g_print(_("nmcli tool, version %s\n"), NMCLI_VERSION);
+                nmc_print(_("nmcli tool, version %s\n"), NMCLI_VERSION);
             return NMC_RESULT_SUCCESS;
         } else if (matches_arg(nmc, &argc, &argv, "-help", NULL)) {
             if (!nmc->complete)
@@ -1047,7 +1047,7 @@ main(int argc, char *argv[])
             nm_cli.return_value = NMC_RESULT_SUCCESS;
     } else if (nm_cli.return_value != NMC_RESULT_SUCCESS) {
         /* Print result descripting text */
-        g_printerr("%s\n", nm_cli.return_text->str);
+        nmc_printerr("%s\n", nm_cli.return_text->str);
     }
 
     nmc_cleanup(&nm_cli);

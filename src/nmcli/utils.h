@@ -359,13 +359,43 @@ nmc_meta_generic_get_enum_with_detail(NmcMetaGenericGetEnumType get_enum_type,
 
 /*****************************************************************************/
 
-gboolean nmc_print(const NmcConfig                 *nmc_config,
-                   gpointer const                  *targets,
-                   gpointer                         targets_data,
-                   const char                      *header_name_no_l10n,
-                   const NMMetaAbstractInfo *const *fields,
-                   const char                      *fields_str,
-                   GError                         **error);
+gboolean nmc_print_table(const NmcConfig                 *nmc_config,
+                         gpointer const                  *targets,
+                         gpointer                         targets_data,
+                         const char                      *header_name_no_l10n,
+                         const NMMetaAbstractInfo *const *fields,
+                         const char                      *fields_str,
+                         GError                         **error);
+
+/*****************************************************************************/
+
+#if 0
+/* For manual testing to sync output with LIBNM_CLIENT_DEBUG/LIBNM_CLIENT_DEBUG_FILE */
+#define nmc_print(...)                                               \
+    G_STMT_START                                                     \
+    {                                                                \
+        gs_free char *_ss  = g_strdup_printf(__VA_ARGS__);           \
+        gs_free char *_ss1 = g_strdup_printf("nmcli[out]: %s", _ss); \
+                                                                     \
+        nm_utils_print(0, _ss1);                                     \
+        nm_utils_print(1, _ss);                                      \
+    }                                                                \
+    G_STMT_END
+
+#define nmc_printerr(...)                                            \
+    G_STMT_START                                                     \
+    {                                                                \
+        gs_free char *_ss  = g_strdup_printf(__VA_ARGS__);           \
+        gs_free char *_ss1 = g_strdup_printf("nmcli[err]: %s", _ss); \
+                                                                     \
+        nm_utils_print(0, _ss1);                                     \
+        nm_utils_print(2, _ss);                                      \
+    }                                                                \
+    G_STMT_END
+#else
+#define nmc_print(...)    g_print(__VA_ARGS__)
+#define nmc_printerr(...) g_printerr(__VA_ARGS__)
+#endif
 
 /*****************************************************************************/
 

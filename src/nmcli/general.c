@@ -299,19 +299,19 @@ static const NmcMetaGenericInfo
 static void
 usage_general(void)
 {
-    g_printerr(_("Usage: nmcli general { COMMAND | help }\n\n"
-                 "COMMAND := { status | hostname | permissions | logging | reload }\n\n"
-                 "  status\n\n"
-                 "  hostname [<hostname>]\n\n"
-                 "  permissions\n\n"
-                 "  logging [level <log level>] [domains <log domains>]\n\n"
-                 "  reload [<flags>]\n\n"));
+    nmc_printerr(_("Usage: nmcli general { COMMAND | help }\n\n"
+                   "COMMAND := { status | hostname | permissions | logging | reload }\n\n"
+                   "  status\n\n"
+                   "  hostname [<hostname>]\n\n"
+                   "  permissions\n\n"
+                   "  logging [level <log level>] [domains <log domains>]\n\n"
+                   "  reload [<flags>]\n\n"));
 }
 
 static void
 usage_general_status(void)
 {
-    g_printerr(
+    nmc_printerr(
         _("Usage: nmcli general status { help }\n"
           "\n"
           "Show overall status of NetworkManager.\n"
@@ -321,7 +321,7 @@ usage_general_status(void)
 static void
 usage_general_hostname(void)
 {
-    g_printerr(
+    nmc_printerr(
         _("Usage: nmcli general hostname { ARGUMENTS | help }\n"
           "\n"
           "ARGUMENTS := [<hostname>]\n"
@@ -334,87 +334,88 @@ usage_general_hostname(void)
 static void
 usage_general_permissions(void)
 {
-    g_printerr(_("Usage: nmcli general permissions { help }\n"
-                 "\n"
-                 "Show caller permissions for authenticated operations.\n\n"));
+    nmc_printerr(_("Usage: nmcli general permissions { help }\n"
+                   "\n"
+                   "Show caller permissions for authenticated operations.\n\n"));
 }
 
 static void
 usage_general_reload(void)
 {
-    g_printerr(_("Usage: nmcli general reload { ARGUMENTS | help }\n"
-                 "\n"
-                 "ARGUMENTS := [<flag>[,<flag>...]]\n"
-                 "\n"
-                 "Reload NetworkManager's configuration and perform certain updates, like\n"
-                 "flushing caches or rewriting external state to disk. This is similar to\n"
-                 "sending SIGHUP to NetworkManager but it allows for more fine-grained\n"
-                 "control over what to reload through the flags argument. It also allows\n"
-                 "non-root access via PolicyKit and contrary to signals it is synchronous.\n"
-                 "\n"
-                 "Available flags are:\n"
-                 "\n"
-                 "  'conf'        Reload the NetworkManager.conf configuration from\n"
-                 "                disk. Note that this does not include connections, which\n"
-                 "                can be reloaded through 'nmcli connection reload' instead.\n"
-                 "\n"
-                 "  'dns-rc'      Update DNS configuration, which usually involves writing\n"
-                 "                /etc/resolv.conf anew. This is equivalent to sending the\n"
-                 "                SIGUSR1 signal to the NetworkManager process.\n"
-                 "\n"
-                 "  'dns-full'    Restart the DNS plugin. This is for example useful when\n"
-                 "                using dnsmasq plugin, which uses additional configuration\n"
-                 "                in /etc/NetworkManager/dnsmasq.d. If you edit those files,\n"
-                 "                you can restart the DNS plugin. This action shortly\n"
-                 "                interrupts name resolution.\n"
-                 "\n"
-                 "With no flags, everything that is supported is reloaded, which is\n"
-                 "identical to sending a SIGHUP.\n"));
+    nmc_printerr(_("Usage: nmcli general reload { ARGUMENTS | help }\n"
+                   "\n"
+                   "ARGUMENTS := [<flag>[,<flag>...]]\n"
+                   "\n"
+                   "Reload NetworkManager's configuration and perform certain updates, like\n"
+                   "flushing caches or rewriting external state to disk. This is similar to\n"
+                   "sending SIGHUP to NetworkManager but it allows for more fine-grained\n"
+                   "control over what to reload through the flags argument. It also allows\n"
+                   "non-root access via PolicyKit and contrary to signals it is synchronous.\n"
+                   "\n"
+                   "Available flags are:\n"
+                   "\n"
+                   "  'conf'        Reload the NetworkManager.conf configuration from\n"
+                   "                disk. Note that this does not include connections, which\n"
+                   "                can be reloaded through 'nmcli connection reload' instead.\n"
+                   "\n"
+                   "  'dns-rc'      Update DNS configuration, which usually involves writing\n"
+                   "                /etc/resolv.conf anew. This is equivalent to sending the\n"
+                   "                SIGUSR1 signal to the NetworkManager process.\n"
+                   "\n"
+                   "  'dns-full'    Restart the DNS plugin. This is for example useful when\n"
+                   "                using dnsmasq plugin, which uses additional configuration\n"
+                   "                in /etc/NetworkManager/dnsmasq.d. If you edit those files,\n"
+                   "                you can restart the DNS plugin. This action shortly\n"
+                   "                interrupts name resolution.\n"
+                   "\n"
+                   "With no flags, everything that is supported is reloaded, which is\n"
+                   "identical to sending a SIGHUP.\n"));
 }
 
 static void
 usage_general_logging(void)
 {
-    g_printerr(_("Usage: nmcli general logging { ARGUMENTS | help }\n"
-                 "\n"
-                 "ARGUMENTS := [level <log level>] [domains <log domains>]\n"
-                 "\n"
-                 "Get or change NetworkManager logging level and domains.\n"
-                 "Without any argument current logging level and domains are shown. In order to\n"
-                 "change logging state, provide level and/or domain. Please refer to the man page\n"
-                 "for the list of possible logging domains.\n\n"));
+    nmc_printerr(
+        _("Usage: nmcli general logging { ARGUMENTS | help }\n"
+          "\n"
+          "ARGUMENTS := [level <log level>] [domains <log domains>]\n"
+          "\n"
+          "Get or change NetworkManager logging level and domains.\n"
+          "Without any argument current logging level and domains are shown. In order to\n"
+          "change logging state, provide level and/or domain. Please refer to the man page\n"
+          "for the list of possible logging domains.\n\n"));
 }
 
 static void
 usage_networking(void)
 {
-    g_printerr(_("Usage: nmcli networking { COMMAND | help }\n\n"
-                 "COMMAND := { [ on | off | connectivity ] }\n\n"
-                 "  on\n\n"
-                 "  off\n\n"
-                 "  connectivity [check]\n\n"));
+    nmc_printerr(_("Usage: nmcli networking { COMMAND | help }\n\n"
+                   "COMMAND := { [ on | off | connectivity ] }\n\n"
+                   "  on\n\n"
+                   "  off\n\n"
+                   "  connectivity [check]\n\n"));
 }
 
 static void
 usage_networking_on(void)
 {
-    g_printerr(_("Usage: nmcli networking on { help }\n"
-                 "\n"
-                 "Switch networking on.\n\n"));
+    nmc_printerr(_("Usage: nmcli networking on { help }\n"
+                   "\n"
+                   "Switch networking on.\n\n"));
 }
 
 static void
 usage_networking_off(void)
 {
-    g_printerr(_("Usage: nmcli networking off { help }\n"
-                 "\n"
-                 "Switch networking off.\n\n"));
+    nmc_printerr(_("Usage: nmcli networking off { help }\n"
+                   "\n"
+                   "Switch networking off.\n\n"));
 }
 
 static void
 usage_networking_connectivity(void)
 {
-    g_printerr(
+    nmc_printerr(
         _("Usage: nmcli networking connectivity { ARGUMENTS | help }\n"
           "\n"
           "ARGUMENTS := [check]\n"
@@ -426,48 +427,48 @@ usage_networking_connectivity(void)
 static void
 usage_radio(void)
 {
-    g_printerr(_("Usage: nmcli radio { COMMAND | help }\n\n"
-                 "COMMAND := { all | wifi | wwan }\n\n"
-                 "  all | wifi | wwan [ on | off ]\n\n"));
+    nmc_printerr(_("Usage: nmcli radio { COMMAND | help }\n\n"
+                   "COMMAND := { all | wifi | wwan }\n\n"
+                   "  all | wifi | wwan [ on | off ]\n\n"));
 }
 
 static void
 usage_radio_all(void)
 {
-    g_printerr(_("Usage: nmcli radio all { ARGUMENTS | help }\n"
-                 "\n"
-                 "ARGUMENTS := [on | off]\n"
-                 "\n"
-                 "Get status of all radio switches, or turn them on/off.\n\n"));
+    nmc_printerr(_("Usage: nmcli radio all { ARGUMENTS | help }\n"
+                   "\n"
+                   "ARGUMENTS := [on | off]\n"
+                   "\n"
+                   "Get status of all radio switches, or turn them on/off.\n\n"));
 }
 
 static void
 usage_radio_wifi(void)
 {
-    g_printerr(_("Usage: nmcli radio wifi { ARGUMENTS | help }\n"
-                 "\n"
-                 "ARGUMENTS := [on | off]\n"
-                 "\n"
-                 "Get status of Wi-Fi radio switch, or turn it on/off.\n\n"));
+    nmc_printerr(_("Usage: nmcli radio wifi { ARGUMENTS | help }\n"
+                   "\n"
+                   "ARGUMENTS := [on | off]\n"
+                   "\n"
+                   "Get status of Wi-Fi radio switch, or turn it on/off.\n\n"));
 }
 
 static void
 usage_radio_wwan(void)
 {
-    g_printerr(_("Usage: nmcli radio wwan { ARGUMENTS | help }\n"
-                 "\n"
-                 "ARGUMENTS := [on | off]\n"
-                 "\n"
-                 "Get status of mobile broadband radio switch, or turn it on/off.\n\n"));
+    nmc_printerr(_("Usage: nmcli radio wwan { ARGUMENTS | help }\n"
+                   "\n"
+                   "ARGUMENTS := [on | off]\n"
+                   "\n"
+                   "Get status of mobile broadband radio switch, or turn it on/off.\n\n"));
 }
 
 static void
 usage_monitor(void)
 {
-    g_printerr(_("Usage: nmcli monitor\n"
-                 "\n"
-                 "Monitor NetworkManager changes.\n"
-                 "Prints a line whenever a change occurs in NetworkManager\n\n"));
+    nmc_printerr(_("Usage: nmcli monitor\n"
+                   "\n"
+                   "Monitor NetworkManager changes.\n"
+                   "Prints a line whenever a change occurs in NetworkManager\n\n"));
 }
 
 static void
@@ -491,13 +492,13 @@ show_nm_status(NmCli *nmc, const char *pretty_header_name, const char *print_fld
     else
         fields_str = nmc->required_fields;
 
-    if (!nmc_print(&nmc->nmc_config,
-                   (gpointer[]){nmc, NULL},
-                   NULL,
-                   pretty_header_name ?: N_("NetworkManager status"),
-                   (const NMMetaAbstractInfo *const *) metagen_general_status,
-                   fields_str,
-                   &error)) {
+    if (!nmc_print_table(&nmc->nmc_config,
+                         (gpointer[]){nmc, NULL},
+                         NULL,
+                         pretty_header_name ?: N_("NetworkManager status"),
+                         (const NMMetaAbstractInfo *const *) metagen_general_status,
+                         fields_str,
+                         &error)) {
         g_string_printf(nmc->return_text,
                         _("Error: only these fields are allowed: %s"),
                         fields_all);
@@ -570,13 +571,13 @@ print_permissions(void *user_data)
 
     nm_cli_spawn_pager(&nmc->nmc_config, &nmc->pager_data);
 
-    if (!nmc_print(&nmc->nmc_config,
-                   permissions,
-                   NULL,
-                   _("NetworkManager permissions"),
-                   (const NMMetaAbstractInfo *const *) metagen_general_permissions,
-                   fields_str,
-                   &error)) {
+    if (!nmc_print_table(&nmc->nmc_config,
+                         permissions,
+                         NULL,
+                         _("NetworkManager permissions"),
+                         (const NMMetaAbstractInfo *const *) metagen_general_permissions,
+                         fields_str,
+                         &error)) {
         g_string_printf(nmc->return_text, _("Error: 'general permissions': %s"), error->message);
         nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
     }
@@ -724,13 +725,13 @@ show_general_logging(NmCli *nmc)
     } else
         fields_str = nmc->required_fields;
 
-    if (!nmc_print(&nmc->nmc_config,
-                   (gpointer const[]){&d, NULL},
-                   NULL,
-                   _("NetworkManager logging"),
-                   (const NMMetaAbstractInfo *const *) metagen_general_logging,
-                   fields_str,
-                   &error)) {
+    if (!nmc_print_table(&nmc->nmc_config,
+                         (gpointer const[]){&d, NULL},
+                         NULL,
+                         _("NetworkManager logging"),
+                         (const NMMetaAbstractInfo *const *) metagen_general_logging,
+                         fields_str,
+                         &error)) {
         g_string_printf(nmc->return_text, _("Error: 'general logging': %s"), error->message);
         nmc->return_value = NMC_RESULT_ERROR_USER_INPUT;
     }
@@ -748,7 +749,7 @@ nmc_complete_strings_nocase(const char *prefix, ...)
     va_start(args, prefix);
     while ((candidate = va_arg(args, const char *))) {
         if (strncasecmp(prefix, candidate, len) == 0)
-            g_print("%s\n", candidate);
+            nmc_print("%s\n", candidate);
     }
     va_end(args);
 }
@@ -919,13 +920,13 @@ do_general_hostname(const NMCCommand *cmd, NmCli *nmc, int argc, const char *con
 
         g_object_get(nmc->client, NM_CLIENT_HOSTNAME, &s, NULL);
         if (s)
-            g_print("%s\n", s);
+            nmc_print("%s\n", s);
         return;
     }
 
     hostname = *argv;
     if (next_arg(nmc, &argc, &argv, NULL) == 0)
-        g_print("Warning: ignoring extra garbage after '%s' hostname\n", hostname);
+        nmc_print("Warning: ignoring extra garbage after '%s' hostname\n", hostname);
 
     nmc->should_wait++;
     nm_client_save_hostname_async(nmc->client, hostname, NULL, save_hostname_cb, nmc);
@@ -1234,7 +1235,7 @@ networkmanager_running(NMClient *client, GParamSpec *param, NmCli *nmc)
     str     = nmc_colorize(&nmc->nmc_config,
                        running ? NM_META_COLOR_MANAGER_RUNNING : NM_META_COLOR_MANAGER_STOPPED,
                        running ? _("NetworkManager is running") : _("NetworkManager is stopped"));
-    g_print("%s\n", str);
+    nmc_print("%s\n", str);
     g_free(str);
 }
 
@@ -1244,7 +1245,7 @@ client_hostname(NMClient *client, GParamSpec *param, NmCli *nmc)
     const char *hostname;
 
     g_object_get(client, NM_CLIENT_HOSTNAME, &hostname, NULL);
-    g_print(_("Hostname set to '%s'\n"), hostname);
+    nmc_print(_("Hostname set to '%s'\n"), hostname);
 }
 
 static void
@@ -1259,9 +1260,9 @@ client_primary_connection(NMClient *client, GParamSpec *param, NmCli *nmc)
         if (!id)
             id = nm_active_connection_get_uuid(primary);
 
-        g_print(_("'%s' is now the primary connection\n"), id);
+        nmc_print(_("'%s' is now the primary connection\n"), id);
     } else {
-        g_print(_("There's no primary connection\n"));
+        nmc_print(_("There's no primary connection\n"));
     }
 }
 
@@ -1276,7 +1277,7 @@ client_connectivity(NMClient *client, GParamSpec *param, NmCli *nmc)
                        connectivity_to_color(connectivity),
                        _("Connectivity is now '%s'\n"),
                        gettext(nm_connectivity_to_string(connectivity)));
-    g_print("%s", str);
+    nmc_print("%s", str);
     g_free(str);
 }
 
@@ -1291,7 +1292,7 @@ client_state(NMClient *client, GParamSpec *param, NmCli *nmc)
                        state_to_color(state),
                        _("Networkmanager is now in the '%s' state\n"),
                        gettext(nm_state_to_string(state)));
-    g_print("%s", str);
+    nmc_print("%s", str);
     g_free(str);
 }
 
@@ -1310,9 +1311,9 @@ device_overview(NmCli *nmc, NMDevice *device)
     if (nm_device_get_state(device) == NM_DEVICE_STATE_DISCONNECTED) {
         if (activatable) {
             if (activatable->len == 1)
-                g_print("\t%d %s\n", activatable->len, _("connection available"));
+                nmc_print("\t%d %s\n", activatable->len, _("connection available"));
             else if (activatable->len > 1)
-                g_print("\t%d %s\n", activatable->len, _("connections available"));
+                nmc_print("\t%d %s\n", activatable->len, _("connections available"));
         }
     }
 
@@ -1401,7 +1402,7 @@ device_overview(NmCli *nmc, NMDevice *device)
 
     if (outbuf->len >= 2) {
         g_string_truncate(outbuf, outbuf->len - 2);
-        g_print("\t%s\n", outbuf->str);
+        nmc_print("\t%s\n", outbuf->str);
     }
 
     g_string_free(outbuf, TRUE);
@@ -1428,7 +1429,7 @@ ac_overview(NmCli *nmc, NMActiveConnection *ac)
         g_string_append_printf(outbuf, "%s, ", _("ip6 default"));
     if (outbuf->len >= 2) {
         g_string_truncate(outbuf, outbuf->len - 2);
-        g_print("\t%s\n", outbuf->str);
+        nmc_print("\t%s\n", outbuf->str);
     }
 
     ip = nm_active_connection_get_ip4_config(ac);
@@ -1439,7 +1440,7 @@ ac_overview(NmCli *nmc, NMActiveConnection *ac)
         p = nm_ip_config_get_addresses(ip);
         for (i = 0; i < p->len; i++) {
             NMIPAddress *a = p->pdata[i];
-            g_print("\tinet4 %s/%d\n", nm_ip_address_get_address(a), nm_ip_address_get_prefix(a));
+            nmc_print("\tinet4 %s/%d\n", nm_ip_address_get_address(a), nm_ip_address_get_prefix(a));
         }
 
         p = nm_ip_config_get_routes(ip);
@@ -1449,7 +1450,7 @@ ac_overview(NmCli *nmc, NMActiveConnection *ac)
             nm_str_buf_reset(&str);
             _nm_ip_route_to_string(a, &str);
 
-            g_print("\troute4 %s\n", nm_str_buf_get_str(&str));
+            nmc_print("\troute4 %s\n", nm_str_buf_get_str(&str));
         }
     }
 
@@ -1461,7 +1462,7 @@ ac_overview(NmCli *nmc, NMActiveConnection *ac)
         p = nm_ip_config_get_addresses(ip);
         for (i = 0; i < p->len; i++) {
             NMIPAddress *a = p->pdata[i];
-            g_print("\tinet6 %s/%d\n", nm_ip_address_get_address(a), nm_ip_address_get_prefix(a));
+            nmc_print("\tinet6 %s/%d\n", nm_ip_address_get_address(a), nm_ip_address_get_prefix(a));
         }
 
         p = nm_ip_config_get_routes(ip);
@@ -1471,7 +1472,7 @@ ac_overview(NmCli *nmc, NMActiveConnection *ac)
             nm_str_buf_reset(&str);
             _nm_ip_route_to_string(a, &str);
 
-            g_print("\troute6 %s\n", nm_str_buf_get_str(&str));
+            nmc_print("\troute6 %s\n", nm_str_buf_get_str(&str));
         }
     }
 
@@ -1509,11 +1510,11 @@ nmc_command_func_overview(const NMCCommand *cmd, NmCli *nmc, int argc, const cha
                            color,
                            _("%s VPN connection"),
                            nm_active_connection_get_id(ac));
-        g_print("%s\n", tmp);
+        nmc_print("%s\n", tmp);
         g_free(tmp);
 
         ac_overview(nmc, ac);
-        g_print("\n");
+        nmc_print("\n");
     }
 
     devices = nmc_get_devices_sorted(nmc->client);
@@ -1541,16 +1542,16 @@ nmc_command_func_overview(const NMCCommand *cmd, NmCli *nmc, int argc, const cha
                                nm_device_get_iface(device),
                                gettext(nmc_device_state_to_string_with_external(device)));
         }
-        g_print("%s\n", tmp);
+        nmc_print("%s\n", tmp);
         g_free(tmp);
 
         if (nm_device_get_description(device) && strcmp(nm_device_get_description(device), ""))
-            g_print("\t\"%s\"\n", nm_device_get_description(device));
+            nmc_print("\t\"%s\"\n", nm_device_get_description(device));
 
         device_overview(nmc, device);
         if (ac)
             ac_overview(nmc, ac);
-        g_print("\n");
+        nmc_print("\n");
     }
     g_free(devices);
 
@@ -1566,31 +1567,32 @@ nmc_command_func_overview(const NMCCommand *cmd, NmCli *nmc, int argc, const cha
         }
 
         if (i == 0)
-            g_print("DNS configuration:\n");
+            nmc_print("DNS configuration:\n");
 
         tmp = g_strjoinv(" ", (char **) strv);
-        g_print("\tservers: %s\n", tmp);
+        nmc_print("\tservers: %s\n", tmp);
         g_free(tmp);
 
         strv = nm_dns_entry_get_domains(dns);
         if (strv && strv[0]) {
             tmp = g_strjoinv(" ", (char **) strv);
-            g_print("\tdomains: %s\n", tmp);
+            nmc_print("\tdomains: %s\n", tmp);
             g_free(tmp);
         }
 
         if (nm_dns_entry_get_interface(dns))
-            g_print("\tinterface: %s\n", nm_dns_entry_get_interface(dns));
+            nmc_print("\tinterface: %s\n", nm_dns_entry_get_interface(dns));
 
         if (nm_dns_entry_get_vpn(dns))
-            g_print("\ttype: vpn\n");
-        g_print("\n");
+            nmc_print("\ttype: vpn\n");
+        nmc_print("\n");
     }
 
-    g_print(_("Use \"nmcli device show\" to get complete information about known devices and\n"
-              "\"nmcli connection show\" to get an overview on active connection profiles.\n"
-              "\n"
-              "Consult nmcli(1) and nmcli-examples(7) manual pages for complete usage details.\n"));
+    nmc_print(
+        _("Use \"nmcli device show\" to get complete information about known devices and\n"
+          "\"nmcli connection show\" to get an overview on active connection profiles.\n"
+          "\n"
+          "Consult nmcli(1) and nmcli-examples(7) manual pages for complete usage details.\n"));
 }
 
 void
@@ -1632,6 +1634,6 @@ nmc_command_func_monitor(const NMCCommand *cmd, NmCli *nmc, int argc, const char
 
     nmc->should_wait++;
 
-    monitor_devices(nmc);
-    monitor_connections(nmc);
+    nmc_monitor_devices(nmc);
+    nmc_monitor_connections(nmc);
 }

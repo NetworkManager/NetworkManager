@@ -1,5 +1,30 @@
 #!/bin/bash
 
+# Runs the "test-python.sh" test, setting proper environment variables
+# for the build tree.
+#
+# - the first three arguments are the BUILDDIR, SRCDIR and PYTHON paths.
+#   The following arguments are passed on to "test-python.sh".
+#
+# - you can use "--" to separate the extra arguments.
+#
+# The full format is
+#
+#   $ src/tests/client/test-client.sh "$BUILDDIR" "$SRCDIR" "$PYTHON" -- "${EXTRA[@]}"
+#
+# - "$BUILDDIR" "$SRCDIR" and "$PYTHON" can be set to "", to fallback
+#   to a default.
+#
+# The safe way to call it is thus
+#
+#     $ src/tests/client/test-client.sh "" "" "" -- "${EXTRA[@]}"
+#
+# but for brevity, you can also call
+#
+#     $ src/tests/client/test-client.sh -- "${EXTRA[@]}"
+#
+# if (and only if) "${EXTRA[@]}" does not contain "--".
+
 set -e
 
 die() {
@@ -7,29 +32,45 @@ die() {
     exit 1
 }
 
-if [ "$2" != "" ]; then
-    SRCDIR="$(realpath "$2")"
+if [ "$4" = "--" ] ; then
+    ARGS=("${@:1:3}")
+    EXTRA=("${@:5}")
+elif [ "$3" = "--" ]; then
+    ARGS=("${@:1:2}")
+    EXTRA=("${@:4}")
+elif [ "$2" = "--" ]; then
+    ARGS=("${@:1:1}")
+    EXTRA=("${@:3}")
+elif [ "$1" = "--" ]; then
+    ARGS=()
+    EXTRA=("${@:2}")
+else
+    ARGS=("${@:1:3}")
+    EXTRA=("${@:4}")
+fi
+
+if [ "${ARGS[1]}" != "" ]; then
+    SRCDIR="$(realpath "${ARGS[1]}")"
 else
     SRCDIR="$(realpath "$(dirname "$BASH_SOURCE")/../../..")"
 fi
 
-if [ "$1" != "" ]; then
-    BUILDDIR="$(realpath "$1")"
+if [ "${ARGS[0]}" != "" ]; then
+    BUILDDIR="$(realpath "${ARGS[0]}")"
 elif test -d "$SRCDIR/build" ; then
     BUILDDIR="$(realpath "$SRCDIR/build")"
 else
     BUILDDIR="$SRCDIR"
 fi
 
-test -d "$BUILDDIR" || die "BUILDDIR \"$BUILDDIR\" does not exist?"
-test -d "$SRCDIR" || die "SRCDIR \"$SRCDIR\" does not exist?"
-
-if [ "$3" != "" ]; then
-    PYTHON="$3"
+if [ "${ARGS[2]}" != "" ]; then
+    PYTHON="${ARGS[2]}"
 elif [ "$PYTHON" == "" ]; then
     PYTHON="$(command -v python)" || die "python not found?"
 fi
 
+test -d "$BUILDDIR" || die "BUILDDIR \"$BUILDDIR\" does not exist?"
+test -d "$SRCDIR" || die "SRCDIR \"$SRCDIR\" does not exist?"
 test -f "$BUILDDIR/src/nmcli/nmcli" || die "\"$BUILDDIR/src/nmcli/nmcli\" does not exist?"
 
 if test -f "$BUILDDIR/src/libnm-client-impl/.libs/libnm.so" ; then
@@ -57,7 +98,7 @@ export NM_TEST_CLIENT_BUILDDIR="$BUILDDIR"
 # test output is grouped together.
 
 r="ok"
-"$PYTHON" "$SRCDIR/src/tests/client/test-client.py" -v &> "$BUILDDIR/src/tests/client/test-client.log" || r=fail
+"$PYTHON" "$SRCDIR/src/tests/client/test-client.py" -v "${EXTRA[@]}" &> "$BUILDDIR/src/tests/client/test-client.log" || r=fail
 
 cat "$BUILDDIR/src/tests/client/test-client.log"
 
