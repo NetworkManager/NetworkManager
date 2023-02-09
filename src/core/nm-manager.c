@@ -1386,7 +1386,7 @@ nm_manager_devcon_autoconnect_reset_reconnect_all(NMManager            *self,
         /* we only reset the no-secrets blocked flag. */
         if (nm_settings_connection_autoconnect_blocked_reason_set(
                 sett_conn,
-                NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NO_SECRETS,
+                NM_SETTINGS_AUTOCONNECT_BLOCKED_REASON_NO_SECRETS,
                 FALSE)) {
             /* maybe the connection is still blocked afterwards for other reasons
              * and in the larger picture nothing changed. Check if the connection
@@ -1407,8 +1407,8 @@ nm_manager_devcon_autoconnect_reset_reconnect_all(NMManager            *self,
             self,
             device,
             sett_conn,
-            NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_FAILED
-                | NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_USER_REQUEST,
+            NM_SETTINGS_AUTOCONNECT_BLOCKED_REASON_FAILED
+                | NM_SETTINGS_AUTOCONNECT_BLOCKED_REASON_USER_REQUEST,
             FALSE))
         changed = TRUE;
 
@@ -1416,8 +1416,8 @@ nm_manager_devcon_autoconnect_reset_reconnect_all(NMManager            *self,
      * happened, then it means the status changed */
     if (nm_settings_connection_autoconnect_blocked_reason_set(
             sett_conn,
-            NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NO_SECRETS
-                | NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_USER_REQUEST,
+            NM_SETTINGS_AUTOCONNECT_BLOCKED_REASON_NO_SECRETS
+                | NM_SETTINGS_AUTOCONNECT_BLOCKED_REASON_USER_REQUEST,
             FALSE))
         changed = TRUE;
 
@@ -1466,7 +1466,7 @@ nm_manager_devcon_autoconnect_is_blocked(NMManager            *self,
         return TRUE;
 
     data = _devcon_lookup_data(self, device, sett_conn, TRUE);
-    if (data->autoconnect.blocked_reason != NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NONE)
+    if (data->autoconnect.blocked_reason != NM_SETTINGS_AUTOCONNECT_BLOCKED_REASON_NONE)
         return TRUE;
 
     if (data->autoconnect.retries == 0 && data->autoconnect.initialized)
@@ -5597,7 +5597,7 @@ _internal_activate_device(NMManager *self, NMActiveConnection *active, GError **
             if (nm_active_connection_get_activation_reason(active)
                     == NM_ACTIVATION_REASON_AUTOCONNECT
                 && NM_FLAGS_HAS(nm_settings_connection_autoconnect_blocked_reason_get(parent_con),
-                                NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_USER_REQUEST)) {
+                                NM_SETTINGS_AUTOCONNECT_BLOCKED_REASON_USER_REQUEST)) {
                 g_set_error(error,
                             NM_MANAGER_ERROR,
                             NM_MANAGER_ERROR_DEPENDENCY_FAILED,
@@ -6228,7 +6228,7 @@ _activation_auth_done(NMManager             *self,
 
     nm_settings_connection_autoconnect_blocked_reason_set(
         connection,
-        NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_USER_REQUEST,
+        NM_SETTINGS_AUTOCONNECT_BLOCKED_REASON_USER_REQUEST,
         FALSE);
     g_dbus_method_invocation_return_value(
         invocation,
