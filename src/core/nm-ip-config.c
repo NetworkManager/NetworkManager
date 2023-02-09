@@ -503,7 +503,7 @@ nm_ip_config_dns_hash(const NML3ConfigData *l3cd, GChecksum *sum, int addr_famil
 {
     guint              i;
     int                val;
-    const char *const *nameservers;
+    gconstpointer      nameservers;
     const in_addr_t   *wins;
     const char *const *domains;
     const char *const *searches;
@@ -518,10 +518,10 @@ nm_ip_config_dns_hash(const NML3ConfigData *l3cd, GChecksum *sum, int addr_famil
     g_return_if_fail(sum);
 
     nameservers = nm_l3_config_data_get_nameservers(l3cd, addr_family, &num_nameservers);
-    for (i = 0; i < num_nameservers; i++) {
+    if (num_nameservers > 0) {
         g_checksum_update(sum,
-                          nm_ip_addr_from_packed_array(addr_family, nameservers, i),
-                          nm_utils_addr_family_to_size(addr_family));
+                          nameservers,
+                          num_nameservers * nm_utils_addr_family_to_size(addr_family));
     }
 
     if (addr_family == AF_INET) {
