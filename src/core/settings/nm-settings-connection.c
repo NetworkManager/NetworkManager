@@ -1502,7 +1502,7 @@ update_auth_cb(NMSettingsConnection  *self,
             /* New secrets, allow autoconnection again */
             if (nm_settings_connection_autoconnect_blocked_reason_set(
                     self,
-                    NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NO_SECRETS,
+                    NM_SETTINGS_AUTOCONNECT_BLOCKED_REASON_NO_SECRETS,
                     FALSE)
                 && !nm_settings_connection_autoconnect_blocked_reason_get(self))
                 nm_manager_devcon_autoconnect_retries_reset(
@@ -2547,7 +2547,7 @@ nm_settings_connection_autoconnect_is_blocked(NMSettingsConnection *self)
 
     priv = NM_SETTINGS_CONNECTION_GET_PRIVATE(self);
 
-    if (priv->autoconnect_blocked_reason != NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NONE)
+    if (priv->autoconnect_blocked_reason != NM_SETTINGS_AUTOCONNECT_BLOCKED_REASON_NONE)
         return TRUE;
 
     flags = priv->flags;

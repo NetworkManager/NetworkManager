@@ -1332,7 +1332,7 @@ pending_ac_state_changed(NMActiveConnection *ac, guint state, guint reason, NMPo
                 priv->manager,
                 nm_active_connection_get_device(ac),
                 con,
-                NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_FAILED,
+                NM_SETTINGS_AUTOCONNECT_BLOCKED_REASON_FAILED,
                 TRUE);
             schedule_activate_check(self, nm_active_connection_get_device(ac));
         }
@@ -1441,7 +1441,7 @@ auto_activate_device(NMPolicy *self, NMDevice *device)
             priv->manager,
             device,
             best_connection,
-            NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_FAILED,
+            NM_SETTINGS_AUTOCONNECT_BLOCKED_REASON_FAILED,
             TRUE);
         schedule_activate_check(self, device);
         return;
@@ -1609,7 +1609,7 @@ nm_policy_unblock_failed_ovs_interfaces(NMPolicy *self)
                 priv->manager,
                 NULL,
                 sett_conn,
-                NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_FAILED,
+                NM_SETTINGS_AUTOCONNECT_BLOCKED_REASON_FAILED,
                 FALSE);
         }
     }
@@ -1647,7 +1647,7 @@ reset_autoconnect_all(
             /* we only reset the no-secrets blocked flag. */
             if (nm_settings_connection_autoconnect_blocked_reason_set(
                     sett_conn,
-                    NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NO_SECRETS,
+                    NM_SETTINGS_AUTOCONNECT_BLOCKED_REASON_NO_SECRETS,
                     FALSE)) {
                 /* maybe the connection is still blocked afterwards for other reasons
                  * and in the larger picture nothing changed. But it's too complicated
@@ -1670,13 +1670,13 @@ reset_autoconnect_all(
                      priv->manager,
                      device,
                      sett_conn,
-                     NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_FAILED
-                         | NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_USER_REQUEST,
+                     NM_SETTINGS_AUTOCONNECT_BLOCKED_REASON_FAILED
+                         | NM_SETTINGS_AUTOCONNECT_BLOCKED_REASON_USER_REQUEST,
                      FALSE))
                 || nm_settings_connection_autoconnect_blocked_reason_set(
                     sett_conn,
-                    NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NO_SECRETS
-                        | NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_USER_REQUEST,
+                    NM_SETTINGS_AUTOCONNECT_BLOCKED_REASON_NO_SECRETS
+                        | NM_SETTINGS_AUTOCONNECT_BLOCKED_REASON_USER_REQUEST,
                     FALSE)) {
                 if (device) {
                     if (!nm_manager_devcon_autoconnect_is_blocked(priv->manager, device, sett_conn))
@@ -1873,7 +1873,7 @@ activate_slave_connections(NMPolicy *self, NMDevice *device)
                 priv->manager,
                 NULL,
                 sett_conn,
-                NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_FAILED,
+                NM_SETTINGS_AUTOCONNECT_BLOCKED_REASON_FAILED,
                 FALSE)) {
             if (!nm_settings_connection_autoconnect_is_blocked(sett_conn))
                 changed = TRUE;
@@ -2000,7 +2000,7 @@ device_state_changed(NMDevice           *device,
                 priv->manager,
                 device,
                 sett_conn,
-                NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_FAILED,
+                NM_SETTINGS_AUTOCONNECT_BLOCKED_REASON_FAILED,
                 TRUE);
         }
         break;
@@ -2041,7 +2041,7 @@ device_state_changed(NMDevice           *device,
                           nm_settings_connection_get_id(sett_conn));
                     nm_settings_connection_autoconnect_blocked_reason_set(
                         sett_conn,
-                        NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NO_SECRETS,
+                        NM_SETTINGS_AUTOCONNECT_BLOCKED_REASON_NO_SECRETS,
                         TRUE);
                     blocked = TRUE;
                 }
@@ -2062,7 +2062,7 @@ device_state_changed(NMDevice           *device,
                     priv->manager,
                     device,
                     sett_conn,
-                    NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_FAILED,
+                    NM_SETTINGS_AUTOCONNECT_BLOCKED_REASON_FAILED,
                     TRUE);
                 blocked = TRUE;
             }
@@ -2122,25 +2122,25 @@ device_state_changed(NMDevice           *device,
     case NM_DEVICE_STATE_DEACTIVATING:
         if (sett_conn) {
             NMSettingsAutoconnectBlockedReason blocked_reason =
-                NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NONE;
+                NM_SETTINGS_AUTOCONNECT_BLOCKED_REASON_NONE;
 
             switch (nm_device_state_reason_check(reason)) {
             case NM_DEVICE_STATE_REASON_USER_REQUESTED:
-                blocked_reason = NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_USER_REQUEST;
+                blocked_reason = NM_SETTINGS_AUTOCONNECT_BLOCKED_REASON_USER_REQUEST;
                 break;
             case NM_DEVICE_STATE_REASON_DEPENDENCY_FAILED:
-                blocked_reason = NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_FAILED;
+                blocked_reason = NM_SETTINGS_AUTOCONNECT_BLOCKED_REASON_FAILED;
                 break;
             default:
                 break;
             }
-            if (blocked_reason != NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NONE) {
+            if (blocked_reason != NM_SETTINGS_AUTOCONNECT_BLOCKED_REASON_NONE) {
                 _LOGD(LOGD_DEVICE,
                       "blocking autoconnect of connection '%s': %s",
                       nm_settings_connection_get_id(sett_conn),
                       NM_UTILS_LOOKUP_STR_A(nm_device_state_reason_to_string,
                                             nm_device_state_reason_check(reason)));
-                if (blocked_reason == NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_FAILED)
+                if (blocked_reason == NM_SETTINGS_AUTOCONNECT_BLOCKED_REASON_FAILED)
                     nm_manager_devcon_autoconnect_blocked_reason_set(priv->manager,
                                                                      device,
                                                                      sett_conn,
@@ -2192,7 +2192,7 @@ device_state_changed(NMDevice           *device,
                 priv->manager,
                 device,
                 sett_conn,
-                NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_ALL,
+                NM_SETTINGS_AUTOCONNECT_BLOCKED_REASON_ALL,
                 FALSE);
         break;
     case NM_DEVICE_STATE_SECONDARIES:

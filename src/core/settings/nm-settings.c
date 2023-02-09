@@ -1119,7 +1119,7 @@ _connection_changed_update(NMSettings                      *self,
     if (NM_FLAGS_HAS(update_reason, NM_SETTINGS_CONNECTION_UPDATE_REASON_BLOCK_AUTOCONNECT)) {
         nm_settings_connection_autoconnect_blocked_reason_set(
             sett_conn,
-            NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_USER_REQUEST,
+            NM_SETTINGS_AUTOCONNECT_BLOCKED_REASON_USER_REQUEST,
             TRUE);
     }
 

@@ -244,7 +244,7 @@ ovsdb_interface_failed(NMOvsdb         *ovsdb,
             nm_device_get_manager(device),
             device,
             connection,
-            NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_FAILED,
+            NM_SETTINGS_AUTOCONNECT_BLOCKED_REASON_FAILED,
             TRUE);
     }
 
