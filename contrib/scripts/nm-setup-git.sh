@@ -96,7 +96,8 @@ done
 
 case "$(git config --get-all remote.origin.url)" in
     "https://gitlab.freedesktop.org/NetworkManager/NetworkManager.git"| \
-    "git@gitlab.freedesktop.org:NetworkManager/NetworkManager.git")
+    "git@gitlab.freedesktop.org:NetworkManager/NetworkManager.git"| \
+    "ssh://git@gitlab.freedesktop.org/NetworkManager/NetworkManager")
         ;;
     *)
         die "unexpected git repository. Expected that remote.origin.url is set to \"https://gitlab.freedesktop.org/NetworkManager/NetworkManager.git\""
