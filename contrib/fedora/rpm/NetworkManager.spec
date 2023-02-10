@@ -19,6 +19,7 @@
 %global snapshot __SNAPSHOT__
 %global git_sha __COMMIT__
 %global bcond_default_debug __BCOND_DEFAULT_DEBUG__
+%global bcond_default_lto __BCOND_DEFAULT_LTO__
 %global bcond_default_test __BCOND_DEFAULT_TEST__
 
 %global obsoletes_device_plugins     1:0.9.9.95-1
@@ -69,10 +70,18 @@
 %else
 %bcond_with    test
 %endif
+%if "%{?bcond_default_lto}" == ""
 %if 0%{?fedora} >= 33 || 0%{?rhel} >= 9
 %bcond_without lto
 %else
 %bcond_with    lto
+%endif
+%else
+%if %{bcond_default_lto}
+%bcond_without lto
+%else
+%bcond_with    lto
+%endif
 %endif
 %bcond_with    sanitizer
 %if 0%{?fedora}
@@ -297,6 +306,10 @@ BuildRequires: python2
 BuildRequires: pygobject3-base
 BuildRequires: dbus-python
 BuildRequires: pexpect
+%if 0%{?rhel} >= 7 && %{with meson}
+BuildRequires: python36-dbus
+BuildRequires: python36-gobject
+%endif
 %endif
 BuildRequires: libselinux-devel
 BuildRequires: polkit-devel
@@ -680,6 +693,7 @@ Preferably use nmcli instead.
 %else
 	-Ddocs=false \
 %endif
+	-Dqt=false \
 %if %{with team}
 	-Dteamdctl=true \
 %else
@@ -707,6 +721,7 @@ Preferably use nmcli instead.
 %endif
 	-Dsession_tracking=systemd \
 	-Dsuspend_resume=systemd \
+	-Dsystemdsystemunitdir=%{_unitdir} \
 	-Dsystem_ca_path=/etc/pki/tls/cert.pem \
 	-Ddbus_conf_dir=%{dbus_sys_dir} \
 	-Dtests=yes \
@@ -714,8 +729,11 @@ Preferably use nmcli instead.
 	-Difcfg_rh=true \
 	-Difupdown=false \
 %if %{with ppp}
-	-Dpppd_plugin_dir=%{_libdir}/pppd/%{ppp_version} \
+	-Dpppd_plugin_dir="%{_libdir}/pppd/%{ppp_version}" \
+	-Dpppd="%{_sbindir}/pppd" \
 	-Dppp=true \
+%else
+	-Dppp=false \
 %endif
 %if %{with firewalld_zone}
 	-Dfirewalld_zone=true \
@@ -843,6 +861,7 @@ autoreconf --install --force
 	--with-ebpf=%{ebpf_enabled} \
 	--with-session-tracking=systemd \
 	--with-suspend-resume=systemd \
+	--with-systemdsystemunitdir=%{_unitdir} \
 	--with-system-ca-path=/etc/pki/tls/cert.pem \
 	--with-dbus-sys-dir=%{dbus_sys_dir} \
 	--with-tests=yes \
@@ -855,7 +874,10 @@ autoreconf --install --force
 	--enable-ifcfg-rh=yes \
 	--enable-ifupdown=no \
 %if %{with ppp}
-	--with-pppd-plugin-dir=%{_libdir}/pppd/%{ppp_version} \
+	--enable-ppp=yes \
+	--with-pppd="%{_sbindir}/pppd" \
+	--with-pppd-plugin-dir="%{_libdir}/pppd/%{ppp_version}" \
+%else
 	--enable-ppp=yes \
 %endif
 %if %{with firewalld_zone}
@@ -914,7 +936,7 @@ rm -f %{buildroot}%{nmplugindir}/*.la
 # Ensure the documentation timestamps are constant to avoid multilib conflicts
 find %{buildroot}%{_datadir}/gtk-doc -exec touch --reference configure.ac '{}' \+
 
-%if 0%{?__debug_package}
+%if 0%{?__debug_package} && ! 0%{?flatpak}
 mkdir -p %{buildroot}%{_prefix}/src/debug/NetworkManager-%{real_version}
 cp valgrind.suppressions %{buildroot}%{_prefix}/src/debug/NetworkManager-%{real_version}
 %endif
@@ -1071,10 +1093,10 @@ fi
 %{_mandir}/man1/*
 %{_mandir}/man5/*
 %{_mandir}/man7/nmcli-examples.7*
-%{_mandir}/man8/nm-initrd-generator.8.gz
-%{_mandir}/man8/NetworkManager.8.gz
-%{_mandir}/man8/NetworkManager-dispatcher.8.gz
-%{_mandir}/man8/NetworkManager-wait-online.service.8.gz
+%{_mandir}/man8/nm-initrd-generator.8*
+%{_mandir}/man8/NetworkManager.8*
+%{_mandir}/man8/NetworkManager-dispatcher.8*
+%{_mandir}/man8/NetworkManager-wait-online.service.8*
 %dir %{_localstatedir}/lib/NetworkManager
 %dir %{_sysconfdir}/sysconfig/network-scripts
 %{_datadir}/dbus-1/system-services/org.freedesktop.nm_dispatcher.service
