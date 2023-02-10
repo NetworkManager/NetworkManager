@@ -24,8 +24,8 @@
 
 %global obsoletes_device_plugins     1:0.9.9.95-1
 %global obsoletes_ppp_plugin         1:1.5.3
-%global obsoletes_initscripts_updown 1:1.35.4
-%global obsoletes_ifcfg_rh           1:1.37.1
+%global obsoletes_initscripts_updown 1:1.36.0-0.6
+%global obsoletes_ifcfg_rh           1:1.36.2
 
 %global nmlibdir %{_prefix}/lib/%{name}
 %global nmplugindir %{_libdir}/%{name}/%{version}-%{release}
