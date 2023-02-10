@@ -1,8 +1,6 @@
 # SPDX-License-Identifier: LGPL-2.1-or-later
 
 private_headers = [
-  'nm-core-types.h',
-
   'nm-dbus-helpers.h',
   'nm-default-libnm.h',
   'nm-device-private.h',
