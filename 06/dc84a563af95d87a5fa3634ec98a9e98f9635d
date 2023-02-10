@@ -1,0 +1,2 @@
+Ignore-Fixes: 820f6f3a4a42 ('contrib/rpm: sync obsoletes_{initscripts_updown,ifcfg_rh} version')
+Fixes: 2598ec3a1fd2 ('contrib/rpm: fix building without ppp')
