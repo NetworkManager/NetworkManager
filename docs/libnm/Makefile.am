@@ -38,8 +38,6 @@ CFILE_GLOB=$(top_srcdir)/src/libnm-core-impl/*.c $(top_srcdir)/src/libnm-client-
 
 # Header files to ignore when scanning.
 IGNORE_HFILES= \
-	nm-core-types.h \
-	\
 	nm-dbus-helpers.h \
 	nm-default-libnm.h \
 	nm-device-private.h \
