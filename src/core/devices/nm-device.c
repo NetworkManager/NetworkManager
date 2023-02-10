@@ -7168,6 +7168,9 @@ nm_device_update_from_platform_link(NMDevice *self, const NMPlatformLink *plink)
 
     ifindex_changed = _set_ifindex(self, plink ? plink->ifindex : 0, FALSE);
 
+    nm_device_update_hw_address(self);
+    nm_device_update_permanent_hw_address(self, FALSE);
+
     if (ifindex_changed)
         NM_DEVICE_GET_CLASS(self)->link_changed(self, plink);
 
