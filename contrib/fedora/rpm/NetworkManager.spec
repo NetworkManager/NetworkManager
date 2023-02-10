@@ -878,7 +878,7 @@ autoreconf --install --force
 	--with-pppd="%{_sbindir}/pppd" \
 	--with-pppd-plugin-dir="%{_libdir}/pppd/%{ppp_version}" \
 %else
-	--enable-ppp=yes \
+	--enable-ppp=no \
 %endif
 %if %{with firewalld_zone}
 	--enable-firewalld-zone=yes \
