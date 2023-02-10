@@ -96,7 +96,8 @@ done
 
 case "$(git config --get-all remote.origin.url)" in
     "https://gitlab.freedesktop.org/NetworkManager/NetworkManager.git"| \
-    "git@gitlab.freedesktop.org:NetworkManager/NetworkManager.git")
+    "git@gitlab.freedesktop.org:NetworkManager/NetworkManager.git"| \
+    "ssh://git@gitlab.freedesktop.org/NetworkManager/NetworkManager")
         ;;
     *)
         die "unexpected git repository. Expected that remote.origin.url is set to \"https://gitlab.freedesktop.org/NetworkManager/NetworkManager.git\""
@@ -109,6 +110,7 @@ git_config_reset blame.markUnblamableLines true
 git_config_add notes.displayref 'refs/notes/bugs'
 git_config_add remote.origin.fetch 'refs/notes/bugs:refs/notes/bugs'
 git_config_reset remote.origin.pushurl 'git@gitlab.freedesktop.org:NetworkManager/NetworkManager.git'
+git_config_add 'alias.backport-merge' '! (git show main:contrib/scripts/git-backport-merge || git show origin/main:contrib/scripts/git-backport-merge) | bash -s -'
 
 if [ "$NO_TEST" != 1 ]; then
     printf "Run with \"--no-test\" or see \"-h\"\n" >&2

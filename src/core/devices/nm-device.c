@@ -6811,7 +6811,10 @@ device_link_changed(gpointer user_data)
          * sync state transition.
          */
         nm_device_queue_recheck_assume(self);
-        nm_device_set_unmanaged_by_flags_queue(self, NM_UNMANAGED_PLATFORM_INIT, FALSE, reason);
+        nm_device_set_unmanaged_by_flags_queue(self,
+                                               NM_UNMANAGED_PLATFORM_INIT,
+                                               NM_UNMAN_FLAG_OP_SET_MANAGED,
+                                               reason);
     }
 
     _dev_unmanaged_check_external_down(self, FALSE, FALSE);
@@ -7867,7 +7870,7 @@ nm_device_master_add_slave(NMDevice *self, NMDevice *slave, gboolean configure)
         g_warn_if_fail(!NM_FLAGS_HAS(slave_priv->unmanaged_mask, NM_UNMANAGED_IS_SLAVE));
         nm_device_set_unmanaged_by_flags(slave,
                                          NM_UNMANAGED_IS_SLAVE,
-                                         FALSE,
+                                         NM_UNMAN_FLAG_OP_SET_MANAGED,
                                          NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
         changed = TRUE;
     } else
@@ -14691,7 +14694,7 @@ nm_device_set_unmanaged_by_quitting(NMDevice *self)
 
     nm_device_set_unmanaged_by_flags(self,
                                      NM_UNMANAGED_QUITTING,
-                                     TRUE,
+                                     NM_UNMAN_FLAG_OP_SET_UNMANAGED,
                                      need_deactivate ? NM_DEVICE_STATE_REASON_REMOVED
                                                      : NM_DEVICE_STATE_REASON_NOW_UNMANAGED);
 }

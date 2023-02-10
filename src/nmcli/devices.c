@@ -17,6 +17,7 @@
 #include <linux/if_ether.h>
 
 #include "libnm-glib-aux/nm-secret-utils.h"
+#include "libnm-glib-aux/nm-random-utils.h"
 #include "common.h"
 #include "connections.h"
 #include "libnmc-base/nm-client-utils.h"
@@ -4102,10 +4103,11 @@ generate_wpa_key(char *key, size_t len)
     /* generate a 8-chars ASCII WPA key */
     for (i = 0; i < WPA_PASSKEY_SIZE; i++) {
         int c;
-        c = g_random_int_range(33, 126);
-        /* too many non alphanumeric characters are hard to remember for humans */
-        while (!g_ascii_isalnum(c))
-            c = g_random_int_range(33, 126);
+
+        do {
+            c = nm_random_u64_range_full(33, 126, TRUE);
+            /* too many non alphanumeric characters are hard to remember for humans */
+        } while (g_ascii_isalnum(c));
 
         key[i] = (char) c;
     }
@@ -4124,7 +4126,8 @@ generate_wep_key(char *key, size_t len)
     /* generate a 10-digit hex WEP key */
     for (i = 0; i < 10; i++) {
         int digit;
-        digit  = g_random_int_range(0, 16);
+
+        digit  = nm_random_u64_range_full(0, 16, TRUE);
         key[i] = hexdigits[digit];
     }
     key[10] = '\0';

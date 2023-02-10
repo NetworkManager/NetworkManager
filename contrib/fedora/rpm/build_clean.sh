@@ -26,6 +26,7 @@ usage() {
     echo "  -s|--snapshot TEXT: use TEXT as the snapshot version for the new package (overwrites \$NM_BUILD_SNAPSHOT environment)"
     echo "  -r|--release: built a release tarball (this option must be alone)"
     echo "  --default-for-debug \$OPTION: set the default for "debug" option in the generated spec file"
+    echo "  --default-for-lto \$OPTION: set the default for "lto" option in the generated spec file"
     echo "  --default-for-test \$OPTION: set the default for "test" option in the generated spec file"
 }
 
@@ -56,6 +57,7 @@ SOURCE_FROM_GIT=0
 SNAPSHOT="$NM_BUILD_SNAPSHOT"
 DO_RELEASE=0
 unset BCOND_DEFAULT_DEBUG
+unset BCOND_DEFAULT_LTO
 unset BCOND_DEFAULT_TEST
 
 ADD_WITH_TEST=1
@@ -110,6 +112,9 @@ while [[ $# -gt 0 ]]; do
                 debug)
                     [[ -z ${BCOND_DEFAULT_DEBUG+.} ]] && BCOND_DEFAULT_DEBUG=1
                     ;;
+                lto)
+                    [[ -z ${BCOND_DEFAULT_LTO+.} ]] && BCOND_DEFAULT_LTO=1
+                    ;;
                 test)
                     ADD_WITH_TEST=0
                     [[ -z ${BCOND_DEFAULT_TEST+.} ]] && BCOND_DEFAULT_TEST=1
@@ -123,6 +128,9 @@ while [[ $# -gt 0 ]]; do
             case "$1" in
                 debug)
                     [[ -z ${BCOND_DEFAULT_DEBUG+.} ]] && BCOND_DEFAULT_DEBUG=0
+                    ;;
+                lto)
+                    [[ -z ${BCOND_DEFAULT_LTO+.} ]] && BCOND_DEFAULT_LTO=0
                     ;;
                 test)
                     ADD_WITH_TEST=0
@@ -143,6 +151,12 @@ while [[ $# -gt 0 ]]; do
             [[ $# -gt 0 ]] || die "Missing argument to $A"
             in_set "$1" "" 0 1 || die "invalid argument $A \"$1\""
             BCOND_DEFAULT_DEBUG="$1"
+            shift
+            ;;
+        --default-for-lto)
+            [[ $# -gt 0 ]] || die "Missing argument to $A"
+            in_set "$1" "" 0 1 || die "invalid argument $A \"$1\""
+            BCOND_DEFAULT_LTO="$1"
             shift
             ;;
         --default-for-test)
@@ -226,6 +240,7 @@ export NM_RPMBUILD_ARGS="${WITH_LIST[@]}"
 export SNAPSHOT
 export DO_RELEASE
 export BCOND_DEFAULT_DEBUG="$BCOND_DEFAULT_DEBUG"
+export BCOND_DEFAULT_LTO="$BCOND_DEFAULT_LTO"
 export BCOND_DEFAULT_TEST="$BCOND_DEFAULT_TEST"
 
 "$SCRIPTDIR"/build.sh

@@ -25,6 +25,7 @@
 #   SIGN_SOURCE=
 #   DO_RELEASE=
 #   BCOND_DEFAULT_DEBUG=
+#   BCOND_DEFAULT_LTO=
 #   BCOND_DEFAULT_TEST=
 
 die() {
@@ -119,6 +120,7 @@ COMMIT_FULL="${COMMIT_FULL:-$(git rev-parse --verify HEAD || die "Error reading 
 COMMIT="${COMMIT:-$(printf '%s' "$COMMIT_FULL" | sed 's/^\(.\{10\}\).*/\1/' || die "Error reading HEAD revision")}"
 BCOND_DEFAULT_DEBUG="${BCOND_DEFAULT_DEBUG:-0}"
 BCOND_DEFAULT_TEST="${BCOND_DEFAULT_TEST:-0}"
+BCOND_DEFAULT_LTO="${BCOND_DEFAULT_LTO}"
 USERNAME="${USERNAME:-"$(git config user.name) <$(git config user.email)>"}"
 SPECFILE="$(abs_path "$SPECFILE" "$SCRIPTDIR/NetworkManager.spec")" || die "invalid \$SPECFILE argument"
 SOURCE_FROM_GIT="$(coerce_bool "$SOURCE_FROM_GIT" "")"
@@ -174,12 +176,14 @@ LOG "SOURCE_README_IFCFG_FILES=$SOURCE_README_IFCFG_FILES"
 LOG "BUILDTYPE=$BUILDTYPE"
 LOG "NM_RPMBUILD_ARGS=$NM_RPMBUILD_ARGS"
 LOG "BCOND_DEFAULT_DEBUG=$BCOND_DEFAULT_DEBUG"
+LOG "BCOND_DEFAULT_LTO=$BCOND_DEFAULT_LTO"
 LOG "BCOND_DEFAULT_TEST=$BCOND_DEFAULT_TEST"
 LOG ""
 LOG "UUID=$UUID"
 LOG "BASEDIR=$TEMP"
 
 in_set "$BCOND_DEFAULT_DEBUG" 0 1 || die "Invalid value for \$BCOND_DEFAULT_DEBUG: \"$BCOND_DEFAULT_DEBUG\""
+in_set "$BCOND_DEFAULT_LTO" '' 0 1 || die "Invalid value for \$BCOND_DEFAULT_LTO: \"$BCOND_DEFAULT_LTO\""
 in_set "$BCOND_DEFAULT_TEST" 0 1 || die "Invalid value for \$BCOND_DEFAULT_TEST: \"$BCOND_DEFAULT_TEST\""
 
 ln -snf "$TEMPBASE" ./latest0
@@ -209,6 +213,7 @@ sed -e "s/__VERSION__/$VERSION/g" \
     -e "s/__SNAPSHOT__/$SNAPSHOT/g" \
     -e "s/__SOURCE1__/$(basename "$SOURCE")/g" \
     -e "s/__BCOND_DEFAULT_DEBUG__/$BCOND_DEFAULT_DEBUG/g" \
+    -e "s/__BCOND_DEFAULT_LTO__/${BCOND_DEFAULT_LTO:-"%{nil}"}/g" \
     -e "s/__BCOND_DEFAULT_TEST__/$BCOND_DEFAULT_TEST/g" \
    "$SPECFILE" |
 sed -e "/^__CHANGELOG__$/ \

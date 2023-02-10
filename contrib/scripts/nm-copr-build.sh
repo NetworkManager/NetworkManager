@@ -2,7 +2,10 @@
 
 # environment variables:
 # - GIT_REF: the ref that should be build. Can be "main" or a git sha.
-# - DEBUG: set to 1 to build "--with debug".
+# - DEBUG: set to 1 to build "--with debug". Otherwise the default is a release
+#     build.
+# - LTO: set to 1/0 to build "--with/--without lto", otherwise the default depends
+#     on the distribution.
 # - NM_GIT_BUNDLE: set to a HTTP url where to fetch the nm-git-bundle-*.noarch.rpm
 #     from. Set to empty to skip it. By default, it fetches the bundle from copr.
 
@@ -12,6 +15,14 @@ if [[ "$DEBUG" == 1 ]]; then
     DEBUG="--with debug"
 else
     DEBUG="--without debug"
+fi
+
+if [ "$LTO" = 0 ]; then
+    LTO='--without lto'
+elif [ "$LTO" = 1 ]; then
+    LTO='--with lto'
+else
+    LTO=
 fi
 
 if [[ -z "$GIT_REF" ]]; then
@@ -55,11 +66,12 @@ git remote remove nm-git-bundle || true
 
 GIT_SHA="$(git show-ref --verify --hash "$GIT_REF" 2>/dev/null ||
            git show-ref --verify --hash "refs/remotes/origin/$GIT_REF" 2>/dev/null ||
+           git rev-parse --verify "refs/remotes/origin/$GIT_REF" 2>/dev/null ||
            git rev-parse --verify "$GIT_REF^{commit}" 2>/dev/null)"
 
 git checkout -b tmp "$GIT_SHA"
 
-./contrib/fedora/rpm/build_clean.sh -g -S -w test $DEBUG -s copr
+./contrib/fedora/rpm/build_clean.sh -g -S -w test $DEBUG $LTO -s copr
 popd
 
 mv ./NetworkManager/contrib/fedora/rpm/latest/{SOURCES,SPECS}/* .

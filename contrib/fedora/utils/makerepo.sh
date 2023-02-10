@@ -398,6 +398,8 @@ pushd "$DIRNAME"
         git remote add origin "git://git.kernel.org/pub/scm/linux/kernel/git/shemminger/iproute2.git"
     elif [[ "$BUILD_TYPE" == "dracut" ]]; then
         git remote add origin "https://github.com/dracutdevs/dracut.git"
+    elif [[ "$BUILD_TYPE" == "systemd" ]]; then
+        git remote add origin "https://github.com/systemd/systemd.git"
     elif [[ "$BUILD_TYPE" == "vpnc" ]]; then
         git_remote_add_github ndpgroup/vpnc
     fi
@@ -515,6 +517,9 @@ cc304f05edab6c408a0f061eb1a104f9f06b8587  86ef789876b65c61751ce854835b91d4  init
 
 # dracut
 00efe708cab023bfe6eaf530d8ac8ea97b440de2  SHA512 (dracut-050.tar.xz) = 9d9a66acfd6b9d2fd50855a59a2393e0602c2ef97119db046f68d6167ea84d1423fa465b8b4d96339febb38d5a96df26dec7862c4b3397c3d726db18d280eee4
+
+# systemd
+903dd65b5eb63257393955cb79777beb8c71afc1  SHA512 (systemd-253-rc1.tar.gz) = aaf0a6bf21bbc50a42015c9cb17f69d1aaf6cab6cabfba5140a94212fb864e38d638dace9a70447f62b4d2a817a0d3bd6f4ae8d9b3c2e741cdeb1cb332f70b65
 EOF
 )"
             OLDIFS="$IFS"

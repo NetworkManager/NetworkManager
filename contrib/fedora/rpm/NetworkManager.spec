@@ -19,6 +19,7 @@
 %global snapshot __SNAPSHOT__
 %global git_sha __COMMIT__
 %global bcond_default_debug __BCOND_DEFAULT_DEBUG__
+%global bcond_default_lto __BCOND_DEFAULT_LTO__
 %global bcond_default_test __BCOND_DEFAULT_TEST__
 
 %global obsoletes_device_plugins     1:0.9.9.95-1
@@ -69,10 +70,18 @@
 %else
 %bcond_with    test
 %endif
+%if "%{?bcond_default_lto}" == ""
 %if 0%{?fedora} >= 33 || 0%{?rhel} >= 9
 %bcond_without lto
 %else
 %bcond_with    lto
+%endif
+%else
+%if %{bcond_default_lto}
+%bcond_without lto
+%else
+%bcond_with    lto
+%endif
 %endif
 %bcond_with    sanitizer
 %if 0%{?fedora}
@@ -297,6 +306,10 @@ BuildRequires: python2
 BuildRequires: pygobject3-base
 BuildRequires: dbus-python
 BuildRequires: pexpect
+%if 0%{?rhel} >= 7 && %{with meson}
+BuildRequires: python36-dbus
+BuildRequires: python36-gobject
+%endif
 %endif
 BuildRequires: libselinux-devel
 BuildRequires: polkit-devel
@@ -680,6 +693,7 @@ Preferably use nmcli instead.
 %else
 	-Ddocs=false \
 %endif
+	-Dqt=false \
 %if %{with team}
 	-Dteamdctl=true \
 %else
@@ -714,7 +728,8 @@ Preferably use nmcli instead.
 	-Difcfg_rh=true \
 	-Difupdown=false \
 %if %{with ppp}
-	-Dpppd_plugin_dir=%{_libdir}/pppd/%{ppp_version} \
+	-Dpppd_plugin_dir="%{_libdir}/pppd/%{ppp_version}" \
+	-Dpppd="%{_sbindir}/pppd" \
 	-Dppp=true \
 %endif
 %if %{with firewalld_zone}
@@ -855,8 +870,9 @@ autoreconf --install --force
 	--enable-ifcfg-rh=yes \
 	--enable-ifupdown=no \
 %if %{with ppp}
-	--with-pppd-plugin-dir=%{_libdir}/pppd/%{ppp_version} \
 	--enable-ppp=yes \
+	--with-pppd="%{_sbindir}/pppd" \
+	--with-pppd-plugin-dir="%{_libdir}/pppd/%{ppp_version}" \
 %endif
 %if %{with firewalld_zone}
 	--enable-firewalld-zone=yes \

@@ -378,7 +378,7 @@ static void name_owner_changed_cb(GDBusConnection *connection,
 
 static void name_owner_get_call(NMClient *self);
 
-static void _set_nm_running(NMClient *self);
+static void _set_nm_running(NMClient *self, gboolean queue_notify);
 
 /*****************************************************************************/
 
@@ -2724,6 +2724,7 @@ _obj_handle_dbus_changes(NMClient *self, NMLDBusObject *dbobj)
             if (dbobj->dbus_path == _dbus_path_nm) {
                 nm_assert(!priv->dbobj_nm);
                 priv->dbobj_nm = dbobj;
+                _set_nm_running(self, TRUE);
             } else if (dbobj->dbus_path == _dbus_path_settings) {
                 nm_assert(!priv->dbobj_settings);
                 priv->dbobj_settings = dbobj;
@@ -2783,6 +2784,7 @@ _obj_handle_dbus_changes(NMClient *self, NMLDBusObject *dbobj)
             if (dbobj->dbus_path == _dbus_path_nm) {
                 nm_assert(priv->dbobj_nm == dbobj);
                 priv->dbobj_nm = NULL;
+                _set_nm_running(self, TRUE);
                 nml_dbus_property_o_clear_many(priv->nm.property_o,
                                                G_N_ELEMENTS(priv->nm.property_o),
                                                self);
@@ -2936,7 +2938,7 @@ _dbus_handle_changes_commit(NMClient *self, gboolean allow_init_start_check_comp
 
     _nm_client_notify_event_emit(self);
 
-    _set_nm_running(self);
+    _set_nm_running(self, FALSE);
 
     if (allow_init_start_check_complete)
         _init_start_check_complete(self);
@@ -3079,11 +3081,10 @@ _dbus_handle_interface_added(NMClient   *self,
                              const char *object_path,
                              GVariant   *ifaces)
 {
-    gboolean       changed = FALSE;
-    const char    *interface_name;
-    GVariant      *changed_properties;
-    GVariantIter   iter_ifaces;
-    NMLDBusObject *dbobj = NULL;
+    gboolean     changed = FALSE;
+    const char  *interface_name;
+    GVariant    *changed_properties;
+    GVariantIter iter_ifaces;
 
     nm_assert(g_variant_is_of_type(ifaces, G_VARIANT_TYPE("a{sa{sv}}")));
 
@@ -3097,7 +3098,7 @@ _dbus_handle_interface_added(NMClient   *self,
                                             interface_name,
                                             TRUE,
                                             changed_properties,
-                                            &dbobj))
+                                            NULL))
             changed = TRUE;
     }
 
@@ -4084,15 +4085,18 @@ nm_client_get_startup(NMClient *client)
 }
 
 static void
-_set_nm_running(NMClient *self)
+_set_nm_running(NMClient *self, gboolean queue_notify)
 {
     NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE(self);
     gboolean         nm_running;
 
-    nm_running = priv->name_owner && !priv->get_managed_objects_cancellable;
+    nm_running = priv->dbobj_nm && priv->name_owner && !priv->get_managed_objects_cancellable;
     if (priv->nm_running != nm_running) {
         priv->nm_running = nm_running;
-        _notify(self, PROP_NM_RUNNING);
+        if (queue_notify) {
+            _nm_client_queue_notify_object(self, self, obj_properties[PROP_NM_RUNNING]);
+        } else
+            _notify(self, PROP_NM_RUNNING);
     }
 }
 
@@ -7172,7 +7176,7 @@ name_owner_changed(NMClient *self, const char *name_owner)
     if (changed && priv->name_owner)
         _init_fetch_all(self);
 
-    _set_nm_running(self);
+    _set_nm_running(self, FALSE);
 
     if (priv->init_data) {
         nm_auto_pop_gmaincontext GMainContext *main_context = NULL;

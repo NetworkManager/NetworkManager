@@ -404,7 +404,7 @@ $ git config --add 'notes.displayref' 'refs/notes/bugs'
 For example, set notes with
 
 ```
-$ git notes --ref refs/notes/bugs add -m "(cherry picked from $COMMIT_SHA)" HEAD
+$ git notes --ref refs/notes/bugs add -m "(cherry picked from commit $COMMIT_SHA)" HEAD
 ```
 
 You should see the notes in git-log output as well.

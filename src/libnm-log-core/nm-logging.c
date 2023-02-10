@@ -707,6 +707,20 @@ _nm_log_impl(const char *file,
 
     msg = nm_vsprintf_buf_or_alloc(fmt, fmt, msg_stack, &msg_heap, NULL);
 
+    /* We always print the level and the timestamp.
+     *
+     * Timestamps are very useful for understanding logfiles. While journalctl
+     * might record the timestamp, it is not present in plain `journalctl` output.
+     * Users who report a bug would simply send us the `journalctl` output and
+     * requesting an output with timestamps (even if it's stored somewhere inside
+     * journald) is not workable.
+     *
+     * We print the level, because this too, it's to quickly identify the severity
+     * of a message.
+     *
+     * We also do this for all messages (for all levels), because then the logging
+     * lines are formatted and aligned in a consistent way, which aids reading the
+     * logs. */
 #define MESSAGE_FMT "%s%-7s [%ld.%04ld] %s"
 #define MESSAGE_ARG(prefix, tv, msg) \
     prefix, nm_log_level_desc[level].level_str, (tv).tv_sec, ((tv).tv_usec / 100), (msg)
