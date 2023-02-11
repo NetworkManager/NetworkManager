@@ -846,6 +846,17 @@ nmtst_test_skip_slow(void)
 #define NMTST_EXPECT_LIBNM_WARNING(msg)  NMTST_EXPECT_LIBNM(G_LOG_LEVEL_WARNING, msg)
 #define NMTST_EXPECT_LIBNM_CRITICAL(msg) NMTST_EXPECT_LIBNM(G_LOG_LEVEL_CRITICAL, msg)
 
+/* Commit [1] changed the level in which glib emits certain assertions.
+ * As we have test that check for those assertions (g_test_expect_message()),
+ * we need to choose the right one.
+ *
+ * [1] https://gitlab.gnome.org/GNOME/glib/-/commit/0ffe86a1f7e215e4561c3b9f1d03c3cd638ed00f */
+#if GLIB_CHECK_VERSION(2, 75, 0)
+#define NMTST_EXPECT_GOBJECT_ASSERT_LEVEL G_LOG_LEVEL_CRITICAL
+#else
+#define NMTST_EXPECT_GOBJECT_ASSERT_LEVEL G_LOG_LEVEL_WARNING
+#endif
+
 /*****************************************************************************/
 
 typedef struct _NmtstTestData NmtstTestData;
