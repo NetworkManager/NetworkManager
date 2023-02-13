@@ -312,7 +312,7 @@ typedef struct {
 
 typedef enum {
     RESOLVER_WAIT_ADDRESS = 0,
-    RESOLVER_IN_PROGRESS,
+    RESOLVER_STARTED,
     RESOLVER_DONE,
 } ResolverState;
 
@@ -17110,6 +17110,21 @@ nm_device_auth_retries_try_next(NMDevice *self)
     return TRUE;
 }
 
+static const char *
+_resolver_state_to_string(ResolverState state)
+{
+    switch (state) {
+    case RESOLVER_WAIT_ADDRESS:
+        return "WAIT-ADDRESS";
+    case RESOLVER_STARTED:
+        return "STARTED";
+    case RESOLVER_DONE:
+        return "DONE";
+    }
+    nm_assert_not_reached();
+    return "UNKNOWN";
+}
+
 static void
 hostname_dns_lookup_callback(GObject *source, GAsyncResult *result, gpointer user_data)
 {
@@ -17129,7 +17144,9 @@ hostname_dns_lookup_callback(GObject *source, GAsyncResult *result, gpointer use
 
     if (error) {
         _LOGD(LOGD_DNS,
-              "hostname-from-dns: lookup error for %s: %s",
+              "hostname-from-dns: ipv%c resolver %s: lookup error for %s: %s",
+              nm_utils_addr_family_to_char(resolver->addr_family),
+              _resolver_state_to_string(RESOLVER_DONE),
               (addr_str = g_inet_address_to_string(resolver->address)),
               error->message);
     } else {
@@ -17139,7 +17156,9 @@ hostname_dns_lookup_callback(GObject *source, GAsyncResult *result, gpointer use
         valid              = nm_utils_validate_hostname(resolver->hostname);
 
         _LOGD(LOGD_DNS,
-              "hostname-from-dns: lookup done for %s, result %s%s%s%s",
+              "hostname-from-dns: ipv%c resolver %s: lookup successful for %s, result %s%s%s%s",
+              nm_utils_addr_family_to_char(resolver->addr_family),
+              _resolver_state_to_string(RESOLVER_DONE),
               (addr_str = g_inet_address_to_string(resolver->address)),
               NM_PRINT_FMT_QUOTE_STRING(resolver->hostname),
               valid ? "" : " (invalid)");
@@ -17165,8 +17184,9 @@ hostname_dns_address_timeout(gpointer user_data)
     nm_assert(!resolver->cancellable);
 
     _LOGT(LOGD_DNS,
-          "hostname-from-dns: timed out while waiting IPv%c address",
-          nm_utils_addr_family_to_char(resolver->addr_family));
+          "hostname-from-dns: ipv%c state %s: timed out while waiting for address",
+          nm_utils_addr_family_to_char(resolver->addr_family),
+          _resolver_state_to_string(RESOLVER_DONE));
 
     resolver->timeout_id = 0;
     resolver->state      = RESOLVER_DONE;
@@ -17175,30 +17195,16 @@ hostname_dns_address_timeout(gpointer user_data)
     return G_SOURCE_REMOVE;
 }
 
-static const char *
-_resolver_state_to_string(ResolverState state)
-{
-    switch (state) {
-    case RESOLVER_WAIT_ADDRESS:
-        return "wait-address";
-    case RESOLVER_IN_PROGRESS:
-        return "in-progress";
-    case RESOLVER_DONE:
-        return "done";
-    default:
-        nm_assert_not_reached();
-        return "unknown";
-    }
-}
-
 void
-nm_device_clear_dns_lookup_data(NMDevice *self)
+nm_device_clear_dns_lookup_data(NMDevice *self, const char *reason)
 {
     NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
-    guint            i;
 
-    for (i = 0; i < 2; i++)
-        nm_clear_pointer(&priv->hostname_resolver_x[i], _hostname_resolver_free);
+    if (priv->hostname_resolver_4 || priv->hostname_resolver_6) {
+        _LOGT(LOGD_DNS, "hostname-from-dns: resetting (%s)", reason);
+        nm_clear_pointer(&priv->hostname_resolver_4, _hostname_resolver_free);
+        nm_clear_pointer(&priv->hostname_resolver_6, _hostname_resolver_free);
+    }
 }
 
 gboolean
@@ -17332,29 +17338,35 @@ nm_device_get_hostname_from_dns_lookup(NMDevice *self, int addr_family, gboolean
     } else if (new_address != resolver->address)
         address_changed = TRUE;
 
+    if (address_changed) {
+        /* set new state before logging */
+        if (new_address)
+            resolver->state = RESOLVER_STARTED;
+        else
+            resolver->state = RESOLVER_WAIT_ADDRESS;
+    }
+
     {
         gs_free char *old_str = NULL;
         gs_free char *new_str = NULL;
 
-        _LOGT(LOGD_DNS,
-              "hostname-from-dns: ipv%c resolver state %s, old address %s, new address %s",
-              nm_utils_addr_family_to_char(resolver->addr_family),
-              _resolver_state_to_string(resolver->state),
-              resolver->address ? (old_str = g_inet_address_to_string(resolver->address))
-                                : "(null)",
-              new_address ? (new_str = g_inet_address_to_string(new_address)) : "(null)");
+        if (address_changed) {
+            _LOGT(LOGD_DNS,
+                  "hostname-from-dns: ipv%c resolver %s, address changed from %s to %s",
+                  nm_utils_addr_family_to_char(resolver->addr_family),
+                  _resolver_state_to_string(resolver->state),
+                  resolver->address ? (old_str = g_inet_address_to_string(resolver->address))
+                                    : "(null)",
+                  new_address ? (new_str = g_inet_address_to_string(new_address)) : "(null)");
+        }
     }
 
-    /* In every state, if the address changed, we restart
-     * the resolution with the new address */
     if (address_changed) {
         nm_clear_g_cancellable(&resolver->cancellable);
         g_clear_object(&resolver->address);
-        resolver->state = RESOLVER_WAIT_ADDRESS;
     }
 
     if (address_changed && new_address) {
-        resolver->state       = RESOLVER_IN_PROGRESS;
         resolver->cancellable = g_cancellable_new();
         resolver->address     = g_steal_pointer(&new_address);
 
@@ -17372,7 +17384,7 @@ nm_device_get_hostname_from_dns_lookup(NMDevice *self, int addr_family, gboolean
             resolver->timeout_id = g_timeout_add(30000, hostname_dns_address_timeout, resolver);
         NM_SET_OUT(out_wait, TRUE);
         return NULL;
-    case RESOLVER_IN_PROGRESS:
+    case RESOLVER_STARTED:
         NM_SET_OUT(out_wait, TRUE);
         return NULL;
     case RESOLVER_DONE:

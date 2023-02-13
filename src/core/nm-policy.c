@@ -2581,7 +2581,7 @@ dns_config_changed(NMDnsManager *dns_manager, gpointer user_data)
         return;
 
     nm_manager_for_each_device (priv->manager, device, tmp_lst) {
-        nm_device_clear_dns_lookup_data(device);
+        nm_device_clear_dns_lookup_data(device, "DNS configuration changed");
     }
 
     update_system_hostname(self, "DNS configuration changed");
