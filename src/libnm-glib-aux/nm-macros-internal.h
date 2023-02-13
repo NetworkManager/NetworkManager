@@ -529,12 +529,12 @@ nm_str_realloc(char *str)
 
 /* redefine assertions to use g_assert*() */
 #undef _nm_assert_fail
-#define _nm_assert_fail(msg)                                                        \
-    G_STMT_START                                                                    \
-    {                                                                               \
-        g_assertion_message_expr(G_LOG_DOMAIN, __FILE__, __LINE__, G_STRFUNC, msg); \
-        _nm_unreachable_code();                                                     \
-    }                                                                               \
+#define _nm_assert_fail(msg)                                                              \
+    G_STMT_START                                                                          \
+    {                                                                                     \
+        g_assertion_message_expr(G_LOG_DOMAIN, __FILE__, __LINE__, G_STRFUNC, "" msg ""); \
+        _nm_unreachable_code();                                                           \
+    }                                                                                     \
     G_STMT_END
 
 #undef _NM_ASSERT_FAIL_ENABLED

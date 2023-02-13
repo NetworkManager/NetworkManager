@@ -221,15 +221,14 @@ typedef uint64_t _nm_bitwise nm_be64_t;
 
 #ifndef NDEBUG
 #define _NM_ASSERT_FAIL_ENABLED 1
-#define _nm_assert_fail(msg)    __assert_fail((msg), __FILE__, __LINE__, __func__)
+#define _nm_assert_fail(msg)                                     \
+    __assert_fail(((NM_MORE_ASSERTS) ? "" msg "" : "<dropped>"), \
+                  __FILE__,                                      \
+                  __LINE__,                                      \
+                  ((NM_MORE_ASSERTS) ? __func__ : "<unknown-fcn>"))
 #else
 #define _NM_ASSERT_FAIL_ENABLED 0
-#define _nm_assert_fail(msg)                 \
-    do {                                     \
-        _nm_unused const char *_msg = (msg); \
-                                             \
-        _nm_unreachable_code();              \
-    } while (0)
+#define _nm_assert_fail(msg)    ((void) ("" msg ""), _nm_unreachable_code())
 #endif
 
 #define NM_MORE_ASSERTS_EFFECTIVE (_NM_ASSERT_FAIL_ENABLED ? NM_MORE_ASSERTS : 0)
