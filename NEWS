@@ -1,4 +1,12 @@
 ================================================
+NetworkManager-1.40.14
+Overview of changes since NetworkManager-1.40.12
+================================================
+
+* Fix updating empty dns settings.
+* Fix memory leaks in nmcli.
+
+================================================
 NetworkManager-1.40.12
 Overview of changes since NetworkManager-1.40.10
 ================================================
