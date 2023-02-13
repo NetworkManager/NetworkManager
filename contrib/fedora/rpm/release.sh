@@ -387,7 +387,12 @@ if [ "$RELEASE_MODE" = major -o "$RELEASE_MODE" = minor ]; then
         echo "Note that after the stable release you maybe should publish the new documentation on"
     fi
     echo "$(echo_color 36 -n "https://gitlab.freedesktop.org/NetworkManager/networkmanager.pages.freedesktop.org.git") by running"
-    echo "  \`$(echo_color 36 -n "./scripts/import-docs.sh ${VERSION_ARR[0]}.$((${VERSION_ARR[1]} + 1)).0$latest")\`"
+    if [ "$RELEASE_MODE" = major ]; then
+        v="${VERSION_ARR[0]}.$((${VERSION_ARR[1]} + 1)).0"
+    else
+        v="${VERSION_ARR[0]}.${VERSION_ARR[1]}.$((${VERSION_ARR[2]} + 1))"
+    fi
+    echo "  \`$(echo_color 36 -n "./scripts/import-docs.sh $v$latest")\`"
     echo
     if [ $WARN_PUBLISH_DOCS = 1 ]; then
         echo "Avoid this prompt via \"--no-warn-publish-docs\""
