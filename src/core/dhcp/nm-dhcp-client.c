@@ -256,14 +256,11 @@ nm_dhcp_client_create_options_dict(NMDhcpClient *self, gboolean static_keys)
          * may send the used client-id/DUID via the environment variables and
          * overwrite them yet again. */
 
-        if (static_keys) {
-            nm_dhcp_option_add_option(options, priv->config.addr_family, option, str);
-        } else {
-            g_hash_table_insert(
-                options,
-                g_strdup(nm_dhcp_option_request_string(priv->config.addr_family, option)),
-                g_steal_pointer(&str));
-        }
+        nm_dhcp_option_take_option(options,
+                                   static_keys,
+                                   priv->config.addr_family,
+                                   option,
+                                   g_steal_pointer(&str));
     }
 
     return options;
