@@ -1804,6 +1804,7 @@ _prop_get_ipvx_dhcp_iaid(NMDevice     *self,
     const char        *iface;
     const char        *fail_reason;
     gboolean           is_explicit = TRUE;
+    gint64             i64;
 
     s_ip     = nm_connection_get_setting_ip_config(connection, addr_family);
     iaid_str = nm_setting_ip_config_get_dhcp_iaid(s_ip);
@@ -1862,7 +1863,7 @@ _prop_get_ipvx_dhcp_iaid(NMDevice     *self,
 
         iaid = unaligned_read_be32(&hwaddr_buf[hwaddr_len - 4]);
         goto out_good;
-    } else if (nm_streq(iaid_str, "stable")) {
+    } else if (nm_streq(iaid_str, NM_IAID_STABLE)) {
         nm_auto_free_checksum GChecksum *sum = NULL;
         guint8                           digest[NM_UTILS_CHECKSUM_LENGTH_SHA1];
         NMUtilsStableType                stable_type;
@@ -1885,14 +1886,21 @@ _prop_get_ipvx_dhcp_iaid(NMDevice     *self,
 
         iaid = unaligned_read_be32(digest);
         goto out_good;
-    } else if ((iaid = _nm_utils_ascii_str_to_int64(iaid_str, 10, 0, G_MAXUINT32, -1)) != -1) {
-        goto out_good;
-    } else {
+    } else if (nm_streq(iaid_str, NM_IAID_IFNAME)) {
         iface = nm_device_get_ip_iface(self);
         iaid  = nm_utils_create_dhcp_iaid(TRUE, (const guint8 *) iface, strlen(iface));
         goto out_good;
+    } else if (_nm_utils_iaid_verify(iaid_str, &i64)) {
+        if (i64 < 0) {
+            fail_reason = nm_assert_unreachable_val("bug handling iaid value");
+            goto out_fail;
+        }
+        nm_assert(i64 <= G_MAXUINT32);
+        iaid = (guint32) i64;
+        goto out_good;
     }
 
+    fail_reason = nm_assert_unreachable_val("bug handling iaid code");
 out_fail:
     nm_assert(fail_reason);
     if (!log_silent) {
