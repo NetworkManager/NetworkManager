@@ -115,6 +115,7 @@ lease_to_ip6_config(NMDhcpSystemd *self, sd_dhcp6_lease *lease, gint32 ts, GErro
 
         if (str->len) {
             nm_dhcp_option_add_option(options,
+                                      TRUE,
                                       AF_INET6,
                                       NM_DHCP_OPTION_DHCP6_NM_IP_ADDRESS,
                                       str->str);
@@ -137,7 +138,11 @@ lease_to_ip6_config(NMDhcpSystemd *self, sd_dhcp6_lease *lease, gint32 ts, GErro
             g_string_append(nm_gstring_add_space_delimiter(str), addr_str);
             nm_l3_config_data_add_nameserver_detail(l3cd, AF_INET6, &dns[i], NULL);
         }
-        nm_dhcp_option_add_option(options, AF_INET6, NM_DHCP_OPTION_DHCP6_DNS_SERVERS, str->str);
+        nm_dhcp_option_add_option(options,
+                                  TRUE,
+                                  AF_INET6,
+                                  NM_DHCP_OPTION_DHCP6_DNS_SERVERS,
+                                  str->str);
     }
 
     num = sd_dhcp6_lease_get_domains(lease, &domains);
@@ -147,11 +152,15 @@ lease_to_ip6_config(NMDhcpSystemd *self, sd_dhcp6_lease *lease, gint32 ts, GErro
             g_string_append(nm_gstring_add_space_delimiter(str), domains[i]);
             nm_l3_config_data_add_search(l3cd, AF_INET6, domains[i]);
         }
-        nm_dhcp_option_add_option(options, AF_INET6, NM_DHCP_OPTION_DHCP6_DOMAIN_LIST, str->str);
+        nm_dhcp_option_add_option(options,
+                                  TRUE,
+                                  AF_INET6,
+                                  NM_DHCP_OPTION_DHCP6_DOMAIN_LIST,
+                                  str->str);
     }
 
     if (sd_dhcp6_lease_get_fqdn(lease, &s) >= 0) {
-        nm_dhcp_option_add_option(options, AF_INET6, NM_DHCP_OPTION_DHCP6_FQDN, s);
+        nm_dhcp_option_add_option(options, TRUE, AF_INET6, NM_DHCP_OPTION_DHCP6_FQDN, s);
     }
 
     /* RFC 5908, section 4 states: "This option MUST include one, and only
@@ -175,7 +184,11 @@ lease_to_ip6_config(NMDhcpSystemd *self, sd_dhcp6_lease *lease, gint32 ts, GErro
         }
     }
     if (str->len) {
-        nm_dhcp_option_add_option(options, AF_INET6, NM_DHCP_OPTION_DHCP6_NTP_SERVER, str->str);
+        nm_dhcp_option_add_option(options,
+                                  TRUE,
+                                  AF_INET6,
+                                  NM_DHCP_OPTION_DHCP6_NTP_SERVER,
+                                  str->str);
     }
 
     nm_l3_config_data_set_dhcp_lease_from_options(l3cd, AF_INET6, g_steal_pointer(&options));

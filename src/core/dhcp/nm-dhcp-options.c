@@ -383,8 +383,14 @@ nm_dhcp_option_find(int addr_family, guint option)
 /*****************************************************************************/
 
 void
-nm_dhcp_option_take_option(GHashTable *options, int addr_family, guint option, char *value)
+nm_dhcp_option_take_option(GHashTable *options,
+                           gboolean    static_keys,
+                           int         addr_family,
+                           guint       option,
+                           char       *value)
 {
+    const char *key;
+
     nm_assert_addr_family(addr_family);
     nm_assert(value);
     nm_assert(g_utf8_validate(value, -1, NULL));
@@ -395,19 +401,13 @@ nm_dhcp_option_take_option(GHashTable *options, int addr_family, guint option, c
         return;
     }
 
-    g_hash_table_insert(options,
-                        (gpointer) nm_dhcp_option_request_string(addr_family, option),
-                        value);
-}
-
-void
-nm_dhcp_option_add_option(GHashTable *options, int addr_family, guint option, const char *value)
-{
-    nm_dhcp_option_take_option(options, addr_family, option, g_strdup(value));
+    key = nm_dhcp_option_request_string(addr_family, option),
+    g_hash_table_insert(options, static_keys ? (gpointer) key : g_strdup(key), value);
 }
 
 void
 nm_dhcp_option_add_option_utf8safe_escape(GHashTable   *options,
+                                          gboolean      static_keys,
                                           int           addr_family,
                                           guint         option,
                                           const guint8 *data,
@@ -420,13 +420,18 @@ nm_dhcp_option_add_option_utf8safe_escape(GHashTable   *options,
                                            n_data,
                                            NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL,
                                            &to_free);
-    nm_dhcp_option_add_option(options, addr_family, option, escaped ?: "");
+    nm_dhcp_option_add_option(options, static_keys, addr_family, option, escaped ?: "");
 }
 
 void
-nm_dhcp_option_add_option_u64(GHashTable *options, int addr_family, guint option, guint64 value)
+nm_dhcp_option_add_option_u64(GHashTable *options,
+                              gboolean    static_keys,
+                              int         addr_family,
+                              guint       option,
+                              guint64     value)
 {
     nm_dhcp_option_take_option(options,
+                               static_keys,
                                addr_family,
                                option,
                                g_strdup_printf("%" G_GUINT64_FORMAT, value));
@@ -434,13 +439,18 @@ nm_dhcp_option_add_option_u64(GHashTable *options, int addr_family, guint option
 
 void
 nm_dhcp_option_add_option_in_addr(GHashTable *options,
+                                  gboolean    static_keys,
                                   int         addr_family,
                                   guint       option,
                                   in_addr_t   value)
 {
     char sbuf[NM_INET_ADDRSTRLEN];
 
-    nm_dhcp_option_add_option(options, addr_family, option, nm_inet4_ntop(value, sbuf));
+    nm_dhcp_option_add_option(options,
+                              static_keys,
+                              addr_family,
+                              option,
+                              nm_inet4_ntop(value, sbuf));
 }
 
 void
