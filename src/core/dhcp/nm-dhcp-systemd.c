@@ -70,11 +70,13 @@ G_DEFINE_TYPE(NMDhcpSystemd, nm_dhcp_systemd, NM_TYPE_DHCP_CLIENT)
 static NML3ConfigData *
 lease_to_ip6_config(NMDhcpSystemd *self, sd_dhcp6_lease *lease, gint32 ts, GError **error)
 {
+    const NMDhcpClientConfig               *config;
     nm_auto_unref_l3cd_init NML3ConfigData *l3cd    = NULL;
     gs_unref_hashtable GHashTable          *options = NULL;
     struct in6_addr                         tmp_addr;
     const struct in6_addr                  *dns;
     char                                    addr_str[NM_INET_ADDRSTRLEN];
+    char                                    iaid_buf[NM_DHCP_IAID_TO_HEXSTR_BUF_LEN];
     char                                  **domains;
     char                                  **ntp_fqdns;
     const struct in6_addr                  *ntp_addrs;
@@ -84,11 +86,19 @@ lease_to_ip6_config(NMDhcpSystemd *self, sd_dhcp6_lease *lease, gint32 ts, GErro
 
     nm_assert(lease);
 
+    config = nm_dhcp_client_get_config(NM_DHCP_CLIENT(self));
+
     l3cd = nm_dhcp_client_create_l3cd(NM_DHCP_CLIENT(self));
 
     options = nm_dhcp_client_create_options_dict(NM_DHCP_CLIENT(self), TRUE);
 
-    if (!nm_dhcp_client_get_config(NM_DHCP_CLIENT(self))->v6.info_only) {
+    nm_dhcp_option_add_option(options,
+                              TRUE,
+                              AF_INET6,
+                              NM_DHCP_OPTION_DHCP6_NM_IAID,
+                              nm_dhcp_iaid_to_hexstr(config->v6.iaid, iaid_buf));
+
+    if (!config->v6.info_only) {
         gboolean has_any_addresses = FALSE;
         uint32_t lft_pref;
         uint32_t lft_valid;
