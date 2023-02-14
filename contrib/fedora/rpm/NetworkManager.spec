@@ -729,9 +729,9 @@ Preferably use nmcli instead.
 	-Difcfg_rh=true \
 	-Difupdown=false \
 %if %{with ppp}
-	-Dpppd_plugin_dir="%{_libdir}/pppd/%{ppp_version}" \
-	-Dpppd="%{_sbindir}/pppd" \
 	-Dppp=true \
+	-Dpppd="%{_sbindir}/pppd" \
+	-Dpppd_plugin_dir="%{_libdir}/pppd/%{ppp_version}" \
 %else
 	-Dppp=false \
 %endif
