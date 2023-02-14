@@ -17177,6 +17177,9 @@ get_address_for_hostname_dns_lookup(NMDevice *self, int addr_family)
                 return g_inet_address_new_from_bytes(addr->address_ptr, G_SOCKET_FAMILY_IPV4);
             }
 
+            if (addr->n_ifa_flags & IFA_F_TENTATIVE)
+                continue;
+
             /* For IPv6 prefer, in order:
              * - !link-local, !deprecated
              * - !link-local, deprecated
