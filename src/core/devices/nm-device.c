@@ -1920,11 +1920,13 @@ out_fail:
     iaid        = nm_utils_create_dhcp_iaid(TRUE, (const guint8 *) iface, strlen(iface));
 out_good:
     if (!log_silent) {
+        char buf[NM_DHCP_IAID_TO_HEXSTR_BUF_LEN];
+
         _LOGD(LOGD_DEVICE | LOGD_DHCPX(IS_IPv4) | LOGD_IPX(IS_IPv4),
-              "ipv%c.dhcp-iaid: using %u (0x%08x) IAID (str: '%s', explicit %d)",
+              "ipv%c.dhcp-iaid: using %u (%s) IAID (str: '%s', explicit %d)",
               nm_utils_addr_family_to_char(addr_family),
               iaid,
-              iaid,
+              nm_dhcp_iaid_to_hexstr(iaid, buf),
               iaid_str,
               is_explicit);
     }
