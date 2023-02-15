@@ -240,7 +240,9 @@ ovsdb_interface_failed(NMOvsdb         *ovsdb,
         return;
 
     if (connection) {
-        nm_settings_connection_autoconnect_blocked_reason_set(
+        nm_manager_devcon_autoconnect_blocked_reason_set(
+            nm_device_get_manager(device),
+            device,
             connection,
             NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_FAILED,
             TRUE);

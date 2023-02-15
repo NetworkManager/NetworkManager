@@ -224,4 +224,51 @@ void nm_manager_device_auth_request(NMManager                     *self,
 
 void nm_manager_unblock_failed_ovs_interfaces(NMManager *self);
 
+/*****************************************************************************/
+
+#define NM_AUTOCONNECT_RETRIES_FOREVER G_MAXUINT32
+
+guint32 nm_manager_devcon_autoconnect_retries_get(NMManager            *self,
+                                                  NMDevice             *device,
+                                                  NMSettingsConnection *sett_conn);
+
+void nm_manager_devcon_autoconnect_retries_set(NMManager            *self,
+                                               NMDevice             *device,
+                                               NMSettingsConnection *sett_conn,
+                                               guint32               retries);
+
+void nm_manager_devcon_autoconnect_retries_reset(NMManager            *self,
+                                                 NMDevice             *device,
+                                                 NMSettingsConnection *sett_conn);
+
+gint32 nm_manager_devcon_autoconnect_retries_blocked_until(NMManager            *self,
+                                                           NMDevice             *device,
+                                                           NMSettingsConnection *sett_conn);
+
+gboolean nm_manager_devcon_autoconnect_is_blocked(NMManager            *self,
+                                                  NMDevice             *device,
+                                                  NMSettingsConnection *sett_conn);
+
+gboolean
+nm_manager_devcon_autoconnect_blocked_reason_set_full(NMManager                         *self,
+                                                      NMDevice                          *device,
+                                                      NMSettingsConnection              *sett_conn,
+                                                      NMSettingsAutoconnectBlockedReason mask,
+                                                      NMSettingsAutoconnectBlockedReason value);
+
+static inline gboolean
+nm_manager_devcon_autoconnect_blocked_reason_set(NMManager                         *self,
+                                                 NMDevice                          *device,
+                                                 NMSettingsConnection              *sett_conn,
+                                                 NMSettingsAutoconnectBlockedReason mask,
+                                                 gboolean                           set)
+{
+    return nm_manager_devcon_autoconnect_blocked_reason_set_full(
+        self,
+        device,
+        sett_conn,
+        mask,
+        set ? mask : NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NONE);
+}
+
 #endif /* __NETWORKMANAGER_MANAGER_H__ */

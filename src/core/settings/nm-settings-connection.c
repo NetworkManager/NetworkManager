@@ -24,12 +24,9 @@
 #include "libnm-core-intern/nm-core-internal.h"
 #include "nm-audit-manager.h"
 #include "nm-settings.h"
+#include "nm-manager.h"
 #include "nm-dbus-manager.h"
 #include "settings/plugins/keyfile/nms-keyfile-storage.h"
-
-#define AUTOCONNECT_RETRIES_UNSET       -2
-#define AUTOCONNECT_RETRIES_FOREVER     -1
-#define AUTOCONNECT_RESET_RETRIES_TIMER 300
 
 #define SEEN_BSSIDS_MAX 30
 
@@ -159,15 +156,11 @@ typedef struct _NMSettingsConnectionPrivate {
 
     guint64 last_secret_agent_version_id;
 
-    int autoconnect_retries;
-
-    gint32 autoconnect_retries_blocked_until;
-
     bool timestamp_set : 1;
 
-    NMSettingsAutoconnectBlockedReason autoconnect_blocked_reason : 4;
-
     NMSettingsConnectionIntFlags flags : 5;
+
+    NMSettingsAutoconnectBlockedReason autoconnect_blocked_reason : 4;
 
 } NMSettingsConnectionPrivate;
 
@@ -1461,52 +1454,6 @@ update_complete(NMSettingsConnection *self, UpdateInfo *info, GError *error)
     g_slice_free(UpdateInfo, info);
 }
 
-static int
-_autoconnect_retries_initial(NMSettingsConnection *self)
-{
-    NMSettingConnection *s_con;
-    int                  retries = -1;
-
-    s_con = nm_connection_get_setting_connection(nm_settings_connection_get_connection(self));
-    if (s_con)
-        retries = nm_setting_connection_get_autoconnect_retries(s_con);
-
-    /* -1 means 'default' */
-    if (retries == -1)
-        retries = nm_config_data_get_autoconnect_retries_default(NM_CONFIG_GET_DATA);
-
-    /* 0 means 'forever', which is translated to a retry count of -1 */
-    if (retries == 0)
-        retries = AUTOCONNECT_RETRIES_FOREVER;
-
-    nm_assert(retries == AUTOCONNECT_RETRIES_FOREVER || retries >= 0);
-    return retries;
-}
-
-static void
-_autoconnect_retries_set(NMSettingsConnection *self, int retries, gboolean is_reset)
-{
-    NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE(self);
-
-    g_return_if_fail(retries == AUTOCONNECT_RETRIES_FOREVER || retries >= 0);
-
-    if (priv->autoconnect_retries != retries) {
-        _LOGT("autoconnect: retries set %d%s", retries, is_reset ? " (reset)" : "");
-        priv->autoconnect_retries = retries;
-    }
-
-    if (retries)
-        priv->autoconnect_retries_blocked_until = 0;
-    else {
-        /* NOTE: the blocked time must be identical for all connections, otherwise
-         * the tracking of resetting the retry count in NMPolicy needs adjustment
-         * in _connection_autoconnect_retries_set() (as it would need to re-evaluate
-         * the next-timeout every time a connection gets blocked). */
-        priv->autoconnect_retries_blocked_until =
-            nm_utils_get_monotonic_timestamp_sec() + AUTOCONNECT_RESET_RETRIES_TIMER;
-    }
-}
-
 static void
 update_auth_cb(NMSettingsConnection  *self,
                GDBusMethodInvocation *context,
@@ -1557,8 +1504,11 @@ update_auth_cb(NMSettingsConnection  *self,
                     self,
                     NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NO_SECRETS,
                     FALSE)
-                && !nm_settings_connection_autoconnect_blocked_reason_get(self))
-                nm_settings_connection_autoconnect_retries_reset(self);
+                && !nm_settings_connection_autoconnect_is_blocked(self))
+                nm_manager_devcon_autoconnect_retries_reset(
+                    nm_settings_connection_get_manager(self),
+                    NULL,
+                    self);
         }
     }
 
@@ -1631,7 +1581,9 @@ update_auth_cb(NMSettingsConnection  *self,
     }
 
     /* Reset auto retries back to default since connection was updated */
-    nm_settings_connection_autoconnect_retries_reset(self);
+    nm_manager_devcon_autoconnect_retries_reset(nm_settings_connection_get_manager(self),
+                                                NULL,
+                                                self);
 
     update_complete(self, info, local);
 }
@@ -2550,76 +2502,33 @@ nm_settings_connection_add_seen_bssid(NMSettingsConnection *self, const char *se
 
 /*****************************************************************************/
 
-/**
- * nm_settings_connection_autoconnect_retries_get:
- * @self: the settings connection
- *
- * Returns the number of autoconnect retries left. If the value is
- * not yet set, initialize it with the value from the connection or
- * with the global default.
- */
-int
-nm_settings_connection_autoconnect_retries_get(NMSettingsConnection *self)
+gboolean
+nm_settings_connection_autoconnect_blocked_reason_set(NMSettingsConnection              *self,
+                                                      NMSettingsAutoconnectBlockedReason reason,
+                                                      gboolean                           set)
 {
-    NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE(self);
+    NMSettingsConnectionPrivate       *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE(self);
+    NMSettingsAutoconnectBlockedReason v;
+    char                               buf[100];
 
-    if (G_UNLIKELY(priv->autoconnect_retries == AUTOCONNECT_RETRIES_UNSET)) {
-        _autoconnect_retries_set(self, _autoconnect_retries_initial(self), TRUE);
+    v = priv->autoconnect_blocked_reason;
+    if (set) {
+        priv->autoconnect_blocked_reason = priv->autoconnect_blocked_reason | reason;
+        _LOGD("autoconnect: blocked reason: %s",
+              nm_settings_autoconnect_blocked_reason_to_string(reason, buf, sizeof(buf)));
+        return v != priv->autoconnect_blocked_reason;
+    } else {
+        priv->autoconnect_blocked_reason = priv->autoconnect_blocked_reason & ~reason;
+        _LOGD("autoconnect: unblocked reason: %s",
+              nm_settings_autoconnect_blocked_reason_to_string(reason, buf, sizeof(buf)));
+        return v != priv->autoconnect_blocked_reason;
     }
-    return priv->autoconnect_retries;
-}
-
-void
-nm_settings_connection_autoconnect_retries_set(NMSettingsConnection *self, int retries)
-{
-    g_return_if_fail(NM_IS_SETTINGS_CONNECTION(self));
-    g_return_if_fail(retries >= 0);
-
-    _autoconnect_retries_set(self, retries, FALSE);
-}
-
-void
-nm_settings_connection_autoconnect_retries_reset(NMSettingsConnection *self)
-{
-    g_return_if_fail(NM_IS_SETTINGS_CONNECTION(self));
-
-    _autoconnect_retries_set(self, _autoconnect_retries_initial(self), TRUE);
-}
-
-gint32
-nm_settings_connection_autoconnect_retries_blocked_until(NMSettingsConnection *self)
-{
-    return NM_SETTINGS_CONNECTION_GET_PRIVATE(self)->autoconnect_retries_blocked_until;
 }
 
 NMSettingsAutoconnectBlockedReason
 nm_settings_connection_autoconnect_blocked_reason_get(NMSettingsConnection *self)
 {
     return NM_SETTINGS_CONNECTION_GET_PRIVATE(self)->autoconnect_blocked_reason;
-}
-
-gboolean
-nm_settings_connection_autoconnect_blocked_reason_set_full(NMSettingsConnection              *self,
-                                                           NMSettingsAutoconnectBlockedReason mask,
-                                                           NMSettingsAutoconnectBlockedReason value)
-{
-    NMSettingsAutoconnectBlockedReason v;
-    NMSettingsConnectionPrivate       *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE(self);
-    char                               buf[100];
-
-    nm_assert(mask);
-    nm_assert(!NM_FLAGS_ANY(value, ~mask));
-
-    v = priv->autoconnect_blocked_reason;
-    v = (v & ~mask) | (value & mask);
-
-    if (priv->autoconnect_blocked_reason == v)
-        return FALSE;
-
-    _LOGT("autoconnect: blocked reason: %s",
-          nm_settings_autoconnect_blocked_reason_to_string(v, buf, sizeof(buf)));
-    priv->autoconnect_blocked_reason = v;
-    return TRUE;
 }
 
 gboolean
@@ -2630,22 +2539,17 @@ nm_settings_connection_autoconnect_is_blocked(NMSettingsConnection *self)
 
     g_return_val_if_fail(NM_IS_SETTINGS_CONNECTION(self), TRUE);
 
-    priv = NM_SETTINGS_CONNECTION_GET_PRIVATE(self);
-
-    if (priv->autoconnect_blocked_reason != NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NONE)
-        return TRUE;
-    if (priv->autoconnect_retries == 0)
-        return TRUE;
-
-    flags = priv->flags;
+    priv  = NM_SETTINGS_CONNECTION_GET_PRIVATE(self);
+    flags = nm_settings_connection_get_flags(self);
     if (NM_FLAGS_ANY(flags,
                      NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE
                          | NM_SETTINGS_CONNECTION_INT_FLAGS_EXTERNAL))
         return TRUE;
+
     if (!NM_FLAGS_HAS(flags, NM_SETTINGS_CONNECTION_INT_FLAGS_VISIBLE))
         return TRUE;
 
-    return FALSE;
+    return priv->autoconnect_blocked_reason != NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NONE;
 }
 
 /*****************************************************************************/
@@ -2755,8 +2659,6 @@ nm_settings_connection_init(NMSettingsConnection *self)
 
     priv->agent_mgr = g_object_ref(nm_agent_manager_get());
     priv->settings  = g_object_ref(nm_settings_get());
-
-    priv->autoconnect_retries = AUTOCONNECT_RETRIES_UNSET;
 }
 
 NMSettingsConnection *

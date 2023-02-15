@@ -338,31 +338,15 @@ gboolean nm_settings_connection_has_seen_bssid(NMSettingsConnection *self, const
 
 void nm_settings_connection_add_seen_bssid(NMSettingsConnection *self, const char *seen_bssid);
 
-int  nm_settings_connection_autoconnect_retries_get(NMSettingsConnection *self);
-void nm_settings_connection_autoconnect_retries_set(NMSettingsConnection *self, int retries);
-void nm_settings_connection_autoconnect_retries_reset(NMSettingsConnection *self);
+gboolean nm_settings_connection_autoconnect_is_blocked(NMSettingsConnection *self);
 
-gint32 nm_settings_connection_autoconnect_retries_blocked_until(NMSettingsConnection *self);
+gboolean
+nm_settings_connection_autoconnect_blocked_reason_set(NMSettingsConnection              *self,
+                                                      NMSettingsAutoconnectBlockedReason reason,
+                                                      gboolean                           set);
 
 NMSettingsAutoconnectBlockedReason
-         nm_settings_connection_autoconnect_blocked_reason_get(NMSettingsConnection *self);
-gboolean nm_settings_connection_autoconnect_blocked_reason_set_full(
-    NMSettingsConnection              *self,
-    NMSettingsAutoconnectBlockedReason mask,
-    NMSettingsAutoconnectBlockedReason value);
-
-static inline gboolean
-nm_settings_connection_autoconnect_blocked_reason_set(NMSettingsConnection              *self,
-                                                      NMSettingsAutoconnectBlockedReason mask,
-                                                      gboolean                           set)
-{
-    return nm_settings_connection_autoconnect_blocked_reason_set_full(
-        self,
-        mask,
-        set ? mask : NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NONE);
-}
-
-gboolean nm_settings_connection_autoconnect_is_blocked(NMSettingsConnection *self);
+nm_settings_connection_autoconnect_blocked_reason_get(NMSettingsConnection *self);
 
 const char *nm_settings_connection_get_id(NMSettingsConnection *connection);
 const char *nm_settings_connection_get_uuid(NMSettingsConnection *connection);
