@@ -734,7 +734,7 @@ update_connection_list(NMModemOfono *self)
 
     g_hash_table_iter_init(&iter, priv->contexts);
     while (g_hash_table_iter_next(&iter, (gpointer *) &uuid, (gpointer *) &octx)) {
-        if (octx->preferred) {
+        if (octx->preferred && nm_streq(octx->type, "internet")) {
             octx_preferred = octx;
             break;
         }
@@ -743,8 +743,7 @@ update_connection_list(NMModemOfono *self)
     g_hash_table_iter_init(&iter, priv->contexts);
     while (g_hash_table_iter_next(&iter, (gpointer *) &uuid, (gpointer *) &octx)) {
         gboolean connection_should_exist =
-            (!octx_preferred || octx_preferred == octx)
-            && (nm_streq(octx->type, "internet") || nm_streq(octx->type, "internet+mms"));
+            octx_preferred == octx || (!octx_preferred && nm_streq(octx->type, "internet"));
         gboolean connection_exists = g_hash_table_contains(priv->connections, uuid);
 
         if (connection_should_exist && !connection_exists) {
