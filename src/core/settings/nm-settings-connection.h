@@ -9,6 +9,7 @@
 
 #include "nm-dbus-object.h"
 #include "nm-connection.h"
+#include "NetworkManagerUtils.h"
 
 #include "nm-settings-storage.h"
 
@@ -187,19 +188,6 @@ typedef enum _NMSettingsConnectionIntFlags {
 
     _NM_SETTINGS_CONNECTION_INT_FLAGS_ALL = ((_NM_SETTINGS_CONNECTION_INT_FLAGS_LAST - 1) << 1) - 1,
 } NMSettingsConnectionIntFlags;
-
-typedef enum {
-    NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NONE = 0,
-
-    NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_USER_REQUEST = (1LL << 0),
-    NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_FAILED       = (1LL << 1),
-    NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NO_SECRETS   = (1LL << 2),
-
-    NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_ALL =
-        (NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_USER_REQUEST
-         | NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_FAILED
-         | NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NO_SECRETS),
-} NMSettingsAutoconnectBlockedReason;
 
 typedef struct _NMSettingsConnectionCallId NMSettingsConnectionCallId;
 
