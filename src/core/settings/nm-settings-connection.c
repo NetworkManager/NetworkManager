@@ -2592,14 +2592,6 @@ nm_settings_connection_autoconnect_retries_blocked_until(NMSettingsConnection *s
     return NM_SETTINGS_CONNECTION_GET_PRIVATE(self)->autoconnect_retries_blocked_until;
 }
 
-static NM_UTILS_FLAGS2STR_DEFINE(
-    _autoconnect_blocked_reason_to_string,
-    NMSettingsAutoconnectBlockedReason,
-    NM_UTILS_FLAGS2STR(NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NONE, "none"),
-    NM_UTILS_FLAGS2STR(NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_USER_REQUEST, "user-request"),
-    NM_UTILS_FLAGS2STR(NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_FAILED, "failed"),
-    NM_UTILS_FLAGS2STR(NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NO_SECRETS, "no-secrets"), );
-
 NMSettingsAutoconnectBlockedReason
 nm_settings_connection_autoconnect_blocked_reason_get(NMSettingsConnection *self)
 {
@@ -2625,7 +2617,7 @@ nm_settings_connection_autoconnect_blocked_reason_set_full(NMSettingsConnection 
         return FALSE;
 
     _LOGT("autoconnect: blocked reason: %s",
-          _autoconnect_blocked_reason_to_string(v, buf, sizeof(buf)));
+          nm_settings_autoconnect_blocked_reason_to_string(v, buf, sizeof(buf)));
     priv->autoconnect_blocked_reason = v;
     return TRUE;
 }

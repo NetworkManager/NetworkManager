@@ -1860,3 +1860,13 @@ nm_linux_platform_setup_with_tc_cache(void)
 {
     nm_platform_setup(nm_linux_platform_new(NULL, FALSE, FALSE, TRUE));
 }
+
+/*****************************************************************************/
+
+NM_UTILS_FLAGS2STR_DEFINE(
+    nm_settings_autoconnect_blocked_reason_to_string,
+    NMSettingsAutoconnectBlockedReason,
+    NM_UTILS_FLAGS2STR(NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NONE, "none"),
+    NM_UTILS_FLAGS2STR(NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_USER_REQUEST, "user-request"),
+    NM_UTILS_FLAGS2STR(NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_FAILED, "failed"),
+    NM_UTILS_FLAGS2STR(NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NO_SECRETS, "no-secrets"), );
