@@ -81,6 +81,7 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMActiveConnection,
                              PROP_DHCP6_CONFIG,
                              PROP_VPN,
                              PROP_MASTER,
+                             PROP_CONTROLLER,
 
                              PROP_INT_SETTINGS_CONNECTION,
                              PROP_INT_APPLIED_CONNECTION,
@@ -803,7 +804,7 @@ check_master_ready(NMActiveConnection *self)
          * ensure that if the master connection was created without a device
          * that we notify clients when the master device is known.
          */
-        _notify(self, PROP_MASTER);
+        nm_gobject_notify_together(self, PROP_MASTER, PROP_CONTROLLER);
     }
 }
 
@@ -1343,6 +1344,7 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
     case PROP_VPN:
         g_value_set_boolean(value, priv->vpn);
         break;
+    case PROP_CONTROLLER:
     case PROP_MASTER:
         if (priv->master)
             master_device = nm_active_connection_get_device(priv->master);
@@ -1439,8 +1441,6 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
     case PROP_VPN:
         /* construct-only */
         priv->vpn = g_value_get_boolean(value);
-        break;
-    case PROP_MASTER:
         break;
     default:
         G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
@@ -1601,6 +1601,9 @@ static const NMDBusInterfaceInfoExtended interface_info_active_connection = {
                                                            "o",
                                                            NM_ACTIVE_CONNECTION_DHCP6_CONFIG),
             NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("Vpn", "b", NM_ACTIVE_CONNECTION_VPN),
+            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("Controller",
+                                                           "o",
+                                                           NM_ACTIVE_CONNECTION_CONTROLLER),
             NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("Master",
                                                            "o",
                                                            NM_ACTIVE_CONNECTION_MASTER), ), ),
@@ -1731,6 +1734,13 @@ nm_active_connection_class_init(NMActiveConnectionClass *ac_class)
                                                       "",
                                                       NULL,
                                                       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+
+    obj_properties[PROP_CONTROLLER] =
+        g_param_spec_string(NM_ACTIVE_CONNECTION_CONTROLLER,
+                            "",
+                            "",
+                            NULL,
+                            G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /* Internal properties */
     obj_properties[PROP_INT_SETTINGS_CONNECTION] =

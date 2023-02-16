@@ -393,7 +393,8 @@
  * complaining in 1.24. That's intentional, because in 1.22 the asynchronous
  * alternative was not yet available.
  */
-#define _NM_DEPRECATED_SYNC_METHOD            NM_DEPRECATED_IN_1_24
-#define _NM_DEPRECATED_SYNC_WRITABLE_PROPERTY /* NM_DEPRECATED_IN_1_22 */
+#define _NM_DEPRECATED_SYNC_METHOD             NM_DEPRECATED_IN_1_24
+#define _NM_DEPRECATED_SYNC_WRITABLE_PROPERTY  /* NM_DEPRECATED_IN_1_22 */
+#define _NM_DEPRECATED_INCLUSIVE_LANGUAGE_1_44 /* NM_DEPRECATED_IN_1_44 */
 
 #endif /* NM_VERSION_H */
