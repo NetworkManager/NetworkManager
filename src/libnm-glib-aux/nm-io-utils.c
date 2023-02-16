@@ -482,13 +482,17 @@ nm_utils_fd_read(int fd, NMStrBuf *out_string)
     g_return_val_if_fail(fd >= 0, -1);
     g_return_val_if_fail(out_string, -1);
 
-    /* If the buffer size is 0, we allocate NM_UTILS_GET_NEXT_REALLOC_SIZE_1000 (1000 bytes)
-     * the first time. Afterwards, the buffer grows exponentially.
+    /* Reserve at least 488+1 bytes of buffer size. That is probably a suitable
+     * compromise between not wasting too much buffer space and not reading too much.
      *
-     * Note that with @buf_available, we always would read as much buffer as we actually
-     * have reserved. */
-    nm_str_buf_maybe_expand(out_string, NM_UTILS_GET_NEXT_REALLOC_SIZE_1000, FALSE);
+     * Note that when we start with an empty buffer, the first allocation of
+     * 488+1 bytes will actually allocate 1000 bytes. So if we were to receive
+     * one byte at a time, we don't need a reallocation for the first 1000-(488+1)
+     * bytes. Afterwards grows the buffer exponentially.
+     */
+    nm_str_buf_maybe_expand(out_string, NM_UTILS_GET_NEXT_REALLOC_SIZE_488 + 1, FALSE);
 
+    /* We always use all the available buffer size. */
     buf_available = out_string->allocated - out_string->len;
 
     n_read = read(fd, &((nm_str_buf_get_str_unsafe(out_string))[out_string->len]), buf_available);
