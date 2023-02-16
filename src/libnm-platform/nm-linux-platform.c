@@ -8251,6 +8251,7 @@ do_change_link(NMPlatform           *platform,
     const char                 *log_detail;
     gs_free char               *log_detail_free = NULL;
     const NMPObject            *obj_cache;
+    int                         try_count = 0;
 
     if (!nm_platform_netns_push(platform, &netns)) {
         log_level  = LOGL_ERR;
@@ -8329,7 +8330,7 @@ out:
            wait_for_nl_response_to_string(seq_result, extack_msg, s_buf, sizeof(s_buf)),
            log_detail);
 
-    if (result == -EAGAIN)
+    if (result == -EAGAIN && ++try_count < RESYNC_RETRIES)
         goto retry;
 
     return result;
