@@ -7458,7 +7458,7 @@ again:
             errsv = errno;
             if (errsv == EINTR && try_count++ < 100)
                 goto again;
-            _LOGD("netlink: nl-send-nlmsghdr: failed sending message: %s (%d)",
+            _LOGI("netlink: nl-send-nlmsghdr: failed sending message: %s (%d)",
                   nm_strerror_native(errsv),
                   errsv);
             return -nm_errno_from_native(errsv);
@@ -7497,7 +7497,7 @@ _netlink_send_nlmsg(NMPlatform                        *platform,
 
     nle = nl_send_auto(priv->sk_x[netlink_protocol], nlmsg);
     if (nle < 0) {
-        _LOGD("netlink: nl-send-nlmsg: failed sending message: %s (%d)", nm_strerror(nle), nle);
+        _LOGI("netlink: nl-send-nlmsg: failed sending message: %s (%d)", nm_strerror(nle), nle);
         return nle;
     }
 
