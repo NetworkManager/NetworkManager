@@ -4534,39 +4534,50 @@ nm_platform_ip_address_flush(NMPlatform *self, int addr_family, int ifindex)
 /*****************************************************************************/
 
 static gboolean
-_err_inval_due_to_ipv6_tentative_pref_src(NMPlatform *self, const NMPObject *obj)
+_route_is_temporary_not_available(NMPlatform      *self,
+                                  int              err,
+                                  const NMPObject *obj,
+                                  const char     **out_err_reason)
 {
-    const NMPlatformIP6Route   *r;
+    const NMPlatformIPXRoute   *rx;
     const NMPlatformIP6Address *a;
 
     nm_assert(NM_IS_PLATFORM(self));
     nm_assert(NMP_OBJECT_IS_VALID(obj));
 
-    /* trying to add an IPv6 route with pref-src fails, if the address is
-     * still tentative (rh#1452684). We need to hack around that.
-     *
-     * Detect it, by guessing whether that's the case. */
-
-    if (NMP_OBJECT_GET_TYPE(obj) != NMP_OBJECT_TYPE_IP6_ROUTE)
+    if (err != -EINVAL)
         return FALSE;
 
-    r = NMP_OBJECT_CAST_IP6_ROUTE(obj);
+    rx = NMP_OBJECT_CAST_IPX_ROUTE(obj);
 
-    /* we only allow this workaround for routes added manually by the user. */
-    if (r->rt_source != NM_IP_CONFIG_SOURCE_USER)
+    if (rx->rx.rt_source != NM_IP_CONFIG_SOURCE_USER) {
+        /* we only allow this workaround for routes added manually by the user. */
         return FALSE;
+    }
 
-    if (IN6_IS_ADDR_UNSPECIFIED(&r->pref_src))
+    if (NMP_OBJECT_GET_TYPE(obj) == NMP_OBJECT_TYPE_IP4_ROUTE) {
         return FALSE;
+    } else {
+        const NMPlatformIP6Route *r = &rx->r6;
 
-    a = nm_platform_ip6_address_get(self, r->ifindex, &r->pref_src);
-    if (!a)
-        return FALSE;
-    if (!NM_FLAGS_HAS(a->n_ifa_flags, IFA_F_TENTATIVE)
-        || NM_FLAGS_HAS(a->n_ifa_flags, IFA_F_DADFAILED))
-        return FALSE;
+        /* trying to add an IPv6 route with pref-src fails, if the address is
+         * still tentative (rh#1452684). We need to hack around that.
+         *
+         * Detect it, by guessing whether that's the case. */
 
-    return TRUE;
+        if (IN6_IS_ADDR_UNSPECIFIED(&r->pref_src))
+            return FALSE;
+
+        a = nm_platform_ip6_address_get(self, r->ifindex, &r->pref_src);
+        if (!a)
+            return FALSE;
+        if (!NM_FLAGS_HAS(a->n_ifa_flags, IFA_F_TENTATIVE)
+            || NM_FLAGS_HAS(a->n_ifa_flags, IFA_F_DADFAILED))
+            return FALSE;
+
+        *out_err_reason = "tentative IPv6 src address not ready";
+        return TRUE;
+    }
 }
 
 static guint
@@ -4988,6 +4999,8 @@ sync_route_add:
                                          conf_o,
                                          &extack_msg);
             if (r < 0) {
+                const char *err_reason = NULL;
+
                 if (r == -EEXIST) {
                     /* Don't fail for EEXIST. It's not clear that the existing route
                      * is identical to the one that we were about to add. However,
@@ -5026,15 +5039,15 @@ sync_route_add:
                                                 sbuf1,
                                                 sizeof(sbuf1)),
                            nm_strerror(r));
-                } else if (r == -EINVAL && out_temporary_not_available
-                           && _err_inval_due_to_ipv6_tentative_pref_src(self, conf_o)) {
-                    _LOG3D("route-sync: ignore failure to add IPv6 route with tentative IPv6 "
-                           "pref-src: %s: %s",
+                } else if (out_temporary_not_available
+                           && _route_is_temporary_not_available(self, r, conf_o, &err_reason)) {
+                    _LOG3D("route-sync: ignore temporary failure to add route (%s, %s): %s",
+                           nm_strerror(r),
+                           err_reason,
                            nmp_object_to_string(conf_o,
                                                 NMP_OBJECT_TO_STRING_PUBLIC,
                                                 sbuf1,
-                                                sizeof(sbuf1)),
-                           nm_strerror(r));
+                                                sizeof(sbuf1)));
                     nm_g_ptr_array_ensure(out_temporary_not_available, 0, nmp_object_unref);
                     g_ptr_array_add(*out_temporary_not_available,
                                     (gpointer) nmp_object_ref(conf_o));
