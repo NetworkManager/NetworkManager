@@ -8185,8 +8185,8 @@ do_change_link(NMPlatform           *platform,
 {
     nm_auto_pop_netns NMPNetns *netns = NULL;
     int                         nle;
-    WaitForNlResponseResult     seq_result = WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN;
-    gs_free char               *errmsg     = NULL;
+    WaitForNlResponseResult     seq_result;
+    gs_free char               *errmsg = NULL;
     char                        s_buf[256];
     int                         result;
     NMLogLevel                  log_level;
@@ -8202,6 +8202,7 @@ do_change_link(NMPlatform           *platform,
     }
 
 retry:
+    seq_result = WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN;
     result     = -NME_UNSPEC;
     log_level  = LOGL_WARN;
     log_detail = "";
