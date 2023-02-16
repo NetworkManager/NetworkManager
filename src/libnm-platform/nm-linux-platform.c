@@ -459,7 +459,14 @@ typedef enum _nm_packed {
     WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN = 0,
     WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK,
     WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_UNKNOWN,
+
+    /* The receive buffer of the netlink socket has a large, but limited size.
+     * It can fill up, and we lose messages. When that happens, we may lose a
+     * response that we were waiting for. This error number indicates that we
+     * don't know the response due to a resync. We probably should retry the
+     * request. */
     WAIT_FOR_NL_RESPONSE_RESULT_FAILED_RESYNC,
+
     WAIT_FOR_NL_RESPONSE_RESULT_FAILED_POLL,
     WAIT_FOR_NL_RESPONSE_RESULT_FAILED_TIMEOUT,
     WAIT_FOR_NL_RESPONSE_RESULT_FAILED_DISPOSING,
@@ -8063,35 +8070,41 @@ do_add_link_with_lookup(NMPlatform            *platform,
                         struct nl_msg         *nlmsg,
                         const NMPlatformLink **out_link)
 {
-    const NMPObject        *obj        = NULL;
-    WaitForNlResponseResult seq_result = WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN;
+    const NMPObject        *obj = NULL;
+    WaitForNlResponseResult seq_result;
     gs_free char           *extack_msg = NULL;
     int                     nle;
     char                    s_buf[256];
-    NMPCache               *cache = nm_platform_get_cache(platform);
+    NMPCache               *cache     = nm_platform_get_cache(platform);
+    int                     try_count = 0;
 
     event_handler_read_netlink(platform, NMP_NETLINK_ROUTE, FALSE);
 
-    nle = _netlink_send_nlmsg_rtnl(platform, nlmsg, &seq_result, &extack_msg);
-    if (nle < 0) {
-        _LOGE("do-add-link[%s/%s]: failed sending netlink request \"%s\" (%d)",
-              name,
-              nm_link_type_to_string(link_type),
-              nm_strerror(nle),
-              -nle);
-        NM_SET_OUT(out_link, NULL);
-        return nle;
-    }
+    do {
+        seq_result = WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN;
+        nle        = _netlink_send_nlmsg_rtnl(platform, nlmsg, &seq_result, &extack_msg);
+        if (nle < 0) {
+            _LOGE("do-add-link[%s/%s]: failed sending netlink request \"%s\" (%d)",
+                  name,
+                  nm_link_type_to_string(link_type),
+                  nm_strerror(nle),
+                  -nle);
+            NM_SET_OUT(out_link, NULL);
+            return nle;
+        }
 
-    delayed_action_handle_all(platform);
+        delayed_action_handle_all(platform);
 
-    nm_assert(seq_result);
+        nm_assert(seq_result);
 
-    _NMLOG(seq_result == WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK ? LOGL_DEBUG : LOGL_WARN,
-           "do-add-link[%s/%s]: %s",
-           name,
-           nm_link_type_to_string(link_type),
-           wait_for_nl_response_to_string(seq_result, extack_msg, s_buf, sizeof(s_buf)));
+        _NMLOG(seq_result == WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK ? LOGL_DEBUG : LOGL_WARN,
+               "do-add-link[%s/%s]: %s",
+               name,
+               nm_link_type_to_string(link_type),
+               wait_for_nl_response_to_string(seq_result, extack_msg, s_buf, sizeof(s_buf)));
+
+    } while (seq_result == WAIT_FOR_NL_RESPONSE_RESULT_FAILED_RESYNC
+             && ++try_count < RESYNC_RETRIES);
 
     if (out_link) {
         obj       = nmp_cache_lookup_link_full(cache, 0, name, FALSE, link_type, NULL, NULL);
@@ -8109,10 +8122,11 @@ do_add_addrroute(NMPlatform      *platform,
                  char           **out_extack_msg)
 {
     char                    sbuf1[NM_UTILS_TO_STRING_BUFFER_SIZE];
-    WaitForNlResponseResult seq_result = WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN;
+    WaitForNlResponseResult seq_result;
     gs_free char           *extack_msg = NULL;
     int                     nle;
     char                    s_buf[256];
+    int                     try_count = 0;
 
     nm_assert(!out_extack_msg || !*out_extack_msg);
     nm_assert(NM_IN_SET(NMP_OBJECT_GET_TYPE(obj_id),
@@ -8123,29 +8137,34 @@ do_add_addrroute(NMPlatform      *platform,
 
     event_handler_read_netlink(platform, NMP_NETLINK_ROUTE, FALSE);
 
-    nle = _netlink_send_nlmsg_rtnl(platform, nlmsg, &seq_result, &extack_msg);
-    if (nle < 0) {
-        _LOGE("do-add-%s[%s]: failure sending netlink request \"%s\" (%d)",
-              NMP_OBJECT_GET_CLASS(obj_id)->obj_type_name,
-              nmp_object_to_string(obj_id, NMP_OBJECT_TO_STRING_ID, sbuf1, sizeof(sbuf1)),
-              nm_strerror(nle),
-              -nle);
-        NM_SET_OUT(out_extack_msg, g_steal_pointer(&extack_msg));
-        return -NME_PL_NETLINK;
-    }
+    do {
+        seq_result = WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN;
+        nle        = _netlink_send_nlmsg_rtnl(platform, nlmsg, &seq_result, &extack_msg);
+        if (nle < 0) {
+            _LOGE("do-add-%s[%s]: failure sending netlink request \"%s\" (%d)",
+                  NMP_OBJECT_GET_CLASS(obj_id)->obj_type_name,
+                  nmp_object_to_string(obj_id, NMP_OBJECT_TO_STRING_ID, sbuf1, sizeof(sbuf1)),
+                  nm_strerror(nle),
+                  -nle);
+            NM_SET_OUT(out_extack_msg, g_steal_pointer(&extack_msg));
+            return -NME_PL_NETLINK;
+        }
 
-    delayed_action_handle_all(platform);
+        delayed_action_handle_all(platform);
 
-    nm_assert(seq_result);
+        nm_assert(seq_result);
 
-    _NMLOG((seq_result == WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK
-            || (suppress_netlink_failure && seq_result < 0))
-               ? LOGL_DEBUG
-               : LOGL_WARN,
-           "do-add-%s[%s]: %s",
-           NMP_OBJECT_GET_CLASS(obj_id)->obj_type_name,
-           nmp_object_to_string(obj_id, NMP_OBJECT_TO_STRING_ID, sbuf1, sizeof(sbuf1)),
-           wait_for_nl_response_to_string(seq_result, extack_msg, s_buf, sizeof(s_buf)));
+        _NMLOG((seq_result == WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK
+                || (suppress_netlink_failure && seq_result < 0))
+                   ? LOGL_DEBUG
+                   : LOGL_WARN,
+               "do-add-%s[%s]: %s",
+               NMP_OBJECT_GET_CLASS(obj_id)->obj_type_name,
+               nmp_object_to_string(obj_id, NMP_OBJECT_TO_STRING_ID, sbuf1, sizeof(sbuf1)),
+               wait_for_nl_response_to_string(seq_result, extack_msg, s_buf, sizeof(s_buf)));
+
+    } while (seq_result == WAIT_FOR_NL_RESPONSE_RESULT_FAILED_RESYNC
+             && ++try_count < RESYNC_RETRIES);
 
     if (NMP_OBJECT_GET_TYPE(obj_id) == NMP_OBJECT_TYPE_IP6_ADDRESS) {
         /* In rare cases, the object is not yet ready as we received the ACK from
@@ -8167,54 +8186,60 @@ static gboolean
 do_delete_object(NMPlatform *platform, const NMPObject *obj_id, struct nl_msg *nlmsg)
 {
     char                    sbuf1[NM_UTILS_TO_STRING_BUFFER_SIZE];
-    WaitForNlResponseResult seq_result = WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN;
+    WaitForNlResponseResult seq_result;
     gs_free char           *extack_msg = NULL;
     int                     nle;
     char                    s_buf[256];
     gboolean                success;
     const char             *log_detail = "";
+    int                     try_count  = 0;
 
     event_handler_read_netlink(platform, NMP_NETLINK_ROUTE, FALSE);
 
-    nle = _netlink_send_nlmsg_rtnl(platform, nlmsg, &seq_result, &extack_msg);
-    if (nle < 0) {
-        _LOGE("do-delete-%s[%s]: failure sending netlink request \"%s\" (%d)",
-              NMP_OBJECT_GET_CLASS(obj_id)->obj_type_name,
-              nmp_object_to_string(obj_id, NMP_OBJECT_TO_STRING_ID, sbuf1, sizeof(sbuf1)),
-              nm_strerror(nle),
-              -nle);
-        return FALSE;
-    }
+    do {
+        seq_result = WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN;
+        nle        = _netlink_send_nlmsg_rtnl(platform, nlmsg, &seq_result, &extack_msg);
+        if (nle < 0) {
+            _LOGE("do-delete-%s[%s]: failure sending netlink request \"%s\" (%d)",
+                  NMP_OBJECT_GET_CLASS(obj_id)->obj_type_name,
+                  nmp_object_to_string(obj_id, NMP_OBJECT_TO_STRING_ID, sbuf1, sizeof(sbuf1)),
+                  nm_strerror(nle),
+                  -nle);
+            return FALSE;
+        }
 
-    delayed_action_handle_all(platform);
+        delayed_action_handle_all(platform);
 
-    nm_assert(seq_result);
+        nm_assert(seq_result);
 
-    success = TRUE;
-    if (seq_result == WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK) {
-        /* ok */
-    } else if (NM_IN_SET(-((int) seq_result), ESRCH, ENOENT))
-        log_detail = ", meaning the object was already removed";
-    else if (NM_IN_SET(-((int) seq_result), ENXIO)
-             && NM_IN_SET(NMP_OBJECT_GET_TYPE(obj_id), NMP_OBJECT_TYPE_IP6_ADDRESS)) {
-        /* On RHEL7 kernel, deleting a non existing address fails with ENXIO */
-        log_detail = ", meaning the address was already removed";
-    } else if (NM_IN_SET(-((int) seq_result), ENODEV)) {
-        log_detail = ", meaning the device was already removed";
-    } else if (NM_IN_SET(-((int) seq_result), EADDRNOTAVAIL)
-               && NM_IN_SET(NMP_OBJECT_GET_TYPE(obj_id),
-                            NMP_OBJECT_TYPE_IP4_ADDRESS,
-                            NMP_OBJECT_TYPE_IP6_ADDRESS))
-        log_detail = ", meaning the address was already removed";
-    else
-        success = FALSE;
+        success = TRUE;
+        if (seq_result == WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK) {
+            /* ok */
+        } else if (NM_IN_SET(-((int) seq_result), ESRCH, ENOENT))
+            log_detail = ", meaning the object was already removed";
+        else if (NM_IN_SET(-((int) seq_result), ENXIO)
+                 && NM_IN_SET(NMP_OBJECT_GET_TYPE(obj_id), NMP_OBJECT_TYPE_IP6_ADDRESS)) {
+            /* On RHEL7 kernel, deleting a non existing address fails with ENXIO */
+            log_detail = ", meaning the address was already removed";
+        } else if (NM_IN_SET(-((int) seq_result), ENODEV)) {
+            log_detail = ", meaning the device was already removed";
+        } else if (NM_IN_SET(-((int) seq_result), EADDRNOTAVAIL)
+                   && NM_IN_SET(NMP_OBJECT_GET_TYPE(obj_id),
+                                NMP_OBJECT_TYPE_IP4_ADDRESS,
+                                NMP_OBJECT_TYPE_IP6_ADDRESS))
+            log_detail = ", meaning the address was already removed";
+        else
+            success = FALSE;
 
-    _NMLOG(success ? LOGL_DEBUG : LOGL_WARN,
-           "do-delete-%s[%s]: %s%s",
-           NMP_OBJECT_GET_CLASS(obj_id)->obj_type_name,
-           nmp_object_to_string(obj_id, NMP_OBJECT_TO_STRING_ID, sbuf1, sizeof(sbuf1)),
-           wait_for_nl_response_to_string(seq_result, extack_msg, s_buf, sizeof(s_buf)),
-           log_detail);
+        _NMLOG(success ? LOGL_DEBUG : LOGL_WARN,
+               "do-delete-%s[%s]: %s%s",
+               NMP_OBJECT_GET_CLASS(obj_id)->obj_type_name,
+               nmp_object_to_string(obj_id, NMP_OBJECT_TO_STRING_ID, sbuf1, sizeof(sbuf1)),
+               wait_for_nl_response_to_string(seq_result, extack_msg, s_buf, sizeof(s_buf)),
+               log_detail);
+
+    } while (seq_result == WAIT_FOR_NL_RESPONSE_RESULT_FAILED_RESYNC
+             && ++try_count < RESYNC_RETRIES);
 
     if (NM_IN_SET(NMP_OBJECT_GET_TYPE(obj_id),
                   NMP_OBJECT_TYPE_IP6_ADDRESS,
@@ -9853,8 +9878,8 @@ ip_route_get(NMPlatform   *platform,
 
         delayed_action_handle_all(platform);
 
-        /* Retry, if we failed due to a cache resync. That can happen when the netlink
-         * socket fills up and we lost the response. */
+        nm_assert(seq_result);
+
     } while (seq_result == WAIT_FOR_NL_RESPONSE_RESULT_FAILED_RESYNC
              && ++try_count < RESYNC_RETRIES);
 
@@ -9880,25 +9905,33 @@ ip_route_get(NMPlatform   *platform,
 static int
 routing_rule_add(NMPlatform *platform, NMPNlmFlags flags, const NMPlatformRoutingRule *routing_rule)
 {
-    WaitForNlResponseResult      seq_result = WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN;
+    WaitForNlResponseResult      seq_result;
     nm_auto_nlmsg struct nl_msg *msg        = NULL;
     gs_free char                *extack_msg = NULL;
     char                         s_buf[256];
     int                          nle;
+    int                          try_count = 0;
 
     msg = _nl_msg_new_routing_rule(RTM_NEWRULE, flags, routing_rule);
 
     event_handler_read_netlink(platform, NMP_NETLINK_ROUTE, FALSE);
 
-    nle = _netlink_send_nlmsg_rtnl(platform, msg, &seq_result, &extack_msg);
-    if (nle < 0) {
-        _LOGE("do-add-rule: failed sending netlink request \"%s\" (%d)", nm_strerror(nle), -nle);
-        return -NME_PL_NETLINK;
-    }
+    do {
+        seq_result = WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN;
+        nle        = _netlink_send_nlmsg_rtnl(platform, msg, &seq_result, &extack_msg);
+        if (nle < 0) {
+            _LOGE("do-add-rule: failed sending netlink request \"%s\" (%d)",
+                  nm_strerror(nle),
+                  -nle);
+            return -NME_PL_NETLINK;
+        }
 
-    delayed_action_handle_all(platform);
+        delayed_action_handle_all(platform);
 
-    nm_assert(seq_result);
+        nm_assert(seq_result);
+
+    } while (seq_result == WAIT_FOR_NL_RESPONSE_RESULT_FAILED_RESYNC
+             && ++try_count < RESYNC_RETRIES);
 
     _NMLOG(seq_result == WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK ? LOGL_DEBUG : LOGL_WARN,
            "do-add-rule: %s",
@@ -9916,11 +9949,12 @@ routing_rule_add(NMPlatform *platform, NMPNlmFlags flags, const NMPlatformRoutin
 static int
 qdisc_add(NMPlatform *platform, NMPNlmFlags flags, const NMPlatformQdisc *qdisc)
 {
-    WaitForNlResponseResult      seq_result = WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN;
+    WaitForNlResponseResult      seq_result;
     gs_free char                *extack_msg = NULL;
     int                          nle;
     char                         s_buf[256];
-    nm_auto_nlmsg struct nl_msg *msg = NULL;
+    nm_auto_nlmsg struct nl_msg *msg       = NULL;
+    int                          try_count = 0;
 
     /* Note: @qdisc must not be copied or kept alive because the lifetime of qdisc.kind
      * is undefined. */
@@ -9929,15 +9963,22 @@ qdisc_add(NMPlatform *platform, NMPNlmFlags flags, const NMPlatformQdisc *qdisc)
 
     event_handler_read_netlink(platform, NMP_NETLINK_ROUTE, FALSE);
 
-    nle = _netlink_send_nlmsg_rtnl(platform, msg, &seq_result, &extack_msg);
-    if (nle < 0) {
-        _LOGE("do-add-qdisc: failed sending netlink request \"%s\" (%d)", nm_strerror(nle), -nle);
-        return -NME_PL_NETLINK;
-    }
+    do {
+        seq_result = WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN;
+        nle        = _netlink_send_nlmsg_rtnl(platform, msg, &seq_result, &extack_msg);
+        if (nle < 0) {
+            _LOGE("do-add-qdisc: failed sending netlink request \"%s\" (%d)",
+                  nm_strerror(nle),
+                  -nle);
+            return -NME_PL_NETLINK;
+        }
 
-    delayed_action_handle_all(platform);
+        delayed_action_handle_all(platform);
 
-    nm_assert(seq_result);
+        nm_assert(seq_result);
+
+    } while (seq_result == WAIT_FOR_NL_RESPONSE_RESULT_FAILED_RESYNC
+             && ++try_count < RESYNC_RETRIES);
 
     _NMLOG(seq_result == WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK ? LOGL_DEBUG : LOGL_WARN,
            "do-add-qdisc: %s",
@@ -9957,7 +9998,7 @@ tc_delete(NMPlatform *platform,
           guint32     parent,
           gboolean    log_error)
 {
-    WaitForNlResponseResult      seq_result = WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN;
+    WaitForNlResponseResult      seq_result;
     gs_free char                *extack_msg = NULL;
     int                          nle;
     char                         s_buf[256];
@@ -9967,6 +10008,7 @@ tc_delete(NMPlatform *platform,
                   .tcm_ifindex = ifindex,
                   .tcm_parent  = parent,
     };
+    int try_count = 0;
 
     switch (nlmsg_type) {
     case RTM_DELQDISC:
@@ -9987,19 +10029,24 @@ tc_delete(NMPlatform *platform,
 
     event_handler_read_netlink(platform, NMP_NETLINK_ROUTE, FALSE);
 
-    nle = _netlink_send_nlmsg_rtnl(platform, msg, &seq_result, &extack_msg);
-    if (nle < 0) {
-        _NMLOG(log_error ? LOGL_ERR : LOGL_DEBUG,
-               "%s: failed sending netlink request \"%s\" (%d)",
-               log_tag,
-               nm_strerror(nle),
-               -nle);
-        return -NME_PL_NETLINK;
-    }
+    do {
+        seq_result = WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN;
+        nle        = _netlink_send_nlmsg_rtnl(platform, msg, &seq_result, &extack_msg);
+        if (nle < 0) {
+            _NMLOG(log_error ? LOGL_ERR : LOGL_DEBUG,
+                   "%s: failed sending netlink request \"%s\" (%d)",
+                   log_tag,
+                   nm_strerror(nle),
+                   -nle);
+            return -NME_PL_NETLINK;
+        }
 
-    delayed_action_handle_all(platform);
+        delayed_action_handle_all(platform);
 
-    nm_assert(seq_result);
+        nm_assert(seq_result);
+
+    } while (seq_result == WAIT_FOR_NL_RESPONSE_RESULT_FAILED_RESYNC
+             && ++try_count < RESYNC_RETRIES);
 
     _NMLOG((seq_result == WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK || !log_error) ? LOGL_DEBUG
                                                                                  : LOGL_WARN,
@@ -10026,11 +10073,12 @@ qdisc_delete(NMPlatform *platform, int ifindex, guint32 parent, gboolean log_err
 static int
 tfilter_add(NMPlatform *platform, NMPNlmFlags flags, const NMPlatformTfilter *tfilter)
 {
-    WaitForNlResponseResult      seq_result = WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN;
+    WaitForNlResponseResult      seq_result;
     gs_free char                *extack_msg = NULL;
     int                          nle;
     char                         s_buf[256];
-    nm_auto_nlmsg struct nl_msg *msg = NULL;
+    nm_auto_nlmsg struct nl_msg *msg       = NULL;
+    int                          try_count = 0;
 
     /* Note: @tfilter must not be copied or kept alive because the lifetime of tfilter.kind
      * and tfilter.action.kind is undefined. */
@@ -10039,19 +10087,26 @@ tfilter_add(NMPlatform *platform, NMPNlmFlags flags, const NMPlatformTfilter *tf
 
     event_handler_read_netlink(platform, NMP_NETLINK_ROUTE, FALSE);
 
-    nle = _netlink_send_nlmsg_rtnl(platform, msg, &seq_result, &extack_msg);
-    if (nle < 0) {
-        _LOGE("do-add-tfilter: failed sending netlink request \"%s\" (%d)", nm_strerror(nle), -nle);
-        return -NME_PL_NETLINK;
-    }
+    do {
+        seq_result = WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN;
+        nle        = _netlink_send_nlmsg_rtnl(platform, msg, &seq_result, &extack_msg);
+        if (nle < 0) {
+            _LOGE("do-add-tfilter: failed sending netlink request \"%s\" (%d)",
+                  nm_strerror(nle),
+                  -nle);
+            return -NME_PL_NETLINK;
+        }
 
-    delayed_action_handle_all(platform);
+        delayed_action_handle_all(platform);
 
-    nm_assert(seq_result);
+        nm_assert(seq_result);
 
-    _NMLOG(seq_result == WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK ? LOGL_DEBUG : LOGL_WARN,
-           "do-add-tfilter: %s",
-           wait_for_nl_response_to_string(seq_result, extack_msg, s_buf, sizeof(s_buf)));
+        _NMLOG(seq_result == WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK ? LOGL_DEBUG : LOGL_WARN,
+               "do-add-tfilter: %s",
+               wait_for_nl_response_to_string(seq_result, extack_msg, s_buf, sizeof(s_buf)));
+
+    } while (seq_result == WAIT_FOR_NL_RESPONSE_RESULT_FAILED_RESYNC
+             && ++try_count < RESYNC_RETRIES);
 
     if (seq_result == WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK)
         return 0;
