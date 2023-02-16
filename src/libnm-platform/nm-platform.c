@@ -2133,6 +2133,40 @@ nm_platform_link_set_name(NMPlatform *self, int ifindex, const char *name)
     return klass->link_set_name(self, ifindex, name);
 }
 
+gboolean
+nm_platform_link_change(NMPlatform               *self,
+                        int                       ifindex,
+                        NMPlatformLinkProps      *props,
+                        NMPlatformLinkChangeFlags flags)
+{
+    _CHECK_SELF(self, klass, FALSE);
+
+    g_return_val_if_fail(ifindex >= 0, FALSE);
+
+    if (flags == 0)
+        return TRUE;
+
+    if (_LOGD_ENABLED()) {
+        nm_auto_free_gstring GString *str = g_string_new("");
+
+        if (flags & NM_PLATFORM_LINK_CHANGE_TX_QUEUE_LENGTH)
+            g_string_append_printf(str, "tx-queue-length %u ", props->tx_queue_length);
+        if (flags & NM_PLATFORM_LINK_CHANGE_GSO_MAX_SIZE)
+            g_string_append_printf(str, "gso_max_size %u ", props->gso_max_size);
+        if (flags & NM_PLATFORM_LINK_CHANGE_GSO_MAX_SEGMENTS)
+            g_string_append_printf(str, "gso_max_segments %u ", props->gso_max_segments);
+        if (flags & NM_PLATFORM_LINK_CHANGE_GRO_MAX_SIZE)
+            g_string_append_printf(str, "gro_max_size %u ", props->gro_max_size);
+
+        if (str->len > 0 && str->str[str->len - 1] == ' ')
+            g_string_truncate(str, str->len - 1);
+
+        _LOG3D("link: change: %s", str->str);
+    }
+
+    return klass->link_change(self, ifindex, props, flags);
+}
+
 /**
  * nm_platform_link_get_physical_port_id:
  * @self: platform instance
@@ -6018,6 +6052,10 @@ nm_platform_link_to_string(const NMPlatformLink *link, char *buf, gsize len)
         "%s%s"    /* l_broadcast */
         "%s%s"    /* inet6_token */
         "%s%s"    /* driver */
+        " tx-queue-len %u"
+        " gso-max-size %u"
+        " gso-max-segs %u"
+        " gro-max-size %u"
         " rx:%" G_GUINT64_FORMAT ",%" G_GUINT64_FORMAT " tx:%" G_GUINT64_FORMAT
         ",%" G_GUINT64_FORMAT,
         link->ifindex,
@@ -6050,6 +6088,10 @@ nm_platform_link_to_string(const NMPlatformLink *link, char *buf, gsize len)
             : "",
         link->driver ? " driver " : "",
         link->driver ?: "",
+        link->link_props.tx_queue_length,
+        link->link_props.gso_max_size,
+        link->link_props.gso_max_segments,
+        link->link_props.gro_max_size,
         link->rx_packets,
         link->rx_bytes,
         link->tx_packets,
@@ -7882,6 +7924,10 @@ nm_platform_link_hash_update(const NMPlatformLink *obj, NMHashState *h)
                         obj->arptype,
                         obj->inet6_addr_gen_mode_inv,
                         obj->inet6_token,
+                        obj->link_props.tx_queue_length,
+                        obj->link_props.gso_max_size,
+                        obj->link_props.gso_max_segments,
+                        obj->link_props.gro_max_size,
                         obj->rx_packets,
                         obj->rx_bytes,
                         obj->tx_packets,
@@ -7929,6 +7975,10 @@ nm_platform_link_cmp(const NMPlatformLink *a, const NMPlatformLink *b)
     if (a->l_broadcast.len)
         NM_CMP_FIELD_MEMCMP_LEN(a, b, l_broadcast.data, a->l_broadcast.len);
     NM_CMP_FIELD_MEMCMP(a, b, inet6_token);
+    NM_CMP_FIELD(a, b, link_props.tx_queue_length);
+    NM_CMP_FIELD(a, b, link_props.gso_max_size);
+    NM_CMP_FIELD(a, b, link_props.gso_max_segments);
+    NM_CMP_FIELD(a, b, link_props.gro_max_size);
     NM_CMP_FIELD(a, b, rx_packets);
     NM_CMP_FIELD(a, b, rx_bytes);
     NM_CMP_FIELD(a, b, tx_packets);

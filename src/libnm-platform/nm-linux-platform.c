@@ -115,7 +115,9 @@ typedef enum _nm_packed {
 #define IFLA_CARRIER       33
 #define IFLA_PHYS_PORT_ID  34
 #define IFLA_LINK_NETNSID  37
-#define __IFLA_MAX         39
+#define IFLA_GSO_MAX_SEGS  40
+#define IFLA_GSO_MAX_SIZE  41
+#define IFLA_GRO_MAX_SIZE  58
 
 #define IFLA_INET6_TOKEN         7
 #define IFLA_INET6_ADDR_GEN_MODE 8
@@ -3260,6 +3262,9 @@ _new_from_nl_link(NMPlatform            *platform,
         [IFLA_IFNAME]        = {.type = NLA_STRING, .maxlen = IFNAMSIZ},
         [IFLA_MTU]           = {.type = NLA_U32},
         [IFLA_TXQLEN]        = {.type = NLA_U32},
+        [IFLA_GSO_MAX_SIZE]  = {.type = NLA_U32},
+        [IFLA_GSO_MAX_SEGS]  = {.type = NLA_U32},
+        [IFLA_GRO_MAX_SIZE]  = {.type = NLA_U32},
         [IFLA_LINK]          = {.type = NLA_U32},
         [IFLA_WEIGHT]        = {.type = NLA_U32},
         [IFLA_MASTER]        = {.type = NLA_U32},
@@ -3358,6 +3363,15 @@ _new_from_nl_link(NMPlatform            *platform,
 
         nl_info_data = li[IFLA_INFO_DATA];
     }
+
+    if (tb[IFLA_TXQLEN])
+        obj->link.link_props.tx_queue_length = nla_get_u32(tb[IFLA_TXQLEN]);
+    if (tb[IFLA_GSO_MAX_SIZE])
+        obj->link.link_props.gso_max_size = nla_get_u32(tb[IFLA_GSO_MAX_SIZE]);
+    if (tb[IFLA_GSO_MAX_SEGS])
+        obj->link.link_props.gso_max_segments = nla_get_u32(tb[IFLA_GSO_MAX_SEGS]);
+    if (tb[IFLA_GRO_MAX_SIZE])
+        obj->link.link_props.gro_max_size = nla_get_u32(tb[IFLA_GRO_MAX_SIZE]);
 
     if (tb[IFLA_STATS64]) {
         const char *stats = nla_data(tb[IFLA_STATS64]);
@@ -8348,6 +8362,32 @@ link_delete(NMPlatform *platform, int ifindex)
 }
 
 static gboolean
+link_change(NMPlatform               *platform,
+            int                       ifindex,
+            NMPlatformLinkProps      *props,
+            NMPlatformLinkChangeFlags flags)
+{
+    nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
+
+    nlmsg = _nl_msg_new_link(RTM_NEWLINK, 0, ifindex, NULL);
+    if (!nlmsg)
+        return FALSE;
+
+    if (flags & NM_PLATFORM_LINK_CHANGE_TX_QUEUE_LENGTH)
+        NLA_PUT_U32(nlmsg, IFLA_TXQLEN, props->tx_queue_length);
+    if (flags & NM_PLATFORM_LINK_CHANGE_GSO_MAX_SIZE)
+        NLA_PUT_U32(nlmsg, IFLA_GSO_MAX_SIZE, props->gso_max_size);
+    if (flags & NM_PLATFORM_LINK_CHANGE_GSO_MAX_SEGMENTS)
+        NLA_PUT_U32(nlmsg, IFLA_GSO_MAX_SEGS, props->gso_max_segments);
+    if (flags & NM_PLATFORM_LINK_CHANGE_GRO_MAX_SIZE)
+        NLA_PUT_U32(nlmsg, IFLA_GRO_MAX_SIZE, props->gro_max_size);
+
+    return do_change_link(platform, CHANGE_LINK_TYPE_UNSPEC, ifindex, nlmsg, NULL) == 0;
+nla_put_failure:
+    g_return_val_if_reached(FALSE);
+}
+
+static gboolean
 link_refresh(NMPlatform *platform, int ifindex)
 {
     do_request_link(platform, ifindex, NULL);
@@ -11169,6 +11209,8 @@ nm_linux_platform_class_init(NMLinuxPlatformClass *klass)
     platform_class->link_add          = link_add;
     platform_class->link_change_extra = link_change_extra;
     platform_class->link_delete       = link_delete;
+
+    platform_class->link_change = link_change;
 
     platform_class->link_refresh = link_refresh;
 

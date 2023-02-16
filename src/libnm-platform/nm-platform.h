@@ -150,6 +150,21 @@ GBytes       *nmp_link_address_get_as_bytes(const NMPLinkAddress *addr);
 
 #define NM_PLATFORM_LINK_OTHER_NETNS (-1)
 
+typedef struct {
+    guint32 tx_queue_length;
+    guint32 gso_max_size;
+    guint32 gso_max_segments;
+    guint32 gro_max_size;
+} NMPlatformLinkProps;
+
+typedef enum {
+    NM_PLATFORM_LINK_CHANGE_NONE             = 0,
+    NM_PLATFORM_LINK_CHANGE_TX_QUEUE_LENGTH  = (1 << 0),
+    NM_PLATFORM_LINK_CHANGE_GSO_MAX_SIZE     = (1 << 1),
+    NM_PLATFORM_LINK_CHANGE_GSO_MAX_SEGMENTS = (1 << 2),
+    NM_PLATFORM_LINK_CHANGE_GRO_MAX_SIZE     = (1 << 3),
+} NMPlatformLinkChangeFlags;
+
 struct _NMPlatformObjWithIfindex {
     __NMPlatformObjWithIfindex_COMMON;
 } _nm_alignas(NMPlatformObject);
@@ -203,6 +218,8 @@ struct _NMPlatformLink {
     guint64 rx_bytes;
     guint64 tx_packets;
     guint64 tx_bytes;
+
+    NMPlatformLinkProps link_props;
 
     /* @connected is mostly identical to (@n_ifi_flags & IFF_UP). Except for bridge/bond masters,
      * where we coerce the link as disconnect if it has no slaves. */
@@ -1097,6 +1114,10 @@ typedef struct {
                              NMLinkType    type,
                              int           ifindex,
                              gconstpointer extra_data);
+    gboolean (*link_change)(NMPlatform               *self,
+                            int                       ifindex,
+                            NMPlatformLinkProps      *props,
+                            NMPlatformLinkChangeFlags flags);
     gboolean (*link_delete)(NMPlatform *self, int ifindex);
     gboolean (*link_refresh)(NMPlatform *self, int ifindex);
     gboolean (*link_set_netns)(NMPlatform *self, int ifindex, int netns_fd);
@@ -1929,6 +1950,11 @@ nm_platform_link_change_flags(NMPlatform *self, int ifindex, unsigned value, gbo
 {
     return nm_platform_link_change_flags_full(self, ifindex, value, set ? value : 0u);
 }
+
+gboolean nm_platform_link_change(NMPlatform               *self,
+                                 int                       ifindex,
+                                 NMPlatformLinkProps      *props,
+                                 NMPlatformLinkChangeFlags flags);
 
 gboolean    nm_platform_link_get_udev_property(NMPlatform  *self,
                                                int          ifindex,
