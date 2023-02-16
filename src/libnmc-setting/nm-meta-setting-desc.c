@@ -8809,11 +8809,13 @@ static const NMMetaSettingValidPartItem *const valid_settings_noslave[] = {
 
 static const NMMetaSettingValidPartItem *const valid_settings_slave_bond[] = {
     NM_META_SETTING_VALID_PART_ITEM(BOND_PORT, TRUE),
+    NM_META_SETTING_VALID_PART_ITEM(MATCH, FALSE),
     NULL,
 };
 
 static const NMMetaSettingValidPartItem *const valid_settings_slave_bridge[] = {
     NM_META_SETTING_VALID_PART_ITEM(BRIDGE_PORT, TRUE),
+    NM_META_SETTING_VALID_PART_ITEM(MATCH, FALSE),
     NULL,
 };
 
@@ -8823,11 +8825,13 @@ static const NMMetaSettingValidPartItem *const valid_settings_slave_ovs_bridge[]
 };
 
 static const NMMetaSettingValidPartItem *const valid_settings_slave_ovs_port[] = {
+    NM_META_SETTING_VALID_PART_ITEM(MATCH, FALSE),
     NM_META_SETTING_VALID_PART_ITEM(OVS_INTERFACE, FALSE),
     NULL,
 };
 
 static const NMMetaSettingValidPartItem *const valid_settings_slave_team[] = {
+    NM_META_SETTING_VALID_PART_ITEM(MATCH, FALSE),
     NM_META_SETTING_VALID_PART_ITEM(TEAM_PORT, TRUE),
     NULL,
 };
