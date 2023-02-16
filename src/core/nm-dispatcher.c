@@ -231,7 +231,7 @@ dump_ip_to_props(const NML3ConfigData *l3cd, int addr_family, GVariantBuilder *b
             continue;
 
         if (IS_IPv4)
-            g_variant_builder_add(&int_builder, "u", &a);
+            g_variant_builder_add(&int_builder, "u", a.addr4);
         else
             g_variant_builder_add(&int_builder, "@ay", nm_g_variant_new_ay_in6addr(&a.addr6));
     }
