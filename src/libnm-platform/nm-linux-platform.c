@@ -328,6 +328,10 @@ struct _ifla_vf_vlan_info {
 
 /*****************************************************************************/
 
+#define RESYNC_RETRIES 10
+
+/*****************************************************************************/
+
 typedef struct {
     guint16 family_id;
 } GenlFamilyData;
@@ -9850,7 +9854,8 @@ ip_route_get(NMPlatform   *platform,
 
         /* Retry, if we failed due to a cache resync. That can happen when the netlink
          * socket fills up and we lost the response. */
-    } while (seq_result == WAIT_FOR_NL_RESPONSE_RESULT_FAILED_RESYNC && ++try_count < 10);
+    } while (seq_result == WAIT_FOR_NL_RESPONSE_RESULT_FAILED_RESYNC
+             && ++try_count < RESYNC_RETRIES);
 
     if (seq_result < 0) {
         /* negative seq_result is an errno from kernel. Map it to negative
