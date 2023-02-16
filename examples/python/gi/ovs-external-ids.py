@@ -236,11 +236,13 @@ DataTypeE = DataTypeTuple(
     NM.SettingOvsExternalIDs,
     NM.SETTING_OVS_EXTERNAL_IDS_DATA,
 )
+
+o = getattr(NM, "SettingOvsOtherConfig", None)
 DataTypeO = DataTypeTuple(
     "other-config",
     "ovs-other-config",
-    NM.SettingOvsOtherConfig,
-    NM.SETTING_OVS_OTHER_CONFIG_DATA,
+    o,
+    NM.SETTING_OVS_OTHER_CONFIG_DATA if o else None,
 )
 
 
@@ -420,12 +422,13 @@ def ids_select(ids, mode, ids_arg):
 
 def connection_print(connection, mode, ids_arg, dbus_path, prefix=""):
     def _num_str(connection, data_type):
+        if data_type.setting_type is None:
+            return "n/a"
         sett = connection.get_setting(data_type.setting_type)
-        num_str = "none"
-        if sett is not None:
-            all_ids = list(sett.get_data_keys())
-            num_str = "%s" % (len(all_ids))
-        return num_str
+        if sett is None:
+            return "none"
+        all_ids = list(sett.get_data_keys())
+        return "%s" % (len(all_ids),)
 
     _print(
         "%s%s [e:%s, o:%s]"
@@ -441,18 +444,17 @@ def connection_print(connection, mode, ids_arg, dbus_path, prefix=""):
 
     for data_type in [DataTypeE, DataTypeO]:
 
-        sett = connection.get_setting(data_type.setting_type)
-        if sett is not None:
-            all_ids = list(sett.get_data_keys())
-            keys, requested = ids_select(all_ids, mode, ids_arg)
-        else:
-            keys = []
-            requested = []
+        if data_type.setting_type is None:
+            continue
 
-        if sett is not None:
-            dd = sett.get_property(data_type.property_name)
-        else:
-            dd = {}
+        sett = connection.get_setting(data_type.setting_type)
+        if sett is None:
+            continue
+
+        all_ids = list(sett.get_data_keys())
+        keys, requested = ids_select(all_ids, mode, ids_arg)
+
+        dd = sett.get_property(data_type.property_name)
         for k in keys:
             v = sett.get_data(k)
             assert v is not None
@@ -477,6 +479,11 @@ def sett_update(connection, ids_arg):
             key = key[2:]
         else:
             data_type = DataTypeE
+
+        if data_type.setting_type is None:
+            raise Exception(
+                "%s is not supported by this version of libnm" % (data_type.name,)
+            )
 
         sett = connection.get_setting(data_type.setting_type)
 
