@@ -7059,6 +7059,8 @@ delayed_action_schedule_WAIT_FOR_RESPONSE(NMPlatform                        *pla
         .response.out_data = response_out_data,
     };
 
+    nm_assert(!out_seq_result || *out_seq_result == WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN);
+
     delayed_action_schedule(
         platform,
         nmp_netlink_protocol_info(netlink_protocol)->delayed_action_type_wait_for_response,
@@ -7423,6 +7425,8 @@ _nl_send_nlmsghdr(NMPlatform                        *platform,
 
     nm_assert(nlhdr);
 
+    nm_assert(out_seq_result && *out_seq_result == WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN);
+
     seq              = _nlh_seq_next_get(priv, NMP_NETLINK_ROUTE);
     nlhdr->nlmsg_seq = seq;
 
@@ -7480,6 +7484,8 @@ _netlink_send_nlmsg(NMPlatform                        *platform,
     struct nlmsghdr        *nlhdr;
     guint32                 seq;
     int                     nle;
+
+    nm_assert(!out_seq_result || *out_seq_result == WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN);
 
     nlhdr            = nlmsg_hdr(nlmsg);
     seq              = _nlh_seq_next_get(priv, netlink_protocol);
