@@ -4649,9 +4649,7 @@ nm_platform_ip_address_get_prune_list(NMPlatform            *self,
             }
         }
 
-        if (!result)
-            result = g_ptr_array_new_full(head_entry->len, (GDestroyNotify) nmp_object_unref);
-
+        nm_g_ptr_array_ensure(&result, head_entry->len, nmp_object_unref);
         g_ptr_array_add(result, (gpointer) nmp_object_ref(obj));
     }
 
@@ -4860,11 +4858,7 @@ nm_platform_ip_route_get_prune_list(NMPlatform            *self,
             break;
         }
 
-        if (!routes_prune) {
-            routes_prune =
-                g_ptr_array_new_full(head_entry->len, (GDestroyNotify) nm_dedup_multi_obj_unref);
-        }
-
+        nm_g_ptr_array_ensure(&routes_prune, head_entry->len, nm_dedup_multi_obj_unref);
         g_ptr_array_add(routes_prune, (gpointer) nmp_object_ref(obj));
     }
 
@@ -5024,9 +5018,7 @@ sync_route_add:
                                                 sbuf1,
                                                 sizeof(sbuf1)),
                            nm_strerror(r));
-                    if (!*out_temporary_not_available)
-                        *out_temporary_not_available =
-                            g_ptr_array_new_full(0, (GDestroyNotify) nmp_object_unref);
+                    nm_g_ptr_array_ensure(out_temporary_not_available, 0, nmp_object_unref);
                     g_ptr_array_add(*out_temporary_not_available,
                                     (gpointer) nmp_object_ref(conf_o));
                 } else if (!gateway_route_added
