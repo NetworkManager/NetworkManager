@@ -238,7 +238,18 @@ nla_get_be64(const struct nlattr *nla)
 static inline char *
 nla_get_string(const struct nlattr *nla)
 {
-    return nla_data(nla);
+    char *s;
+
+    /* nla_get_string() requires that nla contains a NUL terminated string.
+     * It cannot return NULL. Only use it with attributes that validate as NLA_STRING. */
+
+    nm_assert(nla_len(nla) > 0);
+
+    s = nla_data(nla);
+
+    nm_assert(memchr(s, 0, nla_len(nla)));
+
+    return s;
 }
 
 size_t nla_strlcpy(char *dst, const struct nlattr *nla, size_t dstsize);
