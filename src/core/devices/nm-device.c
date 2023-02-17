@@ -599,6 +599,8 @@ typedef struct _NMDevicePrivate {
 
     bool tc_committed : 1;
 
+    bool link_props_set : 1;
+
     NMDeviceStageState stage1_sriov_state : 3;
 
     char *current_stable_id;
@@ -702,6 +704,10 @@ typedef struct _NMDevicePrivate {
     GHashTable *ip6_saved_properties;
 
     EthtoolState *ethtool_state;
+    struct {
+        NMPlatformLinkProps       props;
+        NMPlatformLinkChangeFlags flags;
+    } link_props_state;
 
     /* master interface for bridge/bond/team slave */
     NMDevice *master;
@@ -2748,6 +2754,151 @@ _ethtool_state_set(NMDevice *self)
     if (ethtool_state->features || ethtool_state->coalesce || ethtool_state->ring
         || ethtool_state->pause)
         priv->ethtool_state = g_steal_pointer(&ethtool_state);
+}
+
+static NMPlatformLinkChangeFlags
+link_properties_fill_from_setting(NMDevice *self, NMPlatformLinkProps *props)
+{
+    NMPlatformLinkChangeFlags flags = NM_PLATFORM_LINK_CHANGE_NONE;
+    NMSettingLink            *s_link;
+    gint64                    v;
+
+    *props = (NMPlatformLinkProps){};
+
+    s_link = nm_device_get_applied_setting(self, NM_TYPE_SETTING_LINK);
+    if (!s_link)
+        return 0;
+
+    v = nm_setting_link_get_tx_queue_length(s_link);
+    if (v != -1) {
+        props->tx_queue_length = (guint32) v;
+        flags |= NM_PLATFORM_LINK_CHANGE_TX_QUEUE_LENGTH;
+    }
+
+    v = nm_setting_link_get_gso_max_size(s_link);
+    if (v != -1) {
+        props->gso_max_size = (guint32) v;
+        flags |= NM_PLATFORM_LINK_CHANGE_GSO_MAX_SIZE;
+    }
+
+    v = nm_setting_link_get_gso_max_segments(s_link);
+    if (v != -1) {
+        props->gso_max_segments = (guint32) v;
+        flags |= NM_PLATFORM_LINK_CHANGE_GSO_MAX_SEGMENTS;
+    }
+
+    v = nm_setting_link_get_gro_max_size(s_link);
+    if (v != -1) {
+        props->gro_max_size = (guint32) v;
+        flags |= NM_PLATFORM_LINK_CHANGE_GRO_MAX_SIZE;
+    }
+
+    return flags;
+}
+
+static void
+link_properties_set(NMDevice *self, gboolean reapply)
+{
+    NMDevicePrivate          *priv = NM_DEVICE_GET_PRIVATE(self);
+    NMPlatformLinkProps       props;
+    NMPlatformLinkChangeFlags flags;
+    NMPlatform               *platform;
+    const NMPlatformLink     *plink;
+    int                       ifindex;
+
+    ifindex = nm_device_get_ip_ifindex(self);
+    if (ifindex <= 0)
+        return;
+
+    if (priv->link_props_set && !reapply)
+        return;
+
+    priv->link_props_set = TRUE;
+
+    flags = link_properties_fill_from_setting(self, &props);
+
+    if (flags == NM_PLATFORM_LINK_CHANGE_NONE
+        && priv->link_props_state.flags == NM_PLATFORM_LINK_CHANGE_NONE) {
+        /* Nothing to set now, and nothing was set previously. */
+        return;
+    }
+
+    platform = nm_device_get_platform(self);
+
+    if (priv->link_props_state.flags == NM_PLATFORM_LINK_CHANGE_NONE) {
+        /* It's the first time we reach here. Try to fetch the current
+         * link settings (reset them later). */
+        plink = nm_platform_link_get(platform, ifindex);
+        if (plink) {
+            priv->link_props_state.props = plink->link_props;
+            priv->link_props_state.flags = flags;
+        } else {
+            /* Unknown properties. The "priv->link_props_state.flags" stays unset.
+             * It indicates that "priv->link_props_state.props" is unknown. */
+        }
+
+    } else {
+        /* From a previous call we have some "priv->link_props_state.flags"
+         * flags, which indicates that all link props are cached. Also add
+         * "flags" which are are going to set, to indicate that those flags
+         * will need to be reset later. */
+        priv->link_props_state.flags |= flags;
+    }
+
+#define _RESET(_f, _field)                                                                \
+    if (!NM_FLAGS_HAS(flags, (_f)) && NM_FLAGS_HAS(priv->link_props_state.flags, (_f))) { \
+        props._field = priv->link_props_state.props._field;                               \
+        priv->link_props_state.flags &= ~(_f);                                            \
+        flags |= (_f);                                                                    \
+    }
+
+    /* During reapply, if we previously set some "priv->link_props_state.flags"
+     * but now not anymore (according to "flags"), then we reset the value now.
+     *
+     * We do this by copying the props field from "priv->link_props_state" to
+     * "props", reset the flag in "priv->link_props_state.flags" and set the
+     * flag in "flags" (for changing it). */
+    _RESET(NM_PLATFORM_LINK_CHANGE_TX_QUEUE_LENGTH, tx_queue_length);
+    _RESET(NM_PLATFORM_LINK_CHANGE_GSO_MAX_SIZE, gso_max_size);
+    _RESET(NM_PLATFORM_LINK_CHANGE_GSO_MAX_SEGMENTS, gso_max_segments);
+    _RESET(NM_PLATFORM_LINK_CHANGE_GRO_MAX_SIZE, gro_max_size);
+
+    if (nm_platform_link_change(platform, ifindex, &props, flags)) {
+        _LOGD(LOGD_DEVICE, "link properties successfully set");
+    } else {
+        _LOGW(LOGD_DEVICE, "failure setting link properties");
+    }
+}
+
+static void
+link_properties_reset(NMDevice *self)
+{
+    NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
+    NMPlatform      *platform;
+    int              ifindex;
+
+    if (priv->link_props_state.flags == 0)
+        goto out;
+
+    ifindex = nm_device_get_ip_ifindex(self);
+    if (ifindex <= 0)
+        goto out;
+
+    platform = nm_device_get_platform(self);
+    nm_assert(platform);
+
+    if (nm_platform_link_change(platform,
+                                ifindex,
+                                &priv->link_props_state.props,
+                                priv->link_props_state.flags)) {
+        _LOGD(LOGD_DEVICE, "link properties successfully reset");
+    } else {
+        _LOGW(LOGD_DEVICE, "failure resetting link properties");
+    }
+
+out:
+    priv->link_props_set         = FALSE;
+    priv->link_props_state.flags = 0;
 }
 
 /*****************************************************************************/
@@ -9760,8 +9911,10 @@ activate_stage2_device_config(NMDevice *self)
 
     nm_device_state_changed(self, NM_DEVICE_STATE_CONFIG, NM_DEVICE_STATE_REASON_NONE);
 
-    if (!nm_device_sys_iface_state_is_external(self))
+    if (!nm_device_sys_iface_state_is_external(self)) {
         _ethtool_state_set(self);
+        link_properties_set(self, FALSE);
+    }
 
     if (!nm_device_sys_iface_state_is_external(self)) {
         if (!priv->tc_committed && !tc_commit(self)) {
@@ -12828,7 +12981,8 @@ can_reapply_change(NMDevice   *self,
                      NM_SETTING_USER_SETTING_NAME,
                      NM_SETTING_PROXY_SETTING_NAME,
                      NM_SETTING_IP4_CONFIG_SETTING_NAME,
-                     NM_SETTING_IP6_CONFIG_SETTING_NAME))
+                     NM_SETTING_IP6_CONFIG_SETTING_NAME,
+                     NM_SETTING_LINK_SETTING_NAME))
         return TRUE;
 
     if (nm_streq(setting_name, NM_SETTING_WIRED_SETTING_NAME)) {
@@ -13023,6 +13177,8 @@ check_and_reapply_connection(NMDevice            *self,
      * cache must be updated *first*.
      *************************************************************************/
     klass->reapply_connection(self, con_old, con_new);
+
+    link_properties_set(self, TRUE);
 
     if (priv->state >= NM_DEVICE_STATE_CONFIG)
         lldp_setup(self, NM_TERNARY_DEFAULT);
@@ -15622,6 +15778,7 @@ nm_device_cleanup(NMDevice *self, NMDeviceStateReason reason, CleanupType cleanu
     }
 
     _ethtool_state_reset(self);
+    link_properties_reset(self);
 
     if (priv->promisc_reset != NM_OPTION_BOOL_DEFAULT && ifindex > 0) {
         nm_platform_link_change_flags(nm_device_get_platform(self),
