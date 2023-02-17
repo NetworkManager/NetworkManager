@@ -8041,7 +8041,8 @@ static int
 do_add_addrroute(NMPlatform      *platform,
                  const NMPObject *obj_id,
                  struct nl_msg   *nlmsg,
-                 gboolean         suppress_netlink_failure)
+                 gboolean         suppress_netlink_failure,
+                 char           **out_extack_msg)
 {
     char                    sbuf1[NM_UTILS_TO_STRING_BUFFER_SIZE];
     WaitForNlResponseResult seq_result = WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN;
@@ -8049,6 +8050,7 @@ do_add_addrroute(NMPlatform      *platform,
     int                     nle;
     char                    s_buf[256];
 
+    nm_assert(!out_extack_msg || !*out_extack_msg);
     nm_assert(NM_IN_SET(NMP_OBJECT_GET_TYPE(obj_id),
                         NMP_OBJECT_TYPE_IP4_ADDRESS,
                         NMP_OBJECT_TYPE_IP6_ADDRESS,
@@ -8064,6 +8066,7 @@ do_add_addrroute(NMPlatform      *platform,
               nmp_object_to_string(obj_id, NMP_OBJECT_TO_STRING_ID, sbuf1, sizeof(sbuf1)),
               nm_strerror(nle),
               -nle);
+        NM_SET_OUT(out_extack_msg, g_steal_pointer(&extack_msg));
         return -NME_PL_NETLINK;
     }
 
@@ -9489,7 +9492,8 @@ ip4_address_add(NMPlatform *platform,
                 guint32     lifetime,
                 guint32     preferred,
                 guint32     flags,
-                const char *label)
+                const char *label,
+                char      **out_extack_msg)
 {
     NMPObject                    obj_id;
     nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
@@ -9509,7 +9513,7 @@ ip4_address_add(NMPlatform *platform,
                                 label);
 
     nmp_object_stackinit_id_ip4_address(&obj_id, ifindex, addr, plen, peer_addr);
-    return (do_add_addrroute(platform, &obj_id, nlmsg, FALSE) >= 0);
+    return (do_add_addrroute(platform, &obj_id, nlmsg, FALSE, out_extack_msg) >= 0);
 }
 
 static gboolean
@@ -9520,7 +9524,8 @@ ip6_address_add(NMPlatform     *platform,
                 struct in6_addr peer_addr,
                 guint32         lifetime,
                 guint32         preferred,
-                guint32         flags)
+                guint32         flags,
+                char          **out_extack_msg)
 {
     NMPObject                    obj_id;
     nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
@@ -9540,7 +9545,7 @@ ip6_address_add(NMPlatform     *platform,
                                 NULL);
 
     nmp_object_stackinit_id_ip6_address(&obj_id, ifindex, &addr);
-    return (do_add_addrroute(platform, &obj_id, nlmsg, FALSE) >= 0);
+    return (do_add_addrroute(platform, &obj_id, nlmsg, FALSE, out_extack_msg) >= 0);
 }
 
 static gboolean
@@ -9602,7 +9607,7 @@ ip6_address_delete(NMPlatform *platform, int ifindex, struct in6_addr addr, guin
 /*****************************************************************************/
 
 static int
-ip_route_add(NMPlatform *platform, NMPNlmFlags flags, NMPObject *obj_stack)
+ip_route_add(NMPlatform *platform, NMPNlmFlags flags, NMPObject *obj_stack, char **out_extack_msg)
 {
     nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
 
@@ -9612,7 +9617,8 @@ ip_route_add(NMPlatform *platform, NMPNlmFlags flags, NMPObject *obj_stack)
     return do_add_addrroute(platform,
                             obj_stack,
                             nlmsg,
-                            NM_FLAGS_HAS(flags, NMP_NLM_FLAG_SUPPRESS_NETLINK_FAILURE));
+                            NM_FLAGS_HAS(flags, NMP_NLM_FLAG_SUPPRESS_NETLINK_FAILURE),
+                            out_extack_msg);
 }
 
 static gboolean

@@ -77,6 +77,7 @@ test_cleanup_internal(void)
                                          lifetime,
                                          preferred,
                                          0,
+                                         NULL,
                                          NULL));
     g_assert(nm_platform_ip6_address_add(NM_PLATFORM_GET,
                                          ifindex,
@@ -85,7 +86,8 @@ test_cleanup_internal(void)
                                          in6addr_any,
                                          lifetime,
                                          preferred,
-                                         flags));
+                                         flags,
+                                         NULL));
     nmtstp_ip4_route_add(NM_PLATFORM_GET,
                          ifindex,
                          NM_IP_CONFIG_SOURCE_USER,
