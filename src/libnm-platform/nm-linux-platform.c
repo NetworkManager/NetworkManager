@@ -10176,9 +10176,16 @@ continue_reading:
             int errsv;
 
             errsv = nlmsg_parse_error(msg.nm_nlh, &extack_msg);
-            if (errsv == 0)
+            if (errsv == 0) {
                 seq_result = WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK;
-            else {
+                if (extack_msg) {
+                    _LOGD("%s: recvmsg: warning message from kernel: %s%s%s for request %d",
+                          log_prefix,
+                          NM_PRINT_FMT_QUOTE_STRING(extack_msg),
+                          msg.nm_nlh->nlmsg_seq);
+                    extack_msg = NULL;
+                }
+            } else {
                 _LOGD("%s: recvmsg: error message from kernel: %s (%d)%s%s%s for request %d",
                       log_prefix,
                       nm_strerror(errsv),
@@ -10636,9 +10643,10 @@ mptcp_addr_update(NMPlatform *platform, NMOptionBool add, const NMPlatformMptcpA
         return nle;
     }
 
-    _LOGT("mptcp: %s address %s: success",
+    _LOGT("mptcp: %s address %s: success%s%s%s",
           cmd_str,
-          nm_platform_mptcp_addr_to_string(addr, sbuf, sizeof(sbuf)));
+          nm_platform_mptcp_addr_to_string(addr, sbuf, sizeof(sbuf)),
+          NM_PRINT_FMT_QUOTED(extack_msg[0] != '\0', " Warning: \"", extack_msg, "\"", ""));
 
     return 0;
 

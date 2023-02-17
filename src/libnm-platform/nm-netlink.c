@@ -313,9 +313,6 @@ nlmsg_parse_error(const struct nlmsghdr *nlh, const char **out_extack_msg)
 
     e = nlmsg_data(nlh);
 
-    if (!e->error)
-        return 0;
-
     if (NM_FLAGS_HAS(nlh->nlmsg_flags, NLM_F_ACK_TLVS) && out_extack_msg
         && nlh->nlmsg_len >= sizeof(*e) + e->msg.nlmsg_len) {
         static const struct nla_policy policy[] = {
@@ -328,10 +325,18 @@ nlmsg_parse_error(const struct nlmsghdr *nlh, const char **out_extack_msg)
         tlvs = NM_CAST_ALIGN(struct nlattr,
                              (((char *) e) + sizeof(*e) + e->msg.nlmsg_len - NLMSG_HDRLEN));
         if (nla_parse_arr(tb, tlvs, nlh->nlmsg_len - sizeof(*e) - e->msg.nlmsg_len, policy) >= 0) {
-            if (tb[NLMSGERR_ATTR_MSG])
-                *out_extack_msg = nla_get_string(tb[NLMSGERR_ATTR_MSG]);
+            if (tb[NLMSGERR_ATTR_MSG]) {
+                const char *s;
+
+                s = nla_get_string(tb[NLMSGERR_ATTR_MSG]);
+                if (s[0] != '\0')
+                    *out_extack_msg = s;
+            }
         }
     }
+
+    if (!e->error)
+        return 0;
 
     return -nm_errno_from_native(e->error);
 }
