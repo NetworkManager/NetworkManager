@@ -252,7 +252,22 @@ nla_get_string(const struct nlattr *nla)
     return s;
 }
 
-size_t nla_strlcpy(char *dst, const struct nlattr *nla, size_t dstsize);
+size_t
+_nla_strlcpy_full(char *dst, const struct nlattr *nla, size_t dstsize, gboolean wipe_remainder);
+
+static inline size_t
+nla_strlcpy(char *dst, const struct nlattr *nla, size_t dstsize)
+{
+    return _nla_strlcpy_full(dst, nla, dstsize, FALSE);
+}
+
+static inline size_t
+nla_strlcpy_wipe(char *dst, const struct nlattr *nla, size_t dstsize)
+{
+    /* Behaves exactly like nla_strlcpy(), but (similar to strncpy()) it fills the
+     * remaining @dstsize bytes with NUL. */
+    return _nla_strlcpy_full(dst, nla, dstsize, TRUE);
+}
 
 size_t nla_memcpy(void *dst, const struct nlattr *nla, size_t dstsize);
 
