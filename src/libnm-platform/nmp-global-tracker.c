@@ -1101,7 +1101,7 @@ nmp_global_tracker_sync(NMPGlobalTracker *self, NMPObjectType obj_type, gboolean
                                          NMP_NLM_FLAG_ADD,
                                          NMP_OBJECT_CAST_ROUTING_RULE(obj_data->obj));
         } else
-            nm_platform_ip_route_add(self->platform, NMP_NLM_FLAG_APPEND, obj_data->obj);
+            nm_platform_ip_route_add(self->platform, NMP_NLM_FLAG_APPEND, obj_data->obj, NULL);
     }
 }
 

@@ -421,7 +421,8 @@ test_ip6_route(void)
                                          in6addr_any,
                                          NM_PLATFORM_LIFETIME_PERMANENT,
                                          NM_PLATFORM_LIFETIME_PERMANENT,
-                                         0));
+                                         0,
+                                         NULL));
     accept_signals(route_added, 0, 3);
 
     _wait_for_ipv6_addr_non_tentative(NM_PLATFORM_GET, 200, ifindex, 1, &pref_src);
@@ -706,7 +707,8 @@ test_ip4_route_options(gconstpointer test_data)
                                              a->lifetime,
                                              a->preferred,
                                              a->n_ifa_flags,
-                                             a->label));
+                                             a->label,
+                                             NULL));
         if (a->peer_address == a->address)
             _wait_for_ipv4_addr_device_route(NM_PLATFORM_GET, 200, a->ifindex, a->address, a->plen);
     }
@@ -878,7 +880,8 @@ test_ip6_route_options(gconstpointer test_data)
                                              addr[i].peer_address,
                                              addr[i].lifetime,
                                              addr[i].preferred,
-                                             addr[i].n_ifa_flags));
+                                             addr[i].n_ifa_flags,
+                                             NULL));
     }
     _wait_for_ipv6_addr_non_tentative(NM_PLATFORM_GET, 400, IFINDEX, addr_n, addr_in6);
 

@@ -3559,7 +3559,8 @@ nm_platform_ip4_address_add(NMPlatform *self,
                             guint32     lifetime,
                             guint32     preferred,
                             guint32     flags,
-                            const char *label)
+                            const char *label,
+                            char      **out_extack_msg)
 {
     _CHECK_SELF(self, klass, FALSE);
 
@@ -3569,6 +3570,7 @@ nm_platform_ip4_address_add(NMPlatform *self,
     g_return_val_if_fail(preferred <= lifetime, FALSE);
     g_return_val_if_fail(!label || strlen(label) < sizeof(((NMPlatformIP4Address *) NULL)->label),
                          FALSE);
+    nm_assert(!out_extack_msg || !*out_extack_msg);
 
     if (_LOGD_ENABLED()) {
         char                 sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
@@ -3601,7 +3603,8 @@ nm_platform_ip4_address_add(NMPlatform *self,
                                   lifetime,
                                   preferred,
                                   flags,
-                                  label);
+                                  label,
+                                  out_extack_msg);
 }
 
 gboolean
@@ -3612,7 +3615,8 @@ nm_platform_ip6_address_add(NMPlatform     *self,
                             struct in6_addr peer_address,
                             guint32         lifetime,
                             guint32         preferred,
-                            guint32         flags)
+                            guint32         flags,
+                            char          **out_extack_msg)
 {
     _CHECK_SELF(self, klass, FALSE);
 
@@ -3620,6 +3624,7 @@ nm_platform_ip6_address_add(NMPlatform     *self,
     g_return_val_if_fail(plen <= 128, FALSE);
     g_return_val_if_fail(lifetime > 0, FALSE);
     g_return_val_if_fail(preferred <= lifetime, FALSE);
+    nm_assert(!out_extack_msg || !*out_extack_msg);
 
     if (_LOGD_ENABLED()) {
         char                 sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
@@ -3640,8 +3645,15 @@ nm_platform_ip6_address_add(NMPlatform     *self,
 
     nm_platform_ip6_dadfailed_set(self, ifindex, &address, FALSE);
 
-    return klass
-        ->ip6_address_add(self, ifindex, address, plen, peer_address, lifetime, preferred, flags);
+    return klass->ip6_address_add(self,
+                                  ifindex,
+                                  address,
+                                  plen,
+                                  peer_address,
+                                  lifetime,
+                                  preferred,
+                                  flags,
+                                  out_extack_msg);
 }
 
 gboolean
@@ -4464,7 +4476,8 @@ next_plat:;
                     NM_FLAGS_HAS(flags, NMP_IP_ADDRESS_SYNC_FLAGS_WITH_NOPREFIXROUTE)
                         ? IFA_F_NOPREFIXROUTE
                         : 0,
-                    known_address->a4.label))
+                    known_address->a4.label,
+                    NULL))
                 success = FALSE;
         } else {
             if (!nm_platform_ip6_address_add(
@@ -4478,7 +4491,8 @@ next_plat:;
                     (NM_FLAGS_HAS(flags, NMP_IP_ADDRESS_SYNC_FLAGS_WITH_NOPREFIXROUTE)
                          ? IFA_F_NOPREFIXROUTE
                          : 0)
-                        | known_address->a6.n_ifa_flags))
+                        | known_address->a6.n_ifa_flags,
+                    NULL))
                 success = FALSE;
         }
     }
@@ -4969,7 +4983,8 @@ sync_route_add:
             r = nm_platform_ip_route_add(self,
                                          NMP_NLM_FLAG_APPEND
                                              | NMP_NLM_FLAG_SUPPRESS_NETLINK_FAILURE,
-                                         conf_o);
+                                         conf_o,
+                                         NULL);
             if (r < 0) {
                 if (r == -EEXIST) {
                     /* Don't fail for EEXIST. It's not clear that the existing route
@@ -5077,7 +5092,8 @@ sync_route_add:
                     r2 = nm_platform_ip_route_add(self,
                                                   NMP_NLM_FLAG_APPEND
                                                       | NMP_NLM_FLAG_SUPPRESS_NETLINK_FAILURE,
-                                                  &oo);
+                                                  &oo,
+                                                  NULL);
 
                     if (r2 < 0) {
                         _LOG3D("route-sync: failure to add gateway IPv%c route: %s: %s",
@@ -5242,7 +5258,7 @@ nm_platform_ip_route_normalize(int addr_family, NMPlatformIPRoute *route)
 }
 
 static int
-_ip_route_add(NMPlatform *self, NMPNlmFlags flags, NMPObject *obj_stack)
+_ip_route_add(NMPlatform *self, NMPNlmFlags flags, NMPObject *obj_stack, char **out_extack_msg)
 {
     char sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
     int  ifindex;
@@ -5258,6 +5274,7 @@ _ip_route_add(NMPlatform *self, NMPNlmFlags flags, NMPObject *obj_stack)
     nm_assert(NM_IN_SET(NMP_OBJECT_GET_TYPE(obj_stack),
                         NMP_OBJECT_TYPE_IP4_ROUTE,
                         NMP_OBJECT_TYPE_IP6_ROUTE));
+    nm_assert(!out_extack_msg || !*out_extack_msg);
 
     nm_assert(NMP_OBJECT_GET_TYPE(obj_stack) != NMP_OBJECT_TYPE_IP4_ROUTE
               || obj_stack->ip4_route.n_nexthops <= 1u || obj_stack->_ip4_route.extra_nexthops);
@@ -5279,11 +5296,14 @@ _ip_route_add(NMPlatform *self, NMPNlmFlags flags, NMPObject *obj_stack)
      *   is stack allocated (and the potential "extra_nexthops" array is
      *   guaranteed to stay alive too).
      */
-    return klass->ip_route_add(self, flags, obj_stack);
+    return klass->ip_route_add(self, flags, obj_stack, out_extack_msg);
 }
 
 int
-nm_platform_ip_route_add(NMPlatform *self, NMPNlmFlags flags, const NMPObject *obj)
+nm_platform_ip_route_add(NMPlatform      *self,
+                         NMPNlmFlags      flags,
+                         const NMPObject *obj,
+                         char           **out_extack_msg)
 {
     nm_auto_nmpobj const NMPObject *obj_keep_alive = NULL;
     NMPObject                       obj_stack;
@@ -5301,7 +5321,7 @@ nm_platform_ip_route_add(NMPlatform *self, NMPNlmFlags flags, const NMPObject *o
         obj_stack._ip4_route.extra_nexthops = obj->_ip4_route.extra_nexthops;
     }
 
-    return _ip_route_add(self, flags, &obj_stack);
+    return _ip_route_add(self, flags, &obj_stack, out_extack_msg);
 }
 
 int
@@ -5333,7 +5353,7 @@ nm_platform_ip4_route_add(NMPlatform                   *self,
                               &extra_nexthops_free);
     }
 
-    return _ip_route_add(self, flags, &obj);
+    return _ip_route_add(self, flags, &obj, NULL);
 }
 
 int
@@ -5342,7 +5362,7 @@ nm_platform_ip6_route_add(NMPlatform *self, NMPNlmFlags flags, const NMPlatformI
     NMPObject obj;
 
     nmp_object_stackinit(&obj, NMP_OBJECT_TYPE_IP6_ROUTE, (const NMPlatformObject *) route);
-    return _ip_route_add(self, flags, &obj);
+    return _ip_route_add(self, flags, &obj, NULL);
 }
 
 gboolean

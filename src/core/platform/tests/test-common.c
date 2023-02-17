@@ -1809,7 +1809,8 @@ _ip_address_add(NMPlatform     *platform,
                                                   lifetime,
                                                   preferred,
                                                   flags,
-                                                  label);
+                                                  label,
+                                                  NULL);
         } else {
             g_assert(label == NULL);
             success = nm_platform_ip6_address_add(platform,
@@ -1819,7 +1820,8 @@ _ip_address_add(NMPlatform     *platform,
                                                   peer_address->addr6,
                                                   lifetime,
                                                   preferred,
-                                                  flags);
+                                                  flags,
+                                                  NULL);
         }
         g_assert(success);
     }
