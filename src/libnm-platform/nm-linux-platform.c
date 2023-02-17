@@ -7750,19 +7750,22 @@ event_seq_check(NMPlatform             *platform,
         DelayedActionWaitForNlResponseData *data =
             delayed_action_get_list_wait_for_resonse(priv, netlink_protocol, i);
 
-        if (data->seq_number == seq_number) {
-            /* We potentially receive many parts partial responses for the same sequence number.
-                 * Thus, we only remember the result, and collect it later. */
-            if (data->seq_result < 0) {
-                /* we already saw an error for this sequence number.
-                     * Preserve it. */
-            } else if (seq_result != WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_UNKNOWN
-                       || data->seq_result == WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN)
-                data->seq_result = seq_result;
-            if (data->out_extack_msg && !*data->out_extack_msg)
-                *data->out_extack_msg = g_strdup(extack_msg);
-            return;
-        }
+        if (data->seq_number != seq_number)
+            continue;
+
+        /* We potentially receive many parts partial responses for the same sequence number.
+         * Thus, we only remember the result, and collect it later. */
+        if (data->seq_result < 0) {
+            /* we already saw an error for this sequence number.
+             * Preserve it. */
+        } else if (seq_result != WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_UNKNOWN
+                   || data->seq_result == WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN)
+            data->seq_result = seq_result;
+
+        if (extack_msg && data->out_extack_msg && !*data->out_extack_msg)
+            *data->out_extack_msg = g_strdup(extack_msg);
+
+        return;
     }
 
 out:
