@@ -2941,6 +2941,10 @@ write_ip4_setting(NMConnection *connection,
     svSetValueTernary(ifcfg,
                       "IPV4_AUTO_ROUTE_EXT_GW",
                       nm_setting_ip_config_get_auto_route_ext_gw(s_ip4));
+
+    svSetValueTernary(ifcfg,
+                      "IPV4_REPLACE_LOCAL_RULE",
+                      nm_setting_ip_config_get_replace_local_rule(s_ip4));
 }
 
 static void
@@ -3205,6 +3209,10 @@ write_ip6_setting(NMConnection *connection, shvarFile *ifcfg, GString **out_rout
     svSetValueTernary(ifcfg,
                       "IPV6_AUTO_ROUTE_EXT_GW",
                       nm_setting_ip_config_get_auto_route_ext_gw(s_ip6));
+
+    svSetValueTernary(ifcfg,
+                      "IPV6_REPLACE_LOCAL_RULE",
+                      nm_setting_ip_config_get_replace_local_rule(s_ip6));
 }
 
 static void
