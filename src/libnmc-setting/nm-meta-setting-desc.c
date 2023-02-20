@@ -6288,6 +6288,9 @@ static const NMMetaPropertyInfo *const property_infos_IP4_CONFIG[] = {
     PROPERTY_INFO (NM_SETTING_IP_CONFIG_AUTO_ROUTE_EXT_GW, DESCRIBE_DOC_NM_SETTING_IP4_CONFIG_AUTO_ROUTE_EXT_GW,
         .property_type =                &_pt_gobject_ternary,
     ),
+    PROPERTY_INFO (NM_SETTING_IP_CONFIG_REPLACE_LOCAL_RULE, DESCRIBE_DOC_NM_SETTING_IP4_CONFIG_REPLACE_LOCAL_RULE,
+        .property_type =                &_pt_gobject_ternary,
+    ),
     NULL
 };
 
@@ -6538,6 +6541,9 @@ static const NMMetaPropertyInfo *const property_infos_IP6_CONFIG[] = {
     ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_IP6_CONFIG_TOKEN,
         .property_type =                &_pt_gobject_string,
+    ),
+    PROPERTY_INFO (NM_SETTING_IP_CONFIG_REPLACE_LOCAL_RULE, DESCRIBE_DOC_NM_SETTING_IP6_CONFIG_REPLACE_LOCAL_RULE,
+        .property_type =                &_pt_gobject_ternary,
     ),
     NULL
 };

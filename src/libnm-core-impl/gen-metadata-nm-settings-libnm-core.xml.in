@@ -1574,6 +1574,10 @@
                   dbus-type="b"
                   gprop-type="gboolean"
                   />
+        <property name="replace-local-rule"
+                  dbus-type="i"
+                  gprop-type="NMTernary"
+                  />
         <property name="required-timeout"
                   dbus-type="i"
                   gprop-type="gint"
@@ -1704,6 +1708,10 @@
         <property name="ra-timeout"
                   dbus-type="i"
                   gprop-type="gint"
+                  />
+        <property name="replace-local-rule"
+                  dbus-type="i"
+                  gprop-type="NMTernary"
                   />
         <property name="required-timeout"
                   dbus-type="i"
