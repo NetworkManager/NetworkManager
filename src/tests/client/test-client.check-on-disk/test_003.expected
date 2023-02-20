@@ -182,12 +182,12 @@ id
 path
 uuid
 <<<
-size: 4990
+size: 5076
 location: src/tests/client/test-client.py:test_003()/14
 cmd: $NMCLI con s con-gsm1
 lang: C
 returncode: 0
-stdout: 4857 bytes
+stdout: 4943 bytes
 >>>
 connection.id:                          con-gsm1
 connection.uuid:                        UUID-con-gsm1-REPLACED-REPLACED-REPL
@@ -291,18 +291,20 @@ gsm.device-id:                          --
 gsm.sim-id:                             --
 gsm.sim-operator-id:                    --
 gsm.mtu:                                auto
+gsm.initial-eps-bearer-configure:       no
+gsm.initial-eps-bearer-apn:             --
 proxy.method:                           none
 proxy.browser-only:                     no
 proxy.pac-url:                          --
 proxy.pac-script:                       --
 
 <<<
-size: 5028
+size: 5115
 location: src/tests/client/test-client.py:test_003()/15
 cmd: $NMCLI con s con-gsm1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4885 bytes
+stdout: 4972 bytes
 >>>
 connection.id:                          con-gsm1
 connection.uuid:                        UUID-con-gsm1-REPLACED-REPLACED-REPL
@@ -406,48 +408,50 @@ gsm.device-id:                          --
 gsm.sim-id:                             --
 gsm.sim-operator-id:                    --
 gsm.mtu:                                automatyczne
+gsm.initial-eps-bearer-configure:       nie
+gsm.initial-eps-bearer-apn:             --
 proxy.method:                           none
 proxy.browser-only:                     nie
 proxy.pac-url:                          --
 proxy.pac-script:                       --
 
 <<<
-size: 499
+size: 503
 location: src/tests/client/test-client.py:test_003()/16
 cmd: $NMCLI -g all con s con-gsm1
 lang: C
 returncode: 0
-stdout: 360 bytes
+stdout: 364 bytes
 >>>
 connection:con-gsm1:UUID-con-gsm1-REPLACED-REPLACED-REPL::gsm::no:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1:0x0:-1:-1
 ipv4:auto::: :0::::-1:0::no:no:::0:yes:::0x0:no:yes:-1:-1::0::-1
 ipv6:auto::::0::::-1:0::no:no:no:yes:-1:-1:default:0:auto:::0:yes::0x0:-1:
 serial:5:8:even:1:100
-gsm:no:::<hidden>:0:xyz.con-gsm1::<hidden>:0:no::::auto
+gsm:no:::<hidden>:0:xyz.con-gsm1::<hidden>:0:no::::auto:no:
 proxy:none:no::
 
 <<<
-size: 509
+size: 513
 location: src/tests/client/test-client.py:test_003()/17
 cmd: $NMCLI -g all con s con-gsm1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 360 bytes
+stdout: 364 bytes
 >>>
 connection:con-gsm1:UUID-con-gsm1-REPLACED-REPLACED-REPL::gsm::no:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1:0x0:-1:-1
 ipv4:auto::: :0::::-1:0::no:no:::0:yes:::0x0:no:yes:-1:-1::0::-1
 ipv6:auto::::0::::-1:0::no:no:no:yes:-1:-1:default:0:auto:::0:yes::0x0:-1:
 serial:5:8:even:1:100
-gsm:no:::<hidden>:0:xyz.con-gsm1::<hidden>:0:no::::auto
+gsm:no:::<hidden>:0:xyz.con-gsm1::<hidden>:0:no::::auto:no:
 proxy:none:no::
 
 <<<
-size: 4978
+size: 5064
 location: src/tests/client/test-client.py:test_003()/18
 cmd: $NMCLI con s con-gsm2
 lang: C
 returncode: 0
-stdout: 4845 bytes
+stdout: 4931 bytes
 >>>
 connection.id:                          con-gsm2
 connection.uuid:                        UUID-con-gsm2-REPLACED-REPLACED-REPL
@@ -551,18 +555,20 @@ gsm.device-id:                          --
 gsm.sim-id:                             --
 gsm.sim-operator-id:                    --
 gsm.mtu:                                auto
+gsm.initial-eps-bearer-configure:       no
+gsm.initial-eps-bearer-apn:             --
 proxy.method:                           none
 proxy.browser-only:                     no
 proxy.pac-url:                          --
 proxy.pac-script:                       --
 
 <<<
-size: 5016
+size: 5103
 location: src/tests/client/test-client.py:test_003()/19
 cmd: $NMCLI con s con-gsm2
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4873 bytes
+stdout: 4960 bytes
 >>>
 connection.id:                          con-gsm2
 connection.uuid:                        UUID-con-gsm2-REPLACED-REPLACED-REPL
@@ -666,48 +672,50 @@ gsm.device-id:                          --
 gsm.sim-id:                             --
 gsm.sim-operator-id:                    --
 gsm.mtu:                                automatyczne
+gsm.initial-eps-bearer-configure:       nie
+gsm.initial-eps-bearer-apn:             --
 proxy.method:                           none
 proxy.browser-only:                     nie
 proxy.pac-url:                          --
 proxy.pac-script:                       --
 
 <<<
-size: 487
+size: 491
 location: src/tests/client/test-client.py:test_003()/20
 cmd: $NMCLI -g all con s con-gsm2
 lang: C
 returncode: 0
-stdout: 348 bytes
+stdout: 352 bytes
 >>>
 connection:con-gsm2:UUID-con-gsm2-REPLACED-REPLACED-REPL::gsm::no:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1:0x0:-1:-1
 ipv4:auto::: :0::::-1:0::no:no:::0:yes:::0x0:no:yes:-1:-1::0::-1
 ipv6:auto::::0::::-1:0::no:no:no:yes:-1:-1:default:0:auto:::0:yes::0x0:-1:
 serial:5:8:even:1:100
-gsm:no:::<hidden>:0:::<hidden>:0:no::::auto
+gsm:no:::<hidden>:0:::<hidden>:0:no::::auto:no:
 proxy:none:no::
 
 <<<
-size: 497
+size: 501
 location: src/tests/client/test-client.py:test_003()/21
 cmd: $NMCLI -g all con s con-gsm2
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 348 bytes
+stdout: 352 bytes
 >>>
 connection:con-gsm2:UUID-con-gsm2-REPLACED-REPLACED-REPL::gsm::no:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1:0x0:-1:-1
 ipv4:auto::: :0::::-1:0::no:no:::0:yes:::0x0:no:yes:-1:-1::0::-1
 ipv6:auto::::0::::-1:0::no:no:no:yes:-1:-1:default:0:auto:::0:yes::0x0:-1:
 serial:5:8:even:1:100
-gsm:no:::<hidden>:0:::<hidden>:0:no::::auto
+gsm:no:::<hidden>:0:::<hidden>:0:no::::auto:no:
 proxy:none:no::
 
 <<<
-size: 4978
+size: 5064
 location: src/tests/client/test-client.py:test_003()/22
 cmd: $NMCLI con s con-gsm3
 lang: C
 returncode: 0
-stdout: 4845 bytes
+stdout: 4931 bytes
 >>>
 connection.id:                          con-gsm3
 connection.uuid:                        UUID-con-gsm3-REPLACED-REPLACED-REPL
@@ -811,18 +819,20 @@ gsm.device-id:                          --
 gsm.sim-id:                             --
 gsm.sim-operator-id:                    --
 gsm.mtu:                                auto
+gsm.initial-eps-bearer-configure:       no
+gsm.initial-eps-bearer-apn:             --
 proxy.method:                           none
 proxy.browser-only:                     no
 proxy.pac-url:                          --
 proxy.pac-script:                       --
 
 <<<
-size: 5016
+size: 5103
 location: src/tests/client/test-client.py:test_003()/23
 cmd: $NMCLI con s con-gsm3
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 4873 bytes
+stdout: 4960 bytes
 >>>
 connection.id:                          con-gsm3
 connection.uuid:                        UUID-con-gsm3-REPLACED-REPLACED-REPL
@@ -926,39 +936,41 @@ gsm.device-id:                          --
 gsm.sim-id:                             --
 gsm.sim-operator-id:                    --
 gsm.mtu:                                automatyczne
+gsm.initial-eps-bearer-configure:       nie
+gsm.initial-eps-bearer-apn:             --
 proxy.method:                           none
 proxy.browser-only:                     nie
 proxy.pac-url:                          --
 proxy.pac-script:                       --
 
 <<<
-size: 488
+size: 492
 location: src/tests/client/test-client.py:test_003()/24
 cmd: $NMCLI -g all con s con-gsm3
 lang: C
 returncode: 0
-stdout: 349 bytes
+stdout: 353 bytes
 >>>
 connection:con-gsm3:UUID-con-gsm3-REPLACED-REPLACED-REPL::gsm::no:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1:0x0:-1:-1
 ipv4:auto::: :0::::-1:0::no:no:::0:yes:::0x0:no:yes:-1:-1::0::-1
 ipv6:auto::::0::::-1:0::no:no:no:yes:-1:-1:default:0:auto:::0:yes::0x0:-1:
 serial:5:8:even:1:100
-gsm:no:::<hidden>:0: ::<hidden>:0:no::::auto
+gsm:no:::<hidden>:0: ::<hidden>:0:no::::auto:no:
 proxy:none:no::
 
 <<<
-size: 498
+size: 502
 location: src/tests/client/test-client.py:test_003()/25
 cmd: $NMCLI -g all con s con-gsm3
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 349 bytes
+stdout: 353 bytes
 >>>
 connection:con-gsm3:UUID-con-gsm3-REPLACED-REPLACED-REPL::gsm::no:0:-1:0:-1:0:no:::::-1::0:unknown:default:-1:-1:-1:0x0:-1:-1
 ipv4:auto::: :0::::-1:0::no:no:::0:yes:::0x0:no:yes:-1:-1::0::-1
 ipv6:auto::::0::::-1:0::no:no:no:yes:-1:-1:default:0:auto:::0:yes::0x0:-1:
 serial:5:8:even:1:100
-gsm:no:::<hidden>:0: ::<hidden>:0:no::::auto
+gsm:no:::<hidden>:0: ::<hidden>:0:no::::auto:no:
 proxy:none:no::
 
 <<<

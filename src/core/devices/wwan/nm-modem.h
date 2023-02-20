@@ -226,6 +226,8 @@ void nm_modem_emit_ppp_failed(NMModem *self, NMDeviceStateReason reason);
 
 GArray *nm_modem_get_connection_ip_type(NMModem *self, NMConnection *connection, GError **error);
 
+NMModemIPType nm_modem_get_initial_eps_bearer_ip_type(const GArray *connection_ip_types);
+
 /* For subclasses */
 
 void nm_modem_emit_signal_new_config(NMModem                  *self,

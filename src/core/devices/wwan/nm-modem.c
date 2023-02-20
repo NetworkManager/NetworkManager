@@ -558,6 +558,37 @@ nm_modem_get_connection_ip_type(NMModem *self, NMConnection *connection, GError 
     return NULL;
 }
 
+/**
+ * nm_modem_get_initial_eps_bearer_ip_type:
+ * @connection_ip_types: the #NMModemIPType as returned by
+ * nm_modem_get_connection_ip_type
+ *
+ * Given the connection IP types, this function returns which IP type to use when
+ * configuring the initial EPS bearer.
+ *
+ * Returns: the #NMModemIpType value to use for the initial EPS bearer
+ */
+NMModemIPType
+nm_modem_get_initial_eps_bearer_ip_type(const GArray *connection_ip_types)
+{
+    NMModemIPType ip_types = NM_MODEM_IP_TYPE_UNKNOWN;
+    guint         i;
+
+    nm_assert(connection_ip_types);
+
+    for (i = 0; i < connection_ip_types->len; i++)
+        ip_types |= nm_g_array_index(connection_ip_types, NMModemIPType, i);
+
+    nm_assert(ip_types != NM_MODEM_IP_TYPE_UNKNOWN);
+
+    if (ip_types & NM_MODEM_IP_TYPE_IPV4V6)
+        return NM_MODEM_IP_TYPE_IPV4V6;
+    if (ip_types & NM_MODEM_IP_TYPE_IPV4)
+        return NM_MODEM_IP_TYPE_IPV4;
+
+    return NM_MODEM_IP_TYPE_IPV6;
+}
+
 const char *
 nm_modem_get_device_id(NMModem *self)
 {
