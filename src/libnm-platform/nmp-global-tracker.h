@@ -46,6 +46,12 @@ void nmp_global_tracker_track_rule_default(NMPGlobalTracker *self,
                                            gint32            track_priority,
                                            gconstpointer     user_tag);
 
+void nmp_global_tracker_track_local_rule(NMPGlobalTracker *self,
+                                         int               addr_family,
+                                         gint32            track_priority,
+                                         gconstpointer     user_tag,
+                                         gconstpointer     user_tag_untrack);
+
 void nmp_global_tracker_track_rule_from_platform(NMPGlobalTracker *self,
                                                  NMPlatform       *platform,
                                                  int               addr_family,
