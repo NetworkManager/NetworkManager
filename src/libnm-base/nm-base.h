@@ -423,4 +423,12 @@ typedef enum {
     NM_DNS_IP_CONFIG_TYPE_VPN,
 } NMDnsIPConfigType;
 
+/*****************************************************************************/
+
+#define NM_DHCP_IAID_TO_HEXSTR_BUF_LEN (3 * sizeof(guint32))
+
+char *nm_dhcp_iaid_to_hexstr(guint32 iaid, char buf[static NM_DHCP_IAID_TO_HEXSTR_BUF_LEN]);
+
+gboolean nm_dhcp_iaid_from_hexstr(const char *str, guint32 *out_value);
+
 #endif /* __NM_LIBNM_BASE_H__ */
