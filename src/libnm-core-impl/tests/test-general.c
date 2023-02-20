@@ -10951,6 +10951,34 @@ test_direct_string_is_refstr(void)
 
 /*****************************************************************************/
 
+static void
+test_dhcp_iaid_hexstr(void)
+{
+    char str[NM_DHCP_IAID_TO_HEXSTR_BUF_LEN];
+    int  i;
+
+    for (i = 0; i < 10; i++) {
+        guint32  iaid = nmtst_get_rand_uint32();
+        guint32  iaid2;
+        char    *s;
+        gboolean r;
+
+        s = nm_dhcp_iaid_to_hexstr(iaid, str);
+        g_assert(s == str);
+        g_assert(strlen(s) < sizeof(str));
+
+        r = nm_dhcp_iaid_from_hexstr(str, &iaid2);
+        g_assert(r);
+        g_assert_cmpint(iaid, ==, iaid2);
+    }
+
+    g_assert_cmpstr(nm_dhcp_iaid_to_hexstr(0, str), ==, "00:00:00:00");
+    g_assert_cmpstr(nm_dhcp_iaid_to_hexstr(1, str), ==, "00:00:00:01");
+    g_assert_cmpstr(nm_dhcp_iaid_to_hexstr(0x01002044, str), ==, "01:00:20:44");
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE();
 
 int
@@ -11296,6 +11324,7 @@ main(int argc, char **argv)
 
     g_test_add_func("/core/general/test_system_encodings", test_system_encodings);
     g_test_add_func("/core/general/test_direct_string_is_refstr", test_direct_string_is_refstr);
+    g_test_add_func("/core/general/test_dhcp_iaid_hexstr", test_dhcp_iaid_hexstr);
 
     return g_test_run();
 }
