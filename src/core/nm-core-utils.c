@@ -5132,7 +5132,7 @@ nm_utils_spawn_helper(const char *const  *args,
     fcntl(info->child_stdout, F_SETFL, fd_flags | O_NONBLOCK);
 
     /* Watch process stdin */
-    info->out_buffer = NM_STR_BUF_INIT(32, TRUE);
+    info->out_buffer = NM_STR_BUF_INIT(NM_UTILS_GET_NEXT_REALLOC_SIZE_40, TRUE);
     for (arg = args; *arg; arg++) {
         nm_str_buf_append(&info->out_buffer, *arg);
         nm_str_buf_append_c(&info->out_buffer, '\0');
@@ -5146,7 +5146,7 @@ nm_utils_spawn_helper(const char *const  *args,
     g_source_attach(info->output_source, g_main_context_get_thread_default());
 
     /* Watch process stdout */
-    info->in_buffer    = NM_STR_BUF_INIT(NM_UTILS_GET_NEXT_REALLOC_SIZE_1000, FALSE);
+    info->in_buffer    = NM_STR_BUF_INIT(0, FALSE);
     info->input_source = nm_g_unix_fd_source_new(info->child_stdout,
                                                  G_IO_IN | G_IO_ERR | G_IO_HUP,
                                                  G_PRIORITY_DEFAULT,
