@@ -1920,10 +1920,14 @@ global:
 	nm_version_info_capability_get_type;
 } libnm_1_40_0;
 
+libnm_1_42_2 {
+global:
+	nm_setting_ip_config_get_replace_local_rule;
+} libnm_1_42_0;
+
 libnm_1_44_0 {
 global:
 	nm_active_connection_get_controller;
-	nm_setting_ip_config_get_replace_local_rule;
 	nm_setting_gsm_get_initial_eps_apn;
 	nm_setting_gsm_get_initial_eps_config;
 } libnm_1_42_0;
