@@ -1057,7 +1057,9 @@ output += '  jansson: ' + jansson_msg + '\n'
 output += '  iptables: ' + config_h.get('IPTABLES_PATH') + '\n'
 output += '  nft: ' + config_h.get('NFT_PATH') + '\n'
 output += '  modemmanager-1: ' + enable_modem_manager.to_string() + '\n'
-output += '  mobile-broadband-provider-info-database: ' + mobile_broadband_provider_info_database + '\n'
+if enable_modem_manager
+  output += '  mobile-broadband-provider-info-database: ' + mobile_broadband_provider_info_database + '\n'
+endif
 output += '  ofono: ' + enable_ofono.to_string() + '\n'
 output += '  concheck: ' + enable_concheck.to_string() + '\n'
 output += '  libteamdctl: ' + enable_teamdctl.to_string() + '\n'
