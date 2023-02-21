@@ -2513,22 +2513,28 @@ nm_settings_connection_autoconnect_blocked_reason_set(NMSettingsConnection      
                                                       NMSettingsAutoconnectBlockedReason reason,
                                                       gboolean                           set)
 {
-    NMSettingsConnectionPrivate       *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE(self);
     NMSettingsAutoconnectBlockedReason v;
-    char                               buf[100];
+    NMSettingsConnectionPrivate       *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE(self);
+    char                               buf1[100];
+    char                               buf2[100];
+
+    nm_assert(reason);
 
     v = priv->autoconnect_blocked_reason;
-    if (set) {
-        priv->autoconnect_blocked_reason = priv->autoconnect_blocked_reason | reason;
-        _LOGD("autoconnect: blocked reason: %s",
-              nm_settings_autoconnect_blocked_reason_to_string(reason, buf, sizeof(buf)));
-        return v != priv->autoconnect_blocked_reason;
-    } else {
-        priv->autoconnect_blocked_reason = priv->autoconnect_blocked_reason & ~reason;
-        _LOGD("autoconnect: unblocked reason: %s",
-              nm_settings_autoconnect_blocked_reason_to_string(reason, buf, sizeof(buf)));
-        return v != priv->autoconnect_blocked_reason;
-    }
+    if (set)
+        v = v | reason;
+    else
+        v = v & ~reason;
+
+    if (priv->autoconnect_blocked_reason == v)
+        return FALSE;
+
+    _LOGD("autoconnect: %s blocked reason: %s (now %s)",
+          set ? "set" : "unset",
+          nm_settings_autoconnect_blocked_reason_to_string(reason, buf1, sizeof(buf1)),
+          nm_settings_autoconnect_blocked_reason_to_string(v, buf2, sizeof(buf2)));
+    priv->autoconnect_blocked_reason = v;
+    return TRUE;
 }
 
 gboolean
