@@ -158,9 +158,9 @@ typedef struct _NMSettingsConnectionPrivate {
 
     bool timestamp_set : 1;
 
-    NMSettingsConnectionIntFlags flags : 5;
-
     NMSettingsAutoconnectBlockedReason autoconnect_blocked_reason : 4;
+
+    NMSettingsConnectionIntFlags flags : 5;
 
 } NMSettingsConnectionPrivate;
 
