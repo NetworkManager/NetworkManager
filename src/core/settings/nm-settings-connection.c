@@ -2539,17 +2539,20 @@ nm_settings_connection_autoconnect_is_blocked(NMSettingsConnection *self)
 
     g_return_val_if_fail(NM_IS_SETTINGS_CONNECTION(self), TRUE);
 
-    priv  = NM_SETTINGS_CONNECTION_GET_PRIVATE(self);
-    flags = nm_settings_connection_get_flags(self);
+    priv = NM_SETTINGS_CONNECTION_GET_PRIVATE(self);
+
+    if (priv->autoconnect_blocked_reason != NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NONE)
+        return TRUE;
+
+    flags = priv->flags;
     if (NM_FLAGS_ANY(flags,
                      NM_SETTINGS_CONNECTION_INT_FLAGS_VOLATILE
                          | NM_SETTINGS_CONNECTION_INT_FLAGS_EXTERNAL))
         return TRUE;
-
     if (!NM_FLAGS_HAS(flags, NM_SETTINGS_CONNECTION_INT_FLAGS_VISIBLE))
         return TRUE;
 
-    return priv->autoconnect_blocked_reason != NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NONE;
+    return FALSE;
 }
 
 /*****************************************************************************/
