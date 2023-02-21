@@ -1504,7 +1504,7 @@ update_auth_cb(NMSettingsConnection  *self,
                     self,
                     NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_NO_SECRETS,
                     FALSE)
-                && !nm_settings_connection_autoconnect_is_blocked(self))
+                && !nm_settings_connection_autoconnect_blocked_reason_get(self))
                 nm_manager_devcon_autoconnect_retries_reset(
                     nm_settings_connection_get_manager(self),
                     NULL,
