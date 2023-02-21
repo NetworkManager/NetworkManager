@@ -163,9 +163,21 @@
     <property name="Vpn" type="b" access="read"/>
 
     <!--
+        Controller:
+        @Since: 1.44, 1.42.2
+
+        The path to the controller device if the connection is a port. This
+        property replaces the deprecated 'Master' property.
+    -->
+    <property name="Controller" type="o" access="read"/>
+
+    <!--
         Master:
 
-        The path to the master device if the connection is a slave.
+        The path to the controller device if the connection is a port.
+
+        This property is deprecated in favor of the 'Controller'
+        property since 1.44 and 1.42.2.
     -->
     <property name="Master" type="o" access="read"/>
 

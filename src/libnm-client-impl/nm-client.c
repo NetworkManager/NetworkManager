@@ -1789,7 +1789,7 @@ nml_dbus_property_o_notify_watch_cb(NMClient *self, gpointer obj_watcher)
     }
 }
 
-static NMLDBusNotifyUpdatePropFlags
+NMLDBusNotifyUpdatePropFlags
 nml_dbus_property_o_notify(NMClient               *self,
                            NMLDBusPropertyO       *pr_o,
                            NMLDBusObject          *dbobj,
