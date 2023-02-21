@@ -5592,7 +5592,8 @@ _nm_utils_bridge_vlan_verify_list(GPtrArray  *vlans,
 gboolean
 _nm_utils_iaid_verify(const char *str, gint64 *out_value)
 {
-    gint64 iaid;
+    gint64  i64;
+    guint32 u32;
 
     NM_SET_OUT(out_value, -1);
 
@@ -5602,10 +5603,16 @@ _nm_utils_iaid_verify(const char *str, gint64 *out_value)
     if (NM_IAID_IS_SPECIAL(str))
         return TRUE;
 
-    if (NM_STRCHAR_ALL(str, ch, ch >= '0' && ch <= '9') && (str[0] != '0' || str[1] == '\0')
-        && (iaid = _nm_utils_ascii_str_to_int64(str, 10, 0, G_MAXUINT32, -1)) != -1) {
-        NM_SET_OUT(out_value, iaid);
-        return TRUE;
+    if (NM_STRCHAR_ALL(str, ch, g_ascii_isxdigit(ch) || NM_IN_SET(ch, 'x', ':'))) {
+        if ((i64 = _nm_utils_ascii_str_to_int64(str, 0, 0, G_MAXUINT32, -1)) != -1) {
+            NM_SET_OUT(out_value, i64);
+            return TRUE;
+        }
+
+        if (nm_dhcp_iaid_from_hexstr(str, &u32)) {
+            NM_SET_OUT(out_value, u32);
+            return TRUE;
+        }
     }
 
     return FALSE;
