@@ -817,7 +817,7 @@ gboolean nm_device_is_vpn(NMDevice *self);
 const char *
 nm_device_get_hostname_from_dns_lookup(NMDevice *self, int addr_family, gboolean *out_pending);
 
-void nm_device_clear_dns_lookup_data(NMDevice *self);
+void nm_device_clear_dns_lookup_data(NMDevice *self, const char *reason);
 
 gboolean nm_device_get_allow_autoconnect_on_external(NMDevice *self);
 

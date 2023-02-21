@@ -4868,11 +4868,14 @@ typedef struct {
 
     int      child_stdin;
     int      child_stdout;
+    int      child_stderr;
     GSource *input_source;
     GSource *output_source;
+    GSource *error_source;
 
     NMStrBuf in_buffer;
     NMStrBuf out_buffer;
+    NMStrBuf err_buffer;
     gsize    out_buffer_offset;
 } HelperInfo;
 
@@ -4908,13 +4911,17 @@ helper_info_free(gpointer data)
 
     nm_str_buf_destroy(&info->in_buffer);
     nm_str_buf_destroy(&info->out_buffer);
+    nm_str_buf_destroy(&info->err_buffer);
     nm_clear_g_source_inst(&info->input_source);
     nm_clear_g_source_inst(&info->output_source);
+    nm_clear_g_source_inst(&info->error_source);
 
     if (info->child_stdout != -1)
         nm_close(info->child_stdout);
     if (info->child_stdin != -1)
         nm_close(info->child_stdin);
+    if (info->child_stderr != -1)
+        nm_close(info->child_stderr);
 
     if (info->pid != -1) {
         nm_assert(info->pid > 1);
@@ -4928,6 +4935,10 @@ static void
 helper_complete(HelperInfo *info, GError *error)
 {
     if (error) {
+        if (info->err_buffer.len > 0) {
+            _LOG2T(info, "stderr: %s", nm_str_buf_get_str(&info->err_buffer));
+        }
+
         nm_clear_g_cancellable_disconnect(g_task_get_cancellable(info->task),
                                           &info->cancellable_id);
         g_task_return_error(info->task, error);
@@ -5023,6 +5034,24 @@ helper_have_data(int fd, GIOCondition condition, gpointer user_data)
     return G_SOURCE_CONTINUE;
 }
 
+static gboolean
+helper_have_err_data(int fd, GIOCondition condition, gpointer user_data)
+{
+    HelperInfo *info = user_data;
+    gssize      n_read;
+
+    n_read = nm_utils_fd_read(fd, &info->err_buffer);
+
+    if (n_read > 0)
+        return G_SOURCE_CONTINUE;
+
+    nm_clear_g_source_inst(&info->error_source);
+    nm_close(info->child_stderr);
+    info->child_stderr = -1;
+
+    return G_SOURCE_CONTINUE;
+}
+
 static void
 helper_child_terminated(GPid pid, int status, gpointer user_data)
 {
@@ -5098,10 +5127,11 @@ nm_utils_spawn_helper(const char *const  *args,
                                   &info->pid,
                                   &info->child_stdin,
                                   &info->child_stdout,
-                                  NULL,
+                                  &info->child_stderr,
                                   &error)) {
         info->child_stdin  = -1;
         info->child_stdout = -1;
+        info->child_stderr = -1;
         info->pid          = -1;
         g_task_return_error(info->task,
                             g_error_new(NM_UTILS_ERROR,
@@ -5130,9 +5160,11 @@ nm_utils_spawn_helper(const char *const  *args,
     fcntl(info->child_stdin, F_SETFL, fd_flags | O_NONBLOCK);
     fd_flags = fcntl(info->child_stdout, F_GETFD, 0);
     fcntl(info->child_stdout, F_SETFL, fd_flags | O_NONBLOCK);
+    fd_flags = fcntl(info->child_stderr, F_GETFD, 0);
+    fcntl(info->child_stderr, F_SETFL, fd_flags | O_NONBLOCK);
 
     /* Watch process stdin */
-    info->out_buffer = NM_STR_BUF_INIT(32, TRUE);
+    info->out_buffer = NM_STR_BUF_INIT(NM_UTILS_GET_NEXT_REALLOC_SIZE_40, TRUE);
     for (arg = args; *arg; arg++) {
         nm_str_buf_append(&info->out_buffer, *arg);
         nm_str_buf_append_c(&info->out_buffer, '\0');
@@ -5146,7 +5178,7 @@ nm_utils_spawn_helper(const char *const  *args,
     g_source_attach(info->output_source, g_main_context_get_thread_default());
 
     /* Watch process stdout */
-    info->in_buffer    = NM_STR_BUF_INIT(NM_UTILS_GET_NEXT_REALLOC_SIZE_1000, FALSE);
+    info->in_buffer    = NM_STR_BUF_INIT(0, FALSE);
     info->input_source = nm_g_unix_fd_source_new(info->child_stdout,
                                                  G_IO_IN | G_IO_ERR | G_IO_HUP,
                                                  G_PRIORITY_DEFAULT,
@@ -5154,6 +5186,16 @@ nm_utils_spawn_helper(const char *const  *args,
                                                  info,
                                                  NULL);
     g_source_attach(info->input_source, g_main_context_get_thread_default());
+
+    /* Watch process stderr */
+    info->err_buffer   = NM_STR_BUF_INIT(0, FALSE);
+    info->error_source = nm_g_unix_fd_source_new(info->child_stderr,
+                                                 G_IO_IN | G_IO_ERR | G_IO_HUP,
+                                                 G_PRIORITY_DEFAULT,
+                                                 helper_have_err_data,
+                                                 info,
+                                                 NULL);
+    g_source_attach(info->error_source, g_main_context_get_thread_default());
 
     if (cancellable) {
         gulong signal_id;
