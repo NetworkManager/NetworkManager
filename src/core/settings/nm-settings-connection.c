@@ -2502,6 +2502,12 @@ nm_settings_connection_add_seen_bssid(NMSettingsConnection *self, const char *se
 
 /*****************************************************************************/
 
+NMSettingsAutoconnectBlockedReason
+nm_settings_connection_autoconnect_blocked_reason_get(NMSettingsConnection *self)
+{
+    return NM_SETTINGS_CONNECTION_GET_PRIVATE(self)->autoconnect_blocked_reason;
+}
+
 gboolean
 nm_settings_connection_autoconnect_blocked_reason_set(NMSettingsConnection              *self,
                                                       NMSettingsAutoconnectBlockedReason reason,
@@ -2523,12 +2529,6 @@ nm_settings_connection_autoconnect_blocked_reason_set(NMSettingsConnection      
               nm_settings_autoconnect_blocked_reason_to_string(reason, buf, sizeof(buf)));
         return v != priv->autoconnect_blocked_reason;
     }
-}
-
-NMSettingsAutoconnectBlockedReason
-nm_settings_connection_autoconnect_blocked_reason_get(NMSettingsConnection *self)
-{
-    return NM_SETTINGS_CONNECTION_GET_PRIVATE(self)->autoconnect_blocked_reason;
 }
 
 gboolean
