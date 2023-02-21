@@ -1944,6 +1944,8 @@ make_ip4_setting(shvarFile *ifcfg,
                  ipv4_link_local,
                  NM_SETTING_IP_CONFIG_AUTO_ROUTE_EXT_GW,
                  svGetValueTernary(ifcfg, "IPV4_AUTO_ROUTE_EXT_GW"),
+                 NM_SETTING_IP_CONFIG_REPLACE_LOCAL_RULE,
+                 svGetValueTernary(ifcfg, "IPV4_REPLACE_LOCAL_RULE"),
                  NULL);
 
     if (nm_streq(method, NM_SETTING_IP4_CONFIG_METHOD_DISABLED))
@@ -2459,6 +2461,8 @@ make_ip6_setting(shvarFile *ifcfg, shvarFile *network_ifcfg, gboolean routes_rea
                  ip6_privacy_val,
                  NM_SETTING_IP_CONFIG_AUTO_ROUTE_EXT_GW,
                  svGetValueTernary(ifcfg, "IPV6_AUTO_ROUTE_EXT_GW"),
+                 NM_SETTING_IP_CONFIG_REPLACE_LOCAL_RULE,
+                 svGetValueTernary(ifcfg, "IPV6_REPLACE_LOCAL_RULE"),
                  NULL);
 
     /* Don't bother to read IP, DNS and routes when IPv6 is disabled */

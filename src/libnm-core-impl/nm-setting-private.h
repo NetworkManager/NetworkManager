@@ -198,6 +198,7 @@ typedef struct {
     char      *dhcp_iaid;
     gint64     route_metric;
     int        auto_route_ext_gw;
+    int        replace_local_rule;
     gint32     required_timeout;
     gint32     dad_timeout;
     gint32     dhcp_timeout;

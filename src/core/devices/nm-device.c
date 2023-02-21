@@ -9658,6 +9658,18 @@ _routing_rules_sync(NMDevice *self, NMTernary set_mode)
                                               user_tag_1,
                                               NMP_GLOBAL_TRACKER_EXTERN_WEAKLY_TRACKED_USER_TAG);
             }
+
+            if (nm_setting_ip_config_get_replace_local_rule(s_ip) == NM_TERNARY_TRUE) {
+                /* The user specified that the local rule should be replaced.
+                 * In order to do that, we track the local rule with negative
+                 * priority. */
+                nmp_global_tracker_track_local_rule(
+                    global_tracker,
+                    addr_family,
+                    -5,
+                    user_tag_1,
+                    NMP_GLOBAL_TRACKER_EXTERN_WEAKLY_TRACKED_USER_TAG);
+            }
         }
 
         if (klass->get_extra_rules) {
