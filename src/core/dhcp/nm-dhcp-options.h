@@ -208,20 +208,38 @@ nm_dhcp_option_request_string(int addr_family, guint option)
     return nm_dhcp_option_get_name(nm_dhcp_option_find(addr_family, option));
 }
 
-void nm_dhcp_option_take_option(GHashTable *options, int addr_family, guint option, char *value);
-void
-nm_dhcp_option_add_option(GHashTable *options, int addr_family, guint option, const char *value);
+void nm_dhcp_option_take_option(GHashTable *options,
+                                gboolean    static_keys,
+                                int         addr_family,
+                                guint       option,
+                                char       *value);
+
+static inline void
+nm_dhcp_option_add_option(GHashTable *options,
+                          gboolean    static_keys,
+                          int         addr_family,
+                          guint       option,
+                          const char *value)
+{
+    nm_dhcp_option_take_option(options, static_keys, addr_family, option, g_strdup(value));
+}
+
 void nm_dhcp_option_add_option_utf8safe_escape(GHashTable   *options,
+                                               gboolean      static_keys,
                                                int           addr_family,
                                                guint         option,
                                                const guint8 *data,
                                                gsize         n_data);
 void nm_dhcp_option_add_option_in_addr(GHashTable *options,
+                                       gboolean    static_keys,
                                        int         addr_family,
                                        guint       option,
                                        in_addr_t   value);
-void
-nm_dhcp_option_add_option_u64(GHashTable *options, int addr_family, guint option, guint64 value);
+void nm_dhcp_option_add_option_u64(GHashTable *options,
+                                   gboolean    static_keys,
+                                   int         addr_family,
+                                   guint       option,
+                                   guint64     value);
 void nm_dhcp_option_add_requests_to_options(GHashTable *options, int addr_family);
 
 GHashTable *nm_dhcp_option_create_options_dict(gboolean static_keys);

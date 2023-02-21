@@ -241,7 +241,8 @@ nm_dhcp_client_create_l3cd(NMDhcpClient *self)
 GHashTable *
 nm_dhcp_client_create_options_dict(NMDhcpClient *self, gboolean static_keys)
 {
-    NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
+    NMDhcpClientPrivate *priv    = NM_DHCP_CLIENT_GET_PRIVATE(self);
+    const int            IS_IPv4 = NM_IS_IPv4(priv->config.addr_family);
     GHashTable          *options;
     GBytes              *effective_client_id;
 
@@ -249,22 +250,18 @@ nm_dhcp_client_create_options_dict(NMDhcpClient *self, gboolean static_keys)
 
     effective_client_id = nm_dhcp_client_get_effective_client_id(self);
     if (effective_client_id) {
-        guint         option = NM_IS_IPv4(priv->config.addr_family) ? NM_DHCP_OPTION_DHCP4_CLIENT_ID
-                                                                    : NM_DHCP_OPTION_DHCP6_CLIENT_ID;
-        gs_free char *str    = nm_dhcp_utils_duid_to_string(effective_client_id);
+        guint option = IS_IPv4 ? NM_DHCP_OPTION_DHCP4_CLIENT_ID : NM_DHCP_OPTION_DHCP6_CLIENT_ID;
+        gs_free char *str = nm_dhcp_utils_duid_to_string(effective_client_id);
 
         /* Note that for the nm-dhcp-helper based plugins (dhclient), the plugin
          * may send the used client-id/DUID via the environment variables and
          * overwrite them yet again. */
 
-        if (static_keys) {
-            nm_dhcp_option_add_option(options, priv->config.addr_family, option, str);
-        } else {
-            g_hash_table_insert(
-                options,
-                g_strdup(nm_dhcp_option_request_string(priv->config.addr_family, option)),
-                g_steal_pointer(&str));
-        }
+        nm_dhcp_option_take_option(options,
+                                   static_keys,
+                                   priv->config.addr_family,
+                                   option,
+                                   g_steal_pointer(&str));
     }
 
     return options;
@@ -1589,6 +1586,20 @@ maybe_add_option(NMDhcpClient *self, GHashTable *hash, const char *key, GVariant
 
         /* The effective-client-id was (re)set. Update "hash" with the new value... */
         str_value = nm_dhcp_utils_duid_to_string(bytes);
+    }
+
+    if (!IS_IPv4 && nm_streq(key, "iaid")) {
+        gs_free char *str = g_steal_pointer(&str_value);
+        guint32       iaid;
+
+        /* Validate and normalize the iaid. */
+
+        if (!nm_dhcp_iaid_from_hexstr(str, &iaid)) {
+            /* Seems invalid. Ignore */
+            return;
+        }
+
+        str_value = nm_dhcp_iaid_to_hexstr(iaid, g_malloc(NM_DHCP_IAID_TO_HEXSTR_BUF_LEN));
     }
 
     g_hash_table_insert(hash, g_strdup(key), str_value);

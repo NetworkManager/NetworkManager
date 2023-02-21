@@ -6702,18 +6702,28 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
     /**
      * NMSettingIPConfig:dhcp-iaid:
      *
-     * A string containing the "Identity Association Identifier" (IAID) used
-     * by the DHCP client. The property is a 32-bit decimal value or a
-     * special value among "mac", "perm-mac", "ifname" and "stable". When
-     * set to "mac" (or "perm-mac"), the last 4 bytes of the current (or
-     * permanent) MAC address are used as IAID. When set to "ifname", the
-     * IAID is computed by hashing the interface name. The special value
-     * "stable" can be used to generate an IAID based on the stable-id (see
-     * connection.stable-id), a per-host key and the interface name. When
-     * the property is unset, the value from global configuration is used;
-     * if no global default is set then the IAID is assumed to be
-     * "ifname". Note that at the moment this property is ignored for IPv6
-     * by dhclient, which always derives the IAID from the MAC address.
+     * A string containing the "Identity Association Identifier" (IAID) used by
+     * the DHCP client. The string can be a 32-bit number (either decimal,
+     * hexadecimal or or as colon separated hexadecimal numbers). Alternatively
+     * it can be set to the special values "mac", "perm-mac", "ifname" or
+     * "stable". When set to "mac" (or "perm-mac"), the last 4 bytes of the
+     * current (or permanent) MAC address are used as IAID. When set to
+     * "ifname", the IAID is computed by hashing the interface name. The
+     * special value "stable" can be used to generate an IAID based on the
+     * stable-id (see connection.stable-id), a per-host key and the interface
+     * name. When the property is unset, the value from global configuration is
+     * used; if no global default is set then the IAID is assumed to be
+     * "ifname".
+     *
+     * For DHCPv4, the IAID is only used with "ipv4.dhcp-client-id"
+     * values "duid" and "ipv6-duid" to generate the client-id.
+     *
+     * For DHCPv6, note that at the moment this property is
+     * only supported by the "internal" DHCPv6 plugin. The "dhclient" DHCPv6
+     * plugin always derives the IAID from the MAC address.
+     *
+     * The actually used DHCPv6 IAID for a currently activated interface is
+     * exposed in the lease information of the device.
      *
      * Since: 1.22
      **/
