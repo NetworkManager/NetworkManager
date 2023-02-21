@@ -1411,25 +1411,24 @@ nm_manager_devcon_autoconnect_is_blocked(NMManager            *self,
 }
 
 gboolean
-nm_manager_devcon_autoconnect_blocked_reason_set_full(NMManager                         *self,
-                                                      NMDevice                          *device,
-                                                      NMSettingsConnection              *sett_conn,
-                                                      NMSettingsAutoconnectBlockedReason mask,
-                                                      NMSettingsAutoconnectBlockedReason value)
+nm_manager_devcon_autoconnect_blocked_reason_set(NMManager                         *self,
+                                                 NMDevice                          *device,
+                                                 NMSettingsConnection              *sett_conn,
+                                                 NMSettingsAutoconnectBlockedReason value,
+                                                 gboolean                           set)
 {
     NMSettingsAutoconnectBlockedReason v;
     DevConData                        *data;
     gboolean                           changed = FALSE;
     char                               buf[100];
 
-    nm_assert(mask);
+    nm_assert(value);
     nm_assert(sett_conn);
-    nm_assert(!NM_FLAGS_ANY(value, ~mask));
 
     if (device) {
         data = _devcon_lookup_data(self, device, sett_conn, TRUE);
         v    = data->autoconnect.blocked_reason;
-        v    = (v & ~mask) | (value & mask);
+        v    = set ? NM_FLAGS_SET(v, value) : NM_FLAGS_UNSET(v, value);
 
         if (data->autoconnect.blocked_reason == v)
             return FALSE;
@@ -1440,20 +1439,20 @@ nm_manager_devcon_autoconnect_blocked_reason_set_full(NMManager                 
               nm_device_get_ip_iface(device));
         data->autoconnect.blocked_reason = v;
         return TRUE;
-    } else {
-        c_list_for_each_entry (data, &sett_conn->devcon_con_lst_head, con_lst) {
-            v = data->autoconnect.blocked_reason;
-            v = (v & ~mask) | (value & mask);
+    }
 
-            if (data->autoconnect.blocked_reason == v)
-                continue;
-            _LOGT(LOGD_SETTINGS,
-                  "autoconnect: blocked reason: %s for device %s",
-                  nm_settings_autoconnect_blocked_reason_to_string(v, buf, sizeof(buf)),
-                  nm_device_get_ip_iface(data->device));
-            data->autoconnect.blocked_reason = v;
-            changed                          = TRUE;
-        }
+    c_list_for_each_entry (data, &sett_conn->devcon_con_lst_head, con_lst) {
+        v = data->autoconnect.blocked_reason;
+        v = set ? NM_FLAGS_SET(v, value) : NM_FLAGS_UNSET(v, value);
+
+        if (data->autoconnect.blocked_reason == v)
+            continue;
+        _LOGT(LOGD_SETTINGS,
+              "autoconnect: blocked reason: %s for device %s",
+              nm_settings_autoconnect_blocked_reason_to_string(v, buf, sizeof(buf)),
+              nm_device_get_ip_iface(data->device));
+        data->autoconnect.blocked_reason = v;
+        changed                          = TRUE;
     }
 
     return changed;
