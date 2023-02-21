@@ -2140,7 +2140,7 @@ device_state_changed(NMDevice           *device,
                       nm_settings_connection_get_id(sett_conn),
                       NM_UTILS_LOOKUP_STR_A(nm_device_state_reason_to_string,
                                             nm_device_state_reason_check(reason)));
-                if (blocked_reason == NM_SETTINGS_AUTOCONNECT_BLOCKED_REASON_FAILED)
+                if (blocked_reason == NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_FAILED)
                     nm_manager_devcon_autoconnect_blocked_reason_set(priv->manager,
                                                                      device,
                                                                      sett_conn,
