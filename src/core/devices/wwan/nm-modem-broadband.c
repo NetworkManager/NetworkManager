@@ -20,6 +20,8 @@
 
 #define NM_MODEM_BROADBAND_MODEM "modem"
 
+#define MM_SUPPORTS_INITIAL_EPS_BEARER_SETTINGS MM_CHECK_VERSION(1, 10, 0)
+
 #if !MM_CHECK_VERSION(1, 14, 0)
 #define MM_MODEM_CAPABILITY_5GNR ((MMModemCapability) (1 << 6))
 #endif
@@ -561,6 +563,7 @@ out:
     return TRUE;
 }
 
+#if MM_SUPPORTS_INITIAL_EPS_BEARER_SETTINGS
 static void
 set_initial_eps_bearer_settings_ready(MMModem3gpp      *modem_3gpp_iface,
                                       GAsyncResult     *res,
@@ -588,6 +591,7 @@ set_initial_eps_bearer_settings_ready(MMModem3gpp      *modem_3gpp_iface,
     self->_priv.ctx->step++;
     connect_context_step(self);
 }
+#endif
 
 static void
 connect_context_step(NMModemBroadband *self)
@@ -667,6 +671,7 @@ connect_context_step(NMModemBroadband *self)
 
             /* assume do_config is true if an APN is set */
             if (apn || do_config) {
+#if MM_SUPPORTS_INITIAL_EPS_BEARER_SETTINGS
                 gs_unref_object MMBearerProperties *config = NULL;
                 NMModemIPType ip_type = nm_modem_get_initial_eps_bearer_ip_type(ctx->ip_types);
 
@@ -699,6 +704,9 @@ connect_context_step(NMModemBroadband *self)
                     (GAsyncReadyCallback) set_initial_eps_bearer_settings_ready,
                     self);
                 break;
+#else
+                _LOGD("cannot set initial EPS bearer settings due to old ModemManager version");
+#endif
             }
         }
         ctx->step++;
