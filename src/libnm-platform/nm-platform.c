@@ -4928,8 +4928,10 @@ nm_platform_ip_route_sync(NMPlatform *self,
 
     for (i_type = 0; routes && i_type < 2; i_type++) {
         for (i = 0; i < routes->len; i++) {
-            int      r, r2;
-            gboolean gateway_route_added = FALSE;
+            gs_free char *extack_msg          = NULL;
+            gboolean      gateway_route_added = FALSE;
+            int           r2;
+            int           r;
 
             conf_o = routes->pdata[i];
 
@@ -4990,7 +4992,7 @@ sync_route_add:
                                          NMP_NLM_FLAG_APPEND
                                              | NMP_NLM_FLAG_SUPPRESS_NETLINK_FAILURE,
                                          conf_o,
-                                         NULL);
+                                         &extack_msg);
             if (r < 0) {
                 if (r == -EEXIST) {
                     /* Don't fail for EEXIST. It's not clear that the existing route
