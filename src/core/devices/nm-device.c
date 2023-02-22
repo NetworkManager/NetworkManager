@@ -2796,8 +2796,8 @@ link_properties_fill_from_setting(NMDevice *self, NMPlatformLinkProps *props)
     return flags;
 }
 
-static void
-link_properties_set(NMDevice *self, gboolean reapply)
+void
+nm_device_link_properties_set(NMDevice *self, gboolean reapply)
 {
     NMDevicePrivate          *priv = NM_DEVICE_GET_PRIVATE(self);
     NMPlatformLinkProps       props;
@@ -9913,7 +9913,7 @@ activate_stage2_device_config(NMDevice *self)
 
     if (!nm_device_sys_iface_state_is_external(self)) {
         _ethtool_state_set(self);
-        link_properties_set(self, FALSE);
+        nm_device_link_properties_set(self, FALSE);
     }
 
     if (!nm_device_sys_iface_state_is_external(self)) {
@@ -13178,7 +13178,7 @@ check_and_reapply_connection(NMDevice            *self,
      *************************************************************************/
     klass->reapply_connection(self, con_old, con_new);
 
-    link_properties_set(self, TRUE);
+    nm_device_link_properties_set(self, TRUE);
 
     if (priv->state >= NM_DEVICE_STATE_CONFIG)
         lldp_setup(self, NM_TERNARY_DEFAULT);
