@@ -482,9 +482,6 @@ typedef struct {
 typedef struct {
     guint32 nlh_seq_next;
     guint32 nlh_seq_last_seen;
-#if NM_MORE_LOGGING
-    guint32 nlh_seq_last_handled;
-#endif
 } NetlinkProtocolPrivData;
 
 typedef struct {
@@ -7742,7 +7739,7 @@ event_seq_check(NMPlatform             *platform,
     if (!NM_FLAGS_ANY(
             priv->delayed_action.flags,
             nmp_netlink_protocol_info(netlink_protocol)->delayed_action_type_wait_for_response))
-        goto out;
+        return;
 
     nm_assert(priv->delayed_action.list_wait_for_response_x[netlink_protocol]->len > 0);
 
@@ -7767,16 +7764,6 @@ event_seq_check(NMPlatform             *platform,
 
         return;
     }
-
-out:
-
-#if NM_MORE_LOGGING
-    if (seq_number != priv->proto_data_x[netlink_protocol].nlh_seq_last_handled)
-        _LOGt("netlink: recvmsg: unwaited sequence number %u", seq_number);
-    priv->proto_data_x[netlink_protocol].nlh_seq_last_handled = seq_number;
-#else
-    (void) 0;
-#endif
 }
 
 static void
