@@ -142,6 +142,7 @@ if enable_introspection
       src_inc,
       top_inc,
     ],
+    header: 'NetworkManager.h',
     dependencies: [
       declare_dependency(
         compile_args: [
