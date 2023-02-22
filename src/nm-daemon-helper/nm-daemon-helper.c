@@ -11,6 +11,7 @@
 #if defined(__GLIBC__)
 #include <nss.h>
 #endif
+#include <stdarg.h>
 
 enum {
     RETURN_SUCCESS      = 0,
@@ -61,6 +62,7 @@ cmd_resolve_address(void)
     } sockaddr;
     socklen_t sockaddr_size;
     char      name[NI_MAXHOST];
+    int       ret;
 
     address = read_arg();
     if (!address)
@@ -83,15 +85,26 @@ cmd_resolve_address(void)
     } else
         return RETURN_INVALID_ARGS;
 
-    if (getnameinfo((struct sockaddr *) &sockaddr,
-                    sockaddr_size,
-                    name,
-                    sizeof(name),
-                    NULL,
-                    0,
-                    NI_NAMEREQD)
-        != 0)
+    ret = getnameinfo((struct sockaddr *) &sockaddr,
+                      sockaddr_size,
+                      name,
+                      sizeof(name),
+                      NULL,
+                      0,
+                      NI_NAMEREQD);
+    if (ret != 0) {
+        if (ret == EAI_SYSTEM) {
+            fprintf(stderr,
+                    "getnameinfo() failed: %d (%s), system error: %d (%s)\n",
+                    ret,
+                    gai_strerror(ret),
+                    errno,
+                    strerror(errno));
+        } else {
+            fprintf(stderr, "getnameinfo() failed: %d (%s)\n", ret, gai_strerror(ret));
+        }
         return RETURN_ERROR;
+    }
 
     printf("%s", name);
 
