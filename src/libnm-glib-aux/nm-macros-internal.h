@@ -1023,34 +1023,43 @@ nm_g_variant_equal(GVariant *a, GVariant *b)
 #define NM_FLAGS_SET(flags, val)              \
     ({                                        \
         const typeof(flags) _flags = (flags); \
-        const typeof(flags) _val   = (val);   \
+        typeof(_flags)      _val   = (val);   \
                                               \
-        _flags | _val;                        \
+        (void) (FALSE && (flags) == (val));   \
+                                              \
+        (_flags | _val);                      \
     })
 
 #define NM_FLAGS_UNSET(flags, val)            \
     ({                                        \
         const typeof(flags) _flags = (flags); \
-        const typeof(flags) _val   = (val);   \
+        typeof(_flags)      _val   = (val);   \
                                               \
-        _flags & (~_val);                     \
+        (void) (FALSE && (flags) == (val));   \
+                                              \
+        (_flags & (~_val));                   \
     })
 
-#define NM_FLAGS_ASSIGN(flags, val, assign)            \
-    ({                                                 \
-        const typeof(flags) _flags = (flags);          \
-        const typeof(flags) _val   = (val);            \
-                                                       \
-        (assign) ? _flags | (_val) : _flags & (~_val); \
+#define NM_FLAGS_ASSIGN(flags, val, assign)              \
+    ({                                                   \
+        const typeof(flags) _flags = (flags);            \
+        typeof(_flags)      _val   = (val);              \
+                                                         \
+        (void) (FALSE && (flags) == (val));              \
+                                                         \
+        (assign) ? (_flags | _val) : (_flags & (~_val)); \
     })
 
-#define NM_FLAGS_ASSIGN_MASK(flags, mask, val) \
-    ({                                         \
-        const typeof(flags) _flags = (flags);  \
-        const typeof(flags) _mask  = (mask);   \
-        const typeof(flags) _val   = (val);    \
-                                               \
-        ((_flags & ~_mask) | (_mask & _val));  \
+#define NM_FLAGS_ASSIGN_MASK(flags, mask, val)  \
+    ({                                          \
+        const typeof(flags) _flags = (flags);   \
+        typeof(_flags)      _mask  = (mask);    \
+        typeof(_flags)      _val   = (val);     \
+                                                \
+        (void) (FALSE && (flags) == (val));     \
+        (void) (FALSE && (flags) == (mask));    \
+                                                \
+        ((_flags & (~_mask)) | (_val & _mask)); \
     })
 
 /*****************************************************************************/
