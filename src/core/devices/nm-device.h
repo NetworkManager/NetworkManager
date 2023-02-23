@@ -144,6 +144,7 @@ struct _NMDevice {
     NMDBusObject             parent;
     struct _NMDevicePrivate *_priv;
     CList                    devices_lst;
+    CList                    devcon_dev_lst_head;
 };
 
 /* The flags have an relaxing meaning, that means, specifying more flags, can make
@@ -420,6 +421,10 @@ typedef struct _NMDeviceClass {
 
     const char *(*get_dhcp_anycast_address)(NMDevice *self);
 } NMDeviceClass;
+
+NMSettings *nm_device_get_settings(NMDevice *self);
+
+NMManager *nm_device_get_manager(NMDevice *self);
 
 GType nm_device_get_type(void);
 

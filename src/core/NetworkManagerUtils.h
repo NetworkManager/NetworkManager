@@ -228,6 +228,26 @@ void nm_utils_ip_routes_to_dbus(int                          addr_family,
 
 /*****************************************************************************/
 
+typedef enum _nm_packed {
+    NM_SETTINGS_AUTOCONNECT_BLOCKED_REASON_NONE = 0,
+
+    NM_SETTINGS_AUTOCONNECT_BLOCKED_REASON_USER_REQUEST = (1LL << 0),
+    NM_SETTINGS_AUTOCONNECT_BLOCKED_REASON_FAILED       = (1LL << 1),
+    NM_SETTINGS_AUTOCONNECT_BLOCKED_REASON_NO_SECRETS   = (1LL << 2),
+
+    NM_SETTINGS_AUTOCONNECT_BLOCKED_REASON_ALL =
+        (NM_SETTINGS_AUTOCONNECT_BLOCKED_REASON_USER_REQUEST
+         | NM_SETTINGS_AUTOCONNECT_BLOCKED_REASON_FAILED
+         | NM_SETTINGS_AUTOCONNECT_BLOCKED_REASON_NO_SECRETS),
+} NMSettingsAutoconnectBlockedReason;
+
+const char *
+nm_settings_autoconnect_blocked_reason_to_string(NMSettingsAutoconnectBlockedReason reason,
+                                                 char                              *buf,
+                                                 gsize                              len);
+
+/*****************************************************************************/
+
 /* For now, all we track about a DHCP lease is the GHashTable with
  * the options.
  *

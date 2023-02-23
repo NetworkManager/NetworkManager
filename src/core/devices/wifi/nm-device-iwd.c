@@ -2302,9 +2302,10 @@ act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
          * to reset the retry count so we set no timeout.
          */
         if (priv->iwd_autoconnect) {
-            NMSettingsConnection *sett_conn = nm_act_request_get_settings_connection(req);
-
-            nm_settings_connection_autoconnect_retries_set(sett_conn, 0);
+            nm_manager_devcon_autoconnect_retries_set(nm_device_get_manager(device),
+                                                      device,
+                                                      nm_act_request_get_settings_connection(req),
+                                                      0);
         }
 
         /* With priv->iwd_autoconnect, if we're assuming a connection because
