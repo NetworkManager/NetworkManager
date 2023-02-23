@@ -1,4 +1,15 @@
 ================================================
+NetworkManager-1.40.16
+Overview of changes since NetworkManager-1.40.14
+================================================
+
+* Add the DHCPv6 IAID to the lease information exposed in /run and on
+  D-Bus.
+* Don't use tentative IPv6 address to resolve the system hostname via DNS.
+* Fix race condition when setting the MAC address of an OVS interface.
+* Fix assuming team connections at boot.
+
+================================================
 NetworkManager-1.40.14
 Overview of changes since NetworkManager-1.40.12
 ================================================
