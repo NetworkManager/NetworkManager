@@ -1,3 +1,22 @@
+===============================================
+NetworkManager-1.42.2
+Overview of changes since NetworkManager-1.42.0
+===============================================
+
+* Add build option to set the mobile-broadband-provider-info database
+  path.
+* Add new "ipv[46].replace-local-rule" setting to control whether to
+  remove the local route rule that is automatically generated.
+* Add the DHCPv6 IAID to the lease information exposed in /run and on
+  D-Bus.
+* Fix assuming team connections at boot.
+* Fix race condition when setting the MAC address of an OVS interface.
+* Fix constructing the IPv4 name servers variable passed to dispatcher
+  scripts.
+* Don't use tentative IPv6 address to resolve the system hostname via DNS.
+* Deprecate the "Master" property of the NMActiveConnection D-Bus object
+  in favor of the new "Controller" property.
+
 =============================================
 NetworkManager-1.42
 Overview of changes since NetworkManager-1.40
