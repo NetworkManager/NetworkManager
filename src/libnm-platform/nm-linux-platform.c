@@ -8920,15 +8920,27 @@ get_ext_data(NMPlatform *platform, int ifindex)
     return obj->_link.ext_data;
 }
 
+#define get_ext_data_check(platform, ifindex, is_check)      \
+    ({                                                       \
+        GObject *_obj = get_ext_data((platform), (ifindex)); \
+                                                             \
+        _obj &&is_check(_obj) ? ((gpointer) _obj) : NULL;    \
+    })
+
 /*****************************************************************************/
 
-#define WIFI_GET_WIFI_DATA_NETNS(wifi_data, platform, ifindex, retval) \
-    nm_auto_pop_netns NMPNetns *netns = NULL;                          \
-    NMWifiUtils                *wifi_data;                             \
-    if (!nm_platform_netns_push(platform, &netns))                     \
-        return retval;                                                 \
-    wifi_data = NM_WIFI_UTILS(get_ext_data(platform, ifindex));        \
-    if (!wifi_data)                                                    \
+#define WIFI_GET_WIFI_DATA(wifi_data, platform, ifindex, retval)                      \
+    NMWifiUtils *wifi_data = get_ext_data_check(platform, ifindex, NM_IS_WIFI_UTILS); \
+    if (!wifi_data)                                                                   \
+        return retval;
+
+#define WIFI_GET_WIFI_DATA_NETNS(wifi_data, platform, ifindex, retval)   \
+    nm_auto_pop_netns NMPNetns *netns = NULL;                            \
+    NMWifiUtils                *wifi_data;                               \
+    if (!nm_platform_netns_push(platform, &netns))                       \
+        return retval;                                                   \
+    wifi_data = get_ext_data_check(platform, ifindex, NM_IS_WIFI_UTILS); \
+    if (!wifi_data)                                                      \
         return retval;
 
 static gboolean
@@ -9097,9 +9109,9 @@ mesh_set_ssid(NMPlatform *platform, int ifindex, const guint8 *ssid, gsize len)
 
 /*****************************************************************************/
 
-#define WPAN_GET_WPAN_DATA(wpan_data, platform, ifindex, retval)             \
-    NMWpanUtils *wpan_data = NM_WPAN_UTILS(get_ext_data(platform, ifindex)); \
-    if (!wpan_data)                                                          \
+#define WPAN_GET_WPAN_DATA(wpan_data, platform, ifindex, retval)                      \
+    NMWpanUtils *wpan_data = get_ext_data_check(platform, ifindex, NM_IS_WPAN_UTILS); \
+    if (!wpan_data)                                                                   \
         return retval;
 
 static guint16
@@ -9151,10 +9163,7 @@ link_get_wake_on_lan(NMPlatform *platform, int ifindex)
     if (type == NM_LINK_TYPE_ETHERNET)
         return nmp_utils_ethtool_get_wake_on_lan(ifindex);
     else if (type == NM_LINK_TYPE_WIFI) {
-        NMWifiUtils *wifi_data = NM_WIFI_UTILS(get_ext_data(platform, ifindex));
-
-        if (!wifi_data)
-            return FALSE;
+        WIFI_GET_WIFI_DATA(wifi_data, platform, ifindex, FALSE);
 
         return !NM_IN_SET(nm_wifi_utils_get_wake_on_wlan(wifi_data),
                           _NM_SETTING_WIRELESS_WAKE_ON_WLAN_NONE,
