@@ -137,7 +137,7 @@
       <listitem>
        <para>
          With Ethernet devices, NetworkManager waits for the carrier until the value in
-	 <literal>[device*].carrier-timeout</literal> is reached. This is because some
+	 <literal>[device*].carrier-wait-timeout</literal> is reached. This is because some
 	 devices take a long time to detect the carrier. Consequently, booting with cable
 	 unplugged, unnecessarily delays <literal>NetworkManager-wait-online.service</literal>.
        </para>
