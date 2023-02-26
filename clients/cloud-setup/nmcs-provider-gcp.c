@@ -48,7 +48,7 @@ _detect_get_meta_data_done_cb (GObject *source,
 	gs_free_error GError *error = NULL;
 	gboolean success;
 
-	success = nm_http_client_poll_get_finish (NM_HTTP_CLIENT (source),
+	success = nm_http_client_poll_req_finish (NM_HTTP_CLIENT (source),
 	                                          result,
 	                                          NULL,
 	                                          NULL,
@@ -88,7 +88,7 @@ detect (NMCSProvider *provider,
 
 	http_client = nmcs_provider_get_http_client (provider);
 
-	nm_http_client_poll_get (http_client,
+	nm_http_client_poll_req (http_client,
 	                         (uri = _gcp_uri_concat ("id")),
 	                         HTTP_TIMEOUT_MS,
 	                         256*1024,
@@ -170,7 +170,7 @@ _get_config_fip_cb (GObject *source,
 
 	gcp_data = iface_data->gcp_data;
 
-	nm_http_client_poll_get_finish (NM_HTTP_CLIENT (source),
+	nm_http_client_poll_req_finish (NM_HTTP_CLIENT (source),
 	                                result,
 	                                NULL,
 	                                &response,
@@ -237,7 +237,7 @@ _get_config_ips_list_cb (GObject *source,
 
 	gcp_data = iface_data->gcp_data;
 
-	nm_http_client_poll_get_finish (NM_HTTP_CLIENT (source),
+	nm_http_client_poll_req_finish (NM_HTTP_CLIENT (source),
 	                                result,
 	                                NULL,
 	                                &response,
@@ -290,7 +290,7 @@ _get_config_ips_list_cb (GObject *source,
 		const char *str = uri_arr->pdata[i];
 		gs_free const char *uri = NULL;
 
-		nm_http_client_poll_get (NM_HTTP_CLIENT (source),
+		nm_http_client_poll_req (NM_HTTP_CLIENT (source),
 		                         (uri = _gcp_uri_interfaces (str)),
 		                         HTTP_TIMEOUT_MS,
 		                         HTTP_REQ_MAX_DATA,
@@ -326,7 +326,7 @@ _get_config_iface_cb (GObject *source,
 
 	gcp_data = iface_data->gcp_data;
 
-	nm_http_client_poll_get_finish (NM_HTTP_CLIENT (source),
+	nm_http_client_poll_req_finish (NM_HTTP_CLIENT (source),
 	                                result,
 	                                NULL,
 	                                &response,
@@ -353,7 +353,7 @@ _get_config_iface_cb (GObject *source,
 	str = g_strdup_printf ("%"G_GSSIZE_FORMAT"/forwarded-ips/",
 	                       iface_data->iface_idx);
 
-	nm_http_client_poll_get (NM_HTTP_CLIENT (source),
+	nm_http_client_poll_req (NM_HTTP_CLIENT (source),
 	                         (uri = _gcp_uri_interfaces (str)),
 	                         HTTP_TIMEOUT_MS,
 	                         HTTP_REQ_MAX_DATA,
@@ -391,7 +391,7 @@ _get_net_ifaces_list_cb (GObject *source,
 	gsize line_len;
 	guint i;
 
-	nm_http_client_poll_get_finish (NM_HTTP_CLIENT (source),
+	nm_http_client_poll_req_finish (NM_HTTP_CLIENT (source),
 	                                result,
 	                                NULL,
 	                                &response,
@@ -448,7 +448,7 @@ _get_net_ifaces_list_cb (GObject *source,
 
 		g_string_printf (gstr, "%"G_GSSIZE_FORMAT"/mac", data->iface_idx);
 
-		nm_http_client_poll_get (NM_HTTP_CLIENT (source),
+		nm_http_client_poll_req (NM_HTTP_CLIENT (source),
 		                         (uri = _gcp_uri_interfaces (gstr->str)),
 		                         HTTP_TIMEOUT_MS,
 		                         HTTP_REQ_MAX_DATA,
@@ -487,7 +487,7 @@ get_config (NMCSProvider *provider,
 
 	};
 
-	nm_http_client_poll_get (nmcs_provider_get_http_client (provider),
+	nm_http_client_poll_req (nmcs_provider_get_http_client (provider),
 	                         (uri = _gcp_uri_interfaces ()),
 	                         HTTP_TIMEOUT_MS,
 	                         HTTP_REQ_MAX_DATA,
