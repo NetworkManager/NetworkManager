@@ -259,7 +259,7 @@ _get_cancelled_cb (GObject *object, gpointer user_data)
 	_ehandle_complete (edata, error);
 }
 
-void
+static void
 nm_http_client_get (NMHttpClient *self,
                     const char *url,
                     int timeout_msec,
@@ -352,7 +352,7 @@ nm_http_client_get (NMHttpClient *self,
 	}
 }
 
-gboolean
+static gboolean
 nm_http_client_get_finish (NMHttpClient *self,
                            GAsyncResult *result,
                            long *out_response_code,
