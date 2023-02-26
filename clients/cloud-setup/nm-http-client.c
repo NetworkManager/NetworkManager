@@ -265,6 +265,7 @@ nm_http_client_req (NMHttpClient *self,
                     int timeout_msec,
                     gssize max_data,
                     const char *const *http_headers,
+                    const char * http_method,
                     GCancellable *cancellable,
                     GAsyncReadyCallback callback,
                     gpointer user_data)
@@ -325,6 +326,9 @@ nm_http_client_req (NMHttpClient *self,
 
 		curl_easy_setopt (edata->ehandle, CURLOPT_HTTPHEADER, edata->headers);
 	}
+
+	if (http_method)
+		curl_easy_setopt(edata->ehandle, CURLOPT_CUSTOMREQUEST, http_method);
 
 	if (timeout_msec > 0) {
 		edata->timeout_source = _source_attach (self,
@@ -387,6 +391,7 @@ typedef struct {
 	GTask *task;
 	char *uri;
 	const char *const *http_headers;
+	const char *http_method;
 	NMHttpClientPollReqCheckFcn check_fcn;
 	gpointer check_user_data;
 	GBytes *response_data;
@@ -424,6 +429,7 @@ _poll_req_probe_start_fcn (GCancellable *cancellable,
 	                    poll_req_data->request_timeout_ms,
 	                    poll_req_data->request_max_data,
 	                    poll_req_data->http_headers,
+	                    poll_req_data->http_method,
 	                    cancellable,
 	                    callback,
 	                    user_data);
@@ -504,6 +510,7 @@ nm_http_client_poll_req (NMHttpClient *self,
                          int poll_timeout_ms,
                          int ratelimit_timeout_ms,
                          const char *const *http_headers,
+                         const char *http_method,
                          GCancellable *cancellable,
                          NMHttpClientPollReqCheckFcn check_fcn,
                          gpointer check_user_data,
