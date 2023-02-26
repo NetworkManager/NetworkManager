@@ -44,7 +44,7 @@ _detect_get_meta_data_done_cb(GObject *source, GAsyncResult *result, gpointer us
     gboolean              success;
 
     success =
-        nm_http_client_poll_get_finish(NM_HTTP_CLIENT(source), result, NULL, NULL, &get_error);
+	 nm_http_client_poll_req_finish(NM_HTTP_CLIENT(source), result, NULL, NULL, &get_error);
 
     if (nm_utils_error_is_cancelled(get_error)) {
         g_task_return_error(task, g_steal_pointer(&get_error));
@@ -77,7 +77,7 @@ detect(NMCSProvider *provider, GTask *task)
 
     http_client = nmcs_provider_get_http_client(provider);
 
-    nm_http_client_poll_get(http_client,
+    nm_http_client_poll_req(http_client,
                             (uri = _azure_uri_concat("/metadata/instance")),
                             HTTP_TIMEOUT_MS,
                             256 * 1024,
@@ -165,7 +165,7 @@ _get_config_fetch_done_cb(NMHttpClient *http_client,
 
     azure_data = iface_data->azure_data;
 
-    nm_http_client_poll_get_finish(http_client, result, NULL, &response, &error);
+    nm_http_client_poll_req_finish(http_client, result, NULL, &response, &error);
 
     if (error)
         goto done;
@@ -246,7 +246,8 @@ _get_config_ips_prefix_list_cb(GObject *source, GAsyncResult *result, gpointer u
 
     azure_data = iface_data->azure_data;
 
-    nm_http_client_poll_get_finish(NM_HTTP_CLIENT(source), result, NULL, &response, &error);
+    nm_http_client_poll_req_finish(NM_HTTP_CLIENT(source), result, NULL, &response, &error);
+
     if (error)
         goto done;
 
@@ -281,7 +282,7 @@ _get_config_ips_prefix_list_cb(GObject *source, GAsyncResult *result, gpointer u
 
             iface_data->n_ips_prefix_pending++;
 
-            nm_http_client_poll_get(
+            nm_http_client_poll_req(
                 NM_HTTP_CLIENT(source),
                 (uri = _azure_uri_interfaces(nm_sprintf_buf(
                      buf,
@@ -309,7 +310,7 @@ _get_config_ips_prefix_list_cb(GObject *source, GAsyncResult *result, gpointer u
         char                buf[30];
 
         iface_data->n_ips_prefix_pending++;
-        nm_http_client_poll_get(
+        nm_http_client_poll_req(
             NM_HTTP_CLIENT(source),
             (uri = _azure_uri_interfaces(
                  nm_sprintf_buf(buf, "%" G_GSSIZE_FORMAT, iface_data->iface_idx),
@@ -345,7 +346,7 @@ _get_config_iface_cb(GObject *source, GAsyncResult *result, gpointer user_data)
 
     azure_data = iface_data->azure_data;
 
-    nm_http_client_poll_get_finish(NM_HTTP_CLIENT(source), result, NULL, &response, &error);
+    nm_http_client_poll_req_finish(NM_HTTP_CLIENT(source), result, NULL, &response, &error);
 
     if (error)
         goto done;
@@ -378,7 +379,7 @@ _get_config_iface_cb(GObject *source, GAsyncResult *result, gpointer user_data)
 
     nm_sprintf_buf(buf, "%" G_GSSIZE_FORMAT "/ipv4/ipAddress/", iface_data->iface_idx);
 
-    nm_http_client_poll_get(NM_HTTP_CLIENT(source),
+    nm_http_client_poll_req(NM_HTTP_CLIENT(source),
                             (uri = _azure_uri_interfaces(buf)),
                             HTTP_TIMEOUT_MS,
                             512 * 1024,
@@ -411,7 +412,7 @@ _get_net_ifaces_list_cb(GObject *source, GAsyncResult *result, gpointer user_dat
     gsize                 line_len;
     guint                 i;
 
-    nm_http_client_poll_get_finish(NM_HTTP_CLIENT(source), result, NULL, &response, &error);
+    nm_http_client_poll_req_finish(NM_HTTP_CLIENT(source), result, NULL, &response, &error);
 
     if (error) {
         _get_config_maybe_task_return(azure_data, g_steal_pointer(&error));
@@ -471,7 +472,7 @@ _get_net_ifaces_list_cb(GObject *source, GAsyncResult *result, gpointer user_dat
         nm_sprintf_buf(buf, "%" G_GSSIZE_FORMAT "/macAddress", data->iface_idx);
 
         azure_data->n_ifaces_pending++;
-        nm_http_client_poll_get(NM_HTTP_CLIENT(source),
+        nm_http_client_poll_req(NM_HTTP_CLIENT(source),
                                 (uri = _azure_uri_interfaces(buf)),
                                 HTTP_TIMEOUT_MS,
                                 512 * 1024,
@@ -498,7 +499,7 @@ get_config(NMCSProvider *provider, NMCSProviderGetConfigTaskData *get_config_dat
         .n_ifaces_pending = 0,
     };
 
-    nm_http_client_poll_get(nmcs_provider_get_http_client(provider),
+    nm_http_client_poll_req(nmcs_provider_get_http_client(provider),
                             (uri = _azure_uri_interfaces()),
                             HTTP_TIMEOUT_MS,
                             256 * 1024,
