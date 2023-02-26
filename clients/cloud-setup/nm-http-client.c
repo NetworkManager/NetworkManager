@@ -105,12 +105,12 @@ typedef struct {
 } GetResult;
 
 static void
-_get_result_free (gpointer data)
+_req_result_free (gpointer data)
 {
-	GetResult *get_result = data;
+	GetResult *req_result = data;
 
-	g_bytes_unref (get_result->response_data);
-	nm_g_slice_free (get_result);
+	g_bytes_unref (req_result->response_data);
+	nm_g_slice_free (req_result);
 }
 
 typedef struct {
@@ -157,7 +157,7 @@ static void
 _ehandle_complete (EHandleData *edata,
                    GError *error_take)
 {
-	GetResult *get_result;
+	GetResult *req_result;
 	gs_free char *str_tmp_1 = NULL;
 	long response_code = -1;
 
@@ -201,15 +201,15 @@ _ehandle_complete (EHandleData *edata,
 
 	_ehandle_free_ehandle (edata);
 
-	get_result = g_slice_new (GetResult);
-	*get_result = (GetResult) {
+	req_result = g_slice_new (GetResult);
+	*req_result = (GetResult) {
 		.response_code = response_code,
 		/* This ensures that response_data is always NUL terminated. This is an important guarantee
 		 * that NMHttpClient makes. */
 		.response_data = g_string_free_to_bytes (g_steal_pointer (&edata->recv_data)),
 	};
 
-	g_task_return_pointer (edata->task, get_result, _get_result_free);
+	g_task_return_pointer (edata->task, req_result, _req_result_free);
 
 	_ehandle_free (edata);
 }
@@ -260,7 +260,7 @@ _get_cancelled_cb (GObject *object, gpointer user_data)
 }
 
 static void
-nm_http_client_get (NMHttpClient *self,
+nm_http_client_req (NMHttpClient *self,
                     const char *url,
                     int timeout_msec,
                     gssize max_data,
@@ -283,7 +283,7 @@ nm_http_client_get (NMHttpClient *self,
 
 	edata = g_slice_new (EHandleData);
 	*edata = (EHandleData) {
-		.task           = nm_g_task_new (self, cancellable, nm_http_client_get, callback, user_data),
+		.task           = nm_g_task_new (self, cancellable, nm_http_client_req, callback, user_data),
 		.recv_data      = g_string_sized_new (NM_MIN (max_data, 245)),
 		.max_data       = max_data,
 		.url            = g_strdup (url),
@@ -353,30 +353,30 @@ nm_http_client_get (NMHttpClient *self,
 }
 
 static gboolean
-nm_http_client_get_finish (NMHttpClient *self,
+nm_http_client_req_finish (NMHttpClient *self,
                            GAsyncResult *result,
                            long *out_response_code,
                            GBytes **out_response_data,
                            GError **error)
 {
-	GetResult *get_result;
+	GetResult *req_result;
 
 	g_return_val_if_fail (NM_IS_HTTP_CLIENT (self), FALSE);
-	g_return_val_if_fail (nm_g_task_is_valid (result, self, nm_http_client_get), FALSE);
+	g_return_val_if_fail (nm_g_task_is_valid (result, self, nm_http_client_req), FALSE);
 
-	get_result = g_task_propagate_pointer (G_TASK (result), error);
-	if (!get_result) {
+	req_result = g_task_propagate_pointer (G_TASK (result), error);
+	if (!req_result) {
 		NM_SET_OUT (out_response_code, -1);
 		NM_SET_OUT (out_response_data, NULL);
 		return FALSE;
 	}
 
-	NM_SET_OUT (out_response_code, get_result->response_code);
+	NM_SET_OUT (out_response_code, req_result->response_code);
 
 	/* response_data is binary, but is also guaranteed to be NUL terminated! */
-	NM_SET_OUT (out_response_data, g_steal_pointer (&get_result->response_data));
+	NM_SET_OUT (out_response_data, g_steal_pointer (&req_result->response_data));
 
-	_get_result_free (get_result);
+	_req_result_free (req_result);
 
 	return TRUE;
 }
@@ -387,62 +387,62 @@ typedef struct {
 	GTask *task;
 	char *uri;
 	const char *const *http_headers;
-	NMHttpClientPollGetCheckFcn check_fcn;
+	NMHttpClientPollReqCheckFcn check_fcn;
 	gpointer check_user_data;
 	GBytes *response_data;
 	gsize request_max_data;
 	long response_code;
 	int request_timeout_ms;
-} PollGetData;
+} PollReqData;
 
 static void
-_poll_get_data_free (gpointer data)
+_poll_req_data_free (gpointer data)
 {
-	PollGetData *poll_get_data = data;
+	PollReqData *poll_req_data = data;
 
-	g_free (poll_get_data->uri);
+	g_free (poll_req_data->uri);
 
-	nm_clear_pointer (&poll_get_data->response_data, g_bytes_unref);
-	g_strfreev ((char **) poll_get_data->http_headers);
+	nm_clear_pointer (&poll_req_data->response_data, g_bytes_unref);
+	g_strfreev ((char **) poll_req_data->http_headers);
 
-	nm_g_slice_free (poll_get_data);
+	nm_g_slice_free (poll_req_data);
 }
 
 static void
-_poll_get_probe_start_fcn (GCancellable *cancellable,
+_poll_req_probe_start_fcn (GCancellable *cancellable,
                            gpointer probe_user_data,
                            GAsyncReadyCallback callback,
                            gpointer user_data)
 {
-	PollGetData *poll_get_data = probe_user_data;
+	PollReqData *poll_req_data = probe_user_data;
 
-	/* balanced by _poll_get_probe_finish_fcn() */
-	g_object_ref (poll_get_data->task);
+	/* balanced by _poll_req_probe_finish_fcn() */
+	g_object_ref (poll_req_data->task);
 
-	nm_http_client_get (g_task_get_source_object (poll_get_data->task),
-	                    poll_get_data->uri,
-	                    poll_get_data->request_timeout_ms,
-	                    poll_get_data->request_max_data,
-	                    poll_get_data->http_headers,
+	nm_http_client_req (g_task_get_source_object (poll_req_data->task),
+	                    poll_req_data->uri,
+	                    poll_req_data->request_timeout_ms,
+	                    poll_req_data->request_max_data,
+	                    poll_req_data->http_headers,
 	                    cancellable,
 	                    callback,
 	                    user_data);
 }
 
 static gboolean
-_poll_get_probe_finish_fcn (GObject *source,
+_poll_req_probe_finish_fcn (GObject *source,
                             GAsyncResult *result,
                             gpointer probe_user_data,
                             GError **error)
 {
-	PollGetData *poll_get_data = probe_user_data;
-	_nm_unused gs_unref_object GTask *task = poll_get_data->task; /* balance ref from _poll_get_probe_start_fcn() */
+	PollReqData *poll_req_data = probe_user_data;
+	_nm_unused gs_unref_object GTask *task = poll_req_data->task; /* balance ref from _poll_req_probe_start_fcn() */
 	gboolean success;
 	gs_free_error GError *local_error = NULL;
 	long response_code;
 	gs_unref_bytes GBytes *response_data = NULL;
 
-	success = nm_http_client_get_finish (g_task_get_source_object (poll_get_data->task),
+	success = nm_http_client_req_finish (g_task_get_source_object (poll_req_data->task),
 	                                     result,
 	                                     &response_code,
 	                                     &response_data,
@@ -456,10 +456,10 @@ _poll_get_probe_finish_fcn (GObject *source,
 		return FALSE;
 	}
 
-	if (poll_get_data->check_fcn) {
-		success = poll_get_data->check_fcn (response_code,
+	if (poll_req_data->check_fcn) {
+		success = poll_req_data->check_fcn (response_code,
 		                                    response_data,
-		                                    poll_get_data->check_user_data,
+		                                    poll_req_data->check_user_data,
 		                                    &local_error);
 	} else
 		success = (response_code == 200);
@@ -472,32 +472,32 @@ _poll_get_probe_finish_fcn (GObject *source,
 	if (!success)
 		return FALSE;
 
-	poll_get_data->response_code = response_code;
-	poll_get_data->response_data = g_steal_pointer (&response_data);
+	poll_req_data->response_code = response_code;
+	poll_req_data->response_data = g_steal_pointer (&response_data);
 	return TRUE;
 }
 
 static void
-_poll_get_done_cb (GObject *source,
+_poll_req_done_cb (GObject *source,
                    GAsyncResult *result,
                    gpointer user_data)
 {
-	PollGetData *poll_get_data = user_data;
+	PollReqData *poll_req_data = user_data;
 	gs_free_error GError *error = NULL;
 	gboolean success;
 
 	success = nmcs_utils_poll_finish (result, NULL, &error);
 
 	if (error)
-		g_task_return_error (poll_get_data->task, g_steal_pointer (&error));
+		g_task_return_error (poll_req_data->task, g_steal_pointer (&error));
 	else
-		g_task_return_boolean (poll_get_data->task, success);
+		g_task_return_boolean (poll_req_data->task, success);
 
-	g_object_unref (poll_get_data->task);
+	g_object_unref (poll_req_data->task);
 }
 
 void
-nm_http_client_poll_get (NMHttpClient *self,
+nm_http_client_poll_req (NMHttpClient *self,
                          const char *uri,
                          int request_timeout_ms,
                          gssize request_max_data,
@@ -505,13 +505,13 @@ nm_http_client_poll_get (NMHttpClient *self,
                          int ratelimit_timeout_ms,
                          const char *const *http_headers,
                          GCancellable *cancellable,
-                         NMHttpClientPollGetCheckFcn check_fcn,
+                         NMHttpClientPollReqCheckFcn check_fcn,
                          gpointer check_user_data,
                          GAsyncReadyCallback callback,
                          gpointer user_data)
 {
 	nm_auto_pop_gmaincontext GMainContext *context = NULL;
-	PollGetData *poll_get_data;
+	PollReqData *poll_req_data;
 
 	g_return_if_fail (NM_IS_HTTP_CLIENT (self));
 	g_return_if_fail (uri && uri[0]);
@@ -521,9 +521,9 @@ nm_http_client_poll_get (NMHttpClient *self,
 	g_return_if_fail (ratelimit_timeout_ms >= -1);
 	g_return_if_fail (!cancellable || G_CANCELLABLE (cancellable));
 
-	poll_get_data = g_slice_new (PollGetData);
-	*poll_get_data = (PollGetData) {
-		.task               = nm_g_task_new (self, cancellable, nm_http_client_poll_get, callback, user_data),
+	poll_req_data = g_slice_new (PollReqData);
+	*poll_req_data = (PollReqData) {
+		.task               = nm_g_task_new (self, cancellable, nm_http_client_poll_req, callback, user_data),
 		.uri                = g_strdup (uri),
 		.request_timeout_ms = request_timeout_ms,
 		.request_max_data   = request_max_data,
@@ -533,39 +533,39 @@ nm_http_client_poll_get (NMHttpClient *self,
 		.http_headers       =  NM_CAST_STRV_CC (g_strdupv ((char **) http_headers)),
 	};
 
-	nmcs_wait_for_objects_register (poll_get_data->task);
+	nmcs_wait_for_objects_register (poll_req_data->task);
 
-	g_task_set_task_data (poll_get_data->task,
-	                      poll_get_data,
-	                      _poll_get_data_free);
+	g_task_set_task_data (poll_req_data->task,
+	                      poll_req_data,
+	                      _poll_req_data_free);
 
 	context = nm_g_main_context_push_thread_default_if_necessary (nm_http_client_get_main_context (self));
 
 	nmcs_utils_poll (poll_timeout_ms,
 	                 ratelimit_timeout_ms,
 	                 0,
-	                 _poll_get_probe_start_fcn,
-	                 _poll_get_probe_finish_fcn,
-	                 poll_get_data,
+	                 _poll_req_probe_start_fcn,
+	                 _poll_req_probe_finish_fcn,
+	                 poll_req_data,
 	                 cancellable,
-	                 _poll_get_done_cb,
-	                 poll_get_data);
+	                 _poll_req_done_cb,
+	                 poll_req_data);
 }
 
 gboolean
-nm_http_client_poll_get_finish (NMHttpClient *self,
+nm_http_client_poll_req_finish (NMHttpClient *self,
                                 GAsyncResult *result,
                                 long *out_response_code,
                                 GBytes **out_response_data,
                                 GError **error)
 {
-	PollGetData *poll_get_data;
+	PollReqData *poll_req_data;
 	GTask *task;
 	gboolean success;
 	gs_free_error GError *local_error = NULL;
 
 	g_return_val_if_fail (NM_HTTP_CLIENT (self), FALSE);
-	g_return_val_if_fail (nm_g_task_is_valid (result, self, nm_http_client_poll_get), FALSE);
+	g_return_val_if_fail (nm_g_task_is_valid (result, self, nm_http_client_poll_req), FALSE);
 
 	task = G_TASK (result);
 
@@ -579,10 +579,10 @@ nm_http_client_poll_get_finish (NMHttpClient *self,
 		return FALSE;
 	}
 
-	poll_get_data = g_task_get_task_data (task);
+	poll_req_data = g_task_get_task_data (task);
 
-	NM_SET_OUT (out_response_code, poll_get_data->response_code);
-	NM_SET_OUT (out_response_data, g_steal_pointer (&poll_get_data->response_data));
+	NM_SET_OUT (out_response_code, poll_req_data->response_code);
+	NM_SET_OUT (out_response_data, g_steal_pointer (&poll_req_data->response_data));
 
 	return TRUE;
 }
