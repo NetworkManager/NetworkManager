@@ -28,21 +28,6 @@ GMainContext *nm_http_client_get_main_context(NMHttpClient *self);
 
 /*****************************************************************************/
 
-void nm_http_client_get(NMHttpClient       *self,
-                        const char         *uri,
-                        int                 timeout_msec,
-                        gssize              max_data,
-                        const char *const  *http_headers,
-                        GCancellable       *cancellable,
-                        GAsyncReadyCallback callback,
-                        gpointer            user_data);
-
-gboolean nm_http_client_get_finish(NMHttpClient *self,
-                                   GAsyncResult *result,
-                                   long         *out_response_code,
-                                   GBytes      **out_response_data,
-                                   GError      **error);
-
 typedef gboolean (*NMHttpClientPollGetCheckFcn)(long     response_code,
                                                 GBytes  *response_data,
                                                 gpointer check_user_data,
