@@ -92,7 +92,7 @@ _detect_get_meta_data_done_cb (GObject *source,
 	gs_free_error GError *error = NULL;
 	gboolean success;
 
-	success = nm_http_client_poll_get_finish (NM_HTTP_CLIENT (source),
+	success = nm_http_client_poll_req_finish (NM_HTTP_CLIENT (source),
 	                                          result,
 	                                          NULL,
 	                                          NULL,
@@ -132,7 +132,7 @@ detect (NMCSProvider *provider,
 
 	http_client = nmcs_provider_get_http_client (provider);
 
-	nm_http_client_poll_get (http_client,
+	nm_http_client_poll_req (http_client,
 	                         (uri = _ec2_uri_concat ("latest/meta-data/")),
 	                         HTTP_TIMEOUT_MS,
 	                         256*1024,
@@ -200,7 +200,7 @@ _get_config_fetch_done_cb (NMHttpClient *http_client,
 
 	nm_utils_user_data_unpack (user_data, &iface_data, &hwaddr);
 
-	success = nm_http_client_poll_get_finish (http_client,
+	success = nm_http_client_poll_req_finish (http_client,
 	                                          result,
 	                                          NULL,
 	                                          &response_data,
@@ -316,7 +316,7 @@ _get_config_metadata_ready_cb (GObject *source,
 
 	nm_g_slice_free (metadata_data);
 
-	nm_http_client_poll_get_finish (NM_HTTP_CLIENT (source),
+	nm_http_client_poll_req_finish (NM_HTTP_CLIENT (source),
 	                                result,
 	                                NULL,
 	                                NULL,
@@ -387,7 +387,7 @@ _get_config_metadata_ready_cb (GObject *source,
 		_LOGD ("get-config: start fetching meta data for #%"G_GSSIZE_FORMAT", %s (%s)", config_iface_data->iface_idx, hwaddr, v_mac_data->path);
 
 		iface_data->n_pending++;
-		nm_http_client_poll_get (http_client,
+		nm_http_client_poll_req (http_client,
 		                         (uri1 = _ec2_uri_interfaces (v_mac_data->path,
 		                                                        NM_STR_HAS_SUFFIX (v_mac_data->path, "/")
 		                                                      ? ""
@@ -405,7 +405,7 @@ _get_config_metadata_ready_cb (GObject *source,
 		                         nm_utils_user_data_pack (iface_data, hwaddr));
 
 		iface_data->n_pending++;
-		nm_http_client_poll_get (http_client,
+		nm_http_client_poll_req (http_client,
 		                         (uri2 = _ec2_uri_interfaces (v_mac_data->path,
 		                                                        NM_STR_HAS_SUFFIX (v_mac_data->path, "/")
 		                                                      ? ""
@@ -526,7 +526,7 @@ get_config (NMCSProvider *provider,
 	 * MAC addresses, then we poll until we see them. They might not yet be
 	 * around from the start...
 	 */
-	nm_http_client_poll_get (nmcs_provider_get_http_client (provider),
+	nm_http_client_poll_req (nmcs_provider_get_http_client (provider),
 	                         (uri = _ec2_uri_interfaces ()),
 	                         HTTP_TIMEOUT_MS,
 	                         256 * 1024,
