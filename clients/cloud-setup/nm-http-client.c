@@ -402,7 +402,7 @@ _poll_get_data_free (gpointer data)
 	g_free (poll_get_data->uri);
 
 	nm_clear_pointer (&poll_get_data->response_data, g_bytes_unref);
-	g_strfreev ((char **) poll_get_data->http_headers);
+	g_free((gpointer) poll_get_data->http_headers);
 
 	nm_g_slice_free (poll_get_data);
 }
@@ -529,8 +529,13 @@ nm_http_client_poll_get (NMHttpClient *self,
 		.check_fcn          = check_fcn,
 		.check_user_data    = check_user_data,
 		.response_code      = -1,
-		.http_headers       =  NM_CAST_STRV_CC (g_strdupv ((char **) http_headers)),
+		.http_headers       =  NULL,
 	};
+
+	if (http_headers) {
+	    poll_get_data->http_headers =
+		nm_utils_strv_dup_packed(http_headers, -1) ?: g_new(const char *, 1);
+	}
 
 	nmcs_wait_for_objects_register (poll_get_data->task);
 
