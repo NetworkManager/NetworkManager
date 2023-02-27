@@ -1086,9 +1086,10 @@ typedef struct {
                     guint32                mtu,
                     gconstpointer          extra_data,
                     const NMPlatformLink **out_link);
-
-    int (*link_change)(NMPlatform *self, NMLinkType type, int ifindex, gconstpointer extra_data);
-
+    int (*link_change_extra)(NMPlatform   *self,
+                             NMLinkType    type,
+                             int           ifindex,
+                             gconstpointer extra_data);
     gboolean (*link_delete)(NMPlatform *self, int ifindex);
     gboolean (*link_refresh)(NMPlatform *self, int ifindex);
     gboolean (*link_set_netns)(NMPlatform *self, int ifindex, int netns_fd);
@@ -1590,8 +1591,10 @@ int nm_platform_link_add(NMPlatform            *self,
                          gconstpointer          extra_data,
                          const NMPlatformLink **out_link);
 
-int
-nm_platform_link_change(NMPlatform *self, NMLinkType type, int ifindex, gconstpointer extra_data);
+int nm_platform_link_change_extra(NMPlatform   *self,
+                                  NMLinkType    type,
+                                  int           ifindex,
+                                  gconstpointer extra_data);
 
 static inline int
 nm_platform_link_veth_add(NMPlatform            *self,
@@ -1631,13 +1634,13 @@ nm_platform_link_bridge_add(NMPlatform                *self,
 static inline int
 nm_platform_link_bridge_change(NMPlatform *self, int ifindex, const NMPlatformLnkBridge *props)
 {
-    return nm_platform_link_change(self, NM_LINK_TYPE_BRIDGE, ifindex, props);
+    return nm_platform_link_change_extra(self, NM_LINK_TYPE_BRIDGE, ifindex, props);
 }
 
 static inline int
 nm_platform_link_bond_change(NMPlatform *self, int ifindex, const NMPlatformLnkBond *props)
 {
-    return nm_platform_link_change(self, NM_LINK_TYPE_BOND, ifindex, props);
+    return nm_platform_link_change_extra(self, NM_LINK_TYPE_BOND, ifindex, props);
 }
 
 static inline int
