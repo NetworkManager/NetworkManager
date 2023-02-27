@@ -1388,7 +1388,10 @@ nm_platform_link_add(NMPlatform            *self,
 }
 
 int
-nm_platform_link_change(NMPlatform *self, NMLinkType type, int ifindex, gconstpointer extra_data)
+nm_platform_link_change_extra(NMPlatform   *self,
+                              NMLinkType    type,
+                              int           ifindex,
+                              gconstpointer extra_data)
 {
     char        buf[512];
     const char *name = nm_platform_link_get_name(self, ifindex);
@@ -1429,7 +1432,7 @@ nm_platform_link_change(NMPlatform *self, NMLinkType type, int ifindex, gconstpo
                buf;
            }));
 
-    return klass->link_change(self, type, ifindex, extra_data);
+    return klass->link_change_extra(self, type, ifindex, extra_data);
 }
 
 /**

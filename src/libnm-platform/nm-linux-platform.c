@@ -7984,7 +7984,7 @@ out:
 }
 
 static int
-link_change(NMPlatform *platform, NMLinkType type, int ifindex, gconstpointer extra_data)
+link_change_extra(NMPlatform *platform, NMLinkType type, int ifindex, gconstpointer extra_data)
 {
     nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
 
@@ -10833,9 +10833,9 @@ nm_linux_platform_class_init(NMLinuxPlatformClass *klass)
     platform_class->sysctl_set_async = sysctl_set_async;
     platform_class->sysctl_get       = sysctl_get;
 
-    platform_class->link_add    = link_add;
-    platform_class->link_change = link_change;
-    platform_class->link_delete = link_delete;
+    platform_class->link_add          = link_add;
+    platform_class->link_change_extra = link_change_extra;
+    platform_class->link_delete       = link_delete;
 
     platform_class->link_refresh = link_refresh;
 
