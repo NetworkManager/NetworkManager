@@ -518,7 +518,7 @@ _poll_req_done_cb(GObject *source, GAsyncResult *result, gpointer user_data)
     gs_free_error GError *error         = NULL;
     gboolean              success;
 
-    success = nmcs_utils_poll_finish(result, (gpointer *) &poll_req_data, &error);
+    success = nm_utils_poll_finish(result, (gpointer *) &poll_req_data, &error);
 
     nm_assert((!!success) == (!error));
     nm_assert(poll_req_data);
@@ -581,16 +581,16 @@ nm_http_client_poll_req(NMHttpClient               *self,
     context =
         nm_g_main_context_push_thread_default_if_necessary(nm_http_client_get_main_context(self));
 
-    nmcs_utils_poll(poll_timeout_ms,
-                    ratelimit_timeout_ms,
-                    0,
-                    _poll_reg_probe_register_object_fcn,
-                    _poll_req_probe_start_fcn,
-                    _poll_req_probe_finish_fcn,
-                    poll_req_data,
-                    cancellable,
-                    _poll_req_done_cb,
-                    NULL);
+    nm_utils_poll(poll_timeout_ms,
+                  ratelimit_timeout_ms,
+                  0,
+                  _poll_reg_probe_register_object_fcn,
+                  _poll_req_probe_start_fcn,
+                  _poll_req_probe_finish_fcn,
+                  poll_req_data,
+                  cancellable,
+                  _poll_req_done_cb,
+                  NULL);
 }
 
 gboolean
