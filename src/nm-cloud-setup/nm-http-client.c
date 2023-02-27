@@ -508,13 +508,14 @@ _poll_req_probe_finish_fcn(GObject      *source,
 static void
 _poll_req_done_cb(GObject *source, GAsyncResult *result, gpointer user_data)
 {
-    PollReqData          *poll_req_data = user_data;
+    PollReqData          *poll_req_data = NULL;
     gs_free_error GError *error         = NULL;
     gboolean              success;
 
-    success = nmcs_utils_poll_finish(result, NULL, &error);
+    success = nmcs_utils_poll_finish(result, (gpointer *) &poll_req_data, &error);
 
     nm_assert((!!success) == (!error));
+    nm_assert(poll_req_data);
 
     if (error)
         g_task_return_error(poll_req_data->task, g_steal_pointer(&error));
@@ -582,7 +583,7 @@ nm_http_client_poll_req(NMHttpClient               *self,
                     poll_req_data,
                     cancellable,
                     _poll_req_done_cb,
-                    poll_req_data);
+                    NULL);
 }
 
 gboolean
