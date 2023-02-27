@@ -1021,6 +1021,8 @@ _nm_connection_serialize_secrets(NMConnectionSerializationFlags flags,
 void _nm_connection_clear_secrets_by_secret_flags(NMConnection        *self,
                                                   NMSettingSecretFlags filter_flags);
 
+typedef gboolean (*_NMConnectionForEachSecretFunc)(NMSettingSecretFlags flags, gpointer user_data);
+
 GVariant *_nm_connection_for_each_secret(NMConnection                  *self,
                                          GVariant                      *secrets,
                                          gboolean                       remove_non_secrets,

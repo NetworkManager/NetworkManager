@@ -164,9 +164,6 @@ typedef void (*NMSettingValueIterFn)(NMSetting    *setting,
                                      GParamFlags   flags,
                                      gpointer      user_data);
 
-/*< private >*/
-typedef gboolean (*_NMConnectionForEachSecretFunc)(NMSettingSecretFlags flags, gpointer user_data);
-
 typedef struct _NMSettingClass NMSettingClass;
 
 GType nm_setting_get_type(void);
