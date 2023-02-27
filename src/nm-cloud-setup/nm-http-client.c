@@ -430,6 +430,12 @@ _poll_req_data_free(gpointer data)
 }
 
 static void
+_poll_reg_probe_register_object_fcn(GObject *object, gpointer user_data)
+{
+    nmcs_wait_for_objects_register(object);
+}
+
+static void
 _poll_req_probe_start_fcn(GCancellable       *cancellable,
                           gpointer            probe_user_data,
                           GAsyncReadyCallback callback,
@@ -578,6 +584,7 @@ nm_http_client_poll_req(NMHttpClient               *self,
     nmcs_utils_poll(poll_timeout_ms,
                     ratelimit_timeout_ms,
                     0,
+                    _poll_reg_probe_register_object_fcn,
                     _poll_req_probe_start_fcn,
                     _poll_req_probe_finish_fcn,
                     poll_req_data,

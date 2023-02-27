@@ -309,6 +309,11 @@ _poll_cancelled_cb(GObject *object, gpointer user_data)
  *   before the next. Together with @ratelimit_timeout_ms this determines how
  *   frequently we probe. We will wait at least this time between the end of the
  *   previous poll and the next one.
+ * @probe_register_object_fcn: (allow-none): called by nmcs_utils_poll()
+ *   synchronously, with the new, internal GTask instance. The purpose of this
+ *   callback is a bit obscure, you may want to pass NULL here. It's used by some
+ *   caller to register a weak pointer on the internal GTask instance to track
+ *   the lifetime of the operation.
  * @probe_start_fcn: used to start a (asynchronous) probe. A probe must be
  *   completed by calling the provided callback. While a probe is in progress, we
  *   will not start another. The function is called the first time on an idle
@@ -325,15 +330,16 @@ _poll_cancelled_cb(GObject *object, gpointer user_data)
  * actions.
  */
 void
-nmcs_utils_poll(int                         poll_timeout_ms,
-                int                         ratelimit_timeout_ms,
-                int                         sleep_timeout_ms,
-                NMCSUtilsPollProbeStartFcn  probe_start_fcn,
-                NMCSUtilsPollProbeFinishFcn probe_finish_fcn,
-                gpointer                    probe_user_data,
-                GCancellable               *cancellable,
-                GAsyncReadyCallback         callback,
-                gpointer                    user_data)
+nmcs_utils_poll(int                                 poll_timeout_ms,
+                int                                 ratelimit_timeout_ms,
+                int                                 sleep_timeout_ms,
+                NMCSUtilsPollProbeRegisterObjectFcn probe_register_object_fcn,
+                NMCSUtilsPollProbeStartFcn          probe_start_fcn,
+                NMCSUtilsPollProbeFinishFcn         probe_finish_fcn,
+                gpointer                            probe_user_data,
+                GCancellable                       *cancellable,
+                GAsyncReadyCallback                 callback,
+                gpointer                            user_data)
 {
     PollTaskData *poll_task_data;
 
@@ -350,9 +356,10 @@ nmcs_utils_poll(int                         poll_timeout_ms,
         .internal_cancellable = g_cancellable_new(),
     };
 
-    nmcs_wait_for_objects_register(poll_task_data->task);
-
     g_task_set_task_data(poll_task_data->task, poll_task_data, _poll_task_data_free);
+
+    if (probe_register_object_fcn)
+        probe_register_object_fcn((GObject *) poll_task_data->task, probe_user_data);
 
     if (poll_timeout_ms >= 0) {
         poll_task_data->source_timeout =
