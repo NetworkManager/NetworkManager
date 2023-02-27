@@ -304,14 +304,15 @@ _poll_cancelled_cb(GObject *object, gpointer user_data)
  * @poll_timeout_ms: if >= 0, then this is the overall timeout for how long we poll.
  *   When this timeout expires, the request completes with failure (and error set).
  * @ratelimit_timeout_ms: if > 0, we ratelimit the starts from one prope_start_fcn
- *   call to the next.
+ *   call to the next. We will wait at least this time between two consecutive polls.
  * @sleep_timeout_ms: if > 0, then we wait after a probe finished this timeout
  *   before the next. Together with @ratelimit_timeout_ms this determines how
- *   frequently we probe.
- * @probe_start_fcn: used to start a (asynchronous) probe. A probe must be completed
- *   by calling the provided callback. While a probe is in progress, we will not
- *   start another. This function is already invoked the first time synchronously,
- *   during nmcs_utils_poll().
+ *   frequently we probe. We will wait at least this time between the end of the
+ *   previous poll and the next one.
+ * @probe_start_fcn: used to start a (asynchronous) probe. A probe must be
+ *   completed by calling the provided callback. While a probe is in progress, we
+ *   will not start another. The function is called the first time on an idle
+ *   handler, afterwards it gets called again on each timeout for polling.
  * @probe_finish_fcn: will be called from the callback of @probe_start_fcn. If the
  *   function returns %TRUE (polling done) or an error, polling stops. Otherwise,
  *   another poll will be started.
