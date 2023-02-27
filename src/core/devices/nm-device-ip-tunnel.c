@@ -296,7 +296,7 @@ clear:
         if (lnk->ikey)
             input_key = g_strdup_printf("%u", lnk->ikey);
         if (lnk->okey)
-            input_key = g_strdup_printf("%u", lnk->okey);
+            output_key = g_strdup_printf("%u", lnk->okey);
     } else if (priv->mode == NM_IP_TUNNEL_MODE_VTI6) {
         const NMPlatformLnkVti6 *lnk;
 
@@ -313,7 +313,7 @@ clear:
         if (lnk->ikey)
             input_key = g_strdup_printf("%u", lnk->ikey);
         if (lnk->okey)
-            input_key = g_strdup_printf("%u", lnk->okey);
+            output_key = g_strdup_printf("%u", lnk->okey);
     } else
         g_return_if_reached();
 
