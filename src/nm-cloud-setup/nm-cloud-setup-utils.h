@@ -40,6 +40,8 @@ gboolean nmcs_wait_for_objects_iterate_until_done(GMainContext *context, int tim
 
 /*****************************************************************************/
 
+typedef void (*NMCSUtilsPollProbeRegisterObjectFcn)(GObject *object, gpointer user_data);
+
 typedef void (*NMCSUtilsPollProbeStartFcn)(GCancellable       *cancellable,
                                            gpointer            probe_user_data,
                                            GAsyncReadyCallback callback,
@@ -50,15 +52,16 @@ typedef gboolean (*NMCSUtilsPollProbeFinishFcn)(GObject      *source,
                                                 gpointer      probe_user_data,
                                                 GError      **error);
 
-void nmcs_utils_poll(int                         poll_timeout_ms,
-                     int                         ratelimit_timeout_ms,
-                     int                         sleep_timeout_ms,
-                     NMCSUtilsPollProbeStartFcn  probe_start_fcn,
-                     NMCSUtilsPollProbeFinishFcn probe_finish_fcn,
-                     gpointer                    probe_user_data,
-                     GCancellable               *cancellable,
-                     GAsyncReadyCallback         callback,
-                     gpointer                    user_data);
+void nmcs_utils_poll(int                                 poll_timeout_ms,
+                     int                                 ratelimit_timeout_ms,
+                     int                                 sleep_timeout_ms,
+                     NMCSUtilsPollProbeRegisterObjectFcn probe_register_object_fcn,
+                     NMCSUtilsPollProbeStartFcn          probe_start_fcn,
+                     NMCSUtilsPollProbeFinishFcn         probe_finish_fcn,
+                     gpointer                            probe_user_data,
+                     GCancellable                       *cancellable,
+                     GAsyncReadyCallback                 callback,
+                     gpointer                            user_data);
 
 gboolean nmcs_utils_poll_finish(GAsyncResult *result, gpointer *probe_user_data, GError **error);
 
