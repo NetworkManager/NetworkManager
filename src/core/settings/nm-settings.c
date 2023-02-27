@@ -2009,6 +2009,7 @@ nm_settings_update_connection(NMSettings                      *self,
     const char                        *uuid;
     gboolean                           tombstone_in_memory = FALSE;
     gboolean                           tombstone_on_disk   = FALSE;
+    NMSettingsConnectionIntFlags       new_flags;
 
     g_return_val_if_fail(NM_IS_SETTINGS(self), FALSE);
     g_return_val_if_fail(NM_IS_SETTINGS_CONNECTION(sett_conn), FALSE);
@@ -2228,13 +2229,16 @@ nm_settings_update_connection(NMSettings                      *self,
             }
         }
 
+        new_flags = nm_settings_connection_get_flags(sett_conn);
+        new_flags = NM_FLAGS_ASSIGN_MASK(new_flags, sett_mask, sett_flags);
+
         if (!update_storage) {
             success = _add_connection_to_first_plugin(self,
                                                       plugin_name,
                                                       sett_conn_entry,
                                                       connection,
                                                       new_in_memory,
-                                                      sett_flags,
+                                                      new_flags,
                                                       new_shadowed_storage_filename,
                                                       new_shadowed_owned,
                                                       &new_storage,
@@ -2245,7 +2249,7 @@ nm_settings_update_connection(NMSettings                      *self,
             success = _update_connection_to_plugin(self,
                                                    update_storage,
                                                    connection,
-                                                   sett_flags,
+                                                   new_flags,
                                                    update_reason,
                                                    new_shadowed_storage_filename,
                                                    new_shadowed_owned,
