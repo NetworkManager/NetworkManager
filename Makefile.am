@@ -2019,7 +2019,7 @@ src_libnm_client_impl_NM_1_0_gir_FILES = \
 	$(libnm_lib_h_pub_real) \
 	$(src_libnm_client_public_mkenums_c) \
 	$(libnm_lib_c_real)
-src_libnm_client_impl_NM_1_0_gir_SCANNERFLAGS = --warn-all --identifier-prefix=NM --symbol-prefix=nm
+src_libnm_client_impl_NM_1_0_gir_SCANNERFLAGS = --warn-all --identifier-prefix=NM --symbol-prefix=nm --c-include="NetworkManager.h"
 
 src/libnm-client-impl/libnm.typelib: src/libnm-client-impl/libnm.gir
 	$(INTROSPECTION_COMPILER) --includedir=$(srcdir)/src/libnm-core-public --includedir=$(builddir)/src/libnm-core-public --includedir=$(srcdir)/libnm-client-public --includedir=$(builddir)/libnm-client-public $< -o $@
@@ -5726,6 +5726,11 @@ EXTRA_DIST += \
 	vapi/libnm.deps \
 	vapi/meson.build
 
+check-local-vapi:
+	$(srcdir)/tools/check-vapi.sh
+
+check_local += check-local-vapi
+
 ###############################################################################
 
 girdir = $(datadir)/gir-1.0
@@ -5793,6 +5798,7 @@ EXTRA_DIST += \
 	tools/check-compare-generated.sh \
 	tools/check-gitlab-ci.sh \
 	tools/check-tree.sh \
+	tools/check-vapi.sh \
 	tools/create-exports-NetworkManager.sh \
 	tools/debug-helper.py \
 	tools/meson-post-install.sh \
