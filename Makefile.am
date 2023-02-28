@@ -1861,6 +1861,11 @@ nodist_libnminclude_HEADERS += \
 
 EXTRA_DIST += src/libnm-client-public/meson.build
 
+check-local-nm-autoptr:
+	$(srcdir)/tools/check-nm-autoptr.sh
+
+check_local += check-local-nm-autoptr
+
 ###############################################################################
 
 noinst_PROGRAMS += src/libnm-core-impl/gen-metadata-nm-settings-libnm-core
@@ -5792,20 +5797,21 @@ EXTRA_DIST += \
 	\
 	src/contrib/nm-vpn-editor-plugin-call.h \
 	\
+	tools/check-compare-generated.sh \
 	tools/check-config-options.sh \
 	tools/check-docs.sh \
 	tools/check-exports.sh \
-	tools/check-compare-generated.sh \
 	tools/check-gitlab-ci.sh \
+	tools/check-nm-autoptr.sh \
 	tools/check-tree.sh \
 	tools/check-vapi.sh \
 	tools/create-exports-NetworkManager.sh \
 	tools/debug-helper.py \
+	tools/enums-to-docbook.pl \
 	tools/meson-post-install.sh \
 	tools/run-nm-test.sh \
 	tools/test-networkmanager-service.py \
 	tools/test-sudo-wrapper.sh \
-	tools/enums-to-docbook.pl \
 	\
 	src/core/settings/plugins/meson.build \
 	\

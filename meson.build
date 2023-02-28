@@ -946,6 +946,11 @@ test(
   find_program(join_paths(source_root, 'tools', 'check-vapi.sh')),
 )
 
+test(
+  'check-nm-autoptr',
+  find_program(join_paths(source_root, 'tools', 'check-nm-autoptr.sh')),
+)
+
 subdir('examples/C/glib')
 
 enable_qt = get_option('qt')
