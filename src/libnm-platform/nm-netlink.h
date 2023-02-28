@@ -238,10 +238,36 @@ nla_get_be64(const struct nlattr *nla)
 static inline char *
 nla_get_string(const struct nlattr *nla)
 {
-    return nla_data(nla);
+    char *s;
+
+    /* nla_get_string() requires that nla contains a NUL terminated string.
+     * It cannot return NULL. Only use it with attributes that validate as NLA_STRING. */
+
+    nm_assert(nla_len(nla) > 0);
+
+    s = nla_data(nla);
+
+    nm_assert(memchr(s, 0, nla_len(nla)));
+
+    return s;
 }
 
-size_t nla_strlcpy(char *dst, const struct nlattr *nla, size_t dstsize);
+size_t
+_nla_strlcpy_full(char *dst, const struct nlattr *nla, size_t dstsize, gboolean wipe_remainder);
+
+static inline size_t
+nla_strlcpy(char *dst, const struct nlattr *nla, size_t dstsize)
+{
+    return _nla_strlcpy_full(dst, nla, dstsize, FALSE);
+}
+
+static inline size_t
+nla_strlcpy_wipe(char *dst, const struct nlattr *nla, size_t dstsize)
+{
+    /* Behaves exactly like nla_strlcpy(), but (similar to strncpy()) it fills the
+     * remaining @dstsize bytes with NUL. */
+    return _nla_strlcpy_full(dst, nla, dstsize, TRUE);
+}
 
 size_t nla_memcpy(void *dst, const struct nlattr *nla, size_t dstsize);
 

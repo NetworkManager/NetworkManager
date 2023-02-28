@@ -2007,6 +2007,20 @@ nm_g_array_unref(GArray *arr)
 
 /*****************************************************************************/
 
+#define nm_g_ptr_array_ensure(p_arr, reserved_size, element_free_func)                  \
+    ({                                                                                  \
+        GPtrArray **const    _p_arr             = (p_arr);                              \
+        const guint          _reserved_size     = (reserved_size);                      \
+        const GDestroyNotify _element_free_func = (GDestroyNotify) (element_free_func); \
+                                                                                        \
+        nm_assert(_p_arr);                                                              \
+                                                                                        \
+        if (G_UNLIKELY(!*_p_arr))                                                       \
+            *_p_arr = g_ptr_array_new_full(_reserved_size, _element_free_func);         \
+                                                                                        \
+        *_p_arr;                                                                        \
+    })
+
 static inline GPtrArray *
 nm_g_ptr_array_ref(GPtrArray *arr)
 {
@@ -2471,12 +2485,7 @@ GSource *nm_utils_g_main_context_create_integrate_source(GMainContext *internal)
 static inline GPtrArray *
 nm_strv_ptrarray_ensure(GPtrArray **p_arr)
 {
-    nm_assert(p_arr);
-
-    if (G_UNLIKELY(!*p_arr))
-        *p_arr = g_ptr_array_new_with_free_func(g_free);
-
-    return *p_arr;
+    return nm_g_ptr_array_ensure(p_arr, 0, g_free);
 }
 
 static inline const char *const *

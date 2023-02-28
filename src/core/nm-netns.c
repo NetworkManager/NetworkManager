@@ -815,7 +815,7 @@ nm_netns_ip_route_ecmp_commit(NMNetns    *self,
         if (changed || is_reapply) {
             _LOGT("ecmp-route: multi-hop %s",
                   nmp_object_to_string(route_obj, NMP_OBJECT_TO_STRING_PUBLIC, sbuf, sizeof(sbuf)));
-            nm_platform_ip_route_add(priv->platform, NMP_NLM_FLAG_APPEND, route_obj);
+            nm_platform_ip_route_add(priv->platform, NMP_NLM_FLAG_APPEND, route_obj, NULL);
         }
     }
 }
