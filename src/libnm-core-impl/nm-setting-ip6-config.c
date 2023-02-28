@@ -1107,7 +1107,7 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
      *      </listitem>
      *      <listitem>
      *        <para><literal>"type"</literal> - one of <literal>unicast</literal>, <literal>local</literal>, <literal>blackhole</literal>,
-     *          <literal>unavailable</literal>, <literal>prohibit</literal>, <literal>throw</literal>.
+     *          <literal>unreachable</literal>, <literal>prohibit</literal>, <literal>throw</literal>.
      *          The default is <literal>unicast</literal>.</para>
      *      </listitem>
      *      <listitem>
