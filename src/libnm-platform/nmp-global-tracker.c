@@ -26,7 +26,7 @@
  * view. That is mainly, because such objects are themselves tied to an ifindex.
  *
  * However, for certain objects that's not the case. For example, policy routing
- * rules, certain route types (blackhole, unavailable, prohibit, throw) and MPTCP
+ * rules, certain route types (blackhole, unreachable, prohibit, throw) and MPTCP
  * endpoints require a holistic view of the system. That is, because rules and
  * these route types have no ifindex. For MPTCP endpoints, they have an ifindex,
  * however we can only configure a small number of them at a time, so we need a
