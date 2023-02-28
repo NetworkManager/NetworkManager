@@ -3559,7 +3559,8 @@ nm_platform_ip4_address_add(NMPlatform *self,
                             guint32     lifetime,
                             guint32     preferred,
                             guint32     flags,
-                            const char *label)
+                            const char *label,
+                            char      **out_extack_msg)
 {
     _CHECK_SELF(self, klass, FALSE);
 
@@ -3569,6 +3570,7 @@ nm_platform_ip4_address_add(NMPlatform *self,
     g_return_val_if_fail(preferred <= lifetime, FALSE);
     g_return_val_if_fail(!label || strlen(label) < sizeof(((NMPlatformIP4Address *) NULL)->label),
                          FALSE);
+    nm_assert(!out_extack_msg || !*out_extack_msg);
 
     if (_LOGD_ENABLED()) {
         char                 sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
@@ -3601,7 +3603,8 @@ nm_platform_ip4_address_add(NMPlatform *self,
                                   lifetime,
                                   preferred,
                                   flags,
-                                  label);
+                                  label,
+                                  out_extack_msg);
 }
 
 gboolean
@@ -3612,7 +3615,8 @@ nm_platform_ip6_address_add(NMPlatform     *self,
                             struct in6_addr peer_address,
                             guint32         lifetime,
                             guint32         preferred,
-                            guint32         flags)
+                            guint32         flags,
+                            char          **out_extack_msg)
 {
     _CHECK_SELF(self, klass, FALSE);
 
@@ -3620,6 +3624,7 @@ nm_platform_ip6_address_add(NMPlatform     *self,
     g_return_val_if_fail(plen <= 128, FALSE);
     g_return_val_if_fail(lifetime > 0, FALSE);
     g_return_val_if_fail(preferred <= lifetime, FALSE);
+    nm_assert(!out_extack_msg || !*out_extack_msg);
 
     if (_LOGD_ENABLED()) {
         char                 sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
@@ -3640,8 +3645,15 @@ nm_platform_ip6_address_add(NMPlatform     *self,
 
     nm_platform_ip6_dadfailed_set(self, ifindex, &address, FALSE);
 
-    return klass
-        ->ip6_address_add(self, ifindex, address, plen, peer_address, lifetime, preferred, flags);
+    return klass->ip6_address_add(self,
+                                  ifindex,
+                                  address,
+                                  plen,
+                                  peer_address,
+                                  lifetime,
+                                  preferred,
+                                  flags,
+                                  out_extack_msg);
 }
 
 gboolean
@@ -4464,7 +4476,8 @@ next_plat:;
                     NM_FLAGS_HAS(flags, NMP_IP_ADDRESS_SYNC_FLAGS_WITH_NOPREFIXROUTE)
                         ? IFA_F_NOPREFIXROUTE
                         : 0,
-                    known_address->a4.label))
+                    known_address->a4.label,
+                    NULL))
                 success = FALSE;
         } else {
             if (!nm_platform_ip6_address_add(
@@ -4478,7 +4491,8 @@ next_plat:;
                     (NM_FLAGS_HAS(flags, NMP_IP_ADDRESS_SYNC_FLAGS_WITH_NOPREFIXROUTE)
                          ? IFA_F_NOPREFIXROUTE
                          : 0)
-                        | known_address->a6.n_ifa_flags))
+                        | known_address->a6.n_ifa_flags,
+                    NULL))
                 success = FALSE;
         }
     }
@@ -4520,39 +4534,50 @@ nm_platform_ip_address_flush(NMPlatform *self, int addr_family, int ifindex)
 /*****************************************************************************/
 
 static gboolean
-_err_inval_due_to_ipv6_tentative_pref_src(NMPlatform *self, const NMPObject *obj)
+_route_is_temporary_not_available(NMPlatform      *self,
+                                  int              err,
+                                  const NMPObject *obj,
+                                  const char     **out_err_reason)
 {
-    const NMPlatformIP6Route   *r;
+    const NMPlatformIPXRoute   *rx;
     const NMPlatformIP6Address *a;
 
     nm_assert(NM_IS_PLATFORM(self));
     nm_assert(NMP_OBJECT_IS_VALID(obj));
 
-    /* trying to add an IPv6 route with pref-src fails, if the address is
-     * still tentative (rh#1452684). We need to hack around that.
-     *
-     * Detect it, by guessing whether that's the case. */
-
-    if (NMP_OBJECT_GET_TYPE(obj) != NMP_OBJECT_TYPE_IP6_ROUTE)
+    if (err != -EINVAL)
         return FALSE;
 
-    r = NMP_OBJECT_CAST_IP6_ROUTE(obj);
+    rx = NMP_OBJECT_CAST_IPX_ROUTE(obj);
 
-    /* we only allow this workaround for routes added manually by the user. */
-    if (r->rt_source != NM_IP_CONFIG_SOURCE_USER)
+    if (rx->rx.rt_source != NM_IP_CONFIG_SOURCE_USER) {
+        /* we only allow this workaround for routes added manually by the user. */
         return FALSE;
+    }
 
-    if (IN6_IS_ADDR_UNSPECIFIED(&r->pref_src))
+    if (NMP_OBJECT_GET_TYPE(obj) == NMP_OBJECT_TYPE_IP4_ROUTE) {
         return FALSE;
+    } else {
+        const NMPlatformIP6Route *r = &rx->r6;
 
-    a = nm_platform_ip6_address_get(self, r->ifindex, &r->pref_src);
-    if (!a)
-        return FALSE;
-    if (!NM_FLAGS_HAS(a->n_ifa_flags, IFA_F_TENTATIVE)
-        || NM_FLAGS_HAS(a->n_ifa_flags, IFA_F_DADFAILED))
-        return FALSE;
+        /* trying to add an IPv6 route with pref-src fails, if the address is
+         * still tentative (rh#1452684). We need to hack around that.
+         *
+         * Detect it, by guessing whether that's the case. */
 
-    return TRUE;
+        if (IN6_IS_ADDR_UNSPECIFIED(&r->pref_src))
+            return FALSE;
+
+        a = nm_platform_ip6_address_get(self, r->ifindex, &r->pref_src);
+        if (!a)
+            return FALSE;
+        if (!NM_FLAGS_HAS(a->n_ifa_flags, IFA_F_TENTATIVE)
+            || NM_FLAGS_HAS(a->n_ifa_flags, IFA_F_DADFAILED))
+            return FALSE;
+
+        *out_err_reason = "tentative IPv6 src address not ready";
+        return TRUE;
+    }
 }
 
 static guint
@@ -4914,8 +4939,10 @@ nm_platform_ip_route_sync(NMPlatform *self,
 
     for (i_type = 0; routes && i_type < 2; i_type++) {
         for (i = 0; i < routes->len; i++) {
-            int      r, r2;
-            gboolean gateway_route_added = FALSE;
+            gs_free char *extack_msg          = NULL;
+            gboolean      gateway_route_added = FALSE;
+            int           r2;
+            int           r;
 
             conf_o = routes->pdata[i];
 
@@ -4975,8 +5002,11 @@ sync_route_add:
             r = nm_platform_ip_route_add(self,
                                          NMP_NLM_FLAG_APPEND
                                              | NMP_NLM_FLAG_SUPPRESS_NETLINK_FAILURE,
-                                         conf_o);
+                                         conf_o,
+                                         &extack_msg);
             if (r < 0) {
+                const char *err_reason = NULL;
+
                 if (r == -EEXIST) {
                     /* Don't fail for EEXIST. It's not clear that the existing route
                      * is identical to the one that we were about to add. However,
@@ -5015,15 +5045,15 @@ sync_route_add:
                                                 sbuf1,
                                                 sizeof(sbuf1)),
                            nm_strerror(r));
-                } else if (r == -EINVAL && out_temporary_not_available
-                           && _err_inval_due_to_ipv6_tentative_pref_src(self, conf_o)) {
-                    _LOG3D("route-sync: ignore failure to add IPv6 route with tentative IPv6 "
-                           "pref-src: %s: %s",
+                } else if (out_temporary_not_available
+                           && _route_is_temporary_not_available(self, r, conf_o, &err_reason)) {
+                    _LOG3D("route-sync: ignore temporary failure to add route (%s, %s): %s",
+                           nm_strerror(r),
+                           err_reason,
                            nmp_object_to_string(conf_o,
                                                 NMP_OBJECT_TO_STRING_PUBLIC,
                                                 sbuf1,
-                                                sizeof(sbuf1)),
-                           nm_strerror(r));
+                                                sizeof(sbuf1)));
                     if (!*out_temporary_not_available)
                         *out_temporary_not_available =
                             g_ptr_array_new_full(0, (GDestroyNotify) nmp_object_unref);
@@ -5085,7 +5115,8 @@ sync_route_add:
                     r2 = nm_platform_ip_route_add(self,
                                                   NMP_NLM_FLAG_APPEND
                                                       | NMP_NLM_FLAG_SUPPRESS_NETLINK_FAILURE,
-                                                  &oo);
+                                                  &oo,
+                                                  NULL);
 
                     if (r2 < 0) {
                         _LOG3D("route-sync: failure to add gateway IPv%c route: %s: %s",
@@ -5250,7 +5281,7 @@ nm_platform_ip_route_normalize(int addr_family, NMPlatformIPRoute *route)
 }
 
 static int
-_ip_route_add(NMPlatform *self, NMPNlmFlags flags, NMPObject *obj_stack)
+_ip_route_add(NMPlatform *self, NMPNlmFlags flags, NMPObject *obj_stack, char **out_extack_msg)
 {
     char sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
     int  ifindex;
@@ -5266,6 +5297,7 @@ _ip_route_add(NMPlatform *self, NMPNlmFlags flags, NMPObject *obj_stack)
     nm_assert(NM_IN_SET(NMP_OBJECT_GET_TYPE(obj_stack),
                         NMP_OBJECT_TYPE_IP4_ROUTE,
                         NMP_OBJECT_TYPE_IP6_ROUTE));
+    nm_assert(!out_extack_msg || !*out_extack_msg);
 
     nm_assert(NMP_OBJECT_GET_TYPE(obj_stack) != NMP_OBJECT_TYPE_IP4_ROUTE
               || obj_stack->ip4_route.n_nexthops <= 1u || obj_stack->_ip4_route.extra_nexthops);
@@ -5287,11 +5319,14 @@ _ip_route_add(NMPlatform *self, NMPNlmFlags flags, NMPObject *obj_stack)
      *   is stack allocated (and the potential "extra_nexthops" array is
      *   guaranteed to stay alive too).
      */
-    return klass->ip_route_add(self, flags, obj_stack);
+    return klass->ip_route_add(self, flags, obj_stack, out_extack_msg);
 }
 
 int
-nm_platform_ip_route_add(NMPlatform *self, NMPNlmFlags flags, const NMPObject *obj)
+nm_platform_ip_route_add(NMPlatform      *self,
+                         NMPNlmFlags      flags,
+                         const NMPObject *obj,
+                         char           **out_extack_msg)
 {
     nm_auto_nmpobj const NMPObject *obj_keep_alive = NULL;
     NMPObject                       obj_stack;
@@ -5309,7 +5344,7 @@ nm_platform_ip_route_add(NMPlatform *self, NMPNlmFlags flags, const NMPObject *o
         obj_stack._ip4_route.extra_nexthops = obj->_ip4_route.extra_nexthops;
     }
 
-    return _ip_route_add(self, flags, &obj_stack);
+    return _ip_route_add(self, flags, &obj_stack, out_extack_msg);
 }
 
 int
@@ -5341,7 +5376,7 @@ nm_platform_ip4_route_add(NMPlatform                   *self,
                               &extra_nexthops_free);
     }
 
-    return _ip_route_add(self, flags, &obj);
+    return _ip_route_add(self, flags, &obj, NULL);
 }
 
 int
@@ -5350,7 +5385,7 @@ nm_platform_ip6_route_add(NMPlatform *self, NMPNlmFlags flags, const NMPlatformI
     NMPObject obj;
 
     nmp_object_stackinit(&obj, NMP_OBJECT_TYPE_IP6_ROUTE, (const NMPlatformObject *) route);
-    return _ip_route_add(self, flags, &obj);
+    return _ip_route_add(self, flags, &obj, NULL);
 }
 
 gboolean

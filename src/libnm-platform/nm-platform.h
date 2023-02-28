@@ -1215,7 +1215,8 @@ typedef struct {
                                 guint32     lifetime,
                                 guint32     preferred_lft,
                                 guint32     flags,
-                                const char *label);
+                                const char *label,
+                                char      **out_extack_msg);
     gboolean (*ip6_address_add)(NMPlatform     *self,
                                 int             ifindex,
                                 struct in6_addr address,
@@ -1223,7 +1224,8 @@ typedef struct {
                                 struct in6_addr peer_address,
                                 guint32         lifetime,
                                 guint32         preferred_lft,
-                                guint32         flags);
+                                guint32         flags,
+                                char          **out_extack_msg);
     gboolean (*ip4_address_delete)(NMPlatform *self,
                                    int         ifindex,
                                    in_addr_t   address,
@@ -1234,7 +1236,11 @@ typedef struct {
                                    struct in6_addr address,
                                    guint8          plen);
 
-    int (*ip_route_add)(NMPlatform *self, NMPNlmFlags flags, NMPObject *obj_stack);
+    int (*ip_route_add)(NMPlatform *self,
+                        NMPNlmFlags flags,
+                        NMPObject  *obj_stack,
+                        char      **out_extack_msg);
+
     int (*ip_route_get)(NMPlatform   *self,
                         int           addr_family,
                         gconstpointer address,
@@ -2130,7 +2136,8 @@ gboolean nm_platform_ip4_address_add(NMPlatform *self,
                                      guint32     lifetime,
                                      guint32     preferred_lft,
                                      guint32     flags,
-                                     const char *label);
+                                     const char *label,
+                                     char      **out_extack_msg);
 gboolean nm_platform_ip6_address_add(NMPlatform     *self,
                                      int             ifindex,
                                      struct in6_addr address,
@@ -2138,7 +2145,8 @@ gboolean nm_platform_ip6_address_add(NMPlatform     *self,
                                      struct in6_addr peer_address,
                                      guint32         lifetime,
                                      guint32         preferred_lft,
-                                     guint32         flags);
+                                     guint32         flags,
+                                     char          **out_extack_msg);
 gboolean nm_platform_ip4_address_delete(NMPlatform *self,
                                         int         ifindex,
                                         in_addr_t   address,
@@ -2251,7 +2259,10 @@ nm_platform_ip_route_get_gateway(int addr_family, const NMPlatformIPRoute *route
     return &((NMPlatformIP6Route *) route)->gateway;
 }
 
-int nm_platform_ip_route_add(NMPlatform *self, NMPNlmFlags flags, const NMPObject *route);
+int nm_platform_ip_route_add(NMPlatform      *self,
+                             NMPNlmFlags      flags,
+                             const NMPObject *route,
+                             char           **out_extack_msg);
 int nm_platform_ip4_route_add(NMPlatform                   *self,
                               NMPNlmFlags                   flags,
                               const NMPlatformIP4Route     *route,

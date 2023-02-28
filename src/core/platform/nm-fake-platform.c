@@ -102,7 +102,9 @@ static gboolean ip6_address_add(NMPlatform     *platform,
                                 struct in6_addr peer_addr,
                                 guint32         lifetime,
                                 guint32         preferred,
-                                guint           flags);
+                                guint           flags,
+                                char          **out_extack_msg);
+
 static gboolean
 ip6_address_delete(NMPlatform *platform, int ifindex, struct in6_addr addr, guint8 plen);
 
@@ -542,7 +544,7 @@ link_changed(NMPlatform         *platform,
     nm_platform_cache_update_emit_signal(platform, cache_op, obj_old, device->obj);
 
     if (!IN6_IS_ADDR_UNSPECIFIED(&device->ip6_lladdr)) {
-        if (device->obj->link.connected)
+        if (device->obj->link.connected) {
             ip6_address_add(platform,
                             device->obj->link.ifindex,
                             device->ip6_lladdr,
@@ -550,8 +552,9 @@ link_changed(NMPlatform         *platform,
                             in6addr_any,
                             NM_PLATFORM_LIFETIME_PERMANENT,
                             NM_PLATFORM_LIFETIME_PERMANENT,
-                            0);
-        else
+                            0,
+                            NULL);
+        } else
             ip6_address_delete(platform, device->obj->link.ifindex, device->ip6_lladdr, 64);
     }
 
@@ -865,7 +868,10 @@ mesh_set_ssid(NMPlatform *platform, int ifindex, const guint8 *ssid, gsize len)
 /*****************************************************************************/
 
 static gboolean
-ipx_address_add(NMPlatform *platform, int addr_family, const NMPlatformObject *address)
+ipx_address_add(NMPlatform             *platform,
+                int                     addr_family,
+                const NMPlatformObject *address,
+                char                  **out_extack_msg)
 {
     nm_auto_nmpobj NMPObject       *obj = NULL;
     NMPCacheOpsType                 cache_op;
@@ -874,6 +880,7 @@ ipx_address_add(NMPlatform *platform, int addr_family, const NMPlatformObject *a
     NMPCache                       *cache   = nm_platform_get_cache(platform);
 
     g_assert(NM_IN_SET(addr_family, AF_INET, AF_INET6));
+    g_assert(!out_extack_msg || !*out_extack_msg);
 
     obj = nmp_object_new(addr_family == AF_INET ? NMP_OBJECT_TYPE_IP4_ADDRESS
                                                 : NMP_OBJECT_TYPE_IP6_ADDRESS,
@@ -894,7 +901,8 @@ ip4_address_add(NMPlatform *platform,
                 guint32     lifetime,
                 guint32     preferred,
                 guint32     flags,
-                const char *label)
+                const char *label,
+                char      **out_extack_msg)
 {
     NMPlatformIP4Address address;
 
@@ -914,7 +922,7 @@ ip4_address_add(NMPlatform *platform,
     if (label)
         g_strlcpy(address.label, label, sizeof(address.label));
 
-    return ipx_address_add(platform, AF_INET, (const NMPlatformObject *) &address);
+    return ipx_address_add(platform, AF_INET, (const NMPlatformObject *) &address, out_extack_msg);
 }
 
 static gboolean
@@ -925,7 +933,8 @@ ip6_address_add(NMPlatform     *platform,
                 struct in6_addr peer_addr,
                 guint32         lifetime,
                 guint32         preferred,
-                guint32         flags)
+                guint32         flags,
+                char          **out_extack_msg)
 {
     NMPlatformIP6Address address;
 
@@ -942,7 +951,7 @@ ip6_address_add(NMPlatform     *platform,
     address.preferred   = preferred;
     address.n_ifa_flags = flags;
 
-    return ipx_address_add(platform, AF_INET6, (const NMPlatformObject *) &address);
+    return ipx_address_add(platform, AF_INET6, (const NMPlatformObject *) &address, out_extack_msg);
 }
 
 static gboolean
@@ -1092,7 +1101,7 @@ object_delete(NMPlatform *platform, const NMPObject *obj)
 }
 
 static int
-ip_route_add(NMPlatform *platform, NMPNlmFlags flags, NMPObject *obj_stack)
+ip_route_add(NMPlatform *platform, NMPNlmFlags flags, NMPObject *obj_stack, char **out_extack_msg)
 {
     NMDedupMultiIter                iter;
     nm_auto_nmpobj NMPObject       *obj = NULL;
@@ -1114,6 +1123,7 @@ ip_route_add(NMPlatform *platform, NMPNlmFlags flags, NMPObject *obj_stack)
     g_assert(NM_IN_SET(NMP_OBJECT_GET_TYPE(obj_stack),
                        NMP_OBJECT_TYPE_IP4_ROUTE,
                        NMP_OBJECT_TYPE_IP6_ROUTE));
+    g_assert(!out_extack_msg || !*out_extack_msg);
 
     addr_family = NMP_OBJECT_GET_ADDR_FAMILY(obj_stack);
 
