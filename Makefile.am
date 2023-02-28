@@ -5726,6 +5726,11 @@ EXTRA_DIST += \
 	vapi/libnm.deps \
 	vapi/meson.build
 
+check-local-vapi:
+	$(srcdir)/tools/check-vapi.sh
+
+check_local += check-local-vapi
+
 ###############################################################################
 
 girdir = $(datadir)/gir-1.0
@@ -5793,6 +5798,7 @@ EXTRA_DIST += \
 	tools/check-compare-generated.sh \
 	tools/check-gitlab-ci.sh \
 	tools/check-tree.sh \
+	tools/check-vapi.sh \
 	tools/create-exports-NetworkManager.sh \
 	tools/debug-helper.py \
 	tools/meson-post-install.sh \
