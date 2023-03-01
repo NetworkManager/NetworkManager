@@ -4171,7 +4171,7 @@ nm_client_networking_get_enabled(NMClient *client)
  * nm_client_networking_set_enabled:
  * @client: a #NMClient
  * @enabled: %TRUE to set networking enabled, %FALSE to set networking disabled
- * @error: (allow-none): return location for a #GError, or %NULL
+ * @error: return location for a #GError, or %NULL
  *
  * Enables or disables networking.  When networking is disabled, all controlled
  * interfaces are disconnected and deactivated.  When networking is enabled,
@@ -4465,10 +4465,10 @@ nm_client_connectivity_check_get_uri(NMClient *client)
 /**
  * nm_client_get_logging:
  * @client: a #NMClient
- * @level: (allow-none): return location for logging level string
- * @domains: (allow-none): return location for log domains string. The string is
+ * @level: (nullable) (out) (optional): return location for logging level string
+ * @domains: (nullable) (out) (optional): return location for log domains string. The string is
  *   a list of domains separated by ","
- * @error: (allow-none): return location for a #GError, or %NULL
+ * @error: return location for a #GError, or %NULL
  *
  * Gets NetworkManager current logging level and domains.
  *
@@ -4509,10 +4509,10 @@ nm_client_get_logging(NMClient *client, char **level, char **domains, GError **e
 /**
  * nm_client_set_logging:
  * @client: a #NMClient
- * @level: (allow-none): logging level to set (%NULL or an empty string for no change)
- * @domains: (allow-none): logging domains to set. The string should be a list of log
+ * @level: (nullable): logging level to set (%NULL or an empty string for no change)
+ * @domains: (nullable): logging domains to set. The string should be a list of log
  *   domains separated by ",". (%NULL or an empty string for no change)
- * @error: (allow-none): return location for a #GError, or %NULL
+ * @error: return location for a #GError, or %NULL
  *
  * Sets NetworkManager logging level and/or domains.
  *
@@ -4733,7 +4733,7 @@ nm_client_check_connectivity_finish(NMClient *client, GAsyncResult *result, GErr
 /**
  * nm_client_save_hostname:
  * @client: the %NMClient
- * @hostname: (allow-none): the new persistent hostname to set, or %NULL to
+ * @hostname: (nullable): the new persistent hostname to set, or %NULL to
  *   clear any existing persistent hostname
  * @cancellable: a #GCancellable, or %NULL
  * @error: return location for #GError
@@ -4769,7 +4769,7 @@ nm_client_save_hostname(NMClient     *client,
 /**
  * nm_client_save_hostname_async:
  * @client: the %NMClient
- * @hostname: (allow-none): the new persistent hostname to set, or %NULL to
+ * @hostname: (nullable): the new persistent hostname to set, or %NULL to
  *   clear any existing persistent hostname
  * @cancellable: a #GCancellable, or %NULL
  * @callback: (scope async): callback to be called when the operation completes
@@ -5026,9 +5026,9 @@ activate_connection_cb(GObject *object, GAsyncResult *result, gpointer user_data
 /**
  * nm_client_activate_connection_async:
  * @client: a #NMClient
- * @connection: (allow-none): an #NMConnection
- * @device: (allow-none): the #NMDevice
- * @specific_object: (allow-none): the object path of a connection-type-specific
+ * @connection: (nullable): an #NMConnection
+ * @device: (nullable): the #NMDevice
+ * @specific_object: (nullable): the object path of a connection-type-specific
  *   object this activation should use. This parameter is currently ignored for
  *   wired and mobile broadband connections, and the value of %NULL should be used
  *   (ie, no specific object).  For Wi-Fi or WiMAX connections, pass the object
@@ -5262,11 +5262,11 @@ _add_and_activate_connection(NMClient           *self,
 /**
  * nm_client_add_and_activate_connection_async:
  * @client: a #NMClient
- * @partial: (allow-none): an #NMConnection to add; the connection may be
+ * @partial: (nullable): an #NMConnection to add; the connection may be
  *   partially filled (or even %NULL) and will be completed by NetworkManager
  *   using the given @device and @specific_object before being added
- * @device: (allow-none): the #NMDevice
- * @specific_object: (allow-none): the object path of a connection-type-specific
+ * @device: (nullable): the #NMDevice
+ * @specific_object: (nullable): the object path of a connection-type-specific
  *   object this activation should use. This parameter is currently ignored for
  *   wired and mobile broadband connections, and the value of %NULL should be used
  *   (ie, no specific object).  For Wi-Fi or WiMAX connections, pass the object
@@ -5336,11 +5336,11 @@ nm_client_add_and_activate_connection_finish(NMClient *client, GAsyncResult *res
 /**
  * nm_client_add_and_activate_connection2:
  * @client: a #NMClient
- * @partial: (allow-none): an #NMConnection to add; the connection may be
+ * @partial: (nullable): an #NMConnection to add; the connection may be
  *   partially filled (or even %NULL) and will be completed by NetworkManager
  *   using the given @device and @specific_object before being added
- * @device: (allow-none): the #NMDevice
- * @specific_object: (allow-none): the object path of a connection-type-specific
+ * @device: (nullable): the #NMDevice
+ * @specific_object: (nullable): the object path of a connection-type-specific
  *   object this activation should use. This parameter is currently ignored for
  *   wired and mobile broadband connections, and the value of %NULL should be used
  *   (i.e., no specific object).  For Wi-Fi or WiMAX connections, pass the object
@@ -5402,7 +5402,7 @@ nm_client_add_and_activate_connection2(NMClient           *client,
  * @client: an #NMClient
  * @result: the result passed to the #GAsyncReadyCallback
  * @error: location for a #GError, or %NULL
- * @out_result: (allow-none) (transfer full) (out): the output result
+ * @out_result: (optional) (nullable) (transfer full) (out): the output result
  *   of type "a{sv}" returned by D-Bus' AddAndActivate2 call. Currently, no
  *   output is implemented yet.
  *
@@ -5833,7 +5833,7 @@ nm_client_add_connection_finish(NMClient *client, GAsyncResult *result, GError *
  * @client: the %NMClient
  * @settings: the "a{sa{sv}}" #GVariant with the content of the setting.
  * @flags: the %NMSettingsAddConnection2Flags argument.
- * @args: (allow-none): the "a{sv}" #GVariant with extra argument or %NULL
+ * @args: (nullable): the "a{sv}" #GVariant with extra argument or %NULL
  *   for no extra arguments.
  * @ignore_out_result: this function wraps AddConnection2(), which has an
  *   additional result "a{sv}" output parameter. By setting this to %TRUE,
@@ -5875,11 +5875,11 @@ nm_client_add_connection2(NMClient                     *client,
  * nm_client_add_connection2_finish:
  * @client: the #NMClient
  * @result: the #GAsyncResult
- * @out_result: (allow-none) (transfer full) (out): the output #GVariant
- *   from AddConnection2().
+ * @out_result: (optional) (nullable) (transfer full) (out): the output
+ *   #GVariant from AddConnection2().
  *   If you care about the output result, then the "ignore_out_result"
  *   parameter of nm_client_add_connection2() must not be set to %TRUE.
- * @error: (allow-none): the error argument.
+ * @error: the error argument.
  *
  * Returns: (transfer full): on success, a pointer to the added
  *   #NMRemoteConnection.
@@ -6283,7 +6283,7 @@ _notify_update_prop_dns_manager_configuration(NMClient               *self,
 /**
  * nm_client_get_capabilities:
  * @client: the #NMClient instance
- * @length: (out) (allow-none): the number of returned capabilities.
+ * @length: (out) (optional): the number of returned capabilities.
  *
  * Returns: (transfer none) (array length=length): the
  *   list of capabilities reported by the server or %NULL
@@ -9063,8 +9063,8 @@ _wait_shutdown_cancelled_cb(GCancellable *cancellable, gpointer user_data)
  *   that the client's maincontext gets iterated so that it can complete.
  *   By integrating the maincontext in the current thread default, you
  *   may instead only iterate the latter.
- * @cancellable: (allow-none): the #GCancellable to abort the shutdown.
- * @callback: (nullable): a #GAsyncReadyCallback to call when the request
+ * @cancellable: the #GCancellable to abort the shutdown.
+ * @callback: a #GAsyncReadyCallback to call when the request
  *   is satisfied or %NULL if you don't care about the result of the
  *   method invocation.
  * @user_data: the data to pass to @callback

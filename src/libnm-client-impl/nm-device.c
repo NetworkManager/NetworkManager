@@ -2366,7 +2366,7 @@ nm_device_is_software(NMDevice *device)
 /**
  * nm_device_reapply:
  * @device: a #NMDevice
- * @connection: (allow-none): the #NMConnection to replace the applied
+ * @connection: (nullable): the #NMConnection to replace the applied
  *   settings with or %NULL to reuse existing
  * @version_id: zero or the expected version id of the applied connection.
  *   If specified and the version id mismatches, the call fails without
@@ -2420,7 +2420,7 @@ nm_device_reapply(NMDevice     *device,
 /**
  * nm_device_reapply_async:
  * @device: a #NMDevice
- * @connection: (allow-none): the #NMConnection to replace the applied
+ * @connection: (nullable): the #NMConnection to replace the applied
  *   settings with or %NULL to reuse existing
  * @version_id: zero or the expected version id of the applied
  *   connection. If specified and the version id mismatches, the call
@@ -2500,7 +2500,7 @@ nm_device_reapply_finish(NMDevice *device, GAsyncResult *result, GError **error)
  * nm_device_get_applied_connection:
  * @device: a #NMDevice
  * @flags: the flags argument. See #NMDeviceReapplyFlags.
- * @version_id: (out) (allow-none): returns the current version id of
+ * @version_id: (out) (optional): returns the current version id of
  *   the applied connection
  * @cancellable: a #GCancellable, or %NULL
  * @error: location for a #GError, or %NULL
@@ -2601,7 +2601,7 @@ nm_device_get_applied_connection_async(NMDevice           *device,
  * nm_device_get_applied_connection_finish:
  * @device: a #NMDevice
  * @result: the result passed to the #GAsyncReadyCallback
- * @version_id: (out) (allow-none): the current version id of the applied
+ * @version_id: (out) (optional): the current version id of the applied
  *   connection.
  * @error: location for a #GError, or %NULL
  *
@@ -3108,7 +3108,8 @@ nm_lldp_neighbor_get_attr_names(NMLldpNeighbor *neighbor)
  * nm_lldp_neighbor_get_attr_string_value:
  * @neighbor: the #NMLldpNeighbor
  * @name: the attribute name
- * @out_value: (out) (allow-none) (transfer none): on return, the attribute value
+ * @out_value: (out) (optional) (nullable) (transfer none): on return, the
+ *   attribute value
  *
  * Gets the string value of attribute with name @name on @neighbor
  *
@@ -3135,7 +3136,7 @@ nm_lldp_neighbor_get_attr_string_value(NMLldpNeighbor *neighbor,
  * nm_lldp_neighbor_get_attr_uint_value:
  * @neighbor: the #NMLldpNeighbor
  * @name: the attribute name
- * @out_value: (out) (allow-none): on return, the attribute value
+ * @out_value: (out) (optional): on return, the attribute value
  *
  * Gets the uint32 value of attribute with name @name on @neighbor
  *

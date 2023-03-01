@@ -1955,10 +1955,10 @@ nmp_utils_ip_config_source_to_string(NMIPConfigSource source, char *buf, gsize l
 /**
  * nmp_utils_sysctl_open_netdir:
  * @ifindex: the ifindex for which to open "/sys/class/net/%s"
- * @ifname_guess: (allow-none): optional argument, if present used as initial
+ * @ifname_guess: (nullable): optional argument, if present used as initial
  *   guess as the current name for @ifindex. If guessed right,
  *   it saves an additional if_indextoname() call.
- * @out_ifname: (allow-none): if present, must be at least IFNAMSIZ
+ * @out_ifname: (optional): if present, must be at least IFNAMSIZ
  *   characters. On success, this will contain the actual ifname
  *   found while opening the directory.
  *

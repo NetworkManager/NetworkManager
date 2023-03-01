@@ -2383,7 +2383,7 @@ nm_setting_get_name(NMSetting *setting)
 /**
  * nm_setting_verify:
  * @setting: the #NMSetting to verify
- * @connection: (allow-none): the #NMConnection that @setting came from, or
+ * @connection: (nullable): the #NMConnection that @setting came from, or
  *   %NULL if @setting is being verified in isolation.
  * @error: location to store error, or %NULL
  *
@@ -2421,7 +2421,7 @@ _nm_setting_verify(NMSetting *setting, NMConnection *connection, GError **error)
 /**
  * nm_setting_verify_secrets:
  * @setting: the #NMSetting to verify secrets in
- * @connection: (allow-none): the #NMConnection that @setting came from, or
+ * @connection: (nullable): the #NMConnection that @setting came from, or
  *   %NULL if @setting is being verified in isolation.
  * @error: location to store error, or %NULL
  *
@@ -3828,11 +3828,11 @@ out_zero:
 /**
  * nm_setting_option_get_all_names:
  * @setting: the #NMSetting
- * @out_len: (allow-none) (out):
+ * @out_len: (out) (optional):
  *
  * Gives the name of all set options.
  *
- * Returns: (array length=out_len zero-terminated=1) (transfer none):
+ * Returns: (array length=out_len zero-terminated=1) (transfer none) (nullable):
  *   A %NULL terminated array of key names. If no names are present, this returns
  *   %NULL. The returned array and the names are owned by %NMSetting and might be invalidated
  *   by the next operation.
@@ -3870,7 +3870,7 @@ _nm_setting_option_clear(NMSetting *setting, const char *optname)
 /**
  * nm_setting_option_clear_by_name:
  * @setting: the #NMSetting
- * @predicate: (allow-none) (scope call): the predicate for which names
+ * @predicate: (nullable) (scope call): the predicate for which names
  *   should be clear.
  *   If the predicate returns %TRUE for an option name, the option
  *   gets removed. If %NULL, all options will be removed.
@@ -3937,7 +3937,7 @@ nm_setting_option_get(NMSetting *setting, const char *opt_name)
  * nm_setting_option_get_boolean:
  * @setting: the #NMSetting
  * @opt_name: the option to get
- * @out_value: (allow-none) (out): the optional output value.
+ * @out_value: (nullable) (out): the optional output value.
  *   If the option is unset, %FALSE will be returned.
  *
  * Returns: %TRUE if @opt_name is set to a boolean variant.
@@ -3962,7 +3962,7 @@ nm_setting_option_get_boolean(NMSetting *setting, const char *opt_name, gboolean
  * nm_setting_option_get_uint32:
  * @setting: the #NMSetting
  * @opt_name: the option to get
- * @out_value: (allow-none) (out): the optional output value.
+ * @out_value: (nullable) (out): the optional output value.
  *   If the option is unset, 0 will be returned.
  *
  * Returns: %TRUE if @opt_name is set to a uint32 variant.
@@ -3987,7 +3987,7 @@ nm_setting_option_get_uint32(NMSetting *setting, const char *opt_name, guint32 *
  * nm_setting_option_set:
  * @setting: the #NMSetting
  * @opt_name: the option name to set
- * @variant: (allow-none): the variant to set.
+ * @variant: (nullable): the variant to set.
  *
  * If @variant is %NULL, this clears the option if it is set.
  * Otherwise, @variant is set as the option. If @variant is
@@ -4287,7 +4287,7 @@ nm_range_to_str(const NMRange *range)
 /**
  * nm_range_from_str:
  * @str: the string representation of a range
- * @error: (out) (allow-none): location to store the error on failure
+ * @error: location to store the error on failure
  *
  * Parses the string representation of the range to create a %NMRange
  * instance.

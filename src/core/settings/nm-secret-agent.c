@@ -463,7 +463,7 @@ _call_cancel_cb(GObject *source, GAsyncResult *result, gpointer user_data)
  * nm_secret_agent_cancel_call:
  * @self: the #NMSecretAgent instance for the @call_id.
  *   Maybe be %NULL if @call_id is %NULL.
- * @call_id: (allow-none): the call id to cancel. May be %NULL for convenience,
+ * @call_id: (nullable): the call id to cancel. May be %NULL for convenience,
  *   in which case it does nothing.
  *
  * It is an error to pass an invalid @call_id or a @call_id for an operation

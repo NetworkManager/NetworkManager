@@ -79,7 +79,7 @@ _nm_printf(4, 5) static int _get_contents_error(GError    **error,
  *  the NUL byte. That is, it reads only files up to a length of
  *  @max_length - 1 bytes.
  * @length: optional output argument of the read file size.
- * @out_errsv: (allow-none) (out): on error, a positive errno. or zero.
+ * @out_errsv: (out) (optional): on error, a positive errno. or zero.
  * @error:
  *
  *
@@ -276,7 +276,7 @@ nm_utils_fd_get_contents(int                         fd,
  *   the NUL byte. That is, it reads only files up to a length of
  *   @max_length - 1 bytes.
  * @length: optional output argument of the read file size.
- * @out_errsv: (allow-none) (out): on error, a positive errno. or zero.
+ * @out_errsv: (out) (optional): on error, a positive errno. or zero.
  * @error:
  *
  * A reimplementation of g_file_get_contents() with a few differences:
@@ -444,7 +444,7 @@ nm_utils_file_set_contents(const char            *filename,
 /**
  * nm_utils_file_stat:
  * @filename: the filename to stat.
- * @out_st: (allow-none) (out): if given, this will be passed to stat().
+ * @out_st: (nullable) (out): if given, this will be passed to stat().
  *
  * Just wraps stat() and gives the errno number as function result instead
  * of setting the errno (though, errno is also set). It's only for convenience

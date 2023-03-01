@@ -243,7 +243,7 @@ _idle_timeout_restart(void)
 /**
  * next_request:
  *
- * @request: (allow-none): the request to set as next. If %NULL, dequeue the next
+ * @request: (nullable): the request to set as next. If %NULL, dequeue the next
  * waiting request. Otherwise, try to set the given request.
  *
  * Sets the currently active request (@current_request). The current request

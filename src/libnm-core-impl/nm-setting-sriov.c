@@ -286,7 +286,7 @@ nm_sriov_vf_get_index(const NMSriovVF *vf)
  * nm_sriov_vf_set_attribute:
  * @vf: the #NMSriovVF
  * @name: the name of a route attribute
- * @value: (transfer none) (allow-none): the value
+ * @value: (transfer none) (nullable): the value
  *
  * Sets the named attribute on @vf to the given value.
  *
@@ -364,8 +364,8 @@ const NMVariantAttributeSpec *const _nm_sriov_vf_attribute_spec[] = {
  * nm_sriov_vf_attribute_validate:
  * @name: the attribute name
  * @value: the attribute value
- * @known: (out): on return, whether the attribute name is a known one
- * @error: (allow-none): return location for a #GError, or %NULL
+ * @known: (out) (optional): on return, whether the attribute name is a known one
+ * @error: return location for a #GError, or %NULL
  *
  * Validates a VF attribute, i.e. checks that the attribute is a known one,
  * the value is of the correct type and well-formed.
@@ -533,7 +533,7 @@ vlan_id_compare(gconstpointer a, gconstpointer b, gpointer user_data)
 /**
  * nm_sriov_vf_get_vlan_ids:
  * @vf: the #NMSriovVF
- * @length: (out) (allow-none): on return, the number of VLANs configured
+ * @length: (out) (optional): on return, the number of VLANs configured
  *
  * Returns the VLANs currently configured on the VF. Currently kernel only
  * supports one VLAN per VF.

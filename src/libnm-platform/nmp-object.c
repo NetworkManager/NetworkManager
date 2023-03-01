@@ -134,7 +134,7 @@ nm_sock_addr_union_hash_update(const NMSockAddrUnion *a, NMHashState *h)
  * @dst: the destination #NMSockAddrUnion. It will always be fully initialized,
  *   to one of the address families AF_INET, AF_INET6, or AF_UNSPEC (in case of
  *   error).
- * @src: (allow-none): the source buffer with an sockaddr to copy. It may be unaligned in
+ * @src: (nullable): the source buffer with an sockaddr to copy. It may be unaligned in
  *   memory. If not %NULL, the buffer must be at least large enough to contain
  *   sa.sa_family, and then, depending on sa.sa_family, it must be large enough
  *   to hold struct sockaddr_in or struct sockaddr_in6.
@@ -2047,10 +2047,10 @@ nmp_cache_link_connected_for_slave(int ifindex_master, const NMPObject *slave)
  * @cache: the platform cache
  * @master: the link object, that is checked whether its connected property
  *   needs to be toggled.
- * @potential_slave: (allow-none): an additional link object that is treated
+ * @potential_slave: (nullable): an additional link object that is treated
  *   as if it was inside @cache. If given, it shaddows a link in the cache
  *   with the same ifindex.
- * @ignore_slave: (allow-none): if set, the check will pretend that @ignore_slave
+ * @ignore_slave: (nullable): if set, the check will pretend that @ignore_slave
  *   is not in the cache.
  *
  * NMPlatformLink has two connected flags: (master->link.flags&IFF_LOWER_UP) (as reported
@@ -2114,10 +2114,10 @@ nmp_cache_link_connected_needs_toggle(const NMPCache  *cache,
  * @cache:
  * @master_ifindex: the ifindex of a potential master that should be checked
  *   whether it needs toggling.
- * @potential_slave: (allow-none): passed to nmp_cache_link_connected_needs_toggle().
+ * @potential_slave: (nullable): passed to nmp_cache_link_connected_needs_toggle().
  *   It considers @potential_slave as being inside the cache, replacing an existing
  *   link with the same ifindex.
- * @ignore_slave: (allow-onne): passed to nmp_cache_link_connected_needs_toggle().
+ * @ignore_slave: (nullable): passed to nmp_cache_link_connected_needs_toggle().
  *
  * The flag obj->link.connected depends on the state of other links in the
  * @cache. See also nmp_cache_link_connected_needs_toggle(). Given an ifindex
@@ -2833,11 +2833,11 @@ nmp_cache_remove_netlink(NMPCache         *cache,
  *    afterwards. Hence, during a dump, every update should move the object to the
  *    end of the list, to obtain the correct order. That means, to use NM_DEDUP_MULTI_IDX_MODE_APPEND_FORCE,
  *    instead of NM_DEDUP_MULTI_IDX_MODE_APPEND.
- * @out_obj_old: (allow-none) (out): return the object with same ID as @obj_hand_over,
- *    that was in the cache before update. If an object is returned, the caller must
- *    unref it afterwards.
- * @out_obj_new: (allow-none) (out): return the object from the cache after update.
- *    The caller must unref this object.
+ * @out_obj_old: (out) (optional) (nullable) (transfer full): return the object
+ *    with same ID as @obj_hand_over, that was in the cache before update. If an
+ *    object is returned, the caller must unref it afterwards.
+ * @out_obj_new: (out) (optional) (nullable) (transfer full): return the object
+ *    from the cache after update. The caller must unref this object.
  *
  * Returns: how the cache changed.
  *

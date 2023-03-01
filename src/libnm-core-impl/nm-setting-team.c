@@ -143,7 +143,7 @@ nm_team_link_watcher_new_ethtool(int delay_up, int delay_down, GError **error)
  * @missed_max: missed_max value
  * @target_host: the host name or the ipv6 address that will be used as
  *   target address in the NS packet
- * @error: (out) (allow-none): location to store the error on failure
+ * @error: location to store the error on failure
  *
  * Creates a new nsna_ping #NMTeamLinkWatcher object
  *
@@ -223,7 +223,7 @@ nm_team_link_watcher_new_nsna_ping(int         init_wait,
  * @source_host: the host name or the ip address that will be used as source
  *   address in the arp request
  * @flags: the watcher #NMTeamLinkWatcherArpPingFlags
- * @error: (out) (allow-none): location to store the error on failure
+ * @error: location to store the error on failure
  *
  * Creates a new arp_ping #NMTeamLinkWatcher object
  *
@@ -261,7 +261,7 @@ nm_team_link_watcher_new_arp_ping(int                           init_wait,
  * @source_host: the host name or the ip address that will be used as source
  *   address in the arp request
  * @flags: the watcher #NMTeamLinkWatcherArpPingFlags
- * @error: (out) (allow-none): location to store the error on failure
+ * @error: location to store the error on failure
  *
  * Creates a new arp_ping #NMTeamLinkWatcher object
  *

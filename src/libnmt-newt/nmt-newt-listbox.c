@@ -81,7 +81,7 @@ nmt_newt_listbox_new(int height, NmtNewtListboxFlags flags)
  * nmt_newt_listbox_append:
  * @listbox: an #NmtNewtListbox
  * @entry: the text for the new row
- * @key: (allow-none): the key associated with @entry
+ * @key: (nullable): the key associated with @entry
  *
  * Adds a row to @listbox.
  */

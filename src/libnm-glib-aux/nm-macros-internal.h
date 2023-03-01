@@ -239,7 +239,7 @@ _nm_auto_freev(gpointer ptr)
 
 /**
  * NM_G_ERROR_MSG:
- * @error: (allow-none): the #GError instance
+ * @error: (nullable): the #GError instance
  *
  * All functions must follow the convention that when they
  * return a failure, they must also set the GError to a valid

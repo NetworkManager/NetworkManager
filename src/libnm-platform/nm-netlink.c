@@ -1496,13 +1496,13 @@ nl_send_auto(struct nl_sock *sk, struct nl_msg *msg)
  * @nla: (out): the source address on success.
  * @buf: (out): pointer to the result buffer on success. This is
  *   either @buf0 or an allocated buffer that gets returned.
- * @out_creds: (out) (allow-none): optional out buffer for the credentials
+ * @out_creds: (out) (optional): optional out buffer for the credentials
  *   on success.
- * @out_creds_has: (out) (allow-none): result indicating whether
+ * @out_creds_has: (out) (optional): result indicating whether
  *   @out_creds was filled.
-* @out_pktinfo_group: (out) (allow-none): optional out buffer for NETLINK_PKTINFO
+* @out_pktinfo_group: (out) (optional): optional out buffer for NETLINK_PKTINFO
 *    group on success.
- * @out_pktinfo_has: (out) (allow-none): result indicating whether
+ * @out_pktinfo_has: (out) (optional): result indicating whether
  *   @out_pktinfo_group was filled.
  *
  * If @buf0_len is zero, the function will g_malloc() a new receive buffer of size

@@ -1084,7 +1084,7 @@ get_secrets(NMSecretAgentOld              *agent,
  * nm_secret_agent_simple_response:
  * @self: the #NMSecretAgentSimple
  * @request_id: the request ID being responded to
- * @secrets: (allow-none): the array of secrets, or %NULL
+ * @secrets: (nullable): the array of secrets, or %NULL
  *
  * Response to a #NMSecretAgentSimple::get-secrets signal.
  *
@@ -1252,7 +1252,7 @@ delete_secrets(NMSecretAgentOld                 *agent,
 /**
  * nm_secret_agent_simple_enable:
  * @self: the #NMSecretAgentSimple
- * @path: (allow-none): the path of the connection (if any) to handle secrets
+ * @path: (nullable): the path of the connection (if any) to handle secrets
  *        for.  If %NULL, secrets for any connection will be handled.
  *
  * Enables servicing the requests including the already queued ones.  If @path

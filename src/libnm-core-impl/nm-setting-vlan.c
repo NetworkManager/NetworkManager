@@ -297,8 +297,8 @@ nm_setting_vlan_get_num_priorities(NMSettingVlan *setting, NMVlanPriorityMap map
  * @setting: the #NMSettingVlan
  * @map: the type of priority map
  * @idx: the zero-based index of the ingress/egress priority map entry
- * @out_from: (out) (allow-none): on return the value of the priority map's 'from' item
- * @out_to: (out) (allow-none): on return the value of priority map's 'to' item
+ * @out_from: (out) (optional): on return the value of the priority map's 'from' item
+ * @out_to: (out) (optional): on return the value of priority map's 'to' item
  *
  * Retrieve one of the entries of the #NMSettingVlan:ingress_priority_map
  * or #NMSettingVlan:egress_priority_map properties of this setting.

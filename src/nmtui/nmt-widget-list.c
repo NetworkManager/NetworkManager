@@ -95,7 +95,7 @@ static void remove_clicked(NmtNewtButton *button, gpointer user_data);
  * @create_callback: callback to create new widgets
  * @user_data: user data for @create_callback
  * @destroy_notify: #GDestroyNotify for @user_data
- * @empty_widget: (allow-none): a widget to display when there are
+ * @empty_widget: (nullable): a widget to display when there are
  *   no "real" widgets in the list.
  *
  * Creates a new #NmtWidgetList.

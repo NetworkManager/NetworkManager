@@ -552,7 +552,7 @@ nm_ip_address_get_attribute(NMIPAddress *address, const char *name)
  * nm_ip_address_set_attribute:
  * @address: the #NMIPAddress
  * @name: the name of an address attribute
- * @value: (transfer none) (allow-none): the value
+ * @value: (transfer none) (nullable): the value
  *
  * Sets or clears the named attribute on @address to the given value.
  **/
@@ -601,7 +601,7 @@ struct NMIPRoute {
  *   <literal>AF_INET6</literal>)
  * @dest: the IP address of the route's destination
  * @prefix: the address prefix length
- * @next_hop: (allow-none): the IP address of the next hop (or %NULL)
+ * @next_hop: (nullable): the IP address of the next hop (or %NULL)
  * @metric: the route metric (or -1 for "default")
  * @error: location to store error, or %NULL
  *
@@ -652,7 +652,7 @@ nm_ip_route_new(int         family,
  *   <literal>AF_INET6</literal>)
  * @dest: the IP address of the route's destination
  * @prefix: the address prefix length
- * @next_hop: (allow-none): the IP address of the next hop (or %NULL)
+ * @next_hop: (nullable): the IP address of the next hop (or %NULL)
  * @metric: the route metric (or -1 for "default")
  * @error: location to store error, or %NULL
  *
@@ -994,7 +994,7 @@ nm_ip_route_get_next_hop(NMIPRoute *route)
 /**
  * nm_ip_route_set_next_hop:
  * @route: the #NMIPRoute
- * @next_hop: (allow-none): the route's next hop, as a string
+ * @next_hop: (nullable): the route's next hop, as a string
  *
  * Sets the next-hop property of this route object.
  *
@@ -1112,13 +1112,13 @@ _nm_ip_route_get_attributes(NMIPRoute *route)
  * @route: the #NMIPRoute
  * @sorted: whether to sort the names. Otherwise, their order is
  *   undefined and unstable.
- * @out_length: (allow-none) (out): the number of elements
+ * @out_length: (out) (optional): the number of elements
  *
  * Gets an array of attribute names defined on @route.
  *
- * Returns: (array length=out_length) (transfer container): a %NULL-terminated array
- *   of attribute names or %NULL if there are no attributes. The order of the returned
- *   names depends on @sorted.
+ * Returns: (array length=out_length) (transfer container) (nullable): a %NULL-terminated
+ *   array of attribute names or %NULL if there are no attributes. The order of the
+ *   returned names depends on @sorted.
  **/
 const char **
 _nm_ip_route_get_attribute_names(const NMIPRoute *route, gboolean sorted, guint *out_length)
@@ -1173,7 +1173,7 @@ nm_ip_route_get_attribute(NMIPRoute *route, const char *name)
  * nm_ip_route_set_attribute:
  * @route: the #NMIPRoute
  * @name: the name of a route attribute
- * @value: (transfer none) (allow-none): the value
+ * @value: (transfer none) (nullable): the value
  *
  * Sets the named attribute on @route to the given value.
  **/
@@ -1460,7 +1460,7 @@ _ip_route_attribute_validate(const char           *name,
  * @value: the attribute value
  * @family: IP address family of the route
  * @known: (out): on return, whether the attribute name is a known one
- * @error: (allow-none): return location for a #GError, or %NULL
+ * @error: return location for a #GError, or %NULL
  *
  * Validates a route attribute, i.e. checks that the attribute is a known one
  * and the value is of the correct type and well-formed.
@@ -1733,7 +1733,7 @@ nm_ip_routing_rule_new_clone(const NMIPRoutingRule *rule)
 
 /**
  * nm_ip_routing_rule_ref:
- * @self: (allow-none): the #NMIPRoutingRule instance
+ * @self: (nullable): the #NMIPRoutingRule instance
  *
  * Increases the reference count of the instance.
  *
@@ -1760,7 +1760,7 @@ nm_ip_routing_rule_ref(NMIPRoutingRule *self)
 
 /**
  * nm_ip_routing_rule_unref:
- * @self: (allow-none): the #NMIPRoutingRule instance
+ * @self: (nullable): the #NMIPRoutingRule instance
  *
  * Decreases the reference count of the instance and destroys
  * the instance if the reference count reaches zero.
@@ -1983,7 +1983,7 @@ nm_ip_routing_rule_set_from_bin(NMIPRoutingRule *self, gconstpointer from, guint
 /**
  * nm_ip_routing_rule_set_from:
  * @self: the #NMIPRoutingRule instance
- * @from: (allow-none): the from/src address to set.
+ * @from: (nullable): the from/src address to set.
  *   The address family must match.
  * @len: the corresponding prefix length of the address.
  *
@@ -2083,7 +2083,7 @@ nm_ip_routing_rule_set_to_bin(NMIPRoutingRule *self, gconstpointer to, guint8 le
 /**
  * nm_ip_routing_rule_set_to:
  * @self: the #NMIPRoutingRule instance
- * @to: (allow-none): the to/dst address to set.
+ * @to: (nullable): the to/dst address to set.
  *   The address family must match.
  * @len: the corresponding prefix length of the address.
  *   If @to is %NULL, this valid is ignored.
@@ -2370,7 +2370,7 @@ nm_ip_routing_rule_get_xifname_bin(const NMIPRoutingRule *self,
 /**
  * nm_ip_routing_rule_set_iifname:
  * @self: the #NMIPRoutingRule instance.
- * @iifname: (allow-none): the iifname to set or %NULL to unset.
+ * @iifname: (nullable): the iifname to set or %NULL to unset.
  *
  * The name supports C backslash escaping for non-UTF-8 characters.
  * Note that nm_ip_routing_rule_from_string() too uses backslash
@@ -2407,7 +2407,7 @@ nm_ip_routing_rule_get_oifname(const NMIPRoutingRule *self)
 /**
  * nm_ip_routing_rule_set_oifname:
  * @self: the #NMIPRoutingRule instance.
- * @oifname: (allow-none): the oifname to set or %NULL to unset.
+ * @oifname: (nullable): the oifname to set or %NULL to unset.
  *
  * The name supports C backslash escaping for non-UTF-8 characters.
  * Note that nm_ip_routing_rule_from_string() too uses backslash
@@ -2525,9 +2525,9 @@ nm_ip_routing_rule_set_suppress_prefixlength(NMIPRoutingRule *self, gint32 suppr
 /**
  * nm_ip_routing_rule_get_uid_range:
  * @self: the #NMIPRoutingRule instance
- * @out_range_start: (out) (allow-none): returns the start of the range
+ * @out_range_start: (out) (optional): returns the start of the range
  *   or 0 if the range is not set.
- * @out_range_end: (out) (allow-none): returns the end of the range
+ * @out_range_end: (out) (optional): returns the end of the range
  *   or 0 if the range is not set.
  *
  * Returns: %TRUE if a uid range is set.
@@ -2585,8 +2585,8 @@ nm_ip_routing_rule_set_uid_range(NMIPRoutingRule *self,
 
 /**
  * nm_ip_routing_rule_cmp:
- * @rule: (allow-none): the #NMIPRoutingRule instance to compare
- * @other: (allow-none): the other #NMIPRoutingRule instance to compare
+ * @rule: (nullable): the #NMIPRoutingRule instance to compare
+ * @other: (nullable): the other #NMIPRoutingRule instance to compare
  *
  * Returns: zero, a positive, or a negative integer to indicate
  *   equality or how the arguments compare.
@@ -2708,7 +2708,7 @@ _rr_xport_range_parse(char *str, gint64 *out_start, guint16 *out_end)
 /**
  * nm_ip_routing_rule_validate:
  * @self: the #NMIPRoutingRule instance to validate
- * @error: (allow-none) (out): the error result if validation fails.
+ * @error: the error result if validation fails.
  *
  * Returns: %TRUE if the rule validates.
  *
@@ -3348,9 +3348,9 @@ _rr_string_addr_family_from_flags(NMIPRoutingRuleAsStringFlags to_string_flags)
  * @str: the string representation to convert to an #NMIPRoutingRule
  * @to_string_flags: #NMIPRoutingRuleAsStringFlags for controlling the
  *   string conversion.
- * @extra_args: (allow-none): extra arguments for controlling the string
+ * @extra_args: (nullable): extra arguments for controlling the string
  *   conversion. Currently, not extra arguments are supported.
- * @error: (allow-none) (out): the error reason.
+ * @error: the error reason.
  *
  * Returns: (transfer full): the new #NMIPRoutingRule or %NULL on error.
  *
@@ -3812,9 +3812,9 @@ _rr_string_append_inet_addr(NMStrBuf       *str,
  * @self: the #NMIPRoutingRule instance to convert to string.
  * @to_string_flags: #NMIPRoutingRuleAsStringFlags for controlling the
  *   string conversion.
- * @extra_args: (allow-none): extra arguments for controlling the string
+ * @extra_args: (nullable): extra arguments for controlling the string
  *   conversion. Currently, not extra arguments are supported.
- * @error: (allow-none) (out): the error reason.
+ * @error: the error reason.
  *
  * Returns: (transfer full): the string representation or %NULL on error.
  *
@@ -5348,7 +5348,7 @@ nm_setting_ip_config_get_dhcp_iaid(NMSettingIPConfig *setting)
 /**
  * nm_setting_ip_config_get_dhcp_reject_servers:
  * @setting: the #NMSettingIPConfig
- * @out_len: (allow-none) (out): the number of returned elements
+ * @out_len: (out) (optional): the number of returned elements
  *
  * Returns: (array length=out_len zero-terminated=1) (transfer none):
  *   A %NULL terminated array of DHCP reject servers. Even if no reject

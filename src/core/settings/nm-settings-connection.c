@@ -1058,7 +1058,7 @@ get_secrets_idle_cb(NMSettingsConnectionCallId *call_id)
 /**
  * nm_settings_connection_get_secrets:
  * @self: the #NMSettingsConnection
- * @applied_connection: (allow-none): if provided, only request secrets
+ * @applied_connection: (nullable): if provided, only request secrets
  *   if @self equals to @applied_connection. Also, update the secrets
  *   in the @applied_connection.
  * @subject: the #NMAuthSubject originating the request

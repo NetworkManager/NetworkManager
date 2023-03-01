@@ -522,8 +522,8 @@ nm_str_buf_get_char(const NMStrBuf *strbuf, gsize index)
 
 /**
  * nm_str_buf_finalize:
- * @strbuf: an initilized #NMStrBuf
- * @out_len: (out): (allow-none): optional output
+ * @strbuf: an initialized #NMStrBuf
+ * @out_len: (out): (optional): optional output
  *   argument with the length of the returned string.
  *
  * Returns: (transfer full): the string of the buffer

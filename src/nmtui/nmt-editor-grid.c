@@ -85,9 +85,9 @@ nmt_editor_grid_finalize(GObject *object)
 /**
  * nmt_editor_grid_append:
  * @grid: the #NmtEditorGrid
- * @label: (allow-none): the label text for @widget, or %NULL
- * @widget: (allow-none): the (main) widget
- * @extra: (allow-none): optional extra widget
+ * @label: (nullable): the label text for @widget, or %NULL
+ * @widget: (nullable): the (main) widget
+ * @extra: (nullable): optional extra widget
  *
  * Adds a row to @grid.
  *

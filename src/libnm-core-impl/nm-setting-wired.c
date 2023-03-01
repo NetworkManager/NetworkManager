@@ -507,11 +507,12 @@ nm_setting_wired_get_num_s390_options(NMSettingWired *setting)
  * @setting: the #NMSettingWired
  * @idx: index of the desired option, from 0 to
  * nm_setting_wired_get_num_s390_options() - 1
- * @out_key: (allow-none) (out) (transfer none): on return, the key name of the s390 specific
- *   option; this value is owned by the setting and should not be modified
- * @out_value: (allow-none) (out) (transfer none): on return, the value of the key of the
- *   s390 specific option; this value is owned by the setting and should not be
- *   modified
+ * @out_key: (optional) (nullable) (out) (transfer none): on return, the key
+ *   name of the s390 specific option; this value is owned by the setting and
+ *   should not be modified
+ * @out_value: (optional) (nullable) (out) (transfer none): on return, the value
+ *   of the key of the s390 specific option; this value is owned by the setting
+ *   and should not be modified
  *
  * Given an index, return the value of the s390 option at that index.  indexes
  * are *not* guaranteed to be static across modifications to options done by
@@ -701,7 +702,7 @@ _nm_setting_wired_clear_s390_options(NMSettingWired *setting)
 
 /**
  * nm_setting_wired_get_valid_s390_options:
- * @setting: (allow-none): the #NMSettingWired. This argument is unused
+ * @setting: (nullable): the #NMSettingWired. This argument is unused
  *   and you may pass %NULL.
  *
  * Returns a list of valid s390 options.

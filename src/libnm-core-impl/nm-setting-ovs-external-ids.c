@@ -56,7 +56,7 @@ G_DEFINE_TYPE(NMSettingOvsExternalIDs, nm_setting_ovs_external_ids, NM_TYPE_SETT
 
 /**
  * nm_setting_ovs_external_ids_check_key:
- * @key: (allow-none): the key to check
+ * @key: (nullable): the key to check
  * @error: a #GError, %NULL to ignore.
  *
  * Checks whether @key is a valid key for OVS' external-ids.
@@ -171,7 +171,7 @@ _nm_setting_ovs_verify_connection_type(GType gtype, NMConnection *connection, GE
 
 /**
  * nm_setting_ovs_external_ids_check_val:
- * @val: (allow-none): the value to check
+ * @val: (nullable): the value to check
  * @error: a #GError, %NULL to ignore.
  *
  * Checks whether @val is a valid user data value. This means,
@@ -297,7 +297,7 @@ nm_setting_ovs_external_ids_get_data(NMSettingOvsExternalIDs *setting, const cha
  * nm_setting_ovs_external_ids_set_data:
  * @setting: the #NMSettingOvsExternalIDs instance
  * @key: the key to set
- * @val: (allow-none): the value to set or %NULL to clear a key.
+ * @val: (nullable): the value to set or %NULL to clear a key.
  *
  * Since: 1.30
  */

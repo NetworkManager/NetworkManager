@@ -359,7 +359,7 @@ nm_tc_qdisc_get_attribute(NMTCQdisc *qdisc, const char *name)
  * nm_tc_qdisc_set_attribute:
  * @qdisc: the #NMTCQdisc
  * @name: the name of an qdisc attribute
- * @value: (transfer none) (allow-none): the value
+ * @value: (transfer none) (nullable): the value
  *
  * Sets or clears the named attribute on @qdisc to the given value.
  *
@@ -634,7 +634,7 @@ nm_tc_action_get_attribute(NMTCAction *action, const char *name)
  * nm_tc_action_set_attribute:
  * @action: the #NMTCAction
  * @name: the name of an action attribute
- * @value: (transfer none) (allow-none): the value
+ * @value: (transfer none) (nullable): the value
  *
  * Sets or clears the named attribute on @action to the given value.
  *

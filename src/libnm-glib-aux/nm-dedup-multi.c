@@ -951,7 +951,7 @@ nm_dedup_multi_objs_to_ptr_array_head(const NMDedupMultiHeadEntry   *head_entry,
 /**
  * nm_dedup_multi_entry_reorder:
  * @entry: the entry to reorder. It must not be NULL (and tracked in an index).
- * @entry_order: (allow-none): an optional other entry. It MUST be in the same
+ * @entry_order: (nullable): an optional other entry. It MUST be in the same
  *   list as entry. If given, @entry will be ordered after/before @entry_order.
  *   If left at %NULL, @entry will be moved to the front/end of the list.
  * @order_after: if @entry_order is given, %TRUE means to move @entry after

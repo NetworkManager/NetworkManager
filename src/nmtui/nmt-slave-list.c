@@ -44,8 +44,8 @@ static gboolean nmt_slave_list_connection_filter(NmtEditConnectionList *list,
 /**
  * nmt_slave_list_new:
  * @master: the master #NMConnection whose slaves are being listed
- * @type_filter: (allow-none): a function to limit the available slave types
- * @type_filter_data: (allow-none): data for @type_filter.
+ * @type_filter: (nullable): a function to limit the available slave types
+ * @type_filter_data: (nullable): data for @type_filter.
  *
  * Creates a new #NmtSlaveList.
  *

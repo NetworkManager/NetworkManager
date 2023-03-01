@@ -6481,11 +6481,11 @@ should_complete_cmd(const char *line, int end, const char *cmd, int *cw_num, cha
 
 /*
  * extract_setting_and_property:
- * prompt: (in) (allow-none): prompt string, or NULL
- * line: (in) (allow-none): line, or NULL
- * setting: (out) (transfer full) (array zero-terminated=1):
+ * prompt: (nullable): prompt string, or NULL
+ * line: (nullable): line, or NULL
+ * setting: (out) (transfer full) (array zero-terminated=1) (optional):
  *   return location for setting name
- * property: (out) (transfer full) (array zero-terminated=1):
+ * property: (out) (transfer full) (array zero-terminated=1) (optional):
  *   return location for property name
  *
  * Extract setting and property names from prompt and/or line.

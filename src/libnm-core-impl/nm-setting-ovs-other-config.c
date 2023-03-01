@@ -135,7 +135,7 @@ nm_setting_ovs_other_config_get_data(NMSettingOvsOtherConfig *setting, const cha
  * nm_setting_ovs_other_config_set_data:
  * @setting: the #NMSettingOvsOtherConfig instance
  * @key: the key to set
- * @val: (allow-none): the value to set or %NULL to clear a key.
+ * @val: (nullable): the value to set or %NULL to clear a key.
  *
  * Since: 1.42
  */

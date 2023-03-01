@@ -373,7 +373,7 @@ nm_platform_ip6_address_get_peer(const NMPlatformIP6Address *addr)
 /**
  * nm_platform_ip4_address_to_string:
  * @route: pointer to NMPlatformIP4Address address structure
- * @buf: (allow-none): an optional buffer. If %NULL, a static buffer is used.
+ * @buf: (nullable): an optional buffer. If %NULL, a static buffer is used.
  * @len: the size of the @buf. If @buf is %NULL, this argument is ignored.
  *
  * A method for converting an address struct into a string representation.
@@ -479,7 +479,7 @@ nm_platform_ip4_address_to_string(const NMPlatformIP4Address *address, char *buf
 /**
  * nm_platform_ip6_address_to_string:
  * @route: pointer to NMPlatformIP6Address address structure
- * @buf: (allow-none): an optional buffer. If %NULL, a static buffer is used.
+ * @buf: (nullable): an optional buffer. If %NULL, a static buffer is used.
  * @len: the size of the @buf. If @buf is %NULL, this argument is ignored.
  *
  * A method for converting an address struct into a string representation.

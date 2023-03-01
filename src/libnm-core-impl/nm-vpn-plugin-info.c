@@ -143,7 +143,7 @@ nm_vpn_plugin_info_check_file_full(const char               *filename,
  *   other users.
  * @check_file: pass a callback to do your own validation.
  * @user_data: user data for @check_file.
- * @error: (allow-none) (out): the error reason if the check fails.
+ * @error: the error reason if the check fails.
  *
  * Check whether the file exists and is a valid name file (in keyfile format).
  * Additionally, also check for file permissions.
@@ -236,7 +236,7 @@ _nm_vpn_plugin_info_get_default_dir_user(void)
  * @check_owner: if set to a non-negative number, check that the file
  *   owner is either the same uid or 0. In that case, also check
  *   that the file is not writable by group or other.
- * @check_file: (allow-none): callback to check whether the file is valid.
+ * @check_file: (nullable): callback to check whether the file is valid.
  * @user_data: data for @check_file
  *
  * Iterate over the content of @dirname and load name files.
@@ -352,16 +352,16 @@ nm_vpn_plugin_info_list_load(void)
 
 /**
  * nm_vpn_plugin_info_new_search_file:
- * @name: (allow-none): the name to search for. Either @name or @service
+ * @name: (nullable): the name to search for. Either @name or @service
  *   must be present.
- * @service: (allow-none): the service to search for. Either @name  or
+ * @service: (nullable): the service to search for. Either @name  or
  *   @service must be present.
  *
  * This has the same effect as doing a full nm_vpn_plugin_info_list_load()
  * followed by a search for the first matching VPN plugin info that has the
  * given @name and/or @service.
  *
- * Returns: (transfer full): a newly created instance of plugin info
+ * Returns: (transfer full) (nullable): a newly created instance of plugin info
  *   or %NULL if no matching value was found.
  *
  * Since: 1.4
@@ -987,7 +987,7 @@ nm_vpn_plugin_info_get_editor_plugin(NMVpnPluginInfo *self)
 /**
  * nm_vpn_plugin_info_set_editor_plugin:
  * @self: plugin info instance
- * @plugin: (allow-none): plugin instance
+ * @plugin: (nullable): plugin instance
  *
  * Set the internal plugin instance. If %NULL, only clear the previous instance.
  *

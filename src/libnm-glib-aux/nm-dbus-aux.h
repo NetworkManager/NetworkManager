@@ -290,7 +290,7 @@ gulong _nm_dbus_proxy_signal_connect_data(GDBusProxy         *proxy,
  * @signal_name: the D-Bus signal to connect to
  * @signature: the signal's type signature (must be a tuple)
  * @c_handler: the signal handler function
- * @data: (allow-none): data to pass to @c_handler
+ * @data: (nullable): data to pass to @c_handler
  *
  * Simplified version of _nm_dbus_proxy_signal_connect_data() with fewer arguments.
  *
