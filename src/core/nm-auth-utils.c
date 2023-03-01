@@ -251,7 +251,7 @@ nm_auth_chain_steal_data(NMAuthChain *self, const char *tag)
  * @tag: the tag for referencing the attached data.
  * @data: the data to attach. If %NULL, this call has no effect
  *   and nothing is attached.
- * @data_destroy: (allow-none): the destroy function for the data pointer.
+ * @data_destroy: (nullable): the destroy function for the data pointer.
  *
  * @tag string is not cloned and must outlive @self. That is why
  * the function is "unsafe". Use nm_auth_chain_set_data() with a C literal

@@ -42,7 +42,7 @@ enum {
 /**
  * nmt_editor_section_new:
  * @title: the section title
- * @header_widget: (allow-none): the widget to show next to the title
+ * @header_widget: (nullable): the widget to show next to the title
  * @show_by_default: whether the section should be open by default
  *
  * Creates a new #NmtEditorSection.

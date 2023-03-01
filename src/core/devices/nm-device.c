@@ -6302,7 +6302,7 @@ attach_port_cb(NMDevice *self, GError *error, gpointer user_data)
  * nm_device_master_enslave_slave:
  * @self: the master device
  * @slave: the slave device to enslave
- * @connection: (allow-none): the slave device's connection
+ * @connection: (nullable): the slave device's connection
  *
  * If @self is capable of enslaving other devices (ie it's a bridge, bond, team,
  * etc) then this function enslaves @slave.

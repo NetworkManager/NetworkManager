@@ -364,7 +364,7 @@ nm_keep_alive_disarm(NMKeepAlive *self)
 
 /**
  * nm_keep_alive_destroy:
- * @self: (allow-none): the #NMKeepAlive instance to destroy.
+ * @self: (nullable): the #NMKeepAlive instance to destroy.
  *
  * This does 3 things in one:
  *

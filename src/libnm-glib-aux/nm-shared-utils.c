@@ -439,7 +439,7 @@ nm_g_bytes_new_from_variant_ay(GVariant *var)
 
 /**
  * nm_g_bytes_equal_mem:
- * @bytes: (allow-none): a #GBytes array to compare. Note that
+ * @bytes: (nullable): a #GBytes array to compare. Note that
  *   %NULL is treated like an #GBytes array of length zero.
  * @mem_data: the data pointer with @mem_len bytes
  * @mem_len: the length of the data pointer
@@ -694,7 +694,7 @@ nm_strdict_to_variant_asv(GHashTable *strdict)
  * nm_strquote:
  * @buf: the output buffer of where to write the quoted @str argument.
  * @buf_len: the size of @buf.
- * @str: (allow-none): the string to quote.
+ * @str: (nullable): the string to quote.
  *
  * Writes @str to @buf with quoting. The resulting buffer
  * is always NUL terminated, unless @buf_len is zero.
@@ -1766,11 +1766,11 @@ nm_utils_escaped_tokens_escape_full(const char                     *str,
  * nm_utils_escaped_tokens_options_split:
  * @str: the src string. This string will be modified in-place.
  *   The output values will point into @str.
- * @out_key: (allow-none): the returned output key. This will always be set to @str
- *   itself. @str will be modified to contain only the unescaped, truncated
- *   key name.
- * @out_val: returns the parsed (and unescaped) value or %NULL, if @str contains
- *   no '=' delimiter.
+ * @out_key: (nullable) (out): the returned output key. This will always be set
+ *   to @str itself. @str will be modified to contain only the unescaped,
+ *   truncated key name.
+ * @out_val: (nullable) (out): returns the parsed (and unescaped) value or
+ *   %NULL, if @str contains no '=' delimiter.
  *
  * Honors backslash escaping to parse @str as "key=value" pairs. Optionally, if no '='
  * is present, @out_val will be returned as %NULL. Backslash can be used to escape
@@ -2226,7 +2226,7 @@ nm_utils_error_is_notfound(GError *error)
  * @object: the target object
  * @property_name: the property name
  * @value: the #GValue to set
- * @error: (allow-none): optional error argument
+ * @error: optional error argument
  *
  * A reimplementation of g_object_set_property(), but instead
  * returning an error instead of logging a warning. All g_object_set*()
@@ -2526,7 +2526,7 @@ _str_buf_append_c_escape_octal(NMStrBuf *strbuf, char ch)
 
 /**
  * nm_utils_buf_utf8safe_unescape:
- * @str: (allow-none): the string to unescape. The string itself is a NUL terminated
+ * @str: (nullable): the string to unescape. The string itself is a NUL terminated
  *   ASCII string, that can have C-style backslash escape sequences (which
  *   are to be unescaped). Non-ASCII characters (e.g. UTF-8) are taken verbatim, so
  *   it doesn't care that this string is UTF-8. However, usually this is a UTF-8 encoded
@@ -3334,9 +3334,9 @@ _utils_hashtable_equal(GHashTable      *hash_a,
 
 /**
  * nm_utils_hashtable_cmp_equal:
- * @a: (allow-none): the hash table or %NULL
- * @b: (allow-none): the other hash table or %NULL
- * @cmp_values: (allow-none): if %NULL, only the keys
+ * @a: (nullable): the hash table or %NULL
+ * @b: (nullable): the other hash table or %NULL
+ * @cmp_values: (nullable): if %NULL, only the keys
  *   will be compared. Otherwise, this function is used to
  *   check whether all keys are equal.
  * @user_data: the argument for @cmp_values.
@@ -3403,8 +3403,8 @@ _hashtable_cmp_func(gconstpointer a, gconstpointer b, gpointer user_data)
 
 /**
  * nm_utils_hashtable_cmp:
- * @a: (allow-none): the hash to compare. May be %NULL.
- * @b: (allow-none): the other hash to compare. May be %NULL.
+ * @a: (nullable): the hash to compare. May be %NULL.
+ * @b: (nullable): the other hash to compare. May be %NULL.
  * @do_fast_precheck: if %TRUE, assume that the hashes are equal
  *   and that it is worth calling nm_utils_hashtable_cmp_equal() first.
  *   That requires, that both hashes have the same equals function
@@ -3412,7 +3412,7 @@ _hashtable_cmp_func(gconstpointer a, gconstpointer b, gpointer user_data)
  * @cmp_keys: the compare function for keys. Usually, the hash/equal function
  *   of both hashes corresponds to this function. If you set @do_fast_precheck
  *   to false, then this is not a requirement.
- * @cmp_values: (allow-none): if %NULL, only the keys are compared.
+ * @cmp_values: (nullable): if %NULL, only the keys are compared.
  *   Otherwise, the values must are also compared with this function.
  *
  * Both hashes must have keys/values of the same domain, so that

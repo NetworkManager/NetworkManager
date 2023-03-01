@@ -125,7 +125,7 @@ nm_wireguard_peer_new_clone(const NMWireGuardPeer *self, gboolean with_secrets)
 
 /**
  * nm_wireguard_peer_ref:
- * @self: (allow-none): the #NMWireGuardPeer instance
+ * @self: (nullable): the #NMWireGuardPeer instance
  *
  * Returns: returns the input argument @self after incrementing
  *   the reference count.
@@ -150,7 +150,7 @@ nm_wireguard_peer_ref(NMWireGuardPeer *self)
 
 /**
  * nm_wireguard_peer_unref:
- * @self: (allow-none): the #NMWireGuardPeer instance
+ * @self: (nullable): the #NMWireGuardPeer instance
  *
  * Drop a reference to @self. If the last reference is dropped,
  * the instance is freed and all associate data released.
@@ -260,7 +260,7 @@ nm_wireguard_peer_get_public_key(const NMWireGuardPeer *self)
 /**
  * nm_wireguard_peer_set_public_key:
  * @self: the unsealed #NMWireGuardPeer instance
- * @public_key: (allow-none) (transfer none): the new public
+ * @public_key: (nullable) (transfer none): the new public
  *   key or %NULL to clear the public key.
  * @accept_invalid: if %TRUE and @public_key is not %NULL and
  *   invalid, then do not modify the instance.
@@ -339,7 +339,7 @@ nm_wireguard_peer_get_preshared_key(const NMWireGuardPeer *self)
 /**
  * nm_wireguard_peer_set_preshared_key:
  * @self: the unsealed #NMWireGuardPeer instance
- * @preshared_key: (allow-none) (transfer none): the new preshared
+ * @preshared_key: (nullable) (transfer none): the new preshared
  *   key or %NULL to clear the preshared key.
  * @accept_invalid: whether to allow setting the key to an invalid
  *   value. If %FALSE, @self is unchanged if the key is invalid
@@ -564,13 +564,13 @@ nm_wireguard_peer_get_allowed_ips_len(const NMWireGuardPeer *self)
  * @self: the #NMWireGuardPeer instance
  * @idx: the index from zero to (allowed-ips-len - 1) to
  *   retrieve.
- * @out_is_valid: (allow-none): %TRUE if the returned value is a valid allowed-ip
+ * @out_is_valid: (optional): %TRUE if the returned value is a valid allowed-ip
  *   setting.
  *   This parameter is wrongly not marked as (out) argument, it is
  *   thus not accessible via introspection. This cannot be fixed without
  *   breaking API for introspection users.
  *
- * Returns: (transfer none): the allowed-ip setting at index @idx.
+ * Returns: (transfer none) (nullable): the allowed-ip setting at index @idx.
  *   If @idx is out of range, %NULL will be returned.
  *
  * Since: 1.16
@@ -813,8 +813,8 @@ nm_wireguard_peer_is_valid(const NMWireGuardPeer *self,
 
 /**
  * nm_wireguard_peer_cmp:
- * @a: (allow-none): the #NMWireGuardPeer to compare.
- * @b: (allow-none): the other #NMWireGuardPeer to compare.
+ * @a: (nullable): the #NMWireGuardPeer to compare.
+ * @b: (nullable): the other #NMWireGuardPeer to compare.
  * @compare_flags: #NMSettingCompareFlags to affect the comparison.
  *
  * Returns: zero of the two instances are equivalent or
@@ -1222,11 +1222,11 @@ nm_setting_wireguard_get_peer(NMSettingWireGuard *self, guint idx)
  * @self: the #NMSettingWireGuard instance
  * @public_key: the public key for looking up the
  *   peer.
- * @out_idx: (out) (allow-none): optional output argument
+ * @out_idx: (out) (optional): optional output argument
  *   for the index of the found peer. If no index is found,
  *   this is set to the nm_setting_wireguard_get_peers_len().
  *
- * Returns: (transfer none): the #NMWireGuardPeer instance with a
+ * Returns: (transfer none) (nullable): the #NMWireGuardPeer instance with a
  *   matching public key. If no such peer exists, %NULL is returned.
  *
  * Since: 1.16

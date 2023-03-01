@@ -765,7 +765,7 @@ diff_one_connection(NMConnection         *a,
  * @b: a second #NMConnection to compare with the first
  * @flags: compare flags, e.g. %NM_SETTING_COMPARE_FLAG_EXACT
  * @out_settings: (out) (element-type utf8 GLib.HashTable(utf8,uint32))
- * (optional) (allow-none): if the connections differ, on return a hash table
+ * (optional) (nullable): if the connections differ, on return a hash table
  * mapping setting names to second-level GHashTable (utf8 to guint32), which
  * contains the key names that differ mapped to one or more of
  * %NMSettingDiffResult as a bitfield
@@ -2073,12 +2073,12 @@ _connection_normalize(NMConnection *connection,
 /**
  * nm_connection_normalize:
  * @connection: the #NMConnection to normalize
- * @parameters: (allow-none) (element-type utf8 gpointer): a #GHashTable with
+ * @parameters: (nullable) (element-type utf8 gpointer): a #GHashTable with
  * normalization parameters to allow customization of the normalization by providing
  * specific arguments. Unknown arguments will be ignored and the default will be
  * used. The keys must be strings compared with g_str_equal() function.
  * The values are opaque and depend on the parameter name.
- * @modified: (out) (allow-none): outputs whether any settings were modified.
+ * @modified: (out) (optional): outputs whether any settings were modified.
  * @error: location to store error, or %NULL. Contains the reason,
  * why the connection is invalid, if the function returns an error.
  *
@@ -2429,7 +2429,7 @@ _need_secrets(NMConnection *connection, gboolean check_rerequest, GPtrArray **hi
 /**
  * nm_connection_need_secrets:
  * @connection: the #NMConnection
- * @hints: (out) (element-type utf8) (allow-none) (transfer container):
+ * @hints: (out) (element-type utf8) (nullable) (transfer container):
  *   the address of a pointer to a #GPtrArray, initialized to %NULL, which on
  *   return points to an allocated #GPtrArray containing the property names of
  *   secrets of the #NMSetting which may be required; the caller owns the array
@@ -2442,8 +2442,8 @@ _need_secrets(NMConnection *connection, gboolean check_rerequest, GPtrArray **hi
  * circumstances, there is no way to conclusively determine exactly which
  * secrets are needed.
  *
- * Returns: the setting name of the #NMSetting object which has invalid or
- *   missing secrets
+ * Returns: (nullable): the setting name of the #NMSetting object which has
+ *   invalid or missing secrets
  **/
 const char *
 nm_connection_need_secrets(NMConnection *connection, GPtrArray **hints)
@@ -2458,7 +2458,7 @@ nm_connection_need_secrets(NMConnection *connection, GPtrArray **hints)
  * nm_connection_need_secrets_for_rerequest:
  * @connection: the #NMConnection
  *
- * Returns TRUE if some secret needs to be re-requested
+ * Returns: %TRUE if some secret needs to be re-requested
  **/
 gboolean
 nm_connection_need_secrets_for_rerequest(NMConnection *connection)
@@ -2484,7 +2484,7 @@ nm_connection_clear_secrets(NMConnection *connection)
 /**
  * nm_connection_clear_secrets_with_flags:
  * @connection: the #NMConnection
- * @func: (scope call) (allow-none): function to be called to determine whether a
+ * @func: (scope call) (nullable): function to be called to determine whether a
  *     specific secret should be cleared or not. If %NULL, all secrets are cleared.
  * @user_data: caller-supplied data passed to @func
  *
@@ -2796,15 +2796,14 @@ _nm_connection_get_settings_arr(NMConnection *connection)
 /**
  * nm_connection_get_settings:
  * @connection: the #NMConnection instance
- * @out_length: (allow-none) (out): the length of the returned array
+ * @out_length: (out) (optional): the length of the returned array
  *
  * Retrieves the settings in @connection.
  *
  * The returned array is %NULL-terminated.
  *
- * Returns: (array length=out_length) (transfer container): a
- *   %NULL-terminated array containing every setting of
- *   @connection.
+ * Returns: (array length=out_length) (transfer container) (nullable): a
+ *   %NULL-terminated array containing every setting of @connection.
  *   If the connection has no settings, %NULL is returned.
  *
  * Since: 1.10

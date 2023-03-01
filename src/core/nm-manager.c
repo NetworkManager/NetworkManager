@@ -3268,7 +3268,7 @@ new_activation_allowed_for_connection(NMManager *self, NMSettingsConnection *con
  * get_existing_connection:
  * @manager: #NMManager instance
  * @device: #NMDevice instance
- * @out_generated: (allow-none): return TRUE, if the connection was generated.
+ * @out_generated: (out) (optional): return TRUE, if the connection was generated.
  *
  * Returns: a #NMSettingsConnection to be assumed by the device, or %NULL if
  *   the device does not support assuming existing connections.
@@ -5982,7 +5982,7 @@ fail:
  * nm_manager_activate_connection():
  * @self: the #NMManager
  * @sett_conn: the #NMSettingsConnection to activate on @device
- * @applied: (allow-none): the applied connection to activate on @device
+ * @applied: (nullable): the applied connection to activate on @device
  * @specific_object: the specific object path, if any, for the activation
  * @device: the #NMDevice to activate @sett_conn on. Can be %NULL for VPNs.
  * @subject: the subject which requested activation

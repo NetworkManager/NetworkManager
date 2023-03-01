@@ -416,8 +416,8 @@ nm_act_request_init(NMActRequest *req)
 /**
  * nm_act_request_new:
  *
- * @settings_connection: (allow-none): the connection to activate @device with
- * @applied_connection: (allow-none): the applied connection
+ * @settings_connection: (nullable): the connection to activate @device with
+ * @applied_connection: (nullable): the applied connection
  * @specific_object: the object path of the specific object (ie, Wi-Fi access point,
  *    etc) that will be used to activate @connection and @device
  * @subject: the #NMAuthSubject representing the requestor of the activation
