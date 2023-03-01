@@ -36,6 +36,16 @@
 #define _ADD_DUMMY(platform, name) \
     g_assert(NMTST_NM_ERR_SUCCESS(nm_platform_link_dummy_add((platform), (name), NULL)))
 
+#define _sysctl_assert_eq(plat, path, value)                                   \
+    G_STMT_START                                                               \
+    {                                                                          \
+        gs_free char *_val = NULL;                                             \
+                                                                               \
+        _val = nm_platform_sysctl_get(plat, NMP_SYSCTL_PATHID_ABSOLUTE(path)); \
+        g_assert_cmpstr(_val, ==, value);                                      \
+    }                                                                          \
+    G_STMT_END
+
 static void
 test_bogus(void)
 {
@@ -673,19 +683,15 @@ test_bridge_addr(void)
     b = nm_platform_link_set_bridge_info(NM_PLATFORM_GET, link.ifindex, &info_data);
     g_assert(b);
 
-    str = nm_platform_sysctl_master_get_option(NM_PLATFORM_GET, link.ifindex, "default_pvid");
-    g_assert_cmpstr(str,
-                    ==,
-                    info_data.vlan_default_pvid_has
-                        ? nm_sprintf_buf(sbuf, "%u", info_data.vlan_default_pvid_val)
-                        : "1");
-    nm_clear_g_free(&str);
+    _sysctl_assert_eq(NM_PLATFORM_GET,
+                      "/sys/class/net/" DEVICE_NAME "/bridge/default_pvid",
+                      info_data.vlan_default_pvid_has
+                          ? nm_sprintf_buf(sbuf, "%u", info_data.vlan_default_pvid_val)
+                          : "1");
 
-    str = nm_platform_sysctl_master_get_option(NM_PLATFORM_GET, link.ifindex, "vlan_filtering");
-    g_assert_cmpstr(str,
-                    ==,
-                    info_data.vlan_filtering_val && info_data.vlan_filtering_has ? "1" : "0");
-    nm_clear_g_free(&str);
+    _sysctl_assert_eq(NM_PLATFORM_GET,
+                      "/sys/class/net/" DEVICE_NAME "/bridge/vlan_filtering",
+                      info_data.vlan_filtering_val && info_data.vlan_filtering_has ? "1" : "0");
 
     info_data = (const NMPlatformLinkSetBridgeInfoData){
         .vlan_default_pvid_val = 55,
@@ -696,13 +702,13 @@ test_bridge_addr(void)
     b = nm_platform_link_set_bridge_info(NM_PLATFORM_GET, link.ifindex, &info_data);
     g_assert(b);
 
-    str = nm_platform_sysctl_master_get_option(NM_PLATFORM_GET, link.ifindex, "default_pvid");
-    g_assert_cmpstr(str, ==, nm_sprintf_buf(sbuf, "%u", info_data.vlan_default_pvid_val));
-    nm_clear_g_free(&str);
+    _sysctl_assert_eq(NM_PLATFORM_GET,
+                      "/sys/class/net/" DEVICE_NAME "/bridge/default_pvid",
+                      nm_sprintf_buf(sbuf, "%u", info_data.vlan_default_pvid_val));
 
-    str = nm_platform_sysctl_master_get_option(NM_PLATFORM_GET, link.ifindex, "vlan_filtering");
-    g_assert_cmpstr(str, ==, info_data.vlan_filtering_val ? "1" : "0");
-    nm_clear_g_free(&str);
+    _sysctl_assert_eq(NM_PLATFORM_GET,
+                      "/sys/class/net/" DEVICE_NAME "/bridge/vlan_filtering",
+                      info_data.vlan_filtering_val ? "1" : "0");
 
     nmtstp_link_delete(NULL, -1, link.ifindex, link.name, TRUE);
 }
@@ -2931,16 +2937,6 @@ _check_sysctl_skip(void)
 }
 
 /*****************************************************************************/
-
-#define _sysctl_assert_eq(plat, path, value)                                   \
-    G_STMT_START                                                               \
-    {                                                                          \
-        gs_free char *_val = NULL;                                             \
-                                                                               \
-        _val = nm_platform_sysctl_get(plat, NMP_SYSCTL_PATHID_ABSOLUTE(path)); \
-        g_assert_cmpstr(_val, ==, value);                                      \
-    }                                                                          \
-    G_STMT_END
 
 static void
 test_netns_general(gpointer fixture, gconstpointer test_data)

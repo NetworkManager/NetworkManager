@@ -278,6 +278,24 @@ link_add_pre(NMPlatform *platform,
     return device;
 }
 
+static void
+link_add_post(NMPlatform *self, NMFakePlatformLink *device)
+{
+    char path[128];
+
+    switch (device->obj->link.type) {
+    case NM_LINK_TYPE_BRIDGE:
+        nm_sprintf_buf(path, "/sys/class/net/%s/bridge/default_pvid", device->obj->link.name);
+        sysctl_set(self, NMP_SYSCTL_PATHID_ABSOLUTE(path), "1");
+
+        nm_sprintf_buf(path, "/sys/class/net/%s/bridge/vlan_filtering", device->obj->link.name);
+        sysctl_set(self, NMP_SYSCTL_PATHID_ABSOLUTE(path), "0");
+        break;
+    default:
+        break;
+    }
+}
+
 static int
 link_add(NMPlatform            *platform,
          NMLinkType             type,
@@ -389,6 +407,7 @@ link_add(NMPlatform            *platform,
         *out_link = NMP_OBJECT_CAST_LINK(device->obj);
 
     link_changed(platform, device, cache_op, NULL);
+    link_add_post(platform, device);
     if (veth_peer)
         link_changed(platform, device_veth, cache_op_veth, NULL);
 
@@ -441,6 +460,7 @@ link_add_one(NMPlatform *platform,
 static gboolean
 link_delete(NMPlatform *platform, int ifindex)
 {
+    NMFakePlatformPrivate          *priv     = NM_FAKE_PLATFORM_GET_PRIVATE(platform);
     NMFakePlatformLink             *device   = link_get(platform, ifindex);
     nm_auto_nmpobj const NMPObject *obj_old  = NULL;
     nm_auto_nmpobj const NMPObject *obj_old2 = NULL;
@@ -450,6 +470,17 @@ link_delete(NMPlatform *platform, int ifindex)
         return FALSE;
 
     obj_old = g_steal_pointer(&device->obj);
+
+    if (obj_old->link.type == NM_LINK_TYPE_BRIDGE) {
+        char path[128];
+
+        g_hash_table_remove(
+            priv->options,
+            nm_sprintf_buf(path, "/sys/class/net/%s/bridge/default_pvid", obj_old->link.name));
+        g_hash_table_remove(
+            priv->options,
+            nm_sprintf_buf(path, "/sys/class/net/%s/bridge/vlan_filtering", obj_old->link.name));
+    }
 
     cache_op = nmp_cache_remove(nm_platform_get_cache(platform), obj_old, FALSE, FALSE, &obj_old2);
     g_assert(cache_op == NMP_CACHE_OPS_REMOVED);
@@ -723,6 +754,34 @@ link_vlan_change(NMPlatform             *platform,
                  gsize                   n_egress_map)
 {
     return FALSE;
+}
+
+static gboolean
+link_set_bridge_info(NMPlatform                            *self,
+                     int                                    ifindex,
+                     const NMPlatformLinkSetBridgeInfoData *bridge_info)
+{
+    NMFakePlatformLink *link;
+    char                path[128];
+    char                value[128];
+
+    link = link_get(self, ifindex);
+    if (!link)
+        return FALSE;
+
+    if (bridge_info->vlan_default_pvid_has) {
+        nm_sprintf_buf(path, "/sys/class/net/%s/bridge/default_pvid", link->obj->link.name);
+        nm_sprintf_buf(value, "%u", bridge_info->vlan_default_pvid_val);
+        sysctl_set(self, NMP_SYSCTL_PATHID_ABSOLUTE(path), value);
+    }
+
+    if (bridge_info->vlan_filtering_has) {
+        nm_sprintf_buf(path, "/sys/class/net/%s/bridge/vlan_filtering", link->obj->link.name);
+        nm_sprintf_buf(value, "%u", bridge_info->vlan_filtering_val);
+        sysctl_set(self, NMP_SYSCTL_PATHID_ABSOLUTE(path), value);
+    }
+
+    return TRUE;
 }
 
 struct infiniband_add_data {
@@ -1347,6 +1406,8 @@ nm_fake_platform_class_init(NMFakePlatformClass *klass)
     platform_class->link_release = link_release;
 
     platform_class->link_vlan_change = link_vlan_change;
+
+    platform_class->link_set_bridge_info = link_set_bridge_info;
 
     platform_class->infiniband_partition_add    = infiniband_partition_add;
     platform_class->infiniband_partition_delete = infiniband_partition_delete;
