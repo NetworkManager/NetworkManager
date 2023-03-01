@@ -782,6 +782,7 @@ typedef struct {
     NMEtherAddr ad_actor_system;
     guint8      ad_select;
     guint8      all_ports_active;
+    guint8      arp_missed_max;
     guint8      arp_ip_targets_num;
     guint8      fail_over_mac;
     guint8      lacp_rate;

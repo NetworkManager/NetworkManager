@@ -6221,6 +6221,7 @@ nm_platform_lnk_bond_to_string(const NMPlatformLnkBond *lnk, char *buf, gsize le
         " xmit_hash_policy %u"
         " num_gray_arp %u"
         " all_ports_active %u"
+        " arp_missed_max %u"
         " lacp_rate %u"
         " ad_select %u"
         " use_carrier %d"
@@ -6271,6 +6272,7 @@ nm_platform_lnk_bond_to_string(const NMPlatformLnkBond *lnk, char *buf, gsize le
         lnk->xmit_hash_policy,
         lnk->num_grat_arp,
         lnk->all_ports_active,
+        lnk->arp_missed_max,
         lnk->lacp_rate,
         lnk->ad_select,
         (int) lnk->use_carrier,
@@ -8037,6 +8039,7 @@ nm_platform_lnk_bond_hash_update(const NMPlatformLnkBond *obj, NMHashState *h)
                         obj->ad_actor_system,
                         obj->ad_select,
                         obj->all_ports_active,
+                        obj->arp_missed_max,
                         obj->arp_ip_targets_num,
                         obj->fail_over_mac,
                         obj->lacp_rate,
@@ -8084,6 +8087,7 @@ nm_platform_lnk_bond_cmp(const NMPlatformLnkBond *a, const NMPlatformLnkBond *b)
     NM_CMP_FIELD_MEMCMP(a, b, ad_actor_system);
     NM_CMP_FIELD(a, b, ad_select);
     NM_CMP_FIELD(a, b, all_ports_active);
+    NM_CMP_FIELD(a, b, arp_missed_max);
     NM_CMP_FIELD(a, b, fail_over_mac);
     NM_CMP_FIELD(a, b, lacp_rate);
     NM_CMP_FIELD(a, b, num_grat_arp);

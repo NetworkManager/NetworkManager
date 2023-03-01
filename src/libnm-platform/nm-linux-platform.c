@@ -180,6 +180,7 @@ G_STATIC_ASSERT(RTA_MAX == (__RTA_MAX - 1));
 /*****************************************************************************/
 
 #define IFLA_BOND_PEER_NOTIF_DELAY 28
+#define IFLA_BOND_MISSED_MAX       30
 
 #undef IFLA_BOND_MAX
 
@@ -1606,6 +1607,7 @@ _parse_lnk_bond(const char *kind, struct nlattr *info_data)
         [IFLA_BOND_AD_ACTOR_SYSTEM]   = {.minlen = sizeof(NMEtherAddr)},
         [IFLA_BOND_TLB_DYNAMIC_LB]    = {.type = NLA_U8},
         [IFLA_BOND_PEER_NOTIF_DELAY]  = {.type = NLA_U32},
+        [IFLA_BOND_MISSED_MAX]        = {.type = NLA_U8},
     };
     NMPlatformLnkBond *props;
     struct nlattr     *tb[G_N_ELEMENTS(policy)];
@@ -1680,6 +1682,8 @@ _parse_lnk_bond(const char *kind, struct nlattr *info_data)
         props->num_grat_arp = nla_get_u8(tb[IFLA_BOND_NUM_PEER_NOTIF]);
     if (tb[IFLA_BOND_ALL_SLAVES_ACTIVE])
         props->all_ports_active = nla_get_u8(tb[IFLA_BOND_ALL_SLAVES_ACTIVE]);
+    if (tb[IFLA_BOND_MISSED_MAX])
+        props->arp_missed_max = nla_get_u8(tb[IFLA_BOND_MISSED_MAX]);
     if (tb[IFLA_BOND_MIN_LINKS])
         props->min_links = nla_get_u32(tb[IFLA_BOND_MIN_LINKS]);
     if (tb[IFLA_BOND_LP_INTERVAL])
@@ -4734,6 +4738,8 @@ _nl_msg_new_link_set_linkinfo(struct nl_msg *msg, NMLinkType link_type, gconstpo
                     &props->ad_actor_system);
         if (props->ad_select)
             NLA_PUT_U8(msg, IFLA_BOND_AD_SELECT, props->ad_select);
+        if (props->arp_missed_max)
+            NLA_PUT_U8(msg, IFLA_BOND_MISSED_MAX, props->arp_missed_max);
 
         NLA_PUT_U8(msg, IFLA_BOND_ALL_SLAVES_ACTIVE, props->all_ports_active);
 
