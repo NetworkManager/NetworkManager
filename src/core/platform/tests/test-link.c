@@ -586,10 +586,14 @@ test_vlan(void)
 static void
 test_bridge_addr(void)
 {
-    char                  addr[ETH_ALEN];
-    NMPlatformLink        link;
-    const NMPlatformLink *plink = NULL;
-    NMPLinkAddress        hw_perm_addr;
+    char                            addr[ETH_ALEN];
+    NMPlatformLink                  link;
+    const NMPlatformLink           *plink = NULL;
+    NMPLinkAddress                  hw_perm_addr;
+    gboolean                        b;
+    char                            sbuf[100];
+    gs_free char                   *str = NULL;
+    NMPlatformLinkSetBridgeInfoData info_data;
 
     nm_utils_hwaddr_aton("de:ad:be:ef:00:11", addr, sizeof(addr));
 
@@ -659,6 +663,46 @@ test_bridge_addr(void)
 
     g_assert_cmpint(plink->l_address.len, ==, sizeof(addr));
     g_assert(!memcmp(plink->l_address.data, addr, sizeof(addr)));
+
+    info_data = (const NMPlatformLinkSetBridgeInfoData){
+        .vlan_default_pvid_val = nmtst_rand_select(0, 5, 42, 1048),
+        .vlan_default_pvid_has = nmtst_get_rand_bool(),
+        .vlan_filtering_val    = nmtst_get_rand_bool(),
+        .vlan_filtering_has    = nmtst_get_rand_bool(),
+    };
+    b = nm_platform_link_set_bridge_info(NM_PLATFORM_GET, link.ifindex, &info_data);
+    g_assert(b);
+
+    str = nm_platform_sysctl_master_get_option(NM_PLATFORM_GET, link.ifindex, "default_pvid");
+    g_assert_cmpstr(str,
+                    ==,
+                    info_data.vlan_default_pvid_has
+                        ? nm_sprintf_buf(sbuf, "%u", info_data.vlan_default_pvid_val)
+                        : "1");
+    nm_clear_g_free(&str);
+
+    str = nm_platform_sysctl_master_get_option(NM_PLATFORM_GET, link.ifindex, "vlan_filtering");
+    g_assert_cmpstr(str,
+                    ==,
+                    info_data.vlan_filtering_val && info_data.vlan_filtering_has ? "1" : "0");
+    nm_clear_g_free(&str);
+
+    info_data = (const NMPlatformLinkSetBridgeInfoData){
+        .vlan_default_pvid_val = 55,
+        .vlan_default_pvid_has = TRUE,
+        .vlan_filtering_val    = !info_data.vlan_filtering_val,
+        .vlan_filtering_has    = TRUE,
+    };
+    b = nm_platform_link_set_bridge_info(NM_PLATFORM_GET, link.ifindex, &info_data);
+    g_assert(b);
+
+    str = nm_platform_sysctl_master_get_option(NM_PLATFORM_GET, link.ifindex, "default_pvid");
+    g_assert_cmpstr(str, ==, nm_sprintf_buf(sbuf, "%u", info_data.vlan_default_pvid_val));
+    nm_clear_g_free(&str);
+
+    str = nm_platform_sysctl_master_get_option(NM_PLATFORM_GET, link.ifindex, "vlan_filtering");
+    g_assert_cmpstr(str, ==, info_data.vlan_filtering_val ? "1" : "0");
+    nm_clear_g_free(&str);
 
     nmtstp_link_delete(NULL, -1, link.ifindex, link.name, TRUE);
 }
