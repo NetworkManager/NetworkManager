@@ -78,7 +78,7 @@ nmt_sync_op_wait_boolean(NmtSyncOp *op, GError **error)
  * nmt_sync_op_complete_boolean:
  * @op: the #NmtSyncOp
  * @result: the result of the operation
- * @error: (allow-none): the error, or %NULL
+ * @error: (nullable): the error, or %NULL
  *
  * Completes @op and returns @result and/or @error to the caller.
  */
@@ -115,7 +115,7 @@ nmt_sync_op_wait_pointer(NmtSyncOp *op, GError **error)
  * nmt_sync_op_complete_pointer:
  * @op: the #NmtSyncOp
  * @result: the result of the operation
- * @error: (allow-none): the error, or %NULL
+ * @error: (nullable): the error, or %NULL
  *
  * Completes @op and returns @result and/or @error to the caller.
  */

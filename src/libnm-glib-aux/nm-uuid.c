@@ -411,7 +411,7 @@ nm_uuid_generate_from_string_str(const char   *s,
  * @uuid_type: the UUID type to use. Prefer version 5 unless you have
  *   good reasons.
  * @type_args: the namespace UUID.
- * @strv: (allow-none): the strv list to hash. Can be NULL, in which
+ * @strv: (nullable): the strv list to hash. Can be NULL, in which
  *   case the result is different from an empty array.
  * @len: if negative, @strv is a NULL terminated array. Otherwise,
  *   it is the length of the strv array. In the latter case it may

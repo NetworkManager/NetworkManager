@@ -917,7 +917,7 @@ enum {
  * @options_route: (in-out): when line is from the OPTIONS setting, this is a pre-created
  *   route object that is completed with the settings from options. Otherwise,
  *   it shall point to %NULL and a new route is created and returned.
- * @out_route: (out) (transfer full) (allow-none): the parsed %NMIPRoute instance.
+ * @out_route: (out) (transfer full) (optional): the parsed %NMIPRoute instance.
  *   In case a @options_route is passed in, it returns the input route that was modified
  *   in-place. But the caller must unref the returned route in either case.
  * @error: the failure description.

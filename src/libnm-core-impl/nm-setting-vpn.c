@@ -178,7 +178,7 @@ nm_setting_vpn_get_num_data_items(NMSettingVpn *setting)
  * nm_setting_vpn_add_data_item:
  * @setting: the #NMSettingVpn
  * @key: a name that uniquely identifies the given value @item
- * @item: (allow-none): the value to be referenced by @key
+ * @item: (nullable): the value to be referenced by @key
  *
  * Establishes a relationship between @key and @item internally in the
  * setting which may be retrieved later.  Should not be used to store passwords
@@ -227,11 +227,11 @@ nm_setting_vpn_get_data_item(NMSettingVpn *setting, const char *key)
 /**
  * nm_setting_vpn_get_data_keys:
  * @setting: the #NMSettingVpn
- * @out_length: (allow-none) (out): the length of the returned array
+ * @out_length: (out) (optional): the length of the returned array
  *
  * Retrieves every data key inside @setting, as an array.
  *
- * Returns: (array length=out_length) (transfer container): a
+ * Returns: (array length=out_length) (transfer container) (nullable): a
  *   %NULL-terminated array containing each data key or %NULL if
  *   there are no data items.
  *
@@ -346,7 +346,7 @@ nm_setting_vpn_get_num_secrets(NMSettingVpn *setting)
  * nm_setting_vpn_add_secret:
  * @setting: the #NMSettingVpn
  * @key: a name that uniquely identifies the given secret @secret
- * @secret: (allow-none): the secret to be referenced by @key
+ * @secret: (nullable): the secret to be referenced by @key
  *
  * Establishes a relationship between @key and @secret internally in the
  * setting which may be retrieved later.
@@ -394,11 +394,11 @@ nm_setting_vpn_get_secret(NMSettingVpn *setting, const char *key)
 /**
  * nm_setting_vpn_get_secret_keys:
  * @setting: the #NMSettingVpn
- * @out_length: (allow-none) (out): the length of the returned array
+ * @out_length: (out) (optional): the length of the returned array
  *
  * Retrieves every secret key inside @setting, as an array.
  *
- * Returns: (array length=out_length) (transfer container): a
+ * Returns: (array length=out_length) (transfer container) (nullable): a
  *   %NULL-terminated array containing each secret key or %NULL if
  *   there are no secrets.
  *

@@ -1249,7 +1249,7 @@ nmtst_stable_rand(guint64 seed, gpointer buf, gsize len)
 
 /**
  * nmtst_get_rand_word_length:
- * @rand: (allow-none): #GRand instance or %NULL to use the singleton.
+ * @rand: (nullable): #GRand instance or %NULL to use the singleton.
  *
  * Returns: a random integer >= 0, that most frequently is somewhere between
  * 0 and 16, but (with decreasing) probability, it can be larger. This can

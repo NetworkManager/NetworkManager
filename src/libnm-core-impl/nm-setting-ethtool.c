@@ -25,7 +25,7 @@
 
 /**
  * nm_ethtool_optname_is_feature:
- * @optname: (allow-none): the option name to check
+ * @optname: (nullable): the option name to check
  *
  * Checks whether @optname is a valid option name for an offload feature.
  *
@@ -45,7 +45,7 @@ nm_ethtool_optname_is_feature(const char *optname)
 
 /**
  * nm_ethtool_optname_is_coalesce:
- * @optname: (allow-none): the option name to check
+ * @optname: (nullable): the option name to check
  *
  * Checks whether @optname is a valid option name for a coalesce setting.
  *
@@ -61,7 +61,7 @@ nm_ethtool_optname_is_coalesce(const char *optname)
 
 /**
  * nm_ethtool_optname_is_ring:
- * @optname: (allow-none): the option name to check
+ * @optname: (nullable): the option name to check
  *
  * Checks whether @optname is a valid option name for a ring setting.
  *
@@ -77,7 +77,7 @@ nm_ethtool_optname_is_ring(const char *optname)
 
 /**
  * nm_ethtool_optname_is_pause:
- * @optname: (allow-none): the option name to check
+ * @optname: (nullable): the option name to check
  *
  * Checks whether @optname is a valid option name for a pause setting.
  *

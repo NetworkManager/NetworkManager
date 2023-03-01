@@ -70,7 +70,7 @@ static void nmt_newt_form_redraw(NmtNewtForm *form);
 
 /**
  * nmt_newt_form_new:
- * @title: (allow-none): the form title
+ * @title: (nullable): the form title
  *
  * Creates a new form, which will be shown centered on the screen.
  * Compare nmt_newt_form_new_fullscreen(). You can also position a
@@ -91,7 +91,7 @@ nmt_newt_form_new(const char *title)
 
 /**
  * nmt_newt_form_new_fullscreen:
- * @title: (allow-none): the form title
+ * @title: (nullable): the form title
  *
  * Creates a new fullscreen form. Compare nmt_newt_form_new().
  *
