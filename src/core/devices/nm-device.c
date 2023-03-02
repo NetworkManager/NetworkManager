@@ -9760,10 +9760,10 @@ activate_stage2_device_config(NMDevice *self)
 
     nm_device_state_changed(self, NM_DEVICE_STATE_CONFIG, NM_DEVICE_STATE_REASON_NONE);
 
-    if (!nm_device_sys_iface_state_is_external_or_assume(self))
+    if (!nm_device_sys_iface_state_is_external(self))
         _ethtool_state_set(self);
 
-    if (!nm_device_sys_iface_state_is_external_or_assume(self)) {
+    if (!nm_device_sys_iface_state_is_external(self)) {
         if (!priv->tc_committed && !tc_commit(self)) {
             _LOGW(LOGD_DEVICE, "failed applying traffic control rules");
             nm_device_state_changed(self,
