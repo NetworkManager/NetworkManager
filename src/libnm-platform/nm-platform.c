@@ -4999,9 +4999,7 @@ nm_platform_ip_route_sync(NMPlatform *self,
 
     for (i_type = 0; routes && i_type < 2; i_type++) {
         for (i = 0; i < routes->len; i++) {
-            gs_free char *extack_msg          = NULL;
-            gboolean      gateway_route_added = FALSE;
-            int           r2;
+            gs_free char *extack_msg = NULL;
             int           r;
 
             conf_o = routes->pdata[i];
@@ -5058,7 +5056,6 @@ nm_platform_ip_route_sync(NMPlatform *self,
                 }
             }
 
-sync_route_add:
             r = nm_platform_ip_route_add(self,
                                          NMP_NLM_FLAG_APPEND
                                              | NMP_NLM_FLAG_SUPPRESS_NETLINK_FAILURE,
@@ -5119,77 +5116,6 @@ sync_route_add:
                             g_ptr_array_new_full(0, (GDestroyNotify) nmp_object_unref);
                     g_ptr_array_add(*out_temporary_not_available,
                                     (gpointer) nmp_object_ref(conf_o));
-                } else if (!gateway_route_added
-                           && ((r == -ENETUNREACH && vt->is_ip4
-                                && !!NMP_OBJECT_CAST_IP4_ROUTE(conf_o)->gateway)
-                               || (r == -EHOSTUNREACH && !vt->is_ip4
-                                   && !IN6_IS_ADDR_UNSPECIFIED(
-                                       &NMP_OBJECT_CAST_IP6_ROUTE(conf_o)->gateway)))) {
-                    NMPObject oo;
-
-                    if (vt->is_ip4) {
-                        const NMPlatformIP4Route *rt = NMP_OBJECT_CAST_IP4_ROUTE(conf_o);
-
-                        nmp_object_stackinit(
-                            &oo,
-                            NMP_OBJECT_TYPE_IP4_ROUTE,
-                            &((NMPlatformIP4Route){
-                                .ifindex       = rt->ifindex,
-                                .network       = rt->gateway,
-                                .plen          = 32,
-                                .metric        = nm_platform_ip4_route_get_effective_metric(rt),
-                                .rt_source     = rt->rt_source,
-                                .table_coerced = nm_platform_ip_route_get_effective_table(
-                                    NM_PLATFORM_IP_ROUTE_CAST(rt)),
-                            }));
-                    } else {
-                        const NMPlatformIP6Route *rt = NMP_OBJECT_CAST_IP6_ROUTE(conf_o);
-
-                        nmp_object_stackinit(
-                            &oo,
-                            NMP_OBJECT_TYPE_IP6_ROUTE,
-                            &((NMPlatformIP6Route){
-                                .ifindex       = rt->ifindex,
-                                .network       = rt->gateway,
-                                .plen          = 128,
-                                .metric        = nm_platform_ip6_route_get_effective_metric(rt),
-                                .rt_source     = rt->rt_source,
-                                .table_coerced = nm_platform_ip_route_get_effective_table(
-                                    NM_PLATFORM_IP_ROUTE_CAST(rt)),
-                            }));
-                    }
-
-                    _LOG3D("route-sync: failure to add IPv%c route: %s: %s; try adding direct "
-                           "route to gateway %s",
-                           vt->is_ip4 ? '4' : '6',
-                           nmp_object_to_string(conf_o,
-                                                NMP_OBJECT_TO_STRING_PUBLIC,
-                                                sbuf1,
-                                                sizeof(sbuf1)),
-                           nm_strerror(r),
-                           nmp_object_to_string(&oo,
-                                                NMP_OBJECT_TO_STRING_PUBLIC,
-                                                sbuf2,
-                                                sizeof(sbuf2)));
-
-                    r2 = nm_platform_ip_route_add(self,
-                                                  NMP_NLM_FLAG_APPEND
-                                                      | NMP_NLM_FLAG_SUPPRESS_NETLINK_FAILURE,
-                                                  &oo,
-                                                  NULL);
-
-                    if (r2 < 0) {
-                        _LOG3D("route-sync: failure to add gateway IPv%c route: %s: %s",
-                               vt->is_ip4 ? '4' : '6',
-                               nmp_object_to_string(conf_o,
-                                                    NMP_OBJECT_TO_STRING_PUBLIC,
-                                                    sbuf1,
-                                                    sizeof(sbuf1)),
-                               nm_strerror(r2));
-                    }
-
-                    gateway_route_added = TRUE;
-                    goto sync_route_add;
                 } else {
                     _LOG3W("route-sync: failure to add IPv%c route: %s: %s",
                            vt->is_ip4 ? '4' : '6',
