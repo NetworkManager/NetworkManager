@@ -1506,9 +1506,17 @@ class ActiveConnection(ExportedObj):
 
     def start_activation(self):
         assert self._activation_id is None
-        self._activation_id = GLib.timeout_add(
-            self.activation_state_change_delay_ms, self._activation_step1
-        )
+        if self.activation_state_change_delay_ms == 0:
+            self.device.set_active_connection(self)
+            self._set_state(
+                NM.ActiveConnectionState.ACTIVATED,
+                NM.ActiveConnectionStateReason.UNKNOWN,
+            )
+            self.device.set_state(NM.DeviceState.ACTIVATED, NM.DeviceStateReason.NONE)
+        else:
+            self._activation_id = GLib.timeout_add(
+                self.activation_state_change_delay_ms, self._activation_step1
+            )
 
     def start_deactivation(self):
         assert self._deactivation_id is None
