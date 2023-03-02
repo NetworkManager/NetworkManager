@@ -7561,7 +7561,7 @@ confirm_quit(const NmcConfig *nmc_config)
 
 /*
  * Submenu for detailed property editing
- * Return: TRUE - continue;  FALSE - should quit
+ * Returns TRUE for continue; FALSE for should quit.
  */
 static gboolean
 property_edit_submenu(NmCli               *nmc,

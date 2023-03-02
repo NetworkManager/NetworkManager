@@ -171,7 +171,7 @@ nmt_newt_widget_get_components(NmtNewtWidget *widget)
  *
  * Finds the widget inside @widget that owns @co.
  *
- * Return value: @co's owner, or %NULL if it was not found.
+ * Returns: @co's owner, or %NULL if it was not found.
  */
 NmtNewtWidget *
 nmt_newt_widget_find_component(NmtNewtWidget *widget, newtComponent co)

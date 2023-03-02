@@ -420,7 +420,7 @@ nm_dedup_multi_index_add(NMDedupMultiIndex                         *self,
  *
  * Adds and object to the index.
  *
- * Return: %TRUE if anything changed, %FALSE if nothing changed.
+ * Returns: %TRUE if anything changed, %FALSE if nothing changed.
  */
 gboolean
 nm_dedup_multi_index_add_full(NMDedupMultiIndex                         *self,

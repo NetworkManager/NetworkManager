@@ -3597,7 +3597,7 @@ _nm_property_variant_to_gvalue(GVariant *src_value, GValue *dst_value)
  * Before 1.28, it was an error to call this function with any value other than
  * <literal>ARPHRD_ETHER</literal> or <literal>ARPHRD_INFINIBAND</literal>.
  *
- * Return value: the length or zero if the type is unrecognized.
+ * Returns: the length or zero if the type is unrecognized.
  */
 gsize
 nm_utils_hwaddr_len(int type)
@@ -3621,7 +3621,7 @@ nm_utils_hwaddr_len(int type)
  * eg "00:11" or "0:1".  Any "0x" at the beginning of @hex is ignored.  @hex
  * may not start or end with ':'.
  *
- * Return value: (transfer full): the converted bytes, or %NULL on error
+ * Returns: (transfer full): the converted bytes, or %NULL on error
  */
 GBytes *
 nm_utils_hexstr2bin(const char *hex)
@@ -3644,7 +3644,7 @@ nm_utils_hexstr2bin(const char *hex)
  * Parses @asc and converts it to binary form in a #GByteArray. See
  * nm_utils_hwaddr_aton() if you don't want a #GByteArray.
  *
- * Return value: (transfer full): a new #GByteArray, or %NULL if @asc couldn't
+ * Returns: (transfer full): a new #GByteArray, or %NULL if @asc couldn't
  * be parsed
  */
 GByteArray *
@@ -3676,7 +3676,7 @@ fail:
  * Parses @asc and converts it to binary form in @buffer.
  * Bytes in @asc can be separated by colons (:), or hyphens (-), but not mixed.
  *
- * Return value: @buffer, or %NULL if @asc couldn't be parsed
+ * Returns: @buffer, or %NULL if @asc couldn't be parsed
  *   or would be shorter or longer than @length.
  */
 guint8 *
@@ -3699,7 +3699,7 @@ nm_utils_hwaddr_aton(const char *asc, gpointer buffer, gsize length)
  * greater than -1, the returned string is terminated at that index
  * (returned_string[final_len] == '\0'),
  *
- * Return value: (transfer full): the textual form of @bytes
+ * Returns: (transfer full): the textual form of @bytes
  */
 char *
 nm_utils_bin2hexstr(gconstpointer src, gsize len, int final_len)
@@ -3720,7 +3720,7 @@ nm_utils_bin2hexstr(gconstpointer src, gsize len, int final_len)
  *
  * Converts @addr to textual form.
  *
- * Return value: (transfer full): the textual form of @addr
+ * Returns: (transfer full): the textual form of @addr
  */
 char *
 nm_utils_hwaddr_ntoa(gconstpointer addr, gsize length)
@@ -3740,7 +3740,7 @@ nm_utils_hwaddr_ntoa(gconstpointer addr, gsize length)
  * Parses @asc to see if it is a valid hardware address of the given
  * length.
  *
- * Return value: %TRUE if @asc appears to be a valid hardware address
+ * Returns: %TRUE if @asc appears to be a valid hardware address
  *   of the indicated length, %FALSE if not.
  */
 gboolean
@@ -3771,7 +3771,7 @@ nm_utils_hwaddr_valid(const char *asc, gssize length)
  * length, and if so, returns it in canonical form (uppercase, with
  * leading 0s as needed, and with colons rather than hyphens).
  *
- * Return value: (transfer full): the canonicalized address if @asc appears to
+ * Returns: (transfer full): the canonicalized address if @asc appears to
  *   be a valid hardware address of the indicated length, %NULL if not.
  */
 char *
@@ -3832,7 +3832,7 @@ _nm_utils_ipaddr_canonical_or_invalid(int addr_family, const char *ip, gboolean 
 /*
  * Determine if given Ethernet address is link-local
  *
- * Return value: %TRUE if @mac is link local
+ * Returns: %TRUE if @mac is link local
  * reserved addr (01:80:c2:00:00:0X) per IEEE 802.1Q 8.6.3 Frame filtering, %FALSE if not.
  */
 gboolean
@@ -3889,7 +3889,7 @@ _nm_utils_hwaddr_link_local_valid(const char *mac)
  * sanity-checked before comparing them against known good addresses; they are
  * guaranteed to not match if they are invalid.)
  *
- * Return value: %TRUE if @hwaddr1 and @hwaddr2 are equivalent, %FALSE if they are
+ * Returns: %TRUE if @hwaddr1 and @hwaddr2 are equivalent, %FALSE if they are
  *   different (or either of them is invalid).
  */
 gboolean
@@ -4431,7 +4431,7 @@ nm_utils_inet6_ntop(const struct in6_addr *in6addr, char *dst)
  *
  * Checks if @ip contains a valid IP address of the given family.
  *
- * Return value: %TRUE or %FALSE
+ * Returns: %TRUE or %FALSE
  */
 gboolean
 nm_utils_ipaddr_valid(int family, const char *ip)
@@ -4448,7 +4448,7 @@ nm_utils_ipaddr_valid(int family, const char *ip)
  * Checks if @duid string contains either a special duid value ("ll",
  * "llt", "lease" or the "stable" variants) or a valid hex DUID.
  *
- * Return value: %TRUE or %FALSE
+ * Returns: %TRUE or %FALSE
  */
 gboolean
 _nm_utils_dhcp_duid_valid(const char *duid, GBytes **out_duid_bin)
