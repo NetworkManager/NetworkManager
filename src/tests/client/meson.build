@@ -8,6 +8,7 @@ test(
     source_root,
     python.path(),
     '--',
+    'TestNmcli',
   ],
   env: [
     'LIBTOOL=',
