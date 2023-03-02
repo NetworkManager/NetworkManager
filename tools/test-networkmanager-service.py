@@ -830,6 +830,7 @@ class Device(ExportedObj):
         self.ip6_config = None
         self.dhcp4_config = None
         self.dhcp6_config = None
+        self.activation_state_change_delay_ms = 50
 
         self.prp_state = NM.DeviceState.UNAVAILABLE
 
@@ -1407,9 +1408,9 @@ class ActiveConnection(ExportedObj):
         self.con_inst = con_inst
         self.is_vpn = con_inst.is_vpn()
 
+        self.activation_state_change_delay_ms = device.activation_state_change_delay_ms
         self._activation_id = None
         self._deactivation_id = None
-        self.activation_state_change_delay_ms = 50
 
         s_con = con_inst.con_hash[NM.SETTING_CONNECTION_SETTING_NAME]
 
@@ -1937,9 +1938,9 @@ class NetworkManager(ExportedObj):
 
     @dbus.service.method(dbus_interface=IFACE_TEST, in_signature="ou", out_signature="")
     def SetActiveConnectionStateChangedDelay(self, devpath, delay_ms):
-        for ac in reversed(self.active_connections):
-            if ac.device.path == devpath:
-                ac.activation_state_change_delay_ms = delay_ms
+        for d in self.devices:
+            if d.path == devpath:
+                d.activation_state_change_delay_ms = delay_ms
                 return
         raise BusErr.UnknownDeviceException(
             "Device with iface '%s' not found" % devpath
