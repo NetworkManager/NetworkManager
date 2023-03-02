@@ -4465,8 +4465,8 @@ nm_client_connectivity_check_get_uri(NMClient *client)
 /**
  * nm_client_get_logging:
  * @client: a #NMClient
- * @level: (nullable) (out) (optional): return location for logging level string
- * @domains: (nullable) (out) (optional): return location for log domains string. The string is
+ * @level: (out) (optional) (nullable): return location for logging level string
+ * @domains: (out) (optional) (nullable): return location for log domains string. The string is
  *   a list of domains separated by ","
  * @error: return location for a #GError, or %NULL
  *
@@ -5402,7 +5402,7 @@ nm_client_add_and_activate_connection2(NMClient           *client,
  * @client: an #NMClient
  * @result: the result passed to the #GAsyncReadyCallback
  * @error: location for a #GError, or %NULL
- * @out_result: (optional) (nullable) (transfer full) (out): the output result
+ * @out_result: (out) (optional) (nullable) (transfer full): the output result
  *   of type "a{sv}" returned by D-Bus' AddAndActivate2 call. Currently, no
  *   output is implemented yet.
  *
@@ -5875,7 +5875,7 @@ nm_client_add_connection2(NMClient                     *client,
  * nm_client_add_connection2_finish:
  * @client: the #NMClient
  * @result: the #GAsyncResult
- * @out_result: (optional) (nullable) (transfer full) (out): the output
+ * @out_result: (out) (optional) (nullable) (transfer full): the output
  *   #GVariant from AddConnection2().
  *   If you care about the output result, then the "ignore_out_result"
  *   parameter of nm_client_add_connection2() must not be set to %TRUE.

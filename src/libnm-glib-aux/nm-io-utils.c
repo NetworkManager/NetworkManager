@@ -444,7 +444,7 @@ nm_utils_file_set_contents(const char            *filename,
 /**
  * nm_utils_file_stat:
  * @filename: the filename to stat.
- * @out_st: (nullable) (out): if given, this will be passed to stat().
+ * @out_st: (out) (nullable): if given, this will be passed to stat().
  *
  * Just wraps stat() and gives the errno number as function result instead
  * of setting the errno (though, errno is also set). It's only for convenience
