@@ -3937,7 +3937,7 @@ nm_setting_option_get(NMSetting *setting, const char *opt_name)
  * nm_setting_option_get_boolean:
  * @setting: the #NMSetting
  * @opt_name: the option to get
- * @out_value: (nullable) (out): the optional output value.
+ * @out_value: (out) (nullable): the optional output value.
  *   If the option is unset, %FALSE will be returned.
  *
  * Returns: %TRUE if @opt_name is set to a boolean variant.
@@ -3962,7 +3962,7 @@ nm_setting_option_get_boolean(NMSetting *setting, const char *opt_name, gboolean
  * nm_setting_option_get_uint32:
  * @setting: the #NMSetting
  * @opt_name: the option to get
- * @out_value: (nullable) (out): the optional output value.
+ * @out_value: (out) (nullable): the optional output value.
  *   If the option is unset, 0 will be returned.
  *
  * Returns: %TRUE if @opt_name is set to a uint32 variant.
