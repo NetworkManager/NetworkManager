@@ -68,6 +68,10 @@ ENV_NM_TEST_CLIENT_BUILDDIR = "NM_TEST_CLIENT_BUILDDIR"
 # In particular, you can test also a nmcli binary installed somewhere else.
 ENV_NM_TEST_CLIENT_NMCLI_PATH = "NM_TEST_CLIENT_NMCLI_PATH"
 
+# (optional) Path to nm-cloud-setup. By default, it looks for nm-cloud-setup
+# in build dir.
+ENV_NM_TEST_CLIENT_CLOUD_SETUP_PATH = "NM_TEST_CLIENT_CLOUD_SETUP_PATH"
+
 # (optional) The test also compares tranlsated output (l10n). This requires,
 # that you first install the translation in the right place. So, by default,
 # if a test for a translation fails, it will mark the test as skipped, and not
@@ -140,6 +144,12 @@ try:
 except ImportError:
     pexpect = None
 
+try:
+    from http.server import HTTPServer
+    from http.server import BaseHTTPRequestHandler
+except ImportError:
+    HTTPServer = None
+
 
 ###############################################################################
 
@@ -162,6 +172,14 @@ class PathConfiguration:
             PathConfiguration.top_srcdir() + "/tools/test-networkmanager-service.py"
         )
         assert os.path.exists(v), 'Cannot find test server at "%s"' % (v)
+        return v
+
+    @staticmethod
+    def test_cloud_meta_mock_path():
+        v = os.path.abspath(
+            PathConfiguration.top_srcdir() + "/tools/test-cloud-meta-mock.py"
+        )
+        assert os.path.exists(v), 'Cannot find cloud metadata mock server at "%s"' % (v)
         return v
 
     @staticmethod
@@ -551,6 +569,20 @@ class Configuration:
                     pass
             if not os.path.exists(v):
                 raise Exception("Missing nmcli binary. Set NM_TEST_CLIENT_NMCLI_PATH?")
+        elif name == ENV_NM_TEST_CLIENT_CLOUD_SETUP_PATH:
+            v = os.environ.get(ENV_NM_TEST_CLIENT_CLOUD_SETUP_PATH, None)
+            if v is None:
+                try:
+                    v = os.path.abspath(
+                        self.get(ENV_NM_TEST_CLIENT_BUILDDIR)
+                        + "/src/nm-cloud-setup/nm-cloud-setup"
+                    )
+                except:
+                    pass
+            if not os.path.exists(v):
+                raise Exception(
+                    "Missing nm-cloud-setup binary. Set NM_TEST_CLIENT_CLOUD_SETUP_PATH?"
+                )
         elif name == ENV_NM_TEST_CLIENT_CHECK_L10N:
             # if we test locales other than 'C', the output of nmcli depends on whether
             # nmcli can load the translations. Unfortunately, I cannot find a way to
@@ -750,6 +782,16 @@ class NMStubServer:
         if iface_name is None:
             iface_name = ""
         self.op_SetProperties([(path, [(iface_name, [(propname, value)])])])
+
+    def addAndActivateConnection(
+        self, connection, device, specific_object="", delay=None
+    ):
+        if delay is not None:
+            self.op_SetActiveConnectionStateChangedDelay(device, delay)
+        nm_iface = self._conn_get_main_object(self._conn)
+        self.op_AddAndActivateConnection(
+            connection, device, specific_object, dbus_iface=nm_iface
+        )
 
 
 ###############################################################################
@@ -2089,6 +2131,125 @@ class TestNmcli(TestNmClient):
         )
         nmc.pexp.expect("NetworkManager is stopped")
         end_mon(self, nmc)
+
+
+###############################################################################
+
+
+class TestNmCloudSetup(TestNmClient):
+    def cloud_setup_test(func):
+        """
+        Runs the mock NetworkManager along with a mock cloud metadata service.
+        """
+
+        def f(self):
+            if pexpect is None:
+                raise unittest.SkipTest("pexpect not available")
+
+            s = socket.socket()
+            s.set_inheritable(True)
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+            s.bind(("localhost", 0))
+
+            # The same value as Python's TCPServer uses.
+            # Chosen by summoning the sprit of TCP under influence of
+            # hallucinogenic substances.
+            s.listen(5)
+
+            def pass_socket():
+                os.dup2(s.fileno(), 3, inheritable=True)
+
+            service_path = PathConfiguration.test_cloud_meta_mock_path()
+            env = os.environ.copy()
+            env["LISTEN_FDS"] = "1"
+            p = subprocess.Popen(
+                [sys.executable, service_path],
+                stdin=subprocess.PIPE,
+                env=env,
+                pass_fds=(s.fileno(),),
+                preexec_fn=pass_socket,
+            )
+
+            self.md_url = "http://%s:%d" % s.getsockname()
+            s.close()
+
+            self.srv_start()
+            func(self)
+            self._nm_test_post()
+
+            p.terminate()
+            p.wait()
+
+        return f
+
+    @cloud_setup_test
+    def test_ec2(self):
+
+        # Add a device with an active connection that has IPv4 configured
+        self.srv.op_AddObj("WiredDevice", iface="eth0")
+        self.srv.addAndActivateConnection(
+            {
+                "connection": {"type": "802-3-ethernet", "id": "con-eth0"},
+                "ipv4": {"method": "auto"},
+            },
+            "/org/freedesktop/NetworkManager/Devices/1",
+            delay=0,
+        )
+
+        # The second connection has no IPv4
+        self.srv.op_AddObj("WiredDevice", iface="eth1")
+        self.srv.addAndActivateConnection(
+            {"connection": {"type": "802-3-ethernet", "id": "con-eth1"}},
+            "/org/freedesktop/NetworkManager/Devices/2",
+            "",
+            delay=0,
+        )
+
+        # Run nm-cloud-setup for the first time
+        nmc = self.call_pexpect(
+            ENV_NM_TEST_CLIENT_CLOUD_SETUP_PATH,
+            [],
+            {
+                "NM_CLOUD_SETUP_EC2_HOST": self.md_url,
+                "NM_CLOUD_SETUP_LOG": "trace",
+                "NM_CLOUD_SETUP_EC2": "yes",
+            },
+        )
+
+        nmc.pexp.expect("provider ec2 detected")
+        nmc.pexp.expect("found interfaces: 9E:C0:3E:92:24:2D, 53:E9:7E:52:8D:A8")
+        nmc.pexp.expect("get-config: starting")
+        nmc.pexp.expect("get-config: success")
+        nmc.pexp.expect("meta data received")
+        # One of the devices has no IPv4 configuration to be modified
+        nmc.pexp.expect("device has no suitable applied connection. Skip")
+        # The other one was lacking an address set it up.
+        nmc.pexp.expect("some changes were applied for provider ec2")
+        nmc.pexp.expect(pexpect.EOF)
+
+        # Run nm-cloud-setup for the second time
+        nmc = self.call_pexpect(
+            ENV_NM_TEST_CLIENT_CLOUD_SETUP_PATH,
+            [],
+            {
+                "NM_CLOUD_SETUP_EC2_HOST": self.md_url,
+                "NM_CLOUD_SETUP_LOG": "trace",
+                "NM_CLOUD_SETUP_EC2": "yes",
+            },
+        )
+
+        nmc.pexp.expect("provider ec2 detected")
+        nmc.pexp.expect("found interfaces: 9E:C0:3E:92:24:2D, 53:E9:7E:52:8D:A8")
+        nmc.pexp.expect("get-config: starting")
+        nmc.pexp.expect("get-config: success")
+        nmc.pexp.expect("meta data received")
+        # No changes this time
+        nmc.pexp.expect('device needs no update to applied connection "con-eth0"')
+        nmc.pexp.expect("no changes were applied for provider ec2")
+        nmc.pexp.expect(pexpect.EOF)
+
+        Util.valgrind_check_log(nmc.valgrind_log, "test_ec2")
 
 
 ###############################################################################

@@ -71,7 +71,6 @@ fi
 
 test -d "$BUILDDIR" || die "BUILDDIR \"$BUILDDIR\" does not exist?"
 test -d "$SRCDIR" || die "SRCDIR \"$SRCDIR\" does not exist?"
-test -f "$BUILDDIR/src/nmcli/nmcli" || die "\"$BUILDDIR/src/nmcli/nmcli\" does not exist?"
 
 if test -f "$BUILDDIR/src/libnm-client-impl/.libs/libnm.so" ; then
     LIBDIR="$BUILDDIR/src/libnm-client-impl/.libs"
@@ -84,6 +83,7 @@ fi
 mkdir -p "$BUILDDIR/src/tests/client/" || die "failure to create build output directory \"$BUILDDIR/src/tests/client/\""
 
 export NM_TEST_CLIENT_NMCLI_PATH="$BUILDDIR/src/nmcli/nmcli"
+export NM_TEST_CLIENT_CLOUD_SETUP_PATH="$BUILDDIR/src/nm-cloud-setup/nm-cloud-setup"
 export GI_TYPELIB_PATH="$BUILDDIR/src/libnm-client-impl${GI_TYPELIB_PATH:+:$GI_TYPELIB_PATH}"
 export LD_LIBRARY_PATH="$LIBDIR${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 export NM_TEST_CLIENT_BUILDDIR="$BUILDDIR"
@@ -91,7 +91,8 @@ export NM_TEST_CLIENT_BUILDDIR="$BUILDDIR"
 # Run nmcli at least once. With libtool, nmcli is a shell script and with LTO
 # this seems to perform some slow setup during the first run. If we do that
 # during the test, it will timeout and fail.
-"$NM_TEST_CLIENT_NMCLI_PATH" --version &>/dev/null
+"$NM_TEST_CLIENT_NMCLI_PATH" --version &>/dev/null || :
+"$NM_TEST_CLIENT_CLOUD_SETUP_PATH" --invalid &>/dev/null || :
 
 # we first collect all the output in "test-client.log" and print it at once
 # afterwards. The only reason is that when you run with `make -j` that the
