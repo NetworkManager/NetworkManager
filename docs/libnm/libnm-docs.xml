@@ -332,6 +332,7 @@ print ("NetworkManager version " + client.get_version())]]></programlisting></in
     <xi:include href="xml/nm-setting-ip-tunnel.xml"/>
     <xi:include href="xml/nm-setting-ip4-config.xml"/>
     <xi:include href="xml/nm-setting-ip6-config.xml"/>
+    <xi:include href="xml/nm-setting-link.xml"/>
     <xi:include href="xml/nm-setting-loopback.xml"/>
     <xi:include href="xml/nm-setting-macsec.xml"/>
     <xi:include href="xml/nm-setting-macvlan.xml"/>

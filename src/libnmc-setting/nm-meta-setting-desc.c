@@ -6649,6 +6649,56 @@ static const NMMetaPropertyInfo *const property_infos_LOOPBACK[] = {
 };
 
 #undef  _CURRENT_NM_META_SETTING_TYPE
+#define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_LINK
+static const NMMetaPropertyInfo *const property_infos_LINK[] = {
+    PROPERTY_INFO_WITH_DESC (NM_SETTING_LINK_GSO_MAX_SEGMENTS,
+        .property_type =                &_pt_gobject_int,
+        .property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_int,
+            .value_infos =              INT_VALUE_INFOS (
+                {
+                    .value.i64 = -1,
+                    .nick = "default",
+                },
+            ),
+        ),
+    ),
+    PROPERTY_INFO_WITH_DESC (NM_SETTING_LINK_GSO_MAX_SIZE,
+        .property_type =                &_pt_gobject_int,
+        .property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_int,
+            .value_infos =              INT_VALUE_INFOS (
+                {
+                    .value.i64 = -1,
+                    .nick = "default",
+                },
+            ),
+        ),
+    ),
+    PROPERTY_INFO_WITH_DESC (NM_SETTING_LINK_GRO_MAX_SIZE,
+        .property_type =                &_pt_gobject_int,
+        .property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_int,
+            .value_infos =              INT_VALUE_INFOS (
+                {
+                    .value.i64 = -1,
+                    .nick = "default",
+                },
+            ),
+        ),
+    ),
+    PROPERTY_INFO_WITH_DESC (NM_SETTING_LINK_TX_QUEUE_LENGTH,
+        .property_type =                &_pt_gobject_int,
+        .property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (gobject_int,
+            .value_infos =              INT_VALUE_INFOS (
+                {
+                    .value.i64 = -1,
+                    .nick = "default",
+                },
+            ),
+        ),
+    ),
+    NULL
+};
+
+#undef  _CURRENT_NM_META_SETTING_TYPE
 #define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_MACSEC
 static const NMMetaPropertyInfo *const property_infos_MACSEC[] = {
     PROPERTY_INFO_WITH_DESC (NM_SETTING_MACSEC_PARENT,
@@ -8427,6 +8477,7 @@ _setting_init_fcn_wireless (ARGS_SETTING_INIT_FCN)
 #define SETTING_PRETTY_NAME_IP4_CONFIG          N_("IPv4 protocol")
 #define SETTING_PRETTY_NAME_IP6_CONFIG          N_("IPv6 protocol")
 #define SETTING_PRETTY_NAME_IP_TUNNEL           N_("IP-tunnel settings")
+#define SETTING_PRETTY_NAME_LINK                N_("Link settings")
 #define SETTING_PRETTY_NAME_LOOPBACK            N_("Loopback settings")
 #define SETTING_PRETTY_NAME_MACSEC              N_("MACsec connection")
 #define SETTING_PRETTY_NAME_MACVLAN             N_("macvlan connection")
@@ -8588,6 +8639,7 @@ const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[] = {
             NM_META_SETTING_VALID_PART_ITEM (ETHTOOL,               FALSE),
         ),
     ),
+    SETTING_INFO (LINK),
     SETTING_INFO (LOOPBACK,
         .valid_parts = NM_META_SETTING_VALID_PARTS (
             NM_META_SETTING_VALID_PART_ITEM (CONNECTION,            TRUE),
@@ -8802,6 +8854,7 @@ static const NMMetaSettingValidPartItem *const valid_settings_noslave[] = {
     NM_META_SETTING_VALID_PART_ITEM(IP4_CONFIG, FALSE),
     NM_META_SETTING_VALID_PART_ITEM(IP6_CONFIG, FALSE),
     NM_META_SETTING_VALID_PART_ITEM(HOSTNAME, FALSE),
+    NM_META_SETTING_VALID_PART_ITEM(LINK, FALSE),
     NM_META_SETTING_VALID_PART_ITEM(TC_CONFIG, FALSE),
     NM_META_SETTING_VALID_PART_ITEM(PROXY, FALSE),
     NULL,
@@ -8809,11 +8862,15 @@ static const NMMetaSettingValidPartItem *const valid_settings_noslave[] = {
 
 static const NMMetaSettingValidPartItem *const valid_settings_slave_bond[] = {
     NM_META_SETTING_VALID_PART_ITEM(BOND_PORT, TRUE),
+    NM_META_SETTING_VALID_PART_ITEM(LINK, FALSE),
+    NM_META_SETTING_VALID_PART_ITEM(MATCH, FALSE),
     NULL,
 };
 
 static const NMMetaSettingValidPartItem *const valid_settings_slave_bridge[] = {
     NM_META_SETTING_VALID_PART_ITEM(BRIDGE_PORT, TRUE),
+    NM_META_SETTING_VALID_PART_ITEM(LINK, FALSE),
+    NM_META_SETTING_VALID_PART_ITEM(MATCH, FALSE),
     NULL,
 };
 
@@ -8823,11 +8880,15 @@ static const NMMetaSettingValidPartItem *const valid_settings_slave_ovs_bridge[]
 };
 
 static const NMMetaSettingValidPartItem *const valid_settings_slave_ovs_port[] = {
+    NM_META_SETTING_VALID_PART_ITEM(LINK, FALSE),
+    NM_META_SETTING_VALID_PART_ITEM(MATCH, FALSE),
     NM_META_SETTING_VALID_PART_ITEM(OVS_INTERFACE, FALSE),
     NULL,
 };
 
 static const NMMetaSettingValidPartItem *const valid_settings_slave_team[] = {
+    NM_META_SETTING_VALID_PART_ITEM(LINK, FALSE),
+    NM_META_SETTING_VALID_PART_ITEM(MATCH, FALSE),
     NM_META_SETTING_VALID_PART_ITEM(TEAM_PORT, TRUE),
     NULL,
 };

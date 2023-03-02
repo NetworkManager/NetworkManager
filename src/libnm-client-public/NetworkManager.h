@@ -44,6 +44,7 @@
 #include "nm-setting-ip6-config.h"
 #include "nm-setting-ip-config.h"
 #include "nm-setting-ip-tunnel.h"
+#include "nm-setting-link.h"
 #include "nm-setting-loopback.h"
 #include "nm-setting-macsec.h"
 #include "nm-setting-macvlan.h"

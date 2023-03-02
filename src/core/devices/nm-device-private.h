@@ -176,4 +176,6 @@ void nm_device_auth_request(NMDevice                      *self,
                             NMManagerDeviceAuthRequestFunc callback,
                             gpointer                       user_data);
 
+void nm_device_link_properties_set(NMDevice *self, gboolean reapply);
+
 #endif /* NM_DEVICE_PRIVATE_H */

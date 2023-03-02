@@ -121,8 +121,6 @@ test_nm_meta_setting_types_by_priority(void)
     G_STATIC_ASSERT_EXPR(_NM_META_SETTING_TYPE_NUM
                          == G_N_ELEMENTS(nm_meta_setting_types_by_priority));
 
-    G_STATIC_ASSERT_EXPR(_NM_META_SETTING_TYPE_NUM == 54);
-
     arr = g_ptr_array_new_with_free_func(g_object_unref);
 
     for (i = 0; i < _NM_META_SETTING_TYPE_NUM; i++) {
