@@ -825,6 +825,7 @@ class Device(ExportedObj):
 
         ExportedObj.__init__(self, ExportedObj.create_path(Device), ident)
 
+        self.applied_con = {}
         self.ip4_config = None
         self.ip6_config = None
         self.dhcp4_config = None
@@ -1037,6 +1038,20 @@ class Device(ExportedObj):
     def Disconnect(self):
         pass
 
+    @dbus.service.method(
+        dbus_interface=IFACE_DEVICE, in_signature="u", out_signature="a{sa{sv}}t"
+    )
+    def GetAppliedConnection(self, flags):
+        ac = self._dbus_property_get(IFACE_DEVICE, PRP_DEVICE_ACTIVE_CONNECTION)
+        return (self.applied_con, 0)
+
+    @dbus.service.method(
+        dbus_interface=IFACE_DEVICE, in_signature="a{sa{sv}}tu", out_signature=""
+    )
+    def Reapply(self, connection, version_id, flags):
+        self.applied_con = connection
+        pass
+
     @dbus.service.method(dbus_interface=IFACE_DEVICE, in_signature="", out_signature="")
     def Delete(self):
         # We don't currently support any software device types, so...
@@ -1067,6 +1082,10 @@ class Device(ExportedObj):
 
     def set_active_connection(self, ac):
         self._dbus_property_set(IFACE_DEVICE, PRP_DEVICE_ACTIVE_CONNECTION, ac)
+        if ac is None:
+            self.applied_con = {}
+        else:
+            self.applied_con = ac.con_inst.con_hash
 
     def connection_is_available(self, con_inst):
         if con_inst.is_vpn():
