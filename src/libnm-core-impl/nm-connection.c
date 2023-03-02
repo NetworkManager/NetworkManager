@@ -766,11 +766,11 @@ diff_one_connection(NMConnection         *a,
  * @a: a #NMConnection
  * @b: a second #NMConnection to compare with the first
  * @flags: compare flags, e.g. %NM_SETTING_COMPARE_FLAG_EXACT
- * @out_settings: (out) (element-type utf8 GLib.HashTable<utf8,uint32>)
- * (optional) (nullable): if the connections differ, on return a hash table
- * mapping setting names to second-level GHashTable (utf8 to guint32), which
- * contains the key names that differ mapped to one or more of
- * %NMSettingDiffResult as a bitfield
+ * @out_settings: (out) (element-type utf8 GLib.HashTable<utf8,uint32>) (optional) (nullable):
+ *   if the connections differ, on return a hash table
+ *   mapping setting names to second-level GHashTable (utf8 to guint32), which
+ *   contains the key names that differ mapped to one or more of
+ *   %NMSettingDiffResult as a bitfield
  *
  * Compares two #NMConnection objects for similarity, with comparison behavior
  * modified by a set of flags.  See nm_setting_compare() for a description of
@@ -787,11 +787,11 @@ diff_one_connection(NMConnection         *a,
  * @a: a #NMConnection
  * @b: a second #NMConnection to compare with the first
  * @flags: compare flags, e.g. %NM_SETTING_COMPARE_FLAG_EXACT
- * @out_settings: (out) (element-type utf8 GLib.HashTable&lt;utf8,uint32&gt;)
- * (optional) (nullable): if the connections differ, on return a hash table
- * mapping setting names to second-level GHashTable (utf8 to guint32), which
- * contains the key names that differ mapped to one or more of
- * %NMSettingDiffResult as a bitfield
+ * @out_settings: (out) (element-type utf8 GLib.HashTable&lt;utf8,uint32&gt;) (optional) (nullable):
+ *   if the connections differ, on return a hash table
+ *   mapping setting names to second-level GHashTable (utf8 to guint32), which
+ *   contains the key names that differ mapped to one or more of
+ *   %NMSettingDiffResult as a bitfield
  *
  * Compares two #NMConnection objects for similarity, with comparison behavior
  * modified by a set of flags.  See nm_setting_compare() for a description of

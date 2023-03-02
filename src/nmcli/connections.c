@@ -2609,15 +2609,21 @@ get_default_active_connection(NmCli *nmc, NMDevice **device)
     return default_ac;
 }
 
-/* Find a device to activate the connection on.
- * IN:  connection:  connection to activate
- *      iface:       device interface name to use (optional)
- *      ap:          access point to use (optional; valid just for 802-11-wireless)
- *      nsp:         Network Service Provider to use (option; valid only for wimax)
- * OUT: device:      found device
- *      spec_object: specific_object path of NMAccessPoint
- * RETURNS: TRUE when a device is found, FALSE otherwise.
- */
+/**
+ * find_device_for_connection:
+ * @nmc: the #NmCli
+ * @connection: connection to activate
+ * @iface: device interface name to use (optional)
+ * @ap: access point to use (optional; valid just for 802-11-wireless)
+ * @nsp: Network Service Provider to use (option; valid only for wimax)
+ * @device: (out): found device
+ * @spec_object: (out): specific_object path of NMAccessPoint
+ * @error: the error reason.
+ *
+ * Find a device to activate the connection on.
+ *
+ * Return: TRUE when a device is found, FALSE otherwise.
+ **/
 static gboolean
 find_device_for_connection(NmCli        *nmc,
                            NMConnection *connection,
@@ -6479,17 +6485,17 @@ should_complete_cmd(const char *line, int end, const char *cmd, int *cw_num, cha
     return ret;
 }
 
-/*
+/**
  * extract_setting_and_property:
- * prompt: (nullable): prompt string, or NULL
- * line: (nullable): line, or NULL
- * setting: (out) (transfer full) (array zero-terminated=1) (optional):
+ * @prompt: (nullable): prompt string, or NULL
+ * @line: (nullable): line, or NULL
+ * @setting: (out) (transfer full) (array zero-terminated=1) (optional):
  *   return location for setting name
- * property: (out) (transfer full) (array zero-terminated=1) (optional):
+ * @property: (out) (transfer full) (array zero-terminated=1) (optional):
  *   return location for property name
  *
  * Extract setting and property names from prompt and/or line.
- */
+ **/
 static void
 extract_setting_and_property(const char *prompt, const char *line, char **setting, char **property)
 {
