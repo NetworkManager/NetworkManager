@@ -8580,7 +8580,7 @@ device_has_config(NMDevice *self)
  * @self: the master #NMDevice
  * @slave: the slave #NMDevice
  * @connection: the #NMConnection to update with the slave settings
- * @GError: (out): error description
+ * @error: error description
  *
  * Reads the slave configuration for @slave and updates @connection with those
  * properties. This invokes a virtual function on the master device @self.
@@ -16866,7 +16866,7 @@ nm_device_hw_addr_set(NMDevice *self, const char *addr, const char *detail, gboo
  * @hwaddr: (out): the cloned MAC address to set on interface
  * @hwaddr_type: (out): the type of address to set
  * @hwaddr_detail: (out): the detail (origin) of address to set
- * @error: (out): on return, an error or %NULL
+ * @error: on return, an error or %NULL
  *
  * Computes the MAC to be set on a interface. On success, one of the
  * following exclusive conditions are verified:
