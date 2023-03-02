@@ -6052,7 +6052,7 @@ nm_client_load_connections_finish(NMClient     *client,
  * files from disk, adding, updating, and removing connections until
  * the in-memory state matches the on-disk state.
  *
- * Return value: %TRUE on success, %FALSE on failure
+ * Returns: %TRUE on success, %FALSE on failure
  *
  * Deprecated: 1.22: Use nm_client_reload_connections_async() or GDBusConnection.
  **/
@@ -6125,7 +6125,7 @@ nm_client_reload_connections_async(NMClient           *client,
  *
  * Gets the result of an nm_client_reload_connections_async() call.
  *
- * Return value: %TRUE on success, %FALSE on failure
+ * Returns: %TRUE on success, %FALSE on failure
  **/
 gboolean
 nm_client_reload_connections_finish(NMClient *client, GAsyncResult *result, GError **error)
@@ -6151,7 +6151,7 @@ nm_client_reload_connections_finish(NMClient *client, GAsyncResult *result, GErr
  *
  * Gets the current DNS processing mode.
  *
- * Return value: the DNS processing mode, or %NULL in case the
+ * Returns: the DNS processing mode, or %NULL in case the
  *   value is not available.
  *
  * Since: 1.6
@@ -6170,7 +6170,7 @@ nm_client_get_dns_mode(NMClient *client)
  *
  * Gets the current DNS resolv.conf manager.
  *
- * Return value: the resolv.conf manager or %NULL in case the
+ * Returns: the resolv.conf manager or %NULL in case the
  *   value is not available.
  *
  * Since: 1.6

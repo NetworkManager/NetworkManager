@@ -13000,7 +13000,7 @@ reapply_connection(NMDevice *self, NMConnection *con_old, NMConnection *con_new)
  * Change configuration of an already configured device if possible.
  * Updates the device's applied connection upon success.
  *
- * Return: %FALSE if the new configuration can not be reapplied.
+ * Returns: %FALSE if the new configuration can not be reapplied.
  */
 static gboolean
 check_and_reapply_connection(NMDevice            *self,

@@ -66,7 +66,7 @@ nm_ether_addr_from_string(NMEtherAddr *addr, const char *str)
  *
  * Checks if only the bottom 64bits of the address are set.
  *
- * Return value: %TRUE or %FALSE
+ * Returns: %TRUE or %FALSE
  */
 gboolean
 _nm_utils_inet6_is_token(const struct in6_addr *in6addr)
@@ -6775,7 +6775,7 @@ valid_ldh_char(char c)
  * @s: the hostname to check.
  * @trailing_dot: Accept trailing dot on multi-label names.
  *
- * Return: %TRUE if valid.
+ * Returns: %TRUE if valid.
  */
 gboolean
 nm_hostname_is_valid(const char *s, gboolean trailing_dot)
