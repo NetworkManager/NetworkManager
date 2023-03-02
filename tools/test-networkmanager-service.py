@@ -358,7 +358,7 @@ class Util:
                         [(str(k), Util.variant_from_dbus(v)) for k, v in val.items()]
                     ),
                 )
-            if val.signature == "sa{sv}":
+            if val.signature == "sa{sv}" or val.signature == "sa{ss}":
                 c = collections.OrderedDict(
                     [
                         (
