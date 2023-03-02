@@ -40,7 +40,7 @@
         NM_SETTING_BOND_OPTION_RESEND_IGMP, NM_SETTING_BOND_OPTION_TLB_DYNAMIC_LB,         \
         NM_SETTING_BOND_OPTION_USE_CARRIER, NM_SETTING_BOND_OPTION_XMIT_HASH_POLICY,       \
         NM_SETTING_BOND_OPTION_NUM_GRAT_ARP, NM_SETTING_BOND_OPTION_PEER_NOTIF_DELAY,      \
-        NM_SETTING_BOND_OPTION_ARP_MISSED_MAX
+        NM_SETTING_BOND_OPTION_ARP_MISSED_MAX, NM_SETTING_BOND_OPTION_LACP_ACTIVE
 
 #define OPTIONS_REAPPLY_SUBSET                                                             \
     NM_SETTING_BOND_OPTION_MIIMON, NM_SETTING_BOND_OPTION_UPDELAY,                         \
@@ -52,7 +52,8 @@
         NM_SETTING_BOND_OPTION_PACKETS_PER_SLAVE, NM_SETTING_BOND_OPTION_PRIMARY_RESELECT, \
         NM_SETTING_BOND_OPTION_RESEND_IGMP, NM_SETTING_BOND_OPTION_USE_CARRIER,            \
         NM_SETTING_BOND_OPTION_XMIT_HASH_POLICY, NM_SETTING_BOND_OPTION_NUM_GRAT_ARP,      \
-        NM_SETTING_BOND_OPTION_PEER_NOTIF_DELAY, NM_SETTING_BOND_OPTION_ARP_MISSED_MAX
+        NM_SETTING_BOND_OPTION_PEER_NOTIF_DELAY, NM_SETTING_BOND_OPTION_ARP_MISSED_MAX,    \
+        NM_SETTING_BOND_OPTION_LACP_ACTIVE
 
 #define OPTIONS_REAPPLY_FULL                                     \
     OPTIONS_REAPPLY_SUBSET, NM_SETTING_BOND_OPTION_ACTIVE_SLAVE, \
@@ -439,6 +440,9 @@ _platform_lnk_bond_init_from_setting(NMSettingBond *s_bond, NMPlatformLnkBond *p
         .num_grat_arp      = _v_u8(s_bond, NM_SETTING_BOND_OPTION_NUM_GRAT_ARP),
         .all_ports_active  = _v_u8(s_bond, NM_SETTING_BOND_OPTION_ALL_SLAVES_ACTIVE),
         .arp_missed_max    = _v_u8(s_bond, NM_SETTING_BOND_OPTION_ARP_MISSED_MAX),
+        .lacp_active       = _v_fcn(_nm_setting_bond_lacp_active_from_string,
+                              s_bond,
+                              NM_SETTING_BOND_OPTION_LACP_ACTIVE),
         .lacp_rate         = _v_fcn(_nm_setting_bond_lacp_rate_from_string,
                             s_bond,
                             NM_SETTING_BOND_OPTION_LACP_RATE),
@@ -465,6 +469,7 @@ _platform_lnk_bond_init_from_setting(NMSettingBond *s_bond, NMPlatformLnkBond *p
     props->resend_igmp_has      = props->resend_igmp != 1;
     props->lp_interval_has      = props->lp_interval != 1;
     props->tlb_dynamic_lb_has   = NM_IN_SET(props->mode, NM_BOND_MODE_TLB, NM_BOND_MODE_ALB);
+    props->lacp_active_has      = NM_IN_SET(props->mode, NM_BOND_MODE_8023AD);
 }
 
 static void

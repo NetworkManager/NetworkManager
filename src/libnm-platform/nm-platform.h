@@ -785,12 +785,14 @@ typedef struct {
     guint8      arp_missed_max;
     guint8      arp_ip_targets_num;
     guint8      fail_over_mac;
+    guint8      lacp_active;
     guint8      lacp_rate;
     guint8      num_grat_arp;
     guint8      mode;
     guint8      primary_reselect;
     guint8      xmit_hash_policy;
     bool        downdelay_has : 1;
+    bool        lacp_active_has : 1;
     bool        lp_interval_has : 1;
     bool        miimon_has : 1;
     bool        peer_notif_delay_has : 1;

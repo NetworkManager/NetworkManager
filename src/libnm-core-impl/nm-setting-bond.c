@@ -93,6 +93,7 @@ static const char *const valid_options_lst[] = {
     NM_SETTING_BOND_OPTION_LP_INTERVAL,
     NM_SETTING_BOND_OPTION_PEER_NOTIF_DELAY,
     NM_SETTING_BOND_OPTION_ARP_MISSED_MAX,
+    NM_SETTING_BOND_OPTION_LACP_ACTIVE,
     NULL,
 };
 
@@ -155,8 +156,9 @@ static char const *const _option_default_strv_arp_validate[] =
     NM_MAKE_STRV("none", "active", "backup", "all", "filter", "filter_active", "filter_backup");
 static char const *const _option_default_strv_fail_over_mac[] =
     NM_MAKE_STRV("none", "active", "follow");
-static char const *const _option_default_strv_lacp_rate[] = NM_MAKE_STRV("slow", "fast");
-static char const *const _option_default_strv_mode[]      = NM_MAKE_STRV("balance-rr",
+static char const *const _option_default_strv_lacp_rate[]   = NM_MAKE_STRV("slow", "fast");
+static char const *const _option_default_strv_lacp_active[] = NM_MAKE_STRV("off", "on");
+static char const *const _option_default_strv_mode[]        = NM_MAKE_STRV("balance-rr",
                                                                     "active-backup",
                                                                     "balance-xor",
                                                                     "broadcast",
@@ -202,6 +204,8 @@ static NM_UTILS_STRING_TABLE_LOOKUP_STRUCT_DEFINE(
     {NM_SETTING_BOND_OPTION_DOWNDELAY, {"0", NM_BOND_OPTION_TYPE_INT, 0, G_MAXINT}},
     {NM_SETTING_BOND_OPTION_FAIL_OVER_MAC,
      {"none", NM_BOND_OPTION_TYPE_BOTH, 0, 2, _option_default_strv_fail_over_mac}},
+    {NM_SETTING_BOND_OPTION_LACP_ACTIVE,
+     {"on", NM_BOND_OPTION_TYPE_BOTH, 0, 1, _option_default_strv_lacp_active}},
     {NM_SETTING_BOND_OPTION_LACP_RATE,
      {"slow", NM_BOND_OPTION_TYPE_BOTH, 0, 1, _option_default_strv_lacp_rate}},
     {NM_SETTING_BOND_OPTION_LP_INTERVAL, {"1", NM_BOND_OPTION_TYPE_INT, 1, G_MAXINT}},
@@ -855,6 +859,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
     const char              *mode_str;
     const char              *arp_ip_target = NULL;
     const char              *lacp_rate;
+    const char              *lacp_active;
     const char              *primary;
     const char              *s;
     NMBondMode               bond_mode;
@@ -1075,6 +1080,18 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 
     lacp_rate = _bond_get_option(self, NM_SETTING_BOND_OPTION_LACP_RATE);
     if (lacp_rate && bond_mode != NM_BOND_MODE_8023AD && !NM_IN_STRSET(lacp_rate, "0", "slow")) {
+        g_set_error(error,
+                    NM_CONNECTION_ERROR,
+                    NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                    _("'%s' option is only valid with mode '%s'"),
+                    NM_SETTING_BOND_OPTION_LACP_RATE,
+                    "802.3ad");
+        g_prefix_error(error, "%s.%s: ", NM_SETTING_BOND_SETTING_NAME, NM_SETTING_BOND_OPTIONS);
+        return FALSE;
+    }
+
+    lacp_active = _bond_get_option(self, NM_SETTING_BOND_OPTION_LACP_ACTIVE);
+    if (lacp_active && bond_mode != NM_BOND_MODE_8023AD) {
         g_set_error(error,
                     NM_CONNECTION_ERROR,
                     NM_CONNECTION_ERROR_INVALID_PROPERTY,

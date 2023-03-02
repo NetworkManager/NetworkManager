@@ -87,6 +87,20 @@ NM_UTILS_STRING_TABLE_LOOKUP_DEFINE(
     {"none", NM_BOND_FAIL_OVER_MAC_NONE}, );
 
 NM_UTILS_STRING_TABLE_LOOKUP_DEFINE(
+    _nm_setting_bond_lacp_active_from_string,
+    NMBondLacpActive,
+    {
+        G_STATIC_ASSERT_EXPR(_NM_BOND_LACP_ACTIVE_NUM <= 2);
+
+        if (name && name[0] < '0' + _NM_BOND_LACP_ACTIVE_NUM && name[0] >= '0' && name[1] == '\0') {
+            return name[0] - '0';
+        }
+    },
+    { return NM_BOND_LACP_ACTIVE_ON; },
+    {"off", NM_BOND_LACP_ACTIVE_OFF},
+    {"on", NM_BOND_LACP_ACTIVE_ON}, );
+
+NM_UTILS_STRING_TABLE_LOOKUP_DEFINE(
     _nm_setting_bond_lacp_rate_from_string,
     NMBondLacpRate,
     {

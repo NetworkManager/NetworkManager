@@ -180,6 +180,7 @@ G_STATIC_ASSERT(RTA_MAX == (__RTA_MAX - 1));
 /*****************************************************************************/
 
 #define IFLA_BOND_PEER_NOTIF_DELAY 28
+#define IFLA_BOND_AD_LACP_ACTIVE   29
 #define IFLA_BOND_MISSED_MAX       30
 
 #undef IFLA_BOND_MAX
@@ -1608,6 +1609,7 @@ _parse_lnk_bond(const char *kind, struct nlattr *info_data)
         [IFLA_BOND_TLB_DYNAMIC_LB]    = {.type = NLA_U8},
         [IFLA_BOND_PEER_NOTIF_DELAY]  = {.type = NLA_U32},
         [IFLA_BOND_MISSED_MAX]        = {.type = NLA_U8},
+        [IFLA_BOND_AD_LACP_ACTIVE]    = {.type = NLA_U8},
     };
     NMPlatformLnkBond *props;
     struct nlattr     *tb[G_N_ELEMENTS(policy)];
@@ -1692,6 +1694,10 @@ _parse_lnk_bond(const char *kind, struct nlattr *info_data)
         props->packets_per_port = nla_get_u32(tb[IFLA_BOND_PACKETS_PER_SLAVE]);
     if (tb[IFLA_BOND_AD_LACP_RATE])
         props->lacp_rate = nla_get_u8(tb[IFLA_BOND_AD_LACP_RATE]);
+    if (tb[IFLA_BOND_AD_LACP_ACTIVE]) {
+        props->lacp_active     = nla_get_u8(tb[IFLA_BOND_AD_LACP_ACTIVE]);
+        props->lacp_active_has = TRUE;
+    }
     if (tb[IFLA_BOND_AD_SELECT])
         props->ad_select = nla_get_u8(tb[IFLA_BOND_AD_SELECT]);
     if (tb[IFLA_BOND_AD_ACTOR_SYS_PRIO])
@@ -4747,6 +4753,8 @@ _nl_msg_new_link_set_linkinfo(struct nl_msg *msg, NMLinkType link_type, gconstpo
             NLA_PUT_U8(msg, IFLA_BOND_FAIL_OVER_MAC, props->fail_over_mac);
         if (props->lacp_rate)
             NLA_PUT_U8(msg, IFLA_BOND_AD_LACP_RATE, props->lacp_rate);
+        if (props->lacp_active_has)
+            NLA_PUT_U8(msg, IFLA_BOND_AD_LACP_ACTIVE, props->lacp_active);
         if (props->num_grat_arp)
             NLA_PUT_U8(msg, IFLA_BOND_NUM_PEER_NOTIF, props->num_grat_arp);
 

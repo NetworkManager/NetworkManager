@@ -59,6 +59,7 @@ G_BEGIN_DECLS
 #define NM_SETTING_BOND_OPTION_LP_INTERVAL       "lp_interval"
 #define NM_SETTING_BOND_OPTION_PEER_NOTIF_DELAY  "peer_notif_delay"
 #define NM_SETTING_BOND_OPTION_ARP_MISSED_MAX    "arp_missed_max"
+#define NM_SETTING_BOND_OPTION_LACP_ACTIVE       "lacp_active"
 
 typedef struct _NMSettingBondClass NMSettingBondClass;
 

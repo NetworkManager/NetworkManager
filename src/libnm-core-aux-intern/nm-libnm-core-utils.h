@@ -96,6 +96,18 @@ typedef enum {
 NMBondFailOverMac _nm_setting_bond_fail_over_mac_from_string(const char *str);
 
 typedef enum {
+    NM_BOND_LACP_ACTIVE_UNKNOWN = -1,
+
+    /* The numeric values correspond to kernel's numbering. */
+    NM_BOND_LACP_ACTIVE_OFF = 0,
+    NM_BOND_LACP_ACTIVE_ON  = 1,
+
+    _NM_BOND_LACP_ACTIVE_NUM,
+} NMBondLacpActive;
+
+NMBondLacpActive _nm_setting_bond_lacp_active_from_string(const char *str);
+
+typedef enum {
     NM_BOND_LACP_RATE_UNKNOWN = -1,
 
     /* The numeric values correspond to kernel's numbering. */
