@@ -6299,6 +6299,15 @@ nm_platform_lnk_bond_to_string(const NMPlatformLnkBond *lnk, char *buf, gsize le
             nm_strbuf_append_str(&buf, &len, nm_inet4_ntop(lnk->arp_ip_target[i], target));
         }
     }
+    if (lnk->ns_ip6_targets_num > 0) {
+        nm_strbuf_append_str(&buf, &len, " ns_ip6_target");
+        for (i = 0; i < lnk->ns_ip6_targets_num; i++) {
+            char target[INET6_ADDRSTRLEN];
+
+            nm_strbuf_append_c(&buf, &len, ' ');
+            nm_strbuf_append_str(&buf, &len, nm_inet6_ntop(&lnk->ns_ip6_target[i], target));
+        }
+    }
     return buf;
 }
 
@@ -8052,6 +8061,7 @@ nm_platform_lnk_bond_hash_update(const NMPlatformLnkBond *obj, NMHashState *h)
                         obj->fail_over_mac,
                         obj->lacp_rate,
                         obj->lacp_active,
+                        obj->ns_ip6_targets_num,
                         obj->num_grat_arp,
                         obj->mode,
                         obj->primary_reselect,
@@ -8069,6 +8079,7 @@ nm_platform_lnk_bond_hash_update(const NMPlatformLnkBond *obj, NMHashState *h)
                                               obj->use_carrier));
 
     nm_hash_update(h, obj->arp_ip_target, obj->arp_ip_targets_num * sizeof(obj->arp_ip_target[0]));
+    nm_hash_update(h, obj->ns_ip6_target, obj->ns_ip6_targets_num * sizeof(obj->ns_ip6_target[0]));
 }
 
 int
@@ -8076,6 +8087,11 @@ nm_platform_lnk_bond_cmp(const NMPlatformLnkBond *a, const NMPlatformLnkBond *b)
 {
     NM_CMP_SELF(a, b);
     NM_CMP_FIELD(a, b, arp_ip_targets_num);
+    NM_CMP_FIELD(a, b, ns_ip6_targets_num);
+    NM_CMP_FIELD_MEMCMP_LEN(a,
+                            b,
+                            ns_ip6_target,
+                            a->ns_ip6_targets_num * sizeof(a->ns_ip6_target[0]));
     NM_CMP_FIELD_MEMCMP_LEN(a,
                             b,
                             arp_ip_target,

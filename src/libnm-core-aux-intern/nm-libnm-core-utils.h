@@ -52,7 +52,7 @@ NM_AUTO_DEFINE_FCN0(NMWireGuardPeer *, _nm_auto_unref_wgpeer, nm_wireguard_peer_
 
 /****************************************************************************/
 
-const char **nm_utils_bond_option_arp_ip_targets_split(const char *arp_ip_target);
+const char **nm_utils_bond_option_ip_split(const char *arp_ip_target);
 
 void _nm_setting_bond_remove_options_miimon(NMSettingBond *s_bond);
 void _nm_setting_bond_remove_options_arp_interval(NMSettingBond *s_bond);

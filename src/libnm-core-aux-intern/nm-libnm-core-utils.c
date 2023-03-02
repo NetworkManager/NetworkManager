@@ -13,7 +13,7 @@
 /*****************************************************************************/
 
 const char **
-nm_utils_bond_option_arp_ip_targets_split(const char *arp_ip_target)
+nm_utils_bond_option_ip_split(const char *arp_ip_target)
 {
     return nm_strsplit_set_full(arp_ip_target, ",", NM_STRSPLIT_SET_FLAGS_STRSTRIP);
 }
@@ -36,6 +36,7 @@ _nm_setting_bond_remove_options_arp_interval(NMSettingBond *s_bond)
 
     nm_setting_bond_remove_option(s_bond, NM_SETTING_BOND_OPTION_ARP_INTERVAL);
     nm_setting_bond_remove_option(s_bond, NM_SETTING_BOND_OPTION_ARP_IP_TARGET);
+    nm_setting_bond_remove_option(s_bond, NM_SETTING_BOND_OPTION_NS_IP6_TARGET);
 }
 
 /*****************************************************************************/

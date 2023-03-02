@@ -94,6 +94,7 @@ static const char *const valid_options_lst[] = {
     NM_SETTING_BOND_OPTION_PEER_NOTIF_DELAY,
     NM_SETTING_BOND_OPTION_ARP_MISSED_MAX,
     NM_SETTING_BOND_OPTION_LACP_ACTIVE,
+    NM_SETTING_BOND_OPTION_NS_IP6_TARGET,
     NULL,
 };
 
@@ -135,6 +136,7 @@ _nm_assert_bond_meta(const OptionMeta *option_meta)
         }));
         return TRUE;
     case NM_BOND_OPTION_TYPE_IP:
+    case NM_BOND_OPTION_TYPE_IP6:
         nm_assert(option_meta->val);
         /* fall-through */
     case NM_BOND_OPTION_TYPE_IFNAME:
@@ -213,6 +215,7 @@ static NM_UTILS_STRING_TABLE_LOOKUP_STRUCT_DEFINE(
     {NM_SETTING_BOND_OPTION_MIN_LINKS, {"0", NM_BOND_OPTION_TYPE_INT, 0, G_MAXINT}},
     {NM_SETTING_BOND_OPTION_MODE,
      {"balance-rr", NM_BOND_OPTION_TYPE_BOTH, 0, 6, _option_default_strv_mode}},
+    {NM_SETTING_BOND_OPTION_NS_IP6_TARGET, {"", NM_BOND_OPTION_TYPE_IP6}},
     {NM_SETTING_BOND_OPTION_NUM_GRAT_ARP, {"1", NM_BOND_OPTION_TYPE_INT, 0, 255}},
     {NM_SETTING_BOND_OPTION_NUM_UNSOL_NA, {"1", NM_BOND_OPTION_TYPE_INT, 0, 255}},
     {NM_SETTING_BOND_OPTION_PACKETS_PER_SLAVE, {"1", NM_BOND_OPTION_TYPE_INT, 0, 65535}},
@@ -510,12 +513,12 @@ validate_list(const char *name, const char *value, const OptionMeta *option_meta
 }
 
 static gboolean
-validate_ip(const char *name, const char *value, GError **error)
+validate_ip(int addr_family, const char *name, const char *value, GError **error)
 {
     gs_free const char **addrs = NULL;
     gsize                i;
 
-    addrs = nm_utils_bond_option_arp_ip_targets_split(value);
+    addrs = nm_utils_bond_option_ip_split(value);
     if (!addrs) {
         g_set_error(error,
                     NM_CONNECTION_ERROR,
@@ -524,13 +527,18 @@ validate_ip(const char *name, const char *value, GError **error)
                     name);
         return FALSE;
     }
+
+    /* An empty list is invalid. */
+    nm_assert(addrs[0]);
+
     for (i = 0; addrs[i]; i++) {
-        if (!nm_inet_parse_bin(AF_INET, addrs[i], NULL, NULL)) {
+        if (!nm_inet_parse_bin(addr_family, addrs[i], NULL, NULL)) {
             g_set_error(error,
                         NM_CONNECTION_ERROR,
                         NM_CONNECTION_ERROR_INVALID_PROPERTY,
-                        _("'%s' is not a valid IPv4 address for '%s' option"),
+                        _("'%s' is not a valid %s address for '%s' option"),
                         addrs[i],
+                        addr_family == AF_INET ? "IPv4" : "IPv6",
                         name);
             return FALSE;
         }
@@ -580,7 +588,10 @@ _nm_setting_bond_validate_option(const char *name, const char *value, GError **e
         goto handle_error;
     case NM_BOND_OPTION_TYPE_IP:
         nm_assert(nm_streq0(name, NM_SETTING_BOND_OPTION_ARP_IP_TARGET));
-        return validate_ip(name, value, error);
+        return validate_ip(AF_INET, name, value, error);
+    case NM_BOND_OPTION_TYPE_IP6:
+        nm_assert(nm_streq0(name, NM_SETTING_BOND_OPTION_NS_IP6_TARGET));
+        return validate_ip(AF_INET6, name, value, error);
     case NM_BOND_OPTION_TYPE_MAC:
         success = nm_utils_hwaddr_valid(value, ETH_ALEN);
         goto handle_error;
@@ -858,6 +869,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
     int                      peer_notif_delay;
     const char              *mode_str;
     const char              *arp_ip_target = NULL;
+    const char              *ns_ip6_target;
     const char              *lacp_rate;
     const char              *lacp_active;
     const char              *primary;
@@ -1076,6 +1088,21 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
             g_prefix_error(error, "%s.%s: ", NM_SETTING_BOND_SETTING_NAME, NM_SETTING_BOND_OPTIONS);
             return FALSE;
         }
+    }
+
+    /* ns_ip6_target can only be used with arp_interval, and must
+     * contain a comma-separated list of IPv6 addresses.
+     */
+    ns_ip6_target = _bond_get_option(self, NM_SETTING_BOND_OPTION_NS_IP6_TARGET);
+    if (ns_ip6_target && arp_interval == 0) {
+        g_set_error(error,
+                    NM_CONNECTION_ERROR,
+                    NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                    _("'%s' option requires '%s' option to be set"),
+                    NM_SETTING_BOND_OPTION_NS_IP6_TARGET,
+                    NM_SETTING_BOND_OPTION_ARP_INTERVAL);
+        g_prefix_error(error, "%s.%s: ", NM_SETTING_BOND_SETTING_NAME, NM_SETTING_BOND_OPTIONS);
+        return FALSE;
     }
 
     lacp_rate = _bond_get_option(self, NM_SETTING_BOND_OPTION_LACP_RATE);
