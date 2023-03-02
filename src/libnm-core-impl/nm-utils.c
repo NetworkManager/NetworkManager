@@ -5333,7 +5333,7 @@ NM_UTILS_FLAGS2STR_DEFINE(nm_bluetooth_capability_to_string,
  * @base64_key: the (possibly invalid) base64 encode key.
  * @required_key_len: the expected (binary) length of the key after
  *   decoding. If the length does not match, the validation fails.
- * @out_key: (optional): (out): an optional output buffer for the binary
+ * @out_key: (out) (optional): an optional output buffer for the binary
  *   key. If given, it will be filled with exactly @required_key_len
  *   bytes.
  *

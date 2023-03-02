@@ -1766,10 +1766,10 @@ nm_utils_escaped_tokens_escape_full(const char                     *str,
  * nm_utils_escaped_tokens_options_split:
  * @str: the src string. This string will be modified in-place.
  *   The output values will point into @str.
- * @out_key: (nullable) (out): the returned output key. This will always be set
+ * @out_key: (out) (nullable): the returned output key. This will always be set
  *   to @str itself. @str will be modified to contain only the unescaped,
  *   truncated key name.
- * @out_val: (nullable) (out): returns the parsed (and unescaped) value or
+ * @out_val: (out) (nullable): returns the parsed (and unescaped) value or
  *   %NULL, if @str contains no '=' delimiter.
  *
  * Honors backslash escaping to parse @str as "key=value" pairs. Optionally, if no '='
