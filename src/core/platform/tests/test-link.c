@@ -2588,6 +2588,7 @@ test_link_set_properties(void)
     const NMPlatformLink     *link;
     NMPlatformLinkProps       props;
     NMPlatformLinkChangeFlags flags;
+    int                       ifindex;
 
     props = (NMPlatformLinkProps){
         .tx_queue_length  = 599,
@@ -2597,10 +2598,10 @@ test_link_set_properties(void)
     flags = NM_PLATFORM_LINK_CHANGE_TX_QUEUE_LENGTH | NM_PLATFORM_LINK_CHANGE_GSO_MAX_SIZE
             | NM_PLATFORM_LINK_CHANGE_GSO_MAX_SEGMENTS;
 
-    link = nmtstp_link_dummy_add(NM_PLATFORM_GET, FALSE, "dummy1");
-    g_assert(nm_platform_link_change(NM_PLATFORM_GET, link->ifindex, &props, flags));
+    ifindex = nmtstp_link_dummy_add(NM_PLATFORM_GET, FALSE, "dummy1")->ifindex;
+    g_assert(nm_platform_link_change(NM_PLATFORM_GET, ifindex, &props, flags));
 
-    link = nmtstp_link_get(NM_PLATFORM_GET, link->ifindex, "dummy1");
+    link = nmtstp_link_get(NM_PLATFORM_GET, ifindex, "dummy1");
     g_assert(link);
     g_assert_cmpint(link->link_props.tx_queue_length, ==, 599);
     g_assert_cmpint(link->link_props.gso_max_size, ==, 10001);
