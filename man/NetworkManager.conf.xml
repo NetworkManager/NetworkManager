@@ -1453,8 +1453,8 @@ managed=1
 
   <refsect1>
     <title><literal>global-dns</literal> section</title>
-    <para>This section specifies global DNS settings that override
-    connection-specific configuration.</para>
+    <para>This section specifies DNS settings that are applied
+    globally, in addition to connection-specific ones.</para>
     <para>
       <variablelist>
         <varlistentry>
@@ -1482,10 +1482,15 @@ managed=1
     <para>Sections with a name starting with the "global-dns-domain-"
     prefix allow to define global DNS configuration for specific
     domains.  The part of section name after "global-dns-domain-"
-    specifies the domain name a section applies to.  More specific
-    domains have the precedence over less specific ones and the
-    default domain is represented by the wildcard "*".  A default
-    domain section is mandatory.
+    specifies the domain name a section applies to (for example, a
+    section could be named "global-dns-domain-foobar.com").  More
+    specific domains have the precedence over less specific ones and
+    the default domain is represented by the wildcard "*".
+
+    To be valid, global DNS domains must include a section for the
+    default domain "*". When the global DNS domains are valid, the
+    name servers and domains defined globally override the ones from
+    active connections.
     </para>
     <para>
       <variablelist>

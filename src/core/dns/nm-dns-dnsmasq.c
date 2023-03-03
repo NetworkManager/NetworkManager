@@ -922,7 +922,8 @@ create_update_args(NMDnsDnsmasq            *self,
 
     if (global_config)
         add_global_config(self, &servers, global_config);
-    else {
+
+    if (!global_config || !nm_global_dns_config_lookup_domain(global_config, "*")) {
         c_list_for_each_entry (ip_data, ip_data_lst_head, ip_data_lst)
             add_ip_config(self, &servers, ip_data);
     }
