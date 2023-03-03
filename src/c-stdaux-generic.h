@@ -290,6 +290,27 @@ extern "C" {
 /**/
 
 /**
+ * c_assume_aligned() - Hint alignment to compiler
+ * @_ptr:               Pointer to provide alignment hint for
+ * @_alignment:         Alignment in bytes
+ * @_offset:            Misalignment offset
+ *
+ * This hints to the compiler that `_ptr - _offset` is aligned to the alignment
+ * specified in `_alignment`.
+ *
+ * On platforms without support for `__builtin_assume_aligned()` this is a
+ * no-op.
+ *
+ * Return: `_ptr` is returned.
+ */
+#define c_assume_aligned(_ptr, _alignment, _offset) c_internal_assume_aligned((_ptr), (_alignment), (_offset))
+#if (defined(C_COMPILER_GNUC) && __GNUC__ > 5) || (defined(C_COMPILER_CLANG) && __clang_major__ > 3)
+#  define c_internal_assume_aligned(_ptr, _alignment, _offset) __builtin_assume_aligned((_ptr), (_alignment), (_offset))
+#else
+#  define c_internal_assume_aligned(_ptr, _alignment, _offset) ((void)(_alignment), (void)(_offset), (_ptr))
+#endif
+
+/**
  * c_assert() - Runtime assertions
  * @_x:                 Result of an expression
  *
@@ -399,6 +420,258 @@ static inline int c_memcmp(const void *s1, const void *s2, size_t n) {
                 return memcmp(s1, s2, n);
         return 0;
 }
+
+/**
+ * DOC: Memory Access
+ *
+ * This section provides helpers to read and write arbitrary memory locations.
+ * They are carefully designed to follow all language restrictions and thus
+ * work with strict-aliasing and alignment rules.
+ *
+ * The C language does not allow aliasing an object with a pointer of an
+ * incompatible type (with few exceptions). Furthermore, memory access must be
+ * aligned. This function uses exceptions in the language to circumvent both
+ * restrictions.
+ *
+ * Note that pointer-offset calculations should avoid exceeding the extents of
+ * the object, even if the object is surrounded by other objects. That is,
+ * `ptr+offset` should point to the same object as `ptr`. Otherwise, pointer
+ * provenance will have to be considered.
+ */
+/**/
+
+/**
+ * c_load_8() - Read a u8 from memory
+ * @memory:     Memory location to operate on
+ * @offset:     Offset in bytes from the pointed memory location
+ *
+ * This reads an unsigned 8-bit integer at the offset of the specified memory
+ * location.
+ *
+ * Return: The read value is returned.
+ */
+static inline uint8_t c_load_8(const void *memory, size_t offset) {
+        return ((const uint8_t *)memory)[offset];
+}
+
+/**
+ * c_load_16be_unaligned() - Read an unaligned big-endian u16 from memory
+ * @memory:     Memory location to operate on
+ * @offset:     Offset in bytes from the pointed memory location
+ *
+ * This reads an unaligned big-endian unsigned 16-bit integer at the offset
+ * of the specified memory location.
+ *
+ * Return: The read value is returned.
+ */
+static inline uint16_t c_load_16be_unaligned(const void *memory, size_t offset) {
+        const uint8_t *m = (const uint8_t *)memory + offset;
+        return ((uint16_t)m[1] << 0) | ((uint16_t)m[0] << 8);
+}
+
+/**
+ * c_load_16be_aligned() - Read an aligned big-endian u16 from memory
+ * @memory:     Memory location to operate on
+ * @offset:     Offset in bytes from the pointed memory location
+ *
+ * This reads an aligned big-endian unsigned 16-bit integer at the offset
+ * of the specified memory location.
+ *
+ * Return: The read value is returned.
+ */
+static inline uint16_t c_load_16be_aligned(const void *memory, size_t offset) {
+        const uint8_t *m = c_assume_aligned((const uint8_t *)memory + offset, 2, 0);
+        return ((uint16_t)m[1] << 0) | ((uint16_t)m[0] << 8);
+}
+
+/**
+ * c_load_16le_unaligned() - Read an unaligned little-endian u16 from memory
+ * @memory:     Memory location to operate on
+ * @offset:     Offset in bytes from the pointed memory location
+ *
+ * This reads an unaligned little-endian unsigned 16-bit integer at the offset
+ * of the specified memory location.
+ *
+ * Return: The read value is returned.
+ */
+static inline uint16_t c_load_16le_unaligned(const void *memory, size_t offset) {
+        const uint8_t *m = (const uint8_t *)memory + offset;
+        return ((uint16_t)m[0] << 0) | ((uint16_t)m[1] << 8);
+}
+
+/**
+ * c_load_16le_aligned() - Read an aligned little-endian u16 from memory
+ * @memory:     Memory location to operate on
+ * @offset:     Offset in bytes from the pointed memory location
+ *
+ * This reads an aligned little-endian unsigned 16-bit integer at the offset of
+ * the specified memory location.
+ *
+ * Return: The read value is returned.
+ */
+static inline uint16_t c_load_16le_aligned(const void *memory, size_t offset) {
+        const uint8_t *m = c_assume_aligned((const uint8_t *)memory + offset, 2, 0);
+        return ((uint16_t)m[0] << 0) | ((uint16_t)m[1] << 8);
+}
+
+/**
+ * c_load_32be_unaligned() - Read an unaligned big-endian u32 from memory
+ * @memory:     Memory location to operate on
+ * @offset:     Offset in bytes from the pointed memory location
+ *
+ * This reads an unaligned big-endian unsigned 32-bit integer at the offset
+ * of the specified memory location.
+ *
+ * Return: The read value is returned.
+ */
+static inline uint32_t c_load_32be_unaligned(const void *memory, size_t offset) {
+        const uint8_t *m = (const uint8_t *)memory + offset;
+        return ((uint32_t)m[3] <<  0) | ((uint32_t)m[2] <<  8) |
+               ((uint32_t)m[1] << 16) | ((uint32_t)m[0] << 24);
+}
+
+/**
+ * c_load_32be_aligned() - Read an aligned big-endian u32 from memory
+ * @memory:     Memory location to operate on
+ * @offset:     Offset in bytes from the pointed memory location
+ *
+ * This reads an aligned big-endian unsigned 32-bit integer at the offset
+ * of the specified memory location.
+ *
+ * Return: The read value is returned.
+ */
+static inline uint32_t c_load_32be_aligned(const void *memory, size_t offset) {
+        const uint8_t *m = c_assume_aligned((const uint8_t *)memory + offset, 4, 0);
+        return ((uint32_t)m[3] <<  0) | ((uint32_t)m[2] <<  8) |
+               ((uint32_t)m[1] << 16) | ((uint32_t)m[0] << 24);
+}
+
+/**
+ * c_load_32le_unaligned() - Read an unaligned little-endian u32 from memory
+ * @memory:     Memory location to operate on
+ * @offset:     Offset in bytes from the pointed memory location
+ *
+ * This reads an unaligned little-endian unsigned 32-bit integer at the offset
+ * of the specified memory location.
+ *
+ * Return: The read value is returned.
+ */
+static inline uint32_t c_load_32le_unaligned(const void *memory, size_t offset) {
+        const uint8_t *m = (const uint8_t *)memory + offset;
+        return ((uint32_t)m[0] <<  0) | ((uint32_t)m[1] <<  8) |
+               ((uint32_t)m[2] << 16) | ((uint32_t)m[3] << 24);
+}
+
+/**
+ * c_load_32le_aligned() - Read an aligned little-endian u32 from memory
+ * @memory:     Memory location to operate on
+ * @offset:     Offset in bytes from the pointed memory location
+ *
+ * This reads an aligned little-endian unsigned 32-bit integer at the offset
+ * of the specified memory location.
+ *
+ * Return: The read value is returned.
+ */
+static inline uint32_t c_load_32le_aligned(const void *memory, size_t offset) {
+        const uint8_t *m = c_assume_aligned((const uint8_t *)memory + offset, 4, 0);
+        return ((uint32_t)m[0] <<  0) | ((uint32_t)m[1] <<  8) |
+               ((uint32_t)m[2] << 16) | ((uint32_t)m[3] << 24);
+}
+
+/**
+ * c_load_64be_unaligned() - Read an unaligned big-endian u64 from memory
+ * @memory:     Memory location to operate on
+ * @offset:     Offset in bytes from the pointed memory location
+ *
+ * This reads an unaligned big-endian unsigned 64-bit integer at the offset
+ * of the specified memory location.
+ *
+ * Return: The read value is returned.
+ */
+static inline uint64_t c_load_64be_unaligned(const void *memory, size_t offset) {
+        const uint8_t *m = (const uint8_t *)memory + offset;
+        return ((uint64_t)m[7] <<  0) | ((uint64_t)m[6] <<  8) |
+               ((uint64_t)m[5] << 16) | ((uint64_t)m[4] << 24) |
+               ((uint64_t)m[3] << 32) | ((uint64_t)m[2] << 40) |
+               ((uint64_t)m[1] << 48) | ((uint64_t)m[0] << 56);
+}
+
+/**
+ * c_load_64be_aligned() - Read an aligned big-endian u64 from memory
+ * @memory:     Memory location to operate on
+ * @offset:     Offset in bytes from the pointed memory location
+ *
+ * This reads an aligned big-endian unsigned 64-bit integer at the offset
+ * of the specified memory location.
+ *
+ * Return: The read value is returned.
+ */
+static inline uint64_t c_load_64be_aligned(const void *memory, size_t offset) {
+        const uint8_t *m = c_assume_aligned((const uint8_t *)memory + offset, 8, 0);
+        return ((uint64_t)m[7] <<  0) | ((uint64_t)m[6] <<  8) |
+               ((uint64_t)m[5] << 16) | ((uint64_t)m[4] << 24) |
+               ((uint64_t)m[3] << 32) | ((uint64_t)m[2] << 40) |
+               ((uint64_t)m[1] << 48) | ((uint64_t)m[0] << 56);
+}
+
+/**
+ * c_load_64le_unaligned() - Read an unaligned little-endian u64 from memory
+ * @memory:     Memory location to operate on
+ * @offset:     Offset in bytes from the pointed memory location
+ *
+ * This reads an unaligned little-endian unsigned 64-bit integer at the offset
+ * of the specified memory location.
+ *
+ * Return: The read value is returned.
+ */
+static inline uint64_t c_load_64le_unaligned(const void *memory, size_t offset) {
+        const uint8_t *m = (const uint8_t *)memory + offset;
+        return ((uint64_t)m[0] <<  0) | ((uint64_t)m[1] <<  8) |
+               ((uint64_t)m[2] << 16) | ((uint64_t)m[3] << 24) |
+               ((uint64_t)m[4] << 32) | ((uint64_t)m[5] << 40) |
+               ((uint64_t)m[6] << 48) | ((uint64_t)m[7] << 56);
+}
+
+/**
+ * c_load_64le_aligned() - Read an aligned little-endian u64 from memory
+ * @memory:     Memory location to operate on
+ * @offset:     Offset in bytes from the pointed memory location
+ *
+ * This reads an aligned little-endian unsigned 64-bit integer at the offset
+ * of the specified memory location.
+ *
+ * Return: The read value is returned.
+ */
+static inline uint64_t c_load_64le_aligned(const void *memory, size_t offset) {
+        const uint8_t *m = c_assume_aligned((const uint8_t *)memory + offset, 8, 0);
+        return ((uint64_t)m[0] <<  0) | ((uint64_t)m[1] <<  8) |
+               ((uint64_t)m[2] << 16) | ((uint64_t)m[3] << 24) |
+               ((uint64_t)m[4] << 32) | ((uint64_t)m[5] << 40) |
+               ((uint64_t)m[6] << 48) | ((uint64_t)m[7] << 56);
+}
+
+/**
+ * c_load() - Read from memory
+ * @_type:      Datatype to read
+ * @_endian:    Endianness
+ * @_aligned:   Aligned or unaligned access
+ * @_memory:     Memory location to operate on
+ * @_offset:     Offset in bytes from the pointed memory location
+ *
+ * This reads a value of the same size as `_type` at the offset of the
+ * specified memory location. `_endian` must be either `be` or `le`, `_aligned`
+ * must be either `aligned` or `unaligned`.
+ *
+ * This is a generic macro that maps to the respective `c_load_*()` function.
+ *
+ * Return: The read value is returned.
+ */
+#define c_load(_type, _endian, _aligned, _memory, _offset)                              \
+        (_Generic((_type){ 0 },                                                         \
+                uint16_t: c_load_16 ## _endian ## _ ## _aligned ((_memory), (_offset)), \
+                uint32_t: c_load_32 ## _endian ## _ ## _aligned ((_memory), (_offset)), \
+                uint64_t: c_load_64 ## _endian ## _ ## _aligned ((_memory), (_offset))  \
+        ))
 
 /**
  * DOC: Generic Destructors

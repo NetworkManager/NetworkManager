@@ -1,5 +1,22 @@
 # c-stdaux - Auxiliary macros and functions for the C standard library
 
+## CHANGES WITH 1.4.0:
+
+        * New compiler-builtin c_assume_aligned() allows hinting alignment
+          to the compiler and thus improving code generation. For targets
+          without such builtins, the function will be a no-op.
+
+        * A new set of memory-load operations is added: c_load_*()
+          This includes support for reading unaligned & aligned memory,
+          big-endian & little-endian data, and various standard sizes.
+          The helpers are basically a pointer cast to `uintX_t*` and a
+          dereference operation, but they guarantee that strict aliasing
+          rules, as well as alignment requirements are followed.
+
+        Contributions from: David Rheinsberg, Jan Engelhardt, Tom Gundersen
+
+        - Dußlingen, 2023-01-12
+
 ## CHANGES WITH 1.3.0:
 
         * Microsoft Windows is now supported as a target platform.

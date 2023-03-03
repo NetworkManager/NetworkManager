@@ -98,9 +98,23 @@ static void test_api_generic(void) {
                 int C_VAR = 0; c_assert(!C_VAR); /* must be on the same line */
         }
 
+        /* c_assume_aligned */
+        {
+                _Alignas(16) uint8_t data[8] = { 0 };
+
+                c_assert(c_assume_aligned(data, 16, 0));
+        }
+
         /* c_assert */
         {
                 c_assert(true);
+        }
+
+        /* c_load */
+        {
+                uint64_t data[128] = { 0 };
+
+                c_assert(c_load(uint64_t, le, aligned, data, 0) == 0);
         }
 
         /* C_DEFINE_CLEANUP / C_DEFINE_DIRECT_CLEANUP */
@@ -118,6 +132,19 @@ static void test_api_generic(void) {
                         (void *)c_memset,
                         (void *)c_memzero,
                         (void *)c_memcpy,
+                        (void *)c_load_8,
+                        (void *)c_load_16be_unaligned,
+                        (void *)c_load_16be_aligned,
+                        (void *)c_load_16le_unaligned,
+                        (void *)c_load_16le_aligned,
+                        (void *)c_load_32be_unaligned,
+                        (void *)c_load_32be_aligned,
+                        (void *)c_load_32le_unaligned,
+                        (void *)c_load_32le_aligned,
+                        (void *)c_load_64be_unaligned,
+                        (void *)c_load_64be_aligned,
+                        (void *)c_load_64le_unaligned,
+                        (void *)c_load_64le_aligned,
                         (void *)c_free,
                         (void *)c_fclose,
                         (void *)c_freep,
