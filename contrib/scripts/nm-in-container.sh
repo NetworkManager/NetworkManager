@@ -332,6 +332,8 @@ RUN dnf install -y \\
     bash-completion \\
     bind-utils \\
     bluez-libs-devel \\
+    ccache \\
+    clang \\
     clang-tools-extra \\
     cscope \\
     dbus-devel \\
@@ -359,6 +361,7 @@ RUN dnf install -y \\
     libpsl-devel \\
     libselinux-devel \\
     libtool \\
+    libubsan \\
     libuuid-devel \\
     make \\
     meson \\
