@@ -321,6 +321,33 @@ static void test_basic_generic(int non_constant_expr) {
                 c_assert(c_memcmp(&v1, &v2, 0) == 0);
                 c_assert(c_memcmp(&v1, &v2, 8) != 0);
         }
+
+        /*
+         * Test c_load*() and its mapping to c_load_*() functions.
+         */
+        {
+                _Alignas(8) uint8_t data[16] = {
+                        0, 0, 0, 0,
+                        0, 0, 0, 0,
+                        1, 2, 3, 4,
+                        5, 6, 7, 8,
+                };
+
+                c_assert(c_load_8(data, 7) == 0);
+                c_assert(c_load_8(data, 8) == 1);
+                c_assert(c_load(uint16_t, be, unaligned, data, 7) == UINT16_C(0x0001));
+                c_assert(c_load(uint16_t, be, aligned, data, 8) == UINT16_C(0x0102));
+                c_assert(c_load(uint16_t, le, unaligned, data, 7) == UINT16_C(0x0100));
+                c_assert(c_load(uint16_t, le, aligned, data, 8) == UINT16_C(0x0201));
+                c_assert(c_load(uint32_t, be, unaligned, data, 7) == UINT32_C(0x00010203));
+                c_assert(c_load(uint32_t, be, aligned, data, 8) == UINT32_C(0x01020304));
+                c_assert(c_load(uint32_t, le, unaligned, data, 7) == UINT32_C(0x03020100));
+                c_assert(c_load(uint32_t, le, aligned, data, 8) == UINT32_C(0x04030201));
+                c_assert(c_load(uint64_t, be, unaligned, data, 7) == UINT64_C(0x0001020304050607));
+                c_assert(c_load(uint64_t, be, aligned, data, 8) == UINT64_C(0x0102030405060708));
+                c_assert(c_load(uint64_t, le, unaligned, data, 7) == UINT64_C(0x0706050403020100));
+                c_assert(c_load(uint64_t, le, aligned, data, 8) == UINT64_C(0x0807060504030201));
+        }
 }
 
 #else /* C_MODULE_GENERIC */
