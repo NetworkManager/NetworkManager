@@ -62,6 +62,31 @@ G_STATIC_ASSERT(sizeof(((NMPlatformLink *) NULL)->l_perm_address.data) == _NM_UT
 G_STATIC_ASSERT(sizeof(((NMPlatformLink *) NULL)->l_broadcast.data) == _NM_UTILS_HWADDR_LEN_MAX);
 
 static const char *
+_nmp_link_port_data_to_string(NMPortKind                    port_kind,
+                              const NMPlatformLinkPortData *port_data,
+                              char                         *sbuf,
+                              gsize                         sbuf_len)
+{
+    const char *sbuf0 = sbuf;
+
+    nm_assert(port_data);
+
+    switch (port_kind) {
+    case NM_PORT_KIND_NONE:
+        nm_strbuf_append_c(&sbuf, &sbuf_len, '\0');
+        goto out;
+    case NM_PORT_KIND_BOND:
+        nm_strbuf_append(&sbuf, &sbuf_len, "port bond queue-id %u", port_data->bond.queue_id);
+        goto out;
+    }
+
+    nm_strbuf_append(&sbuf, &sbuf_len, "invalid-port-type %d", (int) port_kind);
+
+out:
+    return sbuf0;
+}
+
+static const char *
 _nmp_link_address_to_string(const NMPLinkAddress *addr,
                             char                  buf[static(_NM_UTILS_HWADDR_LEN_MAX * 3)])
 {
@@ -2090,6 +2115,31 @@ nm_platform_link_set_name(NMPlatform *self, int ifindex, const char *name)
         return FALSE;
 
     return klass->link_set_name(self, ifindex, name);
+}
+
+gboolean
+nm_platform_link_change(NMPlatform *self, int ifindex, NMPlatformLinkBondPort *bond_port)
+{
+    _CHECK_SELF(self, klass, FALSE);
+
+    g_return_val_if_fail(ifindex >= 0, FALSE);
+
+    if (_LOGD_ENABLED()) {
+        nm_auto_free_gstring GString *str = g_string_new("");
+
+        if (bond_port)
+            g_string_append_printf(str, "bond-port queue-id %d", bond_port->queue_id);
+
+        if (str->len > 0 && str->str[str->len - 1] == ' ')
+            g_string_truncate(str, str->len - 1);
+
+        _LOG3D("link: change: %s", str->str);
+    }
+
+    return klass->link_change(self,
+                              ifindex,
+                              bond_port ? NM_PORT_KIND_BOND : NM_PORT_KIND_NONE,
+                              (const NMPlatformLinkPortData *) bond_port);
 }
 
 /**
@@ -5893,6 +5943,7 @@ nm_platform_link_to_string(const NMPlatformLink *link, char *buf, gsize len)
     char       *s;
     gsize       l;
     char        str_addrmode[30];
+    char        str_port_data[200];
     char        str_address[_NM_UTILS_HWADDR_LEN_MAX * 3];
     char        str_perm_address[_NM_UTILS_HWADDR_LEN_MAX * 3];
     char        str_broadcast[_NM_UTILS_HWADDR_LEN_MAX * 3];
@@ -5936,6 +5987,11 @@ nm_platform_link_to_string(const NMPlatformLink *link, char *buf, gsize len)
     _nmp_link_address_to_string(&link->l_perm_address, str_perm_address);
     _nmp_link_address_to_string(&link->l_broadcast, str_broadcast);
 
+    _nmp_link_port_data_to_string(link->port_kind,
+                                  &link->port_data,
+                                  str_port_data,
+                                  sizeof(str_port_data));
+
     str_link_type = nm_link_type_to_string(link->type);
 
     g_snprintf(
@@ -5957,6 +6013,7 @@ nm_platform_link_to_string(const NMPlatformLink *link, char *buf, gsize len)
         "%s%s"    /* l_broadcast */
         "%s%s"    /* inet6_token */
         "%s%s"    /* driver */
+        "%s%s"    /* port_data */
         " rx:%" G_GUINT64_FORMAT ",%" G_GUINT64_FORMAT " tx:%" G_GUINT64_FORMAT
         ",%" G_GUINT64_FORMAT,
         link->ifindex,
@@ -5989,6 +6046,7 @@ nm_platform_link_to_string(const NMPlatformLink *link, char *buf, gsize len)
             : "",
         link->driver ? " driver " : "",
         link->driver ?: "",
+        NM_PRINT_FMT_QUOTED2(str_port_data[0] != '\0', " ", str_port_data, ""),
         link->rx_packets,
         link->rx_bytes,
         link->tx_packets,
@@ -7927,6 +7985,7 @@ nm_platform_link_hash_update(const NMPlatformLink *obj, NMHashState *h)
                         obj->arptype,
                         obj->inet6_addr_gen_mode_inv,
                         obj->inet6_token,
+                        obj->port_kind,
                         obj->rx_packets,
                         obj->rx_bytes,
                         obj->tx_packets,
@@ -7945,6 +8004,20 @@ nm_platform_link_hash_update(const NMPlatformLink *obj, NMHashState *h)
     nm_hash_update_mem(h,
                        obj->l_broadcast.data,
                        NM_MIN(obj->l_broadcast.len, sizeof(obj->l_broadcast.data)));
+
+    switch (obj->port_kind) {
+    case NM_PORT_KIND_NONE:
+        break;
+    case NM_PORT_KIND_BOND:
+        nm_platform_link_bond_port_hash_update(&obj->port_data.bond, h);
+        break;
+    }
+}
+
+void
+nm_platform_link_bond_port_hash_update(const NMPlatformLinkBondPort *obj, NMHashState *h)
+{
+    nm_hash_update_vals(h, obj->queue_id);
 }
 
 int
@@ -7974,6 +8047,14 @@ nm_platform_link_cmp(const NMPlatformLink *a, const NMPlatformLink *b)
     if (a->l_broadcast.len)
         NM_CMP_FIELD_MEMCMP_LEN(a, b, l_broadcast.data, a->l_broadcast.len);
     NM_CMP_FIELD_MEMCMP(a, b, inet6_token);
+    NM_CMP_FIELD(a, b, port_kind);
+    switch (a->port_kind) {
+    case NM_PORT_KIND_NONE:
+        break;
+    case NM_PORT_KIND_BOND:
+        NM_CMP_RETURN(nm_platform_link_bond_port_cmp(&a->port_data.bond, &b->port_data.bond));
+        break;
+    }
     NM_CMP_FIELD(a, b, rx_packets);
     NM_CMP_FIELD(a, b, rx_bytes);
     NM_CMP_FIELD(a, b, tx_packets);
@@ -8051,6 +8132,15 @@ nm_platform_lnk_bond_hash_update(const NMPlatformLnkBond *obj, NMHashState *h)
                                               obj->use_carrier));
 
     nm_hash_update(h, obj->arp_ip_target, obj->arp_ip_targets_num * sizeof(obj->arp_ip_target[0]));
+}
+
+int
+nm_platform_link_bond_port_cmp(const NMPlatformLinkBondPort *a, const NMPlatformLinkBondPort *b)
+{
+    NM_CMP_SELF(a, b);
+    NM_CMP_FIELD(a, b, queue_id);
+
+    return 0;
 }
 
 int
