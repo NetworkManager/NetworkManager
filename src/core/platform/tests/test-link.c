@@ -273,6 +273,21 @@ test_slave(int master, int type, SignalData *master_changed)
     else
         g_assert(!nm_platform_link_is_up(NM_PLATFORM_GET, ifindex));
 
+    if (NM_IN_SET(link_type, NM_LINK_TYPE_BOND)) {
+        const NMPlatformLink  *link;
+        NMPlatformLinkBondPort bond_port;
+
+        bond_port = (NMPlatformLinkBondPort){
+            .queue_id = 5,
+        };
+        g_assert(nm_platform_link_change(NM_PLATFORM_GET, ifindex, NULL, &bond_port, 0));
+        accept_signals(link_changed, 1, 3);
+
+        link = nmtstp_link_get(NM_PLATFORM_GET, ifindex, SLAVE_NAME);
+        g_assert(link);
+        g_assert_cmpint(link->bond_port_opts.queue_id, ==, 5);
+    }
+
     test_link_changed_signal_arg1 = FALSE;
     test_link_changed_signal_arg2 = FALSE;
     g_signal_connect(NM_PLATFORM_GET,
@@ -2663,7 +2678,7 @@ test_link_set_properties(void)
             | NM_PLATFORM_LINK_CHANGE_GSO_MAX_SEGMENTS;
 
     ifindex = nmtstp_link_dummy_add(NM_PLATFORM_GET, FALSE, "dummy1")->ifindex;
-    g_assert(nm_platform_link_change(NM_PLATFORM_GET, ifindex, &props, flags));
+    g_assert(nm_platform_link_change(NM_PLATFORM_GET, ifindex, &props, NULL, flags));
 
     link = nmtstp_link_get(NM_PLATFORM_GET, ifindex, "dummy1");
     g_assert(link);
