@@ -5812,6 +5812,7 @@ EXTRA_DIST += \
 	tools/enums-to-docbook.pl \
 	tools/meson-post-install.sh \
 	tools/run-nm-test.sh \
+	tools/test-cloud-meta-mock.py \
 	tools/test-networkmanager-service.py \
 	tools/test-sudo-wrapper.sh \
 	\
