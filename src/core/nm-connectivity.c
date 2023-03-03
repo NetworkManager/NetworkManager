@@ -981,9 +981,7 @@ check_platform_config(NMConnectivity *self,
         return NM_CONNECTIVITY_NONE;
     }
 
-    switch (addr_family) {
-    case AF_INET:
-    {
+    if (NM_IS_IPv4(addr_family)) {
         const NMPlatformIP4Route *route;
         gboolean                  found_global = FALSE;
         NMDedupMultiIter          iter;
@@ -1002,13 +1000,8 @@ check_platform_config(NMConnectivity *self,
             NM_SET_OUT(reason, "no global route configured");
             return NM_CONNECTIVITY_LIMITED;
         }
-        break;
-    }
-    case AF_INET6:
+    } else {
         /* Route scopes aren't meaningful for IPv6 so any route is fine. */
-        break;
-    default:
-        g_return_val_if_reached(FALSE);
     }
 
     NM_SET_OUT(reason, NULL);
@@ -1050,11 +1043,12 @@ nm_connectivity_check_start(NMConnectivity             *self,
     cb_data->concheck.con_config = _con_config_ref(priv->con_config);
 
     if (iface && ifindex > 0 && priv->enabled && priv->uri_valid) {
-        gboolean            has_systemd_resolved;
-        NMConnectivityState state;
-        const char         *reason;
+        gboolean has_systemd_resolved;
 
         if (platform) {
+            const char         *reason;
+            NMConnectivityState state;
+
             state = check_platform_config(self, platform, ifindex, addr_family, &reason);
             nm_assert((state == NM_CONNECTIVITY_UNKNOWN) == !reason);
             if (state != NM_CONNECTIVITY_UNKNOWN) {
