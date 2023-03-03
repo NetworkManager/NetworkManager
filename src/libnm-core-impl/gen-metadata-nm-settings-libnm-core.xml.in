@@ -1749,6 +1749,26 @@
                   gprop-type="gchararray"
                   />
     </setting>
+    <setting name="link"
+             gtype="NMSettingLink"
+             >
+        <property name="gro-max-size"
+                  dbus-type="x"
+                  gprop-type="gint64"
+                  />
+        <property name="gso-max-segments"
+                  dbus-type="x"
+                  gprop-type="gint64"
+                  />
+        <property name="gso-max-size"
+                  dbus-type="x"
+                  gprop-type="gint64"
+                  />
+        <property name="tx-queue-length"
+                  dbus-type="x"
+                  gprop-type="gint64"
+                  />
+    </setting>
     <setting name="loopback"
              gtype="NMSettingLoopback"
              >

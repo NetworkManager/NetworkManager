@@ -34,6 +34,7 @@
 #include "nm-setting-ip-tunnel.h"
 #include "nm-setting-ip4-config.h"
 #include "nm-setting-ip6-config.h"
+#include "nm-setting-link.h"
 #include "nm-setting-loopback.h"
 #include "nm-setting-macsec.h"
 #include "nm-setting-macvlan.h"
@@ -362,6 +363,13 @@ const NMMetaSettingInfo nm_meta_setting_infos[] = {
             .setting_name      = NM_SETTING_IP_TUNNEL_SETTING_NAME,
             .get_setting_gtype = nm_setting_ip_tunnel_get_type,
         },
+    [NM_META_SETTING_TYPE_LINK] =
+        {
+            .meta_type         = NM_META_SETTING_TYPE_LINK,
+            .setting_priority  = NM_SETTING_PRIORITY_AUX,
+            .setting_name      = NM_SETTING_LINK_SETTING_NAME,
+            .get_setting_gtype = nm_setting_link_get_type,
+        },
     [NM_META_SETTING_TYPE_LOOPBACK] =
         {
             .meta_type         = NM_META_SETTING_TYPE_LOOPBACK,
@@ -660,6 +668,7 @@ const NMMetaSettingType nm_meta_setting_types_by_priority[] = {
     NM_META_SETTING_TYPE_BOND_PORT,
     NM_META_SETTING_TYPE_BRIDGE_PORT,
     NM_META_SETTING_TYPE_ETHTOOL,
+    NM_META_SETTING_TYPE_LINK,
     NM_META_SETTING_TYPE_MATCH,
     NM_META_SETTING_TYPE_OVS_EXTERNAL_IDS,
     NM_META_SETTING_TYPE_OVS_OTHER_CONFIG,

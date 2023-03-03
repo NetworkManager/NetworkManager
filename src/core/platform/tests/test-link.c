@@ -2583,6 +2583,35 @@ test_vlan_set_xgress(void)
 /*****************************************************************************/
 
 static void
+test_link_set_properties(void)
+{
+    const NMPlatformLink     *link;
+    NMPlatformLinkProps       props;
+    NMPlatformLinkChangeFlags flags;
+
+    props = (NMPlatformLinkProps){
+        .tx_queue_length  = 599,
+        .gso_max_size     = 10001,
+        .gso_max_segments = 512,
+    };
+    flags = NM_PLATFORM_LINK_CHANGE_TX_QUEUE_LENGTH | NM_PLATFORM_LINK_CHANGE_GSO_MAX_SIZE
+            | NM_PLATFORM_LINK_CHANGE_GSO_MAX_SEGMENTS;
+
+    link = nmtstp_link_dummy_add(NM_PLATFORM_GET, FALSE, "dummy1");
+    g_assert(nm_platform_link_change(NM_PLATFORM_GET, link->ifindex, &props, flags));
+
+    link = nmtstp_link_get(NM_PLATFORM_GET, link->ifindex, "dummy1");
+    g_assert(link);
+    g_assert_cmpint(link->link_props.tx_queue_length, ==, 599);
+    g_assert_cmpint(link->link_props.gso_max_size, ==, 10001);
+    g_assert_cmpint(link->link_props.gso_max_segments, ==, 512);
+
+    nmtstp_link_delete(NULL, -1, link->ifindex, "dummy1", TRUE);
+}
+
+/*****************************************************************************/
+
+static void
 test_create_many_links_do(guint n_devices)
 {
     gint64                 time, start_time = nm_utils_get_monotonic_timestamp_nsec();
@@ -3947,6 +3976,8 @@ _nmtstp_setup_tests(void)
         test_software_detect_add("/link/software/detect/wireguard/2", NM_LINK_TYPE_WIREGUARD, 2);
 
         g_test_add_func("/link/software/vlan/set-xgress", test_vlan_set_xgress);
+
+        g_test_add_func("/link/set-properties", test_link_set_properties);
 
         g_test_add_data_func("/link/create-many-links/20",
                              GUINT_TO_POINTER(20),

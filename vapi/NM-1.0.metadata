@@ -36,6 +36,7 @@ SETTING_IP4_CONFIG_*        parent="NM.SettingIP4Config"            name="SETTIN
 SETTING_IP6_CONFIG_*        parent="NM.SettingIP6Config"            name="SETTING_IP6_CONFIG_(.+)"
 SETTING_IP_CONFIG_*         parent="NM.SettingIPConfig"             name="SETTING_IP_CONFIG_(.+)"
 SETTING_IP_TUNNEL_*         parent="NM.SettingIPTunnel"             name="SETTING_IP_TUNNEL_(.+)"
+SETTING_LINK_*              parent="NM.SettingLink"                 name="SETTING_LINK_(.+)"
 SETTING_LOOPBACK_*          parent="NM.SettingLoopback"             name="SETTING_LOOPBACK_(.+)"
 SETTING_MACSEC_*            parent="NM.SettingMacsec"               name="SETTING_MACSEC_(.+)"
 SETTING_MACVLAN_*           parent="NM.SettingMacvlan"              name="SETTING_MACVLAN_(.+)"

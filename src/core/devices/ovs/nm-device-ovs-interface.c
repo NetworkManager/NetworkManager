@@ -132,6 +132,8 @@ link_changed(NMDevice *device, const NMPlatformLink *pllink)
             nm_device_devip_set_failed(device, AF_INET6, NM_DEVICE_STATE_REASON_CONFIG_FAILED);
             return;
         }
+
+        nm_device_link_properties_set(device, FALSE);
         nm_device_bring_up(device);
 
         nm_device_devip_set_state(device, AF_INET, NM_DEVICE_IP_STATE_PENDING, NULL);
@@ -214,6 +216,7 @@ _set_ip_ifindex_tun(gpointer user_data)
 
     priv->wait_link_is_waiting = FALSE;
     nm_device_set_ip_ifindex(device, priv->wait_link_ifindex);
+    nm_device_link_properties_set(device, FALSE);
 
     nm_device_devip_set_state(device, AF_INET, NM_DEVICE_IP_STATE_PENDING, NULL);
     nm_device_devip_set_state(device, AF_INET6, NM_DEVICE_IP_STATE_PENDING, NULL);
@@ -303,6 +306,7 @@ act_stage3_ip_config(NMDevice *device, int addr_family)
         return;
     }
 
+    nm_device_link_properties_set(device, FALSE);
     nm_device_devip_set_state(device, addr_family, NM_DEVICE_IP_STATE_READY, NULL);
 }
 
