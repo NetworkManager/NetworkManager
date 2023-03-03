@@ -1,5 +1,14 @@
 #!/bin/bash
 
+# In our git repository we vendor in several external projects.
+# We do so via git-subtree.
+#
+# Run this script (without arguments) for re-importing the latest
+# version of those projects.
+#
+# You can also specify the projects to reimport on the command line,
+# ./contrib/scripts/git-subtree-reimport.sh  [ c-list | c-rbtree | c-siphash | c-stdaux | n-acd | n-dhcp4 ... ]
+
 set -e
 
 cd "$(dirname "$(readlink -f "$0")")/../.."
