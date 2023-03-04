@@ -583,6 +583,10 @@ if enable_ppp
   if pppd_plugin_dir == ''
     pppd_plugin_dir = join_paths(nm_libdir, 'pppd', pppd_version)
   endif
+
+  if (pppd_dep.found())
+    config_h.set10('WITH_PPP_VERSION_2_5_OR_NEWER', 1)
+  endif
 endif
 config_h.set10('WITH_PPP', enable_ppp)
 

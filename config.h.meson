@@ -236,6 +236,9 @@
 /* Define if you have PPP support */
 #mesondefine WITH_PPP
 
+/* Define if you have a more recent version of pppd */
+#mesondefine WITH_PPP_VERSION_2_5_OR_NEWER
+
 /* Define to path of pppd binary */
 #mesondefine PPPD_PATH
 

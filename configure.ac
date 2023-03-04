@@ -790,6 +790,11 @@ fi
 AC_DEFINE_UNQUOTED(PPPD_PATH, "$PPPD_PATH", [Define to path of pppd binary])
 AC_SUBST(PPPD_PATH)
 
+AC_CHECK_HEADERS(pppd/chap.h)
+if test "x$ac_cv_header_pppd_chap_h" = xyes; then
+	AC_DEFINE(WITH_PPP_VERSION_2_5_OR_NEWER, 1, "Defined if one has a recent version of pppd headers installed")
+fi
+
 # ModemManager1 with libmm-glib
 AC_ARG_WITH(modem-manager-1,
             AS_HELP_STRING([--with-modem-manager-1],
