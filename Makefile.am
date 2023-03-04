@@ -3186,6 +3186,7 @@ src_core_ppp_nm_pppd_plugin_la_CPPFLAGS = \
 src_core_ppp_nm_pppd_plugin_la_SOURCES = \
 	src/core/ppp/nm-pppd-plugin.c \
 	src/core/ppp/nm-pppd-plugin.h \
+	src/core/ppp/nm-pppd-compat.h \
 	src/core/ppp/nm-ppp-status.h
 
 src_core_ppp_nm_pppd_plugin_la_LDFLAGS = \
