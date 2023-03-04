@@ -767,13 +767,17 @@ else
 fi
 AM_CONDITIONAL(WITH_PPP, test "${enable_ppp}" = "yes")
 
+PPPD_VERSION=2.4.9
+PKG_CHECK_EXISTS([pppd], [
+	PPPD_VERSION=`$PKG_CONFIG --modversion pppd`
+])
+
 AC_ARG_WITH([pppd-plugin-dir],
             AS_HELP_STRING([--with-pppd-plugin-dir=DIR], [path to the pppd plugins directory]))
-
 if test -n "$with_pppd_plugin_dir" ; then
 	PPPD_PLUGIN_DIR="$with_pppd_plugin_dir"
 else
-	PPPD_PLUGIN_DIR="${libdir}/pppd/2.4.5"
+	PPPD_PLUGIN_DIR="${libdir}/pppd/$PPPD_VERSION"
 fi
 AC_SUBST(PPPD_PLUGIN_DIR)
 
