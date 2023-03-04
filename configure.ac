@@ -767,13 +767,17 @@ else
 fi
 AM_CONDITIONAL(WITH_PPP, test "${enable_ppp}" = "yes")
 
+PPPD_VERSION=2.4.9
+PKG_CHECK_EXISTS([pppd], [
+	PPPD_VERSION=`$PKG_CONFIG --modversion pppd`
+])
+
 AC_ARG_WITH([pppd-plugin-dir],
             AS_HELP_STRING([--with-pppd-plugin-dir=DIR], [path to the pppd plugins directory]))
-
 if test -n "$with_pppd_plugin_dir" ; then
 	PPPD_PLUGIN_DIR="$with_pppd_plugin_dir"
 else
-	PPPD_PLUGIN_DIR="${libdir}/pppd/2.4.5"
+	PPPD_PLUGIN_DIR="${libdir}/pppd/$PPPD_VERSION"
 fi
 AC_SUBST(PPPD_PLUGIN_DIR)
 
@@ -785,6 +789,15 @@ else
 fi
 AC_DEFINE_UNQUOTED(PPPD_PATH, "$PPPD_PATH", [Define to path of pppd binary])
 AC_SUBST(PPPD_PATH)
+
+AC_CHECK_HEADERS(pppd/chap.h pppd/chap-new.h pppd/chap_ms.h)
+AC_DEFINE_UNQUOTED([PPP_VERSION(x,y,z)],
+	[((x & 0xFF) << 16 | (y & 0xFF) << 8 | (z & 0xFF) << 0)],
+	[Macro to help determine the particular version of pppd])
+PPP_VERSION=$(echo $PPPD_VERSION | sed -e "s/\./\,/g")
+AC_DEFINE_UNQUOTED(WITH_PPP_VERSION, PPP_VERSION($PPP_VERSION),
+	[The real version of pppd represented as an int])
+
 
 # ModemManager1 with libmm-glib
 AC_ARG_WITH(modem-manager-1,
