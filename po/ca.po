@@ -297,7 +297,7 @@ msgstr "Connexió ADSL"
 #: src/core/devices/nm-device-ethernet-utils.c:20
 #, c-format
 msgid "Wired connection %d"
-msgstr "Connexions per xarxa amb fil %d"
+msgstr "Connexió per cable %d"
 
 #: src/core/devices/nm-device-ethernet.c:1628
 #: src/libnmc-setting/nm-meta-setting-desc.c:8303
@@ -311,7 +311,7 @@ msgstr "Connexió PPPoE"
 
 #: src/core/devices/nm-device-ethernet.c:1686
 msgid "Wired connection"
-msgstr "Connexions per xarxa amb fil"
+msgstr "Connexió per cable"
 
 #: src/core/devices/nm-device-infiniband.c:157
 #: src/libnmc-setting/nm-meta-setting-desc.c:8279
@@ -751,11 +751,11 @@ msgstr "Error: no s'ha pogut afegir/activar la connexió nova: %s"
 
 #: src/libnm-client-impl/nm-device-adsl.c:66
 msgid "The connection was not an ADSL connection."
-msgstr "La connexió no era una connexió ADSL"
+msgstr "La connexió no era una connexió ADSL."
 
 #: src/libnm-client-impl/nm-device-bond.c:104
 msgid "The connection was not a bond connection."
-msgstr "La connexió no era una connexió vinculada"
+msgstr "La connexió no era una connexió vinculada."
 
 #: src/libnm-client-impl/nm-device-bridge.c:108
 msgid "The connection was not a bridge connection."
@@ -763,7 +763,7 @@ msgstr "La connexió no era una connexió pont."
 
 #: src/libnm-client-impl/nm-device-bt.c:133
 msgid "The connection was not a Bluetooth connection."
-msgstr "La connexió no era una connexió Bluetooth"
+msgstr "La connexió no era una connexió Bluetooth."
 
 #: src/libnm-client-impl/nm-device-bt.c:141
 #, fuzzy
@@ -4846,11 +4846,11 @@ msgstr "0 (cap)"
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:1884
 msgid "agent-owned, "
-msgstr "posseït-per-agent"
+msgstr "posseït-per-agent, "
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:1886
 msgid "not saved, "
-msgstr "sense desar."
+msgstr "sense desar, "
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:1888
 msgid "not required, "
