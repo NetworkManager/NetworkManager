@@ -1463,21 +1463,23 @@ global_dns_equal(NMGlobalDnsConfig *old, NMGlobalDnsConfig *new)
     if ((!old->domains || !new->domains) && old->domains != new->domains)
         return FALSE;
 
-    if (g_hash_table_size(old->domains) != g_hash_table_size(new->domains))
+    if (nm_g_hash_table_size(old->domains) != nm_g_hash_table_size(new->domains))
         return FALSE;
 
-    g_hash_table_iter_init(&iter, old->domains);
-    while (g_hash_table_iter_next(&iter, &key, &value_old)) {
-        value_new = g_hash_table_lookup(new->domains, key);
-        if (!value_new)
-            return FALSE;
+    if (old->domains) {
+        g_hash_table_iter_init(&iter, old->domains);
+        while (g_hash_table_iter_next(&iter, &key, &value_old)) {
+            value_new = g_hash_table_lookup(new->domains, key);
+            if (!value_new)
+                return FALSE;
 
-        domain_old = value_old;
-        domain_new = value_new;
+            domain_old = value_old;
+            domain_new = value_new;
 
-        if (!nm_strv_equal(domain_old->options, domain_new->options)
-            || !nm_strv_equal(domain_old->servers, domain_new->servers))
-            return FALSE;
+            if (!nm_strv_equal(domain_old->options, domain_new->options)
+                || !nm_strv_equal(domain_old->servers, domain_new->servers))
+                return FALSE;
+        }
     }
 
     return TRUE;
