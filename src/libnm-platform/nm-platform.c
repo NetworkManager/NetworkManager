@@ -6187,6 +6187,7 @@ nm_platform_lnk_bond_to_string(const NMPlatformLnkBond *lnk, char *buf, gsize le
     char sbuf_miimon[30];
     char sbuf_updelay[30];
     char sbuf_downdelay[30];
+    char sbuf_lacp_active[30];
     char sbuf_peer_notif_delay[60];
     char sbuf_resend_igmp[30];
     char sbuf_lp_interval[30];
@@ -6221,7 +6222,9 @@ nm_platform_lnk_bond_to_string(const NMPlatformLnkBond *lnk, char *buf, gsize le
         " xmit_hash_policy %u"
         " num_gray_arp %u"
         " all_ports_active %u"
+        " arp_missed_max %u"
         " lacp_rate %u"
+        "%s" /* lacp_active */
         " ad_select %u"
         " use_carrier %d"
         "%s" /* tlb_dynamic_lb */,
@@ -6271,7 +6274,14 @@ nm_platform_lnk_bond_to_string(const NMPlatformLnkBond *lnk, char *buf, gsize le
         lnk->xmit_hash_policy,
         lnk->num_grat_arp,
         lnk->all_ports_active,
+        lnk->arp_missed_max,
         lnk->lacp_rate,
+        lnk->lacp_active_has || lnk->lacp_active != 0
+            ? nm_sprintf_buf(sbuf_lacp_active,
+                             " lacp_active%s %u",
+                             !lnk->lacp_active_has ? "?" : "",
+                             lnk->lacp_active)
+            : "",
         lnk->ad_select,
         (int) lnk->use_carrier,
         lnk->tlb_dynamic_lb_has ? nm_sprintf_buf(sbuf_tlb_dynamic_lb,
@@ -6287,6 +6297,15 @@ nm_platform_lnk_bond_to_string(const NMPlatformLnkBond *lnk, char *buf, gsize le
 
             nm_strbuf_append_c(&buf, &len, ' ');
             nm_strbuf_append_str(&buf, &len, nm_inet4_ntop(lnk->arp_ip_target[i], target));
+        }
+    }
+    if (lnk->ns_ip6_targets_num > 0) {
+        nm_strbuf_append_str(&buf, &len, " ns_ip6_target");
+        for (i = 0; i < lnk->ns_ip6_targets_num; i++) {
+            char target[INET6_ADDRSTRLEN];
+
+            nm_strbuf_append_c(&buf, &len, ' ');
+            nm_strbuf_append_str(&buf, &len, nm_inet6_ntop(&lnk->ns_ip6_target[i], target));
         }
     }
     return buf;
@@ -8037,15 +8056,19 @@ nm_platform_lnk_bond_hash_update(const NMPlatformLnkBond *obj, NMHashState *h)
                         obj->ad_actor_system,
                         obj->ad_select,
                         obj->all_ports_active,
+                        obj->arp_missed_max,
                         obj->arp_ip_targets_num,
                         obj->fail_over_mac,
                         obj->lacp_rate,
+                        obj->lacp_active,
+                        obj->ns_ip6_targets_num,
                         obj->num_grat_arp,
                         obj->mode,
                         obj->primary_reselect,
                         obj->xmit_hash_policy,
                         NM_HASH_COMBINE_BOOLS(guint16,
                                               obj->downdelay_has,
+                                              obj->lacp_active_has,
                                               obj->lp_interval_has,
                                               obj->miimon_has,
                                               obj->peer_notif_delay_has,
@@ -8056,12 +8079,19 @@ nm_platform_lnk_bond_hash_update(const NMPlatformLnkBond *obj, NMHashState *h)
                                               obj->use_carrier));
 
     nm_hash_update(h, obj->arp_ip_target, obj->arp_ip_targets_num * sizeof(obj->arp_ip_target[0]));
+    nm_hash_update(h, obj->ns_ip6_target, obj->ns_ip6_targets_num * sizeof(obj->ns_ip6_target[0]));
 }
 
 int
 nm_platform_lnk_bond_cmp(const NMPlatformLnkBond *a, const NMPlatformLnkBond *b)
 {
     NM_CMP_SELF(a, b);
+    NM_CMP_FIELD(a, b, arp_ip_targets_num);
+    NM_CMP_FIELD(a, b, ns_ip6_targets_num);
+    NM_CMP_FIELD_MEMCMP_LEN(a,
+                            b,
+                            ns_ip6_target,
+                            a->ns_ip6_targets_num * sizeof(a->ns_ip6_target[0]));
     NM_CMP_FIELD_MEMCMP_LEN(a,
                             b,
                             arp_ip_target,
@@ -8083,14 +8113,16 @@ nm_platform_lnk_bond_cmp(const NMPlatformLnkBond *a, const NMPlatformLnkBond *b)
     NM_CMP_FIELD_MEMCMP(a, b, ad_actor_system);
     NM_CMP_FIELD(a, b, ad_select);
     NM_CMP_FIELD(a, b, all_ports_active);
-    NM_CMP_FIELD(a, b, arp_ip_targets_num);
+    NM_CMP_FIELD(a, b, arp_missed_max);
     NM_CMP_FIELD(a, b, fail_over_mac);
     NM_CMP_FIELD(a, b, lacp_rate);
+    NM_CMP_FIELD(a, b, lacp_active);
     NM_CMP_FIELD(a, b, num_grat_arp);
     NM_CMP_FIELD(a, b, mode);
     NM_CMP_FIELD(a, b, primary_reselect);
     NM_CMP_FIELD(a, b, xmit_hash_policy);
     NM_CMP_FIELD_BOOL(a, b, downdelay_has);
+    NM_CMP_FIELD_BOOL(a, b, lacp_active_has);
     NM_CMP_FIELD_BOOL(a, b, lp_interval_has);
     NM_CMP_FIELD_BOOL(a, b, miimon_has);
     NM_CMP_FIELD_BOOL(a, b, peer_notif_delay_has);

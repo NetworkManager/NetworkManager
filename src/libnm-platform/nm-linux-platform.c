@@ -180,6 +180,9 @@ G_STATIC_ASSERT(RTA_MAX == (__RTA_MAX - 1));
 /*****************************************************************************/
 
 #define IFLA_BOND_PEER_NOTIF_DELAY 28
+#define IFLA_BOND_AD_LACP_ACTIVE   29
+#define IFLA_BOND_MISSED_MAX       30
+#define IFLA_BOND_NS_IP6_TARGET    31
 
 #undef IFLA_BOND_MAX
 
@@ -1606,6 +1609,9 @@ _parse_lnk_bond(const char *kind, struct nlattr *info_data)
         [IFLA_BOND_AD_ACTOR_SYSTEM]   = {.minlen = sizeof(NMEtherAddr)},
         [IFLA_BOND_TLB_DYNAMIC_LB]    = {.type = NLA_U8},
         [IFLA_BOND_PEER_NOTIF_DELAY]  = {.type = NLA_U32},
+        [IFLA_BOND_MISSED_MAX]        = {.type = NLA_U8},
+        [IFLA_BOND_AD_LACP_ACTIVE]    = {.type = NLA_U8},
+        [IFLA_BOND_NS_IP6_TARGET]     = {.type = NLA_NESTED},
     };
     NMPlatformLnkBond *props;
     struct nlattr     *tb[G_N_ELEMENTS(policy)];
@@ -1660,6 +1666,19 @@ _parse_lnk_bond(const char *kind, struct nlattr *info_data)
             props->arp_ip_target[props->arp_ip_targets_num++] = nla_get_u32(attr);
         }
     }
+    if (tb[IFLA_BOND_NS_IP6_TARGET]) {
+        struct nlattr *attr;
+        int            rem;
+
+        nla_for_each_nested (attr, tb[IFLA_BOND_NS_IP6_TARGET], rem) {
+            if (props->ns_ip6_targets_num > NM_BOND_MAX_ARP_TARGETS - 1)
+                break;
+            if (nla_len(attr) < sizeof(struct in6_addr))
+                break;
+
+            props->ns_ip6_target[props->ns_ip6_targets_num++] = nla_get_in6_addr(attr);
+        }
+    }
     if (tb[IFLA_BOND_ARP_VALIDATE])
         props->arp_validate = nla_get_u32(tb[IFLA_BOND_ARP_VALIDATE]);
     if (tb[IFLA_BOND_ARP_ALL_TARGETS])
@@ -1680,6 +1699,8 @@ _parse_lnk_bond(const char *kind, struct nlattr *info_data)
         props->num_grat_arp = nla_get_u8(tb[IFLA_BOND_NUM_PEER_NOTIF]);
     if (tb[IFLA_BOND_ALL_SLAVES_ACTIVE])
         props->all_ports_active = nla_get_u8(tb[IFLA_BOND_ALL_SLAVES_ACTIVE]);
+    if (tb[IFLA_BOND_MISSED_MAX])
+        props->arp_missed_max = nla_get_u8(tb[IFLA_BOND_MISSED_MAX]);
     if (tb[IFLA_BOND_MIN_LINKS])
         props->min_links = nla_get_u32(tb[IFLA_BOND_MIN_LINKS]);
     if (tb[IFLA_BOND_LP_INTERVAL])
@@ -1688,6 +1709,10 @@ _parse_lnk_bond(const char *kind, struct nlattr *info_data)
         props->packets_per_port = nla_get_u32(tb[IFLA_BOND_PACKETS_PER_SLAVE]);
     if (tb[IFLA_BOND_AD_LACP_RATE])
         props->lacp_rate = nla_get_u8(tb[IFLA_BOND_AD_LACP_RATE]);
+    if (tb[IFLA_BOND_AD_LACP_ACTIVE]) {
+        props->lacp_active     = nla_get_u8(tb[IFLA_BOND_AD_LACP_ACTIVE]);
+        props->lacp_active_has = TRUE;
+    }
     if (tb[IFLA_BOND_AD_SELECT])
         props->ad_select = nla_get_u8(tb[IFLA_BOND_AD_SELECT]);
     if (tb[IFLA_BOND_AD_ACTOR_SYS_PRIO])
@@ -4699,6 +4724,17 @@ _nl_msg_new_link_set_linkinfo(struct nl_msg *msg, NMLinkType link_type, gconstpo
             nla_nest_end(msg, targets);
         }
 
+        if (props->ns_ip6_targets_num > 0) {
+            targets = nla_nest_start(msg, IFLA_BOND_NS_IP6_TARGET);
+            if (!targets)
+                goto nla_put_failure;
+
+            for (i = 0; i < props->ns_ip6_targets_num; i++)
+                NLA_PUT(msg, i, sizeof(struct in6_addr), &props->ns_ip6_target[i]);
+
+            nla_nest_end(msg, targets);
+        }
+
         if (props->arp_all_targets)
             NLA_PUT_U32(msg, IFLA_BOND_ARP_ALL_TARGETS, props->arp_all_targets);
         if (props->arp_interval)
@@ -4734,6 +4770,8 @@ _nl_msg_new_link_set_linkinfo(struct nl_msg *msg, NMLinkType link_type, gconstpo
                     &props->ad_actor_system);
         if (props->ad_select)
             NLA_PUT_U8(msg, IFLA_BOND_AD_SELECT, props->ad_select);
+        if (props->arp_missed_max)
+            NLA_PUT_U8(msg, IFLA_BOND_MISSED_MAX, props->arp_missed_max);
 
         NLA_PUT_U8(msg, IFLA_BOND_ALL_SLAVES_ACTIVE, props->all_ports_active);
 
@@ -4741,6 +4779,8 @@ _nl_msg_new_link_set_linkinfo(struct nl_msg *msg, NMLinkType link_type, gconstpo
             NLA_PUT_U8(msg, IFLA_BOND_FAIL_OVER_MAC, props->fail_over_mac);
         if (props->lacp_rate)
             NLA_PUT_U8(msg, IFLA_BOND_AD_LACP_RATE, props->lacp_rate);
+        if (props->lacp_active_has)
+            NLA_PUT_U8(msg, IFLA_BOND_AD_LACP_ACTIVE, props->lacp_active);
         if (props->num_grat_arp)
             NLA_PUT_U8(msg, IFLA_BOND_NUM_PEER_NOTIF, props->num_grat_arp);
 

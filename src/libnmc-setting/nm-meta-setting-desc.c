@@ -2474,7 +2474,9 @@ _get_fcn_bond_options(ARGS_GET_FCN)
 
         nm_setting_bond_get_option(s_bond, i, &key, &val);
 
-        if (nm_streq(key, NM_SETTING_BOND_OPTION_ARP_IP_TARGET)) {
+        if (NM_IN_STRSET(key,
+                         NM_SETTING_BOND_OPTION_ARP_IP_TARGET,
+                         NM_SETTING_BOND_OPTION_NS_IP6_TARGET)) {
             val_tmp = g_strdup(val);
             for (p = val_tmp; p && *p; p++) {
                 if (*p == ',')
@@ -2516,7 +2518,8 @@ _nm_meta_setting_bond_add_option(NMSetting  *setting,
         value = nmc_bond_validate_mode(value, error);
         if (!value)
             return FALSE;
-    } else if (nm_streq(name, NM_SETTING_BOND_OPTION_ARP_IP_TARGET)) {
+    } else if (nm_streq(name, NM_SETTING_BOND_OPTION_ARP_IP_TARGET)
+               || nm_streq(name, NM_SETTING_BOND_OPTION_NS_IP6_TARGET)) {
         value = tmp_value = g_strdup(value);
         for (p = tmp_value; p && *p; p++)
             if (*p == ' ')
