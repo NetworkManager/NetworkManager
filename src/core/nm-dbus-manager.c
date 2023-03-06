@@ -1421,6 +1421,11 @@ nm_dbus_manager_request_name_sync(NMDBusManager *self)
 
     priv = NM_DBUS_MANAGER_GET_PRIVATE(self);
 
+    if (priv->objmgr_registration_id == 0) {
+        /* Do nothing. We're presumably in the configure-and-quit mode. */
+        return TRUE;
+    }
+
     g_return_val_if_fail(G_IS_DBUS_CONNECTION(priv->main_dbus_connection), FALSE);
 
     ret = g_dbus_connection_call_sync(
@@ -1498,9 +1503,6 @@ nm_dbus_manager_setup(NMDBusManager *self)
     priv->objmgr_registration_id = registration_id;
 
     _LOGD("D-Bus connection created and ObjectManager object registered");
-
-    if (!nm_dbus_manager_request_name_sync(self))
-        return FALSE;
 
     return TRUE;
 }

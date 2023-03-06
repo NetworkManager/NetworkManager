@@ -508,6 +508,9 @@ main(int argc, char *argv[])
     nm_log_dbg(LOGD_CORE, "setting up local loopback");
     nm_platform_link_change_flags(NM_PLATFORM_GET, 1, IFF_UP, TRUE);
 
+    if (!nm_dbus_manager_request_name_sync(nm_dbus_manager_get()))
+        goto done;
+
     success = TRUE;
 
     if (configure_and_quit == FALSE) {
