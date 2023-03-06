@@ -141,7 +141,7 @@ bond_options_changed(GObject *object, GParamSpec *pspec, gpointer user_data)
     nmt_newt_entry_set_text(priv->arp_interval, val ?: "0");
 
     val = nm_setting_bond_get_option_by_name(s_bond, NM_SETTING_BOND_OPTION_ARP_IP_TARGET);
-    ips = nm_utils_bond_option_arp_ip_targets_split(val);
+    ips = nm_utils_bond_option_ip_split(val);
     g_object_set(G_OBJECT(priv->arp_ip_target),
                  "strings",
                  ips ?: NM_PTRARRAY_EMPTY(const char *),

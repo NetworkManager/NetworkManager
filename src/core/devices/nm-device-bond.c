@@ -39,7 +39,8 @@
         NM_SETTING_BOND_OPTION_PACKETS_PER_SLAVE, NM_SETTING_BOND_OPTION_PRIMARY_RESELECT, \
         NM_SETTING_BOND_OPTION_RESEND_IGMP, NM_SETTING_BOND_OPTION_TLB_DYNAMIC_LB,         \
         NM_SETTING_BOND_OPTION_USE_CARRIER, NM_SETTING_BOND_OPTION_XMIT_HASH_POLICY,       \
-        NM_SETTING_BOND_OPTION_NUM_GRAT_ARP, NM_SETTING_BOND_OPTION_PEER_NOTIF_DELAY
+        NM_SETTING_BOND_OPTION_NUM_GRAT_ARP, NM_SETTING_BOND_OPTION_PEER_NOTIF_DELAY,      \
+        NM_SETTING_BOND_OPTION_ARP_MISSED_MAX, NM_SETTING_BOND_OPTION_LACP_ACTIVE
 
 #define OPTIONS_REAPPLY_SUBSET                                                             \
     NM_SETTING_BOND_OPTION_MIIMON, NM_SETTING_BOND_OPTION_UPDELAY,                         \
@@ -51,11 +52,12 @@
         NM_SETTING_BOND_OPTION_PACKETS_PER_SLAVE, NM_SETTING_BOND_OPTION_PRIMARY_RESELECT, \
         NM_SETTING_BOND_OPTION_RESEND_IGMP, NM_SETTING_BOND_OPTION_USE_CARRIER,            \
         NM_SETTING_BOND_OPTION_XMIT_HASH_POLICY, NM_SETTING_BOND_OPTION_NUM_GRAT_ARP,      \
-        NM_SETTING_BOND_OPTION_PEER_NOTIF_DELAY
+        NM_SETTING_BOND_OPTION_PEER_NOTIF_DELAY, NM_SETTING_BOND_OPTION_ARP_MISSED_MAX,    \
+        NM_SETTING_BOND_OPTION_LACP_ACTIVE
 
 #define OPTIONS_REAPPLY_FULL                                     \
     OPTIONS_REAPPLY_SUBSET, NM_SETTING_BOND_OPTION_ACTIVE_SLAVE, \
-        NM_SETTING_BOND_OPTION_ARP_IP_TARGET
+        NM_SETTING_BOND_OPTION_ARP_IP_TARGET, NM_SETTING_BOND_OPTION_NS_IP6_TARGET
 
 /*****************************************************************************/
 
@@ -268,7 +270,7 @@ set_arp_targets(NMDevice *device, const char *cur_arp_ip_target, const char *new
 
     cur_strv =
         nm_strsplit_set_full(cur_arp_ip_target, NM_ASCII_SPACES, NM_STRSPLIT_SET_FLAGS_STRSTRIP);
-    new_strv = nm_utils_bond_option_arp_ip_targets_split(new_arp_ip_target);
+    new_strv = nm_utils_bond_option_ip_split(new_arp_ip_target);
 
     cur_len = NM_PTRARRAY_LEN(cur_strv);
     new_len = NM_PTRARRAY_LEN(new_strv);
@@ -365,7 +367,7 @@ _bond_arp_ip_target_to_platform(const char *value, in_addr_t out[static NM_BOND_
     int                  i;
     int                  added = 0;
 
-    ip = nm_utils_bond_option_arp_ip_targets_split(value);
+    ip = nm_utils_bond_option_ip_split(value);
 
     if (!ip)
         return added;
@@ -377,6 +379,31 @@ _bond_arp_ip_target_to_platform(const char *value, in_addr_t out[static NM_BOND_
             nm_assert_not_reached(); /* verify() already validated the IP addresses */
 
         out[added++] = in_a;
+    }
+    return added;
+}
+
+static guint8
+_bond_ns_ip6_target_to_platform(const char     *value,
+                                struct in6_addr out[static NM_BOND_MAX_ARP_TARGETS])
+{
+    gs_free const char **ip = NULL;
+    struct in6_addr      in6_a;
+    int                  i;
+    int                  added = 0;
+
+    ip = nm_utils_bond_option_ip_split(value);
+
+    if (!ip)
+        return added;
+
+    for (i = 0; ip[i]; i++) {
+        if (added > NM_BOND_MAX_ARP_TARGETS - 1)
+            break;
+        if (!nm_inet_parse_bin(AF_INET6, ip[i], NULL, &in6_a))
+            nm_assert_not_reached(); /* verify() already validated the IP addresses */
+
+        out[added++] = in6_a;
     }
     return added;
 }
@@ -437,6 +464,10 @@ _platform_lnk_bond_init_from_setting(NMSettingBond *s_bond, NMPlatformLnkBond *p
                                    NM_SETTING_BOND_OPTION_XMIT_HASH_POLICY),
         .num_grat_arp      = _v_u8(s_bond, NM_SETTING_BOND_OPTION_NUM_GRAT_ARP),
         .all_ports_active  = _v_u8(s_bond, NM_SETTING_BOND_OPTION_ALL_SLAVES_ACTIVE),
+        .arp_missed_max    = _v_u8(s_bond, NM_SETTING_BOND_OPTION_ARP_MISSED_MAX),
+        .lacp_active       = _v_fcn(_nm_setting_bond_lacp_active_from_string,
+                              s_bond,
+                              NM_SETTING_BOND_OPTION_LACP_ACTIVE),
         .lacp_rate         = _v_fcn(_nm_setting_bond_lacp_rate_from_string,
                             s_bond,
                             NM_SETTING_BOND_OPTION_LACP_RATE),
@@ -456,6 +487,11 @@ _platform_lnk_bond_init_from_setting(NMSettingBond *s_bond, NMPlatformLnkBond *p
         props->arp_ip_targets_num =
             _bond_arp_ip_target_to_platform(opt_value, props->arp_ip_target);
 
+    opt_value = nm_setting_bond_get_option_normalized(s_bond, NM_SETTING_BOND_OPTION_NS_IP6_TARGET);
+    if (opt_value != NULL)
+        props->ns_ip6_targets_num =
+            _bond_ns_ip6_target_to_platform(opt_value, props->ns_ip6_target);
+
     props->miimon_has           = !props->arp_interval && !props->arp_validate;
     props->updelay_has          = props->miimon_has && props->miimon;
     props->downdelay_has        = props->miimon_has && props->miimon;
@@ -463,6 +499,7 @@ _platform_lnk_bond_init_from_setting(NMSettingBond *s_bond, NMPlatformLnkBond *p
     props->resend_igmp_has      = props->resend_igmp != 1;
     props->lp_interval_has      = props->lp_interval != 1;
     props->tlb_dynamic_lb_has   = NM_IN_SET(props->mode, NM_BOND_MODE_TLB, NM_BOND_MODE_ALB);
+    props->lacp_active_has      = NM_IN_SET(props->mode, NM_BOND_MODE_8023AD);
 }
 
 static void

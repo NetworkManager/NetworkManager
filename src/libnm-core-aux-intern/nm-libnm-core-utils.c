@@ -13,7 +13,7 @@
 /*****************************************************************************/
 
 const char **
-nm_utils_bond_option_arp_ip_targets_split(const char *arp_ip_target)
+nm_utils_bond_option_ip_split(const char *arp_ip_target)
 {
     return nm_strsplit_set_full(arp_ip_target, ",", NM_STRSPLIT_SET_FLAGS_STRSTRIP);
 }
@@ -36,6 +36,7 @@ _nm_setting_bond_remove_options_arp_interval(NMSettingBond *s_bond)
 
     nm_setting_bond_remove_option(s_bond, NM_SETTING_BOND_OPTION_ARP_INTERVAL);
     nm_setting_bond_remove_option(s_bond, NM_SETTING_BOND_OPTION_ARP_IP_TARGET);
+    nm_setting_bond_remove_option(s_bond, NM_SETTING_BOND_OPTION_NS_IP6_TARGET);
 }
 
 /*****************************************************************************/
@@ -85,6 +86,20 @@ NM_UTILS_STRING_TABLE_LOOKUP_DEFINE(
     {"active", NM_BOND_FAIL_OVER_MAC_ACTIVE},
     {"follow", NM_BOND_FAIL_OVER_MAC_FOLLOW},
     {"none", NM_BOND_FAIL_OVER_MAC_NONE}, );
+
+NM_UTILS_STRING_TABLE_LOOKUP_DEFINE(
+    _nm_setting_bond_lacp_active_from_string,
+    NMBondLacpActive,
+    {
+        G_STATIC_ASSERT_EXPR(_NM_BOND_LACP_ACTIVE_NUM <= 2);
+
+        if (name && name[0] < '0' + _NM_BOND_LACP_ACTIVE_NUM && name[0] >= '0' && name[1] == '\0') {
+            return name[0] - '0';
+        }
+    },
+    { return NM_BOND_LACP_ACTIVE_ON; },
+    {"off", NM_BOND_LACP_ACTIVE_OFF},
+    {"on", NM_BOND_LACP_ACTIVE_ON}, );
 
 NM_UTILS_STRING_TABLE_LOOKUP_DEFINE(
     _nm_setting_bond_lacp_rate_from_string,

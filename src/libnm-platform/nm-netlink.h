@@ -290,6 +290,17 @@ size_t nla_memcpy(void *dst, const struct nlattr *nla, size_t dstsize);
     }                                                                    \
     G_STMT_END
 
+static inline struct in6_addr
+nla_get_in6_addr(const struct nlattr *nla)
+{
+    struct in6_addr in6;
+
+    nm_assert(nla_len(nla) >= sizeof(struct in6_addr));
+
+    nla_memcpy(&in6, nla, sizeof(in6));
+    return in6;
+}
+
 int nla_put(struct nl_msg *msg, int attrtype, int datalen, const void *data);
 
 static inline int
