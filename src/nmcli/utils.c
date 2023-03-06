@@ -1467,6 +1467,7 @@ nmc_terminal_spawn_pager(const NmcConfig *nmc_config)
     ev = g_get_environ();
     ev = g_environ_setenv(ev, "LESS", "FRSXMK", TRUE);
     ev = g_environ_setenv(ev, "LESSCHARSET", "utf-8", TRUE);
+    ev = g_environ_setenv(ev, "LESSSECURE", "1", FALSE);
 
     pager_pid = fork();
     if (pager_pid == -1) {
