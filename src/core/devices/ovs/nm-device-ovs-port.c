@@ -221,8 +221,13 @@ del_iface_cb(GError *error, gpointer user_data)
     g_object_unref(slave);
 }
 
-static void
-detach_port(NMDevice *device, NMDevice *port, gboolean configure)
+static NMTernary
+detach_port(NMDevice                  *device,
+            NMDevice                  *port,
+            gboolean                   configure,
+            GCancellable              *cancellable,
+            NMDeviceAttachPortCallback callback,
+            gpointer                   user_data)
 {
     NMDeviceOvsPort *self             = NM_DEVICE_OVS_PORT(device);
     bool             port_not_managed = !NM_IN_SET(nm_device_sys_iface_state_get(port),
@@ -248,6 +253,8 @@ detach_port(NMDevice *device, NMDevice *port, gboolean configure)
         if (NM_IS_DEVICE_OVS_INTERFACE(port))
             nm_device_update_from_platform_link(port, NULL);
     }
+
+    return TRUE;
 }
 
 /*****************************************************************************/

@@ -97,9 +97,16 @@ attach_port(NMDevice                  *device,
     return TRUE;
 }
 
-static void
-detach_port(NMDevice *device, NMDevice *port, gboolean configure)
-{}
+static NMTernary
+detach_port(NMDevice                  *device,
+            NMDevice                  *port,
+            gboolean                   configure,
+            GCancellable              *cancellable,
+            NMDeviceAttachPortCallback callback,
+            gpointer                   user_data)
+{
+    return TRUE;
+}
 
 void
 nm_device_ovs_reapply_connection(NMDevice *self, NMConnection *con_old, NMConnection *con_new)
