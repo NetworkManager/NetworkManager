@@ -8054,6 +8054,7 @@ int
 nm_platform_lnk_bond_cmp(const NMPlatformLnkBond *a, const NMPlatformLnkBond *b)
 {
     NM_CMP_SELF(a, b);
+    NM_CMP_FIELD(a, b, arp_ip_targets_num);
     NM_CMP_FIELD_MEMCMP_LEN(a,
                             b,
                             arp_ip_target,
@@ -8075,7 +8076,6 @@ nm_platform_lnk_bond_cmp(const NMPlatformLnkBond *a, const NMPlatformLnkBond *b)
     NM_CMP_FIELD_MEMCMP(a, b, ad_actor_system);
     NM_CMP_FIELD(a, b, ad_select);
     NM_CMP_FIELD(a, b, all_ports_active);
-    NM_CMP_FIELD(a, b, arp_ip_targets_num);
     NM_CMP_FIELD(a, b, fail_over_mac);
     NM_CMP_FIELD(a, b, lacp_rate);
     NM_CMP_FIELD(a, b, num_grat_arp);
