@@ -6402,10 +6402,17 @@ nm_device_master_release_slave(NMDevice           *self,
 
     /* first, let subclasses handle the release ... */
     if (info->slave_is_enslaved || nm_device_sys_iface_state_is_external(slave)
-        || release_type >= RELEASE_SLAVE_TYPE_CONFIG_FORCE)
-        NM_DEVICE_GET_CLASS(self)->detach_port(self,
-                                               slave,
-                                               release_type >= RELEASE_SLAVE_TYPE_CONFIG);
+        || release_type >= RELEASE_SLAVE_TYPE_CONFIG_FORCE) {
+        NMTernary ret;
+
+        ret = NM_DEVICE_GET_CLASS(self)->detach_port(self,
+                                                     slave,
+                                                     release_type >= RELEASE_SLAVE_TYPE_CONFIG,
+                                                     NULL,
+                                                     NULL,
+                                                     NULL);
+        nm_assert(NM_IN_SET(ret, TRUE, FALSE));
+    }
 
     /* raise notifications about the release, including clearing is_enslaved. */
     nm_device_slave_notify_release(slave, reason, release_type);

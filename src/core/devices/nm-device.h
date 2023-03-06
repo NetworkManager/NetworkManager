@@ -389,7 +389,15 @@ typedef struct _NMDeviceClass {
                              GCancellable              *cancellable,
                              NMDeviceAttachPortCallback callback,
                              gpointer                   user_data);
-    void (*detach_port)(NMDevice *self, NMDevice *port, gboolean configure);
+    /* This works similarly to attach_port(). However, current
+     * implementations don't report errors and so the only possible
+     * return values are TRUE and DEFAULT. */
+    NMTernary (*detach_port)(NMDevice                  *self,
+                             NMDevice                  *port,
+                             gboolean                   configure,
+                             GCancellable              *cancellable,
+                             NMDeviceAttachPortCallback callback,
+                             gpointer                   user_data);
 
     void (*parent_changed_notify)(NMDevice *self,
                                   int       old_ifindex,

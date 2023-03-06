@@ -241,8 +241,13 @@ attach_port(NMDevice                  *device,
     return TRUE;
 }
 
-static void
-detach_port(NMDevice *device, NMDevice *port, gboolean configure)
+static NMTernary
+detach_port(NMDevice                  *device,
+            NMDevice                  *port,
+            gboolean                   configure,
+            GCancellable              *cancellable,
+            NMDeviceAttachPortCallback callback,
+            gpointer                   user_data)
 {
     NMDeviceVrf *self = NM_DEVICE_VRF(device);
     gboolean     success;
@@ -277,6 +282,8 @@ detach_port(NMDevice *device, NMDevice *port, gboolean configure)
             _LOGI(LOGD_DEVICE, "VRF port %s was detached", nm_device_get_ip_iface(port));
         }
     }
+
+    return TRUE;
 }
 
 /*****************************************************************************/

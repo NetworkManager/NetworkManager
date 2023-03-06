@@ -695,8 +695,13 @@ attach_port(NMDevice                  *device,
     return TRUE;
 }
 
-static void
-detach_port(NMDevice *device, NMDevice *port, gboolean configure)
+static NMTernary
+detach_port(NMDevice                  *device,
+            NMDevice                  *port,
+            gboolean                   configure,
+            GCancellable              *cancellable,
+            NMDeviceAttachPortCallback callback,
+            gpointer                   user_data)
 {
     NMDeviceBond *self = NM_DEVICE_BOND(device);
     gboolean      success;
@@ -758,6 +763,8 @@ detach_port(NMDevice *device, NMDevice *port, gboolean configure)
             _LOGI(LOGD_BOND, "bond port %s was detached", nm_device_get_ip_iface(port));
         }
     }
+
+    return TRUE;
 }
 
 static gboolean
