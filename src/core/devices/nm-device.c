@@ -16101,12 +16101,10 @@ _set_state_full(NMDevice *self, NMDeviceState state, NMDeviceStateReason reason,
              * userspace IPv6LL enabled.
              */
             _dev_addrgenmode6_set(self, NM_IN6_ADDR_GEN_MODE_NONE);
-            if (priv->sys_iface_state != NM_DEVICE_SYS_IFACE_STATE_MANAGED) {
+            if (priv->sys_iface_state != NM_DEVICE_SYS_IFACE_STATE_STATE_REMOVED) {
                 nm_device_cleanup(self,
                                   reason,
-                                  priv->sys_iface_state == NM_DEVICE_SYS_IFACE_STATE_REMOVED
-                                      ? CLEANUP_TYPE_REMOVED
-                                      : CLEANUP_TYPE_KEEP);
+                                  CLEANUP_TYPE_REMOVED);
             } else
                 nm_device_cleanup(self, reason, CLEANUP_TYPE_DECONFIGURE);
 
