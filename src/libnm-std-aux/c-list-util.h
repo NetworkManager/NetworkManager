@@ -42,6 +42,12 @@ c_list_length_is(const CList *list, unsigned long check_len)
     return n == check_len;
 }
 
+static inline int
+c_list_is_empty_or_single(const CList *list)
+{
+    return !list || (list->next->next == list);
+}
+
 #define c_list_for_each_prev(_iter, _list) \
     for (_iter = (_list)->prev; (_iter) != (_list); _iter = (_iter)->prev)
 

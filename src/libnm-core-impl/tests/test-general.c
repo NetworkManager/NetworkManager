@@ -1417,6 +1417,7 @@ _do_test_c_list_sort(CListSort *elements, guint n_list, gboolean headless)
 
     g_assert(!c_list_is_empty(&head));
     g_assert(c_list_length(&head) == n_list);
+    g_assert(c_list_is_empty_or_single(&head) == (n_list <= 1));
 
     el_prev = NULL;
     c_list_for_each (iter, &head) {
@@ -1443,6 +1444,10 @@ test_c_list_sort(void)
     guint              n_list;
     guint              repeat;
 
+    g_assert(!c_list_is_linked(NULL));
+    g_assert(c_list_is_empty(NULL));
+    g_assert(c_list_is_empty_or_single(NULL));
+
     {
         CList head;
 
@@ -1450,6 +1455,7 @@ test_c_list_sort(void)
         c_list_sort(&head, _c_list_sort_cmp, NULL);
         g_assert(c_list_length(&head) == 0);
         g_assert(c_list_is_empty(&head));
+        g_assert(c_list_is_empty_or_single(&head));
     }
 
     elements = g_new0(CListSort, N_ELEMENTS);
@@ -1516,6 +1522,8 @@ _do_test_c_list_insert_sorted(CListSort *elements, guint n_list, bool append_equ
     g_assert(!c_list_length_is(&head, n_list - 1));
     g_assert(c_list_length_is(&head, n_list));
     g_assert(!c_list_length_is(&head, n_list + 1));
+
+    g_assert(c_list_is_empty_or_single(&head) == (n_list <= 1));
 
     el_prev = NULL;
     c_list_for_each_entry (el, &head, lst) {
