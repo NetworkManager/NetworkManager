@@ -293,6 +293,14 @@ typedef struct _NML3CfgPrivate {
 
     gint8 commit_reentrant_count;
 
+    union {
+        struct {
+            gint8 commit_reentrant_count_ip_address_sync_6;
+            gint8 commit_reentrant_count_ip_address_sync_4;
+        };
+        gint8 commit_reentrant_count_ip_address_sync_x[2];
+    };
+
     /* The value that was set before we touched the sysctl (this only is
      * meaningful if "ip6_privacy_set" is true. At the end, we want to restore
      * this value. */
@@ -338,6 +346,9 @@ G_DEFINE_TYPE(NML3Cfg, nm_l3cfg, G_TYPE_OBJECT)
     ((gconstpointer) (&(((const char *) (self))[0 + (!(IS_IPv4))])))
 
 #define _MPTCP_TAG(self, IS_IPv4) ((gconstpointer) (&(((const char *) (self))[2 + (!(IS_IPv4))])))
+
+#define _NETNS_WATCHER_IP_ADDR_TAG(self, addr_family) \
+    ((gconstpointer) & (((char *) self)[1 + NM_IS_IPv4(addr_family)]))
 
 /*****************************************************************************/
 
@@ -4399,6 +4410,89 @@ _rp_filter_update(NML3Cfg *self, gboolean reapply)
 
 /*****************************************************************************/
 
+static void
+_routes_watch_ip_addrs_cb(NMNetns                       *netns,
+                          NMNetnsWatcherType             watcher_type,
+                          const NMNetnsWatcherData      *watcher_data,
+                          gconstpointer                  tag,
+                          const NMNetnsWatcherEventData *event_data,
+                          gpointer                       user_data)
+{
+    const int IS_IPv4 = NM_IS_IPv4(watcher_data->ip_addr.addr.addr_family);
+    NML3Cfg  *self    = user_data;
+    char      sbuf[NM_INET_ADDRSTRLEN];
+
+    if (NMP_OBJECT_CAST_IP_ADDRESS(event_data->ip_addr.obj)->ifindex == self->priv.ifindex) {
+        if (self->priv.p->commit_reentrant_count_ip_address_sync_x[IS_IPv4] > 0) {
+            /* We are currently commiting IP addresses on this very interface.
+             * We can ignore the event. Also, because we will sync the routes
+             * immediately after already.  So even if somebody externally added
+             * the address just this very moment, we would still do the commit
+             * at the right time to ensure our routes are there. */
+            return;
+        }
+    }
+
+    if (event_data->ip_addr.change_type == NM_PLATFORM_SIGNAL_REMOVED)
+        return;
+
+    _LOGT("watched ip-address %s changed. Schedule an idle commit",
+          nm_inet_ntop(watcher_data->ip_addr.addr.addr_family,
+                       &watcher_data->ip_addr.addr.addr,
+                       sbuf));
+    nm_l3cfg_commit_on_idle_schedule(self, NM_L3_CFG_COMMIT_TYPE_AUTO);
+}
+
+static void
+_routes_watch_ip_addrs(NML3Cfg *self, int addr_family, GPtrArray *routes)
+{
+    gconstpointer const TAG          = _NETNS_WATCHER_IP_ADDR_TAG(self, addr_family);
+    NMNetnsWatcherData  watcher_data = {
+         .ip_addr =
+            {
+                 .addr =
+                    {
+                         .addr_family = addr_family,
+                    },
+            },
+    };
+    guint i;
+
+    /* IP routes that have a pref_src, can only be configured in kernel if
+     * that address exists (and is non-tentative, in case of IPv6).
+     * That address might be on another interface. So we actually watch all
+     * other interfaces. */
+
+    if (!routes)
+        goto out;
+
+    for (i = 0; i < routes->len; i++) {
+        const NMPlatformIPRoute *rt = NMP_OBJECT_CAST_IP_ROUTE(routes->pdata[i]);
+        gconstpointer            pref_src;
+
+        nm_assert(NMP_OBJECT_GET_ADDR_FAMILY(routes->pdata[i]) == addr_family);
+
+        pref_src = nm_platform_ip_route_get_pref_src(addr_family, rt);
+
+        if (nm_ip_addr_is_null(addr_family, pref_src))
+            continue;
+
+        nm_assert(watcher_data.ip_addr.addr.addr_family == addr_family);
+        nm_ip_addr_set(addr_family, &watcher_data.ip_addr.addr.addr, pref_src);
+
+        nm_netns_watcher_add(self->priv.netns,
+                             NM_NETNS_WATCHER_TYPE_IP_ADDR,
+                             &watcher_data,
+                             TAG,
+                             _routes_watch_ip_addrs_cb,
+                             self);
+    }
+
+out:
+    nm_netns_watcher_remove_all(self->priv.netns, TAG, FALSE);
+}
+/*****************************************************************************/
+
 static gboolean
 _global_tracker_mptcp_untrack(NML3Cfg *self, int addr_family)
 {
@@ -4697,8 +4791,13 @@ _l3_commit_one(NML3Cfg              *self,
             }
         }
     }
+
+    _routes_watch_ip_addrs(self, addr_family, routes);
+
     /* FIXME(l3cfg): need to honor and set nm_l3_config_data_get_ndisc_*(). */
     /* FIXME(l3cfg): need to honor and set nm_l3_config_data_get_mtu(). */
+
+    self->priv.p->commit_reentrant_count_ip_address_sync_x[IS_IPv4]++;
 
     nm_platform_ip_address_sync(self->priv.platform,
                                 addr_family,
@@ -4708,6 +4807,8 @@ _l3_commit_one(NML3Cfg              *self,
                                 self->priv.ifindex == NM_LOOPBACK_IFINDEX
                                     ? NMP_IP_ADDRESS_SYNC_FLAGS_NONE
                                     : NMP_IP_ADDRESS_SYNC_FLAGS_WITH_NOPREFIXROUTE);
+
+    self->priv.p->commit_reentrant_count_ip_address_sync_x[IS_IPv4]--;
 
     _nodev_routes_sync(self, addr_family, commit_type, routes_nodev);
 
@@ -5211,6 +5312,15 @@ finalize(GObject *object)
 {
     NML3Cfg *self = NM_L3CFG(object);
     gboolean changed;
+
+    if (self->priv.netns) {
+        nm_netns_watcher_remove_all(self->priv.netns,
+                                    _NETNS_WATCHER_IP_ADDR_TAG(self, AF_INET),
+                                    TRUE);
+        nm_netns_watcher_remove_all(self->priv.netns,
+                                    _NETNS_WATCHER_IP_ADDR_TAG(self, AF_INET6),
+                                    TRUE);
+    }
 
     nm_assert(c_list_is_empty(&self->internal_netns.signal_pending_lst));
     nm_assert(c_list_is_empty(&self->internal_netns.ecmp_track_ifindex_lst_head));
