@@ -71,7 +71,7 @@ get_symbols_missing() {
 }
 
 pretty() {
-    sed 's/.*/\t\0;/'
+    sed 's/.*/\t&;/'
 }
 
 do_build() {
