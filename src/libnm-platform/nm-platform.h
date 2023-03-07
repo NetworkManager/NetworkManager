@@ -243,13 +243,6 @@ typedef enum {
 
 guint _nm_platform_signal_id_get(NMPlatformSignalIdType signal_type);
 
-typedef enum {
-    NM_PLATFORM_SIGNAL_NONE,
-    NM_PLATFORM_SIGNAL_ADDED,
-    NM_PLATFORM_SIGNAL_CHANGED,
-    NM_PLATFORM_SIGNAL_REMOVED,
-} NMPlatformSignalChangeType;
-
 /* Default value for adding an IPv4 route. This is also what iproute2 does.
  * Note that contrary to IPv6, you can add routes with metric 0 and it is even
  * the default.
