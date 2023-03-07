@@ -28,6 +28,15 @@
 /*****************************************************************************/
 
 typedef enum {
+    NM_PLATFORM_SIGNAL_NONE,
+    NM_PLATFORM_SIGNAL_ADDED,
+    NM_PLATFORM_SIGNAL_CHANGED,
+    NM_PLATFORM_SIGNAL_REMOVED,
+} NMPlatformSignalChangeType;
+
+/*****************************************************************************/
+
+typedef enum {
     NM_PLATFORM_LINK_DUPLEX_UNKNOWN,
     NM_PLATFORM_LINK_DUPLEX_HALF,
     NM_PLATFORM_LINK_DUPLEX_FULL,
