@@ -2355,11 +2355,12 @@ find_parent_device_for_connection(NMManager       *self,
      * with some known device.
      */
     c_list_for_each_entry (candidate, &priv->devices_lst_head, devices_lst) {
-        /* For a realized device, check that it's managed; otherwise it's not
-         * compatible with any connection. If the device is unrealized then
-         * the managed state is meaningless.
-         */
-        if (nm_device_is_real(candidate) && !nm_device_get_managed(candidate, FALSE))
+        /* An unrealized parent device is not a valid one. */
+        if (!nm_device_is_real(candidate))
+            continue;
+
+        /* Check that it's managed; otherwise it's not compatible with any connection. */
+        if (!nm_device_get_managed(candidate, FALSE))
             continue;
 
         if (nm_device_get_settings_connection(candidate) == parent_connection)
