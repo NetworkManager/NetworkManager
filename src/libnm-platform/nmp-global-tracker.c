@@ -540,12 +540,13 @@ _track_data_untrack(NMPGlobalTracker *self,
              * sync. */
             obj_data->config_state = CONFIG_STATE_OWNED_BY_US;
         }
-    } else if (remove_user_tag_data && c_list_length_is(&track_data->user_tag_lst, 1))
+    } else if (remove_user_tag_data && c_list_is_empty_or_single(&track_data->user_tag_lst))
         g_hash_table_remove(self->by_user_tag, &track_data->user_tag);
 
     /* if obj_data is marked to be "added_by_us" or "removed_by_us", we need to keep this entry
      * around for the next sync -- so that we can undo what we did earlier. */
-    if (obj_data->config_state == CONFIG_STATE_NONE && c_list_length_is(&track_data->obj_lst, 1))
+    if (obj_data->config_state == CONFIG_STATE_NONE
+        && c_list_is_empty_or_single(&track_data->obj_lst))
         g_hash_table_remove(self->by_obj, &track_data->obj);
 
     g_hash_table_remove(self->by_data, track_data);
