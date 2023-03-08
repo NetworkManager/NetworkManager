@@ -2332,7 +2332,7 @@ gboolean nm_platform_ip_route_sync(NMPlatform *self,
                                    int         ifindex,
                                    GPtrArray  *routes,
                                    GPtrArray  *routes_prune,
-                                   GPtrArray **out_temporary_not_available);
+                                   GPtrArray **out_routes_failed);
 
 gboolean nm_platform_ip_route_flush(NMPlatform *self, int addr_family, int ifindex);
 

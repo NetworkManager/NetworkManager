@@ -4593,53 +4593,6 @@ nm_platform_ip_address_flush(NMPlatform *self, int addr_family, int ifindex)
 
 /*****************************************************************************/
 
-static gboolean
-_route_is_temporary_not_available(NMPlatform      *self,
-                                  int              err,
-                                  const NMPObject *obj,
-                                  const char     **out_err_reason)
-{
-    const NMPlatformIPXRoute   *rx;
-    const NMPlatformIP6Address *a;
-
-    nm_assert(NM_IS_PLATFORM(self));
-    nm_assert(NMP_OBJECT_IS_VALID(obj));
-
-    if (err != -EINVAL)
-        return FALSE;
-
-    rx = NMP_OBJECT_CAST_IPX_ROUTE(obj);
-
-    if (rx->rx.rt_source != NM_IP_CONFIG_SOURCE_USER) {
-        /* we only allow this workaround for routes added manually by the user. */
-        return FALSE;
-    }
-
-    if (NMP_OBJECT_GET_TYPE(obj) == NMP_OBJECT_TYPE_IP4_ROUTE) {
-        return FALSE;
-    } else {
-        const NMPlatformIP6Route *r = &rx->r6;
-
-        /* trying to add an IPv6 route with pref-src fails, if the address is
-         * still tentative (rh#1452684). We need to hack around that.
-         *
-         * Detect it, by guessing whether that's the case. */
-
-        if (IN6_IS_ADDR_UNSPECIFIED(&r->pref_src))
-            return FALSE;
-
-        a = nm_platform_ip6_address_get(self, r->ifindex, &r->pref_src);
-        if (!a)
-            return FALSE;
-        if (!NM_FLAGS_HAS(a->n_ifa_flags, IFA_F_TENTATIVE)
-            || NM_FLAGS_HAS(a->n_ifa_flags, IFA_F_DADFAILED))
-            return FALSE;
-
-        *out_err_reason = "tentative IPv6 src address not ready";
-        return TRUE;
-    }
-}
-
 static guint
 _ipv6_temporary_addr_prefixes_keep_hash(gconstpointer ptr)
 {
@@ -4968,8 +4921,8 @@ nm_platform_ip_route_get_prune_list(NMPlatform            *self,
  *   at the end of the operation. Note that if @routes contains
  *   the same route, then it will not be deleted. @routes overrules
  *   @routes_prune list.
- * @out_temporary_not_available: (allow-none) (out): routes that could
- *   currently not be synced. The caller shall keep them and try later again.
+ * @out_routes_failed: (allow-none) (out): routes that could
+ *   not be synced/added.
  *
  * Returns: %TRUE on success.
  */
@@ -4979,7 +4932,7 @@ nm_platform_ip_route_sync(NMPlatform *self,
                           int         ifindex,
                           GPtrArray  *routes,
                           GPtrArray  *routes_prune,
-                          GPtrArray **out_temporary_not_available)
+                          GPtrArray **out_routes_failed)
 {
     const int                      IS_IPv4 = NM_IS_IPv4(addr_family);
     const NMPlatformVTableRoute   *vt;
@@ -5000,7 +4953,6 @@ nm_platform_ip_route_sync(NMPlatform *self,
     for (i_type = 0; routes && i_type < 2; i_type++) {
         for (i = 0; i < routes->len; i++) {
             gs_free char *extack_msg = NULL;
-            const char   *err_reason = NULL;
             int           r;
 
             conf_o = routes->pdata[i];
@@ -5094,35 +5046,23 @@ nm_platform_ip_route_sync(NMPlatform *self,
                                                     sizeof(sbuf2)));
                     }
                 }
-            } else if (NMP_OBJECT_CAST_IP_ROUTE(conf_o)->rt_source < NM_IP_CONFIG_SOURCE_USER) {
-                _LOG3D(
-                    "route-sync: ignore failure to add IPv%c route: %s: %s%s%s%s",
-                    vt->is_ip4 ? '4' : '6',
-                    nmp_object_to_string(conf_o, NMP_OBJECT_TO_STRING_PUBLIC, sbuf1, sizeof(sbuf1)),
-                    nm_strerror(r),
-                    NM_PRINT_FMT_QUOTED(extack_msg, " (", extack_msg, ")", ""));
-            } else if (out_temporary_not_available
-                       && _route_is_temporary_not_available(self, r, conf_o, &err_reason)) {
-                _LOG3D("route-sync: ignore temporary failure to add route (%s, %s%s%s%s): %s",
-                       nm_strerror(r),
-                       err_reason,
-                       NM_PRINT_FMT_QUOTED(extack_msg, ", ", extack_msg, "", ""),
-                       nmp_object_to_string(conf_o,
-                                            NMP_OBJECT_TO_STRING_PUBLIC,
-                                            sbuf1,
-                                            sizeof(sbuf1)));
-                if (!*out_temporary_not_available)
-                    *out_temporary_not_available =
-                        g_ptr_array_new_full(0, (GDestroyNotify) nmp_object_unref);
-                g_ptr_array_add(*out_temporary_not_available, (gpointer) nmp_object_ref(conf_o));
             } else {
-                _LOG3W(
+                _LOG3D(
                     "route-sync: failure to add IPv%c route: %s: %s%s%s%s",
                     vt->is_ip4 ? '4' : '6',
                     nmp_object_to_string(conf_o, NMP_OBJECT_TO_STRING_PUBLIC, sbuf1, sizeof(sbuf1)),
                     nm_strerror(r),
                     NM_PRINT_FMT_QUOTED(extack_msg, " (", extack_msg, ")", ""));
+
                 success = FALSE;
+
+                if (out_routes_failed) {
+                    if (!*out_routes_failed) {
+                        *out_routes_failed =
+                            g_ptr_array_new_with_free_func((GDestroyNotify) nmp_object_unref);
+                    }
+                    g_ptr_array_add(*out_routes_failed, (gpointer) nmp_object_ref(conf_o));
+                }
             }
         }
     }
