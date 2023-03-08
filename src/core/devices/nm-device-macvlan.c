@@ -208,14 +208,22 @@ create_and_realize(NMDevice              *device,
     s_macvlan = nm_connection_get_setting_macvlan(connection);
     g_return_val_if_fail(s_macvlan, FALSE);
 
-    parent_ifindex = parent ? nm_device_get_ifindex(parent) : 0;
+    if (!parent) {
+        g_set_error(error,
+                    NM_DEVICE_ERROR,
+                    NM_DEVICE_ERROR_MISSING_DEPENDENCIES,
+                    "MACVLAN device can not be created without a parent interface");
+        return FALSE;
+    }
 
+    parent_ifindex = nm_device_get_ifindex(parent);
     if (parent_ifindex <= 0) {
         g_set_error(error,
                     NM_DEVICE_ERROR,
                     NM_DEVICE_ERROR_MISSING_DEPENDENCIES,
-                    "MACVLAN devices can not be created without a parent interface");
-        g_return_val_if_fail(!parent, FALSE);
+                    "cannot retrieve ifindex of interface %s (%s)",
+                    nm_device_get_iface(parent),
+                    nm_device_get_type_desc(parent));
         return FALSE;
     }
 

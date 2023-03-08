@@ -6495,13 +6495,6 @@ _dev_unmanaged_check_external_down(NMDevice *self, gboolean only_if_unmanaged, g
     }
 
     ext_flags = _dev_unmanaged_is_external_down(self, FALSE);
-    if (ext_flags != NM_UNMAN_FLAG_OP_SET_UNMANAGED) {
-        /* Ensure the assume check is queued before any queued state changes
-         * from the transition to UNAVAILABLE.
-         */
-        nm_device_queue_recheck_assume(self);
-    }
-
     if (now) {
         nm_device_set_unmanaged_by_flags(self,
                                          NM_UNMANAGED_EXTERNAL_DOWN,
@@ -6966,12 +6959,6 @@ device_link_changed(gpointer user_data)
             }
         }
 
-        /* The assume check should happen before the device transitions to
-         * UNAVAILABLE, because in UNAVAILABLE we already clean up the IP
-         * configuration. Therefore, this function should never trigger a
-         * sync state transition.
-         */
-        nm_device_queue_recheck_assume(self);
         nm_device_set_unmanaged_by_flags_queue(self,
                                                NM_UNMANAGED_PLATFORM_INIT,
                                                NM_UNMAN_FLAG_OP_SET_MANAGED,
@@ -14701,6 +14688,15 @@ _set_unmanaged_flags(NMDevice           *self,
 
     if (transition_state) {
         new_state = was_managed ? NM_DEVICE_STATE_UNMANAGED : NM_DEVICE_STATE_UNAVAILABLE;
+        if (new_state != NM_DEVICE_STATE_UNMANAGED) {
+            /* The assume check should happen before the device transitions to
+            * UNAVAILABLE, because in UNAVAILABLE we already clean up the IP
+            * configuration. Therefore, this function should never trigger a
+            * sync state transition.
+            */
+            nm_device_queue_recheck_assume(self);
+        }
+
         if (now)
             nm_device_state_changed(self, new_state, reason);
         else
@@ -16105,8 +16101,11 @@ _set_state_full(NMDevice *self, NMDeviceState state, NMDeviceStateReason reason,
              * userspace IPv6LL enabled.
              */
             _dev_addrgenmode6_set(self, NM_IN6_ADDR_GEN_MODE_NONE);
+            if (priv->sys_iface_state == NM_DEVICE_SYS_IFACE_STATE_REMOVED) {
+                nm_device_cleanup(self, reason, CLEANUP_TYPE_REMOVED);
+            } else
+                nm_device_cleanup(self, reason, CLEANUP_TYPE_DECONFIGURE);
 
-            nm_device_cleanup(self, reason, CLEANUP_TYPE_DECONFIGURE);
         } else if (old_state < NM_DEVICE_STATE_DISCONNECTED) {
             if (priv->sys_iface_state == NM_DEVICE_SYS_IFACE_STATE_MANAGED) {
                 /* Ensure IPv6 is set up as it may not have been done when
