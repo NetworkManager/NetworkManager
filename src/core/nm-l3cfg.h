@@ -128,8 +128,6 @@ typedef enum {
      * and neither should you call into NML3Cfg again (reentrancy). */
     NM_L3_CONFIG_NOTIFY_TYPE_L3CD_CHANGED,
 
-    NM_L3_CONFIG_NOTIFY_TYPE_ROUTES_TEMPORARY_NOT_AVAILABLE_EXPIRED,
-
     NM_L3_CONFIG_NOTIFY_TYPE_ACD_EVENT,
 
     /* emitted before the merged l3cd is committed to platform.
@@ -408,7 +406,7 @@ gboolean nm_l3cfg_check_ready(NML3Cfg               *self,
                               NML3CfgCheckReadyFlags flags,
                               GArray               **conflicts);
 
-gboolean nm_l3cfg_has_temp_not_available_obj(NML3Cfg *self, int addr_family);
+gboolean nm_l3cfg_has_failedobj_pending(NML3Cfg *self, int addr_family);
 
 /*****************************************************************************/
 

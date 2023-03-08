@@ -11,6 +11,7 @@
 #include <linux/if_ether.h>
 #include <linux/rtnetlink.h>
 
+#include "libnm-glib-aux/nm-prioq.h"
 #include "libnm-glib-aux/nm-time-utils.h"
 #include "libnm-platform/nm-platform.h"
 #include "libnm-platform/nmp-object.h"
@@ -123,25 +124,34 @@ typedef struct {
 
     CList os_lst;
 
-    /* If we have a timeout pending, we link the instance to
-     * self->priv.p->obj_state_temporary_not_available_lst_head. */
-    CList os_temporary_not_available_lst;
-
     /* If a NMPObject is no longer to be configured (but was configured
      * during a previous commit), then we need to remember it so that the
      * next commit can delete the address/route in kernel. It becomes a zombie. */
     CList os_zombie_lst;
 
-    /* We might want to configure "obj" in platform, but it's currently not possible.
-     * For example, certain IPv6 routes can only be added after the IPv6 address
-     * becomes non-tentative (*sigh*). In such a case, we need to remember that, and
-     * retry later. If this timestamp is set to a non-zero value, then it means
-     * we tried to configure the obj (at that timestamp) and failed, but we are
-     * waiting to retry.
+    /* Used by _handle_routes_failed() mechanism. If "os_plobj" is set, then
+     * this is meaningless but should be set to zero.
      *
-     * See also self->priv.p->obj_state_temporary_not_available_lst_head
-     * and self->priv.p->obj_state_temporary_not_available_timeout_source. */
-    gint64 os_temporary_not_available_timestamp_msec;
+     * If set to a non-zero value, this means adding the object failed.  Until
+     * "os_failedobj_expiry_msec" we are still waiting whether we would be able to
+     * configure the object. Afterwards, we consider the element failed.
+     *
+     * Depending on "os_failedobj_prioq_idx", we are currently waiting whether the
+     * condition can resolve itself or becomes a failure. */
+    gint64 os_failedobj_expiry_msec;
+
+    /* The index into the "priv->failedobj_prioq" queue for objects that are failed.
+     * - this field is meaningless in case "os_plobj" is set (but it should be
+     *   set to NM_PRIOQ_IDX_NULL).
+     * - otherwise, if "os_failedobj_expiry_msec" is 0, no error was detected so
+     *   far. The index should be set to NM_PRIOQ_IDX_NULL.
+     * - otherwise, if the index is NM_PRIOQ_IDX_NULL it means that the object
+     *   is not tracked by the queue, no grace timer is pending, and the object
+     *   is considered failed.
+     * - otherwise, the index is used for tracking the element in the queue.
+     *   It means, we are currently waiting to decide whether this will be a
+     *   failure or not. */
+    guint os_failedobj_prioq_idx;
 
     /* When the obj is a zombie (that means, it was previously configured by NML3Cfg, but
      * now no longer), it needs to be deleted from platform. This ratelimits the time
@@ -240,7 +250,6 @@ typedef struct _NML3CfgPrivate {
 
     CList obj_state_lst_head;
     CList obj_state_zombie_lst_head;
-    CList obj_state_temporary_not_available_lst_head;
 
     GHashTable *acd_ipv4_addresses_on_link;
 
@@ -287,7 +296,9 @@ typedef struct _NML3CfgPrivate {
 
     guint64 pseudo_timestamp_counter;
 
-    GSource *obj_state_temporary_not_available_timeout_source;
+    NMPrioq  failedobj_prioq;
+    GSource *failedobj_timeout_source;
+    gint64   failedobj_timeout_expiry_msec;
 
     NML3CfgCommitType commit_on_idle_type;
 
@@ -420,8 +431,6 @@ static NM_UTILS_ENUM2STR_DEFINE(
     NM_UTILS_ENUM2STR(NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE_ON_IDLE, "platform-change-on-idle"),
     NM_UTILS_ENUM2STR(NM_L3_CONFIG_NOTIFY_TYPE_PRE_COMMIT, "pre-commit"),
     NM_UTILS_ENUM2STR(NM_L3_CONFIG_NOTIFY_TYPE_POST_COMMIT, "post-commit"),
-    NM_UTILS_ENUM2STR(NM_L3_CONFIG_NOTIFY_TYPE_ROUTES_TEMPORARY_NOT_AVAILABLE_EXPIRED,
-                      "routes-temporary-not-available-expired"),
     NM_UTILS_ENUM2STR_IGNORE(_NM_L3_CONFIG_NOTIFY_TYPE_NUM), );
 
 static NM_UTILS_ENUM2STR_DEFINE(_l3_acd_defend_type_to_string,
@@ -764,51 +773,51 @@ _nm_n_acd_data_probe_new(NML3Cfg *self, in_addr_t addr, guint32 timeout_msec, gp
 
 /*****************************************************************************/
 
-#define nm_assert_obj_state(self, obj_state)                                                      \
-    G_STMT_START                                                                                  \
-    {                                                                                             \
-        if (NM_MORE_ASSERTS > 0) {                                                                \
-            const NML3Cfg      *_self      = (self);                                              \
-            const ObjStateData *_obj_state = (obj_state);                                         \
-                                                                                                  \
-            nm_assert(_obj_state);                                                                \
-            nm_assert(NM_IN_SET(NMP_OBJECT_GET_TYPE(_obj_state->obj),                             \
-                                NMP_OBJECT_TYPE_IP4_ADDRESS,                                      \
-                                NMP_OBJECT_TYPE_IP6_ADDRESS,                                      \
-                                NMP_OBJECT_TYPE_IP4_ROUTE,                                        \
-                                NMP_OBJECT_TYPE_IP6_ROUTE));                                      \
-            nm_assert(!_obj_state->os_plobj || _obj_state->os_was_in_platform);                   \
-            nm_assert((_obj_state->os_temporary_not_available_timestamp_msec == 0)                \
-                      == c_list_is_empty(&_obj_state->os_temporary_not_available_lst));           \
-            if (_self) {                                                                          \
-                if (c_list_is_empty(&_obj_state->os_zombie_lst)) {                                \
-                    nm_assert(_self->priv.p->combined_l3cd_commited);                             \
-                                                                                                  \
-                    if (NM_MORE_ASSERTS > 5) {                                                    \
-                        nm_assert(c_list_contains(&_self->priv.p->obj_state_lst_head,             \
-                                                  &_obj_state->os_lst));                          \
-                        nm_assert((_obj_state->os_temporary_not_available_timestamp_msec == 0)    \
-                                  || c_list_contains(                                             \
-                                      &_self->priv.p->obj_state_temporary_not_available_lst_head, \
-                                      &_obj_state->os_temporary_not_available_lst));              \
-                        nm_assert(_obj_state->os_plobj                                            \
-                                  == nm_platform_lookup_obj(_self->priv.platform,                 \
-                                                            NMP_CACHE_ID_TYPE_OBJECT_TYPE,        \
-                                                            _obj_state->obj));                    \
-                        nm_assert(                                                                \
-                            c_list_is_empty(&obj_state->os_zombie_lst)                            \
-                                ? (_obj_state->obj                                                \
-                                   == nm_dedup_multi_entry_get_obj(nm_l3_config_data_lookup_obj(  \
-                                       _self->priv.p->combined_l3cd_commited,                     \
-                                       _obj_state->obj)))                                         \
-                                : (!nm_l3_config_data_lookup_obj(                                 \
-                                    _self->priv.p->combined_l3cd_commited,                        \
-                                    _obj_state->obj)));                                           \
-                    }                                                                             \
-                }                                                                                 \
-            }                                                                                     \
-        }                                                                                         \
-    }                                                                                             \
+#define nm_assert_obj_state(self, obj_state)                                                     \
+    G_STMT_START                                                                                 \
+    {                                                                                            \
+        if (NM_MORE_ASSERTS > 0) {                                                               \
+            const NML3Cfg      *_self      = (self);                                             \
+            const ObjStateData *_obj_state = (obj_state);                                        \
+                                                                                                 \
+            nm_assert(_obj_state);                                                               \
+            nm_assert(NM_IN_SET(NMP_OBJECT_GET_TYPE(_obj_state->obj),                            \
+                                NMP_OBJECT_TYPE_IP4_ADDRESS,                                     \
+                                NMP_OBJECT_TYPE_IP6_ADDRESS,                                     \
+                                NMP_OBJECT_TYPE_IP4_ROUTE,                                       \
+                                NMP_OBJECT_TYPE_IP6_ROUTE));                                     \
+            nm_assert(!_obj_state->os_plobj || _obj_state->os_was_in_platform);                  \
+            nm_assert(_obj_state->os_failedobj_expiry_msec != 0                                  \
+                      || _obj_state->os_failedobj_prioq_idx == NM_PRIOQ_IDX_NULL);               \
+            nm_assert(_obj_state->os_failedobj_expiry_msec == 0 || !_obj_state->os_plobj);       \
+            nm_assert(_obj_state->os_failedobj_expiry_msec == 0                                  \
+                      || c_list_is_empty(&_obj_state->os_zombie_lst));                           \
+            nm_assert(_obj_state->os_failedobj_expiry_msec == 0 || _obj_state->obj);             \
+            if (_self) {                                                                         \
+                if (c_list_is_empty(&_obj_state->os_zombie_lst)) {                               \
+                    nm_assert(_self->priv.p->combined_l3cd_commited);                            \
+                                                                                                 \
+                    if (NM_MORE_ASSERTS > 5) {                                                   \
+                        nm_assert(c_list_contains(&_self->priv.p->obj_state_lst_head,            \
+                                                  &_obj_state->os_lst));                         \
+                        nm_assert(_obj_state->os_plobj                                           \
+                                  == nm_platform_lookup_obj(_self->priv.platform,                \
+                                                            NMP_CACHE_ID_TYPE_OBJECT_TYPE,       \
+                                                            _obj_state->obj));                   \
+                        nm_assert(                                                               \
+                            c_list_is_empty(&obj_state->os_zombie_lst)                           \
+                                ? (_obj_state->obj                                               \
+                                   == nm_dedup_multi_entry_get_obj(nm_l3_config_data_lookup_obj( \
+                                       _self->priv.p->combined_l3cd_commited,                    \
+                                       _obj_state->obj)))                                        \
+                                : (!nm_l3_config_data_lookup_obj(                                \
+                                    _self->priv.p->combined_l3cd_commited,                       \
+                                    _obj_state->obj)));                                          \
+                    }                                                                            \
+                }                                                                                \
+            }                                                                                    \
+        }                                                                                        \
+    }                                                                                            \
     G_STMT_END
 
 static ObjStateData *
@@ -818,13 +827,14 @@ _obj_state_data_new(const NMPObject *obj, const NMPObject *plobj)
 
     obj_state  = g_slice_new(ObjStateData);
     *obj_state = (ObjStateData){
-        .obj                            = nmp_object_ref(obj),
-        .os_plobj                       = nmp_object_ref(plobj),
-        .os_was_in_platform             = !!plobj,
-        .os_nm_configured               = FALSE,
-        .os_dirty                       = FALSE,
-        .os_temporary_not_available_lst = C_LIST_INIT(obj_state->os_temporary_not_available_lst),
-        .os_zombie_lst                  = C_LIST_INIT(obj_state->os_zombie_lst),
+        .obj                      = nmp_object_ref(obj),
+        .os_plobj                 = nmp_object_ref(plobj),
+        .os_was_in_platform       = !!plobj,
+        .os_nm_configured         = FALSE,
+        .os_dirty                 = FALSE,
+        .os_failedobj_expiry_msec = 0,
+        .os_failedobj_prioq_idx   = NM_PRIOQ_IDX_NULL,
+        .os_zombie_lst            = C_LIST_INIT(obj_state->os_zombie_lst),
     };
     return obj_state;
 }
@@ -834,9 +844,10 @@ _obj_state_data_free(gpointer data)
 {
     ObjStateData *obj_state = data;
 
+    nm_assert(obj_state->os_failedobj_prioq_idx == NM_PRIOQ_IDX_NULL);
+
     c_list_unlink_stale(&obj_state->os_lst);
     c_list_unlink_stale(&obj_state->os_zombie_lst);
-    c_list_unlink_stale(&obj_state->os_temporary_not_available_lst);
     nmp_object_unref(obj_state->obj);
     nmp_object_unref(obj_state->os_plobj);
     nm_g_slice_free(obj_state);
@@ -874,15 +885,17 @@ _obj_state_data_to_string(const ObjStateData *obj_state, char *buf, gsize buf_si
     } else if (obj_state->os_was_in_platform)
         nm_strbuf_append_str(&buf, &buf_size, ", was-in-platform");
 
-    if (obj_state->os_temporary_not_available_timestamp_msec > 0) {
+    if (obj_state->os_failedobj_expiry_msec > 0) {
         nm_utils_get_monotonic_timestamp_msec_cached(&now_msec);
-        nm_strbuf_append(
-            &buf,
-            &buf_size,
-            ", temporary-not-available-since=%" G_GINT64_FORMAT ".%03d",
-            (now_msec - obj_state->os_temporary_not_available_timestamp_msec) / 1000,
-            (int) ((now_msec - obj_state->os_temporary_not_available_timestamp_msec) % 1000));
-    }
+        nm_strbuf_append(&buf,
+                         &buf_size,
+                         ", %s-since=%" G_GINT64_FORMAT ".%03d",
+                         (obj_state->os_failedobj_prioq_idx == NM_PRIOQ_IDX_NULL) ? "failed"
+                                                                                  : "failed-wait",
+                         (obj_state->os_failedobj_expiry_msec - now_msec) / 1000,
+                         (int) ((obj_state->os_failedobj_expiry_msec - now_msec) % 1000));
+    } else
+        nm_assert(obj_state->os_failedobj_prioq_idx == NM_PRIOQ_IDX_NULL);
 
     return buf0;
 }
@@ -944,6 +957,7 @@ _obj_states_externally_removed_track(NML3Cfg *self, const NMPObject *obj, gboole
 
     if (!in_platform && !c_list_is_empty(&obj_state->os_zombie_lst)) {
         /* this is a zombie. We can forget about it.*/
+        nm_assert(obj_state->os_failedobj_prioq_idx == NM_PRIOQ_IDX_NULL);
         nm_clear_nmp_object(&obj_state->os_plobj);
         c_list_unlink(&obj_state->os_zombie_lst);
         _LOGD("obj-state: zombie gone (untrack): %s",
@@ -959,8 +973,23 @@ _obj_states_externally_removed_track(NML3Cfg *self, const NMPObject *obj, gboole
     if (in_platform) {
         nmp_object_ref_set(&obj_state->os_plobj, obj);
         obj_state->os_was_in_platform = TRUE;
-        _LOGD("obj-state: appeared in platform: %s",
-              _obj_state_data_to_string(obj_state, sbuf, sizeof(sbuf)));
+        if (obj_state->os_failedobj_expiry_msec != 0) {
+            obj_state->os_failedobj_expiry_msec = 0;
+            if (obj_state->os_failedobj_prioq_idx == NM_PRIOQ_IDX_NULL) {
+                _LOGT("obj-state: failed-obj: object now configured after failed earlier: %s",
+                      _obj_state_data_to_string(obj_state, sbuf, sizeof(sbuf)));
+            } else {
+                nm_prioq_remove(&self->priv.p->failedobj_prioq,
+                                obj_state,
+                                &obj_state->os_failedobj_prioq_idx);
+                _LOGT("obj-state: failed-obj: object now configured after waiting: %s",
+                      _obj_state_data_to_string(obj_state, sbuf, sizeof(sbuf)));
+            }
+        } else {
+            _LOGD("obj-state: appeared in platform: %s",
+                  _obj_state_data_to_string(obj_state, sbuf, sizeof(sbuf)));
+        }
+        nm_assert(obj_state->os_failedobj_prioq_idx == NM_PRIOQ_IDX_NULL);
         goto out;
     }
 
@@ -1049,6 +1078,7 @@ _obj_states_update_all(NML3Cfg *self)
                 continue;
 
             if (obj_state->os_plobj && obj_state->os_nm_configured) {
+                nm_assert(obj_state->os_failedobj_prioq_idx == NM_PRIOQ_IDX_NULL);
                 c_list_link_tail(&self->priv.p->obj_state_zombie_lst_head,
                                  &obj_state->os_zombie_lst);
                 obj_state->os_zombie_count = ZOMBIE_COUNT_START;
@@ -1059,6 +1089,9 @@ _obj_states_update_all(NML3Cfg *self)
 
             _LOGD("obj-state: untrack: %s",
                   _obj_state_data_to_string(obj_state, sbuf, sizeof(sbuf)));
+            nm_prioq_remove(&self->priv.p->failedobj_prioq,
+                            obj_state,
+                            &obj_state->os_failedobj_prioq_idx);
             g_hash_table_iter_remove(&h_iter);
         }
     }
@@ -1272,6 +1305,7 @@ _obj_state_zombie_lst_get_prune_lists(NML3Cfg    *self,
         if (--obj_state->os_zombie_count == 0) {
             _LOGD("obj-state: prune zombie (untrack): %s",
                   _obj_state_data_to_string(obj_state, sbuf, sizeof(sbuf)));
+            nm_assert(obj_state->os_failedobj_prioq_idx == NM_PRIOQ_IDX_NULL);
             g_hash_table_remove(self->priv.p->obj_state_hash, obj_state);
             continue;
         }
@@ -1306,6 +1340,7 @@ _obj_state_zombie_lst_prune_all(NML3Cfg *self, int addr_family)
         if (--obj_state->os_zombie_count == 0) {
             _LOGD("obj-state: zombie pruned during reapply (untrack): %s",
                   _obj_state_data_to_string(obj_state, sbuf, sizeof(sbuf)));
+            nm_assert(obj_state->os_failedobj_prioq_idx == NM_PRIOQ_IDX_NULL);
             g_hash_table_remove(self->priv.p->obj_state_hash, obj_state);
             continue;
         }
@@ -3043,16 +3078,14 @@ nm_l3cfg_get_acd_addr_info(NML3Cfg *self, in_addr_t addr)
 /*****************************************************************************/
 
 gboolean
-nm_l3cfg_has_temp_not_available_obj(NML3Cfg *self, int addr_family)
+nm_l3cfg_has_failedobj_pending(NML3Cfg *self, int addr_family)
 {
     ObjStateData *obj_state;
 
     nm_assert(NM_IS_L3CFG(self));
     nm_assert_addr_family(addr_family);
 
-    c_list_for_each_entry (obj_state,
-                           &self->priv.p->obj_state_temporary_not_available_lst_head,
-                           os_temporary_not_available_lst) {
+    nm_prioq_for_each (&self->priv.p->failedobj_prioq, obj_state) {
         if (NMP_OBJECT_GET_ADDR_FAMILY(obj_state->obj) == addr_family)
             return TRUE;
     }
@@ -3940,79 +3973,91 @@ out:
 /*****************************************************************************/
 
 static gboolean
-_routes_temporary_not_available_timeout(gpointer user_data)
+_failedobj_timeout_cb(gpointer user_data)
 {
-    NML3Cfg      *self = NM_L3CFG(user_data);
-    ObjStateData *obj_state;
-    gint64        now_msec;
-    gint64        expiry_msec;
+    NML3Cfg *self = NM_L3CFG(user_data);
 
-    nm_clear_g_source_inst(&self->priv.p->obj_state_temporary_not_available_timeout_source);
+    _LOGT("obj-state: failed-obj: handle timeout");
 
-    obj_state = c_list_first_entry(&self->priv.p->obj_state_temporary_not_available_lst_head,
-                                   ObjStateData,
-                                   os_temporary_not_available_lst);
+    nm_clear_g_source_inst(&self->priv.p->failedobj_timeout_source);
 
-    if (!obj_state)
-        return G_SOURCE_CONTINUE;
+    nm_l3cfg_commit_on_idle_schedule(self, NM_L3_CFG_COMMIT_TYPE_AUTO);
 
-    now_msec = nm_utils_get_monotonic_timestamp_msec();
-
-    expiry_msec = obj_state->os_temporary_not_available_timestamp_msec
-                  + ROUTES_TEMPORARY_NOT_AVAILABLE_MAX_AGE_MSEC;
-
-    if (now_msec < expiry_msec) {
-        /* the timeout is not yet reached. Restart the timer... */
-        self->priv.p->obj_state_temporary_not_available_timeout_source =
-            nm_g_timeout_add_source(expiry_msec - now_msec,
-                                    _routes_temporary_not_available_timeout,
-                                    self);
-        return G_SOURCE_CONTINUE;
-    }
-
-    /* One (or several) routes expired. We emit a signal, but we don't schedule it again.
-     * We expect the callers to commit again, which will one last time try to configure
-     * the route. If that again fails, we detect the timeout, log a warning and don't
-     * track the object as not temporary-not-available anymore. */
-    _nm_l3cfg_emit_signal_notify_simple(
-        self,
-        NM_L3_CONFIG_NOTIFY_TYPE_ROUTES_TEMPORARY_NOT_AVAILABLE_EXPIRED);
     return G_SOURCE_CONTINUE;
 }
 
-static gboolean
-_routes_temporary_not_available_update(NML3Cfg   *self,
-                                       int        addr_family,
-                                       GPtrArray *routes_temporary_not_available_arr)
+static void
+_failedobj_reschedule(NML3Cfg *self, gint64 now_msec)
 {
-    ObjStateData   *obj_state;
-    ObjStateData   *obj_state_safe;
-    gint64          now_msec;
-    gboolean        prune_all = FALSE;
-    gboolean        success   = TRUE;
-    guint           i;
-    const NMPClass *klass;
+    char          sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
+    ObjStateData *obj_state;
 
-    klass    = nmp_class_from_type(NMP_OBJECT_TYPE_IP_ROUTE(NM_IS_IPv4(addr_family)));
-    now_msec = nm_utils_get_monotonic_timestamp_msec();
+    nm_utils_get_monotonic_timestamp_msec_cached(&now_msec);
 
-    if (nm_g_ptr_array_len(routes_temporary_not_available_arr) <= 0) {
-        prune_all = TRUE;
-        goto out_prune;
+again:
+    obj_state = nm_prioq_peek(&self->priv.p->failedobj_prioq);
+
+    if (obj_state && obj_state->os_failedobj_expiry_msec <= now_msec) {
+        /* The object is already expired... */
+
+        /* we shouldn't have a "os_plobj", because if we had, we should have
+         * removed "obj_state" from the queue. */
+        nm_assert(!obj_state->os_plobj);
+
+        /* we need to have an "obj", otherwise the "obj_state" instance
+         * shouldn't exist (as it also has not "os_plobj"). */
+        nm_assert(obj_state->obj);
+
+        /* It seems that nm_platform_ip_route_sync() signaled success and did
+         * not report the route as missing. Regardless, it is still not
+         * configured and the timeout expired. */
+        nm_prioq_remove(&self->priv.p->failedobj_prioq,
+                        obj_state,
+                        &obj_state->os_failedobj_prioq_idx);
+        _LOGW(
+            "missing IPv%c route: %s",
+            nm_utils_addr_family_to_char(NMP_OBJECT_GET_TYPE(obj_state->obj)),
+            nmp_object_to_string(obj_state->obj, NMP_OBJECT_TO_STRING_PUBLIC, sbuf, sizeof(sbuf)));
+        goto again;
     }
 
-    c_list_for_each_entry (obj_state,
-                           &self->priv.p->obj_state_temporary_not_available_lst_head,
-                           os_temporary_not_available_lst) {
-        if (NMP_OBJECT_GET_CLASS(obj_state->obj) == klass) {
-            nm_assert(obj_state->os_temporary_not_available_timestamp_msec > 0);
-            obj_state->os_tna_dirty = TRUE;
-        }
+    if (!obj_state) {
+        if (nm_clear_g_source_inst(&self->priv.p->failedobj_timeout_source))
+            _LOGT("obj-state: failed-obj: cancel timeout");
+        return;
     }
 
-    for (i = 0; i < routes_temporary_not_available_arr->len; i++) {
-        const NMPObject *o = routes_temporary_not_available_arr->pdata[i];
-        char             sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
+    if (nm_g_timeout_reschedule(&self->priv.p->failedobj_timeout_source,
+                                &self->priv.p->failedobj_timeout_expiry_msec,
+                                obj_state->os_failedobj_expiry_msec,
+                                _failedobj_timeout_cb,
+                                self)) {
+        _LOGT(
+            "obj-state: failed-obj: schedule timeout in %" G_GINT64_FORMAT " msec",
+            NM_MAX((gint64) 0,
+                   obj_state->os_failedobj_expiry_msec - nm_utils_get_monotonic_timestamp_msec()));
+    }
+}
+
+static void
+_failedobj_handle_routes(NML3Cfg *self, int addr_family, GPtrArray *routes_failed)
+{
+    const gint64  now_msec = nm_utils_get_monotonic_timestamp_msec();
+    char          sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
+    ObjStateData *obj_state;
+    guint         i;
+
+    if (!routes_failed)
+        return;
+
+    for (i = 0; i < routes_failed->len; i++) {
+        const NMPObject          *o                    = routes_failed->pdata[i];
+        const NMPlatformIPXRoute *rt                   = NMP_OBJECT_CAST_IPX_ROUTE(o);
+        gboolean                  just_started_to_fail = FALSE;
+        gboolean                  just_failed          = FALSE;
+        gboolean                  arm_timer            = FALSE;
+        int                       grace_timeout_msec;
+        gint64                    grace_expiry_mesc;
 
         nm_assert(NMP_OBJECT_GET_TYPE(o) == NMP_OBJECT_TYPE_IP_ROUTE(NM_IS_IPv4(addr_family)));
 
@@ -4024,70 +4069,83 @@ _routes_temporary_not_available_update(NML3Cfg   *self,
             continue;
         }
 
-        if (obj_state->os_temporary_not_available_timestamp_msec > 0) {
-            nm_assert(obj_state->os_temporary_not_available_timestamp_msec > 0
-                      && obj_state->os_temporary_not_available_timestamp_msec <= now_msec);
-
-            if (!obj_state->os_tna_dirty) {
-                /* Odd, this only can happen if routes_temporary_not_available_arr contains duplicates.
-                 * It should not. */
-                nm_assert_not_reached();
-                continue;
-            }
-
-            if (now_msec > obj_state->os_temporary_not_available_timestamp_msec
-                               + ROUTES_TEMPORARY_NOT_AVAILABLE_MAX_AGE_MSEC) {
-                /* Timeout. Could not add this address.
-                 *
-                 * For now, keep it obj_state->os_tna_dirty and prune it below. */
-                _LOGW("failure to add IPv%c route: %s",
-                      nm_utils_addr_family_to_char(addr_family),
-                      nmp_object_to_string(o, NMP_OBJECT_TO_STRING_PUBLIC, sbuf, sizeof(sbuf)));
-                success = FALSE;
-                continue;
-            }
-
-            obj_state->os_tna_dirty = FALSE;
+        if (obj_state->os_plobj) {
+            /* This object is apparently present in platform. Not sure what this failure report
+             * is about. Probably some harmless glitch. Ignore. */
             continue;
         }
 
-        _LOGT("(temporarily) unable to add IPv%c route: %s",
-              nm_utils_addr_family_to_char(addr_family),
-              nmp_object_to_string(o, NMP_OBJECT_TO_STRING_PUBLIC, sbuf, sizeof(sbuf)));
+        /* This route failed, but why? That determines the grace time that we
+         * give before considering it bad. */
+        if (!nm_ip_addr_is_null(addr_family,
+                                nm_platform_ip_route_get_pref_src(addr_family, &rt->rx))) {
+            /* This route has a pref_src. A common cause for being unable to
+             * configure such routes, is that the referenced IP address is not
+             * configured/ready (yet). Give a longer timeout to this case. */
+            grace_timeout_msec = 10000;
+        } else {
+            /* Other route don't have any grace time. There is no retry/wait,
+             * they are a failure right away. */
+            grace_timeout_msec = 0;
+        }
 
-        obj_state->os_tna_dirty                              = FALSE;
-        obj_state->os_temporary_not_available_timestamp_msec = now_msec;
-        c_list_link_tail(&self->priv.p->obj_state_temporary_not_available_lst_head,
-                         &obj_state->os_temporary_not_available_lst);
-    }
+        grace_expiry_mesc = now_msec + grace_timeout_msec;
 
-out_prune:
-    c_list_for_each_entry_safe (obj_state,
-                                obj_state_safe,
-                                &self->priv.p->obj_state_temporary_not_available_lst_head,
-                                os_temporary_not_available_lst) {
-        if (prune_all || obj_state->os_tna_dirty) {
-            if (NMP_OBJECT_GET_CLASS(obj_state->obj) == klass) {
-                obj_state->os_temporary_not_available_timestamp_msec = 0;
-                c_list_unlink(&obj_state->os_temporary_not_available_lst);
+        if (obj_state->os_failedobj_expiry_msec == 0) {
+            /* This is a new failure that we didn't see before... */
+            obj_state->os_failedobj_expiry_msec = grace_expiry_mesc;
+            if (grace_timeout_msec == 0)
+                just_failed = TRUE;
+            else {
+                arm_timer            = TRUE;
+                just_started_to_fail = TRUE;
             }
+        } else {
+            if (obj_state->os_failedobj_expiry_msec > grace_expiry_mesc) {
+                /* Shorten the grace timeout. We anyway rearm below... */
+                obj_state->os_failedobj_expiry_msec = grace_expiry_mesc;
+            }
+            if (obj_state->os_failedobj_expiry_msec <= now_msec) {
+                /* The grace period is (already) expired. */
+                if (obj_state->os_failedobj_prioq_idx != NM_PRIOQ_IDX_NULL) {
+                    /* We are still tracking the element. It just is about to become failed. */
+                    just_failed = TRUE;
+                }
+            } else
+                arm_timer = TRUE;
+        }
+
+        nm_prioq_update(&self->priv.p->failedobj_prioq,
+                        obj_state,
+                        &obj_state->os_failedobj_prioq_idx,
+                        arm_timer);
+
+        if (just_failed) {
+            _LOGW("unable to configure IPv%c route: %s",
+                  nm_utils_addr_family_to_char(addr_family),
+                  nmp_object_to_string(o, NMP_OBJECT_TO_STRING_PUBLIC, sbuf, sizeof(sbuf)));
+        } else if (just_started_to_fail) {
+            _LOGT("obj-state: failed-obj: unable to configure %s. Wait for %d msec",
+                  _obj_state_data_to_string(obj_state, sbuf, sizeof(sbuf)),
+                  grace_timeout_msec);
         }
     }
+}
 
-    nm_clear_g_source_inst(&self->priv.p->obj_state_temporary_not_available_timeout_source);
+static int
+_failedobj_prioq_cmp(gconstpointer a, gconstpointer b)
+{
+    const ObjStateData *object_state_a = a;
+    const ObjStateData *object_state_b = b;
 
-    obj_state = c_list_first_entry(&self->priv.p->obj_state_temporary_not_available_lst_head,
-                                   ObjStateData,
-                                   os_temporary_not_available_lst);
-    if (obj_state) {
-        self->priv.p->obj_state_temporary_not_available_timeout_source =
-            nm_g_timeout_add_source((obj_state->os_temporary_not_available_timestamp_msec
-                                     + ROUTES_TEMPORARY_NOT_AVAILABLE_MAX_AGE_MSEC - now_msec),
-                                    _routes_temporary_not_available_timeout,
-                                    self);
-    }
+    nm_assert(object_state_a);
+    nm_assert(object_state_a->os_failedobj_expiry_msec > 0);
+    nm_assert(object_state_b);
+    nm_assert(object_state_b->os_failedobj_expiry_msec > 0);
 
-    return success;
+    NM_CMP_SELF(object_state_a, object_state_b);
+    NM_CMP_FIELD(object_state_a, object_state_b, os_failedobj_expiry_msec);
+    return 0;
 }
 
 /*****************************************************************************/
@@ -4459,10 +4517,23 @@ _routes_watch_ip_addrs(NML3Cfg *self, int addr_family, GPtrArray *addresses, GPt
     guint i;
     guint j;
 
-    /* IP routes that have a pref_src, can only be configured in kernel if
-     * that address exists (and is non-tentative, in case of IPv6).
-     * That address might be on another interface. So we actually watch all
-     * other interfaces. */
+    /* IP routes that have a pref_src, can only be configured in kernel if that
+     * address exists (and is non-tentative, in case of IPv6).  That address
+     * might be on another interface. So we actually watch all other
+     * interfaces.
+     *
+     * Note that while we track failure to configure routes via "failedobj"
+     * mechanism, we eagerly register watchers, even if the route is already
+     * successfully configured or if the route is to be configure the first
+     * time.  Maybe that could be improved, but
+     * - watchers should be cheap unless they notify the event.
+     * - upon change we do an async commit, which is maybe not entirely cheap
+     *   but cheap enough. More importantly, committing is something that
+     *   *always* should be permissible -- because NML3Cfg has multiple,
+     *   independent users, that don't know about each other and which
+     *   independently are allowed to issue a commit when they think something
+     *   relevant changed. If there are really too many, unnecessary commits,
+     *   then the cause needs to be understood and addressed explicitly. */
 
     if (!routes)
         goto out;
@@ -4730,15 +4801,14 @@ _l3_commit_one(NML3Cfg              *self,
                gboolean              changed_combined_l3cd,
                const NML3ConfigData *l3cd_old)
 {
-    const int                    IS_IPv4                            = NM_IS_IPv4(addr_family);
-    gs_unref_ptrarray GPtrArray *addresses                          = NULL;
-    gs_unref_ptrarray GPtrArray *routes                             = NULL;
-    gs_unref_ptrarray GPtrArray *routes_nodev                       = NULL;
-    gs_unref_ptrarray GPtrArray *addresses_prune                    = NULL;
-    gs_unref_ptrarray GPtrArray *routes_prune                       = NULL;
-    gs_unref_ptrarray GPtrArray *routes_temporary_not_available_arr = NULL;
+    const int                    IS_IPv4         = NM_IS_IPv4(addr_family);
+    gs_unref_ptrarray GPtrArray *addresses       = NULL;
+    gs_unref_ptrarray GPtrArray *routes          = NULL;
+    gs_unref_ptrarray GPtrArray *routes_nodev    = NULL;
+    gs_unref_ptrarray GPtrArray *addresses_prune = NULL;
+    gs_unref_ptrarray GPtrArray *routes_prune    = NULL;
+    gs_unref_ptrarray GPtrArray *routes_failed   = NULL;
     NMIPRouteTableSyncMode       route_table_sync;
-    gboolean                     final_failure_for_temporary_not_available = FALSE;
     char                         sbuf_commit_type[50];
     guint                        i;
 
@@ -4861,16 +4931,9 @@ _l3_commit_one(NML3Cfg              *self,
                               self->priv.ifindex,
                               routes,
                               routes_prune,
-                              &routes_temporary_not_available_arr);
+                              &routes_failed);
 
-    final_failure_for_temporary_not_available = FALSE;
-    if (!_routes_temporary_not_available_update(self,
-                                                addr_family,
-                                                routes_temporary_not_available_arr))
-        final_failure_for_temporary_not_available = TRUE;
-
-    /* FIXME(l3cfg) */
-    (void) final_failure_for_temporary_not_available;
+    _failedobj_handle_routes(self, addr_family, routes_failed);
 }
 
 static void
@@ -4942,6 +5005,8 @@ _l3_commit(NML3Cfg *self, NML3CfgCommitType commit_type, gboolean is_idle)
 
     _l3_commit_one(self, AF_INET, commit_type, changed_combined_l3cd, l3cd_old);
     _l3_commit_one(self, AF_INET6, commit_type, changed_combined_l3cd, l3cd_old);
+
+    _failedobj_reschedule(self, 0);
 
     _l3_commit_mptcp(self, commit_type);
 
@@ -5304,7 +5369,6 @@ nm_l3cfg_init(NML3Cfg *self)
     c_list_init(&self->priv.p->acd_event_notify_lst_head);
     c_list_init(&self->priv.p->commit_type_lst_head);
     c_list_init(&self->priv.p->obj_state_lst_head);
-    c_list_init(&self->priv.p->obj_state_temporary_not_available_lst_head);
     c_list_init(&self->priv.p->obj_state_zombie_lst_head);
     c_list_init(&self->priv.p->blocked_lst_head_4);
     c_list_init(&self->priv.p->blocked_lst_head_6);
@@ -5316,6 +5380,8 @@ nm_l3cfg_init(NML3Cfg *self)
                                                          nmp_object_indirect_id_equal,
                                                          _obj_state_data_free,
                                                          NULL);
+
+    nm_prioq_init(&self->priv.p->failedobj_prioq, _failedobj_prioq_cmp);
 }
 
 static void
@@ -5363,6 +5429,9 @@ finalize(GObject *object)
                                     TRUE);
     }
 
+    nm_prioq_destroy(&self->priv.p->failedobj_prioq);
+    nm_clear_g_source_inst(&self->priv.p->failedobj_timeout_source);
+
     nm_assert(c_list_is_empty(&self->internal_netns.signal_pending_lst));
     nm_assert(c_list_is_empty(&self->internal_netns.ecmp_track_ifindex_lst_head));
 
@@ -5390,11 +5459,8 @@ finalize(GObject *object)
     nm_clear_g_source_inst(&self->priv.p->nacd_instance_ensure_retry);
     nm_clear_g_source_inst(&self->priv.p->nacd_event_down_source);
 
-    nm_clear_g_source_inst(&self->priv.p->obj_state_temporary_not_available_timeout_source);
-
     nm_clear_pointer(&self->priv.p->obj_state_hash, g_hash_table_destroy);
     nm_assert(c_list_is_empty(&self->priv.p->obj_state_lst_head));
-    nm_assert(c_list_is_empty(&self->priv.p->obj_state_temporary_not_available_lst_head));
     nm_assert(c_list_is_empty(&self->priv.p->obj_state_zombie_lst_head));
 
     if (_nodev_routes_untrack(self, AF_INET))
