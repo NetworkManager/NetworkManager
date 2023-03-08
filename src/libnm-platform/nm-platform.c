@@ -5000,6 +5000,7 @@ nm_platform_ip_route_sync(NMPlatform *self,
     for (i_type = 0; routes && i_type < 2; i_type++) {
         for (i = 0; i < routes->len; i++) {
             gs_free char *extack_msg = NULL;
+            const char   *err_reason = NULL;
             int           r;
 
             conf_o = routes->pdata[i];
@@ -5061,71 +5062,64 @@ nm_platform_ip_route_sync(NMPlatform *self,
                                              | NMP_NLM_FLAG_SUPPRESS_NETLINK_FAILURE,
                                          conf_o,
                                          &extack_msg);
-            if (r < 0) {
-                const char *err_reason = NULL;
-
-                if (r == -EEXIST) {
-                    /* Don't fail for EEXIST. It's not clear that the existing route
-                     * is identical to the one that we were about to add. However,
-                     * above we should have deleted conflicting (non-identical) routes. */
-                    if (_LOGD_ENABLED()) {
-                        plat_entry =
-                            nm_platform_lookup_entry(self, NMP_CACHE_ID_TYPE_OBJECT_TYPE, conf_o);
-                        if (!plat_entry) {
-                            _LOG3D("route-sync: adding route %s failed with EEXIST, however we "
-                                   "cannot find such a route",
-                                   nmp_object_to_string(conf_o,
-                                                        NMP_OBJECT_TO_STRING_PUBLIC,
-                                                        sbuf1,
-                                                        sizeof(sbuf1)));
-                        } else if (vt->route_cmp(NMP_OBJECT_CAST_IPX_ROUTE(conf_o),
-                                                 NMP_OBJECT_CAST_IPX_ROUTE(plat_entry->obj),
-                                                 NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY)
-                                   != 0) {
-                            _LOG3D("route-sync: adding route %s failed due to existing "
-                                   "(different!) route %s",
-                                   nmp_object_to_string(conf_o,
-                                                        NMP_OBJECT_TO_STRING_PUBLIC,
-                                                        sbuf1,
-                                                        sizeof(sbuf1)),
-                                   nmp_object_to_string(plat_entry->obj,
-                                                        NMP_OBJECT_TO_STRING_PUBLIC,
-                                                        sbuf2,
-                                                        sizeof(sbuf2)));
-                        }
+            if (r == 0) {
+                /* success */
+            } else if (r == -EEXIST) {
+                /* Don't fail for EEXIST. It's not clear that the existing route
+                 * is identical to the one that we were about to add. However,
+                 * above we should have deleted conflicting (non-identical) routes. */
+                if (_LOGD_ENABLED()) {
+                    plat_entry =
+                        nm_platform_lookup_entry(self, NMP_CACHE_ID_TYPE_OBJECT_TYPE, conf_o);
+                    if (!plat_entry) {
+                        _LOG3D("route-sync: adding route %s failed with EEXIST, however we "
+                               "cannot find such a route",
+                               nmp_object_to_string(conf_o,
+                                                    NMP_OBJECT_TO_STRING_PUBLIC,
+                                                    sbuf1,
+                                                    sizeof(sbuf1)));
+                    } else if (vt->route_cmp(NMP_OBJECT_CAST_IPX_ROUTE(conf_o),
+                                             NMP_OBJECT_CAST_IPX_ROUTE(plat_entry->obj),
+                                             NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY)
+                               != 0) {
+                        _LOG3D("route-sync: adding route %s failed due to existing "
+                               "(different!) route %s",
+                               nmp_object_to_string(conf_o,
+                                                    NMP_OBJECT_TO_STRING_PUBLIC,
+                                                    sbuf1,
+                                                    sizeof(sbuf1)),
+                               nmp_object_to_string(plat_entry->obj,
+                                                    NMP_OBJECT_TO_STRING_PUBLIC,
+                                                    sbuf2,
+                                                    sizeof(sbuf2)));
                     }
-                } else if (NMP_OBJECT_CAST_IP_ROUTE(conf_o)->rt_source < NM_IP_CONFIG_SOURCE_USER) {
-                    _LOG3D("route-sync: ignore failure to add IPv%c route: %s: %s",
-                           vt->is_ip4 ? '4' : '6',
-                           nmp_object_to_string(conf_o,
-                                                NMP_OBJECT_TO_STRING_PUBLIC,
-                                                sbuf1,
-                                                sizeof(sbuf1)),
-                           nm_strerror(r));
-                } else if (out_temporary_not_available
-                           && _route_is_temporary_not_available(self, r, conf_o, &err_reason)) {
-                    _LOG3D("route-sync: ignore temporary failure to add route (%s, %s): %s",
-                           nm_strerror(r),
-                           err_reason,
-                           nmp_object_to_string(conf_o,
-                                                NMP_OBJECT_TO_STRING_PUBLIC,
-                                                sbuf1,
-                                                sizeof(sbuf1)));
-                    if (!*out_temporary_not_available)
-                        *out_temporary_not_available =
-                            g_ptr_array_new_full(0, (GDestroyNotify) nmp_object_unref);
-                    g_ptr_array_add(*out_temporary_not_available,
-                                    (gpointer) nmp_object_ref(conf_o));
-                } else {
-                    _LOG3W("route-sync: failure to add IPv%c route: %s: %s",
-                           vt->is_ip4 ? '4' : '6',
-                           nmp_object_to_string(conf_o,
-                                                NMP_OBJECT_TO_STRING_PUBLIC,
-                                                sbuf1,
-                                                sizeof(sbuf1)),
-                           nm_strerror(r));
-                    success = FALSE;
                 }
+            } else if (NMP_OBJECT_CAST_IP_ROUTE(conf_o)->rt_source < NM_IP_CONFIG_SOURCE_USER) {
+                _LOG3D(
+                    "route-sync: ignore failure to add IPv%c route: %s: %s",
+                    vt->is_ip4 ? '4' : '6',
+                    nmp_object_to_string(conf_o, NMP_OBJECT_TO_STRING_PUBLIC, sbuf1, sizeof(sbuf1)),
+                    nm_strerror(r));
+            } else if (out_temporary_not_available
+                       && _route_is_temporary_not_available(self, r, conf_o, &err_reason)) {
+                _LOG3D("route-sync: ignore temporary failure to add route (%s, %s): %s",
+                       nm_strerror(r),
+                       err_reason,
+                       nmp_object_to_string(conf_o,
+                                            NMP_OBJECT_TO_STRING_PUBLIC,
+                                            sbuf1,
+                                            sizeof(sbuf1)));
+                if (!*out_temporary_not_available)
+                    *out_temporary_not_available =
+                        g_ptr_array_new_full(0, (GDestroyNotify) nmp_object_unref);
+                g_ptr_array_add(*out_temporary_not_available, (gpointer) nmp_object_ref(conf_o));
+            } else {
+                _LOG3W(
+                    "route-sync: failure to add IPv%c route: %s: %s",
+                    vt->is_ip4 ? '4' : '6',
+                    nmp_object_to_string(conf_o, NMP_OBJECT_TO_STRING_PUBLIC, sbuf1, sizeof(sbuf1)),
+                    nm_strerror(r));
+                success = FALSE;
             }
         }
     }
