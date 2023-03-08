@@ -97,7 +97,7 @@ _entry_lookup_head(const NMDedupMultiIndex   *self,
         if (c_list_is_empty(&idx_type->lst_idx_head))
             head_entry = NULL;
         else {
-            nm_assert(c_list_length(&idx_type->lst_idx_head) == 1);
+            nm_assert(c_list_length_is(&idx_type->lst_idx_head, 1));
             head_entry = c_list_entry(idx_type->lst_idx_head.next, NMDedupMultiHeadEntry, lst_idx);
         }
         nm_assert(head_entry == g_hash_table_lookup(self->idx_entries, &stack_entry));

@@ -695,7 +695,7 @@ nm_netns_ip_route_ecmp_commit(NMNetns    *self,
                     /* This route is onlink. We don't need to configure an onlink route
                      * to the gateway, and the route is immediately ready for configuration. */
                     track_obj->is_ready = TRUE;
-                } else if (c_list_length_is(&track_ecmpid->ecmpid_lst_head, 1)) {
+                } else if (c_list_is_empty_or_single(&track_ecmpid->ecmpid_lst_head)) {
                     /* This route has no merge partner and ends up being a
                      * single hop route. It will be returned and configured by
                      * the calling "l3cfg".

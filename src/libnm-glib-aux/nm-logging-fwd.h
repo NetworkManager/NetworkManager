@@ -177,8 +177,8 @@ extern void _nm_utils_monotonic_timestamp_initialized(const struct timespec *tp,
 #define _LOGW(...) _NMLOG(_LOGL_WARN, __VA_ARGS__)
 #define _LOGE(...) _NMLOG(_LOGL_ERR, __VA_ARGS__)
 
-#define _LOGT_ENABLED(...) _NMLOG_ENABLED(_LOGL_TRACE, ##__VA_ARGS__)
-#define _LOGD_ENABLED(...) _NMLOG_ENABLED(_LOGL_DEBUG, ##__VA_ARGS__)
+#define _LOGT_ENABLED(...) G_UNLIKELY(_NMLOG_ENABLED(_LOGL_TRACE, ##__VA_ARGS__))
+#define _LOGD_ENABLED(...) G_UNLIKELY(_NMLOG_ENABLED(_LOGL_DEBUG, ##__VA_ARGS__))
 #define _LOGI_ENABLED(...) _NMLOG_ENABLED(_LOGL_INFO, ##__VA_ARGS__)
 #define _LOGW_ENABLED(...) _NMLOG_ENABLED(_LOGL_WARN, ##__VA_ARGS__)
 #define _LOGE_ENABLED(...) _NMLOG_ENABLED(_LOGL_ERR, ##__VA_ARGS__)
@@ -192,7 +192,7 @@ extern void _nm_utils_monotonic_timestamp_initialized(const struct timespec *tp,
 /* _LOGT() and _LOGt() both log with level TRACE, but the latter is disabled by default,
  * unless building with --with-more-logging. */
 #if NM_MORE_LOGGING
-#define _LOGt_ENABLED(...)    _NMLOG_ENABLED(_LOGL_TRACE, ##__VA_ARGS__)
+#define _LOGt_ENABLED(...)    G_UNLIKELY(_NMLOG_ENABLED(_LOGL_TRACE, ##__VA_ARGS__))
 #define _LOGt(...)            _NMLOG(_LOGL_TRACE, __VA_ARGS__)
 #define _LOGt_err(errsv, ...) _NMLOG_err(errsv, _LOGL_TRACE, __VA_ARGS__)
 #else
@@ -233,8 +233,8 @@ extern void _nm_utils_monotonic_timestamp_initialized(const struct timespec *tp,
 #define _LOG2W(...) _NMLOG2(_LOGL_WARN, __VA_ARGS__)
 #define _LOG2E(...) _NMLOG2(_LOGL_ERR, __VA_ARGS__)
 
-#define _LOG2T_ENABLED(...) _NMLOG2_ENABLED(_LOGL_TRACE, ##__VA_ARGS__)
-#define _LOG2D_ENABLED(...) _NMLOG2_ENABLED(_LOGL_DEBUG, ##__VA_ARGS__)
+#define _LOG2T_ENABLED(...) G_UNLIKELY(_NMLOG2_ENABLED(_LOGL_TRACE, ##__VA_ARGS__))
+#define _LOG2D_ENABLED(...) G_UNLIKELY(_NMLOG2_ENABLED(_LOGL_DEBUG, ##__VA_ARGS__))
 #define _LOG2I_ENABLED(...) _NMLOG2_ENABLED(_LOGL_INFO, ##__VA_ARGS__)
 #define _LOG2W_ENABLED(...) _NMLOG2_ENABLED(_LOGL_WARN, ##__VA_ARGS__)
 #define _LOG2E_ENABLED(...) _NMLOG2_ENABLED(_LOGL_ERR, ##__VA_ARGS__)
@@ -246,7 +246,7 @@ extern void _nm_utils_monotonic_timestamp_initialized(const struct timespec *tp,
 #define _LOG2E_err(errsv, ...) _NMLOG2_err(errsv, _LOGL_ERR, __VA_ARGS__)
 
 #if NM_MORE_LOGGING
-#define _LOG2t_ENABLED(...)    _NMLOG2_ENABLED(_LOGL_TRACE, ##__VA_ARGS__)
+#define _LOG2t_ENABLED(...)    G_UNLIKELY(_NMLOG2_ENABLED(_LOGL_TRACE, ##__VA_ARGS__))
 #define _LOG2t(...)            _NMLOG2(_LOGL_TRACE, __VA_ARGS__)
 #define _LOG2t_err(errsv, ...) _NMLOG2_err(errsv, _LOGL_TRACE, __VA_ARGS__)
 #else
@@ -278,8 +278,8 @@ extern void _nm_utils_monotonic_timestamp_initialized(const struct timespec *tp,
 #define _LOG3W(...) _NMLOG3(_LOGL_WARN, __VA_ARGS__)
 #define _LOG3E(...) _NMLOG3(_LOGL_ERR, __VA_ARGS__)
 
-#define _LOG3T_ENABLED(...) _NMLOG3_ENABLED(_LOGL_TRACE, ##__VA_ARGS__)
-#define _LOG3D_ENABLED(...) _NMLOG3_ENABLED(_LOGL_DEBUG, ##__VA_ARGS__)
+#define _LOG3T_ENABLED(...) G_UNLIKELY(_NMLOG3_ENABLED(_LOGL_TRACE, ##__VA_ARGS__))
+#define _LOG3D_ENABLED(...) G_UNLIKELY(_NMLOG3_ENABLED(_LOGL_DEBUG, ##__VA_ARGS__))
 #define _LOG3I_ENABLED(...) _NMLOG3_ENABLED(_LOGL_INFO, ##__VA_ARGS__)
 #define _LOG3W_ENABLED(...) _NMLOG3_ENABLED(_LOGL_WARN, ##__VA_ARGS__)
 #define _LOG3E_ENABLED(...) _NMLOG3_ENABLED(_LOGL_ERR, ##__VA_ARGS__)
@@ -291,7 +291,7 @@ extern void _nm_utils_monotonic_timestamp_initialized(const struct timespec *tp,
 #define _LOG3E_err(errsv, ...) _NMLOG3_err(errsv, _LOGL_ERR, __VA_ARGS__)
 
 #if NM_MORE_LOGGING
-#define _LOG3t_ENABLED(...)    _NMLOG3_ENABLED(_LOGL_TRACE, ##__VA_ARGS__)
+#define _LOG3t_ENABLED(...)    G_UNLIKELY(_NMLOG3_ENABLED(_LOGL_TRACE, ##__VA_ARGS__))
 #define _LOG3t(...)            _NMLOG3(_LOGL_TRACE, __VA_ARGS__)
 #define _LOG3t_err(errsv, ...) _NMLOG3_err(errsv, _LOGL_TRACE, __VA_ARGS__)
 #else
