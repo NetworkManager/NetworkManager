@@ -3,14 +3,12 @@
 #ifndef __NM_INET_UTILS_H__
 #define __NM_INET_UTILS_H__
 
-typedef struct _NMIPAddr {
-    union {
-        guint8          addr_ptr[sizeof(struct in6_addr)];
-        in_addr_t       addr4;
-        struct in_addr  addr4_struct;
-        struct in6_addr addr6;
-        guint8          array[sizeof(struct in6_addr)];
-    };
+typedef union _NMIPAddr {
+    guint8          addr_ptr[sizeof(struct in6_addr)];
+    in_addr_t       addr4;
+    struct in_addr  addr4_struct;
+    struct in6_addr addr6;
+    guint8          array[sizeof(struct in6_addr)];
 } NMIPAddr;
 
 #define NM_IP_ADDR_INIT \

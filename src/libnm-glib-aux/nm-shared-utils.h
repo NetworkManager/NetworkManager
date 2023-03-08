@@ -200,9 +200,9 @@ typedef struct {
 
 #define NM_ETHER_ADDR_INIT(...) ((NMEtherAddr) _NM_ETHER_ADDR_INIT(__VA_ARGS__))
 
-struct _NMIPAddr;
+union _NMIPAddr;
 
-extern const struct _NMIPAddr nm_ip_addr_zero;
+extern const union _NMIPAddr nm_ip_addr_zero;
 
 /* Let's reuse nm_ip_addr_zero also for nm_ether_addr_zero. It's a union that
  * also contains a NMEtherAddr field. */
