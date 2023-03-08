@@ -16,6 +16,11 @@
 #define NM_EC2_METADATA_URL_BASE /* $NM_EC2_BASE/$NM_EC2_API_VERSION */ \
     "/meta-data/network/interfaces/macs/"
 
+/* Token TTL of 180 seconds is chosen abitrarily, in hope that it is
+ * surely more than enough to read all relevant metadata. */
+#define NM_EC2_TOKEN_TTL_HEADER "X-aws-ec2-metadata-token-ttl-seconds: 180"
+#define NM_EC2_TOKEN_HEADER     "X-aws-ec2-metadata-token: "
+
 static const char *
 _ec2_base(void)
 {
@@ -44,8 +49,15 @@ again:
 
 /*****************************************************************************/
 
+enum {
+    NM_EC2_HTTP_HEADER_TOKEN,
+    NM_EC2_HTTP_HEADER_SENTINEL,
+    _NM_EC2_HTTP_HEADER_NUM,
+};
+
 struct _NMCSProviderEC2 {
     NMCSProvider parent;
+    char        *token;
 };
 
 struct _NMCSProviderEC2Class {
@@ -56,23 +68,18 @@ G_DEFINE_TYPE(NMCSProviderEC2, nmcs_provider_ec2, NMCS_TYPE_PROVIDER);
 
 /*****************************************************************************/
 
-static gboolean
-_detect_get_meta_data_check_cb(long     response_code,
-                               GBytes  *response,
-                               gpointer check_user_data,
-                               GError **error)
-{
-    return response_code == 200 && nmcs_utils_parse_get_full_line(response, "ami-id");
-}
-
 static void
-_detect_get_meta_data_done_cb(GObject *source, GAsyncResult *result, gpointer user_data)
+_detect_get_token_done_cb(GObject *source, GAsyncResult *result, gpointer user_data)
 {
     gs_unref_object GTask *task      = user_data;
+    NMCSProviderEC2       *self      = NMCS_PROVIDER_EC2(g_task_get_source_object(task));
+    gs_unref_bytes GBytes *response  = NULL;
     gs_free_error GError  *get_error = NULL;
     gs_free_error GError  *error     = NULL;
 
-    nm_http_client_poll_get_finish(NM_HTTP_CLIENT(source), result, NULL, NULL, &get_error);
+    nm_clear_g_free(&self->token);
+
+    nm_http_client_poll_req_finish(NM_HTTP_CLIENT(source), result, NULL, &response, &get_error);
 
     if (nm_utils_error_is_cancelled(get_error)) {
         g_task_return_error(task, g_steal_pointer(&get_error));
@@ -88,6 +95,12 @@ _detect_get_meta_data_done_cb(GObject *source, GAsyncResult *result, gpointer us
         return;
     }
 
+    /* We use the token as-is. Special characters can cause confusion (e.g.
+     * response splitting), but we're not crossing a security boundary.
+     * None of the examples in AWS documentation does any sort of
+     * sanitization either.  */
+    self->token = g_strconcat(NM_EC2_TOKEN_HEADER, g_bytes_get_data(response, NULL), NULL);
+
     g_task_return_boolean(task, TRUE);
 }
 
@@ -99,17 +112,18 @@ detect(NMCSProvider *provider, GTask *task)
 
     http_client = nmcs_provider_get_http_client(provider);
 
-    nm_http_client_poll_get(http_client,
-                            (uri = _ec2_uri_concat("latest/meta-data/")),
+    nm_http_client_poll_req(http_client,
+                            (uri = _ec2_uri_concat("latest/api/token")),
                             HTTP_TIMEOUT_MS,
                             256 * 1024,
                             7000,
                             1000,
-                            NULL,
+                            NM_MAKE_STRV(NM_EC2_TOKEN_TTL_HEADER),
+                            "PUT",
                             g_task_get_cancellable(task),
-                            _detect_get_meta_data_check_cb,
                             NULL,
-                            _detect_get_meta_data_done_cb,
+                            NULL,
+                            _detect_get_token_done_cb,
                             task);
 }
 
@@ -126,7 +140,7 @@ _get_config_fetch_done_cb(NMHttpClient                   *http_client,
     in_addr_t              tmp_addr;
     int                    tmp_prefix;
 
-    nm_http_client_poll_get_finish(http_client, result, NULL, &response, &error);
+    nm_http_client_poll_req_finish(http_client, result, NULL, &response, &error);
 
     if (nm_utils_error_is_cancelled(error))
         return;
@@ -197,6 +211,7 @@ static void
 _get_config_metadata_ready_cb(GObject *source, GAsyncResult *result, gpointer user_data)
 {
     NMCSProviderGetConfigTaskData *get_config_data;
+    NMCSProviderEC2               *self;
     gs_unref_hashtable GHashTable *response_parsed = NULL;
     gs_free_error GError          *error           = NULL;
     GetConfigMetadataMac          *v_mac_data;
@@ -204,12 +219,13 @@ _get_config_metadata_ready_cb(GObject *source, GAsyncResult *result, gpointer us
     GHashTableIter                 h_iter;
     NMHttpClient                  *http_client;
 
-    nm_http_client_poll_get_finish(NM_HTTP_CLIENT(source), result, NULL, NULL, &error);
+    nm_http_client_poll_req_finish(NM_HTTP_CLIENT(source), result, NULL, NULL, &error);
 
     if (nm_utils_error_is_cancelled(error))
         return;
 
     get_config_data = user_data;
+    self            = NMCS_PROVIDER_EC2(get_config_data->self);
 
     response_parsed                     = g_steal_pointer(&get_config_data->extra_data);
     get_config_data->extra_data_destroy = NULL;
@@ -254,7 +270,7 @@ _get_config_metadata_ready_cb(GObject *source, GAsyncResult *result, gpointer us
               v_mac_data->path);
 
         get_config_data->n_pending++;
-        nm_http_client_poll_get(
+        nm_http_client_poll_req(
             http_client,
             (uri1 = _ec2_uri_interfaces(v_mac_data->path,
                                         NM_STR_HAS_SUFFIX(v_mac_data->path, "/") ? "" : "/",
@@ -263,6 +279,7 @@ _get_config_metadata_ready_cb(GObject *source, GAsyncResult *result, gpointer us
             512 * 1024,
             10000,
             1000,
+            NM_MAKE_STRV(self->token),
             NULL,
             get_config_data->intern_cancellable,
             NULL,
@@ -271,7 +288,7 @@ _get_config_metadata_ready_cb(GObject *source, GAsyncResult *result, gpointer us
             config_iface_data);
 
         get_config_data->n_pending++;
-        nm_http_client_poll_get(
+        nm_http_client_poll_req(
             http_client,
             (uri2 = _ec2_uri_interfaces(v_mac_data->path,
                                         NM_STR_HAS_SUFFIX(v_mac_data->path, "/") ? "" : "/",
@@ -280,6 +297,7 @@ _get_config_metadata_ready_cb(GObject *source, GAsyncResult *result, gpointer us
             512 * 1024,
             10000,
             1000,
+            NM_MAKE_STRV(self->token),
             NULL,
             get_config_data->intern_cancellable,
             NULL,
@@ -365,18 +383,25 @@ _get_config_metadata_ready_check(long     response_code,
 static void
 get_config(NMCSProvider *provider, NMCSProviderGetConfigTaskData *get_config_data)
 {
-    gs_free char *uri = NULL;
+    NMCSProviderEC2 *self = NMCS_PROVIDER_EC2(provider);
+    gs_free char    *uri  = NULL;
+
+    /* This can be called only if detect() succeeded, which implies
+     * there must be a token.
+     */
+    nm_assert(self->token);
 
     /* First we fetch the "macs/". If the caller requested some particular
      * MAC addresses, then we poll until we see them. They might not yet be
      * around from the start...
      */
-    nm_http_client_poll_get(nmcs_provider_get_http_client(provider),
+    nm_http_client_poll_req(nmcs_provider_get_http_client(provider),
                             (uri = _ec2_uri_interfaces()),
                             HTTP_TIMEOUT_MS,
                             256 * 1024,
                             15000,
                             1000,
+                            NM_MAKE_STRV(self->token),
                             NULL,
                             get_config_data->intern_cancellable,
                             _get_config_metadata_ready_check,
@@ -392,9 +417,22 @@ nmcs_provider_ec2_init(NMCSProviderEC2 *self)
 {}
 
 static void
+dispose(GObject *object)
+{
+    NMCSProviderEC2 *self = NMCS_PROVIDER_EC2(object);
+
+    nm_clear_g_free(&self->token);
+
+    G_OBJECT_CLASS(nmcs_provider_ec2_parent_class)->dispose(object);
+}
+
+static void
 nmcs_provider_ec2_class_init(NMCSProviderEC2Class *klass)
 {
+    GObjectClass      *object_class   = G_OBJECT_CLASS(klass);
     NMCSProviderClass *provider_class = NMCS_PROVIDER_CLASS(klass);
+
+    object_class->dispose = dispose;
 
     provider_class->_name                 = "ec2";
     provider_class->_env_provider_enabled = NMCS_ENV_VARIABLE("NM_CLOUD_SETUP_EC2");

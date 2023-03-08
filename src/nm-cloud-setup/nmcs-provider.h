@@ -152,8 +152,36 @@ typedef struct {
     const char  *_name;
     const char  *_env_provider_enabled;
 
+    /**
+     * detect:
+     * @self: the #NMCSProvider
+     * @task: a #GTask that's completed when the detection finishes.
+     *
+     * Checks whether the metadata of a particular cloud provider is
+     * accessible on the host machine. The check runs asynchronously.
+     *
+     * When the check finishes, @task is completed. If the check was
+     * successful, @task returns a gboolean of %TRUE. Otherwise
+     * a %FALSE value or an error is returned.
+     *
+     * The routine has to be called before the get_config() can be
+     * used.
+     */
     void (*detect)(NMCSProvider *self, GTask *task);
 
+    /**
+     * get_config:
+     * @self: the #NMCSProvider
+     * @get_config_data: encapsulates a #GTask and network configuration data
+     *
+     * Collects the network configuration from metadata service of a
+     * particular cloud provider. The metadata is traversed and checked
+     * asynchronously, completing a task encapsulated in @get_config_data
+     * upon finishing.
+     *
+     * Call to detect() with a successful result is necessary before
+     * using this routine.
+     */
     void (*get_config)(NMCSProvider *self, NMCSProviderGetConfigTaskData *get_config_data);
 
 } NMCSProviderClass;
