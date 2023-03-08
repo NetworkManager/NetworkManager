@@ -206,7 +206,7 @@ extern const union _NMIPAddr nm_ip_addr_zero;
 
 /* Let's reuse nm_ip_addr_zero also for nm_ether_addr_zero. It's a union that
  * also contains a NMEtherAddr field. */
-#define nm_ether_addr_zero (*((const NMEtherAddr *) ((gconstpointer) &nm_ip_addr_zero)))
+#define nm_ether_addr_zero (*((const NMEtherAddr *) &nm_ip_addr_zero))
 
 static inline int
 nm_ether_addr_cmp(const NMEtherAddr *a, const NMEtherAddr *b)

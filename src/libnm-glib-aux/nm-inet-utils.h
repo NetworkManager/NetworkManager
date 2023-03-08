@@ -8,6 +8,11 @@ typedef union _NMIPAddr {
     in_addr_t       addr4;
     struct in_addr  addr4_struct;
     struct in6_addr addr6;
+
+    /* This union field only exists, so that it's guaranteed that NMIPAddr has
+     * a suitable alignment. We use that with nm_ether_addr_zero macro, that
+     * aliases nm_ip_addr_zero. */
+    NMEtherAddr _ether_addr;
 } NMIPAddr;
 
 #define NM_IP_ADDR_INIT   \
