@@ -28,40 +28,26 @@ GMainContext *nm_http_client_get_main_context(NMHttpClient *self);
 
 /*****************************************************************************/
 
-void nm_http_client_get(NMHttpClient       *self,
-                        const char         *uri,
-                        int                 timeout_msec,
-                        gssize              max_data,
-                        const char *const  *http_headers,
-                        GCancellable       *cancellable,
-                        GAsyncReadyCallback callback,
-                        gpointer            user_data);
-
-gboolean nm_http_client_get_finish(NMHttpClient *self,
-                                   GAsyncResult *result,
-                                   long         *out_response_code,
-                                   GBytes      **out_response_data,
-                                   GError      **error);
-
-typedef gboolean (*NMHttpClientPollGetCheckFcn)(long     response_code,
+typedef gboolean (*NMHttpClientPollReqCheckFcn)(long     response_code,
                                                 GBytes  *response_data,
                                                 gpointer check_user_data,
                                                 GError **error);
 
-void nm_http_client_poll_get(NMHttpClient               *self,
+void nm_http_client_poll_req(NMHttpClient               *self,
                              const char                 *uri,
                              int                         request_timeout_ms,
                              gssize                      request_max_data,
                              int                         poll_timeout_ms,
                              int                         ratelimit_timeout_ms,
                              const char *const          *http_headers,
+                             const char                 *http_method,
                              GCancellable               *cancellable,
-                             NMHttpClientPollGetCheckFcn check_fcn,
+                             NMHttpClientPollReqCheckFcn check_fcn,
                              gpointer                    check_user_data,
                              GAsyncReadyCallback         callback,
                              gpointer                    user_data);
 
-gboolean nm_http_client_poll_get_finish(NMHttpClient *self,
+gboolean nm_http_client_poll_req_finish(NMHttpClient *self,
                                         GAsyncResult *result,
                                         long         *out_response_code,
                                         GBytes      **out_response_data,

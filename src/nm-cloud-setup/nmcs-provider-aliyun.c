@@ -77,7 +77,7 @@ _detect_get_meta_data_done_cb(GObject *source, GAsyncResult *result, gpointer us
     gs_free_error GError  *get_error = NULL;
     gs_free_error GError  *error     = NULL;
 
-    nm_http_client_poll_get_finish(NM_HTTP_CLIENT(source), result, NULL, NULL, &get_error);
+    nm_http_client_poll_req_finish(NM_HTTP_CLIENT(source), result, NULL, NULL, &get_error);
 
     if (nm_utils_error_is_cancelled(get_error)) {
         g_task_return_error(task, g_steal_pointer(&get_error));
@@ -104,12 +104,13 @@ detect(NMCSProvider *provider, GTask *task)
 
     http_client = nmcs_provider_get_http_client(provider);
 
-    nm_http_client_poll_get(http_client,
+    nm_http_client_poll_req(http_client,
                             (uri = _aliyun_uri_concat(NM_ALIYUN_API_VERSION "/meta-data/")),
                             HTTP_TIMEOUT_MS,
                             256 * 1024,
                             7000,
                             1000,
+                            NULL,
                             NULL,
                             g_task_get_cancellable(task),
                             NULL,
@@ -144,7 +145,7 @@ _get_config_fetch_done_cb(NMHttpClient                   *http_client,
     gsize                  i;
     gsize                  len;
 
-    nm_http_client_poll_get_finish(http_client, result, NULL, &response, &error);
+    nm_http_client_poll_req_finish(http_client, result, NULL, &response, &error);
 
     if (nm_utils_error_is_cancelled(error))
         return;
@@ -302,7 +303,7 @@ _get_config_metadata_ready_cb(GObject *source, GAsyncResult *result, gpointer us
     GHashTableIter                 h_iter;
     NMHttpClient                  *http_client;
 
-    nm_http_client_poll_get_finish(NM_HTTP_CLIENT(source), result, NULL, NULL, &error);
+    nm_http_client_poll_req_finish(NM_HTTP_CLIENT(source), result, NULL, NULL, &error);
 
     if (nm_utils_error_is_cancelled(error))
         return;
@@ -356,7 +357,7 @@ _get_config_metadata_ready_cb(GObject *source, GAsyncResult *result, gpointer us
               v_mac_data->path);
 
         get_config_data->n_pending++;
-        nm_http_client_poll_get(
+        nm_http_client_poll_req(
             http_client,
             (uri1 = _aliyun_uri_interfaces(v_mac_data->path,
                                            NM_STR_HAS_SUFFIX(v_mac_data->path, "/") ? "" : "/",
@@ -366,6 +367,7 @@ _get_config_metadata_ready_cb(GObject *source, GAsyncResult *result, gpointer us
             10000,
             1000,
             NULL,
+            NULL,
             get_config_data->intern_cancellable,
             NULL,
             NULL,
@@ -373,7 +375,7 @@ _get_config_metadata_ready_cb(GObject *source, GAsyncResult *result, gpointer us
             config_iface_data);
 
         get_config_data->n_pending++;
-        nm_http_client_poll_get(
+        nm_http_client_poll_req(
             http_client,
             (uri2 = _aliyun_uri_interfaces(v_mac_data->path,
                                            NM_STR_HAS_SUFFIX(v_mac_data->path, "/") ? "" : "/",
@@ -383,6 +385,7 @@ _get_config_metadata_ready_cb(GObject *source, GAsyncResult *result, gpointer us
             10000,
             1000,
             NULL,
+            NULL,
             get_config_data->intern_cancellable,
             NULL,
             NULL,
@@ -390,7 +393,7 @@ _get_config_metadata_ready_cb(GObject *source, GAsyncResult *result, gpointer us
             config_iface_data);
 
         get_config_data->n_pending++;
-        nm_http_client_poll_get(
+        nm_http_client_poll_req(
             http_client,
             (uri3 = _aliyun_uri_interfaces(v_mac_data->path,
                                            NM_STR_HAS_SUFFIX(v_mac_data->path, "/") ? "" : "/",
@@ -400,6 +403,7 @@ _get_config_metadata_ready_cb(GObject *source, GAsyncResult *result, gpointer us
             10000,
             1000,
             NULL,
+            NULL,
             get_config_data->intern_cancellable,
             NULL,
             NULL,
@@ -407,7 +411,7 @@ _get_config_metadata_ready_cb(GObject *source, GAsyncResult *result, gpointer us
             config_iface_data);
 
         get_config_data->n_pending++;
-        nm_http_client_poll_get(
+        nm_http_client_poll_req(
             http_client,
             (uri4 = _aliyun_uri_interfaces(v_mac_data->path,
                                            NM_STR_HAS_SUFFIX(v_mac_data->path, "/") ? "" : "/",
@@ -417,6 +421,7 @@ _get_config_metadata_ready_cb(GObject *source, GAsyncResult *result, gpointer us
             10000,
             1000,
             NULL,
+            NULL,
             get_config_data->intern_cancellable,
             NULL,
             NULL,
@@ -424,7 +429,7 @@ _get_config_metadata_ready_cb(GObject *source, GAsyncResult *result, gpointer us
             config_iface_data);
 
         get_config_data->n_pending++;
-        nm_http_client_poll_get(
+        nm_http_client_poll_req(
             http_client,
             (uri5 = _aliyun_uri_interfaces(v_mac_data->path,
                                            NM_STR_HAS_SUFFIX(v_mac_data->path, "/") ? "" : "/",
@@ -433,6 +438,7 @@ _get_config_metadata_ready_cb(GObject *source, GAsyncResult *result, gpointer us
             512 * 1024,
             10000,
             1000,
+            NULL,
             NULL,
             get_config_data->intern_cancellable,
             NULL,
@@ -524,12 +530,13 @@ get_config(NMCSProvider *provider, NMCSProviderGetConfigTaskData *get_config_dat
      * MAC addresses, then we poll until we see them. They might not yet be
      * around from the start...
      */
-    nm_http_client_poll_get(nmcs_provider_get_http_client(provider),
+    nm_http_client_poll_req(nmcs_provider_get_http_client(provider),
                             (uri = _aliyun_uri_interfaces()),
                             HTTP_TIMEOUT_MS,
                             256 * 1024,
                             15000,
                             1000,
+                            NULL,
                             NULL,
                             get_config_data->intern_cancellable,
                             _get_config_metadata_ready_check,

@@ -45,7 +45,7 @@ _detect_get_meta_data_done_cb(GObject *source, GAsyncResult *result, gpointer us
     gs_free_error GError  *get_error = NULL;
     gs_free_error GError  *error     = NULL;
 
-    nm_http_client_poll_get_finish(NM_HTTP_CLIENT(source), result, NULL, NULL, &get_error);
+    nm_http_client_poll_req_finish(NM_HTTP_CLIENT(source), result, NULL, NULL, &get_error);
 
     if (nm_utils_error_is_cancelled(get_error)) {
         g_task_return_error(task, g_steal_pointer(&get_error));
@@ -72,13 +72,14 @@ detect(NMCSProvider *provider, GTask *task)
 
     http_client = nmcs_provider_get_http_client(provider);
 
-    nm_http_client_poll_get(http_client,
+    nm_http_client_poll_req(http_client,
                             (uri = _gcp_uri_concat("id")),
                             HTTP_TIMEOUT_MS,
                             256 * 1024,
                             7000,
                             1000,
                             NM_MAKE_STRV(NM_GCP_METADATA_HEADER),
+                            NULL,
                             g_task_get_cancellable(task),
                             NULL,
                             NULL,
@@ -114,7 +115,7 @@ _get_config_fip_cb(GObject *source, GAsyncResult *result, gpointer user_data)
     NMIPRoute                     **routes_arr;
     NMIPRoute                      *route_new;
 
-    nm_http_client_poll_get_finish(NM_HTTP_CLIENT(source), result, NULL, &response, &error);
+    nm_http_client_poll_req_finish(NM_HTTP_CLIENT(source), result, NULL, &response, &error);
 
     if (nm_utils_error_is_cancelled(error))
         return;
@@ -171,7 +172,7 @@ _get_config_ips_list_cb(GObject *source, GAsyncResult *result, gpointer user_dat
     gsize                          line_len;
     guint                          i;
 
-    nm_http_client_poll_get_finish(NM_HTTP_CLIENT(source), result, NULL, &response, &error);
+    nm_http_client_poll_req_finish(NM_HTTP_CLIENT(source), result, NULL, &response, &error);
 
     if (nm_utils_error_is_cancelled(error))
         return;
@@ -220,13 +221,14 @@ _get_config_ips_list_cb(GObject *source, GAsyncResult *result, gpointer user_dat
         const char         *str = uri_arr->pdata[i];
         gs_free const char *uri = NULL;
 
-        nm_http_client_poll_get(NM_HTTP_CLIENT(source),
+        nm_http_client_poll_req(NM_HTTP_CLIENT(source),
                                 (uri = _gcp_uri_interfaces(str)),
                                 HTTP_TIMEOUT_MS,
                                 HTTP_REQ_MAX_DATA,
                                 HTTP_POLL_TIMEOUT_MS,
                                 HTTP_RATE_LIMIT_MS,
                                 NM_MAKE_STRV(NM_GCP_METADATA_HEADER),
+                                NULL,
                                 get_config_data->intern_cancellable,
                                 NULL,
                                 NULL,
@@ -252,7 +254,7 @@ _get_config_iface_cb(GObject *source, GAsyncResult *result, gpointer user_data)
     NMCSProviderGetConfigTaskData *get_config_data;
     gboolean                       is_requested;
 
-    nm_http_client_poll_get_finish(NM_HTTP_CLIENT(source), result, NULL, &response, &error);
+    nm_http_client_poll_req_finish(NM_HTTP_CLIENT(source), result, NULL, &response, &error);
 
     if (nm_utils_error_is_cancelled(error))
         return;
@@ -306,13 +308,14 @@ _get_config_iface_cb(GObject *source, GAsyncResult *result, gpointer user_data)
 
     nm_sprintf_buf(sbuf, "%" G_GSSIZE_FORMAT "/forwarded-ips/", iface_data->intern_iface_idx);
 
-    nm_http_client_poll_get(NM_HTTP_CLIENT(source),
+    nm_http_client_poll_req(NM_HTTP_CLIENT(source),
                             (uri = _gcp_uri_interfaces(sbuf)),
                             HTTP_TIMEOUT_MS,
                             HTTP_REQ_MAX_DATA,
                             HTTP_POLL_TIMEOUT_MS,
                             HTTP_RATE_LIMIT_MS,
                             NM_MAKE_STRV(NM_GCP_METADATA_HEADER),
+                            NULL,
                             get_config_data->intern_cancellable,
                             NULL,
                             NULL,
@@ -339,7 +342,7 @@ _get_net_ifaces_list_cb(GObject *source, GAsyncResult *result, gpointer user_dat
     guint                          i;
     gssize                         extern_iface_idx_cnt = 0;
 
-    nm_http_client_poll_get_finish(NM_HTTP_CLIENT(source), result, NULL, &response, &error);
+    nm_http_client_poll_req_finish(NM_HTTP_CLIENT(source), result, NULL, &response, &error);
 
     if (nm_utils_error_is_cancelled(error))
         return;
@@ -405,13 +408,14 @@ _get_net_ifaces_list_cb(GObject *source, GAsyncResult *result, gpointer user_dat
         nm_sprintf_buf(sbuf, "%" G_GSSIZE_FORMAT "/mac", data->intern_iface_idx);
 
         get_config_data->n_pending++;
-        nm_http_client_poll_get(NM_HTTP_CLIENT(source),
+        nm_http_client_poll_req(NM_HTTP_CLIENT(source),
                                 (uri = _gcp_uri_interfaces(sbuf)),
                                 HTTP_TIMEOUT_MS,
                                 HTTP_REQ_MAX_DATA,
                                 HTTP_POLL_TIMEOUT_MS,
                                 HTTP_RATE_LIMIT_MS,
                                 NM_MAKE_STRV(NM_GCP_METADATA_HEADER),
+                                NULL,
                                 get_config_data->intern_cancellable,
                                 NULL,
                                 NULL,
@@ -428,13 +432,14 @@ get_config(NMCSProvider *provider, NMCSProviderGetConfigTaskData *get_config_dat
 {
     gs_free const char *uri = NULL;
 
-    nm_http_client_poll_get(nmcs_provider_get_http_client(provider),
+    nm_http_client_poll_req(nmcs_provider_get_http_client(provider),
                             (uri = _gcp_uri_interfaces()),
                             HTTP_TIMEOUT_MS,
                             HTTP_REQ_MAX_DATA,
                             HTTP_POLL_TIMEOUT_MS,
                             HTTP_RATE_LIMIT_MS,
                             NM_MAKE_STRV(NM_GCP_METADATA_HEADER),
+                            NULL,
                             get_config_data->intern_cancellable,
                             NULL,
                             NULL,
