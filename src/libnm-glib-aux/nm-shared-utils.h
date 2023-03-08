@@ -201,6 +201,7 @@ typedef struct {
 #define NM_ETHER_ADDR_INIT(...) ((NMEtherAddr) _NM_ETHER_ADDR_INIT(__VA_ARGS__))
 
 struct _NMIPAddr;
+
 extern const struct _NMIPAddr nm_ip_addr_zero;
 
 /* Let's reuse nm_ip_addr_zero also for nm_ether_addr_zero. It's a union that
@@ -1343,10 +1344,6 @@ nm_g_variant_new_au(const guint32 *data, gsize len)
 {
     return g_variant_new_fixed_array(G_VARIANT_TYPE_UINT32, data, len, sizeof(guint32));
 }
-
-struct _NMIPAddr;
-
-extern const struct _NMIPAddr nm_ip_addr_zero;
 
 static inline GVariant *
 nm_g_variant_new_ay_inaddr(int addr_family, gconstpointer addr)
