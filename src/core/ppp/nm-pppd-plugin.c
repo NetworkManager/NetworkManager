@@ -386,31 +386,6 @@ nm_exit_notify(void *data, int arg)
     nm_clear_g_free(&gl.ipparam);
 }
 
-static void
-add_ip6_notifier(void)
-{
-#if WITH_PPP_VERSION < PPP_VERSION(2, 5, 0)
-    static struct notifier **notifier  = NULL;
-    static gsize             load_once = 0;
-
-    if (g_once_init_enter(&load_once)) {
-        void *handle = dlopen(NULL, RTLD_NOW | RTLD_GLOBAL);
-
-        if (handle) {
-            notifier = dlsym(handle, "ipv6_up_notifier");
-            dlclose(handle);
-        }
-        g_once_init_leave(&load_once, 1);
-    }
-    if (notifier)
-        add_notifier(notifier, nm_ip6_up, NULL);
-    else
-        g_message("nm-ppp-plugin: no IPV6CP notifier support; IPv6 not available");
-#else
-    ppp_add_notify(NF_IPV6_UP, nm_ip6_up, NULL);
-#endif
-}
-
 int
 plugin_init(void)
 {
@@ -437,6 +412,6 @@ plugin_init(void)
     ppp_add_notify(NF_PHASE_CHANGE, nm_phasechange_hook, NULL);
     ppp_add_notify(NF_IP_UP, nm_ip_up, NULL);
     ppp_add_notify(NF_EXIT, nm_exit_notify, NULL);
-    add_ip6_notifier();
+    ppp_add_notify(NF_IPV6_UP, nm_ip6_up, NULL);
     return 0;
 }
