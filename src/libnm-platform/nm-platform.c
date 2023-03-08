@@ -5096,15 +5096,17 @@ nm_platform_ip_route_sync(NMPlatform *self,
                 }
             } else if (NMP_OBJECT_CAST_IP_ROUTE(conf_o)->rt_source < NM_IP_CONFIG_SOURCE_USER) {
                 _LOG3D(
-                    "route-sync: ignore failure to add IPv%c route: %s: %s",
+                    "route-sync: ignore failure to add IPv%c route: %s: %s%s%s%s",
                     vt->is_ip4 ? '4' : '6',
                     nmp_object_to_string(conf_o, NMP_OBJECT_TO_STRING_PUBLIC, sbuf1, sizeof(sbuf1)),
-                    nm_strerror(r));
+                    nm_strerror(r),
+                    NM_PRINT_FMT_QUOTED(extack_msg, " (", extack_msg, ")", ""));
             } else if (out_temporary_not_available
                        && _route_is_temporary_not_available(self, r, conf_o, &err_reason)) {
-                _LOG3D("route-sync: ignore temporary failure to add route (%s, %s): %s",
+                _LOG3D("route-sync: ignore temporary failure to add route (%s, %s%s%s%s): %s",
                        nm_strerror(r),
                        err_reason,
+                       NM_PRINT_FMT_QUOTED(extack_msg, ", ", extack_msg, "", ""),
                        nmp_object_to_string(conf_o,
                                             NMP_OBJECT_TO_STRING_PUBLIC,
                                             sbuf1,
@@ -5115,10 +5117,11 @@ nm_platform_ip_route_sync(NMPlatform *self,
                 g_ptr_array_add(*out_temporary_not_available, (gpointer) nmp_object_ref(conf_o));
             } else {
                 _LOG3W(
-                    "route-sync: failure to add IPv%c route: %s: %s",
+                    "route-sync: failure to add IPv%c route: %s: %s%s%s%s",
                     vt->is_ip4 ? '4' : '6',
                     nmp_object_to_string(conf_o, NMP_OBJECT_TO_STRING_PUBLIC, sbuf1, sizeof(sbuf1)),
-                    nm_strerror(r));
+                    nm_strerror(r),
+                    NM_PRINT_FMT_QUOTED(extack_msg, " (", extack_msg, ")", ""));
                 success = FALSE;
             }
         }
