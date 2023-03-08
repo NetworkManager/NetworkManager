@@ -30,7 +30,7 @@ set -e
 # Create a symlink ./.git/NetworkManager-ci, to also bind-mount the CI directory.
 #
 # Currently NM-ci requires a working eth1.
-# Hence call `nm-env-prepare.sh --prefix eth -i 1 && nmcli device connect eth1` before
+# Hence call `nm-env-prepare.sh --prefix eth -i 1 && sleep 1 && nmcli device connect eth1` before
 # running a CI test.
 ###############################################################################
 
@@ -197,7 +197,7 @@ subsequent \`make && make install\` will overwrite your system's NetworkManager,
 and you can test it with \`systemctl daemon-reload ; systemctl restart NetworkManager\`.
 
 Run NM-ci tests after creating eth1 with
-\`nm-env-prepare.sh --prefix eth -i 1 && nmcli device connect eth1\`.
+\`nm-env-prepare.sh --prefix eth -i 1 && sleep 1 && nmcli device connect eth1\`.
 EOF
 
     cat <<EOF | tmp_file "$BASEDIR/data-bashrc.my"
@@ -286,7 +286,7 @@ make install
 n
 nm-env-prepare.sh
 nm-env-prepare.sh --prefix eth -i 1
-nm-env-prepare.sh --prefix eth -i 1 && nmcli device connect eth1
+nm-env-prepare.sh --prefix eth -i 1 && sleep 1 && nmcli device connect eth1
 nm_run_gdb
 nm_run_normal
 gdb /usr/sbin/NetworkManager /tmp/core.NetworkManager.
