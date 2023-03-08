@@ -4723,7 +4723,7 @@ _l3_commit_mptcp(NML3Cfg *self, NML3CfgCommitType commit_type)
     _rp_filter_update(self, reapply);
 }
 
-static gboolean
+static void
 _l3_commit_one(NML3Cfg              *self,
                int                   addr_family,
                NML3CfgCommitType     commit_type,
@@ -4740,7 +4740,6 @@ _l3_commit_one(NML3Cfg              *self,
     NMIPRouteTableSyncMode       route_table_sync;
     gboolean                     final_failure_for_temporary_not_available = FALSE;
     char                         sbuf_commit_type[50];
-    gboolean                     success = TRUE;
     guint                        i;
 
     nm_assert(NM_IS_L3CFG(self));
@@ -4857,13 +4856,12 @@ _l3_commit_one(NML3Cfg              *self,
 
     _nodev_routes_sync(self, addr_family, commit_type, routes_nodev);
 
-    if (!nm_platform_ip_route_sync(self->priv.platform,
-                                   addr_family,
-                                   self->priv.ifindex,
-                                   routes,
-                                   routes_prune,
-                                   &routes_temporary_not_available_arr))
-        success = FALSE;
+    nm_platform_ip_route_sync(self->priv.platform,
+                              addr_family,
+                              self->priv.ifindex,
+                              routes,
+                              routes_prune,
+                              &routes_temporary_not_available_arr);
 
     final_failure_for_temporary_not_available = FALSE;
     if (!_routes_temporary_not_available_update(self,
@@ -4873,8 +4871,6 @@ _l3_commit_one(NML3Cfg              *self,
 
     /* FIXME(l3cfg) */
     (void) final_failure_for_temporary_not_available;
-
-    return success;
 }
 
 static void
