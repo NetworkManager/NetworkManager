@@ -1419,6 +1419,9 @@ nm_utils_addr_family_to_char(int addr_family)
         (NM_UNIQ_T(_addr_family, uniq) == NM_AF_INET);           \
     })
 
+/* NM_IS_IPv4() is guaranteed to give either 0 or 1! That is an important
+ * guarantee, because we often use that value to index a 2-array (where at
+ * position zero is IPv6 and at position 1 IPv4). */
 #define NM_IS_IPv4(addr_family) _NM_IS_IPv4(NM_UNIQ, addr_family)
 
 static inline int
