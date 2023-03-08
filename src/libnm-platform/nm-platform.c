@@ -5346,7 +5346,7 @@ _ip_route_add(NMPlatform *self, NMPNlmFlags flags, NMPObject *obj_stack, char **
     char sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
     int  ifindex;
 
-    _CHECK_SELF(self, klass, FALSE);
+    _CHECK_SELF(self, klass, -NME_BUG);
 
     /* The caller already ensures that this is a stack allocated copy, that
      * - stays alive for the duration of the call.
