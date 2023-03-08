@@ -368,7 +368,7 @@ get_property_ip4(GObject *object, guint prop_id, GValue *value, GParamSpec *pspe
                     continue;
 
                 if (prop_id == PROP_IP4_NAMESERVERS)
-                    g_variant_builder_add(&builder, "u", &a);
+                    g_variant_builder_add(&builder, "u", a);
                 else {
                     GVariantBuilder nested_builder;
 
