@@ -1883,12 +1883,13 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      * the stable-id can contain placeholders that are substituted dynamically and
      * deterministically depending on the context.
      *
-     * The stable-id is used for generating IPv6 stable private addresses
-     * with ipv6.addr-gen-mode=stable-privacy. It is also used to seed the
-     * generated cloned MAC address for ethernet.cloned-mac-address=stable
-     * and wifi.cloned-mac-address=stable. It is also used as DHCP client
-     * identifier with ipv4.dhcp-client-id=stable and to derive the DHCP
-     * DUID with ipv6.dhcp-duid=stable-[llt,ll,uuid].
+     * The stable-id is used for generating IPv6 stable private addresses with
+     * ipv6.addr-gen-mode=stable-privacy. It is also used to seed the generated
+     * cloned MAC address for ethernet.cloned-mac-address=stable and
+     * wifi.cloned-mac-address=stable. It is also used to derive the DHCP
+     * client identifier with ipv4.dhcp-client-id=stable, the DHCPv6 DUID with
+     * ipv6.dhcp-duid=stable-[llt,ll,uuid] and the DHCP IAID with
+     * ipv4.iaid=stable and ipv6.iaid=stable.
      *
      * Note that depending on the context where it is used, other parameters are
      * also seeded into the generation algorithm. For example, a per-host key
