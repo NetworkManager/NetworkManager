@@ -15,6 +15,11 @@ typedef union _NMIPAddr {
     NMEtherAddr _ether_addr;
 } NMIPAddr;
 
+typedef struct _NMIPAddrTyped {
+    NMIPAddr addr;
+    gint8    addr_family;
+} NMIPAddrTyped;
+
 #define NM_IP_ADDR_INIT   \
     {                     \
         .addr_ptr = { 0 } \
@@ -134,6 +139,30 @@ nm_ip_addr_from_packed_array(int addr_family, gconstpointer ipaddr_arr, gsize id
     return NM_IS_IPv4(addr_family)
                ? ((gconstpointer) & (((const struct in_addr *) ipaddr_arr)[idx]))
                : ((gconstpointer) & (((const struct in6_addr *) ipaddr_arr)[idx]));
+}
+
+/*****************************************************************************/
+
+static inline int
+nm_ip_addr_typed_cmp(const NMIPAddrTyped *a, const NMIPAddrTyped *b)
+{
+    NM_CMP_SELF(a, b);
+    NM_CMP_FIELD(a, b, addr_family);
+    NM_CMP_DIRECT_MEMCMP(&a->addr, &b->addr, nm_utils_addr_family_to_size(a->addr_family));
+    return 0;
+}
+
+static inline gboolean
+nm_ip_addr_typed_equal(const NMIPAddrTyped *a, const NMIPAddrTyped *b)
+{
+    return nm_ip_addr_typed_cmp(a, b) == 0;
+}
+
+static inline void
+nm_ip_addr_typed_hash_update(NMHashState *h, const NMIPAddrTyped *addr)
+{
+    nm_hash_update_vals(h, addr->addr_family);
+    nm_hash_update_mem(h, &addr->addr, nm_utils_addr_family_to_size(addr->addr_family));
 }
 
 /*****************************************************************************/
