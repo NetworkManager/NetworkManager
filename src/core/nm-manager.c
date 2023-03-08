@@ -7077,7 +7077,7 @@ do_sleep_wake(NMManager *self, gboolean sleeping_changed)
             nm_device_set_unmanaged_by_flags(device,
                                              NM_UNMANAGED_SLEEPING,
                                              NM_UNMAN_FLAG_OP_SET_MANAGED,
-                                             NM_DEVICE_STATE_REASON_NOW_MANAGED);
+                                             NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
         }
 
         /* Give the connections a chance to recreate the virtual devices.
