@@ -8,12 +8,11 @@ typedef union _NMIPAddr {
     in_addr_t       addr4;
     struct in_addr  addr4_struct;
     struct in6_addr addr6;
-    guint8          array[sizeof(struct in6_addr)];
 } NMIPAddr;
 
-#define NM_IP_ADDR_INIT \
-    {                   \
-        .array = { 0 }  \
+#define NM_IP_ADDR_INIT   \
+    {                     \
+        .addr_ptr = { 0 } \
     }
 
 #define _NM_IN6ADDR_INIT(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, aa, ab, ac, ad, ae, af) \
@@ -108,7 +107,7 @@ nm_ip_addr_init(int addr_family, gconstpointer src)
 
         /* ensure all bytes of the union are initialized. If only to make
          * valgrind happy. */
-        memset(&a.array[sizeof(in_addr_t)], 0, sizeof(a) - sizeof(in_addr_t));
+        memset(&a.addr_ptr[sizeof(in_addr_t)], 0, sizeof(a) - sizeof(in_addr_t));
     } else
         memcpy(&a, src, sizeof(struct in6_addr));
 

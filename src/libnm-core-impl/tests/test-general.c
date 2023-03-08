@@ -10471,7 +10471,7 @@ test_nm_ip_addr_zero(void)
     g_assert_cmpstr(nm_inet_ntop(AF_INET, &nm_ip_addr_zero, buf), ==, "0.0.0.0");
     g_assert_cmpstr(nm_inet_ntop(AF_INET6, &nm_ip_addr_zero, buf), ==, "::");
 
-    G_STATIC_ASSERT_EXPR(sizeof(a) == sizeof(a.array));
+    G_STATIC_ASSERT_EXPR(sizeof(a) == sizeof(a.addr_ptr));
 }
 
 static void
