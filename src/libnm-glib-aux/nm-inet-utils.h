@@ -9,14 +9,7 @@ typedef struct _NMIPAddr {
         in_addr_t       addr4;
         struct in_addr  addr4_struct;
         struct in6_addr addr6;
-
-        /* NMIPAddr is really a union for IP addresses.
-         * However, as ethernet addresses fit in here nicely, use
-         * it also for an ethernet MAC address. */
-        guint8      ether_addr_octet[6 /*ETH_ALEN*/];
-        NMEtherAddr ether_addr;
-
-        guint8 array[sizeof(struct in6_addr)];
+        guint8          array[sizeof(struct in6_addr)];
     };
 } NMIPAddr;
 
