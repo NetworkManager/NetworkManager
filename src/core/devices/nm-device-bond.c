@@ -240,7 +240,12 @@ controller_update_port_connection(NMDevice     *self,
     pllink = nm_platform_link_get(nm_device_get_platform(port), ifindex_port);
 
     if (pllink)
-        g_object_set(s_port, NM_SETTING_BOND_PORT_QUEUE_ID, pllink->bond_port_opts.queue_id, NULL);
+        g_object_set(s_port,
+                     NM_SETTING_BOND_PORT_QUEUE_ID,
+                     pllink->bond_port_opts.queue_id,
+                     NM_SETTING_BOND_PORT_PRIO,
+                     pllink->bond_port_opts.prio,
+                     NULL);
 
     g_object_set(nm_connection_get_setting_connection(connection),
                  NM_SETTING_CONNECTION_MASTER,
@@ -631,12 +636,31 @@ act_stage1_prepare(NMDevice *device, NMDeviceStateReason *out_failure_reason)
 static void
 commit_port_options(NMDevice *bond_device, NMDevice *port, NMSettingBondPort *s_port)
 {
+    NMConnection  *connection = nm_device_get_settings_connection_get_connection(bond_device);
+    NMBondMode     mode       = NM_BOND_MODE_UNKNOWN;
+    const char    *value;
+    NMSettingBond *s_bond;
+
+    if (connection) {
+        s_bond = _nm_connection_get_setting(connection, NM_TYPE_SETTING_BOND);
+        if (s_bond) {
+            value = nm_setting_bond_get_option_normalized(s_bond, NM_SETTING_BOND_OPTION_MODE);
+            mode  = _nm_setting_bond_mode_from_string(value);
+        }
+    }
+
     nm_platform_link_change(
         nm_device_get_platform(port),
         nm_device_get_ifindex(port),
         NULL,
-        &((NMPlatformLinkBondPort){.queue_id = s_port ? nm_setting_bond_port_get_queue_id(s_port)
-                                                      : NM_BOND_PORT_QUEUE_ID_DEF}),
+        &((NMPlatformLinkBondPort){
+            .queue_id =
+                s_port ? nm_setting_bond_port_get_queue_id(s_port) : NM_BOND_PORT_QUEUE_ID_DEF,
+            .prio = s_port ? nm_setting_bond_port_get_prio(s_port) : NM_BOND_PORT_PRIO_DEF,
+            .prio_has =
+                !NM_IN_SET(mode, NM_BOND_MODE_ACTIVEBACKUP, NM_BOND_MODE_TLB, NM_BOND_MODE_ALB)
+                    ? FALSE
+                    : TRUE}),
         0);
 }
 

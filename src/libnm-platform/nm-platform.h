@@ -170,7 +170,9 @@ struct _NMPlatformObjWithIfindex {
 } _nm_alignas(NMPlatformObject);
 
 typedef struct {
+    gint32  prio;
     guint16 queue_id;
+    bool    prio_has : 1;
 } NMPlatformLinkBondPort;
 
 struct _NMPlatformLink {

@@ -80,7 +80,12 @@ _nmp_link_bond_port_to_string(const NMPlatformLinkBondPort *bond_port, char buf[
 {
     nm_assert(bond_port);
 
-    g_snprintf(buf, 100, "bond-port queue-id %u", bond_port->queue_id);
+    g_snprintf(buf,
+               100,
+               "bond-port queue-id %u prio%s %" G_GINT32_FORMAT,
+               bond_port->queue_id,
+               !bond_port->prio_has ? "?" : "",
+               bond_port->prio);
 
     return buf;
 }
@@ -2164,6 +2169,8 @@ nm_platform_link_change(NMPlatform               *self,
                         NMPlatformLinkBondPort   *bond_port,
                         NMPlatformLinkChangeFlags flags)
 {
+    char sbuf_prio[100];
+
     _CHECK_SELF(self, klass, FALSE);
 
     g_return_val_if_fail(ifindex >= 0, FALSE);
@@ -2187,7 +2194,15 @@ nm_platform_link_change(NMPlatform               *self,
         if (flags & NM_PLATFORM_LINK_CHANGE_GRO_MAX_SIZE)
             g_string_append_printf(str, "gro_max_size %u ", props->gro_max_size);
         if (bond_port)
-            g_string_append_printf(str, "bond-port queue-id %d", bond_port->queue_id);
+            g_string_append_printf(str,
+                                   "bond-port queue-id %d %s",
+                                   bond_port->queue_id,
+                                   bond_port->prio_has || bond_port->prio != 0
+                                       ? nm_sprintf_buf(sbuf_prio,
+                                                        "prio%s %" G_GINT32_FORMAT,
+                                                        !bond_port->prio_has ? "?" : "",
+                                                        bond_port->prio)
+                                       : "");
 
         if (str->len > 0 && str->str[str->len - 1] == ' ')
             g_string_truncate(str, str->len - 1);
@@ -7874,7 +7889,7 @@ nm_platform_link_hash_update(const NMPlatformLink *obj, NMHashState *h)
 void
 nm_platform_link_bond_port_hash_update(const NMPlatformLinkBondPort *obj, NMHashState *h)
 {
-    nm_hash_update_vals(h, obj->queue_id);
+    nm_hash_update_vals(h, obj->prio, obj->queue_id, NM_HASH_COMBINE_BOOLS(guint8, obj->prio_has));
 }
 
 int
@@ -7998,6 +8013,8 @@ nm_platform_link_bond_port_cmp(const NMPlatformLinkBondPort *a, const NMPlatform
 {
     NM_CMP_SELF(a, b);
     NM_CMP_FIELD(a, b, queue_id);
+    NM_CMP_FIELD(a, b, prio);
+    NM_CMP_FIELD_BOOL(a, b, prio_has);
 
     return 0;
 }
