@@ -2306,6 +2306,19 @@ nm_platform_ip_route_get_gateway(int addr_family, const NMPlatformIPRoute *route
     return &((NMPlatformIP6Route *) route)->gateway;
 }
 
+static inline gconstpointer
+nm_platform_ip_route_get_pref_src(int addr_family, const NMPlatformIPRoute *route)
+{
+    nm_assert_addr_family(addr_family);
+
+    if (!route)
+        return NULL;
+
+    if (NM_IS_IPv4(addr_family))
+        return &((NMPlatformIP4Route *) route)->pref_src;
+    return &((NMPlatformIP6Route *) route)->pref_src;
+}
+
 int nm_platform_ip_route_add(NMPlatform      *self,
                              NMPNlmFlags      flags,
                              const NMPObject *route,
