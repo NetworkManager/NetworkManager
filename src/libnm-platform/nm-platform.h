@@ -217,7 +217,9 @@ struct _NMPlatformObjWithIfindex {
 };
 
 typedef struct {
+    gint32  prio;
     guint16 queue_id;
+    bool    prio_has : 1;
 } NMPlatformLinkBondPort;
 
 typedef union {
@@ -274,11 +276,11 @@ struct _NMPlatformLink {
     guint64 tx_packets;
     guint64 tx_bytes;
 
-    /* IFLA_INFO_SLAVE_KIND */
-    NMPortKind port_kind;
-
     /* an interface can only hold IFLA_INFO_SLAVE_DATA for one link type */
     NMPlatformLinkPortData port_data;
+
+    /* IFLA_INFO_SLAVE_KIND */
+    NMPortKind port_kind;
 
     /* @connected is mostly identical to (@n_ifi_flags & IFF_UP). Except for bridge/bond masters,
      * where we coerce the link as disconnect if it has no slaves. */
@@ -1139,6 +1141,8 @@ typedef enum {
     /* this also includes FRA_SPORT_RANGE and FRA_DPORT_RANGE which
      * were added at the same time. */
     NM_PLATFORM_KERNEL_SUPPORT_TYPE_FRA_IP_PROTO,
+
+    NM_PLATFORM_KERNEL_SUPPORT_TYPE_IFLA_BOND_SLAVE_PRIO,
 
     _NM_PLATFORM_KERNEL_SUPPORT_NUM,
 } NMPlatformKernelSupportType;

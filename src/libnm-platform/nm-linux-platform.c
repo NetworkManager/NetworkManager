@@ -177,6 +177,8 @@ G_STATIC_ASSERT(RTA_MAX == (__RTA_MAX - 1));
 
 /*****************************************************************************/
 
+#define IFLA_BOND_SLAVE_PRIO 9
+
 #define IFLA_BOND_PEER_NOTIF_DELAY 28
 
 #undef IFLA_BOND_MAX
@@ -3267,6 +3269,7 @@ _new_from_nl_link(NMPlatform            *platform,
         if (li[IFLA_INFO_SLAVE_DATA]) {
             static const struct nla_policy policy_bond_port[] = {
                 [IFLA_BOND_SLAVE_QUEUE_ID] = {.type = NLA_U16},
+                [IFLA_BOND_SLAVE_PRIO]     = {.type = NLA_S32},
             };
             struct nlattr *bp[G_N_ELEMENTS(policy_bond_port)];
 
@@ -3278,6 +3281,21 @@ _new_from_nl_link(NMPlatform            *platform,
                 if (bp[IFLA_BOND_SLAVE_QUEUE_ID])
                     obj->link.port_data.bond.queue_id = nla_get_u16(bp[IFLA_BOND_SLAVE_QUEUE_ID]);
 
+                if (bp[IFLA_BOND_SLAVE_PRIO]) {
+                    obj->link.port_data.bond.prio     = nla_get_s32(bp[IFLA_BOND_SLAVE_PRIO]);
+                    obj->link.port_data.bond.prio_has = TRUE;
+                    if (!_nm_platform_kernel_support_detected(
+                            NM_PLATFORM_KERNEL_SUPPORT_TYPE_IFLA_BOND_SLAVE_PRIO)) {
+                        /* support for IFLA_BOND_SLAVE_PRIO was added in 0a2ff7cc8ad48a86939a91bd3457f38e59e741a1,
+                         * kernel 6.0, 2 October 2022.
+                         *
+                         * We can only detect support if the attribute is present. A missing attribute
+                         * is not conclusive. */
+                        _nm_platform_kernel_support_init(
+                            NM_PLATFORM_KERNEL_SUPPORT_TYPE_IFLA_BOND_SLAVE_PRIO,
+                            1);
+                    }
+                }
                 break;
             case NM_PORT_KIND_NONE:
                 break;
@@ -8119,6 +8137,9 @@ link_change(NMPlatform                   *platform,
             goto nla_put_failure;
 
         NLA_PUT_U16(nlmsg, IFLA_BOND_SLAVE_QUEUE_ID, port_data->bond.queue_id);
+
+        if (port_data->bond.prio_has)
+            NLA_PUT_S32(nlmsg, IFLA_BOND_SLAVE_PRIO, port_data->bond.prio);
 
         nla_nest_end(nlmsg, nl_port_data);
         nla_nest_end(nlmsg, nl_info);

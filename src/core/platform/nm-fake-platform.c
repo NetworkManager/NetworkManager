@@ -681,6 +681,8 @@ link_change(NMPlatform                   *platform,
         obj_tmp                               = nmp_object_clone(device->obj, FALSE);
         obj_tmp->link.port_kind               = NM_PORT_KIND_BOND;
         obj_tmp->link.port_data.bond.queue_id = port_data->bond.queue_id;
+        obj_tmp->link.port_data.bond.prio_has = port_data->bond.prio_has;
+        obj_tmp->link.port_data.bond.prio     = port_data->bond.prio;
         link_set_obj(platform, device, obj_tmp);
         return TRUE;
     case NM_PORT_KIND_NONE:
