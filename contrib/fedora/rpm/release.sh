@@ -32,7 +32,8 @@
 #     Also, ensure you have a GPG key that you want to use for signing. Also, have gpg-agent running
 #     and possibly configure `git config --get user.signingkey` for the proper key.
 #
-#   * Your git repository needs a remote "origin" that points to the upstream git repository.
+#   * Your git repository needs a remote "origin" that points to the upstream git repository
+#     (or set $ORIGIN) and use the standard git refs/remotes/$ORIGIN/ branch names.
 #
 #   * All your (relevant) local branches (main and nm-1-*) must be up to date with their
 #     remote tracking branches for origin.
@@ -367,7 +368,7 @@ if [ -n "$RELEASE_BRANCH" ]; then
 fi
 
 if [ "$ALLOW_LOCAL_BRANCHES" != 1 ]; then
-    cmp <(git show origin/main:contrib/fedora/rpm/release.sh) "$BASH_SOURCE_ABSOLUTE" || die "$BASH_SOURCE is not identical to \`git show origin/main:contrib/fedora/rpm/release.sh\`"
+    cmp <(git show "$ORIGIN/main:contrib/fedora/rpm/release.sh") "$BASH_SOURCE_ABSOLUTE" || die "$BASH_SOURCE is not identical to \`git show \"$ORIGIN/main:contrib/fedora/rpm/release.sh\"\`"
 fi
 
 if ! check_news "$RELEASE_MODE" "@{VERSION_ARR[@]}" ; then
