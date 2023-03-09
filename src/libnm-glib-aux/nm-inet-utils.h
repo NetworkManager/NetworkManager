@@ -3,6 +3,8 @@
 #ifndef __NM_INET_UTILS_H__
 #define __NM_INET_UTILS_H__
 
+#include "libnm-std-aux/unaligned-fundamental.h"
+
 typedef union _NMIPAddr {
     guint8          addr_ptr[sizeof(struct in6_addr)];
     in_addr_t       addr4;
@@ -90,14 +92,15 @@ nm_ip_addr_set(int addr_family, gpointer dst, gconstpointer src)
 static inline gboolean
 nm_ip_addr_is_null(int addr_family, gconstpointer addr)
 {
-    NMIPAddr a;
+    struct in6_addr a6;
 
-    nm_ip_addr_set(addr_family, &a, addr);
+    nm_assert(addr);
 
     if (NM_IS_IPv4(addr_family))
-        return a.addr4 == 0;
+        return unaligned_read_ne32(addr) == 0;
 
-    return IN6_IS_ADDR_UNSPECIFIED(&a.addr6);
+    memcpy(&a6, addr, sizeof(struct in6_addr));
+    return IN6_IS_ADDR_UNSPECIFIED(&a6);
 }
 
 static inline NMIPAddr
