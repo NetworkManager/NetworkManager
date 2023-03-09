@@ -5590,6 +5590,7 @@ make_bond_port_setting(shvarFile *ifcfg)
     gs_free char *value_to_free = NULL;
     const char   *value;
     guint         queue_id;
+    gint32        prio;
 
     g_return_val_if_fail(ifcfg != NULL, FALSE);
 
@@ -5603,6 +5604,19 @@ make_bond_port_setting(shvarFile *ifcfg)
             return s_port;
         }
         g_object_set(G_OBJECT(s_port), NM_SETTING_BOND_PORT_QUEUE_ID, queue_id, NULL);
+    }
+
+    value = svGetValue(ifcfg, "BOND_PORT_PRIO", &value_to_free);
+    if (value) {
+        if (!s_port)
+            s_port = nm_setting_bond_port_new();
+        prio =
+            _nm_utils_ascii_str_to_int64(value, 10, G_MININT32, G_MAXUINT32, NM_BOND_PORT_PRIO_DEF);
+        if (errno != 0) {
+            PARSE_WARNING("Invalid bond port prio value '%s'", value);
+            return s_port;
+        }
+        g_object_set(G_OBJECT(s_port), NM_SETTING_BOND_PORT_PRIO, prio, NULL);
     }
 
     return s_port;
