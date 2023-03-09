@@ -170,7 +170,9 @@ struct _NMPlatformObjWithIfindex {
 } _nm_alignas(NMPlatformObject);
 
 typedef struct {
+    gint32  prio;
     guint16 queue_id;
+    bool    prio_has : 1;
 } NMPlatformLinkBondPort;
 
 typedef union {
@@ -1025,6 +1027,8 @@ typedef enum {
     /* this also includes FRA_SPORT_RANGE and FRA_DPORT_RANGE which
      * were added at the same time. */
     NM_PLATFORM_KERNEL_SUPPORT_TYPE_FRA_IP_PROTO,
+
+    NM_PLATFORM_KERNEL_SUPPORT_TYPE_IFLA_BOND_SLAVE_PRIO,
 
     _NM_PLATFORM_KERNEL_SUPPORT_NUM,
 } NMPlatformKernelSupportType;
