@@ -386,6 +386,7 @@ if [ "$RELEASE_MODE" = major -o "$RELEASE_MODE" = minor ]; then
         latest=" -l"
     else
         echo "Note that after the stable release you maybe should publish the new documentation on"
+        latest=" [-l]"
     fi
     echo "$(echo_color 36 -n "https://gitlab.freedesktop.org/NetworkManager/networkmanager.pages.freedesktop.org.git") by running"
     if [ "$RELEASE_MODE" = major ]; then
