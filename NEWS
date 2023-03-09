@@ -1,4 +1,13 @@
 ===============================================
+NetworkManager-1.42.4
+Overview of changes since NetworkManager-1.42.2
+===============================================
+
+* Fix a possible crash when [global-dns] is used and improve the
+  documentation.
+* Documentation improvements.
+
+===============================================
 NetworkManager-1.42.2
 Overview of changes since NetworkManager-1.42.0
 ===============================================
