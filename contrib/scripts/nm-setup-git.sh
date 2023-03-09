@@ -34,16 +34,26 @@ die() {
     exit 1
 }
 
+_pprint() {
+    local a
+    local sp=''
+
+    for a; do
+        printf "$sp%q" "$a"
+        sp=' '
+    done
+}
+
 call() {
     local m=""
 
     [ "$SKIP" = 1 ] && m="SKIP: "
 
     if [ "$NO_TEST" != 1 ]; then
-        printf "WOULD: %s%s\n" "$m" "$*"
+        printf "WOULD: %s%s\n" "$m" "$(_pprint "$@")"
         return 0
     fi
-    printf "CALL: %s%s\n" "$m" "$*"
+    printf "CALL: %s%s\n" "$m" "$(_pprint "$@")"
     [ "$SKIP" = 1 ] || "$@"
 }
 
