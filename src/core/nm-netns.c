@@ -39,8 +39,7 @@ struct _NMNetnsWatcherHandle {
     NMNetnsWatcherCallback callback;
     gpointer               callback_user_data;
 
-    /* If "tag" is NULL, this element is linked to "priv->watcher_no_tag_lst_head".
-     * Otherwise, it is linked to "WatcherByTag.watcher_by_tag_lst_head" in
+    /* This is linked to "WatcherByTag.watcher_by_tag_lst_head" in
      * "priv->watcher_by_tag_idx". */
     CList watcher_tag_lst;
 
@@ -73,8 +72,7 @@ typedef struct {
     GHashTable       *ecmp_track_by_obj;
     GHashTable       *ecmp_track_by_ecmpid;
 
-    /* Contains the watchers that have a tag. Those without tag are not indexed
-     * by a dictionary but linked in "watcher_no_tag_lst_head" list. */
+    /* Indexes the watcher handles. */
     GHashTable *watcher_idx;
 
     /* An index of WatcherByTag. It allows to lookup watcher handles by tag.
@@ -84,10 +82,6 @@ typedef struct {
     /* Index for WatcherDataIPAddr instances. Allows to lookup all subscribers
      * by IP address. */
     GHashTable *watcher_ip_data_idx;
-
-    /* NMNetnsWatcherHandle without tag are not indexed in "watcher_idx" nor
-     * "watcher_by_tag_idx". Those are only linked in this list. */
-    CList watcher_no_tag_lst_head;
 
     CList    l3cfg_signal_pending_lst_head;
     GSource *signal_pending_idle_source;
@@ -1227,7 +1221,7 @@ _watcher_unregister_handle(NMNetns *self, NMNetnsWatcherHandle *handle)
     nm_assert_not_reached();
 }
 
-NMNetnsWatcherHandle *
+void
 nm_netns_watcher_add(NMNetns                  *self,
                      NMNetnsWatcherType        watcher_type,
                      const NMNetnsWatcherData *watcher_data,
@@ -1240,51 +1234,45 @@ nm_netns_watcher_add(NMNetns                  *self,
     gboolean              is_new = FALSE;
     char                  sbuf[500];
 
-    g_return_val_if_fail(NM_IS_NETNS(self), NULL);
-    g_return_val_if_fail(NM_NETNS_WATCHER_TYPE_VALID(watcher_type), NULL);
-    g_return_val_if_fail(callback, NULL);
+    g_return_if_fail(NM_IS_NETNS(self));
+    g_return_if_fail(NM_NETNS_WATCHER_TYPE_VALID(watcher_type));
+    g_return_if_fail(callback);
+    g_return_if_fail(tag);
 
     priv = NM_NETNS_GET_PRIVATE(self);
 
-    if (tag)
-        handle = _watcher_lookup_handle(self, watcher_type, watcher_data, tag);
-    else
-        handle = NULL;
+    handle = _watcher_lookup_handle(self, watcher_type, watcher_data, tag);
 
     if (!handle) {
-        if (G_UNLIKELY(c_list_is_empty(&priv->watcher_no_tag_lst_head)
-                       && g_hash_table_size(priv->watcher_idx) == 0))
+        WatcherByTag *watcher_by_tag;
+
+        if (G_UNLIKELY(g_hash_table_size(priv->watcher_idx) == 0))
             g_object_ref(self);
 
         handle = g_slice_new(NMNetnsWatcherHandle);
         _watcher_handle_init(handle, watcher_type, watcher_data, tag);
 
-        if (tag) {
-            WatcherByTag *watcher_by_tag;
+        if (!g_hash_table_add(priv->watcher_idx, handle))
+            nm_assert_not_reached();
 
-            if (!g_hash_table_add(priv->watcher_idx, handle))
-                nm_assert_not_reached();
+        watcher_by_tag = g_hash_table_lookup(priv->watcher_by_tag_idx, &tag);
 
-            watcher_by_tag = g_hash_table_lookup(priv->watcher_by_tag_idx, &tag);
+        if (!watcher_by_tag) {
+            watcher_by_tag  = g_slice_new(WatcherByTag);
+            *watcher_by_tag = (WatcherByTag){
+                .tag                     = tag,
+                .watcher_by_tag_lst_head = C_LIST_INIT(watcher_by_tag->watcher_by_tag_lst_head),
+            };
+            g_hash_table_add(priv->watcher_by_tag_idx, watcher_by_tag);
+        }
 
-            if (!watcher_by_tag) {
-                watcher_by_tag  = g_slice_new(WatcherByTag);
-                *watcher_by_tag = (WatcherByTag){
-                    .tag                     = tag,
-                    .watcher_by_tag_lst_head = C_LIST_INIT(watcher_by_tag->watcher_by_tag_lst_head),
-                };
-                g_hash_table_add(priv->watcher_by_tag_idx, watcher_by_tag);
-            }
-
-            c_list_link_tail(&watcher_by_tag->watcher_by_tag_lst_head, &handle->watcher_tag_lst);
-        } else
-            c_list_link_tail(&priv->watcher_no_tag_lst_head, &handle->watcher_tag_lst);
+        c_list_link_tail(&watcher_by_tag->watcher_by_tag_lst_head, &handle->watcher_tag_lst);
 
         is_new = TRUE;
     } else {
-        /* Handles with a tag are deduplicated/shared. Hence it is error prone
-         * (and likely a bug) to provide different callback/user_data. Such
-         * usage is rejected here.
+        /* Handles are deduplicated/shared. Hence it is error prone (and likely
+         * a bug) to provide different callback/user_data. Such usage is
+         * rejected here.
          *
          * This could be made to work, for example by now allowing handles to
          * be merged or simply requiring the caller to be careful to not get
@@ -1308,27 +1296,16 @@ nm_netns_watcher_add(NMNetns                  *self,
     if (is_new)
         _watcher_register_handle(self, handle);
 
-    if (tag) {
-        /* Identical handles with tags are deduplicated (via the
-         * priv->watchers_idx dictionary). The usage pattern with a tag is to
-         * use nm_netns_watcher_remove_all(), not to delete them one by one via
-         * nm_netns_watcher_remove_handle(). Consequently, the handles don't
-         * have a ref-count implemented, and consequently the user cannot use
-         * nm_netns_watcher_remove_handle() to remove such handles (because
-         * nm_netns_watcher_add() might return the same handle multiple times).
-         *
-         * For that reason, we return NULL here. The user cannot use such
-         * handles with a tag and must ignore them
-         *
-         * We could extend that by adding a ref-count to the handles, but
-         * it's unnecessary, for now. */
-        return NULL;
-    }
-
-    return handle;
+    /* We cannot return a handle here, because handles are deduplicated via the priv->watchers_idx dictionary.
+     * The usage pattern is to use nm_netns_watcher_remove_all(), and not remove them one by one.
+     * As nm_netns_watcher_add() can return the same handle more than once, the user
+     * wouldn't know when it's safe to call nm_netns_watcher_remove_handle().
+     *
+     * This could be extended by adding a ref-count to the handles. But that is not
+     * used currently, so it's not possible to remove watcher by their handle. */
 }
 
-void
+static void
 nm_netns_watcher_remove_handle(NMNetns *self, NMNetnsWatcherHandle *handle)
 {
     NMNetnsPrivate *priv;
@@ -1336,14 +1313,11 @@ nm_netns_watcher_remove_handle(NMNetns *self, NMNetnsWatcherHandle *handle)
 
     g_return_if_fail(NM_IS_NETNS(self));
     g_return_if_fail(handle);
+    nm_assert(handle->tag);
 
     priv = NM_NETNS_GET_PRIVATE(self);
 
-    if (NM_MORE_ASSERTS > 5) {
-        nm_assert(!handle->tag || g_hash_table_lookup(priv->watcher_idx, handle) == handle);
-        nm_assert(handle->tag
-                  || c_list_contains(&priv->watcher_no_tag_lst_head, &handle->watcher_tag_lst));
-    }
+    nm_assert(g_hash_table_lookup(priv->watcher_idx, handle) == handle);
 
     _LOGT("netns-watcher: %s %s",
           "unregister",
@@ -1351,39 +1325,19 @@ nm_netns_watcher_remove_handle(NMNetns *self, NMNetnsWatcherHandle *handle)
 
     _watcher_unregister_handle(self, handle);
 
-    if (handle->tag) {
-        if (!g_hash_table_remove(priv->watcher_idx, handle))
-            nm_assert_not_reached();
+    if (!g_hash_table_remove(priv->watcher_idx, handle))
+        nm_assert_not_reached();
 
-        if (c_list_is_empty_or_single(&handle->watcher_tag_lst)) {
-            if (!g_hash_table_remove(priv->watcher_by_tag_idx, &handle->tag))
-                nm_assert_not_reached();
-        }
+    if (c_list_is_empty_or_single(&handle->watcher_tag_lst)) {
+        if (!g_hash_table_remove(priv->watcher_by_tag_idx, &handle->tag))
+            nm_assert_not_reached();
     }
 
     c_list_unlink_stale(&handle->watcher_tag_lst);
     nm_g_slice_free(handle);
 
-    if (G_UNLIKELY(c_list_is_empty(&priv->watcher_no_tag_lst_head)
-                   && g_hash_table_size(priv->watcher_idx) == 0))
+    if (G_UNLIKELY(g_hash_table_size(priv->watcher_idx) == 0))
         g_object_unref(self);
-}
-
-void
-nm_netns_watcher_remove(NMNetns                  *self,
-                        NMNetnsWatcherType        watcher_type,
-                        const NMNetnsWatcherData *watcher_data,
-                        gconstpointer             tag)
-{
-    NMNetnsWatcherHandle *handle;
-
-    g_return_if_fail(NM_IS_NETNS(self));
-    g_return_if_fail(NM_NETNS_WATCHER_TYPE_VALID(watcher_type));
-    g_return_if_fail(tag);
-
-    handle = _watcher_lookup_handle(self, watcher_type, watcher_data, tag);
-    if (handle)
-        nm_netns_watcher_remove_handle(self, handle);
 }
 
 void
@@ -1399,11 +1353,7 @@ nm_netns_watcher_remove_all(NMNetns *self, gconstpointer tag, gboolean all)
     /* remove-all only works with handles that have a tag associated.
      * Since NMNetns can have multiple users that are unknown to each
      * other, it makes no sense to have a remove-all function which
-     * would remove all of them.
-     *
-     * Note that if your watch handle has no tag, the only way to
-     * remove it is by tracking the handle returned from nm_netns_watcher_add()
-     * and use it with nm_netns_watcher_remove_handle(). */
+     * would remove all of them. */
     g_return_if_fail(tag);
 
     priv = NM_NETNS_GET_PRIVATE(self);
@@ -1473,7 +1423,6 @@ nm_netns_init(NMNetns *self)
     priv->_self_signal_user_data = self;
 
     c_list_init(&priv->l3cfg_signal_pending_lst_head);
-    c_list_init(&priv->watcher_no_tag_lst_head);
 
     G_STATIC_ASSERT_EXPR(G_STRUCT_OFFSET(EcmpTrackObj, obj) == 0);
     priv->ecmp_track_by_obj =
@@ -1571,7 +1520,6 @@ dispose(GObject *object)
     nm_assert(nm_g_hash_table_size(priv->watcher_idx) == 0);
     nm_assert(nm_g_hash_table_size(priv->watcher_by_tag_idx) == 0);
     nm_assert(nm_g_hash_table_size(priv->watcher_ip_data_idx) == 0);
-    nm_assert(c_list_is_empty(&priv->watcher_no_tag_lst_head));
 
     nm_clear_pointer(&priv->ecmp_track_by_obj, g_hash_table_destroy);
     nm_clear_pointer(&priv->ecmp_track_by_ecmpid, g_hash_table_destroy);
