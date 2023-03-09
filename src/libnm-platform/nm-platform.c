@@ -68,6 +68,7 @@ _nmp_link_port_data_to_string(NMPortKind                    port_kind,
                               gsize                         sbuf_len)
 {
     const char *sbuf0 = sbuf;
+    char        s0[120];
 
     nm_assert(port_data);
 
@@ -76,7 +77,16 @@ _nmp_link_port_data_to_string(NMPortKind                    port_kind,
         nm_strbuf_append_c(&sbuf, &sbuf_len, '\0');
         goto out;
     case NM_PORT_KIND_BOND:
-        nm_strbuf_append(&sbuf, &sbuf_len, "port bond queue-id %u", port_data->bond.queue_id);
+        nm_strbuf_append(&sbuf,
+                         &sbuf_len,
+                         "port bond queue-id %u%s",
+                         port_data->bond.queue_id,
+                         port_data->bond.prio_has || port_data->bond.prio != 0
+                             ? nm_sprintf_buf(s0,
+                                              " prio%s %u",
+                                              port_data->bond.prio_has ? "" : "?",
+                                              port_data->bond.prio)
+                             : "");
         goto out;
     }
 
@@ -2165,6 +2175,8 @@ nm_platform_link_change(NMPlatform               *self,
                         NMPlatformLinkBondPort   *bond_port,
                         NMPlatformLinkChangeFlags flags)
 {
+    char sbuf_prio[100];
+
     _CHECK_SELF(self, klass, FALSE);
 
     g_return_val_if_fail(ifindex >= 0, FALSE);
@@ -2187,8 +2199,18 @@ nm_platform_link_change(NMPlatform               *self,
             g_string_append_printf(str, "gso_max_segments %u ", props->gso_max_segments);
         if (flags & NM_PLATFORM_LINK_CHANGE_GRO_MAX_SIZE)
             g_string_append_printf(str, "gro_max_size %u ", props->gro_max_size);
-        if (bond_port)
-            g_string_append_printf(str, "bond-port queue-id %d", bond_port->queue_id);
+        if (bond_port) {
+            nm_assert(bond_port->prio_has || bond_port->prio == 0);
+            g_string_append_printf(str,
+                                   "bond-port queue-id %d %s",
+                                   bond_port->queue_id,
+                                   bond_port->prio_has || bond_port->prio != 0
+                                       ? nm_sprintf_buf(sbuf_prio,
+                                                        "prio%s %" G_GINT32_FORMAT,
+                                                        !bond_port->prio_has ? "?" : "",
+                                                        bond_port->prio)
+                                       : "");
+        }
 
         if (str->len > 0 && str->str[str->len - 1] == ' ')
             g_string_truncate(str, str->len - 1);
@@ -7883,7 +7905,7 @@ nm_platform_link_hash_update(const NMPlatformLink *obj, NMHashState *h)
 void
 nm_platform_link_bond_port_hash_update(const NMPlatformLinkBondPort *obj, NMHashState *h)
 {
-    nm_hash_update_vals(h, obj->queue_id);
+    nm_hash_update_vals(h, obj->prio, obj->queue_id, NM_HASH_COMBINE_BOOLS(guint8, obj->prio_has));
 }
 
 int
@@ -8014,6 +8036,8 @@ nm_platform_link_bond_port_cmp(const NMPlatformLinkBondPort *a, const NMPlatform
 {
     NM_CMP_SELF(a, b);
     NM_CMP_FIELD(a, b, queue_id);
+    NM_CMP_FIELD(a, b, prio);
+    NM_CMP_FIELD_BOOL(a, b, prio_has);
 
     return 0;
 }
