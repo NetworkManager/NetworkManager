@@ -91,19 +91,12 @@ typedef void (*NMNetnsWatcherCallback)(NMNetns                       *self,
                                        const NMNetnsWatcherEventData *event_data,
                                        gpointer                       user_data);
 
-NMNetnsWatcherHandle *nm_netns_watcher_add(NMNetns                  *self,
-                                           NMNetnsWatcherType        watcher_type,
-                                           const NMNetnsWatcherData *watcher_data,
-                                           gconstpointer             tag,
-                                           NMNetnsWatcherCallback    callback,
-                                           gpointer                  user_data);
-
-void nm_netns_watcher_remove_handle(NMNetns *self, NMNetnsWatcherHandle *handle);
-
-void nm_netns_watcher_remove(NMNetns                  *self,
-                             NMNetnsWatcherType        watcher_type,
-                             const NMNetnsWatcherData *watcher_data,
-                             gconstpointer             tag);
+void nm_netns_watcher_add(NMNetns                  *self,
+                          NMNetnsWatcherType        watcher_type,
+                          const NMNetnsWatcherData *watcher_data,
+                          gconstpointer             tag,
+                          NMNetnsWatcherCallback    callback,
+                          gpointer                  user_data);
 
 void
 nm_netns_watcher_remove_all(NMNetns *self, gconstpointer tag, gboolean all /* or only dirty */);
