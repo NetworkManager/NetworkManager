@@ -20,6 +20,7 @@
 
 #include "c-list/src/c-list.h"
 #include "nm-errno.h"
+#include "nm-time-utils.h"
 #include "nm-str-buf.h"
 #include "nm-time-utils.h"
 
@@ -4838,6 +4839,50 @@ nm_g_child_watch_source_new(GPid            pid,
         g_source_set_priority(source, priority);
     g_source_set_callback(source, G_SOURCE_FUNC(handler), user_data, notify);
     return source;
+}
+
+gboolean
+nm_g_timeout_reschedule(GSource   **src,
+                        gint64     *p_expiry_msec,
+                        gint64      expiry_msec,
+                        GSourceFunc func,
+                        gpointer    user_data)
+{
+    gint64 now_msec;
+    gint64 timeout_msec;
+
+    /* (Re-)Schedules a timeout at "expiry_msec" (in
+     * nm_utils_get_monotonic_timestamp_msec() scale).
+     *
+     * If a source is already scheduled in "*src" and "*p_expiry_msec" is
+     * identical to "expiry_msec", then we assume the timer is already ticking,
+     * and nothing is rescheduled.
+     *
+     * Otherwise, "*src" gets cancelled (if any), a new timer is scheduled
+     * (assigned to "*src") and the new expiry is written to "*p_expiry_msec".
+     */
+
+    nm_assert(src);
+    nm_assert(p_expiry_msec);
+
+    if (*src) {
+        if (*p_expiry_msec == expiry_msec) {
+            /* already scheduled with same expiry. */
+            return FALSE;
+        }
+        nm_clear_g_source_inst(src);
+    }
+
+    now_msec = nm_utils_get_monotonic_timestamp_msec();
+
+    if (expiry_msec <= now_msec)
+        timeout_msec = 0;
+    else
+        timeout_msec = NM_MIN(expiry_msec - now_msec, (gint64) G_MAXUINT);
+
+    *p_expiry_msec = expiry_msec;
+    *src           = nm_g_timeout_add_source(timeout_msec, func, user_data);
+    return TRUE;
 }
 
 /*****************************************************************************/
