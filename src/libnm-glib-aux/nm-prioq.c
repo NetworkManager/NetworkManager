@@ -132,8 +132,7 @@ swap(NMPrioq *q, unsigned j, unsigned k)
     nm_assert(!q->_priv.items[j].idx || *(q->_priv.items[j].idx) == j);
     nm_assert(!q->_priv.items[k].idx || *(q->_priv.items[k].idx) == k);
 
-    NM_SWAP(&q->_priv.items[j].data, &q->_priv.items[k].data);
-    NM_SWAP(&q->_priv.items[j].idx, &q->_priv.items[k].idx);
+    NM_SWAP(&q->_priv.items[j], &q->_priv.items[k]);
 
     if (q->_priv.items[j].idx)
         *q->_priv.items[j].idx = j;
@@ -213,7 +212,7 @@ nm_prioq_put(NMPrioq *q, void *data, unsigned *idx)
     _nm_assert_q(q);
     nm_assert(q->_priv.n_items < G_MAXUINT);
 
-    if (q->_priv.n_items >= q->_priv.n_allocated) {
+    if (G_UNLIKELY(q->_priv.n_items >= q->_priv.n_allocated)) {
         q->_priv.n_allocated = NM_MAX((q->_priv.n_items + 1u) * 2u, 16u);
         q->_priv.items       = g_renew(PrioqItem, q->_priv.items, q->_priv.n_allocated);
     }
@@ -224,6 +223,7 @@ nm_prioq_put(NMPrioq *q, void *data, unsigned *idx)
         .data = data,
         .idx  = idx,
     };
+
     if (idx)
         *idx = k;
 
@@ -246,8 +246,9 @@ remove_item(NMPrioq *q, PrioqItem *i)
         return;
     }
 
-    /* Not last entry, let's replace the last entry with
-     * this one, and reshuffle */
+    /* Not last entry, let's replace this entry with the last one, and
+     * reshuffle */
+
     k = i - q->_priv.items;
 
     *i = *l;
@@ -259,7 +260,7 @@ remove_item(NMPrioq *q, PrioqItem *i)
     shuffle_up(q, k);
 }
 
-_nm_pure static PrioqItem *
+static PrioqItem *
 find_item(NMPrioq *q, void *data, unsigned *idx)
 {
     PrioqItem *i;
