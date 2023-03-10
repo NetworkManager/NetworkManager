@@ -278,24 +278,26 @@ find_item(NMPrioq *q, void *data, unsigned *idx)
 
     _nm_assert_q(q);
 
-    if (q->_priv.n_items <= 0)
-        return NULL;
-
-    if (idx) {
-        if (*idx == NM_PRIOQ_IDX_NULL || *idx >= q->_priv.n_items)
-            return NULL;
-
-        i = &q->_priv.items[*idx];
-        if (i->data == data)
-            return i;
-    } else {
+    if (G_UNLIKELY(!idx)) {
+        /* We allow using NMPrioq without "idx". In that case, it does a linear
+         * search for the data. */
         for (i = q->_priv.items; i < &q->_priv.items[q->_priv.n_items]; i++) {
             if (i->data == data)
                 return i;
         }
+        return NULL;
     }
 
-    return NULL;
+    if (*idx >= q->_priv.n_items) {
+        return NULL;
+    }
+
+    i = &q->_priv.items[*idx];
+
+    if (i->data != data)
+        return NULL;
+
+    return i;
 }
 
 gboolean
