@@ -43,6 +43,8 @@ void     nm_prioq_put(NMPrioq *q, void *data, unsigned *idx);
 gboolean nm_prioq_remove(NMPrioq *q, void *data, unsigned *idx);
 gboolean nm_prioq_reshuffle(NMPrioq *q, void *data, unsigned *idx);
 
+void nm_prioq_update(NMPrioq *q, void *data, unsigned *idx, bool queued /* or else remove */);
+
 void *nm_prioq_peek_by_index(NMPrioq *q, unsigned idx) _nm_pure;
 
 static inline void *

@@ -278,11 +278,20 @@ nm_prioq_remove(NMPrioq *q, void *data, unsigned *idx)
     return TRUE;
 }
 
+static void
+reshuffle_item(NMPrioq *q, struct _NMPrioqItem *i)
+{
+    unsigned k;
+
+    k = i - q->_priv.items;
+    k = shuffle_down(q, k);
+    shuffle_up(q, k);
+}
+
 gboolean
 nm_prioq_reshuffle(NMPrioq *q, void *data, unsigned *idx)
 {
     struct _NMPrioqItem *i;
-    unsigned             k;
 
     nm_assert(q);
 
@@ -290,10 +299,31 @@ nm_prioq_reshuffle(NMPrioq *q, void *data, unsigned *idx)
     if (!i)
         return FALSE;
 
-    k = i - q->_priv.items;
-    k = shuffle_down(q, k);
-    shuffle_up(q, k);
+    reshuffle_item(q, i);
     return TRUE;
+}
+
+void
+nm_prioq_update(NMPrioq *q, void *data, unsigned *idx, bool queued /* or else remove */)
+{
+    struct _NMPrioqItem *i;
+
+    nm_assert(q);
+
+    i = find_item(q, data, idx);
+
+    if (!i) {
+        if (queued)
+            nm_prioq_put(q, data, idx);
+        return;
+    }
+
+    if (!queued) {
+        remove_item(q, i);
+        return;
+    }
+
+    reshuffle_item(q, i);
 }
 
 void *
