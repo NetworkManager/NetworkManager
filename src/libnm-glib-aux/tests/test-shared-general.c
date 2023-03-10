@@ -2348,7 +2348,7 @@ test_garray(void)
 static int
 _prioq_cmp(gconstpointer a, gconstpointer b)
 {
-    NM_CMP_DIRECT(GPOINTER_TO_UINT(a), GPOINTER_TO_UINT(b));
+    NM_CMP_DIRECT(*((const guint32 *) a), *((const guint32 *) b));
     return 0;
 }
 
@@ -2362,11 +2362,12 @@ static void
 test_nm_prioq(void)
 {
     nm_auto_prioq NMPrioq q = NM_PRIOQ_ZERO;
-    gpointer              data[200];
-    gpointer              data_pop[200];
+    guint32               data[200];
+    const guint32        *data_pop[200];
     guint                 data_idx[G_N_ELEMENTS(data)];
     guint                 i;
     guint                 n;
+    guint                 m;
     gpointer              p;
 
     if (nmtst_get_rand_one_case_in(10))
@@ -2379,37 +2380,67 @@ test_nm_prioq(void)
 
     g_assert(nm_prioq_size(&q) == 0);
 
-    if (nmtst_get_rand_one_case_in(10))
+    if (nmtst_get_rand_one_case_in(100))
         return;
 
     for (i = 0; i < G_N_ELEMENTS(data); i++) {
-        data[i]     = GUINT_TO_POINTER((nmtst_get_rand_uint32() % G_N_ELEMENTS(data)) + 1u);
+        data[i]     = nmtst_get_rand_uint32() % G_N_ELEMENTS(data);
         data_idx[i] = NM_PRIOQ_IDX_NULL;
     }
 
-    nm_prioq_put(&q, data[0], NULL);
+    nm_prioq_put(&q, &data[0], NULL);
     g_assert(nm_prioq_size(&q) == 1);
 
     p = nm_prioq_pop(&q);
-    g_assert(p == data[0]);
+    g_assert(p == &data[0]);
     g_assert(nm_prioq_size(&q) == 0);
 
     g_assert(!nm_prioq_pop(&q));
 
     n = nmtst_get_rand_uint32() % G_N_ELEMENTS(data);
     for (i = 0; i < n; i++)
-        nm_prioq_put(&q, data[i], &data_idx[i]);
+        nm_prioq_put(&q, &data[i], &data_idx[i]);
 
-    g_assert_cmpint(nm_prioq_size(&q), ==, n);
+    m = n;
+    for (i = 0; i < n; i++) {
+        if (!nmtst_get_rand_bool())
+            continue;
 
-    if (nmtst_get_rand_one_case_in(10))
+        data[i] = nmtst_get_rand_uint32() % G_N_ELEMENTS(data);
+        switch (nmtst_get_rand_uint32() % 4) {
+        case 0:
+            nm_prioq_reshuffle(&q, &data[i], &data_idx[i]);
+            break;
+        case 1:
+            nm_prioq_remove(&q, &data[i], nmtst_get_rand_bool() ? &data_idx[i] : NULL);
+            m--;
+            break;
+        case 2:
+            nm_prioq_update(&q, &data[i], &data_idx[i], TRUE);
+            break;
+        case 3:
+            nm_prioq_update(&q, &data[i], nmtst_get_rand_bool() ? &data_idx[i] : NULL, FALSE);
+            m--;
+            break;
+        }
+    }
+
+    g_assert_cmpint(nm_prioq_size(&q), ==, m);
+
+    if (nmtst_get_rand_one_case_in(50))
         return;
 
-    for (i = 0; i < n; i++) {
+    for (i = 0; i < m; i++) {
         data_pop[i] = nm_prioq_pop(&q);
         g_assert(data_pop[i]);
-        if (i > 0)
+        g_assert_cmpint(*data_pop[i], >=, 0);
+        g_assert_cmpint(*data_pop[i], <, G_N_ELEMENTS(data));
+        g_assert(data_pop[i] >= &data[0]);
+        g_assert(data_pop[i] < &data[n]);
+        if (i > 0) {
             g_assert(_prioq_cmp(data_pop[i - 1], data_pop[i]) <= 0);
+            g_assert_cmpint(*data_pop[i - 1], <=, *data_pop[i]);
+        }
     }
 
     g_assert(!nm_prioq_pop(&q));
