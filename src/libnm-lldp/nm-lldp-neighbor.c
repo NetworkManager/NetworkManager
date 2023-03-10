@@ -735,6 +735,7 @@ nm_lldp_neighbor_new(size_t raw_size)
 
     n->raw_size  = raw_size;
     n->ref_count = 1;
+    n->prioq_idx = NM_PRIOQ_IDX_NULL;
     return n;
 }
 
