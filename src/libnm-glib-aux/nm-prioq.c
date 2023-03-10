@@ -28,6 +28,32 @@ typedef struct _NMPrioqItem {
 
 /*****************************************************************************/
 
+#define _nm_assert_q(q)                                         \
+    G_STMT_START                                                \
+    {                                                           \
+        const NMPrioq *const _q2 = (q);                         \
+                                                                \
+        nm_assert(_q2);                                         \
+        nm_assert(_q2->_priv.n_items == 0 || _q2->_priv.items); \
+        nm_assert(_q2->_priv.compare_func);                     \
+    }                                                           \
+    G_STMT_END
+
+#define _nm_assert_item(q, item)                                \
+    G_STMT_START                                                \
+    {                                                           \
+        const NMPrioq *const   _q    = (q);                     \
+        const PrioqItem *const _item = (item);                  \
+                                                                \
+        _nm_assert_q(_q);                                       \
+                                                                \
+        nm_assert(_item >= _q->_priv.items);                    \
+        nm_assert(_item < &_q->_priv.items[_q->_priv.n_items]); \
+    }                                                           \
+    G_STMT_END
+
+/*****************************************************************************/
+
 void
 nm_prioq_init(NMPrioq *q, GCompareFunc compare_func)
 {
@@ -72,6 +98,8 @@ nm_prioq_destroy(NMPrioq *q)
     if (!q || !q->_priv.compare_func)
         return;
 
+    _nm_assert_q(q);
+
     free(q->_priv.items);
     q->_priv.compare_func = NULL;
 }
@@ -81,8 +109,7 @@ nm_prioq_destroy(NMPrioq *q)
 static int
 compare(NMPrioq *q, unsigned a, unsigned b)
 {
-    nm_assert(q);
-    nm_assert(q->_priv.compare_func);
+    _nm_assert_q(q);
     nm_assert(a != b);
     nm_assert(a < q->_priv.n_items);
     nm_assert(b < q->_priv.n_items);
@@ -99,10 +126,9 @@ compare(NMPrioq *q, unsigned a, unsigned b)
 static void
 swap(NMPrioq *q, unsigned j, unsigned k)
 {
-    nm_assert(q);
+    _nm_assert_q(q);
     nm_assert(j < q->_priv.n_items);
     nm_assert(k < q->_priv.n_items);
-
     nm_assert(!q->_priv.items[j].idx || *(q->_priv.items[j].idx) == j);
     nm_assert(!q->_priv.items[k].idx || *(q->_priv.items[k].idx) == k);
 
@@ -119,7 +145,7 @@ swap(NMPrioq *q, unsigned j, unsigned k)
 static unsigned
 shuffle_up(NMPrioq *q, unsigned idx)
 {
-    nm_assert(q);
+    _nm_assert_q(q);
     nm_assert(idx < q->_priv.n_items);
 
     while (idx > 0) {
@@ -140,7 +166,7 @@ shuffle_up(NMPrioq *q, unsigned idx)
 static unsigned
 shuffle_down(NMPrioq *q, unsigned idx)
 {
-    nm_assert(q);
+    _nm_assert_q(q);
 
     for (;;) {
         unsigned j;
@@ -184,7 +210,8 @@ nm_prioq_put(NMPrioq *q, void *data, unsigned *idx)
 {
     unsigned k;
 
-    nm_assert(q);
+    _nm_assert_q(q);
+    nm_assert(q->_priv.n_items < G_MAXUINT);
 
     if (q->_priv.n_items >= q->_priv.n_allocated) {
         q->_priv.n_allocated = NM_MAX((q->_priv.n_items + 1u) * 2u, 16u);
@@ -209,11 +236,7 @@ remove_item(NMPrioq *q, PrioqItem *i)
     PrioqItem *l;
     unsigned   k;
 
-    nm_assert(q);
-    nm_assert(i);
-    nm_assert(q->_priv.n_items > 0);
-    nm_assert(i >= q->_priv.items);
-    nm_assert(i < &q->_priv.items[q->_priv.n_items]);
+    _nm_assert_item(q, i);
 
     l = &q->_priv.items[q->_priv.n_items - 1u];
 
@@ -241,7 +264,7 @@ find_item(NMPrioq *q, void *data, unsigned *idx)
 {
     PrioqItem *i;
 
-    nm_assert(q);
+    _nm_assert_q(q);
 
     if (q->_priv.n_items <= 0)
         return NULL;
@@ -268,7 +291,7 @@ nm_prioq_remove(NMPrioq *q, void *data, unsigned *idx)
 {
     PrioqItem *i;
 
-    nm_assert(q);
+    _nm_assert_q(q);
 
     i = find_item(q, data, idx);
     if (!i)
@@ -283,6 +306,8 @@ reshuffle_item(NMPrioq *q, PrioqItem *i)
 {
     unsigned k;
 
+    _nm_assert_item(q, i);
+
     k = i - q->_priv.items;
     k = shuffle_down(q, k);
     shuffle_up(q, k);
@@ -293,7 +318,7 @@ nm_prioq_reshuffle(NMPrioq *q, void *data, unsigned *idx)
 {
     PrioqItem *i;
 
-    nm_assert(q);
+    _nm_assert_q(q);
 
     i = find_item(q, data, idx);
     if (!i)
@@ -308,7 +333,7 @@ nm_prioq_update(NMPrioq *q, void *data, unsigned *idx, bool queued /* or else re
 {
     PrioqItem *i;
 
-    nm_assert(q);
+    _nm_assert_q(q);
 
     i = find_item(q, data, idx);
 
@@ -329,7 +354,7 @@ nm_prioq_update(NMPrioq *q, void *data, unsigned *idx, bool queued /* or else re
 void *
 nm_prioq_peek_by_index(NMPrioq *q, unsigned idx)
 {
-    nm_assert(q);
+    _nm_assert_q(q);
 
     if (idx >= q->_priv.n_items)
         return NULL;
@@ -342,7 +367,7 @@ nm_prioq_pop(NMPrioq *q)
 {
     void *data;
 
-    nm_assert(q);
+    _nm_assert_q(q);
 
     if (q->_priv.n_items <= 0)
         return NULL;
