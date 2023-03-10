@@ -288,14 +288,28 @@ find_item(NMPrioq *q, void *data, unsigned *idx)
         return NULL;
     }
 
+    /* If the user however provides an "idx" pointer, then we assert that it is
+     * consistent. That is, if data is not in the queue, then we require that
+     * "*idx" is NM_PRIOQ_IDX_NULL, and otherwise we require that we really
+     * find "data" at index "*idx".
+     *
+     * This means, when the user calls nm_prioq_{remove,update,reshuffle}()
+     * with an "idx", then they must make sure that the index is consistent.
+     * Usually this means they are required to initialize the index to
+     * NM_PRIOQ_IDX_NULL while the data is not in the heap.
+     *
+     * This is done to assert more, and requires a stricter usage of the API
+     * (in the hope to find misuses of the index). */
+
     if (*idx >= q->_priv.n_items) {
+        nm_assert(*idx == NM_PRIOQ_IDX_NULL);
         return NULL;
     }
 
     i = &q->_priv.items[*idx];
 
     if (i->data != data)
-        return NULL;
+        return nm_assert_unreachable_val(NULL);
 
     return i;
 }
