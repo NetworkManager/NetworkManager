@@ -21,10 +21,10 @@
 
 /*****************************************************************************/
 
-struct _NMPrioqItem {
+typedef struct _NMPrioqItem {
     void     *data;
     unsigned *idx;
-};
+} PrioqItem;
 
 /*****************************************************************************/
 
@@ -188,12 +188,12 @@ nm_prioq_put(NMPrioq *q, void *data, unsigned *idx)
 
     if (q->_priv.n_items >= q->_priv.n_allocated) {
         q->_priv.n_allocated = NM_MAX((q->_priv.n_items + 1u) * 2u, 16u);
-        q->_priv.items       = g_renew(struct _NMPrioqItem, q->_priv.items, q->_priv.n_allocated);
+        q->_priv.items       = g_renew(PrioqItem, q->_priv.items, q->_priv.n_allocated);
     }
 
     k = q->_priv.n_items++;
 
-    q->_priv.items[k] = (struct _NMPrioqItem){
+    q->_priv.items[k] = (PrioqItem){
         .data = data,
         .idx  = idx,
     };
@@ -204,10 +204,10 @@ nm_prioq_put(NMPrioq *q, void *data, unsigned *idx)
 }
 
 static void
-remove_item(NMPrioq *q, struct _NMPrioqItem *i)
+remove_item(NMPrioq *q, PrioqItem *i)
 {
-    struct _NMPrioqItem *l;
-    unsigned             k;
+    PrioqItem *l;
+    unsigned   k;
 
     nm_assert(q);
     nm_assert(i);
@@ -236,10 +236,10 @@ remove_item(NMPrioq *q, struct _NMPrioqItem *i)
     shuffle_up(q, k);
 }
 
-_nm_pure static struct _NMPrioqItem *
+_nm_pure static PrioqItem *
 find_item(NMPrioq *q, void *data, unsigned *idx)
 {
-    struct _NMPrioqItem *i;
+    PrioqItem *i;
 
     nm_assert(q);
 
@@ -266,7 +266,7 @@ find_item(NMPrioq *q, void *data, unsigned *idx)
 gboolean
 nm_prioq_remove(NMPrioq *q, void *data, unsigned *idx)
 {
-    struct _NMPrioqItem *i;
+    PrioqItem *i;
 
     nm_assert(q);
 
@@ -279,7 +279,7 @@ nm_prioq_remove(NMPrioq *q, void *data, unsigned *idx)
 }
 
 static void
-reshuffle_item(NMPrioq *q, struct _NMPrioqItem *i)
+reshuffle_item(NMPrioq *q, PrioqItem *i)
 {
     unsigned k;
 
@@ -291,7 +291,7 @@ reshuffle_item(NMPrioq *q, struct _NMPrioqItem *i)
 gboolean
 nm_prioq_reshuffle(NMPrioq *q, void *data, unsigned *idx)
 {
-    struct _NMPrioqItem *i;
+    PrioqItem *i;
 
     nm_assert(q);
 
@@ -306,7 +306,7 @@ nm_prioq_reshuffle(NMPrioq *q, void *data, unsigned *idx)
 void
 nm_prioq_update(NMPrioq *q, void *data, unsigned *idx, bool queued /* or else remove */)
 {
-    struct _NMPrioqItem *i;
+    PrioqItem *i;
 
     nm_assert(q);
 
