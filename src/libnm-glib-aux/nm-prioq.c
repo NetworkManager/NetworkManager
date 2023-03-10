@@ -100,6 +100,13 @@ nm_prioq_destroy(NMPrioq *q)
 
     _nm_assert_q(q);
 
+    while (q->_priv.n_items > 0) {
+        PrioqItem *i = &q->_priv.items[--q->_priv.n_items];
+
+        if (i->idx)
+            *i->idx = NM_PRIOQ_IDX_NULL;
+    }
+
     free(q->_priv.items);
     q->_priv.compare_func = NULL;
 }
@@ -238,11 +245,15 @@ remove_item(NMPrioq *q, PrioqItem *i)
 
     _nm_assert_item(q, i);
 
-    l = &q->_priv.items[q->_priv.n_items - 1u];
+    if (i->idx)
+        *i->idx = NM_PRIOQ_IDX_NULL;
+
+    q->_priv.n_items--;
+
+    l = &q->_priv.items[q->_priv.n_items];
 
     if (i == l) {
-        /* Last entry, let's just remove it */
-        q->_priv.n_items--;
+        /* Last entry, nothing to do. */
         return;
     }
 
@@ -252,9 +263,9 @@ remove_item(NMPrioq *q, PrioqItem *i)
     k = i - q->_priv.items;
 
     *i = *l;
+
     if (i->idx)
         *i->idx = k;
-    q->_priv.n_items--;
 
     k = shuffle_down(q, k);
     shuffle_up(q, k);
