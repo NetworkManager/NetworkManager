@@ -1572,6 +1572,153 @@ _match_section_infos_lookup(const MatchSectionInfo *match_section_infos,
                                         (gpointer *) out_value);
 }
 
+static gpointer
+_match_section_info_to_variant(const MatchSectionInfo *m, GKeyFile *keyfile, gpointer user_data)
+{
+    GHashTable   *conn_hash = user_data;
+    GVariantDict *sett_dict;
+    int           i;
+
+    for (i = 0; i < m->lookup_len; i++) {
+        const NMSettInfoSetting  *sett_info;
+        const NMSettInfoProperty *property_info;
+        char                     *sett_name, *prop_name;
+        GType                     sett_type;
+
+        sett_name = g_strdup(m->lookup_idx[i].name);
+        prop_name = strchr(sett_name, '.');
+        if (!prop_name) {
+            nm_log_warn(LOGD_CORE, "'%s' is not a <setting>.<property. Ignoring.", sett_name);
+            goto next_prop;
+        }
+
+        *prop_name = '\0';
+        prop_name++;
+
+        sett_type = nm_setting_lookup_type(sett_name);
+        if (!sett_type) {
+            nm_log_warn(LOGD_CORE, "'%s' is not a known setting. Ignoring.", sett_name);
+            goto next_prop;
+        }
+
+        sett_info = _nm_setting_class_get_sett_info(NM_SETTING_CLASS(g_type_class_peek(sett_type)));
+        g_return_val_if_fail(sett_info, NULL);
+
+        property_info = _nm_sett_info_setting_get_property_info(sett_info, prop_name);
+        if (!property_info) {
+            nm_log_warn(LOGD_CORE, "Unknown property: '%s.%s'. Ignoring.", sett_name, prop_name);
+            goto next_prop;
+        }
+
+        sett_dict = g_hash_table_lookup(conn_hash, sett_name);
+        if (sett_dict && g_variant_dict_contains(sett_dict, prop_name))
+            goto next_prop;
+
+        if (!sett_dict) {
+            sett_dict = g_variant_dict_new(NULL);
+            g_hash_table_insert(conn_hash, g_strdup(sett_name), sett_dict);
+        }
+
+        if (g_variant_type_equal(property_info->property_type->dbus_type,
+                                 G_VARIANT_TYPE_BYTESTRING)) {
+            g_variant_dict_insert_value(sett_dict,
+                                        prop_name,
+                                        g_variant_new_bytestring(m->lookup_idx[i].value_str));
+        } else if (g_variant_type_equal(property_info->property_type->dbus_type,
+                                        G_VARIANT_TYPE_STRING)) {
+            g_variant_dict_insert_value(sett_dict,
+                                        prop_name,
+                                        g_variant_new_string(m->lookup_idx[i].value_str));
+        } else if (g_variant_type_equal(property_info->property_type->dbus_type,
+                                        G_VARIANT_TYPE_INT32)) {
+            gint32 i32 =
+                _nm_utils_ascii_str_to_int64(m->lookup_idx[i].value_str, 0, G_MININT, G_MAXINT, 0);
+            g_variant_dict_insert_value(sett_dict, prop_name, g_variant_new_int32(i32));
+        } else if (g_variant_type_equal(property_info->property_type->dbus_type,
+                                        G_VARIANT_TYPE_INT64)) {
+            gint64 i64 = _nm_utils_ascii_str_to_int64(m->lookup_idx[i].value_str,
+                                                      0,
+                                                      G_MININT64,
+                                                      G_MAXINT64,
+                                                      0);
+            g_variant_dict_insert_value(sett_dict, prop_name, g_variant_new_int64(i64));
+        } else {
+            nm_log_warn(LOGD_CORE,
+                        "Don't know how deserialize '%s.%s'. Ignoring.",
+                        sett_name,
+                        prop_name);
+        }
+
+next_prop:
+        g_free(sett_name);
+    }
+
+    return GINT_TO_POINTER(TRUE);
+}
+
+static void
+_add_default_setting(gpointer key, gpointer value, gpointer user_data)
+{
+    GVariantBuilder *conn_builder = user_data;
+    GVariantDict    *sett_dict    = value;
+    const char      *sett_name    = key;
+
+    g_variant_builder_add(conn_builder, "{s@a{sv}}", sett_name, g_variant_dict_end(sett_dict));
+}
+
+GVariant *
+nm_config_data_merge_default_settings(const NMConfigData *self,
+                                      NMDevice           *device,
+                                      GVariant           *settings)
+{
+    const NMConfigDataPrivate *priv;
+    GHashTable                *conn_hash;
+    GVariantBuilder           *conn_builder;
+    int                        i;
+
+    g_return_val_if_fail(self, NULL);
+
+    priv = NM_CONFIG_DATA_GET_PRIVATE(self);
+
+    conn_hash = g_hash_table_new_full(nm_str_hash, g_str_equal, g_free, NULL);
+
+    if (settings) {
+        /* First copy properties from user's setting into our builder. */
+        for (i = 0; i < g_variant_n_children(settings); i++) {
+            const char   *prop      = NULL;
+            GVariantIter *sett_iter = NULL;
+            GVariant     *value     = NULL;
+            char         *name      = NULL;
+            GVariantDict *dict;
+
+            g_variant_get_child(settings, i, "{sa{sv}}", &name, &sett_iter);
+            dict = g_variant_dict_new(NULL);
+            g_hash_table_insert(conn_hash, name, dict);
+            while (g_variant_iter_next(sett_iter, "{sv}", &prop, &value))
+                g_variant_dict_insert_value(dict, prop, value);
+        }
+    }
+
+    if (device) {
+        /* Then merge in defaults for properties that haven't been
+	 * explicitly specified. */
+        _match_section_infos_foreach(&priv->connection_infos[0],
+                                     priv->keyfile,
+                                     device,
+                                     NULL,
+                                     NULL,
+                                     TRUE,
+                                     _match_section_info_to_variant,
+                                     conn_hash,
+                                     NULL);
+    }
+
+    conn_builder = g_variant_builder_new(NM_VARIANT_TYPE_CONNECTION);
+    g_hash_table_foreach(conn_hash, _add_default_setting, conn_builder);
+    g_hash_table_unref(conn_hash);
+    return g_variant_builder_end(conn_builder);
+}
+
 const char *
 nm_config_data_get_device_config(const NMConfigData *self,
                                  const char         *property,
