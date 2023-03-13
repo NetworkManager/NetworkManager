@@ -127,8 +127,8 @@ G_DEFINE_TYPE(NMConfigData, nm_config_data, G_TYPE_OBJECT)
 
 /*****************************************************************************/
 
-static const char *
-_match_section_info_get_str(const MatchSectionInfo *m, GKeyFile *keyfile, const char *property);
+static gpointer
+_match_section_info_get_str(const MatchSectionInfo *m, GKeyFile *keyfile, gpointer user_data);
 
 /*****************************************************************************/
 
@@ -1488,13 +1488,16 @@ global_dns_equal(NMGlobalDnsConfig *old, NMGlobalDnsConfig *new)
 /*****************************************************************************/
 
 static const MatchSectionInfo *
-_match_section_infos_lookup(const MatchSectionInfo *match_section_infos,
-                            GKeyFile               *keyfile,
-                            const char             *property,
-                            NMDevice               *device,
-                            const NMPlatformLink   *pllink,
-                            const char             *match_device_type,
-                            const char            **out_value)
+_match_section_infos_foreach(const MatchSectionInfo *match_section_infos,
+                             GKeyFile               *keyfile,
+                             NMDevice               *device,
+                             const NMPlatformLink   *pllink,
+                             const char             *match_device_type,
+                             gpointer (*match_section_cb)(const MatchSectionInfo *m,
+                                                          GKeyFile               *keyfile,
+                                                          gpointer                user_data),
+                             gpointer  user_data,
+                             gpointer *out_value)
 {
     const char *match_dhcp_plugin;
 
@@ -1504,19 +1507,8 @@ _match_section_infos_lookup(const MatchSectionInfo *match_section_infos,
     match_dhcp_plugin = nm_dhcp_manager_get_config(nm_dhcp_manager_get());
 
     for (; match_section_infos->group_name; match_section_infos++) {
-        const char *value;
-        gboolean    match;
-
-        /* FIXME: Here we use g_key_file_get_string(). This should be in sync with what keyfile-reader
-         * does.
-         *
-         * Unfortunately that is currently not possible because keyfile-reader does the two steps
-         * string_to_value(keyfile_to_string(keyfile)) in one. Optimally, keyfile library would
-         * expose both functions, and we would return here keyfile_to_string(keyfile).
-         * The caller then could convert the string to the proper value via string_to_value(value). */
-        value = _match_section_info_get_str(match_section_infos, keyfile, property);
-        if (!value && !match_section_infos->stop_match)
-            continue;
+        gpointer value;
+        gboolean match;
 
         if (match_section_infos->match_device.has) {
             if (device)
@@ -1532,15 +1524,46 @@ _match_section_infos_lookup(const MatchSectionInfo *match_section_infos,
         } else
             match = TRUE;
 
-        if (match) {
-            NM_SET_OUT(out_value, value);
-            return match_section_infos;
-        }
+        if (!match)
+            continue;
+
+        /* FIXME: Here we use g_key_file_get_string(). This should be in sync with what keyfile-reader
+         * does.
+         *
+         * Unfortunately that is currently not possible because keyfile-reader does the two steps
+         * string_to_value(keyfile_to_string(keyfile)) in one. Optimally, keyfile library would
+         * expose both functions, and we would return here keyfile_to_string(keyfile).
+         * The caller then could convert the string to the proper value via string_to_value(value). */
+        value = match_section_cb(match_section_infos, keyfile, user_data);
+        if (!value && !match_section_infos->stop_match)
+            continue;
+
+        NM_SET_OUT(out_value, value);
+        return match_section_infos;
     }
 
 out:
     NM_SET_OUT(out_value, NULL);
     return NULL;
+}
+
+static const MatchSectionInfo *
+_match_section_infos_lookup(const MatchSectionInfo *match_section_infos,
+                            GKeyFile               *keyfile,
+                            const char             *property,
+                            NMDevice               *device,
+                            const NMPlatformLink   *pllink,
+                            const char             *match_device_type,
+                            const char            **out_value)
+{
+    return _match_section_infos_foreach(match_section_infos,
+                                        keyfile,
+                                        device,
+                                        pllink,
+                                        match_device_type,
+                                        _match_section_info_get_str,
+                                        (gpointer) property,
+                                        (gpointer *) out_value);
 }
 
 const char *
@@ -1717,10 +1740,11 @@ nm_config_data_get_connection_default_int64(const NMConfigData *self,
     return _nm_utils_ascii_str_to_int64(value, 0, min, max, fallback);
 }
 
-static const char *
-_match_section_info_get_str(const MatchSectionInfo *m, GKeyFile *keyfile, const char *property)
+static gpointer
+_match_section_info_get_str(const MatchSectionInfo *m, GKeyFile *keyfile, gpointer user_data)
 {
     gssize      idx;
+    const char *property = user_data;
     const char *value;
 
     idx   = nm_utils_named_value_list_find(m->lookup_idx, m->lookup_len, property, TRUE);
@@ -1734,7 +1758,7 @@ _match_section_info_get_str(const MatchSectionInfo *m, GKeyFile *keyfile, const 
     }
 #endif
 
-    return value;
+    return (gpointer) value;
 }
 
 static void
