@@ -2522,7 +2522,9 @@ nmtstp_link_ip6gre_add(NMPlatform                *platform,
     gboolean              success;
     char                  b1[NM_INET_ADDRSTRLEN];
     char                  b2[NM_INET_ADDRSTRLEN];
+    char                  encap[20];
     char                  tclass[20];
+    gboolean              encap_ignore;
     gboolean              tclass_inherit;
 
     g_assert(nm_utils_ifname_valid_kernel(name, NULL));
@@ -2540,9 +2542,11 @@ nmtstp_link_ip6gre_add(NMPlatform                *platform,
                 g_strdup_printf("dev %s", nm_platform_link_get_name(platform, lnk->parent_ifindex));
 
         tclass_inherit = NM_FLAGS_HAS(lnk->flags, IP6_TNL_F_USE_ORIG_TCLASS);
+        encap_ignore   = NM_FLAGS_HAS(lnk->flags, IP6_TNL_F_IGN_ENCAP_LIMIT);
 
         success = !nmtstp_run_command(
-            "ip link add %s type %s%s%s local %s remote %s ttl %u tclass %s flowlabel %x",
+            "ip link add %s type %s%s%s local %s remote %s ttl %u tclass %s encaplimit %s "
+            "flowlabel %x",
             name,
             lnk->is_tap ? "ip6gretap" : "ip6gre",
             NM_PRINT_FMT_QUOTED2(dev, " ", dev, ""),
@@ -2550,6 +2554,7 @@ nmtstp_link_ip6gre_add(NMPlatform                *platform,
             nm_inet6_ntop(&lnk->remote, b2),
             lnk->ttl,
             tclass_inherit ? "inherit" : nm_sprintf_buf(tclass, "%02x", lnk->tclass),
+            encap_ignore ? "none" : nm_sprintf_buf(encap, "%u", lnk->encap_limit),
             lnk->flow_label);
         if (success) {
             pllink = nmtstp_assert_wait_for_link(platform,

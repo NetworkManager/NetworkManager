@@ -491,7 +491,11 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
     }
 
     flags = priv->flags;
-    if (NM_IN_SET(priv->mode, NM_IP_TUNNEL_MODE_IPIP6, NM_IP_TUNNEL_MODE_IP6IP6))
+    if (NM_IN_SET(priv->mode,
+                  NM_IP_TUNNEL_MODE_IPIP6,
+                  NM_IP_TUNNEL_MODE_IP6IP6,
+                  NM_IP_TUNNEL_MODE_IP6GRE,
+                  NM_IP_TUNNEL_MODE_IP6GRETAP))
         flags &= (guint32) (~_NM_IP_TUNNEL_FLAG_ALL_IP6TNL);
     if (flags) {
         g_set_error(error,
@@ -727,7 +731,7 @@ nm_setting_ip_tunnel_class_init(NMSettingIPTunnelClass *klass)
      * NMSettingIPTunnel:encapsulation-limit:
      *
      * How many additional levels of encapsulation are permitted to be prepended
-     * to packets. This property applies only to IPv6 tunnels.
+     * to packets. This property applies only to IPv6 tunnels. To disable this option, add %NM_IP_TUNNEL_FLAG_IP6_IGN_ENCAP_LIMIT to ip-tunnel flags.
      *
      * Since: 1.2
      **/

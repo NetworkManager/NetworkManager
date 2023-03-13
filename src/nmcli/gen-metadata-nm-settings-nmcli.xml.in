@@ -644,7 +644,7 @@
         <property name="output-key"
                   description="The key used for tunnel output packets; the property is valid only for certain tunnel modes (GRE, IP6GRE). If empty, no key is used." />
         <property name="encapsulation-limit"
-                  description="How many additional levels of encapsulation are permitted to be prepended to packets. This property applies only to IPv6 tunnels." />
+                  description="How many additional levels of encapsulation are permitted to be prepended to packets. This property applies only to IPv6 tunnels. To disable this option, add NM_IP_TUNNEL_FLAG_IP6_IGN_ENCAP_LIMIT (0x1) to ip-tunnel flags." />
         <property name="flow-label"
                   description="The flow label to assign to tunnel packets. This property applies only to IPv6 tunnels." />
         <property name="fwmark"

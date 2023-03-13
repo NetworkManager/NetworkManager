@@ -1489,12 +1489,25 @@ test_software_detect(gconstpointer user_data)
 
         module_loaded = nmtstp_ensure_module("ip6_gre");
 
-        lnk_ip6tnl.local          = nmtst_inet6_from_string("fd01::42");
-        lnk_ip6tnl.remote         = nmtst_inet6_from_string("fd01::aaaa");
-        lnk_ip6tnl.parent_ifindex = ifindex_parent;
-        lnk_ip6tnl.tclass         = 21;
-        lnk_ip6tnl.flow_label     = 1338;
-        lnk_ip6tnl.is_gre         = TRUE;
+        switch (test_data->test_mode) {
+        case 0:
+            lnk_ip6tnl.local          = nmtst_inet6_from_string("fd01::43");
+            lnk_ip6tnl.remote         = nmtst_inet6_from_string("fd01::aaaa");
+            lnk_ip6tnl.parent_ifindex = ifindex_parent;
+            lnk_ip6tnl.tclass         = 21;
+            lnk_ip6tnl.flow_label     = 1338;
+            lnk_ip6tnl.is_gre         = TRUE;
+            break;
+        case 1:
+            lnk_ip6tnl.local          = nmtst_inet6_from_string("fd01::44");
+            lnk_ip6tnl.remote         = nmtst_inet6_from_string("fd01::aaab");
+            lnk_ip6tnl.parent_ifindex = ifindex_parent;
+            lnk_ip6tnl.tclass         = 0;
+            lnk_ip6tnl.flow_label     = 1339;
+            lnk_ip6tnl.is_gre         = TRUE;
+            lnk_ip6tnl.flags          = IP6_TNL_F_IGN_ENCAP_LIMIT | IP6_TNL_F_USE_ORIG_TCLASS;
+            break;
+        }
 
         if (!nmtstp_link_ip6gre_add(NULL, ext, DEVICE_NAME, &lnk_ip6tnl)) {
             if (!module_loaded) {
@@ -1513,14 +1526,29 @@ test_software_detect(gconstpointer user_data)
 
         module_loaded = nmtstp_ensure_module("ip6_gre");
 
-        lnk_ip6tnl.local          = nmtst_inet6_from_string("fe80::abcd");
-        lnk_ip6tnl.remote         = nmtst_inet6_from_string("fc01::bbbb");
-        lnk_ip6tnl.parent_ifindex = ifindex_parent;
-        lnk_ip6tnl.ttl            = 10;
-        lnk_ip6tnl.tclass         = 22;
-        lnk_ip6tnl.flow_label     = 1339;
-        lnk_ip6tnl.is_gre         = TRUE;
-        lnk_ip6tnl.is_tap         = TRUE;
+        switch (test_data->test_mode) {
+        case 0:
+            lnk_ip6tnl.local          = nmtst_inet6_from_string("fe80::abcd");
+            lnk_ip6tnl.remote         = nmtst_inet6_from_string("fc01::bbbb");
+            lnk_ip6tnl.parent_ifindex = ifindex_parent;
+            lnk_ip6tnl.ttl            = 10;
+            lnk_ip6tnl.tclass         = 23;
+            lnk_ip6tnl.flow_label     = 1340;
+            lnk_ip6tnl.is_gre         = TRUE;
+            lnk_ip6tnl.is_tap         = TRUE;
+            break;
+        case 1:
+            lnk_ip6tnl.local          = nmtst_inet6_from_string("fe80::abce");
+            lnk_ip6tnl.remote         = nmtst_inet6_from_string("fc01::bbbc");
+            lnk_ip6tnl.parent_ifindex = ifindex_parent;
+            lnk_ip6tnl.ttl            = 10;
+            lnk_ip6tnl.tclass         = 0;
+            lnk_ip6tnl.flow_label     = 1341;
+            lnk_ip6tnl.is_gre         = TRUE;
+            lnk_ip6tnl.is_tap         = TRUE;
+            lnk_ip6tnl.flags          = IP6_TNL_F_IGN_ENCAP_LIMIT | IP6_TNL_F_USE_ORIG_TCLASS;
+            break;
+        }
 
         if (!nmtstp_link_ip6gre_add(NULL, ext, DEVICE_NAME, &lnk_ip6tnl)) {
             if (!module_loaded) {
@@ -1901,29 +1929,65 @@ test_software_detect(gconstpointer user_data)
         {
             const NMPlatformLnkIp6Tnl *plnk = &lnk->lnk_ip6tnl;
 
-            g_assert(plnk == nm_platform_link_get_lnk_ip6gre(NM_PLATFORM_GET, ifindex, NULL));
-            g_assert_cmpint(plnk->parent_ifindex, ==, ifindex_parent);
-            nmtst_assert_ip6_address(&plnk->local, "fd01::42");
-            nmtst_assert_ip6_address(&plnk->remote, "fd01::aaaa");
-            g_assert_cmpint(plnk->tclass, ==, 21);
-            g_assert_cmpint(plnk->flow_label, ==, 1338);
-            g_assert_cmpint(plnk->is_gre, ==, TRUE);
-            g_assert_cmpint(plnk->is_tap, ==, FALSE);
+            switch (test_data->test_mode) {
+            case 0:
+                g_assert(plnk == nm_platform_link_get_lnk_ip6gre(NM_PLATFORM_GET, ifindex, NULL));
+                g_assert_cmpint(plnk->parent_ifindex, ==, ifindex_parent);
+                nmtst_assert_ip6_address(&plnk->local, "fd01::43");
+                nmtst_assert_ip6_address(&plnk->remote, "fd01::aaaa");
+                g_assert_cmpint(plnk->tclass, ==, 21);
+                g_assert_cmpint(plnk->flow_label, ==, 1338);
+                g_assert_cmpint(plnk->is_gre, ==, TRUE);
+                g_assert_cmpint(plnk->is_tap, ==, FALSE);
+                break;
+            case 1:
+                g_assert(plnk == nm_platform_link_get_lnk_ip6gre(NM_PLATFORM_GET, ifindex, NULL));
+                g_assert_cmpint(plnk->parent_ifindex, ==, ifindex_parent);
+                nmtst_assert_ip6_address(&plnk->local, "fd01::44");
+                nmtst_assert_ip6_address(&plnk->remote, "fd01::aaab");
+                g_assert_cmpint(plnk->flow_label, ==, 1339);
+                g_assert_cmpint(plnk->is_gre, ==, TRUE);
+                g_assert_cmpint(plnk->is_tap, ==, FALSE);
+                g_assert_cmpint(plnk->flags & 0xFFFF, /* ignore kernel internal flags */
+                                ==,
+                                IP6_TNL_F_IGN_ENCAP_LIMIT | IP6_TNL_F_USE_ORIG_TCLASS);
+                break;
+            }
+
             break;
         }
         case NM_LINK_TYPE_IP6GRETAP:
         {
             const NMPlatformLnkIp6Tnl *plnk = &lnk->lnk_ip6tnl;
 
-            g_assert(plnk == nm_platform_link_get_lnk_ip6gretap(NM_PLATFORM_GET, ifindex, NULL));
-            g_assert_cmpint(plnk->parent_ifindex, ==, ifindex_parent);
-            nmtst_assert_ip6_address(&plnk->local, "fe80::abcd");
-            nmtst_assert_ip6_address(&plnk->remote, "fc01::bbbb");
-            g_assert_cmpint(plnk->ttl, ==, 10);
-            g_assert_cmpint(plnk->tclass, ==, 22);
-            g_assert_cmpint(plnk->flow_label, ==, 1339);
-            g_assert_cmpint(plnk->is_gre, ==, TRUE);
-            g_assert_cmpint(plnk->is_tap, ==, TRUE);
+            switch (test_data->test_mode) {
+            case 0:
+                g_assert(plnk
+                         == nm_platform_link_get_lnk_ip6gretap(NM_PLATFORM_GET, ifindex, NULL));
+                g_assert_cmpint(plnk->parent_ifindex, ==, ifindex_parent);
+                nmtst_assert_ip6_address(&plnk->local, "fe80::abcd");
+                nmtst_assert_ip6_address(&plnk->remote, "fc01::bbbb");
+                g_assert_cmpint(plnk->ttl, ==, 10);
+                g_assert_cmpint(plnk->tclass, ==, 23);
+                g_assert_cmpint(plnk->flow_label, ==, 1340);
+                g_assert_cmpint(plnk->is_gre, ==, TRUE);
+                g_assert_cmpint(plnk->is_tap, ==, TRUE);
+                break;
+            case 1:
+                g_assert(plnk
+                         == nm_platform_link_get_lnk_ip6gretap(NM_PLATFORM_GET, ifindex, NULL));
+                g_assert_cmpint(plnk->parent_ifindex, ==, ifindex_parent);
+                nmtst_assert_ip6_address(&plnk->local, "fe80::abce");
+                nmtst_assert_ip6_address(&plnk->remote, "fc01::bbbc");
+                g_assert_cmpint(plnk->ttl, ==, 10);
+                g_assert_cmpint(plnk->flow_label, ==, 1341);
+                g_assert_cmpint(plnk->is_gre, ==, TRUE);
+                g_assert_cmpint(plnk->is_tap, ==, TRUE);
+                g_assert_cmpint(plnk->flags & 0xFFFF, /* ignore kernel internal flags */
+                                ==,
+                                IP6_TNL_F_IGN_ENCAP_LIMIT | IP6_TNL_F_USE_ORIG_TCLASS);
+                break;
+            }
             break;
         }
         case NM_LINK_TYPE_IPIP:
@@ -3958,8 +4022,10 @@ _nmtstp_setup_tests(void)
         test_software_detect_add("/link/software/detect/gretap", NM_LINK_TYPE_GRETAP, 0);
         test_software_detect_add("/link/software/detect/ip6tnl/0", NM_LINK_TYPE_IP6TNL, 0);
         test_software_detect_add("/link/software/detect/ip6tnl/1", NM_LINK_TYPE_IP6TNL, 1);
-        test_software_detect_add("/link/software/detect/ip6gre", NM_LINK_TYPE_IP6GRE, 0);
-        test_software_detect_add("/link/software/detect/ip6gretap", NM_LINK_TYPE_IP6GRETAP, 0);
+        test_software_detect_add("/link/software/detect/ip6gre/0", NM_LINK_TYPE_IP6GRE, 0);
+        test_software_detect_add("/link/software/detect/ip6gre/1", NM_LINK_TYPE_IP6GRE, 1);
+        test_software_detect_add("/link/software/detect/ip6gretap/0", NM_LINK_TYPE_IP6GRETAP, 0);
+        test_software_detect_add("/link/software/detect/ip6gretap/1", NM_LINK_TYPE_IP6GRETAP, 1);
         test_software_detect_add("/link/software/detect/ipip", NM_LINK_TYPE_IPIP, 0);
         test_software_detect_add("/link/software/detect/macvlan", NM_LINK_TYPE_MACVLAN, 0);
         test_software_detect_add("/link/software/detect/macvtap", NM_LINK_TYPE_MACVTAP, 0);
