@@ -6584,6 +6584,17 @@ impl_manager_add_and_activate_connection(NMDBusObject                      *obj,
     specific_object_path = nm_dbus_path_not_empty(specific_object_path);
     device_path          = nm_dbus_path_not_empty(device_path);
 
+    if (device_path) {
+        device = nm_manager_get_device_by_path(self, device_path);
+        if (!device) {
+            error = g_error_new(NM_MANAGER_ERROR,
+                                NM_MANAGER_ERROR_UNKNOWN_DEVICE,
+                                "Device does not exist: %s",
+                                device_path);
+            goto error;
+        }
+    }
+
     /* Try to create a new connection with the given settings.
      * We allow empty settings for AddAndActivateConnection(). In that case,
      * the connection will be completed in nm_utils_complete_generic() or
