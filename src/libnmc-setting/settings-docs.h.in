@@ -218,7 +218,7 @@
 #define DESCRIBE_DOC_NM_SETTING_IP6_CONFIG_ROUTES N_("Array of IP routes.")
 #define DESCRIBE_DOC_NM_SETTING_IP6_CONFIG_ROUTING_RULES N_("A comma separated list of routing rules for policy routing.")
 #define DESCRIBE_DOC_NM_SETTING_IP6_CONFIG_TOKEN N_("Configure the token for draft-chown-6man-tokenised-ipv6-identifiers-02 IPv6 tokenized interface identifiers. Useful with eui64 addr-gen-mode.")
-#define DESCRIBE_DOC_NM_SETTING_IP_TUNNEL_ENCAPSULATION_LIMIT N_("How many additional levels of encapsulation are permitted to be prepended to packets. This property applies only to IPv6 tunnels.")
+#define DESCRIBE_DOC_NM_SETTING_IP_TUNNEL_ENCAPSULATION_LIMIT N_("How many additional levels of encapsulation are permitted to be prepended to packets. This property applies only to IPv6 tunnels. To disable this option, add NM_IP_TUNNEL_FLAG_IP6_IGN_ENCAP_LIMIT (0x1) to ip-tunnel flags.")
 #define DESCRIBE_DOC_NM_SETTING_IP_TUNNEL_FLAGS N_("Tunnel flags. Currently, the following values are supported: NM_IP_TUNNEL_FLAG_IP6_IGN_ENCAP_LIMIT (0x1), NM_IP_TUNNEL_FLAG_IP6_USE_ORIG_TCLASS (0x2), NM_IP_TUNNEL_FLAG_IP6_USE_ORIG_FLOWLABEL (0x4), NM_IP_TUNNEL_FLAG_IP6_MIP6_DEV (0x8), NM_IP_TUNNEL_FLAG_IP6_RCV_DSCP_COPY (0x10), NM_IP_TUNNEL_FLAG_IP6_USE_ORIG_FWMARK (0x20). They are valid only for IPv6 tunnels.")
 #define DESCRIBE_DOC_NM_SETTING_IP_TUNNEL_FLOW_LABEL N_("The flow label to assign to tunnel packets. This property applies only to IPv6 tunnels.")
 #define DESCRIBE_DOC_NM_SETTING_IP_TUNNEL_FWMARK N_("The fwmark value to assign to tunnel packets. This property can be set to a non zero value only on VTI and VTI6 tunnels.")
