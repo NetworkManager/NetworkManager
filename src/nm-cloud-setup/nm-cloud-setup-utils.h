@@ -40,30 +40,6 @@ gboolean nmcs_wait_for_objects_iterate_until_done(GMainContext *context, int tim
 
 /*****************************************************************************/
 
-typedef void (*NMCSUtilsPollProbeStartFcn)(GCancellable       *cancellable,
-                                           gpointer            probe_user_data,
-                                           GAsyncReadyCallback callback,
-                                           gpointer            user_data);
-
-typedef gboolean (*NMCSUtilsPollProbeFinishFcn)(GObject      *source,
-                                                GAsyncResult *result,
-                                                gpointer      probe_user_data,
-                                                GError      **error);
-
-void nmcs_utils_poll(int                         poll_timeout_ms,
-                     int                         ratelimit_timeout_ms,
-                     int                         sleep_timeout_ms,
-                     NMCSUtilsPollProbeStartFcn  probe_start_fcn,
-                     NMCSUtilsPollProbeFinishFcn probe_finish_fcn,
-                     gpointer                    probe_user_data,
-                     GCancellable               *cancellable,
-                     GAsyncReadyCallback         callback,
-                     gpointer                    user_data);
-
-gboolean nmcs_utils_poll_finish(GAsyncResult *result, gpointer *probe_user_data, GError **error);
-
-/*****************************************************************************/
-
 char *nmcs_utils_hwaddr_normalize(const char *hwaddr, gssize len);
 
 static inline char *

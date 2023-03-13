@@ -3239,4 +3239,31 @@ nm_path_startswith(const char *path, const char *prefix)
 
 gboolean nm_hostname_is_valid(const char *s, gboolean trailing_dot);
 
+/*****************************************************************************/
+
+typedef void (*NMUtilsPollProbeRegisterObjectFcn)(GObject *object, gpointer user_data);
+
+typedef void (*NMUtilsPollProbeStartFcn)(GCancellable       *cancellable,
+                                         gpointer            probe_user_data,
+                                         GAsyncReadyCallback callback,
+                                         gpointer            user_data);
+
+typedef gboolean (*NMUtilsPollProbeFinishFcn)(GObject      *source,
+                                              GAsyncResult *result,
+                                              gpointer      probe_user_data,
+                                              GError      **error);
+
+void nm_utils_poll(int                               poll_timeout_ms,
+                   int                               ratelimit_timeout_ms,
+                   int                               sleep_timeout_ms,
+                   NMUtilsPollProbeRegisterObjectFcn probe_register_object_fcn,
+                   NMUtilsPollProbeStartFcn          probe_start_fcn,
+                   NMUtilsPollProbeFinishFcn         probe_finish_fcn,
+                   gpointer                          probe_user_data,
+                   GCancellable                     *cancellable,
+                   GAsyncReadyCallback               callback,
+                   gpointer                          user_data);
+
+gboolean nm_utils_poll_finish(GAsyncResult *result, gpointer *probe_user_data, GError **error);
+
 #endif /* __NM_SHARED_UTILS_H__ */
