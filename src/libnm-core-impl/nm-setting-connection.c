@@ -647,6 +647,8 @@ _to_dbus_fcn_timestamp(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
  * Returns the #NMSettingConnection:read-only property of the connection.
  *
  * Returns: %TRUE if the connection is read-only, %FALSE if it is not
+ *
+ * Deprecated: 1.44: This property is deprecated and has no meaning.
  **/
 gboolean
 nm_setting_connection_get_read_only(NMSettingConnection *setting)
@@ -2191,9 +2193,9 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
     /**
      * NMSettingConnection:read-only:
      *
-     * %FALSE if the connection can be modified using the provided settings
-     * service's D-Bus interface with the right privileges, or %TRUE if the
-     * connection is read-only and cannot be modified.
+     * This property is deprecated and has no meaning.
+     *
+     * Deprecated: 1.44: This property is deprecated and has no meaning.
      **/
     _nm_setting_property_define_direct_boolean(properties_override,
                                                obj_properties,
@@ -2202,7 +2204,8 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
                                                FALSE,
                                                NM_SETTING_PARAM_FUZZY_IGNORE,
                                                NMSettingConnectionPrivate,
-                                               read_only);
+                                               read_only,
+                                               .is_deprecated = TRUE, );
 
     /**
      * NMSettingConnection:zone:
