@@ -58,12 +58,12 @@ location: src/tests/client/test-client.py:test_004()/7
 cmd: $NMCLI connection mod con-xx1 ipv4.addresses 192.168.77.5/24 ipv4.routes '2.3.4.5/32 192.168.77.1' ipv6.addresses 1:2:3:4::6/64 ipv6.routes 1:2:3:4:5:6::5/128
 lang: C
 returncode: 0
-size: 5164
+size: 5080
 location: src/tests/client/test-client.py:test_004()/8
 cmd: $NMCLI con s con-xx1
 lang: C
 returncode: 0
-stdout: 5033 bytes
+stdout: 4949 bytes
 >>>
 connection.id:                          con-xx1
 connection.uuid:                        UUID-con-xx1-REPLACED-REPLACED-REPLA
@@ -97,8 +97,6 @@ connection.wait-activation-delay:       -1
 802-11-wireless.band:                   a
 802-11-wireless.channel:                0
 802-11-wireless.bssid:                  --
-802-11-wireless.rate:                   0
-802-11-wireless.tx-power:               0
 802-11-wireless.mac-address:            --
 802-11-wireless.cloned-mac-address:     --
 802-11-wireless.generate-mac-address-mask:--
@@ -174,12 +172,12 @@ proxy.pac-url:                          --
 proxy.pac-script:                       --
 
 <<<
-size: 5200
+size: 5116
 location: src/tests/client/test-client.py:test_004()/9
 cmd: $NMCLI con s con-xx1
 lang: pl_PL.UTF-8
 returncode: 0
-stdout: 5059 bytes
+stdout: 4975 bytes
 >>>
 connection.id:                          con-xx1
 connection.uuid:                        UUID-con-xx1-REPLACED-REPLACED-REPLA
@@ -213,8 +211,6 @@ connection.wait-activation-delay:       -1
 802-11-wireless.band:                   a
 802-11-wireless.channel:                0
 802-11-wireless.bssid:                  --
-802-11-wireless.rate:                   0
-802-11-wireless.tx-power:               0
 802-11-wireless.mac-address:            --
 802-11-wireless.cloned-mac-address:     --
 802-11-wireless.generate-mac-address-mask:--
