@@ -6497,6 +6497,7 @@ impl_manager_add_and_activate_connection(NMDBusObject                      *obj,
     NMDevice                           *device       = NULL;
     gboolean                            is_vpn       = FALSE;
     gs_unref_variant GVariant          *settings     = NULL;
+    gs_unref_variant GVariant          *defaults     = NULL;
     gs_unref_variant GVariant          *options      = NULL;
     const char                         *device_path;
     const char                         *specific_object_path;
@@ -6595,6 +6596,9 @@ impl_manager_add_and_activate_connection(NMDBusObject                      *obj,
         }
     }
 
+    defaults =
+        nm_config_data_merge_default_settings(nm_config_get_data(priv->config), device, settings);
+
     /* Try to create a new connection with the given settings.
      * We allow empty settings for AddAndActivateConnection(). In that case,
      * the connection will be completed in nm_utils_complete_generic() or
@@ -6603,13 +6607,11 @@ impl_manager_add_and_activate_connection(NMDBusObject                      *obj,
      * validate_activation_request()).
      */
     incompl_conn = nm_simple_connection_new();
-    if (settings && g_variant_n_children(settings)) {
-        if (!_nm_connection_replace_settings(incompl_conn,
-                                             settings,
-                                             NM_SETTING_PARSE_FLAGS_STRICT,
-                                             &error)) {
-            goto error;
-        }
+    if (!_nm_connection_replace_settings(incompl_conn,
+                                         defaults,
+                                         NM_SETTING_PARSE_FLAGS_STRICT,
+                                         &error)) {
+        goto error;
     }
 
     subject = validate_activation_request(self,
