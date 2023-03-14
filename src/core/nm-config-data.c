@@ -19,6 +19,7 @@
 typedef struct {
     char    *group_name;
     gboolean stop_match;
+    gboolean on_add_and_activate;
     struct {
         /* have a separate boolean field @has, because a @spec with
          * value %NULL does not necessarily mean, that the property
@@ -1493,6 +1494,7 @@ _match_section_infos_foreach(const MatchSectionInfo *match_section_infos,
                              NMDevice               *device,
                              const NMPlatformLink   *pllink,
                              const char             *match_device_type,
+                             gboolean                on_add_and_activate,
                              gpointer (*match_section_cb)(const MatchSectionInfo *m,
                                                           GKeyFile               *keyfile,
                                                           gpointer                user_data),
@@ -1502,6 +1504,9 @@ _match_section_infos_foreach(const MatchSectionInfo *match_section_infos,
     const char *match_dhcp_plugin;
 
     if (!match_section_infos)
+        goto out;
+
+    if (match_section_infos->on_add_and_activate != on_add_and_activate)
         goto out;
 
     match_dhcp_plugin = nm_dhcp_manager_get_config(nm_dhcp_manager_get());
@@ -1561,6 +1566,7 @@ _match_section_infos_lookup(const MatchSectionInfo *match_section_infos,
                                         device,
                                         pllink,
                                         match_device_type,
+                                        FALSE,
                                         _match_section_info_get_str,
                                         (gpointer) property,
                                         (gpointer *) out_value);
@@ -1783,6 +1789,11 @@ _match_section_info_init(MatchSectionInfo *connection_info,
                                  &connection_info->match_device.has);
     connection_info->stop_match =
         nm_config_keyfile_get_boolean(keyfile, group, NM_CONFIG_KEYFILE_KEY_STOP_MATCH, FALSE);
+    connection_info->on_add_and_activate =
+        nm_config_keyfile_get_boolean(keyfile,
+                                      group,
+                                      NM_CONFIG_KEYFILE_KEY_ON_ADD_AND_ACTIVATE,
+                                      FALSE);
 
     if (is_device) {
         connection_info->device.allowed_connections =
@@ -1801,7 +1812,10 @@ _match_section_info_init(MatchSectionInfo *connection_info,
         gs_free char *key = g_steal_pointer(&keys[i]);
         char         *value;
 
-        if (NM_IN_STRSET(key, NM_CONFIG_KEYFILE_KEY_STOP_MATCH, NM_CONFIG_KEYFILE_KEY_MATCH_DEVICE))
+        if (NM_IN_STRSET(key,
+                         NM_CONFIG_KEYFILE_KEY_STOP_MATCH,
+                         NM_CONFIG_KEYFILE_KEY_MATCH_DEVICE,
+                         NM_CONFIG_KEYFILE_KEY_ON_ADD_AND_ACTIVATE))
             continue;
 
         if (j > 0 && nm_streq(vals[j - 1].name, key))
