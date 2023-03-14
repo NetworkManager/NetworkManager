@@ -5531,9 +5531,6 @@ static const NMMetaPropertyInfo *const property_infos_CONNECTION[] = {
     PROPERTY_INFO_WITH_DESC (NM_SETTING_CONNECTION_TIMESTAMP,
         .property_type =                &_pt_gobject_readonly,
     ),
-    PROPERTY_INFO_WITH_DESC (NM_SETTING_CONNECTION_READ_ONLY,
-        .property_type =                &_pt_gobject_readonly,
-    ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_CONNECTION_PERMISSIONS,
         .describe_message =
              N_("Enter a list of user permissions. This is a list of user names formatted as:\n"

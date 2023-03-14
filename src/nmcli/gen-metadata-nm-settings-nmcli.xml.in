@@ -387,8 +387,6 @@
                   description="The number of retries for the authentication. Zero means to try indefinitely; -1 means to use a global default. If the global default is not set, the authentication retries for 3 times before failing the connection. Currently, this only applies to 802-1x authentication." />
         <property name="timestamp"
                   description="The time, in seconds since the Unix Epoch, that the connection was last _successfully_ fully activated. NetworkManager updates the connection timestamp periodically when the connection is active to ensure that an active connection has the latest timestamp. The property is only meant for reading (changes to this property will not be preserved)." />
-        <property name="read-only"
-                  description="This property is deprecated and has no meaning." />
         <property name="permissions"
                   description="An array of strings defining what access a given user has to this connection.  If this is NULL or empty, all users are allowed to access this connection; otherwise users are allowed if and only if they are in this list.  When this is not empty, the connection can be active only when one of the specified users is logged into an active session.  Each entry is of the form &quot;[type]:[id]:[reserved]&quot;; for example, &quot;user:dcbw:blah&quot;. At this time only the &quot;user&quot; [type] is allowed.  Any other values are ignored and reserved for future use.  [id] is the username that this permission refers to, which may not contain the &quot;:&quot; character. Any [reserved] information present must be ignored and is reserved for future use.  All of [type], [id], and [reserved] must be valid UTF-8." />
         <property name="zone"
