@@ -2591,7 +2591,7 @@ make_ip6_setting(shvarFile *ifcfg, shvarFile *network_ifcfg, gboolean routes_rea
                         &local)) {
         PARSE_WARNING("%s", local->message);
         g_clear_error(&local);
-    } else if (errno == ENOENT) {
+    } else if (errno == ENOKEY) {
         /* The key is not specified. If "v" (IPV6_TOKEN) is set,
          * we default to EUI64. Otherwise, the connection would not verify. */
         if (v)
