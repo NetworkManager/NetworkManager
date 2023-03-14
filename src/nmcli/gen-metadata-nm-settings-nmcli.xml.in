@@ -31,9 +31,9 @@
         <property name="bssid"
                   description="If specified, directs the device to only associate with the given access point.  This capability is highly driver dependent and not supported by all devices.  Note: this property does not control the BSSID used when creating an Ad-Hoc network and is unlikely to in the future. Locking a client profile to a certain BSSID will prevent roaming and also disable background scanning. That can be useful, if there is only one access point for the SSID." />
         <property name="rate"
-                  description="If non-zero, directs the device to only use the specified bitrate for communication with the access point.  Units are in Kb/s, ie 5500 = 5.5 Mbit/s.  This property is highly driver dependent and not all devices support setting a static bitrate." />
+                  description="This property is not implemented and has no effect." />
         <property name="tx-power"
-                  description="If non-zero, directs the device to use the specified transmit power. Units are dBm.  This property is highly driver dependent and not all devices support setting a static transmit power." />
+                  description="This property is not implemented and has no effect." />
         <property name="mac-address"
                   alias="mac"
                   description="If specified, this connection will only apply to the Wi-Fi device whose permanent MAC address matches. This property does not change the MAC address of the device (i.e. MAC spoofing)." />
