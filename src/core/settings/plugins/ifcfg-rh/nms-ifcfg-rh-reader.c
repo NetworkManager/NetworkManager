@@ -2683,16 +2683,25 @@ make_hostname_setting(shvarFile *ifcfg)
     NMTernary  from_dns_lookup;
     NMTernary  only_from_default;
     int        priority;
+    gboolean   has_setting = FALSE;
 
     priority = svGetValueInt64(ifcfg, "HOSTNAME_PRIORITY", 10, G_MININT32, G_MAXINT32, 0);
+    if (!has_setting && errno != ENOKEY)
+        has_setting = TRUE;
 
-    from_dhcp         = svGetValueTernary(ifcfg, "HOSTNAME_FROM_DHCP");
-    from_dns_lookup   = svGetValueTernary(ifcfg, "HOSTNAME_FROM_DNS_LOOKUP");
+    from_dhcp = svGetValueTernary(ifcfg, "HOSTNAME_FROM_DHCP");
+    if (!has_setting && errno != ENOKEY)
+        has_setting = TRUE;
+
+    from_dns_lookup = svGetValueTernary(ifcfg, "HOSTNAME_FROM_DNS_LOOKUP");
+    if (!has_setting && errno != ENOKEY)
+        has_setting = TRUE;
+
     only_from_default = svGetValueTernary(ifcfg, "HOSTNAME_ONLY_FROM_DEFAULT");
+    if (!has_setting && errno != ENOKEY)
+        has_setting = TRUE;
 
-    /* Create the setting when at least one key is not default*/
-    if (priority == 0 && from_dhcp == NM_TERNARY_DEFAULT && from_dns_lookup == NM_TERNARY_DEFAULT
-        && only_from_default == NM_TERNARY_DEFAULT)
+    if (!has_setting)
         return NULL;
 
     setting = nm_setting_hostname_new();
