@@ -907,6 +907,20 @@ _normalize_connection_uuid(NMConnection *self)
     return TRUE;
 }
 
+static gboolean
+_normalize_connection(NMConnection *self)
+{
+    NMSettingConnection *s_con   = nm_connection_get_setting_connection(self);
+    gboolean             changed = FALSE;
+
+    if (nm_setting_connection_get_read_only(s_con)) {
+        g_object_set(s_con, NM_SETTING_CONNECTION_READ_ONLY, FALSE, NULL);
+        changed = TRUE;
+    }
+
+    return changed;
+}
+
 gboolean
 _nm_setting_connection_verify_secondaries(GArray *secondaries, GError **error)
 {
@@ -2029,6 +2043,7 @@ _connection_normalize(NMConnection *connection,
     was_modified |= _normalize_connection_type(connection);
     was_modified |= _normalize_connection_slave_type(connection);
     was_modified |= _normalize_connection_secondaries(connection);
+    was_modified |= _normalize_connection(connection);
     was_modified |= _normalize_required_settings(connection);
     was_modified |= _normalize_invalid_slave_port_settings(connection);
     was_modified |= _normalize_ip_config(connection, parameters);
