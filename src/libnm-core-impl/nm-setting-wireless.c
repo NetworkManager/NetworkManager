@@ -1693,11 +1693,16 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
      * property is only meant for reading and reflects the BSSID list of
      * NetworkManager. The changes you make to this property will not be
      * preserved.
+     *
+     * This is not a regular property that the user would configure. Instead,
+     * NetworkManager automatically sets the seen BSSIDs and tracks them internally
+     * in "/var/lib/NetworkManager/seen-bssids" file.
      **/
     /* ---ifcfg-rh---
      * property: seen-bssids
      * variable: (none)
-     * description: This property is not handled by ifcfg-rh plugin.
+     * description: This is not a regular property that would be configured by the
+     *   user. It is not handled by ifcfg-rh plugin.
      * ---end---
      */
     obj_properties[PROP_SEEN_BSSIDS] = g_param_spec_boxed(
