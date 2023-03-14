@@ -1837,19 +1837,11 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
                                               mac_address_randomization,
                                               .is_deprecated = TRUE, );
 
-    /* Compatibility for deprecated property */
-    /* ---ifcfg-rh---
-     * property: security
-     * variable: (none)
-     * description: This property is deprecated and not handled by ifcfg-rh-plugin.
-     * ---end---
-     */
     /* ---dbus---
      * property: security
-     * description: This property is deprecated, but can be set to the value
-     *   '802-11-wireless-security' when a wireless security setting is also
-     *   present in the connection dictionary, for compatibility with very old
-     *   NetworkManager daemons.
+     * description: This property is deprecated and has no effect.
+     * For backwards compatibility, it can be set to "802-11-wireless-security"
+     * if the profile has a wireless security setting.
      * ---end---
      */
     _nm_properties_override_dbus(
