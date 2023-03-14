@@ -986,7 +986,7 @@ typedef enum {
  *
  * The flags for CheckpointCreate call
  *
- * Since: 1.12 (public since 1.4, g-ir since 1.12)
+ * Since: 1.12: Public since 1.4, g-ir since 1.12.
  */
 typedef enum /*< flags >*/ {
     NM_CHECKPOINT_CREATE_FLAG_NONE                       = 0,
