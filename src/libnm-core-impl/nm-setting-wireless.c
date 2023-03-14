@@ -1104,6 +1104,19 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
     return NM_SETTING_VERIFY_NORMALIZABLE;
 mac_addr_rand_ok:
 
+    if (priv->tx_power != 0 || priv->rate != 0) {
+        g_set_error(error,
+                    NM_CONNECTION_ERROR,
+                    NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                    _("property is deprecated and not implemented"));
+        g_prefix_error(error,
+                       "%s.%s: ",
+                       NM_SETTING_WIRELESS_SETTING_NAME,
+                       priv->tx_power != 0 ? NM_SETTING_WIRELESS_TX_POWER
+                                           : NM_SETTING_WIRELESS_RATE);
+        return NM_SETTING_VERIFY_NORMALIZABLE;
+    }
+
     return TRUE;
 }
 

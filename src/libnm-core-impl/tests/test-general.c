@@ -3210,7 +3210,7 @@ test_setting_new_from_dbus_bad(void)
     nmtst_assert_success(conn, error);
     setting = nm_connection_get_setting(conn, NM_TYPE_SETTING_WIRELESS);
     g_assert(setting);
-    g_assert_cmpint(nm_setting_wireless_get_rate(NM_SETTING_WIRELESS(setting)), ==, 10);
+    g_assert_cmpint(nm_setting_wireless_get_rate(NM_SETTING_WIRELESS(setting)), ==, 0);
     g_object_unref(conn);
     g_variant_unref(dict);
 
