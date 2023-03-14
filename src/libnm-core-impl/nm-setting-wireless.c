@@ -392,6 +392,8 @@ nm_setting_wireless_get_bssid(NMSettingWireless *setting)
  * @setting: the #NMSettingWireless
  *
  * Returns: the #NMSettingWireless:rate property of the setting
+ *
+ * Deprecated: 1.44: This setting is not implemented and has no effect.
  **/
 guint32
 nm_setting_wireless_get_rate(NMSettingWireless *setting)
@@ -406,6 +408,8 @@ nm_setting_wireless_get_rate(NMSettingWireless *setting)
  * @setting: the #NMSettingWireless
  *
  * Returns: the #NMSettingWireless:tx-power property of the setting
+ *
+ * Deprecated: 1.44: This setting is not implemented and has no effect.
  **/
 guint32
 nm_setting_wireless_get_tx_power(NMSettingWireless *setting)
@@ -1434,15 +1438,14 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
     /**
      * NMSettingWireless:rate:
      *
-     * If non-zero, directs the device to only use the specified bitrate for
-     * communication with the access point.  Units are in Kb/s, ie 5500 = 5.5
-     * Mbit/s.  This property is highly driver dependent and not all devices
-     * support setting a static bitrate.
+     * This property is not implemented and has no effect.
+     *
+     * Deprecated: 1.44: This property is not implemented and has no effect.
      **/
     /* ---ifcfg-rh---
      * property: rate
      * variable: (none)
-     * description: This property is not handled by ifcfg-rh plugin.
+     * description: This property is deprecated and not handled by ifcfg-rh plugin.
      * ---end---
      */
     _nm_setting_property_define_direct_uint32(properties_override,
@@ -1454,19 +1457,20 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
                                               0,
                                               NM_SETTING_PARAM_FUZZY_IGNORE,
                                               NMSettingWirelessPrivate,
-                                              rate);
+                                              rate,
+                                              .is_deprecated = TRUE, );
 
     /**
      * NMSettingWireless:tx-power:
      *
-     * If non-zero, directs the device to use the specified transmit power.
-     * Units are dBm.  This property is highly driver dependent and not all
-     * devices support setting a static transmit power.
+     * This property is not implemented and has no effect.
+     *
+     * Deprecated: 1.44: This property is not implemented and has no effect.
      **/
     /* ---ifcfg-rh---
      * property: tx-power
      * variable: (none)
-     * description: This property is not handled by ifcfg-rh plugin.
+     * description: This property is deprecated and not handled by ifcfg-rh plugin.
      * ---end---
      */
     _nm_setting_property_define_direct_uint32(properties_override,
@@ -1478,7 +1482,8 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
                                               0,
                                               NM_SETTING_PARAM_FUZZY_IGNORE,
                                               NMSettingWirelessPrivate,
-                                              tx_power);
+                                              tx_power,
+                                              .is_deprecated = TRUE, );
 
     /**
      * NMSettingWireless:mac-address:

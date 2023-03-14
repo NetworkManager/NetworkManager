@@ -124,6 +124,7 @@
                   gprop-type="guint"
                   />
         <property name="rate"
+                  is-deprecated="1"
                   dbus-type="u"
                   gprop-type="guint"
                   />
@@ -140,6 +141,7 @@
                   gprop-type="GBytes"
                   />
         <property name="tx-power"
+                  is-deprecated="1"
                   dbus-type="u"
                   gprop-type="guint"
                   />
