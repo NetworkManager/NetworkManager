@@ -1610,6 +1610,18 @@ after_interface_name:
     if (!_nm_setting_connection_verify_secondaries(priv->secondaries.arr, error))
         return NM_SETTING_VERIFY_NORMALIZABLE;
 
+    if (priv->read_only) {
+        g_set_error_literal(error,
+                            NM_CONNECTION_ERROR,
+                            NM_CONNECTION_ERROR_MISSING_PROPERTY,
+                            _("read-only is deprecated and not settable for the user"));
+        g_prefix_error(error,
+                       "%s.%s: ",
+                       NM_SETTING_CONNECTION_SETTING_NAME,
+                       NM_SETTING_CONNECTION_READ_ONLY);
+        return NM_SETTING_VERIFY_NORMALIZABLE;
+    }
+
     return TRUE;
 }
 
