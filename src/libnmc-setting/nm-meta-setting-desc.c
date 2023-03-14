@@ -8027,14 +8027,6 @@ static const NMMetaPropertyInfo *const property_infos_WIRELESS[] = {
     PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRELESS_BSSID,
         .property_type =                &_pt_gobject_mac,
     ),
-    PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRELESS_RATE,
-        /* Do not allow setting 'rate'. It is not implemented in NM core. */
-        .property_type =                &_pt_gobject_readonly,
-    ),
-    PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRELESS_TX_POWER,
-        /* Do not allow setting 'tx-power'. It is not implemented in NM core. */
-        .property_type =                &_pt_gobject_readonly,
-    ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRELESS_MAC_ADDRESS,
         .property_type =                &_pt_gobject_mac,
         .is_cli_option =                TRUE,
