@@ -83,7 +83,7 @@ nm_device_team_get_carrier(NMDeviceTeam *device)
  * #NMDevices that are slaves of @device. This is the internal
  * copy used by the device, and must not be modified.
  *
- * Deprecated: 1.34 Use nm_device_get_ports() instead.
+ * Deprecated: 1.34: Use nm_device_get_ports() instead.
  **/
 const GPtrArray *
 nm_device_team_get_slaves(NMDeviceTeam *device)
