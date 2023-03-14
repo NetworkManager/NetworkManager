@@ -1449,6 +1449,28 @@ _normalize_wireless_mac_address_randomization(NMConnection *self)
 }
 
 static gboolean
+_normalize_wireless(NMConnection *self)
+{
+    NMSettingWireless *s_wifi  = nm_connection_get_setting_wireless(self);
+    gboolean           changed = FALSE;
+
+    if (!s_wifi)
+        return FALSE;
+
+    if (nm_setting_wireless_get_rate(s_wifi) != 0) {
+        g_object_set(s_wifi, NM_SETTING_WIRELESS_RATE, 0u, NULL);
+        changed = TRUE;
+    }
+
+    if (nm_setting_wireless_get_tx_power(s_wifi) != 0) {
+        g_object_set(s_wifi, NM_SETTING_WIRELESS_TX_POWER, 0u, NULL);
+        changed = TRUE;
+    }
+
+    return changed;
+}
+
+static gboolean
 _normalize_macsec(NMConnection *self)
 {
     NMSettingMacsec *s_macsec = nm_connection_get_setting_macsec(self);
@@ -1991,6 +2013,7 @@ _connection_normalize(NMConnection *connection,
     was_modified |= _normalize_bond_mode(connection);
     was_modified |= _normalize_bond_options(connection);
     was_modified |= _normalize_wireless_mac_address_randomization(connection);
+    was_modified |= _normalize_wireless(connection);
     was_modified |= _normalize_macsec(connection);
     was_modified |= _normalize_team_config(connection);
     was_modified |= _normalize_team_port_config(connection);
