@@ -46,6 +46,11 @@ fi
 BASEDIR_NM="$(readlink -f "$(dirname "$(readlink -f "$0")")/../..")"
 BASEDIR="$BASEDIR_NM/contrib/scripts/nm-in-container.d"
 
+BASEDIR_NM_CI=
+if [ -d "$BASEDIR_NM/.git/NetworkManager-ci" ] ; then
+    BASEDIR_NM_CI="$(readlink -f "$BASEDIR_NM/.git/NetworkManager-ci")"
+fi
+
 CONTAINER_NAME_REPOSITORY=${CONTAINER_NAME_REPOSITORY:-nm}
 CONTAINER_NAME_TAG=${CONTAINER_NAME_TAG:-nm}
 CONTAINER_NAME_NAME=${CONTAINER_NAME_NAME:-nm}
@@ -314,6 +319,16 @@ EOF
 html = behave_html_formatter:HTMLFormatter
 EOF
 
+    RUN_LN_BASEDIR_NM=
+    if [ -n "$BASEDIR_NM" -a "$BASEDIR_NM" != "/NetworkManager" ] ; then
+        RUN_LN_BASEDIR_NM="RUN ln -snf \"$BASEDIR_NM\" /NetworkManager"
+    fi
+
+    RUN_LN_BASEDIR_NM_CI=
+    if [ -n "$BASEDIR_NM_CI" -a "$BASEDIR_NM_CI" != "/NetworkManager-ci" ] ; then
+        RUN_LN_BASEDIR_NM_CI="RUN ln -snf \"$BASEDIR_NM_CI\" /NetworkManager-ci"
+    fi
+
     cat <<EOF | tmp_file "$CONTAINERFILE"
 FROM $BASE_IMAGE
 
@@ -488,6 +503,9 @@ RUN chmod 600 /var/lib/NetworkManager/secret_key
 
 RUN sed 's/.*RateLimitBurst=.*/RateLimitBurst=0/' /etc/systemd/journald.conf -i
 
+$RUN_LN_BASEDIR_NM
+$RUN_LN_BASEDIR_NM_CI
+
 RUN rm -rf /etc/NetworkManager/system-connections/*
 
 RUN echo -e '\n. /etc/bashrc.my\n' >> /etc/bashrc
@@ -543,9 +561,8 @@ do_run() {
         bind_files BIND_FILES
 
         BIND_NM_CI=()
-        if [ -d "$BASEDIR_NM/.git/NetworkManager-ci" ] ; then
-            DIR="$(readlink -f "$BASEDIR_NM/.git/NetworkManager-ci")"
-            BIND_NM_CI=(-v "$DIR:$DIR")
+        if [ -n "$BASEDIR_NM_CI" ] ; then
+            BIND_NM_CI=(-v "$BASEDIR_NM_CI:$BASEDIR_NM_CI")
         fi
 
         podman run --privileged \
