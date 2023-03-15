@@ -97,23 +97,32 @@ static void _line_link_parse(shvarFile *s, const char *value, gsize len);
  * in case no valid value is found, the fallback value. Valid values
  * are: "yes", "true", "t", "y", "1" and "no", "false", "f", "n", "0".
  *
+ * Always sets errno. Either to zero on success, to ENOKEY for NULL
+ * or to EINVAL otherwise.
+ *
  * Returns: the parsed boolean value or @fallback.
  */
 int
 svParseBoolean(const char *value, int fallback)
 {
-    if (!value)
+    if (!value) {
+        errno = ENOKEY;
         return fallback;
+    }
 
     if (!g_ascii_strcasecmp("yes", value) || !g_ascii_strcasecmp("true", value)
         || !g_ascii_strcasecmp("t", value) || !g_ascii_strcasecmp("y", value)
-        || !g_ascii_strcasecmp("1", value))
+        || !g_ascii_strcasecmp("1", value)) {
+        errno = 0;
         return TRUE;
-    else if (!g_ascii_strcasecmp("no", value) || !g_ascii_strcasecmp("false", value)
-             || !g_ascii_strcasecmp("f", value) || !g_ascii_strcasecmp("n", value)
-             || !g_ascii_strcasecmp("0", value))
+    } else if (!g_ascii_strcasecmp("no", value) || !g_ascii_strcasecmp("false", value)
+               || !g_ascii_strcasecmp("f", value) || !g_ascii_strcasecmp("n", value)
+               || !g_ascii_strcasecmp("0", value)) {
+        errno = 0;
         return FALSE;
+    }
 
+    errno = EINVAL;
     return fallback;
 }
 
@@ -1253,6 +1262,7 @@ svGetValueStr_cp(shvarFile *s, const char *key)
  * @fallback: the fallback value in any error case
  *
  * Reads a value @key and converts it to a boolean using svParseBoolean().
+ * This always sets errno, see svParseBoolean().
  *
  * Returns: the parsed boolean value or @fallback.
  */
@@ -1271,6 +1281,7 @@ svGetValueBoolean(shvarFile *s, const char *key, int fallback)
  * @key: the name of the key to read
  *
  * Reads a value @key and converts it to a NMTernary value.
+ * This always sets errno, see svParseBoolean().
  *
  * Returns: the parsed NMTernary
  */
@@ -1328,7 +1339,7 @@ svGetValueEnum(shvarFile *s, const char *key, GType gtype, int *out_value, GErro
     if (!svalue) {
         /* don't touch out_value. The caller is supposed
          * to initialize it with the default value. */
-        errno = ENOENT;
+        errno = ENOKEY;
         return TRUE;
     }
 
