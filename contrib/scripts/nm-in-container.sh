@@ -289,6 +289,7 @@ m
 make
 make install
 n
+nm-deploy.sh
 nm-env-prepare.sh
 nm-env-prepare.sh --prefix eth -i 1
 nm-env-prepare.sh --prefix eth -i 1 && sleep 1 && nmcli device connect eth1
@@ -479,6 +480,7 @@ RUN pip3 install --user behave_html_formatter || true
 
 COPY data-NM-log "/usr/bin/NM-log"
 COPY data-nm-env-prepare.sh "/usr/bin/nm-env-prepare.sh"
+COPY data-nm-deploy.sh "/usr/bin/nm-deploy.sh"
 COPY data-_nm-in-container-setup.sh "/usr/bin/_nm-in-container-setup.sh"
 COPY data-etc-rc.local "/etc/rc.d/rc.local"
 COPY data-motd /etc/motd
