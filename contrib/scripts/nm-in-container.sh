@@ -497,6 +497,8 @@ RUN systemctl enable NetworkManager
 # Generate a stable machine id.
 RUN echo "10001000100010001000100010001000" > /etc/machine-id
 
+RUN echo -e "# Default from the container image\nnameserver 8.8.8.8" > /etc/resolv.conf
+
 # Generate a fixed (version 1) secret key.
 RUN mkdir -p /var/lib/NetworkManager
 RUN chmod 700 /var/lib/NetworkManager
@@ -569,6 +571,7 @@ do_run() {
 
         podman run --privileged \
             --name "$CONTAINER_NAME_NAME" \
+            --dns=none \
             -d \
             -v "$BASEDIR_NM:$BASEDIR_NM" \
             "${BIND_NM_CI[@]}" \

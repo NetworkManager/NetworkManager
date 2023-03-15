@@ -83,6 +83,8 @@ do_setup() {
             --listen-address="192:168:$((120 + IDX))::1" \
             --dhcp-range="192.168.$((120 + $IDX)).100,192.168.$((120 + $IDX)).150,2m" \
             --dhcp-range="192:168:$((120 + IDX))::1:1000,192:168:$((120 + IDX))::1:2000,64,2m" \
+            --dhcp-option=option:dns-server,8.8.8.8,8.8.4.4 \
+            --dhcp-option=option6:dns-server \
             --no-ping \
             &
 
