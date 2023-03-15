@@ -4444,7 +4444,7 @@ _routes_watch_ip_addrs_cb(NMNetns                       *netns,
 }
 
 static void
-_routes_watch_ip_addrs(NML3Cfg *self, int addr_family, GPtrArray *routes)
+_routes_watch_ip_addrs(NML3Cfg *self, int addr_family, GPtrArray *addresses, GPtrArray *routes)
 {
     gconstpointer const TAG          = _NETNS_WATCHER_IP_ADDR_TAG(self, addr_family);
     NMNetnsWatcherData  watcher_data = {
@@ -4457,6 +4457,7 @@ _routes_watch_ip_addrs(NML3Cfg *self, int addr_family, GPtrArray *routes)
             },
     };
     guint i;
+    guint j;
 
     /* IP routes that have a pref_src, can only be configured in kernel if
      * that address exists (and is non-tentative, in case of IPv6).
@@ -4477,6 +4478,48 @@ _routes_watch_ip_addrs(NML3Cfg *self, int addr_family, GPtrArray *routes)
         if (nm_ip_addr_is_null(addr_family, pref_src))
             continue;
 
+        if (NM_IS_IPv4(addr_family)) {
+            if (addresses) {
+                /* This nested loop makes the whole operation O(n*m). We still
+                 * do it that way, because it's probably faster to just iterate
+                 * over the few addresses instead of building a lookup index to
+                 * get it in O(n+m). */
+                for (j = 0; j < addresses->len; j++) {
+                    const NMPlatformIPAddress *a = NMP_OBJECT_CAST_IP_ADDRESS(addresses->pdata[j]);
+
+                    nm_assert(NMP_OBJECT_GET_ADDR_FAMILY(addresses->pdata[j]) == addr_family);
+
+                    if (nm_ip_addr_equal(addr_family, pref_src, a->address_ptr)) {
+                        /* We optimize for the case where the required address
+                         * is about be configured in the same commit. That is a
+                         * common case, because our DHCP routes have prefsrc
+                         * set, and we commonly have the respective IP address
+                         * ready.  Otherwise, the very common DHCP case would
+                         * also require the overhead of registering a watcher
+                         * (every time).
+                         */
+                        goto next;
+                    }
+                }
+            }
+        } else {
+            /* For IPv6, the prefsrc address must also be non-tentative (or
+             * IFA_F_OPTIMISTIC).  So by only looking at the addresses we are
+             * about to configure, it's not clear whether we will be able to
+             * configure the route too.
+             *
+             * Maybe we could check current platform, whether the address
+             * exists there as non-tentative, but that seems fragile.
+             *
+             * Maybe we should only register watchers, after we encountered a
+             * failure to configure a route, but that seems complicated (and
+             * has the potential to be wrong).
+             *
+             * The overhead for always watching the IPv6 address should be
+             * acceptably small. So just do that.
+             */
+        }
+
         nm_assert(watcher_data.ip_addr.addr.addr_family == addr_family);
         nm_ip_addr_set(addr_family, &watcher_data.ip_addr.addr.addr, pref_src);
 
@@ -4486,6 +4529,8 @@ _routes_watch_ip_addrs(NML3Cfg *self, int addr_family, GPtrArray *routes)
                              TAG,
                              _routes_watch_ip_addrs_cb,
                              self);
+next:
+        (void) 0;
     }
 
 out:
@@ -4792,7 +4837,7 @@ _l3_commit_one(NML3Cfg              *self,
         }
     }
 
-    _routes_watch_ip_addrs(self, addr_family, routes);
+    _routes_watch_ip_addrs(self, addr_family, addresses, routes);
 
     /* FIXME(l3cfg): need to honor and set nm_l3_config_data_get_ndisc_*(). */
     /* FIXME(l3cfg): need to honor and set nm_l3_config_data_get_mtu(). */
