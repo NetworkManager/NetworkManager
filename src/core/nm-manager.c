@@ -6592,11 +6592,14 @@ impl_manager_add_and_activate_connection(NMDBusObject                      *obj,
      * validate_activation_request()).
      */
     incompl_conn = nm_simple_connection_new();
-    if (settings && g_variant_n_children(settings))
-        _nm_connection_replace_settings(incompl_conn,
-                                        settings,
-                                        NM_SETTING_PARSE_FLAGS_STRICT,
-                                        NULL);
+    if (settings && g_variant_n_children(settings)) {
+        if (!_nm_connection_replace_settings(incompl_conn,
+                                             settings,
+                                             NM_SETTING_PARSE_FLAGS_STRICT,
+                                             &error)) {
+            goto error;
+        }
+    }
 
     subject = validate_activation_request(self,
                                           invocation,
