@@ -498,7 +498,10 @@ update_connection(NMDevice *device, NMConnection *connection)
 }
 
 static gboolean
-check_connection_compatible(NMDevice *device, NMConnection *connection, GError **error)
+check_connection_compatible(NMDevice     *device,
+                            NMConnection *connection,
+                            gboolean      check_properties,
+                            GError      **error)
 {
     NMDeviceIPTunnel        *self = NM_DEVICE_IP_TUNNEL(device);
     NMDeviceIPTunnelPrivate *priv = NM_DEVICE_IP_TUNNEL_GET_PRIVATE(self);
@@ -507,7 +510,7 @@ check_connection_compatible(NMDevice *device, NMConnection *connection, GError *
     const char              *parent;
 
     if (!NM_DEVICE_CLASS(nm_device_ip_tunnel_parent_class)
-             ->check_connection_compatible(device, connection, error))
+             ->check_connection_compatible(device, connection, check_properties, error))
         return FALSE;
 
     s_ip_tunnel = nm_connection_get_setting_ip_tunnel(connection);
@@ -520,7 +523,7 @@ check_connection_compatible(NMDevice *device, NMConnection *connection, GError *
         return FALSE;
     }
 
-    if (nm_device_is_real(device)) {
+    if (check_properties && nm_device_is_real(device)) {
         /* Check parent interface; could be an interface name or a UUID */
         parent = nm_setting_ip_tunnel_get_parent(s_ip_tunnel);
         if (parent && !nm_device_match_parent(device, parent)) {

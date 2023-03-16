@@ -723,7 +723,10 @@ is_ap_known_network(NMIwdManager *manager, NMWifiAP *ap)
 }
 
 static gboolean
-check_connection_compatible(NMDevice *device, NMConnection *connection, GError **error)
+check_connection_compatible(NMDevice     *device,
+                            NMConnection *connection,
+                            gboolean      check_properties,
+                            GError      **error)
 {
     NMDeviceIwd         *self = NM_DEVICE_IWD(device);
     NMDeviceIwdPrivate  *priv = NM_DEVICE_IWD_GET_PRIVATE(self);
@@ -739,7 +742,7 @@ check_connection_compatible(NMDevice *device, NMConnection *connection, GError *
     gsize                ssid_len;
 
     if (!NM_DEVICE_CLASS(nm_device_iwd_parent_class)
-             ->check_connection_compatible(device, connection, error))
+             ->check_connection_compatible(device, connection, check_properties, error))
         return FALSE;
 
     s_wireless = nm_connection_get_setting_wireless(connection);

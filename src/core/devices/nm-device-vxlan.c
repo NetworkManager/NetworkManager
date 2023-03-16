@@ -238,17 +238,20 @@ address_matches(const char *candidate, in_addr_t addr4, struct in6_addr *addr6)
 }
 
 static gboolean
-check_connection_compatible(NMDevice *device, NMConnection *connection, GError **error)
+check_connection_compatible(NMDevice     *device,
+                            NMConnection *connection,
+                            gboolean      check_properties,
+                            GError      **error)
 {
     NMDeviceVxlanPrivate *priv = NM_DEVICE_VXLAN_GET_PRIVATE(device);
     NMSettingVxlan       *s_vxlan;
     const char           *parent;
 
     if (!NM_DEVICE_CLASS(nm_device_vxlan_parent_class)
-             ->check_connection_compatible(device, connection, error))
+             ->check_connection_compatible(device, connection, check_properties, error))
         return FALSE;
 
-    if (nm_device_is_real(device)) {
+    if (check_properties && nm_device_is_real(device)) {
         s_vxlan = nm_connection_get_setting_vxlan(connection);
 
         parent = nm_setting_vxlan_get_parent(s_vxlan);

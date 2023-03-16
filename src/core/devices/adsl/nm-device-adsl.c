@@ -67,13 +67,16 @@ get_generic_capabilities(NMDevice *dev)
 }
 
 static gboolean
-check_connection_compatible(NMDevice *device, NMConnection *connection, GError **error)
+check_connection_compatible(NMDevice     *device,
+                            NMConnection *connection,
+                            gboolean      check_properties,
+                            GError      **error)
 {
     NMSettingAdsl *s_adsl;
     const char    *protocol;
 
     if (!NM_DEVICE_CLASS(nm_device_adsl_parent_class)
-             ->check_connection_compatible(device, connection, error))
+             ->check_connection_compatible(device, connection, check_properties, error))
         return FALSE;
 
     s_adsl = nm_connection_get_setting_adsl(connection);

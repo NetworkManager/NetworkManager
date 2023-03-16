@@ -192,7 +192,10 @@ can_auto_connect(NMDevice *device, NMSettingsConnection *sett_conn, char **speci
 }
 
 static gboolean
-check_connection_compatible(NMDevice *device, NMConnection *connection, GError **error)
+check_connection_compatible(NMDevice     *device,
+                            NMConnection *connection,
+                            gboolean      check_properties,
+                            GError      **error)
 {
     NMDeviceBt         *self = NM_DEVICE_BT(device);
     NMDeviceBtPrivate  *priv = NM_DEVICE_BT_GET_PRIVATE(self);
@@ -200,7 +203,7 @@ check_connection_compatible(NMDevice *device, NMConnection *connection, GError *
     const char         *bdaddr;
 
     if (!NM_DEVICE_CLASS(nm_device_bt_parent_class)
-             ->check_connection_compatible(device, connection, error))
+             ->check_connection_compatible(device, connection, check_properties, error))
         return FALSE;
 
     if (!get_connection_bt_type_check(self, connection, NULL, error))

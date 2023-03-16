@@ -1640,6 +1640,7 @@ reset_autoconnect_all(
             && !nm_device_check_connection_compatible(
                 device,
                 nm_settings_connection_get_connection(sett_conn),
+                TRUE,
                 NULL))
             continue;
 

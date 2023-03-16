@@ -344,13 +344,16 @@ match_subchans(NMDeviceEthernet *self, NMSettingWired *s_wired, gboolean *try_ma
 }
 
 static gboolean
-check_connection_compatible(NMDevice *device, NMConnection *connection, GError **error)
+check_connection_compatible(NMDevice     *device,
+                            NMConnection *connection,
+                            gboolean      check_properties,
+                            GError      **error)
 {
     NMDeviceEthernet *self = NM_DEVICE_ETHERNET(device);
     NMSettingWired   *s_wired;
 
     if (!NM_DEVICE_CLASS(nm_device_ethernet_parent_class)
-             ->check_connection_compatible(device, connection, error))
+             ->check_connection_compatible(device, connection, check_properties, error))
         return FALSE;
 
     if (nm_connection_is_type(connection, NM_SETTING_PPPOE_SETTING_NAME)

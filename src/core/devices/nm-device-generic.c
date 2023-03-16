@@ -72,12 +72,15 @@ realize_start_notify(NMDevice *device, const NMPlatformLink *plink)
 }
 
 static gboolean
-check_connection_compatible(NMDevice *device, NMConnection *connection, GError **error)
+check_connection_compatible(NMDevice     *device,
+                            NMConnection *connection,
+                            gboolean      check_properties,
+                            GError      **error)
 {
     NMSettingConnection *s_con;
 
     if (!NM_DEVICE_CLASS(nm_device_generic_parent_class)
-             ->check_connection_compatible(device, connection, error))
+             ->check_connection_compatible(device, connection, check_properties, error))
         return FALSE;
 
     s_con = nm_connection_get_setting_connection(connection);

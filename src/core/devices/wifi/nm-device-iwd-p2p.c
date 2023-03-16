@@ -126,14 +126,17 @@ is_available(NMDevice *device, NMDeviceCheckDevAvailableFlags flags)
 }
 
 static gboolean
-check_connection_compatible(NMDevice *device, NMConnection *connection, GError **error)
+check_connection_compatible(NMDevice     *device,
+                            NMConnection *connection,
+                            gboolean      check_properties,
+                            GError      **error)
 {
     NMSettingWifiP2P  *s_wifi_p2p;
     GBytes            *wfd_ies;
     NMSettingIPConfig *s_ip;
 
     if (!NM_DEVICE_CLASS(nm_device_iwd_p2p_parent_class)
-             ->check_connection_compatible(device, connection, error))
+             ->check_connection_compatible(device, connection, check_properties, error))
         return FALSE;
 
     s_wifi_p2p =

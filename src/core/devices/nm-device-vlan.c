@@ -303,17 +303,20 @@ is_available(NMDevice *device, NMDeviceCheckDevAvailableFlags flags)
 /*****************************************************************************/
 
 static gboolean
-check_connection_compatible(NMDevice *device, NMConnection *connection, GError **error)
+check_connection_compatible(NMDevice     *device,
+                            NMConnection *connection,
+                            gboolean      check_properties,
+                            GError      **error)
 {
     NMDeviceVlanPrivate *priv = NM_DEVICE_VLAN_GET_PRIVATE(device);
     NMSettingVlan       *s_vlan;
     const char          *parent;
 
     if (!NM_DEVICE_CLASS(nm_device_vlan_parent_class)
-             ->check_connection_compatible(device, connection, error))
+             ->check_connection_compatible(device, connection, check_properties, error))
         return FALSE;
 
-    if (nm_device_is_real(device)) {
+    if (check_properties && nm_device_is_real(device)) {
         s_vlan = nm_connection_get_setting_vlan(connection);
 
         if (nm_setting_vlan_get_id(s_vlan) != priv->vlan_id) {
