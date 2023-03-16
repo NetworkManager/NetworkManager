@@ -250,6 +250,8 @@ GQuark nm_secret_agent_error_quark(void);
  * @NM_SETTINGS_ERROR_UUID_EXISTS: a connection with that UUID already exists
  * @NM_SETTINGS_ERROR_INVALID_HOSTNAME: attempted to set an invalid hostname
  * @NM_SETTINGS_ERROR_INVALID_ARGUMENTS: invalid arguments
+ * @NM_SETTINGS_ERROR_NOT_SUPPORTED_BY_PLUGIN: the requested operation is not supported by
+ *   the settings backend currently in use for the specified object.
  *
  * Errors related to the settings/persistent configuration interface of
  * NetworkManager.
@@ -259,14 +261,15 @@ GQuark nm_secret_agent_error_quark(void);
  * D-Bus errors in that namespace.
  */
 typedef enum {
-    NM_SETTINGS_ERROR_FAILED = 0,           /*< nick=Failed >*/
-    NM_SETTINGS_ERROR_PERMISSION_DENIED,    /*< nick=PermissionDenied >*/
-    NM_SETTINGS_ERROR_NOT_SUPPORTED,        /*< nick=NotSupported >*/
-    NM_SETTINGS_ERROR_INVALID_CONNECTION,   /*< nick=InvalidConnection >*/
-    NM_SETTINGS_ERROR_READ_ONLY_CONNECTION, /*< nick=ReadOnlyConnection >*/
-    NM_SETTINGS_ERROR_UUID_EXISTS,          /*< nick=UuidExists >*/
-    NM_SETTINGS_ERROR_INVALID_HOSTNAME,     /*< nick=InvalidHostname >*/
-    NM_SETTINGS_ERROR_INVALID_ARGUMENTS,    /*< nick=InvalidArguments >*/
+    NM_SETTINGS_ERROR_FAILED = 0,              /*< nick=Failed >*/
+    NM_SETTINGS_ERROR_PERMISSION_DENIED,       /*< nick=PermissionDenied >*/
+    NM_SETTINGS_ERROR_NOT_SUPPORTED,           /*< nick=NotSupported >*/
+    NM_SETTINGS_ERROR_INVALID_CONNECTION,      /*< nick=InvalidConnection >*/
+    NM_SETTINGS_ERROR_READ_ONLY_CONNECTION,    /*< nick=ReadOnlyConnection >*/
+    NM_SETTINGS_ERROR_UUID_EXISTS,             /*< nick=UuidExists >*/
+    NM_SETTINGS_ERROR_INVALID_HOSTNAME,        /*< nick=InvalidHostname >*/
+    NM_SETTINGS_ERROR_INVALID_ARGUMENTS,       /*< nick=InvalidArguments >*/
+    NM_SETTINGS_ERROR_NOT_SUPPORTED_BY_PLUGIN, /*< nick=NotSupportedByPlugin >*/
 } NMSettingsError;
 
 GQuark nm_settings_error_quark(void);
