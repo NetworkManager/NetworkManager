@@ -61,7 +61,7 @@
 
 /*****************************************************************************/
 
-static void _nm_unused
+static void
 set_error_unsupported(GError      **error,
                       NMConnection *connection,
                       const char   *name,
@@ -3505,6 +3505,11 @@ do_write_construct(NMConnection                   *connection,
     write_hostname_setting(connection, ifcfg);
     write_sriov_setting(connection, ifcfg);
     write_tc_setting(connection, ifcfg);
+
+    if (_nm_connection_get_setting(connection, NM_TYPE_SETTING_LINK)) {
+        set_error_unsupported(error, connection, "link", TRUE);
+        return FALSE;
+    }
 
     route_path_is_svformat = utils_has_route_file_new_syntax(route_path);
 
