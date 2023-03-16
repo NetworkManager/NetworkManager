@@ -535,7 +535,7 @@ _startup_complete_check_is_ready(NMSettings           *self,
         /* Check that device is compatible with the device. We are also happy
          * with a device compatible but for which the connection is disallowed
          * by NM configuration. */
-        if (!nm_device_check_connection_compatible(device, conn, &error)
+        if (!nm_device_check_connection_compatible(device, conn, TRUE, &error)
             && !g_error_matches(error,
                                 NM_UTILS_ERROR,
                                 NM_UTILS_ERROR_CONNECTION_AVAILABLE_DISALLOWED))
@@ -3641,7 +3641,7 @@ have_connection_for_device(NMSettings *self, NMDevice *device)
     c_list_for_each_entry (sett_conn, &priv->connections_lst_head, _connections_lst) {
         NMConnection *connection = nm_settings_connection_get_connection(sett_conn);
 
-        if (!nm_device_check_connection_compatible(device, connection, NULL))
+        if (!nm_device_check_connection_compatible(device, connection, TRUE, NULL))
             continue;
 
         if (nm_settings_connection_default_wired_get_device(sett_conn))

@@ -282,14 +282,17 @@ is_available(NMDevice *device, NMDeviceCheckDevAvailableFlags flags)
 /*****************************************************************************/
 
 static gboolean
-check_connection_compatible(NMDevice *device, NMConnection *connection, GError **error)
+check_connection_compatible(NMDevice     *device,
+                            NMConnection *connection,
+                            gboolean      check_properties,
+                            GError      **error)
 {
     NMDeviceMacvlanPrivate *priv = NM_DEVICE_MACVLAN_GET_PRIVATE(device);
     NMSettingMacvlan       *s_macvlan;
     const char             *parent = NULL;
 
     if (!NM_DEVICE_CLASS(nm_device_macvlan_parent_class)
-             ->check_connection_compatible(device, connection, error))
+             ->check_connection_compatible(device, connection, check_properties, error))
         return FALSE;
 
     s_macvlan = nm_connection_get_setting_macvlan(connection);
@@ -308,7 +311,7 @@ check_connection_compatible(NMDevice *device, NMConnection *connection, GError *
     }
 
     /* Before the device is realized some properties will not be set */
-    if (nm_device_is_real(device)) {
+    if (check_properties && nm_device_is_real(device)) {
         if (setting_mode_to_platform(nm_setting_macvlan_get_mode(s_macvlan)) != priv->props.mode) {
             nm_utils_error_set_literal(error,
                                        NM_UTILS_ERROR_CONNECTION_AVAILABLE_TEMPORARY,

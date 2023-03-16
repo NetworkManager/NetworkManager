@@ -4887,6 +4887,7 @@ nm_device_parent_find_for_connection(NMDevice *self, const char *current_setting
             && nm_device_check_connection_compatible(
                 parent_device,
                 nm_settings_connection_get_connection(parent_connection),
+                TRUE,
                 NULL))
             return current_setting_parent;
     }
@@ -8860,7 +8861,7 @@ nm_device_complete_connection(NMDevice            *self,
     if (!nm_connection_normalize(connection, NULL, NULL, error))
         return FALSE;
 
-    return nm_device_check_connection_compatible(self, connection, error);
+    return nm_device_check_connection_compatible(self, connection, TRUE, error);
 }
 
 gboolean
@@ -8920,7 +8921,10 @@ nm_device_match_parent_hwaddr(NMDevice     *device,
 }
 
 static gboolean
-check_connection_compatible(NMDevice *self, NMConnection *connection, GError **error)
+check_connection_compatible(NMDevice     *self,
+                            NMConnection *connection,
+                            gboolean      check_properties,
+                            GError      **error)
 {
     NMDevicePrivate      *priv         = NM_DEVICE_GET_PRIVATE(self);
     const char           *device_iface = nm_device_get_iface(self);
@@ -9047,12 +9051,18 @@ check_connection_compatible(NMDevice *self, NMConnection *connection, GError **e
  *   @self.
  */
 gboolean
-nm_device_check_connection_compatible(NMDevice *self, NMConnection *connection, GError **error)
+nm_device_check_connection_compatible(NMDevice     *self,
+                                      NMConnection *connection,
+                                      gboolean      check_properties,
+                                      GError      **error)
 {
     g_return_val_if_fail(NM_IS_DEVICE(self), FALSE);
     g_return_val_if_fail(NM_IS_CONNECTION(connection), FALSE);
 
-    return NM_DEVICE_GET_CLASS(self)->check_connection_compatible(self, connection, error);
+    return NM_DEVICE_GET_CLASS(self)->check_connection_compatible(self,
+                                                                  connection,
+                                                                  check_properties,
+                                                                  error);
 }
 
 gboolean
@@ -15051,7 +15061,10 @@ _nm_device_check_connection_available(NMDevice                      *self,
     /* an unrealized software device is always available, hardware devices never. */
     if (!nm_device_is_real(self)) {
         if (nm_device_is_software(self)) {
-            if (!nm_device_check_connection_compatible(self, connection, error ? &local : NULL)) {
+            if (!nm_device_check_connection_compatible(self,
+                                                       connection,
+                                                       TRUE,
+                                                       error ? &local : NULL)) {
                 if (error) {
                     g_return_val_if_fail(local, FALSE);
                     nm_utils_error_set(error,
@@ -15115,7 +15128,7 @@ _nm_device_check_connection_available(NMDevice                      *self,
         }
     }
 
-    if (!nm_device_check_connection_compatible(self, connection, error ? &local : NULL)) {
+    if (!nm_device_check_connection_compatible(self, connection, TRUE, error ? &local : NULL)) {
         if (error) {
             nm_utils_error_set(error,
                                local->domain == NM_UTILS_ERROR ? local->code

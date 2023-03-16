@@ -101,13 +101,16 @@ check_connection_available(NMDevice                      *device,
 }
 
 static gboolean
-check_connection_compatible(NMDevice *device, NMConnection *connection, GError **error)
+check_connection_compatible(NMDevice     *device,
+                            NMConnection *connection,
+                            gboolean      check_properties,
+                            GError      **error)
 {
     NMSettingBridge *s_bridge;
     const char      *mac_address;
 
     if (!NM_DEVICE_CLASS(nm_device_bridge_parent_class)
-             ->check_connection_compatible(device, connection, error))
+             ->check_connection_compatible(device, connection, check_properties, error))
         return FALSE;
 
     if (nm_connection_is_type(connection, NM_SETTING_BLUETOOTH_SETTING_NAME)

@@ -383,12 +383,15 @@ get_type_description(NMDevice *device)
 }
 
 static gboolean
-check_connection_compatible(NMDevice *device, NMConnection *connection, GError **error)
+check_connection_compatible(NMDevice     *device,
+                            NMConnection *connection,
+                            gboolean      check_properties,
+                            GError      **error)
 {
     GError *local = NULL;
 
     if (!NM_DEVICE_CLASS(nm_device_modem_parent_class)
-             ->check_connection_compatible(device, connection, error))
+             ->check_connection_compatible(device, connection, check_properties, error))
         return FALSE;
 
     if (!nm_modem_check_connection_compatible(NM_DEVICE_MODEM_GET_PRIVATE(device)->modem,
