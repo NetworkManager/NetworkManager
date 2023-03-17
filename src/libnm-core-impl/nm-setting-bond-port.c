@@ -148,7 +148,7 @@ nm_setting_bond_port_class_init(NMSettingBondPortClass *klass)
      **/
     /* ---ifcfg-rh---
      * property: queue-id
-     * variable: BONDING_OPTS: queue-id=
+     * variable: BOND_PORT_QUEUE_ID
      * values: 0 - 65535
      * default: 0
      * description: Queue ID.
