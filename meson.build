@@ -12,7 +12,7 @@ project(
     'buildtype=debugoptimized',
     'c_std=gnu11',
   ],
-  meson_version: '>= 0.47.2',
+  meson_version: '>= 0.59.0',
 )
 
 nm_name = meson.project_name()
@@ -957,9 +957,8 @@ enable_qt = get_option('qt')
 if enable_qt
   add_languages('cpp')
 
-  qt_core_dep = dependency('QtCore', version: '>= 4')
-  qt_dbus_dep = dependency('QtDBus')
-  qt_network_dep = dependency('QtNetwork')
+  qt5 = import('qt5')
+  qtdep = dependency('qt5', modules: ['Core', 'DBus', 'Network'])
 
   subdir('examples/C/qt')
 endif
