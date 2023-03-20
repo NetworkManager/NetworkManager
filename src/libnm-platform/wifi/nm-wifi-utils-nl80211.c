@@ -825,111 +825,6 @@ nla_put_failure:
     g_return_val_if_reached(FALSE);
 }
 
-struct nl80211_csme_conn_info {
-    NMWifiUtilsNl80211     *self;
-    NMPlatformCsmeConnInfo *conn_info;
-};
-
-static int
-nl80211_csme_conn_event_handler(const struct nl_msg *msg, void *arg)
-{
-    struct nl80211_csme_conn_info *info          = arg;
-    NMPlatformCsmeConnInfo        *out_conn_info = info->conn_info;
-    NMWifiUtilsNl80211            *self          = info->self;
-    struct genlmsghdr             *gnlh          = (void *) nlmsg_data(nlmsg_hdr(msg));
-    struct nlattr                 *tb[NL80211_ATTR_MAX + 1];
-    struct nlattr                 *data;
-    struct nlattr                 *attrs[NUM_IWL_MVM_VENDOR_ATTR];
-    int                            err;
-
-    static const struct nla_policy iwl_vendor_policy[NUM_IWL_MVM_VENDOR_ATTR] = {
-        [IWL_MVM_VENDOR_ATTR_AUTH_MODE]   = {.type = NLA_U32},
-        [IWL_MVM_VENDOR_ATTR_SSID]        = {.type = NLA_UNSPEC, .maxlen = NM_IW_ESSID_MAX_SIZE},
-        [IWL_MVM_VENDOR_ATTR_STA_CIPHER]  = {.type = NLA_U32},
-        [IWL_MVM_VENDOR_ATTR_CHANNEL_NUM] = {.type = NLA_U8},
-        [IWL_MVM_VENDOR_ATTR_ADDR] = {.type = NLA_UNSPEC, .minlen = ETH_ALEN, .maxlen = ETH_ALEN},
-    };
-
-    nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), NULL);
-    data = tb[NL80211_ATTR_VENDOR_DATA];
-
-    *out_conn_info = (NMPlatformCsmeConnInfo){};
-
-    err = nla_parse_nested(attrs, MAX_IWL_MVM_VENDOR_ATTR, data, iwl_vendor_policy);
-    if (err) {
-        _LOGD("IWL_MVM_VENDOR_CMD_GET_CSME_CONN_INFO Failed to parse CSME connection info: %s",
-              nm_strerror(err));
-        return -EINVAL;
-    }
-
-    if (attrs[IWL_MVM_VENDOR_ATTR_AUTH_MODE])
-        out_conn_info->auth_mode = nla_get_u8(attrs[IWL_MVM_VENDOR_ATTR_AUTH_MODE]);
-
-    if (attrs[IWL_MVM_VENDOR_ATTR_SSID])
-        memcpy(out_conn_info->ssid,
-               nla_data(attrs[IWL_MVM_VENDOR_ATTR_SSID]),
-               nla_len(attrs[IWL_MVM_VENDOR_ATTR_SSID]));
-
-    if (attrs[IWL_MVM_VENDOR_ATTR_STA_CIPHER])
-        out_conn_info->sta_cipher = nla_get_u8(attrs[IWL_MVM_VENDOR_ATTR_STA_CIPHER]);
-
-    if (attrs[IWL_MVM_VENDOR_ATTR_CHANNEL_NUM])
-        out_conn_info->channel = nla_get_u8(attrs[IWL_MVM_VENDOR_ATTR_CHANNEL_NUM]);
-
-    if (attrs[IWL_MVM_VENDOR_ATTR_ADDR])
-        memcpy(&out_conn_info->addr,
-               nla_data(attrs[IWL_MVM_VENDOR_ATTR_ADDR]),
-               sizeof(out_conn_info->addr));
-
-    return NL_SKIP;
-}
-
-static gboolean
-wifi_nl80211_intel_vnd_get_csme_conn_info(NMWifiUtils *data, NMPlatformCsmeConnInfo *out_conn_info)
-{
-    NMWifiUtilsNl80211           *self = (NMWifiUtilsNl80211 *) data;
-    nm_auto_nlmsg struct nl_msg  *msg  = NULL;
-    int                           err;
-    struct nl80211_csme_conn_info conn_info = {
-        .self      = self,
-        .conn_info = out_conn_info,
-    };
-
-    msg = nl80211_alloc_msg(self, NL80211_CMD_VENDOR, 0);
-    NLA_PUT_U32(msg, NL80211_ATTR_VENDOR_ID, INTEL_OUI);
-    NLA_PUT_U32(msg, NL80211_ATTR_VENDOR_SUBCMD, IWL_MVM_VENDOR_CMD_GET_CSME_CONN_INFO);
-
-    err = nl80211_send_and_recv(self, msg, nl80211_csme_conn_event_handler, &conn_info);
-    if (err < 0)
-        _LOGD("IWL_MVM_VENDOR_CMD_GET_CSME_CONN_INFO request failed: %s", nm_strerror(err));
-
-    return err >= 0;
-
-nla_put_failure:
-    g_return_val_if_reached(FALSE);
-}
-
-static gboolean
-wifi_nl80211_intel_vnd_get_device_from_csme(NMWifiUtils *data)
-{
-    NMWifiUtilsNl80211          *self = (NMWifiUtilsNl80211 *) data;
-    nm_auto_nlmsg struct nl_msg *msg  = NULL;
-    int                          err;
-
-    msg = nl80211_alloc_msg(self, NL80211_CMD_VENDOR, 0);
-    NLA_PUT_U32(msg, NL80211_ATTR_VENDOR_ID, INTEL_OUI);
-    NLA_PUT_U32(msg, NL80211_ATTR_VENDOR_SUBCMD, IWL_MVM_VENDOR_CMD_HOST_GET_OWNERSHIP);
-
-    err = nl80211_send_and_recv(self, msg, NULL, NULL);
-    if (err < 0)
-        _LOGD("IWL_MVM_VENDOR_CMD_HOST_GET_OWNERSHIP request failed: %s", nm_strerror(err));
-
-    return err >= 0;
-
-nla_put_failure:
-    g_return_val_if_reached(FALSE);
-}
-
 static void
 nm_wifi_utils_nl80211_init(NMWifiUtilsNl80211 *self)
 {}
@@ -954,8 +849,6 @@ nm_wifi_utils_nl80211_class_init(NMWifiUtilsNl80211Class *klass)
     wifi_utils_class->get_mesh_channel            = wifi_nl80211_get_mesh_channel;
     wifi_utils_class->set_mesh_channel            = wifi_nl80211_set_mesh_channel;
     wifi_utils_class->set_mesh_ssid               = wifi_nl80211_set_mesh_ssid;
-    wifi_utils_class->get_csme_conn_info          = wifi_nl80211_intel_vnd_get_csme_conn_info;
-    wifi_utils_class->get_device_from_csme        = wifi_nl80211_intel_vnd_get_device_from_csme;
 }
 
 NMWifiUtils *

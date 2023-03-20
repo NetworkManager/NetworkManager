@@ -157,28 +157,6 @@ nm_wifi_utils_is_wifi(int dirfd, const char *ifname)
     return FALSE;
 }
 
-gboolean
-nm_wifi_utils_get_csme_conn_info(NMWifiUtils *data, NMPlatformCsmeConnInfo *out_conn_info)
-{
-    NMWifiUtilsClass *klass;
-
-    g_return_val_if_fail(data != NULL, FALSE);
-
-    klass = NM_WIFI_UTILS_GET_CLASS(data);
-    return klass->get_csme_conn_info ? klass->get_csme_conn_info(data, out_conn_info) : FALSE;
-}
-
-gboolean
-nm_wifi_utils_get_device_from_csme(NMWifiUtils *data)
-{
-    NMWifiUtilsClass *klass;
-
-    g_return_val_if_fail(data != NULL, FALSE);
-
-    klass = NM_WIFI_UTILS_GET_CLASS(data);
-    return klass->get_device_from_csme ? klass->get_device_from_csme(data) : FALSE;
-}
-
 /* OLPC Mesh-only functions */
 
 guint32
