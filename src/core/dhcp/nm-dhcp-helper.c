@@ -21,21 +21,22 @@
 #define _NMLOG_ENABLED(level) ((level) <= LOG_ERR)
 #endif
 
-#define _NMLOG(always_enabled, level, ...)                                                       \
-    G_STMT_START                                                                                 \
-    {                                                                                            \
-        if ((always_enabled) || _NMLOG_ENABLED(level)) {                                         \
-            GTimeVal _tv;                                                                        \
-                                                                                                 \
-            g_get_current_time(&_tv);                                                            \
-            g_print(                                                                             \
-                "nm-dhcp-helper[%ld] %-7s [%ld.%04ld] " _NM_UTILS_MACRO_FIRST(__VA_ARGS__) "\n", \
-                (long) getpid(),                                                                 \
-                nm_utils_syslog_to_str(level),                                                   \
-                _tv.tv_sec,                                                                      \
-                _tv.tv_usec / 100 _NM_UTILS_MACRO_REST(__VA_ARGS__));                            \
-        }                                                                                        \
-    }                                                                                            \
+#define _NMLOG(always_enabled, level, ...)                                     \
+    G_STMT_START                                                               \
+    {                                                                          \
+        if ((always_enabled) || _NMLOG_ENABLED(level)) {                       \
+            gint64 _tv;                                                        \
+                                                                               \
+            _tv = g_get_real_time();                                           \
+            g_print("nm-dhcp-helper[%ld] %-7s [%" G_GINT64_FORMAT              \
+                    ".%04d] " _NM_UTILS_MACRO_FIRST(__VA_ARGS__) "\n",         \
+                    (long) getpid(),                                           \
+                    nm_utils_syslog_to_str(level),                             \
+                    (_tv / NM_UTILS_USEC_PER_SEC),                             \
+                    ((int) ((_tv % NM_UTILS_USEC_PER_SEC) / (((gint64) 100)))) \
+                        _NM_UTILS_MACRO_REST(__VA_ARGS__));                    \
+        }                                                                      \
+    }                                                                          \
     G_STMT_END
 
 #define _LOGD(...) _NMLOG(TRUE, LOG_INFO, __VA_ARGS__)

@@ -665,7 +665,7 @@ _nm_log_impl(const char *file,
     char               msg_stack[400];
     gs_free char      *msg_heap = NULL;
     const char        *msg;
-    GTimeVal           tv;
+    gint64             tv;
     int                errsv;
     const NMLogDomain *cur_log_state;
     NMLogDomain        cur_log_state_copy[_LOGL_N_REAL];
@@ -721,11 +721,12 @@ _nm_log_impl(const char *file,
      * We also do this for all messages (for all levels), because then the logging
      * lines are formatted and aligned in a consistent way, which aids reading the
      * logs. */
-#define MESSAGE_FMT "%s%-7s [%ld.%04ld] %s"
-#define MESSAGE_ARG(prefix, tv, msg) \
-    prefix, nm_log_level_desc[level].level_str, (tv).tv_sec, ((tv).tv_usec / 100), (msg)
+#define MESSAGE_FMT "%s%-7s [%" G_GINT64_FORMAT ".%04d] %s"
+#define MESSAGE_ARG(prefix, tv, msg)                                            \
+    prefix, nm_log_level_desc[level].level_str, ((tv) / NM_UTILS_USEC_PER_SEC), \
+        ((int) ((((tv) % NM_UTILS_USEC_PER_SEC)) / ((gint64) 100))), (msg)
 
-    g_get_current_time(&tv);
+    tv = g_get_real_time();
 
     if (g->debug_stderr)
         g_printerr(MESSAGE_FMT "\n", MESSAGE_ARG(g->prefix, tv, msg));
