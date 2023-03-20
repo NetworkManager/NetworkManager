@@ -1188,6 +1188,7 @@ static void
 _commit_collect_routes(NML3Cfg          *self,
                        int               addr_family,
                        NML3CfgCommitType commit_type,
+                       gboolean          any_addrs,
                        GPtrArray       **routes,
                        GPtrArray       **routes_nodev)
 {
@@ -1212,6 +1213,24 @@ _commit_collect_routes(NML3Cfg          *self,
             r = routes_nodev;
         else {
             nm_assert(NMP_OBJECT_CAST_IP_ROUTE(obj)->ifindex == self->priv.ifindex);
+
+            if (!any_addrs) {
+                /* This is a unicast route (or a similar route, which has an
+                 * ifindex).
+                 *
+                 * However, during this commit we don't plan to configure any
+                 * IP addresses.  With `ipvx.method=manual` that should not be
+                 * possible. More likely, this is because the profile has
+                 * `ipvx.method=auto` and static routes.
+                 *
+                 * Don't configure any such routes before we also have at least
+                 * one IP address.
+                 *
+                 * This code applies to IPv4 and IPv6, however for IPv6 we
+                 * early on configure a link local address, so in practice the
+                 * branch is not taken for IPv6. */
+                continue;
+            }
 
             if (IS_IPv4 && NMP_OBJECT_CAST_IP4_ROUTE(obj)->weight > 0) {
                 /* This route needs to be registered as ECMP route. */
@@ -4825,7 +4844,12 @@ _l3_commit_one(NML3Cfg              *self,
 
     addresses = _commit_collect_addresses(self, addr_family, commit_type);
 
-    _commit_collect_routes(self, addr_family, commit_type, &routes, &routes_nodev);
+    _commit_collect_routes(self,
+                           addr_family,
+                           commit_type,
+                           nm_g_ptr_array_len(addresses) > 0,
+                           &routes,
+                           &routes_nodev);
 
     route_table_sync =
         self->priv.p->combined_l3cd_commited
