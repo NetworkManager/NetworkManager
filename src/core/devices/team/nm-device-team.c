@@ -39,6 +39,7 @@ typedef struct {
     guint              teamd_process_watch;
     guint              teamd_timeout;
     guint              teamd_read_timeout;
+    guint              teamd_backoff;
     guint              teamd_dbus_watch;
     bool               kill_in_progress : 1;
     GFileMonitor      *usock_monitor;
@@ -343,6 +344,7 @@ teamd_cleanup(NMDeviceTeam *self, gboolean free_tdc)
     nm_clear_g_source(&priv->teamd_process_watch);
     nm_clear_g_source(&priv->teamd_timeout);
     nm_clear_g_source(&priv->teamd_read_timeout);
+    nm_clear_g_source(&priv->teamd_backoff);
 
     if (priv->teamd_pid > 0) {
         priv->kill_in_progress = TRUE;
@@ -442,9 +444,10 @@ teamd_ready(NMDeviceTeam *self)
     nm_device_activate_schedule_stage1_device_prepare(device, FALSE);
 }
 
-static void
-teamd_gone(NMDeviceTeam *self)
+static gboolean
+teamd_backoff_cb(gpointer user_data)
 {
+    NMDeviceTeam *self   = NM_DEVICE_TEAM(user_data);
     NMDevice     *device = NM_DEVICE(self);
     NMDeviceState state;
 
@@ -459,6 +462,19 @@ teamd_gone(NMDeviceTeam *self)
                                     NM_DEVICE_STATE_REASON_TEAMD_CONTROL_FAILED);
         }
     }
+
+    return G_SOURCE_REMOVE;
+}
+
+static void
+teamd_gone(NMDeviceTeam *self)
+{
+    /* Wait a little before respawning. Something unexpected has happened
+     * causing teamd to disappear and we need to be careful. Maybe a clumsy
+     * supervisor is just killing off all processes and it's not too nice
+     * if we respawn too quickly. */
+    NM_DEVICE_TEAM_GET_PRIVATE(self)->teamd_backoff =
+        g_timeout_add_seconds(5, teamd_backoff_cb, self);
 }
 
 static void
