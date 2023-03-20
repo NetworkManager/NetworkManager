@@ -44,7 +44,7 @@ if [ -z "$BASE_IMAGE" ]; then
 fi
 
 BASEDIR_NM="$(readlink -f "$(dirname "$(readlink -f "$0")")/../..")"
-BASEDIR="$BASEDIR_NM/contrib/scripts/nm-in-container.d"
+BASEDIR_DATA="$BASEDIR_NM/tools/nm-in-container/data"
 
 BASEDIR_NM_CI=
 if [ -d "$BASEDIR_NM/.git/NetworkManager-ci" ] ; then
@@ -124,10 +124,10 @@ create_dockerfile() {
     local CONTAINERFILE="$1"
     local BASE_IMAGE="$2"
 
-    cp "$BASEDIR_NM/contrib/scripts/NM-log" "$BASEDIR/data-NM-log"
-    CLEANUP_FILES+=( "$BASEDIR/data-NM-log" )
+    cp "$BASEDIR_NM/contrib/scripts/NM-log" "$BASEDIR_DATA/data-NM-log"
+    CLEANUP_FILES+=( "$BASEDIR_DATA/data-NM-log" )
 
-    cat <<EOF | tmp_file "$BASEDIR/data-motd"
+    cat <<EOF | tmp_file "$BASEDIR_DATA/data-motd"
 *** nm-in-container:
 
 find NetworkManager bind mounted at $BASEDIR_NM
@@ -205,7 +205,7 @@ Run NM-ci tests after creating eth1 with
 \`nm-env-prepare.sh --prefix eth -i 1 && sleep 1 && nmcli device connect eth1\`.
 EOF
 
-    cat <<EOF | tmp_file "$BASEDIR/data-bashrc.my"
+    cat <<EOF | tmp_file "$BASEDIR_DATA/data-bashrc.my"
 alias m="make -j 8"
 alias n="ninja -C build"
 
@@ -254,7 +254,7 @@ if test "\$SHOW_MOTD" != 0; then
 fi
 EOF
 
-    cat <<EOF | tmp_file "$BASEDIR/data-90-my.conf"
+    cat <<EOF | tmp_file "$BASEDIR_DATA/data-90-my.conf"
 [main]
 no-auto-default=*
 debug=RLIMIT_CORE,fatal-warnings
@@ -272,10 +272,10 @@ match-device=interface-name:net*,interface-name:eth*
 managed=1
 EOF
 
-    cat <<EOF | tmp_file "$BASEDIR/data-95-user.conf"
+    cat <<EOF | tmp_file "$BASEDIR_DATA/data-95-user.conf"
 EOF
 
-    cat <<EOF | tmp_file "$BASEDIR/data-bash_history" 600
+    cat <<EOF | tmp_file "$BASEDIR_DATA/data-bash_history" 600
 NM-log
 NM-log /tmp/nm-log.txt
 behave -f html --stop -t ipv4_method_static_with_IP ./features/scenarios/ipv4.feature
@@ -305,17 +305,17 @@ systemctl daemon-reload ; systemctl restart NetworkManager
 systemctl status NetworkManager
 EOF
 
-    cat <<EOF | tmp_file "$BASEDIR/data-gdbinit"
+    cat <<EOF | tmp_file "$BASEDIR_DATA/data-gdbinit"
 set history save
 set history filename ~/.gdb_history
 EOF
 
-    cat <<EOF | tmp_file "$BASEDIR/data-gdb_history" 600
+    cat <<EOF | tmp_file "$BASEDIR_DATA/data-gdb_history" 600
 run
 run --debug 2>&1 | tee /tmp/nm-log.txt
 EOF
 
-    cat <<EOF | tmp_file "$BASEDIR/data-behaverc" 600
+    cat <<EOF | tmp_file "$BASEDIR_DATA/data-behaverc" 600
 [behave.formatters]
 html = behave_html_formatter:HTMLFormatter
 EOF
@@ -547,7 +547,7 @@ do_clean() {
 do_build() {
     container_image_exists "$CONTAINER_NAME_REPOSITORY:$CONTAINER_NAME_TAG" && return 0
 
-    CONTAINERFILE="$BASEDIR/containerfile"
+    CONTAINERFILE="$BASEDIR_DATA/containerfile"
     create_dockerfile "$CONTAINERFILE" "$BASE_IMAGE"
     podman build --squash-all --tag "$CONTAINER_NAME_REPOSITORY:$CONTAINER_NAME_TAG" -f "$CONTAINERFILE"
 }
