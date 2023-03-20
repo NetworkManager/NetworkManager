@@ -106,8 +106,6 @@ nm_rfkill_state_to_string(NMRfkillState state)
         return "soft-blocked";
     case NM_RFKILL_STATE_HARD_BLOCKED:
         return "hard-blocked";
-    case NM_RFKILL_STATE_HARD_BLOCKED_OS_NOT_OWNER:
-        return "hard-blocked-os-not-owner";
     }
     return nm_assert_unreachable_val("unknown");
 }
@@ -171,7 +169,7 @@ killswitch_destroy(Killswitch *ks)
 }
 
 static NMRfkillState
-sysfs_state_to_nm_state(int sysfs_state, int sysfs_reason)
+sysfs_state_to_nm_state(int sysfs_state)
 {
     switch (sysfs_state) {
     case 0:
@@ -179,11 +177,6 @@ sysfs_state_to_nm_state(int sysfs_state, int sysfs_reason)
     case 1:
         return NM_RFKILL_STATE_UNBLOCKED;
     case 2:
-        /* sysfs reason is a bitmap, in case we have both reasons (SIGNAL and NOT_OWNER), we want
-         * to consider the device as not owned.
-         */
-        if (sysfs_reason & 2)
-            return NM_RFKILL_STATE_HARD_BLOCKED_OS_NOT_OWNER;
         return NM_RFKILL_STATE_HARD_BLOCKED;
     default:
         nm_log_warn(LOGD_RFKILL, "unhandled rfkill state %d", sysfs_state);
@@ -214,7 +207,6 @@ recheck_killswitches(NMRfkillManager *self)
         struct udev_device *device;
         NMRfkillState       dev_state;
         int                 sysfs_state;
-        int                 sysfs_reason;
 
         device = udev_device_new_from_subsystem_sysname(nm_udev_client_get_udev(priv->udev_client),
                                                         "rfkill",
@@ -227,24 +219,15 @@ recheck_killswitches(NMRfkillManager *self)
                                          G_MININT,
                                          G_MAXINT,
                                          -1);
-
-        sysfs_reason = _nm_utils_ascii_str_to_int64(
-            udev_device_get_property_value(device, "RFKILL_HW_BLOCK_REASON"),
-            16,
-            G_MININT,
-            G_MAXINT,
-            1); /* defaults to SIGNAL in case the kernel does not support this */
-
-        dev_state = sysfs_state_to_nm_state(sysfs_state, sysfs_reason);
+        dev_state = sysfs_state_to_nm_state(sysfs_state);
 
         nm_log_dbg(LOGD_RFKILL,
-                   "%s rfkill%s switch %s state now %d/%s reason: 0x%x",
+                   "%s rfkill%s switch %s state now %d/%s",
                    nm_rfkill_type_to_string(ks->rtype),
                    ks->platform ? " platform" : "",
                    ks->name,
                    sysfs_state,
-                   nm_rfkill_state_to_string(dev_state),
-                   sysfs_reason);
+                   nm_rfkill_state_to_string(dev_state));
 
         if (ks->platform == FALSE) {
             if (dev_state > poll_states[ks->rtype])
