@@ -262,7 +262,8 @@ run_meson() {
 
     export NM_TEST_CLIENT_CHECK_L10N=1
 
-    ninja -C build -v
+    #ninja -C build -v
+    ninja -C build
     ninja -C build install
 
     if ! meson test -C build -v --print-errorlogs ; then
