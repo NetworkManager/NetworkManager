@@ -11327,10 +11327,8 @@ _commit_mtu(NMDevice *self)
     if (ifindex <= 0)
         return;
 
-    if (!nm_device_get_applied_connection(self)
-        || nm_device_sys_iface_state_is_external_or_assume(self)) {
-        /* we don't tamper with the MTU of disconnected and
-         * external/assumed devices. */
+    if (!nm_device_get_applied_connection(self) || nm_device_sys_iface_state_is_external(self)) {
+        /* we don't tamper with the MTU of disconnected and external devices. */
         return;
     }
 
