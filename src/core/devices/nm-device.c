@@ -3043,6 +3043,7 @@ nm_device_sys_iface_state_set(NMDevice *self, NMDeviceSysIfaceState sys_iface_st
               nm_device_sys_iface_state_to_string(sys_iface_state));
         priv->sys_iface_state_ = sys_iface_state;
         _dev_l3_cfg_commit_type_reset(self);
+        nm_device_l3cfg_commit(self, NM_L3_CFG_COMMIT_TYPE_AUTO, FALSE);
     }
 
     /* this function only sets a flag, no immediate actions are initiated.
