@@ -293,7 +293,7 @@ nm_http_client_req (NMHttpClient *self,
 
 	nmcs_wait_for_objects_register (edata->task);
 
-	_LOG2D (edata, "start get ...");
+	_LOG2D(edata, "start %s ...", http_method ?: "get");
 
 	edata->ehandle = curl_easy_init ();
 	if (!edata->ehandle) {
@@ -538,6 +538,7 @@ nm_http_client_poll_req (NMHttpClient *self,
 		.check_user_data    = check_user_data,
 		.response_code      = -1,
 		.http_headers       =  NM_CAST_STRV_CC (g_strdupv ((char **) http_headers)),
+		.http_method        = http_method,
 	};
 
 	nmcs_wait_for_objects_register (poll_req_data->task);
