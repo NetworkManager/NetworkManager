@@ -759,14 +759,12 @@ diff_one_connection(NMConnection         *a,
     return diff_found;
 }
 
-/* Required until https://gitlab.gnome.org/GNOME/gtk-doc/-/merge_requests/71 */
-#ifndef __GTK_DOC_IGNORE__
 /**
  * nm_connection_diff:
  * @a: a #NMConnection
  * @b: a second #NMConnection to compare with the first
  * @flags: compare flags, e.g. %NM_SETTING_COMPARE_FLAG_EXACT
- * @out_settings: (out) (element-type utf8 GLib.HashTable<utf8,uint32>)
+ * @out_settings: (out) (element-type utf8 GLib.HashTable(utf8,uint32))
  * (optional) (allow-none): if the connections differ, on return a hash table
  * mapping setting names to second-level GHashTable (utf8 to guint32), which
  * contains the key names that differ mapped to one or more of
@@ -781,28 +779,6 @@ diff_one_connection(NMConnection         *a,
  * Returns: %TRUE if the connections contain the same values, %FALSE if they do
  * not
  **/
-#else
-/**
- * nm_connection_diff:
- * @a: a #NMConnection
- * @b: a second #NMConnection to compare with the first
- * @flags: compare flags, e.g. %NM_SETTING_COMPARE_FLAG_EXACT
- * @out_settings: (out) (element-type utf8 GLib.HashTable&lt;utf8,uint32&gt;)
- * (optional) (nullable): if the connections differ, on return a hash table
- * mapping setting names to second-level GHashTable (utf8 to guint32), which
- * contains the key names that differ mapped to one or more of
- * %NMSettingDiffResult as a bitfield
- *
- * Compares two #NMConnection objects for similarity, with comparison behavior
- * modified by a set of flags.  See nm_setting_compare() for a description of
- * each flag's behavior.  If the connections differ, settings and keys within
- * each setting that differ are added to the returned @out_settings hash table.
- * No values are returned, only key names.
- *
- * Returns: %TRUE if the connections contain the same values, %FALSE if they do
- * not
- **/
-#endif
 gboolean
 nm_connection_diff(NMConnection         *a,
                    NMConnection         *b,
