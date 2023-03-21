@@ -43,6 +43,8 @@ void     nm_prioq_put(NMPrioq *q, void *data, unsigned *idx);
 gboolean nm_prioq_remove(NMPrioq *q, void *data, unsigned *idx);
 gboolean nm_prioq_reshuffle(NMPrioq *q, void *data, unsigned *idx);
 
+void nm_prioq_update(NMPrioq *q, void *data, unsigned *idx, bool queued /* or else remove */);
+
 void *nm_prioq_peek_by_index(NMPrioq *q, unsigned idx) _nm_pure;
 
 static inline void *
@@ -53,7 +55,7 @@ nm_prioq_peek(NMPrioq *q)
 
 void *nm_prioq_pop(NMPrioq *q);
 
-#define NM_PRIOQ_FOREACH_ITEM(q, p) for (unsigned _i = 0; (p = nm_prioq_peek_by_index(q, _i)); _i++)
+#define nm_prioq_for_each(q, p) for (unsigned _i = 0; (p = nm_prioq_peek_by_index((q), _i)); _i++)
 
 _nm_pure static inline unsigned
 nm_prioq_size(NMPrioq *q)

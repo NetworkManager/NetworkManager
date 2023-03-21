@@ -3,6 +3,8 @@
 #ifndef __NM_INET_UTILS_H__
 #define __NM_INET_UTILS_H__
 
+#include "libnm-std-aux/unaligned-fundamental.h"
+
 typedef union _NMIPAddr {
     guint8          addr_ptr[sizeof(struct in6_addr)];
     in_addr_t       addr4;
@@ -14,6 +16,11 @@ typedef union _NMIPAddr {
      * aliases nm_ip_addr_zero. */
     NMEtherAddr _ether_addr;
 } NMIPAddr;
+
+typedef struct _NMIPAddrTyped {
+    NMIPAddr addr;
+    gint8    addr_family;
+} NMIPAddrTyped;
 
 #define NM_IP_ADDR_INIT   \
     {                     \
@@ -85,14 +92,15 @@ nm_ip_addr_set(int addr_family, gpointer dst, gconstpointer src)
 static inline gboolean
 nm_ip_addr_is_null(int addr_family, gconstpointer addr)
 {
-    NMIPAddr a;
+    struct in6_addr a6;
 
-    nm_ip_addr_set(addr_family, &a, addr);
+    nm_assert(addr);
 
     if (NM_IS_IPv4(addr_family))
-        return a.addr4 == 0;
+        return unaligned_read_ne32(addr) == 0;
 
-    return IN6_IS_ADDR_UNSPECIFIED(&a.addr6);
+    memcpy(&a6, addr, sizeof(struct in6_addr));
+    return IN6_IS_ADDR_UNSPECIFIED(&a6);
 }
 
 static inline NMIPAddr
@@ -134,6 +142,30 @@ nm_ip_addr_from_packed_array(int addr_family, gconstpointer ipaddr_arr, gsize id
     return NM_IS_IPv4(addr_family)
                ? ((gconstpointer) & (((const struct in_addr *) ipaddr_arr)[idx]))
                : ((gconstpointer) & (((const struct in6_addr *) ipaddr_arr)[idx]));
+}
+
+/*****************************************************************************/
+
+static inline int
+nm_ip_addr_typed_cmp(const NMIPAddrTyped *a, const NMIPAddrTyped *b)
+{
+    NM_CMP_SELF(a, b);
+    NM_CMP_FIELD(a, b, addr_family);
+    NM_CMP_DIRECT_MEMCMP(&a->addr, &b->addr, nm_utils_addr_family_to_size(a->addr_family));
+    return 0;
+}
+
+static inline gboolean
+nm_ip_addr_typed_equal(const NMIPAddrTyped *a, const NMIPAddrTyped *b)
+{
+    return nm_ip_addr_typed_cmp(a, b) == 0;
+}
+
+static inline void
+nm_ip_addr_typed_hash_update(NMHashState *h, const NMIPAddrTyped *addr)
+{
+    nm_hash_update_vals(h, addr->addr_family);
+    nm_hash_update_mem(h, &addr->addr, nm_utils_addr_family_to_size(addr->addr_family));
 }
 
 /*****************************************************************************/

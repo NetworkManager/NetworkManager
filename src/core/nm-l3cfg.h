@@ -55,15 +55,11 @@ typedef enum _nm_packed {
  *   "don't change" behavior. At least once. If the address/route
  *   is still not (no longer) configured on the subsequent
  *   commit, it's not getting added again.
- * @NM_L3CFG_CONFIG_FLAGS_FORCE_ONCE: if set, objects in the
- *   NML3ConfigData are committed to platform even if they were
- *   removed externally.
  */
 typedef enum _nm_packed {
     NM_L3CFG_CONFIG_FLAGS_NONE               = 0,
     NM_L3CFG_CONFIG_FLAGS_ONLY_FOR_ACD       = (1LL << 0),
     NM_L3CFG_CONFIG_FLAGS_ASSUME_CONFIG_ONCE = (1LL << 1),
-    NM_L3CFG_CONFIG_FLAGS_FORCE_ONCE         = (1LL << 2),
 } NML3CfgConfigFlags;
 
 typedef enum _nm_packed {
@@ -131,8 +127,6 @@ typedef enum {
      * you should not perform complex operations inside this callback,
      * and neither should you call into NML3Cfg again (reentrancy). */
     NM_L3_CONFIG_NOTIFY_TYPE_L3CD_CHANGED,
-
-    NM_L3_CONFIG_NOTIFY_TYPE_ROUTES_TEMPORARY_NOT_AVAILABLE_EXPIRED,
 
     NM_L3_CONFIG_NOTIFY_TYPE_ACD_EVENT,
 
@@ -412,7 +406,7 @@ gboolean nm_l3cfg_check_ready(NML3Cfg               *self,
                               NML3CfgCheckReadyFlags flags,
                               GArray               **conflicts);
 
-gboolean nm_l3cfg_has_temp_not_available_obj(NML3Cfg *self, int addr_family);
+gboolean nm_l3cfg_has_failedobj_pending(NML3Cfg *self, int addr_family);
 
 /*****************************************************************************/
 

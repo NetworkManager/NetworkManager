@@ -1183,21 +1183,6 @@ nm_platform_lookup_object_by_addr_family(NMPlatform   *platform,
 
 /*****************************************************************************/
 
-static inline gboolean
-nmp_object_get_force_commit(const NMPObject *obj)
-{
-    switch (NMP_OBJECT_GET_TYPE(obj)) {
-    case NMP_OBJECT_TYPE_IP4_ADDRESS:
-    case NMP_OBJECT_TYPE_IP6_ADDRESS:
-        return NMP_OBJECT_CAST_IP_ADDRESS(obj)->a_force_commit;
-    case NMP_OBJECT_TYPE_IP4_ROUTE:
-    case NMP_OBJECT_TYPE_IP6_ROUTE:
-        return NMP_OBJECT_CAST_IP_ROUTE(obj)->r_force_commit;
-    default:
-        return nm_assert_unreachable_val(FALSE);
-    }
-}
-
 static inline const char *
 nmp_object_link_get_ifname(const NMPObject *obj)
 {

@@ -243,13 +243,6 @@ typedef enum {
 
 guint _nm_platform_signal_id_get(NMPlatformSignalIdType signal_type);
 
-typedef enum {
-    NM_PLATFORM_SIGNAL_NONE,
-    NM_PLATFORM_SIGNAL_ADDED,
-    NM_PLATFORM_SIGNAL_CHANGED,
-    NM_PLATFORM_SIGNAL_REMOVED,
-} NMPlatformSignalChangeType;
-
 /* Default value for adding an IPv4 route. This is also what iproute2 does.
  * Note that contrary to IPv6, you can add routes with metric 0 and it is even
  * the default.
@@ -2306,6 +2299,19 @@ nm_platform_ip_route_get_gateway(int addr_family, const NMPlatformIPRoute *route
     return &((NMPlatformIP6Route *) route)->gateway;
 }
 
+static inline gconstpointer
+nm_platform_ip_route_get_pref_src(int addr_family, const NMPlatformIPRoute *route)
+{
+    nm_assert_addr_family(addr_family);
+
+    if (!route)
+        return NULL;
+
+    if (NM_IS_IPv4(addr_family))
+        return &((NMPlatformIP4Route *) route)->pref_src;
+    return &((NMPlatformIP6Route *) route)->pref_src;
+}
+
 int nm_platform_ip_route_add(NMPlatform      *self,
                              NMPNlmFlags      flags,
                              const NMPObject *route,
@@ -2326,7 +2332,7 @@ gboolean nm_platform_ip_route_sync(NMPlatform *self,
                                    int         ifindex,
                                    GPtrArray  *routes,
                                    GPtrArray  *routes_prune,
-                                   GPtrArray **out_temporary_not_available);
+                                   GPtrArray **out_routes_failed);
 
 gboolean nm_platform_ip_route_flush(NMPlatform *self, int addr_family, int ifindex);
 
