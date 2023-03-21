@@ -4593,53 +4593,6 @@ nm_platform_ip_address_flush(NMPlatform *self, int addr_family, int ifindex)
 
 /*****************************************************************************/
 
-static gboolean
-_route_is_temporary_not_available(NMPlatform      *self,
-                                  int              err,
-                                  const NMPObject *obj,
-                                  const char     **out_err_reason)
-{
-    const NMPlatformIPXRoute   *rx;
-    const NMPlatformIP6Address *a;
-
-    nm_assert(NM_IS_PLATFORM(self));
-    nm_assert(NMP_OBJECT_IS_VALID(obj));
-
-    if (err != -EINVAL)
-        return FALSE;
-
-    rx = NMP_OBJECT_CAST_IPX_ROUTE(obj);
-
-    if (rx->rx.rt_source != NM_IP_CONFIG_SOURCE_USER) {
-        /* we only allow this workaround for routes added manually by the user. */
-        return FALSE;
-    }
-
-    if (NMP_OBJECT_GET_TYPE(obj) == NMP_OBJECT_TYPE_IP4_ROUTE) {
-        return FALSE;
-    } else {
-        const NMPlatformIP6Route *r = &rx->r6;
-
-        /* trying to add an IPv6 route with pref-src fails, if the address is
-         * still tentative (rh#1452684). We need to hack around that.
-         *
-         * Detect it, by guessing whether that's the case. */
-
-        if (IN6_IS_ADDR_UNSPECIFIED(&r->pref_src))
-            return FALSE;
-
-        a = nm_platform_ip6_address_get(self, r->ifindex, &r->pref_src);
-        if (!a)
-            return FALSE;
-        if (!NM_FLAGS_HAS(a->n_ifa_flags, IFA_F_TENTATIVE)
-            || NM_FLAGS_HAS(a->n_ifa_flags, IFA_F_DADFAILED))
-            return FALSE;
-
-        *out_err_reason = "tentative IPv6 src address not ready";
-        return TRUE;
-    }
-}
-
 static guint
 _ipv6_temporary_addr_prefixes_keep_hash(gconstpointer ptr)
 {
@@ -4968,8 +4921,8 @@ nm_platform_ip_route_get_prune_list(NMPlatform            *self,
  *   at the end of the operation. Note that if @routes contains
  *   the same route, then it will not be deleted. @routes overrules
  *   @routes_prune list.
- * @out_temporary_not_available: (allow-none) (out): routes that could
- *   currently not be synced. The caller shall keep them and try later again.
+ * @out_routes_failed: (allow-none) (out): routes that could
+ *   not be synced/added.
  *
  * Returns: %TRUE on success.
  */
@@ -4979,7 +4932,7 @@ nm_platform_ip_route_sync(NMPlatform *self,
                           int         ifindex,
                           GPtrArray  *routes,
                           GPtrArray  *routes_prune,
-                          GPtrArray **out_temporary_not_available)
+                          GPtrArray **out_routes_failed)
 {
     const int                      IS_IPv4 = NM_IS_IPv4(addr_family);
     const NMPlatformVTableRoute   *vt;
@@ -4999,9 +4952,7 @@ nm_platform_ip_route_sync(NMPlatform *self,
 
     for (i_type = 0; routes && i_type < 2; i_type++) {
         for (i = 0; i < routes->len; i++) {
-            gs_free char *extack_msg          = NULL;
-            gboolean      gateway_route_added = FALSE;
-            int           r2;
+            gs_free char *extack_msg = NULL;
             int           r;
 
             conf_o = routes->pdata[i];
@@ -5058,147 +5009,59 @@ nm_platform_ip_route_sync(NMPlatform *self,
                 }
             }
 
-sync_route_add:
             r = nm_platform_ip_route_add(self,
                                          NMP_NLM_FLAG_APPEND
                                              | NMP_NLM_FLAG_SUPPRESS_NETLINK_FAILURE,
                                          conf_o,
                                          &extack_msg);
-            if (r < 0) {
-                const char *err_reason = NULL;
-
-                if (r == -EEXIST) {
-                    /* Don't fail for EEXIST. It's not clear that the existing route
-                     * is identical to the one that we were about to add. However,
-                     * above we should have deleted conflicting (non-identical) routes. */
-                    if (_LOGD_ENABLED()) {
-                        plat_entry =
-                            nm_platform_lookup_entry(self, NMP_CACHE_ID_TYPE_OBJECT_TYPE, conf_o);
-                        if (!plat_entry) {
-                            _LOG3D("route-sync: adding route %s failed with EEXIST, however we "
-                                   "cannot find such a route",
-                                   nmp_object_to_string(conf_o,
-                                                        NMP_OBJECT_TO_STRING_PUBLIC,
-                                                        sbuf1,
-                                                        sizeof(sbuf1)));
-                        } else if (vt->route_cmp(NMP_OBJECT_CAST_IPX_ROUTE(conf_o),
-                                                 NMP_OBJECT_CAST_IPX_ROUTE(plat_entry->obj),
-                                                 NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY)
-                                   != 0) {
-                            _LOG3D("route-sync: adding route %s failed due to existing "
-                                   "(different!) route %s",
-                                   nmp_object_to_string(conf_o,
-                                                        NMP_OBJECT_TO_STRING_PUBLIC,
-                                                        sbuf1,
-                                                        sizeof(sbuf1)),
-                                   nmp_object_to_string(plat_entry->obj,
-                                                        NMP_OBJECT_TO_STRING_PUBLIC,
-                                                        sbuf2,
-                                                        sizeof(sbuf2)));
-                        }
-                    }
-                } else if (NMP_OBJECT_CAST_IP_ROUTE(conf_o)->rt_source < NM_IP_CONFIG_SOURCE_USER) {
-                    _LOG3D("route-sync: ignore failure to add IPv%c route: %s: %s",
-                           vt->is_ip4 ? '4' : '6',
-                           nmp_object_to_string(conf_o,
-                                                NMP_OBJECT_TO_STRING_PUBLIC,
-                                                sbuf1,
-                                                sizeof(sbuf1)),
-                           nm_strerror(r));
-                } else if (out_temporary_not_available
-                           && _route_is_temporary_not_available(self, r, conf_o, &err_reason)) {
-                    _LOG3D("route-sync: ignore temporary failure to add route (%s, %s): %s",
-                           nm_strerror(r),
-                           err_reason,
-                           nmp_object_to_string(conf_o,
-                                                NMP_OBJECT_TO_STRING_PUBLIC,
-                                                sbuf1,
-                                                sizeof(sbuf1)));
-                    if (!*out_temporary_not_available)
-                        *out_temporary_not_available =
-                            g_ptr_array_new_full(0, (GDestroyNotify) nmp_object_unref);
-                    g_ptr_array_add(*out_temporary_not_available,
-                                    (gpointer) nmp_object_ref(conf_o));
-                } else if (!gateway_route_added
-                           && ((r == -ENETUNREACH && vt->is_ip4
-                                && !!NMP_OBJECT_CAST_IP4_ROUTE(conf_o)->gateway)
-                               || (r == -EHOSTUNREACH && !vt->is_ip4
-                                   && !IN6_IS_ADDR_UNSPECIFIED(
-                                       &NMP_OBJECT_CAST_IP6_ROUTE(conf_o)->gateway)))) {
-                    NMPObject oo;
-
-                    if (vt->is_ip4) {
-                        const NMPlatformIP4Route *rt = NMP_OBJECT_CAST_IP4_ROUTE(conf_o);
-
-                        nmp_object_stackinit(
-                            &oo,
-                            NMP_OBJECT_TYPE_IP4_ROUTE,
-                            &((NMPlatformIP4Route){
-                                .ifindex       = rt->ifindex,
-                                .network       = rt->gateway,
-                                .plen          = 32,
-                                .metric        = nm_platform_ip4_route_get_effective_metric(rt),
-                                .rt_source     = rt->rt_source,
-                                .table_coerced = nm_platform_ip_route_get_effective_table(
-                                    NM_PLATFORM_IP_ROUTE_CAST(rt)),
-                            }));
-                    } else {
-                        const NMPlatformIP6Route *rt = NMP_OBJECT_CAST_IP6_ROUTE(conf_o);
-
-                        nmp_object_stackinit(
-                            &oo,
-                            NMP_OBJECT_TYPE_IP6_ROUTE,
-                            &((NMPlatformIP6Route){
-                                .ifindex       = rt->ifindex,
-                                .network       = rt->gateway,
-                                .plen          = 128,
-                                .metric        = nm_platform_ip6_route_get_effective_metric(rt),
-                                .rt_source     = rt->rt_source,
-                                .table_coerced = nm_platform_ip_route_get_effective_table(
-                                    NM_PLATFORM_IP_ROUTE_CAST(rt)),
-                            }));
-                    }
-
-                    _LOG3D("route-sync: failure to add IPv%c route: %s: %s; try adding direct "
-                           "route to gateway %s",
-                           vt->is_ip4 ? '4' : '6',
-                           nmp_object_to_string(conf_o,
-                                                NMP_OBJECT_TO_STRING_PUBLIC,
-                                                sbuf1,
-                                                sizeof(sbuf1)),
-                           nm_strerror(r),
-                           nmp_object_to_string(&oo,
-                                                NMP_OBJECT_TO_STRING_PUBLIC,
-                                                sbuf2,
-                                                sizeof(sbuf2)));
-
-                    r2 = nm_platform_ip_route_add(self,
-                                                  NMP_NLM_FLAG_APPEND
-                                                      | NMP_NLM_FLAG_SUPPRESS_NETLINK_FAILURE,
-                                                  &oo,
-                                                  NULL);
-
-                    if (r2 < 0) {
-                        _LOG3D("route-sync: failure to add gateway IPv%c route: %s: %s",
-                               vt->is_ip4 ? '4' : '6',
+            if (r == 0) {
+                /* success */
+            } else if (r == -EEXIST) {
+                /* Don't fail for EEXIST. It's not clear that the existing route
+                 * is identical to the one that we were about to add. However,
+                 * above we should have deleted conflicting (non-identical) routes. */
+                if (_LOGD_ENABLED()) {
+                    plat_entry =
+                        nm_platform_lookup_entry(self, NMP_CACHE_ID_TYPE_OBJECT_TYPE, conf_o);
+                    if (!plat_entry) {
+                        _LOG3D("route-sync: adding route %s failed with EEXIST, however we "
+                               "cannot find such a route",
+                               nmp_object_to_string(conf_o,
+                                                    NMP_OBJECT_TO_STRING_PUBLIC,
+                                                    sbuf1,
+                                                    sizeof(sbuf1)));
+                    } else if (vt->route_cmp(NMP_OBJECT_CAST_IPX_ROUTE(conf_o),
+                                             NMP_OBJECT_CAST_IPX_ROUTE(plat_entry->obj),
+                                             NM_PLATFORM_IP_ROUTE_CMP_TYPE_SEMANTICALLY)
+                               != 0) {
+                        _LOG3D("route-sync: adding route %s failed due to existing "
+                               "(different!) route %s",
                                nmp_object_to_string(conf_o,
                                                     NMP_OBJECT_TO_STRING_PUBLIC,
                                                     sbuf1,
                                                     sizeof(sbuf1)),
-                               nm_strerror(r2));
+                               nmp_object_to_string(plat_entry->obj,
+                                                    NMP_OBJECT_TO_STRING_PUBLIC,
+                                                    sbuf2,
+                                                    sizeof(sbuf2)));
                     }
+                }
+            } else {
+                _LOG3D(
+                    "route-sync: failure to add IPv%c route: %s: %s%s%s%s",
+                    vt->is_ip4 ? '4' : '6',
+                    nmp_object_to_string(conf_o, NMP_OBJECT_TO_STRING_PUBLIC, sbuf1, sizeof(sbuf1)),
+                    nm_strerror(r),
+                    NM_PRINT_FMT_QUOTED(extack_msg, " (", extack_msg, ")", ""));
 
-                    gateway_route_added = TRUE;
-                    goto sync_route_add;
-                } else {
-                    _LOG3W("route-sync: failure to add IPv%c route: %s: %s",
-                           vt->is_ip4 ? '4' : '6',
-                           nmp_object_to_string(conf_o,
-                                                NMP_OBJECT_TO_STRING_PUBLIC,
-                                                sbuf1,
-                                                sizeof(sbuf1)),
-                           nm_strerror(r));
-                    success = FALSE;
+                success = FALSE;
+
+                if (out_routes_failed) {
+                    if (!*out_routes_failed) {
+                        *out_routes_failed =
+                            g_ptr_array_new_with_free_func((GDestroyNotify) nmp_object_unref);
+                    }
+                    g_ptr_array_add(*out_routes_failed, (gpointer) nmp_object_ref(conf_o));
                 }
             }
         }
@@ -5346,7 +5209,7 @@ _ip_route_add(NMPlatform *self, NMPNlmFlags flags, NMPObject *obj_stack, char **
     char sbuf[NM_UTILS_TO_STRING_BUFFER_SIZE];
     int  ifindex;
 
-    _CHECK_SELF(self, klass, FALSE);
+    _CHECK_SELF(self, klass, -NME_BUG);
 
     /* The caller already ensures that this is a stack allocated copy, that
      * - stays alive for the duration of the call.
@@ -7037,7 +6900,6 @@ nm_platform_ip4_route_to_string_full(const NMPlatformIP4Route     *route,
         "%s"         /* rto_min */
         "%s"         /* quickack */
         "%s"         /* mtu */
-        "%s"         /* r_force_commit */
         "",
         nm_net_aux_rtnl_rtntype_n2a_maybe_buf(nm_platform_route_type_uncoerce(route->type_coerced),
                                               str_type),
@@ -7104,8 +6966,7 @@ nm_platform_ip4_route_to_string_full(const NMPlatformIP4Route     *route,
                                                        " mtu %s%" G_GUINT32_FORMAT,
                                                        route->lock_mtu ? "lock " : "",
                                                        route->mtu)
-                                      : "",
-        route->r_force_commit ? " force-commit" : "");
+                                      : "");
 
     if ((n_nexthops == 1 && route->ifindex > 0) || n_nexthops == 0) {
         /* A plain single hop route. Nothing extra to remark. */
@@ -7225,7 +7086,6 @@ nm_platform_ip6_route_to_string(const NMPlatformIP6Route *route, char *buf, gsiz
         "%s"         /* quickack */
         "%s"         /* mtu */
         "%s"         /* pref */
-        "%s"         /* r_force_commit */
         "",
         nm_net_aux_rtnl_rtntype_n2a_maybe_buf(nm_platform_route_type_uncoerce(route->type_coerced),
                                               str_type),
@@ -7292,8 +7152,7 @@ nm_platform_ip6_route_to_string(const NMPlatformIP6Route *route, char *buf, gsiz
             str_pref,
             " pref %s",
             nm_icmpv6_router_pref_to_string(route->rt_pref, str_pref2, sizeof(str_pref2)))
-                       : "",
-        route->r_force_commit ? " force-commit" : "");
+                       : "");
 
     return buf;
 }
@@ -8680,8 +8539,7 @@ nm_platform_ip4_route_hash_update(const NMPlatformIP4Route *obj,
                                                   obj->lock_initcwnd,
                                                   obj->lock_initrwnd,
                                                   obj->lock_mtu,
-                                                  obj->lock_mss,
-                                                  obj->r_force_commit));
+                                                  obj->lock_mss));
         break;
     }
 }
@@ -8824,8 +8682,6 @@ nm_platform_ip4_route_cmp(const NMPlatformIP4Route *a,
         NM_CMP_FIELD(a, b, initrwnd);
         NM_CMP_FIELD(a, b, mtu);
         NM_CMP_FIELD(a, b, rto_min);
-        if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_FULL)
-            NM_CMP_FIELD_UNSAFE(a, b, r_force_commit);
         break;
     }
     return 0;
@@ -8925,8 +8781,7 @@ nm_platform_ip6_route_hash_update(const NMPlatformIP6Route *obj,
                                                   obj->lock_initcwnd,
                                                   obj->lock_initrwnd,
                                                   obj->lock_mtu,
-                                                  obj->lock_mss,
-                                                  obj->r_force_commit),
+                                                  obj->lock_mss),
                             obj->window,
                             obj->cwnd,
                             obj->initcwnd,
@@ -9016,8 +8871,6 @@ nm_platform_ip6_route_cmp(const NMPlatformIP6Route *a,
             NM_CMP_DIRECT(_route_pref_normalize(a->rt_pref), _route_pref_normalize(b->rt_pref));
         else
             NM_CMP_FIELD(a, b, rt_pref);
-        if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_FULL)
-            NM_CMP_FIELD_UNSAFE(a, b, r_force_commit);
         break;
     }
     return 0;
@@ -9339,7 +9192,6 @@ nm_platform_ip4_address_generate_device_route(const NMPlatformIP4Address *addr,
                                               int                         ifindex,
                                               guint32                     route_table,
                                               guint32                     route_metric,
-                                              gboolean                    force_commit,
                                               NMPlatformIP4Route         *dst)
 {
     in_addr_t network_4;
@@ -9369,15 +9221,14 @@ nm_platform_ip4_address_generate_device_route(const NMPlatformIP4Address *addr,
     }
 
     *dst = (NMPlatformIP4Route){
-        .ifindex        = ifindex,
-        .rt_source      = NM_IP_CONFIG_SOURCE_KERNEL,
-        .network        = network_4,
-        .plen           = addr->plen,
-        .pref_src       = addr->address,
-        .table_coerced  = nm_platform_route_table_coerce(route_table),
-        .metric         = route_metric,
-        .scope_inv      = nm_platform_route_scope_inv(NM_RT_SCOPE_LINK),
-        .r_force_commit = force_commit,
+        .ifindex       = ifindex,
+        .rt_source     = NM_IP_CONFIG_SOURCE_KERNEL,
+        .network       = network_4,
+        .plen          = addr->plen,
+        .pref_src      = addr->address,
+        .table_coerced = nm_platform_route_table_coerce(route_table),
+        .metric        = route_metric,
+        .scope_inv     = nm_platform_route_scope_inv(NM_RT_SCOPE_LINK),
     };
 
     nm_platform_ip_route_normalize(AF_INET, (NMPlatformIPRoute *) dst);

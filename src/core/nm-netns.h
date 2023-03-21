@@ -59,4 +59,46 @@ void nm_netns_ip_route_ecmp_commit(NMNetns    *self,
                                    GPtrArray **routes,
                                    gboolean    is_reapply);
 
+/*****************************************************************************/
+
+typedef enum {
+    NM_NETNS_WATCHER_TYPE_IP_ADDR,
+} NMNetnsWatcherType;
+
+typedef struct {
+    union {
+        struct {
+            NMIPAddrTyped addr;
+        } ip_addr;
+    };
+} NMNetnsWatcherData;
+
+typedef struct {
+    union {
+        struct {
+            const NMPObject           *obj;
+            NMPlatformSignalChangeType change_type;
+        } ip_addr;
+    };
+} NMNetnsWatcherEventData;
+
+typedef struct _NMNetnsWatcherHandle NMNetnsWatcherHandle;
+
+typedef void (*NMNetnsWatcherCallback)(NMNetns                       *self,
+                                       NMNetnsWatcherType             watcher_type,
+                                       const NMNetnsWatcherData      *watcher_data,
+                                       gconstpointer                  tag,
+                                       const NMNetnsWatcherEventData *event_data,
+                                       gpointer                       user_data);
+
+void nm_netns_watcher_add(NMNetns                  *self,
+                          NMNetnsWatcherType        watcher_type,
+                          const NMNetnsWatcherData *watcher_data,
+                          gconstpointer             tag,
+                          NMNetnsWatcherCallback    callback,
+                          gpointer                  user_data);
+
+void
+nm_netns_watcher_remove_all(NMNetns *self, gconstpointer tag, gboolean all /* or only dirty */);
+
 #endif /* __NM_NETNS_H__ */

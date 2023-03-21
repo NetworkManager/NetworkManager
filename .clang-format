@@ -120,6 +120,7 @@ ForEachMacros: [
                 'nm_manager_for_each_device',
                 'nm_manager_for_each_device_safe',
                 'nm_platform_iter_obj_for_each',
+                'nm_prioq_for_each',
                 'nmp_cache_iter_for_each',
                 'nmp_cache_iter_for_each_link',
                 'nmp_cache_iter_for_each_reverse',

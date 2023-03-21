@@ -22,6 +22,44 @@
 
 /*****************************************************************************/
 
+typedef struct {
+    gconstpointer tag;
+    CList         watcher_by_tag_lst_head;
+} WatcherByTag;
+
+typedef struct {
+    NMIPAddrTyped addr;
+    CList         watcher_ip_addr_lst_head;
+} WatcherDataIPAddr;
+
+struct _NMNetnsWatcherHandle {
+    NMNetnsWatcherType     watcher_type;
+    NMNetnsWatcherData     watcher_data;
+    gconstpointer          tag;
+    NMNetnsWatcherCallback callback;
+    gpointer               callback_user_data;
+
+    /* This is linked to "WatcherByTag.watcher_by_tag_lst_head" in
+     * "priv->watcher_by_tag_idx". */
+    CList watcher_tag_lst;
+
+    /* The registration data, which depends on the "watcher_type". */
+    union {
+        struct {
+            CList watcher_ip_addr_lst;
+        } ip_addr;
+    } reg_data;
+
+    /* nm_netns_watcher_add() will mark the handle as non-dirty, while
+     * nm_netns_watcher_remove_all() can delete only dirty handles (while
+     * leaving non-dirty handles alive, but marking them as dirty).
+     *
+     * That allows a pattern where you just add the new handles that you want
+     * now, and then call nm_netns_watcher_remove_all() to remove those that
+     * should no longer be present. */
+    bool watcher_dirty : 1;
+};
+
 NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_PLATFORM, );
 
 typedef struct {
@@ -33,8 +71,20 @@ typedef struct {
     GHashTable       *shared_ips;
     GHashTable       *ecmp_track_by_obj;
     GHashTable       *ecmp_track_by_ecmpid;
-    CList             l3cfg_signal_pending_lst_head;
-    GSource          *signal_pending_idle_source;
+
+    /* Indexes the watcher handles. */
+    GHashTable *watcher_idx;
+
+    /* An index of WatcherByTag. It allows to lookup watcher handles by tag.
+     * Handles without tag are not indexed. */
+    GHashTable *watcher_by_tag_idx;
+
+    /* Index for WatcherDataIPAddr instances. Allows to lookup all subscribers
+     * by IP address. */
+    GHashTable *watcher_ip_data_idx;
+
+    CList    l3cfg_signal_pending_lst_head;
+    GSource *signal_pending_idle_source;
 } NMNetnsPrivate;
 
 struct _NMNetns {
@@ -84,6 +134,24 @@ NM_DEFINE_SINGLETON_GETTER(NMNetns, nm_netns_get, NM_TYPE_NETNS);
             nm_assert(_l3cfg == nm_netns_l3cfg_get(_self, nm_l3cfg_get_ifindex(_l3cfg))); \
     }                                                                                     \
     G_STMT_END
+
+/*****************************************************************************/
+
+static WatcherDataIPAddr             *
+_watcher_ip_data_lookup(NMNetns *self, int addr_family, gconstpointer addr);
+static void _watcher_handle_notify(NMNetns                       *self,
+                                   NMNetnsWatcherHandle          *handle,
+                                   const NMNetnsWatcherEventData *event_data);
+static const char *
+_watcher_handle_to_string(const NMNetnsWatcherHandle *handle, char *buf, gsize buf_size);
+
+/*****************************************************************************/
+
+static gboolean
+NM_NETNS_WATCHER_TYPE_VALID(NMNetnsWatcherType watcher_type)
+{
+    return NM_IN_SET(watcher_type, NM_NETNS_WATCHER_TYPE_IP_ADDR);
+}
 
 /*****************************************************************************/
 
@@ -437,7 +505,7 @@ _platform_signal_cb(NMPlatform   *platform,
 
     l3cfg = nm_netns_l3cfg_get(self, ifindex);
     if (!l3cfg)
-        return;
+        goto notify_watcher;
 
     l3cfg->internal_netns.signal_pending_obj_type_flags |= nmp_object_type_to_flags(obj_type);
 
@@ -450,6 +518,55 @@ _platform_signal_cb(NMPlatform   *platform,
     }
 
     _nm_l3cfg_notify_platform_change(l3cfg, change_type, NMP_OBJECT_UP_CAST(platform_object));
+
+notify_watcher:
+    switch (obj_type) {
+    case NMP_OBJECT_TYPE_IP4_ADDRESS:
+    case NMP_OBJECT_TYPE_IP6_ADDRESS:
+    {
+        NMNetnsWatcherHandle *handle;
+        NMNetnsWatcherHandle *handle_safe;
+        WatcherDataIPAddr    *data;
+
+        data =
+            _watcher_ip_data_lookup(self,
+                                    obj_type == NMP_OBJECT_TYPE_IP4_ADDRESS ? AF_INET : AF_INET6,
+                                    ((const NMPlatformIPAddress *) platform_object)->address_ptr);
+
+        if (data) {
+            const NMNetnsWatcherEventData event_data = {
+                .ip_addr =
+                    {
+                        .change_type = change_type,
+                        .obj         = NMP_OBJECT_UP_CAST(platform_object),
+                    },
+            };
+            char sbuf[500];
+
+            c_list_for_each_entry_safe (handle,
+                                        handle_safe,
+                                        &data->watcher_ip_addr_lst_head,
+                                        reg_data.ip_addr.watcher_ip_addr_lst) {
+                _LOGT("netns-watcher: %s %s",
+                      "notify",
+                      _watcher_handle_to_string(handle, sbuf, sizeof(sbuf)));
+
+                /* Note that we dispatch these events directly from the platform event
+                 * and while iterating over "data".
+                 *
+                 * From the callback, it's probably a bad idea to do anything in platform
+                 * that might change anything (emit new signals) or to nm_netns_watcher_remove*()
+                 * any other watcher.
+                 *
+                 * The callee needs to be careful. */
+                _watcher_handle_notify(self, handle, &event_data);
+            }
+        }
+        break;
+    }
+    default:
+        break;
+    }
 }
 
 /*****************************************************************************/
@@ -823,6 +940,460 @@ nm_netns_ip_route_ecmp_commit(NMNetns    *self,
 /*****************************************************************************/
 
 static void
+_watcher_data_set(NMNetnsWatcherData       *dst,
+                  NMNetnsWatcherType        watcher_type,
+                  const NMNetnsWatcherData *src)
+{
+    nm_assert(dst);
+    nm_assert(src);
+
+    switch (watcher_type) {
+    case NM_NETNS_WATCHER_TYPE_IP_ADDR:
+        dst->ip_addr = src->ip_addr;
+        return;
+    }
+    nm_assert_not_reached();
+}
+
+static void
+_watcher_data_hash(NMHashState *h, NMNetnsWatcherType watcher_type, const NMNetnsWatcherData *data)
+{
+    nm_assert(h);
+    nm_assert(NM_NETNS_WATCHER_TYPE_VALID(watcher_type));
+    nm_assert(data);
+
+    switch (watcher_type) {
+    case NM_NETNS_WATCHER_TYPE_IP_ADDR:
+        nm_ip_addr_typed_hash_update(h, &data->ip_addr.addr);
+        return;
+    }
+    nm_assert_not_reached();
+}
+
+static gboolean
+_watcher_data_equal(NMNetnsWatcherType        watcher_type,
+                    const NMNetnsWatcherData *a,
+                    const NMNetnsWatcherData *b)
+{
+    nm_assert(NM_NETNS_WATCHER_TYPE_VALID(watcher_type));
+    nm_assert(a);
+    nm_assert(b);
+
+    switch (watcher_type) {
+    case NM_NETNS_WATCHER_TYPE_IP_ADDR:
+        return nm_ip_addr_typed_equal(&a->ip_addr.addr, &b->ip_addr.addr);
+    }
+    return nm_assert_unreachable_val(FALSE);
+}
+
+static void
+_watcher_by_tag_destroy(WatcherByTag *watcher_by_tag)
+{
+    c_list_unlink_stale(&watcher_by_tag->watcher_by_tag_lst_head);
+    nm_g_slice_free(watcher_by_tag);
+}
+
+static void
+_watcher_handle_init(NMNetnsWatcherHandle     *handle,
+                     NMNetnsWatcherType        watcher_type,
+                     const NMNetnsWatcherData *watcher_data,
+                     gconstpointer             tag)
+{
+    nm_assert(handle);
+    nm_assert(NM_NETNS_WATCHER_TYPE_VALID(watcher_type));
+
+    *handle = (NMNetnsWatcherHandle){
+        .watcher_type    = watcher_type,
+        .tag             = tag,
+        .watcher_tag_lst = C_LIST_INIT(handle->watcher_tag_lst),
+    };
+    _watcher_data_set(&handle->watcher_data, watcher_type, watcher_data);
+}
+
+static guint
+_watcher_handle_hash(gconstpointer data)
+{
+    const NMNetnsWatcherHandle *watcher = data;
+    NMHashState                 h;
+
+    nm_assert(watcher);
+    nm_assert(watcher->tag);
+
+    nm_hash_init(&h, 2696278447u);
+    nm_hash_update_vals(&h, watcher->tag, watcher->watcher_type);
+    _watcher_data_hash(&h, watcher->watcher_type, &watcher->watcher_data);
+    return nm_hash_complete(&h);
+}
+
+static gboolean
+_watcher_handle_equal(gconstpointer a, gconstpointer b)
+{
+    const NMNetnsWatcherHandle *ha = a;
+    const NMNetnsWatcherHandle *hb = b;
+
+    nm_assert(ha);
+    nm_assert(hb);
+    nm_assert(ha->tag);
+    nm_assert(hb->tag);
+
+    if (ha == hb)
+        return TRUE;
+
+    return (ha->tag == hb->tag) && (ha->watcher_type == hb->watcher_type)
+           && _watcher_data_equal(ha->watcher_type, &ha->watcher_data, &hb->watcher_data);
+}
+
+static const char *
+_watcher_handle_to_string(const NMNetnsWatcherHandle *handle, char *buf, gsize buf_size)
+{
+    const char *buf0 = buf;
+    char        sbuf[NM_INET_ADDRSTRLEN];
+
+    nm_strbuf_append(&buf,
+                     &buf_size,
+                     "h:" NM_HASH_OBFUSCATE_PTR_FMT "[",
+                     NM_HASH_OBFUSCATE_PTR(handle));
+
+    if (handle->tag) {
+        nm_strbuf_append(&buf,
+                         &buf_size,
+                         "tag:" NM_HASH_OBFUSCATE_PTR_FMT ",",
+                         NM_HASH_OBFUSCATE_PTR(handle->tag));
+    }
+
+    switch (handle->watcher_type) {
+    case NM_NETNS_WATCHER_TYPE_IP_ADDR:
+        nm_strbuf_append_str(&buf, &buf_size, "ip-addr:");
+        nm_strbuf_append_str(&buf,
+                             &buf_size,
+                             nm_inet_ntop(handle->watcher_data.ip_addr.addr.addr_family,
+                                          &handle->watcher_data.ip_addr.addr.addr,
+                                          sbuf));
+        goto out;
+    }
+    nm_assert_not_reached();
+    nm_strbuf_append_str(&buf, &buf_size, "unknown");
+
+out:
+    nm_strbuf_append_c(&buf, &buf_size, ']');
+    return buf0;
+}
+
+static void
+_watcher_handle_notify(NMNetns                       *self,
+                       NMNetnsWatcherHandle          *handle,
+                       const NMNetnsWatcherEventData *event_data)
+{
+    nm_assert(NM_IS_NETNS(self));
+    nm_assert(handle);
+    nm_assert(handle->callback);
+
+    handle->callback(self,
+                     handle->watcher_type,
+                     &handle->watcher_data,
+                     handle->tag,
+                     event_data,
+                     handle->callback_user_data);
+}
+
+static WatcherDataIPAddr *
+_watcher_ip_data_lookup(NMNetns *self, int addr_family, gconstpointer addr)
+{
+    WatcherDataIPAddr needle;
+
+    needle.addr.addr_family = addr_family;
+    nm_ip_addr_set(addr_family, &needle.addr.addr, addr);
+    return g_hash_table_lookup(NM_NETNS_GET_PRIVATE(self)->watcher_ip_data_idx, &needle);
+}
+
+static WatcherDataIPAddr *
+_watcher_ip_data_lookup_addr(NMNetns *self, const NMIPAddrTyped *addr)
+{
+    return _watcher_ip_data_lookup(self, addr->addr_family, &addr->addr);
+}
+
+static guint
+_watcher_ip_data_hash(gconstpointer _data)
+{
+    const WatcherDataIPAddr *data = _data;
+    NMHashState              h;
+
+    nm_assert(data);
+
+    nm_hash_init(&h, 3152126191u);
+    nm_ip_addr_typed_hash_update(&h, &data->addr);
+    return nm_hash_complete(&h);
+}
+
+static gboolean
+_watcher_ip_data_equal(gconstpointer a, gconstpointer b)
+{
+    const WatcherDataIPAddr *data_a = a;
+    const WatcherDataIPAddr *data_b = b;
+
+    nm_assert(data_a);
+    nm_assert(data_b);
+
+    return nm_ip_addr_typed_equal(&data_a->addr, &data_b->addr);
+}
+
+static NMNetnsWatcherHandle *
+_watcher_lookup_handle(NMNetns                  *self,
+                       NMNetnsWatcherType        watcher_type,
+                       const NMNetnsWatcherData *watcher_data,
+                       gconstpointer             tag)
+{
+    NMNetnsWatcherHandle handle_needle;
+
+    nm_assert(NM_IS_NETNS(self));
+    nm_assert(tag);
+
+    _watcher_handle_init(&handle_needle, watcher_type, watcher_data, tag);
+    return g_hash_table_lookup(NM_NETNS_GET_PRIVATE(self)->watcher_idx, &handle_needle);
+}
+
+static void
+_watcher_register_handle(NMNetns *self, NMNetnsWatcherHandle *handle)
+{
+    NMNetnsPrivate *priv = NM_NETNS_GET_PRIVATE(self);
+
+    switch (handle->watcher_type) {
+    case NM_NETNS_WATCHER_TYPE_IP_ADDR:
+    {
+        WatcherDataIPAddr *data;
+
+        data = _watcher_ip_data_lookup_addr(self, &handle->watcher_data.ip_addr.addr);
+        if (!data) {
+            data  = g_slice_new(WatcherDataIPAddr);
+            *data = (WatcherDataIPAddr){
+                .addr                     = handle->watcher_data.ip_addr.addr,
+                .watcher_ip_addr_lst_head = C_LIST_INIT(data->watcher_ip_addr_lst_head),
+            };
+            if (!g_hash_table_add(priv->watcher_ip_data_idx, data))
+                nm_assert_not_reached();
+        }
+
+        c_list_link_tail(&data->watcher_ip_addr_lst_head,
+                         &handle->reg_data.ip_addr.watcher_ip_addr_lst);
+        return;
+    }
+    }
+    nm_assert_not_reached();
+}
+
+static void
+_watcher_unregister_handle(NMNetns *self, NMNetnsWatcherHandle *handle)
+{
+    NMNetnsPrivate *priv = NM_NETNS_GET_PRIVATE(self);
+
+    switch (handle->watcher_type) {
+    case NM_NETNS_WATCHER_TYPE_IP_ADDR:
+    {
+        gboolean is_last;
+
+        nm_assert(({
+            WatcherDataIPAddr *d;
+
+            d = _watcher_ip_data_lookup_addr(self, &handle->watcher_data.ip_addr.addr);
+            d &&c_list_contains(&d->watcher_ip_addr_lst_head,
+                                &handle->reg_data.ip_addr.watcher_ip_addr_lst);
+        }));
+
+        is_last = c_list_is_empty_or_single(&handle->reg_data.ip_addr.watcher_ip_addr_lst);
+
+        c_list_unlink(&handle->reg_data.ip_addr.watcher_ip_addr_lst);
+
+        if (is_last) {
+            WatcherDataIPAddr *data;
+
+            data = _watcher_ip_data_lookup_addr(self, &handle->watcher_data.ip_addr.addr);
+            nm_assert(data);
+            nm_assert(c_list_is_empty(&data->watcher_ip_addr_lst_head));
+
+            if (!g_hash_table_remove(priv->watcher_ip_data_idx, data))
+                nm_assert_not_reached();
+
+            nm_g_slice_free(data);
+        }
+        return;
+    }
+    }
+    nm_assert_not_reached();
+}
+
+void
+nm_netns_watcher_add(NMNetns                  *self,
+                     NMNetnsWatcherType        watcher_type,
+                     const NMNetnsWatcherData *watcher_data,
+                     gconstpointer             tag,
+                     NMNetnsWatcherCallback    callback,
+                     gpointer                  user_data)
+{
+    NMNetnsPrivate       *priv;
+    NMNetnsWatcherHandle *handle;
+    gboolean              is_new = FALSE;
+    char                  sbuf[500];
+
+    g_return_if_fail(NM_IS_NETNS(self));
+    g_return_if_fail(NM_NETNS_WATCHER_TYPE_VALID(watcher_type));
+    g_return_if_fail(callback);
+    g_return_if_fail(tag);
+
+    priv = NM_NETNS_GET_PRIVATE(self);
+
+    handle = _watcher_lookup_handle(self, watcher_type, watcher_data, tag);
+
+    if (!handle) {
+        WatcherByTag *watcher_by_tag;
+
+        if (G_UNLIKELY(g_hash_table_size(priv->watcher_idx) == 0))
+            g_object_ref(self);
+
+        handle = g_slice_new(NMNetnsWatcherHandle);
+        _watcher_handle_init(handle, watcher_type, watcher_data, tag);
+
+        if (!g_hash_table_add(priv->watcher_idx, handle))
+            nm_assert_not_reached();
+
+        watcher_by_tag = g_hash_table_lookup(priv->watcher_by_tag_idx, &tag);
+
+        if (!watcher_by_tag) {
+            watcher_by_tag  = g_slice_new(WatcherByTag);
+            *watcher_by_tag = (WatcherByTag){
+                .tag                     = tag,
+                .watcher_by_tag_lst_head = C_LIST_INIT(watcher_by_tag->watcher_by_tag_lst_head),
+            };
+            g_hash_table_add(priv->watcher_by_tag_idx, watcher_by_tag);
+        }
+
+        c_list_link_tail(&watcher_by_tag->watcher_by_tag_lst_head, &handle->watcher_tag_lst);
+
+        is_new = TRUE;
+    } else {
+        /* Handles are deduplicated/shared. Hence it is error prone (and likely
+         * a bug) to provide different callback/user_data. Such usage is
+         * rejected here.
+         *
+         * This could be made to work, for example by now allowing handles to
+         * be merged or simply requiring the caller to be careful to not get
+         * this wrong. But that is currently not implemented nor needed.
+         */
+        nm_assert(!tag
+                  || (handle->callback == callback && handle->callback_user_data == user_data));
+    }
+
+    if (_LOGT_ENABLED()
+        && (is_new || handle->callback != callback || handle->callback_user_data != user_data)) {
+        _LOGT("netns-watcher: %s %s",
+              is_new ? "register" : "update",
+              _watcher_handle_to_string(handle, sbuf, sizeof(sbuf)));
+    }
+
+    handle->callback           = callback;
+    handle->callback_user_data = user_data;
+    handle->watcher_dirty      = FALSE;
+
+    if (is_new)
+        _watcher_register_handle(self, handle);
+
+    /* We cannot return a handle here, because handles are deduplicated via the priv->watchers_idx dictionary.
+     * The usage pattern is to use nm_netns_watcher_remove_all(), and not remove them one by one.
+     * As nm_netns_watcher_add() can return the same handle more than once, the user
+     * wouldn't know when it's safe to call nm_netns_watcher_remove_handle().
+     *
+     * This could be extended by adding a ref-count to the handles. But that is not
+     * used currently, so it's not possible to remove watcher by their handle. */
+}
+
+static void
+nm_netns_watcher_remove_handle(NMNetns *self, NMNetnsWatcherHandle *handle)
+{
+    NMNetnsPrivate *priv;
+    char            sbuf[500];
+
+    g_return_if_fail(NM_IS_NETNS(self));
+    g_return_if_fail(handle);
+    nm_assert(handle->tag);
+
+    priv = NM_NETNS_GET_PRIVATE(self);
+
+    nm_assert(g_hash_table_lookup(priv->watcher_idx, handle) == handle);
+
+    _LOGT("netns-watcher: %s %s",
+          "unregister",
+          _watcher_handle_to_string(handle, sbuf, sizeof(sbuf)));
+
+    _watcher_unregister_handle(self, handle);
+
+    if (!g_hash_table_remove(priv->watcher_idx, handle))
+        nm_assert_not_reached();
+
+    if (c_list_is_empty_or_single(&handle->watcher_tag_lst)) {
+        if (!g_hash_table_remove(priv->watcher_by_tag_idx, &handle->tag))
+            nm_assert_not_reached();
+    }
+
+    c_list_unlink_stale(&handle->watcher_tag_lst);
+    nm_g_slice_free(handle);
+
+    if (G_UNLIKELY(g_hash_table_size(priv->watcher_idx) == 0))
+        g_object_unref(self);
+}
+
+void
+nm_netns_watcher_remove_all(NMNetns *self, gconstpointer tag, gboolean all)
+{
+    NMNetnsPrivate       *priv;
+    WatcherByTag         *watcher_by_tag;
+    NMNetnsWatcherHandle *handle;
+    NMNetnsWatcherHandle *handle_safe;
+
+    g_return_if_fail(NM_IS_NETNS(self));
+
+    /* remove-all only works with handles that have a tag associated.
+     * Since NMNetns can have multiple users that are unknown to each
+     * other, it makes no sense to have a remove-all function which
+     * would remove all of them. */
+    g_return_if_fail(tag);
+
+    priv = NM_NETNS_GET_PRIVATE(self);
+
+    watcher_by_tag = g_hash_table_lookup(priv->watcher_by_tag_idx, &tag);
+    if (!watcher_by_tag)
+        return;
+
+    c_list_for_each_entry_safe (handle,
+                                handle_safe,
+                                &watcher_by_tag->watcher_by_tag_lst_head,
+                                watcher_tag_lst) {
+        gboolean is_last;
+
+        if (!all && !handle->watcher_dirty) {
+            /* Survivors are marked as dirty. This enables a pattern where you
+             * call nm_netns_watcher_add() on the elements you care about
+             * (which clears the dirty flag), and then remove all dirty ones
+             * with nm_netns_watcher_remove_all() (which marks the remaining
+             * handles as dirty for the next time). */
+            handle->watcher_dirty = TRUE;
+            continue;
+        }
+
+        is_last = c_list_is_empty_or_single(&watcher_by_tag->watcher_by_tag_lst_head);
+        nm_netns_watcher_remove_handle(self, handle);
+
+        if (is_last) {
+            /* Removing the last handle destroys the "watcher_by_tag" and may even
+             * destroy "self". We must not touch those pointers hereafter.
+             *
+             * If you ever *not* return here, make sure to handle that! */
+            return;
+        }
+    }
+}
+
+/*****************************************************************************/
+
+static void
 set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
 {
     NMNetns        *self = NM_NETNS(object);
@@ -850,6 +1421,7 @@ nm_netns_init(NMNetns *self)
     NMNetnsPrivate *priv = NM_NETNS_GET_PRIVATE(self);
 
     priv->_self_signal_user_data = self;
+
     c_list_init(&priv->l3cfg_signal_pending_lst_head);
 
     G_STATIC_ASSERT_EXPR(G_STRUCT_OFFSET(EcmpTrackObj, obj) == 0);
@@ -859,6 +1431,14 @@ nm_netns_init(NMNetns *self)
                                                        _ecmp_routes_by_ecmpid_equal,
                                                        _ecmp_routes_by_ecmpid_free,
                                                        NULL);
+
+    priv->watcher_idx = g_hash_table_new(_watcher_handle_hash, _watcher_handle_equal);
+    G_STATIC_ASSERT_EXPR(G_STRUCT_OFFSET(WatcherByTag, tag) == 0);
+    priv->watcher_by_tag_idx  = g_hash_table_new_full(nm_pdirect_hash,
+                                                     nm_pdirect_equal,
+                                                     (GDestroyNotify) _watcher_by_tag_destroy,
+                                                     NULL);
+    priv->watcher_ip_data_idx = g_hash_table_new(_watcher_ip_data_hash, _watcher_ip_data_equal);
 }
 
 static void
@@ -937,9 +1517,16 @@ dispose(GObject *object)
     nm_assert(nm_g_hash_table_size(priv->l3cfgs) == 0);
     nm_assert(c_list_is_empty(&priv->l3cfg_signal_pending_lst_head));
     nm_assert(!priv->shared_ips);
+    nm_assert(nm_g_hash_table_size(priv->watcher_idx) == 0);
+    nm_assert(nm_g_hash_table_size(priv->watcher_by_tag_idx) == 0);
+    nm_assert(nm_g_hash_table_size(priv->watcher_ip_data_idx) == 0);
 
     nm_clear_pointer(&priv->ecmp_track_by_obj, g_hash_table_destroy);
     nm_clear_pointer(&priv->ecmp_track_by_ecmpid, g_hash_table_destroy);
+
+    nm_clear_pointer(&priv->watcher_idx, g_hash_table_destroy);
+    nm_clear_pointer(&priv->watcher_by_tag_idx, g_hash_table_destroy);
+    nm_clear_pointer(&priv->watcher_ip_data_idx, g_hash_table_destroy);
 
     nm_clear_g_source_inst(&priv->signal_pending_idle_source);
 

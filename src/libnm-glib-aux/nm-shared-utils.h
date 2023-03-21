@@ -1543,6 +1543,12 @@ nm_g_timeout_add_source(guint timeout_msec, GSourceFunc func, gpointer user_data
         NULL);
 }
 
+gboolean nm_g_timeout_reschedule(GSource   **src,
+                                 gint64     *p_expiry_msec,
+                                 gint64      expiry_msec,
+                                 GSourceFunc func,
+                                 gpointer    user_data);
+
 static inline GSource *
 nm_g_timeout_add_seconds_source(guint timeout_sec, GSourceFunc func, gpointer user_data)
 {

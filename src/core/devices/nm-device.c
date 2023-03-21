@@ -3522,7 +3522,7 @@ _dev_ip_state_check(NMDevice *self, int addr_family)
                                 &s_is_pending,
                                 &s_is_failed);
 
-    has_tna = priv->l3cfg && nm_l3cfg_has_temp_not_available_obj(priv->l3cfg, addr_family);
+    has_tna = priv->l3cfg && nm_l3cfg_has_failedobj_pending(priv->l3cfg, addr_family);
     if (has_tna)
         s_is_pending = TRUE;
 
@@ -3967,9 +3967,7 @@ after_merge_flags:
 }
 
 static gboolean
-_dev_l3_register_l3cds_add_config(NMDevice          *self,
-                                  L3ConfigDataType   l3cd_type,
-                                  NML3CfgConfigFlags flags)
+_dev_l3_register_l3cds_add_config(NMDevice *self, L3ConfigDataType l3cd_type)
 {
     NMDevicePrivate     *priv = NM_DEVICE_GET_PRIVATE(self);
     NML3ConfigMergeFlags merge_flags;
@@ -3992,7 +3990,7 @@ _dev_l3_register_l3cds_add_config(NMDevice          *self,
                                _prop_get_ipvx_dns_priority(self, AF_INET6),
                                acd_defend_type,
                                acd_timeout_msec,
-                               flags,
+                               NM_L3CFG_CONFIG_FLAGS_NONE,
                                merge_flags);
 }
 
@@ -4000,7 +3998,6 @@ static gboolean
 _dev_l3_register_l3cds_set_one_full(NMDevice             *self,
                                     L3ConfigDataType      l3cd_type,
                                     const NML3ConfigData *l3cd,
-                                    NML3CfgConfigFlags    flags,
                                     NMTernary             commit_sync)
 {
     NMDevicePrivate                         *priv     = NM_DEVICE_GET_PRIVATE(self);
@@ -4024,7 +4021,7 @@ _dev_l3_register_l3cds_set_one_full(NMDevice             *self,
 
     if (priv->l3cfg) {
         if (priv->l3cds[l3cd_type].d) {
-            if (_dev_l3_register_l3cds_add_config(self, l3cd_type, flags))
+            if (_dev_l3_register_l3cds_add_config(self, l3cd_type))
                 changed = TRUE;
         }
 
@@ -4048,11 +4045,7 @@ _dev_l3_register_l3cds_set_one(NMDevice             *self,
                                const NML3ConfigData *l3cd,
                                NMTernary             commit_sync)
 {
-    return _dev_l3_register_l3cds_set_one_full(self,
-                                               l3cd_type,
-                                               l3cd,
-                                               NM_L3CFG_CONFIG_FLAGS_NONE,
-                                               commit_sync);
+    return _dev_l3_register_l3cds_set_one_full(self, l3cd_type, l3cd, commit_sync);
 }
 
 static void
@@ -4107,7 +4100,7 @@ _dev_l3_register_l3cds(NMDevice *self,
         }
         if (is_external)
             continue;
-        if (_dev_l3_register_l3cds_add_config(self, i, NM_L3CFG_CONFIG_FLAGS_NONE))
+        if (_dev_l3_register_l3cds_add_config(self, i))
             changed = TRUE;
     }
 
@@ -4261,6 +4254,7 @@ _dev_l3_cfg_notify_cb(NML3Cfg *l3cfg, const NML3ConfigNotifyData *notify_data, N
             _dev_ipshared4_spawn_dnsmasq(self);
             nm_clear_l3cd(&priv->ipshared_data_4.v4.l3cd);
         }
+        _dev_ip_state_check_async(self, AF_UNSPEC);
         _dev_ipmanual_check_ready(self);
         return;
     case NM_L3_CONFIG_NOTIFY_TYPE_IPV4LL_EVENT:
@@ -4269,10 +4263,6 @@ _dev_l3_cfg_notify_cb(NML3Cfg *l3cfg, const NML3ConfigNotifyData *notify_data, N
             _dev_ipll4_notify_event(self);
         return;
     case NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE:
-        return;
-    case NM_L3_CONFIG_NOTIFY_TYPE_ROUTES_TEMPORARY_NOT_AVAILABLE_EXPIRED:
-        /* we commit again. This way we try to configure the routes.*/
-        _dev_l3_cfg_commit(self, FALSE);
         return;
     case NM_L3_CONFIG_NOTIFY_TYPE_PLATFORM_CHANGE_ON_IDLE:
         if (NM_FLAGS_ANY(notify_data->platform_change_on_idle.obj_type_flags,
@@ -4305,9 +4295,6 @@ _dev_l3_cfg_notify_cb(NML3Cfg *l3cfg, const NML3ConfigNotifyData *notify_data, N
                  * synchronously to update the current state and schedule a commit. */
                 nm_ndisc_dad_failed(priv->ipac6_data.ndisc, conflicts, TRUE);
             } else if (ready) {
-                if (nm_l3cfg_has_temp_not_available_obj(priv->l3cfg, AF_INET6))
-                    _dev_l3_cfg_commit(self, FALSE);
-
                 nm_clear_l3cd(&priv->ipac6_data.l3cd);
                 _dev_ipac6_set_state(self, NM_DEVICE_IP_STATE_READY);
                 _dev_ip_state_check_async(self, AF_INET6);
@@ -10314,14 +10301,6 @@ _dev_ipmanual_check_ready(NMDevice *self)
             _dev_ipmanual_set_state(self, addr_family, NM_DEVICE_IP_STATE_FAILED);
             _dev_ip_state_check_async(self, AF_UNSPEC);
         } else if (ready) {
-            if (priv->ipmanual_data.state_x[IS_IPv4] != NM_DEVICE_IP_STATE_READY
-                && nm_l3cfg_has_temp_not_available_obj(priv->l3cfg, addr_family)) {
-                /* Addresses with pending ACD/DAD are a possible cause for the
-                 * presence of temporarily-not-available objects. Once all addresses
-                 * are ready, retry to commit those unavailable objects. */
-                _dev_l3_cfg_commit(self, FALSE);
-            }
-
             _dev_ipmanual_set_state(self, addr_family, NM_DEVICE_IP_STATE_READY);
             _dev_ip_state_check_async(self, AF_UNSPEC);
         }
@@ -10487,7 +10466,6 @@ _dev_ipdhcpx_notify(NMDhcpClient *client, const NMDhcpClientNotifyData *notify_d
         _dev_l3_register_l3cds_set_one_full(self,
                                             L3_CONFIG_DATA_TYPE_DHCP_X(IS_IPv4),
                                             notify_data->lease_update.l3cd,
-                                            NM_L3CFG_CONFIG_FLAGS_FORCE_ONCE,
                                             FALSE);
 
         if (notify_data->lease_update.accepted) {
@@ -10708,7 +10686,6 @@ _dev_ipdhcpx_start(NMDevice *self, int addr_family)
         _dev_l3_register_l3cds_set_one_full(self,
                                             L3_CONFIG_DATA_TYPE_DHCP_X(IS_IPv4),
                                             previous_lease,
-                                            NM_L3CFG_CONFIG_FLAGS_FORCE_ONCE,
                                             FALSE);
     }
 
@@ -11641,11 +11618,7 @@ _dev_ipac6_ndisc_config_changed(NMNDisc              *ndisc,
 
     _dev_ipac6_grace_period_start(self, 0, TRUE);
 
-    _dev_l3_register_l3cds_set_one_full(self,
-                                        L3_CONFIG_DATA_TYPE_AC_6,
-                                        l3cd,
-                                        NM_L3CFG_CONFIG_FLAGS_FORCE_ONCE,
-                                        FALSE);
+    _dev_l3_register_l3cds_set_one_full(self, L3_CONFIG_DATA_TYPE_AC_6, l3cd, FALSE);
 
     nm_clear_l3cd(&priv->ipac6_data.l3cd);
     ready = nm_l3cfg_check_ready(priv->l3cfg,

@@ -8149,6 +8149,7 @@ do_add_addrroute(NMPlatform      *platform,
             do_request_one_type_by_needle_object(platform, obj_id);
     }
 
+    NM_SET_OUT(out_extack_msg, g_steal_pointer(&extack_msg));
     return wait_for_nl_response_to_nmerr(seq_result);
 }
 
