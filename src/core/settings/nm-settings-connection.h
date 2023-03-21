@@ -338,6 +338,8 @@ gboolean nm_settings_connection_has_seen_bssid(NMSettingsConnection *self, const
 
 void nm_settings_connection_add_seen_bssid(NMSettingsConnection *self, const char *seen_bssid);
 
+guint nm_settings_connection_get_num_seen_bssids(NMSettingsConnection *self);
+
 gboolean nm_settings_connection_autoconnect_is_blocked(NMSettingsConnection *self);
 
 NMSettingsAutoconnectBlockedReason
