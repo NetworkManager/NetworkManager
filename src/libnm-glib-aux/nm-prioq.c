@@ -16,9 +16,6 @@
 
 #include "nm-prioq.h"
 
-#include <errno.h>
-#include <stdlib.h>
-
 /*****************************************************************************/
 
 typedef struct _NMPrioqItem {
