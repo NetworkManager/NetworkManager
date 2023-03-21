@@ -385,7 +385,7 @@ wifi_nl80211_get_freq(NMWifiUtils *data)
 }
 
 static guint32
-wifi_nl80211_find_freq(NMWifiUtils *data, const guint32 *freqs)
+wifi_nl80211_find_freq(NMWifiUtils *data, const guint32 *freqs, gboolean ap)
 {
     NMWifiUtilsNl80211 *self = (NMWifiUtilsNl80211 *) data;
     int                 i;
@@ -396,6 +396,8 @@ wifi_nl80211_find_freq(NMWifiUtils *data, const guint32 *freqs)
     for (j = 0; freqs[j] != 0; j++) {
         for (i = 0; i < self->num_freqs; i++) {
             if (self->freqs[i].disabled)
+                continue;
+            if (ap && self->freqs[i].no_ir)
                 continue;
             if (self->freqs[i].freq == freqs[j])
                 return freqs[j];

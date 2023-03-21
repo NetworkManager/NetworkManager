@@ -835,7 +835,7 @@ wifi_set_mode(NMPlatform *platform, int ifindex, _NM80211Mode mode)
 }
 
 static guint32
-wifi_find_frequency(NMPlatform *platform, int ifindex, const guint32 *freqs)
+wifi_find_frequency(NMPlatform *platform, int ifindex, const guint32 *freqs, gboolean ap)
 {
     return freqs[0];
 }
