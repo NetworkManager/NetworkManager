@@ -2532,6 +2532,14 @@ nm_settings_connection_add_seen_bssid(NMSettingsConnection *self, const char *se
     nm_key_file_db_set_string_list(priv->kf_db_seen_bssids, connection_uuid, seen_bssids_strv, i);
 }
 
+guint
+nm_settings_connection_get_num_seen_bssids(NMSettingsConnection *self)
+{
+    g_return_val_if_fail(NM_IS_SETTINGS_CONNECTION(self), 0);
+
+    return nm_g_hash_table_size(NM_SETTINGS_CONNECTION_GET_PRIVATE(self)->seen_bssids_hash);
+}
+
 /*****************************************************************************/
 
 /**

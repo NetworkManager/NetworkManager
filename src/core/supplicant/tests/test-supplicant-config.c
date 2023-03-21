@@ -127,7 +127,7 @@ build_supplicant_config(NMConnection  *connection,
     g_assert_no_error(error);
     g_assert(success);
 
-    success = nm_supplicant_config_add_bgscan(config, connection, &error);
+    success = nm_supplicant_config_add_bgscan(config, connection, 0, &error);
     g_assert_no_error(error);
     g_assert(success);
 
