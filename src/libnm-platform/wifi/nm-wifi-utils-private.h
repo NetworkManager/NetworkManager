@@ -28,8 +28,9 @@ typedef struct {
     /* Return current frequency in MHz (really associated BSS frequency) */
     guint32 (*get_freq)(NMWifiUtils *data);
 
-    /* Return first supported frequency in the zero-terminated list */
-    guint32 (*find_freq)(NMWifiUtils *data, const guint32 *freqs);
+    /* Return first supported frequency in the zero-terminated list. @ap
+     * indicates that the frequency must be suited for AP mode. */
+    guint32 (*find_freq)(NMWifiUtils *data, const guint32 *freqs, gboolean ap);
 
     /*
      * @out_bssid: must be NULL or an ETH_ALEN-byte buffer

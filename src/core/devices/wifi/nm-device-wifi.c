@@ -3230,7 +3230,8 @@ ensure_hotspot_frequency(NMDeviceWifi *self, NMSettingWireless *s_wifi, NMWifiAP
 
     freq = nm_platform_wifi_find_frequency(nm_device_get_platform(device),
                                            nm_device_get_ifindex(device),
-                                           rnd_freqs);
+                                           rnd_freqs,
+                                           TRUE);
     if (freq == 0)
         freq = rnd_freqs[0];
 
