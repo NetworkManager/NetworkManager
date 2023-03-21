@@ -592,7 +592,10 @@ nm_supplicant_config_add_setting_wireless(NMSupplicantConfig *self,
 }
 
 gboolean
-nm_supplicant_config_add_bgscan(NMSupplicantConfig *self, NMConnection *connection, GError **error)
+nm_supplicant_config_add_bgscan(NMSupplicantConfig *self,
+                                NMConnection       *connection,
+                                guint               num_seen_bssids,
+                                GError            **error)
 {
     NMSettingWireless         *s_wifi;
     NMSettingWirelessSecurity *s_wsec;
@@ -629,7 +632,7 @@ nm_supplicant_config_add_bgscan(NMSupplicantConfig *self, NMConnection *connecti
      * when the signal is still somewhat OK so we have an up-to-date roam
      * candidate list when the signal gets bad.
      */
-    if (nm_setting_wireless_get_num_seen_bssids(s_wifi) > 1
+    if (num_seen_bssids > 1u
         || ((s_wsec = nm_connection_get_setting_wireless_security(connection))
             && NM_IN_STRSET(nm_setting_wireless_security_get_key_mgmt(s_wsec),
                             "ieee8021x",

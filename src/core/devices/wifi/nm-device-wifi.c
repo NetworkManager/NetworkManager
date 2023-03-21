@@ -2907,10 +2907,11 @@ supplicant_connection_timeout_cb(gpointer user_data)
 }
 
 static NMSupplicantConfig *
-build_supplicant_config(NMDeviceWifi *self,
-                        NMConnection *connection,
-                        guint32       fixed_freq,
-                        GError      **error)
+build_supplicant_config(NMDeviceWifi         *self,
+                        NMSettingsConnection *sett_conn,
+                        NMConnection         *connection,
+                        guint32               fixed_freq,
+                        GError              **error)
 {
     NMDeviceWifiPrivate          *priv   = NM_DEVICE_WIFI_GET_PRIVATE(self);
     NMSupplicantConfig           *config = NULL;
@@ -2939,7 +2940,10 @@ build_supplicant_config(NMDeviceWifi *self,
         goto error;
     }
 
-    if (!nm_supplicant_config_add_bgscan(config, connection, error)) {
+    if (!nm_supplicant_config_add_bgscan(config,
+                                         connection,
+                                         nm_settings_connection_get_num_seen_bssids(sett_conn),
+                                         error)) {
         g_prefix_error(error, "bgscan: ");
         goto error;
     }
@@ -3273,6 +3277,7 @@ act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
     NMActRequest                       *req;
     NMWifiAP                           *ap;
     NMConnection                       *connection;
+    NMSettingsConnection               *sett_conn;
     const char                         *setting_name;
     NMSettingWireless                  *s_wireless;
     GError                             *error = NULL;
@@ -3295,6 +3300,9 @@ act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
     }
 
     ap_mode = nm_wifi_ap_get_mode(ap);
+
+    sett_conn = nm_act_request_get_settings_connection(req);
+    nm_assert(sett_conn);
 
     connection = nm_act_request_get_applied_connection(req);
     s_wireless = nm_connection_get_setting_wireless(connection);
@@ -3344,7 +3352,7 @@ act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
         set_powersave(device);
 
     /* Build up the supplicant configuration */
-    config = build_supplicant_config(self, connection, nm_wifi_ap_get_freq(ap), &error);
+    config = build_supplicant_config(self, sett_conn, connection, nm_wifi_ap_get_freq(ap), &error);
     if (!config) {
         _LOGE(LOGD_DEVICE | LOGD_WIFI,
               "Activation: (wifi) couldn't build wireless configuration: %s",
