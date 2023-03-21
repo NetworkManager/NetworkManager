@@ -51,6 +51,7 @@ const NMUtilsDNSOptionDesc _nm_utils_dns_option_descs[] = {
     {NM_SETTING_DNS_OPTION_USE_VC, FALSE, FALSE},
     {NM_SETTING_DNS_OPTION_NO_RELOAD, FALSE, FALSE},
     {NM_SETTING_DNS_OPTION_TRUST_AD, FALSE, FALSE},
+    {NM_SETTING_DNS_OPTION_NO_AAAA, FALSE, FALSE},
     {NULL, FALSE, FALSE}};
 
 static char *
@@ -6370,9 +6371,10 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
      * distinct from an empty list of properties.
      *
      * The currently supported options are "attempts", "debug", "edns0",
-     * "inet6", "ip6-bytestring", "ip6-dotint", "ndots", "no-check-names",
-     * "no-ip6-dotint", "no-reload", "no-tld-query", "rotate", "single-request",
-     * "single-request-reopen", "timeout", "trust-ad", "use-vc".
+     * "inet6", "ip6-bytestring", "ip6-dotint", "ndots", "no-aaaa",
+     * "no-check-names", "no-ip6-dotint", "no-reload", "no-tld-query",
+     * "rotate", "single-request", "single-request-reopen", "timeout",
+     * "trust-ad", "use-vc".
      *
      * The "trust-ad" setting is only honored if the profile contributes
      * name servers to resolv.conf, and if all contributing profiles have
