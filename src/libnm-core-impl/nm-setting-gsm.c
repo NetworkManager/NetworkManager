@@ -825,7 +825,7 @@ nm_setting_gsm_class_init(NMSettingGsmClass *klass)
      * NMSettingGsm:initial-eps-bearer-apn:
      *
      * For LTE modems, this sets the APN for the initial EPS bearer that is set
-     * up when attaching to the network.  Setting this parameters implies
+     * up when attaching to the network.  Setting this parameter implies
      * initial-eps-bearer-configure to be TRUE.
      *
      * Since: 1.44
