@@ -102,7 +102,7 @@ nm_main_utils_ensure_statedir(void)
         && g_mkdir_with_parents(parent, 0755) != 0) {
         errsv = errno;
         fprintf(stderr,
-                "Cannot create parents for '%s': %s",
+                _("Cannot create parents for '%s': %s\n"),
                 NMSTATEDIR,
                 nm_strerror_native(errsv));
         exit(1);
@@ -110,7 +110,7 @@ nm_main_utils_ensure_statedir(void)
     /* Ensure state directory exists */
     if (g_mkdir_with_parents(NMSTATEDIR, 0700) != 0) {
         errsv = errno;
-        fprintf(stderr, "Cannot create '%s': %s", NMSTATEDIR, nm_strerror_native(errsv));
+        fprintf(stderr, _("Cannot create '%s': %s\n"), NMSTATEDIR, nm_strerror_native(errsv));
         exit(1);
     }
 }
@@ -123,7 +123,7 @@ nm_main_utils_ensure_rundir(void)
     /* Setup runtime directory */
     if (g_mkdir_with_parents(NMRUNDIR, 0755) != 0) {
         errsv = errno;
-        fprintf(stderr, _("Cannot create '%s': %s"), NMRUNDIR, nm_strerror_native(errsv));
+        fprintf(stderr, _("Cannot create '%s': %s\n"), NMRUNDIR, nm_strerror_native(errsv));
         exit(1);
     }
 
@@ -135,7 +135,7 @@ nm_main_utils_ensure_rundir(void)
         errsv = errno;
         if (errsv != EEXIST) {
             fprintf(stderr,
-                    _("Cannot create '%s': %s"),
+                    _("Cannot create '%s': %s\n"),
                     NM_CONFIG_DEVICE_STATE_DIR,
                     nm_strerror_native(errsv));
             exit(1);

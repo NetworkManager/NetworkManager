@@ -1778,17 +1778,17 @@ static void
 activate_slave_connections(NMPolicy *self, NMDevice *device)
 {
     NMPolicyPrivate             *priv = NM_POLICY_GET_PRIVATE(self);
-    const char                  *master_device;
-    const char                  *master_uuid_settings = NULL;
-    const char                  *master_uuid_applied  = NULL;
+    const char                  *controller_device;
+    const char                  *controller_uuid_settings = NULL;
+    const char                  *controller_uuid_applied  = NULL;
     guint                        i;
     NMActRequest                *req;
     gboolean                     internal_activation = FALSE;
     NMSettingsConnection *const *connections;
     gboolean                     changed;
 
-    master_device = nm_device_get_iface(device);
-    g_assert(master_device);
+    controller_device = nm_device_get_iface(device);
+    g_assert(controller_device);
 
     req = nm_device_get_act_request(device);
     if (req) {
@@ -1798,13 +1798,13 @@ activate_slave_connections(NMPolicy *self, NMDevice *device)
 
         connection = nm_active_connection_get_applied_connection(NM_ACTIVE_CONNECTION(req));
         if (connection)
-            master_uuid_applied = nm_connection_get_uuid(connection);
+            controller_uuid_applied = nm_connection_get_uuid(connection);
 
         sett_conn = nm_active_connection_get_settings_connection(NM_ACTIVE_CONNECTION(req));
         if (sett_conn) {
-            master_uuid_settings = nm_settings_connection_get_uuid(sett_conn);
-            if (nm_streq0(master_uuid_settings, master_uuid_applied))
-                master_uuid_settings = NULL;
+            controller_uuid_settings = nm_settings_connection_get_uuid(sett_conn);
+            if (nm_streq0(controller_uuid_settings, controller_uuid_applied))
+                controller_uuid_settings = NULL;
         }
 
         subject = nm_active_connection_get_subject(NM_ACTIVE_CONNECTION(req));
@@ -1817,14 +1817,17 @@ activate_slave_connections(NMPolicy *self, NMDevice *device)
     for (i = 0; connections[i]; i++) {
         NMSettingsConnection *sett_conn = connections[i];
         NMSettingConnection  *s_slave_con;
-        const char           *slave_master;
+        const char           *slave_controller;
 
         s_slave_con =
             nm_connection_get_setting_connection(nm_settings_connection_get_connection(sett_conn));
-        slave_master = nm_setting_connection_get_master(s_slave_con);
-        if (!slave_master)
+        slave_controller = nm_setting_connection_get_controller(s_slave_con);
+        if (!slave_controller)
             continue;
-        if (!NM_IN_STRSET(slave_master, master_device, master_uuid_applied, master_uuid_settings))
+        if (!NM_IN_STRSET(slave_controller,
+                          controller_device,
+                          controller_uuid_applied,
+                          controller_uuid_settings))
             continue;
 
         if (!internal_activation) {

@@ -550,7 +550,7 @@ GHashTable *_nm_tc_action_get_attributes(NMTCAction *action);
 /*****************************************************************************/
 
 static inline gboolean
-_nm_connection_type_is_master(const char *type)
+_nm_connection_type_is_controller(const char *type)
 {
     return (NM_IN_STRSET(type,
                          NM_SETTING_BOND_SETTING_NAME,
@@ -844,6 +844,8 @@ struct _NMSettInfoProperty {
      * is not deprecated. This flag is about the deprecation of the D-Bus representation
      * of a property. */
     bool dbus_deprecated : 1;
+
+    const gchar *alias_prop_name;
 };
 
 typedef struct {

@@ -261,7 +261,7 @@ connection_master_changed_cb(GObject *object, GParamSpec *pspec, gpointer user_d
     NMSetting           *s_ipv4, *s_ipv6;
     const char          *value, *tmp_str;
 
-    value = nm_setting_connection_get_master(s_con);
+    value = nm_setting_connection_get_controller(s_con);
     if (value) {
         s_ipv4 = nm_connection_get_setting_by_name(connection, NM_SETTING_IP4_CONFIG_SETTING_NAME);
         s_ipv6 = nm_connection_get_setting_by_name(connection, NM_SETTING_IP6_CONFIG_SETTING_NAME);

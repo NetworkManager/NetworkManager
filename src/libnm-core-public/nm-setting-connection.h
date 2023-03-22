@@ -47,6 +47,7 @@ G_BEGIN_DECLS
 #define NM_SETTING_CONNECTION_PERMISSIONS           "permissions"
 #define NM_SETTING_CONNECTION_ZONE                  "zone"
 #define NM_SETTING_CONNECTION_MASTER                "master"
+#define NM_SETTING_CONNECTION_CONTROLLER            "controller"
 #define NM_SETTING_CONNECTION_SLAVE_TYPE            "slave-type"
 #define NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES    "autoconnect-slaves"
 #define NM_SETTING_CONNECTION_SECONDARIES           "secondaries"
@@ -67,12 +68,12 @@ G_BEGIN_DECLS
  * NMSettingConnectionAutoconnectSlaves:
  * @NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES_DEFAULT: default value
  * @NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES_NO: slaves are not brought up when
- *   master is activated
+ *   controller is activated
  * @NM_SETTING_CONNECTION_AUTOCONNECT_SLAVES_YES: slaves are brought up when
- *   master is activated
+ *   controller is activated
  *
  * #NMSettingConnectionAutoconnectSlaves values indicate whether slave connections
- * should be activated when master is activated.
+ * should be activated when controller is activated.
  *
  * Since: 1.2
  */
@@ -191,7 +192,22 @@ gboolean    nm_setting_connection_remove_permission_by_value(NMSettingConnection
                                                              const char          *pitem,
                                                              const char          *detail);
 
-const char *nm_setting_connection_get_master(NMSettingConnection *setting);
+NM_AVAILABLE_IN_1_42
+const char *nm_setting_connection_get_controller(NMSettingConnection *setting);
+
+/**
+ * nm_setting_connection_get_master:
+ * @setting: the #NMSettingConnection
+ *
+ * Deprecated: 1.42: Use nm_setting_connection_get_controller() instead
+ */
+NM_DEPRECATED_IN_1_42
+static inline const char *
+nm_setting_connection_get_master(NMSettingConnection *setting)
+{
+    return nm_setting_connection_get_controller(setting);
+}
+
 gboolean    nm_setting_connection_is_slave_type(NMSettingConnection *setting, const char *type);
 const char *nm_setting_connection_get_slave_type(NMSettingConnection *setting);
 NM_AVAILABLE_IN_1_2

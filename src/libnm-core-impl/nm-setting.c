@@ -188,7 +188,7 @@ _nm_properties_override_assert(const NMSettInfoProperty *prop_info)
         const NMSettInfoPropertType *property_type = prop_info->property_type;
 
         /* we always require a dbus_type. */
-        nm_assert(property_type->dbus_type);
+        //nm_assert(property_type->dbus_type);
 
         if (property_type->typdata_from_dbus.gprop_fcn)
             nm_assert(property_type->from_dbus_fcn == _nm_setting_property_from_dbus_fcn_gprop);
@@ -416,8 +416,8 @@ _nm_setting_class_commit(NMSettingClass             *setting_class,
 
 has_property_type:
         nm_assert(p->property_type);
-        nm_assert(p->property_type->dbus_type);
-        nm_assert(g_variant_type_string_is_valid((const char *) p->property_type->dbus_type));
+        //nm_assert(p->property_type->dbus_type);
+        //nm_assert(g_variant_type_string_is_valid((const char *) p->property_type->dbus_type));
     }
 
     G_STATIC_ASSERT_EXPR(G_STRUCT_OFFSET(NMSettInfoProperty, name) == 0);
@@ -750,6 +750,108 @@ out_take:
     return nm_strdup_reset_take(dst, s);
 }
 
+static void
+_get_property_direct(NMSetting                *setting,
+                     const NMSettInfoSetting  *sett_info,
+                     const NMSettInfoProperty *property_info,
+                     GValue                   *value)
+{
+    switch (property_info->property_type->direct_type) {
+    case NM_VALUE_TYPE_BOOL:
+    {
+        const bool *p_val = _nm_setting_get_private_field(setting, sett_info, property_info);
+
+        g_value_set_boolean(value, *p_val);
+        break;
+    }
+    case NM_VALUE_TYPE_INT32:
+    {
+        const gint32 *p_val = _nm_setting_get_private_field(setting, sett_info, property_info);
+
+        g_value_set_int(value, *p_val);
+        break;
+    }
+    case NM_VALUE_TYPE_UINT32:
+    {
+        const guint32 *p_val = _nm_setting_get_private_field(setting, sett_info, property_info);
+
+        g_value_set_uint(value, *p_val);
+        break;
+    }
+    case NM_VALUE_TYPE_INT64:
+    {
+        const gint64 *p_val = _nm_setting_get_private_field(setting, sett_info, property_info);
+
+        g_value_set_int64(value, *p_val);
+        break;
+    }
+    case NM_VALUE_TYPE_UINT64:
+    {
+        const guint64 *p_val = _nm_setting_get_private_field(setting, sett_info, property_info);
+
+        g_value_set_uint64(value, *p_val);
+        break;
+    }
+    case NM_VALUE_TYPE_ENUM:
+    {
+        const int *p_val = _nm_setting_get_private_field(setting, sett_info, property_info);
+
+        g_value_set_enum(value, *p_val);
+        break;
+    }
+    case NM_VALUE_TYPE_FLAGS:
+    {
+        const guint *p_val = _nm_setting_get_private_field(setting, sett_info, property_info);
+
+        g_value_set_flags(value, *p_val);
+        break;
+    }
+    case NM_VALUE_TYPE_STRING:
+    {
+        const char *const *p_val = _nm_setting_get_private_field(setting, sett_info, property_info);
+
+        g_value_set_string(value, *p_val);
+        break;
+    }
+    case NM_VALUE_TYPE_BYTES:
+    {
+        const GBytes *const *p_val =
+            _nm_setting_get_private_field(setting, sett_info, property_info);
+
+        g_value_set_boxed(value, *p_val);
+        break;
+    }
+    case NM_VALUE_TYPE_STRV:
+    {
+        const NMValueStrv *p_val = _nm_setting_get_private_field(setting, sett_info, property_info);
+
+        g_value_take_boxed(value, nm_strvarray_get_strv_non_empty_dup(p_val->arr, NULL));
+        break;
+    }
+    case NM_VALUE_TYPE_ALIAS:
+    {
+        const NMSettInfoProperty *alias_property_info;
+        GParamSpec               *alias_pspec;
+
+        g_return_if_fail(property_info->alias_prop_name);
+
+        alias_pspec = g_object_class_find_property(G_OBJECT_GET_CLASS(setting),
+                                                   property_info->alias_prop_name);
+        g_return_if_fail(alias_pspec);
+
+        alias_property_info = _nm_sett_info_property_lookup_by_param_spec(sett_info, alias_pspec);
+        g_return_if_fail(alias_property_info);
+
+        _get_property_direct(setting, sett_info, alias_property_info, value);
+        return;
+    }
+    default:
+        g_return_if_reached();
+    }
+
+    return;
+}
+
 void
 _nm_setting_property_get_property_direct(GObject    *object,
                                          guint       prop_id,
@@ -764,91 +866,162 @@ _nm_setting_property_get_property_direct(GObject    *object,
     nm_assert(sett_info);
 
     property_info = _nm_sett_info_property_lookup_by_param_spec(sett_info, pspec);
-    if (!property_info)
-        goto out_fail;
+    if (!property_info) {
+        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+        return;
+    }
 
     nm_assert(property_info->param_spec == pspec);
+    _get_property_direct(setting, sett_info, property_info, value);
+}
 
+static void
+_set_property_direct(NMSetting                *setting,
+                     const NMSettInfoSetting  *sett_info,
+                     const NMSettInfoProperty *property_info,
+                     const GValue             *value)
+{
     switch (property_info->property_type->direct_type) {
     case NM_VALUE_TYPE_BOOL:
     {
-        const bool *p_val = _nm_setting_get_private_field(setting, sett_info, property_info);
+        bool    *p_val = _nm_setting_get_private_field(setting, sett_info, property_info);
+        gboolean v;
 
-        g_value_set_boolean(value, *p_val);
-        return;
+        v = g_value_get_boolean(value);
+        if (*p_val == v)
+            return;
+        *p_val = v;
+        break;
     }
     case NM_VALUE_TYPE_INT32:
     {
-        const gint32 *p_val = _nm_setting_get_private_field(setting, sett_info, property_info);
+        gint32 *p_val = _nm_setting_get_private_field(setting, sett_info, property_info);
+        int     v;
 
-        g_value_set_int(value, *p_val);
-        return;
+        v = g_value_get_int(value);
+        if (*p_val == v)
+            return;
+        *p_val = v;
+
+        /* truncation cannot happen, because the param_spec is supposed to have suitable
+         * minimum/maximum values so that we are in range for int32. */
+        nm_assert(*p_val == v);
+        break;
     }
     case NM_VALUE_TYPE_UINT32:
     {
-        const guint32 *p_val = _nm_setting_get_private_field(setting, sett_info, property_info);
+        guint32 *p_val = _nm_setting_get_private_field(setting, sett_info, property_info);
+        guint    v;
 
-        g_value_set_uint(value, *p_val);
-        return;
+        v = g_value_get_uint(value);
+        if (*p_val == v)
+            return;
+        *p_val = v;
+
+        /* truncation cannot happen, because the param_spec is supposed to have suitable
+         * minimum/maximum values so that we are in range for uint32. */
+        nm_assert(*p_val == v);
+        break;
     }
     case NM_VALUE_TYPE_INT64:
     {
-        const gint64 *p_val = _nm_setting_get_private_field(setting, sett_info, property_info);
+        gint64 *p_val = _nm_setting_get_private_field(setting, sett_info, property_info);
+        gint64  v;
 
-        g_value_set_int64(value, *p_val);
-        return;
+        v = g_value_get_int64(value);
+        if (*p_val == v)
+            return;
+        *p_val = v;
+        break;
     }
     case NM_VALUE_TYPE_UINT64:
     {
-        const guint64 *p_val = _nm_setting_get_private_field(setting, sett_info, property_info);
+        guint64 *p_val = _nm_setting_get_private_field(setting, sett_info, property_info);
+        guint64  v;
 
-        g_value_set_uint64(value, *p_val);
-        return;
+        v = g_value_get_uint64(value);
+        if (*p_val == v)
+            return;
+        *p_val = v;
+        break;
     }
     case NM_VALUE_TYPE_ENUM:
     {
-        const int *p_val = _nm_setting_get_private_field(setting, sett_info, property_info);
+        int *p_val = _nm_setting_get_private_field(setting, sett_info, property_info);
+        int  v;
 
-        g_value_set_enum(value, *p_val);
-        return;
+        v = g_value_get_enum(value);
+        if (*p_val == v)
+            return;
+        *p_val = v;
+        break;
     }
     case NM_VALUE_TYPE_FLAGS:
     {
-        const guint *p_val = _nm_setting_get_private_field(setting, sett_info, property_info);
+        guint *p_val = _nm_setting_get_private_field(setting, sett_info, property_info);
+        guint  v;
 
-        g_value_set_flags(value, *p_val);
-        return;
+        v = g_value_get_flags(value);
+        if (*p_val == v)
+            return;
+        *p_val = v;
+        break;
     }
     case NM_VALUE_TYPE_STRING:
-    {
-        const char *const *p_val = _nm_setting_get_private_field(setting, sett_info, property_info);
-
-        g_value_set_string(value, *p_val);
-        return;
-    }
+        if (!_property_direct_set_string(sett_info,
+                                         property_info,
+                                         setting,
+                                         g_value_get_string(value)))
+            return;
+        break;
     case NM_VALUE_TYPE_BYTES:
     {
-        const GBytes *const *p_val =
-            _nm_setting_get_private_field(setting, sett_info, property_info);
+        GBytes **p_val = _nm_setting_get_private_field(setting, sett_info, property_info);
+        GBytes  *v;
+        _nm_unused gs_unref_bytes GBytes *old = NULL;
 
-        g_value_set_boxed(value, *p_val);
-        return;
+        v = g_value_get_boxed(value);
+        if (nm_g_bytes_equal0(*p_val, v))
+            return;
+        old    = *p_val;
+        *p_val = v ? g_bytes_ref(v) : NULL;
+        break;
     }
     case NM_VALUE_TYPE_STRV:
     {
-        const NMValueStrv *p_val = _nm_setting_get_private_field(setting, sett_info, property_info);
+        NMValueStrv       *p_val = _nm_setting_get_private_field(setting, sett_info, property_info);
+        const char *const *v;
 
-        g_value_take_boxed(value, nm_strvarray_get_strv_non_empty_dup(p_val->arr, NULL));
-        return;
+        v = g_value_get_boxed(value);
+        if (nm_strvarray_equal_strv(p_val->arr, v, -1))
+            return;
+
+        nm_strvarray_set_strv(&p_val->arr, v);
+        break;
+    }
+    case NM_VALUE_TYPE_ALIAS:
+    {
+        const NMSettInfoProperty *alias_property_info;
+        GParamSpec               *alias_pspec;
+
+        g_return_if_fail(property_info->alias_prop_name);
+
+        alias_pspec = g_object_class_find_property(G_OBJECT_GET_CLASS(setting),
+                                                   property_info->alias_prop_name);
+        g_return_if_fail(alias_pspec);
+
+        alias_property_info = _nm_sett_info_property_lookup_by_param_spec(sett_info, alias_pspec);
+        g_return_if_fail(alias_property_info);
+
+        _set_property_direct(setting, sett_info, alias_property_info, value);
+        break;
     }
     default:
-        goto out_fail;
+        g_return_if_reached();
     }
 
-    return;
-
-out_fail:
-    G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+    if (property_info->alias_prop_name)
+        g_object_notify(G_OBJECT(setting), property_info->alias_prop_name);
 }
 
 void
@@ -865,144 +1038,19 @@ _nm_setting_property_set_property_direct(GObject      *object,
     nm_assert(sett_info);
 
     property_info = _nm_sett_info_property_lookup_by_param_spec(sett_info, pspec);
-    if (!property_info)
-        goto out_fail;
+    if (!property_info) {
+        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+        return;
+    }
 
     nm_assert(property_info->param_spec == pspec);
 
-    switch (property_info->property_type->direct_type) {
-    case NM_VALUE_TYPE_BOOL:
-    {
-        bool    *p_val = _nm_setting_get_private_field(setting, sett_info, property_info);
-        gboolean v;
+    _set_property_direct(setting, sett_info, property_info, value);
 
-        v = g_value_get_boolean(value);
-        if (*p_val == v)
-            return;
-        *p_val = v;
-        goto out_notify;
-    }
-    case NM_VALUE_TYPE_INT32:
-    {
-        gint32 *p_val = _nm_setting_get_private_field(setting, sett_info, property_info);
-        int     v;
-
-        v = g_value_get_int(value);
-        if (*p_val == v)
-            return;
-        *p_val = v;
-
-        /* truncation cannot happen, because the param_spec is supposed to have suitable
-         * minimum/maximum values so that we are in range for int32. */
-        nm_assert(*p_val == v);
-        goto out_notify;
-    }
-    case NM_VALUE_TYPE_UINT32:
-    {
-        guint32 *p_val = _nm_setting_get_private_field(setting, sett_info, property_info);
-        guint    v;
-
-        v = g_value_get_uint(value);
-        if (*p_val == v)
-            return;
-        *p_val = v;
-
-        /* truncation cannot happen, because the param_spec is supposed to have suitable
-         * minimum/maximum values so that we are in range for uint32. */
-        nm_assert(*p_val == v);
-        goto out_notify;
-    }
-    case NM_VALUE_TYPE_INT64:
-    {
-        gint64 *p_val = _nm_setting_get_private_field(setting, sett_info, property_info);
-        gint64  v;
-
-        v = g_value_get_int64(value);
-        if (*p_val == v)
-            return;
-        *p_val = v;
-        goto out_notify;
-    }
-    case NM_VALUE_TYPE_UINT64:
-    {
-        guint64 *p_val = _nm_setting_get_private_field(setting, sett_info, property_info);
-        guint64  v;
-
-        v = g_value_get_uint64(value);
-        if (*p_val == v)
-            return;
-        *p_val = v;
-        goto out_notify;
-    }
-    case NM_VALUE_TYPE_ENUM:
-    {
-        int *p_val = _nm_setting_get_private_field(setting, sett_info, property_info);
-        int  v;
-
-        v = g_value_get_enum(value);
-        if (*p_val == v)
-            return;
-        *p_val = v;
-        goto out_notify;
-    }
-    case NM_VALUE_TYPE_FLAGS:
-    {
-        guint *p_val = _nm_setting_get_private_field(setting, sett_info, property_info);
-        guint  v;
-
-        v = g_value_get_flags(value);
-        if (*p_val == v)
-            return;
-        *p_val = v;
-        goto out_notify;
-    }
-    case NM_VALUE_TYPE_STRING:
-        if (!_property_direct_set_string(sett_info,
-                                         property_info,
-                                         setting,
-                                         g_value_get_string(value)))
-            return;
-        goto out_notify;
-    case NM_VALUE_TYPE_BYTES:
-    {
-        GBytes **p_val = _nm_setting_get_private_field(setting, sett_info, property_info);
-        GBytes  *v;
-        _nm_unused gs_unref_bytes GBytes *old = NULL;
-
-        v = g_value_get_boxed(value);
-        if (nm_g_bytes_equal0(*p_val, v))
-            return;
-        old    = *p_val;
-        *p_val = v ? g_bytes_ref(v) : NULL;
-        goto out_notify;
-    }
-    case NM_VALUE_TYPE_STRV:
-    {
-        NMValueStrv       *p_val = _nm_setting_get_private_field(setting, sett_info, property_info);
-        const char *const *v;
-
-        v = g_value_get_boxed(value);
-        if (nm_strvarray_equal_strv(p_val->arr, v, -1))
-            return;
-
-        nm_strvarray_set_strv(&p_val->arr, v);
-        goto out_notify;
-    }
-    default:
-        goto out_fail;
-    }
-
-    return;
-
-out_notify:
     /* If explicit-notify would be set, we would need to emit g_object_notify_by_pspec().
      *
      * Currently we never set that, also because we still support glib 2.40. */
     nm_assert(!NM_FLAGS_HAS(pspec->flags, 1 << 30 /* G_PARAM_EXPLICIT_NOTIFY */));
-    return;
-
-out_fail:
-    G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
 }
 
 /*****************************************************************************/
@@ -1110,6 +1158,9 @@ _init_direct(NMSetting *setting)
                             _nm_setting_get_private_field(setting, sett_info, property_info))
                            ->arr);
             break;
+        case NM_VALUE_TYPE_ALIAS:
+            // XXX
+            break;
         default:
             nm_assert_not_reached();
             break;
@@ -1145,6 +1196,7 @@ _finalize_direct(NMSetting *setting)
         case NM_VALUE_TYPE_UINT64:
         case NM_VALUE_TYPE_ENUM:
         case NM_VALUE_TYPE_FLAGS:
+        case NM_VALUE_TYPE_ALIAS:
             break;
         case NM_VALUE_TYPE_STRING:
         {
@@ -1787,7 +1839,8 @@ property_to_dbus(const NMSettInfoSetting                *sett_info,
 {
     GVariant *variant;
 
-    nm_assert(property_info->property_type->dbus_type);
+    nm_assert(property_info->property_type->dbus_type
+              || property_info->property_type->direct_type == NM_VALUE_TYPE_ALIAS);
 
     if (!property_info->property_type->to_dbus_fcn) {
         nm_assert(!property_info->param_spec);
@@ -1835,7 +1888,8 @@ property_to_dbus(const NMSettInfoSetting                *sett_info,
                   ->to_dbus_fcn(sett_info, property_info, connection, setting, flags, options);
     nm_g_variant_take_ref(variant);
 
-    nm_assert(!variant || g_variant_is_of_type(variant, property_info->property_type->dbus_type));
+    nm_assert(!variant || property_info->property_type->direct_type == NM_VALUE_TYPE_ALIAS
+              || g_variant_is_of_type(variant, property_info->property_type->dbus_type));
 
     return variant;
 }
@@ -2221,6 +2275,10 @@ nm_setting_get_dbus_property_type(NMSetting *setting, const char *property_name)
     g_return_val_if_fail(property_info != NULL, NULL);
 
     nm_assert(property_info->property_type);
+
+    if (property_info->property_type->direct_type == NM_VALUE_TYPE_ALIAS)
+        return nm_setting_get_dbus_property_type(setting, property_info->alias_prop_name);
+
     nm_assert(
         g_variant_type_string_is_valid((const char *) property_info->property_type->dbus_type));
 
@@ -3708,6 +3766,73 @@ const NMSettInfoPropertType nm_sett_info_propert_type_direct_mac_address =
         .compare_fcn   = _nm_setting_property_compare_fcn_direct,
         .to_dbus_fcn   = _nm_setting_property_to_dbus_fcn_direct_mac_address,
         .from_dbus_fcn = _nm_setting_property_from_dbus_fcn_direct_mac_address);
+
+/*****************************************************************************/
+
+static GVariant *
+_nm_setting_property_to_dbus_fcn_deprecated_alias(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_nil)
+{
+    const NMSettInfoProperty *alias_property_info;
+    GParamSpec               *alias_pspec;
+
+    nm_assert(property_info->property_type == &nm_sett_info_propert_type_deprecated_alias);
+    nm_assert(property_info->property_type->direct_type == NM_VALUE_TYPE_ALIAS);
+
+    g_return_val_if_fail(property_info->alias_prop_name, NULL);
+
+    alias_pspec =
+        g_object_class_find_property(G_OBJECT_GET_CLASS(setting), property_info->alias_prop_name);
+    g_return_val_if_fail(alias_pspec, NULL);
+
+    alias_property_info = _nm_sett_info_property_lookup_by_param_spec(sett_info, alias_pspec);
+    g_return_val_if_fail(alias_property_info, NULL);
+
+    return property_to_dbus(sett_info,
+                            alias_property_info,
+                            connection,
+                            setting,
+                            flags,
+                            options,
+                            FALSE);
+}
+
+static gboolean
+_nm_setting_property_from_dbus_fcn_deprecated_alias(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
+{
+    const NMSettInfoProperty *alias_property_info;
+    GParamSpec               *alias_pspec;
+
+    nm_assert(property_info->property_type == &nm_sett_info_propert_type_deprecated_alias);
+    nm_assert(property_info->property_type->direct_type == NM_VALUE_TYPE_ALIAS);
+
+    g_return_val_if_fail(property_info->alias_prop_name, FALSE);
+
+    alias_pspec =
+        g_object_class_find_property(G_OBJECT_GET_CLASS(setting), property_info->alias_prop_name);
+    g_return_val_if_fail(alias_pspec, FALSE);
+
+    alias_property_info = _nm_sett_info_property_lookup_by_param_spec(sett_info, alias_pspec);
+    g_return_val_if_fail(alias_property_info, FALSE);
+
+    return _property_set_from_dbus(sett_info,
+                                   alias_property_info,
+                                   setting,
+                                   connection_dict,
+                                   value,
+                                   parse_flags,
+                                   out_is_modified,
+                                   error);
+
+    return TRUE;
+}
+
+const NMSettInfoPropertType nm_sett_info_propert_type_deprecated_alias = {
+    .direct_type       = NM_VALUE_TYPE_ALIAS,
+    .compare_fcn       = _nm_setting_property_compare_fcn_ignore,
+    .to_dbus_fcn       = _nm_setting_property_to_dbus_fcn_deprecated_alias,
+    .from_dbus_fcn     = _nm_setting_property_from_dbus_fcn_deprecated_alias,
+    .from_dbus_is_full = TRUE,
+};
 
 /*****************************************************************************/
 

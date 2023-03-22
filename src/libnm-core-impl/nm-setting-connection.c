@@ -56,6 +56,7 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMSettingConnection,
                              PROP_READ_ONLY,
                              PROP_ZONE,
                              PROP_MASTER,
+                             PROP_CONTROLLER,
                              PROP_SLAVE_TYPE,
                              PROP_AUTOCONNECT_SLAVES,
                              PROP_SECONDARIES,
@@ -80,7 +81,7 @@ typedef struct {
     char       *stable_id;
     char       *interface_name;
     char       *type;
-    char       *master;
+    char       *controller;
     char       *slave_type;
     char       *zone;
     char       *mud_url;
@@ -673,20 +674,22 @@ nm_setting_connection_get_zone(NMSettingConnection *setting)
 }
 
 /**
- * nm_setting_connection_get_master:
+ * nm_setting_connection_get_controller:
  * @setting: the #NMSettingConnection
  *
- * Returns the #NMSettingConnection:master property of the connection.
+ * Returns the #NMSettingConnection:controller property of the connection.
  *
- * Returns: interface name of the master device or UUID of the master
+ * Returns: interface name of the controller device or UUID of the controller
  * connection.
+ *
+ * Since: 1.42
  */
 const char *
-nm_setting_connection_get_master(NMSettingConnection *setting)
+nm_setting_connection_get_controller(NMSettingConnection *setting)
 {
     g_return_val_if_fail(NM_IS_SETTING_CONNECTION(setting), NULL);
 
-    return NM_SETTING_CONNECTION_GET_PRIVATE(setting)->master;
+    return NM_SETTING_CONNECTION_GET_PRIVATE(setting)->controller;
 }
 
 /**
@@ -1081,16 +1084,16 @@ _nm_connection_detect_slave_type_full(NMSettingConnection *s_con,
     }
 
     if (is_slave) {
-        if (!priv->master) {
+        if (!priv->controller) {
             g_set_error(error,
                         NM_CONNECTION_ERROR,
                         NM_CONNECTION_ERROR_MISSING_PROPERTY,
                         _("Slave connections need a valid '%s' property"),
-                        NM_SETTING_CONNECTION_MASTER);
+                        NM_SETTING_CONNECTION_CONTROLLER);
             g_prefix_error(error,
                            "%s.%s: ",
                            NM_SETTING_CONNECTION_SETTING_NAME,
-                           NM_SETTING_CONNECTION_MASTER);
+                           NM_SETTING_CONNECTION_CONTROLLER);
             return FALSE;
         }
         if (slave_setting_type && connection
@@ -1098,7 +1101,7 @@ _nm_connection_detect_slave_type_full(NMSettingConnection *s_con,
             normerr_slave_setting_type = slave_setting_type;
     } else {
         nm_assert(!slave_type);
-        if (priv->master) {
+        if (priv->controller) {
             NMSetting *s_port;
 
             if (connection
@@ -1110,7 +1113,7 @@ _nm_connection_detect_slave_type_full(NMSettingConnection *s_con,
                             NM_CONNECTION_ERROR,
                             NM_CONNECTION_ERROR_MISSING_PROPERTY,
                             _("Cannot set '%s' without '%s'"),
-                            NM_SETTING_CONNECTION_MASTER,
+                            NM_SETTING_CONNECTION_CONTROLLER,
                             NM_SETTING_CONNECTION_SLAVE_TYPE);
                 g_prefix_error(error,
                                "%s.%s: ",
@@ -1556,7 +1559,7 @@ after_interface_name:
                     NM_CONNECTION_ERROR_MISSING_PROPERTY,
                     _("Detect a slave connection with '%s' set and a port type '%s'. '%s' should "
                       "be set to '%s'"),
-                    NM_SETTING_CONNECTION_MASTER,
+                    NM_SETTING_CONNECTION_CONTROLLER,
                     normerr_missing_slave_type_port,
                     NM_SETTING_CONNECTION_SLAVE_TYPE,
                     normerr_missing_slave_type);
@@ -2233,14 +2236,14 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
                                               zone);
 
     /**
-     * NMSettingConnection:master:
+     * NMSettingConnection:controller:
      *
-     * Interface name of the master device or UUID of the master connection.
+     * Interface name of the controller device or UUID of the controller connection.
      **/
     /* ---ifcfg-rh---
-     * property: master
+     * property: controller
      * variable: MASTER, MASTER_UUID, TEAM_MASTER, TEAM_MASTER_UUID, BRIDGE, BRIDGE_UUID
-     * description: Reference to master connection. The variable used depends on
+     * description: Reference to controller connection. The variable used depends on
      *   the connection type and the value. In general, if the *_UUID variant is present,
      *   the variant without *_UUID is ignored. NetworkManager attempts to write both
      *   for compatibility with legacy tooling.
@@ -2248,19 +2251,34 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      */
     _nm_setting_property_define_direct_string(properties_override,
                                               obj_properties,
-                                              NM_SETTING_CONNECTION_MASTER,
-                                              PROP_MASTER,
+                                              NM_SETTING_CONNECTION_CONTROLLER,
+                                              PROP_CONTROLLER,
                                               NM_SETTING_PARAM_FUZZY_IGNORE
                                                   | NM_SETTING_PARAM_INFERRABLE,
                                               NMSettingConnectionPrivate,
-                                              master);
+                                              controller,
+                                              .alias_prop_name = NM_SETTING_CONNECTION_MASTER);
+
+    /**
+     * NMSettingConnection:master:
+     *
+     * Obsolete alias for #NMSettingConnection:controller property
+     *
+     * Deprecated: 1.42: Deprecated in favor of the #NMSettingConnection:controller property.
+     **/
+    _nm_setting_property_define_alias(properties_override,
+                                      obj_properties,
+                                      NM_SETTING_CONNECTION_MASTER,
+                                      PROP_MASTER,
+                                      NM_SETTING_PARAM_FUZZY_IGNORE | NM_SETTING_PARAM_INFERRABLE,
+                                      .alias_prop_name = NM_SETTING_CONNECTION_CONTROLLER);
 
     /**
      * NMSettingConnection:slave-type:
      *
-     * Setting name of the device type of this slave's master connection (eg,
-     * %NM_SETTING_BOND_SETTING_NAME), or %NULL if this connection is not a
-     * slave.
+     * Setting name of the device type of this slave's controller connection
+     * (eg, %NM_SETTING_BOND_SETTING_NAME), or %NULL if this connection is
+     * not a slave.
      **/
     /* ---ifcfg-rh---
      * property: slave-type
@@ -2286,7 +2304,7 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      *
      * Whether or not slaves of this connection should be automatically brought up
      * when NetworkManager activates this connection. This only has a real effect
-     * for master connections. The properties #NMSettingConnection:autoconnect,
+     * for controller connections. The properties #NMSettingConnection:autoconnect,
      * #NMSettingConnection:autoconnect-priority and #NMSettingConnection:autoconnect-retries
      * are unrelated to this setting.
      * The permitted values are: 0: leave slave connections untouched,

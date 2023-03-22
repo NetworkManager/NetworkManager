@@ -98,7 +98,7 @@ nmt_slave_list_connection_filter(NmtEditConnectionList *list,
 {
     NmtSlaveListPrivate *priv = NMT_SLAVE_LIST_GET_PRIVATE(list);
     NMSettingConnection *s_con;
-    const char          *master, *master_ifname, *slave_type;
+    const char          *controller, *controller_ifname, *slave_type;
 
     s_con = nm_connection_get_setting_connection(connection);
     g_return_val_if_fail(s_con != NULL, FALSE);
@@ -107,12 +107,13 @@ nmt_slave_list_connection_filter(NmtEditConnectionList *list,
     if (g_strcmp0(slave_type, priv->master_type) != 0)
         return FALSE;
 
-    master = nm_setting_connection_get_master(s_con);
-    if (!master)
+    controller = nm_setting_connection_get_controller(s_con);
+    if (!controller)
         return FALSE;
 
-    master_ifname = nm_connection_get_interface_name(priv->master);
-    if (g_strcmp0(master, master_ifname) != 0 && g_strcmp0(master, priv->master_uuid) != 0)
+    controller_ifname = nm_connection_get_interface_name(priv->master);
+    if (g_strcmp0(controller, controller_ifname) != 0
+        && g_strcmp0(controller, priv->master_uuid) != 0)
         return FALSE;
 
     return TRUE;

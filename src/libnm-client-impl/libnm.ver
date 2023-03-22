@@ -480,7 +480,7 @@ global:
 	nm_setting_connection_get_gateway_ping_timeout;
 	nm_setting_connection_get_id;
 	nm_setting_connection_get_interface_name;
-	nm_setting_connection_get_master;
+	nm_setting_connection_get_controller;
 	nm_setting_connection_get_num_permissions;
 	nm_setting_connection_get_num_secondaries;
 	nm_setting_connection_get_permission;
@@ -1918,6 +1918,7 @@ global:
 	nm_setting_vlan_get_protocol;
 	nm_utils_ensure_gtypes;
 	nm_version_info_capability_get_type;
+	nm_setting_connection_get_controller;
 } libnm_1_40_0;
 
 libnm_1_42_2 {

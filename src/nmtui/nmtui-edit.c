@@ -49,17 +49,17 @@ edit_connection_list_filter(NmtEditConnectionList *list,
                             gpointer               user_data)
 {
     NMSettingConnection *s_con;
-    const char          *master, *slave_type;
+    const char          *controller, *slave_type;
     const char          *uuid, *ifname;
     const GPtrArray     *conns;
     int                  i;
-    gboolean             found_master = FALSE;
+    gboolean             found_controller = FALSE;
 
     s_con = nm_connection_get_setting_connection(connection);
     g_return_val_if_fail(s_con != NULL, FALSE);
 
-    master = nm_setting_connection_get_master(s_con);
-    if (!master)
+    controller = nm_setting_connection_get_controller(s_con);
+    if (!controller)
         return TRUE;
     slave_type = nm_setting_connection_get_slave_type(s_con);
     if (g_strcmp0(slave_type, NM_SETTING_BOND_SETTING_NAME) != 0
@@ -73,13 +73,13 @@ edit_connection_list_filter(NmtEditConnectionList *list,
 
         uuid   = nm_connection_get_uuid(candidate);
         ifname = nm_connection_get_interface_name(candidate);
-        if (!g_strcmp0(master, uuid) || !g_strcmp0(master, ifname)) {
-            found_master = TRUE;
+        if (!g_strcmp0(controller, uuid) || !g_strcmp0(controller, ifname)) {
+            found_controller = TRUE;
             break;
         }
     }
 
-    return !found_master;
+    return !found_controller;
 }
 
 static NmtNewtForm *
@@ -525,7 +525,7 @@ nmt_remove_connection(NMRemoteConnection *connection)
     for (i = 0; i < all_conns->len; i++) {
         slave  = all_conns->pdata[i];
         s_con  = nm_connection_get_setting_connection(NM_CONNECTION(slave));
-        master = nm_setting_connection_get_master(s_con);
+        master = nm_setting_connection_get_controller(s_con);
         if (master) {
             if (!g_strcmp0(master, uuid) || !g_strcmp0(master, iface))
                 slaves = g_slist_prepend(slaves, g_object_ref(slave));
