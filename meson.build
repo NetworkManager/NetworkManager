@@ -956,10 +956,8 @@ subdir('examples/C/glib')
 enable_qt = get_option('qt')
 if enable_qt
   add_languages('cpp')
-
-  qt_core_dep = dependency('QtCore', version: '>= 4')
-  qt_dbus_dep = dependency('QtDBus')
-  qt_network_dep = dependency('QtNetwork')
+  
+  qt_dep = dependency('qt5', modules: ['Core', 'DBus', 'Network'])
 
   subdir('examples/C/qt')
 endif
