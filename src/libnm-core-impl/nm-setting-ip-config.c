@@ -6728,7 +6728,7 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
      *
      * A string containing the "Identity Association Identifier" (IAID) used by
      * the DHCP client. The string can be a 32-bit number (either decimal,
-     * hexadecimal or or as colon separated hexadecimal numbers). Alternatively
+     * hexadecimal or as colon separated hexadecimal numbers). Alternatively
      * it can be set to the special values "mac", "perm-mac", "ifname" or
      * "stable". When set to "mac" (or "perm-mac"), the last 4 bytes of the
      * current (or permanent) MAC address are used as IAID. When set to
