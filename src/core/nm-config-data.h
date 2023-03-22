@@ -248,6 +248,10 @@ const GSList *nm_config_data_get_device_allowed_connections_specs(const NMConfig
                                                                   NMDevice           *device,
                                                                   gboolean           *has_match);
 
+GVariant *nm_config_data_merge_default_settings(const NMConfigData *self,
+                                                NMDevice           *device,
+                                                GVariant           *settings);
+
 char   **nm_config_data_get_groups(const NMConfigData *self);
 char   **nm_config_data_get_keys(const NMConfigData *self, const char *group);
 gboolean nm_config_data_is_intern_atomic_group(const NMConfigData *self, const char *group);
