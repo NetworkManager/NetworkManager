@@ -4095,7 +4095,7 @@ generate_ssid_for_hotspot(void)
     return ssid_bytes;
 }
 
-#define WPA_PASSKEY_SIZE 8
+#define WPA_PASSKEY_SIZE 12
 static void
 generate_wpa_key(char *key, size_t len)
 {
@@ -4104,14 +4104,13 @@ generate_wpa_key(char *key, size_t len)
     g_return_if_fail(key);
     g_return_if_fail(len > WPA_PASSKEY_SIZE);
 
-    /* generate a 8-chars ASCII WPA key */
     for (i = 0; i < WPA_PASSKEY_SIZE; i++) {
         int c;
 
         do {
             c = nm_random_u64_range_full(33, 126, TRUE);
-            /* too many non alphanumeric characters are hard to remember for humans */
-        } while (!g_ascii_isalnum(c));
+            /* skip characters that look similar */
+        } while (NM_IN_SET(c, '1', 'l', '0', 'O') || !g_ascii_isalnum(c));
 
         key[i] = (char) c;
     }
@@ -4145,7 +4144,7 @@ set_wireless_security_for_hotspot(NMSettingWirelessSecurity *s_wsec,
                                   gboolean                   show_password,
                                   GError                   **error)
 {
-    char        generated_key[11];
+    char        generated_key[20];
     const char *key;
     const char *key_mgmt;
 
