@@ -4271,6 +4271,8 @@ create_hotspot_conn(const GPtrArray *connections,
     NMSettingIPConfig         *s_ip4, *s_ip6;
     NMSettingProxy            *s_proxy;
 
+    nm_assert(channel_int == -1 || band);
+
     connection = nm_simple_connection_new();
     s_con      = (NMSettingConnection *) nm_setting_connection_new();
     nm_connection_add_setting(connection, NM_SETTING(s_con));
@@ -4301,6 +4303,8 @@ create_hotspot_conn(const GPtrArray *connections,
                      NM_SETTING_WIRELESS_BAND,
                      band,
                      NULL);
+    } else if (band) {
+        g_object_set(s_wifi, NM_SETTING_WIRELESS_BAND, band, NULL);
     }
 
     s_wsec = (NMSettingWirelessSecurity *) nm_setting_wireless_security_new();
@@ -4446,13 +4450,6 @@ do_device_wifi_hotspot(const NMCCommand *cmd, NmCli *nmc, int argc, const char *
     if (nmc->complete)
         return;
 
-    /* Verify band and channel parameters */
-    if (!channel) {
-        if (g_strcmp0(band, "bg") == 0)
-            channel = "1";
-        if (g_strcmp0(band, "a") == 0)
-            channel = "7";
-    }
     if (channel) {
         unsigned long int value;
 
