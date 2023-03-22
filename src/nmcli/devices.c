@@ -4111,7 +4111,7 @@ generate_wpa_key(char *key, size_t len)
         do {
             c = nm_random_u64_range_full(33, 126, TRUE);
             /* too many non alphanumeric characters are hard to remember for humans */
-        } while (g_ascii_isalnum(c));
+        } while (!g_ascii_isalnum(c));
 
         key[i] = (char) c;
     }
