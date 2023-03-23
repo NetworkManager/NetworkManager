@@ -1410,17 +1410,69 @@ nm_dbus_manager_start(NMDBusManager                  *self,
 }
 
 gboolean
-nm_dbus_manager_acquire_bus(NMDBusManager *self, gboolean request_name)
+nm_dbus_manager_request_name_sync(NMDBusManager *self)
 {
     NMDBusManagerPrivate      *priv;
     gs_free_error GError      *error = NULL;
     gs_unref_variant GVariant *ret   = NULL;
     guint32                    result;
-    guint                      registration_id;
 
     g_return_val_if_fail(NM_IS_DBUS_MANAGER(self), FALSE);
 
     priv = NM_DBUS_MANAGER_GET_PRIVATE(self);
+
+    if (priv->objmgr_registration_id == 0) {
+        /* Do nothing. We're presumably in the configure-and-quit mode. */
+        return TRUE;
+    }
+
+    g_return_val_if_fail(G_IS_DBUS_CONNECTION(priv->main_dbus_connection), FALSE);
+
+    ret = g_dbus_connection_call_sync(
+        priv->main_dbus_connection,
+        DBUS_SERVICE_DBUS,
+        DBUS_PATH_DBUS,
+        DBUS_INTERFACE_DBUS,
+        "RequestName",
+        g_variant_new("(su)", NM_DBUS_SERVICE, DBUS_NAME_FLAG_DO_NOT_QUEUE),
+        G_VARIANT_TYPE("(u)"),
+        G_DBUS_CALL_FLAGS_NONE,
+        -1,
+        NULL,
+        &error);
+
+    if (!ret) {
+        _LOGE("fatal failure to acquire D-Bus service \"%s"
+              ": %s",
+              NM_DBUS_SERVICE,
+              error->message);
+        return FALSE;
+    }
+
+    g_variant_get(ret, "(u)", &result);
+    if (result != DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER) {
+        _LOGE("fatal failure to acquire D-Bus service \"%s\" (%u). Service already taken",
+              NM_DBUS_SERVICE,
+              (guint) result);
+        return FALSE;
+    }
+
+    _LOGI("acquired D-Bus service \"%s\"", NM_DBUS_SERVICE);
+    return TRUE;
+}
+
+gboolean
+nm_dbus_manager_setup(NMDBusManager *self)
+{
+    NMDBusManagerPrivate *priv;
+    gs_free_error GError *error = NULL;
+    guint                 registration_id;
+
+    g_return_val_if_fail(NM_IS_DBUS_MANAGER(self), FALSE);
+
+    priv = NM_DBUS_MANAGER_GET_PRIVATE(self);
+
+    g_return_val_if_fail(!priv->main_dbus_connection, FALSE);
 
     /* Create the D-Bus connection and registering the name synchronously.
      * That is necessary because we need to exit right away if we can't
@@ -1435,11 +1487,6 @@ nm_dbus_manager_acquire_bus(NMDBusManager *self, gboolean request_name)
 
     g_dbus_connection_set_exit_on_close(priv->main_dbus_connection, FALSE);
 
-    if (!request_name) {
-        _LOGD("D-Bus connection created");
-        return TRUE;
-    }
-
     registration_id = g_dbus_connection_register_object(
         priv->main_dbus_connection,
         OBJECT_MANAGER_SERVER_BASE_PATH,
@@ -1453,39 +1500,9 @@ nm_dbus_manager_acquire_bus(NMDBusManager *self, gboolean request_name)
         return FALSE;
     }
 
-    ret = g_dbus_connection_call_sync(
-        priv->main_dbus_connection,
-        DBUS_SERVICE_DBUS,
-        DBUS_PATH_DBUS,
-        DBUS_INTERFACE_DBUS,
-        "RequestName",
-        g_variant_new("(su)", NM_DBUS_SERVICE, DBUS_NAME_FLAG_DO_NOT_QUEUE),
-        G_VARIANT_TYPE("(u)"),
-        G_DBUS_CALL_FLAGS_NONE,
-        -1,
-        NULL,
-        &error);
-    if (!ret) {
-        _LOGE("fatal failure to acquire D-Bus service \"%s"
-              ": %s",
-              NM_DBUS_SERVICE,
-              error->message);
-        g_dbus_connection_unregister_object(priv->main_dbus_connection, registration_id);
-        return FALSE;
-    }
-
-    g_variant_get(ret, "(u)", &result);
-    if (result != DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER) {
-        _LOGE("fatal failure to acquire D-Bus service \"%s\" (%u). Service already taken",
-              NM_DBUS_SERVICE,
-              (guint) result);
-        g_dbus_connection_unregister_object(priv->main_dbus_connection, registration_id);
-        return FALSE;
-    }
-
     priv->objmgr_registration_id = registration_id;
 
-    _LOGI("acquired D-Bus service \"%s\"", NM_DBUS_SERVICE);
+    _LOGD("D-Bus connection created and ObjectManager object registered");
 
     return TRUE;
 }
