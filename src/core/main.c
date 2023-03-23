@@ -266,13 +266,14 @@ _dbus_manager_init(NMConfig *config)
 
     c_a_q_type = nm_config_get_configure_and_quit(config);
 
-    if (c_a_q_type == NM_CONFIG_CONFIGURE_AND_QUIT_DISABLED)
-        return nm_dbus_manager_acquire_bus(busmgr, TRUE);
+    if (c_a_q_type == NM_CONFIG_CONFIGURE_AND_QUIT_INITRD) {
+        /* in initrd we don't have D-Bus at all. Don't even try to get the G_BUS_TYPE_SYSTEM
+         * connection. And of course don't claim the D-Bus name. */
+        return TRUE;
+    }
 
-    nm_assert(c_a_q_type == NM_CONFIG_CONFIGURE_AND_QUIT_INITRD);
-    /* in initrd we don't have D-Bus at all. Don't even try to get the G_BUS_TYPE_SYSTEM
-     * connection. And of course don't claim the D-Bus name. */
-    return TRUE;
+    nm_assert(c_a_q_type == NM_CONFIG_CONFIGURE_AND_QUIT_DISABLED);
+    return nm_dbus_manager_setup(busmgr);
 }
 
 /*
@@ -506,6 +507,9 @@ main(int argc, char *argv[])
      */
     nm_log_dbg(LOGD_CORE, "setting up local loopback");
     nm_platform_link_change_flags(NM_PLATFORM_GET, 1, IFF_UP, TRUE);
+
+    if (!nm_dbus_manager_request_name_sync(nm_dbus_manager_get()))
+        goto done;
 
     success = TRUE;
 
