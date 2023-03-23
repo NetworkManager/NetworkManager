@@ -7,29 +7,23 @@
 #include <config.h>
 #define ___CONFIG_H__
 
-#include <pppd/pppd.h>
-#include <pppd/fsm.h>
-#include <pppd/ipcp.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <net/if.h>
 #include <arpa/inet.h>
 #include <dlfcn.h>
-
-#define INET6
-#include <pppd/eui64.h>
-#include <pppd/ipv6cp.h>
-
-#include "libnm-glib-aux/nm-default-glib.h"
-
-#include "nm-dbus-interface.h"
+#include <glib.h>
 
 #include "nm-pppd-plugin.h"
+#include "nm-pppd-compat.h"
 #include "nm-ppp-status.h"
+
+#include "libnm-glib-aux/nm-default-glib.h"
+#include "nm-dbus-interface.h"
 
 int plugin_init(void);
 
-char pppd_version[] = VERSION;
+char pppd_version[] = PPPD_VERSION;
 
 static struct {
     GDBusConnection *dbus_connection;
@@ -125,7 +119,7 @@ nm_phasechange(int arg)
         char                       new_name[IF_NAMESIZE];
         int                        ifindex;
 
-        ifindex = if_nametoindex(ifname);
+        ifindex = if_nametoindex(ppp_ifname());
 
         /* Make a sync call to ensure that when the call
          * terminates the interface already has its final
@@ -143,9 +137,11 @@ nm_phasechange(int arg)
                                           NULL);
 
         /* Update the name in pppd if NM changed it */
-        if (if_indextoname(ifindex, new_name) && !nm_streq0(ifname, new_name)) {
-            g_message("nm-ppp-plugin: interface name changed from '%s' to '%s'", ifname, new_name);
-            g_strlcpy(ifname, new_name, IF_NAMESIZE);
+        if (if_indextoname(ifindex, new_name) && !nm_streq0(ppp_ifname(), new_name)) {
+            g_message("nm-ppp-plugin: interface name changed from '%s' to '%s'",
+                      ppp_ifname(),
+                      new_name);
+            ppp_set_ifname(new_name);
         }
     }
 }
@@ -166,7 +162,7 @@ nm_ip_up(void *data, int arg)
     ipcp_options    opts      = ipcp_gotoptions[0];
     ipcp_options    peer_opts = ipcp_hisoptions[0];
     GVariantBuilder builder;
-    guint32         pppd_made_up_address = htonl(0x0a404040 + ifunit);
+    guint32         pppd_made_up_address = htonl(0x0a404040 + ppp_ifunit());
 
     g_return_if_fail(G_IS_DBUS_CONNECTION(gl.dbus_connection));
 
@@ -186,7 +182,7 @@ nm_ip_up(void *data, int arg)
     g_variant_builder_add(&builder,
                           "{sv}",
                           NM_PPP_IP4_CONFIG_INTERFACE,
-                          g_variant_new_string(ifname));
+                          g_variant_new_string(ppp_ifname()));
 
     g_variant_builder_add(&builder,
                           "{sv}",
@@ -292,7 +288,7 @@ nm_ip6_up(void *data, int arg)
     g_variant_builder_add(&builder,
                           "{sv}",
                           NM_PPP_IP6_CONFIG_INTERFACE,
-                          g_variant_new_string(ifname));
+                          g_variant_new_string(ppp_ifname()));
     g_variant_builder_add(&builder, "{sv}", NM_PPP_IP6_CONFIG_OUR_IID, eui64_to_variant(go->ourid));
     g_variant_builder_add(&builder,
                           "{sv}",
@@ -390,27 +386,6 @@ nm_exit_notify(void *data, int arg)
     nm_clear_g_free(&gl.ipparam);
 }
 
-static void
-add_ip6_notifier(void)
-{
-    static struct notifier **notifier  = NULL;
-    static gsize             load_once = 0;
-
-    if (g_once_init_enter(&load_once)) {
-        void *handle = dlopen(NULL, RTLD_NOW | RTLD_GLOBAL);
-
-        if (handle) {
-            notifier = dlsym(handle, "ipv6_up_notifier");
-            dlclose(handle);
-        }
-        g_once_init_leave(&load_once, 1);
-    }
-    if (notifier)
-        add_notifier(notifier, nm_ip6_up, NULL);
-    else
-        g_message("nm-ppp-plugin: no IPV6CP notifier support; IPv6 not available");
-}
-
 int
 plugin_init(void)
 {
@@ -427,17 +402,16 @@ plugin_init(void)
         return -1;
     }
 
-    gl.ipparam = g_strdup(ipparam);
+    gl.ipparam = g_strdup(ppp_ipparam());
 
     chap_passwd_hook = get_credentials;
     chap_check_hook  = get_chap_check;
     pap_passwd_hook  = get_credentials;
     pap_check_hook   = get_pap_check;
 
-    add_notifier(&phasechange, nm_phasechange_hook, NULL);
-    add_notifier(&ip_up_notifier, nm_ip_up, NULL);
-    add_notifier(&exitnotify, nm_exit_notify, NULL);
-    add_ip6_notifier();
-
+    ppp_add_notify(NF_PHASE_CHANGE, nm_phasechange_hook, NULL);
+    ppp_add_notify(NF_IP_UP, nm_ip_up, NULL);
+    ppp_add_notify(NF_EXIT, nm_exit_notify, NULL);
+    ppp_add_notify(NF_IPV6_UP, nm_ip6_up, NULL);
     return 0;
 }
