@@ -68,6 +68,10 @@ ENV_NM_TEST_CLIENT_BUILDDIR = "NM_TEST_CLIENT_BUILDDIR"
 # In particular, you can test also a nmcli binary installed somewhere else.
 ENV_NM_TEST_CLIENT_NMCLI_PATH = "NM_TEST_CLIENT_NMCLI_PATH"
 
+# (optional) Path to nm-cloud-setup. By default, it looks for nm-cloud-setup
+# in build dir.
+ENV_NM_TEST_CLIENT_CLOUD_SETUP_PATH = "NM_TEST_CLIENT_CLOUD_SETUP_PATH"
+
 # (optional) The test also compares tranlsated output (l10n). This requires,
 # that you first install the translation in the right place. So, by default,
 # if a test for a translation fails, it will mark the test as skipped, and not
@@ -140,6 +144,12 @@ try:
 except ImportError:
     pexpect = None
 
+try:
+    from http.server import HTTPServer
+    from http.server import BaseHTTPRequestHandler
+except ImportError:
+    HTTPServer = None
+
 
 ###############################################################################
 
@@ -162,6 +172,14 @@ class PathConfiguration:
             PathConfiguration.top_srcdir() + "/tools/test-networkmanager-service.py"
         )
         assert os.path.exists(v), 'Cannot find test server at "%s"' % (v)
+        return v
+
+    @staticmethod
+    def test_cloud_meta_mock_path():
+        v = os.path.abspath(
+            PathConfiguration.top_srcdir() + "/tools/test-cloud-meta-mock.py"
+        )
+        assert os.path.exists(v), 'Cannot find cloud metadata mock server at "%s"' % (v)
         return v
 
     @staticmethod
@@ -551,6 +569,20 @@ class Configuration:
                     pass
             if not os.path.exists(v):
                 raise Exception("Missing nmcli binary. Set NM_TEST_CLIENT_NMCLI_PATH?")
+        elif name == ENV_NM_TEST_CLIENT_CLOUD_SETUP_PATH:
+            v = os.environ.get(ENV_NM_TEST_CLIENT_CLOUD_SETUP_PATH, None)
+            if v is None:
+                try:
+                    v = os.path.abspath(
+                        self.get(ENV_NM_TEST_CLIENT_BUILDDIR)
+                        + "/src/nm-cloud-setup/nm-cloud-setup"
+                    )
+                except:
+                    pass
+            if not os.path.exists(v):
+                raise Exception(
+                    "Missing nm-cloud-setup binary. Set NM_TEST_CLIENT_CLOUD_SETUP_PATH?"
+                )
         elif name == ENV_NM_TEST_CLIENT_CHECK_L10N:
             # if we test locales other than 'C', the output of nmcli depends on whether
             # nmcli can load the translations. Unfortunately, I cannot find a way to
@@ -751,6 +783,16 @@ class NMStubServer:
             iface_name = ""
         self.op_SetProperties([(path, [(iface_name, [(propname, value)])])])
 
+    def addAndActivateConnection(
+        self, connection, device, specific_object="", delay=None
+    ):
+        if delay is not None:
+            self.op_SetActiveConnectionStateChangedDelay(device, delay)
+        nm_iface = self._conn_get_main_object(self._conn)
+        self.op_AddAndActivateConnection(
+            connection, device, specific_object, dbus_iface=nm_iface
+        )
+
 
 ###############################################################################
 
@@ -835,7 +877,7 @@ class AsyncProcess:
 MAX_JOBS = 15
 
 
-class TestNmcli(unittest.TestCase):
+class TestNmClient(unittest.TestCase):
     def __init__(self, *args, **kwargs):
         self._calling_num = {}
         self._skip_test_for_l10n_diff = []
@@ -888,131 +930,6 @@ class TestNmcli(unittest.TestCase):
 
         return content_expect, results_expect
 
-    def nmcli_construct_argv(self, args, with_valgrind=None):
-
-        if with_valgrind is None:
-            with_valgrind = conf.get(ENV_NM_TEST_VALGRIND)
-
-        valgrind_log = None
-        cmd = conf.get(ENV_NM_TEST_CLIENT_NMCLI_PATH)
-        if with_valgrind:
-            valgrind_log = tempfile.mkstemp(prefix="nm-test-client-valgrind.")
-            argv = [
-                "valgrind",
-                "--quiet",
-                "--error-exitcode=37",
-                "--leak-check=full",
-                "--gen-suppressions=all",
-                (
-                    "--suppressions="
-                    + PathConfiguration.top_srcdir()
-                    + "/valgrind.suppressions"
-                ),
-                "--num-callers=100",
-                "--log-file=" + valgrind_log[1],
-                cmd,
-            ]
-            libtool = conf.get(ENV_LIBTOOL)
-            if libtool:
-                argv = list(libtool) + ["--mode=execute"] + argv
-        else:
-            argv = [cmd]
-
-        argv.extend(args)
-        return argv, valgrind_log
-
-    def call_nmcli_l(
-        self,
-        args,
-        check_on_disk=_DEFAULT_ARG,
-        fatal_warnings=_DEFAULT_ARG,
-        expected_returncode=_DEFAULT_ARG,
-        expected_stdout=_DEFAULT_ARG,
-        expected_stderr=_DEFAULT_ARG,
-        replace_stdout=None,
-        replace_stderr=None,
-        replace_cmd=None,
-        sort_lines_stdout=False,
-        extra_env=None,
-        sync_barrier=False,
-    ):
-        frame = sys._getframe(1)
-        for lang in ["C", "pl"]:
-            self._call_nmcli(
-                args,
-                lang,
-                check_on_disk,
-                fatal_warnings,
-                expected_returncode,
-                expected_stdout,
-                expected_stderr,
-                replace_stdout,
-                replace_stderr,
-                replace_cmd,
-                sort_lines_stdout,
-                extra_env,
-                sync_barrier,
-                frame,
-            )
-
-    def call_nmcli(
-        self,
-        args,
-        langs=None,
-        lang=None,
-        check_on_disk=_DEFAULT_ARG,
-        fatal_warnings=_DEFAULT_ARG,
-        expected_returncode=_DEFAULT_ARG,
-        expected_stdout=_DEFAULT_ARG,
-        expected_stderr=_DEFAULT_ARG,
-        replace_stdout=None,
-        replace_stderr=None,
-        replace_cmd=None,
-        sort_lines_stdout=False,
-        extra_env=None,
-        sync_barrier=None,
-    ):
-
-        frame = sys._getframe(1)
-
-        if langs is not None:
-            assert lang is None
-        else:
-            if lang is None:
-                lang = "C"
-            langs = [lang]
-
-        if sync_barrier is None:
-            sync_barrier = len(langs) == 1
-
-        for lang in langs:
-            self._call_nmcli(
-                args,
-                lang,
-                check_on_disk,
-                fatal_warnings,
-                expected_returncode,
-                expected_stdout,
-                expected_stderr,
-                replace_stdout,
-                replace_stderr,
-                replace_cmd,
-                sort_lines_stdout,
-                extra_env,
-                sync_barrier,
-                frame,
-            )
-
-    def call_nmcli_pexpect(self, args):
-
-        env = self._env(extra_env={"NO_COLOR": "1"})
-        argv, valgrind_log = self.nmcli_construct_argv(args)
-
-        pexp = pexpect.spawn(argv[0], argv[1:], timeout=10, env=env)
-
-        typ = collections.namedtuple("CallNmcliPexpect", ["pexp", "valgrind_log"])
-        return typ(pexp, valgrind_log)
-
     def _env(
         self, lang="C", calling_num=None, fatal_warnings=_DEFAULT_ARG, extra_env=None
     ):
@@ -1053,184 +970,47 @@ class TestNmcli(unittest.TestCase):
                 env[k] = v
         return env
 
-    def _call_nmcli(
-        self,
-        args,
-        lang,
-        check_on_disk,
-        fatal_warnings,
-        expected_returncode,
-        expected_stdout,
-        expected_stderr,
-        replace_stdout,
-        replace_stderr,
-        replace_cmd,
-        sort_lines_stdout,
-        extra_env,
-        sync_barrier,
-        frame,
-    ):
+    def cmd_construct_argv(self, cmd_path, args, with_valgrind=None):
 
-        if sync_barrier:
-            self.async_wait()
+        if with_valgrind is None:
+            with_valgrind = conf.get(ENV_NM_TEST_VALGRIND)
 
-        calling_fcn = frame.f_code.co_name
-        calling_num = self._calling_num.get(calling_fcn, 0) + 1
-        self._calling_num[calling_fcn] = calling_num
-
-        test_name = "%s-%03d" % (calling_fcn, calling_num)
-
-        # we cannot use frame.f_code.co_filename directly, because it might be different depending
-        # on where the file lies and which is CWD. We still want to give the location of
-        # the file, so that the user can easier find the source (when looking at the .expected files)
-        self.assertTrue(
-            os.path.abspath(frame.f_code.co_filename).endswith(
-                "/" + PathConfiguration.canonical_script_filename()
-            )
-        )
-
-        if conf.get(ENV_NM_TEST_WITH_LINENO):
-            calling_location = "%s:%d:%s()/%d" % (
-                PathConfiguration.canonical_script_filename(),
-                frame.f_lineno,
-                frame.f_code.co_name,
-                calling_num,
-            )
+        valgrind_log = None
+        cmd = conf.get(cmd_path)
+        if with_valgrind:
+            valgrind_log = tempfile.mkstemp(prefix="nm-test-client-valgrind.")
+            argv = [
+                "valgrind",
+                "--quiet",
+                "--error-exitcode=37",
+                "--leak-check=full",
+                "--gen-suppressions=all",
+                (
+                    "--suppressions="
+                    + PathConfiguration.top_srcdir()
+                    + "/valgrind.suppressions"
+                ),
+                "--num-callers=100",
+                "--log-file=" + valgrind_log[1],
+                cmd,
+            ]
+            libtool = conf.get(ENV_LIBTOOL)
+            if libtool:
+                argv = list(libtool) + ["--mode=execute"] + argv
         else:
-            calling_location = "%s:%s()/%d" % (
-                PathConfiguration.canonical_script_filename(),
-                frame.f_code.co_name,
-                calling_num,
-            )
+            argv = [cmd]
 
-        if lang is None or lang == "C":
-            lang = "C"
-        elif lang == "de":
-            lang = "de_DE.utf8"
-        elif lang == "pl":
-            lang = "pl_PL.UTF-8"
-        else:
-            self.fail("invalid language %s" % (lang))
+        argv.extend(args)
+        return argv, valgrind_log
 
-        # Running under valgrind is not yet supported for those tests.
-        args, valgrind_log = self.nmcli_construct_argv(args, with_valgrind=False)
+    def call_pexpect(self, cmd_path, args, extra_env):
+        argv, valgrind_log = self.cmd_construct_argv(cmd_path, args)
+        env = self._env(extra_env=extra_env)
 
-        assert valgrind_log is None
+        pexp = pexpect.spawn(argv[0], argv[1:], timeout=10, env=env)
 
-        if replace_stdout is not None:
-            replace_stdout = list(replace_stdout)
-        if replace_stderr is not None:
-            replace_stderr = list(replace_stderr)
-        if replace_cmd is not None:
-            replace_cmd = list(replace_cmd)
-
-        if check_on_disk is _DEFAULT_ARG:
-            check_on_disk = (
-                expected_returncode is _DEFAULT_ARG
-                and (
-                    expected_stdout is _DEFAULT_ARG
-                    or expected_stdout is _UNSTABLE_OUTPUT
-                )
-                and (
-                    expected_stderr is _DEFAULT_ARG
-                    or expected_stderr is _UNSTABLE_OUTPUT
-                )
-            )
-        if expected_returncode is _DEFAULT_ARG:
-            expected_returncode = None
-        if expected_stdout is _DEFAULT_ARG:
-            expected_stdout = None
-        if expected_stderr is _DEFAULT_ARG:
-            expected_stderr = None
-
-        results_idx = len(self._results)
-        self._results.append(None)
-
-        def complete_cb(async_job, returncode, stdout, stderr):
-
-            if expected_stdout is _UNSTABLE_OUTPUT:
-                stdout = "<UNSTABLE OUTPUT>".encode("utf-8")
-            else:
-                stdout = Util.replace_text(stdout, replace_stdout)
-
-            if expected_stderr is _UNSTABLE_OUTPUT:
-                stderr = "<UNSTABLE OUTPUT>".encode("utf-8")
-            else:
-                stderr = Util.replace_text(stderr, replace_stderr)
-
-            if sort_lines_stdout:
-                stdout = b"\n".join(sorted(stdout.split(b"\n")))
-
-            ignore_l10n_diff = lang != "C" and not conf.get(
-                ENV_NM_TEST_CLIENT_CHECK_L10N
-            )
-
-            if expected_stderr is not None and expected_stderr is not _UNSTABLE_OUTPUT:
-                if expected_stderr != stderr:
-                    if ignore_l10n_diff:
-                        self._skip_test_for_l10n_diff.append(test_name)
-                    else:
-                        self.assertEqual(expected_stderr, stderr)
-            if expected_stdout is not None and expected_stdout is not _UNSTABLE_OUTPUT:
-                if expected_stdout != stdout:
-                    if ignore_l10n_diff:
-                        self._skip_test_for_l10n_diff.append(test_name)
-                    else:
-                        self.assertEqual(expected_stdout, stdout)
-            if expected_returncode is not None:
-                self.assertEqual(expected_returncode, returncode)
-
-            if fatal_warnings is _DEFAULT_ARG:
-                if expected_returncode != -5:
-                    self.assertNotEqual(returncode, -5)
-            elif fatal_warnings:
-                if expected_returncode is None:
-                    self.assertEqual(returncode, -5)
-
-            if check_on_disk:
-                cmd = "$NMCLI %s" % (Util.shlex_join(args[1:]),)
-                cmd = Util.replace_text(cmd, replace_cmd)
-
-                if returncode < 0:
-                    returncode_str = "%d (SIGNAL %s)" % (
-                        returncode,
-                        Util.signal_no_to_str(-returncode),
-                    )
-                else:
-                    returncode_str = "%d" % (returncode)
-
-                content = (
-                    ("location: %s\n" % (calling_location)).encode("utf8")
-                    + ("cmd: %s\n" % (cmd)).encode("utf8")
-                    + ("lang: %s\n" % (lang)).encode("utf8")
-                    + ("returncode: %s\n" % (returncode_str)).encode("utf8")
-                )
-                if len(stdout) > 0:
-                    content += (
-                        ("stdout: %d bytes\n>>>\n" % (len(stdout))).encode("utf8")
-                        + stdout
-                        + "\n<<<\n".encode("utf8")
-                    )
-                if len(stderr) > 0:
-                    content += (
-                        ("stderr: %d bytes\n>>>\n" % (len(stderr))).encode("utf8")
-                        + stderr
-                        + "\n<<<\n".encode("utf8")
-                    )
-                content = ("size: %s\n" % (len(content))).encode("utf8") + content
-
-                self._results[results_idx] = {
-                    "test_name": test_name,
-                    "ignore_l10n_diff": ignore_l10n_diff,
-                    "content": content,
-                }
-
-        env = self._env(lang, calling_num, fatal_warnings, extra_env)
-        async_job = AsyncProcess(args=args, env=env, complete_cb=complete_cb)
-
-        self._async_jobs.append(async_job)
-
-        self.async_start(wait_all=sync_barrier)
+        typ = collections.namedtuple("CallPexpect", ["pexp", "valgrind_log"])
+        return typ(pexp, valgrind_log)
 
     def async_start(self, wait_all=False):
 
@@ -1381,13 +1161,281 @@ class TestNmcli(unittest.TestCase):
                 % (",".join(skip_test_for_l10n_diff))
             )
 
-    def skip_without_pexpect(func):
-        def f(self):
-            if pexpect is None:
-                raise unittest.SkipTest("pexpect not available")
-            func(self)
+    def setUp(self):
+        if not dbus_session_inited:
+            self.skipTest(
+                "Own D-Bus session for testing is not initialized. Do you have dbus-run-session available?"
+            )
+        if NM is None:
+            self.skipTest("gi.NM is not available. Did you build with introspection?")
 
-        return f
+
+class TestNmcli(TestNmClient):
+    def call_nmcli_l(
+        self,
+        args,
+        check_on_disk=_DEFAULT_ARG,
+        fatal_warnings=_DEFAULT_ARG,
+        expected_returncode=_DEFAULT_ARG,
+        expected_stdout=_DEFAULT_ARG,
+        expected_stderr=_DEFAULT_ARG,
+        replace_stdout=None,
+        replace_stderr=None,
+        replace_cmd=None,
+        sort_lines_stdout=False,
+        extra_env=None,
+        sync_barrier=False,
+    ):
+        frame = sys._getframe(1)
+        for lang in ["C", "pl"]:
+            self._call_nmcli(
+                args,
+                lang,
+                check_on_disk,
+                fatal_warnings,
+                expected_returncode,
+                expected_stdout,
+                expected_stderr,
+                replace_stdout,
+                replace_stderr,
+                replace_cmd,
+                sort_lines_stdout,
+                extra_env,
+                sync_barrier,
+                frame,
+            )
+
+    def call_nmcli(
+        self,
+        args,
+        langs=None,
+        lang=None,
+        check_on_disk=_DEFAULT_ARG,
+        fatal_warnings=_DEFAULT_ARG,
+        expected_returncode=_DEFAULT_ARG,
+        expected_stdout=_DEFAULT_ARG,
+        expected_stderr=_DEFAULT_ARG,
+        replace_stdout=None,
+        replace_stderr=None,
+        replace_cmd=None,
+        sort_lines_stdout=False,
+        extra_env=None,
+        sync_barrier=None,
+    ):
+
+        frame = sys._getframe(1)
+
+        if langs is not None:
+            assert lang is None
+        else:
+            if lang is None:
+                lang = "C"
+            langs = [lang]
+
+        if sync_barrier is None:
+            sync_barrier = len(langs) == 1
+
+        for lang in langs:
+            self._call_nmcli(
+                args,
+                lang,
+                check_on_disk,
+                fatal_warnings,
+                expected_returncode,
+                expected_stdout,
+                expected_stderr,
+                replace_stdout,
+                replace_stderr,
+                replace_cmd,
+                sort_lines_stdout,
+                extra_env,
+                sync_barrier,
+                frame,
+            )
+
+    def call_nmcli_pexpect(self, args):
+        return self.call_pexpect(ENV_NM_TEST_CLIENT_NMCLI_PATH, args, {"NO_COLOR": "1"})
+
+    def _call_nmcli(
+        self,
+        args,
+        lang,
+        check_on_disk,
+        fatal_warnings,
+        expected_returncode,
+        expected_stdout,
+        expected_stderr,
+        replace_stdout,
+        replace_stderr,
+        replace_cmd,
+        sort_lines_stdout,
+        extra_env,
+        sync_barrier,
+        frame,
+    ):
+
+        if sync_barrier:
+            self.async_wait()
+
+        calling_fcn = frame.f_code.co_name
+        calling_num = self._calling_num.get(calling_fcn, 0) + 1
+        self._calling_num[calling_fcn] = calling_num
+
+        test_name = "%s-%03d" % (calling_fcn, calling_num)
+
+        # we cannot use frame.f_code.co_filename directly, because it might be different depending
+        # on where the file lies and which is CWD. We still want to give the location of
+        # the file, so that the user can easier find the source (when looking at the .expected files)
+        self.assertTrue(
+            os.path.abspath(frame.f_code.co_filename).endswith(
+                "/" + PathConfiguration.canonical_script_filename()
+            )
+        )
+
+        if conf.get(ENV_NM_TEST_WITH_LINENO):
+            calling_location = "%s:%d:%s()/%d" % (
+                PathConfiguration.canonical_script_filename(),
+                frame.f_lineno,
+                frame.f_code.co_name,
+                calling_num,
+            )
+        else:
+            calling_location = "%s:%s()/%d" % (
+                PathConfiguration.canonical_script_filename(),
+                frame.f_code.co_name,
+                calling_num,
+            )
+
+        if lang is None or lang == "C":
+            lang = "C"
+        elif lang == "de":
+            lang = "de_DE.utf8"
+        elif lang == "pl":
+            lang = "pl_PL.UTF-8"
+        else:
+            self.fail("invalid language %s" % (lang))
+
+        # Running under valgrind is not yet supported for those tests.
+        args, valgrind_log = self.cmd_construct_argv(
+            ENV_NM_TEST_CLIENT_NMCLI_PATH, args, with_valgrind=False
+        )
+
+        assert valgrind_log is None
+
+        if replace_stdout is not None:
+            replace_stdout = list(replace_stdout)
+        if replace_stderr is not None:
+            replace_stderr = list(replace_stderr)
+        if replace_cmd is not None:
+            replace_cmd = list(replace_cmd)
+
+        if check_on_disk is _DEFAULT_ARG:
+            check_on_disk = (
+                expected_returncode is _DEFAULT_ARG
+                and (
+                    expected_stdout is _DEFAULT_ARG
+                    or expected_stdout is _UNSTABLE_OUTPUT
+                )
+                and (
+                    expected_stderr is _DEFAULT_ARG
+                    or expected_stderr is _UNSTABLE_OUTPUT
+                )
+            )
+        if expected_returncode is _DEFAULT_ARG:
+            expected_returncode = None
+        if expected_stdout is _DEFAULT_ARG:
+            expected_stdout = None
+        if expected_stderr is _DEFAULT_ARG:
+            expected_stderr = None
+
+        results_idx = len(self._results)
+        self._results.append(None)
+
+        def complete_cb(async_job, returncode, stdout, stderr):
+
+            if expected_stdout is _UNSTABLE_OUTPUT:
+                stdout = "<UNSTABLE OUTPUT>".encode("utf-8")
+            else:
+                stdout = Util.replace_text(stdout, replace_stdout)
+
+            if expected_stderr is _UNSTABLE_OUTPUT:
+                stderr = "<UNSTABLE OUTPUT>".encode("utf-8")
+            else:
+                stderr = Util.replace_text(stderr, replace_stderr)
+
+            if sort_lines_stdout:
+                stdout = b"\n".join(sorted(stdout.split(b"\n")))
+
+            ignore_l10n_diff = lang != "C" and not conf.get(
+                ENV_NM_TEST_CLIENT_CHECK_L10N
+            )
+
+            if expected_stderr is not None and expected_stderr is not _UNSTABLE_OUTPUT:
+                if expected_stderr != stderr:
+                    if ignore_l10n_diff:
+                        self._skip_test_for_l10n_diff.append(test_name)
+                    else:
+                        self.assertEqual(expected_stderr, stderr)
+            if expected_stdout is not None and expected_stdout is not _UNSTABLE_OUTPUT:
+                if expected_stdout != stdout:
+                    if ignore_l10n_diff:
+                        self._skip_test_for_l10n_diff.append(test_name)
+                    else:
+                        self.assertEqual(expected_stdout, stdout)
+            if expected_returncode is not None:
+                self.assertEqual(expected_returncode, returncode)
+
+            if fatal_warnings is _DEFAULT_ARG:
+                if expected_returncode != -5:
+                    self.assertNotEqual(returncode, -5)
+            elif fatal_warnings:
+                if expected_returncode is None:
+                    self.assertEqual(returncode, -5)
+
+            if check_on_disk:
+                cmd = "$NMCLI %s" % (Util.shlex_join(args[1:]),)
+                cmd = Util.replace_text(cmd, replace_cmd)
+
+                if returncode < 0:
+                    returncode_str = "%d (SIGNAL %s)" % (
+                        returncode,
+                        Util.signal_no_to_str(-returncode),
+                    )
+                else:
+                    returncode_str = "%d" % (returncode)
+
+                content = (
+                    ("location: %s\n" % (calling_location)).encode("utf8")
+                    + ("cmd: %s\n" % (cmd)).encode("utf8")
+                    + ("lang: %s\n" % (lang)).encode("utf8")
+                    + ("returncode: %s\n" % (returncode_str)).encode("utf8")
+                )
+                if len(stdout) > 0:
+                    content += (
+                        ("stdout: %d bytes\n>>>\n" % (len(stdout))).encode("utf8")
+                        + stdout
+                        + "\n<<<\n".encode("utf8")
+                    )
+                if len(stderr) > 0:
+                    content += (
+                        ("stderr: %d bytes\n>>>\n" % (len(stderr))).encode("utf8")
+                        + stderr
+                        + "\n<<<\n".encode("utf8")
+                    )
+                content = ("size: %s\n" % (len(content))).encode("utf8") + content
+
+                self._results[results_idx] = {
+                    "test_name": test_name,
+                    "ignore_l10n_diff": ignore_l10n_diff,
+                    "content": content,
+                }
+
+        env = self._env(lang, calling_num, fatal_warnings, extra_env)
+        async_job = AsyncProcess(args=args, env=env, complete_cb=complete_cb)
+
+        self._async_jobs.append(async_job)
+
+        self.async_start(wait_all=sync_barrier)
 
     def nm_test(func):
         def f(self):
@@ -1404,13 +1452,13 @@ class TestNmcli(unittest.TestCase):
 
         return f
 
-    def setUp(self):
-        if not dbus_session_inited:
-            self.skipTest(
-                "Own D-Bus session for testing is not initialized. Do you have dbus-run-session available?"
-            )
-        if NM is None:
-            self.skipTest("gi.NM is not available. Did you build with introspection?")
+    def skip_without_pexpect(func):
+        def f(self):
+            if pexpect is None:
+                raise unittest.SkipTest("pexpect not available")
+            func(self)
+
+        return f
 
     def init_001(self):
         self.srv.op_AddObj("WiredDevice", iface="eth0")
@@ -2083,6 +2131,125 @@ class TestNmcli(unittest.TestCase):
         )
         nmc.pexp.expect("NetworkManager is stopped")
         end_mon(self, nmc)
+
+
+###############################################################################
+
+
+class TestNmCloudSetup(TestNmClient):
+    def cloud_setup_test(func):
+        """
+        Runs the mock NetworkManager along with a mock cloud metadata service.
+        """
+
+        def f(self):
+            if pexpect is None:
+                raise unittest.SkipTest("pexpect not available")
+
+            s = socket.socket()
+            s.set_inheritable(True)
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+            s.bind(("localhost", 0))
+
+            # The same value as Python's TCPServer uses.
+            # Chosen by summoning the sprit of TCP under influence of
+            # hallucinogenic substances.
+            s.listen(5)
+
+            def pass_socket():
+                os.dup2(s.fileno(), 3, inheritable=True)
+
+            service_path = PathConfiguration.test_cloud_meta_mock_path()
+            env = os.environ.copy()
+            env["LISTEN_FDS"] = "1"
+            p = subprocess.Popen(
+                [sys.executable, service_path],
+                stdin=subprocess.PIPE,
+                env=env,
+                pass_fds=(s.fileno(),),
+                preexec_fn=pass_socket,
+            )
+
+            self.md_url = "http://%s:%d" % s.getsockname()
+            s.close()
+
+            self.srv_start()
+            func(self)
+            self._nm_test_post()
+
+            p.terminate()
+            p.wait()
+
+        return f
+
+    @cloud_setup_test
+    def test_ec2(self):
+
+        # Add a device with an active connection that has IPv4 configured
+        self.srv.op_AddObj("WiredDevice", iface="eth0")
+        self.srv.addAndActivateConnection(
+            {
+                "connection": {"type": "802-3-ethernet", "id": "con-eth0"},
+                "ipv4": {"method": "auto"},
+            },
+            "/org/freedesktop/NetworkManager/Devices/1",
+            delay=0,
+        )
+
+        # The second connection has no IPv4
+        self.srv.op_AddObj("WiredDevice", iface="eth1")
+        self.srv.addAndActivateConnection(
+            {"connection": {"type": "802-3-ethernet", "id": "con-eth1"}},
+            "/org/freedesktop/NetworkManager/Devices/2",
+            "",
+            delay=0,
+        )
+
+        # Run nm-cloud-setup for the first time
+        nmc = self.call_pexpect(
+            ENV_NM_TEST_CLIENT_CLOUD_SETUP_PATH,
+            [],
+            {
+                "NM_CLOUD_SETUP_EC2_HOST": self.md_url,
+                "NM_CLOUD_SETUP_LOG": "trace",
+                "NM_CLOUD_SETUP_EC2": "yes",
+            },
+        )
+
+        nmc.pexp.expect("provider ec2 detected")
+        nmc.pexp.expect("found interfaces: 9E:C0:3E:92:24:2D, 53:E9:7E:52:8D:A8")
+        nmc.pexp.expect("get-config: starting")
+        nmc.pexp.expect("get-config: success")
+        nmc.pexp.expect("meta data received")
+        # One of the devices has no IPv4 configuration to be modified
+        nmc.pexp.expect("device has no suitable applied connection. Skip")
+        # The other one was lacking an address set it up.
+        nmc.pexp.expect("some changes were applied for provider ec2")
+        nmc.pexp.expect(pexpect.EOF)
+
+        # Run nm-cloud-setup for the second time
+        nmc = self.call_pexpect(
+            ENV_NM_TEST_CLIENT_CLOUD_SETUP_PATH,
+            [],
+            {
+                "NM_CLOUD_SETUP_EC2_HOST": self.md_url,
+                "NM_CLOUD_SETUP_LOG": "trace",
+                "NM_CLOUD_SETUP_EC2": "yes",
+            },
+        )
+
+        nmc.pexp.expect("provider ec2 detected")
+        nmc.pexp.expect("found interfaces: 9E:C0:3E:92:24:2D, 53:E9:7E:52:8D:A8")
+        nmc.pexp.expect("get-config: starting")
+        nmc.pexp.expect("get-config: success")
+        nmc.pexp.expect("meta data received")
+        # No changes this time
+        nmc.pexp.expect('device needs no update to applied connection "con-eth0"')
+        nmc.pexp.expect("no changes were applied for provider ec2")
+        nmc.pexp.expect(pexpect.EOF)
+
+        Util.valgrind_check_log(nmc.valgrind_log, "test_ec2")
 
 
 ###############################################################################

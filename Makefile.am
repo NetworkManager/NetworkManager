@@ -5468,9 +5468,16 @@ endif
 ###############################################################################
 
 check-local-tests-client: src/nmcli/nmcli src/tests/client/test-client.py
-	LIBTOOL="$(LIBTOOL)" "$(srcdir)/src/tests/client/test-client.sh" "$(builddir)" "$(srcdir)" "$(PYTHON)" --
+	LIBTOOL="$(LIBTOOL)" "$(srcdir)/src/tests/client/test-client.sh" "$(builddir)" "$(srcdir)" "$(PYTHON)" -- TestNmcli
 
 check_local += check-local-tests-client
+
+check-local-tests-cloud-setup: src/nm-cloud-setup/nm-cloud-setup src/tests/client/test-client.py
+	LIBTOOL="$(LIBTOOL)" "$(srcdir)/src/tests/client/test-client.sh" "$(builddir)" "$(srcdir)" "$(PYTHON)" -- TestNmCloudSetup
+
+if BUILD_NM_CLOUD_SETUP
+check_local += check-local-tests-cloud-setup
+endif
 
 CLEANFILES += src/tests/client/test-client.log
 
@@ -5812,6 +5819,7 @@ EXTRA_DIST += \
 	tools/enums-to-docbook.pl \
 	tools/meson-post-install.sh \
 	tools/run-nm-test.sh \
+	tools/test-cloud-meta-mock.py \
 	tools/test-networkmanager-service.py \
 	tools/test-sudo-wrapper.sh \
 	\
