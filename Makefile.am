@@ -648,7 +648,6 @@ src_libnm_platform_libnm_platform_la_SOURCES = \
 	\
 	src/linux-headers/ethtool.h \
 	src/linux-headers/mptcp.h \
-	src/linux-headers/nl80211-vnd-intel.h \
 	src/linux-headers/nl802154.h \
 	\
 	src/nm-compat-headers/linux/if_addr.h \

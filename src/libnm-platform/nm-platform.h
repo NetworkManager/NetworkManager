@@ -993,14 +993,6 @@ typedef struct {
 
 /*****************************************************************************/
 
-typedef struct _NMPlatformCsmeConnInfo {
-    guint8      ssid[32];
-    guint32     channel;
-    NMEtherAddr addr;
-    guint8      sta_cipher;
-    guint8      auth_mode;
-} NMPlatformCsmeConnInfo;
-
 typedef enum {
     NM_PLATFORM_KERNEL_SUPPORT_TYPE_FRA_L3MDEV,
     NM_PLATFORM_KERNEL_SUPPORT_TYPE_FRA_UID_RANGE,
@@ -1219,10 +1211,6 @@ typedef struct {
     gboolean (*wifi_set_wake_on_wlan)(NMPlatform                  *self,
                                       int                          ifindex,
                                       _NMSettingWirelessWakeOnWLan wowl);
-    gboolean (*wifi_get_csme_conn_info)(NMPlatform             *self,
-                                        int                     ifindex,
-                                        NMPlatformCsmeConnInfo *out_conn_info);
-    gboolean (*wifi_get_device_from_csme)(NMPlatform *self, int ifindex);
 
     guint32 (*mesh_get_channel)(NMPlatform *self, int ifindex);
     gboolean (*mesh_set_channel)(NMPlatform *self, int ifindex, guint32 channel);
@@ -2114,10 +2102,6 @@ void nm_platform_wifi_indicate_addressing_running(NMPlatform *self, int ifindex,
 _NMSettingWirelessWakeOnWLan nm_platform_wifi_get_wake_on_wlan(NMPlatform *self, int ifindex);
 gboolean
 nm_platform_wifi_set_wake_on_wlan(NMPlatform *self, int ifindex, _NMSettingWirelessWakeOnWLan wowl);
-gboolean nm_platform_wifi_get_csme_conn_info(NMPlatform             *self,
-                                             int                     ifindex,
-                                             NMPlatformCsmeConnInfo *out_conn_info);
-gboolean nm_platform_wifi_get_device_from_csme(NMPlatform *self, int ifindex);
 
 guint32  nm_platform_mesh_get_channel(NMPlatform *self, int ifindex);
 gboolean nm_platform_mesh_set_channel(NMPlatform *self, int ifindex, guint32 channel);
