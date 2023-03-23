@@ -541,21 +541,6 @@ case $with_suspend_resume in
 		;;
 esac
 
-# eBPF support
-AC_ARG_WITH(ebpf,
-            AS_HELP_STRING([--with-ebpf=yes|no|auto], [Build with eBPF support [default=auto]]),
-            [], [with_ebpf=auto])
-# 'auto' means 'false' because there are still some issues.
-if test "$with_ebpf" = "yes" ; then
-	AC_CHECK_HEADER(linux/bpf.h, [have_ebpf=yes], [have_ebpf=no])
-else
-	have_ebpf=no
-fi
-if test "$with_ebpf" = "yes" -a "$have_ebpf" = "no"; then
-	AC_MSG_ERROR([--with-ebpf=yes requires eBPF kernel header])
-fi
-AM_CONDITIONAL(WITH_EBPF, test "${have_ebpf}" = "yes")
-
 # SELinux support
 AC_ARG_WITH(selinux,
             AS_HELP_STRING([--with-selinux=yes|no|auto], [Build with SELinux [default=auto]]),
@@ -1442,7 +1427,6 @@ echo "  linker garbage collection: $enable_ld_gc"
 echo "  crypto: $with_crypto (have-gnutls: $have_crypto_gnutls, have-nss: $have_crypto_nss)"
 echo "  sanitizers: $sanitizers"
 echo "  Mozilla Public Suffix List: $with_libpsl"
-echo "  eBPF: $have_ebpf"
 echo "  readline: $with_readline"
 echo "  python: $PYTHON"
 echo

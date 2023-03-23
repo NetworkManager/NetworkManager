@@ -100,9 +100,6 @@ test_subtree() {
     pushd ./src/$d
 
     ARGS=()
-    if [ "$d" = n-acd ]; then
-        ARGS+=('-Debpf=false')
-    fi
 
     CC="$cc" CFLAGS="-Werror -Wall" meson build "${ARGS[@]}"
     ninja -v -C build test

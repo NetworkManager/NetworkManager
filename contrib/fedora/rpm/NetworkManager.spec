@@ -170,17 +170,6 @@
 %global ifcfg_warning 0
 %endif
 
-%if 0%{?fedora}
-# Although eBPF would be available on Fedora's kernel, it seems
-# we often get SELinux denials (rh#1651654). But even aside them,
-# bpf(BPF_MAP_CREATE, ...) randomly fails with EPERM. That might
-# be related to `ulimit -l`. Anyway, this is not usable at the
-# moment.
-%global ebpf_enabled "no"
-%else
-%global ebpf_enabled "no"
-%endif
-
 # Fedora 33 enables LTO by default by setting CFLAGS="-flto -ffat-lto-objects".
 # However, we also require "-flto -flto-partition=none", so disable Fedora's
 # default and use our configure option --with-lto instead.
@@ -714,11 +703,6 @@ Preferably use nmcli instead.
 %else
 	-Dlibpsl=false \
 %endif
-%if %{ebpf_enabled} != "yes"
-	-Debpf=false \
-%else
-	-Debpf=true \
-%endif
 	-Dsession_tracking=systemd \
 	-Dsuspend_resume=systemd \
 	-Dsystemdsystemunitdir=%{_unitdir} \
@@ -858,7 +842,6 @@ autoreconf --install --force
 %else
 	--with-libpsl=no \
 %endif
-	--with-ebpf=%{ebpf_enabled} \
 	--with-session-tracking=systemd \
 	--with-suspend-resume=systemd \
 	--with-systemdsystemunitdir=%{_unitdir} \

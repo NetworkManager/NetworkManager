@@ -296,7 +296,7 @@ int n_acd_ensure_bpf_map_space(NAcd *acd) {
 
         r = n_acd_bpf_compile(&fd_prog, fd_map, (struct ether_addr*) acd->mac);
         if (r)
-                return r;
+                fd_prog = -1;
 
         if (fd_prog >= 0) {
                 r = setsockopt(acd->fd_socket, SOL_SOCKET, SO_ATTACH_BPF, &fd_prog, sizeof(fd_prog));
@@ -360,12 +360,12 @@ _c_public_ int n_acd_new(NAcd **acdp, NAcdConfig *config) {
         acd->max_bpf_map = 8;
 
         r = n_acd_bpf_map_create(&acd->fd_bpf_map, acd->max_bpf_map);
-        if (r)
-                return r;
 
-        r = n_acd_bpf_compile(&fd_bpf_prog, acd->fd_bpf_map, (struct ether_addr*) acd->mac);
-        if (r)
-                return r;
+        if (acd->fd_bpf_map >= 0) {
+                r = n_acd_bpf_compile(&fd_bpf_prog, acd->fd_bpf_map, (struct ether_addr*) acd->mac);
+                if (r)
+                        fd_bpf_prog = -1;
+        }
 
         r = n_acd_socket_new(&acd->fd_socket, fd_bpf_prog, config);
         if (r)

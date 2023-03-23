@@ -49,42 +49,6 @@ jobs:
                 "--m32=1" \
                 "--source=/github/workspace"
 
-  ci-no-ebpf:
-    name: CI without eBPF
-    runs-on: ubuntu-latest
-
-    steps:
-    # See above in 'ci' job.
-    - name: Fetch CI
-      uses: actions/checkout@v2
-      with:
-        repository: c-util/automation
-        ref: v1
-        path: automation
-    - name: Build CI
-      working-directory: automation/src/ci-c-util
-      run: docker build --tag ci-c-util:v1 .
-
-    #
-    # Run CI
-    #
-    # This again runs the CI, but this time disables eBPF. We do support the
-    # legacy BPF fallback, so lets make sure we test for it.
-    #
-    - name: Fetch Sources
-      uses: actions/checkout@v2
-      with:
-        path: source
-    - name: Run through C-Util CI
-      run: |
-        docker run \
-                --privileged \
-                -v "$(pwd)/source:/github/workspace" \
-                "ci-c-util:v1" \
-                "--m32=1" \
-                "--mesonargs=-Debpf=false" \
-                "--source=/github/workspace"
-
   ci-valgrind:
     name: CI through Valgrind
     runs-on: ubuntu-latest

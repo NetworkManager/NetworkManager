@@ -173,8 +173,6 @@ run_autotools() {
             --enable-tests=yes \
             --with-crypto=$_WITH_CRYPTO \
             \
-            --with-ebpf=no \
-            \
             --with-iwd=yes \
             --with-ofono=yes \
             --enable-teamdctl=$_WITH_LIBTEAM \
@@ -241,8 +239,6 @@ run_meson() {
         -D qt=false \
         -D crypto=$_WITH_CRYPTO \
         -D docs=$_WITH_DOCS \
-        \
-        -D ebpf=false \
         \
         -D iwd=true \
         -D ofono=true \
