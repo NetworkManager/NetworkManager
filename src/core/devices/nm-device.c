@@ -774,7 +774,7 @@ typedef struct _NMDevicePrivate {
      * As such, it must stay in DEACTIVATING until the port detach
      * terminates. */
     gpointer detach_port_tag;
-    bool     detach_port_schedule_disconnect : 1;
+    bool     detach_port_schedule_deactivate : 1;
 
     NMOptionBool promisc_reset;
 
@@ -6410,9 +6410,9 @@ detach_port_done(NMDevice *self, NMDevice *slave, SlaveInfo *info, gboolean is_c
                                          NM_UNMAN_FLAG_OP_FORGET,
                                          NM_DEVICE_STATE_REASON_REMOVED);
 
-        if (slave_priv->detach_port_schedule_disconnect) {
+        if (slave_priv->detach_port_schedule_deactivate) {
             deactivate_ready(slave, reason);
-            slave_priv->detach_port_schedule_disconnect = FALSE;
+            slave_priv->detach_port_schedule_deactivate = FALSE;
         }
     }
 }
@@ -16289,7 +16289,7 @@ _set_state_full(NMDevice *self, NMDeviceState state, NMDeviceStateReason reason,
              * on `detach_port_source` in `deactivate_ready()`. We need
              * to schedule deactivate_ready() when the detach finishes.
              */
-            priv->detach_port_schedule_disconnect = TRUE;
+            priv->detach_port_schedule_deactivate = TRUE;
         }
 
         nm_pacrunner_manager_remove_clear(&priv->pacrunner_conf_id);
