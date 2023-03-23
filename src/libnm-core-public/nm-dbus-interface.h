@@ -447,7 +447,7 @@ typedef enum /*< flags >*/ {
  * @NM_DEVICE_MODEM_CAPABILITY_GSM_UMTS: modem supports at least one of GSM,
  * GPRS, EDGE, UMTS, HSDPA, HSUPA, or HSPA+ packet switched data capability
  * @NM_DEVICE_MODEM_CAPABILITY_LTE: modem has LTE data capability
- * @NM_DEVICE_MODEM_CAPABILITY_5GNR: modem has 5GNR data capability (Since: 1.36)
+ * @NM_DEVICE_MODEM_CAPABILITY_5GNR: modem has 5GNR data capability. Since: 1.36.
  *
  * #NMDeviceModemCapabilities values indicate the generic radio access
  * technology families a modem device supports.  For more information on the
@@ -986,7 +986,7 @@ typedef enum {
  *
  * The flags for CheckpointCreate call
  *
- * Since: 1.12 (public since 1.4, g-ir since 1.12)
+ * Since: 1.12: Public since 1.4, g-ir since 1.12.
  */
 typedef enum /*< flags >*/ {
     NM_CHECKPOINT_CREATE_FLAG_NONE                       = 0,

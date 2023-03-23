@@ -155,8 +155,13 @@ const char *nm_setting_wireless_get_mode(NMSettingWireless *setting);
 const char *nm_setting_wireless_get_band(NMSettingWireless *setting);
 guint32     nm_setting_wireless_get_channel(NMSettingWireless *setting);
 const char *nm_setting_wireless_get_bssid(NMSettingWireless *setting);
-guint32     nm_setting_wireless_get_rate(NMSettingWireless *setting);
-guint32     nm_setting_wireless_get_tx_power(NMSettingWireless *setting);
+
+NM_DEPRECATED_IN_1_44
+guint32 nm_setting_wireless_get_rate(NMSettingWireless *setting);
+
+NM_DEPRECATED_IN_1_44
+guint32 nm_setting_wireless_get_tx_power(NMSettingWireless *setting);
+
 const char *nm_setting_wireless_get_mac_address(NMSettingWireless *setting);
 const char *nm_setting_wireless_get_cloned_mac_address(NMSettingWireless *setting);
 

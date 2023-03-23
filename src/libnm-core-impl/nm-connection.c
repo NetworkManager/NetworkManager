@@ -883,6 +883,20 @@ _normalize_connection_uuid(NMConnection *self)
     return TRUE;
 }
 
+static gboolean
+_normalize_connection(NMConnection *self)
+{
+    NMSettingConnection *s_con   = nm_connection_get_setting_connection(self);
+    gboolean             changed = FALSE;
+
+    if (nm_setting_connection_get_read_only(s_con)) {
+        g_object_set(s_con, NM_SETTING_CONNECTION_READ_ONLY, FALSE, NULL);
+        changed = TRUE;
+    }
+
+    return changed;
+}
+
 gboolean
 _nm_setting_connection_verify_secondaries(GArray *secondaries, GError **error)
 {
@@ -1449,6 +1463,28 @@ _normalize_wireless_mac_address_randomization(NMConnection *self)
 }
 
 static gboolean
+_normalize_wireless(NMConnection *self)
+{
+    NMSettingWireless *s_wifi  = nm_connection_get_setting_wireless(self);
+    gboolean           changed = FALSE;
+
+    if (!s_wifi)
+        return FALSE;
+
+    if (nm_setting_wireless_get_rate(s_wifi) != 0) {
+        g_object_set(s_wifi, NM_SETTING_WIRELESS_RATE, 0u, NULL);
+        changed = TRUE;
+    }
+
+    if (nm_setting_wireless_get_tx_power(s_wifi) != 0) {
+        g_object_set(s_wifi, NM_SETTING_WIRELESS_TX_POWER, 0u, NULL);
+        changed = TRUE;
+    }
+
+    return changed;
+}
+
+static gboolean
 _normalize_macsec(NMConnection *self)
 {
     NMSettingMacsec *s_macsec = nm_connection_get_setting_macsec(self);
@@ -1983,6 +2019,7 @@ _connection_normalize(NMConnection *connection,
     was_modified |= _normalize_connection_type(connection);
     was_modified |= _normalize_connection_slave_type(connection);
     was_modified |= _normalize_connection_secondaries(connection);
+    was_modified |= _normalize_connection(connection);
     was_modified |= _normalize_required_settings(connection);
     was_modified |= _normalize_invalid_slave_port_settings(connection);
     was_modified |= _normalize_ip_config(connection, parameters);
@@ -1991,6 +2028,7 @@ _connection_normalize(NMConnection *connection,
     was_modified |= _normalize_bond_mode(connection);
     was_modified |= _normalize_bond_options(connection);
     was_modified |= _normalize_wireless_mac_address_randomization(connection);
+    was_modified |= _normalize_wireless(connection);
     was_modified |= _normalize_macsec(connection);
     was_modified |= _normalize_team_config(connection);
     was_modified |= _normalize_team_port_config(connection);

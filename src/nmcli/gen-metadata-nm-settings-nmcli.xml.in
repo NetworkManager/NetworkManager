@@ -30,10 +30,6 @@
                   description="Wireless channel to use for the Wi-Fi connection.  The device will only join (or create for Ad-Hoc networks) a Wi-Fi network on the specified channel.  Because channel numbers overlap between bands, this property also requires the &quot;band&quot; property to be set." />
         <property name="bssid"
                   description="If specified, directs the device to only associate with the given access point.  This capability is highly driver dependent and not supported by all devices.  Note: this property does not control the BSSID used when creating an Ad-Hoc network and is unlikely to in the future. Locking a client profile to a certain BSSID will prevent roaming and also disable background scanning. That can be useful, if there is only one access point for the SSID." />
-        <property name="rate"
-                  description="If non-zero, directs the device to only use the specified bitrate for communication with the access point.  Units are in Kb/s, ie 5500 = 5.5 Mbit/s.  This property is highly driver dependent and not all devices support setting a static bitrate." />
-        <property name="tx-power"
-                  description="If non-zero, directs the device to use the specified transmit power. Units are dBm.  This property is highly driver dependent and not all devices support setting a static transmit power." />
         <property name="mac-address"
                   alias="mac"
                   description="If specified, this connection will only apply to the Wi-Fi device whose permanent MAC address matches. This property does not change the MAC address of the device (i.e. MAC spoofing)." />
@@ -50,7 +46,7 @@
                   alias="mtu"
                   description="If non-zero, only transmit packets of the specified size or smaller, breaking larger packets up into multiple Ethernet frames." />
         <property name="seen-bssids"
-                  description="A list of BSSIDs (each BSSID formatted as a MAC address like &quot;00:11:22:33:44:55&quot;) that have been detected as part of the Wi-Fi network.  NetworkManager internally tracks previously seen BSSIDs. The property is only meant for reading and reflects the BSSID list of NetworkManager. The changes you make to this property will not be preserved." />
+                  description="A list of BSSIDs (each BSSID formatted as a MAC address like &quot;00:11:22:33:44:55&quot;) that have been detected as part of the Wi-Fi network.  NetworkManager internally tracks previously seen BSSIDs. The property is only meant for reading and reflects the BSSID list of NetworkManager. The changes you make to this property will not be preserved. This is not a regular property that the user would configure. Instead, NetworkManager automatically sets the seen BSSIDs and tracks them internally in &quot;/var/lib/NetworkManager/seen-bssids&quot; file." />
         <property name="hidden"
                   description="If TRUE, indicates that the network is a non-broadcasting network that hides its SSID. This works both in infrastructure and AP mode. In infrastructure mode, various workarounds are used for a more reliable discovery of hidden networks, such as probe-scanning the SSID.  However, these workarounds expose inherent insecurities with hidden SSID networks, and thus hidden SSID networks should be used with caution. In AP mode, the created network does not broadcast its SSID. Note that marking the network as hidden may be a privacy issue for you (in infrastructure mode) or client stations (in AP mode), as the explicit probe-scans are distinctly recognizable on the air." />
         <property name="powersave"
@@ -391,8 +387,6 @@
                   description="The number of retries for the authentication. Zero means to try indefinitely; -1 means to use a global default. If the global default is not set, the authentication retries for 3 times before failing the connection. Currently, this only applies to 802-1x authentication." />
         <property name="timestamp"
                   description="The time, in seconds since the Unix Epoch, that the connection was last _successfully_ fully activated. NetworkManager updates the connection timestamp periodically when the connection is active to ensure that an active connection has the latest timestamp. The property is only meant for reading (changes to this property will not be preserved)." />
-        <property name="read-only"
-                  description="FALSE if the connection can be modified using the provided settings service&apos;s D-Bus interface with the right privileges, or TRUE if the connection is read-only and cannot be modified." />
         <property name="permissions"
                   description="An array of strings defining what access a given user has to this connection.  If this is NULL or empty, all users are allowed to access this connection; otherwise users are allowed if and only if they are in this list.  When this is not empty, the connection can be active only when one of the specified users is logged into an active session.  Each entry is of the form &quot;[type]:[id]:[reserved]&quot;; for example, &quot;user:dcbw:blah&quot;. At this time only the &quot;user&quot; [type] is allowed.  Any other values are ignored and reserved for future use.  [id] is the username that this permission refers to, which may not contain the &quot;:&quot; character. Any [reserved] information present must be ignored and is reserved for future use.  All of [type], [id], and [reserved] must be valid UTF-8." />
         <property name="zone"

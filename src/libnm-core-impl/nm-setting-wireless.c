@@ -392,6 +392,8 @@ nm_setting_wireless_get_bssid(NMSettingWireless *setting)
  * @setting: the #NMSettingWireless
  *
  * Returns: the #NMSettingWireless:rate property of the setting
+ *
+ * Deprecated: 1.44: This setting is not implemented and has no effect.
  **/
 guint32
 nm_setting_wireless_get_rate(NMSettingWireless *setting)
@@ -406,6 +408,8 @@ nm_setting_wireless_get_rate(NMSettingWireless *setting)
  * @setting: the #NMSettingWireless
  *
  * Returns: the #NMSettingWireless:tx-power property of the setting
+ *
+ * Deprecated: 1.44: This setting is not implemented and has no effect.
  **/
 guint32
 nm_setting_wireless_get_tx_power(NMSettingWireless *setting)
@@ -1100,6 +1104,19 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
     return NM_SETTING_VERIFY_NORMALIZABLE;
 mac_addr_rand_ok:
 
+    if (priv->tx_power != 0 || priv->rate != 0) {
+        g_set_error(error,
+                    NM_CONNECTION_ERROR,
+                    NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                    _("property is deprecated and not implemented"));
+        g_prefix_error(error,
+                       "%s.%s: ",
+                       NM_SETTING_WIRELESS_SETTING_NAME,
+                       priv->tx_power != 0 ? NM_SETTING_WIRELESS_TX_POWER
+                                           : NM_SETTING_WIRELESS_RATE);
+        return NM_SETTING_VERIFY_NORMALIZABLE;
+    }
+
     return TRUE;
 }
 
@@ -1434,15 +1451,14 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
     /**
      * NMSettingWireless:rate:
      *
-     * If non-zero, directs the device to only use the specified bitrate for
-     * communication with the access point.  Units are in Kb/s, ie 5500 = 5.5
-     * Mbit/s.  This property is highly driver dependent and not all devices
-     * support setting a static bitrate.
+     * This property is not implemented and has no effect.
+     *
+     * Deprecated: 1.44: This property is not implemented and has no effect.
      **/
     /* ---ifcfg-rh---
      * property: rate
      * variable: (none)
-     * description: This property is not handled by ifcfg-rh plugin.
+     * description: This property is deprecated and not handled by ifcfg-rh plugin.
      * ---end---
      */
     _nm_setting_property_define_direct_uint32(properties_override,
@@ -1454,19 +1470,20 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
                                               0,
                                               NM_SETTING_PARAM_FUZZY_IGNORE,
                                               NMSettingWirelessPrivate,
-                                              rate);
+                                              rate,
+                                              .is_deprecated = TRUE, );
 
     /**
      * NMSettingWireless:tx-power:
      *
-     * If non-zero, directs the device to use the specified transmit power.
-     * Units are dBm.  This property is highly driver dependent and not all
-     * devices support setting a static transmit power.
+     * This property is not implemented and has no effect.
+     *
+     * Deprecated: 1.44: This property is not implemented and has no effect.
      **/
     /* ---ifcfg-rh---
      * property: tx-power
      * variable: (none)
-     * description: This property is not handled by ifcfg-rh plugin.
+     * description: This property is deprecated and not handled by ifcfg-rh plugin.
      * ---end---
      */
     _nm_setting_property_define_direct_uint32(properties_override,
@@ -1478,7 +1495,8 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
                                               0,
                                               NM_SETTING_PARAM_FUZZY_IGNORE,
                                               NMSettingWirelessPrivate,
-                                              tx_power);
+                                              tx_power,
+                                              .is_deprecated = TRUE, );
 
     /**
      * NMSettingWireless:mac-address:
@@ -1675,11 +1693,16 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
      * property is only meant for reading and reflects the BSSID list of
      * NetworkManager. The changes you make to this property will not be
      * preserved.
+     *
+     * This is not a regular property that the user would configure. Instead,
+     * NetworkManager automatically sets the seen BSSIDs and tracks them internally
+     * in "/var/lib/NetworkManager/seen-bssids" file.
      **/
     /* ---ifcfg-rh---
      * property: seen-bssids
      * variable: (none)
-     * description: This property is not handled by ifcfg-rh plugin.
+     * description: This is not a regular property that would be configured by the
+     *   user. It is not handled by ifcfg-rh plugin.
      * ---end---
      */
     obj_properties[PROP_SEEN_BSSIDS] = g_param_spec_boxed(
@@ -1814,19 +1837,11 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
                                               mac_address_randomization,
                                               .is_deprecated = TRUE, );
 
-    /* Compatibility for deprecated property */
-    /* ---ifcfg-rh---
-     * property: security
-     * variable: (none)
-     * description: This property is deprecated and not handled by ifcfg-rh-plugin.
-     * ---end---
-     */
     /* ---dbus---
      * property: security
-     * description: This property is deprecated, but can be set to the value
-     *   '802-11-wireless-security' when a wireless security setting is also
-     *   present in the connection dictionary, for compatibility with very old
-     *   NetworkManager daemons.
+     * description: This property is deprecated and has no effect.
+     * For backwards compatibility, it can be set to "802-11-wireless-security"
+     * if the profile has a wireless security setting.
      * ---end---
      */
     _nm_properties_override_dbus(
