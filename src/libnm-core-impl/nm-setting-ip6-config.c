@@ -44,13 +44,15 @@ NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_IP6_PRIVACY,
                                   PROP_TOKEN,
                                   PROP_DHCP_DUID,
                                   PROP_RA_TIMEOUT,
-                                  PROP_MTU, );
+                                  PROP_MTU,
+                                  PROP_DHCP_PD_HINT, );
 
 typedef struct {
     NMSettingIPConfigPrivate parent;
 
     char   *token;
     char   *dhcp_duid;
+    char   *dhcp_pd_hint;
     int     ip6_privacy;
     gint32  addr_gen_mode;
     gint32  ra_timeout;
@@ -95,6 +97,26 @@ nm_setting_ip6_config_get_ip6_privacy(NMSettingIP6Config *setting)
     g_return_val_if_fail(NM_IS_SETTING_IP6_CONFIG(setting), NM_SETTING_IP6_CONFIG_PRIVACY_UNKNOWN);
 
     return NM_SETTING_IP6_CONFIG_GET_PRIVATE(setting)->ip6_privacy;
+}
+
+/**
+ * nm_setting_ip6_config_get_dhcp_pd_hint:
+ * @setting: the #NMSettingIP6Config
+ *
+ * Returns the value contained in the #NMSettingIP6Config:dhcp-pd-hint
+ * property.
+ *
+ * Returns: a string containing an address and prefix length to be used
+ * as hint for DHCPv6 prefix delegation.
+ *
+ * Since: 1.44
+ **/
+const char *
+nm_setting_ip6_config_get_dhcp_pd_hint(NMSettingIP6Config *setting)
+{
+    g_return_val_if_fail(NM_IS_SETTING_IP6_CONFIG(setting), NULL);
+
+    return NM_SETTING_IP6_CONFIG_GET_PRIVATE(setting)->dhcp_pd_hint;
 }
 
 /**
@@ -349,6 +371,23 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
         }
     }
 
+    if (priv->dhcp_pd_hint) {
+        int prefix;
+
+        if (!nm_inet_parse_with_prefix_bin(AF_INET6, priv->dhcp_pd_hint, NULL, NULL, &prefix)
+            || prefix < 1 || prefix > 128) {
+            g_set_error_literal(error,
+                                NM_CONNECTION_ERROR,
+                                NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                                _("must be a valid IPv6 address with prefix"));
+            g_prefix_error(error,
+                           "%s.%s: ",
+                           NM_SETTING_IP6_CONFIG_SETTING_NAME,
+                           NM_SETTING_IP6_CONFIG_DHCP_PD_HINT);
+            return FALSE;
+        }
+    }
+
     /* Failures from here on, are NORMALIZABLE_ERROR... */
 
     if (token_needs_normalization) {
@@ -521,6 +560,41 @@ ip6_route_data_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
     routes = nm_utils_ip_routes_from_variant(value, AF_INET6);
     g_object_set(setting, NM_SETTING_IP_CONFIG_ROUTES, routes, NULL);
     return TRUE;
+}
+
+static gboolean
+_set_string_fcn_dhcp_pd_hint(const NMSettInfoSetting  *sett_info,
+                             const NMSettInfoProperty *property_info,
+                             NMSetting                *setting,
+                             const char               *str)
+{
+    NMSettingIP6ConfigPrivate *priv = NM_SETTING_IP6_CONFIG_GET_PRIVATE(setting);
+    char                       buf[NM_INET_ADDRSTRLEN];
+    char                       bufp[NM_INET_ADDRSTRLEN + 16];
+    gs_free char              *old = NULL;
+    NMIPAddr                   addr;
+    int                        prefix;
+
+    if (!str)
+        goto do_set;
+
+    if (!nm_inet_parse_with_prefix_bin(AF_INET6, str, NULL, &addr, &prefix)) {
+        /* address not valid, set as is */
+        goto do_set;
+    }
+
+    /* address valid, normalize */
+    nm_inet_ntop(AF_INET6, &addr, buf);
+    nm_sprintf_buf(bufp, "%s/%d", buf, prefix);
+    str = bufp;
+
+do_set:
+    if (!nm_streq0(priv->dhcp_pd_hint, str)) {
+        old                = priv->dhcp_pd_hint;
+        priv->dhcp_pd_hint = g_strdup(str);
+        return TRUE;
+    }
+    return FALSE;
 }
 
 /*****************************************************************************/
@@ -988,6 +1062,35 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
                                               NM_SETTING_PARAM_NONE,
                                               NMSettingIP6ConfigPrivate,
                                               dhcp_duid);
+
+    /**
+     * NMSettingIP6Config:dhcp-pd-hint:
+     *
+     * A IPv6 address followed by a slash and a prefix length. If set, the value is
+     * sent to the DHCPv6 server as hint indicating the prefix delegation (IA_PD) we
+     * want to receive.
+     * To only hint a prefix length without prefix, set the address part to the
+     * zero address (for example "::/60").
+     *
+     * Since: 1.44
+     **/
+    /* ---ifcfg-rh---
+     * property: dhcp-pd-hint
+     * variable: DHCPV6_PD_HINT(+)
+     * description: Hint for DHCPv6 prefix delegation
+     * example: DHCPV6_PD_HINT=2001:db8:1111:2220::/60
+     *          DHCPV6_PD_HINT=::/60
+     * ---end---
+     */
+    _nm_setting_property_define_direct_string(properties_override,
+                                              obj_properties,
+                                              NM_SETTING_IP6_CONFIG_DHCP_PD_HINT,
+                                              PROP_DHCP_PD_HINT,
+                                              NM_SETTING_PARAM_NONE,
+                                              NMSettingIP6ConfigPrivate,
+                                              dhcp_pd_hint,
+                                              .direct_hook.set_string_fcn =
+                                                  _set_string_fcn_dhcp_pd_hint);
 
     /* IP6-specific property overrides */
 

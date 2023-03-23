@@ -1930,6 +1930,7 @@ libnm_1_44_0 {
 global:
 	nm_setting_gsm_get_initial_eps_apn;
 	nm_setting_gsm_get_initial_eps_config;
+	nm_setting_ip6_config_get_dhcp_pd_hint;
 	nm_setting_link_get_gro_max_size;
 	nm_setting_link_get_gso_max_segments;
 	nm_setting_link_get_gso_max_size;
