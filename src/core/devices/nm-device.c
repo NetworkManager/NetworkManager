@@ -6410,10 +6410,8 @@ detach_port_done(NMDevice *self, NMDevice *slave, SlaveInfo *info, gboolean is_c
                                          NM_UNMAN_FLAG_OP_FORGET,
                                          NM_DEVICE_STATE_REASON_REMOVED);
 
-        if (slave_priv->detach_port_schedule_deactivate) {
+        if (slave_priv->detach_port_schedule_deactivate)
             deactivate_ready(slave, reason);
-            slave_priv->detach_port_schedule_deactivate = FALSE;
-        }
     }
 }
 
@@ -15881,6 +15879,8 @@ deactivate_ready(NMDevice *self, NMDeviceStateReason reason)
 {
     NMDevicePrivate *priv     = NM_DEVICE_GET_PRIVATE(self);
     gboolean         do_queue = FALSE;
+
+    slave_priv->detach_port_schedule_deactivate = FALSE;
 
     if (priv->state == NM_DEVICE_STATE_DEACTIVATING && !priv->detach_port_tag
         && !priv->dispatcher.call_id && priv->sriov_reset_pending == 0)
