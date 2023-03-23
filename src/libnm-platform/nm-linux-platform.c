@@ -179,6 +179,8 @@ G_STATIC_ASSERT(RTA_MAX == (__RTA_MAX - 1));
 
 /*****************************************************************************/
 
+#define IFLA_BOND_SLAVE_PRIO 9
+
 #define IFLA_BOND_PEER_NOTIF_DELAY 28
 #define IFLA_BOND_AD_LACP_ACTIVE   29
 #define IFLA_BOND_MISSED_MAX       30
@@ -3374,17 +3376,47 @@ _new_from_nl_link(NMPlatform            *platform,
 
     if (tb[IFLA_LINKINFO]) {
         static const struct nla_policy policy_link_info[] = {
-            [IFLA_INFO_KIND]   = {.type = NLA_STRING},
-            [IFLA_INFO_DATA]   = {.type = NLA_NESTED},
-            [IFLA_INFO_XSTATS] = {.type = NLA_NESTED},
+            [IFLA_INFO_KIND]       = {.type = NLA_STRING},
+            [IFLA_INFO_DATA]       = {.type = NLA_NESTED},
+            [IFLA_INFO_XSTATS]     = {.type = NLA_NESTED},
+            [IFLA_INFO_SLAVE_KIND] = {.type = NLA_STRING},
+            [IFLA_INFO_SLAVE_DATA] = {.type = NLA_NESTED},
         };
         struct nlattr *li[G_N_ELEMENTS(policy_link_info)];
+        char          *nl_info_kind_port = NULL;
 
         if (nla_parse_nested_arr(li, tb[IFLA_LINKINFO], policy_link_info) < 0)
             return NULL;
 
         if (li[IFLA_INFO_KIND])
             nl_info_kind = nla_get_string(li[IFLA_INFO_KIND]);
+
+        if (li[IFLA_INFO_SLAVE_KIND]) {
+            nl_info_kind_port = nla_get_string(li[IFLA_INFO_SLAVE_KIND]);
+            if (nm_streq0(nl_info_kind_port, "bond"))
+                obj->link.port_kind = NM_PORT_KIND_BOND;
+        }
+
+        if (li[IFLA_INFO_SLAVE_DATA]) {
+            if (nl_info_kind_port && NM_IN_SET(obj->link.port_kind, NM_PORT_KIND_BOND)) {
+                static const struct nla_policy policy_bond_port[] = {
+                    [IFLA_BOND_SLAVE_QUEUE_ID] = {.type = NLA_U16},
+                    [IFLA_BOND_SLAVE_PRIO]     = {.type = NLA_S32},
+                };
+                struct nlattr *bp[G_N_ELEMENTS(policy_bond_port)];
+
+                if (nla_parse_nested_arr(bp, li[IFLA_INFO_SLAVE_DATA], policy_bond_port) < 0)
+                    return NULL;
+
+                if (bp[IFLA_BOND_SLAVE_QUEUE_ID])
+                    obj->link.bond_port_opts.queue_id = nla_get_u16(bp[IFLA_BOND_SLAVE_QUEUE_ID]);
+
+                if (bp[IFLA_BOND_SLAVE_PRIO]) {
+                    obj->link.bond_port_opts.prio     = nla_get_s32(bp[IFLA_BOND_SLAVE_PRIO]);
+                    obj->link.bond_port_opts.prio_has = TRUE;
+                }
+            }
+        }
 
         nl_info_data = li[IFLA_INFO_DATA];
     }
@@ -8406,6 +8438,7 @@ static gboolean
 link_change(NMPlatform               *platform,
             int                       ifindex,
             NMPlatformLinkProps      *props,
+            NMPlatformLinkBondPort   *bond_port,
             NMPlatformLinkChangeFlags flags)
 {
     nm_auto_nlmsg struct nl_msg *nlmsg = NULL;
@@ -8422,6 +8455,31 @@ link_change(NMPlatform               *platform,
         NLA_PUT_U32(nlmsg, IFLA_GSO_MAX_SEGS, props->gso_max_segments);
     if (flags & NM_PLATFORM_LINK_CHANGE_GRO_MAX_SIZE)
         NLA_PUT_U32(nlmsg, IFLA_GRO_MAX_SIZE, props->gro_max_size);
+    if (bond_port) {
+        struct nlattr *info;
+        struct nlattr *port_data;
+        const char    *kind;
+
+        if (!(info = nla_nest_start(nlmsg, IFLA_LINKINFO)))
+            goto nla_put_failure;
+
+        kind = nm_link_type_to_rtnl_type_string(NM_LINK_TYPE_BOND);
+        if (!kind)
+            goto nla_put_failure;
+
+        NLA_PUT_STRING(nlmsg, IFLA_INFO_SLAVE_KIND, kind);
+
+        if (!(port_data = nla_nest_start(nlmsg, IFLA_INFO_SLAVE_DATA)))
+            goto nla_put_failure;
+
+        NLA_PUT_U16(nlmsg, IFLA_BOND_SLAVE_QUEUE_ID, bond_port->queue_id);
+
+        if (bond_port->prio_has)
+            NLA_PUT_S32(nlmsg, IFLA_BOND_SLAVE_PRIO, bond_port->prio);
+
+        nla_nest_end(nlmsg, port_data);
+        nla_nest_end(nlmsg, info);
+    }
 
     return do_change_link(platform, CHANGE_LINK_TYPE_UNSPEC, ifindex, nlmsg, NULL) == 0;
 nla_put_failure:

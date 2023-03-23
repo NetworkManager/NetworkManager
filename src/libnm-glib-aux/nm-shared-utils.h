@@ -94,6 +94,14 @@ G_STATIC_ASSERT(sizeof(int) == sizeof(gint32));
 /*****************************************************************************/
 
 typedef enum {
+    /* No type, empty value */
+    NM_PORT_KIND_NONE,
+    NM_PORT_KIND_BOND,
+} NMPortKind;
+
+/*****************************************************************************/
+
+typedef enum {
 
     /* No type, used as error value */
     NM_LINK_TYPE_NONE,

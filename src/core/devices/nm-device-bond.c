@@ -229,24 +229,23 @@ controller_update_port_connection(NMDevice     *self,
                                   NMConnection *connection,
                                   GError      **error)
 {
-    NMSettingBondPort *s_port;
-    int                ifindex_port       = nm_device_get_ifindex(port);
-    NMConnection      *applied_connection = nm_device_get_applied_connection(self);
-    uint               queue_id           = NM_BOND_PORT_QUEUE_ID_DEF;
-    gs_free char      *queue_id_str       = NULL;
+    NMSettingBondPort    *s_port;
+    int                   ifindex_port       = nm_device_get_ifindex(port);
+    NMConnection         *applied_connection = nm_device_get_applied_connection(self);
+    const NMPlatformLink *pllink;
 
     g_return_val_if_fail(ifindex_port > 0, FALSE);
 
     s_port = _nm_connection_ensure_setting(connection, NM_TYPE_SETTING_BOND_PORT);
+    pllink = nm_platform_link_get(nm_device_get_platform(port), ifindex_port);
 
-    queue_id_str =
-        nm_platform_sysctl_slave_get_option(nm_device_get_platform(self), ifindex_port, "queue_id");
-    if (queue_id_str) {
-        queue_id =
-            _nm_utils_ascii_str_to_int64(queue_id_str, 10, 0, 65535, NM_BOND_PORT_QUEUE_ID_DEF);
-        g_object_set(s_port, NM_SETTING_BOND_PORT_QUEUE_ID, queue_id, NULL);
-    } else
-        _LOGW(LOGD_BOND, "failed to read bond port setting '%s'", NM_SETTING_BOND_PORT_QUEUE_ID);
+    if (pllink)
+        g_object_set(s_port,
+                     NM_SETTING_BOND_PORT_QUEUE_ID,
+                     pllink->bond_port_opts.queue_id,
+                     NM_SETTING_BOND_PORT_PRIO,
+                     pllink->bond_port_opts.prio,
+                     NULL);
 
     g_object_set(nm_connection_get_setting_connection(connection),
                  NM_SETTING_CONNECTION_MASTER,
@@ -637,23 +636,32 @@ act_stage1_prepare(NMDevice *device, NMDeviceStateReason *out_failure_reason)
 static void
 commit_port_options(NMDevice *bond_device, NMDevice *port, NMSettingBondPort *s_port)
 {
-    char queue_id_str[IFNAMSIZ + NM_STRLEN(":") + 5 + 100];
+    NMConnection  *connection = nm_device_get_settings_connection_get_connection(bond_device);
+    NMBondMode     mode       = NM_BOND_MODE_UNKNOWN;
+    const char    *value;
+    NMSettingBond *s_bond;
 
-    /*
-     * The queue-id of bond port is read only, we should modify bond interface using:
-     *    echo "eth1:2" > /sys/class/net/bond0/bonding/queue_id
-     * Kernel allows parital editing, so no need to care about other bond ports.
-     */
-    g_snprintf(queue_id_str,
-               sizeof(queue_id_str),
-               "%s:%" G_GUINT32_FORMAT,
-               nm_device_get_iface(port),
-               s_port ? nm_setting_bond_port_get_queue_id(s_port) : NM_BOND_PORT_QUEUE_ID_DEF);
+    if (connection) {
+        s_bond = _nm_connection_get_setting(connection, NM_TYPE_SETTING_BOND);
+        if (s_bond) {
+            value = nm_setting_bond_get_option_normalized(s_bond, NM_SETTING_BOND_OPTION_MODE);
+            mode  = _nm_setting_bond_mode_from_string(value);
+        }
+    }
 
-    nm_platform_sysctl_master_set_option(nm_device_get_platform(bond_device),
-                                         nm_device_get_ifindex(bond_device),
-                                         "queue_id",
-                                         queue_id_str);
+    nm_platform_link_change(
+        nm_device_get_platform(port),
+        nm_device_get_ifindex(port),
+        NULL,
+        &((NMPlatformLinkBondPort){
+            .queue_id =
+                s_port ? nm_setting_bond_port_get_queue_id(s_port) : NM_BOND_PORT_QUEUE_ID_DEF,
+            .prio = s_port ? nm_setting_bond_port_get_prio(s_port) : NM_BOND_PORT_PRIO_DEF,
+            .prio_has =
+                !NM_IN_SET(mode, NM_BOND_MODE_ACTIVEBACKUP, NM_BOND_MODE_TLB, NM_BOND_MODE_ALB)
+                    ? FALSE
+                    : TRUE}),
+        0);
 }
 
 static NMTernary

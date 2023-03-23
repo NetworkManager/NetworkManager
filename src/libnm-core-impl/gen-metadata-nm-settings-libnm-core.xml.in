@@ -582,6 +582,10 @@
     <setting name="bond-port"
              gtype="NMSettingBondPort"
              >
+        <property name="prio"
+                  dbus-type="i"
+                  gprop-type="gint"
+                  />
         <property name="queue-id"
                   dbus-type="u"
                   gprop-type="guint"
