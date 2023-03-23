@@ -129,6 +129,10 @@ typedef struct {
     gulong        watch_id;
     bool          slave_is_enslaved;
     bool          configure;
+    struct {
+        NMDeviceStateReason reason;
+        ReleaseSlaveType    release_type;
+    } detach;
 } SlaveInfo;
 
 typedef struct {
@@ -766,6 +770,12 @@ typedef struct _NMDevicePrivate {
 
     bool needs_ip6_subnet : 1;
 
+    /* When set, this device is being detached from its controller.
+     * As such, it must stay in DEACTIVATING until the port detach
+     * terminates. */
+    gpointer detach_port_tag;
+    bool     detach_port_schedule_deactivate : 1;
+
     NMOptionBool promisc_reset;
 
     GVariant *ports_variant; /* Array of port devices D-Bus path */
@@ -869,6 +879,7 @@ static void sriov_op_cb(GError *error, gpointer user_data);
 static void device_ifindex_changed_cb(NMManager *manager, NMDevice *device_changed, NMDevice *self);
 static gboolean device_link_changed(gpointer user_data);
 static gboolean _get_maybe_ipv6_disabled(NMDevice *self);
+static void     deactivate_ready(NMDevice *self, NMDeviceStateReason reason);
 
 /*****************************************************************************/
 
@@ -6345,6 +6356,78 @@ nm_device_master_enslave_slave(NMDevice *self, NMDevice *slave, NMConnection *co
     attach_port_done(self, slave, success);
 }
 
+static void
+detach_port_done(NMDevice *self, NMDevice *slave, SlaveInfo *info, gboolean is_cancelled)
+{
+    gs_unref_object NMDevice *self_free  = NULL;
+    gs_unref_object NMDevice *slave_free = NULL;
+    NMDevicePrivate          *priv;
+    NMDevicePrivate          *slave_priv;
+    NMDeviceStateReason       reason = info->detach.reason;
+
+    _LOGD(LOGD_CORE,
+          "detach port '%s' %s",
+          nm_device_get_iface(slave),
+          is_cancelled ? "cancelled" : "completed");
+
+    priv       = NM_DEVICE_GET_PRIVATE(self);
+    slave_priv = NM_DEVICE_GET_PRIVATE(slave);
+
+    if (!is_cancelled) {
+        /* raise notifications about the release, including clearing is_enslaved. */
+        nm_device_slave_notify_release(slave, info->detach.reason, info->detach.release_type);
+    }
+
+    nm_assert(slave_priv->detach_port_tag == self);
+    slave_priv->detach_port_tag = NULL;
+
+    /* keep both alive until the end of the function.
+     * Transfers ownership from slave_priv->master.  */
+    nm_assert(self == slave_priv->master);
+    self_free = g_steal_pointer(&slave_priv->master);
+
+    nm_assert(slave == info->slave);
+    slave_free = g_steal_pointer(&info->slave);
+    nm_clear_g_cancellable(&info->cancellable);
+
+    if (!is_cancelled) {
+        c_list_unlink(&info->lst_slave);
+        g_signal_handler_disconnect(slave, info->watch_id);
+        nm_g_slice_free(info);
+
+        if (c_list_is_empty(&priv->slaves)) {
+            _active_connection_set_state_flags_full(self,
+                                                    0,
+                                                    NM_ACTIVATION_STATE_FLAG_MASTER_HAS_SLAVES);
+        }
+
+        /* Ensure the device's hardware address is up-to-date; it often changes
+         * when slaves change.
+         */
+        nm_device_update_hw_address(self);
+        nm_device_set_unmanaged_by_flags(slave,
+                                         NM_UNMANAGED_IS_SLAVE,
+                                         NM_UNMAN_FLAG_OP_FORGET,
+                                         NM_DEVICE_STATE_REASON_REMOVED);
+
+        if (slave_priv->detach_port_schedule_deactivate)
+            deactivate_ready(slave, reason);
+    }
+}
+
+static void
+detach_port_cb(NMDevice *self, GError *error, gpointer user_data)
+{
+    NMDevice  *slave = user_data;
+    SlaveInfo *info;
+
+    info = find_slave_info(self, slave);
+    if (!info)
+        return;
+
+    detach_port_done(self, slave, info, nm_utils_error_is_cancelled(error));
+}
+
 /**
  * nm_device_master_release_slave:
  * @self: the master device
@@ -6353,6 +6436,7 @@ nm_device_master_enslave_slave(NMDevice *self, NMDevice *slave, NMConnection *co
  * @release_type: whether @self needs to actually release slave
  *   and whether that is forced.
  * @reason: the state change reason for the @slave
+ * @do_wait: if TRUE, wait that operation finishes before updating the slave state
  *
  * If @self is capable of enslaving other devices (ie it's a bridge, bond, team,
  * etc) then this function releases the previously enslaved @slave and/or
@@ -6362,13 +6446,13 @@ static void
 nm_device_master_release_slave(NMDevice           *self,
                                NMDevice           *slave,
                                ReleaseSlaveType    release_type,
-                               NMDeviceStateReason reason)
+                               NMDeviceStateReason reason,
+                               gboolean            do_wait)
 {
-    NMDevicePrivate          *priv;
-    NMDevicePrivate          *slave_priv;
     SlaveInfo                *info;
     gs_unref_object NMDevice *self_free  = NULL;
     gs_unref_object NMDevice *slave_free = NULL;
+    NMDevicePrivate          *slave_priv;
 
     g_return_if_fail(NM_DEVICE(self));
     g_return_if_fail(NM_DEVICE(slave));
@@ -6392,49 +6476,42 @@ nm_device_master_release_slave(NMDevice           *self,
     if (!info)
         g_return_if_reached();
 
-    priv       = NM_DEVICE_GET_PRIVATE(self);
     slave_priv = NM_DEVICE_GET_PRIVATE(slave);
+    if (slave_priv->detach_port_tag == self) {
+        /* Already in progress */
+        return;
+    }
 
-    g_return_if_fail(self == slave_priv->master);
     nm_assert(slave == info->slave);
     nm_clear_g_cancellable(&info->cancellable);
 
+    info->detach.reason         = reason;
+    info->detach.release_type   = release_type;
+    slave_priv->detach_port_tag = self;
+
     /* first, let subclasses handle the release ... */
     if (info->slave_is_enslaved || nm_device_sys_iface_state_is_external(slave)
-        || release_type >= RELEASE_SLAVE_TYPE_CONFIG_FORCE)
-        NM_DEVICE_GET_CLASS(self)->detach_port(self,
-                                               slave,
-                                               release_type >= RELEASE_SLAVE_TYPE_CONFIG);
+        || release_type >= RELEASE_SLAVE_TYPE_CONFIG_FORCE) {
+        NMTernary ret;
 
-    /* raise notifications about the release, including clearing is_enslaved. */
-    nm_device_slave_notify_release(slave, reason, release_type);
-
-    /* keep both alive until the end of the function.
-     * Transfers ownership from slave_priv->master.  */
-    nm_assert(self == slave_priv->master);
-    self_free = g_steal_pointer(&slave_priv->master);
-
-    nm_assert(slave == info->slave);
-    slave_free = g_steal_pointer(&info->slave);
-
-    c_list_unlink(&info->lst_slave);
-    g_signal_handler_disconnect(slave, info->watch_id);
-    nm_g_slice_free(info);
-
-    if (c_list_is_empty(&priv->slaves)) {
-        _active_connection_set_state_flags_full(self,
-                                                0,
-                                                NM_ACTIVATION_STATE_FLAG_MASTER_HAS_SLAVES);
+        if (do_wait)
+            info->cancellable = g_cancellable_new();
+        ret = NM_DEVICE_GET_CLASS(self)->detach_port(self,
+                                                     slave,
+                                                     release_type >= RELEASE_SLAVE_TYPE_CONFIG,
+                                                     info->cancellable,
+                                                     do_wait ? detach_port_cb : NULL,
+                                                     do_wait ? slave : NULL);
+        if (do_wait && ret == NM_TERNARY_DEFAULT) {
+            _LOGT(LOGD_CORE,
+                  "master: waiting for async release of slave " NM_HASH_OBFUSCATE_PTR_FMT "/%s",
+                  NM_HASH_OBFUSCATE_PTR(slave),
+                  nm_device_get_iface(slave));
+            return;
+        }
     }
 
-    /* Ensure the device's hardware address is up-to-date; it often changes
-     * when slaves change.
-     */
-    nm_device_update_hw_address(self);
-    nm_device_set_unmanaged_by_flags(slave,
-                                     NM_UNMANAGED_IS_SLAVE,
-                                     NM_UNMAN_FLAG_OP_FORGET,
-                                     NM_DEVICE_STATE_REASON_REMOVED);
+    detach_port_done(self, slave, info, FALSE);
 }
 
 /*****************************************************************************/
@@ -6733,7 +6810,8 @@ device_recheck_slave_status(NMDevice *self, const NMPlatformLink *plink)
         nm_device_master_release_slave(priv->master,
                                        self,
                                        RELEASE_SLAVE_TYPE_NO_CONFIG,
-                                       NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
+                                       NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED,
+                                       FALSE);
     }
 
     if (master) {
@@ -7939,7 +8017,8 @@ slave_state_changed(NMDevice           *slave,
                                        slave,
                                        configure ? RELEASE_SLAVE_TYPE_CONFIG
                                                  : RELEASE_SLAVE_TYPE_NO_CONFIG,
-                                       reason);
+                                       reason,
+                                       slave_new_state == NM_DEVICE_STATE_DEACTIVATING);
         /* Bridge/bond/team interfaces are left up until manually deactivated */
         if (c_list_is_empty(&priv->slaves) && priv->state == NM_DEVICE_STATE_ACTIVATED)
             _LOGD(LOGD_DEVICE, "last slave removed; remaining activated");
@@ -8085,7 +8164,7 @@ nm_device_master_release_slaves_all(NMDevice *self)
                   nm_device_get_iface(info->slave));
             continue;
         }
-        nm_device_master_release_slave(self, info->slave, RELEASE_SLAVE_TYPE_CONFIG, reason);
+        nm_device_master_release_slave(self, info->slave, RELEASE_SLAVE_TYPE_CONFIG, reason, FALSE);
     }
 
     /* We only need this flag for a short time. It served its purpose. Clear
@@ -8267,7 +8346,8 @@ nm_device_removed(NMDevice *self, gboolean unconfigure_ip_config)
         nm_device_master_release_slave(priv->master,
                                        self,
                                        RELEASE_SLAVE_TYPE_NO_CONFIG,
-                                       NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
+                                       NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED,
+                                       FALSE);
     }
 
     _dev_l3_register_l3cds(self, priv->l3cfg, FALSE, unconfigure_ip_config);
@@ -9372,7 +9452,8 @@ master_ready(NMDevice *self, NMActiveConnection *active)
         nm_device_master_release_slave(priv->master,
                                        self,
                                        RELEASE_SLAVE_TYPE_NO_CONFIG,
-                                       NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
+                                       NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED,
+                                       FALSE);
 
     /* If the master didn't change, add-slave only rechecks whether to assume a connection. */
     nm_device_master_add_slave(master,
@@ -9662,7 +9743,8 @@ activate_stage1_device_prepare(NMDevice *self)
         nm_device_master_release_slave(priv->master,
                                        self,
                                        RELEASE_SLAVE_TYPE_CONFIG_FORCE,
-                                       NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
+                                       NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED,
+                                       FALSE);
     }
 
     nm_device_activate_schedule_stage2_device_config(self, TRUE);
@@ -15707,7 +15789,8 @@ nm_device_cleanup(NMDevice *self, NMDeviceStateReason reason, CleanupType cleanu
         nm_device_master_release_slave(priv->master,
                                        self,
                                        RELEASE_SLAVE_TYPE_NO_CONFIG,
-                                       NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
+                                       NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED,
+                                       FALSE);
     }
 
     lldp_setup(self, NM_TERNARY_FALSE);
@@ -15794,15 +15877,25 @@ ip6_managed_setup(NMDevice *self)
 static void
 deactivate_ready(NMDevice *self, NMDeviceStateReason reason)
 {
-    NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
+    NMDevicePrivate *priv     = NM_DEVICE_GET_PRIVATE(self);
+    gboolean         do_queue = FALSE;
 
-    if (priv->dispatcher.call_id)
-        return;
+    slave_priv->detach_port_schedule_deactivate = FALSE;
 
-    if (priv->sriov_reset_pending > 0)
-        return;
+    if (priv->state == NM_DEVICE_STATE_DEACTIVATING && !priv->detach_port_tag
+        && !priv->dispatcher.call_id && priv->sriov_reset_pending == 0)
+        do_queue = TRUE;
 
-    if (priv->state == NM_DEVICE_STATE_DEACTIVATING)
+    _LOGT(LOGD_CORE,
+          "deactivate: %squeue disconnected state: current state %s,"
+          " detach-port-pending %d, dispatcher-pending %d, sriov-reset-pending %u",
+          do_queue ? "" : "do not ",
+          nm_device_state_to_string(priv->state),
+          !!priv->detach_port_tag,
+          !!priv->dispatcher.call_id,
+          priv->sriov_reset_pending);
+
+    if (do_queue)
         nm_device_queue_state(self, NM_DEVICE_STATE_DISCONNECTED, reason);
 }
 
@@ -16186,6 +16279,17 @@ _set_state_full(NMDevice *self, NMDeviceState state, NMDeviceStateReason reason,
                                sriov_reset_on_deactivate_cb,
                                nm_utils_user_data_pack(self, GINT_TO_POINTER(reason)));
             }
+        }
+
+        if (priv->detach_port_tag) {
+            /* If this is a port device, in the the DEACTIVATING state
+             * the device is detached from its controller, however that
+             * operation can take some time. If the detach is pending,
+             * the transition to DISCONNECTED is inhibited by the check
+             * on `detach_port_source` in `deactivate_ready()`. We need
+             * to schedule deactivate_ready() when the detach finishes.
+             */
+            priv->detach_port_schedule_deactivate = TRUE;
         }
 
         nm_pacrunner_manager_remove_clear(&priv->pacrunner_conf_id);

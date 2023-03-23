@@ -913,8 +913,13 @@ attach_port(NMDevice                  *device,
     return TRUE;
 }
 
-static void
-detach_port(NMDevice *device, NMDevice *port, gboolean configure)
+static NMTernary
+detach_port(NMDevice                  *device,
+            NMDevice                  *port,
+            gboolean                   configure,
+            GCancellable              *cancellable,
+            NMDeviceAttachPortCallback callback,
+            gpointer                   user_data)
 {
     NMDeviceTeam        *self       = NM_DEVICE_TEAM(device);
     NMDeviceTeamPrivate *priv       = NM_DEVICE_TEAM_GET_PRIVATE(self);
@@ -964,6 +969,8 @@ detach_port(NMDevice *device, NMDevice *port, gboolean configure)
         _update_port_config(self, port_iface, "{}");
         g_hash_table_remove(priv->port_configs, port_iface);
     }
+
+    return TRUE;
 }
 
 static gboolean

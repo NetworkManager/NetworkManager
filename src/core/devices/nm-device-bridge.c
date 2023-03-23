@@ -1052,8 +1052,13 @@ attach_port(NMDevice                  *device,
     return TRUE;
 }
 
-static void
-detach_port(NMDevice *device, NMDevice *port, gboolean configure)
+static NMTernary
+detach_port(NMDevice                  *device,
+            NMDevice                  *port,
+            gboolean                   configure,
+            GCancellable              *cancellable,
+            NMDeviceAttachPortCallback callback,
+            gpointer                   user_data)
 {
     NMDeviceBridge *self = NM_DEVICE_BRIDGE(device);
     gboolean        success;
@@ -1070,7 +1075,7 @@ detach_port(NMDevice *device, NMDevice *port, gboolean configure)
 
     if (ifindex_slave <= 0) {
         _LOGD(LOGD_TEAM, "bridge port %s is already detached", nm_device_get_ip_iface(port));
-        return;
+        return TRUE;
     }
 
     if (configure) {
@@ -1086,6 +1091,8 @@ detach_port(NMDevice *device, NMDevice *port, gboolean configure)
     } else {
         _LOGI(LOGD_BRIDGE, "bridge port %s was detached", nm_device_get_ip_iface(port));
     }
+
+    return TRUE;
 }
 
 static gboolean

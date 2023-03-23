@@ -78,10 +78,11 @@ typedef struct {
     GCancellable              *cancellable;
     NMDeviceAttachPortCallback callback;
     gpointer                   callback_user_data;
+    gboolean                   add;
 } AttachPortData;
 
 static void
-add_iface_cb(GError *error, gpointer user_data)
+add_del_iface_cb(GError *error, gpointer user_data)
 {
     AttachPortData       *data = user_data;
     NMDeviceOvsPort      *self;
@@ -93,15 +94,17 @@ add_iface_cb(GError *error, gpointer user_data)
     } else if (error && !nm_utils_error_is_cancelled_or_disposing(error)) {
         self = NM_DEVICE_OVS_PORT(data->device);
         _LOGW(LOGD_DEVICE,
-              "device %s could not be added to a ovs port: %s",
+              "device %s could not be %s a ovs port: %s",
               nm_device_get_iface(data->port),
+              data->add ? "added to" : "removed from",
               error->message);
         nm_device_state_changed(data->port,
                                 NM_DEVICE_STATE_FAILED,
                                 NM_DEVICE_STATE_REASON_OVSDB_FAILED);
     }
 
-    data->callback(data->device, error, data->callback_user_data);
+    if (data->callback)
+        data->callback(data->device, error, data->callback_user_data);
 
     g_object_unref(data->device);
     g_object_unref(data->port);
@@ -178,6 +181,7 @@ attach_port(NMDevice                  *device,
         .cancellable        = g_object_ref(cancellable),
         .callback           = callback,
         .callback_user_data = user_data,
+        .add                = TRUE,
     };
 
     nm_ovsdb_add_interface(nm_ovsdb_get(),
@@ -186,7 +190,7 @@ attach_port(NMDevice                  *device,
                            nm_device_get_applied_connection(port),
                            bridge_device,
                            port,
-                           add_iface_cb,
+                           add_del_iface_cb,
                            data);
 
     /* DPDK ports does not have a link after the devbind, so the MTU must be
@@ -205,29 +209,19 @@ attach_port(NMDevice                  *device,
     return NM_TERNARY_DEFAULT;
 }
 
-static void
-del_iface_cb(GError *error, gpointer user_data)
-{
-    NMDevice *slave = user_data;
-
-    if (error && !g_error_matches(error, NM_UTILS_ERROR, NM_UTILS_ERROR_CANCELLED_DISPOSING)) {
-        nm_log_warn(LOGD_DEVICE,
-                    "device %s could not be removed from a ovs port: %s",
-                    nm_device_get_iface(slave),
-                    error->message);
-        nm_device_state_changed(slave, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_OVSDB_FAILED);
-    }
-
-    g_object_unref(slave);
-}
-
-static void
-detach_port(NMDevice *device, NMDevice *port, gboolean configure)
+static NMTernary
+detach_port(NMDevice                  *device,
+            NMDevice                  *port,
+            gboolean                   configure,
+            GCancellable              *cancellable,
+            NMDeviceAttachPortCallback callback,
+            gpointer                   user_data)
 {
     NMDeviceOvsPort *self             = NM_DEVICE_OVS_PORT(device);
     bool             port_not_managed = !NM_IN_SET(nm_device_sys_iface_state_get(port),
                                        NM_DEVICE_SYS_IFACE_STATE_MANAGED,
                                        NM_DEVICE_SYS_IFACE_STATE_ASSUME);
+    NMTernary        ret              = TRUE;
 
     _LOGI(LOGD_DEVICE, "detaching ovs interface %s", nm_device_get_ip_iface(port));
 
@@ -236,10 +230,20 @@ detach_port(NMDevice *device, NMDevice *port, gboolean configure)
      * to make sure its OVSDB entry is gone.
      */
     if (configure || port_not_managed) {
-        nm_ovsdb_del_interface(nm_ovsdb_get(),
-                               nm_device_get_iface(port),
-                               del_iface_cb,
-                               g_object_ref(port));
+        AttachPortData *data;
+
+        data  = g_slice_new(AttachPortData);
+        *data = (AttachPortData){
+            .device             = g_object_ref(device),
+            .port               = g_object_ref(port),
+            .cancellable        = nm_g_object_ref(cancellable),
+            .callback           = callback,
+            .callback_user_data = user_data,
+            .add                = FALSE,
+        };
+
+        nm_ovsdb_del_interface(nm_ovsdb_get(), nm_device_get_iface(port), add_del_iface_cb, data);
+        ret = NM_TERNARY_DEFAULT;
     }
 
     if (configure) {
@@ -248,6 +252,8 @@ detach_port(NMDevice *device, NMDevice *port, gboolean configure)
         if (NM_IS_DEVICE_OVS_INTERFACE(port))
             nm_device_update_from_platform_link(port, NULL);
     }
+
+    return ret;
 }
 
 /*****************************************************************************/
