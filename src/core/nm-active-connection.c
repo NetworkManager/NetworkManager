@@ -1153,7 +1153,7 @@ auth_done(NMAuthManager       *auth_mgr,
 /**
  * nm_active_connection_authorize:
  * @self: the #NMActiveConnection
- * @initial_connection: (allow-none): for add-and-activate, there
+ * @initial_connection: (nullable): for add-and-activate, there
  *   is no @settings_connection available when creating the active connection.
  *   Instead pass an alternative connection.
  * @result_func: function to be called on success or error

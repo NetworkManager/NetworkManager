@@ -4557,15 +4557,15 @@ _new_from_nl_tfilter(NMPlatform *platform, const struct nlmsghdr *nlh, gboolean 
 
 /**
  * nmp_object_new_from_nl:
- * @platform: (allow-none): for creating certain objects, the constructor wants to check
+ * @platform: (nullable): for creating certain objects, the constructor wants to check
  *   sysfs. For this the platform instance is needed. If missing, the object might not
  *   be correctly detected.
- * @cache: (allow-none): for certain objects, the netlink message doesn't contain all the information.
+ * @cache: (nullable): for certain objects, the netlink message doesn't contain all the information.
  *   If a cache is given, the object is completed with information from the cache.
  * @nlh: the netlink message header
  * @id_only: whether only to create an empty object with only the ID fields set.
  *
- * Returns: %NULL or a newly created NMPObject instance.
+ * Returns: (nullable): %NULL or a newly created NMPObject instance.
  **/
 static NMPObject *
 nmp_object_new_from_nl(NMPlatform               *platform,

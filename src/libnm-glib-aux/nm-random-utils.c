@@ -301,7 +301,7 @@ _bad_random_bytes(guint8 *buf, gsize n)
  * nm_random_get_bytes_full:
  * @p: the buffer to fill
  * @n: the number of bytes to write to @p.
- * @out_high_quality: (allow-none) (out): whether the returned
+ * @out_high_quality: (out) (optional): whether the returned
  *   random bytes are of high quality.
  *
  * - will never block

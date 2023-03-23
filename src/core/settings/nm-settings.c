@@ -222,7 +222,7 @@ _sett_conn_entry_get_conn(SettConnEntry *sett_conn_entry)
  * _sett_conn_entry_storage_find_conflicting_storage:
  * @sett_conn_entry: the list of settings-storages for the given UUID.
  * @target_plugin: the settings plugin to check
- * @storage_check_including: (allow-none): optionally compare against this storage.
+ * @storage_check_including: (nullable): optionally compare against this storage.
  * @plugins: the list of plugins sorted in descending priority. This determines
  *   the priority and whether a storage conflicts.
  *
@@ -1740,7 +1740,8 @@ _set_nmmeta_tombstone(NMSettings *self,
  * @persist_mode: the persist-mode for this profile.
  * @add_reason: the add-reason flags.
  * @sett_flags: the settings flags to set.
- * @out_sett_conn: (allow-none) (transfer none): the added settings connection on success.
+ * @out_sett_conn: (out) (optional) (nullable) (transfer none): the added
+ *   settings connection on success.
  * @error: on return, a location to store any errors that may occur
  *
  * Creates a new #NMSettingsConnection for the given source @connection.
@@ -3114,7 +3115,7 @@ error:
 /**
  * nm_settings_get_connections:
  * @self: the #NMSettings
- * @out_len: (out) (allow-none): returns the number of returned
+ * @out_len: (out) (optional): returns the number of returned
  *   connections.
  *
  * Returns: (transfer none): a list of NMSettingsConnections. The list is
@@ -3217,10 +3218,10 @@ nm_settings_get_connections_sorted_by_autoconnect_priority(NMSettings *self, gui
 /**
  * nm_settings_get_connections_clone:
  * @self: the #NMSetting
- * @out_len: (allow-none): optional output argument
+ * @out_len: (optional): optional output argument
  * @func: caller-supplied function for filtering connections
  * @func_data: caller-supplied data passed to @func
- * @sort_compare_func: (allow-none): optional function pointer for
+ * @sort_compare_func: (nullable): optional function pointer for
  *   sorting the returned list.
  * @sort_data: user data for @sort_compare_func.
  *

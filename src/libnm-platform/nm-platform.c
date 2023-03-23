@@ -1241,7 +1241,7 @@ _link_add_check_existing(NMPlatform            *self,
  * @type: Interface type
  * @name: Interface name
  * @parent: the IFLA_LINK parameter or 0.
- * @address: (allow-none): set the mac address of the link
+ * @address: (nullable): set the mac address of the link
  * @address_len: the length of the @address
  * @extra_data: depending on @type, additional data.
  * @out_link: on success, the link object
@@ -2347,7 +2347,7 @@ nm_platform_link_can_assume(NMPlatform *self, int ifindex)
  * @self: the platform instance
  * @ifindex: the link ifindex to lookup
  * @link_type: filter by link-type.
- * @out_link: (allow-none): returns the platform link instance
+ * @out_link: (out) (optional) (nullable): returns the platform link instance
  *
  * If the function returns %NULL, that could mean that no such ifindex
  * exists, of that the link has no lnk data. You can find that out
@@ -2358,7 +2358,7 @@ nm_platform_link_can_assume(NMPlatform *self, int ifindex)
  * object if it is present. If you set link-type, you can be sure
  * that only a link type of the matching type is returned (or %NULL).
  *
- * Returns: the internal link lnk object. The returned object
+ * Returns: (nullable): the internal link lnk object. The returned object
  * is owned by the platform cache and must not be modified. Note
  * however, that the object is guaranteed to be immutable, so
  * you can safely take a reference and keep it for yourself
@@ -2616,7 +2616,7 @@ nm_platform_link_wireguard_change(NMPlatform                               *self
  * @vnet_hdr: whether to set the IFF_VNET_HDR flag
  * @multi_queue: whether to set the IFF_MULTI_QUEUE flag
  * @out_link: on success, the link object
- * @out_fd: (allow-none): if give, return the file descriptor for the
+ * @out_fd: (out) (optional): if give, return the file descriptor for the
  *   created device. Note that when creating a non-persistent device,
  *   this argument is mandatory, otherwise it makes no sense
  *   to create such an interface.
@@ -3078,7 +3078,7 @@ nm_platform_link_veth_get_properties(NMPlatform *self, int ifindex, int *out_pee
  * nm_platform_link_tun_get_properties:
  * @self: the #NMPlatform instance
  * @ifindex: the ifindex to look up
- * @out_properties: (out) (allow-none): return the read properties
+ * @out_properties: (out) (optional): return the read properties
  *
  * Only recent versions of kernel export tun properties via netlink.
  * So, if that's the case, then we have the NMPlatformLnkTun instance
@@ -4099,7 +4099,7 @@ ip6_address_scope_cmp_descending(gconstpointer p_a, gconstpointer p_b, gpointer 
  * @known_addresses: List of addresses. The list will be modified and
  *   expired addresses will be cleared (by calling nmp_object_unref()
  *   on the array element).
- * @addresses_prune: (allow-none): the list of addresses to delete.
+ * @addresses_prune: (nullable): the list of addresses to delete.
  *   If platform has such an address configured, it will be deleted
  *   at the beginning of the sync. Note that the array will be modified
  *   by the function.
@@ -4914,14 +4914,14 @@ nm_platform_ip_route_get_prune_list(NMPlatform            *self,
  * @self: the #NMPlatform instance.
  * @addr_family: AF_INET or AF_INET6.
  * @ifindex: the @ifindex for which the routes are to be added.
- * @routes: (allow-none): a list of routes to configure. Must contain
+ * @routes: (nullable): a list of routes to configure. Must contain
  *   NMPObject instances of routes, according to @addr_family.
- * @routes_prune: (allow-none): the list of routes to delete.
+ * @routes_prune: (nullable): the list of routes to delete.
  *   If platform has such a route configured, it will be deleted
  *   at the end of the operation. Note that if @routes contains
  *   the same route, then it will not be deleted. @routes overrules
  *   @routes_prune list.
- * @out_routes_failed: (allow-none) (out): routes that could
+ * @out_routes_failed: (out) (optional) (nullable): routes that could
  *   not be synced/added.
  *
  * Returns: %TRUE on success.
@@ -5834,7 +5834,7 @@ nm_platform_vlan_qos_mapping_to_string(const char             *name,
 /**
  * nm_platform_link_to_string:
  * @route: pointer to NMPlatformLink address structure
- * @buf: (allow-none): an optional buffer. If %NULL, a static buffer is used.
+ * @buf: (nullable): an optional buffer. If %NULL, a static buffer is used.
  * @len: the size of the @buf. If @buf is %NULL, this argument is ignored.
  *
  * A method for converting an link struct into a string representation.
@@ -6822,11 +6822,11 @@ _rtm_flags_to_string_full(char *buf, gsize buf_size, unsigned rtm_flags)
 /**
  * nm_platform_ip4_route_to_string:
  * @route: pointer to NMPlatformIP4Route route structure
- * @extra_nexthops: (allow-none): the route might be a ECMP multihop route
+ * @extra_nexthops: (nullable): the route might be a ECMP multihop route
  *   (with n_nexthops > 1). In that case, provide the list of extra hops
  *   to print too. It is allowed for a multihop route to omit the extra hops
  *   by passing NULL.
- * @buf: (allow-none): an optional buffer. If %NULL, a static buffer is used.
+ * @buf: (nullable): an optional buffer. If %NULL, a static buffer is used.
  * @len: the size of the @buf. If @buf is %NULL, this argument is ignored.
  *
  * A method for converting a route struct into a string representation.
@@ -7016,7 +7016,7 @@ nm_platform_ip4_route_to_string_full(const NMPlatformIP4Route     *route,
 /**
  * nm_platform_ip6_route_to_string:
  * @route: pointer to NMPlatformIP6Route route structure
- * @buf: (allow-none): an optional buffer. If %NULL, a static buffer is used.
+ * @buf: (nullable): an optional buffer. If %NULL, a static buffer is used.
  * @len: the size of the @buf. If @buf is %NULL, this argument is ignored.
  *
  * A method for converting a route struct into a string representation.

@@ -69,9 +69,9 @@ G_DEFINE_TYPE_WITH_CODE(NMRemoteConnection,
 /**
  * nm_remote_connection_update2:
  * @connection: the #NMRemoteConnection
- * @settings: (allow-none): optional connection to update the settings.
+ * @settings: (nullable): optional connection to update the settings.
  * @flags: update-flags
- * @args: (allow-none): optional arguments.
+ * @args: (nullable): optional arguments.
  * @cancellable: a #GCancellable, or %NULL
  * @callback: callback to be called when the commit operation completes
  * @user_data: caller-specific data passed to @callback

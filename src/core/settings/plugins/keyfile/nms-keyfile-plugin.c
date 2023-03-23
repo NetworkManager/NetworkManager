@@ -1066,12 +1066,12 @@ delete_connection(NMSettingsPlugin *plugin, NMSettingsStorage *storage_x, GError
  * @shadowed_storage: a tombstone can also shadow an existing storage.
  *   In combination with @set and @in_memory, this is allowed to store
  *   the shadowed storage filename.
- * @out_storage: (transfer full) (allow-none): the storage element that changes, or
- *   NULL if nothing changed. Note that the file on disk is already as
- *   we want to write it, then this still counts as a change. No change only
+ * @out_storage: (transfer full) (optional) (nullable): the storage element that
+ *   changes, or %NULL if nothing changed. Note that the file on disk is already
+ *   as we want to write it, then this still counts as a change. No change only
  *   means if we try to delete a storage (@set %FALSE) that did not
  *   exist previously.
- * @out_hard_failure: (allow-none): on failure, indicate that this is a hard failure.
+ * @out_hard_failure: (optional): on failure, indicate that this is a hard failure.
  *
  * The function writes or deletes nmmeta files to/from filesystem. In this case,
  * the nmmeta files can only be symlinks to /dev/null (to indicate tombstones).

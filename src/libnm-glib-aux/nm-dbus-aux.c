@@ -454,8 +454,8 @@ _bus_get_cb(GObject *source, GAsyncResult *result, gpointer user_data)
 
 /**
  * nm_g_bus_get_blocking:
- * @cancellable: (allow-none): a #GCancellable to abort the operation.
- * @error: (allow-none): the error.
+ * @cancellable: a #GCancellable to abort the operation.
+ * @error: the error.
  *
  * This calls g_bus_get(), but iterates the current (thread-default) GMainContext
  * until the response is ready. As such, it's similar to g_bus_get_sync(),
@@ -605,10 +605,10 @@ dbus_signal_meta_marshal(GClosure     *closure,
  * _nm_dbus_proxy_signal_connect_data:
  * @proxy: a #GDBusProxy
  * @signal_name: the D-Bus signal to connect to
- * @signature: (allow-none): the signal's type signature (must be a tuple)
+ * @signature: (nullable): the signal's type signature (must be a tuple)
  * @c_handler: the signal handler function
- * @data: (allow-none): data to pass to @c_handler
- * @destroy_data: (allow-none): closure destroy notify for @data
+ * @data: (nullable): data to pass to @c_handler
+ * @destroy_data: (nullable): closure destroy notify for @data
  * @connect_flags: connection flags
  *
  * Connects to the D-Bus signal @signal_name on @proxy. @c_handler must be a
@@ -690,7 +690,7 @@ _nm_dbus_typecheck_response(GVariant *response, const GVariantType *reply_type, 
  * @proxy: A #GDBusProxy.
  * @res: A #GAsyncResult obtained from the #GAsyncReadyCallback passed to
  *   g_dbus_proxy_call().
- * @reply_type: (allow-none): the expected type of the reply, or %NULL
+ * @reply_type: (nullable): the expected type of the reply, or %NULL
  * @error: Return location for error or %NULL.
  *
  * Finishes an operation started with g_dbus_proxy_call(), as with

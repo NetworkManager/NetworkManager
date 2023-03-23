@@ -367,7 +367,7 @@ get_available_iface_name(const char *try_name, NMClient *client)
 /**
  * nm_editor_utils_create_connection:
  * @type: the type of the connection's primary #NMSetting
- * @master: (allow-none): the connection's master, if any
+ * @master: (nullable): the connection's master, if any
  * @client: an #NMClient
  *
  * Creates a new #NMConnection of the given type, automatically

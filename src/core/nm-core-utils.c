@@ -468,7 +468,7 @@ _kc_invoke_callback(pid_t                   pid,
  * @log_name: for logging, the name of the processes to kill
  * @wait_before_kill_msec: Waittime in milliseconds before sending %SIGKILL signal. Set this value
  * to zero, not to send %SIGKILL. If @sig is already %SIGKILL, this parameter is ignored.
- * @callback: (allow-none): callback after the child terminated. This function will always
+ * @callback: (nullable): callback after the child terminated. This function will always
  *   be invoked asynchronously.
  * @user_data: passed on to callback
  *
@@ -601,7 +601,7 @@ _sleep_duration_convert_ms_to_us(guint32 sleep_duration_msec)
  * @log_domain: log debug information for this domain. Errors and warnings are logged both
  * as %LOGD_CORE and @log_domain.
  * @log_name: name of the process to kill for logging.
- * @child_status: (out) (allow-none): return the exit status of the child, if no error occurred.
+ * @child_status: (out) (optional): return the exit status of the child, if no error occurred.
  * @wait_before_kill_msec: Waittime in milliseconds before sending %SIGKILL signal. Set this value
  * to zero, not to send %SIGKILL. If @sig is already %SIGKILL, this parameter has not effect.
  * @sleep_duration_msec: the synchronous function sleeps repeatedly waiting for the child to terminate.

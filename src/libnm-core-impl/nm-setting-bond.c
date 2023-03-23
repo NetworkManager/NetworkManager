@@ -618,7 +618,7 @@ handle_error:
 /**
  * nm_setting_bond_validate_option:
  * @name: the name of the option to validate
- * @value: (allow-none): the value of the option to validate.
+ * @value: (nullable): the value of the option to validate.
  *
  * Checks whether @name is a valid bond option and @value is a valid value for
  * the @name. If @value is %NULL, the function only validates the option name.
@@ -720,13 +720,13 @@ nm_setting_bond_remove_option(NMSettingBond *setting, const char *name)
 
 /**
  * nm_setting_bond_get_valid_options:
- * @setting: (allow-none): the #NMSettingBond
+ * @setting: (nullable): the #NMSettingBond
  *
  * Returns a list of valid bond options.
  *
  * The @setting argument is unused and may be passed as %NULL.
  *
- * Returns: (transfer none): a %NULL-terminated array of strings of valid bond options.
+ * Returns: (transfer none) (nullable): a %NULL-terminated array of strings of valid bond options.
  **/
 const char **
 nm_setting_bond_get_valid_options(NMSettingBond *setting)

@@ -130,7 +130,7 @@ nm_device_wifi_p2p_get_peer_by_path(NMDeviceWifiP2P *device, const char *path)
 /**
  * nm_device_wifi_p2p_start_find:
  * @device: a #NMDeviceWifiP2P
- * @options: (allow-none): optional options passed to StartFind.
+ * @options: (nullable): optional options passed to StartFind.
  * @cancellable: a #GCancellable, or %NULL
  * @callback: a #GAsyncReadyCallback, or %NULL
  * @user_data: user_data for @callback

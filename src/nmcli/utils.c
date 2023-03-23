@@ -837,8 +837,8 @@ _output_selection_parse(const NMMetaAbstractInfo *const *fields,
  * @field_str: comma-separated field names to parse
  * @fields_array: array of allowed fields
  * @parse_groups: whether the fields can contain group prefix (e.g. general.driver)
- * @group_fields: (out) (allow-none): array of field names for particular groups
- * @error: (out) (allow-none): location to store error, or %NULL
+ * @group_fields: (out) (optional) (nullable): array of field names for particular groups
+ * @error: location to store error, or %NULL
  *
  * Parses comma separated fields in @fields_str according to @fields_array.
  * When @parse_groups is %TRUE, fields can be in the form 'group.field'. Then

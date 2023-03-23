@@ -899,9 +899,9 @@ nm_crypto_randomize(void *buffer, gsize buffer_len, GError **error)
  * nmtst_crypto_rsa_key_encrypt:
  * @data: (array length=len): RSA private key data to be encrypted
  * @len: length of @data
- * @in_password: (allow-none): existing password to use, if any
- * @out_password: (out) (allow-none): if @in_password was %NULL, a random
- *  password will be generated and returned in this argument
+ * @in_password: (nullable): existing password to use, if any
+ * @out_password: (out) (optional) (nullable): if @in_password was %NULL, a
+ *  random password will be generated and returned in this argument
  * @error: detailed error information on return, if an error occurred
  *
  * Encrypts the given RSA private key data with the given password (or generates

@@ -650,7 +650,7 @@ nm_utils_dnsname_normalize(int addr_family, const char *dns, char **out_free)
 
 /**
  * nm_setting_ovs_other_config_check_key:
- * @key: (allow-none): the key to check
+ * @key: (nullable): the key to check
  * @error: a #GError, %NULL to ignore.
  *
  * Checks whether @key is a valid key for OVS' other-config.
@@ -704,7 +704,7 @@ nm_setting_ovs_other_config_check_key(const char *key, GError **error)
 
 /**
  * nm_setting_ovs_other_config_check_val:
- * @val: (allow-none): the value to check
+ * @val: (nullable): the value to check
  * @error: a #GError, %NULL to ignore.
  *
  * Checks whether @val is a valid user data value. This means,

@@ -268,8 +268,8 @@ nm_setting_user_get_data(NMSettingUser *setting, const char *key)
  * nm_setting_user_set_data:
  * @setting: the #NMSettingUser instance
  * @key: the key to set
- * @val: (allow-none): the value to set or %NULL to clear a key.
- * @error: (allow-none): optional error argument
+ * @val: (nullable): the value to set or %NULL to clear a key.
+ * @error: optional error argument
  *
  * Since: 1.8
  *
