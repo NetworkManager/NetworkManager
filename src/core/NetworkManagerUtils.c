@@ -767,6 +767,10 @@ check_possible_match(NMConnection *orig,
     if (!check_connection_s390_props(orig, candidate, settings))
         return NULL;
 
+    /* match properties are for matching from static to generated connections,
+     * so they are not really part of the difference. */
+    g_hash_table_remove(settings, NM_SETTING_MATCH_SETTING_NAME);
+
     if (g_hash_table_size(settings) == 0)
         return candidate;
     else
