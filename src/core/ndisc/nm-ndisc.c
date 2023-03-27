@@ -703,6 +703,7 @@ nm_ndisc_add_route(NMNDisc *ndisc, const NMNDiscRoute *new_item, gint64 now_msec
          * comparison is aborted, and both routes are added.
          */
         if (IN6_ARE_ADDR_EQUAL(&item->network, &new_item->network) && item->plen == new_item->plen
+            && IN6_ARE_ADDR_EQUAL(&item->gateway, &new_item->gateway)
             && item->on_link == new_item->on_link) {
             if (new_item->expiry_msec <= now_msec) {
                 g_array_remove_index(rdata->routes, i);
