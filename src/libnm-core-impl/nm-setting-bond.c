@@ -1062,18 +1062,20 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
         }
     }
 
-    /* arp_ip_target can only be used with arp_interval, and must
+    /* arp_ip_target and ns_ip6_target can only be used with arp_interval, and must
      * contain a comma-separated list of IPv4 addresses.
      */
+    ns_ip6_target = _bond_get_option(self, NM_SETTING_BOND_OPTION_NS_IP6_TARGET);
     arp_ip_target = _bond_get_option(self, NM_SETTING_BOND_OPTION_ARP_IP_TARGET);
     if (arp_interval > 0) {
-        if (!arp_ip_target) {
+        if (!arp_ip_target && !ns_ip6_target) {
             g_set_error(error,
                         NM_CONNECTION_ERROR,
                         NM_CONNECTION_ERROR_INVALID_PROPERTY,
-                        _("'%s' option requires '%s' option to be set"),
+                        _("'%s' option requires '%s' or '%s'option to be set"),
                         NM_SETTING_BOND_OPTION_ARP_INTERVAL,
-                        NM_SETTING_BOND_OPTION_ARP_IP_TARGET);
+                        NM_SETTING_BOND_OPTION_ARP_IP_TARGET,
+                        NM_SETTING_BOND_OPTION_NS_IP6_TARGET);
             g_prefix_error(error, "%s.%s: ", NM_SETTING_BOND_SETTING_NAME, NM_SETTING_BOND_OPTIONS);
             return FALSE;
         }
@@ -1088,21 +1090,16 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
             g_prefix_error(error, "%s.%s: ", NM_SETTING_BOND_SETTING_NAME, NM_SETTING_BOND_OPTIONS);
             return FALSE;
         }
-    }
-
-    /* ns_ip6_target can only be used with arp_interval, and must
-     * contain a comma-separated list of IPv6 addresses.
-     */
-    ns_ip6_target = _bond_get_option(self, NM_SETTING_BOND_OPTION_NS_IP6_TARGET);
-    if (ns_ip6_target && arp_interval == 0) {
-        g_set_error(error,
-                    NM_CONNECTION_ERROR,
-                    NM_CONNECTION_ERROR_INVALID_PROPERTY,
-                    _("'%s' option requires '%s' option to be set"),
-                    NM_SETTING_BOND_OPTION_NS_IP6_TARGET,
-                    NM_SETTING_BOND_OPTION_ARP_INTERVAL);
-        g_prefix_error(error, "%s.%s: ", NM_SETTING_BOND_SETTING_NAME, NM_SETTING_BOND_OPTIONS);
-        return FALSE;
+        if (ns_ip6_target) {
+            g_set_error(error,
+                        NM_CONNECTION_ERROR,
+                        NM_CONNECTION_ERROR_INVALID_PROPERTY,
+                        _("'%s' option requires '%s' option to be set"),
+                        NM_SETTING_BOND_OPTION_NS_IP6_TARGET,
+                        NM_SETTING_BOND_OPTION_ARP_INTERVAL);
+            g_prefix_error(error, "%s.%s: ", NM_SETTING_BOND_SETTING_NAME, NM_SETTING_BOND_OPTIONS);
+            return FALSE;
+        }
     }
 
     lacp_rate = _bond_get_option(self, NM_SETTING_BOND_OPTION_LACP_RATE);
