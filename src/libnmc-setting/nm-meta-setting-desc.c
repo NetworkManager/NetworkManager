@@ -5531,9 +5531,6 @@ static const NMMetaPropertyInfo *const property_infos_CONNECTION[] = {
     PROPERTY_INFO_WITH_DESC (NM_SETTING_CONNECTION_TIMESTAMP,
         .property_type =                &_pt_gobject_readonly,
     ),
-    PROPERTY_INFO_WITH_DESC (NM_SETTING_CONNECTION_READ_ONLY,
-        .property_type =                &_pt_gobject_readonly,
-    ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_CONNECTION_PERMISSIONS,
         .describe_message =
              N_("Enter a list of user permissions. This is a list of user names formatted as:\n"
@@ -8026,14 +8023,6 @@ static const NMMetaPropertyInfo *const property_infos_WIRELESS[] = {
     ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRELESS_BSSID,
         .property_type =                &_pt_gobject_mac,
-    ),
-    PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRELESS_RATE,
-        /* Do not allow setting 'rate'. It is not implemented in NM core. */
-        .property_type =                &_pt_gobject_readonly,
-    ),
-    PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRELESS_TX_POWER,
-        /* Do not allow setting 'tx-power'. It is not implemented in NM core. */
-        .property_type =                &_pt_gobject_readonly,
     ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRELESS_MAC_ADDRESS,
         .property_type =                &_pt_gobject_mac,

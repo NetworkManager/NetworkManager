@@ -44,7 +44,7 @@ G_DEFINE_TYPE(NMDeviceOvsBridge, nm_device_ovs_bridge, NM_TYPE_DEVICE)
  *
  * Since: 1.14
  *
- * Deprecated: 1.34 Use nm_device_get_ports() instead.
+ * Deprecated: 1.34: Use nm_device_get_ports() instead.
  **/
 const GPtrArray *
 nm_device_ovs_bridge_get_slaves(NMDeviceOvsBridge *device)
