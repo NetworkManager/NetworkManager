@@ -4913,13 +4913,9 @@ helper_info_free(gpointer data)
     nm_clear_g_source_inst(&info->input_source);
     nm_clear_g_source_inst(&info->output_source);
     nm_clear_g_source_inst(&info->error_source);
-
-    if (info->child_stdout != -1)
-        nm_close(info->child_stdout);
-    if (info->child_stdin != -1)
-        nm_close(info->child_stdin);
-    if (info->child_stderr != -1)
-        nm_close(info->child_stderr);
+    nm_clear_fd(&info->child_stdout);
+    nm_clear_fd(&info->child_stdin);
+    nm_clear_fd(&info->child_stderr);
 
     if (info->pid != -1) {
         nm_assert(info->pid > 1);
@@ -5015,8 +5011,7 @@ helper_have_data(int fd, GIOCondition condition, gpointer user_data)
         return G_SOURCE_CONTINUE;
 
     nm_clear_g_source_inst(&info->input_source);
-    nm_close(info->child_stdout);
-    info->child_stdout = -1;
+    nm_clear_fd(&info->child_stdout);
 
     _LOG2T(info, "stdout closed");
 
@@ -5044,9 +5039,7 @@ helper_have_err_data(int fd, GIOCondition condition, gpointer user_data)
         return G_SOURCE_CONTINUE;
 
     nm_clear_g_source_inst(&info->error_source);
-    nm_close(info->child_stderr);
-    info->child_stderr = -1;
-
+    nm_clear_fd(&info->child_stderr);
     return G_SOURCE_CONTINUE;
 }
 
