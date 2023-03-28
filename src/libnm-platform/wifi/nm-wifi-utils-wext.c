@@ -249,7 +249,7 @@ wifi_wext_get_freq(NMWifiUtils *data)
 }
 
 static guint32
-wifi_wext_find_freq(NMWifiUtils *data, const guint32 *freqs)
+wifi_wext_find_freq(NMWifiUtils *data, const guint32 *freqs, gboolean ap)
 {
     NMWifiUtilsWext *wext = (NMWifiUtilsWext *) data;
     guint            i;

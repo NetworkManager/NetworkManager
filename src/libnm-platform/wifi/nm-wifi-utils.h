@@ -39,7 +39,7 @@ guint32 nm_wifi_utils_get_freq(NMWifiUtils *data);
 
 /* Return the first supported frequency in the zero-terminated list.
  * Frequencies are specified in MHz. */
-guint32 nm_wifi_utils_find_freq(NMWifiUtils *data, const guint32 *freqs);
+guint32 nm_wifi_utils_find_freq(NMWifiUtils *data, const guint32 *freqs, gboolean ap);
 
 /*
  * @out_bssid: must be NULL or an ETH_ALEN-byte buffer
