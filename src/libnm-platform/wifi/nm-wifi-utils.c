@@ -124,12 +124,12 @@ nm_wifi_utils_get_freq(NMWifiUtils *data)
 }
 
 guint32
-nm_wifi_utils_find_freq(NMWifiUtils *data, const guint32 *freqs)
+nm_wifi_utils_find_freq(NMWifiUtils *data, const guint32 *freqs, gboolean ap)
 {
     g_return_val_if_fail(data != NULL, 0);
     g_return_val_if_fail(freqs != NULL, 0);
 
-    return NM_WIFI_UTILS_GET_CLASS(data)->find_freq(data, freqs);
+    return NM_WIFI_UTILS_GET_CLASS(data)->find_freq(data, freqs, ap);
 }
 
 gboolean

@@ -9291,11 +9291,11 @@ wifi_set_powersave(NMPlatform *platform, int ifindex, guint32 powersave)
 }
 
 static guint32
-wifi_find_frequency(NMPlatform *platform, int ifindex, const guint32 *freqs)
+wifi_find_frequency(NMPlatform *platform, int ifindex, const guint32 *freqs, gboolean ap)
 {
     WIFI_GET_WIFI_DATA_NETNS(wifi_data, platform, ifindex, 0);
 
-    return nm_wifi_utils_find_freq(wifi_data, freqs);
+    return nm_wifi_utils_find_freq(wifi_data, freqs, ap);
 }
 
 static void

@@ -42,9 +42,15 @@
     G_STMT_END
 
 typedef struct {
+    guint32 freq;
+    bool    disabled : 1;
+    bool    no_ir : 1;
+} Nl80211Freq;
+
+typedef struct {
     NMWifiUtils     parent;
     struct nl_sock *nl_sock;
-    guint32        *freqs;
+    Nl80211Freq    *freqs;
     int             num_freqs;
     int             phy;
     guint16         genl_family_id;
@@ -379,7 +385,7 @@ wifi_nl80211_get_freq(NMWifiUtils *data)
 }
 
 static guint32
-wifi_nl80211_find_freq(NMWifiUtils *data, const guint32 *freqs)
+wifi_nl80211_find_freq(NMWifiUtils *data, const guint32 *freqs, gboolean ap)
 {
     NMWifiUtilsNl80211 *self = (NMWifiUtilsNl80211 *) data;
     int                 i;
@@ -389,7 +395,11 @@ wifi_nl80211_find_freq(NMWifiUtils *data, const guint32 *freqs)
      * that array might be sorted to contain preferred frequencies first. */
     for (j = 0; freqs[j] != 0; j++) {
         for (i = 0; i < self->num_freqs; i++) {
-            if (self->freqs[i] == freqs[j])
+            if (self->freqs[i].disabled)
+                continue;
+            if (ap && self->freqs[i].no_ir)
+                continue;
+            if (self->freqs[i].freq == freqs[j])
                 return freqs[j];
         }
     }
@@ -555,7 +565,7 @@ nla_put_failure:
 struct nl80211_device_info {
     NMWifiUtilsNl80211 *self;
     int                 phy;
-    guint32            *freqs;
+    Nl80211Freq        *freqs;
     int                 num_freqs;
     guint32             freq;
     guint32             caps;
@@ -657,40 +667,45 @@ nl80211_wiphy_info_handler(const struct nl_msg *msg, void *arg)
     /* Read supported frequencies */
     num_alloc       = 32;
     info->num_freqs = 0;
-    info->freqs     = g_new(guint32, num_alloc);
+    info->freqs     = g_new(Nl80211Freq, num_alloc);
 
     nla_for_each_nested (nl_band, tb[NL80211_ATTR_WIPHY_BANDS], rem_band) {
         if (nla_parse_nested_arr(tb_band, nl_band, NULL) < 0)
             return NL_SKIP;
 
         nla_for_each_nested (nl_freq, tb_band[NL80211_BAND_ATTR_FREQS], rem_freq) {
+            Nl80211Freq *f;
+
             if (nla_parse_nested_arr(tb_freq, nl_freq, freq_policy) < 0)
                 continue;
 
             if (!tb_freq[NL80211_FREQUENCY_ATTR_FREQ])
                 continue;
 
-            if (tb_freq[NL80211_FREQUENCY_ATTR_DISABLED])
-                continue;
-
             if (info->num_freqs >= num_alloc) {
                 num_alloc *= 2;
-                info->freqs = g_renew(guint32, info->freqs, num_alloc);
+                info->freqs = g_renew(Nl80211Freq, info->freqs, num_alloc);
             }
 
-            info->freqs[info->num_freqs] = nla_get_u32(tb_freq[NL80211_FREQUENCY_ATTR_FREQ]);
+            f  = &info->freqs[info->num_freqs];
+            *f = (Nl80211Freq){
+                .freq     = nla_get_u32(tb_freq[NL80211_FREQUENCY_ATTR_FREQ]),
+                .disabled = !!tb_freq[NL80211_FREQUENCY_ATTR_DISABLED],
+                .no_ir    = !!tb_freq[NL80211_FREQUENCY_ATTR_NO_IR],
+            };
+
             info->caps |= _NM_WIFI_DEVICE_CAP_FREQ_VALID;
 
-            if (info->freqs[info->num_freqs] > 2400 && info->freqs[info->num_freqs] < 2500)
+            if (f->freq > 2400 && f->freq < 2500)
                 info->caps |= _NM_WIFI_DEVICE_CAP_FREQ_2GHZ;
-            if (info->freqs[info->num_freqs] > 4900 && info->freqs[info->num_freqs] < 6000)
+            if (f->freq > 4900 && f->freq < 6000)
                 info->caps |= _NM_WIFI_DEVICE_CAP_FREQ_5GHZ;
 
             info->num_freqs++;
         }
     }
 
-    info->freqs = g_renew(guint32, info->freqs, info->num_freqs);
+    info->freqs = g_renew(Nl80211Freq, info->freqs, info->num_freqs);
 
     /* Read security/encryption support */
     if (tb[NL80211_ATTR_CIPHER_SUITES]) {
@@ -769,7 +784,7 @@ wifi_nl80211_get_mesh_channel(NMWifiUtils *data)
     }
 
     for (i = 0; i < self->num_freqs; i++) {
-        if (device_info.freq == self->freqs[i])
+        if (device_info.freq == self->freqs[i].freq)
             return i + 1;
     }
     return 0;
@@ -786,7 +801,7 @@ wifi_nl80211_set_mesh_channel(NMWifiUtils *data, guint32 channel)
         return FALSE;
 
     msg = nl80211_alloc_msg(self, NL80211_CMD_SET_WIPHY, 0);
-    NLA_PUT_U32(msg, NL80211_ATTR_WIPHY_FREQ, self->freqs[channel - 1]);
+    NLA_PUT_U32(msg, NL80211_ATTR_WIPHY_FREQ, self->freqs[channel - 1].freq);
     err = nl80211_send_and_recv(self, msg, NULL, NULL);
     return err >= 0;
 

@@ -3192,14 +3192,14 @@ nm_platform_wifi_set_powersave(NMPlatform *self, int ifindex, guint32 powersave)
 }
 
 guint32
-nm_platform_wifi_find_frequency(NMPlatform *self, int ifindex, const guint32 *freqs)
+nm_platform_wifi_find_frequency(NMPlatform *self, int ifindex, const guint32 *freqs, gboolean ap)
 {
     _CHECK_SELF(self, klass, 0);
 
     g_return_val_if_fail(ifindex > 0, 0);
     g_return_val_if_fail(freqs != NULL, 0);
 
-    return klass->wifi_find_frequency(self, ifindex, freqs);
+    return klass->wifi_find_frequency(self, ifindex, freqs, ap);
 }
 
 void

@@ -1183,7 +1183,10 @@ typedef struct {
     _NM80211Mode (*wifi_get_mode)(NMPlatform *self, int ifindex);
     void (*wifi_set_mode)(NMPlatform *self, int ifindex, _NM80211Mode mode);
     void (*wifi_set_powersave)(NMPlatform *self, int ifindex, guint32 powersave);
-    guint32 (*wifi_find_frequency)(NMPlatform *self, int ifindex, const guint32 *freqs);
+    guint32 (*wifi_find_frequency)(NMPlatform    *self,
+                                   int            ifindex,
+                                   const guint32 *freqs,
+                                   gboolean       ap);
     void (*wifi_indicate_addressing_running)(NMPlatform *self, int ifindex, gboolean running);
     _NMSettingWirelessWakeOnWLan (*wifi_get_wake_on_wlan)(NMPlatform *self, int ifindex);
     gboolean (*wifi_set_wake_on_wlan)(NMPlatform                  *self,
@@ -2063,7 +2066,8 @@ gboolean     nm_platform_wifi_get_station(NMPlatform  *self,
 _NM80211Mode nm_platform_wifi_get_mode(NMPlatform *self, int ifindex);
 void         nm_platform_wifi_set_mode(NMPlatform *self, int ifindex, _NM80211Mode mode);
 void         nm_platform_wifi_set_powersave(NMPlatform *self, int ifindex, guint32 powersave);
-guint32      nm_platform_wifi_find_frequency(NMPlatform *self, int ifindex, const guint32 *freqs);
+guint32
+nm_platform_wifi_find_frequency(NMPlatform *self, int ifindex, const guint32 *freqs, gboolean ap);
 void nm_platform_wifi_indicate_addressing_running(NMPlatform *self, int ifindex, gboolean running);
 _NMSettingWirelessWakeOnWLan nm_platform_wifi_get_wake_on_wlan(NMPlatform *self, int ifindex);
 gboolean
