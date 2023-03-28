@@ -4877,25 +4877,25 @@ typedef struct {
     gsize    out_buffer_offset;
 } HelperInfo;
 
-#define _NMLOG_PREFIX_NAME "helper"
-#define _NMLOG_DOMAIN      LOGD_CORE
-#define _NMLOG2(level, info, ...)                                                   \
-    G_STMT_START                                                                    \
-    {                                                                               \
-        if (nm_logging_enabled((level), (_NMLOG_DOMAIN))) {                         \
-            HelperInfo *_info = (info);                                             \
-                                                                                    \
-            _nm_log((level),                                                        \
-                    (_NMLOG_DOMAIN),                                                \
-                    0,                                                              \
-                    NULL,                                                           \
-                    NULL,                                                           \
-                    _NMLOG_PREFIX_NAME "[" NM_HASH_OBFUSCATE_PTR_FMT                \
-                                       ",%d]: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
-                    NM_HASH_OBFUSCATE_PTR(_info),                                   \
-                    _info->pid _NM_UTILS_MACRO_REST(__VA_ARGS__));                  \
-        }                                                                           \
-    }                                                                               \
+#define _NMLOG2_PREFIX_NAME "helper"
+#define _NMLOG2_DOMAIN      LOGD_CORE
+#define _NMLOG2(level, info, ...)                                                    \
+    G_STMT_START                                                                     \
+    {                                                                                \
+        if (nm_logging_enabled((level), (_NMLOG2_DOMAIN))) {                         \
+            HelperInfo *_info = (info);                                              \
+                                                                                     \
+            _nm_log((level),                                                         \
+                    (_NMLOG2_DOMAIN),                                                \
+                    0,                                                               \
+                    NULL,                                                            \
+                    NULL,                                                            \
+                    _NMLOG2_PREFIX_NAME "[" NM_HASH_OBFUSCATE_PTR_FMT                \
+                                        ",%d]: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
+                    NM_HASH_OBFUSCATE_PTR(_info),                                    \
+                    _info->pid _NM_UTILS_MACRO_REST(__VA_ARGS__));                   \
+        }                                                                            \
+    }                                                                                \
     G_STMT_END
 
 static void
@@ -4919,7 +4919,13 @@ helper_info_free(gpointer data)
 
     if (info->pid != -1) {
         nm_assert(info->pid > 1);
-        nm_utils_kill_child_async(info->pid, SIGKILL, LOGD_CORE, _NMLOG_PREFIX_NAME, 0, NULL, NULL);
+        nm_utils_kill_child_async(info->pid,
+                                  SIGKILL,
+                                  LOGD_CORE,
+                                  _NMLOG2_PREFIX_NAME,
+                                  0,
+                                  NULL,
+                                  NULL);
     }
 
     g_free(info);
