@@ -5978,6 +5978,33 @@ fail:
                                         error_desc ?: error->message);
 }
 
+void
+nm_manager_deactivate_ac(NMManager *self, NMSettingsConnection *connection)
+{
+    NMActiveConnection *ac;
+    const CList        *tmp_list, *tmp_safe;
+    GError             *error = NULL;
+
+    nm_assert(NM_IS_SETTINGS_CONNECTION(connection));
+
+    nm_manager_for_each_active_connection_safe (self, ac, tmp_list, tmp_safe) {
+        if (nm_active_connection_get_settings_connection(ac) == connection
+            && (nm_active_connection_get_state(ac) <= NM_ACTIVE_CONNECTION_STATE_ACTIVATED)) {
+            if (!nm_manager_deactivate_connection(self,
+                                                  ac,
+                                                  NM_DEVICE_STATE_REASON_CONNECTION_REMOVED,
+                                                  &error)) {
+                _LOGW(LOGD_DEVICE,
+                      "connection '%s' disappeared, but error deactivating it: (%d) %s",
+                      nm_settings_connection_get_id(connection),
+                      error ? error->code : -1,
+                      error ? error->message : "(unknown)");
+                g_clear_error(&error);
+            }
+        }
+    }
+}
+
 /**
  * nm_manager_activate_connection():
  * @self: the #NMManager
