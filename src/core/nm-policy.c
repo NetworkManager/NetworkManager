@@ -1326,7 +1326,8 @@ pending_ac_state_changed(NMActiveConnection *ac, guint state, guint reason, NMPo
          * device, but block the current connection to avoid an activation
          * loop.
          */
-        if (reason != NM_ACTIVE_CONNECTION_STATE_REASON_DEVICE_DISCONNECTED) {
+        if (reason != NM_ACTIVE_CONNECTION_STATE_REASON_DEVICE_DISCONNECTED
+            && reason != NM_ACTIVE_CONNECTION_STATE_REASON_CONNECTION_REMOVED) {
             con = nm_active_connection_get_settings_connection(ac);
             nm_manager_devcon_autoconnect_blocked_reason_set(
                 priv->manager,
