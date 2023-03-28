@@ -5098,6 +5098,7 @@ nm_utils_spawn_helper(const char *const  *args,
     HelperInfo           *info;
     int                   fd_flags;
     const char *const    *arg;
+    GMainContext         *context;
 
     nm_assert(args && args[0]);
 
@@ -5135,16 +5136,18 @@ nm_utils_spawn_helper(const char *const  *args,
 
     _LOG2D(info, "spawned process with args: %s", (commands = g_strjoinv(" ", (char **) args)));
 
+    context = g_task_get_context(info->task);
+
     info->child_watch_source = g_child_watch_source_new(info->pid);
     g_source_set_callback(info->child_watch_source,
                           G_SOURCE_FUNC(helper_child_terminated),
                           info,
                           NULL);
-    g_source_attach(info->child_watch_source, g_main_context_get_thread_default());
+    g_source_attach(info->child_watch_source, context);
 
     info->timeout_source =
         nm_g_timeout_source_new_seconds(20, G_PRIORITY_DEFAULT, helper_timeout, info, NULL);
-    g_source_attach(info->timeout_source, g_main_context_get_thread_default());
+    g_source_attach(info->timeout_source, context);
 
     /* Set file descriptors as non-blocking */
     fd_flags = fcntl(info->child_stdin, F_GETFD, 0);
@@ -5166,7 +5169,7 @@ nm_utils_spawn_helper(const char *const  *args,
                                                   helper_can_write,
                                                   info,
                                                   NULL);
-    g_source_attach(info->output_source, g_main_context_get_thread_default());
+    g_source_attach(info->output_source, context);
 
     /* Watch process stdout */
     info->in_buffer    = NM_STR_BUF_INIT(0, FALSE);
@@ -5176,7 +5179,7 @@ nm_utils_spawn_helper(const char *const  *args,
                                                  helper_have_data,
                                                  info,
                                                  NULL);
-    g_source_attach(info->input_source, g_main_context_get_thread_default());
+    g_source_attach(info->input_source, context);
 
     /* Watch process stderr */
     info->err_buffer   = NM_STR_BUF_INIT(0, FALSE);
@@ -5186,7 +5189,7 @@ nm_utils_spawn_helper(const char *const  *args,
                                                  helper_have_err_data,
                                                  info,
                                                  NULL);
-    g_source_attach(info->error_source, g_main_context_get_thread_default());
+    g_source_attach(info->error_source, context);
 
     if (cancellable) {
         gulong signal_id;
