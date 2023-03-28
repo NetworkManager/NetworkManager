@@ -5099,6 +5099,7 @@ nm_utils_spawn_helper(const char *const  *args,
     int                   fd_flags;
     const char *const    *arg;
     GMainContext         *context;
+    gsize                 n;
 
     nm_assert(args && args[0]);
 
@@ -5176,7 +5177,9 @@ nm_utils_spawn_helper(const char *const  *args,
     fcntl(info->child_stderr, F_SETFL, fd_flags | O_NONBLOCK);
 
     /* Watch process stdin */
-    info->out_buffer = NM_STR_BUF_INIT(NM_UTILS_GET_NEXT_REALLOC_SIZE_40, TRUE);
+    for (n = 1, arg = args; *arg; arg++)
+        n += strlen(*arg) + 1u;
+    info->out_buffer = NM_STR_BUF_INIT(n, TRUE);
     for (arg = args; *arg; arg++) {
         nm_str_buf_append(&info->out_buffer, *arg);
         nm_str_buf_append_c(&info->out_buffer, '\0');
