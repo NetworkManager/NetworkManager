@@ -5981,9 +5981,12 @@ fail:
 void
 nm_manager_deactivate_ac(NMManager *self, NMSettingsConnection *connection)
 {
+    NMManagerPrivate   *priv = NM_MANAGER_GET_PRIVATE(self);
     NMActiveConnection *ac;
     const CList        *tmp_list, *tmp_safe;
     GError             *error = NULL;
+    AsyncOpData        *async_op_data;
+    AsyncOpData        *async_op_data_safe;
 
     nm_assert(NM_IS_SETTINGS_CONNECTION(connection));
 
@@ -6001,6 +6004,25 @@ nm_manager_deactivate_ac(NMManager *self, NMSettingsConnection *connection)
                       error ? error->message : "(unknown)");
                 g_clear_error(&error);
             }
+        }
+    }
+
+    c_list_for_each_entry_safe (async_op_data,
+                                async_op_data_safe,
+                                &priv->async_op_lst_head,
+                                async_op_lst) {
+        if (!NM_IN_SET(async_op_data->async_op_type,
+                       ASYNC_OP_TYPE_AC_AUTH_ACTIVATE_INTERNAL,
+                       ASYNC_OP_TYPE_AC_AUTH_ACTIVATE_USER,
+                       ASYNC_OP_TYPE_AC_AUTH_ADD_AND_ACTIVATE,
+                       ASYNC_OP_TYPE_AC_AUTH_ADD_AND_ACTIVATE2))
+            continue;
+
+        ac = async_op_data->ac_auth.active;
+        if (nm_active_connection_get_settings_connection(ac) == connection) {
+            nm_active_connection_set_state(ac,
+                                           NM_ACTIVE_CONNECTION_STATE_DEACTIVATED,
+                                           NM_ACTIVE_CONNECTION_STATE_REASON_CONNECTION_REMOVED);
         }
     }
 }
