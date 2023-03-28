@@ -4877,7 +4877,7 @@ typedef struct {
     gsize    out_buffer_offset;
 } HelperInfo;
 
-#define _NMLOG2_PREFIX_NAME "helper"
+#define _NMLOG2_PREFIX_NAME "nm-daemon-helper"
 #define _NMLOG2_DOMAIN      LOGD_CORE
 #define _NMLOG2(level, info, ...)                                                    \
     G_STMT_START                                                                     \
@@ -4919,13 +4919,7 @@ helper_info_free(gpointer data)
 
     if (info->pid != -1) {
         nm_assert(info->pid > 1);
-        nm_utils_kill_child_async(info->pid,
-                                  SIGKILL,
-                                  LOGD_CORE,
-                                  _NMLOG2_PREFIX_NAME,
-                                  0,
-                                  NULL,
-                                  NULL);
+        nm_utils_kill_child_async(info->pid, SIGKILL, LOGD_CORE, "nm-daemon-helper", 0, NULL, NULL);
     }
 
     g_free(info);
