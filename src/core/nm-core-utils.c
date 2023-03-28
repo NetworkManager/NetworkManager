@@ -5144,11 +5144,11 @@ nm_utils_spawn_helper(const char *const  *args,
      * main context. */
     nm_assert(context == g_main_context_default());
 
-    info->child_watch_source = g_child_watch_source_new(info->pid);
-    g_source_set_callback(info->child_watch_source,
-                          G_SOURCE_FUNC(helper_child_terminated),
-                          info,
-                          NULL);
+    info->child_watch_source = nm_g_child_watch_source_new(info->pid,
+                                                           G_PRIORITY_DEFAULT,
+                                                           helper_child_terminated,
+                                                           info,
+                                                           NULL);
     g_source_attach(info->child_watch_source, context);
 
     info->timeout_source =
