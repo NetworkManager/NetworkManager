@@ -5144,6 +5144,18 @@ nm_utils_spawn_helper(const char *const  *args,
      * main context. */
     nm_assert(context == g_main_context_default());
 
+    /* We are using a GChildWatchSource in combination with kill()/waitpid()
+     * (where helper_info_free() clears the source and calls
+     * nm_utils_kill_child_async()). That leads to races where glib might have
+     * already reaped the process and our waitpid() call fails with:
+     *
+     *   <error> [TIMESTAMP] kill child process 'nm-daemon-helper' (PID): failed due to unexpected return value -1 by waitpid (No child processes, 10) after sending SIGKILL (9)
+     *
+     * This is a bug in glib, addressed by [1].  Maybe there should be a
+     * workaround here, and not using the child watcher?
+     *
+     * [1] https://gitlab.gnome.org/GNOME/glib/-/merge_requests/3353
+     */
     info->child_watch_source = nm_g_child_watch_source_new(info->pid,
                                                            G_PRIORITY_DEFAULT,
                                                            helper_child_terminated,
