@@ -6705,7 +6705,7 @@ delayed_action_wait_for_response_complete(NMPlatform             *platform,
 
     nm_assert(NM_FLAGS_ANY(priv->delayed_action.flags, ACTION_TYPE));
     nm_assert(idx < priv->delayed_action.list_wait_for_response_x[netlink_protocol]->len);
-    nm_assert(seq_result);
+    nm_assert(seq_result != WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN);
 
     data = delayed_action_get_list_wait_for_resonse(priv, netlink_protocol, idx);
 
@@ -8095,7 +8095,7 @@ do_add_link_with_lookup(NMPlatform            *platform,
 
         delayed_action_handle_all(platform);
 
-        nm_assert(seq_result);
+        nm_assert(seq_result != WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN);
 
         _NMLOG(seq_result == WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK ? LOGL_DEBUG : LOGL_WARN,
                "do-add-link[%s/%s]: %s",
@@ -8152,7 +8152,7 @@ do_add_addrroute(NMPlatform      *platform,
 
         delayed_action_handle_all(platform);
 
-        nm_assert(seq_result);
+        nm_assert(seq_result != WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN);
 
         _NMLOG((seq_result == WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK
                 || (suppress_netlink_failure && seq_result < 0))
@@ -8210,7 +8210,7 @@ do_delete_object(NMPlatform *platform, const NMPObject *obj_id, struct nl_msg *n
 
         delayed_action_handle_all(platform);
 
-        nm_assert(seq_result);
+        nm_assert(seq_result != WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN);
 
         success = TRUE;
         if (seq_result == WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK) {
@@ -8307,7 +8307,7 @@ retry:
 
     delayed_action_handle_all(platform);
 
-    nm_assert(seq_result);
+    nm_assert(seq_result != WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN);
 
     if (NM_IN_SET(seq_result, WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK, -EEXIST, -EADDRINUSE)) {
         log_level = LOGL_DEBUG;
@@ -9878,7 +9878,7 @@ ip_route_get(NMPlatform   *platform,
 
         delayed_action_handle_all(platform);
 
-        nm_assert(seq_result);
+        nm_assert(seq_result != WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN);
 
     } while (seq_result == WAIT_FOR_NL_RESPONSE_RESULT_FAILED_RESYNC
              && ++try_count < RESYNC_RETRIES);
@@ -9928,7 +9928,7 @@ routing_rule_add(NMPlatform *platform, NMPNlmFlags flags, const NMPlatformRoutin
 
         delayed_action_handle_all(platform);
 
-        nm_assert(seq_result);
+        nm_assert(seq_result != WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN);
 
     } while (seq_result == WAIT_FOR_NL_RESPONSE_RESULT_FAILED_RESYNC
              && ++try_count < RESYNC_RETRIES);
@@ -9975,7 +9975,7 @@ qdisc_add(NMPlatform *platform, NMPNlmFlags flags, const NMPlatformQdisc *qdisc)
 
         delayed_action_handle_all(platform);
 
-        nm_assert(seq_result);
+        nm_assert(seq_result != WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN);
 
     } while (seq_result == WAIT_FOR_NL_RESPONSE_RESULT_FAILED_RESYNC
              && ++try_count < RESYNC_RETRIES);
@@ -10043,7 +10043,7 @@ tc_delete(NMPlatform *platform,
 
         delayed_action_handle_all(platform);
 
-        nm_assert(seq_result);
+        nm_assert(seq_result != WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN);
 
     } while (seq_result == WAIT_FOR_NL_RESPONSE_RESULT_FAILED_RESYNC
              && ++try_count < RESYNC_RETRIES);
@@ -10099,7 +10099,7 @@ tfilter_add(NMPlatform *platform, NMPNlmFlags flags, const NMPlatformTfilter *tf
 
         delayed_action_handle_all(platform);
 
-        nm_assert(seq_result);
+        nm_assert(seq_result != WAIT_FOR_NL_RESPONSE_RESULT_UNKNOWN);
 
         _NMLOG(seq_result == WAIT_FOR_NL_RESPONSE_RESULT_RESPONSE_OK ? LOGL_DEBUG : LOGL_WARN,
                "do-add-tfilter: %s",
