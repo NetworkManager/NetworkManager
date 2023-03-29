@@ -1326,7 +1326,8 @@ pending_ac_state_changed(NMActiveConnection *ac, guint state, guint reason, NMPo
          * device, but block the current connection to avoid an activation
          * loop.
          */
-        if (reason != NM_ACTIVE_CONNECTION_STATE_REASON_DEVICE_DISCONNECTED) {
+        if (reason != NM_ACTIVE_CONNECTION_STATE_REASON_DEVICE_DISCONNECTED
+            && reason != NM_ACTIVE_CONNECTION_STATE_REASON_CONNECTION_REMOVED) {
             con = nm_active_connection_get_settings_connection(ac);
             nm_manager_devcon_autoconnect_blocked_reason_set(
                 priv->manager,
@@ -2625,40 +2626,11 @@ connection_updated(NMSettings           *settings,
 }
 
 static void
-_deactivate_if_active(NMPolicy *self, NMSettingsConnection *connection)
-{
-    NMPolicyPrivate    *priv = NM_POLICY_GET_PRIVATE(self);
-    NMActiveConnection *ac;
-    const CList        *tmp_list, *tmp_safe;
-    GError             *error = NULL;
-
-    nm_assert(NM_IS_SETTINGS_CONNECTION(connection));
-
-    nm_manager_for_each_active_connection_safe (priv->manager, ac, tmp_list, tmp_safe) {
-        if (nm_active_connection_get_settings_connection(ac) == connection
-            && (nm_active_connection_get_state(ac) <= NM_ACTIVE_CONNECTION_STATE_ACTIVATED)) {
-            if (!nm_manager_deactivate_connection(priv->manager,
-                                                  ac,
-                                                  NM_DEVICE_STATE_REASON_CONNECTION_REMOVED,
-                                                  &error)) {
-                _LOGW(LOGD_DEVICE,
-                      "connection '%s' disappeared, but error deactivating it: (%d) %s",
-                      nm_settings_connection_get_id(connection),
-                      error ? error->code : -1,
-                      error ? error->message : "(unknown)");
-                g_clear_error(&error);
-            }
-        }
-    }
-}
-
-static void
 connection_removed(NMSettings *settings, NMSettingsConnection *connection, gpointer user_data)
 {
     NMPolicyPrivate *priv = user_data;
-    NMPolicy        *self = _PRIV_TO_SELF(priv);
 
-    _deactivate_if_active(self, connection);
+    nm_manager_deactivate_ac(priv->manager, connection);
 }
 
 static void
