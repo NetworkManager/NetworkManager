@@ -66,7 +66,7 @@ nm_ether_addr_from_string(NMEtherAddr *addr, const char *str)
  *
  * Checks if only the bottom 64bits of the address are set.
  *
- * Return value: %TRUE or %FALSE
+ * Returns: %TRUE or %FALSE
  */
 gboolean
 _nm_utils_inet6_is_token(const struct in6_addr *in6addr)
@@ -1766,10 +1766,10 @@ nm_utils_escaped_tokens_escape_full(const char                     *str,
  * nm_utils_escaped_tokens_options_split:
  * @str: the src string. This string will be modified in-place.
  *   The output values will point into @str.
- * @out_key: (nullable) (out): the returned output key. This will always be set
+ * @out_key: (out) (nullable): the returned output key. This will always be set
  *   to @str itself. @str will be modified to contain only the unescaped,
  *   truncated key name.
- * @out_val: (nullable) (out): returns the parsed (and unescaped) value or
+ * @out_val: (out) (nullable): returns the parsed (and unescaped) value or
  *   %NULL, if @str contains no '=' delimiter.
  *
  * Honors backslash escaping to parse @str as "key=value" pairs. Optionally, if no '='
@@ -6775,7 +6775,7 @@ valid_ldh_char(char c)
  * @s: the hostname to check.
  * @trailing_dot: Accept trailing dot on multi-label names.
  *
- * Return: %TRUE if valid.
+ * Returns: %TRUE if valid.
  */
 gboolean
 nm_hostname_is_valid(const char *s, gboolean trailing_dot)

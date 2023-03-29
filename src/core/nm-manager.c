@@ -3905,7 +3905,7 @@ _device_realize_finish(NMManager *self, NMDevice *device, const NMPlatformLink *
  * add_device:
  * @self: the #NMManager
  * @device: the #NMDevice to add
- * @error: (out): the #GError
+ * @error: the #GError
  *
  * If successful, this function will increase the references count of @device.
  * Callers should decrease the reference count.

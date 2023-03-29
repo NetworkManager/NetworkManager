@@ -2719,7 +2719,7 @@ guint8 *nm_utils_hexstr2bin_alloc(const char *hexstr,
  * can parse addresses of any length. That is, you don't need
  * to know the length before-hand.
  *
- * Return value: @buffer, or %NULL if @asc couldn't be parsed.
+ * Returns: @buffer, or %NULL if @asc couldn't be parsed.
  */
 static inline guint8 *
 _nm_utils_hwaddr_aton(const char *asc, gpointer buffer, gsize buffer_length, gsize *out_length)

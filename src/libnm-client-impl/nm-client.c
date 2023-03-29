@@ -4465,8 +4465,8 @@ nm_client_connectivity_check_get_uri(NMClient *client)
 /**
  * nm_client_get_logging:
  * @client: a #NMClient
- * @level: (nullable) (out) (optional): return location for logging level string
- * @domains: (nullable) (out) (optional): return location for log domains string. The string is
+ * @level: (out) (optional) (nullable): return location for logging level string
+ * @domains: (out) (optional) (nullable): return location for log domains string. The string is
  *   a list of domains separated by ","
  * @error: return location for a #GError, or %NULL
  *
@@ -5402,7 +5402,7 @@ nm_client_add_and_activate_connection2(NMClient           *client,
  * @client: an #NMClient
  * @result: the result passed to the #GAsyncReadyCallback
  * @error: location for a #GError, or %NULL
- * @out_result: (optional) (nullable) (transfer full) (out): the output result
+ * @out_result: (out) (optional) (nullable) (transfer full): the output result
  *   of type "a{sv}" returned by D-Bus' AddAndActivate2 call. Currently, no
  *   output is implemented yet.
  *
@@ -5875,7 +5875,7 @@ nm_client_add_connection2(NMClient                     *client,
  * nm_client_add_connection2_finish:
  * @client: the #NMClient
  * @result: the #GAsyncResult
- * @out_result: (optional) (nullable) (transfer full) (out): the output
+ * @out_result: (out) (optional) (nullable) (transfer full): the output
  *   #GVariant from AddConnection2().
  *   If you care about the output result, then the "ignore_out_result"
  *   parameter of nm_client_add_connection2() must not be set to %TRUE.
@@ -6052,7 +6052,7 @@ nm_client_load_connections_finish(NMClient     *client,
  * files from disk, adding, updating, and removing connections until
  * the in-memory state matches the on-disk state.
  *
- * Return value: %TRUE on success, %FALSE on failure
+ * Returns: %TRUE on success, %FALSE on failure
  *
  * Deprecated: 1.22: Use nm_client_reload_connections_async() or GDBusConnection.
  **/
@@ -6125,7 +6125,7 @@ nm_client_reload_connections_async(NMClient           *client,
  *
  * Gets the result of an nm_client_reload_connections_async() call.
  *
- * Return value: %TRUE on success, %FALSE on failure
+ * Returns: %TRUE on success, %FALSE on failure
  **/
 gboolean
 nm_client_reload_connections_finish(NMClient *client, GAsyncResult *result, GError **error)
@@ -6151,7 +6151,7 @@ nm_client_reload_connections_finish(NMClient *client, GAsyncResult *result, GErr
  *
  * Gets the current DNS processing mode.
  *
- * Return value: the DNS processing mode, or %NULL in case the
+ * Returns: the DNS processing mode, or %NULL in case the
  *   value is not available.
  *
  * Since: 1.6
@@ -6170,7 +6170,7 @@ nm_client_get_dns_mode(NMClient *client)
  *
  * Gets the current DNS resolv.conf manager.
  *
- * Return value: the resolv.conf manager or %NULL in case the
+ * Returns: the resolv.conf manager or %NULL in case the
  *   value is not available.
  *
  * Since: 1.6
