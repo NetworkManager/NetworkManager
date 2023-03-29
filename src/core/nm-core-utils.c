@@ -507,16 +507,13 @@ nm_utils_kill_child_async(pid_t                   pid,
         return;
     } else if (ret != 0) {
         errsv = errno;
-        /* ECHILD means, the process is not a child/does not exist or it has SIGCHILD blocked. */
-        if (errsv != ECHILD) {
-            nm_log_err(LOGD_CORE | log_domain,
-                       LOG_NAME_FMT ": unexpected error while waitpid: %s (%d)",
-                       LOG_NAME_ARGS,
-                       nm_strerror_native(errsv),
-                       errsv);
-            _kc_invoke_callback(pid, log_domain, log_name, callback, user_data, FALSE, -1);
-            return;
-        }
+        nm_log_err(LOGD_CORE | log_domain,
+                   LOG_NAME_FMT ": unexpected error while waitpid: %s (%d)",
+                   LOG_NAME_ARGS,
+                   nm_strerror_native(errsv),
+                   errsv);
+        _kc_invoke_callback(pid, log_domain, log_name, callback, user_data, FALSE, -1);
+        return;
     }
 
     /* send the first signal. */
@@ -647,15 +644,12 @@ nm_utils_kill_child_sync(pid_t       pid,
         goto out;
     } else if (ret != 0) {
         errsv = errno;
-        /* ECHILD means, the process is not a child/does not exist or it has SIGCHILD blocked. */
-        if (errsv != ECHILD) {
-            nm_log_err(LOGD_CORE | log_domain,
-                       LOG_NAME_FMT ": unexpected error while waitpid: %s (%d)",
-                       LOG_NAME_ARGS,
-                       nm_strerror_native(errsv),
-                       errsv);
-            goto out;
-        }
+        nm_log_err(LOGD_CORE | log_domain,
+                   LOG_NAME_FMT ": unexpected error while waitpid: %s (%d)",
+                   LOG_NAME_ARGS,
+                   nm_strerror_native(errsv),
+                   errsv);
+        goto out;
     }
 
     /* send first signal @sig */
