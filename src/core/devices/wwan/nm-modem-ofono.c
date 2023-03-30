@@ -1320,9 +1320,18 @@ handle_settings(NMModemOfono *self, GVariant *v_dict)
         }
     }
 
-    if (g_variant_lookup(v_dict, "MessageProxy", "&s", &s)) {
-        _LOGI("MessageProxy: %s", s);
-        if (s && nm_inet_parse_bin(AF_INET, s, NULL, &address_network)) {
+    if (g_variant_lookup(v_dict, "Proxy", "&s", &s) && s) {
+        gs_free char *proxy = g_strdup(s);
+        char         *colon;
+
+        _LOGI("(MMS) Proxy: %s", s);
+
+        /* Strip the port out. We can do this as we know this is IPv4. */
+        colon = strchr(proxy, ':');
+        if (colon)
+            *colon = '\0';
+
+        if (nm_inet_parse_bin(AF_INET, proxy, NULL, &address_network)) {
             const NMPlatformIP4Route mms_route = {
                 .network       = address_network,
                 .plen          = 32,
@@ -1335,7 +1344,7 @@ handle_settings(NMModemOfono *self, GVariant *v_dict)
 
             nm_l3_config_data_add_route_4(priv->l3cd_4, &mms_route);
         } else
-            _LOGW("invalid MessageProxy: %s", s);
+            _LOGW("invalid (MMS) Proxy: %s", s);
     }
 
     ret = TRUE;
