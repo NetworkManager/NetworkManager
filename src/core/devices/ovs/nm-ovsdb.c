@@ -2431,6 +2431,12 @@ again:
     }
 
     if (priv->input_buf.len > 0) {
+        if (priv->input_buf.len > 50 * 1024 * 1024) {
+            _LOGW("received too much data from ovsdb that is not valid JSON");
+            priv->num_failures++;
+            ovsdb_disconnect(self, priv->num_failures <= OVSDB_MAX_FAILURES, FALSE);
+            return;
+        }
         /* We have an incomplete message in the message buffer. Don't wait for another round
          * of "poll", instead try to read it again. */
         goto again;
