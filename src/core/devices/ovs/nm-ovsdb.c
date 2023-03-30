@@ -138,7 +138,6 @@ typedef struct {
     GSocketConnection *conn;
     GCancellable      *conn_cancellable;
     char               buf[4096]; /* Input buffer */
-    size_t             bufp;      /* Last decoded byte in the input buffer. */
     GString           *input;     /* JSON stream waiting for decoding. */
     GString           *output;    /* JSON stream to be sent. */
     guint64            call_id_counter;
@@ -2320,25 +2319,55 @@ ovsdb_got_msg(NMOvsdb *self, json_t *msg)
 
 /*****************************************************************************/
 
+typedef struct {
+    gsize    bufp;
+    GString *input;
+} JsonReadMsgData;
+
 /* Lower level marshalling and demarshalling of the JSON-RPC traffic on the
  * ovsdb socket. */
 
 static size_t
-_json_callback(void *buffer, size_t buflen, void *user_data)
+_json_read_msg_cb(void *buffer, size_t buflen, void *user_data)
 {
-    NMOvsdb        *self = NM_OVSDB(user_data);
-    NMOvsdbPrivate *priv = NM_OVSDB_GET_PRIVATE(self);
+    JsonReadMsgData *data = user_data;
 
-    if (priv->bufp == priv->input->len) {
+    nm_assert(buffer);
+    nm_assert(buflen > 0);
+
+    if (data->bufp == data->input->len) {
         /* No more bytes buffered for decoding. */
         return 0;
     }
 
     /* Pass one more byte to the JSON decoder. */
-    *(char *) buffer = priv->input->str[priv->bufp];
-    priv->bufp++;
+    *(char *) buffer = data->input->str[data->bufp];
+    data->bufp++;
+    return 1;
+}
 
-    return (size_t) 1;
+static json_t *
+_json_read_msg(GString *input)
+{
+    JsonReadMsgData data = {
+        .bufp  = 0,
+        .input = input,
+    };
+    json_error_t json_error = {
+        0,
+    };
+    json_t *msg;
+
+    /* The callback always eats up only up to a single byte. This makes it
+     * possible for us to identify complete JSON objects in spite of us not
+     * knowing the length in advance. */
+    msg = json_load_callback(_json_read_msg_cb, &data, JSON_DISABLE_EOF_CHECK, &json_error);
+    if (!msg)
+        return NULL;
+
+    nm_assert(data.bufp > 0);
+    g_string_erase(input, 0, data.bufp);
+    return msg;
 }
 
 /**
@@ -2355,10 +2384,6 @@ ovsdb_read_cb(GObject *source_object, GAsyncResult *res, gpointer user_data)
     GInputStream   *stream = G_INPUT_STREAM(source_object);
     GError         *error  = NULL;
     gssize          size;
-    json_t         *msg;
-    json_error_t    json_error = {
-        0,
-    };
 
     size = g_input_stream_read_finish(stream, res, &error);
     if (size == -1) {
@@ -2371,18 +2396,15 @@ ovsdb_read_cb(GObject *source_object, GAsyncResult *res, gpointer user_data)
     }
 
     g_string_append_len(priv->input, priv->buf, size);
-    do {
-        priv->bufp = 0;
-        /* The callback always eats up only up to a single byte. This makes
-         * it possible for us to identify complete JSON objects in spite of
-         * us not knowing the length in advance. */
-        msg = json_load_callback(_json_callback, self, JSON_DISABLE_EOF_CHECK, &json_error);
-        if (msg) {
-            ovsdb_got_msg(self, msg);
-            g_string_erase(priv->input, 0, priv->bufp);
-        }
-        json_decref(msg);
-    } while (msg);
+    while (TRUE) {
+        nm_auto_decref_json json_t *msg = NULL;
+
+        msg = _json_read_msg(priv->input);
+        if (!msg)
+            break;
+
+        ovsdb_got_msg(self, msg);
+    }
 
     if (!priv->conn)
         return;
@@ -2498,7 +2520,6 @@ ovsdb_disconnect(NMOvsdb *self, gboolean retry, gboolean is_disposing)
             _call_complete(call, NULL, error);
     }
 
-    priv->bufp = 0;
     g_string_truncate(priv->input, 0);
     g_string_truncate(priv->output, 0);
     g_clear_object(&priv->conn);
