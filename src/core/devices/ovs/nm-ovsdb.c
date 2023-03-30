@@ -2274,13 +2274,13 @@ ovsdb_got_msg(NMOvsdb *self, json_t *msg)
 
         /* This is a response to a method call. */
         if (c_list_is_empty(&priv->calls_lst_head)) {
-            _LOGE("there are no queued calls expecting response %" G_GUINT64_FORMAT, (guint64) id);
+            _LOGW("there are no queued calls expecting response %" G_GUINT64_FORMAT, (guint64) id);
             ovsdb_disconnect(self, FALSE, FALSE);
             return;
         }
         call = c_list_first_entry(&priv->calls_lst_head, OvsdbMethodCall, calls_lst);
         if (call->call_id != id) {
-            _LOGE("expected a response to call %" G_GUINT64_FORMAT ", not %" G_GUINT64_FORMAT,
+            _LOGW("expected a response to call %" G_GUINT64_FORMAT ", not %" G_GUINT64_FORMAT,
                   call->call_id,
                   (guint64) id);
             ovsdb_disconnect(self, FALSE, FALSE);
