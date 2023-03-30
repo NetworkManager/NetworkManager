@@ -5138,6 +5138,12 @@ nm_utils_spawn_helper(const char *const  *args,
 
     context = g_task_get_context(info->task);
 
+    /* The async function makes a lukewarm attempt to honor the current thread default
+     * context. However, it later uses nm_utils_kill_child_async() which always uses
+     * g_main_context_default(). For now, the function really can only be used with the
+     * main context. */
+    nm_assert(context == g_main_context_default());
+
     info->child_watch_source = g_child_watch_source_new(info->pid);
     g_source_set_callback(info->child_watch_source,
                           G_SOURCE_FUNC(helper_child_terminated),
