@@ -2146,6 +2146,10 @@ class TestNmCloudSetup(TestNmClient):
             if pexpect is None:
                 raise unittest.SkipTest("pexpect not available")
 
+            if tuple(sys.version_info[0:2]) < (3, 2):
+                # subprocess.Popen()'s "pass_fd" argument requires at least Python 3.2.
+                raise unittest.SkipTest("This test requires at least Python 3.2")
+
             s = socket.socket()
             s.set_inheritable(True)
             s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
