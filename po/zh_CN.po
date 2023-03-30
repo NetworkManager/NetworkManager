@@ -1210,7 +1210,7 @@ msgstr "忽略无效的 %s 地址：%s"
 #: src/libnm-core-impl/nm-keyfile.c:418
 #, c-format
 msgid "ignoring invalid gateway '%s' for %s route"
-msgstr "忽略 %s%s 路由的无效网关 \"\""
+msgstr "\"%s\"对于 %s 路由来说是无效网关，忽略此网关 "
 
 #: src/libnm-core-impl/nm-keyfile.c:440
 #, c-format
@@ -2984,7 +2984,7 @@ msgstr "信道不能在 %d 和 %d 之间"
 #: src/libnm-core-impl/nm-setting.c:1995
 #, c-format
 msgid "can't set property of type '%s' from value of type '%s'"
-msgstr "无法从类型为 \"%s%s\" 的值设置类型为 \"\" 的属性"
+msgstr "类型为 \"%s\" 的值无法用于设置类型为 \"%s\" 的属性"
 
 #: src/libnm-core-impl/nm-setting.c:1665
 #, fuzzy, c-format
@@ -4406,13 +4406,13 @@ msgstr "未知的 VPN 插件 \"%s\""
 #: src/libnmc-base/nm-vpn-helpers.c:57
 #, c-format
 msgid "cannot load legacy-only VPN plugin \"%s\" for \"%s\""
-msgstr "无法为 \"%s%s\" 加载旧版限定的 VPN 插件 \"\""
+msgstr "旧版限定的 VPN 插件 \"%s\" 无法为 \"%s\" 加载"
 
 #: src/libnmc-base/nm-vpn-helpers.c:65
 #, c-format
 msgid ""
 "cannot load VPN plugin \"%s\" due to missing \"%s\". Missing client plugin?"
-msgstr "由于缺少 \"%s%s\"，无法加载 VPN 插件 \"\"。缺少客户端插件？"
+msgstr "VPN 插件 \"%s\" 无法加载，因为缺少 \"%s\"。缺少客户端插件？"
 
 #: src/libnmc-base/nm-vpn-helpers.c:72
 #, c-format
@@ -12658,7 +12658,7 @@ msgstr "错误：超时时间 %d 秒已到。"
 #: src/nmcli/devices.c:2126
 #, c-format
 msgid "Device '%s' successfully activated with '%s'.\n"
-msgstr "成功用 \"%s%s\" 激活了设备 \"\"。\n"
+msgstr "设备 \"%s\" 成功以 \"%s\" 激活。\n"
 
 #: src/nmcli/devices.c:2132
 msgid ""
