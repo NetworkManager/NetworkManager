@@ -2181,6 +2181,7 @@ class TestNmCloudSetup(TestNmClient):
             func(self)
             self._nm_test_post()
 
+            p.stdin.close()
             p.terminate()
             p.wait()
 
