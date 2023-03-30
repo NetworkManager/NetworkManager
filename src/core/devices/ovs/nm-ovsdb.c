@@ -144,6 +144,8 @@ typedef struct {
     NMStrBuf input_buf;
     NMStrBuf output_buf;
 
+    GSource *input_timeout_source;
+
     guint64 call_id_counter;
 
     CList calls_lst_head;
@@ -2369,6 +2371,18 @@ _json_read_msg(NMStrBuf *input)
     return msg;
 }
 
+static gboolean
+_ovsdb_read_input_timeout_cb(gpointer user_data)
+{
+    NMOvsdb        *self = user_data;
+    NMOvsdbPrivate *priv = NM_OVSDB_GET_PRIVATE(self);
+
+    _LOGW("invalid/incomplete data in receive buffer. Reset");
+    priv->num_failures++;
+    ovsdb_disconnect(self, priv->num_failures <= OVSDB_MAX_FAILURES, FALSE);
+    return G_SOURCE_CONTINUE;
+}
+
 static void
 ovsdb_read(NMOvsdb *self)
 {
@@ -2379,8 +2393,19 @@ again:
     size = nm_utils_fd_read(priv->conn_fd, &priv->input_buf);
 
     if (size <= 0) {
-        if (size == -EAGAIN)
+        if (size == -EAGAIN) {
+            if (priv->input_buf.len == 0)
+                nm_clear_g_source_inst(&priv->input_timeout_source);
+            else if (!priv->input_timeout_source) {
+                /* We have data in the buffer but nothing further to read. Schedule a timer,
+                 * if we don't get the rest within timeout, it means that the buffer
+                 * content is broken (_json_read_msg() cannot extract any data) and
+                 * we disconnect. */
+                priv->input_timeout_source =
+                    nm_g_timeout_add_seconds_source(5, _ovsdb_read_input_timeout_cb, NULL);
+            }
             return;
+        }
 
         /* ovsdb-server was possibly restarted */
         _LOGW("short read from ovsdb: %s", nm_strerror_native(-size));
@@ -2398,6 +2423,7 @@ again:
         if (!msg)
             break;
 
+        nm_clear_g_source_inst(&priv->input_timeout_source);
         ovsdb_got_msg(self, msg);
 
         if (priv->input_buf.len == 0)
@@ -2409,6 +2435,8 @@ again:
          * of "poll", instead try to read it again. */
         goto again;
     }
+
+    nm_clear_g_source_inst(&priv->input_timeout_source);
 }
 
 static gboolean
@@ -2522,6 +2550,7 @@ ovsdb_disconnect(NMOvsdb *self, gboolean retry, gboolean is_disposing)
     nm_clear_fd(&priv->conn_fd);
     nm_clear_g_source_inst(&priv->conn_fd_in_source);
     nm_clear_g_source_inst(&priv->conn_fd_out_source);
+    nm_clear_g_source_inst(&priv->input_timeout_source);
     nm_clear_g_free(&priv->db_uuid);
     nm_clear_g_cancellable(&priv->conn_cancellable);
 
