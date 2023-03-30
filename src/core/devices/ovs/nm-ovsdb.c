@@ -1445,7 +1445,7 @@ ovsdb_next_command(NMOvsdb *self)
 {
     NMOvsdbPrivate             *priv = NM_OVSDB_GET_PRIVATE(self);
     OvsdbMethodCall            *call;
-    char                       *cmd;
+    nm_auto_free char          *cmd = NULL;
     nm_auto_decref_json json_t *msg = NULL;
 
     if (!priv->conn)
@@ -1586,7 +1586,6 @@ ovsdb_next_command(NMOvsdb *self)
     cmd = json_dumps(msg, 0);
     _LOGT_call(call, "send: call-id=%" G_GUINT64_FORMAT ", %s", call->call_id, cmd);
     g_string_append(priv->output, cmd);
-    free(cmd);
 
     ovsdb_write(self);
 }
@@ -2187,9 +2186,9 @@ ovsdb_got_update(NMOvsdb *self, json_t *msg)
 static void
 ovsdb_got_echo(NMOvsdb *self, json_int_t id, json_t *data)
 {
-    NMOvsdbPrivate             *priv = NM_OVSDB_GET_PRIVATE(self);
-    nm_auto_decref_json json_t *msg  = NULL;
-    char                       *reply;
+    NMOvsdbPrivate             *priv  = NM_OVSDB_GET_PRIVATE(self);
+    nm_auto_decref_json json_t *msg   = NULL;
+    nm_auto_free char          *reply = NULL;
     gboolean                    output_was_empty;
 
     output_was_empty = priv->output->len == 0;
@@ -2197,7 +2196,6 @@ ovsdb_got_echo(NMOvsdb *self, json_int_t id, json_t *data)
     msg   = json_pack("{s:I, s:O}", "id", id, "result", data);
     reply = json_dumps(msg, 0);
     g_string_append(priv->output, reply);
-    free(reply);
 
     if (output_was_empty)
         ovsdb_write(self);
