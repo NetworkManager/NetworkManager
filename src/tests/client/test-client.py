@@ -2146,8 +2146,11 @@ class TestNmCloudSetup(TestNmClient):
             if pexpect is None:
                 raise unittest.SkipTest("pexpect not available")
 
+            if tuple(sys.version_info[0:2]) < (3, 2):
+                # subprocess.Popen()'s "pass_fd" argument requires at least Python 3.2.
+                raise unittest.SkipTest("This test requires at least Python 3.2")
+
             s = socket.socket()
-            s.set_inheritable(True)
             s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
             s.bind(("localhost", 0))
@@ -2157,18 +2160,14 @@ class TestNmCloudSetup(TestNmClient):
             # hallucinogenic substances.
             s.listen(5)
 
-            def pass_socket():
-                os.dup2(s.fileno(), 3, inheritable=True)
-
             service_path = PathConfiguration.test_cloud_meta_mock_path()
             env = os.environ.copy()
-            env["LISTEN_FDS"] = "1"
+            env["LISTEN_FD"] = str(s.fileno())
             p = subprocess.Popen(
                 [sys.executable, service_path],
                 stdin=subprocess.PIPE,
                 env=env,
                 pass_fds=(s.fileno(),),
-                preexec_fn=pass_socket,
             )
 
             self.md_url = "http://%s:%d" % s.getsockname()
@@ -2178,6 +2177,7 @@ class TestNmCloudSetup(TestNmClient):
             func(self)
             self._nm_test_post()
 
+            p.stdin.close()
             p.terminate()
             p.wait()
 
