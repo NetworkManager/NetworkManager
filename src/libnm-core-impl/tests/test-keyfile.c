@@ -901,8 +901,8 @@ _invalid_option_write_handler(NMConnection         *connection,
                               NMKeyfileHandlerData *handler_data,
                               void                 *user_data)
 {
-    InvalidOptionWriteData *data = user_data;
-    const char             *message;
+    InvalidOptionWriteData *data    = user_data;
+    const char             *message = NULL;
     NMKeyfileWarnSeverity   severity;
 
     g_assert(data);
