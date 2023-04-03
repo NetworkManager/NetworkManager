@@ -749,6 +749,9 @@ typedef struct _NMDevicePrivate {
     guint   check_delete_unrealized_id;
     guint32 interface_flags;
 
+    guint32             port_detach_count;
+    NMDeviceStateReason port_detach_reason;
+
     struct {
         SriovOp *pending; /* SR-IOV operation currently running */
         SriovOp *next;    /* next SR-IOV operation scheduled */
@@ -869,6 +872,7 @@ static void sriov_op_cb(GError *error, gpointer user_data);
 static void device_ifindex_changed_cb(NMManager *manager, NMDevice *device_changed, NMDevice *self);
 static gboolean device_link_changed(gpointer user_data);
 static gboolean _get_maybe_ipv6_disabled(NMDevice *self);
+static void     deactivate_ready(NMDevice *self, NMDeviceStateReason reason);
 
 /*****************************************************************************/
 
@@ -6346,6 +6350,21 @@ nm_device_master_enslave_slave(NMDevice *self, NMDevice *slave, NMConnection *co
     attach_port_done(self, slave, success);
 }
 
+static void
+detach_port_cb(NMDevice *self, GError *error, gpointer user_data)
+{
+    nm_auto_unref_object NMDevice *slave      = user_data;
+    NMDevicePrivate               *slave_priv = NM_DEVICE_GET_PRIVATE(slave);
+
+    nm_assert(slave_priv->port_detach_count > 0);
+
+    if (--slave_priv->port_detach_count == 0) {
+        if (slave_priv->state == NM_DEVICE_STATE_DEACTIVATING) {
+            deactivate_ready(slave, slave_priv->port_detach_reason);
+        }
+    }
+}
+
 /**
  * nm_device_master_release_slave:
  * @self: the master device
@@ -6409,9 +6428,12 @@ nm_device_master_release_slave(NMDevice           *self,
                                                      slave,
                                                      release_type >= RELEASE_SLAVE_TYPE_CONFIG,
                                                      NULL,
-                                                     NULL,
-                                                     NULL);
-        nm_assert(NM_IN_SET(ret, TRUE, FALSE));
+                                                     detach_port_cb,
+                                                     g_object_ref(slave));
+        if (ret == NM_TERNARY_DEFAULT) {
+            slave_priv->port_detach_count++;
+            slave_priv->port_detach_reason = reason;
+        }
     }
 
     /* raise notifications about the release, including clearing is_enslaved. */
@@ -15817,6 +15839,9 @@ static void
 deactivate_ready(NMDevice *self, NMDeviceStateReason reason)
 {
     NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
+
+    if (priv->port_detach_count > 0)
+        return;
 
     if (priv->dispatcher.call_id)
         return;
