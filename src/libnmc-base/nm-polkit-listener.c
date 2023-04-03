@@ -514,7 +514,7 @@ begin_authentication(AuthRequest *request)
     if (!g_spawn_async_with_pipes(NULL,
                                   (char **) helper_argv,
                                   NULL,
-                                  G_SPAWN_STDERR_TO_DEV_NULL,
+                                  G_SPAWN_CLOEXEC_PIPES | G_SPAWN_STDERR_TO_DEV_NULL,
                                   NULL,
                                   NULL,
                                   NULL,

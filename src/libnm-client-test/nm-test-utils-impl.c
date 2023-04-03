@@ -107,7 +107,8 @@ nmtstc_service_init(void)
     g_spawn_async_with_pipes(NULL,
                              (char **) args,
                              NULL,
-                             G_SPAWN_SEARCH_PATH | G_SPAWN_DO_NOT_REAP_CHILD,
+                             G_SPAWN_CLOEXEC_PIPES | G_SPAWN_SEARCH_PATH
+                                 | G_SPAWN_DO_NOT_REAP_CHILD,
                              NULL,
                              NULL,
                              &info->pid,
