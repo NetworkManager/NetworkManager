@@ -5098,10 +5098,7 @@ nm_utils_spawn_helper(const char *const  *args,
 
     info  = g_new(HelperInfo, 1);
     *info = (HelperInfo){
-        .task         = nm_g_task_new(NULL, cancellable, nm_utils_spawn_helper, callback, cb_data),
-        .child_stdin  = -1,
-        .child_stdout = -1,
-        .pid          = -1,
+        .task = nm_g_task_new(NULL, cancellable, nm_utils_spawn_helper, callback, cb_data),
     };
 
     if (!g_spawn_async_with_pipes("/",
