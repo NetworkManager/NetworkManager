@@ -174,6 +174,10 @@ typedef struct {
             /* Number to prefixes (IA_PD) to request */
             guint needed_prefixes;
 
+            /* A hint to send to server for prefix delegation (IA_PD). */
+            struct in6_addr pd_hint_addr;
+            guint8          pd_hint_length;
+
             /* Use Information-request to get stateless configuration
              * parameters (don't request a IA_NA) */
             bool info_only : 1;

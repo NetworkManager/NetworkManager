@@ -1652,6 +1652,10 @@
                   dbus-type="s"
                   gprop-type="gchararray"
                   />
+        <property name="dhcp-pd-hint"
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
         <property name="dhcp-reject-servers"
                   dbus-type="as"
                   gprop-type="GStrv"

@@ -3081,6 +3081,9 @@ write_ip6_setting(NMConnection *connection, shvarFile *ifcfg, GString **out_rout
                   "DHCPV6_DUID",
                   nm_setting_ip6_config_get_dhcp_duid(NM_SETTING_IP6_CONFIG(s_ip6)));
     svSetValueStr(ifcfg, "DHCPV6_IAID", nm_setting_ip_config_get_dhcp_iaid(s_ip6));
+    svSetValueStr(ifcfg,
+                  "DHCPV6_PD_HINT",
+                  nm_setting_ip6_config_get_dhcp_pd_hint(NM_SETTING_IP6_CONFIG(s_ip6)));
 
     hostname = nm_setting_ip_config_get_dhcp_hostname(s_ip6);
     svSetValueStr(ifcfg, "DHCPV6_HOSTNAME", hostname);
