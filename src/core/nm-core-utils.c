@@ -5150,9 +5150,9 @@ nm_utils_spawn_helper(const char *const  *args,
     g_source_attach(info->timeout_source, g_main_context_get_thread_default());
 
     /* Set file descriptors as non-blocking */
-    fd_flags = fcntl(info->child_stdin, F_GETFD, 0);
+    fd_flags = fcntl(info->child_stdin, F_GETFL, 0);
     fcntl(info->child_stdin, F_SETFL, fd_flags | O_NONBLOCK);
-    fd_flags = fcntl(info->child_stdout, F_GETFD, 0);
+    fd_flags = fcntl(info->child_stdout, F_GETFL, 0);
     fcntl(info->child_stdout, F_SETFL, fd_flags | O_NONBLOCK);
     fd_flags = fcntl(info->child_stderr, F_GETFD, 0);
     fcntl(info->child_stderr, F_SETFL, fd_flags | O_NONBLOCK);
