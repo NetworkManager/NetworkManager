@@ -333,9 +333,8 @@ do_test_nm_utils_kill_child(void)
 
     /* pid3s should not be a valid process, hence the call should fail. Note, that there
      * is a race here. */
-    NMTST_EXPECT_NM_ERROR(
-        "kill child process 'test-s-3-2' (*): failed due to unexpected return value -1 by waitpid "
-        "(No child process*, 10) after sending no signal (0)");
+    NMTST_EXPECT_NM_ERROR("kill child process 'test-s-3-2' (*): unexpected error while waitpid: No "
+                          "child process* (10)");
     test_nm_utils_kill_child_sync_do("test-s-3-2", pid3s, 0, 0, FALSE, NULL);
 
     NMTST_EXPECT_NM_DEBUG("kill child process 'test-s-4' (*): waiting up to 50 milliseconds for "
@@ -396,9 +395,8 @@ do_test_nm_utils_kill_child(void)
 
     /* pid3a should not be a valid process, hence the call should fail. Note, that there
      * is a race here. */
-    NMTST_EXPECT_NM_ERROR(
-        "kill child process 'test-a-3-2' (*): failed due to unexpected return value -1 by waitpid "
-        "(No child process*, 10) after sending no signal (0)");
+    NMTST_EXPECT_NM_ERROR("kill child process 'test-a-3-2' (*): unexpected error while "
+                          "waitpid: No child process* (10)");
     NMTST_EXPECT_NM_DEBUG(
         "kill child process 'test-a-3-2' (*): invoke callback: killing child failed");
     test_nm_utils_kill_child_async_do("test-a-3-2", pid3a, 0, 0, FALSE, NULL);

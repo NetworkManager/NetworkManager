@@ -507,16 +507,13 @@ nm_utils_kill_child_async(pid_t                   pid,
         return;
     } else if (ret != 0) {
         errsv = errno;
-        /* ECHILD means, the process is not a child/does not exist or it has SIGCHILD blocked. */
-        if (errsv != ECHILD) {
-            nm_log_err(LOGD_CORE | log_domain,
-                       LOG_NAME_FMT ": unexpected error while waitpid: %s (%d)",
-                       LOG_NAME_ARGS,
-                       nm_strerror_native(errsv),
-                       errsv);
-            _kc_invoke_callback(pid, log_domain, log_name, callback, user_data, FALSE, -1);
-            return;
-        }
+        nm_log_err(LOGD_CORE | log_domain,
+                   LOG_NAME_FMT ": unexpected error while waitpid: %s (%d)",
+                   LOG_NAME_ARGS,
+                   nm_strerror_native(errsv),
+                   errsv);
+        _kc_invoke_callback(pid, log_domain, log_name, callback, user_data, FALSE, -1);
+        return;
     }
 
     /* send the first signal. */
@@ -647,15 +644,12 @@ nm_utils_kill_child_sync(pid_t       pid,
         goto out;
     } else if (ret != 0) {
         errsv = errno;
-        /* ECHILD means, the process is not a child/does not exist or it has SIGCHILD blocked. */
-        if (errsv != ECHILD) {
-            nm_log_err(LOGD_CORE | log_domain,
-                       LOG_NAME_FMT ": unexpected error while waitpid: %s (%d)",
-                       LOG_NAME_ARGS,
-                       nm_strerror_native(errsv),
-                       errsv);
-            goto out;
-        }
+        nm_log_err(LOGD_CORE | log_domain,
+                   LOG_NAME_FMT ": unexpected error while waitpid: %s (%d)",
+                   LOG_NAME_ARGS,
+                   nm_strerror_native(errsv),
+                   errsv);
+        goto out;
     }
 
     /* send first signal @sig */
@@ -4877,25 +4871,25 @@ typedef struct {
     gsize    out_buffer_offset;
 } HelperInfo;
 
-#define _NMLOG_PREFIX_NAME "helper"
-#define _NMLOG_DOMAIN      LOGD_CORE
-#define _NMLOG2(level, info, ...)                                                   \
-    G_STMT_START                                                                    \
-    {                                                                               \
-        if (nm_logging_enabled((level), (_NMLOG_DOMAIN))) {                         \
-            HelperInfo *_info = (info);                                             \
-                                                                                    \
-            _nm_log((level),                                                        \
-                    (_NMLOG_DOMAIN),                                                \
-                    0,                                                              \
-                    NULL,                                                           \
-                    NULL,                                                           \
-                    _NMLOG_PREFIX_NAME "[" NM_HASH_OBFUSCATE_PTR_FMT                \
-                                       ",%d]: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
-                    NM_HASH_OBFUSCATE_PTR(_info),                                   \
-                    _info->pid _NM_UTILS_MACRO_REST(__VA_ARGS__));                  \
-        }                                                                           \
-    }                                                                               \
+#define _NMLOG2_PREFIX_NAME "nm-daemon-helper"
+#define _NMLOG2_DOMAIN      LOGD_CORE
+#define _NMLOG2(level, info, ...)                                                    \
+    G_STMT_START                                                                     \
+    {                                                                                \
+        if (nm_logging_enabled((level), (_NMLOG2_DOMAIN))) {                         \
+            HelperInfo *_info = (info);                                              \
+                                                                                     \
+            _nm_log((level),                                                         \
+                    (_NMLOG2_DOMAIN),                                                \
+                    0,                                                               \
+                    NULL,                                                            \
+                    NULL,                                                            \
+                    _NMLOG2_PREFIX_NAME "[" NM_HASH_OBFUSCATE_PTR_FMT                \
+                                        ",%d]: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__), \
+                    NM_HASH_OBFUSCATE_PTR(_info),                                    \
+                    _info->pid _NM_UTILS_MACRO_REST(__VA_ARGS__));                   \
+        }                                                                            \
+    }                                                                                \
     G_STMT_END
 
 static void
@@ -4913,17 +4907,13 @@ helper_info_free(gpointer data)
     nm_clear_g_source_inst(&info->input_source);
     nm_clear_g_source_inst(&info->output_source);
     nm_clear_g_source_inst(&info->error_source);
-
-    if (info->child_stdout != -1)
-        nm_close(info->child_stdout);
-    if (info->child_stdin != -1)
-        nm_close(info->child_stdin);
-    if (info->child_stderr != -1)
-        nm_close(info->child_stderr);
+    nm_clear_fd(&info->child_stdout);
+    nm_clear_fd(&info->child_stdin);
+    nm_clear_fd(&info->child_stderr);
 
     if (info->pid != -1) {
         nm_assert(info->pid > 1);
-        nm_utils_kill_child_async(info->pid, SIGKILL, LOGD_CORE, _NMLOG_PREFIX_NAME, 0, NULL, NULL);
+        nm_utils_kill_child_async(info->pid, SIGKILL, LOGD_CORE, "nm-daemon-helper", 0, NULL, NULL);
     }
 
     g_free(info);
@@ -5015,8 +5005,7 @@ helper_have_data(int fd, GIOCondition condition, gpointer user_data)
         return G_SOURCE_CONTINUE;
 
     nm_clear_g_source_inst(&info->input_source);
-    nm_close(info->child_stdout);
-    info->child_stdout = -1;
+    nm_clear_fd(&info->child_stdout);
 
     _LOG2T(info, "stdout closed");
 
@@ -5044,9 +5033,7 @@ helper_have_err_data(int fd, GIOCondition condition, gpointer user_data)
         return G_SOURCE_CONTINUE;
 
     nm_clear_g_source_inst(&info->error_source);
-    nm_close(info->child_stderr);
-    info->child_stderr = -1;
-
+    nm_clear_fd(&info->child_stderr);
     return G_SOURCE_CONTINUE;
 }
 
@@ -5105,6 +5092,8 @@ nm_utils_spawn_helper(const char *const  *args,
     HelperInfo           *info;
     int                   fd_flags;
     const char *const    *arg;
+    GMainContext         *context;
+    gsize                 n;
 
     nm_assert(args && args[0]);
 
@@ -5142,16 +5131,36 @@ nm_utils_spawn_helper(const char *const  *args,
 
     _LOG2D(info, "spawned process with args: %s", (commands = g_strjoinv(" ", (char **) args)));
 
-    info->child_watch_source = g_child_watch_source_new(info->pid);
-    g_source_set_callback(info->child_watch_source,
-                          G_SOURCE_FUNC(helper_child_terminated),
-                          info,
-                          NULL);
-    g_source_attach(info->child_watch_source, g_main_context_get_thread_default());
+    context = g_task_get_context(info->task);
+
+    /* The async function makes a lukewarm attempt to honor the current thread default
+     * context. However, it later uses nm_utils_kill_child_async() which always uses
+     * g_main_context_default(). For now, the function really can only be used with the
+     * main context. */
+    nm_assert(context == g_main_context_default());
+
+    /* We are using a GChildWatchSource in combination with kill()/waitpid()
+     * (where helper_info_free() clears the source and calls
+     * nm_utils_kill_child_async()). That leads to races where glib might have
+     * already reaped the process and our waitpid() call fails with:
+     *
+     *   <error> [TIMESTAMP] kill child process 'nm-daemon-helper' (PID): failed due to unexpected return value -1 by waitpid (No child processes, 10) after sending SIGKILL (9)
+     *
+     * This is a bug in glib, addressed by [1].  Maybe there should be a
+     * workaround here, and not using the child watcher?
+     *
+     * [1] https://gitlab.gnome.org/GNOME/glib/-/merge_requests/3353
+     */
+    info->child_watch_source = nm_g_child_watch_source_new(info->pid,
+                                                           G_PRIORITY_DEFAULT,
+                                                           helper_child_terminated,
+                                                           info,
+                                                           NULL);
+    g_source_attach(info->child_watch_source, context);
 
     info->timeout_source =
         nm_g_timeout_source_new_seconds(20, G_PRIORITY_DEFAULT, helper_timeout, info, NULL);
-    g_source_attach(info->timeout_source, g_main_context_get_thread_default());
+    g_source_attach(info->timeout_source, context);
 
     /* Set file descriptors as non-blocking */
     fd_flags = fcntl(info->child_stdin, F_GETFD, 0);
@@ -5162,7 +5171,9 @@ nm_utils_spawn_helper(const char *const  *args,
     fcntl(info->child_stderr, F_SETFL, fd_flags | O_NONBLOCK);
 
     /* Watch process stdin */
-    info->out_buffer = NM_STR_BUF_INIT(NM_UTILS_GET_NEXT_REALLOC_SIZE_40, TRUE);
+    for (n = 1, arg = args; *arg; arg++)
+        n += strlen(*arg) + 1u;
+    info->out_buffer = NM_STR_BUF_INIT(n, TRUE);
     for (arg = args; *arg; arg++) {
         nm_str_buf_append(&info->out_buffer, *arg);
         nm_str_buf_append_c(&info->out_buffer, '\0');
@@ -5173,7 +5184,7 @@ nm_utils_spawn_helper(const char *const  *args,
                                                   helper_can_write,
                                                   info,
                                                   NULL);
-    g_source_attach(info->output_source, g_main_context_get_thread_default());
+    g_source_attach(info->output_source, context);
 
     /* Watch process stdout */
     info->in_buffer    = NM_STR_BUF_INIT(0, FALSE);
@@ -5183,7 +5194,7 @@ nm_utils_spawn_helper(const char *const  *args,
                                                  helper_have_data,
                                                  info,
                                                  NULL);
-    g_source_attach(info->input_source, g_main_context_get_thread_default());
+    g_source_attach(info->input_source, context);
 
     /* Watch process stderr */
     info->err_buffer   = NM_STR_BUF_INIT(0, FALSE);
@@ -5193,7 +5204,7 @@ nm_utils_spawn_helper(const char *const  *args,
                                                  helper_have_err_data,
                                                  info,
                                                  NULL);
-    g_source_attach(info->error_source, g_main_context_get_thread_default());
+    g_source_attach(info->error_source, context);
 
     if (cancellable) {
         gulong signal_id;
