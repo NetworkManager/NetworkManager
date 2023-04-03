@@ -499,7 +499,6 @@ out:
 static void
 begin_authentication(AuthRequest *request)
 {
-    int         fd_flags;
     const char *helper_argv[] = {
         POLKIT_AGENT_HELPER_1_PATH,
         request->username,
@@ -534,11 +533,8 @@ begin_authentication(AuthRequest *request)
         return;
     }
 
-    fd_flags = fcntl(request->child_stdin, F_GETFL, 0);
-    fcntl(request->child_stdin, F_SETFL, fd_flags | O_NONBLOCK);
-
-    fd_flags = fcntl(request->child_stdout, F_GETFL, 0);
-    fcntl(request->child_stdout, F_SETFL, fd_flags | O_NONBLOCK);
+    nm_io_fcntl_setfl_update_nonblock(request->child_stdin);
+    nm_io_fcntl_setfl_update_nonblock(request->child_stdout);
 
     request->child_stdout_watch_source = nm_g_unix_fd_source_new(request->child_stdout,
                                                                  G_IO_IN | G_IO_ERR | G_IO_HUP,

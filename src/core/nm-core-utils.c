@@ -5090,7 +5090,6 @@ nm_utils_spawn_helper(const char *const  *args,
     gs_free_error GError *error    = NULL;
     gs_free char         *commands = NULL;
     HelperInfo           *info;
-    int                   fd_flags;
     const char *const    *arg;
     GMainContext         *context;
     gsize                 n;
@@ -5162,13 +5161,9 @@ nm_utils_spawn_helper(const char *const  *args,
         nm_g_timeout_source_new_seconds(20, G_PRIORITY_DEFAULT, helper_timeout, info, NULL);
     g_source_attach(info->timeout_source, context);
 
-    /* Set file descriptors as non-blocking */
-    fd_flags = fcntl(info->child_stdin, F_GETFL, 0);
-    fcntl(info->child_stdin, F_SETFL, fd_flags | O_NONBLOCK);
-    fd_flags = fcntl(info->child_stdout, F_GETFL, 0);
-    fcntl(info->child_stdout, F_SETFL, fd_flags | O_NONBLOCK);
-    fd_flags = fcntl(info->child_stderr, F_GETFL, 0);
-    fcntl(info->child_stderr, F_SETFL, fd_flags | O_NONBLOCK);
+    nm_io_fcntl_setfl_update_nonblock(info->child_stdin);
+    nm_io_fcntl_setfl_update_nonblock(info->child_stdout);
+    nm_io_fcntl_setfl_update_nonblock(info->child_stderr);
 
     /* Watch process stdin */
     for (n = 1, arg = args; *arg; arg++)
