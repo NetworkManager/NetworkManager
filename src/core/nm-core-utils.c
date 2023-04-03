@@ -5158,7 +5158,7 @@ nm_utils_spawn_helper(const char *const  *args,
     fcntl(info->child_stdin, F_SETFL, fd_flags | O_NONBLOCK);
     fd_flags = fcntl(info->child_stdout, F_GETFL, 0);
     fcntl(info->child_stdout, F_SETFL, fd_flags | O_NONBLOCK);
-    fd_flags = fcntl(info->child_stderr, F_GETFD, 0);
+    fd_flags = fcntl(info->child_stderr, F_GETFL, 0);
     fcntl(info->child_stderr, F_SETFL, fd_flags | O_NONBLOCK);
 
     /* Watch process stdin */
