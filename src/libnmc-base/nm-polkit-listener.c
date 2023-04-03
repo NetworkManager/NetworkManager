@@ -534,10 +534,10 @@ begin_authentication(AuthRequest *request)
         return;
     }
 
-    fd_flags = fcntl(request->child_stdin, F_GETFD, 0);
+    fd_flags = fcntl(request->child_stdin, F_GETFL, 0);
     fcntl(request->child_stdin, F_SETFL, fd_flags | O_NONBLOCK);
 
-    fd_flags = fcntl(request->child_stdout, F_GETFD, 0);
+    fd_flags = fcntl(request->child_stdout, F_GETFL, 0);
     fcntl(request->child_stdout, F_SETFL, fd_flags | O_NONBLOCK);
 
     request->child_stdout_watch_source = nm_g_unix_fd_source_new(request->child_stdout,
