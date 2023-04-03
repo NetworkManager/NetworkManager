@@ -10,6 +10,16 @@
 
 /*****************************************************************************/
 
+int nm_io_fcntl_getfl(int fd);
+
+int nm_io_fcntl_setfl(int fd, int flags);
+
+int nm_io_fcntl_setfl_update(int fd, int flags_mask, int flags_value);
+
+void nm_io_fcntl_setfl_update_nonblock(int fd);
+
+/*****************************************************************************/
+
 /**
  * NMUtilsFileGetContentsFlags:
  * @NM_UTILS_FILE_GET_CONTENTS_FLAG_NONE: no flag

@@ -21,6 +21,86 @@
 
 /*****************************************************************************/
 
+int
+nm_io_fcntl_getfl(int fd)
+{
+    int f;
+
+    nm_assert(fd >= 0);
+
+    f = fcntl(fd, F_GETFL, 0);
+
+    /* The caller really must provide a valid FD. For a valid FD, there is not
+     * reason why this call could fail (or how we could handle the failure).
+     *
+     * Unlike plain fcntl(), nm_io_fcntl_getfl() cannot fail. */
+    nm_assert(f != -1);
+
+    /* We not only assert that the return value is "!= -1", but that it's not
+     * negative. Negative flags would be very odd, and not something we would
+     * expect for a successful call. */
+    nm_assert(f >= 0);
+
+    return f;
+}
+
+int
+nm_io_fcntl_setfl(int fd, int flags)
+{
+    int f;
+    int errsv;
+
+    nm_assert(fd >= 0);
+    nm_assert(flags >= 0);
+
+    f = fcntl(fd, F_SETFL, flags);
+    if (f != 0) {
+        errsv = errno;
+
+        nm_assert(errsv != EBADF);
+
+        return -NM_ERRNO_NATIVE(errsv);
+    }
+
+    return 0;
+}
+
+int
+nm_io_fcntl_setfl_update(int fd, int flags_mask, int flags_value)
+{
+    int flags_current;
+
+    nm_assert(fd >= 0);
+    nm_assert(flags_mask > 0);
+    nm_assert(flags_value >= 0);
+    nm_assert(((~flags_mask) & flags_value) == 0);
+
+    flags_current = nm_io_fcntl_getfl(fd);
+    return nm_io_fcntl_setfl(fd, (flags_current & ~flags_mask) | (flags_mask & flags_value));
+}
+
+void
+nm_io_fcntl_setfl_update_nonblock(int fd)
+{
+    int r;
+
+    nm_assert(fd >= 0);
+
+    r = nm_io_fcntl_setfl_update(fd, O_NONBLOCK, O_NONBLOCK);
+
+    /* nm_io_fcntl_setfl_update() already asserts that it cannot fail with
+     * EBADF.
+     *
+     * In nm_io_fcntl_setfl_update_nonblock() only sts O_NONBLOCK, where we
+     * don't expect any other error. Kernel should never reject setting this
+     * flags, and if it did, we have to find out how to handle that. Currently
+     * we don't handle it and assert against failure. */
+
+    nm_assert(r == 0);
+}
+
+/*****************************************************************************/
+
 _nm_printf(4, 5) static int _get_contents_error(GError    **error,
                                                 int         errsv,
                                                 int        *out_errsv,
