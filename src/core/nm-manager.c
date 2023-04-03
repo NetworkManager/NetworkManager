@@ -2582,20 +2582,12 @@ _rfkill_update_system(NMManager *self, NMRfkillType rtype, gboolean enabled)
 
     nm_assert(NM_IN_SET(rtype, NM_RFKILL_TYPE_WLAN, NM_RFKILL_TYPE_WWAN));
 
-    fd = open("/dev/rfkill", O_RDWR | O_CLOEXEC);
+    fd = open("/dev/rfkill", O_RDWR | O_NONBLOCK | O_CLOEXEC);
     if (fd < 0) {
         if (errno == EACCES)
             _LOGW(LOGD_RFKILL,
                   "rfkill: (%s): failed to open killswitch device",
                   nm_rfkill_type_to_string(rtype));
-        return;
-    }
-
-    if (fcntl(fd, F_SETFL, O_NONBLOCK) < 0) {
-        _LOGW(LOGD_RFKILL,
-              "rfkill: (%s): failed to set killswitch device for "
-              "non-blocking operation",
-              nm_rfkill_type_to_string(rtype));
         return;
     }
 
