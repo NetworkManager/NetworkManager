@@ -605,8 +605,6 @@ int nl_socket_set_passcred(struct nl_sock *sk, int state);
 
 int nl_socket_set_pktinfo(struct nl_sock *sk, int state);
 
-int nl_socket_set_nonblocking(const struct nl_sock *sk);
-
 uint32_t nl_socket_get_local_port(const struct nl_sock *sk);
 
 int nl_socket_add_memberships(struct nl_sock *sk, int group, ...);

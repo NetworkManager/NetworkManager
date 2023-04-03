@@ -1037,17 +1037,6 @@ nlmsg_get_dst(struct nl_msg *msg)
 }
 
 int
-nl_socket_set_nonblocking(const struct nl_sock *sk)
-{
-    nm_assert_sk(sk);
-
-    if (fcntl(sk->s_fd, F_SETFL, O_NONBLOCK) < 0)
-        return -nm_errno_from_native(errno);
-
-    return 0;
-}
-
-int
 nl_socket_set_buffer_size(struct nl_sock *sk, int rxbuf, int txbuf)
 {
     int err;
