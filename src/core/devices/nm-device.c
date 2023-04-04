@@ -10669,7 +10669,7 @@ _dev_ipdhcpx_start(NMDevice *self, int addr_family)
                                                 &config.v6.pd_hint_addr,
                                                 &pd_hint_length);
             nm_assert(res);
-            nm_assert(pd_hint_length > 0 || pd_hint_length <= 128);
+            nm_assert(pd_hint_length > 0 && pd_hint_length <= 128);
             config.v6.pd_hint_length = pd_hint_length;
         }
 
