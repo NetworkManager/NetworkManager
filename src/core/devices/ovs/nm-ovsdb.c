@@ -189,6 +189,7 @@ static void     ovsdb_write_try(NMOvsdb *self);
 static gboolean ovsdb_write_cb(int fd, GIOCondition condition, gpointer user_data);
 static void     ovsdb_next_command(NMOvsdb *self);
 static void     cleanup_check_ready(NMOvsdb *self);
+static void     ovsdb_method_call_destroy(OvsdbMethodCall *call);
 
 /*****************************************************************************/
 
@@ -278,8 +279,6 @@ static NM_UTILS_LOOKUP_STR_DEFINE(_device_type_to_table,
 static void
 _call_complete(OvsdbMethodCall *call, json_t *response, GError *error)
 {
-    g_clear_object(&call->shutdown_wait_obj);
-
     if (response) {
         gs_free char *str = NULL;
 
@@ -293,38 +292,12 @@ _call_complete(OvsdbMethodCall *call, json_t *response, GError *error)
         _LOGT_call(call, "completed: error: %s", error->message);
     }
 
-    c_list_unlink_stale(&call->calls_lst);
+    c_list_unlink(&call->calls_lst);
 
     if (call->callback)
         call->callback(call->self, response, error, call->user_data);
 
-    switch (call->command) {
-    case OVSDB_MONITOR:
-        break;
-    case OVSDB_ADD_INTERFACE:
-        g_clear_object(&call->payload.add_interface.bridge);
-        g_clear_object(&call->payload.add_interface.port);
-        g_clear_object(&call->payload.add_interface.interface);
-        g_clear_object(&call->payload.add_interface.bridge_device);
-        g_clear_object(&call->payload.add_interface.interface_device);
-        break;
-    case OVSDB_DEL_INTERFACE:
-        nm_clear_g_free(&call->payload.del_interface.ifname);
-        break;
-    case OVSDB_SET_INTERFACE_MTU:
-        nm_clear_g_free(&call->payload.set_interface_mtu.ifname);
-        break;
-    case OVSDB_SET_REAPPLY:
-        nm_clear_g_free(&call->payload.set_reapply.ifname);
-        nm_clear_g_free(&call->payload.set_reapply.connection_uuid);
-        nm_clear_pointer(&call->payload.set_reapply.external_ids_old, g_hash_table_destroy);
-        nm_clear_pointer(&call->payload.set_reapply.external_ids_new, g_hash_table_destroy);
-        nm_clear_pointer(&call->payload.set_reapply.other_config_old, g_hash_table_destroy);
-        nm_clear_pointer(&call->payload.set_reapply.other_config_new, g_hash_table_destroy);
-        break;
-    }
-
-    nm_g_slice_free(call);
+    ovsdb_method_call_destroy(call);
 }
 
 /*****************************************************************************/
@@ -445,29 +418,14 @@ ovsdb_method_call_to_string(OvsdbMethodCall *call, char *buf, gsize buf_len)
     return buf0;
 }
 
-/**
- * ovsdb_call_method:
- *
- * Queues the ovsdb command. Eventually fires the command right away if
- * there's no command pending completion.
- */
-static void
-ovsdb_call_method(NMOvsdb                  *self,
-                  OvsdbMethodCallback       callback,
-                  gpointer                  user_data,
-                  gboolean                  add_first,
-                  OvsdbCommand              command,
-                  const OvsdbMethodPayload *payload)
+static OvsdbMethodCall *
+ovsdb_method_call_create(NMOvsdb                  *self,
+                         OvsdbCommand              command,
+                         const OvsdbMethodPayload *payload,
+                         OvsdbMethodCallback       callback,
+                         gpointer                  user_data)
 {
-    NMOvsdbPrivate  *priv = NM_OVSDB_GET_PRIVATE(self);
     OvsdbMethodCall *call;
-    char             sbuf[1000];
-
-    /* FIXME(shutdown): this function should accept a cancellable to
-     * interrupt the operation. */
-
-    /* Ensure we're not unsynchronized before we queue the method call. */
-    ovsdb_try_connect(self);
 
     call  = g_slice_new(OvsdbMethodCall);
     *call = (OvsdbMethodCall){
@@ -478,12 +436,6 @@ ovsdb_call_method(NMOvsdb                  *self,
         .user_data         = user_data,
         .shutdown_wait_obj = g_object_new(G_TYPE_OBJECT, NULL),
     };
-    nm_shutdown_wait_obj_register_object(call->shutdown_wait_obj, "ovsdb-call");
-
-    if (add_first)
-        c_list_link_front(&priv->calls_lst_head, &call->calls_lst);
-    else
-        c_list_link_tail(&priv->calls_lst_head, &call->calls_lst);
 
     /* Migrate the arguments from @payload to @call->payload. Technically,
      * this is not a plain copy, because
@@ -527,7 +479,87 @@ ovsdb_call_method(NMOvsdb                  *self,
         call->payload.set_reapply.other_config_new =
             nm_g_hash_table_ref(payload->set_reapply.other_config_new);
         break;
+    default:
+        nm_assert_not_reached();
+        break;
     }
+
+    return call;
+}
+
+static void
+ovsdb_method_call_destroy(OvsdbMethodCall *call)
+{
+    g_clear_object(&call->shutdown_wait_obj);
+
+    c_list_unlink_stale(&call->calls_lst);
+
+    switch (call->command) {
+    case OVSDB_MONITOR:
+        break;
+    case OVSDB_ADD_INTERFACE:
+        g_clear_object(&call->payload.add_interface.bridge);
+        g_clear_object(&call->payload.add_interface.port);
+        g_clear_object(&call->payload.add_interface.interface);
+        g_clear_object(&call->payload.add_interface.bridge_device);
+        g_clear_object(&call->payload.add_interface.interface_device);
+        break;
+    case OVSDB_DEL_INTERFACE:
+        nm_clear_g_free(&call->payload.del_interface.ifname);
+        break;
+    case OVSDB_SET_INTERFACE_MTU:
+        nm_clear_g_free(&call->payload.set_interface_mtu.ifname);
+        break;
+    case OVSDB_SET_REAPPLY:
+        nm_clear_g_free(&call->payload.set_reapply.ifname);
+        nm_clear_g_free(&call->payload.set_reapply.connection_uuid);
+        nm_clear_pointer(&call->payload.set_reapply.external_ids_old, g_hash_table_destroy);
+        nm_clear_pointer(&call->payload.set_reapply.external_ids_new, g_hash_table_destroy);
+        nm_clear_pointer(&call->payload.set_reapply.other_config_old, g_hash_table_destroy);
+        nm_clear_pointer(&call->payload.set_reapply.other_config_new, g_hash_table_destroy);
+        break;
+    default:
+        nm_assert_not_reached();
+        break;
+    }
+
+    nm_g_slice_free(call);
+}
+
+/*****************************************************************************/
+
+/**
+ * ovsdb_call_method:
+ *
+ * Queues the ovsdb command. Eventually fires the command right away if
+ * there's no command pending completion.
+ */
+static void
+ovsdb_call_method(NMOvsdb                  *self,
+                  OvsdbMethodCallback       callback,
+                  gpointer                  user_data,
+                  gboolean                  add_first,
+                  OvsdbCommand              command,
+                  const OvsdbMethodPayload *payload)
+{
+    NMOvsdbPrivate  *priv = NM_OVSDB_GET_PRIVATE(self);
+    OvsdbMethodCall *call;
+    char             sbuf[1000];
+
+    /* FIXME(shutdown): this function should accept a cancellable to
+     * interrupt the operation. */
+
+    /* Ensure we're not unsynchronized before we queue the method call. */
+    ovsdb_try_connect(self);
+
+    call = ovsdb_method_call_create(self, command, payload, callback, user_data);
+
+    nm_shutdown_wait_obj_register_object(call->shutdown_wait_obj, "ovsdb-call");
+
+    if (add_first)
+        c_list_link_front(&priv->calls_lst_head, &call->calls_lst);
+    else
+        c_list_link_tail(&priv->calls_lst_head, &call->calls_lst);
 
     _LOGT_call(call,
                "new request queued%s: %s",
