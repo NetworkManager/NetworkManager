@@ -396,6 +396,55 @@ _signal_emit_interface_failed(NMOvsdb    *self,
 
 /*****************************************************************************/
 
+static const char *
+ovsdb_method_call_to_string(OvsdbMethodCall *call, char *buf, gsize buf_len)
+{
+    const char *buf0 = buf;
+
+    nm_assert(call);
+
+    switch (call->command) {
+    case OVSDB_MONITOR:
+        nm_strbuf_append_str(&buf, &buf_len, "monitor");
+        break;
+    case OVSDB_ADD_INTERFACE:
+        nm_strbuf_append(&buf,
+                         &buf_len,
+                         "add-interface bridge=%s port=%s interface=%s",
+                         nm_connection_get_interface_name(call->payload.add_interface.bridge),
+                         nm_connection_get_interface_name(call->payload.add_interface.port),
+                         nm_connection_get_interface_name(call->payload.add_interface.interface));
+        break;
+    case OVSDB_DEL_INTERFACE:
+        nm_strbuf_append(&buf,
+                         &buf_len,
+                         "del-interface interface=%s",
+                         call->payload.del_interface.ifname);
+        break;
+    case OVSDB_SET_INTERFACE_MTU:
+        nm_strbuf_append(&buf,
+                         &buf_len,
+                         "set-interface-mtu interface=%s mtu=%u",
+                         call->payload.set_interface_mtu.ifname,
+                         call->payload.set_interface_mtu.mtu);
+        break;
+    case OVSDB_SET_REAPPLY:
+        nm_strbuf_append(&buf,
+                         &buf_len,
+                         "set external-ids/other-config con-uuid=%s, interface=%s",
+                         call->payload.set_reapply.connection_uuid,
+                         call->payload.set_reapply.ifname);
+        break;
+    default:
+        return nm_assert_unreachable_val("");
+    }
+
+    if (call->call_id != CALL_ID_UNSPEC)
+        nm_strbuf_append(&buf, &buf_len, "; call-id=%" G_GUINT64_FORMAT, call->call_id);
+
+    return buf0;
+}
+
 /**
  * ovsdb_call_method:
  *
@@ -412,6 +461,7 @@ ovsdb_call_method(NMOvsdb                  *self,
 {
     NMOvsdbPrivate  *priv = NM_OVSDB_GET_PRIVATE(self);
     OvsdbMethodCall *call;
+    char             sbuf[1000];
 
     /* FIXME(shutdown): this function should accept a cancellable to
      * interrupt the operation. */
@@ -442,7 +492,6 @@ ovsdb_call_method(NMOvsdb                  *self,
      *   OVSDB_METHOD_PAYLOAD_*() macros. */
     switch (command) {
     case OVSDB_MONITOR:
-        _LOGT_call(call, "new: monitor");
         break;
     case OVSDB_ADD_INTERFACE:
         /* FIXME(applied-connection-immutable): we should not modify the applied
@@ -457,23 +506,13 @@ ovsdb_call_method(NMOvsdb                  *self,
             g_object_ref(payload->add_interface.bridge_device);
         call->payload.add_interface.interface_device =
             g_object_ref(payload->add_interface.interface_device);
-        _LOGT_call(call,
-                   "new: add-interface bridge=%s port=%s interface=%s",
-                   nm_connection_get_interface_name(call->payload.add_interface.bridge),
-                   nm_connection_get_interface_name(call->payload.add_interface.port),
-                   nm_connection_get_interface_name(call->payload.add_interface.interface));
         break;
     case OVSDB_DEL_INTERFACE:
         call->payload.del_interface.ifname = g_strdup(payload->del_interface.ifname);
-        _LOGT_call(call, "new: del-interface interface=%s", call->payload.del_interface.ifname);
         break;
     case OVSDB_SET_INTERFACE_MTU:
         call->payload.set_interface_mtu.ifname = g_strdup(payload->set_interface_mtu.ifname);
         call->payload.set_interface_mtu.mtu    = payload->set_interface_mtu.mtu;
-        _LOGT_call(call,
-                   "new: set-interface-mtu interface=%s mtu=%u",
-                   call->payload.set_interface_mtu.ifname,
-                   call->payload.set_interface_mtu.mtu);
         break;
     case OVSDB_SET_REAPPLY:
         call->payload.set_reapply.device_type     = payload->set_reapply.device_type;
@@ -487,12 +526,13 @@ ovsdb_call_method(NMOvsdb                  *self,
             nm_g_hash_table_ref(payload->set_reapply.other_config_old);
         call->payload.set_reapply.other_config_new =
             nm_g_hash_table_ref(payload->set_reapply.other_config_new);
-        _LOGT_call(call,
-                   "new: set external-ids/other-config con-uuid=%s, interface=%s",
-                   call->payload.set_reapply.connection_uuid,
-                   call->payload.set_reapply.ifname);
         break;
     }
+
+    _LOGT_call(call,
+               "new request queued%s: %s",
+               add_first ? " in front" : "",
+               ovsdb_method_call_to_string(call, sbuf, sizeof(sbuf)));
 
     ovsdb_next_command(self);
 }
