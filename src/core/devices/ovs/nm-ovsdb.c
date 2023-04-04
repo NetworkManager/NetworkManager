@@ -2360,9 +2360,6 @@ ovsdb_got_msg(NMOvsdb *self, json_t *msg)
             ovsdb_disconnect(self, FALSE, FALSE);
             return;
         }
-        /* Cool, we found a corresponding call. Finish it. */
-
-        _LOGT_call(call, "response: %s", (msg_as_str = json_dumps(msg, 0)));
 
         if (!json_is_null(error)) {
             /* The response contains an error. */
