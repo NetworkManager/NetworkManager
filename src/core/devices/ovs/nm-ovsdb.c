@@ -2199,6 +2199,9 @@ ovsdb_got_echo(NMOvsdb *self, json_int_t id, json_t *data)
 
     msg   = json_pack("{s:I, s:O}", "id", id, "result", data);
     reply = json_dumps(msg, 0);
+
+    _LOGT("send: echo: %s", reply);
+
     nm_str_buf_append(&priv->output_buf, reply);
 
     ovsdb_write_try(self);
@@ -2348,8 +2351,9 @@ _json_read_msg_cb(void *buffer, size_t buflen, void *user_data)
 }
 
 static json_t *
-_json_read_msg(NMStrBuf *input)
+_json_read_msg(NMOvsdb *self, NMStrBuf *input)
 {
+    gs_free char   *ss   = NULL;
     JsonReadMsgData data = {
         .bufp  = 0,
         .input = input,
@@ -2367,6 +2371,11 @@ _json_read_msg(NMStrBuf *input)
         return NULL;
 
     nm_assert(data.bufp > 0);
+
+    _LOGT("json: parse %zu bytes: \"%s\"",
+          data.bufp,
+          (ss = g_strndup(nm_str_buf_get_str_at_unsafe(input, 0), data.bufp)));
+
     nm_str_buf_erase(input, 0, data.bufp, FALSE);
     return msg;
 }
@@ -2419,7 +2428,7 @@ again:
     while (TRUE) {
         nm_auto_decref_json json_t *msg = NULL;
 
-        msg = _json_read_msg(&priv->input_buf);
+        msg = _json_read_msg(self, &priv->input_buf);
         if (!msg)
             break;
 
