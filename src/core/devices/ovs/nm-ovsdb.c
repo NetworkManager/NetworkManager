@@ -279,18 +279,17 @@ static NM_UTILS_LOOKUP_STR_DEFINE(_device_type_to_table,
 static void
 _call_complete(OvsdbMethodCall *call, json_t *response, GError *error)
 {
-    if (response) {
-        gs_free char *str = NULL;
+    gs_free char *str = NULL;
 
-        str = json_dumps(response, 0);
-        if (error)
-            _LOGT_call(call, "completed: %s ; error: %s", str, error->message);
-        else
-            _LOGT_call(call, "completed: %s", str);
-    } else {
-        nm_assert(error);
+    nm_assert(response || error);
+
+    if (response) {
+        _LOGT_call(call,
+                   "completed: %s%s%s",
+                   (str = json_dumps(response, 0)),
+                   NM_PRINT_FMT_QUOTED2(error, " ; error: ", error->message, ""));
+    } else
         _LOGT_call(call, "completed: error: %s", error->message);
-    }
 
     c_list_unlink(&call->calls_lst);
 
