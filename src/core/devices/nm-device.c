@@ -6259,6 +6259,11 @@ attach_port_done(NMDevice *self, NMDevice *slave, gboolean success)
 {
     SlaveInfo *info;
 
+    _LOGT(LOGD_DEVICE,
+          "attaching port %s complete (success=%d)",
+          nm_device_get_iface(slave),
+          success);
+
     info = find_slave_info(self, slave);
     if (!info)
         return;
@@ -6332,6 +6337,11 @@ nm_device_master_enslave_slave(NMDevice *self, NMDevice *slave, NMConnection *co
         configure = (info->configure && connection != NULL);
         if (configure)
             g_return_if_fail(nm_device_get_state(slave) >= NM_DEVICE_STATE_DISCONNECTED);
+
+        _LOGT(LOGD_DEVICE,
+              "attaching port %s (configure=%d)",
+              nm_device_get_iface(slave),
+              configure);
 
         nm_clear_g_cancellable(&info->cancellable);
         info->cancellable = g_cancellable_new();
