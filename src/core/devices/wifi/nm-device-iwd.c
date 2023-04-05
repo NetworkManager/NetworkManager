@@ -159,7 +159,7 @@ ap_add_remove(NMDeviceIwd *self,
     }
 
     if (priv->enabled && !priv->iwd_autoconnect)
-        nm_device_emit_recheck_auto_activate(NM_DEVICE(self));
+        nm_device_recheck_auto_activate_schedule(NM_DEVICE(self));
 
     if (recheck_available_connections)
         nm_device_recheck_available_connections(NM_DEVICE(self));
@@ -208,7 +208,7 @@ remove_all_aps(NMDeviceIwd *self)
         ap_add_remove(self, FALSE, ap, FALSE);
 
     if (!priv->iwd_autoconnect)
-        nm_device_emit_recheck_auto_activate(NM_DEVICE(self));
+        nm_device_recheck_auto_activate_schedule(NM_DEVICE(self));
 
     nm_device_recheck_available_connections(NM_DEVICE(self));
 }
@@ -401,7 +401,7 @@ get_ordered_networks_cb(GObject *source, GAsyncResult *res, gpointer user_data)
 
     if (changed) {
         if (!priv->iwd_autoconnect)
-            nm_device_emit_recheck_auto_activate(NM_DEVICE(self));
+            nm_device_recheck_auto_activate_schedule(NM_DEVICE(self));
 
         nm_device_recheck_available_connections(NM_DEVICE(self));
     }
@@ -1685,7 +1685,7 @@ failed:
 
         if (!priv->nm_autoconnect) {
             priv->nm_autoconnect = true;
-            nm_device_emit_recheck_auto_activate(device);
+            nm_device_recheck_auto_activate_schedule(device);
         }
     }
     g_variant_unref(value);
@@ -2912,7 +2912,7 @@ state_changed(NMDeviceIwd *self, const char *new_state)
     if (!priv->iwd_autoconnect && NM_IN_STRSET(new_state, "disconnected")) {
         priv->nm_autoconnect = TRUE;
         if (!can_connect)
-            nm_device_emit_recheck_auto_activate(device);
+            nm_device_recheck_auto_activate_schedule(device);
     }
 }
 

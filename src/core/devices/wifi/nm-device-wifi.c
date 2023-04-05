@@ -483,7 +483,7 @@ _scan_notify_is_scanning(NMDeviceWifi *self)
 
     if (!_scan_is_scanning_eval(priv)) {
         if (state <= NM_DEVICE_STATE_DISCONNECTED || state > NM_DEVICE_STATE_ACTIVATED)
-            nm_device_emit_recheck_auto_activate(NM_DEVICE(self));
+            nm_device_recheck_auto_activate_schedule(NM_DEVICE(self));
         nm_device_remove_pending_action(NM_DEVICE(self), NM_PENDING_ACTION_WIFI_SCAN, FALSE);
     }
 
@@ -843,7 +843,7 @@ ap_add_remove(NMDeviceWifi *self,
         nm_dbus_object_clear_and_unexport(&ap);
     }
 
-    nm_device_emit_recheck_auto_activate(NM_DEVICE(self));
+    nm_device_recheck_auto_activate_schedule(NM_DEVICE(self));
     if (recheck_available_connections)
         nm_device_recheck_available_connections(NM_DEVICE(self));
 }
