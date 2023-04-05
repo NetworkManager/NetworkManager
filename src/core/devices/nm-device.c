@@ -335,7 +335,6 @@ enum {
     IP6_PREFIX_DELEGATED,
     IP6_SUBNET_NEEDED,
     REMOVED,
-    RECHECK_AUTO_ACTIVATE,
     RECHECK_ASSUME,
     DNS_LOOKUP_DONE,
     PLATFORM_ADDRESS_CHANGED,
@@ -9083,7 +9082,7 @@ nm_device_queue_recheck_available(NMDevice           *self,
 void
 nm_device_emit_recheck_auto_activate(NMDevice *self)
 {
-    g_signal_emit(self, signals[RECHECK_AUTO_ACTIVATE], 0);
+    nm_manager_device_recheck_auto_activate_schedule(nm_device_get_manager(self), self);
 }
 
 void
@@ -18553,16 +18552,6 @@ nm_device_class_init(NMDeviceClass *klass)
                                     NULL,
                                     G_TYPE_NONE,
                                     0);
-
-    signals[RECHECK_AUTO_ACTIVATE] = g_signal_new(NM_DEVICE_RECHECK_AUTO_ACTIVATE,
-                                                  G_OBJECT_CLASS_TYPE(object_class),
-                                                  G_SIGNAL_RUN_FIRST,
-                                                  0,
-                                                  NULL,
-                                                  NULL,
-                                                  NULL,
-                                                  G_TYPE_NONE,
-                                                  0);
 
     signals[RECHECK_ASSUME] = g_signal_new(NM_DEVICE_RECHECK_ASSUME,
                                            G_OBJECT_CLASS_TYPE(object_class),

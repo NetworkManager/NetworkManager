@@ -2258,15 +2258,6 @@ device_autoconnect_changed(NMDevice *device, GParamSpec *pspec, gpointer user_da
 }
 
 static void
-device_recheck_auto_activate(NMDevice *device, gpointer user_data)
-{
-    NMPolicyPrivate *priv = user_data;
-    NMPolicy        *self = _PRIV_TO_SELF(priv);
-
-    nm_policy_device_recheck_auto_activate_schedule(self, device);
-}
-
-static void
 devices_list_unregister(NMPolicy *self, NMDevice *device)
 {
     NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE(self);
@@ -2297,10 +2288,6 @@ devices_list_register(NMPolicy *self, NMDevice *device)
     g_signal_connect(device,
                      "notify::" NM_DEVICE_AUTOCONNECT,
                      G_CALLBACK(device_autoconnect_changed),
-                     priv);
-    g_signal_connect(device,
-                     NM_DEVICE_RECHECK_AUTO_ACTIVATE,
-                     G_CALLBACK(device_recheck_auto_activate),
                      priv);
 }
 

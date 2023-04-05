@@ -75,7 +75,6 @@
 #define NM_DEVICE_IP6_PREFIX_DELEGATED     "ip6-prefix-delegated"
 #define NM_DEVICE_IP6_SUBNET_NEEDED        "ip6-subnet-needed"
 #define NM_DEVICE_REMOVED                  "removed"
-#define NM_DEVICE_RECHECK_AUTO_ACTIVATE    "recheck-auto-activate"
 #define NM_DEVICE_RECHECK_ASSUME           "recheck-assume"
 #define NM_DEVICE_STATE_CHANGED            "state-changed"
 #define NM_DEVICE_LINK_INITIALIZED         "link-initialized"
