@@ -123,6 +123,8 @@ NMSettingsConnection **nm_manager_get_activatable_connections(NMManager *manager
 
 void nm_manager_deactivate_ac(NMManager *self, NMSettingsConnection *connection);
 
+void nm_manager_device_recheck_auto_activate_schedule(NMManager *self, NMDevice *device);
+
 void     nm_manager_write_device_state_all(NMManager *manager);
 gboolean nm_manager_write_device_state(NMManager *manager, NMDevice *device, int *out_ifindex);
 

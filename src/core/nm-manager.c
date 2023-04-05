@@ -3105,6 +3105,16 @@ _rfkill_update_from_user(NMManager *self, NMRfkillType rtype, gboolean enabled)
 
 /*****************************************************************************/
 
+void
+nm_manager_device_recheck_auto_activate_schedule(NMManager *self, NMDevice *device)
+{
+    g_return_if_fail(NM_IS_MANAGER(self));
+
+    nm_policy_device_recheck_auto_activate_schedule(NM_MANAGER_GET_PRIVATE(self)->policy, device);
+}
+
+/*****************************************************************************/
+
 static void
 device_auth_done_cb(NMAuthChain *chain, GDBusMethodInvocation *context, gpointer user_data)
 {
