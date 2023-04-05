@@ -1677,6 +1677,14 @@ schedule_activate_check(NMPolicy *self, NMDevice *device)
     NMActiveConnection *ac;
     const CList        *tmp_list;
 
+    _LOGD(LOGD_DEVICE,
+          ">>>> >>>> device %s: check autoactivate... (manager-state=%d, device-autoconnect-allowed=%d, "
+          "find-pending=%d)",
+          nm_device_get_iface(device),
+          nm_manager_get_state(priv->manager),
+          nm_device_autoconnect_allowed(device),
+          !!find_pending_activation(self, device));
+
     if (nm_manager_get_state(priv->manager) == NM_STATE_ASLEEP)
         return;
 
