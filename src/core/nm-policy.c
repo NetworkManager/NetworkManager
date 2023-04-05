@@ -51,7 +51,7 @@ typedef struct {
     NMManager          *manager;
     NMNetns            *netns;
     NMFirewalldManager *firewalld_manager;
-    CList               pending_activation_checks;
+    CList               policy_auto_activate_lst_head;
 
     NMAgentManager *agent_mgr;
 
@@ -1282,23 +1282,6 @@ check_activating_active_connections(NMPolicy *self)
     g_object_thaw_notify(G_OBJECT(self));
 }
 
-typedef struct {
-    CList     pending_lst;
-    NMPolicy *policy;
-    NMDevice *device;
-    guint     autoactivate_id;
-} ActivateData;
-
-static void
-activate_data_free(ActivateData *data)
-{
-    nm_device_remove_pending_action(data->device, NM_PENDING_ACTION_AUTOACTIVATE, TRUE);
-    c_list_unlink_stale(&data->pending_lst);
-    nm_clear_g_source(&data->autoactivate_id);
-    g_object_unref(data->device);
-    g_slice_free(ActivateData, data);
-}
-
 static void
 pending_ac_gone(gpointer data, GObject *where_the_object_was)
 {
@@ -1345,7 +1328,7 @@ pending_ac_state_changed(NMActiveConnection *ac, guint state, guint reason, NMPo
 }
 
 static void
-auto_activate_device(NMPolicy *self, NMDevice *device)
+_auto_activate_device(NMPolicy *self, NMDevice *device)
 {
     NMPolicyPrivate               *priv;
     NMSettingsConnection          *best_connection;
@@ -1456,32 +1439,34 @@ auto_activate_device(NMPolicy *self, NMDevice *device)
     }
 }
 
-static gboolean
-auto_activate_device_cb(gpointer user_data)
+static void
+_auto_activate_device_clear(NMPolicy *self, NMDevice *device, gboolean do_activate)
 {
-    ActivateData *data = user_data;
+    nm_assert(NM_IS_DEVICE(device));
+    nm_assert(NM_IS_POLICY(self));
+    nm_assert(c_list_is_linked(&device->policy_auto_activate_lst));
+    nm_assert(c_list_contains(&NM_POLICY_GET_PRIVATE(self)->policy_auto_activate_lst_head,
+                              &device->policy_auto_activate_lst));
 
-    g_assert(data);
-    g_assert(NM_IS_POLICY(data->policy));
-    g_assert(NM_IS_DEVICE(data->device));
+    c_list_unlink(&device->policy_auto_activate_lst);
+    nm_clear_g_source_inst(&device->policy_auto_activate_idle_source);
 
-    data->autoactivate_id = 0;
-    auto_activate_device(data->policy, data->device);
-    activate_data_free(data);
-    return G_SOURCE_REMOVE;
+    if (do_activate)
+        _auto_activate_device(self, device);
+
+    nm_device_remove_pending_action(device, NM_PENDING_ACTION_AUTOACTIVATE, TRUE);
+    g_object_unref(device);
 }
 
-static ActivateData *
-find_pending_activation(NMPolicy *self, NMDevice *device)
+static gboolean
+_auto_activate_idle_cb(gpointer user_data)
 {
-    NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE(self);
-    ActivateData    *data;
+    NMDevice *device = user_data;
 
-    c_list_for_each_entry (data, &priv->pending_activation_checks, pending_lst) {
-        if (data->device == device)
-            return data;
-    }
-    return NULL;
+    nm_assert(NM_IS_DEVICE(device));
+
+    _auto_activate_device_clear(nm_manager_get_policy(nm_device_get_manager(device)), device, TRUE);
+    return G_SOURCE_CONTINUE;
 }
 
 /*****************************************************************************/
@@ -1687,12 +1672,16 @@ void
 nm_policy_device_recheck_auto_activate_schedule(NMPolicy *self, NMDevice *device)
 {
     NMPolicyPrivate    *priv;
-    ActivateData       *data;
     NMActiveConnection *ac;
     const CList        *tmp_list;
 
     g_return_if_fail(NM_IS_POLICY(self));
     g_return_if_fail(NM_IS_DEVICE(device));
+
+    if (!c_list_is_empty(&device->policy_auto_activate_lst)) {
+        /* already queued. Return. */
+        return;
+    }
 
     priv = NM_POLICY_GET_PRIVATE(self);
 
@@ -1700,9 +1689,6 @@ nm_policy_device_recheck_auto_activate_schedule(NMPolicy *self, NMDevice *device
         return;
 
     if (!nm_device_autoconnect_allowed(device))
-        return;
-
-    if (find_pending_activation(self, device))
         return;
 
     nm_manager_for_each_active_connection (priv->manager, ac, tmp_list) {
@@ -1717,11 +1703,9 @@ nm_policy_device_recheck_auto_activate_schedule(NMPolicy *self, NMDevice *device
 
     nm_device_add_pending_action(device, NM_PENDING_ACTION_AUTOACTIVATE, TRUE);
 
-    data                  = g_slice_new0(ActivateData);
-    data->policy          = self;
-    data->device          = g_object_ref(device);
-    data->autoactivate_id = g_idle_add(auto_activate_device_cb, data);
-    c_list_link_tail(&priv->pending_activation_checks, &data->pending_lst);
+    c_list_link_tail(&priv->policy_auto_activate_lst_head, &device->policy_auto_activate_lst);
+    device->policy_auto_activate_idle_source = nm_g_idle_add_source(_auto_activate_idle_cb, device);
+    g_object_ref(device);
 }
 
 static gboolean
@@ -2312,16 +2296,13 @@ device_removed(NMManager *manager, NMDevice *device, gpointer user_data)
 {
     NMPolicyPrivate *priv = user_data;
     NMPolicy        *self = _PRIV_TO_SELF(priv);
-    ActivateData    *data;
 
     /* TODO: is this needed? The delegations are cleaned up
      * on transition to deactivated too. */
     ip6_remove_device_prefix_delegations(self, device);
 
-    /* Clear any idle callbacks for this device */
-    data = find_pending_activation(self, device);
-    if (data && data->autoactivate_id)
-        activate_data_free(data);
+    if (c_list_is_linked(&device->policy_auto_activate_lst))
+        _auto_activate_device_clear(self, device, FALSE);
 
     if (g_hash_table_remove(priv->devices, device))
         devices_list_unregister(self, device);
@@ -2762,7 +2743,7 @@ nm_policy_init(NMPolicy *self)
     NMPolicyPrivate *priv          = NM_POLICY_GET_PRIVATE(self);
     gs_free char    *hostname_mode = NULL;
 
-    c_list_init(&priv->pending_activation_checks);
+    c_list_init(&priv->policy_auto_activate_lst_head);
 
     priv->netns = g_object_ref(nm_netns_get());
 
@@ -2900,7 +2881,6 @@ dispose(GObject *object)
     NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE(self);
     GHashTableIter   h_iter;
     NMDevice        *device;
-    ActivateData    *data, *data_safe;
 
     nm_clear_g_object(&priv->default_ac4);
     nm_clear_g_object(&priv->default_ac6);
@@ -2908,8 +2888,10 @@ dispose(GObject *object)
     nm_clear_g_object(&priv->activating_ac6);
     nm_clear_pointer(&priv->pending_active_connections, g_hash_table_unref);
 
-    c_list_for_each_entry_safe (data, data_safe, &priv->pending_activation_checks, pending_lst)
-        activate_data_free(data);
+    while ((device = c_list_first_entry(&priv->policy_auto_activate_lst_head,
+                                        NMDevice,
+                                        policy_auto_activate_lst)))
+        _auto_activate_device_clear(self, device, FALSE);
 
     g_slist_free_full(priv->pending_secondaries, (GDestroyNotify) pending_secondary_data_free);
     priv->pending_secondaries = NULL;

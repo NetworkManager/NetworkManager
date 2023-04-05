@@ -17771,6 +17771,7 @@ nm_device_init(NMDevice *self)
 
     c_list_init(&priv->concheck_lst_head);
     c_list_init(&self->devices_lst);
+    c_list_init(&self->policy_auto_activate_lst);
     c_list_init(&priv->slaves);
 
     priv->ipdhcp_data_6.v6.mode = NM_NDISC_DHCP_LEVEL_NONE;
@@ -17891,6 +17892,8 @@ dispose(GObject *object)
     _LOGD(LOGD_DEVICE, "disposing");
 
     nm_assert(c_list_is_empty(&self->devices_lst));
+    nm_assert(c_list_is_empty(&self->policy_auto_activate_lst));
+    nm_assert(!self->policy_auto_activate_idle_source);
 
     while ((con_handle = c_list_first_entry(&priv->concheck_lst_head,
                                             NMDeviceConnectivityHandle,

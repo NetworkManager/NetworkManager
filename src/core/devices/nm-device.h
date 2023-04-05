@@ -143,6 +143,9 @@ struct _NMDevice {
     NMDBusObject             parent;
     struct _NMDevicePrivate *_priv;
     CList                    devices_lst;
+
+    CList    policy_auto_activate_lst;
+    GSource *policy_auto_activate_idle_source;
 };
 
 /* The flags have an relaxing meaning, that means, specifying more flags, can make
