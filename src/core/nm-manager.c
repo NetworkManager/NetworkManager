@@ -3459,7 +3459,7 @@ _device_realize_finish(NMManager *self, NMDevice *device, const NMPlatformLink *
     nm_device_state_changed(device,
                             NM_DEVICE_STATE_UNAVAILABLE,
                             NM_DEVICE_STATE_REASON_NOW_MANAGED);
-    nm_device_emit_recheck_auto_activate(device);
+    nm_device_recheck_auto_activate_schedule(device);
 }
 
 /**

@@ -6443,7 +6443,7 @@ carrier_changed(NMDevice *self, gboolean carrier)
              * when the carrier appears, auto connections are rechecked for
              * the device.
              */
-            nm_device_emit_recheck_auto_activate(self);
+            nm_device_recheck_auto_activate_schedule(self);
         }
     } else {
         if (priv->state == NM_DEVICE_STATE_UNAVAILABLE) {
@@ -6767,7 +6767,7 @@ device_link_changed(gpointer user_data)
         /* Let any connections that use the new interface name have a chance
          * to auto-activate on the device.
          */
-        nm_device_emit_recheck_auto_activate(self);
+        nm_device_recheck_auto_activate_schedule(self);
     }
 
     if (priv->ipac6_data.ndisc && pllink->inet6_token.id) {
@@ -7702,7 +7702,7 @@ nm_device_unrealize(NMDevice *self, gboolean remove_resources, GError **error)
 
     /* In case the unrealized device is not going away, it may need to
      * autoactivate.  Schedule also a check for that. */
-    nm_device_emit_recheck_auto_activate(self);
+    nm_device_recheck_auto_activate_schedule(self);
 
     return TRUE;
 }
@@ -7724,7 +7724,7 @@ nm_device_notify_availability_maybe_changed(NMDevice *self)
      * available. */
     nm_device_recheck_available_connections(self);
     if (g_hash_table_size(priv->available_connections) > 0)
-        nm_device_emit_recheck_auto_activate(self);
+        nm_device_recheck_auto_activate_schedule(self);
 }
 
 /**
@@ -9080,7 +9080,7 @@ nm_device_queue_recheck_available(NMDevice           *self,
 }
 
 void
-nm_device_emit_recheck_auto_activate(NMDevice *self)
+nm_device_recheck_auto_activate_schedule(NMDevice *self)
 {
     nm_manager_device_recheck_auto_activate_schedule(nm_device_get_manager(self), self);
 }
@@ -12630,7 +12630,7 @@ delete_on_deactivate_link_delete(gpointer user_data)
     if (nm_dbus_object_is_exported(NM_DBUS_OBJECT(self))) {
         /* The device is still alive. We may need to autoactivate virtual
          * devices again. */
-        nm_device_emit_recheck_auto_activate(self);
+        nm_device_recheck_auto_activate_schedule(self);
     }
 
     g_free(data);

@@ -479,7 +479,7 @@ ovsdb_ready(NMOvsdb *ovsdb, NMDeviceOvsInterface *self)
                                       NM_DEVICE_STATE_REASON_NONE,
                                       NM_DEVICE_STATE_REASON_NONE);
     nm_device_recheck_available_connections(device);
-    nm_device_emit_recheck_auto_activate(device);
+    nm_device_recheck_auto_activate_schedule(device);
 }
 
 static void

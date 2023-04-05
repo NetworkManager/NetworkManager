@@ -293,7 +293,7 @@ typedef struct _NMDeviceClass {
     GPtrArray *(*get_extra_rules)(NMDevice *self);
 
     /* allow derived classes to override the result of nm_device_autoconnect_allowed().
-     * If the value changes, the class should call nm_device_emit_recheck_auto_activate(),
+     * If the value changes, the class should call nm_device_recheck_auto_activate_schedule(),
      * which emits NM_DEVICE_RECHECK_AUTO_ACTIVATE signal. */
     gboolean (*get_autoconnect_allowed)(NMDevice *self);
 
@@ -704,7 +704,7 @@ nm_device_autoconnect_blocked_unset(NMDevice *device, NMDeviceAutoconnectBlocked
     nm_device_autoconnect_blocked_set_full(device, mask, NM_DEVICE_AUTOCONNECT_BLOCKED_NONE);
 }
 
-void nm_device_emit_recheck_auto_activate(NMDevice *device);
+void nm_device_recheck_auto_activate_schedule(NMDevice *device);
 
 NMDeviceSysIfaceState nm_device_sys_iface_state_get(NMDevice *device);
 
