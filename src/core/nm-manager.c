@@ -7973,6 +7973,14 @@ nm_settings_get(void)
     return NM_MANAGER_GET_PRIVATE(singleton_instance)->settings;
 }
 
+NMPolicy *
+nm_manager_get_policy(NMManager *self)
+{
+    g_return_val_if_fail(NM_IS_MANAGER(self), NULL);
+
+    return NM_MANAGER_GET_PRIVATE(self)->policy;
+}
+
 NMManager *
 nm_manager_setup(void)
 {
