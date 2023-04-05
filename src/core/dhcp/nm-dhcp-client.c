@@ -871,6 +871,7 @@ _nm_dhcp_client_notify(NMDhcpClient         *self,
         nm_clear_g_source_inst(&priv->previous_lease_timeout_source);
 
     nm_l3_config_data_reset(&priv->l3cd_curr, priv->l3cd_next);
+    priv->l3cfg_notify.wait_ipv6_dad = FALSE;
 
     if (client_event_type == NM_DHCP_CLIENT_EVENT_TYPE_BOUND && priv->l3cd_curr
         && nm_l3_config_data_get_num_addresses(priv->l3cd_curr, priv->config.addr_family) > 0)
