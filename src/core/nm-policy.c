@@ -72,7 +72,8 @@ typedef struct {
 
     guint reset_retries_id; /* idle handler for resetting the retries count */
 
-    guint schedule_activate_all_id; /* idle handler for schedule_activate_all(). */
+    guint
+        schedule_activate_all_id; /* idle handler for nm_policy_device_recheck_auto_activate_all_schedule(). */
 
     NMPolicyHostnameMode hostname_mode;
     char                *orig_hostname;     /* hostname at NM start time */
@@ -135,7 +136,7 @@ _PRIV_TO_SELF(NMPolicyPrivate *priv)
 /*****************************************************************************/
 
 static void      update_system_hostname(NMPolicy *self, const char *msg);
-static void      schedule_activate_all(NMPolicy *self);
+static void      nm_policy_device_recheck_auto_activate_all_schedule(NMPolicy *self);
 static NMDevice *get_default_device(NMPolicy *self, int addr_family);
 
 /*****************************************************************************/
@@ -1760,7 +1761,7 @@ reset_connections_retries(gpointer user_data)
 
     /* If anything changed, try to activate the newly re-enabled connections */
     if (changed)
-        schedule_activate_all(self);
+        nm_policy_device_recheck_auto_activate_all_schedule(self);
 
     return FALSE;
 }
@@ -1858,7 +1859,7 @@ activate_slave_connections(NMPolicy *self, NMDevice *device)
     }
 
     if (changed)
-        schedule_activate_all(self);
+        nm_policy_device_recheck_auto_activate_all_schedule(self);
 }
 
 static gboolean
@@ -2513,7 +2514,7 @@ active_connection_removed(NMManager *manager, NMActiveConnection *active, gpoint
 /*****************************************************************************/
 
 static gboolean
-schedule_activate_all_cb(gpointer user_data)
+_device_recheck_auto_activate_all_cb(gpointer user_data)
 {
     NMPolicy        *self = user_data;
     NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE(self);
@@ -2529,15 +2530,17 @@ schedule_activate_all_cb(gpointer user_data)
 }
 
 static void
-schedule_activate_all(NMPolicy *self)
+nm_policy_device_recheck_auto_activate_all_schedule(NMPolicy *self)
 {
     NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE(self);
 
     /* always restart the idle handler. That way, we settle
      * all other events before restarting to activate them. */
     nm_clear_g_source(&priv->schedule_activate_all_id);
-    priv->schedule_activate_all_id = g_idle_add(schedule_activate_all_cb, self);
+    priv->schedule_activate_all_id = g_idle_add(_device_recheck_auto_activate_all_cb, self);
 }
+
+/*****************************************************************************/
 
 static void
 connection_added(NMSettings *settings, NMSettingsConnection *connection, gpointer user_data)
@@ -2545,7 +2548,7 @@ connection_added(NMSettings *settings, NMSettingsConnection *connection, gpointe
     NMPolicyPrivate *priv = user_data;
     NMPolicy        *self = _PRIV_TO_SELF(priv);
 
-    schedule_activate_all(self);
+    nm_policy_device_recheck_auto_activate_all_schedule(self);
 }
 
 static void
@@ -2613,7 +2616,7 @@ connection_updated(NMSettings           *settings,
         }
     }
 
-    schedule_activate_all(self);
+    nm_policy_device_recheck_auto_activate_all_schedule(self);
 }
 
 static void
@@ -2662,7 +2665,7 @@ connection_flags_changed(NMSettings *settings, NMSettingsConnection *connection,
     if (NM_FLAGS_HAS(nm_settings_connection_get_flags(connection),
                      NM_SETTINGS_CONNECTION_INT_FLAGS_VISIBLE)) {
         if (!nm_settings_connection_autoconnect_is_blocked(connection))
-            schedule_activate_all(self);
+            nm_policy_device_recheck_auto_activate_all_schedule(self);
     }
 }
 
@@ -2676,7 +2679,7 @@ secret_agent_registered(NMSettings *settings, NMSecretAgent *agent, gpointer use
      * connections failed due to missing secrets may re-try auto-connection.
      */
     if (reset_autoconnect_all(self, NULL, TRUE))
-        schedule_activate_all(self);
+        nm_policy_device_recheck_auto_activate_all_schedule(self);
 }
 
 NMActiveConnection *
