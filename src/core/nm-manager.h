@@ -69,6 +69,8 @@ NMManager *nm_manager_setup(void);
 NMManager *nm_manager_get(void);
 #define NM_MANAGER_GET (nm_manager_get())
 
+NMPolicy *nm_manager_get_policy(NMManager *self);
+
 gboolean nm_manager_start(NMManager *manager, GError **error);
 void     nm_manager_stop(NMManager *manager);
 NMState  nm_manager_get_state(NMManager *manager);
