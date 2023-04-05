@@ -787,7 +787,7 @@ try_spawn_vpn_auth_helper(RequestData *request, GPtrArray *secrets)
     if (!g_spawn_async_with_pipes(NULL,
                                   (char **) auth_dialog_argv->pdata,
                                   NULL,
-                                  G_SPAWN_DO_NOT_REAP_CHILD,
+                                  G_SPAWN_CLOEXEC_PIPES | G_SPAWN_DO_NOT_REAP_CHILD,
                                   NULL,
                                   NULL,
                                   &auth_dialog_pid,

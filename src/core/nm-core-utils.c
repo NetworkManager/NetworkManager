@@ -5090,7 +5090,6 @@ nm_utils_spawn_helper(const char *const  *args,
     gs_free_error GError *error    = NULL;
     gs_free char         *commands = NULL;
     HelperInfo           *info;
-    int                   fd_flags;
     const char *const    *arg;
     GMainContext         *context;
     gsize                 n;
@@ -5099,16 +5098,13 @@ nm_utils_spawn_helper(const char *const  *args,
 
     info  = g_new(HelperInfo, 1);
     *info = (HelperInfo){
-        .task         = nm_g_task_new(NULL, cancellable, nm_utils_spawn_helper, callback, cb_data),
-        .child_stdin  = -1,
-        .child_stdout = -1,
-        .pid          = -1,
+        .task = nm_g_task_new(NULL, cancellable, nm_utils_spawn_helper, callback, cb_data),
     };
 
     if (!g_spawn_async_with_pipes("/",
                                   (char **) NM_MAKE_STRV(LIBEXECDIR "/nm-daemon-helper"),
                                   (char **) NM_MAKE_STRV(),
-                                  G_SPAWN_DO_NOT_REAP_CHILD,
+                                  G_SPAWN_CLOEXEC_PIPES | G_SPAWN_DO_NOT_REAP_CHILD,
                                   NULL,
                                   NULL,
                                   &info->pid,
@@ -5162,13 +5158,9 @@ nm_utils_spawn_helper(const char *const  *args,
         nm_g_timeout_source_new_seconds(20, G_PRIORITY_DEFAULT, helper_timeout, info, NULL);
     g_source_attach(info->timeout_source, context);
 
-    /* Set file descriptors as non-blocking */
-    fd_flags = fcntl(info->child_stdin, F_GETFD, 0);
-    fcntl(info->child_stdin, F_SETFL, fd_flags | O_NONBLOCK);
-    fd_flags = fcntl(info->child_stdout, F_GETFD, 0);
-    fcntl(info->child_stdout, F_SETFL, fd_flags | O_NONBLOCK);
-    fd_flags = fcntl(info->child_stderr, F_GETFD, 0);
-    fcntl(info->child_stderr, F_SETFL, fd_flags | O_NONBLOCK);
+    nm_io_fcntl_setfl_update_nonblock(info->child_stdin);
+    nm_io_fcntl_setfl_update_nonblock(info->child_stdout);
+    nm_io_fcntl_setfl_update_nonblock(info->child_stderr);
 
     /* Watch process stdin */
     for (n = 1, arg = args; *arg; arg++)

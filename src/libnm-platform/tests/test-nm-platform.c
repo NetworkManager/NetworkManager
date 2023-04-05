@@ -117,7 +117,6 @@ test_use_symbols(void)
         (void (*)(void)) nl_socket_set_passcred,
         (void (*)(void)) nl_socket_set_msg_buf_size,
         (void (*)(void)) nlmsg_get_dst,
-        (void (*)(void)) nl_socket_set_nonblocking,
         (void (*)(void)) nl_socket_set_buffer_size,
         (void (*)(void)) nl_socket_add_memberships,
         (void (*)(void)) nl_wait_for_ack,
