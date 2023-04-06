@@ -1,4 +1,14 @@
 ================================================
+NetworkManager-1.40.18
+Overview of changes since NetworkManager-1.40.16
+================================================
+
+* Added support for "no-aaaa" resolver option.
+* Added IMDSv2 support to nm-cloud-init's EC2 support.
+* Fix an issue with Wi-Fi roaming.
+* Other various fixes.
+
+================================================
 NetworkManager-1.40.16
 Overview of changes since NetworkManager-1.40.14
 ================================================
