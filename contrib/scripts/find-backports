@@ -139,6 +139,11 @@ def git_all_commits(rnge):
     return git_all_commits_grep(rnge)
 
 
+@memoize
+def git_all_commits_set(rnge):
+    return set(git_all_commits_grep(rnge))
+
+
 def git_commit_sorted(commits):
     commits = list(commits)
     if not commits:
@@ -256,6 +261,10 @@ def git_commits_annotate_cherry_picked(rnge):
     return c_dict
 
 
+def git_ref_in_history(ref, rnge):
+    return git_ref_exists(ref) in git_all_commits_set(rnge)
+
+
 if __name__ == "__main__":
     if len(sys.argv) <= 1:
         ref_head0 = "HEAD"
@@ -370,6 +379,23 @@ if __name__ == "__main__":
     commits_good = git_commit_sorted(commits_good)
 
     print_err(git_logg(commits_good))
+
+    not_in = [
+        c
+        for c in commits_good
+        if not git_ref_in_history(c, f"{ref_head}..{ref_upstreams[0]}")
+    ]
+    if not_in:
+        print_err("")
+        print_err(
+            f'WARNING: The following commits are not from the first reference "{ref_upstreams[0]}".'
+        )
+        print_err(
+            f'  You may want to first backports those patches to "{ref_upstreams[0]}".'
+        )
+        for l in git_logg(git_commit_sorted(not_in)).splitlines():
+            print_err(f"  - {l}")
+        print_err("")
 
     for c in reversed(commits_good):
         print("%s" % (c))
