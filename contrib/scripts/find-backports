@@ -111,7 +111,7 @@ def git_all_commits_grep(rnge, grep=None):
         + [str(rnge)],
         stderr=FNULL,
     )
-    return list([x for x in out.decode("ascii").split("\n") if x])
+    return [x for x in out.decode("ascii").split("\n") if x]
 
 
 def git_logg(commits):
@@ -128,7 +128,7 @@ def git_logg(commits):
             "--abbrev-commit",
             "--date=local",
         ]
-        + list([str(c) for c in commits]),
+        + [str(c) for c in commits],
         stderr=FNULL,
     )
     return out.decode("utf-8").strip()
@@ -145,11 +145,11 @@ def git_commit_sorted(commits):
         return []
     out = subprocess.check_output(
         ["git", "log", "--no-walk", "--pretty=%H", "--reverse"]
-        + list([str(x) for x in commits]),
+        + [str(x) for x in commits],
         stderr=FNULL,
     )
     out = out.decode("ascii")
-    return list([x for x in out.split("\n") if x])
+    return [x for x in out.split("\n") if x]
 
 
 @memoize
@@ -223,7 +223,7 @@ def git_ref_commit_body_get_cherry_picked_recurse(ref):
     def do_recurse(result, ref):
         result2 = git_ref_commit_body_get_cherry_picked_one(ref)
         if result2:
-            extra = list([h2 for h2 in result2 if h2 not in result])
+            extra = [h2 for h2 in result2 if h2 not in result]
             if extra:
                 result.extend(extra)
                 for h2 in extra:
@@ -332,23 +332,23 @@ if __name__ == "__main__":
     fixing_commits = {}
     for ref_upstream in ref_upstreams:
         ref_str = ref_head + ".." + ref_upstream
-        print_err('Check upstream patches "%s"...' % (ref_str))
+        print_err(f'Check upstream patches "{ref_str}"...')
         for c, fixes in git_commits_annotate_fixes(ref_str).items():
-            dbg_log(">>> test %s ==> %s" % (c, fixes))
             if not fixes:
-                dbg_log(">>> test %s ==> SKIP" % (c))
+                dbg_log(f">>> test {c} : SKIP (does not fix anything)")
                 continue
             if c in cherry_picks_all:
                 # commit 'c' is already backported. Skip it.
-                dbg_log(">>> in cherry_picks_all")
+                dbg_log(f">>> test {c} => {fixes} : SKIP (already backported)")
                 continue
+            dbg_log(f">>> test {c} => {fixes} : process")
             for f in fixes:
                 if f not in own_commits_cherry_picked_flat:
                     # commit "c" fixes commit "f", but this is not one of our own commits
                     # and not interesting.
-                    dbg_log(">>> fixes %s not in own_commits_cherry_picked" % (f))
+                    dbg_log(f">>> fixes {f} not in own_commits_cherry_picked")
                     continue
-                dbg_log(">>> take %s (fixes %s)" % (c, fixes))
+                dbg_log(f">>> take {c} (fixes {fixes})")
                 fixing_commits[c] = fixes
                 break
 
