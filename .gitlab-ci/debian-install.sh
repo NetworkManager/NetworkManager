@@ -27,7 +27,8 @@ dbus-uuidgen --ensure
 sed -i 's/^# \(pl_PL.UTF-8 .*\)$/\1/p' /etc/locale.gen || true
 locale-gen pl_PL.UTF-8
 
-pip3 install meson
+# Debian 12 and later requires --break-system-packages
+pip3 install meson || pip3 install --break-system-packages meson
 
 # iproute2 5.2.0 on debian:sid causes our unit tests to fail.
 # Downgrade to a working version. See https://www.spinics.net/lists/netdev/msg584916.html
