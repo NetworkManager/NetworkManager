@@ -9,7 +9,19 @@ import pprint
 
 
 FNULL = open(os.devnull, "w")
-pp = pprint.PrettyPrinter(indent=4)
+pp = pprint.PrettyPrinter(indent=4, stream=sys.stderr)
+
+DEBUG = os.environ.get("NM_FIND_BACKPORTS_DEBUG", None) == "1"
+
+
+def dbg_log(s):
+    if DEBUG:
+        print(s, file=sys.stderr)
+
+
+def dbg_pprint(obj):
+    if DEBUG:
+        pp.pprint(obj)
 
 
 def print_err(s):
@@ -310,11 +322,11 @@ if __name__ == "__main__":
         if p:
             own_commits_cherry_picked_flat.update(p)
 
-    # print(">>> own_commits_cherry_picked")
-    # pp.pprint(own_commits_cherry_picked)
+    dbg_log(">>> own_commits_cherry_picked")
+    dbg_pprint(own_commits_cherry_picked)
 
-    # print(">>> cherry_picks_all")
-    # pp.pprint(cherry_picks_all)
+    dbg_log(">>> cherry_picks_all")
+    dbg_pprint(cherry_picks_all)
 
     # find all commits on the upstream branches that fix another commit.
     fixing_commits = {}
@@ -322,21 +334,21 @@ if __name__ == "__main__":
         ref_str = ref_head + ".." + ref_upstream
         print_err('Check upstream patches "%s"...' % (ref_str))
         for c, fixes in git_commits_annotate_fixes(ref_str).items():
-            # print(">>> test %s ==> %s" % (c, fixes))
+            dbg_log(">>> test %s ==> %s" % (c, fixes))
             if not fixes:
-                # print(">>> test %s ==> SKIP" % (c))
+                dbg_log(">>> test %s ==> SKIP" % (c))
                 continue
             if c in cherry_picks_all:
                 # commit 'c' is already backported. Skip it.
-                # print(">>> in cherry_picks_all")
+                dbg_log(">>> in cherry_picks_all")
                 continue
             for f in fixes:
                 if f not in own_commits_cherry_picked_flat:
                     # commit "c" fixes commit "f", but this is not one of our own commits
                     # and not interesting.
-                    # print(">>> fixes %s not in own_commits_cherry_picked" % (f))
+                    dbg_log(">>> fixes %s not in own_commits_cherry_picked" % (f))
                     continue
-                # print(">>> take %s (fixes %s)" % (c, fixes))
+                dbg_log(">>> take %s (fixes %s)" % (c, fixes))
                 fixing_commits[c] = fixes
                 break
 
