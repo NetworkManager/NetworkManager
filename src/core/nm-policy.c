@@ -1455,7 +1455,6 @@ _auto_activate_device_clear(NMPolicy *self, NMDevice *device, gboolean do_activa
         _auto_activate_device(self, device);
 
     nm_device_remove_pending_action(device, NM_PENDING_ACTION_AUTOACTIVATE, TRUE);
-    g_object_unref(device);
 }
 
 static gboolean
@@ -1677,6 +1676,14 @@ nm_policy_device_recheck_auto_activate_schedule(NMPolicy *self, NMDevice *device
 
     g_return_if_fail(NM_IS_POLICY(self));
     g_return_if_fail(NM_IS_DEVICE(device));
+    nm_assert(g_signal_handler_find(device,
+                                    G_SIGNAL_MATCH_DATA,
+                                    0,
+                                    0,
+                                    NULL,
+                                    NULL,
+                                    NM_POLICY_GET_PRIVATE(self))
+              != 0);
 
     if (!c_list_is_empty(&device->policy_auto_activate_lst)) {
         /* already queued. Return. */
@@ -1705,7 +1712,6 @@ nm_policy_device_recheck_auto_activate_schedule(NMPolicy *self, NMDevice *device
 
     c_list_link_tail(&priv->policy_auto_activate_lst_head, &device->policy_auto_activate_lst);
     device->policy_auto_activate_idle_source = nm_g_idle_add_source(_auto_activate_idle_cb, device);
-    g_object_ref(device);
 }
 
 static gboolean
