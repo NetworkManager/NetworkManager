@@ -2522,7 +2522,7 @@ nmtstp_link_ip6gre_add(NMPlatform                *platform,
     gboolean              success;
     char                  b1[NM_INET_ADDRSTRLEN];
     char                  b2[NM_INET_ADDRSTRLEN];
-    char                  encap[20];
+    char                  encap[100];
     char                  tclass[20];
     gboolean              encap_ignore;
     gboolean              tclass_inherit;
@@ -2534,6 +2534,7 @@ nmtstp_link_ip6gre_add(NMPlatform                *platform,
 
     _init_platform(&platform, external_command);
 
+again:
     if (external_command) {
         gs_free char *dev = NULL;
 
@@ -2545,7 +2546,7 @@ nmtstp_link_ip6gre_add(NMPlatform                *platform,
         encap_ignore   = NM_FLAGS_HAS(lnk->flags, IP6_TNL_F_IGN_ENCAP_LIMIT);
 
         success = !nmtstp_run_command(
-            "ip link add %s type %s%s%s local %s remote %s ttl %u tclass %s encaplimit %s "
+            "ip link add %s type %s%s%s local %s remote %s ttl %u tclass %s%s "
             "flowlabel %x",
             name,
             lnk->is_tap ? "ip6gretap" : "ip6gre",
@@ -2554,8 +2555,19 @@ nmtstp_link_ip6gre_add(NMPlatform                *platform,
             nm_inet6_ntop(&lnk->remote, b2),
             lnk->ttl,
             tclass_inherit ? "inherit" : nm_sprintf_buf(tclass, "%02x", lnk->tclass),
-            encap_ignore ? "none" : nm_sprintf_buf(encap, "%u", lnk->encap_limit),
+            encap_ignore
+                ? "encaplimit none"
+                : (lnk->encap_limit != 4 ? nm_sprintf_buf(encap, "encaplimit %u", lnk->encap_limit)
+                                         : ""),
             lnk->flow_label);
+
+        if (!success && (encap_ignore || lnk->encap_limit != 4)) {
+            /* The command failed. That might be because iproute2 does not support the
+             * encaplimit parameter yet. Retry, now with platform code. */
+            external_command = FALSE;
+            goto again;
+        }
+
         if (success) {
             pllink = nmtstp_assert_wait_for_link(platform,
                                                  name,

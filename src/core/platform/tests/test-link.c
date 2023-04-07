@@ -1546,6 +1546,7 @@ test_software_detect(gconstpointer user_data)
             lnk_ip6tnl.flow_label     = 1341;
             lnk_ip6tnl.is_gre         = TRUE;
             lnk_ip6tnl.is_tap         = TRUE;
+            lnk_ip6tnl.encap_limit    = 4;
             lnk_ip6tnl.flags          = IP6_TNL_F_IGN_ENCAP_LIMIT | IP6_TNL_F_USE_ORIG_TCLASS;
             break;
         }
