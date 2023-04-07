@@ -64,6 +64,8 @@ typedef struct {
 
     GSource *device_recheck_auto_activate_all_idle_source;
 
+    GSource *reset_connections_retries_idle_source;
+
     NMHostnameManager *hostname_manager;
 
     NMActiveConnection *default_ac4, *activating_ac4;
@@ -71,8 +73,6 @@ typedef struct {
 
     NMDnsManager *dns_manager;
     gulong        config_changed_id;
-
-    guint reset_retries_id; /* idle handler for resetting the retries count */
 
     NMPolicyHostnameMode hostname_mode;
     char                *orig_hostname;     /* hostname at NM start time */
@@ -1734,7 +1734,7 @@ reset_connections_retries(gpointer user_data)
     gint32                       con_stamp, min_stamp, now;
     gboolean                     changed = FALSE;
 
-    priv->reset_retries_id = 0;
+    nm_clear_g_source_inst(&priv->reset_connections_retries_idle_source);
 
     min_stamp   = 0;
     now         = nm_utils_get_monotonic_timestamp_sec();
@@ -1754,15 +1754,16 @@ reset_connections_retries(gpointer user_data)
     }
 
     /* Schedule the handler again if there are some stamps left */
-    if (min_stamp != 0)
-        priv->reset_retries_id =
-            g_timeout_add_seconds(min_stamp - now, reset_connections_retries, self);
+    if (min_stamp != 0) {
+        priv->reset_connections_retries_idle_source =
+            nm_g_timeout_add_seconds_source(min_stamp - now, reset_connections_retries, self);
+    }
 
     /* If anything changed, try to activate the newly re-enabled connections */
     if (changed)
         nm_policy_device_recheck_auto_activate_all_schedule(self);
 
-    return FALSE;
+    return G_SOURCE_CONTINUE;
 }
 
 static void
@@ -1777,15 +1778,15 @@ _connection_autoconnect_retries_set(NMPolicy *self, NMSettingsConnection *connec
 
     if (tries == 0) {
         /* Schedule a handler to reset retries count */
-        if (!priv->reset_retries_id) {
+        if (!priv->reset_connections_retries_idle_source) {
             gint32 retry_time =
                 nm_settings_connection_autoconnect_retries_blocked_until(connection);
 
             g_warn_if_fail(retry_time != 0);
-            priv->reset_retries_id =
-                g_timeout_add_seconds(MAX(0, retry_time - nm_utils_get_monotonic_timestamp_sec()),
-                                      reset_connections_retries,
-                                      self);
+            priv->reset_connections_retries_idle_source = nm_g_timeout_add_seconds_source(
+                MAX(0, retry_time - nm_utils_get_monotonic_timestamp_sec()),
+                reset_connections_retries,
+                self);
         }
     }
 }
@@ -2953,7 +2954,7 @@ dispose(GObject *object)
      */
     nm_assert(c_list_is_empty(nm_manager_get_active_connections(priv->manager)));
 
-    nm_clear_g_source(&priv->reset_retries_id);
+    nm_clear_g_source_inst(&priv->reset_connections_retries_idle_source);
     nm_clear_g_source_inst(&priv->device_recheck_auto_activate_all_idle_source);
 
     nm_clear_g_free(&priv->orig_hostname);
