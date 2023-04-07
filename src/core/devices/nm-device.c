@@ -14715,7 +14715,9 @@ _set_unmanaged_flags(NMDevice           *self,
 
     if (transition_state) {
         new_state = was_managed ? NM_DEVICE_STATE_UNMANAGED : NM_DEVICE_STATE_UNAVAILABLE;
-        if (new_state != NM_DEVICE_STATE_UNMANAGED) {
+        if (new_state == NM_DEVICE_STATE_UNMANAGED) {
+            _cancel_activation(self);
+        } else {
             /* The assume check should happen before the device transitions to
             * UNAVAILABLE, because in UNAVAILABLE we already clean up the IP
             * configuration. Therefore, this function should never trigger a
