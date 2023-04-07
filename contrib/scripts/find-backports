@@ -56,29 +56,45 @@ def _keys_to_dict(itr):
 
 
 @memoize
-def git_ref_exists_plain(ref):
-    try:
-        subprocess.check_output(["git", "show-ref", "-q", "--verify", str(ref)])
-    except subprocess.CalledProcessError:
-        return False
-    return True
+def git_ref_exists_full_path(ref):
+    val = git_ref_exists(ref)
+    if val:
+        try:
+            subprocess.check_output(["git", "show-ref", "-q", "--verify", str(ref)])
+        except subprocess.CalledProcessError:
+            pass
+        else:
+            return val
+    return None
 
 
-@memoize
-def git_ref_exists(ref):
+def _git_ref_exists_eval(ref):
     try:
         out = subprocess.check_output(
-            ["git", "rev-parse", "--verify", str(ref) + "^{commit}"], stderr=FNULL
+            ["git", "rev-parse", "--verify", str(ref) + "^{commit}"],
+            stderr=FNULL,
         )
     except subprocess.CalledProcessError:
         return None
-    try:
-        o = out.decode("ascii").strip()
-        if len(o) == 40:
-            return o
-    except Exception:
-        pass
-    raise Exception("git-rev-parse for '%s' returned unexpected output %s" % (ref, out))
+    o = out.decode("ascii").strip()
+    if len(o) == 40:
+        return o
+    raise Exception(f"git-rev-parse for '{ref}' returned unexpected output {out}")
+
+
+_git_ref_exists_cache = {}
+
+
+def git_ref_exists(ref):
+    val = _git_ref_exists_cache.get(ref, False)
+
+    if val is False:
+        val = _git_ref_exists_eval(ref)
+        _git_ref_exists_cache[ref] = val
+        if val and ref != val:
+            _git_ref_exists_cache[val] = val
+
+    return val
 
 
 @memoize
@@ -275,7 +291,7 @@ if __name__ == "__main__":
     if not ref_head:
         die('Ref "%s" does not exist' % (ref_head0))
 
-    if not git_ref_exists_plain("refs/notes/bugs"):
+    if not git_ref_exists_full_path("refs/notes/bugs"):
         die(
             "Notes refs/notes/bugs not found. Read CONTRIBUTING.md file for how to setup the notes"
         )
