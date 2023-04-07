@@ -2870,19 +2870,15 @@ dispose(GObject *object)
 {
     NMPolicy        *self = NM_POLICY(object);
     NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE(self);
-    GHashTableIter   h_iter;
-    NMDevice        *device;
+
+    nm_assert(!c_list_is_empty(&priv->policy_auto_activate_lst_head));
+    nm_assert(g_hash_table_size(priv->devices) == 0);
 
     nm_clear_g_object(&priv->default_ac4);
     nm_clear_g_object(&priv->default_ac6);
     nm_clear_g_object(&priv->activating_ac4);
     nm_clear_g_object(&priv->activating_ac6);
     nm_clear_pointer(&priv->pending_active_connections, g_hash_table_unref);
-
-    while ((device = c_list_first_entry(&priv->policy_auto_activate_lst_head,
-                                        NMDevice,
-                                        policy_auto_activate_lst)))
-        _auto_activate_device_clear(self, device, FALSE);
 
     g_slist_free_full(priv->pending_secondaries, (GDestroyNotify) pending_secondary_data_free);
     priv->pending_secondaries = NULL;
@@ -2900,12 +2896,6 @@ dispose(GObject *object)
     if (priv->dns_manager) {
         nm_clear_g_signal_handler(priv->dns_manager, &priv->config_changed_id);
         g_clear_object(&priv->dns_manager);
-    }
-
-    g_hash_table_iter_init(&h_iter, priv->devices);
-    while (g_hash_table_iter_next(&h_iter, (gpointer *) &device, NULL)) {
-        g_hash_table_iter_remove(&h_iter);
-        devices_list_unregister(self, device);
     }
 
     /* The manager should have disposed of ActiveConnections already, which
