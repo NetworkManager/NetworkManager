@@ -62,6 +62,8 @@ typedef struct {
 
     NMSettings *settings;
 
+    GSource *device_recheck_auto_activate_all_idle_source;
+
     NMHostnameManager *hostname_manager;
 
     NMActiveConnection *default_ac4, *activating_ac4;
@@ -71,9 +73,6 @@ typedef struct {
     gulong        config_changed_id;
 
     guint reset_retries_id; /* idle handler for resetting the retries count */
-
-    guint
-        schedule_activate_all_id; /* idle handler for nm_policy_device_recheck_auto_activate_all_schedule(). */
 
     NMPolicyHostnameMode hostname_mode;
     char                *orig_hostname;     /* hostname at NM start time */
@@ -2535,12 +2534,12 @@ _device_recheck_auto_activate_all_cb(gpointer user_data)
     const CList     *tmp_lst;
     NMDevice        *device;
 
-    priv->schedule_activate_all_id = 0;
+    nm_clear_g_source_inst(&priv->device_recheck_auto_activate_all_idle_source);
 
     nm_manager_for_each_device (priv->manager, device, tmp_lst)
         nm_policy_device_recheck_auto_activate_schedule(self, device);
 
-    return G_SOURCE_REMOVE;
+    return G_SOURCE_CONTINUE;
 }
 
 static void
@@ -2550,8 +2549,10 @@ nm_policy_device_recheck_auto_activate_all_schedule(NMPolicy *self)
 
     /* always restart the idle handler. That way, we settle
      * all other events before restarting to activate them. */
-    nm_clear_g_source(&priv->schedule_activate_all_id);
-    priv->schedule_activate_all_id = g_idle_add(_device_recheck_auto_activate_all_cb, self);
+    nm_clear_g_source_inst(&priv->device_recheck_auto_activate_all_idle_source);
+
+    priv->device_recheck_auto_activate_all_idle_source =
+        nm_g_idle_add_source(_device_recheck_auto_activate_all_cb, self);
 }
 
 /*****************************************************************************/
@@ -2938,7 +2939,7 @@ dispose(GObject *object)
     nm_assert(c_list_is_empty(nm_manager_get_active_connections(priv->manager)));
 
     nm_clear_g_source(&priv->reset_retries_id);
-    nm_clear_g_source(&priv->schedule_activate_all_id);
+    nm_clear_g_source_inst(&priv->device_recheck_auto_activate_all_idle_source);
 
     nm_clear_g_free(&priv->orig_hostname);
     nm_clear_g_free(&priv->cur_hostname);
