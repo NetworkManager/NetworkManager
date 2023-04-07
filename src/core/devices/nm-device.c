@@ -14134,6 +14134,9 @@ _set_unmanaged_flags(NMDevice           *self,
 
     if (transition_state) {
         new_state = was_managed ? NM_DEVICE_STATE_UNMANAGED : NM_DEVICE_STATE_UNAVAILABLE;
+        if (new_state == NM_DEVICE_STATE_UNMANAGED) {
+            _cancel_activation(self);
+        }
         if (now)
             nm_device_state_changed(self, new_state, reason);
         else
