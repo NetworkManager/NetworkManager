@@ -17,17 +17,37 @@
 
 .templates_sha: &template_sha ffe4d1b10aab7534489f0c4bbc4c5899df17d3f2 # see https://docs.gitlab.com/ee/ci/yaml/#includefile
 
+{# Group distros by their common (name,base_type,tag) tuples.#}
+{% set distro_groups = [] %}
+{% for distro in distributions %}
+  {% set g = {'name':distro.name,'base_type':distro.base_type,'tag':distro.tag} %}
+  {% if g not in distro_groups %}
+  {%   do distro_groups.append(g) %}
+  {% endif %}
+{% endfor %}
+
+{# The "default_distro" builds our pages and is used for check-{tree,patch} tests. It is the first distro with tier 1. #}
+{% set default_distro = [] %}
+{% for distro in distributions %}
+  {% if distro.tier == 1 and default_distro|length == 0 %}
+    {% do default_distro.append(distro) %}
+  {% endif %}
+{% endfor %}
+{% set default_distro = default_distro[0] %}
+
 include:
-{% for distro in distributions|sort(attribute="name") %}
-  # {{ distro.name.capitalize() }} container builder template
+{% for distro_group in distro_groups|sort(attribute='name') %}
+  # {{ distro_group.name.capitalize() }} container builder template
   - project: 'freedesktop/ci-templates'
     ref: *template_sha
-    file: '/templates/{{distro.name}}.yml'
+    file: '/templates/{{distro_group.name}}.yml'
 {% endfor %}
 
 stages:
   - prep
-  - test
+  - tier1
+  - tier2
+  - tier3
   - deploy
   - triage
   - container_clean
@@ -41,17 +61,17 @@ variables:
   #
   # This is done by running `ci-fairy generate-template` and possibly bumping
   # ".default_tag".
-{% for distro in distributions %}
-  {{"%-13s"| format(distro.name.upper() + '_TAG:')}}'{{distro.tag}}-{{
+{% for distro_group in distro_groups|sort(attribute='name') %}
+  {{"%-13s"| format(distro_group.name.upper() + '_TAG:')}}'{{distro_group.tag}}-{{
     (ci_fairy.hashfiles('./.gitlab-ci/config.yml',
                         './.gitlab-ci/ci.template',
-                        './.gitlab-ci/' + distro.base_type + '-install.sh',
-                        './contrib/' + distro.base_type + '/REQUIRED_PACKAGES'))[0:12]
+                        './.gitlab-ci/' + distro_group.base_type + '-install.sh',
+                        './contrib/' + distro_group.base_type + '/REQUIRED_PACKAGES'))[0:12]
   }}'
 {% endfor %}
 
-{% for distro in distributions %}
-  {{"%-13s"| format(distro.name.upper() + '_EXEC:')}}'bash .gitlab-ci/{{distro.base_type}}-install.sh'
+{% for distro_group in distro_groups|sort(attribute='name') %}
+  {{"%-13s"| format(distro_group.name.upper() + '_EXEC:')}}'bash .gitlab-ci/{{distro_group.base_type}}-install.sh'
 {% endfor %}
 
 .nm_artifacts:
@@ -151,7 +171,6 @@ variables:
 #################################################################
 
 .build@template:
-  stage: test
   script:
     - env
     - r=0
@@ -174,12 +193,12 @@ t_{{distro.name}}:{{version}}:
   extends:
     - .build@template
     - .fdo.distribution-image@{{distro.name}}
-{% if distro.name == pages_build.name and
-      version == pages_build.version %}
+{% if distro == default_distro %}
     - .nm_artifacts
 {% else %}
     - .nm_artifacts_debug
 {% endif %}
+  stage: tier{{distro.tier}}
   variables:
     FDO_DISTRIBUTION_VERSION: '{{version}}'
     FDO_DISTRIBUTION_TAG: ${{distro.name.upper()}}_TAG
@@ -191,7 +210,7 @@ t_{{distro.name}}:{{version}}:
     {% endif %}
   needs:
     - "{{distro.name}}:{{version}}@container-prep"
-{% if not version in distro.get('always', []) and (distro.name != pages_build.name or version != pages_build.version) %}
+{% if distro.tier > 1 %}
   when: manual
 {% endif %}
 {% endfor %}
@@ -205,26 +224,26 @@ t_{{distro.name}}:{{version}}:
 
 check-patch:
   extends:
-    - .fdo.distribution-image@{{pages_build.name}}
+    - .fdo.distribution-image@{{default_distro.name}}
   variables:
-    FDO_DISTRIBUTION_VERSION: '{{pages_build.version}}'
-    FDO_DISTRIBUTION_TAG: ${{pages_build.name.upper()}}_TAG
+    FDO_DISTRIBUTION_VERSION: '{{default_distro.versions[0]}}'
+    FDO_DISTRIBUTION_TAG: ${{default_distro.name.upper()}}_TAG
   needs:
-    - "{{pages_build.name}}:{{pages_build.version}}@container-prep"
-  stage: test
+    - "{{default_distro.name}}:{{default_distro.versions[0]}}@container-prep"
+  stage: tier1
   script:
     - date '+%Y%m%d-%H%M%S'; NM_CHECKPATCH_FETCH_UPSTREAM=1 contrib/scripts/checkpatch-feature-branch.sh
   allow_failure: true
 
 check-tree:
   extends:
-    - .fdo.distribution-image@{{pages_build.name}}
+    - .fdo.distribution-image@{{default_distro.name}}
   variables:
-    FDO_DISTRIBUTION_VERSION: '{{pages_build.version}}'
-    FDO_DISTRIBUTION_TAG: ${{pages_build.name.upper()}}_TAG
+    FDO_DISTRIBUTION_VERSION: '{{default_distro.versions[0]}}'
+    FDO_DISTRIBUTION_TAG: ${{default_distro.name.upper()}}_TAG
   needs:
-    - "{{pages_build.name}}:{{pages_build.version}}@container-prep"
-  stage: test
+    - "{{default_distro.name}}:{{default_distro.versions[0]}}@container-prep"
+  stage: tier1
   script:
     - date '+%Y%m%d-%H%M%S'; contrib/scripts/nm-python-black-format.sh --check
     - date '+%Y%m%d-%H%M%S'; git ls-files -z -- 'po/*.po' | xargs -0 -n1 msgfmt -vc
@@ -242,9 +261,9 @@ pages:
   only:
     - main
   dependencies:
-    - t_{{pages_build.name}}:{{pages_build.version}}
+    - t_{{default_distro.name}}:{{default_distro.versions[0]}}
   needs:
-    - t_{{pages_build.name}}:{{pages_build.version}}
+    - t_{{default_distro.name}}:{{default_distro.versions[0]}}
 
 triage:issues:
   stage: triage
