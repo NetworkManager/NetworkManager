@@ -2,6 +2,11 @@
 
 set -ex
 
+die() {
+    printf "%s\n" "$*" >&2
+    exit 1
+}
+
 export PAGER=cat
 export OMP_NUM_THREADS=1
 
@@ -44,8 +49,46 @@ meson --version
 # to run that test as part of the build. Disable it.
 export NMTST_SKIP_CHECK_GITLAB_CI=1
 
+# Assert that "$1" is one of the valid values for NM_TEST_SELECT_RUN. die() otherwise.
+check_run_assert() {
+    { set +x; } 2>/dev/null
+    local run="$1"
+    local a
+
+    # These are the supported $NM_TEST_SELECT_RUN values.
+    local _CHECK_RUN_LIST=(
+        1
+        2
+        3
+        4
+        5
+        6
+        7
+        8
+        9
+        10
+    )
+
+    if [ "$run" = '' ] ; then
+        set -x
+        return 0
+    fi
+
+    for a in "${_CHECK_RUN_LIST[@]}" ; do
+        if [ "$a" = "$run" ] ; then
+            set -x
+            return 0
+        fi
+    done
+    die "invalid NM_TEST_SELECT_RUN value \"$1\""
+}
+
+check_run_assert "$NM_TEST_SELECT_RUN"
+
 check_run() {
     local test_no="$1"
+
+    check_run_assert "$test_no"
 
     # Usually, we run the build several times. However, for testing
     # the build script manually, it can be useful to explicitly select
@@ -54,7 +97,6 @@ check_run() {
 
     test -z "$NM_TEST_SELECT_RUN" -o "$NM_TEST_SELECT_RUN" = "$test_no"
 }
-
 
 check_run_clean() {
     if ! check_run "$1" ; then
