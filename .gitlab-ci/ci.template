@@ -199,6 +199,19 @@ t_{{distro.name}}:{{version}}:
     - .nm_artifacts_debug
 {% endif %}
   stage: tier{{distro.tier}}
+{% if distro.tier <= 1 %}
+  parallel:
+    matrix:
+      - NM_TEST_SELECT_RUN:
+        - autotools+gcc+docs+valgrind
+        - meson+gcc+docs+valgrind
+        - autotools+clang
+        - meson+clang
+        - rpm+autotools
+        - rpm+meson
+        - tarball
+        - subtree
+{% endif %}
   variables:
     FDO_DISTRIBUTION_VERSION: '{{version}}'
     FDO_DISTRIBUTION_TAG: ${{distro.name.upper()}}_TAG
@@ -261,9 +274,9 @@ pages:
   only:
     - main
   dependencies:
-    - t_{{default_distro.name}}:{{default_distro.versions[0]}}
+    - "t_{{default_distro.name}}:{{default_distro.versions[0]}}: [autotools+gcc+docs+valgrind]"
   needs:
-    - t_{{default_distro.name}}:{{default_distro.versions[0]}}
+    - "t_{{default_distro.name}}:{{default_distro.versions[0]}}: [autotools+gcc+docs+valgrind]"
 
 triage:issues:
   stage: triage

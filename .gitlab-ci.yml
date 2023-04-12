@@ -57,11 +57,11 @@ variables:
   #
   # This is done by running `ci-fairy generate-template` and possibly bumping
   # ".default_tag".
-  ALPINE_TAG:  '2023-04-11.0-c319e2a8ce5b'
-  CENTOS_TAG:  '2023-04-11.0-3322a2e54777'
-  DEBIAN_TAG:  '2023-04-11.0-b529fd8eba83'
-  FEDORA_TAG:  '2023-04-11.0-3322a2e54777'
-  UBUNTU_TAG:  '2023-04-11.0-b529fd8eba83'
+  ALPINE_TAG:  '2023-04-11.0-5bd75d53d745'
+  CENTOS_TAG:  '2023-04-11.0-5bda0c516ecd'
+  DEBIAN_TAG:  '2023-04-11.0-8dcd2b8ca112'
+  FEDORA_TAG:  '2023-04-11.0-5bda0c516ecd'
+  UBUNTU_TAG:  '2023-04-11.0-8dcd2b8ca112'
 
   ALPINE_EXEC: 'bash .gitlab-ci/alpine-install.sh'
   CENTOS_EXEC: 'bash .gitlab-ci/fedora-install.sh'
@@ -693,6 +693,17 @@ t_fedora:37:
     - .fdo.distribution-image@fedora
     - .nm_artifacts
   stage: tier1
+  parallel:
+    matrix:
+      - NM_TEST_SELECT_RUN:
+        - autotools+gcc+docs+valgrind
+        - meson+gcc+docs+valgrind
+        - autotools+clang
+        - meson+clang
+        - rpm+autotools
+        - rpm+meson
+        - tarball
+        - subtree
   variables:
     FDO_DISTRIBUTION_VERSION: '37'
     FDO_DISTRIBUTION_TAG: $FEDORA_TAG
@@ -1095,9 +1106,9 @@ pages:
   only:
     - main
   dependencies:
-    - t_fedora:37
+    - "t_fedora:37: [autotools+gcc+docs+valgrind]"
   needs:
-    - t_fedora:37
+    - "t_fedora:37: [autotools+gcc+docs+valgrind]"
 
 triage:issues:
   stage: triage
