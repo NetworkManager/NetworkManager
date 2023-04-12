@@ -4400,11 +4400,13 @@ find_master(NMManager             *self,
             NMActiveConnection   **out_master_ac,
             GError               **error)
 {
-    NMManagerPrivate     *priv = NM_MANAGER_GET_PRIVATE(self);
-    NMSettingConnection  *s_con;
-    const char           *master;
-    NMDevice             *master_device = NULL;
-    NMSettingsConnection *master_connection;
+    NMManagerPrivate            *priv = NM_MANAGER_GET_PRIVATE(self);
+    NMSettingConnection         *s_con;
+    const char                  *master;
+    NMDevice                    *master_device     = NULL;
+    NMSettingsConnection        *master_connection = NULL;
+    NMSettingsConnection *const *connections;
+    guint                        i;
 
     s_con = nm_connection_get_setting_connection(connection);
     g_assert(s_con);
@@ -4413,9 +4415,93 @@ find_master(NMManager             *self,
     if (master == NULL)
         return TRUE; /* success, but no master */
 
-    /* Try as an interface name first */
-    master_device = find_device_by_iface(self, master, NULL, connection);
-    if (master_device) {
+    _LOGD(LOGD_CORE,
+          "Looking for a master '%s' for connection '%s' (%s)",
+          master,
+          nm_connection_get_id(connection),
+          nm_connection_get_uuid(connection));
+
+    connections = nm_settings_get_connections_sorted_by_autoconnect_priority(priv->settings, NULL);
+    for (i = 0; connections[i]; i++) {
+        NMConnection *master_candidate = nm_settings_connection_get_connection(connections[i]);
+        NMDevice     *device_candidate;
+
+        if (nm_streq(nm_connection_get_uuid(master_candidate), master)) {
+            if (!is_compatible_with_slave(master_candidate, connection)) {
+                g_set_error(error,
+                            NM_MANAGER_ERROR,
+                            NM_MANAGER_ERROR_DEPENDENCY_FAILED,
+                            "The active connection on %s is not compatible",
+                            nm_device_get_iface(master_device));
+                return FALSE;
+            }
+
+            _LOGD(LOGD_CORE,
+                  "Will consider using connection '%s' (%s) as a master for '%s' (%s) "
+                  "because UUID matches",
+                  nm_connection_get_id(master_candidate),
+                  nm_connection_get_uuid(master_candidate),
+                  nm_connection_get_id(connection),
+                  nm_connection_get_uuid(connection));
+
+            master_connection = connections[i];
+        } else if (nm_connection_get_interface_name(master_candidate)
+                   && nm_streq(nm_connection_get_interface_name(master_candidate), master)) {
+            if (!is_compatible_with_slave(master_candidate, connection))
+                continue;
+
+            /* This might be good enough unless we find a better one (already active or UUID match) */
+            if (!master_connection) {
+                master_connection = connections[i];
+                _LOGD(LOGD_CORE,
+                      "Will consider using connection '%s' (%s) as a master for '%s' (%s) "
+                      "because device matches",
+                      nm_connection_get_id(master_candidate),
+                      nm_connection_get_uuid(master_candidate),
+                      nm_connection_get_id(connection),
+                      nm_connection_get_uuid(connection));
+            }
+        } else {
+            /* No match. */
+            continue;
+        }
+
+        /* Check if the master connection is activated on some device already */
+        c_list_for_each_entry (device_candidate, &priv->devices_lst_head, devices_lst) {
+            if (device_candidate == device)
+                continue;
+
+            if (nm_device_get_settings_connection(device_candidate) == connections[i]) {
+                master_device     = device_candidate;
+                master_connection = connections[i];
+                break;
+            }
+        }
+
+        if (master_device) {
+            /* Now we got a connection and also a device. Look no further. */
+            _LOGD(LOGD_CORE,
+                  "Will use connection '%s' (%s) as a master for '%s' (%s)",
+                  nm_connection_get_id(master_candidate),
+                  nm_connection_get_uuid(master_candidate),
+                  nm_connection_get_id(connection),
+                  nm_connection_get_uuid(connection));
+
+            break;
+        }
+    }
+
+    if (!master_connection) {
+        master_device = find_device_by_iface(self, master, NULL, connection);
+        if (!master_device) {
+            g_set_error(error,
+                        NM_MANAGER_ERROR,
+                        NM_MANAGER_ERROR_DEPENDENCY_FAILED,
+                        "Connection or device %s not found",
+                        master);
+            return FALSE;
+        }
+
         if (master_device == device) {
             g_set_error_literal(error,
                                 NM_MANAGER_ERROR,
@@ -4424,34 +4510,11 @@ find_master(NMManager             *self,
             return FALSE;
         }
 
-        master_connection = nm_device_get_settings_connection(master_device);
-        if (master_connection
-            && !is_compatible_with_slave(nm_settings_connection_get_connection(master_connection),
-                                         connection)) {
-            g_set_error(error,
-                        NM_MANAGER_ERROR,
-                        NM_MANAGER_ERROR_DEPENDENCY_FAILED,
-                        "The active connection on %s is not compatible",
-                        nm_device_get_iface(master_device));
-            return FALSE;
-        }
-    } else {
-        /* Try master as a connection UUID */
-        master_connection = nm_settings_get_connection_by_uuid(priv->settings, master);
-        if (master_connection) {
-            NMDevice *candidate;
-
-            /* Check if the master connection is activated on some device already */
-            c_list_for_each_entry (candidate, &priv->devices_lst_head, devices_lst) {
-                if (candidate == device)
-                    continue;
-
-                if (nm_device_get_settings_connection(candidate) == master_connection) {
-                    master_device = candidate;
-                    break;
-                }
-            }
-        }
+        _LOGD(LOGD_CORE,
+              "Master connection for '%s' (%s) not found, will use device '%s'",
+              nm_connection_get_id(connection),
+              nm_connection_get_uuid(connection),
+              nm_device_get_iface(master_device));
     }
 
     if (out_master_connection)
