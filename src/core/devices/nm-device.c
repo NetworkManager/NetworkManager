@@ -7860,6 +7860,10 @@ nm_device_unrealize(NMDevice *self, gboolean remove_resources, GError **error)
     /* Garbage-collect unneeded unrealized devices. */
     nm_device_recheck_available_connections(self);
 
+    /* In case the unrealized device is not going away, it may need to
+     * autoactivate.  Schedule also a check for that. */
+    nm_device_emit_recheck_auto_activate(self);
+
     return TRUE;
 }
 
