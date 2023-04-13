@@ -104,7 +104,7 @@ variables:
 {% for distro in distributions %}
 {% for version in distro.versions %}
 
-{{distro.name}}:{{version}}@prep:
+tier{{distro.tier}}:{{distro.name}}:{{version}}@prep:
   extends:
     - .fdo.container-build@{{distro.name}}
   stage: prep
@@ -113,6 +113,9 @@ variables:
     FDO_DISTRIBUTION_VERSION: '{{version}}'
     FDO_DISTRIBUTION_TAG: ${{distro.name.upper()}}_TAG
     FDO_DISTRIBUTION_EXEC: ${{distro.name.upper()}}_EXEC
+{% if distro.tier > 1 %}
+  when: manual
+{% endif %}
 {% endfor %}
 {% endfor %}
 
@@ -222,10 +225,7 @@ t_{{distro.name}}:{{version}}:
     {% endfor %}
     {% endif %}
   needs:
-    - "{{distro.name}}:{{version}}@prep"
-{% if distro.tier > 1 %}
-  when: manual
-{% endif %}
+    - "tier{{distro.tier}}:{{distro.name}}:{{version}}@prep"
 {% endfor %}
 {% endfor %}
 
@@ -242,7 +242,7 @@ check-patch:
     FDO_DISTRIBUTION_VERSION: '{{default_distro.versions[0]}}'
     FDO_DISTRIBUTION_TAG: ${{default_distro.name.upper()}}_TAG
   needs:
-    - "{{default_distro.name}}:{{default_distro.versions[0]}}@prep"
+    - "tier{{default_distro.tier}}:{{default_distro.name}}:{{default_distro.versions[0]}}@prep"
   stage: tier1
   script:
     - date '+%Y%m%d-%H%M%S'; NM_CHECKPATCH_FETCH_UPSTREAM=1 contrib/scripts/checkpatch-feature-branch.sh
@@ -255,7 +255,7 @@ check-tree:
     FDO_DISTRIBUTION_VERSION: '{{default_distro.versions[0]}}'
     FDO_DISTRIBUTION_TAG: ${{default_distro.name.upper()}}_TAG
   needs:
-    - "{{default_distro.name}}:{{default_distro.versions[0]}}@prep"
+    - "tier{{default_distro.tier}}:{{default_distro.name}}:{{default_distro.versions[0]}}@prep"
   stage: tier1
   script:
     - date '+%Y%m%d-%H%M%S'; contrib/scripts/nm-python-black-format.sh --check
