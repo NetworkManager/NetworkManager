@@ -286,3 +286,10 @@ triage:issues:
     - gitlab-triage -d --token $API_TOKEN --source-id $SOURCE_ID
   only:
     - schedules
+
+# Have detached MR pipeline (https://docs.gitlab.com/ee/ci/pipelines/merge_request_pipelines.html)
+# https://gitlab.freedesktop.org/freedesktop/freedesktop/-/issues/540#what-it-means-for-me-a-maintainer-of-a-project-part-of-gitlabfreedesktoporg
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+    - if: $CI_PIPELINE_SOURCE == 'push'

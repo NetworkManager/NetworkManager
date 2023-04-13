@@ -57,11 +57,11 @@ variables:
   #
   # This is done by running `ci-fairy generate-template` and possibly bumping
   # ".default_tag".
-  ALPINE_TAG:  'tag-c6ac275362b2'
-  CENTOS_TAG:  'tag-80e000f258af'
-  DEBIAN_TAG:  'tag-f961edd7a574'
-  FEDORA_TAG:  'tag-80e000f258af'
-  UBUNTU_TAG:  'tag-f961edd7a574'
+  ALPINE_TAG:  'tag-20ccfc6f0a87'
+  CENTOS_TAG:  'tag-cdc72bd04206'
+  DEBIAN_TAG:  'tag-bc68fd50d074'
+  FEDORA_TAG:  'tag-cdc72bd04206'
+  UBUNTU_TAG:  'tag-bc68fd50d074'
 
   ALPINE_EXEC: 'bash .gitlab-ci/alpine-install.sh'
   CENTOS_EXEC: 'bash .gitlab-ci/fedora-install.sh'
@@ -1118,3 +1118,10 @@ triage:issues:
     - gitlab-triage -d --token $API_TOKEN --source-id $SOURCE_ID
   only:
     - schedules
+
+# Have detached MR pipeline (https://docs.gitlab.com/ee/ci/pipelines/merge_request_pipelines.html)
+# https://gitlab.freedesktop.org/freedesktop/freedesktop/-/issues/540#what-it-means-for-me-a-maintainer-of-a-project-part-of-gitlabfreedesktoporg
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+    - if: $CI_PIPELINE_SOURCE == 'push'
