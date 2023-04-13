@@ -131,7 +131,7 @@ check_gitlab_pipeline() {
         return 1
     fi
 
-    PIPELINE_STATUSES="$(curl --no-progress-meter "https://gitlab.freedesktop.org/api/v4/projects/411/pipelines/$PIPELINE_ID/jobs" 2>/dev/null | jq '.[].status')"
+    PIPELINE_STATUSES="$(curl --no-progress-meter "https://gitlab.freedesktop.org/api/v4/projects/411/pipelines/$PIPELINE_ID/jobs?per_page=100" 2>/dev/null | jq '.[] | select(.stage!="prep" and .stage!="tier3") | .status')"
 
     if ! echo "$PIPELINE_STATUSES" | grep -q '^"success"$' ; then
         echo "Cannot find successful jobs for branch $BRANCH. Check \"https://gitlab.freedesktop.org/NetworkManager/NetworkManager/-/pipelines/$PIPELINE_ID\""
@@ -414,6 +414,7 @@ fi
 if [ $CHECK_GITLAB = 1 ]; then
     if ! check_gitlab_pipeline "$CUR_BRANCH" "$CUR_HEAD" ; then
         echo "Check the pipelines for branch \"$CUR_BRANCH\" at https://gitlab.freedesktop.org/NetworkManager/NetworkManager/-/pipelines?ref=$CUR_BRANCH"
+        echo "Wait for pipeline with \`ci-fairy wait-for-pipeline --project NetworkManager/NetworkManager --sha \"$CUR_HEAD\"\`"
         die "It seems not all gitlab-ci jobs were running/succeeding. Skip this check with --no-check-gitlab"
     fi
 fi

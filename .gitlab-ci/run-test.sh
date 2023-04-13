@@ -2,6 +2,11 @@
 
 set -ex
 
+die() {
+    printf "%s\n" "$*" >&2
+    exit 1
+}
+
 export PAGER=cat
 export OMP_NUM_THREADS=1
 
@@ -44,17 +49,57 @@ meson --version
 # to run that test as part of the build. Disable it.
 export NMTST_SKIP_CHECK_GITLAB_CI=1
 
+# Assert that "$1" is one of the valid values for NM_TEST_SELECT_RUN. die() otherwise.
+check_run_assert() {
+    { set +x; } 2>/dev/null
+    local run="$1"
+    local a
+
+    # These are the supported $NM_TEST_SELECT_RUN values.
+    local _CHECK_RUN_LIST=(
+        autotools+gcc+docs+valgrind
+        meson+gcc+docs+valgrind
+        autotools+clang
+        meson+clang
+        autotools+gcc+docs+el7+py2
+        rpm+autotools
+        rpm+meson
+        tarball
+        subtree
+
+        all
+        none
+    )
+
+    if [ "$run" = all ] ; then
+        set -x
+        return 0
+    fi
+
+    for a in "${_CHECK_RUN_LIST[@]}" ; do
+        if [ "$a" = "$run" ] ; then
+            set -x
+            return 0
+        fi
+    done
+    die "invalid NM_TEST_SELECT_RUN value \"$1\""
+}
+
+[ -z "$NM_TEST_SELECT_RUN" ] && NM_TEST_SELECT_RUN=all
+check_run_assert "$NM_TEST_SELECT_RUN"
+
 check_run() {
     local test_no="$1"
+
+    check_run_assert "$test_no"
 
     # Usually, we run the build several times. However, for testing
     # the build script manually, it can be useful to explicitly select
     # one step to run. For example, if step 3 is known to fail, you
-    # can still manually run step 4 by setting NM_TEST_SELECT_RUN=4.
+    # can still manually run step A by setting NM_TEST_SELECT_RUN=A.
 
-    test -z "$NM_TEST_SELECT_RUN" -o "$NM_TEST_SELECT_RUN" = "$test_no"
+    test "$NM_TEST_SELECT_RUN" = all -o "$NM_TEST_SELECT_RUN" = "$test_no"
 }
-
 
 check_run_clean() {
     if ! check_run "$1" ; then
@@ -64,21 +109,21 @@ check_run_clean() {
     return 0
 }
 
-if check_run_clean 1 ; then
+if check_run_clean autotools+gcc+docs+valgrind ; then
     BUILD_TYPE=autotools CC=gcc WITH_DOCS=1 WITH_VALGRIND=1 contrib/scripts/nm-ci-run.sh
     mv build/INST/share/gtk-doc/html "$ARTIFACT_DIR/docs-html"
 fi
 
-check_run_clean 2 && BUILD_TYPE=meson     CC=gcc   WITH_DOCS=1 WITH_VALGRIND=1 contrib/scripts/nm-ci-run.sh
-check_run_clean 3 && BUILD_TYPE=autotools CC=clang WITH_DOCS=0                 contrib/scripts/nm-ci-run.sh
-check_run_clean 4 && BUILD_TYPE=meson     CC=clang WITH_DOCS=0                 contrib/scripts/nm-ci-run.sh
+check_run_clean meson+gcc+docs+valgrind && BUILD_TYPE=meson     CC=gcc   WITH_DOCS=1 WITH_VALGRIND=1 contrib/scripts/nm-ci-run.sh
+check_run_clean autotools+clang         && BUILD_TYPE=autotools CC=clang WITH_DOCS=0                 contrib/scripts/nm-ci-run.sh
+check_run_clean meson+clang             && BUILD_TYPE=meson     CC=clang WITH_DOCS=0                 contrib/scripts/nm-ci-run.sh
 
-check_run_clean 5 && test $IS_CENTOS_7 = 1 && PYTHON=python2 BUILD_TYPE=autotools CC=gcc WITH_DOCS=1 contrib/scripts/nm-ci-run.sh
+check_run_clean autotools+gcc+docs+el7+py2 && test $IS_CENTOS_7 = 1 && PYTHON=python2 BUILD_TYPE=autotools CC=gcc WITH_DOCS=1 contrib/scripts/nm-ci-run.sh
 
-check_run_clean 6 && test $IS_FEDORA = 1 -o $IS_CENTOS = 1 && ./contrib/fedora/rpm/build_clean.sh -g -w crypto_gnutls -w debug -w iwd -w test -W meson
-check_run_clean 7 && test $IS_FEDORA = 1                   && ./contrib/fedora/rpm/build_clean.sh -g -w crypto_gnutls -w debug -w iwd -w test -w meson
+check_run_clean rpm+autotools && test $IS_FEDORA = 1 -o $IS_CENTOS = 1 && ./contrib/fedora/rpm/build_clean.sh -g -w crypto_gnutls -w debug -w iwd -w test -W meson
+check_run_clean rpm+meson     && test $IS_FEDORA = 1                   && ./contrib/fedora/rpm/build_clean.sh -g -w crypto_gnutls -w debug -w iwd -w test -w meson
 
-if check_run_clean 8 && [ "$NM_BUILD_TARBALL" = 1 ]; then
+if check_run_clean tarball && [ "$NM_BUILD_TARBALL" = 1 ]; then
     SIGN_SOURCE=0 ./contrib/fedora/rpm/build_clean.sh -r
     mv ./NetworkManager-1*.tar.xz "$ARTIFACT_DIR/"
     mv ./contrib/fedora/rpm/latest/SRPMS/NetworkManager-1*.src.rpm "$ARTIFACT_DIR/"
@@ -110,7 +155,7 @@ test_subtree() {
     popd
 }
 
-if check_run_clean 10; then
+if check_run_clean subtree; then
     for d in c-list c-rbtree c-siphash c-stdaux n-acd n-dhcp4 ; do
         for cc in gcc clang; do
             test_subtree "$d" "$cc"
@@ -120,18 +165,16 @@ fi
 
 ###############################################################################
 
-if [ -z "$NM_TEST_SELECT_RUN" ] ; then
+if [ "$NM_BUILD_TARBALL" = 1 ]; then
     do_clean
-    if [ "$NM_BUILD_TARBALL" = 1 ]; then
-        if check_run 1 ; then
-            mv "$ARTIFACT_DIR/docs-html/" ./
-        fi
-        if check_run 8 ; then
-            mv \
-               "$ARTIFACT_DIR"/NetworkManager-1*.tar.xz \
-               "$ARTIFACT_DIR"/NetworkManager-1*.src.rpm \
-               ./
-        fi
+    if check_run autotools+gcc+docs+valgrind ; then
+        mv "$ARTIFACT_DIR/docs-html/" ./
+    fi
+    if check_run tarball ; then
+        mv \
+           "$ARTIFACT_DIR"/NetworkManager-1*.tar.xz \
+           "$ARTIFACT_DIR"/NetworkManager-1*.src.rpm \
+           ./
     fi
 fi
 

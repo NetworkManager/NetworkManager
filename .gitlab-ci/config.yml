@@ -7,16 +7,29 @@
 # https://gitlab.freedesktop.org/freedesktop/ci-templates
 #
 
-# We're happy to rebuild all containers when one changes.
-.default_tag: &default_tag '2023-01-18.0'
-
+# Some distros are fairly similar, and we reuse similar scripts.
+# The base type maps the distro name to their base.
+base_types:
+  fedora: fedora
+  centos: fedora
+  debian: debian
+  ubuntu: debian
+  alpine: alpine
 
 # The list of all distributions we want to create job for.
-# The template generates manual jobs for all these.
 distributions:
   - name: fedora
-    tag: *default_tag
-    base_type: fedora
+    # The first tier:1 in the list is used to build the pages and check-{tree,patch}
+    tier: 1
+    versions:
+      - '37'
+  - name: fedora
+    tier: 2
+    versions:
+      - '36'
+      - '38'
+  - name: fedora
+    tier: 3
     versions:
       - '30'
       - '31'
@@ -24,12 +37,8 @@ distributions:
       - '33'
       - '34'
       - '35'
-      - '36'
-      - '37'
-      - '38'
   - name: ubuntu
-    tag: *default_tag
-    base_type: debian
+    tier: 2
     versions:
       - '18.04'
       - '20.04'
@@ -37,33 +46,31 @@ distributions:
       - 'devel'
       - 'rolling'
   - name: debian
-    tag: *default_tag
-    base_type: debian
+    tier: 2
     versions:
-      - '9'
       - '10'
       - '11'
-      - 'testing'
       - 'sid'
+  - name: debian
+    tier: 3
+    versions:
+      - '9'
+      - 'testing'
   - name: centos
-    tag: *default_tag
-    base_type: fedora
+    tier: 2
     versions:
       - '7.5.1804'
+      - '7.9.2009'
+      - '8.1.1911'
+      - '8.3.2011'
+  - name: centos
+    tier: 3
+    versions:
       - '7.6.1810'
       - '7.7.1908'
       - '7.8.2003'
-      - '7.9.2009'
-      - '8.1.1911'
       - '8.2.2004'
-      - '8.3.2011'
   - name: alpine
-    tag: *default_tag
-    base_type: alpine
+    tier: 2
     versions:
       - 'latest'
-
-# specifies which of the above distros is used as source for pages
-pages_build:
-  name: fedora
-  version: '37'
