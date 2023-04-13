@@ -7,22 +7,28 @@
 # https://gitlab.freedesktop.org/freedesktop/ci-templates
 #
 
+# Some distros are fairly similar, and we reuse similar scripts.
+# The base type maps the distro name to their base.
+base_types:
+  fedora: fedora
+  centos: fedora
+  debian: debian
+  ubuntu: debian
+  alpine: alpine
+
 # The list of all distributions we want to create job for.
 distributions:
   - name: fedora
-    base_type: fedora
     # The first tier:1 in the list is used to build the pages and check-{tree,patch}
     tier: 1
     versions:
       - '37'
   - name: fedora
-    base_type: fedora
     tier: 2
     versions:
       - '36'
       - '38'
   - name: fedora
-    base_type: fedora
     tier: 3
     versions:
       - '30'
@@ -32,7 +38,6 @@ distributions:
       - '34'
       - '35'
   - name: ubuntu
-    base_type: debian
     tier: 2
     versions:
       - '18.04'
@@ -41,20 +46,17 @@ distributions:
       - 'devel'
       - 'rolling'
   - name: debian
-    base_type: debian
     tier: 2
     versions:
       - '10'
       - '11'
       - 'sid'
   - name: debian
-    base_type: debian
     tier: 3
     versions:
       - '9'
       - 'testing'
   - name: centos
-    base_type: fedora
     tier: 2
     versions:
       - '7.5.1804'
@@ -62,7 +64,6 @@ distributions:
       - '8.1.1911'
       - '8.3.2011'
   - name: centos
-    base_type: fedora
     tier: 3
     versions:
       - '7.6.1810'
@@ -70,7 +71,6 @@ distributions:
       - '7.8.2003'
       - '8.2.2004'
   - name: alpine
-    base_type: alpine
     tier: 2
     versions:
       - 'latest'

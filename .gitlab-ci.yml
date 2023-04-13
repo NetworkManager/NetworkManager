@@ -57,11 +57,11 @@ variables:
   #
   # This is done by running `ci-fairy generate-template` and possibly bumping
   # ".default_tag".
-  ALPINE_TAG:  'tag-0a615b61395f'
-  CENTOS_TAG:  'tag-87fa88557da7'
-  DEBIAN_TAG:  'tag-2edf40356382'
-  FEDORA_TAG:  'tag-87fa88557da7'
-  UBUNTU_TAG:  'tag-2edf40356382'
+  ALPINE_TAG:  'tag-93cf50e3b143'
+  CENTOS_TAG:  'tag-43e358544423'
+  DEBIAN_TAG:  'tag-08e17e4980fb'
+  FEDORA_TAG:  'tag-43e358544423'
+  UBUNTU_TAG:  'tag-08e17e4980fb'
 
   ALPINE_EXEC: 'bash .gitlab-ci/alpine-install.sh'
   CENTOS_EXEC: 'bash .gitlab-ci/fedora-install.sh'

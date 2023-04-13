@@ -17,10 +17,10 @@
 
 .templates_sha: &template_sha ffe4d1b10aab7534489f0c4bbc4c5899df17d3f2 # see https://docs.gitlab.com/ee/ci/yaml/#includefile
 
-{# Group distros by their common (name,base_type) tuples.#}
+{# Group distros by their common (name,) tuples.#}
 {% set distro_groups = [] %}
 {% for distro in distributions %}
-  {% set g = {'name':distro.name,'base_type':distro.base_type} %}
+  {% set g = {'name':distro.name} %}
   {% if g not in distro_groups %}
   {%   do distro_groups.append(g) %}
   {% endif %}
@@ -65,13 +65,13 @@ variables:
   {{"%-13s"| format(distro_group.name.upper() + '_TAG:')}}'tag-{{
     (ci_fairy.hashfiles('./.gitlab-ci/config.yml',
                         './.gitlab-ci/ci.template',
-                        './.gitlab-ci/' + distro_group.base_type + '-install.sh',
-                        './contrib/' + distro_group.base_type + '/REQUIRED_PACKAGES'))[0:12]
+                        './.gitlab-ci/' + base_types[distro_group.name] + '-install.sh',
+                        './contrib/' + base_types[distro_group.name] + '/REQUIRED_PACKAGES'))[0:12]
   }}'
 {% endfor %}
 
 {% for distro_group in distro_groups|sort(attribute='name') %}
-  {{"%-13s"| format(distro_group.name.upper() + '_EXEC:')}}'bash .gitlab-ci/{{distro_group.base_type}}-install.sh'
+  {{"%-13s"| format(distro_group.name.upper() + '_EXEC:')}}'bash .gitlab-ci/{{base_types[distro_group.name]}}-install.sh'
 {% endfor %}
 
 .nm_artifacts:
