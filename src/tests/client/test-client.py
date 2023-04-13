@@ -2172,7 +2172,7 @@ class TestNmCloudSetup(TestNmClient):
                 [sys.executable, service_path],
                 stdin=subprocess.PIPE,
                 env=env,
-                pass_fds=(s.fileno(),),
+                pass_fds=(3,),
                 preexec_fn=pass_socket,
             )
 
