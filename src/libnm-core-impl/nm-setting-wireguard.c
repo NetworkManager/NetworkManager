@@ -564,7 +564,7 @@ nm_wireguard_peer_get_allowed_ips_len(const NMWireGuardPeer *self)
  * @self: the #NMWireGuardPeer instance
  * @idx: the index from zero to (allowed-ips-len - 1) to
  *   retrieve.
- * @out_is_valid: (optional): %TRUE if the returned value is a valid allowed-ip
+ * @out_is_valid: (nullable): %TRUE if the returned value is a valid allowed-ip
  *   setting.
  *   This parameter is wrongly not marked as (out) argument, it is
  *   thus not accessible via introspection. This cannot be fixed without
