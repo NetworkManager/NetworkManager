@@ -754,23 +754,26 @@ fi
 AC_SUBST(DBUS_SYS_DIR)
 
 # pppd
+PPPD_VERSION=2.4.9
+PKG_CHECK_EXISTS([pppd], [
+	PPPD_VERSION=`$PKG_CONFIG --modversion pppd`
+	PPPD_CFLAGS=`$PKG_CONFIG --cflags pppd`
+])
+
 AC_ARG_ENABLE(ppp,
               AS_HELP_STRING([--enable-ppp], [enable PPP/PPPoE support]),
               [enable_ppp=${enableval}], [enable_ppp=yes])
 if test "${enable_ppp}" = "yes"; then
-	AC_CHECK_HEADERS(pppd/pppd.h,,
-	                 AC_MSG_ERROR("couldn't find pppd.h. pppd development headers are required."))
-
+	if test -z "$PPPD_CFLAGS" ; then
+		AC_CHECK_HEADERS(pppd/pppd.h,,
+		                 AC_MSG_ERROR("couldn't find pppd.h. pppd development headers are required."),)
+	fi
+	AC_SUBST(PPPD_CFLAGS, ["$PPPD_CFLAGS"])
 	AC_DEFINE(WITH_PPP, 1, [Define if you have PPP support])
 else
 	AC_DEFINE(WITH_PPP, 0, [Define if you have PPP support])
 fi
 AM_CONDITIONAL(WITH_PPP, test "${enable_ppp}" = "yes")
-
-PPPD_VERSION=2.4.9
-PKG_CHECK_EXISTS([pppd], [
-	PPPD_VERSION=`$PKG_CONFIG --modversion pppd`
-])
 
 AC_ARG_WITH([pppd-plugin-dir],
             AS_HELP_STRING([--with-pppd-plugin-dir=DIR], [path to the pppd plugins directory]))
@@ -789,11 +792,6 @@ else
 fi
 AC_DEFINE_UNQUOTED(PPPD_PATH, "$PPPD_PATH", [Define to path of pppd binary])
 AC_SUBST(PPPD_PATH)
-
-AC_CHECK_HEADERS(pppd/chap.h)
-if test "x$ac_cv_header_pppd_chap_h" = xyes; then
-	AC_DEFINE(WITH_PPP_VERSION_2_5_OR_NEWER, 1, "Defined if one has a recent version of pppd headers installed")
-fi
 
 # ModemManager1 with libmm-glib
 AC_ARG_WITH(modem-manager-1,
