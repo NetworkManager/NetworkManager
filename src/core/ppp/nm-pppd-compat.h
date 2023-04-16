@@ -1,122 +1,64 @@
 /* SPDX-License-Identifier: LGPL-2.1-or-later */
 /*
- * Copyright (C) Eivind Næss, eivnaes@yahoo.com
+ * Copyright (C) 2023 Eivind Næss, eivnaes@yahoo.com
  */
 
 #ifndef __NM_PPPD_COMPAT_H__
 #define __NM_PPPD_COMPAT_H__
 
-/* Define INET6 to compile with IPv6 support against older pppd headers,
-   pppd >= 2.5.0 use PPP_WITH_IPV6CP and is defined in pppdconf.h */
-#define INET6 1
+#define NM_PPPD_COMPAT_MAXNAMELEN   256
+#define NM_PPPD_COMPAT_MAXSECRETLEN 256
 
-/* PPP < 2.5.0 defines and exports VERSION which overlaps with current package VERSION define.
-   this silly macro magic is to work around that. */
-#undef VERSION
-#include <pppd/pppd.h>
+int nm_pppd_compat_get_ifunit(void);
 
-#ifndef PPPD_VERSION
-#define PPPD_VERSION VERSION
-#endif
+const char *nm_pppd_compat_get_ifname(void);
+void        nm_pppd_compat_set_ifname(const char *ifname);
 
-#include <pppd/fsm.h>
-#include <pppd/eui64.h>
-#include <pppd/ipcp.h>
-#include <pppd/ipv6cp.h>
-#include <pppd/upap.h>
+const char *nm_pppd_compat_get_ipparam(void);
 
-#ifdef WITH_PPP_VERSION_2_5_OR_NEWER
-#include <pppd/chap.h>
-#else
-#include <pppd/chap-new.h>
-#include <pppd/chap_ms.h>
-#endif
+typedef struct {
+    /* has information from "ipcp_options" */
+    in_addr_t ouraddr;
+    in_addr_t hisaddr;
+    in_addr_t dnsaddr[2];
+    in_addr_t winsaddr[2];
+} NMPppdCompatIPCPOptions;
 
-#ifndef PPP_PROTO_CHAP
-#define PPP_PROTO_CHAP 0xc223
-#endif
+void nm_pppd_compat_get_ipcp_options(NMPppdCompatIPCPOptions *out_got,
+                                     NMPppdCompatIPCPOptions *out_his);
 
-#ifndef PPP_PROTO_EAP
-#define PPP_PROTO_EAP 0xc227
-#endif
+typedef struct {
+    /* has information from "ipv6cp_options" */
+    guint64 ourid;
+    guint64 hisid;
+} NMPppdCompatIPV6CPOptions;
 
-#ifndef WITH_PPP_VERSION_2_5_OR_NEWER
+void nm_pppd_compat_get_ipv6cp_options(NMPppdCompatIPV6CPOptions *out_got,
+                                       NMPppdCompatIPV6CPOptions *out_his);
 
-static inline bool
-debug_on(void)
-{
-    return debug;
-}
+void nm_pppd_compat_set_chap_passwd_hook(int (*hook)(char *user, char *password));
 
-static inline const char *
-ppp_ipparam(void)
-{
-    return ipparam;
-}
+void nm_pppd_compat_set_chap_check_hook(int (*hook)(void));
 
-static inline int
-ppp_ifunit(void)
-{
-    return ifunit;
-}
+void nm_pppd_compat_set_pap_passwd_hook(int (*hook)(char *user, char *passwd));
 
-static inline const char *
-ppp_ifname(void)
-{
-    return ifname;
-}
+void nm_pppd_compat_set_pap_check_hook(int (*hook)(void));
 
-static inline int
-ppp_get_mtu(int idx)
-{
-    return netif_get_mtu(idx);
-}
+typedef enum {
+    NM_PPPD_COMPAT_NF_PID_CHANGE,
+    NM_PPPD_COMPAT_NF_PHASE_CHANGE,
+    NM_PPPD_COMPAT_NF_EXIT,
+    NM_PPPD_COMPAT_NF_SIGNALED,
+    NM_PPPD_COMPAT_NF_IP_UP,
+    NM_PPPD_COMPAT_NF_IP_DOWN,
+    NM_PPPD_COMPAT_NF_IPV6_UP,
+    NM_PPPD_COMPAT_NF_IPV6_DOWN,
+    NM_PPPD_COMPAT_NF_AUTH_UP,
+    NM_PPPD_COMPAT_NF_LINK_DOWN,
+    NM_PPPD_COMPAT_NF_FORK,
+} NMPppdCompatNotifyT;
 
-static inline void
-ppp_set_ifname(const char *new_name)
-{
-    g_strlcpy(ifname, new_name, IF_NAMESIZE);
-}
+gboolean
+nm_pppd_compat_add_notify(NMPppdCompatNotifyT type, void (*func)(void *ctx, int arg), void *ctx);
 
-typedef enum ppp_notify {
-    NF_PID_CHANGE,
-    NF_PHASE_CHANGE,
-    NF_EXIT,
-    NF_SIGNALED,
-    NF_IP_UP,
-    NF_IP_DOWN,
-    NF_IPV6_UP,
-    NF_IPV6_DOWN,
-    NF_AUTH_UP,
-    NF_LINK_DOWN,
-    NF_FORK,
-    NF_MAX_NOTIFY
-} ppp_notify_t;
-
-typedef void(ppp_notify_fn)(void *ctx, int arg);
-
-static inline void
-ppp_add_notify(ppp_notify_t type, ppp_notify_fn *func, void *ctx)
-{
-    static struct notifier **list[NF_MAX_NOTIFY] = {
-        [NF_PID_CHANGE]   = &pidchange,
-        [NF_PHASE_CHANGE] = &phasechange,
-        [NF_EXIT]         = &exitnotify,
-        [NF_SIGNALED]     = &sigreceived,
-        [NF_IP_UP]        = &ip_up_notifier,
-        [NF_IP_DOWN]      = &ip_down_notifier,
-        [NF_IPV6_UP]      = &ipv6_up_notifier,
-        [NF_IPV6_DOWN]    = &ipv6_down_notifier,
-        [NF_AUTH_UP]      = &auth_up_notifier,
-        [NF_LINK_DOWN]    = &link_down_notifier,
-        [NF_FORK]         = &fork_notifier,
-    };
-
-    struct notifier **notify = list[type];
-    if (notify) {
-        add_notifier(notify, func, ctx);
-    }
-}
-
-#endif /* #ifndef WITH_PPP_VERSION_2_5_OR_NEWER */
 #endif /* #ifdef __NM_PPPD_COMPAT_H__ */
