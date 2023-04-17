@@ -2234,6 +2234,96 @@ class TestNmCloudSetup(TestNmClient):
         self.md_conn.getresponse().read()
 
     @cloud_setup_test
+    def test_aliyun(self):
+        self._mock_devices()
+
+        _aliyun_meta = "/2016-01-01/meta-data/"
+        _aliyun_macs = _aliyun_meta + "network/interfaces/macs/"
+        self._mock_path(_aliyun_meta, "ami-id\n")
+        self._mock_path(
+            _aliyun_macs, TestNmCloudSetup._mac2 + "\n" + TestNmCloudSetup._mac1
+        )
+        self._mock_path(
+            _aliyun_macs + TestNmCloudSetup._mac2 + "/vpc-cidr-block", "172.31.16.0/20"
+        )
+        self._mock_path(
+            _aliyun_macs + TestNmCloudSetup._mac2 + "/private-ipv4s",
+            TestNmCloudSetup._ip1,
+        )
+        self._mock_path(
+            _aliyun_macs + TestNmCloudSetup._mac2 + "/primary-ip-address",
+            TestNmCloudSetup._ip1,
+        )
+        self._mock_path(
+            _aliyun_macs + TestNmCloudSetup._mac2 + "/netmask", "255.255.255.0"
+        )
+        self._mock_path(
+            _aliyun_macs + TestNmCloudSetup._mac2 + "/gateway", "172.31.26.2"
+        )
+        self._mock_path(
+            _aliyun_macs + TestNmCloudSetup._mac1 + "/vpc-cidr-block", "172.31.166.0/20"
+        )
+        self._mock_path(
+            _aliyun_macs + TestNmCloudSetup._mac1 + "/private-ipv4s",
+            TestNmCloudSetup._ip2,
+        )
+        self._mock_path(
+            _aliyun_macs + TestNmCloudSetup._mac1 + "/primary-ip-address",
+            TestNmCloudSetup._ip2,
+        )
+        self._mock_path(
+            _aliyun_macs + TestNmCloudSetup._mac1 + "/netmask", "255.255.255.0"
+        )
+        self._mock_path(
+            _aliyun_macs + TestNmCloudSetup._mac1 + "/gateway", "172.31.176.2"
+        )
+
+        # Run nm-cloud-setup for the first time
+        nmc = self.call_pexpect(
+            ENV_NM_TEST_CLIENT_CLOUD_SETUP_PATH,
+            [],
+            {
+                "NM_CLOUD_SETUP_ALIYUN_HOST": self.md_url,
+                "NM_CLOUD_SETUP_LOG": "trace",
+                "NM_CLOUD_SETUP_ALIYUN": "yes",
+            },
+        )
+
+        nmc.pexp.expect("provider aliyun detected")
+        nmc.pexp.expect("found interfaces: 9E:C0:3E:92:24:2D, 53:E9:7E:52:8D:A8")
+        nmc.pexp.expect("get-config: start fetching meta data")
+        nmc.pexp.expect("get-config: success")
+        nmc.pexp.expect("meta data received")
+        # One of the devices has no IPv4 configuration to be modified
+        nmc.pexp.expect("device has no suitable applied connection. Skip")
+        # The other one was lacking an address set it up.
+        nmc.pexp.expect("some changes were applied for provider aliyun")
+        nmc.pexp.expect(pexpect.EOF)
+
+        # Run nm-cloud-setup for the second time
+        nmc = self.call_pexpect(
+            ENV_NM_TEST_CLIENT_CLOUD_SETUP_PATH,
+            [],
+            {
+                "NM_CLOUD_SETUP_ALIYUN_HOST": self.md_url,
+                "NM_CLOUD_SETUP_LOG": "trace",
+                "NM_CLOUD_SETUP_ALIYUN": "yes",
+            },
+        )
+
+        nmc.pexp.expect("provider aliyun detected")
+        nmc.pexp.expect("found interfaces: 9E:C0:3E:92:24:2D, 53:E9:7E:52:8D:A8")
+        nmc.pexp.expect("get-config: starting")
+        nmc.pexp.expect("get-config: success")
+        nmc.pexp.expect("meta data received")
+        # No changes this time
+        nmc.pexp.expect('device needs no update to applied connection "con-eth0"')
+        nmc.pexp.expect("no changes were applied for provider aliyun")
+        nmc.pexp.expect(pexpect.EOF)
+
+        Util.valgrind_check_log(nmc.valgrind_log, "test_aliyun")
+
+    @cloud_setup_test
     def test_ec2(self):
         self._mock_devices()
 
