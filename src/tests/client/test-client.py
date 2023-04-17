@@ -2478,6 +2478,67 @@ class TestNmCloudSetup(TestNmClient):
 
         Util.valgrind_check_log(nmc.valgrind_log, "test_ec2")
 
+    @cloud_setup_test
+    def test_gcp(self):
+        self._mock_devices()
+
+        gcp_meta = "/computeMetadata/v1/instance/"
+        gcp_iface = gcp_meta + "network-interfaces/"
+        self._mock_path(gcp_meta + "id", "")
+        self._mock_path(gcp_iface, "0\n1\n")
+        self._mock_path(gcp_iface + "0/mac", TestNmCloudSetup._mac1)
+        self._mock_path(gcp_iface + "1/mac", TestNmCloudSetup._mac2)
+        self._mock_path(gcp_iface + "0/forwarded-ips/", "0\n")
+        self._mock_path(gcp_iface + "0/forwarded-ips/0", TestNmCloudSetup._ip1)
+        self._mock_path(gcp_iface + "1/forwarded-ips/", "0\n")
+        self._mock_path(gcp_iface + "1/forwarded-ips/0", TestNmCloudSetup._ip2)
+
+        # Run nm-cloud-setup for the first time
+        nmc = self.call_pexpect(
+            ENV_NM_TEST_CLIENT_CLOUD_SETUP_PATH,
+            [],
+            {
+                "NM_CLOUD_SETUP_GCP_HOST": self.md_url,
+                "NM_CLOUD_SETUP_LOG": "trace",
+                "NM_CLOUD_SETUP_GCP": "yes",
+            },
+        )
+
+        nmc.pexp.expect("provider GCP detected")
+        nmc.pexp.expect("found interfaces: 9E:C0:3E:92:24:2D, 53:E9:7E:52:8D:A8")
+        nmc.pexp.expect("found GCP interfaces: 2")
+        nmc.pexp.expect("GCP interface\[0]: found a requested device with hwaddr")
+        nmc.pexp.expect("get-config: success")
+        nmc.pexp.expect("meta data received")
+        # One of the devices has no IPv4 configuration to be modified
+        nmc.pexp.expect("device has no suitable applied connection. Skip")
+        # The other one was lacking an address set it up.
+        nmc.pexp.expect("some changes were applied for provider GCP")
+        nmc.pexp.expect(pexpect.EOF)
+
+        # Run nm-cloud-setup for the second time
+        nmc = self.call_pexpect(
+            ENV_NM_TEST_CLIENT_CLOUD_SETUP_PATH,
+            [],
+            {
+                "NM_CLOUD_SETUP_GCP_HOST": self.md_url,
+                "NM_CLOUD_SETUP_LOG": "trace",
+                "NM_CLOUD_SETUP_GCP": "yes",
+            },
+        )
+
+        nmc.pexp.expect("provider GCP detected")
+        nmc.pexp.expect("found interfaces: 9E:C0:3E:92:24:2D, 53:E9:7E:52:8D:A8")
+        nmc.pexp.expect("get-config: starting")
+        nmc.pexp.expect("get-config: success")
+        nmc.pexp.expect("meta data received")
+        # No changes this time
+        nmc.pexp.expect('device needs no update to applied connection "con-eth0"')
+        nmc.pexp.expect("no changes were applied for provider GCP")
+        nmc.pexp.expect(pexpect.EOF)
+
+        Util.valgrind_check_log(nmc.valgrind_log, "test_gcp")
+
 
 ###############################################################################
 
