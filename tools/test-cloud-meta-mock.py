@@ -88,6 +88,10 @@ def default_resources():
     aliyun_meta = b"/2016-01-01/meta-data/"
     aliyun_macs = aliyun_meta + b"network/interfaces/macs/"
 
+    azure_meta = b"/metadata/instance"
+    azure_iface = azure_meta + b"/network/interface/"
+    azure_query = b"?format=text&api-version=2017-04-02"
+
     mac1 = b"9e:c0:3e:92:24:2d"
     mac2 = b"53:e9:7e:52:8d:a8"
 
@@ -113,6 +117,18 @@ def default_resources():
         aliyun_macs + mac1 + b"/primary-ip-address": ip2,
         aliyun_macs + mac1 + b"/netmask": b"255.255.255.0",
         aliyun_macs + mac1 + b"/gateway": b"172.31.176.2",
+        azure_meta + azure_query: b"",
+        azure_iface + azure_query: b"0\n1\n",
+        azure_iface + b"0/macAddress" + azure_query: mac1,
+        azure_iface + b"1/macAddress" + azure_query: mac2,
+        azure_iface + b"0/ipv4/ipAddress/" + azure_query: b"0\n",
+        azure_iface + b"1/ipv4/ipAddress/" + azure_query: b"0\n",
+        azure_iface + b"0/ipv4/ipAddress/0/privateIpAddress" + azure_query: ip1,
+        azure_iface + b"1/ipv4/ipAddress/0/privateIpAddress" + azure_query: ip2,
+        azure_iface + b"0/ipv4/subnet/0/address/" + azure_query: b"172.31.16.0",
+        azure_iface + b"1/ipv4/subnet/0/address/" + azure_query: b"172.31.166.0",
+        azure_iface + b"0/ipv4/subnet/0/prefix/" + azure_query: b"20",
+        azure_iface + b"1/ipv4/subnet/0/prefix/" + azure_query: b"20",
     }
 
 
