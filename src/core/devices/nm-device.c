@@ -12899,11 +12899,9 @@ delete_on_deactivate_check_and_schedule(NMDevice *self)
         return;
     if (nm_device_get_state(self) == NM_DEVICE_STATE_UNMANAGED)
         return;
-    if (nm_device_get_state(self) == NM_DEVICE_STATE_UNAVAILABLE)
-        return;
-    delete_on_deactivate_unschedule(self); /* always cancel and reschedule */
 
     g_object_ref(self);
+    delete_on_deactivate_unschedule(self); /* always cancel and reschedule */
     priv->delete_on_deactivate_idle_source =
         nm_g_idle_add_source(delete_on_deactivate_link_delete, self);
 
