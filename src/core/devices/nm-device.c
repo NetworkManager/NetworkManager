@@ -12899,11 +12899,9 @@ delete_on_deactivate_check_and_schedule(NMDevice *self)
         return;
     if (nm_device_get_state(self) == NM_DEVICE_STATE_UNMANAGED)
         return;
-    if (nm_device_get_state(self) == NM_DEVICE_STATE_UNAVAILABLE)
-        return;
-    delete_on_deactivate_unschedule(self); /* always cancel and reschedule */
 
     g_object_ref(self);
+    delete_on_deactivate_unschedule(self); /* always cancel and reschedule */
     priv->delete_on_deactivate_idle_source =
         nm_g_idle_add_source(delete_on_deactivate_link_delete, self);
 
@@ -15748,7 +15746,7 @@ _cleanup_generic_pre(NMDevice *self, CleanupType cleanup_type)
 }
 
 static void
-_cleanup_generic_post(NMDevice *self, CleanupType cleanup_type)
+_cleanup_generic_post(NMDevice *self, NMDeviceStateReason reason, CleanupType cleanup_type)
 {
     NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
 
@@ -15771,7 +15769,7 @@ _cleanup_generic_post(NMDevice *self, CleanupType cleanup_type)
         act_request_set(self, NULL);
     }
 
-    if (cleanup_type == CLEANUP_TYPE_DECONFIGURE) {
+    if (cleanup_type == CLEANUP_TYPE_DECONFIGURE && reason != NM_DEVICE_STATE_REASON_NOW_MANAGED) {
         /* Check if the device was deactivated, and if so, delete_link.
          * Don't call delete_link synchronously because we are currently
          * handling a state change -- which is not reentrant. */
@@ -15920,7 +15918,7 @@ nm_device_cleanup(NMDevice *self, NMDeviceStateReason reason, CleanupType cleanu
         priv->promisc_reset = NM_OPTION_BOOL_DEFAULT;
     }
 
-    _cleanup_generic_post(self, cleanup_type);
+    _cleanup_generic_post(self, reason, cleanup_type);
 }
 
 static void
@@ -18158,7 +18156,7 @@ dispose(GObject *object)
     /* Let the kernel manage IPv6LL again */
     _dev_addrgenmode6_set(self, NM_IN6_ADDR_GEN_MODE_EUI64);
 
-    _cleanup_generic_post(self, CLEANUP_TYPE_KEEP);
+    _cleanup_generic_post(self, NM_DEVICE_STATE_REASON_NONE, CLEANUP_TYPE_KEEP);
 
     nm_assert(priv->master_ready_id == 0);
 
