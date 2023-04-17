@@ -13429,10 +13429,13 @@ delete_cb(NMDevice              *self,
 
     /* Authorized */
     nm_audit_log_device_op(NM_AUDIT_OP_DEVICE_DELETE, self, TRUE, NULL, subject, NULL);
-    if (nm_device_unrealize(self, TRUE, &local))
-        g_dbus_method_invocation_return_value(context, NULL);
-    else
+
+    if (!nm_device_unrealize(self, TRUE, &local)) {
         g_dbus_method_invocation_take_error(context, local);
+        return;
+    }
+
+    g_dbus_method_invocation_return_value(context, NULL);
 }
 
 static void
