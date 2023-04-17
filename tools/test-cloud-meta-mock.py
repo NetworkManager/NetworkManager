@@ -85,6 +85,9 @@ class SocketHTTPServer(HTTPServer):
 def default_resources():
     ec2_macs = b"/2018-09-24/meta-data/network/interfaces/macs/"
 
+    aliyun_meta = b"/2016-01-01/meta-data/"
+    aliyun_macs = aliyun_meta + b"network/interfaces/macs/"
+
     mac1 = b"9e:c0:3e:92:24:2d"
     mac2 = b"53:e9:7e:52:8d:a8"
 
@@ -98,6 +101,18 @@ def default_resources():
         ec2_macs + mac2 + b"/local-ipv4s": ip1,
         ec2_macs + mac1 + b"/subnet-ipv4-cidr-block": b"172.31.166.0/20",
         ec2_macs + mac1 + b"/local-ipv4s": ip2,
+        aliyun_meta: b"ami-id\n",
+        aliyun_macs: mac2 + b"\n" + mac1,
+        aliyun_macs + mac2 + b"/vpc-cidr-block": b"172.31.16.0/20",
+        aliyun_macs + mac2 + b"/private-ipv4s": ip1,
+        aliyun_macs + mac2 + b"/primary-ip-address": ip1,
+        aliyun_macs + mac2 + b"/netmask": b"255.255.255.0",
+        aliyun_macs + mac2 + b"/gateway": b"172.31.26.2",
+        aliyun_macs + mac1 + b"/vpc-cidr-block": b"172.31.166.0/20",
+        aliyun_macs + mac1 + b"/private-ipv4s": ip2,
+        aliyun_macs + mac1 + b"/primary-ip-address": ip2,
+        aliyun_macs + mac1 + b"/netmask": b"255.255.255.0",
+        aliyun_macs + mac1 + b"/gateway": b"172.31.176.2",
     }
 
 
