@@ -2201,7 +2201,7 @@ class TestNmCloudSetup(TestNmClient):
     def test_ec2(self):
 
         # Add a device with an active connection that has IPv4 configured
-        self.srv.op_AddObj("WiredDevice", iface="eth0")
+        self.srv.op_AddObj("WiredDevice", iface="eth0", mac="9e:c0:3e:92:24:2d")
         self.srv.addAndActivateConnection(
             {
                 "connection": {"type": "802-3-ethernet", "id": "con-eth0"},
@@ -2212,7 +2212,7 @@ class TestNmCloudSetup(TestNmClient):
         )
 
         # The second connection has no IPv4
-        self.srv.op_AddObj("WiredDevice", iface="eth1")
+        self.srv.op_AddObj("WiredDevice", iface="eth1", mac="53:e9:7e:52:8d:a8")
         self.srv.addAndActivateConnection(
             {"connection": {"type": "802-3-ethernet", "id": "con-eth1"}},
             "/org/freedesktop/NetworkManager/Devices/2",
