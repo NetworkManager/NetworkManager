@@ -92,6 +92,9 @@ def default_resources():
     azure_iface = azure_meta + b"/network/interface/"
     azure_query = b"?format=text&api-version=2017-04-02"
 
+    gcp_meta = b"/computeMetadata/v1/instance/"
+    gcp_iface = gcp_meta + b"network-interfaces/"
+
     mac1 = b"9e:c0:3e:92:24:2d"
     mac2 = b"53:e9:7e:52:8d:a8"
 
@@ -129,6 +132,14 @@ def default_resources():
         azure_iface + b"1/ipv4/subnet/0/address/" + azure_query: b"172.31.166.0",
         azure_iface + b"0/ipv4/subnet/0/prefix/" + azure_query: b"20",
         azure_iface + b"1/ipv4/subnet/0/prefix/" + azure_query: b"20",
+        gcp_meta + b"id": b"",
+        gcp_iface: b"0\n1\n",
+        gcp_iface + b"0/mac": mac1,
+        gcp_iface + b"1/mac": mac2,
+        gcp_iface + b"0/forwarded-ips/": b"0\n",
+        gcp_iface + b"0/forwarded-ips/0": ip1,
+        gcp_iface + b"1/forwarded-ips/": b"0\n",
+        gcp_iface + b"1/forwarded-ips/0": ip2,
     }
 
 
