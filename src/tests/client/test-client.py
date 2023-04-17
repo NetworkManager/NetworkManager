@@ -2197,9 +2197,7 @@ class TestNmCloudSetup(TestNmClient):
 
         return f
 
-    @cloud_setup_test
-    def test_ec2(self):
-
+    def _mock_devices(self):
         # Add a device with an active connection that has IPv4 configured
         self.srv.op_AddObj("WiredDevice", iface="eth0", mac="9e:c0:3e:92:24:2d")
         self.srv.addAndActivateConnection(
