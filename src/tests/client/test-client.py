@@ -2324,6 +2324,92 @@ class TestNmCloudSetup(TestNmClient):
         Util.valgrind_check_log(nmc.valgrind_log, "test_aliyun")
 
     @cloud_setup_test
+    def test_azure(self):
+        self._mock_devices()
+
+        _azure_meta = "/metadata/instance"
+        _azure_iface = _azure_meta + "/network/interface/"
+        _azure_query = "?format=text&api-version=2017-04-02"
+        self._mock_path(_azure_meta + _azure_query, "")
+        self._mock_path(_azure_iface + _azure_query, "0\n1\n")
+        self._mock_path(
+            _azure_iface + "0/macAddress" + _azure_query, TestNmCloudSetup._mac1
+        )
+        self._mock_path(
+            _azure_iface + "1/macAddress" + _azure_query, TestNmCloudSetup._mac2
+        )
+        self._mock_path(_azure_iface + "0/ipv4/ipAddress/" + _azure_query, "0\n")
+        self._mock_path(_azure_iface + "1/ipv4/ipAddress/" + _azure_query, "0\n")
+        self._mock_path(
+            _azure_iface + "0/ipv4/ipAddress/0/privateIpAddress" + _azure_query,
+            TestNmCloudSetup._ip1,
+        )
+        self._mock_path(
+            _azure_iface + "1/ipv4/ipAddress/0/privateIpAddress" + _azure_query,
+            TestNmCloudSetup._ip2,
+        )
+        self._mock_path(
+            _azure_iface + "0/ipv4/subnet/0/address/" + _azure_query, "172.31.16.0"
+        )
+        self._mock_path(
+            _azure_iface + "1/ipv4/subnet/0/address/" + _azure_query, "172.31.166.0"
+        )
+        self._mock_path(_azure_iface + "0/ipv4/subnet/0/prefix/" + _azure_query, "20")
+        self._mock_path(_azure_iface + "1/ipv4/subnet/0/prefix/" + _azure_query, "20")
+
+        # Run nm-cloud-setup for the first time
+        nmc = self.call_pexpect(
+            ENV_NM_TEST_CLIENT_CLOUD_SETUP_PATH,
+            [],
+            {
+                "NM_CLOUD_SETUP_AZURE_HOST": self.md_url,
+                "NM_CLOUD_SETUP_LOG": "trace",
+                "NM_CLOUD_SETUP_AZURE": "yes",
+            },
+        )
+
+        nmc.pexp.expect("provider azure detected")
+        nmc.pexp.expect("found interfaces: 9E:C0:3E:92:24:2D, 53:E9:7E:52:8D:A8")
+        nmc.pexp.expect("found azure interfaces: 2")
+        nmc.pexp.expect("interface\[0]: found a matching device with hwaddr")
+        nmc.pexp.expect(
+            "interface\[0]: (received subnet address|received subnet prefix 20)"
+        )
+        nmc.pexp.expect(
+            "interface\[0]: (received subnet address|received subnet prefix 20)"
+        )
+        nmc.pexp.expect("get-config: success")
+        nmc.pexp.expect("meta data received")
+        # One of the devices has no IPv4 configuration to be modified
+        nmc.pexp.expect("device has no suitable applied connection. Skip")
+        # The other one was lacking an address set it up.
+        nmc.pexp.expect("some changes were applied for provider azure")
+        nmc.pexp.expect(pexpect.EOF)
+
+        # Run nm-cloud-setup for the second time
+        nmc = self.call_pexpect(
+            ENV_NM_TEST_CLIENT_CLOUD_SETUP_PATH,
+            [],
+            {
+                "NM_CLOUD_SETUP_AZURE_HOST": self.md_url,
+                "NM_CLOUD_SETUP_LOG": "trace",
+                "NM_CLOUD_SETUP_AZURE": "yes",
+            },
+        )
+
+        nmc.pexp.expect("provider azure detected")
+        nmc.pexp.expect("found interfaces: 9E:C0:3E:92:24:2D, 53:E9:7E:52:8D:A8")
+        nmc.pexp.expect("get-config: starting")
+        nmc.pexp.expect("get-config: success")
+        nmc.pexp.expect("meta data received")
+        # No changes this time
+        nmc.pexp.expect('device needs no update to applied connection "con-eth0"')
+        nmc.pexp.expect("no changes were applied for provider azure")
+        nmc.pexp.expect(pexpect.EOF)
+
+        Util.valgrind_check_log(nmc.valgrind_log, "test_azure")
+
+    @cloud_setup_test
     def test_ec2(self):
         self._mock_devices()
 
