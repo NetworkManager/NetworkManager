@@ -3,7 +3,10 @@
 nm_pppd_plugin = shared_module(
   'nm-pppd-plugin',
   name_prefix: '',
-  sources: 'nm-pppd-plugin.c',
+  sources: [
+    'nm-pppd-compat.c',
+    'nm-pppd-plugin.c',
+  ],
   include_directories: [
     src_inc,
     top_inc,
@@ -11,6 +14,7 @@ nm_pppd_plugin = shared_module(
   dependencies: [
     libnm_core_public_dep,
     glib_dep,
+    pppd_dep,
   ],
   link_with: [
     libnm_core_impl,
