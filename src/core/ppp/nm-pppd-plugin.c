@@ -4,32 +4,22 @@
  * Copyright (C) 2008 Red Hat, Inc.
  */
 
-#include <config.h>
-#define ___CONFIG_H__
+#include "libnm-glib-aux/nm-default-glib.h"
 
-#include <pppd/pppd.h>
-#include <pppd/fsm.h>
-#include <pppd/ipcp.h>
+#include "nm-pppd-plugin.h"
+
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <net/if.h>
 #include <arpa/inet.h>
 #include <dlfcn.h>
+#include <glib.h>
 
-#define INET6
-#include <pppd/eui64.h>
-#include <pppd/ipv6cp.h>
-
-#include "libnm-glib-aux/nm-default-glib.h"
-
+#include "nm-pppd-compat.h"
+#include "nm-ppp-status.h"
 #include "nm-dbus-interface.h"
 
-#include "nm-pppd-plugin.h"
-#include "nm-ppp-status.h"
-
 int plugin_init(void);
-
-char pppd_version[] = VERSION;
 
 static struct {
     GDBusConnection *dbus_connection;
@@ -39,73 +29,63 @@ static struct {
 static void
 nm_phasechange(int arg)
 {
-    NMPPPStatus ppp_status = NM_PPP_STATUS_UNKNOWN;
+    NMPPPStatus ppp_status;
     char       *ppp_phase;
 
     g_return_if_fail(G_IS_DBUS_CONNECTION(gl.dbus_connection));
 
+    ppp_status = arg;
+
     switch (arg) {
-    case PHASE_DEAD:
-        ppp_status = NM_PPP_STATUS_DEAD;
-        ppp_phase  = "dead";
+    case NM_PPP_STATUS_DEAD:
+        ppp_phase = "dead";
         break;
-    case PHASE_INITIALIZE:
-        ppp_status = NM_PPP_STATUS_INITIALIZE;
-        ppp_phase  = "initialize";
+    case NM_PPP_STATUS_INITIALIZE:
+        ppp_phase = "initialize";
         break;
-    case PHASE_SERIALCONN:
-        ppp_status = NM_PPP_STATUS_SERIALCONN;
-        ppp_phase  = "serial connection";
+    case NM_PPP_STATUS_SERIALCONN:
+        ppp_phase = "serial connection";
         break;
-    case PHASE_DORMANT:
-        ppp_status = NM_PPP_STATUS_DORMANT;
-        ppp_phase  = "dormant";
+    case NM_PPP_STATUS_DORMANT:
+        ppp_phase = "dormant";
         break;
-    case PHASE_ESTABLISH:
-        ppp_status = NM_PPP_STATUS_ESTABLISH;
-        ppp_phase  = "establish";
+    case NM_PPP_STATUS_ESTABLISH:
+        ppp_phase = "establish";
         break;
-    case PHASE_AUTHENTICATE:
-        ppp_status = NM_PPP_STATUS_AUTHENTICATE;
-        ppp_phase  = "authenticate";
+    case NM_PPP_STATUS_AUTHENTICATE:
+        ppp_phase = "authenticate";
         break;
-    case PHASE_CALLBACK:
-        ppp_status = NM_PPP_STATUS_CALLBACK;
-        ppp_phase  = "callback";
+    case NM_PPP_STATUS_CALLBACK:
+        ppp_phase = "callback";
         break;
-    case PHASE_NETWORK:
-        ppp_status = NM_PPP_STATUS_NETWORK;
-        ppp_phase  = "network";
+    case NM_PPP_STATUS_NETWORK:
+        ppp_phase = "network";
         break;
-    case PHASE_RUNNING:
-        ppp_status = NM_PPP_STATUS_RUNNING;
-        ppp_phase  = "running";
+    case NM_PPP_STATUS_RUNNING:
+        ppp_phase = "running";
         break;
-    case PHASE_TERMINATE:
-        ppp_status = NM_PPP_STATUS_TERMINATE;
-        ppp_phase  = "terminate";
+    case NM_PPP_STATUS_TERMINATE:
+        ppp_phase = "terminate";
         break;
-    case PHASE_DISCONNECT:
-        ppp_status = NM_PPP_STATUS_DISCONNECT;
-        ppp_phase  = "disconnect";
+    case NM_PPP_STATUS_DISCONNECT:
+        ppp_phase = "disconnect";
         break;
-    case PHASE_HOLDOFF:
-        ppp_status = NM_PPP_STATUS_HOLDOFF;
-        ppp_phase  = "holdoff";
+    case NM_PPP_STATUS_HOLDOFF:
+        ppp_phase = "holdoff";
         break;
-    case PHASE_MASTER:
-        ppp_status = NM_PPP_STATUS_MASTER;
-        ppp_phase  = "master";
+    case NM_PPP_STATUS_MASTER:
+        ppp_phase = "master";
         break;
 
     default:
-        ppp_phase = "unknown";
+        ppp_status = NM_PPP_STATUS_INTERN_UNKNOWN;
+        ppp_phase  = "unknown";
         break;
     }
 
     g_message("nm-ppp-plugin: status %d / phase '%s'", ppp_status, ppp_phase);
 
-    if (ppp_status != NM_PPP_STATUS_UNKNOWN) {
+    if (ppp_status != NM_PPP_STATUS_INTERN_UNKNOWN) {
         g_dbus_connection_call(gl.dbus_connection,
                                NM_DBUS_SERVICE,
                                gl.ipparam,
@@ -125,7 +105,7 @@ nm_phasechange(int arg)
         char                       new_name[IF_NAMESIZE];
         int                        ifindex;
 
-        ifindex = if_nametoindex(ifname);
+        ifindex = if_nametoindex(nm_pppd_compat_get_ifname());
 
         /* Make a sync call to ensure that when the call
          * terminates the interface already has its final
@@ -143,9 +123,12 @@ nm_phasechange(int arg)
                                           NULL);
 
         /* Update the name in pppd if NM changed it */
-        if (if_indextoname(ifindex, new_name) && !nm_streq0(ifname, new_name)) {
-            g_message("nm-ppp-plugin: interface name changed from '%s' to '%s'", ifname, new_name);
-            g_strlcpy(ifname, new_name, IF_NAMESIZE);
+        if (if_indextoname(ifindex, new_name)
+            && !nm_streq0(nm_pppd_compat_get_ifname(), new_name)) {
+            g_message("nm-ppp-plugin: interface name changed from '%s' to '%s'",
+                      nm_pppd_compat_get_ifname(),
+                      new_name);
+            nm_pppd_compat_set_ifname(new_name);
         }
     }
 }
@@ -154,7 +137,7 @@ static void
 nm_phasechange_hook(void *data, int arg)
 {
     /* We send the nofication in exitnotify instead */
-    if (arg == PHASE_DEAD)
+    if (arg == NM_PPP_STATUS_DEAD)
         return;
 
     nm_phasechange(arg);
@@ -163,18 +146,21 @@ nm_phasechange_hook(void *data, int arg)
 static void
 nm_ip_up(void *data, int arg)
 {
-    ipcp_options    opts      = ipcp_gotoptions[0];
-    ipcp_options    peer_opts = ipcp_hisoptions[0];
-    GVariantBuilder builder;
-    guint32         pppd_made_up_address = htonl(0x0a404040 + ifunit);
+    NMPppdCompatIPCPOptions opts;
+    NMPppdCompatIPCPOptions peer_opts;
+    GVariantBuilder         builder;
+    const in_addr_t         pppd_made_up_address =
+        htonl(0x0a404040u + ((guint) nm_pppd_compat_get_ifunit()));
 
     g_return_if_fail(G_IS_DBUS_CONNECTION(gl.dbus_connection));
 
     g_message("nm-ppp-plugin: ip-up event");
 
+    nm_pppd_compat_get_ipcp_options(&opts, &peer_opts);
+
     if (!opts.ouraddr) {
         g_warning("nm-ppp-plugin: didn't receive an internal IP from pppd!");
-        nm_phasechange(PHASE_DEAD);
+        nm_phasechange(NM_PPP_STATUS_DEAD);
         return;
     }
 
@@ -186,7 +172,7 @@ nm_ip_up(void *data, int arg)
     g_variant_builder_add(&builder,
                           "{sv}",
                           NM_PPP_IP4_CONFIG_INTERFACE,
-                          g_variant_new_string(ifname));
+                          g_variant_new_string(nm_pppd_compat_get_ifname()));
 
     g_variant_builder_add(&builder,
                           "{sv}",
@@ -263,27 +249,18 @@ nm_ip_up(void *data, int arg)
                            NULL);
 }
 
-static GVariant *
-eui64_to_variant(eui64_t eui)
-{
-    guint64 iid;
-
-    G_STATIC_ASSERT(sizeof(iid) == sizeof(eui));
-
-    memcpy(&iid, &eui, sizeof(eui));
-    return g_variant_new_uint64(iid);
-}
-
 static void
 nm_ip6_up(void *data, int arg)
 {
-    ipv6cp_options *ho = &ipv6cp_hisoptions[0];
-    ipv6cp_options *go = &ipv6cp_gotoptions[0];
-    GVariantBuilder builder;
+    NMPppdCompatIPV6CPOptions his;
+    NMPppdCompatIPV6CPOptions got;
+    GVariantBuilder           builder;
 
     g_return_if_fail(G_IS_DBUS_CONNECTION(gl.dbus_connection));
 
     g_message("nm-ppp-plugin: ip6-up event");
+
+    nm_pppd_compat_get_ipv6cp_options(&got, &his);
 
     g_variant_builder_init(&builder, G_VARIANT_TYPE_VARDICT);
     /* Keep sending the interface name to be backwards compatible
@@ -292,12 +269,15 @@ nm_ip6_up(void *data, int arg)
     g_variant_builder_add(&builder,
                           "{sv}",
                           NM_PPP_IP6_CONFIG_INTERFACE,
-                          g_variant_new_string(ifname));
-    g_variant_builder_add(&builder, "{sv}", NM_PPP_IP6_CONFIG_OUR_IID, eui64_to_variant(go->ourid));
+                          g_variant_new_string(nm_pppd_compat_get_ifname()));
+    g_variant_builder_add(&builder,
+                          "{sv}",
+                          NM_PPP_IP6_CONFIG_OUR_IID,
+                          g_variant_new_uint64(got.ourid));
     g_variant_builder_add(&builder,
                           "{sv}",
                           NM_PPP_IP6_CONFIG_PEER_IID,
-                          eui64_to_variant(ho->hisid));
+                          g_variant_new_uint64(his.hisid));
 
     /* DNS is done via DHCPv6 or router advertisements */
 
@@ -368,8 +348,8 @@ get_credentials(char *username, char *password)
 
     g_variant_get(ret, "(&s&s)", &my_username, &my_password);
 
-    g_strlcpy(username, my_username, MAXNAMELEN);
-    g_strlcpy(password, my_password, MAXSECRETLEN);
+    g_strlcpy(username, my_username, NM_PPPD_COMPAT_MAXNAMELEN);
+    g_strlcpy(password, my_password, NM_PPPD_COMPAT_MAXSECRETLEN);
 
     return 1;
 }
@@ -382,33 +362,12 @@ nm_exit_notify(void *data, int arg)
     /* We wait until this point to notify dead phase to make sure that
      * the serial port has recovered already its original settings.
      */
-    nm_phasechange(PHASE_DEAD);
+    nm_phasechange(NM_PPP_STATUS_DEAD);
 
     g_message("nm-ppp-plugin: cleaning up");
 
     g_clear_object(&gl.dbus_connection);
     nm_clear_g_free(&gl.ipparam);
-}
-
-static void
-add_ip6_notifier(void)
-{
-    static struct notifier **notifier  = NULL;
-    static gsize             load_once = 0;
-
-    if (g_once_init_enter(&load_once)) {
-        void *handle = dlopen(NULL, RTLD_NOW | RTLD_GLOBAL);
-
-        if (handle) {
-            notifier = dlsym(handle, "ipv6_up_notifier");
-            dlclose(handle);
-        }
-        g_once_init_leave(&load_once, 1);
-    }
-    if (notifier)
-        add_notifier(notifier, nm_ip6_up, NULL);
-    else
-        g_message("nm-ppp-plugin: no IPV6CP notifier support; IPv6 not available");
 }
 
 int
@@ -427,17 +386,16 @@ plugin_init(void)
         return -1;
     }
 
-    gl.ipparam = g_strdup(ipparam);
+    gl.ipparam = g_strdup(nm_pppd_compat_get_ipparam());
 
-    chap_passwd_hook = get_credentials;
-    chap_check_hook  = get_chap_check;
-    pap_passwd_hook  = get_credentials;
-    pap_check_hook   = get_pap_check;
+    nm_pppd_compat_set_chap_passwd_hook(get_credentials);
+    nm_pppd_compat_set_chap_check_hook(get_chap_check);
+    nm_pppd_compat_set_pap_passwd_hook(get_credentials);
+    nm_pppd_compat_set_pap_check_hook(get_pap_check);
 
-    add_notifier(&phasechange, nm_phasechange_hook, NULL);
-    add_notifier(&ip_up_notifier, nm_ip_up, NULL);
-    add_notifier(&exitnotify, nm_exit_notify, NULL);
-    add_ip6_notifier();
-
+    nm_pppd_compat_add_notify(NM_PPPD_COMPAT_NF_PHASE_CHANGE, nm_phasechange_hook, NULL);
+    nm_pppd_compat_add_notify(NM_PPPD_COMPAT_NF_IP_UP, nm_ip_up, NULL);
+    nm_pppd_compat_add_notify(NM_PPPD_COMPAT_NF_EXIT, nm_exit_notify, NULL);
+    nm_pppd_compat_add_notify(NM_PPPD_COMPAT_NF_IPV6_UP, nm_ip6_up, NULL);
     return 0;
 }

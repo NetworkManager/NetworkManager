@@ -3297,9 +3297,13 @@ src_core_ppp_nm_pppd_plugin_la_CPPFLAGS = \
 	-I$(builddir)/src \
 	-I$(builddir)/src/libnm-core-public \
 	-I$(srcdir)/src/libnm-core-public \
-	$(GLIB_CFLAGS)
+	$(GLIB_CFLAGS) \
+	$(PPPD_CFLAGS) \
+	$(NULL)
 
 src_core_ppp_nm_pppd_plugin_la_SOURCES = \
+	src/core/ppp/nm-pppd-compat.c \
+	src/core/ppp/nm-pppd-compat.h \
 	src/core/ppp/nm-pppd-plugin.c \
 	src/core/ppp/nm-pppd-plugin.h \
 	src/core/ppp/nm-ppp-status.h
