@@ -257,7 +257,7 @@ _ppp_signal_state_changed(NMPPPManager *ppp_manager, guint ppp_state_u, gpointer
     const char         *reason_msg;
 
     if ((guint) ppp_state != ppp_state_u)
-        ppp_state = NM_PPP_STATUS_UNKNOWN;
+        ppp_state = NM_PPP_STATUS_INTERN_UNKNOWN;
 
     switch (ppp_state) {
     case NM_PPP_STATUS_DISCONNECT:
