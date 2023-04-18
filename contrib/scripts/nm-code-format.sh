@@ -208,7 +208,7 @@ if [ $TEST_ONLY = 1 ]; then
             trap 'rm -f "$FF"' EXIT
             clang-format "$f" 2>/dev/null > "$FF"
             git --no-pager diff "$f" "$FF" || :
-            die "Error: file \"$f\" has code-style is wrong. Fix it by running "'`'"\"$0\" -i \"$f\""'`'
+            die "Error: file \"$f\" has style issues."$'\n'"Fix it by running \`\"$0\" -i \"$f\"\` using $(clang-format --version)"
         fi
     done
     die "an unknown error happened."
