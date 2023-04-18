@@ -2109,7 +2109,7 @@ do_test_stable_id_parse(const char       *stable_id,
         g_assert(!expected_generated);
 
     if (expected_stable_type == NM_UTILS_STABLE_TYPE_UUID)
-        g_assert(!stable_id);
+        g_assert(NM_IN_STRSET(stable_id, NULL, "default${CONNECTION}"));
     else
         g_assert(stable_id);
 
@@ -2137,6 +2137,7 @@ test_stable_id_parse(void)
 #define _parse_random(stable_id) \
     do_test_stable_id_parse("" stable_id "", NM_UTILS_STABLE_TYPE_RANDOM, NULL)
     do_test_stable_id_parse(NULL, NM_UTILS_STABLE_TYPE_UUID, NULL);
+    do_test_stable_id_parse("default${CONNECTION}", NM_UTILS_STABLE_TYPE_UUID, NULL);
     _parse_stable_id("");
     _parse_stable_id("a");
     _parse_stable_id("a$");
@@ -2151,6 +2152,7 @@ test_stable_id_parse(void)
     _parse_stable_id("a$${CONNECTION}");
     _parse_stable_id("a$${CONNECTION}x");
     _parse_generated("${CONNECTION}", "${CONNECTION}=11{_CONNECTION}");
+    _parse_generated(" ${CONNECTION}", " ${CONNECTION}=11{_CONNECTION}");
     _parse_generated("${${CONNECTION}", "${${CONNECTION}=11{_CONNECTION}");
     _parse_generated("${CONNECTION}x", "${CONNECTION}=11{_CONNECTION}x");
     _parse_generated("x${CONNECTION}", "x${CONNECTION}=11{_CONNECTION}");

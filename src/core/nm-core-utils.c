@@ -3390,6 +3390,14 @@ nm_utils_stable_id_parse(const char *stable_id,
         return NM_UTILS_STABLE_TYPE_UUID;
     }
 
+    if (nm_streq(stable_id, "default${CONNECTION}")) {
+        /* This changed behavior in 1.44. Explicitly setting "default${CONNECTION}"
+         * the same as the built-in default that we get by not configuring
+         * the property. */
+        *out_generated = NULL;
+        return NM_UTILS_STABLE_TYPE_UUID;
+    }
+
     /* the stable-id allows for some dynamic by performing text-substitutions
      * of ${...} patterns.
      *
