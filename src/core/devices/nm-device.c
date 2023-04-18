@@ -10500,14 +10500,14 @@ _dev_ipdhcpx_notify(NMDhcpClient *client, const NMDhcpClientNotifyData *notify_d
 
         if (notify_data->lease_update.accepted) {
             nm_manager_write_device_state(priv->manager, self, NULL);
+            nm_dispatcher_call_device(NM_DISPATCHER_ACTION_DHCP_CHANGE_X(IS_IPv4),
+                                      self,
+                                      NULL,
+                                      NULL,
+                                      NULL,
+                                      NULL);
             if (priv->ipdhcp_data_x[IS_IPv4].state != NM_DEVICE_IP_STATE_READY) {
                 _dev_ipdhcpx_set_state(self, addr_family, NM_DEVICE_IP_STATE_READY);
-                nm_dispatcher_call_device(NM_DISPATCHER_ACTION_DHCP_CHANGE_X(IS_IPv4),
-                                          self,
-                                          NULL,
-                                          NULL,
-                                          NULL,
-                                          NULL);
                 _dev_ip_state_check_async(self, addr_family);
             }
         }
