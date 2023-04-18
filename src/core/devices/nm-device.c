@@ -132,11 +132,6 @@ typedef struct {
 } SlaveInfo;
 
 typedef struct {
-    NMDevice *device;
-    guint     idle_add_id;
-} DeleteOnDeactivateData;
-
-typedef struct {
     NMDevice               *device;
     GCancellable           *cancellable;
     NMPlatformAsyncCallback callback;
@@ -512,8 +507,8 @@ typedef struct _NMDevicePrivate {
 
     NMUnmanagedFlags unmanaged_mask;
     NMUnmanagedFlags unmanaged_flags;
-    DeleteOnDeactivateData
-        *delete_on_deactivate_data; /* data for scheduled cleanup when deleting link (g_idle_add) */
+
+    GSource *delete_on_deactivate_idle_source;
 
     GCancellable *deactivating_cancellable;
 
@@ -8493,7 +8488,7 @@ nm_device_autoconnect_allowed(NMDevice *self)
             return FALSE;
     }
 
-    if (priv->delete_on_deactivate_data)
+    if (priv->delete_on_deactivate_idle_source)
         return FALSE;
 
     /* The 'autoconnect-allowed' signal is emitted on a device to allow
@@ -12773,16 +12768,13 @@ nm_device_is_nm_owned(NMDevice *self)
 static gboolean
 delete_on_deactivate_link_delete(gpointer user_data)
 {
-    DeleteOnDeactivateData        *data  = user_data;
-    nm_auto_unref_object NMDevice *self  = data->device;
+    nm_auto_unref_object NMDevice *self  = user_data;
     NMDevicePrivate               *priv  = NM_DEVICE_GET_PRIVATE(self);
     gs_free_error GError          *error = NULL;
 
-    _LOGD(LOGD_DEVICE,
-          "delete_on_deactivate: cleanup and delete virtual link (id=%u)",
-          data->idle_add_id);
+    _LOGD(LOGD_DEVICE, "delete_on_deactivate: cleanup and delete virtual link");
 
-    priv->delete_on_deactivate_data = NULL;
+    nm_clear_g_source_inst(&priv->delete_on_deactivate_idle_source);
 
     if (!nm_device_unrealize(self, TRUE, &error))
         _LOGD(LOGD_DEVICE, "delete_on_deactivate: unrealizing failed (%s)", error->message);
@@ -12793,8 +12785,7 @@ delete_on_deactivate_link_delete(gpointer user_data)
         nm_device_recheck_auto_activate_schedule(self);
     }
 
-    g_free(data);
-    return FALSE;
+    return G_SOURCE_CONTINUE;
 }
 
 static void
@@ -12802,25 +12793,16 @@ delete_on_deactivate_unschedule(NMDevice *self)
 {
     NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
 
-    if (priv->delete_on_deactivate_data) {
-        DeleteOnDeactivateData *data = priv->delete_on_deactivate_data;
-
-        priv->delete_on_deactivate_data = NULL;
-
-        g_source_remove(data->idle_add_id);
-        _LOGD(LOGD_DEVICE,
-              "delete_on_deactivate: cancel cleanup and delete virtual link (id=%u)",
-              data->idle_add_id);
-        g_object_unref(data->device);
-        g_free(data);
+    if (nm_clear_g_source_inst(&priv->delete_on_deactivate_idle_source)) {
+        _LOGD(LOGD_DEVICE, "delete_on_deactivate: cancel cleanup and delete virtual link");
+        g_object_unref(self);
     }
 }
 
 static void
 delete_on_deactivate_check_and_schedule(NMDevice *self)
 {
-    NMDevicePrivate        *priv = NM_DEVICE_GET_PRIVATE(self);
-    DeleteOnDeactivateData *data;
+    NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
 
     if (!priv->nm_owned)
         return;
@@ -12834,14 +12816,11 @@ delete_on_deactivate_check_and_schedule(NMDevice *self)
         return;
     delete_on_deactivate_unschedule(self); /* always cancel and reschedule */
 
-    data                            = g_new(DeleteOnDeactivateData, 1);
-    data->device                    = g_object_ref(self);
-    data->idle_add_id               = g_idle_add(delete_on_deactivate_link_delete, data);
-    priv->delete_on_deactivate_data = data;
+    g_object_ref(self);
+    priv->delete_on_deactivate_idle_source =
+        nm_g_idle_add_source(delete_on_deactivate_link_delete, self);
 
-    _LOGD(LOGD_DEVICE,
-          "delete_on_deactivate: schedule cleanup and delete virtual link (id=%u)",
-          data->idle_add_id);
+    _LOGD(LOGD_DEVICE, "delete_on_deactivate: schedule cleanup and delete virtual link");
 }
 
 static void
