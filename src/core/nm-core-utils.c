@@ -3360,7 +3360,7 @@ nm_utils_stable_id_generated_complete(const char *stable_id_generated)
 }
 
 static void
-_stable_id_append(GString *str, const char *substitution)
+_stable_id_append(NMStrBuf *str, const char *substitution)
 {
     if (!substitution) {
         /* Would have been nicer to append "=NIL;" to differentiate between
@@ -3369,7 +3369,7 @@ _stable_id_append(GString *str, const char *substitution)
          * Can't do that now, as it would change behavior. */
         substitution = "";
     }
-    g_string_append_printf(str, "=%zu{%s}", strlen(substitution), substitution);
+    nm_str_buf_append_printf(str, "=%zu{%s}", strlen(substitution), substitution);
 }
 
 NMUtilsStableType
@@ -3380,8 +3380,9 @@ nm_utils_stable_id_parse(const char *stable_id,
                          const char *uuid,
                          char      **out_generated)
 {
-    gsize    i, idx_start;
-    GString *str = NULL;
+    nm_auto_str_buf NMStrBuf str = NM_STR_BUF_INIT_A(NM_UTILS_GET_NEXT_REALLOC_SIZE_232, FALSE);
+    gsize                    i;
+    gsize                    idx_start;
 
     g_return_val_if_fail(out_generated, NM_UTILS_STABLE_TYPE_RANDOM);
 
@@ -3405,7 +3406,7 @@ nm_utils_stable_id_parse(const char *stable_id,
      * In contrast however, the process is unambiguous so that the resulting
      * effective id differs if:
      *  - the original, untranslated stable-id differs
-     *  - or any of the subsitutions differs.
+     *  - or any of the substitution differs.
      *
      * The reason for that is, for example if you specify "${CONNECTION}" in the
      * stable-id, then the resulting ID should be always(!) unique for this connection.
@@ -3442,28 +3443,26 @@ nm_utils_stable_id_parse(const char *stable_id,
             continue;
         }
 
-#define CHECK_PREFIX(prefix)                                                  \
-    ({                                                                        \
-        gboolean _match = FALSE;                                              \
-                                                                              \
-        if (NM_STR_HAS_PREFIX(&stable_id[i], "" prefix "")) {                 \
-            _match = TRUE;                                                    \
-            if (!str)                                                         \
-                str = g_string_sized_new(256);                                \
-            i += NM_STRLEN(prefix);                                           \
-            g_string_append_len(str, &(stable_id)[idx_start], i - idx_start); \
-            idx_start = i;                                                    \
-        }                                                                     \
-        _match;                                                               \
+#define CHECK_PREFIX(prefix)                                                     \
+    ({                                                                           \
+        gboolean _match = FALSE;                                                 \
+                                                                                 \
+        if (NM_STR_HAS_PREFIX(&stable_id[i], "" prefix "")) {                    \
+            _match = TRUE;                                                       \
+            i += NM_STRLEN(prefix);                                              \
+            nm_str_buf_append_len(&str, &(stable_id)[idx_start], i - idx_start); \
+            idx_start = i;                                                       \
+        }                                                                        \
+        _match;                                                                  \
     })
         if (CHECK_PREFIX("${CONNECTION}"))
-            _stable_id_append(str, uuid);
+            _stable_id_append(&str, uuid);
         else if (CHECK_PREFIX("${BOOT}"))
-            _stable_id_append(str, bootid);
+            _stable_id_append(&str, bootid);
         else if (CHECK_PREFIX("${DEVICE}"))
-            _stable_id_append(str, deviceid);
+            _stable_id_append(&str, deviceid);
         else if (CHECK_PREFIX("${MAC}"))
-            _stable_id_append(str, hwaddr);
+            _stable_id_append(&str, hwaddr);
         else if (g_str_has_prefix(&stable_id[i], "${RANDOM}")) {
             /* RANDOM makes not so much sense for cloned-mac-address
              * as the result is similar to specifying "cloned-mac-address=random".
@@ -3476,8 +3475,6 @@ nm_utils_stable_id_parse(const char *stable_id,
              * by toggling only the stable-id property of the connection.
              * With RANDOM being the most short-lived, ~non-stable~ variant.
              */
-            if (str)
-                g_string_free(str, TRUE);
             *out_generated = NULL;
             return NM_UTILS_STABLE_TYPE_RANDOM;
         } else {
@@ -3496,14 +3493,14 @@ nm_utils_stable_id_parse(const char *stable_id,
     }
 #undef CHECK_PREFIX
 
-    if (!str) {
+    if (str.len == 0) {
         *out_generated = NULL;
         return NM_UTILS_STABLE_TYPE_STABLE_ID;
     }
 
     if (idx_start < i)
-        g_string_append_len(str, &stable_id[idx_start], i - idx_start);
-    *out_generated = g_string_free(str, FALSE);
+        nm_str_buf_append_len(&str, &stable_id[idx_start], i - idx_start);
+    *out_generated = nm_str_buf_finalize(&str, NULL);
     return NM_UTILS_STABLE_TYPE_GENERATED;
 }
 
