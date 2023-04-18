@@ -447,6 +447,7 @@ RUN dnf install -y \\
     iw \\
     ldns \\
     libreswan \\
+    libselinux-utils \\
     libyaml-devel \\
     logrotate \\
     lvm2 \\
