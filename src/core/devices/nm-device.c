@@ -12628,7 +12628,11 @@ delete_on_deactivate_link_delete(gpointer user_data)
     if (!nm_device_unrealize(self, TRUE, &error))
         _LOGD(LOGD_DEVICE, "delete_on_deactivate: unrealizing failed (%s)", error->message);
 
-    nm_device_emit_recheck_auto_activate(self);
+    if (nm_dbus_object_is_exported(NM_DBUS_OBJECT(self))) {
+        /* The device is still alive. We may need to autoactivate virtual
+         * devices again. */
+        nm_device_emit_recheck_auto_activate(self);
+    }
 
     g_free(data);
     return FALSE;
