@@ -1,4 +1,20 @@
 ===============================================
+NetworkManager-1.42.6
+Overview of changes since NetworkManager-1.42.4
+===============================================
+
+* Emit the dhcp-change dispatcher event also after a lease renewal.
+* Fix assertion failure on DHCP renewal.
+* Add support for EC2 IMDSv2 in nm-cloud-setup.
+* Allow setting tunnel flags for ip6gre & ip6gretap connection
+  profiles.
+* Improve the Wi-Fi hotspot functionality.
+* Fix setting the Wi-Fi roaming policy based on the number of seen
+  BSSIDs.
+* Support the "no-aaaa" resolv.conf option.
+* Some oFono fixes.
+
+===============================================
 NetworkManager-1.42.4
 Overview of changes since NetworkManager-1.42.2
 ===============================================
