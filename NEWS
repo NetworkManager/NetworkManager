@@ -152,6 +152,8 @@ Overview of changes since NetworkManager-1.38
   paragraphs.
 * Support enabling ipv4ll alongside DHCPv4 and static addressing.
 * Support configuring "ipv6.mtu".
+* The "ipv6.addr-gen-mode" property can now have a default value
+  specified via global connections defaults in NetworkManager.conf.
 * Honor "nm.debug" kernel command line to enable debug logging of
   NetworkManager.
 * NetworkManager reads the kernel command line "/proc/cmdline" for several
