@@ -1302,6 +1302,45 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
      * ---end---
      */
 
+    /* ---nmcli---
+     * property: method
+     * format: string
+     * description: The IPv6 connection method.
+     * description-docbook:
+     *   <para>
+     *     Sets the IPv6 connection method. You can set one of the following values:
+     *   </para>
+     *   <para>
+     *     <itemizedlist>
+     *        <listitem>
+     *          <para><literal>"auto"</literal> - Enables IPv6 auto-configuration. By default, NetworkManager uses Router Advertisements and, if the router announces the "managed" flag, NetworkManager requests an IPv6 address and prefix from a DHCPv6 server.</para>
+     *        </listitem>
+     *        <listitem>
+     *          <para><literal>"dhcp"</literal> - Requests an IPv6 address and prefix from a DHCPv6 server. Note that DHCPv6 does not have options to provide routes and the default gateway. As a consequence, by using the "dhcp" method, connections are limited to their own subnet.</para>
+     *        </listitem>
+     *        <listitem>
+     *          <para><literal>"manual"</literal> - Enables the configuration of static IPv6 addresses on the interface. Note that you must set at least one IP address and prefix in the "ipv6.addresses" property.</para>
+     *        </listitem>
+     *        <listitem>
+     *          <para><literal>"disabled"</literal> - Disables the IPv6 protocol in this connection profile.</para>
+     *        </listitem>
+     *        <listitem>
+     *          <para><literal>"ignore"</literal> - Configures NetworkManager to make no changes to the IPv6 configuration on the interface. For example, you can then use the "accept_ra" feature of the kernel to accept Router Advertisements.</para>
+     *        </listitem>
+     *        <listitem>
+     *          <para><literal>"shared"</literal> - Provides network access to other computers. NetworkManager requests a prefix from an upstream DHCPv6 server, assigns an address to the interface, and announces the prefix to clients that connect to this interface.</para>
+     *        </listitem>
+     *        <listitem>
+     *          <para><literal>"link-local"</literal> - Assigns a random link-local address from the fe80::/64 subnet to the interface.</para>
+     *        </listitem>
+     *     </itemizedlist>
+     *     <para>
+     *       If you set <literal>"auto"</literal>, <literal>"dhcp"</literal>, <literal>"manual"</literal>, <literal>"ignore"</literal>, or <literal>"shared"</literal>, NetworkManager assigns, in addition to the global address, an IPv6 link-local address to the interface. This is compliant with RFC 4291.
+     *     </para>
+     *   </para>
+     * ---end---
+     */
+
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
     _nm_setting_class_commit(setting_class,
