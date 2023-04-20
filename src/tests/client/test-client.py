@@ -147,6 +147,7 @@ except ImportError:
 try:
     from http.server import HTTPServer
     from http.server import BaseHTTPRequestHandler
+    from http.client import HTTPConnection, HTTPResponse
 except ImportError:
     HTTPServer = None
 
@@ -2139,6 +2140,13 @@ class TestNmcli(TestNmClient):
 
 
 class TestNmCloudSetup(TestNmClient):
+
+    _mac1 = "9e:c0:3e:92:24:2d"
+    _mac2 = "53:e9:7e:52:8d:a8"
+
+    _ip1 = "172.31.26.249"
+    _ip2 = "172.31.176.249"
+
     def cloud_setup_test(func):
         """
         Runs the mock NetworkManager along with a mock cloud metadata service.
@@ -2169,14 +2177,16 @@ class TestNmCloudSetup(TestNmClient):
             env = os.environ.copy()
             env["LISTEN_FDS"] = "1"
             p = subprocess.Popen(
-                [sys.executable, service_path],
+                [sys.executable, service_path, "--empty"],
                 stdin=subprocess.PIPE,
                 env=env,
                 pass_fds=(3,),
                 preexec_fn=pass_socket,
             )
 
-            self.md_url = "http://%s:%d" % s.getsockname()
+            (hostaddr, port) = s.getsockname()
+            self.md_conn = HTTPConnection(hostaddr, port=port)
+            self.md_url = "http://%s:%d" % (hostaddr, port)
             s.close()
 
             error = None
@@ -2188,6 +2198,7 @@ class TestNmCloudSetup(TestNmClient):
                 error = e
             self._nm_test_post()
 
+            self.md_conn.close()
             p.stdin.close()
             p.terminate()
             p.wait()
@@ -2216,6 +2227,34 @@ class TestNmCloudSetup(TestNmClient):
             "/org/freedesktop/NetworkManager/Devices/2",
             "",
             delay=0,
+        )
+
+    def _mock_path(self, path, body):
+        self.md_conn.request("PUT", path, body=body)
+        self.md_conn.getresponse().read()
+
+    @cloud_setup_test
+    def test_ec2(self):
+        self._mock_devices()
+
+        _ec2_macs = "/2018-09-24/meta-data/network/interfaces/macs/"
+        self._mock_path("/latest/meta-data/", "ami-id\n")
+        self._mock_path(
+            _ec2_macs, TestNmCloudSetup._mac2 + "\n" + TestNmCloudSetup._mac1
+        )
+        self._mock_path(
+            _ec2_macs + TestNmCloudSetup._mac2 + "/subnet-ipv4-cidr-block",
+            "172.31.16.0/20",
+        )
+        self._mock_path(
+            _ec2_macs + TestNmCloudSetup._mac2 + "/local-ipv4s", TestNmCloudSetup._ip1
+        )
+        self._mock_path(
+            _ec2_macs + TestNmCloudSetup._mac1 + "/subnet-ipv4-cidr-block",
+            "172.31.166.0/20",
+        )
+        self._mock_path(
+            _ec2_macs + TestNmCloudSetup._mac1 + "/local-ipv4s", TestNmCloudSetup._ip2
         )
 
         # Run nm-cloud-setup for the first time
