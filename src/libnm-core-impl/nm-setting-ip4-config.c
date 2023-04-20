@@ -1224,6 +1224,36 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
      * ---end---
      */
 
+    /* ---nmcli---
+     * property: method
+     * format: string
+     * description: The IPv4 connection method.
+     * description-docbook:
+     *   <para>
+     *     Sets the IPv4 connection method. You can set one of the following values:
+     *   </para>
+     *   <para>
+     *     <itemizedlist>
+     *        <listitem>
+     *          <para><literal>"auto"</literal> - Enables automatic IPv4 address assignment from DHCP, PPP, or similar services.</para>
+     *        </listitem>
+     *        <listitem>
+     *          <para><literal>"manual"</literal> - Enables the configuration of static IPv4 addresses on the interface. Note that you must set at least one IP address and subnet mask in the "ipv4.addresses" property.</para>
+     *        </listitem>
+     *        <listitem>
+     *          <para><literal>"disabled"</literal> - Disables the IPv4 protocol in this connection profile.</para>
+     *        </listitem>
+     *        <listitem>
+     *          <para><literal>"shared"</literal> - Provides network access to other computers. If you do not specify an IP address and subnet mask in "ipv4.addresses", NetworkManager assigns 10.42.x.1/24 to the interface. Additionally, NetworkManager starts a DHCP server and DNS forwarder. Hosts that connect to this interface will then receive an IP address from the configured range, and NetworkManager configures NAT to map client addresses to the one of the current default network connection.</para>
+     *        </listitem>
+     *        <listitem>
+     *          <para><literal>"link-local"</literal> - Enables link-local addresses according to RFC 3927. NetworkManager assigns a random link-local address from the 169.254.0.0/16 subnet to the interface.</para>
+     *        </listitem>
+     *     </itemizedlist>
+     *   </para>
+     * ---end---
+     */
+
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 
     _nm_setting_class_commit(setting_class,

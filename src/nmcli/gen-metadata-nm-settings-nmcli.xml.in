@@ -650,7 +650,7 @@
     </setting>
     <setting name="ipv4" >
         <property name="method"
-                  description="IP configuration method. NMSettingIP4Config and NMSettingIP6Config both support &quot;disabled&quot;, &quot;auto&quot;, &quot;manual&quot;, and &quot;link-local&quot;. See the subclass-specific documentation for other values. In general, for the &quot;auto&quot; method, properties such as &quot;dns&quot; and &quot;routes&quot; specify information that is added on to the information returned from automatic configuration.  The &quot;ignore-auto-routes&quot; and &quot;ignore-auto-dns&quot; properties modify this behavior. For methods that imply no upstream network, such as &quot;shared&quot; or &quot;link-local&quot;, these properties must be empty. For IPv4 method &quot;shared&quot;, the IP subnet can be configured by adding one manual IPv4 address or otherwise 10.42.x.0/24 is chosen. Note that the shared method must be configured on the interface which shares the internet to a subnet, not on the uplink which is shared." />
+                  description="The IPv4 connection method." />
         <property name="dns"
                   description="Array of IP addresses of DNS servers. For DoT (DNS over TLS), the SNI server name can be specified by appending &quot;#example.com&quot; to the IP address of the DNS server. This currently only has effect when using systemd-resolved." />
         <property name="dns-search"
@@ -711,7 +711,7 @@
     </setting>
     <setting name="ipv6" >
         <property name="method"
-                  description="IP configuration method. NMSettingIP4Config and NMSettingIP6Config both support &quot;disabled&quot;, &quot;auto&quot;, &quot;manual&quot;, and &quot;link-local&quot;. See the subclass-specific documentation for other values. In general, for the &quot;auto&quot; method, properties such as &quot;dns&quot; and &quot;routes&quot; specify information that is added on to the information returned from automatic configuration.  The &quot;ignore-auto-routes&quot; and &quot;ignore-auto-dns&quot; properties modify this behavior. For methods that imply no upstream network, such as &quot;shared&quot; or &quot;link-local&quot;, these properties must be empty. For IPv4 method &quot;shared&quot;, the IP subnet can be configured by adding one manual IPv4 address or otherwise 10.42.x.0/24 is chosen. Note that the shared method must be configured on the interface which shares the internet to a subnet, not on the uplink which is shared." />
+                  description="The IPv6 connection method." />
         <property name="dns"
                   description="Array of IP addresses of DNS servers. For DoT (DNS over TLS), the SNI server name can be specified by appending &quot;#example.com&quot; to the IP address of the DNS server. This currently only has effect when using systemd-resolved." />
         <property name="dns-search"
