@@ -2162,14 +2162,18 @@ class TestNmCloudSetup(TestNmClient):
             # hallucinogenic substances.
             s.listen(5)
 
+            def pass_socket():
+                os.dup2(s.fileno(), 3)
+
             service_path = PathConfiguration.test_cloud_meta_mock_path()
             env = os.environ.copy()
-            env["LISTEN_FD"] = str(s.fileno())
+            env["LISTEN_FDS"] = "1"
             p = subprocess.Popen(
                 [sys.executable, service_path],
                 stdin=subprocess.PIPE,
                 env=env,
                 pass_fds=(s.fileno(),),
+                preexec_fn=pass_socket,
             )
 
             self.md_url = "http://%s:%d" % s.getsockname()

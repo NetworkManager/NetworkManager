@@ -68,9 +68,11 @@ class SocketHTTPServer(HTTPServer):
 
 
 # See sd_listen_fds(3)
-fileno = os.getenv("LISTEN_FD")
+fileno = os.getenv("LISTEN_FDS")
 if fileno is not None:
-    s = socket.socket(fileno=int(fileno))
+    if fileno != "1":
+        raise Exception("Bad LISTEN_FDS")
+    s = socket.socket(fileno=3)
 else:
     addr = ("localhost", 0)
     s = socket.socket()
