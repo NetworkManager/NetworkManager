@@ -159,9 +159,20 @@
 %endif
 
 %if 0%{?fedora} >= 36 || 0%{?rhel} >= 10
+# Whether the ifcfg-rh plugin is split into a separate package
+# (NetworkManager-initscripts-ifcfg-rh)
 %global split_ifcfg_rh 1
 %else
 %global split_ifcfg_rh 0
+%endif
+
+%if 0%{?split_ifcfg_rh} && 0%{?fedora} == 37
+# If the ifcfg-rh plugin is in a separate package, this controls
+# whether we install a service that runs once and migrates the
+# profiles to keyfile.
+%global enable_ifcfg_rh_migration 1
+%else
+%global enable_ifcfg_rh_migration 0
 %endif
 
 %if 0%{?fedora} >= 36 || 0%{?rhel} >= 9
@@ -985,6 +996,15 @@ fi
 
 %systemd_post %{systemd_units}
 
+%if 0%{?split_ifcfg_rh} && 0%{?enable_ifcfg_rh_migration}
+%post initscripts-ifcfg-rh
+# Don't use systemd macros 'systemd_post' and
+# 'systemd_postun_with_restart', since they require that both the old
+# package and the new one include the unit.  In this case, the old
+# package is possibly missing it.
+systemctl --no-reload preset NetworkManager-ifcfg-rh-migration.service
+systemctl set-property NetworkManager-ifcfg-rh-migration.service  Markers=+needs-restart
+%endif
 
 %post initscripts-updown
 if [ -f %{_sbindir}/ifup -a ! -L %{_sbindir}/ifup ]; then
@@ -1018,10 +1038,14 @@ if [ $1 -eq 0 ]; then
     /usr/sbin/update-alternatives --remove ifup %{_libexecdir}/nm-ifup >/dev/null 2>&1 || :
 fi
 
-
 %if %{with nm_cloud_setup}
 %preun cloud-setup
 %systemd_preun %{systemd_units_cloud_setup}
+%endif
+
+%if 0%{?split_ifcfg_rh} && 0%{?enable_ifcfg_rh_migration}
+%preun initscripts-ifcfg-rh
+%systemd_preun NetworkManager-ifcfg-rh-migration.service
 %endif
 
 
@@ -1045,7 +1069,6 @@ fi
 %postun cloud-setup
 %systemd_postun %{systemd_units_cloud_setup}
 %endif
-
 
 %files
 %{dbus_sys_dir}/org.freedesktop.NetworkManager.conf
@@ -1233,6 +1256,9 @@ fi
 %files initscripts-ifcfg-rh
 %{nmplugindir}/libnm-settings-plugin-ifcfg-rh.so
 %{dbus_sys_dir}/nm-ifcfg-rh.conf
+%if 0%{?enable_ifcfg_rh_migration}
+%{_unitdir}/NetworkManager-ifcfg-rh-migration.service
+%endif
 %endif
 
 

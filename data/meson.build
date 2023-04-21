@@ -11,6 +11,7 @@ if install_systemdunitdir
   services = [
     'NetworkManager-dispatcher.service.in',
     'NetworkManager.service.in',
+    'NetworkManager-ifcfg-rh-migration.service.in',
     'nm-priv-helper.service.in',
   ]
 

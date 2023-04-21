@@ -5512,12 +5512,16 @@ if HAVE_SYSTEMD
 
 systemdsystemunit_DATA += \
 	data/NetworkManager.service \
+	data/NetworkManager-ifcfg-rh-migration.service \
 	data/NetworkManager-wait-online.service \
 	data/NetworkManager-dispatcher.service \
 	data/nm-priv-helper.service \
 	$(NULL)
 
 data/NetworkManager.service: $(srcdir)/data/NetworkManager.service.in
+	$(AM_V_GEN) $(data_edit) $< >$@
+
+data/NetworkManager-ifcfg-rh-migration.service: $(srcdir)/data/NetworkManager-ifcfg-rh-migration.service.in
 	$(AM_V_GEN) $(data_edit) $< >$@
 
 if HAVE_SYSTEMD_200
@@ -5563,6 +5567,7 @@ EXTRA_DIST += \
 	data/NetworkManager-wait-online-systemd-pre200.service.in \
 	data/NetworkManager-wait-online.service.in \
 	data/NetworkManager.service.in \
+	data/NetworkManager-ifcfg-rh-migration.service.in \
 	data/nm-priv-helper.service.in \
 	data/meson.build \
 	data/nm-shared.xml \
@@ -5573,6 +5578,7 @@ CLEANFILES += \
 	data/NetworkManager-dispatcher.service \
 	data/NetworkManager-wait-online.service \
 	data/NetworkManager.service \
+	data/NetworkManager-ifcfg-rh-migration.service \
 	data/nm-priv-helper.service \
 	data/server.conf \
 	$(NULL)

@@ -1,0 +1,13 @@
+[Unit]
+Description=Network Manager ifcfg-rh migration
+Wants=NetworkManager.service
+After=NetworkManager.service
+ConditionPathExists=!@localstatedir@/lib/NetworkManager/.migration-done
+
+[Service]
+Type=oneshot
+ExecStart=@bindir@/nmcli connection migrate
+ExecStartPost=/bin/touch @localstatedir@/lib/NetworkManager/.migration-done
+
+[Install]
+WantedBy=multi-user.target
