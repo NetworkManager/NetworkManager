@@ -173,13 +173,41 @@ NM_DEFINE_SINGLETON_GETTER(NMDnsManager, nm_dns_manager_get, NM_TYPE_DNS_MANAGER
 /*****************************************************************************/
 
 static gboolean
-domain_is_valid(const char *domain, gboolean check_public_suffix)
+domain_is_valid(const char *domain, gboolean check_public_suffix, gboolean assume_any_tld_is_public)
 {
+#if WITH_LIBPSL
+    /* ifdef to fall back to old API function on platforms with older LIBPSL */
+#ifdef PSL_TYPE_NO_STAR_RULE
+    int type = PSL_TYPE_ANY;
+#endif
+#endif
+
     if (*domain == '\0')
         return FALSE;
 #if WITH_LIBPSL
+        /* ifdef to fall back to old API function on platforms with older LIBPSL */
+#ifdef PSL_TYPE_NO_STAR_RULE
+    /*
+     * If we use PSL_TYPE_ANY, any TLD (top-level domain, i.e., domain
+     * with no dots) is considered *public* by the PSL library even if
+     * it is *not* on the official suffix list. This is the implicit
+     * behavior of the older API function psl_is_public_suffix().
+     * To inhibit that and only deem TLDs explicitly listed in the PSL
+     * as public, we need to turn off the "prevailing star rule" with
+     * PSL_TYPE_NO_STAR_RULE.
+     * For documentation on psl_is_public_suffix2(), see:
+     * https://rockdaboot.github.io/libpsl/libpsl-Public-Suffix-List-functions.html#psl-is-public-suffix2
+     * For more on the public suffix format, including wildcards:
+     * https://github.com/publicsuffix/list/wiki/Format#format
+     */
+    if (!assume_any_tld_is_public)
+        type = PSL_TYPE_NO_STAR_RULE;
+    if (check_public_suffix && psl_is_public_suffix2(psl_builtin(), domain, type))
+        return FALSE;
+#else
     if (check_public_suffix && psl_is_public_suffix(psl_builtin(), domain))
         return FALSE;
+#endif
 #endif
     return TRUE;
 }
@@ -533,7 +561,7 @@ add_dns_domains(GPtrArray            *array,
         str = searches[i];
         if (!include_routing && domain_is_routing(str))
             continue;
-        if (!domain_is_valid(nm_utils_parse_dns_domain(str, NULL), FALSE))
+        if (!domain_is_valid(nm_utils_parse_dns_domain(str, NULL), FALSE, TRUE))
             continue;
         add_string_item(array, str, dup);
     }
@@ -542,7 +570,7 @@ add_dns_domains(GPtrArray            *array,
             str = domains[i];
             if (!include_routing && domain_is_routing(str))
                 continue;
-            if (!domain_is_valid(nm_utils_parse_dns_domain(str, NULL), FALSE))
+            if (!domain_is_valid(nm_utils_parse_dns_domain(str, NULL), FALSE, TRUE))
                 continue;
             add_string_item(array, str, dup);
         }
@@ -1236,7 +1264,7 @@ merge_global_dns_config(NMResolvConfData *rc, NMGlobalDnsConfig *global_conf)
         for (i = 0; searches[i]; i++) {
             if (domain_is_routing(searches[i]))
                 continue;
-            if (!domain_is_valid(searches[i], FALSE))
+            if (!domain_is_valid(searches[i], FALSE, TRUE))
                 continue;
             add_string_item(rc->searches, searches[i], TRUE);
         }
@@ -2111,11 +2139,16 @@ nm_dns_manager_set_hostname(NMDnsManager *self, const char *hostname, gboolean s
              * specified, this makes a good default.) However, if the
              * hostname is the top level of a domain (eg, "example.com"),
              * then use the hostname itself as the search (since the user
-             * is unlikely to want "com" as a search domain).a
+             * is unlikely to want "com" as a search domain).
+             *
+             * Because that logic only applies to public domains, the
+             * "assume_any_tld_is_public" parameter is FALSE. For
+             * example, it is likely that the user *does* want "local"
+             * or "localdomain" as a search domain.
              */
-            if (domain_is_valid(domain, TRUE)) {
+            if (domain_is_valid(domain, TRUE, FALSE)) {
                 /* pass */
-            } else if (domain_is_valid(hostname, TRUE)) {
+            } else if (domain_is_valid(hostname, TRUE, FALSE)) {
                 domain = hostname;
             }
 
@@ -2124,8 +2157,10 @@ nm_dns_manager_set_hostname(NMDnsManager *self, const char *hostname, gboolean s
         }
     }
 
-    if (!nm_strdup_reset(&priv->hostdomain, domain))
+    if (!nm_strdup_reset(&priv->hostdomain, domain)) {
+        _LOGT("Established |%s| as host domain.", priv->hostdomain);
         return;
+    }
 
     if (skip_update)
         return;
