@@ -217,6 +217,8 @@ export G_DEBUG=fatal-warnings
 
 unset DEBUGINFOD_URLS
 
+export NMCI_DEBUG=1
+
 Clean() {
     systemctl stop NetworkManager
     rm -i -rf /run/NetworkManager
