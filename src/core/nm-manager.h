@@ -69,6 +69,8 @@ NMManager *nm_manager_setup(void);
 NMManager *nm_manager_get(void);
 #define NM_MANAGER_GET (nm_manager_get())
 
+NMPolicy *nm_manager_get_policy(NMManager *self);
+
 gboolean nm_manager_start(NMManager *manager, GError **error);
 void     nm_manager_stop(NMManager *manager);
 NMState  nm_manager_get_state(NMManager *manager);
@@ -120,6 +122,8 @@ NMSettingsConnection **nm_manager_get_activatable_connections(NMManager *manager
                                                               gboolean   for_auto_activation,
                                                               gboolean   sort,
                                                               guint     *out_len);
+
+void nm_manager_device_recheck_auto_activate_schedule(NMManager *self, NMDevice *device);
 
 void     nm_manager_write_device_state_all(NMManager *manager);
 gboolean nm_manager_write_device_state(NMManager *manager, NMDevice *device, int *out_ifindex);

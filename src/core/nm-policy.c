@@ -51,7 +51,7 @@ typedef struct {
     NMManager          *manager;
     NMNetns            *netns;
     NMFirewalldManager *firewalld_manager;
-    CList               pending_activation_checks;
+    CList               policy_auto_activate_lst_head;
 
     NMAgentManager *agent_mgr;
 
@@ -62,6 +62,10 @@ typedef struct {
 
     NMSettings *settings;
 
+    GSource *device_recheck_auto_activate_all_idle_source;
+
+    GSource *reset_connections_retries_idle_source;
+
     NMHostnameManager *hostname_manager;
 
     NMActiveConnection *default_ac4, *activating_ac4;
@@ -69,10 +73,6 @@ typedef struct {
 
     NMDnsManager *dns_manager;
     gulong        config_changed_id;
-
-    guint reset_retries_id; /* idle handler for resetting the retries count */
-
-    guint schedule_activate_all_id; /* idle handler for schedule_activate_all(). */
 
     NMPolicyHostnameMode hostname_mode;
     char                *orig_hostname;     /* hostname at NM start time */
@@ -135,8 +135,7 @@ _PRIV_TO_SELF(NMPolicyPrivate *priv)
 /*****************************************************************************/
 
 static void      update_system_hostname(NMPolicy *self, const char *msg);
-static void      schedule_activate_all(NMPolicy *self);
-static void      schedule_activate_check(NMPolicy *self, NMDevice *device);
+static void      nm_policy_device_recheck_auto_activate_all_schedule(NMPolicy *self);
 static NMDevice *get_default_device(NMPolicy *self, int addr_family);
 
 /*****************************************************************************/
@@ -1283,23 +1282,6 @@ check_activating_active_connections(NMPolicy *self)
     g_object_thaw_notify(G_OBJECT(self));
 }
 
-typedef struct {
-    CList     pending_lst;
-    NMPolicy *policy;
-    NMDevice *device;
-    guint     autoactivate_id;
-} ActivateData;
-
-static void
-activate_data_free(ActivateData *data)
-{
-    nm_device_remove_pending_action(data->device, NM_PENDING_ACTION_AUTOACTIVATE, TRUE);
-    c_list_unlink_stale(&data->pending_lst);
-    nm_clear_g_source(&data->autoactivate_id);
-    g_object_unref(data->device);
-    g_slice_free(ActivateData, data);
-}
-
 static void
 pending_ac_gone(gpointer data, GObject *where_the_object_was)
 {
@@ -1332,7 +1314,8 @@ pending_ac_state_changed(NMActiveConnection *ac, guint state, guint reason, NMPo
                 con,
                 NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_FAILED,
                 TRUE);
-            schedule_activate_check(self, nm_active_connection_get_device(ac));
+            nm_policy_device_recheck_auto_activate_schedule(self,
+                                                            nm_active_connection_get_device(ac));
         }
 
         /* Cleanup */
@@ -1345,7 +1328,7 @@ pending_ac_state_changed(NMActiveConnection *ac, guint state, guint reason, NMPo
 }
 
 static void
-auto_activate_device(NMPolicy *self, NMDevice *device)
+_auto_activate_device(NMPolicy *self, NMDevice *device)
 {
     NMPolicyPrivate               *priv;
     NMSettingsConnection          *best_connection;
@@ -1439,7 +1422,7 @@ auto_activate_device(NMPolicy *self, NMDevice *device)
             best_connection,
             NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_FAILED,
             TRUE);
-        schedule_activate_check(self, device);
+        nm_policy_device_recheck_auto_activate_schedule(self, device);
         return;
     }
 
@@ -1456,32 +1439,33 @@ auto_activate_device(NMPolicy *self, NMDevice *device)
     }
 }
 
-static gboolean
-auto_activate_device_cb(gpointer user_data)
+static void
+_auto_activate_device_clear(NMPolicy *self, NMDevice *device, gboolean do_activate)
 {
-    ActivateData *data = user_data;
+    nm_assert(NM_IS_DEVICE(device));
+    nm_assert(NM_IS_POLICY(self));
+    nm_assert(c_list_is_linked(&device->policy_auto_activate_lst));
+    nm_assert(c_list_contains(&NM_POLICY_GET_PRIVATE(self)->policy_auto_activate_lst_head,
+                              &device->policy_auto_activate_lst));
 
-    g_assert(data);
-    g_assert(NM_IS_POLICY(data->policy));
-    g_assert(NM_IS_DEVICE(data->device));
+    c_list_unlink(&device->policy_auto_activate_lst);
+    nm_clear_g_source_inst(&device->policy_auto_activate_idle_source);
 
-    data->autoactivate_id = 0;
-    auto_activate_device(data->policy, data->device);
-    activate_data_free(data);
-    return G_SOURCE_REMOVE;
+    if (do_activate)
+        _auto_activate_device(self, device);
+
+    nm_device_remove_pending_action(device, NM_PENDING_ACTION_AUTOACTIVATE, TRUE);
 }
 
-static ActivateData *
-find_pending_activation(NMPolicy *self, NMDevice *device)
+static gboolean
+_auto_activate_idle_cb(gpointer user_data)
 {
-    NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE(self);
-    ActivateData    *data;
+    NMDevice *device = user_data;
 
-    c_list_for_each_entry (data, &priv->pending_activation_checks, pending_lst) {
-        if (data->device == device)
-            return data;
-    }
-    return NULL;
+    nm_assert(NM_IS_DEVICE(device));
+
+    _auto_activate_device_clear(nm_manager_get_policy(nm_device_get_manager(device)), device, TRUE);
+    return G_SOURCE_CONTINUE;
 }
 
 /*****************************************************************************/
@@ -1683,21 +1667,35 @@ sleeping_changed(NMManager *manager, GParamSpec *pspec, gpointer user_data)
         reset_autoconnect_all(self, NULL, FALSE);
 }
 
-static void
-schedule_activate_check(NMPolicy *self, NMDevice *device)
+void
+nm_policy_device_recheck_auto_activate_schedule(NMPolicy *self, NMDevice *device)
 {
-    NMPolicyPrivate    *priv = NM_POLICY_GET_PRIVATE(self);
-    ActivateData       *data;
+    NMPolicyPrivate    *priv;
     NMActiveConnection *ac;
     const CList        *tmp_list;
+
+    g_return_if_fail(NM_IS_POLICY(self));
+    g_return_if_fail(NM_IS_DEVICE(device));
+    nm_assert(g_signal_handler_find(device,
+                                    G_SIGNAL_MATCH_DATA,
+                                    0,
+                                    0,
+                                    NULL,
+                                    NULL,
+                                    NM_POLICY_GET_PRIVATE(self))
+              != 0);
+
+    if (!c_list_is_empty(&device->policy_auto_activate_lst)) {
+        /* already queued. Return. */
+        return;
+    }
+
+    priv = NM_POLICY_GET_PRIVATE(self);
 
     if (nm_manager_get_state(priv->manager) == NM_STATE_ASLEEP)
         return;
 
     if (!nm_device_autoconnect_allowed(device))
-        return;
-
-    if (find_pending_activation(self, device))
         return;
 
     nm_manager_for_each_active_connection (priv->manager, ac, tmp_list) {
@@ -1712,11 +1710,8 @@ schedule_activate_check(NMPolicy *self, NMDevice *device)
 
     nm_device_add_pending_action(device, NM_PENDING_ACTION_AUTOACTIVATE, TRUE);
 
-    data                  = g_slice_new0(ActivateData);
-    data->policy          = self;
-    data->device          = g_object_ref(device);
-    data->autoactivate_id = g_idle_add(auto_activate_device_cb, data);
-    c_list_link_tail(&priv->pending_activation_checks, &data->pending_lst);
+    c_list_link_tail(&priv->policy_auto_activate_lst_head, &device->policy_auto_activate_lst);
+    device->policy_auto_activate_idle_source = nm_g_idle_add_source(_auto_activate_idle_cb, device);
 }
 
 static gboolean
@@ -1729,7 +1724,7 @@ reset_connections_retries(gpointer user_data)
     gint32                       con_stamp, min_stamp, now;
     gboolean                     changed = FALSE;
 
-    priv->reset_retries_id = 0;
+    nm_clear_g_source_inst(&priv->reset_connections_retries_idle_source);
 
     min_stamp   = 0;
     now         = nm_utils_get_monotonic_timestamp_sec();
@@ -1749,15 +1744,16 @@ reset_connections_retries(gpointer user_data)
     }
 
     /* Schedule the handler again if there are some stamps left */
-    if (min_stamp != 0)
-        priv->reset_retries_id =
-            g_timeout_add_seconds(min_stamp - now, reset_connections_retries, self);
+    if (min_stamp != 0) {
+        priv->reset_connections_retries_idle_source =
+            nm_g_timeout_add_seconds_source(min_stamp - now, reset_connections_retries, self);
+    }
 
     /* If anything changed, try to activate the newly re-enabled connections */
     if (changed)
-        schedule_activate_all(self);
+        nm_policy_device_recheck_auto_activate_all_schedule(self);
 
-    return FALSE;
+    return G_SOURCE_CONTINUE;
 }
 
 static void
@@ -1772,15 +1768,15 @@ _connection_autoconnect_retries_set(NMPolicy *self, NMSettingsConnection *connec
 
     if (tries == 0) {
         /* Schedule a handler to reset retries count */
-        if (!priv->reset_retries_id) {
+        if (!priv->reset_connections_retries_idle_source) {
             gint32 retry_time =
                 nm_settings_connection_autoconnect_retries_blocked_until(connection);
 
             g_warn_if_fail(retry_time != 0);
-            priv->reset_retries_id =
-                g_timeout_add_seconds(MAX(0, retry_time - nm_utils_get_monotonic_timestamp_sec()),
-                                      reset_connections_retries,
-                                      self);
+            priv->reset_connections_retries_idle_source = nm_g_timeout_add_seconds_source(
+                MAX(0, retry_time - nm_utils_get_monotonic_timestamp_sec()),
+                reset_connections_retries,
+                self);
         }
     }
 }
@@ -1853,7 +1849,7 @@ activate_slave_connections(NMPolicy *self, NMDevice *device)
     }
 
     if (changed)
-        schedule_activate_all(self);
+        nm_policy_device_recheck_auto_activate_all_schedule(self);
 }
 
 static gboolean
@@ -2126,7 +2122,7 @@ device_state_changed(NMDevice           *device,
             update_routing_and_dns(self, FALSE, device);
 
         /* Device is now available for auto-activation */
-        schedule_activate_check(self, device);
+        nm_policy_device_recheck_auto_activate_schedule(self, device);
         break;
 
     case NM_DEVICE_STATE_PREPARE:
@@ -2248,16 +2244,7 @@ device_autoconnect_changed(NMDevice *device, GParamSpec *pspec, gpointer user_da
     NMPolicyPrivate *priv = user_data;
     NMPolicy        *self = _PRIV_TO_SELF(priv);
 
-    schedule_activate_check(self, device);
-}
-
-static void
-device_recheck_auto_activate(NMDevice *device, gpointer user_data)
-{
-    NMPolicyPrivate *priv = user_data;
-    NMPolicy        *self = _PRIV_TO_SELF(priv);
-
-    schedule_activate_check(self, device);
+    nm_policy_device_recheck_auto_activate_schedule(self, device);
 }
 
 static void
@@ -2292,10 +2279,6 @@ devices_list_register(NMPolicy *self, NMDevice *device)
                      "notify::" NM_DEVICE_AUTOCONNECT,
                      G_CALLBACK(device_autoconnect_changed),
                      priv);
-    g_signal_connect(device,
-                     NM_DEVICE_RECHECK_AUTO_ACTIVATE,
-                     G_CALLBACK(device_recheck_auto_activate),
-                     priv);
 }
 
 static void
@@ -2319,16 +2302,13 @@ device_removed(NMManager *manager, NMDevice *device, gpointer user_data)
 {
     NMPolicyPrivate *priv = user_data;
     NMPolicy        *self = _PRIV_TO_SELF(priv);
-    ActivateData    *data;
 
     /* TODO: is this needed? The delegations are cleaned up
      * on transition to deactivated too. */
     ip6_remove_device_prefix_delegations(self, device);
 
-    /* Clear any idle callbacks for this device */
-    data = find_pending_activation(self, device);
-    if (data && data->autoactivate_id)
-        activate_data_free(data);
+    if (c_list_is_linked(&device->policy_auto_activate_lst))
+        _auto_activate_device_clear(self, device, FALSE);
 
     if (g_hash_table_remove(priv->devices, device))
         devices_list_unregister(self, device);
@@ -2508,31 +2488,35 @@ active_connection_removed(NMManager *manager, NMActiveConnection *active, gpoint
 /*****************************************************************************/
 
 static gboolean
-schedule_activate_all_cb(gpointer user_data)
+_device_recheck_auto_activate_all_cb(gpointer user_data)
 {
     NMPolicy        *self = user_data;
     NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE(self);
     const CList     *tmp_lst;
     NMDevice        *device;
 
-    priv->schedule_activate_all_id = 0;
+    nm_clear_g_source_inst(&priv->device_recheck_auto_activate_all_idle_source);
 
     nm_manager_for_each_device (priv->manager, device, tmp_lst)
-        schedule_activate_check(self, device);
+        nm_policy_device_recheck_auto_activate_schedule(self, device);
 
-    return G_SOURCE_REMOVE;
+    return G_SOURCE_CONTINUE;
 }
 
 static void
-schedule_activate_all(NMPolicy *self)
+nm_policy_device_recheck_auto_activate_all_schedule(NMPolicy *self)
 {
     NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE(self);
 
     /* always restart the idle handler. That way, we settle
      * all other events before restarting to activate them. */
-    nm_clear_g_source(&priv->schedule_activate_all_id);
-    priv->schedule_activate_all_id = g_idle_add(schedule_activate_all_cb, self);
+    nm_clear_g_source_inst(&priv->device_recheck_auto_activate_all_idle_source);
+
+    priv->device_recheck_auto_activate_all_idle_source =
+        nm_g_idle_add_source(_device_recheck_auto_activate_all_cb, self);
 }
+
+/*****************************************************************************/
 
 static void
 connection_added(NMSettings *settings, NMSettingsConnection *connection, gpointer user_data)
@@ -2540,7 +2524,7 @@ connection_added(NMSettings *settings, NMSettingsConnection *connection, gpointe
     NMPolicyPrivate *priv = user_data;
     NMPolicy        *self = _PRIV_TO_SELF(priv);
 
-    schedule_activate_all(self);
+    nm_policy_device_recheck_auto_activate_all_schedule(self);
 }
 
 static void
@@ -2608,7 +2592,7 @@ connection_updated(NMSettings           *settings,
         }
     }
 
-    schedule_activate_all(self);
+    nm_policy_device_recheck_auto_activate_all_schedule(self);
 }
 
 static void
@@ -2657,7 +2641,7 @@ connection_flags_changed(NMSettings *settings, NMSettingsConnection *connection,
     if (NM_FLAGS_HAS(nm_settings_connection_get_flags(connection),
                      NM_SETTINGS_CONNECTION_INT_FLAGS_VISIBLE)) {
         if (!nm_settings_connection_autoconnect_is_blocked(connection))
-            schedule_activate_all(self);
+            nm_policy_device_recheck_auto_activate_all_schedule(self);
     }
 }
 
@@ -2671,7 +2655,7 @@ secret_agent_registered(NMSettings *settings, NMSecretAgent *agent, gpointer use
      * connections failed due to missing secrets may re-try auto-connection.
      */
     if (reset_autoconnect_all(self, NULL, TRUE))
-        schedule_activate_all(self);
+        nm_policy_device_recheck_auto_activate_all_schedule(self);
 }
 
 NMActiveConnection *
@@ -2765,7 +2749,7 @@ nm_policy_init(NMPolicy *self)
     NMPolicyPrivate *priv          = NM_POLICY_GET_PRIVATE(self);
     gs_free char    *hostname_mode = NULL;
 
-    c_list_init(&priv->pending_activation_checks);
+    c_list_init(&priv->policy_auto_activate_lst_head);
 
     priv->netns = g_object_ref(nm_netns_get());
 
@@ -2901,18 +2885,15 @@ dispose(GObject *object)
 {
     NMPolicy        *self = NM_POLICY(object);
     NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE(self);
-    GHashTableIter   h_iter;
-    NMDevice        *device;
-    ActivateData    *data, *data_safe;
+
+    nm_assert(!c_list_is_empty(&priv->policy_auto_activate_lst_head));
+    nm_assert(g_hash_table_size(priv->devices) == 0);
 
     nm_clear_g_object(&priv->default_ac4);
     nm_clear_g_object(&priv->default_ac6);
     nm_clear_g_object(&priv->activating_ac4);
     nm_clear_g_object(&priv->activating_ac6);
     nm_clear_pointer(&priv->pending_active_connections, g_hash_table_unref);
-
-    c_list_for_each_entry_safe (data, data_safe, &priv->pending_activation_checks, pending_lst)
-        activate_data_free(data);
 
     g_slist_free_full(priv->pending_secondaries, (GDestroyNotify) pending_secondary_data_free);
     priv->pending_secondaries = NULL;
@@ -2932,20 +2913,14 @@ dispose(GObject *object)
         g_clear_object(&priv->dns_manager);
     }
 
-    g_hash_table_iter_init(&h_iter, priv->devices);
-    while (g_hash_table_iter_next(&h_iter, (gpointer *) &device, NULL)) {
-        g_hash_table_iter_remove(&h_iter);
-        devices_list_unregister(self, device);
-    }
-
     /* The manager should have disposed of ActiveConnections already, which
      * will have called active_connection_removed() and thus we don't need
      * to clean anything up.  Assert that this is TRUE.
      */
     nm_assert(c_list_is_empty(nm_manager_get_active_connections(priv->manager)));
 
-    nm_clear_g_source(&priv->reset_retries_id);
-    nm_clear_g_source(&priv->schedule_activate_all_id);
+    nm_clear_g_source_inst(&priv->reset_connections_retries_idle_source);
+    nm_clear_g_source_inst(&priv->device_recheck_auto_activate_all_idle_source);
 
     nm_clear_g_free(&priv->orig_hostname);
     nm_clear_g_free(&priv->cur_hostname);
