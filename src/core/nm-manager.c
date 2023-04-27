@@ -3105,6 +3105,16 @@ _rfkill_update_from_user(NMManager *self, NMRfkillType rtype, gboolean enabled)
 
 /*****************************************************************************/
 
+void
+nm_manager_device_recheck_auto_activate_schedule(NMManager *self, NMDevice *device)
+{
+    g_return_if_fail(NM_IS_MANAGER(self));
+
+    nm_policy_device_recheck_auto_activate_schedule(NM_MANAGER_GET_PRIVATE(self)->policy, device);
+}
+
+/*****************************************************************************/
+
 static void
 device_auth_done_cb(NMAuthChain *chain, GDBusMethodInvocation *context, gpointer user_data)
 {
@@ -3890,7 +3900,7 @@ _device_realize_finish(NMManager *self, NMDevice *device, const NMPlatformLink *
     nm_device_state_changed(device,
                             NM_DEVICE_STATE_UNAVAILABLE,
                             NM_DEVICE_STATE_REASON_NOW_MANAGED);
-    nm_device_emit_recheck_auto_activate(device);
+    nm_manager_device_recheck_auto_activate_schedule(self, device);
 }
 
 /**
@@ -8451,6 +8461,14 @@ nm_settings_get(void)
     g_return_val_if_fail(singleton_instance, NULL);
 
     return NM_MANAGER_GET_PRIVATE(singleton_instance)->settings;
+}
+
+NMPolicy *
+nm_manager_get_policy(NMManager *self)
+{
+    g_return_val_if_fail(NM_IS_MANAGER(self), NULL);
+
+    return NM_MANAGER_GET_PRIVATE(self)->policy;
 }
 
 NMManager *

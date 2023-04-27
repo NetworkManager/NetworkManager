@@ -270,7 +270,7 @@ companion_state_changed_cb(NMDeviceWifi       *companion,
     NMDeviceState     self_state = nm_device_get_state(NM_DEVICE(self));
 
     if (old_state > NM_DEVICE_STATE_DISCONNECTED && state <= NM_DEVICE_STATE_DISCONNECTED) {
-        nm_device_emit_recheck_auto_activate(NM_DEVICE(self));
+        nm_device_recheck_auto_activate_schedule(NM_DEVICE(self));
     }
 
     if (self_state < NM_DEVICE_STATE_PREPARE || self_state > NM_DEVICE_STATE_ACTIVATED

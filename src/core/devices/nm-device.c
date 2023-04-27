@@ -132,11 +132,6 @@ typedef struct {
 } SlaveInfo;
 
 typedef struct {
-    NMDevice *device;
-    guint     idle_add_id;
-} DeleteOnDeactivateData;
-
-typedef struct {
     NMDevice               *device;
     GCancellable           *cancellable;
     NMPlatformAsyncCallback callback;
@@ -335,7 +330,6 @@ enum {
     IP6_PREFIX_DELEGATED,
     IP6_SUBNET_NEEDED,
     REMOVED,
-    RECHECK_AUTO_ACTIVATE,
     RECHECK_ASSUME,
     DNS_LOOKUP_DONE,
     PLATFORM_ADDRESS_CHANGED,
@@ -513,8 +507,8 @@ typedef struct _NMDevicePrivate {
 
     NMUnmanagedFlags unmanaged_mask;
     NMUnmanagedFlags unmanaged_flags;
-    DeleteOnDeactivateData
-        *delete_on_deactivate_data; /* data for scheduled cleanup when deleting link (g_idle_add) */
+
+    GSource *delete_on_deactivate_idle_source;
 
     GCancellable *deactivating_cancellable;
 
@@ -6606,7 +6600,7 @@ carrier_changed(NMDevice *self, gboolean carrier)
              * when the carrier appears, auto connections are rechecked for
              * the device.
              */
-            nm_device_emit_recheck_auto_activate(self);
+            nm_device_recheck_auto_activate_schedule(self);
         }
     } else {
         if (priv->state == NM_DEVICE_STATE_UNAVAILABLE) {
@@ -6930,7 +6924,7 @@ device_link_changed(gpointer user_data)
         /* Let any connections that use the new interface name have a chance
          * to auto-activate on the device.
          */
-        nm_device_emit_recheck_auto_activate(self);
+        nm_device_recheck_auto_activate_schedule(self);
     }
 
     if (priv->ipac6_data.ndisc && pllink->inet6_token.id) {
@@ -7862,7 +7856,7 @@ nm_device_unrealize(NMDevice *self, gboolean remove_resources, GError **error)
 
     /* In case the unrealized device is not going away, it may need to
      * autoactivate.  Schedule also a check for that. */
-    nm_device_emit_recheck_auto_activate(self);
+    nm_device_recheck_auto_activate_schedule(self);
 
     return TRUE;
 }
@@ -7884,7 +7878,7 @@ nm_device_notify_availability_maybe_changed(NMDevice *self)
      * available. */
     nm_device_recheck_available_connections(self);
     if (g_hash_table_size(priv->available_connections) > 0)
-        nm_device_emit_recheck_auto_activate(self);
+        nm_device_recheck_auto_activate_schedule(self);
 }
 
 /**
@@ -8494,7 +8488,7 @@ nm_device_autoconnect_allowed(NMDevice *self)
             return FALSE;
     }
 
-    if (priv->delete_on_deactivate_data)
+    if (priv->delete_on_deactivate_idle_source)
         return FALSE;
 
     /* The 'autoconnect-allowed' signal is emitted on a device to allow
@@ -9249,9 +9243,9 @@ nm_device_queue_recheck_available(NMDevice           *self,
 }
 
 void
-nm_device_emit_recheck_auto_activate(NMDevice *self)
+nm_device_recheck_auto_activate_schedule(NMDevice *self)
 {
-    g_signal_emit(self, signals[RECHECK_AUTO_ACTIVATE], 0);
+    nm_manager_device_recheck_auto_activate_schedule(nm_device_get_manager(self), self);
 }
 
 void
@@ -12774,24 +12768,24 @@ nm_device_is_nm_owned(NMDevice *self)
 static gboolean
 delete_on_deactivate_link_delete(gpointer user_data)
 {
-    DeleteOnDeactivateData        *data  = user_data;
-    nm_auto_unref_object NMDevice *self  = data->device;
+    nm_auto_unref_object NMDevice *self  = user_data;
     NMDevicePrivate               *priv  = NM_DEVICE_GET_PRIVATE(self);
     gs_free_error GError          *error = NULL;
 
-    _LOGD(LOGD_DEVICE,
-          "delete_on_deactivate: cleanup and delete virtual link (id=%u)",
-          data->idle_add_id);
+    _LOGD(LOGD_DEVICE, "delete_on_deactivate: cleanup and delete virtual link");
 
-    priv->delete_on_deactivate_data = NULL;
+    nm_clear_g_source_inst(&priv->delete_on_deactivate_idle_source);
 
     if (!nm_device_unrealize(self, TRUE, &error))
         _LOGD(LOGD_DEVICE, "delete_on_deactivate: unrealizing failed (%s)", error->message);
 
-    nm_device_emit_recheck_auto_activate(self);
+    if (nm_dbus_object_is_exported(NM_DBUS_OBJECT(self))) {
+        /* The device is still alive. We may need to autoactivate virtual
+         * devices again. */
+        nm_device_recheck_auto_activate_schedule(self);
+    }
 
-    g_free(data);
-    return FALSE;
+    return G_SOURCE_CONTINUE;
 }
 
 static void
@@ -12799,25 +12793,16 @@ delete_on_deactivate_unschedule(NMDevice *self)
 {
     NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
 
-    if (priv->delete_on_deactivate_data) {
-        DeleteOnDeactivateData *data = priv->delete_on_deactivate_data;
-
-        priv->delete_on_deactivate_data = NULL;
-
-        g_source_remove(data->idle_add_id);
-        _LOGD(LOGD_DEVICE,
-              "delete_on_deactivate: cancel cleanup and delete virtual link (id=%u)",
-              data->idle_add_id);
-        g_object_unref(data->device);
-        g_free(data);
+    if (nm_clear_g_source_inst(&priv->delete_on_deactivate_idle_source)) {
+        _LOGD(LOGD_DEVICE, "delete_on_deactivate: cancel cleanup and delete virtual link");
+        g_object_unref(self);
     }
 }
 
 static void
 delete_on_deactivate_check_and_schedule(NMDevice *self)
 {
-    NMDevicePrivate        *priv = NM_DEVICE_GET_PRIVATE(self);
-    DeleteOnDeactivateData *data;
+    NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
 
     if (!priv->nm_owned)
         return;
@@ -12831,14 +12816,11 @@ delete_on_deactivate_check_and_schedule(NMDevice *self)
         return;
     delete_on_deactivate_unschedule(self); /* always cancel and reschedule */
 
-    data                            = g_new(DeleteOnDeactivateData, 1);
-    data->device                    = g_object_ref(self);
-    data->idle_add_id               = g_idle_add(delete_on_deactivate_link_delete, data);
-    priv->delete_on_deactivate_data = data;
+    g_object_ref(self);
+    priv->delete_on_deactivate_idle_source =
+        nm_g_idle_add_source(delete_on_deactivate_link_delete, self);
 
-    _LOGD(LOGD_DEVICE,
-          "delete_on_deactivate: schedule cleanup and delete virtual link (id=%u)",
-          data->idle_add_id);
+    _LOGD(LOGD_DEVICE, "delete_on_deactivate: schedule cleanup and delete virtual link");
 }
 
 static void
@@ -17942,6 +17924,7 @@ nm_device_init(NMDevice *self)
     c_list_init(&priv->concheck_lst_head);
     c_list_init(&self->devices_lst);
     c_list_init(&self->devcon_dev_lst_head);
+    c_list_init(&self->policy_auto_activate_lst);
     c_list_init(&priv->slaves);
 
     priv->ipdhcp_data_6.v6.mode = NM_NDISC_DHCP_LEVEL_NONE;
@@ -18063,6 +18046,8 @@ dispose(GObject *object)
 
     nm_assert(c_list_is_empty(&self->devices_lst));
     nm_assert(c_list_is_empty(&self->devcon_dev_lst_head));
+    nm_assert(c_list_is_empty(&self->policy_auto_activate_lst));
+    nm_assert(!self->policy_auto_activate_idle_source);
 
     while ((con_handle = c_list_first_entry(&priv->concheck_lst_head,
                                             NMDeviceConnectivityHandle,
@@ -18724,16 +18709,6 @@ nm_device_class_init(NMDeviceClass *klass)
                                     NULL,
                                     G_TYPE_NONE,
                                     0);
-
-    signals[RECHECK_AUTO_ACTIVATE] = g_signal_new(NM_DEVICE_RECHECK_AUTO_ACTIVATE,
-                                                  G_OBJECT_CLASS_TYPE(object_class),
-                                                  G_SIGNAL_RUN_FIRST,
-                                                  0,
-                                                  NULL,
-                                                  NULL,
-                                                  NULL,
-                                                  G_TYPE_NONE,
-                                                  0);
 
     signals[RECHECK_ASSUME] = g_signal_new(NM_DEVICE_RECHECK_ASSUME,
                                            G_OBJECT_CLASS_TYPE(object_class),
