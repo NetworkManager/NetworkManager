@@ -7701,6 +7701,10 @@ nm_device_unrealize(NMDevice *self, gboolean remove_resources, GError **error)
     /* Garbage-collect unneeded unrealized devices. */
     nm_device_recheck_available_connections(self);
 
+    /* In case the unrealized device is not going away, it may need to
+     * autoactivate.  Schedule also a check for that. */
+    nm_device_emit_recheck_auto_activate(self);
+
     return TRUE;
 }
 
@@ -13414,7 +13418,8 @@ delete_cb(NMDevice              *self,
           GError                *error,
           gpointer               user_data)
 {
-    GError *local = NULL;
+    NMSettingsConnection *sett_conn;
+    GError               *local = NULL;
 
     if (error) {
         g_dbus_method_invocation_return_gerror(context, error);
@@ -13429,10 +13434,26 @@ delete_cb(NMDevice              *self,
 
     /* Authorized */
     nm_audit_log_device_op(NM_AUDIT_OP_DEVICE_DELETE, self, TRUE, NULL, subject, NULL);
-    if (nm_device_unrealize(self, TRUE, &local))
-        g_dbus_method_invocation_return_value(context, NULL);
-    else
+
+    sett_conn = nm_device_get_settings_connection(self);
+    if (sett_conn) {
+        /* Block profile from autoconnecting. We block the profile, which may
+         * be ugly/wrong with multi-connect profiles. However, it's not
+         * obviously wrong, because profiles for software devices tend not to
+         * work with multi-connect anyway, because they describe a (unique)
+         * interface by name. */
+        nm_settings_connection_autoconnect_blocked_reason_set(
+            sett_conn,
+            NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_USER_REQUEST,
+            TRUE);
+    }
+
+    if (!nm_device_unrealize(self, TRUE, &local)) {
         g_dbus_method_invocation_take_error(context, local);
+        return;
+    }
+
+    g_dbus_method_invocation_return_value(context, NULL);
 }
 
 static void
