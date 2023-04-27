@@ -1998,7 +1998,8 @@ device_state_changed(NMDevice           *device,
                 con_v = nm_settings_connection_get_last_secret_agent_version_id(sett_conn);
                 if (con_v == 0 || con_v == nm_agent_manager_get_agent_version_id(priv->agent_mgr)) {
                     _LOGD(LOGD_DEVICE,
-                          "connection '%s' now blocked from autoconnect due to no secrets",
+                          "block-autoconnect: connection '%s' now blocked from autoconnect due to "
+                          "no secrets",
                           nm_settings_connection_get_id(sett_conn));
                     nm_settings_connection_autoconnect_blocked_reason_set(
                         sett_conn,
@@ -2017,7 +2018,8 @@ device_state_changed(NMDevice           *device,
                  * dependency-failed.
                  */
                 _LOGD(LOGD_DEVICE,
-                      "autoconnect: connection[%p] (%s) now blocked from autoconnect due to failed "
+                      "block-autoconnect: connection[%p] (%s) now blocked from autoconnect due to "
+                      "failed "
                       "dependency",
                       sett_conn,
                       nm_settings_connection_get_id(sett_conn));
@@ -2102,7 +2104,7 @@ device_state_changed(NMDevice           *device,
             }
             if (blocked_reason != NM_SETTINGS_AUTOCONNECT_BLOCKED_REASON_NONE) {
                 _LOGD(LOGD_DEVICE,
-                      "blocking autoconnect of connection '%s': %s",
+                      "block-autoconnect: blocking autoconnect of connection '%s': %s",
                       nm_settings_connection_get_id(sett_conn),
                       NM_UTILS_LOOKUP_STR_A(nm_device_state_reason_to_string,
                                             nm_device_state_reason_check(reason)));
