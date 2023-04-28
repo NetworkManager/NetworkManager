@@ -1983,7 +1983,8 @@ device_state_changed(NMDevice           *device,
             gboolean blocked = FALSE;
             guint64  con_v;
 
-            if (nm_device_state_reason_check(reason) == NM_DEVICE_STATE_REASON_NO_SECRETS) {
+            switch (nm_device_state_reason_check(reason)) {
+            case NM_DEVICE_STATE_REASON_NO_SECRETS:
                 /* we want to block the connection from auto-connect if it failed due to no-secrets.
                  * However, if a secret-agent registered, since the connection made the last
                  * secret-request, we do not block it. The new secret-agent might not yet
@@ -2009,8 +2010,8 @@ device_state_changed(NMDevice           *device,
                         TRUE);
                     blocked = TRUE;
                 }
-            } else if (nm_device_state_reason_check(reason)
-                       == NM_DEVICE_STATE_REASON_DEPENDENCY_FAILED) {
+                break;
+            case NM_DEVICE_STATE_REASON_DEPENDENCY_FAILED:
                 /* A connection that fails due to dependency-failed is not
                  * able to reconnect until the master connection activates
                  * again; when this happens, the master clears the blocked
@@ -2032,6 +2033,9 @@ device_state_changed(NMDevice           *device,
                     NM_SETTINGS_AUTOCONNECT_BLOCKED_REASON_FAILED,
                     TRUE);
                 blocked = TRUE;
+                break;
+            default:
+                break;
             }
 
             if (!blocked) {
