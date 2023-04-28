@@ -1782,20 +1782,61 @@ _connection_autoconnect_retries_set(NMPolicy *self, NMSettingsConnection *connec
 }
 
 static void
-activate_slave_connections(NMPolicy *self, NMDevice *device)
+unblock_autoconnect_for_ports(NMPolicy   *self,
+                              const char *master_device,
+                              const char *master_uuid_settings,
+                              const char *master_uuid_applied,
+                              gboolean    reset_devcon_autoconnect)
 {
     NMPolicyPrivate             *priv = NM_POLICY_GET_PRIVATE(self);
-    const char                  *master_device;
-    const char                  *master_uuid_settings = NULL;
-    const char                  *master_uuid_applied  = NULL;
-    guint                        i;
-    NMActRequest                *req;
-    gboolean                     internal_activation = FALSE;
     NMSettingsConnection *const *connections;
     gboolean                     changed;
+    guint                        i;
+
+    changed     = FALSE;
+    connections = nm_settings_get_connections(priv->settings, NULL);
+    for (i = 0; connections[i]; i++) {
+        NMSettingsConnection *sett_conn = connections[i];
+        NMSettingConnection  *s_slave_con;
+        const char           *slave_master;
+
+        s_slave_con =
+            nm_connection_get_setting_connection(nm_settings_connection_get_connection(sett_conn));
+        slave_master = nm_setting_connection_get_master(s_slave_con);
+        if (!slave_master)
+            continue;
+        if (!NM_IN_STRSET(slave_master, master_device, master_uuid_applied, master_uuid_settings))
+            continue;
+
+        if (reset_devcon_autoconnect) {
+            if (nm_settings_connection_autoconnect_retries_get(sett_conn) == 0)
+                changed = TRUE;
+            nm_settings_connection_autoconnect_retries_reset(sett_conn);
+        }
+        if (nm_settings_connection_autoconnect_blocked_reason_set(
+                sett_conn,
+                NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_FAILED,
+                FALSE)) {
+            if (!nm_settings_connection_autoconnect_is_blocked(sett_conn))
+                changed = TRUE;
+        }
+    }
+
+    if (changed)
+        nm_policy_device_recheck_auto_activate_all_schedule(self);
+}
+
+static void
+activate_slave_connections(NMPolicy *self, NMDevice *device)
+{
+    const char   *master_device;
+    const char   *master_uuid_settings = NULL;
+    const char   *master_uuid_applied  = NULL;
+    NMActRequest *req;
+    gboolean      internal_activation = FALSE;
 
     master_device = nm_device_get_iface(device);
-    g_assert(master_device);
+    nm_assert(master_device);
 
     req = nm_device_get_act_request(device);
     if (req) {
@@ -1819,37 +1860,11 @@ activate_slave_connections(NMPolicy *self, NMDevice *device)
             subject && (nm_auth_subject_get_subject_type(subject) == NM_AUTH_SUBJECT_TYPE_INTERNAL);
     }
 
-    changed     = FALSE;
-    connections = nm_settings_get_connections(priv->settings, NULL);
-    for (i = 0; connections[i]; i++) {
-        NMSettingsConnection *sett_conn = connections[i];
-        NMSettingConnection  *s_slave_con;
-        const char           *slave_master;
-
-        s_slave_con =
-            nm_connection_get_setting_connection(nm_settings_connection_get_connection(sett_conn));
-        slave_master = nm_setting_connection_get_master(s_slave_con);
-        if (!slave_master)
-            continue;
-        if (!NM_IN_STRSET(slave_master, master_device, master_uuid_applied, master_uuid_settings))
-            continue;
-
-        if (!internal_activation) {
-            if (nm_settings_connection_autoconnect_retries_get(sett_conn) == 0)
-                changed = TRUE;
-            nm_settings_connection_autoconnect_retries_reset(sett_conn);
-        }
-        if (nm_settings_connection_autoconnect_blocked_reason_set(
-                sett_conn,
-                NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_FAILED,
-                FALSE)) {
-            if (!nm_settings_connection_autoconnect_is_blocked(sett_conn))
-                changed = TRUE;
-        }
-    }
-
-    if (changed)
-        nm_policy_device_recheck_auto_activate_all_schedule(self);
+    unblock_autoconnect_for_ports(self,
+                                  master_device,
+                                  master_uuid_settings,
+                                  master_uuid_applied,
+                                  !internal_activation);
 }
 
 static gboolean
