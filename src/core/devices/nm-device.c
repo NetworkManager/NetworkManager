@@ -1653,7 +1653,7 @@ _prop_get_ipv4_dad_timeout(NMDevice *self)
                                                        self,
                                                        0,
                                                        NM_SETTING_IP_CONFIG_DAD_TIMEOUT_MAX,
-                                                       0);
+                                                       3000);
 }
 
 static guint32
