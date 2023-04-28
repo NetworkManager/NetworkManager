@@ -1827,9 +1827,8 @@ activate_slave_connections(NMPolicy *self, NMDevice *device)
             continue;
 
         if (!internal_activation) {
-            nm_manager_devcon_autoconnect_retries_reset(priv->manager, NULL, sett_conn);
-            /* we cannot know if they changed or not, so considering we did a reset, let's consider they changed. */
-            changed = TRUE;
+            if (nm_manager_devcon_autoconnect_retries_reset(priv->manager, NULL, sett_conn))
+                changed = TRUE;
         }
         /* unblock the devices associated with that connection */
         if (nm_manager_devcon_autoconnect_blocked_reason_set(
