@@ -18117,7 +18117,6 @@ dispose(GObject *object)
     nm_assert(c_list_is_empty(&self->devices_lst));
     nm_assert(c_list_is_empty(&self->devcon_dev_lst_head));
     nm_assert(c_list_is_empty(&self->policy_auto_activate_lst));
-    nm_assert(!self->policy_auto_activate_idle_source);
 
     while ((con_handle = c_list_first_entry(&priv->concheck_lst_head,
                                             NMDeviceConnectivityHandle,

@@ -145,8 +145,7 @@ struct _NMDevice {
     CList                    devices_lst;
     CList                    devcon_dev_lst_head;
 
-    CList    policy_auto_activate_lst;
-    GSource *policy_auto_activate_idle_source;
+    CList policy_auto_activate_lst;
 };
 
 /* The flags have an relaxing meaning, that means, specifying more flags, can make

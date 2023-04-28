@@ -62,7 +62,7 @@ typedef struct {
 
     NMSettings *settings;
 
-    GSource *device_recheck_auto_activate_all_idle_source;
+    GSource *auto_activate_idle_source;
 
     GSource *reset_connections_retries_idle_source;
 
@@ -84,6 +84,8 @@ typedef struct {
     bool changing_hostname : 1; /* hostname set operation in progress */
     bool dhcp_hostname : 1;     /* current hostname was set from dhcp */
     bool updating_dns : 1;
+
+    bool auto_activate_recheck_all_blocked : 1;
 
     GArray *ip6_prefix_delegations; /* pool of ip6 prefixes delegated to all devices */
 } NMPolicyPrivate;
@@ -1330,7 +1332,7 @@ pending_ac_state_changed(NMActiveConnection *ac, guint state, guint reason, NMPo
     }
 }
 
-static void
+static gboolean
 _auto_activate_device(NMPolicy *self, NMDevice *device)
 {
     NMPolicyPrivate               *priv;
@@ -1359,15 +1361,15 @@ _auto_activate_device(NMPolicy *self, NMDevice *device)
              *
              * pass. */
         } else
-            return;
+            return FALSE;
     }
 
     if (!nm_device_autoconnect_allowed(device))
-        return;
+        return FALSE;
 
     connections = nm_manager_get_activatable_connections(priv->manager, TRUE, TRUE, &len);
     if (!connections[0])
-        return;
+        return FALSE;
 
     /* Find the first connection that should be auto-activated */
     best_connection = NULL;
@@ -1397,7 +1399,7 @@ _auto_activate_device(NMPolicy *self, NMDevice *device)
     }
 
     if (!best_connection)
-        return;
+        return FALSE;
 
     _LOGI(LOGD_DEVICE,
           "auto-activating connection '%s' (%s)",
@@ -1428,7 +1430,7 @@ _auto_activate_device(NMPolicy *self, NMDevice *device)
             NM_SETTINGS_AUTOCONNECT_BLOCKED_REASON_FAILED,
             TRUE);
         nm_policy_device_recheck_auto_activate_schedule(self, device);
-        return;
+        return TRUE;
     }
 
     /* Subscribe to AC state-changed signal to detect when the
@@ -1442,11 +1444,15 @@ _auto_activate_device(NMPolicy *self, NMDevice *device)
                          g_object_ref(self));
         g_object_weak_ref(G_OBJECT(ac), (GWeakNotify) pending_ac_gone, self);
     }
+
+    return TRUE;
 }
 
-static void
+static gboolean
 _auto_activate_device_clear(NMPolicy *self, NMDevice *device, gboolean do_activate)
 {
+    gboolean activation_started = FALSE;
+
     nm_assert(NM_IS_DEVICE(device));
     nm_assert(NM_IS_POLICY(self));
     nm_assert(c_list_is_linked(&device->policy_auto_activate_lst));
@@ -1454,22 +1460,48 @@ _auto_activate_device_clear(NMPolicy *self, NMDevice *device, gboolean do_activa
                               &device->policy_auto_activate_lst));
 
     c_list_unlink(&device->policy_auto_activate_lst);
-    nm_clear_g_source_inst(&device->policy_auto_activate_idle_source);
 
     if (do_activate)
-        _auto_activate_device(self, device);
+        activation_started = _auto_activate_device(self, device);
 
     nm_device_remove_pending_action(device, NM_PENDING_ACTION_AUTOACTIVATE, TRUE);
+
+    return activation_started;
 }
 
 static gboolean
 _auto_activate_idle_cb(gpointer user_data)
 {
-    NMDevice *device = user_data;
+    NMPolicy        *self = user_data;
+    NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE(self);
+    NMDevice        *device;
 
-    nm_assert(NM_IS_DEVICE(device));
+    priv->auto_activate_recheck_all_blocked = FALSE;
 
-    _auto_activate_device_clear(nm_manager_get_policy(nm_device_get_manager(device)), device, TRUE);
+    while ((device = c_list_first_entry(&priv->policy_auto_activate_lst_head,
+                                        NMDevice,
+                                        policy_auto_activate_lst))) {
+        if (_auto_activate_device_clear(self, device, TRUE)) {
+            /* an autoactivation was started. We break the loop, and further
+             * autoconnect checks will be performed the next time on an
+             * idle handler. */
+            break;
+        }
+        /* The check didn't actually result in anything relevant. We can
+         * check the next device right away. */
+    }
+
+    if (!c_list_is_empty(&priv->policy_auto_activate_lst_head)) {
+        /* We have more entires in the list for checking to autoconnect. We
+         * don't handle them now, but go through another round of idle handler.
+         * The idea is that most other actions are more important and should be
+         * performed first, before handling another autoconnect.
+         *
+         * Keep priv->auto_activate_idle_source attached for that. */
+    } else {
+        nm_clear_g_source_inst(&priv->auto_activate_idle_source);
+    }
+
     return G_SOURCE_CONTINUE;
 }
 
@@ -1656,9 +1688,7 @@ sleeping_changed(NMManager *manager, GParamSpec *pspec, gpointer user_data)
 void
 nm_policy_device_recheck_auto_activate_schedule(NMPolicy *self, NMDevice *device)
 {
-    NMPolicyPrivate    *priv;
-    NMActiveConnection *ac;
-    const CList        *tmp_list;
+    NMPolicyPrivate *priv;
 
     g_return_if_fail(NM_IS_POLICY(self));
     g_return_if_fail(NM_IS_DEVICE(device));
@@ -1673,31 +1703,30 @@ nm_policy_device_recheck_auto_activate_schedule(NMPolicy *self, NMDevice *device
 
     if (!c_list_is_empty(&device->policy_auto_activate_lst)) {
         /* already queued. Return. */
+        nm_assert(NM_POLICY_GET_PRIVATE(self)->auto_activate_idle_source);
         return;
     }
 
     priv = NM_POLICY_GET_PRIVATE(self);
 
-    if (nm_manager_get_state(priv->manager) == NM_STATE_ASLEEP)
-        return;
-
-    if (!nm_device_autoconnect_allowed(device))
-        return;
-
-    nm_manager_for_each_active_connection (priv->manager, ac, tmp_list) {
-        if (nm_active_connection_get_device(ac) == device) {
-            if (nm_device_sys_iface_state_is_external(device)
-                && nm_device_get_allow_autoconnect_on_external(device)) {
-                /* pass */
-            } else
-                return;
-        }
-    }
+    /* Note that we don't perform other checks here (like whether the device has
+     * autoconnect blocked). Instead, we always schedule an auto-activate check.
+     *
+     * The overhead is the additional pending-action that we add and remove (possibly needlessly).
+     * If that is a concern, optimize that part of the code (e.g. that NM_DEVICE_HAS_PENDING_ACTION
+     * can be evaluated more efficiently, by checking on an idle handler).
+     *
+     * If we were to perform additional checks here, then the optimization with
+     * priv->auto_activate_recheck_all_blocked would not be valid, because we would
+     * need to keep track of changes to the device to clear the all-blocked flag
+     * prematurely. */
 
     nm_device_add_pending_action(device, NM_PENDING_ACTION_AUTOACTIVATE, TRUE);
 
     c_list_link_tail(&priv->policy_auto_activate_lst_head, &device->policy_auto_activate_lst);
-    device->policy_auto_activate_idle_source = nm_g_idle_add_source(_auto_activate_idle_cb, device);
+
+    if (!priv->auto_activate_idle_source)
+        priv->auto_activate_idle_source = nm_g_idle_add_source(_auto_activate_idle_cb, self);
 }
 
 static gboolean
@@ -2360,6 +2389,8 @@ device_added(NMManager *manager, NMDevice *device, gpointer user_data)
 
     priv = NM_POLICY_GET_PRIVATE(self);
 
+    priv->auto_activate_recheck_all_blocked = FALSE;
+
     if (!g_hash_table_add(priv->devices, device))
         g_return_if_reached();
 
@@ -2556,33 +2587,27 @@ active_connection_removed(NMManager *manager, NMActiveConnection *active, gpoint
 
 /*****************************************************************************/
 
-static gboolean
-_device_recheck_auto_activate_all_cb(gpointer user_data)
-{
-    NMPolicy        *self = user_data;
-    NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE(self);
-    const CList     *tmp_lst;
-    NMDevice        *device;
-
-    nm_clear_g_source_inst(&priv->device_recheck_auto_activate_all_idle_source);
-
-    nm_manager_for_each_device (priv->manager, device, tmp_lst)
-        nm_policy_device_recheck_auto_activate_schedule(self, device);
-
-    return G_SOURCE_CONTINUE;
-}
-
 static void
 nm_policy_device_recheck_auto_activate_all_schedule(NMPolicy *self)
 {
     NMPolicyPrivate *priv = NM_POLICY_GET_PRIVATE(self);
+    const CList     *tmp_lst;
+    NMDevice        *device;
 
-    /* always restart the idle handler. That way, we settle
-     * all other events before restarting to activate them. */
-    nm_clear_g_source_inst(&priv->device_recheck_auto_activate_all_idle_source);
+    if (priv->auto_activate_recheck_all_blocked) {
+        /* Optimize. Calling nm_policy_device_recheck_auto_activate_all_schedule() several
+         * times should not require to iterate all devices multiple times.
+         *
+         * Since nm_policy_device_recheck_auto_activate_schedule() already schedules the pending
+         * action, once we called it, we don't need to call it again (as long as the flag
+         * is set). */
+        return;
+    }
 
-    priv->device_recheck_auto_activate_all_idle_source =
-        nm_g_idle_add_source(_device_recheck_auto_activate_all_cb, self);
+    priv->auto_activate_recheck_all_blocked = TRUE;
+
+    nm_manager_for_each_device (priv->manager, device, tmp_lst)
+        nm_policy_device_recheck_auto_activate_schedule(self, device);
 }
 
 /*****************************************************************************/
@@ -2964,7 +2989,7 @@ dispose(GObject *object)
     nm_assert(c_list_is_empty(nm_manager_get_active_connections(priv->manager)));
 
     nm_clear_g_source_inst(&priv->reset_connections_retries_idle_source);
-    nm_clear_g_source_inst(&priv->device_recheck_auto_activate_all_idle_source);
+    nm_clear_g_source_inst(&priv->auto_activate_idle_source);
 
     nm_clear_g_free(&priv->orig_hostname);
     nm_clear_g_free(&priv->cur_hostname);
