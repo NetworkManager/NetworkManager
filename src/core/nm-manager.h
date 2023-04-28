@@ -243,9 +243,9 @@ void nm_manager_devcon_autoconnect_retries_set(NMManager            *self,
                                                NMSettingsConnection *sett_conn,
                                                guint32               retries);
 
-void nm_manager_devcon_autoconnect_retries_reset(NMManager            *self,
-                                                 NMDevice             *device,
-                                                 NMSettingsConnection *sett_conn);
+gboolean nm_manager_devcon_autoconnect_retries_reset(NMManager            *self,
+                                                     NMDevice             *device,
+                                                     NMSettingsConnection *sett_conn);
 
 gboolean nm_manager_devcon_autoconnect_reset_reconnect_all(NMManager            *self,
                                                            NMDevice             *device,

@@ -1270,7 +1270,7 @@ _autoconnect_retries_initial(NMSettingsConnection *sett_conn)
     return (guint32) retries;
 }
 
-static void
+static gboolean
 _autoconnect_retries_set(NMManager *self, DevConData *data, guint32 retries, gboolean is_reset)
 {
     gboolean changed = FALSE;
@@ -1313,6 +1313,8 @@ _autoconnect_retries_set(NMManager *self, DevConData *data, guint32 retries, gbo
                                                       " (blocked for %d sec)",
                                                       AUTOCONNECT_RESET_RETRIES_TIMER_SEC));
     }
+
+    return changed;
 }
 
 /**
@@ -1358,28 +1360,32 @@ nm_manager_devcon_autoconnect_retries_set(NMManager            *self,
                              FALSE);
 }
 
-void
+gboolean
 nm_manager_devcon_autoconnect_retries_reset(NMManager            *self,
                                             NMDevice             *device,
                                             NMSettingsConnection *sett_conn)
 {
     DevConData *data;
     guint32     retries_initial;
+    gboolean    changed = FALSE;
 
     nm_assert(NM_IS_SETTINGS_CONNECTION(sett_conn));
 
     retries_initial = _autoconnect_retries_initial(sett_conn);
 
     if (device) {
-        _autoconnect_retries_set(self,
-                                 _devcon_lookup_data(self, device, sett_conn, TRUE, FALSE),
-                                 retries_initial,
-                                 TRUE);
-        return;
+        return _autoconnect_retries_set(self,
+                                        _devcon_lookup_data(self, device, sett_conn, TRUE, FALSE),
+                                        retries_initial,
+                                        TRUE);
     }
 
-    c_list_for_each_entry (data, &sett_conn->devcon_con_lst_head, con_lst)
-        _autoconnect_retries_set(self, data, retries_initial, TRUE);
+    c_list_for_each_entry (data, &sett_conn->devcon_con_lst_head, con_lst) {
+        if (_autoconnect_retries_set(self, data, retries_initial, TRUE))
+            changed = TRUE;
+    }
+
+    return changed;
 }
 
 /**
