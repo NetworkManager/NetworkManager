@@ -1456,7 +1456,11 @@ nm_manager_devcon_autoconnect_retries_blocked_until(NMManager            *self,
     nm_assert(NM_IS_SETTINGS_CONNECTION(sett_conn));
 
     if (device) {
-        data = _devcon_lookup_data(self, device, sett_conn, TRUE, TRUE);
+        data = _devcon_lookup_data(self, device, sett_conn, FALSE, FALSE);
+
+        if (!data)
+            return 0;
+
         return data->autoconnect.blocked_until_sec;
     }
 
@@ -1487,7 +1491,10 @@ nm_manager_devcon_autoconnect_is_blocked(NMManager            *self,
     if (nm_settings_connection_autoconnect_is_blocked(sett_conn))
         return TRUE;
 
-    data = _devcon_lookup_data(self, device, sett_conn, TRUE, TRUE);
+    data = _devcon_lookup_data(self, device, sett_conn, FALSE, FALSE);
+
+    if (!data)
+        return FALSE;
 
     if (data->autoconnect.blocked_reason != NM_SETTINGS_AUTOCONNECT_BLOCKED_REASON_NONE)
         return TRUE;

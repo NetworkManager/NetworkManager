@@ -1758,11 +1758,13 @@ _connection_autoconnect_retries_set(NMPolicy             *self,
     if (tries == 0) {
         /* Schedule a handler to reset retries count */
         if (!priv->reset_connections_retries_idle_source) {
-            gint32 retry_time = nm_manager_devcon_autoconnect_retries_blocked_until(priv->manager,
-                                                                                    device,
-                                                                                    connection);
+            gint32 retry_time;
 
-            g_warn_if_fail(retry_time != 0);
+            retry_time = nm_manager_devcon_autoconnect_retries_blocked_until(priv->manager,
+                                                                             device,
+                                                                             connection);
+            nm_assert(retry_time != 0);
+
             priv->reset_connections_retries_idle_source = nm_g_timeout_add_seconds_source(
                 MAX(0, retry_time - nm_utils_get_monotonic_timestamp_sec()),
                 reset_connections_retries,
