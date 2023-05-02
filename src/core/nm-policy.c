@@ -2158,7 +2158,7 @@ device_state_changed(NMDevice           *device,
                 priv->manager,
                 device,
                 sett_conn,
-                NM_SETTINGS_AUTOCONNECT_BLOCKED_REASON_ALL,
+                NM_SETTINGS_AUTOCONNECT_BLOCKED_REASON_FAILED,
                 FALSE);
         break;
     case NM_DEVICE_STATE_SECONDARIES:

@@ -1252,7 +1252,7 @@ _autoconnect_retries_initial(NMSettingsConnection *sett_conn)
     if (retries == -1)
         retries = nm_config_data_get_autoconnect_retries_default(NM_CONFIG_GET_DATA);
 
-    nm_assert(retries >= 0 && ((guint) retries) <= ((guint) G_MAXINT32));
+    nm_assert(retries >= 0 && retries <= G_MAXINT32);
 
     if (retries == 0)
         return NM_AUTOCONNECT_RETRIES_FOREVER;
@@ -1401,16 +1401,15 @@ nm_manager_devcon_autoconnect_reset_reconnect_all(NMManager            *self,
     /* we reset the tries-count and any blocked-reason */
     nm_manager_devcon_autoconnect_retries_reset(self, NULL, sett_conn);
 
-    /* if there is a device and we changed the state, then something changed. */
-    if (device
-        && nm_manager_devcon_autoconnect_blocked_reason_set(
-            self,
-            device,
-            sett_conn,
-            NM_SETTINGS_AUTOCONNECT_BLOCKED_REASON_FAILED
-                | NM_SETTINGS_AUTOCONNECT_BLOCKED_REASON_USER_REQUEST,
-            FALSE))
-        changed = TRUE;
+    if (device) {
+        if (nm_manager_devcon_autoconnect_blocked_reason_set(
+                self,
+                device,
+                sett_conn,
+                NM_SETTINGS_AUTOCONNECT_BLOCKED_REASON_FAILED,
+                FALSE))
+            changed = TRUE;
+    }
 
     /* we remove all the blocked reason from the connection, if something
      * happened, then it means the status changed */
@@ -1487,8 +1486,9 @@ nm_manager_devcon_autoconnect_blocked_reason_set(NMManager                      
     gboolean                           changed = FALSE;
     char                               buf[100];
 
-    nm_assert(value);
-    nm_assert(sett_conn);
+    nm_assert(NM_IS_SETTINGS_CONNECTION(sett_conn));
+    nm_assert(value != NM_SETTINGS_AUTOCONNECT_BLOCKED_REASON_NONE);
+    nm_assert(!NM_FLAGS_ANY(value, ~(NM_SETTINGS_AUTOCONNECT_BLOCKED_REASON_FAILED)));
 
     if (device) {
         data = _devcon_lookup_data(self, device, sett_conn, TRUE);
