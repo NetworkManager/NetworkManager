@@ -170,7 +170,7 @@ nm_conn_wireguard_import(const char *filename, GError **error)
                                    NM_UTILS_ERROR_UNKNOWN,
                                    _("The name of the WireGuard config must be a valid interface "
                                      "name followed by \".conf\""));
-        return FALSE;
+        return NULL;
     }
 
     if (!nm_utils_file_get_contents(-1,
@@ -250,7 +250,7 @@ nm_conn_wireguard_import(const char *filename, GError **error)
                                    current_peer_start_line_nr,
                                    filename,
                                    error))
-                return FALSE;
+                return NULL;
             line_context = LINE_CONTEXT_INTERFACE;
             continue;
         }
@@ -261,7 +261,7 @@ nm_conn_wireguard_import(const char *filename, GError **error)
                                    current_peer_start_line_nr,
                                    filename,
                                    error))
-                return FALSE;
+                return NULL;
             current_peer_start_line_nr = line_nr;
             current_peer               = nm_wireguard_peer_new();
             line_context               = LINE_CONTEXT_PEER;
@@ -454,7 +454,7 @@ fail_invalid_line:
                            _("unrecognized line at %s:%zu"),
                            filename,
                            line_nr);
-        return FALSE;
+        return NULL;
 fail_invalid_value:
         nm_utils_error_set(error,
                            NM_UTILS_ERROR_INVALID_ARGUMENT,
@@ -462,7 +462,7 @@ fail_invalid_value:
                            matched_key,
                            filename,
                            line_nr);
-        return FALSE;
+        return NULL;
 fail_invalid_secret:
         nm_utils_error_set(error,
                            NM_UTILS_ERROR_INVALID_ARGUMENT,
@@ -470,7 +470,7 @@ fail_invalid_secret:
                            matched_key,
                            filename,
                            line_nr);
-        return FALSE;
+        return NULL;
     }
 
     if (!_wg_complete_peer(&data_peers,
@@ -478,7 +478,7 @@ fail_invalid_secret:
                            current_peer_start_line_nr,
                            filename,
                            error))
-        return FALSE;
+        return NULL;
 
     connection = nm_simple_connection_new();
     s_con      = NM_SETTING_CONNECTION(nm_setting_connection_new());
@@ -592,7 +592,7 @@ fail_invalid_secret:
                            NM_UTILS_ERROR_INVALID_ARGUMENT,
                            _("Failed to create WireGuard connection: %s"),
                            local->message);
-        return FALSE;
+        return NULL;
     }
 
     return g_steal_pointer(&connection);

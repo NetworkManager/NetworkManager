@@ -53,7 +53,7 @@ nmtst_ref_string_find(const char *cstr)
 {
     /* WARNING: only use for testing. See nmtst_ref_string_find_len() why. */
     if (!cstr)
-        return FALSE;
+        return NULL;
     return nmtst_ref_string_find_len(cstr, strlen(cstr));
 }
 
