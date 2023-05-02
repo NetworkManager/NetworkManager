@@ -49,7 +49,7 @@
 #include <sys/ioctl.h>
 #include <pthread.h>
 
-#define ENABLE_GSHADOW FALSE
+#define ENABLE_GSHADOW 0
 
 #define HAVE_SECCOMP 0
 
