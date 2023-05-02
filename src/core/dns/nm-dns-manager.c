@@ -2128,7 +2128,8 @@ nm_dns_manager_set_hostname(NMDnsManager *self, const char *hostname, gboolean s
 
     /* Certain hostnames we don't want to include in resolv.conf 'searches' */
     if (hostname && nm_utils_is_specific_hostname(hostname)
-        && !g_str_has_suffix(hostname, ".in-addr.arpa") && !nm_inet_is_valid(AF_UNSPEC, hostname)) {
+        && !NM_STR_HAS_SUFFIX(hostname, ".in-addr.arpa")
+        && !nm_inet_is_valid(AF_UNSPEC, hostname)) {
         domain = strchr(hostname, '.');
         if (domain) {
             domain++;
