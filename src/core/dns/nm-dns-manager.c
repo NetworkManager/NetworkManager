@@ -173,7 +173,9 @@ NM_DEFINE_SINGLETON_GETTER(NMDnsManager, nm_dns_manager_get, NM_TYPE_DNS_MANAGER
 /*****************************************************************************/
 
 static gboolean
-domain_is_valid(const char *domain, gboolean check_public_suffix, gboolean assume_any_tld_is_public)
+domain_is_valid(const char *domain,
+                gboolean    reject_public_suffix,
+                gboolean    assume_any_tld_is_public)
 {
 #if WITH_LIBPSL
     /* ifdef to fall back to old API function on platforms with older LIBPSL */
@@ -202,10 +204,10 @@ domain_is_valid(const char *domain, gboolean check_public_suffix, gboolean assum
      */
     if (!assume_any_tld_is_public)
         type = PSL_TYPE_NO_STAR_RULE;
-    if (check_public_suffix && psl_is_public_suffix2(psl_builtin(), domain, type))
+    if (reject_public_suffix && psl_is_public_suffix2(psl_builtin(), domain, type))
         return FALSE;
 #else
-    if (check_public_suffix && psl_is_public_suffix(psl_builtin(), domain))
+    if (reject_public_suffix && psl_is_public_suffix(psl_builtin(), domain))
         return FALSE;
 #endif
 #endif
