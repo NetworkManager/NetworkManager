@@ -889,12 +889,12 @@ nm_firewall_nft_stdio_mlag(gboolean           up,
          */
         _append(&strbuf,
                 "add set netdev %s macset-tagged {"
-                " typeof ether saddr . vlan id; flags timeout; "
+                " typeof ether saddr . vlan id; flags dynamic,timeout; "
                 "}",
                 table_name);
         _append(&strbuf,
                 "add set netdev %s macset-untagged {"
-                " typeof ether saddr; flags timeout;"
+                " typeof ether saddr; flags dynamic,timeout; "
                 "}",
                 table_name);
 
