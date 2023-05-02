@@ -10,6 +10,8 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 
 * Setting "connection.stable-id=default${CONNECTION}" changed behavior to
   be identical to the built-in default value when the stable-id is not set.
+* When configuring hostnames in non-public TLD (like "example.local"), use
+  the TLD as default search domain instead of the full hostname.
 
 =============================================
 NetworkManager-1.42
