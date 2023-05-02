@@ -2157,10 +2157,10 @@ nm_dns_manager_set_hostname(NMDnsManager *self, const char *hostname, gboolean s
         }
     }
 
-    if (!nm_strdup_reset(&priv->hostdomain, domain)) {
-        _LOGT("Established |%s| as host domain.", priv->hostdomain);
+    if (!nm_strdup_reset(&priv->hostdomain, domain))
         return;
-    }
+
+    _LOGT("set host domain to %s%s%s", NM_PRINT_FMT_QUOTE_STRING(priv->hostdomain));
 
     if (skip_update)
         return;
