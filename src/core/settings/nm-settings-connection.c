@@ -361,6 +361,20 @@ nm_settings_connection_get_connection(NMSettingsConnection *self)
     return NM_SETTINGS_CONNECTION_GET_PRIVATE(self)->connection;
 }
 
+gpointer
+nm_settings_connection_get_setting(NMSettingsConnection *self, NMMetaSettingType meta_type)
+{
+    NMConnection *connection;
+
+    nm_assert(NM_IS_SETTINGS_CONNECTION(self));
+
+    connection = NM_SETTINGS_CONNECTION_GET_PRIVATE(self)->connection;
+
+    nm_assert(NM_IS_SIMPLE_CONNECTION(connection));
+
+    return _nm_connection_get_setting_by_metatype_unsafe(connection, meta_type);
+}
+
 void
 _nm_settings_connection_set_connection(NMSettingsConnection            *self,
                                        NMConnection                    *new_connection,
