@@ -285,8 +285,11 @@ _get_setting_by_metatype(NMConnectionPrivate *priv, NMMetaSettingType meta_type)
     return priv->settings[meta_type];
 }
 
-static gpointer
-_nm_connection_get_setting_by_metatype(NMConnection *connection, NMMetaSettingType meta_type)
+/* The "unsafe" part here is that _nm_connection_get_setting_by_metatype() has a compile
+ * time check that meta_type is valid. With the unsafe variant, the caller must ensure that,
+ * and we only get an nm_assert() check -- which is basically nothing. */
+gpointer
+_nm_connection_get_setting_by_metatype_unsafe(NMConnection *connection, NMMetaSettingType meta_type)
 {
     g_return_val_if_fail(NM_IS_CONNECTION(connection), NULL);
 
