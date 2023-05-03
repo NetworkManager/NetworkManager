@@ -7,6 +7,8 @@
 #ifndef __NETWORKMANAGER_SETTINGS_CONNECTION_H__
 #define __NETWORKMANAGER_SETTINGS_CONNECTION_H__
 
+#include "libnm-core-intern/nm-meta-setting-base.h"
+
 #include "nm-dbus-object.h"
 #include "nm-connection.h"
 
@@ -222,6 +224,8 @@ NMSettings *nm_settings_connection_get_settings(NMSettingsConnection *self);
 NMManager *nm_settings_connection_get_manager(NMSettingsConnection *self);
 
 NMConnection *nm_settings_connection_get_connection(NMSettingsConnection *self);
+gpointer      nm_settings_connection_get_setting(NMSettingsConnection *self,
+                                                 NMMetaSettingType     meta_type);
 
 void _nm_settings_connection_set_connection(NMSettingsConnection            *self,
                                             NMConnection                    *new_connection,
