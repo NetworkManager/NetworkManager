@@ -22,9 +22,10 @@
 
 /*****************************************************************************/
 
-NM_GOBJECT_PROPERTIES_DEFINE(NMSettingBondPort, PROP_QUEUE_ID, );
+NM_GOBJECT_PROPERTIES_DEFINE(NMSettingBondPort, PROP_QUEUE_ID, PROP_PRIO, );
 
 typedef struct {
+    gint32  prio;
     guint32 queue_id;
 } NMSettingBondPortPrivate;
 
@@ -63,6 +64,22 @@ nm_setting_bond_port_get_queue_id(NMSettingBondPort *setting)
     g_return_val_if_fail(NM_IS_SETTING_BOND_PORT(setting), 0);
 
     return NM_SETTING_BOND_PORT_GET_PRIVATE(setting)->queue_id;
+}
+
+/**
+ * nm_setting_bond_port_get_prio:
+ * @setting: the #NMSettingBondPort
+ *
+ * Returns: the #NMSettingBondPort:prio property of the setting
+ *
+ * Since: 1.44
+ **/
+gint32
+nm_setting_bond_port_get_prio(NMSettingBondPort *setting)
+{
+    g_return_val_if_fail(NM_IS_SETTING_BOND_PORT(setting), 0);
+
+    return NM_SETTING_BOND_PORT_GET_PRIVATE(setting)->prio;
 }
 
 /*****************************************************************************/
@@ -148,7 +165,7 @@ nm_setting_bond_port_class_init(NMSettingBondPortClass *klass)
      **/
     /* ---ifcfg-rh---
      * property: queue-id
-     * variable: BONDING_OPTS: queue-id=
+     * variable: BOND_PORT_QUEUE_ID(+)
      * values: 0 - 65535
      * default: 0
      * description: Queue ID.
@@ -164,6 +181,35 @@ nm_setting_bond_port_class_init(NMSettingBondPortClass *klass)
                                               NM_SETTING_PARAM_INFERRABLE,
                                               NMSettingBondPort,
                                               _priv.queue_id);
+
+    /**
+     * NMSettingBondPort:prio:
+     *
+     * The port priority for bond active port re-selection during failover. A
+     * higher number means a higher priority in selection. The primary port has
+     * the highest priority. This option is only compatible with active-backup,
+     * balance-tlb and balance-alb modes.
+     *
+     * Since: 1.44
+     **/
+    /* ---ifcfg-rh---
+     * property: prio
+     * variable: BOND_PORT_PRIO(+)
+     * values: -2147483648 - 2147483647
+     * default: 0
+     * description: Port priority.
+     * ---end---
+     */
+    _nm_setting_property_define_direct_int32(properties_override,
+                                             obj_properties,
+                                             NM_SETTING_BOND_PORT_PRIO,
+                                             PROP_PRIO,
+                                             G_MININT32,
+                                             G_MAXINT32,
+                                             NM_BOND_PORT_PRIO_DEF,
+                                             NM_SETTING_PARAM_INFERRABLE,
+                                             NMSettingBondPort,
+                                             _priv.prio);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 

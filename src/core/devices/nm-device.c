@@ -2861,7 +2861,7 @@ nm_device_link_properties_set(NMDevice *self, gboolean reapply)
     _RESET(NM_PLATFORM_LINK_CHANGE_GSO_MAX_SEGMENTS, gso_max_segments);
     _RESET(NM_PLATFORM_LINK_CHANGE_GRO_MAX_SIZE, gro_max_size);
 
-    if (nm_platform_link_change(platform, ifindex, &props, flags)) {
+    if (nm_platform_link_change(platform, ifindex, &props, NULL, flags)) {
         _LOGD(LOGD_DEVICE, "link properties successfully set");
     } else {
         _LOGW(LOGD_DEVICE, "failure setting link properties");
@@ -2888,6 +2888,7 @@ link_properties_reset(NMDevice *self)
     if (nm_platform_link_change(platform,
                                 ifindex,
                                 &priv->link_props_state.props,
+                                NULL,
                                 priv->link_props_state.flags)) {
         _LOGD(LOGD_DEVICE, "link properties successfully reset");
     } else {

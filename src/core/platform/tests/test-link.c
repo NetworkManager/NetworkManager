@@ -122,7 +122,7 @@ software_add(NMLinkType link_type, const char *name)
         gboolean bond0_exists = !!nm_platform_link_get_by_ifname(NM_PLATFORM_GET, "bond0");
         int      r;
         const NMPlatformLnkBond nm_platform_lnk_bond_default = {
-            .mode = 3,
+            .mode = nmtst_rand_select(3, 1),
         };
 
         r = nm_platform_link_bond_add(NM_PLATFORM_GET, name, &nm_platform_lnk_bond_default, NULL);
@@ -272,6 +272,38 @@ test_slave(int master, int type, SignalData *master_changed)
         g_assert(nm_platform_link_is_up(NM_PLATFORM_GET, ifindex));
     else
         g_assert(!nm_platform_link_is_up(NM_PLATFORM_GET, ifindex));
+
+    if (NM_IN_SET(link_type, NM_LINK_TYPE_BOND)) {
+        NMPlatformLinkBondPort   bond_port;
+        gboolean                 prio_has;
+        gboolean                 prio_supported;
+        const NMPlatformLink    *link;
+        const NMPlatformLnkBond *lnk;
+
+        link = nmtstp_link_get_typed(NM_PLATFORM_GET, 0, SLAVE_NAME, NM_LINK_TYPE_DUMMY);
+        g_assert(link);
+
+        lnk = nm_platform_link_get_lnk_bond(NM_PLATFORM_GET, master, NULL);
+        g_assert(lnk);
+
+        g_assert(NM_IN_SET(lnk->mode, 3, 1));
+        prio_supported = (lnk->mode == 1);
+        prio_has       = nmtst_get_rand_bool() && prio_supported;
+
+        bond_port = (NMPlatformLinkBondPort){
+            .queue_id = 5,
+            .prio_has = prio_has,
+            .prio     = prio_has ? 6 : 0,
+        };
+
+        g_assert(nm_platform_link_change(NM_PLATFORM_GET, ifindex, NULL, &bond_port, 0));
+        accept_signals(link_changed, 1, 3);
+
+        link = nmtstp_link_get(NM_PLATFORM_GET, ifindex, SLAVE_NAME);
+        g_assert(link);
+        g_assert_cmpint(link->port_data.bond.queue_id, ==, 5);
+        g_assert(link->port_data.bond.prio_has || link->port_data.bond.prio == 0);
+    }
 
     test_link_changed_signal_arg1 = FALSE;
     test_link_changed_signal_arg2 = FALSE;
@@ -2664,7 +2696,7 @@ test_link_set_properties(void)
             | NM_PLATFORM_LINK_CHANGE_GSO_MAX_SEGMENTS;
 
     ifindex = nmtstp_link_dummy_add(NM_PLATFORM_GET, FALSE, "dummy1")->ifindex;
-    g_assert(nm_platform_link_change(NM_PLATFORM_GET, ifindex, &props, flags));
+    g_assert(nm_platform_link_change(NM_PLATFORM_GET, ifindex, &props, NULL, flags));
 
     link = nmtstp_link_get(NM_PLATFORM_GET, ifindex, "dummy1");
     g_assert(link);
