@@ -479,6 +479,20 @@ _nm_connection_get_setting(NMConnection *connection, GType type)
     return (gpointer) nm_connection_get_setting(connection, type);
 }
 
+gpointer _nm_connection_get_setting_by_metatype_unsafe(NMConnection     *connection,
+                                                       NMMetaSettingType meta_type);
+
+/* This variant is the most efficient one, because it does not require resolving a
+ * name/GType first. The NMMetaSettingType enum allows for a direct lookup. */
+#define _nm_connection_get_setting_by_metatype(connection, meta_type)                       \
+    ({                                                                                      \
+        /* Static assert that meta_type is in the valid range. If you don't want that,
+         * because the argument is no a compile time constant, use  _nm_connection_get_setting_by_metatype_unsafe(). */      \
+        G_STATIC_ASSERT((meta_type) < _NM_META_SETTING_TYPE_NUM && ((int) meta_type) >= 0); \
+                                                                                            \
+        _nm_connection_get_setting_by_metatype_unsafe((connection), (meta_type));           \
+    })
+
 NMSettingIPConfig *nm_connection_get_setting_ip_config(NMConnection *connection, int addr_family);
 
 /*****************************************************************************/
