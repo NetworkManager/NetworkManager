@@ -228,17 +228,10 @@ update_connection(NMDevice *device, NMConnection *connection)
     NMDeviceTeam        *self   = NM_DEVICE_TEAM(device);
     NMSettingTeam       *s_team = _nm_connection_ensure_setting(connection, NM_TYPE_SETTING_TEAM);
     NMDeviceTeamPrivate *priv   = NM_DEVICE_TEAM_GET_PRIVATE(self);
-    struct teamdctl     *tdc    = priv->tdc;
 
     /* Read the configuration only if not already set */
-    if (!priv->config && ensure_teamd_connection(device))
+    if (!priv->config && priv->tdc) {
         teamd_read_config(self);
-
-    /* Restore previous tdc state */
-    if (priv->tdc && !tdc) {
-        teamdctl_disconnect(priv->tdc);
-        teamdctl_free(priv->tdc);
-        priv->tdc = NULL;
     }
 
     g_object_set(G_OBJECT(s_team), NM_SETTING_TEAM_CONFIG, _get_config(self), NULL);
