@@ -2523,10 +2523,13 @@ nm_settings_connection_autoconnect_blocked_reason_set(NMSettingsConnection      
 {
     NMSettingsAutoconnectBlockedReason v;
     NMSettingsConnectionPrivate       *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE(self);
-    char                               buf1[100];
-    char                               buf2[100];
+    char                               buf1[200];
+    char                               buf2[200];
 
-    nm_assert(reason);
+    nm_assert(reason != NM_SETTINGS_AUTOCONNECT_BLOCKED_REASON_NONE);
+    nm_assert(!NM_FLAGS_ANY(reason,
+                            ~(NM_SETTINGS_AUTOCONNECT_BLOCKED_REASON_USER_REQUEST
+                              | NM_SETTINGS_AUTOCONNECT_BLOCKED_REASON_NO_SECRETS)));
 
     v = priv->autoconnect_blocked_reason;
     v = NM_FLAGS_ASSIGN(v, reason, set);
@@ -2534,10 +2537,21 @@ nm_settings_connection_autoconnect_blocked_reason_set(NMSettingsConnection      
     if (priv->autoconnect_blocked_reason == v)
         return FALSE;
 
-    _LOGD("autoconnect: %s blocked reason: %s (now %s)",
-          set ? "set" : "unset",
-          nm_settings_autoconnect_blocked_reason_to_string(reason, buf1, sizeof(buf1)),
-          nm_settings_autoconnect_blocked_reason_to_string(v, buf2, sizeof(buf2)));
+    if (set) {
+        _LOGT("block-autoconnect: profile: blocked with reason %s (%s %s)",
+              nm_settings_autoconnect_blocked_reason_to_string(v, buf1, sizeof(buf1)),
+              "just blocked",
+              nm_settings_autoconnect_blocked_reason_to_string(reason, buf2, sizeof(buf2)));
+    } else if (v != NM_SETTINGS_AUTOCONNECT_BLOCKED_REASON_NONE) {
+        _LOGT("block-autoconnect: profile: blocked with reason %s (%s %s)",
+              nm_settings_autoconnect_blocked_reason_to_string(v, buf1, sizeof(buf1)),
+              "just unblocked",
+              nm_settings_autoconnect_blocked_reason_to_string(reason, buf2, sizeof(buf2)));
+    } else {
+        _LOGT("block-autoconnect: profile: not blocked (unblocked %s)",
+              nm_settings_autoconnect_blocked_reason_to_string(reason, buf1, sizeof(buf1)));
+    }
+
     priv->autoconnect_blocked_reason = v;
     return TRUE;
 }

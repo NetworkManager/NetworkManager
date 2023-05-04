@@ -89,6 +89,16 @@ typedef struct {
 
 } DevConData;
 
+#define DEV_CON_DATA_LOG_FMT \
+    "device[" NM_HASH_OBFUSCATE_PTR_FMT ",%s]-profile[" NM_HASH_OBFUSCATE_PTR_FMT ",%s]"
+
+/* This is an unsafe macro (it evaluates the macro arguments multiple times and is non-function-like). */
+#define DEV_CON_DATA_LOG_ARGS(device, sett_conn)                                                  \
+    NM_HASH_OBFUSCATE_PTR(device), nm_device_get_iface(device), NM_HASH_OBFUSCATE_PTR(sett_conn), \
+        nm_settings_connection_get_id(sett_conn)
+
+#define DEV_CON_DATA_LOG_ARGS_DATA(data) DEV_CON_DATA_LOG_ARGS((data)->device, (data)->sett_conn)
+
 typedef enum {
     ASYNC_OP_TYPE_AC_AUTH_ACTIVATE_INTERNAL,
     ASYNC_OP_TYPE_AC_AUTH_ACTIVATE_USER,
@@ -440,7 +450,8 @@ static void _rfkill_update(NMManager *self, NMRfkillType rtype);
 static DevConData *_devcon_lookup_data(NMManager            *self,
                                        NMDevice             *device,
                                        NMSettingsConnection *sett_conn,
-                                       gboolean              create);
+                                       gboolean              create,
+                                       gboolean              log_creation);
 
 /*****************************************************************************/
 
@@ -1252,49 +1263,58 @@ _autoconnect_retries_initial(NMSettingsConnection *sett_conn)
     if (retries == -1)
         retries = nm_config_data_get_autoconnect_retries_default(NM_CONFIG_GET_DATA);
 
-    nm_assert(retries >= 0 && ((guint) retries) <= ((guint) G_MAXINT32));
+    nm_assert(retries >= 0 && retries <= G_MAXINT32);
 
     if (retries == 0)
         return NM_AUTOCONNECT_RETRIES_FOREVER;
     return (guint32) retries;
 }
 
-static void
+static gboolean
 _autoconnect_retries_set(NMManager *self, DevConData *data, guint32 retries, gboolean is_reset)
 {
+    gboolean changed = FALSE;
+    gint32   blocked_until_sec;
+
     nm_assert(data);
 
-    if (data->autoconnect.retries != retries || !data->autoconnect.initialized) {
-        _LOGT(LOGD_SETTINGS,
-              "autoconnect: device[%p] (%s): retries set %d%s",
-              data->device,
-              nm_device_get_ip_iface(data->device),
-              retries,
-              is_reset ? " (reset)" : "");
+    if (!data->autoconnect.initialized || data->autoconnect.retries != retries) {
         data->autoconnect.initialized = TRUE;
         data->autoconnect.retries     = retries;
+        changed                       = TRUE;
     }
 
     if (retries != 0) {
-        _LOGT(LOGD_SETTINGS,
-              "autoconnect: device[%p] (%s): no longer block autoconnect (due to retry count) %s",
-              data->device,
-              nm_device_get_ip_iface(data->device),
-              is_reset ? " (reset)" : "");
-        data->autoconnect.blocked_until_sec = 0;
+        blocked_until_sec = 0;
     } else {
         /* NOTE: the blocked time must be identical for all connections, otherwise
          * the tracking of resetting the retry count in NMPolicy needs adjustment
          * in _connection_autoconnect_retries_set() (as it would need to re-evaluate
          * the next-timeout every time a connection gets blocked). */
-        data->autoconnect.blocked_until_sec =
+        blocked_until_sec =
             nm_utils_get_monotonic_timestamp_sec() + AUTOCONNECT_RESET_RETRIES_TIMER_SEC;
-        _LOGT(LOGD_SETTINGS,
-              "autoconnect: device[%p] (%s): block autoconnect due to retry count for %d seconds",
-              data->device,
-              nm_device_get_ip_iface(data->device),
-              AUTOCONNECT_RESET_RETRIES_TIMER_SEC);
     }
+
+    if (data->autoconnect.blocked_until_sec != blocked_until_sec) {
+        data->autoconnect.blocked_until_sec = blocked_until_sec;
+        changed                             = TRUE;
+    }
+
+    if (changed) {
+        char sbuf[200];
+
+        _LOGT(LOGD_SETTINGS,
+              "block-autoconnect: " DEV_CON_DATA_LOG_FMT ": retries set %u%s%s",
+              DEV_CON_DATA_LOG_ARGS_DATA(data),
+              retries,
+              is_reset ? " (is-reset)" : "",
+              blocked_until_sec == 0 ? ""
+                                     : nm_sprintf_buf(sbuf,
+                                                      " (blocked for %d sec)",
+                                                      AUTOCONNECT_RESET_RETRIES_TIMER_SEC));
+    }
+
+    return changed;
 }
 
 /**
@@ -1320,11 +1340,10 @@ nm_manager_devcon_autoconnect_retries_get(NMManager            *self,
     nm_assert(self == nm_device_get_manager(device));
     nm_assert(self == nm_settings_connection_get_manager(sett_conn));
 
-    data = _devcon_lookup_data(self, device, sett_conn, TRUE);
+    data = _devcon_lookup_data(self, device, sett_conn, TRUE, FALSE);
 
-    if (G_UNLIKELY(!data->autoconnect.initialized)) {
+    if (G_UNLIKELY(!data->autoconnect.initialized))
         _autoconnect_retries_set(self, data, _autoconnect_retries_initial(sett_conn), FALSE);
-    }
 
     return data->autoconnect.retries;
 }
@@ -1336,29 +1355,37 @@ nm_manager_devcon_autoconnect_retries_set(NMManager            *self,
                                           guint32               retries)
 {
     _autoconnect_retries_set(self,
-                             _devcon_lookup_data(self, device, sett_conn, TRUE),
+                             _devcon_lookup_data(self, device, sett_conn, TRUE, FALSE),
                              retries,
                              FALSE);
 }
 
-void
+gboolean
 nm_manager_devcon_autoconnect_retries_reset(NMManager            *self,
                                             NMDevice             *device,
                                             NMSettingsConnection *sett_conn)
 {
     DevConData *data;
+    guint32     retries_initial;
+    gboolean    changed = FALSE;
 
     nm_assert(NM_IS_SETTINGS_CONNECTION(sett_conn));
 
-    if (device)
-        _autoconnect_retries_set(self,
-                                 _devcon_lookup_data(self, device, sett_conn, TRUE),
-                                 _autoconnect_retries_initial(sett_conn),
-                                 TRUE);
-    else {
-        c_list_for_each_entry (data, &sett_conn->devcon_con_lst_head, con_lst)
-            _autoconnect_retries_set(self, data, _autoconnect_retries_initial(sett_conn), TRUE);
+    retries_initial = _autoconnect_retries_initial(sett_conn);
+
+    if (device) {
+        return _autoconnect_retries_set(self,
+                                        _devcon_lookup_data(self, device, sett_conn, TRUE, FALSE),
+                                        retries_initial,
+                                        TRUE);
     }
+
+    c_list_for_each_entry (data, &sett_conn->devcon_con_lst_head, con_lst) {
+        if (_autoconnect_retries_set(self, data, retries_initial, TRUE))
+            changed = TRUE;
+    }
+
+    return changed;
 }
 
 /**
@@ -1398,19 +1425,19 @@ nm_manager_devcon_autoconnect_reset_reconnect_all(NMManager            *self,
         return changed;
     }
 
-    /* we reset the tries-count and any blocked-reason */
+    /* we reset the tries-count and any blocked-reason... */
+
     nm_manager_devcon_autoconnect_retries_reset(self, NULL, sett_conn);
 
-    /* if there is a device and we changed the state, then something changed. */
-    if (device
-        && nm_manager_devcon_autoconnect_blocked_reason_set(
-            self,
-            device,
-            sett_conn,
-            NM_SETTINGS_AUTOCONNECT_BLOCKED_REASON_FAILED
-                | NM_SETTINGS_AUTOCONNECT_BLOCKED_REASON_USER_REQUEST,
-            FALSE))
-        changed = TRUE;
+    if (device) {
+        if (nm_manager_devcon_autoconnect_blocked_reason_set(
+                self,
+                device,
+                sett_conn,
+                NM_SETTINGS_AUTOCONNECT_BLOCKED_REASON_FAILED,
+                FALSE))
+            changed = TRUE;
+    }
 
     /* we remove all the blocked reason from the connection, if something
      * happened, then it means the status changed */
@@ -1435,18 +1462,23 @@ nm_manager_devcon_autoconnect_retries_blocked_until(NMManager            *self,
     nm_assert(NM_IS_SETTINGS_CONNECTION(sett_conn));
 
     if (device) {
-        data = _devcon_lookup_data(self, device, sett_conn, TRUE);
-        return data->autoconnect.blocked_until_sec;
-    } else {
-        min_stamp = 0;
-        c_list_for_each_entry (data, &sett_conn->devcon_con_lst_head, con_lst) {
-            gint32 condev_stamp = data->autoconnect.blocked_until_sec;
-            if (condev_stamp == 0)
-                continue;
+        data = _devcon_lookup_data(self, device, sett_conn, FALSE, FALSE);
 
-            if (min_stamp == 0 || min_stamp > condev_stamp)
-                min_stamp = condev_stamp;
-        }
+        if (!data)
+            return 0;
+
+        return data->autoconnect.blocked_until_sec;
+    }
+
+    min_stamp = 0;
+    c_list_for_each_entry (data, &sett_conn->devcon_con_lst_head, con_lst) {
+        gint32 condev_stamp = data->autoconnect.blocked_until_sec;
+
+        if (condev_stamp == 0)
+            continue;
+
+        if (min_stamp == 0 || min_stamp > condev_stamp)
+            min_stamp = condev_stamp;
     }
 
     return min_stamp;
@@ -1465,11 +1497,15 @@ nm_manager_devcon_autoconnect_is_blocked(NMManager            *self,
     if (nm_settings_connection_autoconnect_is_blocked(sett_conn))
         return TRUE;
 
-    data = _devcon_lookup_data(self, device, sett_conn, TRUE);
+    data = _devcon_lookup_data(self, device, sett_conn, FALSE, FALSE);
+
+    if (!data)
+        return FALSE;
+
     if (data->autoconnect.blocked_reason != NM_SETTINGS_AUTOCONNECT_BLOCKED_REASON_NONE)
         return TRUE;
 
-    if (data->autoconnect.retries == 0 && data->autoconnect.initialized)
+    if (data->autoconnect.initialized && data->autoconnect.retries == 0)
         return TRUE;
 
     return FALSE;
@@ -1487,22 +1523,23 @@ nm_manager_devcon_autoconnect_blocked_reason_set(NMManager                      
     gboolean                           changed = FALSE;
     char                               buf[100];
 
-    nm_assert(value);
-    nm_assert(sett_conn);
+    nm_assert(NM_IS_SETTINGS_CONNECTION(sett_conn));
+    nm_assert(value != NM_SETTINGS_AUTOCONNECT_BLOCKED_REASON_NONE);
+    nm_assert(!NM_FLAGS_ANY(value, ~(NM_SETTINGS_AUTOCONNECT_BLOCKED_REASON_FAILED)));
 
     if (device) {
-        data = _devcon_lookup_data(self, device, sett_conn, TRUE);
+        data = _devcon_lookup_data(self, device, sett_conn, TRUE, TRUE);
         v    = data->autoconnect.blocked_reason;
         v    = NM_FLAGS_ASSIGN(v, value, set);
 
         if (data->autoconnect.blocked_reason == v)
             return FALSE;
 
-        _LOGT(LOGD_SETTINGS,
-              "autoconnect: blocked reason: %s for device %s",
-              nm_settings_autoconnect_blocked_reason_to_string(v, buf, sizeof(buf)),
-              nm_device_get_ip_iface(device));
         data->autoconnect.blocked_reason = v;
+        _LOGT(LOGD_SETTINGS,
+              "block-autoconnect: " DEV_CON_DATA_LOG_FMT ": set blocked reason %s",
+              DEV_CON_DATA_LOG_ARGS_DATA(data),
+              nm_settings_autoconnect_blocked_reason_to_string(v, buf, sizeof(buf)));
         return TRUE;
     }
 
@@ -1512,10 +1549,11 @@ nm_manager_devcon_autoconnect_blocked_reason_set(NMManager                      
 
         if (data->autoconnect.blocked_reason == v)
             continue;
+
         _LOGT(LOGD_SETTINGS,
-              "autoconnect: blocked reason: %s for device %s",
-              nm_settings_autoconnect_blocked_reason_to_string(v, buf, sizeof(buf)),
-              nm_device_get_ip_iface(data->device));
+              "block-autoconnect: " DEV_CON_DATA_LOG_FMT ": set blocked reason %s",
+              DEV_CON_DATA_LOG_ARGS_DATA(data),
+              nm_settings_autoconnect_blocked_reason_to_string(v, buf, sizeof(buf)));
         data->autoconnect.blocked_reason = v;
         changed                          = TRUE;
     }
@@ -1554,7 +1592,8 @@ static DevConData *
 _devcon_lookup_data(NMManager            *self,
                     NMDevice             *device,
                     NMSettingsConnection *sett_conn,
-                    gboolean              create)
+                    gboolean              create,
+                    gboolean              log_creation)
 {
     NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE(self);
     DevConData       *data;
@@ -1581,13 +1620,22 @@ _devcon_lookup_data(NMManager            *self,
         .sett_conn = sett_conn,
         .autoconnect =
             {
-                .initialized = FALSE,
+                .initialized       = FALSE,
+                .retries           = 0,
+                .blocked_until_sec = 0,
+                .blocked_reason    = NM_SETTINGS_AUTOCONNECT_BLOCKED_REASON_NONE,
             },
     };
     c_list_link_tail(&device->devcon_dev_lst_head, &data->dev_lst);
     c_list_link_tail(&sett_conn->devcon_con_lst_head, &data->con_lst);
 
     g_hash_table_add(priv->devcon_data_dict, data);
+
+    if (log_creation) {
+        _LOGT(LOGD_SETTINGS,
+              "block-autoconnect: " DEV_CON_DATA_LOG_FMT ": entry created (not initialized)",
+              DEV_CON_DATA_LOG_ARGS_DATA(data));
+    }
 
     return data;
 }
@@ -1600,7 +1648,7 @@ _devcon_remove_data(NMManager *self, DevConData *data)
     nm_assert(data);
     nm_assert(NM_IS_DEVICE(data->device));
     nm_assert(NM_IS_SETTINGS_CONNECTION(data->sett_conn));
-    nm_assert(data == _devcon_lookup_data(self, data->device, data->sett_conn, FALSE));
+    nm_assert(data == _devcon_lookup_data(self, data->device, data->sett_conn, FALSE, FALSE));
 
     c_list_unlink_stale(&data->dev_lst);
     c_list_unlink_stale(&data->con_lst);

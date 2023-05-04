@@ -1758,11 +1758,13 @@ _connection_autoconnect_retries_set(NMPolicy             *self,
     if (tries == 0) {
         /* Schedule a handler to reset retries count */
         if (!priv->reset_connections_retries_idle_source) {
-            gint32 retry_time = nm_manager_devcon_autoconnect_retries_blocked_until(priv->manager,
-                                                                                    device,
-                                                                                    connection);
+            gint32 retry_time;
 
-            g_warn_if_fail(retry_time != 0);
+            retry_time = nm_manager_devcon_autoconnect_retries_blocked_until(priv->manager,
+                                                                             device,
+                                                                             connection);
+            nm_assert(retry_time != 0);
+
             priv->reset_connections_retries_idle_source = nm_g_timeout_add_seconds_source(
                 MAX(0, retry_time - nm_utils_get_monotonic_timestamp_sec()),
                 reset_connections_retries,
@@ -1825,9 +1827,8 @@ activate_slave_connections(NMPolicy *self, NMDevice *device)
             continue;
 
         if (!internal_activation) {
-            nm_manager_devcon_autoconnect_retries_reset(priv->manager, NULL, sett_conn);
-            /* we cannot know if they changed or not, so considering we did a reset, let's consider they changed. */
-            changed = TRUE;
+            if (nm_manager_devcon_autoconnect_retries_reset(priv->manager, NULL, sett_conn))
+                changed = TRUE;
         }
         /* unblock the devices associated with that connection */
         if (nm_manager_devcon_autoconnect_blocked_reason_set(
@@ -1981,7 +1982,8 @@ device_state_changed(NMDevice           *device,
             gboolean blocked = FALSE;
             guint64  con_v;
 
-            if (nm_device_state_reason_check(reason) == NM_DEVICE_STATE_REASON_NO_SECRETS) {
+            switch (nm_device_state_reason_check(reason)) {
+            case NM_DEVICE_STATE_REASON_NO_SECRETS:
                 /* we want to block the connection from auto-connect if it failed due to no-secrets.
                  * However, if a secret-agent registered, since the connection made the last
                  * secret-request, we do not block it. The new secret-agent might not yet
@@ -1998,7 +2000,8 @@ device_state_changed(NMDevice           *device,
                 con_v = nm_settings_connection_get_last_secret_agent_version_id(sett_conn);
                 if (con_v == 0 || con_v == nm_agent_manager_get_agent_version_id(priv->agent_mgr)) {
                     _LOGD(LOGD_DEVICE,
-                          "connection '%s' now blocked from autoconnect due to no secrets",
+                          "block-autoconnect: connection '%s' now blocked from autoconnect due to "
+                          "no secrets",
                           nm_settings_connection_get_id(sett_conn));
                     nm_settings_connection_autoconnect_blocked_reason_set(
                         sett_conn,
@@ -2006,8 +2009,8 @@ device_state_changed(NMDevice           *device,
                         TRUE);
                     blocked = TRUE;
                 }
-            } else if (nm_device_state_reason_check(reason)
-                       == NM_DEVICE_STATE_REASON_DEPENDENCY_FAILED) {
+                break;
+            case NM_DEVICE_STATE_REASON_DEPENDENCY_FAILED:
                 /* A connection that fails due to dependency-failed is not
                  * able to reconnect until the master connection activates
                  * again; when this happens, the master clears the blocked
@@ -2017,7 +2020,8 @@ device_state_changed(NMDevice           *device,
                  * dependency-failed.
                  */
                 _LOGD(LOGD_DEVICE,
-                      "autoconnect: connection[%p] (%s) now blocked from autoconnect due to failed "
+                      "block-autoconnect: connection[%p] (%s) now blocked from autoconnect due to "
+                      "failed "
                       "dependency",
                       sett_conn,
                       nm_settings_connection_get_id(sett_conn));
@@ -2028,6 +2032,9 @@ device_state_changed(NMDevice           *device,
                     NM_SETTINGS_AUTOCONNECT_BLOCKED_REASON_FAILED,
                     TRUE);
                 blocked = TRUE;
+                break;
+            default:
+                break;
             }
 
             if (!blocked) {
@@ -2102,7 +2109,7 @@ device_state_changed(NMDevice           *device,
             }
             if (blocked_reason != NM_SETTINGS_AUTOCONNECT_BLOCKED_REASON_NONE) {
                 _LOGD(LOGD_DEVICE,
-                      "blocking autoconnect of connection '%s': %s",
+                      "block-autoconnect: blocking autoconnect of connection '%s': %s",
                       nm_settings_connection_get_id(sett_conn),
                       NM_UTILS_LOOKUP_STR_A(nm_device_state_reason_to_string,
                                             nm_device_state_reason_check(reason)));
@@ -2158,7 +2165,7 @@ device_state_changed(NMDevice           *device,
                 priv->manager,
                 device,
                 sett_conn,
-                NM_SETTINGS_AUTOCONNECT_BLOCKED_REASON_ALL,
+                NM_SETTINGS_AUTOCONNECT_BLOCKED_REASON_FAILED,
                 FALSE);
         break;
     case NM_DEVICE_STATE_SECONDARIES:
