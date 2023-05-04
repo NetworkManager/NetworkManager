@@ -110,6 +110,10 @@ nm_setting_lookup_type(const char *name)
 {
     const NMMetaSettingInfo *setting_info;
 
+    /* various callers check whether the result is valid with plain `if (gtype)`.
+     * Assert that G_TYPE_INVALID is zero. */
+    G_STATIC_ASSERT(G_TYPE_INVALID == 0);
+
     g_return_val_if_fail(name, G_TYPE_INVALID);
 
     setting_info = nm_meta_setting_infos_by_name(name);
