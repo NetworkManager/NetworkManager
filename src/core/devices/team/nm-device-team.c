@@ -226,24 +226,10 @@ update_connection(NMDevice *device, NMConnection *connection)
     NMDeviceTeam        *self   = NM_DEVICE_TEAM(device);
     NMSettingTeam       *s_team = _nm_connection_ensure_setting(connection, NM_TYPE_SETTING_TEAM);
     NMDeviceTeamPrivate *priv   = NM_DEVICE_TEAM_GET_PRIVATE(self);
-    struct teamdctl     *tdc    = priv->tdc;
-    GError              *error  = NULL;
 
     /* Read the configuration only if not already set */
-    if (!priv->config) {
-        if (ensure_teamd_connection(device, &error)) {
-            teamd_read_config(self);
-        } else {
-            _LOGD(LOGD_TEAM, "could not connect to teamd: %s", error->message);
-            g_clear_error(&error);
-        }
-    }
-
-    /* Restore previous tdc state */
-    if (priv->tdc && !tdc) {
-        teamdctl_disconnect(priv->tdc);
-        teamdctl_free(priv->tdc);
-        priv->tdc = NULL;
+    if (!priv->config && priv->tdc) {
+        teamd_read_config(self);
     }
 
     g_object_set(G_OBJECT(s_team), NM_SETTING_TEAM_CONFIG, _get_config(self), NULL);
