@@ -302,26 +302,7 @@ nm_connection_remove_setting(NMConnection *connection, GType setting_type)
 }
 
 static gpointer
-_connection_get_setting(NMConnection *connection, GType setting_type)
-{
-    NMSetting               *setting;
-    const NMMetaSettingInfo *setting_info;
-
-    nm_assert(NM_IS_CONNECTION(connection));
-    nm_assert(g_type_is_a(setting_type, NM_TYPE_SETTING));
-
-    setting_info = _nm_meta_setting_info_from_gtype(setting_type);
-    if (!setting_info)
-        g_return_val_if_reached(NULL);
-
-    setting = NM_CONNECTION_GET_PRIVATE(connection)->settings[setting_info->meta_type];
-
-    nm_assert(!setting || G_TYPE_CHECK_INSTANCE_TYPE(setting, setting_type));
-    return setting;
-}
-
-static gpointer
-_connection_get_setting_by_meta_type(NMConnectionPrivate *priv, NMMetaSettingType meta_type)
+_get_setting_by_metatype(NMConnectionPrivate *priv, NMMetaSettingType meta_type)
 {
     nm_assert(priv);
     nm_assert(_NM_INT_NOT_NEGATIVE(meta_type));
@@ -331,19 +312,11 @@ _connection_get_setting_by_meta_type(NMConnectionPrivate *priv, NMMetaSettingTyp
 }
 
 static gpointer
-_connection_get_setting_check(NMConnection *connection, GType setting_type)
-{
-    g_return_val_if_fail(NM_IS_CONNECTION(connection), NULL);
-
-    return _connection_get_setting(connection, setting_type);
-}
-
-static gpointer
 _nm_connection_get_setting_by_metatype(NMConnection *connection, NMMetaSettingType meta_type)
 {
     g_return_val_if_fail(NM_IS_CONNECTION(connection), NULL);
 
-    return _connection_get_setting_by_meta_type(NM_CONNECTION_GET_PRIVATE(connection), meta_type);
+    return _get_setting_by_metatype(NM_CONNECTION_GET_PRIVATE(connection), meta_type);
 }
 
 /**
@@ -360,19 +333,34 @@ _nm_connection_get_setting_by_metatype(NMConnection *connection, NMMetaSettingTy
 NMSetting *
 nm_connection_get_setting(NMConnection *connection, GType setting_type)
 {
-    g_return_val_if_fail(g_type_is_a(setting_type, NM_TYPE_SETTING), NULL);
+    NMSetting               *setting;
+    const NMMetaSettingInfo *setting_info;
 
-    return _connection_get_setting_check(connection, setting_type);
+    g_return_val_if_fail(NM_IS_CONNECTION(connection), NULL);
+
+    setting_info = _nm_meta_setting_info_from_gtype(setting_type);
+
+    if (!setting_info)
+        g_return_val_if_reached(NULL);
+
+    setting = NM_CONNECTION_GET_PRIVATE(connection)->settings[setting_info->meta_type];
+
+    nm_assert(!setting || G_TYPE_CHECK_INSTANCE_TYPE(setting, setting_type));
+
+    return setting;
 }
 
 NMSettingIPConfig *
 nm_connection_get_setting_ip_config(NMConnection *connection, int addr_family)
 {
+    g_return_val_if_fail(NM_IS_CONNECTION(connection), NULL);
+
     nm_assert_addr_family(addr_family);
 
-    return NM_SETTING_IP_CONFIG(_connection_get_setting(
-        connection,
-        (addr_family == AF_INET) ? NM_TYPE_SETTING_IP4_CONFIG : NM_TYPE_SETTING_IP6_CONFIG));
+    return NM_SETTING_IP_CONFIG(_get_setting_by_metatype(NM_CONNECTION_GET_PRIVATE(connection),
+                                                         (addr_family == AF_INET)
+                                                             ? NM_META_SETTING_TYPE_IP4_CONFIG
+                                                             : NM_META_SETTING_TYPE_IP6_CONFIG));
 }
 
 /**
@@ -389,12 +377,14 @@ nm_connection_get_setting_ip_config(NMConnection *connection, int addr_family)
 NMSetting *
 nm_connection_get_setting_by_name(NMConnection *connection, const char *name)
 {
-    GType type;
+    const NMMetaSettingInfo *setting_info;
 
     g_return_val_if_fail(NM_IS_CONNECTION(connection), NULL);
 
-    type = nm_setting_lookup_type(name);
-    return type ? _connection_get_setting(connection, type) : NULL;
+    setting_info = nm_meta_setting_infos_by_name(name);
+    return setting_info ? _get_setting_by_metatype(NM_CONNECTION_GET_PRIVATE(connection),
+                                                   setting_info->meta_type)
+                        : NULL;
 }
 
 /*****************************************************************************/
@@ -1672,8 +1662,8 @@ _normalize_802_1x_empty_strings(NMConnection *self)
     NMSetting8021x *s_8021x;
     gboolean        changed = FALSE;
 
-    s_8021x = _connection_get_setting_by_meta_type(NM_CONNECTION_GET_PRIVATE(self),
-                                                   NM_META_SETTING_TYPE_802_1X);
+    s_8021x =
+        _get_setting_by_metatype(NM_CONNECTION_GET_PRIVATE(self), NM_META_SETTING_TYPE_802_1X);
     if (!s_8021x)
         return FALSE;
 
@@ -1823,7 +1813,7 @@ _nm_connection_verify(NMConnection *connection, GError **error)
 
     priv = NM_CONNECTION_GET_PRIVATE(connection);
 
-    if (!_connection_get_setting_by_meta_type(priv, NM_META_SETTING_TYPE_CONNECTION)) {
+    if (!_get_setting_by_metatype(priv, NM_META_SETTING_TYPE_CONNECTION)) {
         g_set_error_literal(error,
                             NM_CONNECTION_ERROR,
                             NM_CONNECTION_ERROR_MISSING_SETTING,
@@ -1868,9 +1858,9 @@ _nm_connection_verify(NMConnection *connection, GError **error)
         g_clear_error(&verify_error);
     }
 
-    s_ip4   = _connection_get_setting_by_meta_type(priv, NM_META_SETTING_TYPE_IP4_CONFIG);
-    s_ip6   = _connection_get_setting_by_meta_type(priv, NM_META_SETTING_TYPE_IP6_CONFIG);
-    s_proxy = _connection_get_setting_by_meta_type(priv, NM_META_SETTING_TYPE_PROXY);
+    s_ip4   = _get_setting_by_metatype(priv, NM_META_SETTING_TYPE_IP4_CONFIG);
+    s_ip6   = _get_setting_by_metatype(priv, NM_META_SETTING_TYPE_IP6_CONFIG);
+    s_proxy = _get_setting_by_metatype(priv, NM_META_SETTING_TYPE_PROXY);
 
     nm_assert(normalizable_error_type != NM_SETTING_VERIFY_ERROR);
     if (NM_IN_SET(normalizable_error_type,
