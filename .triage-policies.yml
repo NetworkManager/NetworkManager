@@ -3,47 +3,24 @@ host_url: https://gitlab.freedesktop.org
 resource_rules:
   issues:
     rules:
-      - name: Close issues with no activity for 6 months
+      - name: Mark issue as stale with no activity for 4 months
         conditions:
           date:
             attribute: updated_at
             condition: older_than
             interval_type: months
-            interval: 6
+            interval: 4
           state: opened
+          forbidden_labels:
+            - stale
         actions:
             comment: |
-                This issue has been inactive for 6 months, closing automatically, please reopen if you think the issue is still relevant.
-            status: close
+                This issue has been inactive for 4 months and got stale. Contributions welcome to move it forward.
             labels:
-                - auto-closed
-      - name: Close RFE with no activity for 12 months
-        conditions:
-          date:
-            attribute: updated_at
-            condition: older_than
-            interval_type: months
-            interval: 12
-          state: opened
-          labels:
-              - enhancement
-        actions:
-            comment: |
-                This enhancement issue has been inactive for 12 months, closing automatically, please reopen if you think the issue is still relevant.
-            status: close
-            labels:
-                - auto-closed
-      - name: Clear auto-closed label for open issues
-        conditions:
-          state: opened
-          labels:
-                - auto-closed
-        actions:
-            remove_labels:
-                - auto-closed
+                - stale
   merge_requests:
     rules:
-      - name: Close MRs with no activity after 2 month
+      - name: Mark merge-request as stale after no activity for 2 months
         conditions:
           date:
             attribute: updated_at
@@ -51,17 +28,10 @@ resource_rules:
             interval_type: months
             interval: 2
           state: opened
+          forbidden_labels:
+            - stale
         actions:
             comment: |
-                This MR has been inactive for more than 2 months, closing automatically, please reopen if you think it is still relevant.
-            status: close
+                This merge-request has been inactive for 2 months and got stale. Work is necessary to move it forward.
             labels:
-                - auto-closed
-      - name: Clear auto-closed label for open MRs
-        conditions:
-          state: opened
-          labels:
-                - auto-closed
-        actions:
-            remove_labels:
-                - auto-closed
+                - stale
