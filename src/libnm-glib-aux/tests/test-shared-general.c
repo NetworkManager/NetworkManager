@@ -2382,6 +2382,15 @@ _inet_parse(int addr_family, const char *str, gboolean accept_legacy, gpointer o
             nmtst_assert_ip6_address(&_addr[0].addr6, _expected);               \
         else                                                                    \
             nmtst_assert_ip4_address(_addr[1].addr4, _expected);                \
+                                                                                \
+        if (_success[1]) {                                                      \
+            in_addr_t _a4;                                                      \
+            int       _r;                                                       \
+                                                                                \
+            _r = nmtst_inet_aton(_check, &_a4);                                 \
+            g_assert_cmpint(_r, ==, 0);                                         \
+            nmtst_assert_ip4_address(_a4, _expected);                           \
+        }                                                                       \
     }                                                                           \
     G_STMT_END
 

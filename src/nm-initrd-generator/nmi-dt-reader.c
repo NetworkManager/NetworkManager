@@ -96,6 +96,11 @@ str_addr(const char *str, int *family)
 {
     NMIPAddr addr_bin;
 
+    /* For IPv4, we need to be more tolerant than inet_pton() to recognize
+     * things like the extra zeroes in "255.255.255.000".
+     *
+     * Pass accept_legacy=TRUE to nm_inet_parse_bin_full(), which also accepts
+     * such forms (but not everything which inet_aton() accepts). */
     if (!nm_inet_parse_bin_full(*family, TRUE, str, family, &addr_bin)) {
         _LOGW(LOGD_CORE, "Malformed IP address: '%s'", str);
         return NULL;
