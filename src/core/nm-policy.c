@@ -2594,6 +2594,12 @@ nm_policy_device_recheck_auto_activate_all_schedule(NMPolicy *self)
     const CList     *tmp_lst;
     NMDevice        *device;
 
+    if (nm_clear_g_source_inst(&priv->auto_activate_idle_source)) {
+        /* reschedule the timer if it was pending already. The idea is that idle
+         * activation is pushed back further. */
+        priv->auto_activate_idle_source = nm_g_idle_add_source(_auto_activate_idle_cb, self);
+    }
+
     if (priv->auto_activate_recheck_all_blocked) {
         /* Optimize. Calling nm_policy_device_recheck_auto_activate_all_schedule() several
          * times should not require to iterate all devices multiple times.
