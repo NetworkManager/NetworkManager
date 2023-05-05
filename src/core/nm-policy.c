@@ -1793,6 +1793,17 @@ unblock_autoconnect_for_ports(NMPolicy   *self,
     gboolean                     changed;
     guint                        i;
 
+    _LOGT(LOGD_CORE,
+          "block-autoconnect: unblocking port profiles for controller ifname=%s%s%s, uuid=%s%s%s"
+          "%s%s%s",
+          NM_PRINT_FMT_QUOTE_STRING(master_device),
+          NM_PRINT_FMT_QUOTE_STRING(master_uuid_settings),
+          NM_PRINT_FMT_QUOTED(master_uuid_applied,
+                              ", applied-uuid=\"",
+                              master_uuid_applied,
+                              "\"",
+                              ""));
+
     changed     = FALSE;
     connections = nm_settings_get_connections(priv->settings, NULL);
     for (i = 0; connections[i]; i++) {
@@ -1801,7 +1812,7 @@ unblock_autoconnect_for_ports(NMPolicy   *self,
         const char           *slave_master;
 
         s_slave_con =
-            nm_connection_get_setting_connection(nm_settings_connection_get_connection(sett_conn));
+            nm_settings_connection_get_setting(sett_conn, NM_META_SETTING_TYPE_CONNECTION);
         slave_master = nm_setting_connection_get_master(s_slave_con);
         if (!slave_master)
             continue;
@@ -1844,16 +1855,16 @@ activate_slave_connections(NMPolicy *self, NMDevice *device)
         NMSettingsConnection *sett_conn;
         NMAuthSubject        *subject;
 
+        sett_conn = nm_active_connection_get_settings_connection(NM_ACTIVE_CONNECTION(req));
+        if (sett_conn)
+            master_uuid_settings = nm_settings_connection_get_uuid(sett_conn);
+
         connection = nm_active_connection_get_applied_connection(NM_ACTIVE_CONNECTION(req));
         if (connection)
             master_uuid_applied = nm_connection_get_uuid(connection);
 
-        sett_conn = nm_active_connection_get_settings_connection(NM_ACTIVE_CONNECTION(req));
-        if (sett_conn) {
-            master_uuid_settings = nm_settings_connection_get_uuid(sett_conn);
-            if (nm_streq0(master_uuid_settings, master_uuid_applied))
-                master_uuid_settings = NULL;
-        }
+        if (nm_streq0(master_uuid_settings, master_uuid_applied))
+            master_uuid_applied = NULL;
 
         subject = nm_active_connection_get_subject(NM_ACTIVE_CONNECTION(req));
         internal_activation =
