@@ -227,24 +227,23 @@ controller_update_port_connection(NMDevice     *self,
                                   NMConnection *connection,
                                   GError      **error)
 {
-    NMSettingBondPort *s_port;
-    int                ifindex_port       = nm_device_get_ifindex(port);
-    NMConnection      *applied_connection = nm_device_get_applied_connection(self);
-    uint               queue_id           = NM_BOND_PORT_QUEUE_ID_DEF;
-    gs_free char      *queue_id_str       = NULL;
+    NMSettingBondPort    *s_port;
+    int                   ifindex_port       = nm_device_get_ifindex(port);
+    NMConnection         *applied_connection = nm_device_get_applied_connection(self);
+    const NMPlatformLink *pllink;
 
     g_return_val_if_fail(ifindex_port > 0, FALSE);
 
     s_port = _nm_connection_ensure_setting(connection, NM_TYPE_SETTING_BOND_PORT);
+    pllink = nm_platform_link_get(nm_device_get_platform(port), ifindex_port);
 
-    queue_id_str =
-        nm_platform_sysctl_slave_get_option(nm_device_get_platform(self), ifindex_port, "queue_id");
-    if (queue_id_str) {
-        queue_id =
-            _nm_utils_ascii_str_to_int64(queue_id_str, 10, 0, 65535, NM_BOND_PORT_QUEUE_ID_DEF);
-        g_object_set(s_port, NM_SETTING_BOND_PORT_QUEUE_ID, queue_id, NULL);
-    } else
-        _LOGW(LOGD_BOND, "failed to read bond port setting '%s'", NM_SETTING_BOND_PORT_QUEUE_ID);
+    if (pllink && pllink->port_kind == NM_PORT_KIND_BOND)
+        g_object_set(s_port,
+                     NM_SETTING_BOND_PORT_QUEUE_ID,
+                     pllink->port_data.bond.queue_id,
+                     NM_SETTING_BOND_PORT_PRIO,
+                     pllink->port_data.bond.prio,
+                     NULL);
 
     g_object_set(nm_connection_get_setting_connection(connection),
                  NM_SETTING_CONNECTION_MASTER,
@@ -600,23 +599,52 @@ act_stage1_prepare(NMDevice *device, NMDeviceStateReason *out_failure_reason)
 static void
 commit_port_options(NMDevice *bond_device, NMDevice *port, NMSettingBondPort *s_port)
 {
-    char queue_id_str[IFNAMSIZ + NM_STRLEN(":") + 5 + 100];
+    NMBondMode     mode = NM_BOND_MODE_UNKNOWN;
+    const char    *value;
+    NMSettingBond *s_bond;
+    gint32         prio;
+    gboolean       prio_has;
 
-    /*
-     * The queue-id of bond port is read only, we should modify bond interface using:
-     *    echo "eth1:2" > /sys/class/net/bond0/bonding/queue_id
-     * Kernel allows parital editing, so no need to care about other bond ports.
-     */
-    g_snprintf(queue_id_str,
-               sizeof(queue_id_str),
-               "%s:%" G_GUINT32_FORMAT,
-               nm_device_get_iface(port),
-               s_port ? nm_setting_bond_port_get_queue_id(s_port) : NM_BOND_PORT_QUEUE_ID_DEF);
+    s_bond = nm_device_get_applied_setting(bond_device, NM_TYPE_SETTING_BOND);
+    if (s_bond) {
+        value = nm_setting_bond_get_option_normalized(s_bond, NM_SETTING_BOND_OPTION_MODE);
+        mode  = _nm_setting_bond_mode_from_string(value);
+    }
 
-    nm_platform_sysctl_master_set_option(nm_device_get_platform(bond_device),
-                                         nm_device_get_ifindex(bond_device),
-                                         "queue_id",
-                                         queue_id_str);
+    prio = s_port ? nm_setting_bond_port_get_prio(s_port) : NM_BOND_PORT_PRIO_DEF;
+
+    if (prio != 0) {
+        /* The profile explicitly sets the priority. No matter what, we try to set it
+         * in netlink. */
+        prio_has = TRUE;
+    } else if (!NM_IN_SET(mode, NM_BOND_MODE_ACTIVEBACKUP, NM_BOND_MODE_TLB, NM_BOND_MODE_ALB)) {
+        /* The priority only is configurable with certain modes. If we don't have
+         * one of those modes, don't try to set the priority explicitly to zero. */
+        prio_has = FALSE;
+    } else if (nm_platform_kernel_support_get_full(
+                   NM_PLATFORM_KERNEL_SUPPORT_TYPE_IFLA_BOND_SLAVE_PRIO,
+                   FALSE)
+               == NM_OPTION_BOOL_TRUE) {
+        /* We can only detect support if we have it. We cannot detect lack of support if
+         * we don't have it.
+         *
+         * But we did explicitly detect support, so explicitly set the prio to zero. */
+        prio_has = TRUE;
+    } else {
+        /* We either have an unsuitable mode or didn't detect kernel support for the
+         * priority. Don't explicitly set priority to zero. It is already the default,
+         * so it shouldn't be necessary. */
+        prio_has = FALSE;
+    }
+
+    nm_platform_link_change(nm_device_get_platform(port),
+                            nm_device_get_ifindex(port),
+                            &((NMPlatformLinkBondPort){
+                                .queue_id = s_port ? nm_setting_bond_port_get_queue_id(s_port)
+                                                   : NM_BOND_PORT_QUEUE_ID_DEF,
+                                .prio     = prio_has ? prio : 0,
+                                .prio_has = prio_has,
+                            }));
 }
 
 static NMTernary

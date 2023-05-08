@@ -1925,3 +1925,8 @@ global:
 	nm_active_connection_get_controller;
 	nm_setting_ip_config_get_replace_local_rule;
 } libnm_1_42_0;
+
+libnm_1_42_8 {
+global:
+	nm_setting_bond_port_get_prio;
+} libnm_1_42_0;

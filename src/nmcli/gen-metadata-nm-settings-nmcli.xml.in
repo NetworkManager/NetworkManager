@@ -271,6 +271,9 @@
         <property name="queue-id"
                   alias="queue-id"
                   description="The queue ID of this bond port. The maximum value of queue ID is the number of TX queues currently active in device." />
+        <property name="prio"
+                  alias="prio"
+                  description="The port priority for bond active port re-selection during failover. A higher number means a higher priority in selection. The primary port has the highest priority. This option is only compatible with active-backup, balance-tlb and balance-alb modes." />
     </setting>
     <setting name="bridge" >
         <property name="mac-address"

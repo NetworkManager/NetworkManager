@@ -5235,6 +5235,12 @@ static const NMMetaPropertyInfo *const property_infos_BOND_PORT[] = {
         .prompt =                       N_("Queue ID"),
         .property_type =                &_pt_gobject_int,
     ),
+    PROPERTY_INFO_WITH_DESC (NM_SETTING_BOND_PORT_PRIO,
+        .is_cli_option =                TRUE,
+        .property_alias =               "prio",
+        .prompt =                       N_("Port Priority"),
+        .property_type=                 &_pt_gobject_int,
+    ),
     NULL
 };
 
