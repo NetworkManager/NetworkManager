@@ -140,8 +140,8 @@
     <varlistentry>
       <term>
         <option>
-          <xsl:attribute name="id">nm-settings-nmcli.property.<xsl:value-of select="../@name"/>.<xsl:value-of select="@name"/></xsl:attribute>
-          <xsl:value-of select="@name"/>
+          <xsl:attribute name="id">nm-settings-nmcli.property.<xsl:value-of select="$setting_name"/>.<xsl:value-of select="@name"/></xsl:attribute>
+          <xsl:value-of select="$setting_name"/>.<xsl:value-of select="@name"/>
         </option>
       </term>
       <listitem>
