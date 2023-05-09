@@ -26,6 +26,7 @@ global:
         n_dhcp4_client_pop_event;
         n_dhcp4_client_update_mtu;
         n_dhcp4_client_probe;
+        n_dhcp4_client_set_log_level;
 
         n_dhcp4_client_probe_free;
         n_dhcp4_client_probe_get_userdata;
