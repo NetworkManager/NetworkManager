@@ -50,7 +50,6 @@ stages:
   - tier3
   - deploy
   - triage
-  - container_clean
 
 variables:
   FDO_UPSTREAM_REPO: NetworkManager/NetworkManager
@@ -95,7 +94,7 @@ variables:
 
 #################################################################
 #                                                               #
-#                     containers stage                          #
+# prep stage                                                    #
 #                                                               #
 #################################################################
 
@@ -121,55 +120,7 @@ tier{{distro.tier}}:{{distro.name}}:{{version}}@prep:
 
 #################################################################
 #                                                               #
-#                   container clean stage                       #
-#                 run during the clean stage                    #
-#                                                               #
-#################################################################
-
-#
-# This stage will look for the container images we currently have in
-# the registry and will remove any that are not tagged with the provided
-# $container_image:$tag
-#
-# This job only runs for a scheduled pipeline.
-#
-# Go to your Profile, Settings, Access Tokens
-# Create a personal token with 'api' scope, copy the value.
-# Go to CI/CD, Schedules, schedule a monthly job.
-# Define a variable of type File named AUTHFILE. Content is that token
-# value.
-.container-clean:
-  stage: container_clean
-  image: golang:alpine
-  before_script:
-    - apk add python3 py-pip git
-    - pip3 install git+http://gitlab.freedesktop.org/freedesktop/ci-templates
-  script:
-    - ci-fairy -v --authfile $AUTHFILE delete-image
-            --repository $FDO_DISTRIBUTION_NAME/$FDO_DISTRIBUTION_VERSION
-            --exclude-tag $FDO_DISTRIBUTION_TAG
-  dependencies: []
-  allow_failure: true
-  only:
-    - schedules
-
-{% for distro in distributions %}
-{% for version in distro.versions %}
-{{distro.name}}:{{version}}@container-clean:
-  extends:
-    - .container-clean
-  variables:
-    GIT_STRATEGY: none
-    CURRENT_CONTAINER_IMAGE: $CI_REGISTRY_IMAGE/{{distro.name}}/$FDO_DISTRIBUTION_VERSION:$FDO_DISTRIBUTION_TAG
-    FDO_DISTRIBUTION_VERSION: '{{version}}'
-    FDO_DISTRIBUTION_TAG: ${{distro.name.upper()}}_TAG
-
-{% endfor %}
-{% endfor %}
-
-#################################################################
-#                                                               #
-#                       build stage                             #
+# tierN stage                                                   #
 #                                                               #
 #################################################################
 
@@ -181,13 +132,6 @@ tier{{distro.tier}}:{{distro.name}}:{{version}}@prep:
     - mv /tmp/nm-test.log .
     - exit $r
   dependencies: []
-
-
-#################################################################
-#                                                               #
-#                          test stage                           #
-#                                                               #
-#################################################################
 
 {% for distro in distributions %}
 {% for version in distro.versions %}
@@ -231,7 +175,7 @@ t_{{distro.name}}:{{version}}:
 
 #################################################################
 #                                                               #
-#                      specific jobs                            #
+# specific jobs                                                 #
 #                                                               #
 #################################################################
 
