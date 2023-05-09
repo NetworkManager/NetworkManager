@@ -6,6 +6,7 @@
 
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <dlfcn.h>
 
 /*****************************************************************************/
 
@@ -266,34 +267,118 @@ nm_ip6_addr_same_prefix_cmp(const struct in6_addr *addr_a,
 
 /*****************************************************************************/
 
+static int
+_inet_aton(const char *text, in_addr_t *out_addr)
+{
+    /* Call inet_aton() via dlopen.
+     *
+     * The inet_aton() API is discouraged, and ABI checkers warn when we call
+     * it.
+     *
+     * We want to use this function, but only for testing/asserting. To avoid
+     * the ABI checker's complain, dlopen() the symbol. This is not used for
+     * production.
+     */
+    static gpointer mod_handle  = NULL;
+    static gpointer fcn_sym     = NULL;
+    static gsize    initialized = 0;
+    int (*fcn)(const char *text, struct in_addr *out_addr);
+    int       r;
+    in_addr_t a;
+
+    if (g_once_init_enter(&initialized)) {
+        mod_handle = dlopen(NULL, RTLD_LAZY);
+        if (mod_handle) {
+            fcn_sym = dlsym(mod_handle, "inet_aton");
+            if (!fcn_sym)
+                dlclose(g_steal_pointer(&mod_handle));
+        }
+        g_once_init_leave(&initialized, 1);
+    }
+
+    if (!fcn_sym)
+        return -ENOSYS;
+
+    g_assert(mod_handle);
+
+    fcn = fcn_sym;
+    r   = fcn(text, (gpointer) &a);
+
+    if (r != 1)
+        return -EINVAL;
+
+    NM_SET_OUT(out_addr, a);
+    return 0;
+}
+
+int
+nmtst_inet_aton(const char *text, in_addr_t *out_addr)
+{
+    return _inet_aton(text, out_addr);
+}
+
+static void
+_nm_assert_legacy_addr4(const char *text, in_addr_t addr)
+{
+#if NM_MORE_ASSERTS > 20
+    char      buf1[NM_INET_ADDRSTRLEN];
+    char      buf2[NM_INET_ADDRSTRLEN];
+    int       r;
+    in_addr_t a;
+
+    /* Our legacy parser accepted "text" as "addr".
+     *
+     * However, we want to ensure that whatever we parse is also parsed by old
+     * inet_aton(). So we want to be strictly more strict than inet_aton() in
+     * what we accept.
+     */
+
+    r = _inet_aton(text, &a);
+
+    if (r != 0) {
+        if (r == -ENOSYS)
+            return;
+        g_error("inet_aton(\"%s\") failed with \"%s\", but we expected %s",
+                text,
+                nm_strerror_native(-r),
+                nm_inet4_ntop(addr, buf2));
+    }
+
+    if (a != addr) {
+        g_error("inet_aton(\"%s\") parsed %s, but we expected %s",
+                text,
+                nm_inet4_ntop(a, buf1),
+                nm_inet4_ntop(addr, buf2));
+    }
+#endif
+}
+
 static gboolean
 _parse_legacy_addr4(const char *text, in_addr_t *out_addr, GError **error)
 {
-    gs_free char  *s_free = NULL;
-    struct in_addr a1;
-    guint8         bin[sizeof(a1)];
-    char          *s;
-    int            i;
+    gs_free char *s_free = NULL;
+    union {
+        guint8    b[sizeof(in_addr_t)];
+        in_addr_t a;
+    } addr;
+    char *s;
+    int   i;
 
-    if (inet_aton(text, &a1) != 1) {
-        g_set_error_literal(error,
-                            NM_UTILS_ERROR,
-                            NM_UTILS_ERROR_INVALID_ARGUMENT,
-                            "address invalid according to inet_aton()");
-        return FALSE;
-    }
-
-    /* OK, inet_aton() accepted the format. That's good, because we want
-     * to accept IPv4 addresses in octal format, like 255.255.000.000.
-     * That's what "legacy" means here. inet_pton() doesn't accept those.
+    /* inet_pton() does strict parsing of IPv4 address. Good.
      *
-     * But inet_aton() also ignores trailing garbage and formats with fewer than
-     * 4 digits. That is just too crazy and we don't do that. Perform additional checks
-     * and reject some forms that inet_aton() accepted.
+     * However, inet_aton() used to accept much more relaxed forms (e.g. octal
+     * and hex numbers, not having 4 components but fewer, ignore any trailing
+     * garbage).
+     *
+     * Some places where we accept input, we want to be slightly more forgiving
+     * than inet_pton() and accept some (not all!) forms of what inet_aton()
+     * would accept. For example, we want to accept 255.000.000.000.
+     *
+     * We reimplement that below.
      *
      * Note that we still should (of course) accept everything that inet_pton()
-     * accepts. However this code never gets called if inet_pton() succeeds
-     * (see below, aside the assertion code). */
+     * accepts. This is ensured because the caller only calls this function
+     * after inet_pton() failed. */
 
     if (NM_STRCHAR_ANY(text, ch, (!(ch >= '0' && ch <= '9') && !NM_IN_SET(ch, '.', 'x')))) {
         /* We only accepts '.', digits, and 'x' for "0x". */
@@ -306,7 +391,7 @@ _parse_legacy_addr4(const char *text, in_addr_t *out_addr, GError **error)
 
     s = nm_memdup_maybe_a(300, text, strlen(text) + 1, &s_free);
 
-    for (i = 0; i < G_N_ELEMENTS(bin); i++) {
+    for (i = 0; i < G_N_ELEMENTS(addr.b); i++) {
         char  *current_token = s;
         gint32 v;
 
@@ -316,7 +401,7 @@ _parse_legacy_addr4(const char *text, in_addr_t *out_addr, GError **error)
             s++;
         }
 
-        if ((i == G_N_ELEMENTS(bin) - 1) != (s == NULL)) {
+        if ((i == G_N_ELEMENTS(addr.b) - 1) != (s == NULL)) {
             /* Exactly for the last digit, we expect to have no more following token.
              * But this isn't the case. Abort. */
             g_set_error(error,
@@ -344,26 +429,12 @@ _parse_legacy_addr4(const char *text, in_addr_t *out_addr, GError **error)
             return FALSE;
         }
 
-        bin[i] = v;
+        addr.b[i] = v;
     }
 
-    if (memcmp(bin, &a1, sizeof(bin)) != 0) {
-        /* our parsing did not agree with what inet_aton() gave. Something
-         * is wrong. Abort. */
-        g_set_error(
-            error,
-            NM_UTILS_ERROR,
-            NM_UTILS_ERROR_INVALID_ARGUMENT,
-            "inet_aton() result 0x%08x differs from computed value 0x%02hhx%02hhx%02hhx%02hhx",
-            a1.s_addr,
-            bin[0],
-            bin[1],
-            bin[2],
-            bin[3]);
-        return FALSE;
-    }
+    _nm_assert_legacy_addr4(text, addr.a);
 
-    *out_addr = a1.s_addr;
+    *out_addr = addr.a;
     return TRUE;
 }
 

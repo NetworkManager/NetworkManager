@@ -369,6 +369,8 @@ nm_inet6_ntop_dup(const struct in6_addr *addr)
 
 /*****************************************************************************/
 
+int nmtst_inet_aton(const char *text, in_addr_t *out_addr);
+
 gboolean nm_inet_parse_bin_full(int         addr_family,
                                 gboolean    accept_legacy,
                                 const char *text,
