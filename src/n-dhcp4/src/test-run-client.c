@@ -597,7 +597,7 @@ static int parse_argv(int argc, char **argv) {
                         break;
 
                 case ARG_REQUESTED_IP:
-                        r = inet_aton(optarg, &main_arg_requested_ip);
+                        r = inet_pton(AF_INET, optarg, &main_arg_requested_ip);
                         if (r != 1) {
                                 fprintf(stderr,
                                         "%s: invalid requested IP -- '%s'\n",

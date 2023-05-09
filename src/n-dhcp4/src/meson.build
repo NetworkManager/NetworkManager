@@ -44,7 +44,6 @@ libndhcp4_shared = shared_library(
         soversion: 0,
         link_depends: libndhcp4_symfile,
         link_args: [
-                '-Wl,--no-undefined',
                 '-Wl,--version-script=@0@'.format(libndhcp4_symfile)
         ],
 )
