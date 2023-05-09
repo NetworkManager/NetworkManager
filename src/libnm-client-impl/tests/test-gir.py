@@ -89,8 +89,10 @@ def syms_from_ver(verfile):
         ):
             c_syms[str_removesuffix(line, ";")] = version
 
-    # This one is... messy.
+    # These are exceptions and we cannot know the version for the symbol so we
+    # hardcode it.
     c_syms["nm_ethtool_optname_is_feature"] = "1.20"
+    c_syms["nm_setting_bond_port_get_prio"] = "1.44"
 
     return c_syms
 
