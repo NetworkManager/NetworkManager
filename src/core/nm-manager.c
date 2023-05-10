@@ -7089,6 +7089,8 @@ do_sleep_wake(NMManager *self, gboolean sleeping_changed)
                 continue;
             }
 
+            nm_device_notify_sleeping(device);
+
             if (nm_device_is_activating(device)
                 || nm_device_get_state(device) == NM_DEVICE_STATE_ACTIVATED) {
                 _LOGD(LOGD_SUSPEND,
@@ -7145,7 +7147,8 @@ do_sleep_wake(NMManager *self, gboolean sleeping_changed)
 
         /* Re-manage managed devices */
         c_list_for_each_entry (device, &priv->devices_lst_head, devices_lst) {
-            guint i;
+            NMDeviceStateReason reason;
+            guint               i;
 
             if (nm_device_is_software(device)
                 && !nm_device_get_unmanaged_flags(device, NM_UNMANAGED_SLEEPING)) {
@@ -7176,10 +7179,17 @@ do_sleep_wake(NMManager *self, gboolean sleeping_changed)
                     nm_device_set_enabled(device, enabled);
             }
 
+            /* The reason determines whether the device will be sys-iface-state=managed
+             * or sys-iface-state=external. Pass the correct reason to restore the state
+             * that was set before sleeping. */
+            reason = nm_device_get_sys_iface_state_before_sleep(device)
+                             == NM_DEVICE_SYS_IFACE_STATE_EXTERNAL
+                         ? NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED
+                         : NM_DEVICE_STATE_REASON_NOW_MANAGED;
             nm_device_set_unmanaged_by_flags(device,
                                              NM_UNMANAGED_SLEEPING,
                                              NM_UNMAN_FLAG_OP_SET_MANAGED,
-                                             NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED);
+                                             reason);
         }
 
         /* Give the connections a chance to recreate the virtual devices.
