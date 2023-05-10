@@ -279,7 +279,6 @@ _inet_aton(const char *text, in_addr_t *out_addr)
      * the ABI checker's complain, dlopen() the symbol. This is not used for
      * production.
      */
-    static gpointer mod_handle  = NULL;
     static gpointer fcn_sym     = NULL;
     static gsize    initialized = 0;
     int (*fcn)(const char *text, struct in_addr *out_addr);
@@ -287,19 +286,20 @@ _inet_aton(const char *text, in_addr_t *out_addr)
     in_addr_t a;
 
     if (g_once_init_enter(&initialized)) {
-        mod_handle = dlopen(NULL, RTLD_LAZY);
-        if (mod_handle) {
-            fcn_sym = dlsym(mod_handle, "inet_aton");
-            if (!fcn_sym)
-                dlclose(g_steal_pointer(&mod_handle));
+        GModule *module;
+
+        module = g_module_open(NULL, G_MODULE_BIND_LAZY);
+        if (module) {
+            if (!g_module_symbol(module, "inet_aton", &fcn_sym))
+                g_module_close(module);
+            else
+                g_module_make_resident(module);
         }
         g_once_init_leave(&initialized, 1);
     }
 
     if (!fcn_sym)
         return -ENOSYS;
-
-    g_assert(mod_handle);
 
     fcn = fcn_sym;
     r   = fcn(text, (gpointer) &a);
