@@ -763,13 +763,15 @@ nm_firewall_nft_stdio_mlag(gboolean           up,
                            const char        *bond_ifname,
                            const char *const *bond_ifnames_down,
                            const char *const *active_members,
-                           const char *const *previous_members)
+                           const char *const *previous_members,
+                           gboolean           with_counters)
 {
     nm_auto_str_buf NMStrBuf strbuf_table_name =
         NM_STR_BUF_INIT_A(NM_UTILS_GET_NEXT_REALLOC_SIZE_32, FALSE);
     nm_auto_str_buf NMStrBuf strbuf = NM_STR_BUF_INIT(NM_UTILS_GET_NEXT_REALLOC_SIZE_1000, FALSE);
     const char              *table_name;
     gsize                    i;
+    const char *const        s_counter = with_counters ? " counter" : "";
 
     if (NM_MORE_ASSERTS > 10 && active_members) {
         /* No duplicates. We make certain assumptions here, and we don't
@@ -876,9 +878,10 @@ nm_firewall_nft_stdio_mlag(gboolean           up,
             _append(&strbuf,
                     "add rule netdev %s %s pkttype {"
                     " broadcast, multicast "
-                    "} counter drop",
+                    "}%s drop",
                     table_name,
-                    chain_name);
+                    chain_name,
+                    s_counter);
         }
 
         /* OVS SLB rule 2
@@ -905,15 +908,17 @@ nm_firewall_nft_stdio_mlag(gboolean           up,
                 table_name,
                 bond_ifname);
         _append(&strbuf,
-                "add rule netdev %s tx-snoop-source-mac set update ether saddr . vlan id"
-                " timeout 5s @macset-tagged counter return"
+                "add rule netdev %s tx-snoop-source-mac set update ether saddr . vlan id "
+                "timeout 5s @macset-tagged%s return"
                 "", /* tagged */
-                table_name);
+                table_name,
+                s_counter);
         _append(&strbuf,
-                "add rule netdev %s tx-snoop-source-mac set update ether saddr"
-                " timeout 5s @macset-untagged counter"
+                "add rule netdev %s tx-snoop-source-mac set update ether saddr timeout 5s "
+                "@macset-untagged%s"
                 "", /* untagged*/
-                table_name);
+                table_name,
+                s_counter);
 
         _append(&strbuf,
                 "add chain netdev %s rx-drop-looped-packets {"
@@ -921,18 +926,20 @@ nm_firewall_nft_stdio_mlag(gboolean           up,
                 "}",
                 table_name,
                 bond_ifname);
+        _append(
+            &strbuf,
+            "add rule netdev %s rx-drop-looped-packets ether saddr . vlan id @macset-tagged%s drop",
+            table_name,
+            s_counter);
         _append(&strbuf,
-                "add rule netdev %s rx-drop-looped-packets ether saddr . vlan id"
-                " @macset-tagged counter drop",
-                table_name);
-        _append(&strbuf,
-                "add rule netdev %s rx-drop-looped-packets ether type vlan counter return"
+                "add rule netdev %s rx-drop-looped-packets ether type vlan%s return"
                 "", /* avoid looking up tagged packets in untagged table */
-                table_name);
+                table_name,
+                s_counter);
         _append(&strbuf,
-                "add rule netdev %s rx-drop-looped-packets ether saddr @macset-untagged"
-                " counter drop",
-                table_name);
+                "add rule netdev %s rx-drop-looped-packets ether saddr @macset-untagged%s drop",
+                table_name,
+                s_counter);
     }
 
 out:
