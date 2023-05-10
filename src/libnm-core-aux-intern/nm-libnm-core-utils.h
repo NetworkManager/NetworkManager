@@ -21,6 +21,13 @@
 #define nm_auto_unref_ip_address nm_auto(_nm_ip_address_unref)
 NM_AUTO_DEFINE_FCN0(NMIPAddress *, _nm_ip_address_unref, nm_ip_address_unref);
 
+static inline NMIPRoute *
+_nm_ip_route_ref(NMIPRoute *route)
+{
+    nm_ip_route_ref(route);
+    return route;
+}
+
 #define nm_auto_unref_ip_route nm_auto(_nm_auto_unref_ip_route)
 NM_AUTO_DEFINE_FCN0(NMIPRoute *, _nm_auto_unref_ip_route, nm_ip_route_unref);
 
