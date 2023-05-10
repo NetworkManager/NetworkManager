@@ -39,6 +39,7 @@ GBytes *nm_firewall_nft_stdio_mlag(gboolean           up,
                                    const char        *bond_ifname,
                                    const char *const *bond_ifnames_down,
                                    const char *const *active_members,
-                                   const char *const *previous_members);
+                                   const char *const *previous_members,
+                                   gboolean           with_counters);
 
 #endif /* __NM_FIREWALL_UTILS_H__ */
