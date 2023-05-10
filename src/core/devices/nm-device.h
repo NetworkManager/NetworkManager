@@ -728,6 +728,10 @@ gboolean nm_device_sys_iface_state_is_external_or_assume(NMDevice *self);
 
 void nm_device_sys_iface_state_set(NMDevice *device, NMDeviceSysIfaceState sys_iface_state);
 
+void nm_device_notify_sleeping(NMDevice *self);
+
+NMDeviceSysIfaceState nm_device_get_sys_iface_state_before_sleep(NMDevice *self);
+
 void nm_device_state_changed(NMDevice *device, NMDeviceState state, NMDeviceStateReason reason);
 
 void nm_device_queue_state(NMDevice *self, NMDeviceState state, NMDeviceStateReason reason);

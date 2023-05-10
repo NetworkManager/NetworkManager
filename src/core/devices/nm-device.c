@@ -570,6 +570,8 @@ typedef struct _NMDevicePrivate {
         NMDeviceSysIfaceState       sys_iface_state_;
     };
 
+    NMDeviceSysIfaceState sys_iface_state_before_sleep;
+
     bool carrier : 1;
     bool ignore_carrier : 1;
 
@@ -3050,6 +3052,22 @@ nm_device_sys_iface_state_set(NMDevice *self, NMDeviceSysIfaceState sys_iface_st
      * If you change this, make sure that all callers are fine with such actions. */
 
     nm_assert(priv->sys_iface_state == sys_iface_state);
+}
+
+void
+nm_device_notify_sleeping(NMDevice *self)
+{
+    NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
+
+    priv->sys_iface_state_before_sleep = priv->sys_iface_state;
+}
+
+NMDeviceSysIfaceState
+nm_device_get_sys_iface_state_before_sleep(NMDevice *self)
+{
+    NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
+
+    return priv->sys_iface_state_before_sleep;
 }
 
 static void
@@ -17961,7 +17979,11 @@ nm_device_init(NMDevice *self)
     priv->unmanaged_mask        = priv->unmanaged_flags;
     priv->available_connections = g_hash_table_new_full(nm_direct_hash, NULL, g_object_unref, NULL);
     priv->ip6_saved_properties  = g_hash_table_new_full(nm_str_hash, g_str_equal, NULL, g_free);
-    priv->sys_iface_state_      = NM_DEVICE_SYS_IFACE_STATE_EXTERNAL;
+
+    priv->sys_iface_state_ = NM_DEVICE_SYS_IFACE_STATE_EXTERNAL;
+    /* If networking is already disabled at boot, we want to manage all devices
+     * after re-enabling networking; hence, the initial state is MANAGED. */
+    priv->sys_iface_state_before_sleep = NM_DEVICE_SYS_IFACE_STATE_MANAGED;
 
     priv->promisc_reset = NM_OPTION_BOOL_DEFAULT;
 }
