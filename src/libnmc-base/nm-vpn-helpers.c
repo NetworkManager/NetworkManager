@@ -187,7 +187,50 @@ _extract_variable_value(char *line, const char *tag, char **value)
     return TRUE;
 }
 
-#define OC_ARGS_MAX 10
+#define NM_OPENCONNECT_KEY_GATEWAY              "gateway"
+#define NM_OPENCONNECT_KEY_COOKIE               "cookie"
+#define NM_OPENCONNECT_KEY_GWCERT               "gwcert"
+#define NM_OPENCONNECT_KEY_RESOLVE              "resolve"
+#define NM_OPENCONNECT_KEY_AUTHTYPE             "authtype"
+#define NM_OPENCONNECT_KEY_USERCERT             "usercert"
+#define NM_OPENCONNECT_KEY_CACERT               "cacert"
+#define NM_OPENCONNECT_KEY_PRIVKEY              "userkey"
+#define NM_OPENCONNECT_KEY_KEY_PASS             "key_pass"
+#define NM_OPENCONNECT_KEY_MTU                  "mtu"
+#define NM_OPENCONNECT_KEY_PEM_PASSPHRASE_FSID  "pem_passphrase_fsid"
+#define NM_OPENCONNECT_KEY_PREVENT_INVALID_CERT "prevent_invalid_cert"
+#define NM_OPENCONNECT_KEY_DISABLE_UDP          "disable_udp"
+#define NM_OPENCONNECT_KEY_PROTOCOL             "protocol"
+#define NM_OPENCONNECT_KEY_PROXY                "proxy"
+#define NM_OPENCONNECT_KEY_CSD_ENABLE           "enable_csd_trojan"
+#define NM_OPENCONNECT_KEY_USERAGENT            "useragent"
+#define NM_OPENCONNECT_KEY_CSD_WRAPPER          "csd_wrapper"
+#define NM_OPENCONNECT_KEY_TOKEN_MODE           "stoken_source"
+#define NM_OPENCONNECT_KEY_TOKEN_SECRET         "stoken_string"
+#define NM_OPENCONNECT_KEY_REPORTED_OS          "reported_os"
+#define NM_OPENCONNECT_KEY_MCACERT              "mcacert"
+#define NM_OPENCONNECT_KEY_MCAKEY               "mcakey"
+#define NM_OPENCONNECT_KEY_MCA_PASS             "mca_key_pass"
+
+struct {
+    const char *property;
+    const char *cmdline;
+} oc_property_args[] = {
+    {NM_OPENCONNECT_KEY_USERCERT, "--certificate"},
+    {NM_OPENCONNECT_KEY_CACERT, "--caflle"},
+    {NM_OPENCONNECT_KEY_PRIVKEY, "--sslkey"},
+    {NM_OPENCONNECT_KEY_KEY_PASS, "--key-password"},
+    {NM_OPENCONNECT_KEY_PROTOCOL, "--protocol"},
+    {NM_OPENCONNECT_KEY_PROXY, "--proxy"},
+    {NM_OPENCONNECT_KEY_USERAGENT, "--useragent"},
+    {NM_OPENCONNECT_KEY_REPORTED_OS, "--os"},
+    {NM_OPENCONNECT_KEY_MCACERT, "--mca-certificate"},
+    {NM_OPENCONNECT_KEY_MCAKEY, "--mca-key"},
+    {NM_OPENCONNECT_KEY_MCA_PASS, "--mca-key-password"},
+};
+
+#define NR_OC_STRING_PROPS (sizeof(oc_property_args) / sizeof(oc_property_args[0]))
+#define OC_ARGS_MAX        (12 + 2 * NR_OC_STRING_PROPS)
 
 gboolean
 nm_vpn_openconnect_authenticate_helper(NMSettingVpn *s_vpn,
@@ -216,7 +259,7 @@ nm_vpn_openconnect_authenticate_helper(NMSettingVpn *s_vpn,
     };
     const char *gw, *port;
     const char *oc_argv[OC_ARGS_MAX];
-    int         oc_argc = 0;
+    int         i, oc_argc = 0;
 
     /* Get gateway and port */
     gw   = nm_setting_vpn_get_data_item(s_vpn, "gateway");
@@ -236,10 +279,47 @@ nm_vpn_openconnect_authenticate_helper(NMSettingVpn *s_vpn,
     oc_argv[oc_argc++] = "--authenticate";
     oc_argv[oc_argc++] = gw;
 
-    opt = nm_setting_vpn_get_data_item(s_vpn, "protocol");
+    for (i = 0; i < NR_OC_STRING_PROPS; i++) {
+        opt = nm_setting_vpn_get_data_item(s_vpn, oc_property_args[i].property);
+        if (opt) {
+            oc_argv[oc_argc++] = oc_property_args[i].cmdline;
+            oc_argv[oc_argc++] = opt;
+        }
+    }
+
+    opt = nm_setting_vpn_get_data_item(s_vpn, NM_OPENCONNECT_KEY_PEM_PASSPHRASE_FSID);
+    if (opt && nm_streq(opt, "yes"))
+        oc_argv[oc_argc++] = "--key-password-from-fsid";
+
+    opt = nm_setting_vpn_get_data_item(s_vpn, NM_OPENCONNECT_KEY_CSD_ENABLE);
+    if (opt && nm_streq(opt, "yes")) {
+        opt = nm_setting_vpn_get_data_item(s_vpn, NM_OPENCONNECT_KEY_CSD_WRAPPER);
+        if (opt) {
+            oc_argv[oc_argc++] = "--csd-wrapper";
+            oc_argv[oc_argc++] = opt;
+        }
+    }
+
+    opt = nm_setting_vpn_get_data_item(s_vpn, NM_OPENCONNECT_KEY_TOKEN_MODE);
     if (opt) {
-        oc_argv[oc_argc++] = "--protocol";
-        oc_argv[oc_argc++] = opt;
+        const char *token_secret =
+            nm_setting_vpn_get_data_item(s_vpn, NM_OPENCONNECT_KEY_TOKEN_SECRET);
+        if (nm_streq(opt, "manual") && token_secret) {
+            opt = "rsa";
+        } else if (nm_streq(opt, "stokenrc")) {
+            opt          = "rsa";
+            token_secret = NULL;
+        } else if (!nm_streq(opt, "totp") && !nm_streq(opt, "hotp") && !nm_streq(opt, "yubioath")) {
+            opt = NULL;
+        }
+        if (opt) {
+            oc_argv[oc_argc++] = "--token-mode";
+            oc_argv[oc_argc++] = opt;
+        }
+        if (token_secret) {
+            oc_argv[oc_argc++] = "--token-secret";
+            oc_argv[oc_argc++] = token_secret;
+        }
     }
 
     oc_argv[oc_argc++] = NULL;
