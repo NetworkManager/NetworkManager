@@ -315,8 +315,9 @@ _nmc_mangle_connection(NMDevice                             *device,
     addrs_new = g_ptr_array_new_full(config_data->ipv4s_len, (GDestroyNotify) nm_ip_address_unref);
     rules_new =
         g_ptr_array_new_full(config_data->ipv4s_len, (GDestroyNotify) nm_ip_routing_rule_unref);
-    routes_new = g_ptr_array_new_full(config_data->iproutes_len + !!config_data->ipv4s_len,
-                                      (GDestroyNotify) nm_ip_route_unref);
+    routes_new =
+        g_ptr_array_new_full(nm_g_ptr_array_len(config_data->iproutes) + !!config_data->ipv4s_len,
+                             (GDestroyNotify) nm_ip_route_unref);
 
     if (remote_s_ip) {
         guint len;
@@ -422,8 +423,8 @@ _nmc_mangle_connection(NMDevice                             *device,
         }
     }
 
-    for (i = 0; i < config_data->iproutes_len; ++i)
-        g_ptr_array_add(routes_new, config_data->iproutes_arr[i]);
+    for (i = 0; i < nm_g_ptr_array_len(config_data->iproutes); i++)
+        g_ptr_array_add(routes_new, _nm_ip_route_ref(config_data->iproutes->pdata[i]));
 
     addrs_changed = nmcs_setting_ip_replace_ipv4_addresses(s_ip,
                                                            (NMIPAddress **) addrs_new->pdata,

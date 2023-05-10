@@ -216,7 +216,7 @@ _iface_data_free(gpointer data)
     NMCSProviderGetConfigIfaceData *iface_data = data;
 
     g_free(iface_data->ipv4s_arr);
-    g_free(iface_data->iproutes_arr);
+    nm_g_ptr_array_unref(iface_data->iproutes);
     g_free((char *) iface_data->hwaddr);
 
     nm_g_slice_free(iface_data);

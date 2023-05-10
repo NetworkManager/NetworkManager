@@ -112,7 +112,6 @@ _get_config_fip_cb(GObject *source, GAsyncResult *result, gpointer user_data)
     GCPIfaceData                   *iface_data = user_data;
     gs_free_error GError           *error      = NULL;
     gs_free char                   *ipaddr     = NULL;
-    NMIPRoute                     **routes_arr;
     NMIPRoute                      *route_new;
 
     nm_http_client_poll_req_finish(NM_HTTP_CLIENT(source), result, NULL, &response, &error);
@@ -137,15 +136,14 @@ _get_config_fip_cb(GObject *source, GAsyncResult *result, gpointer user_data)
           ipaddr);
 
     iface_get_config = iface_data->iface_get_config;
-    routes_arr       = iface_get_config->iproutes_arr;
 
     route_new = nm_ip_route_new(AF_INET, ipaddr, 32, NULL, 100, &error);
     if (error)
         goto out_done;
 
     nm_ip_route_set_attribute(route_new, NM_IP_ROUTE_ATTRIBUTE_TYPE, g_variant_new_string("local"));
-    routes_arr[iface_get_config->iproutes_len] = route_new;
-    ++iface_get_config->iproutes_len;
+
+    g_ptr_array_add(iface_get_config->iproutes, route_new);
 
 out_done:
     if (!error) {
@@ -215,7 +213,8 @@ _get_config_ips_list_cb(GObject *source, GAsyncResult *result, gpointer user_dat
         goto out_error;
     }
 
-    iface_data->iface_get_config->iproutes_arr = g_new(NMIPRoute *, iface_data->n_fips_pending);
+    iface_data->iface_get_config->iproutes =
+        g_ptr_array_new_full(iface_data->n_fips_pending, (GDestroyNotify) nm_ip_route_unref);
 
     for (i = 0; i < uri_arr->len; ++i) {
         const char         *str = uri_arr->pdata[i];
