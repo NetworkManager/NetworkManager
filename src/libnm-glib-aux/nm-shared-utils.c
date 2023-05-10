@@ -2757,13 +2757,16 @@ nm_utils_buf_utf8safe_escape(gconstpointer           buf,
     if (g_utf8_validate(str, buflen, &p) && nul_terminated) {
         /* note that g_utf8_validate() does not allow NUL character inside @str. Good.
          * We can treat @str like a NUL terminated string. */
-        if (!NM_STRCHAR_ANY(str,
-                            ch,
-                            (ch == '\\'
-                             || (NM_FLAGS_HAS(flags, NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL)
-                                 && nm_ascii_is_ctrl_or_del(ch))
-                             || (NM_FLAGS_HAS(flags, NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_NON_ASCII)
-                                 && nm_ascii_is_non_ascii(ch)))))
+        if (!NM_STRCHAR_ANY(
+                str,
+                ch,
+                (ch == '\\'
+                 || (NM_FLAGS_HAS(flags, NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL)
+                     && nm_ascii_is_ctrl_or_del(ch))
+                 || (NM_FLAGS_HAS(flags, NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_NON_ASCII)
+                     && nm_ascii_is_non_ascii(ch))
+                 || (NM_FLAGS_HAS(flags, NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_DOUBLE_QUOTE)
+                     && ch == '"'))))
             return str;
     }
 
@@ -2783,7 +2786,9 @@ nm_utils_buf_utf8safe_escape(gconstpointer           buf,
             else if ((NM_FLAGS_HAS(flags, NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_CTRL)
                       && nm_ascii_is_ctrl_or_del(ch))
                      || (NM_FLAGS_HAS(flags, NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_NON_ASCII)
-                         && nm_ascii_is_non_ascii(ch)))
+                         && nm_ascii_is_non_ascii(ch))
+                     || (NM_FLAGS_HAS(flags, NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_DOUBLE_QUOTE)
+                         && ch == '"'))
                 _str_buf_append_c_escape_octal(&strbuf, ch);
             else
                 nm_str_buf_append_c(&strbuf, ch);
