@@ -160,9 +160,10 @@ nm_vpn_get_secret_names(const char *service_type)
     };
 
     if (NM_IN_STRSET(type, "openconnect")) {
-        return _VPN_PASSWORD_LIST({"gateway", N_("Gateway")},
+        return _VPN_PASSWORD_LIST({"gateway", N_("Gateway URL")},
                                   {"cookie", N_("Cookie")},
-                                  {"gwcert", N_("Gateway certificate hash")}, );
+                                  {"gwcert", N_("Gateway certificate hash")},
+                                  {"resolve", N_("Gateway DNS resolution ('host:IP')")}, );
     };
 
     return NULL;
@@ -186,18 +187,24 @@ _extract_variable_value(char *line, const char *tag, char **value)
     return TRUE;
 }
 
+#define OC_ARGS_MAX 10
+
 gboolean
-nm_vpn_openconnect_authenticate_helper(const char *host,
-                                       char      **cookie,
-                                       char      **gateway,
-                                       char      **gwcert,
-                                       int        *status,
-                                       GError    **error)
+nm_vpn_openconnect_authenticate_helper(NMSettingVpn *s_vpn,
+                                       char        **cookie,
+                                       char        **gateway,
+                                       char        **gwcert,
+                                       char        **resolve,
+                                       int          *status,
+                                       GError      **error)
 {
-    gs_free char        *output   = NULL;
-    gs_free const char **output_v = NULL;
+    gs_free char        *output      = NULL;
+    gs_free char        *legacy_host = NULL;
+    gs_free char        *connect_url = NULL;
+    gs_free const char **output_v    = NULL;
     const char *const   *iter;
     const char          *path;
+    const char          *opt;
     const char *const    DEFAULT_PATHS[] = {
         "/sbin/",
         "/usr/sbin/",
@@ -207,6 +214,13 @@ nm_vpn_openconnect_authenticate_helper(const char *host,
         "/usr/local/bin/",
         NULL,
     };
+    const char *gw, *port;
+    const char *oc_argv[OC_ARGS_MAX];
+    int         oc_argc = 0;
+
+    /* Get gateway and port */
+    gw   = nm_setting_vpn_get_data_item(s_vpn, "gateway");
+    port = gw ? strrchr(gw, ':') : NULL;
 
     path = nm_utils_file_search_in_paths("openconnect",
                                          "/usr/sbin/openconnect",
@@ -218,8 +232,21 @@ nm_vpn_openconnect_authenticate_helper(const char *host,
     if (!path)
         return FALSE;
 
+    oc_argv[oc_argc++] = path;
+    oc_argv[oc_argc++] = "--authenticate";
+    oc_argv[oc_argc++] = gw;
+
+    opt = nm_setting_vpn_get_data_item(s_vpn, "protocol");
+    if (opt) {
+        oc_argv[oc_argc++] = "--protocol";
+        oc_argv[oc_argc++] = opt;
+    }
+
+    oc_argv[oc_argc++] = NULL;
+    g_return_val_if_fail(oc_argc <= OC_ARGS_MAX, FALSE);
+
     if (!g_spawn_sync(NULL,
-                      (char **) NM_MAKE_STRV(path, "--authenticate", host),
+                      (char **) oc_argv,
                       NULL,
                       G_SPAWN_SEARCH_PATH | G_SPAWN_CHILD_INHERITS_STDIN,
                       NULL,
@@ -235,14 +262,37 @@ nm_vpn_openconnect_authenticate_helper(const char *host,
      * COOKIE='loremipsum'
      * HOST='1.2.3.4'
      * FINGERPRINT='sha1:32bac90cf09a722e10ecc1942c67fe2ac8c21e2e'
+     *
+     * Since OpenConnect v8.20 (2022-02-20) OpenConnect has also passed e.g.:
+     *
+     * CONNECT_URL='https://vpn.example.com:8443/ConnectPath'
+     * RESOLVE=vpn.example.com:1.2.3.4
      */
     output_v = nm_strsplit_set_with_empty(output, "\r\n");
     for (iter = output_v; iter && *iter; iter++) {
         char *s_mutable = (char *) *iter;
 
         _extract_variable_value(s_mutable, "COOKIE=", cookie);
-        _extract_variable_value(s_mutable, "HOST=", gateway);
+        _extract_variable_value(s_mutable, "CONNECT_URL=", &connect_url);
+        _extract_variable_value(s_mutable, "HOST=", &legacy_host);
         _extract_variable_value(s_mutable, "FINGERPRINT=", gwcert);
+        _extract_variable_value(s_mutable, "RESOLVE=", resolve);
+    }
+
+    if (connect_url) {
+        *gateway = g_steal_pointer(&connect_url);
+    } else {
+        if (!legacy_host) {
+            g_set_error(error,
+                        NM_VPN_PLUGIN_ERROR,
+                        NM_VPN_PLUGIN_ERROR_FAILED,
+                        _("OpenConnect failed to return gateway URL"));
+            return FALSE;
+        }
+        if (port)
+            *gateway = g_strdup_printf("%s%s", legacy_host, port);
+        else
+            *gateway = g_steal_pointer(&legacy_host);
     }
 
     return TRUE;

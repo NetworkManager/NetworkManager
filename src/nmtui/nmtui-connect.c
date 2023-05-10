@@ -31,25 +31,32 @@
  * before starting the command and restored after it returns.
  */
 static gboolean
-openconnect_authenticate(NMConnection *connection, char **cookie, char **gateway, char **gwcert)
+openconnect_authenticate(NMConnection *connection,
+                         char        **cookie,
+                         char        **gateway,
+                         char        **gwcert,
+                         char        **resolve)
 {
     GError       *error = NULL;
     NMSettingVpn *s_vpn;
     gboolean      ret;
     int           status = 0;
-    const char   *gw, *port;
 
     nmt_newt_message_dialog(
         _("openconnect will be run to authenticate.\nIt will return to nmtui when completed."));
 
     /* Get port */
     s_vpn = nm_connection_get_setting_vpn(connection);
-    gw    = nm_setting_vpn_get_data_item(s_vpn, "gateway");
-    port  = gw ? strrchr(gw, ':') : NULL;
 
     newtSuspend();
 
-    ret = nm_vpn_openconnect_authenticate_helper(gw, cookie, gateway, gwcert, &status, &error);
+    ret = nm_vpn_openconnect_authenticate_helper(s_vpn,
+                                                 cookie,
+                                                 gateway,
+                                                 gwcert,
+                                                 resolve,
+                                                 &status,
+                                                 &error);
 
     newtResume();
 
@@ -67,12 +74,6 @@ openconnect_authenticate(NMConnection *connection, char **cookie, char **gateway
     } else if (WIFSIGNALED(status)) {
         nmt_newt_message_dialog(_("openconnect failed with signal %d"), WTERMSIG(status));
         return FALSE;
-    }
-
-    if (gateway && *gateway && port) {
-        char *tmp = *gateway;
-        *gateway  = g_strdup_printf("%s%s", *gateway, port);
-        g_free(tmp);
     }
 
     return TRUE;
@@ -99,8 +100,9 @@ secrets_requested(NMSecretAgentSimple *agent,
             gs_free char *cookie  = NULL;
             gs_free char *gateway = NULL;
             gs_free char *gwcert  = NULL;
+            gs_free char *resolve = NULL;
 
-            openconnect_authenticate(connection, &cookie, &gateway, &gwcert);
+            openconnect_authenticate(connection, &cookie, &gateway, &gwcert, &resolve);
 
             for (i = 0; i < secrets->len; i++) {
                 NMSecretAgentSimpleSecret *secret = secrets->pdata[i];
@@ -121,6 +123,10 @@ secrets_requested(NMSecretAgentSimple *agent,
                                      NM_SECRET_AGENT_ENTRY_ID_PREFX_VPN_SECRETS "gwcert")) {
                     g_free(secret->value);
                     secret->value = g_steal_pointer(&gwcert);
+                } else if (nm_streq0(secret->entry_id,
+                                     NM_SECRET_AGENT_ENTRY_ID_PREFX_VPN_SECRETS "resolve")) {
+                    g_free(secret->value);
+                    secret->value = g_steal_pointer(&resolve);
                 }
             }
         }

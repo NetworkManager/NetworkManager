@@ -635,10 +635,10 @@ vpn_openconnect_get_secrets(NMConnection *connection, GPtrArray *secrets)
 {
     GError       *error = NULL;
     NMSettingVpn *s_vpn;
-    const char   *gw, *port;
     gs_free char *cookie  = NULL;
     gs_free char *gateway = NULL;
     gs_free char *gwcert  = NULL;
+    gs_free char *resolve = NULL;
     int           status  = 0;
     int           i;
     gboolean      ret;
@@ -653,12 +653,14 @@ vpn_openconnect_get_secrets(NMConnection *connection, GPtrArray *secrets)
     if (!nm_streq0(nm_setting_vpn_get_service_type(s_vpn), NM_SECRET_AGENT_VPN_TYPE_OPENCONNECT))
         return FALSE;
 
-    /* Get gateway and port */
-    gw   = nm_setting_vpn_get_data_item(s_vpn, "gateway");
-    port = gw ? strrchr(gw, ':') : NULL;
-
     /* Interactively authenticate to OpenConnect server and get secrets */
-    ret = nm_vpn_openconnect_authenticate_helper(gw, &cookie, &gateway, &gwcert, &status, &error);
+    ret = nm_vpn_openconnect_authenticate_helper(s_vpn,
+                                                 &cookie,
+                                                 &gateway,
+                                                 &gwcert,
+                                                 &resolve,
+                                                 &status,
+                                                 &error);
     if (!ret) {
         nmc_printerr(_("Error: openconnect failed: %s\n"), error->message);
         g_clear_error(&error);
@@ -670,13 +672,6 @@ vpn_openconnect_get_secrets(NMConnection *connection, GPtrArray *secrets)
             nmc_printerr(_("Error: openconnect failed with status %d\n"), WEXITSTATUS(status));
     } else if (WIFSIGNALED(status))
         nmc_printerr(_("Error: openconnect failed with signal %d\n"), WTERMSIG(status));
-
-    /* Append port to the host value */
-    if (gateway && port) {
-        gs_free char *tmp = gateway;
-
-        gateway = g_strdup_printf("%s%s", tmp, port);
-    }
 
     /* Fill secrets to the array */
     for (i = 0; i < secrets->len; i++) {
@@ -698,6 +693,10 @@ vpn_openconnect_get_secrets(NMConnection *connection, GPtrArray *secrets)
                              NM_SECRET_AGENT_ENTRY_ID_PREFX_VPN_SECRETS "gwcert")) {
             g_free(secret->value);
             secret->value = g_steal_pointer(&gwcert);
+        } else if (nm_streq0(secret->entry_id,
+                             NM_SECRET_AGENT_ENTRY_ID_PREFX_VPN_SECRETS "resolve")) {
+            g_free(secret->value);
+            secret->value = g_steal_pointer(&resolve);
         }
     }
 
