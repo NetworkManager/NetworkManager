@@ -438,6 +438,7 @@ _nft_call(NMBondManager     *self,
 {
     gs_unref_bytes GBytes     *stdin_buf             = NULL;
     gs_free const char *const *previous_members_strv = NULL;
+    gboolean                   with_counters;
 
     if (up) {
         gs_unref_ptrarray GPtrArray *arr = NULL;
@@ -480,11 +481,16 @@ _nft_call(NMBondManager     *self,
         }
     }
 
+    /* counters in the nft rules are convenient for debugging, but have a performance overhead.
+     * Enable counters based on whether NM logging is enabled. */
+    with_counters = _NMLOG_ENABLED(LOGL_TRACE);
+
     stdin_buf = nm_firewall_nft_stdio_mlag(up,
                                            bond_ifname,
                                            bond_ifnames_down,
                                            active_members,
-                                           previous_members_strv);
+                                           previous_members_strv,
+                                           with_counters);
 
     nm_clear_g_cancellable(&self->cancellable);
     self->cancellable = g_cancellable_new();

@@ -18,6 +18,7 @@
 
 #include "dns/nm-dns-manager.h"
 #include "nm-connectivity.h"
+#include "nm-firewall-utils.h"
 
 #include "nm-test-utils-core.h"
 
@@ -2582,6 +2583,125 @@ test_connectivity_state_cmp(void)
 
 /*****************************************************************************/
 
+static void
+test_nm_firewall_nft_stdio_mlag(void)
+{
+#define _T(up,                                               \
+           bond_ifname,                                      \
+           bond_ifnames_down,                                \
+           active_members,                                   \
+           previous_members,                                 \
+           with_counters,                                    \
+           expected)                                         \
+    G_STMT_START                                             \
+    {                                                        \
+        gs_unref_bytes GBytes *_b = NULL;                    \
+                                                             \
+        _b = nm_firewall_nft_stdio_mlag((up),                \
+                                        (bond_ifname),       \
+                                        (bond_ifnames_down), \
+                                        (active_members),    \
+                                        (previous_members),  \
+                                        (with_counters));    \
+                                                             \
+        g_assert(_b);                                        \
+        nmtst_assert_cmpmem(expected,                        \
+                            NM_STRLEN(expected),             \
+                            g_bytes_get_data(_b, NULL),      \
+                            g_bytes_get_size(_b));           \
+    }                                                        \
+    G_STMT_END
+
+    _T(TRUE,
+       "bond0",
+       NM_MAKE_STRV("eth0"),
+       NM_MAKE_STRV("eth1"),
+       NM_MAKE_STRV("eth2"),
+       TRUE,
+       "add table netdev nm-mlag-eth0\012delete table netdev nm-mlag-eth0\012add table netdev "
+       "nm-mlag-bond0\012flush table netdev nm-mlag-bond0\012add chain netdev nm-mlag-bond0 "
+       "rx-drop-bc-mc-eth2 { type filter hook ingress device eth2 priority filter; }\012delete "
+       "chain netdev nm-mlag-bond0 rx-drop-bc-mc-eth2\012add chain netdev nm-mlag-bond0 "
+       "rx-drop-bc-mc-eth1 { type filter hook ingress device eth1 priority filter; }\012delete "
+       "chain netdev nm-mlag-bond0 rx-drop-bc-mc-eth1\012add set netdev nm-mlag-bond0 "
+       "macset-tagged { typeof ether saddr . vlan id; flags dynamic,timeout; }\012add set netdev "
+       "nm-mlag-bond0 macset-untagged { typeof ether saddr; flags dynamic,timeout; }\012add chain "
+       "netdev nm-mlag-bond0 tx-snoop-source-mac { type filter hook egress device bond0 priority "
+       "filter; }\012add rule netdev nm-mlag-bond0 tx-snoop-source-mac set update ether saddr . "
+       "vlan id timeout 5s @macset-tagged counter return\012add rule netdev nm-mlag-bond0 "
+       "tx-snoop-source-mac set update ether saddr timeout 5s @macset-untagged counter\012add "
+       "chain netdev nm-mlag-bond0 rx-drop-looped-packets { type filter hook ingress device bond0 "
+       "priority filter; }\012add rule netdev nm-mlag-bond0 rx-drop-looped-packets ether saddr . "
+       "vlan id @macset-tagged counter drop\012add rule netdev nm-mlag-bond0 "
+       "rx-drop-looped-packets ether type vlan counter return\012add rule netdev nm-mlag-bond0 "
+       "rx-drop-looped-packets ether saddr @macset-untagged counter drop\012");
+
+    _T(TRUE,
+       "bond0",
+       NM_MAKE_STRV("eth0"),
+       NM_MAKE_STRV("eth1"),
+       NM_MAKE_STRV("eth2"),
+       FALSE,
+       "add table netdev nm-mlag-eth0\012delete table netdev nm-mlag-eth0\012add table netdev "
+       "nm-mlag-bond0\012flush table netdev nm-mlag-bond0\012add chain netdev nm-mlag-bond0 "
+       "rx-drop-bc-mc-eth2 { type filter hook ingress device eth2 priority filter; }\012delete "
+       "chain netdev nm-mlag-bond0 rx-drop-bc-mc-eth2\012add chain netdev nm-mlag-bond0 "
+       "rx-drop-bc-mc-eth1 { type filter hook ingress device eth1 priority filter; }\012delete "
+       "chain netdev nm-mlag-bond0 rx-drop-bc-mc-eth1\012add set netdev nm-mlag-bond0 "
+       "macset-tagged { typeof ether saddr . vlan id; flags dynamic,timeout; }\012add set netdev "
+       "nm-mlag-bond0 macset-untagged { typeof ether saddr; flags dynamic,timeout; }\012add chain "
+       "netdev nm-mlag-bond0 tx-snoop-source-mac { type filter hook egress device bond0 priority "
+       "filter; }\012add rule netdev nm-mlag-bond0 tx-snoop-source-mac set update ether saddr . "
+       "vlan id timeout 5s @macset-tagged return\012add rule netdev nm-mlag-bond0 "
+       "tx-snoop-source-mac set update ether saddr timeout 5s @macset-untagged\012add chain netdev "
+       "nm-mlag-bond0 rx-drop-looped-packets { type filter hook ingress device bond0 priority "
+       "filter; }\012add rule netdev nm-mlag-bond0 rx-drop-looped-packets ether saddr . vlan id "
+       "@macset-tagged drop\012add rule netdev nm-mlag-bond0 rx-drop-looped-packets ether type "
+       "vlan return\012add rule netdev nm-mlag-bond0 rx-drop-looped-packets ether saddr "
+       "@macset-untagged drop\012");
+
+    _T(TRUE,
+       "bond0",
+       NM_MAKE_STRV("eth0", "eth1"),
+       NM_MAKE_STRV("eth2", "eth3"),
+       NM_MAKE_STRV("eth4", "eth5"),
+       FALSE,
+       "add table netdev nm-mlag-eth0\012delete table netdev nm-mlag-eth0\012add table netdev "
+       "nm-mlag-eth1\012delete table netdev nm-mlag-eth1\012add table netdev "
+       "nm-mlag-bond0\012flush table netdev nm-mlag-bond0\012add chain netdev nm-mlag-bond0 "
+       "rx-drop-bc-mc-eth4 { type filter hook ingress device eth4 priority filter; }\012delete "
+       "chain netdev nm-mlag-bond0 rx-drop-bc-mc-eth4\012add chain netdev nm-mlag-bond0 "
+       "rx-drop-bc-mc-eth5 { type filter hook ingress device eth5 priority filter; }\012delete "
+       "chain netdev nm-mlag-bond0 rx-drop-bc-mc-eth5\012add chain netdev nm-mlag-bond0 "
+       "rx-drop-bc-mc-eth2 { type filter hook ingress device eth2 priority filter; }\012delete "
+       "chain netdev nm-mlag-bond0 rx-drop-bc-mc-eth2\012add chain netdev nm-mlag-bond0 "
+       "rx-drop-bc-mc-eth3 { type filter hook ingress device eth3 priority filter; }\012add rule "
+       "netdev nm-mlag-bond0 rx-drop-bc-mc-eth3 pkttype { broadcast, multicast } drop\012add set "
+       "netdev nm-mlag-bond0 macset-tagged { typeof ether saddr . vlan id; flags dynamic,timeout; "
+       "}\012add set netdev nm-mlag-bond0 macset-untagged { typeof ether saddr; flags "
+       "dynamic,timeout; }\012add chain netdev nm-mlag-bond0 tx-snoop-source-mac { type filter "
+       "hook egress device bond0 priority filter; }\012add rule netdev nm-mlag-bond0 "
+       "tx-snoop-source-mac set update ether saddr . vlan id timeout 5s @macset-tagged "
+       "return\012add rule netdev nm-mlag-bond0 tx-snoop-source-mac set update ether saddr timeout "
+       "5s @macset-untagged\012add chain netdev nm-mlag-bond0 rx-drop-looped-packets { type filter "
+       "hook ingress device bond0 priority filter; }\012add rule netdev nm-mlag-bond0 "
+       "rx-drop-looped-packets ether saddr . vlan id @macset-tagged drop\012add rule netdev "
+       "nm-mlag-bond0 rx-drop-looped-packets ether type vlan return\012add rule netdev "
+       "nm-mlag-bond0 rx-drop-looped-packets ether saddr @macset-untagged drop\012");
+
+    _T(FALSE,
+       "bond0",
+       NM_MAKE_STRV("eth0", "eth1"),
+       NM_MAKE_STRV("eth2", "eth3"),
+       NM_MAKE_STRV("eth4", "eth5"),
+       FALSE,
+       "add table netdev nm-mlag-eth0\012delete table netdev nm-mlag-eth0\012add table netdev "
+       "nm-mlag-eth1\012delete table netdev nm-mlag-eth1\012add table netdev "
+       "nm-mlag-bond0\012delete table netdev nm-mlag-bond0\012");
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE();
 
 int
@@ -2655,6 +2775,8 @@ main(int argc, char **argv)
     g_test_add_func("/core/general/test_connectivity_state_cmp", test_connectivity_state_cmp);
     g_test_add_func("/core/general/test_kernel_cmdline_match_check",
                     test_kernel_cmdline_match_check);
+
+    g_test_add_func("/core/test_nm_firewall_nft_stdio_mlag", test_nm_firewall_nft_stdio_mlag);
 
     return g_test_run();
 }

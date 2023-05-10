@@ -1252,12 +1252,16 @@ typedef enum {
      * It will backslash escape ascii characters according to nm_ascii_is_non_ascii(). */
     NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_NON_ASCII = 0x0002,
 
+    /* Escape '"' as ASCII "\\042". This is useful when escaping a string so that
+     * it can be unescaped with `echo -e $PASTE_TEXT`. */
+    NM_UTILS_STR_UTF8_SAFE_FLAG_ESCAPE_DOUBLE_QUOTE = 0x0004,
+
     /* This flag only has an effect during escaping to ensure we
      * don't leak secrets in memory. Note that during unescape we
      * know the maximum result size from the beginning, and no
      * reallocation happens. Thus, unescape always avoids leaking
      * secrets already. */
-    NM_UTILS_STR_UTF8_SAFE_FLAG_SECRET = 0x0004,
+    NM_UTILS_STR_UTF8_SAFE_FLAG_SECRET = 0x0008,
 
     /* This flag only has an effect during unescaping. It means
      * that non-escaped whitespaces (g_ascii_isspace()) will be
@@ -1265,7 +1269,7 @@ typedef enum {
      * this flag is only useful for gracefully accepting user input
      * with spaces. With this flag, escape and unescape may no longer
      * yield the original input. */
-    NM_UTILS_STR_UTF8_SAFE_UNESCAPE_STRIP_SPACES = 0x0008,
+    NM_UTILS_STR_UTF8_SAFE_UNESCAPE_STRIP_SPACES = 0x0010,
 } NMUtilsStrUtf8SafeFlags;
 
 const char *nm_utils_buf_utf8safe_escape(gconstpointer           buf,
