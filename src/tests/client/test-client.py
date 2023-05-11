@@ -569,6 +569,49 @@ class Util:
             idx = pexp.expect(pattern_list)
             del pattern_list[idx]
 
+    @staticmethod
+    def skip_without_pexpect(_func=None):
+        if _func is None:
+            if pexpect is None:
+                raise unittest.SkipTest("pexpect not available")
+            return
+
+        def f(*a, **kw):
+            Util.skip_without_pexpect()
+            _func(*a, **kw)
+
+        return f
+
+    @staticmethod
+    def skip_without_dbus_session(_func=None):
+        if _func is None:
+            if not dbus_session_inited:
+                raise unittest.SkipTest(
+                    "Own D-Bus session for testing is not initialized. Do you have dbus-run-session available?"
+                )
+            return
+
+        def f(*a, **kw):
+            Util.skip_without_dbus_session()
+            _func(*a, **kw)
+
+        return f
+
+    @staticmethod
+    def skip_without_NM(_func=None):
+        if _func is None:
+            if NM is None:
+                raise unittest.SkipTest(
+                    "gi.NM is not available. Did you build with introspection?"
+                )
+            return
+
+        def f(*a, **kw):
+            Util.skip_without_NM()
+            _func(*a, **kw)
+
+        return f
+
 
 ###############################################################################
 
@@ -1159,18 +1202,14 @@ class TestNmClient(unittest.TestCase):
             # nmcli loads translations from the installation path. This failure commonly
             # happens because you did not install the binary in the --prefix, before
             # running the test. Hence, translations are not available or differ.
-            self.skipTest(
+            raise unittest.SkipTest(
                 "Skipped asserting for localized tests %s. Set NM_TEST_CLIENT_CHECK_L10N=1 to force fail."
                 % (",".join(skip_test_for_l10n_diff))
             )
 
     def setUp(self):
-        if not dbus_session_inited:
-            self.skipTest(
-                "Own D-Bus session for testing is not initialized. Do you have dbus-run-session available?"
-            )
-        if NM is None:
-            self.skipTest("gi.NM is not available. Did you build with introspection?")
+        Util.skip_without_dbus_session()
+        Util.skip_without_NM()
 
 
 class TestNmcli(TestNmClient):
@@ -1452,14 +1491,6 @@ class TestNmcli(TestNmClient):
         def f(self):
             func(self)
             self._nm_test_post()
-
-        return f
-
-    def skip_without_pexpect(func):
-        def f(self):
-            if pexpect is None:
-                raise unittest.SkipTest("pexpect not available")
-            func(self)
 
         return f
 
@@ -2076,7 +2107,7 @@ class TestNmcli(TestNmClient):
             extra_env=no_dbus_env,
         )
 
-    @skip_without_pexpect
+    @Util.skip_without_pexpect
     @nm_test
     def test_ask_mode(self):
         nmc = self.call_nmcli_pexpect(["--ask", "c", "add"])
@@ -2100,7 +2131,7 @@ class TestNmcli(TestNmClient):
         nmc.pexp.expect(pexpect.EOF)
         Util.valgrind_check_log(nmc.valgrind_log, "test_ask_mode")
 
-    @skip_without_pexpect
+    @Util.skip_without_pexpect
     @nm_test
     def test_monitor(self):
         def start_mon(self):
@@ -2153,8 +2184,7 @@ class TestNmCloudSetup(TestNmClient):
         """
 
         def f(self):
-            if pexpect is None:
-                raise unittest.SkipTest("pexpect not available")
+            Util.skip_without_pexpect()
 
             if tuple(sys.version_info[0:2]) < (3, 2):
                 # subprocess.Popen()'s "pass_fd" argument requires at least Python 3.2.
