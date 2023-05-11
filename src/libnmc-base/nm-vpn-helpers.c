@@ -261,8 +261,16 @@ nm_vpn_openconnect_authenticate_helper(NMSettingVpn *s_vpn, GPtrArray *secrets, 
     int         i, oc_argc = 0;
 
     /* Get gateway and port */
-    gw   = nm_setting_vpn_get_data_item(s_vpn, "gateway");
-    port = gw ? strrchr(gw, ':') : NULL;
+    gw = nm_setting_vpn_get_data_item(s_vpn, "gateway");
+    if (!gw) {
+        g_set_error(error,
+                    NM_VPN_PLUGIN_ERROR,
+                    NM_VPN_PLUGIN_ERROR_FAILED,
+                    _("no gateway configured"));
+        return FALSE;
+    }
+
+    port = strrchr(gw, ':');
 
     path = nm_utils_file_search_in_paths("openconnect",
                                          "/usr/sbin/openconnect",
