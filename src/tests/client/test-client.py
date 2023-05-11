@@ -2175,13 +2175,21 @@ class TestNmCloudSetup(TestNmClient):
             self.md_url = "http://%s:%d" % s.getsockname()
             s.close()
 
+            error = None
+
             self.srv_start()
-            func(self)
+            try:
+                func(self)
+            except Exception as e:
+                error = e
             self._nm_test_post()
 
             p.stdin.close()
             p.terminate()
             p.wait()
+
+            if error:
+                raise error
 
         return f
 
