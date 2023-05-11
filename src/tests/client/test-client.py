@@ -948,6 +948,12 @@ class NMStubServer:
             )
         return u
 
+    def ReplaceTextConUuid(self, con_name, replacement):
+        return Util.ReplaceTextSimple(
+            Util.memoize_nullary(lambda: self.findConnectionUuid(con_name)),
+            replacement,
+        )
+
     def setProperty(self, path, propname, value, iface_name=None):
         if iface_name is None:
             iface_name = ""
@@ -1065,12 +1071,6 @@ class TestNmClient(unittest.TestCase):
             srv = self.srv
             self.srv = None
             srv.shutdown()
-
-    def ReplaceTextConUuid(self, con_name, replacement):
-        return Util.ReplaceTextSimple(
-            Util.memoize_nullary(lambda: self.srv.findConnectionUuid(con_name)),
-            replacement,
-        )
 
     def async_start(self, wait_all=False):
 
@@ -1590,7 +1590,9 @@ class TestNmcli(TestNmClient):
         replace_uuids = []
 
         replace_uuids.append(
-            self.ReplaceTextConUuid("con-xx1", "UUID-con-xx1-REPLACED-REPLACED-REPLA")
+            self.srv.ReplaceTextConUuid(
+                "con-xx1", "UUID-con-xx1-REPLACED-REPLACED-REPLA"
+            )
         )
 
         self.call_nmcli(
@@ -1603,7 +1605,7 @@ class TestNmcli(TestNmClient):
         for con_name, apn in con_gsm_list:
 
             replace_uuids.append(
-                self.ReplaceTextConUuid(
+                self.srv.ReplaceTextConUuid(
                     con_name, "UUID-" + con_name + "-REPLACED-REPLACED-REPL"
                 )
             )
@@ -1635,7 +1637,9 @@ class TestNmcli(TestNmClient):
             )
 
         replace_uuids.append(
-            self.ReplaceTextConUuid("ethernet", "UUID-ethernet-REPLACED-REPLACED-REPL")
+            self.srv.ReplaceTextConUuid(
+                "ethernet", "UUID-ethernet-REPLACED-REPLACED-REPL"
+            )
         )
 
         self.call_nmcli(
@@ -1764,7 +1768,9 @@ class TestNmcli(TestNmClient):
         replace_uuids = []
 
         replace_uuids.append(
-            self.ReplaceTextConUuid("con-xx1", "UUID-con-xx1-REPLACED-REPLACED-REPLA")
+            self.srv.ReplaceTextConUuid(
+                "con-xx1", "UUID-con-xx1-REPLACED-REPLACED-REPLA"
+            )
         )
 
         self.call_nmcli(
@@ -1810,7 +1816,9 @@ class TestNmcli(TestNmClient):
         self.async_wait()
 
         replace_uuids.append(
-            self.ReplaceTextConUuid("con-vpn-1", "UUID-con-vpn-1-REPLACED-REPLACED-REP")
+            self.srv.ReplaceTextConUuid(
+                "con-vpn-1", "UUID-con-vpn-1-REPLACED-REPLACED-REP"
+            )
         )
 
         self.call_nmcli(
