@@ -213,7 +213,7 @@ _extract_variable_value(char *line, const char *tag, char **value)
 #define NM_OPENCONNECT_KEY_MCAKEY               "mcakey"
 #define NM_OPENCONNECT_KEY_MCA_PASS             "mca_key_pass"
 
-struct {
+static const struct {
     const char *property;
     const char *cmdline;
 } oc_property_args[] = {
@@ -229,9 +229,6 @@ struct {
     {NM_OPENCONNECT_KEY_MCAKEY, "--mca-key"},
     {NM_OPENCONNECT_KEY_MCA_PASS, "--mca-key-password"},
 };
-
-#define NR_OC_STRING_PROPS (sizeof(oc_property_args) / sizeof(oc_property_args[0]))
-#define OC_ARGS_MAX        (12 + 2 * NR_OC_STRING_PROPS)
 
 /*
  * For old versions of openconnect we need to extract the port# and
@@ -296,10 +293,11 @@ nm_vpn_openconnect_authenticate_helper(NMSettingVpn *s_vpn, GPtrArray *secrets, 
         "/usr/local/bin/",
         NULL,
     };
-    int         port = 0;
+    const char *oc_argv[(12 + 2 * G_N_ELEMENTS(oc_property_args))];
     const char *gw;
-    const char *oc_argv[OC_ARGS_MAX];
-    int         i, oc_argc = 0;
+    int         port;
+    guint       oc_argc = 0;
+    guint       i;
 
     /* Get gateway and port */
     gw = nm_setting_vpn_get_data_item(s_vpn, "gateway");
@@ -327,7 +325,7 @@ nm_vpn_openconnect_authenticate_helper(NMSettingVpn *s_vpn, GPtrArray *secrets, 
     oc_argv[oc_argc++] = "--authenticate";
     oc_argv[oc_argc++] = gw;
 
-    for (i = 0; i < NR_OC_STRING_PROPS; i++) {
+    for (i = 0; i < G_N_ELEMENTS(oc_property_args); i++) {
         opt = nm_setting_vpn_get_data_item(s_vpn, oc_property_args[i].property);
         if (opt) {
             oc_argv[oc_argc++] = oc_property_args[i].cmdline;
@@ -371,7 +369,8 @@ nm_vpn_openconnect_authenticate_helper(NMSettingVpn *s_vpn, GPtrArray *secrets, 
     }
 
     oc_argv[oc_argc++] = NULL;
-    g_return_val_if_fail(oc_argc <= OC_ARGS_MAX, FALSE);
+
+    nm_assert(oc_argc <= G_N_ELEMENTS(oc_argv));
 
     if (!g_spawn_sync(NULL,
                       (char **) oc_argv,
