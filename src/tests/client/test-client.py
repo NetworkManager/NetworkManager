@@ -612,6 +612,104 @@ class Util:
 
         return f
 
+    @staticmethod
+    def cmd_create_env(
+        lang="C",
+        calling_num=None,
+        fatal_warnings=_DEFAULT_ARG,
+        extra_env=None,
+    ):
+        if lang == "C":
+            language = ""
+        elif lang == "de_DE.utf8":
+            language = "de"
+        elif lang == "pl_PL.UTF-8":
+            language = "pl"
+        else:
+            raise AssertionError("invalid language %s" % (lang))
+
+        env = {}
+        for k in [
+            "LD_LIBRARY_PATH",
+            "DBUS_SESSION_BUS_ADDRESS",
+            "LIBNM_CLIENT_DEBUG",
+            "LIBNM_CLIENT_DEBUG_FILE",
+        ]:
+            val = os.environ.get(k, None)
+            if val is not None:
+                env[k] = val
+        env["LANG"] = lang
+        env["LANGUAGE"] = language
+        env["LIBNM_USE_SESSION_BUS"] = "1"
+        env["LIBNM_USE_NO_UDEV"] = "1"
+        env["TERM"] = "linux"
+        env["ASAN_OPTIONS"] = conf.get(ENV_NM_TEST_ASAN_OPTIONS)
+        env["LSAN_OPTIONS"] = conf.get(ENV_NM_TEST_LSAN_OPTIONS)
+        env["LBSAN_OPTIONS"] = conf.get(ENV_NM_TEST_UBSAN_OPTIONS)
+        env["XDG_CONFIG_HOME"] = PathConfiguration.srcdir()
+        if calling_num is not None:
+            env["NM_TEST_CALLING_NUM"] = str(calling_num)
+        if fatal_warnings is _DEFAULT_ARG or fatal_warnings:
+            env["G_DEBUG"] = "fatal-warnings"
+        if extra_env is not None:
+            for k, v in extra_env.items():
+                env[k] = v
+        return env
+
+    @staticmethod
+    def cmd_create_argv(cmd_path, args, with_valgrind=None):
+
+        if with_valgrind is None:
+            with_valgrind = conf.get(ENV_NM_TEST_VALGRIND)
+
+        valgrind_log = None
+        cmd = conf.get(cmd_path)
+        if with_valgrind:
+            valgrind_log = tempfile.mkstemp(prefix="nm-test-client-valgrind.")
+            argv = [
+                "valgrind",
+                "--quiet",
+                "--error-exitcode=37",
+                "--leak-check=full",
+                "--gen-suppressions=all",
+                (
+                    "--suppressions="
+                    + PathConfiguration.top_srcdir()
+                    + "/valgrind.suppressions"
+                ),
+                "--num-callers=100",
+                "--log-file=" + valgrind_log[1],
+                cmd,
+            ]
+            libtool = conf.get(ENV_LIBTOOL)
+            if libtool:
+                argv = list(libtool) + ["--mode=execute"] + argv
+        else:
+            argv = [cmd]
+
+        argv.extend(args)
+        return argv, valgrind_log
+
+    @staticmethod
+    def cmd_call_pexpect(cmd_path, args, extra_env):
+        argv, valgrind_log = Util.cmd_create_argv(cmd_path, args)
+        env = Util.cmd_create_env(extra_env=extra_env)
+
+        pexp = pexpect.spawn(argv[0], argv[1:], timeout=10, env=env)
+
+        pexp.str_last_chars = 100000
+
+        typ = collections.namedtuple("CallPexpect", ["pexp", "valgrind_log"])
+        return typ(pexp, valgrind_log)
+
+    @staticmethod
+    def cmd_call_pexpect_nmcli(args):
+        return Util.cmd_call_pexpect(
+            ENV_NM_TEST_CLIENT_NMCLI_PATH,
+            args,
+            {"NO_COLOR": "1"},
+        )
+
 
 ###############################################################################
 
@@ -974,90 +1072,6 @@ class TestNmClient(unittest.TestCase):
             replacement,
         )
 
-    def _env(
-        self, lang="C", calling_num=None, fatal_warnings=_DEFAULT_ARG, extra_env=None
-    ):
-        if lang == "C":
-            language = ""
-        elif lang == "de_DE.utf8":
-            language = "de"
-        elif lang == "pl_PL.UTF-8":
-            language = "pl"
-        else:
-            self.fail("invalid language %s" % (lang))
-
-        env = {}
-        for k in [
-            "LD_LIBRARY_PATH",
-            "DBUS_SESSION_BUS_ADDRESS",
-            "LIBNM_CLIENT_DEBUG",
-            "LIBNM_CLIENT_DEBUG_FILE",
-        ]:
-            val = os.environ.get(k, None)
-            if val is not None:
-                env[k] = val
-        env["LANG"] = lang
-        env["LANGUAGE"] = language
-        env["LIBNM_USE_SESSION_BUS"] = "1"
-        env["LIBNM_USE_NO_UDEV"] = "1"
-        env["TERM"] = "linux"
-        env["ASAN_OPTIONS"] = conf.get(ENV_NM_TEST_ASAN_OPTIONS)
-        env["LSAN_OPTIONS"] = conf.get(ENV_NM_TEST_LSAN_OPTIONS)
-        env["LBSAN_OPTIONS"] = conf.get(ENV_NM_TEST_UBSAN_OPTIONS)
-        env["XDG_CONFIG_HOME"] = PathConfiguration.srcdir()
-        if calling_num is not None:
-            env["NM_TEST_CALLING_NUM"] = str(calling_num)
-        if fatal_warnings is _DEFAULT_ARG or fatal_warnings:
-            env["G_DEBUG"] = "fatal-warnings"
-        if extra_env is not None:
-            for k, v in extra_env.items():
-                env[k] = v
-        return env
-
-    def cmd_construct_argv(self, cmd_path, args, with_valgrind=None):
-
-        if with_valgrind is None:
-            with_valgrind = conf.get(ENV_NM_TEST_VALGRIND)
-
-        valgrind_log = None
-        cmd = conf.get(cmd_path)
-        if with_valgrind:
-            valgrind_log = tempfile.mkstemp(prefix="nm-test-client-valgrind.")
-            argv = [
-                "valgrind",
-                "--quiet",
-                "--error-exitcode=37",
-                "--leak-check=full",
-                "--gen-suppressions=all",
-                (
-                    "--suppressions="
-                    + PathConfiguration.top_srcdir()
-                    + "/valgrind.suppressions"
-                ),
-                "--num-callers=100",
-                "--log-file=" + valgrind_log[1],
-                cmd,
-            ]
-            libtool = conf.get(ENV_LIBTOOL)
-            if libtool:
-                argv = list(libtool) + ["--mode=execute"] + argv
-        else:
-            argv = [cmd]
-
-        argv.extend(args)
-        return argv, valgrind_log
-
-    def call_pexpect(self, cmd_path, args, extra_env):
-        argv, valgrind_log = self.cmd_construct_argv(cmd_path, args)
-        env = self._env(extra_env=extra_env)
-
-        pexp = pexpect.spawn(argv[0], argv[1:], timeout=10, env=env)
-
-        pexp.str_last_chars = 100000
-
-        typ = collections.namedtuple("CallPexpect", ["pexp", "valgrind_log"])
-        return typ(pexp, valgrind_log)
-
     def async_start(self, wait_all=False):
 
         while True:
@@ -1295,9 +1309,6 @@ class TestNmcli(TestNmClient):
                 frame,
             )
 
-    def call_nmcli_pexpect(self, args):
-        return self.call_pexpect(ENV_NM_TEST_CLIENT_NMCLI_PATH, args, {"NO_COLOR": "1"})
-
     def _call_nmcli(
         self,
         args,
@@ -1358,7 +1369,7 @@ class TestNmcli(TestNmClient):
             self.fail("invalid language %s" % (lang))
 
         # Running under valgrind is not yet supported for those tests.
-        args, valgrind_log = self.cmd_construct_argv(
+        args, valgrind_log = Util.cmd_create_argv(
             ENV_NM_TEST_CLIENT_NMCLI_PATH, args, with_valgrind=False
         )
 
@@ -1472,7 +1483,7 @@ class TestNmcli(TestNmClient):
                     "content": content,
                 }
 
-        env = self._env(lang, calling_num, fatal_warnings, extra_env)
+        env = Util.cmd_create_env(lang, calling_num, fatal_warnings, extra_env)
         async_job = AsyncProcess(args=args, env=env, complete_cb=complete_cb)
 
         self._async_jobs.append(async_job)
@@ -2110,7 +2121,7 @@ class TestNmcli(TestNmClient):
     @Util.skip_without_pexpect
     @nm_test
     def test_ask_mode(self):
-        nmc = self.call_nmcli_pexpect(["--ask", "c", "add"])
+        nmc = Util.cmd_call_pexpect_nmcli(["--ask", "c", "add"])
         nmc.pexp.expect("Connection type:")
         nmc.pexp.sendline("ethernet")
         nmc.pexp.expect("Interface name:")
@@ -2135,7 +2146,7 @@ class TestNmcli(TestNmClient):
     @nm_test
     def test_monitor(self):
         def start_mon(self):
-            nmc = self.call_nmcli_pexpect(["monitor"])
+            nmc = Util.cmd_call_pexpect_nmcli(["monitor"])
             nmc.pexp.expect("NetworkManager is running")
             return nmc
 
@@ -2309,7 +2320,7 @@ class TestNmCloudSetup(TestNmClient):
         )
 
         # Run nm-cloud-setup for the first time
-        nmc = self.call_pexpect(
+        nmc = Util.cmd_call_pexpect(
             ENV_NM_TEST_CLIENT_CLOUD_SETUP_PATH,
             [],
             {
@@ -2331,7 +2342,7 @@ class TestNmCloudSetup(TestNmClient):
         nmc.pexp.expect(pexpect.EOF)
 
         # Run nm-cloud-setup for the second time
-        nmc = self.call_pexpect(
+        nmc = Util.cmd_call_pexpect(
             ENV_NM_TEST_CLIENT_CLOUD_SETUP_PATH,
             [],
             {
@@ -2388,7 +2399,7 @@ class TestNmCloudSetup(TestNmClient):
         self._mock_path(_azure_iface + "1/ipv4/subnet/0/prefix/" + _azure_query, "20")
 
         # Run nm-cloud-setup for the first time
-        nmc = self.call_pexpect(
+        nmc = Util.cmd_call_pexpect(
             ENV_NM_TEST_CLIENT_CLOUD_SETUP_PATH,
             [],
             {
@@ -2417,7 +2428,7 @@ class TestNmCloudSetup(TestNmClient):
         nmc.pexp.expect(pexpect.EOF)
 
         # Run nm-cloud-setup for the second time
-        nmc = self.call_pexpect(
+        nmc = Util.cmd_call_pexpect(
             ENV_NM_TEST_CLIENT_CLOUD_SETUP_PATH,
             [],
             {
@@ -2464,7 +2475,7 @@ class TestNmCloudSetup(TestNmClient):
         )
 
         # Run nm-cloud-setup for the first time
-        nmc = self.call_pexpect(
+        nmc = Util.cmd_call_pexpect(
             ENV_NM_TEST_CLIENT_CLOUD_SETUP_PATH,
             [],
             {
@@ -2486,7 +2497,7 @@ class TestNmCloudSetup(TestNmClient):
         nmc.pexp.expect(pexpect.EOF)
 
         # Run nm-cloud-setup for the second time
-        nmc = self.call_pexpect(
+        nmc = Util.cmd_call_pexpect(
             ENV_NM_TEST_CLIENT_CLOUD_SETUP_PATH,
             [],
             {
@@ -2524,7 +2535,7 @@ class TestNmCloudSetup(TestNmClient):
         self._mock_path(gcp_iface + "1/forwarded-ips/0", TestNmCloudSetup._ip2)
 
         # Run nm-cloud-setup for the first time
-        nmc = self.call_pexpect(
+        nmc = Util.cmd_call_pexpect(
             ENV_NM_TEST_CLIENT_CLOUD_SETUP_PATH,
             [],
             {
@@ -2547,7 +2558,7 @@ class TestNmCloudSetup(TestNmClient):
         nmc.pexp.expect(pexpect.EOF)
 
         # Run nm-cloud-setup for the second time
-        nmc = self.call_pexpect(
+        nmc = Util.cmd_call_pexpect(
             ENV_NM_TEST_CLIENT_CLOUD_SETUP_PATH,
             [],
             {
