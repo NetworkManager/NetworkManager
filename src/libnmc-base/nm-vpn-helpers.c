@@ -16,6 +16,7 @@
 #include <net/if.h>
 
 #include "nm-client-utils.h"
+#include "nm-secret-agent-simple.h"
 #include "nm-utils.h"
 #include "libnm-glib-aux/nm-io-utils.h"
 #include "libnm-glib-aux/nm-secret-utils.h"
@@ -233,18 +234,16 @@ struct {
 #define OC_ARGS_MAX        (12 + 2 * NR_OC_STRING_PROPS)
 
 gboolean
-nm_vpn_openconnect_authenticate_helper(NMSettingVpn *s_vpn,
-                                       char        **cookie,
-                                       char        **gateway,
-                                       char        **gwcert,
-                                       char        **resolve,
-                                       int          *status,
-                                       GError      **error)
+nm_vpn_openconnect_authenticate_helper(NMSettingVpn *s_vpn, GPtrArray *secrets, GError **error)
 {
     gs_free char        *output      = NULL;
     gs_free char        *legacy_host = NULL;
     gs_free char        *connect_url = NULL;
+    gs_free char        *cookie      = NULL;
+    gs_free char        *gwcert      = NULL;
+    gs_free char        *resolve     = NULL;
     gs_free const char **output_v    = NULL;
+    int                  status      = 0;
     const char *const   *iter;
     const char          *path;
     const char          *opt;
@@ -333,9 +332,26 @@ nm_vpn_openconnect_authenticate_helper(NMSettingVpn *s_vpn,
                       NULL,
                       &output,
                       NULL,
-                      status,
+                      &status,
                       error))
         return FALSE;
+
+    if (WIFEXITED(status) && WEXITSTATUS(status) != 0) {
+        /* The caller will prepend "Error: openconnect failed: " to this */
+        g_set_error(error,
+                    NM_VPN_PLUGIN_ERROR,
+                    NM_VPN_PLUGIN_ERROR_FAILED,
+                    _("exited with status %d"),
+                    WEXITSTATUS(status));
+        return FALSE;
+    } else if (WIFSIGNALED(status)) {
+        g_set_error(error,
+                    NM_VPN_PLUGIN_ERROR,
+                    NM_VPN_PLUGIN_ERROR_FAILED,
+                    _("exited on signal %d"),
+                    WTERMSIG(status));
+        return FALSE;
+    }
 
     /* Parse output and set cookie, gateway and gwcert
      * output example:
@@ -352,27 +368,49 @@ nm_vpn_openconnect_authenticate_helper(NMSettingVpn *s_vpn,
     for (iter = output_v; iter && *iter; iter++) {
         char *s_mutable = (char *) *iter;
 
-        _extract_variable_value(s_mutable, "COOKIE=", cookie);
+        _extract_variable_value(s_mutable, "COOKIE=", &cookie);
         _extract_variable_value(s_mutable, "CONNECT_URL=", &connect_url);
         _extract_variable_value(s_mutable, "HOST=", &legacy_host);
-        _extract_variable_value(s_mutable, "FINGERPRINT=", gwcert);
-        _extract_variable_value(s_mutable, "RESOLVE=", resolve);
+        _extract_variable_value(s_mutable, "FINGERPRINT=", &gwcert);
+        _extract_variable_value(s_mutable, "RESOLVE=", &resolve);
     }
 
-    if (connect_url) {
-        *gateway = g_steal_pointer(&connect_url);
-    } else {
-        if (!legacy_host) {
-            g_set_error(error,
-                        NM_VPN_PLUGIN_ERROR,
-                        NM_VPN_PLUGIN_ERROR_FAILED,
-                        _("OpenConnect failed to return gateway URL"));
-            return FALSE;
+    if (!cookie || !gwcert || (!legacy_host && !connect_url)) {
+        g_set_error(error,
+                    NM_VPN_PLUGIN_ERROR,
+                    NM_VPN_PLUGIN_ERROR_FAILED,
+                    _("insufficent secrets returned"));
+        return FALSE;
+    }
+
+    for (i = 0; i < secrets->len; i++) {
+        NMSecretAgentSimpleSecret *secret = secrets->pdata[i];
+
+        if (secret->secret_type != NM_SECRET_AGENT_SECRET_TYPE_VPN_SECRET)
+            continue;
+        if (!nm_streq0(secret->vpn_type, NM_SECRET_AGENT_VPN_TYPE_OPENCONNECT))
+            continue;
+        if (nm_streq0(secret->entry_id, NM_SECRET_AGENT_ENTRY_ID_PREFX_VPN_SECRETS "cookie")) {
+            g_free(secret->value);
+            secret->value = g_steal_pointer(&cookie);
+        } else if (nm_streq0(secret->entry_id,
+                             NM_SECRET_AGENT_ENTRY_ID_PREFX_VPN_SECRETS "gateway")) {
+            g_free(secret->value);
+            if (connect_url)
+                secret->value = g_steal_pointer(&connect_url);
+            else if (port)
+                secret->value = g_strdup_printf("%s%s", legacy_host, port);
+            else
+                secret->value = g_steal_pointer(&legacy_host);
+        } else if (nm_streq0(secret->entry_id,
+                             NM_SECRET_AGENT_ENTRY_ID_PREFX_VPN_SECRETS "gwcert")) {
+            g_free(secret->value);
+            secret->value = g_steal_pointer(&gwcert);
+        } else if (nm_streq0(secret->entry_id,
+                             NM_SECRET_AGENT_ENTRY_ID_PREFX_VPN_SECRETS "resolve")) {
+            g_free(secret->value);
+            secret->value = g_steal_pointer(&resolve);
         }
-        if (port)
-            *gateway = g_strdup_printf("%s%s", legacy_host, port);
-        else
-            *gateway = g_steal_pointer(&legacy_host);
     }
 
     return TRUE;
