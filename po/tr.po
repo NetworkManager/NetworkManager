@@ -3540,7 +3540,7 @@ msgstr ""
 
 #: src/libnm-crypto/nm-crypto-gnutls.c:58
 msgid "Failed to initialize the crypto engine."
-msgstr "Kripto cihazını sıfırlama başarısız."
+msgstr "Kripto motoru ilklendirme başarısız oldu."
 
 #: src/libnm-crypto/nm-crypto-gnutls.c:91 src/libnm-crypto/nm-crypto-nss.c:118
 msgid "Unsupported key cipher for decryption"
