@@ -26,38 +26,6 @@
 #include "libnmc-base/nm-client-utils.h"
 #include "nmt-utils.h"
 
-/**
- * Runs openconnect to authenticate. The current screen state is saved
- * before starting the command and restored after it returns.
- */
-static gboolean
-openconnect_authenticate(NMConnection *connection, GPtrArray *secrets)
-{
-    GError       *error = NULL;
-    NMSettingVpn *s_vpn;
-    gboolean      ret;
-
-    nmt_newt_message_dialog(
-        _("openconnect will be run to authenticate.\nIt will return to nmtui when completed."));
-
-    /* Get port */
-    s_vpn = nm_connection_get_setting_vpn(connection);
-
-    newtSuspend();
-
-    ret = nm_vpn_openconnect_authenticate_helper(s_vpn, secrets, &error);
-
-    newtResume();
-
-    if (!ret) {
-        nmt_newt_message_dialog(_("Error: openconnect failed: %s"), error->message);
-        g_clear_error(&error);
-        return FALSE;
-    }
-
-    return TRUE;
-}
-
 static void
 secrets_requested(NMSecretAgentSimple *agent,
                   const char          *request_id,
@@ -68,6 +36,7 @@ secrets_requested(NMSecretAgentSimple *agent,
 {
     NmtNewtForm  *form;
     NMConnection *connection = NM_CONNECTION(user_data);
+    gboolean      success    = FALSE;
 
     /* Get secrets for OpenConnect VPN */
     if (connection && nm_connection_is_type(connection, NM_SETTING_VPN_SETTING_NAME)) {
@@ -75,19 +44,37 @@ secrets_requested(NMSecretAgentSimple *agent,
 
         if (nm_streq0(nm_setting_vpn_get_service_type(s_vpn),
                       NM_SECRET_AGENT_VPN_TYPE_OPENCONNECT)) {
-            openconnect_authenticate(connection, secrets);
+            GError *error = NULL;
+
+            nmt_newt_message_dialog(_("openconnect will be run to authenticate.\nIt will return to "
+                                      "nmtui when completed."));
+
+            newtSuspend();
+
+            success = nm_vpn_openconnect_authenticate_helper(s_vpn, secrets, &error);
+
+            newtResume();
+
+            if (!success) {
+                nmt_newt_message_dialog(_("Error: openconnect failed: %s"), error->message);
+                g_clear_error(&error);
+            }
         }
     }
 
-    form = nmt_password_dialog_new(request_id, title, msg, secrets);
-    nmt_newt_form_run_sync(form);
+    if (!success) {
+        form = nmt_password_dialog_new(request_id, title, msg, secrets);
+        nmt_newt_form_run_sync(form);
 
-    if (nmt_password_dialog_succeeded(NMT_PASSWORD_DIALOG(form)))
+        success = nmt_password_dialog_succeeded(NMT_PASSWORD_DIALOG(form));
+
+        g_object_unref(form);
+    }
+
+    if (success)
         nm_secret_agent_simple_response(agent, request_id, secrets);
     else
         nm_secret_agent_simple_response(agent, request_id, NULL);
-
-    g_object_unref(form);
 }
 
 typedef struct {
