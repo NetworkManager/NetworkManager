@@ -233,6 +233,46 @@ struct {
 #define NR_OC_STRING_PROPS (sizeof(oc_property_args) / sizeof(oc_property_args[0]))
 #define OC_ARGS_MAX        (12 + 2 * NR_OC_STRING_PROPS)
 
+/*
+ * For old versions of openconnect we need to extract the port# and
+ * append it to the hostname that is returned to us. Use a cut-down
+ * version of openconnect's own internal_parse_url() function.
+ */
+static int
+extract_url_port(const char *url)
+{
+    const char *host, *port_str, *path;
+    char       *end;
+    int         port_nr;
+
+    /* Skip the scheme, if present */
+    host = strstr(url, "://");
+    if (host)
+        host += 3;
+    else
+        host = url;
+
+    port_str = strrchr(host, ':');
+    if (!port_str)
+        return 0;
+
+    /*
+     * If the host is an IPv6 literal, port_str may point somewhere
+     * inside it rather than to an actual port#. But IPv6 literals
+     * are always enclosed in [], e.g. '[fec0::1]:443'. So we check
+     * that the end pointer returned by strtol points exactly to the
+     * end of the hostname (either the end of the string, or to the
+     * first '/' of the path element if there is one).
+     */
+    path    = strchr(host, '/');
+    port_nr = strtol(port_str + 1, &end, 10);
+
+    if (end == path || (!path && !*end))
+        return port_nr;
+
+    return 0;
+}
+
 gboolean
 nm_vpn_openconnect_authenticate_helper(NMSettingVpn *s_vpn, GPtrArray *secrets, GError **error)
 {
@@ -256,7 +296,8 @@ nm_vpn_openconnect_authenticate_helper(NMSettingVpn *s_vpn, GPtrArray *secrets, 
         "/usr/local/bin/",
         NULL,
     };
-    const char *gw, *port;
+    int         port = 0;
+    const char *gw;
     const char *oc_argv[OC_ARGS_MAX];
     int         i, oc_argc = 0;
 
@@ -270,7 +311,7 @@ nm_vpn_openconnect_authenticate_helper(NMSettingVpn *s_vpn, GPtrArray *secrets, 
         return FALSE;
     }
 
-    port = strrchr(gw, ':');
+    port = extract_url_port(gw);
 
     path = nm_utils_file_search_in_paths("openconnect",
                                          "/usr/sbin/openconnect",
@@ -407,7 +448,7 @@ nm_vpn_openconnect_authenticate_helper(NMSettingVpn *s_vpn, GPtrArray *secrets, 
             if (connect_url)
                 secret->value = g_steal_pointer(&connect_url);
             else if (port)
-                secret->value = g_strdup_printf("%s%s", legacy_host, port);
+                secret->value = g_strdup_printf("%s:%d", legacy_host, port);
             else
                 secret->value = g_steal_pointer(&legacy_host);
         } else if (nm_streq0(secret->entry_id,
