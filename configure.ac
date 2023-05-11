@@ -1049,6 +1049,7 @@ else
 fi
 AM_CONDITIONAL(WITH_LIBPSL, test "$with_libpsl" != "no")
 
+have_libcurl=''
 
 AC_ARG_ENABLE(concheck,
               AS_HELP_STRING([--enable-concheck], [enable connectivity checking support]),
@@ -1087,7 +1088,9 @@ AM_CONDITIONAL(BUILD_NMCLI, test "$build_nmcli" = yes)
 AC_ARG_WITH(nm-cloud-setup,
             AS_HELP_STRING([--with-nm-cloud-setup=yes|no], [Build nm-cloud-setup, a tool for automatically configuring networking in cloud]))
 if test "$with_nm_cloud_setup" != no; then
-	PKG_CHECK_MODULES(LIBCURL, [libcurl >= 7.24.0], [have_libcurl=yes], [have_libcurl=no])
+	if test "$have_libcurl" = ""; then
+		PKG_CHECK_MODULES(LIBCURL, [libcurl >= 7.24.0], [have_libcurl=yes], [have_libcurl=no])
+	fi
 	if test "$have_libcurl" != "yes"; then
 		AC_MSG_ERROR(--with-nm-cloud-setup requires libcurl library.)
 	fi
