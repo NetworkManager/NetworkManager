@@ -1009,6 +1009,8 @@ class TestNmClient(unittest.TestCase):
 
         pexp = pexpect.spawn(argv[0], argv[1:], timeout=10, env=env)
 
+        pexp.str_last_chars = 100000
+
         typ = collections.namedtuple("CallPexpect", ["pexp", "valgrind_log"])
         return typ(pexp, valgrind_log)
 
