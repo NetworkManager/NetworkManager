@@ -391,7 +391,7 @@ _pladdr_find_ll(NML3IPv6LL *self, gboolean *out_cur_addr_failed)
 /*****************************************************************************/
 
 static void
-_lladdr_handle_changed(NML3IPv6LL *self)
+_lladdr_handle_changed(NML3IPv6LL *self, gboolean force_commit)
 {
     const NML3ConfigData *l3cd;
     gboolean              changed = FALSE;
@@ -420,7 +420,9 @@ _lladdr_handle_changed(NML3IPv6LL *self)
                                 NM_DNS_PRIORITY_DEFAULT_NORMAL,
                                 NM_L3_ACD_DEFEND_TYPE_ALWAYS,
                                 0,
-                                NM_L3CFG_CONFIG_FLAGS_NONE,
+                                /* Even if the address was removed from platform, it must
+                                 * be re-added, hence FORCE_ONCE. */
+                                NM_L3CFG_CONFIG_FLAGS_FORCE_ONCE,
                                 NM_L3_CONFIG_MERGE_FLAGS_NONE))
             changed = TRUE;
     } else {
@@ -434,7 +436,7 @@ _lladdr_handle_changed(NML3IPv6LL *self)
                                                               self->l3cfg_commit_handle,
                                                               "ipv6ll");
 
-    if (changed)
+    if (changed || force_commit)
         nm_l3cfg_commit_on_idle_schedule(self->l3cfg, NM_L3_CFG_COMMIT_TYPE_AUTO);
 
     if (!self->emit_changed_idle_source) {
@@ -515,6 +517,7 @@ _check(NML3IPv6LL *self)
     const NMPlatformIP6Address *pladdr;
     char                        sbuf[INET6_ADDRSTRLEN];
     gboolean                    cur_addr_failed;
+    gboolean                    restarted = FALSE;
     struct in6_addr             lladdr;
 
     pladdr = _pladdr_find_ll(self, &cur_addr_failed);
@@ -526,14 +529,14 @@ _check(NML3IPv6LL *self)
             if (_set_cur_lladdr_obj(self, NM_L3_IPV6LL_STATE_DAD_IN_PROGRESS, pladdr)) {
                 _LOGT("changed: waiting for address %s to complete DAD",
                       nm_inet6_ntop(&self->cur_lladdr, sbuf));
-                _lladdr_handle_changed(self);
+                _lladdr_handle_changed(self, FALSE);
             }
             return;
         }
 
         if (_set_cur_lladdr_obj(self, NM_L3_IPV6LL_STATE_READY, pladdr)) {
             _LOGT("changed: address %s is ready", nm_inet6_ntop(&self->cur_lladdr, sbuf));
-            _lladdr_handle_changed(self);
+            _lladdr_handle_changed(self, FALSE);
         }
         return;
     }
@@ -543,11 +546,17 @@ _check(NML3IPv6LL *self)
          * Prematurely abort DAD to generate a new address below. */
         nm_assert(
             NM_IN_SET(self->state, NM_L3_IPV6LL_STATE_DAD_IN_PROGRESS, NM_L3_IPV6LL_STATE_READY));
-        if (self->state == NM_L3_IPV6LL_STATE_DAD_IN_PROGRESS)
-            _LOGT("changed: address %s did not complete DAD",
-                  nm_inet6_ntop(&self->cur_lladdr, sbuf));
-        else {
+
+        if (cur_addr_failed) {
+            /* On DAD failure, we always try to regenerate a new address. */
+            _LOGT("changed: address %s failed", nm_inet6_ntop(&self->cur_lladdr, sbuf));
+        } else {
             _LOGT("changed: address %s is gone", nm_inet6_ntop(&self->cur_lladdr, sbuf));
+            /* When the address is removed, we always try to re-add it. */
+            nm_clear_g_source_inst(&self->wait_for_addr_source);
+            lladdr    = self->cur_lladdr;
+            restarted = TRUE;
+            goto commit;
         }
 
         /* reset the state here, so that we are sure that the following
@@ -569,18 +578,19 @@ _check(NML3IPv6LL *self)
         if (_set_cur_lladdr_bin(self, NM_L3_IPV6LL_STATE_DAD_FAILED, NULL)) {
             _LOGW("changed: no IPv6 link local address to retry after Duplicate Address Detection "
                   "failures (back off)");
-            _lladdr_handle_changed(self);
+            _lladdr_handle_changed(self, FALSE);
         }
         return;
     }
 
+commit:
     /* we give NML3Cfg 2 seconds to configure the address on the interface. We
      * thus very soon expect to see this address configured (and kernel started DAD).
      * If that does not happen within timeout, we assume that this address failed DAD. */
     self->wait_for_addr_source = nm_g_timeout_add_source(2000, _wait_for_addr_timeout_cb, self);
-    if (_set_cur_lladdr_bin(self, NM_L3_IPV6LL_STATE_DAD_IN_PROGRESS, &lladdr)) {
+    if (_set_cur_lladdr_bin(self, NM_L3_IPV6LL_STATE_DAD_IN_PROGRESS, &lladdr) || restarted) {
         _LOGT("changed: starting DAD for address %s", nm_inet6_ntop(&self->cur_lladdr, sbuf));
-        _lladdr_handle_changed(self);
+        _lladdr_handle_changed(self, restarted);
     }
     return;
 }
