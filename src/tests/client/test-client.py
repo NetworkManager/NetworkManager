@@ -412,6 +412,34 @@ class Util:
             return None
 
     @staticmethod
+    def file_read_expected(filename):
+        results_expect = []
+        content_expect = Util.file_read(filename)
+        try:
+            base_idx = 0
+            size_prefix = "size: ".encode("utf8")
+            while True:
+                if not content_expect[base_idx : base_idx + 10].startswith(size_prefix):
+                    raise Exception("Unexpected token")
+                j = base_idx + len(size_prefix)
+                i = j
+                if Util.python_has_version(3, 0):
+                    eol = ord("\n")
+                else:
+                    eol = "\n"
+                while content_expect[i] != eol:
+                    i += 1
+                i = i + 1 + int(content_expect[j:i])
+                results_expect.append(content_expect[base_idx:i])
+                if len(content_expect) == i:
+                    break
+                base_idx = i
+        except Exception as e:
+            results_expect = None
+
+        return content_expect, results_expect
+
+    @staticmethod
     def _replace_text_match_join(split_arr, replacement):
         yield split_arr[0]
         for t in split_arr[1:]:
@@ -903,34 +931,6 @@ class TestNmClient(unittest.TestCase):
             replacement,
         )
 
-    @staticmethod
-    def _read_expected(filename):
-        results_expect = []
-        content_expect = Util.file_read(filename)
-        try:
-            base_idx = 0
-            size_prefix = "size: ".encode("utf8")
-            while True:
-                if not content_expect[base_idx : base_idx + 10].startswith(size_prefix):
-                    raise Exception("Unexpected token")
-                j = base_idx + len(size_prefix)
-                i = j
-                if Util.python_has_version(3, 0):
-                    eol = ord("\n")
-                else:
-                    eol = "\n"
-                while content_expect[i] != eol:
-                    i += 1
-                i = i + 1 + int(content_expect[j:i])
-                results_expect.append(content_expect[base_idx:i])
-                if len(content_expect) == i:
-                    break
-                base_idx = i
-        except Exception as e:
-            results_expect = None
-
-        return content_expect, results_expect
-
     def _env(
         self, lang="C", calling_num=None, fatal_warnings=_DEFAULT_ARG, extra_env=None
     ):
@@ -1082,7 +1082,7 @@ class TestNmClient(unittest.TestCase):
 
         regenerate = conf.get(ENV_NM_TEST_REGENERATE)
 
-        content_expect, results_expect = self._read_expected(filename)
+        content_expect, results_expect = Util.file_read_expected(filename)
 
         if results_expect is None:
             if not regenerate:
