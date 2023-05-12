@@ -34,7 +34,6 @@ secrets_requested(NMSecretAgentSimple *agent,
                   GPtrArray           *secrets,
                   gpointer             user_data)
 {
-    NmtNewtForm  *form;
     NMConnection *connection = NM_CONNECTION(user_data);
     gboolean      success    = FALSE;
 
@@ -44,7 +43,7 @@ secrets_requested(NMSecretAgentSimple *agent,
 
         if (nm_streq0(nm_setting_vpn_get_service_type(s_vpn),
                       NM_SECRET_AGENT_VPN_TYPE_OPENCONNECT)) {
-            GError *error = NULL;
+            gs_free_error GError *error = NULL;
 
             nmt_newt_message_dialog(_("openconnect will be run to authenticate.\nIt will return to "
                                       "nmtui when completed."));
@@ -55,26 +54,21 @@ secrets_requested(NMSecretAgentSimple *agent,
 
             newtResume();
 
-            if (!success) {
+            if (!success)
                 nmt_newt_message_dialog(_("Error: openconnect failed: %s"), error->message);
-                g_clear_error(&error);
-            }
         }
     }
 
     if (!success) {
+        gs_unref_object NmtNewtForm *form = NULL;
+
         form = nmt_password_dialog_new(request_id, title, msg, secrets);
         nmt_newt_form_run_sync(form);
 
         success = nmt_password_dialog_succeeded(NMT_PASSWORD_DIALOG(form));
-
-        g_object_unref(form);
     }
 
-    if (success)
-        nm_secret_agent_simple_response(agent, request_id, secrets);
-    else
-        nm_secret_agent_simple_response(agent, request_id, NULL);
+    nm_secret_agent_simple_response(agent, request_id, success ? secrets : NULL);
 }
 
 typedef struct {
