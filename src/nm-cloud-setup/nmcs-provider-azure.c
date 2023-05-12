@@ -17,8 +17,30 @@
 #define NM_AZURE_METADATA_URL_BASE /* $NM_AZURE_BASE/$NM_AZURE_API_VERSION */ \
     "/metadata/instance/network/interface/"
 
+static const char *
+_azure_base(void)
+{
+    static const char *base_cached = NULL;
+    const char        *base;
+
+again:
+    base = g_atomic_pointer_get(&base_cached);
+    if (G_UNLIKELY(!base)) {
+        /* The base URI can be set via environment variable.
+         * This is mainly for testing, it's not usually supposed to be configured.
+         * Consider this private API! */
+        base = g_getenv(NMCS_ENV_VARIABLE("NM_CLOUD_SETUP_AZURE_HOST"));
+        base = nmcs_utils_uri_complete_interned(base) ?: ("" NM_AZURE_BASE);
+
+        if (!g_atomic_pointer_compare_and_exchange(&base_cached, NULL, base))
+            goto again;
+    }
+
+    return base;
+}
+
 #define _azure_uri_concat(...) \
-    nmcs_utils_uri_build_concat(NM_AZURE_BASE, __VA_ARGS__, NM_AZURE_API_VERSION)
+    nmcs_utils_uri_build_concat(_azure_base(), __VA_ARGS__, NM_AZURE_API_VERSION)
 #define _azure_uri_interfaces(...) _azure_uri_concat(NM_AZURE_METADATA_URL_BASE, ##__VA_ARGS__)
 
 /*****************************************************************************/

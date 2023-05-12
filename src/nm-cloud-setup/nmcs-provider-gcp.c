@@ -13,15 +13,39 @@
 #define HTTP_POLL_TIMEOUT_MS 10000
 #define HTTP_RATE_LIMIT_MS   1000
 
-#define NM_GCP_HOST              "metadata.google.internal"
-#define NM_GCP_BASE              "http://" NM_GCP_HOST
-#define NM_GCP_API_VERSION       "/v1"
-#define NM_GCP_METADATA_URL_BASE NM_GCP_BASE "/computeMetadata" NM_GCP_API_VERSION "/instance"
-#define NM_GCP_METADATA_URL_NET  "/network-interfaces/"
+#define NM_GCP_HOST             "metadata.google.internal"
+#define NM_GCP_BASE             "http://" NM_GCP_HOST
+#define NM_GCP_API_VERSION      "/v1"
+#define NM_GCP_METADATA_URL_NET "/network-interfaces/"
 
 #define NM_GCP_METADATA_HEADER "Metadata-Flavor: Google"
 
-#define _gcp_uri_concat(...)     nmcs_utils_uri_build_concat(NM_GCP_METADATA_URL_BASE, __VA_ARGS__)
+static const char *
+_gcp_base(void)
+{
+    static const char *base_cached = NULL;
+    const char        *base;
+
+again:
+    base = g_atomic_pointer_get(&base_cached);
+    if (G_UNLIKELY(!base)) {
+        /* The base URI can be set via environment variable.
+         * This is mainly for testing, it's not usually supposed to be configured.
+         * Consider this private API! */
+        base = g_getenv(NMCS_ENV_VARIABLE("NM_CLOUD_SETUP_GCP_HOST"));
+        base = nmcs_utils_uri_complete_interned(base) ?: ("" NM_GCP_BASE);
+
+        if (!g_atomic_pointer_compare_and_exchange(&base_cached, NULL, base))
+            goto again;
+    }
+
+    return base;
+}
+
+#define _gcp_uri_concat(...)                                                       \
+    nmcs_utils_uri_build_concat(_gcp_base(),                                       \
+                                "/computeMetadata" NM_GCP_API_VERSION "/instance", \
+                                __VA_ARGS__)
 #define _gcp_uri_interfaces(...) _gcp_uri_concat(NM_GCP_METADATA_URL_NET, ##__VA_ARGS__)
 
 /*****************************************************************************/
@@ -73,7 +97,7 @@ detect(NMCSProvider *provider, GTask *task)
     http_client = nmcs_provider_get_http_client(provider);
 
     nm_http_client_poll_req(http_client,
-                            (uri = _gcp_uri_concat("id")),
+                            (uri = _gcp_uri_concat("/id")),
                             HTTP_TIMEOUT_MS,
                             256 * 1024,
                             7000,
@@ -112,7 +136,6 @@ _get_config_fip_cb(GObject *source, GAsyncResult *result, gpointer user_data)
     GCPIfaceData                   *iface_data = user_data;
     gs_free_error GError           *error      = NULL;
     gs_free char                   *ipaddr     = NULL;
-    NMIPRoute                     **routes_arr;
     NMIPRoute                      *route_new;
 
     nm_http_client_poll_req_finish(NM_HTTP_CLIENT(source), result, NULL, &response, &error);
@@ -137,15 +160,14 @@ _get_config_fip_cb(GObject *source, GAsyncResult *result, gpointer user_data)
           ipaddr);
 
     iface_get_config = iface_data->iface_get_config;
-    routes_arr       = iface_get_config->iproutes_arr;
 
     route_new = nm_ip_route_new(AF_INET, ipaddr, 32, NULL, 100, &error);
     if (error)
         goto out_done;
 
     nm_ip_route_set_attribute(route_new, NM_IP_ROUTE_ATTRIBUTE_TYPE, g_variant_new_string("local"));
-    routes_arr[iface_get_config->iproutes_len] = route_new;
-    ++iface_get_config->iproutes_len;
+
+    g_ptr_array_add(iface_get_config->iproutes, route_new);
 
 out_done:
     if (!error) {
@@ -215,7 +237,8 @@ _get_config_ips_list_cb(GObject *source, GAsyncResult *result, gpointer user_dat
         goto out_error;
     }
 
-    iface_data->iface_get_config->iproutes_arr = g_new(NMIPRoute *, iface_data->n_fips_pending);
+    iface_data->iface_get_config->iproutes =
+        g_ptr_array_new_full(iface_data->n_fips_pending, (GDestroyNotify) nm_ip_route_unref);
 
     for (i = 0; i < uri_arr->len; ++i) {
         const char         *str = uri_arr->pdata[i];

@@ -147,6 +147,7 @@ except ImportError:
 try:
     from http.server import HTTPServer
     from http.server import BaseHTTPRequestHandler
+    from http.client import HTTPConnection, HTTPResponse
 except ImportError:
     HTTPServer = None
 
@@ -1008,6 +1009,8 @@ class TestNmClient(unittest.TestCase):
         env = self._env(extra_env=extra_env)
 
         pexp = pexpect.spawn(argv[0], argv[1:], timeout=10, env=env)
+
+        pexp.str_last_chars = 100000
 
         typ = collections.namedtuple("CallPexpect", ["pexp", "valgrind_log"])
         return typ(pexp, valgrind_log)
@@ -2137,6 +2140,13 @@ class TestNmcli(TestNmClient):
 
 
 class TestNmCloudSetup(TestNmClient):
+
+    _mac1 = "9e:c0:3e:92:24:2d"
+    _mac2 = "53:e9:7e:52:8d:a8"
+
+    _ip1 = "172.31.26.249"
+    _ip2 = "172.31.176.249"
+
     def cloud_setup_test(func):
         """
         Runs the mock NetworkManager along with a mock cloud metadata service.
@@ -2160,34 +2170,47 @@ class TestNmCloudSetup(TestNmClient):
             # hallucinogenic substances.
             s.listen(5)
 
+            def pass_socket():
+                os.dup2(s.fileno(), 3)
+
             service_path = PathConfiguration.test_cloud_meta_mock_path()
             env = os.environ.copy()
-            env["LISTEN_FD"] = str(s.fileno())
+            env["LISTEN_FDS"] = "1"
             p = subprocess.Popen(
-                [sys.executable, service_path],
+                [sys.executable, service_path, "--empty"],
                 stdin=subprocess.PIPE,
                 env=env,
-                pass_fds=(s.fileno(),),
+                pass_fds=(3,),
+                preexec_fn=pass_socket,
             )
 
-            self.md_url = "http://%s:%d" % s.getsockname()
+            (hostaddr, port) = s.getsockname()
+            self.md_conn = HTTPConnection(hostaddr, port=port)
+            self.md_url = "http://%s:%d" % (hostaddr, port)
             s.close()
 
+            error = None
+
             self.srv_start()
-            func(self)
+            try:
+                func(self)
+            except Exception as e:
+                error = e
             self._nm_test_post()
 
+            self.md_conn.close()
             p.stdin.close()
             p.terminate()
             p.wait()
 
+            if error:
+                raise error
+
         return f
 
-    @cloud_setup_test
-    def test_ec2(self):
-
+    def _mock_devices(self):
         # Add a device with an active connection that has IPv4 configured
-        self.srv.op_AddObj("WiredDevice", iface="eth0")
+        self.srv.op_AddObj("WiredDevice", iface="eth0", mac="9e:c0:3e:92:24:2d")
         self.srv.addAndActivateConnection(
             {
                 "connection": {"type": "802-3-ethernet", "id": "con-eth0"},
@@ -2198,12 +2221,216 @@ class TestNmCloudSetup(TestNmClient):
         )
 
         # The second connection has no IPv4
-        self.srv.op_AddObj("WiredDevice", iface="eth1")
+        self.srv.op_AddObj("WiredDevice", iface="eth1", mac="53:e9:7e:52:8d:a8")
         self.srv.addAndActivateConnection(
             {"connection": {"type": "802-3-ethernet", "id": "con-eth1"}},
             "/org/freedesktop/NetworkManager/Devices/2",
             "",
             delay=0,
+        )
+
+    def _mock_path(self, path, body):
+        self.md_conn.request("PUT", path, body=body)
+        self.md_conn.getresponse().read()
+
+    @cloud_setup_test
+    def test_aliyun(self):
+        self._mock_devices()
+
+        _aliyun_meta = "/2016-01-01/meta-data/"
+        _aliyun_macs = _aliyun_meta + "network/interfaces/macs/"
+        self._mock_path(_aliyun_meta, "ami-id\n")
+        self._mock_path(
+            _aliyun_macs, TestNmCloudSetup._mac2 + "\n" + TestNmCloudSetup._mac1
+        )
+        self._mock_path(
+            _aliyun_macs + TestNmCloudSetup._mac2 + "/vpc-cidr-block", "172.31.16.0/20"
+        )
+        self._mock_path(
+            _aliyun_macs + TestNmCloudSetup._mac2 + "/private-ipv4s",
+            TestNmCloudSetup._ip1,
+        )
+        self._mock_path(
+            _aliyun_macs + TestNmCloudSetup._mac2 + "/primary-ip-address",
+            TestNmCloudSetup._ip1,
+        )
+        self._mock_path(
+            _aliyun_macs + TestNmCloudSetup._mac2 + "/netmask", "255.255.255.0"
+        )
+        self._mock_path(
+            _aliyun_macs + TestNmCloudSetup._mac2 + "/gateway", "172.31.26.2"
+        )
+        self._mock_path(
+            _aliyun_macs + TestNmCloudSetup._mac1 + "/vpc-cidr-block", "172.31.166.0/20"
+        )
+        self._mock_path(
+            _aliyun_macs + TestNmCloudSetup._mac1 + "/private-ipv4s",
+            TestNmCloudSetup._ip2,
+        )
+        self._mock_path(
+            _aliyun_macs + TestNmCloudSetup._mac1 + "/primary-ip-address",
+            TestNmCloudSetup._ip2,
+        )
+        self._mock_path(
+            _aliyun_macs + TestNmCloudSetup._mac1 + "/netmask", "255.255.255.0"
+        )
+        self._mock_path(
+            _aliyun_macs + TestNmCloudSetup._mac1 + "/gateway", "172.31.176.2"
+        )
+
+        # Run nm-cloud-setup for the first time
+        nmc = self.call_pexpect(
+            ENV_NM_TEST_CLIENT_CLOUD_SETUP_PATH,
+            [],
+            {
+                "NM_CLOUD_SETUP_ALIYUN_HOST": self.md_url,
+                "NM_CLOUD_SETUP_LOG": "trace",
+                "NM_CLOUD_SETUP_ALIYUN": "yes",
+            },
+        )
+
+        nmc.pexp.expect("provider aliyun detected")
+        nmc.pexp.expect("found interfaces: 9E:C0:3E:92:24:2D, 53:E9:7E:52:8D:A8")
+        nmc.pexp.expect("get-config: start fetching meta data")
+        nmc.pexp.expect("get-config: success")
+        nmc.pexp.expect("meta data received")
+        # One of the devices has no IPv4 configuration to be modified
+        nmc.pexp.expect("device has no suitable applied connection. Skip")
+        # The other one was lacking an address set it up.
+        nmc.pexp.expect("some changes were applied for provider aliyun")
+        nmc.pexp.expect(pexpect.EOF)
+
+        # Run nm-cloud-setup for the second time
+        nmc = self.call_pexpect(
+            ENV_NM_TEST_CLIENT_CLOUD_SETUP_PATH,
+            [],
+            {
+                "NM_CLOUD_SETUP_ALIYUN_HOST": self.md_url,
+                "NM_CLOUD_SETUP_LOG": "trace",
+                "NM_CLOUD_SETUP_ALIYUN": "yes",
+            },
+        )
+
+        nmc.pexp.expect("provider aliyun detected")
+        nmc.pexp.expect("found interfaces: 9E:C0:3E:92:24:2D, 53:E9:7E:52:8D:A8")
+        nmc.pexp.expect("get-config: starting")
+        nmc.pexp.expect("get-config: success")
+        nmc.pexp.expect("meta data received")
+        # No changes this time
+        nmc.pexp.expect('device needs no update to applied connection "con-eth0"')
+        nmc.pexp.expect("no changes were applied for provider aliyun")
+        nmc.pexp.expect(pexpect.EOF)
+
+        Util.valgrind_check_log(nmc.valgrind_log, "test_aliyun")
+
+    @cloud_setup_test
+    def test_azure(self):
+        self._mock_devices()
+
+        _azure_meta = "/metadata/instance"
+        _azure_iface = _azure_meta + "/network/interface/"
+        _azure_query = "?format=text&api-version=2017-04-02"
+        self._mock_path(_azure_meta + _azure_query, "")
+        self._mock_path(_azure_iface + _azure_query, "0\n1\n")
+        self._mock_path(
+            _azure_iface + "0/macAddress" + _azure_query, TestNmCloudSetup._mac1
+        )
+        self._mock_path(
+            _azure_iface + "1/macAddress" + _azure_query, TestNmCloudSetup._mac2
+        )
+        self._mock_path(_azure_iface + "0/ipv4/ipAddress/" + _azure_query, "0\n")
+        self._mock_path(_azure_iface + "1/ipv4/ipAddress/" + _azure_query, "0\n")
+        self._mock_path(
+            _azure_iface + "0/ipv4/ipAddress/0/privateIpAddress" + _azure_query,
+            TestNmCloudSetup._ip1,
+        )
+        self._mock_path(
+            _azure_iface + "1/ipv4/ipAddress/0/privateIpAddress" + _azure_query,
+            TestNmCloudSetup._ip2,
+        )
+        self._mock_path(
+            _azure_iface + "0/ipv4/subnet/0/address/" + _azure_query, "172.31.16.0"
+        )
+        self._mock_path(
+            _azure_iface + "1/ipv4/subnet/0/address/" + _azure_query, "172.31.166.0"
+        )
+        self._mock_path(_azure_iface + "0/ipv4/subnet/0/prefix/" + _azure_query, "20")
+        self._mock_path(_azure_iface + "1/ipv4/subnet/0/prefix/" + _azure_query, "20")
+
+        # Run nm-cloud-setup for the first time
+        nmc = self.call_pexpect(
+            ENV_NM_TEST_CLIENT_CLOUD_SETUP_PATH,
+            [],
+            {
+                "NM_CLOUD_SETUP_AZURE_HOST": self.md_url,
+                "NM_CLOUD_SETUP_LOG": "trace",
+                "NM_CLOUD_SETUP_AZURE": "yes",
+            },
+        )
+
+        nmc.pexp.expect("provider azure detected")
+        nmc.pexp.expect("found interfaces: 9E:C0:3E:92:24:2D, 53:E9:7E:52:8D:A8")
+        nmc.pexp.expect("found azure interfaces: 2")
+        nmc.pexp.expect("interface\[0]: found a matching device with hwaddr")
+        nmc.pexp.expect(
+            "interface\[0]: (received subnet address|received subnet prefix 20)"
+        )
+        nmc.pexp.expect(
+            "interface\[0]: (received subnet address|received subnet prefix 20)"
+        )
+        nmc.pexp.expect("get-config: success")
+        nmc.pexp.expect("meta data received")
+        # One of the devices has no IPv4 configuration to be modified
+        nmc.pexp.expect("device has no suitable applied connection. Skip")
+        # The other one was lacking an address set it up.
+        nmc.pexp.expect("some changes were applied for provider azure")
+        nmc.pexp.expect(pexpect.EOF)
+
+        # Run nm-cloud-setup for the second time
+        nmc = self.call_pexpect(
+            ENV_NM_TEST_CLIENT_CLOUD_SETUP_PATH,
+            [],
+            {
+                "NM_CLOUD_SETUP_AZURE_HOST": self.md_url,
+                "NM_CLOUD_SETUP_LOG": "trace",
+                "NM_CLOUD_SETUP_AZURE": "yes",
+            },
+        )
+
+        nmc.pexp.expect("provider azure detected")
+        nmc.pexp.expect("found interfaces: 9E:C0:3E:92:24:2D, 53:E9:7E:52:8D:A8")
+        nmc.pexp.expect("get-config: starting")
+        nmc.pexp.expect("get-config: success")
+        nmc.pexp.expect("meta data received")
+        # No changes this time
+        nmc.pexp.expect('device needs no update to applied connection "con-eth0"')
+        nmc.pexp.expect("no changes were applied for provider azure")
+        nmc.pexp.expect(pexpect.EOF)
+
+        Util.valgrind_check_log(nmc.valgrind_log, "test_azure")
+
+    @cloud_setup_test
+    def test_ec2(self):
+        self._mock_devices()
+
+        _ec2_macs = "/2018-09-24/meta-data/network/interfaces/macs/"
+        self._mock_path("/latest/meta-data/", "ami-id\n")
+        self._mock_path(
+            _ec2_macs, TestNmCloudSetup._mac2 + "\n" + TestNmCloudSetup._mac1
+        )
+        self._mock_path(
+            _ec2_macs + TestNmCloudSetup._mac2 + "/subnet-ipv4-cidr-block",
+            "172.31.16.0/20",
+        )
+        self._mock_path(
+            _ec2_macs + TestNmCloudSetup._mac2 + "/local-ipv4s", TestNmCloudSetup._ip1
+        )
+        self._mock_path(
+            _ec2_macs + TestNmCloudSetup._mac1 + "/subnet-ipv4-cidr-block",
+            "172.31.166.0/20",
+        )
+        self._mock_path(
+            _ec2_macs + TestNmCloudSetup._mac1 + "/local-ipv4s", TestNmCloudSetup._ip2
         )
 
         # Run nm-cloud-setup for the first time
@@ -2250,6 +2477,67 @@ class TestNmCloudSetup(TestNmClient):
         nmc.pexp.expect(pexpect.EOF)
 
         Util.valgrind_check_log(nmc.valgrind_log, "test_ec2")
+
+    @cloud_setup_test
+    def test_gcp(self):
+        self._mock_devices()
+
+        gcp_meta = "/computeMetadata/v1/instance/"
+        gcp_iface = gcp_meta + "network-interfaces/"
+        self._mock_path(gcp_meta + "id", "")
+        self._mock_path(gcp_iface, "0\n1\n")
+        self._mock_path(gcp_iface + "0/mac", TestNmCloudSetup._mac1)
+        self._mock_path(gcp_iface + "1/mac", TestNmCloudSetup._mac2)
+        self._mock_path(gcp_iface + "0/forwarded-ips/", "0\n")
+        self._mock_path(gcp_iface + "0/forwarded-ips/0", TestNmCloudSetup._ip1)
+        self._mock_path(gcp_iface + "1/forwarded-ips/", "0\n")
+        self._mock_path(gcp_iface + "1/forwarded-ips/0", TestNmCloudSetup._ip2)
+
+        # Run nm-cloud-setup for the first time
+        nmc = self.call_pexpect(
+            ENV_NM_TEST_CLIENT_CLOUD_SETUP_PATH,
+            [],
+            {
+                "NM_CLOUD_SETUP_GCP_HOST": self.md_url,
+                "NM_CLOUD_SETUP_LOG": "trace",
+                "NM_CLOUD_SETUP_GCP": "yes",
+            },
+        )
+
+        nmc.pexp.expect("provider GCP detected")
+        nmc.pexp.expect("found interfaces: 9E:C0:3E:92:24:2D, 53:E9:7E:52:8D:A8")
+        nmc.pexp.expect("found GCP interfaces: 2")
+        nmc.pexp.expect("GCP interface\[0]: found a requested device with hwaddr")
+        nmc.pexp.expect("get-config: success")
+        nmc.pexp.expect("meta data received")
+        # One of the devices has no IPv4 configuration to be modified
+        nmc.pexp.expect("device has no suitable applied connection. Skip")
+        # The other one was lacking an address set it up.
+        nmc.pexp.expect("some changes were applied for provider GCP")
+        nmc.pexp.expect(pexpect.EOF)
+
+        # Run nm-cloud-setup for the second time
+        nmc = self.call_pexpect(
+            ENV_NM_TEST_CLIENT_CLOUD_SETUP_PATH,
+            [],
+            {
+                "NM_CLOUD_SETUP_GCP_HOST": self.md_url,
+                "NM_CLOUD_SETUP_LOG": "trace",
+                "NM_CLOUD_SETUP_GCP": "yes",
+            },
+        )
+
+        nmc.pexp.expect("provider GCP detected")
+        nmc.pexp.expect("found interfaces: 9E:C0:3E:92:24:2D, 53:E9:7E:52:8D:A8")
+        nmc.pexp.expect("get-config: starting")
+        nmc.pexp.expect("get-config: success")
+        nmc.pexp.expect("meta data received")
+        # No changes this time
+        nmc.pexp.expect('device needs no update to applied connection "con-eth0"')
+        nmc.pexp.expect("no changes were applied for provider GCP")
+        nmc.pexp.expect(pexpect.EOF)
+
+        Util.valgrind_check_log(nmc.valgrind_log, "test_gcp")
 
 
 ###############################################################################

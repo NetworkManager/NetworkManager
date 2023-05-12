@@ -34,8 +34,8 @@ typedef struct {
     bool      has_cidr : 1;
     bool      has_gateway : 1;
 
-    NMIPRoute **iproutes_arr;
-    gsize       iproutes_len;
+    /* Array of NMIPRoute (must own/free the entries). */
+    GPtrArray *iproutes;
 
     /* TRUE, if the configuration was requested via hwaddrs argument to
      * nmcs_provider_get_config(). */
@@ -59,7 +59,8 @@ static inline gboolean
 nmcs_provider_get_config_iface_data_is_valid(const NMCSProviderGetConfigIfaceData *config_data)
 {
     return config_data && config_data->iface_idx >= 0
-           && ((config_data->has_ipv4s && config_data->has_cidr) || config_data->iproutes_len);
+           && ((config_data->has_ipv4s && config_data->has_cidr)
+               || nm_g_ptr_array_len(config_data->iproutes) > 0);
 }
 
 /*****************************************************************************/
