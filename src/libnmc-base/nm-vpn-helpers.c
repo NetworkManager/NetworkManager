@@ -218,7 +218,7 @@ static const struct {
     const char *cmdline;
 } oc_property_args[] = {
     {NM_OPENCONNECT_KEY_USERCERT, "--certificate"},
-    {NM_OPENCONNECT_KEY_CACERT, "--caflle"},
+    {NM_OPENCONNECT_KEY_CACERT, "--cafile"},
     {NM_OPENCONNECT_KEY_PRIVKEY, "--sslkey"},
     {NM_OPENCONNECT_KEY_KEY_PASS, "--key-password"},
     {NM_OPENCONNECT_KEY_PROTOCOL, "--protocol"},
