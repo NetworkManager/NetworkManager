@@ -7,6 +7,7 @@
 from __future__ import print_function
 import xml.etree.ElementTree as ET
 import argparse
+import re
 import sys
 
 C_NS = "http://www.gtk.org/introspection/c/1.0"
@@ -60,17 +61,6 @@ def str_removesuffix(string, suffix):
             return string
 
 
-# Older Python doesn't have str.removeprefix()
-def str_removeprefix(string, prefix):
-    try:
-        return string.removeprefix(prefix)
-    except AttributeError:
-        if string.startswith(prefix):
-            return string[len(prefix) :]
-        else:
-            return string
-
-
 def syms_from_ver(verfile):
     c_syms = {}
     for line in open(verfile).readlines():
@@ -78,8 +68,10 @@ def syms_from_ver(verfile):
 
         if line.endswith("{"):
             line = str_removesuffix(line, " {")
-            line = str_removeprefix(line, "libnm_")
-            (major, minor, micro) = line.split("_")
+            m = re.search(r"^libnm_([0-9]+)_([0-9]+)_([0-9]+)$", line)
+            if not m:
+                continue
+            (major, minor, micro) = m.groups()
             if int(major) > 1 or int(minor) > 0:
                 if int(micro) > 0:
                     # Snap to next major version. Perhaps not
@@ -97,8 +89,10 @@ def syms_from_ver(verfile):
         ):
             c_syms[str_removesuffix(line, ";")] = version
 
-    # This one is... messy.
+    # These are exceptions and we cannot know the version for the symbol so we
+    # hardcode it.
     c_syms["nm_ethtool_optname_is_feature"] = "1.20"
+    c_syms["nm_setting_bond_port_get_prio"] = "1.44"
 
     return c_syms
 
