@@ -95,8 +95,8 @@ def default_resources():
     gcp_meta = b"/computeMetadata/v1/instance/"
     gcp_iface = gcp_meta + b"network-interfaces/"
 
-    mac1 = b"9e:c0:3e:92:24:2d"
-    mac2 = b"53:e9:7e:52:8d:a8"
+    mac1 = b"cc:00:00:00:00:01"
+    mac2 = b"cc:00:00:00:00:02"
 
     ip1 = b"172.31.26.249"
     ip2 = b"172.31.176.249"
