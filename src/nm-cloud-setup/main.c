@@ -123,6 +123,107 @@ out:
 
 /*****************************************************************************/
 
+static NMUtilsNamedValue *
+_map_interfaces_parse(void)
+{
+    gs_free const char **split = NULL;
+    NMUtilsNamedValue   *map_interfaces;
+    const char          *env_var;
+    gsize                i;
+    gsize                j;
+    gsize                alloc_len;
+
+    env_var = g_getenv(NMCS_ENV_NM_CLOUD_SETUP_MAP_INTERFACES);
+
+    if (nm_str_is_empty(env_var))
+        return NULL;
+
+    split = nm_strsplit_set_full(env_var, ";", NM_STRSPLIT_SET_FLAGS_STRSTRIP);
+
+    alloc_len = NM_PTRARRAY_LEN(split) + 1u;
+
+    map_interfaces = g_new(NMUtilsNamedValue, alloc_len);
+
+    _LOGD("test: map interfaces via NM_CLOUD_SETUP_MAP_INTERFACES=\"%s\"", env_var);
+
+    for (i = 0, j = 0; split && split[i]; i++) {
+        NMUtilsNamedValue *m;
+        const char        *str = split[i];
+        char              *hwaddr;
+        const char        *s;
+
+        s = strchr(str, '=');
+        if (!s || str == s)
+            continue;
+
+        hwaddr = nmcs_utils_hwaddr_normalize(&s[1], -1);
+        if (!hwaddr)
+            continue;
+
+        nm_assert(j < alloc_len);
+        m = &map_interfaces[j++];
+
+        *m = (NMUtilsNamedValue){
+            .name      = g_strndup(str, s - str),
+            .value_str = hwaddr,
+        };
+
+        _LOGD("test:  map \"%s\" -> %s", m->name, m->value_str);
+    }
+
+    nm_assert(j < alloc_len);
+    map_interfaces[j++] = (NMUtilsNamedValue){
+        .name      = NULL,
+        .value_str = NULL,
+    };
+
+    return g_steal_pointer(&map_interfaces);
+}
+
+static const char *
+_device_get_hwaddr(NMDeviceEthernet *device)
+{
+    static const NMUtilsNamedValue *gl_map_interfaces_map = NULL;
+    static gsize                    gl_initialized        = 0;
+    const NMUtilsNamedValue        *map                   = NULL;
+
+    nm_assert(NM_IS_DEVICE_ETHERNET(device));
+
+    /* Network interfaces in cloud environments are identified by their permanent
+     * MAC address.
+     *
+     * For testing, we can set NMCS_ENV_NM_CLOUD_SETUP_MAP_INTERFACES
+     * to a ';' separate list of "$INTERFACE=$HWADDR", which means that we
+     * pretend that device with ip-interface "$INTERFACE" has the specified permanent
+     * MAC address. */
+
+    if (g_once_init_enter(&gl_initialized)) {
+        gl_map_interfaces_map = _map_interfaces_parse();
+        g_once_init_leave(&gl_initialized, 1);
+    }
+
+    map = gl_map_interfaces_map;
+    if (G_UNLIKELY(map)) {
+        const char *const iface = nm_device_get_iface(NM_DEVICE(device));
+
+        /* For testing, the device<->hwaddr is remapped and the actual permanent
+         * MAC address of the device ignored. This mapping is configured via
+         * NMCS_ENV_NM_CLOUD_SETUP_MAP_INTERFACES environment variable. */
+
+        if (!iface)
+            return NULL;
+
+        for (; map->name; map++) {
+            if (nm_streq(map->name, iface))
+                return map->value_str;
+        }
+
+        return NULL;
+    }
+
+    return nm_device_ethernet_get_permanent_hw_address(device);
+}
+
 static char **
 _nmc_get_hwaddrs(NMClient *nmc)
 {
@@ -145,7 +246,7 @@ _nmc_get_hwaddrs(NMClient *nmc)
         if (nm_device_get_state(device) < NM_DEVICE_STATE_UNAVAILABLE)
             continue;
 
-        hwaddr = nm_device_ethernet_get_permanent_hw_address(NM_DEVICE_ETHERNET(device));
+        hwaddr = _device_get_hwaddr(NM_DEVICE_ETHERNET(device));
         if (!hwaddr)
             continue;
 
@@ -187,7 +288,7 @@ _nmc_get_device_by_hwaddr(NMClient *nmc, const char *hwaddr)
         if (!NM_IS_DEVICE_ETHERNET(device))
             continue;
 
-        hwaddr_dev = nm_device_ethernet_get_permanent_hw_address(NM_DEVICE_ETHERNET(device));
+        hwaddr_dev = _device_get_hwaddr(NM_DEVICE_ETHERNET(device));
         if (!hwaddr_dev)
             continue;
 

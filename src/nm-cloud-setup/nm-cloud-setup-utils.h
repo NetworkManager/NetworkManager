@@ -16,10 +16,11 @@
 
 /* Undocumented/internal environment variables for configuring nm-cloud-setup.
  * These are mainly for testing/debugging. */
-#define NMCS_ENV_NM_CLOUD_SETUP_ALIYUN_HOST "NM_CLOUD_SETUP_ALIYUN_HOST"
-#define NMCS_ENV_NM_CLOUD_SETUP_AZURE_HOST  "NM_CLOUD_SETUP_AZURE_HOST"
-#define NMCS_ENV_NM_CLOUD_SETUP_EC2_HOST    "NM_CLOUD_SETUP_EC2_HOST"
-#define NMCS_ENV_NM_CLOUD_SETUP_GCP_HOST    "NM_CLOUD_SETUP_GCP_HOST"
+#define NMCS_ENV_NM_CLOUD_SETUP_ALIYUN_HOST    "NM_CLOUD_SETUP_ALIYUN_HOST"
+#define NMCS_ENV_NM_CLOUD_SETUP_AZURE_HOST     "NM_CLOUD_SETUP_AZURE_HOST"
+#define NMCS_ENV_NM_CLOUD_SETUP_EC2_HOST       "NM_CLOUD_SETUP_EC2_HOST"
+#define NMCS_ENV_NM_CLOUD_SETUP_GCP_HOST       "NM_CLOUD_SETUP_GCP_HOST"
+#define NMCS_ENV_NM_CLOUD_SETUP_MAP_INTERFACES "NM_CLOUD_SETUP_MAP_INTERFACES"
 
 /*****************************************************************************/
 
