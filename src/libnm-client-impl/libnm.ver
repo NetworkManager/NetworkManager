@@ -1901,7 +1901,6 @@ global:
 	nm_range_unref;
 	nm_setting_ip_config_get_auto_route_ext_gw;
 	nm_setting_ip_config_get_dhcp_iaid;
-	nm_setting_ip_config_get_dhcp_iaid;
 	nm_setting_ip_tunnel_get_fwmark;
 	nm_setting_loopback_get_mtu;
 	nm_setting_loopback_get_type;
