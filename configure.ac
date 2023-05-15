@@ -1073,12 +1073,12 @@ AC_ARG_WITH(nmcli,
             AS_HELP_STRING([--with-nmcli=yes|no], [Build nmcli]),
             [],
             [with_nmcli=yes])
-if test "$with_nmcli" == yes; then
+if test "$with_nmcli" = yes; then
     if test "$with_readline" = none; then
         AC_MSG_FAILURE([nmcli requires readline library. Use --with-readline or --with-nmcli=no])
     fi
     build_nmcli=yes
-elif test "$with_nmcli" == no; then
+elif test "$with_nmcli" = no; then
     build_nmcli=no
 else
     AC_MSG_ERROR([invalid --with-nmcli option. Valid options are --with-nmcli=yes|no])

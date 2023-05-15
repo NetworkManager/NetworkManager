@@ -39,7 +39,7 @@ libnm_headers() {
 
 SOURCEDIR="$1"
 BUILDDIR="$2"
-if test "$SOURCEDIR" == "$BUILDDIR"; then
+if test "$SOURCEDIR" = "$BUILDDIR"; then
     BUILDDIR=
 fi
 [ -z "$SOURCEDIR" ] && SOURCEDIR='.'
