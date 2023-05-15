@@ -1878,3 +1878,8 @@ global:
 	nm_utils_ip_routes_to_variant;
 	nm_vpn_plugin_info_supports_multiple;
 } libnm_1_40_0;
+
+libnm_1_40_20_bondp {
+global:
+	nm_setting_bond_port_get_prio;
+} libnm_1_40_0;

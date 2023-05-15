@@ -8325,6 +8325,7 @@ test_write_bond_port(void)
 
     s_bond_port = _nm_connection_new_setting(connection, NM_TYPE_SETTING_BOND_PORT);
     g_object_set(s_bond_port, NM_SETTING_BOND_PORT_QUEUE_ID, 1, NULL);
+    g_object_set(s_bond_port, NM_SETTING_BOND_PORT_PRIO, 10, NULL);
 
     nmtst_assert_connection_verifies(connection);
 

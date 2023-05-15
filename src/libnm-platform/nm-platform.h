@@ -216,6 +216,16 @@ struct _NMPlatformObjWithIfindex {
     __NMPlatformObjWithIfindex_COMMON;
 };
 
+typedef struct {
+    gint32  prio;
+    guint16 queue_id;
+    bool    prio_has : 1;
+} NMPlatformLinkBondPort;
+
+typedef union {
+    NMPlatformLinkBondPort bond;
+} NMPlatformLinkPortData;
+
 struct _NMPlatformLink {
     __NMPlatformObjWithIfindex_COMMON;
     char       name[NMP_IFNAMSIZ];
@@ -265,6 +275,12 @@ struct _NMPlatformLink {
     guint64 rx_bytes;
     guint64 tx_packets;
     guint64 tx_bytes;
+
+    /* an interface can only hold IFLA_INFO_SLAVE_DATA for one link type */
+    NMPlatformLinkPortData port_data;
+
+    /* IFLA_INFO_SLAVE_KIND */
+    NMPortKind port_kind;
 
     /* @connected is mostly identical to (@n_ifi_flags & IFF_UP). Except for bridge/bond masters,
      * where we coerce the link as disconnect if it has no slaves. */
@@ -1126,6 +1142,8 @@ typedef enum {
      * were added at the same time. */
     NM_PLATFORM_KERNEL_SUPPORT_TYPE_FRA_IP_PROTO,
 
+    NM_PLATFORM_KERNEL_SUPPORT_TYPE_IFLA_BOND_SLAVE_PRIO,
+
     _NM_PLATFORM_KERNEL_SUPPORT_NUM,
 } NMPlatformKernelSupportType;
 
@@ -1222,9 +1240,14 @@ typedef struct {
                     guint32                mtu,
                     gconstpointer          extra_data,
                     const NMPlatformLink **out_link);
-
-    int (*link_change)(NMPlatform *self, NMLinkType type, int ifindex, gconstpointer extra_data);
-
+    int (*link_change_extra)(NMPlatform   *self,
+                             NMLinkType    type,
+                             int           ifindex,
+                             gconstpointer extra_data);
+    gboolean (*link_change)(NMPlatform                   *self,
+                            int                           ifindex,
+                            NMPortKind                    port_kind,
+                            const NMPlatformLinkPortData *port_data);
     gboolean (*link_delete)(NMPlatform *self, int ifindex);
     gboolean (*link_refresh)(NMPlatform *self, int ifindex);
     gboolean (*link_set_netns)(NMPlatform *self, int ifindex, int netns_fd);
@@ -1749,8 +1772,10 @@ int nm_platform_link_add(NMPlatform            *self,
                          gconstpointer          extra_data,
                          const NMPlatformLink **out_link);
 
-int
-nm_platform_link_change(NMPlatform *self, NMLinkType type, int ifindex, gconstpointer extra_data);
+int nm_platform_link_change_extra(NMPlatform   *self,
+                                  NMLinkType    type,
+                                  int           ifindex,
+                                  gconstpointer extra_data);
 
 static inline int
 nm_platform_link_veth_add(NMPlatform            *self,
@@ -1790,13 +1815,13 @@ nm_platform_link_bridge_add(NMPlatform                *self,
 static inline int
 nm_platform_link_bridge_change(NMPlatform *self, int ifindex, const NMPlatformLnkBridge *props)
 {
-    return nm_platform_link_change(self, NM_LINK_TYPE_BRIDGE, ifindex, props);
+    return nm_platform_link_change_extra(self, NM_LINK_TYPE_BRIDGE, ifindex, props);
 }
 
 static inline int
 nm_platform_link_bond_change(NMPlatform *self, int ifindex, const NMPlatformLnkBond *props)
 {
-    return nm_platform_link_change(self, NM_LINK_TYPE_BOND, ifindex, props);
+    return nm_platform_link_change_extra(self, NM_LINK_TYPE_BOND, ifindex, props);
 }
 
 static inline int
@@ -2069,6 +2094,8 @@ nm_platform_link_change_flags(NMPlatform *self, int ifindex, unsigned value, gbo
 {
     return nm_platform_link_change_flags_full(self, ifindex, value, set ? value : 0u);
 }
+
+gboolean nm_platform_link_change(NMPlatform *self, int ifindex, NMPlatformLinkBondPort *bond_port);
 
 gboolean    nm_platform_link_get_udev_property(NMPlatform  *self,
                                                int          ifindex,
@@ -2560,6 +2587,11 @@ int nm_platform_tfilter_cmp(const NMPlatformTfilter *a, const NMPlatformTfilter 
 int nm_platform_mptcp_addr_cmp(const NMPlatformMptcpAddr *a, const NMPlatformMptcpAddr *b);
 
 void nm_platform_link_hash_update(const NMPlatformLink *obj, NMHashState *h);
+
+void nm_platform_link_bond_port_hash_update(const NMPlatformLinkBondPort *obj, NMHashState *h);
+int  nm_platform_link_bond_port_cmp(const NMPlatformLinkBondPort *a,
+                                    const NMPlatformLinkBondPort *b);
+
 void nm_platform_ip4_address_hash_update(const NMPlatformIP4Address *obj, NMHashState *h);
 void nm_platform_ip6_address_hash_update(const NMPlatformIP6Address *obj, NMHashState *h);
 void nm_platform_ip4_route_hash_update(const NMPlatformIP4Route *obj,

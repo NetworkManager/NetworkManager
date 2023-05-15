@@ -668,6 +668,31 @@ link_supports_sriov(NMPlatform *platform, int ifindex)
 }
 
 static gboolean
+link_change(NMPlatform                   *platform,
+            int                           ifindex,
+            NMPortKind                    port_kind,
+            const NMPlatformLinkPortData *port_data)
+{
+    NMFakePlatformLink       *device  = link_get(platform, ifindex);
+    nm_auto_nmpobj NMPObject *obj_tmp = NULL;
+
+    switch (port_kind) {
+    case NM_PORT_KIND_BOND:
+        obj_tmp                               = nmp_object_clone(device->obj, FALSE);
+        obj_tmp->link.port_kind               = NM_PORT_KIND_BOND;
+        obj_tmp->link.port_data.bond.queue_id = port_data->bond.queue_id;
+        obj_tmp->link.port_data.bond.prio_has = port_data->bond.prio_has;
+        obj_tmp->link.port_data.bond.prio     = port_data->bond.prio;
+        link_set_obj(platform, device, obj_tmp);
+        return TRUE;
+    case NM_PORT_KIND_NONE:
+        return TRUE;
+    }
+
+    return nm_assert_unreachable_val(TRUE);
+}
+
+static gboolean
 link_enslave(NMPlatform *platform, int master, int slave)
 {
     NMFakePlatformLink *device        = link_get(platform, slave);
@@ -1322,6 +1347,7 @@ nm_fake_platform_class_init(NMFakePlatformClass *klass)
     platform_class->link_set_address = link_set_address;
     platform_class->link_set_mtu     = link_set_mtu;
 
+    platform_class->link_change       = link_change;
     platform_class->link_change_flags = link_change_flags;
 
     platform_class->link_get_driver_info = link_get_driver_info;

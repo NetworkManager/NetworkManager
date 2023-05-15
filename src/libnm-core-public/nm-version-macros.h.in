@@ -73,6 +73,7 @@
 #define NM_VERSION_1_38   (NM_ENCODE_VERSION (1, 38, 0))
 #define NM_VERSION_1_40   (NM_ENCODE_VERSION (1, 40, 0))
 #define NM_VERSION_1_40_4 (NM_ENCODE_VERSION (1, 40, 4))
+#define NM_VERSION_1_40_20 (NM_ENCODE_VERSION (1, 40, 20))
 
 /* For releases, NM_API_VERSION is equal to NM_VERSION.
  *
