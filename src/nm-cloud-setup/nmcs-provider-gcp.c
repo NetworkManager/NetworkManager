@@ -32,7 +32,7 @@ again:
         /* The base URI can be set via environment variable.
          * This is mainly for testing, it's not usually supposed to be configured.
          * Consider this private API! */
-        base = g_getenv(NMCS_ENV_VARIABLE("NM_CLOUD_SETUP_GCP_HOST"));
+        base = g_getenv(NMCS_ENV_NM_CLOUD_SETUP_GCP_HOST);
         base = nmcs_utils_uri_complete_interned(base) ?: ("" NM_GCP_BASE);
 
         if (!g_atomic_pointer_compare_and_exchange(&base_cached, NULL, base))
@@ -482,7 +482,7 @@ nmcs_provider_gcp_class_init(NMCSProviderGCPClass *klass)
     NMCSProviderClass *provider_class = NMCS_PROVIDER_CLASS(klass);
 
     provider_class->_name                 = "GCP";
-    provider_class->_env_provider_enabled = NMCS_ENV_VARIABLE("NM_CLOUD_SETUP_GCP");
+    provider_class->_env_provider_enabled = NMCS_ENV_NM_CLOUD_SETUP_GCP;
     provider_class->detect                = detect;
     provider_class->get_config            = get_config;
 }

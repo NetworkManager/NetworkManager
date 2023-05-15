@@ -7,9 +7,19 @@
 
 /*****************************************************************************/
 
-/* mark names for  variables that can be used as configuration. Search
- * for NMCS_ENV_VARIABLE() to find all honored environment variables. */
-#define NMCS_ENV_VARIABLE(var) "" var ""
+/* Environment variables for configuring nm-cloud-setup */
+#define NMCS_ENV_NM_CLOUD_SETUP_ALIYUN "NM_CLOUD_SETUP_ALIYUN"
+#define NMCS_ENV_NM_CLOUD_SETUP_AZURE  "NM_CLOUD_SETUP_AZURE"
+#define NMCS_ENV_NM_CLOUD_SETUP_EC2    "NM_CLOUD_SETUP_EC2"
+#define NMCS_ENV_NM_CLOUD_SETUP_GCP    "NM_CLOUD_SETUP_GCP"
+#define NMCS_ENV_NM_CLOUD_SETUP_LOG    "NM_CLOUD_SETUP_LOG"
+
+/* Undocumented/internal environment variables for configuring nm-cloud-setup.
+ * These are mainly for testing/debugging. */
+#define NMCS_ENV_NM_CLOUD_SETUP_ALIYUN_HOST "NM_CLOUD_SETUP_ALIYUN_HOST"
+#define NMCS_ENV_NM_CLOUD_SETUP_AZURE_HOST  "NM_CLOUD_SETUP_AZURE_HOST"
+#define NMCS_ENV_NM_CLOUD_SETUP_EC2_HOST    "NM_CLOUD_SETUP_EC2_HOST"
+#define NMCS_ENV_NM_CLOUD_SETUP_GCP_HOST    "NM_CLOUD_SETUP_GCP_HOST"
 
 /*****************************************************************************/
 

@@ -633,7 +633,7 @@ main(int argc, const char *const *argv)
     nm_auto_free_nmcs_provider_get_config_result NMCSProviderGetConfigResult *result = NULL;
     gs_free_error GError                                                     *error  = NULL;
 
-    _nm_logging_enabled_init(g_getenv(NMCS_ENV_VARIABLE("NM_CLOUD_SETUP_LOG")));
+    _nm_logging_enabled_init(g_getenv(NMCS_ENV_NM_CLOUD_SETUP_LOG));
 
     _LOGD("nm-cloud-setup %s starting...", NM_DIST_VERSION);
 
