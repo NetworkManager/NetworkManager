@@ -31,11 +31,12 @@ again:
          * This is mainly for testing, it's not usually supposed to be configured.
          * Consider this private API! */
         base = g_getenv(NMCS_ENV_VARIABLE("NM_CLOUD_SETUP_ALIYUN_HOST"));
+        base = nmcs_utils_uri_complete_interned(base) ?: ("" NM_ALIYUN_HOST);
 
         if (!g_atomic_pointer_compare_and_exchange(&base_cached, NULL, base))
             goto again;
     }
-    base = nmcs_utils_uri_complete_interned(base) ?: ("" NM_ALIYUN_BASE);
+
     return base;
 }
 
