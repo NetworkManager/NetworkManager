@@ -108,6 +108,13 @@ again:                                                                          
                                                                                    \
             if (!g_atomic_pointer_compare_and_exchange(&base_cached, NULL, base))  \
                 goto again;                                                        \
+                                                                                   \
+            if (!nm_streq(base, ("" default_host ""))) {                           \
+                _LOGD("test: mock %s=\"%s\" (default \"%s\")",                     \
+                      "" nmcs_env_host "",                                         \
+                      base,                                                        \
+                      "" default_host "");                                         \
+            }                                                                      \
         }                                                                          \
                                                                                    \
         return base;                                                               \
