@@ -20,27 +20,7 @@
 
 #define NM_GCP_METADATA_HEADER "Metadata-Flavor: Google"
 
-static const char *
-_gcp_base(void)
-{
-    static const char *base_cached = NULL;
-    const char        *base;
-
-again:
-    base = g_atomic_pointer_get(&base_cached);
-    if (G_UNLIKELY(!base)) {
-        /* The base URI can be set via environment variable.
-         * This is mainly for testing, it's not usually supposed to be configured.
-         * Consider this private API! */
-        base = g_getenv(NMCS_ENV_NM_CLOUD_SETUP_GCP_HOST);
-        base = nmcs_utils_uri_complete_interned(base) ?: ("" NM_GCP_BASE);
-
-        if (!g_atomic_pointer_compare_and_exchange(&base_cached, NULL, base))
-            goto again;
-    }
-
-    return base;
-}
+NMCS_DEFINE_HOST_BASE(_gcp_base, NMCS_ENV_NM_CLOUD_SETUP_GCP_HOST, NM_GCP_BASE);
 
 #define _gcp_uri_concat(...)                                                       \
     nmcs_utils_uri_build_concat(_gcp_base(),                                       \

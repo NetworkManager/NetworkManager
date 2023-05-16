@@ -91,6 +91,31 @@ const char *nmcs_utils_parse_get_full_line(GBytes *mem, const char *needle);
 
 /*****************************************************************************/
 
+#define NMCS_DEFINE_HOST_BASE(base_fcn, nmcs_env_host, default_host)               \
+    static const char *base_fcn(void)                                              \
+    {                                                                              \
+        static const char *base_cached = NULL;                                     \
+        const char        *base;                                                   \
+                                                                                   \
+again:                                                                             \
+        base = g_atomic_pointer_get(&base_cached);                                 \
+        if (G_UNLIKELY(!base)) {                                                   \
+            /* The base URI can be set via environment variable. \
+             * This is mainly for testing, it's not usually supposed to be configured. \
+             * Consider this private API! */                 \
+            base = g_getenv("" nmcs_env_host "");                                  \
+            base = nmcs_utils_uri_complete_interned(base) ?: ("" default_host ""); \
+                                                                                   \
+            if (!g_atomic_pointer_compare_and_exchange(&base_cached, NULL, base))  \
+                goto again;                                                        \
+        }                                                                          \
+                                                                                   \
+        return base;                                                               \
+    }                                                                              \
+    _NM_DUMMY_STRUCT_FOR_TRAILING_SEMICOLON
+
+/*****************************************************************************/
+
 char *nmcs_utils_uri_build_concat_v(const char *base, const char **components, gsize n_components);
 
 #define nmcs_utils_uri_build_concat(base, ...) \

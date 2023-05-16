@@ -21,27 +21,7 @@
 #define NM_EC2_TOKEN_TTL_HEADER "X-aws-ec2-metadata-token-ttl-seconds: 180"
 #define NM_EC2_TOKEN_HEADER     "X-aws-ec2-metadata-token: "
 
-static const char *
-_ec2_base(void)
-{
-    static const char *base_cached = NULL;
-    const char        *base;
-
-again:
-    base = g_atomic_pointer_get(&base_cached);
-    if (G_UNLIKELY(!base)) {
-        /* The base URI can be set via environment variable.
-         * This is mainly for testing, it's not usually supposed to be configured.
-         * Consider this private API! */
-        base = g_getenv(NMCS_ENV_NM_CLOUD_SETUP_EC2_HOST);
-        base = nmcs_utils_uri_complete_interned(base) ?: ("" NM_EC2_BASE);
-
-        if (!g_atomic_pointer_compare_and_exchange(&base_cached, NULL, base))
-            goto again;
-    }
-
-    return base;
-}
+NMCS_DEFINE_HOST_BASE(_ec2_base, NMCS_ENV_NM_CLOUD_SETUP_EC2_HOST, NM_EC2_BASE);
 
 #define _ec2_uri_concat(...) nmcs_utils_uri_build_concat(_ec2_base(), __VA_ARGS__)
 #define _ec2_uri_interfaces(...) \

@@ -18,27 +18,7 @@
 #define NM_ALIYUN_METADATA_URL_BASE /* $NM_ALIYUN_BASE/$NM_ALIYUN_API_VERSION */ \
     "/meta-data/network/interfaces/macs/"
 
-static const char *
-_aliyun_base(void)
-{
-    static const char *base_cached = NULL;
-    const char        *base;
-
-again:
-    base = g_atomic_pointer_get(&base_cached);
-    if (G_UNLIKELY(!base)) {
-        /* The base URI can be set via environment variable.
-         * This is mainly for testing, it's not usually supposed to be configured.
-         * Consider this private API! */
-        base = g_getenv(NMCS_ENV_NM_CLOUD_SETUP_ALIYUN_HOST);
-        base = nmcs_utils_uri_complete_interned(base) ?: ("" NM_ALIYUN_HOST);
-
-        if (!g_atomic_pointer_compare_and_exchange(&base_cached, NULL, base))
-            goto again;
-    }
-
-    return base;
-}
+NMCS_DEFINE_HOST_BASE(_aliyun_base, NMCS_ENV_NM_CLOUD_SETUP_ALIYUN_HOST, NM_ALIYUN_HOST);
 
 #define _aliyun_uri_concat(...) nmcs_utils_uri_build_concat(_aliyun_base(), __VA_ARGS__)
 #define _aliyun_uri_interfaces(...) \
