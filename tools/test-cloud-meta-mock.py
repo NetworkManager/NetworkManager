@@ -33,39 +33,37 @@ class MockCloudMDRequestHandler(BaseHTTPRequestHandler):
     def log_message(self, format, *args):
         pass
 
+    def _response_and_end(self, code):
+        self.send_response(code)
+        self.end_headers()
+
     def do_GET(self):
         path = self.path.encode("ascii")
         if path in self.server._resources:
-            self.send_response(200)
-            self.end_headers()
+            self._response_and_end(200)
             self.wfile.write(self.server._resources[path])
         else:
-            self.send_response(404)
-            self.end_headers()
+            self._response_and_end(404)
 
     def do_PUT(self):
         path = self.path.encode("ascii")
         if path == b"/latest/api/token":
-            self.send_response(200)
-            self.end_headers()
+            self._response_and_end(200)
             self.wfile.write(
                 b"AQAAALH-k7i18JMkK-ORLZQfAa7nkNjQbKwpQPExNHqzk1oL_7eh-A=="
             )
         else:
             length = int(self.headers["content-length"])
             self.server._resources[path] = self.rfile.read(length)
-            self.send_response(201)
-            self.end_headers()
+            self._response_and_end(201)
 
     def do_DELETE(self):
         path = self.path.encode("ascii")
         if path in self.server._resources:
             del self.server._resources[path]
-            self.send_response(204)
-            self.end_headers()
+            self._response_and_end(204)
         else:
-            self.send_response(404)
-            self.end_headers()
+            self._response_and_end(404)
 
 
 class SocketHTTPServer(HTTPServer):
