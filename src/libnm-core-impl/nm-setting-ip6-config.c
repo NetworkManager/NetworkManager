@@ -931,6 +931,45 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
      * example: IPV6_ADDR_GEN_MODE=stable-privacy
      * ---end---
      */
+    /* ---nmcli---
+     * property: addr-gen-mode
+     * format: one of "eui64" (0), "stable-privacy" (1), "default" (3) or "default-or-eui64" (2)
+     * description: Configure method for creating the
+     * IPv6 interface identifer of addresses with RFC4862 IPv6 Stateless
+     * Address Autoconfiguration and Link Local addresses.
+     *
+     * The permitted values are: "eui64" (0), "stable-privacy" (1), "default"
+     * (3) or "default-or-eui64" (2).
+     *
+     * If the property is set to "eui64", the addresses will be generated using
+     * the interface token derived from hardware address. This makes the host
+     * part of the address to stay constant, making it possible to track the
+     * host's presence when it changes networks. The address changes when the
+     * interface hardware is replaced. If a duplicate address is detected,
+     * there is also no fallback to generate another address. When configured,
+     * the "ipv6.token" is used instead of the MAC address to generate
+     * addresses for stateless autoconfiguration.
+     *
+     * If the property is set to "stable-privacy", the interface identifier is
+     * generated as specified by RFC7217. This works by hashing a host specific
+     * key (see NetworkManager(8) manual), the interface name, the connection's
+     * "connection.stable-id" property and the address prefix.  This improves
+     * privacy by making it harder to use the address to track the host's
+     * presence and the address is stable when the network interface hardware
+     * is replaced.
+     *
+     * The special values "default" and "default-or-eui64" will fallback to the
+     * global connection default as documented in the NetworkManager.conf(5)
+     * manual. If the global default is not specified, the fallback value is
+     * "stable-privacy" or "eui64", respectively.
+     *
+     * If not specified, when creating a new profile the default is "default".
+     *
+     * Note that this setting is distinct from the Privacy Extensions as
+     * configured by "ip6-privacy" property and it does not affect the
+     * temporary addresses configured with this option.
+     * ---end---
+     */
     _nm_setting_property_define_direct_int32(properties_override,
                                              obj_properties,
                                              NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE,
