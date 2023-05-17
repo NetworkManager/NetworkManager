@@ -11869,7 +11869,11 @@ _dev_ipac6_start(NMDevice *self)
     }
 
     if (nm_device_get_ip_iface_identifier(self, &iid, FALSE, &is_token)) {
-        _LOGD_ipac6("using the device EUI-64 identifier");
+        char buf[INET6_ADDRSTRLEN];
+
+        _LOGD_ipac6("using the device EUI-64 identifier %s (from %s)",
+                    nm_utils_inet6_interface_identifier_to_token(&iid, buf),
+                    is_token ? "token" : "address");
         nm_ndisc_set_iid(priv->ipac6_data.ndisc, iid, is_token);
     } else {
         /* Don't abort the addrconf at this point -- if ndisc needs the iid
