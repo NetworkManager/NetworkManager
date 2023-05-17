@@ -328,12 +328,9 @@ def main(gir_path_str, output_path_str):
                     },
                 ).text = deprecated_desc
 
-                deprecated_docbook = ET.SubElement(
-                    property_element,
-                    "deprecated-docbook",
-                )
-
-                create_desc_docbook(deprecated_docbook, deprecated_desc)
+                # The text should only be one line. Otherwise, our simple "<deprecated>" element
+                # cannot be rendered nicely.
+                assert re.split("\n", deprecated_desc) == [deprecated_desc]
 
     docs_gir.write(
         output_path_str,

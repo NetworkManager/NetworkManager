@@ -133,7 +133,6 @@ keywords = collections.OrderedDict(
 )
 
 
-
 def keywords_allowed(tag, keyword):
     # certain keywords might not be valid for some tags.
     # Currently, all of them are always valid.
@@ -177,11 +176,17 @@ def write_data(tag, setting_node, line_no, parsed_data):
         and parsed_data.get("description-docbook", None) is None
     ):
         # we have a description, but no docbook. Generate one.
-        node = ET.SubElement(property_node, 'description-docbook')
+        node = ET.SubElement(property_node, "description-docbook")
         for l in re.split("\n", parsed_data["description"]):
             paragraph = ET.SubElement(node, "para")
             paragraph.text = l
-
+    elif (
+        parsed_data.get("description-docbook", None) is not None
+        and parsed_data.get("description", None) is None
+    ):
+        raise Exception(
+            'Invalid configuration. When specifying "description-docbook:" there MUST be also a  "description:"'
+        )
 
 
 kwd_first_line_re = re.compile(r"^ *\* ([-a-z0-9]+): (.*)$")

@@ -154,11 +154,11 @@
           <xsl:when test="description-docbook">
             <xsl:copy-of select="./description-docbook/*/."/>
           </xsl:when>
-          <xsl:otherwise>
+          <xsl:when test="description">
             <para>
-              <xsl:value-of select="@description"/>
+              <xsl:value-of select="description"/>
             </para>
-          </xsl:otherwise>
+          </xsl:when>
         </xsl:choose>
         <xsl:if test="@type = 'NMSettingSecretFlags (uint32)'">
           <para>

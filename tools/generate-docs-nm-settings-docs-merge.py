@@ -113,10 +113,60 @@ def node_set_attr(dst_node, name, nodes):
 
 def find_attr(properties_attrs, name):
     for p_attr in properties_attrs:
-        if p_attr is not None:
-            p_attr = p_attr.find(name)
+        if p_attr is None:
+            continue
+        p_attr = p_attr.find(name)
         if p_attr is not None:
             return p_attr
+
+
+def find_description(properties_attrs):
+    for p in properties_attrs:
+        if p is None:
+            continue
+
+        # These are not attributes, but XML element.
+        assert p.get("description", None) is None
+        assert p.get("description-docbook", None) is None
+
+        p_elem = p.find("description")
+        p_elem_docbook = p.find("description-docbook")
+
+        if p_elem is not None or p_elem_docbook is not None:
+            if p_elem is None or p_elem_docbook is None:
+                # invalid input!
+                if p_elem:
+                    s = ET.tostring(p_elem)
+                else:
+                    s = ET.tostring(p_elem_docbook)
+                raise Exception(
+                    f"We expect both a <description> and <description-docbook> tag, but we only have {s}"
+                )
+            return p_elem, p_elem_docbook
+
+    return None, None
+
+
+def find_deprecated(properties_attrs):
+    for p in properties_attrs:
+        if p is None:
+            continue
+
+        # These are not attributes, but XML element.
+        assert p.get("deprecated", None) is None
+        assert p.get("deprecated-docbook", None) is None
+
+        # We don't expect a <deprecated-docbook> tag.
+        assert p.find("deprecated-docbook") is None
+
+        p_elem = p.find("deprecated")
+
+        if p_elem is not None:
+            # We require a "since" attribute
+            assert p_elem.get("since", None) is not None
+            return p_elem
+
+    return None
 
 
 ###############################################################################
@@ -181,10 +231,9 @@ for setting_name in iter_keys_of_dicts(settings_roots, key_fcn_setting_name):
         dbg("> > > > property_name: %s" % (property_name))
 
         properties_attrs = [p.get(property_name) for p in properties]
-        description_docbook = find_attr(properties_attrs, "description-docbook")
-        description = find_attr(properties_attrs, "description")
-        deprecated_docbook = find_attr(properties_attrs, "deprecated-docbook")
-        deprecated = find_attr(properties_attrs, "deprecated")
+
+        description, description_docbook = find_description(properties_attrs)
+        deprecated = find_deprecated(properties_attrs)
 
         if gl_only_from_first and properties_attrs[0] is None:
             dbg("> > > > skip (only-from-first")
@@ -203,20 +252,13 @@ for setting_name in iter_keys_of_dicts(settings_roots, key_fcn_setting_name):
             node_set_attr(property_node, "type", properties_attrs)
 
         node_set_attr(property_node, "default", properties_attrs)
-        desc_value = node_get_attr(properties_attrs, "description")
         node_set_attr(property_node, "alias", properties_attrs)
 
         if description_docbook is not None:
             property_node.insert(0, description_docbook)
-        if desc_value:
-            description = ET.Element("description")
-            description.text = desc_value
-            property_node.append(description)
-        elif description is not None:
+        if description is not None:
             property_node.append(description)
 
-        if deprecated_docbook is not None:
-            property_node.insert(0, deprecated_docbook)
         if deprecated is not None:
             property_node.insert(0, deprecated)
 
