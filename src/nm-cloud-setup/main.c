@@ -27,38 +27,35 @@ _provider_detect_cb(GObject *source, GAsyncResult *result, gpointer user_data)
 {
     gs_unref_object NMCSProvider *provider = NMCS_PROVIDER(source);
     gs_free_error GError         *error    = NULL;
-    ProviderDetectData           *dd;
+    ProviderDetectData           *dd       = user_data;
     gboolean                      success;
+
+    nm_assert(dd->detect_count > 0);
+    dd->detect_count--;
 
     success = nmcs_provider_detect_finish(provider, result, &error);
 
     nm_assert(success != (!!error));
 
-    if (nm_utils_error_is_cancelled(error))
-        return;
-
-    dd = user_data;
-
-    nm_assert(dd->detect_count > 0);
-    dd->detect_count--;
-
+    if (nm_utils_error_is_cancelled(error)) {
+        _LOGD("provider %s detection cancelled", nmcs_provider_get_name(provider));
+        goto out;
+    }
     if (error) {
         _LOGI("provider %s not detected: %s", nmcs_provider_get_name(provider), error->message);
-        if (dd->detect_count > 0) {
-            /* wait longer. */
-            return;
-        }
-
-        _LOGI("no provider detected");
-        goto done;
+        goto out;
     }
 
     _LOGI("provider %s detected", nmcs_provider_get_name(provider));
     dd->provider_result = g_steal_pointer(&provider);
-
-done:
     g_cancellable_cancel(dd->cancellable);
-    g_main_loop_quit(dd->main_loop);
+
+out:
+    if (dd->detect_count == 0) {
+        if (!dd->provider_result)
+            _LOGI("no provider detected");
+        g_main_loop_quit(dd->main_loop);
+    }
 }
 
 static void
@@ -68,8 +65,6 @@ _provider_detect_sigterm_cb(GCancellable *source, gpointer user_data)
 
     g_cancellable_cancel(dd->cancellable);
     g_clear_object(&dd->provider_result);
-    dd->detect_count = 0;
-    g_main_loop_quit(dd->main_loop);
 }
 
 static NMCSProvider *
