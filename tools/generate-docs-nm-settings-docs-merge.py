@@ -4,15 +4,19 @@
 from __future__ import print_function
 
 import collections
+import os
 import sys
 import xml.etree.ElementTree as ET
 
 ###############################################################################
 
 
+DEBUG = os.environ.get("NM_GENERATE_DOCS_NM_SETTINGS_DOCS_MERGE_DEBUG", None) == "1"
+
+
 def dbg(msg):
-    pass
-    # print("%s" % (msg,))
+    if DEBUG:
+        print("%s" % (msg,))
 
 
 ###############################################################################
@@ -173,19 +177,36 @@ def find_deprecated(properties_attrs):
 
 gl_only_from_first = False
 
-argv = list(sys.argv[1:])
-while True:
-    if argv[0] == "--only-from-first":
-        gl_only_from_first = True
-        del argv[0]
-        continue
-    break
-if len(argv) < 2:
-    print("%s [--only-from-first] [OUT_FILE] [SETTING_XML [...]]" % (sys.argv[0]))
-    exit(1)
+gl_only_properties_from = None
+gl_output_xml_file = None
+gl_input_files = []
 
-gl_output_xml_file = argv[0]
-gl_input_files = list(argv[1:])
+
+def usage_and_quit(exit_code):
+    print(
+        "%s [--only-properties-from SLECTOR_FILE] [OUT_FILE] [SETTING_XML [...]]"
+        % (sys.argv[0])
+    )
+    exit(exit_code)
+
+
+i = 1
+special_args = True
+while i < len(sys.argv):
+    if special_args and sys.argv[i] in ["-h", "--help"]:
+        usage_and_quit(0)
+    elif special_args and sys.argv[i] == "--only-properties-from":
+        i += 1
+        gl_only_properties_from = sys.argv[i]
+    elif special_args and sys.argv[i] == "--":
+        special_args = False
+    elif gl_output_xml_file is None:
+        gl_output_xml_file = sys.argv[i]
+    else:
+        gl_input_files.append(sys.argv[i])
+    i += 1
+if len(gl_input_files) < 2:
+    usage_and_quit(1)
 
 ###############################################################################
 
@@ -196,6 +217,33 @@ xml_roots = [ET.parse(f).getroot() for f in gl_input_files]
 
 assert all([root.tag == "nm-setting-docs" for root in xml_roots])
 
+
+def skip_property(setting_name, property_name):
+    return False
+
+
+if gl_only_properties_from:
+    xml_root = ET.parse(gl_only_properties_from).getroot()
+    opf_setting_root = node_to_dict(xml_root, "setting", "name")
+    opf_cache = {}
+
+    def skip_property(setting_name, property_name):
+        if setting_name not in opf_cache:
+            s = opf_setting_root.get(setting_name)
+            if s is not None:
+                s = node_to_dict(s, "property", "name")
+            opf_cache[setting_name] = s
+        else:
+            s = opf_cache[setting_name]
+        if not s:
+            return True
+        if property_name is not None:
+            p = s.get(property_name)
+            if p is None:
+                return True
+        return False
+
+
 settings_roots = [node_to_dict(root, "setting", "name") for root in xml_roots]
 
 root_node = ET.Element("nm-setting-docs")
@@ -204,17 +252,13 @@ for setting_name in iter_keys_of_dicts(settings_roots, key_fcn_setting_name):
 
     dbg("> > setting_name: %s" % (setting_name))
 
+    if skip_property(setting_name, None):
+        dbg("> > > skip (only-properties-from)")
+        continue
+
     settings = [d.get(setting_name) for d in settings_roots]
 
-    if gl_only_from_first and settings[0] is None:
-        dbg("> > > skip (only-from-first")
-        continue
-
     properties = [node_to_dict(s, "property", "name") for s in settings]
-
-    if gl_only_from_first and not properties[0]:
-        dbg("> > > skip (no properties")
-        continue
 
     setting_node = ET.SubElement(root_node, "setting")
 
@@ -235,8 +279,8 @@ for setting_name in iter_keys_of_dicts(settings_roots, key_fcn_setting_name):
         description, description_docbook = find_description(properties_attrs)
         deprecated = find_deprecated(properties_attrs)
 
-        if gl_only_from_first and properties_attrs[0] is None:
-            dbg("> > > > skip (only-from-first")
+        if skip_property(setting_name, property_name):
+            dbg("> > > > skip (only-properties-from)")
             continue
 
         property_node = ET.SubElement(setting_node, "property")
