@@ -1187,6 +1187,7 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
     /* ---nmcli---
      * property: routes
      * format: a comma separated list of routes
+     * description: Array of IP routes.
      * description-docbook:
      *   <para>
      *     A list of IPv6 destination addresses, prefix length, optional IPv6
