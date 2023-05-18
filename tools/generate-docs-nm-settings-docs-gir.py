@@ -203,7 +203,6 @@ def settings_sort_key(x):
 
 def create_desc_docbook(desc_docbook, description):
     lines = re.split("\n", description)
-    in_par = True
 
     paragraph = ET.SubElement(
         desc_docbook,
@@ -211,10 +210,11 @@ def create_desc_docbook(desc_docbook, description):
     )
 
     for l in lines:
-        if l and in_par:
-            paragraph.text = l
-        else:
+        if not l:
+            # A blank line. This starts a new paragraph
             paragraph = ET.SubElement(desc_docbook, "para")
+            continue
+        paragraph.text = l
 
 
 def main(gir_path_str, output_path_str):
