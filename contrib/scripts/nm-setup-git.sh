@@ -62,7 +62,7 @@ git_config_reset() {
     local val="$2"
     local c=(git config --replace-all "$key" "$val")
 
-    test "$#" == 2 || die "invalid arguments to git_config_add(): $@"
+    test "$#" -eq 2 || die "invalid arguments to git_config_add(): $@"
 
     if [ "$(git config --get-all "$key")" = "$val" ]; then
         SKIP=1 call "${c[@]}"
@@ -76,7 +76,7 @@ git_config_add() {
     local val="$2"
     local c=(git config --add "$key" "$val")
 
-    test "$#" == 2 || die "invalid arguments to git_config_add(): $@"
+    test "$#" -eq 2 || die "invalid arguments to git_config_add(): $@"
 
     if git config --get-all "$key" | grep -qFx "$val"; then
         SKIP=1 call "${c[@]}"

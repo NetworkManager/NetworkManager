@@ -34,7 +34,7 @@ in_set() {
     local v="$1"
     shift
     for v2; do
-        test "$v" == "$v2" && return 0
+        test "$v" = "$v2" && return 0
     done
     return 1
 }

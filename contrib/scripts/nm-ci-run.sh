@@ -102,7 +102,7 @@ unset _WITH_VALGRIND_CHECKED
 _with_valgrind() {
     _is_true "$WITH_VALGRIND" 0 || return 1
 
-    test "$_WITH_VALGRIND_CHECKED" == "1" && return 0
+    test "$_WITH_VALGRIND_CHECKED" = "1" && return 0
     _WITH_VALGRIND_CHECKED=1
 
     if [ "$IS_ALPINE" = 1 ]; then
