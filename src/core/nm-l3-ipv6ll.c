@@ -665,17 +665,13 @@ _nm_l3_ipv6ll_new(NML3Cfg                  *l3cfg,
     };
 
     if (self->addrgen.stable_type == NM_UTILS_STABLE_TYPE_NONE) {
-        char sbuf_token[sizeof(self->addrgen.token.iid) * 3];
+        char sbuf_token[INET6_ADDRSTRLEN];
 
         self->addrgen.token.iid = *token_iid;
         _LOGT("created: l3cfg=" NM_HASH_OBFUSCATE_PTR_FMT ", ifindex=%d, token=%s%s",
               NM_HASH_OBFUSCATE_PTR(l3cfg),
               nm_l3cfg_get_ifindex(l3cfg),
-              nm_utils_bin2hexstr_full(&self->addrgen.token.iid,
-                                       sizeof(self->addrgen.token.iid),
-                                       ':',
-                                       FALSE,
-                                       sbuf_token),
+              nm_utils_inet6_interface_identifier_to_token(&self->addrgen.token.iid, sbuf_token),
               self->assume ? ", assume" : "");
     } else {
         self->addrgen.stable_privacy.ifname     = g_strdup(ifname);

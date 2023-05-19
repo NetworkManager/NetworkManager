@@ -4,15 +4,19 @@
 from __future__ import print_function
 
 import collections
+import os
 import sys
 import xml.etree.ElementTree as ET
 
 ###############################################################################
 
 
+DEBUG = os.environ.get("NM_GENERATE_DOCS_NM_SETTINGS_DOCS_MERGE_DEBUG", None) == "1"
+
+
 def dbg(msg):
-    pass
-    # print("%s" % (msg,))
+    if DEBUG:
+        print("%s" % (msg,))
 
 
 ###############################################################################
@@ -113,40 +117,134 @@ def node_set_attr(dst_node, name, nodes):
 
 def find_attr(properties_attrs, name):
     for p_attr in properties_attrs:
-        if p_attr is not None:
-            p_attr = p_attr.find(name)
+        if p_attr is None:
+            continue
+        p_attr = p_attr.find(name)
         if p_attr is not None:
             return p_attr
+
+
+def find_description(properties_attrs):
+    for p in properties_attrs:
+        if p is None:
+            continue
+
+        # These are not attributes, but XML element.
+        assert p.get("description", None) is None
+        assert p.get("description-docbook", None) is None
+
+        p_elem = p.find("description")
+        p_elem_docbook = p.find("description-docbook")
+
+        if p_elem is not None or p_elem_docbook is not None:
+            if p_elem is None or p_elem_docbook is None:
+                # invalid input!
+                if p_elem:
+                    s = ET.tostring(p_elem)
+                else:
+                    s = ET.tostring(p_elem_docbook)
+                raise Exception(
+                    f"We expect both a <description> and <description-docbook> tag, but we only have {s}"
+                )
+            return p_elem, p_elem_docbook
+
+    return None, None
+
+
+def find_deprecated(properties_attrs):
+    for p in properties_attrs:
+        if p is None:
+            continue
+
+        # These are not attributes, but XML element.
+        assert p.get("deprecated", None) is None
+        assert p.get("deprecated-docbook", None) is None
+
+        # We don't expect a <deprecated-docbook> tag.
+        assert p.find("deprecated-docbook") is None
+
+        p_elem = p.find("deprecated")
+
+        if p_elem is not None:
+            # We require a "since" attribute
+            assert p_elem.get("since", None) is not None
+            return p_elem
+
+    return None
 
 
 ###############################################################################
 
 gl_only_from_first = False
 
-argv = list(sys.argv[1:])
-while True:
-    if argv[0] == "--only-from-first":
-        gl_only_from_first = True
-        del argv[0]
-        continue
-    break
-if len(argv) < 2:
-    print("%s [--only-from-first] [OUT_FILE] [SETTING_XML [...]]" % (sys.argv[0]))
-    exit(1)
+gl_only_properties_from = None
+gl_output_xml_file = None
+gl_input_files = []
 
-gl_output_xml_file = argv[0]
-gl_input_files = list(argv[1:])
+
+def usage_and_quit(exit_code):
+    print(
+        "%s [--only-properties-from SLECTOR_FILE] [OUT_FILE] [SETTING_XML [...]]"
+        % (sys.argv[0])
+    )
+    exit(exit_code)
+
+
+i = 1
+special_args = True
+while i < len(sys.argv):
+    if special_args and sys.argv[i] in ["-h", "--help"]:
+        usage_and_quit(0)
+    elif special_args and sys.argv[i] == "--only-properties-from":
+        i += 1
+        gl_only_properties_from = sys.argv[i]
+    elif special_args and sys.argv[i] == "--":
+        special_args = False
+    elif gl_output_xml_file is None:
+        gl_output_xml_file = sys.argv[i]
+    else:
+        gl_input_files.append(sys.argv[i])
+    i += 1
+if len(gl_input_files) < 2:
+    usage_and_quit(1)
 
 ###############################################################################
 
 for f in gl_input_files:
     dbg("> input file %s" % (f))
 
-xml_roots = list([ET.parse(f).getroot() for f in gl_input_files])
+xml_roots = [ET.parse(f).getroot() for f in gl_input_files]
 
 assert all([root.tag == "nm-setting-docs" for root in xml_roots])
 
-settings_roots = list([node_to_dict(root, "setting", "name") for root in xml_roots])
+
+def skip_property(setting_name, property_name):
+    return False
+
+
+if gl_only_properties_from:
+    xml_root = ET.parse(gl_only_properties_from).getroot()
+    opf_setting_root = node_to_dict(xml_root, "setting", "name")
+    opf_cache = {}
+
+    def skip_property(setting_name, property_name):
+        if setting_name not in opf_cache:
+            s = opf_setting_root.get(setting_name)
+            if s is not None:
+                s = node_to_dict(s, "property", "name")
+            opf_cache[setting_name] = s
+        else:
+            s = opf_cache[setting_name]
+        if not s:
+            return True
+        if property_name is not None:
+            p = s.get(property_name)
+            if p is None:
+                return True
+        return False
+
+
+settings_roots = [node_to_dict(root, "setting", "name") for root in xml_roots]
 
 root_node = ET.Element("nm-setting-docs")
 
@@ -154,17 +252,13 @@ for setting_name in iter_keys_of_dicts(settings_roots, key_fcn_setting_name):
 
     dbg("> > setting_name: %s" % (setting_name))
 
-    settings = list([d.get(setting_name) for d in settings_roots])
-
-    if gl_only_from_first and settings[0] is None:
-        dbg("> > > skip (only-from-first")
+    if skip_property(setting_name, None):
+        dbg("> > > skip (only-properties-from)")
         continue
 
-    properties = list([node_to_dict(s, "property", "name") for s in settings])
+    settings = [d.get(setting_name) for d in settings_roots]
 
-    if gl_only_from_first and not properties[0]:
-        dbg("> > > skip (no properties")
-        continue
+    properties = [node_to_dict(s, "property", "name") for s in settings]
 
     setting_node = ET.SubElement(root_node, "setting")
 
@@ -180,14 +274,13 @@ for setting_name in iter_keys_of_dicts(settings_roots, key_fcn_setting_name):
 
         dbg("> > > > property_name: %s" % (property_name))
 
-        properties_attrs = list([p.get(property_name) for p in properties])
-        description_docbook = find_attr(properties_attrs, "description-docbook")
-        description = find_attr(properties_attrs, "description")
-        deprecated_docbook = find_attr(properties_attrs, "deprecated-docbook")
-        deprecated = find_attr(properties_attrs, "deprecated")
+        properties_attrs = [p.get(property_name) for p in properties]
 
-        if gl_only_from_first and properties_attrs[0] is None:
-            dbg("> > > > skip (only-from-first")
+        description, description_docbook = find_description(properties_attrs)
+        deprecated = find_deprecated(properties_attrs)
+
+        if skip_property(setting_name, property_name):
+            dbg("> > > > skip (only-properties-from)")
             continue
 
         property_node = ET.SubElement(setting_node, "property")
@@ -203,20 +296,13 @@ for setting_name in iter_keys_of_dicts(settings_roots, key_fcn_setting_name):
             node_set_attr(property_node, "type", properties_attrs)
 
         node_set_attr(property_node, "default", properties_attrs)
-        desc_value = node_get_attr(properties_attrs, "description")
         node_set_attr(property_node, "alias", properties_attrs)
 
         if description_docbook is not None:
             property_node.insert(0, description_docbook)
-        if desc_value:
-            description = ET.Element("description")
-            description.text = desc_value
-            property_node.append(description)
-        elif description is not None:
+        if description is not None:
             property_node.append(description)
 
-        if deprecated_docbook is not None:
-            property_node.insert(0, deprecated_docbook)
         if deprecated is not None:
             property_node.insert(0, deprecated)
 

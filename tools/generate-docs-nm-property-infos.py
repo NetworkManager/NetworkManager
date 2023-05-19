@@ -116,7 +116,7 @@ def get_file_infos(source_files):
 
 
 KEYWORD_XML_TYPE_NESTED = "nested"
-KEYWORD_XML_TYPE_NODE = "node"
+KEYWORD_XML_TYPE_ELEM = "elem"
 KEYWORD_XML_TYPE_ATTR = "attr"
 
 keywords = collections.OrderedDict(
@@ -127,7 +127,7 @@ keywords = collections.OrderedDict(
         ("values", KEYWORD_XML_TYPE_ATTR),
         ("default", KEYWORD_XML_TYPE_ATTR),
         ("example", KEYWORD_XML_TYPE_ATTR),
-        ("description", KEYWORD_XML_TYPE_ATTR),
+        ("description", KEYWORD_XML_TYPE_ELEM),
         ("description-docbook", KEYWORD_XML_TYPE_NESTED),
     ]
 )
@@ -163,13 +163,30 @@ def write_data(tag, setting_node, line_no, parsed_data):
             # Set as XML nodes. The input data is XML itself.
             des = ET.fromstring("<%s>%s</%s>" % (k, v, k))
             property_node.append(des)
-        elif xmltype == KEYWORD_XML_TYPE_NODE:
+        elif xmltype == KEYWORD_XML_TYPE_ELEM:
             node = ET.SubElement(property_node, k)
             node.text = v
         elif xmltype == KEYWORD_XML_TYPE_ATTR:
             property_node.set(k, v)
         else:
             assert False
+
+    if (
+        parsed_data.get("description", None) is not None
+        and parsed_data.get("description-docbook", None) is None
+    ):
+        # we have a description, but no docbook. Generate one.
+        node = ET.SubElement(property_node, "description-docbook")
+        for l in re.split("\n", parsed_data["description"]):
+            paragraph = ET.SubElement(node, "para")
+            paragraph.text = l
+    elif (
+        parsed_data.get("description-docbook", None) is not None
+        and parsed_data.get("description", None) is None
+    ):
+        raise Exception(
+            'Invalid configuration. When specifying "description-docbook:" there MUST be also a  "description:"'
+        )
 
 
 kwd_first_line_re = re.compile(r"^ *\* ([-a-z0-9]+): (.*)$")

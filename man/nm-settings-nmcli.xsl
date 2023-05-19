@@ -154,15 +154,17 @@
           <xsl:when test="description-docbook">
             <xsl:copy-of select="./description-docbook/*/."/>
           </xsl:when>
-          <xsl:otherwise>
+          <xsl:when test="description">
             <para>
-              <xsl:value-of select="@description"/>
-              <xsl:if test="@type = 'NMSettingSecretFlags (uint32)'">
-              See <xref linkend="secrets-flags"/> for flag values.
-              </xsl:if>
+              <xsl:value-of select="description"/>
             </para>
-          </xsl:otherwise>
+          </xsl:when>
         </xsl:choose>
+        <xsl:if test="@type = 'NMSettingSecretFlags (uint32)'">
+          <para>
+            See <xref linkend="secrets-flags"/> for flag values.
+          </para>
+        </xsl:if>
         <xsl:if test="deprecated">
           <para>
             This property is deprecated since version <xsl:value-of select="deprecated/@since"/>.

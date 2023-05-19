@@ -57,10 +57,22 @@ main(int argc, char *argv[])
                 g_print("\n%salias=%s",
                         _indent_level(2 * INDENT + 10),
                         tmp3 = _xml_escape_attribute(prop_info->property_alias));
-            if (prop_info->describe_doc)
-                g_print("\n%sdescription=%s",
+            if (prop_info->describe_doc) {
+                /* These descriptions are used by interactive nmcli modes. For the most part,
+                 * they are themselves generated (see "settings-docs.h"). Some of them are instead
+                 * explicitly (manually) set.
+                 *
+                 * In any case, they serve little purpose outside of nmcli's interactive mode,
+                 * because their formatting/wording would not be suitable.
+                 *
+                 * We generate this XML mainly to generate `man nm-settings-nmcli`, but the
+                 * descriptions in "describe_doc" field are not suitable there.
+                 *
+                 * Name them something else ("<nmcli-description>") which isn't actually used. */
+                g_print("\n%snmcli-description=%s",
                         _indent_level(2 * INDENT + 10),
                         tmp4 = _xml_escape_attribute(prop_info->describe_doc));
+            }
             g_print(" />\n");
         }
 

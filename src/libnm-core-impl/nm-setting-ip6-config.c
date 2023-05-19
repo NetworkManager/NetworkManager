@@ -879,37 +879,42 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
     /**
      * NMSettingIP6Config:addr-gen-mode:
      *
-     * Configure method for creating the address for use with RFC4862 IPv6
-     * Stateless Address Autoconfiguration. The permitted values are:
-     * %NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_EUI64,
+     * Configure the method for creating the IPv6 interface identifier of
+     * addresses for RFC4862 IPv6 Stateless Address Autoconfiguration and IPv6
+     * Link Local.
+     *
+     * The permitted values are: %NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_EUI64,
      * %NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_STABLE_PRIVACY.
-     * %NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_DEFAULT_OR_EUI64
-     * or %NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_DEFAULT.
+     * %NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_DEFAULT_OR_EUI64 or
+     * %NM_SETTING_IP6_CONFIG_ADDR_GEN_MODE_DEFAULT.
      *
-     * If the property is set to EUI64, the addresses will be generated
-     * using the interface tokens derived from hardware address. This makes
-     * the host part of the address to stay constant, making it possible
-     * to track host's presence when it changes networks. The address changes
-     * when the interface hardware is replaced.
+     * If the property is set to "eui64", the addresses will be generated using
+     * the interface token derived from the hardware address. This makes the
+     * host part of the address constant, making it possible to track the
+     * host's presence when it changes networks. The address changes when the
+     * interface hardware is replaced. If a duplicate address is detected,
+     * there is no fallback to generate another address. When configured, the
+     * "ipv6.token" is used instead of the MAC address to generate addresses
+     * for stateless autoconfiguration.
      *
-     * The value of stable-privacy enables use of cryptographically
-     * secure hash of a secret host-specific key along with the connection's
-     * stable-id and the network address as specified by RFC7217.
-     * This makes it impossible to use the address track host's presence,
-     * and makes the address stable when the network interface hardware is
-     * replaced.
+     * If the property is set to "stable-privacy", the interface identifier is
+     * generated as specified by RFC7217. This works by hashing a host specific
+     * key (see NetworkManager(8) manual), the interface name, the connection's
+     * "connection.stable-id" property and the address prefix.  This improves
+     * privacy by making it harder to use the address to track the host's
+     * presence as every prefix and network has a different identifier. Also,
+     * the address is stable when the network interface hardware is replaced.
      *
-     * The special values "default" and "default-or-eui64" will fallback to the global
-     * connection default in as documented in NetworkManager.conf(5) manual. If the
-     * global default is not specified, the fallback value is "stable-privacy"
-     * or "eui64", respectively.
+     * The special values "default" and "default-or-eui64" will fallback to the
+     * global connection default as documented in the NetworkManager.conf(5)
+     * manual. If the global default is not specified, the fallback value is
+     * "stable-privacy" or "eui64", respectively.
      *
-     * For libnm, the property defaults to "default" since 1.40.
-     * Previously it defaulted to "stable-privacy".
-     * On D-Bus, the absence of an addr-gen-mode setting equals
-     * "default". For keyfile plugin, the absence of the setting
-     * on disk means "default-or-eui64" so that the property doesn't change on upgrade
-     * from older versions.
+     * For libnm, the property defaults to "default" since 1.40.  Previously it
+     * used to default to "stable-privacy".  On D-Bus, the absence of an
+     * addr-gen-mode setting equals "default". For keyfile plugin, the absence
+     * of the setting on disk means "default-or-eui64" so that the property
+     * doesn't change on upgrade from older versions.
      *
      * Note that this setting is distinct from the Privacy Extensions as
      * configured by "ip6-privacy" property and it does not affect the
@@ -924,6 +929,45 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
      * default: "default-or-eui64"
      * description: Configure IPv6 Stable Privacy addressing for SLAAC (RFC7217).
      * example: IPV6_ADDR_GEN_MODE=stable-privacy
+     * ---end---
+     */
+    /* ---nmcli---
+     * property: addr-gen-mode
+     * format: one of "eui64" (0), "stable-privacy" (1), "default" (3) or "default-or-eui64" (2)
+     * description: Configure method for creating the
+     * IPv6 interface identifer of addresses with RFC4862 IPv6 Stateless
+     * Address Autoconfiguration and Link Local addresses.
+     *
+     * The permitted values are: "eui64" (0), "stable-privacy" (1), "default"
+     * (3) or "default-or-eui64" (2).
+     *
+     * If the property is set to "eui64", the addresses will be generated using
+     * the interface token derived from hardware address. This makes the host
+     * part of the address to stay constant, making it possible to track the
+     * host's presence when it changes networks. The address changes when the
+     * interface hardware is replaced. If a duplicate address is detected,
+     * there is also no fallback to generate another address. When configured,
+     * the "ipv6.token" is used instead of the MAC address to generate
+     * addresses for stateless autoconfiguration.
+     *
+     * If the property is set to "stable-privacy", the interface identifier is
+     * generated as specified by RFC7217. This works by hashing a host specific
+     * key (see NetworkManager(8) manual), the interface name, the connection's
+     * "connection.stable-id" property and the address prefix.  This improves
+     * privacy by making it harder to use the address to track the host's
+     * presence and the address is stable when the network interface hardware
+     * is replaced.
+     *
+     * The special values "default" and "default-or-eui64" will fallback to the
+     * global connection default as documented in the NetworkManager.conf(5)
+     * manual. If the global default is not specified, the fallback value is
+     * "stable-privacy" or "eui64", respectively.
+     *
+     * If not specified, when creating a new profile the default is "default".
+     *
+     * Note that this setting is distinct from the Privacy Extensions as
+     * configured by "ip6-privacy" property and it does not affect the
+     * temporary addresses configured with this option.
      * ---end---
      */
     _nm_setting_property_define_direct_int32(properties_override,
@@ -942,6 +986,10 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
      *
      * Configure the token for draft-chown-6man-tokenised-ipv6-identifiers-02
      * IPv6 tokenized interface identifiers. Useful with eui64 addr-gen-mode.
+     *
+     * When set, the token is used as IPv6 interface identifier instead of the
+     * hardware address. This only applies to addresses from stateless
+     * autoconfiguration, not to IPv6 link local addresses.
      *
      * Since: 1.4
      **/
@@ -1178,6 +1226,7 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
     /* ---nmcli---
      * property: routes
      * format: a comma separated list of routes
+     * description: Array of IP routes.
      * description-docbook:
      *   <para>
      *     A list of IPv6 destination addresses, prefix length, optional IPv6

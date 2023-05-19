@@ -85,10 +85,11 @@ if enable_introspection
     command: [
       python.path(),
       join_paths(meson.source_root(), 'tools', 'generate-docs-nm-settings-docs-merge.py'),
-      '--only-from-first',
       '@OUTPUT@',
+      '--only-properties-from',
       gen_metadata_nm_settings_nmcli_xml,
       nm_property_infos_xml[name],
+      gen_metadata_nm_settings_nmcli_xml,
       nm_settings_docs_xml_gir,
     ],
   )
