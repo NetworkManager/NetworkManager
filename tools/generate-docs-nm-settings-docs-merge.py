@@ -142,11 +142,11 @@ gl_input_files = list(argv[1:])
 for f in gl_input_files:
     dbg("> input file %s" % (f))
 
-xml_roots = list([ET.parse(f).getroot() for f in gl_input_files])
+xml_roots = [ET.parse(f).getroot() for f in gl_input_files]
 
 assert all([root.tag == "nm-setting-docs" for root in xml_roots])
 
-settings_roots = list([node_to_dict(root, "setting", "name") for root in xml_roots])
+settings_roots = [node_to_dict(root, "setting", "name") for root in xml_roots]
 
 root_node = ET.Element("nm-setting-docs")
 
@@ -154,13 +154,13 @@ for setting_name in iter_keys_of_dicts(settings_roots, key_fcn_setting_name):
 
     dbg("> > setting_name: %s" % (setting_name))
 
-    settings = list([d.get(setting_name) for d in settings_roots])
+    settings = [d.get(setting_name) for d in settings_roots]
 
     if gl_only_from_first and settings[0] is None:
         dbg("> > > skip (only-from-first")
         continue
 
-    properties = list([node_to_dict(s, "property", "name") for s in settings])
+    properties = [node_to_dict(s, "property", "name") for s in settings]
 
     if gl_only_from_first and not properties[0]:
         dbg("> > > skip (no properties")
@@ -180,7 +180,7 @@ for setting_name in iter_keys_of_dicts(settings_roots, key_fcn_setting_name):
 
         dbg("> > > > property_name: %s" % (property_name))
 
-        properties_attrs = list([p.get(property_name) for p in properties])
+        properties_attrs = [p.get(property_name) for p in properties]
         description_docbook = find_attr(properties_attrs, "description-docbook")
         description = find_attr(properties_attrs, "description")
         deprecated_docbook = find_attr(properties_attrs, "deprecated-docbook")
