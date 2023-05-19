@@ -30,5 +30,6 @@ if enable_nm_cloud_setup
     env: [
       'LIBTOOL=',
     ],
+    timeout: 120,
   )
 endif
