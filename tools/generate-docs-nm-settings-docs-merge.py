@@ -144,7 +144,8 @@ def find_description(properties_attrs):
                 else:
                     s = ET.tostring(p_elem_docbook)
                 raise Exception(
-                    f"We expect both a <description> and <description-docbook> tag, but we only have {s}"
+                    "We expect both a <description> and <description-docbook> tag, but we only have %s"
+                    % (s,)
                 )
             return p_elem, p_elem_docbook
 
