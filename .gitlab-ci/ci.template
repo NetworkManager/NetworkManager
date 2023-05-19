@@ -15,7 +15,7 @@
 ########################################
 
 
-.templates_sha: &template_sha ffe4d1b10aab7534489f0c4bbc4c5899df17d3f2 # see https://docs.gitlab.com/ee/ci/yaml/#includefile
+.templates_sha: &template_sha fb33e1b244ec2a0b8edf8ee5590a96369c3b4666 # see https://docs.gitlab.com/ee/ci/yaml/#includefile
 
 {# Group distros by their common (name,) tuples.#}
 {% set distro_groups = [] %}
