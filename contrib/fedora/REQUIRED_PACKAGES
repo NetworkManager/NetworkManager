@@ -85,7 +85,6 @@ install \
     teamd-devel \
     util-linux \
     vala \
-    vala-devel \
     valgrind \
     which \
     "${EXTRA_PACKAGES[@]}"
@@ -98,9 +97,11 @@ install_ignore_missing \
     libasan \
     libpsl-devel \
     libubsan \
+    libvala-devel \
     pexpect \
     pygobject3-base \
     python-gobject-base \
     python36-pexpect \
     qt-devel \
+    vala-devel \
     #end

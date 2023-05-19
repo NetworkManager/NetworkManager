@@ -2887,8 +2887,7 @@ _nmtst_variant_new_vardict(int dummy, ...)
     G_STMT_END
 #else
 #define _nmtst_assert_variant_bytestring_cmp_str(_ptr, _ptr2, _len) \
-    G_STMT_START                                                    \
-    {}                                                              \
+    G_STMT_START {}                                                 \
     G_STMT_END
 #endif
 

@@ -500,7 +500,7 @@ _nm_g_variant_new_take_string(char *string)
     return value;
 #elif !GLIB_CHECK_VERSION(2, 38, 0)
     GVariant *value;
-    GBytes *bytes;
+    GBytes   *bytes;
 
     g_return_val_if_fail(string != NULL, NULL);
     g_return_val_if_fail(g_utf8_validate(string, -1, NULL), NULL);

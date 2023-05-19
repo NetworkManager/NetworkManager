@@ -13,7 +13,7 @@
 ########################################
 
 
-.templates_sha: &template_sha ffe4d1b10aab7534489f0c4bbc4c5899df17d3f2 # see https://docs.gitlab.com/ee/ci/yaml/#includefile
+.templates_sha: &template_sha fb33e1b244ec2a0b8edf8ee5590a96369c3b4666 # see https://docs.gitlab.com/ee/ci/yaml/#includefile
 
 
 
@@ -56,11 +56,11 @@ variables:
   #
   # This is done by running `ci-fairy generate-template` and possibly bumping
   # ".default_tag".
-  ALPINE_TAG:  'tag-372c77b49d01'
-  CENTOS_TAG:  'tag-ab77da6a62d5'
-  DEBIAN_TAG:  'tag-e7368fd611d6'
-  FEDORA_TAG:  'tag-ab77da6a62d5'
-  UBUNTU_TAG:  'tag-e7368fd611d6'
+  ALPINE_TAG:  'tag-8399f83819ed'
+  CENTOS_TAG:  'tag-a5e8e3d94c70'
+  DEBIAN_TAG:  'tag-f97319c5ab59'
+  FEDORA_TAG:  'tag-a5e8e3d94c70'
+  UBUNTU_TAG:  'tag-f97319c5ab59'
 
   ALPINE_EXEC: 'bash .gitlab-ci/alpine-install.sh'
   CENTOS_EXEC: 'bash .gitlab-ci/fedora-install.sh'
@@ -96,7 +96,17 @@ variables:
 # Build a container for each distribution + version. The ci-templates
 # will re-use the containers if the tag doesn't change.
 
-tier1:fedora:37@prep:
+tier1:fedora:38@prep:
+  extends:
+    - .fdo.container-build@fedora
+  stage: prep
+  variables:
+    GIT_STRATEGY: none
+    FDO_DISTRIBUTION_VERSION: '38'
+    FDO_DISTRIBUTION_TAG: $FEDORA_TAG
+    FDO_DISTRIBUTION_EXEC: $FEDORA_EXEC
+
+tier2:fedora:37@prep:
   extends:
     - .fdo.container-build@fedora
   stage: prep
@@ -105,25 +115,15 @@ tier1:fedora:37@prep:
     FDO_DISTRIBUTION_VERSION: '37'
     FDO_DISTRIBUTION_TAG: $FEDORA_TAG
     FDO_DISTRIBUTION_EXEC: $FEDORA_EXEC
-
-tier2:fedora:36@prep:
-  extends:
-    - .fdo.container-build@fedora
-  stage: prep
-  variables:
-    GIT_STRATEGY: none
-    FDO_DISTRIBUTION_VERSION: '36'
-    FDO_DISTRIBUTION_TAG: $FEDORA_TAG
-    FDO_DISTRIBUTION_EXEC: $FEDORA_EXEC
   when: manual
 
-tier2:fedora:38@prep:
+tier2:fedora:39@prep:
   extends:
     - .fdo.container-build@fedora
   stage: prep
   variables:
     GIT_STRATEGY: none
-    FDO_DISTRIBUTION_VERSION: '38'
+    FDO_DISTRIBUTION_VERSION: '39'
     FDO_DISTRIBUTION_TAG: $FEDORA_TAG
     FDO_DISTRIBUTION_EXEC: $FEDORA_EXEC
   when: manual
@@ -190,6 +190,17 @@ tier3:fedora:35@prep:
   variables:
     GIT_STRATEGY: none
     FDO_DISTRIBUTION_VERSION: '35'
+    FDO_DISTRIBUTION_TAG: $FEDORA_TAG
+    FDO_DISTRIBUTION_EXEC: $FEDORA_EXEC
+  when: manual
+
+tier3:fedora:36@prep:
+  extends:
+    - .fdo.container-build@fedora
+  stage: prep
+  variables:
+    GIT_STRATEGY: none
+    FDO_DISTRIBUTION_VERSION: '36'
     FDO_DISTRIBUTION_TAG: $FEDORA_TAG
     FDO_DISTRIBUTION_EXEC: $FEDORA_EXEC
   when: manual
@@ -419,7 +430,7 @@ tier2:alpine:latest@prep:
   dependencies: []
 
 
-t_fedora:37:
+t_fedora:38:
   extends:
     - .build@template
     - .fdo.distribution-image@fedora
@@ -437,34 +448,34 @@ t_fedora:37:
         - tarball
         - subtree
   variables:
-    FDO_DISTRIBUTION_VERSION: '37'
-    FDO_DISTRIBUTION_TAG: $FEDORA_TAG
-  needs:
-    - "tier1:fedora:37@prep"
-
-t_fedora:36:
-  extends:
-    - .build@template
-    - .fdo.distribution-image@fedora
-    - .nm_artifacts_debug
-  stage: tier2
-  variables:
-    FDO_DISTRIBUTION_VERSION: '36'
-    FDO_DISTRIBUTION_TAG: $FEDORA_TAG
-  needs:
-    - "tier2:fedora:36@prep"
-
-t_fedora:38:
-  extends:
-    - .build@template
-    - .fdo.distribution-image@fedora
-    - .nm_artifacts_debug
-  stage: tier2
-  variables:
     FDO_DISTRIBUTION_VERSION: '38'
     FDO_DISTRIBUTION_TAG: $FEDORA_TAG
   needs:
-    - "tier2:fedora:38@prep"
+    - "tier1:fedora:38@prep"
+
+t_fedora:37:
+  extends:
+    - .build@template
+    - .fdo.distribution-image@fedora
+    - .nm_artifacts_debug
+  stage: tier2
+  variables:
+    FDO_DISTRIBUTION_VERSION: '37'
+    FDO_DISTRIBUTION_TAG: $FEDORA_TAG
+  needs:
+    - "tier2:fedora:37@prep"
+
+t_fedora:39:
+  extends:
+    - .build@template
+    - .fdo.distribution-image@fedora
+    - .nm_artifacts_debug
+  stage: tier2
+  variables:
+    FDO_DISTRIBUTION_VERSION: '39'
+    FDO_DISTRIBUTION_TAG: $FEDORA_TAG
+  needs:
+    - "tier2:fedora:39@prep"
 
 t_fedora:30:
   extends:
@@ -537,6 +548,18 @@ t_fedora:35:
     FDO_DISTRIBUTION_TAG: $FEDORA_TAG
   needs:
     - "tier3:fedora:35@prep"
+
+t_fedora:36:
+  extends:
+    - .build@template
+    - .fdo.distribution-image@fedora
+    - .nm_artifacts_debug
+  stage: tier3
+  variables:
+    FDO_DISTRIBUTION_VERSION: '36'
+    FDO_DISTRIBUTION_TAG: $FEDORA_TAG
+  needs:
+    - "tier3:fedora:36@prep"
 
 t_ubuntu:18.04:
   extends:
@@ -776,10 +799,10 @@ check-patch:
   extends:
     - .fdo.distribution-image@fedora
   variables:
-    FDO_DISTRIBUTION_VERSION: '37'
+    FDO_DISTRIBUTION_VERSION: '38'
     FDO_DISTRIBUTION_TAG: $FEDORA_TAG
   needs:
-    - "tier1:fedora:37@prep"
+    - "tier1:fedora:38@prep"
   stage: tier1
   script:
     - date '+%Y%m%d-%H%M%S'; NM_CHECKPATCH_FETCH_UPSTREAM=1 contrib/scripts/checkpatch-feature-branch.sh
@@ -789,10 +812,10 @@ check-tree:
   extends:
     - .fdo.distribution-image@fedora
   variables:
-    FDO_DISTRIBUTION_VERSION: '37'
+    FDO_DISTRIBUTION_VERSION: '38'
     FDO_DISTRIBUTION_TAG: $FEDORA_TAG
   needs:
-    - "tier1:fedora:37@prep"
+    - "tier1:fedora:38@prep"
   stage: tier1
   script:
     - date '+%Y%m%d-%H%M%S'; contrib/scripts/nm-python-black-format.sh --check
@@ -811,9 +834,9 @@ pages:
   only:
     - main
   dependencies:
-    - "t_fedora:37: [autotools+gcc+docs+valgrind]"
+    - "t_fedora:38: [autotools+gcc+docs+valgrind]"
   needs:
-    - "t_fedora:37: [autotools+gcc+docs+valgrind]"
+    - "t_fedora:38: [autotools+gcc+docs+valgrind]"
 
 triage:issues:
   stage: triage
