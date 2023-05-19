@@ -157,12 +157,14 @@
           <xsl:otherwise>
             <para>
               <xsl:value-of select="@description"/>
-              <xsl:if test="@type = 'NMSettingSecretFlags (uint32)'">
-              See <xref linkend="secrets-flags"/> for flag values.
-              </xsl:if>
             </para>
           </xsl:otherwise>
         </xsl:choose>
+        <xsl:if test="@type = 'NMSettingSecretFlags (uint32)'">
+          <para>
+            See <xref linkend="secrets-flags"/> for flag values.
+          </para>
+        </xsl:if>
         <xsl:if test="deprecated">
           <para>
             This property is deprecated since version <xsl:value-of select="deprecated/@since"/>.
