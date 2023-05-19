@@ -79,7 +79,7 @@ G_STATIC_ASSERT(sizeof(int) == sizeof(gint32));
     ({                                             \
         _nm_unused typeof(value) _value = (value); \
                                                    \
-        _Generic((value), int : TRUE);             \
+        _Generic((value), int: TRUE);              \
     })
 #else
 #define _NM_INT_LE_MAXINT32(value)                   \

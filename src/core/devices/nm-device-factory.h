@@ -208,8 +208,7 @@ NMDevice *nm_device_factory_create_device(NMDeviceFactory      *factory,
                                                                                                  \
     NM_DEVICE_FACTORY_DECLARE_TYPES(st_code)                                                     \
                                                                                                  \
-    static void nm_##lower##_device_factory_init(NM##mixed##DeviceFactory *self)                 \
-    {}                                                                                           \
+    static void nm_##lower##_device_factory_init(NM##mixed##DeviceFactory *self) {}              \
                                                                                                  \
     static void nm_##lower##_device_factory_class_init(NM##mixed##DeviceFactoryClass *klass)     \
     {                                                                                            \

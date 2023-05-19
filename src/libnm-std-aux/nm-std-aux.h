@@ -327,9 +327,9 @@ typedef uint64_t _nm_bitwise nm_be64_t;
      *
      * It's useful to check the let the compiler ensure that @value is
      * of a certain type. */
-#define _NM_ENSURE_TYPE(type, value) (_Generic((value), type : (value)))
+#define _NM_ENSURE_TYPE(type, value) (_Generic((value), type: (value)))
 #define _NM_ENSURE_TYPE_CONST(type, value) \
-    (_Generic((value), const type : ((const type)(value)), type : ((const type)(value))))
+    (_Generic((value), const type: ((const type)(value)), type: ((const type)(value))))
 #else
 #define _NM_ENSURE_TYPE(type, value)       (value)
 #define _NM_ENSURE_TYPE_CONST(type, value) ((const type)(value))
@@ -348,7 +348,7 @@ typedef uint64_t _nm_bitwise nm_be64_t;
 
 #if _NM_CC_SUPPORT_GENERIC && (!defined(__clang__) || __clang_major__ > 3)
 #define NM_STRUCT_OFFSET_ENSURE_TYPE(type, container, field) \
-    (_Generic((&(((container *) NULL)->field))[0], type : nm_offsetof(container, field)))
+    (_Generic((&(((container *) NULL)->field))[0], type: nm_offsetof(container, field)))
 #else
 #define NM_STRUCT_OFFSET_ENSURE_TYPE(type, container, field) nm_offsetof(container, field)
 #endif

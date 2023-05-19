@@ -262,18 +262,17 @@ _nmtst_auto_utils_host_id_context_pop(const char *const *unused)
     nmtst_utils_host_id_pop();
 }
 
-#define _NMTST_UTILS_HOST_ID_CONTEXT(uniq, host_id)                                        \
-    _nm_unused nm_auto(_nmtst_auto_utils_host_id_context_pop) const char *const NM_UNIQ_T( \
-        _host_id_context_,                                                                 \
-        uniq) = ({                                                                         \
-        const gint64 _timestamp_ns = 1631000672;                                           \
-                                                                                           \
-        nmtst_utils_host_id_push((const guint8 *) "" host_id "",                           \
-                                 NM_STRLEN(host_id),                                       \
-                                 TRUE,                                                     \
-                                 &_timestamp_ns);                                          \
-        "" host_id "";                                                                     \
-    })
+#define _NMTST_UTILS_HOST_ID_CONTEXT(uniq, host_id)                      \
+    _nm_unused            nm_auto(_nmtst_auto_utils_host_id_context_pop) \
+        const char *const NM_UNIQ_T(_host_id_context_, uniq) = ({        \
+            const gint64 _timestamp_ns = 1631000672;                     \
+                                                                         \
+            nmtst_utils_host_id_push((const guint8 *) "" host_id "",     \
+                                     NM_STRLEN(host_id),                 \
+                                     TRUE,                               \
+                                     &_timestamp_ns);                    \
+            "" host_id "";                                               \
+        })
 
 #define NMTST_UTILS_HOST_ID_CONTEXT(host_id) _NMTST_UTILS_HOST_ID_CONTEXT(NM_UNIQ, host_id)
 

@@ -10,7 +10,7 @@ die() {
 DIR="$(realpath "$(dirname "$0")/../../")"
 cd "$DIR"
 
-FEDORA_VERSION=37
+FEDORA_VERSION=38
 
 PODNAME="nm-code-format-f$FEDORA_VERSION"
 
