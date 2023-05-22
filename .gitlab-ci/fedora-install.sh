@@ -4,40 +4,50 @@ set -ex
 
 IS_FEDORA=0
 IS_CENTOS=0
-IS_CENTOS_7=0
-IS_CENTOS_8=0
+CENTOS_VERSION=0
 grep -q '^NAME=.*\(CentOS\)' /etc/os-release && IS_CENTOS=1
 grep -q '^NAME=.*\(Fedora\)' /etc/os-release && IS_FEDORA=1
 if [ $IS_CENTOS = 1 ]; then
     if grep -q '^VERSION_ID=.*\<7\>' /etc/os-release ; then
-        IS_CENTOS_7=1
+        CENTOS_VERSION=7
     elif grep -q '^VERSION_ID=.*\<8\>' /etc/os-release ; then
-        IS_CENTOS_8=1
+        CENTOS_VERSION=8
+    elif grep -q '^VERSION_ID=.*\<9\>' /etc/os-release ; then
+        CENTOS_VERSION=9
+    else
+        exit 1
+    fi
+    if grep -q "^NAME.*Stream" /etc/os-release ; then
+        CENTOS_VERSION="stream$CENTOS_VERSION"
     fi
 fi
 
- if [ $IS_CENTOS = 1 ]; then
-    if [ $IS_CENTOS_7 = 1 ]; then
+ if [ "$IS_CENTOS" = 1 ]; then
+    if [ "$CENTOS_VERSION" = 7 ]; then
         yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
         yum install -y glibc-common
         localedef -c -i pl_PL -f UTF-8 pl_PL.UTF-8
         locale -a
         yum install -y python36-dbus python36-gobject-base
-    elif [ $IS_CENTOS_8 = 1 ]; then
-        # CentOS Linux 8 is now EOF and plain `dnf upgrade` does not work. We need
-        # to patch the mirror list.
-        sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-*
-        sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-*
-
+    elif [ "$CENTOS_VERSION" = 8 -o "$CENTOS_VERSION" = stream8 ]; then
+        if [ "$CENTOS_VERSION" = 8 ]; then
+            # CentOS Linux 8 is now EOF and plain `dnf upgrade` does not work. We need
+            # to patch the mirror list.
+            sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-*
+            sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-*
+        fi
         dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
         dnf install -y 'dnf-command(config-manager)'
         dnf config-manager --set-enabled powertools || \
           dnf config-manager --set-enabled PowerTools
         curl https://copr.fedorainfracloud.org/coprs/nmstate/nm-build-deps/repo/epel-8/nmstate-nm-build-deps-epel-8.repo > /etc/yum.repos.d/nmstate-nm-build-deps-epel-8.repo
-    else
-        dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
+    elif [ "$CENTOS_VERSION" = stream9 ]; then
+        dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm
         dnf install -y 'dnf-command(config-manager)'
+        dnf config-manager --set-enabled crb
         curl https://copr.fedorainfracloud.org/coprs/nmstate/nm-build-deps/repo/epel-9/nmstate-nm-build-deps-epel-9.repo > /etc/yum.repos.d/nmstate-nm-build-deps-epel-9.repo
+    else
+        exit 1
     fi
 fi
 
