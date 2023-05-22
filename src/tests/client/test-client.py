@@ -2203,8 +2203,8 @@ class TestNmCloudSetup(unittest.TestCase):
         Util.skip_without_NM()
         self.ctx = NMTestContext(self._testMethodName)
 
-    _mac1 = "9e:c0:3e:92:24:2d"
-    _mac2 = "53:e9:7e:52:8d:a8"
+    _mac1 = "cc:00:00:00:00:01"
+    _mac2 = "cc:00:00:00:00:02"
 
     _ip1 = "172.31.26.249"
     _ip2 = "172.31.176.249"
@@ -2271,7 +2271,7 @@ class TestNmCloudSetup(unittest.TestCase):
 
     def _mock_devices(self):
         # Add a device with an active connection that has IPv4 configured
-        self.ctx.srv.op_AddObj("WiredDevice", iface="eth0", mac="9e:c0:3e:92:24:2d")
+        self.ctx.srv.op_AddObj("WiredDevice", iface="eth0", mac="cc:00:00:00:00:01")
         self.ctx.srv.addAndActivateConnection(
             {
                 "connection": {"type": "802-3-ethernet", "id": "con-eth0"},
@@ -2282,7 +2282,7 @@ class TestNmCloudSetup(unittest.TestCase):
         )
 
         # The second connection has no IPv4
-        self.ctx.srv.op_AddObj("WiredDevice", iface="eth1", mac="53:e9:7e:52:8d:a8")
+        self.ctx.srv.op_AddObj("WiredDevice", iface="eth1", mac="cc:00:00:00:00:02")
         self.ctx.srv.addAndActivateConnection(
             {"connection": {"type": "802-3-ethernet", "id": "con-eth1"}},
             "/org/freedesktop/NetworkManager/Devices/2",
@@ -2351,7 +2351,7 @@ class TestNmCloudSetup(unittest.TestCase):
         )
 
         nmc.pexp.expect("provider aliyun detected")
-        nmc.pexp.expect("found interfaces: 9E:C0:3E:92:24:2D, 53:E9:7E:52:8D:A8")
+        nmc.pexp.expect("found interfaces: CC:00:00:00:00:01, CC:00:00:00:00:02")
         nmc.pexp.expect("get-config: start fetching meta data")
         nmc.pexp.expect("get-config: success")
         nmc.pexp.expect("meta data received")
@@ -2373,7 +2373,7 @@ class TestNmCloudSetup(unittest.TestCase):
         )
 
         nmc.pexp.expect("provider aliyun detected")
-        nmc.pexp.expect("found interfaces: 9E:C0:3E:92:24:2D, 53:E9:7E:52:8D:A8")
+        nmc.pexp.expect("found interfaces: CC:00:00:00:00:01, CC:00:00:00:00:02")
         nmc.pexp.expect("get-config: starting")
         nmc.pexp.expect("get-config: success")
         nmc.pexp.expect("meta data received")
@@ -2430,7 +2430,7 @@ class TestNmCloudSetup(unittest.TestCase):
         )
 
         nmc.pexp.expect("provider azure detected")
-        nmc.pexp.expect("found interfaces: 9E:C0:3E:92:24:2D, 53:E9:7E:52:8D:A8")
+        nmc.pexp.expect("found interfaces: CC:00:00:00:00:01, CC:00:00:00:00:02")
         nmc.pexp.expect("found azure interfaces: 2")
         nmc.pexp.expect("interface\[0]: found a matching device with hwaddr")
         nmc.pexp.expect(
@@ -2459,7 +2459,7 @@ class TestNmCloudSetup(unittest.TestCase):
         )
 
         nmc.pexp.expect("provider azure detected")
-        nmc.pexp.expect("found interfaces: 9E:C0:3E:92:24:2D, 53:E9:7E:52:8D:A8")
+        nmc.pexp.expect("found interfaces: CC:00:00:00:00:01, CC:00:00:00:00:02")
         nmc.pexp.expect("get-config: starting")
         nmc.pexp.expect("get-config: success")
         nmc.pexp.expect("meta data received")
@@ -2506,7 +2506,7 @@ class TestNmCloudSetup(unittest.TestCase):
         )
 
         nmc.pexp.expect("provider ec2 detected")
-        nmc.pexp.expect("found interfaces: 9E:C0:3E:92:24:2D, 53:E9:7E:52:8D:A8")
+        nmc.pexp.expect("found interfaces: CC:00:00:00:00:01, CC:00:00:00:00:02")
         nmc.pexp.expect("get-config: starting")
         nmc.pexp.expect("get-config: success")
         nmc.pexp.expect("meta data received")
@@ -2528,7 +2528,7 @@ class TestNmCloudSetup(unittest.TestCase):
         )
 
         nmc.pexp.expect("provider ec2 detected")
-        nmc.pexp.expect("found interfaces: 9E:C0:3E:92:24:2D, 53:E9:7E:52:8D:A8")
+        nmc.pexp.expect("found interfaces: CC:00:00:00:00:01, CC:00:00:00:00:02")
         nmc.pexp.expect("get-config: starting")
         nmc.pexp.expect("get-config: success")
         nmc.pexp.expect("meta data received")
@@ -2566,7 +2566,7 @@ class TestNmCloudSetup(unittest.TestCase):
         )
 
         nmc.pexp.expect("provider GCP detected")
-        nmc.pexp.expect("found interfaces: 9E:C0:3E:92:24:2D, 53:E9:7E:52:8D:A8")
+        nmc.pexp.expect("found interfaces: CC:00:00:00:00:01, CC:00:00:00:00:02")
         nmc.pexp.expect("found GCP interfaces: 2")
         nmc.pexp.expect("GCP interface\[0]: found a requested device with hwaddr")
         nmc.pexp.expect("get-config: success")
@@ -2589,7 +2589,7 @@ class TestNmCloudSetup(unittest.TestCase):
         )
 
         nmc.pexp.expect("provider GCP detected")
-        nmc.pexp.expect("found interfaces: 9E:C0:3E:92:24:2D, 53:E9:7E:52:8D:A8")
+        nmc.pexp.expect("found interfaces: CC:00:00:00:00:01, CC:00:00:00:00:02")
         nmc.pexp.expect("get-config: starting")
         nmc.pexp.expect("get-config: success")
         nmc.pexp.expect("meta data received")
