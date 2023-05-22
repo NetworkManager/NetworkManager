@@ -41,16 +41,19 @@ _nm_dhcp_client_get_domain(NMDhcpClient *self)
         if (nm_logging_enabled(_level, _NMLOG_DOMAIN)) {                                 \
             NMDhcpClient     *_self    = (NMDhcpClient *) (self);                        \
             const char       *__ifname = _self ? nm_dhcp_client_get_iface(_self) : NULL; \
+            const char       *_type    = nm_dhcp_client_get_iface_type_for_log(_self);   \
             const NMLogDomain _domain  = _nm_dhcp_client_get_domain(_self);              \
                                                                                          \
             nm_log(_level,                                                               \
                    _domain,                                                              \
                    __ifname,                                                             \
                    NULL,                                                                 \
-                   "%s%s%s%s%s: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__),                    \
+                   "%s%s%s%s%s%s%s%s%s: " _NM_UTILS_MACRO_FIRST(__VA_ARGS__),            \
                    _NMLOG_PREFIX_NAME,                                                   \
                    (_domain == LOGD_DHCP4 ? "4" : (_domain == LOGD_DHCP6 ? "6" : "")),   \
-                   NM_PRINT_FMT_QUOTED(__ifname, " (", __ifname, ")", "")                \
+                   (__ifname || _type) ? " " : "",                                       \
+                   NM_PRINT_FMT_QUOTED(__ifname, "(", __ifname, ")", ""),                \
+                   NM_PRINT_FMT_QUOTED(_type, "[", _type, "]", "")                       \
                        _NM_UTILS_MACRO_REST(__VA_ARGS__));                               \
         }                                                                                \
     }                                                                                    \
