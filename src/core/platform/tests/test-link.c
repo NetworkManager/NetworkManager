@@ -3207,9 +3207,11 @@ test_netns_bind_to_path(gpointer fixture, gconstpointer test_data)
     gs_unref_object NMPlatform *platform_1 = NULL;
     gs_unref_object NMPlatform *platform_2 = NULL;
     nm_auto_pop_netns NMPNetns *netns_pop  = NULL;
-    NMPlatform *                platforms[3];
-    NMPNetns *                  netns;
+    NMPlatform                 *platforms[3];
+    NMPNetns                   *netns;
+    int                         errsv;
     int                         i;
+    int                         r;
 
     if (_test_netns_check_skip())
         return;
@@ -3252,7 +3254,12 @@ test_netns_bind_to_path(gpointer fixture, gconstpointer test_data)
                     !=,
                     0);
 
-    g_assert_cmpint(umount(P_VAR_RUN), ==, 0);
+    r = umount(P_VAR_RUN);
+    if (r != 0) {
+        errsv = errno;
+        g_assert_cmpint(errsv, ==, 0);
+        g_assert_cmpint(r, ==, 0);
+    }
 }
 
 /*****************************************************************************/
