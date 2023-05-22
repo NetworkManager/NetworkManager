@@ -64,6 +64,8 @@ distributions:
       - '7.9.2009'
       - '8.1.1911'
       - '8.3.2011'
+      - 'stream8'
+      - 'stream9'
   - name: centos
     tier: 3
     versions:
