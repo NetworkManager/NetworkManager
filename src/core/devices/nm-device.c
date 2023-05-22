@@ -5400,6 +5400,24 @@ nm_device_get_type_desc(NMDevice *self)
 }
 
 const char *
+nm_device_get_type_desc_for_log(NMDevice *self)
+{
+    const char *type;
+
+    type = nm_device_get_type_desc(self);
+
+    /* Some OVS device types (ports and bridges) are not backed by a kernel link, and
+     * they can have the same name of another device of a different type. In fact, it's
+     * quite common to assign the same name to the OVS bridge, the OVS port and the OVS
+     * interface. For this reason, also log the type in case of OVS devices to make the
+     * log message unambiguous. */
+    if (NM_STR_HAS_PREFIX(type, "Open vSwitch"))
+        return type;
+
+    return NULL;
+}
+
+const char *
 nm_device_get_type_description(NMDevice *self)
 {
     g_return_val_if_fail(self != NULL, NULL);

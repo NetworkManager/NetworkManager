@@ -463,6 +463,7 @@ int          nm_device_get_ip_ifindex(const NMDevice *dev);
 const char  *nm_device_get_driver(NMDevice *dev);
 const char  *nm_device_get_driver_version(NMDevice *dev);
 const char  *nm_device_get_type_desc(NMDevice *dev);
+const char  *nm_device_get_type_desc_for_log(NMDevice *dev);
 const char  *nm_device_get_type_description(NMDevice *dev);
 NMDeviceType nm_device_get_device_type(NMDevice *dev);
 NMLinkType   nm_device_get_link_type(NMDevice *dev);
