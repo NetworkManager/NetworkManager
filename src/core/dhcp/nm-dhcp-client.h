@@ -103,6 +103,10 @@ typedef struct {
 
     const char *iface;
 
+    /* Interface type for logging; only set for some devices whose names can be
+     * ambiguous. */
+    const char *iface_type_log;
+
     /* The hardware address */
     GBytes *hwaddr;
 
@@ -264,6 +268,7 @@ gboolean nm_dhcp_client_server_id_is_rejected(NMDhcpClient *self, gconstpointer 
 
 int                nm_dhcp_client_get_addr_family(NMDhcpClient *self);
 const char        *nm_dhcp_client_get_iface(NMDhcpClient *self);
+const char        *nm_dhcp_client_get_iface_type_for_log(NMDhcpClient *self);
 NMDedupMultiIndex *nm_dhcp_client_get_multi_idx(NMDhcpClient *self);
 int                nm_dhcp_client_get_ifindex(NMDhcpClient *self);
 
