@@ -5606,7 +5606,7 @@ static const NMMetaPropertyInfo *const property_infos_CONNECTION[] = {
                 .remove_by_idx_fcn_u32 = MULTILIST_REMOVE_BY_IDX_FCN_U32 (NMSettingConnection, nm_setting_connection_remove_secondary),
                 .remove_by_value_fcn =  MULTILIST_REMOVE_BY_VALUE_FCN (NMSettingConnection, nm_setting_connection_remove_secondary_by_value),
                 .validate2_fcn =        _multilist_validate2_fcn_uuid,
-                .strsplit_plain =       TRUE,
+                .strsplit_with_spaces = TRUE,
             ),
         ),
     ),
