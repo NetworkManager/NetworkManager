@@ -17,6 +17,11 @@ if [ $IS_DEBIAN_9 = 1 ]; then
     # Errors were encountered while processing:
     #  systemd
     ln -sf /bin/true /usr/bin/chfn
+
+    # Debian 9 (stretch) is archived. Update the sources.
+    sed -i s/deb.debian.org/archive.debian.org/g /etc/apt/sources.list
+    sed -i /stretch-updates/d /etc/apt/sources.list
+    sed -i /security.debian.org/d /etc/apt/sources.list
 fi
 
 DEBIAN_FRONTEND=noninteractive apt-get update
