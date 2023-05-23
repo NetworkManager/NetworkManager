@@ -3100,7 +3100,7 @@ dcb_parse_uint_array(const char *val,
 
 static void
 dcb_check_feature_enabled(const NMMetaEnvironment *environment,
-                          gpointer                *environment_user_data,
+                          gpointer                 environment_user_data,
                           NMSettingDcb            *s_dcb,
                           const char              *flags_prop)
 {
