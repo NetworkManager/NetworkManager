@@ -366,6 +366,9 @@ _set_fcn_precheck_connection_secondaries(NMClient   *client,
     if (!strv0)
         return TRUE;
 
+    if (!client)
+        return TRUE;
+
     connections = nm_client_get_connections(client);
 
     strv = g_strdupv((char **) strv0);
