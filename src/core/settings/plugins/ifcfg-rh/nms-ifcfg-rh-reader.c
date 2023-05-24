@@ -5406,6 +5406,24 @@ parse_infiniband_p_key(shvarFile *ifcfg, int *out_p_key, char **out_parent, GErr
         return FALSE;
     }
 
+    /* The highest bit 0x8000 indicates full membership, which kernel always
+     * automatically sets.
+     *
+     * NetworkManager supports p-keys without the high bit set. That affects
+     * the interface name (nmp_utils_new_infiniband_name()) and is what
+     * we write to "create_child"/"delete_child" sysctl. Kernel will honor
+     * such p-keys for the interface name, but for other purposes it adds the
+     * highest bit. That makes using p-keys without the highest bit odd.
+     *
+     * Historically, /etc/sysconfig/network-scripts/ifup-ib would always add "|=0x8000".
+     * The reader does that too.
+     *
+     * Note that this means ifcfg cannot handle p-keys without the highest bit set,
+     * and when trying to store that to ifcfg format, the profile will be mangled/modified
+     * by the ifcg plugin (unlike keyfile backend, which preserves the original p-key value).
+     */
+    id |= 0x8000;
+
     *out_p_key  = id;
     *out_parent = g_steal_pointer(&physdev);
     return TRUE;
