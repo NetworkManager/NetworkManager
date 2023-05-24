@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <linux/if_infiniband.h>
 
+#include "libnm-platform/nmp-base.h"
 #include "nm-utils.h"
 #include "nm-utils-private.h"
 #include "nm-setting-private.h"
@@ -147,7 +148,12 @@ nm_setting_infiniband_get_parent(NMSettingInfiniband *setting)
 char *
 nm_setting_infiniband_create_virtual_interface_name(const char *parent, int p_key)
 {
-    return g_strdup_printf("%s.%04x", parent, p_key);
+    char *s;
+
+    s = g_strdup_printf("%s.%04x", parent, (guint) p_key);
+    if (strlen(s) >= NMP_IFNAMSIZ)
+        s[NMP_IFNAMSIZ - 1] = '\0';
+    return s;
 }
 
 /**

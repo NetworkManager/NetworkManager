@@ -6233,6 +6233,38 @@ test_connection_normalize_infiniband(void)
 
     nmtst_connection_normalize(con);
     g_assert_cmpstr(nm_connection_get_interface_name(con), ==, "foo.005c");
+
+    g_object_set(s_infini,
+                 NM_SETTING_INFINIBAND_PARENT,
+                 "x234567890123",
+                 NM_SETTING_INFINIBAND_P_KEY,
+                 0x005c,
+                 NULL);
+    nmtst_assert_connection_verifies_after_normalization(con,
+                                                         NM_CONNECTION_ERROR,
+                                                         NM_CONNECTION_ERROR_INVALID_PROPERTY);
+
+    nmtst_connection_normalize(con);
+    g_assert_cmpstr(nm_connection_get_interface_name(con), ==, "x234567890123.0");
+
+#define iface_name(parent, p_key, expected)                                                        \
+    G_STMT_START                                                                                   \
+    {                                                                                              \
+        gs_free char *_s = nm_setting_infiniband_create_virtual_interface_name((parent), (p_key)); \
+                                                                                                   \
+        g_assert(nm_utils_ifname_valid_kernel(_s, NULL));                                          \
+        g_assert_cmpstr(_s, ==, (expected));                                                       \
+    }                                                                                              \
+    G_STMT_END
+
+    iface_name("foo", 15, "foo.000f");
+    iface_name("x23456789012345", 15, "x23456789012345");
+    iface_name("x2345678901234", 15, "x2345678901234.");
+    iface_name("x234567890123", 15, "x234567890123.0");
+    iface_name("x23456789012", 15, "x23456789012.00");
+    iface_name("x2345678901", 15, "x2345678901.000");
+    iface_name("x234567890", 15, "x234567890.000f");
+    iface_name("x23456789", 15, "x23456789.000f");
 }
 
 static void
