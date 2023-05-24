@@ -1332,18 +1332,41 @@ _normalize_ip_config(NMConnection *self, GHashTable *parameters)
 }
 
 static gboolean
-_normalize_infiniband_mtu(NMConnection *self)
+_normalize_infiniband(NMConnection *self)
 {
     NMSettingInfiniband *s_infini = nm_connection_get_setting_infiniband(self);
+    gboolean             changed  = FALSE;
+    const char          *interface_name;
+    int                  p_key;
 
-    if (!s_infini || nm_setting_infiniband_get_mtu(s_infini) <= NM_INFINIBAND_MAX_MTU
-        || !NM_IN_STRSET(nm_setting_infiniband_get_transport_mode(s_infini),
-                         "datagram",
-                         "connected"))
+    if (!s_infini)
         return FALSE;
 
-    g_object_set(s_infini, NM_SETTING_INFINIBAND_MTU, (guint) NM_INFINIBAND_MAX_MTU, NULL);
-    return TRUE;
+    if (nm_setting_infiniband_get_mtu(s_infini) > NM_INFINIBAND_MAX_MTU) {
+        if (NM_IN_STRSET(nm_setting_infiniband_get_transport_mode(s_infini),
+                         "datagram",
+                         "connected")) {
+            g_object_set(s_infini, NM_SETTING_INFINIBAND_MTU, (guint) NM_INFINIBAND_MAX_MTU, NULL);
+            changed = TRUE;
+        }
+    }
+
+    if ((p_key = nm_setting_infiniband_get_p_key(s_infini)) != -1
+        && (interface_name = nm_connection_get_interface_name(self))) {
+        const char *virtual_iface_name;
+
+        virtual_iface_name = nm_setting_infiniband_get_virtual_interface_name(s_infini);
+
+        if (!nm_streq0(interface_name, virtual_iface_name)) {
+            g_object_set(nm_connection_get_setting_connection(self),
+                         NM_SETTING_CONNECTION_INTERFACE_NAME,
+                         virtual_iface_name,
+                         NULL);
+            changed = TRUE;
+        }
+    }
+
+    return changed;
 }
 
 static gboolean
@@ -1986,7 +2009,7 @@ _connection_normalize(NMConnection *connection,
     was_modified |= _normalize_invalid_slave_port_settings(connection);
     was_modified |= _normalize_ip_config(connection, parameters);
     was_modified |= _normalize_ethernet_link_neg(connection);
-    was_modified |= _normalize_infiniband_mtu(connection);
+    was_modified |= _normalize_infiniband(connection);
     was_modified |= _normalize_bond_mode(connection);
     was_modified |= _normalize_bond_options(connection);
     was_modified |= _normalize_wireless_mac_address_randomization(connection);
