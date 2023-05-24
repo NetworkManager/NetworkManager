@@ -6149,16 +6149,17 @@ test_connection_normalize_slave_type_2(void)
 }
 
 static void
-test_connection_normalize_infiniband_mtu(void)
+test_connection_normalize_infiniband(void)
 {
     gs_unref_object NMConnection *con = NULL;
     NMSettingInfiniband          *s_infini;
+    NMSettingConnection          *s_con;
     guint                         mtu_regular = nmtst_rand_select(2044, 2045, 65520);
 
-    con = nmtst_create_minimal_connection("test_connection_normalize_infiniband_mtu",
+    con = nmtst_create_minimal_connection("test_connection_normalize_infiniband",
                                           NULL,
                                           NM_SETTING_INFINIBAND_SETTING_NAME,
-                                          NULL);
+                                          &s_con);
 
     s_infini = nm_connection_get_setting_infiniband(con);
     g_object_set(s_infini, NM_SETTING_INFINIBAND_TRANSPORT_MODE, "connected", NULL);
@@ -6206,6 +6207,25 @@ test_connection_normalize_infiniband_mtu(void)
                                                          NM_CONNECTION_ERROR_INVALID_PROPERTY);
     nmtst_connection_normalize(con);
     g_assert_cmpint(65520, ==, nm_setting_infiniband_get_mtu(s_infini));
+
+    g_object_set(s_infini,
+                 NM_SETTING_INFINIBAND_PARENT,
+                 "foo",
+                 NM_SETTING_INFINIBAND_P_KEY,
+                 0x005c,
+                 NULL);
+    nmtst_assert_connection_verifies_without_normalization(con);
+
+    g_object_set(s_con, NM_SETTING_CONNECTION_INTERFACE_NAME, "foo.005c", NULL);
+    nmtst_assert_connection_verifies_without_normalization(con);
+
+    g_object_set(s_con, NM_SETTING_CONNECTION_INTERFACE_NAME, "foo", NULL);
+    nmtst_assert_connection_verifies_after_normalization(con,
+                                                         NM_CONNECTION_ERROR,
+                                                         NM_CONNECTION_ERROR_INVALID_PROPERTY);
+
+    nmtst_connection_normalize(con);
+    g_assert_cmpstr(nm_connection_get_interface_name(con), ==, "foo.005c");
 }
 
 static void
@@ -11109,8 +11129,8 @@ main(int argc, char **argv)
                     test_connection_normalize_slave_type_1);
     g_test_add_func("/core/general/test_connection_normalize_slave_type_2",
                     test_connection_normalize_slave_type_2);
-    g_test_add_func("/core/general/test_connection_normalize_infiniband_mtu",
-                    test_connection_normalize_infiniband_mtu);
+    g_test_add_func("/core/general/test_connection_normalize_infiniband",
+                    test_connection_normalize_infiniband);
     g_test_add_func("/core/general/test_connection_normalize_gateway_never_default",
                     test_connection_normalize_gateway_never_default);
     g_test_add_func("/core/general/test_connection_normalize_may_fail",
