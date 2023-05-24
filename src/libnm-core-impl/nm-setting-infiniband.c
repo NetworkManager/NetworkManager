@@ -144,6 +144,12 @@ nm_setting_infiniband_get_parent(NMSettingInfiniband *setting)
     return NM_SETTING_INFINIBAND_GET_PRIVATE(setting)->parent;
 }
 
+char *
+nm_setting_infiniband_create_virtual_interface_name(const char *parent, int p_key)
+{
+    return g_strdup_printf("%s.%04x", parent, p_key);
+}
+
 /**
  * nm_setting_infiniband_get_virtual_interface_name:
  * @setting: the #NMSettingInfiniband
@@ -172,7 +178,8 @@ nm_setting_infiniband_get_virtual_interface_name(NMSettingInfiniband *setting)
         priv->virtual_iface_name_p_key         = priv->p_key;
         priv->virtual_iface_name_parent_length = len;
         g_free(priv->virtual_iface_name);
-        priv->virtual_iface_name = g_strdup_printf("%s.%04x", priv->parent, priv->p_key);
+        priv->virtual_iface_name =
+            nm_setting_infiniband_create_virtual_interface_name(priv->parent, priv->p_key);
     }
 
     return priv->virtual_iface_name;
