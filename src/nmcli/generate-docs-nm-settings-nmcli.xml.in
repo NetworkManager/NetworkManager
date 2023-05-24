@@ -614,7 +614,7 @@
                   description="The IP-over-InfiniBand transport mode. Either &quot;datagram&quot; or &quot;connected&quot;." />
         <property name="p-key"
                   alias="p-key"
-                  description="The InfiniBand P_Key to use for this device. A value of -1 means to use the default P_Key (aka &quot;the P_Key at index 0&quot;). Otherwise, it is a 16-bit unsigned integer, whose high bit is set if it is a &quot;full membership&quot; P_Key." />
+                  description="The InfiniBand P_Key to use for this device. A value of -1 means to use the default P_Key (aka &quot;the P_Key at index 0&quot;). Otherwise, it is a 16-bit unsigned integer, whose high bit 0x8000 is set if it is a &quot;full membership&quot; P_Key. The values 0 and 0x8000 are not allowed. With the p-key set, the interface name is always &quot;$parent.$p_key&quot;. Setting &quot;connection.interface-name&quot; to another name is not supported. Note that kernel will internally always set the full membership bit, although the interface name does not reflect that. Thus, not setting the high bit is probably not useful. If the profile is stored in ifcfg-rh format, then the full membership bit is automatically added. To get consistent behavior, it is best to only use p-key values with the full membership bit set." />
         <property name="parent"
                   alias="parent"
                   description="The interface name of the parent device of this device. Normally NULL, but if the &quot;p_key&quot; property is set, then you must specify the base device by setting either this property or &quot;mac-address&quot;." />

@@ -448,9 +448,20 @@ nm_setting_infiniband_class_init(NMSettingInfinibandClass *klass)
      * NMSettingInfiniband:p-key:
      *
      * The InfiniBand P_Key to use for this device. A value of -1 means to use
-     * the default P_Key (aka "the P_Key at index 0"). Otherwise, it is a 16-bit
-     * unsigned integer, whose high bit is set if it is a "full membership"
-     * P_Key.
+     * the default P_Key (aka "the P_Key at index 0"). Otherwise, it is a
+     * 16-bit unsigned integer, whose high bit 0x8000 is set if it is a "full
+     * membership" P_Key. The values 0 and 0x8000 are not allowed.
+     *
+     * With the p-key set, the interface name is always "$parent.$p_key".
+     * Setting "connection.interface-name" to another name is not supported.
+     *
+     * Note that kernel will internally always set the full membership bit,
+     * although the interface name does not reflect that. Thus, not setting
+     * the high bit is probably not useful.
+     *
+     * If the profile is stored in ifcfg-rh format, then the full membership
+     * bit is automatically added. To get consistent behavior, it is
+     * best to only use p-key values with the full membership bit set.
      **/
     /* ---ifcfg-rh---
      * property: p-key
@@ -459,6 +470,8 @@ nm_setting_infiniband_class_init(NMSettingInfinibandClass *klass)
      * description: InfiniBand P_Key. The value can be a hex number prefixed with "0x"
      *   or a decimal number.
      *   When PKEY_ID is specified, PHYSDEV and DEVICE also must be specified.
+     *   Note that ifcfg-rh format will always automatically set the full membership
+     *   bit 0x8000. Other p-key cannot be stored.
      * example: PKEY=yes PKEY_ID=2 PHYSDEV=mlx4_ib0 DEVICE=mlx4_ib0.8002
      * ---end---
      */
