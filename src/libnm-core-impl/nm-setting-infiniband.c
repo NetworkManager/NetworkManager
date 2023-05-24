@@ -181,8 +181,8 @@ nm_setting_infiniband_get_virtual_interface_name(NMSettingInfiniband *setting)
 static gboolean
 verify(NMSetting *setting, NMConnection *connection, GError **error)
 {
-    NMSettingConnection        *s_con = NULL;
-    NMSettingInfinibandPrivate *priv  = NM_SETTING_INFINIBAND_GET_PRIVATE(setting);
+    NMSettingConnection        *s_con;
+    NMSettingInfinibandPrivate *priv = NM_SETTING_INFINIBAND_GET_PRIVATE(setting);
 
     if (priv->mac_address && !nm_utils_hwaddr_valid(priv->mac_address, INFINIBAND_ALEN)) {
         g_set_error_literal(error,
@@ -251,8 +251,10 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
         }
     }
 
-    if (connection)
-        s_con = nm_connection_get_setting_connection(connection);
+    /* *** errors above here should be always fatal, below NORMALIZABLE_ERROR *** */
+
+    s_con = connection ? nm_connection_get_setting_connection(connection) : NULL;
+
     if (s_con) {
         const char *interface_name = nm_setting_connection_get_interface_name(s_con);
 
@@ -287,12 +289,10 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
                                "%s.%s: ",
                                NM_SETTING_CONNECTION_SETTING_NAME,
                                NM_SETTING_CONNECTION_INTERFACE_NAME);
-                return FALSE;
+                return NM_SETTING_VERIFY_NORMALIZABLE_ERROR;
             }
         }
     }
-
-    /* *** errors above here should be always fatal, below NORMALIZABLE_ERROR *** */
 
     if (priv->mtu > NM_INFINIBAND_MAX_MTU) {
         /* Traditionally, MTU for "datagram" mode was limited to 2044
