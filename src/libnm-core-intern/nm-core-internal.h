@@ -322,6 +322,8 @@ typedef gpointer (*NMUtilsCopyFunc)(gpointer);
 const char **
 _nm_ip_address_get_attribute_names(const NMIPAddress *addr, gboolean sorted, guint *out_length);
 
+char *nm_setting_infiniband_create_virtual_interface_name(const char *parent, int p_key);
+
 #define NM_SETTING_WIRED_S390_OPTION_MAX_LEN 200u
 
 void     _nm_setting_wired_clear_s390_options(NMSettingWired *setting);
