@@ -1023,7 +1023,10 @@ write_wireless_setting(NMConnection *connection,
 }
 
 static gboolean
-write_infiniband_setting(NMConnection *connection, shvarFile *ifcfg, GError **error)
+write_infiniband_setting(NMConnection *connection,
+                         shvarFile    *ifcfg,
+                         char        **out_interface_name,
+                         GError      **error)
 {
     NMSettingInfiniband *s_infiniband;
     const char          *mac, *transport_mode, *parent;
@@ -1051,12 +1054,28 @@ write_infiniband_setting(NMConnection *connection, shvarFile *ifcfg, GError **er
 
     p_key = nm_setting_infiniband_get_p_key(s_infiniband);
     if (p_key != -1) {
+        /* The reader normalizes KKEY_ID with |=0x8000. Also do that when
+         * writing the profile so that what we write, is consistent with what
+         * we would read. */
+        p_key |= 0x8000;
+
         svSetValueStr(ifcfg, "PKEY", "yes");
         svSetValueInt64(ifcfg, "PKEY_ID", p_key);
 
         parent = nm_setting_infiniband_get_parent(s_infiniband);
-        if (parent)
-            svSetValueStr(ifcfg, "PHYSDEV", parent);
+        svSetValueStr(ifcfg, "PHYSDEV", parent);
+
+        if (parent && nm_connection_get_interface_name(connection)) {
+            /* The connection.interface-name depends on the p-key. Also,
+             * nm_connection_normalize() will automatically adjust the
+             * interface-name to match the p-key.
+             *
+             * As we patched the p-key above, also anticipate that change, and
+             * don't write a DEVICE= to the file, which would we normalize
+             * differently, when reading it back. */
+            *out_interface_name =
+                nm_setting_infiniband_create_virtual_interface_name(parent, p_key);
+        }
     }
 
     svSetValueStr(ifcfg, "TYPE", TYPE_INFINIBAND);
@@ -2094,7 +2113,7 @@ write_dcb_setting(NMConnection *connection, shvarFile *ifcfg, GError **error)
 }
 
 static void
-write_connection_setting(NMSettingConnection *s_con, shvarFile *ifcfg)
+write_connection_setting(NMSettingConnection *s_con, shvarFile *ifcfg, const char *interface_name)
 {
     guint32                       n, i;
     nm_auto_free_gstring GString *str = NULL;
@@ -2111,7 +2130,9 @@ write_connection_setting(NMSettingConnection *s_con, shvarFile *ifcfg)
     svSetValueStr(ifcfg, "NAME", nm_setting_connection_get_id(s_con));
     svSetValueStr(ifcfg, "UUID", nm_setting_connection_get_uuid(s_con));
     svSetValueStr(ifcfg, "STABLE_ID", nm_setting_connection_get_stable_id(s_con));
-    svSetValueStr(ifcfg, "DEVICE", nm_setting_connection_get_interface_name(s_con));
+    svSetValueStr(ifcfg,
+                  "DEVICE",
+                  interface_name ?: nm_setting_connection_get_interface_name(s_con));
     svSetValueBoolean(ifcfg, "ONBOOT", nm_setting_connection_get_autoconnect(s_con));
 
     vint = nm_setting_connection_get_autoconnect_priority(s_con);
@@ -3294,6 +3315,7 @@ do_write_construct(NMConnection                   *connection,
     nm_auto_shvar_file_close shvarFile *route_content_svformat = NULL;
     nm_auto_free_gstring GString       *route_content          = NULL;
     nm_auto_free_gstring GString       *route6_content         = NULL;
+    gs_free char                       *interface_name         = NULL;
 
     nm_assert(NM_IS_CONNECTION(connection));
     nm_assert(_nm_connection_verify(connection, NULL) == NM_SETTING_VERIFY_SUCCESS);
@@ -3399,7 +3421,7 @@ do_write_construct(NMConnection                   *connection,
         if (!write_wireless_setting(connection, ifcfg, secrets, &no_8021x, error))
             return FALSE;
     } else if (!strcmp(type, NM_SETTING_INFINIBAND_SETTING_NAME)) {
-        if (!write_infiniband_setting(connection, ifcfg, error))
+        if (!write_infiniband_setting(connection, ifcfg, &interface_name, error))
             return FALSE;
     } else if (!strcmp(type, NM_SETTING_BOND_SETTING_NAME)) {
         if (!write_bond_setting(connection, ifcfg, &wired, error))
@@ -3504,7 +3526,7 @@ do_write_construct(NMConnection                   *connection,
 
     write_ip_routing_rules(connection, ifcfg, route_ignore);
 
-    write_connection_setting(s_con, ifcfg);
+    write_connection_setting(s_con, ifcfg, interface_name);
 
     NM_SET_OUT(out_ifcfg, g_steal_pointer(&ifcfg));
     NM_SET_OUT(out_blobs, g_steal_pointer(&blobs));
