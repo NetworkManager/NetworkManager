@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <linux/if_infiniband.h>
 
+#include "libnm-platform/nmp-base.h"
 #include "nm-utils.h"
 #include "nm-utils-private.h"
 #include "nm-setting-private.h"
@@ -144,6 +145,17 @@ nm_setting_infiniband_get_parent(NMSettingInfiniband *setting)
     return NM_SETTING_INFINIBAND_GET_PRIVATE(setting)->parent;
 }
 
+char *
+nm_setting_infiniband_create_virtual_interface_name(const char *parent, int p_key)
+{
+    char *s;
+
+    s = g_strdup_printf("%s.%04x", parent, (guint) p_key);
+    if (strlen(s) >= NMP_IFNAMSIZ)
+        s[NMP_IFNAMSIZ - 1] = '\0';
+    return s;
+}
+
 /**
  * nm_setting_infiniband_get_virtual_interface_name:
  * @setting: the #NMSettingInfiniband
@@ -172,7 +184,8 @@ nm_setting_infiniband_get_virtual_interface_name(NMSettingInfiniband *setting)
         priv->virtual_iface_name_p_key         = priv->p_key;
         priv->virtual_iface_name_parent_length = len;
         g_free(priv->virtual_iface_name);
-        priv->virtual_iface_name = g_strdup_printf("%s.%04x", priv->parent, priv->p_key);
+        priv->virtual_iface_name =
+            nm_setting_infiniband_create_virtual_interface_name(priv->parent, priv->p_key);
     }
 
     return priv->virtual_iface_name;
@@ -181,8 +194,8 @@ nm_setting_infiniband_get_virtual_interface_name(NMSettingInfiniband *setting)
 static gboolean
 verify(NMSetting *setting, NMConnection *connection, GError **error)
 {
-    NMSettingConnection        *s_con = NULL;
-    NMSettingInfinibandPrivate *priv  = NM_SETTING_INFINIBAND_GET_PRIVATE(setting);
+    NMSettingConnection        *s_con;
+    NMSettingInfinibandPrivate *priv = NM_SETTING_INFINIBAND_GET_PRIVATE(setting);
 
     if (priv->mac_address && !nm_utils_hwaddr_valid(priv->mac_address, INFINIBAND_ALEN)) {
         g_set_error_literal(error,
@@ -251,8 +264,10 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
         }
     }
 
-    if (connection)
-        s_con = nm_connection_get_setting_connection(connection);
+    /* *** errors above here should be always fatal, below NORMALIZABLE_ERROR *** */
+
+    s_con = connection ? nm_connection_get_setting_connection(connection) : NULL;
+
     if (s_con) {
         const char *interface_name = nm_setting_connection_get_interface_name(s_con);
 
@@ -287,12 +302,10 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
                                "%s.%s: ",
                                NM_SETTING_CONNECTION_SETTING_NAME,
                                NM_SETTING_CONNECTION_INTERFACE_NAME);
-                return FALSE;
+                return NM_SETTING_VERIFY_NORMALIZABLE_ERROR;
             }
         }
     }
-
-    /* *** errors above here should be always fatal, below NORMALIZABLE_ERROR *** */
 
     if (priv->mtu > NM_INFINIBAND_MAX_MTU) {
         /* Traditionally, MTU for "datagram" mode was limited to 2044
@@ -449,9 +462,20 @@ nm_setting_infiniband_class_init(NMSettingInfinibandClass *klass)
      * NMSettingInfiniband:p-key:
      *
      * The InfiniBand P_Key to use for this device. A value of -1 means to use
-     * the default P_Key (aka "the P_Key at index 0"). Otherwise, it is a 16-bit
-     * unsigned integer, whose high bit is set if it is a "full membership"
-     * P_Key.
+     * the default P_Key (aka "the P_Key at index 0"). Otherwise, it is a
+     * 16-bit unsigned integer, whose high bit 0x8000 is set if it is a "full
+     * membership" P_Key. The values 0 and 0x8000 are not allowed.
+     *
+     * With the p-key set, the interface name is always "$parent.$p_key".
+     * Setting "connection.interface-name" to another name is not supported.
+     *
+     * Note that kernel will internally always set the full membership bit,
+     * although the interface name does not reflect that. Thus, not setting
+     * the high bit is probably not useful.
+     *
+     * If the profile is stored in ifcfg-rh format, then the full membership
+     * bit is automatically added. To get consistent behavior, it is
+     * best to only use p-key values with the full membership bit set.
      **/
     /* ---ifcfg-rh---
      * property: p-key
@@ -460,6 +484,8 @@ nm_setting_infiniband_class_init(NMSettingInfinibandClass *klass)
      * description: InfiniBand P_Key. The value can be a hex number prefixed with "0x"
      *   or a decimal number.
      *   When PKEY_ID is specified, PHYSDEV and DEVICE also must be specified.
+     *   Note that ifcfg-rh format will always automatically set the full membership
+     *   bit 0x8000. Other p-key cannot be stored.
      * example: PKEY=yes PKEY_ID=2 PHYSDEV=mlx4_ib0 DEVICE=mlx4_ib0.8002
      * ---end---
      */
