@@ -447,7 +447,7 @@ _create_iface_dbus_call_get_interface_cb(GObject *source, GAsyncResult *result, 
     nm_assert(handle->name_owner == priv->name_owner);
 
     if (!res) {
-        char ifname[NMP_IFNAMSIZ];
+        char ifname[NM_IFNAMSIZ];
 
         if (handle->create_iface_try_count < CREATE_IFACE_TRY_COUNT_MAX
             && nm_dbus_error_is(error, NM_WPAS_ERROR_UNKNOWN_IFACE)
@@ -489,7 +489,7 @@ _create_iface_dbus_call_create_interface_cb(GObject      *source,
     gs_unref_variant GVariant   *res   = NULL;
     gs_free_error GError        *error = NULL;
     const char                  *iface_path_str;
-    char                         ifname[NMP_IFNAMSIZ];
+    char                         ifname[NM_IFNAMSIZ];
 
     res = g_dbus_connection_call_finish(dbus_connection, result, &error);
 
@@ -619,7 +619,7 @@ static void
 _create_iface_dbus_start(NMSupplicantManager *self, NMSupplMgrCreateIfaceHandle *handle)
 {
     NMSupplicantManagerPrivate *priv = NM_SUPPLICANT_MANAGER_GET_PRIVATE(self);
-    char                        ifname[NMP_IFNAMSIZ];
+    char                        ifname[NM_IFNAMSIZ];
 
     nm_assert(priv->name_owner);
     nm_assert(!handle->cancellable);

@@ -151,8 +151,8 @@ nm_setting_infiniband_create_virtual_interface_name(const char *parent, int p_ke
     char *s;
 
     s = g_strdup_printf("%s.%04x", parent, (guint) p_key);
-    if (strlen(s) >= NMP_IFNAMSIZ)
-        s[NMP_IFNAMSIZ - 1] = '\0';
+    if (strlen(s) >= NM_IFNAMSIZ)
+        s[NM_IFNAMSIZ - 1] = '\0';
     return s;
 }
 

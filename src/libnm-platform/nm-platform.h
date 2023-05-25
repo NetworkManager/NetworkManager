@@ -181,7 +181,7 @@ typedef union {
 
 struct _NMPlatformLink {
     __NMPlatformObjWithIfindex_COMMON;
-    char       name[NMP_IFNAMSIZ];
+    char       name[NM_IFNAMSIZ];
     NMLinkType type;
 
     /* rtnl_link_get_type(), IFLA_INFO_KIND. */
@@ -545,8 +545,8 @@ typedef struct {
     NMFibRuleUidRange  uid_range;                  /* FRA_UID_RANGE */
     NMFibRulePortRange sport_range;                /* FRA_SPORT_RANGE */
     NMFibRulePortRange dport_range;                /* FRA_DPORT_RANGE */
-    char               iifname[NMP_IFNAMSIZ];      /* FRA_IIFNAME */
-    char               oifname[NMP_IFNAMSIZ];      /* FRA_OIFNAME */
+    char               iifname[NM_IFNAMSIZ];       /* FRA_IIFNAME */
+    char               oifname[NM_IFNAMSIZ];       /* FRA_OIFNAME */
     guint8             addr_family;                /* (struct fib_rule_hdr).family */
     guint8             action;                     /* (struct fib_rule_hdr).action */
     guint8             tos;                        /* (struct fib_rule_hdr).tos */
@@ -1534,23 +1534,23 @@ const char *nm_link_type_to_string(NMLinkType link_type);
 
 #define NMP_SYSCTL_PATHID_ABSOLUTE(path) ((const char *) NULL), -1, (path)
 
-#define NMP_SYSCTL_PATHID_NETDIR_unsafe(dirfd, ifname, path)                        \
-    nm_sprintf_buf_unsafe_a(NM_STRLEN("net:/sys/class/net//\0") + NMP_IFNAMSIZ + ({ \
-                                const gsize _l = strlen(path);                      \
-                                                                                    \
-                                nm_assert(_l < 200);                                \
-                                _l;                                                 \
-                            }),                                                     \
-                            "net:/sys/class/net/%s/%s",                             \
-                            (ifname),                                               \
-                            (path)),                                                \
+#define NMP_SYSCTL_PATHID_NETDIR_unsafe(dirfd, ifname, path)                       \
+    nm_sprintf_buf_unsafe_a(NM_STRLEN("net:/sys/class/net//\0") + NM_IFNAMSIZ + ({ \
+                                const gsize _l = strlen(path);                     \
+                                                                                   \
+                                nm_assert(_l < 200);                               \
+                                _l;                                                \
+                            }),                                                    \
+                            "net:/sys/class/net/%s/%s",                            \
+                            (ifname),                                              \
+                            (path)),                                               \
         (dirfd), (path)
 
-#define NMP_SYSCTL_PATHID_NETDIR(dirfd, ifname, path)                            \
-    nm_sprintf_bufa(NM_STRLEN("net:/sys/class/net//" path "/\0") + NMP_IFNAMSIZ, \
-                    "net:/sys/class/net/%s/%s",                                  \
-                    (ifname),                                                    \
-                    path),                                                       \
+#define NMP_SYSCTL_PATHID_NETDIR(dirfd, ifname, path)                           \
+    nm_sprintf_bufa(NM_STRLEN("net:/sys/class/net//" path "/\0") + NM_IFNAMSIZ, \
+                    "net:/sys/class/net/%s/%s",                                 \
+                    (ifname),                                                   \
+                    path),                                                      \
         (dirfd), ("" path "")
 
 int      nm_platform_sysctl_open_netdir(NMPlatform *self, int ifindex, char *out_ifname);

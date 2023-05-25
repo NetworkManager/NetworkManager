@@ -113,7 +113,7 @@ struct _NMPlatformIP4Address {
      * See nm_platform_ip4_broadcast_address_from_addr(). */
     in_addr_t broadcast_address;
 
-    char label[NMP_IFNAMSIZ];
+    char label[NM_IFNAMSIZ];
 
     /* Whether the address is ready to be configured. By default, an address is, but this
      * flag may indicate that the address is just for tracking purpose only, but the ACD
