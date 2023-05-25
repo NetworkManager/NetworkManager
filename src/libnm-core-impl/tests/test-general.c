@@ -6255,14 +6255,16 @@ test_connection_normalize_infiniband(void)
     nmtst_connection_normalize(con);
     g_assert_cmpstr(nm_connection_get_interface_name(con), ==, "x234567890123.0");
 
-#define iface_name(parent, p_key, expected)                                                        \
-    G_STMT_START                                                                                   \
-    {                                                                                              \
-        gs_free char *_s = nm_setting_infiniband_create_virtual_interface_name((parent), (p_key)); \
-                                                                                                   \
-        g_assert(nm_utils_ifname_valid_kernel(_s, NULL));                                          \
-        g_assert_cmpstr(_s, ==, (expected));                                                       \
-    }                                                                                              \
+#define iface_name(parent, p_key, expected)                  \
+    G_STMT_START                                             \
+    {                                                        \
+        char _name[NM_IFNAMSIZ];                             \
+                                                             \
+        nm_net_devname_infiniband(_name, (parent), (p_key)); \
+                                                             \
+        g_assert(nm_utils_ifname_valid_kernel(_name, NULL)); \
+        g_assert_cmpstr(_name, ==, (expected));              \
+    }                                                        \
     G_STMT_END
 
     iface_name("foo", 15, "foo.000f");
