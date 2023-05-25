@@ -63,8 +63,13 @@ nm_net_devname_infiniband(char name[static NM_IFNAMSIZ], const char *parent_name
      * resilient here, and accept those. */
     g_return_val_if_fail(p_key >= 0 && p_key <= 0xffff, NULL);
 
+    nm_assert(nm_utils_ifname_valid_kernel(parent_name, NULL));
+
     /* If parent+suffix is too long, kernel would just truncate
      * the name. We do the same. See ipoib_vlan_add().  */
     g_snprintf(name, NM_IFNAMSIZ, "%s.%04x", parent_name, p_key);
+
+    nm_assert(nm_utils_ifname_valid_kernel(name, NULL));
+
     return name;
 }
