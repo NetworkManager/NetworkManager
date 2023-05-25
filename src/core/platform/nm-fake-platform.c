@@ -795,7 +795,7 @@ static gboolean
 infiniband_partition_delete(NMPlatform *platform, int parent, int p_key)
 {
     NMFakePlatformLink *parent_device;
-    gs_free char       *name = NULL;
+    char                name[IFNAMSIZ];
 
     parent_device = link_get(platform, parent);
     g_return_val_if_fail(parent_device != NULL, FALSE);
