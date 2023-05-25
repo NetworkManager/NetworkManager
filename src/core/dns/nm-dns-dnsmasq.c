@@ -527,7 +527,6 @@ _gl_pid_spawn_next_step(void)
     argv[argv_idx++] = "--cache-size=400";
     argv[argv_idx++] = "--clear-on-reload";     /* clear cache when dns server changes */
     argv[argv_idx++] = "--conf-file=/dev/null"; /* avoid loading /etc/dnsmasq.conf */
-    argv[argv_idx++] = "--proxy-dnssec";        /* Allow DNSSEC to pass through */
     argv[argv_idx++] = "--enable-dbus=" DNSMASQ_DBUS_SERVICE;
 
     /* dnsmasq exits if the conf dir is not present */
