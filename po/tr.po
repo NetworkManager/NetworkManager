@@ -1,5 +1,6 @@
 # Turkish translation for NetworkManager.
 # Copyright (c) 2006 Canonical Ltd, and Rosetta Contributors
+# Copyright (C) 2023 NetworkManager's COPYRIGHT HOLDER
 # This file is distributed under the same license as the NetworkManager package.
 #
 # Alperen Yusuf Aybar <alperen@aybar.biz>, 2006.
@@ -7,21 +8,23 @@
 # Muhammet Kara <muhammetk@gmail.com>, 2012, 2015.
 # Lubomir Rintel <lkundrak@v3.sk>, 2016. #zanata
 # Thomas Haller <thaller@redhat.com>, 2017. #zanata
+# Sabri Ünal <libreajans@gmail.com>, 2023.
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: https://gitlab.freedesktop.org/NetworkManager/"
 "NetworkManager/issues\n"
 "POT-Creation-Date: 2022-08-15 18:14-0300\n"
-"PO-Revision-Date: 2017-04-21 06:01-0400\n"
-"Last-Translator: Copied by Zanata <copied-by-zanata@zanata.org>\n"
-"Language-Team: Türkçe <gnome-turk@gnome.org>\n"
+"PO-Revision-Date: 2023-05-26 22:33+0300\n"
+"Last-Translator: Sabri Ünal <libreajans@gmail.com>\n"
+"Language-Team: Türkçe <takim@gnome.org.tr>\n"
 "Language: tr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Zanata 3.9.6\n"
+"X-Generator: Poedit 3.2.2\n"
 "X-Launchpad-Export-Date: 2012-01-03 09:56+0000\n"
 "X-POOTLE-MTIME: 1424811693.000000\n"
 
@@ -187,26 +190,24 @@ msgid "System policy prevents enabling or disabling device statistics"
 msgstr ""
 
 #: data/org.freedesktop.NetworkManager.policy.in.in:165
-#, fuzzy
 msgid "Enable or disable connectivity checking"
-msgstr "Sistem ağını etkinleştir ya da etkisizleştir"
+msgstr "Bağlanabilirlik denetimini etkinleştir ya da devre dışı bırak"
 
 #: data/org.freedesktop.NetworkManager.policy.in.in:166
-#, fuzzy
 msgid "System policy prevents enabling or disabling connectivity checking"
 msgstr ""
-"Sistem kuralları, sistem ağını etkinleştirmeyi ya da etkisizleştirmeyi "
-"engelliyor"
+"Sistem ilkesi, bağlanabilirlik denetimini etkisizleştirmeyi ya da devre dışı "
+"bırakmayı engelliyor"
 
 #. TRANSLATORS: the first %s is a prefix for the connection id, such
 #. * as "Wired Connection" or "VPN Connection". The %d is a number
 #. * that is combined with the first argument to create a unique
 #. * connection id.
 #: src/core/NetworkManagerUtils.c:119
-#, fuzzy, c-format
+#, c-format
 msgctxt "connection id fallback"
 msgid "%s %u"
-msgstr "%s %d"
+msgstr "%s %u"
 
 #: src/core/devices/adsl/nm-device-adsl.c:115
 #: src/libnmc-setting/nm-meta-setting-desc.c:8265
@@ -225,10 +226,8 @@ msgid "NAP requested, but Bluetooth device does not support NAP"
 msgstr "PAN isteği yapıldı, ancak Bluetooth aygıtı NAP desteklemiyor"
 
 #: src/core/devices/bluetooth/nm-device-bt.c:313
-#, fuzzy
-#| msgid "PAN connection"
 msgid "NAP connection"
-msgstr "PAN bağlantısı"
+msgstr "NAP bağlantısı"
 
 #: src/core/devices/bluetooth/nm-device-bt.c:320
 msgid "PAN requested, but Bluetooth device does not support NAP"
@@ -269,9 +268,8 @@ msgid "connection does not match device"
 msgstr "bağlantı aygıtla eşleşmiyor"
 
 #: src/core/devices/nm-device-6lowpan.c:191
-#, fuzzy
 msgid "6LOWPAN connection"
-msgstr "PAN bağlantısı"
+msgstr "6LOWPAN bağlantısı"
 
 #: src/core/devices/nm-device-bond.c:91
 msgid "Bond connection"
@@ -282,9 +280,8 @@ msgid "Bridge connection"
 msgstr "Köprü bağlantısı"
 
 #: src/core/devices/nm-device-dummy.c:56
-#, fuzzy
 msgid "Dummy connection"
-msgstr "ADSL bağlantısı"
+msgstr "Temsili bağlantı"
 
 #: src/core/devices/nm-device-ethernet-utils.c:20
 #, c-format
@@ -293,9 +290,8 @@ msgstr "Kablolu bağlantı %d"
 
 #: src/core/devices/nm-device-ethernet.c:1628
 #: src/libnmc-setting/nm-meta-setting-desc.c:8303
-#, fuzzy
 msgid "Veth connection"
-msgstr "VPN bağlantısı"
+msgstr "Veth bağlantısı"
 
 #: src/core/devices/nm-device-ethernet.c:1686
 msgid "PPPoE connection"
@@ -311,24 +307,21 @@ msgid "InfiniBand connection"
 msgstr "InfiniBand bağlantısı"
 
 #: src/core/devices/nm-device-ip-tunnel.c:399
-#, fuzzy
 msgid "IP tunnel connection"
-msgstr "PAN bağlantısı"
+msgstr "IP tünel bağlantısı"
 
 #: src/core/devices/nm-device-macvlan.c:389
-#, fuzzy
 msgid "MACVLAN connection"
-msgstr "VLAN bağlatısı"
+msgstr "MACVLAN bağlantısı"
 
 #: src/core/devices/nm-device-tun.c:144
-#, fuzzy
 msgid "TUN connection"
-msgstr "DUN bağlantısı"
+msgstr "TUN bağlantısı"
 
 #: src/core/devices/nm-device-vlan.c:398
 #: src/libnmc-setting/nm-meta-setting-desc.c:8304
 msgid "VLAN connection"
-msgstr "VLAN bağlatısı"
+msgstr "VLAN bağlantısı"
 
 #: src/core/devices/nm-device-vrf.c:182
 #: src/libnmc-setting/nm-meta-setting-desc.c:8306
@@ -338,9 +331,8 @@ msgstr "VPN bağlantısı"
 
 #: src/core/devices/nm-device-vxlan.c:382
 #: src/libnmc-setting/nm-meta-setting-desc.c:8307
-#, fuzzy
 msgid "VXLAN connection"
-msgstr "VLAN bağlatısı"
+msgstr "VLAN bağlantısı"
 
 #: src/core/devices/nm-device-wpan.c:54
 #, fuzzy
@@ -564,7 +556,7 @@ msgstr "Ağ Yöneticisinin sürümünü yazdır ve çık"
 
 #: src/core/main.c:198
 msgid "Don't become a daemon"
-msgstr "Bir servis haline gelme"
+msgstr "Bir art alan hizmeti haline gelme"
 
 #: src/core/main.c:205
 #, c-format
@@ -605,7 +597,7 @@ msgstr ""
 #: src/core/main.c:401
 #, c-format
 msgid "Could not daemonize: %s [error %u]\n"
-msgstr "Artalan işlemi yapılamadı: %s [hata %u]\n"
+msgstr "Art alan hizmeti yapılamadı: %s [hata %u]\n"
 
 #: src/core/nm-config.c:544 src/libnm-core-impl/nm-setting-ovs-bridge.c:187
 #: src/libnmc-setting/nm-meta-setting-desc.c:2204
@@ -655,7 +647,7 @@ msgstr "Başlangıç yapılandırmasının ardından çık"
 
 #: src/core/nm-config.c:639
 msgid "Don't become a daemon, and log to stderr"
-msgstr "Artalan işlemi olma be stderr üstüne günlükle"
+msgstr "Art alan hizmeti olma ve stderr üstüne günlükle"
 
 #: src/core/nm-config.c:648
 msgid "An http(s) address for checking internet connectivity"
@@ -670,9 +662,8 @@ msgid "The expected start of the response"
 msgstr "Yanıtın beklenen başlangıcı"
 
 #: src/core/nm-config.c:671
-#, fuzzy
 msgid "NetworkManager options"
-msgstr "NetworkManager izinleri"
+msgstr "NetworkManager seçenekleri"
 
 #: src/core/nm-config.c:672
 #, fuzzy
@@ -1002,9 +993,8 @@ msgid "ADSL"
 msgstr "ADSL"
 
 #: src/libnm-client-impl/nm-device.c:1789
-#, fuzzy
 msgid "MACVLAN"
-msgstr "VLAN"
+msgstr "MACVLAN"
 
 #: src/libnm-client-impl/nm-device.c:1791
 msgid "VXLAN"
@@ -1012,7 +1002,7 @@ msgstr ""
 
 #: src/libnm-client-impl/nm-device.c:1793
 msgid "IPTunnel"
-msgstr ""
+msgstr "IPTunnel"
 
 #: src/libnm-client-impl/nm-device.c:1795
 msgid "Tun"
@@ -1037,7 +1027,7 @@ msgstr "PPPoE"
 
 #: src/libnm-client-impl/nm-device.c:1805
 msgid "IEEE 802.15.4"
-msgstr ""
+msgstr "IEEE 802.15.4"
 
 #: src/libnm-client-impl/nm-device.c:1807
 msgid "6LoWPAN"
@@ -1141,9 +1131,8 @@ msgid "value for '%s' must be a boolean"
 msgstr ""
 
 #: src/libnm-core-aux-extern/nm-libnm-core-aux.c:347
-#, fuzzy
 msgid "missing 'name' attribute"
-msgstr "eksik ayar"
+msgstr "eksik 'name' özniteliği"
 
 #: src/libnm-core-aux-extern/nm-libnm-core-aux.c:356
 #, fuzzy, c-format
@@ -1254,7 +1243,7 @@ msgstr "özellik eksik"
 
 #: src/libnm-core-impl/nm-connection.c:3184
 msgid "IP Tunnel"
-msgstr ""
+msgstr "IP Tünel"
 
 #: src/libnm-core-impl/nm-connection.c:3188
 msgid "TUN/TAP"
@@ -1341,9 +1330,9 @@ msgid "invalid value for \"%s\": %s"
 msgstr ""
 
 #: src/libnm-core-impl/nm-keyfile.c:1129
-#, fuzzy, c-format
+#, c-format
 msgid "ignoring invalid DNS server IPv%c address '%s'"
-msgstr "geçersiz DNS sunucusu IPv4 adresi '%s' gözardı ediliyor"
+msgstr "geçersiz DNS sunucusu IPv%c adresi '%s' gözardı ediliyor"
 
 #: src/libnm-core-impl/nm-keyfile.c:1166
 #: src/libnmc-setting/nm-meta-setting-desc.c:1669
@@ -1356,9 +1345,9 @@ msgid "ignoring invalid MAC address"
 msgstr "geçersiz MAC adresi gözardı ediliyor"
 
 #: src/libnm-core-impl/nm-keyfile.c:1317
-#, fuzzy, c-format
+#, c-format
 msgid "ignoring invalid bond option %s%s%s = %s%s%s: %s"
-msgstr "geçersiz %s adresi gözardı ediliyor: %s"
+msgstr "geçersiz bağlama seçeneği gözardı ediliyor: %s%s%s = %s%s%s: %s"
 
 #: src/libnm-core-impl/nm-keyfile.c:1507
 msgid "ignoring invalid SSID"
@@ -1699,9 +1688,8 @@ msgid "'%s' is not a valid IPv4 address for '%s' option"
 msgstr "'%s', '%s' seçeneği için geçerli bir IPv4 adresi değil"
 
 #: src/libnm-core-impl/nm-setting-bond.c:540
-#, fuzzy
 msgid "missing option name"
-msgstr "eksik seçenek"
+msgstr "eksik seçenek arı"
 
 #: src/libnm-core-impl/nm-setting-bond.c:545
 #, fuzzy, c-format
@@ -2060,14 +2048,12 @@ msgid "mtu can be at most %u but it is %u"
 msgstr "taşıma kipi '%s' için mtu en fazla %d olmalı ancak şu anda %d"
 
 #: src/libnm-core-impl/nm-setting-ip-config.c:80
-#, fuzzy
 msgid "Missing IPv4 address"
-msgstr "geçersiz IPv4 adresi '%s'"
+msgstr "Eksik IPv4 adresi"
 
 #: src/libnm-core-impl/nm-setting-ip-config.c:80
-#, fuzzy
 msgid "Missing IPv6 address"
-msgstr "geçersiz IPv6 adresi '%s'"
+msgstr "Eksik IPv6 adresi"
 
 #: src/libnm-core-impl/nm-setting-ip-config.c:87
 #, c-format
@@ -2147,19 +2133,16 @@ msgid "a %s route cannot have a next-hop"
 msgstr "%d. rota varsayılan rota olamaz"
 
 #: src/libnm-core-impl/nm-setting-ip-config.c:2705
-#, fuzzy
 msgid "missing priority"
-msgstr "geçersiz öncelik alanı '%s'"
+msgstr "eksik öncelik"
 
 #: src/libnm-core-impl/nm-setting-ip-config.c:2718
-#, fuzzy
 msgid "missing table"
-msgstr "eksik ayar"
+msgstr "eksik tablo"
 
 #: src/libnm-core-impl/nm-setting-ip-config.c:2728
-#, fuzzy
 msgid "invalid action type"
-msgstr "geçersiz seçenek '%s'"
+msgstr "geçersiz işlem türü"
 
 #: src/libnm-core-impl/nm-setting-ip-config.c:2737
 msgid "has from/src but the prefix-length is zero"
@@ -2226,9 +2209,9 @@ msgid "suppress_prefixlength is only allowed with the to-table action"
 msgstr ""
 
 #: src/libnm-core-impl/nm-setting-ip-config.c:2987
-#, fuzzy, c-format
+#, c-format
 msgid "invalid key \"%s\""
-msgstr "geçersiz seçenek '%s'"
+msgstr "geçersiz anahtar \"%s\""
 
 #: src/libnm-core-impl/nm-setting-ip-config.c:2999
 #, fuzzy, c-format
@@ -2241,14 +2224,12 @@ msgid "invalid variant type '%s' for \"%s\""
 msgstr "geçersiz parite değeri '%s'"
 
 #: src/libnm-core-impl/nm-setting-ip-config.c:3026
-#, fuzzy
 msgid "missing \"family\""
-msgstr "eksik ayar"
+msgstr "eksik \"family\""
 
 #: src/libnm-core-impl/nm-setting-ip-config.c:3034
-#, fuzzy
 msgid "invalid \"family\""
-msgstr "geçersiz IP adresi: %s"
+msgstr "geçersiz \"aile\""
 
 #: src/libnm-core-impl/nm-setting-ip-config.c:3091
 msgid "\"uid-range-start\" is greater than \"uid-range-end\""
@@ -2291,9 +2272,8 @@ msgid "invalid \"from\" part"
 msgstr ""
 
 #: src/libnm-core-impl/nm-setting-ip-config.c:3659
-#, fuzzy
 msgid "invalid \"to\" part"
-msgstr "geçersiz seçenek '%s'"
+msgstr "geçersiz \"to\" parçası"
 
 #: src/libnm-core-impl/nm-setting-ip-config.c:3670
 msgid "cannot detect address family for rule"
@@ -2306,9 +2286,8 @@ msgid "rule is invalid: %s"
 msgstr "sertifika geçersiz: %s"
 
 #: src/libnm-core-impl/nm-setting-ip-config.c:3808
-#, fuzzy
 msgid "invalid address family"
-msgstr "geçersiz IP adresi: %s"
+msgstr "geçersiz adresi ailesi"
 
 #: src/libnm-core-impl/nm-setting-ip-config.c:5080
 #, fuzzy, c-format
@@ -2478,9 +2457,8 @@ msgid "only makes sense with EUI64 address generation mode"
 msgstr ""
 
 #: src/libnm-core-impl/nm-setting-ip6-config.c:343
-#, fuzzy
 msgid "invalid DUID"
-msgstr "'%s' geçerli bir UUID değil"
+msgstr "geçersiz UUID"
 
 #: src/libnm-core-impl/nm-setting-ip6-config.c:358
 msgid "token is not in canonical form"
@@ -2561,9 +2539,8 @@ msgstr "'%s' geçerli bir Wi-Fi kipi değil"
 
 #: src/libnm-core-impl/nm-setting-ovs-external-ids.c:90
 #: src/libnm-core-impl/nm-setting-user.c:91
-#, fuzzy
 msgid "missing key"
-msgstr "eksik ayar"
+msgstr "eksik anahtar"
 
 #: src/libnm-core-impl/nm-setting-ovs-external-ids.c:98
 #: src/libnm-core-impl/nm-setting-user.c:99
@@ -2609,7 +2586,7 @@ msgstr "'%s' değeri geçerli bir UUID değil"
 #: src/libnm-core-impl/nm-setting-user.c:357
 #, c-format
 msgid "invalid key \"%s\": %s"
-msgstr ""
+msgstr "geçersiz anahtar \"%s\": %s"
 
 #: src/libnm-core-impl/nm-setting-ovs-external-ids.c:337
 #: src/libnm-core-impl/nm-setting-user.c:381
@@ -2677,9 +2654,8 @@ msgstr ""
 "algılandı. '%s' '%s' olarak atanmalıdır."
 
 #: src/libnm-core-impl/nm-setting-ovs-interface.c:250
-#, fuzzy
 msgid "Missing ovs interface setting"
-msgstr "eksik ayar"
+msgstr "Eksik ovs arayüz ayarı"
 
 #: src/libnm-core-impl/nm-setting-ovs-interface.c:256
 msgid "Missing ovs interface type"
@@ -2936,9 +2912,9 @@ msgid "'%s' is not a valid duplex value"
 msgstr "'%s' geçerli bir dupleks değeri değil"
 
 #: src/libnm-core-impl/nm-setting-wired.c:866
-#, fuzzy, c-format
+#, c-format
 msgid "invalid key '%s'"
-msgstr "geçersiz seçenek '%s'"
+msgstr "geçersiz anahtar '%s'"
 
 #: src/libnm-core-impl/nm-setting-wired.c:878
 #, fuzzy, c-format
@@ -3265,9 +3241,8 @@ msgid "unsupported action option: '%s'."
 msgstr ""
 
 #: src/libnm-core-impl/nm-utils.c:2803
-#, fuzzy
 msgid "invalid action: "
-msgstr "geçersiz seçenek '%s'"
+msgstr "geçersiz işlem: "
 
 #: src/libnm-core-impl/nm-utils.c:2807
 #, c-format
@@ -3492,9 +3467,8 @@ msgid "the plugin does not support export capability"
 msgstr ""
 
 #: src/libnm-core-impl/nm-vpn-plugin-info.c:109
-#, fuzzy
 msgid "missing filename"
-msgstr "eksik seçenek"
+msgstr "eksik dosya adı"
 
 #: src/libnm-core-impl/nm-vpn-plugin-info.c:117
 #, c-format
@@ -3517,9 +3491,8 @@ msgid "there exists a conflicting plugin with the same name (%s)"
 msgstr ""
 
 #: src/libnm-core-impl/nm-vpn-plugin-info.c:1050
-#, fuzzy
 msgid "missing \"plugin\" setting"
-msgstr "eksik ayar"
+msgstr "eksik \"plugin\" ayarı"
 
 #: src/libnm-core-impl/nm-vpn-plugin-info.c:1060
 #, c-format
@@ -4339,9 +4312,8 @@ msgid "The Wi-Fi P2P peer could not be found"
 msgstr "Wi-Fi ağı bulunamadı"
 
 #: src/libnmc-base/nm-client-utils.c:474
-#, fuzzy
 msgid "Unknown reason"
-msgstr "bilinmeyen neden"
+msgstr "Bilinmeyen neden"
 
 #: src/libnmc-base/nm-client-utils.c:476
 #, fuzzy
@@ -4399,9 +4371,8 @@ msgid "The connection was removed"
 msgstr "bağlantı kaldırıldı"
 
 #: src/libnmc-base/nm-client-utils.c:496
-#, fuzzy
 msgid "Master connection failed"
-msgstr "bağlantı başarısız"
+msgstr "Ana bağlantı başarısız"
 
 #: src/libnmc-base/nm-client-utils.c:498
 #, fuzzy
@@ -4620,9 +4591,8 @@ msgid "Certificate password"
 msgstr "Özel anahtar parolası"
 
 #: src/libnmc-base/nm-vpn-helpers.c:149
-#, fuzzy
 msgid "HTTP proxy password"
-msgstr "Parolayı göster"
+msgstr "HTTP vekil parolası"
 
 #: src/libnmc-base/nm-vpn-helpers.c:154 src/libnmc-base/nm-vpn-helpers.c:159
 #, fuzzy
@@ -4783,9 +4753,8 @@ msgid "LOOSE_BINDING, "
 msgstr "BAĞLAMAYI_AYIR, "
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:1857
-#, fuzzy
 msgid "MVRP, "
-msgstr "GVRP, "
+msgstr "MVRP, "
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:1878
 msgid "0 (none)"
@@ -4824,9 +4793,9 @@ msgid "'%s' is not a valid number (or out of range)"
 msgstr "'%s' geçerli bir sayı değil (sınırların dışında)"
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:2282
-#, fuzzy, c-format
+#, c-format
 msgid "invalid IPv4 or subnet \"%s\""
-msgstr "geçersiz yönlendirme: %s"
+msgstr "geçersiz IPv4 ya da alt ağ yönlendirmesi \"%s\""
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:2313
 #, fuzzy
@@ -4964,9 +4933,9 @@ msgid "default"
 msgstr "varsayılan"
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:3420
-#, fuzzy, c-format
+#, c-format
 msgid "invalid IPv%c address '%s'"
-msgstr "geçersiz IPv4 adresi '%s'"
+msgstr "geçersiz IPv%c adresi '%s'"
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:3548
 #, c-format
@@ -5063,9 +5032,8 @@ msgid "'%s' is not valid; use 'on', 'off', or 'ignore'"
 msgstr "'%s' geçerli değil; 0,1 ve ya 2 kullanın"
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:4482
-#, fuzzy
 msgid "Bonding primary interface"
-msgstr "Birincil arayüz birleştiriliyor [hiçbiri]: "
+msgstr "Birincil arayüz birleştiriliyor"
 
 #. this is a virtual property, only needed during "ask" mode.
 #: src/libnmc-setting/nm-meta-setting-desc.c:4490
@@ -5251,14 +5219,12 @@ msgstr ""
 #: src/libnmc-setting/nm-meta-setting-desc.c:5356
 #: src/libnmc-setting/nm-meta-setting-desc.c:5843
 #: src/libnmc-setting/nm-meta-setting-desc.c:6899
-#, fuzzy
 msgid "Password [none]"
-msgstr "Parola [hiçbiri]: "
+msgstr "Parola [hiçbiri]"
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:5106
-#, fuzzy
 msgid "Bluetooth device address"
-msgstr "Bluetooth aygıt adresi: "
+msgstr "Bluetooth aygıt adresi:"
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:5154
 #: src/nmtui/nmt-page-bond-port.c:51
@@ -5271,9 +5237,8 @@ msgstr ""
 #: src/libnmc-setting/nm-meta-setting-desc.c:7657
 #: src/libnmc-setting/nm-meta-setting-desc.c:7842
 #: src/libnmc-setting/nm-meta-setting-desc.c:8075
-#, fuzzy
 msgid "MAC [none]"
-msgstr "MAC [hiçbiri]: "
+msgstr "MAC [hiçbiri]"
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:5172
 #, fuzzy
@@ -5302,9 +5267,8 @@ msgid "Max age"
 msgstr "En fazla yaş"
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:5202
-#, fuzzy
 msgid "MAC address ageing time"
-msgstr "MAC adresi yaşlanma zamanı [300]: "
+msgstr "MAC adresi yaşlanma zamanı"
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:5212
 #: src/nmtui/nmt-page-bridge.c:156
@@ -5386,9 +5350,8 @@ msgid ""
 msgstr ""
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:5853
-#, fuzzy
 msgid "APN"
-msgstr "AP"
+msgstr "APN"
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:5926
 #: src/libnmc-setting/nm-meta-setting-desc.c:7688
@@ -5400,14 +5363,12 @@ msgid "MTU"
 msgstr "MTU"
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:5945
-#, fuzzy
 msgid "P_KEY [none]"
-msgstr "P_KEY [hiçbiri]: "
+msgstr "P_KEY [hiçbiri]"
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:5954
-#, fuzzy
 msgid "Parent interface [none]"
-msgstr "Üst arayüz [hiçbiri]: "
+msgstr "Üst arayüz [hiçbiri]"
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:5981
 msgid ""
@@ -5550,14 +5511,12 @@ msgstr ""
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:6479
 #: src/libnmc-setting/nm-meta-setting-desc.c:7519
-#, fuzzy
 msgid "Parent device [none]"
-msgstr "Üst arayüz [hiçbiri]: "
+msgstr "Üst aygıt [hiçbiri]"
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:6485
-#, fuzzy
 msgid "Local endpoint [none]"
-msgstr "Üst arayüz [hiçbiri]: "
+msgstr "Yerel uç noktası [hiçbiri]: "
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:6492
 #: src/libnmc-setting/nm-meta-setting-desc.c:7538
@@ -5596,9 +5555,8 @@ msgid "SSID"
 msgstr "SSID"
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:6703
-#, fuzzy
 msgid "OLPC Mesh channel"
-msgstr "OLPC Mesh kanalı [1]: "
+msgstr "OLPC Mesh kanalı"
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:6712
 #, fuzzy
@@ -5702,9 +5660,8 @@ msgid "VXLAN ID"
 msgstr "VLAN ID <0-4095>: "
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:7532
-#, fuzzy
 msgid "Local address [none]"
-msgstr "DHCP anycast MAC adresi [none]: "
+msgstr "Yerel adres [hiçbiri]: "
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:7544
 #, fuzzy
@@ -5782,9 +5739,8 @@ msgid "802-1x settings"
 msgstr ""
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:8266
-#, fuzzy
 msgid "bluetooth connection"
-msgstr "Bond bağlantısı"
+msgstr "bluetooth bağlantısı"
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:8267
 #, fuzzy
@@ -5837,9 +5793,8 @@ msgid "GSM mobile broadband connection"
 msgstr "Mobil geniş bant bağlantısı %d"
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:8278
-#, fuzzy
 msgid "Hostname settings"
-msgstr "Makine adını '%s' olarak ayarla"
+msgstr "Makine adını ayarları"
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:8280
 msgid "IPv4 protocol"
@@ -5847,29 +5802,27 @@ msgstr ""
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:8281
 msgid "IPv6 protocol"
-msgstr ""
+msgstr "IPv6 iletişim kuralı"
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:8282
 msgid "IP-tunnel settings"
-msgstr ""
+msgstr "IP-tunnel ayarları"
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:8283
 msgid "MACsec connection"
 msgstr ""
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:8284
-#, fuzzy
 msgid "macvlan connection"
-msgstr "Bond bağlantısı"
+msgstr "macvlan bağlantısı"
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:8285
 msgid "Match"
 msgstr ""
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:8286
-#, fuzzy
 msgid "OLPC Mesh connection"
-msgstr "CDMA bağlantısı"
+msgstr "OLPC Mesh bağlantısı"
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:8287
 msgid "Open vSwitch bridge settings"
@@ -5972,9 +5925,8 @@ msgid "WPAN settings"
 msgstr ""
 
 #: src/libnmc-setting/nm-meta-setting-desc.c:8720
-#, fuzzy
 msgid "name"
-msgstr "Kullanıcı adı"
+msgstr "ad"
 
 #. Generated file. Do not edit.
 #: src/libnmc-setting/settings-docs.h.in:3
@@ -9226,7 +9178,7 @@ msgstr ""
 "Kullanım: nmcli agent polkit { help }\n"
 "\n"
 "Kullanıcı oturumu için nmcli'yi bir polkit aracı olarak kaydeder.\n"
-"Polkit sürecinin kimlik doğrulamaya ihtiyacı olduğunda nmcli bunu "
+"Polkit art alan hizmeti kimlik doğrulamaya ihtiyacı olduğunda nmcli bunu "
 "kullanıcıya\n"
 "sorar ver aldığı cevabı polkit'e iletir.\n"
 "\n"
@@ -9317,13 +9269,12 @@ msgid "access denied"
 msgstr ""
 
 #: src/nmcli/common.c:1617
-#, fuzzy
 msgid "NetworkManager is not running"
-msgstr "NetworkManager çalışmıyor."
+msgstr "NetworkManager çalışmıyor"
 
 #: src/nmcli/common.c:1627
 msgid "none"
-msgstr "yok"
+msgstr "hiçbiri"
 
 #: src/nmcli/common.c:1628
 msgid "portal"
@@ -9989,7 +9940,7 @@ msgstr "Bağlantı ayrıntılarını etkinleştir"
 #: src/nmcli/devices.c:1680 src/nmcli/devices.c:1698 src/nmcli/devices.c:1717
 #: src/nmcli/devices.c:1781 src/nmcli/devices.c:1910
 msgid "NAME"
-msgstr ""
+msgstr "AD"
 
 #: src/nmcli/connections.c:1895
 #, c-format
@@ -11102,9 +11053,8 @@ msgid "%s (%s) cloned as %s (%s).\n"
 msgstr ""
 
 #: src/nmcli/connections.c:9241
-#, fuzzy
 msgid "New connection name: "
-msgstr "Yeni Bağlantı"
+msgstr "Yeni bağlantı adı: "
 
 #: src/nmcli/connections.c:9243
 #, fuzzy
@@ -11214,9 +11164,8 @@ msgid "Error: failed to import '%s': %s."
 msgstr "Hata: düzenleme başarısız %s.%s: %s."
 
 #: src/nmcli/connections.c:9786
-#, fuzzy
 msgid "Output file name: "
-msgstr "dosya adı"
+msgstr "Çıktı dosya adı: "
 
 #: src/nmcli/connections.c:9791
 #, fuzzy
@@ -11676,7 +11625,7 @@ msgstr "Infra"
 
 #: src/nmcli/devices.c:1398
 msgid "N/A"
-msgstr "N/A"
+msgstr "Yok"
 
 #: src/nmcli/devices.c:1590
 msgid "Device details"
@@ -11948,7 +11897,7 @@ msgstr "'%s' uzunluğu geçerli değil (5 ya da 6 basamak olmalı)"
 #: src/nmcli/devices.c:4176
 #, c-format
 msgid "Hotspot password: %s\n"
-msgstr ""
+msgstr "Erişim noktası parolası: %s\n"
 
 #: src/nmcli/devices.c:4355
 #, fuzzy
@@ -11993,7 +11942,6 @@ msgid "Security"
 msgstr "Güvenlik"
 
 #: src/nmcli/devices.c:4675
-#, fuzzy
 msgid "None"
 msgstr "Hiçbiri"
 
@@ -12019,9 +11967,8 @@ msgstr "bağlantı kaldırıldı"
 
 #. The command is done, we're in the confirmation prompt.
 #: src/nmcli/devices.c:5065
-#, fuzzy
 msgid "No"
-msgstr "Hiçbiri"
+msgstr "Hayır"
 
 #: src/nmcli/devices.c:5078
 #, fuzzy, c-format
@@ -12094,9 +12041,8 @@ msgid "started"
 msgstr "başlatıldı"
 
 #: src/nmcli/general.c:150 src/nmcli/general.c:161
-#, fuzzy
 msgid "missing"
-msgstr "eksik ayar"
+msgstr "eksik"
 
 #: src/nmcli/general.c:181
 msgid "enabled"
@@ -12474,7 +12420,7 @@ msgstr "Hata: günlükleme ayarlama başarısız: %s"
 #. no arguments -> get current state
 #: src/nmcli/general.c:1059 src/nmcli/general.c:1071
 msgid "Connectivity"
-msgstr "Bağlanabilirlik"
+msgstr "Bağlanabilirlik"
 
 #: src/nmcli/general.c:1075
 #, c-format
@@ -12506,19 +12452,17 @@ msgid "WWAN radio switch"
 msgstr "WWAN radyo anahtarı"
 
 #: src/nmcli/general.c:1236
-#, fuzzy
 msgid "NetworkManager has started"
-msgstr "NetworkManager durumu"
+msgstr "NetworkManager başlatıldı"
 
 #: src/nmcli/general.c:1236
-#, fuzzy
 msgid "NetworkManager has stopped"
-msgstr "NetworkManager durumu"
+msgstr "NetworkManager durduruldu"
 
 #: src/nmcli/general.c:1247
-#, fuzzy, c-format
+#, c-format
 msgid "Hostname set to '%s'\n"
-msgstr "Makine adını '%s' olarak ayarla"
+msgstr "Makine adını '%s' olarak ayarlandı\n"
 
 #: src/nmcli/general.c:1262
 #, fuzzy, c-format
@@ -12531,14 +12475,14 @@ msgid "There's no primary connection\n"
 msgstr "Takım bağlantı"
 
 #: src/nmcli/general.c:1277
-#, fuzzy, c-format
+#, c-format
 msgid "Connectivity is now '%s'\n"
-msgstr "Bağlanabilirlik"
+msgstr "Bağlanabilirlik şimdi '%s'\n"
 
 #: src/nmcli/general.c:1292
-#, fuzzy, c-format
+#, c-format
 msgid "Networkmanager is now in the '%s' state\n"
-msgstr "NetworkManager çalışmıyor."
+msgstr "Networkmanager şu anda '%s' durumunda\n"
 
 #: src/nmcli/general.c:1312
 msgid "connection available"
@@ -12561,22 +12505,20 @@ msgid "plugin missing"
 msgstr ""
 
 #: src/nmcli/general.c:1350 src/nmcli/general.c:1365
-#, fuzzy
 msgid "sw disabled"
-msgstr "etkin değil"
+msgstr "sw devre dışı"
 
 #: src/nmcli/general.c:1355 src/nmcli/general.c:1371
-#, fuzzy
 msgid "hw disabled"
-msgstr "etkin değil"
+msgstr "hw devre dışı"
 
 #: src/nmcli/general.c:1382
 msgid "sw"
-msgstr ""
+msgstr "sw"
 
 #: src/nmcli/general.c:1384
 msgid "hw"
-msgstr ""
+msgstr "hw"
 
 #: src/nmcli/general.c:1387
 msgid "iface"
@@ -12584,11 +12526,11 @@ msgstr ""
 
 #: src/nmcli/general.c:1392
 msgid "port"
-msgstr ""
+msgstr "bağlantı noktası"
 
 #: src/nmcli/general.c:1396
 msgid "mtu"
-msgstr ""
+msgstr "mtu"
 
 #: src/nmcli/general.c:1416
 msgid "master"
@@ -12601,16 +12543,16 @@ msgstr "VPN"
 
 #: src/nmcli/general.c:1422
 msgid "ip4 default"
-msgstr ""
+msgstr "ip4 öntanımlı"
 
 #: src/nmcli/general.c:1424
 msgid "ip6 default"
-msgstr ""
+msgstr "ip6 öntanımlı"
 
 #: src/nmcli/general.c:1506
 #, c-format
 msgid "%s VPN connection"
-msgstr ""
+msgstr "%s VPN bağlantısı"
 
 #: src/nmcli/general.c:1527
 #, c-format
@@ -12619,10 +12561,10 @@ msgid "%s: %s to %s"
 msgstr ""
 
 #: src/nmcli/general.c:1536
-#, fuzzy, c-format
+#, c-format
 msgctxt "nmcli-overview"
 msgid "%s: %s"
-msgstr "Error: %s: %s."
+msgstr "%s: %s"
 
 #: src/nmcli/general.c:1586
 msgid ""
@@ -12640,9 +12582,8 @@ msgid "Error: 'monitor' command '%s' is not valid."
 msgstr "Hata: ''agent' komutu '%s' geçerli değil."
 
 #: src/nmcli/general.c:1617
-#, fuzzy
 msgid "Networkmanager is not running (waiting for it)\n"
-msgstr "NetworkManager çalışmıyor."
+msgstr "NetworkManager çalışmıyor (bekleniyor)\n"
 
 #: src/nmcli/nmcli.c:243
 msgid ""
@@ -12805,9 +12746,9 @@ msgid "Warning: %s\n"
 msgstr ""
 
 #: src/nmcli/settings.c:437
-#, fuzzy, c-format
+#, c-format
 msgid "Info: %s\n"
-msgstr "Hata: %s\n"
+msgstr "Bilgi: %s\n"
 
 #: src/nmcli/settings.c:535
 msgid "don't know how to get the property value"
@@ -12895,9 +12836,9 @@ msgid "Ethernet connection %d"
 msgstr "Eternet bağlantısı %d"
 
 #: src/nmtui/nm-editor-utils.c:156
-#, fuzzy, c-format
+#, c-format
 msgid "Veth connection %d"
-msgstr "VPN bağlantısı %d"
+msgstr "Veth bağlantısı %d"
 
 #: src/nmtui/nm-editor-utils.c:164
 #, c-format
@@ -12941,16 +12882,16 @@ msgstr "Takım bağlantısı %d"
 #: src/nmtui/nm-editor-utils.c:227
 #, c-format
 msgid "VLAN connection %d"
-msgstr "VLAN bağlatısı %d"
+msgstr "VLAN bağlantısı %d"
 
 #: src/nmtui/nm-editor-utils.c:231 src/nmtui/nmt-page-ip-tunnel.c:113
 msgid "IP tunnel"
-msgstr ""
+msgstr "IP tünel"
 
 #: src/nmtui/nm-editor-utils.c:235
 #, c-format
 msgid "IP tunnel connection %d"
-msgstr ""
+msgstr "IP tünel bağlantısı %d"
 
 #: src/nmtui/nm-editor-utils.c:250
 #, c-format
@@ -12958,9 +12899,9 @@ msgid "VPN connection %d"
 msgstr "VPN bağlantısı %d"
 
 #: src/nmtui/nm-editor-utils.c:267
-#, fuzzy, c-format
+#, c-format
 msgid "WireGuard connection %d"
-msgstr "Kablolu bağlantı %d"
+msgstr "WireGuard bağlantısı %d"
 
 #: src/nmtui/nmt-device-entry.c:348
 msgid "Select..."
@@ -13126,7 +13067,7 @@ msgstr "İzleme sıklığı"
 
 #: src/nmtui/nmt-page-bond.c:378
 msgid "Link up delay"
-msgstr "Giden bağlantı gecikmesi:"
+msgstr "Giden bağlantı gecikmesi"
 
 #: src/nmtui/nmt-page-bond.c:384
 msgid "Link down delay"
@@ -13217,7 +13158,7 @@ msgstr ""
 
 #: src/nmtui/nmt-page-ip-tunnel.c:70
 msgid "IP6IP6"
-msgstr ""
+msgstr "IP6IP6"
 
 #: src/nmtui/nmt-page-ip-tunnel.c:71
 msgid "IPIP6"
@@ -13225,7 +13166,7 @@ msgstr ""
 
 #: src/nmtui/nmt-page-ip-tunnel.c:72
 msgid "IP6GRE"
-msgstr ""
+msgstr "IP6GRE"
 
 #: src/nmtui/nmt-page-ip-tunnel.c:73
 msgid "VTI6"
@@ -13237,7 +13178,7 @@ msgstr "Üst"
 
 #: src/nmtui/nmt-page-ip-tunnel.c:139
 msgid "Local IP"
-msgstr ""
+msgstr "Yerel IP"
 
 #: src/nmtui/nmt-page-ip-tunnel.c:147
 msgid "Remote IP"
@@ -13249,7 +13190,7 @@ msgstr ""
 
 #: src/nmtui/nmt-page-ip-tunnel.c:164
 msgid "Output key"
-msgstr ""
+msgstr "Çıktı anahtarı"
 
 #: src/nmtui/nmt-page-ip4.c:27 src/nmtui/nmt-page-ip6.c:32
 msgid "Disabled"
@@ -13443,9 +13384,8 @@ msgid "WPA & WPA2 Personal"
 msgstr "WPA & WPA2 Kişisel"
 
 #: src/nmtui/nmt-page-wifi.c:63
-#, fuzzy
 msgid "WPA3 Personal"
-msgstr "WPA & WPA2 Kişisel"
+msgstr "WPA3 Kişisel"
 
 #: src/nmtui/nmt-page-wifi.c:64
 msgid "WPA & WPA2 Enterprise"
