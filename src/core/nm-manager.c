@@ -3947,7 +3947,7 @@ _device_realize_finish(NMManager *self, NMDevice *device, const NMPlatformLink *
      * is still unavailable. Set UNAVAILABLE state again, this time with NOW_MANAGED. */
     nm_device_state_changed(device,
                             NM_DEVICE_STATE_UNAVAILABLE,
-                            NM_DEVICE_STATE_REASON_NOW_MANAGED);
+                            nm_device_get_manage_reason_external(device));
     nm_manager_device_recheck_auto_activate_schedule(self, device);
 }
 
