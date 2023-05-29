@@ -649,6 +649,7 @@ void nm_device_set_unmanaged_by_user_settings(NMDevice *self, gboolean now);
 void nm_device_set_unmanaged_by_user_udev(NMDevice *self);
 void nm_device_set_unmanaged_by_user_conf(NMDevice *self);
 void nm_device_set_unmanaged_by_quitting(NMDevice *device);
+NMDeviceStateReason nm_device_get_manage_reason_external(NMDevice *self);
 
 gboolean nm_device_check_unrealized_device_managed(NMDevice *self);
 
