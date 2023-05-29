@@ -6857,6 +6857,37 @@ device_update_interface_flags(NMDevice *self, const NMPlatformLink *plink)
                              TRUE);
 }
 
+/*
+ * Returns the reason for managing a device. The suffix "external" indicates
+ * that the reason mainly depends on whether we want to make the device
+ * sys-iface-state=external or not.
+ */
+NMDeviceStateReason
+nm_device_get_manage_reason_external(NMDevice *self)
+{
+    NMDeviceStateReason reason;
+
+    /* By default we return reason NOW_MANAGED, which makes the device fully
+     * managed by NM (sys-iface-state=managed). */
+    reason = NM_DEVICE_STATE_REASON_NOW_MANAGED;
+
+    /* If the device is an external-down candidate but no longer has the flag
+     * set, then the device is an externally created interface that previously
+     * had no addresses or no controller and now has.
+     * We need to set CONNECTION_ASSUMED as the reason, so that the device
+     * is managed but is not touched by NM (sys-iface-state=external). */
+    if (nm_device_get_unmanaged_mask(self, NM_UNMANAGED_EXTERNAL_DOWN)
+        && !nm_device_get_unmanaged_flags(self, NM_UNMANAGED_EXTERNAL_DOWN)) {
+        /* user-udev overwrites external-down, so we only assume the device
+         * when it is a external-down candidate which is not managed via udev. */
+        if (!nm_device_get_unmanaged_mask(self, NM_UNMANAGED_USER_UDEV)) {
+            reason = NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED;
+        }
+    }
+
+    return reason;
+}
+
 static gboolean
 device_link_changed(gpointer user_data)
 {
@@ -6968,32 +6999,13 @@ device_link_changed(gpointer user_data)
     priv->up = NM_FLAGS_HAS(pllink->n_ifi_flags, IFF_UP);
 
     if (pllink->initialized && nm_device_get_unmanaged_flags(self, NM_UNMANAGED_PLATFORM_INIT)) {
-        NMDeviceStateReason reason;
-
         nm_device_set_unmanaged_by_user_udev(self);
         nm_device_set_unmanaged_by_user_conf(self);
-
-        reason = NM_DEVICE_STATE_REASON_NOW_MANAGED;
-
-        /* If the device is a external-down candidated but no longer has external
-         * down set, we must clear the platform-unmanaged flag with reason
-         * "assumed". */
-        if (nm_device_get_unmanaged_mask(self, NM_UNMANAGED_EXTERNAL_DOWN)
-            && !nm_device_get_unmanaged_flags(self, NM_UNMANAGED_EXTERNAL_DOWN)) {
-            /* actually, user-udev overwrites external-down. So we only assume the device,
-             * when it is a external-down candidate, which is not managed via udev. */
-            if (!nm_device_get_unmanaged_mask(self, NM_UNMANAGED_USER_UDEV)) {
-                /* Ensure the assume check is queued before any queued state changes
-                 * from the transition to UNAVAILABLE.
-                 */
-                reason = NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED;
-            }
-        }
 
         nm_device_set_unmanaged_by_flags_queue(self,
                                                NM_UNMANAGED_PLATFORM_INIT,
                                                NM_UNMAN_FLAG_OP_SET_MANAGED,
-                                               reason);
+                                               nm_device_get_manage_reason_external(self));
     }
 
     _dev_unmanaged_check_external_down(self, FALSE, FALSE);
