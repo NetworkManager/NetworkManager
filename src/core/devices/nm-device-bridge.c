@@ -437,96 +437,6 @@ static const Option slave_options[] = {
     OPTION(NM_SETTING_BRIDGE_PORT_HAIRPIN_MODE, "hairpin_mode", OPTION_TYPE_BOOL(FALSE), ),
     {0}};
 
-static void
-commit_option(NMDevice *device, NMSetting *setting, const Option *option, gboolean slave)
-{
-    int                         ifindex = nm_device_get_ifindex(device);
-    nm_auto_unset_gvalue GValue val     = G_VALUE_INIT;
-    GParamSpec                 *pspec;
-    const char                 *value;
-    char                        value_buf[100];
-
-    if (slave)
-        nm_assert(NM_IS_SETTING_BRIDGE_PORT(setting));
-    else
-        nm_assert(NM_IS_SETTING_BRIDGE(setting));
-
-    pspec = g_object_class_find_property(G_OBJECT_GET_CLASS(setting), option->name);
-    nm_assert(pspec);
-
-    g_value_init(&val, G_PARAM_SPEC_VALUE_TYPE(pspec));
-    g_object_get_property((GObject *) setting, option->name, &val);
-
-    if (option->to_sysfs) {
-        value = option->to_sysfs(&val);
-        goto out;
-    }
-
-    switch (pspec->value_type) {
-    case G_TYPE_BOOLEAN:
-        value = g_value_get_boolean(&val) ? "1" : "0";
-        break;
-    case G_TYPE_UINT64:
-    case G_TYPE_UINT:
-    {
-        guint64 uval;
-
-        if (pspec->value_type == G_TYPE_UINT64)
-            uval = g_value_get_uint64(&val);
-        else
-            uval = (guint) g_value_get_uint(&val);
-
-        /* zero means "unspecified" for some NM properties but isn't in the
-             * allowed kernel range, so reset the property to the default value.
-             */
-        if (option->default_if_zero && uval == 0) {
-            if (pspec->value_type == G_TYPE_UINT64)
-                uval = NM_G_PARAM_SPEC_GET_DEFAULT_UINT64(pspec);
-            else
-                uval = NM_G_PARAM_SPEC_GET_DEFAULT_UINT(pspec);
-        }
-
-        /* Linux kernel bridge interfaces use 'centiseconds' for time-based values.
-             * In reality it's not centiseconds, but depends on HZ and USER_HZ, which
-             * is almost always works out to be a multiplier of 100, so we can assume
-             * centiseconds.  See clock_t_to_jiffies().
-             */
-        if (option->user_hz_compensate)
-            uval *= 100;
-
-        if (pspec->value_type == G_TYPE_UINT64)
-            nm_sprintf_buf(value_buf, "%" G_GUINT64_FORMAT, uval);
-        else
-            nm_sprintf_buf(value_buf, "%u", (guint) uval);
-
-        value = value_buf;
-    } break;
-    case G_TYPE_STRING:
-        value = g_value_get_string(&val);
-        break;
-    default:
-        nm_assert_not_reached();
-        value = NULL;
-        break;
-    }
-
-out:
-    if (!value)
-        return;
-
-    if (slave) {
-        nm_platform_sysctl_slave_set_option(nm_device_get_platform(device),
-                                            ifindex,
-                                            option->sysname,
-                                            value);
-    } else {
-        nm_platform_sysctl_master_set_option(nm_device_get_platform(device),
-                                             ifindex,
-                                             option->sysname,
-                                             value);
-    }
-}
-
 static const NMPlatformBridgeVlan **
 setting_vlans_to_platform(GPtrArray *array)
 {
@@ -561,19 +471,92 @@ setting_vlans_to_platform(GPtrArray *array)
 }
 
 static void
-commit_slave_options(NMDevice *device, NMSettingBridgePort *setting)
+commit_port_options(NMDevice *device, NMSettingBridgePort *setting)
 {
     const Option              *option;
     NMSetting                 *s;
     gs_unref_object NMSetting *s_clear = NULL;
+    int                        ifindex = nm_device_get_ifindex(device);
 
     if (setting)
         s = NM_SETTING(setting);
     else
         s = s_clear = nm_setting_bridge_port_new();
 
-    for (option = slave_options; option->name; option++)
-        commit_option(device, s, option, TRUE);
+    for (option = slave_options; option->name; option++) {
+        nm_auto_unset_gvalue GValue val = G_VALUE_INIT;
+        GParamSpec                 *pspec;
+        const char                 *value;
+        char                        value_buf[100];
+
+        pspec = g_object_class_find_property(G_OBJECT_GET_CLASS(s), option->name);
+        nm_assert(pspec);
+
+        g_value_init(&val, G_PARAM_SPEC_VALUE_TYPE(pspec));
+        g_object_get_property((GObject *) s, option->name, &val);
+
+        if (option->to_sysfs) {
+            value = option->to_sysfs(&val);
+            goto out;
+        }
+
+        switch (pspec->value_type) {
+        case G_TYPE_BOOLEAN:
+            value = g_value_get_boolean(&val) ? "1" : "0";
+            break;
+        case G_TYPE_UINT64:
+        case G_TYPE_UINT:
+        {
+            guint64 uval;
+
+            if (pspec->value_type == G_TYPE_UINT64)
+                uval = g_value_get_uint64(&val);
+            else
+                uval = (guint) g_value_get_uint(&val);
+
+            /* zero means "unspecified" for some NM properties but isn't in the
+             * allowed kernel range, so reset the property to the default value.
+             */
+            if (option->default_if_zero && uval == 0) {
+                if (pspec->value_type == G_TYPE_UINT64)
+                    uval = NM_G_PARAM_SPEC_GET_DEFAULT_UINT64(pspec);
+                else
+                    uval = NM_G_PARAM_SPEC_GET_DEFAULT_UINT(pspec);
+            }
+
+            /* Linux kernel bridge interfaces use 'centiseconds' for time-based values.
+             * In reality it's not centiseconds, but depends on HZ and USER_HZ, which
+             * is almost always works out to be a multiplier of 100, so we can assume
+             * centiseconds.  See clock_t_to_jiffies().
+             */
+            if (option->user_hz_compensate)
+                uval *= 100;
+
+            if (pspec->value_type == G_TYPE_UINT64)
+                nm_sprintf_buf(value_buf, "%" G_GUINT64_FORMAT, uval);
+            else
+                nm_sprintf_buf(value_buf, "%u", (guint) uval);
+
+            value = value_buf;
+        } break;
+        case G_TYPE_STRING:
+            value = g_value_get_string(&val);
+            break;
+        default:
+            nm_assert_not_reached();
+            value = NULL;
+            break;
+        }
+
+out:
+        if (!value)
+            return;
+
+        nm_platform_sysctl_slave_set_option(nm_device_get_platform(device),
+                                            ifindex,
+                                            option->sysname,
+                                            value);
+    }
 }
 
 static void
@@ -1042,7 +1025,7 @@ attach_port(NMDevice                  *device,
                 return FALSE;
         }
 
-        commit_slave_options(port, s_port);
+        commit_port_options(port, s_port);
 
         _LOGI(LOGD_BRIDGE, "attached bridge port %s", nm_device_get_ip_iface(port));
     } else {
