@@ -1066,6 +1066,8 @@ write_infiniband_setting(NMConnection *connection,
         svSetValueStr(ifcfg, "PHYSDEV", parent);
 
         if (parent && nm_connection_get_interface_name(connection)) {
+            char name[NM_IFNAMSIZ];
+
             /* The connection.interface-name depends on the p-key. Also,
              * nm_connection_normalize() will automatically adjust the
              * interface-name to match the p-key.
@@ -1073,8 +1075,8 @@ write_infiniband_setting(NMConnection *connection,
              * As we patched the p-key above, also anticipate that change, and
              * don't write a DEVICE= to the file, which would we normalize
              * differently, when reading it back. */
-            *out_interface_name =
-                nm_setting_infiniband_create_virtual_interface_name(parent, p_key);
+            nm_net_devname_infiniband(name, parent, p_key);
+            *out_interface_name = g_strdup(name);
         }
     }
 

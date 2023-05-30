@@ -74,7 +74,7 @@ _nft_ifname_valid(const char *str)
             return NULL;
         }
     }
-    if (i >= NMP_IFNAMSIZ)
+    if (i >= NM_IFNAMSIZ)
         return NULL;
 
     return str;
@@ -154,10 +154,10 @@ _share_iptables_get_name(gboolean is_iptables_chain, const char *prefix, const c
     nm_str_buf_append(&strbuf, prefix);
 
     ip_iface_len = strlen(ip_iface);
-    G_STATIC_ASSERT_EXPR(NMP_IFNAMSIZ == 16);
-    if (ip_iface_len >= NMP_IFNAMSIZ) {
+    G_STATIC_ASSERT_EXPR(NM_IFNAMSIZ == 16);
+    if (ip_iface_len >= NM_IFNAMSIZ) {
         nm_assert_not_reached();
-        ip_iface_len = NMP_IFNAMSIZ - 1;
+        ip_iface_len = NM_IFNAMSIZ - 1;
     }
 
     if (NM_STRCHAR_ALL(ip_iface,

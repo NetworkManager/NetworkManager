@@ -49,8 +49,8 @@ nmtst_platform_ip4_address_full(const char      *address,
 {
     NMPlatformIP4Address *addr = nmtst_platform_ip4_address(address, peer_address, plen);
 
-    G_STATIC_ASSERT(NMP_IFNAMSIZ == sizeof(addr->label));
-    g_assert(!label || strlen(label) < NMP_IFNAMSIZ);
+    G_STATIC_ASSERT(NM_IFNAMSIZ == sizeof(addr->label));
+    g_assert(!label || strlen(label) < NM_IFNAMSIZ);
 
     addr->ifindex     = ifindex;
     addr->addr_source = source;

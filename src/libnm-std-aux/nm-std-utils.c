@@ -7,9 +7,13 @@
 #include <stdint.h>
 #include <assert.h>
 #include <limits.h>
+#include <net/if.h>
 
 /*****************************************************************************/
 
+NM_STATIC_ASSERT(NM_IFNAMSIZ == IFNAMSIZ);
+
+/*****************************************************************************/
 size_t
 nm_utils_get_next_realloc_size(bool true_realloc, size_t requested)
 {

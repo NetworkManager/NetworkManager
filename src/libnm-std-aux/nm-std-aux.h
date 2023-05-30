@@ -1367,6 +1367,12 @@ nm_ptr_to_uintptr(const void *p)
 
 /*****************************************************************************/
 
+/* IFNAMSIZ is both defined in <linux/if.h> and <net/if.h>. In the past, these
+ * headers conflicted, so we cannot simply include either of them in a header-file.*/
+#define NM_IFNAMSIZ 16
+
+/*****************************************************************************/
+
 #define NM_AF_UNSPEC 0  /* AF_UNSPEC */
 #define NM_AF_INET   2  /* AF_INET   */
 #define NM_AF_INET6  10 /* AF_INET6  */

@@ -36,9 +36,7 @@ typedef struct {
     char   *mac_address;
     char   *transport_mode;
     char   *parent;
-    char   *virtual_iface_name;
-    gsize   virtual_iface_name_parent_length;
-    gint32  virtual_iface_name_p_key;
+    char    virtual_iface_name[NM_IFNAMSIZ];
     gint32  p_key;
     guint32 mtu;
 } NMSettingInfinibandPrivate;
@@ -145,17 +143,6 @@ nm_setting_infiniband_get_parent(NMSettingInfiniband *setting)
     return NM_SETTING_INFINIBAND_GET_PRIVATE(setting)->parent;
 }
 
-char *
-nm_setting_infiniband_create_virtual_interface_name(const char *parent, int p_key)
-{
-    char *s;
-
-    s = g_strdup_printf("%s.%04x", parent, (guint) p_key);
-    if (strlen(s) >= NMP_IFNAMSIZ)
-        s[NMP_IFNAMSIZ - 1] = '\0';
-    return s;
-}
-
 /**
  * nm_setting_infiniband_get_virtual_interface_name:
  * @setting: the #NMSettingInfiniband
@@ -170,25 +157,11 @@ const char *
 nm_setting_infiniband_get_virtual_interface_name(NMSettingInfiniband *setting)
 {
     NMSettingInfinibandPrivate *priv = NM_SETTING_INFINIBAND_GET_PRIVATE(setting);
-    gsize                       len;
 
-    if (priv->p_key == -1 || !priv->parent) {
-        nm_clear_g_free(&priv->virtual_iface_name);
+    if (priv->p_key == -1 || !priv->parent)
         return NULL;
-    }
 
-    len = strlen(priv->parent);
-    if (!priv->virtual_iface_name || priv->virtual_iface_name_p_key != priv->p_key
-        || priv->virtual_iface_name_parent_length != len
-        || memcmp(priv->parent, priv->virtual_iface_name, len) != 0) {
-        priv->virtual_iface_name_p_key         = priv->p_key;
-        priv->virtual_iface_name_parent_length = len;
-        g_free(priv->virtual_iface_name);
-        priv->virtual_iface_name =
-            nm_setting_infiniband_create_virtual_interface_name(priv->parent, priv->p_key);
-    }
-
-    return priv->virtual_iface_name;
+    return nm_net_devname_infiniband(priv->virtual_iface_name, priv->parent, priv->p_key);
 }
 
 static gboolean
@@ -353,16 +326,6 @@ nm_setting_infiniband_new(void)
 }
 
 static void
-finalize(GObject *object)
-{
-    NMSettingInfinibandPrivate *priv = NM_SETTING_INFINIBAND_GET_PRIVATE(object);
-
-    g_free(priv->virtual_iface_name);
-
-    G_OBJECT_CLASS(nm_setting_infiniband_parent_class)->finalize(object);
-}
-
-static void
 nm_setting_infiniband_class_init(NMSettingInfinibandClass *klass)
 {
     GObjectClass   *object_class        = G_OBJECT_CLASS(klass);
@@ -373,7 +336,6 @@ nm_setting_infiniband_class_init(NMSettingInfinibandClass *klass)
 
     object_class->get_property = _nm_setting_property_get_property_direct;
     object_class->set_property = _nm_setting_property_set_property_direct;
-    object_class->finalize     = finalize;
 
     setting_class->verify = verify;
 

@@ -5424,7 +5424,7 @@ parse_infiniband_p_key(shvarFile *ifcfg, int *out_p_key, char **out_parent, GErr
      * automatically sets.
      *
      * NetworkManager supports p-keys without the high bit set. That affects
-     * the interface name (nmp_utils_new_infiniband_name()) and is what
+     * the interface name (nm_net_devname_infiniband()) and is what
      * we write to "create_child"/"delete_child" sysctl. Kernel will honor
      * such p-keys for the interface name, but for other purposes it adds the
      * highest bit. That makes using p-keys without the highest bit odd.

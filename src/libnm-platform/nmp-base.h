@@ -11,12 +11,6 @@
 
 /*****************************************************************************/
 
-/* IFNAMSIZ is both defined in <linux/if.h> and <net/if.h>. In the past, these
- * headers conflicted, so we cannot simply include either of them in a header-file.*/
-#define NMP_IFNAMSIZ 16
-
-/*****************************************************************************/
-
 /* Define of the IN6_ADDR_GEN_MODE_* values to workaround old kernel headers
  * that don't define it. */
 #define NM_IN6_ADDR_GEN_MODE_UNKNOWN        255 /* no corresponding value.  */
