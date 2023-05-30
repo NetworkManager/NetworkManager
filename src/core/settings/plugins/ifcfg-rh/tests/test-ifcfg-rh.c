@@ -8446,7 +8446,6 @@ test_write_infiniband(gconstpointer test_data)
     const int                     TEST_IDX    = GPOINTER_TO_INT(test_data);
     nmtst_auto_unlinkfile char   *testfile    = NULL;
     gs_unref_object NMConnection *connection  = NULL;
-    gs_unref_object NMConnection *expected    = NULL;
     gs_unref_object NMConnection *reread      = NULL;
     gboolean                      reread_same = FALSE;
     NMSettingConnection          *s_con;
@@ -8527,32 +8526,20 @@ test_write_infiniband(gconstpointer test_data)
 
     nmtst_assert_connection_verifies(connection);
 
-    if (p_key != -1 && p_key < 0x8000) {
-        expected = nm_simple_connection_new_clone(connection);
-        g_object_set(nm_connection_get_setting(expected, NM_TYPE_SETTING_INFINIBAND),
-                     NM_SETTING_INFINIBAND_P_KEY,
-                     (int) (p_key | 0x8000),
-                     NULL);
-    } else
-        expected = g_object_ref(connection);
-
     _writer_new_connection_reread(connection,
                                   TEST_SCRATCH_DIR,
                                   &testfile,
                                   NO_EXPECTED,
                                   &reread,
                                   &reread_same);
-    _assert_reread_same(expected, reread);
-    if (p_key == -1 || p_key > 0x8000)
-        g_assert(reread_same);
-    else
-        g_assert(!reread_same);
+    _assert_reread_same(connection, reread);
+    g_assert(reread_same);
 
     g_assert_cmpstr(interface_name, ==, nm_connection_get_interface_name(reread));
     g_assert_cmpint(nm_setting_infiniband_get_p_key(
                         _nm_connection_get_setting(reread, NM_TYPE_SETTING_INFINIBAND)),
                     ==,
-                    p_key == -1 ? -1 : (p_key | 0x8000));
+                    p_key);
 }
 
 static void

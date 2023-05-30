@@ -1054,30 +1054,24 @@ write_infiniband_setting(NMConnection *connection,
 
     p_key = nm_setting_infiniband_get_p_key(s_infiniband);
     if (p_key != -1) {
-        /* The reader normalizes KKEY_ID with |=0x8000. Also do that when
-         * writing the profile so that what we write, is consistent with what
-         * we would read. */
-        p_key |= 0x8000;
-
         svSetValueStr(ifcfg, "PKEY", "yes");
+
         svSetValueInt64(ifcfg, "PKEY_ID", p_key);
+
+        if (!NM_FLAGS_HAS(p_key, 0x8000)) {
+            /* initscripts' ifup-ib used to always interpret the PKEY_ID with
+             * the full membership flag (0x8000) set. For compatibility, we do
+             * interpret PKEY_ID as having that flag set.
+             *
+             * However, now we want to persist a p-key which doesn't have the
+             * flag. Use a NetworkManager specific variable for that. This configuration
+             * is not supported by initscripts' ifup-ib.
+             */
+            svSetValueInt64(ifcfg, "PKEY_ID_NM", p_key);
+        }
 
         parent = nm_setting_infiniband_get_parent(s_infiniband);
         svSetValueStr(ifcfg, "PHYSDEV", parent);
-
-        if (parent && nm_connection_get_interface_name(connection)) {
-            char name[NM_IFNAMSIZ];
-
-            /* The connection.interface-name depends on the p-key. Also,
-             * nm_connection_normalize() will automatically adjust the
-             * interface-name to match the p-key.
-             *
-             * As we patched the p-key above, also anticipate that change, and
-             * don't write a DEVICE= to the file, which would we normalize
-             * differently, when reading it back. */
-            nm_net_devname_infiniband(name, parent, p_key);
-            *out_interface_name = g_strdup(name);
-        }
     }
 
     svSetValueStr(ifcfg, "TYPE", TYPE_INFINIBAND);
