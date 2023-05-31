@@ -16,6 +16,12 @@
 /*****************************************************************************/
 
 typedef struct {
+    GCancellable *cancellable;
+    gboolean      enabled;
+    gboolean      signal_received;
+} SigTermData;
+
+typedef struct {
     GMainLoop    *main_loop;
     GCancellable *cancellable;
     NMCSProvider *provider_result;
@@ -443,7 +449,7 @@ _nmc_mangle_connection(NMDevice                             *device,
 /*****************************************************************************/
 
 static gboolean
-_config_one(GCancellable                      *sigterm_cancellable,
+_config_one(SigTermData                       *sigterm_data,
             NMClient                          *nmc,
             const NMCSProviderGetConfigResult *result,
             guint                              idx)
@@ -463,7 +469,7 @@ _config_one(GCancellable                      *sigterm_cancellable,
 
     g_main_context_iteration(NULL, FALSE);
 
-    if (g_cancellable_is_cancelled(sigterm_cancellable))
+    if (g_cancellable_is_cancelled(sigterm_data->cancellable))
         return FALSE;
 
     device = nm_g_object_ref(_nmc_get_device_by_hwaddr(nmc, hwaddr));
@@ -497,7 +503,7 @@ try_again:
     g_clear_error(&error);
 
     applied_connection = nmcs_device_get_applied_connection(device,
-                                                            sigterm_cancellable,
+                                                            sigterm_data->cancellable,
                                                             &applied_version_id,
                                                             &error);
     if (!applied_connection) {
@@ -558,8 +564,12 @@ try_again:
     maybe_no_preserved_external_ip =
         (nmc_client_has_version_info_v(nmc) < NM_ENCODE_VERSION(1, 41, 6));
 
+    /* Once we start reconfiguring the system, we cannot abort in the middle. From now on,
+     * any SIGTERM gets ignored until we are done.  */
+    sigterm_data->enabled = FALSE;
+
     if (!nmcs_device_reapply(device,
-                             sigterm_cancellable,
+                             NULL,
                              applied_connection,
                              applied_version_id,
                              maybe_no_preserved_external_ip,
@@ -590,15 +600,13 @@ try_again:
 }
 
 static gboolean
-_config_all(GCancellable                      *sigterm_cancellable,
-            NMClient                          *nmc,
-            const NMCSProviderGetConfigResult *result)
+_config_all(SigTermData *sigterm_data, NMClient *nmc, const NMCSProviderGetConfigResult *result)
 {
     gboolean any_changes = FALSE;
     guint    i;
 
     for (i = 0; i < result->n_iface_datas; i++) {
-        if (_config_one(sigterm_cancellable, nmc, result, i))
+        if (_config_one(sigterm_data, nmc, result, i))
             any_changes = TRUE;
     }
 
@@ -610,13 +618,16 @@ _config_all(GCancellable                      *sigterm_cancellable,
 static gboolean
 sigterm_handler(gpointer user_data)
 {
-    GCancellable *sigterm_cancellable = user_data;
+    SigTermData *sigterm_data = user_data;
 
-    if (!g_cancellable_is_cancelled(sigterm_cancellable)) {
-        _LOGD("SIGTERM received");
-        g_cancellable_cancel(user_data);
-    } else
-        _LOGD("SIGTERM received (again)");
+    _LOGD("SIGTERM received (%s) (%s)",
+          sigterm_data->signal_received ? "first time" : "again",
+          sigterm_data->enabled ? "cancel operation" : "ignore");
+
+    sigterm_data->signal_received = TRUE;
+
+    if (sigterm_data->enabled)
+        g_cancellable_cancel(sigterm_data->cancellable);
     return G_SOURCE_CONTINUE;
 }
 
@@ -631,6 +642,7 @@ main(int argc, const char *const *argv)
     gs_unref_object NMClient                  *nmc                                   = NULL;
     nm_auto_free_nmcs_provider_get_config_result NMCSProviderGetConfigResult *result = NULL;
     gs_free_error GError                                                     *error  = NULL;
+    SigTermData                                                               sigterm_data;
 
     _nm_logging_enabled_init(g_getenv(NMCS_ENV_VARIABLE("NM_CLOUD_SETUP_LOG")));
 
@@ -643,7 +655,12 @@ main(int argc, const char *const *argv)
 
     sigterm_cancellable = g_cancellable_new();
 
-    sigterm_source = nm_g_unix_signal_add_source(SIGTERM, sigterm_handler, sigterm_cancellable);
+    sigterm_data = (SigTermData){
+        .cancellable     = sigterm_cancellable,
+        .enabled         = TRUE,
+        .signal_received = FALSE,
+    };
+    sigterm_source = nm_g_unix_signal_add_source(SIGTERM, sigterm_handler, &sigterm_data);
 
     provider = _provider_detect(sigterm_cancellable);
     if (!provider)
@@ -674,7 +691,7 @@ main(int argc, const char *const *argv)
     if (!result)
         goto done;
 
-    if (_config_all(sigterm_cancellable, nmc, result))
+    if (_config_all(&sigterm_data, nmc, result))
         _LOGI("some changes were applied for provider %s", nmcs_provider_get_name(provider));
     else
         _LOGD("no changes were applied for provider %s", nmcs_provider_get_name(provider));
