@@ -63,7 +63,7 @@
       </screen></entry>
       <entry><screen><xsl:value-of select="@type"/></screen></entry>
       <entry><screen><xsl:value-of select="@default"/></screen></entry>
-      <entry><xsl:value-of select="@description"/><xsl:if test="@type = 'NMSettingSecretFlags'"> (see <xref linkend="secrets-flags"/> for flag values)</xsl:if></entry>
+      <entry><xsl:value-of select="description"/><xsl:if test="@type = 'NMSettingSecretFlags'"> (see <xref linkend="secrets-flags"/> for flag values)</xsl:if></entry>
     </row>
   </xsl:template>
 

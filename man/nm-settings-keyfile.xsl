@@ -284,7 +284,7 @@ id=4
       <entry align="left"><xsl:value-of select="@variable"/></entry>
       <entry align="left"><xsl:value-of select="@format"/></entry>
       <entry align="left">
-        <xsl:value-of select="@description"/>
+        <xsl:value-of select="description"/>
         <xsl:if test="string-length(@example)">
           <emphasis role="bold">
 
