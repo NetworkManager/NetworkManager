@@ -289,11 +289,6 @@ glib_dep = declare_dependency(
 )
 
 enable_ifcfg_rh = get_option('ifcfg_rh')
-if enable_ifcfg_rh == 'auto'
-  enable_ifcfg_rh = (run_command('test', '-e', '/etc/sysconfig/network-scripts').returncode() == 0)
-else
-  enable_ifcfg_rh = (enable_ifcfg_rh != 'false')
-endif
 
 enable_ifupdown = get_option('ifupdown')
 if enable_ifupdown == 'auto'
