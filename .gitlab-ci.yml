@@ -6,14 +6,15 @@
 # Edit .gitlab-ci/ci.template instead  #
 #                                      #
 # Regenerate with:
-#   TEMPLATE_SHA="$(sed -n 's/^.templates_sha: *\&template_sha *\([0-9a-f]\+\) .*/\1/p' ./.gitlab-ci/ci.template)"
+#   TEMPLATE_SHA="$(sed -n 's/^.templates_sha: *\&template_sha *\([0-9a-f]\+\)$/\1/p' ./.gitlab-ci/ci.template)"
 #   pip3 install "git+http://gitlab.freedesktop.org/freedesktop/ci-templates@$TEMPLATE_SHA"
 #   ci-fairy generate-template
 #
 ########################################
 
 
-.templates_sha: &template_sha ffe4d1b10aab7534489f0c4bbc4c5899df17d3f2 # see https://docs.gitlab.com/ee/ci/yaml/#includefile
+# see https://docs.gitlab.com/ee/ci/yaml/#includefile
+.templates_sha: &template_sha 184ca628f89f3193c249b4e34e45afee2773a833
 
 include:
   # Alpine container builder template
@@ -53,11 +54,11 @@ variables:
   #
   # This is done by running `ci-fairy generate-template` and possibly bumping
   # ".default_tag".
-  FEDORA_TAG:  '2023-01-18.0-81a15acb09ec'
-  UBUNTU_TAG:  '2023-01-18.0-b674114b79c1'
-  DEBIAN_TAG:  '2023-01-18.0-b674114b79c1'
-  CENTOS_TAG:  '2023-01-18.0-81a15acb09ec'
-  ALPINE_TAG:  '2023-01-18.0-14c807942fa4'
+  FEDORA_TAG:  '2023-01-18.0-2fd6b9b2aa64'
+  UBUNTU_TAG:  '2023-01-18.0-d59117c480f0'
+  DEBIAN_TAG:  '2023-01-18.0-d59117c480f0'
+  CENTOS_TAG:  '2023-01-18.0-2fd6b9b2aa64'
+  ALPINE_TAG:  '2023-01-18.0-7cc187484567'
 
   FEDORA_EXEC: 'bash .gitlab-ci/fedora-install.sh'
   UBUNTU_EXEC: 'bash .gitlab-ci/debian-install.sh'
