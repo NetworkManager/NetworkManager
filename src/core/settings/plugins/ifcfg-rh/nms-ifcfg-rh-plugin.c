@@ -53,6 +53,7 @@ typedef struct {
     GHashTable *unmanaged_specs;
     GHashTable *unrecognized_specs;
 
+    gboolean warned;
 } NMSIfcfgRHPluginPrivate;
 
 struct _NMSIfcfgRHPlugin {
@@ -177,6 +178,8 @@ nm_assert_self(NMSIfcfgRHPlugin *self, gboolean unhandled_specs_consistent)
 static NMSIfcfgRHStorage *
 _load_file(NMSIfcfgRHPlugin *self, const char *filename, GError **error)
 {
+    NMSIfcfgRHPluginPrivate      *priv           = NMS_IFCFG_RH_PLUGIN_GET_PRIVATE(self);
+    NMSIfcfgRHStorage            *ret            = NULL;
     gs_unref_object NMConnection *connection     = NULL;
     gs_free_error GError         *load_error     = NULL;
     gs_free char                 *unhandled_spec = NULL;
@@ -224,16 +227,23 @@ _load_file(NMSIfcfgRHPlugin *self, const char *filename, GError **error)
             nm_assert_not_reached();
             return NULL;
         }
-        return nms_ifcfg_rh_storage_new_unhandled(self,
+
+        ret = nms_ifcfg_rh_storage_new_unhandled(self, filename, unmanaged_spec, unrecognized_spec);
+    } else {
+        ret = nms_ifcfg_rh_storage_new_connection(self,
                                                   filename,
-                                                  unmanaged_spec,
-                                                  unrecognized_spec);
+                                                  g_steal_pointer(&connection),
+                                                  &st.st_mtim);
     }
 
-    return nms_ifcfg_rh_storage_new_connection(self,
-                                               filename,
-                                               g_steal_pointer(&connection),
-                                               &st.st_mtim);
+    if (!priv->warned) {
+        nm_log_info(_NMLOG_DOMAIN,
+                    "Warning: the ifcfg-rh plugin is deprecated, please migrate connections "
+                    "to the keyfile format using \"nmcli connection migrate\".");
+        priv->warned = TRUE;
+    }
+
+    return ret;
 }
 
 static void
