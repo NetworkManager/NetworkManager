@@ -45,20 +45,21 @@ Coding Style
 
 ### clang-format
 
-The formatting is automated using clang-format. Run `./contrib/scripts/nm-code-format.sh -i`
-([[1]](contrib/scripts/nm-code-format.sh)) to reformat the code or run `clang-format` yourself.
-
-You may also call `./contrib/scripts/nm-code-format-container.sh` which runs a
-Fedora container using podman.
+The formatting is automated using [clang-format](https://clang.llvm.org/docs/ClangFormat.html).
+Run `./contrib/scripts/nm-code-format.sh -i` ([[1]](contrib/scripts/nm-code-format.sh)) to reformat
+the code or run `clang-format` directly.
 
 As the generated format depends on the version of clang-format, you need to use the
 correct clang-format version. That is basically the version that our [gitlab-ci
 pipeline](https://gitlab.freedesktop.org/NetworkManager/NetworkManager/-/pipelines) uses
 for the "check-tree" test. This is the version from a recent Fedora installation.
 
-You are welcome to not bother and open a merge request with
-wrong formatting, but note that we then will automatically adjust
-your contribution before merging.
+You may also run `./contrib/scripts/nm-code-format-container.sh` which uses a
+Fedora container with podman and the correct version of clang-format.
+
+You are welcome to not bother and open a merge request with wrong formatting,
+but note that we then will automatically adjust your contribution before
+merging.
 
 The automatic reformatting was done by commit 328fb90f3e0d4e35975aff63944ac0412d7893a5.
 Use `--ignore-rev` option or `--ignore-revs-file .git-blame-ignore-revs` to ignore
@@ -67,6 +68,8 @@ the reformatting commit with git-blame:
 ```
 $ git config --add 'blame.ignoreRevsFile' '.git-blame-ignore-revs'
 ```
+
+You may integrate clang-formatter in your editor (for [vim](https://github.com/rhysd/vim-clang-format)).
 
 ### Style
 
