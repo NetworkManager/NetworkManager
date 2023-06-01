@@ -57,11 +57,11 @@ variables:
   #
   # This is done by running `ci-fairy generate-template` and possibly bumping
   # ".default_tag".
-  ALPINE_TAG:  'tag-3c44b17230c3'
-  CENTOS_TAG:  'tag-a6311164b42c'
-  DEBIAN_TAG:  'tag-7f291c2d3f4d'
-  FEDORA_TAG:  'tag-a6311164b42c'
-  UBUNTU_TAG:  'tag-7f291c2d3f4d'
+  ALPINE_TAG:  'tag-d53edbf2ebdd'
+  CENTOS_TAG:  'tag-c374af7add25'
+  DEBIAN_TAG:  'tag-2ded62f40aeb'
+  FEDORA_TAG:  'tag-c374af7add25'
+  UBUNTU_TAG:  'tag-2ded62f40aeb'
 
   ALPINE_EXEC: 'bash .gitlab-ci/alpine-install.sh'
   CENTOS_EXEC: 'bash .gitlab-ci/fedora-install.sh'
@@ -865,6 +865,8 @@ check-tree:
     - "tier1:fedora:38@prep"
   stage: tier1
   script:
+    - date '+%Y%m%d-%H%M%S'; clang-format --version
+    - date '+%Y%m%d-%H%M%S'; black --version
     - date '+%Y%m%d-%H%M%S'; contrib/scripts/nm-python-black-format.sh --check
     - date '+%Y%m%d-%H%M%S'; git ls-files -z -- 'po/*.po' | xargs -0 -n1 msgfmt -vc
     - date '+%Y%m%d-%H%M%S'; contrib/scripts/nm-code-format.sh -n

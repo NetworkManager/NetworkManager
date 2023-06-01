@@ -203,6 +203,8 @@ check-tree:
     - "tier{{default_distro.tier}}:{{default_distro.name}}:{{default_distro.versions[0]}}@prep"
   stage: tier1
   script:
+    - date '+%Y%m%d-%H%M%S'; clang-format --version
+    - date '+%Y%m%d-%H%M%S'; black --version
     - date '+%Y%m%d-%H%M%S'; contrib/scripts/nm-python-black-format.sh --check
     - date '+%Y%m%d-%H%M%S'; git ls-files -z -- 'po/*.po' | xargs -0 -n1 msgfmt -vc
     - date '+%Y%m%d-%H%M%S'; contrib/scripts/nm-code-format.sh -n
