@@ -581,6 +581,8 @@ nmcs_device_reapply(NMDevice     *device,
     NMDeviceReapplyFlags reapply_flags = NM_DEVICE_REAPPLY_FLAGS_PRESERVE_EXTERNAL_IP;
 
 again:
+    g_clear_error(&data.error);
+
     nm_device_reapply_async(device,
                             connection,
                             version_id,
