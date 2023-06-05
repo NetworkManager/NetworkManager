@@ -5405,8 +5405,8 @@ nm_device_get_type_description(NMDevice *self)
     g_return_val_if_fail(self != NULL, NULL);
 
     /* Beware: this function should return the same
-     * value as nm_device_get_type_description() in libnm. */
-
+     * value as nm_device_get_type_description() in libnm.
+     * The returned string is static or interned */
     return NM_DEVICE_GET_CLASS(self)->get_type_description(self);
 }
 
