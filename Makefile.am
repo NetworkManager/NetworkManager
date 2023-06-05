@@ -3561,7 +3561,9 @@ EXTRA_DIST += \
 	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-fcoe-fabric \
 	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-fcoe-vn2vn \
 	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-ibft \
-	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-infiniband \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-infiniband0 \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-infiniband1 \
+	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-infiniband2 \
 	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-ip6-disabled.cexpected \
 	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-ipoib \
 	src/core/settings/plugins/ifcfg-rh/tests/network-scripts/ifcfg-test-link_local \
