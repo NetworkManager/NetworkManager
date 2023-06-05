@@ -423,31 +423,31 @@ nm_setting_infiniband_class_init(NMSettingInfinibandClass *klass)
     /**
      * NMSettingInfiniband:p-key:
      *
-     * The InfiniBand P_Key to use for this device. A value of -1 means to use
-     * the default P_Key (aka "the P_Key at index 0"). Otherwise, it is a
+     * The InfiniBand p-key to use for this device. A value of -1 means to use
+     * the default p-key (aka "the p-key at index 0"). Otherwise, it is a
      * 16-bit unsigned integer, whose high bit 0x8000 is set if it is a "full
-     * membership" P_Key. The values 0 and 0x8000 are not allowed.
+     * membership" p-key. The values 0 and 0x8000 are not allowed.
      *
      * With the p-key set, the interface name is always "$parent.$p_key".
      * Setting "connection.interface-name" to another name is not supported.
      *
      * Note that kernel will internally always set the full membership bit,
-     * although the interface name does not reflect that. Thus, not setting
-     * the high bit is probably not useful.
-     *
-     * If the profile is stored in ifcfg-rh format, then the full membership
-     * bit is automatically added. To get consistent behavior, it is
-     * best to only use p-key values with the full membership bit set.
+     * although the interface name does not reflect that. Usually the user
+     * would want to configure a full membership p-key with 0x8000 flag set.
      **/
     /* ---ifcfg-rh---
      * property: p-key
-     * variable: PKEY_ID (and PKEY=yes)
+     * variable: PKEY_ID or PKEY_ID_NM(*) (requires PKEY=yes)
      * default: PKEY=no
      * description: InfiniBand P_Key. The value can be a hex number prefixed with "0x"
      *   or a decimal number.
-     *   When PKEY_ID is specified, PHYSDEV and DEVICE also must be specified.
+     *   When PKEY_ID is specified, PHYSDEV must be specified.
      *   Note that ifcfg-rh format will always automatically set the full membership
-     *   bit 0x8000. Other p-key cannot be stored.
+     *   flag 0x8000 for the PKEY_ID variable. To express IDs without the full membership
+     *   flag, use PKEY_ID_NM. Note that kernel internally treats the interface as
+     *   having the full membership flag set, this mainly affects the interface name.
+     *   For the ifcfg file to be supported by initscripts' ifup-ib, the DEVICE=
+     *   must always be set. NetworkManager does not require that.
      * example: PKEY=yes PKEY_ID=2 PHYSDEV=mlx4_ib0 DEVICE=mlx4_ib0.8002
      * ---end---
      */
