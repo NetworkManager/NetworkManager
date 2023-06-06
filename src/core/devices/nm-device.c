@@ -6690,8 +6690,9 @@ nm_device_set_carrier(NMDevice *self, gboolean carrier)
         NM_DEVICE_GET_CLASS(self)->carrier_changed_notify(self, carrier);
         if (state <= NM_DEVICE_STATE_DISCONNECTED && !priv->queued_act_request) {
             _LOGD(LOGD_DEVICE, "carrier: link disconnected");
+            carrier_disconnected_action_cancel(self);
             carrier_changed(self, FALSE);
-        } else {
+        } else if (!priv->carrier_defer_source) {
             gint64 until_ms;
             gint64 now_ms;
 
