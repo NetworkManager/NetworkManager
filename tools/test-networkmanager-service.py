@@ -288,8 +288,15 @@ class Util:
         return (Util.ip_addr_ntop(a, family), family)
 
     @staticmethod
-    def eprint(*args, **kwargs):
-        print(*args, file=sys.stderr, **kwargs)
+    def log(message):
+        if gl.log_file:
+            try:
+                gl.log_file.write(message + "\n")
+                gl.log_file.flush()
+            except Exception:
+                pass
+        else:
+            print(message, file=sys.stderr)
 
     @staticmethod
     def variant_from_dbus(val):
@@ -2884,6 +2891,26 @@ class ObjectManager(dbus.service.Object):
         return managed_objects
 
 
+def setup_log_file():
+    """
+    Get environment variable for the log file , if any
+    We accept a %p placeholder to replace with the pid of the current
+    process
+    """
+    try:
+        log_file_name = os.environ["NM_TEST_NETWORKMANAGER_SERVICE_LOGFILE"]
+    except KeyError:
+        return None
+    if "%p" in log_file_name:
+        log_file_name = log_file_name.replace("%p", str(os.getpid()))
+    try:
+        log_file = open(log_file_name, "w")
+    except Exception:
+        log_file = None
+
+    return log_file
+
+
 ###############################################################################
 
 
@@ -2895,6 +2922,7 @@ def main():
     global gl
     gl = Global()
 
+    gl.log_file = setup_log_file()
     gl.mainloop = GLib.MainLoop()
     gl.bus = dbus.SessionBus()
     gl.force_activation_failure = {}
@@ -2927,7 +2955,8 @@ def main():
     gl.settings.unexport()
     gl.manager.unexport()
     gl.object_manager.remove_from_connection()
-
+    if gl.log_file:
+        gl.log_file.close()
     sys.exit(0)
 
 
