@@ -315,9 +315,9 @@ class Util:
         if isinstance(val, dbus.Array):
             try:
                 if val.signature == "s":
-                    return GLib.Variant("as", [Util.variant_from_dbus(x) for x in val])
+                    return GLib.Variant("as", [str(x) for x in val])
                 if val.signature == "b":
-                    return GLib.Variant("ab", [Util.variant_from_dbus(x) for x in val])
+                    return GLib.Variant("ab", [bool(x) for x in val])
                 if val.signature == "y":
                     return GLib.Variant("ay", [int(x) for x in val])
                 if val.signature == "u":
@@ -349,8 +349,7 @@ class Util:
                     )
             except Exception as e:
                 raise Exception(
-                    "Cannot convert array element to type '%s': %s"
-                    % (val.signature, e.message)
+                    "Cannot convert array element to type '%s': %s" % (val.signature, e)
                 )
         if isinstance(val, dbus.Dictionary):
             if val.signature == "ss":
