@@ -720,6 +720,14 @@ link_change(NMPlatform                   *platform,
         obj_tmp->link.port_data.bond.prio     = port_data->bond.prio;
         link_set_obj(platform, device, obj_tmp);
         return TRUE;
+    case NM_PORT_KIND_BRIDGE:
+        obj_tmp                                  = nmp_object_clone(device->obj, FALSE);
+        obj_tmp->link.port_kind                  = NM_PORT_KIND_BRIDGE;
+        obj_tmp->link.port_data.bridge.path_cost = port_data->bridge.path_cost;
+        obj_tmp->link.port_data.bridge.priority  = port_data->bridge.priority;
+        obj_tmp->link.port_data.bridge.hairpin   = port_data->bridge.hairpin;
+        link_set_obj(platform, device, obj_tmp);
+        return TRUE;
     case NM_PORT_KIND_NONE:
         return TRUE;
     }

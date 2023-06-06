@@ -421,22 +421,6 @@ static const Option master_options[] = {
         0,
     }};
 
-static const Option slave_options[] = {
-    OPTION(NM_SETTING_BRIDGE_PORT_PRIORITY,
-           "priority",
-           OPTION_TYPE_INT(NM_BRIDGE_PORT_PRIORITY_MIN,
-                           NM_BRIDGE_PORT_PRIORITY_MAX,
-                           NM_BRIDGE_PORT_PRIORITY_DEF),
-           .default_if_zero = TRUE, ),
-    OPTION(NM_SETTING_BRIDGE_PORT_PATH_COST,
-           "path_cost",
-           OPTION_TYPE_INT(NM_BRIDGE_PORT_PATH_COST_MIN,
-                           NM_BRIDGE_PORT_PATH_COST_MAX,
-                           NM_BRIDGE_PORT_PATH_COST_DEF),
-           .default_if_zero = TRUE, ),
-    OPTION(NM_SETTING_BRIDGE_PORT_HAIRPIN_MODE, "hairpin_mode", OPTION_TYPE_BOOL(FALSE), ),
-    {0}};
-
 static const NMPlatformBridgeVlan **
 setting_vlans_to_platform(GPtrArray *array)
 {
@@ -473,90 +457,26 @@ setting_vlans_to_platform(GPtrArray *array)
 static void
 commit_port_options(NMDevice *device, NMSettingBridgePort *setting)
 {
-    const Option              *option;
-    NMSetting                 *s;
-    gs_unref_object NMSetting *s_clear = NULL;
-    int                        ifindex = nm_device_get_ifindex(device);
+    guint32 path_cost, priority;
 
-    if (setting)
-        s = NM_SETTING(setting);
-    else
-        s = s_clear = nm_setting_bridge_port_new();
+    path_cost = nm_setting_bridge_port_get_path_cost(setting);
+    if (path_cost == 0)
+        path_cost = NM_BRIDGE_PORT_PATH_COST_DEF;
 
-    for (option = slave_options; option->name; option++) {
-        nm_auto_unset_gvalue GValue val = G_VALUE_INIT;
-        GParamSpec                 *pspec;
-        const char                 *value;
-        char                        value_buf[100];
+    priority = nm_setting_bridge_port_get_priority(setting);
+    if (priority == 0)
+        priority = NM_BRIDGE_PORT_PRIORITY_DEF;
 
-        pspec = g_object_class_find_property(G_OBJECT_GET_CLASS(s), option->name);
-        nm_assert(pspec);
-
-        g_value_init(&val, G_PARAM_SPEC_VALUE_TYPE(pspec));
-        g_object_get_property((GObject *) s, option->name, &val);
-
-        if (option->to_sysfs) {
-            value = option->to_sysfs(&val);
-            goto out;
-        }
-
-        switch (pspec->value_type) {
-        case G_TYPE_BOOLEAN:
-            value = g_value_get_boolean(&val) ? "1" : "0";
-            break;
-        case G_TYPE_UINT64:
-        case G_TYPE_UINT:
-        {
-            guint64 uval;
-
-            if (pspec->value_type == G_TYPE_UINT64)
-                uval = g_value_get_uint64(&val);
-            else
-                uval = (guint) g_value_get_uint(&val);
-
-            /* zero means "unspecified" for some NM properties but isn't in the
-             * allowed kernel range, so reset the property to the default value.
-             */
-            if (option->default_if_zero && uval == 0) {
-                if (pspec->value_type == G_TYPE_UINT64)
-                    uval = NM_G_PARAM_SPEC_GET_DEFAULT_UINT64(pspec);
-                else
-                    uval = NM_G_PARAM_SPEC_GET_DEFAULT_UINT(pspec);
-            }
-
-            /* Linux kernel bridge interfaces use 'centiseconds' for time-based values.
-             * In reality it's not centiseconds, but depends on HZ and USER_HZ, which
-             * is almost always works out to be a multiplier of 100, so we can assume
-             * centiseconds.  See clock_t_to_jiffies().
-             */
-            if (option->user_hz_compensate)
-                uval *= 100;
-
-            if (pspec->value_type == G_TYPE_UINT64)
-                nm_sprintf_buf(value_buf, "%" G_GUINT64_FORMAT, uval);
-            else
-                nm_sprintf_buf(value_buf, "%u", (guint) uval);
-
-            value = value_buf;
-        } break;
-        case G_TYPE_STRING:
-            value = g_value_get_string(&val);
-            break;
-        default:
-            nm_assert_not_reached();
-            value = NULL;
-            break;
-        }
-
-out:
-        if (!value)
-            return;
-
-        nm_platform_sysctl_slave_set_option(nm_device_get_platform(device),
-                                            ifindex,
-                                            option->sysname,
-                                            value);
-    }
+    nm_platform_link_change(nm_device_get_platform(device),
+                            nm_device_get_ifindex(device),
+                            NULL,
+                            NULL,
+                            &((NMPlatformLinkBridgePort){
+                                .path_cost = path_cost,
+                                .priority  = priority,
+                                .hairpin   = nm_setting_bridge_port_get_hairpin_mode(setting),
+                            }),
+                            0);
 }
 
 static void
@@ -662,44 +582,31 @@ master_update_slave_connection(NMDevice     *device,
                                NMConnection *connection,
                                GError      **error)
 {
-    NMDeviceBridge      *self = NM_DEVICE_BRIDGE(device);
-    NMSettingConnection *s_con;
-    NMSettingBridgePort *s_port;
-    int                  ifindex_slave      = nm_device_get_ifindex(slave);
-    NMConnection        *applied_connection = nm_device_get_applied_connection(device);
-
-    const Option *option;
+    NMSettingConnection  *s_con;
+    NMSettingBridgePort  *s_port;
+    int                   ifindex_slave      = nm_device_get_ifindex(slave);
+    NMConnection         *applied_connection = nm_device_get_applied_connection(device);
+    const NMPlatformLink *pllink;
 
     g_return_val_if_fail(ifindex_slave > 0, FALSE);
 
     s_con  = nm_connection_get_setting_connection(connection);
     s_port = _nm_connection_ensure_setting(connection, NM_TYPE_SETTING_BRIDGE_PORT);
+    pllink = nm_platform_link_get(nm_device_get_platform(slave), ifindex_slave);
 
-    for (option = slave_options; option->name; option++) {
-        gs_free char *str = nm_platform_sysctl_slave_get_option(nm_device_get_platform(device),
-                                                                ifindex_slave,
-                                                                option->sysname);
-        uint          value;
-
-        if (str) {
-            /* See comments in set_sysfs_uint() about centiseconds. */
-            if (option->user_hz_compensate) {
-                value = _nm_utils_ascii_str_to_int64(str,
-                                                     10,
-                                                     option->nm_min * 100,
-                                                     option->nm_max * 100,
-                                                     option->nm_default * 100);
-                value /= 100;
-            } else {
-                value = _nm_utils_ascii_str_to_int64(str,
-                                                     10,
-                                                     option->nm_min,
-                                                     option->nm_max,
-                                                     option->nm_default);
-            }
-            g_object_set(s_port, option->name, value, NULL);
-        } else
-            _LOGW(LOGD_BRIDGE, "failed to read bridge port setting '%s'", option->sysname);
+    if (pllink && pllink->port_kind == NM_PORT_KIND_BRIDGE) {
+        g_object_set(s_port,
+                     NM_SETTING_BRIDGE_PORT_PATH_COST,
+                     pllink->port_data.bridge.path_cost,
+                     NULL);
+        g_object_set(s_port,
+                     NM_SETTING_BRIDGE_PORT_PRIORITY,
+                     pllink->port_data.bridge.priority,
+                     NULL);
+        g_object_set(s_port,
+                     NM_SETTING_BRIDGE_PORT_HAIRPIN_MODE,
+                     pllink->port_data.bridge.hairpin,
+                     NULL);
     }
 
     g_object_set(s_con,

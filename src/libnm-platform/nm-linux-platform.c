@@ -3408,6 +3408,8 @@ _new_from_nl_link(NMPlatform            *platform,
 
             if (nm_streq(s, "bond"))
                 obj->link.port_kind = NM_PORT_KIND_BOND;
+            else if (nm_streq(s, "bridge"))
+                obj->link.port_kind = NM_PORT_KIND_BRIDGE;
         }
 
         if (li[IFLA_INFO_SLAVE_DATA]) {
@@ -3415,7 +3417,13 @@ _new_from_nl_link(NMPlatform            *platform,
                 [IFLA_BOND_SLAVE_QUEUE_ID] = {.type = NLA_U16},
                 [IFLA_BOND_SLAVE_PRIO]     = {.type = NLA_S32},
             };
-            struct nlattr *bp[G_N_ELEMENTS(policy_bond_port)];
+            struct nlattr                 *bp[G_N_ELEMENTS(policy_bond_port)];
+            static const struct nla_policy policy_bridge_port[] = {
+                [IFLA_BRPORT_COST]     = {.type = NLA_U32},
+                [IFLA_BRPORT_PRIORITY] = {.type = NLA_U16},
+                [IFLA_BRPORT_MODE]     = {.type = NLA_U8},
+            };
+            struct nlattr *brp[G_N_ELEMENTS(policy_bridge_port)];
 
             switch (obj->link.port_kind) {
             case NM_PORT_KIND_BOND:
@@ -3440,6 +3448,19 @@ _new_from_nl_link(NMPlatform            *platform,
                             1);
                     }
                 }
+                break;
+            case NM_PORT_KIND_BRIDGE:
+                if (nla_parse_nested_arr(brp, li[IFLA_INFO_SLAVE_DATA], policy_bridge_port) < 0)
+                    return NULL;
+
+                if (brp[IFLA_BRPORT_COST])
+                    obj->link.port_data.bridge.path_cost = nla_get_u32(brp[IFLA_BRPORT_COST]);
+
+                if (brp[IFLA_BRPORT_PRIORITY])
+                    obj->link.port_data.bridge.priority = nla_get_u16(brp[IFLA_BRPORT_PRIORITY]);
+
+                if (brp[IFLA_BRPORT_MODE])
+                    obj->link.port_data.bridge.hairpin = nla_get_u8(brp[IFLA_BRPORT_MODE]);
                 break;
             case NM_PORT_KIND_NONE:
                 break;
@@ -8529,6 +8550,26 @@ link_change(NMPlatform                   *platform,
 
         if (port_data->bond.prio_has)
             NLA_PUT_S32(nlmsg, IFLA_BOND_SLAVE_PRIO, port_data->bond.prio);
+
+        nla_nest_end(nlmsg, nl_port_data);
+        nla_nest_end(nlmsg, nl_info);
+        break;
+    case NM_PORT_KIND_BRIDGE:
+
+        nm_assert(port_data);
+
+        if (!(nl_info = nla_nest_start(nlmsg, IFLA_LINKINFO)))
+            goto nla_put_failure;
+
+        nm_assert(nm_streq0("bridge", nm_link_type_to_rtnl_type_string(NM_LINK_TYPE_BRIDGE)));
+        NLA_PUT_STRING(nlmsg, IFLA_INFO_SLAVE_KIND, "bridge");
+
+        if (!(nl_port_data = nla_nest_start(nlmsg, IFLA_INFO_SLAVE_DATA)))
+            goto nla_put_failure;
+
+        NLA_PUT_U32(nlmsg, IFLA_BRPORT_COST, port_data->bridge.path_cost);
+        NLA_PUT_U16(nlmsg, IFLA_BRPORT_PRIORITY, port_data->bridge.priority);
+        NLA_PUT_U8(nlmsg, IFLA_BRPORT_MODE, port_data->bridge.hairpin);
 
         nla_nest_end(nlmsg, nl_port_data);
         nla_nest_end(nlmsg, nl_info);

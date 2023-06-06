@@ -88,6 +88,14 @@ _nmp_link_port_data_to_string(NMPortKind                    port_kind,
                                               port_data->bond.prio)
                              : "");
         goto out;
+    case NM_PORT_KIND_BRIDGE:
+        nm_strbuf_append(&sbuf,
+                         &sbuf_len,
+                         "port bridge path_cost %u priority %u hairpin %s",
+                         port_data->bridge.path_cost,
+                         port_data->bridge.priority,
+                         port_data->bridge.hairpin ? "true" : "false");
+        goto out;
     }
 
     nm_strbuf_append(&sbuf, &sbuf_len, "invalid-port-type %d", (int) port_kind);
@@ -2173,9 +2181,12 @@ nm_platform_link_change(NMPlatform               *self,
                         int                       ifindex,
                         NMPlatformLinkProps      *props,
                         NMPlatformLinkBondPort   *bond_port,
+                        NMPlatformLinkBridgePort *bridge_port,
                         NMPlatformLinkChangeFlags flags)
 {
-    char sbuf_prio[100];
+    NMPortKind             port_kind = NM_PORT_KIND_NONE;
+    NMPlatformLinkPortData port_data;
+    char                   sbuf_prio[100];
 
     _CHECK_SELF(self, klass, FALSE);
 
@@ -2187,6 +2198,7 @@ nm_platform_link_change(NMPlatform               *self,
                                 | NM_PLATFORM_LINK_CHANGE_GSO_MAX_SEGMENTS
                                 | NM_PLATFORM_LINK_CHANGE_GRO_MAX_SIZE)
               || props);
+    nm_assert((!!bond_port + !!bridge_port) <= 1);
 
     if (_LOGD_ENABLED()) {
         nm_auto_free_gstring GString *str = g_string_new("");
@@ -2210,6 +2222,12 @@ nm_platform_link_change(NMPlatform               *self,
                                                         !bond_port->prio_has ? "?" : "",
                                                         bond_port->prio)
                                        : "");
+        } else if (bridge_port) {
+            g_string_append_printf(str,
+                                   "bridge-port path_cost %u priority %u hairpin %s",
+                                   bridge_port->path_cost,
+                                   bridge_port->priority,
+                                   bridge_port->hairpin ? "true" : "false");
         }
 
         if (str->len > 0 && str->str[str->len - 1] == ' ')
@@ -2218,12 +2236,15 @@ nm_platform_link_change(NMPlatform               *self,
         _LOG3D("link: change: %s", str->str);
     }
 
-    return klass->link_change(self,
-                              ifindex,
-                              props,
-                              bond_port ? NM_PORT_KIND_BOND : NM_PORT_KIND_NONE,
-                              (const NMPlatformLinkPortData *) bond_port,
-                              flags);
+    if (bond_port) {
+        port_data.bond = *bond_port;
+        port_kind      = NM_PORT_KIND_BOND;
+    } else if (bridge_port) {
+        port_data.bridge = *bridge_port;
+        port_kind        = NM_PORT_KIND_BRIDGE;
+    }
+
+    return klass->link_change(self, ifindex, props, port_kind, &port_data, flags);
 }
 
 /**
@@ -7879,6 +7900,9 @@ nm_platform_link_hash_update(const NMPlatformLink *obj, NMHashState *h)
     case NM_PORT_KIND_BOND:
         nm_platform_link_bond_port_hash_update(&obj->port_data.bond, h);
         break;
+    case NM_PORT_KIND_BRIDGE:
+        nm_platform_link_bridge_port_hash_update(&obj->port_data.bridge, h);
+        break;
     }
 }
 
@@ -7886,6 +7910,12 @@ void
 nm_platform_link_bond_port_hash_update(const NMPlatformLinkBondPort *obj, NMHashState *h)
 {
     nm_hash_update_vals(h, obj->prio, obj->queue_id, NM_HASH_COMBINE_BOOLS(guint8, obj->prio_has));
+}
+
+void
+nm_platform_link_bridge_port_hash_update(const NMPlatformLinkBridgePort *obj, NMHashState *h)
+{
+    nm_hash_update_vals(h, obj->path_cost, obj->priority, obj->hairpin);
 }
 
 int
@@ -7925,6 +7955,9 @@ nm_platform_link_cmp(const NMPlatformLink *a, const NMPlatformLink *b)
         break;
     case NM_PORT_KIND_BOND:
         NM_CMP_RETURN(nm_platform_link_bond_port_cmp(&a->port_data.bond, &b->port_data.bond));
+        break;
+    case NM_PORT_KIND_BRIDGE:
+        NM_CMP_RETURN(nm_platform_link_bridge_port_cmp(&a->port_data.bridge, &b->port_data.bridge));
         break;
     }
     NM_CMP_FIELD(a, b, rx_packets);
@@ -8018,6 +8051,18 @@ nm_platform_link_bond_port_cmp(const NMPlatformLinkBondPort *a, const NMPlatform
     NM_CMP_FIELD(a, b, queue_id);
     NM_CMP_FIELD(a, b, prio);
     NM_CMP_FIELD_BOOL(a, b, prio_has);
+
+    return 0;
+}
+
+int
+nm_platform_link_bridge_port_cmp(const NMPlatformLinkBridgePort *a,
+                                 const NMPlatformLinkBridgePort *b)
+{
+    NM_CMP_SELF(a, b);
+    NM_CMP_FIELD(a, b, path_cost);
+    NM_CMP_FIELD(a, b, priority);
+    NM_CMP_FIELD(a, b, hairpin);
 
     return 0;
 }
