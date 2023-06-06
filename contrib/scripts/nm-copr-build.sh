@@ -29,6 +29,8 @@
 #     on the distribution.
 # - NM_GIT_BUNDLE: set to a HTTP url where to fetch the nm-git-bundle-*.noarch.rpm
 #     from. Set to empty to skip it. By default, it fetches the bundle from copr.
+#     See "contrib/scripts/nm-copr-build-nm-git-bundle.sh" script and
+#     https://copr.fedorainfracloud.org/coprs/networkmanager/NetworkManager-main/package/nm-git-bundle/
 
 set -ex
 
