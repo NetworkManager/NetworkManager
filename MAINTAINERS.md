@@ -75,3 +75,15 @@ In practice when we want to backport new API from main we have two options:
   which is released as 1.12.0. The API is backported to 1.10.14 in commit
   19d7e66099ee43f47d6be0e740dc710fc365d200. Then, on main we add duplicate
   symbols with commit 5eade4da11ee38a0e7faf4a87b2c2b5af07c5eeb.
+
+### Reimporting systemd
+
+See [here](src/libnm-systemd-shared/README.md#reimport-upstream-code).
+
+### Copr repository
+
+See [here](contrib/scripts/nm-copr-build.sh).
+
+### gitlab-ci Pipelines
+
+See [here](.gitlab-ci/README.md).
