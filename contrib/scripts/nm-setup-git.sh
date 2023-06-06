@@ -5,6 +5,11 @@ set -e
 usage() {
     printf "%s [--no-test]\n" "$CMD_NAME"
     printf "\n"
+    printf "This script configures (or shows configuration) to the local git, with\n"
+    printf "settings that might be useful when working on NetworkManager.\n"
+    printf "\n"
+    printf "RUn it without arguments, it only prints and shows what it would do.\n"
+    printf "\n"
     printf "  --no-test: by default, the script only prints what it\n"
     printf "    would do. You can also set NO_TEST=1 environment variable.\n"
     printf "\n"
