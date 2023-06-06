@@ -417,3 +417,6 @@ To resync our local notes use:
 ```
 $ git fetch origin refs/notes/bugs:refs/notes/bugs -f
 ```
+### Testing NetworkManager with nm-in-container script.
+
+See [the readme](tools/nm-in-container/README.md) for details.

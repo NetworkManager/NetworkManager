@@ -6,4 +6,4 @@ privileged  podman container.  This is useful for testing NetworkManager for
 development.
 
 Try `./nm-in-container --help` to see options.  Inside the container, see the
-bash history for useful commands and  the hints in "/etc/motd".
+bash history for useful commands and read the hints in "/etc/motd".
