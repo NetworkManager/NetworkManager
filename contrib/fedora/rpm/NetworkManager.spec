@@ -1243,6 +1243,7 @@ fi
 %{_unitdir}/nm-cloud-setup.timer
 %{nmlibdir}/dispatcher.d/90-nm-cloud-setup.sh
 %{nmlibdir}/dispatcher.d/no-wait.d/90-nm-cloud-setup.sh
+%{nmlibdir}/dispatcher.d/pre-up.d/90-nm-cloud-setup.sh
 %{_mandir}/man8/nm-cloud-setup.8*
 %endif
 

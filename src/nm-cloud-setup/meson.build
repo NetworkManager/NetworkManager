@@ -16,7 +16,7 @@ if install_systemdunitdir
 
   install_data(
     '90-nm-cloud-setup.sh',
-    install_dir: join_paths(nm_pkglibdir, 'dispatcher.d', 'no-wait.d'),
+    install_dir: join_paths(nm_pkglibdir, 'dispatcher.d', 'pre-up.d'),
   )
 
 endif
