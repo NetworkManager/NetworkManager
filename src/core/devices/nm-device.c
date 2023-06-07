@@ -536,10 +536,10 @@ typedef struct _NMDevicePrivate {
     /* Link stuff */
     guint             link_connected_id;
     guint             link_disconnected_id;
-    guint             carrier_defer_id;
-    guint             carrier_wait_id;
     gulong            config_changed_id;
     gulong            ifindex_changed_id;
+    GSource          *carrier_wait_source;
+    GSource          *carrier_defer_source;
     guint32           mtu;
     guint32           ip6_mtu; /* FIXME(l3cfg) */
     guint32           mtu_initial;
@@ -6639,24 +6639,20 @@ carrier_disconnected_action_cb(gpointer user_data)
     NMDevice        *self = NM_DEVICE(user_data);
     NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
 
-    _LOGD(LOGD_DEVICE,
-          "carrier: link disconnected (calling deferred action) (id=%u)",
-          priv->carrier_defer_id);
+    _LOGD(LOGD_DEVICE, "carrier: link disconnected (calling deferred action)");
 
-    priv->carrier_defer_id = 0;
+    nm_clear_g_source_inst(&priv->carrier_defer_source);
     carrier_changed(self, FALSE);
-    return FALSE;
+    return G_SOURCE_CONTINUE;
 }
 
 static void
 carrier_disconnected_action_cancel(NMDevice *self)
 {
     NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
-    guint            id   = priv->carrier_defer_id;
 
-    if (nm_clear_g_source(&priv->carrier_defer_id)) {
-        _LOGD(LOGD_DEVICE, "carrier: link disconnected (canceling deferred action) (id=%u)", id);
-    }
+    if (nm_clear_g_source_inst(&priv->carrier_defer_source))
+        _LOGD(LOGD_DEVICE, "carrier: link disconnected (canceling deferred action)");
 }
 
 void
@@ -6684,28 +6680,29 @@ nm_device_set_carrier(NMDevice *self, gboolean carrier)
         NM_DEVICE_GET_CLASS(self)->carrier_changed_notify(self, carrier);
         carrier_changed(self, TRUE);
 
-        if (priv->carrier_wait_id) {
+        if (priv->carrier_wait_source) {
             nm_device_remove_pending_action(self, NM_PENDING_ACTION_CARRIER_WAIT, FALSE);
             _carrier_wait_check_queued_act_request(self);
         }
     } else {
-        if (priv->carrier_wait_id)
+        if (priv->carrier_wait_source)
             nm_device_add_pending_action(self, NM_PENDING_ACTION_CARRIER_WAIT, FALSE);
         NM_DEVICE_GET_CLASS(self)->carrier_changed_notify(self, carrier);
         if (state <= NM_DEVICE_STATE_DISCONNECTED && !priv->queued_act_request) {
             _LOGD(LOGD_DEVICE, "carrier: link disconnected");
+            carrier_disconnected_action_cancel(self);
             carrier_changed(self, FALSE);
-        } else {
-            gint64 now_ms, until_ms;
+        } else if (!priv->carrier_defer_source) {
+            gint64 until_ms;
+            gint64 now_ms;
 
             now_ms   = nm_utils_get_monotonic_timestamp_msec();
             until_ms = NM_MAX(now_ms + _get_carrier_wait_ms(self), priv->carrier_wait_until_ms);
-            priv->carrier_defer_id =
-                g_timeout_add(until_ms - now_ms, carrier_disconnected_action_cb, self);
+            priv->carrier_defer_source =
+                nm_g_timeout_add_source(until_ms - now_ms, carrier_disconnected_action_cb, self);
             _LOGD(LOGD_DEVICE,
-                  "carrier: link disconnected (deferring action for %ld milliseconds) (id=%u)",
-                  (long) (until_ms - now_ms),
-                  priv->carrier_defer_id);
+                  "carrier: link disconnected (deferring action for %ld milliseconds)",
+                  (long) (until_ms - now_ms));
         }
     }
 }
@@ -13741,7 +13738,7 @@ _carrier_wait_check_act_request_must_queue(NMDevice *self, NMActRequest *req)
      * request is not blocked waiting for carrier. */
     if (priv->carrier)
         return FALSE;
-    if (priv->carrier_wait_id == 0)
+    if (!priv->carrier_wait_source)
         return FALSE;
 
     connection = nm_act_request_get_applied_connection(req);
@@ -14255,11 +14252,11 @@ carrier_wait_timeout(gpointer user_data)
     NMDevice        *self = NM_DEVICE(user_data);
     NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
 
-    priv->carrier_wait_id = 0;
+    nm_clear_g_source_inst(&priv->carrier_wait_source);
     nm_device_remove_pending_action(self, NM_PENDING_ACTION_CARRIER_WAIT, FALSE);
     if (!priv->carrier)
         _carrier_wait_check_queued_act_request(self);
-    return G_SOURCE_REMOVE;
+    return G_SOURCE_CONTINUE;
 }
 
 static gboolean
@@ -14306,13 +14303,14 @@ carrier_detect_wait(NMDevice *self)
      *
      * If during that time carrier goes away, we declare the interface
      * as not ready. */
-    nm_clear_g_source(&priv->carrier_wait_id);
+    nm_clear_g_source_inst(&priv->carrier_wait_source);
     if (!priv->carrier)
         nm_device_add_pending_action(self, NM_PENDING_ACTION_CARRIER_WAIT, FALSE);
 
     now_ms   = nm_utils_get_monotonic_timestamp_msec();
     until_ms = NM_MAX(now_ms + _get_carrier_wait_ms(self), priv->carrier_wait_until_ms);
-    priv->carrier_wait_id = g_timeout_add(until_ms - now_ms, carrier_wait_timeout, self);
+    priv->carrier_wait_source =
+        nm_g_timeout_add_source(until_ms - now_ms, carrier_wait_timeout, self);
 }
 
 gboolean
@@ -15304,7 +15302,7 @@ check_connection_available(NMDevice                      *self,
         return TRUE;
 
     if (NM_FLAGS_HAS(flags, _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_WAITING_CARRIER)
-        && priv->carrier_wait_id != 0) {
+        && priv->carrier_wait_source) {
         /* The device has no carrier though the connection requires it.
          *
          * If we are still waiting for carrier, the connection is available
@@ -18154,7 +18152,7 @@ dispose(GObject *object)
 
     available_connections_del_all(self);
 
-    if (nm_clear_g_source(&priv->carrier_wait_id))
+    if (nm_clear_g_source_inst(&priv->carrier_wait_source))
         nm_device_remove_pending_action(self, NM_PENDING_ACTION_CARRIER_WAIT, FALSE);
 
     _clear_queued_act_request(priv, NM_ACTIVE_CONNECTION_STATE_REASON_DEVICE_DISCONNECTED);
