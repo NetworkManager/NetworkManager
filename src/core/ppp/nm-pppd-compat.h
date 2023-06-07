@@ -11,6 +11,8 @@
 
 int nm_pppd_compat_get_ifunit(void);
 
+const char *nm_pppd_compat_get_pppoe_plugin_name(void) _nm_const;
+
 const char *nm_pppd_compat_get_ifname(void);
 void        nm_pppd_compat_set_ifname(const char *ifname);
 
