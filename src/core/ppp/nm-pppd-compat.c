@@ -94,14 +94,6 @@ G_STATIC_ASSERT(NM_PPPD_COMPAT_MAXSECRETLEN == MAXSECRETLEN);
 
 /*****************************************************************************/
 
-_nm_const const char *
-nm_pppd_compat_get_pppoe_plugin_name(void)
-{
-    return PPP_VERSION_2_5_OR_NEWER ? "pppoe.so" : "rp-pppoe.so";
-}
-
-/*****************************************************************************/
-
 int
 nm_pppd_compat_get_ifunit(void)
 {
