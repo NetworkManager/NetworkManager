@@ -55,6 +55,7 @@ if [ "$enable_ifcfg_rh" = 1 ]; then
 fi
 
 if [ "$enable_nm_cloud_setup" = 1 -a "$install_systemdunitdir" = 1 ]; then
+    ln -sfn '../pre-up.d/90-nm-cloud-setup.sh' "${DESTDIR}${nm_pkglibdir}/dispatcher.d/no-wait.d/90-nm-cloud-setup.sh"
     ln -sfn 'no-wait.d/90-nm-cloud-setup.sh' "${DESTDIR}${nm_pkglibdir}/dispatcher.d/90-nm-cloud-setup.sh"
 fi
 

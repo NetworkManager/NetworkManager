@@ -5419,12 +5419,14 @@ src/nm-cloud-setup/nm-cloud-setup.service: $(srcdir)/src/nm-cloud-setup/nm-cloud
 	$(AM_V_GEN) $(data_edit) $< >$@
 
 install-data-hook-cloud-setup: install-data-hook-dispatcher
-	$(INSTALL_SCRIPT) "$(srcdir)/src/nm-cloud-setup/90-nm-cloud-setup.sh" "$(DESTDIR)$(nmlibdir)/dispatcher.d/no-wait.d/"
+	$(INSTALL_SCRIPT) "$(srcdir)/src/nm-cloud-setup/90-nm-cloud-setup.sh" "$(DESTDIR)$(nmlibdir)/dispatcher.d/pre-up.d/"
+	ln -fs ../pre-up.d/90-nm-cloud-setup.sh "$(DESTDIR)$(nmlibdir)/dispatcher.d/no-wait.d/90-nm-cloud-setup.sh"
 	ln -fs no-wait.d/90-nm-cloud-setup.sh "$(DESTDIR)$(nmlibdir)/dispatcher.d/90-nm-cloud-setup.sh"
 
 install_data_hook += install-data-hook-cloud-setup
 
 uninstall-hook-cloud-setup:
+	rm -f "$(DESTDIR)$(nmlibdir)/dispatcher.d/pre-up.d/90-nm-cloud-setup.sh"
 	rm -f "$(DESTDIR)$(nmlibdir)/dispatcher.d/no-wait.d/90-nm-cloud-setup.sh"
 	rm -f "$(DESTDIR)$(nmlibdir)/dispatcher.d/90-nm-cloud-setup.sh"
 
