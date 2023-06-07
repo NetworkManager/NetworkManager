@@ -39,6 +39,8 @@ The reason is that we might one day use the code under terms of LGPL-2.1-or-late
 new contributions already must already agree to that.
 For more details see [RELICENSE.md](RELICENSE.md).
 
+Do not use "Signed-off-by:" lines in commits for NetworkManager. It has no meaning.
+
 
 Coding Style
 ------------
