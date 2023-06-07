@@ -1,3 +1,44 @@
+Merging Merge Requests
+----------------------
+
+- almost all new code, gets merged to `main` branch only. Stable branches only
+  receive backports via `git cherry-pick -x`.
+
+- almost always, make sure that the merge request is rebased against current
+  `main` branch.
+
+- if the merge request contains multiple patches, create a `--no-ff` merge
+  request that envelop the patches. The merge commit can have a trivial commit
+message like "area: merge branch 'xy/topic'" and refer to all relevant
+resources. At least the full URL to the gitlab merge request should be there.
+
+- for single patches, the merge commit can be skipped. In that case, add the
+  full URL to the commit message before merging.
+
+- before merging the result to `main`, make again sure that the merge request
+  is up-to date (in particular, if you just rebased the branch or amended the
+commit message). So usually first do a `git push origin -f -o ci.skip` to
+update the merge request one more time, and the push the merge request to
+`main`. The result is that the merge request in gitlab is shown as "Merged".
+
+- always refer to relevant URLs (bugzilla, gitlab issues, gitlab merge
+  request).  Do so via full URLs, not abbreviations like "!XYZ", so that the
+URL is clickable in the browser.  Note that while the merge request is still
+under review and being reworked, we will frequently force push the branch.
+Gitlab and github will create backlinks to full URLs, so we want not to specify
+those URLs while development, but the moment before merging, we will add them.
+This means, usually when we decide that a merge request is ready to be merged,
+we still need to rebase it to latest main and amend the commit messages. Then
+we usually need to push once more to the merge-request, before pushing the
+final result to `main`.
+
+The purpose of this elaborate scheme is to get a clean history that is easy
+to review and links to relevant resources.
+
+If you forget to mention an URL, you can do so afterwards via `git-notes`.
+See [CONTRIBUTING.md](CONTRIBUTING.md#git-notes-refsnotesbugs).
+
+
 Upstream backports
 ---------------------------
 
