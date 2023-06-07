@@ -843,7 +843,7 @@ create_pppd_cmd_line(NMPPPManager   *self,
         const char *pppoe_service;
 
         nm_strv_ptrarray_add_string_dup(cmd, "plugin");
-        nm_strv_ptrarray_add_string_dup(cmd, "rp-pppoe.so");
+        nm_strv_ptrarray_add_string_dup(cmd, NM_PPPOE_PLUGIN_NAME);
 
         nm_strv_ptrarray_add_string_concat(cmd, "nic-", priv->parent_iface);
 
@@ -872,7 +872,7 @@ create_pppd_cmd_line(NMPPPManager   *self,
 
         } else if (!strcmp(protocol, NM_SETTING_ADSL_PROTOCOL_PPPOE)) {
             nm_strv_ptrarray_add_string_dup(cmd, "plugin");
-            nm_strv_ptrarray_add_string_dup(cmd, "rp-pppoe.so");
+            nm_strv_ptrarray_add_string_dup(cmd, NM_PPPOE_PLUGIN_NAME);
             nm_strv_ptrarray_add_string_dup(cmd, priv->parent_iface);
         }
 
