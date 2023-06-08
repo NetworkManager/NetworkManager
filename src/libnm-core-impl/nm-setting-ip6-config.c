@@ -807,6 +807,35 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
      * ---end---
      */
 
+    /* ---nmcli---
+     * property: dns-options
+     * format: a comma separated list of DNS options
+     * description:
+     *   DNS options for /etc/resolv.conf as described in resolv.conf(5) manual.
+     *
+     *   The currently supported options are "attempts", "debug", "edns0",
+     *   "ndots", "no-aaaa", "no-check-names", "no-reload", "no-tld-query",
+     *   "rotate", "single-request", "single-request-reopen", "timeout",
+     *   "trust-ad", "use-vc" and "inet6", "ip6-bytestring", "ip6-dotint",
+     *   "no-ip6-dotint". See the resolv.conf(5) manual.
+     *
+     *   Note that there is a distinction between an unset (default) list
+     *   and an empty list. In nmcli, to unset the list set the value to
+     *   "". To set an empty list, set it to " ". Currently, an unset list
+     *   has the same meaning as an empty list. That might change in the future.
+     *
+     *   The "trust-ad" setting is only honored if the profile contributes
+     *   name servers to resolv.conf, and if all contributing profiles have
+     *   "trust-ad" enabled.
+     *
+     *   When using a caching DNS plugin (dnsmasq or systemd-resolved in
+     *   NetworkManager.conf) then "edns0" and "trust-ad" are automatically
+     *   added.
+     *
+     *   The valid "ipv4.dns-options" and "ipv6.dns-options" get merged together.
+     * ---end---
+     */
+
     /* ---ifcfg-rh---
      * property: dns-options
      * variable: IPV6_RES_OPTIONS(+)
