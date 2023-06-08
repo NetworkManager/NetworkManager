@@ -11650,7 +11650,7 @@ _dev_ipac6_start(NMDevice *self)
 
         sysctl_value = nm_device_sysctl_ip_conf_get(self, AF_INET6, "forwarding");
         if (!nm_streq0(sysctl_value, "1")) {
-            if (sysctl_value) {
+            if (sysctl_value && !g_hash_table_contains(priv->ip6_saved_properties, "forwarding")) {
                 g_hash_table_insert(priv->ip6_saved_properties,
                                     "forwarding",
                                     g_steal_pointer(&sysctl_value));
