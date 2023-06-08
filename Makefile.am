@@ -5200,6 +5200,8 @@ src_nmtui_nmtui_SOURCES = \
 	src/nmtui/nmtui-edit.h \
 	src/nmtui/nmtui-hostname.c \
 	src/nmtui/nmtui-hostname.h \
+	src/nmtui/nmtui-radio.c \
+	src/nmtui/nmtui-radio.h \
 	\
 	src/nmtui/nm-editor-bindings.c \
 	src/nmtui/nm-editor-bindings.h \

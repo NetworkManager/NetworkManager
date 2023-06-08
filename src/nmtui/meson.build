@@ -47,6 +47,7 @@ executable(
     'nmtui-connect.c',
     'nmtui-edit.c',
     'nmtui-hostname.c',
+    'nmtui-radio.c',
     'nmt-utils.c',
     'nmt-widget-list.c',
   ),

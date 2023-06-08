@@ -26,6 +26,7 @@
 #include "nmtui-edit.h"
 #include "nmtui-connect.h"
 #include "nmtui-hostname.h"
+#include "nmtui-radio.h"
 
 NMClient         *nm_client;
 static GMainLoop *loop;
@@ -39,7 +40,8 @@ static const struct {
 } subprograms[] = {
     {"edit", "nmtui-edit", N_("connection"), N_("Edit a connection"), nmtui_edit},
     {"connect", "nmtui-connect", N_("connection"), N_("Activate a connection"), nmtui_connect},
-    {"hostname", "nmtui-hostname", N_("new hostname"), N_("Set system hostname"), nmtui_hostname}};
+    {"hostname", "nmtui-hostname", N_("new hostname"), N_("Set system hostname"), nmtui_hostname},
+    {"radio", "nmtui-radio", N_("radio"), N_("Radio"), nmtui_radio}};
 static const int    num_subprograms = G_N_ELEMENTS(subprograms);
 static NmtNewtForm *toplevel_form;
 
