@@ -89,6 +89,8 @@ NMConnection *nm_utils_match_connection(NMConnection *const   *connections,
                                         NMUtilsMatchFilterFunc match_filter_func,
                                         gpointer               match_filter_data);
 
+/*****************************************************************************/
+
 int nm_match_spec_device_by_pllink(const NMPlatformLink *pllink,
                                    const char           *match_device_type,
                                    const char           *match_dhcp_plugin,

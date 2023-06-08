@@ -918,17 +918,7 @@ nm_match_spec_device_by_pllink(const NMPlatformLink *pllink,
                              NULL,
                              NULL,
                              match_dhcp_plugin);
-
-    switch (m) {
-    case NM_MATCH_SPEC_MATCH:
-        return TRUE;
-    case NM_MATCH_SPEC_NEG_MATCH:
-        return FALSE;
-    case NM_MATCH_SPEC_NO_MATCH:
-        return no_match_value;
-    }
-    nm_assert_not_reached();
-    return no_match_value;
+    return nm_match_spec_match_type_to_bool(m, no_match_value);
 }
 
 /*****************************************************************************/

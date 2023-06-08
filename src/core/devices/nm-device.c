@@ -17059,16 +17059,7 @@ nm_device_spec_match_list_full(NMDevice *self, const GSList *specs, int no_match
                              klass->get_s390_subchannels ? klass->get_s390_subchannels(self) : NULL,
                              nm_dhcp_manager_get_config(nm_dhcp_manager_get()));
 
-    switch (m) {
-    case NM_MATCH_SPEC_MATCH:
-        return TRUE;
-    case NM_MATCH_SPEC_NEG_MATCH:
-        return FALSE;
-    case NM_MATCH_SPEC_NO_MATCH:
-        return no_match_value;
-    }
-    nm_assert_not_reached();
-    return no_match_value;
+    return nm_match_spec_match_type_to_bool(m, no_match_value);
 }
 
 guint
