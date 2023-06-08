@@ -911,13 +911,15 @@ nm_match_spec_device_by_pllink(const NMPlatformLink *pllink,
      * It's still useful because of specs like "*" and "except:interface-name:eth0",
      * which match even in that case. */
     m = nm_match_spec_device(specs,
-                             pllink ? pllink->name : NULL,
-                             match_device_type,
-                             pllink ? pllink->driver : NULL,
-                             NULL,
-                             NULL,
-                             NULL,
-                             match_dhcp_plugin);
+                             &((const NMMatchSpecDeviceData){
+                                 .interface_name   = pllink ? pllink->name : NULL,
+                                 .device_type      = match_device_type,
+                                 .driver           = pllink ? pllink->driver : NULL,
+                                 .driver_version   = NULL,
+                                 .hwaddr           = NULL,
+                                 .s390_subchannels = NULL,
+                                 .dhcp_plugin      = match_dhcp_plugin,
+                             }));
     return nm_match_spec_match_type_to_bool(m, no_match_value);
 }
 

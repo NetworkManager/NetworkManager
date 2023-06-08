@@ -17050,14 +17050,18 @@ nm_device_spec_match_list_full(NMDevice *self, const GSList *specs, int no_match
         !nm_device_get_unmanaged_flags(self, NM_UNMANAGED_PLATFORM_INIT),
         &is_fake);
 
-    m = nm_match_spec_device(specs,
-                             nm_device_get_iface(self),
-                             nm_device_get_type_description(self),
-                             nm_device_get_driver(self),
-                             nm_device_get_driver_version(self),
-                             is_fake ? NULL : hw_address,
-                             klass->get_s390_subchannels ? klass->get_s390_subchannels(self) : NULL,
-                             nm_dhcp_manager_get_config(nm_dhcp_manager_get()));
+    m = nm_match_spec_device(
+        specs,
+        &((const NMMatchSpecDeviceData){
+            .interface_name = nm_device_get_iface(self),
+            .device_type    = nm_device_get_type_description(self),
+            .driver         = nm_device_get_driver(self),
+            .driver_version = nm_device_get_driver_version(self),
+            .hwaddr         = is_fake ? NULL : hw_address,
+            .s390_subchannels =
+                klass->get_s390_subchannels ? klass->get_s390_subchannels(self) : NULL,
+            .dhcp_plugin = nm_dhcp_manager_get_config(nm_dhcp_manager_get()),
+        }));
 
     return nm_match_spec_match_type_to_bool(m, no_match_value);
 }
