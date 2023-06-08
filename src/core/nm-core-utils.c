@@ -1478,6 +1478,20 @@ nm_match_spec_device(const GSList *specs,
     return _match_result(has_except, has_not_except, has_match, has_match_except);
 }
 
+int
+nm_match_spec_match_type_to_bool(NMMatchSpecMatchType m, int no_match_value)
+{
+    switch (m) {
+    case NM_MATCH_SPEC_MATCH:
+        return TRUE;
+    case NM_MATCH_SPEC_NEG_MATCH:
+        return FALSE;
+    case NM_MATCH_SPEC_NO_MATCH:
+        return no_match_value;
+    }
+    return nm_assert_unreachable_val(no_match_value);
+}
+
 typedef struct {
     const char *uuid;
     const char *id;

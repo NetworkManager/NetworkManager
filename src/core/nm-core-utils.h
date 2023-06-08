@@ -193,6 +193,8 @@ typedef enum {
     NM_MATCH_SPEC_NEG_MATCH = 2,
 } NMMatchSpecMatchType;
 
+int nm_match_spec_match_type_to_bool(NMMatchSpecMatchType m, int no_match_value);
+
 NMMatchSpecMatchType nm_match_spec_device(const GSList *specs,
                                           const char   *interface_name,
                                           const char   *device_type,
