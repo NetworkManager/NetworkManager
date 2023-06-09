@@ -128,22 +128,6 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
     }
 }
 
-static void
-set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
-{
-    NMDeviceGeneric        *self = NM_DEVICE_GENERIC(object);
-    NMDeviceGenericPrivate *priv = NM_DEVICE_GENERIC_GET_PRIVATE(self);
-
-    switch (prop_id) {
-    case PROP_TYPE_DESCRIPTION:
-        priv->type_description = g_value_dup_string(value);
-        break;
-    default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
-        break;
-    }
-}
-
 /*****************************************************************************/
 
 static void
@@ -212,7 +196,6 @@ nm_device_generic_class_init(NMDeviceGenericClass *klass)
     object_class->constructor  = constructor;
     object_class->dispose      = dispose;
     object_class->get_property = get_property;
-    object_class->set_property = set_property;
 
     dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS(&interface_info_device_generic);
 
@@ -231,7 +214,7 @@ nm_device_generic_class_init(NMDeviceGenericClass *klass)
                             "",
                             "",
                             NULL,
-                            G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
+                            G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 }
