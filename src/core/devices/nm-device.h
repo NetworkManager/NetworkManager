@@ -460,6 +460,7 @@ gboolean     nm_device_is_real(NMDevice *dev);
 const char  *nm_device_get_ip_iface(NMDevice *dev);
 const char  *nm_device_get_ip_iface_from_platform(NMDevice *dev);
 int          nm_device_get_ip_ifindex(const NMDevice *dev);
+const char  *nm_device_get_s390_subchannels(NMDevice *self);
 const char  *nm_device_get_driver(NMDevice *dev);
 const char  *nm_device_get_driver_version(NMDevice *dev);
 const char  *nm_device_get_type_desc(NMDevice *dev);
