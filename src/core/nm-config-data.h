@@ -219,10 +219,10 @@ gint64 nm_config_data_get_connection_default_int64(const NMConfigData *self,
                                                    gint64              max,
                                                    gint64              fallback);
 
-const char *nm_config_data_get_device_config(const NMConfigData *self,
-                                             const char         *property,
-                                             NMDevice           *device,
-                                             gboolean           *has_match);
+const char *nm_config_data_get_device_config_by_device(const NMConfigData *self,
+                                                       const char         *property,
+                                                       NMDevice           *device,
+                                                       gboolean           *has_match);
 
 const char *nm_config_data_get_device_config_by_pllink(const NMConfigData   *self,
                                                        const char           *property,
@@ -230,19 +230,19 @@ const char *nm_config_data_get_device_config_by_pllink(const NMConfigData   *sel
                                                        const char           *match_device_type,
                                                        gboolean             *has_match);
 
-gboolean nm_config_data_get_device_config_boolean(const NMConfigData *self,
-                                                  const char         *property,
-                                                  NMDevice           *device,
-                                                  int                 val_no_match,
-                                                  int                 val_invalid);
-gint64   nm_config_data_get_device_config_int64(const NMConfigData *self,
-                                                const char         *property,
-                                                NMDevice           *device,
-                                                int                 base,
-                                                gint64              min,
-                                                gint64              max,
-                                                gint64              val_no_match,
-                                                gint64              val_invalid);
+gboolean nm_config_data_get_device_config_boolean_by_device(const NMConfigData *self,
+                                                            const char         *property,
+                                                            NMDevice           *device,
+                                                            int                 val_no_match,
+                                                            int                 val_invalid);
+gint64   nm_config_data_get_device_config_int64_by_device(const NMConfigData *self,
+                                                          const char         *property,
+                                                          NMDevice           *device,
+                                                          int                 base,
+                                                          gint64              min,
+                                                          gint64              max,
+                                                          gint64              val_no_match,
+                                                          gint64              val_invalid);
 
 const GSList *nm_config_data_get_device_allowed_connections_specs(const NMConfigData *self,
                                                                   NMDevice           *device,

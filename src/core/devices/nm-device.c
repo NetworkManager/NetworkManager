@@ -7315,14 +7315,15 @@ device_init_static_sriov_num_vfs(NMDevice *self)
     if (priv->ifindex > 0 && nm_device_has_capability(self, NM_DEVICE_CAP_SRIOV)) {
         int num_vfs;
 
-        num_vfs = nm_config_data_get_device_config_int64(NM_CONFIG_GET_DATA,
-                                                         NM_CONFIG_KEYFILE_KEY_DEVICE_SRIOV_NUM_VFS,
-                                                         self,
-                                                         10,
-                                                         0,
-                                                         G_MAXINT32,
-                                                         -1,
-                                                         -1);
+        num_vfs = nm_config_data_get_device_config_int64_by_device(
+            NM_CONFIG_GET_DATA,
+            NM_CONFIG_KEYFILE_KEY_DEVICE_SRIOV_NUM_VFS,
+            self,
+            10,
+            0,
+            G_MAXINT32,
+            -1,
+            -1);
         if (num_vfs >= 0)
             sriov_op_queue(self, num_vfs, NM_OPTION_BOOL_DEFAULT, NULL, NULL);
     }
@@ -14092,14 +14093,15 @@ nm_device_is_up(NMDevice *self)
 static gint64
 _get_carrier_wait_ms(NMDevice *self)
 {
-    return nm_config_data_get_device_config_int64(NM_CONFIG_GET_DATA,
-                                                  NM_CONFIG_KEYFILE_KEY_DEVICE_CARRIER_WAIT_TIMEOUT,
-                                                  self,
-                                                  10,
-                                                  0,
-                                                  G_MAXINT32,
-                                                  CARRIER_WAIT_TIME_MS,
-                                                  CARRIER_WAIT_TIME_MS);
+    return nm_config_data_get_device_config_int64_by_device(
+        NM_CONFIG_GET_DATA,
+        NM_CONFIG_KEYFILE_KEY_DEVICE_CARRIER_WAIT_TIMEOUT,
+        self,
+        10,
+        0,
+        G_MAXINT32,
+        CARRIER_WAIT_TIME_MS,
+        CARRIER_WAIT_TIME_MS);
 }
 
 /*
@@ -14647,11 +14649,11 @@ nm_device_check_unrealized_device_managed(NMDevice *self)
 
     nm_assert(!nm_device_is_real(self));
 
-    if (!nm_config_data_get_device_config_boolean(NM_CONFIG_GET_DATA,
-                                                  NM_CONFIG_KEYFILE_KEY_DEVICE_MANAGED,
-                                                  self,
-                                                  TRUE,
-                                                  TRUE))
+    if (!nm_config_data_get_device_config_boolean_by_device(NM_CONFIG_GET_DATA,
+                                                            NM_CONFIG_KEYFILE_KEY_DEVICE_MANAGED,
+                                                            self,
+                                                            TRUE,
+                                                            TRUE))
         return FALSE;
 
     if (nm_device_spec_match_list(self, nm_settings_get_unmanaged_specs(priv->settings)))
@@ -14718,11 +14720,11 @@ nm_device_set_unmanaged_by_user_conf(NMDevice *self)
     gboolean      value;
     NMUnmanFlagOp set_op;
 
-    value = nm_config_data_get_device_config_boolean(NM_CONFIG_GET_DATA,
-                                                     NM_CONFIG_KEYFILE_KEY_DEVICE_MANAGED,
-                                                     self,
-                                                     -1,
-                                                     TRUE);
+    value = nm_config_data_get_device_config_boolean_by_device(NM_CONFIG_GET_DATA,
+                                                               NM_CONFIG_KEYFILE_KEY_DEVICE_MANAGED,
+                                                               self,
+                                                               -1,
+                                                               TRUE);
     switch (value) {
     case TRUE:
         set_op = NM_UNMAN_FLAG_OP_SET_MANAGED;

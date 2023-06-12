@@ -2892,11 +2892,12 @@ get_existing_connection(NMManager *self, NMDevice *device, gboolean *out_generat
         }
     }
 
-    if (nm_config_data_get_device_config_boolean(NM_CONFIG_GET_DATA,
-                                                 NM_CONFIG_KEYFILE_KEY_DEVICE_KEEP_CONFIGURATION,
-                                                 device,
-                                                 TRUE,
-                                                 TRUE)) {
+    if (nm_config_data_get_device_config_boolean_by_device(
+            NM_CONFIG_GET_DATA,
+            NM_CONFIG_KEYFILE_KEY_DEVICE_KEEP_CONFIGURATION,
+            device,
+            TRUE,
+            TRUE)) {
         /* The core of the API is nm_device_generate_connection() function, based on
          * update_connection() virtual method and the @connection_type_supported
          * class attribute. Devices that support assuming existing connections must
