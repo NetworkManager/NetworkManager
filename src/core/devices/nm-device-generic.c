@@ -16,7 +16,7 @@
 NM_GOBJECT_PROPERTIES_DEFINE_BASE(PROP_TYPE_DESCRIPTION, );
 
 typedef struct {
-    char *type_description;
+    const char *type_description;
 } NMDeviceGenericPrivate;
 
 struct _NMDeviceGeneric {
@@ -64,11 +64,11 @@ realize_start_notify(NMDevice *device, const NMPlatformLink *plink)
 
     NM_DEVICE_CLASS(nm_device_generic_parent_class)->realize_start_notify(device, plink);
 
-    nm_clear_g_free(&priv->type_description);
     ifindex = nm_device_get_ip_ifindex(NM_DEVICE(self));
-    if (ifindex > 0)
+    if (ifindex > 0) {
         priv->type_description =
-            g_strdup(nm_platform_link_get_type_name(nm_device_get_platform(device), ifindex));
+            nm_platform_link_get_type_name(nm_device_get_platform(device), ifindex);
+    }
 }
 
 static gboolean
@@ -128,22 +128,6 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
     }
 }
 
-static void
-set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *pspec)
-{
-    NMDeviceGeneric        *self = NM_DEVICE_GENERIC(object);
-    NMDeviceGenericPrivate *priv = NM_DEVICE_GENERIC_GET_PRIVATE(self);
-
-    switch (prop_id) {
-    case PROP_TYPE_DESCRIPTION:
-        priv->type_description = g_value_dup_string(value);
-        break;
-    default:
-        G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
-        break;
-    }
-}
-
 /*****************************************************************************/
 
 static void
@@ -180,17 +164,6 @@ nm_device_generic_new(const NMPlatformLink *plink, gboolean nm_plugin_missing)
                         NULL);
 }
 
-static void
-dispose(GObject *object)
-{
-    NMDeviceGeneric        *self = NM_DEVICE_GENERIC(object);
-    NMDeviceGenericPrivate *priv = NM_DEVICE_GENERIC_GET_PRIVATE(self);
-
-    nm_clear_g_free(&priv->type_description);
-
-    G_OBJECT_CLASS(nm_device_generic_parent_class)->dispose(object);
-}
-
 static const NMDBusInterfaceInfoExtended interface_info_device_generic = {
     .parent = NM_DEFINE_GDBUS_INTERFACE_INFO_INIT(
         NM_DBUS_INTERFACE_DEVICE_GENERIC,
@@ -210,9 +183,7 @@ nm_device_generic_class_init(NMDeviceGenericClass *klass)
     NMDeviceClass     *device_class      = NM_DEVICE_CLASS(klass);
 
     object_class->constructor  = constructor;
-    object_class->dispose      = dispose;
     object_class->get_property = get_property;
-    object_class->set_property = set_property;
 
     dbus_object_class->interface_infos = NM_DBUS_INTERFACE_INFOS(&interface_info_device_generic);
 
@@ -231,7 +202,7 @@ nm_device_generic_class_init(NMDeviceGenericClass *klass)
                             "",
                             "",
                             NULL,
-                            G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS);
+                            G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 }

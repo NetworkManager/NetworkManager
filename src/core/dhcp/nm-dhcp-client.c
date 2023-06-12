@@ -196,6 +196,14 @@ nm_dhcp_client_get_iface(NMDhcpClient *self)
     return priv->config.iface;
 }
 
+const char *
+nm_dhcp_client_get_iface_type_for_log(NMDhcpClient *self)
+{
+    NMDhcpClientPrivate *priv = NM_DHCP_CLIENT_GET_PRIVATE(self);
+
+    return priv->config.iface_type_log;
+}
+
 NMDedupMultiIndex *
 nm_dhcp_client_get_multi_idx(NMDhcpClient *self)
 {
@@ -1823,6 +1831,7 @@ config_init(NMDhcpClientConfig *config, const NMDhcpClientConfig *src)
     nm_g_bytes_ref(config->client_id);
 
     config->iface           = g_strdup(config->iface);
+    config->iface_type_log  = g_strdup(config->iface_type_log);
     config->uuid            = g_strdup(config->uuid);
     config->anycast_address = g_strdup(config->anycast_address);
     config->hostname        = g_strdup(config->hostname);
@@ -1885,6 +1894,7 @@ config_clear(NMDhcpClientConfig *config)
     nm_clear_pointer(&config->client_id, g_bytes_unref);
 
     nm_clear_g_free((gpointer *) &config->iface);
+    nm_clear_g_free((gpointer *) &config->iface_type_log);
     nm_clear_g_free((gpointer *) &config->uuid);
     nm_clear_g_free((gpointer *) &config->anycast_address);
     nm_clear_g_free((gpointer *) &config->hostname);

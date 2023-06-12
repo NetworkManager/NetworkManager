@@ -5400,13 +5400,31 @@ nm_device_get_type_desc(NMDevice *self)
 }
 
 const char *
+nm_device_get_type_desc_for_log(NMDevice *self)
+{
+    const char *type;
+
+    type = nm_device_get_type_desc(self);
+
+    /* Some OVS device types (ports and bridges) are not backed by a kernel link, and
+     * they can have the same name of another device of a different type. In fact, it's
+     * quite common to assign the same name to the OVS bridge, the OVS port and the OVS
+     * interface. For this reason, also log the type in case of OVS devices to make the
+     * log message unambiguous. */
+    if (NM_STR_HAS_PREFIX(type, "Open vSwitch"))
+        return type;
+
+    return NULL;
+}
+
+const char *
 nm_device_get_type_description(NMDevice *self)
 {
     g_return_val_if_fail(self != NULL, NULL);
 
     /* Beware: this function should return the same
-     * value as nm_device_get_type_description() in libnm. */
-
+     * value as nm_device_get_type_description() in libnm.
+     * The returned string is static or interned */
     return NM_DEVICE_GET_CLASS(self)->get_type_description(self);
 }
 
@@ -10658,6 +10676,7 @@ _dev_ipdhcpx_start(NMDevice *self, int addr_family)
             .addr_family             = AF_INET,
             .l3cfg                   = nm_device_get_l3cfg(self),
             .iface                   = nm_device_get_ip_iface(self),
+            .iface_type_log          = nm_device_get_type_desc_for_log(self),
             .uuid                    = nm_connection_get_uuid(connection),
             .hwaddr                  = hwaddr,
             .bcast_hwaddr            = bcast_hwaddr,
@@ -10695,6 +10714,7 @@ _dev_ipdhcpx_start(NMDevice *self, int addr_family)
             .addr_family     = AF_INET6,
             .l3cfg           = nm_device_get_l3cfg(self),
             .iface           = nm_device_get_ip_iface(self),
+            .iface_type_log  = nm_device_get_type_desc_for_log(self),
             .uuid            = nm_connection_get_uuid(connection),
             .send_hostname   = nm_setting_ip_config_get_dhcp_send_hostname(s_ip),
             .hostname        = nm_setting_ip_config_get_dhcp_hostname(s_ip),
