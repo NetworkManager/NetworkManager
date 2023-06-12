@@ -10678,10 +10678,13 @@ connection_ip_method_requires_carrier(NMConnection *connection,
 static gboolean
 connection_requires_carrier(NMConnection *connection)
 {
-    NMSettingIPConfig   *s_ip4, *s_ip6;
+    NMSettingIPConfig   *s_ip4;
+    NMSettingIPConfig   *s_ip6;
     NMSettingConnection *s_con;
-    gboolean             ip4_carrier_wanted, ip6_carrier_wanted;
-    gboolean             ip4_used = FALSE, ip6_used = FALSE;
+    gboolean             ip4_carrier_wanted;
+    gboolean             ip6_carrier_wanted;
+    gboolean             ip4_used = FALSE;
+    gboolean             ip6_used = FALSE;
 
     /* We can progress to IP_CONFIG now, so that we're enslaved.
      * That may actually cause carrier to go up and thus continue activation. */
