@@ -4953,6 +4953,18 @@ nm_device_get_ip_iface_identifier(NMDevice           *self,
 }
 
 const char *
+nm_device_get_s390_subchannels(NMDevice *self)
+{
+    NMDeviceClass *klass;
+
+    g_return_val_if_fail(NM_IS_DEVICE(self), NULL);
+
+    klass = NM_DEVICE_GET_CLASS(self);
+
+    return klass->get_s390_subchannels ? klass->get_s390_subchannels(self) : NULL;
+}
+
+const char *
 nm_device_get_driver(NMDevice *self)
 {
     g_return_val_if_fail(self != NULL, NULL);
