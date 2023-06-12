@@ -940,6 +940,32 @@ nm_match_spec_device_data_init_from_device(struct _NMMatchSpecDeviceData *out_da
     return out_data;
 }
 
+const NMMatchSpecDeviceData *
+nm_match_spec_device_data_init_from_platform(NMMatchSpecDeviceData *out_data,
+                                             const NMPlatformLink  *pllink,
+                                             const char            *match_device_type,
+                                             const char            *match_dhcp_plugin)
+{
+    nm_assert(out_data);
+
+    /* we can only match by certain properties that are available on the
+     * platform link (and even @pllink might be missing.
+     *
+     * It's still useful because of specs like "*" and "except:interface-name:eth0",
+     * which match even in that case. */
+
+    *out_data = (NMMatchSpecDeviceData){
+        .interface_name   = pllink ? pllink->name : NULL,
+        .device_type      = match_device_type,
+        .driver           = pllink ? pllink->driver : NULL,
+        .driver_version   = NULL,
+        .hwaddr           = NULL,
+        .s390_subchannels = NULL,
+        .dhcp_plugin      = match_dhcp_plugin,
+    };
+    return out_data;
+}
+
 /*****************************************************************************/
 
 int
@@ -949,23 +975,14 @@ nm_match_spec_device_by_pllink(const NMPlatformLink *pllink,
                                const GSList         *specs,
                                int                   no_match_value)
 {
-    NMMatchSpecMatchType m;
+    NMMatchSpecMatchType  m;
+    NMMatchSpecDeviceData data;
 
-    /* we can only match by certain properties that are available on the
-     * platform link (and even @pllink might be missing.
-     *
-     * It's still useful because of specs like "*" and "except:interface-name:eth0",
-     * which match even in that case. */
     m = nm_match_spec_device(specs,
-                             &((const NMMatchSpecDeviceData){
-                                 .interface_name   = pllink ? pllink->name : NULL,
-                                 .device_type      = match_device_type,
-                                 .driver           = pllink ? pllink->driver : NULL,
-                                 .driver_version   = NULL,
-                                 .hwaddr           = NULL,
-                                 .s390_subchannels = NULL,
-                                 .dhcp_plugin      = match_dhcp_plugin,
-                             }));
+                             nm_match_spec_device_data_init_from_platform(&data,
+                                                                          pllink,
+                                                                          match_device_type,
+                                                                          match_dhcp_plugin));
     return nm_match_spec_match_type_to_bool(m, no_match_value);
 }
 
