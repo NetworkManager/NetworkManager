@@ -152,6 +152,7 @@ int n_dhcp4_c_connection_listen(NDhcp4CConnection *connection) {
         if (connection->fd_packet >= 0) {
                 epoll_ctl(connection->fd_epoll, EPOLL_CTL_DEL, connection->fd_packet, NULL);
                 connection->fd_packet = c_close(connection->fd_packet);
+                connection->ns_drain_timeout = 0;
         }
 
         if (connection->fd_udp >= 0) {
@@ -211,6 +212,7 @@ int n_dhcp4_c_connection_connect(NDhcp4CConnection *connection,
         }
 
         connection->state = N_DHCP4_C_CONNECTION_STATE_DRAINING;
+        connection->ns_drain_timeout = n_dhcp4_gettime(CLOCK_BOOTTIME) + UINT64_C(10000000000);
         connection->fd_udp = fd_udp;
         fd_udp = -1;
         connection->client_ip = client->s_addr;
@@ -231,6 +233,7 @@ void n_dhcp4_c_connection_close(NDhcp4CConnection *connection) {
 
         connection->fd_epoll = -1;
         connection->state = N_DHCP4_C_CONNECTION_STATE_CLOSED;
+        connection->ns_drain_timeout = 0;
 }
 
 static int n_dhcp4_c_connection_verify_incoming(NDhcp4CConnection *connection,
@@ -325,7 +328,7 @@ void n_dhcp4_c_connection_get_timeout(NDhcp4CConnection *connection,
         size_t n_send;
 
         if (!connection->request) {
-                *timeoutp = 0;
+                *timeoutp = connection->ns_drain_timeout;
                 return;
         }
 
@@ -368,6 +371,9 @@ void n_dhcp4_c_connection_get_timeout(NDhcp4CConnection *connection,
         default:
                 c_assert(0);
         }
+
+        if (connection->ns_drain_timeout != 0 && connection->ns_drain_timeout < timeout)
+            timeout = connection->ns_drain_timeout;
 
         *timeoutp = timeout;
 }
@@ -1122,6 +1128,13 @@ int n_dhcp4_c_connection_dispatch_timer(NDhcp4CConnection *connection,
         uint64_t timeout;
         int r;
 
+        if (connection->ns_drain_timeout != 0 && connection->ns_drain_timeout < timestamp) {
+                epoll_ctl(connection->fd_epoll, EPOLL_CTL_DEL, connection->fd_packet, NULL);
+                connection->fd_packet = c_close(connection->fd_packet);
+                connection->state = N_DHCP4_C_CONNECTION_STATE_UDP;
+                connection->ns_drain_timeout = 0;
+        }
+
         if (!connection->request)
                 return 0;
 
@@ -1189,6 +1202,7 @@ int n_dhcp4_c_connection_dispatch_io(NDhcp4CConnection *connection,
                 c_assert(!r);
                 connection->fd_packet = c_close(connection->fd_packet);
                 connection->state = N_DHCP4_C_CONNECTION_STATE_UDP;
+                connection->ns_drain_timeout = 0;
 
                 /* fall-through */
         case N_DHCP4_C_CONNECTION_STATE_UDP:
