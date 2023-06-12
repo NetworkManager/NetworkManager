@@ -130,6 +130,12 @@ G_DEFINE_TYPE(NMConfigData, nm_config_data, G_TYPE_OBJECT)
 static const char *
 _match_section_info_get_str(const MatchSectionInfo *m, GKeyFile *keyfile, const char *property);
 
+static const char *_config_data_get_device_config(const NMConfigData          *self,
+                                                  const char                  *property,
+                                                  const NMMatchSpecDeviceData *match_data,
+                                                  NMDevice                    *device,
+                                                  gboolean                    *has_match);
+
 /*****************************************************************************/
 
 const char *
@@ -363,6 +369,54 @@ const char *
 nm_config_data_get_iwd_config_path(const NMConfigData *self)
 {
     return NM_CONFIG_DATA_GET_PRIVATE(self)->iwd_config_path;
+}
+
+gboolean
+nm_config_data_get_ignore_carrier_for_port(const NMConfigData *self,
+                                           const char         *master,
+                                           const char         *slave_type)
+{
+    const char           *value;
+    gboolean              has_match;
+    int                   m;
+    NMMatchSpecDeviceData match_data;
+
+    g_return_val_if_fail(NM_IS_CONFIG_DATA(self), FALSE);
+
+    if (!master || !slave_type)
+        goto out_default;
+
+    if (!nm_utils_ifname_valid_kernel(master, NULL))
+        goto out_default;
+
+    match_data = (NMMatchSpecDeviceData){
+        .interface_name = master,
+        .device_type    = slave_type,
+    };
+
+    value = _config_data_get_device_config(self,
+                                           NM_CONFIG_KEYFILE_KEY_DEVICE_IGNORE_CARRIER,
+                                           &match_data,
+                                           NULL,
+                                           &has_match);
+    if (has_match)
+        m = nm_config_parse_boolean(value, -1);
+    else {
+        NMMatchSpecMatchType x;
+
+        x = nm_match_spec_device(NM_CONFIG_DATA_GET_PRIVATE(self)->ignore_carrier, &match_data);
+        m = nm_match_spec_match_type_to_bool(x, -1);
+    }
+
+    if (NM_IN_SET(m, TRUE, FALSE))
+        return m;
+
+out_default:
+    /* if ignore-carrier is not explicitly or detected for the master, then we assume it's
+     * enabled. This is in line with nm_config_data_get_ignore_carrier_by_device(), where
+     * ignore-carrier is enabled based on nm_device_ignore_carrier_by_default().
+     */
+    return TRUE;
 }
 
 gboolean

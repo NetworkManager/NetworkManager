@@ -185,6 +185,10 @@ const char *nm_config_data_get_dns_mode(const NMConfigData *self);
 const char *nm_config_data_get_rc_manager(const NMConfigData *self);
 gboolean    nm_config_data_get_systemd_resolved(const NMConfigData *self);
 
+gboolean nm_config_data_get_ignore_carrier_for_port(const NMConfigData *self,
+                                                    const char         *master,
+                                                    const char         *slave_type);
+
 gboolean nm_config_data_get_ignore_carrier_by_device(const NMConfigData *self, NMDevice *device);
 gboolean nm_config_data_get_assume_ipv6ll_only(const NMConfigData *self, NMDevice *device);
 int      nm_config_data_get_sriov_num_vfs(const NMConfigData *self, NMDevice *device);
