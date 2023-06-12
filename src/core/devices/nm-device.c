@@ -15324,10 +15324,7 @@ check_connection_available(NMDevice                      *self,
 {
     NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
 
-    /* Connections which require a network connection are not available when
-     * the device has no carrier, even with ignore-carrer=TRUE.
-     */
-    if (priv->carrier || !connection_requires_carrier(connection))
+    if (priv->carrier)
         return TRUE;
 
     if (NM_FLAGS_HAS(flags, _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_WAITING_CARRIER)
@@ -15339,18 +15336,24 @@ check_connection_available(NMDevice                      *self,
         return TRUE;
     }
 
-    /* master types are always available even without carrier.
-     * Making connection non-available would un-enslave slaves which
-     * is not desired. */
-    if (nm_device_is_master(self))
-        return TRUE;
-
     if (!priv->up) {
         /* If the device is !IFF_UP it also has no carrier. But we assume that if we
          * would start activating the device (and thereby set the device IFF_UP),
          * that we would get a carrier. We only know after we set the device up,
          * and we only set it up after we start activating it. So presumably, this
          * profile would be available (but we just don't know). */
+        return TRUE;
+    }
+
+    if (!connection_requires_carrier(connection)) {
+        /* Connections that don't require carrier are available. */
+        return TRUE;
+    }
+
+    if (nm_device_is_master(self)) {
+        /* master types are always available even without carrier.
+         * Making connection non-available would un-enslave slaves which
+         * is not desired. */
         return TRUE;
     }
 
