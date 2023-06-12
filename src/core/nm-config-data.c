@@ -366,7 +366,7 @@ nm_config_data_get_iwd_config_path(const NMConfigData *self)
 }
 
 gboolean
-nm_config_data_get_ignore_carrier(const NMConfigData *self, NMDevice *device)
+nm_config_data_get_ignore_carrier_by_device(const NMConfigData *self, NMDevice *device)
 {
     const char *value;
     gboolean    has_match;
