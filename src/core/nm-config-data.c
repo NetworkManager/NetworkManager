@@ -1546,11 +1546,12 @@ out:
     return NULL;
 }
 
-const char *
-nm_config_data_get_device_config_by_device(const NMConfigData *self,
-                                           const char         *property,
-                                           NMDevice           *device,
-                                           gboolean           *has_match)
+static const char *
+_config_data_get_device_config(const NMConfigData          *self,
+                               const char                  *property,
+                               const NMMatchSpecDeviceData *match_data,
+                               NMDevice                    *device,
+                               gboolean                    *has_match)
 {
     const NMConfigDataPrivate *priv;
     const MatchSectionInfo    *connection_info;
@@ -1561,16 +1562,37 @@ nm_config_data_get_device_config_by_device(const NMConfigData *self,
     g_return_val_if_fail(self, NULL);
     g_return_val_if_fail(property && *property, NULL);
 
+    nm_assert(!match_data || !device);
+    nm_assert(!device || NM_IS_DEVICE(device));
+
     priv = NM_CONFIG_DATA_GET_PRIVATE(self);
 
     connection_info = _match_section_infos_lookup(&priv->device_infos[0],
                                                   priv->keyfile,
                                                   property,
-                                                  NULL,
+                                                  match_data,
                                                   device,
                                                   &value);
     NM_SET_OUT(has_match, !!connection_info);
     return value;
+}
+
+const char *
+nm_config_data_get_device_config(const NMConfigData          *self,
+                                 const char                  *property,
+                                 const NMMatchSpecDeviceData *match_data,
+                                 gboolean                    *has_match)
+{
+    return _config_data_get_device_config(self, property, match_data, NULL, has_match);
+}
+
+const char *
+nm_config_data_get_device_config_by_device(const NMConfigData *self,
+                                           const char         *property,
+                                           NMDevice           *device,
+                                           gboolean           *has_match)
+{
+    return _config_data_get_device_config(self, property, NULL, device, has_match);
 }
 
 const char *

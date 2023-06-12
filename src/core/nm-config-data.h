@@ -219,6 +219,13 @@ gint64 nm_config_data_get_connection_default_int64(const NMConfigData *self,
                                                    gint64              max,
                                                    gint64              fallback);
 
+struct _NMMatchSpecDeviceData;
+
+const char *nm_config_data_get_device_config(const NMConfigData                  *self,
+                                             const char                          *property,
+                                             const struct _NMMatchSpecDeviceData *match_data,
+                                             gboolean                            *has_match);
+
 const char *nm_config_data_get_device_config_by_device(const NMConfigData *self,
                                                        const char         *property,
                                                        NMDevice           *device,
