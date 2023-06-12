@@ -375,10 +375,10 @@ nm_config_data_get_ignore_carrier(const NMConfigData *self, NMDevice *device)
     g_return_val_if_fail(NM_IS_CONFIG_DATA(self), FALSE);
     g_return_val_if_fail(NM_IS_DEVICE(device), FALSE);
 
-    value = nm_config_data_get_device_config(self,
-                                             NM_CONFIG_KEYFILE_KEY_DEVICE_IGNORE_CARRIER,
-                                             device,
-                                             &has_match);
+    value = nm_config_data_get_device_config_by_device(self,
+                                                       NM_CONFIG_KEYFILE_KEY_DEVICE_IGNORE_CARRIER,
+                                                       device,
+                                                       &has_match);
     if (has_match)
         m = nm_config_parse_boolean(value, -1);
     else
@@ -1547,10 +1547,10 @@ out:
 }
 
 const char *
-nm_config_data_get_device_config(const NMConfigData *self,
-                                 const char         *property,
-                                 NMDevice           *device,
-                                 gboolean           *has_match)
+nm_config_data_get_device_config_by_device(const NMConfigData *self,
+                                           const char         *property,
+                                           NMDevice           *device,
+                                           gboolean           *has_match)
 {
     const NMConfigDataPrivate *priv;
     const MatchSectionInfo    *connection_info;
@@ -1606,35 +1606,35 @@ nm_config_data_get_device_config_by_pllink(const NMConfigData   *self,
 }
 
 gboolean
-nm_config_data_get_device_config_boolean(const NMConfigData *self,
-                                         const char         *property,
-                                         NMDevice           *device,
-                                         int                 val_no_match,
-                                         int                 val_invalid)
+nm_config_data_get_device_config_boolean_by_device(const NMConfigData *self,
+                                                   const char         *property,
+                                                   NMDevice           *device,
+                                                   int                 val_no_match,
+                                                   int                 val_invalid)
 {
     const char *value;
     gboolean    has_match;
 
-    value = nm_config_data_get_device_config(self, property, device, &has_match);
+    value = nm_config_data_get_device_config_by_device(self, property, device, &has_match);
     if (!has_match)
         return val_no_match;
     return nm_config_parse_boolean(value, val_invalid);
 }
 
 gint64
-nm_config_data_get_device_config_int64(const NMConfigData *self,
-                                       const char         *property,
-                                       NMDevice           *device,
-                                       int                 base,
-                                       gint64              min,
-                                       gint64              max,
-                                       gint64              val_no_match,
-                                       gint64              val_invalid)
+nm_config_data_get_device_config_int64_by_device(const NMConfigData *self,
+                                                 const char         *property,
+                                                 NMDevice           *device,
+                                                 int                 base,
+                                                 gint64              min,
+                                                 gint64              max,
+                                                 gint64              val_no_match,
+                                                 gint64              val_invalid)
 {
     const char *value;
     gboolean    has_match;
 
-    value = nm_config_data_get_device_config(self, property, device, &has_match);
+    value = nm_config_data_get_device_config_by_device(self, property, device, &has_match);
     if (!has_match) {
         errno = ENOENT;
         return val_no_match;
