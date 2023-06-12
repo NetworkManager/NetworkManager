@@ -30,6 +30,7 @@
 #include "libnm-platform/nm-linux-platform.h"
 #include "libnm-platform/nm-platform-utils.h"
 #include "nm-auth-utils.h"
+#include "devices/nm-device.h"
 
 /*****************************************************************************/
 
@@ -896,6 +897,47 @@ nm_utils_match_connection(NMConnection *const   *connections,
 
     /* Best match (if any) */
     return best_match;
+}
+
+/*****************************************************************************/
+
+const struct _NMMatchSpecDeviceData *
+nm_match_spec_device_data_init_from_device(struct _NMMatchSpecDeviceData *out_data,
+                                           NMDevice                      *device)
+{
+    const char *hw_address;
+    gboolean    is_fake;
+
+    nm_assert(out_data);
+
+    if (!device) {
+        *out_data = (NMMatchSpecDeviceData){};
+        return out_data;
+    }
+
+    nm_assert(NM_IS_DEVICE(device));
+
+    hw_address = nm_device_get_permanent_hw_address_full(
+        device,
+        !nm_device_get_unmanaged_flags(device, NM_UNMANAGED_PLATFORM_INIT),
+        &is_fake);
+
+    /* Note that here we access various getters on @device, without cloning
+     * or taking ownership and return it to the caller.
+     *
+     * The returned data is only valid, until NMDevice gets modified again. */
+
+    *out_data = (NMMatchSpecDeviceData){
+        .interface_name   = nm_device_get_iface(device),
+        .device_type      = nm_device_get_type_description(device),
+        .driver           = nm_device_get_driver(device),
+        .driver_version   = nm_device_get_driver_version(device),
+        .hwaddr           = is_fake ? NULL : hw_address,
+        .s390_subchannels = nm_device_get_s390_subchannels(device),
+        .dhcp_plugin      = nm_dhcp_manager_get_config(nm_dhcp_manager_get()),
+    };
+
+    return out_data;
 }
 
 /*****************************************************************************/

@@ -17293,32 +17293,10 @@ nm_device_spec_match_list(NMDevice *self, const GSList *specs)
 int
 nm_device_spec_match_list_full(NMDevice *self, const GSList *specs, int no_match_value)
 {
-    NMDeviceClass       *klass;
-    NMMatchSpecMatchType m;
-    const char          *hw_address = NULL;
-    gboolean             is_fake;
+    NMMatchSpecDeviceData data;
+    NMMatchSpecMatchType  m;
 
-    g_return_val_if_fail(NM_IS_DEVICE(self), FALSE);
-
-    klass      = NM_DEVICE_GET_CLASS(self);
-    hw_address = nm_device_get_permanent_hw_address_full(
-        self,
-        !nm_device_get_unmanaged_flags(self, NM_UNMANAGED_PLATFORM_INIT),
-        &is_fake);
-
-    m = nm_match_spec_device(
-        specs,
-        &((const NMMatchSpecDeviceData){
-            .interface_name = nm_device_get_iface(self),
-            .device_type    = nm_device_get_type_description(self),
-            .driver         = nm_device_get_driver(self),
-            .driver_version = nm_device_get_driver_version(self),
-            .hwaddr         = is_fake ? NULL : hw_address,
-            .s390_subchannels =
-                klass->get_s390_subchannels ? klass->get_s390_subchannels(self) : NULL,
-            .dhcp_plugin = nm_dhcp_manager_get_config(nm_dhcp_manager_get()),
-        }));
-
+    m = nm_match_spec_device(specs, nm_match_spec_device_data_init_from_device(&data, self));
     return nm_match_spec_match_type_to_bool(m, no_match_value);
 }
 
