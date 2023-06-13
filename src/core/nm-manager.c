@@ -4516,6 +4516,14 @@ find_master(NMManager             *self,
               nm_device_get_iface(master_device));
     }
 
+    if (!master_device && !master_connection) {
+        g_set_error_literal(error,
+                            NM_MANAGER_ERROR,
+                            NM_MANAGER_ERROR_UNKNOWN_DEVICE,
+                            "Master connection not found or invalid");
+        return FALSE;
+    }
+
     NM_SET_OUT(out_master_connection, master_connection);
     NM_SET_OUT(out_master_device, master_device);
     if (out_master_ac && master_connection) {
@@ -4525,14 +4533,6 @@ find_master(NMManager             *self,
                                                 NM_ACTIVE_CONNECTION_STATE_DEACTIVATING,
                                                 FALSE,
                                                 NULL);
-    }
-
-    if (!master_device && !master_connection) {
-        g_set_error_literal(error,
-                            NM_MANAGER_ERROR,
-                            NM_MANAGER_ERROR_UNKNOWN_DEVICE,
-                            "Master connection not found or invalid");
-        return FALSE;
     }
 
     return TRUE;
