@@ -6639,6 +6639,8 @@ carrier_changed(NMDevice *self, gboolean carrier)
     }
 
     if (carrier) {
+        gboolean recheck_auto_activate = FALSE;
+
         if (priv->state == NM_DEVICE_STATE_UNAVAILABLE) {
             nm_device_queue_state(self,
                                   NM_DEVICE_STATE_DISCONNECTED,
@@ -6649,8 +6651,18 @@ carrier_changed(NMDevice *self, gboolean carrier)
              * when the carrier appears, auto connections are rechecked for
              * the device.
              */
-            nm_device_recheck_auto_activate_schedule(self);
+            recheck_auto_activate = TRUE;
         }
+        if (nm_manager_devcon_autoconnect_blocked_reason_set(
+                nm_device_get_manager(self),
+                self,
+                NULL,
+                NM_SETTINGS_AUTOCONNECT_BLOCKED_REASON_FAILED,
+                FALSE))
+            recheck_auto_activate = TRUE;
+
+        if (recheck_auto_activate)
+            nm_device_recheck_auto_activate_schedule(self);
     } else {
         if (priv->state == NM_DEVICE_STATE_UNAVAILABLE) {
             if (priv->queued_state.id && priv->queued_state.state >= NM_DEVICE_STATE_DISCONNECTED)
