@@ -1523,9 +1523,30 @@ nm_manager_devcon_autoconnect_blocked_reason_set(NMManager                      
     gboolean                           changed = FALSE;
     char                               buf[100];
 
-    nm_assert(NM_IS_SETTINGS_CONNECTION(sett_conn));
+    nm_assert(!sett_conn || NM_IS_SETTINGS_CONNECTION(sett_conn));
+    nm_assert(!device || NM_IS_DEVICE(device));
     nm_assert(value != NM_SETTINGS_AUTOCONNECT_BLOCKED_REASON_NONE);
     nm_assert(!NM_FLAGS_ANY(value, ~(NM_SETTINGS_AUTOCONNECT_BLOCKED_REASON_FAILED)));
+
+    if (!sett_conn) {
+        if (!device)
+            g_return_val_if_reached(FALSE);
+        c_list_for_each_entry (data, &device->devcon_dev_lst_head, dev_lst) {
+            v = data->autoconnect.blocked_reason;
+            v = NM_FLAGS_ASSIGN(v, value, set);
+
+            if (data->autoconnect.blocked_reason == v)
+                continue;
+
+            _LOGT(LOGD_SETTINGS,
+                  "block-autoconnect: " DEV_CON_DATA_LOG_FMT ": set blocked reason %s",
+                  DEV_CON_DATA_LOG_ARGS_DATA(data),
+                  nm_settings_autoconnect_blocked_reason_to_string(v, buf, sizeof(buf)));
+            data->autoconnect.blocked_reason = v;
+            changed                          = TRUE;
+        }
+        return changed;
+    }
 
     if (device) {
         data = _devcon_lookup_data(self, device, sett_conn, TRUE, TRUE);
