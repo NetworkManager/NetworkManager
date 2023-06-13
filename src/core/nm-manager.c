@@ -2088,9 +2088,10 @@ system_create_virtual_device(NMManager *self, NMConnection *connection)
     guint                        i;
     gs_free char                *iface = NULL;
     const char                  *parent_spec;
-    NMDevice                    *device = NULL, *parent = NULL;
+    NMDevice                    *device = NULL;
+    NMDevice                    *parent = NULL;
     NMDevice                    *dev_candidate;
-    GError                      *error = NULL;
+    gs_free_error GError        *error = NULL;
     NMLogLevel                   log_level;
 
     g_return_val_if_fail(NM_IS_MANAGER(self), NULL);
@@ -2099,7 +2100,6 @@ system_create_virtual_device(NMManager *self, NMConnection *connection)
     iface = nm_manager_get_connection_iface(self, connection, &parent, &parent_spec, &error);
     if (!iface) {
         _LOG3D(LOGD_DEVICE, connection, "can't get a name of a virtual device: %s", error->message);
-        g_error_free(error);
         return NULL;
     }
 
@@ -2137,7 +2137,6 @@ system_create_virtual_device(NMManager *self, NMConnection *connection)
         device = nm_device_factory_create_device(factory, iface, NULL, connection, NULL, &error);
         if (!device) {
             _LOG3W(LOGD_DEVICE, connection, "factory can't create the device: %s", error->message);
-            g_error_free(error);
             return NULL;
         }
 
@@ -2148,7 +2147,6 @@ system_create_virtual_device(NMManager *self, NMConnection *connection)
                    connection,
                    "can't register the device with manager: %s",
                    error->message);
-            g_error_free(error);
             g_object_unref(device);
             return NULL;
         }
@@ -2169,7 +2167,6 @@ system_create_virtual_device(NMManager *self, NMConnection *connection)
 
     if (!find_master(self, connection, device, NULL, NULL, NULL, &error)) {
         _LOG3D(LOGD_DEVICE, connection, "skip activation: %s", error->message);
-        g_error_free(error);
         return device;
     }
 
@@ -2183,7 +2180,6 @@ system_create_virtual_device(NMManager *self, NMConnection *connection)
             continue;
 
         s_con = nm_connection_get_setting_connection(candidate);
-        g_assert(s_con);
         if (!nm_setting_connection_get_autoconnect(s_con)
             || nm_settings_connection_autoconnect_is_blocked(connections[i]))
             continue;
@@ -2199,7 +2195,6 @@ system_create_virtual_device(NMManager *self, NMConnection *connection)
                     connection,
                     "couldn't create the device: %s",
                     error->message);
-            g_error_free(error);
             return NULL;
         }
 
@@ -4409,8 +4404,11 @@ find_master(NMManager             *self,
     NMSettingsConnection *const *connections;
     guint                        i;
 
-    s_con = nm_connection_get_setting_connection(connection);
-    g_assert(s_con);
+    nm_assert(!out_master_connection || !*out_master_connection);
+    nm_assert(!out_master_device || !*out_master_device);
+    nm_assert(!out_master_ac || !*out_master_ac);
+
+    s_con  = nm_connection_get_setting_connection(connection);
     master = nm_setting_connection_get_master(s_con);
 
     if (master == NULL)
@@ -4518,10 +4516,8 @@ find_master(NMManager             *self,
               nm_device_get_iface(master_device));
     }
 
-    if (out_master_connection)
-        *out_master_connection = master_connection;
-    if (out_master_device)
-        *out_master_device = master_device;
+    NM_SET_OUT(out_master_connection, master_connection);
+    NM_SET_OUT(out_master_device, master_device);
     if (out_master_ac && master_connection) {
         *out_master_ac = active_connection_find(self,
                                                 master_connection,
@@ -4531,15 +4527,15 @@ find_master(NMManager             *self,
                                                 NULL);
     }
 
-    if (master_device || master_connection)
-        return TRUE;
-    else {
+    if (!master_device && !master_connection) {
         g_set_error_literal(error,
                             NM_MANAGER_ERROR,
                             NM_MANAGER_ERROR_UNKNOWN_DEVICE,
                             "Master connection not found or invalid");
         return FALSE;
     }
+
+    return TRUE;
 }
 
 /**
@@ -4784,8 +4780,9 @@ find_slaves(NMManager            *manager,
                                                                    &n_all_connections);
     for (i = 0; i < n_all_connections; i++) {
         NMSettingsConnection *master_connection = NULL;
-        NMDevice             *master_device     = NULL, *slave_device;
-        NMSettingsConnection *candidate         = all_connections[i];
+        NMDevice             *master_device     = NULL;
+        NMDevice             *slave_device;
+        NMSettingsConnection *candidate = all_connections[i];
 
         find_master(manager,
                     nm_settings_connection_get_connection(candidate),
@@ -5118,7 +5115,8 @@ active_connection_parent_active(NMActiveConnection *active,
 static gboolean
 _internal_activate_device(NMManager *self, NMActiveConnection *active, GError **error)
 {
-    NMDevice                *device, *master_device = NULL;
+    NMDevice                *device;
+    NMDevice                *master_device = NULL;
     NMConnection            *applied;
     NMSettingsConnection    *sett_conn;
     NMSettingsConnection    *master_connection   = NULL;
