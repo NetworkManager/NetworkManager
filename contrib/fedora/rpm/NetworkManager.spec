@@ -595,8 +595,8 @@ Requires: %{name}-libnm%{?_isa} = %{epoch}:%{version}-%{release}
 
 %description cloud-setup
 Installs a nm-cloud-setup tool that can automatically configure
-NetworkManager in cloud setups. Currently only EC2 is supported.
-This tool is still experimental.
+NetworkManager in cloud environment. Only certain cloud providers
+like Aliyun, Azure, EC2, GCP are supported.
 %endif
 
 
