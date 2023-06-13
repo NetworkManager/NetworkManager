@@ -6440,6 +6440,11 @@ carrier_changed(NMDevice *self, gboolean carrier)
     }
 
     if (carrier) {
+        NMSettingsConnection *const *connections;
+        gboolean                     recheck_auto_activate = FALSE;
+        guint                        n_connections;
+        guint                        i;
+
         if (priv->state == NM_DEVICE_STATE_UNAVAILABLE) {
             nm_device_queue_state(self,
                                   NM_DEVICE_STATE_DISCONNECTED,
@@ -6450,8 +6455,30 @@ carrier_changed(NMDevice *self, gboolean carrier)
              * when the carrier appears, auto connections are rechecked for
              * the device.
              */
-            nm_device_recheck_auto_activate_schedule(self);
+            recheck_auto_activate = TRUE;
         }
+
+        connections = nm_settings_get_connections(priv->settings, &n_connections);
+        for (i = 0; i < n_connections; i++) {
+            NMSettingsConnection *sett_conn = connections[i];
+
+            if (!NM_FLAGS_HAS(nm_settings_connection_autoconnect_blocked_reason_get(sett_conn),
+                              NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_FAILED))
+                continue;
+            if (!nm_device_check_connection_compatible(
+                    self,
+                    nm_settings_connection_get_connection(sett_conn),
+                    NULL))
+                continue;
+            if (nm_settings_connection_autoconnect_blocked_reason_set(
+                    sett_conn,
+                    NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_FAILED,
+                    FALSE))
+                recheck_auto_activate = TRUE;
+        }
+
+        if (recheck_auto_activate)
+            nm_device_recheck_auto_activate_schedule(self);
     } else {
         if (priv->state == NM_DEVICE_STATE_UNAVAILABLE) {
             if (priv->queued_state.id && priv->queued_state.state >= NM_DEVICE_STATE_DISCONNECTED)

@@ -5113,6 +5113,62 @@ active_connection_parent_active(NMActiveConnection *active,
 }
 
 static gboolean
+_check_autoconnect_port(NMActiveConnection   *active,
+                        NMSettingsConnection *master_connection,
+                        NMDevice             *master_device,
+                        NMActiveConnection   *master_ac)
+{
+    NMSettingConnection *s_con;
+    NMDevice            *device;
+
+    if (nm_active_connection_get_activation_reason(active) != NM_ACTIVATION_REASON_AUTOCONNECT) {
+        /* This is an explicit activation. Proceed. */
+        return TRUE;
+    }
+
+    if (!master_connection) {
+        /* This is not a port. Proceed. */
+        return TRUE;
+    }
+
+    device = nm_active_connection_get_device(active);
+
+    if (!nm_device_is_real(device)) {
+        /* The device is not real. We don't know about the carrier. Proceed. */
+        return TRUE;
+    }
+
+    if (nm_device_get_ifindex(device) <= 0) {
+        /* The device has no ifindex. It has no concept of carrier. Proceed. */
+        return TRUE;
+    }
+
+    if (nm_device_has_carrier(device)) {
+        /* The device has carrier. Proceed. */
+        return TRUE;
+    }
+
+    s_con = nm_settings_connection_get_setting(master_connection, NM_META_SETTING_TYPE_CONNECTION);
+
+    if (nm_setting_connection_get_autoconnect(s_con)) {
+        /* The controller profile has autoconnect enabled. Here we want to honor
+         * "ignore-carrier=no", which -- as configuration -- only makes sense for
+         * controllers that have autoconnect disable. Proceed. */
+        return TRUE;
+    }
+
+    if (nm_config_data_get_ignore_carrier_for_port(
+            NM_CONFIG_GET_DATA,
+            nm_setting_connection_get_interface_name(s_con),
+            nm_setting_connection_get_connection_type(s_con))) {
+        /* We ignore carrier on the master (as we would do by default). Proceed. */
+        return TRUE;
+    }
+
+    return FALSE;
+}
+
+static gboolean
 _internal_activate_device(NMManager *self, NMActiveConnection *active, GError **error)
 {
     NMDevice                *device;
@@ -5189,6 +5245,18 @@ _internal_activate_device(NMManager *self, NMActiveConnection *active, GError **
         g_prefix_error(error,
                        "Can not find a master for %s: ",
                        nm_settings_connection_get_id(sett_conn));
+        return FALSE;
+    }
+
+    if (!_check_autoconnect_port(active, master_connection, master_device, master_ac)) {
+        /* Usually, port and controller devices can (auto)connect without carrier. However,
+         * the controller has "ignore-carrier=no" configured. If the port autoconnects,
+         * has no carrier and the controller has ignore-carrier=no, then autoconnect
+         * is going to fail. */
+        g_set_error(error,
+                    NM_MANAGER_ERROR,
+                    NM_MANAGER_ERROR_DEPENDENCY_FAILED,
+                    "port has no carrier and controller does not ignore carrier");
         return FALSE;
     }
 
