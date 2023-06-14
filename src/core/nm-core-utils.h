@@ -193,14 +193,20 @@ typedef enum {
     NM_MATCH_SPEC_NEG_MATCH = 2,
 } NMMatchSpecMatchType;
 
-NMMatchSpecMatchType nm_match_spec_device(const GSList *specs,
-                                          const char   *interface_name,
-                                          const char   *device_type,
-                                          const char   *driver,
-                                          const char   *driver_version,
-                                          const char   *hwaddr,
-                                          const char   *s390_subchannels,
-                                          const char   *dhcp_plugin);
+int nm_match_spec_match_type_to_bool(NMMatchSpecMatchType m, int no_match_value);
+
+typedef struct _NMMatchSpecDeviceData {
+    const char *interface_name;
+    const char *device_type;
+    const char *driver;
+    const char *driver_version;
+    const char *dhcp_plugin;
+    const char *hwaddr;
+    const char *s390_subchannels;
+} NMMatchSpecDeviceData;
+
+NMMatchSpecMatchType nm_match_spec_device(const GSList *specs, const NMMatchSpecDeviceData *data);
+
 NMMatchSpecMatchType nm_match_spec_config(const GSList *specs, guint nm_version, const char *env);
 GSList              *nm_match_spec_split(const char *value);
 char                *nm_match_spec_join(GSList *specs);

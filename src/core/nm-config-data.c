@@ -130,6 +130,12 @@ G_DEFINE_TYPE(NMConfigData, nm_config_data, G_TYPE_OBJECT)
 static const char *
 _match_section_info_get_str(const MatchSectionInfo *m, GKeyFile *keyfile, const char *property);
 
+static const char *_config_data_get_device_config(const NMConfigData          *self,
+                                                  const char                  *property,
+                                                  const NMMatchSpecDeviceData *match_data,
+                                                  NMDevice                    *device,
+                                                  gboolean                    *has_match);
+
 /*****************************************************************************/
 
 const char *
@@ -366,7 +372,55 @@ nm_config_data_get_iwd_config_path(const NMConfigData *self)
 }
 
 gboolean
-nm_config_data_get_ignore_carrier(const NMConfigData *self, NMDevice *device)
+nm_config_data_get_ignore_carrier_for_port(const NMConfigData *self,
+                                           const char         *master,
+                                           const char         *slave_type)
+{
+    const char           *value;
+    gboolean              has_match;
+    int                   m;
+    NMMatchSpecDeviceData match_data;
+
+    g_return_val_if_fail(NM_IS_CONFIG_DATA(self), FALSE);
+
+    if (!master || !slave_type)
+        goto out_default;
+
+    if (!nm_utils_ifname_valid_kernel(master, NULL))
+        goto out_default;
+
+    match_data = (NMMatchSpecDeviceData){
+        .interface_name = master,
+        .device_type    = slave_type,
+    };
+
+    value = _config_data_get_device_config(self,
+                                           NM_CONFIG_KEYFILE_KEY_DEVICE_IGNORE_CARRIER,
+                                           &match_data,
+                                           NULL,
+                                           &has_match);
+    if (has_match)
+        m = nm_config_parse_boolean(value, -1);
+    else {
+        NMMatchSpecMatchType x;
+
+        x = nm_match_spec_device(NM_CONFIG_DATA_GET_PRIVATE(self)->ignore_carrier, &match_data);
+        m = nm_match_spec_match_type_to_bool(x, -1);
+    }
+
+    if (NM_IN_SET(m, TRUE, FALSE))
+        return m;
+
+out_default:
+    /* if ignore-carrier is not explicitly or detected for the master, then we assume it's
+     * enabled. This is in line with nm_config_data_get_ignore_carrier_by_device(), where
+     * ignore-carrier is enabled based on nm_device_ignore_carrier_by_default().
+     */
+    return TRUE;
+}
+
+gboolean
+nm_config_data_get_ignore_carrier_by_device(const NMConfigData *self, NMDevice *device)
 {
     const char *value;
     gboolean    has_match;
@@ -375,10 +429,10 @@ nm_config_data_get_ignore_carrier(const NMConfigData *self, NMDevice *device)
     g_return_val_if_fail(NM_IS_CONFIG_DATA(self), FALSE);
     g_return_val_if_fail(NM_IS_DEVICE(device), FALSE);
 
-    value = nm_config_data_get_device_config(self,
-                                             NM_CONFIG_KEYFILE_KEY_DEVICE_IGNORE_CARRIER,
-                                             device,
-                                             &has_match);
+    value = nm_config_data_get_device_config_by_device(self,
+                                                       NM_CONFIG_KEYFILE_KEY_DEVICE_IGNORE_CARRIER,
+                                                       device,
+                                                       &has_match);
     if (has_match)
         m = nm_config_parse_boolean(value, -1);
     else
@@ -1488,20 +1542,22 @@ global_dns_equal(NMGlobalDnsConfig *old, NMGlobalDnsConfig *new)
 /*****************************************************************************/
 
 static const MatchSectionInfo *
-_match_section_infos_lookup(const MatchSectionInfo *match_section_infos,
-                            GKeyFile               *keyfile,
-                            const char             *property,
-                            NMDevice               *device,
-                            const NMPlatformLink   *pllink,
-                            const char             *match_device_type,
-                            const char            **out_value)
+_match_section_infos_lookup(const MatchSectionInfo      *match_section_infos,
+                            GKeyFile                    *keyfile,
+                            const char                  *property,
+                            const NMMatchSpecDeviceData *match_data,
+                            NMDevice                    *device,
+                            const char                 **out_value)
 {
-    const char *match_dhcp_plugin;
+    NMMatchSpecDeviceData match_data_local;
+
+    /* Caller must either provide a "match_data" or a "device" (actually,
+     * neither is also fine, albeit unusual). */
+    nm_assert(!match_data || !device);
+    nm_assert(!device || NM_IS_DEVICE(device));
 
     if (!match_section_infos)
         goto out;
-
-    match_dhcp_plugin = nm_dhcp_manager_get_config(nm_dhcp_manager_get());
 
     for (; match_section_infos->group_name; match_section_infos++) {
         const char *value;
@@ -1519,16 +1575,17 @@ _match_section_infos_lookup(const MatchSectionInfo *match_section_infos,
             continue;
 
         if (match_section_infos->match_device.has) {
-            if (device)
-                match = nm_device_spec_match_list(device, match_section_infos->match_device.spec);
-            else if (pllink)
-                match = nm_match_spec_device_by_pllink(pllink,
-                                                       match_device_type,
-                                                       match_dhcp_plugin,
-                                                       match_section_infos->match_device.spec,
-                                                       FALSE);
-            else
-                match = FALSE;
+            NMMatchSpecMatchType m;
+
+            if (G_UNLIKELY(!match_data)) {
+                /* In most cases, we don't actually have any matches. So we "optimize"
+                 * here by allowing the user to specify a NMDEvice directly, and only
+                 * initialize the match-data when needed. */
+                match_data = nm_match_spec_device_data_init_from_device(&match_data_local, device);
+            }
+
+            m     = nm_match_spec_device(match_section_infos->match_device.spec, match_data);
+            match = nm_match_spec_match_type_to_bool(m, FALSE);
         } else
             match = TRUE;
 
@@ -1543,11 +1600,12 @@ out:
     return NULL;
 }
 
-const char *
-nm_config_data_get_device_config(const NMConfigData *self,
-                                 const char         *property,
-                                 NMDevice           *device,
-                                 gboolean           *has_match)
+static const char *
+_config_data_get_device_config(const NMConfigData          *self,
+                               const char                  *property,
+                               const NMMatchSpecDeviceData *match_data,
+                               NMDevice                    *device,
+                               gboolean                    *has_match)
 {
     const NMConfigDataPrivate *priv;
     const MatchSectionInfo    *connection_info;
@@ -1558,17 +1616,37 @@ nm_config_data_get_device_config(const NMConfigData *self,
     g_return_val_if_fail(self, NULL);
     g_return_val_if_fail(property && *property, NULL);
 
+    nm_assert(!match_data || !device);
+    nm_assert(!device || NM_IS_DEVICE(device));
+
     priv = NM_CONFIG_DATA_GET_PRIVATE(self);
 
     connection_info = _match_section_infos_lookup(&priv->device_infos[0],
                                                   priv->keyfile,
                                                   property,
+                                                  match_data,
                                                   device,
-                                                  NULL,
-                                                  NULL,
                                                   &value);
     NM_SET_OUT(has_match, !!connection_info);
     return value;
+}
+
+const char *
+nm_config_data_get_device_config(const NMConfigData          *self,
+                                 const char                  *property,
+                                 const NMMatchSpecDeviceData *match_data,
+                                 gboolean                    *has_match)
+{
+    return _config_data_get_device_config(self, property, match_data, NULL, has_match);
+}
+
+const char *
+nm_config_data_get_device_config_by_device(const NMConfigData *self,
+                                           const char         *property,
+                                           NMDevice           *device,
+                                           gboolean           *has_match)
+{
+    return _config_data_get_device_config(self, property, NULL, device, has_match);
 }
 
 const char *
@@ -1581,53 +1659,58 @@ nm_config_data_get_device_config_by_pllink(const NMConfigData   *self,
     const NMConfigDataPrivate *priv;
     const MatchSectionInfo    *connection_info;
     const char                *value;
+    NMMatchSpecDeviceData      match_data;
 
     g_return_val_if_fail(self, NULL);
     g_return_val_if_fail(property && *property, NULL);
 
     priv = NM_CONFIG_DATA_GET_PRIVATE(self);
 
+    nm_match_spec_device_data_init_from_platform(&match_data,
+                                                 pllink,
+                                                 match_device_type,
+                                                 nm_dhcp_manager_get_config(nm_dhcp_manager_get()));
+
     connection_info = _match_section_infos_lookup(&priv->device_infos[0],
                                                   priv->keyfile,
                                                   property,
+                                                  &match_data,
                                                   NULL,
-                                                  pllink,
-                                                  match_device_type,
                                                   &value);
     NM_SET_OUT(has_match, !!connection_info);
     return value;
 }
 
 gboolean
-nm_config_data_get_device_config_boolean(const NMConfigData *self,
-                                         const char         *property,
-                                         NMDevice           *device,
-                                         int                 val_no_match,
-                                         int                 val_invalid)
+nm_config_data_get_device_config_boolean_by_device(const NMConfigData *self,
+                                                   const char         *property,
+                                                   NMDevice           *device,
+                                                   int                 val_no_match,
+                                                   int                 val_invalid)
 {
     const char *value;
     gboolean    has_match;
 
-    value = nm_config_data_get_device_config(self, property, device, &has_match);
+    value = nm_config_data_get_device_config_by_device(self, property, device, &has_match);
     if (!has_match)
         return val_no_match;
     return nm_config_parse_boolean(value, val_invalid);
 }
 
 gint64
-nm_config_data_get_device_config_int64(const NMConfigData *self,
-                                       const char         *property,
-                                       NMDevice           *device,
-                                       int                 base,
-                                       gint64              min,
-                                       gint64              max,
-                                       gint64              val_no_match,
-                                       gint64              val_invalid)
+nm_config_data_get_device_config_int64_by_device(const NMConfigData *self,
+                                                 const char         *property,
+                                                 NMDevice           *device,
+                                                 int                 base,
+                                                 gint64              min,
+                                                 gint64              max,
+                                                 gint64              val_no_match,
+                                                 gint64              val_invalid)
 {
     const char *value;
     gboolean    has_match;
 
-    value = nm_config_data_get_device_config(self, property, device, &has_match);
+    value = nm_config_data_get_device_config_by_device(self, property, device, &has_match);
     if (!has_match) {
         errno = ENOENT;
         return val_no_match;
@@ -1651,9 +1734,8 @@ nm_config_data_get_device_allowed_connections_specs(const NMConfigData *self,
     connection_info = _match_section_infos_lookup(&priv->device_infos[0],
                                                   priv->keyfile,
                                                   NM_CONFIG_KEYFILE_KEY_DEVICE_ALLOWED_CONNECTIONS,
+                                                  NULL,
                                                   device,
-                                                  NULL,
-                                                  NULL,
                                                   NULL);
 
     if (connection_info) {
@@ -1696,9 +1778,8 @@ nm_config_data_get_connection_default(const NMConfigData *self,
     _match_section_infos_lookup(&priv->connection_infos[0],
                                 priv->keyfile,
                                 property,
+                                NULL,
                                 device,
-                                NULL,
-                                NULL,
                                 &value);
     return value;
 }
