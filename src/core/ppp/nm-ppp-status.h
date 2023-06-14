@@ -29,4 +29,10 @@ typedef enum {
     NM_PPP_STATUS_INTERN_DEAD,
 } NMPPPStatus;
 
+/*****************************************************************************/
+
+/* The plugin name "(rp-)pppoe.so" depends on the ppp version. */
+
+#define NM_PPPOE_PLUGIN_NAME (NM_PPP_VERSION_2_5_OR_NEWER ? "pppoe.so" : "rp-pppoe.so")
+
 #endif /* __NM_PPP_STATUS_H__ */

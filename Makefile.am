@@ -3331,6 +3331,12 @@ src_core_ppp_libnm_ppp_plugin_la_LIBADD = \
 
 $(src_core_ppp_libnm_ppp_plugin_la_OBJECTS): $(src_libnm_core_public_mkenums_h)
 
+check-local-ppp-plugin: src/core/NetworkManager src/core/ppp/libnm-ppp-plugin.la
+	$(srcdir)/tools/check-exports.sh $(builddir)/src/core/ppp/.libs/libnm-ppp-plugin.so "$(srcdir)/src/core/ppp/nm-ppp-plugin.ver"
+	$(call check_so_symbols,$(builddir)/src/core/ppp/.libs/libnm-ppp-plugin.so)
+
+check_local += check-local-ppp-plugin
+
 endif
 
 EXTRA_DIST += \
