@@ -239,6 +239,9 @@
 /* Define to path of pppd binary */
 #mesondefine PPPD_PATH
 
+/* The detected ppp API version */
+#mesondefine NM_PPP_VERSION_2_5_OR_NEWER
+
 /* Define if you have iwd support */
 #mesondefine WITH_IWD
 
