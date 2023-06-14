@@ -155,7 +155,7 @@ nmcs_provider_detect(NMCSProvider       *self,
     env = g_getenv(NMCS_PROVIDER_GET_CLASS(self)->_env_provider_enabled);
     if (!_nm_utils_ascii_str_to_bool(env, FALSE)) {
         g_task_return_error(task,
-                            nm_utils_error_new(NM_UTILS_ERROR_UNKNOWN, "provider is disabled"));
+                            nm_utils_error_new(NM_UTILS_ERROR_NOT_READY, "provider is disabled"));
         return;
     }
 

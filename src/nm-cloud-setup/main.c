@@ -22,10 +22,12 @@ typedef struct {
 } SigTermData;
 
 typedef struct {
+    SigTermData  *sigterm_data;
     GMainLoop    *main_loop;
     GCancellable *cancellable;
     NMCSProvider *provider_result;
     guint         detect_count;
+    gboolean      any_provider_enabled;
 } ProviderDetectData;
 
 static void
@@ -48,6 +50,10 @@ _provider_detect_cb(GObject *source, GAsyncResult *result, gpointer user_data)
         goto out;
     }
     if (error) {
+        if (nm_g_error_matches(error, NM_UTILS_ERROR, NM_UTILS_ERROR_NOT_READY)) {
+            /* This error tells us, that the provider was not enabled in configuration. */
+        } else
+            dd->any_provider_enabled = TRUE;
         _LOGI("provider %s not detected: %s", nmcs_provider_get_name(provider), error->message);
         goto out;
     }
@@ -58,8 +64,14 @@ _provider_detect_cb(GObject *source, GAsyncResult *result, gpointer user_data)
 
 out:
     if (dd->detect_count == 0) {
-        if (!dd->provider_result)
-            _LOGI("no provider detected");
+        if (!dd->provider_result) {
+            NMLogLevel level = LOGL_INFO;
+
+            if (dd->any_provider_enabled && !dd->sigterm_data->signal_received)
+                level = LOGL_WARN;
+
+            _NMLOG(level, "no provider detected");
+        }
         g_main_loop_quit(dd->main_loop);
     }
 }
@@ -74,16 +86,18 @@ _provider_detect_sigterm_cb(GCancellable *source, gpointer user_data)
 }
 
 static NMCSProvider *
-_provider_detect(GCancellable *sigterm_cancellable)
+_provider_detect(SigTermData *sigterm_data)
 {
     nm_auto_unref_gmainloop GMainLoop *main_loop   = g_main_loop_new(NULL, FALSE);
     gs_unref_object GCancellable      *cancellable = g_cancellable_new();
     gs_unref_object NMHttpClient      *http_client = NULL;
     ProviderDetectData                 dd          = {
-                                 .cancellable     = cancellable,
-                                 .main_loop       = main_loop,
-                                 .detect_count    = 0,
-                                 .provider_result = NULL,
+                                 .sigterm_data         = sigterm_data,
+                                 .cancellable          = cancellable,
+                                 .main_loop            = main_loop,
+                                 .detect_count         = 0,
+                                 .provider_result      = NULL,
+                                 .any_provider_enabled = FALSE,
     };
     const GType gtypes[] = {
         NMCS_TYPE_PROVIDER_EC2,
@@ -94,7 +108,7 @@ _provider_detect(GCancellable *sigterm_cancellable)
     int    i;
     gulong cancellable_signal_id;
 
-    cancellable_signal_id = g_cancellable_connect(sigterm_cancellable,
+    cancellable_signal_id = g_cancellable_connect(sigterm_data->cancellable,
                                                   G_CALLBACK(_provider_detect_sigterm_cb),
                                                   &dd,
                                                   NULL);
@@ -118,7 +132,7 @@ _provider_detect(GCancellable *sigterm_cancellable)
         g_main_loop_run(main_loop);
 
 out:
-    nm_clear_g_signal_handler(sigterm_cancellable, &cancellable_signal_id);
+    nm_clear_g_signal_handler(sigterm_data->cancellable, &cancellable_signal_id);
     return dd.provider_result;
 }
 
@@ -759,7 +773,7 @@ main(int argc, const char *const *argv)
     };
     sigterm_source = nm_g_unix_signal_add_source(SIGTERM, sigterm_handler, &sigterm_data);
 
-    provider = _provider_detect(sigterm_cancellable);
+    provider = _provider_detect(&sigterm_data);
     if (!provider)
         goto done;
 
