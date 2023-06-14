@@ -75,6 +75,10 @@ _NM_PRAGMA_WARNING_REENABLE;
 
 /*****************************************************************************/
 
+G_STATIC_ASSERT(PPP_VERSION_2_5_OR_NEWER == NM_PPP_VERSION_2_5_OR_NEWER);
+
+/*****************************************************************************/
+
 G_STATIC_ASSERT((gint64) NM_PPP_STATUS_DEAD == PHASE_DEAD);
 G_STATIC_ASSERT((gint64) NM_PPP_STATUS_INITIALIZE == PHASE_INITIALIZE);
 G_STATIC_ASSERT((gint64) NM_PPP_STATUS_SERIALCONN == PHASE_SERIALCONN);

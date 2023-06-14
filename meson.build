@@ -560,10 +560,12 @@ config_h.set10('WITH_FIREWALLD_ZONE', enable_firewalld_zone)
 
 # pppd
 enable_ppp = get_option('ppp')
+NM_PPP_VERSION_2_5_OR_NEWER = 0
 if enable_ppp
   pppd_dep = dependency('pppd', required: false)
   if (pppd_dep.found())
     pppd_version = pppd_dep.version()
+    NM_PPP_VERSION_2_5_OR_NEWER = 1
   else
     assert(cc.has_header('pppd/pppd.h'), 'couldn\'t find pppd.h. pppd development headers are required')
     pppd_version = '2.4.9'
@@ -584,6 +586,7 @@ if enable_ppp
   endif
 endif
 config_h.set10('WITH_PPP', enable_ppp)
+config_h.set10('NM_PPP_VERSION_2_5_OR_NEWER', NM_PPP_VERSION_2_5_OR_NEWER)
 
 # ModemManager1 with libmm-glib
 enable_modem_manager = get_option('modem_manager')
