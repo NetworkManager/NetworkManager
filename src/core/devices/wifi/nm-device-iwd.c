@@ -3108,12 +3108,12 @@ config_changed(NMConfig           *config,
     NMDeviceIwdPrivate *priv       = NM_DEVICE_IWD_GET_PRIVATE(self);
     gboolean            old_iwd_ac = priv->iwd_autoconnect;
 
-    priv->iwd_autoconnect =
-        nm_config_data_get_device_config_boolean(config_data,
-                                                 NM_CONFIG_KEYFILE_KEY_DEVICE_WIFI_IWD_AUTOCONNECT,
-                                                 NM_DEVICE(self),
-                                                 TRUE,
-                                                 TRUE);
+    priv->iwd_autoconnect = nm_config_data_get_device_config_boolean_by_device(
+        config_data,
+        NM_CONFIG_KEYFILE_KEY_DEVICE_WIFI_IWD_AUTOCONNECT,
+        NM_DEVICE(self),
+        TRUE,
+        TRUE);
 
     if (old_iwd_ac != priv->iwd_autoconnect && priv->dbus_station_proxy && !priv->current_ap) {
         gs_unref_variant GVariant *value = NULL;

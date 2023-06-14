@@ -30,6 +30,7 @@
 #include "libnm-platform/nm-linux-platform.h"
 #include "libnm-platform/nm-platform-utils.h"
 #include "nm-auth-utils.h"
+#include "devices/nm-device.h"
 
 /*****************************************************************************/
 
@@ -900,6 +901,73 @@ nm_utils_match_connection(NMConnection *const   *connections,
 
 /*****************************************************************************/
 
+const struct _NMMatchSpecDeviceData *
+nm_match_spec_device_data_init_from_device(struct _NMMatchSpecDeviceData *out_data,
+                                           NMDevice                      *device)
+{
+    const char *hw_address;
+    gboolean    is_fake;
+
+    nm_assert(out_data);
+
+    if (!device) {
+        *out_data = (NMMatchSpecDeviceData){};
+        return out_data;
+    }
+
+    nm_assert(NM_IS_DEVICE(device));
+
+    hw_address = nm_device_get_permanent_hw_address_full(
+        device,
+        !nm_device_get_unmanaged_flags(device, NM_UNMANAGED_PLATFORM_INIT),
+        &is_fake);
+
+    /* Note that here we access various getters on @device, without cloning
+     * or taking ownership and return it to the caller.
+     *
+     * The returned data is only valid, until NMDevice gets modified again. */
+
+    *out_data = (NMMatchSpecDeviceData){
+        .interface_name   = nm_device_get_iface(device),
+        .device_type      = nm_device_get_type_description(device),
+        .driver           = nm_device_get_driver(device),
+        .driver_version   = nm_device_get_driver_version(device),
+        .hwaddr           = is_fake ? NULL : hw_address,
+        .s390_subchannels = nm_device_get_s390_subchannels(device),
+        .dhcp_plugin      = nm_dhcp_manager_get_config(nm_dhcp_manager_get()),
+    };
+
+    return out_data;
+}
+
+const NMMatchSpecDeviceData *
+nm_match_spec_device_data_init_from_platform(NMMatchSpecDeviceData *out_data,
+                                             const NMPlatformLink  *pllink,
+                                             const char            *match_device_type,
+                                             const char            *match_dhcp_plugin)
+{
+    nm_assert(out_data);
+
+    /* we can only match by certain properties that are available on the
+     * platform link (and even @pllink might be missing.
+     *
+     * It's still useful because of specs like "*" and "except:interface-name:eth0",
+     * which match even in that case. */
+
+    *out_data = (NMMatchSpecDeviceData){
+        .interface_name   = pllink ? pllink->name : NULL,
+        .device_type      = match_device_type,
+        .driver           = pllink ? pllink->driver : NULL,
+        .driver_version   = NULL,
+        .hwaddr           = NULL,
+        .s390_subchannels = NULL,
+        .dhcp_plugin      = match_dhcp_plugin,
+    };
+    return out_data;
+}
+
+/*****************************************************************************/
+
 int
 nm_match_spec_device_by_pllink(const NMPlatformLink *pllink,
                                const char           *match_device_type,
@@ -907,32 +975,15 @@ nm_match_spec_device_by_pllink(const NMPlatformLink *pllink,
                                const GSList         *specs,
                                int                   no_match_value)
 {
-    NMMatchSpecMatchType m;
+    NMMatchSpecMatchType  m;
+    NMMatchSpecDeviceData data;
 
-    /* we can only match by certain properties that are available on the
-     * platform link (and even @pllink might be missing.
-     *
-     * It's still useful because of specs like "*" and "except:interface-name:eth0",
-     * which match even in that case. */
     m = nm_match_spec_device(specs,
-                             pllink ? pllink->name : NULL,
-                             match_device_type,
-                             pllink ? pllink->driver : NULL,
-                             NULL,
-                             NULL,
-                             NULL,
-                             match_dhcp_plugin);
-
-    switch (m) {
-    case NM_MATCH_SPEC_MATCH:
-        return TRUE;
-    case NM_MATCH_SPEC_NEG_MATCH:
-        return FALSE;
-    case NM_MATCH_SPEC_NO_MATCH:
-        return no_match_value;
-    }
-    nm_assert_not_reached();
-    return no_match_value;
+                             nm_match_spec_device_data_init_from_platform(&data,
+                                                                          pllink,
+                                                                          match_device_type,
+                                                                          match_dhcp_plugin));
+    return nm_match_spec_match_type_to_bool(m, no_match_value);
 }
 
 /*****************************************************************************/

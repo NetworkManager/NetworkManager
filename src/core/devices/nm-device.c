@@ -5116,6 +5116,18 @@ nm_device_get_ip_iface_identifier(NMDevice           *self,
 }
 
 const char *
+nm_device_get_s390_subchannels(NMDevice *self)
+{
+    NMDeviceClass *klass;
+
+    g_return_val_if_fail(NM_IS_DEVICE(self), NULL);
+
+    klass = NM_DEVICE_GET_CLASS(self);
+
+    return klass->get_s390_subchannels ? klass->get_s390_subchannels(self) : NULL;
+}
+
+const char *
 nm_device_get_driver(NMDevice *self)
 {
     g_return_val_if_fail(self != NULL, NULL);
@@ -7508,14 +7520,15 @@ device_init_static_sriov_num_vfs(NMDevice *self)
     if (priv->ifindex > 0 && nm_device_has_capability(self, NM_DEVICE_CAP_SRIOV)) {
         int num_vfs;
 
-        num_vfs = nm_config_data_get_device_config_int64(NM_CONFIG_GET_DATA,
-                                                         NM_CONFIG_KEYFILE_KEY_DEVICE_SRIOV_NUM_VFS,
-                                                         self,
-                                                         10,
-                                                         0,
-                                                         G_MAXINT32,
-                                                         -1,
-                                                         -1);
+        num_vfs = nm_config_data_get_device_config_int64_by_device(
+            NM_CONFIG_GET_DATA,
+            NM_CONFIG_KEYFILE_KEY_DEVICE_SRIOV_NUM_VFS,
+            self,
+            10,
+            0,
+            G_MAXINT32,
+            -1,
+            -1);
         if (num_vfs >= 0)
             sriov_op_queue(self, num_vfs, NM_OPTION_BOOL_DEFAULT, NULL, NULL);
     }
@@ -7531,7 +7544,7 @@ config_changed(NMConfig           *config,
     NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
 
     if (priv->state <= NM_DEVICE_STATE_DISCONNECTED || priv->state >= NM_DEVICE_STATE_ACTIVATED) {
-        priv->ignore_carrier = nm_config_data_get_ignore_carrier(config_data, self);
+        priv->ignore_carrier = nm_config_data_get_ignore_carrier_by_device(config_data, self);
         if (NM_FLAGS_HAS(changes, NM_CONFIG_CHANGE_VALUES)
             && !nm_device_get_applied_setting(self, NM_TYPE_SETTING_SRIOV))
             device_init_static_sriov_num_vfs(self);
@@ -7670,8 +7683,9 @@ realize_start_setup(NMDevice             *self,
     nm_device_update_permanent_hw_address(self, FALSE);
 
     /* Note: initial hardware address must be read before calling get_ignore_carrier() */
-    config               = nm_config_get();
-    priv->ignore_carrier = nm_config_data_get_ignore_carrier(nm_config_get_data(config), self);
+    config = nm_config_get();
+    priv->ignore_carrier =
+        nm_config_data_get_ignore_carrier_by_device(nm_config_get_data(config), self);
     if (!priv->config_changed_id) {
         priv->config_changed_id = g_signal_connect(config,
                                                    NM_CONFIG_SIGNAL_CONFIG_CHANGED,
@@ -10902,10 +10916,13 @@ connection_ip_method_requires_carrier(NMConnection *connection,
 static gboolean
 connection_requires_carrier(NMConnection *connection)
 {
-    NMSettingIPConfig   *s_ip4, *s_ip6;
+    NMSettingIPConfig   *s_ip4;
+    NMSettingIPConfig   *s_ip6;
     NMSettingConnection *s_con;
-    gboolean             ip4_carrier_wanted, ip6_carrier_wanted;
-    gboolean             ip4_used = FALSE, ip6_used = FALSE;
+    gboolean             ip4_carrier_wanted;
+    gboolean             ip6_carrier_wanted;
+    gboolean             ip4_used = FALSE;
+    gboolean             ip6_used = FALSE;
 
     /* We can progress to IP_CONFIG now, so that we're enslaved.
      * That may actually cause carrier to go up and thus continue activation. */
@@ -14302,14 +14319,15 @@ nm_device_is_up(NMDevice *self)
 static gint64
 _get_carrier_wait_ms(NMDevice *self)
 {
-    return nm_config_data_get_device_config_int64(NM_CONFIG_GET_DATA,
-                                                  NM_CONFIG_KEYFILE_KEY_DEVICE_CARRIER_WAIT_TIMEOUT,
-                                                  self,
-                                                  10,
-                                                  0,
-                                                  G_MAXINT32,
-                                                  CARRIER_WAIT_TIME_MS,
-                                                  CARRIER_WAIT_TIME_MS);
+    return nm_config_data_get_device_config_int64_by_device(
+        NM_CONFIG_GET_DATA,
+        NM_CONFIG_KEYFILE_KEY_DEVICE_CARRIER_WAIT_TIMEOUT,
+        self,
+        10,
+        0,
+        G_MAXINT32,
+        CARRIER_WAIT_TIME_MS,
+        CARRIER_WAIT_TIME_MS);
 }
 
 /*
@@ -14866,11 +14884,11 @@ nm_device_check_unrealized_device_managed(NMDevice *self)
 
     nm_assert(!nm_device_is_real(self));
 
-    if (!nm_config_data_get_device_config_boolean(NM_CONFIG_GET_DATA,
-                                                  NM_CONFIG_KEYFILE_KEY_DEVICE_MANAGED,
-                                                  self,
-                                                  TRUE,
-                                                  TRUE))
+    if (!nm_config_data_get_device_config_boolean_by_device(NM_CONFIG_GET_DATA,
+                                                            NM_CONFIG_KEYFILE_KEY_DEVICE_MANAGED,
+                                                            self,
+                                                            TRUE,
+                                                            TRUE))
         return FALSE;
 
     if (nm_device_spec_match_list(self, nm_settings_get_unmanaged_specs(priv->settings)))
@@ -14937,11 +14955,11 @@ nm_device_set_unmanaged_by_user_conf(NMDevice *self)
     gboolean      value;
     NMUnmanFlagOp set_op;
 
-    value = nm_config_data_get_device_config_boolean(NM_CONFIG_GET_DATA,
-                                                     NM_CONFIG_KEYFILE_KEY_DEVICE_MANAGED,
-                                                     self,
-                                                     -1,
-                                                     TRUE);
+    value = nm_config_data_get_device_config_boolean_by_device(NM_CONFIG_GET_DATA,
+                                                               NM_CONFIG_KEYFILE_KEY_DEVICE_MANAGED,
+                                                               self,
+                                                               -1,
+                                                               TRUE);
     switch (value) {
     case TRUE:
         set_op = NM_UNMAN_FLAG_OP_SET_MANAGED;
@@ -15324,10 +15342,7 @@ check_connection_available(NMDevice                      *self,
 {
     NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
 
-    /* Connections which require a network connection are not available when
-     * the device has no carrier, even with ignore-carrer=TRUE.
-     */
-    if (priv->carrier || !connection_requires_carrier(connection))
+    if (priv->carrier)
         return TRUE;
 
     if (NM_FLAGS_HAS(flags, _NM_DEVICE_CHECK_CON_AVAILABLE_FOR_USER_REQUEST_WAITING_CARRIER)
@@ -15339,18 +15354,24 @@ check_connection_available(NMDevice                      *self,
         return TRUE;
     }
 
-    /* master types are always available even without carrier.
-     * Making connection non-available would un-enslave slaves which
-     * is not desired. */
-    if (nm_device_is_master(self))
-        return TRUE;
-
     if (!priv->up) {
         /* If the device is !IFF_UP it also has no carrier. But we assume that if we
          * would start activating the device (and thereby set the device IFF_UP),
          * that we would get a carrier. We only know after we set the device up,
          * and we only set it up after we start activating it. So presumably, this
          * profile would be available (but we just don't know). */
+        return TRUE;
+    }
+
+    if (!connection_requires_carrier(connection)) {
+        /* Connections that don't require carrier are available. */
+        return TRUE;
+    }
+
+    if (nm_device_is_master(self)) {
+        /* master types are always available even without carrier.
+         * Making connection non-available would un-enslave slaves which
+         * is not desired. */
         return TRUE;
     }
 
@@ -16283,7 +16304,8 @@ _set_state_full(NMDevice *self, NMDeviceState state, NMDeviceStateReason reason,
 
         /* We cache the ignore_carrier state to not react on config-reloads while the connection
          * is active. But on deactivating, reset the ignore-carrier flag to the current state. */
-        priv->ignore_carrier = nm_config_data_get_ignore_carrier(NM_CONFIG_GET_DATA, self);
+        priv->ignore_carrier =
+            nm_config_data_get_ignore_carrier_by_device(NM_CONFIG_GET_DATA, self);
 
         if (quitting) {
             nm_dispatcher_call_device_sync(NM_DISPATCHER_ACTION_PRE_DOWN, self, req);
@@ -17275,38 +17297,11 @@ nm_device_spec_match_list(NMDevice *self, const GSList *specs)
 int
 nm_device_spec_match_list_full(NMDevice *self, const GSList *specs, int no_match_value)
 {
-    NMDeviceClass       *klass;
-    NMMatchSpecMatchType m;
-    const char          *hw_address = NULL;
-    gboolean             is_fake;
+    NMMatchSpecDeviceData data;
+    NMMatchSpecMatchType  m;
 
-    g_return_val_if_fail(NM_IS_DEVICE(self), FALSE);
-
-    klass      = NM_DEVICE_GET_CLASS(self);
-    hw_address = nm_device_get_permanent_hw_address_full(
-        self,
-        !nm_device_get_unmanaged_flags(self, NM_UNMANAGED_PLATFORM_INIT),
-        &is_fake);
-
-    m = nm_match_spec_device(specs,
-                             nm_device_get_iface(self),
-                             nm_device_get_type_description(self),
-                             nm_device_get_driver(self),
-                             nm_device_get_driver_version(self),
-                             is_fake ? NULL : hw_address,
-                             klass->get_s390_subchannels ? klass->get_s390_subchannels(self) : NULL,
-                             nm_dhcp_manager_get_config(nm_dhcp_manager_get()));
-
-    switch (m) {
-    case NM_MATCH_SPEC_MATCH:
-        return TRUE;
-    case NM_MATCH_SPEC_NEG_MATCH:
-        return FALSE;
-    case NM_MATCH_SPEC_NO_MATCH:
-        return no_match_value;
-    }
-    nm_assert_not_reached();
-    return no_match_value;
+    m = nm_match_spec_device(specs, nm_match_spec_device_data_init_from_device(&data, self));
+    return nm_match_spec_match_type_to_bool(m, no_match_value);
 }
 
 guint

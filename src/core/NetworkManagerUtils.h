@@ -89,6 +89,20 @@ NMConnection *nm_utils_match_connection(NMConnection *const   *connections,
                                         NMUtilsMatchFilterFunc match_filter_func,
                                         gpointer               match_filter_data);
 
+/*****************************************************************************/
+
+struct _NMMatchSpecDeviceData;
+
+const struct _NMMatchSpecDeviceData *
+nm_match_spec_device_data_init_from_device(struct _NMMatchSpecDeviceData *out_data,
+                                           NMDevice                      *device);
+
+const struct _NMMatchSpecDeviceData *
+nm_match_spec_device_data_init_from_platform(struct _NMMatchSpecDeviceData *out_data,
+                                             const NMPlatformLink          *pllink,
+                                             const char                    *match_device_type,
+                                             const char                    *match_dhcp_plugin);
+
 int nm_match_spec_device_by_pllink(const NMPlatformLink *pllink,
                                    const char           *match_device_type,
                                    const char           *match_dhcp_plugin,

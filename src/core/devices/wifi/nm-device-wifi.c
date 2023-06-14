@@ -1398,7 +1398,7 @@ _hw_addr_set_scanning(NMDeviceWifi *self, gboolean do_reset)
 
     priv = NM_DEVICE_WIFI_GET_PRIVATE(self);
 
-    randomize = nm_config_data_get_device_config_boolean(
+    randomize = nm_config_data_get_device_config_boolean_by_device(
         NM_CONFIG_GET_DATA,
         NM_CONFIG_KEYFILE_KEY_DEVICE_WIFI_SCAN_RAND_MAC_ADDRESS,
         device,
@@ -1431,7 +1431,7 @@ _hw_addr_set_scanning(NMDeviceWifi *self, gboolean do_reset)
          * a new one.*/
         priv->hw_addr_scan_expire = now + SCAN_RAND_MAC_ADDRESS_EXPIRE_SEC;
 
-        generate_mac_address_mask = nm_config_data_get_device_config(
+        generate_mac_address_mask = nm_config_data_get_device_config_by_device(
             NM_CONFIG_GET_DATA,
             NM_CONFIG_KEYFILE_KEY_DEVICE_WIFI_SCAN_GENERATE_MAC_ADDRESS_MASK,
             device,

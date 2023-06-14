@@ -1244,13 +1244,9 @@ _test_match_spec_device(const GSList *specs, const char *match_str)
 {
     if (match_str && g_str_has_prefix(match_str, MATCH_S390))
         return nm_match_spec_device(specs,
-                                    NULL,
-                                    NULL,
-                                    NULL,
-                                    NULL,
-                                    NULL,
-                                    &match_str[NM_STRLEN(MATCH_S390)],
-                                    NULL);
+                                    &((const NMMatchSpecDeviceData){
+                                        .s390_subchannels = &match_str[NM_STRLEN(MATCH_S390)],
+                                    }));
     if (match_str && g_str_has_prefix(match_str, MATCH_DRIVER)) {
         gs_free char *s = g_strdup(&match_str[NM_STRLEN(MATCH_DRIVER)]);
         char         *t;
@@ -1260,9 +1256,16 @@ _test_match_spec_device(const GSList *specs, const char *match_str)
             t[0] = '\0';
             t++;
         }
-        return nm_match_spec_device(specs, NULL, NULL, s, t, NULL, NULL, NULL);
+        return nm_match_spec_device(specs,
+                                    &((const NMMatchSpecDeviceData){
+                                        .driver         = s,
+                                        .driver_version = t,
+                                    }));
     }
-    return nm_match_spec_device(specs, match_str, NULL, NULL, NULL, NULL, NULL, NULL);
+    return nm_match_spec_device(specs,
+                                &((const NMMatchSpecDeviceData){
+                                    .interface_name = match_str,
+                                }));
 }
 
 static void
