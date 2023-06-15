@@ -5758,6 +5758,25 @@ _internal_activate_device(NMManager *self, NMActiveConnection *active, GError **
         return FALSE;
     }
 
+    /* FIXME: in _check_autoconnect_port() we decide on whether to abort to
+     * activation based on the device's carrier state (and the controller's
+     * ignore-carrier setting).
+     *
+     * At this stage, we might be activating a VLAN attached to a bond
+     * interface. But the VLAN interface may not be created yet, and not have a
+     * carrier state yet.
+     *
+     * We could fix this, by checking again (or exclusively) before attaching
+     * the port to the controller, whether the conditions from
+     * _check_autoconnect_port() hold.  And if they don't, abort activation at
+     * a later stage.
+     *
+     * The problem is, that we already start activating the controller at this
+     * point. Hence, aborting later is not good. What instead maybe should be
+     * done, is that port profiles don't start activating the controller
+     * before they have layer 2 set up.
+     */
+
     if (!_check_autoconnect_port(active, master_connection, master_device, master_ac)) {
         /* Usually, port and controller devices can (auto)connect without carrier. However,
          * the controller has "ignore-carrier=no" configured. If the port autoconnects,
