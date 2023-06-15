@@ -891,6 +891,7 @@ nms_keyfile_plugin_update_connection(NMSKeyfilePlugin   *self,
     gboolean                      reread_same;
     const char                   *uuid;
     char                          strbuf[100];
+    NMTernary                     force_rename2;
 
     _nm_assert_storage(self, storage, TRUE);
     nm_assert(NM_IS_CONNECTION(connection));
@@ -910,6 +911,20 @@ nms_keyfile_plugin_update_connection(NMSKeyfilePlugin   *self,
     previous_filename = nms_keyfile_storage_get_filename(storage);
     uuid              = nms_keyfile_storage_get_uuid(storage);
 
+    if (force_rename)
+        force_rename2 = NM_TERNARY_TRUE;
+    else {
+        /* If the caller does not force a rename, we honor [keyfile].rename
+         * setting, and (if enabled) we rename by following the preferred name
+         * as necessary.  That's indicated with NM_TERNARY_DEFAULT. */
+        force_rename2 = nm_config_data_get_value_boolean(NM_CONFIG_GET_DATA,
+                                                         NM_CONFIG_KEYFILE_GROUP_KEYFILE,
+                                                         NM_CONFIG_KEYFILE_KEY_KEYFILE_RENAME,
+                                                         FALSE)
+                            ? NM_TERNARY_DEFAULT
+                            : NM_TERNARY_FALSE;
+    }
+
     if (!nms_keyfile_writer_connection(
             connection,
             is_nm_generated,
@@ -922,7 +937,7 @@ nms_keyfile_plugin_update_connection(NMSKeyfilePlugin   *self,
             _get_plugin_dir(priv),
             previous_filename,
             FALSE,
-            !!force_rename,
+            force_rename2,
             nm_sett_util_allow_filename_cb,
             NM_SETT_UTIL_ALLOW_FILENAME_DATA(&priv->storages, previous_filename),
             &full_filename,
@@ -939,7 +954,7 @@ nms_keyfile_plugin_update_connection(NMSKeyfilePlugin   *self,
     }
 
     nm_assert(full_filename);
-    nm_assert(force_rename || nm_streq(full_filename, previous_filename));
+    nm_assert(force_rename2 != NM_TERNARY_FALSE || nm_streq(full_filename, previous_filename));
 
     if (!reread || reread_same)
         nm_g_object_ref_set(&reread, connection);

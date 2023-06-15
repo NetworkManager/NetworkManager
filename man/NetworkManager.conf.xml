@@ -555,6 +555,21 @@ no-auto-default=*
           </listitem>
         </varlistentry>
         <varlistentry>
+          <term><varname>rename</varname></term>
+          <listitem>
+            <para>
+                NetworkManager automatically chooses a filename when storing
+                a new profile to disk. That name depends on the profile's name
+                (connection.id). When updating a profile's name, the file is
+                not renamed to not break scripts that rely on the filename
+                for the profile.
+                By setting this option to "true", NetworkManager renames
+                the keyfile on update of the profile, to follow the profile's
+                name. This defaults to "false".
+            </para>
+          </listitem>
+        </varlistentry>
+        <varlistentry>
           <term><varname>unmanaged-devices</varname></term>
           <listitem>
             <para>Set devices that should be ignored by NetworkManager.
