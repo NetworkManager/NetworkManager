@@ -458,14 +458,14 @@ nms_keyfile_writer_connection(NMConnection                   *connection,
 }
 
 gboolean
-nms_keyfile_writer_test_connection(NMConnection  *connection,
-                                   const char    *keyfile_dir,
-                                   uid_t          owner_uid,
-                                   pid_t          owner_grp,
-                                   char         **out_path,
-                                   NMConnection **out_reread,
-                                   gboolean      *out_reread_same,
-                                   GError       **error)
+nmtst_keyfile_writer_test_connection(NMConnection  *connection,
+                                     const char    *keyfile_dir,
+                                     uid_t          owner_uid,
+                                     pid_t          owner_grp,
+                                     char         **out_path,
+                                     NMConnection **out_reread,
+                                     gboolean      *out_reread_same,
+                                     GError       **error)
 {
     return _internal_write_connection(connection,
                                       FALSE,

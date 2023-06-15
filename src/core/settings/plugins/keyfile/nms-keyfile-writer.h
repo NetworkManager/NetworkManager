@@ -30,13 +30,13 @@ gboolean nms_keyfile_writer_connection(NMConnection                   *connectio
                                        gboolean                       *out_reread_same,
                                        GError                        **error);
 
-gboolean nms_keyfile_writer_test_connection(NMConnection  *connection,
-                                            const char    *keyfile_dir,
-                                            uid_t          owner_uid,
-                                            pid_t          owner_grp,
-                                            char         **out_path,
-                                            NMConnection **out_reread,
-                                            gboolean      *out_reread_same,
-                                            GError       **error);
+gboolean nmtst_keyfile_writer_test_connection(NMConnection  *connection,
+                                              const char    *keyfile_dir,
+                                              uid_t          owner_uid,
+                                              pid_t          owner_grp,
+                                              char         **out_path,
+                                              NMConnection **out_reread,
+                                              gboolean      *out_reread_same,
+                                              GError       **error);
 
 #endif /* __NMS_KEYFILE_WRITER_H__ */
