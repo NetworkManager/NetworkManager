@@ -91,8 +91,8 @@
 
 #define GRACE_PERIOD_MULTIPLIER 2U
 
-#define CARRIER_WAIT_TIME_MS           6000
-#define CARRIER_WAIT_TIME_AFTER_MTU_MS 10000
+#define CARRIER_WAIT_TIME_MS             6000
+#define CARRIER_WAIT_TIME_AFTER_MTU_MSEC 10000
 
 #define NM_DEVICE_AUTH_RETRIES_UNSET    -1
 #define NM_DEVICE_AUTH_RETRIES_INFINITY -2
@@ -553,9 +553,9 @@ typedef struct _NMDevicePrivate {
      * until taking action.
      *
      * When changing MTU, the device might take longer then that. So, whenever
-     * NM changes the MTU it sets @carrier_wait_until_ms to CARRIER_WAIT_TIME_AFTER_MTU_MS
+     * NM changes the MTU it sets @carrier_wait_until_msec to CARRIER_WAIT_TIME_AFTER_MTU_MSEC
      * in the future. This is used to extend the grace period in this particular case. */
-    gint64 carrier_wait_until_ms;
+    gint64 carrier_wait_until_msec;
 
     union {
         struct {
@@ -6739,7 +6739,7 @@ nm_device_set_carrier(NMDevice *self, gboolean carrier)
             gint64 now_ms;
 
             now_ms   = nm_utils_get_monotonic_timestamp_msec();
-            until_ms = NM_MAX(now_ms + _get_carrier_wait_ms(self), priv->carrier_wait_until_ms);
+            until_ms = NM_MAX(now_ms + _get_carrier_wait_ms(self), priv->carrier_wait_until_msec);
             priv->carrier_defer_source =
                 nm_g_timeout_add_source(until_ms - now_ms, carrier_disconnected_action_cb, self);
             _LOGD(LOGD_DEVICE,
@@ -11627,8 +11627,8 @@ _commit_mtu(NMDevice *self)
                                  ? "Are the MTU sizes of the slaves large enough?"
                                  : "Did you configure the MTU correctly?"));
             }
-            priv->carrier_wait_until_ms =
-                nm_utils_get_monotonic_timestamp_msec() + CARRIER_WAIT_TIME_AFTER_MTU_MS;
+            priv->carrier_wait_until_msec =
+                nm_utils_get_monotonic_timestamp_msec() + CARRIER_WAIT_TIME_AFTER_MTU_MSEC;
         }
 
         if (ip6_mtu && ip6_mtu != _IP6_MTU_SYS()) {
@@ -11657,8 +11657,8 @@ _commit_mtu(NMDevice *self)
                        msg ? ": " : "",
                        msg ?: "");
             }
-            priv->carrier_wait_until_ms =
-                nm_utils_get_monotonic_timestamp_msec() + CARRIER_WAIT_TIME_AFTER_MTU_MS;
+            priv->carrier_wait_until_msec =
+                nm_utils_get_monotonic_timestamp_msec() + CARRIER_WAIT_TIME_AFTER_MTU_MSEC;
         }
     }
 
@@ -14367,7 +14367,7 @@ carrier_detect_wait(NMDevice *self)
         nm_device_add_pending_action(self, NM_PENDING_ACTION_CARRIER_WAIT, FALSE);
 
     now_ms   = nm_utils_get_monotonic_timestamp_msec();
-    until_ms = NM_MAX(now_ms + _get_carrier_wait_ms(self), priv->carrier_wait_until_ms);
+    until_ms = NM_MAX(now_ms + _get_carrier_wait_ms(self), priv->carrier_wait_until_msec);
     priv->carrier_wait_source =
         nm_g_timeout_add_source(until_ms - now_ms, carrier_wait_timeout, self);
 }
@@ -15896,8 +15896,8 @@ nm_device_cleanup(NMDevice *self, NMDeviceStateReason reason, CleanupType cleanu
                   ifindex);
             if (priv->mtu_initial) {
                 nm_platform_link_set_mtu(nm_device_get_platform(self), ifindex, priv->mtu_initial);
-                priv->carrier_wait_until_ms =
-                    nm_utils_get_monotonic_timestamp_msec() + CARRIER_WAIT_TIME_AFTER_MTU_MS;
+                priv->carrier_wait_until_msec =
+                    nm_utils_get_monotonic_timestamp_msec() + CARRIER_WAIT_TIME_AFTER_MTU_MSEC;
             }
             if (priv->ip6_mtu_initial) {
                 char sbuf[64];
