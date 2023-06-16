@@ -2017,9 +2017,10 @@ nm_settings_update_connection(NMSettings                      *self,
     gs_unref_object NMConnection      *new_connection_cloned = NULL;
     gs_unref_object NMConnection      *new_connection        = NULL;
     NMConnection                      *new_connection_real;
-    gs_unref_object NMSettingsStorage *cur_storage  = NULL;
-    gs_unref_object NMSettingsStorage *new_storage  = NULL;
-    NMSettingsStorage                 *drop_storage = NULL;
+    gs_unref_object NMSettingsStorage *cur_storage         = NULL;
+    gs_unref_object NMSettingsStorage *new_storage         = NULL;
+    NMSettingsStorage                 *drop_storage        = NULL;
+    NMSettingsStorage                 *prev_update_storage = NULL;
     SettConnEntry                     *sett_conn_entry;
     gboolean                           cur_in_memory;
     gboolean                           new_in_memory;
@@ -2324,6 +2325,9 @@ nm_settings_update_connection(NMSettings                      *self,
                 nm_assert_not_reached();
                 new_connection_real = new_connection;
             }
+
+            if (update_storage && new_storage != update_storage)
+                prev_update_storage = update_storage;
         }
     }
 
@@ -2331,6 +2335,12 @@ nm_settings_update_connection(NMSettings                      *self,
     nm_assert(NM_IS_CONNECTION(new_connection_real));
 
     _connection_changed_track(self, new_storage, new_connection_real, TRUE);
+
+    if (prev_update_storage) {
+        /* The storage was swapped by the update call. The old one needs
+         * to be dropped, which we do by setting the connection to NULL. */
+        _connection_changed_track(self, prev_update_storage, NULL, FALSE);
+    }
 
     if (drop_storage && drop_storage != new_storage) {
         gs_free_error GError *local = NULL;

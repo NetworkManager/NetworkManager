@@ -910,8 +910,6 @@ nms_keyfile_plugin_update_connection(NMSKeyfilePlugin   *self,
     previous_filename = nms_keyfile_storage_get_filename(storage);
     uuid              = nms_keyfile_storage_get_uuid(storage);
 
-    /* FIXME: force_rename is unused so far. */
-
     if (!nms_keyfile_writer_connection(
             connection,
             is_nm_generated,
@@ -924,7 +922,7 @@ nms_keyfile_plugin_update_connection(NMSKeyfilePlugin   *self,
             _get_plugin_dir(priv),
             previous_filename,
             FALSE,
-            FALSE,
+            force_rename,
             nm_sett_util_allow_filename_cb,
             NM_SETT_UTIL_ALLOW_FILENAME_DATA(&priv->storages, previous_filename),
             &full_filename,
@@ -940,7 +938,8 @@ nms_keyfile_plugin_update_connection(NMSKeyfilePlugin   *self,
         return FALSE;
     }
 
-    nm_assert(full_filename && nm_streq(full_filename, previous_filename));
+    nm_assert(full_filename);
+    nm_assert(force_rename || nm_streq(full_filename, previous_filename));
 
     if (!reread || reread_same)
         nm_g_object_ref_set(&reread, connection);
@@ -959,11 +958,33 @@ nms_keyfile_plugin_update_connection(NMSKeyfilePlugin   *self,
                               "\")",
                               ""));
 
-    storage->u.conn_data.is_nm_generated = is_nm_generated;
-    storage->u.conn_data.is_volatile     = is_volatile;
-    storage->u.conn_data.is_external     = is_external;
-    storage->u.conn_data.stat_mtime      = *nm_sett_util_stat_mtime(full_filename, FALSE, &mtime);
-    storage->u.conn_data.shadowed_owned  = shadowed_owned;
+    nm_sett_util_stat_mtime(full_filename, FALSE, &mtime);
+
+    if (nm_streq(full_filename, previous_filename)) {
+        storage->u.conn_data.is_nm_generated = is_nm_generated;
+        storage->u.conn_data.is_volatile     = is_volatile;
+        storage->u.conn_data.is_external     = is_external;
+        storage->u.conn_data.stat_mtime      = mtime;
+        storage->u.conn_data.shadowed_owned  = shadowed_owned;
+    } else {
+        NMSKeyfileStorage *storage_new;
+
+        /* The filename changed. We cannot modify the filename of an NMSettingsStorage.
+         * We need to create a new one. */
+        storage_new =
+            nms_keyfile_storage_new_connection(NMS_KEYFILE_PLUGIN(storage->parent._plugin),
+                                               g_object_ref(reread),
+                                               full_filename,
+                                               storage->storage_type,
+                                               is_nm_generated,
+                                               is_volatile,
+                                               is_external,
+                                               storage->u.conn_data.shadowed_storage,
+                                               shadowed_owned,
+                                               &mtime);
+        nm_sett_util_storages_add_take(&priv->storages, storage_new);
+        storage = storage_new;
+    }
 
     *out_storage    = g_object_ref(NM_SETTINGS_STORAGE(storage));
     *out_connection = g_steal_pointer(&reread);
