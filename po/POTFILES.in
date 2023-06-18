@@ -194,4 +194,5 @@ src/nmtui/nmt-wireguard-peer-list.c
 src/nmtui/nmtui-connect.c
 src/nmtui/nmtui-edit.c
 src/nmtui/nmtui-hostname.c
+src/nmtui/nmtui-radio.c
 src/nmtui/nmtui.c
