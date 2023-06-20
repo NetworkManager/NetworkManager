@@ -17,6 +17,9 @@ char* strv_find(char * const *l, const char *name) _pure_;
 char* strv_find_case(char * const *l, const char *name) _pure_;
 char* strv_find_prefix(char * const *l, const char *name) _pure_;
 char* strv_find_startswith(char * const *l, const char *name) _pure_;
+/* Given two vectors, the first a list of keys and the second a list of key-value pairs, returns the value
+ * of the first key from the first vector that is found in the second vector. */
+char* strv_find_first_field(char * const *needles, char * const *haystack) _pure_;
 
 #define strv_contains(l, s) (!!strv_find((l), (s)))
 #define strv_contains_case(l, s) (!!strv_find_case((l), (s)))
@@ -29,7 +32,10 @@ char** strv_free_erase(char **l);
 DEFINE_TRIVIAL_CLEANUP_FUNC(char**, strv_free_erase);
 #define _cleanup_strv_free_erase_ _cleanup_(strv_free_erasep)
 
-char** strv_copy(char * const *l);
+char** strv_copy_n(char * const *l, size_t n);
+static inline char** strv_copy(char * const *l) {
+        return strv_copy_n(l, SIZE_MAX);
+}
 size_t strv_length(char * const *l) _pure_;
 
 int strv_extend_strv(char ***a, char * const *b, bool filter_duplicates);
@@ -84,7 +90,7 @@ char** strv_new_ap(const char *x, va_list ap);
 #define STRV_IGNORE ((const char *) POINTER_MAX)
 
 static inline const char* STRV_IFNOTNULL(const char *x) {
-        return x ? x : STRV_IGNORE;
+        return x ?: STRV_IGNORE;
 }
 
 static inline bool strv_isempty(char * const *l) {
@@ -146,7 +152,10 @@ bool strv_overlap(char * const *a, char * const *b) _pure_;
         _STRV_FOREACH_PAIR(x, y, l, UNIQ_T(i, UNIQ))
 
 char** strv_sort(char **l);
-void strv_print(char * const *l);
+void strv_print_full(char * const *l, const char *prefix);
+static inline void strv_print(char * const *l) {
+        strv_print_full(l, NULL);
+}
 
 #define strv_from_stdarg_alloca(first)                          \
         ({                                                      \
@@ -189,18 +198,6 @@ void strv_print(char * const *l);
         ({                                                       \
                 const char* _x = (x);                            \
                 _x && strv_contains_case(STRV_MAKE(__VA_ARGS__), _x); \
-        })
-
-#define STARTSWITH_SET(p, ...)                                  \
-        ({                                                      \
-                const char *_p = (p);                           \
-                char *_found = NULL;                            \
-                STRV_FOREACH(_i, STRV_MAKE(__VA_ARGS__)) {      \
-                        _found = startswith(_p, *_i);           \
-                        if (_found)                             \
-                                break;                          \
-                }                                               \
-                _found;                                         \
         })
 
 #define ENDSWITH_SET(p, ...)                                    \

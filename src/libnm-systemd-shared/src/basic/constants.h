@@ -42,6 +42,9 @@
 #define DEFAULT_START_LIMIT_INTERVAL (10*USEC_PER_SEC)
 #define DEFAULT_START_LIMIT_BURST 5
 
+/* Wait for 1.5 seconds at maximum for freeze operation */
+#define FREEZE_TIMEOUT (1500 * USEC_PER_MSEC)
+
 /* The default time after which exit-on-idle services exit. This
  * should be kept lower than the watchdog timeout, because otherwise
  * the watchdog pings will keep the loop busy. */
@@ -64,10 +67,8 @@
 #  define _CONF_PATHS_SPLIT_USR(n)
 #endif
 
-/* Return a nulstr for a standard cascade of configuration paths,
- * suitable to pass to conf_files_list_nulstr() or config_parse_many_nulstr()
- * to implement drop-in directories for extending configuration
- * files. */
+/* Return a nulstr for a standard cascade of configuration paths, suitable to pass to
+ * conf_files_list_nulstr() to implement drop-in directories for extending configuration files. */
 #define CONF_PATHS_NULSTR(n)                    \
         "/etc/" n "\0"                          \
         "/run/" n "\0"                          \

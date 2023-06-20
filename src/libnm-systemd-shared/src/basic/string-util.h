@@ -29,6 +29,18 @@ static inline char* strstr_ptr(const char *haystack, const char *needle) {
         return strstr(haystack, needle);
 }
 
+static inline char *strstrafter(const char *haystack, const char *needle) {
+        char *p;
+
+        /* Returns NULL if not found, or pointer to first character after needle if found */
+
+        p = strstr_ptr(haystack, needle);
+        if (!p)
+                return NULL;
+
+        return p + strlen(needle);
+}
+
 static inline const char* strnull(const char *s) {
         return s ?: "(null)";
 }
@@ -253,3 +265,10 @@ size_t strspn_from_end(const char *str, const char *accept);
 
 char *strdupspn(const char *a, const char *accept);
 char *strdupcspn(const char *a, const char *reject);
+
+char *find_line_startswith(const char *haystack, const char *needle);
+
+char *startswith_strv(const char *string, char **strv);
+
+#define STARTSWITH_SET(p, ...)                                  \
+        startswith_strv(p, STRV_MAKE(__VA_ARGS__))

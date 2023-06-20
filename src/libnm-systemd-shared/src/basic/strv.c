@@ -7,6 +7,7 @@
 #include <stdlib.h>
 
 #include "alloc-util.h"
+#include "env-util.h"
 #include "escape.h"
 #include "extract-word.h"
 #include "fileio.h"
@@ -63,6 +64,16 @@ char* strv_find_startswith(char * const *l, const char *name) {
         return NULL;
 }
 
+char* strv_find_first_field(char * const *needles, char * const *haystack) {
+        STRV_FOREACH(k, needles) {
+                char *value = strv_env_pairs_get((char **)haystack, *k);
+                if (value)
+                        return value;
+        }
+
+        return NULL;
+}
+
 char** strv_free(char **l) {
         STRV_FOREACH(k, l)
                 free(*k);
@@ -77,20 +88,26 @@ char** strv_free_erase(char **l) {
         return mfree(l);
 }
 
-char** strv_copy(char * const *l) {
+char** strv_copy_n(char * const *l, size_t m) {
         _cleanup_strv_free_ char **result = NULL;
         char **k;
 
-        result = new(char*, strv_length(l) + 1);
+        result = new(char*, MIN(strv_length(l), m) + 1);
         if (!result)
                 return NULL;
 
         k = result;
         STRV_FOREACH(i, l) {
+                if (m == 0)
+                        break;
+
                 *k = strdup(*i);
                 if (!*k)
                         return NULL;
                 k++;
+
+                if (m != SIZE_MAX)
+                        m--;
         }
 
         *k = NULL;
@@ -662,9 +679,9 @@ int strv_compare(char * const *a, char * const *b) {
         return 0;
 }
 
-void strv_print(char * const *l) {
+void strv_print_full(char * const *l, const char *prefix) {
         STRV_FOREACH(s, l)
-                puts(*s);
+                printf("%s%s\n", strempty(prefix), *s);
 }
 
 int strv_extendf(char ***l, const char *format, ...) {
@@ -706,8 +723,7 @@ char** strv_shell_escape(char **l, const char *bad) {
                 if (!v)
                         return NULL;
 
-                free(*s);
-                *s = v;
+                free_and_replace(*s, v);
         }
 
         return l;

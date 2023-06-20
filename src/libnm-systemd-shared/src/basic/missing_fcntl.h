@@ -25,6 +25,14 @@
 #define F_SEAL_WRITE    0x0008  /* prevent writes */
 #endif
 
+#ifndef F_SEAL_FUTURE_WRITE
+#define F_SEAL_FUTURE_WRITE 0x0010 /* prevent future writes while mapped */
+#endif
+
+#ifndef F_SEAL_EXEC
+#define F_SEAL_EXEC     0x0020  /* prevent chmod modifying exec bits */
+#endif
+
 #ifndef F_OFD_GETLK
 #define F_OFD_GETLK     36
 #define F_OFD_SETLK     37
@@ -57,4 +65,13 @@
 /* a horrid kludge trying to make sure that this will fail on old kernels */
 #ifndef O_TMPFILE
 #define O_TMPFILE (__O_TMPFILE | O_DIRECTORY)
+#endif
+
+/* So O_LARGEFILE is generally implied by glibc, and defined to zero hence, because we only build in LFS
+ * mode. However, when invoking fcntl(F_GETFL) the flag is ORed into the result anyway — glibc does not mask
+ * it away. Which sucks. Let's define the actual value here, so that we can mask it ourselves. */
+#if O_LARGEFILE != 0
+#define RAW_O_LARGEFILE O_LARGEFILE
+#else
+#define RAW_O_LARGEFILE 0100000
 #endif
