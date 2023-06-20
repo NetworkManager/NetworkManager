@@ -5,6 +5,9 @@
 #include <pthread.h>
 #include <stdint.h>
 #include <stdlib.h>
+#if HAVE_VALGRIND_VALGRIND_H
+#  include <valgrind/valgrind.h>
+#endif
 
 #include "alloc-util.h"
 #include "fileio.h"
@@ -274,29 +277,32 @@ static _used_ const struct hashmap_type_info hashmap_type_info[_HASHMAP_TYPE_MAX
         },
 };
 
-#if VALGRIND
-_destructor_ static void cleanup_pools(void) {
-        _cleanup_free_ char *t = NULL;
+void hashmap_trim_pools(void) {
         int r;
 
-        /* Be nice to valgrind */
+        /* The pool is only allocated by the main thread, but the memory can be passed to other
+         * threads. Let's clean up if we are the main thread and no other threads are live. */
 
-        /* The pool is only allocated by the main thread, but the memory can
-         * be passed to other threads. Let's clean up if we are the main thread
-         * and no other threads are live. */
-        /* We build our own is_main_thread() here, which doesn't use C11
-         * TLS based caching of the result. That's because valgrind apparently
-         * doesn't like malloc() (which C11 TLS internally uses) to be called
-         * from a GCC destructors. */
+        /* We build our own is_main_thread() here, which doesn't use C11 TLS based caching of the
+         * result. That's because valgrind apparently doesn't like TLS to be used from a GCC destructor. */
         if (getpid() != gettid())
-                return;
+                return (void) log_debug("Not cleaning up memory pools, not in main thread.");
 
-        r = get_proc_field("/proc/self/status", "Threads", WHITESPACE, &t);
-        if (r < 0 || !streq(t, "1"))
-                return;
+        r = get_process_threads(0);
+        if (r < 0)
+                return (void) log_debug_errno(r, "Failed to determine number of threads, not cleaning up memory pools: %m");
+        if (r != 1)
+                return (void) log_debug("Not cleaning up memory pools, running in multi-threaded process.");
 
-        mempool_drop(&hashmap_pool);
-        mempool_drop(&ordered_hashmap_pool);
+        mempool_trim(&hashmap_pool);
+        mempool_trim(&ordered_hashmap_pool);
+}
+
+#if HAVE_VALGRIND_VALGRIND_H
+_destructor_ static void cleanup_pools(void) {
+        /* Be nice to valgrind */
+        if (RUNNING_ON_VALGRIND)
+                hashmap_trim_pools();
 }
 #endif
 

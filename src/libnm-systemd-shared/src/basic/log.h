@@ -51,8 +51,10 @@ static inline void clear_log_syntax_callback(dummy_t *dummy) {
 const char *log_target_to_string(LogTarget target) _const_;
 LogTarget log_target_from_string(const char *s) _pure_;
 void log_set_target(LogTarget target);
+void log_set_target_and_open(LogTarget target);
 int log_set_target_from_string(const char *e);
 LogTarget log_get_target(void) _pure_;
+void log_settle_target(void);
 
 void log_set_max_level(int level);
 int log_set_max_level_from_string(const char *e);
@@ -424,6 +426,16 @@ typedef struct LogRateLimit {
 #define log_ratelimit_error_errno(error, ...)     log_ratelimit_full_errno(LOG_ERR,     error, __VA_ARGS__)
 #define log_ratelimit_emergency_errno(error, ...) log_ratelimit_full_errno(log_emergency_level(), error, __VA_ARGS__)
 
+const char *_log_set_prefix(const char *prefix, bool force);
+static inline const char *_log_unset_prefixp(const char **p) {
+        assert(p);
+        _log_set_prefix(*p, true);
+        return NULL;
+}
+
+#define LOG_SET_PREFIX(prefix) \
+        _cleanup_(_log_unset_prefixp) _unused_ const char *CONCATENATE(_cleanup_log_unset_prefix_, UNIQ) = _log_set_prefix(prefix, false);
+
 /*
  * The log context allows attaching extra metadata to log messages written to the journal via log.h. We keep
  * track of a thread local log context onto which we can push extra metadata fields that should be logged.
@@ -456,22 +468,23 @@ typedef struct LogContext LogContext;
 
 bool log_context_enabled(void);
 
-LogContext* log_context_attach(LogContext *c);
-LogContext* log_context_detach(LogContext *c);
+LogContext* log_context_new(const char *key, const char *value);
+LogContext* log_context_new_strv(char **fields, bool owned);
+LogContext* log_context_new_iov(struct iovec *input_iovec, size_t n_input_iovec, bool owned);
 
-LogContext* log_context_new(char **fields, bool owned);
-LogContext* log_context_free(LogContext *c);
+/* Same as log_context_new(), but frees the given fields strv/iovec on failure. */
+LogContext* log_context_new_strv_consume(char **fields);
+LogContext* log_context_new_iov_consume(struct iovec *input_iovec, size_t n_input_iovec);
 
-/* Same as log_context_new(), but frees the given fields strv on failure. */
-LogContext* log_context_new_consume(char **fields);
+LogContext *log_context_ref(LogContext *c);
+LogContext *log_context_unref(LogContext *c);
+
+DEFINE_TRIVIAL_CLEANUP_FUNC(LogContext*, log_context_unref);
 
 /* Returns the number of attached log context objects. */
 size_t log_context_num_contexts(void);
 /* Returns the number of fields in all attached log contexts. */
 size_t log_context_num_fields(void);
-
-DEFINE_TRIVIAL_CLEANUP_FUNC(LogContext*, log_context_detach);
-DEFINE_TRIVIAL_CLEANUP_FUNC(LogContext*, log_context_free);
 
 #define LOG_CONTEXT_PUSH(...) \
         LOG_CONTEXT_PUSH_STRV(STRV_MAKE(__VA_ARGS__))
@@ -479,27 +492,46 @@ DEFINE_TRIVIAL_CLEANUP_FUNC(LogContext*, log_context_free);
 #define LOG_CONTEXT_PUSHF(...) \
         LOG_CONTEXT_PUSH(snprintf_ok((char[LINE_MAX]) {}, LINE_MAX, __VA_ARGS__))
 
+#define _LOG_CONTEXT_PUSH_KEY_VALUE(key, value, c) \
+        _unused_ _cleanup_(log_context_unrefp) LogContext *c = log_context_new(key, value);
+
+#define LOG_CONTEXT_PUSH_KEY_VALUE(key, value) \
+        _LOG_CONTEXT_PUSH_KEY_VALUE(key, value, UNIQ_T(c, UNIQ))
+
 #define _LOG_CONTEXT_PUSH_STRV(strv, c) \
-        _unused_ _cleanup_(log_context_freep) LogContext *c = log_context_new(strv, /*owned=*/ false);
+        _unused_ _cleanup_(log_context_unrefp) LogContext *c = log_context_new_strv(strv, /*owned=*/ false);
 
 #define LOG_CONTEXT_PUSH_STRV(strv) \
         _LOG_CONTEXT_PUSH_STRV(strv, UNIQ_T(c, UNIQ))
 
-/* LOG_CONTEXT_CONSUME_STR()/LOG_CONTEXT_CONSUME_STRV() are identical to
- * LOG_CONTEXT_PUSH_STR()/LOG_CONTEXT_PUSH_STRV() except they take ownership of the given str/strv argument.
+#define _LOG_CONTEXT_PUSH_IOV(input_iovec, n_input_iovec, c) \
+        _unused_ _cleanup_(log_context_unrefp) LogContext *c = log_context_new_iov(input_iovec, n_input_iovec, /*owned=*/ false);
+
+#define LOG_CONTEXT_PUSH_IOV(input_iovec, n_input_iovec) \
+        _LOG_CONTEXT_PUSH_IOV(input_iovec, n_input_iovec, UNIQ_T(c, UNIQ))
+
+/* LOG_CONTEXT_CONSUME_STR()/LOG_CONTEXT_CONSUME_STRV()/LOG_CONTEXT_CONSUME_IOV() are identical to
+ * LOG_CONTEXT_PUSH_STR()/LOG_CONTEXT_PUSH_STRV()/LOG_CONTEXT_PUSH_IOV() except they take ownership of the
+ * given str/strv argument.
  */
 
 #define _LOG_CONTEXT_CONSUME_STR(s, c, strv) \
         _unused_ _cleanup_strv_free_ strv = strv_new(s);                                                \
         if (!strv)                                                                                      \
                 free(s);                                                                                \
-        _unused_ _cleanup_(log_context_freep) LogContext *c = log_context_new_consume(TAKE_PTR(strv))
+        _unused_ _cleanup_(log_context_unrefp) LogContext *c = log_context_new_strv_consume(TAKE_PTR(strv))
 
 #define LOG_CONTEXT_CONSUME_STR(s) \
         _LOG_CONTEXT_CONSUME_STR(s, UNIQ_T(c, UNIQ), UNIQ_T(sv, UNIQ))
 
 #define _LOG_CONTEXT_CONSUME_STRV(strv, c) \
-        _unused_ _cleanup_(log_context_freep) LogContext *c = log_context_new_consume(strv);
+        _unused_ _cleanup_(log_context_unrefp) LogContext *c = log_context_new_strv_consume(strv);
 
 #define LOG_CONTEXT_CONSUME_STRV(strv) \
         _LOG_CONTEXT_CONSUME_STRV(strv, UNIQ_T(c, UNIQ))
+
+#define _LOG_CONTEXT_CONSUME_IOV(input_iovec, n_input_iovec, c) \
+        _unused_ _cleanup_(log_context_unrefp) LogContext *c = log_context_new_iov_consume(input_iovec, n_input_iovec);
+
+#define LOG_CONTEXT_CONSUME_IOV(input_iovec, n_input_iovec) \
+        _LOG_CONTEXT_CONSUME_IOV(input_iovec, n_input_iovec, UNIQ_T(c, UNIQ))

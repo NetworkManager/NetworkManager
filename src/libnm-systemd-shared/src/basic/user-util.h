@@ -80,7 +80,8 @@ int take_etc_passwd_lock(const char *root);
 #define UID_MAPPED_ROOT ((uid_t) (INT32_MAX-1))
 #define GID_MAPPED_ROOT ((gid_t) (INT32_MAX-1))
 
-#define ETC_PASSWD_LOCK_PATH "/etc/.pwd.lock"
+#define ETC_PASSWD_LOCK_FILENAME ".pwd.lock"
+#define ETC_PASSWD_LOCK_PATH "/etc/" ETC_PASSWD_LOCK_FILENAME
 
 /* The following macros add 1 when converting things, since UID 0 is a valid UID, while the pointer
  * NULL is special */
@@ -102,7 +103,7 @@ typedef enum ValidUserFlags {
 
 bool valid_user_group_name(const char *u, ValidUserFlags flags);
 bool valid_gecos(const char *d);
-char *mangle_gecos(const char *d);
+char* mangle_gecos(const char *d);
 bool valid_home(const char *p);
 
 static inline bool valid_shell(const char *p) {
@@ -130,11 +131,12 @@ int putsgent_sane(const struct sgrp *sg, FILE *stream);
 #endif
 
 bool is_nologin_shell(const char *shell);
+const char* default_root_shell_at(int rfd);
 const char* default_root_shell(const char *root);
 
 int is_this_me(const char *username);
 
-const char *get_home_root(void);
+const char* get_home_root(void);
 
 static inline bool hashed_password_is_locked_or_invalid(const char *password) {
         return password && password[0] != '$';
@@ -148,3 +150,8 @@ static inline bool hashed_password_is_locked_or_invalid(const char *password) {
 
 /* A password indicating "hey, no password required for login" */
 #define PASSWORD_NONE ""
+
+/* Used by sysusers to indicate that the password should be filled in by firstboot.
+ * Also see https://github.com/systemd/systemd/pull/24680#pullrequestreview-1439464325.
+ */
+#define PASSWORD_UNPROVISIONED "!unprovisioned"

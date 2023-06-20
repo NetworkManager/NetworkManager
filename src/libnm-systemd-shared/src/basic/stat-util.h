@@ -30,7 +30,6 @@ static inline int dir_is_empty(const char *path, bool ignore_hidden_or_backup) {
 
 bool null_or_empty(struct stat *st) _pure_;
 int null_or_empty_path_with_root(const char *fn, const char *root);
-int null_or_empty_fd(int fd);
 
 static inline int null_or_empty_path(const char *fn) {
         return null_or_empty_path_with_root(fn, NULL);
@@ -38,15 +37,24 @@ static inline int null_or_empty_path(const char *fn) {
 
 int path_is_read_only_fs(const char *path);
 
-int files_same(const char *filea, const char *fileb, int flags);
+int inode_same_at(int fda, const char *filea, int fdb, const char *fileb, int flags);
+
+static inline int inode_same(const char *filea, const char *fileb, int flags) {
+        return inode_same_at(AT_FDCWD, filea, AT_FDCWD, fileb, flags);
+}
 
 /* The .f_type field of struct statfs is really weird defined on
  * different archs. Let's give its type a name. */
 typedef typeof(((struct statfs*)NULL)->f_type) statfs_f_type_t;
 
 bool is_fs_type(const struct statfs *s, statfs_f_type_t magic_value) _pure_;
-int fd_is_fs_type(int fd, statfs_f_type_t magic_value);
-int path_is_fs_type(const char *path, statfs_f_type_t magic_value);
+int is_fs_type_at(int dir_fd, const char *path, statfs_f_type_t magic_value);
+static inline int fd_is_fs_type(int fd, statfs_f_type_t magic_value) {
+        return is_fs_type_at(fd, NULL, magic_value);
+}
+static inline int path_is_fs_type(const char *path, statfs_f_type_t magic_value) {
+        return is_fs_type_at(AT_FDCWD, path, magic_value);
+}
 
 bool is_temporary_fs(const struct statfs *s) _pure_;
 bool is_network_fs(const struct statfs *s) _pure_;
@@ -65,6 +73,7 @@ int path_is_network_fs(const char *path);
 
 int stat_verify_regular(const struct stat *st);
 int fd_verify_regular(int fd);
+int verify_regular_at(int dir_fd, const char *path, bool follow);
 
 int stat_verify_directory(const struct stat *st);
 int fd_verify_directory(int fd);
@@ -78,6 +87,8 @@ bool statx_inode_same(const struct statx *a, const struct statx *b);
 bool statx_mount_same(const struct new_statx *a, const struct new_statx *b);
 
 int statx_fallback(int dfd, const char *path, int flags, unsigned mask, struct statx *sx);
+
+int xstatfsat(int dir_fd, const char *path, struct statfs *ret);
 
 #if HAS_FEATURE_MEMORY_SANITIZER
 #  warning "Explicitly initializing struct statx, to work around msan limitation. Please remove as soon as msan has been updated to not require this."
@@ -101,3 +112,5 @@ int statx_fallback(int dfd, const char *path, int flags, unsigned mask, struct s
 void inode_hash_func(const struct stat *q, struct siphash *state);
 int inode_compare_func(const struct stat *a, const struct stat *b);
 extern const struct hash_ops inode_hash_ops;
+
+const char* inode_type_to_string(mode_t m);
