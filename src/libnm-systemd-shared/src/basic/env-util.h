@@ -19,18 +19,18 @@ bool env_name_is_valid(const char *e);
 bool env_value_is_valid(const char *e);
 bool env_assignment_is_valid(const char *e);
 
-enum {
+typedef enum ReplaceEnvFlags {
         REPLACE_ENV_USE_ENVIRONMENT = 1 << 0,
         REPLACE_ENV_ALLOW_BRACELESS = 1 << 1,
         REPLACE_ENV_ALLOW_EXTENDED  = 1 << 2,
-};
+} ReplaceEnvFlags;
 
-char *replace_env_n(const char *format, size_t n, char **env, unsigned flags);
-char **replace_env_argv(char **argv, char **env);
-
-static inline char *replace_env(const char *format, char **env, unsigned flags) {
-        return replace_env_n(format, strlen(format), env, flags);
+int replace_env_full(const char *format, size_t n, char **env, ReplaceEnvFlags flags, char **ret, char ***ret_unset_variables, char ***ret_bad_variables);
+static inline int replace_env(const char *format, char **env, ReplaceEnvFlags flags, char **ret) {
+        return replace_env_full(format, SIZE_MAX, env, flags, ret, NULL, NULL);
 }
+
+int replace_env_argv(char **argv, char **env, char ***ret, char ***ret_unset_variables, char ***ret_bad_variables);
 
 bool strv_env_is_valid(char **e);
 #define strv_env_clean(l) strv_env_clean_with_callback(l, NULL, NULL)
@@ -49,11 +49,15 @@ int strv_env_replace_consume(char ***l, char *p); /* In place ... */
 int strv_env_replace_strdup(char ***l, const char *assignment);
 int strv_env_replace_strdup_passthrough(char ***l, const char *assignment);
 int strv_env_assign(char ***l, const char *key, const char *value);
+int strv_env_assignf(char ***l, const char *key, const char *valuef, ...) _printf_(3, 4);
 int _strv_env_assign_many(char ***l, ...) _sentinel_;
 #define strv_env_assign_many(l, ...) _strv_env_assign_many(l, __VA_ARGS__, NULL)
 
-char *strv_env_get_n(char **l, const char *name, size_t k, unsigned flags) _pure_;
-char *strv_env_get(char **x, const char *n) _pure_;
+char* strv_env_get_n(char * const *l, const char *name, size_t k, ReplaceEnvFlags flags);
+static inline char* strv_env_get(char * const *x, const char *n) {
+        return strv_env_get_n(x, n, SIZE_MAX, 0);
+}
+
 char *strv_env_pairs_get(char **l, const char *name) _pure_;
 
 int getenv_bool(const char *p);
@@ -74,3 +78,7 @@ int setenv_systemd_exec_pid(bool update_only);
 int getenv_path_list(const char *name, char ***ret_paths);
 
 int getenv_steal_erase(const char *name, char **ret);
+
+int set_full_environment(char **env);
+
+int setenvf(const char *name, bool overwrite, const char *valuef, ...) _printf_(3,4);

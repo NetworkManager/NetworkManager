@@ -17,6 +17,7 @@
 #include "fileio.h"
 #include "hashmap.h"
 #include "locale-util.h"
+#include "missing_syscall.h"
 #include "path-util.h"
 #include "set.h"
 #include "string-table.h"
@@ -220,7 +221,7 @@ int get_locales(char ***ret) {
         locales = set_free(locales);
 
         r = getenv_bool("SYSTEMD_LIST_NON_UTF8_LOCALES");
-        if (r == -ENXIO || r == 0) {
+        if (IN_SET(r, -ENXIO, 0)) {
                 char **a, **b;
 
                 /* Filter out non-UTF-8 locales, because it's 2019, by default */
@@ -280,11 +281,6 @@ int locale_is_installed(const char *name) {
         return true;
 }
 
-void init_gettext(void) {
-        setlocale(LC_ALL, "");
-        textdomain(GETTEXT_PACKAGE);
-}
-
 bool is_locale_utf8(void) {
         static int cached_answer = -1;
         const char *set;
@@ -302,6 +298,12 @@ bool is_locale_utf8(void) {
                 goto out;
         } else if (r != -ENXIO)
                 log_debug_errno(r, "Failed to parse $SYSTEMD_UTF8, ignoring: %m");
+
+        /* This function may be called from libsystemd, and setlocale() is not thread safe. Assuming yes. */
+        if (gettid() != raw_getpid()) {
+                cached_answer = true;
+                goto out;
+        }
 
         if (!setlocale(LC_ALL, "")) {
                 cached_answer = true;
@@ -340,11 +342,7 @@ out:
 }
 
 void locale_variables_free(char *l[_VARIABLE_LC_MAX]) {
-        if (!l)
-                return;
-
-        for (LocaleVariable i = 0; i < _VARIABLE_LC_MAX; i++)
-                l[i] = mfree(l[i]);
+        free_many_charp(l, _VARIABLE_LC_MAX);
 }
 
 void locale_variables_simplify(char *l[_VARIABLE_LC_MAX]) {

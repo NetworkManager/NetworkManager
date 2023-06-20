@@ -34,9 +34,12 @@ void unposix_unlockpp(int **fd);
         _cleanup_(unposix_unlockpp) _unused_ int *CONCATENATE(_cleanup_unposix_unlock_, UNIQ) = &(fd)
 
 typedef enum LockType {
+        LOCK_NONE, /* Don't lock the file descriptor. Useful if you need to conditionally lock a file. */
         LOCK_BSD,
         LOCK_POSIX,
         LOCK_UNPOSIX,
 } LockType;
 
 int lock_generic(int fd, LockType type, int operation);
+
+int lock_generic_with_timeout(int fd, LockType type, int operation, usec_t timeout);

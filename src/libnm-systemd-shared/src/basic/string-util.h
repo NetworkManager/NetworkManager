@@ -22,6 +22,9 @@
 #define ALPHANUMERICAL      LETTERS DIGITS
 #define HEXDIGITS           DIGITS "abcdefABCDEF"
 #define LOWERCASE_HEXDIGITS DIGITS "abcdef"
+#define URI_RESERVED        ":/?#[]@!$&'()*+;="         /* [RFC3986] */
+#define URI_UNRESERVED      ALPHANUMERICAL "-._~"       /* [RFC3986] */
+#define URI_VALID           URI_RESERVED URI_UNRESERVED /* [RFC3986] */
 
 static inline char* strstr_ptr(const char *haystack, const char *needle) {
         if (!haystack || !needle)
@@ -63,6 +66,10 @@ static inline const char* one_zero(bool b) {
 
 static inline const char* enable_disable(bool b) {
         return b ? "enable" : "disable";
+}
+
+static inline const char* enabled_disabled(bool b) {
+        return b ? "enabled" : "disabled";
 }
 
 /* This macro's return pointer will have the "const" qualifier set or unset the same way as the input
@@ -121,7 +128,10 @@ char *strjoin_real(const char *x, ...) _sentinel_;
 char *strstrip(char *s);
 char *delete_chars(char *s, const char *bad);
 char *delete_trailing_chars(char *s, const char *bad);
-char *truncate_nl(char *s);
+char *truncate_nl_full(char *s, size_t *ret_len);
+static inline char *truncate_nl(char *s) {
+        return truncate_nl_full(s, NULL);
+}
 
 static inline char *skip_leading_chars(const char *s, const char *bad) {
         if (!s)
@@ -183,10 +193,23 @@ char *strextend_with_separator_internal(char **x, const char *separator, ...) _s
 #define strextend_with_separator(x, separator, ...) strextend_with_separator_internal(x, separator, __VA_ARGS__, NULL)
 #define strextend(x, ...) strextend_with_separator_internal(x, NULL, __VA_ARGS__, NULL)
 
+char *strextendn(char **x, const char *s, size_t l);
+
 int strextendf_with_separator(char **x, const char *separator, const char *format, ...) _printf_(3,4);
 #define strextendf(x, ...) strextendf_with_separator(x, NULL, __VA_ARGS__)
 
 char *strrep(const char *s, unsigned n);
+
+#define strrepa(s, n)                                           \
+        ({                                                      \
+                char *_d_, *_p_;                                \
+                size_t _len_ = strlen(s) * n;                   \
+                _p_ = _d_ = newa(char, _len_ + 1);              \
+                for (unsigned _i_ = 0; _i_ < n; _i_++)          \
+                        _p_ = stpcpy(_p_, s);                   \
+                *_p_ = 0;                                       \
+                _d_;                                            \
+        })
 
 int split_pair(const char *s, const char *sep, char **l, char **r);
 
@@ -268,7 +291,31 @@ char *strdupcspn(const char *a, const char *reject);
 
 char *find_line_startswith(const char *haystack, const char *needle);
 
-char *startswith_strv(const char *string, char **strv);
+bool version_is_valid(const char *s);
 
-#define STARTSWITH_SET(p, ...)                                  \
-        startswith_strv(p, STRV_MAKE(__VA_ARGS__))
+bool version_is_valid_versionspec(const char *s);
+
+ssize_t strlevenshtein(const char *x, const char *y);
+
+static inline int strdup_or_null(const char *s, char **ret) {
+        char *c;
+
+        assert(ret);
+
+        /* This is a lot like strdup(), but is happy with NULL strings, and does not treat that as error, but
+         * copies the NULL value. */
+
+        if (!s) {
+                *ret = NULL;
+                return 0;
+        }
+
+        c = strdup(s);
+        if (!c)
+                return -ENOMEM;
+
+        *ret = c;
+        return 1;
+}
+
+char *strrstr(const char *haystack, const char *needle);

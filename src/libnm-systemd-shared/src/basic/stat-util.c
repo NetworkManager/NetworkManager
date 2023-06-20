@@ -187,14 +187,12 @@ int inode_same_at(int fda, const char *filea, int fdb, const char *fileb, int fl
         struct stat a, b;
 
         assert(fda >= 0 || fda == AT_FDCWD);
-        assert(filea);
         assert(fdb >= 0 || fdb == AT_FDCWD);
-        assert(fileb);
 
-        if (fstatat(fda, filea, &a, flags) < 0)
+        if (fstatat(fda, strempty(filea), &a, flags) < 0)
                 return log_debug_errno(errno, "Cannot stat %s: %m", filea);
 
-        if (fstatat(fdb, fileb, &b, flags) < 0)
+        if (fstatat(fdb, strempty(fileb), &b, flags) < 0)
                 return log_debug_errno(errno, "Cannot stat %s: %m", fileb);
 
         return stat_inode_same(&a, &b);
@@ -394,21 +392,35 @@ bool statx_mount_same(const struct new_statx *a, const struct new_statx *b) {
                 a->stx_dev_minor == b->stx_dev_minor;
 }
 
+static bool is_statx_fatal_error(int err, int flags) {
+        assert(err < 0);
+
+        /* If statx() is not supported or if we see EPERM (which might indicate seccomp filtering or so),
+         * let's do a fallback. Note that on EACCES we'll not fall back, since that is likely an indication of
+         * fs access issues, which we should propagate. */
+        if (ERRNO_IS_NOT_SUPPORTED(err) || err == -EPERM)
+                return false;
+
+        /* When unsupported flags are specified, glibc's fallback function returns -EINVAL.
+         * See statx_generic() in glibc. */
+        if (err != -EINVAL)
+                return true;
+
+        if ((flags & ~(AT_EMPTY_PATH | AT_NO_AUTOMOUNT | AT_SYMLINK_NOFOLLOW | AT_STATX_SYNC_AS_STAT)) != 0)
+                return false; /* Unsupported flags are specified. Let's try to use our implementation. */
+
+        return true;
+}
+
 int statx_fallback(int dfd, const char *path, int flags, unsigned mask, struct statx *sx) {
         static bool avoid_statx = false;
         struct stat st;
+        int r;
 
         if (!avoid_statx) {
-                if (statx(dfd, path, flags, mask, sx) < 0) {
-                        if (!ERRNO_IS_NOT_SUPPORTED(errno) && errno != EPERM)
-                                return -errno;
-
-                        /* If statx() is not supported or if we see EPERM (which might indicate seccomp
-                         * filtering or so), let's do a fallback. Not that on EACCES we'll not fall back,
-                         * since that is likely an indication of fs access issues, which we should
-                         * propagate */
-                } else
-                        return 0;
+                r = RET_NERRNO(statx(dfd, path, flags, mask, sx));
+                if (r >= 0 || is_statx_fatal_error(r, flags))
+                        return r;
 
                 avoid_statx = true;
         }
@@ -464,8 +476,8 @@ int xstatfsat(int dir_fd, const char *path, struct statfs *ret) {
 }
 
 void inode_hash_func(const struct stat *q, struct siphash *state) {
-        siphash24_compress(&q->st_dev, sizeof(q->st_dev), state);
-        siphash24_compress(&q->st_ino, sizeof(q->st_ino), state);
+        siphash24_compress_typesafe(q->st_dev, state);
+        siphash24_compress_typesafe(q->st_ino, state);
 }
 
 int inode_compare_func(const struct stat *a, const struct stat *b) {
@@ -490,6 +502,8 @@ const char* inode_type_to_string(mode_t m) {
                 return "reg";
         case S_IFDIR:
                 return "dir";
+        case S_IFLNK:
+                return "lnk";
         case S_IFCHR:
                 return "chr";
         case S_IFBLK:
@@ -501,4 +515,26 @@ const char* inode_type_to_string(mode_t m) {
         }
 
         return NULL;
+}
+
+mode_t inode_type_from_string(const char *s) {
+        if (!s)
+                return MODE_INVALID;
+
+        if (streq(s, "reg"))
+                return S_IFREG;
+        if (streq(s, "dir"))
+                return S_IFDIR;
+        if (streq(s, "lnk"))
+                return S_IFLNK;
+        if (streq(s, "chr"))
+                return S_IFCHR;
+        if (streq(s, "blk"))
+                return S_IFBLK;
+        if (streq(s, "fifo"))
+                return S_IFIFO;
+        if (streq(s, "sock"))
+                return S_IFSOCK;
+
+        return MODE_INVALID;
 }

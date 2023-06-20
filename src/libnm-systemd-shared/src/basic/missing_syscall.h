@@ -32,6 +32,21 @@
 
 /* ======================================================================= */
 
+#if !HAVE_FCHMODAT2
+static inline int missing_fchmodat2(int dirfd, const char *path, mode_t mode, int flags) {
+#  ifdef __NR_fchmodat2
+        return syscall(__NR_fchmodat2, dirfd, path, mode, flags);
+#  else
+        errno = ENOSYS;
+        return -1;
+#  endif
+}
+
+#  define fchmodat2 missing_fchmodat2
+#endif
+
+/* ======================================================================= */
+
 #if !HAVE_PIVOT_ROOT
 static inline int missing_pivot_root(const char *new_root, const char *put_old) {
         return syscall(__NR_pivot_root, new_root, put_old);
@@ -539,6 +554,10 @@ static inline int missing_open_tree(
 
 /* ======================================================================= */
 
+#ifndef MOVE_MOUNT_BENEATH
+#define MOVE_MOUNT_BENEATH 0x00000200
+#endif
+
 #if !HAVE_MOVE_MOUNT
 
 #ifndef MOVE_MOUNT_F_EMPTY_PATH
@@ -653,4 +672,18 @@ static inline ssize_t missing_getdents64(int fd, void *buffer, size_t length) {
 }
 
 #  define getdents64 missing_getdents64
+#endif
+
+/* ======================================================================= */
+
+/* glibc does not provide clone() on ia64, only clone2(). Not only that, but it also doesn't provide a
+ * prototype, only the symbol in the shared library (it provides a prototype for clone(), but not the
+ * symbol in the shared library). */
+#if defined(__ia64__)
+int __clone2(int (*fn)(void *), void *stack_base, size_t stack_size, int flags, void *arg);
+#define HAVE_CLONE 0
+#else
+/* We know that everywhere else clone() is available, so we don't bother with a meson check (that takes time
+ * at build time) and just define it. Once the kernel drops ia64 support, we can drop this too. */
+#define HAVE_CLONE 1
 #endif

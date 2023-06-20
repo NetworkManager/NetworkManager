@@ -28,10 +28,13 @@
 #include "stdio-util.h"
 #include "string-util.h"
 #include "sync-util.h"
+#include "terminal-util.h"
 #include "tmpfile-util.h"
 
 /* The maximum size of the file we'll read in one go in read_full_file() (64M). */
 #define READ_FULL_BYTES_MAX (64U*1024U*1024U - 1U)
+/* Used when a size is specified for read_full_file() with READ_FULL_FILE_UNBASE64 or _UNHEX */
+#define READ_FULL_FILE_ENCODED_STRING_AMPLIFICATION_BOUNDARY 3
 
 /* The maximum size of virtual files (i.e. procfs, sysfs, and other virtual "API" files) we'll read in one go
  * in read_virtual_file(). Note that this limit is different (and much lower) than the READ_FULL_BYTES_MAX
@@ -197,6 +200,19 @@ int write_string_stream_ts(
         return 0;
 }
 
+static mode_t write_string_file_flags_to_mode(WriteStringFileFlags flags) {
+
+        /* We support three different modes, that are the ones that really make sense for text files like this:
+         *
+         *     → 0600 (i.e. root-only)
+         *     → 0444 (i.e. read-only)
+         *     → 0644 (i.e. writable for root, readable for everyone else)
+         */
+
+        return FLAGS_SET(flags, WRITE_STRING_FILE_MODE_0600) ? 0600 :
+                FLAGS_SET(flags, WRITE_STRING_FILE_MODE_0444) ? 0444 : 0644;
+}
+
 static int write_string_file_atomic_at(
                 int dir_fd,
                 const char *fn,
@@ -222,7 +238,7 @@ static int write_string_file_atomic_at(
         if (r < 0)
                 goto fail;
 
-        r = fchmod_umask(fileno(f), FLAGS_SET(flags, WRITE_STRING_FILE_MODE_0600) ? 0600 : 0644);
+        r = fchmod_umask(fileno(f), write_string_file_flags_to_mode(flags));
         if (r < 0)
                 goto fail;
 
@@ -285,7 +301,7 @@ int write_string_file_ts_at(
                     (FLAGS_SET(flags, WRITE_STRING_FILE_CREATE) ? O_CREAT : 0) |
                     (FLAGS_SET(flags, WRITE_STRING_FILE_TRUNCATE) ? O_TRUNC : 0) |
                     (FLAGS_SET(flags, WRITE_STRING_FILE_SUPPRESS_REDUNDANT_VIRTUAL) ? O_RDWR : O_WRONLY),
-                    (FLAGS_SET(flags, WRITE_STRING_FILE_MODE_0600) ? 0600 : 0666));
+                    write_string_file_flags_to_mode(flags));
         if (fd < 0) {
                 r = -errno;
                 goto fail;
@@ -572,7 +588,7 @@ int read_full_stream_full(
                 size_t *ret_size) {
 
         _cleanup_free_ char *buf = NULL;
-        size_t n, n_next = 0, l;
+        size_t n, n_next = 0, l, expected_decoded_size = size;
         int fd, r;
 
         assert(f);
@@ -582,6 +598,13 @@ int read_full_stream_full(
 
         if (offset != UINT64_MAX && offset > LONG_MAX) /* fseek() can only deal with "long" offsets */
                 return -ERANGE;
+
+        if ((flags & (READ_FULL_FILE_UNBASE64 | READ_FULL_FILE_UNHEX)) != 0) {
+                if (size <= SIZE_MAX / READ_FULL_FILE_ENCODED_STRING_AMPLIFICATION_BOUNDARY)
+                        size *= READ_FULL_FILE_ENCODED_STRING_AMPLIFICATION_BOUNDARY;
+                else
+                        size = SIZE_MAX;
+        }
 
         fd = fileno(f);
         if (fd >= 0) { /* If the FILE* object is backed by an fd (as opposed to memory or such, see
@@ -707,6 +730,11 @@ int read_full_stream_full(
                         explicit_bzero_safe(buf, n);
                 free_and_replace(buf, decoded);
                 n = l = decoded_size;
+
+                if (FLAGS_SET(flags, READ_FULL_FILE_FAIL_WHEN_LARGER) && l > expected_decoded_size) {
+                        r = -E2BIG;
+                        goto finalize;
+                }
         }
 
         if (!ret_size) {
@@ -1050,7 +1078,9 @@ int fdopen_independent(int fd, const char *mode, FILE **ret) {
         if (mode_flags < 0)
                 return mode_flags;
 
-        copy_fd = fd_reopen(fd, mode_flags);
+        /* Flags returned by fopen_mode_to_flags might contain O_CREAT, but it doesn't make sense for fd_reopen
+         * since we're working on an existing fd anyway. Let's drop it here to avoid triggering assertion. */
+        copy_fd = fd_reopen(fd, mode_flags & ~O_CREAT);
         if (copy_fd < 0)
                 return copy_fd;
 
@@ -1062,123 +1092,171 @@ int fdopen_independent(int fd, const char *mode, FILE **ret) {
         return 0;
 }
 
-static int search_and_fopen_internal(
+static int search_and_open_internal(
                 const char *path,
-                const char *mode,
+                int mode,            /* if ret_fd is NULL this is an [FRWX]_OK mode for access(), otherwise an open mode for open() */
                 const char *root,
                 char **search,
-                FILE **ret,
+                int *ret_fd,
                 char **ret_path) {
 
+        int r;
+
+        assert(!ret_fd || !FLAGS_SET(mode, O_CREAT)); /* We don't support O_CREAT for this */
         assert(path);
-        assert(mode);
-        assert(ret);
+
+        if (path_is_absolute(path)) {
+                _cleanup_close_ int fd = -EBADF;
+
+                if (ret_fd)
+                        /* We only specify 0777 here to appease static analyzers, it's never used since we
+                         * don't support O_CREAT here */
+                        r = fd = RET_NERRNO(open(path, mode, 0777));
+                else
+                        r = RET_NERRNO(access(path, mode));
+                if (r < 0)
+                        return r;
+
+                if (ret_path) {
+                        r = path_simplify_alloc(path, ret_path);
+                        if (r < 0)
+                                return r;
+                }
+
+                if (ret_fd)
+                        *ret_fd = TAKE_FD(fd);
+
+                return 0;
+        }
 
         if (!path_strv_resolve_uniq(search, root))
                 return -ENOMEM;
 
         STRV_FOREACH(i, search) {
+                _cleanup_close_ int fd = -EBADF;
                 _cleanup_free_ char *p = NULL;
-                FILE *f;
 
                 p = path_join(root, *i, path);
                 if (!p)
                         return -ENOMEM;
 
-                f = fopen(p, mode);
-                if (f) {
+                if (ret_fd)
+                        /* as above, 0777 is static analyzer appeasement */
+                        r = fd = RET_NERRNO(open(p, mode, 0777));
+                else
+                        r = RET_NERRNO(access(p, F_OK));
+                if (r >= 0) {
                         if (ret_path)
                                 *ret_path = path_simplify(TAKE_PTR(p));
 
-                        *ret = f;
+                        if (ret_fd)
+                                *ret_fd = TAKE_FD(fd);
+
                         return 0;
                 }
-
-                if (errno != ENOENT)
-                        return -errno;
+                if (r != -ENOENT)
+                        return r;
         }
 
         return -ENOENT;
 }
 
-int search_and_fopen(
-                const char *filename,
-                const char *mode,
+int search_and_open(
+                const char *path,
+                int mode,
                 const char *root,
-                const char **search,
-                FILE **ret,
+                char **search,
+                int *ret_fd,
                 char **ret_path) {
 
         _cleanup_strv_free_ char **copy = NULL;
 
-        assert(filename);
-        assert(mode);
-        assert(ret);
-
-        if (path_is_absolute(filename)) {
-                _cleanup_fclose_ FILE *f = NULL;
-
-                f = fopen(filename, mode);
-                if (!f)
-                        return -errno;
-
-                if (ret_path) {
-                        char *p;
-
-                        p = strdup(filename);
-                        if (!p)
-                                return -ENOMEM;
-
-                        *ret_path = path_simplify(p);
-                }
-
-                *ret = TAKE_PTR(f);
-                return 0;
-        }
+        assert(path);
 
         copy = strv_copy((char**) search);
         if (!copy)
                 return -ENOMEM;
 
-        return search_and_fopen_internal(filename, mode, root, copy, ret, ret_path);
+        return search_and_open_internal(path, mode, root, copy, ret_fd, ret_path);
 }
 
-int search_and_fopen_nulstr(
-                const char *filename,
+static int search_and_fopen_internal(
+                const char *path,
                 const char *mode,
                 const char *root,
-                const char *search,
-                FILE **ret,
+                char **search,
+                FILE **ret_file,
                 char **ret_path) {
 
-        _cleanup_strv_free_ char **s = NULL;
+        _cleanup_free_ char *found_path = NULL;
+        _cleanup_close_ int fd = -EBADF;
+        int r;
 
-        if (path_is_absolute(filename)) {
-                _cleanup_fclose_ FILE *f = NULL;
+        assert(path);
+        assert(mode || !ret_file);
 
-                f = fopen(filename, mode);
+        r = search_and_open(
+                        path,
+                        mode ? fopen_mode_to_flags(mode) : 0,
+                        root,
+                        search,
+                        ret_file ? &fd : NULL,
+                        ret_path ? &found_path : NULL);
+        if (r < 0)
+                return r;
+
+        if (ret_file) {
+                FILE *f = take_fdopen(&fd, mode);
                 if (!f)
                         return -errno;
 
-                if (ret_path) {
-                        char *p;
-
-                        p = strdup(filename);
-                        if (!p)
-                                return -ENOMEM;
-
-                        *ret_path = path_simplify(p);
-                }
-
-                *ret = TAKE_PTR(f);
-                return 0;
+                *ret_file = f;
         }
 
-        s = strv_split_nulstr(search);
-        if (!s)
+        if (ret_path)
+                *ret_path = TAKE_PTR(found_path);
+
+        return 0;
+}
+
+int search_and_fopen(
+                const char *path,
+                const char *mode,
+                const char *root,
+                const char **search,
+                FILE **ret_file,
+                char **ret_path) {
+
+        _cleanup_strv_free_ char **copy = NULL;
+
+        assert(path);
+        assert(mode || !ret_file);
+
+        copy = strv_copy((char**) search);
+        if (!copy)
                 return -ENOMEM;
 
-        return search_and_fopen_internal(filename, mode, root, s, ret, ret_path);
+        return search_and_fopen_internal(path, mode, root, copy, ret_file, ret_path);
+}
+
+int search_and_fopen_nulstr(
+                const char *path,
+                const char *mode,
+                const char *root,
+                const char *search,
+                FILE **ret_file,
+                char **ret_path) {
+
+        _cleanup_strv_free_ char **l = NULL;
+
+        assert(path);
+        assert(mode || !ret_file);
+
+        l = strv_split_nulstr(search);
+        if (!l)
+                return -ENOMEM;
+
+        return search_and_fopen_internal(path, mode, root, l, ret_file, ret_path);
 }
 
 int fflush_and_check(FILE *f) {
@@ -1249,33 +1327,31 @@ int read_timestamp_file(const char *fn, usec_t *ret) {
         return 0;
 }
 
-int fputs_with_space(FILE *f, const char *s, const char *separator, bool *space) {
-        int r;
-
+int fputs_with_separator(FILE *f, const char *s, const char *separator, bool *space) {
         assert(s);
+        assert(space);
 
-        /* Outputs the specified string with fputs(), but optionally prefixes it with a separator. The *space parameter
-         * when specified shall initially point to a boolean variable initialized to false. It is set to true after the
-         * first invocation. This call is supposed to be use in loops, where a separator shall be inserted between each
-         * element, but not before the first one. */
+        /* Outputs the specified string with fputs(), but optionally prefixes it with a separator.
+         * The *space parameter when specified shall initially point to a boolean variable initialized
+         * to false. It is set to true after the first invocation. This call is supposed to be use in loops,
+         * where a separator shall be inserted between each element, but not before the first one. */
 
         if (!f)
                 f = stdout;
 
-        if (space) {
-                if (!separator)
-                        separator = " ";
+        if (!separator)
+                separator = " ";
 
-                if (*space) {
-                        r = fputs(separator, f);
-                        if (r < 0)
-                                return r;
-                }
+        if (*space)
+                if (fputs(separator, f) < 0)
+                        return -EIO;
 
-                *space = true;
-        }
+        *space = true;
 
-        return fputs(s, f);
+        if (fputs(s, f) < 0)
+                return -EIO;
+
+        return 0;
 }
 
 /* A bitmask of the EOL markers we know */
@@ -1395,7 +1471,7 @@ int read_line_full(FILE *f, size_t limit, ReadLineFlags flags, char **ret) {
                                                      * and don't call isatty() on an invalid fd */
                                                 flags |= READ_LINE_NOT_A_TTY;
                                         else
-                                                flags |= isatty(fd) ? READ_LINE_IS_A_TTY : READ_LINE_NOT_A_TTY;
+                                                flags |= isatty_safe(fd) ? READ_LINE_IS_A_TTY : READ_LINE_NOT_A_TTY;
                                 }
                                 if (FLAGS_SET(flags, READ_LINE_IS_A_TTY))
                                         break;
@@ -1424,6 +1500,36 @@ int read_line_full(FILE *f, size_t limit, ReadLineFlags flags, char **ret) {
         }
 
         return (int) count;
+}
+
+int read_stripped_line(FILE *f, size_t limit, char **ret) {
+        _cleanup_free_ char *s = NULL;
+        int r;
+
+        assert(f);
+
+        r = read_line(f, limit, ret ? &s : NULL);
+        if (r < 0)
+                return r;
+
+        if (ret) {
+                const char *p;
+
+                p = strstrip(s);
+                if (p == s)
+                        *ret = TAKE_PTR(s);
+                else {
+                        char *copy;
+
+                        copy = strdup(p);
+                        if (!copy)
+                                return -ENOMEM;
+
+                        *ret = copy;
+                }
+        }
+
+        return r;
 }
 
 int safe_fgetc(FILE *f, char *ret) {

@@ -10,6 +10,7 @@
 #include <sys/types.h>
 
 #include "constants.h"
+#include "pidref.h"
 #include "set.h"
 
 #define SYSTEMD_CGROUP_CONTROLLER_LEGACY "name=systemd"
@@ -35,7 +36,7 @@ typedef enum CGroupController {
         CGROUP_CONTROLLER_BPF_SOCKET_BIND,
         CGROUP_CONTROLLER_BPF_RESTRICT_NETWORK_INTERFACES,
         /* The BPF hook implementing RestrictFileSystems= is not defined here.
-         * It's applied as late as possible in exec_child() so we don't block
+         * It's applied as late as possible in exec_invoke() so we don't block
          * our own unit setup code. */
 
         _CGROUP_CONTROLLER_MAX,
@@ -66,10 +67,13 @@ typedef enum CGroupMask {
         /* All real cgroup v2 controllers */
         CGROUP_MASK_V2 = CGROUP_MASK_CPU|CGROUP_MASK_CPUSET|CGROUP_MASK_IO|CGROUP_MASK_MEMORY|CGROUP_MASK_PIDS,
 
+        /* All controllers we want to delegate in case of Delegate=yes. Which are pretty much the v2 controllers only, as delegation on v1 is not safe, and bpf stuff isn't a real controller */
+        CGROUP_MASK_DELEGATE = CGROUP_MASK_V2,
+
         /* All cgroup v2 BPF pseudo-controllers */
         CGROUP_MASK_BPF = CGROUP_MASK_BPF_FIREWALL|CGROUP_MASK_BPF_DEVICES|CGROUP_MASK_BPF_FOREIGN|CGROUP_MASK_BPF_SOCKET_BIND|CGROUP_MASK_BPF_RESTRICT_NETWORK_INTERFACES,
 
-        _CGROUP_MASK_ALL = CGROUP_CONTROLLER_TO_MASK(_CGROUP_CONTROLLER_MAX) - 1
+        _CGROUP_MASK_ALL = CGROUP_CONTROLLER_TO_MASK(_CGROUP_CONTROLLER_MAX) - 1,
 } CGroupMask;
 
 static inline CGroupMask CGROUP_MASK_EXTEND_JOINED(CGroupMask mask) {
@@ -176,13 +180,13 @@ typedef enum CGroupUnified {
  * generate paths with multiple adjacent / removed.
  */
 
-int cg_enumerate_processes(const char *controller, const char *path, FILE **_f);
-int cg_read_pid(FILE *f, pid_t *_pid);
-int cg_read_event(const char *controller, const char *path, const char *event,
-                  char **val);
+int cg_enumerate_processes(const char *controller, const char *path, FILE **ret);
+int cg_read_pid(FILE *f, pid_t *ret);
+int cg_read_pidref(FILE *f, PidRef *ret);
+int cg_read_event(const char *controller, const char *path, const char *event, char **ret);
 
-int cg_enumerate_subgroups(const char *controller, const char *path, DIR **_d);
-int cg_read_subgroup(DIR *d, char **fn);
+int cg_enumerate_subgroups(const char *controller, const char *path, DIR **ret);
+int cg_read_subgroup(DIR *d, char **ret);
 
 typedef enum CGroupFlags {
         CGROUP_SIGCONT     = 1 << 0,
@@ -190,25 +194,31 @@ typedef enum CGroupFlags {
         CGROUP_REMOVE      = 1 << 2,
 } CGroupFlags;
 
-typedef int (*cg_kill_log_func_t)(pid_t pid, int sig, void *userdata);
+typedef int (*cg_kill_log_func_t)(const PidRef *pid, int sig, void *userdata);
 
-int cg_kill(const char *controller, const char *path, int sig, CGroupFlags flags, Set *s, cg_kill_log_func_t kill_log, void *userdata);
-int cg_kill_kernel_sigkill(const char *controller, const char *path);
-int cg_kill_recursive(const char *controller, const char *path, int sig, CGroupFlags flags, Set *s, cg_kill_log_func_t kill_log, void *userdata);
+int cg_kill(const char *path, int sig, CGroupFlags flags, Set *s, cg_kill_log_func_t kill_log, void *userdata);
+int cg_kill_kernel_sigkill(const char *path);
+int cg_kill_recursive(const char *path, int sig, CGroupFlags flags, Set *s, cg_kill_log_func_t kill_log, void *userdata);
 
 int cg_split_spec(const char *spec, char **ret_controller, char **ret_path);
-int cg_mangle_path(const char *path, char **result);
+int cg_mangle_path(const char *path, char **ret);
 
-int cg_get_path(const char *controller, const char *path, const char *suffix, char **fs);
-int cg_get_path_and_check(const char *controller, const char *path, const char *suffix, char **fs);
+int cg_get_path(const char *controller, const char *path, const char *suffix, char **ret);
+int cg_get_path_and_check(const char *controller, const char *path, const char *suffix, char **ret);
 
-int cg_pid_get_path(const char *controller, pid_t pid, char **path);
+int cg_pid_get_path(const char *controller, pid_t pid, char **ret);
+int cg_pidref_get_path(const char *controller, const PidRef *pidref, char **ret);
 
 int cg_rmdir(const char *controller, const char *path);
 
-int cg_is_threaded(const char *controller, const char *path);
+int cg_is_threaded(const char *path);
 
-typedef enum  {
+int cg_is_delegated(const char *path);
+int cg_is_delegated_fd(int fd);
+
+int cg_has_coredump_receive(const char *path);
+
+typedef enum {
         CG_KEY_MODE_GRACEFUL = 1 << 0,
 } CGroupKeyMode;
 
@@ -239,14 +249,14 @@ int cg_get_attribute_as_uint64(const char *controller, const char *path, const c
 /* Does a parse_boolean() on the attribute contents and sets ret accordingly */
 int cg_get_attribute_as_bool(const char *controller, const char *path, const char *attribute, bool *ret);
 
-int cg_get_owner(const char *controller, const char *path, uid_t *ret_uid);
+int cg_get_owner(const char *path, uid_t *ret_uid);
 
-int cg_set_xattr(const char *controller, const char *path, const char *name, const void *value, size_t size, int flags);
-int cg_get_xattr(const char *controller, const char *path, const char *name, void *value, size_t size);
-int cg_get_xattr_malloc(const char *controller, const char *path, const char *name, char **ret);
+int cg_set_xattr(const char *path, const char *name, const void *value, size_t size, int flags);
+int cg_get_xattr(const char *path, const char *name, void *value, size_t size);
+int cg_get_xattr_malloc(const char *path, const char *name, char **ret);
 /* Returns negative on error, and 0 or 1 on success for the bool value */
-int cg_get_xattr_bool(const char *controller, const char *path, const char *name);
-int cg_remove_xattr(const char *controller, const char *path, const char *name);
+int cg_get_xattr_bool(const char *path, const char *name);
+int cg_remove_xattr(const char *path, const char *name);
 
 int cg_install_release_agent(const char *controller, const char *agent);
 int cg_uninstall_release_agent(const char *controller);
@@ -257,27 +267,28 @@ int cg_is_empty_recursive(const char *controller, const char *path);
 int cg_get_root_path(char **path);
 
 int cg_path_get_cgroupid(const char *path, uint64_t *ret);
-int cg_path_get_session(const char *path, char **session);
-int cg_path_get_owner_uid(const char *path, uid_t *uid);
-int cg_path_get_unit(const char *path, char **unit);
-int cg_path_get_unit_path(const char *path, char **unit);
-int cg_path_get_user_unit(const char *path, char **unit);
-int cg_path_get_machine_name(const char *path, char **machine);
-int cg_path_get_slice(const char *path, char **slice);
-int cg_path_get_user_slice(const char *path, char **slice);
+int cg_path_get_session(const char *path, char **ret_session);
+int cg_path_get_owner_uid(const char *path, uid_t *ret_uid);
+int cg_path_get_unit(const char *path, char **ret_unit);
+int cg_path_get_unit_path(const char *path, char **ret_unit);
+int cg_path_get_user_unit(const char *path, char **ret_unit);
+int cg_path_get_machine_name(const char *path, char **ret_machine);
+int cg_path_get_slice(const char *path, char **ret_slice);
+int cg_path_get_user_slice(const char *path, char **ret_slice);
 
-int cg_shift_path(const char *cgroup, const char *cached_root, const char **shifted);
-int cg_pid_get_path_shifted(pid_t pid, const char *cached_root, char **cgroup);
+int cg_shift_path(const char *cgroup, const char *cached_root, const char **ret_shifted);
+int cg_pid_get_path_shifted(pid_t pid, const char *cached_root, char **ret_cgroup);
 
-int cg_pid_get_session(pid_t pid, char **session);
-int cg_pid_get_owner_uid(pid_t pid, uid_t *uid);
-int cg_pid_get_unit(pid_t pid, char **unit);
-int cg_pid_get_user_unit(pid_t pid, char **unit);
-int cg_pid_get_machine_name(pid_t pid, char **machine);
-int cg_pid_get_slice(pid_t pid, char **slice);
-int cg_pid_get_user_slice(pid_t pid, char **slice);
+int cg_pid_get_session(pid_t pid, char **ret_session);
+int cg_pid_get_owner_uid(pid_t pid, uid_t *ret_uid);
+int cg_pid_get_unit(pid_t pid, char **ret_unit);
+int cg_pidref_get_unit(const PidRef *pidref, char **ret);
+int cg_pid_get_user_unit(pid_t pid, char **ret_unit);
+int cg_pid_get_machine_name(pid_t pid, char **ret_machine);
+int cg_pid_get_slice(pid_t pid, char **ret_slice);
+int cg_pid_get_user_slice(pid_t pid, char **ret_slice);
 
-int cg_path_decode_unit(const char *cgroup, char **unit);
+int cg_path_decode_unit(const char *cgroup, char **ret_unit);
 
 bool cg_needs_escape(const char *p);
 int cg_escape(const char *p, char **ret);

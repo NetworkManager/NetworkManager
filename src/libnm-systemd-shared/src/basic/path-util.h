@@ -6,6 +6,7 @@
 #include <stddef.h>
 
 #include "macro.h"
+#include "stat-util.h"
 #include "string-util.h"
 #include "strv.h"
 #include "time-util.h"
@@ -24,19 +25,9 @@
 #  define PATH_SBIN_BIN_NULSTR(x) PATH_NORMAL_SBIN_BIN_NULSTR(x)
 #endif
 
-#define DEFAULT_PATH_NORMAL PATH_SBIN_BIN("/usr/local/") ":" PATH_SBIN_BIN("/usr/")
-#define DEFAULT_PATH_NORMAL_NULSTR PATH_SBIN_BIN_NULSTR("/usr/local/") PATH_SBIN_BIN_NULSTR("/usr/")
-#define DEFAULT_PATH_SPLIT_USR DEFAULT_PATH_NORMAL ":" PATH_SBIN_BIN("/")
-#define DEFAULT_PATH_SPLIT_USR_NULSTR DEFAULT_PATH_NORMAL_NULSTR PATH_SBIN_BIN_NULSTR("/")
+#define DEFAULT_PATH PATH_SBIN_BIN("/usr/local/") ":" PATH_SBIN_BIN("/usr/")
+#define DEFAULT_PATH_NULSTR PATH_SBIN_BIN_NULSTR("/usr/local/") PATH_SBIN_BIN_NULSTR("/usr/")
 #define DEFAULT_PATH_COMPAT PATH_SPLIT_SBIN_BIN("/usr/local/") ":" PATH_SPLIT_SBIN_BIN("/usr/") ":" PATH_SPLIT_SBIN_BIN("/")
-
-#if HAVE_SPLIT_USR
-#  define DEFAULT_PATH DEFAULT_PATH_SPLIT_USR
-#  define DEFAULT_PATH_NULSTR DEFAULT_PATH_SPLIT_USR_NULSTR
-#else
-#  define DEFAULT_PATH DEFAULT_PATH_NORMAL
-#  define DEFAULT_PATH_NULSTR DEFAULT_PATH_NORMAL_NULSTR
-#endif
 
 #ifndef DEFAULT_USER_PATH
 #  define DEFAULT_USER_PATH DEFAULT_PATH
@@ -62,7 +53,7 @@ int safe_getcwd(char **ret);
 int path_make_absolute_cwd(const char *p, char **ret);
 int path_make_relative(const char *from, const char *to, char **ret);
 int path_make_relative_parent(const char *from_child, const char *to, char **ret);
-char *path_startswith_full(const char *path, const char *prefix, bool accept_dot_dot) _pure_;
+char* path_startswith_full(const char *path, const char *prefix, bool accept_dot_dot) _pure_;
 static inline char* path_startswith(const char *path, const char *prefix) {
         return path_startswith_full(path, prefix, true);
 }
@@ -77,13 +68,38 @@ static inline bool path_equal_filename(const char *a, const char *b) {
         return path_compare_filename(a, b) == 0;
 }
 
-bool path_equal_or_inode_same(const char *a, const char *b, int flags);
+static inline bool path_equal_or_inode_same(const char *a, const char *b, int flags) {
+        return path_equal(a, b) || inode_same(a, b, flags) > 0;
+}
 
 char* path_extend_internal(char **x, ...);
 #define path_extend(x, ...) path_extend_internal(x, __VA_ARGS__, POINTER_MAX)
 #define path_join(...) path_extend_internal(NULL, __VA_ARGS__, POINTER_MAX)
 
-char* path_simplify(char *path);
+typedef enum PathSimplifyFlags {
+        PATH_SIMPLIFY_KEEP_TRAILING_SLASH = 1 << 0,
+} PathSimplifyFlags;
+
+char* path_simplify_full(char *path, PathSimplifyFlags flags);
+static inline char* path_simplify(char *path) {
+        return path_simplify_full(path, 0);
+}
+
+static inline int path_simplify_alloc(const char *path, char **ret) {
+        assert(ret);
+
+        if (!path) {
+                *ret = NULL;
+                return 0;
+        }
+
+        char *t = strdup(path);
+        if (!t)
+                return -ENOMEM;
+
+        *ret = path_simplify(t);
+        return 0;
+}
 
 static inline bool path_equal_ptr(const char *a, const char *b) {
         return !!a == !!b && (!a || path_equal(a, b));
@@ -140,7 +156,7 @@ int fsck_exists_for_fstype(const char *fstype);
                 char *_p, *_n;                                          \
                 size_t _l;                                              \
                 while (_path[0] == '/' && _path[1] == '/')              \
-                        _path ++;                                       \
+                        _path++;                                        \
                 if (isempty(_root))                                     \
                         _ret = _path;                                   \
                 else {                                                  \
@@ -159,10 +175,11 @@ int fsck_exists_for_fstype(const char *fstype);
 
 int path_find_first_component(const char **p, bool accept_dot_dot, const char **ret);
 int path_find_last_component(const char *path, bool accept_dot_dot, const char **next, const char **ret);
-const char *last_path_component(const char *path);
+const char* last_path_component(const char *path);
 int path_extract_filename(const char *path, char **ret);
 int path_extract_directory(const char *path, char **ret);
 
+bool filename_part_is_valid(const char *p) _pure_;
 bool filename_is_valid(const char *p) _pure_;
 bool path_is_valid_full(const char *p, bool accept_dot_dot) _pure_;
 static inline bool path_is_valid(const char *p) {
@@ -195,7 +212,7 @@ static inline const char *skip_dev_prefix(const char *p) {
 }
 
 bool empty_or_root(const char *path);
-static inline const char *empty_to_root(const char *path) {
+static inline const char* empty_to_root(const char *path) {
         return isempty(path) ? "/" : path;
 }
 
