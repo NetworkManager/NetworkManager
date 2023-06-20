@@ -197,6 +197,7 @@ bool is_localhost(const char *hostname) {
                 endswith_no_case(hostname, ".localhost.localdomain.");
 }
 
+#if 0 /* NM_IGNORED */
 int get_pretty_hostname(char **ret) {
         _cleanup_free_ char *n = NULL;
         int r;
@@ -213,3 +214,4 @@ int get_pretty_hostname(char **ret) {
         *ret = TAKE_PTR(n);
         return 0;
 }
+#endif /* NM_IGNORED */

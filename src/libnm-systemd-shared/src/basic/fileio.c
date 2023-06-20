@@ -15,7 +15,7 @@
 #include <unistd.h>
 
 #include "alloc-util.h"
-#include "chase-symlinks.h"
+#include "chase.h"
 #include "fd-util.h"
 #include "fileio.h"
 #include "fs-util.h"
@@ -45,22 +45,6 @@
  * allows us to read() (larger reads will fail with ENOMEM), and we want to read one extra byte so that we
  * can detect EOFs. */
 #define READ_VIRTUAL_BYTES_MAX (4U*1024U*1024U - 2U)
-
-#if 0 /* NM_IGNORED */
-int fopen_unlocked_at(int dir_fd, const char *path, const char *options, int flags, FILE **ret) {
-        int r;
-
-        assert(ret);
-
-        r = xfopenat(dir_fd, path, options, flags, ret);
-        if (r < 0)
-                return r;
-
-        (void) __fsetlocking(*ret, FSETLOCKING_BYCALLER);
-
-        return 0;
-}
-#endif /* NM_IGNORED */
 
 int fdopen_unlocked(int fd, const char *options, FILE **ret) {
         assert(ret);
@@ -272,7 +256,8 @@ int write_string_file_ts_at(
                 const struct timespec *ts) {
 
         _cleanup_fclose_ FILE *f = NULL;
-        int q, r, fd;
+        _cleanup_close_ int fd = -EBADF;
+        int q, r;
 
         assert(fn);
         assert(line);
@@ -309,11 +294,9 @@ int write_string_file_ts_at(
                 goto fail;
         }
 
-        r = fdopen_unlocked(fd, "w", &f);
-        if (r < 0) {
-                safe_close(fd);
+        r = take_fdopen_unlocked(&fd, "w", &f);
+        if (r < 0)
                 goto fail;
-        }
 
         if (flags & WRITE_STRING_FILE_DISABLE_BUFFER)
                 setvbuf(f, NULL, _IONBF, 0);
@@ -359,18 +342,19 @@ int write_string_filef(
         return write_string_file(fn, p, flags);
 }
 
-int read_one_line_file(const char *fn, char **line) {
+int read_one_line_file_at(int dir_fd, const char *filename, char **ret) {
         _cleanup_fclose_ FILE *f = NULL;
         int r;
 
-        assert(fn);
-        assert(line);
+        assert(dir_fd >= 0 || dir_fd == AT_FDCWD);
+        assert(filename);
+        assert(ret);
 
-        r = fopen_unlocked(fn, "re", &f);
+        r = fopen_unlocked_at(dir_fd, filename, "re", 0, &f);
         if (r < 0)
                 return r;
 
-        return read_line(f, LONG_LINE_MAX, line);
+        return read_line(f, LONG_LINE_MAX, ret);
 }
 
 int verify_file_at(int dir_fd, const char *fn, const char *blob, bool accept_extra_nl) {
@@ -510,7 +494,7 @@ int read_virtual_file_fd(int fd, size_t max_size, char **ret_contents, size_t *r
                  * at least one more byte to be able to distinguish EOF from truncation. */
                 if (max_size != SIZE_MAX && n > max_size) {
                         n = size; /* Make sure we never use more than what we sized the buffer for (so that
-                                   * we have one free byte in it for the trailing NUL we add below).*/
+                                   * we have one free byte in it for the trailing NUL we add below). */
                         truncated = true;
                         break;
                 }
@@ -766,62 +750,19 @@ int read_full_file_full(
                 size_t *ret_size) {
 
         _cleanup_fclose_ FILE *f = NULL;
+        XfopenFlags xflags = XFOPEN_UNLOCKED;
         int r;
 
         assert(filename);
         assert(ret_contents);
 
-        r = xfopenat(dir_fd, filename, "re", 0, &f);
-        if (r < 0) {
-                _cleanup_close_ int sk = -EBADF;
+        if (FLAGS_SET(flags, READ_FULL_FILE_CONNECT_SOCKET) && /* If this is enabled, let's try to connect to it */
+            offset == UINT64_MAX)                              /* Seeking is not supported on AF_UNIX sockets */
+                xflags |= XFOPEN_SOCKET;
 
-                /* ENXIO is what Linux returns if we open a node that is an AF_UNIX socket */
-                if (r != -ENXIO)
-                        return r;
-
-                /* If this is enabled, let's try to connect to it */
-                if (!FLAGS_SET(flags, READ_FULL_FILE_CONNECT_SOCKET))
-                        return -ENXIO;
-
-                /* Seeking is not supported on AF_UNIX sockets */
-                if (offset != UINT64_MAX)
-                        return -ENXIO;
-
-                sk = socket(AF_UNIX, SOCK_STREAM|SOCK_CLOEXEC, 0);
-                if (sk < 0)
-                        return -errno;
-
-                if (bind_name) {
-                        /* If the caller specified a socket name to bind to, do so before connecting. This is
-                         * useful to communicate some minor, short meta-information token from the client to
-                         * the server. */
-                        union sockaddr_union bsa;
-
-                        r = sockaddr_un_set_path(&bsa.un, bind_name);
-                        if (r < 0)
-                                return r;
-
-                        if (bind(sk, &bsa.sa, r) < 0)
-                                return -errno;
-                }
-
-                r = connect_unix_path(sk, dir_fd, filename);
-                if (IN_SET(r, -ENOTSOCK, -EINVAL)) /* propagate original error if this is not a socket after all */
-                        return -ENXIO;
-                if (r < 0)
-                        return r;
-
-                if (shutdown(sk, SHUT_WR) < 0)
-                        return -errno;
-
-                f = fdopen(sk, "r");
-                if (!f)
-                        return -errno;
-
-                TAKE_FD(sk);
-        }
-
-        (void) __fsetlocking(f, FSETLOCKING_BYCALLER);
+        r = xfopenat_full(dir_fd, filename, "re", 0, xflags, bind_name, &f);
+        if (r < 0)
+                return r;
 
         return read_full_stream_full(f, filename, offset, size, flags, ret_contents, ret_size);
 }
@@ -929,8 +870,7 @@ int get_proc_field(const char *filename, const char *pattern, const char *termin
 }
 
 DIR *xopendirat(int fd, const char *name, int flags) {
-        int nfd;
-        DIR *d;
+        _cleanup_close_ int nfd = -EBADF;
 
         assert(!(flags & O_CREAT));
 
@@ -941,13 +881,7 @@ DIR *xopendirat(int fd, const char *name, int flags) {
         if (nfd < 0)
                 return NULL;
 
-        d = fdopendir(nfd);
-        if (!d) {
-                safe_close(nfd);
-                return NULL;
-        }
-
-        return d;
+        return take_fdopendir(&nfd);
 }
 #endif /* NM_IGNORED */
 
@@ -997,38 +931,144 @@ int fopen_mode_to_flags(const char *mode) {
         return flags;
 }
 
-int xfopenat(int dir_fd, const char *path, const char *mode, int flags, FILE **ret) {
+static int xfopenat_regular(int dir_fd, const char *path, const char *mode, int open_flags, FILE **ret) {
         FILE *f;
 
         /* A combination of fopen() with openat() */
 
-        if (dir_fd == AT_FDCWD && flags == 0) {
+        assert(dir_fd >= 0 || dir_fd == AT_FDCWD);
+        assert(path);
+        assert(mode);
+        assert(ret);
+
+        if (dir_fd == AT_FDCWD && open_flags == 0)
                 f = fopen(path, mode);
-                if (!f)
-                        return -errno;
-        } else {
-                int fd, mode_flags;
+        else {
+                _cleanup_close_ int fd = -EBADF;
+                int mode_flags;
 
                 mode_flags = fopen_mode_to_flags(mode);
                 if (mode_flags < 0)
                         return mode_flags;
 
-                fd = openat(dir_fd, path, mode_flags | flags);
+                fd = openat(dir_fd, path, mode_flags | open_flags);
                 if (fd < 0)
                         return -errno;
 
-                f = fdopen(fd, mode);
-                if (!f) {
-                        safe_close(fd);
-                        return -errno;
-                }
+                f = take_fdopen(&fd, mode);
         }
+        if (!f)
+                return -errno;
+
+        *ret = f;
+        return 0;
+}
+
+static int xfopenat_unix_socket(int dir_fd, const char *path, const char *bind_name, FILE **ret) {
+        _cleanup_close_ int sk = -EBADF;
+        FILE *f;
+        int r;
+
+        assert(dir_fd >= 0 || dir_fd == AT_FDCWD);
+        assert(path);
+        assert(ret);
+
+        sk = socket(AF_UNIX, SOCK_STREAM|SOCK_CLOEXEC, 0);
+        if (sk < 0)
+                return -errno;
+
+        if (bind_name) {
+                /* If the caller specified a socket name to bind to, do so before connecting. This is
+                 * useful to communicate some minor, short meta-information token from the client to
+                 * the server. */
+                union sockaddr_union bsa;
+
+                r = sockaddr_un_set_path(&bsa.un, bind_name);
+                if (r < 0)
+                        return r;
+
+                if (bind(sk, &bsa.sa, r) < 0)
+                        return -errno;
+        }
+
+        r = connect_unix_path(sk, dir_fd, path);
+        if (r < 0)
+                return r;
+
+        if (shutdown(sk, SHUT_WR) < 0)
+                return -errno;
+
+        f = take_fdopen(&sk, "r");
+        if (!f)
+                return -errno;
+
+        *ret = f;
+        return 0;
+}
+
+int xfopenat_full(
+                int dir_fd,
+                const char *path,
+                const char *mode,
+                int open_flags,
+                XfopenFlags flags,
+                const char *bind_name,
+                FILE **ret) {
+
+        FILE *f = NULL;  /* avoid false maybe-uninitialized warning */
+        int r;
+
+        assert(dir_fd >= 0 || dir_fd == AT_FDCWD);
+        assert(path);
+        assert(mode);
+        assert(ret);
+
+        r = xfopenat_regular(dir_fd, path, mode, open_flags, &f);
+        if (r == -ENXIO && FLAGS_SET(flags, XFOPEN_SOCKET)) {
+                /* ENXIO is what Linux returns if we open a node that is an AF_UNIX socket */
+                r = xfopenat_unix_socket(dir_fd, path, bind_name, &f);
+                if (IN_SET(r, -ENOTSOCK, -EINVAL))
+                        return -ENXIO; /* propagate original error if this is not a socket after all */
+        }
+        if (r < 0)
+                return r;
+
+        if (FLAGS_SET(flags, XFOPEN_UNLOCKED))
+                (void) __fsetlocking(f, FSETLOCKING_BYCALLER);
 
         *ret = f;
         return 0;
 }
 
 #if 0 /* NM_IGNORED */
+int fdopen_independent(int fd, const char *mode, FILE **ret) {
+        _cleanup_close_ int copy_fd = -EBADF;
+        _cleanup_fclose_ FILE *f = NULL;
+        int mode_flags;
+
+        assert(fd >= 0);
+        assert(mode);
+        assert(ret);
+
+        /* A combination of fdopen() + fd_reopen(). i.e. reopens the inode the specified fd points to and
+         * returns a FILE* for it */
+
+        mode_flags = fopen_mode_to_flags(mode);
+        if (mode_flags < 0)
+                return mode_flags;
+
+        copy_fd = fd_reopen(fd, mode_flags);
+        if (copy_fd < 0)
+                return copy_fd;
+
+        f = take_fdopen(&copy_fd, mode);
+        if (!f)
+                return -errno;
+
+        *ret = TAKE_PTR(f);
+        return 0;
+}
+
 static int search_and_fopen_internal(
                 const char *path,
                 const char *mode,

@@ -46,6 +46,9 @@
 /* Define to 1 if you have the <sys/auxv.h> header file. */
 #mesondefine HAVE_SYS_AUXV_H
 
+/* Define to 1 if you have the <threads.h> header file. */
+#mesondefine HAVE_THREADS_H
+
 /* Define if you have Linux Wireless Extensions support */
 #mesondefine HAVE_WEXT
 

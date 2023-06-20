@@ -22,6 +22,7 @@ libnm_systemd_shared = static_library(
     'src/basic/in-addr-util.c',
     'src/basic/inotify-util.c',
     'src/basic/io-util.c',
+    'src/basic/label.c',
     'src/basic/locale-util.c',
     'src/basic/memory-util.c',
     'src/basic/mempool.c',

@@ -177,17 +177,29 @@ int flush_accept(int fd);
 #define CMSG_FOREACH(cmsg, mh)                                          \
         for ((cmsg) = CMSG_FIRSTHDR(mh); (cmsg); (cmsg) = CMSG_NXTHDR((mh), (cmsg)))
 
+/* Returns the cmsghdr's data pointer, but safely cast to the specified type. Does two alignment checks: one
+ * at compile time, that the requested type has a smaller or same alignment as 'struct cmsghdr', and one
+ * during runtime, that the actual pointer matches the alignment too. This is supposed to catch cases such as
+ * 'struct timeval' is embedded into 'struct cmsghdr' on architectures where the alignment of the former is 8
+ * bytes (because of a 64bit time_t), but of the latter is 4 bytes (because size_t is 32bit), such as
+ * riscv32. */
 #define CMSG_TYPED_DATA(cmsg, type)                                     \
         ({                                                              \
-                struct cmsghdr *_cmsg = cmsg;                           \
+                struct cmsghdr *_cmsg = (cmsg);                         \
+                assert_cc(alignof(type) <= alignof(struct cmsghdr));    \
                 _cmsg ? CAST_ALIGN_PTR(type, CMSG_DATA(_cmsg)) : (type*) NULL; \
         })
 
 struct cmsghdr* cmsg_find(struct msghdr *mh, int level, int type, socklen_t length);
+void* cmsg_find_and_copy_data(struct msghdr *mh, int level, int type, void *buf, size_t buf_len);
 
 /* Type-safe, dereferencing version of cmsg_find() */
 #define CMSG_FIND_DATA(mh, level, type, ctype)                          \
         CMSG_TYPED_DATA(cmsg_find(mh, level, type, CMSG_LEN(sizeof(ctype))), ctype)
+
+/* Type-safe version of cmsg_find_and_copy_data() */
+#define CMSG_FIND_AND_COPY_DATA(mh, level, type, ctype)             \
+        (ctype*) cmsg_find_and_copy_data(mh, level, type, &(ctype){}, sizeof(ctype))
 
 /* Resolves to a type that can carry cmsghdr structures. Make sure things are properly aligned, i.e. the type
  * itself is placed properly in memory and the size is also aligned to what's appropriate for "cmsghdr"
@@ -308,7 +320,7 @@ struct timespec_large {
 
 ssize_t recvmsg_safe(int sockfd, struct msghdr *msg, int flags);
 
-int socket_get_family(int fd, int *ret);
+int socket_get_family(int fd);
 int socket_set_recvpktinfo(int fd, int af, bool b);
 int socket_set_unicast_if(int fd, int af, int ifi);
 
@@ -346,3 +358,10 @@ int connect_unix_path(int fd, int dir_fd, const char *path);
  * protocol mismatch. */
 int socket_address_parse_unix(SocketAddress *ret_address, const char *s);
 int socket_address_parse_vsock(SocketAddress *ret_address, const char *s);
+
+/* libc's SOMAXCONN is defined to 128 or 4096 (at least on glibc). But actually, the value can be much
+ * larger. In our codebase we want to set it to the max usually, since noawadays socket memory is properly
+ * tracked by memcg, and hence we don't need to enforce extra limits here. Moreover, the kernel caps it to
+ * /proc/sys/net/core/somaxconn anyway, thus by setting this to unbounded we just make that sysctl file
+ * authoritative. */
+#define SOMAXCONN_DELUXE INT_MAX
