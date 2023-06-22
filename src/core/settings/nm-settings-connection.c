@@ -1465,7 +1465,7 @@ update_complete(NMSettingsConnection *self, UpdateInfo *info, GError *error)
     g_clear_object(&info->new_settings);
     g_free(info->audit_args);
     g_free(info->plugin_name);
-    g_slice_free(UpdateInfo, info);
+    nm_g_slice_free(info);
 }
 
 static void
@@ -1479,11 +1479,10 @@ update_auth_cb(NMSettingsConnection  *self,
     UpdateInfo                     *info  = data;
     gs_free_error GError           *local = NULL;
     NMSettingsConnectionPersistMode persist_mode;
+    gs_unref_object NMConnection   *for_agent = NULL;
 
-    if (error) {
-        update_complete(self, info, error);
-        return;
-    }
+    if (error)
+        goto out;
 
     priv = NM_SETTINGS_CONNECTION_GET_PRIVATE(self);
 
@@ -1579,27 +1578,29 @@ update_auth_cb(NMSettingsConnection  *self,
         "update-from-dbus",
         &local);
 
-    if (!local) {
-        gs_unref_object NMConnection *for_agent = NULL;
-
-        /* Dupe the connection so we can clear out non-agent-owned secrets,
-         * as agent-owned secrets are the only ones we send back to be saved.
-         * Only send secrets to agents of the same UID that called update too.
-         */
-        for_agent = nm_simple_connection_new_clone(nm_settings_connection_get_connection(self));
-        _nm_connection_clear_secrets_by_secret_flags(for_agent, NM_SETTING_SECRET_FLAG_AGENT_OWNED);
-        nm_agent_manager_save_secrets(info->agent_mgr,
-                                      nm_dbus_object_get_path(NM_DBUS_OBJECT(self)),
-                                      for_agent,
-                                      info->subject);
+    if (local) {
+        error = local;
+        goto out;
     }
+
+    /* Dupe the connection so we can clear out non-agent-owned secrets,
+     * as agent-owned secrets are the only ones we send back to be saved.
+     * Only send secrets to agents of the same UID that called update too.
+     */
+    for_agent = nm_simple_connection_new_clone(nm_settings_connection_get_connection(self));
+    _nm_connection_clear_secrets_by_secret_flags(for_agent, NM_SETTING_SECRET_FLAG_AGENT_OWNED);
+    nm_agent_manager_save_secrets(info->agent_mgr,
+                                  nm_dbus_object_get_path(NM_DBUS_OBJECT(self)),
+                                  for_agent,
+                                  info->subject);
 
     /* Reset auto retries back to default since connection was updated */
     nm_manager_devcon_autoconnect_retries_reset(nm_settings_connection_get_manager(self),
                                                 NULL,
                                                 self);
 
-    update_complete(self, info, local);
+out:
+    update_complete(self, info, error);
 }
 
 static const char *
@@ -1679,14 +1680,16 @@ settings_connection_update(NMSettingsConnection  *self,
                                              &error))
         goto error;
 
-    info               = g_slice_new0(UpdateInfo);
-    info->is_update2   = is_update2;
-    info->context      = context;
-    info->agent_mgr    = g_object_ref(priv->agent_mgr);
-    info->subject      = subject;
-    info->flags        = flags;
-    info->new_settings = tmp;
-    info->plugin_name  = g_strdup(plugin_name);
+    info  = g_slice_new(UpdateInfo);
+    *info = (UpdateInfo){
+        .is_update2   = is_update2,
+        .context      = context,
+        .agent_mgr    = g_object_ref(priv->agent_mgr),
+        .subject      = subject,
+        .flags        = flags,
+        .new_settings = tmp,
+        .plugin_name  = g_strdup(plugin_name),
+    };
 
     permission = get_update_modify_permission(nm_settings_connection_get_connection(self),
                                               tmp ?: nm_settings_connection_get_connection(self));
