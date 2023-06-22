@@ -164,6 +164,10 @@
           <listitem><para>The settings plugin the connection will be migrated to
           such as "keyfile" or "ifcfg-rh".</para>
           <para role="since">Since 1.38</para></listitem>
+          <term><literal>version-id</literal>:</term>
+          <listitem><para>If specified, the update request is rejected if the
+          profile's version-id does not match. This can be used to catch concurrent
+          modifications. Zero means no version check.</para><para role="since">Since 1.44</para></listitem>
         </varlistentry>
         </variablelist>
 

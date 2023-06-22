@@ -1443,6 +1443,7 @@ typedef struct {
     NMSettingsUpdate2Flags flags;
     char                  *audit_args;
     char                  *plugin_name;
+    guint64                version_id;
     bool                   is_update2 : 1;
 } UpdateInfo;
 
@@ -1491,6 +1492,16 @@ update_auth_cb(NMSettingsConnection  *self,
         goto out;
 
     priv = NM_SETTINGS_CONNECTION_GET_PRIVATE(self);
+
+    if (info->version_id != 0 && info->version_id != priv->version_id) {
+        g_set_error_literal(&local,
+                            NM_SETTINGS_ERROR,
+                            NM_SETTINGS_ERROR_VERSION_ID_MISMATCH,
+                            "Update failed because profile changed in the meantime and the "
+                            "version-id mismatches");
+        error = local;
+        goto out;
+    }
 
     if (info->new_settings) {
         if (!_nm_connection_aggregate(info->new_settings,
@@ -1639,6 +1650,7 @@ settings_connection_update(NMSettingsConnection  *self,
                            GDBusMethodInvocation *context,
                            GVariant              *new_settings,
                            const char            *plugin_name,
+                           guint64                version_id,
                            NMSettingsUpdate2Flags flags)
 {
     NMSettingsConnectionPrivate *priv    = NM_SETTINGS_CONNECTION_GET_PRIVATE(self);
@@ -1695,6 +1707,7 @@ settings_connection_update(NMSettingsConnection  *self,
         .flags        = flags,
         .new_settings = tmp,
         .plugin_name  = g_strdup(plugin_name),
+        .version_id   = version_id,
     };
 
     permission = get_update_modify_permission(nm_settings_connection_get_connection(self),
@@ -1729,6 +1742,7 @@ impl_settings_connection_update(NMDBusObject                      *obj,
                                invocation,
                                settings,
                                NULL,
+                               0,
                                NM_SETTINGS_UPDATE2_FLAG_TO_DISK);
 }
 
@@ -1750,6 +1764,7 @@ impl_settings_connection_update_unsaved(NMDBusObject                      *obj,
                                invocation,
                                settings,
                                NULL,
+                               0,
                                NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY);
 }
 
@@ -1769,6 +1784,7 @@ impl_settings_connection_save(NMDBusObject                      *obj,
                                invocation,
                                NULL,
                                NULL,
+                               0,
                                NM_SETTINGS_UPDATE2_FLAG_TO_DISK);
 }
 
@@ -1785,6 +1801,7 @@ impl_settings_connection_update2(NMDBusObject                      *obj,
     gs_unref_variant GVariant *settings    = NULL;
     gs_unref_variant GVariant *args        = NULL;
     gs_free char              *plugin_name = NULL;
+    guint64                    version_id  = 0;
     guint32                    flags_u;
     GError                    *error = NULL;
     GVariantIter               iter;
@@ -1831,6 +1848,11 @@ impl_settings_connection_update2(NMDBusObject                      *obj,
             plugin_name = g_variant_dup_string(args_value, NULL);
             continue;
         }
+        if (nm_streq(args_name, "version-id")
+            && g_variant_is_of_type(args_value, G_VARIANT_TYPE_UINT64)) {
+            version_id = g_variant_get_uint64(args_value);
+            continue;
+        }
 
         error = g_error_new(NM_SETTINGS_ERROR,
                             NM_SETTINGS_ERROR_INVALID_ARGUMENTS,
@@ -1840,7 +1862,7 @@ impl_settings_connection_update2(NMDBusObject                      *obj,
         return;
     }
 
-    settings_connection_update(self, TRUE, invocation, settings, plugin_name, flags);
+    settings_connection_update(self, TRUE, invocation, settings, plugin_name, version_id, flags);
 }
 
 static void
