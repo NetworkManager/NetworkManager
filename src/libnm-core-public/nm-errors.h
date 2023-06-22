@@ -250,6 +250,9 @@ GQuark nm_secret_agent_error_quark(void);
  * @NM_SETTINGS_ERROR_UUID_EXISTS: a connection with that UUID already exists
  * @NM_SETTINGS_ERROR_INVALID_HOSTNAME: attempted to set an invalid hostname
  * @NM_SETTINGS_ERROR_INVALID_ARGUMENTS: invalid arguments
+ * @NM_SETTINGS_ERROR_VERSION_ID_MISMATCH: The profile's VersionId mismatched
+ *   and the update is rejected. See the "version-id" argument to Update2()
+ *   method. Since 1.44.
  *
  * Errors related to the settings/persistent configuration interface of
  * NetworkManager.
@@ -267,6 +270,7 @@ typedef enum {
     NM_SETTINGS_ERROR_UUID_EXISTS,          /*< nick=UuidExists >*/
     NM_SETTINGS_ERROR_INVALID_HOSTNAME,     /*< nick=InvalidHostname >*/
     NM_SETTINGS_ERROR_INVALID_ARGUMENTS,    /*< nick=InvalidArguments >*/
+    NM_SETTINGS_ERROR_VERSION_ID_MISMATCH,  /*< nick=VersionIdMismatch >*/
 } NMSettingsError;
 
 GQuark nm_settings_error_quark(void);
