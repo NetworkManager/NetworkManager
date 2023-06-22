@@ -194,7 +194,7 @@ Epoch: %{epoch_version}
 Version: %{rpm_version}
 Release: %{release_version}%{?snap}%{?dist}
 Group: System Environment/Base
-License: GPLv2+ and LGPLv2+
+License: GPL-2.0-or-later AND LGPL-2.1-or-later
 URL: https://networkmanager.dev/
 
 #Source: https://download.gnome.org/sources/NetworkManager/%{real_version_major}/%{name}-%{real_version}.tar.xz
