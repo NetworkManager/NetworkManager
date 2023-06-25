@@ -1568,7 +1568,7 @@ enable=nm-version-max:1.2.6
               You can also match against the value of the environment variable
               <literal>NM_CONFIG_ENABLE_TAG</literal>, like:
 <programlisting>
-# always skip loading the file when running NetworkManager with
+# only load the file when running NetworkManager with
 # environment variable "NM_CONFIG_ENABLE_TAG=TAG1"
 [.config]
 enable=env:TAG1
