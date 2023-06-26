@@ -189,6 +189,16 @@
     <property name="CanModify" type="b" access="read"/>
 
     <!--
+        VersionId:
+
+        The version of the settings. This is incremented whenever the profile
+        changes and can be used to detect concurrent modifications.
+
+        Since: 1.44
+    -->
+    <property name="VersionId" type="t" access="read"/>
+
+    <!--
         NewConnection:
         @connection: Object path of the new connection.
 

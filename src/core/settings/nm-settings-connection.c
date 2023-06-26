@@ -109,7 +109,11 @@ _seen_bssids_hash_new(void)
 
 /*****************************************************************************/
 
-NM_GOBJECT_PROPERTIES_DEFINE(NMSettingsConnection, PROP_UNSAVED, PROP_FLAGS, PROP_FILENAME, );
+NM_GOBJECT_PROPERTIES_DEFINE(NMSettingsConnection,
+                             PROP_VERSION_ID,
+                             PROP_UNSAVED,
+                             PROP_FLAGS,
+                             PROP_FILENAME, );
 
 enum { UPDATED_INTERNAL, FLAGS_CHANGED, LAST_SIGNAL };
 
@@ -155,6 +159,8 @@ typedef struct _NMSettingsConnectionPrivate {
     guint64 timestamp; /* Up-to-date timestamp of connection use */
 
     guint64 last_secret_agent_version_id;
+
+    guint64 version_id;
 
     bool timestamp_set : 1;
 
@@ -1437,6 +1443,7 @@ typedef struct {
     NMSettingsUpdate2Flags flags;
     char                  *audit_args;
     char                  *plugin_name;
+    guint64                version_id;
     bool                   is_update2 : 1;
 } UpdateInfo;
 
@@ -1465,7 +1472,7 @@ update_complete(NMSettingsConnection *self, UpdateInfo *info, GError *error)
     g_clear_object(&info->new_settings);
     g_free(info->audit_args);
     g_free(info->plugin_name);
-    g_slice_free(UpdateInfo, info);
+    nm_g_slice_free(info);
 }
 
 static void
@@ -1479,13 +1486,22 @@ update_auth_cb(NMSettingsConnection  *self,
     UpdateInfo                     *info  = data;
     gs_free_error GError           *local = NULL;
     NMSettingsConnectionPersistMode persist_mode;
+    gs_unref_object NMConnection   *for_agent = NULL;
 
-    if (error) {
-        update_complete(self, info, error);
-        return;
-    }
+    if (error)
+        goto out;
 
     priv = NM_SETTINGS_CONNECTION_GET_PRIVATE(self);
+
+    if (info->version_id != 0 && info->version_id != priv->version_id) {
+        g_set_error_literal(&local,
+                            NM_SETTINGS_ERROR,
+                            NM_SETTINGS_ERROR_VERSION_ID_MISMATCH,
+                            "Update failed because profile changed in the meantime and the "
+                            "version-id mismatches");
+        error = local;
+        goto out;
+    }
 
     if (info->new_settings) {
         if (!_nm_connection_aggregate(info->new_settings,
@@ -1579,27 +1595,29 @@ update_auth_cb(NMSettingsConnection  *self,
         "update-from-dbus",
         &local);
 
-    if (!local) {
-        gs_unref_object NMConnection *for_agent = NULL;
-
-        /* Dupe the connection so we can clear out non-agent-owned secrets,
-         * as agent-owned secrets are the only ones we send back to be saved.
-         * Only send secrets to agents of the same UID that called update too.
-         */
-        for_agent = nm_simple_connection_new_clone(nm_settings_connection_get_connection(self));
-        _nm_connection_clear_secrets_by_secret_flags(for_agent, NM_SETTING_SECRET_FLAG_AGENT_OWNED);
-        nm_agent_manager_save_secrets(info->agent_mgr,
-                                      nm_dbus_object_get_path(NM_DBUS_OBJECT(self)),
-                                      for_agent,
-                                      info->subject);
+    if (local) {
+        error = local;
+        goto out;
     }
+
+    /* Dupe the connection so we can clear out non-agent-owned secrets,
+     * as agent-owned secrets are the only ones we send back to be saved.
+     * Only send secrets to agents of the same UID that called update too.
+     */
+    for_agent = nm_simple_connection_new_clone(nm_settings_connection_get_connection(self));
+    _nm_connection_clear_secrets_by_secret_flags(for_agent, NM_SETTING_SECRET_FLAG_AGENT_OWNED);
+    nm_agent_manager_save_secrets(info->agent_mgr,
+                                  nm_dbus_object_get_path(NM_DBUS_OBJECT(self)),
+                                  for_agent,
+                                  info->subject);
 
     /* Reset auto retries back to default since connection was updated */
     nm_manager_devcon_autoconnect_retries_reset(nm_settings_connection_get_manager(self),
                                                 NULL,
                                                 self);
 
-    update_complete(self, info, local);
+out:
+    update_complete(self, info, error);
 }
 
 static const char *
@@ -1632,6 +1650,7 @@ settings_connection_update(NMSettingsConnection  *self,
                            GDBusMethodInvocation *context,
                            GVariant              *new_settings,
                            const char            *plugin_name,
+                           guint64                version_id,
                            NMSettingsUpdate2Flags flags)
 {
     NMSettingsConnectionPrivate *priv    = NM_SETTINGS_CONNECTION_GET_PRIVATE(self);
@@ -1679,14 +1698,17 @@ settings_connection_update(NMSettingsConnection  *self,
                                              &error))
         goto error;
 
-    info               = g_slice_new0(UpdateInfo);
-    info->is_update2   = is_update2;
-    info->context      = context;
-    info->agent_mgr    = g_object_ref(priv->agent_mgr);
-    info->subject      = subject;
-    info->flags        = flags;
-    info->new_settings = tmp;
-    info->plugin_name  = g_strdup(plugin_name);
+    info  = g_slice_new(UpdateInfo);
+    *info = (UpdateInfo){
+        .is_update2   = is_update2,
+        .context      = context,
+        .agent_mgr    = g_object_ref(priv->agent_mgr),
+        .subject      = subject,
+        .flags        = flags,
+        .new_settings = tmp,
+        .plugin_name  = g_strdup(plugin_name),
+        .version_id   = version_id,
+    };
 
     permission = get_update_modify_permission(nm_settings_connection_get_connection(self),
                                               tmp ?: nm_settings_connection_get_connection(self));
@@ -1720,6 +1742,7 @@ impl_settings_connection_update(NMDBusObject                      *obj,
                                invocation,
                                settings,
                                NULL,
+                               0,
                                NM_SETTINGS_UPDATE2_FLAG_TO_DISK);
 }
 
@@ -1741,6 +1764,7 @@ impl_settings_connection_update_unsaved(NMDBusObject                      *obj,
                                invocation,
                                settings,
                                NULL,
+                               0,
                                NM_SETTINGS_UPDATE2_FLAG_IN_MEMORY);
 }
 
@@ -1760,6 +1784,7 @@ impl_settings_connection_save(NMDBusObject                      *obj,
                                invocation,
                                NULL,
                                NULL,
+                               0,
                                NM_SETTINGS_UPDATE2_FLAG_TO_DISK);
 }
 
@@ -1776,6 +1801,7 @@ impl_settings_connection_update2(NMDBusObject                      *obj,
     gs_unref_variant GVariant *settings    = NULL;
     gs_unref_variant GVariant *args        = NULL;
     gs_free char              *plugin_name = NULL;
+    guint64                    version_id  = 0;
     guint32                    flags_u;
     GError                    *error = NULL;
     GVariantIter               iter;
@@ -1822,6 +1848,11 @@ impl_settings_connection_update2(NMDBusObject                      *obj,
             plugin_name = g_variant_dup_string(args_value, NULL);
             continue;
         }
+        if (nm_streq(args_name, "version-id")
+            && g_variant_is_of_type(args_value, G_VARIANT_TYPE_UINT64)) {
+            version_id = g_variant_get_uint64(args_value);
+            continue;
+        }
 
         error = g_error_new(NM_SETTINGS_ERROR,
                             NM_SETTINGS_ERROR_INVALID_ARGUMENTS,
@@ -1831,7 +1862,7 @@ impl_settings_connection_update2(NMDBusObject                      *obj,
         return;
     }
 
-    settings_connection_update(self, TRUE, invocation, settings, plugin_name, flags);
+    settings_connection_update(self, TRUE, invocation, settings, plugin_name, version_id, flags);
 }
 
 static void
@@ -2639,6 +2670,23 @@ nm_settings_connection_get_uuid(NMSettingsConnection *self)
     return uuid;
 }
 
+guint64
+nm_settings_connection_get_version_id(NMSettingsConnection *self)
+{
+    g_return_val_if_fail(NM_IS_SETTINGS_CONNECTION(self), 0);
+
+    return NM_SETTINGS_CONNECTION_GET_PRIVATE(self)->version_id;
+}
+
+void
+nm_settings_connection_bump_version_id(NMSettingsConnection *self)
+{
+    g_return_if_fail(NM_IS_SETTINGS_CONNECTION(self));
+
+    NM_SETTINGS_CONNECTION_GET_PRIVATE(self)->version_id++;
+    _notify(self, PROP_VERSION_ID);
+}
+
 const char *
 nm_settings_connection_get_connection_type(NMSettingsConnection *self)
 {
@@ -2662,9 +2710,13 @@ _nm_settings_connection_cleanup_after_remove(NMSettingsConnection *self)
 static void
 get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 {
-    NMSettingsConnection *self = NM_SETTINGS_CONNECTION(object);
+    NMSettingsConnection        *self = NM_SETTINGS_CONNECTION(object);
+    NMSettingsConnectionPrivate *priv = NM_SETTINGS_CONNECTION_GET_PRIVATE(self);
 
     switch (prop_id) {
+    case PROP_VERSION_ID:
+        g_value_set_uint64(value, priv->version_id);
+        break;
     case PROP_UNSAVED:
         g_value_set_boolean(value, nm_settings_connection_get_unsaved(self));
         break;
@@ -2701,6 +2753,8 @@ nm_settings_connection_init(NMSettingsConnection *self)
 
     priv->agent_mgr = g_object_ref(nm_agent_manager_get());
     priv->settings  = g_object_ref(nm_settings_get());
+
+    priv->version_id = 1;
 }
 
 NMSettingsConnection *
@@ -2814,7 +2868,10 @@ static const NMDBusInterfaceInfoExtended interface_info_settings_connection = {
                                                            NM_SETTINGS_CONNECTION_FLAGS),
             NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("Filename",
                                                            "s",
-                                                           NM_SETTINGS_CONNECTION_FILENAME), ), ),
+                                                           NM_SETTINGS_CONNECTION_FILENAME),
+            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("VersionId",
+                                                           "t",
+                                                           NM_SETTINGS_CONNECTION_VERSION_ID), ), ),
 };
 
 static void
@@ -2831,6 +2888,15 @@ nm_settings_connection_class_init(NMSettingsConnectionClass *klass)
 
     object_class->dispose      = dispose;
     object_class->get_property = get_property;
+
+    obj_properties[PROP_VERSION_ID] =
+        g_param_spec_uint64(NM_SETTINGS_CONNECTION_VERSION_ID,
+                            "",
+                            "",
+                            0,
+                            G_MAXUINT64,
+                            0,
+                            G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     obj_properties[PROP_UNSAVED] = g_param_spec_boolean(NM_SETTINGS_CONNECTION_UNSAVED,
                                                         "",
