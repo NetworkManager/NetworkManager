@@ -104,6 +104,7 @@ endforeach
 
 # headers
 config_h.set10('HAVE_SYS_AUXV_H', cc.has_header('sys/auxv.h'))
+config_h.set10('HAVE_THREADS_H', cc.has_header('threads.h'))
 
 use_sys_random = cc.has_function('getrandom', prefix: '#include <sys/random.h>')
 config_h.set10('USE_SYS_RANDOM_H', use_sys_random)

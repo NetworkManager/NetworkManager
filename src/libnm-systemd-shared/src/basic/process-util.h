@@ -40,6 +40,7 @@ typedef enum ProcessCmdlineFlags {
 
 int get_process_comm(pid_t pid, char **ret);
 int get_process_cmdline(pid_t pid, size_t max_columns, ProcessCmdlineFlags flags, char **ret);
+int get_process_cmdline_strv(pid_t pid, ProcessCmdlineFlags flags, char ***ret);
 int get_process_exe(pid_t pid, char **ret);
 int get_process_uid(pid_t pid, uid_t *ret);
 int get_process_gid(pid_t pid, gid_t *ret);
@@ -145,7 +146,7 @@ typedef enum ForkFlags {
         FORK_CLOSE_ALL_FDS      = 1 <<  1, /* Close all open file descriptors in the child, except for 0,1,2 */
         FORK_DEATHSIG           = 1 <<  2, /* Set PR_DEATHSIG in the child to SIGTERM */
         FORK_DEATHSIG_SIGINT    = 1 <<  3, /* Set PR_DEATHSIG in the child to SIGINT */
-        FORK_NULL_STDIO         = 1 <<  4, /* Connect 0,1,2 to /dev/null */
+        FORK_REARRANGE_STDIO    = 1 <<  4, /* Connect 0,1,2 to specified fds or /dev/null */
         FORK_REOPEN_LOG         = 1 <<  5, /* Reopen log connection */
         FORK_LOG                = 1 <<  6, /* Log above LOG_DEBUG log level about failures */
         FORK_WAIT               = 1 <<  7, /* Wait until child exited */
@@ -157,12 +158,19 @@ typedef enum ForkFlags {
         FORK_FLUSH_STDIO        = 1 << 13, /* fflush() stdout (and stderr) before forking */
         FORK_NEW_USERNS         = 1 << 14, /* Run child in its own user namespace */
         FORK_CLOEXEC_OFF        = 1 << 15, /* In the child: turn off O_CLOEXEC on all fds in except_fds[] */
+        FORK_KEEP_NOTIFY_SOCKET = 1 << 16, /* Unless this specified, $NOTIFY_SOCKET will be unset. */
 } ForkFlags;
 
-int safe_fork_full(const char *name, const int except_fds[], size_t n_except_fds, ForkFlags flags, pid_t *ret_pid);
+int safe_fork_full(
+                const char *name,
+                const int stdio_fds[3],
+                const int except_fds[],
+                size_t n_except_fds,
+                ForkFlags flags,
+                pid_t *ret_pid);
 
 static inline int safe_fork(const char *name, ForkFlags flags, pid_t *ret_pid) {
-        return safe_fork_full(name, NULL, 0, flags, ret_pid);
+        return safe_fork_full(name, NULL, NULL, 0, flags, ret_pid);
 }
 
 int namespace_fork(const char *outer_name, const char *inner_name, const int except_fds[], size_t n_except_fds, ForkFlags flags, int pidns_fd, int mntns_fd, int netns_fd, int userns_fd, int root_fd, pid_t *ret_pid);
@@ -191,3 +199,5 @@ int pidfd_verify_pid(int pidfd, pid_t pid);
 int setpriority_closest(int priority);
 
 _noreturn_ void freeze(void);
+
+int get_process_threads(pid_t pid);

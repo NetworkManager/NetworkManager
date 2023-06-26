@@ -28,9 +28,7 @@
 
 /*****************************************************************************/
 
-#ifndef VALGRIND
-#define VALGRIND 0
-#endif
+#define HAVE_VALGRIND_VALGRIND_H 0
 
 #define ENABLE_DEBUG_HASHMAP 0
 

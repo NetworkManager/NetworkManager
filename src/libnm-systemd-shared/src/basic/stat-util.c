@@ -10,7 +10,7 @@
 #include <unistd.h>
 
 #include "alloc-util.h"
-#include "chase-symlinks.h"
+#include "chase.h"
 #include "dirent-util.h"
 #include "errno-util.h"
 #include "fd-util.h"
@@ -150,20 +150,9 @@ int null_or_empty_path_with_root(const char *fn, const char *root) {
         if (path_equal_ptr(path_startswith(fn, root ?: "/"), "dev/null"))
                 return true;
 
-        r = chase_symlinks_and_stat(fn, root, CHASE_PREFIX_ROOT, NULL, &st, NULL);
+        r = chase_and_stat(fn, root, CHASE_PREFIX_ROOT, NULL, &st);
         if (r < 0)
                 return r;
-
-        return null_or_empty(&st);
-}
-
-int null_or_empty_fd(int fd) {
-        struct stat st;
-
-        assert(fd >= 0);
-
-        if (fstat(fd, &st) < 0)
-                return -errno;
 
         return null_or_empty(&st);
 }
@@ -200,17 +189,19 @@ int path_is_read_only_fs(const char *path) {
 }
 #endif /* NM_IGNORED */
 
-int files_same(const char *filea, const char *fileb, int flags) {
+int inode_same_at(int fda, const char *filea, int fdb, const char *fileb, int flags) {
         struct stat a, b;
 
+        assert(fda >= 0 || fda == AT_FDCWD);
         assert(filea);
+        assert(fdb >= 0 || fdb == AT_FDCWD);
         assert(fileb);
 
-        if (fstatat(AT_FDCWD, filea, &a, flags) < 0)
-                return -errno;
+        if (fstatat(fda, filea, &a, flags) < 0)
+                return log_debug_errno(errno, "Cannot stat %s: %m", filea);
 
-        if (fstatat(AT_FDCWD, fileb, &b, flags) < 0)
-                return -errno;
+        if (fstatat(fdb, fileb, &b, flags) < 0)
+                return log_debug_errno(errno, "Cannot stat %s: %m", fileb);
 
         return stat_inode_same(&a, &b);
 }
@@ -222,22 +213,13 @@ bool is_fs_type(const struct statfs *s, statfs_f_type_t magic_value) {
         return F_TYPE_EQUAL(s->f_type, magic_value);
 }
 
-#if 0 /* NM_IGNORED */
-int fd_is_fs_type(int fd, statfs_f_type_t magic_value) {
+int is_fs_type_at(int dir_fd, const char *path, statfs_f_type_t magic_value) {
         struct statfs s;
+        int r;
 
-        if (fstatfs(fd, &s) < 0)
-                return -errno;
-
-        return is_fs_type(&s, magic_value);
-}
-#endif /* NM_IGNORED */
-
-int path_is_fs_type(const char *path, statfs_f_type_t magic_value) {
-        struct statfs s;
-
-        if (statfs(path, &s) < 0)
-                return -errno;
+        r = xstatfsat(dir_fd, path, &s);
+        if (r < 0)
+                return r;
 
         return is_fs_type(&s, magic_value);
 }
@@ -318,6 +300,18 @@ int fd_verify_regular(int fd) {
 }
 
 #if 0 /* NM_IGNORED */
+int verify_regular_at(int dir_fd, const char *path, bool follow) {
+        struct stat st;
+
+        assert(dir_fd >= 0 || dir_fd == AT_FDCWD);
+        assert(path);
+
+        if (fstatat(dir_fd, path, &st, (isempty(path) ? AT_EMPTY_PATH : 0) | (follow ? 0 : AT_SYMLINK_NOFOLLOW)) < 0)
+                return -errno;
+
+        return stat_verify_regular(&st);
+}
+
 int stat_verify_directory(const struct stat *st) {
         assert(st);
 
@@ -466,7 +460,22 @@ int statx_fallback(int dfd, const char *path, int flags, unsigned mask, struct s
 
         return 0;
 }
+#endif /* NM_IGNORED */
 
+int xstatfsat(int dir_fd, const char *path, struct statfs *ret) {
+        _cleanup_close_ int fd = -EBADF;
+
+        assert(dir_fd >= 0 || dir_fd == AT_FDCWD);
+        assert(ret);
+
+        fd = xopenat(dir_fd, path, O_PATH|O_CLOEXEC|O_NOCTTY, /* xopen_flags = */ 0, /* mode = */ 0);
+        if (fd < 0)
+                return fd;
+
+        return RET_NERRNO(fstatfs(fd, ret));
+}
+
+#if 0 /* NM_IGNORED */
 void inode_hash_func(const struct stat *q, struct siphash *state) {
         siphash24_compress(&q->st_dev, sizeof(q->st_dev), state);
         siphash24_compress(&q->st_ino, sizeof(q->st_ino), state);
@@ -483,4 +492,27 @@ int inode_compare_func(const struct stat *a, const struct stat *b) {
 }
 
 DEFINE_HASH_OPS_WITH_KEY_DESTRUCTOR(inode_hash_ops, struct stat, inode_hash_func, inode_compare_func, free);
+
+const char* inode_type_to_string(mode_t m) {
+
+        /* Returns a short string for the inode type. We use the same name as the underlying macros for each
+         * inode type. */
+
+        switch (m & S_IFMT) {
+        case S_IFREG:
+                return "reg";
+        case S_IFDIR:
+                return "dir";
+        case S_IFCHR:
+                return "chr";
+        case S_IFBLK:
+                return "blk";
+        case S_IFIFO:
+                return "fifo";
+        case S_IFSOCK:
+                return "sock";
+        }
+
+        return NULL;
+}
 #endif /* NM_IGNORED */

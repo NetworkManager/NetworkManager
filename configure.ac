@@ -120,6 +120,9 @@ AC_CHECK_DECLS([
 ]])
 
 AC_CHECK_HEADERS(sys/auxv.h)
+AC_CHECK_HEADERS(threads.h,
+                 [],
+                 [AC_DEFINE([HAVE_THREADS_H], [0], [Define to 1 if you have the <threads.h> header file.])])
 
 AC_CHECK_DECLS([getrandom],
                [AC_DEFINE([USE_SYS_RANDOM_H], [1], [sys/random.h is usable])

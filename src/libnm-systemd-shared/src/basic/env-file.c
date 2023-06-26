@@ -332,8 +332,7 @@ static int parse_env_file_push(
 
                 if (streq(key, k)) {
                         va_end(aq);
-                        free(*v);
-                        *v = value;
+                        free_and_replace(*v, value);
 
                         return 1;
                 }
@@ -361,6 +360,24 @@ int parse_env_filev(
         return r;
 }
 
+#if 0 /* NM_IGNORED */
+int parse_env_file_fdv(int fd, const char *fname, va_list ap) {
+        _cleanup_fclose_ FILE *f = NULL;
+        va_list aq;
+        int r;
+
+        assert(fd >= 0);
+
+        r = fdopen_independent(fd, "re", &f);
+        if (r < 0)
+                return r;
+
+        va_copy(aq, ap);
+        r = parse_env_file_internal(f, fname, parse_env_file_push, &aq);
+        va_end(aq);
+        return r;
+}
+
 int parse_env_file_sentinel(
                 FILE *f,
                 const char *fname,
@@ -378,31 +395,18 @@ int parse_env_file_sentinel(
         return r;
 }
 
-#if 0 /* NM_IGNORED */
 int parse_env_file_fd_sentinel(
                 int fd,
                 const char *fname, /* only used for logging */
                 ...) {
 
-        _cleanup_close_ int fd_ro = -EBADF;
-        _cleanup_fclose_ FILE *f = NULL;
         va_list ap;
         int r;
 
         assert(fd >= 0);
 
-        fd_ro = fd_reopen(fd, O_CLOEXEC | O_RDONLY);
-        if (fd_ro < 0)
-                return fd_ro;
-
-        f = fdopen(fd_ro, "re");
-        if (!f)
-                return -errno;
-
-        TAKE_FD(fd_ro);
-
         va_start(ap, fname);
-        r = parse_env_filev(f, fname, ap);
+        r = parse_env_file_fdv(fd, fname, ap);
         va_end(ap);
 
         return r;
@@ -488,6 +492,7 @@ int load_env_file_pairs(FILE *f, const char *fname, char ***ret) {
         int r;
 
         assert(f || fname);
+        assert(ret);
 
         r = parse_env_file_internal(f, fname, load_env_file_push_pairs, &m);
         if (r < 0)
@@ -495,6 +500,19 @@ int load_env_file_pairs(FILE *f, const char *fname, char ***ret) {
 
         *ret = TAKE_PTR(m);
         return 0;
+}
+
+int load_env_file_pairs_fd(int fd, const char *fname, char ***ret) {
+        _cleanup_fclose_ FILE *f = NULL;
+        int r;
+
+        assert(fd >= 0);
+
+        r = fdopen_independent(fd, "re", &f);
+        if (r < 0)
+                return r;
+
+        return load_env_file_pairs(f, fname, ret);
 }
 
 static int merge_env_file_push(
@@ -581,14 +599,15 @@ static void write_env_var(FILE *f, const char *v) {
         fputc_unlocked('\n', f);
 }
 
-int write_env_file(const char *fname, char **l) {
+int write_env_file_at(int dir_fd, const char *fname, char **l) {
         _cleanup_fclose_ FILE *f = NULL;
         _cleanup_free_ char *p = NULL;
         int r;
 
+        assert(dir_fd >= 0 || dir_fd == AT_FDCWD);
         assert(fname);
 
-        r = fopen_temporary(fname, &f, &p);
+        r = fopen_temporary_at(dir_fd, fname, &f, &p);
         if (r < 0)
                 return r;
 
@@ -599,13 +618,13 @@ int write_env_file(const char *fname, char **l) {
 
         r = fflush_and_check(f);
         if (r >= 0) {
-                if (rename(p, fname) >= 0)
+                if (renameat(dir_fd, p, dir_fd, fname) >= 0)
                         return 0;
 
                 r = -errno;
         }
 
-        (void) unlink(p);
+        (void) unlinkat(dir_fd, p, 0);
         return r;
 }
 #endif /* NM_IGNORED */

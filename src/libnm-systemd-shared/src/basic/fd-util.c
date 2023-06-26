@@ -23,6 +23,7 @@
 #include "missing_fcntl.h"
 #include "missing_fs.h"
 #include "missing_syscall.h"
+#include "mountpoint-util.h"
 #include "parse-util.h"
 #include "path-util.h"
 #include "process-util.h"
@@ -418,7 +419,8 @@ int close_all_fds(const int except[], size_t n_except) {
                 if (!IN_SET(de->d_type, DT_LNK, DT_UNKNOWN))
                         continue;
 
-                if (safe_atoi(de->d_name, &fd) < 0)
+                fd = parse_fd(de->d_name);
+                if (fd < 0)
                         /* Let's better ignore this, just in case */
                         continue;
 
@@ -537,6 +539,11 @@ bool fdname_is_valid(const char *s) {
 #if 0 /* NM_IGNORED */
 int fd_get_path(int fd, char **ret) {
         int r;
+
+        assert(fd >= 0 || fd == AT_FDCWD);
+
+        if (fd == AT_FDCWD)
+                return safe_getcwd(ret);
 
         r = readlink_malloc(FORMAT_PROC_FD_PATH(fd), ret);
         if (r == -ENOENT) {
@@ -746,26 +753,46 @@ finish:
 
         return r;
 }
+#endif /* NM_IGNORED */
 
 int fd_reopen(int fd, int flags) {
         int new_fd, r;
+
+        assert(fd >= 0 || fd == AT_FDCWD);
 
         /* Reopens the specified fd with new flags. This is useful for convert an O_PATH fd into a regular one, or to
          * turn O_RDWR fds into O_RDONLY fds.
          *
          * This doesn't work on sockets (since they cannot be open()ed, ever).
          *
-         * This implicitly resets the file read index to 0. */
+         * This implicitly resets the file read index to 0.
+         *
+         * If AT_FDCWD is specified as file descriptor gets an fd to the current cwd.
+         *
+         * If the specified file descriptor refers to a symlink via O_PATH, then this function cannot be used
+         * to follow that symlink. Because we cannot have non-O_PATH fds to symlinks reopening it without
+         * O_PATH will always result in -ELOOP. Or in other words: if you have an O_PATH fd to a symlink you
+         * can reopen it only if you pass O_PATH again. */
 
-        if (FLAGS_SET(flags, O_DIRECTORY)) {
+        if (FLAGS_SET(flags, O_NOFOLLOW))
+                /* O_NOFOLLOW is not allowed in fd_reopen(), because after all this is primarily implemented
+                 * via a symlink-based interface in /proc/self/fd. Let's refuse this here early. Note that
+                 * the kernel would generate ELOOP here too, hence this manual check is mostly redundant –
+                 * the only reason we add it here is so that the O_DIRECTORY special case (see below) behaves
+                 * the same way as the non-O_DIRECTORY case. */
+                return -ELOOP;
+
+        if (FLAGS_SET(flags, O_DIRECTORY) || fd == AT_FDCWD) {
                 /* If we shall reopen the fd as directory we can just go via "." and thus bypass the whole
                  * magic /proc/ directory, and make ourselves independent of that being mounted. */
-                new_fd = openat(fd, ".", flags);
+                new_fd = openat(fd, ".", flags | O_DIRECTORY);
                 if (new_fd < 0)
                         return -errno;
 
                 return new_fd;
         }
+
+        assert(fd >= 0);
 
         new_fd = open(FORMAT_PROC_FD_PATH(fd), flags);
         if (new_fd < 0) {
@@ -784,6 +811,7 @@ int fd_reopen(int fd, int flags) {
         return new_fd;
 }
 
+#if 0 /* NM_IGNORED */
 int fd_reopen_condition(
                 int fd,
                 int flags,
@@ -813,6 +841,18 @@ int fd_reopen_condition(
 
         *ret_new_fd = new_fd;
         return new_fd;
+}
+
+int fd_is_opath(int fd) {
+        int r;
+
+        assert(fd >= 0);
+
+        r = fcntl(fd, F_GETFL);
+        if (r < 0)
+                return -errno;
+
+        return FLAGS_SET(r, O_PATH);
 }
 
 int read_nr_open(void) {
@@ -858,5 +898,90 @@ int fd_get_diskseq(int fd, uint64_t *ret) {
         *ret = diskseq;
 
         return 0;
+}
+
+int path_is_root_at(int dir_fd, const char *path) {
+        STRUCT_NEW_STATX_DEFINE(st);
+        STRUCT_NEW_STATX_DEFINE(pst);
+        _cleanup_close_ int fd = -EBADF;
+        int r;
+
+        assert(dir_fd >= 0 || dir_fd == AT_FDCWD);
+
+        if (!isempty(path)) {
+                fd = openat(dir_fd, path, O_PATH|O_CLOEXEC);
+                if (fd < 0)
+                        return -errno;
+
+                dir_fd = fd;
+        }
+
+        r = statx_fallback(dir_fd, ".", 0, STATX_TYPE|STATX_INO|STATX_MNT_ID, &st.sx);
+        if (r == -ENOTDIR)
+                return false;
+        if (r < 0)
+                return r;
+
+        r = statx_fallback(dir_fd, "..", 0, STATX_TYPE|STATX_INO|STATX_MNT_ID, &pst.sx);
+        if (r < 0)
+                return r;
+
+        /* First, compare inode. If these are different, the fd does not point to the root directory "/". */
+        if (!statx_inode_same(&st.sx, &pst.sx))
+                return false;
+
+        /* Even if the parent directory has the same inode, the fd may not point to the root directory "/",
+         * and we also need to check that the mount ids are the same. Otherwise, a construct like the
+         * following could be used to trick us:
+         *
+         * $ mkdir /tmp/x /tmp/x/y
+         * $ mount --bind /tmp/x /tmp/x/y
+         *
+         * Note, statx() does not provide the mount ID and path_get_mnt_id_at() does not work when an old
+         * kernel is used without /proc mounted. In that case, let's assume that we do not have such spurious
+         * mount points in an early boot stage, and silently skip the following check. */
+
+        if (!FLAGS_SET(st.nsx.stx_mask, STATX_MNT_ID)) {
+                int mntid;
+
+                r = path_get_mnt_id_at(dir_fd, "", &mntid);
+                if (r == -ENOSYS)
+                        return true; /* skip the mount ID check */
+                if (r < 0)
+                        return r;
+                assert(mntid >= 0);
+
+                st.nsx.stx_mnt_id = mntid;
+                st.nsx.stx_mask |= STATX_MNT_ID;
+        }
+
+        if (!FLAGS_SET(pst.nsx.stx_mask, STATX_MNT_ID)) {
+                int mntid;
+
+                r = path_get_mnt_id_at(dir_fd, "..", &mntid);
+                if (r == -ENOSYS)
+                        return true; /* skip the mount ID check */
+                if (r < 0)
+                        return r;
+                assert(mntid >= 0);
+
+                pst.nsx.stx_mnt_id = mntid;
+                pst.nsx.stx_mask |= STATX_MNT_ID;
+        }
+
+        return statx_mount_same(&st.nsx, &pst.nsx);
+}
+
+const char *accmode_to_string(int flags) {
+        switch (flags & O_ACCMODE) {
+        case O_RDONLY:
+                return "ro";
+        case O_WRONLY:
+                return "wo";
+        case O_RDWR:
+                return "rw";
+        default:
+                return NULL;
+        }
 }
 #endif /* NM_IGNORED */

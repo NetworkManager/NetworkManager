@@ -2,6 +2,7 @@
 #pragma once
 
 #include <dirent.h>
+#include <fcntl.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <sys/socket.h>
@@ -74,14 +75,6 @@ int fd_get_path(int fd, char **ret);
 
 int move_fd(int from, int to, int cloexec);
 
-enum {
-        ACQUIRE_NO_DEV_NULL = 1 << 0,
-        ACQUIRE_NO_MEMFD    = 1 << 1,
-        ACQUIRE_NO_PIPE     = 1 << 2,
-        ACQUIRE_NO_TMPFILE  = 1 << 3,
-        ACQUIRE_NO_REGULAR  = 1 << 4,
-};
-
 int fd_move_above_stdio(int fd);
 
 int rearrange_stdio(int original_input_fd, int original_output_fd, int original_error_fd);
@@ -104,8 +97,17 @@ static inline int make_null_stdio(void) {
 
 int fd_reopen(int fd, int flags);
 int fd_reopen_condition(int fd, int flags, int mask, int *ret_new_fd);
+int fd_is_opath(int fd);
 int read_nr_open(void);
 int fd_get_diskseq(int fd, uint64_t *ret);
+
+int path_is_root_at(int dir_fd, const char *path);
+static inline int dir_fd_is_root(int dir_fd) {
+        return path_is_root_at(dir_fd, NULL);
+}
+static inline int dir_fd_is_root_or_cwd(int dir_fd) {
+        return dir_fd == AT_FDCWD ? true : path_is_root_at(dir_fd, NULL);
+}
 
 /* The maximum length a buffer for a /proc/self/fd/<fd> path needs */
 #define PROC_FD_PATH_MAX \
@@ -120,3 +122,13 @@ static inline char *format_proc_fd_path(char buf[static PROC_FD_PATH_MAX], int f
 
 #define FORMAT_PROC_FD_PATH(fd) \
         format_proc_fd_path((char[PROC_FD_PATH_MAX]) {}, (fd))
+
+const char *accmode_to_string(int flags);
+
+/* Like ASSERT_PTR, but for fds */
+#define ASSERT_FD(fd)                           \
+        ({                                      \
+                int _fd_ = (fd);                \
+                assert(_fd_ >= 0);              \
+                _fd_;                           \
+        })

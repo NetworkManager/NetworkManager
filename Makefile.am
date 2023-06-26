@@ -2321,6 +2321,7 @@ src_libnm_systemd_shared_libnm_systemd_shared_la_SOURCES = \
 	src/libnm-systemd-shared/sd-adapt-shared/blockdev-util.h \
 	src/libnm-systemd-shared/sd-adapt-shared/build.h \
 	src/libnm-systemd-shared/sd-adapt-shared/chase-symlinks.h \
+	src/libnm-systemd-shared/sd-adapt-shared/chase.h \
 	src/libnm-systemd-shared/sd-adapt-shared/copy.h \
 	src/libnm-systemd-shared/sd-adapt-shared/dhcp-server-internal.h \
 	src/libnm-systemd-shared/sd-adapt-shared/dirent-util.h \
@@ -2331,7 +2332,9 @@ src_libnm_systemd_shared_libnm_systemd_shared_la_SOURCES = \
 	src/libnm-systemd-shared/sd-adapt-shared/hmac.h \
 	src/libnm-systemd-shared/sd-adapt-shared/idn-util.h \
 	src/libnm-systemd-shared/sd-adapt-shared/ioprio.h \
+	src/libnm-systemd-shared/sd-adapt-shared/mallinfo-util.h \
 	src/libnm-systemd-shared/sd-adapt-shared/memfd-util.h \
+	src/libnm-systemd-shared/sd-adapt-shared/memstream-util.h \
 	src/libnm-systemd-shared/sd-adapt-shared/missing_fs.h \
 	src/libnm-systemd-shared/sd-adapt-shared/missing_ioprio.h \
 	src/libnm-systemd-shared/sd-adapt-shared/missing_keyctl.h \
@@ -2347,6 +2350,7 @@ src_libnm_systemd_shared_libnm_systemd_shared_la_SOURCES = \
 	src/libnm-systemd-shared/sd-adapt-shared/nm-sd-adapt-shared.h \
 	src/libnm-systemd-shared/sd-adapt-shared/nulstr-util.h \
 	src/libnm-systemd-shared/sd-adapt-shared/os-util.h \
+	src/libnm-systemd-shared/sd-adapt-shared/psi-util.h \
 	src/libnm-systemd-shared/sd-adapt-shared/raw-clone.h \
 	src/libnm-systemd-shared/sd-adapt-shared/rlimit-util.h \
 	src/libnm-systemd-shared/sd-adapt-shared/sync-util.h \
@@ -2396,11 +2400,13 @@ src_libnm_systemd_shared_libnm_systemd_shared_la_SOURCES = \
 	src/libnm-systemd-shared/src/basic/inotify-util.h \
 	src/libnm-systemd-shared/src/basic/io-util.c \
 	src/libnm-systemd-shared/src/basic/io-util.h \
+	src/libnm-systemd-shared/src/basic/label.c \
+	src/libnm-systemd-shared/src/basic/label.h \
 	src/libnm-systemd-shared/src/basic/list.h \
 	src/libnm-systemd-shared/src/basic/locale-util.c \
 	src/libnm-systemd-shared/src/basic/locale-util.h \
+	src/libnm-systemd-shared/src/basic/lock-util.h \
 	src/libnm-systemd-shared/src/basic/log.h \
-	src/libnm-systemd-shared/src/basic/logarithm.h \
 	src/libnm-systemd-shared/src/basic/macro.h \
 	src/libnm-systemd-shared/src/basic/memory-util.c \
 	src/libnm-systemd-shared/src/basic/memory-util.h \
@@ -2411,9 +2417,11 @@ src_libnm_systemd_shared_libnm_systemd_shared_la_SOURCES = \
 	src/libnm-systemd-shared/src/basic/missing_socket.h \
 	src/libnm-systemd-shared/src/basic/missing_stat.h \
 	src/libnm-systemd-shared/src/basic/missing_syscall.h \
+	src/libnm-systemd-shared/src/basic/missing_threads.h \
 	src/libnm-systemd-shared/src/basic/missing_type.h \
 	src/libnm-systemd-shared/src/basic/ordered-set.c \
 	src/libnm-systemd-shared/src/basic/ordered-set.h \
+	src/libnm-systemd-shared/src/basic/origin-id.h \
 	src/libnm-systemd-shared/src/basic/parse-util.c \
 	src/libnm-systemd-shared/src/basic/parse-util.h \
 	src/libnm-systemd-shared/src/basic/path-util.c \
@@ -2453,6 +2461,7 @@ src_libnm_systemd_shared_libnm_systemd_shared_la_SOURCES = \
 	src/libnm-systemd-shared/src/basic/user-util.h \
 	src/libnm-systemd-shared/src/basic/utf8.c \
 	src/libnm-systemd-shared/src/basic/utf8.h \
+	src/libnm-systemd-shared/src/fundamental/logarithm.h \
 	src/libnm-systemd-shared/src/fundamental/macro-fundamental.h \
 	src/libnm-systemd-shared/src/fundamental/memory-util-fundamental.h \
 	src/libnm-systemd-shared/src/fundamental/sha256.c \
@@ -2500,6 +2509,7 @@ src_libnm_systemd_core_libnm_systemd_core_la_SOURCES = \
 	src/libnm-systemd-core/sd-adapt-core/nm-sd-adapt-core.c \
 	src/libnm-systemd-core/sd-adapt-core/nm-sd-adapt-core.h \
 	src/libnm-systemd-core/sd-adapt-core/sd-daemon.h \
+	src/libnm-systemd-core/sd-adapt-core/sd-messages.h \
 	src/libnm-systemd-core/sd-adapt-core/udev-util.h \
 	src/libnm-systemd-core/src/libsystemd-network/dhcp-identifier.c \
 	src/libnm-systemd-core/src/libsystemd-network/dhcp-identifier.h \

@@ -10,7 +10,7 @@
 #include <unistd.h>
 
 #include "alloc-util.h"
-#include "chase-symlinks.h"
+#include "chase.h"
 #include "extract-word.h"
 #include "fd-util.h"
 #include "fs-util.h"
@@ -25,7 +25,7 @@
 
 #if 0 /* NM_IGNORED */
 int path_split_and_make_absolute(const char *p, char ***ret) {
-        char **l;
+        _cleanup_strv_free_ char **l = NULL;
         int r;
 
         assert(p);
@@ -36,12 +36,10 @@ int path_split_and_make_absolute(const char *p, char ***ret) {
                 return -ENOMEM;
 
         r = path_strv_make_absolute_cwd(l);
-        if (r < 0) {
-                strv_free(l);
+        if (r < 0)
                 return r;
-        }
 
-        *ret = l;
+        *ret = TAKE_PTR(l);
         return r;
 }
 
@@ -288,7 +286,7 @@ char **path_strv_resolve(char **l, const char *root) {
                 } else
                         t = *s;
 
-                r = chase_symlinks(t, root, 0, &u, NULL);
+                r = chase(t, root, 0, &u, NULL);
                 if (r == -ENOENT) {
                         if (root) {
                                 u = TAKE_PTR(orig);
@@ -491,29 +489,37 @@ int path_compare(const char *a, const char *b) {
         }
 }
 
-bool path_equal_or_files_same(const char *a, const char *b, int flags) {
-        return path_equal(a, b) || files_same(a, b, flags) > 0;
+bool path_equal_or_inode_same(const char *a, const char *b, int flags) {
+        return path_equal(a, b) || inode_same(a, b, flags) > 0;
 }
 
-bool path_equal_filename(const char *a, const char *b) {
-        _cleanup_free_ char *a_basename = NULL, *b_basename = NULL;
-        int r;
+int path_compare_filename(const char *a, const char *b) {
+        _cleanup_free_ char *fa = NULL, *fb = NULL;
+        int r, j, k;
 
-        assert(a);
-        assert(b);
+        /* Order NULL before non-NULL */
+        r = CMP(!!a, !!b);
+        if (r != 0)
+                return r;
 
-        r = path_extract_filename(a, &a_basename);
-        if (r < 0) {
-                log_debug_errno(r, "Failed to parse basename of %s: %m", a);
-                return false;
-        }
-        r = path_extract_filename(b, &b_basename);
-        if (r < 0) {
-                log_debug_errno(r, "Failed to parse basename of %s: %m", b);
-                return false;
-        }
+        j = path_extract_filename(a, &fa);
+        k = path_extract_filename(b, &fb);
 
-        return path_equal(a_basename, b_basename);
+        /* When one of paths is "." or root, then order it earlier. */
+        r = CMP(j != -EADDRNOTAVAIL, k != -EADDRNOTAVAIL);
+        if (r != 0)
+                return r;
+
+        /* When one of paths is invalid (or we get OOM), order invalid path after valid one. */
+        r = CMP(j < 0, k < 0);
+        if (r != 0)
+                return r;
+
+        /* fallback to use strcmp() if both paths are invalid. */
+        if (j < 0)
+                return strcmp(a, b);
+
+        return strcmp(fa, fb);
 }
 
 char* path_extend_internal(char **x, ...) {
@@ -626,16 +632,13 @@ static int find_executable_impl(const char *name, const char *root, char **ret_f
 
         assert(name);
 
-        /* Function chase_symlinks() is invoked only when root is not NULL, as using it regardless of
+        /* Function chase() is invoked only when root is not NULL, as using it regardless of
          * root value would alter the behavior of existing callers for example: /bin/sleep would become
          * /usr/bin/sleep when find_executables is called. Hence, this function should be invoked when
          * needed to avoid unforeseen regression or other complicated changes. */
         if (root) {
-                r = chase_symlinks(name,
-                                   root,
-                                   CHASE_PREFIX_ROOT,
-                                   &path_name,
-                                   /* ret_fd= */ NULL); /* prefix root to name in case full paths are not specified */
+                 /* prefix root to name in case full paths are not specified */
+                r = chase(name, root, CHASE_PREFIX_ROOT, &path_name, /* ret_fd= */ NULL);
                 if (r < 0)
                         return r;
 
@@ -902,6 +905,8 @@ static const char *skip_slash_or_dot_backward(const char *path, const char *q) {
                         continue;
                 if (q > path && strneq(q - 1, "/.", 2))
                         continue;
+                if (q == path && *q == '.')
+                        continue;
                 break;
         }
         return q;
@@ -925,6 +930,12 @@ int path_find_last_component(const char *path, bool accept_dot_dot, const char *
         *   Output: next: "///bbbbb/cc//././"
         *           ret: "bbbbb/cc//././"
         *           return value: 5 (== strlen("bbbbb"))
+        *
+        *   Input:  path: "//.//aaa///bbbbb/cc//././"
+        *           next: "///bbbbb/cc//././"
+        *   Output: next: "//.//aaa///bbbbb/cc//././" (next == path)
+        *           ret: "aaa///bbbbb/cc//././"
+        *           return value: 3 (== strlen("aaa"))
         *
         *   Input:  path: "/", ".", "", or NULL
         *   Output: next: equivalent to path
