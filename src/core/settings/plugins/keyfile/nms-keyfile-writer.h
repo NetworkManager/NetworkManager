@@ -22,7 +22,7 @@ gboolean nms_keyfile_writer_connection(NMConnection                   *connectio
                                        const char                     *profile_dir,
                                        const char                     *existing_path,
                                        gboolean                        existing_path_read_only,
-                                       gboolean                        force_rename,
+                                       NMTernary                       force_rename,
                                        NMSKeyfileWriterAllowFilenameCb allow_filename_cb,
                                        gpointer                        allow_filename_user_data,
                                        char                          **out_path,
