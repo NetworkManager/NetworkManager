@@ -40,3 +40,12 @@ To do a re-import, do:
   on all test distributions.
 
 - push `main` and `systemd` branch.
+
+### Hints
+
+- Eagerly commented out the unused function.
+- Patching header is best avoided, #if 0  and #endif  function patching should
+  only be used in the C source.
+- We may create some dummy files in
+  `src/libnm-systemd-{shared,core}/sd-adapt-\*/` for resolving the compiling
+  error (missing header file)
