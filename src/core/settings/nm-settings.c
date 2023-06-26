@@ -2263,16 +2263,17 @@ nm_settings_update_connection(NMSettings                      *self,
                                                       drop_storage,
                                                       &local);
         } else {
-            success = _update_connection_to_plugin(self,
-                                                   update_storage,
-                                                   connection,
-                                                   new_flags,
-                                                   update_reason,
-                                                   new_shadowed_storage_filename,
-                                                   new_shadowed_owned,
-                                                   &new_storage,
-                                                   &new_connection,
-                                                   &local);
+            success = _update_connection_to_plugin(
+                self,
+                update_storage,
+                connection,
+                new_flags,
+                NM_FLAGS_HAS(update_reason, NM_SETTINGS_CONNECTION_UPDATE_REASON_FORCE_RENAME),
+                new_shadowed_storage_filename,
+                new_shadowed_owned,
+                &new_storage,
+                &new_connection,
+                &local);
         }
         if (!success) {
             gboolean ignore_failure;

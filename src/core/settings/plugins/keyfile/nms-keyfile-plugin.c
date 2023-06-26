@@ -910,6 +910,8 @@ nms_keyfile_plugin_update_connection(NMSKeyfilePlugin   *self,
     previous_filename = nms_keyfile_storage_get_filename(storage);
     uuid              = nms_keyfile_storage_get_uuid(storage);
 
+    /* FIXME: force_rename is unused so far. */
+
     if (!nms_keyfile_writer_connection(
             connection,
             is_nm_generated,
