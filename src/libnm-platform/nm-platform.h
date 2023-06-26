@@ -1534,6 +1534,12 @@ const char *nm_link_type_to_string(NMLinkType link_type);
 
 #define NMP_SYSCTL_PATHID_ABSOLUTE(path) ((const char *) NULL), -1, (path)
 
+/* Uses alloca(). Use with care.
+ *
+ * Like NMP_SYSCTL_PATHID_NETDIR_A(), but "path" must not be a string literal.
+ * This is the "UNSAFE" part, where there is no compile time check for the
+ * maximum string length. It still must be reasonably short to not overflow
+ * the stack (the runtime assert checks for <200 chars). */
 #define NMP_SYSCTL_PATHID_NETDIR_UNSAFE_A(dirfd, ifname, path)                     \
     nm_sprintf_buf_unsafe_a(NM_STRLEN("net:/sys/class/net//\0") + NM_IFNAMSIZ + ({ \
                                 const gsize _l = strlen(path);                     \
@@ -1546,6 +1552,7 @@ const char *nm_link_type_to_string(NMLinkType link_type);
                             (path)),                                               \
         (dirfd), (path)
 
+/* Uses alloca(). Use with care. */
 #define NMP_SYSCTL_PATHID_NETDIR_A(dirfd, ifname, path)                         \
     nm_sprintf_bufa(NM_STRLEN("net:/sys/class/net//" path "/\0") + NM_IFNAMSIZ, \
                     "net:/sys/class/net/%s/%s",                                 \
