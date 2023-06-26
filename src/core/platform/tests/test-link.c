@@ -303,6 +303,15 @@ test_slave(int master, int type, SignalData *master_changed)
         g_assert(link);
         g_assert_cmpint(link->port_data.bond.queue_id, ==, 5);
         g_assert(link->port_data.bond.prio_has || link->port_data.bond.prio == 0);
+    } else if (link_type == NM_LINK_TYPE_BRIDGE) {
+        /* Skip this part for nm-fake-platform */
+        if (nmtstp_is_root_test() && nmtstp_is_sysfs_writable()) {
+            g_assert(
+                nm_platform_sysctl_slave_set_option(NM_PLATFORM_GET, ifindex, "priority", "614"));
+            value = nm_platform_sysctl_slave_get_option(NM_PLATFORM_GET, ifindex, "priority");
+            g_assert_cmpstr(value, ==, "614");
+            g_free(value);
+        }
     }
 
     test_link_changed_signal_arg1 = FALSE;
@@ -386,21 +395,6 @@ test_slave(int master, int type, SignalData *master_changed)
     g_assert(nm_platform_link_enslave(NM_PLATFORM_GET, master, ifindex));
     accept_signals(link_changed, 0, 2);
     accept_signals(master_changed, 0, 2);
-
-    /* Set slave option */
-    switch (type) {
-    case NM_LINK_TYPE_BRIDGE:
-        if (nmtstp_is_sysfs_writable()) {
-            g_assert(
-                nm_platform_sysctl_slave_set_option(NM_PLATFORM_GET, ifindex, "priority", "614"));
-            value = nm_platform_sysctl_slave_get_option(NM_PLATFORM_GET, ifindex, "priority");
-            g_assert_cmpstr(value, ==, "614");
-            g_free(value);
-        }
-        break;
-    default:
-        break;
-    }
 
     /* Release */
     ensure_no_signal(link_added);
