@@ -3603,7 +3603,7 @@ test_sysctl_rename(void)
                         ==,
                         (gint32) nm_platform_sysctl_get_int32(
                             PL,
-                            NMP_SYSCTL_PATHID_NETDIR(dirfd, s ?: "<unknown>", "ifindex"),
+                            NMP_SYSCTL_PATHID_NETDIR_A(dirfd, s ?: "<unknown>", "ifindex"),
                             -1));
         break;
     }
@@ -3675,7 +3675,7 @@ test_sysctl_netns_switch(void)
                     ==,
                     (gint32) nm_platform_sysctl_get_int32(
                         PL,
-                        NMP_SYSCTL_PATHID_NETDIR(dirfd, s ?: "<unknown>", "ifindex"),
+                        NMP_SYSCTL_PATHID_NETDIR_A(dirfd, s ?: "<unknown>", "ifindex"),
                         -1));
     g_assert_cmpint(
         ifindex,

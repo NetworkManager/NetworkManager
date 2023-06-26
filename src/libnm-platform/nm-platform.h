@@ -1534,7 +1534,7 @@ const char *nm_link_type_to_string(NMLinkType link_type);
 
 #define NMP_SYSCTL_PATHID_ABSOLUTE(path) ((const char *) NULL), -1, (path)
 
-#define NMP_SYSCTL_PATHID_NETDIR_unsafe(dirfd, ifname, path)                       \
+#define NMP_SYSCTL_PATHID_NETDIR_UNSAFE_A(dirfd, ifname, path)                     \
     nm_sprintf_buf_unsafe_a(NM_STRLEN("net:/sys/class/net//\0") + NM_IFNAMSIZ + ({ \
                                 const gsize _l = strlen(path);                     \
                                                                                    \
@@ -1546,7 +1546,7 @@ const char *nm_link_type_to_string(NMLinkType link_type);
                             (path)),                                               \
         (dirfd), (path)
 
-#define NMP_SYSCTL_PATHID_NETDIR(dirfd, ifname, path)                           \
+#define NMP_SYSCTL_PATHID_NETDIR_A(dirfd, ifname, path)                         \
     nm_sprintf_bufa(NM_STRLEN("net:/sys/class/net//" path "/\0") + NM_IFNAMSIZ, \
                     "net:/sys/class/net/%s/%s",                                 \
                     (ifname),                                                   \

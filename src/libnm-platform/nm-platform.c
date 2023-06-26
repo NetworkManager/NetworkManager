@@ -2771,7 +2771,7 @@ link_set_option(NMPlatform *self,
     path =
         nm_sprintf_buf_unsafe_a(strlen(category) + strlen(option) + 2, "%s/%s", category, option);
     return nm_platform_sysctl_set(self,
-                                  NMP_SYSCTL_PATHID_NETDIR_unsafe(dirfd, ifname_verified, path),
+                                  NMP_SYSCTL_PATHID_NETDIR_UNSAFE_A(dirfd, ifname_verified, path),
                                   value);
 }
 
@@ -2792,7 +2792,7 @@ link_get_option(NMPlatform *self, int ifindex, const char *category, const char 
     path =
         nm_sprintf_buf_unsafe_a(strlen(category) + strlen(option) + 2, "%s/%s", category, option);
     return nm_platform_sysctl_get(self,
-                                  NMP_SYSCTL_PATHID_NETDIR_unsafe(dirfd, ifname_verified, path));
+                                  NMP_SYSCTL_PATHID_NETDIR_UNSAFE_A(dirfd, ifname_verified, path));
 }
 
 static const char *
@@ -3073,7 +3073,7 @@ nm_platform_link_infiniband_get_properties(NMPlatform  *self,
         return FALSE;
 
     contents =
-        nm_platform_sysctl_get(self, NMP_SYSCTL_PATHID_NETDIR(dirfd, ifname_verified, "mode"));
+        nm_platform_sysctl_get(self, NMP_SYSCTL_PATHID_NETDIR_A(dirfd, ifname_verified, "mode"));
     if (!contents)
         return FALSE;
     if (strstr(contents, "datagram"))
@@ -3084,13 +3084,13 @@ nm_platform_link_infiniband_get_properties(NMPlatform  *self,
         mode = NULL;
     g_free(contents);
 
-    p_key =
-        nm_platform_sysctl_get_int_checked(self,
-                                           NMP_SYSCTL_PATHID_NETDIR(dirfd, ifname_verified, "pkey"),
-                                           16,
-                                           0,
-                                           0xFFFF,
-                                           -1);
+    p_key = nm_platform_sysctl_get_int_checked(
+        self,
+        NMP_SYSCTL_PATHID_NETDIR_A(dirfd, ifname_verified, "pkey"),
+        16,
+        0,
+        0xFFFF,
+        -1);
     if (p_key < 0)
         return FALSE;
 
@@ -3192,31 +3192,33 @@ nm_platform_link_tun_get_properties(NMPlatform *self, int ifindex, NMPlatformLnk
         if (dirfd < 0)
             return FALSE;
 
-        owner = nm_platform_sysctl_get_int_checked(self,
-                                                   NMP_SYSCTL_PATHID_NETDIR(dirfd, ifname, "owner"),
-                                                   10,
-                                                   -1,
-                                                   G_MAXUINT32,
-                                                   -2);
+        owner =
+            nm_platform_sysctl_get_int_checked(self,
+                                               NMP_SYSCTL_PATHID_NETDIR_A(dirfd, ifname, "owner"),
+                                               10,
+                                               -1,
+                                               G_MAXUINT32,
+                                               -2);
         if (owner == -2)
             return FALSE;
 
-        group = nm_platform_sysctl_get_int_checked(self,
-                                                   NMP_SYSCTL_PATHID_NETDIR(dirfd, ifname, "group"),
-                                                   10,
-                                                   -1,
-                                                   G_MAXUINT32,
-                                                   -2);
+        group =
+            nm_platform_sysctl_get_int_checked(self,
+                                               NMP_SYSCTL_PATHID_NETDIR_A(dirfd, ifname, "group"),
+                                               10,
+                                               -1,
+                                               G_MAXUINT32,
+                                               -2);
         if (group == -2)
             return FALSE;
 
-        flags =
-            nm_platform_sysctl_get_int_checked(self,
-                                               NMP_SYSCTL_PATHID_NETDIR(dirfd, ifname, "tun_flags"),
-                                               16,
-                                               0,
-                                               G_MAXINT64,
-                                               -1);
+        flags = nm_platform_sysctl_get_int_checked(
+            self,
+            NMP_SYSCTL_PATHID_NETDIR_A(dirfd, ifname, "tun_flags"),
+            16,
+            0,
+            G_MAXINT64,
+            -1);
         if (flags == -1)
             return FALSE;
     }

@@ -8669,10 +8669,10 @@ link_supports_sriov(NMPlatform *platform, int ifindex)
     if (dirfd < 0)
         return FALSE;
 
-    num =
-        nm_platform_sysctl_get_int32(platform,
-                                     NMP_SYSCTL_PATHID_NETDIR(dirfd, ifname, "device/sriov_numvfs"),
-                                     -1);
+    num = nm_platform_sysctl_get_int32(
+        platform,
+        NMP_SYSCTL_PATHID_NETDIR_A(dirfd, ifname, "device/sriov_numvfs"),
+        -1);
 
     return num != -1;
 }
@@ -8806,7 +8806,7 @@ link_set_sriov_params_async(NMPlatform             *platform,
 
     total = nm_platform_sysctl_get_int_checked(
         platform,
-        NMP_SYSCTL_PATHID_NETDIR(dirfd, ifname, "device/sriov_totalvfs"),
+        NMP_SYSCTL_PATHID_NETDIR_A(dirfd, ifname, "device/sriov_totalvfs"),
         10,
         0,
         G_MAXUINT,
@@ -8824,14 +8824,14 @@ link_set_sriov_params_async(NMPlatform             *platform,
      */
     current_num = nm_platform_sysctl_get_int_checked(
         platform,
-        NMP_SYSCTL_PATHID_NETDIR(dirfd, ifname, "device/sriov_numvfs"),
+        NMP_SYSCTL_PATHID_NETDIR_A(dirfd, ifname, "device/sriov_numvfs"),
         10,
         0,
         G_MAXUINT,
         -1);
     current_autoprobe = nm_platform_sysctl_get_int_checked(
         platform,
-        NMP_SYSCTL_PATHID_NETDIR(dirfd, ifname, "device/sriov_drivers_autoprobe"),
+        NMP_SYSCTL_PATHID_NETDIR_A(dirfd, ifname, "device/sriov_drivers_autoprobe"),
         10,
         0,
         1,
@@ -8851,7 +8851,7 @@ link_set_sriov_params_async(NMPlatform             *platform,
         && current_autoprobe != autoprobe
         && !nm_platform_sysctl_set(
             platform,
-            NMP_SYSCTL_PATHID_NETDIR(dirfd, ifname, "device/sriov_drivers_autoprobe"),
+            NMP_SYSCTL_PATHID_NETDIR_A(dirfd, ifname, "device/sriov_drivers_autoprobe"),
             nm_sprintf_buf(buf, "%d", (int) autoprobe))) {
         g_set_error(&error,
                     NM_UTILS_ERROR,
@@ -8873,7 +8873,7 @@ link_set_sriov_params_async(NMPlatform             *platform,
     values[i++] = NULL;
 
     sysctl_set_async(platform,
-                     NMP_SYSCTL_PATHID_NETDIR(dirfd, ifname, "device/sriov_numvfs"),
+                     NMP_SYSCTL_PATHID_NETDIR_A(dirfd, ifname, "device/sriov_numvfs"),
                      values,
                      callback,
                      data,
@@ -9109,7 +9109,7 @@ link_get_physical_port_id(NMPlatform *platform, int ifindex)
     dirfd = nm_platform_sysctl_open_netdir(platform, ifindex, ifname_verified);
     if (dirfd < 0)
         return NULL;
-    return sysctl_get(platform, NMP_SYSCTL_PATHID_NETDIR(dirfd, ifname_verified, "phys_port_id"));
+    return sysctl_get(platform, NMP_SYSCTL_PATHID_NETDIR_A(dirfd, ifname_verified, "phys_port_id"));
 }
 
 static guint
@@ -9123,7 +9123,7 @@ link_get_dev_id(NMPlatform *platform, int ifindex)
         return 0;
     return nm_platform_sysctl_get_int_checked(
         platform,
-        NMP_SYSCTL_PATHID_NETDIR(dirfd, ifname_verified, "dev_id"),
+        NMP_SYSCTL_PATHID_NETDIR_A(dirfd, ifname_verified, "dev_id"),
         16,
         0,
         G_MAXUINT16,
@@ -9373,12 +9373,12 @@ _infiniband_partition_action(NMPlatform            *platform,
     if (action == INFINIBAND_ACTION_CREATE_CHILD)
         success =
             nm_platform_sysctl_set(platform,
-                                   NMP_SYSCTL_PATHID_NETDIR(dirfd, ifname_parent, "create_child"),
+                                   NMP_SYSCTL_PATHID_NETDIR_A(dirfd, ifname_parent, "create_child"),
                                    id);
     else
         success =
             nm_platform_sysctl_set(platform,
-                                   NMP_SYSCTL_PATHID_NETDIR(dirfd, ifname_parent, "delete_child"),
+                                   NMP_SYSCTL_PATHID_NETDIR_A(dirfd, ifname_parent, "delete_child"),
                                    id);
 
     if (!success) {
