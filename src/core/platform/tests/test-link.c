@@ -222,58 +222,58 @@ test_link_changed_signal_cb(NMPlatform               *platform,
 }
 
 static void
-test_slave(int master, int type, SignalData *master_changed)
+test_port(int controller, int port_type, SignalData *controller_changed)
 {
-    int         ifindex;
+    int         ifindex_port;
     SignalData *link_added = add_signal_ifname(NM_PLATFORM_SIGNAL_LINK_CHANGED,
                                                NM_PLATFORM_SIGNAL_ADDED,
                                                link_callback,
                                                SLAVE_NAME);
     SignalData *link_changed, *link_removed;
     char       *value;
-    NMLinkType  link_type = nm_platform_link_get_type(NM_PLATFORM_GET, master);
+    NMLinkType  controller_type = nm_platform_link_get_type(NM_PLATFORM_GET, controller);
     gboolean    test_link_changed_signal_arg1;
     gboolean    test_link_changed_signal_arg2;
 
-    g_assert(NM_IN_SET(link_type, NM_LINK_TYPE_TEAM, NM_LINK_TYPE_BOND, NM_LINK_TYPE_BRIDGE));
+    g_assert(NM_IN_SET(controller_type, NM_LINK_TYPE_TEAM, NM_LINK_TYPE_BOND, NM_LINK_TYPE_BRIDGE));
 
-    g_assert(software_add(type, SLAVE_NAME));
-    ifindex = nm_platform_link_get_ifindex(NM_PLATFORM_GET, SLAVE_NAME);
-    g_assert(ifindex > 0);
+    g_assert(software_add(port_type, SLAVE_NAME));
+    ifindex_port = nm_platform_link_get_ifindex(NM_PLATFORM_GET, SLAVE_NAME);
+    g_assert(ifindex_port > 0);
     link_changed = add_signal_ifindex(NM_PLATFORM_SIGNAL_LINK_CHANGED,
                                       NM_PLATFORM_SIGNAL_CHANGED,
                                       link_callback,
-                                      ifindex);
+                                      ifindex_port);
     link_removed = add_signal_ifindex(NM_PLATFORM_SIGNAL_LINK_CHANGED,
                                       NM_PLATFORM_SIGNAL_REMOVED,
                                       link_callback,
-                                      ifindex);
+                                      ifindex_port);
     accept_signal(link_added);
 
-    /* Set the slave up to see whether master's IFF_LOWER_UP is set correctly.
+    /* Set the port up to see whether controller's IFF_LOWER_UP is set correctly.
      *
      * See https://bugzilla.redhat.com/show_bug.cgi?id=910348
      */
-    g_assert(!nm_platform_link_is_up(NM_PLATFORM_GET, ifindex));
-    g_assert(nm_platform_link_change_flags(NM_PLATFORM_GET, ifindex, IFF_UP, FALSE) >= 0);
-    g_assert(!nm_platform_link_is_up(NM_PLATFORM_GET, ifindex));
+    g_assert(!nm_platform_link_is_up(NM_PLATFORM_GET, ifindex_port));
+    g_assert(nm_platform_link_change_flags(NM_PLATFORM_GET, ifindex_port, IFF_UP, FALSE) >= 0);
+    g_assert(!nm_platform_link_is_up(NM_PLATFORM_GET, ifindex_port));
     ensure_no_signal(link_changed);
 
-    /* Enslave */
-    link_changed->ifindex = ifindex;
-    g_assert(nm_platform_link_enslave(NM_PLATFORM_GET, master, ifindex));
-    g_assert_cmpint(nm_platform_link_get_master(NM_PLATFORM_GET, ifindex), ==, master);
+    /* Attach port */
+    link_changed->ifindex = ifindex_port;
+    g_assert(nm_platform_link_enslave(NM_PLATFORM_GET, controller, ifindex_port));
+    g_assert_cmpint(nm_platform_link_get_master(NM_PLATFORM_GET, ifindex_port), ==, controller);
 
     accept_signals(link_changed, 1, 3);
-    accept_signals(master_changed, 0, 2);
+    accept_signals(controller_changed, 0, 2);
 
-    /* enslaveing brings put the slave */
-    if (NM_IN_SET(link_type, NM_LINK_TYPE_BOND, NM_LINK_TYPE_TEAM))
-        g_assert(nm_platform_link_is_up(NM_PLATFORM_GET, ifindex));
+    /* Attaching ports brings up the port */
+    if (NM_IN_SET(controller_type, NM_LINK_TYPE_BOND, NM_LINK_TYPE_TEAM))
+        g_assert(nm_platform_link_is_up(NM_PLATFORM_GET, ifindex_port));
     else
-        g_assert(!nm_platform_link_is_up(NM_PLATFORM_GET, ifindex));
+        g_assert(!nm_platform_link_is_up(NM_PLATFORM_GET, ifindex_port));
 
-    if (NM_IN_SET(link_type, NM_LINK_TYPE_BOND)) {
+    if (NM_IN_SET(controller_type, NM_LINK_TYPE_BOND)) {
         NMPlatformLinkBondPort   bond_port;
         gboolean                 prio_has;
         gboolean                 prio_supported;
@@ -283,7 +283,7 @@ test_slave(int master, int type, SignalData *master_changed)
         link = nmtstp_link_get_typed(NM_PLATFORM_GET, 0, SLAVE_NAME, NM_LINK_TYPE_DUMMY);
         g_assert(link);
 
-        lnk = nm_platform_link_get_lnk_bond(NM_PLATFORM_GET, master, NULL);
+        lnk = nm_platform_link_get_lnk_bond(NM_PLATFORM_GET, controller, NULL);
         g_assert(lnk);
 
         g_assert(NM_IN_SET(lnk->mode, 3, 1));
@@ -296,13 +296,24 @@ test_slave(int master, int type, SignalData *master_changed)
             .prio     = prio_has ? 6 : 0,
         };
 
-        g_assert(nm_platform_link_change(NM_PLATFORM_GET, ifindex, NULL, &bond_port, 0));
+        g_assert(nm_platform_link_change(NM_PLATFORM_GET, ifindex_port, NULL, &bond_port, 0));
         accept_signals(link_changed, 1, 3);
 
-        link = nmtstp_link_get(NM_PLATFORM_GET, ifindex, SLAVE_NAME);
+        link = nmtstp_link_get(NM_PLATFORM_GET, ifindex_port, SLAVE_NAME);
         g_assert(link);
         g_assert_cmpint(link->port_data.bond.queue_id, ==, 5);
         g_assert(link->port_data.bond.prio_has || link->port_data.bond.prio == 0);
+    } else if (controller_type == NM_LINK_TYPE_BRIDGE) {
+        /* Skip this part for nm-fake-platform */
+        if (nmtstp_is_root_test() && nmtstp_is_sysfs_writable()) {
+            g_assert(nm_platform_sysctl_slave_set_option(NM_PLATFORM_GET,
+                                                         ifindex_port,
+                                                         "priority",
+                                                         "614"));
+            value = nm_platform_sysctl_slave_get_option(NM_PLATFORM_GET, ifindex_port, "priority");
+            g_assert_cmpstr(value, ==, "614");
+            g_free(value);
+        }
     }
 
     test_link_changed_signal_arg1 = FALSE;
@@ -316,10 +327,10 @@ test_slave(int master, int type, SignalData *master_changed)
                      G_CALLBACK(test_link_changed_signal_cb),
                      &test_link_changed_signal_arg2);
 
-    /* Set master up */
-    g_assert(nm_platform_link_change_flags(NM_PLATFORM_GET, master, IFF_UP, TRUE) >= 0);
-    g_assert(nm_platform_link_is_up(NM_PLATFORM_GET, master));
-    accept_signals(master_changed, 1, 3);
+    /* Set controller up */
+    g_assert(nm_platform_link_change_flags(NM_PLATFORM_GET, controller, IFF_UP, TRUE) >= 0);
+    g_assert(nm_platform_link_is_up(NM_PLATFORM_GET, controller));
+    accept_signals(controller_changed, 1, 3);
 
     g_signal_handlers_disconnect_by_func(NM_PLATFORM_GET,
                                          G_CALLBACK(test_link_changed_signal_cb),
@@ -330,28 +341,28 @@ test_slave(int master, int type, SignalData *master_changed)
     g_assert(test_link_changed_signal_arg1);
     g_assert(test_link_changed_signal_arg2);
 
-    /* Master with a disconnected slave is disconnected
+    /* Master with a disconnected port is disconnected
      *
-     * For some reason, bonding and teaming slaves are automatically set up. We
+     * For some reason, bonding and teaming ports are automatically set up. We
      * need to set them back down for this test.
      */
-    switch (nm_platform_link_get_type(NM_PLATFORM_GET, master)) {
+    switch (nm_platform_link_get_type(NM_PLATFORM_GET, controller)) {
     case NM_LINK_TYPE_BOND:
     case NM_LINK_TYPE_TEAM:
-        g_assert(nm_platform_link_change_flags(NM_PLATFORM_GET, ifindex, IFF_UP, FALSE) >= 0);
+        g_assert(nm_platform_link_change_flags(NM_PLATFORM_GET, ifindex_port, IFF_UP, FALSE) >= 0);
         accept_signal(link_changed);
-        accept_signals(master_changed, 0, 3);
+        accept_signals(controller_changed, 0, 3);
         break;
     default:
         break;
     }
-    g_assert(!nm_platform_link_is_up(NM_PLATFORM_GET, ifindex));
-    g_assert(!nm_platform_link_is_connected(NM_PLATFORM_GET, ifindex));
-    if (nmtstp_is_root_test() && nm_platform_link_is_connected(NM_PLATFORM_GET, master)) {
-        if (nm_platform_link_get_type(NM_PLATFORM_GET, master) == NM_LINK_TYPE_TEAM) {
-            /* Older team versions (e.g. Fedora 17) have a bug that team master stays
-             * IFF_LOWER_UP even if its slave is down. Double check it with iproute2 and if
-             * `ip link` also claims master to be up, accept it. */
+    g_assert(!nm_platform_link_is_up(NM_PLATFORM_GET, ifindex_port));
+    g_assert(!nm_platform_link_is_connected(NM_PLATFORM_GET, ifindex_port));
+    if (nmtstp_is_root_test() && nm_platform_link_is_connected(NM_PLATFORM_GET, controller)) {
+        if (nm_platform_link_get_type(NM_PLATFORM_GET, controller) == NM_LINK_TYPE_TEAM) {
+            /* Older team versions (e.g. Fedora 17) have a bug that team controller stays
+             * IFF_LOWER_UP even if its port is down. Double check it with iproute2 and if
+             * `ip link` also claims controller to be up, accept it. */
             char *stdout_str = NULL;
 
             nmtst_spawn_sync(NULL,
@@ -362,7 +373,7 @@ test_slave(int master, int type, SignalData *master_changed)
                              "link",
                              "show",
                              "dev",
-                             nm_platform_link_get_name(NM_PLATFORM_GET, master));
+                             nm_platform_link_get_name(NM_PLATFORM_GET, controller));
 
             g_assert(strstr(stdout_str, "LOWER_UP"));
             g_free(stdout_str);
@@ -370,44 +381,29 @@ test_slave(int master, int type, SignalData *master_changed)
             g_assert_not_reached();
     }
 
-    /* Set slave up and see if master gets up too */
-    g_assert(nm_platform_link_change_flags(NM_PLATFORM_GET, ifindex, IFF_UP, TRUE) >= 0);
-    g_assert(nm_platform_link_is_connected(NM_PLATFORM_GET, ifindex));
-    g_assert(nm_platform_link_is_connected(NM_PLATFORM_GET, master));
+    /* Set port up and see if controller gets up too */
+    g_assert(nm_platform_link_change_flags(NM_PLATFORM_GET, ifindex_port, IFF_UP, TRUE) >= 0);
+    g_assert(nm_platform_link_is_connected(NM_PLATFORM_GET, ifindex_port));
+    g_assert(nm_platform_link_is_connected(NM_PLATFORM_GET, controller));
     accept_signals(link_changed, 1, 3);
     /* NM running, can cause additional change of addrgenmode */
-    accept_signals(master_changed, 0, 3);
+    accept_signals(controller_changed, 0, 3);
 
-    /* Enslave again
+    /* Attach port again
      *
-     * Gracefully succeed if already enslaved.
+     * Gracefully succeed if already attached port.
      */
     ensure_no_signal(link_changed);
-    g_assert(nm_platform_link_enslave(NM_PLATFORM_GET, master, ifindex));
+    g_assert(nm_platform_link_enslave(NM_PLATFORM_GET, controller, ifindex_port));
     accept_signals(link_changed, 0, 2);
-    accept_signals(master_changed, 0, 2);
-
-    /* Set slave option */
-    switch (type) {
-    case NM_LINK_TYPE_BRIDGE:
-        if (nmtstp_is_sysfs_writable()) {
-            g_assert(
-                nm_platform_sysctl_slave_set_option(NM_PLATFORM_GET, ifindex, "priority", "614"));
-            value = nm_platform_sysctl_slave_get_option(NM_PLATFORM_GET, ifindex, "priority");
-            g_assert_cmpstr(value, ==, "614");
-            g_free(value);
-        }
-        break;
-    default:
-        break;
-    }
+    accept_signals(controller_changed, 0, 2);
 
     /* Release */
     ensure_no_signal(link_added);
     ensure_no_signal(link_changed);
     ensure_no_signal(link_removed);
-    g_assert(nm_platform_link_release(NM_PLATFORM_GET, master, ifindex));
-    g_assert_cmpint(nm_platform_link_get_master(NM_PLATFORM_GET, ifindex), ==, 0);
+    g_assert(nm_platform_link_release(NM_PLATFORM_GET, controller, ifindex_port));
+    g_assert_cmpint(nm_platform_link_get_master(NM_PLATFORM_GET, ifindex_port), ==, 0);
     if (link_changed->received_count > 0) {
         accept_signals(link_added, 0, 1);
         accept_signals(link_changed, 1, 5);
@@ -419,22 +415,22 @@ test_slave(int master, int type, SignalData *master_changed)
         ensure_no_signal(link_changed);
         accept_signal(link_removed);
     }
-    accept_signals(master_changed, 0, 3);
+    accept_signals(controller_changed, 0, 3);
 
-    ensure_no_signal(master_changed);
+    ensure_no_signal(controller_changed);
 
     /* Release again */
     ensure_no_signal(link_changed);
-    g_assert(!nm_platform_link_release(NM_PLATFORM_GET, master, ifindex));
+    g_assert(!nm_platform_link_release(NM_PLATFORM_GET, controller, ifindex_port));
 
-    ensure_no_signal(master_changed);
+    ensure_no_signal(controller_changed);
 
     /* Remove */
     ensure_no_signal(link_added);
     ensure_no_signal(link_changed);
     ensure_no_signal(link_removed);
-    nmtstp_link_delete(NULL, -1, ifindex, NULL, TRUE);
-    accept_signals(master_changed, 0, 1);
+    nmtstp_link_delete(NULL, -1, ifindex_port, NULL, TRUE);
+    accept_signals(controller_changed, 0, 1);
     accept_signals(link_changed, 0, 1);
     accept_signal(link_removed);
 
@@ -538,7 +534,7 @@ test_software(NMLinkType link_type, const char *link_typename)
     case NM_LINK_TYPE_BOND:
     case NM_LINK_TYPE_TEAM:
         link_changed->ifindex = ifindex;
-        test_slave(ifindex, NM_LINK_TYPE_DUMMY, link_changed);
+        test_port(ifindex, NM_LINK_TYPE_DUMMY, link_changed);
         link_changed->ifindex = 0;
         break;
     default:
