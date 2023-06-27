@@ -1,4 +1,20 @@
 ===============================================
+NetworkManager-1.42.8
+Overview of changes since NetworkManager-1.42.6
+===============================================
+
+* Add support for ppp 2.5.0.
+- Fix nft rules for balance-slb bonding.
+- Support port priority for bonding.
+- Fix regression handling the PKEY_ID for infiniband profiles
+  in ifcfg-rh format.
+- Fix race in nm-cloud-setup that caused partial configuration
+  and loss of connectivity with multiple interfaces.
+- Don't touch "net.ipv6.conf.$IFACE.forwarding" unless explicitly
+  required for IPv6 sharing.
+- Various bugfixes related to team, Wi-Fi P2P, IPv6LL.
+
+===============================================
 NetworkManager-1.42.6
 Overview of changes since NetworkManager-1.42.4
 ===============================================
