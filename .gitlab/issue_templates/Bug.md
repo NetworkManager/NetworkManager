@@ -14,5 +14,5 @@
 
 ## Relevant logs
 
-(Please see the DEBUGGING section of `man NetworkManager` and attach any relevant log)
+(Please see the DEBUGGING section of "[man NetworkManager](https://networkmanager.pages.freedesktop.org/NetworkManager/NetworkManager/NetworkManager.html)" and attach any relevant log)
 
