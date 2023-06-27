@@ -12712,7 +12712,7 @@ check_and_reapply_connection(NMDevice *    self,
     NMSettingIPConfig *            s_ip4_old, *s_ip4_new;
     NMSettingIPConfig *            s_ip6_old, *s_ip6_new;
     GHashTableIter                 iter;
-    NMSettingsConnection          *sett_conn;
+    NMSettingsConnection *         sett_conn;
 
     if (priv->state < NM_DEVICE_STATE_PREPARE || priv->state > NM_DEVICE_STATE_ACTIVATED) {
         g_set_error_literal(error,
