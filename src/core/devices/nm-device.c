@@ -12902,6 +12902,7 @@ check_and_reapply_connection(NMDevice            *self,
     NMConnection                  *con_old;
     NMConnection                  *con_new;
     GHashTableIter                 iter;
+    NMSettingsConnection          *sett_conn;
 
     if (priv->state < NM_DEVICE_STATE_PREPARE || priv->state > NM_DEVICE_STATE_ACTIVATED) {
         g_set_error_literal(error,
@@ -13073,6 +13074,14 @@ check_and_reapply_connection(NMDevice            *self,
 
     if (priv->state >= NM_DEVICE_STATE_ACTIVATED)
         nm_device_update_metered(self);
+
+    sett_conn = nm_device_get_settings_connection(self);
+    if (sett_conn) {
+        nm_settings_connection_autoconnect_blocked_reason_set(
+            sett_conn,
+            NM_SETTINGS_AUTO_CONNECT_BLOCKED_REASON_USER_REQUEST,
+            FALSE);
+    }
 
     /* Notify dispatcher when re-applied */
     _LOGD(LOGD_DEVICE, "Notifying re-apply complete");
