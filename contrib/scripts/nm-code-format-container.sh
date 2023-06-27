@@ -10,7 +10,11 @@ die() {
 DIR="$(realpath "$(dirname "$0")/../../")"
 cd "$DIR"
 
-FEDORA_VERSION=38
+# The correct clang-format version is the one from the Fedora version used in our
+# gitlab-ci pipeline. Parse it from ".gitlab-ci/config.yml".
+FEDORA_VERSION="$(sed '/^    tier: 1/,/^  - name/!d' .gitlab-ci/config.yml | sed -n "s/^      - '\([0-9]\+\)'$/\1/p" | sed -n 1p)"
+
+test -n "$FEDORA_VERSION" || die "Could not detect the Fedora version in .gitlab-ci/config.yml"
 
 PODNAME="nm-code-format-f$FEDORA_VERSION"
 
