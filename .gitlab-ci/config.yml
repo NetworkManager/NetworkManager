@@ -4,7 +4,7 @@
 #   ci-fairy generate-template
 #
 # The ci-fairy tool is part of
-# https://gitlab.freedesktop.org/freedesktop/ci-templates
+# https://gitlab.freedesktop.org/thaller/ci-templates
 #
 
 # Some distros are fairly similar, and we reuse similar scripts.

@@ -6,7 +6,7 @@ https://gitlab.freedesktop.org/NetworkManager/NetworkManager/-/pipelines
 
 This directory contains a template for generating [.gitlab-ci.yml](../.gitlab-ci.yml).
 
-It uses [ci-templates](https://gitlab.freedesktop.org/freedesktop/ci-templates/) project.
+It uses [ci-templates](https://gitlab.freedesktop.org/thaller/ci-templates/) project.
 
 To get the right version of ci-templates, see the "Regenerate with" comment in
 [.gitlab-ci.yml](../.gitlab-ci.yml).  It shows how to install ci-fairy via

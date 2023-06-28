@@ -7,36 +7,36 @@
 #                                      #
 # Regenerate with:
 #   TEMPLATE_SHA="$(sed -n 's/^.templates_sha: *\&template_sha *\([0-9a-f]\+\)$/\1/p' ./.gitlab-ci/ci.template)"
-#   pip3 install "git+http://gitlab.freedesktop.org/freedesktop/ci-templates@$TEMPLATE_SHA"
+#   pip3 install "git+http://gitlab.freedesktop.org/thaller/ci-templates@$TEMPLATE_SHA"
 #   ci-fairy generate-template
 #
 ########################################
 
 
 # see https://docs.gitlab.com/ee/ci/yaml/#includefile
-.templates_sha: &template_sha 184ca628f89f3193c249b4e34e45afee2773a833
+.templates_sha: &template_sha 0c3f682516663e131843df9f7fcade654f6285bc
 
 
 
 include:
   # Alpine container builder template
-  - project: 'freedesktop/ci-templates'
+  - project: 'thaller/ci-templates'
     ref: *template_sha
     file: '/templates/alpine.yml'
   # Centos container builder template
-  - project: 'freedesktop/ci-templates'
+  - project: 'thaller/ci-templates'
     ref: *template_sha
     file: '/templates/centos.yml'
   # Debian container builder template
-  - project: 'freedesktop/ci-templates'
+  - project: 'thaller/ci-templates'
     ref: *template_sha
     file: '/templates/debian.yml'
   # Fedora container builder template
-  - project: 'freedesktop/ci-templates'
+  - project: 'thaller/ci-templates'
     ref: *template_sha
     file: '/templates/fedora.yml'
   # Ubuntu container builder template
-  - project: 'freedesktop/ci-templates'
+  - project: 'thaller/ci-templates'
     ref: *template_sha
     file: '/templates/ubuntu.yml'
 
@@ -57,11 +57,11 @@ variables:
   #
   # This is done by running `ci-fairy generate-template` and possibly bumping
   # ".default_tag".
-  ALPINE_TAG:  'tag-d53edbf2ebdd'
-  CENTOS_TAG:  'tag-c374af7add25'
-  DEBIAN_TAG:  'tag-33f59276e980'
-  FEDORA_TAG:  'tag-c374af7add25'
-  UBUNTU_TAG:  'tag-33f59276e980'
+  ALPINE_TAG:  'tag-7e6203220b3c'
+  CENTOS_TAG:  'tag-1b7c359a7801'
+  DEBIAN_TAG:  'tag-84a0afd00643'
+  FEDORA_TAG:  'tag-1b7c359a7801'
+  UBUNTU_TAG:  'tag-84a0afd00643'
 
   ALPINE_EXEC: 'bash .gitlab-ci/alpine-install.sh'
   CENTOS_EXEC: 'bash .gitlab-ci/fedora-install.sh'
