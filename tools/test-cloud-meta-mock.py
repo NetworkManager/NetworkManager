@@ -45,7 +45,7 @@ def _s_to_bool(s):
     if isinstance(s, int):
         if s in [0, 1]:
             return s == 1
-    raise ValueError(f'Not a boolean value ("{s0}")')
+    raise ValueError('Not a boolean value ("%s")' % (s0,))
 
 
 DEBUG = _s_to_bool(os.environ.get("NM_TEST_CLOUD_SETUP_MOCK_DEBUG", "0"))
