@@ -57,11 +57,11 @@ variables:
   #
   # This is done by running `ci-fairy generate-template` and possibly bumping
   # ".default_tag".
-  ALPINE_TAG:  'tag-d53edbf2ebdd'
-  CENTOS_TAG:  'tag-c374af7add25'
-  DEBIAN_TAG:  'tag-33f59276e980'
-  FEDORA_TAG:  'tag-c374af7add25'
-  UBUNTU_TAG:  'tag-33f59276e980'
+  ALPINE_TAG:  'tag-c8098af7124c'
+  CENTOS_TAG:  'tag-3d4e015f0349'
+  DEBIAN_TAG:  'tag-b53d33c8107d'
+  FEDORA_TAG:  'tag-3d4e015f0349'
+  UBUNTU_TAG:  'tag-b53d33c8107d'
 
   ALPINE_EXEC: 'bash .gitlab-ci/alpine-install.sh'
   CENTOS_EXEC: 'bash .gitlab-ci/fedora-install.sh'
@@ -433,6 +433,17 @@ tier2:alpine:latest@prep:
   variables:
     GIT_STRATEGY: none
     FDO_DISTRIBUTION_VERSION: 'latest'
+    FDO_DISTRIBUTION_TAG: $ALPINE_TAG
+    FDO_DISTRIBUTION_EXEC: $ALPINE_EXEC
+  when: manual
+
+tier2:alpine:edge@prep:
+  extends:
+    - .fdo.container-build@alpine
+  stage: prep
+  variables:
+    GIT_STRATEGY: none
+    FDO_DISTRIBUTION_VERSION: 'edge'
     FDO_DISTRIBUTION_TAG: $ALPINE_TAG
     FDO_DISTRIBUTION_EXEC: $ALPINE_EXEC
   when: manual
@@ -835,6 +846,18 @@ t_alpine:latest:
     FDO_DISTRIBUTION_TAG: $ALPINE_TAG
   needs:
     - "tier2:alpine:latest@prep"
+
+t_alpine:edge:
+  extends:
+    - .build@template
+    - .fdo.distribution-image@alpine
+    - .nm_artifacts_debug
+  stage: tier2
+  variables:
+    FDO_DISTRIBUTION_VERSION: 'edge'
+    FDO_DISTRIBUTION_TAG: $ALPINE_TAG
+  needs:
+    - "tier2:alpine:edge@prep"
 
 #################################################################
 #                                                               #

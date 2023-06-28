@@ -77,3 +77,4 @@ distributions:
     tier: 2
     versions:
       - 'latest'
+      - 'edge'
