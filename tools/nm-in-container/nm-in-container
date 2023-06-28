@@ -424,6 +424,7 @@ RUN dnf install -y \\
     \\
     'dbus*' \\
     'openvswitch2*' \\
+    /usr/bin/pytest \\
     /usr/bin/debuginfo-install \\
     NetworkManager-openvpn \\
     NetworkManager-pptp \\
@@ -442,8 +443,6 @@ RUN dnf install -y \\
     ethtool \\
     firewalld \\
     gcc \\
-    gdb \\
-    gdb \\
     git \\
     hostapd \\
     iproute-tc \\
