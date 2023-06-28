@@ -5,6 +5,15 @@ set -ex
 grep -q '^VERSION=.\(9 (stretch)\|18.04.[0-9]\+ LTS\)' /etc/os-release && IS_DEBIAN_9=1 || IS_DEBIAN_9=0
 
 if [ $IS_DEBIAN_9 = 1 ]; then
+    cat > /etc/apt/sources.list <<EOF
+deb http://archive.debian.org/debian/ stretch main non-free contrib
+deb-src http://archive.debian.org/debian/ stretch main non-free contrib
+deb http://archive.debian.org/debian-security/ stretch/updates main non-free contrib
+deb-src http://archive.debian.org/debian-security/ stretch/updates main non-free contrib
+EOF
+fi
+
+if [ $IS_DEBIAN_9 = 1 ]; then
     # pam is hosted on this release to the point chfn doesn't work.
     # It's okay on Ubuntu 16.04 and 20.04 though, so keep this version specific.
     #
