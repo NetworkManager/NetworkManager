@@ -125,6 +125,9 @@ typedef struct {
 
     NMConfig *config;
 
+    NMDnsConfigIPData *best_ip_config_4;
+    NMDnsConfigIPData *best_ip_config_6;
+
     struct {
         guint64 ts;
         guint   num_restarts;
@@ -1978,6 +1981,7 @@ nm_dns_manager_set_ip_config(NMDnsManager         *self,
     NMDnsConfigIPData   *ip_data = NULL;
     int                  dns_priority;
     gboolean             any_removed = FALSE;
+    NMDnsConfigIPData  **p_best;
 
     g_return_val_if_fail(NM_IS_DNS_MANAGER(self), FALSE);
     g_return_val_if_fail(!l3cd || NM_IS_L3_CONFIG_DATA(l3cd), FALSE);
@@ -2045,6 +2049,12 @@ nm_dns_manager_set_ip_config(NMDnsManager         *self,
             }
 
             any_removed = TRUE;
+
+            if (priv->best_ip_config_4 == ip_data_iter)
+                priv->best_ip_config_4 = NULL;
+            if (priv->best_ip_config_6 == ip_data_iter)
+                priv->best_ip_config_6 = NULL;
+
             _dns_config_ip_data_free(ip_data_iter);
         }
     }
@@ -2093,6 +2103,19 @@ nm_dns_manager_set_ip_config(NMDnsManager         *self,
     } else {
         ip_data->ip_config_type = ip_config_type;
         changed                 = TRUE;
+    }
+
+    p_best = NM_IS_IPv4(addr_family) ? &priv->best_ip_config_4 : &priv->best_ip_config_6;
+    if (ip_config_type == NM_DNS_IP_CONFIG_TYPE_BEST_DEVICE) {
+        /* Only one best-device per IP version is allowed */
+        if (*p_best != ip_data) {
+            if (*p_best)
+                (*p_best)->ip_config_type = NM_DNS_IP_CONFIG_TYPE_DEFAULT;
+            *p_best = ip_data;
+        }
+    } else {
+        if (*p_best == ip_data)
+            *p_best = NULL;
     }
 
     if (changed)
@@ -2818,6 +2841,9 @@ dispose(GObject *object)
     _clear_plugin(self);
 
     nm_clear_g_source_inst(&priv->update_pending_unblock);
+
+    priv->best_ip_config_4 = NULL;
+    priv->best_ip_config_6 = NULL;
 
     c_list_for_each_entry_safe (ip_data, ip_data_safe, &priv->ip_data_lst_head, ip_data_lst)
         _dns_config_ip_data_free(ip_data);
