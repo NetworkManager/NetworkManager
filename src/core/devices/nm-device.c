@@ -9590,11 +9590,7 @@ sriov_params_cb(GError *error, gpointer user_data)
     if (!nm_platform_link_set_sriov_vfs(nm_device_get_platform(self),
                                         priv->ifindex,
                                         (const NMPlatformVF *const *) plat_vfs)) {
-        _LOGE(LOGD_DEVICE, "failed to apply SR-IOV VFs");
-        nm_device_state_changed(self,
-                                NM_DEVICE_STATE_FAILED,
-                                NM_DEVICE_STATE_REASON_SRIOV_CONFIGURATION_FAILED);
-        return;
+        _LOGW(LOGD_DEVICE, "failed to apply SR-IOV VF configurations");
     }
 
     priv->stage1_sriov_state = NM_DEVICE_STAGE_STATE_COMPLETED;
