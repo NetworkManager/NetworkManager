@@ -173,7 +173,9 @@
         <para><literal>NM_CLOUD_SETUP_LOG</literal>: control the logging verbosity. Set it
           to one of <literal>TRACE</literal>, <literal>DEBUG</literal>, <literal>INFO</literal>,
           <literal>WARN</literal>, <literal>ERR</literal> or <literal>OFF</literal>. The program
-          will print message on stdout and the default level is <literal>WARN</literal>.</para>
+          will print message on stdout and the default level is <literal>WARN</literal>. When
+          run as systemd service, the log will be collected by journald can can be seen with
+          <command>journalctl</command>.</para>
       </listitem>
       <listitem>
         <para><literal>NM_CLOUD_SETUP_AZURE</literal>: boolean, whether Microsoft Azure support is enabled. Defaults
@@ -193,6 +195,16 @@
       </listitem>
     </itemizedlist>
 
+  </refsect1>
+
+  <refsect1 id="debugging">
+    <title>Debugging</title>
+    <para>Enable debug logging by setting <literal>NM_CLOUD_SETUP_LOG</literal> environment variable to <literal>TRACE</literal>.</para>
+    <para>In the common case where nm-cloud-setup is running as systemd service, this can be done via <command>systemctl edit nm-cloud-setup.service</command>
+    and add <literal>Environment=NM_CLOUD_SETUP_LOG=TRACE</literal> to the <literal>[Service]</literal> section. Afterwards, the log can
+    be found in syslog via <literal>journalctl</literal>. You may also want to enable debug logging in NetworkManager as descibed
+    in the DEBUGGING section in <link linkend='NetworkManager'><citerefentry><refentrytitle>NetworkManager</refentrytitle><manvolnum>5</manvolnum></citerefentry></link>
+    manual. When sharing logs, it's best to share complete logs and not preemptively filter for NetworkManager or nm-cloud-setup logs.</para>
   </refsect1>
 
   <refsect1 id="deploy">
