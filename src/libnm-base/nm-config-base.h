@@ -50,6 +50,7 @@
 #define NM_CONFIG_KEYFILE_KEY_KEYFILE_PATH              "path"
 #define NM_CONFIG_KEYFILE_KEY_KEYFILE_UNMANAGED_DEVICES "unmanaged-devices"
 #define NM_CONFIG_KEYFILE_KEY_KEYFILE_HOSTNAME          "hostname"
+#define NM_CONFIG_KEYFILE_KEY_KEYFILE_RENAME            "rename"
 
 #define NM_CONFIG_KEYFILE_KEY_IFUPDOWN_MANAGED "managed"
 

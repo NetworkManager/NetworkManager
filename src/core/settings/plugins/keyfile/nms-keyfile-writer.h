@@ -22,7 +22,7 @@ gboolean nms_keyfile_writer_connection(NMConnection                   *connectio
                                        const char                     *profile_dir,
                                        const char                     *existing_path,
                                        gboolean                        existing_path_read_only,
-                                       gboolean                        force_rename,
+                                       NMTernary                       force_rename,
                                        NMSKeyfileWriterAllowFilenameCb allow_filename_cb,
                                        gpointer                        allow_filename_user_data,
                                        char                          **out_path,
@@ -30,13 +30,13 @@ gboolean nms_keyfile_writer_connection(NMConnection                   *connectio
                                        gboolean                       *out_reread_same,
                                        GError                        **error);
 
-gboolean nms_keyfile_writer_test_connection(NMConnection  *connection,
-                                            const char    *keyfile_dir,
-                                            uid_t          owner_uid,
-                                            pid_t          owner_grp,
-                                            char         **out_path,
-                                            NMConnection **out_reread,
-                                            gboolean      *out_reread_same,
-                                            GError       **error);
+gboolean nmtst_keyfile_writer_test_connection(NMConnection  *connection,
+                                              const char    *keyfile_dir,
+                                              uid_t          owner_uid,
+                                              pid_t          owner_grp,
+                                              char         **out_path,
+                                              NMConnection **out_reread,
+                                              gboolean      *out_reread_same,
+                                              GError       **error);
 
 #endif /* __NMS_KEYFILE_WRITER_H__ */

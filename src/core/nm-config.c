@@ -878,6 +878,7 @@ static const ConfigGroup config_groups[] = {
         .group = NM_CONFIG_KEYFILE_GROUP_KEYFILE,
         .keys  = NM_MAKE_STRV(NM_CONFIG_KEYFILE_KEY_KEYFILE_HOSTNAME,
                              NM_CONFIG_KEYFILE_KEY_KEYFILE_PATH,
+                             NM_CONFIG_KEYFILE_KEY_KEYFILE_RENAME,
                              NM_CONFIG_KEYFILE_KEY_KEYFILE_UNMANAGED_DEVICES, ),
     },
     {

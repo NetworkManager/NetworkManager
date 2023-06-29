@@ -138,14 +138,14 @@ write_test_connection_reread(NMConnection  *connection,
 
     connection_normalized = nmtst_connection_duplicate_and_normalize(connection);
 
-    success = nms_keyfile_writer_test_connection(connection_normalized,
-                                                 TEST_SCRATCH_DIR,
-                                                 owner_uid,
-                                                 owner_grp,
-                                                 testfile,
-                                                 out_reread,
-                                                 out_reread_same,
-                                                 p_error);
+    success = nmtst_keyfile_writer_test_connection(connection_normalized,
+                                                   TEST_SCRATCH_DIR,
+                                                   owner_uid,
+                                                   owner_grp,
+                                                   testfile,
+                                                   out_reread,
+                                                   out_reread_same,
+                                                   p_error);
     g_assert_no_error(error);
     g_assert(success);
     g_assert(*testfile && (*testfile)[0]);

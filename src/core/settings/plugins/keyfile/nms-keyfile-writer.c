@@ -195,7 +195,7 @@ _internal_write_connection(NMConnection                   *connection,
                            pid_t                           owner_grp,
                            const char                     *existing_path,
                            gboolean                        existing_path_read_only,
-                           gboolean                        force_rename,
+                           NMTernary                       force_rename,
                            NMSKeyfileWriterAllowFilenameCb allow_filename_cb,
                            gpointer                        allow_filename_user_data,
                            char                          **out_path,
@@ -212,6 +212,7 @@ _internal_write_connection(NMConnection                   *connection,
     gs_free_error GError           *local_err = NULL;
     int                             errsv;
     gboolean                        rename;
+    gboolean                        rename_follow;
     int                             i_path;
     gs_unref_object NMConnection   *reread      = NULL;
     gboolean                        reread_same = FALSE;
@@ -223,8 +224,12 @@ _internal_write_connection(NMConnection                   *connection,
 
     nm_assert(!shadowed_owned || shadowed_storage);
 
-    rename = force_rename || existing_path_read_only
-             || (existing_path && !nm_utils_file_is_in_path(existing_path, keyfile_dir));
+    rename = existing_path_read_only
+             || (existing_path && !nm_utils_file_is_in_path(existing_path, keyfile_dir))
+             || force_rename == NM_TERNARY_TRUE;
+
+    /* Follow the connection.id upon change. */
+    rename_follow = !rename && existing_path && force_rename == NM_TERNARY_DEFAULT;
 
     id = nm_connection_get_id(connection);
     nm_assert(id && *id);
@@ -283,7 +288,7 @@ _internal_write_connection(NMConnection                   *connection,
         gboolean      is_existing_path;
 
         if (i_path == -2) {
-            if (!existing_path || rename)
+            if (!existing_path || rename || rename_follow)
                 continue;
             path_candidate = g_strdup(existing_path);
         } else if (i_path == -1) {
@@ -427,7 +432,7 @@ nms_keyfile_writer_connection(NMConnection                   *connection,
                               const char                     *profile_dir,
                               const char                     *existing_path,
                               gboolean                        existing_path_read_only,
-                              gboolean                        force_rename,
+                              NMTernary                       force_rename,
                               NMSKeyfileWriterAllowFilenameCb allow_filename_cb,
                               gpointer                        allow_filename_user_data,
                               char                          **out_path,
@@ -458,14 +463,14 @@ nms_keyfile_writer_connection(NMConnection                   *connection,
 }
 
 gboolean
-nms_keyfile_writer_test_connection(NMConnection  *connection,
-                                   const char    *keyfile_dir,
-                                   uid_t          owner_uid,
-                                   pid_t          owner_grp,
-                                   char         **out_path,
-                                   NMConnection **out_reread,
-                                   gboolean      *out_reread_same,
-                                   GError       **error)
+nmtst_keyfile_writer_test_connection(NMConnection  *connection,
+                                     const char    *keyfile_dir,
+                                     uid_t          owner_uid,
+                                     pid_t          owner_grp,
+                                     char         **out_path,
+                                     NMConnection **out_reread,
+                                     gboolean      *out_reread_same,
+                                     GError       **error)
 {
     return _internal_write_connection(connection,
                                       FALSE,

@@ -12,6 +12,8 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
   be identical to the built-in default value when the stable-id is not set.
 * When configuring hostnames in non-public TLD (like "example.local"), use
   the TLD as default search domain instead of the full hostname.
+* Add a "[keyfile].rename" option to NetworkManager.conf to force renaming
+  profiles on disk when their name changes.
 
 =============================================
 NetworkManager-1.42
