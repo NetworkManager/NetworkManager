@@ -45,7 +45,7 @@ option('ebpf', type: 'combo', choices: ['auto', 'true', 'false'], description: '
 
 # configuration plugins
 option('config_plugins_default', type: 'string', value: '', description: 'Default configuration option for main.plugins setting, used as fallback if the configuration option is unset')
-option('ifcfg_rh', type: 'combo', choices: ['auto', 'true', 'false'], value: 'auto', description: 'enable ifcfg-rh configuration plugin (Fedora/RHEL)')
+option('ifcfg_rh', type: 'boolean', value: false, description: 'enable ifcfg-rh configuration plugin (Fedora/RHEL) (deprecated)')
 option('ifupdown', type: 'combo', choices:['auto', 'true', 'false'], value: 'auto', description: 'enable ifupdown configuration plugin (Debian/Ubuntu)')
 
 # handlers for resolv.conf

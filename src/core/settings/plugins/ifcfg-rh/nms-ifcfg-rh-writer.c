@@ -62,6 +62,24 @@
 /*****************************************************************************/
 
 static void
+set_error_unsupported(GError      **error,
+                      NMConnection *connection,
+                      const char   *name,
+                      gboolean      is_setting)
+{
+    g_set_error(error,
+                NM_SETTINGS_ERROR,
+                NM_SETTINGS_ERROR_NOT_SUPPORTED_BY_PLUGIN,
+                "The ifcfg-rh plugin doesn't support %s '%s'. If you are modifying an existing "
+                "connection profile saved in ifcfg-rh format, please migrate the connection to "
+                "keyfile using 'nmcli connection migrate %s' or via the Update2() D-Bus API "
+                "and try again.",
+                is_setting ? "setting" : "property",
+                name,
+                nm_connection_get_uuid(connection));
+};
+
+static void
 save_secret_flags(shvarFile *ifcfg, const char *key, NMSettingSecretFlags flags)
 {
     GString *str;
@@ -3487,6 +3505,11 @@ do_write_construct(NMConnection                   *connection,
     write_hostname_setting(connection, ifcfg);
     write_sriov_setting(connection, ifcfg);
     write_tc_setting(connection, ifcfg);
+
+    if (_nm_connection_get_setting(connection, NM_TYPE_SETTING_LINK)) {
+        set_error_unsupported(error, connection, "link", TRUE);
+        return FALSE;
+    }
 
     route_path_is_svformat = utils_has_route_file_new_syntax(route_path);
 
