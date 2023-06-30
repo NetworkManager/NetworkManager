@@ -225,7 +225,6 @@ controller_update_port_connection(NMDevice     *self,
 {
     NMSettingBondPort    *s_port;
     int                   ifindex_port       = nm_device_get_ifindex(port);
-    NMConnection         *applied_connection = nm_device_get_applied_connection(self);
     const NMPlatformLink *pllink;
 
     g_return_val_if_fail(ifindex_port > 0, FALSE);
@@ -243,7 +242,7 @@ controller_update_port_connection(NMDevice     *self,
 
     g_object_set(nm_connection_get_setting_connection(connection),
                  NM_SETTING_CONNECTION_MASTER,
-                 nm_connection_get_uuid(applied_connection),
+                 nm_device_get_iface(self),
                  NM_SETTING_CONNECTION_SLAVE_TYPE,
                  NM_SETTING_BOND_SETTING_NAME,
                  NULL);
