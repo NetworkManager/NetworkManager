@@ -1,0 +1,5 @@
+# Overrides for NetworkManager.service with nm-in-container
+# Placed in /etc/systemd/system/NetworkManager.service.d/
+[Service]
+Environment=G_DEBUG=fatal-warnings
+Environment=NM_OBFUSCATE_PTR=0

@@ -484,6 +484,8 @@ RUN dnf clean all
 
 RUN pip3 install --user behave_html_formatter || true
 
+RUN mkdir -p /etc/systemd/system/NetworkManager.service.d
+
 COPY data-NM-log "/usr/bin/NM-log"
 COPY data-nm-env-prepare.sh "/usr/bin/nm-env-prepare.sh"
 COPY data-nm-deploy.sh "/usr/bin/nm-deploy.sh"
@@ -497,6 +499,7 @@ COPY data-bash_history /root/.bash_history
 COPY data-gdbinit /root/.gdbinit
 COPY data-gdb_history /root/.gdb_history
 COPY data-behaverc /root/.behaverc
+COPY data-etc-systemd-20-nm-in-container.override /etc/systemd/system/NetworkManager.service.d/20-nm-in-container.override
 
 RUN systemctl enable NetworkManager
 
