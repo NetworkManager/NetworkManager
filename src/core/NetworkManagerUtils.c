@@ -23,6 +23,7 @@
 #include "nm-setting-connection.h"
 #include "nm-setting-ip4-config.h"
 #include "nm-setting-ip6-config.h"
+#include "settings/nm-settings.h"
 #include "libnm-core-intern/nm-core-internal.h"
 #include "libnm-platform/nmp-object.h"
 
@@ -684,6 +685,53 @@ check_connection_cloned_mac_address(NMConnection *orig,
 }
 
 static gboolean
+check_connection_controller(NMConnection *orig, NMConnection *candidate, GHashTable *settings)
+{
+    GHashTable           *props;
+    const char           *orig_controller = NULL, *cand_controller = NULL;
+    NMSettingConnection  *s_con_orig, *s_con_cand, *s_con_controller;
+    NMSettingsConnection *con_controller;
+
+    props = check_property_in_hash(settings,
+                                   NM_SETTING_CONNECTION_SETTING_NAME,
+                                   NM_SETTING_CONNECTION_MASTER);
+    if (!props)
+        return TRUE;
+
+    s_con_orig      = nm_connection_get_setting_connection(orig);
+    s_con_cand      = nm_connection_get_setting_connection(candidate);
+    orig_controller = nm_setting_connection_get_master(s_con_orig);
+    cand_controller = nm_setting_connection_get_master(s_con_cand);
+
+    /* A generated connection uses the UUID to specify the controller. Accept
+     * candidates that specify as controller an interface name matching that
+     * UUID */
+    if (orig_controller && cand_controller) {
+        if (nm_utils_is_uuid(orig_controller)) {
+            con_controller = nm_settings_get_connection_by_uuid(NM_SETTINGS_GET, orig_controller);
+            /* no connection found for that uuid */
+            if (!con_controller)
+                return FALSE;
+
+            s_con_controller =
+                nm_settings_connection_get_setting(con_controller, NM_META_SETTING_TYPE_CONNECTION);
+            if (nm_streq0(nm_setting_connection_get_interface_name(s_con_controller),
+                          cand_controller)) {
+                remove_from_hash(settings,
+                                 props,
+                                 NM_SETTING_CONNECTION_SETTING_NAME,
+                                 NM_SETTING_CONNECTION_MASTER);
+                return TRUE;
+            } else {
+                return FALSE;
+            }
+        }
+    }
+
+    return FALSE;
+}
+
+static gboolean
 check_connection_s390_props(NMConnection *orig, NMConnection *candidate, GHashTable *settings)
 {
     GHashTable     *props1, *props2, *props3;
@@ -762,6 +810,9 @@ check_possible_match(NMConnection *orig,
         return NULL;
 
     if (!check_connection_cloned_mac_address(orig, candidate, settings))
+        return NULL;
+
+    if (!check_connection_controller(orig, candidate, settings))
         return NULL;
 
     if (!check_connection_s390_props(orig, candidate, settings))
