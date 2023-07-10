@@ -7,6 +7,7 @@ option('kernel_firmware_dir', type: 'string', value: '/lib/firmware', descriptio
 option('iptables', type: 'string', value: '', description: 'path to iptables')
 option('nft', type: 'string', value: '', description: 'path to nft')
 option('dnsmasq', type: 'string', value: '', description: 'path to dnsmasq')
+option('modprobe', type: 'string', value: '', description: 'path to modprobe')
 
 # platform
 option('dist_version', type: 'string', value: '', description: 'Define the NM\'s distribution version string')

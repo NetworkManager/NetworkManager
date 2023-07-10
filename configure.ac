@@ -1008,6 +1008,19 @@ fi
 AC_DEFINE_UNQUOTED(NFT_PATH, "$NFT_PATH", [Define to path of nft binary])
 AC_SUBST(NFT_PATH)
 
+AC_ARG_WITH(modprobe,
+			AS_HELP_STRING([--with-modprobe=/sbin/modprobe], [path to modprobe]))
+if test "x${with_modprobe}" = x; then
+	AC_PATH_PROG(MODPROBE_PATH, modprobe, [], $PATH:/sbin:/usr/sbin)
+	if test "x$MODPROBE_PATH" = x; then
+		MODPROBE_PATH='/sbin/modprobe'
+	fi
+else
+	MODPROBE_PATH="$with_modprobe"
+fi
+AC_DEFINE_UNQUOTED(MODPROBE_PATH, "$MODPROBE_PATH", [Define to path of modprobe binary])
+AC_SUBST(MODPROBE_PATH)
+
 AC_ARG_WITH(dnsmasq,
             AS_HELP_STRING([--with-dnsmasq=/path/to/dnsmasq], [path to dnsmasq]))
 if test "x${with_dnsmasq}" = x; then
@@ -1422,6 +1435,7 @@ echo "  iwd: $ac_with_iwd"
 echo "  jansson: $have_jansson${JANSSON_SONAME:+ (soname: $JANSSON_SONAME)}"
 echo "  iptables: $IPTABLES_PATH"
 echo "  nft: $NFT_PATH"
+echo "  modprobe: $MODPROBE_PATH"
 echo
 
 echo "Configuration plugins (main.plugins=${config_plugins_default})"

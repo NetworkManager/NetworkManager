@@ -2180,7 +2180,7 @@ nmp_utils_modprobe(GError **error, gboolean suppress_error_logging, const char *
 
     /* construct the argument list */
     argv = g_ptr_array_sized_new(4);
-    g_ptr_array_add(argv, "/sbin/modprobe");
+    g_ptr_array_add(argv, MODPROBE_PATH);
     g_ptr_array_add(argv, "--use-blacklist");
     g_ptr_array_add(argv, (char *) arg1);
 

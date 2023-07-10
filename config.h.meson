@@ -13,6 +13,9 @@
 /* Define to path of dnsmasq binary */
 #mesondefine DNSMASQ_PATH
 
+/* Define to path of modprobe binary */
+#mesondefine MODPROBE_PATH
+
 /* Gettext package */
 #mesondefine GETTEXT_PACKAGE
 
