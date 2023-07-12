@@ -16940,6 +16940,7 @@ nm_device_hw_addr_reset(NMDevice *self, const char *detail)
 {
     NMDevicePrivate *priv;
     const char      *addr;
+    int              ifindex;
 
     g_return_val_if_fail(NM_IS_DEVICE(self), FALSE);
 
@@ -16949,7 +16950,13 @@ nm_device_hw_addr_reset(NMDevice *self, const char *detail)
         return TRUE;
 
     priv->hw_addr_type = HW_ADDR_TYPE_UNSET;
-    addr               = nm_device_get_initial_hw_address(self);
+
+    ifindex = nm_device_get_ip_ifindex(self);
+    if (ifindex <= 0) {
+        return TRUE;
+    }
+
+    addr = nm_device_get_initial_hw_address(self);
     if (!addr) {
         /* as hw_addr_type is not UNSET, we expect that we can get an
          * initial address to which to reset. */
