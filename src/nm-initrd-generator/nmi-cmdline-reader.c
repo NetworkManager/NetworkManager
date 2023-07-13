@@ -1274,7 +1274,39 @@ reader_parse_ethtool(Reader *reader, char *argument)
 static void
 _normalize_conn(gpointer key, gpointer value, gpointer user_data)
 {
-    NMConnection *connection = value;
+    NMConnection      *connection = value;
+    NMSettingIPConfig *s_ip4 = NULL, *s_ip6 = NULL;
+
+    s_ip4 = nm_connection_get_setting_ip4_config(connection);
+    if (s_ip4) {
+        const char *method = nm_setting_ip_config_get_method(s_ip4);
+
+        if (!nm_streq(method, NM_SETTING_IP4_CONFIG_METHOD_AUTO)) {
+            g_object_set(s_ip4,
+                         NM_SETTING_IP_CONFIG_DHCP_HOSTNAME,
+                         NULL,
+                         NM_SETTING_IP_CONFIG_DHCP_TIMEOUT,
+                         NULL,
+                         NM_SETTING_IP4_CONFIG_DHCP_VENDOR_CLASS_IDENTIFIER,
+                         NULL,
+                         NULL);
+        }
+    }
+
+    s_ip6 = nm_connection_get_setting_ip6_config(connection);
+    if (s_ip6) {
+        const char *method = nm_setting_ip_config_get_method(s_ip6);
+
+        if (!nm_streq(method, NM_SETTING_IP6_CONFIG_METHOD_AUTO)
+            && !nm_streq(method, NM_SETTING_IP6_CONFIG_METHOD_DHCP)) {
+            g_object_set(s_ip6,
+                         NM_SETTING_IP_CONFIG_DHCP_HOSTNAME,
+                         NULL,
+                         NM_SETTING_IP_CONFIG_DHCP_TIMEOUT,
+                         NULL,
+                         NULL);
+        }
+    }
 
     nm_connection_normalize(connection, NULL, NULL, NULL);
 }
