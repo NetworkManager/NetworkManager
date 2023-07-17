@@ -5352,7 +5352,7 @@ nm_utils_ifname_valid_kernel(const char *name, GError **error)
 
         if (ch == '\0')
             return TRUE;
-        if (NM_IN_SET(ch, '/', ':') || g_ascii_isspace(ch)) {
+        if (NM_IN_SET(ch, '/', ':') || nm_ascii_is_space_kernel(ch)) {
             g_set_error_literal(error,
                                 NM_UTILS_ERROR,
                                 NM_UTILS_ERROR_UNKNOWN,
