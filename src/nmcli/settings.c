@@ -498,7 +498,7 @@ _env_get_env_flags(const NMMetaEnvironment *environment, gpointer environment_us
 
     nm_assert(nmc);
 
-    return (nmc->offline ? NM_META_ENV_FLAGS_OFFLINE : NM_META_ENV_FLAGS_NONE);
+    return (nmc->nmc_config.offline ? NM_META_ENV_FLAGS_OFFLINE : NM_META_ENV_FLAGS_NONE);
 }
 
 /*****************************************************************************/

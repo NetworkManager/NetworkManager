@@ -132,6 +132,9 @@ typedef struct _NmcConfig {
     /* Overview mode (hide default values) */
     bool overview : 1;
 
+    /* Communicate the connection data over stdin/stdout instead of talking to the daemon. */
+    bool offline : 1;
+
     NmcColorPalette palette;
 } NmcConfig;
 
@@ -177,9 +180,6 @@ typedef struct _NmCli {
 
     /* Whether tabular/multiline mode was specified via '--mode' option */
     bool mode_specified : 1;
-
-    /* Communicate the connection data over stdin/stdout instead of talking to the daemon. */
-    bool offline : 1;
 
     /* Ask for missing parameters: option '--ask' */
     bool ask : 1;

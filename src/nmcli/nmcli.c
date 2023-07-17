@@ -785,7 +785,7 @@ process_command_line(NmCli *nmc, int argc, char **argv_orig)
         if (matches_arg(nmc, &argc, &argv, "-overview", NULL)) {
             nmc->nmc_config_mutable.overview = TRUE;
         } else if (matches_arg(nmc, &argc, &argv, "-offline", NULL)) {
-            nmc->offline = TRUE;
+            nmc->nmc_config_mutable.offline = TRUE;
         } else if (matches_arg(nmc, &argc, &argv, "-terse", NULL)) {
             if (nmc->nmc_config.print_output == NMC_PRINT_TERSE) {
                 g_string_printf(nmc->return_text,
