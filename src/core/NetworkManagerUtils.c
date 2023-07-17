@@ -1799,6 +1799,13 @@ nm_utils_platform_capture_ip_setting(NMPlatform *platform,
             method = maybe_ipv6_disabled ? NM_SETTING_IP6_CONFIG_METHOD_DISABLED
                                          : NM_SETTING_IP6_CONFIG_METHOD_IGNORE;
     }
+
+    /* The IPv6 method "ignore" and "disabled" are not supported for loopback */
+    if (ifindex == 1
+        && NM_IN_STRSET(method,
+                        NM_SETTING_IP6_CONFIG_METHOD_DISABLED,
+                        NM_SETTING_IP6_CONFIG_METHOD_IGNORE))
+        method = NM_SETTING_IP6_CONFIG_METHOD_AUTO;
     g_object_set(s_ip, NM_SETTING_IP_CONFIG_METHOD, method, NULL);
 
     nmp_lookup_init_object_by_ifindex(&lookup, NMP_OBJECT_TYPE_IP_ROUTE(IS_IPv4), ifindex);
