@@ -1371,7 +1371,7 @@ call_cmd(NmCli *nmc, GTask *task, const NMCCommand *cmd, int argc, const char *c
 {
     CmdCall *call;
 
-    if (nmc->offline) {
+    if (nmc->nmc_config.offline) {
         if (!cmd->supports_offline) {
             g_task_return_new_error(task,
                                     NMCLI_ERROR,

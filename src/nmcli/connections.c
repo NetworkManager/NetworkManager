@@ -237,7 +237,7 @@ error:
 static const GPtrArray *
 nmc_get_connections(const NmCli *nmc)
 {
-    if (nmc->offline) {
+    if (nmc->nmc_config.offline) {
         g_return_val_if_fail(!nmc->client, nmc->offline_connections);
         return nmc->offline_connections;
     } else {
@@ -251,7 +251,7 @@ nmc_get_active_connections(const NmCli *nmc)
 {
     static const GPtrArray offline_active_connections = {.len = 0};
 
-    if (nmc->offline) {
+    if (nmc->nmc_config.offline) {
         g_return_val_if_fail(!nmc->client, &offline_active_connections);
         return &offline_active_connections;
     } else {
@@ -2242,7 +2242,7 @@ get_connection(NmCli              *nmc,
     if (nmc->offline_connections && nmc->offline_connections->len)
         return nmc->offline_connections->pdata[0];
 
-    g_return_val_if_fail(!nmc->offline, NULL);
+    g_return_val_if_fail(!nmc->nmc_config.offline, NULL);
 
     if (*argc == 0) {
         g_set_error_literal(error,
@@ -5844,7 +5844,7 @@ again:
 static void
 nmc_add_connection(NmCli *nmc, NMConnection *connection, gboolean temporary)
 {
-    if (nmc->offline) {
+    if (nmc->nmc_config.offline) {
         nmc_print_connection_and_quit(nmc, connection);
     } else {
         add_connection(nmc->client,
@@ -9146,7 +9146,7 @@ modify_connection_cb(GObject *connection, GAsyncResult *result, gpointer user_da
 static void
 nmc_update_connection(NmCli *nmc, NMConnection *connection, gboolean temporary)
 {
-    if (nmc->offline) {
+    if (nmc->nmc_config.offline) {
         nmc_print_connection_and_quit(nmc, connection);
     } else {
         nm_remote_connection_commit_changes_async(NM_REMOTE_CONNECTION(connection),
@@ -9177,7 +9177,7 @@ do_connection_modify(const NMCCommand *cmd, NmCli *nmc, int argc, const char *co
     }
 
     /* Don't insist on having argument if we're running in offline mode. */
-    if (!nmc->offline || argc > 0) {
+    if (!nmc->nmc_config.offline || argc > 0) {
         if (!nmc_process_connection_properties(nmc, connection, &argc, &argv, TRUE, &error)) {
             g_string_assign(nmc->return_text, error->message);
             nmc->return_value = error->code;
