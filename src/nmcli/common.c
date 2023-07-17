@@ -880,7 +880,8 @@ read_again:
     rl_got_line = FALSE;
     rl_callback_handler_install(prompt, readline_cb);
 
-    while (!rl_got_line && g_main_loop_is_running(loop) && !nmc_seen_sigint())
+    while (!rl_got_line && (g_main_loop_is_running(loop) || nmc_config->offline)
+           && !nmc_seen_sigint())
         g_main_context_iteration(NULL, TRUE);
 
     /* If Ctrl-C was detected, complete the line */
@@ -909,7 +910,7 @@ read_again:
         }
     } else if (!rl_string) {
         /* Ctrl-D, exit */
-        if (g_main_loop_is_running(loop))
+        if (g_main_loop_is_running(loop) || nmc_config->offline)
             nmc_exit();
     }
 

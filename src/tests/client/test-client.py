@@ -703,11 +703,14 @@ class Util:
         return typ(pexp, valgrind_log)
 
     @staticmethod
-    def cmd_call_pexpect_nmcli(args):
+    def cmd_call_pexpect_nmcli(args, extra_env={}):
+        extra_env = extra_env.copy()
+        extra_env.update({"NO_COLOR": "1"})
+
         return Util.cmd_call_pexpect(
             ENV_NM_TEST_CLIENT_NMCLI_PATH,
             args,
-            {"NO_COLOR": "1"},
+            extra_env,
         )
 
 
@@ -2157,6 +2160,55 @@ class TestNmcli(unittest.TestCase):
         nmc.pexp.expect("Connection 'ethernet' \(.*\) successfully added.")
         nmc.pexp.expect(pexpect.EOF)
         Util.valgrind_check_log(nmc.valgrind_log, "test_ask_mode")
+
+    @Util.skip_without_pexpect
+    @nm_test
+    def test_ask_offline(self):
+        # Make sure we're not using D-Bus
+        no_dbus_env = {
+            "DBUS_SYSTEM_BUS_ADDRESS": "very:invalid",
+            "DBUS_SESSION_BUS_ADDRESS": "very:invalid",
+        }
+
+        nmc = Util.cmd_call_pexpect_nmcli(
+            ["--offline", "--ask", "c", "add"], extra_env=no_dbus_env
+        )
+        nmc.pexp.expect("Connection type:")
+        nmc.pexp.sendline("ethernet")
+        nmc.pexp.expect("Interface name:")
+        nmc.pexp.sendline("eth0")
+        nmc.pexp.expect("There are 3 optional settings for Wired Ethernet.")
+        nmc.pexp.expect("Do you want to provide them\? \(yes/no\) \[yes]")
+        nmc.pexp.sendline("no")
+        nmc.pexp.expect("There are 2 optional settings for IPv4 protocol.")
+        nmc.pexp.expect("Do you want to provide them\? \(yes/no\) \[yes]")
+        nmc.pexp.sendline("no")
+        nmc.pexp.expect("There are 2 optional settings for IPv6 protocol.")
+        nmc.pexp.expect("Do you want to provide them\? \(yes/no\) \[yes]")
+        nmc.pexp.sendline("no")
+        nmc.pexp.expect("There are 4 optional settings for Proxy.")
+        nmc.pexp.expect("Do you want to provide them\? \(yes/no\) \[yes]")
+        nmc.pexp.sendline("no")
+        nmc.pexp.expect(
+            "\[connection\]\r\n"
+            + "id=ethernet\r\n"
+            + "uuid=.*\r\n"
+            + "type=ethernet\r\n"
+            + "interface-name=eth0\r\n"
+            + "\r\n"
+            + "\[ethernet\]\r\n"
+            + "\r\n"
+            + "\[ipv4\]\r\n"
+            + "method=auto\r\n"
+            + "\r\n"
+            + "\[ipv6\]\r\n"
+            + "addr-gen-mode=default\r\n"
+            + "method=auto\r\n"
+            + "\r\n"
+            + "\[proxy\]\r\n"
+        )
+        nmc.pexp.expect(pexpect.EOF)
+        Util.valgrind_check_log(nmc.valgrind_log, "test_ask_offline")
 
     @Util.skip_without_pexpect
     @nm_test
