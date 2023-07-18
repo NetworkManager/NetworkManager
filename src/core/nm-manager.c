@@ -4600,11 +4600,11 @@ ensure_master_active_connection(NMManager            *self,
                     NULL))
                 continue;
 
-            if (!nm_device_is_software(candidate)) {
-                master_state = nm_device_get_state(candidate);
-                if (nm_device_is_real(candidate) && master_state != NM_DEVICE_STATE_DISCONNECTED)
-                    continue;
-            }
+            if (nm_device_is_real(candidate)
+                && !NM_IN_SET(nm_device_get_state(candidate),
+                              NM_DEVICE_STATE_DISCONNECTED,
+                              NM_DEVICE_STATE_DEACTIVATING))
+                continue;
 
             master_ac = nm_manager_activate_connection(
                 self,
