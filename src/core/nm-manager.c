@@ -5212,7 +5212,9 @@ ensure_master_active_connection(NMManager            *self,
                 continue;
 
             if (nm_device_is_real(candidate)
-                && nm_device_get_state(candidate) != NM_DEVICE_STATE_DISCONNECTED)
+                && !NM_IN_SET(nm_device_get_state(candidate),
+                              NM_DEVICE_STATE_DISCONNECTED,
+                              NM_DEVICE_STATE_DEACTIVATING))
                 continue;
 
             master_ac = nm_manager_activate_connection(
