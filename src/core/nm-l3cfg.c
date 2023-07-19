@@ -166,7 +166,6 @@ typedef struct {
     /* This flag is only used temporarily to do a bulk update and
      * clear all the ones that are no longer in used. */
     bool os_dirty : 1;
-    bool os_tna_dirty : 1;
 } ObjStateData;
 
 G_STATIC_ASSERT(G_STRUCT_OFFSET(ObjStateData, obj) == 0);
