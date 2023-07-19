@@ -4035,7 +4035,7 @@ again:
                         &obj_state->os_failedobj_prioq_idx);
         _LOGW(
             "missing IPv%c route: %s",
-            nm_utils_addr_family_to_char(NMP_OBJECT_GET_TYPE(obj_state->obj)),
+            nm_utils_addr_family_to_char(NMP_OBJECT_GET_ADDR_FAMILY(obj_state->obj)),
             nmp_object_to_string(obj_state->obj, NMP_OBJECT_TO_STRING_PUBLIC, sbuf, sizeof(sbuf)));
         goto again;
     }
