@@ -1470,32 +1470,30 @@ print_bond_bridge_info(NMDevice   *device,
                        const char *group_prefix,
                        const char *one_field)
 {
-    const GPtrArray                 *slaves = NULL;
-    GString                         *slaves_str;
+    const GPtrArray                 *ports = NULL;
+    GString                         *ports_str;
     int                              idx;
     const NMMetaAbstractInfo *const *tmpl;
     NmcOutputField                  *arr;
     NMC_OUTPUT_DATA_DEFINE_SCOPED(out);
 
-    if (NM_IS_DEVICE_BOND(device))
-        slaves = nm_device_bond_get_slaves(NM_DEVICE_BOND(device));
-    else if (NM_IS_DEVICE_BRIDGE(device))
-        slaves = nm_device_bridge_get_slaves(NM_DEVICE_BRIDGE(device));
+    if (NM_IS_DEVICE_BOND(device) || NM_IS_DEVICE_BRIDGE(device))
+        ports = nm_device_get_ports(device);
     else
         g_return_val_if_reached(FALSE);
 
-    slaves_str = g_string_new(NULL);
-    for (idx = 0; slaves && idx < slaves->len; idx++) {
-        NMDevice   *slave = g_ptr_array_index(slaves, idx);
-        const char *iface = nm_device_get_iface(slave);
+    ports_str = g_string_new(NULL);
+    for (idx = 0; ports && idx < ports->len; idx++) {
+        NMDevice   *port  = g_ptr_array_index(ports, idx);
+        const char *iface = nm_device_get_iface(port);
 
         if (iface) {
-            g_string_append(slaves_str, iface);
-            g_string_append_c(slaves_str, ' ');
+            g_string_append(ports_str, iface);
+            g_string_append_c(ports_str, ' ');
         }
     }
-    if (slaves_str->len > 0)
-        g_string_truncate(slaves_str, slaves_str->len - 1); /* Chop off last space */
+    if (ports_str->len > 0)
+        g_string_truncate(ports_str, ports_str->len - 1); /* Chop off last space */
 
     tmpl        = (const NMMetaAbstractInfo *const *) nmc_fields_dev_show_master_prop;
     out_indices = parse_output_fields(one_field, tmpl, FALSE, NULL, NULL);
@@ -1504,7 +1502,7 @@ print_bond_bridge_info(NMDevice   *device,
 
     arr = nmc_dup_fields_array(tmpl, NMC_OF_FLAG_SECTION_PREFIX);
     set_val_strc(arr, 0, group_prefix); /* i.e. BOND, TEAM, BRIDGE */
-    set_val_str(arr, 1, g_string_free(slaves_str, FALSE));
+    set_val_str(arr, 1, g_string_free(ports_str, FALSE));
     g_ptr_array_add(out.output_data, arr);
 
     print_data_prepare_width(out.output_data);
@@ -1535,30 +1533,30 @@ sanitize_team_config(const char *config)
 static gboolean
 print_team_info(NMDevice *device, NmCli *nmc, const char *group_prefix, const char *one_field)
 {
-    const GPtrArray                 *slaves = NULL;
-    GString                         *slaves_str;
+    const GPtrArray                 *ports = NULL;
+    GString                         *ports_str;
     int                              idx;
     const NMMetaAbstractInfo *const *tmpl;
     NmcOutputField                  *arr;
     NMC_OUTPUT_DATA_DEFINE_SCOPED(out);
 
     if (NM_IS_DEVICE_TEAM(device))
-        slaves = nm_device_team_get_slaves(NM_DEVICE_TEAM(device));
+        ports = nm_device_get_ports(device);
     else
         g_return_val_if_reached(FALSE);
 
-    slaves_str = g_string_new(NULL);
-    for (idx = 0; slaves && idx < slaves->len; idx++) {
-        NMDevice   *slave = g_ptr_array_index(slaves, idx);
-        const char *iface = nm_device_get_iface(slave);
+    ports_str = g_string_new(NULL);
+    for (idx = 0; ports && idx < ports->len; idx++) {
+        NMDevice   *port  = g_ptr_array_index(ports, idx);
+        const char *iface = nm_device_get_iface(port);
 
         if (iface) {
-            g_string_append(slaves_str, iface);
-            g_string_append_c(slaves_str, ' ');
+            g_string_append(ports_str, iface);
+            g_string_append_c(ports_str, ' ');
         }
     }
-    if (slaves_str->len > 0)
-        g_string_truncate(slaves_str, slaves_str->len - 1); /* Chop off last space */
+    if (ports_str->len > 0)
+        g_string_truncate(ports_str, ports_str->len - 1); /* Chop off last space */
 
     tmpl        = (const NMMetaAbstractInfo *const *) nmc_fields_dev_show_team_prop;
     out_indices = parse_output_fields(one_field, tmpl, FALSE, NULL, NULL);
@@ -1567,7 +1565,7 @@ print_team_info(NMDevice *device, NmCli *nmc, const char *group_prefix, const ch
 
     arr = nmc_dup_fields_array(tmpl, NMC_OF_FLAG_SECTION_PREFIX);
     set_val_strc(arr, 0, group_prefix); /* TEAM */
-    set_val_str(arr, 1, g_string_free(slaves_str, FALSE));
+    set_val_str(arr, 1, g_string_free(ports_str, FALSE));
     set_val_str(arr, 2, sanitize_team_config(nm_device_team_get_config(NM_DEVICE_TEAM(device))));
     g_ptr_array_add(out.output_data, arr);
 

@@ -254,7 +254,7 @@ wireless_band_channel_changed_cb(GObject *object, GParamSpec *pspec, gpointer us
 }
 
 static void
-connection_master_changed_cb(GObject *object, GParamSpec *pspec, gpointer user_data)
+connection_controller_changed_cb(GObject *object, GParamSpec *pspec, gpointer user_data)
 {
     NMSettingConnection *s_con      = NM_SETTING_CONNECTION(object);
     NMConnection        *connection = NM_CONNECTION(user_data);
@@ -343,7 +343,7 @@ nmc_setting_connection_connect_handlers(NMSettingConnection *setting, NMConnecti
 
     g_signal_connect(setting,
                      "notify::" NM_SETTING_CONNECTION_MASTER,
-                     G_CALLBACK(connection_master_changed_cb),
+                     G_CALLBACK(connection_controller_changed_cb),
                      connection);
 }
 
