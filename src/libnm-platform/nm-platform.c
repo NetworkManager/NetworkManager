@@ -6969,6 +6969,7 @@ nm_platform_ip4_route_to_string_full(const NMPlatformIP4Route     *route,
         "%s"         /* rto_min */
         "%s"         /* quickack */
         "%s"         /* mtu */
+        "%s"         /* r_force_commit */
         "",
         nm_net_aux_rtnl_rtntype_n2a_maybe_buf(nm_platform_route_type_uncoerce(route->type_coerced),
                                               str_type),
@@ -7035,7 +7036,8 @@ nm_platform_ip4_route_to_string_full(const NMPlatformIP4Route     *route,
                                                        " mtu %s%" G_GUINT32_FORMAT,
                                                        route->lock_mtu ? "lock " : "",
                                                        route->mtu)
-                                      : "");
+                                      : "",
+        route->r_force_commit ? " force-commit" : "");
 
     if ((n_nexthops == 1 && route->ifindex > 0) || n_nexthops == 0) {
         /* A plain single hop route. Nothing extra to remark. */
@@ -7155,6 +7157,7 @@ nm_platform_ip6_route_to_string(const NMPlatformIP6Route *route, char *buf, gsiz
         "%s"         /* quickack */
         "%s"         /* mtu */
         "%s"         /* pref */
+        "%s"         /* r_force_commit */
         "",
         nm_net_aux_rtnl_rtntype_n2a_maybe_buf(nm_platform_route_type_uncoerce(route->type_coerced),
                                               str_type),
@@ -7221,7 +7224,8 @@ nm_platform_ip6_route_to_string(const NMPlatformIP6Route *route, char *buf, gsiz
             str_pref,
             " pref %s",
             nm_icmpv6_router_pref_to_string(route->rt_pref, str_pref2, sizeof(str_pref2)))
-                       : "");
+                       : "",
+        route->r_force_commit ? " force-commit" : "");
 
     return buf;
 }
@@ -8642,7 +8646,8 @@ nm_platform_ip4_route_hash_update(const NMPlatformIP4Route *obj,
                                                   obj->lock_initcwnd,
                                                   obj->lock_initrwnd,
                                                   obj->lock_mtu,
-                                                  obj->lock_mss));
+                                                  obj->lock_mss,
+                                                  obj->r_force_commit));
         break;
     }
 }
@@ -8785,6 +8790,8 @@ nm_platform_ip4_route_cmp(const NMPlatformIP4Route *a,
         NM_CMP_FIELD(a, b, initrwnd);
         NM_CMP_FIELD(a, b, mtu);
         NM_CMP_FIELD(a, b, rto_min);
+        if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_FULL)
+            NM_CMP_FIELD_UNSAFE(a, b, r_force_commit);
         break;
     }
     return 0;
@@ -8884,7 +8891,8 @@ nm_platform_ip6_route_hash_update(const NMPlatformIP6Route *obj,
                                                   obj->lock_initcwnd,
                                                   obj->lock_initrwnd,
                                                   obj->lock_mtu,
-                                                  obj->lock_mss),
+                                                  obj->lock_mss,
+                                                  obj->r_force_commit),
                             obj->window,
                             obj->cwnd,
                             obj->initcwnd,
@@ -8974,6 +8982,8 @@ nm_platform_ip6_route_cmp(const NMPlatformIP6Route *a,
             NM_CMP_DIRECT(_route_pref_normalize(a->rt_pref), _route_pref_normalize(b->rt_pref));
         else
             NM_CMP_FIELD(a, b, rt_pref);
+        if (cmp_type == NM_PLATFORM_IP_ROUTE_CMP_TYPE_FULL)
+            NM_CMP_FIELD_UNSAFE(a, b, r_force_commit);
         break;
     }
     return 0;
@@ -9295,6 +9305,7 @@ nm_platform_ip4_address_generate_device_route(const NMPlatformIP4Address *addr,
                                               int                         ifindex,
                                               guint32                     route_table,
                                               guint32                     route_metric,
+                                              gboolean                    force_commit,
                                               NMPlatformIP4Route         *dst)
 {
     in_addr_t network_4;
@@ -9324,14 +9335,15 @@ nm_platform_ip4_address_generate_device_route(const NMPlatformIP4Address *addr,
     }
 
     *dst = (NMPlatformIP4Route){
-        .ifindex       = ifindex,
-        .rt_source     = NM_IP_CONFIG_SOURCE_KERNEL,
-        .network       = network_4,
-        .plen          = addr->plen,
-        .pref_src      = addr->address,
-        .table_coerced = nm_platform_route_table_coerce(route_table),
-        .metric        = route_metric,
-        .scope_inv     = nm_platform_route_scope_inv(NM_RT_SCOPE_LINK),
+        .ifindex        = ifindex,
+        .rt_source      = NM_IP_CONFIG_SOURCE_KERNEL,
+        .network        = network_4,
+        .plen           = addr->plen,
+        .pref_src       = addr->address,
+        .table_coerced  = nm_platform_route_table_coerce(route_table),
+        .metric         = route_metric,
+        .scope_inv      = nm_platform_route_scope_inv(NM_RT_SCOPE_LINK),
+        .r_force_commit = force_commit,
     };
 
     nm_platform_ip_route_normalize(AF_INET, (NMPlatformIPRoute *) dst);

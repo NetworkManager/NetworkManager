@@ -255,6 +255,7 @@ NMPlatformIP4Route *nm_platform_ip4_address_generate_device_route(const NMPlatfo
                                                                   int                 ifindex,
                                                                   guint32             route_table,
                                                                   guint32             route_metric,
+                                                                  gboolean            force_commit,
                                                                   NMPlatformIP4Route *dst);
 
 typedef enum {

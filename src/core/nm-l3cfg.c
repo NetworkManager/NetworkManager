@@ -215,6 +215,7 @@ typedef struct {
     guint32           acd_timeout_msec_confdata;
     NML3AcdDefendType acd_defend_type_confdata : 3;
     bool              dirty_confdata : 1;
+    gboolean          force_commit_once : 1;
 } L3ConfigData;
 
 struct _NML3CfgBlockHandle {
@@ -3490,7 +3491,8 @@ nm_l3cfg_add_config(NML3Cfg              *self,
             .acd_timeout_msec_confdata = acd_timeout_msec,
             .priority_confdata         = priority,
             .pseudo_timestamp_confdata = ++self->priv.p->pseudo_timestamp_counter,
-            .dirty_confdata            = FALSE,
+            .force_commit_once = NM_FLAGS_HAS(config_flags, NM_L3CFG_CONFIG_FLAGS_FORCE_ONCE),
+            .dirty_confdata    = FALSE,
         };
         changed = TRUE;
     } else {
@@ -3687,6 +3689,7 @@ typedef struct {
     NML3Cfg      *self;
     gconstpointer tag;
     bool          to_commit;
+    bool          force_commit_once;
 } L3ConfigMergeHookAddObjData;
 
 static gboolean
@@ -3704,6 +3707,9 @@ _l3_hook_add_obj_cb(const NML3ConfigData      *l3cd,
     nm_assert(obj);
     nm_assert(hook_result);
     nm_assert(hook_result->ip4acd_not_ready == NM_OPTION_BOOL_DEFAULT);
+    nm_assert(hook_result->force_commit == NM_OPTION_BOOL_DEFAULT);
+
+    hook_result->force_commit = hook_data->force_commit_once;
 
     switch (NMP_OBJECT_GET_TYPE(obj)) {
     case NMP_OBJECT_TYPE_IP4_ADDRESS:
@@ -3859,7 +3865,8 @@ _l3cfg_update_combined_config(NML3Cfg               *self,
             if (NM_FLAGS_HAS(l3cd_data->config_flags, NM_L3CFG_CONFIG_FLAGS_ONLY_FOR_ACD))
                 continue;
 
-            hook_data.tag = l3cd_data->tag_confdata;
+            hook_data.tag               = l3cd_data->tag_confdata;
+            hook_data.force_commit_once = l3cd_data->force_commit_once;
 
             nm_l3_config_data_merge(l3cd,
                                     l3cd_data->l3cd,
@@ -3917,6 +3924,7 @@ _l3cfg_update_combined_config(NML3Cfg               *self,
                     IS_IPv4 ? AF_INET : AF_INET6,
                     l3cd_data->default_route_table_x[IS_IPv4],
                     l3cd_data->default_route_metric_x[IS_IPv4],
+                    l3cd_data->force_commit_once,
                     l3cd_data->l3cd);
             }
         }
@@ -4969,6 +4977,7 @@ _l3_commit(NML3Cfg *self, NML3CfgCommitType commit_type, gboolean is_idle)
     gboolean                                 is_sticky_update      = FALSE;
     char                                     sbuf_ct[30];
     gboolean                                 changed_combined_l3cd;
+    guint                                    i;
 
     g_return_if_fail(NM_IS_L3CFG(self));
     nm_assert(NM_IN_SET(commit_type,
@@ -5034,6 +5043,15 @@ _l3_commit(NML3Cfg *self, NML3CfgCommitType commit_type, gboolean is_idle)
     _l3_commit_mptcp(self, commit_type);
 
     _l3_acd_data_process_changes(self);
+
+    if (self->priv.p->l3_config_datas) {
+        for (i = 0; i < self->priv.p->l3_config_datas->len; i++) {
+            L3ConfigData *l3_config_data = _l3_config_datas_at(self->priv.p->l3_config_datas, i);
+
+            if (l3_config_data->force_commit_once)
+                l3_config_data->force_commit_once = FALSE;
+        }
+    }
 
     nm_assert(self->priv.p->commit_reentrant_count == 1);
     self->priv.p->commit_reentrant_count--;

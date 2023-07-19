@@ -3985,7 +3985,9 @@ after_merge_flags:
 }
 
 static gboolean
-_dev_l3_register_l3cds_add_config(NMDevice *self, L3ConfigDataType l3cd_type)
+_dev_l3_register_l3cds_add_config(NMDevice          *self,
+                                  L3ConfigDataType   l3cd_type,
+                                  NML3CfgConfigFlags flags)
 {
     NMDevicePrivate     *priv = NM_DEVICE_GET_PRIVATE(self);
     NML3ConfigMergeFlags merge_flags;
@@ -4008,7 +4010,7 @@ _dev_l3_register_l3cds_add_config(NMDevice *self, L3ConfigDataType l3cd_type)
                                _prop_get_ipvx_dns_priority(self, AF_INET6),
                                acd_defend_type,
                                acd_timeout_msec,
-                               NM_L3CFG_CONFIG_FLAGS_NONE,
+                               flags,
                                merge_flags);
 }
 
@@ -4016,6 +4018,7 @@ static gboolean
 _dev_l3_register_l3cds_set_one_full(NMDevice             *self,
                                     L3ConfigDataType      l3cd_type,
                                     const NML3ConfigData *l3cd,
+                                    NML3CfgConfigFlags    flags,
                                     NMTernary             commit_sync)
 {
     NMDevicePrivate                         *priv     = NM_DEVICE_GET_PRIVATE(self);
@@ -4039,7 +4042,7 @@ _dev_l3_register_l3cds_set_one_full(NMDevice             *self,
 
     if (priv->l3cfg) {
         if (priv->l3cds[l3cd_type].d) {
-            if (_dev_l3_register_l3cds_add_config(self, l3cd_type))
+            if (_dev_l3_register_l3cds_add_config(self, l3cd_type, flags))
                 changed = TRUE;
         }
 
@@ -4063,7 +4066,11 @@ _dev_l3_register_l3cds_set_one(NMDevice             *self,
                                const NML3ConfigData *l3cd,
                                NMTernary             commit_sync)
 {
-    return _dev_l3_register_l3cds_set_one_full(self, l3cd_type, l3cd, commit_sync);
+    return _dev_l3_register_l3cds_set_one_full(self,
+                                               l3cd_type,
+                                               l3cd,
+                                               NM_L3CFG_CONFIG_FLAGS_NONE,
+                                               commit_sync);
 }
 
 static void
@@ -4118,7 +4125,7 @@ _dev_l3_register_l3cds(NMDevice *self,
         }
         if (is_external)
             continue;
-        if (_dev_l3_register_l3cds_add_config(self, i))
+        if (_dev_l3_register_l3cds_add_config(self, i, NM_L3CFG_CONFIG_FLAGS_NONE))
             changed = TRUE;
     }
 
@@ -10562,6 +10569,7 @@ _dev_ipdhcpx_notify(NMDhcpClient *client, const NMDhcpClientNotifyData *notify_d
         _dev_l3_register_l3cds_set_one_full(self,
                                             L3_CONFIG_DATA_TYPE_DHCP_X(IS_IPv4),
                                             notify_data->lease_update.l3cd,
+                                            NM_L3CFG_CONFIG_FLAGS_FORCE_ONCE,
                                             FALSE);
 
         if (notify_data->lease_update.accepted) {
@@ -10800,6 +10808,7 @@ _dev_ipdhcpx_start(NMDevice *self, int addr_family)
         _dev_l3_register_l3cds_set_one_full(self,
                                             L3_CONFIG_DATA_TYPE_DHCP_X(IS_IPv4),
                                             previous_lease,
+                                            NM_L3CFG_CONFIG_FLAGS_FORCE_ONCE,
                                             FALSE);
     }
 
@@ -11733,7 +11742,11 @@ _dev_ipac6_ndisc_config_changed(NMNDisc              *ndisc,
 
     _dev_ipac6_grace_period_start(self, 0, TRUE);
 
-    _dev_l3_register_l3cds_set_one_full(self, L3_CONFIG_DATA_TYPE_AC_6, l3cd, FALSE);
+    _dev_l3_register_l3cds_set_one_full(self,
+                                        L3_CONFIG_DATA_TYPE_AC_6,
+                                        l3cd,
+                                        NM_L3CFG_CONFIG_FLAGS_FORCE_ONCE,
+                                        FALSE);
 
     nm_clear_l3cd(&priv->ipac6_data.l3cd);
     ready = nm_l3cfg_check_ready(priv->l3cfg,

@@ -2606,6 +2606,7 @@ nm_l3_config_data_add_dependent_device_routes(NML3ConfigData       *self,
                                               int                   addr_family,
                                               guint32               route_table,
                                               guint32               route_metric,
+                                              gboolean              force_commit,
                                               const NML3ConfigData *source)
 {
     const int          IS_IPv4 = NM_IS_IPv4(addr_family);
@@ -2650,6 +2651,7 @@ nm_l3_config_data_add_dependent_device_routes(NML3ConfigData       *self,
                                                                                     self->ifindex,
                                                                                     route_table,
                                                                                     route_metric,
+                                                                                    force_commit,
                                                                                     &r_stack.r4);
             if (r)
                 nm_l3_config_data_add_route(self, addr_family, NULL, r);
@@ -2685,12 +2687,13 @@ nm_l3_config_data_add_dependent_device_routes(NML3ConfigData       *self,
                 }
 
                 rx.r6 = (NMPlatformIP6Route){
-                    .ifindex       = self->ifindex,
-                    .rt_source     = NM_IP_CONFIG_SOURCE_KERNEL,
-                    .table_coerced = nm_platform_route_table_coerce(route_table),
-                    .metric        = route_metric,
-                    .network       = *a6,
-                    .plen          = plen,
+                    .ifindex        = self->ifindex,
+                    .rt_source      = NM_IP_CONFIG_SOURCE_KERNEL,
+                    .table_coerced  = nm_platform_route_table_coerce(route_table),
+                    .metric         = route_metric,
+                    .network        = *a6,
+                    .plen           = plen,
+                    .r_force_commit = force_commit,
                 };
 
                 nm_platform_ip_route_normalize(addr_family, &rx.rx);
@@ -3196,6 +3199,7 @@ nm_l3_config_data_merge(NML3ConfigData       *self,
             NMPlatformIPXAddress       a;
             NML3ConfigMergeHookResult  hook_result = {
                  .ip4acd_not_ready = NM_OPTION_BOOL_DEFAULT,
+                 .force_commit     = NM_OPTION_BOOL_DEFAULT,
             };
 
 #define _ensure_a()                                       \
@@ -3228,6 +3232,12 @@ nm_l3_config_data_merge(NML3ConfigData       *self,
                 a.a4.a_acd_not_ready = (!!hook_result.ip4acd_not_ready);
             }
 
+            if (hook_result.force_commit != NM_OPTION_BOOL_DEFAULT
+                && (!!hook_result.force_commit) != a_src->a_force_commit) {
+                _ensure_a();
+                a.ax.a_force_commit = (!!hook_result.force_commit);
+            }
+
             nm_l3_config_data_add_address_full(self,
                                                addr_family,
                                                a_src == &a.ax ? NULL : obj,
@@ -3247,6 +3257,7 @@ nm_l3_config_data_merge(NML3ConfigData       *self,
                 NMPlatformIPXRoute        r;
                 NML3ConfigMergeHookResult hook_result = {
                     .ip4acd_not_ready = NM_OPTION_BOOL_DEFAULT,
+                    .force_commit     = NM_OPTION_BOOL_DEFAULT,
                 };
 
 #define _ensure_r()                                     \
@@ -3270,6 +3281,12 @@ nm_l3_config_data_merge(NML3ConfigData       *self,
                 if (r_src->ifindex != self->ifindex) {
                     _ensure_r();
                     r.rx.ifindex = self->ifindex;
+                }
+
+                if (hook_result.force_commit != NM_OPTION_BOOL_DEFAULT
+                    && (!!hook_result.force_commit) != r_src->r_force_commit) {
+                    _ensure_r();
+                    r.rx.r_force_commit = (!!hook_result.force_commit);
                 }
 
                 if (!NM_FLAGS_HAS(merge_flags, NM_L3_CONFIG_MERGE_FLAGS_CLONE)) {
