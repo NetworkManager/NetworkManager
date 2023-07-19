@@ -13685,7 +13685,7 @@ msgstr "মেট্রিক"
 msgid "No custom routes are defined."
 msgstr "কোনো কাস্টম রাউট নির্দিষ্ট করা হয়নি।"
 
-#: src/nmtui/nmt-slave-list.c:126
+#: src/nmtui/nmt-port-list.c:126
 msgid "Select the type of slave connection you wish to add."
 msgstr "অাপনি যে ধরনের স্লেভ সংযোগ যোগ করতে চান তা নির্বাচন করুন।"
 

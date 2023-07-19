@@ -306,7 +306,7 @@ nmt_editor_constructed(GObject *object)
     const char          *deventry_label;
     NmtDeviceEntry      *deventry;
     GType                hardware_type;
-    const char          *slave_type;
+    const char          *port_type;
     NmtEditorPage       *page;
 
     if (G_OBJECT_CLASS(nmt_editor_parent_class)->constructed)
@@ -385,13 +385,13 @@ nmt_editor_constructed(GObject *object)
     add_sections_for_page(editor, grid, page);
     nmt_editor_grid_append(grid, NULL, nmt_newt_separator_new(), NULL);
 
-    slave_type = nm_setting_connection_get_slave_type(s_con);
-    if (slave_type) {
-        if (!strcmp(slave_type, NM_SETTING_BRIDGE_SETTING_NAME))
+    port_type = nm_setting_connection_get_slave_type(s_con);
+    if (port_type) {
+        if (!strcmp(port_type, NM_SETTING_BRIDGE_SETTING_NAME))
             add_sections_for_page(editor, grid, nmt_page_bridge_port_new(priv->edit_connection));
-        else if (!strcmp(slave_type, NM_SETTING_TEAM_SETTING_NAME))
+        else if (!strcmp(port_type, NM_SETTING_TEAM_SETTING_NAME))
             add_sections_for_page(editor, grid, nmt_page_team_port_new(priv->edit_connection));
-        else if (nm_streq(slave_type, NM_SETTING_BOND_SETTING_NAME))
+        else if (nm_streq(port_type, NM_SETTING_BOND_SETTING_NAME))
             add_sections_for_page(editor, grid, nmt_page_bond_port_new(priv->edit_connection));
     } else {
         NmtNewtWidget *section;

@@ -14429,7 +14429,7 @@ msgstr "Mètrica"
 msgid "No custom routes are defined."
 msgstr "No hi ha rutes personalitzades definides."
 
-#: src/nmtui/nmt-slave-list.c:126
+#: src/nmtui/nmt-port-list.c:126
 msgid "Select the type of slave connection you wish to add."
 msgstr "Seleccioneu el tipus de connexió esclava que voleu afegir."
 

@@ -49,22 +49,22 @@ edit_connection_list_filter(NmtEditConnectionList *list,
                             gpointer               user_data)
 {
     NMSettingConnection *s_con;
-    const char          *master, *slave_type;
+    const char          *controller, *port_type;
     const char          *uuid, *ifname;
     const GPtrArray     *conns;
     int                  i;
-    gboolean             found_master = FALSE;
+    gboolean             found_controller = FALSE;
 
     s_con = nm_connection_get_setting_connection(connection);
     g_return_val_if_fail(s_con != NULL, FALSE);
 
-    master = nm_setting_connection_get_master(s_con);
-    if (!master)
+    controller = nm_setting_connection_get_master(s_con);
+    if (!controller)
         return TRUE;
-    slave_type = nm_setting_connection_get_slave_type(s_con);
-    if (g_strcmp0(slave_type, NM_SETTING_BOND_SETTING_NAME) != 0
-        && g_strcmp0(slave_type, NM_SETTING_TEAM_SETTING_NAME) != 0
-        && g_strcmp0(slave_type, NM_SETTING_BRIDGE_SETTING_NAME) != 0)
+    port_type = nm_setting_connection_get_slave_type(s_con);
+    if (g_strcmp0(port_type, NM_SETTING_BOND_SETTING_NAME) != 0
+        && g_strcmp0(port_type, NM_SETTING_TEAM_SETTING_NAME) != 0
+        && g_strcmp0(port_type, NM_SETTING_BRIDGE_SETTING_NAME) != 0)
         return TRUE;
 
     conns = nm_client_get_connections(nm_client);
@@ -73,13 +73,13 @@ edit_connection_list_filter(NmtEditConnectionList *list,
 
         uuid   = nm_connection_get_uuid(candidate);
         ifname = nm_connection_get_interface_name(candidate);
-        if (!g_strcmp0(master, uuid) || !g_strcmp0(master, ifname)) {
-            found_master = TRUE;
+        if (!g_strcmp0(controller, uuid) || !g_strcmp0(controller, ifname)) {
+            found_controller = TRUE;
             break;
         }
     }
 
-    return !found_master;
+    return !found_controller;
 }
 
 static NmtNewtForm *
@@ -132,7 +132,7 @@ typedef struct {
 
     char                      *primary_text;
     char                      *secondary_text;
-    NMConnection              *master;
+    NMConnection              *controller;
     NmtAddConnectionTypeFilter type_filter;
     gpointer                   type_filter_data;
 
@@ -144,7 +144,7 @@ enum {
 
     PROP_PRIMARY_TEXT,
     PROP_SECONDARY_TEXT,
-    PROP_MASTER,
+    PROP_CONTROLLER,
     PROP_TYPE_FILTER,
     PROP_TYPE_FILTER_DATA,
 
@@ -158,7 +158,7 @@ create_connection(NmtNewtWidget *widget, gpointer list)
     GType         type = (GType) GPOINTER_TO_SIZE(nmt_newt_listbox_get_active_key(priv->listbox));
     NMConnection *connection;
 
-    connection = nm_editor_utils_create_connection(type, priv->master, nm_client);
+    connection = nm_editor_utils_create_connection(type, priv->controller, nm_client);
     nmt_edit_connection(connection);
     g_object_unref(connection);
 }
@@ -262,7 +262,7 @@ nmt_add_connection_finalize(GObject *object)
 
     g_free(priv->primary_text);
     g_free(priv->secondary_text);
-    g_clear_object(&priv->master);
+    g_clear_object(&priv->controller);
 
     G_OBJECT_CLASS(nmt_add_connection_parent_class)->finalize(object);
 }
@@ -282,8 +282,8 @@ nmt_add_connection_set_property(GObject      *object,
     case PROP_SECONDARY_TEXT:
         priv->secondary_text = g_value_dup_string(value);
         break;
-    case PROP_MASTER:
-        priv->master = g_value_dup_object(value);
+    case PROP_CONTROLLER:
+        priv->controller = g_value_dup_object(value);
         break;
     case PROP_TYPE_FILTER:
         priv->type_filter = g_value_get_pointer(value);
@@ -309,8 +309,8 @@ nmt_add_connection_get_property(GObject *object, guint prop_id, GValue *value, G
     case PROP_SECONDARY_TEXT:
         g_value_set_string(value, priv->secondary_text);
         break;
-    case PROP_MASTER:
-        g_value_set_object(value, priv->master);
+    case PROP_CONTROLLER:
+        g_value_set_object(value, priv->controller);
         break;
     case PROP_TYPE_FILTER:
         g_value_set_pointer(value, priv->type_filter);
@@ -364,8 +364,8 @@ nmt_add_connection_class_init(NmtAddConnectionClass *add_class)
                             G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | G_PARAM_STATIC_STRINGS));
     g_object_class_install_property(
         object_class,
-        PROP_MASTER,
-        g_param_spec_object("master",
+        PROP_CONTROLLER,
+        g_param_spec_object("controller",
                             "",
                             "",
                             NM_TYPE_CONNECTION,
@@ -399,7 +399,7 @@ nmt_add_connection(void)
 void
 nmt_add_connection_full(const char                *primary_text,
                         const char                *secondary_text,
-                        NMConnection              *master,
+                        NMConnection              *controller,
                         NmtAddConnectionTypeFilter type_filter,
                         gpointer                   type_filter_data)
 {
@@ -412,8 +412,8 @@ nmt_add_connection_full(const char                *primary_text,
                         primary_text,
                         "secondary-text",
                         secondary_text,
-                        "master",
-                        master,
+                        "controller",
+                        controller,
                         "type-filter",
                         type_filter,
                         "type-filter-data",
@@ -500,11 +500,11 @@ void
 nmt_remove_connection(NMRemoteConnection *connection)
 {
     const GPtrArray     *all_conns;
-    GSList              *slaves, *iter;
+    GSList              *ports, *iter;
     int                  i;
-    NMRemoteConnection  *slave;
+    NMRemoteConnection  *port;
     NMSettingConnection *s_con;
-    const char          *uuid, *iface, *master;
+    const char          *uuid, *iface, *controller;
     int                  choice;
 
     choice = nmt_newt_choice_dialog(_("Cancel"),
@@ -521,20 +521,20 @@ nmt_remove_connection(NMRemoteConnection *connection)
     iface = nm_connection_get_interface_name(NM_CONNECTION(connection));
 
     all_conns = nm_client_get_connections(nm_client);
-    slaves    = NULL;
+    ports     = NULL;
     for (i = 0; i < all_conns->len; i++) {
-        slave  = all_conns->pdata[i];
-        s_con  = nm_connection_get_setting_connection(NM_CONNECTION(slave));
-        master = nm_setting_connection_get_master(s_con);
-        if (master) {
-            if (!g_strcmp0(master, uuid) || !g_strcmp0(master, iface))
-                slaves = g_slist_prepend(slaves, g_object_ref(slave));
+        port       = all_conns->pdata[i];
+        s_con      = nm_connection_get_setting_connection(NM_CONNECTION(port));
+        controller = nm_setting_connection_get_master(s_con);
+        if (controller) {
+            if (!g_strcmp0(controller, uuid) || !g_strcmp0(controller, iface))
+                ports = g_slist_prepend(ports, g_object_ref(port));
         }
     }
 
-    for (iter = slaves; iter; iter = iter->next)
+    for (iter = ports; iter; iter = iter->next)
         remove_one_connection(iter->data);
-    g_slist_free_full(slaves, g_object_unref);
+    g_slist_free_full(ports, g_object_unref);
 
     g_object_unref(connection);
 }

@@ -5294,8 +5294,8 @@ src_nmtui_nmtui_SOURCES = \
 	src/nmtui/nmt-route-entry.h \
 	src/nmtui/nmt-route-table.c \
 	src/nmtui/nmt-route-table.h \
-	src/nmtui/nmt-slave-list.c \
-	src/nmtui/nmt-slave-list.h \
+	src/nmtui/nmt-port-list.c \
+	src/nmtui/nmt-port-list.h \
 	src/nmtui/nmt-utils.c \
 	src/nmtui/nmt-utils.h \
 	src/nmtui/nmt-widget-list.c \

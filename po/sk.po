@@ -12804,7 +12804,7 @@ msgstr "Metrika"
 msgid "No custom routes are defined."
 msgstr "Nie sú definované žiane vlastné smerovania."
 
-#: src/nmtui/nmt-slave-list.c:126
+#: src/nmtui/nmt-port-list.c:126
 msgid "Select the type of slave connection you wish to add."
 msgstr "Vyberte typ podriadeného spojenia, ktoré si želáte pridať."
 

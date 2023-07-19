@@ -22,7 +22,7 @@
 #include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 #include "nmt-mac-entry.h"
 #include "nmt-address-list.h"
-#include "nmt-slave-list.h"
+#include "nmt-port-list.h"
 
 G_DEFINE_TYPE(NmtPageBond, nmt_page_bond, NMT_TYPE_EDITOR_PAGE_DEVICE)
 
@@ -36,7 +36,7 @@ typedef enum {
 } NmtPageBondMonitoringMode;
 
 typedef struct {
-    NmtSlaveList *slaves;
+    NmtPortList *ports;
 
     /* Note: when adding new options to the UI also ensure they are
      * initialized in bond_connection_setup_func()
@@ -53,7 +53,7 @@ typedef struct {
     NmtPageBondMonitoringMode monitoring_mode;
 
     NMSettingBond *s_bond;
-    GType          slave_type;
+    GType          port_type;
     gboolean       updating;
 } NmtPageBondPrivate;
 
@@ -75,7 +75,7 @@ nmt_page_bond_init(NmtPageBond *bond)
     NmtPageBondPrivate *priv = NMT_PAGE_BOND_GET_PRIVATE(bond);
 
     priv->monitoring_mode = NMT_PAGE_BOND_MONITORING_UNKNOWN;
-    priv->slave_type      = G_TYPE_NONE;
+    priv->port_type       = G_TYPE_NONE;
 }
 
 static NmtNewtPopupEntry bond_mode[] = {
@@ -159,30 +159,30 @@ bond_options_changed(GObject *object, GParamSpec *pspec, gpointer user_data)
 }
 
 static void
-slaves_changed(GObject *object, GParamSpec *pspec, gpointer user_data)
+ports_changed(GObject *object, GParamSpec *pspec, gpointer user_data)
 {
     NmtPageBond        *bond = NMT_PAGE_BOND(user_data);
     NmtPageBondPrivate *priv = NMT_PAGE_BOND_GET_PRIVATE(bond);
-    GPtrArray          *slaves;
+    GPtrArray          *ports;
 
-    g_object_get(object, "connections", &slaves, NULL);
-    if (slaves->len == 0) {
-        if (priv->slave_type == G_TYPE_NONE)
+    g_object_get(object, "connections", &ports, NULL);
+    if (ports->len == 0) {
+        if (priv->port_type == G_TYPE_NONE)
             return;
-        priv->slave_type = G_TYPE_NONE;
+        priv->port_type = G_TYPE_NONE;
     } else {
-        NMConnection *slave = slaves->pdata[0];
+        NMConnection *port = ports->pdata[0];
 
-        if (priv->slave_type != G_TYPE_NONE)
+        if (priv->port_type != G_TYPE_NONE)
             return;
 
-        if (nm_connection_is_type(slave, NM_SETTING_INFINIBAND_SETTING_NAME))
-            priv->slave_type = NM_TYPE_SETTING_INFINIBAND;
+        if (nm_connection_is_type(port, NM_SETTING_INFINIBAND_SETTING_NAME))
+            priv->port_type = NM_TYPE_SETTING_INFINIBAND;
         else
-            priv->slave_type = NM_TYPE_SETTING_WIRED;
+            priv->port_type = NM_TYPE_SETTING_WIRED;
     }
 
-    if (priv->slave_type == NM_TYPE_SETTING_INFINIBAND) {
+    if (priv->port_type == NM_TYPE_SETTING_INFINIBAND) {
         nmt_newt_popup_set_active_id(priv->mode, "active-backup");
         nmt_newt_component_set_sensitive(NMT_NEWT_COMPONENT(priv->mode), FALSE);
     } else
@@ -314,9 +314,9 @@ bond_connection_type_filter(GType connection_type, gpointer user_data)
     NmtPageBond        *bond = user_data;
     NmtPageBondPrivate *priv = NMT_PAGE_BOND_GET_PRIVATE(bond);
 
-    if (priv->slave_type != NM_TYPE_SETTING_WIRED && connection_type == NM_TYPE_SETTING_INFINIBAND)
+    if (priv->port_type != NM_TYPE_SETTING_WIRED && connection_type == NM_TYPE_SETTING_INFINIBAND)
         return TRUE;
-    if (priv->slave_type != NM_TYPE_SETTING_INFINIBAND && connection_type == NM_TYPE_SETTING_WIRED)
+    if (priv->port_type != NM_TYPE_SETTING_INFINIBAND && connection_type == NM_TYPE_SETTING_WIRED)
         return TRUE;
 
     return FALSE;
@@ -346,10 +346,10 @@ nmt_page_bond_constructed(GObject *object)
     nmt_editor_grid_append(grid, _("Slaves"), widget, NULL);
     nmt_editor_grid_set_row_flags(grid, widget, NMT_EDITOR_GRID_ROW_LABEL_ALIGN_LEFT);
 
-    widget = nmt_slave_list_new(conn, bond_connection_type_filter, bond);
-    g_signal_connect(widget, "notify::connections", G_CALLBACK(slaves_changed), bond);
+    widget = nmt_port_list_new(conn, bond_connection_type_filter, bond);
+    g_signal_connect(widget, "notify::connections", G_CALLBACK(ports_changed), bond);
     nmt_editor_grid_append(grid, NULL, widget, NULL);
-    priv->slaves = NMT_SLAVE_LIST(widget);
+    priv->ports = NMT_PORT_LIST(widget);
 
     widget = nmt_newt_popup_new(bond_mode);
     g_signal_connect(widget, "notify::active-id", G_CALLBACK(mode_widget_changed), bond);
@@ -408,7 +408,7 @@ nmt_page_bond_constructed(GObject *object)
                      G_CALLBACK(bond_options_changed),
                      bond);
     bond_options_changed(G_OBJECT(s_bond), NULL, bond);
-    slaves_changed(G_OBJECT(priv->slaves), NULL, bond);
+    ports_changed(G_OBJECT(priv->ports), NULL, bond);
 
     nmt_editor_page_add_section(NMT_EDITOR_PAGE(bond), section);
 
@@ -420,7 +420,7 @@ nmt_page_bond_saved(NmtEditorPage *editor_page)
 {
     NmtPageBondPrivate *priv = NMT_PAGE_BOND_GET_PRIVATE(editor_page);
 
-    nmt_edit_connection_list_recommit(NMT_EDIT_CONNECTION_LIST(priv->slaves));
+    nmt_edit_connection_list_recommit(NMT_EDIT_CONNECTION_LIST(priv->ports));
 }
 
 static void

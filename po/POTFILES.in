@@ -187,7 +187,7 @@ src/nmtui/nmt-password-dialog.c
 src/nmtui/nmt-password-fields.c
 src/nmtui/nmt-route-editor.c
 src/nmtui/nmt-route-table.c
-src/nmtui/nmt-slave-list.c
+src/nmtui/nmt-port-list.c
 src/nmtui/nmt-widget-list.c
 src/nmtui/nmt-wireguard-peer-editor.c
 src/nmtui/nmt-wireguard-peer-list.c

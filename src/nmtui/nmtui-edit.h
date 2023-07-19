@@ -15,7 +15,7 @@ NmtNewtForm *nmtui_edit(gboolean is_top, int argc, char **argv);
 void nmt_add_connection(void);
 void nmt_add_connection_full(const char                *primary_text,
                              const char                *secondary_text,
-                             NMConnection              *master,
+                             NMConnection              *controller,
                              NmtAddConnectionTypeFilter type_filter,
                              gpointer                   type_filter_data);
 

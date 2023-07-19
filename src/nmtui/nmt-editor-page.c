@@ -104,7 +104,7 @@ nmt_editor_page_add_section(NmtEditorPage *page, NmtEditorSection *section)
  *
  * This method is called when the user saves the connection. It gives
  * the page a chance to do save its data outside the connections (such as
- * recommit the slave connections).
+ * recommit the port connections).
  */
 void
 nmt_editor_page_saved(NmtEditorPage *page)

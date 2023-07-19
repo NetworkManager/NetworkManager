@@ -40,7 +40,7 @@ executable(
     'nmt-route-editor.c',
     'nmt-route-entry.c',
     'nmt-route-table.c',
-    'nmt-slave-list.c',
+    'nmt-port-list.c',
     'nmt-wireguard-peer-list.c',
     'nmt-wireguard-peer-editor.c',
     'nmtui.c',
