@@ -7,6 +7,7 @@
 
 #include "libnm-core-impl/nm-default-libnm-core.h"
 
+#include <ctype.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -87,21 +88,65 @@ G_STATIC_ASSERT(NM_UTILS_HWADDR_LEN_MAX == _NM_UTILS_HWADDR_LEN_MAX);
 static void
 test_nm_ascii_spaces(void)
 {
-    int               i;
-    const char *const S = NM_ASCII_SPACES;
+    int i;
 
-    for (i = 0; S[i]; i++)
-        g_assert(!strchr(&S[i + 1], S[i]));
+    {
+        const char *const S = NM_ASCII_SPACES;
 
-    for (i = 0; S[i] != '\0'; i++)
-        g_assert(g_ascii_isspace(S[i]));
+        for (i = 0; S[i]; i++)
+            g_assert(!strchr(&S[i + 1], S[i]));
 
-    g_assert(!g_ascii_isspace((char) 0));
-    for (i = 1; i < 0x100; i++) {
-        if (g_ascii_isspace((char) i))
-            g_assert(strchr(S, (char) i));
-        else
-            g_assert(!strchr(S, (char) i));
+        for (i = 0; S[i] != '\0'; i++)
+            g_assert(g_ascii_isspace(S[i]));
+
+        g_assert(!g_ascii_isspace((char) 0));
+        for (i = 1; i < 0x100; i++) {
+            g_assert((!!g_ascii_isspace((char) i)) == (!!strchr(S, (char) i)));
+        }
+    }
+
+    {
+        const char *const S = NM_ASCII_WHITESPACES;
+
+        for (i = 0; S[i]; i++)
+            g_assert(!strchr(&S[i + 1], S[i]));
+
+        for (i = 0; S[i] != '\0'; i++)
+            g_assert(nm_ascii_is_whitespace(S[i]));
+
+        g_assert(!nm_ascii_is_whitespace((char) 0));
+        for (i = 1; i < 0x100; i++) {
+            g_assert(nm_ascii_is_whitespace((char) i) == (!!strchr(S, (char) i)));
+        }
+    }
+
+    {
+        const char *const S = NM_ASCII_SPACES_CTYPE;
+
+        for (i = 0; S[i]; i++)
+            g_assert(!strchr(&S[i + 1], S[i]));
+
+        if (nm_streq0(g_getenv("LANG"), "C")) {
+            g_assert(!isspace((char) 0));
+            for (i = 1; i < 0x100; i++) {
+                g_assert((!!isspace((char) i)) == (!!strchr(S, (char) i)));
+            }
+        }
+    }
+
+    {
+        const char *const S = NM_ASCII_SPACES_KERNEL;
+
+        for (i = 0; S[i]; i++)
+            g_assert(!strchr(&S[i + 1], S[i]));
+
+        for (i = 0; S[i] != '\0'; i++)
+            g_assert(nm_ascii_is_space_kernel(S[i]));
+
+        g_assert(!nm_ascii_is_space_kernel((char) 0));
+        for (i = 1; i < 0x100; i++) {
+            g_assert(nm_ascii_is_space_kernel((char) i) == (!!strchr(S, (char) i)));
+        }
     }
 }
 

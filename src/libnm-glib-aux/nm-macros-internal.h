@@ -1086,10 +1086,19 @@ nm_g_variant_equal(GVariant *a, GVariant *b)
 /* mirrors g_ascii_isspace() and what we consider spaces in general. */
 #define NM_ASCII_SPACES " \n\t\r\f"
 
-/* Like NM_ASCII_SPACES, but without "\f" (0x0c, Formfeed Page Break).
- * This is what for example systemd calls WHITESPACE and what it uses to tokenize
- * the kernel command line. */
+/* Like NM_ASCII_SPACES, but without "\f" (0x0c, Formfeed Page Break).  This is
+ * what for example systemd calls WHITESPACE and what it uses to tokenize the
+ * kernel command line. */
 #define NM_ASCII_WHITESPACES " \n\t\r"
+
+/* mirrors <ctype.h>'s isspace() with C locale. It's like NM_ASCII_SPACES but
+ * additionally also considers '\v' (vertical tab). */
+#define NM_ASCII_SPACES_CTYPE NM_ASCII_SPACES "\v"
+
+/* mirrors kernel's isspace() from "include/linux/ctype.h", which treats as
+ * space the common ASCII spaces, including '\v' (vertical tab), but also
+ * '\240' (non-breaking space, NBSP in Latin-1). */
+#define NM_ASCII_SPACES_KERNEL NM_ASCII_SPACES_CTYPE "\240"
 
 static inline gboolean
 nm_ascii_is_whitespace(char ch)
@@ -1098,6 +1107,13 @@ nm_ascii_is_whitespace(char ch)
      * Similar to g_ascii_isspace(), however this one does not accept '\f'.
      * This is the same as systemd's strchr(WHITESPACE, ch). */
     return NM_IN_SET(ch, ' ', '\n', '\t', '\r');
+}
+
+static inline gboolean
+nm_ascii_is_space_kernel(char ch)
+{
+    /* Checks whether @ch is in NM_ASCII_SPACES_KERNEL. */
+    return NM_IN_SET(ch, ' ', '\n', '\t', '\r', '\f', '\v', '\240');
 }
 
 #define NM_ASCII_NEWLINE "\n\r"
