@@ -168,6 +168,10 @@ typedef struct {
     /* This flag is only used temporarily to do a bulk update and
      * clear all the ones that are no longer in used. */
     bool os_dirty : 1;
+
+    /* Indicates that we previously failed to configure the object. As such,
+     * we should try again at the next commit. */
+    bool os_failed : 1;
 } ObjStateData;
 
 G_STATIC_ASSERT(G_STRUCT_OFFSET(ObjStateData, obj) == 0);
@@ -1126,6 +1130,11 @@ _obj_states_sync_filter(NML3Cfg *self, const NMPObject *obj, NML3CfgCommitType c
 
         _LOGD("obj-state: configure-first-time: %s",
               _obj_state_data_to_string(obj_state, sbuf, sizeof(sbuf)));
+        return TRUE;
+    }
+
+    if (obj_state->os_failed) {
+        /* We previously failed to configure the object, must always try again. */
         return TRUE;
     }
 
@@ -4065,7 +4074,8 @@ _failedobj_handle_routes(NML3Cfg *self, int addr_family, GPtrArray *routes_faile
 
         nm_assert(NMP_OBJECT_GET_TYPE(o) == NMP_OBJECT_TYPE_IP_ROUTE(NM_IS_IPv4(addr_family)));
 
-        obj_state = g_hash_table_lookup(self->priv.p->obj_state_hash, &o);
+        obj_state            = g_hash_table_lookup(self->priv.p->obj_state_hash, &o);
+        obj_state->os_failed = TRUE;
 
         if (!obj_state) {
             /* Hm? We don't track this object? Very odd, a bug? */
@@ -4545,6 +4555,11 @@ _routes_watch_ip_addrs(NML3Cfg *self, int addr_family, GPtrArray *addresses, GPt
     for (i = 0; i < routes->len; i++) {
         const NMPlatformIPRoute *rt = NMP_OBJECT_CAST_IP_ROUTE(routes->pdata[i]);
         gconstpointer            pref_src;
+        ObjStateData            *obj_state;
+
+        obj_state = g_hash_table_lookup(self->priv.p->obj_state_hash, &routes->pdata[i]);
+        if (obj_state)
+            obj_state->os_failed = FALSE;
 
         nm_assert(NMP_OBJECT_GET_ADDR_FAMILY(routes->pdata[i]) == addr_family);
 
