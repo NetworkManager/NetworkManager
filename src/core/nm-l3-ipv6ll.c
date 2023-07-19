@@ -420,7 +420,9 @@ _lladdr_handle_changed(NML3IPv6LL *self, gboolean force_commit)
                                 NM_DNS_PRIORITY_DEFAULT_NORMAL,
                                 NM_L3_ACD_DEFEND_TYPE_ALWAYS,
                                 0,
-                                NM_L3CFG_CONFIG_FLAGS_NONE,
+                                /* Even if the address was removed from platform, it must
+                                 * be re-added, hence FORCE_ONCE. */
+                                NM_L3CFG_CONFIG_FLAGS_FORCE_ONCE,
                                 NM_L3_CONFIG_MERGE_FLAGS_NONE))
             changed = TRUE;
     } else {
