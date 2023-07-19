@@ -1129,32 +1129,10 @@ _obj_states_sync_filter(NML3Cfg *self, const NMPObject *obj, NML3CfgCommitType c
         return TRUE;
     }
 
-    /* One goal would be that we don't forcefully re-add routes which were
-     * externally removed (e.g. by the user via `ip route del`).
-     *
-     * However,
-     *
-     *  - some routes get automatically deleted by kernel (for example,
-     *  when we have an IPv4 route with RTA_PREFSRC set and the referenced
-     *  IPv4 address gets removed). The absence of such a route does not
-     *  mean that the user doesn't want the route there. It means, kernel
-     *  removed it because of some consistency check, but we want it back.
-     *  - a route with a non-zero gateway requires that the gateway is
-     *  directly reachable via an onlink route. The rules for this are
-     *  complex, but kernel will reject adding a route which has such a
-     *  gateway. If the user manually removed the needed onlink route, the
-     *  gateway route cannot be added in kernel ("Nexthop has invalid
-     *  gateway"). To handle that is a nightmare, so we always ensure that
-     *  the onlink route is there.
-     *  - a route with RTA_PREFSRC requires that such an address is
-     *  configured otherwise kernel rejects adding the route with "Invalid
-     *  prefsrc address"/"Invalid source address".  Removing an address can
-     *  thus prevent adding the route, which is a problem for us.
-     *
-     * So the goal is not tenable and causes problems. NetworkManager will
-     * try hard to re-add routes and address that it thinks should be
-     * present. If you externally remove them, then you are starting a
-     * fight where NetworkManager tries to re-add them on every commit. */
+    if (!obj_state->os_plobj && commit_type != NM_L3_CFG_COMMIT_TYPE_REAPPLY
+        && !nmp_object_get_force_commit(obj))
+        return FALSE;
+
     return TRUE;
 }
 
