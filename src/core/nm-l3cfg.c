@@ -4076,7 +4076,7 @@ _failedobj_handle_routes(NML3Cfg *self, int addr_family, GPtrArray *routes_faile
         gboolean                  just_failed          = FALSE;
         gboolean                  arm_timer            = FALSE;
         int                       grace_timeout_msec;
-        gint64                    grace_expiry_mesc;
+        gint64                    grace_expiry_msec;
 
         nm_assert(NMP_OBJECT_GET_TYPE(o) == NMP_OBJECT_TYPE_IP_ROUTE(NM_IS_IPv4(addr_family)));
 
@@ -4108,11 +4108,11 @@ _failedobj_handle_routes(NML3Cfg *self, int addr_family, GPtrArray *routes_faile
             grace_timeout_msec = 0;
         }
 
-        grace_expiry_mesc = now_msec + grace_timeout_msec;
+        grace_expiry_msec = now_msec + grace_timeout_msec;
 
         if (obj_state->os_failedobj_expiry_msec == 0) {
             /* This is a new failure that we didn't see before... */
-            obj_state->os_failedobj_expiry_msec = grace_expiry_mesc;
+            obj_state->os_failedobj_expiry_msec = grace_expiry_msec;
             if (grace_timeout_msec == 0)
                 just_failed = TRUE;
             else {
@@ -4120,9 +4120,9 @@ _failedobj_handle_routes(NML3Cfg *self, int addr_family, GPtrArray *routes_faile
                 just_started_to_fail = TRUE;
             }
         } else {
-            if (obj_state->os_failedobj_expiry_msec > grace_expiry_mesc) {
+            if (obj_state->os_failedobj_expiry_msec > grace_expiry_msec) {
                 /* Shorten the grace timeout. We anyway rearm below... */
-                obj_state->os_failedobj_expiry_msec = grace_expiry_mesc;
+                obj_state->os_failedobj_expiry_msec = grace_expiry_msec;
             }
             if (obj_state->os_failedobj_expiry_msec <= now_msec) {
                 /* The grace period is (already) expired. */
