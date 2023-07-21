@@ -1,0 +1,75 @@
+*** nm-in-container:
+
+find NetworkManager bind mounted at {{BASEDIR_NM}}
+run `nm-env-prepare.sh setup --idx 1` to setup test interfaces
+
+Coredumps: coredumps are not namespaced, so by default they will
+be sent to coredumpctl of the outer host, which has no idea where
+to get the debugging symbols from. A possible workaround is setting
+
+  $ echo '/tmp/core.%e.%p' | sudo tee /proc/sys/kernel/core_pattern
+
+so that core dumps get written to file. Afterwards, restore with
+
+  $ echo '|/usr/lib/systemd/systemd-coredump %P %u %g %s %t %c %h' | sudo tee /proc/sys/kernel/core_pattern
+
+from /usr/lib/sysctl.d/50-coredump.conf.
+
+For example, configure NetworkManager with
+  $ ./configure \
+           --enable-address-sanitizer=no \
+           --enable-compile-warnings=yes \
+           --enable-concheck \
+           --enable-config-plugin-ibft=yes \
+           --enable-gtk-doc \
+           --enable-ifcfg-rh=yes \
+           --enable-ifcfg-suse \
+           --enable-ifnet \
+           --enable-ifupdown=yes \
+           --enable-introspection \
+           --enable-json-validation=yes \
+           --enable-maintainer-mode \
+           --enable-more-logging \
+           --enable-more-warnings=error \
+           --enable-ovs=yes \
+           --enable-polkit=yes \
+           --enable-teamdctl=yes \
+           --enable-undefined-sanitizer=no \
+           --enable-vala=yes \
+           --enable-wimax \
+           --localstatedir=/var \
+           --prefix=/opt/test \
+           --sysconfdir=/etc \
+           --with-config-dhcp-default=internal \
+           --with-config-dns-rc-manager-default=auto \
+           --with-consolekit=yes \
+           --with-consolekit=yes \
+           --with-crypto=nss \
+           --with-dhclient=yes \
+           --with-dhcpcanon=yes \
+           --with-dhcpcd=yes \
+           --with-iwd=yes \
+           --with-libnm-glib=yes \
+           --with-modem-manager-1 \
+           --with-netconfig=/bin/nowhere/netconfig \
+           --with-nm-cloud-setup=yes \
+           --with-nmcli=yes \
+           --with-nmtui=yes \
+           --with-ofono=yes \
+           --with-resolvconf=/bin/nowhere/resolvconf \
+           --with-session-tracking=systemd \
+           --with-suspend-resume=systemd \
+           --with-systemd-logind=yes \
+           --with-valgrind=yes \
+           --enable-tests="${NM_BUILD_TESTS:-yes}" \
+           --with-more-asserts="${NM_BUILD_MORE_ASSERTS:-1000}" \
+           "${NM_CONFIGURE_OTPS[@]}"
+Test with:
+  $ systemctl stop NetworkManager; /opt/test/sbin/NetworkManager --debug 2>&1 | tee -a /tmp/nm-log.txt
+
+Or better, configure with `contrib/fedora/rpm/configure-for-system.sh`,
+subsequent `make && make install` will overwrite your system's NetworkManager,
+and you can test it with `systemctl daemon-reload ; systemctl restart NetworkManager`.
+
+Run NM-ci tests after creating eth1 with
+`nm-env-prepare.sh --prefix eth -i 1 && sleep 1 && nmcli device connect eth1`.

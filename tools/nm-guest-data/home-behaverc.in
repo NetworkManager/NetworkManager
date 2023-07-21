@@ -1,0 +1,2 @@
+[behave.formatters]
+html = behave_html_formatter:HTMLFormatter

@@ -100,6 +100,13 @@ tmp_file() {
     test -z "$2" || chmod "$2" "$1"
 }
 
+gen_file() {
+    local PERMS
+    [[ $1 =~ bin-* ]] && PERMS=755 || PERMS=644
+    sed "s|{{BASEDIR_NM}}|$BASEDIR_NM|g" "$BASEDIR_DATA/$1.in" \
+        | tmp_file "$BASEDIR_DATA/data-$1" $PERMS
+}
+
 bind_files() {
     VARIABLE_NAME="$1"
 
@@ -123,208 +130,17 @@ create_dockerfile() {
 
     local CONTAINERFILE="$1"
     local BASE_IMAGE="$2"
+    local GEN_FILES="bin-nm-env-prepare.sh bin-nm-deploy.sh bin-_nm-in-container-setup.sh
+        etc-rc.local etc-motd-container etc-bashrc.my nm-90-my.conf nm-95-user.conf
+        home-bash_history home-gdbinit home-gdb_history home-behaverc systemd-20-nm.override"
 
-    cp "$BASEDIR_NM/contrib/scripts/NM-log" "$BASEDIR_DATA/data-NM-log"
+    cp "$BASEDIR_NM/contrib/scripts/NM-log" "$BASEDIR_DATA/data-bin-NM-log"
     CLEANUP_FILES+=( "$BASEDIR_DATA/data-NM-log" )
 
-    cat <<EOF | tmp_file "$BASEDIR_DATA/data-motd"
-*** nm-in-container:
-
-find NetworkManager bind mounted at $BASEDIR_NM
-run \`nm-env-prepare.sh setup --idx 1\` to setup test interfaces
-
-Coredumps: coredumps are not namespaced, so by default they will
-be sent to coredumpctl of the outer host, which has no idea where
-to get the debugging symbols from. A possible workaround is setting
-
-  $ echo '/tmp/core.%e.%p' | sudo tee /proc/sys/kernel/core_pattern
-
-so that core dumps get written to file. Afterwards, restore with
-
-  echo '|/usr/lib/systemd/systemd-coredump %P %u %g %s %t %c %h' | sudo tee /proc/sys/kernel/core_pattern
-
-from /usr/lib/sysctl.d/50-coredump.conf.
-
-For example, configure NetworkManager with
-  \$ ./configure \\
-           --enable-address-sanitizer=no \\
-           --enable-compile-warnings=yes \\
-           --enable-concheck \\
-           --enable-config-plugin-ibft=yes \\
-           --enable-gtk-doc \\
-           --enable-ifcfg-rh=yes \\
-           --enable-ifcfg-suse \\
-           --enable-ifnet \\
-           --enable-ifupdown=yes \\
-           --enable-introspection \\
-           --enable-json-validation=yes \\
-           --enable-maintainer-mode \\
-           --enable-more-logging \\
-           --enable-more-warnings=error \\
-           --enable-ovs=yes \\
-           --enable-polkit=yes \\
-           --enable-teamdctl=yes \\
-           --enable-undefined-sanitizer=no \\
-           --enable-vala=yes \\
-           --enable-wimax \\
-           --localstatedir=/var \\
-           --prefix=/opt/test \\
-           --sysconfdir=/etc \\
-           --with-config-dhcp-default=internal \\
-           --with-config-dns-rc-manager-default=auto \\
-           --with-consolekit=yes \\
-           --with-consolekit=yes \\
-           --with-crypto=nss \\
-           --with-dhclient=yes \\
-           --with-dhcpcanon=yes \\
-           --with-dhcpcd=yes \\
-           --with-iwd=yes \\
-           --with-libnm-glib=yes \\
-           --with-modem-manager-1 \\
-           --with-netconfig=/bin/nowhere/netconfig \\
-           --with-nm-cloud-setup=yes \\
-           --with-nmcli=yes \\
-           --with-nmtui=yes \\
-           --with-ofono=yes \\
-           --with-resolvconf=/bin/nowhere/resolvconf \\
-           --with-session-tracking=systemd \\
-           --with-suspend-resume=systemd \\
-           --with-systemd-logind=yes \\
-           --with-valgrind=yes \\
-           --enable-tests="\${NM_BUILD_TESTS:-yes}" \\
-           --with-more-asserts="\${NM_BUILD_MORE_ASSERTS:-1000}" \\
-           "\${NM_CONFIGURE_OTPS[@]}"
-Test with:
-  \$ systemctl stop NetworkManager; /opt/test/sbin/NetworkManager --debug 2>&1 | tee -a /tmp/nm-log.txt
-
-Or better, configure with \`contrib/fedora/rpm/configure-for-system.sh\`,
-subsequent \`make && make install\` will overwrite your system's NetworkManager,
-and you can test it with \`systemctl daemon-reload ; systemctl restart NetworkManager\`.
-
-Run NM-ci tests after creating eth1 with
-\`nm-env-prepare.sh --prefix eth -i 1 && sleep 1 && nmcli device connect eth1\`.
-EOF
-
-    cat <<EOF | tmp_file "$BASEDIR_DATA/data-bashrc.my"
-alias m="make -j 8"
-alias n="ninja -C build"
-
-alias l='ls -l --color=auto'
-
-ulimit -c unlimited
-
-export G_DEBUG=fatal-warnings
-
-unset DEBUGINFOD_URLS
-
-export NMCI_DEBUG=1
-
-Clean() {
-    systemctl stop NetworkManager
-    rm -i -rf /run/NetworkManager
-    nm-env-prepare.sh
-}
-
-Cat-Timestamp() {
-    while IFS=$'\n' read line; do
-        printf "[%s]: %s\n" "$(date '+%s.%N')" "$line"
+    for f in $GEN_FILES; do
+        gen_file "$f"
     done
-}
-
-Journald-clear() {
-    rm -rf /var/log/journal/????????????????????????????????/*
-    systemctl restart systemd-journald
-}
-
-nm_run_gdb() {
-    systemctl stop NetworkManager.service
-    gdb --args "\${1:-/opt/test/sbin/NetworkManager}" --debug
-}
-
-nm_run_normal() {
-    systemctl stop NetworkManager.service
-    "\${1:-/opt/test/sbin/NetworkManager}" --debug 2>&1 | tee /tmp/nm-log.txt
-}
-
-. /usr/share/git-core/contrib/completion/git-prompt.sh
-PS1="\[\\033[01;36m\]\u@\h\[\\033[00m\]:\\t:\[\\033[01;34m\]\w\\\$(__git_ps1 \\" \[\\033[01;36m\](%s)\[\\033[00m\]\\")\[\\033[00m\]\$ "
-export GIT_PS1_SHOWDIRTYSTATE=1
-
-if test "\$SHOW_MOTD" != 0; then
-  cat /etc/motd
-  export SHOW_MOTD=0
-fi
-EOF
-
-    cat <<EOF | tmp_file "$BASEDIR_DATA/data-90-my.conf"
-[main]
-no-auto-default=*
-debug=RLIMIT_CORE,fatal-warnings
-
-[logging]
-level=TRACE
-domains=ALL,VPN_PLUGIN:TRACE
-
-[device-managed-0]
-match-device=interface-name:d_*,interface-name:tap*
-managed=0
-
-[device-managed-1]
-match-device=interface-name:net*,interface-name:eth*
-managed=1
-EOF
-
-    cat <<EOF | tmp_file "$BASEDIR_DATA/data-95-user.conf"
-EOF
-
-    cat <<EOF | tmp_file "$BASEDIR_DATA/data-bash_history" 600
-NM-log
-NM-log /tmp/nm-log.txt
-behave -f html --stop -t ipv4_method_static_with_IP ./features/scenarios/ipv4.feature
-behave -f html --stop ./features/scenarios/vrf.feature
-cd $BASEDIR_NM
-cd /NetworkManager-ci
-cd /NetworkManager
-for i in {1..9}; do nm-env-prepare.sh --prefix eth -i \$i; done
-Journald-clear
-journalctl | NM-log
-journalctl --since '3 min ago' | NM-log
-m
-make
-make install
-n
-nm-deploy.sh
-nm-env-prepare.sh
-nm-env-prepare.sh --prefix eth -i 1
-nm-env-prepare.sh --prefix eth -i 1 && sleep 1 && nmcli device connect eth1
-nm_run_gdb
-nm_run_normal
-gdb /usr/sbin/NetworkManager /tmp/core.NetworkManager.
-nmcli connection add type pppoe con-name ppp-net1 ifname ppp-net1 pppoe.parent net1 service isp username test password networkmanager autoconnect no
-nmcli device connect eth1
-systemctl stop NetworkManager; /opt/test/sbin/NetworkManager --debug 2>&1 | tee -a ./nm-log.txt
-systemctl stop NetworkManager; gdb -ex run --args /opt/test/sbin/NetworkManager --debug
-systemctl stop NetworkManager
-systemctl daemon-reload ; systemctl restart NetworkManager
-(cd /NetworkManager && n && n install && systemctl daemon-reload && systemctl restart NetworkManager.service)
-(cd /NetworkManager && m && m install && systemctl daemon-reload && systemctl restart NetworkManager.service)
-systemctl status NetworkManager
-EOF
-
-    cat <<EOF | tmp_file "$BASEDIR_DATA/data-gdbinit"
-set history save
-set history filename ~/.gdb_history
-EOF
-
-    cat <<EOF | tmp_file "$BASEDIR_DATA/data-gdb_history" 600
-run
-run --debug 2>&1 | tee /tmp/nm-log.txt
-EOF
-
-    cat <<EOF | tmp_file "$BASEDIR_DATA/data-behaverc" 600
-[behave.formatters]
-html = behave_html_formatter:HTMLFormatter
-EOF
+    chmod 755 "$BASEDIR_DATA/data-etc-rc.local"
 
     RUN_LN_BASEDIR_NM=
     if [ -n "$BASEDIR_NM" -a "$BASEDIR_NM" != "/NetworkManager" ] ; then
@@ -486,20 +302,20 @@ RUN pip3 install --user behave_html_formatter || true
 
 RUN mkdir -p /etc/systemd/system/NetworkManager.service.d
 
-COPY data-NM-log "/usr/bin/NM-log"
-COPY data-nm-env-prepare.sh "/usr/bin/nm-env-prepare.sh"
-COPY data-nm-deploy.sh "/usr/bin/nm-deploy.sh"
-COPY data-_nm-in-container-setup.sh "/usr/bin/_nm-in-container-setup.sh"
+COPY data-bin-NM-log "/usr/bin/NM-log"
+COPY data-bin-nm-env-prepare.sh "/usr/bin/nm-env-prepare.sh"
+COPY data-bin-nm-deploy.sh "/usr/bin/nm-deploy.sh"
+COPY data-bin-_nm-in-container-setup.sh "/usr/bin/_nm-in-container-setup.sh"
 COPY data-etc-rc.local "/etc/rc.d/rc.local"
-COPY data-motd /etc/motd
-COPY data-bashrc.my /etc/bashrc.my
-COPY data-90-my.conf /etc/NetworkManager/conf.d/90-my.conf
-COPY data-95-user.conf /etc/NetworkManager/conf.d/95-user.conf
-COPY data-bash_history /root/.bash_history
-COPY data-gdbinit /root/.gdbinit
-COPY data-gdb_history /root/.gdb_history
-COPY data-behaverc /root/.behaverc
-COPY data-etc-systemd-20-nm-in-container.override /etc/systemd/system/NetworkManager.service.d/20-nm-in-container.override
+COPY data-etc-motd-container /etc/motd
+COPY data-etc-bashrc.my /etc/bashrc.my
+COPY data-nm-90-my.conf /etc/NetworkManager/conf.d/90-my.conf
+COPY data-nm-95-user.conf /etc/NetworkManager/conf.d/95-user.conf
+COPY data-home-bash_history /root/.bash_history
+COPY data-home-gdbinit /root/.gdbinit
+COPY data-home-gdb_history /root/.gdb_history
+COPY data-home-behaverc /root/.behaverc
+COPY data-systemd-20-nm.override /etc/systemd/system/NetworkManager.service.d/20-nm.override
 
 RUN systemctl enable NetworkManager
 
