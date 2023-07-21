@@ -43,8 +43,8 @@ if [ -z "$BASE_IMAGE" ]; then
     BASE_IMAGE=fedora:latest
 fi
 
-BASEDIR_NM="$(readlink -f "$(dirname "$(readlink -f "$0")")/../..")"
-BASEDIR_DATA="$BASEDIR_NM/tools/nm-in-container/data"
+BASEDIR_NM="$(readlink -f "$(dirname "$(readlink -f "$0")")/..")"
+BASEDIR_DATA="$BASEDIR_NM/tools/nm-guest-data"
 
 BASEDIR_NM_CI=
 if [ -d "$BASEDIR_NM/.git/NetworkManager-ci" ] ; then
