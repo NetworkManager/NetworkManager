@@ -15769,7 +15769,11 @@ _cleanup_generic_post(NMDevice *self, NMDeviceStateReason reason, CleanupType cl
         act_request_set(self, NULL);
     }
 
-    if (cleanup_type == CLEANUP_TYPE_DECONFIGURE && reason != NM_DEVICE_STATE_REASON_NOW_MANAGED) {
+    if (cleanup_type == CLEANUP_TYPE_DECONFIGURE
+        && ((reason == NM_DEVICE_STATE_REASON_CARRIER && nm_device_is_master(self))
+            || !NM_IN_SET(reason,
+                          NM_DEVICE_STATE_REASON_NOW_MANAGED,
+                          NM_DEVICE_STATE_REASON_CARRIER))) {
         /* Check if the device was deactivated, and if so, delete_link.
          * Don't call delete_link synchronously because we are currently
          * handling a state change -- which is not reentrant. */
