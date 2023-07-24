@@ -52,8 +52,6 @@ typedef struct {
 
     GHashTable *unmanaged_specs;
     GHashTable *unrecognized_specs;
-
-    gboolean warned;
 } NMSIfcfgRHPluginPrivate;
 
 struct _NMSIfcfgRHPlugin {
@@ -178,7 +176,6 @@ nm_assert_self(NMSIfcfgRHPlugin *self, gboolean unhandled_specs_consistent)
 static NMSIfcfgRHStorage *
 _load_file(NMSIfcfgRHPlugin *self, const char *filename, GError **error)
 {
-    NMSIfcfgRHPluginPrivate      *priv           = NMS_IFCFG_RH_PLUGIN_GET_PRIVATE(self);
     NMSIfcfgRHStorage            *ret            = NULL;
     gs_unref_object NMConnection *connection     = NULL;
     gs_free_error GError         *load_error     = NULL;
@@ -234,13 +231,6 @@ _load_file(NMSIfcfgRHPlugin *self, const char *filename, GError **error)
                                                   filename,
                                                   g_steal_pointer(&connection),
                                                   &st.st_mtim);
-    }
-
-    if (!priv->warned) {
-        nm_log_info(_NMLOG_DOMAIN,
-                    "Warning: the ifcfg-rh plugin is deprecated, please migrate connections "
-                    "to the keyfile format using \"nmcli connection migrate\".");
-        priv->warned = TRUE;
     }
 
     return ret;

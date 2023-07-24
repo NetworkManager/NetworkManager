@@ -1469,10 +1469,15 @@ static void
 _plugin_connections_reload(NMSettings *self)
 {
     NMSettingsPrivate *priv = NM_SETTINGS_GET_PRIVATE(self);
-    GSList            *iter;
+    GSList            *iter_plugin;
+    GHashTableIter     iter_entry;
+    SettConnEntry     *entry;
+    gboolean           warned = FALSE;
 
-    for (iter = priv->plugins; iter; iter = iter->next) {
-        nm_settings_plugin_reload_connections(iter->data, _plugin_connections_reload_cb, self);
+    for (iter_plugin = priv->plugins; iter_plugin; iter_plugin = iter_plugin->next) {
+        nm_settings_plugin_reload_connections(iter_plugin->data,
+                                              _plugin_connections_reload_cb,
+                                              self);
     }
 
     _connection_changed_process_all_dirty(
@@ -1485,8 +1490,26 @@ _plugin_connections_reload(NMSettings *self)
             | NM_SETTINGS_CONNECTION_UPDATE_REASON_RESET_AGENT_SECRETS
             | NM_SETTINGS_CONNECTION_UPDATE_REASON_UPDATE_NON_SECRET);
 
-    for (iter = priv->plugins; iter; iter = iter->next)
-        nm_settings_plugin_load_connections_done(iter->data);
+    for (iter_plugin = priv->plugins; iter_plugin; iter_plugin = iter_plugin->next)
+        nm_settings_plugin_load_connections_done(iter_plugin->data);
+
+    g_hash_table_iter_init(&iter_entry, priv->sce_idx);
+    while (g_hash_table_iter_next(&iter_entry, (gpointer *) &entry, NULL)) {
+        const char *plugin;
+
+        plugin = nm_settings_plugin_get_plugin_name(nm_settings_storage_get_plugin(entry->storage));
+
+        if (nm_streq0(plugin, "ifcfg-rh")) {
+            if (!warned) {
+                nm_log_info(
+                    LOGD_SETTINGS,
+                    "Warning: the ifcfg-rh plugin is deprecated, please migrate connections "
+                    "to the keyfile format using \"nmcli connection migrate\"");
+                warned = TRUE;
+                break;
+            }
+        }
+    }
 }
 
 /*****************************************************************************/
