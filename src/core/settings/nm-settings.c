@@ -1473,6 +1473,7 @@ _plugin_connections_reload(NMSettings *self)
     GHashTableIter     iter_entry;
     SettConnEntry     *entry;
     gboolean           warned = FALSE;
+    gboolean           migrate;
 
     for (iter_plugin = priv->plugins; iter_plugin; iter_plugin = iter_plugin->next) {
         nm_settings_plugin_reload_connections(iter_plugin->data,
@@ -1493,6 +1494,11 @@ _plugin_connections_reload(NMSettings *self)
     for (iter_plugin = priv->plugins; iter_plugin; iter_plugin = iter_plugin->next)
         nm_settings_plugin_load_connections_done(iter_plugin->data);
 
+    migrate = nm_config_data_get_value_boolean(nm_config_get_data(priv->config),
+                                               NM_CONFIG_KEYFILE_GROUP_MAIN,
+                                               NM_CONFIG_KEYFILE_KEY_MAIN_MIGRATE_IFCFG_RH,
+                                               NM_CONFIG_DEFAULT_MAIN_MIGRATE_IFCFG_RH_BOOL);
+
     g_hash_table_iter_init(&iter_entry, priv->sce_idx);
     while (g_hash_table_iter_next(&iter_entry, (gpointer *) &entry, NULL)) {
         const char *plugin;
@@ -1501,12 +1507,34 @@ _plugin_connections_reload(NMSettings *self)
 
         if (nm_streq0(plugin, "ifcfg-rh")) {
             if (!warned) {
-                nm_log_info(
-                    LOGD_SETTINGS,
-                    "Warning: the ifcfg-rh plugin is deprecated, please migrate connections "
-                    "to the keyfile format using \"nmcli connection migrate\"");
+                if (migrate) {
+                    nm_log_warn(
+                        LOGD_SETTINGS,
+                        "Warning: connections were found in ifcfg-rh format and the "
+                        "\"main.migrate-ifcfg-rh\" option is enabled. Those connections will be "
+                        "migrated to keyfile. To convert them back, disable the option and then "
+                        "run \"nmcli connection migrate --plugin ifcfg-rh $UUID\"");
+                } else {
+                    nm_log_info(
+                        LOGD_SETTINGS,
+                        "Warning: the ifcfg-rh plugin is deprecated, please migrate connections "
+                        "to the keyfile format using \"nmcli connection migrate\"");
+                }
                 warned = TRUE;
-                break;
+            }
+            if (migrate) {
+                _LOGW("migrating connection %s ('%s') from ifcfg-rh to keyfile",
+                      entry->uuid,
+                      nm_settings_connection_get_id(entry->sett_conn));
+                nm_settings_connection_update(entry->sett_conn,
+                                              "keyfile",
+                                              NULL,
+                                              NM_SETTINGS_CONNECTION_PERSIST_MODE_KEEP,
+                                              NM_SETTINGS_CONNECTION_INT_FLAGS_NONE,
+                                              NM_SETTINGS_CONNECTION_INT_FLAGS_NONE,
+                                              NM_SETTINGS_CONNECTION_UPDATE_REASON_NONE,
+                                              "migrate-ifcfg-rh",
+                                              NULL);
             }
         }
     }
