@@ -106,6 +106,9 @@
 /* Default configuration option for main.plugins setting */
 #mesondefine NM_CONFIG_DEFAULT_MAIN_PLUGINS
 
+/* Default configuration value for main.migrate-ifcfg-rh setting */
+#mesondefine NM_CONFIG_DEFAULT_MAIN_MIGRATE_IFCFG_RH
+
 /* Default value for main.rc-manager setting */
 #mesondefine NM_CONFIG_DEFAULT_MAIN_RC_MANAGER
 

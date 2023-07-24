@@ -48,6 +48,7 @@ option('ebpf', type: 'combo', choices: ['auto', 'true', 'false'], description: '
 option('config_plugins_default', type: 'string', value: '', description: 'Default configuration option for main.plugins setting, used as fallback if the configuration option is unset')
 option('ifcfg_rh', type: 'boolean', value: false, description: 'enable ifcfg-rh configuration plugin (Fedora/RHEL) (deprecated)')
 option('ifupdown', type: 'combo', choices:['auto', 'true', 'false'], value: 'auto', description: 'enable ifupdown configuration plugin (Debian/Ubuntu)')
+option('config_migrate_ifcfg_rh_default', type: 'boolean', value: false, description: 'The default value of the main.migrate-ifcfg-rh configuration option')
 
 # handlers for resolv.conf
 option('resolvconf', type: 'string', value: '', description: 'Enable resolvconf support')

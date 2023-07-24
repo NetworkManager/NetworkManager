@@ -150,6 +150,8 @@ extern char *_nm_config_match_env;
 #define NM_CONFIG_DEVICE_STATE_DIR "" NMRUNDIR "/devices"
 
 #define NM_CONFIG_DEFAULT_LOGGING_AUDIT_BOOL (nm_streq("" NM_CONFIG_DEFAULT_LOGGING_AUDIT, "true"))
+#define NM_CONFIG_DEFAULT_MAIN_MIGRATE_IFCFG_RH_BOOL \
+    (nm_streq("" NM_CONFIG_DEFAULT_MAIN_MIGRATE_IFCFG_RH, "true"))
 
 typedef enum {
     NM_CONFIG_DEVICE_STATE_MANAGED_TYPE_UNKNOWN   = -1,
