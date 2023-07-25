@@ -290,6 +290,12 @@ glib_dep = declare_dependency(
 
 enable_ifcfg_rh = get_option('ifcfg_rh')
 
+config_migrate_ifcfg_rh_default = get_option('config_migrate_ifcfg_rh_default').to_string()
+if config_migrate_ifcfg_rh_default == 'true'
+  assert(enable_ifcfg_rh, 'ifcfg-rh migration can be enabled by default only when the ifcfg-rh plugin is enabled')
+endif
+config_h.set_quoted('NM_CONFIG_DEFAULT_MAIN_MIGRATE_IFCFG_RH', config_migrate_ifcfg_rh_default)
+
 enable_ifupdown = get_option('ifupdown')
 if enable_ifupdown == 'auto'
   enable_ifupdown = (run_command('test', '-e', '/etc/debian_version').returncode() == 0)
@@ -889,6 +895,7 @@ data_conf.set('NM_CONFIG_DEFAULT_LOGGING_BACKEND_TEXT',  config_logging_backend_
 data_conf.set('NM_CONFIG_DEFAULT_MAIN_AUTH_POLKIT_TEXT', config_auth_polkit_default)
 data_conf.set('NM_CONFIG_DEFAULT_MAIN_DHCP',             config_dhcp_default)
 data_conf.set('NM_CONFIG_DEFAULT_MAIN_RC_MANAGER',       config_dns_rc_manager_default)
+data_conf.set('NM_CONFIG_DEFAULT_MAIN_MIGRATE_IFCFG_RH_TEXT', config_migrate_ifcfg_rh_default)
 data_conf.set('NM_CONFIG_DEFAULT_WIFI_BACKEND_TEXT',     config_wifi_backend_default)
 data_conf.set('NM_MAJOR_VERSION',                        nm_major_version)
 data_conf.set('NM_MICRO_VERSION',                        nm_micro_version)
@@ -1086,6 +1093,7 @@ output += '  nmtui: ' + enable_nmtui.to_string() + '\n'
 output += '  nm-cloud-setup: ' + enable_nm_cloud_setup.to_string() + '\n'
 output += '\nConfiguration_plugins (main.plugins=' + config_plugins_default + ')\n'
 output += '  ifcfg-rh: ' + enable_ifcfg_rh.to_string() + '\n'
+output += '    default value of main.migrate-ifcfg-rh: ' +  config_migrate_ifcfg_rh_default + '\n'
 output += '  ifupdown: ' + enable_ifupdown.to_string() + '\n'
 output += '\nHandlers for /etc/resolv.conf:\n' + resolv_conf_summary
 output += '\n'

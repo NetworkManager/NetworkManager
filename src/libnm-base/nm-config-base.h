@@ -30,6 +30,7 @@
 #define NM_CONFIG_KEYFILE_KEY_MAIN_HOSTNAME_MODE               "hostname-mode"
 #define NM_CONFIG_KEYFILE_KEY_MAIN_IGNORE_CARRIER              "ignore-carrier"
 #define NM_CONFIG_KEYFILE_KEY_MAIN_IWD_CONFIG_PATH             "iwd-config-path"
+#define NM_CONFIG_KEYFILE_KEY_MAIN_MIGRATE_IFCFG_RH            "migrate-ifcfg-rh"
 #define NM_CONFIG_KEYFILE_KEY_MAIN_MONITOR_CONNECTION_FILES    "monitor-connection-files"
 #define NM_CONFIG_KEYFILE_KEY_MAIN_NO_AUTO_DEFAULT             "no-auto-default"
 #define NM_CONFIG_KEYFILE_KEY_MAIN_PLUGINS                     "plugins"

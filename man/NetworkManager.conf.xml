@@ -528,6 +528,17 @@ no-auto-default=*
           </para>
         </listitem>
       </varlistentry>
+
+      <varlistentry>
+        <term><varname>migrate-ifcfg-rh</varname></term>
+        <listitem><para>Whether NetworkManager tries to automatically convert
+        any connection profile stored in ifcfg-rh format to the keyfile format.
+        Support for ifcfg-rh is deprecated and will be eventually removed. If
+        enabled, the migration is performed at every startup of the daemon.
+        The default value is <literal>&NM_CONFIG_DEFAULT_MAIN_MIGRATE_IFCFG_RH_TEXT;</literal>.
+        </para></listitem>
+      </varlistentry>
+
     </variablelist>
   </refsect1>
 

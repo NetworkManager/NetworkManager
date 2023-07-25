@@ -853,6 +853,7 @@ static const ConfigGroup config_groups[] = {
                              NM_CONFIG_KEYFILE_KEY_MAIN_HOSTNAME_MODE,
                              NM_CONFIG_KEYFILE_KEY_MAIN_IGNORE_CARRIER,
                              NM_CONFIG_KEYFILE_KEY_MAIN_IWD_CONFIG_PATH,
+                             NM_CONFIG_KEYFILE_KEY_MAIN_MIGRATE_IFCFG_RH,
                              NM_CONFIG_KEYFILE_KEY_MAIN_MONITOR_CONNECTION_FILES,
                              NM_CONFIG_KEYFILE_KEY_MAIN_NO_AUTO_DEFAULT,
                              NM_CONFIG_KEYFILE_KEY_MAIN_PLUGINS,

@@ -409,6 +409,26 @@ AC_DEFINE_UNQUOTED(NM_CONFIG_DEFAULT_LOGGING_BACKEND, "$nm_config_logging_backen
 NM_CONFIG_DEFAULT_LOGGING_BACKEND_TEXT="$nm_config_logging_backend_default"
 AC_SUBST(NM_CONFIG_DEFAULT_LOGGING_BACKEND_TEXT)
 
+AC_ARG_WITH(config-migrate-ifcfg-rh-default,
+            AS_HELP_STRING([--with-config-migrate-ifcfg-rh-default=yes|no],
+                           [Default value for main.migrate-ifcfg-rh]),
+            nm_config_migrate_ifcfg_rh_default="$withval",
+            nm_config_migrate_ifcfg_rh_default="no")
+
+if test "$nm_config_migrate_ifcfg_rh_default" = yes; then
+	if test "$enable_ifcfg_rh" = no; then
+		AC_MSG_ERROR([ifcfg-rh migration can be enabled by default only when the ifcfg-rh plugin is enabled])
+	fi
+	AC_DEFINE(NM_CONFIG_DEFAULT_MAIN_MIGRATE_IFCFG_RH, "true", [The default value of the main.migrate-ifcfg-rh configuration option])
+	NM_CONFIG_DEFAULT_MAIN_MIGRATE_IFCFG_RH_TEXT='true'
+elif test "$nm_config_migrate_ifcfg_rh_default" = no; then
+	AC_DEFINE(NM_CONFIG_DEFAULT_MAIN_MIGRATE_IFCFG_RH, "false", [The default value of the main.migrate-ifcfg-rh configuration option])
+	NM_CONFIG_DEFAULT_MAIN_MIGRATE_IFCFG_RH_TEXT='false'
+else
+	AC_MSG_ERROR([The value of --with-config-migrate-ifcfg-rh-default must be either "yes" or "no".])
+fi
+AC_SUBST(NM_CONFIG_DEFAULT_MAIN_MIGRATE_IFCFG_RH_TEXT)
+
 AC_ARG_WITH(config-wifi-backend-default,
             AS_HELP_STRING([--with-config-wifi-backend-default=backend],
                            [Default value for wifi.backend]),
@@ -1440,6 +1460,7 @@ echo
 
 echo "Configuration plugins (main.plugins=${config_plugins_default})"
 echo "  ifcfg-rh: ${enable_ifcfg_rh}"
+echo "    default value of main.migrate-ifcfg-rh: ${nm_config_migrate_ifcfg_rh_default}"
 echo "  ifupdown: ${enable_ifupdown}"
 echo
 
