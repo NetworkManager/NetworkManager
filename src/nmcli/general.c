@@ -1415,11 +1415,11 @@ ac_overview(NmCli *nmc, NMActiveConnection *ac)
     NMIPConfig              *ip;
     nm_auto_str_buf NMStrBuf str = NM_STR_BUF_INIT(NM_UTILS_GET_NEXT_REALLOC_SIZE_104, FALSE);
 
-    if (nm_active_connection_get_master(ac)) {
+    if (nm_active_connection_get_controller(ac)) {
         g_string_append_printf(outbuf,
                                "%s %s, ",
                                _("master"),
-                               nm_device_get_iface(nm_active_connection_get_master(ac)));
+                               nm_device_get_iface(nm_active_connection_get_controller(ac)));
     }
     if (nm_active_connection_get_vpn(ac))
         g_string_append_printf(outbuf, "%s, ", _("VPN"));
