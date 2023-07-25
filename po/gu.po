@@ -13562,7 +13562,7 @@ msgstr "મેટ્રિક"
 msgid "No custom routes are defined."
 msgstr "કોઇ વૈવિધ્યપૂર્ણ માર્ગો વ્યાખ્યાયિત નથી."
 
-#: src/nmtui/nmt-slave-list.c:126
+#: src/nmtui/nmt-port-list.c:126
 msgid "Select the type of slave connection you wish to add."
 msgstr "જે પ્રકારનું ગૌણ જોડાણ તમે ઉમેરવા ઇચ્છો છો તે પસંદ કરો."
 

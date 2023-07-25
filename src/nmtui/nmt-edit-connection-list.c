@@ -490,7 +490,7 @@ nmt_edit_connection_list_class_init(NmtEditConnectionListClass *list_class)
      *
      * If %TRUE, connections should be grouped by type, with headers
      * indicating the types (as in the main connection list). If %FALSE,
-     * they will not be grouped (as in slave connection lists).
+     * they will not be grouped (as in port connection lists).
      */
     g_object_class_install_property(
         object_class,

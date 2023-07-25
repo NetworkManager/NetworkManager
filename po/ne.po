@@ -12662,7 +12662,7 @@ msgstr ""
 msgid "No custom routes are defined."
 msgstr ""
 
-#: src/nmtui/nmt-slave-list.c:126
+#: src/nmtui/nmt-port-list.c:126
 #, fuzzy
 msgid "Select the type of slave connection you wish to add."
 msgstr "तपाईँ कस्तो प्रकारको भीपीएन जडान सिर्जना गर्न चाहनुहुन्छ रोज्नुहोस् ।"

@@ -201,22 +201,22 @@ nm_editor_utils_get_connection_type_list(void)
     item->connection_setup_func = bond_connection_setup_func;
     g_ptr_array_add(array, item);
 
-    item                          = g_new0(NMEditorConnectionTypeDataReal, 1);
-    item->data.name               = _("Bridge");
-    item->data.setting_type       = NM_TYPE_SETTING_BRIDGE;
-    item->data.slave_setting_type = NM_TYPE_SETTING_BRIDGE_PORT;
-    item->data.device_type        = NM_TYPE_DEVICE_BRIDGE;
-    item->data.virtual            = TRUE;
-    item->id_format               = _("Bridge connection %d");
+    item                         = g_new0(NMEditorConnectionTypeDataReal, 1);
+    item->data.name              = _("Bridge");
+    item->data.setting_type      = NM_TYPE_SETTING_BRIDGE;
+    item->data.port_setting_type = NM_TYPE_SETTING_BRIDGE_PORT;
+    item->data.device_type       = NM_TYPE_DEVICE_BRIDGE;
+    item->data.virtual           = TRUE;
+    item->id_format              = _("Bridge connection %d");
     g_ptr_array_add(array, item);
 
-    item                          = g_new0(NMEditorConnectionTypeDataReal, 1);
-    item->data.name               = _("Team");
-    item->data.setting_type       = NM_TYPE_SETTING_TEAM;
-    item->data.slave_setting_type = NM_TYPE_SETTING_TEAM_PORT;
-    item->data.device_type        = NM_TYPE_DEVICE_TEAM;
-    item->data.virtual            = TRUE;
-    item->id_format               = _("Team connection %d");
+    item                         = g_new0(NMEditorConnectionTypeDataReal, 1);
+    item->data.name              = _("Team");
+    item->data.setting_type      = NM_TYPE_SETTING_TEAM;
+    item->data.port_setting_type = NM_TYPE_SETTING_TEAM_PORT;
+    item->data.device_type       = NM_TYPE_DEVICE_TEAM;
+    item->data.virtual           = TRUE;
+    item->id_format              = _("Team connection %d");
     g_ptr_array_add(array, item);
 
     item                    = g_new0(NMEditorConnectionTypeDataReal, 1);
@@ -367,46 +367,46 @@ get_available_iface_name(const char *try_name, NMClient *client)
 /**
  * nm_editor_utils_create_connection:
  * @type: the type of the connection's primary #NMSetting
- * @master: (nullable): the connection's master, if any
+ * @controller: (nullable): the connection's controller, if any
  * @client: an #NMClient
  *
  * Creates a new #NMConnection of the given type, automatically
  * creating a UUID and an appropriate not-currently-in-use connection
  * name, setting #NMSettingConnection:autoconnect appropriately for
- * the connection type, filling in slave-related information if
- * @master is not %NULL, and initializing any other mandatory-to-set
+ * the connection type, filling in port-related information if
+ * @controller is not %NULL, and initializing any other mandatory-to-set
  * properties to reasonable initial values.
  *
  * Returns: a new #NMConnection
  */
 NMConnection *
-nm_editor_utils_create_connection(GType type, NMConnection *master, NMClient *client)
+nm_editor_utils_create_connection(GType type, NMConnection *controller, NMClient *client)
 {
     NMEditorConnectionTypeData    **types;
-    NMEditorConnectionTypeDataReal *type_data           = NULL;
-    const char                     *master_setting_type = NULL, *master_uuid = NULL;
-    GType                master_type = G_TYPE_INVALID, slave_setting_type = G_TYPE_INVALID;
+    NMEditorConnectionTypeDataReal *type_data               = NULL;
+    const char                     *controller_setting_type = NULL, *controller_uuid = NULL;
+    GType                controller_type = G_TYPE_INVALID, port_setting_type = G_TYPE_INVALID;
     NMConnection        *connection;
     NMSettingConnection *s_con;
-    NMSetting           *s_hw, *s_slave;
+    NMSetting           *s_hw, *s_port;
     char                *uuid, *id, *ifname;
     int                  i;
 
-    if (master) {
-        NMSettingConnection *master_s_con;
+    if (controller) {
+        NMSettingConnection *controller_s_con;
 
-        master_s_con        = nm_connection_get_setting_connection(master);
-        master_setting_type = nm_setting_connection_get_connection_type(master_s_con);
-        master_uuid         = nm_setting_connection_get_uuid(master_s_con);
-        master_type         = nm_setting_lookup_type(master_setting_type);
+        controller_s_con        = nm_connection_get_setting_connection(controller);
+        controller_setting_type = nm_setting_connection_get_connection_type(controller_s_con);
+        controller_uuid         = nm_setting_connection_get_uuid(controller_s_con);
+        controller_type         = nm_setting_lookup_type(controller_setting_type);
     }
 
     types = nm_editor_utils_get_connection_type_list();
     for (i = 0; types[i]; i++) {
         if (types[i]->setting_type == type)
             type_data = (NMEditorConnectionTypeDataReal *) types[i];
-        if (types[i]->setting_type == master_type)
-            slave_setting_type = types[i]->slave_setting_type;
+        if (types[i]->setting_type == controller_type)
+            port_setting_type = types[i]->port_setting_type;
     }
     if (!type_data) {
         g_return_val_if_reached(NULL);
@@ -430,9 +430,9 @@ nm_editor_utils_create_connection(GType type, NMConnection *master, NMClient *cl
     else
         ifname = NULL;
 
-    if (slave_setting_type != G_TYPE_INVALID) {
-        s_slave = g_object_new(slave_setting_type, NULL);
-        nm_connection_add_setting(connection, s_slave);
+    if (port_setting_type != G_TYPE_INVALID) {
+        s_port = g_object_new(port_setting_type, NULL);
+        nm_connection_add_setting(connection, s_port);
     }
 
     uuid = nm_utils_uuid_generate();
@@ -448,9 +448,9 @@ nm_editor_utils_create_connection(GType type, NMConnection *master, NMClient *cl
                  NM_SETTING_CONNECTION_AUTOCONNECT,
                  !type_data->no_autoconnect,
                  NM_SETTING_CONNECTION_MASTER,
-                 master_uuid,
+                 controller_uuid,
                  NM_SETTING_CONNECTION_SLAVE_TYPE,
-                 master_setting_type,
+                 controller_setting_type,
                  NM_SETTING_CONNECTION_INTERFACE_NAME,
                  ifname,
                  NULL);

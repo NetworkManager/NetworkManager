@@ -14755,7 +14755,7 @@ msgstr "Metrika"
 msgid "No custom routes are defined."
 msgstr "Nema određenih prilagođenih ruta."
 
-#: src/nmtui/nmt-slave-list.c:126
+#: src/nmtui/nmt-port-list.c:126
 msgid "Select the type of slave connection you wish to add."
 msgstr "Odaberi vrstu pričuvnog povezivanja kojeg želite dodati."
 

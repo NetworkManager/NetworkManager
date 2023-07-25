@@ -15407,7 +15407,7 @@ msgstr "Metrik"
 msgid "No custom routes are defined."
 msgstr "Es sind keine eigenen Routen festgelegt."
 
-#: src/nmtui/nmt-slave-list.c:126
+#: src/nmtui/nmt-port-list.c:126
 msgid "Select the type of slave connection you wish to add."
 msgstr "Wählen Sie die Art der Slave-Verbindung, die Sie hinzufügen möchten."
 

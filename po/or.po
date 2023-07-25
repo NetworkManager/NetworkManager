@@ -13403,7 +13403,7 @@ msgstr "ମେଟ୍ରିକ"
 msgid "No custom routes are defined."
 msgstr "କୌଣସି ଇଚ୍ଛାରୂପଣ ପଥ ବ୍ୟାଖା କରାଯାଇ ନାହିଁ।"
 
-#: src/nmtui/nmt-slave-list.c:126
+#: src/nmtui/nmt-port-list.c:126
 msgid "Select the type of slave connection you wish to add."
 msgstr "ଆପଣ ଯୋଗ କରିବାକୁ ଚାହୁଁଥିବା ସ୍ଲେଭ ସଂଯୋଗ ପ୍ରକାରକୁ ବାଛନ୍ତୁ।"
 

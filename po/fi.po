@@ -12831,7 +12831,7 @@ msgstr ""
 msgid "No custom routes are defined."
 msgstr ""
 
-#: src/nmtui/nmt-slave-list.c:126
+#: src/nmtui/nmt-port-list.c:126
 msgid "Select the type of slave connection you wish to add."
 msgstr ""
 

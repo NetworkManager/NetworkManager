@@ -14,7 +14,7 @@
 
 #include "libnm-core-aux-intern/nm-libnm-core-utils.h"
 #include "nmt-address-list.h"
-#include "nmt-slave-list.h"
+#include "nmt-port-list.h"
 
 G_DEFINE_TYPE(NmtPageBridge, nmt_page_bridge, NMT_TYPE_EDITOR_PAGE_DEVICE)
 
@@ -22,7 +22,7 @@ G_DEFINE_TYPE(NmtPageBridge, nmt_page_bridge, NMT_TYPE_EDITOR_PAGE_DEVICE)
     (G_TYPE_INSTANCE_GET_PRIVATE((o), NMT_TYPE_PAGE_BRIDGE, NmtPageBridgePrivate))
 
 typedef struct {
-    NmtSlaveList *slaves;
+    NmtPortList *ports;
 } NmtPageBridgePrivate;
 
 NmtEditorPage *
@@ -63,9 +63,9 @@ nmt_page_bridge_constructed(GObject *object)
     nmt_editor_grid_append(grid, _("Slaves"), widget, NULL);
     nmt_editor_grid_set_row_flags(grid, widget, NMT_EDITOR_GRID_ROW_LABEL_ALIGN_LEFT);
 
-    widget = nmt_slave_list_new(conn, bridge_connection_type_filter, bridge);
+    widget = nmt_port_list_new(conn, bridge_connection_type_filter, bridge);
     nmt_editor_grid_append(grid, NULL, widget, NULL);
-    priv->slaves = NMT_SLAVE_LIST(widget);
+    priv->ports = NMT_PORT_LIST(widget);
 
     widget = nmt_newt_entry_numeric_new(10, 0, 1000000);
     g_object_bind_property(s_bridge,
@@ -165,7 +165,7 @@ nmt_page_bridge_saved(NmtEditorPage *editor_page)
 {
     NmtPageBridgePrivate *priv = NMT_PAGE_BRIDGE_GET_PRIVATE(editor_page);
 
-    nmt_edit_connection_list_recommit(NMT_EDIT_CONNECTION_LIST(priv->slaves));
+    nmt_edit_connection_list_recommit(NMT_EDIT_CONNECTION_LIST(priv->ports));
 }
 
 static void

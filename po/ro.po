@@ -12815,7 +12815,7 @@ msgstr "Metrică"
 msgid "No custom routes are defined."
 msgstr "Nu sunt definite rute personalizate."
 
-#: src/nmtui/nmt-slave-list.c:126
+#: src/nmtui/nmt-port-list.c:126
 msgid "Select the type of slave connection you wish to add."
 msgstr "Alegeți tipul conexiunii secundare pe care doriți s-o creați."
 

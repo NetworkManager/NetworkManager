@@ -13,7 +13,7 @@
 #include "nmt-page-team.h"
 
 #include "libnm-core-aux-intern/nm-libnm-core-utils.h"
-#include "nmt-slave-list.h"
+#include "nmt-port-list.h"
 
 G_DEFINE_TYPE(NmtPageTeam, nmt_page_team, NMT_TYPE_EDITOR_PAGE_DEVICE)
 
@@ -21,10 +21,10 @@ G_DEFINE_TYPE(NmtPageTeam, nmt_page_team, NMT_TYPE_EDITOR_PAGE_DEVICE)
     (G_TYPE_INSTANCE_GET_PRIVATE((o), NMT_TYPE_PAGE_TEAM, NmtPageTeamPrivate))
 
 typedef struct {
-    NmtSlaveList *slaves;
+    NmtPortList *ports;
 
     NMSettingTeam *s_team;
-    GType          slave_type;
+    GType          port_type;
 
 } NmtPageTeamPrivate;
 
@@ -39,26 +39,26 @@ nmt_page_team_init(NmtPageTeam *team)
 {
     NmtPageTeamPrivate *priv = NMT_PAGE_TEAM_GET_PRIVATE(team);
 
-    priv->slave_type = G_TYPE_NONE;
+    priv->port_type = G_TYPE_NONE;
 }
 
 static void
-slaves_changed(GObject *object, GParamSpec *pspec, gpointer user_data)
+ports_changed(GObject *object, GParamSpec *pspec, gpointer user_data)
 {
     NmtPageTeam        *team = NMT_PAGE_TEAM(user_data);
     NmtPageTeamPrivate *priv = NMT_PAGE_TEAM_GET_PRIVATE(team);
-    GPtrArray          *slaves;
+    GPtrArray          *ports;
 
-    g_object_get(object, "connections", &slaves, NULL);
-    if (slaves->len == 0) {
-        priv->slave_type = G_TYPE_NONE;
-    } else if (priv->slave_type == G_TYPE_NONE) {
-        NMConnection *slave = slaves->pdata[0];
+    g_object_get(object, "connections", &ports, NULL);
+    if (ports->len == 0) {
+        priv->port_type = G_TYPE_NONE;
+    } else if (priv->port_type == G_TYPE_NONE) {
+        NMConnection *port = ports->pdata[0];
 
-        if (nm_connection_is_type(slave, NM_SETTING_INFINIBAND_SETTING_NAME))
-            priv->slave_type = NM_TYPE_SETTING_INFINIBAND;
+        if (nm_connection_is_type(port, NM_SETTING_INFINIBAND_SETTING_NAME))
+            priv->port_type = NM_TYPE_SETTING_INFINIBAND;
         else
-            priv->slave_type = NM_TYPE_SETTING_WIRED;
+            priv->port_type = NM_TYPE_SETTING_WIRED;
     }
 }
 
@@ -68,11 +68,11 @@ team_connection_type_filter(GType connection_type, gpointer user_data)
     NmtPageTeam        *team = user_data;
     NmtPageTeamPrivate *priv = NMT_PAGE_TEAM_GET_PRIVATE(team);
 
-    if (priv->slave_type != NM_TYPE_SETTING_WIRED) {
+    if (priv->port_type != NM_TYPE_SETTING_WIRED) {
         if (connection_type == NM_TYPE_SETTING_INFINIBAND)
             return TRUE;
     }
-    if (priv->slave_type != NM_TYPE_SETTING_INFINIBAND) {
+    if (priv->port_type != NM_TYPE_SETTING_INFINIBAND) {
         if (connection_type == NM_TYPE_SETTING_WIRED || connection_type == NM_TYPE_SETTING_WIRELESS
             || connection_type == NM_TYPE_SETTING_VLAN)
             return TRUE;
@@ -126,12 +126,12 @@ nmt_page_team_constructed(GObject *object)
     widget = nmt_newt_label_new(_("Slaves"));
     nmt_newt_grid_add(grid, widget, 0, 0);
 
-    widget = nmt_slave_list_new(conn, team_connection_type_filter, team);
-    g_signal_connect(widget, "notify::connections", G_CALLBACK(slaves_changed), team);
+    widget = nmt_port_list_new(conn, team_connection_type_filter, team);
+    g_signal_connect(widget, "notify::connections", G_CALLBACK(ports_changed), team);
     nmt_newt_grid_add(grid, widget, 0, 1);
     nmt_newt_widget_set_padding(widget, 0, 0, 0, 1);
-    priv->slaves = NMT_SLAVE_LIST(widget);
-    slaves_changed(G_OBJECT(priv->slaves), NULL, team);
+    priv->ports = NMT_PORT_LIST(widget);
+    ports_changed(G_OBJECT(priv->ports), NULL, team);
 
     widget = nmt_newt_label_new(_("JSON configuration"));
     nmt_newt_grid_add(grid, widget, 0, 2);
@@ -156,7 +156,7 @@ nmt_page_team_saved(NmtEditorPage *editor_page)
 {
     NmtPageTeamPrivate *priv = NMT_PAGE_TEAM_GET_PRIVATE(editor_page);
 
-    nmt_edit_connection_list_recommit(NMT_EDIT_CONNECTION_LIST(priv->slaves));
+    nmt_edit_connection_list_recommit(NMT_EDIT_CONNECTION_LIST(priv->ports));
 }
 
 static void
