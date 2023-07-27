@@ -421,16 +421,15 @@ no-auto-default=*
 
       <varlistentry>
         <term><varname>systemd-resolved</varname></term>
-        <listitem><para>Send the connection DNS configuration to
+        <listitem><para>Additionally, send the connection DNS configuration to
         <literal>systemd-resolved</literal>. Defaults to "<literal>true</literal>".
         </para>
-        <para>Note that this setting is complementary to the
-        <varname>dns</varname> setting. You can keep this enabled while using
-        <varname>dns</varname> set to another DNS plugin alongside
-        <literal>systemd-resolved</literal>, or <varname>dns</varname> set to
-        <literal>systemd-resolved</literal> to configure the system resolver to use
-        <literal>systemd-resolved</literal>.</para>
-        <para>If systemd-resolved is enabled, the connectivity check resolves the
+        <para>Note that this setting has no effect if the main <varname>dns</varname>
+        plugin is already <literal>systemd-resolved</literal>. It is complementary to the
+        <varname>dns</varname> setting to configure systemd-resolved alongside the
+        main plugin.</para>
+        <para>If systemd-resolved is enabled, either via this setting as the main
+        DNS plugin, the connectivity check resolves the
         hostname per-device.</para>
         </listitem>
       </varlistentry>
