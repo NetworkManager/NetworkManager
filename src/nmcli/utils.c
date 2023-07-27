@@ -1822,3 +1822,19 @@ print_data(const NmcConfig     *nmc_config,
                               field_values);
     }
 }
+
+void
+nmc_warn_if_version_mismatch(NMClient *client)
+{
+    const char *nm_ver;
+
+    g_return_if_fail(client != NULL);
+
+    nm_ver = nm_client_get_version(client);
+    if (!nm_streq0(nm_ver, VERSION)) {
+        g_printerr(_("Warning: nmcli (%s) and NetworkManager (%s) versions don't match. "
+                     "Restarting NetworkManager is advised.\n"),
+                   VERSION,
+                   nm_ver ? nm_ver : _("Unknown"));
+    }
+}

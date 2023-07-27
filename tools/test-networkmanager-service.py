@@ -1587,7 +1587,9 @@ class NetworkManager(ExportedObj):
             PRP_NM_ACTIVATING_CONNECTION: ExportedObj.to_path(None),
             PRP_NM_STARTUP: False,
             PRP_NM_STATE: dbus.UInt32(NM.State.DISCONNECTED),
-            PRP_NM_VERSION: "0.9.9.0",
+            PRP_NM_VERSION: os.environ.get(
+                "NM_TEST_NETWORKMANAGER_SERVICE_VERSION", "0.9.9.0"
+            ),
             PRP_NM_CONNECTIVITY: dbus.UInt32(NM.ConnectivityState.NONE),
         }
 

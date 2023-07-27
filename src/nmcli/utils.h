@@ -72,6 +72,8 @@ void            print_data(const NmcConfig     *nmc_config,
                            int                  indent,
                            const NmcOutputData *out);
 
+void nmc_warn_if_version_mismatch(NMClient *client);
+
 /*****************************************************************************/
 
 extern const NMMetaEnvironment *const nmc_meta_environment;
