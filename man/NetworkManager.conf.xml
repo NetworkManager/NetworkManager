@@ -428,7 +428,7 @@ no-auto-default=*
         plugin is already <literal>systemd-resolved</literal>. It is complementary to the
         <varname>dns</varname> setting to configure systemd-resolved alongside the
         main plugin.</para>
-        <para>If systemd-resolved is enabled, either via this setting as the main
+        <para>If systemd-resolved is enabled, either via this setting or the main
         DNS plugin, the connectivity check resolves the
         hostname per-device.</para>
         </listitem>
