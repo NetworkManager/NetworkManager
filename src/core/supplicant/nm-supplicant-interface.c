@@ -765,9 +765,15 @@ _bss_info_properties_changed(NMSupplicantInterface *self,
         gboolean p_owe_transition_mode;
         gboolean p_metered;
         guint32  rate;
+        guint32  bandwidth;
 
         arr_data = g_variant_get_fixed_array(v_v, &arr_len, 1);
-        nm_wifi_utils_parse_ies(arr_data, arr_len, &rate, &p_metered, &p_owe_transition_mode);
+        nm_wifi_utils_parse_ies(arr_data,
+                                arr_len,
+                                &rate,
+                                &bandwidth,
+                                &p_metered,
+                                &p_owe_transition_mode);
         p_max_rate     = NM_MAX(p_max_rate, rate);
         p_max_rate_has = TRUE;
         g_variant_unref(v_v);
@@ -777,7 +783,8 @@ _bss_info_properties_changed(NMSupplicantInterface *self,
         else
             bss_info->rsn_flags &= ~NM_802_11_AP_SEC_KEY_MGMT_OWE_TM;
 
-        bss_info->metered = p_metered;
+        bss_info->metered   = p_metered;
+        bss_info->bandwidth = bandwidth;
     }
 
     if (p_max_rate_has)

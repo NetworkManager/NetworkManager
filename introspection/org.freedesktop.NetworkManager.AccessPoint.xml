@@ -80,6 +80,13 @@
     <property name="MaxBitrate" type="u" access="read"/>
 
     <!--
+        Bandwidth:
+
+        The bandwidth announced by the access point in MHz.
+    -->
+    <property name="Bandwidth" type="u" access="read"/>
+
+    <!--
         Strength:
 
         The current signal quality of the access point, in percent.

@@ -455,6 +455,7 @@ const char *nm_utils_parse_dns_domain(const char *domain, gboolean *is_routing);
 void nm_wifi_utils_parse_ies(const guint8 *bytes,
                              gsize         len,
                              guint32      *out_max_rate,
+                             guint32      *out_bandwidth,
                              gboolean     *out_metered,
                              gboolean     *out_owe_transition_mode);
 

@@ -179,6 +179,8 @@ typedef struct _NMSupplicantBssInfo {
 
     guint32 max_rate;
 
+    guint32 bandwidth;
+
     guint8 signal_percent;
 
     NMEtherAddr bssid;

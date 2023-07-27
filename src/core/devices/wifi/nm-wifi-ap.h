@@ -27,6 +27,7 @@
 #define NM_WIFI_AP_HW_ADDRESS  "hw-address"
 #define NM_WIFI_AP_MODE        "mode"
 #define NM_WIFI_AP_MAX_BITRATE "max-bitrate"
+#define NM_WIFI_AP_BANDWIDTH   "bandwidth"
 #define NM_WIFI_AP_STRENGTH    "strength"
 #define NM_WIFI_AP_LAST_SEEN   "last-seen"
 
@@ -78,6 +79,8 @@ guint32                nm_wifi_ap_get_freq(NMWifiAP *ap);
 gboolean               nm_wifi_ap_set_freq(NMWifiAP *ap, guint32 freq);
 guint32                nm_wifi_ap_get_max_bitrate(NMWifiAP *ap);
 gboolean               nm_wifi_ap_set_max_bitrate(NMWifiAP *ap, guint32 bitrate);
+guint32                nm_wifi_ap_get_bandwidth(NMWifiAP *ap);
+gboolean               nm_wifi_ap_set_bandwidth(NMWifiAP *ap, guint32 bandwidth);
 gboolean               nm_wifi_ap_get_fake(const NMWifiAP *ap);
 gboolean               nm_wifi_ap_set_fake(NMWifiAP *ap, gboolean fake);
 NM80211ApFlags         nm_wifi_ap_get_flags(const NMWifiAP *self);
