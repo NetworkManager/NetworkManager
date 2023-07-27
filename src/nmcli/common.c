@@ -1250,6 +1250,7 @@ got_client(GObject *source_object, GAsyncResult *res, gpointer user_data)
                                 error->message);
     } else {
         nmc->client = NM_CLIENT(source_object);
+        nmc_warn_if_version_mismatch(nmc->client);
         call_cmd(nmc,
                  g_steal_pointer(&task),
                  call->cmd,
