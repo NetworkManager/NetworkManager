@@ -713,6 +713,14 @@ class Util:
             extra_env,
         )
 
+    @staticmethod
+    def get_nmcli_version():
+        ver = NM.utils_version()
+        micro = ver & 0xFF
+        minor = (ver >> 8) & 0xFF
+        major = ver >> 16
+        return f"{major}.{minor}.{micro}"
+
 
 ###############################################################################
 
@@ -834,11 +842,15 @@ class NMStubServer:
         except:
             return None
 
-    def __init__(self, seed):
+    def __init__(self, seed, version=None):
         service_path = PathConfiguration.test_networkmanager_service_path()
         self._conn = dbus.SessionBus()
         env = os.environ.copy()
         env["NM_TEST_NETWORKMANAGER_SERVICE_SEED"] = seed
+        if version is not None:
+            env["NM_TEST_NETWORKMANAGER_SERVICE_VERSION"] = version
+        else:
+            env["NM_TEST_NETWORKMANAGER_SERVICE_VERSION"] = Util.get_nmcli_version()
         p = subprocess.Popen(
             [sys.executable, service_path], stdin=subprocess.PIPE, env=env
         )
@@ -1069,9 +1081,9 @@ class NMTestContext:
         self._calling_num[calling_fcn] = calling_num
         return calling_num
 
-    def srv_start(self):
+    def srv_start(self, srv_version=None):
         self.srv_shutdown()
-        self.srv = NMStubServer(self.testMethodName)
+        self.srv = NMStubServer(self.testMethodName, srv_version)
 
     def srv_shutdown(self):
         if self.srv is not None:
@@ -2245,6 +2257,18 @@ class TestNmcli(unittest.TestCase):
         nmc.pexp.expect("NetworkManager is stopped")
         end_mon(self, nmc)
 
+    @nm_test_no_dbus  # we need dbus, but we need to pass arguments to srv_start
+    def test_version_warn(self):
+        self.ctx.srv_start(srv_version="A.B.C")
+        self.call_nmcli_l(
+            ["c"],
+            replace_stderr=[
+                Util.ReplaceTextRegex(
+                    r"\(" + Util.get_nmcli_version() + r"\)", "(X.Y.Z)"
+                )
+            ],
+        )
+
 
 ###############################################################################
 
@@ -2675,7 +2699,7 @@ def main():
                     sys.executable,
                     __file__,
                     "--started-with-dbus-session",
-                    *sys.argv[1:]
+                    *sys.argv[1:],
                 )
             except OSError as e:
                 if e.errno != errno.ENOENT:

@@ -1,0 +1,30 @@
+size: 263
+location: src/tests/client/test-client.py:test_version_warn()/1
+cmd: $NMCLI c
+lang: C
+returncode: 0
+stdout: 1 bytes
+>>>
+
+
+<<<
+stderr: 110 bytes
+>>>
+Warning: nmcli (X.Y.Z) and NetworkManager (A.B.C) versions don't match. Restarting NetworkManager is advised.
+
+<<<
+size: 273
+location: src/tests/client/test-client.py:test_version_warn()/2
+cmd: $NMCLI c
+lang: pl_PL.UTF-8
+returncode: 0
+stdout: 1 bytes
+>>>
+
+
+<<<
+stderr: 110 bytes
+>>>
+Warning: nmcli (X.Y.Z) and NetworkManager (A.B.C) versions don't match. Restarting NetworkManager is advised.
+
+<<<
