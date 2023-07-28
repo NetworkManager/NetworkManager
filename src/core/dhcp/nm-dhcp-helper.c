@@ -159,7 +159,7 @@ do_connect:
                       error->message,
                       try_count,
                       (long long) (time_end - remaining_time - time_start) / 1000);
-                interval = NM_CLAMP((gint64) (100L * (1L << NM_MIN(try_count, 31))), 5000, 100000);
+                interval = NM_CLAMP((gint64) (100L * (1L << NM_MIN(try_count, 31u))), 5000, 100000);
                 g_usleep(NM_MIN(interval, remaining_time));
                 g_clear_error(&error);
                 goto do_connect;
@@ -222,7 +222,7 @@ do_notify:
         gint64 interval;
 
         _LOGi("failure to call notify: %s (retry %u)", error->message, try_count);
-        interval = NM_CLAMP((gint64) (100L * (1L << NM_MIN(try_count, 31))), 5000, 25000);
+        interval = NM_CLAMP((gint64) (100L * (1L << NM_MIN(try_count, 31u))), 5000, 25000);
         g_usleep(NM_MIN(interval, remaining_time));
         g_clear_error(&error);
         goto do_notify;

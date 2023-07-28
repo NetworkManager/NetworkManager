@@ -719,7 +719,7 @@ nm_platform_sysctl_ip_neigh_set_ipv6_reachable_time(NMPlatform *self,
 
     /* RFC 4861 says the value can't be greater than one hour.
      * Also use a reasonable lower threshold. */
-    clamped = NM_CLAMP(value_ms, 100, 3600000);
+    clamped = NM_CLAMP(value_ms, 100u, 3600000u);
     nm_sprintf_buf(path, "/proc/sys/net/ipv6/neigh/%s/base_reachable_time_ms", iface);
     nm_sprintf_buf(str, "%u", clamped);
     if (!nm_platform_sysctl_set(self, NMP_SYSCTL_PATHID_ABSOLUTE(path), str))
@@ -746,7 +746,7 @@ nm_platform_sysctl_ip_neigh_set_ipv6_retrans_time(NMPlatform *self,
         return TRUE;
 
     nm_sprintf_buf(path, "/proc/sys/net/ipv6/neigh/%s/retrans_time_ms", iface);
-    nm_sprintf_buf(str, "%u", NM_CLAMP(value_ms, 10, 3600000));
+    nm_sprintf_buf(str, "%u", NM_CLAMP(value_ms, 10u, 3600000u));
 
     return nm_platform_sysctl_set(self, NMP_SYSCTL_PATHID_ABSOLUTE(path), str);
 }
