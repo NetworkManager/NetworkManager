@@ -154,6 +154,12 @@ typedef uint64_t _nm_bitwise nm_be64_t;
 
 /*****************************************************************************/
 
+#define _NM_INT_IS_SIGNED(arg) (!(((typeof(arg)) -1) > 0))
+
+#define _NM_INT_SAME_SIGNEDNESS(arg1, arg2) (_NM_INT_IS_SIGNED(arg1) == _NM_INT_IS_SIGNED(arg2))
+
+/*****************************************************************************/
+
 #define NM_PASTE_ARGS(identifier1, identifier2) identifier1##identifier2
 #define NM_PASTE(identifier1, identifier2)      NM_PASTE_ARGS(identifier1, identifier2)
 
