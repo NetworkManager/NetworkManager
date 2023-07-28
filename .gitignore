@@ -41,6 +41,8 @@ test-*.trs
 .project
 .cproject
 .settings/
+.vscode/
+.cache/
 
 /build/
 
