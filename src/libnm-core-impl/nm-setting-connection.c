@@ -1824,6 +1824,13 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      * A human readable unique identifier for the connection, like "Work Wi-Fi"
      * or "T-Mobile 3G".
      **/
+    /* ---keyfile---
+     * property: id
+     * format: string
+     * description: A human readable unique identifier for the connection.
+     * example: id=Home Ethernet
+     * ---end---
+     */
     /* ---ifcfg-rh---
      * property: id
      * variable: NAME(+)
@@ -1872,6 +1879,20 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      *   The UUID cannot be changed, except in offline mode. In that case,
      *   the special values "new", "generate" and "" are allowed to generate
      *   a new random UUID.
+     * ---end---
+     */
+    /* ---keyfile---
+     * property: uuid
+     * format: a valid RFC4122 universally unique identifier (UUID).
+     * description: The connection.uuid is the real identifier of a profile.
+     *   It cannot change and it must be unique. It is therefore often best
+     *   to refer to a connection by UUID, for example with `nmcli connection up uuid $UUID`.
+     *
+     *   Please notice that a UUID might be missing on a keyfile and that is
+     *   totally fine as NetworkManager will write it on the keyfile when
+     *   modifying the keyfile. That means that a connection can be activated
+     *   without a UUID written in the keyfile.
+     * example: uuid=7f9b3356-b210-4c0e-8123-bd116c9c280f
      * ---end---
      */
     /* ---ifcfg-rh---
@@ -1931,6 +1952,13 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      *
      * Since: 1.4
      **/
+    /* ---keyfile---
+     * property: stable-id
+     * format: string
+     * description: Token to generate stable IDs.
+     * example: stable-id=${CONNECTION}-${BOOT}-${DEVICE}
+     * ---end---
+     */
     /* ---ifcfg-rh---
      * property: stable-id
      * variable: STABLE_ID(+)
@@ -1960,6 +1988,15 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      * can be used with, and if interface names change or are reordered the
      * connection may be applied to the wrong interface.
      **/
+    /* ---keyfile---
+     * property: interface-name
+     * format: string
+     * description: Interface name of the device this connection is bound to.
+     * The variable can be left out when the connection should apply for more
+     * devices.
+     * example: interface-name=eth0
+     * ---end---
+     */
     /* ---ifcfg-rh---
      * property: interface-name
      * variable: DEVICE
@@ -1995,6 +2032,13 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      * non-hardware dependent connections like VPN or otherwise, should contain
      * the setting name of that setting type (ie, "vpn" or "bridge", etc).
      **/
+    /* ---keyfile---
+     * property: type
+     * format: string
+     * description: Base type of the connection.
+     * example: type=ethernet, type=bond, type=bridge
+     * ---end---
+     */
     /* ---ifcfg-rh---
      * property: type
      * variable: TYPE (DEVICETYPE, DEVICE)
@@ -2028,6 +2072,15 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      * permission refers to, which may not contain the ":" character. Any
      * [reserved] information present must be ignored and is reserved for future
      * use.  All of [type], [id], and [reserved] must be valid UTF-8.
+     */
+    /* ---keyfile---
+     * property: permissions
+     * format: string ([type]:[id]:[reserved])
+     * description: Restrict to certain users the access to this connection,
+     * and allow the connection to be active only when at least one of the
+     * specified users is logged into an active session.
+     * example: permissions=user:dcbw:blah
+     * ---end---
      */
     /* ---ifcfg-rh---
      * property: permissions
@@ -2070,6 +2123,13 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      * Depending on "connection.multi-connect", a profile can (auto)connect only
      * once at a time or multiple times.
      **/
+    /* ---keyfile---
+     * property: autoconnect
+     * format: boolean
+     * description: Whether the connection should be autoconnected. Default value is true.
+     * example: autoconnect=true, autoconnect=false
+     * ---end---
+     */
     /* ---ifcfg-rh---
      * property: autoconnect
      * variable: ONBOOT
@@ -2096,6 +2156,14 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      * profile to select for autoconnect. In case of equal priority, the profile
      * used most recently is chosen.
      **/
+    /* ---keyfile---
+     * property: autoconnect-priority
+     * format: integer (-999 to 999)
+     * description: Connection priority for automatic activation. Connections with
+     *  higher numbers are preferred when selecting profiles for automatic activation.
+     * example: autoconnect-priority=200, autoconnect-priority=-200
+     * ---end---
+     */
     /* ---ifcfg-rh---
      * property: autoconnect-priority
      * variable: AUTOCONNECT_PRIORITY(+)
@@ -2126,6 +2194,14 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      * blocking autoconnect. Note that after a timeout, NetworkManager will try
      * to autoconnect again.
      */
+    /* ---keyfile---
+     * property: autoconnect-retries
+     * format: integer (Zero means forever)
+     * description: The number of times a connection should be autoactivated
+     * before giving up and switching to the next one.
+     * example: autoconnect-retries=3
+     * ---end---
+     */
     /* ---ifcfg-rh---
      * property: autoconnect-retries
      * variable: AUTOCONNECT_RETRIES(+)
@@ -2153,6 +2229,14 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      * moment. The value is of type #NMConnectionMultiConnect.
      *
      * Since: 1.14
+     */
+    /* ---keyfile---
+     * property: multi-connect
+     * format: integer (values corresponding to #NMConnectionMultiConnect enum)
+     * description: whether the profile can be active on multiple devices at a
+     * given moment.
+     * example: multi-connect=1, multi-connect=3
+     * ---end---
      */
     /* ---ifcfg-rh---
      * property: multi-connect
@@ -2184,6 +2268,15 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      * timestamp. The property is only meant for reading (changes to this
      * property will not be preserved).
      **/
+    /* ---keyfile---
+     * property: timestamp
+     * format: integer
+     * description: The time, in seconds since the Unix Epoch, that the
+     * connection was last successfully fully activated. This property is
+     * read-only.
+     * example: timestamp=1385401165
+     * ---end---
+     */
     obj_properties[PROP_TIMESTAMP] = g_param_spec_uint64(
         NM_SETTING_CONNECTION_TIMESTAMP,
         "",
@@ -2229,6 +2322,14 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      * When updating this property on a currently activated connection,
      * the change takes effect immediately.
      **/
+    /* ---keyfile---
+     * property: zone
+     * format: string
+     * description: Trust level of this connection. The string is usually used
+     * for a firewall.
+     * example: zone=Home, zone=Work
+     * ---end---
+     */
     /* ---ifcfg-rh---
      * property: zone
      * variable: ZONE(+)
@@ -2251,6 +2352,14 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      *
      * Interface name of the master device or UUID of the master connection.
      **/
+    /* ---keyfile---
+     * property: master
+     * format: string
+     * description: Interface name of the controller device or UUID of the
+     * controller connection.
+     * example: master=br0, master=27afa607-ee36-43f0-b8c3-9d245cdc4bb3
+     * ---end---
+     */
     /* ---ifcfg-rh---
      * property: master
      * variable: MASTER, MASTER_UUID, TEAM_MASTER, TEAM_MASTER_UUID, BRIDGE, BRIDGE_UUID
@@ -2276,6 +2385,13 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      * %NM_SETTING_BOND_SETTING_NAME), or %NULL if this connection is not a
      * slave.
      **/
+    /* ---keyfile---
+     * property: slave-type
+     * format: string
+     * description: Setting name of the device type of this port's controller connection.
+     * example: slave-type=bond, slave-type=bridge
+     * ---end---
+     */
     /* ---ifcfg-rh---
      * property: slave-type
      * variable: MASTER, MASTER_UUID, TEAM_MASTER, TEAM_MASTER_UUID, DEVICETYPE,
@@ -2310,6 +2426,14 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      *
      * Since: 1.2
      **/
+    /* ---keyfile---
+     * property: autoconnect-slaves
+     * format: integer
+     * description: Whether ports of this connection should be auto-connected
+     * when this connection is activated.
+     * example: autoconnect-slaves=1, autoconnect-slaves=0
+     * ---end---
+     */
     /* ---ifcfg-rh---
      * property: autoconnect-slaves
      * variable: AUTOCONNECT_SLAVES(+)
@@ -2335,6 +2459,14 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      * connection itself is activated. Currently, only VPN connections are
      * supported.
      **/
+    /* ---keyfile---
+     * property: secondaries
+     * format: string
+     * description: UUID of VPN connections that should be activated together
+     * with this connection.
+     * example: secondaries=27afa607-ee36-43f0-b8c3-9d245cdc4bb3
+     * ---end---
+     */
     /* ---ifcfg-rh---
      * property: secondaries
      * variable: SECONDARY_UUIDS(+)
@@ -2356,6 +2488,15 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      * If greater than zero, delay success of IP addressing until either the
      * timeout is reached, or an IP gateway replies to a ping.
      **/
+    /* ---keyfile---
+     * property: gateway-ping-timeout
+     * format: integer
+     * description: If greather than zero, the IP connectivity will be checked
+     * by pinging the gateway and waiting for the specified timeout (in
+     * seconds).
+     * example: gateway-ping-timeout=5
+     * ---end---
+     */
     /* ---ifcfg-rh---
      * property: gateway-ping-timeout
      * variable: GATEWAY_PING_TIMEOUT(+)
@@ -2386,6 +2527,13 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      *
      * Since: 1.2
      **/
+    /* ---keyfile---
+     * property: metered
+     * format: boolean
+     * description: Whether the connection is metered.
+     * example: metered=true, metered=false
+     * ---end---
+     */
     /* ---ifcfg-rh---
      * property: metered
      * variable: CONNECTION_METERED(+)
@@ -2411,6 +2559,13 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      *
      * Since: 1.2
      **/
+    /* ---keyfile---
+     * property: lldp
+     * format: boolean
+     * description: Whether LLDP is enabled for the connection.
+     * example: lldp=true, lldp=false
+     * ---end---
+     */
     /* ---ifcfg-rh---
      * property: lldp
      * variable: LLDP(+)
@@ -2442,6 +2597,13 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      *
      * Since: 1.10
      **/
+    /* ---keyfile---
+     * property: auth-retries
+     * format: integer
+     * description: Number of retries for authenctication. Zero means to try indefinitely.
+     * example: auth-retries=3, auth-retries=0
+     * ---end---
+     */
     /* ---ifcfg-rh---
      * property: auth-retries
      * variable: AUTH_RETRIES(+)
@@ -2477,6 +2639,13 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      *
      * Since: 1.12
      **/
+    /* ---keyfile---
+     * property: mdns
+     * format: integer
+     * description: Whether mDNS is enabled for the connection.
+     * example: mdns=1, mdns=0
+     * ---end---
+     */
     /* ---ifcfg-rh---
      * property: mdns
      * variable: MDNS(+)
@@ -2516,6 +2685,14 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      *
      * Since: 1.14
      **/
+    /* ---keyfile---
+     * property: llmnr
+     * format: integer
+     * description: Whether Link-Local Multicast Name Resolution (LLMNR) is
+     * enabled for the connection.
+     * example: llmnr=1, llmnr=0
+     * ---end---
+     */
     /* ---ifcfg-rh---
      * property: llmnr
      * variable: LLMNR(+)
@@ -2553,6 +2730,13 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      *
      * Since: 1.34
      **/
+    /* ---keyfile---
+     * property: dns-over-tls
+     * format: integer
+     * description: Whether DNSOverTls is enabled for the connection.
+     * example: dns-over-tls=1, dns-over-tls=0
+     * ---end---
+     */
     /* ---ifcfg-rh---
      * property: dns-over-tls
      * variable: DNS_OVER_TLS(+)
@@ -2656,6 +2840,13 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      *
      * Since: 1.40
      **/
+    /* ---keyfile---
+     * property: mptcp-flags
+     * format: integer
+     * description: Whether to configure MPTCP endpoints and the address flags.
+     * example: mptcp-flags=2
+     * ---end---
+     */
     /* ---ifcfg-rh---
      * property: mptcp-flags
      * variable: MPTCP_FLAGS(+)
@@ -2691,6 +2882,13 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      *
      * Since: 1.20
      **/
+    /* ---keyfile---
+     * property: wait-device-timeout
+     * format: integer
+     * description: Timeout in milliseconds to wait for device at startup.
+     * example: wait-device-timeout=2
+     * ---end---
+     */
     /* ---ifcfg-rh---
      * property: wait-device-timeout
      * variable: DEVTIMEOUT(+)
@@ -2726,6 +2924,15 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      *
      * Since: 1.26
      **/
+    /* ---keyfile---
+     * property: mud-url
+     * format: string
+     * description: If configured, set to a Manufacturer Usage Description
+     * (MUD) URL that points to manufacturer-recommended network policies for
+     * IoT devices.
+     * example: mud-url=https://yourdevice.example.com/model.json
+     * ---end---
+     */
     /* ---ifcfg-rh---
      * property: mud-url
      * variable: MUD_URL
@@ -2753,6 +2960,14 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      *
      * Since: 1.40
      **/
+    /* ---keyfile---
+     * property: wait-activation-delay
+     * format: integer
+     * description: Time in milliseconds to wait for connection to be
+     * considered activated.
+     * example: wait-activation-delay=10
+     * ---end---
+     */
     /* ---ifcfg-rh---
      * property: wait-activation-delay
      * variable: WAIT_ACTIVATION_DELAY(+)
