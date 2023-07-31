@@ -1302,13 +1302,15 @@ nm_ptr_to_uintptr(const void *p)
 
 /*****************************************************************************/
 
-#define NM_CMP_DIRECT(a, b)            \
-    do {                               \
-        typeof(a) _a = (a);            \
-        typeof(b) _b = (b);            \
-                                       \
-        if (_a != _b)                  \
-            return (_a < _b) ? -1 : 1; \
+#define NM_CMP_DIRECT(a, b)                               \
+    do {                                                  \
+        typeof(a) _a = (a);                               \
+        typeof(b) _b = (b);                               \
+                                                          \
+        G_STATIC_ASSERT(_NM_INT_SAME_SIGNEDNESS(_a, _b)); \
+                                                          \
+        if (_a != _b)                                     \
+            return (_a < _b) ? -1 : 1;                    \
     } while (0)
 
 #define NM_CMP_DIRECT_UNSAFE(a, b)                                                  \
