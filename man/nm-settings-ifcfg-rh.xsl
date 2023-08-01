@@ -36,7 +36,7 @@
       <refsect1 id='description'><title>Description</title>
         <para>
           NetworkManager is based on the concept of connection profiles that contain
-          network configuration (see <citerefentry><refentrytitle>nm-settings</refentrytitle>
+          network configuration (see <citerefentry><refentrytitle>nm-settings-nmcli</refentrytitle>
           <manvolnum>5</manvolnum></citerefentry> for details). The profiles can be
           stored in various formats. NetworkManager uses plugins for reading and writing
           the data. The plugins can be configured in <citerefentry>
@@ -322,7 +322,7 @@ DEVICETYPE=TeamPort
         <para><filename>/usr/share/doc/initscripts/sysconfig.txt</filename></para>
       </refsect1>
       <refsect1 id='see_also'><title>See Also</title>
-        <para><link linkend='nm-settings'><citerefentry><refentrytitle>nm-settings</refentrytitle><manvolnum>5</manvolnum></citerefentry></link>,
+        <para><link linkend='nm-settings-nmcli'><citerefentry><refentrytitle>nm-settings-nmcli</refentrytitle><manvolnum>5</manvolnum></citerefentry></link>,
         <link linkend='nm-settings-keyfile'><citerefentry><refentrytitle>nm-settings-keyfile</refentrytitle><manvolnum>5</manvolnum></citerefentry></link>,
         <link linkend='NetworkManager'><citerefentry><refentrytitle>NetworkManager</refentrytitle><manvolnum>8</manvolnum></citerefentry></link>,
         <link linkend='NetworkManager.conf'><citerefentry><refentrytitle>NetworkManager.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry></link>,

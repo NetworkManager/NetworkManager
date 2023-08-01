@@ -32,7 +32,7 @@
       <refsect1 id='description'><title>Description</title>
         <para>
           NetworkManager is based on the concept of connection profiles that contain
-          network configuration (see <citerefentry><refentrytitle>nm-settings</refentrytitle>
+          network configuration (see <citerefentry><refentrytitle>nm-settings-nmcli</refentrytitle>
           <manvolnum>5</manvolnum></citerefentry> for details). The profiles can be
           stored in various formats. NetworkManager uses plugins for reading and writing
           the data. The plugins can be configured in <citerefentry>
@@ -56,7 +56,7 @@
           The <emphasis>keyfile</emphasis> config format is a simple .ini-style
           format. It consists of sections (groups) of key-value pairs. Each section
           corresponds to a setting name as described in the settings specification
-          (<citerefentry><refentrytitle>nm-settings</refentrytitle>
+          (<citerefentry><refentrytitle>nm-settings-nmcli</refentrytitle>
           <manvolnum>5</manvolnum></citerefentry>). Each configuration key/value
           pair in the section is one of the properties listed in the settings
           specification. The majority of properties of the specification is written
@@ -195,7 +195,7 @@ id=4
           There are several exceptions to this rule, mainly for making keyfile syntax easier
           for humans. The exceptions handled specially by <emphasis>keyfile</emphasis>
           plugin are listed below. Refer to
-          <link linkend='nm-settings'><citerefentry><refentrytitle>nm-settings</refentrytitle><manvolnum>5</manvolnum></citerefentry></link>
+          <link linkend='nm-settings-nmcli'><citerefentry><refentrytitle>nm-settings-nmcli</refentrytitle><manvolnum>5</manvolnum></citerefentry></link>
           for all available settings and properties and their description.
         </para>
         <formalpara><title>Name aliases</title>
@@ -246,7 +246,7 @@ id=4
       </refsect1>
 
       <refsect1 id='see_also'><title>See Also</title>
-        <para><link linkend='nm-settings'><citerefentry><refentrytitle>nm-settings</refentrytitle><manvolnum>5</manvolnum></citerefentry></link>,
+        <para><link linkend='nm-settings-nmcli'><citerefentry><refentrytitle>nm-settings-nmcli</refentrytitle><manvolnum>5</manvolnum></citerefentry></link>,
         <link linkend='nm-settings-ifcfg-rh'><citerefentry><refentrytitle>nm-settings-ifcfg-rh</refentrytitle><manvolnum>5</manvolnum></citerefentry></link>,
         <link linkend='NetworkManager'><citerefentry><refentrytitle>NetworkManager</refentrytitle><manvolnum>8</manvolnum></citerefentry></link>,
         <link linkend='NetworkManager.conf'><citerefentry><refentrytitle>NetworkManager.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry></link>,
