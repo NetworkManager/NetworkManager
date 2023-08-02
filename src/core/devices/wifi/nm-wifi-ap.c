@@ -36,6 +36,7 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMWifiAP,
                              PROP_HW_ADDRESS,
                              PROP_MODE,
                              PROP_MAX_BITRATE,
+                             PROP_BANDWIDTH,
                              PROP_STRENGTH,
                              PROP_LAST_SEEN, );
 
@@ -47,6 +48,7 @@ struct _NMWifiAPPrivate {
     guint8       strength;
     guint32      freq;        /* Frequency in MHz; ie 2412 (== 2.412 GHz) */
     guint32      max_bitrate; /* Maximum bitrate of the AP in Kbit/s (ie 54000 Kb/s == 54Mbit/s) */
+    guint32      bandwidth;   /* Bandwidth of the AP in MHz */
 
     gint64
         last_seen_msec; /* Timestamp when the AP was seen lastly (in nm_utils_get_monotonic_timestamp_*() scale).
@@ -277,6 +279,32 @@ nm_wifi_ap_get_max_bitrate(NMWifiAP *ap)
     return NM_WIFI_AP_GET_PRIVATE(ap)->max_bitrate;
 }
 
+guint32
+nm_wifi_ap_get_bandwidth(NMWifiAP *ap)
+{
+    g_return_val_if_fail(NM_IS_WIFI_AP(ap), 0);
+    g_return_val_if_fail(nm_dbus_object_is_exported(NM_DBUS_OBJECT(ap)), 0);
+
+    return NM_WIFI_AP_GET_PRIVATE(ap)->bandwidth;
+}
+
+gboolean
+nm_wifi_ap_set_bandwidth(NMWifiAP *ap, guint32 bandwidth)
+{
+    NMWifiAPPrivate *priv;
+
+    g_return_val_if_fail(NM_IS_WIFI_AP(ap), FALSE);
+
+    priv = NM_WIFI_AP_GET_PRIVATE(ap);
+
+    if (priv->bandwidth != bandwidth) {
+        priv->bandwidth = bandwidth;
+        _notify(ap, PROP_BANDWIDTH);
+        return TRUE;
+    }
+    return FALSE;
+}
+
 gboolean
 nm_wifi_ap_set_max_bitrate(NMWifiAP *ap, guint32 bitrate)
 {
@@ -393,6 +421,7 @@ nm_wifi_ap_update_from_properties(NMWifiAP *ap, const NMSupplicantBssInfo *bss_i
     }
 
     changed |= nm_wifi_ap_set_max_bitrate(ap, bss_info->max_rate);
+    changed |= nm_wifi_ap_set_bandwidth(ap, bss_info->bandwidth);
 
     if (priv->metered != bss_info->metered) {
         priv->metered = bss_info->metered;
@@ -683,6 +712,9 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
     case PROP_MAX_BITRATE:
         g_value_set_uint(value, priv->max_bitrate);
         break;
+    case PROP_BANDWIDTH:
+        g_value_set_uint(value, priv->bandwidth);
+        break;
     case PROP_STRENGTH:
         g_value_set_uchar(value, priv->strength);
         break;
@@ -873,6 +905,7 @@ static const NMDBusInterfaceInfoExtended interface_info_access_point = {
             NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("MaxBitrate",
                                                            "u",
                                                            NM_WIFI_AP_MAX_BITRATE),
+            NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("Bandwidth", "u", NM_WIFI_AP_BANDWIDTH),
             NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("Strength", "y", NM_WIFI_AP_STRENGTH),
             NM_DEFINE_DBUS_PROPERTY_INFO_EXTENDED_READABLE("LastSeen",
                                                            "i",
@@ -978,6 +1011,14 @@ nm_wifi_ap_class_init(NMWifiAPClass *ap_class)
                                                       G_MAXINT,
                                                       -1,
                                                       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+
+    obj_properties[PROP_BANDWIDTH] = g_param_spec_uint(NM_WIFI_AP_BANDWIDTH,
+                                                       "",
+                                                       "",
+                                                       0,
+                                                       G_MAXUINT32,
+                                                       0,
+                                                       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     g_object_class_install_properties(object_class, _PROPERTY_ENUMS_LAST, obj_properties);
 }

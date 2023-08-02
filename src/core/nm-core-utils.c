@@ -4779,15 +4779,91 @@ get_max_rate_vht(const guint8 *bytes, guint len, guint32 *out_maxrate)
     return TRUE;
 }
 
+static gboolean
+get_bandwidth_ht(const guint8 *bytes, guint len, guint32 *out_bandwidth)
+{
+    guint8 ht_op_flag_group;
+
+    /* http://standards.ieee.org/getieee802/download/802.11-2012.pdf
+     * https://mrncciew.com/2014/11/04/cwap-ht-operations-ie/
+     * IEEE std 802.11-2020 section 9.4.2.56
+     */
+
+    if (len != 22)
+        return FALSE;
+
+    ht_op_flag_group = bytes[1];
+
+    /* Check bit for 20Mhz or 40Mhz */
+    if (ht_op_flag_group & (1 << 2))
+        *out_bandwidth = 40;
+    else
+        *out_bandwidth = 20;
+
+    return TRUE;
+}
+
+static gboolean
+get_bandwidth_vht(const guint8 *bytes, guint len, guint32 *out_bandwidth)
+{
+    guint8 sta_channel_width;
+    guint8 ccfs0;
+    guint8 ccfs1;
+
+    /* http://chimera.labs.oreilly.com/books/1234000001739/ch03.html#management_frames
+     * https://community.arubanetworks.com/community-home/librarydocuments/viewdocument?DocumentKey=799aad1b-d9c4-421a-a492-a111e8680d34&CommunityKey=39a6bdf4-2376-46f9-853a-49420d2d0caa&tab=librarydocuments
+     * IEEE Std 802.11-2020 section 9.4.2.158
+     */
+
+    if (len < 3)
+        return FALSE;
+
+    sta_channel_width = bytes[0];
+    ccfs0             = bytes[1];
+    ccfs1             = bytes[2];
+    switch (sta_channel_width) {
+    case 0:
+        /* we rely on HT Operation IE value*/
+        return FALSE;
+    case 1:
+        if (ccfs1 == 0)
+            *out_bandwidth = 80;
+        else if (abs(ccfs1 - ccfs0) == 8)
+            *out_bandwidth = 160;
+        else if (abs(ccfs1 - ccfs0) > 16)
+            /* we are considering 80+80 as 160 */
+            *out_bandwidth = 160;
+        else
+            /* falling back to 80 MHz */
+            *out_bandwidth = 80;
+        break;
+    case 2:
+        /* deprecated */
+        *out_bandwidth = 160;
+        break;
+    case 3:
+        /* deprecated */
+        *out_bandwidth = 160;
+        break;
+    default:
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
 /* Management Frame Information Element IDs, ieee80211_eid */
 #define WLAN_EID_HT_CAPABILITY   45
+#define WLAN_EID_HT_OPERATION    61
 #define WLAN_EID_VHT_CAPABILITY  191
+#define WLAN_EID_VHT_OPERATION   192
 #define WLAN_EID_VENDOR_SPECIFIC 221
 
 void
 nm_wifi_utils_parse_ies(const guint8 *bytes,
                         gsize         len,
                         guint32      *out_max_rate,
+                        guint32      *out_bandwidth,
                         gboolean     *out_metered,
                         gboolean     *out_owe_transition_mode)
 {
@@ -4795,6 +4871,7 @@ nm_wifi_utils_parse_ies(const guint8 *bytes,
     guint32 m;
 
     NM_SET_OUT(out_max_rate, 0);
+    NM_SET_OUT(out_bandwidth, 0);
     NM_SET_OUT(out_metered, FALSE);
     NM_SET_OUT(out_owe_transition_mode, FALSE);
 
@@ -4816,11 +4893,19 @@ nm_wifi_utils_parse_ies(const guint8 *bytes,
                     *out_max_rate = NM_MAX(*out_max_rate, m);
             }
             break;
+        case WLAN_EID_HT_OPERATION:
+            if (out_bandwidth)
+                get_bandwidth_ht(bytes, elem_len, out_bandwidth);
+            break;
         case WLAN_EID_VHT_CAPABILITY:
             if (out_max_rate) {
                 if (get_max_rate_vht(bytes, elem_len, &m))
                     *out_max_rate = NM_MAX(*out_max_rate, m);
             }
+            break;
+        case WLAN_EID_VHT_OPERATION:
+            if (out_bandwidth)
+                get_bandwidth_vht(bytes, elem_len, out_bandwidth);
             break;
         case WLAN_EID_VENDOR_SPECIFIC:
             if (len == 8 && bytes[0] == 0x00 /* OUI: Microsoft */

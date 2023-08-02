@@ -35,6 +35,7 @@ G_BEGIN_DECLS
 #define NM_ACCESS_POINT_MAX_BITRATE "max-bitrate"
 #define NM_ACCESS_POINT_STRENGTH    "strength"
 #define NM_ACCESS_POINT_LAST_SEEN   "last-seen"
+#define NM_ACCESS_POINT_BANDWIDTH   "bandwidth"
 
 /* DEPRECATED */
 #define NM_ACCESS_POINT_HW_ADDRESS "hw-address"
@@ -58,6 +59,9 @@ guint32                nm_access_point_get_max_bitrate(NMAccessPoint *ap);
 guint8                 nm_access_point_get_strength(NMAccessPoint *ap);
 NM_AVAILABLE_IN_1_2
 int nm_access_point_get_last_seen(NMAccessPoint *ap);
+
+NM_AVAILABLE_IN_1_46
+guint32 nm_access_point_get_bandwidth(NMAccessPoint *ap);
 
 GPtrArray *nm_access_point_filter_connections(NMAccessPoint *ap, const GPtrArray *connections);
 

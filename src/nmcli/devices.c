@@ -725,15 +725,16 @@ const NmcMetaGenericInfo *const nmc_fields_dev_wifi_list[] = {
     NMC_META_GENERIC("CHAN"),      /* 5 */
     NMC_META_GENERIC("FREQ"),      /* 6 */
     NMC_META_GENERIC("RATE"),      /* 7 */
-    NMC_META_GENERIC("SIGNAL"),    /* 8 */
-    NMC_META_GENERIC("BARS"),      /* 9 */
-    NMC_META_GENERIC("SECURITY"),  /* 10 */
-    NMC_META_GENERIC("WPA-FLAGS"), /* 11 */
-    NMC_META_GENERIC("RSN-FLAGS"), /* 12 */
-    NMC_META_GENERIC("DEVICE"),    /* 13 */
-    NMC_META_GENERIC("ACTIVE"),    /* 14 */
-    NMC_META_GENERIC("IN-USE"),    /* 15 */
-    NMC_META_GENERIC("DBUS-PATH"), /* 16 */
+    NMC_META_GENERIC("BANDWIDTH"), /* 8 */
+    NMC_META_GENERIC("SIGNAL"),    /* 9 */
+    NMC_META_GENERIC("BARS"),      /* 10 */
+    NMC_META_GENERIC("SECURITY"),  /* 11 */
+    NMC_META_GENERIC("WPA-FLAGS"), /* 12 */
+    NMC_META_GENERIC("RSN-FLAGS"), /* 13 */
+    NMC_META_GENERIC("DEVICE"),    /* 14 */
+    NMC_META_GENERIC("ACTIVE"),    /* 15 */
+    NMC_META_GENERIC("IN-USE"),    /* 16 */
+    NMC_META_GENERIC("DBUS-PATH"), /* 17 */
     NULL,
 };
 #define NMC_FIELDS_DEV_WIFI_LIST_COMMON       "IN-USE,BSSID,SSID,MODE,CHAN,RATE,SIGNAL,BARS,SECURITY"
@@ -1305,7 +1306,9 @@ fill_output_access_point(NMAccessPoint *ap, const APInfo *info)
     NmcOutputField        *arr;
     gboolean               active;
     NM80211ApSecurityFlags wpa_flags, rsn_flags;
-    guint32                freq, bitrate;
+    guint32                freq;
+    guint32                bitrate;
+    guint32                bandwidth;
     guint8                 strength;
     GBytes                *ssid;
     const char            *bssid;
@@ -1315,6 +1318,7 @@ fill_output_access_point(NMAccessPoint *ap, const APInfo *info)
     char                  *ssid_str     = NULL;
     char                  *ssid_hex_str = NULL;
     char                  *bitrate_str;
+    char                  *bandwidth_str;
     char                  *strength_str;
     char                  *wpa_flags_str;
     char                  *rsn_flags_str;
@@ -1333,6 +1337,7 @@ fill_output_access_point(NMAccessPoint *ap, const APInfo *info)
     freq      = nm_access_point_get_frequency(ap);
     mode      = nm_access_point_get_mode(ap);
     bitrate   = nm_access_point_get_max_bitrate(ap);
+    bandwidth = nm_access_point_get_bandwidth(ap);
     strength  = MIN(nm_access_point_get_strength(ap), 100);
 
     /* Convert to strings */
@@ -1347,6 +1352,7 @@ fill_output_access_point(NMAccessPoint *ap, const APInfo *info)
     channel_str   = g_strdup_printf("%u", nm_utils_wifi_freq_to_channel(freq));
     freq_str      = g_strdup_printf(_("%u MHz"), freq);
     bitrate_str   = g_strdup_printf(_("%u Mbit/s"), bitrate / 1000);
+    bandwidth_str = g_strdup_printf(_("%u MHz"), bandwidth);
     strength_str  = nm_strdup_int(strength);
     wpa_flags_str = ap_wpa_rsn_flags_to_string(wpa_flags, NM_META_ACCESSOR_GET_TYPE_PRETTY);
     rsn_flags_str = ap_wpa_rsn_flags_to_string(rsn_flags, NM_META_ACCESSOR_GET_TYPE_PRETTY);
@@ -1402,15 +1408,16 @@ fill_output_access_point(NMAccessPoint *ap, const APInfo *info)
     set_val_str(arr, 5, channel_str);
     set_val_str(arr, 6, freq_str);
     set_val_str(arr, 7, bitrate_str);
-    set_val_str(arr, 8, strength_str);
-    set_val_strc(arr, 9, sig_bars);
-    set_val_str(arr, 10, g_string_free(security_str, FALSE));
-    set_val_str(arr, 11, wpa_flags_str);
-    set_val_str(arr, 12, rsn_flags_str);
-    set_val_strc(arr, 13, info->device);
-    set_val_strc(arr, 14, active ? _("yes") : _("no"));
-    set_val_strc(arr, 15, active ? "*" : " ");
-    set_val_strc(arr, 16, nm_object_get_path(NM_OBJECT(ap)));
+    set_val_str(arr, 8, bandwidth_str);
+    set_val_str(arr, 9, strength_str);
+    set_val_strc(arr, 10, sig_bars);
+    set_val_str(arr, 11, g_string_free(security_str, FALSE));
+    set_val_str(arr, 12, wpa_flags_str);
+    set_val_str(arr, 13, rsn_flags_str);
+    set_val_strc(arr, 14, info->device);
+    set_val_strc(arr, 15, active ? _("yes") : _("no"));
+    set_val_strc(arr, 16, active ? "*" : " ");
+    set_val_strc(arr, 17, nm_object_get_path(NM_OBJECT(ap)));
 
     /* Set colors */
     color = wifi_signal_to_color(strength);
