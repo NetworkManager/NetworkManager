@@ -13,3 +13,7 @@ managed=0
 [device-managed-1]
 match-device=interface-name:net*,interface-name:eth*
 managed=1
+
+[device-host-net]
+match-device=interface-name:host_net
+managed=0

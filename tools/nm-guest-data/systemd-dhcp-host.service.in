@@ -1,0 +1,14 @@
+[Unit]
+Description=dhclient service to get connectivity with the host
+After=network.target
+
+[Service]
+Type=simple
+Restart=on-failure
+User=root
+RestartSec=5
+ExecStart=dhclient -d -H "%H" host_net
+ExecStop=dhclient -r host_net
+
+[Install]
+WantedBy=multi-user.target

@@ -123,6 +123,8 @@ do_build() {
         "home-gdbinit:/root/.gdbinit"
         "home-gdb_history:/root/.gdb_history"
         "home-behaverc:/root/.behaverc"
+        "systemd-10-host-net.link:/etc/systemd/network/10-host-net.link"
+        "systemd-dhcp-host.service:/etc/systemd/system/dhcp-host.service"
         "systemd-20-nm.override:/etc/systemd/system/NetworkManager.service.d/20-nm.override"
     )
 
@@ -216,7 +218,8 @@ do_build() {
         --edit "/etc/systemd/journald.conf:s/.*RateLimitBurst=.*/RateLimitBurst=0/" \
         --delete "/etc/NetworkManager/system-connections/*" \
         --append-line "/etc/bashrc:. /etc/bashrc.my" \
-        --run-command "updatedb"
+        --run-command "updatedb" \
+        --firstboot-command "systemctl enable --now dhcp-host"
 
     virt-install \
         --name "$VM" \
