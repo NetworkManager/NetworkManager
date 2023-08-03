@@ -101,12 +101,30 @@ basedir_vm_image=$(readlink -f "$BASEDIR_VM_IMAGE")
 vm_image_file="$VM.qcow2"
 os_variant=${OS_VERSION//-/}  # virt-install --os-variant value, deduced from OS_VERSION
 os_variant=${os_variant/centosstream/centos-stream}
+datadir="$BASEDIR_NM/tools/nm-guest-data"
 
 ##############################################################################
 
 do_build() {
-    local t
-    t=$'\t'
+    local t=$'\t'
+    local nm_ci_build_args
+    local nm_ci_install_args
+    local extra_pkgs
+    local install_pkgs
+    local install_files
+    local gen_files=(
+        "bin-nm-env-prepare.sh:/usr/bin/nm-env-prepare.sh"
+        "bin-nm-deploy.sh:/usr/bin/nm-deploy.sh"
+        "etc-motd-vm:/etc/motd"
+        "etc-bashrc.my:/etc/bashrc.my"
+        "nm-90-my.conf:/etc/NetworkManager/conf.d/90-my.conf"
+        "nm-95-user.conf:/etc/NetworkManager/conf.d/95-user.conf"
+        "home-bash_history:/root/.bash_history"
+        "home-gdbinit:/root/.gdbinit"
+        "home-gdb_history:/root/.gdb_history"
+        "home-behaverc:/root/.behaverc"
+        "systemd-20-nm.override:/etc/systemd/system/NetworkManager.service.d/20-nm.override"
+    )
 
     if vm_is_installed; then
         echo "The virtual machine '$VM' is already installed, skiping build" >&2
@@ -119,10 +137,49 @@ do_build() {
     fi
 
     if [[ -n $BASEDIR_NM_CI ]]; then
-        nm_ci_mkdir=("--mkdir" "$BASEDIR_NM_CI")
-        nm_ci_fstab=("--append-line" "/etc/fstab:/NM_CI${t}$BASEDIR_NM_CI${t}9p${t}trans=virtio,rw,_netdev${t}0${t}0")
-        nm_ci_fs=("--filesystem" "$BASEDIR_NM_CI,/NM_CI")
+        nm_ci_build_args=(
+            --mkdir "$BASEDIR_NM_CI"
+            --link "$BASEDIR_NM_CI:/NetworkManager-ci"
+            --append-line "/etc/fstab:/NM_CI${t}$BASEDIR_NM_CI${t}9p${t}trans=virtio,rw,_netdev${t}0${t}0"
+        )
+        nm_ci_install_args=(
+            --filesystem "$BASEDIR_NM_CI,/NM_CI"
+        )
     fi
+
+    if [[ $OS_VERSION =~ fedora* || $OS_VERSION =~ centos* ]]; then
+        extra_pkgs=(bash-completion bind-utils ccache clang-tools-extra cryptsetup cscope \'dbus\*\'
+            dhcp-client dhcp-relay dhcp-server dnsmasq dracut-network ethtool firewalld  gcc gdb
+            glibc-langpack-pl hostapd intltool iproute ipsec-tools iputils iscsi-initiator-utils
+            iw ldns libreswan libselinux-utils libyaml-devel logrotate lvm2 mdadm mlocate net-tools
+            NetworkManager NetworkManager-openvpn NetworkManager-ovs NetworkManager-ppp
+            NetworkManager-pptp NetworkManager-strongswan NetworkManager-team NetworkManager-vpnc
+            NetworkManager-wifi nfs-utils nispor nmap-ncat nmstate nss-tools openvpn
+            \'openvswitch2\*\' perl-IO-Pty-Easy perl-IO-Tty procps psmisc python3-behave
+            python3-black python3-devel python3-netaddr python3-pip python3-pyte python3-pyyaml
+            qemu-kvm radvd rp-pppoe scsi-target-utils strace systemd tcpdump tcpreplay tuned
+            /usr/bin/debuginfo-install /usr/bin/pytest /usr/bin/python vim wireguard-tools
+            wireshark-cli)
+
+        install_pkgs=(
+            --run "$BASEDIR_NM/contrib/fedora/REQUIRED_PACKAGES"
+            --run-command "dnf install -y --skip-broken ${extra_pkgs[*]}"
+            --run-command "dnf debuginfo-install -y --skip-broken NetworkManager \
+                \$(ldd /usr/sbin/NetworkManager \
+                    | sed -n 's/.* => \(.*\) (0x[0-9A-Fa-f]*)\$/\1/p' \
+                    | xargs -n1 readlink -f)"
+        )
+    elif [[ $OS_VERSION =~ debian* || $OS_VERSION =~ ubuntu* ]]; then
+        install_pkgs=(
+            --run "$BASEDIR_NM/contrib/debian/REQUIRED_PACKAGES"
+        )
+    fi
+
+    install_files=(--upload "$BASEDIR_NM/contrib/scripts/NM-log:/usr/bin/NM-log")
+    for f in "${gen_files[@]}"; do
+        gen_file "${f%:*}"
+        install_files+=(--upload "$datadir/data-$f")
+    done
 
     echo "Creating VM"
     echo " - VM NAME: $VM"
@@ -143,11 +200,23 @@ do_build() {
         --hostname "$VM" \
         --root-password password:nm \
         --ssh-inject root \
+        --append-line "/etc/ssh/sshd_config:PermitRootLogin yes" \
         --mkdir "$BASEDIR_NM" \
+        --link "$BASEDIR_NM:/NetworkManager" \
         --append-line "/etc/fstab:/NM${t}$BASEDIR_NM${t}9p${t}trans=virtio,rw,_netdev${t}0${t}0" \
-        "${nm_ci_mkdir[@]}" \
-        "${nm_ci_fstab[@]}" \
-        --update
+        "${nm_ci_build_args[@]}" \
+        --update \
+        "${install_pkgs[@]}" \
+        --run-command "pip3 install --user behave_html_formatter" \
+        --mkdir "/etc/systemd/system/NetworkManager.service.d" \
+        "${install_files[@]}" \
+        --write "/var/lib/NetworkManager/secret_key:nm-in-container-secret-key" \
+        --chmod "700:/var/lib/NetworkManager" \
+        --chmod "600:/var/lib/NetworkManager/secret_key" \
+        --edit "/etc/systemd/journald.conf:s/.*RateLimitBurst=.*/RateLimitBurst=0/" \
+        --delete "/etc/NetworkManager/system-connections/*" \
+        --append-line "/etc/bashrc:. /etc/bashrc.my" \
+        --run-command "updatedb"
 
     virt-install \
         --name "$VM" \
@@ -155,7 +224,7 @@ do_build() {
         --disk "path=$basedir_vm_image/$vm_image_file,format=qcow2" \
         --os-variant "$os_variant" \
         --filesystem "$BASEDIR_NM,/NM" \
-        "${nm_ci_fs[@]}" \
+        "${nm_ci_install_args[@]}" \
         --network "bridge=$HOST_BRIDGE" \
         --import \
         --autoconsole none \
@@ -220,6 +289,15 @@ vm_is_installed() {
 
 vm_is_running() {
     virsh list --name | grep --fixed-strings --line-regexp "$VM" &>/dev/null || return 1
+}
+
+gen_file() {
+    sed "s|{{BASEDIR_NM}}|$BASEDIR_NM|g" "$datadir/$1.in" > "$datadir/data-$1"
+    if [[ $1 =~ bin-* ]]; then
+        chmod 755 "$datadir/data-$1"
+    else
+        chmod 644 "$datadir/data-$1"
+    fi
 }
 
 usage() {
