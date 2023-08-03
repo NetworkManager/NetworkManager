@@ -3222,6 +3222,13 @@ device_auth_done_cb(NMAuthChain *chain, GDBusMethodInvocation *context, gpointer
         nm_assert(error || (result == NM_AUTH_CALL_RESULT_YES));
     }
 
+    if (!error && !nm_dbus_object_is_exported(NM_DBUS_OBJECT(device))) {
+        g_set_error(&error,
+                    NM_MANAGER_ERROR,
+                    NM_MANAGER_ERROR_UNKNOWN_DEVICE,
+                    "device no longer exists");
+    }
+
     callback(device, context, subject, error, nm_auth_chain_get_data(chain, "user-data"));
 }
 
@@ -3286,6 +3293,14 @@ nm_manager_device_auth_request(NMManager                     *self,
                                                 NM_MANAGER_ERROR_PERMISSION_DENIED,
                                                 &error))
         goto fail_on_idle;
+
+    if (!nm_dbus_object_is_exported(NM_DBUS_OBJECT(device))) {
+        g_set_error(&error,
+                    NM_MANAGER_ERROR,
+                    NM_MANAGER_ERROR_UNKNOWN_DEVICE,
+                    "device no longer exists");
+        goto fail_on_idle;
+    }
 
     chain = nm_auth_chain_new_subject(subject, context, device_auth_done_cb, self);
     if (cancellable)
