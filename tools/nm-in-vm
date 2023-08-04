@@ -65,7 +65,7 @@ fi
 VM=${VM:="nm"}
 OS_VERSION=${OS_VERSION:=}
 RAM=${RAM:=2048}
-IMAGE_SIZE=${IMAGE_SIZE:=10G}
+IMAGE_SIZE=${IMAGE_SIZE=20G}
 ROOT_PASSWORD=${ROOT_PASSWORD:=nm}
 LIBVIRT_POOL=${LIBVIRT_POOL:=default}  # only useful if BASEDIR_VM_IMAGE is empty
 BASEDIR_VM_IMAGE=${BASEDIR_VM_IMAGE:=}
@@ -104,6 +104,8 @@ fi
 
 do_build() {
     local t=$'\t'
+    local ram
+    local size
     local os_variant
     local nm_ci_build_args
     local nm_ci_install_args
@@ -139,6 +141,10 @@ do_build() {
     if vm_image_exists; then
         echo "The image '$basedir_vm_image/$vm_image_file' already exists, skiping build" >&2
         return 0
+    fi
+
+    if [[ -n $IMAGE_SIZE ]]; then
+        size=(--size "$IMAGE_SIZE")
     fi
 
     if [[ -n $BASEDIR_NM_CI ]]; then
@@ -223,7 +229,7 @@ do_build() {
     echo "Creating VM"
     echo " - VM NAME: $VM"
     echo " - OS VERSION: $OS_VERSION"
-    echo " - SIZE: $IMAGE_SIZE"
+    echo " - SIZE: $([[ -n $IMAGE_SIZE ]] && echo "$IMAGE_SIZE" || echo "don't resize")"
     echo " - RAM: $RAM"
     echo " - ROOT PASSWORD: $ROOT_PASSWORD"
     echo " - IMAGE PATH: $basedir_vm_image/$vm_image_file"
@@ -233,7 +239,7 @@ do_build() {
     
     virt-builder "$OS_VERSION" \
         --output "$basedir_vm_image/$vm_image_file" \
-        --size "$IMAGE_SIZE" \
+        "${size[@]}" \
         --format qcow2 \
         --arch x86_64 \
         --hostname "$VM" \
