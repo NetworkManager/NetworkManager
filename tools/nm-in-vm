@@ -6,15 +6,19 @@ set -e
 # Script to create a virtual machine for testing NetworkManager.
 #
 # Commands:
-#  - build: build a new VM, named "$VM" ("nm").
+#  - build: build a new VM, named "$VM" ("nm")
+#        Args: the name of the OS to build, from `virt-builder --list` (Fedora by default)
 #  - run: start the VM.
 #  - exec: run bash inside the VM, connecting via ssh (this is the default).
+#        Args: command to execute inside the VM (then, ssh session won't open).
 #  - stop: stop the VM.
 #  - reexec: stop and exec.
 #  - clean: stop the VM and delete the image.
 #
-#   Commands exec and reexec accepts extra arguments, which are the command to
-#   execute in the VM instead of opening an ssh session.
+# Options (they MUST go before the command):
+#  -v | --vm: name of the VM to run the command on (by default 'nm').
+#             This allows to have more than one VM at the same time
+#  -h | --help: show this text
 #
 # NetworkManager directories:
 #
@@ -38,15 +42,15 @@ set -e
 # Additional VMs:
 #
 #   By default, the VM named 'nm' is created, but additional ones can be created:
-#   $ VM=nm2 nm-in-vm build
-#   $ VM=nm2 nm-in-vm exec
-#   $ VM=nm2 nm-in-vm stop
+#   $ nm-in-vm -v nm2 build
+#   $ nm-in-vm -v nm2 exec
+#   $ nm-in-vm -v nm2 stop
 #
 # Choosing a different OS:
 #
 #   By default Fedora is used, but you can choose a different OS. Most from the
 #   list `virt-builder --list` will work.
-#   $ OS_VERSION=debian-12 nm-in-vm build
+#   $ nm-in-vm build debian-12
 #   $ nm-in-vm exec
 #   $ nm-in-vm stop
 ###############################################################################
@@ -96,17 +100,11 @@ if [[ -z $BASEDIR_VM_IMAGE ]]; then
     fi
 fi
 
-# compute some values that depends on user selectable variables
-basedir_vm_image=$(readlink -f "$BASEDIR_VM_IMAGE")
-vm_image_file="$VM.qcow2"
-os_variant=${OS_VERSION//-/}  # virt-install --os-variant value, deduced from OS_VERSION
-os_variant=${os_variant/centosstream/centos-stream}
-datadir="$BASEDIR_NM/tools/nm-guest-data"
-
 ##############################################################################
 
 do_build() {
     local t=$'\t'
+    local os_variant
     local nm_ci_build_args
     local nm_ci_install_args
     local extra_pkgs
@@ -127,6 +125,11 @@ do_build() {
         "systemd-dhcp-host.service:/etc/systemd/system/dhcp-host.service"
         "systemd-20-nm.override:/etc/systemd/system/NetworkManager.service.d/20-nm.override"
     )
+
+    (( $# > 1 )) && die "build only accepts one argument"
+    (( $# > 0 )) && OS_VERSION="$1"
+    os_variant=${OS_VERSION//-/}  # virt-install --os-variant value, deduced from OS_VERSION
+    os_variant=${os_variant/centosstream/centos-stream}
 
     if vm_is_installed; then
         echo "The virtual machine '$VM' is already installed, skiping build" >&2
@@ -338,7 +341,7 @@ gen_file() {
 }
 
 usage() {
-    echo "nm-in-vm [-h|--help] build|run|exec|stop|reexec|clean"
+    echo "nm-in-vm [options] build|run|exec|stop|reexec|clean [command_args]"
 }
 
 help() {
@@ -367,6 +370,11 @@ while (( $# > 0 )); do
             help
             exit 0
             ;;
+        -v|--vm)
+            (( $# > 1 )) || die "--vm requires one argument"
+            VM="$2"
+            shift 2
+            ;;
         --)
             shift
             break
@@ -380,6 +388,11 @@ while (( $# > 0 )); do
     esac
 done
 
+# compute some values that depends on user selectable variables
+basedir_vm_image=$(readlink -f "$BASEDIR_VM_IMAGE")
+vm_image_file="$VM.qcow2"
+datadir="$BASEDIR_NM/tools/nm-guest-data"
+
 if [[ $cmd == "" ]]; then
     cmd=exec
 fi
@@ -388,8 +401,8 @@ if [[ $UID == 0 ]]; then
     die "cannot run as root"
 fi
 
-if [[ $cmd != exec && $cmd != reexec && $# != 0 ]]; then
-    die "Extra arguments are only allowed with exec|reexec command"
+if [[ $cmd != exec && $cmd != reexec && $cmd != build && $# != 0 ]]; then
+    die "Extra arguments are only allowed with exec|reexec|build command"
 fi
 
 do_$cmd "$@"
