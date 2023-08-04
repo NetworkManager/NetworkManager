@@ -164,17 +164,51 @@ do_build() {
             wireshark-cli)
 
         install_pkgs=(
+            --update
             --run "$BASEDIR_NM/contrib/fedora/REQUIRED_PACKAGES"
             --run-command "dnf install -y --skip-broken ${extra_pkgs[*]}"
+            --run-command "pip3 install --user behave_html_formatter"
             --run-command "dnf debuginfo-install -y --skip-broken NetworkManager \
                 \$(ldd /usr/sbin/NetworkManager \
                     | sed -n 's/.* => \(.*\) (0x[0-9A-Fa-f]*)\$/\1/p' \
                     | xargs -n1 readlink -f)"
         )
     elif [[ $OS_VERSION =~ debian* || $OS_VERSION =~ ubuntu* ]]; then
-        install_pkgs=(
-            --run "$BASEDIR_NM/contrib/debian/REQUIRED_PACKAGES"
+        extra_pkgs=(bash-completion bind9-utils ccache clang-tools cryptsetup cscope \'dbus\*\'
+            isc-dhcp-client isc-dhcp-relay isc-dhcp-server dnsmasq dracut-network ethtool firewalld
+            gcc gdb hostapd intltool iproute2 \'iputils-\*\' iw libldns3 libreswan
+            libyaml-dev logrotate lvm2 mdadm mlocate net-tools network-manager
+            network-manager-openvpn network-manager-pptp network-manager-strongswan
+            network-manager-vpnc nfs-common ncat libnss3-tools openvpn \'openvswitch2\*\' procps
+            psmisc python3-behave black python3-dev python3-netaddr python3-pip python3-pyte
+            python3-pretty-yaml qemu-kvm radvd pppoe strace systemd tcpdump tcpreplay tuned
+            debian-goodies python3-pytest python3 vim wireguard-tools tshark)
+
+        if [[ $OS_VERSION =~ debian ]]; then
+            install_pkgs=(
+                --run-command "echo deb http://deb.debian.org/debian-debug/ \$(lsb_release -cs)-debug main >> /etc/apt/sources.list.d/debug.list"
+                --run-command "echo deb http://deb.debian.org/debian-debug/ \$(lsb_release -cs)-proposed-updates-debug main >> /etc/apt/sources.list.d/debug.list"
+            )
+        elif [[ $OS_VERSION =~ ubuntu ]]; then
+            install_pkgs=(
+                --run-command "echo deb http://ddebs.ubuntu.com \$(lsb_release -cs) main restricted universe multiverse >> /etc/apt/sources.list.d/debug.list"
+                --run-command "echo deb http://ddebs.ubuntu.com \$(lsb_release -cs)-updates main restricted universe multiverse >> /etc/apt/sources.list.d/debug.list"
+                --run-command "echo deb http://ddebs.ubuntu.com \$(lsb_release -cs)-proposed main restricted universe multiverse >> /etc/apt/sources.list.d/debug.list"
+            )
+        fi
+
+        install_pkgs+=(
+            --update
+            --upload "$BASEDIR_NM/contrib/debian/REQUIRED_PACKAGES:/tmp/REQUIRED_PACKAGES"
+            --run-command "/bin/bash /tmp/REQUIRED_PACKAGES" # using only --run fails
+            --run-command "apt-get install -y \$(find-dbgsym-packages NetworkManager 2>/dev/null)"
+            --edit "/etc/locale.gen:s/^# pl_PL.UTF-8/pl_PL.UTF-8/"
+            --run-command "locale-gen"
         )
+
+        for p in "${extra_pkgs[@]}"; do
+            install_pkgs+=(--run-command "apt-get install -y $p || :")
+        done
     fi
 
     install_files=(--upload "$BASEDIR_NM/contrib/scripts/NM-log:/usr/bin/NM-log")
@@ -203,13 +237,12 @@ do_build() {
         --root-password password:nm \
         --ssh-inject root \
         --append-line "/etc/ssh/sshd_config:PermitRootLogin yes" \
+        --run-command "ssh-keygen -A" \
         --mkdir "$BASEDIR_NM" \
         --link "$BASEDIR_NM:/NetworkManager" \
         --append-line "/etc/fstab:/NM${t}$BASEDIR_NM${t}9p${t}trans=virtio,rw,_netdev${t}0${t}0" \
         "${nm_ci_build_args[@]}" \
-        --update \
         "${install_pkgs[@]}" \
-        --run-command "pip3 install --user behave_html_formatter" \
         --mkdir "/etc/systemd/system/NetworkManager.service.d" \
         "${install_files[@]}" \
         --write "/var/lib/NetworkManager/secret_key:nm-in-container-secret-key" \
@@ -219,6 +252,7 @@ do_build() {
         --delete "/etc/NetworkManager/system-connections/*" \
         --append-line "/etc/bashrc:. /etc/bashrc.my" \
         --run-command "updatedb" \
+        --append-line "/etc/dhcp/dhclient.conf:send host-name = gethostname();" \
         --firstboot-command "systemctl enable --now dhcp-host"
 
     virt-install \
