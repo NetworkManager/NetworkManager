@@ -158,7 +158,7 @@ do_build() {
         )
     fi
 
-    if [[ $OS_VERSION =~ fedora* || $OS_VERSION =~ centos* ]]; then
+    if [[ $OS_VERSION =~ fedora* || $OS_VERSION =~ centosstream* ]]; then
         extra_pkgs=(bash-completion bind-utils ccache clang-tools-extra cryptsetup cscope \'dbus\*\'
             dhcp-client dhcp-relay dhcp-server dnsmasq dracut-network ethtool firewalld  gcc gdb
             glibc-langpack-pl hostapd intltool iproute ipsec-tools iputils iscsi-initiator-utils
@@ -172,7 +172,21 @@ do_build() {
             /usr/bin/debuginfo-install /usr/bin/pytest /usr/bin/python vim wireguard-tools
             wireshark-cli)
 
-        install_pkgs=(
+        if [[ $OS_VERSION == centosstream-8 ]]; then
+            install_pkgs=(
+                --run-command "dnf -y copr enable nmstate/nm-build-deps"
+                --run-command "dnf config-manager -y --set-enabled powertools"
+                --install epel-release,epel-next-release
+            )
+        elif [[ $OS_VERSION == centosstream-9 ]]; then
+            install_pkgs=(
+                --run-command "dnf -y copr enable nmstate/nm-build-deps"
+                --run-command "dnf config-manager -y --set-enabled crb"
+                --install epel-release,epel-next-release
+            )
+        fi
+
+        install_pkgs+=(
             --update
             --run "$BASEDIR_NM/contrib/fedora/REQUIRED_PACKAGES"
             --run-command "dnf install -y --skip-broken ${extra_pkgs[*]}"
@@ -236,6 +250,12 @@ do_build() {
     echo " - NM DIR: $BASEDIR_NM"
     echo " - NM CI DIR: $([[ -n $BASEDIR_NM_CI ]] && echo "$BASEDIR_NM_CI" || echo '<none>')"
     echo " - HOST BRIDGE: $HOST_BRIDGE"
+
+    if [[ $OS_VERSION =~ centosstream-* ]]; then
+        echo "WARNING: NetworkManager repositories can't be shared with the guest" \
+             "(CentOS Stream doesn't support 9P filesystem). You'll need to manually" \
+             "share by NFS or make a new clone of the repository inside the guest." >&2
+    fi
     
     virt-builder "$OS_VERSION" \
         --output "$basedir_vm_image/$vm_image_file" \
@@ -253,6 +273,7 @@ do_build() {
         "${nm_ci_build_args[@]}" \
         "${install_pkgs[@]}" \
         --mkdir "/etc/systemd/system/NetworkManager.service.d" \
+        --mkdir "/etc/systemd/network" \
         "${install_files[@]}" \
         --write "/var/lib/NetworkManager/secret_key:nm-in-container-secret-key" \
         --chmod "700:/var/lib/NetworkManager" \
