@@ -760,7 +760,7 @@ test_l3_ipv4ll(gconstpointer test_data)
         if (next_timeout_msec <= 0)
             break;
 
-        next_timeout_msec = NM_MIN(next_timeout_msec, nmtst_get_rand_uint32() % 1000u);
+        next_timeout_msec = NM_MIN(next_timeout_msec, (gint64) (nmtst_get_rand_uint32() % 1000u));
         nmtst_main_context_iterate_until(NULL, next_timeout_msec, FALSE);
         _LOGT("poll 1 intermezzo");
 

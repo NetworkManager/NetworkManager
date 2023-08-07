@@ -365,7 +365,7 @@ lldp_rx_start_timer(NMLldpRX *lldp_rx, NMLldpNeighbor *neighbor)
     timeout_msec = (n->until_usec / 1000) - nm_utils_get_monotonic_timestamp_msec();
 
     lldp_rx->timer_event_source =
-        nm_g_source_attach(nm_g_timeout_source_new(NM_CLAMP(timeout_msec, 0, G_MAXUINT),
+        nm_g_source_attach(nm_g_timeout_source_new(NM_CLAMP(timeout_msec, 0, (gint64) G_MAXUINT),
                                                    G_PRIORITY_DEFAULT,
                                                    on_timer_event,
                                                    lldp_rx,

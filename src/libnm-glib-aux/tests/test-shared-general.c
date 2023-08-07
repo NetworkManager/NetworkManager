@@ -32,6 +32,13 @@ G_STATIC_ASSERT(_nm_alignof(NMEtherAddr) <= _nm_alignof(NMIPAddr));
 
 /*****************************************************************************/
 
+G_STATIC_ASSERT(_NM_INT_IS_SIGNED(1));
+G_STATIC_ASSERT(!_NM_INT_IS_SIGNED(1u));
+G_STATIC_ASSERT(_NM_INT_SAME_SIGNEDNESS((short) 1, 1l));
+G_STATIC_ASSERT(!_NM_INT_SAME_SIGNEDNESS((unsigned short) 1, 1l));
+
+/*****************************************************************************/
+
 static void
 test_nm_static_assert(void)
 {

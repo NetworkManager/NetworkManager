@@ -800,7 +800,7 @@ initited:
          * a lot of stale entries. We must from time to time clean them up.
          *
          * Do do this cleanup, whenever we have more entries then 2 times the number of links. */
-        if (G_UNLIKELY(g_hash_table_size(priv->device_route_metrics) > NM_MAX(20, n_links * 2))) {
+        if (G_UNLIKELY(g_hash_table_size(priv->device_route_metrics) > NM_MAX(20u, n_links * 2u))) {
             /* from time to time, we need to do some house-keeping and prune stale entries.
              * Otherwise, on a system where interfaces frequently come and go (docker), we
              * keep growing this cache for ifindexes that no longer exist. */

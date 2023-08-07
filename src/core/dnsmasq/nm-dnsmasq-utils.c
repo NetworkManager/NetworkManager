@@ -83,12 +83,12 @@ nm_dnsmasq_utils_get_range(const NMPlatformIP4Address *addr,
     mid = (host & netmask) | (((first + last) / 2) & ~netmask);
     if (host > mid) {
         /* use lower range */
-        reserved = NM_MIN(((host - first) / 10), 8);
+        reserved = NM_MIN(((host - first) / 10u), 8u);
         last     = host - 1 - reserved;
         first    = NM_MAX(first, last > NUM ? last - NUM : 0);
     } else {
         /* use upper range */
-        reserved = NM_MIN(((last - host) / 10), 8);
+        reserved = NM_MIN(((last - host) / 10u), 8u);
         first    = host + 1 + reserved;
         last     = NM_MIN(last, first < 0xFFFFFFFF - NUM ? first + NUM : 0xFFFFFFFF);
     }
