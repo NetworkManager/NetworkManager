@@ -259,15 +259,17 @@ restore_and_activate_connection(NMCheckpoint *self, DeviceCheckpoint *dev_checkp
             g_clear_error(&local_error);
             return FALSE;
         }
-
-        /* If the device is software, a brand new NMDevice may have been created */
-        if (dev_checkpoint->is_software && !dev_checkpoint->device) {
-            dev_checkpoint->device = nm_manager_get_device(priv->manager,
-                                                           dev_checkpoint->original_dev_name,
-                                                           dev_checkpoint->dev_type);
-            nm_g_object_ref(dev_checkpoint->device);
-        }
         need_activation = TRUE;
+    }
+
+    /* If the device is software, a brand new NMDevice may have been created
+     * after adding the new connection; or the old device might have been
+     * deleted and we need to fetch it again. */
+    if (dev_checkpoint->is_software && !dev_checkpoint->device) {
+        dev_checkpoint->device = nm_manager_get_device(priv->manager,
+                                                       dev_checkpoint->original_dev_name,
+                                                       dev_checkpoint->dev_type);
+        nm_g_object_ref(dev_checkpoint->device);
     }
 
     if (!dev_checkpoint->device) {
