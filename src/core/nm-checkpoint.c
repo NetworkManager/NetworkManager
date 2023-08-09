@@ -259,15 +259,17 @@ restore_and_activate_connection(NMCheckpoint *self, DeviceCheckpoint *dev_checkp
             g_clear_error(&local_error);
             return FALSE;
         }
-
-        /* If the device is software, a brand new NMDevice may have been created */
-        if (dev_checkpoint->is_software && !dev_checkpoint->device) {
-            dev_checkpoint->device = nm_manager_get_device(priv->manager,
-                                                           dev_checkpoint->original_dev_name,
-                                                           dev_checkpoint->dev_type);
-            nm_g_object_ref(dev_checkpoint->device);
-        }
         need_activation = TRUE;
+    }
+
+    /* If the device is software, a brand new NMDevice may have been created
+     * after adding the new connection; or the old device might have been
+     * deleted and we need to fetch it again. */
+    if (dev_checkpoint->is_software && !dev_checkpoint->device) {
+        dev_checkpoint->device = nm_manager_get_device(priv->manager,
+                                                       dev_checkpoint->original_dev_name,
+                                                       dev_checkpoint->dev_type);
+        nm_g_object_ref(dev_checkpoint->device);
     }
 
     if (!dev_checkpoint->device) {
@@ -458,8 +460,25 @@ next_dev:
         NMDeviceState state;
 
         nm_manager_for_each_device (priv->manager, device, tmp_lst) {
+            gboolean found = FALSE;
+
             if (g_hash_table_contains(priv->devices, device))
                 continue;
+
+            /* Also ignore devices that were in the checkpoint initially and
+             * were moved to 'removed_devices' because they got removed from
+             * the system. */
+            for (i = 0; i < priv->removed_devices->len; i++) {
+                dev_checkpoint = priv->removed_devices->pdata[i];
+                if (dev_checkpoint->dev_type == nm_device_get_device_type(device)
+                    && nm_streq0(dev_checkpoint->original_dev_name, nm_device_get_iface(device))) {
+                    found = TRUE;
+                    break;
+                }
+            }
+            if (found)
+                continue;
+
             state = nm_device_get_state(device);
             if (state > NM_DEVICE_STATE_DISCONNECTED && state < NM_DEVICE_STATE_DEACTIVATING) {
                 _LOGD("rollback: disconnecting new device %s", nm_device_get_iface(device));
