@@ -3,11 +3,6 @@ NetworkManager-1.44
 Overview of changes since NetworkManager-1.42
 =============================================
 
-This is a snapshot of NetworkManager development. The API is
-subject to change and not guaranteed to be compatible with
-the later release.
-USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
-
 * Introduce a new "link" setting that holds properties related to the
   kernel link such as "tx-queue-length", "gso-max-size",
   "gso-max-segments", "gro-max-size".
