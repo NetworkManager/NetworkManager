@@ -47,6 +47,7 @@ USE AT YOUR OWN RISK.  NOT RECOMMENDED FOR PRODUCTION USE!
 * nm-cloud-setup now supports IMDSv2 on Amazon EC2.
 * nmtui now allows to enable or disable Wi-Fi and WWAN radios.
 * Honor ignore-carrier=no for bond/bridge/team devices.
+* Add version mismatch warning when running nmcli commands.
 
 The following changes were backported to 1.42.x releases between 1.42.0
 and 1.42.8, and are also present in NetworkManager-1.44:
