@@ -5701,7 +5701,7 @@ out:
     return FALSE;
 }
 
-#define CONCHECK_P_PROBE_INTERVAL 1
+#define CONCHECK_P_PROBE_INTERVAL 1u
 
 static void
 concheck_periodic_schedule_set(NMDevice *self, int addr_family, ConcheckScheduleMode mode)
@@ -5873,7 +5873,7 @@ concheck_update_interval(NMDevice *self, int addr_family, gboolean check_now)
 
     new_interval = nm_connectivity_get_interval(concheck_get_mgr(self));
 
-    new_interval = NM_MIN(new_interval, 7 * 24 * 3600);
+    new_interval = NM_MIN(new_interval, 7u * 24u * 3600u);
 
     if (new_interval != priv->concheck_x[IS_IPv4].p_max_interval) {
         _LOGT(LOGD_CONCHECK,
@@ -11546,13 +11546,13 @@ _commit_mtu(NMDevice *self)
     mtu_plat = nm_platform_link_get_mtu(nm_device_get_platform(self), ifindex);
 
     if (ip6_mtu) {
-        ip6_mtu = NM_MAX(1280, ip6_mtu);
+        ip6_mtu = NM_MAX(1280u, ip6_mtu);
 
         if (!mtu_desired)
             mtu_desired = mtu_plat;
 
         if (mtu_desired) {
-            mtu_desired = NM_MAX(1280, mtu_desired);
+            mtu_desired = NM_MAX(1280u, mtu_desired);
 
             if (mtu_desired < ip6_mtu)
                 ip6_mtu = mtu_desired;

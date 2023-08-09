@@ -1435,7 +1435,7 @@ nmi_cmdline_reader_parse(const char        *etc_connections_dir,
         }
     }
 
-    reader->dhcp_timeout = NM_CLAMP(dhcp_timeout * dhcp_num_tries, 1, G_MAXINT32);
+    reader->dhcp_timeout = NM_CLAMP(dhcp_timeout * dhcp_num_tries, 1u, (guint32) G_MAXINT32);
 
     for (i = 0; argv[i]; i++) {
         gs_free char *argument_clone = NULL;

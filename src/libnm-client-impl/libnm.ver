@@ -1943,3 +1943,8 @@ global:
 	nm_setting_link_get_type;
 	nm_setting_link_new;
 } libnm_1_42_0;
+
+libnm_1_46_0 {
+global:
+	nm_access_point_get_bandwidth;
+} libnm_1_44_0;

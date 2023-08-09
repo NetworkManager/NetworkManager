@@ -32,7 +32,7 @@
          * Normalize the requested_value to the kernel_value, if it look as if a rounding
          * error happens. If the difference is larger than +/- 1, no normalization happens! */   \
                                                                                                  \
-        ((_requested_value >= (NM_MAX(_kernel_value, 1) - 1))                                    \
+        ((_requested_value >= (NM_MAX(_kernel_value, (typeof(_kernel_value)) 1) - 1))            \
          && (_requested_value <= (NM_MIN(_kernel_value, ~((typeof(_kernel_value)) 0) - 1) + 1))) \
             ? _kernel_value                                                                      \
             : _requested_value;                                                                  \

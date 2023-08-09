@@ -30,6 +30,7 @@ NM_GOBJECT_PROPERTIES_DEFINE(NMAccessPoint,
                              PROP_HW_ADDRESS,
                              PROP_MODE,
                              PROP_MAX_BITRATE,
+                             PROP_BANDWIDTH,
                              PROP_STRENGTH,
                              PROP_BSSID,
                              PROP_LAST_SEEN, );
@@ -43,6 +44,7 @@ typedef struct {
     guint32 frequency;
     guint32 mode;
     guint32 max_bitrate;
+    guint32 bandwidth;
     gint32  last_seen;
     guint8  strength;
 } NMAccessPointPrivate;
@@ -196,6 +198,24 @@ nm_access_point_get_max_bitrate(NMAccessPoint *ap)
     g_return_val_if_fail(NM_IS_ACCESS_POINT(ap), 0);
 
     return NM_ACCESS_POINT_GET_PRIVATE(ap)->max_bitrate;
+}
+
+/**
+ * nm_access_point_get_bandwidth:
+ * @ap: a #NMAccessPoint
+ *
+ * Gets the bandwidth advertised by the access point in MHz.
+ *
+ * Returns: the advertised bandwidth (MHz)
+ *
+ * Since: 1.46
+ **/
+guint32
+nm_access_point_get_bandwidth(NMAccessPoint *ap)
+{
+    g_return_val_if_fail(NM_IS_ACCESS_POINT(ap), 0);
+
+    return NM_ACCESS_POINT_GET_PRIVATE(ap)->bandwidth;
 }
 
 /**
@@ -463,6 +483,9 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
     case PROP_MAX_BITRATE:
         g_value_set_uint(value, nm_access_point_get_max_bitrate(ap));
         break;
+    case PROP_BANDWIDTH:
+        g_value_set_uint(value, nm_access_point_get_bandwidth(ap));
+        break;
     case PROP_STRENGTH:
         g_value_set_uchar(value, nm_access_point_get_strength(ap));
         break;
@@ -480,6 +503,7 @@ const NMLDBusMetaIface _nml_dbus_meta_iface_nm_accesspoint = NML_DBUS_META_IFACE
     nm_access_point_get_type,
     NML_DBUS_META_INTERFACE_PRIO_INSTANTIATE_30,
     NML_DBUS_META_IFACE_DBUS_PROPERTIES(
+        NML_DBUS_META_PROPERTY_INIT_U("Bandwidth", PROP_BANDWIDTH, NMAccessPoint, _priv.bandwidth),
         NML_DBUS_META_PROPERTY_INIT_U("Flags", PROP_FLAGS, NMAccessPoint, _priv.flags),
         NML_DBUS_META_PROPERTY_INIT_U("Frequency", PROP_FREQUENCY, NMAccessPoint, _priv.frequency),
         NML_DBUS_META_PROPERTY_INIT_FCN("HwAddress",
@@ -619,6 +643,21 @@ nm_access_point_class_init(NMAccessPointClass *ap_class)
                                                          G_MAXUINT32,
                                                          0,
                                                          G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+
+    /**
+     * NMAccessPoint:bandwidth:
+     *
+     * The channel bandwidth announced by the AP in MHz.
+     *
+     * Since: 1.46
+     **/
+    obj_properties[PROP_BANDWIDTH] = g_param_spec_uint(NM_ACCESS_POINT_BANDWIDTH,
+                                                       "",
+                                                       "",
+                                                       0,
+                                                       G_MAXUINT32,
+                                                       0,
+                                                       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
     /**
      * NMAccessPoint:strength:

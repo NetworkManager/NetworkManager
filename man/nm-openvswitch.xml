@@ -170,7 +170,7 @@ Connection 'ovs-slave-eth2' (475ac1bf-30b2-4534-a877-27f33f58b082) successfully 
 <prompt>$ </prompt><userinput>nmcli conn add type ethernet conn.interface eth3 master bond0</userinput>
 Connection 'ovs-slave-eth3' (8dedeecb-ed12-482b-b77a-24a4fb835136) successfully added.
 </screen>
-      <para>It's just a Port with multiple interfaces. See nm-settings manual for
+      <para>It's just a Port with multiple interfaces. See nm-settings-nmcli manual for
       Bonding options you can use with "nmcli c add" or "nmcli c modify". You could
       even set a VLAN tag on the same Port to do VLAN tagging and bonding at the same
       time.</para>
@@ -197,7 +197,7 @@ Connection 'ovs-slave-eth3' (8dedeecb-ed12-482b-b77a-24a4fb835136) successfully 
       <ulink url="https://www.rfc-editor.org/rfc/rfc7047.txt">RFC 7047: The Open vSwitch Database Management Protocol</ulink>,
       <citerefentry><refentrytitle>ovs-vsctl</refentrytitle><manvolnum>8</manvolnum></citerefentry>,
       <citerefentry><refentrytitle>ovs-vswitchd.conf.db</refentrytitle><manvolnum>5</manvolnum></citerefentry>,
-      <link linkend='nm-settings'><citerefentry><refentrytitle>nm-settings</refentrytitle><manvolnum>5</manvolnum></citerefentry></link>,
+      <link linkend='nm-settings-nmcli'><citerefentry><refentrytitle>nm-settings-nmcli</refentrytitle><manvolnum>5</manvolnum></citerefentry></link>,
       <link linkend='nmcli'><citerefentry><refentrytitle>nmcli</refentrytitle><manvolnum>1</manvolnum></citerefentry></link>
     </para>
   </refsect1>

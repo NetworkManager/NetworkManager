@@ -3922,7 +3922,7 @@ _new_from_nl_route(const struct nlmsghdr *nlh, gboolean id_only, ParseNlmsgIter 
                  * hops in this list). */
                 nm_assert(v4_n_nexthops > 0u);
                 if (v4_n_nexthops - 1u >= v4_nh_extra_alloc) {
-                    v4_nh_extra_alloc = NM_MAX(4, v4_nh_extra_alloc * 2u);
+                    v4_nh_extra_alloc = NM_MAX(4u, v4_nh_extra_alloc * 2u);
                     if (!v4_nh_extra_nexthops_heap) {
                         v4_nh_extra_nexthops_heap =
                             g_new(NMPlatformIP4RtNextHop, v4_nh_extra_alloc);

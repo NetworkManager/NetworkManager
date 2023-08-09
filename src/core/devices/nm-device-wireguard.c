@@ -720,7 +720,7 @@ _peers_retry_in_msec(PeerData *peer_data, gboolean after_failure)
         return RETRY_IN_MSEC_MAX;
 
     /* double the retry-time, starting with one second. */
-    return NM_MIN(RETRY_IN_MSEC_MAX, (1u << peer_data->ep_resolv.resolv_fail_count) * 500);
+    return NM_MIN(RETRY_IN_MSEC_MAX, (1l << peer_data->ep_resolv.resolv_fail_count) * 500);
 }
 
 static void
