@@ -170,6 +170,12 @@
 %global ifcfg_warning 0
 %endif
 
+%if 0%{?fedora} >= 39
+%global ifcfg_migrate 1
+%else
+%global ifcfg_migrate 0
+%endif
+
 %if 0%{?fedora}
 # Although eBPF would be available on Fedora's kernel, it seems
 # we often get SELinux denials (rh#1651654). But even aside them,
@@ -745,6 +751,9 @@ Preferably use nmcli instead.
 %if %{?config_plugins_default_ifcfg_rh}
 	-Dconfig_plugins_default=ifcfg-rh \
 %endif
+%if %{?ifcfg_migrate}
+	-Dconfig_migrate_ifcfg_rh_default=true \
+%endif
 	-Dresolvconf=no \
 	-Dnetconfig=no \
 	-Dconfig_dns_rc_manager_default=%{dns_rc_manager_default} \
@@ -889,6 +898,9 @@ autoreconf --install --force
 	--with-dist-version=%{version}-%{release} \
 %if %{?config_plugins_default_ifcfg_rh}
 	--with-config-plugins-default=ifcfg-rh \
+%endif
+%if %{?ifcfg_migrate}
+	--with-config-migrate-ifcfg-rh-default=yes \
 %endif
 	--with-resolvconf=no \
 	--with-netconfig=no \
