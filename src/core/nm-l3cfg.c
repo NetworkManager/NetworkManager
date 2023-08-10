@@ -101,8 +101,6 @@ typedef struct {
      * timestamp when we start probing. */
     guint32 probing_timeout_msec;
 
-    NMEtherAddr last_conflict_addr;
-
     NML3AcdDefendType acd_defend_type_desired : 3;
     NML3AcdDefendType acd_defend_type_current : 3;
     bool              acd_defend_type_is_active : 1;
@@ -2662,8 +2660,8 @@ handle_init:
         nm_assert(acd_data->info.state == NM_L3_ACD_ADDR_STATE_PROBING);
         nm_assert(acd_data->nacd_probe);
 
-        acd_data->nacd_probe         = n_acd_probe_free(acd_data->nacd_probe);
-        acd_data->last_conflict_addr = *sender_addr;
+        acd_data->nacd_probe              = n_acd_probe_free(acd_data->nacd_probe);
+        acd_data->info.last_conflict_addr = *sender_addr;
         _l3_acd_data_state_set_full(self,
                                     acd_data,
                                     NM_L3_ACD_ADDR_STATE_USED,
@@ -2718,8 +2716,8 @@ handle_init:
                   nm_ether_addr_to_string_a(sender_addr));
         }
 
-        acd_data->nacd_probe         = n_acd_probe_free(acd_data->nacd_probe);
-        acd_data->last_conflict_addr = *sender_addr;
+        acd_data->nacd_probe              = n_acd_probe_free(acd_data->nacd_probe);
+        acd_data->info.last_conflict_addr = *sender_addr;
         _l3_acd_data_state_set(self, acd_data, NM_L3_ACD_ADDR_STATE_CONFLICT, TRUE);
         if (!acd_data->acd_data_timeout_source)
             _l3_acd_data_timeout_schedule(acd_data, ACD_WAIT_TIME_CONFLICT_RESTART_MSEC);
