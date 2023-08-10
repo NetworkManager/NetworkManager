@@ -2673,7 +2673,7 @@ handle_init:
             _l3_acd_data_timeout_schedule(acd_data, ACD_WAIT_TIME_PROBING_FULL_RESTART_MSEC);
 
         if (!_l3_acd_data_defendconflict_warning_ratelimited(acd_data, p_now_msec)) {
-            _LOGI("IPv4 address %s is used on network connected to interface %d%s%s%s from "
+            _LOGD("IPv4 address %s is used on network connected to interface %d%s%s%s from "
                   "host %s",
                   nm_inet4_ntop(acd_data->info.addr, sbuf_addr),
                   self->priv.ifindex,
@@ -2704,7 +2704,7 @@ handle_init:
                   nm_ether_addr_to_string_a(sender_addr));
 
         if (!_l3_acd_data_defendconflict_warning_ratelimited(acd_data, p_now_msec)) {
-            _LOGW("IPv4 address collision detection sees conflict on interface %d%s%s%s for "
+            _LOGD("IPv4 address collision detection sees conflict on interface %d%s%s%s for "
                   "address %s from host %s",
                   self->priv.ifindex,
                   NM_PRINT_FMT_QUOTED(self->priv.plobj_next,
