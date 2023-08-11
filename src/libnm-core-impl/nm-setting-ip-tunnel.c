@@ -593,11 +593,15 @@ nm_setting_ip_tunnel_class_init(NMSettingIPTunnelClass *klass)
     /**
      * NMSettingIPTunnel:mode:
      *
-     * The tunneling mode, for example %NM_IP_TUNNEL_MODE_IPIP or
-     * %NM_IP_TUNNEL_MODE_GRE.
+     * The tunneling mode, valid values: #NMIPTunnelMode.
      *
      * Since: 1.2
      **/
+    /* ---nmcli,dbus---
+     * property: mode
+     * description: The tunneling mode, valid values: #NMIPTunnelMode:*
+     * ---end---
+     */
     _nm_setting_property_define_direct_uint32(properties_override,
                                               obj_properties,
                                               NM_SETTING_IP_TUNNEL_MODE,

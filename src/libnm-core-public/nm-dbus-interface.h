@@ -943,6 +943,11 @@ typedef enum /*< flags >*/ {
  * Since: 1.2
  */
 typedef enum {
+    /**
+     * NM_IP_TUNNEL_MODE_UNKNOWN: (attributes NM.internal=1)
+     *
+     * Unknown/unset tunnel mode
+     */
     NM_IP_TUNNEL_MODE_UNKNOWN   = 0,
     NM_IP_TUNNEL_MODE_IPIP      = 1,
     NM_IP_TUNNEL_MODE_GRE       = 2,
