@@ -396,7 +396,9 @@ def process_setting(tag, root_node, source_file, setting_name):
         "> > tag:%s, source_file:%s, setting_name:%s" % (tag, source_file, setting_name)
     )
 
-    start_tag = "---" + tag + "---"
+    start_tag = r"---([a-z\-]*,)*" + tag + r"(,[a-z\-]*)*---"
+    start_tag_re = re.compile(start_tag)
+    start_tag_fmt_re = re.compile(r"^    /\* " + start_tag + r"$")
     end_tag = "---end---"
 
     setting_node, created = xnode_get_or_create(root_node, "setting", setting_name)
@@ -425,12 +427,12 @@ def process_setting(tag, root_node, source_file, setting_name):
                         'Invalid end tag "%s". Expects literally "     */" after end-tag'
                         % (line,),
                     )
-            elif start_tag in line:
-                if line != "    /* " + start_tag:
+            elif start_tag_re.search(line):
+                if not start_tag_fmt_re.match(line):
                     raise LineError(
                         line_no,
-                        'Invalid start tag "%s". Expects literally "    /* %s"'
-                        % (line, start_tag),
+                        'Invalid start tag "%s". Expects literally "    /* ---TAGS---"'
+                        % line,
                     )
                 if lines is not None:
                     raise LineError(
