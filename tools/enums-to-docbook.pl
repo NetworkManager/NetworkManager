@@ -20,6 +20,7 @@ our $desc;
 our $choice;
 our @choices;
 our $val;
+our $in_choice_docblock;
 
 BEGIN {
 my $id = shift @ARGV or die "Missing ID";
@@ -81,12 +82,13 @@ if (/^\/\*\*$/) {
 	$desc = '';
 	$choice = undef;
 	@choices = ();
+	$in_choice_docblock = 0;
 } elsif (/^ \* (.+):$/) {
 	# The name
 	die "Duplicate name '$1': already processing '$name'" if $name;
 	$name = $1;
 } elsif (/^ \* @(\S+):\s+(.*)$/) {
-	# The enum choice documentation
+	# The enum choice documentation (inline `@` style)
 	$choice = $1;
 	die "Documentation for '$1' already seen" if grep { $_->[0] eq $choice } @choices;
 	push @choices, [ $choice, $2 ]
@@ -109,6 +111,41 @@ if (/^\/\*\*$/) {
 } elsif (/^typedef enum/) {
 	# Start of an enum
 	$val = -1;
+} elsif (/^    \/\*\*$/) {
+	# The enum choice documentation start (docblock style)
+	next unless defined $val;
+	$in_choice_docblock = 1;
+	$choice = undef;
+} elsif (/^     \*\s+([a-zA-Z_]+)(:.*)?$/) {
+	# The enum choice name, maybe ignoring gtkdoc annotations
+	next unless $in_choice_docblock;
+	$choice = $1;
+
+	# Overwrite previous data if we have both inline and docblock (rare, but sometimes necessary)
+	my ($this) = grep { $_->[0] eq $choice } @choices;
+	if ($this) {
+		$this->[1] = '';
+	} else {
+		push @choices, [ $choice, '' ];
+	}
+} elsif (/^     \*\s+(.+)$/) {
+	# An enum choice's description line
+	next unless $in_choice_docblock;
+	die "Docblock's first line must be the name of the enum value, saw '$&'" unless defined $choice;
+	my ($this) = grep { $_->[0] eq $choice } @choices;
+	if ($this->[1]) {
+		$this->[1] .= " ";
+	}
+	$this->[1] .= $1;
+} elsif (/^     \*\s*$/) {
+	# A blank line in the docblock
+	next unless $in_choice_docblock;
+	my ($this) = grep { $_->[0] eq $choice } @choices;
+	$this->[1] .= "\n";
+} elsif (/^     \*+\/$/) {
+	# End of the docblock
+	$in_choice_docblock = 0;
+	$choice = undef;
 } elsif (/^\s+(\S+)\s+=\s+([^,\s]+)/) {
 	# A choice with a literal value
 	next unless @choices;
@@ -188,6 +225,7 @@ END
 	$choice = undef;
 	$val = undef;
 	@choices = ();
+	$in_choice_docblock = 0;
 } else {
 	# Only care about other lines if we're parsing an enum
 	next unless $val;
