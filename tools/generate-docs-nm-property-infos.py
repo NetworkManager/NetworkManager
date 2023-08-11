@@ -70,6 +70,9 @@ def init_enumvals(girxml):
         enum_cname = enum.attrib[type_key]
         enums[enum_cname] = []
         for enumval in enum.findall("./gi:member", ns_map):
+            if enumval.find('./gi:attribute[@name="NM.internal"]', ns_map) is not None:
+                continue
+
             cname = enumval.attrib[identifier_key]
             num_val = enumval.attrib["value"]
             doc = enumval.find("./gi:doc", ns_map)
@@ -88,6 +91,9 @@ def init_enumvals(girxml):
         enum_cname = enum.attrib[type_key]
         enums[enum_cname] = []
         for enumval in enum.findall("./gi:member", ns_map):
+            if enumval.find('./gi:attribute[@name="NM.internal"]', ns_map) is not None:
+                continue
+
             cname = enumval.attrib[identifier_key]
             num_val = int(enumval.attrib["value"])
             doc = enumval.find("./gi:doc", ns_map)
