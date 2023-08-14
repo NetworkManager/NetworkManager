@@ -4247,6 +4247,20 @@ _dev_l3_cfg_notify_cb(NML3Cfg *l3cfg, const NML3ConfigNotifyData *notify_data, N
     case NM_L3_CONFIG_NOTIFY_TYPE_ACD_EVENT:
     {
         const NML3AcdAddrInfo *addr_info = &notify_data->acd_event.info;
+        char                   buf_addr[NM_INET_ADDRSTRLEN];
+
+        if (addr_info->state == NM_L3_ACD_ADDR_STATE_USED) {
+            _LOGI(LOGD_DEVICE,
+                  "IP address %s cannot be configured because it is already in use in the "
+                  "network by host %s",
+                  nm_inet4_ntop(addr_info->addr, buf_addr),
+                  nm_ether_addr_to_string_a(&addr_info->last_conflict_addr));
+        } else if (addr_info->state == NM_L3_ACD_ADDR_STATE_CONFLICT) {
+            _LOGI(LOGD_DEVICE,
+                  "conflict detected for IP address %s with host %s",
+                  nm_inet4_ntop(addr_info->addr, buf_addr),
+                  nm_ether_addr_to_string_a(&addr_info->last_conflict_addr));
+        }
 
         if (addr_info->state > NM_L3_ACD_ADDR_STATE_PROBING)
             _dev_ipmanual_check_ready(self);
