@@ -92,6 +92,7 @@ typedef struct {
     NML3AcdAddrState            state;
     NML3Cfg                    *l3cfg;
     const NML3AcdAddrTrackInfo *track_infos;
+    NMEtherAddr                 last_conflict_addr;
 } NML3AcdAddrInfo;
 
 static inline const NML3AcdAddrTrackInfo *
