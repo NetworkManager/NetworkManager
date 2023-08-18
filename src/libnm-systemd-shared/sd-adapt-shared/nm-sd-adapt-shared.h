@@ -12,11 +12,6 @@
 
 /*****************************************************************************/
 
-/* strerror() is not thread-safe. Patch systemd-sources via a define. */
-#define strerror(errsv) nm_strerror_native(errsv)
-
-/*****************************************************************************/
-
 /* systemd detects whether compiler supports "-Wstringop-truncation" to disable
  * the warning at particular places. Since we anyway build with -Wno-pragma,
  * we don't do that and just let systemd call
