@@ -35,4 +35,6 @@
 
 size_t nm_utils_get_next_realloc_size(bool true_realloc, size_t requested);
 
+const char *_nm_strerror_r(int errsv, char *buf, size_t buf_size);
+
 #endif /* __NM_STD_UTILS_H__ */
