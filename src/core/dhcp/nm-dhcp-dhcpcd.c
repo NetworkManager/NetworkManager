@@ -174,7 +174,7 @@ stop(NMDhcpClient *client, gboolean release)
          */
         if (kill(pid, sig) == -1) {
             errsv = errno;
-            _LOGE("failed to kill dhcpcd %d:%s", errsv, strerror(errsv));
+            _LOGE("failed to kill dhcpcd %d:%s", errsv, nm_strerror_native(errsv));
         }
 
         /* When this function exits NM expects the PID to be -1.
