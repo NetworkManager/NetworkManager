@@ -94,12 +94,15 @@ cmd_resolve_address(void)
                       NI_NAMEREQD);
     if (ret != 0) {
         if (ret == EAI_SYSTEM) {
+            int  errsv = errno;
+            char buf[1024];
+
             fprintf(stderr,
                     "getnameinfo() failed: %d (%s), system error: %d (%s)\n",
                     ret,
                     gai_strerror(ret),
-                    errno,
-                    strerror(errno));
+                    errsv,
+                    _nm_strerror_r(errsv, buf, sizeof(buf)));
         } else {
             fprintf(stderr, "getnameinfo() failed: %d (%s)\n", ret, gai_strerror(ret));
         }
