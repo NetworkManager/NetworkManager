@@ -8,6 +8,10 @@ import collections
 import xml.etree.ElementTree as ET
 
 
+enums = {}
+enumvals = {}
+
+
 class LineError(Exception):
     def __init__(self, line_no, msg):
         Exception.__init__(self, msg)
@@ -50,6 +54,53 @@ def xnode_get_or_create(root_node, node_name, name):
         created = False
 
     return node, created
+
+
+def init_enumvals(girxml):
+    ns_map = {
+        "c": "http://www.gtk.org/introspection/c/1.0",
+        "gi": "http://www.gtk.org/introspection/core/1.0",
+        "glib": "http://www.gtk.org/introspection/glib/1.0",
+    }
+    type_key = "{%s}type" % ns_map["c"]
+    identifier_key = "{%s}identifier" % ns_map["c"]
+    nick_key = "{%s}nick" % ns_map["glib"]
+
+    for enum in girxml.findall("./gi:namespace/gi:enumeration", ns_map):
+        enum_cname = enum.attrib[type_key]
+        enums[enum_cname] = []
+        for enumval in enum.findall("./gi:member", ns_map):
+            cname = enumval.attrib[identifier_key]
+            num_val = enumval.attrib["value"]
+            doc = enumval.find("./gi:doc", ns_map)
+            doc = doc.text if doc is not None else None
+            nick = enumval.attrib.get(nick_key)
+            nick = "%s (%s)" % (nick, num_val) if nick else None
+
+            enums[enum_cname].append(cname)
+            enumvals[cname] = {
+                "cvalue": "%s (%s)" % (cname, num_val),
+                "nick": nick,
+                "doc": doc,
+            }
+
+    for enum in girxml.findall("./gi:namespace/gi:bitfield", ns_map):
+        enum_cname = enum.attrib[type_key]
+        enums[enum_cname] = []
+        for enumval in enum.findall("./gi:member", ns_map):
+            cname = enumval.attrib[identifier_key]
+            num_val = int(enumval.attrib["value"])
+            doc = enumval.find("./gi:doc", ns_map)
+            doc = doc.text if doc is not None else None
+            nick = enumval.attrib.get(nick_key)
+            nick = "%s (0x%x)" % (nick, num_val) if nick else None
+
+            enums[enum_cname].append(cname)
+            enumvals[cname] = {
+                "cvalue": "%s (0x%x)" % (cname, num_val),
+                "nick": nick,
+                "doc": doc,
+            }
 
 
 def get_setting_names(source_file):
@@ -171,15 +222,46 @@ def write_data(tag, setting_node, line_no, parsed_data):
         else:
             assert False
 
+
+def expand_enumval(enumval_name, use_nicks):
+    if enumval_name not in enumvals:
+        return enumval_name
+    enumval = enumvals[enumval_name]
+    return enumval["nick"] if use_nicks and enumval["nick"] else enumval["cvalue"]
+
+
+def expand_all_enumvals(enum, use_nicks):
+    assert enum in enums
+    return ", ".join(expand_enumval(val_name, use_nicks) for val_name in enums[enum])
+
+
+def expand_all_enumvals_with_docs(enum, use_nicks):
+    assert enum in enums
+
+    out_str = "<itemizedlist>"
+    for enumval_name in enums[enum]:
+        assert enumval_name in enumvals
+        enumval = enumvals[enumval_name]
+        out_str += "<listitem><para><literal>%s</literal>%s</para></listitem>" % (
+            expand_enumval(enumval_name, use_nicks),
+            " - " + enumval["doc"] if enumval["doc"] else "",
+        )
+    out_str += "</itemizedlist>"
+
+    return out_str
+
+
+def format_descriptions(tag, parsed_data):
     if (
         parsed_data.get("description", None) is not None
         and parsed_data.get("description-docbook", None) is None
     ):
         # we have a description, but no docbook. Generate one.
-        node = ET.SubElement(property_node, "description-docbook")
-        for l in re.split("\n", parsed_data["description"]):
-            paragraph = ET.SubElement(node, "para")
-            paragraph.text = l
+        parsed_data["description-docbook"] = ""
+        for line in parsed_data["description"].split("\n"):
+            para = ET.Element("para")
+            para.text = line
+            parsed_data["description-docbook"] += ET.tostring(para, encoding='unicode')
     elif (
         parsed_data.get("description-docbook", None) is not None
         and parsed_data.get("description", None) is None
@@ -187,10 +269,41 @@ def write_data(tag, setting_node, line_no, parsed_data):
         raise Exception(
             'Invalid configuration. When specifying "description-docbook:" there MUST be also a  "description:"'
         )
+    elif parsed_data.get("description", None) is None:
+        return
 
+    # Expand enumvals expressions (%ENUM_VALUE, #EnumName:** and #EnumName:*)
+    use_nicks = tag == "nmcli"
 
-kwd_first_line_re = re.compile(r"^ *\* ([-a-z0-9]+): (.*)$")
-kwd_more_line_re = re.compile(r"^ *\*( *)(.*?)\s*$")
+    parsed_data["description"] = re.sub(
+        r"#([A-Za-z0-9_]*):\*{1,2}",
+        lambda match: expand_all_enumvals(match.group(1), use_nicks),
+        parsed_data["description"],
+    )
+
+    parsed_data["description"] = re.sub(
+        r"%([^%]\w*)",
+        lambda match: expand_enumval(match.group(1), use_nicks),
+        parsed_data["description"],
+    )
+
+    parsed_data["description-docbook"] = re.sub(
+        r"#([A-Za-z0-9_]*):\*\*",
+        lambda match: expand_all_enumvals_with_docs(match.group(1), use_nicks),
+        parsed_data["description-docbook"],
+    )
+
+    parsed_data["description-docbook"] = re.sub(
+        r"#([A-Za-z0-9_]*):\*",
+        lambda match: expand_all_enumvals(match.group(1), use_nicks),
+        parsed_data["description-docbook"],
+    )
+
+    parsed_data["description-docbook"] = re.sub(
+        r"%([^%]\w*)",
+        lambda match: expand_enumval(match.group(1), use_nicks),
+        parsed_data["description-docbook"],
+    )
 
 
 def parse_data(tag, line_no, lines):
@@ -325,6 +438,7 @@ def process_setting(tag, root_node, source_file, setting_name):
                 parsed_data = parse_data(tag, line_no_start, lines)
                 if not parsed_data:
                     raise Exception('invalid data: line %s, "%s"' % (line_no, lines))
+                format_descriptions(tag, parsed_data)
                 dbg("> > > property: %s" % (parsed_data["property"],))
                 if _dbg_level > 1:
                     for keyword in sorted(parsed_data.keys()):
@@ -343,11 +457,13 @@ def process_setting(tag, root_node, source_file, setting_name):
             raise LineError(line_no_start, "Unterminated start tag")
 
 
-def process_settings_docs(tag, output, source_files):
+def process_settings_docs(tag, output, gir_file, source_files):
 
     dbg("> tag:%s, output:%s" % (tag, output))
 
     root_node = ET.Element("nm-setting-docs")
+
+    init_enumvals(ET.parse(gir_file).getroot())
 
     for setting_name, source_file in get_file_infos(source_files):
         try:
@@ -368,11 +484,16 @@ def process_settings_docs(tag, output, source_files):
 
 def main():
     if len(sys.argv) < 4:
-        print("Usage: %s [tag] [output-xml-file] [srcfiles...]" % (sys.argv[0]))
+        print(
+            "Usage: %s [tag] [output-xml-file] [gir-file] [srcfiles...]" % (sys.argv[0])
+        )
         exit(1)
 
     process_settings_docs(
-        tag=sys.argv[1], output=sys.argv[2], source_files=sys.argv[3:]
+        tag=sys.argv[1],
+        output=sys.argv[2],
+        gir_file=sys.argv[3],
+        source_files=sys.argv[4:],
     )
 
 
