@@ -169,9 +169,9 @@ if enable_introspection
   endif
   foreach info: infos
     t = custom_target(
-      'nm-propery-infos-' + info + '.xml',
-      input: libnm_core_settings_sources,
-      output: 'nm-propery-infos-' + info + '.xml',
+      'nm-property-infos-' + info + '.xml',
+      input: [libnm_gir[0]] + libnm_core_settings_sources,
+      output: 'nm-property-infos-' + info + '.xml',
       command: [
         python.path(),
         join_paths(meson.source_root(), 'tools', 'generate-docs-nm-property-infos.py'),

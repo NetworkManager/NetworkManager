@@ -2088,7 +2088,7 @@ endif
 
 libnm_docs_sources = $(src_libnm_core_impl_lib_c_settings_real)
 
-src/libnm-client-impl/nm-property-infos-%.xml: tools/generate-docs-nm-property-infos.py src/libnm-core-impl/libnm-core-impl.la $(libnm_docs_sources)
+src/libnm-client-impl/nm-property-infos-%.xml: tools/generate-docs-nm-property-infos.py src/libnm-core-impl/libnm-core-impl.la src/libnm-client-impl/NM-1.0.gir $(libnm_docs_sources)
 	$(AM_V_GEN) \
 		"$(PYTHON)" \
 		$(srcdir)/tools/generate-docs-nm-property-infos.py \
