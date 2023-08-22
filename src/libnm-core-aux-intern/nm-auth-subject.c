@@ -351,6 +351,8 @@ constructed(GObject *object)
     NMAuthSubject        *self = NM_AUTH_SUBJECT(object);
     NMAuthSubjectPrivate *priv = NM_AUTH_SUBJECT_GET_PRIVATE(self);
 
+    G_OBJECT_CLASS(nm_auth_subject_parent_class)->constructed(object);
+
     /* validate that the created instance. */
 
     switch (priv->subject_type) {
