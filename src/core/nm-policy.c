@@ -1662,15 +1662,14 @@ nm_policy_device_recheck_auto_activate_schedule(NMPolicy *self, NMDevice *device
 
     g_return_if_fail(NM_IS_POLICY(self));
     g_return_if_fail(NM_IS_DEVICE(device));
-    if (g_signal_handler_find(device,
-                              G_SIGNAL_MATCH_DATA,
-                              0,
-                              0,
-                              NULL,
-                              NULL,
-                              NM_POLICY_GET_PRIVATE(self))
-        == 0)
-        return;
+    nm_assert(g_signal_handler_find(device,
+                                    G_SIGNAL_MATCH_DATA,
+                                    0,
+                                    0,
+                                    NULL,
+                                    NULL,
+                                    NM_POLICY_GET_PRIVATE(self))
+              != 0);
 
     if (!c_list_is_empty(&device->policy_auto_activate_lst)) {
         /* already queued. Return. */
