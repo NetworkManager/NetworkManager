@@ -27,7 +27,7 @@ private_headers = [
 scan_args = [
   '--rebuild-types',
   '--rebuild-sections',
-  '--ignore-decorators=NM_AVAILABLE_IN_\d+_\d+|NM_DEPRECATED_IN_\d+_\d+|NM_DEPRECATED_IN_\d+_\d+_FOR\(\)',
+  '--ignore-decorators=NM_AVAILABLE_IN_[0-9]+_[0-9]+|NM_DEPRECATED_IN_[0-9]+_[0-9]+|NM_DEPRECATED_IN_[0-9]+_[0-9]+_FOR[(][)]',
   '--ignore-headers=' + ' '.join(private_headers),
 ]
 
