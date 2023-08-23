@@ -719,7 +719,7 @@ class Util:
         micro = ver & 0xFF
         minor = (ver >> 8) & 0xFF
         major = ver >> 16
-        return f"{major}.{minor}.{micro}"
+        return "%s.%s.%s" % (major, minor, micro)
 
 
 ###############################################################################
@@ -2699,7 +2699,7 @@ def main():
                     sys.executable,
                     __file__,
                     "--started-with-dbus-session",
-                    *sys.argv[1:],
+                    *sys.argv[1:]
                 )
             except OSError as e:
                 if e.errno != errno.ENOENT:
