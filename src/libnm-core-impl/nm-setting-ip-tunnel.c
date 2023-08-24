@@ -593,11 +593,22 @@ nm_setting_ip_tunnel_class_init(NMSettingIPTunnelClass *klass)
     /**
      * NMSettingIPTunnel:mode:
      *
-     * The tunneling mode, for example %NM_IP_TUNNEL_MODE_IPIP or
-     * %NM_IP_TUNNEL_MODE_GRE.
+     * The tunneling mode. Valid values: %NM_IP_TUNNEL_MODE_IPIP,
+     * %NM_IP_TUNNEL_MODE_GRE, %NM_IP_TUNNEL_MODE_SIT, %NM_IP_TUNNEL_MODE_ISATAP,
+     * %NM_IP_TUNNEL_MODE_VTI, %NM_IP_TUNNEL_MODE_IP6IP6, %NM_IP_TUNNEL_MODE_IPIP6,
+     * %NM_IP_TUNNEL_MODE_IP6GRE, %NM_IP_TUNNEL_MODE_VTI6, %NM_IP_TUNNEL_MODE_GRETAP
+     * and %NM_IP_TUNNEL_MODE_IP6GRETAP
      *
      * Since: 1.2
      **/
+    /* ---nmcli---
+     * property: mode
+     * description:
+     *   The tunneling mode. Valid values: ipip (1), gre (2), sit (3), isatap (4),
+     *   vti (5), ip6ip6 (6), ipip6 (7), ip6gre (8), vti6 (9), gretap (10) and
+     *   ip6gretap (11)
+     * ---end---
+     */
     _nm_setting_property_define_direct_uint32(properties_override,
                                               obj_properties,
                                               NM_SETTING_IP_TUNNEL_MODE,
@@ -731,10 +742,19 @@ nm_setting_ip_tunnel_class_init(NMSettingIPTunnelClass *klass)
      * NMSettingIPTunnel:encapsulation-limit:
      *
      * How many additional levels of encapsulation are permitted to be prepended
-     * to packets. This property applies only to IPv6 tunnels. To disable this option, add %NM_IP_TUNNEL_FLAG_IP6_IGN_ENCAP_LIMIT to ip-tunnel flags.
+     * to packets. This property applies only to IPv6 tunnels. To disable this option,
+     * add %NM_IP_TUNNEL_FLAG_IP6_IGN_ENCAP_LIMIT to ip-tunnel flags.
      *
      * Since: 1.2
      **/
+    /* ---nmcli---
+     * property: encapsulation-limit
+     * description:
+     *   How many additional levels of encapsulation are permitted to be prepended
+     *   to packets. This property applies only to IPv6 tunnels. To disable this
+     *   option, add 0x1 (ip6-ign-encap-limit) to ip-tunnel flags.
+     * ---end---
+     */
     _nm_setting_property_define_direct_uint32(properties_override,
                                               obj_properties,
                                               NM_SETTING_IP_TUNNEL_ENCAPSULATION_LIMIT,
@@ -814,6 +834,16 @@ nm_setting_ip_tunnel_class_init(NMSettingIPTunnelClass *klass)
      *
      * Since: 1.12
      **/
+    /* ---nmcli---
+     * property: flags
+     * description:
+     *   Tunnel flags. Currently, the following values are supported:
+     *   0x1 (ip6-ign-encap-limit), 0x2 (ip6-use-orig-tclass),
+     *   0x4 (ip6-use-orig-flowlabel), 0x8 (ip6-mip6-dev), 0x10 (ip6-rcv-dscp-copy)
+     *   and 0x20 (ip6-use-orig-fwmark).
+     *   They are valid only for IPv6 tunnels.
+     * ---end---
+     */
     _nm_setting_property_define_direct_uint32(properties_override,
                                               obj_properties,
                                               NM_SETTING_IP_TUNNEL_FLAGS,
