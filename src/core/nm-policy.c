@@ -1782,6 +1782,8 @@ unblock_autoconnect_for_ports(NMPolicy   *self,
 {
     NMPolicyPrivate             *priv = NM_POLICY_GET_PRIVATE(self);
     NMSettingsConnection *const *connections;
+    const CList                 *tmp_lst;
+    NMDevice                    *device;
     gboolean                     changed;
     guint                        i;
 
@@ -1797,7 +1799,7 @@ unblock_autoconnect_for_ports(NMPolicy   *self,
                               ""));
 
     changed     = FALSE;
-    connections = nm_settings_get_connections(priv->settings, NULL);
+    connections = nm_settings_get_connections_sorted_by_autoconnect_priority(priv->settings, NULL);
     for (i = 0; connections[i]; i++) {
         NMSettingsConnection *sett_conn = connections[i];
         NMSettingConnection  *s_slave_con;
@@ -1828,7 +1830,8 @@ unblock_autoconnect_for_ports(NMPolicy   *self,
                 changed = TRUE;
         }
     }
-
+    nm_manager_for_each_device (priv->manager, device, tmp_lst)
+        nm_device_autoconnect_blocked_unset(device, NM_DEVICE_AUTOCONNECT_BLOCKED_INTERNAL);
     if (changed)
         nm_policy_device_recheck_auto_activate_all_schedule(self);
 }
@@ -2073,6 +2076,8 @@ device_state_changed(NMDevice           *device,
                       "dependency",
                       sett_conn,
                       nm_settings_connection_get_id(sett_conn));
+                nm_device_autoconnect_blocked_set(NM_DEVICE(self),
+                                                  NM_DEVICE_AUTOCONNECT_BLOCKED_INTERNAL);
                 nm_manager_devcon_autoconnect_blocked_reason_set(
                     priv->manager,
                     device,
