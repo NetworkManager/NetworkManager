@@ -460,24 +460,27 @@ next_dev:
         NMDeviceState state;
 
         nm_manager_for_each_device (priv->manager, device, tmp_lst) {
-            gboolean found = FALSE;
-
             if (g_hash_table_contains(priv->devices, device))
                 continue;
 
             /* Also ignore devices that were in the checkpoint initially and
              * were moved to 'removed_devices' because they got removed from
              * the system. */
-            for (i = 0; i < priv->removed_devices->len; i++) {
-                dev_checkpoint = priv->removed_devices->pdata[i];
-                if (dev_checkpoint->dev_type == nm_device_get_device_type(device)
-                    && nm_streq0(dev_checkpoint->original_dev_name, nm_device_get_iface(device))) {
-                    found = TRUE;
-                    break;
+            if (priv->removed_devices) {
+                gboolean found = FALSE;
+
+                for (i = 0; i < priv->removed_devices->len; i++) {
+                    dev_checkpoint = priv->removed_devices->pdata[i];
+                    if (dev_checkpoint->dev_type == nm_device_get_device_type(device)
+                        && nm_streq0(dev_checkpoint->original_dev_name,
+                                     nm_device_get_iface(device))) {
+                        found = TRUE;
+                        break;
+                    }
                 }
+                if (found)
+                    continue;
             }
-            if (found)
-                continue;
 
             state = nm_device_get_state(device);
             if (state > NM_DEVICE_STATE_DISCONNECTED && state < NM_DEVICE_STATE_DEACTIVATING) {
