@@ -60,6 +60,7 @@ install \
     libnewt-dev \
     libnss3-dev \
     libpolkit-gobject-1-dev \
+    libpsl-dev \
     libreadline-dev \
     libsystemd-dev \
     libteam-dev \
