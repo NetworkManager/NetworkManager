@@ -714,11 +714,30 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
      * example: route1=2001:4860:4860::/64,2620:52:0:2219:222:68ff:fe11:5403
      * ---end---
      */
+    /* ---keyfile---
+     * property: routes (attributes)
+     * variable: route1_options, route2_options, ...
+     * format: key=val[,key=val...]
+     * description: Attributes defined for the routes, if any. The supported
+     *   attributes are explained in ipv6.routes entry in `man nm-settings-nmcli`.
+     * example: route1_options=mtu=1000,onlink=true
+     * ---end---
+     */
     /* ---ifcfg-rh---
      * property: routes
      * variable: (none)
      * description: List of static routes. They are not stored in ifcfg-* file,
      *   but in route6-* file instead in the form of command line for 'ip route add'.
+     * ---end---
+     */
+
+    /* ---keyfile---
+     * property: routing-rules
+     * variable: routing-rule1, routing-rule2, ...
+     * format: routing rule string
+     * description: Routing rules as defined with `ip rule add`, but with mandatory
+     *    fixed priority.
+     * example: routing-rule1=priority 5 from 2001:4860:4860::/64 table 45
      * ---end---
      */
 
