@@ -54,21 +54,30 @@
       <refsect1 id='file_format'><title>File Format</title>
         <para>
           The <emphasis>keyfile</emphasis> config format is a simple .ini-style
-          format. It consists of sections (groups) of key-value pairs. Each section
-          corresponds to a setting name as described in the settings specification
-          (<citerefentry><refentrytitle>nm-settings-nmcli</refentrytitle>
-          <manvolnum>5</manvolnum></citerefentry>). Each configuration key/value
-          pair in the section is one of the properties listed in the settings
-          specification. The majority of properties of the specification is written
-          in the same format into the <emphasis>keyfile</emphasis> too. However
-          some values are inconvenient for people to use. These are stored in the
-          files in more readable ways. These properties are described below.
-          An example could be IP addresses that are not written as integer arrays,
-          but more reasonably as "1.2.3.4/12 1.2.3.254".
+          format. It consists of sections (groups) of key-value pairs.
           More information of the generic key file format can be found at
           <ulink url="https://developer.gnome.org/glib/stable/glib-Key-value-file-parser.html#glib-Key-value-file-parser.description">
           GLib key file format</ulink> (Lines beginning with a '#' are comments,
           lists are separated by character <literal>;</literal> etc.).
+        </para>
+        <para>
+          Each section corresponds to a setting name as described in the settings
+          specification (<citerefentry><refentrytitle>nm-settings-nmcli</refentrytitle>
+          <manvolnum>5</manvolnum></citerefentry>). Each key/value pair in a
+          section is one of the properties from the specification.
+        </para>
+        <para>
+          The majority of properties are written in the same format as the
+          specification into the <emphasis>keyfile</emphasis>. However, some
+          values are inconvenient for people to use so they are stored in the
+          <emphasis>keyfile</emphasis> in more readable ways. These properties
+          that differ from the specification are described below.
+          An example could be IP addresses that are not written as integer arrays,
+          but more reasonably as "1.2.3.4/12 1.2.3.254".
+          Also, some lists of complex values (addresses, routes, routing-rules),
+          instead of using a semicolon separated list, use one key-value pair
+          per list element, with the key being the singular of the property name
+          followed by the numeric index (i.e address1, address2, ...).
         </para>
         <para>
           Users can create or modify the <emphasis>keyfile</emphasis> connection files
