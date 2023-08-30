@@ -1203,7 +1203,7 @@ managed=1
           <listitem>
             <para>
               Specify the timeout for waiting for carrier in milliseconds.
-              The default is 5000 milliseconds.
+              The default is 6000 milliseconds.
               This setting exists because certain drivers/hardware can take
               a long time to detect whether the cable is plugged in.
             </para>
