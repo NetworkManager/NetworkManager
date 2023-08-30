@@ -6659,7 +6659,7 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
      * addresses on the network.  If an address conflict is detected, the
      * activation will fail.  A zero value means that no duplicate address
      * detection is performed, -1 means the default value (either configuration
-     * ipvx.dad-timeout override or zero).  A value greater than zero is a
+     * ipvx.dad-timeout override or 3000ms).  A value greater than zero is a
      * timeout in milliseconds.
      *
      * The property is currently implemented only for IPv4.
