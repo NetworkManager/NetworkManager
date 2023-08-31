@@ -41,8 +41,3 @@ nm_run_normal() {
 . /usr/share/git-core/contrib/completion/git-prompt.sh
 PS1="\[\033[01;36m\]\u@\h\[\033[00m\]:\t:\[\033[01;34m\]\w\$(__git_ps1 \" \[\033[01;36m\](%s)\[\033[00m\]\")\[\033[00m\]$ "
 export GIT_PS1_SHOWDIRTYSTATE=1
-
-if test "$SHOW_MOTD" != 0; then
-  cat /etc/motd
-  export SHOW_MOTD=0
-fi

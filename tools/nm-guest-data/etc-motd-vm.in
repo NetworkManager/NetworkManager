@@ -55,7 +55,7 @@ For example, configure NetworkManager with
 Test with:
   $ systemctl stop NetworkManager; /opt/test/sbin/NetworkManager --debug 2>&1 | tee -a /tmp/nm-log.txt
 
-Or better, configure with `contrib/fedora/rpm/configure-for-system.sh`,
+Or better, if using Fedora, configure with `contrib/fedora/rpm/configure-for-system.sh`,
 subsequent `make && make install` will overwrite your system's NetworkManager,
 and you can test it with `systemctl daemon-reload ; systemctl restart NetworkManager`.
 

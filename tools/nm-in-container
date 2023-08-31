@@ -131,8 +131,9 @@ create_dockerfile() {
     local CONTAINERFILE="$1"
     local BASE_IMAGE="$2"
     local GEN_FILES="bin-nm-env-prepare.sh bin-nm-deploy.sh bin-_nm-in-container-setup.sh
-        etc-rc.local etc-motd-container etc-bashrc.my nm-90-my.conf nm-95-user.conf
-        home-bash_history home-gdbinit home-gdb_history home-behaverc systemd-20-nm.override"
+        etc-rc.local etc-motd-container etc-bashrc.my etc-bashrc-motd.my nm-90-my.conf
+        nm-95-user.conf home-bash_history home-gdbinit home-gdb_history home-behaverc
+        systemd-20-nm.override"
 
     cp "$BASEDIR_NM/contrib/scripts/NM-log" "$BASEDIR_DATA/data-bin-NM-log"
     CLEANUP_FILES+=( "$BASEDIR_DATA/data-NM-log" )
@@ -310,6 +311,7 @@ COPY data-bin-_nm-in-container-setup.sh "/usr/bin/_nm-in-container-setup.sh"
 COPY data-etc-rc.local "/etc/rc.d/rc.local"
 COPY data-etc-motd-container /etc/motd
 COPY data-etc-bashrc.my /etc/bashrc.my
+COPY data-etc-bashrc-motd.my /etc/bashrc-motd.my
 COPY data-nm-90-my.conf /etc/NetworkManager/conf.d/90-my.conf
 COPY data-nm-95-user.conf /etc/NetworkManager/conf.d/95-user.conf
 COPY data-home-bash_history /root/.bash_history
@@ -339,6 +341,7 @@ $RUN_LN_BASEDIR_NM_CI
 RUN rm -rf /etc/NetworkManager/system-connections/*
 
 RUN echo -e '\n. /etc/bashrc.my\n' >> /etc/bashrc
+RUN echo -e '\n. /etc/bashrc-motd.my\n' >> /etc/bashrc
 
 RUN updatedb
 EOF
