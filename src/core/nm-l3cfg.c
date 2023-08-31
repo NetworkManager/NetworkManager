@@ -3120,7 +3120,8 @@ nm_l3cfg_check_ready(NML3Cfg               *self,
                      const NML3ConfigData  *l3cd,
                      int                    addr_family,
                      NML3CfgCheckReadyFlags flags,
-                     GArray               **conflicts)
+                     GArray               **conflicts,
+                     gboolean              *valid_addr)
 {
     NMDedupMultiIter iter;
     const NMPObject *obj;
@@ -3155,6 +3156,8 @@ nm_l3cfg_check_ready(NML3Cfg               *self,
                                                          nm_utils_addr_family_to_size(addr_family));
                             g_array_append_val(*conflicts, addr_info->addr);
                         }
+                    } else {
+                        NM_SET_OUT(valid_addr, TRUE);
                     }
                 }
                 /* we only care that we don't have ACD still pending. Otherwise we are ready,

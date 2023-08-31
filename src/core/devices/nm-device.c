@@ -4319,7 +4319,8 @@ _dev_l3_cfg_notify_cb(NML3Cfg *l3cfg, const NML3ConfigNotifyData *notify_data, N
                                          priv->ipac6_data.l3cd,
                                          AF_INET6,
                                          NM_L3CFG_CHECK_READY_FLAGS_IP6_DAD_READY,
-                                         &conflicts);
+                                         &conflicts,
+                                         NULL);
             if (conflicts) {
                 /* nm_ndisc_dad_failed() will emit a new "NDisc:config-received"
                  * signal; _dev_ipac6_ndisc_config_changed() will be called
@@ -10397,18 +10398,26 @@ _dev_ipmanual_check_ready(NMDevice *self)
 
     for (IS_IPv4 = 0; IS_IPv4 < 2; IS_IPv4++) {
         const int addr_family = IS_IPv4 ? AF_INET : AF_INET6;
+        gboolean  valid_addr  = FALSE;
 
         ready = nm_l3cfg_check_ready(priv->l3cfg,
                                      priv->l3cds[L3_CONFIG_DATA_TYPE_MANUALIP].d,
                                      addr_family,
                                      flags,
-                                     &conflicts);
-        if (conflicts) {
-            _dev_ipmanual_set_state(self, addr_family, NM_DEVICE_IP_STATE_FAILED);
-            _dev_ip_state_check_async(self, AF_UNSPEC);
-        } else if (ready) {
-            _dev_ipmanual_set_state(self, addr_family, NM_DEVICE_IP_STATE_READY);
-            _dev_ip_state_check_async(self, AF_UNSPEC);
+                                     &conflicts,
+                                     &valid_addr);
+        if (ready) {
+            if (conflicts && !valid_addr) {
+                _LOGD_ipmanual(addr_family, "all manual addresses failed DAD, failing");
+                _dev_ipmanual_set_state(self, addr_family, NM_DEVICE_IP_STATE_FAILED);
+                _dev_ip_state_check_async(self, AF_UNSPEC);
+            } else {
+                if (conflicts) {
+                    _LOGD_ipmanual(addr_family, "some manual addresses passed DAD, continuing");
+                }
+                _dev_ipmanual_set_state(self, addr_family, NM_DEVICE_IP_STATE_READY);
+                _dev_ip_state_check_async(self, AF_UNSPEC);
+            }
         }
     }
 }
@@ -11750,6 +11759,7 @@ _dev_ipac6_ndisc_config_changed(NMNDisc              *ndisc,
                                  l3cd,
                                  AF_INET6,
                                  NM_L3CFG_CHECK_READY_FLAGS_IP6_DAD_READY,
+                                 NULL,
                                  NULL);
     if (ready) {
         _dev_ipac6_set_state(self, NM_DEVICE_IP_STATE_READY);
@@ -12740,7 +12750,8 @@ _dev_ipshared4_spawn_dnsmasq(NMDevice *self)
                                  priv->l3cds[L3_CONFIG_DATA_TYPE_SHARED_4].d,
                                  AF_INET,
                                  NM_L3CFG_CHECK_READY_FLAGS_IP4_ACD_READY,
-                                 &conflicts);
+                                 &conflicts,
+                                 NULL);
     if (!ready) {
         _LOGT_ipshared(AF_INET, "address not ready, wait");
         return;

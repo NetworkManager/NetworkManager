@@ -405,7 +405,8 @@ gboolean nm_l3cfg_check_ready(NML3Cfg               *self,
                               const NML3ConfigData  *l3cd,
                               int                    addr_family,
                               NML3CfgCheckReadyFlags flags,
-                              GArray               **conflicts);
+                              GArray               **conflicts,
+                              gboolean              *valid_addr);
 
 gboolean nm_l3cfg_has_failedobj_pending(NML3Cfg *self, int addr_family);
 
