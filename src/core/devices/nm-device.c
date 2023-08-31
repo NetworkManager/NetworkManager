@@ -10403,12 +10403,24 @@ _dev_ipmanual_check_ready(NMDevice *self)
                                      addr_family,
                                      flags,
                                      &conflicts);
-        if (conflicts) {
-            _dev_ipmanual_set_state(self, addr_family, NM_DEVICE_IP_STATE_FAILED);
-            _dev_ip_state_check_async(self, AF_UNSPEC);
-        } else if (ready) {
-            _dev_ipmanual_set_state(self, addr_family, NM_DEVICE_IP_STATE_READY);
-            _dev_ip_state_check_async(self, AF_UNSPEC);
+        if (ready) {
+            guint num_addrs = 0;
+
+            num_addrs =
+                nm_l3_config_data_get_num_addresses(priv->l3cds[L3_CONFIG_DATA_TYPE_MANUALIP].d,
+                                                    addr_family);
+
+            if (conflicts && conflicts->len == num_addrs) {
+                _LOGD_ipmanual(addr_family, "all manual addresses failed DAD, failing");
+                _dev_ipmanual_set_state(self, addr_family, NM_DEVICE_IP_STATE_FAILED);
+                _dev_ip_state_check_async(self, AF_UNSPEC);
+            } else {
+                if (conflicts) {
+                    _LOGD_ipmanual(addr_family, "some manual addresses passed DAD, continuing");
+                }
+                _dev_ipmanual_set_state(self, addr_family, NM_DEVICE_IP_STATE_READY);
+                _dev_ip_state_check_async(self, AF_UNSPEC);
+            }
         }
     }
 }
