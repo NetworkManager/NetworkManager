@@ -133,6 +133,11 @@ do_build() {
     os_variant=${OS_VERSION//-/}  # virt-install --os-variant value, deduced from OS_VERSION
     os_variant=${os_variant/centosstream/centos-stream}
 
+    if [[ ! $VM =~ ^[a-zA-Z0-9\-]*$ ]]; then
+        echo "Invalid VM name '$VM', use only letters, numbers and '-' character"
+        return 1
+    fi
+
     if vm_is_installed; then
         echo "The virtual machine '$VM' is already installed, skiping build" >&2
         return 0
@@ -158,7 +163,7 @@ do_build() {
         )
     fi
 
-    if [[ $OS_VERSION =~ fedora* || $OS_VERSION =~ centosstream* ]]; then
+    if [[ $OS_VERSION =~ fedora || $OS_VERSION =~ centosstream ]]; then
         extra_pkgs=(bash-completion bind-utils ccache clang-tools-extra cryptsetup cscope \'dbus\*\'
             dhcp-client dhcp-relay dhcp-server dnsmasq dracut-network ethtool firewalld  gcc gdb
             glibc-langpack-pl hostapd intltool iproute ipsec-tools iputils iscsi-initiator-utils
@@ -196,7 +201,7 @@ do_build() {
                     | sed -n 's/.* => \(.*\) (0x[0-9A-Fa-f]*)\$/\1/p' \
                     | xargs -n1 readlink -f)"
         )
-    elif [[ $OS_VERSION =~ debian* || $OS_VERSION =~ ubuntu* ]]; then
+    elif [[ $OS_VERSION =~ debian || $OS_VERSION =~ ubuntu ]]; then
         extra_pkgs=(bash-completion bind9-utils ccache clang-tools cryptsetup cscope \'dbus\*\'
             isc-dhcp-client isc-dhcp-relay isc-dhcp-server dnsmasq dracut-network ethtool firewalld
             gcc gdb hostapd intltool iproute2 \'iputils-\*\' iw libldns3 libreswan
@@ -251,7 +256,7 @@ do_build() {
     echo " - NM CI DIR: $([[ -n $BASEDIR_NM_CI ]] && echo "$BASEDIR_NM_CI" || echo '<none>')"
     echo " - HOST BRIDGE: $HOST_BRIDGE"
 
-    if [[ $OS_VERSION =~ centosstream-* ]]; then
+    if [[ $OS_VERSION =~ centosstream ]]; then
         echo "WARNING: NetworkManager repositories can't be shared with the guest" \
              "(CentOS Stream doesn't support 9P filesystem). You'll need to manually" \
              "share by NFS or make a new clone of the repository inside the guest." >&2
@@ -360,7 +365,7 @@ vm_is_running() {
 
 gen_file() {
     sed "s|{{BASEDIR_NM}}|$BASEDIR_NM|g" "$datadir/$1.in" > "$datadir/data-$1"
-    if [[ $1 =~ bin-* ]]; then
+    if [[ $1 =~ ^bin- ]]; then
         chmod 755 "$datadir/data-$1"
     else
         chmod 644 "$datadir/data-$1"
