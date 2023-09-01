@@ -172,7 +172,7 @@ static void n_acd_probe_schedule(NAcdProbe *probe, uint64_t n_timeout, unsigned 
         if (n_jitter) {
                 uint64_t random;
 
-                random = ((uint64_t)rand_r(&probe->acd->seed) << 32) | (uint64_t)rand_r(&probe->acd->seed);
+                random = ((uint64_t)rand_r(&probe->seed) << 32) | (uint64_t)rand_r(&probe->seed);
                 n_time += random % n_jitter;
         }
 
@@ -283,6 +283,7 @@ int n_acd_probe_new(NAcdProbe **probep, NAcd *acd, NAcdProbeConfig *config) {
         *probe = (NAcdProbe)N_ACD_PROBE_NULL(*probe);
         probe->acd = n_acd_ref(acd);
         probe->ip = config->ip;
+        probe->seed = acd->seed;
 
         /*
          * We use the provided timeout-length as multiplier for all our
