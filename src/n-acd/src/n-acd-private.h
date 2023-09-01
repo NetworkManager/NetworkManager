@@ -105,6 +105,7 @@ struct NAcdProbe {
         void *userdata;
 
         /* state */
+        unsigned int seed;
         unsigned int state;
         unsigned int n_iteration;
         unsigned int defend;
