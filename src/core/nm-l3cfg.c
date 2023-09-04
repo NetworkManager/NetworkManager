@@ -168,7 +168,6 @@ typedef struct {
     /* This flag is only used temporarily to do a bulk update and
      * clear all the ones that are no longer in used. */
     bool os_dirty : 1;
-    bool os_tna_dirty : 1;
 } ObjStateData;
 
 G_STATIC_ASSERT(G_STRUCT_OFFSET(ObjStateData, obj) == 0);
@@ -4035,7 +4034,7 @@ again:
                         &obj_state->os_failedobj_prioq_idx);
         _LOGW(
             "missing IPv%c route: %s",
-            nm_utils_addr_family_to_char(NMP_OBJECT_GET_TYPE(obj_state->obj)),
+            nm_utils_addr_family_to_char(NMP_OBJECT_GET_ADDR_FAMILY(obj_state->obj)),
             nmp_object_to_string(obj_state->obj, NMP_OBJECT_TO_STRING_PUBLIC, sbuf, sizeof(sbuf)));
         goto again;
     }
@@ -4076,7 +4075,7 @@ _failedobj_handle_routes(NML3Cfg *self, int addr_family, GPtrArray *routes_faile
         gboolean                  just_failed          = FALSE;
         gboolean                  arm_timer            = FALSE;
         int                       grace_timeout_msec;
-        gint64                    grace_expiry_mesc;
+        gint64                    grace_expiry_msec;
 
         nm_assert(NMP_OBJECT_GET_TYPE(o) == NMP_OBJECT_TYPE_IP_ROUTE(NM_IS_IPv4(addr_family)));
 
@@ -4108,11 +4107,11 @@ _failedobj_handle_routes(NML3Cfg *self, int addr_family, GPtrArray *routes_faile
             grace_timeout_msec = 0;
         }
 
-        grace_expiry_mesc = now_msec + grace_timeout_msec;
+        grace_expiry_msec = now_msec + grace_timeout_msec;
 
         if (obj_state->os_failedobj_expiry_msec == 0) {
             /* This is a new failure that we didn't see before... */
-            obj_state->os_failedobj_expiry_msec = grace_expiry_mesc;
+            obj_state->os_failedobj_expiry_msec = grace_expiry_msec;
             if (grace_timeout_msec == 0)
                 just_failed = TRUE;
             else {
@@ -4120,9 +4119,9 @@ _failedobj_handle_routes(NML3Cfg *self, int addr_family, GPtrArray *routes_faile
                 just_started_to_fail = TRUE;
             }
         } else {
-            if (obj_state->os_failedobj_expiry_msec > grace_expiry_mesc) {
+            if (obj_state->os_failedobj_expiry_msec > grace_expiry_msec) {
                 /* Shorten the grace timeout. We anyway rearm below... */
-                obj_state->os_failedobj_expiry_msec = grace_expiry_mesc;
+                obj_state->os_failedobj_expiry_msec = grace_expiry_msec;
             }
             if (obj_state->os_failedobj_expiry_msec <= now_msec) {
                 /* The grace period is (already) expired. */
