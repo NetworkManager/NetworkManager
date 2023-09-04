@@ -2972,8 +2972,7 @@ handle_start_defending:
                                         NM_L3_ACD_ADDR_STATE_READY,
                                         !NM_IN_SET(state_change_mode,
                                                    ACD_STATE_CHANGE_MODE_INIT,
-                                                   ACD_STATE_CHANGE_MODE_INIT_REAPPLY,
-                                                   ACD_STATE_CHANGE_MODE_POST_COMMIT),
+                                                   ACD_STATE_CHANGE_MODE_INIT_REAPPLY),
                                         "probe is ready, waiting for address to be configured");
         }
         return;
