@@ -6655,14 +6655,16 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
     /**
      * NMSettingIPConfig:dad-timeout:
      *
-     * Timeout in milliseconds used to check for the presence of duplicate IP
-     * addresses on the network.  If an address conflict is detected, the
-     * activation will fail.  A zero value means that no duplicate address
-     * detection is performed, -1 means the default value (either configuration
-     * ipvx.dad-timeout override or zero).  A value greater than zero is a
-     * timeout in milliseconds.
+     * Maximum timeout in milliseconds used to check for the presence of duplicate
+     * IP addresses on the network.  If an address conflict is detected, the
+     * activation will fail. The property is currently implemented only for IPv4.
      *
-     * The property is currently implemented only for IPv4.
+     * A zero value means that no duplicate address detection is performed, -1 means
+     * the default value (either the value configured globally in NetworkManger.conf
+     * or zero).  A value greater than zero is a timeout in milliseconds.  Note that
+     * the time intervals are subject to randomization as per RFC 5227 and so the
+     * actual duration can be between half and the full time specified in this
+     * property.
      *
      * Since: 1.2
      **/
