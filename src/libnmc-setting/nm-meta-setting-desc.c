@@ -4661,44 +4661,52 @@ static const NMMetaPropertyType _pt_gobject_readonly = {
 static const NMMetaPropertyType _pt_gobject_string = {
     .get_fcn =                      _get_fcn_gobject,
     .set_fcn =                      _set_fcn_gobject_string,
+    .doc_format =                   NM_META_PROPERTY_TYPE_FORMAT_STRING,
 };
 
 static const NMMetaPropertyType _pt_gobject_bool = {
     .get_fcn =                      _get_fcn_gobject,
     .set_fcn =                      _set_fcn_gobject_bool,
     .complete_fcn =                 _complete_fcn_gobject_bool,
+    .doc_format =                   NM_META_PROPERTY_TYPE_FORMAT_BOOL,
 };
 
 static const NMMetaPropertyType _pt_gobject_ternary = {
     .get_fcn =                      _get_fcn_gobject_enum,
     .set_fcn =                      _set_fcn_gobject_ternary,
     .complete_fcn =                 _complete_fcn_gobject_ternary,
+    .doc_format =                   NM_META_PROPERTY_TYPE_FORMAT_TERNARY,
 };
 
 static const NMMetaPropertyType _pt_gobject_int = {
     .get_fcn =                      _get_fcn_gobject_int,
     .set_fcn =                      _set_fcn_gobject_int,
+    .doc_format =                   NM_META_PROPERTY_TYPE_FORMAT_INT,
 };
 
 static const NMMetaPropertyType _pt_gobject_mtu = {
     .get_fcn =                      _get_fcn_gobject_mtu,
     .set_fcn =                      _set_fcn_gobject_mtu,
+    .doc_format =                   NM_META_PROPERTY_TYPE_FORMAT_MTU,
 };
 
 static const NMMetaPropertyType _pt_gobject_bytes = {
     .get_fcn =                     _get_fcn_gobject,
     .set_fcn =                     _set_fcn_gobject_bytes,
+    .doc_format =                  NM_META_PROPERTY_TYPE_FORMAT_BYTES,
 };
 
 static const NMMetaPropertyType _pt_gobject_mac = {
     .get_fcn =                      _get_fcn_gobject,
     .set_fcn =                      _set_fcn_gobject_mac,
+    .doc_format =                   NM_META_PROPERTY_TYPE_FORMAT_MAC,
 };
 
 static const NMMetaPropertyType _pt_gobject_secret_flags = {
     .get_fcn =                      _get_fcn_gobject_secret_flags,
     .set_fcn =                      _set_fcn_gobject_enum,
     .values_fcn =                   _values_fcn_gobject_enum,
+    .doc_format =                   NM_META_PROPERTY_TYPE_FORMAT_SECRET_FLAGS,
     .set_supports_remove =          TRUE,
 };
 
@@ -4706,6 +4714,7 @@ static const NMMetaPropertyType _pt_gobject_enum = {
     .get_fcn =                      _get_fcn_gobject_enum,
     .set_fcn =                      _set_fcn_gobject_enum,
     .values_fcn =                   _values_fcn_gobject_enum,
+    .doc_format =                   NM_META_PROPERTY_TYPE_FORMAT_ENUM,
     .set_supports_remove =          TRUE,
 };
 
@@ -4713,45 +4722,53 @@ static const NMMetaPropertyType _pt_gobject_devices = {
     .get_fcn =                      _get_fcn_gobject,
     .set_fcn =                      _set_fcn_gobject_string,
     .complete_fcn =                 _complete_fcn_gobject_devices,
+    .doc_format =                   NM_META_PROPERTY_TYPE_FORMAT_STRING,
 };
 
 static const NMMetaPropertyType _pt_dcb_flags = {
     .get_fcn =                      _get_fcn_dcb_flags,
     .set_fcn =                      _set_fcn_dcb_flags,
+    .doc_format =                   NM_META_PROPERTY_TYPE_FORMAT_DCB_FLAGS,
 };
 
 static const NMMetaPropertyType _pt_dcb_bool = {
     .get_fcn =                      _get_fcn_dcb_bool,
     .set_fcn =                      _set_fcn_dcb_bool,
+    .doc_format =                   NM_META_PROPERTY_TYPE_FORMAT_DCB_BOOL,
 };
 
 static const NMMetaPropertyType _pt_dcb = {
     .get_fcn =                      _get_fcn_dcb,
     .set_fcn =                      _set_fcn_dcb,
+    .doc_format =                   NM_META_PROPERTY_TYPE_FORMAT_DCB,
 };
 
 static const NMMetaPropertyType _pt_cert_8021x = {
     .get_fcn =                      _get_fcn_cert_8021x,
     .set_fcn =                      _set_fcn_cert_8021x,
     .complete_fcn =                 _complete_fcn_cert_8021x,
+    .doc_format =                   NM_META_PROPERTY_TYPE_FORMAT_PATH,
 };
 
 static const NMMetaPropertyType _pt_ethtool = {
     .get_fcn =                      _get_fcn_ethtool,
     .set_fcn =                      _set_fcn_ethtool,
     .complete_fcn =                 _complete_fcn_ethtool,
+    .doc_format =                   NM_META_PROPERTY_TYPE_FORMAT_ETHTOOL,
 };
 
 static const NMMetaPropertyType _pt_multilist = {
     .get_fcn =                      _get_fcn_multilist,
     .set_fcn =                      _set_fcn_multilist,
     .set_supports_remove =          TRUE,
+    .doc_format =                   NM_META_PROPERTY_TYPE_FORMAT_MULTILIST,
 };
 
 static const NMMetaPropertyType _pt_objlist = {
-    .get_fcn =                  _get_fcn_objlist,
-    .set_fcn =                  _set_fcn_objlist,
-    .set_supports_remove =      TRUE,
+    .get_fcn =                      _get_fcn_objlist,
+    .set_fcn =                      _set_fcn_objlist,
+    .set_supports_remove =          TRUE,
+    .doc_format =                   NM_META_PROPERTY_TYPE_FORMAT_OBJLIST,
 };
 
 #define MULTILIST_GET_NUM_FCN_U32(type, func)       (((func) == ((guint32  (*) (type *              )) (func))) ? ((guint32  (*) (NMSetting *              )) (func)) : NULL)
@@ -4879,6 +4896,7 @@ static const NMMetaPropertyInfo *const property_infos_802_1X[] = {
                 .strsplit_plain =       TRUE,
             ),
             .values_static =            NM_MAKE_STRV ("leap", "md5", "tls", "peap", "ttls", "sim", "fast", "pwd"),
+            .list_items_doc_format =    NM_META_PROPERTY_TYPE_FORMAT_STRING,
         ),
     ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_802_1X_IDENTITY,
@@ -4924,6 +4942,7 @@ static const NMMetaPropertyInfo *const property_infos_802_1X[] = {
                 .remove_by_value_fcn =  MULTILIST_REMOVE_BY_VALUE_FCN (NMSetting8021x, nm_setting_802_1x_remove_altsubject_match_by_value),
                 .strsplit_plain =       TRUE,
             ),
+            .list_items_doc_format =    NM_META_PROPERTY_TYPE_FORMAT_STRING,
         ),
     ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_802_1X_DOMAIN_SUFFIX_MATCH,
@@ -5009,7 +5028,11 @@ static const NMMetaPropertyInfo *const property_infos_802_1X[] = {
         .property_type =                &_pt_gobject_secret_flags,
     ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_802_1X_PHASE2_CA_PATH,
-        .property_type =                &_pt_gobject_string,
+        .property_type = DEFINE_PROPERTY_TYPE(
+            .get_fcn =                  _get_fcn_gobject,
+            .set_fcn =                  _set_fcn_gobject_string,
+            .doc_format =               NM_META_PROPERTY_TYPE_FORMAT_PATH,
+        )
     ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_802_1X_PHASE2_SUBJECT_MATCH,
         .property_type =                &_pt_gobject_string,
@@ -5024,6 +5047,7 @@ static const NMMetaPropertyInfo *const property_infos_802_1X[] = {
                 .remove_by_value_fcn =  MULTILIST_REMOVE_BY_VALUE_FCN (NMSetting8021x, nm_setting_802_1x_remove_phase2_altsubject_match_by_value),
                 .strsplit_plain =       TRUE,
             ),
+            .list_items_doc_format =    NM_META_PROPERTY_TYPE_FORMAT_STRING,
         ),
     ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_802_1X_PHASE2_DOMAIN_SUFFIX_MATCH,
@@ -5215,6 +5239,7 @@ static const NMMetaPropertyInfo property_info_BOND_OPTIONS =
             .set_fcn =                  _set_fcn_optionlist,
             .set_supports_remove =      TRUE,
             .values_fcn =               _values_fcn_bond_options,
+            .doc_format =               NM_META_PROPERTY_TYPE_FORMAT_OPTIONLIST,
         ),
         .property_typ_data = DEFINE_PROPERTY_TYP_DATA (
             PROPERTY_TYP_DATA_SUBTYPE (optionlist,
@@ -5469,10 +5494,11 @@ static const NMMetaPropertyInfo *const property_infos_CONNECTION[] = {
         .property_type =                &_pt_gobject_string,
     ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_CONNECTION_UUID,
-            .property_type =                DEFINE_PROPERTY_TYPE (
-                .get_fcn =                  _get_fcn_gobject,
-                .set_fcn =                  _set_fcn_connection_uuid,
-            ),
+        .property_type = DEFINE_PROPERTY_TYPE (
+            .get_fcn =                  _get_fcn_gobject,
+            .set_fcn =                  _set_fcn_connection_uuid,
+            .doc_format =               NM_META_PROPERTY_TYPE_FORMAT_STRING,
+        ),
     ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_CONNECTION_STABLE_ID,
         .property_type =                &_pt_gobject_string,
@@ -5487,6 +5513,7 @@ static const NMMetaPropertyInfo *const property_infos_CONNECTION[] = {
                 .get_fcn =                  _get_fcn_gobject,
                 .set_fcn =                  _set_fcn_connection_type,
                 .complete_fcn =             _complete_fcn_connection_type,
+                .doc_format =               NM_META_PROPERTY_TYPE_FORMAT_STRING,
             ),
         ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_CONNECTION_INTERFACE_NAME,
@@ -5497,6 +5524,7 @@ static const NMMetaPropertyInfo *const property_infos_CONNECTION[] = {
             .get_fcn =                  _get_fcn_gobject,
             .set_fcn =                  _set_fcn_gobject_ifname,
             .complete_fcn =             _complete_fcn_gobject_devices,
+            .doc_format =               NM_META_PROPERTY_TYPE_FORMAT_STRING,
         ),
     ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_CONNECTION_AUTOCONNECT,
@@ -5547,6 +5575,7 @@ static const NMMetaPropertyInfo *const property_infos_CONNECTION[] = {
             .get_fcn =                  _get_fcn_connection_permissions,
             .set_fcn =                  _set_fcn_multilist,
             .set_supports_remove =      TRUE,
+            .doc_format =               NM_META_PROPERTY_TYPE_FORMAT_MULTILIST,
         ),
         .property_typ_data = DEFINE_PROPERTY_TYP_DATA (
             PROPERTY_TYP_DATA_SUBTYPE (multilist,
@@ -5557,6 +5586,7 @@ static const NMMetaPropertyInfo *const property_infos_CONNECTION[] = {
                 .validate2_fcn =        _multilist_validate2_fcn_connection_permissions,
                 .strsplit_plain =       TRUE,
             ),
+            .list_items_doc_format =    NM_META_PROPERTY_TYPE_FORMAT_STRING,
         ),
     ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_CONNECTION_ZONE,
@@ -5571,6 +5601,7 @@ static const NMMetaPropertyInfo *const property_infos_CONNECTION[] = {
             .get_fcn =                  _get_fcn_gobject,
             .set_fcn =                  _set_fcn_gobject_string,
             .complete_fcn =             _complete_fcn_connection_master,
+            .doc_format =               NM_META_PROPERTY_TYPE_FORMAT_STRING,
         ),
     ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_CONNECTION_SLAVE_TYPE,
@@ -5608,6 +5639,7 @@ static const NMMetaPropertyInfo *const property_infos_CONNECTION[] = {
                 .validate2_fcn =        _multilist_validate2_fcn_uuid,
                 .strsplit_with_spaces = TRUE,
             ),
+            .list_items_doc_format =    NM_META_PROPERTY_TYPE_FORMAT_STRING,
         ),
     ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_CONNECTION_GATEWAY_PING_TIMEOUT,
@@ -5623,6 +5655,7 @@ static const NMMetaPropertyInfo *const property_infos_CONNECTION[] = {
         .property_type = DEFINE_PROPERTY_TYPE (
             .get_fcn =                  _get_fcn_connection_metered,
             .set_fcn =                  _set_fcn_connection_metered,
+            .doc_format =               NM_META_PROPERTY_TYPE_FORMAT_TERNARY,
         ),
         .property_typ_data = DEFINE_PROPERTY_TYP_DATA (
             .values_static =            NM_MAKE_STRV ("yes", "no", "unknown"),
@@ -5916,6 +5949,7 @@ static const NMMetaPropertyInfo *const property_infos_GSM[] = {
             .get_fcn =                  _get_fcn_gobject,
             .set_fcn =                  _set_fcn_gsm_auto_config,
             .complete_fcn =             _complete_fcn_gobject_bool,
+            .doc_format =               NM_META_PROPERTY_TYPE_FORMAT_BOOL,
         ),
     ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_GSM_NUMBER,
@@ -5969,6 +6003,7 @@ static const NMMetaPropertyInfo *const property_infos_GSM[] = {
         .property_type = DEFINE_PROPERTY_TYPE (
             .get_fcn =                  _get_fcn_gobject,
             .set_fcn =                  _set_fcn_gsm_sim_operator_id,
+            .doc_format =               NM_META_PROPERTY_TYPE_FORMAT_STRING,
         ),
     ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_GSM_MTU,
@@ -6042,7 +6077,16 @@ static const NMMetaPropertyInfo *const property_infos_INFINIBAND[] = {
         .property_type = DEFINE_PROPERTY_TYPE (
             .get_fcn =                  _get_fcn_infiniband_p_key,
             .set_fcn =                  _set_fcn_infiniband_p_key,
+            .doc_format =               NM_META_PROPERTY_TYPE_FORMAT_INT,
         ),
+        .property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE(gobject_int,
+            .value_infos =              INT_VALUE_INFOS (
+                {
+                    .value.i64 = -1,
+                    .nick = "default",
+                },
+            ),
+        )
     ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_INFINIBAND_PARENT,
         .is_cli_option =                TRUE,
@@ -6051,6 +6095,7 @@ static const NMMetaPropertyInfo *const property_infos_INFINIBAND[] = {
         .property_type = DEFINE_PROPERTY_TYPE (
             .get_fcn =                  _get_fcn_gobject,
             .set_fcn =                  _set_fcn_gobject_ifname,
+            .doc_format =               NM_META_PROPERTY_TYPE_FORMAT_STRING,
         ),
     ),
     NULL
@@ -6063,6 +6108,7 @@ static const NMMetaPropertyInfo *const property_infos_IP4_CONFIG[] = {
         .property_type = DEFINE_PROPERTY_TYPE (
             .get_fcn =                  _get_fcn_gobject,
             .set_fcn =                  _set_fcn_ip_config_method,
+            .doc_format =               NM_META_PROPERTY_TYPE_FORMAT_STRING,
         ),
         .property_typ_data = DEFINE_PROPERTY_TYP_DATA (
             .values_static =            NM_MAKE_STRV (NM_SETTING_IP4_CONFIG_METHOD_AUTO,
@@ -6085,6 +6131,7 @@ static const NMMetaPropertyInfo *const property_infos_IP4_CONFIG[] = {
                 .remove_by_value_fcn =  MULTILIST_REMOVE_BY_VALUE_FCN (NMSettingIPConfig, nm_setting_ip_config_remove_dns_by_value),
                 .strsplit_plain =       TRUE,
             ),
+            .list_items_doc_format =    NM_META_PROPERTY_TYPE_FORMAT_IPV4,
         ),
     ),
     PROPERTY_INFO (NM_SETTING_IP_CONFIG_DNS_SEARCH, DESCRIBE_DOC_NM_SETTING_IP4_CONFIG_DNS_SEARCH,
@@ -6098,6 +6145,7 @@ static const NMMetaPropertyInfo *const property_infos_IP4_CONFIG[] = {
                 .validate_fcn =         _multilist_validate_fcn_is_domain,
                 .strsplit_plain =       TRUE,
             ),
+            .list_items_doc_format =    NM_META_PROPERTY_TYPE_FORMAT_STRING,
         ),
     ),
     PROPERTY_INFO (NM_SETTING_IP_CONFIG_DNS_OPTIONS, DESCRIBE_DOC_NM_SETTING_IP4_CONFIG_DNS_OPTIONS,
@@ -6112,6 +6160,7 @@ static const NMMetaPropertyInfo *const property_infos_IP4_CONFIG[] = {
                 .strsplit_plain =       TRUE,
             ),
             .is_default_fcn =           _is_default_func_ip_config_dns_options,
+            .list_items_doc_format =    NM_META_PROPERTY_TYPE_FORMAT_STRING,
         ),
     ),
     PROPERTY_INFO (NM_SETTING_IP_CONFIG_DNS_PRIORITY, DESCRIBE_DOC_NM_SETTING_IP4_CONFIG_DNS_PRIORITY,
@@ -6146,6 +6195,7 @@ static const NMMetaPropertyInfo *const property_infos_IP4_CONFIG[] = {
         .property_type = DEFINE_PROPERTY_TYPE (
             .get_fcn =                  _get_fcn_gobject,
             .set_fcn =                  _set_fcn_ip_config_gateway,
+            .doc_format =               NM_META_PROPERTY_TYPE_FORMAT_IPV4,
         ),
     ),
     PROPERTY_INFO (NM_SETTING_IP_CONFIG_ROUTES, DESCRIBE_DOC_NM_SETTING_IP4_CONFIG_ROUTES,
@@ -6298,6 +6348,7 @@ static const NMMetaPropertyInfo *const property_infos_IP4_CONFIG[] = {
                 .validate_fcn =         _multilist_validate_fcn_is_ipv4_addr_or_subnet,
                 .strsplit_plain =       TRUE,
             ),
+            .list_items_doc_format =    NM_META_PROPERTY_TYPE_FORMAT_IPV4,
         ),
     ),
     PROPERTY_INFO (NM_SETTING_IP_CONFIG_AUTO_ROUTE_EXT_GW, DESCRIBE_DOC_NM_SETTING_IP4_CONFIG_AUTO_ROUTE_EXT_GW,
@@ -6313,6 +6364,7 @@ static const NMMetaPropertyInfo *const property_infos_IP6_CONFIG[] = {
         .property_type = DEFINE_PROPERTY_TYPE (
             .get_fcn =                  _get_fcn_gobject,
             .set_fcn =                  _set_fcn_ip_config_method,
+            .doc_format =               NM_META_PROPERTY_TYPE_FORMAT_STRING,
         ),
         .property_typ_data = DEFINE_PROPERTY_TYP_DATA (
             .values_static =            NM_MAKE_STRV (NM_SETTING_IP6_CONFIG_METHOD_IGNORE,
@@ -6343,6 +6395,7 @@ static const NMMetaPropertyInfo *const property_infos_IP6_CONFIG[] = {
                 .remove_by_value_fcn =  MULTILIST_REMOVE_BY_VALUE_FCN (NMSettingIPConfig, nm_setting_ip_config_remove_dns_by_value),
                 .strsplit_plain =       TRUE,
             ),
+            .list_items_doc_format =    NM_META_PROPERTY_TYPE_FORMAT_IPV6,
         ),
     ),
     PROPERTY_INFO (NM_SETTING_IP_CONFIG_DNS_SEARCH, DESCRIBE_DOC_NM_SETTING_IP6_CONFIG_DNS_SEARCH,
@@ -6356,6 +6409,7 @@ static const NMMetaPropertyInfo *const property_infos_IP6_CONFIG[] = {
                 .validate_fcn =         _multilist_validate_fcn_is_domain,
                 .strsplit_plain =       TRUE,
             ),
+            .list_items_doc_format =    NM_META_PROPERTY_TYPE_FORMAT_STRING,
         ),
     ),
     PROPERTY_INFO (NM_SETTING_IP_CONFIG_DNS_OPTIONS, DESCRIBE_DOC_NM_SETTING_IP6_CONFIG_DNS_OPTIONS,
@@ -6370,6 +6424,7 @@ static const NMMetaPropertyInfo *const property_infos_IP6_CONFIG[] = {
                 .strsplit_plain =       TRUE,
             ),
             .is_default_fcn =           _is_default_func_ip_config_dns_options,
+            .list_items_doc_format =    NM_META_PROPERTY_TYPE_FORMAT_STRING,
         ),
     ),
     PROPERTY_INFO (NM_SETTING_IP_CONFIG_DNS_PRIORITY, DESCRIBE_DOC_NM_SETTING_IP6_CONFIG_DNS_PRIORITY,
@@ -6404,6 +6459,7 @@ static const NMMetaPropertyInfo *const property_infos_IP6_CONFIG[] = {
         .property_type = DEFINE_PROPERTY_TYPE (
             .get_fcn =                  _get_fcn_gobject,
             .set_fcn =                  _set_fcn_ip_config_gateway,
+            .doc_format =               NM_META_PROPERTY_TYPE_FORMAT_IPV6,
         ),
     ),
     PROPERTY_INFO (NM_SETTING_IP_CONFIG_ROUTES, DESCRIBE_DOC_NM_SETTING_IP6_CONFIG_ROUTES,
@@ -6823,6 +6879,7 @@ static const NMMetaPropertyInfo *const property_infos_MATCH[] = {
                 .remove_by_value_fcn =  MULTILIST_REMOVE_BY_VALUE_FCN (NMSettingMatch, nm_setting_match_remove_interface_name_by_value),
                 .strsplit_with_spaces = TRUE,
             ),
+            .list_items_doc_format =    NM_META_PROPERTY_TYPE_FORMAT_STRING,
         ),
     ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_MATCH_KERNEL_COMMAND_LINE,
@@ -6835,6 +6892,7 @@ static const NMMetaPropertyInfo *const property_infos_MATCH[] = {
                 .remove_by_value_fcn =  MULTILIST_REMOVE_BY_VALUE_FCN (NMSettingMatch, nm_setting_match_remove_kernel_command_line_by_value),
                 .strsplit_with_spaces = TRUE,
             ),
+            .list_items_doc_format =    NM_META_PROPERTY_TYPE_FORMAT_STRING,
         ),
     ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_MATCH_DRIVER,
@@ -6847,6 +6905,7 @@ static const NMMetaPropertyInfo *const property_infos_MATCH[] = {
                 .remove_by_value_fcn =  MULTILIST_REMOVE_BY_VALUE_FCN (NMSettingMatch, nm_setting_match_remove_driver_by_value),
                 .strsplit_with_spaces = TRUE,
             ),
+            .list_items_doc_format =    NM_META_PROPERTY_TYPE_FORMAT_STRING,
         ),
     ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_MATCH_PATH,
@@ -6859,6 +6918,7 @@ static const NMMetaPropertyInfo *const property_infos_MATCH[] = {
                 .remove_by_value_fcn =  MULTILIST_REMOVE_BY_VALUE_FCN (NMSettingMatch, nm_setting_match_remove_path_by_value),
                 .strsplit_with_spaces = TRUE,
             ),
+            .list_items_doc_format =    NM_META_PROPERTY_TYPE_FORMAT_STRING,
         ),
     ),
     NULL
@@ -6875,6 +6935,7 @@ static const NMMetaPropertyInfo *const property_infos_OLPC_MESH[] = {
         .property_type = DEFINE_PROPERTY_TYPE (
             .get_fcn =                  _get_fcn_olpc_mesh_ssid,
             .set_fcn =                  _set_fcn_gobject_ssid,
+            .doc_format =               NM_META_PROPERTY_TYPE_FORMAT_STRING,
         ),
     ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_OLPC_MESH_CHANNEL,
@@ -6884,6 +6945,7 @@ static const NMMetaPropertyInfo *const property_infos_OLPC_MESH[] = {
         .property_type = DEFINE_PROPERTY_TYPE (
             .get_fcn =                  _get_fcn_gobject,
             .set_fcn =                  _set_fcn_olpc_mesh_channel,
+            .doc_format =               NM_META_PROPERTY_TYPE_FORMAT_INT,
         ),
     ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_OLPC_MESH_DHCP_ANYCAST_ADDRESS,
@@ -7360,6 +7422,7 @@ static const NMMetaPropertyInfo *const property_infos_TEAM[] = {
             ),
             .values_static =            NM_MAKE_STRV ("eth", "vlan", "ipv4", "ipv6", "ip",
                                                       "l3", "tcp", "udp", "sctp", "l4"),
+            .list_items_doc_format =    NM_META_PROPERTY_TYPE_FORMAT_STRING,
         ),
     ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_TEAM_RUNNER_TX_BALANCER,
@@ -7620,6 +7683,7 @@ static const NMMetaPropertyInfo *const property_infos_VLAN[] = {
         .property_type = DEFINE_PROPERTY_TYPE (
             .get_fcn =                  _get_fcn_vlan_flags,
             .set_fcn =                  _set_fcn_gobject_flags,
+            .doc_format =               NM_META_PROPERTY_TYPE_FORMAT_ENUM,
         ),
     ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_VLAN_PROTOCOL,
@@ -7636,6 +7700,7 @@ static const NMMetaPropertyInfo *const property_infos_VLAN[] = {
             .get_fcn =                  _get_fcn_vlan_xgress_priority_map,
             .set_fcn =                  _set_fcn_vlan_xgress_priority_map,
             .set_supports_remove =      TRUE,
+            .doc_format =               NM_META_PROPERTY_TYPE_FORMAT_OBJLIST,
         ),
     ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_VLAN_EGRESS_PRIORITY_MAP,
@@ -7646,6 +7711,7 @@ static const NMMetaPropertyInfo *const property_infos_VLAN[] = {
             .get_fcn =                  _get_fcn_vlan_xgress_priority_map,
             .set_fcn =                  _set_fcn_vlan_xgress_priority_map,
             .set_supports_remove =      TRUE,
+            .doc_format =               NM_META_PROPERTY_TYPE_FORMAT_OBJLIST,
         ),
     ),
     NULL
@@ -7664,6 +7730,7 @@ static const NMMetaPropertyInfo *const property_infos_VPN[] = {
             .get_fcn =                  _get_fcn_gobject,
             .set_fcn =                  _set_fcn_vpn_service_type,
             .complete_fcn =             _complete_fcn_vpn_service_type,
+            .doc_format =               NM_META_PROPERTY_TYPE_FORMAT_STRING,
         ),
     ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_VPN_USER_NAME,
@@ -7677,6 +7744,7 @@ static const NMMetaPropertyInfo *const property_infos_VPN[] = {
             .get_fcn =                  _get_fcn_vpn_options,
             .set_fcn =                  _set_fcn_optionlist,
             .set_supports_remove =      TRUE,
+            .doc_format =               NM_META_PROPERTY_TYPE_FORMAT_OPTIONLIST,
         ),
         .property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (optionlist,
             .set_fcn =                  _optionlist_set_fcn_vpn_data,
@@ -7688,6 +7756,7 @@ static const NMMetaPropertyInfo *const property_infos_VPN[] = {
             .get_fcn =                  _get_fcn_vpn_options,
             .set_fcn =                  _set_fcn_optionlist,
             .set_supports_remove =      TRUE,
+            .doc_format =               NM_META_PROPERTY_TYPE_FORMAT_OPTIONLIST,
         ),
         .property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (optionlist,
             .set_fcn =                  _optionlist_set_fcn_vpn_secrets,
@@ -7886,6 +7955,7 @@ static const NMMetaPropertyInfo *const property_infos_WIRED[] = {
                 .validate2_fcn =        _multilist_validate2_fcn_mac_addr,
                 .strsplit_plain =       TRUE,
             ),
+            .list_items_doc_format =    NM_META_PROPERTY_TYPE_FORMAT_MAC,
         ),
     ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRED_MTU,
@@ -7904,6 +7974,7 @@ static const NMMetaPropertyInfo *const property_infos_WIRED[] = {
         .property_type = DEFINE_PROPERTY_TYPE (
             .get_fcn =                  _get_fcn_gobject,
             .set_fcn =                  _set_fcn_wired_s390_subchannels,
+            .doc_format =               NM_META_PROPERTY_TYPE_FORMAT_OBJLIST,
         ),
     ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRED_S390_NETTYPE,
@@ -7919,6 +7990,7 @@ static const NMMetaPropertyInfo *const property_infos_WIRED[] = {
             .set_fcn =                  _set_fcn_optionlist,
             .set_supports_remove =      TRUE,
             .values_fcn =               _values_fcn_wired_s390_options,
+            .doc_format =               NM_META_PROPERTY_TYPE_FORMAT_OPTIONLIST,
         ),
         .property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (optionlist,
             .set_fcn =                  _optionlist_set_fcn_wired_s390_options,
@@ -8003,6 +8075,7 @@ static const NMMetaPropertyInfo *const property_infos_WIRELESS[] = {
         .property_type = DEFINE_PROPERTY_TYPE (
             .get_fcn =                  _get_fcn_wireless_ssid,
             .set_fcn =                  _set_fcn_gobject_ssid,
+            .doc_format =               NM_META_PROPERTY_TYPE_FORMAT_STRING,
         ),
     ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRELESS_MODE,
@@ -8028,6 +8101,7 @@ static const NMMetaPropertyInfo *const property_infos_WIRELESS[] = {
         .property_type = DEFINE_PROPERTY_TYPE (
             .get_fcn =                  _get_fcn_gobject,
             .set_fcn =                  _set_fcn_wireless_channel,
+            .doc_format =               NM_META_PROPERTY_TYPE_FORMAT_INT,
         ),
     ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRELESS_BSSID,
@@ -8062,6 +8136,7 @@ static const NMMetaPropertyInfo *const property_infos_WIRELESS[] = {
                 .validate2_fcn =        _multilist_validate2_fcn_mac_addr,
                 .strsplit_plain =       TRUE,
             ),
+            .list_items_doc_format =    NM_META_PROPERTY_TYPE_FORMAT_MAC,
         ),
     ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRELESS_MAC_ADDRESS_RANDOMIZATION,
@@ -8147,6 +8222,7 @@ static const NMMetaPropertyInfo *const property_infos_WIRELESS_SECURITY[] = {
                 .strsplit_plain =       TRUE,
             ),
             .values_static =            NM_MAKE_STRV ("wpa", "rsn"),
+            .list_items_doc_format =    NM_META_PROPERTY_TYPE_FORMAT_STRING,
         ),
     ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRELESS_SECURITY_PAIRWISE,
@@ -8160,6 +8236,7 @@ static const NMMetaPropertyInfo *const property_infos_WIRELESS_SECURITY[] = {
                 .strsplit_plain =       TRUE,
             ),
             .values_static =            NM_MAKE_STRV ("tkip", "ccmp"),
+            .list_items_doc_format =    NM_META_PROPERTY_TYPE_FORMAT_STRING,
         ),
     ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRELESS_SECURITY_GROUP,
@@ -8173,6 +8250,7 @@ static const NMMetaPropertyInfo *const property_infos_WIRELESS_SECURITY[] = {
                 .strsplit_plain =       TRUE,
             ),
             .values_static =            NM_MAKE_STRV ("wep40", "wep104", "tkip", "ccmp"),
+            .list_items_doc_format =    NM_META_PROPERTY_TYPE_FORMAT_STRING,
         ),
     ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRELESS_SECURITY_PMF,
@@ -8191,6 +8269,7 @@ static const NMMetaPropertyInfo *const property_infos_WIRELESS_SECURITY[] = {
         .property_type = DEFINE_PROPERTY_TYPE (
             .get_fcn =                  _get_fcn_wireless_security_wep_key,
             .set_fcn =                  _set_fcn_wireless_wep_key,
+            .doc_format =               NM_META_PROPERTY_TYPE_FORMAT_STRING,
         ),
     ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRELESS_SECURITY_WEP_KEY1,
@@ -8198,6 +8277,7 @@ static const NMMetaPropertyInfo *const property_infos_WIRELESS_SECURITY[] = {
         .property_type = DEFINE_PROPERTY_TYPE (
             .get_fcn =                  _get_fcn_wireless_security_wep_key,
             .set_fcn =                  _set_fcn_wireless_wep_key,
+            .doc_format =               NM_META_PROPERTY_TYPE_FORMAT_STRING,
         ),
     ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRELESS_SECURITY_WEP_KEY2,
@@ -8205,6 +8285,7 @@ static const NMMetaPropertyInfo *const property_infos_WIRELESS_SECURITY[] = {
         .property_type = DEFINE_PROPERTY_TYPE (
             .get_fcn =                  _get_fcn_wireless_security_wep_key,
             .set_fcn =                  _set_fcn_wireless_wep_key,
+            .doc_format =               NM_META_PROPERTY_TYPE_FORMAT_STRING,
         ),
     ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRELESS_SECURITY_WEP_KEY3,
@@ -8212,6 +8293,7 @@ static const NMMetaPropertyInfo *const property_infos_WIRELESS_SECURITY[] = {
         .property_type = DEFINE_PROPERTY_TYPE (
             .get_fcn =                  _get_fcn_wireless_security_wep_key,
             .set_fcn =                  _set_fcn_wireless_wep_key,
+            .doc_format =               NM_META_PROPERTY_TYPE_FORMAT_STRING,
         ),
     ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRELESS_SECURITY_WEP_KEY_FLAGS,
