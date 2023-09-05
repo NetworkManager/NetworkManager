@@ -394,7 +394,8 @@ static void _l3_commit(NML3Cfg *self, NML3CfgCommitType commit_type, gboolean is
 
 static void _nm_l3cfg_emit_signal_notify_acd_event_all(NML3Cfg *self);
 
-static gboolean _acd_has_valid_link(const NMPObject *obj,
+static gboolean _acd_has_valid_link(NML3Cfg         *self,
+                                    const NMPObject *obj,
                                     const guint8   **out_addr_bin,
                                     gboolean        *out_acd_not_supported);
 
@@ -1403,8 +1404,8 @@ _load_link(NML3Cfg *self, gboolean initial)
         nacd_link_now_up = FALSE;
 
     nacd_changed   = FALSE;
-    nacd_old_valid = _acd_has_valid_link(obj_old, &nacd_old_addr, NULL);
-    nacd_new_valid = _acd_has_valid_link(obj, &nacd_new_addr, NULL);
+    nacd_old_valid = _acd_has_valid_link(self, obj_old, &nacd_old_addr, NULL);
+    nacd_new_valid = _acd_has_valid_link(self, obj, &nacd_new_addr, NULL);
     if (self->priv.p->nacd_instance_ensure_retry) {
         if (nacd_new_valid
             && (!nacd_old_valid
@@ -1614,7 +1615,8 @@ _acd_data_find_track(const AcdData        *acd_data,
 /*****************************************************************************/
 
 static gboolean
-_acd_has_valid_link(const NMPObject *obj,
+_acd_has_valid_link(NML3Cfg         *self,
+                    const NMPObject *obj,
                     const guint8   **out_addr_bin,
                     gboolean        *out_acd_not_supported)
 {
@@ -1631,6 +1633,11 @@ _acd_has_valid_link(const NMPObject *obj,
 
     addr_bin = nmp_link_address_get(&link->l_address, &addr_len);
     if (addr_len != ACD_SUPPORTED_ETH_ALEN) {
+        NM_SET_OUT(out_acd_not_supported, TRUE);
+        return FALSE;
+    }
+
+    if (nm_platform_link_get_ifi_flags(self->priv.platform, self->priv.ifindex, IFF_NOARP)) {
         NM_SET_OUT(out_acd_not_supported, TRUE);
         return FALSE;
     }
@@ -1864,7 +1871,7 @@ again:
         return NULL;
     }
 
-    valid = _acd_has_valid_link(self->priv.plobj, &addr_bin, &acd_not_supported);
+    valid = _acd_has_valid_link(self, self->priv.plobj, &addr_bin, &acd_not_supported);
     if (!valid)
         goto failed_create_acd;
 
