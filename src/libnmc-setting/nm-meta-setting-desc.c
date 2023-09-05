@@ -5672,9 +5672,6 @@ static const NMMetaPropertyInfo *const property_infos_CONNECTION[] = {
             .set_fcn =                  _set_fcn_connection_metered,
             .doc_format =               NM_META_PROPERTY_TYPE_FORMAT_TERNARY,
         ),
-        .property_typ_data = DEFINE_PROPERTY_TYP_DATA (
-            .values_static =            NM_MAKE_STRV ("yes", "no", "unknown"),
-        ),
     ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_CONNECTION_LLDP,
         .property_type =                &_pt_gobject_enum,

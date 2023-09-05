@@ -125,6 +125,7 @@ keywords = collections.OrderedDict(
         ("variable", KEYWORD_XML_TYPE_ATTR),
         ("format", KEYWORD_XML_TYPE_ATTR),
         ("values", KEYWORD_XML_TYPE_ATTR),
+        ("special-values", KEYWORD_XML_TYPE_ATTR),
         ("default", KEYWORD_XML_TYPE_ATTR),
         ("example", KEYWORD_XML_TYPE_ATTR),
         ("description", KEYWORD_XML_TYPE_ELEM),

@@ -402,6 +402,65 @@ get_property_valid_values(const NMMetaPropertyInfo *prop_info)
     return valid_values;
 }
 
+static void
+append_int_special_values(const NMMetaPropertyInfo *prop_info, GPtrArray *special_values)
+{
+    const NMMetaPropertyTypData *prop_typ_data = prop_info->property_typ_data;
+
+    if (prop_typ_data && prop_typ_data->subtype.gobject_int.value_infos) {
+        GType                          gtype   = _property_get_gtype(prop_info);
+        bool                           is_uint = NM_IN_SET(gtype, G_TYPE_UINT, G_TYPE_UINT64);
+        guint                          base    = prop_typ_data->subtype.gobject_int.base;
+        const NMMetaUtilsIntValueInfo *v       = prop_typ_data->subtype.gobject_int.value_infos;
+
+        if (!(base == 0 || base == 10 || (is_uint && base == 16))) {
+            if (is_uint)
+                prop_abort(prop_info, "only base 10 supported for signed int");
+            else
+                prop_abort(prop_info, "only base 10 or 16 supported for uint");
+        }
+
+        for (; v->nick != NULL; v++) {
+            char *v_str;
+            if (base == 16)
+                v_str = g_strdup_printf("%s (0x%lx)", v->nick, v->value.u64);
+            else if (is_uint)
+                v_str = g_strdup_printf("%s (%lu)", v->nick, v->value.u64);
+            else
+                v_str = g_strdup_printf("%s (%ld)", v->nick, v->value.i64);
+
+            g_ptr_array_add(special_values, v_str);
+        }
+    }
+}
+
+static GPtrArray *
+get_property_special_values(const NMMetaPropertyInfo *prop_info)
+{
+    const NMMetaPropertyType    *prop_type      = prop_info->property_type;
+    const NMMetaPropertyTypData *prop_typ_data  = prop_info->property_typ_data;
+    NMMetaPropertyTypeFormat     fmt            = prop_type->doc_format;
+    GPtrArray                   *special_values = g_ptr_array_new_full(16, g_free);
+
+    switch (fmt) {
+    case NM_META_PROPERTY_TYPE_FORMAT_INT:
+        append_int_special_values(prop_info, special_values);
+        break;
+    case NM_META_PROPERTY_TYPE_FORMAT_MAC:
+        if (prop_typ_data
+            && prop_typ_data->subtype.mac.mode == NM_META_PROPERTY_TYPE_MAC_MODE_CLONED)
+            append_vals(special_values, "preserve", "permanent", "random", "stable");
+        break;
+    case NM_META_PROPERTY_TYPE_FORMAT_MTU:
+        g_ptr_array_add(special_values, g_strdup("auto"));
+        break;
+    default:
+        break;
+    }
+
+    return special_values;
+}
+
 int
 main(int argc, char *argv[])
 {
@@ -424,13 +483,15 @@ main(int argc, char *argv[])
         g_print(" >\n");
 
         for (i_property = 0; i_property < sett_info->properties_num; i_property++) {
-            const NMMetaPropertyInfo    *prop_info = sett_info->properties[i_property];
-            gs_free char                *name      = NULL;
-            gs_free char                *alias     = NULL;
-            gs_free char                *descr     = NULL;
-            gs_free char                *fmt       = NULL;
-            gs_unref_ptrarray GPtrArray *vals_arr  = NULL;
-            gs_free char                *vals_str  = NULL;
+            const NMMetaPropertyInfo    *prop_info    = sett_info->properties[i_property];
+            gs_free char                *name         = NULL;
+            gs_free char                *alias        = NULL;
+            gs_free char                *descr        = NULL;
+            gs_free char                *fmt          = NULL;
+            gs_unref_ptrarray GPtrArray *vals_arr     = NULL;
+            gs_free char                *vals_str     = NULL;
+            gs_unref_ptrarray GPtrArray *specials_arr = NULL;
+            gs_free char                *specials_str = NULL;
 
             g_print("%s<property", _indent_level(2 * INDENT));
             g_print(" name=%s", name = _xml_escape_attribute(prop_info->property_name));
@@ -468,6 +529,15 @@ main(int argc, char *argv[])
                 g_print("\n%svalues=%s",
                         _indent_level(2 * INDENT + 10),
                         _xml_escape_attribute(vals_str));
+            }
+
+            specials_arr = get_property_special_values(prop_info);
+            if (specials_arr->len) {
+                g_ptr_array_add(specials_arr, NULL);
+                specials_str = g_strjoinv(", ", (char **) specials_arr->pdata);
+                g_print("\n%sspecial-values=%s",
+                        _indent_level(2 * INDENT + 10),
+                        _xml_escape_attribute(specials_str));
             }
 
             g_print(" />\n");

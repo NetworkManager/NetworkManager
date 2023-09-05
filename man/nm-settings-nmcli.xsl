@@ -181,6 +181,11 @@
             Valid values: <xsl:value-of select="@values"/>
           </para>
         </xsl:if>
+        <xsl:if test="@special-values">
+          <para>
+            Special values: <xsl:value-of select="@special-values"/>
+          </para>
+        </xsl:if>
       </listitem>
     </varlistentry>
   </xsl:template>
