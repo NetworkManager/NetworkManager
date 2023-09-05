@@ -15,6 +15,13 @@ typedef struct _NMUtilsEnumValueInfo {
     int         value;
 } NMUtilsEnumValueInfo;
 
+typedef struct _NMUtilsEnumValueInfoFull {
+    const char  *nick;
+    const char **aliases;
+    const char  *value_str;
+    int          value;
+} NMUtilsEnumValueInfoFull;
+
 char    *_nm_utils_enum_to_str_full(GType                       type,
                                     int                         value,
                                     const char                 *sep,
@@ -26,6 +33,11 @@ gboolean _nm_utils_enum_from_str_full(GType                       type,
                                       const NMUtilsEnumValueInfo *value_infos);
 
 const char **_nm_utils_enum_get_values(GType type, int from, int to);
+
+GArray *_nm_utils_enum_get_values_full(GType                       type,
+                                       int                         from,
+                                       int                         to,
+                                       const NMUtilsEnumValueInfo *value_infos);
 
 /*****************************************************************************/
 

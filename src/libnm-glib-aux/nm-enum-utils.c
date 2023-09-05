@@ -320,53 +320,117 @@ _nm_utils_enum_from_str_full(GType                       type,
 const char **
 _nm_utils_enum_get_values(GType type, int from, int to)
 {
-    GTypeClass *klass;
-    GPtrArray  *array;
-    int         i;
-    char        sbuf[64];
+    int        i;
+    GArray    *values_full = _nm_utils_enum_get_values_full(type, from, to, NULL);
+    GPtrArray *values      = g_ptr_array_sized_new(values_full->len + 1);
 
-    klass = g_type_class_ref(type);
-    array = g_ptr_array_new();
+    for (i = 0; i < values_full->len; i++) {
+        NMUtilsEnumValueInfoFull *v = &g_array_index(values_full, NMUtilsEnumValueInfoFull, i);
+        g_ptr_array_add(values, (gpointer) v->nick);
+    }
+
+    g_ptr_array_add(values, NULL);
+    g_array_unref(values_full);
+    return (const char **) g_ptr_array_free(values, FALSE);
+}
+
+static void
+_free_value_info_full(NMUtilsEnumValueInfoFull *value_info_full)
+{
+    g_free(value_info_full->aliases);
+}
+
+static void
+_init_value_info_full(NMUtilsEnumValueInfoFull *v, bool is_flag, const char *nick, int value)
+{
+    char        sbuf[64];
+    const char *value_str = is_flag ? g_intern_string(nm_sprintf_buf(sbuf, "0x%x", value))
+                                    : g_intern_string(nm_sprintf_buf(sbuf, "%d", value));
+
+    v->nick      = _enum_is_valid_enum_nick(nick) ? nick : value_str;
+    v->aliases   = NULL;
+    v->value_str = value_str;
+    v->value     = value;
+}
+
+/**
+ * _nm_utils_enum_get_values_full:
+ * @type: the enum or flags type
+ * @from: lowest value to return
+ * @to:   highest value to return
+ * @value_infos: (nullable): additional value aliases
+ * 
+ * Get the enum or flags values within the given range, putting together the
+ * value, name and aliases of each of them.
+ *
+ * If @value_infos is NULL, no memory will be allocated and deallocated for the
+ * aliases and #NMUtilsEnumValueInfoFull:aliases will be NULL in the returned
+ * data.
+ *
+ * The caller is responsible of releasing the container, but not the contained
+ * data. Only #NMUtilsEnumValueInfoFull:aliases can be stolen (and set to NULL),
+ * and then the caller becomes the responsible to release it.
+ * 
+ * Return: (transfer container): an array of #NMUtilsEnumValueInfoFull.
+ */
+GArray *
+_nm_utils_enum_get_values_full(GType                       type,
+                               int                         from,
+                               int                         to,
+                               const NMUtilsEnumValueInfo *value_infos)
+{
+    NMUtilsEnumValueInfoFull v;
+    GArray                  *array;
+    int                      i;
+
+    nm_auto_unref_gtypeclass GTypeClass *klass = g_type_class_ref(type);
+    g_return_val_if_fail(G_IS_ENUM_CLASS(klass) || G_IS_FLAGS_CLASS(klass), NULL);
+
+    _ASSERT_enum_values_info(type, value_infos);
+
+    array = g_array_new(FALSE, FALSE, sizeof(NMUtilsEnumValueInfoFull));
 
     if (G_IS_ENUM_CLASS(klass)) {
         GEnumClass *enum_class = G_ENUM_CLASS(klass);
-        GEnumValue *enum_value;
 
         for (i = 0; i < enum_class->n_values; i++) {
-            enum_value = &enum_class->values[i];
-            if (enum_value->value >= from && enum_value->value <= to) {
-                if (_enum_is_valid_enum_nick(enum_value->value_nick))
-                    g_ptr_array_add(array, (gpointer) enum_value->value_nick);
-                else
-                    g_ptr_array_add(
-                        array,
-                        (gpointer) g_intern_string(nm_sprintf_buf(sbuf, "%d", enum_value->value)));
-            }
-        }
-    } else if (G_IS_FLAGS_CLASS(klass)) {
-        GFlagsClass *flags_class = G_FLAGS_CLASS(klass);
-        GFlagsValue *flags_value;
+            GEnumValue *enum_val = &enum_class->values[i];
 
-        for (i = 0; i < flags_class->n_values; i++) {
-            flags_value = &flags_class->values[i];
-            if (flags_value->value >= (guint) from && flags_value->value <= (guint) to) {
-                if (_enum_is_valid_flags_nick(flags_value->value_nick))
-                    g_ptr_array_add(array, (gpointer) flags_value->value_nick);
-                else
-                    g_ptr_array_add(
-                        array,
-                        (gpointer) g_intern_string(
-                            nm_sprintf_buf(sbuf, "0x%x", (unsigned) flags_value->value)));
+            if (enum_val->value >= from && enum_val->value <= to) {
+                _init_value_info_full(&v, FALSE, enum_val->value_nick, enum_val->value);
+                g_array_append_val(array, v);
             }
         }
     } else {
-        g_type_class_unref(klass);
-        g_ptr_array_free(array, TRUE);
-        g_return_val_if_reached(NULL);
+        GFlagsClass *flags_class = G_FLAGS_CLASS(klass);
+
+        for (i = 0; i < flags_class->n_values; i++) {
+            GFlagsValue *flags_val = &flags_class->values[i];
+
+            if (flags_val->value >= (guint) from && flags_val->value <= (guint) to) {
+                _init_value_info_full(&v, TRUE, flags_val->value_nick, flags_val->value);
+                g_array_append_val(array, v);
+            }
+        }
     }
 
-    g_type_class_unref(klass);
-    g_ptr_array_add(array, NULL);
+    if (value_infos) {
+        g_array_set_clear_func(array, (GDestroyNotify) _free_value_info_full);
 
-    return (const char **) g_ptr_array_free(array, FALSE);
+        for (i = 0; i < array->len; i++) {
+            NMUtilsEnumValueInfoFull *vi_full = &g_array_index(array, NMUtilsEnumValueInfoFull, i);
+            GPtrArray                *aliases = g_ptr_array_new();
+
+            const NMUtilsEnumValueInfo *vi;
+            for (vi = value_infos; vi && vi->nick; vi++) {
+                if (vi->value == vi_full->value)
+                    g_ptr_array_add(aliases, (gpointer) vi->nick);
+            }
+
+            g_ptr_array_add(aliases, NULL);
+            vi_full->aliases = (const char **) g_ptr_array_free(aliases, FALSE);
+        }
+    }
+
+    return array;
 }

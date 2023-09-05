@@ -4,6 +4,7 @@
 
 #include "libnmc-setting/nm-meta-setting-desc.h"
 #include "libnmc-setting/nm-meta-setting-base.h"
+#include "libnm-glib-aux/nm-enum-utils.h"
 #include "nm-core-enum-types.h"
 #include <stdarg.h>
 #include <stdlib.h>
@@ -70,28 +71,12 @@ _property_get_gtype(const NMMetaPropertyInfo *prop_info)
 }
 
 static char *
-_get_enum_format(GType g_type)
+get_enum_format(GType g_type)
 {
     if (G_TYPE_IS_FLAGS(g_type))
         return g_strdup_printf("flags (%s)", g_type_name(g_type));
     else
         return g_strdup_printf("choice (%s)", g_type_name(g_type));
-}
-
-static char *
-get_enum_format(const NMMetaPropertyInfo *prop_info)
-{
-    GType                        gtype         = G_TYPE_INVALID;
-    const NMMetaPropertyTypData *prop_typ_data = prop_info->property_typ_data;
-
-    if (prop_typ_data && prop_typ_data->subtype.gobject_enum.get_gtype)
-        gtype = prop_typ_data->subtype.gobject_enum.get_gtype();
-    else
-        gtype = _property_get_gtype(prop_info);
-
-    prop_assert(gtype != G_TYPE_INVALID, prop_info, "unknown property's enum type");
-
-    return _get_enum_format(gtype);
 }
 
 static char *
@@ -185,11 +170,11 @@ get_property_format(const NMMetaPropertyInfo *prop_info)
     case NM_META_PROPERTY_TYPE_FORMAT_STRING:
         return g_strdup("string");
     case NM_META_PROPERTY_TYPE_FORMAT_ENUM:
-        return get_enum_format(prop_info);
+        return get_enum_format(nm_meta_property_enum_get_type(prop_info));
     case NM_META_PROPERTY_TYPE_FORMAT_SECRET_FLAGS:
-        return _get_enum_format(NM_TYPE_SETTING_SECRET_FLAGS);
+        return get_enum_format(NM_TYPE_SETTING_SECRET_FLAGS);
     case NM_META_PROPERTY_TYPE_FORMAT_DCB_FLAGS:
-        return _get_enum_format(NM_TYPE_SETTING_DCB_FLAGS);
+        return get_enum_format(NM_TYPE_SETTING_DCB_FLAGS);
     case NM_META_PROPERTY_TYPE_FORMAT_BOOL:
         return g_strdup("boolean");
     case NM_META_PROPERTY_TYPE_FORMAT_TERNARY:
@@ -224,6 +209,199 @@ get_property_format(const NMMetaPropertyInfo *prop_info)
     }
 }
 
+#define append_vals(to, ...)                          \
+    G_STMT_START                                      \
+    {                                                 \
+        size_t      i;                                \
+        const char *from[] = {__VA_ARGS__};           \
+        for (i = 0; i < NM_N_ELEMENTS(from); i++)     \
+            g_ptr_array_add((to), g_strdup(from[i])); \
+    }                                                 \
+    G_STMT_END
+
+static void
+append_connection_types(GPtrArray *valid_values)
+{
+    size_t i;
+    for (i = 0; i < _NM_META_SETTING_TYPE_NUM; i++) {
+        /* If the setting has a priority of a base-type, it's a valid value for connection.type */
+        NMSettingPriority pri =
+            _nm_setting_type_get_base_type_priority(nm_meta_setting_infos[i].get_setting_gtype());
+        if (pri != NM_SETTING_PRIORITY_INVALID)
+            g_ptr_array_add(valid_values, g_strdup(nm_meta_setting_infos[i].setting_name));
+    }
+}
+
+static void
+append_int_valid_range(const NMMetaPropertyInfo *prop_info, GPtrArray *valid_values)
+{
+    NMMetaSignUnsignInt64 min;
+    NMMetaSignUnsignInt64 max;
+
+    nm_meta_property_int_get_range(prop_info, &min, &max);
+    if (NM_IN_SET(_property_get_gtype(prop_info), G_TYPE_UINT, G_TYPE_UINT64))
+        g_ptr_array_add(valid_values, g_strdup_printf("%lu - %lu", min.u64, max.u64));
+    else
+        g_ptr_array_add(valid_values, g_strdup_printf("%ld - %ld", min.i64, max.i64));
+}
+
+static void
+_append_enum_valid_values(GType                       g_type,
+                          int                         min,
+                          int                         max,
+                          const NMUtilsEnumValueInfo *value_infos,
+                          GPtrArray                  *valid_values)
+{
+    size_t       i;
+    const char **alias;
+    GString     *names  = g_string_sized_new(64);
+    GArray      *values = _nm_utils_enum_get_values_full(g_type, min, max, value_infos);
+
+    for (i = 0; i < values->len; i++) {
+        NMUtilsEnumValueInfoFull *val = &g_array_index(values, NMUtilsEnumValueInfoFull, i);
+
+        g_string_assign(names, val->nick);
+
+        if (val->aliases) {
+            for (alias = val->aliases; *alias; alias++) {
+                g_string_append_c(names, '/');
+                g_string_append(names, *alias);
+            }
+        }
+
+        g_ptr_array_add(valid_values, g_strdup_printf("%s (%s)", names->str, val->value_str));
+    }
+
+    g_string_free(names, TRUE);
+    g_array_unref(values);
+}
+
+static void
+append_enum_valid_values(const NMMetaPropertyInfo *prop_info, GPtrArray *valid_values)
+{
+    const NMMetaPropertyTypData *prop_typ_data = prop_info->property_typ_data;
+    const NMUtilsEnumValueInfo  *value_infos;
+    GType                        gtype;
+    int                          min;
+    int                          max;
+
+    gtype = nm_meta_property_enum_get_type(prop_info);
+    nm_meta_property_enum_get_range(prop_info, &min, &max);
+    value_infos = prop_typ_data ? prop_typ_data->subtype.gobject_enum.value_infos : NULL;
+
+    _append_enum_valid_values(gtype, min, max, value_infos, valid_values);
+}
+
+static void
+append_ethtool_valid_values(const NMMetaPropertyInfo *prop_info, GPtrArray *valid_values)
+{
+    NMEthtoolID ethtool_id;
+
+    prop_assert(prop_info->property_typ_data, prop_info, "missing .property_typ_data");
+
+    ethtool_id = prop_info->property_typ_data->subtype.ethtool.ethtool_id;
+
+    if (nm_ethtool_id_is_coalesce(ethtool_id) || nm_ethtool_id_is_ring(ethtool_id))
+        g_ptr_array_add(valid_values, g_strdup_printf("0 - %u", G_MAXUINT32));
+    else if (nm_ethtool_id_is_feature(ethtool_id) || nm_ethtool_id_is_pause(ethtool_id))
+        append_vals(valid_values, "on", "off", "ignore");
+}
+
+static void
+append_dcb_valid_values(const NMMetaPropertyInfo *prop_info, GPtrArray *valid_values)
+{
+    guint max;
+    guint other;
+
+    prop_assert(prop_info->property_typ_data, prop_info, "missing .property_typ_data");
+
+    max   = prop_info->property_typ_data->subtype.dcb.max;
+    other = prop_info->property_typ_data->subtype.dcb.other;
+
+    if (max != 0)
+        g_ptr_array_add(valid_values, g_strdup_printf("0 - %u", max));
+    if (other != 0 && (!max || other > max))
+        g_ptr_array_add(valid_values, g_strdup_printf("%u", other));
+}
+
+static GPtrArray *
+get_property_valid_values(const NMMetaPropertyInfo *prop_info)
+{
+    const NMMetaPropertyType    *prop_type     = prop_info->property_type;
+    const NMMetaPropertyTypData *prop_typ_data = prop_info->property_typ_data;
+    NMMetaPropertyTypeFormat     fmt           = prop_type->doc_format;
+    GPtrArray                   *valid_values  = g_ptr_array_new_full(16, g_free);
+
+    /* connection.type is generated differently */
+    if (prop_info->setting_info->general->meta_type == NM_META_SETTING_TYPE_CONNECTION
+        && !nm_strcmp0(prop_info->property_name, "type")) {
+        append_connection_types(valid_values);
+        return valid_values;
+    }
+
+    /* If it's a list, get the format of the items, but only  if we can process it
+     * (prop_typ_data->subtype is of type multilist, so we can't process ints or enums) */
+    if (fmt == NM_META_PROPERTY_TYPE_FORMAT_MULTILIST && prop_typ_data) {
+        switch (prop_typ_data->list_items_doc_format) {
+        case NM_META_PROPERTY_TYPE_FORMAT_SECRET_FLAGS:
+        case NM_META_PROPERTY_TYPE_FORMAT_DCB_FLAGS:
+        case NM_META_PROPERTY_TYPE_FORMAT_BOOL:
+        case NM_META_PROPERTY_TYPE_FORMAT_DCB_BOOL:
+        case NM_META_PROPERTY_TYPE_FORMAT_TERNARY:
+        case NM_META_PROPERTY_TYPE_FORMAT_ETHTOOL:
+            fmt = prop_typ_data->list_items_doc_format;
+            break;
+        case NM_META_PROPERTY_TYPE_FORMAT_ENUM:
+            prop_warn(prop_info, "unknown enum type, can't get valid values");
+            break;
+        case NM_META_PROPERTY_TYPE_FORMAT_INT:
+            prop_warn(prop_info, "can't check for valid range in multilists");
+            break;
+        default:
+            /* Other types probably don't need to show "Valid values" */
+            break;
+        }
+    }
+
+    switch (fmt) {
+    case NM_META_PROPERTY_TYPE_FORMAT_INT:
+        append_int_valid_range(prop_info, valid_values);
+        break;
+    case NM_META_PROPERTY_TYPE_FORMAT_ENUM:
+        append_enum_valid_values(prop_info, valid_values);
+        break;
+    case NM_META_PROPERTY_TYPE_FORMAT_SECRET_FLAGS:
+        _append_enum_valid_values(NM_TYPE_SETTING_SECRET_FLAGS, 0, G_MAXUINT, NULL, valid_values);
+        break;
+    case NM_META_PROPERTY_TYPE_FORMAT_DCB_FLAGS:
+        _append_enum_valid_values(NM_TYPE_SETTING_DCB_FLAGS, 0, G_MAXUINT, NULL, valid_values);
+        break;
+    case NM_META_PROPERTY_TYPE_FORMAT_BOOL:
+    case NM_META_PROPERTY_TYPE_FORMAT_DCB_BOOL:
+        append_vals(valid_values, "true/yes/on", "false/no/off");
+        break;
+    case NM_META_PROPERTY_TYPE_FORMAT_TERNARY:
+        append_vals(valid_values, "true/yes/on", "false/no/off", "default/unknown");
+        break;
+    case NM_META_PROPERTY_TYPE_FORMAT_ETHTOOL:
+        append_ethtool_valid_values(prop_info, valid_values);
+        break;
+    case NM_META_PROPERTY_TYPE_FORMAT_DCB:
+        append_dcb_valid_values(prop_info, valid_values);
+        break;
+    default:
+        break;
+    }
+
+    if (prop_typ_data && prop_typ_data->values_static) {
+        const char *const *v;
+        for (v = prop_typ_data->values_static; *v; v++)
+            g_ptr_array_add(valid_values, g_strdup(*v));
+    }
+
+    return valid_values;
+}
+
 int
 main(int argc, char *argv[])
 {
@@ -246,11 +424,13 @@ main(int argc, char *argv[])
         g_print(" >\n");
 
         for (i_property = 0; i_property < sett_info->properties_num; i_property++) {
-            const NMMetaPropertyInfo *prop_info = sett_info->properties[i_property];
-            gs_free char             *name      = NULL;
-            gs_free char             *alias     = NULL;
-            gs_free char             *descr     = NULL;
-            gs_free char             *fmt       = NULL;
+            const NMMetaPropertyInfo    *prop_info = sett_info->properties[i_property];
+            gs_free char                *name      = NULL;
+            gs_free char                *alias     = NULL;
+            gs_free char                *descr     = NULL;
+            gs_free char                *fmt       = NULL;
+            gs_unref_ptrarray GPtrArray *vals_arr  = NULL;
+            gs_free char                *vals_str  = NULL;
 
             g_print("%s<property", _indent_level(2 * INDENT));
             g_print(" name=%s", name = _xml_escape_attribute(prop_info->property_name));
@@ -280,6 +460,15 @@ main(int argc, char *argv[])
                 g_print("\n%sformat=%s",
                         _indent_level(2 * INDENT + 10),
                         _xml_escape_attribute(fmt));
+
+            vals_arr = get_property_valid_values(prop_info);
+            if (vals_arr->len) {
+                g_ptr_array_add(vals_arr, NULL);
+                vals_str = g_strjoinv(", ", (char **) vals_arr->pdata);
+                g_print("\n%svalues=%s",
+                        _indent_level(2 * INDENT + 10),
+                        _xml_escape_attribute(vals_str));
+            }
 
             g_print(" />\n");
         }

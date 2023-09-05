@@ -176,6 +176,11 @@
             Format: <xsl:value-of select="@type"/>
           </para>
         </xsl:if>
+        <xsl:if test="@values">
+          <para>
+            Valid values: <xsl:value-of select="@values"/>
+          </para>
+        </xsl:if>
       </listitem>
     </varlistentry>
   </xsl:template>

@@ -505,6 +505,16 @@ const NMMetaSettingValidPartItem *const *
 nm_meta_setting_info_valid_parts_for_slave_type(const char  *slave_type,
                                                 const char **out_slave_name);
 
+gboolean nm_meta_property_int_get_range(const NMMetaPropertyInfo *property_info,
+                                        NMMetaSignUnsignInt64    *out_min,
+                                        NMMetaSignUnsignInt64    *out_max);
+
+gboolean nm_meta_property_enum_get_range(const NMMetaPropertyInfo *property_info,
+                                         int                      *out_min,
+                                         int                      *out_max);
+
+GType nm_meta_property_enum_get_type(const NMMetaPropertyInfo *property_info);
+
 /*****************************************************************************/
 
 typedef enum {
