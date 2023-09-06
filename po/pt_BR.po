@@ -3776,7 +3776,7 @@ msgstr "Falha ao reconhecer o certificado"
 
 #: src/libnm-crypto/nm-crypto.c:861
 msgid "not a valid private key"
-msgstr "não é uma chave privada inválida"
+msgstr "não é uma chave privada válida"
 
 #: src/libnm-glib-aux/nm-shared-utils.c:2716
 #, c-format
