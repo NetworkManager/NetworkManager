@@ -421,6 +421,7 @@ while (( $# > 0 )); do
 done
 
 # compute some values that depends on user selectable variables
+mkdir -p "$BASEDIR_VM_IMAGE"
 basedir_vm_image=$(readlink -f "$BASEDIR_VM_IMAGE")
 vm_image_file="$VM.qcow2"
 datadir="$BASEDIR_NM/tools/nm-guest-data"
