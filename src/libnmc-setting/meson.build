@@ -4,14 +4,14 @@ if enable_docs
   assert(enable_introspection, '-Ddocs=true requires -Dintrospection=true')
   settings_docs_input_xml = custom_target(
     'settings-docs-input.xml',
-    input: [nm_settings_docs_xml_gir, nm_property_infos_xml['nmcli']],
+    input: [nm_settings_docs_xml_gir['nmcli'], nm_property_infos_xml['nmcli']],
     output: 'settings-docs-input.xml',
     command: [
       python.path(),
       join_paths(meson.source_root(), 'tools', 'generate-docs-nm-settings-docs-merge.py'),
       '@OUTPUT@',
       nm_property_infos_xml['nmcli'],
-      nm_settings_docs_xml_gir,
+      nm_settings_docs_xml_gir['nmcli'],
     ],
   )
 

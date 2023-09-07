@@ -66,21 +66,21 @@ if enable_introspection
   name = 'dbus'
   nm_settings_docs_xml_dbus = custom_target(
     'nm-settings-docs-' + name + '.xml',
-    input: [nm_settings_docs_xml_gir, nm_property_infos_xml[name]],
+    input: [nm_settings_docs_xml_gir[name], nm_property_infos_xml[name]],
     output: 'nm-settings-docs-' + name + '.xml',
     command: [
       python.path(),
       join_paths(meson.source_root(), 'tools', 'generate-docs-nm-settings-docs-merge.py'),
       '@OUTPUT@',
       nm_property_infos_xml[name],
-      nm_settings_docs_xml_gir,
+      nm_settings_docs_xml_gir[name],
     ],
   )
 
   name = 'nmcli'
   nm_settings_docs_xml_nmcli = custom_target(
     'nm-settings-docs-' + name + '.xml',
-    input: [nm_settings_docs_xml_gir, nm_property_infos_xml[name]],
+    input: [nm_settings_docs_xml_gir[name], nm_property_infos_xml[name]],
     output: 'nm-settings-docs-' + name + '.xml',
     command: [
       python.path(),
@@ -90,12 +90,11 @@ if enable_introspection
       gen_metadata_nm_settings_nmcli_xml,
       nm_property_infos_xml[name],
       gen_metadata_nm_settings_nmcli_xml,
-      nm_settings_docs_xml_gir,
+      nm_settings_docs_xml_gir[name],
     ],
   )
 
   nm_settings_docs_xml = {
-    'gir':   nm_settings_docs_xml_gir,
     'dbus':  nm_settings_docs_xml_dbus,
     'nmcli':  nm_settings_docs_xml_nmcli,
   }

@@ -57,6 +57,7 @@ ns_map = {
 identifier_key = "{%s}identifier" % ns_map["c"]
 nick_key = "{%s}nick" % ns_map["glib"]
 symbol_prefix_key = "{%s}symbol-prefix" % ns_map["c"]
+nick_key = "{%s}nick" % ns_map["glib"]
 
 constants = {
     "TRUE": "TRUE",
@@ -74,25 +75,37 @@ def get_setting_name_define(setting):
     raise Exception('Unexpected symbol_prefix_key "%s"' % (n))
 
 
-def init_constants(girxml, settings):
+def init_constants(girxml, settings, output_target):
     for const in girxml.findall("./gi:namespace/gi:constant", ns_map):
         cname = const.attrib["{%s}type" % ns_map["c"]]
-        cvalue = const.attrib["value"]
+        value = const.attrib["value"]
         if const.find('./gi:type[@name="utf8"]', ns_map) is not None:
-            cvalue = '"%s"' % cvalue
-        constants[cname] = cvalue
+            value = '"%s"' % value
+        constants[cname] = value
 
     for enum in girxml.findall("./gi:namespace/gi:enumeration", ns_map):
         for enumval in enum.findall("./gi:member", ns_map):
             cname = enumval.attrib[identifier_key]
-            cvalue = "%s (%s)" % (cname, enumval.attrib["value"])
-            constants[cname] = cvalue
+            nick = enumval.attrib.get(nick_key, cname)
+            if output_target == "nmcli":
+                value = '"%s" (%s)' % (nick, enumval.attrib["value"])
+            elif output_target is not None:
+                value = "%s (%s)" % (enumval.attrib["value"], nick)
+            else:
+                value = "%s (%s)" % (cname, enumval.attrib["value"])
+            constants[cname] = value
 
     for enum in girxml.findall("./gi:namespace/gi:bitfield", ns_map):
         for enumval in enum.findall("./gi:member", ns_map):
             cname = enumval.attrib[identifier_key]
-            cvalue = "%s (0x%x)" % (cname, int(enumval.attrib["value"]))
-            constants[cname] = cvalue
+            nick = enumval.attrib.get(nick_key, cname)
+            if output_target == "nmcli":
+                value = '"%s" (0x%x)' % (nick, int(enumval.attrib["value"]))
+            elif output_target is not None:
+                value = "0x%x (%s)" % (int(enumval.attrib["value"]), nick)
+            else:
+                value = "%s (0x%x)" % (cname, int(enumval.attrib["value"]))
+            constants[cname] = value
 
     for setting in settings:
         setting_type_name = "NM" + setting.attrib["name"]
@@ -217,7 +230,7 @@ def create_desc_docbook(desc_docbook, description):
         paragraph.text = l
 
 
-def main(gir_path_str, output_path_str):
+def main(gir_path_str, output_path_str, output_target):
     girxml = ET.parse(gir_path_str).getroot()
 
     basexml = girxml.find('./gi:namespace/gi:class[@name="Setting"]', ns_map)
@@ -229,7 +242,7 @@ def main(gir_path_str, output_path_str):
     )
     settings = sorted(settings, key=settings_sort_key)
 
-    init_constants(girxml, settings)
+    init_constants(girxml, settings, output_target)
 
     nm_settings_docs_element = ET.Element("nm-setting-docs")
     docs_gir = ET.ElementTree(nm_settings_docs_element)
@@ -362,6 +375,12 @@ if __name__ == "__main__":
         help="output file",
         required=True,
     )
+    parser.add_argument(
+        "-t",
+        "--target",
+        choices=["nmcli", "dbus", "keyfile", "ifcfg-rh"],
+        help="target where the output will be used (i.e. nmcli)",
+    )
 
     args = parser.parse_args()
 
@@ -369,4 +388,4 @@ if __name__ == "__main__":
         for lib in args.lib_path:
             GIRepository.Repository.prepend_library_path(lib)
 
-    main(args.gir, args.output)
+    main(args.gir, args.output, args.target)

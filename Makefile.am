@@ -2042,7 +2042,10 @@ libnm_noinst_data = \
 	src/libnm-client-impl/nm-property-infos-ifcfg-rh.xml \
 	src/libnm-client-impl/nm-property-infos-keyfile.xml \
 	src/libnm-client-impl/nm-property-infos-nmcli.xml \
-	src/libnm-client-impl/nm-settings-docs-gir.xml \
+	src/libnm-client-impl/nm-settings-docs-gir-dbus.xml \
+	src/libnm-client-impl/nm-settings-docs-gir-ifcfg-rh.xml \
+	src/libnm-client-impl/nm-settings-docs-gir-keyfile.xml \
+	src/libnm-client-impl/nm-settings-docs-gir-nmcli.xml \
 	src/libnmc-setting/settings-docs-input.xml \
 	$(NULL)
 
@@ -2096,7 +2099,7 @@ src/libnm-client-impl/nm-property-infos-%.xml: tools/generate-docs-nm-property-i
 		$@ \
 		$(wordlist 3,1000,$^)
 
-src/libnm-client-impl/nm-settings-docs-gir.xml: tools/generate-docs-nm-settings-docs-gir.py src/libnm-client-impl/NM-1.0.gir src/libnm-client-impl/NM-1.0.typelib src/libnm-client-impl/libnm.la $(libnm_docs_sources)
+src/libnm-client-impl/nm-settings-docs-gir-%.xml: tools/generate-docs-nm-settings-docs-gir.py src/libnm-client-impl/NM-1.0.gir src/libnm-client-impl/NM-1.0.typelib src/libnm-client-impl/libnm.la $(libnm_docs_sources)
 	$(AM_V_GEN) \
 	export GI_TYPELIB_PATH=$(abs_builddir)/src/libnm-client-impl$${GI_TYPELIB_PATH:+:$$GI_TYPELIB_PATH}; \
 	export LD_LIBRARY_PATH=$(abs_builddir)/src/libnm-client-impl/.libs$${LD_LIBRARY_PATH:+:$$LD_LIBRARY_PATH}; \
@@ -2104,9 +2107,10 @@ src/libnm-client-impl/nm-settings-docs-gir.xml: tools/generate-docs-nm-settings-
 	"$(PYTHON)" \
 	$(srcdir)/tools/generate-docs-nm-settings-docs-gir.py \
 		--gir $(builddir)/src/libnm-client-impl/NM-1.0.gir \
-		--output $@
+		--output $@ \
+		--target $(patsubst nm-settings-docs-gir-%.xml,%,$(notdir $@))
 
-man/nm-settings-docs-nmcli.xml: src/nmcli/gen-metadata-nm-settings-nmcli.xml src/libnm-client-impl/nm-property-infos-nmcli.xml src/libnm-client-impl/nm-settings-docs-gir.xml tools/generate-docs-nm-settings-docs-merge.py man/common.ent
+man/nm-settings-docs-nmcli.xml: src/nmcli/gen-metadata-nm-settings-nmcli.xml src/libnm-client-impl/nm-property-infos-nmcli.xml src/libnm-client-impl/nm-settings-docs-gir-nmcli.xml tools/generate-docs-nm-settings-docs-merge.py man/common.ent
 	$(AM_V_GEN) \
 		"$(PYTHON)" \
 		"$(srcdir)/tools/generate-docs-nm-settings-docs-merge.py" \
@@ -2115,10 +2119,10 @@ man/nm-settings-docs-nmcli.xml: src/nmcli/gen-metadata-nm-settings-nmcli.xml src
 		"$<" \
 		$(wordlist 1,3,$^)
 
-src/libnmc-setting/settings-docs-input.xml: src/libnm-client-impl/nm-property-infos-nmcli.xml src/libnm-client-impl/nm-settings-docs-gir.xml tools/generate-docs-nm-settings-docs-merge.py
+src/libnmc-setting/settings-docs-input.xml: src/libnm-client-impl/nm-property-infos-nmcli.xml src/libnm-client-impl/nm-settings-docs-gir-nmcli.xml tools/generate-docs-nm-settings-docs-merge.py
 	$(AM_V_GEN) "$(PYTHON)" $(srcdir)/tools/generate-docs-nm-settings-docs-merge.py $@ $(wordlist 1,2,$^)
 
-man/nm-settings-docs-%.xml: src/libnm-client-impl/nm-property-infos-%.xml src/libnm-client-impl/nm-settings-docs-gir.xml tools/generate-docs-nm-settings-docs-merge.py man/common.ent
+man/nm-settings-docs-%.xml: src/libnm-client-impl/nm-property-infos-%.xml src/libnm-client-impl/nm-settings-docs-gir-%.xml tools/generate-docs-nm-settings-docs-merge.py man/common.ent
 	$(AM_V_GEN) "$(PYTHON)" $(srcdir)/tools/generate-docs-nm-settings-docs-merge.py $@ $(wordlist 1,2,$^)
 
 
