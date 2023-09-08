@@ -9746,10 +9746,16 @@ activate_stage1_device_prepare(NMDevice *self)
     master = nm_active_connection_get_master(active);
     if (master) {
         if (nm_active_connection_get_state(master) >= NM_ACTIVE_CONNECTION_STATE_DEACTIVATING) {
+            NMDevice           *master_device  = nm_active_connection_get_device(master);
+            NMDeviceStateReason failure_reason = NM_DEVICE_STATE_REASON_DEPENDENCY_FAILED;
+
             _LOGD(LOGD_DEVICE, "master connection is deactivating");
-            nm_device_state_changed(self,
-                                    NM_DEVICE_STATE_FAILED,
-                                    NM_DEVICE_STATE_REASON_DEPENDENCY_FAILED);
+
+            if (master_device && NM_DEVICE_GET_PRIVATE(master_device)->queued_act_request) {
+                /* if the controller is going to activate again, don't block this device */
+                failure_reason = NM_DEVICE_STATE_REASON_NONE;
+            }
+            nm_device_state_changed(self, NM_DEVICE_STATE_FAILED, failure_reason);
             return;
         }
         /* If the master connection is ready for slaves, attach ourselves */
