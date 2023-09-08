@@ -676,9 +676,9 @@ _nm_l3cfg_emit_signal_notify_l3cd_changed(NML3Cfg              *self,
 /*****************************************************************************/
 
 static void
-_l3_changed_configs_set_dirty(NML3Cfg *self)
+_l3_changed_configs_set_dirty(NML3Cfg *self, const char *reason)
 {
-    _LOGT("IP configuration changed (mark dirty)");
+    _LOGT("IP configuration changed (mark dirty): %s", reason);
     self->priv.p->changed_configs_configs   = TRUE;
     self->priv.p->changed_configs_acd_state = TRUE;
 }
@@ -1795,7 +1795,7 @@ _l3_acd_nacd_instance_ensure_retry_cb(gpointer user_data)
 
     nm_clear_g_source_inst(&self->priv.p->nacd_instance_ensure_retry);
 
-    _l3_changed_configs_set_dirty(self);
+    _l3_changed_configs_set_dirty(self, "nacd retry");
     nm_l3cfg_commit(self, NM_L3_CFG_COMMIT_TYPE_AUTO);
     return G_SOURCE_REMOVE;
 }
@@ -1818,7 +1818,7 @@ _l3_acd_nacd_instance_reset(NML3Cfg *self, NMTernary start_timer, gboolean acd_d
 
     switch (start_timer) {
     case NM_TERNARY_FALSE:
-        _l3_changed_configs_set_dirty(self);
+        _l3_changed_configs_set_dirty(self, "nacd reset");
         nm_l3cfg_commit_on_idle_schedule(self, NM_L3_CFG_COMMIT_TYPE_AUTO);
         break;
     case NM_TERNARY_TRUE:
@@ -2333,7 +2333,7 @@ _nm_printf(5, 6) static void _l3_acd_data_state_set_full(NML3Cfg         *self,
     if (changed && allow_commit) {
         /* The availability of an address just changed (and we are instructed to
          * trigger a new commit). Do it. */
-        _l3_changed_configs_set_dirty(self);
+        _l3_changed_configs_set_dirty(self, "acd state changed");
         nm_l3cfg_commit_on_idle_schedule(self, NM_L3_CFG_COMMIT_TYPE_AUTO);
     }
 }
@@ -3563,7 +3563,7 @@ nm_l3cfg_add_config(NML3Cfg              *self,
     nm_assert(l3_config_data->acd_defend_type_confdata == acd_defend_type);
 
     if (changed) {
-        _l3_changed_configs_set_dirty(self);
+        _l3_changed_configs_set_dirty(self, "configuration added");
         nm_l3cfg_commit_on_idle_schedule(self, NM_L3_CFG_COMMIT_TYPE_AUTO);
     }
 
@@ -3600,7 +3600,7 @@ _l3cfg_remove_config(NML3Cfg              *self,
             continue;
         }
 
-        _l3_changed_configs_set_dirty(self);
+        _l3_changed_configs_set_dirty(self, "configuration removed");
         _l3_config_datas_remove_index_fast(self->priv.p->l3_config_datas, idx);
         changed = TRUE;
         if (l3cd) {
