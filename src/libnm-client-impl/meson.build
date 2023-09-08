@@ -175,6 +175,9 @@ if enable_introspection
   endif
   ld_library_path = meson.current_build_dir() + ld_library_path
 
+  gen_infos_cmd = join_paths(meson.source_root(), 'tools', 'generate-docs-nm-property-infos.py')
+  gen_gir_cmd = join_paths(meson.source_root(), 'tools', 'generate-docs-nm-settings-docs-gir.py')
+
   names = [ 'dbus', 'nmcli', 'keyfile' ]
   if enable_ifcfg_rh
     names += [ 'ifcfg-rh' ]
@@ -182,29 +185,29 @@ if enable_introspection
   foreach name: names
     t_infos = custom_target(
       'nm-property-infos-' + name + '.xml',
-      input: [libnm_gir[0]] + libnm_core_settings_sources,
+      input: [gen_infos_cmd, libnm_gir[0]] + libnm_core_settings_sources,
       output: 'nm-property-infos-' + name + '.xml',
       command: [
         python.path(),
-        join_paths(meson.source_root(), 'tools', 'generate-docs-nm-property-infos.py'),
+        gen_infos_cmd,
         name,
         '@OUTPUT@',
-        '@INPUT@'
-      ],
+        libnm_gir[0]
+      ] + libnm_core_settings_sources,
     )
 
     t_gir = custom_target(
       'nm-settings-docs-gir-' + name + '.xml',
-      input: libnm_gir[0],
+      input: [gen_gir_cmd, libnm_gir[0]],
       output: 'nm-settings-docs-gir-' + name + '.xml',
       command: [
         'env',
         'GI_TYPELIB_PATH=' + gi_typelib_path,
         'LD_LIBRARY_PATH=' + ld_library_path,
         python.path(),
-        join_paths(meson.source_root(), 'tools', 'generate-docs-nm-settings-docs-gir.py'),
+        gen_gir_cmd,
         '--lib-path', meson.current_build_dir(),
-        '--gir', '@INPUT@',
+        '--gir', libnm_gir[0],
         '--output', '@OUTPUT@',
         '--target', name
       ],
