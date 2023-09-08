@@ -10398,11 +10398,8 @@ _dev_ipmanual_check_ready(NMDevice *self)
         }
     }
 
-    flags = NM_L3CFG_CHECK_READY_FLAGS_NONE;
-    if (has_carrier) {
-        flags |= NM_L3CFG_CHECK_READY_FLAGS_IP4_ACD_READY;
-        flags |= NM_L3CFG_CHECK_READY_FLAGS_IP6_DAD_READY;
-    }
+    flags = NM_L3CFG_CHECK_READY_FLAGS_IP4_ACD_READY;
+    flags |= NM_L3CFG_CHECK_READY_FLAGS_IP6_DAD_READY;
 
     for (IS_IPv4 = 0; IS_IPv4 < 2; IS_IPv4++) {
         const int addr_family = IS_IPv4 ? AF_INET : AF_INET6;
