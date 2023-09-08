@@ -3281,7 +3281,7 @@ nm_l3cfg_commit_on_idle_schedule(NML3Cfg *self, NML3CfgCommitType commit_type)
     if (self->priv.p->commit_on_idle_source) {
         if (self->priv.p->commit_on_idle_type < commit_type) {
             /* For multiple calls, we collect the maximum "commit-type". */
-            _LOGT("commit on idle (scheduled) (update to %s)",
+            _LOGT("schedule commit on idle (upgrade type to %s)",
                   _l3_cfg_commit_type_to_string(commit_type,
                                                 sbuf_commit_type,
                                                 sizeof(sbuf_commit_type)));
@@ -3290,7 +3290,7 @@ nm_l3cfg_commit_on_idle_schedule(NML3Cfg *self, NML3CfgCommitType commit_type)
         return FALSE;
     }
 
-    _LOGT("commit on idle (scheduled) (%s)",
+    _LOGT("schedule commit on idle (%s)",
           _l3_cfg_commit_type_to_string(commit_type, sbuf_commit_type, sizeof(sbuf_commit_type)));
     self->priv.p->commit_on_idle_source = nm_g_idle_add_source(_l3_commit_on_idle_cb, self);
     self->priv.p->commit_on_idle_type   = commit_type;
