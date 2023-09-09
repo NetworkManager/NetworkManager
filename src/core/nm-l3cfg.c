@@ -3052,14 +3052,15 @@ handle_start_defending:
 }
 
 static void
-_l3_acd_data_process_changes(NML3Cfg *self)
+_l3_acd_data_process_changes(NML3Cfg *self, gboolean do_prune_acd_data)
 {
     gboolean acd_is_pending = FALSE;
     gboolean acd_busy       = FALSE;
     AcdData *acd_data;
     gint64   now_msec = 0;
 
-    _l3_acd_data_prune(self, FALSE);
+    if (do_prune_acd_data)
+        _l3_acd_data_prune(self, FALSE);
 
     c_list_for_each_entry (acd_data, &self->priv.p->acd_lst_head, acd_lst) {
         _l3_acd_data_state_change(self,
@@ -3772,7 +3773,8 @@ _l3cfg_update_combined_config(NML3Cfg               *self,
                               gboolean               to_commit,
                               gboolean               reapply,
                               const NML3ConfigData **out_old /* transfer reference */,
-                              gboolean              *out_changed_combined_l3cd)
+                              gboolean              *out_changed_combined_l3cd,
+                              gboolean              *out_do_prune_acd_data)
 {
     nm_auto_unref_l3cd const NML3ConfigData *l3cd_commited_old    = NULL;
     nm_auto_unref_l3cd const NML3ConfigData *l3cd_old             = NULL;
@@ -3788,6 +3790,7 @@ _l3cfg_update_combined_config(NML3Cfg               *self,
     nm_assert(!out_old || !*out_old);
 
     NM_SET_OUT(out_changed_combined_l3cd, FALSE);
+    NM_SET_OUT(out_do_prune_acd_data, FALSE);
 
     if (!self->priv.p->changed_configs_configs) {
         if (!self->priv.p->changed_configs_acd_state)
@@ -3837,6 +3840,7 @@ _l3cfg_update_combined_config(NML3Cfg               *self,
     } else {
         _l3_acd_data_add_all(self, l3_config_datas_arr, l3_config_datas_len, reapply);
         self->priv.p->changed_configs_acd_state = FALSE;
+        NM_SET_OUT(out_do_prune_acd_data, TRUE);
     }
 
     if (l3_config_datas_len > 0) {
@@ -4973,6 +4977,8 @@ _l3_commit(NML3Cfg *self, NML3CfgCommitType commit_type, gboolean is_idle)
     gboolean                                 is_sticky_update      = FALSE;
     char                                     sbuf_ct[30];
     gboolean                                 changed_combined_l3cd;
+    gboolean                                 do_prune_acd_data;
+
 
     g_return_if_fail(NM_IS_L3CFG(self));
     nm_assert(NM_IN_SET(commit_type,
@@ -5026,7 +5032,8 @@ _l3_commit(NML3Cfg *self, NML3CfgCommitType commit_type, gboolean is_idle)
                                   TRUE,
                                   commit_type == NM_L3_CFG_COMMIT_TYPE_REAPPLY,
                                   &l3cd_old,
-                                  &changed_combined_l3cd);
+                                  &changed_combined_l3cd,
+                                  &do_prune_acd_data);
 
     _nm_l3cfg_emit_signal_notify_simple(self, NM_L3_CONFIG_NOTIFY_TYPE_PRE_COMMIT);
 
@@ -5037,7 +5044,7 @@ _l3_commit(NML3Cfg *self, NML3CfgCommitType commit_type, gboolean is_idle)
 
     _l3_commit_mptcp(self, commit_type);
 
-    _l3_acd_data_process_changes(self);
+    _l3_acd_data_process_changes(self, do_prune_acd_data);
 
     nm_assert(self->priv.p->commit_reentrant_count == 1);
     self->priv.p->commit_reentrant_count--;
@@ -5239,7 +5246,7 @@ nm_l3cfg_get_combined_l3cd(NML3Cfg *self, gboolean get_commited)
     if (get_commited)
         return self->priv.p->combined_l3cd_commited;
 
-    _l3cfg_update_combined_config(self, FALSE, FALSE, NULL, NULL);
+    _l3cfg_update_combined_config(self, FALSE, FALSE, NULL, NULL, NULL);
     return self->priv.p->combined_l3cd_merged;
 }
 
