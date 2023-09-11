@@ -277,7 +277,7 @@ typedef struct {
 struct _NMMetaPropertyTypData {
     union {
         struct {
-            GType (*get_gtype)(void);
+            GType (*get_gtype)(void); /* note: only allowed for int/uint properties */
             int                                 min;
             int                                 max;
             const struct _NMUtilsEnumValueInfo *value_infos_get; /* nicks for get function */

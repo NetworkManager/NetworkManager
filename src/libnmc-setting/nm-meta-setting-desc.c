@@ -1071,21 +1071,19 @@ _get_fcn_gobject_secret_flags(ARGS_GET_FCN)
 static gconstpointer
 _get_fcn_gobject_enum(ARGS_GET_FCN)
 {
-    GType                                gtype            = 0;
-    nm_auto_unref_gtypeclass GTypeClass *gtype_class      = NULL;
-    nm_auto_unref_gtypeclass GTypeClass *gtype_prop_class = NULL;
-    const NMUtilsEnumValueInfo          *value_infos      = NULL;
-    gboolean                             has_gtype        = FALSE;
-    nm_auto_unset_gvalue GValue          gval             = G_VALUE_INIT;
-    gint64                               v;
-    gboolean                             format_numeric             = FALSE;
-    gboolean                             format_numeric_hex         = FALSE;
-    gboolean                             format_numeric_hex_unknown = FALSE;
-    gboolean                             format_text                = FALSE;
-    gboolean                             format_text_l10n           = FALSE;
-    gs_free char                        *s                          = NULL;
-    char                                 s_numeric[64];
-    GParamSpec                          *pspec;
+    GType                       gtype       = 0;
+    const NMUtilsEnumValueInfo *value_infos = NULL;
+    gboolean                    has_gtype   = FALSE;
+    nm_auto_unset_gvalue GValue gval        = G_VALUE_INIT;
+    gint64                      v;
+    gboolean                    format_numeric             = FALSE;
+    gboolean                    format_numeric_hex         = FALSE;
+    gboolean                    format_numeric_hex_unknown = FALSE;
+    gboolean                    format_text                = FALSE;
+    gboolean                    format_text_l10n           = FALSE;
+    gs_free char               *s                          = NULL;
+    char                        s_numeric[64];
+    GParamSpec                 *pspec;
 
     RETURN_UNSUPPORTED_GET_TYPE();
 
@@ -1141,50 +1139,32 @@ _get_fcn_gobject_enum(ARGS_GET_FCN)
     pspec = g_object_class_find_property(G_OBJECT_GET_CLASS(setting), property_info->property_name);
     g_return_val_if_fail(pspec, NULL);
 
+    if (has_gtype) {
+        /* if the property is already enum, don't set get_gtype: it's redundant and error prone */
+        g_return_val_if_fail(NM_IN_SET(pspec->value_type, G_TYPE_INT, G_TYPE_UINT), FALSE);
+    } else {
+        gtype = pspec->value_type;
+    }
+
+    g_return_val_if_fail(G_TYPE_IS_ENUM(gtype) || G_TYPE_IS_FLAGS(gtype), NULL);
+
     g_value_init(&gval, pspec->value_type);
     g_object_get_property(G_OBJECT(setting), property_info->property_name, &gval);
     NM_SET_OUT(out_is_default, g_param_value_defaults(pspec, &gval));
 
-    if (pspec->value_type == G_TYPE_INT
-        || (G_TYPE_IS_CLASSED(pspec->value_type)
-            && G_IS_ENUM_CLASS(
-                (gtype_prop_class ?: (gtype_prop_class = g_type_class_ref(pspec->value_type)))))) {
-        if (pspec->value_type == G_TYPE_INT) {
-            if (!has_gtype)
-                g_return_val_if_reached(NULL);
-            v = g_value_get_int(&gval);
-        } else
-            v = g_value_get_enum(&gval);
-    } else if (pspec->value_type == G_TYPE_UINT
-               || (G_TYPE_IS_CLASSED(pspec->value_type)
-                   && G_IS_FLAGS_CLASS(
-                       (gtype_prop_class
-                            ?: (gtype_prop_class = g_type_class_ref(pspec->value_type)))))) {
-        if (pspec->value_type == G_TYPE_UINT) {
-            if (!has_gtype)
-                g_return_val_if_reached(NULL);
-            v = g_value_get_uint(&gval);
-        } else
-            v = g_value_get_flags(&gval);
-    } else
+    if (pspec->value_type == G_TYPE_INT)
+        v = g_value_get_int(&gval);
+    else if (pspec->value_type == G_TYPE_UINT)
+        v = g_value_get_uint(&gval);
+    else if (G_TYPE_IS_ENUM(pspec->value_type))
+        v = g_value_get_enum(&gval);
+    else if (G_TYPE_IS_FLAGS(pspec->value_type))
+        v = g_value_get_flags(&gval);
+    else
         g_return_val_if_reached(NULL);
 
-    if (!has_gtype) {
-        gtype       = pspec->value_type;
-        gtype_class = g_steal_pointer(&gtype_prop_class);
-    }
-
-    nm_assert(({
-        nm_auto_unref_gtypeclass GTypeClass *t = NULL;
-
-        (G_TYPE_IS_CLASSED(gtype) && (t = g_type_class_ref(gtype))
-         && (G_IS_ENUM_CLASS(t) || G_IS_FLAGS_CLASS(t)));
-    }));
-
     if (format_numeric && !format_text) {
-        s = format_numeric_hex
-                    || (format_numeric_hex_unknown
-                        && !G_IS_ENUM_CLASS(gtype_class ?: (gtype_class = g_type_class_ref(gtype))))
+        s = format_numeric_hex || (format_numeric_hex_unknown && !G_TYPE_IS_ENUM(gtype))
                 ? g_strdup_printf("0x%" G_GINT64_MODIFIER "x", v)
                 : g_strdup_printf("%" G_GINT64_FORMAT, v);
         RETURN_STR_TO_FREE(g_steal_pointer(&s));
@@ -1201,9 +1181,7 @@ _get_fcn_gobject_enum(ARGS_GET_FCN)
     if (!format_numeric)
         RETURN_STR_TO_FREE(g_steal_pointer(&s));
 
-    if (format_numeric_hex
-        || (format_numeric_hex_unknown
-            && !G_IS_ENUM_CLASS(gtype_class ?: (gtype_class = g_type_class_ref(gtype)))))
+    if (format_numeric_hex || (format_numeric_hex_unknown && !G_TYPE_IS_ENUM(gtype)))
         nm_sprintf_buf(s_numeric, "0x%" G_GINT64_MODIFIER "x", v);
     else
         nm_sprintf_buf(s_numeric, "%" G_GINT64_FORMAT, v);
@@ -1597,14 +1575,12 @@ _set_fcn_gobject_mac(ARGS_SET_FCN)
 static gboolean
 _set_fcn_gobject_enum(ARGS_SET_FCN)
 {
-    GType                                gtype = 0;
-    GType                                gtype_prop;
-    gboolean                             has_gtype        = FALSE;
-    nm_auto_unset_gvalue GValue          gval             = G_VALUE_INIT;
-    nm_auto_unref_gtypeclass GTypeClass *gtype_prop_class = NULL;
-    nm_auto_unref_gtypeclass GTypeClass *gtype_class      = NULL;
-    gboolean                             is_flags;
-    int                                  v;
+    GType                       gtype = 0;
+    GType                       gtype_prop;
+    gboolean                    has_gtype = FALSE;
+    nm_auto_unset_gvalue GValue gval      = G_VALUE_INIT;
+    gboolean                    is_flags;
+    int                         v;
 
     if (_SET_FCN_DO_RESET_DEFAULT_WITH_SUPPORTS_REMOVE(property_info, modifier, value))
         return _gobject_property_reset_default(setting, property_info->property_name);
@@ -1618,17 +1594,15 @@ _set_fcn_gobject_enum(ARGS_SET_FCN)
 
     gtype_prop = _gobject_property_get_gtype(G_OBJECT(setting), property_info->property_name);
 
-    if (has_gtype && NM_IN_SET(gtype_prop, G_TYPE_INT, G_TYPE_UINT) && G_TYPE_IS_CLASSED(gtype)
-        && (gtype_prop_class = g_type_class_ref(gtype))
-        && ((is_flags = G_IS_FLAGS_CLASS(gtype_prop_class)) || G_IS_ENUM_CLASS(gtype_prop_class))) {
-        /* valid */
-    } else if (!has_gtype && G_TYPE_IS_CLASSED(gtype_prop)
-               && (gtype_prop_class = g_type_class_ref(gtype_prop))
-               && ((is_flags = G_IS_FLAGS_CLASS(gtype_prop_class))
-                   || G_IS_ENUM_CLASS(gtype_prop_class))) {
+    if (has_gtype) {
+        /* if the property is already enum, don't set get_gtype: it's redundant and error prone */
+        g_return_val_if_fail(NM_IN_SET(gtype_prop, G_TYPE_INT, G_TYPE_UINT), FALSE);
+    } else {
         gtype = gtype_prop;
-    } else
-        g_return_val_if_reached(FALSE);
+    }
+
+    g_return_val_if_fail(G_TYPE_IS_FLAGS(gtype) || G_TYPE_IS_ENUM(gtype), FALSE);
+    is_flags = G_TYPE_IS_FLAGS(gtype);
 
     if (!_nm_utils_enum_from_str_full(
             gtype,
@@ -1649,9 +1623,7 @@ _set_fcn_gobject_enum(ARGS_SET_FCN)
                                                                               v);
     }
 
-    gtype_class = g_type_class_ref(gtype);
-
-    if (G_IS_FLAGS_CLASS(gtype_class) && !_SET_FCN_DO_SET_ALL(modifier, value)) {
+    if (is_flags && !_SET_FCN_DO_SET_ALL(modifier, value)) {
         nm_auto_unset_gvalue GValue int_value = {};
         guint                       v_flag;
 
@@ -1670,13 +1642,10 @@ _set_fcn_gobject_enum(ARGS_SET_FCN)
         g_value_set_int(&gval, v);
     else if (gtype_prop == G_TYPE_UINT)
         g_value_set_uint(&gval, v);
-    else if (is_flags) {
-        nm_assert(G_IS_FLAGS_CLASS(gtype_prop_class));
+    else if (is_flags)
         g_value_set_flags(&gval, v);
-    } else {
-        nm_assert(G_IS_ENUM_CLASS(gtype_prop_class));
+    else
         g_value_set_enum(&gval, v);
-    }
 
     if (!nm_g_object_set_property(G_OBJECT(setting), property_info->property_name, &gval, NULL))
         goto fail;
