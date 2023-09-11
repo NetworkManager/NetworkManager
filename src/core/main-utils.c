@@ -174,7 +174,7 @@ nm_main_utils_ensure_not_running_pidfile(const char *pidfile)
 
     errno = 0;
     pid   = strtol(contents, NULL, 10);
-    if (pid <= 0 || pid > 65536 || errno)
+    if (pid <= 0 || errno)
         return;
 
     nm_clear_g_free(&contents);
