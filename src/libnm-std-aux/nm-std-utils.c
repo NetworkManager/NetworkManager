@@ -92,3 +92,43 @@ out_huge:
     }
     return SIZE_MAX;
 }
+
+/*****************************************************************************/
+
+/**
+ * _nm_strerror_r:
+ * @errsv: the errno passed to strerror_r()
+ * @buf: the string buffer, must be non-null
+ * @buf_size: the size of the buffer, must be positive.
+ *
+ * A wrapper around strerror_r(). Does little else, aside clearing up the
+ * confusion about the different versions of the function.
+ *
+ * errno is preserved.
+ *
+ * Returns: the error string. This is either a static strong or @buf. It
+ *   is not guaranteed to be @buf.
+ */
+const char *
+_nm_strerror_r(int errsv, char *buf, size_t buf_size)
+{
+    NM_AUTO_PROTECT_ERRNO(errsv2);
+    char *buf2;
+
+    nm_assert(buf);
+    nm_assert(buf_size > 0);
+
+#if (!defined(__GLIBC__) && !defined(__UCLIBC__)) || ((_POSIX_C_SOURCE >= 200112L) && !_GNU_SOURCE)
+    /* XSI-compliant */
+    if (strerror_r(errsv, buf, buf_size) != 0) {
+        snprintf(buf, buf_size, "Unspecified errno %d", errsv);
+    }
+    buf2 = buf;
+#else
+    /* GNU-specific */
+    buf2 = strerror_r(errsv, buf, buf_size);
+#endif
+
+    nm_assert(buf2);
+    return buf2;
+}

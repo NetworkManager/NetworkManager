@@ -810,7 +810,7 @@ sett_conn_changed(NMSettingsConnection   *sett_conn,
             nm_log_dbg(LOGD_WIFI,
                        "iwd: profile at %s not removed: %s (%i)",
                        orig_full_path,
-                       strerror(errno),
+                       nm_strerror_native(errno),
                        errno);
 
         removed = TRUE;
@@ -1431,7 +1431,7 @@ try_delete_file:
     if (g_remove(full_path) == 0)
         _LOGD("IWD profile at %s removed", full_path);
     else if (errno != ENOENT)
-        _LOGD("IWD profile at %s not removed: %s (%i)", full_path, strerror(errno), errno);
+        _LOGD("IWD profile at %s not removed: %s (%i)", full_path, nm_strerror_native(errno), errno);
 }
 
 static void

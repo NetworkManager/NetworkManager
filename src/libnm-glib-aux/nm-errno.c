@@ -6,6 +6,7 @@
 #include "libnm-glib-aux/nm-default-glib-i18n-lib.h"
 
 #include "nm-errno.h"
+#include "libnm-std-aux/nm-std-utils.h"
 
 /*****************************************************************************/
 
@@ -100,26 +101,10 @@ nm_strerror(int nmerr)
 const char *
 nm_strerror_native_r(int errsv, char *buf, gsize buf_size)
 {
-    char *buf2;
+    NM_AUTO_PROTECT_ERRNO(errsv2);
+    const char *buf2;
 
-    nm_assert(buf);
-    nm_assert(buf_size > 0);
-
-#if (!defined(__GLIBC__) && !defined(__UCLIBC__)) || ((_POSIX_C_SOURCE >= 200112L) && !_GNU_SOURCE)
-    /* XSI-compliant */
-    {
-        int errno_saved = errno;
-
-        if (strerror_r(errsv, buf, buf_size) != 0) {
-            g_snprintf(buf, buf_size, "Unspecified errno %d", errsv);
-            errno = errno_saved;
-        }
-        buf2 = buf;
-    }
-#else
-    /* GNU-specific */
-    buf2 = strerror_r(errsv, buf, buf_size);
-#endif
+    buf2 = _nm_strerror_r(errsv, buf, buf_size);
 
     /* like g_strerror(), ensure that the error message is UTF-8. */
     if (!g_get_charset(NULL) && !g_utf8_validate(buf2, -1, NULL)) {
