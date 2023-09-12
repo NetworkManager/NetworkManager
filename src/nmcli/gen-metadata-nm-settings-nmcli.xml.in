@@ -620,7 +620,7 @@
     <setting name="ip-tunnel" >
         <property name="mode"
                   alias="mode"
-                  nmcli-description="The tunneling mode, for example NM_IP_TUNNEL_MODE_IPIP (1) or NM_IP_TUNNEL_MODE_GRE (2)." />
+                  nmcli-description="The tunneling mode. Valid values: ipip (1), gre (2), sit (3), isatap (4), vti (5), ip6ip6 (6), ipip6 (7), ip6gre (8), vti6 (9), gretap (10) and ip6gretap (11)" />
         <property name="parent"
                   alias="dev"
                   nmcli-description="If given, specifies the parent interface name or parent connection UUID the new device will be bound to so that tunneled packets will only be routed via that interface." />
@@ -641,7 +641,7 @@
         <property name="output-key"
                   nmcli-description="The key used for tunnel output packets; the property is valid only for certain tunnel modes (GRE, IP6GRE). If empty, no key is used." />
         <property name="encapsulation-limit"
-                  nmcli-description="How many additional levels of encapsulation are permitted to be prepended to packets. This property applies only to IPv6 tunnels. To disable this option, add NM_IP_TUNNEL_FLAG_IP6_IGN_ENCAP_LIMIT (0x1) to ip-tunnel flags." />
+                  nmcli-description="How many additional levels of encapsulation are permitted to be prepended to packets. This property applies only to IPv6 tunnels. To disable this option, add 0x1 (ip6-ign-encap-limit) to ip-tunnel flags." />
         <property name="flow-label"
                   nmcli-description="The flow label to assign to tunnel packets. This property applies only to IPv6 tunnels." />
         <property name="fwmark"
@@ -649,7 +649,7 @@
         <property name="mtu"
                   nmcli-description="If non-zero, only transmit packets of the specified size or smaller, breaking larger packets up into multiple fragments." />
         <property name="flags"
-                  nmcli-description="Tunnel flags. Currently, the following values are supported: NM_IP_TUNNEL_FLAG_IP6_IGN_ENCAP_LIMIT (0x1), NM_IP_TUNNEL_FLAG_IP6_USE_ORIG_TCLASS (0x2), NM_IP_TUNNEL_FLAG_IP6_USE_ORIG_FLOWLABEL (0x4), NM_IP_TUNNEL_FLAG_IP6_MIP6_DEV (0x8), NM_IP_TUNNEL_FLAG_IP6_RCV_DSCP_COPY (0x10), NM_IP_TUNNEL_FLAG_IP6_USE_ORIG_FWMARK (0x20). They are valid only for IPv6 tunnels." />
+                  nmcli-description="Tunnel flags. Currently, the following values are supported: 0x1 (ip6-ign-encap-limit), 0x2 (ip6-use-orig-tclass), 0x4 (ip6-use-orig-flowlabel), 0x8 (ip6-mip6-dev), 0x10 (ip6-rcv-dscp-copy) and 0x20 (ip6-use-orig-fwmark). They are valid only for IPv6 tunnels." />
     </setting>
     <setting name="ipv4" >
         <property name="method"
