@@ -1431,7 +1431,10 @@ try_delete_file:
     if (g_remove(full_path) == 0)
         _LOGD("IWD profile at %s removed", full_path);
     else if (errno != ENOENT)
-        _LOGD("IWD profile at %s not removed: %s (%i)", full_path, nm_strerror_native(errno), errno);
+        _LOGD("IWD profile at %s not removed: %s (%i)",
+              full_path,
+              nm_strerror_native(errno),
+              errno);
 }
 
 static void
