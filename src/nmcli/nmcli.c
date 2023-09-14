@@ -481,7 +481,7 @@ check_colors(NmcColorOption color_option, char **out_palette_str)
         return FALSE;
     }
 
-    if (color_option == NMC_USE_COLOR_AUTO && g_getenv("NO_COLOR")) {
+    if (color_option == NMC_USE_COLOR_AUTO && nm_str_not_empty(g_getenv("NO_COLOR"))) {
         /* https://no-color.org/ */
         return FALSE;
     }
