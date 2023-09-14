@@ -489,7 +489,9 @@ check_colors(NmcColorOption color_option, char **out_palette_str)
     term = g_getenv("TERM");
 
     if (color_option == NMC_USE_COLOR_AUTO) {
-        if (nm_streq0(term, "dumb") || !isatty(STDOUT_FILENO))
+        if (nm_str_not_empty(g_getenv("CLICOLOR_FORCE"))) {
+            color_option = NMC_USE_COLOR_YES;
+        } else if (nm_streq0(term, "dumb") || !isatty(STDOUT_FILENO))
             return FALSE;
     }
 
