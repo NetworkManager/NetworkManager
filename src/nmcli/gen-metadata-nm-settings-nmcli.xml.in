@@ -1070,6 +1070,9 @@
                   values="0 - 4294967295" />
     </setting>
     <setting name="generic" >
+        <property name="device-handler"
+                  nmcli-description="Name of the device handler that will be invoked to add and delete the device for this connection. The name can only contain ASCII alphanumeric characters and &apos;-&apos;, &apos;_&apos;, &apos;.&apos;. It cannot start with &apos;.&apos;. See the NetworkManager-dispatcher(8) man page for more details about how to write the device handler. By setting this property the generic connection becomes &quot;virtual&quot;, meaning that it can be activated without an existing device; the device will be created at the time the connection is started by invoking the device-handler."
+                  format="string" />
     </setting>
     <setting name="gsm" >
         <property name="auto-config"

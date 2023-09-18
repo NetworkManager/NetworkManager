@@ -172,6 +172,35 @@
             looking at file <filename>/run/NetworkManager/resolv.conf</filename>
         </para></listitem>
       </varlistentry>
+      <varlistentry>
+        <term><varname>device-add</varname></term>
+        <listitem>
+          <para>
+            This action is called when a connection of type <literal>generic</literal>
+            has the <literal>generic.device-handler</literal> property set. The property
+            indicates the name of a dispatcher script to be executed in directory
+            <filename>/{etc,usr/lib}/NetworkManager/dispatcher.d/device</filename>. Note
+            that differently from other actions, only one script is executed.
+          </para>
+          <para>
+            The script needs to perform any action needed to create the device
+            for the generic connection. On successful termination, the script
+            returns zero. Otherwise, it returns a non-zero value to indicate an
+            error.
+          </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><varname>device-delete</varname></term>
+        <listitem>
+          <para>
+            This action is the counterpart of <literal>device-add</literal> and
+            is called to delete the device for a generic connection. All the
+            aspects described for <literal>device-add</literal> also apply to
+            this action.
+          </para>
+        </listitem>
+      </varlistentry>
     </variablelist>
     <para>
       The environment contains more information about the interface and the connection.

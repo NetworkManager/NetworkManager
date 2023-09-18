@@ -27,11 +27,16 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_GENERIC_SETTING_NAME "generic"
 
+#define NM_SETTING_GENERIC_DEVICE_HANDLER "device-handler"
+
 typedef struct _NMSettingGenericClass NMSettingGenericClass;
 
 GType nm_setting_generic_get_type(void);
 
 NMSetting *nm_setting_generic_new(void);
+
+NM_AVAILABLE_IN_1_46
+const char *nm_setting_generic_get_device_handler(NMSettingGeneric *setting);
 
 G_END_DECLS
 

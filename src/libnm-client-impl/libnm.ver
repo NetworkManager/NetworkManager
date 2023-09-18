@@ -1959,6 +1959,7 @@ global:
 	nm_setting_connection_get_autoconnect_ports;
 	nm_setting_connection_get_controller;
 	nm_setting_connection_get_port_type;
+	nm_setting_generic_get_device_handler;
 	nm_setting_get_enum_property_type;
 	nm_setting_hsr_get_multicast_spec;
 	nm_setting_hsr_get_port1;
