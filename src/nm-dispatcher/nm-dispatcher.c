@@ -416,10 +416,10 @@ script_watch_cb(GPid pid, int status, gpointer user_data)
     }
 
     if (script->result == DISPATCH_RESULT_SUCCESS) {
-        _LOG_S_T(script, "complete");
+        _LOG_S_T(script, "complete: process succeeded");
     } else {
         script->result = DISPATCH_RESULT_FAILED;
-        _LOG_S_W(script, "complete: failed with %s", script->error);
+        _LOG_S_W(script, "complete: process failed with %s", script->error);
     }
 
     g_spawn_close_pid(script->pid);
