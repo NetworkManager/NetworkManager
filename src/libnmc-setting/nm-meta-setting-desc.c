@@ -5923,6 +5923,15 @@ static const NMMetaPropertyInfo *const property_infos_ETHTOOL[] = {
 };
 
 #undef  _CURRENT_NM_META_SETTING_TYPE
+#define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_GENERIC
+static const NMMetaPropertyInfo *const property_infos_GENERIC[] = {
+    PROPERTY_INFO_WITH_DESC (NM_SETTING_GENERIC_DEVICE_HANDLER,
+        .property_type =                &_pt_gobject_string,
+    ),
+    NULL
+};
+
+#undef  _CURRENT_NM_META_SETTING_TYPE
 #define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_GSM
 static const NMMetaPropertyInfo *const property_infos_GSM[] = {
     PROPERTY_INFO_WITH_DESC (NM_SETTING_GSM_AUTO_CONFIG,
@@ -8664,7 +8673,7 @@ const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[] = {
             NM_META_SETTING_VALID_PART_ITEM (ETHTOOL,               FALSE),
         ),
     ),
-    SETTING_INFO_EMPTY (GENERIC,
+    SETTING_INFO (GENERIC,
         .valid_parts = NM_META_SETTING_VALID_PARTS (
             NM_META_SETTING_VALID_PART_ITEM (CONNECTION,            TRUE),
             NM_META_SETTING_VALID_PART_ITEM (GENERIC,               TRUE),

@@ -1296,6 +1296,10 @@
     <setting name="generic"
              gtype="NMSettingGeneric"
              >
+        <property name="device-handler"
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
     </setting>
     <setting name="gsm"
              gtype="NMSettingGsm"
