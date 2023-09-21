@@ -1,0 +1,6 @@
+[Match]
+Driver=virtio_net
+
+[Link]
+NamePolicy=
+Name=host_net

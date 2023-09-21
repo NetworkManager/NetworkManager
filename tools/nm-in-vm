@@ -1,0 +1,441 @@
+#!/bin/bash
+
+set -e
+
+###############################################################################
+# Script to create a virtual machine for testing NetworkManager.
+#
+# Commands:
+#  - build: build a new VM, named "$VM" ("nm")
+#        Args: the name of the OS to build, from `virt-builder --list` (Fedora by default)
+#  - run: start the VM.
+#  - exec: run bash inside the VM, connecting via ssh (this is the default).
+#        Args: command to execute inside the VM (then, ssh session won't open).
+#  - stop: stop the VM.
+#  - reexec: stop and exec.
+#  - clean: stop the VM and delete the image.
+#
+# Options (they MUST go before the command):
+#  -v | --vm: name of the VM to run the command on (by default 'nm').
+#             This allows to have more than one VM at the same time
+#  -h | --help: show this text
+#
+# NetworkManager directories:
+#
+#   The NetworkManager root directory is mounted in the VM as a filesystem share.
+#   You can run `make install` and run tests.
+#
+#   Create a symlink ./.git/NetworkManager-ci, to share the CI directory too.
+#
+# Required packages:
+#
+#   Your host needs libvirt, libvirt-nss and guestfs-tools. To access the VM with
+#   `ssh root@$VM`, configure /etc/nsswitch.conf as explained in
+#   https://libvirt.org/nss.html (otherwise, `nm-in-vm exec` won't work, either).
+#
+# Prepare for testing:
+#
+#   There is a script nm-env-prepare.sh to generate a net1 interface for testing.
+#   Currently NM-ci requires a working eth1, so use this before running a CI test:
+#   `nm-env-prepare.sh --prefix eth -i 1 && sleep 1 && nmcli device connect eth1`
+#
+# Additional VMs:
+#
+#   By default, the VM named 'nm' is created, but additional ones can be created:
+#   $ nm-in-vm -v nm2 build
+#   $ nm-in-vm -v nm2 exec
+#   $ nm-in-vm -v nm2 stop
+#
+# Choosing a different OS:
+#
+#   By default Fedora is used, but you can choose a different OS. Most from the
+#   list `virt-builder --list` will work.
+#   $ nm-in-vm build debian-12
+#   $ nm-in-vm exec
+#   $ nm-in-vm stop
+###############################################################################
+
+# Check for libvirt
+if ! (command -v virsh && command -v virt-builder && command -v virt-install) &>/dev/null; then
+    echo "libvirt and guestfs-tools are required" >&2
+    exit 1
+fi
+
+# set defaults if user didn't define these values
+VM=${VM:="nm"}
+OS_VERSION=${OS_VERSION:=}
+RAM=${RAM:=2048}
+IMAGE_SIZE=${IMAGE_SIZE=20G}
+ROOT_PASSWORD=${ROOT_PASSWORD:=nm}
+LIBVIRT_POOL=${LIBVIRT_POOL:=default}  # only useful if BASEDIR_VM_IMAGE is empty
+BASEDIR_VM_IMAGE=${BASEDIR_VM_IMAGE:=}
+BASEDIR_NM=${BASEDIR_NM:=}
+BASEDIR_NM_CI=${BASEDIR_NM_CI:=}
+HOST_BRIDGE=${HOST_BRIDGE:=virbr0}
+SSH_LOG_LEVEL=${SSH_LOG_LEVEL:=ERROR}
+
+if [[ -z $OS_VERSION ]]; then
+    # if running Fedora, select same version, else select latest Fedora
+    if grep -q "^ID=fedora$" /etc/os-release 2>/dev/null ; then
+        OS_VERSION="$(sed -n 's/^VERSION_ID=\([0-9]\+\)$/fedora-\1/p' /etc/os-release)"
+    else
+        OS_VERSION=$(virt-builder --list | grep '^fedora' | sort | tail -n 1 | cut -d" " -f 1)
+    fi
+fi
+
+if [[ -z $BASEDIR_NM ]]; then
+    BASEDIR_NM="$(readlink -f "$(dirname -- "$BASH_SOURCE")/..")"
+fi
+
+if [[ -z $BASEDIR_NM_CI && -d "$BASEDIR_NM/.git/NetworkManager-ci" ]]; then
+    BASEDIR_NM_CI="$(readlink -f "$BASEDIR_NM/.git/NetworkManager-ci")"
+fi
+
+if [[ -z $BASEDIR_VM_IMAGE ]]; then
+    libvirt_pool_path_xml=$(virsh pool-dumpxml $LIBVIRT_POOL | grep -F '<path>')
+    if [[ $libvirt_pool_path_xml =~ \<path\>(.*)\</path\> ]]; then
+        BASEDIR_VM_IMAGE=${BASH_REMATCH[1]}
+    else
+        BASEDIR_VM_IMAGE=$BASEDIR_NM
+    fi
+fi
+
+##############################################################################
+
+do_build() {
+    local t=$'\t'
+    local ram
+    local size
+    local os_variant
+    local nm_ci_build_args
+    local nm_ci_install_args
+    local extra_pkgs
+    local install_pkgs
+    local install_files
+    local gen_files=(
+        "bin-nm-env-prepare.sh:/usr/bin/nm-env-prepare.sh"
+        "bin-nm-deploy.sh:/usr/bin/nm-deploy.sh"
+        "etc-motd-vm:/etc/motd"
+        "etc-bashrc.my:/etc/bashrc.my"
+        "nm-90-my.conf:/etc/NetworkManager/conf.d/90-my.conf"
+        "nm-95-user.conf:/etc/NetworkManager/conf.d/95-user.conf"
+        "home-bash_history:/root/.bash_history"
+        "home-gdbinit:/root/.gdbinit"
+        "home-gdb_history:/root/.gdb_history"
+        "home-behaverc:/root/.behaverc"
+        "systemd-10-host-net.link:/etc/systemd/network/10-host-net.link"
+        "systemd-dhcp-host.service:/etc/systemd/system/dhcp-host.service"
+        "systemd-20-nm.override:/etc/systemd/system/NetworkManager.service.d/20-nm.override"
+    )
+
+    (( $# > 1 )) && die "build only accepts one argument"
+    (( $# > 0 )) && OS_VERSION="$1"
+    os_variant=${OS_VERSION//-/}  # virt-install --os-variant value, deduced from OS_VERSION
+    os_variant=${os_variant/centosstream/centos-stream}
+
+    if [[ ! $VM =~ ^[a-zA-Z0-9\-]*$ ]]; then
+        echo "Invalid VM name '$VM', use only letters, numbers and '-' character"
+        return 1
+    fi
+
+    if vm_is_installed; then
+        echo "The virtual machine '$VM' is already installed, skiping build" >&2
+        return 0
+    fi
+
+    if vm_image_exists; then
+        echo "The image '$basedir_vm_image/$vm_image_file' already exists, skiping build" >&2
+        return 0
+    fi
+
+    if [[ -n $IMAGE_SIZE ]]; then
+        size=(--size "$IMAGE_SIZE")
+    fi
+
+    if [[ -n $BASEDIR_NM_CI ]]; then
+        nm_ci_build_args=(
+            --mkdir "$BASEDIR_NM_CI"
+            --link "$BASEDIR_NM_CI:/NetworkManager-ci"
+            --append-line "/etc/fstab:/NM_CI${t}$BASEDIR_NM_CI${t}9p${t}trans=virtio,rw,_netdev${t}0${t}0"
+        )
+        nm_ci_install_args=(
+            --filesystem "$BASEDIR_NM_CI,/NM_CI"
+        )
+    fi
+
+    if [[ $OS_VERSION =~ fedora || $OS_VERSION =~ centosstream ]]; then
+        extra_pkgs=(bash-completion bind-utils ccache clang-tools-extra cryptsetup cscope \'dbus\*\'
+            dhcp-client dhcp-relay dhcp-server dnsmasq dracut-network ethtool firewalld  gcc gdb
+            glibc-langpack-pl hostapd intltool iproute ipsec-tools iputils iscsi-initiator-utils
+            iw ldns libreswan libselinux-utils libyaml-devel logrotate lvm2 mdadm mlocate net-tools
+            NetworkManager NetworkManager-openvpn NetworkManager-ovs NetworkManager-ppp
+            NetworkManager-pptp NetworkManager-strongswan NetworkManager-team NetworkManager-vpnc
+            NetworkManager-wifi nfs-utils nispor nmap-ncat nmstate nss-tools openvpn
+            \'openvswitch2\*\' perl-IO-Pty-Easy perl-IO-Tty procps psmisc python3-behave
+            python3-black python3-devel python3-netaddr python3-pip python3-pyte python3-pyyaml
+            qemu-kvm radvd rp-pppoe scsi-target-utils strace systemd tcpdump tcpreplay tuned
+            /usr/bin/debuginfo-install /usr/bin/pytest /usr/bin/python vim wireguard-tools
+            wireshark-cli)
+
+        if [[ $OS_VERSION == centosstream-8 ]]; then
+            install_pkgs=(
+                --run-command "dnf -y copr enable nmstate/nm-build-deps"
+                --run-command "dnf config-manager -y --set-enabled powertools"
+                --install epel-release,epel-next-release
+            )
+        elif [[ $OS_VERSION == centosstream-9 ]]; then
+            install_pkgs=(
+                --run-command "dnf -y copr enable nmstate/nm-build-deps"
+                --run-command "dnf config-manager -y --set-enabled crb"
+                --install epel-release,epel-next-release
+            )
+        fi
+
+        install_pkgs+=(
+            --update
+            --run "$BASEDIR_NM/contrib/fedora/REQUIRED_PACKAGES"
+            --run-command "dnf install -y --skip-broken ${extra_pkgs[*]}"
+            --run-command "pip3 install --user behave_html_formatter"
+            --run-command "dnf debuginfo-install -y --skip-broken NetworkManager \
+                \$(ldd /usr/sbin/NetworkManager \
+                    | sed -n 's/.* => \(.*\) (0x[0-9A-Fa-f]*)\$/\1/p' \
+                    | xargs -n1 readlink -f)"
+        )
+    elif [[ $OS_VERSION =~ debian || $OS_VERSION =~ ubuntu ]]; then
+        extra_pkgs=(bash-completion bind9-utils ccache clang-tools cryptsetup cscope \'dbus\*\'
+            isc-dhcp-client isc-dhcp-relay isc-dhcp-server dnsmasq dracut-network ethtool firewalld
+            gcc gdb hostapd intltool iproute2 \'iputils-\*\' iw libldns3 libreswan
+            libyaml-dev logrotate lvm2 mdadm mlocate net-tools network-manager
+            network-manager-openvpn network-manager-pptp network-manager-strongswan
+            network-manager-vpnc nfs-common ncat libnss3-tools openvpn \'openvswitch2\*\' procps
+            psmisc python3-behave black python3-dev python3-netaddr python3-pip python3-pyte
+            python3-pretty-yaml qemu-kvm radvd pppoe strace systemd tcpdump tcpreplay tuned
+            debian-goodies python3-pytest python3 vim wireguard-tools tshark)
+
+        if [[ $OS_VERSION =~ debian ]]; then
+            install_pkgs=(
+                --run-command "echo deb http://deb.debian.org/debian-debug/ \$(lsb_release -cs)-debug main >> /etc/apt/sources.list.d/debug.list"
+                --run-command "echo deb http://deb.debian.org/debian-debug/ \$(lsb_release -cs)-proposed-updates-debug main >> /etc/apt/sources.list.d/debug.list"
+            )
+        elif [[ $OS_VERSION =~ ubuntu ]]; then
+            install_pkgs=(
+                --run-command "echo deb http://ddebs.ubuntu.com \$(lsb_release -cs) main restricted universe multiverse >> /etc/apt/sources.list.d/debug.list"
+                --run-command "echo deb http://ddebs.ubuntu.com \$(lsb_release -cs)-updates main restricted universe multiverse >> /etc/apt/sources.list.d/debug.list"
+                --run-command "echo deb http://ddebs.ubuntu.com \$(lsb_release -cs)-proposed main restricted universe multiverse >> /etc/apt/sources.list.d/debug.list"
+            )
+        fi
+
+        install_pkgs+=(
+            --update
+            --upload "$BASEDIR_NM/contrib/debian/REQUIRED_PACKAGES:/tmp/REQUIRED_PACKAGES"
+            --run-command "/bin/bash /tmp/REQUIRED_PACKAGES" # using only --run fails
+            --run-command "apt-get install -y \$(find-dbgsym-packages NetworkManager 2>/dev/null)"
+            --edit "/etc/locale.gen:s/^# pl_PL.UTF-8/pl_PL.UTF-8/"
+            --run-command "locale-gen"
+        )
+
+        for p in "${extra_pkgs[@]}"; do
+            install_pkgs+=(--run-command "apt-get install -y $p || :")
+        done
+    fi
+
+    install_files=(--upload "$BASEDIR_NM/contrib/scripts/NM-log:/usr/bin/NM-log")
+    for f in "${gen_files[@]}"; do
+        gen_file "${f%:*}"
+        install_files+=(--upload "$datadir/data-$f")
+    done
+
+    echo "Creating VM"
+    echo " - VM NAME: $VM"
+    echo " - OS VERSION: $OS_VERSION"
+    echo " - SIZE: $([[ -n $IMAGE_SIZE ]] && echo "$IMAGE_SIZE" || echo "don't resize")"
+    echo " - RAM: $RAM"
+    echo " - ROOT PASSWORD: $ROOT_PASSWORD"
+    echo " - IMAGE PATH: $basedir_vm_image/$vm_image_file"
+    echo " - NM DIR: $BASEDIR_NM"
+    echo " - NM CI DIR: $([[ -n $BASEDIR_NM_CI ]] && echo "$BASEDIR_NM_CI" || echo '<none>')"
+    echo " - HOST BRIDGE: $HOST_BRIDGE"
+
+    if [[ $OS_VERSION =~ centosstream ]]; then
+        echo "WARNING: NetworkManager repositories can't be shared with the guest" \
+             "(CentOS Stream doesn't support 9P filesystem). You'll need to manually" \
+             "share by NFS or make a new clone of the repository inside the guest." >&2
+    fi
+    
+    virt-builder "$OS_VERSION" \
+        --output "$basedir_vm_image/$vm_image_file" \
+        "${size[@]}" \
+        --format qcow2 \
+        --arch x86_64 \
+        --hostname "$VM" \
+        --root-password password:nm \
+        --ssh-inject root \
+        --append-line "/etc/ssh/sshd_config:PermitRootLogin yes" \
+        --run-command "ssh-keygen -A" \
+        --mkdir "$BASEDIR_NM" \
+        --link "$BASEDIR_NM:/NetworkManager" \
+        --append-line "/etc/fstab:/NM${t}$BASEDIR_NM${t}9p${t}trans=virtio,rw,_netdev${t}0${t}0" \
+        "${nm_ci_build_args[@]}" \
+        "${install_pkgs[@]}" \
+        --mkdir "/etc/systemd/system/NetworkManager.service.d" \
+        --mkdir "/etc/systemd/network" \
+        "${install_files[@]}" \
+        --write "/var/lib/NetworkManager/secret_key:nm-in-container-secret-key" \
+        --chmod "700:/var/lib/NetworkManager" \
+        --chmod "600:/var/lib/NetworkManager/secret_key" \
+        --edit "/etc/systemd/journald.conf:s/.*RateLimitBurst=.*/RateLimitBurst=0/" \
+        --delete "/etc/NetworkManager/system-connections/*" \
+        --append-line "/etc/bashrc:. /etc/bashrc.my" \
+        --run-command "updatedb" \
+        --append-line "/etc/dhcp/dhclient.conf:send host-name = gethostname();" \
+        --firstboot-command "systemctl enable --now dhcp-host"
+
+    virt-install \
+        --name "$VM" \
+        --ram "$RAM" \
+        --disk "path=$basedir_vm_image/$vm_image_file,format=qcow2" \
+        --os-variant "$os_variant" \
+        --filesystem "$BASEDIR_NM,/NM" \
+        "${nm_ci_install_args[@]}" \
+        --network "bridge=$HOST_BRIDGE" \
+        --import \
+        --autoconsole none \
+        --noreboot
+}
+
+do_clean() {
+    vm_is_running && virsh shutdown "$VM" &>/dev/null
+    vm_is_installed && virsh undefine "$VM" &>/dev/null
+    rm -f "$basedir_vm_image/$vm_image_file"
+}
+
+do_run() {
+    vm_is_installed || do_build
+    vm_is_running && return 0
+    virsh start "$VM" >&2
+}
+
+do_exec() {
+    do_run
+
+    local failed=0
+    while ! ping -c 1 "$VM" &>/dev/null; do
+        failed=$((failed + 1))
+        (( failed < 15 )) || die "Timeout trying to ping the VM"
+        sleep 1
+    done
+
+    ssh \
+        -o StrictHostKeyChecking=no \
+        -o UserKnownHostsFile=/dev/null \
+        -o LogLevel="$SSH_LOG_LEVEL" \
+        "root@$VM" "$@"
+}
+
+do_reexec() {
+    vm_is_running && do_stop
+
+    local waited=0
+    while vm_is_running; do
+        waited=$((waited + 1))
+        (( waited < 30 )) || die "Timeout waiting for VM shutdown"
+        sleep 1
+    done
+
+    do_exec "$@"
+}
+
+do_stop() {
+    vm_is_running && virsh shutdown "$VM" >&2
+}
+
+###############################################################################
+
+vm_image_exists() {
+    [[ -f "$basedir_vm_image/$vm_image_file" ]] || return 1
+}
+
+vm_is_installed() {
+    virsh list --all --name | grep --fixed-strings --line-regexp "$VM" &>/dev/null || return 1
+}
+
+vm_is_running() {
+    virsh list --name | grep --fixed-strings --line-regexp "$VM" &>/dev/null || return 1
+}
+
+gen_file() {
+    sed "s|{{BASEDIR_NM}}|$BASEDIR_NM|g" "$datadir/$1.in" > "$datadir/data-$1"
+    if [[ $1 =~ ^bin- ]]; then
+        chmod 755 "$datadir/data-$1"
+    else
+        chmod 644 "$datadir/data-$1"
+    fi
+}
+
+usage() {
+    echo "nm-in-vm [options] build|run|exec|stop|reexec|clean [command_args]"
+}
+
+help() {
+    usage
+    echo
+    awk '/^####*$/ { if (on) exit; on=-1; } !/^####*$/ { if (on) print(substr($0,3)) }' "$BASH_SOURCE"
+    echo
+}
+
+die() {
+    echo "$1" >&2
+    exit 1
+}
+
+###############################################################################
+
+cmd=
+
+while (( $# > 0 )); do
+    case "$1" in
+        build|run|exec|reexec|stop|clean)
+            cmd="$1"
+            shift
+            ;;
+        -h|--help)
+            help
+            exit 0
+            ;;
+        -v|--vm)
+            (( $# > 1 )) || die "--vm requires one argument"
+            VM="$2"
+            shift 2
+            ;;
+        --)
+            shift
+            break
+            ;;
+        *)
+            [[ $cmd != "" ]] && break
+            echo "Invalid argument '$1'" >&2
+            echo $(usage) >&2
+            exit 1
+            ;;
+    esac
+done
+
+# compute some values that depends on user selectable variables
+mkdir -p "$BASEDIR_VM_IMAGE"
+basedir_vm_image=$(readlink -f "$BASEDIR_VM_IMAGE")
+vm_image_file="$VM.qcow2"
+datadir="$BASEDIR_NM/tools/nm-guest-data"
+
+if [[ $cmd == "" ]]; then
+    cmd=exec
+fi
+
+if [[ $UID == 0 ]]; then
+    die "cannot run as root"
+fi
+
+if [[ $cmd != exec && $cmd != reexec && $cmd != build && $# != 0 ]]; then
+    die "Extra arguments are only allowed with exec|reexec|build command"
+fi
+
+do_$cmd "$@"

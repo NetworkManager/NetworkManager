@@ -1,0 +1,2 @@
+run
+run --debug 2>&1 | tee /tmp/nm-log.txt

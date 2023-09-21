@@ -1,0 +1,4 @@
+if test "$SHOW_MOTD" != 0; then
+  cat /etc/motd
+  export SHOW_MOTD=0
+fi

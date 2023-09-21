@@ -1,0 +1,43 @@
+alias m="make -j 8"
+alias n="ninja -C build"
+
+alias l='ls -l --color=auto'
+
+ulimit -c unlimited
+
+export G_DEBUG=fatal-warnings
+
+unset DEBUGINFOD_URLS
+
+export NMCI_DEBUG=1
+
+Clean() {
+    systemctl stop NetworkManager
+    rm -i -rf /run/NetworkManager
+    nm-env-prepare.sh
+}
+
+Cat-Timestamp() {
+    while IFS=$'\n' read line; do
+        printf "[%s]: %s\n" "1689938340.403232924" "$line"
+    done
+}
+
+Journald-clear() {
+    rm -rf /var/log/journal/????????????????????????????????/*
+    systemctl restart systemd-journald
+}
+
+nm_run_gdb() {
+    systemctl stop NetworkManager.service
+    gdb --args "${1:-/opt/test/sbin/NetworkManager}" --debug
+}
+
+nm_run_normal() {
+    systemctl stop NetworkManager.service
+    "${1:-/opt/test/sbin/NetworkManager}" --debug 2>&1 | tee /tmp/nm-log.txt
+}
+
+. /usr/share/git-core/contrib/completion/git-prompt.sh
+PS1="\[\033[01;36m\]\u@\h\[\033[00m\]:\t:\[\033[01;34m\]\w\$(__git_ps1 \" \[\033[01;36m\](%s)\[\033[00m\]\")\[\033[00m\]$ "
+export GIT_PS1_SHOWDIRTYSTATE=1
