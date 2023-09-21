@@ -703,11 +703,30 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
      *   route2=7.7.0.0/16
      * ---end---
      */
+    /* ---keyfile---
+     * property: routes (attributes)
+     * variable: route1_options, route2_options, ...
+     * format: key=val[,key=val...]
+     * description: Attributes defined for the routes, if any. The supported
+     *   attributes are explained in ipv4.routes entry in `man nm-settings-nmcli`.
+     * example: route1_options=mtu=1000,onlink=true
+     * ---end---
+     */
     /* ---ifcfg-rh---
      * property: routes
      * variable: ADDRESS1, NETMASK1, GATEWAY1, METRIC1, OPTIONS1, ...
      * description: List of static routes. They are not stored in ifcfg-* file,
      *   but in route-* file instead.
+     * ---end---
+     */
+
+    /* ---keyfile---
+     * property: routing-rules
+     * variable: routing-rule1, routing-rule2, ...
+     * format: routing rule string
+     * description: Routing rules as defined with `ip rule add`, but with mandatory
+     *    fixed priority.
+     * example: routing-rule1=priority 5 from 192.167.4.0/24 table 45
      * ---end---
      */
 
