@@ -62,40 +62,40 @@ foreach man: mans
 endforeach
 
 if enable_introspection
+  merge_cmd = join_paths(meson.source_root(), 'tools', 'generate-docs-nm-settings-docs-merge.py')
 
   name = 'dbus'
   nm_settings_docs_xml_dbus = custom_target(
     'nm-settings-docs-' + name + '.xml',
-    input: [nm_settings_docs_xml_gir, nm_property_infos_xml[name]],
+    input: [merge_cmd, nm_property_infos_xml[name], nm_settings_docs_xml_gir[name]],
     output: 'nm-settings-docs-' + name + '.xml',
     command: [
       python.path(),
-      join_paths(meson.source_root(), 'tools', 'generate-docs-nm-settings-docs-merge.py'),
+      merge_cmd,
       '@OUTPUT@',
       nm_property_infos_xml[name],
-      nm_settings_docs_xml_gir,
+      nm_settings_docs_xml_gir[name]
     ],
   )
 
   name = 'nmcli'
   nm_settings_docs_xml_nmcli = custom_target(
     'nm-settings-docs-' + name + '.xml',
-    input: [nm_settings_docs_xml_gir, nm_property_infos_xml[name]],
+    input: [merge_cmd, nm_property_infos_xml[name], gen_metadata_nm_settings_nmcli_xml, nm_settings_docs_xml_gir[name]],
     output: 'nm-settings-docs-' + name + '.xml',
     command: [
       python.path(),
-      join_paths(meson.source_root(), 'tools', 'generate-docs-nm-settings-docs-merge.py'),
+      merge_cmd,
       '@OUTPUT@',
       '--only-properties-from',
       gen_metadata_nm_settings_nmcli_xml,
       nm_property_infos_xml[name],
       gen_metadata_nm_settings_nmcli_xml,
-      nm_settings_docs_xml_gir,
+      nm_settings_docs_xml_gir[name]
     ],
   )
 
   nm_settings_docs_xml = {
-    'gir':   nm_settings_docs_xml_gir,
     'dbus':  nm_settings_docs_xml_dbus,
     'nmcli':  nm_settings_docs_xml_nmcli,
   }
@@ -112,12 +112,13 @@ if enable_introspection
 
   foreach man: mans
     output = man[0] + '.xml'
+    template = join_paths(meson.current_source_dir(), man[0] + '.xsl')
 
     input = custom_target(
       output,
-      input: man[2],
+      input: [template, man[2]],
       output: output,
-      command: xsltproc_options + [join_paths(meson.current_source_dir(), man[0] + '.xsl'), '@INPUT@'],
+      command: xsltproc_options + '@INPUT@',
     )
     content_files += input.full_path()
 

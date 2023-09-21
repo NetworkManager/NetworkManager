@@ -183,6 +183,29 @@ typedef enum {
     NM_META_PROPERTY_TYPE_MAC_MODE_WPAN,
 } NMMetaPropertyTypeMacMode;
 
+typedef enum _nm_packed {
+    NM_META_PROPERTY_TYPE_FORMAT_UNDEF = 0,
+    NM_META_PROPERTY_TYPE_FORMAT_INT,
+    NM_META_PROPERTY_TYPE_FORMAT_STRING,
+    NM_META_PROPERTY_TYPE_FORMAT_ENUM,
+    NM_META_PROPERTY_TYPE_FORMAT_SECRET_FLAGS,
+    NM_META_PROPERTY_TYPE_FORMAT_BOOL,
+    NM_META_PROPERTY_TYPE_FORMAT_TERNARY,
+    NM_META_PROPERTY_TYPE_FORMAT_MAC,
+    NM_META_PROPERTY_TYPE_FORMAT_IPV4,
+    NM_META_PROPERTY_TYPE_FORMAT_IPV6,
+    NM_META_PROPERTY_TYPE_FORMAT_MTU,
+    NM_META_PROPERTY_TYPE_FORMAT_BYTES,
+    NM_META_PROPERTY_TYPE_FORMAT_PATH,
+    NM_META_PROPERTY_TYPE_FORMAT_ETHTOOL,
+    NM_META_PROPERTY_TYPE_FORMAT_MULTILIST,
+    NM_META_PROPERTY_TYPE_FORMAT_OBJLIST,
+    NM_META_PROPERTY_TYPE_FORMAT_OPTIONLIST,
+    NM_META_PROPERTY_TYPE_FORMAT_DCB,
+    NM_META_PROPERTY_TYPE_FORMAT_DCB_BOOL,
+    NM_META_PROPERTY_TYPE_FORMAT_DCB_FLAGS,
+} NMMetaPropertyTypeFormat;
+
 typedef struct _NMMetaEnvironment           NMMetaEnvironment;
 typedef struct _NMMetaType                  NMMetaType;
 typedef struct _NMMetaAbstractInfo          NMMetaAbstractInfo;
@@ -231,6 +254,8 @@ struct _NMMetaPropertyType {
                                        const char                   *text,
                                        gboolean                     *out_complete_filename,
                                        char                       ***out_to_free);
+
+    NMMetaPropertyTypeFormat doc_format;
 
     /* Whether set_fcn() supports the '-' modifier. That is, whether the property
      * is a list type. */
@@ -350,6 +375,7 @@ struct _NMMetaPropertyTypData {
     const char *const                 *values_static;
     const NMMetaPropertyTypDataNested *nested;
     NMMetaPropertyTypFlags             typ_flags;
+    NMMetaPropertyTypeFormat           list_items_doc_format;
 };
 
 typedef enum {
@@ -478,6 +504,16 @@ extern const NMMetaSettingValidPartItem *const nm_meta_setting_info_valid_parts_
 const NMMetaSettingValidPartItem *const *
 nm_meta_setting_info_valid_parts_for_slave_type(const char  *slave_type,
                                                 const char **out_slave_name);
+
+gboolean nm_meta_property_int_get_range(const NMMetaPropertyInfo *property_info,
+                                        NMMetaSignUnsignInt64    *out_min,
+                                        NMMetaSignUnsignInt64    *out_max);
+
+gboolean nm_meta_property_enum_get_range(const NMMetaPropertyInfo *property_info,
+                                         int                      *out_min,
+                                         int                      *out_max);
+
+GType nm_meta_property_enum_get_type(const NMMetaPropertyInfo *property_info);
 
 /*****************************************************************************/
 
