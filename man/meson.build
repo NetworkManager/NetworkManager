@@ -118,7 +118,7 @@ if enable_introspection
       output,
       input: [template, man[2]],
       output: output,
-      command: xsltproc_options + '@INPUT@',
+      command: xsltproc_options + ['@INPUT@'],
     )
     content_files += input.full_path()
 
