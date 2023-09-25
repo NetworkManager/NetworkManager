@@ -696,10 +696,12 @@ nl80211_wiphy_info_handler(const struct nl_msg *msg, void *arg)
 
             info->caps |= _NM_WIFI_DEVICE_CAP_FREQ_VALID;
 
-            if (f->freq > 2400 && f->freq < 2500)
+            if (f->freq >= 2401 && f->freq <= 2495)
                 info->caps |= _NM_WIFI_DEVICE_CAP_FREQ_2GHZ;
-            if (f->freq > 4900 && f->freq < 6000)
+            if (f->freq >= 5150 && f->freq <= 5895)
                 info->caps |= _NM_WIFI_DEVICE_CAP_FREQ_5GHZ;
+            if (f->freq >= 5925 && f->freq <= 7125)
+                info->caps |= _NM_WIFI_DEVICE_CAP_FREQ_6GHZ;
 
             info->num_freqs++;
         }

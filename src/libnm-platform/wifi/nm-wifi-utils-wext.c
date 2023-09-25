@@ -724,8 +724,8 @@ nm_wifi_utils_wext_new(int ifindex, gboolean check_scan)
     guint32                         response_len = 0;
     struct iw_range_with_scan_capa *scan_capa_range;
     int                             i;
-    gboolean                        freq_valid = FALSE, has_5ghz = FALSE, has_2ghz = FALSE;
-    char                            ifname[IFNAMSIZ];
+    gboolean freq_valid = FALSE, has_6ghz = FALSE, has_5ghz = FALSE, has_2ghz = FALSE;
+    char     ifname[IFNAMSIZ];
 
     if (!nmp_utils_if_indextoname(ifindex, ifname)) {
         _LOGW(LOGD_PLATFORM | LOGD_WIFI, "can't determine interface name for ifindex %d", ifindex);
@@ -762,10 +762,12 @@ nm_wifi_utils_wext_new(int ifindex, gboolean check_scan)
     for (i = 0; i < wext->num_freqs; i++) {
         wext->freqs[i] = iw_freq_to_uint32(&range.freq[i]);
         freq_valid     = TRUE;
-        if (wext->freqs[i] > 2400 && wext->freqs[i] < 2500)
+        if (wext->freqs[i] >= 2401 && wext->freqs[i] <= 2495)
             has_2ghz = TRUE;
-        else if (wext->freqs[i] > 4900 && wext->freqs[i] < 6000)
+        else if (wext->freqs[i] >= 5150 && wext->freqs[i] <= 5895)
             has_5ghz = TRUE;
+        else if (wext->freqs[i] >= 5925 && wext->freqs[i] <= 7125)
+            has_6ghz = TRUE;
     }
 
     /* Check for scanning capability; cards that can't scan are not supported */
@@ -798,6 +800,8 @@ nm_wifi_utils_wext_new(int ifindex, gboolean check_scan)
         wext->parent.caps |= _NM_WIFI_DEVICE_CAP_FREQ_2GHZ;
     if (has_5ghz)
         wext->parent.caps |= _NM_WIFI_DEVICE_CAP_FREQ_5GHZ;
+    if (has_6ghz)
+        wext->parent.caps |= _NM_WIFI_DEVICE_CAP_FREQ_6GHZ;
 
     _LOGI(LOGD_PLATFORM | LOGD_WIFI, "(%s): using WEXT for Wi-Fi device control", ifname);
 

@@ -597,6 +597,12 @@ _metagen_device_detail_wifi_properties_get_fcn(NMC_META_GENERIC_INFO_GET_FCN_ARG
                 ? (NM_FLAGS_HAS(wcaps, NM_WIFI_DEVICE_CAP_FREQ_5GHZ) ? N_("yes") : N_("no"))
                 : N_("unknown"),
             get_type);
+    case NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_WIFI_PROPERTIES_6GHZ:
+        return nmc_meta_generic_get_str_i18n(
+            NM_FLAGS_HAS(wcaps, NM_WIFI_DEVICE_CAP_FREQ_VALID)
+                ? (NM_FLAGS_HAS(wcaps, NM_WIFI_DEVICE_CAP_FREQ_6GHZ) ? N_("yes") : N_("no"))
+                : N_("unknown"),
+            get_type);
     case NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_WIFI_PROPERTIES_MESH:
         return nmc_meta_generic_get_bool(NM_FLAGS_HAS(wcaps, NM_WIFI_DEVICE_CAP_MESH), get_type);
     case NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_WIFI_PROPERTIES_IBSS_RSN:
@@ -643,6 +649,9 @@ const NmcMetaGenericInfo *const
         _METAGEN_DEVICE_DETAIL_WIFI_PROPERTIES(
             NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_WIFI_PROPERTIES_5GHZ,
             "5GHZ"),
+        _METAGEN_DEVICE_DETAIL_WIFI_PROPERTIES(
+            NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_WIFI_PROPERTIES_6GHZ,
+            "6GHZ"),
         _METAGEN_DEVICE_DETAIL_WIFI_PROPERTIES(
             NMC_GENERIC_INFO_TYPE_DEVICE_DETAIL_WIFI_PROPERTIES_MESH,
             "MESH"),
