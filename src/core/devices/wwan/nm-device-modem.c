@@ -70,14 +70,17 @@ ppp_failed(NMModem *modem, guint i_reason, gpointer user_data)
 static void
 modem_prepare_result(NMModem *modem, gboolean success, guint i_reason, gpointer user_data)
 {
-    NMDeviceModem        *self   = NM_DEVICE_MODEM(user_data);
-    NMDeviceModemPrivate *priv   = NM_DEVICE_MODEM_GET_PRIVATE(self);
-    NMDevice             *device = NM_DEVICE(self);
-    NMDeviceStateReason   reason = i_reason;
+    NMDeviceModem        *self         = NM_DEVICE_MODEM(user_data);
+    NMDeviceModemPrivate *priv         = NM_DEVICE_MODEM_GET_PRIVATE(self);
+    NMDevice             *device       = NM_DEVICE(self);
+    NMDeviceStateReason   reason       = i_reason;
+    NMDeviceState         device_state = nm_device_get_state(device);
 
-    if (nm_device_get_state(device) != NM_DEVICE_STATE_PREPARE
+    if (device_state != NM_DEVICE_STATE_PREPARE
         || priv->stage1_state != NM_DEVICE_STAGE_STATE_PENDING) {
-        nm_assert_not_reached();
+        _LOGD(LOGD_MB,
+              "device no longer in prepare state when modem prepare finished ('%s')",
+              nm_device_state_to_string(device_state));
         success = FALSE;
     }
 
