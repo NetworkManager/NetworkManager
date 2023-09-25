@@ -4,11 +4,11 @@
 # Дронова Юлия <juliette.tux@gmail.com>, 2023.
 msgid ""
 msgstr ""
-"Project-Id-Version: \n"
+"Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: https://gitlab.freedesktop.org/NetworkManager/"
 "NetworkManager/issues\n"
-"POT-Creation-Date: 2023-05-26 03:27+0000\n"
-"PO-Revision-Date: 2023-05-31 17:49+0300\n"
+"POT-Creation-Date: 2023-09-23 15:26+0000\n"
+"PO-Revision-Date: 2023-09-23 20:26+0300\n"
 "Last-Translator: Aleksandr Melman <Alexmelman88@gmail.com>\n"
 "Language-Team: RU\n"
 "Language: ru\n"
@@ -17,7 +17,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
 "n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
-"X-Generator: Poedit 3.3.1\n"
+"X-Generator: Poedit 3.3.2\n"
 
 #: data/org.freedesktop.NetworkManager.policy.in.in:13
 msgid "Enable or disable system networking"
@@ -185,14 +185,14 @@ msgstr ""
 #. * as "Wired Connection" or "VPN Connection". The %d is a number
 #. * that is combined with the first argument to create a unique
 #. * connection id.
-#: src/core/NetworkManagerUtils.c:119
+#: src/core/NetworkManagerUtils.c:121
 #, c-format
 msgctxt "connection id fallback"
 msgid "%s %u"
 msgstr "%s %u"
 
 #: src/core/devices/adsl/nm-device-adsl.c:118
-#: src/libnmc-setting/nm-meta-setting-desc.c:8463
+#: src/libnmc-setting/nm-meta-setting-desc.c:8526
 msgid "ADSL connection"
 msgstr "Подключение ADSL"
 
@@ -271,7 +271,7 @@ msgid "Wired connection %d"
 msgstr "Проводное подключение %d"
 
 #: src/core/devices/nm-device-ethernet.c:1641
-#: src/libnmc-setting/nm-meta-setting-desc.c:8504
+#: src/libnmc-setting/nm-meta-setting-desc.c:8567
 msgid "Veth connection"
 msgstr "Подключение Veth"
 
@@ -284,7 +284,7 @@ msgid "Wired connection"
 msgstr "Проводное подключение"
 
 #: src/core/devices/nm-device-infiniband.c:160
-#: src/libnmc-setting/nm-meta-setting-desc.c:8477
+#: src/libnmc-setting/nm-meta-setting-desc.c:8540
 msgid "InfiniBand connection"
 msgstr "Подключение InfiniBand"
 
@@ -305,17 +305,17 @@ msgid "TUN connection"
 msgstr "Подключение TUN"
 
 #: src/core/devices/nm-device-vlan.c:380
-#: src/libnmc-setting/nm-meta-setting-desc.c:8505
+#: src/libnmc-setting/nm-meta-setting-desc.c:8568
 msgid "VLAN connection"
 msgstr "Подключение VLAN"
 
 #: src/core/devices/nm-device-vrf.c:185
-#: src/libnmc-setting/nm-meta-setting-desc.c:8507
+#: src/libnmc-setting/nm-meta-setting-desc.c:8570
 msgid "VRF connection"
 msgstr "Подключение VRF"
 
 #: src/core/devices/nm-device-vxlan.c:385
-#: src/libnmc-setting/nm-meta-setting-desc.c:8508
+#: src/libnmc-setting/nm-meta-setting-desc.c:8571
 msgid "VXLAN connection"
 msgstr "Подключение VXLAN"
 
@@ -327,7 +327,7 @@ msgstr "Подключение WPAN"
 msgid "Team connection"
 msgstr "Агрегированное (Team) подключение"
 
-#: src/core/devices/wifi/nm-device-olpc-mesh.c:112 src/nmcli/devices.c:1400
+#: src/core/devices/wifi/nm-device-olpc-mesh.c:112 src/nmcli/devices.c:1406
 msgid "Mesh"
 msgstr "Mesh"
 
@@ -569,8 +569,8 @@ msgid "Could not daemonize: %s [error %u]\n"
 msgstr "Невозможно преобразовать в фоновую службу: %s [ошибка %u]\n"
 
 #: src/core/nm-config.c:544 src/libnm-core-impl/nm-setting-ovs-bridge.c:187
-#: src/libnmc-setting/nm-meta-setting-desc.c:2200
-#: src/libnmc-setting/nm-meta-setting-desc.c:4346
+#: src/libnmc-setting/nm-meta-setting-desc.c:2184
+#: src/libnmc-setting/nm-meta-setting-desc.c:4330
 #, c-format
 msgid "'%s' is not valid"
 msgstr "Недействительное значение «%s»"
@@ -638,29 +638,29 @@ msgstr "Параметры NetworkManager"
 msgid "Show NetworkManager options"
 msgstr "Показать параметры NetworkManager"
 
-#: src/core/nm-manager.c:6733 src/libnmc-setting/nm-meta-setting-desc.c:8506
+#: src/core/nm-manager.c:6920 src/libnmc-setting/nm-meta-setting-desc.c:8569
 msgid "VPN connection"
 msgstr "Подключение VPN"
 
-#: src/core/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:5658
+#: src/core/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:5650
 #: src/libnm-client-impl/nm-device.c:1780
 #: src/libnm-core-impl/nm-connection.c:3244 src/nmtui/nm-editor-utils.c:196
 msgid "Bond"
 msgstr "Агрегированное (Bond)"
 
-#: src/core/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:5729
+#: src/core/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:5721
 #: src/libnm-client-impl/nm-device.c:1782
 #: src/libnm-core-impl/nm-connection.c:3246 src/nmtui/nm-editor-utils.c:214
 msgid "Team"
 msgstr "Агрегированное (Team)"
 
-#: src/core/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:6066
+#: src/core/settings/plugins/ifcfg-rh/nms-ifcfg-rh-reader.c:6058
 #: src/libnm-client-impl/nm-device.c:1784
 #: src/libnm-core-impl/nm-connection.c:3248 src/nmtui/nm-editor-utils.c:205
 msgid "Bridge"
 msgstr "Мост"
 
-#: src/core/settings/plugins/ifcfg-rh/tests/test-ifcfg-rh.c:9010
+#: src/core/settings/plugins/ifcfg-rh/tests/test-ifcfg-rh.c:9021
 #: src/libnm-core-impl/nm-team-utils.c:2391
 msgid "invalid json"
 msgstr "недействительный json"
@@ -907,6 +907,7 @@ msgid "Ethernet"
 msgstr "Ethernet"
 
 #: src/libnm-client-impl/nm-device.c:1762 src/nmtui/nm-editor-utils.c:160
+#: src/nmtui/nmtui-radio.c:58
 msgid "Wi-Fi"
 msgstr "Wi-Fi"
 
@@ -1015,13 +1016,13 @@ msgstr "Петлевой адрес"
 #. TRANSLATORS: Unknown reason for a device state change (NMDeviceStateReason)
 #. TRANSLATORS: Unknown reason for a connection state change (NMActiveConnectionStateReason)
 #: src/libnm-client-impl/nm-device.c:1823 src/libnmc-base/nm-client-utils.c:352
-#: src/libnmc-base/nm-client-utils.c:473
+#: src/libnmc-base/nm-client-utils.c:473 src/nmcli/utils.c:1838
 msgid "Unknown"
 msgstr "Неизвестно"
 
 #: src/libnm-client-impl/nm-device.c:1848
 msgid "Wired"
-msgstr "Проводное"
+msgstr "Ethernet"
 
 #: src/libnm-client-impl/nm-device.c:1880
 msgid "PCI"
@@ -1330,7 +1331,7 @@ msgid "ignoring invalid DNS server IPv%c address '%s'"
 msgstr "адрес IPv%c '%s' недействительного сервера DNS игнорируется"
 
 #: src/libnm-core-impl/nm-keyfile.c:1177
-#: src/libnmc-setting/nm-meta-setting-desc.c:1663
+#: src/libnmc-setting/nm-meta-setting-desc.c:1674
 #, c-format
 msgid "invalid option '%s', use one of [%s]"
 msgstr "недействительный параметр «%s»; используйте один из [%s]"
@@ -1604,8 +1605,8 @@ msgstr "может активироваться только в подключе
 
 #: src/libnm-core-impl/nm-setting-8021x.c:2825
 #: src/libnm-core-impl/nm-setting-bluetooth.c:110
-#: src/libnm-core-impl/nm-setting-infiniband.c:204
-#: src/libnm-core-impl/nm-setting-infiniband.c:216
+#: src/libnm-core-impl/nm-setting-infiniband.c:177
+#: src/libnm-core-impl/nm-setting-infiniband.c:189
 #: src/libnm-core-impl/nm-setting-ip4-config.c:234
 #: src/libnm-core-impl/nm-setting-ip4-config.c:250
 #: src/libnm-core-impl/nm-setting-ip6-config.c:303
@@ -2022,19 +2023,19 @@ msgstr "свойство может содержать только цифры"
 msgid "can't be enabled when manual configuration is present"
 msgstr "нельзя активировать в присутствии ручной конфигурации"
 
-#: src/libnm-core-impl/nm-setting-infiniband.c:242
+#: src/libnm-core-impl/nm-setting-infiniband.c:215
 msgid "Must specify a P_Key if specifying parent"
 msgstr "При указании родительского интерфейса необходимо указать P_Key"
 
-#: src/libnm-core-impl/nm-setting-infiniband.c:253
+#: src/libnm-core-impl/nm-setting-infiniband.c:226
 msgid "InfiniBand P_Key connection did not specify parent interface name"
 msgstr "InfiniBand P_Key не содержит имени родительского интерфейса"
 
-#: src/libnm-core-impl/nm-setting-infiniband.c:261
+#: src/libnm-core-impl/nm-setting-infiniband.c:234
 msgid "the values 0 and 0x8000 are not allowed"
 msgstr "значения 0 и 0x8000 не допускаются"
 
-#: src/libnm-core-impl/nm-setting-infiniband.c:289
+#: src/libnm-core-impl/nm-setting-infiniband.c:262
 #, c-format
 msgid ""
 "interface name of software infiniband device must be '%s' or unset (instead it "
@@ -2043,7 +2044,7 @@ msgstr ""
 "интерфейс программного устройства InfiniBand должно иметь имя «%s» или "
 "оставаться пустым (а не «%s»)"
 
-#: src/libnm-core-impl/nm-setting-infiniband.c:297
+#: src/libnm-core-impl/nm-setting-infiniband.c:270
 #, c-format
 msgid ""
 "interface name of software infiniband device with MAC address must be unset "
@@ -2052,7 +2053,7 @@ msgstr ""
 "имя интерфейса устройства infiniband с адресом MAC не должно быть настроено "
 "(но есть настроенное значение '%s')"
 
-#: src/libnm-core-impl/nm-setting-infiniband.c:323
+#: src/libnm-core-impl/nm-setting-infiniband.c:296
 #, c-format
 msgid "mtu can be at most %u but it is %u"
 msgstr "максимальное значение mtu может составлять %u, но указано значение %u"
@@ -2743,7 +2744,7 @@ msgstr "сценарию не хватает функции FindProxyForURL"
 #: src/libnm-core-impl/nm-setting-wired.c:953
 #: src/libnm-core-impl/nm-setting-wireless.c:1001
 #: src/libnm-core-impl/nm-setting-wireless.c:1020
-#: src/libnmc-setting/nm-meta-setting-desc.c:4295
+#: src/libnmc-setting/nm-meta-setting-desc.c:4279
 #, c-format
 msgid "'%s' is not a valid MAC address"
 msgstr "Недействительный MAC-адрес: «%s»"
@@ -3968,10 +3969,10 @@ msgstr "«%s» не входит в [%s]"
 
 #: src/libnmc-base/nm-client-utils.c:291 src/libnmc-base/nm-client-utils.c:305
 #: src/libnmc-base/nm-client-utils.c:341 src/libnmc-base/nm-client-utils.c:346
-#: src/libnmc-setting/nm-meta-setting-desc.c:1854
-#: src/libnmc-setting/nm-meta-setting-desc.c:1885
-#: src/libnmc-setting/nm-meta-setting-desc.c:2894
-#: src/libnmc-setting/nm-meta-setting-desc.c:2952 src/nmcli/common.c:1609
+#: src/libnmc-setting/nm-meta-setting-desc.c:1838
+#: src/libnmc-setting/nm-meta-setting-desc.c:1869
+#: src/libnmc-setting/nm-meta-setting-desc.c:2878
+#: src/libnmc-setting/nm-meta-setting-desc.c:2936 src/nmcli/common.c:1611
 #: src/nmcli/connections.c:79 src/nmcli/connections.c:89 src/nmcli/devices.c:485
 #: src/nmcli/devices.c:592 src/nmcli/devices.c:598 src/nmcli/general.c:30
 #: src/nmcli/general.c:85 src/nmcli/general.c:91
@@ -4041,20 +4042,20 @@ msgid "deactivating (externally)"
 msgstr "деактивация (внешняя)"
 
 #: src/libnmc-base/nm-client-utils.c:342
-#: src/libnmc-setting/nm-meta-setting-desc.c:881
-#: src/libnmc-setting/nm-meta-setting-desc.c:2886 src/nmcli/connections.c:5543
-#: src/nmcli/connections.c:7521 src/nmcli/connections.c:7522
-#: src/nmcli/devices.c:591 src/nmcli/devices.c:597 src/nmcli/devices.c:1411
-#: src/nmcli/general.c:92 src/nmcli/utils.h:313
+#: src/libnmc-setting/nm-meta-setting-desc.c:875
+#: src/libnmc-setting/nm-meta-setting-desc.c:2870 src/nmcli/connections.c:5542
+#: src/nmcli/connections.c:7520 src/nmcli/connections.c:7521
+#: src/nmcli/devices.c:591 src/nmcli/devices.c:597 src/nmcli/devices.c:1418
+#: src/nmcli/general.c:92 src/nmcli/utils.h:315
 msgid "yes"
 msgstr "да"
 
 #: src/libnmc-base/nm-client-utils.c:343
-#: src/libnmc-setting/nm-meta-setting-desc.c:881
-#: src/libnmc-setting/nm-meta-setting-desc.c:2889 src/nmcli/connections.c:5542
-#: src/nmcli/connections.c:7521 src/nmcli/connections.c:7522
-#: src/nmcli/devices.c:591 src/nmcli/devices.c:597 src/nmcli/devices.c:1411
-#: src/nmcli/general.c:93 src/nmcli/utils.h:313
+#: src/libnmc-setting/nm-meta-setting-desc.c:875
+#: src/libnmc-setting/nm-meta-setting-desc.c:2873 src/nmcli/connections.c:5541
+#: src/nmcli/connections.c:7520 src/nmcli/connections.c:7521
+#: src/nmcli/devices.c:591 src/nmcli/devices.c:597 src/nmcli/devices.c:1418
+#: src/nmcli/general.c:93 src/nmcli/utils.h:315
 msgid "no"
 msgstr "нет"
 
@@ -4448,7 +4449,7 @@ msgstr "Предопределённый ключ для %s"
 
 #: src/libnmc-base/nm-secret-agent-simple.c:270
 #: src/libnmc-base/nm-secret-agent-simple.c:357
-#: src/libnmc-setting/nm-meta-setting-desc.c:5138
+#: src/libnmc-setting/nm-meta-setting-desc.c:5146
 #: src/nmtui/nmt-8021x-fields.c:182 src/nmtui/nmt-8021x-fields.c:353
 #: src/nmtui/nmt-8021x-fields.c:457 src/nmtui/nmt-page-dsl.c:51
 #: src/nmtui/nmt-page-wifi.c:345
@@ -4464,7 +4465,7 @@ msgstr "Имя пользователя"
 #: src/libnmc-base/nm-secret-agent-simple.c:979
 #: src/libnmc-base/nm-vpn-helpers.c:144 src/libnmc-base/nm-vpn-helpers.c:148
 #: src/libnmc-base/nm-vpn-helpers.c:154 src/libnmc-base/nm-vpn-helpers.c:159
-#: src/nmcli/devices.c:4722 src/nmtui/nmt-8021x-fields.c:195
+#: src/nmcli/devices.c:4727 src/nmtui/nmt-8021x-fields.c:195
 #: src/nmtui/nmt-8021x-fields.c:373 src/nmtui/nmt-8021x-fields.c:477
 #: src/nmtui/nmt-page-dsl.c:64 src/nmtui/nmt-page-wifi.c:287
 #: src/nmtui/nmt-page-wifi.c:319 src/nmtui/nmt-page-wifi.c:358
@@ -4523,7 +4524,7 @@ msgstr "Аутентификация проводного подключения
 #: src/libnmc-base/nm-secret-agent-simple.c:887
 #, c-format
 msgid "Secrets are required to access the wired network '%s'"
-msgstr "Для доступа к проводной сети «%s» необходим секрет"
+msgstr "Для доступа к проводной сети «%s» необходимы секреты"
 
 #: src/libnmc-base/nm-secret-agent-simple.c:893
 msgid "DSL authentication"
@@ -4563,7 +4564,7 @@ msgid "MACsec PSK authentication"
 msgstr "Аутентификация MACsec PSK"
 
 #: src/libnmc-base/nm-secret-agent-simple.c:931
-#: src/libnmc-setting/nm-meta-setting-desc.c:6744
+#: src/libnmc-setting/nm-meta-setting-desc.c:6781
 msgid "MKA CAK"
 msgstr "MKA CAK"
 
@@ -4658,18 +4659,18 @@ msgstr "поле «%s» должно быть единственным"
 msgid "invalid field '%s%s%s%s%s'; %s%s%s"
 msgstr "недействительное поле «%s%s%s%s%s»; %s%s%s"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:264
-#: src/libnmc-setting/nm-meta-setting-desc.c:332
+#: src/libnmc-setting/nm-meta-setting-desc.c:258
+#: src/libnmc-setting/nm-meta-setting-desc.c:326
 #, c-format
 msgid "invalid prefix '%s'; <0-%d> allowed"
 msgstr "недействительный префикс '%s'; допускаются: <0-%d>"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:275
+#: src/libnmc-setting/nm-meta-setting-desc.c:269
 #, c-format
 msgid "invalid IP address: %s"
 msgstr "недействительный IP: %s"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:300
+#: src/libnmc-setting/nm-meta-setting-desc.c:294
 msgid ""
 "The valid syntax is: 'ip[/prefix] [next-hop] [metric] [attribute=val]... [,ip[/"
 "prefix] ...]'"
@@ -4677,171 +4678,171 @@ msgstr ""
 "Действительный синтаксис: 'ip[/prefix] [next-hop] [metric] [attribute=val]... "
 "[,ip[/prefix] ...]'"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:346
+#: src/libnmc-setting/nm-meta-setting-desc.c:340
 #, c-format
 msgid "the next hop ('%s') must be first"
 msgstr "следующий переход («%s») должен быть первым"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:356
+#: src/libnmc-setting/nm-meta-setting-desc.c:350
 #, c-format
 msgid "the metric ('%s') must be before attributes"
 msgstr "метрика («%s») должна идти до атрибутов"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:409
+#: src/libnmc-setting/nm-meta-setting-desc.c:403
 #, c-format
 msgid "invalid route: %s. %s"
 msgstr "недействительный маршрут: %s. %s"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:478
+#: src/libnmc-setting/nm-meta-setting-desc.c:472
 #, c-format
 msgid "cannot read pac-script from file '%s'"
 msgstr "не удалось прочитать pac-script из файла «%s"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:486
+#: src/libnmc-setting/nm-meta-setting-desc.c:480
 #, c-format
 msgid "file '%s' contains non-valid utf-8"
 msgstr "файл «%s» содержит недействительный utf-8"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:499
+#: src/libnmc-setting/nm-meta-setting-desc.c:493
 #, c-format
 msgid "'%s' does not contain a valid PAC Script"
 msgstr "«%s» не содержит действительный сценарий PAC"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:502
+#: src/libnmc-setting/nm-meta-setting-desc.c:496
 msgid "Not a valid PAC Script"
 msgstr "Недействительный сценарий PAC"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:554
+#: src/libnmc-setting/nm-meta-setting-desc.c:548
 #, c-format
 msgid "cannot read team config from file '%s'"
 msgstr "невозможно прочитать конфигурацию team из файла «%s»"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:562
+#: src/libnmc-setting/nm-meta-setting-desc.c:556
 #, c-format
 msgid "team config file '%s' contains non-valid utf-8"
 msgstr "файл конфигурации team «%s» содержит недействительный utf-8"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:1056
+#: src/libnmc-setting/nm-meta-setting-desc.c:1050
 msgid "auto"
 msgstr "автоматически"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:1221
+#: src/libnmc-setting/nm-meta-setting-desc.c:1193
 #, c-format
 msgid "%s (%s)"
 msgstr "%s (%s)"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:1413
-#: src/libnmc-setting/nm-meta-setting-desc.c:1421
-#: src/libnmc-setting/nm-meta-setting-desc.c:4478
+#: src/libnmc-setting/nm-meta-setting-desc.c:1447
+#: src/libnmc-setting/nm-meta-setting-desc.c:1455
+#: src/libnmc-setting/nm-meta-setting-desc.c:4462
 msgid "'%s' is out of range [%"
 msgstr "«%s» за пределами диапазона [%"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:1429
+#: src/libnmc-setting/nm-meta-setting-desc.c:1463
 #, c-format
 msgid "'%s' is not a valid number"
 msgstr "«%s» не является действительным числом"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:1485
+#: src/libnmc-setting/nm-meta-setting-desc.c:1519
 #, c-format
 msgid "'%s' is out of range [0, %u]"
 msgstr "«%s» за пределами диапазона [0, %u]"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:1532
+#: src/libnmc-setting/nm-meta-setting-desc.c:1566
 #, c-format
 msgid "'%s' is not a valid Ethernet MAC"
 msgstr "«%s» не является действительным MAC-адресом Ethernet"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:1657
+#: src/libnmc-setting/nm-meta-setting-desc.c:1668
 #, c-format
 msgid "invalid option '%s', use a combination of [%s]"
 msgstr "недействительный параметр «%s»; используйте комбинацию из [%s]"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:1821
+#: src/libnmc-setting/nm-meta-setting-desc.c:1805
 #, c-format
 msgid "%d (key)"
 msgstr "%d (ключ)"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:1823
+#: src/libnmc-setting/nm-meta-setting-desc.c:1807
 #, c-format
 msgid "%d (passphrase)"
 msgstr "%d (парольная фраза)"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:1826
+#: src/libnmc-setting/nm-meta-setting-desc.c:1810
 #, c-format
 msgid "%d (unknown)"
 msgstr "%d (неизвестно)"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:1839
+#: src/libnmc-setting/nm-meta-setting-desc.c:1823
 msgid "0 (NONE)"
 msgstr "0 (НЕТ)"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:1845
+#: src/libnmc-setting/nm-meta-setting-desc.c:1829
 msgid "REORDER_HEADERS, "
 msgstr "УПОРЯДОЧИТЬ_ЗАГОЛОВКИ, "
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:1847
+#: src/libnmc-setting/nm-meta-setting-desc.c:1831
 msgid "GVRP, "
 msgstr "GVRP, "
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:1849
+#: src/libnmc-setting/nm-meta-setting-desc.c:1833
 msgid "LOOSE_BINDING, "
 msgstr "LOOSE_BINDING, "
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:1851
+#: src/libnmc-setting/nm-meta-setting-desc.c:1835
 msgid "MVRP, "
 msgstr "MVRP, "
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:1872
+#: src/libnmc-setting/nm-meta-setting-desc.c:1856
 msgid "0 (none)"
 msgstr "0 (нет)"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:1878
+#: src/libnmc-setting/nm-meta-setting-desc.c:1862
 msgid "agent-owned, "
 msgstr "под управлением агента, "
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:1880
+#: src/libnmc-setting/nm-meta-setting-desc.c:1864
 msgid "not saved, "
 msgstr "не сохранено, "
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:1882
+#: src/libnmc-setting/nm-meta-setting-desc.c:1866
 msgid "not required, "
 msgstr "не требуется, "
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:2087
+#: src/libnmc-setting/nm-meta-setting-desc.c:2071
 #, c-format
 msgid "'%s' is not valid; use <option>=<value>"
 msgstr "«%s» не является действительным; используйте <параметр>=<значение>"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:2097
+#: src/libnmc-setting/nm-meta-setting-desc.c:2081
 #, c-format
 msgid "cannot set empty \"%s\" option"
 msgstr "свойство «%s» не может быть пустым"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:2158
+#: src/libnmc-setting/nm-meta-setting-desc.c:2142
 #, c-format
 msgid "'%u' flags are not valid; use combination of %s"
 msgstr "Флаги «%u» не являются действительными; используйте сочетание %s"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:2178
+#: src/libnmc-setting/nm-meta-setting-desc.c:2162
 #, c-format
 msgid "'%s' is not a valid number (or out of range)"
 msgstr "«%s» не является действительным числом (или находится вне диапазона)"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:2278
+#: src/libnmc-setting/nm-meta-setting-desc.c:2262
 #, c-format
 msgid "invalid IPv4 or subnet \"%s\""
 msgstr "недействительный IPv4 или подсеть \"%s\""
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:2309
+#: src/libnmc-setting/nm-meta-setting-desc.c:2293
 msgid "not a valid hex-string"
 msgstr "не является действительной шестнадцатеричной строкой"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:2327
+#: src/libnmc-setting/nm-meta-setting-desc.c:2311
 #, c-format
 msgid "'%s' is not a valid hex character"
 msgstr "«%s» не является действительным шестнадцатеричным символом"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:2415
+#: src/libnmc-setting/nm-meta-setting-desc.c:2399
 msgid ""
 "too many arguments. Please only specify a private key file and optionally a "
 "password"
@@ -4849,12 +4850,12 @@ msgstr ""
 "слишком много аргументов. Укажите только файл закрытого ключа и, по желанию, "
 "пароль"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:2532
+#: src/libnmc-setting/nm-meta-setting-desc.c:2516
 #, c-format
 msgid "failed to set bond option \"%s\""
 msgstr "не удалось наcтроить параметр связки bond «%s»"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:2580
+#: src/libnmc-setting/nm-meta-setting-desc.c:2564
 #, c-format
 msgid ""
 "Enter a list of bonding options formatted as:\n"
@@ -4885,121 +4886,121 @@ msgstr ""
 "\n"
 "Пример: mode=2,miimon=120\n"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:2687
+#: src/libnmc-setting/nm-meta-setting-desc.c:2671
 msgid "Can not change the connection type"
 msgstr "Тип подключения изменить невозможно"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:2768
+#: src/libnmc-setting/nm-meta-setting-desc.c:2752
 #, c-format
 msgid "invalid permission \"%s\""
 msgstr "недействительное полномочие «%s»"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:2868
+#: src/libnmc-setting/nm-meta-setting-desc.c:2852
 #, c-format
 msgid "the value '%s' is not a valid UUID"
 msgstr "значение «%s» не является действительным UUID"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:2939
+#: src/libnmc-setting/nm-meta-setting-desc.c:2923
 msgid "0 (disabled)"
 msgstr "0 (отключено)"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:2945
+#: src/libnmc-setting/nm-meta-setting-desc.c:2929
 msgid "enabled, "
 msgstr "включено, "
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:2947
+#: src/libnmc-setting/nm-meta-setting-desc.c:2931
 msgid "advertise, "
 msgstr "объявлять, "
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:2949
+#: src/libnmc-setting/nm-meta-setting-desc.c:2933
 msgid "willing, "
 msgstr "желающий, "
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:3038
+#: src/libnmc-setting/nm-meta-setting-desc.c:3022
 #, c-format
 msgid "'%s' is not a valid DCB flag"
 msgstr "«%s» не является действительным флагом DCB"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:3066
+#: src/libnmc-setting/nm-meta-setting-desc.c:3050
 msgid "must contain 8 comma-separated numbers"
 msgstr "должен содержать 8 чисел, через запятую"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:3081
+#: src/libnmc-setting/nm-meta-setting-desc.c:3065
 #, c-format
 msgid "'%s' not a number between 0 and %u (inclusive) or %u"
 msgstr "«%s» не является числом в диапазоне от 0 до %u (включительно) или %u"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:3088
+#: src/libnmc-setting/nm-meta-setting-desc.c:3072
 #, c-format
 msgid "'%s' not a number between 0 and %u (inclusive)"
 msgstr "«%s» не является числом в диапазоне от 0 до %u (включительно)"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:3114
+#: src/libnmc-setting/nm-meta-setting-desc.c:3098
 #, c-format
 msgid "changes will have no effect until '%s' includes 1 (enabled)"
 msgstr ""
 "изменения не вступят в силу, пока «%s» не будет включать в себя 1 (включено)"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:3146
+#: src/libnmc-setting/nm-meta-setting-desc.c:3130
 #, c-format
 msgid "bandwidth percentages must total 100%%"
 msgstr "сумма процентных частей пропускной способности должна быть равна 100%%"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:3246
-#: src/libnmc-setting/nm-meta-setting-desc.c:3255
+#: src/libnmc-setting/nm-meta-setting-desc.c:3230
+#: src/libnmc-setting/nm-meta-setting-desc.c:3239
 msgid "SIM operator ID must be a 5 or 6 number MCCMNC code"
 msgstr "Идентификатор оператора SIM должен содержать код MCCMNC из 5 или 6 цифр"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:3278
+#: src/libnmc-setting/nm-meta-setting-desc.c:3262
 #, c-format
 msgid "'%s' is not a valid IBoIP P_Key"
 msgstr "Недействительное значение IBoIP P_Key: «%s»"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:3302
+#: src/libnmc-setting/nm-meta-setting-desc.c:3286
 msgid "default"
 msgstr "по умолчанию"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:3573
+#: src/libnmc-setting/nm-meta-setting-desc.c:3557
 #, c-format
 msgid "invalid gateway address '%s'"
 msgstr "недействительный адрес шлюза «%s»"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:3725
+#: src/libnmc-setting/nm-meta-setting-desc.c:3709
 #, c-format
 msgid "'%s' is not a valid channel; use <1-13>"
 msgstr "«%s» не является действительным каналом; используйте <1-13>"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:3819
+#: src/libnmc-setting/nm-meta-setting-desc.c:3803
 msgid "The valid syntax is: vf [attribute=value]... [,vf [attribute=value]...]"
 msgstr ""
 "Действительный синтаксис: vf [attribute=value]... [,vf [attribute=value]...]"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:3845
-#: src/libnmc-setting/nm-meta-setting-desc.c:3958
+#: src/libnmc-setting/nm-meta-setting-desc.c:3829
+#: src/libnmc-setting/nm-meta-setting-desc.c:3942
 msgid "The valid syntax is: '[root | parent <handle>] [handle <handle>] <kind>'"
 msgstr ""
 "Действительный синтаксис: '[корень | родитель <handle>] [маркер <handle>] "
 "<kind>'"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:3872
+#: src/libnmc-setting/nm-meta-setting-desc.c:3856
 msgid "The valid syntax is: '<value>' or '<start>-<end>"
 msgstr "Действительный синтаксис: '<значение>' или '<начало>-<конец>"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:3902
+#: src/libnmc-setting/nm-meta-setting-desc.c:3886
 msgid "The valid syntax is: '<vid>[-<vid>] [pvid] [untagged]'"
 msgstr "Действительный синтаксис: '<vid>[-<vid>] [pvid] [без_метки]'"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:4104
+#: src/libnmc-setting/nm-meta-setting-desc.c:4088
 #, c-format
 msgid "invalid priority map '%s'"
 msgstr "недействительная схема приоритетов «%s»"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:4197
+#: src/libnmc-setting/nm-meta-setting-desc.c:4181
 #, c-format
 msgid "'%s' is not valid; 2 or 3 strings should be provided"
 msgstr "'%s' не является допустимым; необходимо предоставить 2 или 3 строки"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:4236
+#: src/libnmc-setting/nm-meta-setting-desc.c:4220
 #, c-format
 msgid ""
 "Enter a list of S/390 options formatted as:\n"
@@ -5010,87 +5011,87 @@ msgstr ""
 "  параметр = <значение>, параметр = <значение>,...\n"
 "Действительные параметры: %s\n"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:4270
+#: src/libnmc-setting/nm-meta-setting-desc.c:4254
 #, c-format
 msgid "'%s' is not a valid channel"
 msgstr "'%s' не является действительным каналом"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:4278
+#: src/libnmc-setting/nm-meta-setting-desc.c:4262
 #, c-format
 msgid "'%ld' is not a valid channel"
 msgstr "'%ld' не является действительным каналом"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:4359
+#: src/libnmc-setting/nm-meta-setting-desc.c:4343
 #, c-format
 msgid ""
 "'%s' not compatible with %s '%s', please change the key or set the right %s "
 "first."
 msgstr "«%s» несовместим с %s «%s». Измените ключ или корректно настройте %s."
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:4375
+#: src/libnmc-setting/nm-meta-setting-desc.c:4359
 #, c-format
 msgid "WEP key is guessed to be of %s"
 msgstr "Ключ WEP предположительно равен «%s»"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:4382
+#: src/libnmc-setting/nm-meta-setting-desc.c:4366
 #, c-format
 msgid "WEP key index set to '%d'"
 msgstr "Индекс ключа WEP предположительно равен «%d»"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:4421
+#: src/libnmc-setting/nm-meta-setting-desc.c:4405
 #, c-format
 msgid "'%s' is not compatible with '%s' type, please change or delete the key."
 msgstr "«%s» несовместим с типом «%s», смените или удалите ключ."
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:4456 src/nmcli/utils.h:319
+#: src/libnmc-setting/nm-meta-setting-desc.c:4440 src/nmcli/utils.h:321
 msgid "on"
-msgstr "вкл."
+msgstr "вкл"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:4456 src/nmcli/utils.h:319
+#: src/libnmc-setting/nm-meta-setting-desc.c:4440 src/nmcli/utils.h:321
 msgid "off"
-msgstr "выкл."
+msgstr "выкл"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:4497
+#: src/libnmc-setting/nm-meta-setting-desc.c:4481
 #, c-format
 msgid "'%s' is not valid; use 'on', 'off', or 'ignore'"
 msgstr "'%s' не является действительным; используйте «on», «off» или «ignore»,"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:4566
+#: src/libnmc-setting/nm-meta-setting-desc.c:4550
 msgid "Bonding primary interface"
 msgstr "Первичный интерфейс агрегации bond"
 
 #. this is a virtual property, only needed during "ask" mode.
-#: src/libnmc-setting/nm-meta-setting-desc.c:4574
+#: src/libnmc-setting/nm-meta-setting-desc.c:4558
 msgid "Bonding monitoring mode"
 msgstr "Режим мониторинга агрегации (Bond)"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:4583
+#: src/libnmc-setting/nm-meta-setting-desc.c:4567
 msgid "Bonding miimon"
 msgstr "Значение miimon агрегации bond"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:4592
+#: src/libnmc-setting/nm-meta-setting-desc.c:4576
 msgid "Bonding downdelay"
 msgstr "Значение downdelay агрегации bond"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:4601
+#: src/libnmc-setting/nm-meta-setting-desc.c:4585
 msgid "Bonding updelay"
 msgstr "Значение updelay агрегации bond"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:4610
+#: src/libnmc-setting/nm-meta-setting-desc.c:4594
 msgid "Bonding arp-interval"
 msgstr "Значение arp-interval агрегации bond"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:4619
+#: src/libnmc-setting/nm-meta-setting-desc.c:4603
 msgid "Bonding arp-ip-target"
 msgstr "Значение arp-ip-target агрегации bond"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:4628
+#: src/libnmc-setting/nm-meta-setting-desc.c:4612
 msgid "LACP rate (slow/fast)"
 msgstr "Частота отправки LACP (slow/fast)"
 
 #. macro that returns @func as const (guint32(*)(NMSetting*)) type, but checks
 #. * that the actual type is (guint32(*)(type *)).
-#: src/libnmc-setting/nm-meta-setting-desc.c:4802
+#: src/libnmc-setting/nm-meta-setting-desc.c:4803
 msgid ""
 "nmcli can accepts both direct JSON configuration data and a file name "
 "containing the configuration. In the latter case the file is read and the "
@@ -5108,7 +5109,7 @@ msgstr ""
 "\"roundrobin\"}, \"ports\": {\"eth1\": {}, \"eth2\": {}} }\n"
 "          set team.config /etc/my-team.conf\n"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:4810
+#: src/libnmc-setting/nm-meta-setting-desc.c:4811
 msgid ""
 "Enter a list of link watchers formatted as dictionaries where the keys are "
 "teamd properties. Dictionary pairs are in the form: key=value and pairs are "
@@ -5156,11 +5157,11 @@ msgstr ""
 "   name=arp_ping source-host=172.16.1.1 target-host=172.16.1.254, name=ethtool "
 "delay-up=3\n"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:4859
+#: src/libnmc-setting/nm-meta-setting-desc.c:4860
 msgid "IEEE 802.15.4 (WPAN) parent device or connection UUID"
 msgstr "Родительское устройство IEEE 802.15.4 (WPAN) или UUID подключения"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:4895
+#: src/libnmc-setting/nm-meta-setting-desc.c:4897
 msgid ""
 "Enter file path to CA certificate (optionally prefixed with file://).\n"
 "  [file://]<file path>\n"
@@ -5174,7 +5175,7 @@ msgstr ""
 "необработанных blob-данных.\n"
 "Пример: /home/cimrman/cacert.crt\n"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:4937
+#: src/libnmc-setting/nm-meta-setting-desc.c:4940
 msgid ""
 "Enter file path to client certificate (optionally prefixed with file://).\n"
 "  [file://]<file path>\n"
@@ -5188,7 +5189,7 @@ msgstr ""
 "необработанных blob-данных.\n"
 "Пример: /home/cimrman/jara.crt\n"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:4994
+#: src/libnmc-setting/nm-meta-setting-desc.c:4997
 msgid ""
 "Enter file path to CA certificate for inner authentication (optionally "
 "prefixed\n"
@@ -5205,7 +5206,7 @@ msgstr ""
 "необработанных blob-данных.\n"
 "Пример: /home/cimrman/ca-zweite-phase.crt\n"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:5037
+#: src/libnmc-setting/nm-meta-setting-desc.c:5045
 msgid ""
 "Enter file path to client certificate for inner authentication (optionally "
 "prefixed\n"
@@ -5222,7 +5223,7 @@ msgstr ""
 "необработанных blob-данных.\n"
 "Пример: /home/cimrman/jara-zweite-phase.crt\n"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:5064
+#: src/libnmc-setting/nm-meta-setting-desc.c:5072
 msgid ""
 "Enter bytes as a list of hexadecimal values.\n"
 "Two formats are accepted:\n"
@@ -5242,8 +5243,8 @@ msgstr ""
 "Примеры: ab0455a6ea3a74C2\n"
 "          ab 4 55 0xa6 ea 3a 74 C2\n"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:5081
-#: src/libnmc-setting/nm-meta-setting-desc.c:5099
+#: src/libnmc-setting/nm-meta-setting-desc.c:5089
+#: src/libnmc-setting/nm-meta-setting-desc.c:5107
 msgid ""
 "Enter path to a private key and the key password (if not set yet):\n"
 "  [file://]<file path> [<password>]\n"
@@ -5256,86 +5257,86 @@ msgstr ""
 "необработанных blob-данных.\n"
 "Пример: /home/cimrman/jara-priv-key Dardanely\n"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:5144
-#: src/libnmc-setting/nm-meta-setting-desc.c:5446
-#: src/libnmc-setting/nm-meta-setting-desc.c:5933
-#: src/libnmc-setting/nm-meta-setting-desc.c:7099
+#: src/libnmc-setting/nm-meta-setting-desc.c:5152
+#: src/libnmc-setting/nm-meta-setting-desc.c:5455
+#: src/libnmc-setting/nm-meta-setting-desc.c:5948
+#: src/libnmc-setting/nm-meta-setting-desc.c:7142
 msgid "Password [none]"
 msgstr "Пароль [нет]"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:5190
+#: src/libnmc-setting/nm-meta-setting-desc.c:5198
 msgid "Bluetooth device address"
 msgstr "Адрес устройства Bluetooth"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:5238
+#: src/libnmc-setting/nm-meta-setting-desc.c:5247
 #: src/nmtui/nmt-page-bond-port.c:51
 msgid "Queue ID"
 msgstr "ID очереди"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:5244
+#: src/libnmc-setting/nm-meta-setting-desc.c:5253
 msgid "Port Priority"
 msgstr "Приоритет порта"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:5256
-#: src/libnmc-setting/nm-meta-setting-desc.c:6013
-#: src/libnmc-setting/nm-meta-setting-desc.c:7825
-#: src/libnmc-setting/nm-meta-setting-desc.c:7863
-#: src/libnmc-setting/nm-meta-setting-desc.c:8040
-#: src/libnmc-setting/nm-meta-setting-desc.c:8273
+#: src/libnmc-setting/nm-meta-setting-desc.c:5265
+#: src/libnmc-setting/nm-meta-setting-desc.c:6029
+#: src/libnmc-setting/nm-meta-setting-desc.c:7875
+#: src/libnmc-setting/nm-meta-setting-desc.c:7913
+#: src/libnmc-setting/nm-meta-setting-desc.c:8095
+#: src/libnmc-setting/nm-meta-setting-desc.c:8336
 msgid "MAC [none]"
 msgstr "MAC [нет]"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:5262
+#: src/libnmc-setting/nm-meta-setting-desc.c:5271
 msgid "Enable STP"
 msgstr "Включить STP"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:5268
+#: src/libnmc-setting/nm-meta-setting-desc.c:5277
 msgid "STP priority"
 msgstr "Приоритет STP"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:5274 src/nmtui/nmt-page-bridge.c:120
+#: src/libnmc-setting/nm-meta-setting-desc.c:5283 src/nmtui/nmt-page-bridge.c:120
 msgid "Forward delay"
 msgstr "Задержка перенаправления"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:5280 src/nmtui/nmt-page-bridge.c:134
+#: src/libnmc-setting/nm-meta-setting-desc.c:5289 src/nmtui/nmt-page-bridge.c:134
 msgid "Hello time"
 msgstr "Время приветствия"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:5286 src/nmtui/nmt-page-bridge.c:148
+#: src/libnmc-setting/nm-meta-setting-desc.c:5295 src/nmtui/nmt-page-bridge.c:148
 msgid "Max age"
 msgstr "Максимальное время действия"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:5292
+#: src/libnmc-setting/nm-meta-setting-desc.c:5301
 msgid "MAC address ageing time"
 msgstr "Время действия адреса MAC"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:5302 src/nmtui/nmt-page-bridge.c:156
+#: src/libnmc-setting/nm-meta-setting-desc.c:5311 src/nmtui/nmt-page-bridge.c:156
 msgid "Group forward mask"
 msgstr "Маска перенаправления группы"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:5344 src/nmtui/nmt-page-bridge.c:79
+#: src/libnmc-setting/nm-meta-setting-desc.c:5353 src/nmtui/nmt-page-bridge.c:79
 msgid "Enable IGMP snooping"
 msgstr "Включить отслеживание сетевого трафика IGMP"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:5402
+#: src/libnmc-setting/nm-meta-setting-desc.c:5411
 msgid "Bridge port priority"
 msgstr "Приоритет порта моста"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:5408
+#: src/libnmc-setting/nm-meta-setting-desc.c:5417
 msgid "Bridge port STP path cost"
 msgstr "Стоимость пути STP порта моста"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:5414
+#: src/libnmc-setting/nm-meta-setting-desc.c:5423
 msgid "Hairpin"
 msgstr "Hairpin"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:5440
-#: src/libnmc-setting/nm-meta-setting-desc.c:5927
-#: src/libnmc-setting/nm-meta-setting-desc.c:7672
+#: src/libnmc-setting/nm-meta-setting-desc.c:5449
+#: src/libnmc-setting/nm-meta-setting-desc.c:5942
+#: src/libnmc-setting/nm-meta-setting-desc.c:7720
 msgid "Username [none]"
 msgstr "Имя пользователя [нет]"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:5542
+#: src/libnmc-setting/nm-meta-setting-desc.c:5554
 msgid ""
 "Enter a list of user permissions. This is a list of user names formatted as:\n"
 "  [user:]<user name 1>, [user:]<user name 2>,...\n"
@@ -5351,7 +5352,7 @@ msgstr ""
 "\n"
 "Пример: alice bob charlie\n"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:5595
+#: src/libnmc-setting/nm-meta-setting-desc.c:5610
 msgid ""
 "Enter secondary connections that should be activated when this connection is\n"
 "activated. Connections can be specified either by UUID or ID (name). nmcli\n"
@@ -5372,7 +5373,7 @@ msgstr ""
 "\n"
 "Пример: private-openvpn, fe6ba5d8-c2fc-4aae-b2e3-97efddd8d9a7\n"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:5618
+#: src/libnmc-setting/nm-meta-setting-desc.c:5634
 msgid ""
 "Enter a value which indicates whether the connection is subject to a data\n"
 "quota, usage costs or other limitations. Accepted options are:\n"
@@ -5388,29 +5389,29 @@ msgstr ""
 "«unknown» — позволить NetworkManager выбирать значение с помощью эвристических "
 "методов\n"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:5943
+#: src/libnmc-setting/nm-meta-setting-desc.c:5958
 msgid "APN"
 msgstr "APN"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6022
-#: src/libnmc-setting/nm-meta-setting-desc.c:6651
-#: src/libnmc-setting/nm-meta-setting-desc.c:7894
-#: src/libnmc-setting/nm-meta-setting-desc.c:8080
+#: src/libnmc-setting/nm-meta-setting-desc.c:6038
+#: src/libnmc-setting/nm-meta-setting-desc.c:6688
+#: src/libnmc-setting/nm-meta-setting-desc.c:7945
+#: src/libnmc-setting/nm-meta-setting-desc.c:8136
 #: src/nmtui/nmt-page-ethernet.c:124 src/nmtui/nmt-page-infiniband.c:81
 #: src/nmtui/nmt-page-ip-tunnel.c:178 src/nmtui/nmt-page-vlan.c:100
 #: src/nmtui/nmt-page-wifi.c:395 src/nmtui/nmt-page-wireguard.c:85
 msgid "MTU"
 msgstr "MTU"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6041
+#: src/libnmc-setting/nm-meta-setting-desc.c:6057
 msgid "P_KEY [none]"
 msgstr "P_KEY [нет]"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6050
+#: src/libnmc-setting/nm-meta-setting-desc.c:6075
 msgid "Parent interface [none]"
 msgstr "Родительский интерфейс [нет]"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6077
+#: src/libnmc-setting/nm-meta-setting-desc.c:6104
 msgid ""
 "Enter a list of IPv4 addresses of DNS servers.\n"
 "\n"
@@ -5420,11 +5421,11 @@ msgstr ""
 "\n"
 "Пример: 8.8.8.8, 8.8.4.4\n"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6124
+#: src/libnmc-setting/nm-meta-setting-desc.c:6154
 msgid "IPv4 address (IP[/plen]) [none]"
 msgstr "Адрес IPv4 (IP[/plen]) [нет]"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6126
+#: src/libnmc-setting/nm-meta-setting-desc.c:6156
 msgid ""
 "Enter a list of IPv4 addresses formatted as:\n"
 "  ip[/prefix], ip[/prefix],...\n"
@@ -5438,11 +5439,11 @@ msgstr ""
 "\n"
 "Пример: 92.168.1.5/24 192.168.1.1, 10.0.0.11/24\n"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6145
+#: src/libnmc-setting/nm-meta-setting-desc.c:6175
 msgid "IPv4 gateway [none]"
 msgstr "Шлюз IPv4 [нет]"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6153
+#: src/libnmc-setting/nm-meta-setting-desc.c:6184
 msgid ""
 "Enter a list of IPv4 routes formatted as:\n"
 "  ip[/prefix] [next-hop] [metric],...\n"
@@ -5465,7 +5466,7 @@ msgstr ""
 "Примеры: 192.168.2.0/24 192.168.2.1 3, 10.1.0.0/16 10.0.0.254\n"
 "          10.1.2.0/24\n"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6193
+#: src/libnmc-setting/nm-meta-setting-desc.c:6224
 msgid ""
 "Enter a list of IPv4 routing rules formatted as:\n"
 "  priority [prio] [from [src]] [to [dst]], ,...\n"
@@ -5475,7 +5476,7 @@ msgstr ""
 "  приоритет [prio] [от [исходн]] [до [цель]], ,...\n"
 "\n"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6329
+#: src/libnmc-setting/nm-meta-setting-desc.c:6362
 msgid ""
 "Enter a list of IPv6 addresses of DNS servers.  If the IPv6 configuration "
 "method is 'auto' these DNS servers are appended to those (if any) returned by "
@@ -5495,11 +5496,11 @@ msgstr ""
 "\n"
 "Пример: 2607:f0d0:1002:51::4, 2607:f0d0:1002:51::1\n"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6382
+#: src/libnmc-setting/nm-meta-setting-desc.c:6418
 msgid "IPv6 address (IP[/plen]) [none]"
 msgstr "Адрес IPv6 (IP[/plen]) [нет]"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6384
+#: src/libnmc-setting/nm-meta-setting-desc.c:6420
 msgid ""
 "Enter a list of IPv6 addresses formatted as:\n"
 "  ip[/prefix], ip[/prefix],...\n"
@@ -5513,11 +5514,11 @@ msgstr ""
 "\n"
 "Пример: 2607:f0d0:1002:51::4/64, 1050:0:0:0:5:600:300c:326b\n"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6403
+#: src/libnmc-setting/nm-meta-setting-desc.c:6439
 msgid "IPv6 gateway [none]"
 msgstr "Шлюз IPv6 [нет]"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6411
+#: src/libnmc-setting/nm-meta-setting-desc.c:6448
 msgid ""
 "Enter a list of IPv6 routes formatted as:\n"
 "  ip[/prefix] [next-hop] [metric],...\n"
@@ -5542,7 +5543,7 @@ msgstr ""
 "beef::3 2\n"
 "          abbe::/64 55\n"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6451
+#: src/libnmc-setting/nm-meta-setting-desc.c:6488
 msgid ""
 "Enter a list of IPv6 routing rules formatted as:\n"
 "  priority [prio] [from [src]] [to [dst]], ,...\n"
@@ -5552,169 +5553,169 @@ msgstr ""
 "  приоритет [prio] [от [исходн]] [до [цель]], ,...\n"
 "\n"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6588
-#: src/libnmc-setting/nm-meta-setting-desc.c:7725
+#: src/libnmc-setting/nm-meta-setting-desc.c:6625
+#: src/libnmc-setting/nm-meta-setting-desc.c:7775
 msgid "Parent device [none]"
 msgstr "Родительское устройство [нет]"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6594
+#: src/libnmc-setting/nm-meta-setting-desc.c:6631
 msgid "Local endpoint [none]"
 msgstr "Локальная конечная точка [нет]"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6601
-#: src/libnmc-setting/nm-meta-setting-desc.c:7744
+#: src/libnmc-setting/nm-meta-setting-desc.c:6638
+#: src/libnmc-setting/nm-meta-setting-desc.c:7794
 msgid "Remote"
 msgstr "Удалённый"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6717
+#: src/libnmc-setting/nm-meta-setting-desc.c:6754
 msgid "MACsec parent device or connection UUID"
 msgstr "Родительское устройство MACsec или UUID подключения"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6738
+#: src/libnmc-setting/nm-meta-setting-desc.c:6775
 msgid "Enable encryption"
 msgstr "Включить шифрование"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6754
+#: src/libnmc-setting/nm-meta-setting-desc.c:6791
 msgid "MKA_CKN"
 msgstr "MKA_CKN"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6760 src/nmtui/nmt-page-macsec.c:170
+#: src/libnmc-setting/nm-meta-setting-desc.c:6797 src/nmtui/nmt-page-macsec.c:170
 msgid "SCI port"
 msgstr "Порт SCI"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6786
+#: src/libnmc-setting/nm-meta-setting-desc.c:6823
 msgid "MACVLAN parent device or connection UUID"
 msgstr "Родительское устройство MACVLAN или UUID подключения"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6807
+#: src/libnmc-setting/nm-meta-setting-desc.c:6844
 msgid "Tap"
 msgstr "Tap"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6874
-#: src/libnmc-setting/nm-meta-setting-desc.c:8002 src/nmtui/nmt-page-wifi.c:216
+#: src/libnmc-setting/nm-meta-setting-desc.c:6915
+#: src/libnmc-setting/nm-meta-setting-desc.c:8055 src/nmtui/nmt-page-wifi.c:216
 msgid "SSID"
 msgstr "SSID"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6883
+#: src/libnmc-setting/nm-meta-setting-desc.c:6925
 msgid "OLPC Mesh channel"
 msgstr "Канал OLPC Mesh"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:6892
+#: src/libnmc-setting/nm-meta-setting-desc.c:6935
 msgid "DHCP anycast MAC address [none]"
 msgstr "Адрес MAC произвольной рассылки DHCP [нет]"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7080
+#: src/libnmc-setting/nm-meta-setting-desc.c:7123
 msgid "PPPoE parent device"
 msgstr "Родительское устройство PPPoE"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7086
+#: src/libnmc-setting/nm-meta-setting-desc.c:7129
 msgid "Service [none]"
 msgstr "Служба [нет]"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7093
+#: src/libnmc-setting/nm-meta-setting-desc.c:7136
 msgid "PPPoE username"
 msgstr "Имя пользователя PPPoE"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7129
+#: src/libnmc-setting/nm-meta-setting-desc.c:7172
 msgid "Browser only"
 msgstr "Только для браузера"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7135
+#: src/libnmc-setting/nm-meta-setting-desc.c:7178
 msgid "PAC URL"
 msgstr "URL сертификата атрибута привилегий (PAC)"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7141
+#: src/libnmc-setting/nm-meta-setting-desc.c:7184
 msgid "PAC script"
 msgstr "Сценарий сертификата атрибута привилегий (PAC)"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7265
-#: src/libnmc-setting/nm-meta-setting-desc.c:7453
+#: src/libnmc-setting/nm-meta-setting-desc.c:7308
+#: src/libnmc-setting/nm-meta-setting-desc.c:7497
 msgid "Team JSON configuration [none]"
 msgstr "Конфигурация JSON агрегированного подключения team [нет]"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7556
+#: src/libnmc-setting/nm-meta-setting-desc.c:7600
 msgid "User ID [none]"
 msgstr "ID пользователя [нет]"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7562
+#: src/libnmc-setting/nm-meta-setting-desc.c:7606
 msgid "Group ID [none]"
 msgstr "ID группы [нет]"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7568
+#: src/libnmc-setting/nm-meta-setting-desc.c:7612
 msgid "Enable PI"
 msgstr "Включить PI"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7574
+#: src/libnmc-setting/nm-meta-setting-desc.c:7618
 msgid "Enable VNET header"
 msgstr "Включить заголовок VNET"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7580
+#: src/libnmc-setting/nm-meta-setting-desc.c:7624
 msgid "Enable multi queue"
 msgstr "Включить многоочерёдность"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7593
+#: src/libnmc-setting/nm-meta-setting-desc.c:7637
 msgid "veth peer"
 msgstr "одноранговый узел veth"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7606
+#: src/libnmc-setting/nm-meta-setting-desc.c:7650
 msgid "VLAN parent device or connection UUID"
 msgstr "Родительское устройство VLAN или UUID подключения"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7613
+#: src/libnmc-setting/nm-meta-setting-desc.c:7657
 msgid "VLAN ID (<0-4094>)"
 msgstr "Идентификатор VLAN (<0-4094>)"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7619
+#: src/libnmc-setting/nm-meta-setting-desc.c:7663
 msgid "VLAN flags (<0-7>) [none]"
 msgstr "Флаги VLAN flags (<0-7>) [нет]"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7634
+#: src/libnmc-setting/nm-meta-setting-desc.c:7679
 msgid "Ingress priority maps [none]"
 msgstr "Соответствие приоритета на входе [нет]"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7644
+#: src/libnmc-setting/nm-meta-setting-desc.c:7690
 msgid "Egress priority maps [none]"
 msgstr "Соответствие приоритета на выходе [нет]"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7712
+#: src/libnmc-setting/nm-meta-setting-desc.c:7762
 msgid "Table"
 msgstr "Таблица"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7732
+#: src/libnmc-setting/nm-meta-setting-desc.c:7782
 msgid "VXLAN ID"
 msgstr "Идентификатор VXLAN"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7738
+#: src/libnmc-setting/nm-meta-setting-desc.c:7788
 msgid "Local address [none]"
 msgstr "Локальный адрес [нет]"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7750
+#: src/libnmc-setting/nm-meta-setting-desc.c:7800
 msgid "Minimum source port"
 msgstr "Минимальный исходный порт"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7756
+#: src/libnmc-setting/nm-meta-setting-desc.c:7806
 msgid "Maximum source port"
 msgstr "Максимальный исходный порт"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7762
+#: src/libnmc-setting/nm-meta-setting-desc.c:7812
 msgid "Destination port"
 msgstr "Целевой порт"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7802
+#: src/libnmc-setting/nm-meta-setting-desc.c:7852
 #: src/nmtui/nmt-wireguard-peer-editor.c:78
 msgid "Peer"
 msgstr "Одноранговый узел"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7832
+#: src/libnmc-setting/nm-meta-setting-desc.c:7882
 msgid "WiMAX NSP name"
 msgstr "Имя WiMAX NSP"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7869
-#: src/libnmc-setting/nm-meta-setting-desc.c:8045
+#: src/libnmc-setting/nm-meta-setting-desc.c:7919
+#: src/libnmc-setting/nm-meta-setting-desc.c:8100
 msgid "Cloned MAC [none]"
 msgstr "Клонированный MAC [нет]"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:7902
+#: src/libnmc-setting/nm-meta-setting-desc.c:7953
 msgid ""
 "Enter a list of subchannels (comma or space separated).\n"
 "\n"
@@ -5724,7 +5725,7 @@ msgstr ""
 "\n"
 "Пример: 0.0.0e20 0.0.0e21 0.0.0e22\n"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8222
+#: src/libnmc-setting/nm-meta-setting-desc.c:8285
 msgid ""
 "Enter the type of WEP keys. The accepted values are: 0 or unknown, 1 or key, "
 "and 2 or passphrase.\n"
@@ -5732,216 +5733,216 @@ msgstr ""
 "Укажите тип ключей WEP. Принимаемые значения: 0 (неизвестно), 1 (ключ), 2 "
 "(парольная фраза).\n"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8281
+#: src/libnmc-setting/nm-meta-setting-desc.c:8344
 msgid "Short address (<0x0000-0xffff>)"
 msgstr "Короткий адрес (<0x0000-0xffff>)"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8297
+#: src/libnmc-setting/nm-meta-setting-desc.c:8360
 msgid "PAN Identifier (<0x0000-0xffff>)"
 msgstr "Идентификатор PAN (<0x0000-0xffff>)"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8312
+#: src/libnmc-setting/nm-meta-setting-desc.c:8375
 msgid "Page (<default|0-31>)"
 msgstr "Страница (<default|0-31>)"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8326
+#: src/libnmc-setting/nm-meta-setting-desc.c:8389
 msgid "Channel (<default|0-26>)"
 msgstr "Канал (<default|0-26>)"
 
 #. ***************************************************************************
-#: src/libnmc-setting/nm-meta-setting-desc.c:8461
+#: src/libnmc-setting/nm-meta-setting-desc.c:8524
 msgid "6LOWPAN settings"
 msgstr "Параметры 6LOWPAN"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8462
+#: src/libnmc-setting/nm-meta-setting-desc.c:8525
 msgid "802-1x settings"
 msgstr "Параметры 802-1x"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8464
+#: src/libnmc-setting/nm-meta-setting-desc.c:8527
 msgid "bluetooth connection"
 msgstr "Подключение bluetooth"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8465
+#: src/libnmc-setting/nm-meta-setting-desc.c:8528
 msgid "Bond device"
 msgstr "Устройство Bond"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8466
+#: src/libnmc-setting/nm-meta-setting-desc.c:8529
 msgid "Bond port"
 msgstr "Порт bond"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8467
+#: src/libnmc-setting/nm-meta-setting-desc.c:8530
 msgid "Bridge device"
 msgstr "Устройство мост"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8468
+#: src/libnmc-setting/nm-meta-setting-desc.c:8531
 msgid "Bridge port"
 msgstr "Порт моста"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8469
+#: src/libnmc-setting/nm-meta-setting-desc.c:8532
 msgid "CDMA mobile broadband connection"
 msgstr "Мобильное широкополосное подключение CDMA"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8470
+#: src/libnmc-setting/nm-meta-setting-desc.c:8533
 msgid "General settings"
 msgstr "Общие параметры"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8471
+#: src/libnmc-setting/nm-meta-setting-desc.c:8534
 msgid "DCB settings"
 msgstr "Параметры DCB"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8472
+#: src/libnmc-setting/nm-meta-setting-desc.c:8535
 msgid "Dummy settings"
 msgstr "Параметры-заглушки"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8473
+#: src/libnmc-setting/nm-meta-setting-desc.c:8536
 msgid "Ethtool settings"
 msgstr "Параметры ethtool"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8474
+#: src/libnmc-setting/nm-meta-setting-desc.c:8537
 msgid "Generic settings"
 msgstr "Базовые параметры"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8475
+#: src/libnmc-setting/nm-meta-setting-desc.c:8538
 msgid "GSM mobile broadband connection"
 msgstr "Мобильное широкополосное подключение GSM"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8476
+#: src/libnmc-setting/nm-meta-setting-desc.c:8539
 msgid "Hostname settings"
 msgstr "Параметры имени хоста"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8478
+#: src/libnmc-setting/nm-meta-setting-desc.c:8541
 msgid "IPv4 protocol"
 msgstr "Протокол IPv4"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8479
+#: src/libnmc-setting/nm-meta-setting-desc.c:8542
 msgid "IPv6 protocol"
 msgstr "Протокол IPv6"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8480
+#: src/libnmc-setting/nm-meta-setting-desc.c:8543
 msgid "IP-tunnel settings"
 msgstr "Параметры IP-туннеля"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8481
+#: src/libnmc-setting/nm-meta-setting-desc.c:8544
 msgid "Link settings"
 msgstr "Настройки связи"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8482
+#: src/libnmc-setting/nm-meta-setting-desc.c:8545
 msgid "Loopback settings"
 msgstr "Настройки петли"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8483
+#: src/libnmc-setting/nm-meta-setting-desc.c:8546
 msgid "MACsec connection"
 msgstr "Подключение MACsec"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8484
+#: src/libnmc-setting/nm-meta-setting-desc.c:8547
 msgid "macvlan connection"
 msgstr "Подключение macvlan"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8485
+#: src/libnmc-setting/nm-meta-setting-desc.c:8548
 msgid "Match"
 msgstr "Соответствие"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8486
+#: src/libnmc-setting/nm-meta-setting-desc.c:8549
 msgid "OLPC Mesh connection"
 msgstr "Подключение OLPC Mesh"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8487
+#: src/libnmc-setting/nm-meta-setting-desc.c:8550
 msgid "Open vSwitch bridge settings"
 msgstr "Параметры моста Open vSwitch"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8488
+#: src/libnmc-setting/nm-meta-setting-desc.c:8551
 msgid "Open vSwitch DPDK interface settings"
 msgstr "Параметры интерфейса Open vSwitch DPDK"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8489
+#: src/libnmc-setting/nm-meta-setting-desc.c:8552
 msgid "OVS Other Config"
 msgstr "Другая конфигурация OVS"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8490
+#: src/libnmc-setting/nm-meta-setting-desc.c:8553
 msgid "OVS External IDs"
 msgstr "Внешние идентификаторы OVS"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8491
+#: src/libnmc-setting/nm-meta-setting-desc.c:8554
 msgid "Open vSwitch interface settings"
 msgstr "Параметры интерфейса Open vSwitch"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8492
+#: src/libnmc-setting/nm-meta-setting-desc.c:8555
 msgid "Open vSwitch patch interface settings"
 msgstr "Параметры интерфейса Open vSwitch patch"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8493
+#: src/libnmc-setting/nm-meta-setting-desc.c:8556
 msgid "Open vSwitch port settings"
 msgstr "Параметры порта Open vSwitch"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8494
+#: src/libnmc-setting/nm-meta-setting-desc.c:8557
 msgid "PPP settings"
 msgstr "Параметры PPP"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8495
+#: src/libnmc-setting/nm-meta-setting-desc.c:8558
 msgid "PPPoE"
 msgstr "PPPoE"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8496
+#: src/libnmc-setting/nm-meta-setting-desc.c:8559
 msgid "Proxy"
 msgstr "Прокси"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8497
+#: src/libnmc-setting/nm-meta-setting-desc.c:8560
 msgid "Serial settings"
 msgstr "Параметры последовательного порта"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8498
+#: src/libnmc-setting/nm-meta-setting-desc.c:8561
 msgid "SR-IOV settings"
 msgstr "Параметры SR-IOV"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8499
+#: src/libnmc-setting/nm-meta-setting-desc.c:8562
 msgid "Traffic controls"
 msgstr "Контроль трафика"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8500
+#: src/libnmc-setting/nm-meta-setting-desc.c:8563
 msgid "Team device"
 msgstr "Устройство Team"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8501
+#: src/libnmc-setting/nm-meta-setting-desc.c:8564
 msgid "Team port"
 msgstr "Порт агрегации team"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8502
+#: src/libnmc-setting/nm-meta-setting-desc.c:8565
 msgid "Tun device"
 msgstr "Устройство Tun"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8503
+#: src/libnmc-setting/nm-meta-setting-desc.c:8566
 msgid "User settings"
 msgstr "Параметры пользователя"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8509
+#: src/libnmc-setting/nm-meta-setting-desc.c:8572
 msgid "Wi-Fi P2P connection"
 msgstr "Подключение Wi-Fi P2P"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8510
+#: src/libnmc-setting/nm-meta-setting-desc.c:8573
 msgid "WiMAX connection"
 msgstr "Подключение WiMAX"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8511
+#: src/libnmc-setting/nm-meta-setting-desc.c:8574
 msgid "Wired Ethernet"
 msgstr "Проводной Ethernet"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8512
+#: src/libnmc-setting/nm-meta-setting-desc.c:8575
 msgid "WireGuard VPN settings"
 msgstr "Параметры WireGuard VPN"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8513
+#: src/libnmc-setting/nm-meta-setting-desc.c:8576
 msgid "Wi-Fi connection"
 msgstr "Подключение Wi-Fi"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8514
+#: src/libnmc-setting/nm-meta-setting-desc.c:8577
 msgid "Wi-Fi security settings"
 msgstr "Параметры безопасности Wi-Fi"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8515
+#: src/libnmc-setting/nm-meta-setting-desc.c:8578
 msgid "WPAN settings"
 msgstr "Параметры WPAN"
 
-#: src/libnmc-setting/nm-meta-setting-desc.c:8938
+#: src/libnmc-setting/nm-meta-setting-desc.c:9001
 msgid "name"
 msgstr "имя"
 
@@ -7466,13 +7467,12 @@ msgstr ""
 #: src/libnmc-setting/settings-docs.h.in:125
 msgid ""
 "Specifies the NMSettingDcbFlags for the DCB FCoE application.  Flags may be "
-"any combination of NM_SETTING_DCB_FLAG_ENABLE (0x1), "
-"NM_SETTING_DCB_FLAG_ADVERTISE (0x2), and NM_SETTING_DCB_FLAG_WILLING (0x4)."
+"any combination of \"enable\" (0x1), \"advertise\" (0x2), and "
+"\"willing\" (0x4)."
 msgstr ""
 "Задает NMSettingDcbFlags для применения протокола FCoE в мостовом подключении "
 "центра обработки данных (DCB). Возможна любая комбинация следующих флагов: "
-"NM_SETTING_DCB_FLAG_ENABLE (0x1), NM_SETTING_DCB_FLAG_ADVERTISE (0x2) и "
-"NM_SETTING_DCB_FLAG_WILLING (0x4)."
+"\"enable\" (0x1), \"advertise (0x2) и \"willing\" (0x4)."
 
 #: src/libnmc-setting/settings-docs.h.in:126
 msgid ""
@@ -7488,56 +7488,50 @@ msgstr ""
 msgid ""
 "The highest User Priority (0 - 7) which FCoE frames should use, or -1 for "
 "default priority.  Only used when the \"app-fcoe-flags\" property includes the "
-"NM_SETTING_DCB_FLAG_ENABLE (0x1) flag."
+"\"enable\" (0x1) flag."
 msgstr ""
 "Наивысший приоритет пользователя (0 - 7), который должен использоваться "
 "кадрами FCoE, либо «-1» для приоритета по умолчанию. Используется, только если "
-"свойство \"app-fcoe-flags\" включает в себя флаг NM_SETTING_DCB_FLAG_ENABLE "
-"(0x1)."
+"свойство \"app-fcoe-flags\" включает в себя флаг \"enable\" (0x1)."
 
 #: src/libnmc-setting/settings-docs.h.in:128
 msgid ""
 "Specifies the NMSettingDcbFlags for the DCB FIP application.  Flags may be any "
-"combination of NM_SETTING_DCB_FLAG_ENABLE (0x1), NM_SETTING_DCB_FLAG_ADVERTISE "
-"(0x2), and NM_SETTING_DCB_FLAG_WILLING (0x4)."
+"combination of \"enable\" (0x1), \"advertise\" (0x2), and \"willing\" (0x4)."
 msgstr ""
 "Задает NMSettingDcbFlags для применения протокола инициализации FCoE (FIP) в в "
 "мостовом подключении центра обработки данных (DCB). Возможна любая комбинация "
-"следующих флагов: NM_SETTING_DCB_FLAG_ENABLE (0x1), "
-"NM_SETTING_DCB_FLAG_ADVERTISE (0x2) и NM_SETTING_DCB_FLAG_WILLING (0x4)."
+"следующих флагов: \"enable\" (0x1), \"advertise\" (0x2) и \"willing\" (0x4)."
 
 #: src/libnmc-setting/settings-docs.h.in:129
 msgid ""
 "The highest User Priority (0 - 7) which FIP frames should use, or -1 for "
 "default priority.  Only used when the \"app-fip-flags\" property includes the "
-"NM_SETTING_DCB_FLAG_ENABLE (0x1) flag."
+"\"enable\" (0x1) flag."
 msgstr ""
 "Наивысший приоритет пользователя (0 - 7), который должен использоваться "
 "кадрами FIP, либо «-1» для приоритета по умолчанию. Используется только, если "
-"свойство \"app-fcoe-flags\" включает в себя флаг NM_SETTING_DCB_FLAG_ENABLE "
-"(0x1)."
+"свойство \"app-fcoe-flags\" включает в себя флаг \"enable\" (0x1)."
 
 #: src/libnmc-setting/settings-docs.h.in:130
 msgid ""
 "Specifies the NMSettingDcbFlags for the DCB iSCSI application.  Flags may be "
-"any combination of NM_SETTING_DCB_FLAG_ENABLE (0x1), "
-"NM_SETTING_DCB_FLAG_ADVERTISE (0x2), and NM_SETTING_DCB_FLAG_WILLING (0x4)."
+"any combination of \"enable\" (0x1), \"advertise\" (0x2), and "
+"\"willing\" (0x4)."
 msgstr ""
 "Задает NMSettingDcbFlags для применения iSCSI в мостовом подключении центра "
 "обработки данных (DCB). Возможна любая комбинация следующих флагов: "
-"NM_SETTING_DCB_FLAG_ENABLE (0x1), NM_SETTING_DCB_FLAG_ADVERTISE (0x2) и "
-"NM_SETTING_DCB_FLAG_WILLING (0x4)."
+"\"enable\" (0x1), \"advertise\" (0x2) и \"willing\" (0x4)."
 
 #: src/libnmc-setting/settings-docs.h.in:131
 msgid ""
 "The highest User Priority (0 - 7) which iSCSI frames should use, or -1 for "
 "default priority. Only used when the \"app-iscsi-flags\" property includes the "
-"NM_SETTING_DCB_FLAG_ENABLE (0x1) flag."
+"\"enable\" (0x1) flag."
 msgstr ""
 "Наивысший приоритет пользователя (0 - 7), который должен использоваться "
 "кадрами iSCSI, либо «-1» для приоритета по умолчанию. Используется только, "
-"если свойство \"app-fcoe-flags\" включает в себя флаг "
-"NM_SETTING_DCB_FLAG_ENABLE (0x1)."
+"если свойство \"app-fcoe-flags\" включает в себя флаг \"enable\" (0x1)."
 
 #: src/libnmc-setting/settings-docs.h.in:132
 msgid ""
@@ -7566,13 +7560,13 @@ msgstr ""
 #: src/libnmc-setting/settings-docs.h.in:134
 msgid ""
 "Specifies the NMSettingDcbFlags for DCB Priority Flow Control (PFC). Flags may "
-"be any combination of NM_SETTING_DCB_FLAG_ENABLE (0x1), "
-"NM_SETTING_DCB_FLAG_ADVERTISE (0x2), and NM_SETTING_DCB_FLAG_WILLING (0x4)."
+"be any combination of \"enable\" (0x1), \"advertise\" (0x2), and "
+"\"willing\" (0x4)."
 msgstr ""
 "Задает NMSettingDcbFlags для применения управления приоритетным потоком (PFC) "
 "в мостовом подключении центра обработки данных (DCB). Возможна любая "
-"комбинация следующих флагов: NM_SETTING_DCB_FLAG_ENABLE (0x1), "
-"NM_SETTING_DCB_FLAG_ADVERTISE (0x2) и NM_SETTING_DCB_FLAG_WILLING (0x4)."
+"комбинация следующих флагов: \"enable\" (0x1), \"advertise\" (0x2) и "
+"\"willing\" (0x4)."
 
 #: src/libnmc-setting/settings-docs.h.in:135
 msgid ""
@@ -7589,13 +7583,11 @@ msgstr ""
 #: src/libnmc-setting/settings-docs.h.in:136
 msgid ""
 "Specifies the NMSettingDcbFlags for DCB Priority Groups.  Flags may be any "
-"combination of NM_SETTING_DCB_FLAG_ENABLE (0x1), NM_SETTING_DCB_FLAG_ADVERTISE "
-"(0x2), and NM_SETTING_DCB_FLAG_WILLING (0x4)."
+"combination of \"enable\" (0x1), \"advertise\" (0x2), and \"willing\" (0x4)."
 msgstr ""
 "Задает NMSettingDcbFlags для групп приоритетов мостового подключения центра "
 "обработки данных (DCB). Возможна любая комбинация следующих флагов: "
-"NM_SETTING_DCB_FLAG_ENABLE (0x1), NM_SETTING_DCB_FLAG_ADVERTISE (0x2) и "
-"NM_SETTING_DCB_FLAG_WILLING (0x4)."
+"\"enable\" (0x1), \"advertise\" (0x2) и \"willing\" (0x4)."
 
 #: src/libnmc-setting/settings-docs.h.in:137
 msgid ""
@@ -7766,30 +7758,25 @@ msgstr ""
 
 #: src/libnmc-setting/settings-docs.h.in:158
 msgid ""
-"The InfiniBand P_Key to use for this device. A value of -1 means to use the "
-"default P_Key (aka \"the P_Key at index 0\"). Otherwise, it is a 16-bit "
+"The InfiniBand p-key to use for this device. A value of -1 means to use the "
+"default p-key (aka \"the p-key at index 0\"). Otherwise, it is a 16-bit "
 "unsigned integer, whose high bit 0x8000 is set if it is a \"full membership\" "
-"P_Key. The values 0 and 0x8000 are not allowed. With the p-key set, the "
+"p-key. The values 0 and 0x8000 are not allowed. With the p-key set, the "
 "interface name is always \"$parent.$p_key\". Setting \"connection.interface-"
 "name\" to another name is not supported. Note that kernel will internally "
 "always set the full membership bit, although the interface name does not "
-"reflect that. Thus, not setting the high bit is probably not useful. If the "
-"profile is stored in ifcfg-rh format, then the full membership bit is "
-"automatically added. To get consistent behavior, it is best to only use p-key "
-"values with the full membership bit set."
+"reflect that. Usually the user would want to configure a full membership p-key "
+"with 0x8000 flag set."
 msgstr ""
-"P_Key InfiniBand, который будет использоваться для этого устройства. Значение "
-"-1 означает использование P_Key по умолчанию (он же \"P_Key с индексом 0\"). В "
+"InfiniBand p-key, который будет использоваться для этого устройства. Значение "
+"-1 означает использование p-key по умолчанию (он же \"p-key с индексом 0\"). В "
 "противном случае это 16-битное беззнаковое целое число, старший бит которого "
-"0x8000 установлен, если это P_Key \"полного членства\". Значения 0 и 0x8000 "
-"недопустимы. При установленном p-ключе имя интерфейса всегда будет \"$parent."
+"0x8000 установлен, если это p-key \"полного членства\". Значения 0 и 0x8000 "
+"недопустимы. При установленном p-key имя интерфейса всегда будет \"$parent."
 "$p_key\". Установка \"connection.interface-name\" на другое имя не "
 "поддерживается. Обратите внимание, что ядро внутренне всегда устанавливает бит "
-"полного членства, хотя имя интерфейса этого не отражает. Таким образом, отказ "
-"от установки старшего бита, вероятно, не является полезным. Если профиль "
-"хранится в формате ifcfg-rh, то бит полного членства добавляется "
-"автоматически. Чтобы добиться последовательного поведения, лучше всего "
-"использовать значения p-ключей только с установленным битом полного членства."
+"полного членства, хотя имя интерфейса этого не отражает. Обычно пользователь "
+"хочет сконфигурировать p-key полного членства с установленным флагом 0x8000."
 
 #: src/libnmc-setting/settings-docs.h.in:159
 msgid ""
@@ -7925,36 +7912,29 @@ msgstr ""
 msgid ""
 "Flags for the DHCP hostname and FQDN. Currently, this property only includes "
 "flags to control the FQDN flags set in the DHCP FQDN option. Supported FQDN "
-"flags are NM_DHCP_HOSTNAME_FLAG_FQDN_SERV_UPDATE (0x1), "
-"NM_DHCP_HOSTNAME_FLAG_FQDN_ENCODED (0x2) and "
-"NM_DHCP_HOSTNAME_FLAG_FQDN_NO_UPDATE (0x4).  When no FQDN flag is set and "
-"NM_DHCP_HOSTNAME_FLAG_FQDN_CLEAR_FLAGS (0x8) is set, the DHCP FQDN option will "
-"contain no flag. Otherwise, if no FQDN flag is set and "
-"NM_DHCP_HOSTNAME_FLAG_FQDN_CLEAR_FLAGS (0x8) is not set, the standard FQDN "
-"flags are set in the request: NM_DHCP_HOSTNAME_FLAG_FQDN_SERV_UPDATE (0x1), "
-"NM_DHCP_HOSTNAME_FLAG_FQDN_ENCODED (0x2) for IPv4 and "
-"NM_DHCP_HOSTNAME_FLAG_FQDN_SERV_UPDATE (0x1) for IPv6. When this property is "
-"set to the default value NM_DHCP_HOSTNAME_FLAG_NONE (0x0), a global default is "
-"looked up in NetworkManager configuration. If that value is unset or also "
-"NM_DHCP_HOSTNAME_FLAG_NONE (0x0), then the standard FQDN flags described above "
-"are sent in the DHCP requests."
+"flags are \"fqdn-serv-update\" (0x1), \"fqdn-encoded\" (0x2) and \"fqdn-no-"
+"update\" (0x4).  When no FQDN flag is set and \"fqdn-clear-flags\" (0x8) is "
+"set, the DHCP FQDN option will contain no flag. Otherwise, if no FQDN flag is "
+"set and \"fqdn-clear-flags\" (0x8) is not set, the standard FQDN flags are set "
+"in the request: \"fqdn-serv-update\" (0x1), \"fqdn-encoded\" (0x2) for IPv4 "
+"and \"fqdn-serv-update\" (0x1) for IPv6. When this property is set to the "
+"default value \"none\" (0x0), a global default is looked up in NetworkManager "
+"configuration. If that value is unset or also \"none\" (0x0), then the "
+"standard FQDN flags described above are sent in the DHCP requests."
 msgstr ""
-"Атрибуты имени хоста по DHCP и FQDN. На данный момент это свойство включает в "
-"себя только атрибуты для контролирования флагов FQDN, указанных в параметре "
-"DHCP FQDN. Поддерживаются следующие атрибуты FQDN: "
-"NM_DHCP_HOSTNAME_FLAG_FQDN_SERV_UPDATE (0x1), "
-"NM_DHCP_HOSTNAME_FLAG_FQDN_ENCODED (0x2) и "
-"NM_DHCP_HOSTNAME_FLAG_FQDN_NO_UPDATE (0x4). Если настроенные флаги FQDN "
-"отсутствуют, и если указан NM_DHCP_HOSTNAME_FLAG_FQDN_CLEAR_FLAGS (0x8), то "
-"параметр DHCP FQDN не будет иметь атрибутов. В противном случае, если не были "
-"указаны ни FQDN, ни NM_DHCP_HOSTNAME_FLAG_FQDN_CLEAR_FLAGS (0x8), то в запросе "
-"указывается стандартный FQDN: NM_DHCP_HOSTNAME_FLAG_FQDN_SERV_UPDATE (0x1), "
-"NM_DHCP_HOSTNAME_FLAG_FQDN_ENCODED (0x2) для IPv4 и "
-"NM_DHCP_HOSTNAME_FLAG_FQDN_SERV_UPDATE (0x1) для IPv6. Если для данного "
-"свойства указано значение по умолчанию NM_DHCP_HOSTNAME_FLAG_NONE (0x0), то из "
-"конфигурации NetworkManager берётся глобальное значение. Если глобальное "
-"значение не настроено, и если присутствует NM_DHCP_HOSTNAME_FLAG_NONE (0x0), "
-"то в запросах DHCP посылаются стандартные флаги FQDN, описанные выше."
+"Флаги для имени хоста DHCP и FQDN. В настоящее время это свойство включает "
+"только флаги для управления флагами FQDN, установленными в параметре DHCP "
+"FQDN. Поддерживаются следующие флаги FQDN: \"fqdn-serv-update\" (0x1), \"fqdn-"
+"encoded\" (0x2) и \"fqdn-no-update\" (0x4).  Если флаг FQDN не установлен и "
+"установлен параметр \"fqdn-clear-flags\" (0x8), то параметр DHCP FQDN не будет "
+"содержать флага. В противном случае, если флаг FQDN не установлен и \"fqdn-"
+"clear-flags\" (0x8) не установлен, в запросе устанавливаются стандартные флаги "
+"FQDN: \"fqdn-serv-update\" (0x1), \"fqdn-encoded\" (0x2) для IPv4 и \"fqdn-"
+"serv-update\" (0x1) для IPv6. Если для этого свойства установлено значение по "
+"умолчанию \"none\" (0x0), то в конфигурации NetworkManager ищется глобальное "
+"значение по умолчанию. Если это значение не установлено или также равно "
+"\"none\" (0x0), то в DHCP-запросах передаются стандартные флаги FQDN, "
+"описанные выше."
 
 #: src/libnmc-setting/settings-docs.h.in:168
 #: src/libnmc-setting/settings-docs.h.in:197
@@ -8066,34 +8046,37 @@ msgstr ""
 "момент действует только, если используется systemd-resolved."
 
 #: src/libnmc-setting/settings-docs.h.in:174
-#: src/libnmc-setting/settings-docs.h.in:203
 msgid ""
-"Array of DNS options as described in man 5 resolv.conf. NULL means that the "
-"options are unset and left at the default. In this case NetworkManager will "
-"use default options. This is distinct from an empty list of properties. The "
-"currently supported options are \"attempts\", \"debug\", \"edns0\", \"inet6\", "
-"\"ip6-bytestring\", \"ip6-dotint\", \"ndots\", \"no-aaaa\", \"no-check-"
-"names\", \"no-ip6-dotint\", \"no-reload\", \"no-tld-query\", \"rotate\", "
+"DNS options for /etc/resolv.conf as described in resolv.conf(5) manual. The "
+"currently supported options are \"attempts\", \"debug\", \"edns0\", \"ndots\", "
+"\"no-aaaa\", \"no-check-names\", \"no-reload\", \"no-tld-query\", \"rotate\", "
 "\"single-request\", \"single-request-reopen\", \"timeout\", \"trust-ad\", "
-"\"use-vc\". The \"trust-ad\" setting is only honored if the profile "
-"contributes name servers to resolv.conf, and if all contributing profiles have "
-"\"trust-ad\" enabled. When using a caching DNS plugin (dnsmasq or systemd-"
-"resolved in NetworkManager.conf) then \"edns0\" and \"trust-ad\" are "
-"automatically added."
+"\"use-vc\". See the resolv.conf(5) manual. Note that there is a distinction "
+"between an unset (default) list and an empty list. In nmcli, to unset the list "
+"set the value to \"\". To set an empty list, set it to \" \". Currently, an "
+"unset list has the same meaning as an empty list. That might change in the "
+"future. The \"trust-ad\" setting is only honored if the profile contributes "
+"name servers to resolv.conf, and if all contributing profiles have \"trust-"
+"ad\" enabled. When using a caching DNS plugin (dnsmasq or systemd-resolved in "
+"NetworkManager.conf) then \"edns0\" and \"trust-ad\" are automatically added. "
+"The valid \"ipv4.dns-options\" and \"ipv6.dns-options\" get merged together."
 msgstr ""
-"Массив параметров DNS, описанных в man 5 resolv.conf. NULL означает, что "
-"параметры не настроены и оставлены их значения по умолчанию. В таком случае "
-"NetworkManager будет использовать значения по умолчанию. Это отличается от "
-"пустого списка параметров. На данный момент поддерживаются следующие "
-"параметры: \"attempts\", \"debug\", \"edns0\", \"inet6\", \"ip6-bytestring\", "
-"\"ip6-dotint\", \"ndots\", \"no-aaaa\", \"no-check-names\", \"no-ip6-dotint\", "
-"\"no-reload\", \"no-tld-query\", \"rotate\", \"single-request\", \"single-"
-"request-reopen\", \"timeout\", \"trust-ad\", \"use-vc\". Параметр \"trust-ad\" "
-"обрабатывается, только если профиль предоставляет серверы имён для resolv."
-"conf, и если все предоставляющие их профили имеют включённый параметр \"trust-"
-"ad\". При использовании кэширующего модуля DNS (dnsmasq или systemd-resolved в "
-"NetworkManager.conf) будут автоматически добавлены параметры \"edns0\" и "
-"\"trust-ad\"."
+"Параметры DNS для файла /etc/resolv.conf, описанные в руководстве resolv."
+"conf(5). В настоящее время поддерживаются следующие опции: \"attempts\", "
+"\"debug\", \"edns0\", \"ndots\", \"no-aaaa\", \"no-check-names\", \"no-"
+"reload\", \"no-tld-query\", \"rotate\", \"single-request\", \"single-request-"
+"reopen\", \"timeout\", \"trust-ad\", \"use-vc\". См. руководство по resolv."
+"conf(5). Обратите внимание, что существует различие между списком без настроек "
+"(по умолчанию) и пустым списком. В nmcli для снятия установки списка "
+"установите значение \"\". Чтобы установить пустой список, установите значение "
+"\" \". В настоящее время список без установки имеет то же значение, что и "
+"пустой список. В будущем это может измениться. Настройка \"trust-ad\" "
+"выполняется только в том случае, если профиль вносит имена серверов в resolv."
+"conf, а также если у всех профилей, вносящих имена, включена опция \"trust-"
+"ad\". При использовании кэширующего DNS-плагина (dnsmasq или systemd-resolved "
+"в NetworkManager.conf) параметры \"edns0\" и \"trust-ad\" добавляются "
+"автоматически. Действительные \"ipv4.dns-options\" и \"ipv6.dns-options\" "
+"объединяются вместе."
 
 #: src/libnmc-setting/settings-docs.h.in:175
 #: src/libnmc-setting/settings-docs.h.in:204
@@ -8547,6 +8530,41 @@ msgstr ""
 "только длину префикса без префикса, установите часть адреса на нулевой адрес "
 "(например, \"::/60\")."
 
+#: src/libnmc-setting/settings-docs.h.in:203
+msgid ""
+"DNS options for /etc/resolv.conf as described in resolv.conf(5) manual. The "
+"currently supported options are \"attempts\", \"debug\", \"edns0\", \"ndots\", "
+"\"no-aaaa\", \"no-check-names\", \"no-reload\", \"no-tld-query\", \"rotate\", "
+"\"single-request\", \"single-request-reopen\", \"timeout\", \"trust-ad\", "
+"\"use-vc\" and \"inet6\", \"ip6-bytestring\", \"ip6-dotint\", \"no-ip6-"
+"dotint\". See the resolv.conf(5) manual. Note that there is a distinction "
+"between an unset (default) list and an empty list. In nmcli, to unset the list "
+"set the value to \"\". To set an empty list, set it to \" \". Currently, an "
+"unset list has the same meaning as an empty list. That might change in the "
+"future. The \"trust-ad\" setting is only honored if the profile contributes "
+"name servers to resolv.conf, and if all contributing profiles have \"trust-"
+"ad\" enabled. When using a caching DNS plugin (dnsmasq or systemd-resolved in "
+"NetworkManager.conf) then \"edns0\" and \"trust-ad\" are automatically added. "
+"The valid \"ipv4.dns-options\" and \"ipv6.dns-options\" get merged together."
+msgstr ""
+"Параметры DNS для файла /etc/resolv.conf, описанные в руководстве resolv."
+"conf(5). В настоящее время поддерживаются следующие опции: \"attempts\", "
+"\"debug\", \"edns0\", \"ndots\", \"no-aaaa\", \"no-check-names\", \"no-"
+"reload\", \"no-tld-query\", \"rotate\", \"single-request\", \"single-request-"
+"reopen\", \"timeout\", \"trust-ad\", \"use-vc\" и \"inet6\", \"ip6-"
+"bytestring\", \"ip6-dotint\", \"no-ip6-dotint\". См. руководство по resolv."
+"conf(5). Обратите внимание, что существует различие между неустановленным (по "
+"умолчанию) списком и пустым списком. В nmcli для отмены установки списка "
+"установите значение \"\". Чтобы установить пустой список, установите значение "
+"\" \". В настоящее время список без установки имеет то же значение, что и "
+"пустой список. В будущем это может измениться. Настройка \"trust-ad\" "
+"выполняется только в том случае, если профиль вносит имена серверов в resolv."
+"conf, а также если у всех профилей, вносящих имена, включена опция \"trust-"
+"ad\". При использовании кэширующего DNS-плагина (dnsmasq или systemd-resolved "
+"в NetworkManager.conf) параметры \"edns0\" и \"trust-ad\" добавляются "
+"автоматически. Действительные \"ipv4.dns-options\" и \"ipv6.dns-options\" "
+"объединяются вместе."
+
 #: src/libnmc-setting/settings-docs.h.in:209
 msgid ""
 "Configure IPv6 Privacy Extensions for SLAAC, described in RFC4941.  If "
@@ -8630,29 +8648,23 @@ msgstr ""
 msgid ""
 "How many additional levels of encapsulation are permitted to be prepended to "
 "packets. This property applies only to IPv6 tunnels. To disable this option, "
-"add NM_IP_TUNNEL_FLAG_IP6_IGN_ENCAP_LIMIT (0x1) to ip-tunnel flags."
+"add 0x1 (ip6-ign-encap-limit) to ip-tunnel flags."
 msgstr ""
 "Сколько дополнительных уровней инкапсуляции разрешено добавлять в начале "
 "пакета. Это свойство применяется только к туннелям IPv6. Чтобы отключить эту "
-"опцию, добавьте NM_IP_TUNNEL_FLAG_IP6_IGN_ENCAP_LIMIT (0x1) к флагам ip-tunnel."
+"опцию, добавьте 0x1 (ip6-ign-encap-limit) к флагам ip-tunnel."
 
 #: src/libnmc-setting/settings-docs.h.in:223
 msgid ""
-"Tunnel flags. Currently, the following values are supported: "
-"NM_IP_TUNNEL_FLAG_IP6_IGN_ENCAP_LIMIT (0x1), "
-"NM_IP_TUNNEL_FLAG_IP6_USE_ORIG_TCLASS (0x2), "
-"NM_IP_TUNNEL_FLAG_IP6_USE_ORIG_FLOWLABEL (0x4), NM_IP_TUNNEL_FLAG_IP6_MIP6_DEV "
-"(0x8), NM_IP_TUNNEL_FLAG_IP6_RCV_DSCP_COPY (0x10), "
-"NM_IP_TUNNEL_FLAG_IP6_USE_ORIG_FWMARK (0x20). They are valid only for IPv6 "
-"tunnels."
+"Tunnel flags. Currently, the following values are supported: 0x1 (ip6-ign-"
+"encap-limit), 0x2 (ip6-use-orig-tclass), 0x4 (ip6-use-orig-flowlabel), 0x8 "
+"(ip6-mip6-dev), 0x10 (ip6-rcv-dscp-copy) and 0x20 (ip6-use-orig-fwmark). They "
+"are valid only for IPv6 tunnels."
 msgstr ""
-"Туннельные флаги. В настоящее время поддерживаются следующие значения: "
-"NM_IP_TUNNEL_FLAG_IP6_IGN_ENCAP_LIMIT (0x1), "
-"NM_IP_TUNNEL_FLAG_IP6_USE_ORIG_TCLASS (0x2), "
-"NM_IP_TUNNEL_FLAG_IP6_USE_ORIG_FLOWLABEL (0x4), NM_IP_TUNNEL_FLAG_IP6_MIP6_DEV "
-"(0x8), NM_IP_TUNNEL_FLAG_IP6_RCV_DSCP_COPY (0x10), "
-"NM_IP_TUNNEL_FLAG_IP6_USE_ORIG_FWMARK (0x20). Действительны только для "
-"туннелей IPv6."
+"Флаги туннеля. В настоящее время поддерживаются следующие значения: 0x1 (ip6-"
+"ign-encap-limit), 0x2 (ip6-use-orig-tclass), 0x4 (ip6-use-orig-flowlabel), 0x8 "
+"(ip6-mip6-dev), 0x10 (ip6-rcv-dscp-copy) и 0x20 (ip6-use-orig-fwmark). Они "
+"действительны только для туннелей IPv6."
 
 #: src/libnmc-setting/settings-docs.h.in:224
 msgid ""
@@ -8689,11 +8701,13 @@ msgstr ""
 
 #: src/libnmc-setting/settings-docs.h.in:228
 msgid ""
-"The tunneling mode, for example NM_IP_TUNNEL_MODE_IPIP (1) or "
-"NM_IP_TUNNEL_MODE_GRE (2)."
+"The tunneling mode. Valid values: ipip (1), gre (2), sit (3), isatap (4), vti "
+"(5), ip6ip6 (6), ipip6 (7), ip6gre (8), vti6 (9), gretap (10) and ip6gretap "
+"(11)"
 msgstr ""
-"Режим туннелирования, например NM_IP_TUNNEL_MODE_IPIP (1) или "
-"NM_IP_TUNNEL_MODE_GRE (2)."
+"Режим туннелирования. Допустимые значения: ipip (1), gre (2), sit (3), isatap "
+"(4), vti (5), ip6ip6 (6), ipip6 (7), ip6gre (8), vti6 (9), gretap (10) и "
+"ip6gretap (11)"
 
 #: src/libnmc-setting/settings-docs.h.in:229
 msgid ""
@@ -9264,11 +9278,8 @@ msgid "Whether the proxy configuration is for browser only."
 msgstr "Используется ли конфигурация прокси-сервера только для браузера."
 
 #: src/libnmc-setting/settings-docs.h.in:299
-msgid ""
-"Method for proxy configuration, Default is NM_SETTING_PROXY_METHOD_NONE (0)"
-msgstr ""
-"Способ настройки прокси-сервера, по умолчанию:  NM_SETTING_PROXY_METHOD_NONE "
-"(0)"
+msgid "Method for proxy configuration, Default is \"none\" (0)"
+msgstr "Способ настройки прокси-сервера, по умолчанию \"none\" (0)"
 
 #: src/libnmc-setting/settings-docs.h.in:300
 msgid ""
@@ -9323,21 +9334,20 @@ msgstr ""
 #: src/libnmc-setting/settings-docs.h.in:307
 msgid ""
 "Whether to autoprobe virtual functions by a compatible driver. If set to "
-"NM_TERNARY_TRUE (1), the kernel will try to bind VFs to a compatible driver "
-"and if this succeeds a new network interface will be instantiated for each VF. "
-"If set to NM_TERNARY_FALSE (0), VFs will not be claimed and no network "
-"interfaces will be created for them. When set to NM_TERNARY_DEFAULT (-1), the "
-"global default is used; in case the global default is unspecified it is "
-"assumed to be NM_TERNARY_TRUE (1)."
+"\"true\" (1), the kernel will try to bind VFs to a compatible driver and if "
+"this succeeds a new network interface will be instantiated for each VF. If set "
+"to \"false\" (0), VFs will not be claimed and no network interfaces will be "
+"created for them. When set to \"default\" (-1), the global default is used; in "
+"case the global default is unspecified it is assumed to be \"true\" (1)."
 msgstr ""
 "Выполнять ли автоматическую пробу виртуальных функций с помощью совместимого "
-"драйвера. При значении NM_TERNARY_TRUE (1) ядро попробует привязать "
-"виртуальные функции к совместимому драйверу, и в случае успеха для каждой "
-"виртуальной функции будет создан отдельный экземпляр сетевого интерфейса. При "
-"значении NM_TERNARY_FALSE (0) виртуальные функции не будут объявлены, идя них "
-"не будут создаваться сетевые интерфейсы. При значении NM_TERNARY_DEFAULT (-1) "
-"используются глобальные параметры по умолчанию; если глобальные параметры не "
-"установлены, то предполагается значение NM_TERNARY_TRUE (1)."
+"драйвера. При значении \"true\" (1) ядро попробует привязать виртуальные "
+"функции к совместимому драйверу, и в случае успеха для каждой виртуальной "
+"функции будет создан отдельный экземпляр сетевого интерфейса. При значении "
+"\"false\" (0) виртуальные функции не будут объявлены, идя них не будут "
+"создаваться сетевые интерфейсы. При значении \"default\" (-1) используются "
+"глобальные параметры по умолчанию; если глобальные параметры не установлены, "
+"то предполагается значение \"true\" (1)."
 
 #: src/libnmc-setting/settings-docs.h.in:308
 msgid ""
@@ -9545,13 +9555,12 @@ msgstr ""
 
 #: src/libnmc-setting/settings-docs.h.in:336
 msgid ""
-"The operating mode of the virtual device. Allowed values are "
-"NM_SETTING_TUN_MODE_TUN (1) to create a layer 3 device and "
-"NM_SETTING_TUN_MODE_TAP (2) to create an Ethernet-like layer 2 one."
+"The operating mode of the virtual device. Allowed values are \"tun\" (1) to "
+"create a layer 3 device and \"tap\" (2) to create an Ethernet-like layer 2 one."
 msgstr ""
-"Режим работы виртуального устройства. Допустимые значения: "
-"NM_SETTING_TUN_MODE_TUN (1), чтобы создать устройство уровня 3 и "
-"NM_SETTING_TUN_MODE_TAP (2), чтобы создать слой 2, подобный Ethernet."
+"Режим работы виртуального устройства. Допустимые значения: \"tun\" (1), чтобы "
+"создать устройство уровня 3 и \"tap\" (2), чтобы создать слой 2, подобный "
+"Ethernet."
 
 #: src/libnmc-setting/settings-docs.h.in:337
 msgid ""
@@ -9613,25 +9622,23 @@ msgstr ""
 #: src/libnmc-setting/settings-docs.h.in:343
 msgid ""
 "One or more flags which control the behavior and features of the VLAN "
-"interface.  Flags include NM_VLAN_FLAG_REORDER_HEADERS (0x1) (reordering of "
-"output packet headers), NM_VLAN_FLAG_GVRP (0x2) (use of the GVRP protocol), "
-"and NM_VLAN_FLAG_LOOSE_BINDING (0x4) (loose binding of the interface to its "
-"master device's operating state). NM_VLAN_FLAG_MVRP (0x8) (use of the MVRP "
-"protocol). The default value of this property is NM_VLAN_FLAG_REORDER_HEADERS, "
-"but it used to be 0. To preserve backward compatibility, the default-value in "
-"the D-Bus API continues to be 0 and a missing property on D-Bus is still "
-"considered as 0."
+"interface.  Flags include \"reorder-headers\" (0x1) (reordering of output "
+"packet headers), \"gvrp\" (0x2) (use of the GVRP protocol), and \"loose-"
+"binding\" (0x4) (loose binding of the interface to its master device's "
+"operating state). \"mvrp\" (0x8) (use of the MVRP protocol). The default value "
+"of this property is NM_VLAN_FLAG_REORDER_HEADERS, but it used to be 0. To "
+"preserve backward compatibility, the default-value in the D-Bus API continues "
+"to be 0 and a missing property on D-Bus is still considered as 0."
 msgstr ""
 "Один или несколько флагов, которые управляют поведением и функциями интерфейса "
-"VLAN. Флаги включают в себя: NM_VLAN_FLAG_REORDER_HEADERS (0x1) "
-"(переупорядочение заголовков исходящих пакетов), NM_VLAN_FLAG_GVRP (0x2) "
-"(использование протокола GVRP) и NM_VLAN_FLAG_LOOSE_BINDING (0x4) (свободное "
-"связывание интерфейса с рабочим состоянием его ведущего устройства). "
-"NM_VLAN_FLAG_MVRP (0x8) (использование протокола MVRP). Значением по умолчанию "
-"для этого свойства является NM_VLAN_FLAG_REORDER_HEADERS, но обычно оно было "
-"равно 0. Чтобы сохранить обратную совместимость, значение по умолчанию в D-Bus "
-"API по-прежнему остаётся нулём, а недостающее свойство D-Bus по-прежнему "
-"считается нулём."
+"VLAN. Флаги включают в себя: \"reorder-headers\" (0x1) (переупорядочение "
+"заголовков исходящих пакетов), \"gvrp\" (0x2) (использование протокола GVRP) и "
+"\"loose-binding\" (0x4) (свободное связывание интерфейса с рабочим состоянием "
+"его ведущего устройства). \"mvrp\" (0x8) (использование протокола MVRP). "
+"Значением по умолчанию для этого свойства является "
+"NM_VLAN_FLAG_REORDER_HEADERS, но обычно оно было равно 0. Чтобы сохранить "
+"обратную совместимость, значение по умолчанию в D-Bus API по-прежнему остаётся "
+"нулём, а недостающее свойство D-Bus по-прежнему считается нулём."
 
 #: src/libnmc-setting/settings-docs.h.in:344
 msgid ""
@@ -10149,24 +10156,17 @@ msgstr ""
 #: src/libnmc-setting/settings-docs.h.in:389
 msgid ""
 "The NMSettingWiredWakeOnLan options to enable. Not all devices support all "
-"options. May be any combination of NM_SETTING_WIRED_WAKE_ON_LAN_PHY (0x2), "
-"NM_SETTING_WIRED_WAKE_ON_LAN_UNICAST (0x4), "
-"NM_SETTING_WIRED_WAKE_ON_LAN_MULTICAST (0x8), "
-"NM_SETTING_WIRED_WAKE_ON_LAN_BROADCAST (0x10), "
-"NM_SETTING_WIRED_WAKE_ON_LAN_ARP (0x20), NM_SETTING_WIRED_WAKE_ON_LAN_MAGIC "
-"(0x40) or the special values NM_SETTING_WIRED_WAKE_ON_LAN_DEFAULT (0x1) (to "
-"use global settings) and NM_SETTING_WIRED_WAKE_ON_LAN_IGNORE (0x8000) (to "
-"disable management of Wake-on-LAN in NetworkManager)."
+"options. May be any combination of \"phy\" (0x2), \"unicast\" (0x4), "
+"\"multicast\" (0x8), \"broadcast\" (0x10), \"arp\" (0x20), \"magic\" (0x40) or "
+"the special values \"default\" (0x1) (to use global settings) and "
+"\"ignore\" (0x8000) (to disable management of Wake-on-LAN in NetworkManager)."
 msgstr ""
 "Параметры NMSettingWiredWakeOnLan для включения. Не все устройства "
 "поддерживают все параметры. Возможна любая комбинация следующих возможностей: "
-"NM_SETTING_WIRED_WAKE_ON_LAN_PHY (0x2), NM_SETTING_WIRED_WAKE_ON_LAN_UNICAST "
-"(0x4), NM_SETTING_WIRED_WAKE_ON_LAN_MULTICAST (0x8), "
-"NM_SETTING_WIRED_WAKE_ON_LAN_BROADCAST (0x10), "
-"NM_SETTING_WIRED_WAKE_ON_LAN_ARP (0x20), NM_SETTING_WIRED_WAKE_ON_LAN_MAGIC "
-"(0x40) или специальных значений NM_SETTING_WIRED_WAKE_ON_LAN_DEFAULT (0x1) "
-"(использовать глобальные настройки) и NM_SETTING_WIRED_WAKE_ON_LAN_IGNORE "
-"(0x8000) (чтобы отключить управление Wake-on-LAN в NetworkManager)."
+"\"phy\" (0x2), \"unicast\" (0x4), \"multicast\"(0x8), \"broadcast\" (0x10), "
+"\"arp\" (0x20), \"magic\" (0x40) или специальных значений \"default\" (0x1) "
+"(использовать глобальные настройки) и \"ignore\" (0x8000) (чтобы отключить "
+"управление Wake-on-LAN в NetworkManager)."
 
 #: src/libnmc-setting/settings-docs.h.in:390
 msgid ""
@@ -10283,27 +10283,27 @@ msgstr "Флаги, указывающие, как нужно обрабатыв
 msgid ""
 "Configures AP isolation, which prevents communication between wireless devices "
 "connected to this AP. This property can be set to a value different from "
-"NM_TERNARY_DEFAULT (-1) only when the interface is configured in AP mode. If "
-"set to NM_TERNARY_TRUE (1), devices are not able to communicate with each "
-"other. This increases security because it protects devices against attacks "
-"from other clients in the network. At the same time, it prevents devices to "
-"access resources on the same wireless networks as file shares, printers, etc. "
-"If set to NM_TERNARY_FALSE (0), devices can talk to each other. When set to "
-"NM_TERNARY_DEFAULT (-1), the global default is used; in case the global "
-"default is unspecified it is assumed to be NM_TERNARY_FALSE (0)."
+"\"default\" (-1) only when the interface is configured in AP mode. If set to "
+"\"true\" (1), devices are not able to communicate with each other. This "
+"increases security because it protects devices against attacks from other "
+"clients in the network. At the same time, it prevents devices to access "
+"resources on the same wireless networks as file shares, printers, etc. If set "
+"to \"false\" (0), devices can talk to each other. When set to "
+"\"default\" (-1), the global default is used; in case the global default is "
+"unspecified it is assumed to be \"false\" (0)."
 msgstr ""
 "Параметры изоляции точки доступа, предотвращающие обмен информацией между "
 "беспроводными устройствами, подключённым к этой точке доступа. Для данного "
-"свойства можно установить значение, отличное от значения NM_TERNARY_DEFAULT "
-"(-1), только если интерфейс настроен в режиме точки доступа. Если указать "
-"NM_TERNARY_TRUE (1), то устройства не смогут обмениваться информацией друг с "
-"другом. Это свойство повышает безопасность, так как защищает устройства от "
-"атак с других клиентов в сети. В тоже время оно препятствует доступу устройств "
-"к таким общим ресурсам в одной беспроводной сети, как файлы, принтеры и так "
-"далее. Если указать NM_TERNARY_FALSE (0), то устройства смогут подключаться "
-"друг к другу. Если указать NM_TERNARY_DEFAULT (-1), то будет использоваться "
-"глобальное значение по умолчанию; в случае его отсутствия, подразумевается "
-"значение NM_TERNARY_FALSE (0)."
+"свойства можно установить значение, отличное от значения \"default\" (-1), "
+"только если интерфейс настроен в режиме точки доступа. Если указать "
+"\"true\" (1), то устройства не смогут обмениваться информацией друг с другом. "
+"Это свойство повышает безопасность, так как защищает устройства от атак с "
+"других клиентов в сети. В тоже время оно препятствует доступу устройств к "
+"таким общим ресурсам в одной беспроводной сети, как файлы, принтеры и так "
+"далее. Если указать \"false\" (0), то устройства смогут подключаться друг к "
+"другу. Если указать \"default\" (-1), то будет использоваться глобальное "
+"значение по умолчанию; в случае его отсутствия, подразумевается значение "
+"\"false\" (0)."
 
 #: src/libnmc-setting/settings-docs.h.in:400
 msgid ""
@@ -10428,19 +10428,16 @@ msgstr ""
 
 #: src/libnmc-setting/settings-docs.h.in:408
 msgid ""
-"One of NM_SETTING_MAC_RANDOMIZATION_DEFAULT (0) (never randomize unless the "
-"user has set a global default to randomize and the supplicant supports "
-"randomization),  NM_SETTING_MAC_RANDOMIZATION_NEVER (1) (never randomize the "
-"MAC address), or NM_SETTING_MAC_RANDOMIZATION_ALWAYS (2) (always randomize the "
-"MAC address)."
+"One of \"default\" (0) (never randomize unless the user has set a global "
+"default to randomize and the supplicant supports randomization),  "
+"\"never\" (1) (never randomize the MAC address), or \"always\" (2) (always "
+"randomize the MAC address)."
 msgstr ""
-"Одно из следующих значений: NM_SETTING_MAC_RANDOMIZATION_DEFAULT (0) (никогда "
-"не настраивать случайный выбор, если только пользователь не установил "
-"глобальное значение по умолчанию для случайного выбора, а запрашивающее "
-"устройство поддерживает возможность случайного выбора); "
-"NM_SETTING_MAC_RANDOMIZATION_NEVER (1) (никогда не выбирать случайный адрес "
-"MAC) или NM_SETTING_MAC_RANDOMIZATION_ALWAYS (2) (всегда выбирать случайный "
-"адрес MAC)."
+"Один из вариантов: \"default\" (0) (никогда не рандомизировать, если "
+"пользователь не установил глобальное значение по умолчанию для рандомизации и "
+"суппликант поддерживает рандомизацию), \"never\" (1) (никогда не "
+"рандомизировать MAC-адрес) или \"always\" (2) (всегда рандомизировать MAC-"
+"адрес)."
 
 #: src/libnmc-setting/settings-docs.h.in:409
 msgid ""
@@ -10452,18 +10449,15 @@ msgstr ""
 
 #: src/libnmc-setting/settings-docs.h.in:411
 msgid ""
-"One of NM_SETTING_WIRELESS_POWERSAVE_DISABLE (2) (disable Wi-Fi power saving), "
-"NM_SETTING_WIRELESS_POWERSAVE_ENABLE (3) (enable Wi-Fi power saving), "
-"NM_SETTING_WIRELESS_POWERSAVE_IGNORE (1) (don't touch currently configure "
-"setting) or NM_SETTING_WIRELESS_POWERSAVE_DEFAULT (0) (use the globally "
-"configured value). All other values are reserved."
+"One of \"disable\" (2) (disable Wi-Fi power saving), \"enable\" (3) (enable Wi-"
+"Fi power saving), \"ignore\" (1) (don't touch currently configure setting) or "
+"\"default\" (0) (use the globally configured value). All other values are "
+"reserved."
 msgstr ""
-"Одно из следующих значений: NM_SETTING_WIRELESS_POWERSAVE_DISABLE (2) "
-"(отключает энергосбережение Wi-Fi), NM_SETTING_WIRELESS_POWERSAVE_ENABLE (3) "
-"(включает энергосбережение Wi-Fi), NM_SETTING_WIRELESS_POWERSAVE_IGNORE (1) "
-"(не трогать текущую конфигурацию) или NM_SETTING_WIRELESS_POWERSAVE_DEFAULT "
-"(0) (используется глобально настроенное значение). Все остальные значения "
-"зарезервированы."
+"Одно из следующих значений: \"disable\" (2) (отключает энергосбережение Wi-"
+"Fi), \"enable\" (3) (включает энергосбережение Wi-Fi), \"ignore\" (1) (не "
+"трогать текущую конфигурацию) или \"default\" (0) (используется глобально "
+"настроенное значение). Все остальные значения зарезервированы."
 
 #: src/libnmc-setting/settings-docs.h.in:412
 #: src/libnmc-setting/settings-docs.h.in:415
@@ -10497,31 +10491,20 @@ msgstr "SSID сети Wi-Fi. Должен быть указан."
 #: src/libnmc-setting/settings-docs.h.in:416
 msgid ""
 "The NMSettingWirelessWakeOnWLan options to enable. Not all devices support all "
-"options. May be any combination of NM_SETTING_WIRELESS_WAKE_ON_WLAN_ANY (0x2), "
-"NM_SETTING_WIRELESS_WAKE_ON_WLAN_DISCONNECT (0x4), "
-"NM_SETTING_WIRELESS_WAKE_ON_WLAN_MAGIC (0x8), "
-"NM_SETTING_WIRELESS_WAKE_ON_WLAN_GTK_REKEY_FAILURE (0x10), "
-"NM_SETTING_WIRELESS_WAKE_ON_WLAN_EAP_IDENTITY_REQUEST (0x20), "
-"NM_SETTING_WIRELESS_WAKE_ON_WLAN_4WAY_HANDSHAKE (0x40), "
-"NM_SETTING_WIRELESS_WAKE_ON_WLAN_RFKILL_RELEASE (0x80), "
-"NM_SETTING_WIRELESS_WAKE_ON_WLAN_TCP (0x100) or the special values "
-"NM_SETTING_WIRELESS_WAKE_ON_WLAN_DEFAULT (0x1) (to use global settings) and "
-"NM_SETTING_WIRELESS_WAKE_ON_WLAN_IGNORE (0x8000) (to disable management of "
-"Wake-on-LAN in NetworkManager)."
+"options. May be any combination of \"any\" (0x2), \"disconnect\" (0x4), "
+"\"magic\" (0x8), \"gtk-rekey-failure\" (0x10), \"eap-identity-"
+"request\" (0x20), \"4way-handshake\" (0x40), \"rfkill-release\" (0x80), "
+"\"tcp\" (0x100) or the special values \"default\" (0x1) (to use global "
+"settings) and \"ignore\" (0x8000) (to disable management of Wake-on-LAN in "
+"NetworkManager)."
 msgstr ""
-"Параметры NMSettingWirelessWakeOnWLan для включения. Не все устройства "
-"поддерживают все параметры. Возможна любая комбинация следующих возможностей: "
-"NM_SETTING_WIRELESS_WAKE_ON_WLAN_ANY (0x2), "
-"NM_SETTING_WIRELESS_WAKE_ON_WLAN_DISCONNECT (0x4), "
-"NM_SETTING_WIRELESS_WAKE_ON_WLAN_MAGIC (0x8), "
-"NM_SETTING_WIRELESS_WAKE_ON_WLAN_GTK_REKEY_FAILURE (0x10), "
-"NM_SETTING_WIRELESS_WAKE_ON_WLAN_EAP_IDENTITY_REQUEST (0x20), "
-"NM_SETTING_WIRELESS_WAKE_ON_WLAN_4WAY_HANDSHAKE (0x40), "
-"NM_SETTING_WIRELESS_WAKE_ON_WLAN_RFKILL_RELEASE (0x80), "
-"NM_SETTING_WIRELESS_WAKE_ON_WLAN_TCP (0x100) или специальные значения "
-"NM_SETTING_WIRELESS_WAKE_ON_WLAN_DEFAULT ( 0x1) (для использования глобальных "
-"параметров) и NM_SETTING_WIRELESS_WAKE_ON_WLAN_IGNORE (0x8000) (чтобы "
-"отключить управление Wake-on-LAN в NetworkManager)."
+"Параметры NMSettingWirelessWakeOnWLan, которые необходимо включить. Не все "
+"устройства поддерживают все параметры. Может быть любой комбинацией из "
+"\"any\" (0x2), \"disconnect\" (0x4), \"magic\" (0x8), \"gtk-rekey-"
+"failure\" (0x10), \"eap-identity-request\" (0x20), \"4way-handshake\" (0x40), "
+"\"rfkill-release\" (0x80), \"tcp\" (0x100) или специальные значения "
+"\"default\" (0x1) (для использования глобальных настроек) и "
+"\"ignore\" (0x8000) (для отключения управления Wake-on-LAN в NetworkManager)."
 
 #: src/libnmc-setting/settings-docs.h.in:417
 msgid ""
@@ -10541,24 +10524,19 @@ msgstr ""
 #: src/libnmc-setting/settings-docs.h.in:418
 msgid ""
 "Indicates whether Fast Initial Link Setup (802.11ai) must be enabled for the "
-"connection.  One of NM_SETTING_WIRELESS_SECURITY_FILS_DEFAULT (0) (use global "
-"default value), NM_SETTING_WIRELESS_SECURITY_FILS_DISABLE (1) (disable FILS), "
-"NM_SETTING_WIRELESS_SECURITY_FILS_OPTIONAL (2) (enable FILS if the supplicant "
-"and the access point support it) or NM_SETTING_WIRELESS_SECURITY_FILS_REQUIRED "
-"(3) (enable FILS and fail if not supported).  When set to "
-"NM_SETTING_WIRELESS_SECURITY_FILS_DEFAULT (0) and no global default is set, "
-"FILS will be optionally enabled."
+"connection.  One of \"default\" (0) (use global default value), "
+"\"disable\" (1) (disable FILS), \"optional\" (2) (enable FILS if the "
+"supplicant and the access point support it) or \"required\" (3) (enable FILS "
+"and fail if not supported).  When set to \"default\" (0) and no global default "
+"is set, FILS will be optionally enabled."
 msgstr ""
-"Указывает, нужно ли включать Fast Initial Link (802.11ai) для подключения. "
-"Одно из следующих значений: NM_SETTING_WIRELESS_SECURITY_FILS_DEFAULT (0) "
-"(используйте глобальное значение по умолчанию), "
-"NM_SETTING_WIRELESS_SECURITY_FILS_DISABLE (1) (отключить FILS), "
-"NM_SETTING_WIRELESS_SECURITY_FILS_OPTIONAL (2) (включить FILS, если "
-"запрашивающее устройство и точка доступа поддерживает его) или "
-"NM_SETTING_WIRELESS_SECURITY_FILS_REQUIRED (3) (включить FILS и выполнить "
-"сбой, если не поддерживается). Если установлено значение "
-"NM_SETTING_WIRELESS_SECURITY_FILS_DEFAULT (0), и глобальное значение по "
-"умолчанию не установлено, FILS будет включён дополнительно."
+"Указывает, должна ли быть включена быстрая начальная установка соединения "
+"(802.11ai) для данного соединения.  Одно из значений: \"default\" (0) "
+"(использовать глобальное значение по умолчанию), \"disable\" (1) (отключить "
+"FILS), \"optional\" (2) (включить FILS, если супликант и точка доступа "
+"поддерживают его) или \"required\" (3) (включить FILS и отказать, если он не "
+"поддерживается).  Если установлено значение \"default\" (0) и не задано "
+"глобальное значение по умолчанию, то FILS будет включен опционально."
 
 #: src/libnmc-setting/settings-docs.h.in:419
 msgid ""
@@ -10624,24 +10602,19 @@ msgstr ""
 #: src/libnmc-setting/settings-docs.h.in:425
 msgid ""
 "Indicates whether Protected Management Frames (802.11w) must be enabled for "
-"the connection.  One of NM_SETTING_WIRELESS_SECURITY_PMF_DEFAULT (0) (use "
-"global default value), NM_SETTING_WIRELESS_SECURITY_PMF_DISABLE (1) (disable "
-"PMF), NM_SETTING_WIRELESS_SECURITY_PMF_OPTIONAL (2) (enable PMF if the "
-"supplicant and the access point support it) or "
-"NM_SETTING_WIRELESS_SECURITY_PMF_REQUIRED (3) (enable PMF and fail if not "
-"supported).  When set to NM_SETTING_WIRELESS_SECURITY_PMF_DEFAULT (0) and no "
-"global default is set, PMF will be optionally enabled."
+"the connection.  One of \"default\" (0) (use global default value), "
+"\"disable\" (1) (disable PMF), \"optional\" (2) (enable PMF if the supplicant "
+"and the access point support it) or \"required\" (3) (enable PMF and fail if "
+"not supported).  When set to \"default\" (0) and no global default is set, PMF "
+"will be optionally enabled."
 msgstr ""
-"Указывает, нужно ли в этом подключении активировать защищённые кадры "
-"управления (PMF, 802.11w). Одно из следующих значений: "
-"NM_SETTING_WIRELESS_SECURITY_PMF_DEFAULT (0) (использовать глобальное значение "
-"по умолчанию), NM_SETTING_WIRELESS_SECURITY_PMF_DISABLE (1) (отключить PMF), "
-"NM_SETTING_WIRELESS_SECURITY_PMF_OPTIONAL (2) (включить PMF, если их "
-"поддерживают запрашивающее устройство и точка доступа) или "
-"NM_SETTING_WIRELESS_SECURITY_PMF_REQUIRED (3) (включить PMF и выполнить сбой, "
-"если они не поддерживаются). Если установлено значение "
-"NM_SETTING_WIRELESS_SECURITY_PMF_DEFAULT (0), и глобальное значение по "
-"умолчанию не установлено, PMF будут включены опционально."
+"Указывает, должна ли быть включена функция Protected Management Frames "
+"(802.11w) для данного соединения.  Одно из значений: \"default\" (0) "
+"(использовать глобальное значение по умолчанию), \"disable\" (1) (отключить "
+"PMF), \"optional\" (2) (включить PMF, если супликант и точка доступа "
+"поддерживают его) или \"required\" (3) (включить PMF и отказать, если он не "
+"поддерживается).  Если установлено значение \"default\" (0) и не задано "
+"глобальное значение по умолчанию, PMF будет включен опционально."
 
 #: src/libnmc-setting/settings-docs.h.in:426
 msgid ""
@@ -10679,19 +10652,18 @@ msgstr ""
 
 #: src/libnmc-setting/settings-docs.h.in:430
 msgid ""
-"Controls the interpretation of WEP keys.  Allowed values are "
-"NM_WEP_KEY_TYPE_KEY (1), in which case the key is either a 10- or 26-character "
-"hexadecimal string, or a 5- or 13-character ASCII password; or "
-"NM_WEP_KEY_TYPE_PASSPHRASE (2), in which case the passphrase is provided as a "
-"string and will be hashed using the de-facto MD5 method to derive the actual "
-"WEP key."
+"Controls the interpretation of WEP keys.  Allowed values are \"key\" (1), in "
+"which case the key is either a 10- or 26-character hexadecimal string, or a 5- "
+"or 13-character ASCII password; or \"passphrase\" (2), in which case the "
+"passphrase is provided as a string and will be hashed using the de-facto MD5 "
+"method to derive the actual WEP key."
 msgstr ""
 "Управляет интерпретацией ключей WEP. Допустимыми значениями являются "
-"NM_WEP_KEY_TYPE_KEY (1), и в этом случае ключ представляет собой "
-"шестнадцатеричную строку с 10 или 26 символами или 5 или 13-символьный пароль "
-"ASCII; или NM_WEP_KEY_TYPE_PASSPHRASE (2), и в этом случае кодовая фраза "
-"предоставляется как строка и будет хеширована с использованием метода de-facto "
-"MD5 для получения фактического ключа WEP."
+"\"key\" (1), и в этом случае ключ представляет собой шестнадцатеричную строку "
+"с 10 или 26 символами или 5 или 13-символьный пароль ASCII; или "
+"\"passphrase\" (2), и в этом случае кодовая фраза предоставляется как строка и "
+"будет хеширована с использованием метода de-facto MD5 для получения "
+"фактического ключа WEP."
 
 #: src/libnmc-setting/settings-docs.h.in:431
 msgid ""
@@ -10809,48 +10781,46 @@ msgstr ""
 #: src/libnmc-setting/settings-docs.h.in:444
 msgid ""
 "Whether the system hostname can be determined from DHCP on this connection. "
-"When set to NM_TERNARY_DEFAULT (-1), the value from global configuration is "
-"used. If the property doesn't have a value in the global configuration, "
-"NetworkManager assumes the value to be NM_TERNARY_TRUE (1)."
+"When set to \"default\" (-1), the value from global configuration is used. If "
+"the property doesn't have a value in the global configuration, NetworkManager "
+"assumes the value to be \"true\" (1)."
 msgstr ""
 "Может ли для данного подключения системное имя хоста определяться по DHCP. При "
-"значении NM_TERNARY_DEFAULT (-1) используется значение из глобальной "
-"конфигурации. Если для этого свойства значение в глобальной конфигурации "
-"отсутствует, то NetworkManager считает, что значение равно NM_TERNARY_TRUE (1)."
+"значении \"default\" (-1) используется значение из глобальной конфигурации. "
+"Если для этого свойства значение в глобальной конфигурации отсутствует, то "
+"NetworkManager считает, что значение равно \"true\" (1)."
 
 #: src/libnmc-setting/settings-docs.h.in:445
 msgid ""
 "Whether the system hostname can be determined from reverse DNS lookup of "
-"addresses on this device. When set to NM_TERNARY_DEFAULT (-1), the value from "
-"global configuration is used. If the property doesn't have a value in the "
-"global configuration, NetworkManager assumes the value to be NM_TERNARY_TRUE "
-"(1)."
+"addresses on this device. When set to \"default\" (-1), the value from global "
+"configuration is used. If the property doesn't have a value in the global "
+"configuration, NetworkManager assumes the value to be \"true\" (1)."
 msgstr ""
 "Может ли для данного устройства системное имя хоста определяться по обратному "
-"поиску DNS по адресам на этом устройстве. При значении NM_TERNARY_DEFAULT (-1) "
+"поиску DNS по адресам на этом устройстве. При значении \"default\" (-1) "
 "используется значение из глобальной конфигурации. Если для этого свойства "
 "значение в глобальной конфигурации отсутствует, то NetworkManager считает, что "
-"значение равно NM_TERNARY_TRUE (1)."
+"значение равно \"true\" (1)."
 
 #: src/libnmc-setting/settings-docs.h.in:446
 msgid ""
-"If set to NM_TERNARY_TRUE (1), NetworkManager attempts to get the hostname via "
-"DHCPv4/DHCPv6 or reverse DNS lookup on this device only when the device has "
-"the default route for the given address family (IPv4/IPv6). If set to "
-"NM_TERNARY_FALSE (0), the hostname can be set from this device even if it "
-"doesn't have the default route. When set to NM_TERNARY_DEFAULT (-1), the value "
-"from global configuration is used. If the property doesn't have a value in the "
-"global configuration, NetworkManager assumes the value to be NM_TERNARY_FALSE "
-"(0)."
+"If set to \"true\" (1), NetworkManager attempts to get the hostname via DHCPv4/"
+"DHCPv6 or reverse DNS lookup on this device only when the device has the "
+"default route for the given address family (IPv4/IPv6). If set to "
+"\"false\" (0), the hostname can be set from this device even if it doesn't "
+"have the default route. When set to \"default\" (-1), the value from global "
+"configuration is used. If the property doesn't have a value in the global "
+"configuration, NetworkManager assumes the value to be \"false\" (0)."
 msgstr ""
-"При значении NM_TERNARY_TRUE (1), NetworkManager попытается получить имя хоста "
-"через DHCPv4/DHCPv6 или с помощью обратного поиска DNS на этом устройстве "
-"только если маршрут по умолчанию на устройстве относится к семейству адресов "
-"по умолчанию (IPv4/IPv6). При значении NM_TERNARY_FALSE (0) имя хоста можно "
-"получить из устройства даже при отсутствии маршрута по умолчанию. При значении "
-"NM_TERNARY_DEFAULT (-1) используется значение из глобальной конфигурации. Если "
-"в глобальной конфигурации значение для этого свойства отсутствует, "
-"NetworkManager считает, что значение равно NM_TERNARY_FALSE (0)."
+"При значении \"true\" (1), NetworkManager попытается получить имя хоста через "
+"DHCPv4/DHCPv6 или с помощью обратного поиска DNS на этом устройстве только "
+"если маршрут по умолчанию на устройстве относится к семейству адресов по "
+"умолчанию (IPv4/IPv6). При значении \"false\" (0) имя хоста можно получить из "
+"устройства даже при отсутствии маршрута по умолчанию. При значении "
+"\"default\" (-1) используется значение из глобальной конфигурации. Если в "
+"глобальной конфигурации значение для этого свойства отсутствует, "
+"NetworkManager считает, что значение равно \"false\" (0)."
 
 #: src/libnmc-setting/settings-docs.h.in:447
 msgid ""
@@ -10942,7 +10912,7 @@ msgstr ""
 #: src/libnmt-newt/nmt-newt-utils.c:267 src/nmtui/nmt-editor.c:442
 #: src/nmtui/nmt-password-dialog.c:163 src/nmtui/nmt-route-editor.c:105
 #: src/nmtui/nmt-wireguard-peer-editor.c:154 src/nmtui/nmtui-hostname.c:53
-#: src/nmtui/nmtui.c:113
+#: src/nmtui/nmtui.c:115
 msgid "OK"
 msgstr "OK"
 
@@ -11102,49 +11072,49 @@ msgstr ""
 "Предупреждение. В файле «passwd-file» не определен пароль для «%s», поэтому "
 "для продолжения работы nmcli необходимо использовать ключ «--ask».\n"
 
-#: src/nmcli/common.c:1248
+#: src/nmcli/common.c:1249
 #, c-format
 msgid "Error: Could not create NMClient object: %s."
 msgstr "Ошибка: не удалось создать объект NMClient: %s."
 
-#: src/nmcli/common.c:1379
+#: src/nmcli/common.c:1381
 msgid "Error: command doesn't support --offline mode."
 msgstr "Ошибка: команда не поддерживает режим --offline."
 
-#: src/nmcli/common.c:1419
+#: src/nmcli/common.c:1421
 msgid "Error: NetworkManager is not running."
 msgstr "Ошибка: NetworkManager не запущен."
 
-#: src/nmcli/common.c:1522
+#: src/nmcli/common.c:1524
 #, c-format
 msgid "Error: argument '%s' not understood. Try passing --help instead."
 msgstr "Ошибка: аргумент '%s' не понял. Попробуйте передать --help вместо этого."
 
-#: src/nmcli/common.c:1533
+#: src/nmcli/common.c:1535
 msgid "Error: missing argument. Try passing --help."
 msgstr "Ошибка: не указан аргумент. Попробуйте передать --help."
 
-#: src/nmcli/common.c:1598
+#: src/nmcli/common.c:1600
 msgid "access denied"
 msgstr "в доступе отказано"
 
-#: src/nmcli/common.c:1600
+#: src/nmcli/common.c:1602
 msgid "NetworkManager is not running"
 msgstr "NetworkManager не запущен"
 
-#: src/nmcli/common.c:1610
+#: src/nmcli/common.c:1612
 msgid "none"
 msgstr "нет"
 
-#: src/nmcli/common.c:1611
+#: src/nmcli/common.c:1613
 msgid "portal"
 msgstr "портал"
 
-#: src/nmcli/common.c:1612
+#: src/nmcli/common.c:1614
 msgid "limited"
 msgstr "ограничено"
 
-#: src/nmcli/common.c:1613
+#: src/nmcli/common.c:1615
 msgid "full"
 msgstr "полностью"
 
@@ -11983,9 +11953,9 @@ msgstr "Ошибка «connection show»: %s"
 msgid "Active connection details"
 msgstr "Сведения об активации подключения"
 
-#: src/nmcli/connections.c:1798 src/nmcli/devices.c:1667 src/nmcli/devices.c:1684
-#: src/nmcli/devices.c:1702 src/nmcli/devices.c:1721 src/nmcli/devices.c:1785
-#: src/nmcli/devices.c:1914
+#: src/nmcli/connections.c:1798 src/nmcli/devices.c:1672 src/nmcli/devices.c:1689
+#: src/nmcli/devices.c:1707 src/nmcli/devices.c:1726 src/nmcli/devices.c:1790
+#: src/nmcli/devices.c:1919
 msgid "NAME"
 msgstr "ИМЯ"
 
@@ -12037,15 +12007,15 @@ msgstr "Профили подключений NetworkManager"
 
 #: src/nmcli/connections.c:2435 src/nmcli/connections.c:3162
 #: src/nmcli/connections.c:3174 src/nmcli/connections.c:3186
-#: src/nmcli/connections.c:3422 src/nmcli/connections.c:9668
-#: src/nmcli/connections.c:9687 src/nmcli/devices.c:3377 src/nmcli/devices.c:3390
-#: src/nmcli/devices.c:3402 src/nmcli/devices.c:3706 src/nmcli/devices.c:3717
-#: src/nmcli/devices.c:3736 src/nmcli/devices.c:3745 src/nmcli/devices.c:3767
-#: src/nmcli/devices.c:3778 src/nmcli/devices.c:3799 src/nmcli/devices.c:4370
-#: src/nmcli/devices.c:4381 src/nmcli/devices.c:4390 src/nmcli/devices.c:4404
-#: src/nmcli/devices.c:4422 src/nmcli/devices.c:4431 src/nmcli/devices.c:4580
-#: src/nmcli/devices.c:4591 src/nmcli/devices.c:4810 src/nmcli/devices.c:4989
-#: src/nmcli/devices.c:5210
+#: src/nmcli/connections.c:3422 src/nmcli/connections.c:9669
+#: src/nmcli/connections.c:9688 src/nmcli/devices.c:3382 src/nmcli/devices.c:3395
+#: src/nmcli/devices.c:3407 src/nmcli/devices.c:3711 src/nmcli/devices.c:3722
+#: src/nmcli/devices.c:3741 src/nmcli/devices.c:3750 src/nmcli/devices.c:3772
+#: src/nmcli/devices.c:3783 src/nmcli/devices.c:3804 src/nmcli/devices.c:4375
+#: src/nmcli/devices.c:4386 src/nmcli/devices.c:4395 src/nmcli/devices.c:4409
+#: src/nmcli/devices.c:4427 src/nmcli/devices.c:4436 src/nmcli/devices.c:4585
+#: src/nmcli/devices.c:4596 src/nmcli/devices.c:4815 src/nmcli/devices.c:4994
+#: src/nmcli/devices.c:5215
 #, c-format
 msgid "Error: %s argument is missing."
 msgstr "Ошибка: не указан аргумент %s."
@@ -12056,16 +12026,16 @@ msgid "Error: %s - no such connection profile."
 msgstr "Ошибка: профиль подключения %s не обнаружен."
 
 #: src/nmcli/connections.c:2562 src/nmcli/connections.c:3148
-#: src/nmcli/connections.c:3222 src/nmcli/connections.c:9174
-#: src/nmcli/connections.c:9258 src/nmcli/connections.c:9792
-#: src/nmcli/devices.c:2014 src/nmcli/devices.c:2316 src/nmcli/devices.c:2483
-#: src/nmcli/devices.c:2609 src/nmcli/devices.c:2794 src/nmcli/devices.c:3577
-#: src/nmcli/devices.c:4544 src/nmcli/devices.c:4996 src/nmcli/general.c:1069
+#: src/nmcli/connections.c:3222 src/nmcli/connections.c:9173
+#: src/nmcli/connections.c:9257 src/nmcli/connections.c:9793
+#: src/nmcli/devices.c:2019 src/nmcli/devices.c:2321 src/nmcli/devices.c:2488
+#: src/nmcli/devices.c:2614 src/nmcli/devices.c:2799 src/nmcli/devices.c:3582
+#: src/nmcli/devices.c:4549 src/nmcli/devices.c:5001 src/nmcli/general.c:1069
 #, c-format
 msgid "Error: %s."
 msgstr "Ошибка: %s."
 
-#: src/nmcli/connections.c:2660 src/nmcli/devices.c:4763
+#: src/nmcli/connections.c:2660 src/nmcli/devices.c:4768
 #, c-format
 msgid "no active connection on device '%s'"
 msgstr "на устройстве «%s» нет активных подключений"
@@ -12105,7 +12075,7 @@ msgid "Connection successfully activated (%s) (D-Bus active path: %s)\n"
 msgstr "Подключение успешно активировано (%s) (активный путь D-Bus: %s)\n"
 
 #: src/nmcli/connections.c:2817 src/nmcli/connections.c:2968
-#: src/nmcli/connections.c:7413
+#: src/nmcli/connections.c:7412
 #, c-format
 msgid "Connection successfully activated (D-Bus active path: %s)\n"
 msgstr "Подключение успешно активировано (активный путь D-Bus: %s)\n"
@@ -12139,11 +12109,11 @@ msgstr "недействительный passwd-file '%s' в строке %zd: %
 msgid "invalid passwd-file '%s': %s"
 msgstr "недействительный passwd-file '%s': %s"
 
-#: src/nmcli/connections.c:3196 src/nmcli/connections.c:9696
-#: src/nmcli/devices.c:1971 src/nmcli/devices.c:2020 src/nmcli/devices.c:2489
-#: src/nmcli/devices.c:2682 src/nmcli/devices.c:2749 src/nmcli/devices.c:2949
-#: src/nmcli/devices.c:3437 src/nmcli/devices.c:3815 src/nmcli/devices.c:4441
-#: src/nmcli/devices.c:4597 src/nmcli/devices.c:4818 src/nmcli/devices.c:5001
+#: src/nmcli/connections.c:3196 src/nmcli/connections.c:9697
+#: src/nmcli/devices.c:1976 src/nmcli/devices.c:2025 src/nmcli/devices.c:2494
+#: src/nmcli/devices.c:2687 src/nmcli/devices.c:2754 src/nmcli/devices.c:2954
+#: src/nmcli/devices.c:3442 src/nmcli/devices.c:3820 src/nmcli/devices.c:4446
+#: src/nmcli/devices.c:4602 src/nmcli/devices.c:4823 src/nmcli/devices.c:5006
 #, c-format
 msgid "Error: invalid extra argument '%s'."
 msgstr "Ошибка: недействительный дополнительный аргумент «%s»."
@@ -12162,8 +12132,8 @@ msgstr "Подключение «%s» (%s) успешно удалено.\n"
 msgid "Connection '%s' successfully deactivated (D-Bus active path: %s)\n"
 msgstr "Подключение «%s» успешно отключено (активный путь D-Bus: %s)\n"
 
-#: src/nmcli/connections.c:3403 src/nmcli/connections.c:9354
-#: src/nmcli/connections.c:9389 src/nmcli/connections.c:9578
+#: src/nmcli/connections.c:3403 src/nmcli/connections.c:9353
+#: src/nmcli/connections.c:9390 src/nmcli/connections.c:9579
 msgid "Error: No connection specified."
 msgstr "Ошибка: не указано подключение."
 
@@ -12191,98 +12161,98 @@ msgid "Warning: master='%s' doesn't refer to any existing profile.\n"
 msgstr ""
 "Предупреждение: master='%s' не относится ни к одному существующему профилю.\n"
 
-#: src/nmcli/connections.c:4338
+#: src/nmcli/connections.c:4337
 #, c-format
 msgid "Error: invalid property '%s': %s."
 msgstr "Ошибка: недействительное свойство «%s»: %s."
 
-#: src/nmcli/connections.c:4356
+#: src/nmcli/connections.c:4355
 #, c-format
 msgid "Error: failed to modify %s.%s: %s."
 msgstr "Ошибка: не удалось изменить %s.%s: %s."
 
-#: src/nmcli/connections.c:4357
+#: src/nmcli/connections.c:4356
 #, c-format
 msgid "Error: failed to remove a value from %s.%s: %s."
 msgstr "Ошибка: не удалось удалить значение из %s.%s: %s."
 
-#: src/nmcli/connections.c:4437
+#: src/nmcli/connections.c:4436
 #, c-format
 msgid "Error: invalid slave type; %s."
 msgstr "Ошибка: недействительный тип подчинённого подключения; %s."
 
-#: src/nmcli/connections.c:4448
+#: src/nmcli/connections.c:4447
 #, c-format
 msgid "Error: invalid connection type; %s."
 msgstr "Ошибка: недействительный тип подключения; %s."
 
-#: src/nmcli/connections.c:4581
+#: src/nmcli/connections.c:4580
 #, c-format
 msgid "Error: bad connection type: %s"
 msgstr "Ошибка: неверный тип подключения: %s"
 
-#: src/nmcli/connections.c:4657
+#: src/nmcli/connections.c:4656
 msgid "Error: master is required"
 msgstr "Ошибка: требуется master"
 
-#: src/nmcli/connections.c:4758
+#: src/nmcli/connections.c:4757
 #, c-format
 msgid "Error: '%s' is not a valid monitoring mode; use '%s' or '%s'.\n"
 msgstr ""
 "Ошибка: «%s» не является действительным режимом мониторинга. Используйте «%s» "
 "или «%s».\n"
 
-#: src/nmcli/connections.c:4798
+#: src/nmcli/connections.c:4797
 #, c-format
 msgid "Error: 'bt-type': '%s' not valid; use [%s, %s, %s (%s), %s]."
 msgstr ""
 "Ошибка: «bt-type»: «%s» не является действительным; используйте [%s, %s, %s "
 "(%s), %s]."
 
-#: src/nmcli/connections.c:5147
+#: src/nmcli/connections.c:5146
 #, c-format
 msgid "Error: setting '%s' is mandatory and cannot be removed."
 msgstr "Ошибка: значение «%s» является обязательным и не может быть удалено."
 
-#: src/nmcli/connections.c:5163
+#: src/nmcli/connections.c:5162
 #, c-format
 msgid "Error: value for '%s' is missing."
 msgstr "Ошибка: не указано значение для «%s»."
 
-#: src/nmcli/connections.c:5214
+#: src/nmcli/connections.c:5213
 msgid "Error: <setting>.<property> argument is missing."
 msgstr "Ошибка: отсутствует аргумент <setting>.<property>."
 
-#: src/nmcli/connections.c:5256
+#: src/nmcli/connections.c:5255
 msgid "Error: missing setting."
 msgstr "Ошибка: отсутствует настройка."
 
-#: src/nmcli/connections.c:5270
+#: src/nmcli/connections.c:5269
 #, c-format
 msgid "Error: invalid setting argument '%s'."
 msgstr "Ошибка: недействительный аргумент «%s» параметра."
 
-#: src/nmcli/connections.c:5301
+#: src/nmcli/connections.c:5300
 #, c-format
 msgid "Error: invalid or not allowed setting '%s': %s."
 msgstr "Ошибка: недействительный или неразрешённый параметр «%s»: %s."
 
-#: src/nmcli/connections.c:5360 src/nmcli/connections.c:5381
+#: src/nmcli/connections.c:5359 src/nmcli/connections.c:5380
 #, c-format
 msgid "Error: '%s' is ambiguous (%s.%s or %s.%s)."
 msgstr "Ошибка: «%s» не является однозначным (%s.%s или %s.%s)."
 
-#: src/nmcli/connections.c:5405
+#: src/nmcli/connections.c:5404
 #, c-format
 msgid "Error: invalid <setting>.<property> '%s'."
 msgstr "Ошибка: недействительный <параметр>.<свойство> «%s»."
 
-#: src/nmcli/connections.c:5439 src/nmcli/devices.c:2203
+#: src/nmcli/connections.c:5438 src/nmcli/devices.c:2208
 #, c-format
 msgid "Warning: %s.\n"
 msgstr "Предупреждение: %s.\n"
 
-#: src/nmcli/connections.c:5455
+#: src/nmcli/connections.c:5454
 #, c-format
 msgid ""
 "Warning: There is another connection with the name '%1$s'. Reference the "
@@ -12300,7 +12270,7 @@ msgstr[2] ""
 "Предупреждение: есть ещё %3$u других подключений с именем '%1$s'. Ссылайтесь "
 "на подключение по его uuid '%2$s'\n"
 
-#: src/nmcli/connections.c:5477 src/nmcli/connections.c:9206
+#: src/nmcli/connections.c:5476 src/nmcli/connections.c:9205
 #, c-format
 msgid "Error: Failed to add '%s' connection: %s"
 msgstr "Ошибка: не удалось добавить подключение «%s»: %s"
@@ -12314,44 +12284,44 @@ msgstr "Ошибка: не удалось добавить подключени�
 #. *
 #. * This is true for many messages that the user might parse. But this one
 #. * seems in particular interesting for a user to parse.
-#: src/nmcli/connections.c:5494
+#: src/nmcli/connections.c:5493
 #, c-format
 msgid "Connection '%s' (%s) successfully added.\n"
 msgstr "Подключение «%s» (%s) успешно добавлено.\n"
 
-#: src/nmcli/connections.c:5643
+#: src/nmcli/connections.c:5642
 msgid ""
 "You can specify this option more than once. Press <Enter> when you're done.\n"
 msgstr ""
 "Этот параметр можно указать более одного раза. Закончив, нажмите <Ввод>.\n"
 
 #. Ask for optional arguments.
-#: src/nmcli/connections.c:5754
+#: src/nmcli/connections.c:5753
 #, c-format
 msgid "There are %d optional settings for %s.\n"
 msgstr "%d дополнительных параметров для %s.\n"
 
-#: src/nmcli/connections.c:5756
+#: src/nmcli/connections.c:5755
 #, c-format
 msgid "Do you want to provide them? %s"
 msgstr "Хотите их указать? %s"
 
-#: src/nmcli/connections.c:5896 src/nmcli/utils.c:280
+#: src/nmcli/connections.c:5895 src/nmcli/utils.c:280
 #, c-format
 msgid "Error: value for '%s' argument is required."
 msgstr "Ошибка: необходимо указать значение аргумента «%s»."
 
-#: src/nmcli/connections.c:5903
+#: src/nmcli/connections.c:5902
 #, c-format
 msgid "Error: 'save': %s."
 msgstr "Ошибка «save»: %s."
 
-#: src/nmcli/connections.c:5991 src/nmcli/connections.c:6004
+#: src/nmcli/connections.c:5990 src/nmcli/connections.c:6003
 #, c-format
 msgid "Error: '%s' argument is required."
 msgstr "Ошибка: требуется аргумент «%s»."
 
-#: src/nmcli/connections.c:6961
+#: src/nmcli/connections.c:6960
 #, c-format
 msgid "['%s' setting values]\n"
 msgstr "[значения параметра '%s']\n"
@@ -12359,7 +12329,7 @@ msgstr "[значения параметра '%s']\n"
 #. TRANSLATORS: do not translate command names and keywords before ::
 #. *              However, you should translate terms enclosed in <>.
 #.
-#: src/nmcli/connections.c:7072
+#: src/nmcli/connections.c:7071
 msgid ""
 "---[ Main menu ]---\n"
 "goto     [<setting> | <prop>]        :: go to a setting or property\n"
@@ -12395,7 +12365,7 @@ msgstr ""
 "nmcli    <параметр> <значение>                 :: конфигурация nmcli\n"
 "quit                                           :: выход из nmcli\n"
 
-#: src/nmcli/connections.c:7100
+#: src/nmcli/connections.c:7099
 msgid ""
 "goto <setting>[.<prop>] | <prop>  :: enter setting/property for editing\n"
 "\n"
@@ -12414,7 +12384,7 @@ msgstr ""
 "          nmcli connection> goto secondaries\n"
 "          nmcli> goto ipv4.addresses\n"
 
-#: src/nmcli/connections.c:7108
+#: src/nmcli/connections.c:7107
 msgid ""
 "remove <setting>[.<prop>]  :: remove setting or reset property value\n"
 "\n"
@@ -12434,7 +12404,7 @@ msgstr ""
 "Примеры: nmcli> remove wifi-sec\n"
 "          nmcli> remove eth.mtu\n"
 
-#: src/nmcli/connections.c:7115
+#: src/nmcli/connections.c:7114
 msgid ""
 "set [<setting>.<prop> <value>]  :: set property value\n"
 "\n"
@@ -12448,7 +12418,7 @@ msgstr ""
 "\n"
 "Пример: nmcli> set con.id моё_подключение\n"
 
-#: src/nmcli/connections.c:7120
+#: src/nmcli/connections.c:7119
 msgid ""
 "add [<setting>.<prop> <value>]  :: add property value\n"
 "\n"
@@ -12462,7 +12432,7 @@ msgstr ""
 "\n"
 "Пример: nmcli> add ipv4.addresses 192.168.1.1/24\n"
 
-#: src/nmcli/connections.c:7125
+#: src/nmcli/connections.c:7124
 msgid ""
 "describe [<setting>.<prop>]  :: describe property\n"
 "\n"
@@ -12474,7 +12444,7 @@ msgstr ""
 "Показывает описание свойства. Полный список параметров и свойств Network "
 "Manager можно найти на справочной странице nm-settings(5).\n"
 
-#: src/nmcli/connections.c:7130
+#: src/nmcli/connections.c:7129
 msgid ""
 "print [all]  :: print setting or connection values\n"
 "\n"
@@ -12488,7 +12458,7 @@ msgstr ""
 "\n"
 "Пример: nmcli ipv4> print all\n"
 
-#: src/nmcli/connections.c:7136
+#: src/nmcli/connections.c:7135
 msgid ""
 "verify [all | fix]  :: verify setting or connection validity\n"
 "\n"
@@ -12511,7 +12481,7 @@ msgstr ""
 "          nmcli> verify fix\n"
 "          nmcli bond> verify\n"
 
-#: src/nmcli/connections.c:7146
+#: src/nmcli/connections.c:7145
 msgid ""
 "save [persistent|temporary]  :: save the connection\n"
 "\n"
@@ -12541,7 +12511,7 @@ msgstr ""
 "основе,\n"
 "необходимо удалить его профиль. \n"
 
-#: src/nmcli/connections.c:7157
+#: src/nmcli/connections.c:7156
 msgid ""
 "activate [<ifname>] [/<ap>|<nsp>]  :: activate the connection\n"
 "\n"
@@ -12561,7 +12531,7 @@ msgstr ""
 "/<ap>|<nsp> - AP (Wi-Fi) или NSP (WiMAX) (если <интерфейс> не задан, в начале "
 "строки надо добавить /)\n"
 
-#: src/nmcli/connections.c:7165 src/nmcli/connections.c:7324
+#: src/nmcli/connections.c:7164 src/nmcli/connections.c:7323
 msgid ""
 "back  :: go to upper menu level\n"
 "\n"
@@ -12569,7 +12539,7 @@ msgstr ""
 "back  :: переход на уровень меню выше\n"
 "\n"
 
-#: src/nmcli/connections.c:7168
+#: src/nmcli/connections.c:7167
 msgid ""
 "help/? [<command>]  :: help for the nmcli commands\n"
 "\n"
@@ -12577,7 +12547,7 @@ msgstr ""
 "help/? [<команда>]  :: справка по командам nmcli\n"
 "\n"
 
-#: src/nmcli/connections.c:7171
+#: src/nmcli/connections.c:7170
 #, c-format
 msgid ""
 "nmcli [<conf-option> <value>]  :: nmcli configuration\n"
@@ -12604,7 +12574,7 @@ msgstr ""
 "          nmcli> nmcli save-confirmation no\n"
 "          nmcli> nmcli prompt-color 3\n"
 
-#: src/nmcli/connections.c:7193 src/nmcli/connections.c:7330
+#: src/nmcli/connections.c:7192 src/nmcli/connections.c:7329
 msgid ""
 "quit  :: exit nmcli\n"
 "\n"
@@ -12616,8 +12586,8 @@ msgstr ""
 "Данная команда выполняет выход из nmcli. Если изменения подключения не "
 "сохранены, будет выведен запрос о подтверждении действия.\n"
 
-#: src/nmcli/connections.c:7198 src/nmcli/connections.c:7335
-#: src/nmcli/connections.c:7727 src/nmcli/connections.c:8769
+#: src/nmcli/connections.c:7197 src/nmcli/connections.c:7334
+#: src/nmcli/connections.c:7726 src/nmcli/connections.c:8768
 #, c-format
 msgid "Unknown command: '%s'\n"
 msgstr "Неизвестная команда: «%s»\n"
@@ -12625,7 +12595,7 @@ msgstr "Неизвестная команда: «%s»\n"
 #. TRANSLATORS: do not translate command names and keywords before ::
 #. *              However, you should translate terms enclosed in <>.
 #.
-#: src/nmcli/connections.c:7263
+#: src/nmcli/connections.c:7262
 msgid ""
 "---[ Property menu ]---\n"
 "set      [<value>]               :: set new value\n"
@@ -12650,7 +12620,7 @@ msgstr ""
 "help/?   [<команда>]             :: показать справку или описание команды\n"
 "quit                             :: выход из nmcli\n"
 
-#: src/nmcli/connections.c:7287
+#: src/nmcli/connections.c:7286
 msgid ""
 "set [<value>]  :: set new value\n"
 "\n"
@@ -12660,7 +12630,7 @@ msgstr ""
 "\n"
 "Эта команда устанавливает новое <значение> свойства.\n"
 
-#: src/nmcli/connections.c:7291
+#: src/nmcli/connections.c:7290
 msgid ""
 "add [<value>]  :: append new value to the property\n"
 "\n"
@@ -12674,7 +12644,7 @@ msgstr ""
 "контейнер. Если свойство имеет единственное значение, оно будет заменено (что "
 "равносильно команде «set»).\n"
 
-#: src/nmcli/connections.c:7297
+#: src/nmcli/connections.c:7296
 msgid ""
 "change  :: change current value\n"
 "\n"
@@ -12684,7 +12654,7 @@ msgstr ""
 "\n"
 "Показывает значение и позволяет его отредактировать.\n"
 
-#: src/nmcli/connections.c:7302
+#: src/nmcli/connections.c:7301
 msgid ""
 "remove [<value>|<index>|<option name>]  :: delete the value\n"
 "\n"
@@ -12716,7 +12686,7 @@ msgstr ""
 "          nmcli ipv4.dns> remove 2\n"
 "          nmcli bond.options> remove downdelay\n"
 
-#: src/nmcli/connections.c:7313
+#: src/nmcli/connections.c:7312
 msgid ""
 "describe  :: describe property\n"
 "\n"
@@ -12728,7 +12698,7 @@ msgstr ""
 "Возвращает описание свойства. Полный список параметров и их значений можно "
 "найти на справочной странице nm-settings(5).\n"
 
-#: src/nmcli/connections.c:7318
+#: src/nmcli/connections.c:7317
 msgid ""
 "print [property|setting|connection]  :: print property (setting, connection) "
 "value(s)\n"
@@ -12742,7 +12712,7 @@ msgstr ""
 "Если аргумент не указан, возвращает значение свойства. Укажите параметр или "
 "подключение, чтобы получить соответствующую информацию.\n"
 
-#: src/nmcli/connections.c:7327
+#: src/nmcli/connections.c:7326
 msgid ""
 "help/? [<command>]  :: help for nmcli commands\n"
 "\n"
@@ -12750,22 +12720,22 @@ msgstr ""
 "help/? [<команда>]  :: справка по командам nmcli\n"
 "\n"
 
-#: src/nmcli/connections.c:7419
+#: src/nmcli/connections.c:7418
 msgid "Error: Connection activation failed.\n"
 msgstr "Ошибка. Не удалось активировать подключение.\n"
 
 #. TRANSLATORS: status line in nmcli connection editor
-#: src/nmcli/connections.c:7517
+#: src/nmcli/connections.c:7516
 #, c-format
 msgid "[ Type: %s | Name: %s | UUID: %s | Dirty: %s | Temp: %s ]\n"
 msgstr "[Тип: %s | Имя: %s | UUID: %s | Не сохранено: %s | Временно.: %s ]\n"
 
-#: src/nmcli/connections.c:7555
+#: src/nmcli/connections.c:7554
 #, c-format
 msgid "The connection is not saved. Do you really want to quit? %s"
 msgstr "Подключение не сохранено. Вы действительно хотите выйти? %s"
 
-#: src/nmcli/connections.c:7599
+#: src/nmcli/connections.c:7598
 msgid ""
 "The connection profile has been removed from another client. You may type "
 "'save' in the main menu to restore it.\n"
@@ -12773,60 +12743,60 @@ msgstr ""
 "Профиль подключения был удален из другого клиента. Чтобы его восстановить, "
 "введите «save».\n"
 
-#: src/nmcli/connections.c:7631 src/nmcli/connections.c:8027
-#: src/nmcli/connections.c:8100
+#: src/nmcli/connections.c:7630 src/nmcli/connections.c:8026
+#: src/nmcli/connections.c:8099
 #, c-format
 msgid "Allowed values for '%s' property: %s\n"
 msgstr "Разрешённые значения свойства «%s»: %s\n"
 
-#: src/nmcli/connections.c:7633 src/nmcli/connections.c:8032
-#: src/nmcli/connections.c:8104
+#: src/nmcli/connections.c:7632 src/nmcli/connections.c:8031
+#: src/nmcli/connections.c:8103
 #, c-format
 msgid "Enter '%s' value: "
 msgstr "Введите значение «%s»: "
 
-#: src/nmcli/connections.c:7646 src/nmcli/connections.c:7665
-#: src/nmcli/connections.c:8040 src/nmcli/connections.c:8115
+#: src/nmcli/connections.c:7645 src/nmcli/connections.c:7664
+#: src/nmcli/connections.c:8039 src/nmcli/connections.c:8114
 #, c-format
 msgid "Error: failed to set '%s' property: %s\n"
 msgstr "Ошибка. Не удалось установить свойство «%s»: %s\n"
 
-#: src/nmcli/connections.c:7657
+#: src/nmcli/connections.c:7656
 #, c-format
 msgid "Edit '%s' value: "
 msgstr "Измените значение «%s»: "
 
-#: src/nmcli/connections.c:7680 src/nmcli/settings.c:443
+#: src/nmcli/connections.c:7679 src/nmcli/settings.c:443
 #, c-format
 msgid "Error: %s\n"
 msgstr "Ошибка: %s\n"
 
-#: src/nmcli/connections.c:7699
+#: src/nmcli/connections.c:7698
 #, c-format
 msgid "Unknown command argument: '%s'\n"
 msgstr "Неизвестный аргумент команды: «%s»\n"
 
-#: src/nmcli/connections.c:7794
+#: src/nmcli/connections.c:7793
 #, c-format
 msgid "Available settings: %s\n"
 msgstr "Доступные параметры: %s\n"
 
-#: src/nmcli/connections.c:7805
+#: src/nmcli/connections.c:7804
 #, c-format
 msgid "Error: invalid setting name; %s\n"
 msgstr "Ошибка. Недействительное значение параметра: %s\n"
 
-#: src/nmcli/connections.c:7822
+#: src/nmcli/connections.c:7821
 #, c-format
 msgid "Available properties: %s\n"
 msgstr "Доступные свойства: %s\n"
 
-#: src/nmcli/connections.c:7830
+#: src/nmcli/connections.c:7829
 #, c-format
 msgid "Error: property %s\n"
 msgstr "Ошибка: свойство %s\n"
 
-#: src/nmcli/connections.c:7875
+#: src/nmcli/connections.c:7874
 #, c-format
 msgid ""
 "Saving the connection with 'autoconnect=yes'. That might result in an "
@@ -12837,12 +12807,12 @@ msgstr ""
 "«autoconnect=yes», что может привести к его немедленной активации.\n"
 "Сохранить? %s"
 
-#: src/nmcli/connections.c:7961
+#: src/nmcli/connections.c:7960
 #, c-format
 msgid "You may edit the following settings: %s\n"
 msgstr "Разрешается изменить следующие параметры: %s\n"
 
-#: src/nmcli/connections.c:7989
+#: src/nmcli/connections.c:7988
 msgid ""
 "The connection profile has been removed from another client. You may type "
 "'save' to restore it.\n"
@@ -12850,216 +12820,216 @@ msgstr ""
 "Профиль подключения был удален из другого клиента. Чтобы его восстановить, "
 "введите «save».\n"
 
-#: src/nmcli/connections.c:8046 src/nmcli/connections.c:8332
-#: src/nmcli/connections.c:8367
+#: src/nmcli/connections.c:8045 src/nmcli/connections.c:8331
+#: src/nmcli/connections.c:8366
 #, c-format
 msgid "Error: no setting selected; valid are [%s]\n"
 msgstr "Ошибка. Параметр не выбран. Действительные: [%s]\n"
 
-#: src/nmcli/connections.c:8048
+#: src/nmcli/connections.c:8047
 msgid "use 'goto <setting>' first, or 'set <setting>.<property>'\n"
 msgstr "используйте «goto <параметр>» или «set <параметр>.<свойство>»\n"
 
-#: src/nmcli/connections.c:8068 src/nmcli/connections.c:8248
-#: src/nmcli/connections.c:8356
+#: src/nmcli/connections.c:8067 src/nmcli/connections.c:8247
+#: src/nmcli/connections.c:8355
 #, c-format
 msgid "Error: invalid setting argument '%s'; valid are [%s]\n"
 msgstr "Ошибка. Недействительный аргумент «%s». Допускается: [%s]\n"
 
-#: src/nmcli/connections.c:8078
+#: src/nmcli/connections.c:8077
 #, c-format
 msgid "Error: missing setting for '%s' property\n"
 msgstr "Ошибка: не указано определение свойства «%s»\n"
 
-#: src/nmcli/connections.c:8085
+#: src/nmcli/connections.c:8084
 #, c-format
 msgid "Error: invalid property: %s\n"
 msgstr "Ошибка. Недействительное свойство: %s\n"
 
-#: src/nmcli/connections.c:8148
+#: src/nmcli/connections.c:8147
 #, c-format
 msgid "Error: unknown setting '%s'\n"
 msgstr "Ошибка: неизвестный параметр: %s\n"
 
-#: src/nmcli/connections.c:8174
+#: src/nmcli/connections.c:8173
 #, c-format
 msgid "You may edit the following properties: %s\n"
 msgstr "Вы можете изменить следующие свойства: %s\n"
 
-#: src/nmcli/connections.c:8220 src/nmcli/connections.c:8282
+#: src/nmcli/connections.c:8219 src/nmcli/connections.c:8281
 #, c-format
 msgid "Error: failed to remove value of '%s': %s\n"
 msgstr "Ошибка. Не удалось изменить значение «%s»: %s\n"
 
-#: src/nmcli/connections.c:8226
+#: src/nmcli/connections.c:8225
 #, c-format
 msgid "Error: no argument given; valid are [%s]\n"
 msgstr "Ошибка. Аргумент не задан. Действительные: [%s]\n"
 
-#: src/nmcli/connections.c:8245
+#: src/nmcli/connections.c:8244
 #, c-format
 msgid "Setting '%s' is not present in the connection.\n"
 msgstr "Параметр «%s» не определен в подключении.\n"
 
-#: src/nmcli/connections.c:8308
+#: src/nmcli/connections.c:8307
 #, c-format
 msgid "Error: %s properties, nor it is a setting name.\n"
 msgstr "Ошибка. %s не является именем параметра или свойства.\n"
 
-#: src/nmcli/connections.c:8335 src/nmcli/connections.c:8370
+#: src/nmcli/connections.c:8334 src/nmcli/connections.c:8369
 msgid "use 'goto <setting>' first, or 'describe <setting>.<property>'\n"
 msgstr "используйте «goto <параметр>» или «describe <параметр>.<свойство>»\n"
 
-#: src/nmcli/connections.c:8393
+#: src/nmcli/connections.c:8392
 #, c-format
 msgid "Error: invalid property: %s, neither a valid setting name.\n"
 msgstr ""
 "Ошибка: недействительное свойство %s, а также недействительное имя параметра.\n"
 
-#: src/nmcli/connections.c:8423
+#: src/nmcli/connections.c:8422
 #, c-format
 msgid "Error: unknown setting: '%s'\n"
 msgstr "Ошибка. Неизвестный параметр: %s\n"
 
-#: src/nmcli/connections.c:8428
+#: src/nmcli/connections.c:8427
 #, c-format
 msgid "Error: '%s' setting not present in the connection\n"
 msgstr "Ошибка: в подключении не определен параметр «%s»\n"
 
-#: src/nmcli/connections.c:8460
+#: src/nmcli/connections.c:8459
 #, c-format
 msgid "Error: invalid property: %s%s\n"
 msgstr "Ошибка: недействительное свойство %s%s\n"
 
-#: src/nmcli/connections.c:8462
+#: src/nmcli/connections.c:8461
 msgid ", neither a valid setting name"
 msgstr "и не является действительным именем параметра"
 
-#: src/nmcli/connections.c:8478
+#: src/nmcli/connections.c:8477
 #, c-format
 msgid "Invalid verify option: %s\n"
 msgstr "Недопустимый параметр проверки: %s\n"
 
-#: src/nmcli/connections.c:8486
+#: src/nmcli/connections.c:8485
 #, c-format
 msgid "Verify setting '%s': %s\n"
 msgstr "Проверьте параметр «%s»: %s\n"
 
-#: src/nmcli/connections.c:8501
+#: src/nmcli/connections.c:8500
 #, c-format
 msgid "Verify connection: %s\n"
 msgstr "Проверьте подключение: %s\n"
 
-#: src/nmcli/connections.c:8503
+#: src/nmcli/connections.c:8502
 msgid "The error cannot be fixed automatically.\n"
 msgstr "Эта ошибка не может быть исправлена автоматически.\n"
 
-#: src/nmcli/connections.c:8523
+#: src/nmcli/connections.c:8522
 #, c-format
 msgid "Error: invalid argument '%s'\n"
 msgstr "Ошибка: недействительный аргумент «%s»\n"
 
-#: src/nmcli/connections.c:8580
+#: src/nmcli/connections.c:8579
 #, c-format
 msgid "Error: Failed to save '%s' (%s) connection: %s\n"
 msgstr "Ошибка: не удалось сохранить подключение «%s» (%s): %s\n"
 
-#: src/nmcli/connections.c:8586
+#: src/nmcli/connections.c:8585
 #, c-format
 msgid "Error: Timeout saving '%s' (%s) connection\n"
 msgstr "Ошибка: истечение времени ожидания сохранения подключения «%s» (%s)\n"
 
-#: src/nmcli/connections.c:8590
+#: src/nmcli/connections.c:8589
 #, c-format
 msgid "Connection '%s' (%s) successfully saved.\n"
 msgstr "Подключение «%s» (%s) успешно сохранено.\n"
 
-#: src/nmcli/connections.c:8591
+#: src/nmcli/connections.c:8590
 #, c-format
 msgid "Connection '%s' (%s) successfully updated.\n"
 msgstr "Подключение «%s» (%s) успешно обновлено.\n"
 
-#: src/nmcli/connections.c:8625
+#: src/nmcli/connections.c:8624
 #, c-format
 msgid "Error: connection verification failed: %s\n"
 msgstr "Ошибка: сбой проверки правильности подключения: %s\n"
 
-#: src/nmcli/connections.c:8626
+#: src/nmcli/connections.c:8625
 msgid "(unknown error)"
 msgstr "(неизвестная ошибка)"
 
-#: src/nmcli/connections.c:8627
+#: src/nmcli/connections.c:8626
 msgid "You may try running 'verify fix' to fix errors.\n"
 msgstr "Для исправления ошибок можно попробовать выполнить «verify fix».\n"
 
 #. TRANSLATORS: do not translate 'save', leave it as it is
-#: src/nmcli/connections.c:8650
+#: src/nmcli/connections.c:8649
 msgid "Error: connection is not saved. Type 'save' first.\n"
 msgstr "Ошибка: подключение не сохранено. Сначала введите «save».\n"
 
-#: src/nmcli/connections.c:8654
+#: src/nmcli/connections.c:8653
 #, c-format
 msgid "Error: connection is not valid: %s\n"
 msgstr "Ошибка: недействительное подключение: %s\n"
 
-#: src/nmcli/connections.c:8670
+#: src/nmcli/connections.c:8669
 #, c-format
 msgid "Error: Cannot activate connection: %s.\n"
 msgstr "Ошибка: не удалось активировать подключение: %s\n"
 
-#: src/nmcli/connections.c:8679
+#: src/nmcli/connections.c:8678
 #, c-format
 msgid "Error: Failed to activate '%s' (%s) connection: %s\n"
 msgstr "Ошибка: не удалось активировать подключение «%s» (%s): %s\n"
 
-#: src/nmcli/connections.c:8686
+#: src/nmcli/connections.c:8685
 msgid "Monitoring connection activation (press any key to continue)\n"
 msgstr ""
 "Наблюдение за активацией подключения (нажмите любую клавишу для продолжения)\n"
 
-#: src/nmcli/connections.c:8721
+#: src/nmcli/connections.c:8720
 #, c-format
 msgid "Error: status-line: %s\n"
 msgstr "Ошибка: status-line: %s\n"
 
-#: src/nmcli/connections.c:8729
+#: src/nmcli/connections.c:8728
 #, c-format
 msgid "Error: save-confirmation: %s\n"
 msgstr "Ошибка: save-confirmation: %s\n"
 
-#: src/nmcli/connections.c:8737
+#: src/nmcli/connections.c:8736
 #, c-format
 msgid "Error: show-secrets: %s\n"
 msgstr "Ошибка: show-secrets: %s\n"
 
-#: src/nmcli/connections.c:8745
+#: src/nmcli/connections.c:8744
 msgid "Current nmcli configuration:\n"
 msgstr "Текущая конфигурация nmcli:\n"
 
-#: src/nmcli/connections.c:8753
+#: src/nmcli/connections.c:8752
 #, c-format
 msgid "Invalid configuration option '%s'; allowed [%s]\n"
 msgstr "Недействительный параметр конфигурации «%s». Допускается: [%s]\n"
 
-#: src/nmcli/connections.c:8985
+#: src/nmcli/connections.c:8984
 msgid "Error: only one of 'id', 'filename', uuid, or 'path' can be provided."
 msgstr ""
 "Ошибка: может быть предоставлено только одно значение из: «id», «filename», "
 "uuid или «path»."
 
-#: src/nmcli/connections.c:9000
+#: src/nmcli/connections.c:8999
 #, c-format
 msgid "Error: Unknown connection '%s'."
 msgstr "Ошибка: неизвестное подключение: «%s»."
 
-#: src/nmcli/connections.c:9017
+#: src/nmcli/connections.c:9016
 #, c-format
 msgid "Warning: editing existing connection '%s'; 'type' argument is ignored\n"
 msgstr ""
 "Предупреждение: редактирование существующего подключения «%s»; аргумент «type» "
 "игнорируется.\n"
 
-#: src/nmcli/connections.c:9021
+#: src/nmcli/connections.c:9020
 #, c-format
 msgid ""
 "Warning: editing existing connection '%s'; 'con-name' argument is ignored\n"
@@ -13067,202 +13037,202 @@ msgstr ""
 "Предупреждение: редактирование существующего подключения «%s»; аргумент «con-"
 "name» игнорируется.\n"
 
-#: src/nmcli/connections.c:9048
+#: src/nmcli/connections.c:9047
 #, c-format
 msgid "Valid connection types: %s\n"
 msgstr "Действительные типы подключений: %s\n"
 
-#: src/nmcli/connections.c:9050
+#: src/nmcli/connections.c:9049
 #, c-format
 msgid "Error: invalid connection type; %s\n"
 msgstr "Ошибка: недействительный тип подключения: %s.\n"
 
-#: src/nmcli/connections.c:9089
+#: src/nmcli/connections.c:9088
 msgid "===| nmcli interactive connection editor |==="
 msgstr "===| интерактивный редактор подключений nmcli |==="
 
-#: src/nmcli/connections.c:9092
+#: src/nmcli/connections.c:9091
 #, c-format
 msgid "Editing existing '%s' connection: '%s'"
 msgstr "Редактируется существующее подключение «%s»: «%s»"
 
-#: src/nmcli/connections.c:9094
+#: src/nmcli/connections.c:9093
 #, c-format
 msgid "Adding a new '%s' connection"
 msgstr "Добавление нового подключения «%s»"
 
 #. TRANSLATORS: do not translate 'help', leave it as it is
-#: src/nmcli/connections.c:9097
+#: src/nmcli/connections.c:9096
 msgid "Type 'help' or '?' for available commands."
 msgstr "Для просмотра доступных команд введите «help» или «?»."
 
 #. TRANSLATORS: do not translate 'print', leave it as it is
-#: src/nmcli/connections.c:9100
+#: src/nmcli/connections.c:9099
 msgid "Type 'print' to show all the connection properties."
 msgstr "Введите «print», чтобы просмотреть все свойства подключения."
 
 #. TRANSLATORS: do not translate 'describe', leave it as it is
-#: src/nmcli/connections.c:9103
+#: src/nmcli/connections.c:9102
 msgid "Type 'describe [<setting>.<prop>]' for detailed property description."
 msgstr ""
 "Для просмотра описания свойства введите «describe [<параметр>.<свойство>]»."
 
-#: src/nmcli/connections.c:9130
+#: src/nmcli/connections.c:9129
 #, c-format
 msgid "Error: Failed to modify connection '%s': %s"
 msgstr "Ошибка: не удалось изменить подключение «%s»: %s"
 
-#: src/nmcli/connections.c:9138
+#: src/nmcli/connections.c:9137
 #, c-format
 msgid "Connection '%s' (%s) successfully modified.\n"
 msgstr "Подключение «%s» (%s) успешно изменено.\n"
 
-#: src/nmcli/connections.c:9211
+#: src/nmcli/connections.c:9210
 #, c-format
 msgid "%s (%s) cloned as %s (%s).\n"
 msgstr "%s (%s) было клонировано в %s (%s).\n"
 
-#: src/nmcli/connections.c:9269
+#: src/nmcli/connections.c:9268
 msgid "New connection name: "
 msgstr "Название нового подключения: "
 
-#: src/nmcli/connections.c:9271
+#: src/nmcli/connections.c:9270
 msgid "Error: <new name> argument is missing."
 msgstr "Ошибка: не указан аргумент <новое имя>."
 
-#: src/nmcli/connections.c:9277 src/nmcli/connections.c:9803
+#: src/nmcli/connections.c:9276 src/nmcli/connections.c:9804
 #, c-format
 msgid "Error: unknown extra argument: '%s'."
 msgstr "Ошибка: неизвестный дополнительный аргумент: «%s»."
 
-#: src/nmcli/connections.c:9311
+#: src/nmcli/connections.c:9310
 msgid "Error: not all connections deleted."
 msgstr "Ошибка: не все подключения были удалены."
 
-#: src/nmcli/connections.c:9312
+#: src/nmcli/connections.c:9311
 #, c-format
 msgid "Error: Connection deletion failed: %s\n"
 msgstr "Ошибка: сбой удаления подключения: %s\n"
 
-#: src/nmcli/connections.c:9367 src/nmcli/connections.c:9494
-#: src/nmcli/connections.c:9956
+#: src/nmcli/connections.c:9366 src/nmcli/connections.c:9495
+#: src/nmcli/connections.c:9957
 #, c-format
 msgid "Error: %s.\n"
 msgstr "Ошибка: %s.\n"
 
-#: src/nmcli/connections.c:9368 src/nmcli/connections.c:9495
-#: src/nmcli/connections.c:9957
+#: src/nmcli/connections.c:9367 src/nmcli/connections.c:9496
+#: src/nmcli/connections.c:9958
 msgid "Error: not all connections found."
 msgstr "Ошибка: обнаружены не все подключения."
 
-#: src/nmcli/connections.c:9427
+#: src/nmcli/connections.c:9428
 #, c-format
 msgid "Error: cannot delete unknown connection(s): %s."
 msgstr "Ошибка: невозможно удалить неизвестные подключения: %s."
 
-#: src/nmcli/connections.c:9435
+#: src/nmcli/connections.c:9436
 #, c-format
 msgid "%s: connection profile changed\n"
 msgstr "%s: профиль подключения изменился\n"
 
-#: src/nmcli/connections.c:9461
+#: src/nmcli/connections.c:9462
 #, c-format
 msgid "%s: connection profile created\n"
 msgstr "%s: профиль подключения создан\n"
 
-#: src/nmcli/connections.c:9470
+#: src/nmcli/connections.c:9471
 #, c-format
 msgid "%s: connection profile removed\n"
 msgstr "%s: профиль подключения удалён\n"
 
-#: src/nmcli/connections.c:9538
+#: src/nmcli/connections.c:9539
 #, c-format
 msgid "Error: failed to reload connections: %s."
 msgstr "Ошибка: не удалось перезагрузить подключения: %s."
 
-#: src/nmcli/connections.c:9610
+#: src/nmcli/connections.c:9611
 #, c-format
 msgid "Error: failed to load connection: %s."
 msgstr "Ошибка: не удалось загрузить подключение: %s."
 
-#: src/nmcli/connections.c:9618
+#: src/nmcli/connections.c:9619
 #, c-format
 msgid "Could not load file '%s'\n"
 msgstr "Не удалось загрузить файл «%s»\n"
 
-#: src/nmcli/connections.c:9622
+#: src/nmcli/connections.c:9623
 msgid "File to import: "
 msgstr "Импортируемый файл: "
 
-#: src/nmcli/connections.c:9653
+#: src/nmcli/connections.c:9654
 msgid "Error: No arguments provided."
 msgstr "Ошибка: не указаны аргументы."
 
-#: src/nmcli/connections.c:9708
+#: src/nmcli/connections.c:9709
 msgid "Error: 'type' argument is required."
 msgstr "Ошибка: требуется аргумент «type»."
 
-#: src/nmcli/connections.c:9713
+#: src/nmcli/connections.c:9714
 msgid "Error: 'file' argument is required."
 msgstr "Ошибка: требуется аргумент «file»."
 
-#: src/nmcli/connections.c:9723
+#: src/nmcli/connections.c:9724
 #, c-format
 msgid "Error: failed to find VPN plugin for %s."
 msgstr "Ошибка: не удалось найти модуль VPN для %s."
 
-#: src/nmcli/connections.c:9732 src/nmcli/connections.c:9824
+#: src/nmcli/connections.c:9733 src/nmcli/connections.c:9825
 #, c-format
 msgid "Error: failed to load VPN plugin: %s."
 msgstr "Ошибка: не удалось загрузить модуль VPN: %s."
 
-#: src/nmcli/connections.c:9743
+#: src/nmcli/connections.c:9744
 #, c-format
 msgid "Error: failed to import '%s': %s."
 msgstr "Ошибка: сбой импорта «%s»: %s."
 
-#: src/nmcli/connections.c:9809
+#: src/nmcli/connections.c:9810
 msgid "Output file name: "
 msgstr "Имя файла вывода: "
 
-#: src/nmcli/connections.c:9814
+#: src/nmcli/connections.c:9815
 msgid "Error: the connection is not VPN."
 msgstr "Ошибка: подключение не является подключением VPN."
 
-#: src/nmcli/connections.c:9838
+#: src/nmcli/connections.c:9839
 #, c-format
 msgid "Error: failed to create temporary file %s."
 msgstr "Ошибка: не удалось создать временный файл %s."
 
-#: src/nmcli/connections.c:9848
+#: src/nmcli/connections.c:9849
 #, c-format
 msgid "Error: failed to export '%s': %s."
 msgstr "Ошибка: не удалось экспортировать «%s»: %s."
 
-#: src/nmcli/connections.c:9862
+#: src/nmcli/connections.c:9863
 #, c-format
 msgid "Error: failed to read temporary file '%s': %s."
 msgstr "Ошибка: не удалось прочитать временный файл «%s»: %s."
 
-#: src/nmcli/connections.c:9886
+#: src/nmcli/connections.c:9887
 msgid "Error: not all connections migrated."
 msgstr "Ошибка: не все подключения мигрировали."
 
-#: src/nmcli/connections.c:9887
+#: src/nmcli/connections.c:9888
 #, c-format
 msgid "Error: Connection migration failed: %s\n"
 msgstr "Ошибка: сбой миграции подключения: %s\n"
 
-#: src/nmcli/connections.c:9891
+#: src/nmcli/connections.c:9892
 #, c-format
 msgid "Connection '%s' (%s) successfully migrated.\n"
 msgstr "Миграция подключения '%s' (%s) выполнена успешно.\n"
 
-#: src/nmcli/connections.c:9923
+#: src/nmcli/connections.c:9924
 msgid "'--plugin' argument is missing"
 msgstr "отсутствует аргумент'--plugin'"
 
-#: src/nmcli/connections.c:10019
+#: src/nmcli/connections.c:10020
 #, c-format
 msgid "Error: cannot migrate unknown connection(s): %s."
 msgstr "Ошибка: миграция неизвестных подключений невозможна: %s."
@@ -13276,7 +13246,7 @@ msgstr "Интерфейс: "
 msgid "Interface(s): "
 msgstr "Интерфейсы: "
 
-#: src/nmcli/devices.c:72 src/nmcli/devices.c:1445
+#: src/nmcli/devices.c:72 src/nmcli/devices.c:1452
 msgid "(none)"
 msgstr "(нет)"
 
@@ -13294,7 +13264,7 @@ msgstr "<invisible>"
 msgid "%u Mb/s"
 msgstr "%u Мб/c"
 
-#: src/nmcli/devices.c:842
+#: src/nmcli/devices.c:843
 msgid ""
 "Usage: nmcli device { COMMAND | help }\n"
 "\n"
@@ -13377,7 +13347,7 @@ msgstr ""
 "  lldp [list [ifname <имя_интерфейса>]]\n"
 "\n"
 
-#: src/nmcli/devices.c:870
+#: src/nmcli/devices.c:871
 msgid ""
 "Usage: nmcli device status { help }\n"
 "\n"
@@ -13404,7 +13374,7 @@ msgstr ""
 "device status».\n"
 "\n"
 
-#: src/nmcli/devices.c:885
+#: src/nmcli/devices.c:886
 msgid ""
 "Usage: nmcli device show { ARGUMENTS | help }\n"
 "\n"
@@ -13422,7 +13392,7 @@ msgstr ""
 "об отдельно выбранном устройстве.\n"
 "\n"
 
-#: src/nmcli/devices.c:896
+#: src/nmcli/devices.c:897
 msgid ""
 "Usage: nmcli device connect { ARGUMENTS | help }\n"
 "\n"
@@ -13442,7 +13412,7 @@ msgstr ""
 "принимая во внимание подключения без включенных функций\n"
 "автоматического запуска.\n"
 
-#: src/nmcli/devices.c:908
+#: src/nmcli/devices.c:909
 msgid ""
 "Usage: nmcli device reapply { ARGUMENTS | help }\n"
 "\n"
@@ -13460,7 +13430,7 @@ msgstr ""
 "подключения, внесённых с момента последнего применения.\n"
 "\n"
 
-#: src/nmcli/devices.c:920
+#: src/nmcli/devices.c:921
 msgid ""
 "Usage: nmcli device modify { ARGUMENTS | help }\n"
 "\n"
@@ -13498,7 +13468,7 @@ msgstr ""
 "nmcli dev mod em1 -ipv4.dns 1\n"
 "nmcli dev mod em1 -ipv6.addr \"abbe::cafe/56\"\n"
 
-#: src/nmcli/devices.c:940
+#: src/nmcli/devices.c:941
 msgid ""
 "Usage: nmcli device disconnect { ARGUMENTS | help }\n"
 "\n"
@@ -13516,7 +13486,7 @@ msgstr ""
 "Отключает устройство и предотвращает повторную\n"
 "автоматическую активацию подключений без вмешательства пользователя.\n"
 
-#: src/nmcli/devices.c:952
+#: src/nmcli/devices.c:953
 msgid ""
 "Usage: nmcli device delete { ARGUMENTS | help }\n"
 "\n"
@@ -13538,7 +13508,7 @@ msgstr ""
 "Аппаратные устройства эта команда удалить не может.\n"
 "\n"
 
-#: src/nmcli/devices.c:965
+#: src/nmcli/devices.c:966
 msgid ""
 "Usage: nmcli device set { ARGUMENTS | help }\n"
 "\n"
@@ -13560,7 +13530,7 @@ msgstr ""
 "Изменить свойства устройства.\n"
 "\n"
 
-#: src/nmcli/devices.c:978
+#: src/nmcli/devices.c:979
 msgid ""
 "Usage: nmcli device monitor { ARGUMENTS | help }\n"
 "\n"
@@ -13581,7 +13551,7 @@ msgstr ""
 "Если интерфейс не указан, будут отслеживаться \n"
 "все устройства.\n"
 
-#: src/nmcli/devices.c:991
+#: src/nmcli/devices.c:992
 msgid ""
 "Usage: nmcli device wifi { ARGUMENTS | help }\n"
 "\n"
@@ -13679,7 +13649,7 @@ msgstr ""
 "«nmcli device wifi list».\n"
 "\n"
 
-#: src/nmcli/devices.c:1039
+#: src/nmcli/devices.c:1040
 msgid ""
 "Usage: nmcli device lldp { ARGUMENTS | help }\n"
 "\n"
@@ -13698,7 +13668,7 @@ msgstr ""
 "для определенного интерфейса.\n"
 "\n"
 
-#: src/nmcli/devices.c:1050
+#: src/nmcli/devices.c:1051
 msgid ""
 "Usage: nmcli device checkpoint { ARGUMENTS | help }\n"
 "\n"
@@ -13719,230 +13689,230 @@ msgstr ""
 "автоматическое восстановление из контрольной точки.\n"
 "\n"
 
-#: src/nmcli/devices.c:1152
+#: src/nmcli/devices.c:1153
 msgid "Error: No interface specified."
 msgstr "Ошибка: не указан интерфейс."
 
-#: src/nmcli/devices.c:1182
+#: src/nmcli/devices.c:1183
 #, c-format
 msgid "Warning: argument '%s' is duplicated.\n"
 msgstr "Предупреждение: аргумент «%s» дублируется.\n"
 
-#: src/nmcli/devices.c:1185
+#: src/nmcli/devices.c:1186
 #, c-format
 msgid "Error: Device '%s' not found.\n"
 msgstr "Ошибка: устройство «%s» не обнаружено.\n"
 
-#: src/nmcli/devices.c:1186 src/nmcli/devices.c:5234
+#: src/nmcli/devices.c:1187 src/nmcli/devices.c:5239
 msgid "Error: not all devices found."
 msgstr "Ошибка: обнаружены не все устройства."
 
-#: src/nmcli/devices.c:1215
+#: src/nmcli/devices.c:1216
 msgid "No interface specified"
 msgstr "Не указан интерфейс"
 
-#: src/nmcli/devices.c:1236
+#: src/nmcli/devices.c:1237
 #, c-format
 msgid "Device '%s' not found"
 msgstr "Устройство «%s» не найдено"
 
-#: src/nmcli/devices.c:1348
+#: src/nmcli/devices.c:1353 src/nmcli/devices.c:1355
 #, c-format
 msgid "%u MHz"
 msgstr "%u МГц"
 
-#: src/nmcli/devices.c:1349
+#: src/nmcli/devices.c:1354
 #, c-format
 msgid "%u Mbit/s"
 msgstr "%u Мбит/с"
 
-#: src/nmcli/devices.c:1398
+#: src/nmcli/devices.c:1404
 msgid "Ad-Hoc"
 msgstr "Ad-Hoc"
 
-#: src/nmcli/devices.c:1399
+#: src/nmcli/devices.c:1405
 msgid "Infra"
 msgstr "Infra"
 
-#: src/nmcli/devices.c:1401
+#: src/nmcli/devices.c:1407
 msgid "N/A"
 msgstr "Н/Д"
 
-#: src/nmcli/devices.c:1593
+#: src/nmcli/devices.c:1598
 msgid "Device details"
 msgstr "Сведения об устройстве"
 
-#: src/nmcli/devices.c:1610
+#: src/nmcli/devices.c:1615
 #, c-format
 msgid "Error: 'device show': %s"
 msgstr "Ошибка: «device show»: %s"
 
-#: src/nmcli/devices.c:1988
+#: src/nmcli/devices.c:1993
 msgid "Status of devices"
 msgstr "Состояние устройств"
 
-#: src/nmcli/devices.c:1992
+#: src/nmcli/devices.c:1997
 #, c-format
 msgid "Error: 'device status': %s"
 msgstr "Ошибка: «device status»: %s"
 
-#: src/nmcli/devices.c:2055 src/nmcli/general.c:528
+#: src/nmcli/devices.c:2060 src/nmcli/general.c:528
 #, c-format
 msgid "Error: Timeout %d sec expired."
 msgstr "Ошибка: превышено время ожидания (%d с)."
 
-#: src/nmcli/devices.c:2132
+#: src/nmcli/devices.c:2137
 #, c-format
 msgid "Device '%s' successfully activated with '%s'.\n"
 msgstr "Устройство «%s» успешно активировано с «%s».\n"
 
-#: src/nmcli/devices.c:2138
+#: src/nmcli/devices.c:2143
 msgid ""
 "Hint: \"nmcli dev wifi show-password\" shows the Wi-Fi name and password.\n"
 msgstr ""
 "Подсказка: \"nmcli dev wifi show-password\" покажет имя и пароль Wi-Fi.\n"
 
-#: src/nmcli/devices.c:2142
+#: src/nmcli/devices.c:2147
 #, c-format
 msgid "Error: Connection activation failed: %s."
 msgstr "Ошибка: не удалось активировать подключение: %s."
 
-#: src/nmcli/devices.c:2184
+#: src/nmcli/devices.c:2189
 #, c-format
 msgid "Error: Failed to setup a Wi-Fi hotspot: %s"
 msgstr "Ошибка: не удалось настроить точку доступа Wi-Fi: %s"
 
-#: src/nmcli/devices.c:2188
+#: src/nmcli/devices.c:2193
 #, c-format
 msgid "Error: Failed to add/activate new connection: %s"
 msgstr "Ошибка: не удалось добавить/активировать новое подключение: %s"
 
-#: src/nmcli/devices.c:2192
+#: src/nmcli/devices.c:2197
 #, c-format
 msgid "Error: Failed to activate connection: %s"
 msgstr "Ошибка: не удалось активировать подключение: %s"
 
-#: src/nmcli/devices.c:2266
+#: src/nmcli/devices.c:2271
 #, c-format
 msgid "Error: Device activation failed: %s"
 msgstr "Ошибка: сбой активации устройства: %s"
 
-#: src/nmcli/devices.c:2322
+#: src/nmcli/devices.c:2327
 #, c-format
 msgid "Error: extra argument not allowed: '%s'."
 msgstr "Ошибка: дополнительный аргумент не разрешён: «%s»."
 
-#: src/nmcli/devices.c:2391 src/nmcli/devices.c:2404 src/nmcli/devices.c:2659
+#: src/nmcli/devices.c:2396 src/nmcli/devices.c:2409 src/nmcli/devices.c:2664
 #, c-format
 msgid "Device '%s' successfully disconnected.\n"
 msgstr "Устройство «%s» отключено успешно.\n"
 
-#: src/nmcli/devices.c:2393 src/nmcli/devices.c:2730
+#: src/nmcli/devices.c:2398 src/nmcli/devices.c:2735
 #, c-format
 msgid "Device '%s' successfully removed.\n"
 msgstr "Устройство «%s» успешно удалено.\n"
 
-#: src/nmcli/devices.c:2453 src/nmcli/devices.c:2535
+#: src/nmcli/devices.c:2458 src/nmcli/devices.c:2540
 #, c-format
 msgid "Error: Reapplying connection to device '%s' (%s) failed: %s"
 msgstr "Ошибка: сбой повторного подключения к устройству «%s» (%s): %s"
 
-#: src/nmcli/devices.c:2463 src/nmcli/devices.c:2544
+#: src/nmcli/devices.c:2468 src/nmcli/devices.c:2549
 #, c-format
 msgid "Connection successfully reapplied to device '%s'.\n"
 msgstr "Успешное повторное применение подключения к устройству «%s».\n"
 
-#: src/nmcli/devices.c:2566
+#: src/nmcli/devices.c:2571
 #, c-format
 msgid "Error: Reading applied connection from device '%s' (%s) failed: %s"
 msgstr ""
 "Ошибка: чтение применённого подключения с устройства «%s» (%s) не удалось: %s"
 
-#: src/nmcli/devices.c:2643
+#: src/nmcli/devices.c:2648
 msgid "Error: not all devices disconnected."
 msgstr "Ошибка: не все устройства отключены."
 
-#: src/nmcli/devices.c:2644
+#: src/nmcli/devices.c:2649
 #, c-format
 msgid "Error: Device '%s' (%s) disconnecting failed: %s\n"
 msgstr "Ошибка: сбой отключения устройства '%s' (%s): %s\n"
 
-#: src/nmcli/devices.c:2721
+#: src/nmcli/devices.c:2726
 msgid "Error: not all devices deleted."
 msgstr "Ошибка: удалены не все устройства."
 
-#: src/nmcli/devices.c:2722
+#: src/nmcli/devices.c:2727
 #, c-format
 msgid "Error: Device '%s' (%s) deletion failed: %s\n"
 msgstr "Ошибка: сбой удаления устройства «%s» (%s): %s\n"
 
-#: src/nmcli/devices.c:2800
+#: src/nmcli/devices.c:2805
 msgid "Error: No property specified."
 msgstr "Ошибка: свойство не указано."
 
-#: src/nmcli/devices.c:2817 src/nmcli/devices.c:2836 src/nmcli/general.c:798
+#: src/nmcli/devices.c:2822 src/nmcli/devices.c:2841 src/nmcli/general.c:798
 #: src/nmcli/general.c:820
 #, c-format
 msgid "Error: '%s' argument is missing."
 msgstr "Ошибка: отсутствует аргумент '%s'."
 
-#: src/nmcli/devices.c:2825
+#: src/nmcli/devices.c:2830
 #, c-format
 msgid "Error: 'managed': %s."
 msgstr "Ошибка: 'managed': %s."
 
-#: src/nmcli/devices.c:2844
+#: src/nmcli/devices.c:2849
 #, c-format
 msgid "Error: 'autoconnect': %s."
 msgstr "Ошибка: «autoconnect»: %s."
 
-#: src/nmcli/devices.c:2851 src/nmcli/general.c:870
+#: src/nmcli/devices.c:2856 src/nmcli/general.c:870
 #, c-format
 msgid "Error: property '%s' is not known."
 msgstr "Ошибка: неизвестное свойство «%s»."
 
-#: src/nmcli/devices.c:2898
+#: src/nmcli/devices.c:2903
 #, c-format
 msgid "%s: using connection '%s'\n"
 msgstr "%s: используется подключение «%s».\n"
 
-#: src/nmcli/devices.c:2924
+#: src/nmcli/devices.c:2929
 #, c-format
 msgid "%s: device created\n"
 msgstr "%s: устройство создано\n"
 
-#: src/nmcli/devices.c:2931
+#: src/nmcli/devices.c:2936
 #, c-format
 msgid "%s: device removed\n"
 msgstr "%s: устройство удалено\n"
 
-#: src/nmcli/devices.c:3111
+#: src/nmcli/devices.c:3116
 msgid "Wi-Fi scan list"
 msgstr "Список сканирования Wi-Fi"
 
-#: src/nmcli/devices.c:3228 src/nmcli/devices.c:3509
+#: src/nmcli/devices.c:3233 src/nmcli/devices.c:3514
 #, c-format
 msgid "Error: Access point with bssid '%s' not found."
 msgstr "Ошибка: точка доступа с bssid «%s» не найдена."
 
-#: src/nmcli/devices.c:3430
+#: src/nmcli/devices.c:3435
 #, c-format
 msgid "Error: 'device wifi': %s"
 msgstr "Ошибка «device wifi»: «%s»"
 
-#: src/nmcli/devices.c:3450
+#: src/nmcli/devices.c:3455
 #, c-format
 msgid "Error: invalid rescan argument: '%s' not among [auto, no, yes]"
 msgstr ""
 "Ошибка: недействительный аргумент повторного сканирования: «%s» нет среди "
 "[авто, нет, да]"
 
-#: src/nmcli/devices.c:3489
+#: src/nmcli/devices.c:3494
 #, c-format
 msgid "Error: Device '%s' not found."
 msgstr "Ошибка: не найдено устройство «%s»."
 
-#: src/nmcli/devices.c:3493
+#: src/nmcli/devices.c:3498
 #, c-format
 msgid ""
 "Error: Device '%s' was not recognized as a Wi-Fi device, check NetworkManager "
@@ -13951,26 +13921,26 @@ msgstr ""
 "Ошибка: «%s» не было распознано как устройство Wi-Fi. Проверьте модуль Wi-Fi "
 "для NetworkManager."
 
-#: src/nmcli/devices.c:3498 src/nmcli/devices.c:3850 src/nmcli/devices.c:4479
-#: src/nmcli/devices.c:4614 src/nmcli/devices.c:4749
+#: src/nmcli/devices.c:3503 src/nmcli/devices.c:3855 src/nmcli/devices.c:4484
+#: src/nmcli/devices.c:4619 src/nmcli/devices.c:4754
 #, c-format
 msgid "Error: Device '%s' is not a Wi-Fi device."
 msgstr "Ошибка: «%s» не является устройством Wi-Fi."
 
-#: src/nmcli/devices.c:3678
+#: src/nmcli/devices.c:3683
 msgid "SSID or BSSID: "
 msgstr "SSID или BSSID: "
 
-#: src/nmcli/devices.c:3683
+#: src/nmcli/devices.c:3688
 msgid "Error: SSID or BSSID are missing."
 msgstr "Ошибка: не указан SSID или BSSID."
 
-#: src/nmcli/devices.c:3727
+#: src/nmcli/devices.c:3732
 #, c-format
 msgid "Error: bssid argument value '%s' is not a valid BSSID."
 msgstr "Ошибка: значение аргумента bssid «%s» не является действительным BSSID."
 
-#: src/nmcli/devices.c:3758
+#: src/nmcli/devices.c:3763
 #, c-format
 msgid ""
 "Error: wep-key-type argument value '%s' is invalid, use 'key' or 'phrase'."
@@ -13978,162 +13948,162 @@ msgstr ""
 "Ошибка: недействительное значение аргумента wep-key-type «%s»; используйте "
 "«key» или «phrase»."
 
-#: src/nmcli/devices.c:3786 src/nmcli/devices.c:3807
+#: src/nmcli/devices.c:3791 src/nmcli/devices.c:3812
 #, c-format
 msgid "Error: %s: %s."
 msgstr "Ошибка: %s: %s."
 
-#: src/nmcli/devices.c:3829
+#: src/nmcli/devices.c:3834
 #, c-format
 msgid "Error: BSSID to connect to (%s) differs from bssid argument (%s)."
 msgstr "Ошибка: BSSID для подключения к (%s) отличается от аргумента bssid (%s)."
 
-#: src/nmcli/devices.c:3837
+#: src/nmcli/devices.c:3842
 #, c-format
 msgid "Error: Parameter '%s' is neither SSID nor BSSID."
 msgstr "Ошибка: параметр «%s» не является ни SSID, ни BSSID."
 
-#: src/nmcli/devices.c:3853 src/nmcli/devices.c:4482 src/nmcli/devices.c:4617
-#: src/nmcli/devices.c:4849
+#: src/nmcli/devices.c:3858 src/nmcli/devices.c:4487 src/nmcli/devices.c:4622
+#: src/nmcli/devices.c:4854
 msgid "Error: No Wi-Fi device found."
 msgstr "Ошибка: устройство Wi-Fi не найдено."
 
-#: src/nmcli/devices.c:3875
+#: src/nmcli/devices.c:3880
 #, c-format
 msgid "Error: Failed to scan hidden SSID: %s."
 msgstr "Ошибка: сбой сканирования скрытого SSID: %s."
 
-#: src/nmcli/devices.c:3907
+#: src/nmcli/devices.c:3912
 #, c-format
 msgid "Error: No network with SSID '%s' found."
 msgstr "Ошибка: не найдена сеть с SSID «%s»."
 
-#: src/nmcli/devices.c:3911
+#: src/nmcli/devices.c:3916
 #, c-format
 msgid "Error: No access point with BSSID '%s' found."
 msgstr "Ошибка: точка доступа с BSSID «%s» не найдена."
 
-#: src/nmcli/devices.c:3940
+#: src/nmcli/devices.c:3945
 #, c-format
 msgid "Error: Connection '%s' exists but properties don't match."
 msgstr "Ошибка: подключение «%s» существует, но свойства не совпадают."
 
-#: src/nmcli/devices.c:3990
+#: src/nmcli/devices.c:3995
 #, c-format
 msgid "Warning: '%s' should be SSID for hidden APs; but it looks like a BSSID.\n"
 msgstr ""
 "Предупреждение: «%s» должен представлять собой SSID для скрытой точки доступа, "
 "но он выглядит как BSSID.\n"
 
-#: src/nmcli/devices.c:4032
+#: src/nmcli/devices.c:4037
 msgid "Password: "
 msgstr "Пароль: "
 
-#: src/nmcli/devices.c:4172
+#: src/nmcli/devices.c:4177
 #, c-format
 msgid "'%s' is not valid WPA PSK"
 msgstr "«%s» не является действительным WPA PSK"
 
-#: src/nmcli/devices.c:4193
+#: src/nmcli/devices.c:4198
 #, c-format
 msgid "'%s' is not valid WEP key (it should be 5 or 13 ASCII chars)"
 msgstr ""
 "«%s» не является действительным ключом WEP (должен содержать 5 или 13 символов "
 "ASCII)"
 
-#: src/nmcli/devices.c:4212
+#: src/nmcli/devices.c:4217
 #, c-format
 msgid "Hotspot password: %s\n"
 msgstr "Пароль точки доступа: %s\n"
 
-#: src/nmcli/devices.c:4395
+#: src/nmcli/devices.c:4400
 msgid "Error: ssid is too long."
 msgstr "Ошибка: слишком длинный SSID."
 
-#: src/nmcli/devices.c:4413
+#: src/nmcli/devices.c:4418
 #, c-format
 msgid "Error: band argument value '%s' is invalid; use 'a' or 'bg'."
 msgstr ""
 "Ошибка: недействительное значение аргумента «band»: «%s». Используйте «a» или "
 "«bg»."
 
-#: src/nmcli/devices.c:4457
+#: src/nmcli/devices.c:4462
 msgid "Error: channel requires band too."
 msgstr "Ошибка: для канала тоже необходимо определить полосу."
 
-#: src/nmcli/devices.c:4464
+#: src/nmcli/devices.c:4469
 #, c-format
 msgid "Error: channel '%s' not valid for band '%s'."
 msgstr "Ошибка: недействительный канал «%s» для полосы «%s»."
 
-#: src/nmcli/devices.c:4495
+#: src/nmcli/devices.c:4500
 #, c-format
 msgid "Error: Device '%s' supports neither AP nor Ad-Hoc mode."
 msgstr "Ошибка: «%s» не поддерживает ни режим точки доступа, ни режим Ad-Hoc."
 
-#: src/nmcli/devices.c:4522
+#: src/nmcli/devices.c:4527
 #, c-format
 msgid "Error: Invalid 'password': %s."
 msgstr "Ошибка: недействительный «password»: %s."
 
-#: src/nmcli/devices.c:4573 src/nmcli/devices.c:4803
+#: src/nmcli/devices.c:4578 src/nmcli/devices.c:4808
 #, c-format
 msgid "Error: '%s' cannot repeat."
 msgstr "Ошибка: «%s» не может повторяться."
 
-#: src/nmcli/devices.c:4708 src/nmcli/devices.c:4711 src/nmcli/devices.c:4715
-#: src/nmcli/devices.c:4718 src/nmtui/nmt-page-wifi.c:269
+#: src/nmcli/devices.c:4713 src/nmcli/devices.c:4716 src/nmcli/devices.c:4720
+#: src/nmcli/devices.c:4723 src/nmtui/nmt-page-wifi.c:269
 msgid "Security"
 msgstr "Защита"
 
-#: src/nmcli/devices.c:4708
+#: src/nmcli/devices.c:4713
 msgid "None"
 msgstr "Нет"
 
 #. Main header name
-#: src/nmcli/devices.c:4890
+#: src/nmcli/devices.c:4895
 msgid "Device LLDP neighbors"
 msgstr "Соседи LLDP"
 
-#: src/nmcli/devices.c:5023
+#: src/nmcli/devices.c:5028
 #, c-format
 msgid "Error: 'device lldp list': %s"
 msgstr "Ошибка: «device lldp list»: %s"
 
-#: src/nmcli/devices.c:5091
+#: src/nmcli/devices.c:5096
 msgid "Checkpoint was removed."
 msgstr "Контрольная точка была удалена."
 
 #. The command is done, we're in the confirmation prompt.
-#: src/nmcli/devices.c:5098
+#: src/nmcli/devices.c:5103
 msgid "No"
 msgstr "Нет"
 
-#: src/nmcli/devices.c:5111
+#: src/nmcli/devices.c:5116
 #, c-format
 msgid "Error: Destroying a checkpoint failed: %s"
 msgstr "Ошибка: не удалось разрушить контрольную точку: %s"
 
-#: src/nmcli/devices.c:5133 src/nmcli/devices.c:5134
+#: src/nmcli/devices.c:5138 src/nmcli/devices.c:5139
 msgid "Yes"
 msgstr "Да"
 
-#: src/nmcli/devices.c:5160
+#: src/nmcli/devices.c:5165
 #, c-format
 msgid "Error: Creating a checkpoint failed: %s"
 msgstr "Ошибка: не удалось создать контрольную точку: %s"
 
-#: src/nmcli/devices.c:5176
+#: src/nmcli/devices.c:5181
 #, c-format
 msgid "Error: %s"
 msgstr "Ошибка: %s"
 
-#: src/nmcli/devices.c:5215 src/nmcli/nmcli.c:885
+#: src/nmcli/devices.c:5220 src/nmcli/nmcli.c:885
 #, c-format
 msgid "Error: '%s' is not a valid timeout."
 msgstr "Ошибка: «%s» не является действительным истечением времени ожидания."
 
-#: src/nmcli/devices.c:5242
+#: src/nmcli/devices.c:5247
 msgid "Error: Expected a command to run after '--'"
 msgstr "Ошибка: после '--' ожидалось выполнение команды"
 
@@ -14515,7 +14485,7 @@ msgid "Error: only these fields are allowed: %s"
 msgstr "Ошибка: допустимые поля: %s"
 
 #. NetworkManager quit while we were waiting.
-#: src/nmcli/general.c:555 src/nmtui/nmtui.c:241
+#: src/nmcli/general.c:555 src/nmtui/nmtui.c:243
 msgid "NetworkManager is not running."
 msgstr "NetworkManager не запущен."
 
@@ -15000,16 +14970,25 @@ msgstr "Не удалось создать форк пейджера: %s\n"
 msgid "Failed to duplicate pager pipe: %s\n"
 msgstr "Не удалось дублировать пейджинговый канал: %s\n"
 
-#: src/nmcli/utils.h:307
+#: src/nmcli/utils.c:1835
+#, c-format
+msgid ""
+"Warning: nmcli (%s) and NetworkManager (%s) versions don't match. Restarting "
+"NetworkManager is advised.\n"
+msgstr ""
+"Предупреждение: версии nmcli (%s) и NetworkManager (%s) не совпадают. "
+"Рекомендуется перезапустить NetworkManager.\n"
+
+#: src/nmcli/utils.h:309
 msgid "(unknown)"
 msgstr "(неизвестно)"
 
-#: src/nmcli/utils.h:347
+#: src/nmcli/utils.h:349
 #, c-format
 msgid "%lld (%s)"
 msgstr "%lld (%s)"
 
-#: src/nmcli/utils.h:354
+#: src/nmcli/utils.h:356
 #, c-format
 msgid "%lld - %s"
 msgstr "%lld - %s"
@@ -15395,7 +15374,7 @@ msgstr "МОСТ"
 #: src/nmtui/nmt-page-bridge.c:76 src/nmtui/nmt-page-bridge.c:119
 #: src/nmtui/nmt-page-bridge.c:133 src/nmtui/nmt-page-bridge.c:147
 msgid "seconds"
-msgstr "сек."
+msgstr "сек"
 
 #: src/nmtui/nmt-page-bridge.c:77
 msgid "Aging time"
@@ -15492,7 +15471,9 @@ msgid "Output key"
 msgstr "Ключ на выходе"
 
 #: src/nmtui/nmt-page-ip4.c:27 src/nmtui/nmt-page-ip6.c:32
-#: src/nmtui/nmt-page-macsec.c:69
+#: src/nmtui/nmt-page-macsec.c:69 src/nmtui/nmtui-radio.c:68
+#: src/nmtui/nmtui-radio.c:77 src/nmtui/nmtui-radio.c:96
+#: src/nmtui/nmtui-radio.c:105
 msgid "Disabled"
 msgstr "Отключено"
 
@@ -15839,7 +15820,7 @@ msgstr "Метрика"
 msgid "No custom routes are defined."
 msgstr "Нет дополнительных маршрутов."
 
-#: src/nmtui/nmt-port-list.c:126
+#: src/nmtui/nmt-port-list.c:127
 msgid "Select the type of slave connection you wish to add."
 msgstr "Выберите тип добавляемого подчинённого подключения."
 
@@ -15870,7 +15851,7 @@ msgstr "Предопределённый ключ"
 #: src/nmtui/nmt-wireguard-peer-editor.c:130
 msgctxt "seconds"
 msgid "seconds"
-msgstr "сек."
+msgstr "сек"
 
 #: src/nmtui/nmt-wireguard-peer-editor.c:131
 msgid "Persistent keepalive"
@@ -15916,11 +15897,12 @@ msgstr "Включить"
 msgid "Deactivate"
 msgstr "Отключить"
 
-#: src/nmtui/nmtui-connect.c:375 src/nmtui/nmtui-edit.c:96 src/nmtui/nmtui.c:107
+#: src/nmtui/nmtui-connect.c:375 src/nmtui/nmtui-edit.c:96 src/nmtui/nmtui.c:109
 msgid "Quit"
 msgstr "Выйти"
 
 #: src/nmtui/nmtui-connect.c:375 src/nmtui/nmtui-edit.c:96
+#: src/nmtui/nmtui-radio.c:118
 msgid "Back"
 msgstr "Назад"
 
@@ -15987,46 +15969,131 @@ msgstr "Изменить имя хоста на «%s»"
 msgid "Unable to set hostname: %s"
 msgstr "Невозможно настроить имя хоста: %s"
 
-#: src/nmtui/nmtui.c:40 src/nmtui/nmtui.c:41
+#: src/nmtui/nmtui-radio.c:52
+msgid "Set the radio switches status"
+msgstr "Установить состояние радиопереключателей"
+
+#: src/nmtui/nmtui-radio.c:61 src/nmtui/nmtui-radio.c:89
+msgid "Hardware:"
+msgstr "Оборудование:"
+
+#: src/nmtui/nmtui-radio.c:65 src/nmtui/nmtui-radio.c:93
+msgid "Missing"
+msgstr "Отсутствует"
+
+#: src/nmtui/nmtui-radio.c:68 src/nmtui/nmtui-radio.c:77
+#: src/nmtui/nmtui-radio.c:96 src/nmtui/nmtui-radio.c:105
+msgid "Enabled"
+msgstr "Включено"
+
+#: src/nmtui/nmtui-radio.c:73 src/nmtui/nmtui-radio.c:101
+msgid "Software:"
+msgstr "Программное обеспечение:"
+
+#: src/nmtui/nmtui-radio.c:85
+msgid "WWAN"
+msgstr "WWAN"
+
+#: src/nmtui/nmtui.c:41 src/nmtui/nmtui.c:42
 msgid "connection"
 msgstr "подключение"
 
-#: src/nmtui/nmtui.c:40
+#: src/nmtui/nmtui.c:41
 msgid "Edit a connection"
 msgstr "Изменить подключение"
 
-#: src/nmtui/nmtui.c:41
+#: src/nmtui/nmtui.c:42
 msgid "Activate a connection"
 msgstr "Активировать подключение"
 
-#: src/nmtui/nmtui.c:42
+#: src/nmtui/nmtui.c:43
 msgid "new hostname"
 msgstr "новое имя хоста"
 
-#: src/nmtui/nmtui.c:42
+#: src/nmtui/nmtui.c:43
 msgid "Set system hostname"
 msgstr "Настроить системное имя хоста"
 
-#: src/nmtui/nmtui.c:83
+#: src/nmtui/nmtui.c:44
+msgid "radio"
+msgstr "радио"
+
+#: src/nmtui/nmtui.c:44
+msgid "Radio"
+msgstr "Радио"
+
+#: src/nmtui/nmtui.c:85
 msgid "NetworkManager TUI"
 msgstr "Текстовый пользовательский интерфейс NetworkManager"
 
-#: src/nmtui/nmtui.c:89
+#: src/nmtui/nmtui.c:91
 msgid "Please select an option"
 msgstr "Выберите вариант"
 
-#: src/nmtui/nmtui.c:136
+#: src/nmtui/nmtui.c:138
 msgid "Usage"
 msgstr "Использование"
 
-#: src/nmtui/nmtui.c:223
+#: src/nmtui/nmtui.c:225
 msgid "Could not parse arguments"
 msgstr "Не удалось выполнить анализ аргументов"
 
-#: src/nmtui/nmtui.c:236
+#: src/nmtui/nmtui.c:238
 #, c-format
 msgid "Could not contact NetworkManager: %s.\n"
 msgstr "Не удалось связаться с  NetworkManager: %s.\n"
+
+#~ msgid ""
+#~ "The NMSettingWirelessWakeOnWLan options to enable. Not all devices support "
+#~ "all options. May be any combination of NM_SETTING_WIRELESS_WAKE_ON_WLAN_ANY "
+#~ "(0x2), NM_SETTING_WIRELESS_WAKE_ON_WLAN_DISCONNECT (0x4), "
+#~ "NM_SETTING_WIRELESS_WAKE_ON_WLAN_MAGIC (0x8), "
+#~ "NM_SETTING_WIRELESS_WAKE_ON_WLAN_GTK_REKEY_FAILURE (0x10), "
+#~ "NM_SETTING_WIRELESS_WAKE_ON_WLAN_EAP_IDENTITY_REQUEST (0x20), "
+#~ "NM_SETTING_WIRELESS_WAKE_ON_WLAN_4WAY_HANDSHAKE (0x40), "
+#~ "NM_SETTING_WIRELESS_WAKE_ON_WLAN_RFKILL_RELEASE (0x80), "
+#~ "NM_SETTING_WIRELESS_WAKE_ON_WLAN_TCP (0x100) or the special values "
+#~ "NM_SETTING_WIRELESS_WAKE_ON_WLAN_DEFAULT (0x1) (to use global settings) and "
+#~ "NM_SETTING_WIRELESS_WAKE_ON_WLAN_IGNORE (0x8000) (to disable management of "
+#~ "Wake-on-LAN in NetworkManager)."
+#~ msgstr ""
+#~ "Параметры NMSettingWirelessWakeOnWLan для включения. Не все устройства "
+#~ "поддерживают все параметры. Возможна любая комбинация следующих "
+#~ "возможностей: NM_SETTING_WIRELESS_WAKE_ON_WLAN_ANY (0x2), "
+#~ "NM_SETTING_WIRELESS_WAKE_ON_WLAN_DISCONNECT (0x4), "
+#~ "NM_SETTING_WIRELESS_WAKE_ON_WLAN_MAGIC (0x8), "
+#~ "NM_SETTING_WIRELESS_WAKE_ON_WLAN_GTK_REKEY_FAILURE (0x10), "
+#~ "NM_SETTING_WIRELESS_WAKE_ON_WLAN_EAP_IDENTITY_REQUEST (0x20), "
+#~ "NM_SETTING_WIRELESS_WAKE_ON_WLAN_4WAY_HANDSHAKE (0x40), "
+#~ "NM_SETTING_WIRELESS_WAKE_ON_WLAN_RFKILL_RELEASE (0x80), "
+#~ "NM_SETTING_WIRELESS_WAKE_ON_WLAN_TCP (0x100) или специальные значения "
+#~ "NM_SETTING_WIRELESS_WAKE_ON_WLAN_DEFAULT ( 0x1) (для использования "
+#~ "глобальных параметров) и NM_SETTING_WIRELESS_WAKE_ON_WLAN_IGNORE (0x8000) "
+#~ "(чтобы отключить управление Wake-on-LAN в NetworkManager)."
+
+#~ msgid ""
+#~ "Tunnel flags. Currently, the following values are supported: "
+#~ "NM_IP_TUNNEL_FLAG_IP6_IGN_ENCAP_LIMIT (0x1), "
+#~ "NM_IP_TUNNEL_FLAG_IP6_USE_ORIG_TCLASS (0x2), "
+#~ "NM_IP_TUNNEL_FLAG_IP6_USE_ORIG_FLOWLABEL (0x4), "
+#~ "NM_IP_TUNNEL_FLAG_IP6_MIP6_DEV (0x8), NM_IP_TUNNEL_FLAG_IP6_RCV_DSCP_COPY "
+#~ "(0x10), NM_IP_TUNNEL_FLAG_IP6_USE_ORIG_FWMARK (0x20). They are valid only "
+#~ "for IPv6 tunnels."
+#~ msgstr ""
+#~ "Туннельные флаги. В настоящее время поддерживаются следующие значения: "
+#~ "NM_IP_TUNNEL_FLAG_IP6_IGN_ENCAP_LIMIT (0x1), "
+#~ "NM_IP_TUNNEL_FLAG_IP6_USE_ORIG_TCLASS (0x2), "
+#~ "NM_IP_TUNNEL_FLAG_IP6_USE_ORIG_FLOWLABEL (0x4), "
+#~ "NM_IP_TUNNEL_FLAG_IP6_MIP6_DEV (0x8), NM_IP_TUNNEL_FLAG_IP6_RCV_DSCP_COPY "
+#~ "(0x10), NM_IP_TUNNEL_FLAG_IP6_USE_ORIG_FWMARK (0x20). Действительны только "
+#~ "для туннелей IPv6."
+
+#~ msgid ""
+#~ "The tunneling mode, for example NM_IP_TUNNEL_MODE_IPIP (1) or "
+#~ "NM_IP_TUNNEL_MODE_GRE (2)."
+#~ msgstr ""
+#~ "Режим туннелирования, например NM_IP_TUNNEL_MODE_IPIP (1) или "
+#~ "NM_IP_TUNNEL_MODE_GRE (2)."
 
 #~ msgid ""
 #~ "The InfiniBand P_Key to use for this device. A value of -1 means to use the "
