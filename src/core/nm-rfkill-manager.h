@@ -12,13 +12,6 @@ typedef enum {
     NM_RFKILL_STATE_UNBLOCKED    = 1,
     NM_RFKILL_STATE_SOFT_BLOCKED = 2,
     NM_RFKILL_STATE_HARD_BLOCKED = 3,
-    /* NM_RFKILL_STATE_HARD_BLOCKED_OS_NOT_OWNER means that the CSME firmware
-     * is currently controlling the device. This feature is implmented on Intel
-     * wifi devices only.
-     * The NetworkManager can get ownership on the device, but it requires to
-     * first ask ownership through the iwlmei kernel module.
-     */
-    NM_RFKILL_STATE_HARD_BLOCKED_OS_NOT_OWNER = 4,
 } NMRfkillState;
 
 typedef enum {
