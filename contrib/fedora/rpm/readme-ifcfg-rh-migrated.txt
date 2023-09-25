@@ -50,3 +50,35 @@ Or, if you prefer to migrate only specific connections:
   nmcli connection migrate --plugin ifcfg-rh <profile_name|UUID>
 
 Note that some connection types are not supported by the ifcfg plugin.
+
+Interface renaming
+==================
+
+Connection profiles stored in ifcfg-rh format support the renaming of
+interfaces via udev. This is done via a helper tool
+/usr/lib/udev/rename_device that is invoked by udev to parse the files
+in /etc/sysconfig/network-scripts; when the HWADDR and DEVICE
+variables are set, the interface that matches the MAC address in
+HWADDR is renamed to the name specified in DEVICE.
+
+Connections in keyfile format don't provide the same integration with
+udev. The renaming of interfaces must be configured directly in udev,
+for example by creating a file:
+
+  /etc/systemd/network/70-rename.link
+
+with content:
+
+  [Match]
+  MACAddress=00:11:22:33:44:56
+
+  [Link]
+  Name=ethernet1
+
+Alternatively, a udev rule can also be used, such as:
+
+  /etc/udev/rules.d/70-interface-names.rules
+
+with content:
+
+  SUBSYSTEM=="net",ACTION=="add",ATTR{address}=="00:11:22:33:44:56",ATTR{type}=="1",NAME="ethernet1"
