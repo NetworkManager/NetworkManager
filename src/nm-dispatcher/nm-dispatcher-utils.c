@@ -453,8 +453,12 @@ nm_dispatcher_utils_construct_envp(const char  *action,
 
     items = g_ptr_array_new_with_free_func(g_free);
 
-    /* Hostname and connectivity changes don't require a device nor contain a connection */
-    if (NM_IN_STRSET(action, NMD_ACTION_HOSTNAME, NMD_ACTION_CONNECTIVITY_CHANGE))
+    /* Hostname, dns and connectivity changes don't require a device nor contain
+     * a connection */
+    if (NM_IN_STRSET(action,
+                     NMD_ACTION_HOSTNAME,
+                     NMD_ACTION_CONNECTIVITY_CHANGE,
+                     NMD_ACTION_DNS_CHANGE))
         goto done;
 
     /* Connection properties */
