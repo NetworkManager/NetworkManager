@@ -155,4 +155,6 @@ char *nmtst_dns_create_resolv_conf(const char *const *searches,
                                    const char *const *nameservers,
                                    const char *const *options);
 
+gboolean nm_dns_manager_is_unmanaged(NMDnsManager *self);
+
 #endif /* __NETWORKMANAGER_DNS_MANAGER_H__ */
