@@ -897,6 +897,11 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
      * If unset, a globally configured default is used. If still unset, the default
      * depends on the DHCP plugin.
      **/
+    /* ---nmcli---
+     * property: dhcp-client-id
+     * special-values: mac, perm-mac, duid, ipv6-duid, stable, none
+     * ---end---
+     */
     /* ---ifcfg-rh---
      * property: dhcp-client-id
      * variable: DHCP_CLIENT_ID(+)
