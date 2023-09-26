@@ -2642,6 +2642,8 @@ dns_config_changed(NMDnsManager *dns_manager, gpointer user_data)
 
         update_system_hostname(self, "DNS configuration changed");
     }
+
+    nm_dispatcher_call_dns_change();
 }
 
 static void

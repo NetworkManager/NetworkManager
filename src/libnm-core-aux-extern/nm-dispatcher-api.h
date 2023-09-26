@@ -34,6 +34,7 @@
 #define NMD_ACTION_DHCP6_CHANGE        "dhcp6-change"
 #define NMD_ACTION_CONNECTIVITY_CHANGE "connectivity-change"
 #define NMD_ACTION_REAPPLY             "reapply"
+#define NMD_ACTION_DNS_CHANGE          "dns-change"
 
 typedef enum {
     DISPATCH_RESULT_UNKNOWN     = 0,

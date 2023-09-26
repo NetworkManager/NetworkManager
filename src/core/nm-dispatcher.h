@@ -23,6 +23,7 @@ typedef enum {
     NM_DISPATCHER_ACTION_DHCP_CHANGE_6,
     NM_DISPATCHER_ACTION_CONNECTIVITY_CHANGE,
     NM_DISPATCHER_ACTION_REAPPLY,
+    NM_DISPATCHER_ACTION_DNS_CHANGE,
 } NMDispatcherAction;
 
 #define NM_DISPATCHER_ACTION_DHCP_CHANGE_X(IS_IPv4) \
@@ -68,6 +69,8 @@ gboolean nm_dispatcher_call_connectivity(NMConnectivityState  state,
                                          NMDispatcherFunc     callback,
                                          gpointer             user_data,
                                          NMDispatcherCallId **out_call_id);
+
+gboolean nm_dispatcher_call_dns_change(void);
 
 void nm_dispatcher_call_cancel(NMDispatcherCallId *call_id);
 
