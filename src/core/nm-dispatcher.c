@@ -723,6 +723,40 @@ nm_dispatcher_call_hostname(NMDispatcherFunc     callback,
                             out_call_id);
 }
 
+static gboolean
+_dispatcher_call_device(NMDispatcherAction   action,
+                        NMDevice            *device,
+                        gboolean             blocking,
+                        NMActRequest        *act_request,
+                        NMDispatcherFunc     callback,
+                        gpointer             user_data,
+                        NMDispatcherCallId **out_call_id)
+{
+    nm_assert(NM_IS_DEVICE(device));
+    if (!act_request) {
+        act_request = nm_device_get_act_request(device);
+        if (!act_request)
+            return FALSE;
+    }
+    nm_assert(NM_IN_SET(nm_active_connection_get_device(NM_ACTIVE_CONNECTION(act_request)),
+                        NULL,
+                        device));
+    return _dispatcher_call(
+        action,
+        blocking,
+        device,
+        nm_act_request_get_settings_connection(act_request),
+        nm_act_request_get_applied_connection(act_request),
+        nm_active_connection_get_activation_type(NM_ACTIVE_CONNECTION(act_request))
+            == NM_ACTIVATION_TYPE_EXTERNAL,
+        NM_CONNECTIVITY_UNKNOWN,
+        NULL,
+        NULL,
+        callback,
+        user_data,
+        out_call_id);
+}
+
 /**
  * nm_dispatcher_call_device:
  * @action: the %NMDispatcherAction
@@ -747,29 +781,13 @@ nm_dispatcher_call_device(NMDispatcherAction   action,
                           gpointer             user_data,
                           NMDispatcherCallId **out_call_id)
 {
-    nm_assert(NM_IS_DEVICE(device));
-    if (!act_request) {
-        act_request = nm_device_get_act_request(device);
-        if (!act_request)
-            return FALSE;
-    }
-    nm_assert(NM_IN_SET(nm_active_connection_get_device(NM_ACTIVE_CONNECTION(act_request)),
-                        NULL,
-                        device));
-    return _dispatcher_call(
-        action,
-        FALSE,
-        device,
-        nm_act_request_get_settings_connection(act_request),
-        nm_act_request_get_applied_connection(act_request),
-        nm_active_connection_get_activation_type(NM_ACTIVE_CONNECTION(act_request))
-            == NM_ACTIVATION_TYPE_EXTERNAL,
-        NM_CONNECTIVITY_UNKNOWN,
-        NULL,
-        NULL,
-        callback,
-        user_data,
-        out_call_id);
+    return _dispatcher_call_device(action,
+                                   device,
+                                   FALSE,
+                                   act_request,
+                                   callback,
+                                   user_data,
+                                   out_call_id);
 }
 
 /**
@@ -789,29 +807,7 @@ nm_dispatcher_call_device_sync(NMDispatcherAction action,
                                NMDevice          *device,
                                NMActRequest      *act_request)
 {
-    nm_assert(NM_IS_DEVICE(device));
-    if (!act_request) {
-        act_request = nm_device_get_act_request(device);
-        if (!act_request)
-            return FALSE;
-    }
-    nm_assert(NM_IN_SET(nm_active_connection_get_device(NM_ACTIVE_CONNECTION(act_request)),
-                        NULL,
-                        device));
-    return _dispatcher_call(
-        action,
-        TRUE,
-        device,
-        nm_act_request_get_settings_connection(act_request),
-        nm_act_request_get_applied_connection(act_request),
-        nm_active_connection_get_activation_type(NM_ACTIVE_CONNECTION(act_request))
-            == NM_ACTIVATION_TYPE_EXTERNAL,
-        NM_CONNECTIVITY_UNKNOWN,
-        NULL,
-        NULL,
-        NULL,
-        NULL,
-        NULL);
+    return _dispatcher_call_device(action, device, TRUE, act_request, NULL, NULL, NULL);
 }
 
 /**
