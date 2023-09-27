@@ -3214,6 +3214,13 @@ nm_connection_is_virtual(NMConnection *connection)
         return !!nm_setting_pppoe_get_parent(s_pppoe);
     }
 
+    if (nm_streq(type, NM_SETTING_GENERIC_SETTING_NAME)) {
+        NMSettingGeneric *s_generic;
+
+        s_generic = nm_connection_get_setting_generic(connection);
+        return !!nm_setting_generic_get_device_handler(s_generic);
+    }
+
     return FALSE;
 }
 
