@@ -18,7 +18,8 @@
 #define NM_DEVICE_GENERIC_GET_CLASS(obj) \
     (G_TYPE_INSTANCE_GET_CLASS((obj), NM_TYPE_DEVICE_GENERIC, NMDeviceGenericClass))
 
-#define NM_DEVICE_GENERIC_TYPE_DESCRIPTION "type-description"
+#define NM_DEVICE_GENERIC_TYPE_DESCRIPTION   "type-description"
+#define NM_DEVICE_GENERIC_HAS_DEVICE_HANDLER "has-device-handler"
 
 typedef struct _NMDeviceGeneric      NMDeviceGeneric;
 typedef struct _NMDeviceGenericClass NMDeviceGenericClass;
