@@ -464,7 +464,9 @@ NM_UTILS_LOOKUP_STR_DEFINE(
     NM_UTILS_LOOKUP_ITEM(NM_DEVICE_STATE_REASON_SRIOV_CONFIGURATION_FAILED,
                          N_("Failed to configure SR-IOV parameters")),
     NM_UTILS_LOOKUP_ITEM(NM_DEVICE_STATE_REASON_PEER_NOT_FOUND,
-                         N_("The Wi-Fi P2P peer could not be found")), );
+                         N_("The Wi-Fi P2P peer could not be found")),
+    NM_UTILS_LOOKUP_ITEM(NM_DEVICE_STATE_REASON_DEVICE_HANDLER_FAILED,
+                         N_("The device handler dispatcher returned an error")), );
 
 NM_UTILS_LOOKUP_STR_DEFINE(
     nm_active_connection_state_reason_to_string,

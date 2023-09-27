@@ -529,7 +529,7 @@ dispatcher_results_process(NMDispatcherAction action,
                 NM_SET_OUT(out_success, FALSE);
                 NM_SET_OUT(out_dict, NULL);
                 NM_SET_OUT(out_error_msg,
-                           err2 ? g_strdup_printf("%s: Error: %s", err, err2) : g_strdup(err));
+                           err2 ? g_strdup_printf("%s (Error: %s)", err, err2) : g_strdup(err));
             }
             break;
         }
