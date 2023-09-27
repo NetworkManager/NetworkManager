@@ -894,8 +894,13 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
      * stable-id, you may want to include the "${DEVICE}" or "${MAC}" specifier to get a
      * per-device key.
      *
-     * If unset, a globally configured default is used. If still unset, the default
-     * depends on the DHCP plugin.
+     * The special value "none" prevents any client identifier from being sent. Note that
+     * this is normally not recommended.
+     *
+     * If unset, a globally configured default from NetworkManager.conf is used. If still
+     * unset, the default depends on the DHCP plugin. The internal dhcp client will
+     * generate a default value and the dhclient plugin will try to use one from its
+     * config file if present, or won't sent any client-id otherwise.
      **/
     /* ---nmcli---
      * property: dhcp-client-id
