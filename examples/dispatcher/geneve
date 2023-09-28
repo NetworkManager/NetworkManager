@@ -1,0 +1,74 @@
+#!/bin/sh
+# NetworkManager device handler for geneve interfaces.
+#
+# Put this script in "/etc/NetworkManager/dispatcher.d/device" and
+# create a generic connection with:
+#
+#   nmcli connection add type generic \
+#                        con-name geneve1 \
+#                        ifname geneve1 \
+#                        generic.device-handler geneve \
+#                        connection.autoconnect no
+#
+# Then add the following parameters at the bottom of file
+# /etc/NetworkManager/system-connections/geneve1 , and do a "nmcli
+# connection reload".
+#
+#   [user]
+#   geneve.remote=172.25.14.15
+#   geneve.vni=5555
+#   geneve.dstport=6082
+#
+# Now, when activating connection "geneve1", NetworkManager calls this
+# script to create the device according to parameters in the user
+# settings, and then performs IP configuration on it.
+#
+# Supported properties in the [user] setting:
+#
+#   geneve.remote     (required)
+#   geneve.vni        (required)
+#   geneve.ttl
+#   geneve.tos
+#   geneve.dstport
+#
+# See the GENEVE section of "man ip-link" for more details.
+
+set -e
+
+ifname=$1
+action=$2
+
+if [ "$action" = device-add ]; then
+    # Create the interface here and then write a line to stdout
+    # containing "IFINDEX=" followed by the ifindex of the interface
+    # just created, so that NetworkManager can manage it and configure
+    # IPs on the interface.. The name of the returned ifindex must be
+    # the same as "$1".
+
+    vni=$CONNECTION_USER_GENEVE__VNI
+    remote=$CONNECTION_USER_GENEVE__REMOTE
+    ttl=$CONNECTION_USER_GENEVE__TTL
+    tos=$CONNECTION_USER_GENEVE__TOS
+    dstport=$CONNECTION_USER_GENEVE__DSTPORT
+
+    if [ -z "$vni" ] || [ -z "$remote" ]; then
+        echo "Missing VNI or remote"
+        exit 1
+    fi
+
+    [ -n "$tos" ] && tos_opt="tos $tos"
+    [ -n "$ttl" ] && ttl_opt="ttl $ttl"
+    [ -n "$dstport" ] && dstport_opt="dstport $dstport"
+
+    ip link add "$1" type geneve vni "$vni" remote "$remote" \
+       $tos_opt $ttl_opt $dstport_opt
+
+    echo IFINDEX=$(cat /sys/class/net/"$1"/ifindex)
+    exit 0
+elif [ "$action" = device-delete ]; then
+    # Delete the interface created by "device-add" here.
+    ip link del "$1"
+    exit 0
+fi
+
+exit 1
