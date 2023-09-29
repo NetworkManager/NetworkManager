@@ -1119,6 +1119,7 @@ nettools_create(NMDhcpNettools *self, GBytes **out_effective_client_id, GError *
     gs_unref_bytes GBytes                                   *client_id_new = NULL;
     const uint8_t                                           *client_id_arr;
     size_t                                                   client_id_len;
+    bool                                                     send_client_id;
     int                                                      r, fd, arp_type, transport;
     const NMDhcpClientConfig                                *client_config;
 
@@ -1150,20 +1151,37 @@ nettools_create(NMDhcpNettools *self, GBytes **out_effective_client_id, GError *
         return FALSE;
     }
 
-    /* Note that we always set a client-id. In particular for infiniband that is necessary,
-     * see https://tools.ietf.org/html/rfc4390#section-2.1 . */
-    client_id = client_config->client_id;
-    if (!client_id) {
+    client_id      = client_config->client_id;
+    send_client_id = client_config->v4.send_client_id;
+
+    if (!send_client_id && transport == N_DHCP4_TRANSPORT_INFINIBAND) {
+        /* Client-id is mandatory for infiniband: https://tools.ietf.org/html/rfc4390#section-2.1 */
+        _LOGI("ipv4.client-id is set to \"none\", but it's mandatory for Infiniband. Setting a "
+              "default one.");
+        send_client_id = TRUE;
+    }
+
+    if (send_client_id && !client_id) {
         client_id_new = nm_utils_dhcp_client_id_mac(arp_type, hwaddr_arr, hwaddr_len);
         client_id     = client_id_new;
     }
 
-    if (!(client_id_arr = g_bytes_get_data(client_id, &client_id_len)) || client_id_len < 2) {
-        /* invalid client-ids are not expected. */
-        nm_assert_not_reached();
+    g_return_val_if_fail(client_id || !send_client_id, FALSE);
 
-        nm_utils_error_set_literal(error, NM_UTILS_ERROR_UNKNOWN, "no valid IPv4 client-id");
-        return FALSE;
+    if (send_client_id) {
+        client_id_arr = g_bytes_get_data(client_id, &client_id_len);
+        client_id_len = NM_MIN(client_id_len, 1 + _NM_MAX_CLIENT_ID_LEN);
+
+        if (!client_id_arr || client_id_len < 2) {
+            /* invalid client-ids are not expected. */
+            nm_assert_not_reached();
+            nm_utils_error_set_literal(error, NM_UTILS_ERROR_UNKNOWN, "no valid IPv4 client-id");
+            return FALSE;
+        }
+    } else {
+        client_id_arr = NULL;
+        /* This will unset the client-id and prevent it from being sent */
+        client_id_len = 0;
     }
 
     r = n_dhcp4_client_config_new(&config);
@@ -1177,9 +1195,7 @@ nettools_create(NMDhcpNettools *self, GBytes **out_effective_client_id, GError *
     n_dhcp4_client_config_set_mac(config, hwaddr_arr, hwaddr_len);
     n_dhcp4_client_config_set_broadcast_mac(config, bcast_hwaddr_arr, bcast_hwaddr_len);
     n_dhcp4_client_config_set_request_broadcast(config, client_config->v4.request_broadcast);
-    r = n_dhcp4_client_config_set_client_id(config,
-                                            client_id_arr,
-                                            NM_MIN(client_id_len, 1 + _NM_MAX_CLIENT_ID_LEN));
+    r = n_dhcp4_client_config_set_client_id(config, client_id_arr, client_id_len);
     if (r) {
         set_error_nettools(error, r, "failed to set client-id");
         return FALSE;
