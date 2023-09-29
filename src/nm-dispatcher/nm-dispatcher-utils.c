@@ -540,6 +540,36 @@ nm_dispatcher_utils_construct_envp(const char  *action,
         _items_add_key0(items, NULL, "DEVICE_IP_IFACE", ip_iface);
     }
 
+    {
+        gs_unref_variant GVariant *user_setting = NULL;
+
+        user_setting = g_variant_lookup_value(connection_dict,
+                                              NM_SETTING_USER_SETTING_NAME,
+                                              NM_VARIANT_TYPE_SETTING);
+        if (user_setting) {
+            gs_unref_variant GVariant    *data   = NULL;
+            nm_auto_free_gstring GString *string = NULL;
+            GVariantIter                  iter;
+            const char                   *key;
+            const char                   *val;
+
+            data =
+                g_variant_lookup_value(user_setting, NM_SETTING_USER_DATA, G_VARIANT_TYPE("a{ss}"));
+            if (data) {
+                g_variant_iter_init(&iter, data);
+                while (g_variant_iter_next(&iter, "{&s&s}", &key, &val)) {
+                    if (key) {
+                        if (!string)
+                            string = g_string_sized_new(64);
+                        g_string_assign(string, "CONNECTION_USER_");
+                        nm_utils_env_var_encode_name(key, string);
+                        _items_add_key0(items, NULL, string->str, val);
+                    }
+                }
+            }
+        }
+    }
+
     /* Device items aren't valid if the device isn't activated */
     if (iface && dev_state == NM_DEVICE_STATE_ACTIVATED) {
         construct_proxy_items(items, device_proxy_props, NULL);

@@ -309,6 +309,33 @@
       exported too, like VPN_IP4_ADDRESS_0, VPN_IP4_NUM_ADDRESSES.
     </para>
     <para>
+      The content of the <literal>user</literal> setting for the connection
+      being activated is also passed via environment variables. Each key is
+      stored in a variable with name <literal>CONNECTION_USER_</literal>
+      concatenated with the encoding of the key name. The encoding works as
+      follows:
+      <itemizedlist>
+        <listitem>
+          <para>lowercase letters become uppercase</para>
+        </listitem>
+        <listitem>
+          <para>uppercase letters are prefixed with an underscore</para>
+        </listitem>
+        <listitem>
+          <para>numbers do not change</para>
+        </listitem>
+        <listitem>
+          <para>a dot is replaced with a double underscore</para>
+        </listitem>
+        <listitem>
+          <para>any other character is encoded with an underscore followed by
+          its 3-digit octal representation</para>
+        </listitem>
+      </itemizedlist>
+      For example, key <literal>test.foo-Bar2</literal> is stored in a variable named
+      <literal>CONNECTION_USER_TEST__FOO_055_BAR2</literal>.
+    </para>
+    <para>
       Dispatcher scripts are run one at a time, but asynchronously from the main
       NetworkManager process, and will be killed if they run for too long. If your script
       might take arbitrarily long to complete, you should spawn a child process and have the
