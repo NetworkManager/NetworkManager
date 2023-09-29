@@ -86,6 +86,7 @@ struct Request {
     char                 **envp;
     gboolean               debug;
     gboolean               is_action2;
+    gboolean               is_device_handler;
 
     GPtrArray *scripts; /* list of ScriptInfo */
     guint      idx;
@@ -615,6 +616,31 @@ _compare_basenames(gconstpointer a, gconstpointer b)
     return 0;
 }
 
+static gboolean
+check_file(Request *request, const char *path)
+{
+    gs_free char *link_target = NULL;
+    const char   *err_msg     = NULL;
+    struct stat   st;
+    int           err;
+
+    link_target = g_file_read_link(path, NULL);
+    if (nm_streq0(link_target, "/dev/null"))
+        return FALSE;
+
+    err = stat(path, &st);
+    if (err) {
+        return FALSE;
+    } else if (!S_ISREG(st.st_mode) || st.st_size == 0) {
+        /* silently skip. */
+        return FALSE;
+    } else if (!check_permissions(&st, &err_msg)) {
+        _LOG_R_W(request, "find-scripts: Cannot execute '%s': %s", path, err_msg);
+        return FALSE;
+    }
+    return TRUE;
+}
+
 static void
 _find_scripts(Request *request, GHashTable *scripts, const char *base, const char *subdir)
 {
@@ -647,7 +673,7 @@ _find_scripts(Request *request, GHashTable *scripts, const char *base, const cha
 }
 
 static GSList *
-find_scripts(Request *request)
+find_scripts(Request *request, const char *device_handler)
 {
     gs_unref_hashtable GHashTable *scripts     = NULL;
     GSList                        *script_list = NULL;
@@ -656,6 +682,33 @@ find_scripts(Request *request)
     char                          *path;
     char                          *filename;
 
+    if (request->is_device_handler) {
+        const char *const dirs[] = {NMCONFDIR, NMLIBDIR};
+        guint             i;
+
+        nm_assert(device_handler);
+
+        for (i = 0; i < G_N_ELEMENTS(dirs); i++) {
+            gs_free char *full_name = NULL;
+
+            full_name = g_build_filename(dirs[i], "dispatcher.d", "device", device_handler, NULL);
+            if (check_file(request, full_name)) {
+                script_list = g_slist_prepend(script_list, g_steal_pointer(&full_name));
+                return script_list;
+            }
+        }
+
+        _LOG_R_W(request,
+                 "find-scripts: no device-handler script found with name \"%s\"",
+                 device_handler);
+        return NULL;
+    }
+
+    nm_assert(!device_handler);
+
+    /* Use a hash-table to deduplicate scripts with same name from /etc and /usr */
+    scripts = g_hash_table_new_full(nm_str_hash, g_str_equal, g_free, g_free);
+
     if (NM_IN_STRSET(request->action, NMD_ACTION_PRE_UP, NMD_ACTION_VPN_PRE_UP))
         subdir = "pre-up.d";
     else if (NM_IN_STRSET(request->action, NMD_ACTION_PRE_DOWN, NMD_ACTION_VPN_PRE_DOWN))
@@ -663,33 +716,13 @@ find_scripts(Request *request)
     else
         subdir = NULL;
 
-    scripts = g_hash_table_new_full(nm_str_hash, g_str_equal, g_free, g_free);
-
     _find_scripts(request, scripts, NMLIBDIR, subdir);
     _find_scripts(request, scripts, NMCONFDIR, subdir);
 
     g_hash_table_iter_init(&iter, scripts);
     while (g_hash_table_iter_next(&iter, (gpointer *) &filename, (gpointer *) &path)) {
-        gs_free char *link_target = NULL;
-        const char   *err_msg     = NULL;
-        struct stat   st;
-        int           err;
-
-        link_target = g_file_read_link(path, NULL);
-        if (nm_streq0(link_target, "/dev/null"))
-            continue;
-
-        err = stat(path, &st);
-        if (err)
-            _LOG_R_W(request, "find-scripts: Failed to stat '%s': %d", path, err);
-        else if (!S_ISREG(st.st_mode) || st.st_size == 0) {
-            /* silently skip. */
-        } else if (!check_permissions(&st, &err_msg))
-            _LOG_R_W(request, "find-scripts: Cannot execute '%s': %s", path, err_msg);
-        else {
-            /* success */
+        if (check_file(request, path)) {
             script_list = g_slist_prepend(script_list, g_strdup(path));
-            continue;
         }
     }
 
@@ -725,6 +758,27 @@ script_must_wait(const char *path)
     return TRUE;
 }
 
+static char *
+get_device_handler(GVariant *connection)
+{
+    gs_unref_variant GVariant *generic_setting = NULL;
+    const char                *device_handler  = NULL;
+
+    generic_setting = g_variant_lookup_value(connection,
+                                             NM_SETTING_GENERIC_SETTING_NAME,
+                                             NM_VARIANT_TYPE_SETTING);
+    if (generic_setting) {
+        if (g_variant_lookup(generic_setting,
+                             NM_SETTING_GENERIC_DEVICE_HANDLER,
+                             "&s",
+                             &device_handler)) {
+            return g_strdup(device_handler);
+        }
+    }
+
+    return NULL;
+}
+
 static void
 _handle_action(GDBusMethodInvocation *invocation, GVariant *parameters, gboolean is_action2)
 {
@@ -739,6 +793,7 @@ _handle_action(GDBusMethodInvocation *invocation, GVariant *parameters, gboolean
     gs_unref_variant GVariant *device_dhcp6_config     = NULL;
     const char                *connectivity_state;
     const char                *vpn_ip_iface;
+    gs_free char              *device_handler       = NULL;
     gs_unref_variant GVariant *vpn_proxy_properties = NULL;
     gs_unref_variant GVariant *vpn_ip4_config       = NULL;
     gs_unref_variant GVariant *vpn_ip6_config       = NULL;
@@ -829,6 +884,8 @@ _handle_action(GDBusMethodInvocation *invocation, GVariant *parameters, gboolean
     request->context    = invocation;
     request->action     = g_strdup(action);
     request->is_action2 = is_action2;
+    request->is_device_handler =
+        NM_IN_STRSET(action, NMD_ACTION_DEVICE_ADD, NMD_ACTION_DEVICE_DELETE);
 
     request->envp = nm_dispatcher_utils_construct_envp(action,
                                                        connection,
@@ -846,11 +903,14 @@ _handle_action(GDBusMethodInvocation *invocation, GVariant *parameters, gboolean
                                                        vpn_ip6_config,
                                                        &request->iface,
                                                        &error_message);
-
     if (!error_message) {
+        if (request->is_device_handler) {
+            device_handler = get_device_handler(connection);
+        }
+
         request->scripts = g_ptr_array_new_full(5, script_info_free);
 
-        sorted_scripts = find_scripts(request);
+        sorted_scripts = find_scripts(request, device_handler);
         for (iter = sorted_scripts; iter; iter = g_slist_next(iter)) {
             ScriptInfo *s;
 
