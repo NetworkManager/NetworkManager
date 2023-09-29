@@ -50,8 +50,6 @@
     }                                                         \
     G_STMT_END
 
-static gboolean nm_dispatcher_need_device(NMDispatcherAction action);
-
 /*****************************************************************************/
 
 struct NMDispatcherCallId {
@@ -83,6 +81,20 @@ static struct {
 } gl;
 
 /*****************************************************************************/
+
+/* All actions except 'hostname', 'connectivity-change' and 'dns-change' require
+ * a device */
+static gboolean
+action_need_device(NMDispatcherAction action)
+{
+    if (NM_IN_SET(action,
+                  NM_DISPATCHER_ACTION_HOSTNAME,
+                  NM_DISPATCHER_ACTION_CONNECTIVITY_CHANGE,
+                  NM_DISPATCHER_ACTION_DNS_CHANGE)) {
+        return FALSE;
+    }
+    return TRUE;
+}
 
 static NMDispatcherCallId *
 dispatcher_call_id_new(guint32            request_id,
@@ -533,7 +545,7 @@ _dispatcher_call(NMDispatcherAction    action,
     if (G_UNLIKELY(!request_id))
         request_id = ++gl.request_id_counter;
 
-    if (!nm_dispatcher_need_device(action)) {
+    if (!action_need_device(action)) {
         _LOG2D(request_id,
                log_ifname,
                log_con_uuid,
@@ -594,7 +606,7 @@ _dispatcher_call(NMDispatcherAction    action,
     g_variant_builder_init(&vpn_ip6_props, G_VARIANT_TYPE_VARDICT);
 
     /* hostname, DNS and connectivity-change actions don't send device data */
-    if (nm_dispatcher_need_device(action)) {
+    if (action_need_device(action)) {
         fill_device_props(device,
                           &device_props,
                           &device_proxy_props,
@@ -956,17 +968,4 @@ nm_dispatcher_call_cancel(NMDispatcherCallId *call_id)
      */
     _LOG3D(call_id, "cancelling dispatcher callback action");
     call_id->callback = NULL;
-}
-
-/* All actions except 'hostname', 'connectivity-change' and 'dns-change' require
- * a device */
-static gboolean
-nm_dispatcher_need_device(NMDispatcherAction action)
-{
-    if (action == NM_DISPATCHER_ACTION_HOSTNAME
-        || action == NM_DISPATCHER_ACTION_CONNECTIVITY_CHANGE
-        || action == NM_DISPATCHER_ACTION_DNS_CHANGE) {
-        return FALSE;
-    }
-    return TRUE;
 }
