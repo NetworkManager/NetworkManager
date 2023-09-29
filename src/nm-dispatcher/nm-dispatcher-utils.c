@@ -430,6 +430,7 @@ nm_dispatcher_utils_construct_envp(const char  *action,
                                    GVariant    *vpn_ip4_props,
                                    GVariant    *vpn_ip6_props,
                                    char       **out_iface,
+                                   const char **out_device_handler,
                                    const char **out_error_message)
 {
     const char                  *iface    = NULL;
@@ -538,6 +539,24 @@ nm_dispatcher_utils_construct_envp(const char  *action,
         _items_add_key0(items, NULL, "CONNECTION_ID", id);
         _items_add_key0(items, NULL, "DEVICE_IFACE", iface);
         _items_add_key0(items, NULL, "DEVICE_IP_IFACE", ip_iface);
+    }
+
+    if (NM_IN_STRSET(action, NMD_ACTION_DEVICE_ADD, NMD_ACTION_DEVICE_DELETE)) {
+        gs_unref_variant GVariant *generic_setting = NULL;
+        const char                *device_handler  = NULL;
+
+        generic_setting = g_variant_lookup_value(connection_dict,
+                                                 NM_SETTING_GENERIC_SETTING_NAME,
+                                                 NM_VARIANT_TYPE_SETTING);
+        if (generic_setting) {
+            if (g_variant_lookup(generic_setting,
+                                 NM_SETTING_GENERIC_DEVICE_HANDLER,
+                                 "&s",
+                                 &device_handler)) {
+                NM_SET_OUT(out_device_handler, device_handler);
+                _items_add_key0(items, NULL, "DEVICE_HANDLER", device_handler);
+            }
+        }
     }
 
     /* Device items aren't valid if the device isn't activated */

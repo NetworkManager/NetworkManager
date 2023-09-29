@@ -526,6 +526,7 @@ test_generic(const char *file, const char *override_vpn_ip_iface)
                                               vpn_ip4_props,
                                               vpn_ip6_props,
                                               &out_iface,
+                                              NULL,
                                               &error_message);
 
     g_assert((!denv && error_message) || (denv && !error_message));

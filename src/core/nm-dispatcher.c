@@ -54,6 +54,7 @@
 
 struct NMDispatcherCallId {
     NMDispatcherFunc   callback;
+    NMDispatcherFuncDH callback_dh;
     gpointer           user_data;
     const char        *log_ifname;
     const char        *log_con_uuid;
@@ -96,11 +97,18 @@ action_need_device(NMDispatcherAction action)
     return TRUE;
 }
 
+static gboolean
+action_is_device_handler(NMDispatcherAction action)
+{
+    return NM_IN_SET(action, NM_DISPATCHER_ACTION_DEVICE_ADD, NM_DISPATCHER_ACTION_DEVICE_DELETE);
+}
+
 static NMDispatcherCallId *
 dispatcher_call_id_new(guint32            request_id,
                        gint64             start_at_msec,
                        NMDispatcherAction action,
                        NMDispatcherFunc   callback,
+                       NMDispatcherFuncDH callback_dh,
                        gpointer           user_data,
                        const char        *log_ifname,
                        const char        *log_con_uuid)
@@ -119,6 +127,7 @@ dispatcher_call_id_new(guint32            request_id,
     call_id->start_at_msec = start_at_msec;
     call_id->request_id    = request_id;
     call_id->callback      = callback;
+    call_id->callback_dh   = callback_dh;
     call_id->user_data     = user_data;
     call_id->idle_id       = 0;
 
@@ -385,17 +394,21 @@ dispatch_result_to_string(DispatchResult result)
 }
 
 static void
-dispatcher_results_process(guint32     request_id,
-                           gint64      start_at_msec,
-                           gint64      now_msec,
-                           const char *log_ifname,
-                           const char *log_con_uuid,
-                           GVariant   *v_results)
+dispatcher_results_process(NMDispatcherAction action,
+                           guint32            request_id,
+                           gint64             start_at_msec,
+                           gint64             now_msec,
+                           const char        *log_ifname,
+                           const char        *log_con_uuid,
+                           gboolean          *out_success,
+                           const char       **out_msg,
+                           GVariant          *v_results)
 {
     nm_auto_free_variant_iter GVariantIter *results = NULL;
     const char                             *script, *err;
     guint32                                 result;
     gsize                                   n_children;
+    gboolean                                action_is_dh = action_is_device_handler(action);
 
     g_variant_get(v_results, "(a(sus))", &results);
 
@@ -412,6 +425,11 @@ dispatcher_results_process(guint32     request_id,
     if (n_children == 0)
         return;
 
+    if (action_is_dh && n_children > 1) {
+        _LOG2W(request_id, log_ifname, log_con_uuid, "returned more than one result, ignoring");
+        return;
+    }
+
     while (g_variant_iter_next(results, "(&su&s)", &script, &result, &err)) {
         if (result == DISPATCH_RESULT_SUCCESS) {
             _LOG2D(request_id, log_ifname, log_con_uuid, "%s succeeded", script);
@@ -424,6 +442,12 @@ dispatcher_results_process(guint32     request_id,
                    dispatch_result_to_string(result),
                    err);
         }
+        if (action_is_dh) {
+            NM_SET_OUT(out_success, result == DISPATCH_RESULT_SUCCESS);
+            /* 'err' is owned by 'v_results' */
+            NM_SET_OUT(out_msg, err);
+            break;
+        }
     }
 }
 
@@ -434,6 +458,9 @@ dispatcher_done_cb(GObject *source, GAsyncResult *result, gpointer user_data)
     gs_free_error GError      *error   = NULL;
     NMDispatcherCallId        *call_id = user_data;
     gint64                     now_msec;
+    gboolean                   action_is_dh;
+    gboolean                   success = TRUE;
+    const char                *output  = NULL;
 
     nm_assert((gpointer) source == gl.dbus_connection);
 
@@ -454,37 +481,46 @@ dispatcher_done_cb(GObject *source, GAsyncResult *result, gpointer user_data)
                 (int) ((now_msec - call_id->start_at_msec) % 1000),
                 error->message);
     } else {
-        dispatcher_results_process(call_id->request_id,
+        dispatcher_results_process(call_id->action,
+                                   call_id->request_id,
                                    call_id->start_at_msec,
                                    now_msec,
                                    call_id->log_ifname,
                                    call_id->log_con_uuid,
+                                   &success,
+                                   &output,
                                    ret);
     }
 
     g_hash_table_remove(gl.requests, call_id);
+    action_is_dh = action_is_device_handler(call_id->action);
 
-    if (call_id->callback)
+    if (!action_is_dh && call_id->callback)
         call_id->callback(call_id, call_id->user_data);
+    else if (action_is_dh && call_id->callback_dh)
+        call_id->callback_dh(call_id, call_id->user_data, success, output);
 
     dispatcher_call_id_free(call_id);
 }
 
-static const char *action_table[] = {[NM_DISPATCHER_ACTION_HOSTNAME]      = NMD_ACTION_HOSTNAME,
-                                     [NM_DISPATCHER_ACTION_PRE_UP]        = NMD_ACTION_PRE_UP,
-                                     [NM_DISPATCHER_ACTION_UP]            = NMD_ACTION_UP,
-                                     [NM_DISPATCHER_ACTION_PRE_DOWN]      = NMD_ACTION_PRE_DOWN,
-                                     [NM_DISPATCHER_ACTION_DOWN]          = NMD_ACTION_DOWN,
-                                     [NM_DISPATCHER_ACTION_VPN_PRE_UP]    = NMD_ACTION_VPN_PRE_UP,
-                                     [NM_DISPATCHER_ACTION_VPN_UP]        = NMD_ACTION_VPN_UP,
-                                     [NM_DISPATCHER_ACTION_VPN_PRE_DOWN]  = NMD_ACTION_VPN_PRE_DOWN,
-                                     [NM_DISPATCHER_ACTION_VPN_DOWN]      = NMD_ACTION_VPN_DOWN,
-                                     [NM_DISPATCHER_ACTION_DHCP_CHANGE_4] = NMD_ACTION_DHCP4_CHANGE,
-                                     [NM_DISPATCHER_ACTION_DHCP_CHANGE_6] = NMD_ACTION_DHCP6_CHANGE,
-                                     [NM_DISPATCHER_ACTION_CONNECTIVITY_CHANGE] =
-                                         NMD_ACTION_CONNECTIVITY_CHANGE,
-                                     [NM_DISPATCHER_ACTION_REAPPLY]    = NMD_ACTION_REAPPLY,
-                                     [NM_DISPATCHER_ACTION_DNS_CHANGE] = NMD_ACTION_DNS_CHANGE};
+static const char *action_table[] = {
+    [NM_DISPATCHER_ACTION_HOSTNAME]            = NMD_ACTION_HOSTNAME,
+    [NM_DISPATCHER_ACTION_PRE_UP]              = NMD_ACTION_PRE_UP,
+    [NM_DISPATCHER_ACTION_UP]                  = NMD_ACTION_UP,
+    [NM_DISPATCHER_ACTION_PRE_DOWN]            = NMD_ACTION_PRE_DOWN,
+    [NM_DISPATCHER_ACTION_DOWN]                = NMD_ACTION_DOWN,
+    [NM_DISPATCHER_ACTION_VPN_PRE_UP]          = NMD_ACTION_VPN_PRE_UP,
+    [NM_DISPATCHER_ACTION_VPN_UP]              = NMD_ACTION_VPN_UP,
+    [NM_DISPATCHER_ACTION_VPN_PRE_DOWN]        = NMD_ACTION_VPN_PRE_DOWN,
+    [NM_DISPATCHER_ACTION_VPN_DOWN]            = NMD_ACTION_VPN_DOWN,
+    [NM_DISPATCHER_ACTION_DHCP_CHANGE_4]       = NMD_ACTION_DHCP4_CHANGE,
+    [NM_DISPATCHER_ACTION_DHCP_CHANGE_6]       = NMD_ACTION_DHCP6_CHANGE,
+    [NM_DISPATCHER_ACTION_CONNECTIVITY_CHANGE] = NMD_ACTION_CONNECTIVITY_CHANGE,
+    [NM_DISPATCHER_ACTION_REAPPLY]             = NMD_ACTION_REAPPLY,
+    [NM_DISPATCHER_ACTION_DNS_CHANGE]          = NMD_ACTION_DNS_CHANGE,
+    [NM_DISPATCHER_ACTION_DEVICE_ADD]          = NMD_ACTION_DEVICE_ADD,
+    [NM_DISPATCHER_ACTION_DEVICE_DELETE]       = NMD_ACTION_DEVICE_DELETE,
+};
 
 static const char *
 action_to_string(NMDispatcherAction action)
@@ -505,6 +541,7 @@ _dispatcher_call(NMDispatcherAction    action,
                  const char           *vpn_iface,
                  const NML3ConfigData *l3cd,
                  NMDispatcherFunc      callback,
+                 NMDispatcherFuncDH    callback_dh,
                  gpointer              user_data,
                  NMDispatcherCallId  **out_call_id)
 {
@@ -527,8 +564,13 @@ _dispatcher_call(NMDispatcherAction    action,
     const char                *log_con_uuid;
     gint64                     start_at_msec;
     gint64                     now_msec;
+    gboolean                   action_is_dh;
 
     g_return_val_if_fail(!blocking || (!callback && !user_data), FALSE);
+
+    action_is_dh = action_is_device_handler(action);
+    g_return_val_if_fail(action_is_dh || !callback_dh, FALSE);
+    g_return_val_if_fail(!action_is_dh || !callback, FALSE);
 
     NM_SET_OUT(out_call_id, NULL);
 
@@ -671,11 +713,14 @@ _dispatcher_call(NMDispatcherAction    action,
                    error->message);
             return FALSE;
         }
-        dispatcher_results_process(request_id,
+        dispatcher_results_process(action,
+                                   request_id,
                                    start_at_msec,
                                    now_msec,
                                    log_ifname,
                                    log_con_uuid,
+                                   NULL,
+                                   NULL,
                                    ret);
         return TRUE;
     }
@@ -684,6 +729,7 @@ _dispatcher_call(NMDispatcherAction    action,
                                      start_at_msec,
                                      action,
                                      callback,
+                                     callback_dh,
                                      user_data,
                                      log_ifname,
                                      log_con_uuid);
@@ -731,6 +777,7 @@ nm_dispatcher_call_hostname(NMDispatcherFunc     callback,
                             NULL,
                             NULL,
                             callback,
+                            NULL,
                             user_data,
                             out_call_id);
 }
@@ -741,6 +788,7 @@ _dispatcher_call_device(NMDispatcherAction   action,
                         gboolean             blocking,
                         NMActRequest        *act_request,
                         NMDispatcherFunc     callback,
+                        NMDispatcherFuncDH   callback_dh,
                         gpointer             user_data,
                         NMDispatcherCallId **out_call_id)
 {
@@ -765,6 +813,7 @@ _dispatcher_call_device(NMDispatcherAction   action,
         NULL,
         NULL,
         callback,
+        callback_dh,
         user_data,
         out_call_id);
 }
@@ -793,11 +842,50 @@ nm_dispatcher_call_device(NMDispatcherAction   action,
                           gpointer             user_data,
                           NMDispatcherCallId **out_call_id)
 {
+    g_return_val_if_fail(!action_is_device_handler(action), FALSE);
+
     return _dispatcher_call_device(action,
                                    device,
                                    FALSE,
                                    act_request,
                                    callback,
+                                   NULL,
+                                   user_data,
+                                   out_call_id);
+}
+
+/**
+ * nm_dispatcher_call_device_handler:
+ * @action: the %NMDispatcherAction, must be device-add or device-remove
+ * @device: the #NMDevice the action applies to
+ * @act_request: the #NMActRequest for the action. If %NULL, use the
+ *   current request of the device.
+ * @callback_dh: a caller-supplied device-handler callback to execute when done
+ * @user_data: caller-supplied pointer passed to @callback
+ * @out_call_id: on success, a call identifier which can be passed to
+ * nm_dispatcher_call_cancel()
+ *
+ * This method always invokes the device dispatcher action asynchronously.  To ignore
+ * the result, pass %NULL to @callback.
+ *
+ * Returns: %TRUE if the action was dispatched, %FALSE on failure
+ */
+gboolean
+nm_dispatcher_call_device_handler(NMDispatcherAction   action,
+                                  NMDevice            *device,
+                                  NMActRequest        *act_request,
+                                  NMDispatcherFuncDH   callback_dh,
+                                  gpointer             user_data,
+                                  NMDispatcherCallId **out_call_id)
+{
+    g_return_val_if_fail(action_is_device_handler(action), FALSE);
+
+    return _dispatcher_call_device(action,
+                                   device,
+                                   FALSE,
+                                   act_request,
+                                   NULL,
+                                   callback_dh,
                                    user_data,
                                    out_call_id);
 }
@@ -819,7 +907,9 @@ nm_dispatcher_call_device_sync(NMDispatcherAction action,
                                NMDevice          *device,
                                NMActRequest      *act_request)
 {
-    return _dispatcher_call_device(action, device, TRUE, act_request, NULL, NULL, NULL);
+    g_return_val_if_fail(action_is_device_handler(action), FALSE);
+
+    return _dispatcher_call_device(action, device, TRUE, act_request, NULL, NULL, NULL, NULL);
 }
 
 /**
@@ -861,6 +951,7 @@ nm_dispatcher_call_vpn(NMDispatcherAction    action,
                             vpn_iface,
                             l3cd,
                             callback,
+                            NULL,
                             user_data,
                             out_call_id);
 }
@@ -898,6 +989,7 @@ nm_dispatcher_call_vpn_sync(NMDispatcherAction    action,
                             l3cd,
                             NULL,
                             NULL,
+                            NULL,
                             NULL);
 }
 
@@ -929,6 +1021,7 @@ nm_dispatcher_call_connectivity(NMConnectivityState  connectivity_state,
                             NULL,
                             NULL,
                             callback,
+                            NULL,
                             user_data,
                             out_call_id);
 }
@@ -954,18 +1047,26 @@ nm_dispatcher_call_dns_change(void)
                             NULL,
                             NULL,
                             NULL,
+                            NULL,
                             NULL);
 }
 
 void
 nm_dispatcher_call_cancel(NMDispatcherCallId *call_id)
 {
-    if (!call_id || g_hash_table_lookup(gl.requests, call_id) != call_id || !call_id->callback)
+    if (!call_id || g_hash_table_lookup(gl.requests, call_id) != call_id)
+        g_return_if_reached();
+
+    if (!action_is_device_handler(call_id->action) && !call_id->callback)
+        g_return_if_reached();
+
+    if (action_is_device_handler(call_id->action) && !call_id->callback_dh)
         g_return_if_reached();
 
     /* Canceling just means the callback doesn't get called, so set the
      * DispatcherInfo's callback to NULL.
      */
     _LOG3D(call_id, "cancelling dispatcher callback action");
-    call_id->callback = NULL;
+    call_id->callback    = NULL;
+    call_id->callback_dh = NULL;
 }

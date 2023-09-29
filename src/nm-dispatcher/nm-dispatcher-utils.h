@@ -21,6 +21,7 @@ char **nm_dispatcher_utils_construct_envp(const char  *action,
                                           GVariant    *vpn_ip4_props,
                                           GVariant    *vpn_ip6_props,
                                           char       **out_iface,
+                                          const char **out_device_handler,
                                           const char **out_error_message);
 
 #endif /* __NETWORKMANAGER_DISPATCHER_UTILS_H__ */

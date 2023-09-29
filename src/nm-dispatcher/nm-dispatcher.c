@@ -594,7 +594,11 @@ _compare_basenames(gconstpointer a, gconstpointer b)
 }
 
 static void
-_find_scripts(Request *request, GHashTable *scripts, const char *base, const char *subdir)
+_find_scripts(Request    *request,
+              GHashTable *scripts,
+              const char *base,
+              const char *subdir,
+              const char *device_handler)
 {
     const char   *filename;
     gs_free char *dirname = NULL;
@@ -602,6 +606,13 @@ _find_scripts(Request *request, GHashTable *scripts, const char *base, const cha
     GDir         *dir;
 
     dirname = g_build_filename(base, "dispatcher.d", subdir, NULL);
+
+    if (NM_IN_STRSET(request->action, NMD_ACTION_DEVICE_ADD, NMD_ACTION_DEVICE_DELETE)) {
+        g_hash_table_insert(scripts,
+                            g_strdup(device_handler),
+                            g_build_filename(dirname, device_handler, NULL));
+        return;
+    }
 
     if (!(dir = g_dir_open(dirname, 0, &error))) {
         if (!g_error_matches(error, G_FILE_ERROR, G_FILE_ERROR_NOENT)) {
@@ -625,7 +636,7 @@ _find_scripts(Request *request, GHashTable *scripts, const char *base, const cha
 }
 
 static GSList *
-find_scripts(Request *request)
+find_scripts(Request *request, const char *device_handler)
 {
     gs_unref_hashtable GHashTable *scripts     = NULL;
     GSList                        *script_list = NULL;
@@ -638,13 +649,17 @@ find_scripts(Request *request)
         subdir = "pre-up.d";
     else if (NM_IN_STRSET(request->action, NMD_ACTION_PRE_DOWN, NMD_ACTION_VPN_PRE_DOWN))
         subdir = "pre-down.d";
-    else
+    else if (NM_IN_STRSET(request->action, NMD_ACTION_DEVICE_ADD, NMD_ACTION_DEVICE_DELETE)) {
+        if (!device_handler)
+            return NULL;
+        subdir = "device";
+    } else
         subdir = NULL;
 
     scripts = g_hash_table_new_full(nm_str_hash, g_str_equal, g_free, g_free);
 
-    _find_scripts(request, scripts, NMLIBDIR, subdir);
-    _find_scripts(request, scripts, NMCONFDIR, subdir);
+    _find_scripts(request, scripts, NMLIBDIR, subdir, device_handler);
+    _find_scripts(request, scripts, NMCONFDIR, subdir, device_handler);
 
     g_hash_table_iter_init(&iter, scripts);
     while (g_hash_table_iter_next(&iter, (gpointer *) &filename, (gpointer *) &path)) {
@@ -717,6 +732,7 @@ _handle_action(GDBusMethodInvocation *invocation, GVariant *parameters)
     gs_unref_variant GVariant *device_dhcp6_config     = NULL;
     const char                *connectivity_state;
     const char                *vpn_ip_iface;
+    const char                *device_handler       = NULL;
     gs_unref_variant GVariant *vpn_proxy_properties = NULL;
     gs_unref_variant GVariant *vpn_ip4_config       = NULL;
     gs_unref_variant GVariant *vpn_ip6_config       = NULL;
@@ -783,11 +799,12 @@ _handle_action(GDBusMethodInvocation *invocation, GVariant *parameters)
                                                        vpn_ip4_config,
                                                        vpn_ip6_config,
                                                        &request->iface,
+                                                       &device_handler,
                                                        &error_message);
 
     request->scripts = g_ptr_array_new_full(5, script_info_free);
 
-    sorted_scripts = find_scripts(request);
+    sorted_scripts = find_scripts(request, device_handler);
     for (iter = sorted_scripts; iter; iter = g_slist_next(iter)) {
         ScriptInfo *s;
 
