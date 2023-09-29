@@ -543,12 +543,14 @@ static int n_dhcp4_c_connection_new_message(NDhcp4CConnection *connection,
         if (r)
                 return r;
 
-        r = n_dhcp4_outgoing_append(message,
-                                    N_DHCP4_OPTION_CLIENT_IDENTIFIER,
-                                    connection->client_config->client_id,
-                                    connection->client_config->n_client_id);
-        if (r)
-                return r;
+        if (connection->client_config->n_client_id > 0) {
+                r = n_dhcp4_outgoing_append(message,
+                                            N_DHCP4_OPTION_CLIENT_IDENTIFIER,
+                                            connection->client_config->client_id,
+                                            connection->client_config->n_client_id);
+                if (r)
+                        return r;
+        }
 
         switch (message_type) {
         case N_DHCP4_MESSAGE_DISCOVER:
