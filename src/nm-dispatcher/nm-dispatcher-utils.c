@@ -414,6 +414,36 @@ construct_device_dhcp_items(GPtrArray *items, int addr_family, GVariant *dhcp_co
 
 /*****************************************************************************/
 
+static char *
+encode_user_key(const char *key)
+{
+    guint    i;
+    GString *str;
+
+    /* User setting keys can contain alphanumeric characters plus
+     * '-', '_', '+', '/', '='. Environment variables only allow
+     * uppercase letters, digits, and '_'.
+     */
+
+    if (!key)
+        return NULL;
+
+    str = g_string_new("CONNECTION_USER_");
+
+    for (i = 0; key[i]; i++) {
+        if (key[i] == '.') {
+            g_string_append_c(str, '_');
+            g_string_append_c(str, '_');
+        } else if (NM_IN_SET(key[i], '-', '_', '+', '/', '=')) {
+            g_string_append_printf(str, "_%02X", (int) key[i]);
+        } else if (g_ascii_isalnum(key[i])) {
+            g_string_append_c(str, g_ascii_toupper(key[i]));
+        }
+    }
+
+    return g_string_free(str, FALSE);
+}
+
 char **
 nm_dispatcher_utils_construct_envp(const char  *action,
                                    GVariant    *connection_dict,
@@ -543,6 +573,7 @@ nm_dispatcher_utils_construct_envp(const char  *action,
 
     if (NM_IN_STRSET(action, NMD_ACTION_DEVICE_ADD, NMD_ACTION_DEVICE_DELETE)) {
         gs_unref_variant GVariant *generic_setting = NULL;
+        gs_unref_variant GVariant *user_setting    = NULL;
         const char                *device_handler  = NULL;
 
         generic_setting = g_variant_lookup_value(connection_dict,
@@ -555,6 +586,31 @@ nm_dispatcher_utils_construct_envp(const char  *action,
                                  &device_handler)) {
                 NM_SET_OUT(out_device_handler, device_handler);
                 _items_add_key0(items, NULL, "DEVICE_HANDLER", device_handler);
+            }
+        }
+
+        /* device handlers need a way to retrieve the configuration from the user
+         * setting of the connection. Since nmcli doesn't support the setting at
+         * the moment, pass all the properties via environment variables. */
+        user_setting = g_variant_lookup_value(connection_dict,
+                                              NM_SETTING_USER_SETTING_NAME,
+                                              NM_VARIANT_TYPE_SETTING);
+        if (user_setting) {
+            gs_unref_variant GVariant *data;
+            GVariantIter               iter;
+            const char                *key;
+            const char                *val;
+
+            data =
+                g_variant_lookup_value(user_setting, NM_SETTING_USER_DATA, G_VARIANT_TYPE("a{ss}"));
+            if (data) {
+                g_variant_iter_init(&iter, data);
+                while (g_variant_iter_next(&iter, "{&ss}", &key, &val)) {
+                    gs_free char *key_enc = encode_user_key(key);
+
+                    if (key_enc)
+                        _items_add_key0(items, NULL, key_enc, val);
+                }
             }
         }
     }

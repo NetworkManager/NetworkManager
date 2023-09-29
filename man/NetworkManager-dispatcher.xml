@@ -190,6 +190,17 @@
             standard output a line containing <literal>IFINDEX=</literal>
             followed by the interface index.
           </para>
+          <para>
+            For this action, the content of the <literal>user</literal> setting for
+            the connection being activated is passed via environment variables. Each
+            key is stored in a variable with name <literal>CONNECTION_USER_</literal>
+            concatenated with the uppercase of the key name. A dot in the key is
+            replaced by a double underscore, while any other non-alphanumeric
+            character is replaced by a underscore followed by two hexadecimal digits
+            representing the ASCII code for the character. For example, key
+            <literal>"test.foo-bar"</literal> will be stored in a variable named
+            <literal>CONNECTION_USER_TEST__FOO_2DBAR</literal>.
+          </para>
         </listitem>
       </varlistentry>
       <varlistentry>
