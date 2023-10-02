@@ -8754,7 +8754,7 @@ _get_maybe_ipv6_disabled(NMDevice *self)
         return FALSE;
 
     path = nm_sprintf_bufa(128, "/proc/sys/net/ipv6/conf/%s/disable_ipv6", ifname);
-    return (nm_platform_sysctl_get_int32(platform, NMP_SYSCTL_PATHID_ABSOLUTE(path), 0) == 0);
+    return (nm_platform_sysctl_get_int32(platform, NMP_SYSCTL_PATHID_ABSOLUTE(path), 1) != 0);
 }
 
 /*
