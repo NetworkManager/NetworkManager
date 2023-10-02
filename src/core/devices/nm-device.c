@@ -10362,7 +10362,6 @@ _dev_ipmanual_check_ready(NMDevice *self)
     gboolean               has_carrier;
     NML3CfgCheckReadyFlags flags;
     gboolean               ready;
-    gs_unref_array GArray *conflicts = NULL;
     int                    IS_IPv4;
 
     if (priv->ipmanual_data.state_4 != NM_DEVICE_IP_STATE_PENDING
@@ -10396,7 +10395,8 @@ _dev_ipmanual_check_ready(NMDevice *self)
     flags |= NM_L3CFG_CHECK_READY_FLAGS_IP6_DAD_READY;
 
     for (IS_IPv4 = 0; IS_IPv4 < 2; IS_IPv4++) {
-        const int addr_family = IS_IPv4 ? AF_INET : AF_INET6;
+        const int              addr_family = IS_IPv4 ? AF_INET : AF_INET6;
+        gs_unref_array GArray *conflicts   = NULL;
 
         ready = nm_l3cfg_check_ready(priv->l3cfg,
                                      priv->l3cds[L3_CONFIG_DATA_TYPE_MANUALIP].d,
