@@ -4168,8 +4168,11 @@ platform_link_added(NMManager                     *self,
         gboolean              compatible = TRUE;
         gs_free_error GError *error      = NULL;
 
-        if (nm_device_get_link_type(candidate) != plink->type)
+        if (nm_device_get_device_type(candidate) == NM_DEVICE_TYPE_GENERIC) {
+            /* generic devices are compatible with all link types */
+        } else if (nm_device_get_link_type(candidate) != plink->type) {
             continue;
+        }
 
         if (!nm_streq(nm_device_get_iface(candidate), plink->name))
             continue;
