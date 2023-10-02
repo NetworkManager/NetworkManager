@@ -712,6 +712,9 @@ nmc_print_qrcode(const char *str)
                 bool bottom = qrcodegen_getModule(qrcode, x, y + 1);
                 if (top) {
                     g_print(bottom ? " " : "\u2584");
+                } else if (y > size) {
+                    /* Print the last line (the bottom QR border) in light gray, no bg color */
+                    g_print("\033[0;37m\u2580");
                 } else {
                     g_print(bottom ? "\u2580" : "\u2588");
                 }
