@@ -1,3 +1,16 @@
+===============================================
+NetworkManager-1.44.2
+Overview of changes since NetworkManager-1.44.0
+===============================================
+
+* Better log IPv4 Address Conflict Detection (ACD) conflicts
+* Remove the upper limit of 65535 for PIDs read from the PID file
+* Allow missing default gateway with oFono 
+* Honor the CLICOLOR_FORCE environment variable
+* Fix generating connection with IPv6 method disabled vs ignored
+* Fix possible segmentation fault when doing a checkpoint rollback
+* Documentation improvements
+
 =============================================
 NetworkManager-1.44
 Overview of changes since NetworkManager-1.42
