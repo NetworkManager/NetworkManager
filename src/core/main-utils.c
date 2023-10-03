@@ -158,7 +158,8 @@ nm_main_utils_ensure_not_running_pidfile(const char *pidfile)
     gs_free char *contents     = NULL;
     gs_free char *proc_cmdline = NULL;
     gsize         len          = 0;
-    long          pid;
+    pid_t         pid;
+    gint64        pid64;
     const char   *process_name;
     const char   *prgname = g_get_prgname();
 
@@ -173,12 +174,13 @@ nm_main_utils_ensure_not_running_pidfile(const char *pidfile)
         return;
 
     errno = 0;
-    pid   = strtol(contents, NULL, 10);
-    if (pid <= 0 || pid > 65536 || errno)
+    pid64 = _nm_utils_ascii_str_to_int64(contents, 10, 0, G_MAXINT64, -1);
+    pid   = (pid_t) pid64;
+    if (pid <= 0 || (gint64) pid != pid64)
         return;
 
     nm_clear_g_free(&contents);
-    proc_cmdline = g_strdup_printf("/proc/%ld/cmdline", pid);
+    proc_cmdline = g_strdup_printf("/proc/%" G_GINT64_FORMAT "/cmdline", (gint64) pid);
     if (!g_file_get_contents(proc_cmdline, &contents, &len, NULL))
         return;
 
@@ -190,7 +192,10 @@ nm_main_utils_ensure_not_running_pidfile(const char *pidfile)
     if (strcmp(process_name, prgname) == 0) {
         /* Check that the process exists */
         if (kill(pid, 0) == 0) {
-            fprintf(stderr, _("%s is already running (pid %ld)\n"), prgname, pid);
+            fprintf(stderr,
+                    _("%s is already running (pid %" G_GINT64_FORMAT ")\n"),
+                    prgname,
+                    (gint64) pid);
             exit(1);
         }
     }
