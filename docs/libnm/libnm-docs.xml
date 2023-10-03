@@ -34,15 +34,7 @@
 	Texts. You may obtain a copy of the <citetitle>GNU Free
 	Documentation License</citetitle> from the Free Software
 	Foundation by visiting <ulink type="http"
-	url="http://www.fsf.org">their Web site</ulink> or by writing
-	to:
-
-	<address>
-	  The Free Software Foundation, Inc.,
-	  <street>51 Franklin Street</street> - Fifth Floor,
-	  <city>Boston</city>, <state>MA</state> <postcode>02110-1301</postcode>,
-	  <country>USA</country>
-	</address>
+	url="http://www.fsf.org">their Web site</ulink>.
       </para>
     </legalnotice>
   </bookinfo>
@@ -467,13 +459,7 @@ print ("NetworkManager version " + client.get_version())]]></programlisting></in
     <para>
       You should have received a copy of the <citetitle>GNU
       Lesser General Public License</citetitle> along with this
-      library; if not, write to the
-      <address>
-        Free Software Foundation, Inc.,
-        <street>51 Franklin Street</street> - Fifth Floor,
-        <city>Boston</city>, <state>MA</state> <postcode>02110-1301</postcode>,
-        <country>USA</country>
-      </address>
+      library.
     </para>
 
     <para>
