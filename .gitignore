@@ -155,11 +155,8 @@ test-*.trs
 /src/libnm-glib-aux/tests/test-shared-general
 /src/libnm-platform/tests/test-nm-platform
 
-/src/libnm-client-impl/nm-property-infos-dbus.xml
-/src/libnm-client-impl/nm-property-infos-ifcfg-rh.xml
-/src/libnm-client-impl/nm-property-infos-keyfile.xml
-/src/libnm-client-impl/nm-property-infos-nmcli.xml
-/src/libnm-client-impl/nm-settings-docs-gir.xml
+/src/libnm-client-impl/nm-property-infos-*.xml
+/src/libnm-client-impl/nm-settings-docs-gir-*.xml
 /src/libnm-client-impl/tests/test-libnm
 /src/libnm-client-impl/tests/test-nm-client
 /src/libnm-client-impl/tests/test-remote-settings-client
@@ -441,6 +438,7 @@ test-*.trs
 /src/initrd/tests/test-cmdline-reader
 /src/initrd/tests/test-dt-reader
 /src/initrd/tests/test-ibft-reader
+/src/libnm-client-impl/nm-settings-docs-gir.xml
 /src/ndisc/tests/test-ndisc-fake
 /src/ndisc/tests/test-ndisc-linux
 /src/nm-daemon-helper/nm-daemon-helper
