@@ -334,7 +334,6 @@ typedef struct _NML3CfgPrivate {
 
     bool nacd_acd_not_supported : 1;
     bool acd_ipv4_addresses_on_link_has : 1;
-    bool acd_data_pruning_needed : 1;
 
     bool changed_configs_configs : 1;
     bool changed_configs_acd_state : 1;
@@ -3060,10 +3059,7 @@ _l3_acd_data_process_changes(NML3Cfg *self)
     AcdData *acd_data;
     gint64   now_msec = 0;
 
-    if (self->priv.p->acd_data_pruning_needed)
-        _l3_acd_data_prune(self, FALSE);
-
-    self->priv.p->acd_data_pruning_needed = FALSE;
+    _l3_acd_data_prune(self, FALSE);
 
     c_list_for_each_entry (acd_data, &self->priv.p->acd_lst_head, acd_lst) {
         _l3_acd_data_state_change(self,
@@ -3793,8 +3789,6 @@ _l3cfg_update_combined_config(NML3Cfg               *self,
 
     NM_SET_OUT(out_changed_combined_l3cd, FALSE);
 
-    self->priv.p->acd_data_pruning_needed = FALSE;
-
     if (!self->priv.p->changed_configs_configs) {
         if (!self->priv.p->changed_configs_acd_state)
             goto out;
@@ -3842,7 +3836,6 @@ _l3cfg_update_combined_config(NML3Cfg               *self,
         self->priv.p->changed_configs_acd_state = TRUE;
     } else {
         _l3_acd_data_add_all(self, l3_config_datas_arr, l3_config_datas_len, reapply);
-        self->priv.p->acd_data_pruning_needed   = TRUE;
         self->priv.p->changed_configs_acd_state = FALSE;
     }
 
