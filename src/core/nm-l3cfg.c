@@ -334,6 +334,7 @@ typedef struct _NML3CfgPrivate {
 
     bool nacd_acd_not_supported : 1;
     bool acd_ipv4_addresses_on_link_has : 1;
+    bool acd_data_pruning_needed : 1;
 
     bool changed_configs_configs : 1;
     bool changed_configs_acd_state : 1;
@@ -394,7 +395,8 @@ static void _l3_commit(NML3Cfg *self, NML3CfgCommitType commit_type, gboolean is
 
 static void _nm_l3cfg_emit_signal_notify_acd_event_all(NML3Cfg *self);
 
-static gboolean _acd_has_valid_link(const NMPObject *obj,
+static gboolean _acd_has_valid_link(NML3Cfg         *self,
+                                    const NMPObject *obj,
                                     const guint8   **out_addr_bin,
                                     gboolean        *out_acd_not_supported);
 
@@ -674,9 +676,9 @@ _nm_l3cfg_emit_signal_notify_l3cd_changed(NML3Cfg              *self,
 /*****************************************************************************/
 
 static void
-_l3_changed_configs_set_dirty(NML3Cfg *self)
+_l3_changed_configs_set_dirty(NML3Cfg *self, const char *reason)
 {
-    _LOGT("IP configuration changed (mark dirty)");
+    _LOGT("IP configuration changed (mark dirty): %s", reason);
     self->priv.p->changed_configs_configs   = TRUE;
     self->priv.p->changed_configs_acd_state = TRUE;
 }
@@ -1403,8 +1405,8 @@ _load_link(NML3Cfg *self, gboolean initial)
         nacd_link_now_up = FALSE;
 
     nacd_changed   = FALSE;
-    nacd_old_valid = _acd_has_valid_link(obj_old, &nacd_old_addr, NULL);
-    nacd_new_valid = _acd_has_valid_link(obj, &nacd_new_addr, NULL);
+    nacd_old_valid = _acd_has_valid_link(self, obj_old, &nacd_old_addr, NULL);
+    nacd_new_valid = _acd_has_valid_link(self, obj, &nacd_new_addr, NULL);
     if (self->priv.p->nacd_instance_ensure_retry) {
         if (nacd_new_valid
             && (!nacd_old_valid
@@ -1614,7 +1616,8 @@ _acd_data_find_track(const AcdData        *acd_data,
 /*****************************************************************************/
 
 static gboolean
-_acd_has_valid_link(const NMPObject *obj,
+_acd_has_valid_link(NML3Cfg         *self,
+                    const NMPObject *obj,
                     const guint8   **out_addr_bin,
                     gboolean        *out_acd_not_supported)
 {
@@ -1631,6 +1634,11 @@ _acd_has_valid_link(const NMPObject *obj,
 
     addr_bin = nmp_link_address_get(&link->l_address, &addr_len);
     if (addr_len != ACD_SUPPORTED_ETH_ALEN) {
+        NM_SET_OUT(out_acd_not_supported, TRUE);
+        return FALSE;
+    }
+
+    if (nm_platform_link_get_ifi_flags(self->priv.platform, self->priv.ifindex, IFF_NOARP)) {
         NM_SET_OUT(out_acd_not_supported, TRUE);
         return FALSE;
     }
@@ -1787,7 +1795,7 @@ _l3_acd_nacd_instance_ensure_retry_cb(gpointer user_data)
 
     nm_clear_g_source_inst(&self->priv.p->nacd_instance_ensure_retry);
 
-    _l3_changed_configs_set_dirty(self);
+    _l3_changed_configs_set_dirty(self, "nacd retry");
     nm_l3cfg_commit(self, NM_L3_CFG_COMMIT_TYPE_AUTO);
     return G_SOURCE_REMOVE;
 }
@@ -1810,7 +1818,7 @@ _l3_acd_nacd_instance_reset(NML3Cfg *self, NMTernary start_timer, gboolean acd_d
 
     switch (start_timer) {
     case NM_TERNARY_FALSE:
-        _l3_changed_configs_set_dirty(self);
+        _l3_changed_configs_set_dirty(self, "nacd reset");
         nm_l3cfg_commit_on_idle_schedule(self, NM_L3_CFG_COMMIT_TYPE_AUTO);
         break;
     case NM_TERNARY_TRUE:
@@ -1864,7 +1872,7 @@ again:
         return NULL;
     }
 
-    valid = _acd_has_valid_link(self->priv.plobj, &addr_bin, &acd_not_supported);
+    valid = _acd_has_valid_link(self, self->priv.plobj, &addr_bin, &acd_not_supported);
     if (!valid)
         goto failed_create_acd;
 
@@ -2325,7 +2333,7 @@ _nm_printf(5, 6) static void _l3_acd_data_state_set_full(NML3Cfg         *self,
     if (changed && allow_commit) {
         /* The availability of an address just changed (and we are instructed to
          * trigger a new commit). Do it. */
-        _l3_changed_configs_set_dirty(self);
+        _l3_changed_configs_set_dirty(self, "acd state changed");
         nm_l3cfg_commit_on_idle_schedule(self, NM_L3_CFG_COMMIT_TYPE_AUTO);
     }
 }
@@ -2972,8 +2980,7 @@ handle_start_defending:
                                         NM_L3_ACD_ADDR_STATE_READY,
                                         !NM_IN_SET(state_change_mode,
                                                    ACD_STATE_CHANGE_MODE_INIT,
-                                                   ACD_STATE_CHANGE_MODE_INIT_REAPPLY,
-                                                   ACD_STATE_CHANGE_MODE_POST_COMMIT),
+                                                   ACD_STATE_CHANGE_MODE_INIT_REAPPLY),
                                         "probe is ready, waiting for address to be configured");
         }
         return;
@@ -3053,7 +3060,10 @@ _l3_acd_data_process_changes(NML3Cfg *self)
     AcdData *acd_data;
     gint64   now_msec = 0;
 
-    _l3_acd_data_prune(self, FALSE);
+    if (self->priv.p->acd_data_pruning_needed)
+        _l3_acd_data_prune(self, FALSE);
+
+    self->priv.p->acd_data_pruning_needed = FALSE;
 
     c_list_for_each_entry (acd_data, &self->priv.p->acd_lst_head, acd_lst) {
         _l3_acd_data_state_change(self,
@@ -3271,7 +3281,7 @@ nm_l3cfg_commit_on_idle_schedule(NML3Cfg *self, NML3CfgCommitType commit_type)
     if (self->priv.p->commit_on_idle_source) {
         if (self->priv.p->commit_on_idle_type < commit_type) {
             /* For multiple calls, we collect the maximum "commit-type". */
-            _LOGT("commit on idle (scheduled) (update to %s)",
+            _LOGT("schedule commit on idle (upgrade type to %s)",
                   _l3_cfg_commit_type_to_string(commit_type,
                                                 sbuf_commit_type,
                                                 sizeof(sbuf_commit_type)));
@@ -3280,7 +3290,7 @@ nm_l3cfg_commit_on_idle_schedule(NML3Cfg *self, NML3CfgCommitType commit_type)
         return FALSE;
     }
 
-    _LOGT("commit on idle (scheduled) (%s)",
+    _LOGT("schedule commit on idle (%s)",
           _l3_cfg_commit_type_to_string(commit_type, sbuf_commit_type, sizeof(sbuf_commit_type)));
     self->priv.p->commit_on_idle_source = nm_g_idle_add_source(_l3_commit_on_idle_cb, self);
     self->priv.p->commit_on_idle_type   = commit_type;
@@ -3553,7 +3563,7 @@ nm_l3cfg_add_config(NML3Cfg              *self,
     nm_assert(l3_config_data->acd_defend_type_confdata == acd_defend_type);
 
     if (changed) {
-        _l3_changed_configs_set_dirty(self);
+        _l3_changed_configs_set_dirty(self, "configuration added");
         nm_l3cfg_commit_on_idle_schedule(self, NM_L3_CFG_COMMIT_TYPE_AUTO);
     }
 
@@ -3590,7 +3600,7 @@ _l3cfg_remove_config(NML3Cfg              *self,
             continue;
         }
 
-        _l3_changed_configs_set_dirty(self);
+        _l3_changed_configs_set_dirty(self, "configuration removed");
         _l3_config_datas_remove_index_fast(self->priv.p->l3_config_datas, idx);
         changed = TRUE;
         if (l3cd) {
@@ -3783,6 +3793,8 @@ _l3cfg_update_combined_config(NML3Cfg               *self,
 
     NM_SET_OUT(out_changed_combined_l3cd, FALSE);
 
+    self->priv.p->acd_data_pruning_needed = FALSE;
+
     if (!self->priv.p->changed_configs_configs) {
         if (!self->priv.p->changed_configs_acd_state)
             goto out;
@@ -3830,6 +3842,7 @@ _l3cfg_update_combined_config(NML3Cfg               *self,
         self->priv.p->changed_configs_acd_state = TRUE;
     } else {
         _l3_acd_data_add_all(self, l3_config_datas_arr, l3_config_datas_len, reapply);
+        self->priv.p->acd_data_pruning_needed   = TRUE;
         self->priv.p->changed_configs_acd_state = FALSE;
     }
 

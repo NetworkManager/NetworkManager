@@ -527,7 +527,7 @@ _acd_reglist_data_remove(NMDhcpClient *self, guint idx, gboolean do_log)
 
     nm_clear_l3cd(&reglist_data->l3cd);
 
-    nm_l3cfg_commit_on_idle_schedule(priv->config.l3cfg, NM_L3_CFG_COMMIT_TYPE_UPDATE);
+    nm_l3cfg_commit_on_idle_schedule(priv->config.l3cfg, NM_L3_CFG_COMMIT_TYPE_AUTO);
 
     g_array_remove_index(priv->v4.acd.reglist, idx);
 
