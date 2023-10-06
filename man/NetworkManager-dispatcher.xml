@@ -7,22 +7,13 @@
 ]>
 
 <!--
+  SPDX-License-Identifier: GFDL-1.1-no-invariants-or-later
+
   NetworkManager-dispatcher(8) manual page
 
   Copyright 2005 - 2016 Red Hat, Inc.
   Copyright 2005 - 2009 Novell, Inc.
   Copyright 2005 Robert Love
-
-  Permission is granted to copy, distribute and/or modify this document
-  under the terms of the GNU Free Documentation License, Version 1.1
-  or any later version published by the Free Software Foundation;
-  with no Invariant Sections, no Front-Cover Texts, and no Back-Cover
-  Texts. You may obtain a copy of the GNU Free Documentation License
-  from the Free Software Foundation by visiting their Web site or by
-  writing to:
-
-  Free Software Foundation, Inc.,
-  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 -->
 
 <refentry id="NetworkManager-dispatcher">
@@ -68,9 +59,9 @@
       device an operation just happened on, and second the action. For device actions,
       the interface is the name of the kernel interface suitable for IP configuration.
       Thus it is either VPN_IP_IFACE, DEVICE_IP_IFACE, or DEVICE_IFACE, as applicable.
-      For the <varname>hostname</varname> action the device name is always <literal>"none"</literal>.
-      For <varname>connectivity-change</varname> it is empty.
-      For <varname>dns-change</varname> it is empty.
+      For the <varname>hostname</varname> action the device name is always
+      <literal>"none"</literal>. For <varname>connectivity-change</varname> and
+      <varname>dns-change</varname> it is empty.
     </para>
     <para>The actions are:</para>
     <variablelist class="dispatcher-options">
@@ -178,7 +169,7 @@
             NetworkManager is configured to not manage resolv.conf (for example,
             via dns=none). In such case, the dispatch script can discover the
             DNS configuration provided by currently active connections by
-            looking at file /run/NetworkManager/resolv.conf
+            looking at file <filename>/run/NetworkManager/resolv.conf</filename>
         </para></listitem>
       </varlistentry>
     </variablelist>
