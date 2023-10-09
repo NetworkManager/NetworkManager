@@ -175,8 +175,15 @@ typedef struct {
     bool    prio_has : 1;
 } NMPlatformLinkBondPort;
 
+typedef struct {
+    guint32 path_cost;
+    guint16 priority;
+    bool    hairpin;
+} NMPlatformLinkBridgePort;
+
 typedef union {
-    NMPlatformLinkBondPort bond;
+    NMPlatformLinkBondPort   bond;
+    NMPlatformLinkBridgePort bridge;
 } NMPlatformLinkPortData;
 
 struct _NMPlatformLink {
@@ -1971,6 +1978,7 @@ gboolean nm_platform_link_change(NMPlatform               *self,
                                  int                       ifindex,
                                  NMPlatformLinkProps      *props,
                                  NMPlatformLinkBondPort   *bond_port,
+                                 NMPlatformLinkBridgePort *bridge_port,
                                  NMPlatformLinkChangeFlags flags);
 
 gboolean    nm_platform_link_get_udev_property(NMPlatform  *self,
@@ -2468,8 +2476,11 @@ int nm_platform_mptcp_addr_cmp(const NMPlatformMptcpAddr *a, const NMPlatformMpt
 
 void nm_platform_link_hash_update(const NMPlatformLink *obj, NMHashState *h);
 void nm_platform_link_bond_port_hash_update(const NMPlatformLinkBondPort *obj, NMHashState *h);
+void nm_platform_link_bridge_port_hash_update(const NMPlatformLinkBridgePort *obj, NMHashState *h);
 int  nm_platform_link_bond_port_cmp(const NMPlatformLinkBondPort *a,
                                     const NMPlatformLinkBondPort *b);
+int  nm_platform_link_bridge_port_cmp(const NMPlatformLinkBridgePort *a,
+                                      const NMPlatformLinkBridgePort *b);
 void nm_platform_ip4_route_hash_update(const NMPlatformIP4Route *obj,
                                        NMPlatformIPRouteCmpType  cmp_type,
                                        NMHashState              *h);

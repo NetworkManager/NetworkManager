@@ -97,6 +97,7 @@ typedef enum _nm_packed {
     /* No type, empty value */
     NM_PORT_KIND_NONE,
     NM_PORT_KIND_BOND,
+    NM_PORT_KIND_BRIDGE,
 } NMPortKind;
 
 /*****************************************************************************/

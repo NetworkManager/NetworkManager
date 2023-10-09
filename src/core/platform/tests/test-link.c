@@ -230,7 +230,6 @@ test_port(int controller, int port_type, SignalData *controller_changed)
                                                link_callback,
                                                SLAVE_NAME);
     SignalData *link_changed, *link_removed;
-    char       *value;
     NMLinkType  controller_type = nm_platform_link_get_type(NM_PLATFORM_GET, controller);
     gboolean    test_link_changed_signal_arg1;
     gboolean    test_link_changed_signal_arg2;
@@ -296,7 +295,7 @@ test_port(int controller, int port_type, SignalData *controller_changed)
             .prio     = prio_has ? 6 : 0,
         };
 
-        g_assert(nm_platform_link_change(NM_PLATFORM_GET, ifindex_port, NULL, &bond_port, 0));
+        g_assert(nm_platform_link_change(NM_PLATFORM_GET, ifindex_port, NULL, &bond_port, NULL, 0));
         accept_signals(link_changed, 1, 3);
 
         link = nmtstp_link_get(NM_PLATFORM_GET, ifindex_port, SLAVE_NAME);
@@ -306,13 +305,35 @@ test_port(int controller, int port_type, SignalData *controller_changed)
     } else if (controller_type == NM_LINK_TYPE_BRIDGE) {
         /* Skip this part for nm-fake-platform */
         if (nmtstp_is_root_test() && nmtstp_is_sysfs_writable()) {
-            g_assert(nm_platform_sysctl_slave_set_option(NM_PLATFORM_GET,
-                                                         ifindex_port,
-                                                         "priority",
-                                                         "614"));
-            value = nm_platform_sysctl_slave_get_option(NM_PLATFORM_GET, ifindex_port, "priority");
-            g_assert_cmpstr(value, ==, "614");
-            g_free(value);
+            NMPlatformLinkBridgePort   bridge_port;
+            const NMPlatformLink      *link;
+            const NMPlatformLnkBridge *lnk;
+
+            link = nmtstp_link_get_typed(NM_PLATFORM_GET, 0, SLAVE_NAME, NM_LINK_TYPE_DUMMY);
+            g_assert(link);
+
+            lnk = nm_platform_link_get_lnk_bridge(NM_PLATFORM_GET, controller, NULL);
+            g_assert(lnk);
+
+            bridge_port = (NMPlatformLinkBridgePort){
+                .path_cost = 100,
+                .priority  = 614,
+                .hairpin   = 0,
+            };
+
+            g_assert(nm_platform_link_change(NM_PLATFORM_GET,
+                                             ifindex_port,
+                                             NULL,
+                                             NULL,
+                                             &bridge_port,
+                                             0));
+            accept_signals(link_changed, 1, 3);
+
+            link = nmtstp_link_get(NM_PLATFORM_GET, ifindex_port, SLAVE_NAME);
+            g_assert(link);
+            g_assert_cmpint(link->port_data.bridge.path_cost, ==, 100);
+            g_assert_cmpint(link->port_data.bridge.priority, ==, 614);
+            g_assert_cmpint(link->port_data.bridge.hairpin, ==, 0);
         }
     }
 
@@ -2692,7 +2713,7 @@ test_link_set_properties(void)
             | NM_PLATFORM_LINK_CHANGE_GSO_MAX_SEGMENTS;
 
     ifindex = nmtstp_link_dummy_add(NM_PLATFORM_GET, FALSE, "dummy1")->ifindex;
-    g_assert(nm_platform_link_change(NM_PLATFORM_GET, ifindex, &props, NULL, flags));
+    g_assert(nm_platform_link_change(NM_PLATFORM_GET, ifindex, &props, NULL, NULL, flags));
 
     link = nmtstp_link_get(NM_PLATFORM_GET, ifindex, "dummy1");
     g_assert(link);

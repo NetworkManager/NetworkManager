@@ -683,6 +683,7 @@ commit_port_options(NMDevice *bond_device, NMDevice *port, NMSettingBondPort *s_
                                 .prio     = prio_has ? prio : 0,
                                 .prio_has = prio_has,
                             }),
+                            NULL,
                             0);
 }
 
