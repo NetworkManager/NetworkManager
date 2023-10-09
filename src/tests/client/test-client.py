@@ -2269,6 +2269,10 @@ class TestNmcli(unittest.TestCase):
             ],
         )
 
+    @nm_test_no_dbus
+    def test_daemon_not_running(self):
+        self.call_nmcli(["c"])
+
 
 ###############################################################################
 

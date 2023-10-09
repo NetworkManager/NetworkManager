@@ -1830,6 +1830,9 @@ nmc_warn_if_version_mismatch(NMClient *client)
 
     g_return_if_fail(client != NULL);
 
+    if (!nm_client_get_nm_running(client))
+        return;
+
     nm_ver = nm_client_get_version(client);
     if (!nm_streq0(nm_ver, VERSION)) {
         g_printerr(_("Warning: nmcli (%s) and NetworkManager (%s) versions don't match. "

@@ -1,0 +1,10 @@
+size: 170
+location: src/tests/client/test-client.py:test_daemon_not_running()/1
+cmd: $NMCLI c
+lang: C
+returncode: 8
+stderr: 38 bytes
+>>>
+Error: NetworkManager is not running.
+
+<<<
