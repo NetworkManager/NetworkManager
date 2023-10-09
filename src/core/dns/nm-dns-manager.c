@@ -1876,8 +1876,11 @@ plugin_skip:;
         nameservers    = g_new0(char *, 2);
         nameservers[0] = g_strdup(lladdr);
 
-        need_edns0 = !nm_strv_contains(options, -1, NM_SETTING_DNS_OPTION_EDNS0);
-        need_trust = !nm_strv_contains(options, -1, NM_SETTING_DNS_OPTION_TRUST_AD);
+        need_edns0 = !nm_strv_contains(options, -1, NM_SETTING_DNS_OPTION_EDNS0)
+                     && !nm_strv_contains(options, -1, NM_SETTING_DNS_OPTION_INTERNAL_NO_ADD_EDNS0);
+        need_trust =
+            !nm_strv_contains(options, -1, NM_SETTING_DNS_OPTION_TRUST_AD)
+            && !nm_strv_contains(options, -1, NM_SETTING_DNS_OPTION_INTERNAL_NO_ADD_TRUST_AD);
 
         if (need_edns0 || need_trust) {
             gsize len;
@@ -1890,6 +1893,23 @@ plugin_skip:;
                 options[len++] = g_strdup(NM_SETTING_DNS_OPTION_TRUST_AD);
             options[len] = NULL;
         }
+    }
+
+    if (options) {
+        guint i;
+        guint j;
+
+        /* Skip internal options, those starting with '_' */
+        for (i = 0, j = 0; options[i]; i++) {
+            if (options[i][0] == '_') {
+                g_free(options[i]);
+                continue;
+            }
+            if (i != j)
+                options[j] = options[i];
+            j++;
+        }
+        options[j] = NULL;
     }
 
     if (do_update) {

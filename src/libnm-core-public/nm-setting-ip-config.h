@@ -363,6 +363,9 @@ char *nm_ip_routing_rule_to_string(const NMIPRoutingRule       *self,
 #define NM_SETTING_DNS_OPTION_NO_RELOAD             "no-reload"
 #define NM_SETTING_DNS_OPTION_TRUST_AD              "trust-ad"
 #define NM_SETTING_DNS_OPTION_NO_AAAA               "no-aaaa"
+/* Internal options (not added to resolv.conf) */
+#define NM_SETTING_DNS_OPTION_INTERNAL_NO_ADD_EDNS0    "_no-add-edns0"
+#define NM_SETTING_DNS_OPTION_INTERNAL_NO_ADD_TRUST_AD "_no-add-trust-ad"
 
 typedef struct _NMSettingIPConfigClass NMSettingIPConfigClass;
 

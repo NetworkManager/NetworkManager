@@ -52,6 +52,8 @@ const NMUtilsDNSOptionDesc _nm_utils_dns_option_descs[] = {
     {NM_SETTING_DNS_OPTION_NO_RELOAD, FALSE, FALSE},
     {NM_SETTING_DNS_OPTION_TRUST_AD, FALSE, FALSE},
     {NM_SETTING_DNS_OPTION_NO_AAAA, FALSE, FALSE},
+    {NM_SETTING_DNS_OPTION_INTERNAL_NO_ADD_EDNS0, FALSE, FALSE},
+    {NM_SETTING_DNS_OPTION_INTERNAL_NO_ADD_TRUST_AD, FALSE, FALSE},
     {NULL, FALSE, FALSE}};
 
 static char *
@@ -6376,17 +6378,24 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
     /**
      * NMSettingIPConfig:dns-options:
      *
-     * Array of DNS options as described in man 5 resolv.conf.
+     * Array of DNS options to be added to resolv.conf.
      *
      * %NULL means that the options are unset and left at the default.
      * In this case NetworkManager will use default options. This is
      * distinct from an empty list of properties.
      *
-     * The currently supported options are "attempts", "debug", "edns0",
+     * The following options are directly added to resolv.conf: "attempts",
+     *  "debug", "edns0",
      * "inet6", "ip6-bytestring", "ip6-dotint", "ndots", "no-aaaa",
      * "no-check-names", "no-ip6-dotint", "no-reload", "no-tld-query",
      * "rotate", "single-request", "single-request-reopen", "timeout",
-     * "trust-ad", "use-vc".
+     * "trust-ad", "use-vc". See the resolv.conf(5) man page for a
+     * detailed description of these options.
+     *
+     * In addition, NetworkManager supports the special options "_no-add-edns0"
+     * and "_no-add-trust-ad". They are not added to resolv.conf, and can be
+     * used to prevent the automatic addition of options "edns0" and "trust-ad"
+     * when using caching DNS plugins (see below).
      *
      * The "trust-ad" setting is only honored if the profile contributes
      * name servers to resolv.conf, and if all contributing profiles have
@@ -6394,7 +6403,7 @@ nm_setting_ip_config_class_init(NMSettingIPConfigClass *klass)
      *
      * When using a caching DNS plugin (dnsmasq or systemd-resolved in
      * NetworkManager.conf) then "edns0" and "trust-ad" are automatically
-     * added.
+     * added, unless "_no-add-edns0" and "_no-add-trust-ad" are present.
      *
      * Since: 1.2
      **/
