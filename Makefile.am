@@ -5523,6 +5523,7 @@ EXTRA_DIST += \
 	src/tests/client/test-client.check-on-disk/test_004.expected \
 	src/tests/client/test-client.check-on-disk/test_offline.expected \
 	src/tests/client/test-client.check-on-disk/test_version_warn.expected \
+	src/tests/client/test-client.check-on-disk/test_daemon_not_running.expected \
 	\
 	src/tests/client/meson.build \
 	$(NULL)
