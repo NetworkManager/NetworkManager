@@ -11556,16 +11556,8 @@ _dev_ipac6_start(NMDevice *self)
     NMUtilsIPv6IfaceId  iid;
     gboolean            is_token;
 
-    if (priv->ipac6_data.state == NM_DEVICE_IP_STATE_NONE) {
-        if (!g_file_test("/proc/sys/net/ipv6", G_FILE_TEST_IS_DIR)) {
-            _LOGI_ipac6("addrconf6: kernel does not support IPv6");
-            _dev_ipac6_set_state(self, NM_DEVICE_IP_STATE_FAILED);
-            _dev_ip_state_check_async(self, AF_INET6);
-            return;
-        }
-
+    if (priv->ipac6_data.state == NM_DEVICE_IP_STATE_NONE)
         _dev_ipac6_set_state(self, NM_DEVICE_IP_STATE_PENDING);
-    }
 
     if (NM_IN_SET(priv->ipll_data_6.state, NM_DEVICE_IP_STATE_NONE, NM_DEVICE_IP_STATE_PENDING)) {
         _dev_ipac6_grace_period_start(self, 30, TRUE);
@@ -12102,15 +12094,6 @@ activate_stage3_ip_config(NMDevice *self)
 
     ifindex = nm_device_get_ip_ifindex(self);
 
-    if (priv->ip_data_4.do_reapply) {
-        _LOGD_ip(AF_INET, "reapply...");
-        _cleanup_ip_pre(self, AF_INET, CLEANUP_TYPE_DECONFIGURE, TRUE);
-    }
-    if (priv->ip_data_6.do_reapply) {
-        _LOGD_ip(AF_INET6, "reapply...");
-        _cleanup_ip_pre(self, AF_INET6, CLEANUP_TYPE_DECONFIGURE, TRUE);
-    }
-
     /* Add the interface to the specified firewall zone */
     switch (priv->fw_state) {
     case FIREWALL_STATE_UNMANAGED:
@@ -12134,6 +12117,38 @@ activate_stage3_ip_config(NMDevice *self)
         break;
     }
     nm_assert(ifindex <= 0 || priv->fw_state == FIREWALL_STATE_INITIALIZED);
+
+    ipv4_method = nm_device_get_effective_ip_config_method(self, AF_INET);
+    if (nm_streq(ipv4_method, NM_SETTING_IP4_CONFIG_METHOD_AUTO)) {
+        /* "auto" usually means DHCPv4 or autoconf6, but it doesn't have to be. Subclasses
+         * can overwrite it. For example, you cannot run DHCPv4 on PPP/WireGuard links. */
+        ipv4_method = klass->get_ip_method_auto(self, AF_INET);
+    }
+
+    ipv6_method = nm_device_get_effective_ip_config_method(self, AF_INET6);
+    if (!g_file_test("/proc/sys/net/ipv6", G_FILE_TEST_IS_DIR)) {
+        _NMLOG_ip((nm_device_sys_iface_state_is_external(self)
+                   || NM_IN_STRSET(ipv6_method,
+                                   NM_SETTING_IP6_CONFIG_METHOD_AUTO,
+                                   NM_SETTING_IP6_CONFIG_METHOD_DISABLED,
+                                   NM_SETTING_IP6_CONFIG_METHOD_IGNORE))
+                      ? LOGL_DEBUG
+                      : LOGL_WARN,
+                  AF_INET6,
+                  "IPv6 not supported by kernel resulting in \"ipv6.method=disabled\"");
+        ipv6_method = NM_SETTING_IP6_CONFIG_METHOD_DISABLED;
+    } else if (nm_streq(ipv6_method, NM_SETTING_IP6_CONFIG_METHOD_AUTO)) {
+        ipv6_method = klass->get_ip_method_auto(self, AF_INET6);
+    }
+
+    if (priv->ip_data_4.do_reapply) {
+        _LOGD_ip(AF_INET, "reapply...");
+        _cleanup_ip_pre(self, AF_INET, CLEANUP_TYPE_DECONFIGURE, TRUE);
+    }
+    if (priv->ip_data_6.do_reapply) {
+        _LOGD_ip(AF_INET6, "reapply...");
+        _cleanup_ip_pre(self, AF_INET6, CLEANUP_TYPE_DECONFIGURE, TRUE);
+    }
 
     if (priv->state < NM_DEVICE_STATE_IP_CONFIG) {
         _dev_ip_state_req_timeout_schedule(self, AF_INET);
@@ -12159,18 +12174,6 @@ activate_stage3_ip_config(NMDevice *self)
      * it might not be a working configuration. But it's what the user asked for, so
      * let's do it! */
     _commit_mtu(self);
-
-    ipv4_method = nm_device_get_effective_ip_config_method(self, AF_INET);
-    if (nm_streq(ipv4_method, NM_SETTING_IP4_CONFIG_METHOD_AUTO)) {
-        /* "auto" usually means DHCPv4 or autoconf6, but it doesn't have to be. Subclasses
-         * can overwrite it. For example, you cannot run DHCPv4 on PPP/WireGuard links. */
-        ipv4_method = klass->get_ip_method_auto(self, AF_INET);
-    }
-
-    ipv6_method = nm_device_get_effective_ip_config_method(self, AF_INET6);
-    if (nm_streq(ipv6_method, NM_SETTING_IP6_CONFIG_METHOD_AUTO)) {
-        ipv6_method = klass->get_ip_method_auto(self, AF_INET6);
-    }
 
     if (!nm_device_sys_iface_state_is_external(self)
         && (!klass->ready_for_ip_config || klass->ready_for_ip_config(self, TRUE))) {
