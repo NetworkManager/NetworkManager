@@ -1081,6 +1081,21 @@ gboolean _nm_utils_iaid_verify(const char *str, gint64 *out_value);
 gboolean
 _nm_utils_validate_dhcp_hostname_flags(NMDhcpHostnameFlags flags, int addr_family, GError **error);
 
+char **_nm_utils_ip4_dns_from_variant(GVariant *value, bool strict, GError **error);
+
+GPtrArray *_nm_utils_ip4_routes_from_variant(GVariant *value, bool strict, GError **error);
+
+GPtrArray *_nm_utils_ip4_addresses_from_variant(GVariant *value,
+                                                char    **out_gateway,
+                                                bool      strict,
+                                                GError  **error);
+
+GPtrArray *
+_nm_utils_ip_addresses_from_variant(GVariant *value, int family, bool strict, GError **error);
+
+GPtrArray *
+_nm_utils_ip_routes_from_variant(GVariant *value, int family, bool strict, GError **error);
+
 /*****************************************************************************/
 
 gboolean _nmtst_variant_attribute_spec_assert_sorted(const NMVariantAttributeSpec *const *array,
