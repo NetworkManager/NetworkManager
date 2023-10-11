@@ -54,6 +54,10 @@ gboolean nmp_utils_ethtool_get_ring(int ifindex, NMEthtoolRingState *ring);
 
 gboolean nmp_utils_ethtool_set_ring(int ifindex, const NMEthtoolRingState *ring);
 
+gboolean nmp_utils_ethtool_get_channels(int ifindex, NMEthtoolChannelsState *channels);
+
+gboolean nmp_utils_ethtool_set_channels(int ifindex, const NMEthtoolChannelsState *channels);
+
 gboolean nmp_utils_ethtool_get_pause(int ifindex, NMEthtoolPauseState *pause);
 
 gboolean nmp_utils_ethtool_set_pause(int ifindex, const NMEthtoolPauseState *pause);

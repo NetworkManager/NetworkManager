@@ -3581,6 +3581,31 @@ nm_platform_ethtool_set_ring(NMPlatform *self, int ifindex, const NMEthtoolRingS
 }
 
 gboolean
+nm_platform_ethtool_get_link_channels(NMPlatform             *self,
+                                      int                     ifindex,
+                                      NMEthtoolChannelsState *channels)
+{
+    _CHECK_SELF_NETNS(self, klass, netns, FALSE);
+
+    g_return_val_if_fail(ifindex > 0, FALSE);
+    g_return_val_if_fail(channels, FALSE);
+
+    return nmp_utils_ethtool_get_channels(ifindex, channels);
+}
+
+gboolean
+nm_platform_ethtool_set_channels(NMPlatform                   *self,
+                                 int                           ifindex,
+                                 const NMEthtoolChannelsState *channels)
+{
+    _CHECK_SELF_NETNS(self, klass, netns, FALSE);
+
+    g_return_val_if_fail(ifindex > 0, FALSE);
+
+    return nmp_utils_ethtool_set_channels(ifindex, channels);
+}
+
+gboolean
 nm_platform_ethtool_get_link_pause(NMPlatform *self, int ifindex, NMEthtoolPauseState *pause)
 {
     _CHECK_SELF_NETNS(self, klass, netns, FALSE);

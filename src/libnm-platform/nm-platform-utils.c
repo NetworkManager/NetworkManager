@@ -1068,6 +1068,69 @@ nmp_utils_ethtool_set_ring(int ifindex, const NMEthtoolRingState *ring)
 }
 
 gboolean
+nmp_utils_ethtool_get_channels(int ifindex, NMEthtoolChannelsState *channels)
+{
+    struct ethtool_channels eth_data;
+
+    g_return_val_if_fail(ifindex > 0, FALSE);
+    g_return_val_if_fail(channels, FALSE);
+
+    eth_data.cmd = ETHTOOL_GCHANNELS;
+
+    if (_ethtool_call_once(ifindex, &eth_data, sizeof(eth_data)) < 0) {
+        nm_log_trace(LOGD_PLATFORM,
+                     "ethtool[%d]: %s: failure getting channels settings",
+                     ifindex,
+                     "get-channels");
+        return FALSE;
+    }
+
+    *channels = (NMEthtoolChannelsState){
+        .rx       = eth_data.rx_count,
+        .tx       = eth_data.tx_count,
+        .other    = eth_data.other_count,
+        .combined = eth_data.combined_count,
+    };
+
+    nm_log_trace(LOGD_PLATFORM,
+                 "ethtool[%d]: %s: retrieved kernel channels settings",
+                 ifindex,
+                 "get-channels");
+    return TRUE;
+}
+
+gboolean
+nmp_utils_ethtool_set_channels(int ifindex, const NMEthtoolChannelsState *channels)
+{
+    struct ethtool_channels eth_data;
+
+    g_return_val_if_fail(ifindex > 0, FALSE);
+    g_return_val_if_fail(channels, FALSE);
+
+    eth_data = (struct ethtool_channels){
+        .cmd            = ETHTOOL_SCHANNELS,
+        .rx_count       = channels->rx,
+        .tx_count       = channels->tx,
+        .other_count    = channels->other,
+        .combined_count = channels->combined,
+    };
+
+    if (_ethtool_call_once(ifindex, &eth_data, sizeof(eth_data)) < 0) {
+        nm_log_trace(LOGD_PLATFORM,
+                     "ethtool[%d]: %s: failure setting channels settings",
+                     ifindex,
+                     "set-channels");
+        return FALSE;
+    }
+
+    nm_log_trace(LOGD_PLATFORM,
+                 "ethtool[%d]: %s: set kernel channels settings",
+                 ifindex,
+                 "set-channels");
+    return TRUE;
+}
+
+gboolean
 nmp_utils_ethtool_get_pause(int ifindex, NMEthtoolPauseState *pause)
 {
     struct ethtool_pauseparam          eth_data;

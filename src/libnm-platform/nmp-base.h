@@ -93,15 +93,11 @@ typedef struct {
     const NMEthtoolFeatureState states_list[];
 } NMEthtoolFeatureStates;
 
-/*****************************************************************************/
-
 typedef struct {
     guint32
         s[_NM_ETHTOOL_ID_COALESCE_NUM /* indexed by (NMEthtoolID - _NM_ETHTOOL_ID_COALESCE_FIRST) */
     ];
 } NMEthtoolCoalesceState;
-
-/*****************************************************************************/
 
 typedef struct {
     guint32 rx_pending;
@@ -115,6 +111,13 @@ typedef struct {
     bool rx : 1;
     bool tx : 1;
 } NMEthtoolPauseState;
+
+typedef struct {
+    guint32 rx;
+    guint32 tx;
+    guint32 other;
+    guint32 combined;
+} NMEthtoolChannelsState;
 
 /*****************************************************************************/
 
