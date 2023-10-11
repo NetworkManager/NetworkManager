@@ -112,6 +112,7 @@ get_ethtool_format(const NMMetaPropertyInfo *prop_info)
     ethtool_id = prop_info->property_typ_data->subtype.ethtool.ethtool_id;
 
     switch (nm_ethtool_id_to_type(ethtool_id)) {
+    case NM_ETHTOOL_TYPE_CHANNELS:
     case NM_ETHTOOL_TYPE_COALESCE:
     case NM_ETHTOOL_TYPE_RING:
         return g_strdup("integer");
@@ -309,6 +310,7 @@ append_ethtool_valid_values(const NMMetaPropertyInfo *prop_info, GPtrArray *vali
     ethtool_id = prop_info->property_typ_data->subtype.ethtool.ethtool_id;
 
     switch (nm_ethtool_id_to_type(ethtool_id)) {
+    case NM_ETHTOOL_TYPE_CHANNELS:
     case NM_ETHTOOL_TYPE_COALESCE:
     case NM_ETHTOOL_TYPE_RING:
         g_ptr_array_add(valid_values, g_strdup_printf("0 - %u", G_MAXUINT32));

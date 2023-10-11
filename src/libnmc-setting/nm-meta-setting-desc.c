@@ -4422,6 +4422,7 @@ _get_fcn_ethtool(ARGS_GET_FCN)
     RETURN_UNSUPPORTED_GET_TYPE();
 
     switch (nm_ethtool_id_to_type(ethtool_id)) {
+    case NM_ETHTOOL_TYPE_CHANNELS:
     case NM_ETHTOOL_TYPE_COALESCE:
     case NM_ETHTOOL_TYPE_RING:
         if (!nm_setting_option_get_uint32(setting, nm_ethtool_data[ethtool_id]->optname, &u32)) {
@@ -4459,6 +4460,7 @@ _set_fcn_ethtool(ARGS_SET_FCN)
         goto do_unset;
 
     switch (nm_ethtool_id_to_type(ethtool_id)) {
+    case NM_ETHTOOL_TYPE_CHANNELS:
     case NM_ETHTOOL_TYPE_COALESCE:
     case NM_ETHTOOL_TYPE_RING:
         i64 = _nm_utils_ascii_str_to_int64(value, 10, 0, G_MAXUINT32, -1);
@@ -5928,6 +5930,10 @@ static const NMMetaPropertyInfo *const property_infos_ETHTOOL[] = {
     PROPERTY_INFO_ETHTOOL (RING_RX_JUMBO),
     PROPERTY_INFO_ETHTOOL (RING_RX_MINI),
     PROPERTY_INFO_ETHTOOL (RING_TX),
+    PROPERTY_INFO_ETHTOOL (CHANNELS_RX),
+    PROPERTY_INFO_ETHTOOL (CHANNELS_TX),
+    PROPERTY_INFO_ETHTOOL (CHANNELS_OTHER),
+    PROPERTY_INFO_ETHTOOL (CHANNELS_COMBINED),
     NULL,
 };
 

@@ -76,6 +76,22 @@ nm_ethtool_optname_is_ring(const char *optname)
 }
 
 /**
+ * nm_ethtool_optname_is_channels:
+ * @optname: (nullable): the option name to check
+ *
+ * Checks whether @optname is a valid option name for a channels setting.
+ *
+ * Returns: %TRUE, if @optname is valid
+ *
+ * Since: 1.46
+ */
+gboolean
+nm_ethtool_optname_is_channels(const char *optname)
+{
+    return optname && nm_ethtool_id_is_channels(nm_ethtool_id_get_by_name(optname));
+}
+
+/**
  * nm_ethtool_optname_is_pause:
  * @optname: (nullable): the option name to check
  *
