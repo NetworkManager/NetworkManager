@@ -68,6 +68,8 @@ nm_setting_match_get_num_interface_names(NMSettingMatch *setting)
  * @setting: the #NMSettingMatch
  * @idx: index number of the DNS search domain to return
  *
+ * Since 1.46, access at index "len" is allowed and returns NULL.
+ *
  * Returns: the interface name at index @idx
  *
  * Since: 1.14
@@ -77,11 +79,7 @@ nm_setting_match_get_interface_name(NMSettingMatch *setting, int idx)
 {
     g_return_val_if_fail(NM_IS_SETTING_MATCH(setting), NULL);
 
-    g_return_val_if_fail(setting->interface_name.arr && idx >= 0
-                             && idx < setting->interface_name.arr->len,
-                         NULL);
-
-    return nm_strvarray_get_idx(setting->interface_name.arr, idx);
+    return nm_strvarray_get_idxnull_or_greturn(setting->interface_name.arr, idx);
 }
 
 /**
@@ -213,6 +211,8 @@ nm_setting_match_get_num_kernel_command_lines(NMSettingMatch *setting)
  * @setting: the #NMSettingMatch
  * @idx: index number of the kernel command line argument to return
  *
+ * Since 1.46, access at index "len" is allowed and returns NULL.
+ *
  * Returns: the kernel command line argument at index @idx
  *
  * Since: 1.26
@@ -222,11 +222,7 @@ nm_setting_match_get_kernel_command_line(NMSettingMatch *setting, guint idx)
 {
     g_return_val_if_fail(NM_IS_SETTING_MATCH(setting), NULL);
 
-    g_return_val_if_fail(setting->kernel_command_line.arr
-                             && idx < setting->kernel_command_line.arr->len,
-                         NULL);
-
-    return nm_strvarray_get_idx(setting->kernel_command_line.arr, idx);
+    return nm_strvarray_get_idxnull_or_greturn(setting->kernel_command_line.arr, idx);
 }
 
 /**
@@ -356,6 +352,8 @@ nm_setting_match_get_num_drivers(NMSettingMatch *setting)
  * @setting: the #NMSettingMatch
  * @idx: index number of the DNS search domain to return
  *
+ * Since 1.46, access at index "len" is allowed and returns NULL.
+ *
  * Returns: the driver at index @idx
  *
  * Since: 1.26
@@ -365,9 +363,7 @@ nm_setting_match_get_driver(NMSettingMatch *setting, guint idx)
 {
     g_return_val_if_fail(NM_IS_SETTING_MATCH(setting), NULL);
 
-    g_return_val_if_fail(setting->driver.arr && idx < setting->driver.arr->len, NULL);
-
-    return nm_strvarray_get_idx(setting->driver.arr, idx);
+    return nm_strvarray_get_idxnull_or_greturn(setting->driver.arr, idx);
 }
 
 /**
@@ -495,6 +491,8 @@ nm_setting_match_get_num_paths(NMSettingMatch *setting)
  * @setting: the #NMSettingMatch
  * @idx: index number of the path to return
  *
+ * Since 1.46, access at index "len" is allowed and returns NULL.
+ *
  * Returns: the path at index @idx
  *
  * Since: 1.26
@@ -504,9 +502,7 @@ nm_setting_match_get_path(NMSettingMatch *setting, guint idx)
 {
     g_return_val_if_fail(NM_IS_SETTING_MATCH(setting), NULL);
 
-    g_return_val_if_fail(setting->path.arr && idx < setting->path.arr->len, NULL);
-
-    return nm_strvarray_get_idx(setting->path.arr, idx);
+    return nm_strvarray_get_idxnull_or_greturn(setting->path.arr, idx);
 }
 
 /**
