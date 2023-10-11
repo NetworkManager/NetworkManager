@@ -303,6 +303,7 @@ typedef struct {
     NMEthtoolCoalesceState *coalesce;
     NMEthtoolRingState     *ring;
     NMEthtoolPauseState    *pause;
+    NMEthtoolChannelsState *channels;
 } EthtoolState;
 
 typedef enum {
@@ -2604,6 +2605,104 @@ _ethtool_ring_set(NMDevice         *self,
 }
 
 static void
+_ethtool_channels_reset(NMDevice *self, NMPlatform *platform, EthtoolState *ethtool_state)
+{
+    gs_free NMEthtoolChannelsState *channels = NULL;
+
+    nm_assert(NM_IS_DEVICE(self));
+    nm_assert(NM_IS_PLATFORM(platform));
+    nm_assert(ethtool_state);
+
+    channels = g_steal_pointer(&ethtool_state->channels);
+    if (!channels)
+        return;
+
+    if (!nm_platform_ethtool_set_channels(platform, ethtool_state->ifindex, channels))
+        _LOGW(LOGD_DEVICE, "ethtool: failure resetting one or more channels settings");
+    else
+        _LOGD(LOGD_DEVICE, "ethtool: channels settings successfully reset");
+}
+
+static void
+_ethtool_channels_set(NMDevice         *self,
+                      NMPlatform       *platform,
+                      EthtoolState     *ethtool_state,
+                      NMSettingEthtool *s_ethtool)
+{
+    NMEthtoolChannelsState channels_old;
+    NMEthtoolChannelsState channels_new;
+    GHashTable            *hash;
+    GHashTableIter         iter;
+    const char            *name;
+    GVariant              *variant;
+    gboolean               has_old = FALSE;
+
+    nm_assert(NM_IS_DEVICE(self));
+    nm_assert(NM_IS_PLATFORM(platform));
+    nm_assert(NM_IS_SETTING_ETHTOOL(s_ethtool));
+    nm_assert(ethtool_state);
+    nm_assert(!ethtool_state->channels);
+
+    hash = _nm_setting_option_hash(NM_SETTING(s_ethtool), FALSE);
+    if (!hash)
+        return;
+
+    g_hash_table_iter_init(&iter, hash);
+    while (g_hash_table_iter_next(&iter, (gpointer *) &name, (gpointer *) &variant)) {
+        NMEthtoolID ethtool_id = nm_ethtool_id_get_by_name(name);
+        guint32     u32;
+
+        if (!nm_ethtool_id_is_channels(ethtool_id))
+            continue;
+
+        nm_assert(g_variant_is_of_type(variant, G_VARIANT_TYPE_UINT32));
+
+        if (!has_old) {
+            if (!nm_platform_ethtool_get_link_channels(platform,
+                                                       ethtool_state->ifindex,
+                                                       &channels_old)) {
+                _LOGW(LOGD_DEVICE,
+                      "ethtool: failure setting channels options (cannot read existing setting)");
+                return;
+            }
+            has_old      = TRUE;
+            channels_new = channels_old;
+        }
+
+        u32 = g_variant_get_uint32(variant);
+
+        switch (ethtool_id) {
+        case NM_ETHTOOL_ID_CHANNELS_RX:
+            channels_new.rx = u32;
+            break;
+        case NM_ETHTOOL_ID_CHANNELS_TX:
+            channels_new.tx = u32;
+            break;
+        case NM_ETHTOOL_ID_CHANNELS_OTHER:
+            channels_new.other = u32;
+            break;
+        case NM_ETHTOOL_ID_CHANNELS_COMBINED:
+            channels_new.combined = u32;
+            break;
+        default:
+            nm_assert_not_reached();
+        }
+    }
+
+    if (!has_old)
+        return;
+
+    ethtool_state->channels = nm_memdup(&channels_old, sizeof(channels_old));
+
+    if (!nm_platform_ethtool_set_channels(platform, ethtool_state->ifindex, &channels_new)) {
+        _LOGW(LOGD_DEVICE, "ethtool: failure setting channels settings");
+        return;
+    }
+
+    _LOGD(LOGD_DEVICE, "ethtool: channels settings successfully set");
+}
+
+static void
 _ethtool_pause_reset(NMDevice *self, NMPlatform *platform, EthtoolState *ethtool_state)
 {
     gs_free NMEthtoolPauseState *pause = NULL;
@@ -2724,6 +2823,7 @@ _ethtool_state_reset(NMDevice *self)
     _ethtool_coalesce_reset(self, platform, ethtool_state);
     _ethtool_ring_reset(self, platform, ethtool_state);
     _ethtool_pause_reset(self, platform, ethtool_state);
+    _ethtool_channels_reset(self, platform, ethtool_state);
 }
 
 static void
@@ -2758,9 +2858,10 @@ _ethtool_state_set(NMDevice *self)
     _ethtool_coalesce_set(self, platform, ethtool_state, s_ethtool);
     _ethtool_ring_set(self, platform, ethtool_state, s_ethtool);
     _ethtool_pause_set(self, platform, ethtool_state, s_ethtool);
+    _ethtool_channels_set(self, platform, ethtool_state, s_ethtool);
 
     if (ethtool_state->features || ethtool_state->coalesce || ethtool_state->ring
-        || ethtool_state->pause)
+        || ethtool_state->pause || ethtool_state->channels)
         priv->ethtool_state = g_steal_pointer(&ethtool_state);
 }
 
