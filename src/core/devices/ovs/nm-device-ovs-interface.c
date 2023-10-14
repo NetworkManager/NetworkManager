@@ -246,13 +246,40 @@ _netdev_tun_link_cb(NMPlatform     *platform,
     }
 }
 
+static gboolean
+ovs_interface_is_netdev_datapath(NMDeviceOvsInterface *self)
+{
+    NMDevice           *device       = NM_DEVICE(self);
+    NMActiveConnection *ac           = NULL;
+    NMSettingOvsBridge *s_ovs_bridge = NULL;
+
+    ac = NM_ACTIVE_CONNECTION(nm_device_get_act_request(device));
+    if (!ac)
+        return FALSE;
+
+    /* get ovs-port active-connection */
+    ac = nm_active_connection_get_master(ac);
+    if (!ac)
+        return FALSE;
+
+    /* get ovs-bridge active-connection */
+    ac = nm_active_connection_get_master(ac);
+    if (!ac)
+        return FALSE;
+
+    s_ovs_bridge =
+        nm_connection_get_setting_ovs_bridge(nm_active_connection_get_applied_connection(ac));
+    if (!s_ovs_bridge)
+        return FALSE;
+
+    return nm_streq0(nm_setting_ovs_bridge_get_datapath_type(s_ovs_bridge), "netdev");
+}
+
 static void
 act_stage3_ip_config(NMDevice *device, int addr_family)
 {
-    NMActiveConnection          *controller_act = NULL;
-    NMSettingOvsBridge          *s_ovs_bridge   = NULL;
-    NMDeviceOvsInterface        *self           = NM_DEVICE_OVS_INTERFACE(device);
-    NMDeviceOvsInterfacePrivate *priv           = NM_DEVICE_OVS_INTERFACE_GET_PRIVATE(self);
+    NMDeviceOvsInterface        *self = NM_DEVICE_OVS_INTERFACE(device);
+    NMDeviceOvsInterfacePrivate *priv = NM_DEVICE_OVS_INTERFACE_GET_PRIVATE(self);
 
     if (!_is_internal_interface(device)) {
         nm_device_devip_set_state(device, addr_family, NM_DEVICE_IP_STATE_READY, NULL);
@@ -263,21 +290,12 @@ act_stage3_ip_config(NMDevice *device, int addr_family)
      * link created is a tun device instead of a ovs-interface. NetworkManager must
      * detect the creation of the tun link and attach the ifindex to the
      * ovs-interface device. */
-    controller_act = NM_ACTIVE_CONNECTION(nm_device_get_act_request(device));
-    if (controller_act && nm_device_get_ip_ifindex(device) <= 0 && priv->wait_link_signal_id == 0) {
-        controller_act = nm_active_connection_get_master(controller_act);
-        if (controller_act) {
-            controller_act = nm_active_connection_get_master(controller_act);
-            if (controller_act)
-                s_ovs_bridge = nm_connection_get_setting_ovs_bridge(
-                    nm_active_connection_get_applied_connection(controller_act));
-            if (s_ovs_bridge
-                && nm_streq0(nm_setting_ovs_bridge_get_datapath_type(s_ovs_bridge), "netdev"))
-                priv->wait_link_signal_id = g_signal_connect(nm_device_get_platform(device),
-                                                             NM_PLATFORM_SIGNAL_LINK_CHANGED,
-                                                             G_CALLBACK(_netdev_tun_link_cb),
-                                                             self);
-        }
+    if (nm_device_get_ip_ifindex(device) <= 0 && priv->wait_link_signal_id == 0
+        && ovs_interface_is_netdev_datapath(self)) {
+        priv->wait_link_signal_id = g_signal_connect(nm_device_get_platform(device),
+                                                     NM_PLATFORM_SIGNAL_LINK_CHANGED,
+                                                     G_CALLBACK(_netdev_tun_link_cb),
+                                                     self);
     }
 
     /* FIXME(l3cfg): we should create the IP ifindex before stage3 start.
