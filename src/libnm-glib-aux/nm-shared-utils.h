@@ -3019,6 +3019,20 @@ nm_strvarray_get_idx(GArray *array, guint idx)
     return nm_g_array_index(array, const char *, idx);
 }
 
+/* nm_strvarray_get_idxnull_or_greturn() permits access at `len`,
+ * returning NULL. If the access is out of bounds, the assertion
+ * will fail (and also return NULL). */
+#define nm_strvarray_get_idxnull_or_greturn(arr, idx)           \
+    ({                                                          \
+        GArray *_arr = (arr);                                   \
+        gsize   _idx = (idx);                                   \
+        guint   _len = nm_g_array_len(_arr);                    \
+                                                                \
+        g_return_val_if_fail(_idx <= _len, NULL);               \
+                                                                \
+        _idx == _len ? NULL : nm_strvarray_get_idx(_arr, _idx); \
+    })
+
 static inline const char *const *
 nm_strvarray_get_strv_non_empty(GArray *arr, guint *length)
 {
