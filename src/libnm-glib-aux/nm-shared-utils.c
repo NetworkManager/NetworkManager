@@ -1964,8 +1964,6 @@ nm_utils_strsplit_quoted(const char *str)
  * Searches @list for @needle and returns the index of the first match (based
  * on strcmp()).
  *
- * For convenience, @list has type 'char**' instead of 'const char **'.
- *
  * Returns: index of first occurrence or -1 if @needle is not found in @list.
  */
 gssize
@@ -1984,7 +1982,7 @@ _nm_strv_find_first(const char *const *list, gssize len, const char *needle)
             }
         } else {
             for (i = 0; i < len; i++) {
-                if (list[i] && !strcmp(needle, list[i]))
+                if (list[i] && nm_streq(needle, list[i]))
                     return i;
             }
         }
@@ -1993,7 +1991,7 @@ _nm_strv_find_first(const char *const *list, gssize len, const char *needle)
 
         if (list) {
             for (i = 0; list[i]; i++) {
-                if (strcmp(needle, list[i]) == 0)
+                if (nm_streq(needle, list[i]))
                     return i;
             }
         }
