@@ -254,6 +254,7 @@ _netdev_tun_link_cb(NMPlatform     *platform,
     NMDeviceOvsInterface            *self        = NM_DEVICE_OVS_INTERFACE(device);
     NMDeviceOvsInterfacePrivate     *priv        = NM_DEVICE_OVS_INTERFACE_GET_PRIVATE(self);
 
+    /* Monitor all platform events to see when a suitable tun interface appears */
     if (change_type == NM_PLATFORM_SIGNAL_ADDED) {
         if (pllink->type == NM_LINK_TYPE_TUN
             && nm_streq0(pllink->name, nm_device_get_iface(device))) {
@@ -303,15 +304,39 @@ act_stage3_ip_config(NMDevice *device, int addr_family)
     NMDeviceOvsInterface        *self = NM_DEVICE_OVS_INTERFACE(device);
     NMDeviceOvsInterfacePrivate *priv = NM_DEVICE_OVS_INTERFACE_GET_PRIVATE(self);
 
+    /*
+     * When the ovs-interface device enters stage3, it becomes eligible to be attached to
+     * its controller (a ovs-port). If also the ovs-bridge is ready, an entry is created
+     * in the ovsdb in NMDeviceOvsPort->attach_port().
+     * FIXME(l3cfg): we should create the IP ifindex before stage3 start.
+     *
+     * NMDeviceOvsInterface->act_stage3_ip_config() is supposed to perform device-specific
+     * IP configuration on the device. An ovs-interface can be of different types, that
+     * require different handling:
+     *
+     *  - "patch" and "dpdk" interfaces don't have any kernel link associated and thus
+     *  NetworkManager completely skips any kind of IP configuration on them, by returning
+     *  FALSE to ->ready_for_ip_config().
+     *
+     *  - "system" interfaces represent other interface types with kernel link (for
+     *  example, ethernet, bond, etc.) that get attached to a ovs bridge. Once they are
+     *  attached, NetworkManager can start the IP configuration right away.
+     *
+     *  - "internal" interfaces are virtual interfaces created by openvswitch. Once the
+     *  entry is created in the ovsdb, the kernel will create a link for the
+     *  interface. When using the system datapath (the default), the link is of type
+     *  "openvswitch", while when using the netdev (userspace) datapath, the link is a tun
+     *  (tap) one. For both datapath types, we use this method to delay the IP
+     *  configuration until the link appears. Note that ready_for_ip_config() returns FALSE
+     *  when there is no ifindex, and so all the regular IP methods (static, auto, etc.)
+     *  can't proceed.
+     */
+
     if (!_is_internal_interface(device)) {
         nm_device_devip_set_state(device, addr_family, NM_DEVICE_IP_STATE_READY, NULL);
         return;
     }
 
-    /* When the ovs-bridge controller is using netdev datapath, the interface
-     * link created is a tun device instead of a ovs-interface. NetworkManager must
-     * detect the creation of the tun link and attach the ifindex to the
-     * ovs-interface device. */
     if (nm_device_get_ip_ifindex(device) <= 0 && priv->wait_link.tun_link_signal_id == 0
         && ovs_interface_is_netdev_datapath(self)) {
         priv->wait_link.tun_link_signal_id = g_signal_connect(nm_device_get_platform(device),
@@ -320,13 +345,6 @@ act_stage3_ip_config(NMDevice *device, int addr_family)
                                                               self);
     }
 
-    /* FIXME(l3cfg): we should create the IP ifindex before stage3 start.
-     *
-     * For now it's here because when the ovs-interface enters stage3, then it's added to the
-     * controller (ovs-port) and the entry is create in the ovsdb. Only after that the kernel
-     * link appears.
-     *
-     * This should change. */
     if (nm_device_get_ip_ifindex(device) <= 0) {
         _LOGT(LOGD_DEVICE, "ovs-wait-link: waiting for link to appear");
         priv->wait_link.waiting = TRUE;
@@ -460,13 +478,22 @@ deactivate_async(NMDevice                  *device,
     nm_clear_g_signal_handler(nm_device_get_platform(device), &priv->wait_link.tun_link_signal_id);
     nm_clear_g_source_inst(&priv->wait_link.tun_set_ifindex_idle_source);
 
-    /* We want to ensure that the kernel link for this device is
-     * removed upon disconnection so that it will not interfere with
-     * later activations of the same device. Unfortunately there is
-     * no synchronization mechanism with vswitchd, we only update
-     * ovsdb and wait that changes are picked up.
+    /* We want to ensure that the kernel link for this device is removed upon
+     * disconnection, so that it will not interfere with later activations of the same
+     * device.
+     *
+     * To do so, we need to be very careful, because unfortunately there is no
+     * synchronization mechanism with vswitchd: we only update ovsdb, wait that changes
+     * are picked up and we see the effects on the kernel interface (appearing or going
+     * away).
+     *
+     * That means for example that if the ovs interface entered stage3 and the entry was
+     * added to the ovsdb, we expect a link to appear. If we disconnect at this point, we
+     * delete the entry from the ovsdb. Now we don't know if ovs-vswitchd will see two
+     * updates or only one. In other words, we don't know if the interface will appear and
+     * go away, or if it will not appear ever. In this situation, the solution is to wait
+     * with a timeout.
      */
-
     data  = g_slice_new(DeactivateData);
     *data = (DeactivateData){
         .self               = g_object_ref(self),
@@ -485,12 +512,8 @@ deactivate_async(NMDevice                  *device,
     }
 
     if (priv->wait_link.waiting) {
-        /* At this point we have issued an INSERT and a DELETE
-         * command for the interface to ovsdb. We don't know if
-         * vswitchd will see the two updates or only one. We
-         * must add a timeout to avoid waiting forever in case
-         * the link doesn't appear.
-         */
+        /* Here we have issued an INSERT and a DELETE command for the interface to ovsdb,
+         * and must wait with a timeout. */
         data->link_timeout_id = g_timeout_add(6000, deactivate_link_timeout, data);
         _LOGT(LOGD_DEVICE, "deactivate: waiting for link to disappear in 6 seconds");
     } else
