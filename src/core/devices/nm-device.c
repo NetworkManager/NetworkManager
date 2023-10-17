@@ -2385,6 +2385,8 @@ _ethtool_features_reset(NMDevice *self, NMPlatform *platform, EthtoolState *etht
     gs_free NMEthtoolFeatureStates *features = NULL;
 
     features = g_steal_pointer(&ethtool_state->features);
+    if (!features)
+        return;
 
     if (!nm_platform_ethtool_set_features(platform,
                                           ethtool_state->ifindex,
@@ -2404,8 +2406,7 @@ _ethtool_features_set(NMDevice         *self,
 {
     gs_free NMEthtoolFeatureStates *features = NULL;
 
-    if (ethtool_state->features)
-        _ethtool_features_reset(self, platform, ethtool_state);
+    _ethtool_features_reset(self, platform, ethtool_state);
 
     if (nm_setting_ethtool_init_features(s_ethtool, ethtool_state->requested) == 0)
         return;
@@ -2719,14 +2720,10 @@ _ethtool_state_reset(NMDevice *self)
     if (!ethtool_state)
         return;
 
-    if (ethtool_state->features)
-        _ethtool_features_reset(self, platform, ethtool_state);
-    if (ethtool_state->coalesce)
-        _ethtool_coalesce_reset(self, platform, ethtool_state);
-    if (ethtool_state->ring)
-        _ethtool_ring_reset(self, platform, ethtool_state);
-    if (ethtool_state->pause)
-        _ethtool_pause_reset(self, platform, ethtool_state);
+    _ethtool_features_reset(self, platform, ethtool_state);
+    _ethtool_coalesce_reset(self, platform, ethtool_state);
+    _ethtool_ring_reset(self, platform, ethtool_state);
+    _ethtool_pause_reset(self, platform, ethtool_state);
 }
 
 static void
