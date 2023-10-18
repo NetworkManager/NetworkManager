@@ -68,8 +68,9 @@
       device an operation just happened on, and second the action. For device actions,
       the interface is the name of the kernel interface suitable for IP configuration.
       Thus it is either VPN_IP_IFACE, DEVICE_IP_IFACE, or DEVICE_IFACE, as applicable.
-      For the <varname>hostname</varname> action the device name is always <literal>"none"</literal>
-      and for <varname>connectivity-change</varname> it is empty.
+      For the <varname>hostname</varname> action the device name is always <literal>"none"</literal>.
+      For <varname>connectivity-change</varname> it is empty.
+      For <varname>dns-change</varname> it is empty.
     </para>
     <para>The actions are:</para>
     <variablelist class="dispatcher-options">
@@ -168,6 +169,16 @@
         <term><varname>reapply</varname></term>
         <listitem><para>
           The connection was reapplied on the device.
+        </para></listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><varname>dns-change</varname></term>
+        <listitem><para>
+            The DNS configuration has changed. This action is raised even if
+            NetworkManager is configured to not manage resolv.conf (for example,
+            via dns=none). In such case, the dispatch script can discover the
+            DNS configuration provided by currently active connections by
+            looking at file /run/NetworkManager/resolv.conf
         </para></listitem>
       </varlistentry>
     </variablelist>
