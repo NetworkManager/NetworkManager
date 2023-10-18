@@ -403,7 +403,7 @@ _c_public_ int n_dhcp4_client_new(NDhcp4Client **clientp, NDhcp4ClientConfig *co
                         return N_DHCP4_E_INVALID_TRANSPORT;
                 }
 
-                if (config->n_client_id < 1)
+                if (config->n_client_id != 0 && config->n_client_id < 2)
                         return N_DHCP4_E_INVALID_CLIENT_ID;
         }
 

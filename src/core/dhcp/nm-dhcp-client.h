@@ -162,6 +162,9 @@ typedef struct {
              * will always broadcast replies. */
             bool request_broadcast : 1;
 
+            /* Whether to send or not the client identifier */
+            bool send_client_id : 1;
+
         } v4;
         struct {
             /* If set, the DUID from the connection is used; otherwise

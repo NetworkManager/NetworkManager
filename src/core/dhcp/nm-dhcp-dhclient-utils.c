@@ -120,7 +120,10 @@ add_ip4_config(GString            *str,
         }
 
         g_string_append(str, CLIENTID_TAG " ");
-        if (i < l) {
+        if (l == 0) {
+            /* An empty value effectively unsets the client-id to avoid sending it */
+            g_string_append(str, "\"\"");
+        } else if (i < l) {
             /* Unprintable; convert to a hex string */
             for (i = 0; i < l; i++) {
                 if (i > 0)
@@ -293,6 +296,7 @@ char *
 nm_dhcp_dhclient_create_config(const char         *interface,
                                int                 addr_family,
                                GBytes             *client_id,
+                               gboolean            send_client_id,
                                const char         *anycast_address,
                                const char         *hostname,
                                guint32             timeout,
@@ -391,8 +395,8 @@ nm_dhcp_dhclient_create_config(const char         *interface,
                 continue;
 
             if (NM_STR_HAS_PREFIX(p, CLIENTID_TAG)) {
-                /* Override config file "dhcp-client-id" and use one from the connection */
-                if (client_id)
+                /* Skip "dhcp-client-id" if the connection has defined a custom one or "none" */
+                if (client_id || !send_client_id)
                     continue;
 
                 /* Otherwise, capture and return the existing client id */
@@ -477,6 +481,8 @@ nm_dhcp_dhclient_create_config(const char         *interface,
     }
 
     if (addr_family == AF_INET) {
+        nm_auto_unref_bytes GBytes *client_id_none = NULL;
+        client_id = send_client_id ? client_id : (client_id_none = g_bytes_new_static("", 0));
         add_ip4_config(new_contents, client_id, hostname, use_fqdn, hostname_flags);
         add_request(reqs, "rfc3442-classless-static-routes");
         add_request(reqs, "ms-classless-static-routes");

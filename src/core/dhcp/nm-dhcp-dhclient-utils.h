@@ -12,6 +12,7 @@
 char *nm_dhcp_dhclient_create_config(const char         *interface,
                                      int                 addr_family,
                                      GBytes             *client_id,
+                                     gboolean            send_client_id,
                                      const char         *anycast_addr,
                                      const char         *hostname,
                                      guint32             timeout,
