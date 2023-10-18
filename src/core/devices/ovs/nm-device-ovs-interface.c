@@ -121,6 +121,35 @@ check_connection_compatible(NMDevice *device, NMConnection *connection, GError *
     return TRUE;
 }
 
+static gboolean
+check_waiting_for_link(NMDevice *device, const char *from)
+{
+    NMDeviceOvsInterface        *self     = NM_DEVICE_OVS_INTERFACE(device);
+    NMDeviceOvsInterfacePrivate *priv     = NM_DEVICE_OVS_INTERFACE_GET_PRIVATE(self);
+    NMPlatform                  *platform = nm_device_get_platform(device);
+    const NMPlatformLink        *pllink;
+    int                          ip_ifindex;
+    const char                  *reason = NULL;
+
+    if (!priv->wait_link.waiting)
+        return FALSE;
+
+    ip_ifindex = nm_device_get_ip_ifindex(device);
+
+    if (ip_ifindex <= 0) {
+        reason = "no ifindex";
+    } else if (!(pllink = nm_platform_link_get(platform, ip_ifindex))) {
+        reason = "platform link not found";
+    } else {
+        priv->wait_link.waiting = FALSE;
+    }
+
+    if (priv->wait_link.waiting)
+        _LOGT(LOGD_DEVICE, "ovs-wait-link(%s): not ready: %s", from, reason);
+
+    return priv->wait_link.waiting;
+}
+
 static void
 link_changed(NMDevice *device, const NMPlatformLink *pllink)
 {
@@ -133,7 +162,8 @@ link_changed(NMDevice *device, const NMPlatformLink *pllink)
     if (nm_device_get_state(device) != NM_DEVICE_STATE_IP_CONFIG)
         return;
 
-    priv->wait_link.waiting = FALSE;
+    if (check_waiting_for_link(device, "link-changed"))
+        return;
 
     if (!nm_device_hw_addr_set_cloned(device, nm_device_get_applied_connection(device), FALSE)) {
         nm_device_devip_set_failed(device, AF_INET, NM_DEVICE_STATE_REASON_CONFIG_FAILED);
@@ -328,18 +358,16 @@ act_stage3_ip_config(NMDevice *device, int addr_family)
         return;
     }
 
-    if (nm_device_get_ip_ifindex(device) <= 0 && priv->wait_link.tun_link_signal_id == 0
-        && ovs_interface_is_netdev_datapath(self)) {
-        priv->wait_link.tun_link_signal_id = g_signal_connect(nm_device_get_platform(device),
-                                                              NM_PLATFORM_SIGNAL_LINK_CHANGED,
-                                                              G_CALLBACK(_netdev_tun_link_cb),
-                                                              self);
-    }
-
-    if (nm_device_get_ip_ifindex(device) <= 0) {
-        _LOGT(LOGD_DEVICE, "ovs-wait-link: waiting for link to appear");
-        priv->wait_link.waiting = TRUE;
+    priv->wait_link.waiting = TRUE;
+    if (check_waiting_for_link(device, addr_family == AF_INET ? "stage3-ipv4" : "stage3-ipv6")) {
         nm_device_devip_set_state(device, addr_family, NM_DEVICE_IP_STATE_PENDING, NULL);
+        if (nm_device_get_ip_ifindex(device) <= 0 && priv->wait_link.tun_link_signal_id == 0
+            && ovs_interface_is_netdev_datapath(self)) {
+            priv->wait_link.tun_link_signal_id = g_signal_connect(nm_device_get_platform(device),
+                                                                  NM_PLATFORM_SIGNAL_LINK_CHANGED,
+                                                                  G_CALLBACK(_netdev_tun_link_cb),
+                                                                  self);
+        }
         return;
     }
 
