@@ -133,29 +133,25 @@ link_changed(NMDevice *device, const NMPlatformLink *pllink)
     if (!pllink || !priv->wait_link.waiting)
         return;
 
+    if (nm_device_get_state(device) != NM_DEVICE_STATE_IP_CONFIG)
+        return;
+
     priv->wait_link.waiting = FALSE;
 
-    if (nm_device_get_state(device) == NM_DEVICE_STATE_IP_CONFIG) {
-        if (!nm_device_hw_addr_set_cloned(device,
-                                          nm_device_get_applied_connection(device),
-                                          FALSE)) {
-            nm_device_devip_set_failed(device, AF_INET, NM_DEVICE_STATE_REASON_CONFIG_FAILED);
-            nm_device_devip_set_failed(device, AF_INET6, NM_DEVICE_STATE_REASON_CONFIG_FAILED);
-            return;
-        }
-
-        _LOGT(LOGD_CORE, "ovs-wait-link: link is ready after link changed event");
-
-        nm_device_link_properties_set(device, FALSE);
-        nm_device_bring_up(device);
-
-        nm_device_devip_set_state(device, AF_INET, NM_DEVICE_IP_STATE_PENDING, NULL);
-        nm_device_devip_set_state(device, AF_INET6, NM_DEVICE_IP_STATE_PENDING, NULL);
-        nm_device_activate_schedule_stage3_ip_config(device, FALSE);
+    if (!nm_device_hw_addr_set_cloned(device, nm_device_get_applied_connection(device), FALSE)) {
+        nm_device_devip_set_failed(device, AF_INET, NM_DEVICE_STATE_REASON_CONFIG_FAILED);
+        nm_device_devip_set_failed(device, AF_INET6, NM_DEVICE_STATE_REASON_CONFIG_FAILED);
         return;
     }
 
-    nm_device_activate_schedule_stage2_device_config(device, FALSE);
+    _LOGT(LOGD_CORE, "ovs-wait-link: link is ready after link changed event");
+
+    nm_device_link_properties_set(device, FALSE);
+    nm_device_bring_up(device);
+
+    nm_device_devip_set_state(device, AF_INET, NM_DEVICE_IP_STATE_PENDING, NULL);
+    nm_device_devip_set_state(device, AF_INET6, NM_DEVICE_IP_STATE_PENDING, NULL);
+    nm_device_activate_schedule_stage3_ip_config(device, FALSE);
 }
 
 static gboolean
