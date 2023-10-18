@@ -24,10 +24,17 @@
 
 typedef struct {
     NMOvsdb *ovsdb;
-    GSource *wait_link_idle_source;
-    gulong   wait_link_signal_id;
-    int      wait_link_ifindex;
-    bool     wait_link_is_waiting : 1;
+
+    struct {
+        /* The source for the idle handler to set the TUN ifindex */
+        GSource *tun_set_ifindex_idle_source;
+        /* The id for the signal watching the TUN link to appear/change */
+        gulong tun_link_signal_id;
+        /* The TUN ifindex to set in the idle handler */
+        int tun_ifindex;
+        /* Whether we are waiting for the kernel link */
+        bool waiting : 1;
+    } wait_link;
 } NMDeviceOvsInterfacePrivate;
 
 struct _NMDeviceOvsInterface {
@@ -122,10 +129,10 @@ link_changed(NMDevice *device, const NMPlatformLink *pllink)
 {
     NMDeviceOvsInterfacePrivate *priv = NM_DEVICE_OVS_INTERFACE_GET_PRIVATE(device);
 
-    if (!pllink || !priv->wait_link_is_waiting)
+    if (!pllink || !priv->wait_link.waiting)
         return;
 
-    priv->wait_link_is_waiting = FALSE;
+    priv->wait_link.waiting = FALSE;
 
     if (nm_device_get_state(device) == NM_DEVICE_STATE_IP_CONFIG) {
         if (!nm_device_hw_addr_set_cloned(device,
@@ -215,10 +222,10 @@ _set_ip_ifindex_tun(gpointer user_data)
     NMDeviceOvsInterface        *self   = NM_DEVICE_OVS_INTERFACE(device);
     NMDeviceOvsInterfacePrivate *priv   = NM_DEVICE_OVS_INTERFACE_GET_PRIVATE(self);
 
-    nm_clear_g_source_inst(&priv->wait_link_idle_source);
+    nm_clear_g_source_inst(&priv->wait_link.tun_set_ifindex_idle_source);
 
-    priv->wait_link_is_waiting = FALSE;
-    nm_device_set_ip_ifindex(device, priv->wait_link_ifindex);
+    priv->wait_link.waiting = FALSE;
+    nm_device_set_ip_ifindex(device, priv->wait_link.tun_ifindex);
     nm_device_link_properties_set(device, FALSE);
 
     nm_device_devip_set_state(device, AF_INET, NM_DEVICE_IP_STATE_PENDING, NULL);
@@ -243,11 +250,12 @@ _netdev_tun_link_cb(NMPlatform     *platform,
     if (change_type == NM_PLATFORM_SIGNAL_ADDED) {
         if (pllink->type == NM_LINK_TYPE_TUN
             && nm_streq0(pllink->name, nm_device_get_iface(device))) {
-            nm_clear_g_signal_handler(platform, &priv->wait_link_signal_id);
+            nm_clear_g_signal_handler(platform, &priv->wait_link.tun_link_signal_id);
 
-            priv->wait_link_ifindex = ifindex;
+            priv->wait_link.tun_ifindex = ifindex;
 
-            priv->wait_link_idle_source = nm_g_idle_add_source(_set_ip_ifindex_tun, device);
+            priv->wait_link.tun_set_ifindex_idle_source =
+                nm_g_idle_add_source(_set_ip_ifindex_tun, device);
         }
     }
 }
@@ -296,12 +304,12 @@ act_stage3_ip_config(NMDevice *device, int addr_family)
      * link created is a tun device instead of a ovs-interface. NetworkManager must
      * detect the creation of the tun link and attach the ifindex to the
      * ovs-interface device. */
-    if (nm_device_get_ip_ifindex(device) <= 0 && priv->wait_link_signal_id == 0
+    if (nm_device_get_ip_ifindex(device) <= 0 && priv->wait_link.tun_link_signal_id == 0
         && ovs_interface_is_netdev_datapath(self)) {
-        priv->wait_link_signal_id = g_signal_connect(nm_device_get_platform(device),
-                                                     NM_PLATFORM_SIGNAL_LINK_CHANGED,
-                                                     G_CALLBACK(_netdev_tun_link_cb),
-                                                     self);
+        priv->wait_link.tun_link_signal_id = g_signal_connect(nm_device_get_platform(device),
+                                                              NM_PLATFORM_SIGNAL_LINK_CHANGED,
+                                                              G_CALLBACK(_netdev_tun_link_cb),
+                                                              self);
     }
 
     /* FIXME(l3cfg): we should create the IP ifindex before stage3 start.
@@ -313,14 +321,14 @@ act_stage3_ip_config(NMDevice *device, int addr_family)
      * This should change. */
     if (nm_device_get_ip_ifindex(device) <= 0) {
         _LOGT(LOGD_DEVICE, "waiting for link to appear");
-        priv->wait_link_is_waiting = TRUE;
+        priv->wait_link.waiting = TRUE;
         nm_device_devip_set_state(device, addr_family, NM_DEVICE_IP_STATE_PENDING, NULL);
         return;
     }
 
-    priv->wait_link_is_waiting = FALSE;
-    nm_clear_g_source_inst(&priv->wait_link_idle_source);
-    nm_clear_g_signal_handler(nm_device_get_platform(device), &priv->wait_link_signal_id);
+    priv->wait_link.waiting = FALSE;
+    nm_clear_g_source_inst(&priv->wait_link.tun_set_ifindex_idle_source);
+    nm_clear_g_signal_handler(nm_device_get_platform(device), &priv->wait_link.tun_link_signal_id);
 
     if (!nm_device_hw_addr_set_cloned(device, nm_device_get_applied_connection(device), FALSE)) {
         nm_device_devip_set_failed(device, addr_family, NM_DEVICE_STATE_REASON_CONFIG_FAILED);
@@ -343,9 +351,9 @@ deactivate(NMDevice *device)
     NMDeviceOvsInterface        *self = NM_DEVICE_OVS_INTERFACE(device);
     NMDeviceOvsInterfacePrivate *priv = NM_DEVICE_OVS_INTERFACE_GET_PRIVATE(self);
 
-    priv->wait_link_is_waiting = FALSE;
-    nm_clear_g_signal_handler(nm_device_get_platform(device), &priv->wait_link_signal_id);
-    nm_clear_g_source_inst(&priv->wait_link_idle_source);
+    priv->wait_link.waiting = FALSE;
+    nm_clear_g_signal_handler(nm_device_get_platform(device), &priv->wait_link.tun_link_signal_id);
+    nm_clear_g_source_inst(&priv->wait_link.tun_set_ifindex_idle_source);
 }
 
 typedef struct {
@@ -437,8 +445,8 @@ deactivate_async(NMDevice                  *device,
 
     _LOGT(LOGD_CORE, "deactivate: start async");
 
-    nm_clear_g_signal_handler(nm_device_get_platform(device), &priv->wait_link_signal_id);
-    nm_clear_g_source_inst(&priv->wait_link_idle_source);
+    nm_clear_g_signal_handler(nm_device_get_platform(device), &priv->wait_link.tun_link_signal_id);
+    nm_clear_g_source_inst(&priv->wait_link.tun_set_ifindex_idle_source);
 
     /* We want to ensure that the kernel link for this device is
      * removed upon disconnection so that it will not interfere with
@@ -455,7 +463,7 @@ deactivate_async(NMDevice                  *device,
         .callback_user_data = callback_user_data,
     };
 
-    if (!priv->wait_link_is_waiting
+    if (!priv->wait_link.waiting
         && !nm_platform_link_get_by_ifname(nm_device_get_platform(device),
                                            nm_device_get_iface(device))) {
         _LOGT(LOGD_CORE, "deactivate: link not present, proceeding");
@@ -464,7 +472,7 @@ deactivate_async(NMDevice                  *device,
         return;
     }
 
-    if (priv->wait_link_is_waiting) {
+    if (priv->wait_link.waiting) {
         /* At this point we have issued an INSERT and a DELETE
          * command for the interface to ovsdb. We don't know if
          * vswitchd will see the two updates or only one. We
@@ -476,7 +484,7 @@ deactivate_async(NMDevice                  *device,
     } else
         _LOGT(LOGD_DEVICE, "deactivate: waiting for link to disappear");
 
-    priv->wait_link_is_waiting = FALSE;
+    priv->wait_link.waiting = FALSE;
     data->cancelled_id =
         g_cancellable_connect(cancellable, G_CALLBACK(deactivate_cancelled_cb), data, NULL);
     data->link_changed_id = g_signal_connect(nm_device_get_platform(device),
@@ -527,9 +535,9 @@ dispose(GObject *object)
     NMDeviceOvsInterface        *self = NM_DEVICE_OVS_INTERFACE(object);
     NMDeviceOvsInterfacePrivate *priv = NM_DEVICE_OVS_INTERFACE_GET_PRIVATE(self);
 
-    nm_assert(!priv->wait_link_is_waiting);
-    nm_assert(!priv->wait_link_signal_id == 0);
-    nm_assert(!priv->wait_link_idle_source);
+    nm_assert(!priv->wait_link.waiting);
+    nm_assert(priv->wait_link.tun_link_signal_id == 0);
+    nm_assert(!priv->wait_link.tun_set_ifindex_idle_source);
 
     if (priv->ovsdb) {
         g_signal_handlers_disconnect_by_func(priv->ovsdb, G_CALLBACK(ovsdb_ready), self);
