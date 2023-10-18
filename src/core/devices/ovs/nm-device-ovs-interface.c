@@ -28,10 +28,14 @@ typedef struct {
     struct {
         /* The source for the idle handler to set the TUN ifindex */
         GSource *tun_set_ifindex_idle_source;
+        /* The cloned MAC to set */
+        char *cloned_mac;
         /* The id for the signal watching the TUN link to appear/change */
         gulong tun_link_signal_id;
         /* The TUN ifindex to set in the idle handler */
         int tun_ifindex;
+        /* Whether we have determined the cloned MAC */
+        bool cloned_mac_evaluated : 1;
         /* Whether we are waiting for the kernel link */
         bool waiting : 1;
     } wait_link;
@@ -52,6 +56,13 @@ G_DEFINE_TYPE(NMDeviceOvsInterface, nm_device_ovs_interface, NM_TYPE_DEVICE)
     _NM_GET_PRIVATE(self, NMDeviceOvsInterface, NM_IS_DEVICE_OVS_INTERFACE, NMDevice)
 
 /*****************************************************************************/
+
+static void _netdev_tun_link_cb(NMPlatform     *platform,
+                                int             obj_type_i,
+                                int             ifindex,
+                                NMPlatformLink *pllink,
+                                int             change_type_i,
+                                NMDevice       *device);
 
 static const char *
 get_type_description(NMDevice *device)
@@ -134,12 +145,19 @@ check_waiting_for_link(NMDevice *device, const char *from)
     if (!priv->wait_link.waiting)
         return FALSE;
 
+    nm_assert(priv->wait_link.cloned_mac_evaluated);
     ip_ifindex = nm_device_get_ip_ifindex(device);
 
     if (ip_ifindex <= 0) {
         reason = "no ifindex";
     } else if (!(pllink = nm_platform_link_get(platform, ip_ifindex))) {
         reason = "platform link not found";
+    } else if (priv->wait_link.cloned_mac
+               && !nm_utils_hwaddr_matches(priv->wait_link.cloned_mac,
+                                           -1,
+                                           pllink->l_address.data,
+                                           pllink->l_address.len)) {
+        reason = "cloned MAC address is not set yet";
     } else {
         priv->wait_link.waiting = FALSE;
     }
@@ -164,12 +182,6 @@ link_changed(NMDevice *device, const NMPlatformLink *pllink)
 
     if (check_waiting_for_link(device, "link-changed"))
         return;
-
-    if (!nm_device_hw_addr_set_cloned(device, nm_device_get_applied_connection(device), FALSE)) {
-        nm_device_devip_set_failed(device, AF_INET, NM_DEVICE_STATE_REASON_CONFIG_FAILED);
-        nm_device_devip_set_failed(device, AF_INET6, NM_DEVICE_STATE_REASON_CONFIG_FAILED);
-        return;
-    }
 
     _LOGT(LOGD_CORE, "ovs-wait-link: link is ready after link changed event");
 
@@ -237,7 +249,9 @@ set_platform_mtu(NMDevice *device, guint32 mtu)
 static gboolean
 ready_for_ip_config(NMDevice *device, gboolean is_manual)
 {
-    return nm_device_get_ip_ifindex(device) > 0;
+    NMDeviceOvsInterfacePrivate *priv = NM_DEVICE_OVS_INTERFACE_GET_PRIVATE(device);
+
+    return nm_device_get_ip_ifindex(device) > 0 && !priv->wait_link.waiting;
 }
 
 static gboolean
@@ -253,8 +267,21 @@ _set_ip_ifindex_tun(gpointer user_data)
 
     nm_clear_g_source_inst(&priv->wait_link.tun_set_ifindex_idle_source);
 
-    priv->wait_link.waiting = FALSE;
     nm_device_set_ip_ifindex(device, priv->wait_link.tun_ifindex);
+
+    if (check_waiting_for_link(device, "set-ip-ifindex-tun")) {
+        /* If the link is not ready, it means the MAC is not set yet. We don't have
+         * a convenient way to monitor for ip-ifindex changes other than listening
+         * for platform events again.*/
+        nm_assert(!priv->wait_link.tun_link_signal_id);
+        priv->wait_link.tun_link_signal_id = g_signal_connect(nm_device_get_platform(device),
+                                                              NM_PLATFORM_SIGNAL_LINK_CHANGED,
+                                                              G_CALLBACK(_netdev_tun_link_cb),
+                                                              self);
+        return G_SOURCE_CONTINUE;
+    }
+
+    _LOGT(LOGD_CORE, "tun link is ready");
 
     nm_device_devip_set_state(device, AF_INET, NM_DEVICE_IP_STATE_PENDING, NULL);
     nm_device_devip_set_state(device, AF_INET6, NM_DEVICE_IP_STATE_PENDING, NULL);
@@ -274,20 +301,39 @@ _netdev_tun_link_cb(NMPlatform     *platform,
     const NMPlatformSignalChangeType change_type = change_type_i;
     NMDeviceOvsInterface            *self        = NM_DEVICE_OVS_INTERFACE(device);
     NMDeviceOvsInterfacePrivate     *priv        = NM_DEVICE_OVS_INTERFACE_GET_PRIVATE(self);
+    int                              ip_ifindex;
 
-    /* Monitor all platform events to see when a suitable tun interface appears */
-    if (change_type == NM_PLATFORM_SIGNAL_ADDED) {
-        if (pllink->type == NM_LINK_TYPE_TUN
-            && nm_streq0(pllink->name, nm_device_get_iface(device))) {
-            _LOGT(LOGD_CORE,
-                  "ovs-wait-link: found matching tun interface, schedule set-ip-ifindex(%d)",
-                  ifindex);
+    if (pllink->type != NM_LINK_TYPE_TUN || !nm_streq0(pllink->name, nm_device_get_iface(device)))
+        return;
+
+    ip_ifindex = nm_device_get_ip_ifindex(device);
+    if (ip_ifindex > 0) {
+        /* When we have an ifindex, we are only waiting for the MAC to settle */
+        if (change_type != NM_PLATFORM_SIGNAL_CHANGED)
+            return;
+
+        if (!check_waiting_for_link(device, "tun-link-changed")) {
+            _LOGT(LOGD_CORE, "ovs-wait-link: tun link is ready, cloned MAC is set");
+
             nm_clear_g_signal_handler(platform, &priv->wait_link.tun_link_signal_id);
-            priv->wait_link.tun_ifindex = ifindex;
-            priv->wait_link.tun_set_ifindex_idle_source =
-                nm_g_idle_add_source(_set_ip_ifindex_tun, device);
+
+            nm_device_devip_set_state(device, AF_INET, NM_DEVICE_IP_STATE_PENDING, NULL);
+            nm_device_devip_set_state(device, AF_INET6, NM_DEVICE_IP_STATE_PENDING, NULL);
+            nm_device_activate_schedule_stage3_ip_config(device, FALSE);
         }
+        return;
     }
+
+    /* No ip-ifindex on the device, set it when the link appears */
+    if (change_type != NM_PLATFORM_SIGNAL_ADDED)
+        return;
+
+    _LOGT(LOGD_CORE,
+          "ovs-wait-link: found matching tun interface, schedule set-ip-ifindex(%d)",
+          ifindex);
+    nm_clear_g_signal_handler(platform, &priv->wait_link.tun_link_signal_id);
+    priv->wait_link.tun_ifindex                 = ifindex;
+    priv->wait_link.tun_set_ifindex_idle_source = nm_g_idle_add_source(_set_ip_ifindex_tun, device);
 }
 
 static gboolean
@@ -358,6 +404,25 @@ act_stage3_ip_config(NMDevice *device, int addr_family)
         return;
     }
 
+    /*
+    * If a ovs interface has the cloned-mac-address property set, we pass the desired MAC
+    * to ovsdb when creating the db entry, and openvswitch will eventually assign it to
+    * the interface. Note that usually the link will not have the desired MAC when it's
+    * created, and so we need to also monitor link changes to detect when the MAC is
+    * ready; only after that we can start IP configuration. Otherwise, the ARP
+    * announcements, the DHCP client-id, etc will use the wrong MAC.
+    */
+    if (!priv->wait_link.cloned_mac_evaluated) {
+        nm_assert(!priv->wait_link.cloned_mac);
+        nm_device_hw_addr_get_cloned(device,
+                                     nm_device_get_applied_connection(device),
+                                     FALSE,
+                                     &priv->wait_link.cloned_mac,
+                                     NULL,
+                                     NULL);
+        priv->wait_link.cloned_mac_evaluated = TRUE;
+    }
+
     priv->wait_link.waiting = TRUE;
     if (check_waiting_for_link(device, addr_family == AF_INET ? "stage3-ipv4" : "stage3-ipv6")) {
         nm_device_devip_set_state(device, addr_family, NM_DEVICE_IP_STATE_PENDING, NULL);
@@ -379,11 +444,6 @@ act_stage3_ip_config(NMDevice *device, int addr_family)
     nm_clear_g_source_inst(&priv->wait_link.tun_set_ifindex_idle_source);
     nm_clear_g_signal_handler(nm_device_get_platform(device), &priv->wait_link.tun_link_signal_id);
 
-    if (!nm_device_hw_addr_set_cloned(device, nm_device_get_applied_connection(device), FALSE)) {
-        nm_device_devip_set_failed(device, addr_family, NM_DEVICE_STATE_REASON_CONFIG_FAILED);
-        return;
-    }
-
     nm_device_devip_set_state(device, addr_family, NM_DEVICE_IP_STATE_READY, NULL);
 }
 
@@ -399,7 +459,9 @@ deactivate(NMDevice *device)
     NMDeviceOvsInterface        *self = NM_DEVICE_OVS_INTERFACE(device);
     NMDeviceOvsInterfacePrivate *priv = NM_DEVICE_OVS_INTERFACE_GET_PRIVATE(self);
 
-    priv->wait_link.waiting = FALSE;
+    priv->wait_link.waiting              = FALSE;
+    priv->wait_link.cloned_mac_evaluated = FALSE;
+    nm_clear_g_free(&priv->wait_link.cloned_mac);
     nm_clear_g_signal_handler(nm_device_get_platform(device), &priv->wait_link.tun_link_signal_id);
     nm_clear_g_source_inst(&priv->wait_link.tun_set_ifindex_idle_source);
 }
@@ -495,6 +557,8 @@ deactivate_async(NMDevice                  *device,
 
     nm_clear_g_signal_handler(nm_device_get_platform(device), &priv->wait_link.tun_link_signal_id);
     nm_clear_g_source_inst(&priv->wait_link.tun_set_ifindex_idle_source);
+    priv->wait_link.cloned_mac_evaluated = FALSE;
+    nm_clear_g_free(&priv->wait_link.cloned_mac);
 
     /* We want to ensure that the kernel link for this device is removed upon
      * disconnection, so that it will not interfere with later activations of the same
