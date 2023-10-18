@@ -3623,6 +3623,11 @@ test_roundtrip_ethtool(void)
             optname = nm_ethtool_data[ethtool_id]->optname;
             vtype   = nm_ethtool_id_get_variant_type(ethtool_id);
 
+            if (nm_ethtool_optname_is_channels(optname)) {
+                /* Not supported */
+                continue;
+            }
+
             if (NM_IN_SET(ethtool_id,
                           NM_ETHTOOL_ID_COALESCE_ADAPTIVE_RX,
                           NM_ETHTOOL_ID_COALESCE_ADAPTIVE_TX)) {

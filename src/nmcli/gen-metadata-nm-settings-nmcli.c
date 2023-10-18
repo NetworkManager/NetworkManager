@@ -111,10 +111,18 @@ get_ethtool_format(const NMMetaPropertyInfo *prop_info)
 
     ethtool_id = prop_info->property_typ_data->subtype.ethtool.ethtool_id;
 
-    if (nm_ethtool_id_is_coalesce(ethtool_id) || nm_ethtool_id_is_ring(ethtool_id))
+    switch (nm_ethtool_id_to_type(ethtool_id)) {
+    case NM_ETHTOOL_TYPE_CHANNELS:
+    case NM_ETHTOOL_TYPE_COALESCE:
+    case NM_ETHTOOL_TYPE_RING:
         return g_strdup("integer");
-    else if (nm_ethtool_id_is_feature(ethtool_id) || nm_ethtool_id_is_pause(ethtool_id))
+    case NM_ETHTOOL_TYPE_FEATURE:
+    case NM_ETHTOOL_TYPE_PAUSE:
         return g_strdup("ternary");
+    case NM_ETHTOOL_TYPE_UNKNOWN:
+        nm_assert_not_reached();
+    };
+
     return NULL;
 }
 
@@ -301,10 +309,19 @@ append_ethtool_valid_values(const NMMetaPropertyInfo *prop_info, GPtrArray *vali
 
     ethtool_id = prop_info->property_typ_data->subtype.ethtool.ethtool_id;
 
-    if (nm_ethtool_id_is_coalesce(ethtool_id) || nm_ethtool_id_is_ring(ethtool_id))
+    switch (nm_ethtool_id_to_type(ethtool_id)) {
+    case NM_ETHTOOL_TYPE_CHANNELS:
+    case NM_ETHTOOL_TYPE_COALESCE:
+    case NM_ETHTOOL_TYPE_RING:
         g_ptr_array_add(valid_values, g_strdup_printf("0 - %u", G_MAXUINT32));
-    else if (nm_ethtool_id_is_feature(ethtool_id) || nm_ethtool_id_is_pause(ethtool_id))
+        break;
+    case NM_ETHTOOL_TYPE_FEATURE:
+    case NM_ETHTOOL_TYPE_PAUSE:
         append_vals(valid_values, "on", "off", "ignore");
+        break;
+    case NM_ETHTOOL_TYPE_UNKNOWN:
+        nm_assert_not_reached();
+    }
 }
 
 static void

@@ -1346,6 +1346,7 @@ write_ethtool_setting(NMConnection *connection, shvarFile *ifcfg, GError **error
         guint32              u32;
         gboolean             b;
         gboolean             any_option = FALSE;
+        char                 prop_name[300];
 
         s_con = nm_connection_get_setting_connection(connection);
         if (s_con) {
@@ -1424,6 +1425,18 @@ write_ethtool_setting(NMConnection *connection, shvarFile *ifcfg, GError **error
             g_string_append(str, nms_ifcfg_rh_utils_get_ethtool_name(ethtool_id));
             g_string_append(str, b ? " on" : " off");
             any_option = TRUE;
+        }
+
+        is_first = TRUE;
+        for (ethtool_id = _NM_ETHTOOL_ID_CHANNELS_FIRST; ethtool_id <= _NM_ETHTOOL_ID_CHANNELS_LAST;
+             ethtool_id++) {
+            if (nm_setting_option_get_uint32(NM_SETTING(s_ethtool),
+                                             nm_ethtool_data[ethtool_id]->optname,
+                                             &u32)) {
+                nm_sprintf_buf(prop_name, "ethtool.%s", nm_ethtool_data[ethtool_id]->optname);
+                set_error_unsupported(error, connection, prop_name, FALSE);
+                return FALSE;
+            }
         }
 
         if (!any_option) {

@@ -1292,6 +1292,22 @@
                   dbus-type="u"
                   is-setting-option="1"
                   />
+        <property name="channels-rx"
+                  dbus-type="u"
+                  is-setting-option="1"
+                  />
+        <property name="channels-tx"
+                  dbus-type="u"
+                  is-setting-option="1"
+                  />
+        <property name="channels-other"
+                  dbus-type="u"
+                  is-setting-option="1"
+                  />
+        <property name="channels-combined"
+                  dbus-type="u"
+                  is-setting-option="1"
+                  />
     </setting>
     <setting name="generic"
              gtype="NMSettingGeneric"

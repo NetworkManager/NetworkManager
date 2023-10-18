@@ -104,6 +104,11 @@ G_BEGIN_DECLS
 #define NM_ETHTOOL_OPTNAME_PAUSE_RX      "pause-rx"
 #define NM_ETHTOOL_OPTNAME_PAUSE_TX      "pause-tx"
 
+#define NM_ETHTOOL_OPTNAME_CHANNELS_RX       "channels-rx"
+#define NM_ETHTOOL_OPTNAME_CHANNELS_TX       "channels-tx"
+#define NM_ETHTOOL_OPTNAME_CHANNELS_OTHER    "channels-other"
+#define NM_ETHTOOL_OPTNAME_CHANNELS_COMBINED "channels-combined"
+
 /*****************************************************************************/
 
 G_END_DECLS

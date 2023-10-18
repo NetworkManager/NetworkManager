@@ -4421,26 +4421,32 @@ _get_fcn_ethtool(ARGS_GET_FCN)
 
     RETURN_UNSUPPORTED_GET_TYPE();
 
-    if (nm_ethtool_id_is_coalesce(ethtool_id) || nm_ethtool_id_is_ring(ethtool_id)) {
+    switch (nm_ethtool_id_to_type(ethtool_id)) {
+    case NM_ETHTOOL_TYPE_CHANNELS:
+    case NM_ETHTOOL_TYPE_COALESCE:
+    case NM_ETHTOOL_TYPE_RING:
         if (!nm_setting_option_get_uint32(setting, nm_ethtool_data[ethtool_id]->optname, &u32)) {
             NM_SET_OUT(out_is_default, TRUE);
             return NULL;
         }
 
         RETURN_STR_TO_FREE(nm_strdup_int(u32));
+    case NM_ETHTOOL_TYPE_FEATURE:
+    case NM_ETHTOOL_TYPE_PAUSE:
+        if (!nm_setting_option_get_boolean(setting, nm_ethtool_data[ethtool_id]->optname, &b)) {
+            NM_SET_OUT(out_is_default, TRUE);
+            return NULL;
+        }
+
+        s = b ? N_("on") : N_("off");
+        if (get_type == NM_META_ACCESSOR_GET_TYPE_PRETTY)
+            s = gettext(s);
+        return s;
+    case NM_ETHTOOL_TYPE_UNKNOWN:
+        nm_assert_not_reached();
     }
 
-    nm_assert(nm_ethtool_id_is_feature(ethtool_id) || nm_ethtool_id_is_pause(ethtool_id));
-
-    if (!nm_setting_option_get_boolean(setting, nm_ethtool_data[ethtool_id]->optname, &b)) {
-        NM_SET_OUT(out_is_default, TRUE);
-        return NULL;
-    }
-
-    s = b ? N_("on") : N_("off");
-    if (get_type == NM_META_ACCESSOR_GET_TYPE_PRETTY)
-        s = gettext(s);
-    return s;
+    return NULL;
 }
 
 static gboolean
@@ -4453,7 +4459,10 @@ _set_fcn_ethtool(ARGS_SET_FCN)
     if (_SET_FCN_DO_RESET_DEFAULT(property_info, modifier, value))
         goto do_unset;
 
-    if (nm_ethtool_id_is_coalesce(ethtool_id) || nm_ethtool_id_is_ring(ethtool_id)) {
+    switch (nm_ethtool_id_to_type(ethtool_id)) {
+    case NM_ETHTOOL_TYPE_CHANNELS:
+    case NM_ETHTOOL_TYPE_COALESCE:
+    case NM_ETHTOOL_TYPE_RING:
         i64 = _nm_utils_ascii_str_to_int64(value, 10, 0, G_MAXUINT32, -1);
         if (i64 == -1) {
             nm_utils_error_set(
@@ -4468,25 +4477,27 @@ _set_fcn_ethtool(ARGS_SET_FCN)
 
         nm_setting_option_set_uint32(setting, nm_ethtool_data[ethtool_id]->optname, i64);
         return TRUE;
+    case NM_ETHTOOL_TYPE_FEATURE:
+    case NM_ETHTOOL_TYPE_PAUSE:
+        if (!nmc_string_to_ternary_full(value,
+                                        NMC_STRING_TO_TERNARY_FLAGS_IGNORE_FOR_DEFAULT,
+                                        &t,
+                                        NULL)) {
+            nm_utils_error_set(error,
+                               NM_UTILS_ERROR_INVALID_ARGUMENT,
+                               _("'%s' is not valid; use 'on', 'off', or 'ignore'"),
+                               value);
+            return FALSE;
+        }
+        if (t == NM_TERNARY_DEFAULT)
+            goto do_unset;
+
+        nm_setting_option_set_boolean(setting, nm_ethtool_data[ethtool_id]->optname, !!t);
+        return TRUE;
+    case NM_ETHTOOL_TYPE_UNKNOWN:
+        nm_assert_not_reached();
     }
-
-    nm_assert(nm_ethtool_id_is_feature(ethtool_id) || nm_ethtool_id_is_pause(ethtool_id));
-
-    if (!nmc_string_to_ternary_full(value,
-                                    NMC_STRING_TO_TERNARY_FLAGS_IGNORE_FOR_DEFAULT,
-                                    &t,
-                                    NULL)) {
-        nm_utils_error_set(error,
-                           NM_UTILS_ERROR_INVALID_ARGUMENT,
-                           _("'%s' is not valid; use 'on', 'off', or 'ignore'"),
-                           value);
-        return FALSE;
-    }
-    if (t == NM_TERNARY_DEFAULT)
-        goto do_unset;
-
-    nm_setting_option_set_boolean(setting, nm_ethtool_data[ethtool_id]->optname, !!t);
-    return TRUE;
+    return FALSE;
 
 do_unset:
     nm_setting_option_set(setting, nm_ethtool_data[ethtool_id]->optname, NULL);
@@ -5919,6 +5930,10 @@ static const NMMetaPropertyInfo *const property_infos_ETHTOOL[] = {
     PROPERTY_INFO_ETHTOOL (RING_RX_JUMBO),
     PROPERTY_INFO_ETHTOOL (RING_RX_MINI),
     PROPERTY_INFO_ETHTOOL (RING_TX),
+    PROPERTY_INFO_ETHTOOL (CHANNELS_RX),
+    PROPERTY_INFO_ETHTOOL (CHANNELS_TX),
+    PROPERTY_INFO_ETHTOOL (CHANNELS_OTHER),
+    PROPERTY_INFO_ETHTOOL (CHANNELS_COMBINED),
     NULL,
 };
 
