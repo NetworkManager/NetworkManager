@@ -905,8 +905,14 @@ nm_netns_ip_route_ecmp_commit(NMNetns    *self,
         if (obj_del) {
             if (NMP_OBJECT_CAST_IP4_ROUTE(obj_del)->n_nexthops > 1)
                 nm_platform_object_delete(priv->platform, obj_del);
-            else if (track_obj->l3cfg != l3cfg)
-                nm_l3cfg_commit_on_idle_schedule(track_obj->l3cfg, NM_L3_CFG_COMMIT_TYPE_AUTO);
+            else if (NMP_OBJECT_CAST_IP4_ROUTE(obj_del)->ifindex != nm_l3cfg_get_ifindex(l3cfg)) {
+                /* A single-hop route from a different interface was merged
+                 * into a ECMP route. Now, it is time to notify the l3cfg that
+                 * is managing that single-hop route to remove it. */
+                nm_l3cfg_commit_on_idle_schedule(
+                    nm_netns_l3cfg_get(self, NMP_OBJECT_CAST_IP4_ROUTE(obj_del)->ifindex),
+                    NM_L3_CFG_COMMIT_TYPE_UPDATE);
+            }
         }
 
         if (route->n_nexthops <= 1) {
