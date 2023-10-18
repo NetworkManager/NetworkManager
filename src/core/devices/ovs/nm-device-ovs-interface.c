@@ -127,7 +127,8 @@ check_connection_compatible(NMDevice     *device,
 static void
 link_changed(NMDevice *device, const NMPlatformLink *pllink)
 {
-    NMDeviceOvsInterfacePrivate *priv = NM_DEVICE_OVS_INTERFACE_GET_PRIVATE(device);
+    NMDeviceOvsInterface        *self = NM_DEVICE_OVS_INTERFACE(device);
+    NMDeviceOvsInterfacePrivate *priv = NM_DEVICE_OVS_INTERFACE_GET_PRIVATE(self);
 
     if (!pllink || !priv->wait_link.waiting)
         return;
@@ -142,6 +143,8 @@ link_changed(NMDevice *device, const NMPlatformLink *pllink)
             nm_device_devip_set_failed(device, AF_INET6, NM_DEVICE_STATE_REASON_CONFIG_FAILED);
             return;
         }
+
+        _LOGT(LOGD_CORE, "ovs-wait-link: link is ready after link changed event");
 
         nm_device_link_properties_set(device, FALSE);
         nm_device_bring_up(device);
@@ -222,6 +225,10 @@ _set_ip_ifindex_tun(gpointer user_data)
     NMDeviceOvsInterface        *self   = NM_DEVICE_OVS_INTERFACE(device);
     NMDeviceOvsInterfacePrivate *priv   = NM_DEVICE_OVS_INTERFACE_GET_PRIVATE(self);
 
+    _LOGT(LOGD_CORE,
+          "ovs-wait-link: setting ip-ifindex %d from tun interface",
+          priv->wait_link.tun_ifindex);
+
     nm_clear_g_source_inst(&priv->wait_link.tun_set_ifindex_idle_source);
 
     priv->wait_link.waiting = FALSE;
@@ -250,10 +257,11 @@ _netdev_tun_link_cb(NMPlatform     *platform,
     if (change_type == NM_PLATFORM_SIGNAL_ADDED) {
         if (pllink->type == NM_LINK_TYPE_TUN
             && nm_streq0(pllink->name, nm_device_get_iface(device))) {
+            _LOGT(LOGD_CORE,
+                  "ovs-wait-link: found matching tun interface, schedule set-ip-ifindex(%d)",
+                  ifindex);
             nm_clear_g_signal_handler(platform, &priv->wait_link.tun_link_signal_id);
-
             priv->wait_link.tun_ifindex = ifindex;
-
             priv->wait_link.tun_set_ifindex_idle_source =
                 nm_g_idle_add_source(_set_ip_ifindex_tun, device);
         }
@@ -320,11 +328,15 @@ act_stage3_ip_config(NMDevice *device, int addr_family)
      *
      * This should change. */
     if (nm_device_get_ip_ifindex(device) <= 0) {
-        _LOGT(LOGD_DEVICE, "waiting for link to appear");
+        _LOGT(LOGD_DEVICE, "ovs-wait-link: waiting for link to appear");
         priv->wait_link.waiting = TRUE;
         nm_device_devip_set_state(device, addr_family, NM_DEVICE_IP_STATE_PENDING, NULL);
         return;
     }
+
+    _LOGT(LOGD_DEVICE,
+          "ovs-wait-link: link is ready, IPv%c can proceed",
+          nm_utils_addr_family_to_char(addr_family));
 
     priv->wait_link.waiting = FALSE;
     nm_clear_g_source_inst(&priv->wait_link.tun_set_ifindex_idle_source);
