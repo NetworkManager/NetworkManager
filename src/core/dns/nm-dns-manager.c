@@ -1910,7 +1910,7 @@ plugin_skip:;
     }
 
     /* signal that DNS resolution configs were changed */
-    if ((do_update || caching || force_emit) && result == SR_SUCCESS)
+    if ((caching || force_emit) && result == SR_SUCCESS)
         g_signal_emit(self, signals[CONFIG_CHANGED], 0);
 
     nm_clear_pointer(&priv->config_variant, g_variant_unref);
@@ -1924,6 +1924,16 @@ plugin_skip:;
 
     nm_assert(!local_error);
     return TRUE;
+}
+
+gboolean
+nm_dns_manager_is_unmanaged(NMDnsManager *self)
+{
+    NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE(self);
+
+    return NM_IN_SET(priv->rc_manager,
+                     NM_DNS_MANAGER_RESOLV_CONF_MAN_UNMANAGED,
+                     NM_DNS_MANAGER_RESOLV_CONF_MAN_IMMUTABLE);
 }
 
 /*****************************************************************************/
