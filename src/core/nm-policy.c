@@ -2563,11 +2563,15 @@ dns_config_changed(NMDnsManager *dns_manager, gpointer user_data)
     if (priv->updating_dns)
         return;
 
-    nm_manager_for_each_device (priv->manager, device, tmp_lst) {
-        nm_device_clear_dns_lookup_data(device);
+    if (!nm_dns_manager_is_unmanaged(dns_manager)) {
+        nm_manager_for_each_device (priv->manager, device, tmp_lst) {
+            nm_device_clear_dns_lookup_data(device);
+        }
+
+        update_system_hostname(self, "DNS configuration changed");
     }
 
-    update_system_hostname(self, "DNS configuration changed");
+    nm_dispatcher_call_dns_change();
 }
 
 static void
