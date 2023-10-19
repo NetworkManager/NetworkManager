@@ -49,6 +49,8 @@
     }                                                         \
     G_STMT_END
 
+static gboolean nm_dispatcher_need_device(NMDispatcherAction action);
+
 /*****************************************************************************/
 
 struct NMDispatcherCallId {
@@ -440,7 +442,8 @@ static const char *action_table[] = {[NM_DISPATCHER_ACTION_HOSTNAME]      = NMD_
                                      [NM_DISPATCHER_ACTION_DHCP_CHANGE_4] = NMD_ACTION_DHCP4_CHANGE,
                                      [NM_DISPATCHER_ACTION_DHCP_CHANGE_6] = NMD_ACTION_DHCP6_CHANGE,
                                      [NM_DISPATCHER_ACTION_CONNECTIVITY_CHANGE] =
-                                         NMD_ACTION_CONNECTIVITY_CHANGE};
+                                         NMD_ACTION_CONNECTIVITY_CHANGE,
+                                     [NM_DISPATCHER_ACTION_DNS_CHANGE] = NMD_ACTION_DNS_CHANGE};
 
 static const char *
 action_to_string(NMDispatcherAction action)
@@ -499,9 +502,7 @@ _dispatcher_call(NMDispatcherAction    action,
     if (G_UNLIKELY(!request_id))
         request_id = ++gl.request_id_counter;
 
-    /* All actions except 'hostname' and 'connectivity-change' require a device */
-    if (action == NM_DISPATCHER_ACTION_HOSTNAME
-        || action == NM_DISPATCHER_ACTION_CONNECTIVITY_CHANGE) {
+    if (!nm_dispatcher_need_device(action)) {
         _LOG2D(request_id,
                log_ifname,
                log_con_uuid,
@@ -561,9 +562,8 @@ _dispatcher_call(NMDispatcherAction    action,
     g_variant_builder_init(&vpn_ip4_props, G_VARIANT_TYPE_VARDICT);
     g_variant_builder_init(&vpn_ip6_props, G_VARIANT_TYPE_VARDICT);
 
-    /* hostname and connectivity-change actions don't send device data */
-    if (action != NM_DISPATCHER_ACTION_HOSTNAME
-        && action != NM_DISPATCHER_ACTION_CONNECTIVITY_CHANGE) {
+    /* hostname, DNS and connectivity-change actions don't send device data */
+    if (nm_dispatcher_need_device(action)) {
         fill_device_props(device,
                           &device_props,
                           &device_proxy_props,
@@ -873,6 +873,30 @@ nm_dispatcher_call_connectivity(NMConnectivityState  connectivity_state,
                             out_call_id);
 }
 
+/**
+ * nm_dispatcher_call_dns_change():
+ *
+ * This method does not block the caller.
+ *
+ * Returns: %TRUE if the action was dispatched, %FALSE on failure
+ */
+gboolean
+nm_dispatcher_call_dns_change(void)
+{
+    return _dispatcher_call(NM_DISPATCHER_ACTION_DNS_CHANGE,
+                            FALSE,
+                            NULL,
+                            NULL,
+                            NULL,
+                            FALSE,
+                            NM_CONNECTIVITY_UNKNOWN,
+                            NULL,
+                            NULL,
+                            NULL,
+                            NULL,
+                            NULL);
+}
+
 void
 nm_dispatcher_call_cancel(NMDispatcherCallId *call_id)
 {
@@ -884,4 +908,17 @@ nm_dispatcher_call_cancel(NMDispatcherCallId *call_id)
      */
     _LOG3D(call_id, "cancelling dispatcher callback action");
     call_id->callback = NULL;
+}
+
+/* All actions except 'hostname', 'connectivity-change' and 'dns-change' require
+ * a device */
+static gboolean
+nm_dispatcher_need_device(NMDispatcherAction action)
+{
+    if (action == NM_DISPATCHER_ACTION_HOSTNAME
+        || action == NM_DISPATCHER_ACTION_CONNECTIVITY_CHANGE
+        || action == NM_DISPATCHER_ACTION_DNS_CHANGE) {
+        return FALSE;
+    }
+    return TRUE;
 }
