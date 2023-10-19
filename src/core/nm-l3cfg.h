@@ -34,8 +34,8 @@ typedef enum _nm_packed {
 /**
  * NML3CfgConfigFlags:
  * @NM_L3CFG_CONFIG_FLAGS_NONE: no flags, the default.
- * @NM_L3_CONFIG_MERGE_FLAGS_ONLY_FOR_ACD: if this merge flag is set,
- *   the the NML3ConfigData doesn't get merged and it's information won't be
+ * @NM_L3CFG_CONFIG_FLAGS_ONLY_FOR_ACD: if this flag is set,
+ *   the NML3ConfigData doesn't get merged and the information won't be
  *   synced. The only purpose is to run ACD on its IPv4 addresses, but
  *   regardless whether ACD succeeds/fails, the IP addresses won't be configured.
  *   The point is to run ACD first (without configuring it), and only
