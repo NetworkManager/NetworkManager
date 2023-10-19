@@ -2076,7 +2076,7 @@ nm_strv_is_same_unordered(const char *const *strv1,
 }
 
 const char **
-nm_strv_cleanup_const(const char **strv, gboolean skip_empty, gboolean skip_repeated)
+nm_strv_cleanup_const(const char **strv, gboolean no_empty, gboolean no_duplicates)
 {
     gsize i;
     gsize j;
@@ -2084,12 +2084,12 @@ nm_strv_cleanup_const(const char **strv, gboolean skip_empty, gboolean skip_repe
     if (!strv || !*strv)
         return strv;
 
-    if (!skip_empty && !skip_repeated)
+    if (!no_empty && !no_duplicates)
         return strv;
 
     j = 0;
     for (i = 0; strv[i]; i++) {
-        if ((skip_empty && !*strv[i]) || (skip_repeated && nm_strv_contains(strv, j, strv[i])))
+        if ((no_empty && !*strv[i]) || (no_duplicates && nm_strv_contains(strv, j, strv[i])))
             continue;
         strv[j++] = strv[i];
     }
@@ -2098,7 +2098,7 @@ nm_strv_cleanup_const(const char **strv, gboolean skip_empty, gboolean skip_repe
 }
 
 char **
-nm_strv_cleanup(char **strv, gboolean strip_whitespace, gboolean skip_empty, gboolean skip_repeated)
+nm_strv_cleanup(char **strv, gboolean strip_whitespace, gboolean no_empty, gboolean no_duplicates)
 {
     gsize i;
     gsize j;
@@ -2112,11 +2112,11 @@ nm_strv_cleanup(char **strv, gboolean strip_whitespace, gboolean skip_empty, gbo
         for (i = 0; strv[i]; i++)
             g_strstrip(strv[i]);
     }
-    if (!skip_empty && !skip_repeated)
+    if (!no_empty && !no_duplicates)
         return strv;
     j = 0;
     for (i = 0; strv[i]; i++) {
-        if ((skip_empty && !*strv[i]) || (skip_repeated && nm_strv_contains(strv, j, strv[i])))
+        if ((no_empty && !*strv[i]) || (no_duplicates && nm_strv_contains(strv, j, strv[i])))
             g_free(strv[i]);
         else
             strv[j++] = strv[i];
