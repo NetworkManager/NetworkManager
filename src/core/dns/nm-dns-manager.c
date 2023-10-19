@@ -1876,8 +1876,8 @@ plugin_skip:;
         nameservers    = g_new0(char *, 2);
         nameservers[0] = g_strdup(lladdr);
 
-        need_edns0 = nm_strv_find_first(options, -1, NM_SETTING_DNS_OPTION_EDNS0) < 0;
-        need_trust = nm_strv_find_first(options, -1, NM_SETTING_DNS_OPTION_TRUST_AD) < 0;
+        need_edns0 = !nm_strv_contains(options, -1, NM_SETTING_DNS_OPTION_EDNS0);
+        need_trust = !nm_strv_contains(options, -1, NM_SETTING_DNS_OPTION_TRUST_AD);
 
         if (need_edns0 || need_trust) {
             gsize len;
@@ -2401,7 +2401,7 @@ _resolvconf_resolved_managed(void)
          * We want to handle that, because systemd-resolved might not
          * have started yet. */
         full_path = g_file_read_link(_PATH_RESCONF, NULL);
-        if (nm_strv_find_first(RESOLVED_PATHS, G_N_ELEMENTS(RESOLVED_PATHS), full_path) >= 0)
+        if (nm_strv_contains(RESOLVED_PATHS, G_N_ELEMENTS(RESOLVED_PATHS), full_path))
             return TRUE;
 
         /* see if resolv.conf is a symlink that resolves exactly one
@@ -2413,7 +2413,7 @@ _resolvconf_resolved_managed(void)
          * We want to handle that, because systemd-resolved might not
          * have started yet. */
         real_path = realpath(_PATH_RESCONF, NULL);
-        if (nm_strv_find_first(RESOLVED_PATHS, G_N_ELEMENTS(RESOLVED_PATHS), real_path) >= 0)
+        if (nm_strv_contains(RESOLVED_PATHS, G_N_ELEMENTS(RESOLVED_PATHS), real_path))
             return TRUE;
 
         /* fall-through and resolve the symlink, to check the file

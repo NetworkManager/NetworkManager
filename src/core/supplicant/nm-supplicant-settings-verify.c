@@ -228,7 +228,7 @@ validate_type_keyword(const struct Opt *opt, const char *value, const guint32 le
             s++;
         }
 
-        if (nm_strv_find_first(opt->str_allowed, -1, value) < 0)
+        if (!nm_strv_contains(opt->str_allowed, -1, value))
             return FALSE;
 
         if (!s)
