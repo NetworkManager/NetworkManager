@@ -325,7 +325,12 @@ nm_setting_wired_get_mac_blacklist_item(NMSettingWired *setting, guint32 idx)
     g_return_val_if_fail(NM_IS_SETTING_WIRED(setting), NULL);
 
     priv = NM_SETTING_WIRED_GET_PRIVATE(setting);
-    g_return_val_if_fail(idx <= priv->mac_address_blacklist->len, NULL);
+
+    if (idx == priv->mac_address_blacklist->len) {
+        return NULL;
+    }
+
+    g_return_val_if_fail(idx < priv->mac_address_blacklist->len, NULL);
 
     return nm_g_array_index(priv->mac_address_blacklist, const char *, idx);
 }

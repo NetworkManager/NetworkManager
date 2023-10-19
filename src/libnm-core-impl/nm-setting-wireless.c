@@ -510,7 +510,12 @@ nm_setting_wireless_get_mac_blacklist_item(NMSettingWireless *setting, guint32 i
     g_return_val_if_fail(NM_IS_SETTING_WIRELESS(setting), NULL);
 
     priv = NM_SETTING_WIRELESS_GET_PRIVATE(setting);
-    g_return_val_if_fail(idx <= priv->mac_address_blacklist->len, NULL);
+
+    if (idx == priv->mac_address_blacklist->len) {
+        return NULL;
+    }
+
+    g_return_val_if_fail(idx < priv->mac_address_blacklist->len, NULL);
 
     return nm_g_array_index(priv->mac_address_blacklist, const char *, idx);
 }
