@@ -2089,8 +2089,7 @@ nm_strv_cleanup_const(const char **strv, gboolean skip_empty, gboolean skip_repe
 
     j = 0;
     for (i = 0; strv[i]; i++) {
-        if ((skip_empty && !*strv[i])
-            || (skip_repeated && nm_strv_find_first(strv, j, strv[i]) >= 0))
+        if ((skip_empty && !*strv[i]) || (skip_repeated && nm_strv_contains(strv, j, strv[i])))
             continue;
         strv[j++] = strv[i];
     }
@@ -2117,8 +2116,7 @@ nm_strv_cleanup(char **strv, gboolean strip_whitespace, gboolean skip_empty, gbo
         return strv;
     j = 0;
     for (i = 0; strv[i]; i++) {
-        if ((skip_empty && !*strv[i])
-            || (skip_repeated && nm_strv_find_first(strv, j, strv[i]) >= 0))
+        if ((skip_empty && !*strv[i]) || (skip_repeated && nm_strv_contains(strv, j, strv[i])))
             g_free(strv[i]);
         else
             strv[j++] = strv[i];

@@ -1129,12 +1129,12 @@ read_config(GKeyFile   *keyfile,
                     /* merge the string lists, by omitting duplicates. */
 
                     for (iter_val = old_val; iter_val && *iter_val; iter_val++) {
-                        if (last_char != '-' || nm_strv_find_first(new_val, -1, *iter_val) < 0)
+                        if (last_char != '-' || !nm_strv_contains(new_val, -1, *iter_val))
                             g_ptr_array_add(new, g_strdup(*iter_val));
                     }
                     for (iter_val = new_val; iter_val && *iter_val; iter_val++) {
                         /* don't add duplicates. That means an "option=a,b"; "option+=a,c" results in "option=a,b,c" */
-                        if (last_char == '+' && nm_strv_find_first(old_val, -1, *iter_val) < 0)
+                        if (last_char == '+' && !nm_strv_contains(old_val, -1, *iter_val))
                             g_ptr_array_add(new, *iter_val);
                         else
                             g_free(*iter_val);
@@ -3019,8 +3019,7 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
 gboolean
 nm_config_kernel_command_line_nm_debug(void)
 {
-    return (nm_strv_find_first(nm_utils_proc_cmdline_split(), -1, NM_CONFIG_KERNEL_CMDLINE_NM_DEBUG)
-            >= 0);
+    return nm_strv_contains(nm_utils_proc_cmdline_split(), -1, NM_CONFIG_KERNEL_CMDLINE_NM_DEBUG);
 }
 
 /*****************************************************************************/

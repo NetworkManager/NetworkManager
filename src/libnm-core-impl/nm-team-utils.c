@@ -2244,7 +2244,7 @@ _team_setting_verify_properties(const NMTeamSetting *self, GError **error)
             } else if (attr_data->value_type == NM_VALUE_TYPE_STRING) {
                 const char *v = *((const char *const *) p_field);
 
-                if (nm_strv_find_first(attr_data->range.r_string.valid_names, -1, v) < 0) {
+                if (!nm_strv_contains(attr_data->range.r_string.valid_names, -1, v)) {
                     g_set_error(error,
                                 NM_CONNECTION_ERROR,
                                 NM_CONNECTION_ERROR_INVALID_SETTING,
@@ -2263,7 +2263,7 @@ _team_setting_verify_properties(const NMTeamSetting *self, GError **error)
                 for (i = 0; i < self->d.master.runner_tx_hash->len; i++) {
                     const char *val = self->d.master.runner_tx_hash->pdata[i];
 
-                    if (!val || (nm_strv_find_first(_valid_names_runner_tx_hash, -1, val) < 0)) {
+                    if (!val || !nm_strv_contains(_valid_names_runner_tx_hash, -1, val)) {
                         g_set_error(error,
                                     NM_CONNECTION_ERROR,
                                     NM_CONNECTION_ERROR_INVALID_SETTING,
@@ -2289,7 +2289,7 @@ _team_setting_verify_properties(const NMTeamSetting *self, GError **error)
             if (!_team_setting_has_field(self, attr_data))
                 continue;
             if (self->d.master.runner
-                && (nm_strv_find_first(e->valid_runners, -1, self->d.master.runner) >= 0))
+                && nm_strv_contains(e->valid_runners, -1, self->d.master.runner))
                 continue;
             if (e->valid_runners[1] == NULL) {
                 g_set_error(error,

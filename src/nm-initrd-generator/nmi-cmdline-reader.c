@@ -486,12 +486,12 @@ _parse_ip_method(const char *kind)
     nm_strv_sort(strv, -1);
     nm_strv_cleanup_const(strv, TRUE, TRUE);
 
-    if (nm_strv_find_first(strv, -1, "auto") >= 0) {
+    if (nm_strv_contains(strv, -1, "auto")) {
         /* if "auto" is present, then "dhcp4", "dhcp6", and "local6" is implied. */
         _strv_remove(strv, "dhcp4");
         _strv_remove(strv, "dhcp6");
         _strv_remove(strv, "local6");
-    } else if (nm_strv_find_first(strv, -1, "dhcp6") >= 0) {
+    } else if (nm_strv_contains(strv, -1, "dhcp6")) {
         /* if "dhcp6" is present, then "local6" is implied. */
         _strv_remove(strv, "local6");
     }
