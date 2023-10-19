@@ -226,7 +226,7 @@ Requires: libndp >= %{libndp_version}
 %endif
 Obsoletes: NetworkManager < %{obsoletes_device_plugins}
 Obsoletes: NetworkManager < %{obsoletes_ppp_plugin}
-Obsoletes: NetworkManager-wimax < 1.2
+Obsoletes: NetworkManager-wimax < 1:1.2
 %if 0%{?rhel} && 0%{?rhel} == 8
 Suggests: NetworkManager-initscripts-updown
 %endif
@@ -394,7 +394,7 @@ Obsoletes: NetworkManager < %{obsoletes_device_plugins}
 # Team was split from main NM binary between 0.9.10 and 1.0
 # We need this Obsoletes in addition to the one above
 # (git:3aede801521ef7bff039e6e3f1b3c7b566b4338d).
-Obsoletes: NetworkManager < 1.0.0
+Obsoletes: NetworkManager < 1:1.0.0
 %endif
 
 %description team
