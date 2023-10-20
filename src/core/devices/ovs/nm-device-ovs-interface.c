@@ -319,6 +319,7 @@ deactivate(NMDevice *device)
     NMDeviceOvsInterfacePrivate *priv = NM_DEVICE_OVS_INTERFACE_GET_PRIVATE(self);
 
     priv->wait_link_is_waiting = FALSE;
+    nm_clear_g_signal_handler(nm_device_get_platform(device), &priv->wait_link_signal_id);
     nm_clear_g_source_inst(&priv->wait_link_idle_source);
 }
 
@@ -411,6 +412,9 @@ deactivate_async(NMDevice                  *device,
 
     _LOGT(LOGD_CORE, "deactivate: start async");
 
+    nm_clear_g_signal_handler(nm_device_get_platform(device), &priv->wait_link_signal_id);
+    nm_clear_g_source_inst(&priv->wait_link_idle_source);
+
     /* We want to ensure that the kernel link for this device is
      * removed upon disconnection so that it will not interfere with
      * later activations of the same device. Unfortunately there is
@@ -435,8 +439,6 @@ deactivate_async(NMDevice                  *device,
         return;
     }
 
-    nm_clear_g_source_inst(&priv->wait_link_idle_source);
-
     if (priv->wait_link_is_waiting) {
         /* At this point we have issued an INSERT and a DELETE
          * command for the interface to ovsdb. We don't know if
@@ -449,6 +451,7 @@ deactivate_async(NMDevice                  *device,
     } else
         _LOGT(LOGD_DEVICE, "deactivate: waiting for link to disappear");
 
+    priv->wait_link_is_waiting = FALSE;
     data->cancelled_id =
         g_cancellable_connect(cancellable, G_CALLBACK(deactivate_cancelled_cb), data, NULL);
     data->link_changed_id = g_signal_connect(nm_device_get_platform(device),
@@ -498,6 +501,10 @@ dispose(GObject *object)
 {
     NMDeviceOvsInterface        *self = NM_DEVICE_OVS_INTERFACE(object);
     NMDeviceOvsInterfacePrivate *priv = NM_DEVICE_OVS_INTERFACE_GET_PRIVATE(self);
+
+    nm_assert(!priv->wait_link_is_waiting);
+    nm_assert(!priv->wait_link_signal_id == 0);
+    nm_assert(!priv->wait_link_idle_source);
 
     if (priv->ovsdb) {
         g_signal_handlers_disconnect_by_func(priv->ovsdb, G_CALLBACK(ovsdb_ready), self);
