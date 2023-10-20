@@ -1,5 +1,6 @@
 [Unit]
 Description=Network Manager Script Dispatcher Service
+Documentation=man:NetworkManager-dispatcher.service(8)
 
 [Service]
 Type=dbus
