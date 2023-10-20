@@ -5554,13 +5554,8 @@ systemdsystemunit_DATA += \
 data/NetworkManager.service: $(srcdir)/data/NetworkManager.service.in
 	$(AM_V_GEN) $(data_edit) $< >$@
 
-if HAVE_SYSTEMD_200
 data/NetworkManager-wait-online.service: $(srcdir)/data/NetworkManager-wait-online.service.in
 	$(AM_V_GEN) $(data_edit) $< >$@
-else
-data/NetworkManager-wait-online.service: $(srcdir)/data/NetworkManager-wait-online-systemd-pre200.service.in
-	$(AM_V_GEN) $(data_edit) $< >$@
-endif
 
 data/NetworkManager-dispatcher.service: $(srcdir)/data/NetworkManager-dispatcher.service.in
 	$(AM_V_GEN) $(data_edit) $< >$@
