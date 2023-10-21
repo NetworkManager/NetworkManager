@@ -259,7 +259,8 @@ static void
 device_state_changed(NMActiveConnection *active,
                      NMDevice           *device,
                      NMDeviceState       new_state,
-                     NMDeviceState       old_state)
+                     NMDeviceState       old_state,
+                     NMDeviceStateReason reason)
 {
     NMActiveConnectionState       cur_ac_state    = nm_active_connection_get_state(active);
     NMActiveConnectionState       ac_state        = NM_ACTIVE_CONNECTION_STATE_UNKNOWN;
