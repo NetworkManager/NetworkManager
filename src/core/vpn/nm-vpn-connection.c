@@ -1143,7 +1143,8 @@ static void
 device_state_changed(NMActiveConnection *active,
                      NMDevice           *device,
                      NMDeviceState       new_state,
-                     NMDeviceState       old_state)
+                     NMDeviceState       old_state,
+                     NMDeviceStateReason reason)
 {
     if (_service_and_connection_can_persist(NM_VPN_CONNECTION(active))) {
         if (new_state <= NM_DEVICE_STATE_DISCONNECTED || new_state == NM_DEVICE_STATE_FAILED) {

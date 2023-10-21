@@ -78,7 +78,8 @@ typedef struct {
     void (*device_state_changed)(NMActiveConnection *connection,
                                  NMDevice           *device,
                                  NMDeviceState       new_state,
-                                 NMDeviceState       old_state);
+                                 NMDeviceState       old_state,
+                                 NMDeviceStateReason reason);
     void (*master_failed)(NMActiveConnection *connection);
 
     void (*device_changed)(NMActiveConnection *connection,
