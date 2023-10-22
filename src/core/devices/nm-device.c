@@ -12467,13 +12467,15 @@ activate_stage3_ip_config(NMDevice *self)
 
     ipv6_method = nm_device_get_effective_ip_config_method(self, AF_INET6);
     if (!g_file_test("/proc/sys/net/ipv6", G_FILE_TEST_IS_DIR)) {
-        _NMLOG_ip((nm_device_sys_iface_state_is_external(self) ||
-                  NM_IN_STRSET(ipv6_method,
-                               NM_SETTING_IP6_CONFIG_METHOD_AUTO,
-                               NM_SETTING_IP6_CONFIG_METHOD_DISABLED,
-                               NM_SETTING_IP6_CONFIG_METHOD_IGNORE)) ? LOGL_DEBUG : LOGL_WARN,
+        _NMLOG_ip((nm_device_sys_iface_state_is_external(self)
+                   || NM_IN_STRSET(ipv6_method,
+                                   NM_SETTING_IP6_CONFIG_METHOD_AUTO,
+                                   NM_SETTING_IP6_CONFIG_METHOD_DISABLED,
+                                   NM_SETTING_IP6_CONFIG_METHOD_IGNORE))
+                      ? LOGL_DEBUG
+                      : LOGL_WARN,
                   AF_INET6,
-                 "IPv6 not supported by kernel resulting in \"ipv6.method=disabled\"");
+                  "IPv6 not supported by kernel resulting in \"ipv6.method=disabled\"");
         ipv6_method = NM_SETTING_IP6_CONFIG_METHOD_DISABLED;
     } else if (nm_streq(ipv6_method, NM_SETTING_IP6_CONFIG_METHOD_AUTO)) {
         ipv6_method = klass->get_ip_method_auto(self, AF_INET6);
