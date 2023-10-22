@@ -320,14 +320,20 @@ device_state_changed(NMActiveConnection *active,
                          active);
         break;
     case NM_DEVICE_STATE_DEACTIVATING:
+        if (reason == NM_DEVICE_STATE_REASON_USER_REQUESTED)
+            ac_state_reason = NM_ACTIVE_CONNECTION_STATE_REASON_USER_DISCONNECTED;
+
         ac_state = NM_ACTIVE_CONNECTION_STATE_DEACTIVATING;
         break;
     case NM_DEVICE_STATE_FAILED:
     case NM_DEVICE_STATE_DISCONNECTED:
     case NM_DEVICE_STATE_UNMANAGED:
     case NM_DEVICE_STATE_UNAVAILABLE:
-        ac_state        = NM_ACTIVE_CONNECTION_STATE_DEACTIVATED;
-        ac_state_reason = NM_ACTIVE_CONNECTION_STATE_REASON_DEVICE_DISCONNECTED;
+        ac_state = NM_ACTIVE_CONNECTION_STATE_DEACTIVATED;
+        if (reason == NM_DEVICE_STATE_REASON_USER_REQUESTED)
+            ac_state_reason = NM_ACTIVE_CONNECTION_STATE_REASON_USER_DISCONNECTED;
+        else
+            ac_state_reason = NM_ACTIVE_CONNECTION_STATE_REASON_DEVICE_DISCONNECTED;
 
         g_signal_handlers_disconnect_by_func(device, G_CALLBACK(device_notify), active);
         break;
