@@ -533,6 +533,9 @@ GPtrArray *_nm_setting_bridge_port_get_vlans(NMSettingBridgePort *setting);
 
 GArray *_nm_setting_connection_get_secondaries(NMSettingConnection *setting);
 
+gboolean nm_setting_connection_permissions_user_allowed_by_uid(NMSettingConnection *setting,
+                                                               gulong               uid);
+
 /*****************************************************************************/
 
 NMSettingBluetooth *_nm_connection_get_setting_bluetooth_for_nap(NMConnection *connection);

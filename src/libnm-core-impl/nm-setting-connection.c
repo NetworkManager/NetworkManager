@@ -355,19 +355,10 @@ invalid:
     return TRUE;
 }
 
-/**
- * nm_setting_connection_permissions_user_allowed:
- * @setting: the #NMSettingConnection
- * @uname: the user name to check permissions for
- *
- * Checks whether the given username is allowed to view/access this connection.
- *
- * Returns: %TRUE if the requested user is allowed to view this connection,
- * %FALSE if the given user is not allowed to view this connection
- */
-gboolean
-nm_setting_connection_permissions_user_allowed(NMSettingConnection *setting, const char *uname)
+static gboolean
+_permissions_user_allowed(NMSettingConnection *setting, const char *uname, gulong uid)
 {
+    gs_free char               *uname_free = NULL;
     NMSettingConnectionPrivate *priv;
     guint                       i;
 
@@ -384,11 +375,49 @@ nm_setting_connection_permissions_user_allowed(NMSettingConnection *setting, con
     for (i = 0; i < priv->permissions->len; i++) {
         const Permission *permission = &nm_g_array_index(priv->permissions, Permission, i);
 
-        if (permission->ptype == PERM_TYPE_USER && nm_streq(permission->item, uname))
+        if (permission->ptype != PERM_TYPE_USER)
+            continue;
+
+        if (!uname) {
+            if (uid != G_MAXULONG)
+                uname_free = nm_utils_uid_to_name(uid);
+            if (!uname_free)
+                return FALSE;
+            uname = uname_free;
+        }
+
+        if (nm_streq(permission->item, uname))
             return TRUE;
     }
 
     return FALSE;
+}
+
+/**
+ * nm_setting_connection_permissions_user_allowed:
+ * @setting: the #NMSettingConnection
+ * @uname: the user name to check permissions for
+ *
+ * Checks whether the given username is allowed to view/access this connection.
+ *
+ * Returns: %TRUE if the requested user is allowed to view this connection,
+ * %FALSE if the given user is not allowed to view this connection
+ */
+gboolean
+nm_setting_connection_permissions_user_allowed(NMSettingConnection *setting, const char *uname)
+{
+    g_return_val_if_fail(NM_IS_SETTING_CONNECTION(setting), FALSE);
+    g_return_val_if_fail(uname != NULL, FALSE);
+
+    return _permissions_user_allowed(setting, uname, G_MAXULONG);
+}
+
+gboolean
+nm_setting_connection_permissions_user_allowed_by_uid(NMSettingConnection *setting, gulong uid)
+{
+    g_return_val_if_fail(NM_IS_SETTING_CONNECTION(setting), FALSE);
+
+    return _permissions_user_allowed(setting, NULL, uid);
 }
 
 /**

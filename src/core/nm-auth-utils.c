@@ -8,6 +8,7 @@
 #include "nm-auth-utils.h"
 
 #include "libnm-glib-aux/nm-c-list.h"
+#include "libnm-core-intern/nm-core-internal.h"
 #include "nm-setting-connection.h"
 #include "libnm-core-aux-intern/nm-auth-subject.h"
 #include "nm-auth-manager.h"
@@ -603,7 +604,6 @@ gboolean
 nm_auth_is_subject_in_acl(NMConnection *connection, NMAuthSubject *subject, char **out_error_desc)
 {
     NMSettingConnection *s_con;
-    gs_free char        *user = NULL;
     gulong               uid;
 
     g_return_val_if_fail(connection, FALSE);
@@ -621,13 +621,6 @@ nm_auth_is_subject_in_acl(NMConnection *connection, NMAuthSubject *subject, char
     if (0 == uid)
         return TRUE;
 
-    user = nm_utils_uid_to_name(uid);
-    if (!user) {
-        NM_SET_OUT(out_error_desc,
-                   g_strdup_printf("Could not determine username for uid %lu", uid));
-        return FALSE;
-    }
-
     s_con = nm_connection_get_setting_connection(connection);
     if (!s_con) {
         /* This can only happen when called from AddAndActivate, so we know
@@ -637,7 +630,7 @@ nm_auth_is_subject_in_acl(NMConnection *connection, NMAuthSubject *subject, char
     }
 
     /* Match the username returned by the session check to a user in the ACL */
-    if (!nm_setting_connection_permissions_user_allowed(s_con, user)) {
+    if (!nm_setting_connection_permissions_user_allowed_by_uid(s_con, uid)) {
         NM_SET_OUT(out_error_desc,
                    g_strdup_printf("uid %lu has no permission to perform this operation", uid));
         return FALSE;
