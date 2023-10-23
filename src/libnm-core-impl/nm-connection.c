@@ -986,7 +986,7 @@ _normalize_connection_secondaries(NMConnection *self)
         if (!nm_uuid_is_valid_nm(s, &uuid_is_normalized, uuid_normalized))
             continue;
 
-        if (nm_strv_find_first(strv, j, uuid_is_normalized ? uuid_normalized : s) >= 0)
+        if (nm_strv_contains(strv, j, uuid_is_normalized ? uuid_normalized : s))
             continue;
 
         strv[j++] = uuid_is_normalized ? g_strdup(uuid_normalized) : g_steal_pointer(&s);

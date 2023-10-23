@@ -529,12 +529,10 @@ gssize _nm_strv_find_first(const char *const *list, gssize len, const char *need
 
 gboolean nm_strv_has_duplicate(const char *const *list, gssize len, gboolean is_sorted);
 
-const char **nm_strv_cleanup_const(const char **strv, gboolean skip_empty, gboolean skip_repeated);
+const char **nm_strv_cleanup_const(const char **strv, gboolean no_empty, gboolean no_duplicates);
 
-char **nm_strv_cleanup(char   **strv,
-                       gboolean strip_whitespace,
-                       gboolean skip_empty,
-                       gboolean skip_repeated);
+char **
+nm_strv_cleanup(char **strv, gboolean strip_whitespace, gboolean no_empty, gboolean no_duplicates);
 
 gboolean nm_strv_is_same_unordered(const char *const *strv1,
                                    gssize             len1,

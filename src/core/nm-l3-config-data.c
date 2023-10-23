@@ -324,7 +324,7 @@ _strv_ptrarray_merge(GPtrArray **p_dst, const GPtrArray *src)
         const char *s = src->pdata[i];
 
         if (dst_initial_len > 0
-            && nm_strv_find_first((const char *const *) ((*p_dst)->pdata), dst_initial_len, s) >= 0)
+            && nm_strv_contains((const char *const *) ((*p_dst)->pdata), dst_initial_len, s))
             continue;
 
         g_ptr_array_add(*p_dst, g_strdup(s));
