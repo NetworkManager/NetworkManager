@@ -358,7 +358,7 @@ invalid:
 static gboolean
 _permissions_user_allowed(NMSettingConnection *setting, const char *uname, gulong uid)
 {
-    gs_free char               *uname_free = NULL;
+    gs_free struct passwd      *pw = NULL;
     NMSettingConnectionPrivate *priv;
     guint                       i;
 
@@ -379,11 +379,12 @@ _permissions_user_allowed(NMSettingConnection *setting, const char *uname, gulon
             continue;
 
         if (!uname) {
-            if (uid != G_MAXULONG)
-                uname_free = nm_utils_uid_to_name(uid);
-            if (!uname_free)
+            if (uid != G_MAXULONG) {
+                pw    = nm_getpwuid(uid);
+                uname = nm_passwd_name(pw);
+            }
+            if (!uname)
                 return FALSE;
-            uname = uname_free;
         }
 
         if (nm_streq(permission->item, uname))
