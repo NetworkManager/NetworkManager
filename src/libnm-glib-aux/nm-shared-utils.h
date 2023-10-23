@@ -3196,6 +3196,12 @@ gboolean nm_utils_is_localhost(const char *name);
 
 gboolean nm_utils_is_specific_hostname(const char *name);
 
+struct passwd;
+
+struct passwd *nm_getpwuid(uid_t uid);
+
+const char *nm_passwd_name(const struct passwd *pw);
+
 char    *nm_utils_uid_to_name(uid_t uid);
 gboolean nm_utils_name_to_uid(const char *name, uid_t *out_uid);
 

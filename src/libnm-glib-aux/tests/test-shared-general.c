@@ -2597,8 +2597,9 @@ test_uid_to_name(void)
     int i;
 
     for (i = 0; i < 20; i++) {
-        gs_free char *name = NULL;
-        uid_t         uid;
+        gs_free char          *name = NULL;
+        gs_free struct passwd *pw   = NULL;
+        uid_t                  uid;
 
         if (i < 5)
             uid = i;
@@ -2607,6 +2608,9 @@ test_uid_to_name(void)
 
         name = nm_utils_uid_to_name(uid);
         g_assert_cmpstr(name, ==, _getpwuid_name(uid));
+
+        pw = nm_getpwuid(uid);
+        g_assert_cmpstr(name, ==, nm_passwd_name(pw));
     }
 }
 
