@@ -5,6 +5,8 @@
 
 #include "libnm-glib-aux/nm-default-glib-i18n-prog.h"
 
+#include <pwd.h>
+
 #include "libnm-std-aux/unaligned.h"
 #include "libnm-glib-aux/nm-random-utils.h"
 #include "libnm-glib-aux/nm-str-buf.h"
@@ -2580,6 +2582,36 @@ test_nm_prioq(void)
 
 /*****************************************************************************/
 
+static const char *
+_getpwuid_name(uid_t uid)
+{
+    static struct passwd *pw;
+
+    pw = getpwuid(uid);
+    return pw ? nm_str_not_empty(pw->pw_name) : NULL;
+}
+
+static void
+test_uid_to_name(void)
+{
+    int i;
+
+    for (i = 0; i < 20; i++) {
+        gs_free char *name = NULL;
+        uid_t         uid;
+
+        if (i < 5)
+            uid = i;
+        else
+            uid = nmtst_get_rand_uint32() % 2000u;
+
+        name = nm_utils_uid_to_name(uid);
+        g_assert_cmpstr(name, ==, _getpwuid_name(uid));
+    }
+}
+
+/*****************************************************************************/
+
 NMTST_DEFINE();
 
 int
@@ -2630,6 +2662,7 @@ main(int argc, char **argv)
     g_test_add_func("/general/test_garray", test_garray);
     g_test_add_func("/general/test_nm_prioq", test_nm_prioq);
     g_test_add_func("/general/test_nm_random", test_nm_random);
+    g_test_add_func("/general/test_uid_to_name", test_uid_to_name);
 
     return g_test_run();
 }
