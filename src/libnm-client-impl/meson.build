@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: LGPL-2.1-or-later
 
+libnm_client_impl_inc = include_directories('.')
+
 libnm_client_impl_sources = files(
   'nm-access-point.c',
   'nm-active-connection.c',
