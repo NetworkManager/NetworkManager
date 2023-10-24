@@ -1,3 +1,45 @@
+Triaging issues
+---------------
+
+Issue tracker: https://gitlab.freedesktop.org/NetworkManager/NetworkManager/-/issues
+
+Help other maintainers with the triage following these guidelines. This way, it
+will be easier to find issues that require attention.
+
+- Assign an issue to yourself if you are going to take care of providing the
+  required help. Assign it to another person if he/she is more suitable to help,
+  but do this quite rarely so we take care of not overloading to anyone.
+
+- Add suitable labels to indicate the state of open issues:
+
+  - `need-info`: waiting for info or feedback from anyone.
+
+  - `need-discussion`: something is not clear about what to do, or about if
+    something has to be done at all. The problem should be discussed by the
+    maintainers and/or with the reporter and/or other interested parts.
+
+  - `triaged`: if the problem is properly explained and understood. Add also
+    one of the labels `bug` or `RFE` as corresponds.
+  
+  - `help-wanted`: request external contributors to work on this. If it's a
+    simple fix, add `good-first-issue` too.
+
+  - `work-in-progress`: anyone is already working on a Merge Request, so others.
+
+  - `blocked`: the issue is waiting for something that blocks its progress
+
+  - `close-proposed`: there are good reasons to reject the request (explain
+    those reasons when adding the label). If after a reasonable time there is no
+    additional info that is good enouch to reconsider it, the issue will be
+    closed.  
+    It is not mandatory to always use this tag before closing an issue, but
+    usually desirable.
+
+- Close an issue if the problem is already solved, either via a code fix or via
+  some information that has been provided. Also if the request is clearly
+  incorrect or doesn't fit at all in the project.
+
+
 Merging Merge Requests
 ----------------------
 

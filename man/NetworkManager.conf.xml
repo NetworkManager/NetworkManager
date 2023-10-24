@@ -648,7 +648,9 @@ level=TRACE
 domains=ALL
 </programlisting>
     and restart the daemon with <command>systemctl restart NetworkManager</command>. Then
-    reproduce the problem. You can find the logs in syslog (for example <command>journalctl</command>).
+    reproduce the problem. You can find the logs in syslog (for example
+    <command>journalctl</command>, or <command>journalctl -u NetworkManager</command>
+    to show only logs from NetworkManager).
     </para>
 
     <para>
