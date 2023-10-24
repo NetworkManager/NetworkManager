@@ -79,9 +79,9 @@ struct _NMConnectivityCheckHandle {
         struct curl_slist *request_headers;
         struct curl_slist *hosts;
 
-        gsize response_good_cnt;
+        GSource *curl_timer;
 
-        guint curl_timer;
+        gsize response_good_cnt;
     } concheck;
 #endif
 
@@ -241,7 +241,7 @@ cb_data_complete(NMConnectivityCheckHandle *cb_data,
         curl_slist_free_all(cb_data->concheck.request_headers);
         curl_slist_free_all(cb_data->concheck.hosts);
     }
-    nm_clear_g_source(&cb_data->concheck.curl_timer);
+    nm_clear_g_source_inst(&cb_data->concheck.curl_timer);
     nm_clear_g_cancellable(&cb_data->concheck.resolve_cancellable);
 #endif
 
@@ -406,10 +406,10 @@ _con_curl_timeout_cb(gpointer user_data)
 {
     NMConnectivityCheckHandle *cb_data = user_data;
 
-    cb_data->concheck.curl_timer = 0;
+    nm_clear_g_source_inst(&cb_data->concheck.curl_timer);
     _con_curl_check_connectivity(cb_data->concheck.curl_mhandle, CURL_SOCKET_TIMEOUT, 0);
     _complete_queued(cb_data->self);
-    return G_SOURCE_REMOVE;
+    return G_SOURCE_CONTINUE;
 }
 
 static int
@@ -417,9 +417,11 @@ multi_timer_cb(CURLM *multi, long timeout_msec, void *userdata)
 {
     NMConnectivityCheckHandle *cb_data = userdata;
 
-    nm_clear_g_source(&cb_data->concheck.curl_timer);
-    if (timeout_msec != -1)
-        cb_data->concheck.curl_timer = g_timeout_add(timeout_msec, _con_curl_timeout_cb, cb_data);
+    nm_clear_g_source_inst(&cb_data->concheck.curl_timer);
+    if (timeout_msec != -1) {
+        cb_data->concheck.curl_timer =
+            nm_g_timeout_add_source(timeout_msec, _con_curl_timeout_cb, cb_data);
+    }
     return 0;
 }
 
