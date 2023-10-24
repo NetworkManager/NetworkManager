@@ -30,13 +30,10 @@ int         _nm_simple_connection_private_offset;
  */
 struct _NMSimpleConnection {
     GObject parent;
-    /* In the past, this struct was public API. Preserve ABI! */
 };
 
 struct _NMSimpleConnectionClass {
     GObjectClass parent;
-    /* In the past, this struct was public API. Preserve ABI! */
-    gpointer padding[4];
 };
 
 static void nm_simple_connection_interface_init(NMConnectionInterface *iface);

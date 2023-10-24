@@ -39,20 +39,18 @@ typedef struct {
  * OLPC Wireless Mesh Settings
  */
 struct _NMSettingOlpcMesh {
-    NMSetting parent;
-    /* In the past, this struct was public API. Preserve ABI! */
+    NMSetting                parent;
+    NMSettingOlpcMeshPrivate _priv;
 };
 
 struct _NMSettingOlpcMeshClass {
     NMSettingClass parent;
-    /* In the past, this struct was public API. Preserve ABI! */
-    gpointer padding[4];
 };
 
 G_DEFINE_TYPE(NMSettingOlpcMesh, nm_setting_olpc_mesh, NM_TYPE_SETTING)
 
 #define NM_SETTING_OLPC_MESH_GET_PRIVATE(o) \
-    (G_TYPE_INSTANCE_GET_PRIVATE((o), NM_TYPE_SETTING_OLPC_MESH, NMSettingOlpcMeshPrivate))
+    _NM_GET_PRIVATE(o, NMSettingOlpcMesh, NM_IS_SETTING_OLPC_MESH, NMSetting)
 
 /*****************************************************************************/
 
@@ -171,8 +169,6 @@ nm_setting_olpc_mesh_class_init(NMSettingOlpcMeshClass *klass)
     NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
     GArray         *properties_override = _nm_sett_info_property_override_create_array();
 
-    g_type_class_add_private(klass, sizeof(NMSettingOlpcMeshPrivate));
-
     object_class->get_property = _nm_setting_property_get_property_direct;
     object_class->set_property = _nm_setting_property_set_property_direct;
 
@@ -231,5 +227,5 @@ nm_setting_olpc_mesh_class_init(NMSettingOlpcMeshClass *klass)
                              NM_META_SETTING_TYPE_OLPC_MESH,
                              NULL,
                              properties_override,
-                             NM_SETT_INFO_PRIVATE_OFFSET_FROM_CLASS);
+                             G_STRUCT_OFFSET(NMSettingOlpcMesh, _priv));
 }

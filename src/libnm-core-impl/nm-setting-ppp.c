@@ -68,20 +68,17 @@ typedef struct {
  * Point-to-Point Protocol Settings
  */
 struct _NMSettingPpp {
-    NMSetting parent;
-    /* In the past, this struct was public API. Preserve ABI! */
+    NMSetting           parent;
+    NMSettingPppPrivate _priv;
 };
 
 struct _NMSettingPppClass {
     NMSettingClass parent;
-    /* In the past, this struct was public API. Preserve ABI! */
-    gpointer padding[4];
 };
 
 G_DEFINE_TYPE(NMSettingPpp, nm_setting_ppp, NM_TYPE_SETTING)
 
-#define NM_SETTING_PPP_GET_PRIVATE(o) \
-    (G_TYPE_INSTANCE_GET_PRIVATE((o), NM_TYPE_SETTING_PPP, NMSettingPppPrivate))
+#define NM_SETTING_PPP_GET_PRIVATE(o) _NM_GET_PRIVATE(o, NMSettingPpp, NM_IS_SETTING_PPP, NMSetting)
 
 /*****************************************************************************/
 
@@ -402,8 +399,6 @@ nm_setting_ppp_class_init(NMSettingPppClass *klass)
     NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
     GArray         *properties_override = _nm_sett_info_property_override_create_array();
 
-    g_type_class_add_private(klass, sizeof(NMSettingPppPrivate));
-
     object_class->get_property = _nm_setting_property_get_property_direct;
     object_class->set_property = _nm_setting_property_set_property_direct;
 
@@ -698,5 +693,5 @@ nm_setting_ppp_class_init(NMSettingPppClass *klass)
                              NM_META_SETTING_TYPE_PPP,
                              NULL,
                              properties_override,
-                             NM_SETT_INFO_PRIVATE_OFFSET_FROM_CLASS);
+                             G_STRUCT_OFFSET(NMSettingPpp, _priv));
 }

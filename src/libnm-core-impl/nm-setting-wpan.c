@@ -57,7 +57,8 @@ typedef struct {
  * Since: 1.14
  */
 struct _NMSettingWpan {
-    NMSetting parent;
+    NMSetting            parent;
+    NMSettingWpanPrivate _priv;
 };
 
 struct _NMSettingWpanClass {
@@ -67,7 +68,7 @@ struct _NMSettingWpanClass {
 G_DEFINE_TYPE(NMSettingWpan, nm_setting_wpan, NM_TYPE_SETTING)
 
 #define NM_SETTING_WPAN_GET_PRIVATE(o) \
-    (G_TYPE_INSTANCE_GET_PRIVATE((o), NM_TYPE_SETTING_WPAN, NMSettingWpanPrivate))
+    _NM_GET_PRIVATE(o, NMSettingWpan, NM_IS_SETTING_WPAN, NMSetting)
 
 /*****************************************************************************/
 
@@ -228,8 +229,6 @@ nm_setting_wpan_class_init(NMSettingWpanClass *klass)
     NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
     GArray         *properties_override = _nm_sett_info_property_override_create_array();
 
-    g_type_class_add_private(setting_class, sizeof(NMSettingWpanPrivate));
-
     object_class->get_property = _nm_setting_property_get_property_direct;
     object_class->set_property = _nm_setting_property_set_property_direct;
 
@@ -334,5 +333,5 @@ nm_setting_wpan_class_init(NMSettingWpanClass *klass)
                              NM_META_SETTING_TYPE_WPAN,
                              NULL,
                              properties_override,
-                             NM_SETT_INFO_PRIVATE_OFFSET_FROM_CLASS);
+                             G_STRUCT_OFFSET(NMSettingWpan, _priv));
 }

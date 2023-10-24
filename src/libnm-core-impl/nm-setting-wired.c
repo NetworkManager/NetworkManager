@@ -75,20 +75,18 @@ typedef struct {
  * Wired Ethernet Settings
  */
 struct _NMSettingWired {
-    NMSetting parent;
-    /* In the past, this struct was public API. Preserve ABI! */
+    NMSetting             parent;
+    NMSettingWiredPrivate _priv;
 };
 
 struct _NMSettingWiredClass {
     NMSettingClass parent;
-    /* In the past, this struct was public API. Preserve ABI! */
-    gpointer padding[4];
 };
 
 G_DEFINE_TYPE(NMSettingWired, nm_setting_wired, NM_TYPE_SETTING)
 
 #define NM_SETTING_WIRED_GET_PRIVATE(o) \
-    (G_TYPE_INSTANCE_GET_PRIVATE((o), NM_TYPE_SETTING_WIRED, NMSettingWiredPrivate))
+    _NM_GET_PRIVATE(o, NMSettingWired, NM_IS_SETTING_WIRED, NMSetting)
 
 /*****************************************************************************/
 
@@ -1172,8 +1170,6 @@ nm_setting_wired_class_init(NMSettingWiredClass *klass)
     NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
     GArray         *properties_override = _nm_sett_info_property_override_create_array();
 
-    g_type_class_add_private(klass, sizeof(NMSettingWiredPrivate));
-
     object_class->get_property = get_property;
     object_class->set_property = set_property;
     object_class->finalize     = finalize;
@@ -1675,5 +1671,5 @@ nm_setting_wired_class_init(NMSettingWiredClass *klass)
                              NM_META_SETTING_TYPE_WIRED,
                              NULL,
                              properties_override,
-                             NM_SETT_INFO_PRIVATE_OFFSET_FROM_CLASS);
+                             G_STRUCT_OFFSET(NMSettingWired, _priv));
 }

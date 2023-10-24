@@ -23,10 +23,6 @@
 
 /*****************************************************************************/
 
-typedef struct {
-    int dummy;
-} NMSettingGenericPrivate;
-
 /**
  * NMSettingGeneric:
  *
@@ -34,19 +30,13 @@ typedef struct {
  */
 struct _NMSettingGeneric {
     NMSetting parent;
-    /* In the past, this struct was public API. Preserve ABI! */
 };
 
 struct _NMSettingGenericClass {
     NMSettingClass parent;
-    /* In the past, this struct was public API. Preserve ABI! */
-    gpointer padding[4];
 };
 
 G_DEFINE_TYPE(NMSettingGeneric, nm_setting_generic, NM_TYPE_SETTING)
-
-#define NM_SETTING_GENERIC_GET_PRIVATE(o) \
-    (G_TYPE_INSTANCE_GET_PRIVATE((o), NM_TYPE_SETTING_GENERIC, NMSettingGenericPrivate))
 
 /*****************************************************************************/
 
@@ -71,8 +61,6 @@ static void
 nm_setting_generic_class_init(NMSettingGenericClass *klass)
 {
     NMSettingClass *setting_class = NM_SETTING_CLASS(klass);
-
-    g_type_class_add_private(klass, sizeof(NMSettingGenericPrivate));
 
     _nm_setting_class_commit(setting_class, NM_META_SETTING_TYPE_GENERIC, NULL, NULL, 0);
 }

@@ -42,20 +42,18 @@ typedef struct {
  * Serial Link Settings
  */
 struct _NMSettingSerial {
-    NMSetting parent;
-    /* In the past, this struct was public API. Preserve ABI! */
+    NMSetting              parent;
+    NMSettingSerialPrivate _priv;
 };
 
 struct _NMSettingSerialClass {
     NMSettingClass parent;
-    /* In the past, this struct was public API. Preserve ABI! */
-    gpointer padding[4];
 };
 
 G_DEFINE_TYPE(NMSettingSerial, nm_setting_serial, NM_TYPE_SETTING)
 
 #define NM_SETTING_SERIAL_GET_PRIVATE(o) \
-    (G_TYPE_INSTANCE_GET_PRIVATE((o), NM_TYPE_SETTING_SERIAL, NMSettingSerialPrivate))
+    _NM_GET_PRIVATE(o, NMSettingSerial, NM_IS_SETTING_SERIAL, NMSetting)
 
 /*****************************************************************************/
 
@@ -226,8 +224,6 @@ nm_setting_serial_class_init(NMSettingSerialClass *klass)
     NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
     GArray         *properties_override = _nm_sett_info_property_override_create_array();
 
-    g_type_class_add_private(klass, sizeof(NMSettingSerialPrivate));
-
     object_class->get_property = get_property;
     object_class->set_property = set_property;
 
@@ -341,5 +337,5 @@ nm_setting_serial_class_init(NMSettingSerialClass *klass)
                              NM_META_SETTING_TYPE_SERIAL,
                              NULL,
                              properties_override,
-                             NM_SETT_INFO_PRIVATE_OFFSET_FROM_CLASS);
+                             G_STRUCT_OFFSET(NMSettingSerial, _priv));
 }

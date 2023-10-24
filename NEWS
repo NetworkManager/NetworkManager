@@ -1,4 +1,13 @@
 =============================================
+NetworkManager-1.46
+Overview of changes since NetworkManager-1.46
+=============================================
+
+* Change internal ABI of NMSetting types and NMSimpleConnection. The layout of
+  these structs was already hidden from public headers since 1.34 and this change
+  should not be noticeable.
+
+=============================================
 NetworkManager-1.44
 Overview of changes since NetworkManager-1.42
 =============================================

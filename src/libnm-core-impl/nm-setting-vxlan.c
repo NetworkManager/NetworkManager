@@ -66,20 +66,18 @@ typedef struct {
  * VXLAN Settings
  */
 struct _NMSettingVxlan {
-    NMSetting parent;
-    /* In the past, this struct was public API. Preserve ABI! */
+    NMSetting             parent;
+    NMSettingVxlanPrivate _priv;
 };
 
 struct _NMSettingVxlanClass {
     NMSettingClass parent;
-    /* In the past, this struct was public API. Preserve ABI! */
-    gpointer padding[4];
 };
 
 G_DEFINE_TYPE(NMSettingVxlan, nm_setting_vxlan, NM_TYPE_SETTING)
 
 #define NM_SETTING_VXLAN_GET_PRIVATE(o) \
-    (G_TYPE_INSTANCE_GET_PRIVATE((o), NM_TYPE_SETTING_VXLAN, NMSettingVxlanPrivate))
+    _NM_GET_PRIVATE(o, NMSettingVxlan, NM_IS_SETTING_VXLAN, NMSetting)
 
 /*****************************************************************************/
 
@@ -428,8 +426,6 @@ nm_setting_vxlan_class_init(NMSettingVxlanClass *klass)
     NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
     GArray         *properties_override = _nm_sett_info_property_override_create_array();
 
-    g_type_class_add_private(klass, sizeof(NMSettingVxlanPrivate));
-
     object_class->get_property = _nm_setting_property_get_property_direct;
     object_class->set_property = _nm_setting_property_set_property_direct;
 
@@ -722,5 +718,5 @@ nm_setting_vxlan_class_init(NMSettingVxlanClass *klass)
                              NM_META_SETTING_TYPE_VXLAN,
                              NULL,
                              properties_override,
-                             NM_SETT_INFO_PRIVATE_OFFSET_FROM_CLASS);
+                             G_STRUCT_OFFSET(NMSettingVxlan, _priv));
 }

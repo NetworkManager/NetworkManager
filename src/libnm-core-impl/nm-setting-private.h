@@ -80,6 +80,8 @@ void _nm_connection_private_clear(NMConnectionPrivate *priv);
 
 /*****************************************************************************/
 
+struct _NMSettingPrivate;
+
 /**
  * NMSetting:
  *
@@ -87,14 +89,12 @@ void _nm_connection_private_clear(NMConnectionPrivate *priv);
  * It should only be accessed through the functions described below.
  */
 struct _NMSetting {
-    GObject parent;
-    /* In the past, this struct was public API. Preserve ABI! */
+    GObject                   parent;
+    struct _NMSettingPrivate *_priv;
 };
 
 struct _NMSettingClass {
     GObjectClass parent;
-
-    /* In the past, this struct was public API. Preserve ABI! */
 
     int (*verify)(NMSetting *setting, NMConnection *connection, GError **error);
 
@@ -119,8 +119,6 @@ struct _NMSettingClass {
                               NMSetting                       *setting,
                               NMSettingClearSecretsWithFlagsFn func,
                               gpointer                         user_data);
-
-    void (*padding_1)(void);
 
     void (*duplicate_copy_properties)(const struct _NMSettInfoSetting *sett_info,
                                       NMSetting                       *src,
@@ -158,30 +156,13 @@ struct _NMSettingClass {
  */
 struct _NMSettingIPConfig {
     NMSetting parent;
-    /* In the past, this struct was public API. Preserve ABI! */
 };
 
 struct _NMSettingIPConfigClass {
     NMSettingClass parent;
-
-    /* In the past, this struct was public API. Preserve ABI! */
-
-    union {
-        gpointer _dummy1;
-        int      private_offset;
-    };
-
-    union {
-        gpointer _dummy2;
-        gint8    addr_family;
-    };
-
-    union {
-        gpointer _dummy3;
-        bool     is_ipv4;
-    };
-
-    gpointer padding[5];
+    int            private_offset;
+    gint8          addr_family;
+    bool           is_ipv4;
 };
 
 typedef struct {

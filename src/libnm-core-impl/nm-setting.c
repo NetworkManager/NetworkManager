@@ -58,14 +58,13 @@ typedef struct {
 
 NM_GOBJECT_PROPERTIES_DEFINE(NMSetting, PROP_NAME, );
 
-typedef struct {
+typedef struct _NMSettingPrivate {
     GenData *gendata;
 } NMSettingPrivate;
 
 G_DEFINE_ABSTRACT_TYPE(NMSetting, nm_setting, G_TYPE_OBJECT)
 
-#define NM_SETTING_GET_PRIVATE(o) \
-    (G_TYPE_INSTANCE_GET_PRIVATE((o), NM_TYPE_SETTING, NMSettingPrivate))
+#define NM_SETTING_GET_PRIVATE(o) _NM_GET_PRIVATE_PTR(o, NMSetting, NM_IS_SETTING)
 
 /*****************************************************************************/
 
@@ -429,17 +428,7 @@ has_property_type:
 
     setting_class->setting_info = &nm_meta_setting_infos[meta_type];
     sett_info->setting_class    = setting_class;
-
-    if (private_offset == NM_SETT_INFO_PRIVATE_OFFSET_FROM_CLASS) {
-        int o;
-
-        o = g_type_class_get_instance_private_offset(setting_class);
-        nm_assert(o != NM_SETT_INFO_PRIVATE_OFFSET_FROM_CLASS);
-        nm_assert(o > G_MININT16);
-        nm_assert(o < 0);
-        private_offset = o;
-    }
-    sett_info->private_offset = private_offset;
+    sett_info->private_offset   = private_offset;
 
     if (detail)
         sett_info->detail = *detail;
@@ -4374,7 +4363,13 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
 
 static void
 nm_setting_init(NMSetting *setting)
-{}
+{
+    NMSettingPrivate *priv;
+
+    priv = G_TYPE_INSTANCE_GET_PRIVATE(setting, NM_TYPE_SETTING, NMSettingPrivate);
+
+    setting->_priv = priv;
+}
 
 static void
 constructed(GObject *object)

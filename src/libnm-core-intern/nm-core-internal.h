@@ -920,8 +920,6 @@ struct _NMSettInfoSetting {
     NMSettInfoSettDetail detail;
 };
 
-#define NM_SETT_INFO_PRIVATE_OFFSET_FROM_CLASS ((gint16) G_MININT16)
-
 static inline gpointer
 _nm_setting_get_private(NMSetting *self, const NMSettInfoSetting *sett_info, guint16 offset)
 {

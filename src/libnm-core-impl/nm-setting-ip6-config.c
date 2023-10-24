@@ -65,20 +65,18 @@ typedef struct {
  * IPv6 Settings
  */
 struct _NMSettingIP6Config {
-    NMSettingIPConfig parent;
-    /* In the past, this struct was public API. Preserve ABI! */
+    NMSettingIPConfig         parent;
+    NMSettingIP6ConfigPrivate _priv;
 };
 
 struct _NMSettingIP6ConfigClass {
     NMSettingIPConfigClass parent;
-    /* In the past, this struct was public API. Preserve ABI! */
-    gpointer padding[4];
 };
 
 G_DEFINE_TYPE(NMSettingIP6Config, nm_setting_ip6_config, NM_TYPE_SETTING_IP_CONFIG)
 
 #define NM_SETTING_IP6_CONFIG_GET_PRIVATE(o) \
-    (G_TYPE_INSTANCE_GET_PRIVATE((o), NM_TYPE_SETTING_IP6_CONFIG, NMSettingIP6ConfigPrivate))
+    _NM_GET_PRIVATE(o, NMSettingIP6Config, NM_IS_SETTING_IP6_CONFIG, NMSettingIPConfig, NMSetting)
 
 /*****************************************************************************/
 
@@ -628,14 +626,12 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
     NMSettingIPConfigClass *setting_ip_config_class = NM_SETTING_IP_CONFIG_CLASS(klass);
     GArray *properties_override = _nm_sett_info_property_override_create_array_ip_config(AF_INET6);
 
-    g_type_class_add_private(klass, sizeof(NMSettingIP6ConfigPrivate));
-
     object_class->get_property = _nm_setting_property_get_property_direct;
     object_class->set_property = _nm_setting_property_set_property_direct;
 
     setting_class->verify = verify;
 
-    setting_ip_config_class->private_offset = g_type_class_get_instance_private_offset(klass);
+    setting_ip_config_class->private_offset = G_STRUCT_OFFSET(NMSettingIP6Config, _priv);
     setting_ip_config_class->is_ipv4        = FALSE;
     setting_ip_config_class->addr_family    = AF_INET6;
 
@@ -1444,5 +1440,5 @@ nm_setting_ip6_config_class_init(NMSettingIP6ConfigClass *klass)
                              NM_META_SETTING_TYPE_IP6_CONFIG,
                              NULL,
                              properties_override,
-                             setting_ip_config_class->private_offset);
+                             G_STRUCT_OFFSET(NMSettingIP6Config, _priv));
 }

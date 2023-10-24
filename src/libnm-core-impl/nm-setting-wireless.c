@@ -72,20 +72,18 @@ typedef struct {
  * Wi-Fi Settings
  */
 struct _NMSettingWireless {
-    NMSetting parent;
-    /* In the past, this struct was public API. Preserve ABI! */
+    NMSetting                parent;
+    NMSettingWirelessPrivate _priv;
 };
 
 struct _NMSettingWirelessClass {
     NMSettingClass parent;
-    /* In the past, this struct was public API. Preserve ABI! */
-    gpointer padding[4];
 };
 
 G_DEFINE_TYPE(NMSettingWireless, nm_setting_wireless, NM_TYPE_SETTING)
 
 #define NM_SETTING_WIRELESS_GET_PRIVATE(o) \
-    (G_TYPE_INSTANCE_GET_PRIVATE((o), NM_TYPE_SETTING_WIRELESS, NMSettingWirelessPrivate))
+    _NM_GET_PRIVATE(o, NMSettingWireless, NM_IS_SETTING_WIRELESS, NMSetting)
 
 /*****************************************************************************/
 
@@ -1309,8 +1307,6 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
     NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
     GArray         *properties_override = _nm_sett_info_property_override_create_array();
 
-    g_type_class_add_private(klass, sizeof(NMSettingWirelessPrivate));
-
     object_class->set_property = set_property;
     object_class->get_property = get_property;
     object_class->finalize     = finalize;
@@ -1925,5 +1921,5 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
                              NM_META_SETTING_TYPE_WIRELESS,
                              NULL,
                              properties_override,
-                             NM_SETT_INFO_PRIVATE_OFFSET_FROM_CLASS);
+                             G_STRUCT_OFFSET(NMSettingWireless, _priv));
 }

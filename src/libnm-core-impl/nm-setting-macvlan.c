@@ -40,20 +40,18 @@ typedef struct {
  * MAC VLAN Settings
  */
 struct _NMSettingMacvlan {
-    NMSetting parent;
-    /* In the past, this struct was public API. Preserve ABI! */
+    NMSetting               parent;
+    NMSettingMacvlanPrivate _priv;
 };
 
 struct _NMSettingMacvlanClass {
     NMSettingClass parent;
-    /* In the past, this struct was public API. Preserve ABI! */
-    gpointer padding[4];
 };
 
 G_DEFINE_TYPE(NMSettingMacvlan, nm_setting_macvlan, NM_TYPE_SETTING)
 
 #define NM_SETTING_MACVLAN_GET_PRIVATE(o) \
-    (G_TYPE_INSTANCE_GET_PRIVATE((o), NM_TYPE_SETTING_MACVLAN, NMSettingMacvlanPrivate))
+    _NM_GET_PRIVATE(o, NMSettingMacvlan, NM_IS_SETTING_MACVLAN, NMSetting)
 
 /*****************************************************************************/
 
@@ -207,8 +205,6 @@ nm_setting_macvlan_class_init(NMSettingMacvlanClass *klass)
     NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
     GArray         *properties_override = _nm_sett_info_property_override_create_array();
 
-    g_type_class_add_private(klass, sizeof(NMSettingMacvlanPrivate));
-
     object_class->get_property = _nm_setting_property_get_property_direct;
     object_class->set_property = _nm_setting_property_set_property_direct;
 
@@ -289,5 +285,5 @@ nm_setting_macvlan_class_init(NMSettingMacvlanClass *klass)
                              NM_META_SETTING_TYPE_MACVLAN,
                              NULL,
                              properties_override,
-                             NM_SETT_INFO_PRIVATE_OFFSET_FROM_CLASS);
+                             G_STRUCT_OFFSET(NMSettingMacvlan, _priv));
 }

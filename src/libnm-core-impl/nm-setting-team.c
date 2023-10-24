@@ -745,20 +745,18 @@ typedef struct {
  * Teaming Settings
  */
 struct _NMSettingTeam {
-    NMSetting parent;
-    /* In the past, this struct was public API. Preserve ABI! */
+    NMSetting            parent;
+    NMSettingTeamPrivate _priv;
 };
 
 struct _NMSettingTeamClass {
     NMSettingClass parent;
-    /* In the past, this struct was public API. Preserve ABI! */
-    gpointer padding[4];
 };
 
 G_DEFINE_TYPE(NMSettingTeam, nm_setting_team, NM_TYPE_SETTING)
 
 #define NM_SETTING_TEAM_GET_PRIVATE(o) \
-    (G_TYPE_INSTANCE_GET_PRIVATE((o), NM_TYPE_SETTING_TEAM, NMSettingTeamPrivate))
+    _NM_GET_PRIVATE(o, NMSettingTeam, NM_IS_SETTING_TEAM, NMSetting)
 
 /*****************************************************************************/
 
@@ -1498,8 +1496,6 @@ nm_setting_team_class_init(NMSettingTeamClass *klass)
     NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
     GArray         *properties_override = _nm_sett_info_property_override_create_array();
 
-    g_type_class_add_private(klass, sizeof(NMSettingTeamPrivate));
-
     object_class->get_property = get_property;
     object_class->set_property = set_property;
     object_class->finalize     = finalize;
@@ -1842,5 +1838,5 @@ nm_setting_team_class_init(NMSettingTeamClass *klass)
                              NM_META_SETTING_TYPE_TEAM,
                              NULL,
                              properties_override,
-                             NM_SETT_INFO_PRIVATE_OFFSET_FROM_CLASS);
+                             G_STRUCT_OFFSET(NMSettingTeam, _priv));
 }

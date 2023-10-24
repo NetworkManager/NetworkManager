@@ -80,20 +80,17 @@ typedef struct {
  * VPN Settings
  */
 struct _NMSettingVpn {
-    NMSetting parent;
-    /* In the past, this struct was public API. Preserve ABI! */
+    NMSetting           parent;
+    NMSettingVpnPrivate _priv;
 };
 
 struct _NMSettingVpnClass {
     NMSettingClass parent;
-    /* In the past, this struct was public API. Preserve ABI! */
-    gpointer padding[4];
 };
 
 G_DEFINE_TYPE(NMSettingVpn, nm_setting_vpn, NM_TYPE_SETTING)
 
-#define NM_SETTING_VPN_GET_PRIVATE(o) \
-    (G_TYPE_INSTANCE_GET_PRIVATE((o), NM_TYPE_SETTING_VPN, NMSettingVpnPrivate))
+#define NM_SETTING_VPN_GET_PRIVATE(o) _NM_GET_PRIVATE(o, NMSettingVpn, NM_IS_SETTING_VPN, NMSetting)
 
 /*****************************************************************************/
 
@@ -1067,8 +1064,6 @@ nm_setting_vpn_class_init(NMSettingVpnClass *klass)
     NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
     GArray         *properties_override = _nm_sett_info_property_override_create_array();
 
-    g_type_class_add_private(klass, sizeof(NMSettingVpnPrivate));
-
     object_class->get_property = get_property;
     object_class->set_property = set_property;
     object_class->finalize     = finalize;
@@ -1211,5 +1206,5 @@ nm_setting_vpn_class_init(NMSettingVpnClass *klass)
                              NM_META_SETTING_TYPE_VPN,
                              NULL,
                              properties_override,
-                             NM_SETT_INFO_PRIVATE_OFFSET_FROM_CLASS);
+                             G_STRUCT_OFFSET(NMSettingVpn, _priv));
 }

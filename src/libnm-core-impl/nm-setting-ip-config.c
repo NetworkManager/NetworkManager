@@ -4014,7 +4014,7 @@ _NM_SETTING_IP_CONFIG_GET_PRIVATE(NMSettingIPConfig *self)
 
     klass = NM_SETTING_IP_CONFIG_GET_CLASS(self);
 
-    nm_assert(klass->private_offset < 0);
+    nm_assert(klass->private_offset > 0);
 
     return (gpointer) (((char *) ((gpointer) self)) + klass->private_offset);
 }

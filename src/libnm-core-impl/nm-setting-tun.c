@@ -46,20 +46,17 @@ typedef struct {
  * Tunnel Settings
  */
 struct _NMSettingTun {
-    NMSetting parent;
-    /* In the past, this struct was public API. Preserve ABI! */
+    NMSetting           parent;
+    NMSettingTunPrivate _priv;
 };
 
 struct _NMSettingTunClass {
     NMSettingClass parent;
-    /* In the past, this struct was public API. Preserve ABI! */
-    gpointer padding[4];
 };
 
 G_DEFINE_TYPE(NMSettingTun, nm_setting_tun, NM_TYPE_SETTING)
 
-#define NM_SETTING_TUN_GET_PRIVATE(o) \
-    (G_TYPE_INSTANCE_GET_PRIVATE((o), NM_TYPE_SETTING_TUN, NMSettingTunPrivate))
+#define NM_SETTING_TUN_GET_PRIVATE(o) _NM_GET_PRIVATE(o, NMSettingTun, NM_IS_SETTING_TUN, NMSetting)
 
 /*****************************************************************************/
 
@@ -223,8 +220,6 @@ nm_setting_tun_class_init(NMSettingTunClass *klass)
     NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
     GArray         *properties_override = _nm_sett_info_property_override_create_array();
 
-    g_type_class_add_private(klass, sizeof(NMSettingTunPrivate));
-
     object_class->get_property = _nm_setting_property_get_property_direct;
     object_class->set_property = _nm_setting_property_set_property_direct;
 
@@ -342,5 +337,5 @@ nm_setting_tun_class_init(NMSettingTunClass *klass)
                              NM_META_SETTING_TYPE_TUN,
                              NULL,
                              properties_override,
-                             NM_SETT_INFO_PRIVATE_OFFSET_FROM_CLASS);
+                             G_STRUCT_OFFSET(NMSettingTun, _priv));
 }

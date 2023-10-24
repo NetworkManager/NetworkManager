@@ -55,20 +55,18 @@ typedef struct {
  * MACSec Settings
  */
 struct _NMSettingMacsec {
-    NMSetting parent;
-    /* In the past, this struct was public API. Preserve ABI! */
+    NMSetting              parent;
+    NMSettingMacsecPrivate _priv;
 };
 
 struct _NMSettingMacsecClass {
     NMSettingClass parent;
-    /* In the past, this struct was public API. Preserve ABI! */
-    gpointer padding[4];
 };
 
 G_DEFINE_TYPE(NMSettingMacsec, nm_setting_macsec, NM_TYPE_SETTING)
 
 #define NM_SETTING_MACSEC_GET_PRIVATE(o) \
-    (G_TYPE_INSTANCE_GET_PRIVATE((o), NM_TYPE_SETTING_MACSEC, NMSettingMacsecPrivate))
+    _NM_GET_PRIVATE(o, NMSettingMacsec, NM_IS_SETTING_MACSEC, NMSetting)
 
 /*****************************************************************************/
 
@@ -436,8 +434,6 @@ nm_setting_macsec_class_init(NMSettingMacsecClass *klass)
     NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
     GArray         *properties_override = _nm_sett_info_property_override_create_array();
 
-    g_type_class_add_private(klass, sizeof(NMSettingMacsecPrivate));
-
     object_class->get_property = _nm_setting_property_get_property_direct;
     object_class->set_property = _nm_setting_property_set_property_direct;
 
@@ -604,5 +600,5 @@ nm_setting_macsec_class_init(NMSettingMacsecClass *klass)
                              NM_META_SETTING_TYPE_MACSEC,
                              NULL,
                              properties_override,
-                             NM_SETT_INFO_PRIVATE_OFFSET_FROM_CLASS);
+                             G_STRUCT_OFFSET(NMSettingMacsec, _priv));
 }

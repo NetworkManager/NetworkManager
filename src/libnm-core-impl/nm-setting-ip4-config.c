@@ -56,20 +56,18 @@ typedef struct {
  * IPv4 Settings
  */
 struct _NMSettingIP4Config {
-    NMSettingIPConfig parent;
-    /* In the past, this struct was public API. Preserve ABI! */
+    NMSettingIPConfig         parent;
+    NMSettingIP4ConfigPrivate _priv;
 };
 
 struct _NMSettingIP4ConfigClass {
     NMSettingIPConfigClass parent;
-    /* In the past, this struct was public API. Preserve ABI! */
-    gpointer padding[4];
 };
 
 G_DEFINE_TYPE(NMSettingIP4Config, nm_setting_ip4_config, NM_TYPE_SETTING_IP_CONFIG)
 
 #define NM_SETTING_IP4_CONFIG_GET_PRIVATE(o) \
-    (G_TYPE_INSTANCE_GET_PRIVATE((o), NM_TYPE_SETTING_IP4_CONFIG, NMSettingIP4ConfigPrivate))
+    _NM_GET_PRIVATE(o, NMSettingIP4Config, NM_IS_SETTING_IP4_CONFIG, NMSettingIPConfig, NMSetting)
 
 /*****************************************************************************/
 
@@ -616,14 +614,12 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
     NMSettingIPConfigClass *setting_ip_config_class = NM_SETTING_IP_CONFIG_CLASS(klass);
     GArray *properties_override = _nm_sett_info_property_override_create_array_ip_config(AF_INET);
 
-    g_type_class_add_private(klass, sizeof(NMSettingIP4ConfigPrivate));
-
     object_class->get_property = _nm_setting_property_get_property_direct;
     object_class->set_property = _nm_setting_property_set_property_direct;
 
     setting_class->verify = verify;
 
-    setting_ip_config_class->private_offset = g_type_class_get_instance_private_offset(klass);
+    setting_ip_config_class->private_offset = G_STRUCT_OFFSET(NMSettingIP4Config, _priv);
     setting_ip_config_class->is_ipv4        = TRUE;
     setting_ip_config_class->addr_family    = AF_INET;
 
@@ -1317,5 +1313,5 @@ nm_setting_ip4_config_class_init(NMSettingIP4ConfigClass *klass)
                              NM_META_SETTING_TYPE_IP4_CONFIG,
                              NULL,
                              properties_override,
-                             setting_ip_config_class->private_offset);
+                             G_STRUCT_OFFSET(NMSettingIP4Config, _priv));
 }

@@ -41,20 +41,18 @@ typedef struct {
  * WiMax Settings
  */
 struct _NMSettingWimax {
-    NMSetting parent;
-    /* In the past, this struct was public API. Preserve ABI! */
+    NMSetting             parent;
+    NMSettingWimaxPrivate _priv;
 };
 
 struct _NMSettingWimaxClass {
     NMSettingClass parent;
-    /* In the past, this struct was public API. Preserve ABI! */
-    gpointer padding[4];
 };
 
 G_DEFINE_TYPE(NMSettingWimax, nm_setting_wimax, NM_TYPE_SETTING)
 
 #define NM_SETTING_WIMAX_GET_PRIVATE(o) \
-    (G_TYPE_INSTANCE_GET_PRIVATE((o), NM_TYPE_SETTING_WIMAX, NMSettingWimaxPrivate))
+    _NM_GET_PRIVATE(o, NMSettingWimax, NM_IS_SETTING_WIMAX, NMSetting)
 
 /*****************************************************************************/
 
@@ -157,8 +155,6 @@ nm_setting_wimax_class_init(NMSettingWimaxClass *klass)
     NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
     GArray         *properties_override = _nm_sett_info_property_override_create_array();
 
-    g_type_class_add_private(klass, sizeof(NMSettingWimaxPrivate));
-
     object_class->get_property = _nm_setting_property_get_property_direct;
     object_class->set_property = _nm_setting_property_set_property_direct;
 
@@ -206,5 +202,5 @@ nm_setting_wimax_class_init(NMSettingWimaxClass *klass)
                              NM_META_SETTING_TYPE_WIMAX,
                              NULL,
                              properties_override,
-                             NM_SETT_INFO_PRIVATE_OFFSET_FROM_CLASS);
+                             G_STRUCT_OFFSET(NMSettingWimax, _priv));
 }

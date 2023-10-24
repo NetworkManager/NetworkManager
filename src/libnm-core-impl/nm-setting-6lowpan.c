@@ -33,7 +33,8 @@ typedef struct {
  * Since: 1.14
  */
 struct _NMSetting6Lowpan {
-    NMSetting parent;
+    NMSetting               parent;
+    NMSetting6LowpanPrivate _priv;
 };
 
 struct _NMSetting6LowpanClass {
@@ -43,7 +44,7 @@ struct _NMSetting6LowpanClass {
 G_DEFINE_TYPE(NMSetting6Lowpan, nm_setting_6lowpan, NM_TYPE_SETTING)
 
 #define NM_SETTING_6LOWPAN_GET_PRIVATE(o) \
-    (G_TYPE_INSTANCE_GET_PRIVATE((o), NM_TYPE_SETTING_6LOWPAN, NMSetting6LowpanPrivate))
+    _NM_GET_PRIVATE(o, NMSetting6Lowpan, NM_IS_SETTING_6LOWPAN, NMSetting)
 
 /*****************************************************************************/
 
@@ -156,8 +157,6 @@ nm_setting_6lowpan_class_init(NMSetting6LowpanClass *klass)
     NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
     GArray         *properties_override = _nm_sett_info_property_override_create_array();
 
-    g_type_class_add_private(klass, sizeof(NMSetting6LowpanPrivate));
-
     object_class->get_property = _nm_setting_property_get_property_direct;
     object_class->set_property = _nm_setting_property_set_property_direct;
 
@@ -185,5 +184,5 @@ nm_setting_6lowpan_class_init(NMSetting6LowpanClass *klass)
                              NM_META_SETTING_TYPE_6LOWPAN,
                              NULL,
                              properties_override,
-                             NM_SETT_INFO_PRIVATE_OFFSET_FROM_CLASS);
+                             G_STRUCT_OFFSET(NMSetting6Lowpan, _priv));
 }

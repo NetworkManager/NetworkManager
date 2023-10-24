@@ -90,22 +90,18 @@ typedef struct {
  * Wi-Fi Security Settings
  */
 struct _NMSettingWirelessSecurity {
-    NMSetting parent;
-    /* In the past, this struct was public API. Preserve ABI! */
+    NMSetting                        parent;
+    NMSettingWirelessSecurityPrivate _priv;
 };
 
 struct _NMSettingWirelessSecurityClass {
     NMSettingClass parent;
-    /* In the past, this struct was public API. Preserve ABI! */
-    gpointer padding[4];
 };
 
 G_DEFINE_TYPE(NMSettingWirelessSecurity, nm_setting_wireless_security, NM_TYPE_SETTING)
 
-#define NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE(o)                 \
-    (G_TYPE_INSTANCE_GET_PRIVATE((o),                               \
-                                 NM_TYPE_SETTING_WIRELESS_SECURITY, \
-                                 NMSettingWirelessSecurityPrivate))
+#define NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE(o) \
+    _NM_GET_PRIVATE(o, NMSettingWirelessSecurity, NM_IS_SETTING_WIRELESS_SECURITY, NMSetting)
 
 /*****************************************************************************/
 
@@ -1389,8 +1385,6 @@ nm_setting_wireless_security_class_init(NMSettingWirelessSecurityClass *klass)
     NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
     GArray         *properties_override = _nm_sett_info_property_override_create_array();
 
-    g_type_class_add_private(klass, sizeof(NMSettingWirelessSecurityPrivate));
-
     object_class->get_property = get_property;
     object_class->set_property = set_property;
     object_class->finalize     = finalize;
@@ -1894,5 +1888,5 @@ nm_setting_wireless_security_class_init(NMSettingWirelessSecurityClass *klass)
                              NM_META_SETTING_TYPE_WIRELESS_SECURITY,
                              NULL,
                              properties_override,
-                             NM_SETT_INFO_PRIVATE_OFFSET_FROM_CLASS);
+                             G_STRUCT_OFFSET(NMSettingWirelessSecurity, _priv));
 }

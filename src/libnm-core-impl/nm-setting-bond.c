@@ -44,20 +44,18 @@ typedef struct {
  * Bonding Settings
  */
 struct _NMSettingBond {
-    NMSetting parent;
-    /* In the past, this struct was public API. Preserve ABI! */
+    NMSetting            parent;
+    NMSettingBondPrivate _priv;
 };
 
 struct _NMSettingBondClass {
     NMSettingClass parent;
-    /* In the past, this struct was public API. Preserve ABI! */
-    gpointer padding[4];
 };
 
 G_DEFINE_TYPE(NMSettingBond, nm_setting_bond, NM_TYPE_SETTING)
 
 #define NM_SETTING_BOND_GET_PRIVATE(o) \
-    (G_TYPE_INSTANCE_GET_PRIVATE((o), NM_TYPE_SETTING_BOND, NMSettingBondPrivate))
+    _NM_GET_PRIVATE(o, NMSettingBond, NM_IS_SETTING_BOND, NMSetting)
 
 /*****************************************************************************/
 
@@ -1322,8 +1320,6 @@ nm_setting_bond_class_init(NMSettingBondClass *klass)
     NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
     GArray         *properties_override = _nm_sett_info_property_override_create_array();
 
-    g_type_class_add_private(klass, sizeof(NMSettingBondPrivate));
-
     object_class->get_property = get_property;
     object_class->set_property = set_property;
     object_class->finalize     = finalize;
@@ -1380,5 +1376,5 @@ nm_setting_bond_class_init(NMSettingBondClass *klass)
                              NM_META_SETTING_TYPE_BOND,
                              NULL,
                              properties_override,
-                             NM_SETT_INFO_PRIVATE_OFFSET_FROM_CLASS);
+                             G_STRUCT_OFFSET(NMSettingBond, _priv));
 }

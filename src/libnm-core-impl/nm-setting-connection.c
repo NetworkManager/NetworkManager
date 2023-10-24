@@ -109,20 +109,18 @@ typedef struct {
  * General Connection Profile Settings
  */
 struct _NMSettingConnection {
-    NMSetting parent;
-    /* In the past, this struct was public API. Preserve ABI! */
+    NMSetting                  parent;
+    NMSettingConnectionPrivate _priv;
 };
 
 struct _NMSettingConnectionClass {
     NMSettingClass parent;
-    /* In the past, this struct was public API. Preserve ABI! */
-    gpointer padding[4];
 };
 
 G_DEFINE_TYPE(NMSettingConnection, nm_setting_connection, NM_TYPE_SETTING)
 
 #define NM_SETTING_CONNECTION_GET_PRIVATE(o) \
-    (G_TYPE_INSTANCE_GET_PRIVATE((o), NM_TYPE_SETTING_CONNECTION, NMSettingConnectionPrivate))
+    _NM_GET_PRIVATE(o, NMSettingConnection, NM_IS_SETTING_CONNECTION, NMSetting)
 
 /*****************************************************************************/
 
@@ -1810,8 +1808,6 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
     NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
     GArray         *properties_override = _nm_sett_info_property_override_create_array();
 
-    g_type_class_add_private(klass, sizeof(NMSettingConnectionPrivate));
-
     object_class->get_property = get_property;
     object_class->set_property = set_property;
     object_class->finalize     = finalize;
@@ -2779,5 +2775,5 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
                              NM_META_SETTING_TYPE_CONNECTION,
                              NULL,
                              properties_override,
-                             NM_SETT_INFO_PRIVATE_OFFSET_FROM_CLASS);
+                             G_STRUCT_OFFSET(NMSettingConnection, _priv));
 }
