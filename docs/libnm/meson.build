@@ -43,6 +43,8 @@ gnome.gtkdoc(
   src_dir: [
     libnm_core_public_inc,
     libnm_client_public_inc,
+    libnm_core_impl_inc,
+    libnm_client_impl_inc
   ],
   dependencies: libnm_dep,
   scan_args: scan_args,
