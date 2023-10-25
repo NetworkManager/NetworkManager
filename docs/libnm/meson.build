@@ -27,7 +27,7 @@ private_headers = [
 scan_args = [
   '--rebuild-types',
   '--rebuild-sections',
-  '--ignore-decorators=NM_AVAILABLE_IN_\d+_\d+|NM_DEPRECATED_IN_\d+_\d+|NM_DEPRECATED_IN_\d+_\d+_FOR\(\)',
+  '--ignore-decorators=NM_AVAILABLE_IN_[0-9]+_[0-9]+|NM_DEPRECATED_IN_[0-9]+_[0-9]+|NM_DEPRECATED_IN_[0-9]+_[0-9]+_FOR[(][)]',
   '--ignore-headers=' + ' '.join(private_headers),
 ]
 
@@ -43,6 +43,8 @@ gnome.gtkdoc(
   src_dir: [
     libnm_core_public_inc,
     libnm_client_public_inc,
+    libnm_core_impl_inc,
+    libnm_client_impl_inc
   ],
   dependencies: libnm_dep,
   scan_args: scan_args,
