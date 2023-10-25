@@ -117,7 +117,11 @@ typedef enum {
     NM_ETHTOOL_ID_PAUSE_TX,
     _NM_ETHTOOL_ID_PAUSE_LAST = NM_ETHTOOL_ID_PAUSE_TX,
 
-    _NM_ETHTOOL_ID_RING_FIRST = _NM_ETHTOOL_ID_PAUSE_LAST + 1,
+    _NM_ETHTOOL_ID_EEE_FIRST  = _NM_ETHTOOL_ID_PAUSE_LAST + 1,
+    NM_ETHTOOL_ID_EEE_ENABLED = _NM_ETHTOOL_ID_EEE_FIRST,
+    _NM_ETHTOOL_ID_EEE_LAST   = NM_ETHTOOL_ID_EEE_ENABLED,
+
+    _NM_ETHTOOL_ID_RING_FIRST = _NM_ETHTOOL_ID_EEE_LAST + 1,
     NM_ETHTOOL_ID_RING_RX     = _NM_ETHTOOL_ID_RING_FIRST,
     NM_ETHTOOL_ID_RING_RX_JUMBO,
     NM_ETHTOOL_ID_RING_RX_MINI,
@@ -153,6 +157,7 @@ typedef enum {
     NM_ETHTOOL_TYPE_RING,
     NM_ETHTOOL_TYPE_PAUSE,
     NM_ETHTOOL_TYPE_CHANNELS,
+    NM_ETHTOOL_TYPE_EEE,
 } NMEthtoolType;
 
 /****************************************************************************/
@@ -185,6 +190,12 @@ static inline gboolean
 nm_ethtool_id_is_channels(NMEthtoolID id)
 {
     return id >= _NM_ETHTOOL_ID_CHANNELS_FIRST && id <= _NM_ETHTOOL_ID_CHANNELS_LAST;
+}
+
+static inline gboolean
+nm_ethtool_id_is_eee(NMEthtoolID id)
+{
+    return id >= _NM_ETHTOOL_ID_EEE_FIRST && id <= _NM_ETHTOOL_ID_EEE_LAST;
 }
 
 /*****************************************************************************/

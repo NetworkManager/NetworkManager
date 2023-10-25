@@ -119,6 +119,10 @@ typedef struct {
     guint32 combined;
 } NMEthtoolChannelsState;
 
+typedef struct {
+    bool enabled : 1;
+} NMEthtoolEEEState;
+
 /*****************************************************************************/
 
 typedef struct _NMPNetns                 NMPNetns;

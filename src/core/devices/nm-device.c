@@ -305,6 +305,7 @@ typedef struct {
     NMEthtoolRingState     *ring;
     NMEthtoolPauseState    *pause;
     NMEthtoolChannelsState *channels;
+    NMEthtoolEEEState      *eee;
 } EthtoolState;
 
 typedef enum {
@@ -2723,6 +2724,25 @@ _ethtool_pause_reset(NMDevice *self, NMPlatform *platform, EthtoolState *ethtool
 }
 
 static void
+_ethtool_eee_reset(NMDevice *self, NMPlatform *platform, EthtoolState *ethtool_state)
+{
+    gs_free NMEthtoolEEEState *eee = NULL;
+
+    nm_assert(NM_IS_DEVICE(self));
+    nm_assert(NM_IS_PLATFORM(platform));
+    nm_assert(ethtool_state);
+
+    eee = g_steal_pointer(&ethtool_state->eee);
+    if (!eee)
+        return;
+
+    if (!nm_platform_ethtool_set_eee(platform, ethtool_state->ifindex, eee))
+        _LOGW(LOGD_DEVICE, "ethtool: failure resetting eee settings");
+    else
+        _LOGD(LOGD_DEVICE, "ethtool: eee settings successfully reset");
+}
+
+static void
 _ethtool_pause_set(NMDevice         *self,
                    NMPlatform       *platform,
                    EthtoolState     *ethtool_state,
@@ -2811,6 +2831,73 @@ _ethtool_pause_set(NMDevice         *self,
 }
 
 static void
+_ethtool_eee_set(NMDevice         *self,
+                 NMPlatform       *platform,
+                 EthtoolState     *ethtool_state,
+                 NMSettingEthtool *s_ethtool)
+{
+    NMEthtoolEEEState eee_old;
+    NMEthtoolEEEState eee_new;
+    GHashTable       *hash;
+    GHashTableIter    iter;
+    const char       *name;
+    GVariant         *variant;
+    gboolean          has_old = FALSE;
+    NMTernary         eee     = NM_TERNARY_DEFAULT;
+
+    nm_assert(NM_IS_DEVICE(self));
+    nm_assert(NM_IS_PLATFORM(platform));
+    nm_assert(NM_IS_SETTING_ETHTOOL(s_ethtool));
+    nm_assert(ethtool_state);
+    nm_assert(!ethtool_state->eee);
+
+    hash = _nm_setting_option_hash(NM_SETTING(s_ethtool), FALSE);
+    if (!hash)
+        return;
+
+    g_hash_table_iter_init(&iter, hash);
+    while (g_hash_table_iter_next(&iter, (gpointer *) &name, (gpointer *) &variant)) {
+        NMEthtoolID ethtool_id = nm_ethtool_id_get_by_name(name);
+
+        if (!nm_ethtool_id_is_eee(ethtool_id))
+            continue;
+
+        nm_assert(g_variant_is_of_type(variant, G_VARIANT_TYPE_BOOLEAN));
+
+        if (!has_old) {
+            if (!nm_platform_ethtool_get_link_eee(platform, ethtool_state->ifindex, &eee_old)) {
+                _LOGW(LOGD_DEVICE,
+                      "ethtool: failure setting eee options (cannot read "
+                      "existing setting)");
+                return;
+            }
+            has_old = TRUE;
+        }
+
+        if (ethtool_id == NM_ETHTOOL_ID_EEE_ENABLED)
+            eee = g_variant_get_boolean(variant);
+        else
+            nm_assert_not_reached();
+    }
+
+    if (!has_old)
+        return;
+
+    eee_new = eee_old;
+    if (eee != NM_TERNARY_DEFAULT)
+        eee_new.enabled = !!eee;
+
+    ethtool_state->eee = nm_memdup(&eee_old, sizeof(eee_old));
+
+    if (!nm_platform_ethtool_set_eee(platform, ethtool_state->ifindex, &eee_new)) {
+        _LOGW(LOGD_DEVICE, "ethtool: failure setting eee settings");
+        return;
+    }
+
+    _LOGD(LOGD_DEVICE, "ethtool: eee settings successfully set");
+}
+
+static void
 _ethtool_state_reset(NMDevice *self)
 {
     NMPlatform           *platform      = nm_device_get_platform(self);
@@ -2825,6 +2912,7 @@ _ethtool_state_reset(NMDevice *self)
     _ethtool_ring_reset(self, platform, ethtool_state);
     _ethtool_pause_reset(self, platform, ethtool_state);
     _ethtool_channels_reset(self, platform, ethtool_state);
+    _ethtool_eee_reset(self, platform, ethtool_state);
 }
 
 static void
@@ -2860,9 +2948,10 @@ _ethtool_state_set(NMDevice *self)
     _ethtool_ring_set(self, platform, ethtool_state, s_ethtool);
     _ethtool_pause_set(self, platform, ethtool_state, s_ethtool);
     _ethtool_channels_set(self, platform, ethtool_state, s_ethtool);
+    _ethtool_eee_set(self, platform, ethtool_state, s_ethtool);
 
     if (ethtool_state->features || ethtool_state->coalesce || ethtool_state->ring
-        || ethtool_state->pause || ethtool_state->channels)
+        || ethtool_state->pause || ethtool_state->channels || ethtool_state->eee)
         priv->ethtool_state = g_steal_pointer(&ethtool_state);
 }
 

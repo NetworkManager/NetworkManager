@@ -1439,6 +1439,18 @@ write_ethtool_setting(NMConnection *connection, shvarFile *ifcfg, GError **error
             }
         }
 
+        is_first = TRUE;
+        for (ethtool_id = _NM_ETHTOOL_ID_EEE_FIRST; ethtool_id <= _NM_ETHTOOL_ID_EEE_LAST;
+             ethtool_id++) {
+            if (nm_setting_option_get_boolean(NM_SETTING(s_ethtool),
+                                              nm_ethtool_data[ethtool_id]->optname,
+                                              &b)) {
+                nm_sprintf_buf(prop_name, "ethtool.%s", nm_ethtool_data[ethtool_id]->optname);
+                set_error_unsupported(error, connection, prop_name, FALSE);
+                return FALSE;
+            }
+        }
+
         if (!any_option) {
             /* Write an empty dummy "-A" option without arguments. This is to
              * ensure that the reader will create an (all default) NMSettingEthtool.

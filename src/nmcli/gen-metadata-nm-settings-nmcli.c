@@ -118,6 +118,7 @@ get_ethtool_format(const NMMetaPropertyInfo *prop_info)
         return g_strdup("integer");
     case NM_ETHTOOL_TYPE_FEATURE:
     case NM_ETHTOOL_TYPE_PAUSE:
+    case NM_ETHTOOL_TYPE_EEE:
         return g_strdup("ternary");
     case NM_ETHTOOL_TYPE_UNKNOWN:
         nm_assert_not_reached();
@@ -317,6 +318,7 @@ append_ethtool_valid_values(const NMMetaPropertyInfo *prop_info, GPtrArray *vali
         break;
     case NM_ETHTOOL_TYPE_FEATURE:
     case NM_ETHTOOL_TYPE_PAUSE:
+    case NM_ETHTOOL_TYPE_EEE:
         append_vals(valid_values, "on", "off", "ignore");
         break;
     case NM_ETHTOOL_TYPE_UNKNOWN:

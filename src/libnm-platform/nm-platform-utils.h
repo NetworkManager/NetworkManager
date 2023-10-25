@@ -62,6 +62,10 @@ gboolean nmp_utils_ethtool_get_pause(int ifindex, NMEthtoolPauseState *pause);
 
 gboolean nmp_utils_ethtool_set_pause(int ifindex, const NMEthtoolPauseState *pause);
 
+gboolean nmp_utils_ethtool_get_eee(int ifindex, NMEthtoolEEEState *eee);
+
+gboolean nmp_utils_ethtool_set_eee(int ifindex, const NMEthtoolEEEState *eee);
+
 /*****************************************************************************/
 
 gboolean nmp_utils_mii_supports_carrier_detect(int ifindex);
