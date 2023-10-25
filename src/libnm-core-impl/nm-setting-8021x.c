@@ -3223,11 +3223,11 @@ nm_setting_802_1x_class_init(NMSetting8021xClass *klass)
      * example: IEEE_8021X_EAP_METHODS=PEAP
      * ---end---
      */
-    obj_properties[PROP_EAP] = g_param_spec_boxed(NM_SETTING_802_1X_EAP,
-                                                  "",
-                                                  "",
-                                                  G_TYPE_STRV,
-                                                  G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_gprop_strv_oldstyle(properties_override,
+                                                    obj_properties,
+                                                    NM_SETTING_802_1X_EAP,
+                                                    PROP_EAP,
+                                                    NM_SETTING_PARAM_NONE);
 
     /**
      * NMSetting8021x:identity:
@@ -3422,12 +3422,11 @@ nm_setting_802_1x_class_init(NMSetting8021xClass *klass)
      * example: IEEE_8021X_ALTSUBJECT_MATCHES="s1.domain.cc"
      * ---end---
      */
-    obj_properties[PROP_ALTSUBJECT_MATCHES] =
-        g_param_spec_boxed(NM_SETTING_802_1X_ALTSUBJECT_MATCHES,
-                           "",
-                           "",
-                           G_TYPE_STRV,
-                           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_gprop_strv_oldstyle(properties_override,
+                                                    obj_properties,
+                                                    NM_SETTING_802_1X_ALTSUBJECT_MATCHES,
+                                                    PROP_ALTSUBJECT_MATCHES,
+                                                    NM_SETTING_PARAM_NONE);
 
     /**
      * NMSetting8021x:domain-suffix-match:
@@ -3835,12 +3834,11 @@ nm_setting_802_1x_class_init(NMSetting8021xClass *klass)
      * variable: IEEE_8021X_PHASE2_ALTSUBJECT_MATCHES(+)
      * ---end---
      */
-    obj_properties[PROP_PHASE2_ALTSUBJECT_MATCHES] =
-        g_param_spec_boxed(NM_SETTING_802_1X_PHASE2_ALTSUBJECT_MATCHES,
-                           "",
-                           "",
-                           G_TYPE_STRV,
-                           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_gprop_strv_oldstyle(properties_override,
+                                                    obj_properties,
+                                                    NM_SETTING_802_1X_PHASE2_ALTSUBJECT_MATCHES,
+                                                    PROP_PHASE2_ALTSUBJECT_MATCHES,
+                                                    NM_SETTING_PARAM_NONE);
 
     /**
      * NMSetting8021x:phase2-domain-suffix-match:

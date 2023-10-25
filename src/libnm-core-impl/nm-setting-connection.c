@@ -2034,12 +2034,11 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      * example: USERS="joe bob"
      * ---end---
      */
-    obj_properties[PROP_PERMISSIONS] =
-        g_param_spec_boxed(NM_SETTING_CONNECTION_PERMISSIONS,
-                           "",
-                           "",
-                           G_TYPE_STRV,
-                           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_gprop_strv_oldstyle(properties_override,
+                                                    obj_properties,
+                                                    NM_SETTING_CONNECTION_PERMISSIONS,
+                                                    PROP_PERMISSIONS,
+                                                    NM_SETTING_PARAM_NONE);
 
     /**
      * NMSettingConnection:autoconnect:

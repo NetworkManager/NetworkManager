@@ -1483,12 +1483,11 @@ nm_setting_wired_class_init(NMSettingWiredClass *klass)
      * example: HWADDR_BLACKLIST="00:22:68:11:69:08 00:11:22:11:44:55"
      * ---end---
      */
-    obj_properties[PROP_MAC_ADDRESS_BLACKLIST] = g_param_spec_boxed(
-        NM_SETTING_WIRED_MAC_ADDRESS_BLACKLIST,
-        "",
-        "",
-        G_TYPE_STRV,
-        G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_gprop_strv_oldstyle(properties_override,
+                                                    obj_properties,
+                                                    NM_SETTING_WIRED_MAC_ADDRESS_BLACKLIST,
+                                                    PROP_MAC_ADDRESS_BLACKLIST,
+                                                    NM_SETTING_PARAM_FUZZY_IGNORE);
 
     /**
      * NMSettingWired:mtu:
@@ -1531,12 +1530,11 @@ nm_setting_wired_class_init(NMSettingWiredClass *klass)
      * example: SUBCHANNELS=0.0.b00a,0.0.b00b,0.0.b00c
      * ---end---
      */
-    obj_properties[PROP_S390_SUBCHANNELS] = g_param_spec_boxed(
-        NM_SETTING_WIRED_S390_SUBCHANNELS,
-        "",
-        "",
-        G_TYPE_STRV,
-        G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_gprop_strv_oldstyle(properties_override,
+                                                    obj_properties,
+                                                    NM_SETTING_WIRED_S390_SUBCHANNELS,
+                                                    PROP_S390_SUBCHANNELS,
+                                                    NM_SETTING_PARAM_INFERRABLE);
 
     /**
      * NMSettingWired:s390-nettype:

@@ -6130,6 +6130,18 @@ _nm_sett_info_property_override_create_array_ip_config(int addr_family)
         .direct_offset =
             NM_STRUCT_OFFSET_ENSURE_TYPE(int, NMSettingIPConfigPrivate, replace_local_rule));
 
+    _nm_properties_override_gobj(properties_override,
+                                 obj_properties[PROP_DNS_SEARCH],
+                                 &nm_sett_info_propert_type_gprop_strv_oldstyle);
+
+    _nm_properties_override_gobj(properties_override,
+                                 obj_properties[PROP_DNS_OPTIONS],
+                                 &nm_sett_info_propert_type_gprop_strv_oldstyle);
+
+    _nm_properties_override_gobj(properties_override,
+                                 obj_properties[PROP_DHCP_REJECT_SERVERS],
+                                 &nm_sett_info_propert_type_gprop_strv_oldstyle);
+
     return properties_override;
 }
 
