@@ -5963,7 +5963,7 @@ dns_data_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 GArray *
 _nm_sett_info_property_override_create_array_ip_config(int addr_family)
 {
-    GArray *properties_override = _nm_sett_info_property_override_create_array();
+    GArray *properties_override = _nm_sett_info_property_override_create_array_sized(45);
 
     nm_assert_addr_family(addr_family);
 

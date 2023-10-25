@@ -3197,7 +3197,7 @@ nm_setting_802_1x_class_init(NMSetting8021xClass *klass)
 {
     GObjectClass   *object_class        = G_OBJECT_CLASS(klass);
     NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
-    GArray         *properties_override = _nm_sett_info_property_override_create_array();
+    GArray         *properties_override = _nm_sett_info_property_override_create_array_sized(55);
 
     object_class->get_property = get_property;
     object_class->set_property = set_property;
