@@ -424,11 +424,7 @@ _nm_setting_class_commit(NMSettingClass             *setting_class,
         vtype = p->param_spec->value_type;
 
         if (vtype == G_TYPE_STRV)
-            p->property_type = NM_SETT_INFO_PROPERT_TYPE_GPROP(
-                G_VARIANT_TYPE_STRING_ARRAY,
-                .compare_fcn       = _nm_setting_property_compare_fcn_default,
-                .from_dbus_fcn     = _nm_setting_property_from_dbus_fcn_gprop,
-                .from_dbus_is_full = TRUE);
+            p->property_type = &nm_sett_info_propert_type_gprop_strv;
         else
             nm_assert_not_reached();
 
@@ -3621,6 +3617,15 @@ const NMSettInfoPropertType nm_sett_info_propert_type_deprecated_ignore_u =
         G_VARIANT_TYPE_UINT32,
         /* No functions set. This property type is to silently ignore the value on D-Bus. */
         .compare_fcn = _nm_setting_property_compare_fcn_ignore);
+
+/* This should not be used for new strv properties. Use nm_sett_info_propert_type_direct_strv.
+ *
+ * FIXME: existing properties should migrate to nm_sett_info_propert_type_direct_strv. */
+const NMSettInfoPropertType nm_sett_info_propert_type_gprop_strv_oldstyle =
+    NM_SETT_INFO_PROPERT_TYPE_GPROP_INIT(G_VARIANT_TYPE_STRING_ARRAY,
+                                         .compare_fcn   = _nm_setting_property_compare_fcn_default,
+                                         .from_dbus_fcn = _nm_setting_property_from_dbus_fcn_gprop,
+                                         .from_dbus_is_full = TRUE);
 
 const NMSettInfoPropertType nm_sett_info_propert_type_direct_boolean =
     NM_SETT_INFO_PROPERT_TYPE_DBUS_INIT(G_VARIANT_TYPE_BOOLEAN,
