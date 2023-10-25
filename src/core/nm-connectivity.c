@@ -406,9 +406,10 @@ _con_curl_timeout_cb(gpointer user_data)
 {
     NMConnectivityCheckHandle *cb_data = user_data;
 
+    cb_data->concheck.curl_timer = 0;
     _con_curl_check_connectivity(cb_data->concheck.curl_mhandle, CURL_SOCKET_TIMEOUT, 0);
     _complete_queued(cb_data->self);
-    return G_SOURCE_CONTINUE;
+    return G_SOURCE_REMOVE;
 }
 
 static int
