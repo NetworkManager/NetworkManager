@@ -208,6 +208,34 @@ _nm_properties_override_assert(const NMSettInfoProperty *prop_info)
     return TRUE;
 }
 
+GArray *
+_nm_sett_info_property_override_create_array_sized(guint reserved_size)
+{
+    GArray     *properties_override;
+    GParamSpec *param_spec;
+
+    /* pre-allocate a relatively large buffer to avoid frequent re-allocations.
+     * Note that the buffer is only short-lived and will be destroyed by
+     * _nm_setting_class_commit(). */
+    properties_override =
+        g_array_sized_new(FALSE, FALSE, sizeof(NMSettInfoProperty), reserved_size);
+
+    /* The "name" property is special because it's defined in the
+     * parent class NMSetting. We add the property info right here.
+     */
+    param_spec = obj_properties[PROP_NAME];
+    nm_assert(param_spec);
+    nm_assert(nm_streq0(param_spec->name, NM_SETTING_NAME));
+    nm_assert(param_spec
+              == g_object_class_find_property(g_type_class_peek(NM_TYPE_SETTING), NM_SETTING_NAME));
+    nm_assert(!NM_FLAGS_HAS(param_spec->flags, G_PARAM_WRITABLE));
+    _nm_properties_override_gobj(properties_override,
+                                 param_spec,
+                                 &nm_sett_info_propert_type_setting_name);
+
+    return properties_override;
+}
+
 static NMSettInfoSetting _sett_info_settings[_NM_META_SETTING_TYPE_NUM];
 
 const NMSettInfoSetting *
@@ -327,23 +355,23 @@ _nm_setting_class_commit(NMSettingClass             *setting_class,
     property_specs =
         g_object_class_list_properties(G_OBJECT_CLASS(setting_class), &n_property_specs);
 
-    if (!properties_override) {
-        override_len        = 0;
+    if (!properties_override)
         properties_override = _nm_sett_info_property_override_create_array_sized(n_property_specs);
-    } else {
-        override_len = properties_override->len;
 
-        for (i = 0; i < override_len; i++) {
-            NMSettInfoProperty *p = &nm_g_array_index(properties_override, NMSettInfoProperty, i);
+    override_len = properties_override->len;
 
-            nm_assert((!!p->name) != (!!p->param_spec));
+    nm_assert(override_len > 0);
 
-            if (!p->name) {
-                nm_assert(p->param_spec);
-                p->name = p->param_spec->name;
-            } else
-                nm_assert(!p->param_spec);
-        }
+    for (i = 0; i < override_len; i++) {
+        NMSettInfoProperty *p = &nm_g_array_index(properties_override, NMSettInfoProperty, i);
+
+        nm_assert((!!p->name) != (!!p->param_spec));
+
+        if (!p->name) {
+            nm_assert(p->param_spec);
+            p->name = p->param_spec->name;
+        } else
+            nm_assert(!p->param_spec);
     }
 
 #if NM_MORE_ASSERTS > 10
@@ -395,19 +423,6 @@ _nm_setting_class_commit(NMSettingClass             *setting_class,
 
         vtype = p->param_spec->value_type;
 
-        if (vtype == G_TYPE_STRING) {
-            /* The "name" property is a bit special because it's defined in the
-             * parent class NMSetting. We set the property_type here, because
-             * it's more convenient (albeit a bit ugly).
-             *
-             * FIXME: let _nm_sett_info_property_override_create_array() always add
-             *   the handling of the name property.*/
-            nm_assert(nm_streq(p->name, NM_SETTING_NAME));
-            nm_assert(!NM_FLAGS_HAS(p->param_spec->flags, G_PARAM_WRITABLE));
-            p->property_type = &nm_sett_info_propert_type_setting_name;
-            goto has_property_type;
-        }
-
         if (vtype == G_TYPE_STRV)
             p->property_type = NM_SETT_INFO_PROPERT_TYPE_GPROP(
                 G_VARIANT_TYPE_STRING_ARRAY,
@@ -421,6 +436,7 @@ has_property_type:
         nm_assert(p->property_type);
         nm_assert(p->property_type->dbus_type);
         nm_assert(g_variant_type_string_is_valid((const char *) p->property_type->dbus_type));
+        nm_assert(p->name);
     }
 
     G_STATIC_ASSERT_EXPR(G_STRUCT_OFFSET(NMSettInfoProperty, name) == 0);

@@ -419,11 +419,7 @@ const NMSettInfoProperty *
 _nm_sett_info_property_lookup_by_param_spec(const NMSettInfoSetting *sett_info,
                                             const GParamSpec        *param_spec);
 
-static inline GArray *
-_nm_sett_info_property_override_create_array_sized(guint reserved_size)
-{
-    return g_array_sized_new(FALSE, FALSE, sizeof(NMSettInfoProperty), reserved_size);
-}
+GArray *_nm_sett_info_property_override_create_array_sized(guint reserved_size);
 
 static inline GArray *
 _nm_sett_info_property_override_create_array(void)
