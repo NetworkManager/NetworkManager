@@ -183,9 +183,8 @@ _nm_properties_override_assert(const NMSettInfoProperty *prop_info)
 {
 #if NM_MORE_ASSERTS
     nm_assert(prop_info);
-    nm_assert((!!prop_info->name) != (!!prop_info->param_spec));
-    nm_assert(!prop_info->param_spec || !prop_info->name
-              || nm_streq0(prop_info->name, prop_info->param_spec->name));
+    nm_assert(prop_info->name);
+    nm_assert(!prop_info->param_spec || prop_info->name == prop_info->param_spec->name);
 
     if (prop_info->property_type) {
         const NMSettInfoPropertType *property_type = prop_info->property_type;
@@ -361,18 +360,6 @@ _nm_setting_class_commit(NMSettingClass             *setting_class,
 
     nm_assert(override_len > 0);
 
-    for (i = 0; i < override_len; i++) {
-        NMSettInfoProperty *p = &nm_g_array_index(properties_override, NMSettInfoProperty, i);
-
-        nm_assert((!!p->name) != (!!p->param_spec));
-
-        if (!p->name) {
-            nm_assert(p->param_spec);
-            p->name = p->param_spec->name;
-        } else
-            nm_assert(!p->param_spec);
-    }
-
 #if NM_MORE_ASSERTS > 10
     property_specs =
         g_object_class_list_properties(G_OBJECT_CLASS(setting_class), &n_property_specs);
@@ -382,6 +369,9 @@ _nm_setting_class_commit(NMSettingClass             *setting_class,
         const NMSettInfoProperty *p = &nm_g_array_index(properties_override, NMSettInfoProperty, i);
         gboolean                  found = FALSE;
         guint                     k;
+
+        nm_assert(p->name);
+        nm_assert(!p->param_spec || p->name == p->param_spec->name);
 
         nm_assert(!_nm_sett_info_property_find_in_array(
             nm_g_array_first_p(properties_override, NMSettInfoProperty),

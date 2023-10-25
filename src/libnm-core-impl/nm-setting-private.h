@@ -483,15 +483,23 @@ _nm_properties_override(GArray *properties_override, const NMSettInfoProperty *p
     g_array_append_vals(properties_override, prop_info, 1);
 }
 
-#define _nm_properties_override_gobj(properties_override,                             \
-                                     p_param_spec,                                    \
-                                     p_property_type,                                 \
-                                     ... /* extra NMSettInfoProperty fields */)       \
-    _nm_properties_override((properties_override),                                    \
-                            NM_SETT_INFO_PROPERTY(.name          = NULL,              \
-                                                  .param_spec    = (p_param_spec),    \
-                                                  .property_type = (p_property_type), \
-                                                  __VA_ARGS__))
+#define _nm_properties_override_gobj(properties_override,                                     \
+                                     p_param_spec,                                            \
+                                     p_property_type,                                         \
+                                     ... /* extra NMSettInfoProperty fields */)               \
+    G_STMT_START                                                                              \
+    {                                                                                         \
+        GParamSpec *const _p_param_spec_2 = (p_param_spec);                                   \
+                                                                                              \
+        nm_assert(_p_param_spec_2);                                                           \
+                                                                                              \
+        _nm_properties_override((properties_override),                                        \
+                                NM_SETT_INFO_PROPERTY(.name          = _p_param_spec_2->name, \
+                                                      .param_spec    = _p_param_spec_2,       \
+                                                      .property_type = (p_property_type),     \
+                                                      __VA_ARGS__));                          \
+    }                                                                                         \
+    G_STMT_END
 
 #define _nm_properties_override_dbus(properties_override,                             \
                                      p_name,                                          \
