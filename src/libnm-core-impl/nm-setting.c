@@ -250,10 +250,8 @@ _property_infos_sort_cmp_setting_connection(gconstpointer p_a,
 {
     const NMSettInfoProperty *a = *((const NMSettInfoProperty *const *) p_a);
     const NMSettInfoProperty *b = *((const NMSettInfoProperty *const *) p_b);
-    int                       c_name;
 
-    c_name = strcmp(a->name, b->name);
-    nm_assert(c_name != 0);
+    nm_assert(a->name && b->name && !nm_streq(a->name, b->name));
 
 #define CMP_AND_RETURN(n_a, n_b, name)         \
     G_STMT_START                               \
@@ -266,15 +264,14 @@ _property_infos_sort_cmp_setting_connection(gconstpointer p_a,
     G_STMT_END
 
     /* for [connection], report first id, uuid, type in that order. */
-    if (c_name != 0) {
-        CMP_AND_RETURN(a->name, b->name, NM_SETTING_CONNECTION_ID);
-        CMP_AND_RETURN(a->name, b->name, NM_SETTING_CONNECTION_UUID);
-        CMP_AND_RETURN(a->name, b->name, NM_SETTING_CONNECTION_TYPE);
-    }
+    CMP_AND_RETURN(a->name, b->name, NM_SETTING_CONNECTION_ID);
+    CMP_AND_RETURN(a->name, b->name, NM_SETTING_CONNECTION_UUID);
+    CMP_AND_RETURN(a->name, b->name, NM_SETTING_CONNECTION_TYPE);
 
 #undef CMP_AND_RETURN
 
-    return c_name;
+    NM_CMP_FIELD_STR(a, b, name);
+    return nm_assert_unreachable_val(0);
 }
 
 static const NMSettInfoProperty *const *
