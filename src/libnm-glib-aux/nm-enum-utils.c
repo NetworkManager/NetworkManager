@@ -325,7 +325,7 @@ _nm_utils_enum_get_values(GType type, int from, int to)
     GPtrArray *values      = g_ptr_array_sized_new(values_full->len + 1);
 
     for (i = 0; i < values_full->len; i++) {
-        NMUtilsEnumValueInfoFull *v = &g_array_index(values_full, NMUtilsEnumValueInfoFull, i);
+        NMUtilsEnumValueInfoFull *v = &nm_g_array_index(values_full, NMUtilsEnumValueInfoFull, i);
         g_ptr_array_add(values, (gpointer) v->nick);
     }
 
@@ -418,8 +418,9 @@ _nm_utils_enum_get_values_full(GType                       type,
         g_array_set_clear_func(array, (GDestroyNotify) _free_value_info_full);
 
         for (i = 0; i < array->len; i++) {
-            NMUtilsEnumValueInfoFull *vi_full = &g_array_index(array, NMUtilsEnumValueInfoFull, i);
-            GPtrArray                *aliases = g_ptr_array_new();
+            NMUtilsEnumValueInfoFull *vi_full =
+                &nm_g_array_index(array, NMUtilsEnumValueInfoFull, i);
+            GPtrArray *aliases = g_ptr_array_new();
 
             const NMUtilsEnumValueInfo *vi;
             for (vi = value_infos; vi && vi->nick; vi++) {
