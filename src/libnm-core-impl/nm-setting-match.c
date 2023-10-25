@@ -719,19 +719,6 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
 }
 
 static void
-finalize(GObject *object)
-{
-    NMSettingMatch *self = NM_SETTING_MATCH(object);
-
-    nm_clear_pointer(&self->interface_name.arr, g_array_unref);
-    nm_clear_pointer(&self->kernel_command_line.arr, g_array_unref);
-    nm_clear_pointer(&self->driver.arr, g_array_unref);
-    nm_clear_pointer(&self->path.arr, g_array_unref);
-
-    G_OBJECT_CLASS(nm_setting_match_parent_class)->finalize(object);
-}
-
-static void
 nm_setting_match_class_init(NMSettingMatchClass *klass)
 {
     GObjectClass   *object_class        = G_OBJECT_CLASS(klass);
@@ -740,7 +727,6 @@ nm_setting_match_class_init(NMSettingMatchClass *klass)
 
     object_class->get_property = _nm_setting_property_get_property_direct;
     object_class->set_property = _nm_setting_property_set_property_direct;
-    object_class->finalize     = finalize;
 
     setting_class->verify = verify;
 
