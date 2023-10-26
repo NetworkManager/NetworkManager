@@ -824,7 +824,7 @@ _nm_setting_property_get_property_direct(GObject    *object,
         goto out_fail;
     }
 
-    return;
+    nm_assert_not_reached();
 
 out_fail:
     G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
@@ -971,7 +971,7 @@ _nm_setting_property_set_property_direct(GObject      *object,
         goto out_fail;
     }
 
-    return;
+    nm_assert_not_reached();
 
 out_notify:
     /* If explicit-notify would be set, we would need to emit g_object_notify_by_pspec().
