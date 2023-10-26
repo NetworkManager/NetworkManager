@@ -3112,6 +3112,8 @@ nm_strvarray_find_first(GArray *strv, const char *needle)
     return -1;
 }
 
+#define nm_strvarray_contains(strv, needle) (nm_strvarray_find_first((strv), (needle)) >= 0)
+
 static inline gboolean
 nm_strvarray_remove_first(GArray *strv, const char *needle)
 {
