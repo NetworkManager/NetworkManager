@@ -97,7 +97,7 @@ nm_setting_match_add_interface_name(NMSettingMatch *setting, const char *interfa
     g_return_if_fail(NM_IS_SETTING_MATCH(setting));
     g_return_if_fail(interface_name);
 
-    nm_strvarray_add(nm_strvarray_ensure(&setting->interface_name.arr), interface_name);
+    nm_strvarray_ensure_and_add(&setting->interface_name.arr, interface_name);
     _notify(setting, PROP_INTERFACE_NAME);
 }
 
@@ -118,7 +118,7 @@ nm_setting_match_remove_interface_name(NMSettingMatch *setting, int idx)
     g_return_if_fail(setting->interface_name.arr && idx >= 0
                      && idx < setting->interface_name.arr->len);
 
-    g_array_remove_index(setting->interface_name.arr, idx);
+    nm_strvarray_remove_index(setting->interface_name.arr, idx);
     _notify(setting, PROP_INTERFACE_NAME);
 }
 
@@ -139,12 +139,11 @@ nm_setting_match_remove_interface_name_by_value(NMSettingMatch *setting, const c
     g_return_val_if_fail(NM_IS_SETTING_MATCH(setting), FALSE);
     g_return_val_if_fail(interface_name, FALSE);
 
-    if (nm_strvarray_remove_first(setting->interface_name.arr, interface_name)) {
-        _notify(setting, PROP_INTERFACE_NAME);
-        return TRUE;
-    }
+    if (!nm_strvarray_remove_first(setting->interface_name.arr, interface_name))
+        return FALSE;
 
-    return FALSE;
+    _notify(setting, PROP_INTERFACE_NAME);
+    return TRUE;
 }
 
 /**
@@ -160,10 +159,8 @@ nm_setting_match_clear_interface_names(NMSettingMatch *setting)
 {
     g_return_if_fail(NM_IS_SETTING_MATCH(setting));
 
-    if (nm_g_array_len(setting->interface_name.arr) != 0) {
-        nm_clear_pointer(&setting->interface_name.arr, g_array_unref);
+    if (nm_strvarray_clear(&setting->interface_name.arr))
         _notify(setting, PROP_INTERFACE_NAME);
-    }
 }
 
 /**
@@ -240,7 +237,7 @@ nm_setting_match_add_kernel_command_line(NMSettingMatch *setting, const char *ke
     g_return_if_fail(NM_IS_SETTING_MATCH(setting));
     g_return_if_fail(kernel_command_line);
 
-    nm_strvarray_add(nm_strvarray_ensure(&setting->kernel_command_line.arr), kernel_command_line);
+    nm_strvarray_ensure_and_add(&setting->kernel_command_line.arr, kernel_command_line);
     _notify(setting, PROP_KERNEL_COMMAND_LINE);
 }
 
@@ -261,7 +258,7 @@ nm_setting_match_remove_kernel_command_line(NMSettingMatch *setting, guint idx)
     g_return_if_fail(setting->kernel_command_line.arr
                      && idx < setting->kernel_command_line.arr->len);
 
-    g_array_remove_index(setting->kernel_command_line.arr, idx);
+    nm_strvarray_remove_index(setting->kernel_command_line.arr, idx);
     _notify(setting, PROP_KERNEL_COMMAND_LINE);
 }
 
@@ -283,12 +280,11 @@ nm_setting_match_remove_kernel_command_line_by_value(NMSettingMatch *setting,
     g_return_val_if_fail(NM_IS_SETTING_MATCH(setting), FALSE);
     g_return_val_if_fail(kernel_command_line, FALSE);
 
-    if (nm_strvarray_remove_first(setting->kernel_command_line.arr, kernel_command_line)) {
-        _notify(setting, PROP_KERNEL_COMMAND_LINE);
-        return TRUE;
-    }
+    if (!nm_strvarray_remove_first(setting->kernel_command_line.arr, kernel_command_line))
+        return FALSE;
 
-    return FALSE;
+    _notify(setting, PROP_KERNEL_COMMAND_LINE);
+    return TRUE;
 }
 
 /**
@@ -304,10 +300,8 @@ nm_setting_match_clear_kernel_command_lines(NMSettingMatch *setting)
 {
     g_return_if_fail(NM_IS_SETTING_MATCH(setting));
 
-    if (nm_g_array_len(setting->kernel_command_line.arr) != 0) {
-        nm_clear_pointer(&setting->kernel_command_line.arr, g_array_unref);
+    if (nm_strvarray_clear(&setting->kernel_command_line.arr))
         _notify(setting, PROP_KERNEL_COMMAND_LINE);
-    }
 }
 
 /**
@@ -381,7 +375,7 @@ nm_setting_match_add_driver(NMSettingMatch *setting, const char *driver)
     g_return_if_fail(NM_IS_SETTING_MATCH(setting));
     g_return_if_fail(driver);
 
-    nm_strvarray_add(nm_strvarray_ensure(&setting->driver.arr), driver);
+    nm_strvarray_ensure_and_add(&setting->driver.arr, driver);
     _notify(setting, PROP_DRIVER);
 }
 
@@ -401,7 +395,7 @@ nm_setting_match_remove_driver(NMSettingMatch *setting, guint idx)
 
     g_return_if_fail(setting->driver.arr && idx < setting->driver.arr->len);
 
-    g_array_remove_index(setting->driver.arr, idx);
+    nm_strvarray_remove_index(setting->driver.arr, idx);
     _notify(setting, PROP_DRIVER);
 }
 
@@ -422,12 +416,11 @@ nm_setting_match_remove_driver_by_value(NMSettingMatch *setting, const char *dri
     g_return_val_if_fail(NM_IS_SETTING_MATCH(setting), FALSE);
     g_return_val_if_fail(driver, FALSE);
 
-    if (nm_strvarray_remove_first(setting->driver.arr, driver)) {
-        _notify(setting, PROP_DRIVER);
-        return TRUE;
-    }
+    if (!nm_strvarray_remove_first(setting->driver.arr, driver))
+        return FALSE;
 
-    return FALSE;
+    _notify(setting, PROP_DRIVER);
+    return TRUE;
 }
 
 /**
@@ -443,10 +436,8 @@ nm_setting_match_clear_drivers(NMSettingMatch *setting)
 {
     g_return_if_fail(NM_IS_SETTING_MATCH(setting));
 
-    if (nm_g_array_len(setting->driver.arr) != 0) {
-        nm_clear_pointer(&setting->driver.arr, g_array_unref);
+    if (nm_strvarray_clear(&setting->driver.arr))
         _notify(setting, PROP_DRIVER);
-    }
 }
 
 /**
@@ -520,7 +511,7 @@ nm_setting_match_add_path(NMSettingMatch *setting, const char *path)
     g_return_if_fail(NM_IS_SETTING_MATCH(setting));
     g_return_if_fail(path);
 
-    nm_strvarray_add(nm_strvarray_ensure(&setting->path.arr), path);
+    nm_strvarray_ensure_and_add(&setting->path.arr, path);
     _notify(setting, PROP_PATH);
 }
 
@@ -540,7 +531,7 @@ nm_setting_match_remove_path(NMSettingMatch *setting, guint idx)
 
     g_return_if_fail(setting->path.arr && idx < setting->path.arr->len);
 
-    g_array_remove_index(setting->path.arr, idx);
+    nm_strvarray_remove_index(setting->path.arr, idx);
     _notify(setting, PROP_PATH);
 }
 
@@ -561,12 +552,11 @@ nm_setting_match_remove_path_by_value(NMSettingMatch *setting, const char *path)
     g_return_val_if_fail(NM_IS_SETTING_MATCH(setting), FALSE);
     g_return_val_if_fail(path, FALSE);
 
-    if (nm_strvarray_remove_first(setting->path.arr, path)) {
-        _notify(setting, PROP_PATH);
-        return TRUE;
-    }
+    if (!nm_strvarray_remove_first(setting->path.arr, path))
+        return FALSE;
 
-    return FALSE;
+    _notify(setting, PROP_PATH);
+    return TRUE;
 }
 
 /**
@@ -582,10 +572,8 @@ nm_setting_match_clear_paths(NMSettingMatch *setting)
 {
     g_return_if_fail(NM_IS_SETTING_MATCH(setting));
 
-    if (nm_g_array_len(setting->path.arr) != 0) {
-        nm_clear_pointer(&setting->path.arr, g_array_unref);
+    if (nm_strvarray_clear(&setting->path.arr))
         _notify(setting, PROP_PATH);
-    }
 }
 
 /**

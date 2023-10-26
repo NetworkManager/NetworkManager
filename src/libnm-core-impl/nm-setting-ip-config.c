@@ -5385,7 +5385,7 @@ nm_setting_ip_config_add_dhcp_reject_server(NMSettingIPConfig *setting, const ch
     g_return_if_fail(server != NULL);
     priv = NM_SETTING_IP_CONFIG_GET_PRIVATE(setting);
 
-    nm_strvarray_add(nm_strvarray_ensure(&priv->dhcp_reject_servers), server);
+    nm_strvarray_ensure_and_add(&priv->dhcp_reject_servers, server);
     _notify(setting, PROP_DHCP_REJECT_SERVERS);
 }
 
