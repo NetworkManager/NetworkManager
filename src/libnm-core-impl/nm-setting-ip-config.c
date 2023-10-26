@@ -5351,8 +5351,10 @@ const char *const *
 nm_setting_ip_config_get_dhcp_reject_servers(NMSettingIPConfig *setting, guint *out_len)
 {
     g_return_val_if_fail(NM_IS_SETTING_IP_CONFIG(setting), NULL);
-    return nm_strvarray_get_strv(&NM_SETTING_IP_CONFIG_GET_PRIVATE(setting)->dhcp_reject_servers,
-                                 out_len);
+
+    return nm_strvarray_get_strv(
+        &NM_SETTING_IP_CONFIG_GET_PRIVATE(setting)->dhcp_reject_servers.arr,
+        out_len);
 }
 
 /**
@@ -5367,13 +5369,11 @@ nm_setting_ip_config_get_dhcp_reject_servers(NMSettingIPConfig *setting, guint *
 void
 nm_setting_ip_config_add_dhcp_reject_server(NMSettingIPConfig *setting, const char *server)
 {
-    NMSettingIPConfigPrivate *priv;
-
     g_return_if_fail(NM_IS_SETTING_IP_CONFIG(setting));
-    g_return_if_fail(server != NULL);
-    priv = NM_SETTING_IP_CONFIG_GET_PRIVATE(setting);
+    g_return_if_fail(server);
 
-    nm_strvarray_ensure_and_add(&priv->dhcp_reject_servers, server);
+    nm_strvarray_ensure_and_add(&NM_SETTING_IP_CONFIG_GET_PRIVATE(setting)->dhcp_reject_servers.arr,
+                                server);
     _notify(setting, PROP_DHCP_REJECT_SERVERS);
 }
 
@@ -5392,10 +5392,12 @@ nm_setting_ip_config_remove_dhcp_reject_server(NMSettingIPConfig *setting, guint
     NMSettingIPConfigPrivate *priv;
 
     g_return_if_fail(NM_IS_SETTING_IP_CONFIG(setting));
-    priv = NM_SETTING_IP_CONFIG_GET_PRIVATE(setting);
-    g_return_if_fail(priv->dhcp_reject_servers && idx < priv->dhcp_reject_servers->len);
 
-    g_array_remove_index(priv->dhcp_reject_servers, idx);
+    priv = NM_SETTING_IP_CONFIG_GET_PRIVATE(setting);
+
+    g_return_if_fail(idx < nm_g_array_len(priv->dhcp_reject_servers.arr));
+
+    nm_strvarray_remove_index(priv->dhcp_reject_servers.arr, idx);
     _notify(setting, PROP_DHCP_REJECT_SERVERS);
 }
 
@@ -5410,15 +5412,10 @@ nm_setting_ip_config_remove_dhcp_reject_server(NMSettingIPConfig *setting, guint
 void
 nm_setting_ip_config_clear_dhcp_reject_servers(NMSettingIPConfig *setting)
 {
-    NMSettingIPConfigPrivate *priv;
-
     g_return_if_fail(NM_IS_SETTING_IP_CONFIG(setting));
 
-    priv = NM_SETTING_IP_CONFIG_GET_PRIVATE(setting);
-    if (nm_g_array_len(priv->dhcp_reject_servers) != 0) {
-        nm_clear_pointer(&priv->dhcp_reject_servers, g_array_unref);
+    if (nm_strvarray_clear(&NM_SETTING_IP_CONFIG_GET_PRIVATE(setting)->dhcp_reject_servers.arr))
         _notify(setting, PROP_DHCP_REJECT_SERVERS);
-    }
 }
 
 /**
@@ -5708,7 +5705,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
     }
 
     /* Validate reject servers */
-    if (priv->dhcp_reject_servers && priv->dhcp_reject_servers->len != 0) {
+    if (priv->dhcp_reject_servers.arr && priv->dhcp_reject_servers.arr->len > 0) {
         if (NM_SETTING_IP_CONFIG_GET_ADDR_FAMILY(setting) != AF_INET) {
             g_set_error_literal(error,
                                 NM_CONNECTION_ERROR,
@@ -5721,17 +5718,17 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
             return FALSE;
         }
 
-        for (i = 0; i < priv->dhcp_reject_servers->len; i++) {
+        for (i = 0; i < priv->dhcp_reject_servers.arr->len; i++) {
             if (!nm_inet_parse_with_prefix_str(
                     NM_SETTING_IP_CONFIG_GET_ADDR_FAMILY(setting),
-                    nm_g_array_index(priv->dhcp_reject_servers, const char *, i),
+                    nm_g_array_index(priv->dhcp_reject_servers.arr, const char *, i),
                     NULL,
                     NULL)) {
                 g_set_error(error,
                             NM_CONNECTION_ERROR,
                             NM_CONNECTION_ERROR_INVALID_PROPERTY,
                             _("'%s' is not a valid IP or subnet"),
-                            nm_g_array_index(priv->dhcp_reject_servers, const char *, i));
+                            nm_g_array_index(priv->dhcp_reject_servers.arr, const char *, i));
                 g_prefix_error(error,
                                "%s.%s: ",
                                nm_setting_get_name(setting),
@@ -6133,7 +6130,11 @@ _nm_sett_info_property_override_create_array_ip_config(int addr_family)
 
     _nm_properties_override_gobj(properties_override,
                                  obj_properties[PROP_DHCP_REJECT_SERVERS],
-                                 &nm_sett_info_propert_type_gprop_strv_oldstyle);
+                                 &nm_sett_info_propert_type_direct_strv,
+                                 .direct_offset =
+                                     NM_STRUCT_OFFSET_ENSURE_TYPE(NMValueStrv,
+                                                                  NMSettingIPConfigPrivate,
+                                                                  dhcp_reject_servers));
 
     return properties_override;
 }
@@ -6166,9 +6167,6 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
                            _nm_utils_copy_array(priv->routes,
                                                 (NMUtilsCopyFunc) nm_ip_route_dup,
                                                 (GDestroyNotify) nm_ip_route_unref));
-        break;
-    case PROP_DHCP_REJECT_SERVERS:
-        g_value_set_boxed(value, nm_strvarray_get_strv_non_empty(priv->dhcp_reject_servers, NULL));
         break;
     default:
         _nm_setting_property_get_property_direct(object, prop_id, value, pspec);
@@ -6228,9 +6226,6 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
                                             (NMUtilsCopyFunc) nm_ip_route_dup,
                                             (GDestroyNotify) nm_ip_route_unref);
         break;
-    case PROP_DHCP_REJECT_SERVERS:
-        nm_strvarray_set_strv(&priv->dhcp_reject_servers, g_value_get_boxed(value));
-        break;
     default:
         _nm_setting_property_set_property_direct(object, prop_id, value, pspec);
         break;
@@ -6265,7 +6260,6 @@ finalize(GObject *object)
     g_ptr_array_unref(priv->addresses);
     g_ptr_array_unref(priv->routes);
     nm_g_ptr_array_unref(priv->routing_rules);
-    nm_g_array_unref(priv->dhcp_reject_servers);
 
     G_OBJECT_CLASS(nm_setting_ip_config_parent_class)->finalize(object);
 }

@@ -174,13 +174,13 @@ struct _NMSettingIPConfigClass {
 };
 
 typedef struct {
-    NMValueStrv dns_search;  /* array of domain name strings */
+    NMValueStrv dns_search; /* array of domain name strings */
+    NMValueStrv dhcp_reject_servers;
     GPtrArray  *dns;         /* array of IP address strings */
     GPtrArray  *dns_options; /* array of DNS options */
     GPtrArray  *addresses;   /* array of NMIPAddress */
     GPtrArray  *routes;      /* array of NMIPRoute */
     GPtrArray  *routing_rules;
-    GArray     *dhcp_reject_servers;
     char       *method;
     char       *gateway;
     char       *dhcp_hostname;
