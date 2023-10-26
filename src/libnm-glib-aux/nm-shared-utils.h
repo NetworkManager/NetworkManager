@@ -3128,6 +3128,23 @@ nm_strvarray_remove_first(GArray *strv, const char *needle)
     return TRUE;
 }
 
+static inline void
+nm_strvarray_ensure_and_add(GArray **p, const char *str)
+{
+    nm_strvarray_add(nm_strvarray_ensure(p), str);
+}
+
+static inline gboolean
+nm_strvarray_ensure_and_add_unique(GArray **p, const char *str)
+{
+    nm_assert(p);
+
+    if (nm_strvarray_contains(*p, str))
+        return FALSE;
+    nm_strvarray_add(nm_strvarray_ensure(p), str);
+    return TRUE;
+}
+
 static inline int
 nm_strvarray_cmp(const GArray *a, const GArray *b)
 {
