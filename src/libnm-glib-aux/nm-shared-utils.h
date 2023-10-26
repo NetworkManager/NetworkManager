@@ -3154,6 +3154,24 @@ _nm_strvarray_cmp_strv(const GArray *strv, const char *const *ss, gsize ss_len)
 #define nm_strvarray_equal_strv(strv, ss, ss_len) \
     (nm_strvarray_cmp_strv((strv), (ss), (ss_len)) == 0)
 
+static inline gboolean
+nm_strvarray_clear(GArray **array)
+{
+    gboolean cleared = FALSE;
+
+    nm_assert(array);
+    nm_assert(!*array || sizeof(char *) == g_array_get_element_size(*array));
+
+    if (*array) {
+        /* We always clear the GArray, but we return TRUE only if the
+         * array was non-empty before. */
+        if ((*array)->len > 0)
+            cleared = TRUE;
+        nm_clear_pointer(array, g_array_unref);
+    }
+    return cleared;
+}
+
 /*****************************************************************************/
 
 struct _NMVariantAttributeSpec {
