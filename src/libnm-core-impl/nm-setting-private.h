@@ -174,31 +174,31 @@ struct _NMSettingIPConfigClass {
 };
 
 typedef struct {
-    GPtrArray *dns;         /* array of IP address strings */
-    GPtrArray *dns_search;  /* array of domain name strings */
-    GPtrArray *dns_options; /* array of DNS options */
-    GPtrArray *addresses;   /* array of NMIPAddress */
-    GPtrArray *routes;      /* array of NMIPRoute */
-    GPtrArray *routing_rules;
-    GArray    *dhcp_reject_servers;
-    char      *method;
-    char      *gateway;
-    char      *dhcp_hostname;
-    char      *dhcp_iaid;
-    gint64     route_metric;
-    int        auto_route_ext_gw;
-    int        replace_local_rule;
-    gint32     required_timeout;
-    gint32     dad_timeout;
-    gint32     dhcp_timeout;
-    gint32     dns_priority;
-    guint32    route_table;
-    guint32    dhcp_hostname_flags;
-    bool       ignore_auto_routes;
-    bool       ignore_auto_dns;
-    bool       dhcp_send_hostname;
-    bool       never_default;
-    bool       may_fail;
+    NMValueStrv dns_search;  /* array of domain name strings */
+    GPtrArray  *dns;         /* array of IP address strings */
+    GPtrArray  *dns_options; /* array of DNS options */
+    GPtrArray  *addresses;   /* array of NMIPAddress */
+    GPtrArray  *routes;      /* array of NMIPRoute */
+    GPtrArray  *routing_rules;
+    GArray     *dhcp_reject_servers;
+    char       *method;
+    char       *gateway;
+    char       *dhcp_hostname;
+    char       *dhcp_iaid;
+    gint64      route_metric;
+    int         auto_route_ext_gw;
+    int         replace_local_rule;
+    gint32      required_timeout;
+    gint32      dad_timeout;
+    gint32      dhcp_timeout;
+    gint32      dns_priority;
+    guint32     route_table;
+    guint32     dhcp_hostname_flags;
+    bool        ignore_auto_routes;
+    bool        ignore_auto_dns;
+    bool        dhcp_send_hostname;
+    bool        never_default;
+    bool        may_fail;
 } NMSettingIPConfigPrivate;
 
 void _nm_setting_ip_config_private_init(gpointer self, NMSettingIPConfigPrivate *priv);

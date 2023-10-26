@@ -4231,7 +4231,7 @@ nm_setting_ip_config_get_num_dns_searches(NMSettingIPConfig *setting)
 {
     g_return_val_if_fail(NM_IS_SETTING_IP_CONFIG(setting), 0);
 
-    return NM_SETTING_IP_CONFIG_GET_PRIVATE(setting)->dns_search->len;
+    return nm_g_array_len(NM_SETTING_IP_CONFIG_GET_PRIVATE(setting)->dns_search.arr);
 }
 
 /**
@@ -4239,19 +4239,18 @@ nm_setting_ip_config_get_num_dns_searches(NMSettingIPConfig *setting)
  * @setting: the #NMSettingIPConfig
  * @idx: index number of the DNS search domain to return
  *
+ * Since 1.46, access at index "len" is allowed and returns NULL.
+ *
  * Returns: the DNS search domain at index @idx
  **/
 const char *
 nm_setting_ip_config_get_dns_search(NMSettingIPConfig *setting, int idx)
 {
-    NMSettingIPConfigPrivate *priv;
-
     g_return_val_if_fail(NM_IS_SETTING_IP_CONFIG(setting), NULL);
 
-    priv = NM_SETTING_IP_CONFIG_GET_PRIVATE(setting);
-    g_return_val_if_fail(idx >= 0 && idx < priv->dns_search->len, NULL);
-
-    return priv->dns_search->pdata[idx];
+    return nm_strvarray_get_idxnull_or_greturn(
+        NM_SETTING_IP_CONFIG_GET_PRIVATE(setting)->dns_search.arr,
+        idx);
 }
 
 /**
@@ -4268,19 +4267,16 @@ gboolean
 nm_setting_ip_config_add_dns_search(NMSettingIPConfig *setting, const char *dns_search)
 {
     NMSettingIPConfigPrivate *priv;
-    guint                     i;
 
     g_return_val_if_fail(NM_IS_SETTING_IP_CONFIG(setting), FALSE);
     g_return_val_if_fail(dns_search != NULL, FALSE);
     g_return_val_if_fail(dns_search[0] != '\0', FALSE);
 
     priv = NM_SETTING_IP_CONFIG_GET_PRIVATE(setting);
-    for (i = 0; i < priv->dns_search->len; i++) {
-        if (!strcmp(dns_search, priv->dns_search->pdata[i]))
-            return FALSE;
-    }
 
-    g_ptr_array_add(priv->dns_search, g_strdup(dns_search));
+    if (!nm_strvarray_ensure_and_add_unique(&priv->dns_search.arr, dns_search))
+        return FALSE;
+
     _notify(setting, PROP_DNS_SEARCH);
     return TRUE;
 }
@@ -4300,9 +4296,10 @@ nm_setting_ip_config_remove_dns_search(NMSettingIPConfig *setting, int idx)
     g_return_if_fail(NM_IS_SETTING_IP_CONFIG(setting));
 
     priv = NM_SETTING_IP_CONFIG_GET_PRIVATE(setting);
-    g_return_if_fail(idx >= 0 && idx < priv->dns_search->len);
 
-    g_ptr_array_remove_index(priv->dns_search, idx);
+    g_return_if_fail(idx >= 0 && idx < nm_g_array_len(priv->dns_search.arr));
+
+    nm_strvarray_remove_index(priv->dns_search.arr, idx);
     _notify(setting, PROP_DNS_SEARCH);
 }
 
@@ -4319,21 +4316,18 @@ gboolean
 nm_setting_ip_config_remove_dns_search_by_value(NMSettingIPConfig *setting, const char *dns_search)
 {
     NMSettingIPConfigPrivate *priv;
-    guint                     i;
 
     g_return_val_if_fail(NM_IS_SETTING_IP_CONFIG(setting), FALSE);
     g_return_val_if_fail(dns_search != NULL, FALSE);
     g_return_val_if_fail(dns_search[0] != '\0', FALSE);
 
     priv = NM_SETTING_IP_CONFIG_GET_PRIVATE(setting);
-    for (i = 0; i < priv->dns_search->len; i++) {
-        if (!strcmp(dns_search, priv->dns_search->pdata[i])) {
-            g_ptr_array_remove_index(priv->dns_search, i);
-            _notify(setting, PROP_DNS_SEARCH);
-            return TRUE;
-        }
-    }
-    return FALSE;
+
+    if (!nm_strvarray_remove_first(priv->dns_search.arr, dns_search))
+        return FALSE;
+
+    _notify(setting, PROP_DNS_SEARCH);
+    return TRUE;
 }
 
 /**
@@ -4345,16 +4339,10 @@ nm_setting_ip_config_remove_dns_search_by_value(NMSettingIPConfig *setting, cons
 void
 nm_setting_ip_config_clear_dns_searches(NMSettingIPConfig *setting)
 {
-    NMSettingIPConfigPrivate *priv;
-
     g_return_if_fail(NM_IS_SETTING_IP_CONFIG(setting));
 
-    priv = NM_SETTING_IP_CONFIG_GET_PRIVATE(setting);
-
-    if (priv->dns_search->len != 0) {
-        g_ptr_array_set_size(priv->dns_search, 0);
+    if (nm_strvarray_clear(&NM_SETTING_IP_CONFIG_GET_PRIVATE(setting)->dns_search.arr))
         _notify(setting, PROP_DNS_SEARCH);
-    }
 }
 
 /**
@@ -6132,9 +6120,12 @@ _nm_sett_info_property_override_create_array_ip_config(int addr_family)
         .direct_offset =
             NM_STRUCT_OFFSET_ENSURE_TYPE(int, NMSettingIPConfigPrivate, replace_local_rule));
 
-    _nm_properties_override_gobj(properties_override,
-                                 obj_properties[PROP_DNS_SEARCH],
-                                 &nm_sett_info_propert_type_gprop_strv_oldstyle);
+    _nm_properties_override_gobj(
+        properties_override,
+        obj_properties[PROP_DNS_SEARCH],
+        &nm_sett_info_propert_type_direct_strv,
+        .direct_offset =
+            NM_STRUCT_OFFSET_ENSURE_TYPE(NMValueStrv, NMSettingIPConfigPrivate, dns_search));
 
     _nm_properties_override_gobj(properties_override,
                                  obj_properties[PROP_DNS_OPTIONS],
@@ -6158,9 +6149,6 @@ get_property(GObject *object, guint prop_id, GValue *value, GParamSpec *pspec)
     switch (prop_id) {
     case PROP_DNS:
         g_value_take_boxed(value, _nm_utils_ptrarray_to_strv(priv->dns));
-        break;
-    case PROP_DNS_SEARCH:
-        g_value_take_boxed(value, _nm_utils_ptrarray_to_strv(priv->dns_search));
         break;
     case PROP_DNS_OPTIONS:
         g_value_take_boxed(value,
@@ -6209,10 +6197,6 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
         }
         break;
     }
-    case PROP_DNS_SEARCH:
-        g_ptr_array_unref(priv->dns_search);
-        priv->dns_search = nm_strv_to_ptrarray(g_value_get_boxed(value));
-        break;
     case PROP_DNS_OPTIONS:
         strv = g_value_get_boxed(value);
         if (!strv) {
@@ -6260,9 +6244,8 @@ _nm_setting_ip_config_private_init(gpointer self, NMSettingIPConfigPrivate *priv
 {
     nm_assert(NM_IS_SETTING_IP_CONFIG(self));
 
-    priv->dns_search = g_ptr_array_new_with_free_func(g_free);
-    priv->addresses  = g_ptr_array_new_with_free_func((GDestroyNotify) nm_ip_address_unref);
-    priv->routes     = g_ptr_array_new_with_free_func((GDestroyNotify) nm_ip_route_unref);
+    priv->addresses = g_ptr_array_new_with_free_func((GDestroyNotify) nm_ip_address_unref);
+    priv->routes    = g_ptr_array_new_with_free_func((GDestroyNotify) nm_ip_route_unref);
 }
 
 static void
@@ -6278,7 +6261,6 @@ finalize(GObject *object)
     NMSettingIPConfigPrivate *priv = NM_SETTING_IP_CONFIG_GET_PRIVATE(self);
 
     nm_g_ptr_array_unref(priv->dns);
-    g_ptr_array_unref(priv->dns_search);
     nm_g_ptr_array_unref(priv->dns_options);
     g_ptr_array_unref(priv->addresses);
     g_ptr_array_unref(priv->routes);
