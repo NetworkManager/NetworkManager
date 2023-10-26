@@ -20,6 +20,14 @@
 
 /*****************************************************************************/
 
+/* This holds a property of type NM_VALUE_TYPE_STRV. You probably want
+ * to use nm_strvarray_*() API with this. */
+typedef struct {
+    GArray *arr;
+} NMValueStrv;
+
+/*****************************************************************************/
+
 struct _NMRefString;
 
 typedef struct {
@@ -274,14 +282,6 @@ NMSettingUpdateSecretResult
 gboolean _nm_setting_clear_secrets(NMSetting                       *setting,
                                    NMSettingClearSecretsWithFlagsFn func,
                                    gpointer                         user_data);
-
-/*****************************************************************************/
-
-/* This holds a property of type NM_VALUE_TYPE_STRV. You probably want
- * to use nm_strvarray_*() API with this. */
-typedef struct {
-    GArray *arr;
-} NMValueStrv;
 
 /*****************************************************************************/
 
