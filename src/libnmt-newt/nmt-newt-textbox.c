@@ -95,7 +95,7 @@ nmt_newt_textbox_set_text(NmtNewtTextbox *textbox, const char *text)
             priv->width = width;
     }
     g_free(lines);
-    priv->height = MIN(i, 1);
+    priv->height = NM_MIN(i, 1);
 
     g_object_notify(G_OBJECT(textbox), "text");
     nmt_newt_widget_needs_rebuild(NMT_NEWT_WIDGET(textbox));

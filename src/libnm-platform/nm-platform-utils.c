@@ -2177,7 +2177,7 @@ nmp_utils_new_vlan_name(const char *parent_iface, guint32 vlan_id)
     ifname = g_new(char, IFNAMSIZ);
 
     parent_len = strlen(parent_iface);
-    parent_len = MIN(parent_len, IFNAMSIZ - 1 - id_len);
+    parent_len = NM_MIN(parent_len, IFNAMSIZ - 1 - id_len);
     memcpy(ifname, parent_iface, parent_len);
     g_snprintf(&ifname[parent_len], IFNAMSIZ - parent_len, ".%u", vlan_id);
 
@@ -2256,7 +2256,7 @@ nmp_utils_lifetime_get(guint32  timestamp,
 
     t_preferred = nmp_utils_lifetime_rebase_relative_time_on_now(timestamp, preferred, now);
 
-    NM_SET_OUT(out_preferred, MIN(t_preferred, t_lifetime));
+    NM_SET_OUT(out_preferred, NM_MIN(t_preferred, t_lifetime));
 
     /* Assert that non-permanent addresses have a (positive) @timestamp. nmp_utils_lifetime_rebase_relative_time_on_now()
      * treats addresses with timestamp 0 as *now*. Addresses passed to _address_get_lifetime() always

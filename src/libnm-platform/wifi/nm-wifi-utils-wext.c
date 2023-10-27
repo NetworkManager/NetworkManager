@@ -548,7 +548,7 @@ wifi_wext_set_mesh_ssid(NMWifiUtils *data, const guint8 *ssid, gsize len)
         return FALSE;
 
     memset(buf, 0, sizeof(buf));
-    memcpy(buf, ssid, MIN(sizeof(buf) - 1, len));
+    memcpy(buf, ssid, NM_MIN(sizeof(buf) - 1, len));
 
     wrq.u.essid.pointer = (caddr_t) buf;
     wrq.u.essid.length  = len;
@@ -758,7 +758,7 @@ nm_wifi_utils_wext_new(int ifindex, gboolean check_scan)
     wext->max_qual.noise   = range.max_qual.noise;
     wext->max_qual.updated = range.max_qual.updated;
 
-    wext->num_freqs = MIN(range.num_frequency, (guint) IW_MAX_FREQUENCIES);
+    wext->num_freqs = NM_MIN(range.num_frequency, (guint) IW_MAX_FREQUENCIES);
     for (i = 0; i < wext->num_freqs; i++) {
         wext->freqs[i] = iw_freq_to_uint32(&range.freq[i]);
         freq_valid     = TRUE;

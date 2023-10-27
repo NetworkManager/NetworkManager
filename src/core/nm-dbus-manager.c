@@ -1644,8 +1644,8 @@ _new_unix_process(GDBusMethodInvocation *context,
     /* polkit glib library stores uid and pid as int. There might be some
      * pitfalls if the id ever happens to be larger then that. Just assert against
      * it here. */
-    g_return_val_if_fail(uid <= MIN(G_MAXINT, G_MAXINT32), NULL);
-    g_return_val_if_fail(pid > 0 && pid <= MIN(G_MAXINT, G_MAXINT32), NULL);
+    g_return_val_if_fail(uid <= NM_MIN(G_MAXINT, G_MAXINT32), NULL);
+    g_return_val_if_fail(pid > 0 && pid <= NM_MIN(G_MAXINT, G_MAXINT32), NULL);
 
     self = nm_auth_subject_new_unix_process(dbus_sender, pid, uid);
 

@@ -1096,7 +1096,7 @@ _addrtime_extend_lifetime(guint32 lifetime, guint32 seconds)
         return lifetime;
 
     v = (guint64) lifetime + (guint64) seconds;
-    return MIN(v, NM_PLATFORM_LIFETIME_PERMANENT - 1);
+    return NM_MIN(v, NM_PLATFORM_LIFETIME_PERMANENT - 1);
 }
 
 /* The rtnl_addr object contains relative lifetimes @valid and @preferred
