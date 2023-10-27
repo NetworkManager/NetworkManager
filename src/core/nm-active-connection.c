@@ -636,7 +636,8 @@ device_state_changed(NMDevice           *device,
         NM_ACTIVE_CONNECTION_GET_CLASS(self)->device_state_changed(self,
                                                                    device,
                                                                    new_state,
-                                                                   old_state);
+                                                                   old_state,
+                                                                   reason);
 }
 
 static void
