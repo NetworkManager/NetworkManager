@@ -689,7 +689,7 @@ _bss_info_properties_changed(NMSupplicantInterface *self,
     v_v = nm_g_variant_lookup_value(properties, "SSID", G_VARIANT_TYPE_BYTESTRING);
     if (v_v) {
         arr_data = g_variant_get_fixed_array(v_v, &arr_len, 1);
-        arr_len  = MIN(32u, arr_len);
+        arr_len  = NM_MIN(32u, arr_len);
 
         /* Stupid ieee80211 layer uses <hidden> */
         if (arr_data && arr_len

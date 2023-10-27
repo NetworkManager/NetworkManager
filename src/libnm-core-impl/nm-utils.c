@@ -669,7 +669,7 @@ nm_utils_escape_ssid(const guint8 *ssid, gsize len)
         return escaped;
     }
 
-    len = MIN(len, (guint32) NM_IW_ESSID_MAX_SIZE);
+    len = NM_MIN(len, (guint32) NM_IW_ESSID_MAX_SIZE);
     while (len--) {
         if (*s == '\0') {
             *d++ = '\\';

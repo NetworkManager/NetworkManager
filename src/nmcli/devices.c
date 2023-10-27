@@ -1347,7 +1347,7 @@ fill_output_access_point(NMAccessPoint *ap, const APInfo *info)
     mode      = nm_access_point_get_mode(ap);
     bitrate   = nm_access_point_get_max_bitrate(ap);
     bandwidth = nm_access_point_get_bandwidth(ap);
-    strength  = MIN(nm_access_point_get_strength(ap), 100u);
+    strength  = NM_MIN(nm_access_point_get_strength(ap), 100u);
 
     /* Convert to strings */
     if (ssid) {
