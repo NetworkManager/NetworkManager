@@ -17,7 +17,7 @@
  * also "packed" is specified. That's what we want.
  * https://gcc.gnu.org/onlinedocs/gcc/Common-Type-Attributes.html#Common-Type-Attributes.
  */
-#define _NMPlatformObject_Align (MAX(_nm_alignof(void *), _nm_alignof(gint64)))
+#define _NMPlatformObject_Align (NM_MAX_CONST(_nm_alignof(void *), _nm_alignof(gint64)))
 
 struct _NMPlatformObject {
     /* the object type has no fields of its own, it is only used to having
