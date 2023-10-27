@@ -313,6 +313,7 @@ coerce_type(NMDeviceType type)
     case NM_DEVICE_TYPE_WIFI_P2P:
     case NM_DEVICE_TYPE_VRF:
     case NM_DEVICE_TYPE_LOOPBACK:
+    case NM_DEVICE_TYPE_HSR:
         return type;
     }
     return NM_DEVICE_TYPE_UNKNOWN;
@@ -1814,6 +1815,8 @@ get_type_name(NMDevice *device)
         return _("VRF");
     case NM_DEVICE_TYPE_LOOPBACK:
         return _("Loopback");
+    case NM_DEVICE_TYPE_HSR:
+        return _("HSR");
     case NM_DEVICE_TYPE_GENERIC:
     case NM_DEVICE_TYPE_UNUSED1:
     case NM_DEVICE_TYPE_UNUSED2:

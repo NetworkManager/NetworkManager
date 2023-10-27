@@ -30,6 +30,7 @@ typedef struct _NMSettingEthtool          NMSettingEthtool;
 typedef struct _NMSettingGeneric          NMSettingGeneric;
 typedef struct _NMSettingGsm              NMSettingGsm;
 typedef struct _NMSettingHostname         NMSettingHostname;
+typedef struct _NMSettingHsr              NMSettingHsr;
 typedef struct _NMSettingIP4Config        NMSettingIP4Config;
 typedef struct _NMSettingIP6Config        NMSettingIP6Config;
 typedef struct _NMSettingIPConfig         NMSettingIPConfig;

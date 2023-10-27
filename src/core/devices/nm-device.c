@@ -5450,6 +5450,8 @@ nm_device_get_route_metric_default(NMDeviceType device_type)
         return 200;
     case NM_DEVICE_TYPE_WIMAX:
         return 250;
+    case NM_DEVICE_TYPE_HSR:
+        return 275;
     case NM_DEVICE_TYPE_BOND:
         return 300;
     case NM_DEVICE_TYPE_TEAM:
@@ -18310,7 +18312,7 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
         nm_assert(priv->type == NM_DEVICE_TYPE_UNKNOWN);
         priv->type = g_value_get_uint(value);
         nm_assert(priv->type > NM_DEVICE_TYPE_UNKNOWN);
-        nm_assert(priv->type <= NM_DEVICE_TYPE_LOOPBACK);
+        nm_assert(priv->type <= NM_DEVICE_TYPE_HSR);
         break;
     case PROP_LINK_TYPE:
         /* construct-only */

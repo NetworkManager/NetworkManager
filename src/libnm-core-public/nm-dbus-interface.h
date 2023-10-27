@@ -37,6 +37,7 @@
 #define NM_DBUS_INTERFACE_DEVICE_DUMMY         NM_DBUS_INTERFACE_DEVICE ".Dummy"
 #define NM_DBUS_INTERFACE_DEVICE_GENERIC       NM_DBUS_INTERFACE_DEVICE ".Generic"
 #define NM_DBUS_INTERFACE_DEVICE_GRE           NM_DBUS_INTERFACE_DEVICE ".Gre"
+#define NM_DBUS_INTERFACE_DEVICE_HSR           NM_DBUS_INTERFACE_DEVICE ".Hsr"
 #define NM_DBUS_INTERFACE_DEVICE_INFINIBAND    NM_DBUS_INTERFACE_DEVICE ".Infiniband"
 #define NM_DBUS_INTERFACE_DEVICE_IP_TUNNEL     NM_DBUS_INTERFACE_DEVICE ".IPTunnel"
 #define NM_DBUS_INTERFACE_DEVICE_LOOPBACK      NM_DBUS_INTERFACE_DEVICE ".Loopback"
@@ -234,6 +235,7 @@ typedef enum {
  * @NM_DEVICE_TYPE_WIFI_P2P: an 802.11 Wi-Fi P2P device. Since: 1.16.
  * @NM_DEVICE_TYPE_VRF: A VRF (Virtual Routing and Forwarding) interface. Since: 1.24.
  * @NM_DEVICE_TYPE_LOOPBACK: a loopback interface. Since: 1.42.
+ * @NM_DEVICE_TYPE_HSR: A HSR/PRP device. Since: 1.46.
  *
  * #NMDeviceType values indicate the type of hardware represented by a
  * device object.
@@ -272,6 +274,7 @@ typedef enum {
     NM_DEVICE_TYPE_WIFI_P2P      = 30,
     NM_DEVICE_TYPE_VRF           = 31,
     NM_DEVICE_TYPE_LOOPBACK      = 32,
+    NM_DEVICE_TYPE_HSR           = 33,
 } NMDeviceType;
 
 /**

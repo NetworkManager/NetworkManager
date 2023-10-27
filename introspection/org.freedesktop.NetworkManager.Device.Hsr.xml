@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<node name="/">
+  <!--
+      org.freedesktop.NetworkManager.Device.Hsr:
+      @short_description: HSR Device.
+
+  -->
+  <interface name="org.freedesktop.NetworkManager.Device.Hsr">
+
+    <!--
+        Port1:
+	@since: 1.46
+
+        The device's port1 device.
+    -->
+    <property name="Port1" type="o" access="read"/>
+
+    <!--
+        Port2:
+	@since: 1.46
+
+        The device's port2 device.
+    -->
+    <property name="Port2" type="o" access="read"/>
+
+    <!--
+        SupervisionAddress:
+	@since: 1.46
+
+        The supervision MAC address.
+    -->
+    <property name="SupervisionAddress" type="s" access="read"/>
+
+    <!--
+        MulticastSpec:
+	@since: 1.46
+
+        The last byte of the supervision address.
+    -->
+    <property name="MulticastSpec" type="y" access="read"/>
+
+    <!--
+        Prp:
+	@since: 1.46
+
+        Whether the PRP protocol is used or not.
+    -->
+    <property name="Prp" type="b" access="read"/>
+
+  </interface>
+</node>

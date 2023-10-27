@@ -38,6 +38,7 @@
 #include "nm-setting-dummy.h"
 #include "nm-setting-generic.h"
 #include "nm-setting-gsm.h"
+#include "nm-setting-hsr.h"
 #include "nm-setting-hostname.h"
 #include "nm-setting-infiniband.h"
 #include "nm-setting-ip-tunnel.h"

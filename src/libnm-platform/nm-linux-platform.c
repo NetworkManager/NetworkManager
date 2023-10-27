@@ -229,6 +229,18 @@ G_STATIC_ASSERT(RTA_MAX == (__RTA_MAX - 1));
 
 /*****************************************************************************/
 
+#define IFLA_HSR_UNSPEC           0
+#define IFLA_HSR_PORT1            1
+#define IFLA_HSR_PORT2            2
+#define IFLA_HSR_MULTICAST_SPEC   3
+#define IFLA_HSR_SUPERVISION_ADDR 4
+#define IFLA_HSR_SEQ_NR           5
+#define IFLA_HSR_VERSION          6
+#define IFLA_HSR_PROTOCOL         7
+#define __IFLA_HSR_MAX            8
+
+/*****************************************************************************/
+
 #define IFLA_VTI_UNSPEC 0
 #define IFLA_VTI_LINK   1
 #define IFLA_VTI_IKEY   2
@@ -847,6 +859,7 @@ static const LinkDesc link_descs[] = {
 
     [NM_LINK_TYPE_BRIDGE] = {"bridge", "bridge", "bridge"},
     [NM_LINK_TYPE_BOND]   = {"bond", "bond", "bond"},
+    [NM_LINK_TYPE_HSR]    = {"hsr", "hsr", "hsr"},
     [NM_LINK_TYPE_TEAM]   = {"team", "team", NULL},
 };
 
@@ -869,6 +882,7 @@ _link_type_from_rtnl_type(const char *name)
         NM_LINK_TYPE_DUMMY,       /* "dummy"       */
         NM_LINK_TYPE_GRE,         /* "gre"         */
         NM_LINK_TYPE_GRETAP,      /* "gretap"      */
+        NM_LINK_TYPE_HSR,         /* "hsr"         */
         NM_LINK_TYPE_IFB,         /* "ifb"         */
         NM_LINK_TYPE_IP6GRE,      /* "ip6gre"      */
         NM_LINK_TYPE_IP6GRETAP,   /* "ip6gretap"   */
@@ -943,6 +957,7 @@ _link_type_from_devtype(const char *name)
         NM_LINK_TYPE_BNEP,      /* "bluetooth" */
         NM_LINK_TYPE_BOND,      /* "bond"      */
         NM_LINK_TYPE_BRIDGE,    /* "bridge"    */
+        NM_LINK_TYPE_HSR,       /* "hsr"       */
         NM_LINK_TYPE_PPP,       /* "ppp"       */
         NM_LINK_TYPE_VLAN,      /* "vlan"      */
         NM_LINK_TYPE_VRF,       /* "vrf"       */
@@ -1799,6 +1814,51 @@ _parse_lnk_gre(const char *kind, struct nlattr *info_data)
     props->ttl                = tb[IFLA_GRE_TTL] ? nla_get_u8(tb[IFLA_GRE_TTL]) : 0;
     props->path_mtu_discovery = !tb[IFLA_GRE_PMTUDISC] || !!nla_get_u8(tb[IFLA_GRE_PMTUDISC]);
     props->is_tap             = is_tap;
+
+    return obj;
+}
+
+/*****************************************************************************/
+
+static NMPObject *
+_parse_lnk_hsr(const char *kind, struct nlattr *info_data)
+{
+    static const struct nla_policy policy[] = {
+        [IFLA_HSR_PORT1]            = {.type = NLA_U32},
+        [IFLA_HSR_PORT2]            = {.type = NLA_U32},
+        [IFLA_HSR_MULTICAST_SPEC]   = {.type = NLA_U8},
+        [IFLA_HSR_SUPERVISION_ADDR] = {.minlen = sizeof(NMEtherAddr)},
+        [IFLA_HSR_PROTOCOL]         = {.type = NLA_U8},
+    };
+    NMPlatformLnkHsr *props;
+    struct nlattr    *tb[G_N_ELEMENTS(policy)];
+    NMPObject        *obj;
+    guint32           v_u32;
+
+    if (!info_data || !kind)
+        return NULL;
+
+    if (nla_parse_nested_arr(tb, info_data, policy) < 0)
+        return NULL;
+
+    obj   = nmp_object_new(NMP_OBJECT_TYPE_LNK_HSR, NULL);
+    props = &obj->lnk_hsr;
+    if (tb[IFLA_HSR_PORT1]) {
+        v_u32 = nla_get_u32(tb[IFLA_HSR_PORT1]);
+        if (v_u32 <= (unsigned) G_MAXINT)
+            props->port1 = v_u32;
+    }
+    if (tb[IFLA_HSR_PORT2]) {
+        v_u32 = nla_get_u32(tb[IFLA_HSR_PORT2]);
+        if (v_u32 <= (unsigned) G_MAXINT)
+            props->port2 = v_u32;
+    }
+    if (tb[IFLA_HSR_MULTICAST_SPEC])
+        props->multicast_spec = nla_get_u8(tb[IFLA_HSR_MULTICAST_SPEC]);
+    if (tb[IFLA_HSR_SUPERVISION_ADDR])
+        nla_memcpy(&props->supervision_address, tb[IFLA_HSR_SUPERVISION_ADDR], sizeof(NMEtherAddr));
+    if (tb[IFLA_HSR_PROTOCOL])
+        props->prp = nla_get_u8(tb[IFLA_HSR_PROTOCOL]);
 
     return obj;
 }
@@ -3568,6 +3628,9 @@ _new_from_nl_link(NMPlatform            *platform,
     case NM_LINK_TYPE_GRETAP:
         lnk_data = _parse_lnk_gre(nl_info_kind, nl_info_data);
         break;
+    case NM_LINK_TYPE_HSR:
+        lnk_data = _parse_lnk_hsr(nl_info_kind, nl_info_data);
+        break;
     case NM_LINK_TYPE_INFINIBAND:
         lnk_data = _parse_lnk_infiniband(nl_info_kind, nl_info_data);
         break;
@@ -4996,6 +5059,29 @@ _nl_msg_new_link_set_linkinfo(struct nl_msg *msg, NMLinkType link_type, gconstpo
         NLA_PUT_U32(msg, IFLA_GRE_OKEY, htonl(props->output_key));
         NLA_PUT_U16(msg, IFLA_GRE_IFLAGS, htons(props->input_flags));
         NLA_PUT_U16(msg, IFLA_GRE_OFLAGS, htons(props->output_flags));
+        break;
+    }
+    case NM_LINK_TYPE_HSR:
+    {
+        const NMPlatformLnkHsr *props = extra_data;
+
+        nm_assert(props);
+
+        if (!(data = nla_nest_start(msg, IFLA_INFO_DATA)))
+            goto nla_put_failure;
+
+        NLA_PUT_U32(msg, IFLA_HSR_PORT1, props->port1);
+        NLA_PUT_U32(msg, IFLA_HSR_PORT2, props->port2);
+
+        if (props->multicast_spec)
+            NLA_PUT_U8(msg, IFLA_HSR_MULTICAST_SPEC, props->multicast_spec);
+        if (!nm_ether_addr_is_zero(&props->supervision_address))
+            NLA_PUT(msg,
+                    IFLA_HSR_SUPERVISION_ADDR,
+                    sizeof(props->supervision_address),
+                    &props->supervision_address);
+
+        NLA_PUT_U8(msg, IFLA_HSR_PROTOCOL, props->prp);
         break;
     }
     case NM_LINK_TYPE_SIT:

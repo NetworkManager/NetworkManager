@@ -39,6 +39,7 @@ content_files = \
 	dbus-org.freedesktop.NetworkManager.Device.Bridge.xml \
 	dbus-org.freedesktop.NetworkManager.Device.Dummy.xml \
 	dbus-org.freedesktop.NetworkManager.Device.Generic.xml \
+	dbus-org.freedesktop.NetworkManager.Device.Hsr.xml \
 	dbus-org.freedesktop.NetworkManager.Device.IPTunnel.xml \
 	dbus-org.freedesktop.NetworkManager.Device.Infiniband.xml \
 	dbus-org.freedesktop.NetworkManager.Device.Loopback.xml \

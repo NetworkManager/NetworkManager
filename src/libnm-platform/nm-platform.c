@@ -1391,6 +1391,12 @@ nm_platform_link_add(NMPlatform            *self,
                                                  buf_p,
                                                  buf_len);
                    break;
+               case NM_LINK_TYPE_HSR:
+                   nm_strbuf_append_str(&buf_p, &buf_len, ", ");
+                   nm_platform_lnk_hsr_to_string((const NMPlatformLnkHsr *) extra_data,
+                                                 buf_p,
+                                                 buf_len);
+                   break;
                case NM_LINK_TYPE_IP6TNL:
                case NM_LINK_TYPE_IP6GRE:
                case NM_LINK_TYPE_IP6GRETAP:
@@ -2513,6 +2519,12 @@ const NMPlatformLnkGre *
 nm_platform_link_get_lnk_gretap(NMPlatform *self, int ifindex, const NMPlatformLink **out_link)
 {
     return _link_get_lnk(self, ifindex, NM_LINK_TYPE_GRETAP, out_link);
+}
+
+const NMPlatformLnkHsr *
+nm_platform_link_get_lnk_hsr(NMPlatform *self, int ifindex, const NMPlatformLink **out_link)
+{
+    return _link_get_lnk(self, ifindex, NM_LINK_TYPE_HSR, out_link);
 }
 
 const NMPlatformLnkInfiniband *
@@ -6428,6 +6440,27 @@ nm_platform_lnk_gre_to_string(const NMPlatformLnkGre *lnk, char *buf, gsize len)
 }
 
 const char *
+nm_platform_lnk_hsr_to_string(const NMPlatformLnkHsr *lnk, char *buf, gsize len)
+{
+    if (!nm_utils_to_string_buffer_init_null(lnk, &buf, &len))
+        return buf;
+
+    g_snprintf(buf,
+               len,
+               "hsr "
+               "port1 %d "
+               "port2 %d "
+               "supervision_address " NM_ETHER_ADDR_FORMAT_STR " multicast_spec %u "
+               "prp %s",
+               lnk->port1,
+               lnk->port2,
+               NM_ETHER_ADDR_FORMAT_VAL(&lnk->supervision_address),
+               lnk->multicast_spec,
+               lnk->prp ? "on" : "off");
+    return buf;
+}
+
+const char *
 nm_platform_lnk_infiniband_to_string(const NMPlatformLnkInfiniband *lnk, char *buf, gsize len)
 {
     char str_p_key[64];
@@ -8305,6 +8338,29 @@ nm_platform_lnk_gre_cmp(const NMPlatformLnkGre *a, const NMPlatformLnkGre *b)
     NM_CMP_FIELD(a, b, tos);
     NM_CMP_FIELD_BOOL(a, b, path_mtu_discovery);
     NM_CMP_FIELD_BOOL(a, b, is_tap);
+    return 0;
+}
+
+void
+nm_platform_lnk_hsr_hash_update(const NMPlatformLnkHsr *obj, NMHashState *h)
+{
+    nm_hash_update_vals(h,
+                        obj->port1,
+                        obj->port2,
+                        obj->supervision_address,
+                        obj->multicast_spec,
+                        NM_HASH_COMBINE_BOOLS(guint8, obj->prp));
+}
+
+int
+nm_platform_lnk_hsr_cmp(const NMPlatformLnkHsr *a, const NMPlatformLnkHsr *b)
+{
+    NM_CMP_SELF(a, b);
+    NM_CMP_FIELD(a, b, port1);
+    NM_CMP_FIELD(a, b, port2);
+    NM_CMP_FIELD_MEMCMP(a, b, supervision_address);
+    NM_CMP_FIELD(a, b, multicast_spec);
+    NM_CMP_FIELD_BOOL(a, b, prp);
     return 0;
 }
 
