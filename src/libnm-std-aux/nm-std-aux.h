@@ -403,7 +403,7 @@ nm_mult_clamped_u(unsigned a, unsigned b)
         typeof(a) NM_UNIQ_T(A, aq) = (a);                                              \
         typeof(b) NM_UNIQ_T(B, bq) = (b);                                              \
                                                                                        \
-        G_STATIC_ASSERT(_NM_INT_SAME_SIGNEDNESS(NM_UNIQ_T(A, aq), NM_UNIQ_T(B, bq)));  \
+        NM_STATIC_ASSERT(_NM_INT_SAME_SIGNEDNESS(NM_UNIQ_T(A, aq), NM_UNIQ_T(B, bq))); \
                                                                                        \
         ((NM_UNIQ_T(A, aq) < NM_UNIQ_T(B, bq)) ? NM_UNIQ_T(A, aq) : NM_UNIQ_T(B, bq)); \
     })
@@ -414,24 +414,24 @@ nm_mult_clamped_u(unsigned a, unsigned b)
         typeof(a) NM_UNIQ_T(A, aq) = (a);                                              \
         typeof(b) NM_UNIQ_T(B, bq) = (b);                                              \
                                                                                        \
-        G_STATIC_ASSERT(_NM_INT_SAME_SIGNEDNESS(NM_UNIQ_T(A, aq), NM_UNIQ_T(B, bq)));  \
+        NM_STATIC_ASSERT(_NM_INT_SAME_SIGNEDNESS(NM_UNIQ_T(A, aq), NM_UNIQ_T(B, bq))); \
                                                                                        \
         ((NM_UNIQ_T(A, aq) > NM_UNIQ_T(B, bq)) ? NM_UNIQ_T(A, aq) : NM_UNIQ_T(B, bq)); \
     })
 
 #define NM_CLAMP(x, low, high) __NM_CLAMP(NM_UNIQ, x, NM_UNIQ, low, NM_UNIQ, high)
-#define __NM_CLAMP(xq, x, lowq, low, highq, high)                                           \
-    ({                                                                                      \
-        typeof(x)    NM_UNIQ_T(X, xq)       = (x);                                          \
-        typeof(low)  NM_UNIQ_T(LOW, lowq)   = (low);                                        \
-        typeof(high) NM_UNIQ_T(HIGH, highq) = (high);                                       \
-                                                                                            \
-        G_STATIC_ASSERT(_NM_INT_SAME_SIGNEDNESS(NM_UNIQ_T(X, xq), NM_UNIQ_T(LOW, lowq)));   \
-        G_STATIC_ASSERT(_NM_INT_SAME_SIGNEDNESS(NM_UNIQ_T(X, xq), NM_UNIQ_T(HIGH, highq))); \
-                                                                                            \
-        ((NM_UNIQ_T(X, xq) > NM_UNIQ_T(HIGH, highq)) ? NM_UNIQ_T(HIGH, highq)               \
-         : (NM_UNIQ_T(X, xq) < NM_UNIQ_T(LOW, lowq)) ? NM_UNIQ_T(LOW, lowq)                 \
-                                                     : NM_UNIQ_T(X, xq));                   \
+#define __NM_CLAMP(xq, x, lowq, low, highq, high)                                            \
+    ({                                                                                       \
+        typeof(x)    NM_UNIQ_T(X, xq)       = (x);                                           \
+        typeof(low)  NM_UNIQ_T(LOW, lowq)   = (low);                                         \
+        typeof(high) NM_UNIQ_T(HIGH, highq) = (high);                                        \
+                                                                                             \
+        NM_STATIC_ASSERT(_NM_INT_SAME_SIGNEDNESS(NM_UNIQ_T(X, xq), NM_UNIQ_T(LOW, lowq)));   \
+        NM_STATIC_ASSERT(_NM_INT_SAME_SIGNEDNESS(NM_UNIQ_T(X, xq), NM_UNIQ_T(HIGH, highq))); \
+                                                                                             \
+        ((NM_UNIQ_T(X, xq) > NM_UNIQ_T(HIGH, highq)) ? NM_UNIQ_T(HIGH, highq)                \
+         : (NM_UNIQ_T(X, xq) < NM_UNIQ_T(LOW, lowq)) ? NM_UNIQ_T(LOW, lowq)                  \
+                                                     : NM_UNIQ_T(X, xq));                    \
     })
 
 #define NM_MAX_WITH_CMP(cmp, a, b)        \
@@ -1302,15 +1302,15 @@ nm_ptr_to_uintptr(const void *p)
 
 /*****************************************************************************/
 
-#define NM_CMP_DIRECT(a, b)                               \
-    do {                                                  \
-        typeof(a) _a = (a);                               \
-        typeof(b) _b = (b);                               \
-                                                          \
-        G_STATIC_ASSERT(_NM_INT_SAME_SIGNEDNESS(_a, _b)); \
-                                                          \
-        if (_a != _b)                                     \
-            return (_a < _b) ? -1 : 1;                    \
+#define NM_CMP_DIRECT(a, b)                                \
+    do {                                                   \
+        typeof(a) _a = (a);                                \
+        typeof(b) _b = (b);                                \
+                                                           \
+        NM_STATIC_ASSERT(_NM_INT_SAME_SIGNEDNESS(_a, _b)); \
+                                                           \
+        if (_a != _b)                                      \
+            return (_a < _b) ? -1 : 1;                     \
     } while (0)
 
 #define NM_CMP_DIRECT_UNSAFE(a, b)                                                  \
