@@ -392,32 +392,49 @@ nm_mult_clamped_u(unsigned a, unsigned b)
     return c;
 }
 
-/* glib's MIN()/MAX() macros don't have function-like behavior, in that they evaluate
- * the argument possibly twice.
- *
- * Taken from systemd's MIN()/MAX() macros. */
+/* In a few places where a constant expression is required, NM_MIN() doesn't work.
+ * In that case, use NM_MIN_CONST(). */
+#define NM_MIN_CONST(a, b)                                                                   \
+    ((NM_STATIC_ASSERT_EXPR_1(_NM_INT_SAME_SIGNEDNESS((a), (b)) && __builtin_constant_p((a)) \
+                              && __builtin_constant_p((b)))                                  \
+      && ((a) <= (b)))                                                                       \
+         ? (a)                                                                               \
+         : (b))
 
-#define NM_MIN(a, b) __NM_MIN(NM_UNIQ, a, NM_UNIQ, b)
-#define __NM_MIN(aq, a, bq, b)                                                         \
-    ({                                                                                 \
-        typeof(a) NM_UNIQ_T(A, aq) = (a);                                              \
-        typeof(b) NM_UNIQ_T(B, bq) = (b);                                              \
-                                                                                       \
-        NM_STATIC_ASSERT(_NM_INT_SAME_SIGNEDNESS(NM_UNIQ_T(A, aq), NM_UNIQ_T(B, bq))); \
-                                                                                       \
-        ((NM_UNIQ_T(A, aq) < NM_UNIQ_T(B, bq)) ? NM_UNIQ_T(A, aq) : NM_UNIQ_T(B, bq)); \
+#define _NM_MIN_V(aq, a, bq, b)                                                         \
+    ({                                                                                  \
+        typeof(a) NM_UNIQ_T(A, aq) = (a);                                               \
+        typeof(b) NM_UNIQ_T(B, bq) = (b);                                               \
+                                                                                        \
+        ((NM_UNIQ_T(A, aq) <= NM_UNIQ_T(B, bq)) ? NM_UNIQ_T(A, aq) : NM_UNIQ_T(B, bq)); \
     })
 
-#define NM_MAX(a, b) __NM_MAX(NM_UNIQ, a, NM_UNIQ, b)
-#define __NM_MAX(aq, a, bq, b)                                                         \
-    ({                                                                                 \
-        typeof(a) NM_UNIQ_T(A, aq) = (a);                                              \
-        typeof(b) NM_UNIQ_T(B, bq) = (b);                                              \
-                                                                                       \
-        NM_STATIC_ASSERT(_NM_INT_SAME_SIGNEDNESS(NM_UNIQ_T(A, aq), NM_UNIQ_T(B, bq))); \
-                                                                                       \
-        ((NM_UNIQ_T(A, aq) > NM_UNIQ_T(B, bq)) ? NM_UNIQ_T(A, aq) : NM_UNIQ_T(B, bq)); \
+#define NM_MIN(a, b)                                                                         \
+    __builtin_choose_expr(__builtin_constant_p((a)) && __builtin_constant_p((b))             \
+                              && NM_STATIC_ASSERT_EXPR_1(_NM_INT_SAME_SIGNEDNESS((a), (b))), \
+                          (((a) <= (b)) ? (a) : (b)),                                        \
+                          _NM_MIN_V(NM_UNIQ, a, NM_UNIQ, b))
+
+#define NM_MAX_CONST(a, b)                                                                   \
+    ((NM_STATIC_ASSERT_EXPR_1(_NM_INT_SAME_SIGNEDNESS((a), (b)) && __builtin_constant_p((a)) \
+                              && __builtin_constant_p((b)))                                  \
+      && ((a) >= (b)))                                                                       \
+         ? (a)                                                                               \
+         : (b))
+
+#define _NM_MAX_V(aq, a, bq, b)                                                         \
+    ({                                                                                  \
+        typeof(a) NM_UNIQ_T(A, aq) = (a);                                               \
+        typeof(b) NM_UNIQ_T(B, bq) = (b);                                               \
+                                                                                        \
+        ((NM_UNIQ_T(A, aq) >= NM_UNIQ_T(B, bq)) ? NM_UNIQ_T(A, aq) : NM_UNIQ_T(B, bq)); \
     })
+
+#define NM_MAX(a, b)                                                                         \
+    __builtin_choose_expr(__builtin_constant_p((a)) && __builtin_constant_p((b))             \
+                              && NM_STATIC_ASSERT_EXPR_1(_NM_INT_SAME_SIGNEDNESS((a), (b))), \
+                          (((a) >= (b)) ? (a) : (b)),                                        \
+                          _NM_MAX_V(NM_UNIQ, a, NM_UNIQ, b))
 
 #define NM_CLAMP(x, low, high) __NM_CLAMP(NM_UNIQ, x, NM_UNIQ, low, NM_UNIQ, high)
 #define __NM_CLAMP(xq, x, lowq, low, highq, high)                                            \
