@@ -1518,7 +1518,7 @@ nm_utils_ip4_routes_to_variant(GPtrArray *routes)
             array[1] = nm_ip_route_get_prefix(route);
             nm_ip_route_get_next_hop_binary(route, &array[2]);
             /* The old routes format uses "0" for default, not "-1" */
-            array[3] = MAX(0, nm_ip_route_get_metric(route));
+            array[3] = NM_MAX(0, nm_ip_route_get_metric(route));
 
             g_variant_builder_add(&builder, "@au", nm_g_variant_new_au(array, 4));
         }

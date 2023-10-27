@@ -1766,7 +1766,7 @@ _connection_autoconnect_retries_set(NMPolicy             *self,
             nm_assert(retry_time != 0);
 
             priv->reset_connections_retries_idle_source = nm_g_timeout_add_seconds_source(
-                MAX(0, retry_time - nm_utils_get_monotonic_timestamp_sec()),
+                NM_MAX(0, retry_time - nm_utils_get_monotonic_timestamp_sec()),
                 reset_connections_retries,
                 self);
         }

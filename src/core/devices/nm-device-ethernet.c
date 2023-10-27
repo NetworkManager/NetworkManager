@@ -1431,7 +1431,7 @@ act_stage2_config(NMDevice *device, NMDeviceStateReason *out_failure_reason)
 
                 mtu = nm_setting_ppp_get_mtu(s_ppp);
                 mru = nm_setting_ppp_get_mru(s_ppp);
-                mxu = MAX(mru, mtu);
+                mxu = NM_MAX(mru, mtu);
                 if (mxu) {
                     _LOGD(LOGD_PPP,
                           "set MTU to %u (PPP interface MRU %u, MTU %u)",

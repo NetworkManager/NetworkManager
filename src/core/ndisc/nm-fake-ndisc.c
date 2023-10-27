@@ -239,7 +239,7 @@ receive_ra(gpointer user_data)
     priv->receive_ra_id = 0;
 
     /* preserve the "most managed" level  on updates. */
-    dhcp_level = MAX(rdata->public.dhcp_level, ra->dhcp_level);
+    dhcp_level = NM_MAX(rdata->public.dhcp_level, ra->dhcp_level);
 
     if (rdata->public.dhcp_level != dhcp_level) {
         rdata->public.dhcp_level = dhcp_level;

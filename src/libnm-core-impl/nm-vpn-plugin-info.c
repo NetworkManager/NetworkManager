@@ -181,8 +181,8 @@ _sort_files(LoadDirInfo *a, LoadDirInfo *b)
 {
     time_t ta, tb;
 
-    ta = MAX(a->stat.st_mtime, a->stat.st_ctime);
-    tb = MAX(b->stat.st_mtime, b->stat.st_ctime);
+    ta = NM_MAX(a->stat.st_mtime, a->stat.st_ctime);
+    tb = NM_MAX(b->stat.st_mtime, b->stat.st_ctime);
     if (ta < tb)
         return 1;
     if (ta > tb)

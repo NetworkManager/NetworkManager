@@ -326,10 +326,10 @@ nmt_editor_grid_size_request(NmtNewtWidget *widget, int *width, int *height)
         if (rows[i].label) {
             nmt_newt_widget_size_request(rows[i].label, &lwidth, &lheight);
             lwidth += priv->indent;
-            state->col_widths[0] = MAX(state->col_widths[0], lwidth);
+            state->col_widths[0] = NM_MAX(state->col_widths[0], lwidth);
 
             nmt_newt_widget_size_request(rows[i].widget, &wwidth, &wheight);
-            state->col_widths[1] = MAX(state->col_widths[1], wwidth);
+            state->col_widths[1] = NM_MAX(state->col_widths[1], wwidth);
             priv->row_heights[i] = wheight;
 
             add_padding = TRUE;
@@ -340,8 +340,8 @@ nmt_editor_grid_size_request(NmtNewtWidget *widget, int *width, int *height)
 
         if (rows[i].extra) {
             nmt_newt_widget_size_request(rows[i].extra, &ewidth, &eheight);
-            state->col_widths[2] = MAX(state->col_widths[2], ewidth);
-            priv->row_heights[i] = MAX(priv->row_heights[i], eheight);
+            state->col_widths[2] = NM_MAX(state->col_widths[2], ewidth);
+            priv->row_heights[i] = NM_MAX(priv->row_heights[i], eheight);
         }
 
         *height += priv->row_heights[i];

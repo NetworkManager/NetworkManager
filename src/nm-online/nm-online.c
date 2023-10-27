@@ -76,7 +76,7 @@ _print_progress(gboolean wait_startup, int progress_next_step_i, gint64 remainin
     g_print("\r%s", _("Connecting"));
     for (i = 0; i < PROGRESS_STEPS; i++)
         putchar(i < j ? '.' : ' ');
-    g_print(" %4lds", (long) (MAX(0, remaining_ms + 999) / 1000));
+    g_print(" %4lds", (long) (NM_MAX(0, remaining_ms + 999) / 1000));
     if (retval != EXIT_NONE) {
         const char *result;
 
