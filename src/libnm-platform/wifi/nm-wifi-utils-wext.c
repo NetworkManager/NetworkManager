@@ -758,7 +758,7 @@ nm_wifi_utils_wext_new(int ifindex, gboolean check_scan)
     wext->max_qual.noise   = range.max_qual.noise;
     wext->max_qual.updated = range.max_qual.updated;
 
-    wext->num_freqs = MIN(range.num_frequency, IW_MAX_FREQUENCIES);
+    wext->num_freqs = MIN(range.num_frequency, (guint) IW_MAX_FREQUENCIES);
     for (i = 0; i < wext->num_freqs; i++) {
         wext->freqs[i] = iw_freq_to_uint32(&range.freq[i]);
         freq_valid     = TRUE;

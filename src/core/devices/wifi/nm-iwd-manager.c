@@ -1902,7 +1902,7 @@ nm_iwd_manager_get_ap_mirror_connection(NMIwdManager *self, NMWifiAP *ap)
     NM80211ApSecurityFlags sec_flags = nm_wifi_ap_get_wpa_flags(ap) | nm_wifi_ap_get_rsn_flags(ap);
 
     ssid_bytes = g_bytes_get_data(nm_wifi_ap_get_ssid(ap), &ssid_len);
-    ssid_len   = MIN(ssid_len, 32);
+    ssid_len   = MIN(ssid_len, 32u);
     memcpy(name_buf, ssid_bytes, ssid_len);
     name_buf[ssid_len] = '\0';
 

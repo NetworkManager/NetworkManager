@@ -617,7 +617,7 @@ test_nmp_utils_new_vlan_name(void)
             g_assert(ifname && ifname[0]);
             g_assert_cmpint(strlen(ifname),
                             ==,
-                            MIN(15, strlen(parent_names[i]) + strlen(vlan_id_s)));
+                            MIN(15u, strlen(parent_names[i]) + strlen(vlan_id_s)));
             g_assert(g_str_has_suffix(ifname, vlan_id_s));
             g_assert(ifname[strlen(ifname) - strlen(vlan_id_s)] == '.');
             g_assert(strncmp(ifname, parent_names[i], strlen(ifname) - strlen(vlan_id_s)) == 0);
