@@ -163,7 +163,7 @@ typedef enum _nm_packed {
 G_STATIC_ASSERT(RTA_MAX == (__RTA_MAX - 1));
 #define RTA_PREF 20
 #undef RTA_MAX
-#define RTA_MAX (MAX((__RTA_MAX - 1), RTA_PREF))
+#define RTA_MAX (NM_MAX_CONST((__RTA_MAX - 1), RTA_PREF))
 
 #ifndef MACVLAN_FLAG_NOPROMISC
 #define MACVLAN_FLAG_NOPROMISC 1

@@ -37,7 +37,7 @@ typedef enum _NMDedupMultiIdxMode {
 
 /*****************************************************************************/
 
-#define _NMDedupMultiObj_Align (MAX(_nm_alignof(void *), _nm_alignof(gint64)))
+#define _NMDedupMultiObj_Align (NM_MAX_CONST(_nm_alignof(void *), _nm_alignof(gint64)))
 
 struct _NMDedupMultiObj {
     union {
