@@ -6962,10 +6962,10 @@ _poll_done_cb(GObject *source, GAsyncResult *result, gpointer user_data)
     else
         wait_ms = 0;
     if (poll_task_data->sleep_timeout_ms > 0)
-        wait_ms = MAX(wait_ms, poll_task_data->sleep_timeout_ms);
+        wait_ms = NM_MAX(wait_ms, poll_task_data->sleep_timeout_ms);
 
     poll_task_data->source_next_poll =
-        nm_g_source_attach(nm_g_timeout_source_new(MAX(1, wait_ms),
+        nm_g_source_attach(nm_g_timeout_source_new(NM_MAX(1, wait_ms),
                                                    G_PRIORITY_DEFAULT,
                                                    _poll_start_cb,
                                                    poll_task_data,

@@ -4256,8 +4256,8 @@ read_device_factory_paths_sort_fcn(gconstpointer a, gconstpointer b)
     const struct plugin_info *db = b;
     time_t                    ta, tb;
 
-    ta = MAX(da->st.st_mtime, da->st.st_ctime);
-    tb = MAX(db->st.st_mtime, db->st.st_ctime);
+    ta = NM_MAX(da->st.st_mtime, da->st.st_ctime);
+    tb = NM_MAX(db->st.st_mtime, db->st.st_ctime);
 
     if (ta < tb)
         return 1;

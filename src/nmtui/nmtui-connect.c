@@ -326,8 +326,8 @@ listbox_active_changed(GObject *object, GParamSpec *pspec, gpointer button)
         deactivate       = _("Deactivate");
         deactivate_width = nmt_newt_text_width(deactivate);
 
-        activate_padding   = MAX(0, deactivate_width - activate_width);
-        deactivate_padding = MAX(0, activate_width - deactivate_width);
+        activate_padding   = NM_MAX(0, deactivate_width - activate_width);
+        deactivate_padding = NM_MAX(0, activate_width - deactivate_width);
     }
 
     has_selection = nmt_connect_connection_list_get_selection(list, NULL, NULL, NULL, &ac);

@@ -218,12 +218,12 @@ size_request_buttons(NmtNewtButtonBox *bbox, GPtrArray *buttons, int *width, int
             *width += child_width;
             if (i > 0)
                 *width += 1;
-            *height = MAX(*height, child_height);
+            *height = NM_MAX(*height, child_height);
         } else {
             *height += child_height;
             if (i > 0)
                 *height += 1;
-            *width = MAX(*width, child_width);
+            *width = NM_MAX(*width, child_width);
         }
     }
 }

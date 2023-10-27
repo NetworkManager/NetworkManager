@@ -249,7 +249,7 @@ nmt_newt_section_size_request(NmtNewtWidget *widget, int *width, int *height)
     nmt_newt_widget_size_request(priv->header, &priv->hwidth_req, &priv->hheight_req);
     nmt_newt_widget_size_request(priv->body, &priv->bwidth_req, &priv->bheight_req);
 
-    *width = MAX(priv->hwidth_req, priv->bwidth_req) + 2;
+    *width = NM_MAX(priv->hwidth_req, priv->bwidth_req) + 2;
     if (priv->open)
         *height = priv->hheight_req + priv->bheight_req + (priv->show_border ? 1 : 0);
     else

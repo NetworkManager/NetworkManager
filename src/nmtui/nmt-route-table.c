@@ -185,8 +185,8 @@ nmt_route_table_init(NmtRouteTable *table)
     metric_width = nmt_newt_text_width(text);
     nmt_newt_grid_add(NMT_NEWT_GRID(header), metric_label, 2, 0);
 
-    priv->ip_entry_width     = MAX(20, MAX(dest_prefix_width, next_hop_width));
-    priv->metric_entry_width = MAX(7, metric_width);
+    priv->ip_entry_width     = NM_MAX(20, NM_MAX(dest_prefix_width, next_hop_width));
+    priv->metric_entry_width = NM_MAX(7, metric_width);
 
     nmt_newt_widget_set_padding(dest_prefix_label,
                                 0,

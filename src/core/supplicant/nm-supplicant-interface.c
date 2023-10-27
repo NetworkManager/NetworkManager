@@ -1380,7 +1380,7 @@ _get_capability(NMSupplicantInterfacePrivate *priv, NMSupplCapType type)
     case NM_SUPPL_CAP_TYPE_AP:
         iface_value = NM_SUPPL_CAP_MASK_GET(priv->iface_capabilities, type);
         value       = NM_SUPPL_CAP_MASK_GET(priv->global_capabilities, type);
-        value       = MAX(iface_value, value);
+        value       = NM_MAX(iface_value, value);
         break;
     case NM_SUPPL_CAP_TYPE_FT:
         value = NM_SUPPL_CAP_MASK_GET(priv->global_capabilities, type);

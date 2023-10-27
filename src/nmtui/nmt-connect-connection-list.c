@@ -480,7 +480,7 @@ nmt_connect_connection_list_rebuild(NmtConnectConnectionList *list)
         for (citer = nmtdev->conns; citer; citer = citer->next) {
             nmtconn = citer->data;
 
-            max_width = MAX(max_width, nmt_newt_text_width(nmtconn->name));
+            max_width = NM_MAX(max_width, nmt_newt_text_width(nmtconn->name));
         }
     }
 
