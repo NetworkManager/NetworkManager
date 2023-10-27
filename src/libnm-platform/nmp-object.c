@@ -3485,6 +3485,18 @@ const NMPClass _nmp_classes[NMP_OBJECT_TYPE_MAX] = {
             .cmd_plobj_hash_update = (CmdPlobjHashUpdateFunc) nm_platform_lnk_gre_hash_update,
             .cmd_plobj_cmp         = (CmdPlobjCmpFunc) nm_platform_lnk_gre_cmp,
         },
+    [NMP_OBJECT_TYPE_LNK_HSR - 1] =
+        {
+            .parent                = DEDUP_MULTI_OBJ_CLASS_INIT(),
+            .obj_type              = NMP_OBJECT_TYPE_LNK_HSR,
+            .sizeof_data           = sizeof(NMPObjectLnkHsr),
+            .sizeof_public         = sizeof(NMPlatformLnkHsr),
+            .obj_type_name         = "hsr",
+            .lnk_link_type         = NM_LINK_TYPE_HSR,
+            .cmd_plobj_to_string   = (CmdPlobjToStringFunc) nm_platform_lnk_hsr_to_string,
+            .cmd_plobj_hash_update = (CmdPlobjHashUpdateFunc) nm_platform_lnk_hsr_hash_update,
+            .cmd_plobj_cmp         = (CmdPlobjCmpFunc) nm_platform_lnk_hsr_cmp,
+        },
     [NMP_OBJECT_TYPE_LNK_INFINIBAND - 1] =
         {
             .parent              = DEDUP_MULTI_OBJ_CLASS_INIT(),

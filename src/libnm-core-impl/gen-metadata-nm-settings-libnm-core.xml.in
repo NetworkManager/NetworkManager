@@ -1418,6 +1418,30 @@
                   gprop-type="gint"
                   />
     </setting>
+    <setting name="hsr"
+             gtype="NMSettingHsr"
+             >
+        <property name="multicast-spec"
+                  dbus-type="u"
+                  gprop-type="guint"
+                  />
+        <property name="port1"
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
+        <property name="port2"
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
+        <property name="prp"
+                  dbus-type="b"
+                  gprop-type="gboolean"
+                  />
+        <property name="supervision-address"
+                  dbus-type="s"
+                  gprop-type="gchararray"
+                  />
+    </setting>
     <setting name="infiniband"
              gtype="NMSettingInfiniband"
              >

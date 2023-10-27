@@ -1021,6 +1021,8 @@ introspection_sources = \
 	introspection/org.freedesktop.NetworkManager.Device.Dummy.h \
 	introspection/org.freedesktop.NetworkManager.Device.Generic.c \
 	introspection/org.freedesktop.NetworkManager.Device.Generic.h \
+	introspection/org.freedesktop.NetworkManager.Device.Hsr.c \
+	introspection/org.freedesktop.NetworkManager.Device.Hsr.h \
 	introspection/org.freedesktop.NetworkManager.Device.IPTunnel.c \
 	introspection/org.freedesktop.NetworkManager.Device.IPTunnel.h \
 	introspection/org.freedesktop.NetworkManager.Device.Infiniband.c \
@@ -1112,6 +1114,7 @@ DBUS_INTERFACE_DOCS = \
 	docs/api/dbus-org.freedesktop.NetworkManager.Device.Bridge.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.Device.Dummy.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.Device.Generic.xml \
+	docs/api/dbus-org.freedesktop.NetworkManager.Device.Hsr.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.Device.IPTunnel.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.Device.Infiniband.xml \
 	docs/api/dbus-org.freedesktop.NetworkManager.Device.Loopback.xml \
@@ -1181,6 +1184,7 @@ dbusinterfaces_DATA = \
 	introspection/org.freedesktop.NetworkManager.Device.Bridge.xml \
 	introspection/org.freedesktop.NetworkManager.Device.Dummy.xml \
 	introspection/org.freedesktop.NetworkManager.Device.Generic.xml \
+	introspection/org.freedesktop.NetworkManager.Device.Hsr.xml \
 	introspection/org.freedesktop.NetworkManager.Device.IPTunnel.xml \
 	introspection/org.freedesktop.NetworkManager.Device.Infiniband.xml \
 	introspection/org.freedesktop.NetworkManager.Device.Loopback.xml \
@@ -1260,6 +1264,7 @@ src_libnm_core_impl_lib_h_pub_real = \
 	src/libnm-core-public/nm-setting-generic.h \
 	src/libnm-core-public/nm-setting-gsm.h \
 	src/libnm-core-public/nm-setting-hostname.h \
+	src/libnm-core-public/nm-setting-hsr.h \
 	src/libnm-core-public/nm-setting-infiniband.h \
 	src/libnm-core-public/nm-setting-ip-config.h \
 	src/libnm-core-public/nm-setting-ip-tunnel.h \
@@ -1342,6 +1347,7 @@ src_libnm_core_impl_lib_c_settings_real = \
 	src/libnm-core-impl/nm-setting-generic.c \
 	src/libnm-core-impl/nm-setting-gsm.c \
 	src/libnm-core-impl/nm-setting-hostname.c \
+	src/libnm-core-impl/nm-setting-hsr.c \
 	src/libnm-core-impl/nm-setting-infiniband.c \
 	src/libnm-core-impl/nm-setting-ip-config.c \
 	src/libnm-core-impl/nm-setting-ip-tunnel.c \
@@ -1741,6 +1747,7 @@ libnm_lib_h_pub_real = \
 	src/libnm-client-public/nm-device-dummy.h \
 	src/libnm-client-public/nm-device-ethernet.h \
 	src/libnm-client-public/nm-device-generic.h \
+	src/libnm-client-public/nm-device-hsr.h \
 	src/libnm-client-public/nm-device-infiniband.h \
 	src/libnm-client-public/nm-device-ip-tunnel.h \
 	src/libnm-client-public/nm-device-loopback.h \
@@ -1812,6 +1819,7 @@ libnm_lib_c_real = \
 	src/libnm-client-impl/nm-device-dummy.c \
 	src/libnm-client-impl/nm-device-ethernet.c \
 	src/libnm-client-impl/nm-device-generic.c \
+	src/libnm-client-impl/nm-device-hsr.c \
 	src/libnm-client-impl/nm-device-infiniband.c \
 	src/libnm-client-impl/nm-device-ip-tunnel.c \
 	src/libnm-client-impl/nm-device-loopback.c \
@@ -2656,6 +2664,8 @@ src_core_libNetworkManager_la_SOURCES = \
 	src/core/devices/nm-device-dummy.h \
 	src/core/devices/nm-device-ethernet.c \
 	src/core/devices/nm-device-ethernet.h \
+	src/core/devices/nm-device-hsr.c \
+	src/core/devices/nm-device-hsr.h \
 	src/core/devices/nm-device-infiniband.c \
 	src/core/devices/nm-device-infiniband.h \
 	src/core/devices/nm-device-ip-tunnel.c \

@@ -19,6 +19,7 @@ libnm_core_settings_sources = files(
   'nm-setting-generic.c',
   'nm-setting-gsm.c',
   'nm-setting-hostname.c',
+  'nm-setting-hsr.c',
   'nm-setting-infiniband.c',
   'nm-setting-ip-config.c',
   'nm-setting-ip-tunnel.c',

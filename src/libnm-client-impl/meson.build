@@ -17,6 +17,7 @@ libnm_client_impl_sources = files(
   'nm-device-dummy.c',
   'nm-device-ethernet.c',
   'nm-device-generic.c',
+  'nm-device-hsr.c',
   'nm-device-infiniband.c',
   'nm-device-ip-tunnel.c',
   'nm-device-loopback.c',

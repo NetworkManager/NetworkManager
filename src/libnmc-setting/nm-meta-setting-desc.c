@@ -6025,6 +6025,42 @@ static const NMMetaPropertyInfo *const property_infos_GSM[] = {
 };
 
 #undef  _CURRENT_NM_META_SETTING_TYPE
+#define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_HSR
+static const NMMetaPropertyInfo *const property_infos_HSR[] = {
+    PROPERTY_INFO_WITH_DESC (NM_SETTING_HSR_PORT1,
+        .is_cli_option =                TRUE,
+        .property_alias =               "port1",
+        .inf_flags =                    NM_META_PROPERTY_INF_FLAG_REQD,
+        .prompt =                       N_("hsr port1"),
+        .property_type =                &_pt_gobject_string,
+    ),
+    PROPERTY_INFO_WITH_DESC (NM_SETTING_HSR_PORT2,
+        .is_cli_option =                TRUE,
+        .property_alias =               "port2",
+        .inf_flags =                    NM_META_PROPERTY_INF_FLAG_REQD,
+        .prompt =                       N_("hsr port2"),
+        .property_type =                &_pt_gobject_string,
+    ),
+    PROPERTY_INFO_WITH_DESC (NM_SETTING_HSR_SUPERVISION_ADDRESS,
+        .is_cli_option =                TRUE,
+        .property_alias =               "supervision-address",
+        .prompt =                       N_("hsr supervision address"),
+        .property_type =                &_pt_gobject_mac,
+    ),
+    PROPERTY_INFO_WITH_DESC (NM_SETTING_HSR_MULTICAST_SPEC,
+        .is_cli_option =                TRUE,
+        .property_alias =               "multicast-spec",
+        .prompt =                       N_("hsr multicast spec"),
+        .property_type =                &_pt_gobject_int,
+    ),
+    PROPERTY_INFO_WITH_DESC (NM_SETTING_HSR_PRP,
+        .property_type =                &_pt_gobject_bool,
+    ),
+    NULL
+};
+
+
+#undef  _CURRENT_NM_META_SETTING_TYPE
 #define _CURRENT_NM_META_SETTING_TYPE NM_META_SETTING_TYPE_HOSTNAME
 static const NMMetaPropertyInfo *const property_infos_HOSTNAME[] = {
     PROPERTY_INFO (NM_SETTING_HOSTNAME_PRIORITY, DESCRIBE_DOC_NM_SETTING_HOSTNAME_PRIORITY,
@@ -8559,6 +8595,7 @@ _setting_init_fcn_wireless (ARGS_SETTING_INIT_FCN)
 #define SETTING_PRETTY_NAME_GENERIC             N_("Generic settings")
 #define SETTING_PRETTY_NAME_GSM                 N_("GSM mobile broadband connection")
 #define SETTING_PRETTY_NAME_HOSTNAME            N_("Hostname settings")
+#define SETTING_PRETTY_NAME_HSR                 N_("HSR settings")
 #define SETTING_PRETTY_NAME_INFINIBAND          N_("InfiniBand connection")
 #define SETTING_PRETTY_NAME_IP4_CONFIG          N_("IPv4 protocol")
 #define SETTING_PRETTY_NAME_IP6_CONFIG          N_("IPv6 protocol")
@@ -8702,6 +8739,12 @@ const NMMetaSettingInfoEditor nm_meta_setting_infos_editor[] = {
         .setting_init_fcn =             _setting_init_fcn_gsm,
     ),
     SETTING_INFO (HOSTNAME),
+    SETTING_INFO (HSR,
+        .valid_parts = NM_META_SETTING_VALID_PARTS (
+            NM_META_SETTING_VALID_PART_ITEM (CONNECTION, TRUE),
+            NM_META_SETTING_VALID_PART_ITEM (HSR, TRUE),
+        ),
+    ),
     SETTING_INFO (INFINIBAND,
         .valid_parts = NM_META_SETTING_VALID_PARTS (
             NM_META_SETTING_VALID_PART_ITEM (CONNECTION,            TRUE),

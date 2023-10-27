@@ -29,6 +29,7 @@
 #include "nm-device-dummy.h"
 #include "nm-device-ethernet.h"
 #include "nm-device-generic.h"
+#include "nm-device-hsr.h"
 #include "nm-device-infiniband.h"
 #include "nm-device-ip-tunnel.h"
 #include "nm-device-loopback.h"

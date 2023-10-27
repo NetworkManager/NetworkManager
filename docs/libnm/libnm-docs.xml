@@ -319,6 +319,7 @@ print ("NetworkManager version " + client.get_version())]]></programlisting></in
     <xi:include href="xml/nm-setting-generic.xml"/>
     <xi:include href="xml/nm-setting-gsm.xml"/>
     <xi:include href="xml/nm-setting-hostname.xml"/>
+    <xi:include href="xml/nm-setting-hsr.xml"/>
     <xi:include href="xml/nm-setting-infiniband.xml"/>
     <xi:include href="xml/nm-setting-ip-config.xml"/>
     <xi:include href="xml/nm-setting-ip-tunnel.xml"/>
@@ -374,6 +375,7 @@ print ("NetworkManager version " + client.get_version())]]></programlisting></in
     <xi:include href="xml/nm-device-dummy.xml"/>
     <xi:include href="xml/nm-device-ethernet.xml"/>
     <xi:include href="xml/nm-device-generic.xml"/>
+    <xi:include href="xml/nm-device-hsr.xml"/>
     <xi:include href="xml/nm-device-infiniband.xml"/>
     <xi:include href="xml/nm-device-ip-tunnel.xml"/>
     <xi:include href="xml/nm-device-loopback.xml"/>

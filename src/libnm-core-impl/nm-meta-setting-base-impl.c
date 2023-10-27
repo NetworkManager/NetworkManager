@@ -29,6 +29,7 @@
 #include "nm-setting-generic.h"
 #include "nm-setting-gsm.h"
 #include "nm-setting-hostname.h"
+#include "nm-setting-hsr.h"
 #include "nm-setting-infiniband.h"
 #include "nm-setting-ip-config.h"
 #include "nm-setting-ip-tunnel.h"
@@ -335,6 +336,13 @@ const NMMetaSettingInfo nm_meta_setting_infos[] = {
             .setting_name      = NM_SETTING_HOSTNAME_SETTING_NAME,
             .get_setting_gtype = nm_setting_hostname_get_type,
         },
+    [NM_META_SETTING_TYPE_HSR] =
+        {
+            .meta_type         = NM_META_SETTING_TYPE_HSR,
+            .setting_priority  = NM_SETTING_PRIORITY_HW_BASE,
+            .setting_name      = NM_SETTING_HSR_SETTING_NAME,
+            .get_setting_gtype = nm_setting_hsr_get_type,
+        },
     [NM_META_SETTING_TYPE_INFINIBAND] =
         {
             .meta_type         = NM_META_SETTING_TYPE_INFINIBAND,
@@ -632,6 +640,7 @@ const NMMetaSettingType nm_meta_setting_types_by_priority[] = {
     NM_META_SETTING_TYPE_DUMMY,
     NM_META_SETTING_TYPE_GENERIC,
     NM_META_SETTING_TYPE_GSM,
+    NM_META_SETTING_TYPE_HSR,
     NM_META_SETTING_TYPE_INFINIBAND,
     NM_META_SETTING_TYPE_IP_TUNNEL,
     NM_META_SETTING_TYPE_LOOPBACK,

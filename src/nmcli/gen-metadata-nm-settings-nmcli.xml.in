@@ -616,7 +616,7 @@
                   alias="type"
                   nmcli-description="Base type of the connection. For hardware-dependent connections, should contain the setting name of the hardware-type specific setting (ie, &quot;802-3-ethernet&quot; or &quot;802-11-wireless&quot; or &quot;bluetooth&quot;, etc), and for non-hardware dependent connections like VPN or otherwise, should contain the setting name of that setting type (ie, &quot;vpn&quot; or &quot;bridge&quot;, etc)."
                   format="string"
-                  values="6lowpan, 802-11-olpc-mesh, 802-11-wireless, 802-3-ethernet, adsl, bluetooth, bond, bridge, cdma, dummy, generic, gsm, infiniband, ip-tunnel, loopback, macsec, macvlan, ovs-bridge, ovs-dpdk, ovs-interface, ovs-patch, ovs-port, pppoe, team, tun, veth, vlan, vpn, vrf, vxlan, wifi-p2p, wimax, wireguard, wpan" />
+                  values="6lowpan, 802-11-olpc-mesh, 802-11-wireless, 802-3-ethernet, adsl, bluetooth, bond, bridge, cdma, dummy, generic, gsm, hsr, infiniband, ip-tunnel, loopback, macsec, macvlan, ovs-bridge, ovs-dpdk, ovs-interface, ovs-patch, ovs-port, pppoe, team, tun, veth, vlan, vpn, vrf, vxlan, wifi-p2p, wimax, wireguard, wpan" />
         <property name="interface-name"
                   alias="ifname"
                   nmcli-description="The name of the network interface this connection is bound to. If not set, then the connection can be attached to any interface of the appropriate type (subject to restrictions imposed by other settings). For software devices this specifies the name of the created device. For connection types where interface names cannot easily be made persistent (e.g. mobile broadband or USB Ethernet), this property should not be used. Setting this property restricts the interfaces a connection can be used with, and if interface names change or are reordered the connection may be applied to the wrong interface."
@@ -1134,6 +1134,29 @@
                   nmcli-description="If set to &quot;true&quot; (1), NetworkManager attempts to get the hostname via DHCPv4/DHCPv6 or reverse DNS lookup on this device only when the device has the default route for the given address family (IPv4/IPv6). If set to &quot;false&quot; (0), the hostname can be set from this device even if it doesn&apos;t have the default route. When set to &quot;default&quot; (-1), the value from global configuration is used. If the property doesn&apos;t have a value in the global configuration, NetworkManager assumes the value to be &quot;false&quot; (0)."
                   format="ternary"
                   values="true/yes/on, false/no/off, default/unknown" />
+    </setting>
+    <setting name="hsr" >
+        <property name="port1"
+                  alias="port1"
+                  nmcli-description="The port1 interface name of the HSR. This property is mandatory."
+                  format="string" />
+        <property name="port2"
+                  alias="port2"
+                  nmcli-description="The port2 interface name of the HSR. This property is mandatory."
+                  format="string" />
+        <property name="supervision-address"
+                  alias="supervision-address"
+                  nmcli-description="The supervision MAC address."
+                  format="MAC address" />
+        <property name="multicast-spec"
+                  alias="multicast-spec"
+                  nmcli-description="The last byte of supervision address."
+                  format="integer"
+                  values="0 - 255" />
+        <property name="prp"
+                  nmcli-description="The protocol used by the interface, whether it is PRP or HSR."
+                  format="boolean"
+                  values="true/yes/on, false/no/off" />
     </setting>
     <setting name="infiniband" >
         <property name="mac-address"
