@@ -766,4 +766,10 @@ _nm_deprecated("Don't use this API") void _nm_forbidden_glib_api_n(gconstpointer
 
 /*****************************************************************************/
 
+/* Use either NM_MIN()/NM_MAX() or (if that doesn't work) use NM_MIN_CONST()/NM_MAX_CONST(). */
+#undef MIN
+#undef MAX
+
+/*****************************************************************************/
+
 #endif /* __NM_GLIB_H__ */
