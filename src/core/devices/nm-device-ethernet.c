@@ -1707,6 +1707,7 @@ complete_connection(NMDevice            *device,
 static NMConnection *
 new_default_connection(NMDevice *self)
 {
+    const char                    *link_local_only = NULL;
     NMConnection                  *connection;
     NMSettingsConnection *const   *connections;
     NMSetting                     *setting;
@@ -1714,7 +1715,6 @@ new_default_connection(NMDevice *self)
     struct udev_device            *dev;
     const char                    *perm_hw_addr;
     const char                    *iface;
-    const char                    *uprop   = "0";
     gs_free char                  *defname = NULL;
     gs_free char                  *uuid    = NULL;
     guint                          i, n_connections;
@@ -1763,10 +1763,13 @@ new_default_connection(NMDevice *self)
     /* Check if we should create a Link-Local only connection */
     dev = nm_platform_link_get_udev_device(nm_device_get_platform(NM_DEVICE(self)),
                                            nm_device_get_ip_ifindex(self));
-    if (dev)
-        uprop = udev_device_get_property_value(dev, "NM_AUTO_DEFAULT_LINK_LOCAL_ONLY");
+    if (dev) {
+        link_local_only = udev_device_get_property_value(dev, "NM_AUTO_DEFAULT_LINK_LOCAL_ONLY");
+        if (!link_local_only)
+            link_local_only = udev_device_get_property_value(dev, "ID_NET_AUTO_LINK_LOCAL_ONLY");
+    }
 
-    if (_nm_utils_ascii_str_to_bool(uprop, FALSE)) {
+    if (_nm_utils_ascii_str_to_bool(link_local_only, FALSE)) {
         setting = nm_setting_ip4_config_new();
         g_object_set(setting,
                      NM_SETTING_IP_CONFIG_METHOD,

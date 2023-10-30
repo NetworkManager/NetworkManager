@@ -193,6 +193,24 @@
         </para>
         </listitem>
       </varlistentry>
+      <varlistentry>
+        <term><varname>NM_AUTO_DEFAULT_LINK_LOCAL_ONLY</varname></term>
+        <listitem><para>
+          If set to <literal>"1"</literal> or <literal>"true"</literal>, the
+          automatically generated connections "Wired connection N" will only
+          enable link local addressing for IPv4 and IPv6. This can be useful
+          on thunderbolt devices or host-to-host USB devices.
+        </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><varname>ID_NET_AUTO_LINK_LOCAL_ONLY</varname></term>
+        <listitem><para>
+          Honored and treated the same as if <varname>NM_AUTO_DEFAULT_LINK_LOCAL_ONLY</varname>
+          were set.
+        </para>
+        </listitem>
+      </varlistentry>
     </variablelist>
   </refsect1>
 

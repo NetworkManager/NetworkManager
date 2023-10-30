@@ -1,11 +1,13 @@
 =============================================
 NetworkManager-1.46
-Overview of changes since NetworkManager-1.46
+Overview of changes since NetworkManager-1.44
 =============================================
 
 * Change internal ABI of NMSetting types and NMSimpleConnection. The layout of
   these structs was already hidden from public headers since 1.34 and this change
   should not be noticeable.
+* Honor udev property ID_NET_AUTO_LINK_LOCAL_ONLY=1 for enabling
+  link local addresses on default wired connection.
 
 =============================================
 NetworkManager-1.44
