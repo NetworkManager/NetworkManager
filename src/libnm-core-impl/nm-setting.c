@@ -355,7 +355,7 @@ _nm_setting_class_commit(NMSettingClass             *setting_class,
         guint                     k;
 
         nm_assert(!_nm_sett_info_property_find_in_array(
-            nm_g_array_index_p(properties_override, NMSettInfoProperty, 0),
+            nm_g_array_first_p(properties_override, NMSettInfoProperty),
             i,
             p->name));
         for (k = 0; k < n_property_specs; k++) {
@@ -374,7 +374,7 @@ _nm_setting_class_commit(NMSettingClass             *setting_class,
         NMSettInfoProperty *p;
 
         if (_nm_sett_info_property_find_in_array(
-                nm_g_array_index_p(properties_override, NMSettInfoProperty, 0),
+                nm_g_array_first_p(properties_override, NMSettInfoProperty),
                 override_len,
                 name))
             continue;
