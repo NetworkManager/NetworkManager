@@ -1941,7 +1941,27 @@ nm_g_array_unref(GArray *arr)
  * When accessing index zero, then this returns NULL if-and-only-if
  * "arr" is NULL or "arr->data" is NULL. In all other cases, this
  * returns the pointer &((Type*) arr->data)[idx]. Note that the pointer
- * may not be followed, if "idx" is equal to "arr->len". */
+ * may not be followed, if "idx" is equal to "arr->len".
+ *
+ * The reason to allow access one element past the length is the
+ * following usage:
+ *
+ *    ptr = nm_g_array_index_p(arr, Type, 0);
+ *    end = nm_g_array_index_p(arr, Type, length);
+ *    for (; ptr < end; ptr++) { ... }
+ *
+ * Another usage is to get a buffer, if the length might be zero. If
+ * length is zero, you cannot dereference the pointer, but it can be convenient
+ * to not require special casing:
+ *
+ *    // length might be zero.
+ *    nm_memdup(nm_g_array_index_p(arr, Type, length), sizeof(Type) * length);
+ *
+ * Note that in C, it's valid point one past the end of an array. So getting
+ * a pointer at index "length" is valid, and what nm_g_array_index_p() allows.
+ * If you don't need that, nm_g_array_index() is usually preferable,
+ * because it asserts against access at index "length".
+ */
 #define nm_g_array_index_p(arr, Type, idx)                                                       \
     ({                                                                                           \
         const GArray *const _arr_55 = (arr);                                                     \

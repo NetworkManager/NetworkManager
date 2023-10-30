@@ -266,7 +266,7 @@ _append_enum_valid_values(GType                       g_type,
     GArray      *values = _nm_utils_enum_get_values_full(g_type, min, max, value_infos);
 
     for (i = 0; i < values->len; i++) {
-        NMUtilsEnumValueInfoFull *val = &g_array_index(values, NMUtilsEnumValueInfoFull, i);
+        NMUtilsEnumValueInfoFull *val = &nm_g_array_index(values, NMUtilsEnumValueInfoFull, i);
 
         g_string_assign(names, val->nick);
 

@@ -552,7 +552,7 @@ nmt_8021x_fields_constructed(GObject *object)
         entry.id    = (char *) eap_method_descs[i].id;
         g_array_append_val(entries, entry);
     }
-    priv->authentication = nmt_newt_popup_new(nm_g_array_index_p(entries, NmtNewtPopupEntry, 0));
+    priv->authentication = nmt_newt_popup_new(nm_g_array_first_p(entries, NmtNewtPopupEntry));
     nmt_editor_grid_append(grid, "Authentication", NMT_NEWT_WIDGET(priv->authentication), NULL);
 
     widget = nmt_newt_stack_new();
