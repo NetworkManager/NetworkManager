@@ -2766,7 +2766,8 @@ nm_ip_routing_rule_validate(const NMIPRoutingRule *self, GError **error)
     }
 
     if (self->from_len == 0) {
-        if (self->from_has) {
+        if (self->from_has
+            && !nm_ip_addr_is_null(_ip_routing_rule_get_addr_family(self), &self->from_bin)) {
             g_set_error_literal(error,
                                 NM_CONNECTION_ERROR,
                                 NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -2797,7 +2798,8 @@ nm_ip_routing_rule_validate(const NMIPRoutingRule *self, GError **error)
     }
 
     if (self->to_len == 0) {
-        if (self->to_has) {
+        if (self->to_has
+            && !nm_ip_addr_is_null(_ip_routing_rule_get_addr_family(self), &self->to_bin)) {
             g_set_error_literal(error,
                                 NM_CONNECTION_ERROR,
                                 NM_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -3743,11 +3745,11 @@ next_words_consumed:
     if (i64_suppress_prefixlength != -1)
         nm_ip_routing_rule_set_suppress_prefixlength(self, i64_suppress_prefixlength);
 
-    if (val_from_len > 0 || (val_from_len == 0 && !nm_ip_addr_is_null(addr_family, &val_from))) {
+    if (val_from_len >= 0) {
         nm_ip_routing_rule_set_from_bin(self, &val_from, val_from_len);
     }
 
-    if (val_to_len > 0 || (val_to_len == 0 && !nm_ip_addr_is_null(addr_family, &val_to))) {
+    if (val_to_len >= 0) {
         nm_ip_routing_rule_set_to_bin(self, &val_to, val_to_len);
     }
 
