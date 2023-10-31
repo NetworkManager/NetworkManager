@@ -7149,7 +7149,7 @@ device_ip_link_changed(gpointer user_data)
     ip_iface = pllink->name;
 
     if (!ip_iface[0])
-        return FALSE;
+        return G_SOURCE_REMOVE;
 
     if (!nm_streq(priv->ip_iface, ip_iface)) {
         _LOGI(LOGD_DEVICE,
