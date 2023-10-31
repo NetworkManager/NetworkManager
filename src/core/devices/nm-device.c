@@ -15097,20 +15097,23 @@ nm_device_set_unmanaged_by_user_settings(NMDevice *self, gboolean now)
 void
 nm_device_set_unmanaged_by_user_udev(NMDevice *self)
 {
-    int      ifindex;
-    gboolean platform_unmanaged = FALSE;
+    NMOptionBool platform_unmanaged;
+    int          ifindex;
 
     ifindex = self->_priv->ifindex;
 
-    if (ifindex <= 0
-        || !nm_platform_link_get_unmanaged(nm_device_get_platform(self),
-                                           ifindex,
-                                           &platform_unmanaged))
+    if (ifindex <= 0)
+        return;
+
+    platform_unmanaged = nm_platform_link_get_unmanaged(nm_device_get_platform(self), ifindex);
+    if (platform_unmanaged == NM_OPTION_BOOL_DEFAULT)
         return;
 
     nm_device_set_unmanaged_by_flags(self,
                                      NM_UNMANAGED_USER_UDEV,
-                                     platform_unmanaged,
+                                     platform_unmanaged == NM_OPTION_BOOL_TRUE
+                                         ? NM_UNMAN_FLAG_OP_SET_UNMANAGED
+                                         : NM_UNMAN_FLAG_OP_SET_MANAGED,
                                      NM_DEVICE_STATE_REASON_USER_REQUESTED);
 }
 
