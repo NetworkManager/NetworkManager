@@ -1673,6 +1673,15 @@ nm_platform_link_get_unmanaged(NMPlatform *self, int ifindex)
     if (val)
         return _nm_utils_ascii_str_to_bool(val, FALSE);
 
+    val = udev_device_get_property_value(udevice, "ID_NET_MANAGED_BY");
+    if (val) {
+        if (!nm_streq(val, "org.freedesktop.NetworkManager")) {
+            /* There is another manager. UNMANAGED. */
+            return TRUE;
+        }
+        return FALSE;
+    }
+
     return NM_OPTION_BOOL_DEFAULT;
 }
 

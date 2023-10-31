@@ -194,6 +194,15 @@
         </listitem>
       </varlistentry>
       <varlistentry>
+        <term><varname>ID_NET_MANAGED_BY</varname></term>
+        <listitem><para>
+          If <varname>NM_UNMANAGED</varname> is set, this has no effect. Otherwise,
+          if the attribute is set to anything but
+          <literal>"org.freedesktop.NetworkManager"</literal>, the device is unmanaged.
+        </para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
         <term><varname>NM_AUTO_DEFAULT_LINK_LOCAL_ONLY</varname></term>
         <listitem><para>
           If set to <literal>"1"</literal> or <literal>"true"</literal>, the

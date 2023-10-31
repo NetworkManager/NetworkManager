@@ -8,6 +8,8 @@ Overview of changes since NetworkManager-1.44
   should not be noticeable.
 * Honor udev property ID_NET_AUTO_LINK_LOCAL_ONLY=1 for enabling
   link local addresses on default wired connection.
+* Honor udev property ID_NET_MANAGED_BY to only manage an interface
+  when set to "org.freedesktop.NetworkManager".
 
 =============================================
 NetworkManager-1.44
