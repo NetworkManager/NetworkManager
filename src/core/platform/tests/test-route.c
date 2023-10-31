@@ -1620,6 +1620,12 @@ test_rule(gconstpointer test_data)
 
     g_ptr_array_add(objs, RR(.addr_family = AF_INET, .priority = 51, .iifname = DEVICE_NAME, ));
 
+    g_ptr_array_add(objs,
+                    RR(.addr_family = AF_INET,
+                       .priority    = 70,
+                       .src         = {{nmtst_inet4_from_string("0.0.0.0")}},
+                       .src_len     = 0, ));
+
     if (TEST_IDX == 1) {
         g_ptr_array_add(objs, RR(.addr_family = AF_INET, .table = 10000, ));
     }
