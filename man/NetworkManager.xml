@@ -211,6 +211,15 @@
         </para>
         </listitem>
       </varlistentry>
+      <varlistentry>
+        <term><varname>ID_NET_DHCP_BROADCAST</varname></term>
+        <listitem><para>
+          If set to <literal>"1"</literal> or <literal>"true"</literal>, use
+          broadcast requests for DHCPv4 offers. This can make sense of devices
+          that can't handle unicast messages until being configured.
+        </para>
+        </listitem>
+      </varlistentry>
     </variablelist>
   </refsect1>
 
