@@ -22,6 +22,7 @@
 #include <linux/rtnetlink.h>
 #include <linux/if_ether.h>
 #include <linux/if_infiniband.h>
+#include <libudev.h>
 
 #include "libnm-std-aux/unaligned.h"
 #include "libnm-glib-aux/nm-uuid.h"
@@ -8098,6 +8099,40 @@ nm_device_owns_iface(NMDevice *self, const char *iface)
     return FALSE;
 }
 
+static void
+apply_udev_auto_default_configs(NMDevice *self, NMConnection *connection)
+{
+    struct udev_device *dev;
+    const char         *uprop;
+    NMSetting          *setting;
+
+    dev = nm_platform_link_get_udev_device(nm_device_get_platform(NM_DEVICE(self)),
+                                           nm_device_get_ip_ifindex(self));
+    if (!dev)
+        return;
+
+    uprop = udev_device_get_property_value(dev, "NM_AUTO_DEFAULT_LINK_LOCAL_ONLY");
+    uprop = uprop ?: udev_device_get_property_value(dev, "ID_NET_AUTO_LINK_LOCAL_ONLY");
+
+    if (_nm_utils_ascii_str_to_bool(uprop, FALSE)) {
+        setting = nm_setting_ip4_config_new();
+        g_object_set(setting,
+                     NM_SETTING_IP_CONFIG_METHOD,
+                     NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL,
+                     NULL);
+        nm_connection_add_setting(connection, setting);
+
+        setting = nm_setting_ip6_config_new();
+        g_object_set(setting,
+                     NM_SETTING_IP_CONFIG_METHOD,
+                     NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL,
+                     NM_SETTING_IP_CONFIG_MAY_FAIL,
+                     TRUE,
+                     NULL);
+        nm_connection_add_setting(connection, setting);
+    }
+}
+
 NMConnection *
 nm_device_new_default_connection(NMDevice *self)
 {
@@ -8110,6 +8145,8 @@ nm_device_new_default_connection(NMDevice *self)
     connection = NM_DEVICE_GET_CLASS(self)->new_default_connection(self);
     if (!connection)
         return NULL;
+
+    apply_udev_auto_default_configs(self, connection);
 
     if (!nm_connection_normalize(connection, NULL, NULL, &error)) {
         _LOGD(LOGD_DEVICE, "device generated an invalid default connection: %s", error->message);

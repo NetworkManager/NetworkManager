@@ -1707,12 +1707,10 @@ complete_connection(NMDevice            *device,
 static NMConnection *
 new_default_connection(NMDevice *self)
 {
-    const char                    *link_local_only = NULL;
     NMConnection                  *connection;
     NMSettingsConnection *const   *connections;
     NMSetting                     *setting;
     gs_unref_hashtable GHashTable *existing_ids = NULL;
-    struct udev_device            *dev;
     const char                    *perm_hw_addr;
     const char                    *iface;
     gs_free char                  *defname = NULL;
@@ -1759,33 +1757,6 @@ new_default_connection(NMDevice *self)
                  NM_SETTING_CONNECTION_INTERFACE_NAME,
                  iface,
                  NULL);
-
-    /* Check if we should create a Link-Local only connection */
-    dev = nm_platform_link_get_udev_device(nm_device_get_platform(NM_DEVICE(self)),
-                                           nm_device_get_ip_ifindex(self));
-    if (dev) {
-        link_local_only = udev_device_get_property_value(dev, "NM_AUTO_DEFAULT_LINK_LOCAL_ONLY");
-        if (!link_local_only)
-            link_local_only = udev_device_get_property_value(dev, "ID_NET_AUTO_LINK_LOCAL_ONLY");
-    }
-
-    if (_nm_utils_ascii_str_to_bool(link_local_only, FALSE)) {
-        setting = nm_setting_ip4_config_new();
-        g_object_set(setting,
-                     NM_SETTING_IP_CONFIG_METHOD,
-                     NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL,
-                     NULL);
-        nm_connection_add_setting(connection, setting);
-
-        setting = nm_setting_ip6_config_new();
-        g_object_set(setting,
-                     NM_SETTING_IP_CONFIG_METHOD,
-                     NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL,
-                     NM_SETTING_IP_CONFIG_MAY_FAIL,
-                     TRUE,
-                     NULL);
-        nm_connection_add_setting(connection, setting);
-    }
 
     return connection;
 }
