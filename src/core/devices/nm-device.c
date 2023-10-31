@@ -8112,6 +8112,7 @@ apply_udev_auto_default_configs(NMDevice *self, NMConnection *connection)
         return;
 
     uprop = udev_device_get_property_value(dev, "NM_AUTO_DEFAULT_LINK_LOCAL_ONLY");
+    uprop = uprop ?: udev_device_get_property_value(dev, "ID_NET_AUTO_LINK_LOCAL_ONLY");
 
     if (_nm_utils_ascii_str_to_bool(uprop, FALSE)) {
         setting = nm_setting_ip4_config_new();
