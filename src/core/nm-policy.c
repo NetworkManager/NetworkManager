@@ -1656,9 +1656,12 @@ sleeping_changed(NMManager *manager, GParamSpec *pspec, gpointer user_data)
 void
 nm_policy_device_recheck_auto_activate_schedule(NMPolicy *self, NMDevice *device)
 {
-    NMPolicyPrivate    *priv;
-    NMActiveConnection *ac;
-    const CList        *tmp_list;
+    NMPolicyPrivate             *priv;
+    NMActiveConnection          *ac;
+    NMSettingsConnection *const *connections = NULL;
+    const CList                 *tmp_list;
+    guint                        i;
+    gboolean                     device_auto_activate = FALSE;
 
     g_return_if_fail(NM_IS_POLICY(self));
     g_return_if_fail(NM_IS_DEVICE(device));
@@ -1678,10 +1681,32 @@ nm_policy_device_recheck_auto_activate_schedule(NMPolicy *self, NMDevice *device
 
     priv = NM_POLICY_GET_PRIVATE(self);
 
+    if (!nm_device_get_managed(device, TRUE))
+        return;
+
     if (nm_manager_get_state(priv->manager) == NM_STATE_ASLEEP)
         return;
 
     if (!nm_device_autoconnect_allowed(device))
+        return;
+
+    connections = nm_settings_get_connections(priv->settings, NULL);
+    for (i = 0; connections[i]; i++) {
+        NMSettingsConnection *sett_conn = connections[i];
+        NMSettingConnection  *s_con;
+        const char           *s_interface_name;
+
+        s_con = nm_settings_connection_get_setting(sett_conn, NM_META_SETTING_TYPE_CONNECTION);
+        s_interface_name = nm_setting_connection_get_interface_name(s_con);
+        if (s_interface_name == nm_device_get_iface(device)) {
+            if (!nm_settings_connection_autoconnect_is_blocked(sett_conn)) {
+                device_auto_activate = TRUE;
+                break;
+            }
+        }
+    }
+
+    if (!device_auto_activate)
         return;
 
     nm_manager_for_each_active_connection (priv->manager, ac, tmp_list) {
@@ -2656,7 +2681,8 @@ connection_updated(NMSettings           *settings,
     NMPolicy                        *self          = _PRIV_TO_SELF(priv);
     NMSettingsConnectionUpdateReason update_reason = update_reason_u;
 
-    unblock_autoconnect_for_ports_for_sett_conn(self, connection);
+    if (!NM_FLAGS_HAS(update_reason, NM_SETTINGS_CONNECTION_UPDATE_REASON_BLOCK_AUTOCONNECT))
+        unblock_autoconnect_for_ports_for_sett_conn(self, connection);
 
     if (NM_FLAGS_HAS(update_reason, NM_SETTINGS_CONNECTION_UPDATE_REASON_REAPPLY_PARTIAL)) {
         const CList *tmp_lst;
