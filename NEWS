@@ -10,6 +10,7 @@ Overview of changes since NetworkManager-1.44
   link local addresses on default wired connection.
 * Honor udev property ID_NET_MANAGED_BY to only manage an interface
   when set to "org.freedesktop.NetworkManager".
+* Drop build support with Python2. Python3 is now required.
 
 =============================================
 NetworkManager-1.44
