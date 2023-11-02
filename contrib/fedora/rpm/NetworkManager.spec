@@ -488,7 +488,7 @@ This package contains NetworkManager support for PPP.
 Summary: Libraries for adding NetworkManager support to applications.
 Group: Development/Libraries
 Conflicts: NetworkManager-glib < 1:1.31.0
-License: LGPLv2+
+License: LGPL-2.1-or-later
 
 %description libnm
 This package contains the libraries that make it easier to use some
@@ -501,7 +501,7 @@ Group: Development/Libraries
 Requires: %{name}-libnm%{?_isa} = %{epoch}:%{version}-%{release}
 Requires: glib2-devel
 Requires: pkgconfig
-License: LGPLv2+
+License: LGPL-2.1-or-later
 
 %description libnm-devel
 This package contains the header and pkg-config files for development
