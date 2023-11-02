@@ -57,11 +57,11 @@ variables:
   #
   # This is done by running `ci-fairy generate-template` and possibly bumping
   # ".default_tag".
-  ALPINE_TAG:  'tag-d53edbf2ebdd'
-  CENTOS_TAG:  'tag-c374af7add25'
-  DEBIAN_TAG:  'tag-0e28ea47158f'
-  FEDORA_TAG:  'tag-c374af7add25'
-  UBUNTU_TAG:  'tag-0e28ea47158f'
+  ALPINE_TAG:  'tag-d831870051be'
+  CENTOS_TAG:  'tag-62b1e9c63f3f'
+  DEBIAN_TAG:  'tag-c531494bb725'
+  FEDORA_TAG:  'tag-62b1e9c63f3f'
+  UBUNTU_TAG:  'tag-c531494bb725'
 
   ALPINE_EXEC: 'bash .gitlab-ci/alpine-install.sh'
   CENTOS_EXEC: 'bash .gitlab-ci/fedora-install.sh'
@@ -125,6 +125,17 @@ tier2:fedora:39@prep:
   variables:
     GIT_STRATEGY: none
     FDO_DISTRIBUTION_VERSION: '39'
+    FDO_DISTRIBUTION_TAG: $FEDORA_TAG
+    FDO_DISTRIBUTION_EXEC: $FEDORA_EXEC
+  when: manual
+
+tier2:fedora:40@prep:
+  extends:
+    - .fdo.container-build@fedora
+  stage: prep
+  variables:
+    GIT_STRATEGY: none
+    FDO_DISTRIBUTION_VERSION: '40'
     FDO_DISTRIBUTION_TAG: $FEDORA_TAG
     FDO_DISTRIBUTION_EXEC: $FEDORA_EXEC
   when: manual
@@ -499,6 +510,18 @@ t_fedora:39:
     FDO_DISTRIBUTION_TAG: $FEDORA_TAG
   needs:
     - "tier2:fedora:39@prep"
+
+t_fedora:40:
+  extends:
+    - .build@template
+    - .fdo.distribution-image@fedora
+    - .nm_artifacts_debug
+  stage: tier2
+  variables:
+    FDO_DISTRIBUTION_VERSION: '40'
+    FDO_DISTRIBUTION_TAG: $FEDORA_TAG
+  needs:
+    - "tier2:fedora:40@prep"
 
 t_fedora:30:
   extends:
