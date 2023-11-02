@@ -4428,6 +4428,19 @@ update_external_connection(NMDevice *self)
 }
 
 static void
+_dev_ipv6_log_conflicts(NMDevice *self, GArray *conflicts)
+{
+    guint i;
+    char  sbuf[NM_INET_ADDRSTRLEN];
+
+    for (i = 0; i < conflicts->len; i++) {
+        const struct in6_addr *addr = &nm_g_array_index(conflicts, const struct in6_addr, i);
+
+        _LOGI(LOGD_DEVICE, "Conflict detected for IPv6 address: %s", nm_inet6_ntop(addr, sbuf));
+    }
+}
+
+static void
 _dev_l3_cfg_notify_cb(NML3Cfg *l3cfg, const NML3ConfigNotifyData *notify_data, NMDevice *self)
 {
     NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
@@ -4521,6 +4534,10 @@ _dev_l3_cfg_notify_cb(NML3Cfg *l3cfg, const NML3ConfigNotifyData *notify_data, N
                                          NM_L3CFG_CHECK_READY_FLAGS_IP6_DAD_READY,
                                          &conflicts);
             if (conflicts) {
+                if (_NMLOG_ENABLED(LOGL_INFO, LOGD_DEVICE)) {
+                    _dev_ipv6_log_conflicts(self, conflicts);
+                }
+
                 /* nm_ndisc_dad_failed() will emit a new "NDisc:config-received"
                  * signal; _dev_ipac6_ndisc_config_changed() will be called
                  * synchronously to update the current state and schedule a commit. */
@@ -10645,6 +10662,11 @@ _dev_ipmanual_check_ready(NMDevice *self)
                                      addr_family,
                                      flags,
                                      &conflicts);
+
+        if (_NMLOG_ENABLED(LOGL_INFO, LOGD_DEVICE) && conflicts && !IS_IPv4) {
+            _dev_ipv6_log_conflicts(self, conflicts);
+        }
+
         if (ready) {
             guint num_addrs = 0;
 
@@ -11989,8 +12011,9 @@ _dev_ipac6_ndisc_config_changed(NMNDisc              *ndisc,
                                 const NML3ConfigData *l3cd,
                                 NMDevice             *self)
 {
-    NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE(self);
-    gboolean         ready;
+    NMDevicePrivate       *priv = NM_DEVICE_GET_PRIVATE(self);
+    gboolean               ready;
+    gs_unref_array GArray *conflicts = NULL;
 
     /* The ndisc configuration changes when we receive a new RA or
      * when a lifetime expires; but also when DAD fails for a
@@ -12007,7 +12030,12 @@ _dev_ipac6_ndisc_config_changed(NMNDisc              *ndisc,
                                  l3cd,
                                  AF_INET6,
                                  NM_L3CFG_CHECK_READY_FLAGS_IP6_DAD_READY,
-                                 NULL);
+                                 &conflicts);
+
+    if (_NMLOG_ENABLED(LOGL_INFO, LOGD_DEVICE) && conflicts) {
+        _dev_ipv6_log_conflicts(self, conflicts);
+    }
+
     if (ready) {
         _dev_ipac6_set_state(self, NM_DEVICE_IP_STATE_READY);
     } else {
