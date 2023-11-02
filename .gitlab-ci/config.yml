@@ -61,8 +61,6 @@ distributions:
   - name: centos
     tier: 2
     versions:
-      - '7.5.1804'
-      - '7.9.2009'
       - '8.1.1911'
       - '8.3.2011'
       - 'stream8'
@@ -70,9 +68,6 @@ distributions:
   - name: centos
     tier: 3
     versions:
-      - '7.6.1810'
-      - '7.7.1908'
-      - '7.8.2003'
       - '8.2.2004'
   - name: alpine
     tier: 2
