@@ -303,21 +303,10 @@ BuildRequires: mobile-broadband-provider-info-devel
 BuildRequires: newt-devel
 %endif
 BuildRequires: /usr/bin/dbus-launch
-%if 0%{?fedora} >= 28 || 0%{?rhel} >= 8
 BuildRequires: python3
 BuildRequires: python3-gobject-base
 BuildRequires: python3-dbus
 BuildRequires: python3-pexpect
-%else
-BuildRequires: python2
-BuildRequires: pygobject3-base
-BuildRequires: dbus-python
-BuildRequires: pexpect
-%if 0%{?rhel} >= 7 && %{with meson}
-BuildRequires: python36-dbus
-BuildRequires: python36-gobject
-%endif
-%endif
 BuildRequires: libselinux-devel
 BuildRequires: polkit-devel
 BuildRequires: jansson-devel
