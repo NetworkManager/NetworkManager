@@ -1636,7 +1636,7 @@ nm_platform_link_get_udev_property(NMPlatform  *self,
                                    const char  *name,
                                    const char **out_value)
 {
-    struct udev_device *udevice = NULL;
+    struct udev_device *udevice;
     const char         *uproperty;
 
     udevice = nm_platform_link_get_udev_device(self, ifindex);
@@ -1655,22 +1655,34 @@ nm_platform_link_get_udev_property(NMPlatform  *self,
  * nm_platform_link_get_unmanaged:
  * @self: platform instance
  * @ifindex: interface index
- * @unmanaged: management status (in case %TRUE is returned)
  *
- * Returns: %TRUE if platform overrides NM default-unmanaged status,
- * %FALSE otherwise (with @unmanaged unmodified).
+ * Returns: %NM_OPTION_BOOL_DEFAULT if the udev property NM_UNMANAGED
+ * is not set. Otherwise, return NM_UNMANAGED as boolean.
  */
-gboolean
-nm_platform_link_get_unmanaged(NMPlatform *self, int ifindex, gboolean *unmanaged)
+NMOptionBool
+nm_platform_link_get_unmanaged(NMPlatform *self, int ifindex)
 {
-    const char *value;
+    struct udev_device *udevice;
+    const char         *val;
 
-    if (nm_platform_link_get_udev_property(self, ifindex, "NM_UNMANAGED", &value)) {
-        NM_SET_OUT(unmanaged, _nm_utils_ascii_str_to_bool(value, FALSE));
-        return TRUE;
+    udevice = nm_platform_link_get_udev_device(self, ifindex);
+    if (!udevice)
+        return NM_OPTION_BOOL_DEFAULT;
+
+    val = udev_device_get_property_value(udevice, "NM_UNMANAGED");
+    if (val)
+        return _nm_utils_ascii_str_to_bool(val, FALSE);
+
+    val = udev_device_get_property_value(udevice, "ID_NET_MANAGED_BY");
+    if (val) {
+        if (!nm_streq(val, "org.freedesktop.NetworkManager")) {
+            /* There is another manager. UNMANAGED. */
+            return TRUE;
+        }
+        return FALSE;
     }
 
-    return FALSE;
+    return NM_OPTION_BOOL_DEFAULT;
 }
 
 /**

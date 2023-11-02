@@ -1941,9 +1941,9 @@ int nm_platform_link_get_master(NMPlatform *self, int slave);
 
 gboolean nm_platform_link_can_assume(NMPlatform *self, int ifindex);
 
-gboolean    nm_platform_link_get_unmanaged(NMPlatform *self, int ifindex, gboolean *unmanaged);
-gboolean    nm_platform_link_supports_slaves(NMPlatform *self, int ifindex);
-const char *nm_platform_link_get_type_name(NMPlatform *self, int ifindex);
+NMOptionBool nm_platform_link_get_unmanaged(NMPlatform *self, int ifindex);
+gboolean     nm_platform_link_supports_slaves(NMPlatform *self, int ifindex);
+const char  *nm_platform_link_get_type_name(NMPlatform *self, int ifindex);
 
 gboolean nm_platform_link_refresh(NMPlatform *self, int ifindex);
 void     nm_platform_process_events(NMPlatform *self);
