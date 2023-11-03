@@ -5589,7 +5589,6 @@ EXTRA_DIST += \
 	data/85-nm-unmanaged.rules \
 	data/90-nm-thunderbolt.rules \
 	data/NetworkManager-dispatcher.service.in \
-	data/NetworkManager-wait-online-systemd-pre200.service.in \
 	data/NetworkManager-wait-online.service.in \
 	data/NetworkManager.service.in \
 	data/nm-priv-helper.service.in \
