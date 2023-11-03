@@ -12,13 +12,8 @@ if install_systemdunitdir
     'NetworkManager-dispatcher.service.in',
     'NetworkManager.service.in',
     'nm-priv-helper.service.in',
+    'NetworkManager-wait-online.service.in',
   ]
-
-  if have_systemd_200
-    services += ['NetworkManager-wait-online.service.in']
-  else
-    services += ['NetworkManager-wait-online-systemd-pre200.service.in']
-  endif
 
   foreach service: services
     configure_file(

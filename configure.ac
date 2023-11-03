@@ -334,9 +334,6 @@ if test "$with_systemdsystemunitdir" != no; then
 	AC_SUBST([systemdsystemunitdir], [$with_systemdsystemunitdir])
 fi
 
-PKG_CHECK_MODULES(SYSTEMD_200, [systemd >= 200], [have_systemd_200=yes], [have_systemd_200=no])
-AM_CONDITIONAL(HAVE_SYSTEMD_200, test "${have_systemd_200}" = "yes")
-
 # Hostname persist mode
 AC_ARG_WITH(hostname-persist,
             AS_HELP_STRING([--with-hostname-persist=default|suse|gentoo|slackware],
