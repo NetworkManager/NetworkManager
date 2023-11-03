@@ -390,23 +390,23 @@ _ipv4ll_addrgen(NML3IPv4LL *self, gboolean generate_new_addr)
     _ASSERT(self);
 
     /* MAC_HASH_KEY is the same as used by systemd. */
-#define MAC_HASH_KEY          \
-    ((const guint8[16]){0xdf, \
-                        0x04, \
-                        0x22, \
-                        0x98, \
-                        0x3f, \
-                        0xad, \
-                        0x14, \
-                        0x52, \
-                        0xf9, \
-                        0x87, \
-                        0x2e, \
-                        0xd1, \
-                        0x9c, \
-                        0x70, \
-                        0xe2, \
-                        0xf2})
+#define MAC_HASH_KEY      \
+    NM_HASH_SEED_16(0xdf, \
+                    0x04, \
+                    0x22, \
+                    0x98, \
+                    0x3f, \
+                    0xad, \
+                    0x14, \
+                    0x52, \
+                    0xf9, \
+                    0x87, \
+                    0x2e, \
+                    0xd1, \
+                    0x9c, \
+                    0x70, \
+                    0xe2, \
+                    0xf2)
 
     if (self->mac_set && (!self->seed_set || !nm_ether_addr_equal(&self->mac, &self->seed_mac))) {
         /* systemd's ipv4ll library by default only hashes the MAC address (as we do here).
@@ -465,23 +465,23 @@ _ipv4ll_addrgen(NML3IPv4LL *self, gboolean generate_new_addr)
 
 gen_addr:
 
-#define PICK_HASH_KEY         \
-    ((const guint8[16]){0x15, \
-                        0xac, \
-                        0x82, \
-                        0xa6, \
-                        0xd6, \
-                        0x3f, \
-                        0x49, \
-                        0x78, \
-                        0x98, \
-                        0x77, \
-                        0x5d, \
-                        0x0c, \
-                        0x69, \
-                        0x02, \
-                        0x94, \
-                        0x0b})
+#define PICK_HASH_KEY     \
+    NM_HASH_SEED_16(0x15, \
+                    0xac, \
+                    0x82, \
+                    0xa6, \
+                    0xd6, \
+                    0x3f, \
+                    0x49, \
+                    0x78, \
+                    0x98, \
+                    0x77, \
+                    0x5d, \
+                    0x0c, \
+                    0x69, \
+                    0x02, \
+                    0x94, \
+                    0x0b)
 
     h = c_siphash_hash(PICK_HASH_KEY, (const guint8 *) &self->seed, sizeof(self->seed));
 
