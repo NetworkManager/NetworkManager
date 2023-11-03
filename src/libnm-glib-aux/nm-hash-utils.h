@@ -14,6 +14,30 @@
 #define NM_HASH_SEED_16(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, aa, ab, ac, ad, ae, af) \
     ((const guint8[16]){a0, a1, a2, a3, a4, a5, a6, a7, a8, a9, aa, ab, ac, ad, ae, af})
 
+struct _nm_packed _nm_hash_seed_16_u64_data {
+    guint64 s1;
+    guint64 s2;
+};
+
+G_STATIC_ASSERT(sizeof(struct _nm_hash_seed_16_u64_data) == 16);
+G_STATIC_ASSERT(sizeof(struct _nm_hash_seed_16_u64_data) == sizeof(guint64) * 2);
+
+/* c_siphash_init() has a seed of 16 bytes (NM_HASH_SEED_16()). That is
+ * cumbersome to use, because we usually just hardcode an arbitrarily chosen,
+ * fixed number.
+ *
+ * This macro takes a u64 (in host-endianness) and returns a 16 byte seed
+ * buffer. The number will be big endian encoded, to be architecture
+ * independent. */
+#define NM_HASH_SEED_16_U64(u64)                              \
+    ((const guint8 *) ((gpointer)                             \
+                       & ((struct _nm_hash_seed_16_u64_data){ \
+                           .s1 = htobe64((u64)),              \
+                           .s2 = 0,                           \
+                       })))
+
+/*****************************************************************************/
+
 void nm_hash_siphash42_init(CSipHash *h, guint static_seed);
 
 /* Siphash24 of binary buffer @arr and @len, using the randomized seed from
@@ -22,7 +46,7 @@ void nm_hash_siphash42_init(CSipHash *h, guint static_seed);
  * Note, that this is guaranteed to use siphash42 under the hood (contrary to
  * all other NMHash API, which leave this undefined). That matters at the point,
  * where the caller needs to be sure that a reasonably strong hashing algorithm
- * is used.  (Yes, NMHash is all about siphash24, but otherwise that is not promised
+ * is used.  (Yes, NMHash is all about siphash42, but otherwise that is not promised
  * anywhere).
  *
  * Another difference is, that this returns guint64 (not guint like other NMHash functions).
