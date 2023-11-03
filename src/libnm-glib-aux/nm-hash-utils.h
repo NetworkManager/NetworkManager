@@ -56,6 +56,9 @@ void nm_hash_siphash42_init(CSipHash *h, guint static_seed);
  * Then, why not use c_siphash_hash() directly? Because this also uses the randomized,
  * per-run hash-seed like nm_hash_init(). So, you get siphash24 with a random
  * seed (which is cached for the current run of the program).
+ *
+ * WARNING: the static_seed gets randomized like with nm_hash*(). If you want a reproducible
+ *   siphash42, use instead `c_siphash_hash(NM_HASH_SEED_16_U64(number), ptr, len)`.
  */
 static inline guint64
 nm_hash_siphash42(guint static_seed, const void *ptr, gsize n)

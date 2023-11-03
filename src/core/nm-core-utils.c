@@ -2711,7 +2711,7 @@ _host_id_read_timestamp(gboolean      use_secret_key_file,
 
 #define EPOCH_TWO_YEARS (G_GINT64_CONSTANT(2 * 365 * 24 * 3600) * NM_UTILS_NSEC_PER_SEC)
 
-    v = nm_hash_siphash42(1156657133u, host_id, host_id_len);
+    v = c_siphash_hash(NM_HASH_SEED_16_U64(1156657133u), host_id, host_id_len);
 
     now = time(NULL);
     *out_timestamp_ns =
