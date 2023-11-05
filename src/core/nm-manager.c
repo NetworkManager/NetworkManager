@@ -3728,6 +3728,7 @@ recheck_assume_connection(NMManager *self, NMDevice *device)
          * deactivation after restart (if the user logs out).
          *
          * This should be improved, but it's unclear how. */
+        _LOGW(LOGD_DEVICE, "-------called in recheck_assume_connection-------");
         active = _new_active_connection(
             self,
             FALSE,
@@ -6325,6 +6326,7 @@ nm_manager_activate_connection(NMManager             *self,
             return active;
     }
 
+    _LOGW(LOGD_DEVICE, "-------called in nm_manager_activate_connection----");
     active = _new_active_connection(self,
                                     is_vpn,
                                     sett_conn,
@@ -6599,6 +6601,7 @@ impl_manager_activate_connection(NMDBusObject                      *obj,
     if (!subject)
         goto error;
 
+    _LOGW(LOGD_DEVICE, "-------called in impl_manager_activate_connection-----");
     active = _new_active_connection(self,
                                     is_vpn,
                                     sett_conn,
@@ -6920,6 +6923,7 @@ impl_manager_add_and_activate_connection(NMDBusObject                      *obj,
 
     nm_assert(_nm_connection_verify(incompl_conn, NULL) == NM_SETTING_VERIFY_SUCCESS);
 
+    _LOGW(LOGD_DEVICE, "-------called in impl_manager_add_and_activate_connection-----");
     active = _new_active_connection(self,
                                     is_vpn,
                                     NULL,

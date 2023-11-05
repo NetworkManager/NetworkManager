@@ -1611,9 +1611,10 @@ update_auth_cb(NMSettingsConnection  *self,
                                   info->subject);
 
     /* Reset auto retries back to default since connection was updated */
-    nm_manager_devcon_autoconnect_retries_reset(nm_settings_connection_get_manager(self),
-                                                NULL,
-                                                self);
+    if (!nm_settings_connection_autoconnect_is_blocked(self))
+        nm_manager_devcon_autoconnect_retries_reset(nm_settings_connection_get_manager(self),
+                                                    NULL,
+                                                    self);
 
 out:
     update_complete(self, info, error);
