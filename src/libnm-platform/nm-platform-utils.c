@@ -1162,6 +1162,35 @@ nmp_utils_ethtool_get_pause(int ifindex, NMEthtoolPauseState *pause)
 }
 
 gboolean
+nmp_utils_ethtool_get_eee(int ifindex, NMEthtoolEEEState *eee)
+{
+    struct ethtool_eee                 eth_data;
+    nm_auto_socket_handle SocketHandle shandle = SOCKET_HANDLE_INIT(ifindex);
+
+    g_return_val_if_fail(ifindex > 0, FALSE);
+    g_return_val_if_fail(eee, FALSE);
+
+    eth_data.cmd = ETHTOOL_GEEE;
+    if (_ethtool_call_handle(&shandle, &eth_data, sizeof(struct ethtool_eee)) != 0) {
+        nm_log_trace(LOGD_PLATFORM,
+                     "ethtool[%d]: %s: failure getting eee settings",
+                     ifindex,
+                     "get-eee");
+        return FALSE;
+    }
+
+    *eee = (NMEthtoolEEEState){
+        .enabled = eth_data.eee_enabled == 1,
+    };
+
+    nm_log_trace(LOGD_PLATFORM,
+                 "ethtool[%d]: %s: retrieved kernel eee settings",
+                 ifindex,
+                 "get-eee");
+    return TRUE;
+}
+
+gboolean
 nmp_utils_ethtool_set_pause(int ifindex, const NMEthtoolPauseState *pause)
 {
     struct ethtool_pauseparam          eth_data;
@@ -1188,6 +1217,36 @@ nmp_utils_ethtool_set_pause(int ifindex, const NMEthtoolPauseState *pause)
     return TRUE;
 }
 
+gboolean
+nmp_utils_ethtool_set_eee(int ifindex, const NMEthtoolEEEState *eee)
+{
+    struct ethtool_eee                 eth_data;
+    nm_auto_socket_handle SocketHandle shandle = SOCKET_HANDLE_INIT(ifindex);
+
+    g_return_val_if_fail(ifindex > 0, FALSE);
+    g_return_val_if_fail(eee, FALSE);
+
+    eth_data.cmd = ETHTOOL_GEEE;
+    if (_ethtool_call_handle(&shandle, &eth_data, sizeof(struct ethtool_eee)) != 0) {
+        nm_log_trace(LOGD_PLATFORM,
+                     "ethtool[%d]: %s: failure getting eee settings",
+                     ifindex,
+                     "get-eee");
+        return FALSE;
+    }
+
+    eth_data.cmd = ETHTOOL_SEEE, eth_data.eee_enabled = eee->enabled ? 1 : 0;
+
+    if (_ethtool_call_handle(&shandle, &eth_data, sizeof(struct ethtool_eee)) != 0) {
+        nm_log_trace(LOGD_PLATFORM,
+                     "ethtool[%d]: %s: failure setting eee settings",
+                     ifindex,
+                     "set-eee");
+        return FALSE;
+    }
+    nm_log_trace(LOGD_PLATFORM, "ethtool[%d]: %s: set kernel eee settings", ifindex, "set-eee");
+    return TRUE;
+}
 /*****************************************************************************/
 
 gboolean

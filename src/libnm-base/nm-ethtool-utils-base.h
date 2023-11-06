@@ -109,6 +109,7 @@ G_BEGIN_DECLS
 #define NM_ETHTOOL_OPTNAME_CHANNELS_OTHER    "channels-other"
 #define NM_ETHTOOL_OPTNAME_CHANNELS_COMBINED "channels-combined"
 
+#define NM_ETHTOOL_OPTNAME_EEE_ENABLED "eee"
 /*****************************************************************************/
 
 G_END_DECLS

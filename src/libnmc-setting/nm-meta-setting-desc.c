@@ -4433,6 +4433,7 @@ _get_fcn_ethtool(ARGS_GET_FCN)
         RETURN_STR_TO_FREE(nm_strdup_int(u32));
     case NM_ETHTOOL_TYPE_FEATURE:
     case NM_ETHTOOL_TYPE_PAUSE:
+    case NM_ETHTOOL_TYPE_EEE:
         if (!nm_setting_option_get_boolean(setting, nm_ethtool_data[ethtool_id]->optname, &b)) {
             NM_SET_OUT(out_is_default, TRUE);
             return NULL;
@@ -4479,6 +4480,7 @@ _set_fcn_ethtool(ARGS_SET_FCN)
         return TRUE;
     case NM_ETHTOOL_TYPE_FEATURE:
     case NM_ETHTOOL_TYPE_PAUSE:
+    case NM_ETHTOOL_TYPE_EEE:
         if (!nmc_string_to_ternary_full(value,
                                         NMC_STRING_TO_TERNARY_FLAGS_IGNORE_FOR_DEFAULT,
                                         &t,
@@ -5926,6 +5928,7 @@ static const NMMetaPropertyInfo *const property_infos_ETHTOOL[] = {
                    DEFINE_PROPERTY_TYP_DATA_SUBTYPE
                       (ethtool, .ethtool_id = NM_ETHTOOL_ID_PAUSE_TX)
                    ),
+    PROPERTY_INFO_ETHTOOL (EEE_ENABLED),
     PROPERTY_INFO_ETHTOOL (RING_RX),
     PROPERTY_INFO_ETHTOOL (RING_RX_JUMBO),
     PROPERTY_INFO_ETHTOOL (RING_RX_MINI),

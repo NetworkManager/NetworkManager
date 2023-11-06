@@ -3629,6 +3629,17 @@ nm_platform_ethtool_get_link_pause(NMPlatform *self, int ifindex, NMEthtoolPause
 }
 
 gboolean
+nm_platform_ethtool_get_link_eee(NMPlatform *self, int ifindex, NMEthtoolEEEState *eee)
+{
+    _CHECK_SELF_NETNS(self, klass, netns, FALSE);
+
+    g_return_val_if_fail(ifindex > 0, FALSE);
+    g_return_val_if_fail(eee, FALSE);
+
+    return nmp_utils_ethtool_get_eee(ifindex, eee);
+}
+
+gboolean
 nm_platform_ethtool_set_pause(NMPlatform *self, int ifindex, const NMEthtoolPauseState *pause)
 {
     _CHECK_SELF_NETNS(self, klass, netns, FALSE);
@@ -3638,6 +3649,15 @@ nm_platform_ethtool_set_pause(NMPlatform *self, int ifindex, const NMEthtoolPaus
     return nmp_utils_ethtool_set_pause(ifindex, pause);
 }
 
+gboolean
+nm_platform_ethtool_set_eee(NMPlatform *self, int ifindex, const NMEthtoolEEEState *eee)
+{
+    _CHECK_SELF_NETNS(self, klass, netns, FALSE);
+
+    g_return_val_if_fail(ifindex > 0, FALSE);
+
+    return nmp_utils_ethtool_set_eee(ifindex, eee);
+}
 /*****************************************************************************/
 
 const NMDedupMultiHeadEntry *

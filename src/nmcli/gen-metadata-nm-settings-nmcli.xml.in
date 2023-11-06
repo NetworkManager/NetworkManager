@@ -1028,6 +1028,9 @@
                   nmcli-description="Whether TX pause should be enabled. Only valid when automatic negotiation is disabled"
                   format="ternary"
                   values="on, off, ignore" />
+        <property name="eee"
+                  format="ternary"
+                  values="on, off, ignore" />
         <property name="ring-rx"
                   format="integer"
                   values="0 - 4294967295" />

@@ -1276,6 +1276,10 @@
                   dbus-type="b"
                   is-setting-option="1"
                   />
+        <property name="eee"
+                  dbus-type="b"
+                  is-setting-option="1"
+                  />
         <property name="ring-rx"
                   dbus-type="u"
                   is-setting-option="1"

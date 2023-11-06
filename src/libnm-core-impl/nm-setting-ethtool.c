@@ -92,6 +92,21 @@ nm_ethtool_optname_is_channels(const char *optname)
 }
 
 /**
+ * nm_ethtool_optname_is_eee:
+ * @optname: (nullable): the option name to check
+ *
+ * Checks whether @optname is a valid option name for an eee setting.
+ *
+ * Returns: %TRUE, if @optname is valid
+ *
+ * Since: 1.46
+ */
+gboolean
+nm_ethtool_optname_is_eee(const char *optname)
+{
+    return optname && nm_ethtool_id_is_eee(nm_ethtool_id_get_by_name(optname));
+}
+/**
  * nm_ethtool_optname_is_pause:
  * @optname: (nullable): the option name to check
  *
