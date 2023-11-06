@@ -2986,8 +2986,8 @@ returncode: 0
 stdout: 1272 bytes
 >>>
 DEVICE  TYPE      STATE        IP4-CONNECTIVITY  IP6-CONNECTIVITY  DBUS-PATH                                  CONNECTION  CON-UUID                              CON-PATH                                           
-eth0    ethernet  connected    unknown           unknown           /org/freedesktop/NetworkManager/Devices/1  ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1 
 eth1    ethernet  connected    unknown           unknown           /org/freedesktop/NetworkManager/Devices/2  ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/2 
+eth0    ethernet  connected    unknown           unknown           /org/freedesktop/NetworkManager/Devices/1  ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1 
 wlan0   wifi      unavailable  unknown           unknown           /org/freedesktop/NetworkManager/Devices/3  --          --                                    --                                                 
 wlan1   wifi      unavailable  unknown           unknown           /org/freedesktop/NetworkManager/Devices/4  --          --                                    --                                                 
 wlan1   wifi      unavailable  unknown           unknown           /org/freedesktop/NetworkManager/Devices/5  --          --                                    --                                                 
@@ -3001,8 +3001,8 @@ returncode: 0
 stdout: 1279 bytes
 >>>
 DEVICE  TYPE      STATE        IP4-CONNECTIVITY  IP6-CONNECTIVITY  DBUS-PATH                                  CONNECTION  CON-UUID                              CON-PATH                                           
-eth0    ethernet  połączono    nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/1  ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1 
 eth1    ethernet  połączono    nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/2  ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/2 
+eth0    ethernet  połączono    nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/1  ethernet    UUID-ethernet-REPLACED-REPLACED-REPL  /org/freedesktop/NetworkManager/ActiveConnection/1 
 wlan0   wifi      niedostępne  nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/3  --          --                                    --                                                 
 wlan1   wifi      niedostępne  nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/4  --          --                                    --                                                 
 wlan1   wifi      niedostępne  nieznane          nieznane          /org/freedesktop/NetworkManager/Devices/5  --          --                                    --                                                 
@@ -3015,13 +3015,13 @@ lang: C
 returncode: 0
 stdout: 641 bytes
 >>>
-eth0: connected to ethernet
-	"eth0"
-	ethernet (virtual), C0:61:AE:26:4D:D7, hw
-
 eth1: connected to ethernet
 	"eth1"
 	ethernet (virtual), 33:9A:18:81:EB:DC, hw
+
+eth0: connected to ethernet
+	"eth0"
+	ethernet (virtual), C0:61:AE:26:4D:D7, hw
 
 wlan0: unavailable
 	"wlan0"
@@ -3051,13 +3051,13 @@ lang: pl_PL.UTF-8
 returncode: 0
 stdout: 706 bytes
 >>>
-eth0: połączono do ethernet
-	"eth0"
-	ethernet (virtual), C0:61:AE:26:4D:D7, sprzęt
-
 eth1: połączono do ethernet
 	"eth1"
 	ethernet (virtual), 33:9A:18:81:EB:DC, sprzęt
+
+eth0: połączono do ethernet
+	"eth0"
+	ethernet (virtual), C0:61:AE:26:4D:D7, sprzęt
 
 wlan0: niedostępne
 	"wlan0"
