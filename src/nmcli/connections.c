@@ -300,21 +300,27 @@ active_connection_get_state_ord(NMActiveConnection *active)
     };
     NMActiveConnectionState state;
     int                     i;
+    gboolean                is_external;
 
     /* returns an integer related to @active's state, that can be used for sorting
      * active connections based on their activation state. */
 
     if (!active)
-        return -2;
+        return -10;
 
-    state = nm_active_connection_get_state(active);
+    state       = nm_active_connection_get_state(active);
+    is_external = NM_FLAGS_HAS(nm_active_connection_get_state_flags(active),
+                               NM_ACTIVATION_STATE_FLAG_EXTERNAL);
 
     for (i = 0; i < (int) G_N_ELEMENTS(ordered_states); i++) {
-        if (state == ordered_states[i])
+        if (state == ordered_states[i]) {
+            if (!is_external)
+                i += G_N_ELEMENTS(ordered_states);
             return i;
+        }
     }
 
-    return -1;
+    return is_external ? -2 : -1;
 }
 
 int
