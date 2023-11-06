@@ -291,23 +291,29 @@ connection_type_to_display(const char *type, NMMetaAccessorGetType get_type)
 static int
 active_connection_get_state_ord(NMActiveConnection *active)
 {
+    static const NMActiveConnectionState ordered_states[] = {
+        NM_ACTIVE_CONNECTION_STATE_UNKNOWN,
+        NM_ACTIVE_CONNECTION_STATE_DEACTIVATED,
+        NM_ACTIVE_CONNECTION_STATE_DEACTIVATING,
+        NM_ACTIVE_CONNECTION_STATE_ACTIVATING,
+        NM_ACTIVE_CONNECTION_STATE_ACTIVATED,
+    };
+    NMActiveConnectionState state;
+    int                     i;
+
     /* returns an integer related to @active's state, that can be used for sorting
      * active connections based on their activation state. */
+
     if (!active)
         return -2;
 
-    switch (nm_active_connection_get_state(active)) {
-    case NM_ACTIVE_CONNECTION_STATE_UNKNOWN:
-        return 0;
-    case NM_ACTIVE_CONNECTION_STATE_DEACTIVATED:
-        return 1;
-    case NM_ACTIVE_CONNECTION_STATE_DEACTIVATING:
-        return 2;
-    case NM_ACTIVE_CONNECTION_STATE_ACTIVATING:
-        return 3;
-    case NM_ACTIVE_CONNECTION_STATE_ACTIVATED:
-        return 4;
+    state = nm_active_connection_get_state(active);
+
+    for (i = 0; i < (int) G_N_ELEMENTS(ordered_states); i++) {
+        if (state == ordered_states[i])
+            return i;
     }
+
     return -1;
 }
 
