@@ -544,7 +544,7 @@ class Util:
                 [
                     "sed",
                     "-e",
-                    "/^--[0-9]\+-- WARNING: unhandled .* syscall: /,/^--[0-9]\+-- it at http.*\.$/d",
+                    r"/^--[0-9]\+-- WARNING: unhandled .* syscall: /,/^--[0-9]\+-- it at http.*\.$/d",
                     name,
                 ],
                 stdout=subprocess.PIPE,
@@ -2158,18 +2158,18 @@ class TestNmcli(unittest.TestCase):
         nmc.pexp.expect("Interface name:")
         nmc.pexp.sendline("eth0")
         nmc.pexp.expect("There are 3 optional settings for Wired Ethernet.")
-        nmc.pexp.expect("Do you want to provide them\? \(yes/no\) \[yes]")
+        nmc.pexp.expect(r"Do you want to provide them\? \(yes/no\) \[yes]")
         nmc.pexp.sendline("no")
         nmc.pexp.expect("There are 2 optional settings for IPv4 protocol.")
-        nmc.pexp.expect("Do you want to provide them\? \(yes/no\) \[yes]")
+        nmc.pexp.expect(r"Do you want to provide them\? \(yes/no\) \[yes]")
         nmc.pexp.sendline("no")
         nmc.pexp.expect("There are 2 optional settings for IPv6 protocol.")
-        nmc.pexp.expect("Do you want to provide them\? \(yes/no\) \[yes]")
+        nmc.pexp.expect(r"Do you want to provide them\? \(yes/no\) \[yes]")
         nmc.pexp.sendline("no")
         nmc.pexp.expect("There are 4 optional settings for Proxy.")
-        nmc.pexp.expect("Do you want to provide them\? \(yes/no\) \[yes]")
+        nmc.pexp.expect(r"Do you want to provide them\? \(yes/no\) \[yes]")
         nmc.pexp.sendline("no")
-        nmc.pexp.expect("Connection 'ethernet' \(.*\) successfully added.")
+        nmc.pexp.expect(r"Connection 'ethernet' \(.*\) successfully added.")
         nmc.pexp.expect(pexpect.EOF)
         Util.valgrind_check_log(nmc.valgrind_log, "test_ask_mode")
 
@@ -2190,34 +2190,34 @@ class TestNmcli(unittest.TestCase):
         nmc.pexp.expect("Interface name:")
         nmc.pexp.sendline("eth0")
         nmc.pexp.expect("There are 3 optional settings for Wired Ethernet.")
-        nmc.pexp.expect("Do you want to provide them\? \(yes/no\) \[yes]")
+        nmc.pexp.expect(r"Do you want to provide them\? \(yes/no\) \[yes]")
         nmc.pexp.sendline("no")
         nmc.pexp.expect("There are 2 optional settings for IPv4 protocol.")
-        nmc.pexp.expect("Do you want to provide them\? \(yes/no\) \[yes]")
+        nmc.pexp.expect(r"Do you want to provide them\? \(yes/no\) \[yes]")
         nmc.pexp.sendline("no")
         nmc.pexp.expect("There are 2 optional settings for IPv6 protocol.")
-        nmc.pexp.expect("Do you want to provide them\? \(yes/no\) \[yes]")
+        nmc.pexp.expect(r"Do you want to provide them\? \(yes/no\) \[yes]")
         nmc.pexp.sendline("no")
         nmc.pexp.expect("There are 4 optional settings for Proxy.")
-        nmc.pexp.expect("Do you want to provide them\? \(yes/no\) \[yes]")
+        nmc.pexp.expect(r"Do you want to provide them\? \(yes/no\) \[yes]")
         nmc.pexp.sendline("no")
         nmc.pexp.expect(
-            "\[connection\]\r\n"
-            + "id=ethernet\r\n"
-            + "uuid=.*\r\n"
-            + "type=ethernet\r\n"
-            + "interface-name=eth0\r\n"
-            + "\r\n"
-            + "\[ethernet\]\r\n"
-            + "\r\n"
-            + "\[ipv4\]\r\n"
-            + "method=auto\r\n"
-            + "\r\n"
-            + "\[ipv6\]\r\n"
-            + "addr-gen-mode=default\r\n"
-            + "method=auto\r\n"
-            + "\r\n"
-            + "\[proxy\]\r\n"
+            r"\[connection\]\r\n"
+            r"id=ethernet\r\n"
+            r"uuid=.*\r\n"
+            r"type=ethernet\r\n"
+            r"interface-name=eth0\r\n"
+            r"\r\n"
+            r"\[ethernet\]\r\n"
+            r"\r\n"
+            r"\[ipv4\]\r\n"
+            r"method=auto\r\n"
+            r"\r\n"
+            r"\[ipv6\]\r\n"
+            r"addr-gen-mode=default\r\n"
+            r"method=auto\r\n"
+            r"\r\n"
+            r"\[proxy\]\r\n"
         )
         nmc.pexp.expect(pexpect.EOF)
         Util.valgrind_check_log(nmc.valgrind_log, "test_ask_offline")
@@ -2512,12 +2512,12 @@ class TestNmCloudSetup(unittest.TestCase):
         nmc.pexp.expect("provider azure detected")
         nmc.pexp.expect("found interfaces: CC:00:00:00:00:01, CC:00:00:00:00:02")
         nmc.pexp.expect("found azure interfaces: 2")
-        nmc.pexp.expect("interface\[0]: found a matching device with hwaddr")
+        nmc.pexp.expect(r"interface\[0]: found a matching device with hwaddr")
         nmc.pexp.expect(
-            "interface\[0]: (received subnet address|received subnet prefix 20)"
+            r"interface\[0]: (received subnet address|received subnet prefix 20)"
         )
         nmc.pexp.expect(
-            "interface\[0]: (received subnet address|received subnet prefix 20)"
+            r"interface\[0]: (received subnet address|received subnet prefix 20)"
         )
         nmc.pexp.expect("get-config: success")
         nmc.pexp.expect("meta data received")
@@ -2648,7 +2648,7 @@ class TestNmCloudSetup(unittest.TestCase):
         nmc.pexp.expect("provider GCP detected")
         nmc.pexp.expect("found interfaces: CC:00:00:00:00:01, CC:00:00:00:00:02")
         nmc.pexp.expect("found GCP interfaces: 2")
-        nmc.pexp.expect("GCP interface\[0]: found a requested device with hwaddr")
+        nmc.pexp.expect(r"GCP interface\[0]: found a requested device with hwaddr")
         nmc.pexp.expect("get-config: success")
         nmc.pexp.expect("meta data received")
         # One of the devices has no IPv4 configuration to be modified
