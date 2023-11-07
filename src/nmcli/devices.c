@@ -1072,8 +1072,8 @@ compare_devices(const void *a, const void *b)
     NMActiveConnection *da_ac = nm_device_get_active_connection(da);
     NMActiveConnection *db_ac = nm_device_get_active_connection(db);
 
-    NM_CMP_DIRECT(nm_device_get_state(db), nm_device_get_state(da));
     NM_CMP_RETURN(nmc_active_connection_cmp(db_ac, da_ac));
+    NM_CMP_DIRECT(nm_device_get_state(db), nm_device_get_state(da));
     NM_CMP_DIRECT_STRCMP0(nm_device_get_type_description(da), nm_device_get_type_description(db));
     NM_CMP_DIRECT_STRCMP0(nm_device_get_iface(da), nm_device_get_iface(db));
     NM_CMP_DIRECT_STRCMP0(nm_object_get_path(NM_OBJECT(da)), nm_object_get_path(NM_OBJECT(db)));
