@@ -280,27 +280,11 @@ next_request(Request *request)
     return TRUE;
 }
 
-/**
- * complete_request:
- * @request: the request
- *
- * Checks if all the scripts for the request have terminated and in such case
- * it sends the D-Bus response and releases the request resources.
- *
- * It also decreases @num_requests_pending and possibly does _idle_timeout_restart().
- */
 static void
-complete_request(Request *request)
+request_dbus_method_return(Request *request)
 {
     GVariantBuilder results;
-    GVariant       *ret;
     guint           i;
-
-    nm_assert(request);
-
-    /* Are there still pending scripts? Then do nothing (for now). */
-    if (request->num_scripts_done < request->scripts->len)
-        return;
 
     g_variant_builder_init(&results, G_VARIANT_TYPE("a(sus)"));
     for (i = 0; i < request->scripts->len; i++) {
@@ -313,8 +297,28 @@ complete_request(Request *request)
                               script->error ?: "");
     }
 
-    ret = g_variant_new("(a(sus))", &results);
-    g_dbus_method_invocation_return_value(request->context, ret);
+    g_dbus_method_invocation_return_value(request->context, g_variant_new("(a(sus))", &results));
+}
+
+/**
+ * complete_request:
+ * @request: the request
+ *
+ * Checks if all the scripts for the request have terminated and in such case
+ * it sends the D-Bus response and releases the request resources.
+ *
+ * It also decreases @num_requests_pending and possibly does _idle_timeout_restart().
+ */
+static void
+complete_request(Request *request)
+{
+    nm_assert(request);
+
+    /* Are there still pending scripts? Then do nothing (for now). */
+    if (request->num_scripts_done < request->scripts->len)
+        return;
+
+    request_dbus_method_return(request);
 
     _LOG_R_T(request, "completed (%u scripts)", request->scripts->len);
 
@@ -785,36 +789,35 @@ _handle_action(GDBusMethodInvocation *invocation, GVariant *parameters)
                                                        &request->iface,
                                                        &error_message);
 
-    request->scripts = g_ptr_array_new_full(5, script_info_free);
+    if (!error_message) {
+        request->scripts = g_ptr_array_new_full(5, script_info_free);
 
-    sorted_scripts = find_scripts(request);
-    for (iter = sorted_scripts; iter; iter = g_slist_next(iter)) {
-        ScriptInfo *s;
+        sorted_scripts = find_scripts(request);
+        for (iter = sorted_scripts; iter; iter = g_slist_next(iter)) {
+            ScriptInfo *s;
 
-        s          = g_slice_new0(ScriptInfo);
-        s->request = request;
-        s->script  = iter->data;
-        s->wait    = script_must_wait(s->script);
-        g_ptr_array_add(request->scripts, s);
+            s          = g_slice_new0(ScriptInfo);
+            s->request = request;
+            s->script  = iter->data;
+            s->wait    = script_must_wait(s->script);
+            g_ptr_array_add(request->scripts, s);
+        }
+        g_slist_free(sorted_scripts);
+
+        _LOG_R_D(request, "new request (%u scripts)", request->scripts->len);
+        if (_LOG_R_T_enabled(request) && request->envp) {
+            for (p = request->envp; *p; p++)
+                _LOG_R_T(request, "environment: %s", *p);
+        }
     }
-    g_slist_free(sorted_scripts);
 
-    _LOG_R_D(request, "new request (%u scripts)", request->scripts->len);
-    if (_LOG_R_T_enabled(request) && request->envp) {
-        for (p = request->envp; *p; p++)
-            _LOG_R_T(request, "environment: %s", *p);
-    }
-
-    if (error_message || request->scripts->len == 0) {
-        GVariant *results;
-
+    if (request->scripts->len == 0) {
         if (error_message)
             _LOG_R_W(request, "completed: invalid request: %s", error_message);
         else
             _LOG_R_D(request, "completed: no scripts");
 
-        results = g_variant_new_array(G_VARIANT_TYPE("(sus)"), NULL, 0);
-        g_dbus_method_invocation_return_value(invocation, g_variant_new("(@a(sus))", results));
+        request_dbus_method_return(request);
         request->num_scripts_done = request->scripts->len;
         request_free(request);
         return;
