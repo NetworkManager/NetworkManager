@@ -85,6 +85,7 @@ struct Request {
     char                  *iface;
     char                 **envp;
     gboolean               debug;
+    gboolean               is_action2;
 
     GPtrArray *scripts; /* list of ScriptInfo */
     guint      idx;
@@ -286,18 +287,35 @@ request_dbus_method_return(Request *request)
     GVariantBuilder results;
     guint           i;
 
-    g_variant_builder_init(&results, G_VARIANT_TYPE("a(sus)"));
+    if (request->is_action2) {
+        g_variant_builder_init(&results, G_VARIANT_TYPE("a(susa{sv})"));
+    } else {
+        g_variant_builder_init(&results, G_VARIANT_TYPE("a(sus)"));
+    }
+
     for (i = 0; i < request->scripts->len; i++) {
         ScriptInfo *script = g_ptr_array_index(request->scripts, i);
 
-        g_variant_builder_add(&results,
-                              "(sus)",
-                              script->script,
-                              script->result,
-                              script->error ?: "");
+        if (request->is_action2) {
+            g_variant_builder_add(&results,
+                                  "(sus@a{sv})",
+                                  script->script,
+                                  script->result,
+                                  script->error ?: "",
+                                  nm_g_variant_singleton_aLsvI());
+        } else {
+            g_variant_builder_add(&results,
+                                  "(sus)",
+                                  script->script,
+                                  script->result,
+                                  script->error ?: "");
+        }
     }
 
-    g_dbus_method_invocation_return_value(request->context, g_variant_new("(a(sus))", &results));
+    g_dbus_method_invocation_return_value(request->context,
+                                          request->is_action2
+                                              ? g_variant_new("(a(susa{sv}))", &results)
+                                              : g_variant_new("(a(sus))", &results));
 }
 
 /**
@@ -708,7 +726,7 @@ script_must_wait(const char *path)
 }
 
 static void
-_handle_action(GDBusMethodInvocation *invocation, GVariant *parameters)
+_handle_action(GDBusMethodInvocation *invocation, GVariant *parameters, gboolean is_action2)
 {
     const char                *action;
     gs_unref_variant GVariant *connection              = NULL;
@@ -724,6 +742,7 @@ _handle_action(GDBusMethodInvocation *invocation, GVariant *parameters)
     gs_unref_variant GVariant *vpn_proxy_properties = NULL;
     gs_unref_variant GVariant *vpn_ip4_config       = NULL;
     gs_unref_variant GVariant *vpn_ip6_config       = NULL;
+    gs_unref_variant GVariant *options              = NULL;
     gboolean                   debug;
     GSList                    *sorted_scripts = NULL;
     GSList                    *iter;
@@ -732,45 +751,84 @@ _handle_action(GDBusMethodInvocation *invocation, GVariant *parameters)
     guint                      i, num_nowait = 0;
     const char                *error_message = NULL;
 
-    g_variant_get(parameters,
-                  "("
-                  "&s"         /* action */
-                  "@a{sa{sv}}" /* connection */
-                  "@a{sv}"     /* connection_properties */
-                  "@a{sv}"     /* device_properties */
-                  "@a{sv}"     /* device_proxy_properties */
-                  "@a{sv}"     /* device_ip4_config */
-                  "@a{sv}"     /* device_ip6_config */
-                  "@a{sv}"     /* device_dhcp4_config */
-                  "@a{sv}"     /* device_dhcp6_config */
-                  "&s"         /* connectivity_state */
-                  "&s"         /* vpn_ip_iface */
-                  "@a{sv}"     /* vpn_proxy_properties */
-                  "@a{sv}"     /* vpn_ip4_config */
-                  "@a{sv}"     /* vpn_ip6_config */
-                  "b"          /* debug */
-                  ")",
-                  &action,
-                  &connection,
-                  &connection_properties,
-                  &device_properties,
-                  &device_proxy_properties,
-                  &device_ip4_config,
-                  &device_ip6_config,
-                  &device_dhcp4_config,
-                  &device_dhcp6_config,
-                  &connectivity_state,
-                  &vpn_ip_iface,
-                  &vpn_proxy_properties,
-                  &vpn_ip4_config,
-                  &vpn_ip6_config,
-                  &debug);
+    if (is_action2) {
+        g_variant_get(parameters,
+                      "("
+                      "&s"         /* action */
+                      "@a{sa{sv}}" /* connection */
+                      "@a{sv}"     /* connection_properties */
+                      "@a{sv}"     /* device_properties */
+                      "@a{sv}"     /* device_proxy_properties */
+                      "@a{sv}"     /* device_ip4_config */
+                      "@a{sv}"     /* device_ip6_config */
+                      "@a{sv}"     /* device_dhcp4_config */
+                      "@a{sv}"     /* device_dhcp6_config */
+                      "&s"         /* connectivity_state */
+                      "&s"         /* vpn_ip_iface */
+                      "@a{sv}"     /* vpn_proxy_properties */
+                      "@a{sv}"     /* vpn_ip4_config */
+                      "@a{sv}"     /* vpn_ip6_config */
+                      "b"          /* debug */
+                      "@a{sv}"     /* options */
+                      ")",
+                      &action,
+                      &connection,
+                      &connection_properties,
+                      &device_properties,
+                      &device_proxy_properties,
+                      &device_ip4_config,
+                      &device_ip6_config,
+                      &device_dhcp4_config,
+                      &device_dhcp6_config,
+                      &connectivity_state,
+                      &vpn_ip_iface,
+                      &vpn_proxy_properties,
+                      &vpn_ip4_config,
+                      &vpn_ip6_config,
+                      &debug,
+                      &options);
+    } else {
+        g_variant_get(parameters,
+                      "("
+                      "&s"         /* action */
+                      "@a{sa{sv}}" /* connection */
+                      "@a{sv}"     /* connection_properties */
+                      "@a{sv}"     /* device_properties */
+                      "@a{sv}"     /* device_proxy_properties */
+                      "@a{sv}"     /* device_ip4_config */
+                      "@a{sv}"     /* device_ip6_config */
+                      "@a{sv}"     /* device_dhcp4_config */
+                      "@a{sv}"     /* device_dhcp6_config */
+                      "&s"         /* connectivity_state */
+                      "&s"         /* vpn_ip_iface */
+                      "@a{sv}"     /* vpn_proxy_properties */
+                      "@a{sv}"     /* vpn_ip4_config */
+                      "@a{sv}"     /* vpn_ip6_config */
+                      "b"          /* debug */
+                      ")",
+                      &action,
+                      &connection,
+                      &connection_properties,
+                      &device_properties,
+                      &device_proxy_properties,
+                      &device_ip4_config,
+                      &device_ip6_config,
+                      &device_dhcp4_config,
+                      &device_dhcp6_config,
+                      &connectivity_state,
+                      &vpn_ip_iface,
+                      &vpn_proxy_properties,
+                      &vpn_ip4_config,
+                      &vpn_ip6_config,
+                      &debug);
+    }
 
     request             = g_slice_new0(Request);
     request->request_id = ++gl.request_id_counter;
     request->debug      = debug || gl.log_verbose;
     request->context    = invocation;
     request->action     = g_strdup(action);
+    request->is_action2 = is_action2;
 
     request->envp = nm_dispatcher_utils_construct_envp(action,
                                                        connection,
@@ -908,8 +966,12 @@ _bus_method_call(GDBusConnection       *connection,
         return;
     }
     if (nm_streq(interface_name, NM_DISPATCHER_DBUS_INTERFACE)) {
+        if (nm_streq(method_name, "Action2")) {
+            _handle_action(invocation, parameters, TRUE);
+            return;
+        }
         if (nm_streq(method_name, "Action")) {
-            _handle_action(invocation, parameters);
+            _handle_action(invocation, parameters, FALSE);
             return;
         }
         if (nm_streq(method_name, "Ping")) {
@@ -950,7 +1012,28 @@ static GDBusInterfaceInfo *const interface_info = NM_DEFINE_GDBUS_INTERFACE_INFO
                 NM_DEFINE_GDBUS_ARG_INFO("vpn_ip6_config", "a{sv}"),
                 NM_DEFINE_GDBUS_ARG_INFO("debug", "b"), ),
             .out_args =
-                NM_DEFINE_GDBUS_ARG_INFOS(NM_DEFINE_GDBUS_ARG_INFO("results", "a(sus)"), ), ), ), );
+                NM_DEFINE_GDBUS_ARG_INFOS(NM_DEFINE_GDBUS_ARG_INFO("results", "a(sus)"), ), ),
+        NM_DEFINE_GDBUS_METHOD_INFO(
+            "Action2",
+            .in_args = NM_DEFINE_GDBUS_ARG_INFOS(
+                NM_DEFINE_GDBUS_ARG_INFO("action", "s"),
+                NM_DEFINE_GDBUS_ARG_INFO("connection", "a{sa{sv}}"),
+                NM_DEFINE_GDBUS_ARG_INFO("connection_properties", "a{sv}"),
+                NM_DEFINE_GDBUS_ARG_INFO("device_properties", "a{sv}"),
+                NM_DEFINE_GDBUS_ARG_INFO("device_proxy_properties", "a{sv}"),
+                NM_DEFINE_GDBUS_ARG_INFO("device_ip4_config", "a{sv}"),
+                NM_DEFINE_GDBUS_ARG_INFO("device_ip6_config", "a{sv}"),
+                NM_DEFINE_GDBUS_ARG_INFO("device_dhcp4_config", "a{sv}"),
+                NM_DEFINE_GDBUS_ARG_INFO("device_dhcp6_config", "a{sv}"),
+                NM_DEFINE_GDBUS_ARG_INFO("connectivity_state", "s"),
+                NM_DEFINE_GDBUS_ARG_INFO("vpn_ip_iface", "s"),
+                NM_DEFINE_GDBUS_ARG_INFO("vpn_proxy_properties", "a{sv}"),
+                NM_DEFINE_GDBUS_ARG_INFO("vpn_ip4_config", "a{sv}"),
+                NM_DEFINE_GDBUS_ARG_INFO("vpn_ip6_config", "a{sv}"),
+                NM_DEFINE_GDBUS_ARG_INFO("debug", "b"),
+                NM_DEFINE_GDBUS_ARG_INFO("options", "a{sv}"), ),
+            .out_args = NM_DEFINE_GDBUS_ARG_INFOS(
+                NM_DEFINE_GDBUS_ARG_INFO("results", "a(susa{sv})"), ), ), ), );
 
 static gboolean
 _bus_register_service(void)
