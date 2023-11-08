@@ -1312,7 +1312,7 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
 {
     GObjectClass   *object_class        = G_OBJECT_CLASS(klass);
     NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
-    GArray         *properties_override = _nm_sett_info_property_override_create_array();
+    GArray         *properties_override = _nm_sett_info_property_override_create_array_sized(25);
 
     object_class->set_property = set_property;
     object_class->get_property = get_property;
@@ -1680,12 +1680,11 @@ nm_setting_wireless_class_init(NMSettingWirelessClass *klass)
      *   is listed.
      * ---end---
      */
-    obj_properties[PROP_MAC_ADDRESS_BLACKLIST] = g_param_spec_boxed(
-        NM_SETTING_WIRELESS_MAC_ADDRESS_BLACKLIST,
-        "",
-        "",
-        G_TYPE_STRV,
-        G_PARAM_READWRITE | NM_SETTING_PARAM_FUZZY_IGNORE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_gprop_strv_oldstyle(properties_override,
+                                                    obj_properties,
+                                                    NM_SETTING_WIRELESS_MAC_ADDRESS_BLACKLIST,
+                                                    PROP_MAC_ADDRESS_BLACKLIST,
+                                                    NM_SETTING_PARAM_FUZZY_IGNORE);
 
     /**
      * NMSettingWireless:seen-bssids:

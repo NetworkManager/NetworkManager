@@ -183,9 +183,8 @@ _nm_properties_override_assert(const NMSettInfoProperty *prop_info)
 {
 #if NM_MORE_ASSERTS
     nm_assert(prop_info);
-    nm_assert((!!prop_info->name) != (!!prop_info->param_spec));
-    nm_assert(!prop_info->param_spec || !prop_info->name
-              || nm_streq0(prop_info->name, prop_info->param_spec->name));
+    nm_assert(prop_info->name);
+    nm_assert(!prop_info->param_spec || prop_info->name == prop_info->param_spec->name);
 
     if (prop_info->property_type) {
         const NMSettInfoPropertType *property_type = prop_info->property_type;
@@ -208,6 +207,34 @@ _nm_properties_override_assert(const NMSettInfoProperty *prop_info)
     return TRUE;
 }
 
+GArray *
+_nm_sett_info_property_override_create_array_sized(guint reserved_size)
+{
+    GArray     *properties_override;
+    GParamSpec *param_spec;
+
+    /* pre-allocate a relatively large buffer to avoid frequent re-allocations.
+     * Note that the buffer is only short-lived and will be destroyed by
+     * _nm_setting_class_commit(). */
+    properties_override =
+        g_array_sized_new(FALSE, FALSE, sizeof(NMSettInfoProperty), reserved_size);
+
+    /* The "name" property is special because it's defined in the
+     * parent class NMSetting. We add the property info right here.
+     */
+    param_spec = obj_properties[PROP_NAME];
+    nm_assert(param_spec);
+    nm_assert(nm_streq0(param_spec->name, NM_SETTING_NAME));
+    nm_assert(param_spec
+              == g_object_class_find_property(g_type_class_peek(NM_TYPE_SETTING), NM_SETTING_NAME));
+    nm_assert(!NM_FLAGS_HAS(param_spec->flags, G_PARAM_WRITABLE));
+    _nm_properties_override_gobj(properties_override,
+                                 param_spec,
+                                 &nm_sett_info_propert_type_setting_name);
+
+    return properties_override;
+}
+
 static NMSettInfoSetting _sett_info_settings[_NM_META_SETTING_TYPE_NUM];
 
 const NMSettInfoSetting *
@@ -223,10 +250,8 @@ _property_infos_sort_cmp_setting_connection(gconstpointer p_a,
 {
     const NMSettInfoProperty *a = *((const NMSettInfoProperty *const *) p_a);
     const NMSettInfoProperty *b = *((const NMSettInfoProperty *const *) p_b);
-    int                       c_name;
 
-    c_name = strcmp(a->name, b->name);
-    nm_assert(c_name != 0);
+    nm_assert(a->name && b->name && !nm_streq(a->name, b->name));
 
 #define CMP_AND_RETURN(n_a, n_b, name)         \
     G_STMT_START                               \
@@ -239,15 +264,14 @@ _property_infos_sort_cmp_setting_connection(gconstpointer p_a,
     G_STMT_END
 
     /* for [connection], report first id, uuid, type in that order. */
-    if (c_name != 0) {
-        CMP_AND_RETURN(a->name, b->name, NM_SETTING_CONNECTION_ID);
-        CMP_AND_RETURN(a->name, b->name, NM_SETTING_CONNECTION_UUID);
-        CMP_AND_RETURN(a->name, b->name, NM_SETTING_CONNECTION_TYPE);
-    }
+    CMP_AND_RETURN(a->name, b->name, NM_SETTING_CONNECTION_ID);
+    CMP_AND_RETURN(a->name, b->name, NM_SETTING_CONNECTION_UUID);
+    CMP_AND_RETURN(a->name, b->name, NM_SETTING_CONNECTION_TYPE);
 
 #undef CMP_AND_RETURN
 
-    return c_name;
+    NM_CMP_FIELD_STR(a, b, name);
+    return nm_assert_unreachable_val(0);
 }
 
 static const NMSettInfoProperty *const *
@@ -305,9 +329,11 @@ _nm_setting_class_commit(NMSettingClass             *setting_class,
                          GArray                     *properties_override,
                          gint16                      private_offset)
 {
-    NMSettInfoSetting                  *sett_info;
-    gs_free GParamSpec                **property_specs = NULL;
-    guint                               n_property_specs;
+    NMSettInfoSetting *sett_info;
+#if NM_MORE_ASSERTS > 10
+    gs_free GParamSpec **property_specs = NULL;
+    guint                n_property_specs;
+#endif
     NMSettInfoPropertLookupByParamSpec *lookup_by_iter;
     guint                               override_len;
     guint                               i;
@@ -324,34 +350,25 @@ _nm_setting_class_commit(NMSettingClass             *setting_class,
     nm_assert(!sett_info->property_infos_len);
     nm_assert(!sett_info->property_infos);
 
+    if (!properties_override)
+        properties_override = _nm_sett_info_property_override_create_array_sized(1);
+
+    override_len = properties_override->len;
+
+    nm_assert(override_len > 0);
+
+#if NM_MORE_ASSERTS > 10
     property_specs =
         g_object_class_list_properties(G_OBJECT_CLASS(setting_class), &n_property_specs);
 
-    if (!properties_override) {
-        override_len        = 0;
-        properties_override = _nm_sett_info_property_override_create_array_sized(n_property_specs);
-    } else {
-        override_len = properties_override->len;
-
-        for (i = 0; i < override_len; i++) {
-            NMSettInfoProperty *p = &nm_g_array_index(properties_override, NMSettInfoProperty, i);
-
-            nm_assert((!!p->name) != (!!p->param_spec));
-
-            if (!p->name) {
-                nm_assert(p->param_spec);
-                p->name = p->param_spec->name;
-            } else
-                nm_assert(!p->param_spec);
-        }
-    }
-
-#if NM_MORE_ASSERTS > 10
     /* assert that properties_override is constructed consistently. */
     for (i = 0; i < override_len; i++) {
         const NMSettInfoProperty *p = &nm_g_array_index(properties_override, NMSettInfoProperty, i);
         gboolean                  found = FALSE;
         guint                     k;
+
+        nm_assert(p->name);
+        nm_assert(!p->param_spec || p->name == p->param_spec->name);
 
         nm_assert(!_nm_sett_info_property_find_in_array(
             nm_g_array_first_p(properties_override, NMSettInfoProperty),
@@ -366,62 +383,31 @@ _nm_setting_class_commit(NMSettingClass             *setting_class,
         }
         nm_assert(found == (p->param_spec != NULL));
     }
-#endif
 
     for (i = 0; i < n_property_specs; i++) {
-        const char         *name = property_specs[i]->name;
-        NMSettInfoProperty *p;
+        const GParamSpec         *param_spec = property_specs[i];
+        const char               *name       = param_spec->name;
+        const NMSettInfoProperty *p;
 
-        if (_nm_sett_info_property_find_in_array(
-                nm_g_array_first_p(properties_override, NMSettInfoProperty),
-                override_len,
-                name))
-            continue;
-
-        p = nm_g_array_append_new(properties_override, NMSettInfoProperty);
-        memset(p, 0, sizeof(*p));
-        p->name       = name;
-        p->param_spec = property_specs[i];
+        p = _nm_sett_info_property_find_in_array(
+            nm_g_array_first_p(properties_override, NMSettInfoProperty),
+            override_len,
+            name);
+        nm_assert(p);
+        nm_assert(p->param_spec);
+        nm_assert(p->param_spec == param_spec);
     }
 
     for (i = 0; i < properties_override->len; i++) {
         NMSettInfoProperty *p = &nm_g_array_index(properties_override, NMSettInfoProperty, i);
-        GType               vtype;
 
-        if (p->property_type)
-            goto has_property_type;
-
-        nm_assert(p->param_spec);
-
-        vtype = p->param_spec->value_type;
-
-        if (vtype == G_TYPE_STRING) {
-            /* The "name" property is a bit special because it's defined in the
-             * parent class NMSetting. We set the property_type here, because
-             * it's more convenient (albeit a bit ugly).
-             *
-             * FIXME: let _nm_sett_info_property_override_create_array() always add
-             *   the handling of the name property.*/
-            nm_assert(nm_streq(p->name, NM_SETTING_NAME));
-            nm_assert(!NM_FLAGS_HAS(p->param_spec->flags, G_PARAM_WRITABLE));
-            p->property_type = &nm_sett_info_propert_type_setting_name;
-            goto has_property_type;
-        }
-
-        if (vtype == G_TYPE_STRV)
-            p->property_type = NM_SETT_INFO_PROPERT_TYPE_GPROP(
-                G_VARIANT_TYPE_STRING_ARRAY,
-                .compare_fcn       = _nm_setting_property_compare_fcn_default,
-                .from_dbus_fcn     = _nm_setting_property_from_dbus_fcn_gprop,
-                .from_dbus_is_full = TRUE);
-        else
-            nm_assert_not_reached();
-
-has_property_type:
         nm_assert(p->property_type);
         nm_assert(p->property_type->dbus_type);
         nm_assert(g_variant_type_string_is_valid((const char *) p->property_type->dbus_type));
+        nm_assert(p->name);
+        nm_assert(!p->param_spec || nm_streq0(p->name, p->param_spec->name));
     }
+#endif
 
     G_STATIC_ASSERT_EXPR(G_STRUCT_OFFSET(NMSettInfoProperty, name) == 0);
     g_array_sort(properties_override, nm_strcmp_p);
@@ -838,7 +824,7 @@ _nm_setting_property_get_property_direct(GObject    *object,
         goto out_fail;
     }
 
-    return;
+    nm_assert_not_reached();
 
 out_fail:
     G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
@@ -985,7 +971,7 @@ _nm_setting_property_set_property_direct(GObject      *object,
         goto out_fail;
     }
 
-    return;
+    nm_assert_not_reached();
 
 out_notify:
     /* If explicit-notify would be set, we would need to emit g_object_notify_by_pspec().
@@ -3605,6 +3591,15 @@ const NMSettInfoPropertType nm_sett_info_propert_type_deprecated_ignore_u =
         G_VARIANT_TYPE_UINT32,
         /* No functions set. This property type is to silently ignore the value on D-Bus. */
         .compare_fcn = _nm_setting_property_compare_fcn_ignore);
+
+/* This should not be used for new strv properties. Use nm_sett_info_propert_type_direct_strv.
+ *
+ * FIXME: existing properties should migrate to nm_sett_info_propert_type_direct_strv. */
+const NMSettInfoPropertType nm_sett_info_propert_type_gprop_strv_oldstyle =
+    NM_SETT_INFO_PROPERT_TYPE_GPROP_INIT(G_VARIANT_TYPE_STRING_ARRAY,
+                                         .compare_fcn   = _nm_setting_property_compare_fcn_default,
+                                         .from_dbus_fcn = _nm_setting_property_from_dbus_fcn_gprop,
+                                         .from_dbus_is_full = TRUE);
 
 const NMSettInfoPropertType nm_sett_info_propert_type_direct_boolean =
     NM_SETT_INFO_PROPERT_TYPE_DBUS_INIT(G_VARIANT_TYPE_BOOLEAN,

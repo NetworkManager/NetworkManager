@@ -331,6 +331,7 @@ extern const NMSettInfoPropertType nm_sett_info_propert_type_setting_name;
 extern const NMSettInfoPropertType nm_sett_info_propert_type_deprecated_interface_name;
 extern const NMSettInfoPropertType nm_sett_info_propert_type_deprecated_ignore_i;
 extern const NMSettInfoPropertType nm_sett_info_propert_type_deprecated_ignore_u;
+extern const NMSettInfoPropertType nm_sett_info_propert_type_gprop_strv_oldstyle;
 
 extern const NMSettInfoPropertType nm_sett_info_propert_type_direct_boolean;
 extern const NMSettInfoPropertType nm_sett_info_propert_type_direct_int32;
@@ -419,11 +420,7 @@ const NMSettInfoProperty *
 _nm_sett_info_property_lookup_by_param_spec(const NMSettInfoSetting *sett_info,
                                             const GParamSpec        *param_spec);
 
-static inline GArray *
-_nm_sett_info_property_override_create_array_sized(guint reserved_size)
-{
-    return g_array_sized_new(FALSE, FALSE, sizeof(NMSettInfoProperty), reserved_size);
-}
+GArray *_nm_sett_info_property_override_create_array_sized(guint reserved_size);
 
 static inline GArray *
 _nm_sett_info_property_override_create_array(void)
@@ -486,15 +483,23 @@ _nm_properties_override(GArray *properties_override, const NMSettInfoProperty *p
     g_array_append_vals(properties_override, prop_info, 1);
 }
 
-#define _nm_properties_override_gobj(properties_override,                             \
-                                     p_param_spec,                                    \
-                                     p_property_type,                                 \
-                                     ... /* extra NMSettInfoProperty fields */)       \
-    _nm_properties_override((properties_override),                                    \
-                            NM_SETT_INFO_PROPERTY(.name          = NULL,              \
-                                                  .param_spec    = (p_param_spec),    \
-                                                  .property_type = (p_property_type), \
-                                                  __VA_ARGS__))
+#define _nm_properties_override_gobj(properties_override,                                     \
+                                     p_param_spec,                                            \
+                                     p_property_type,                                         \
+                                     ... /* extra NMSettInfoProperty fields */)               \
+    G_STMT_START                                                                              \
+    {                                                                                         \
+        GParamSpec *const _p_param_spec_2 = (p_param_spec);                                   \
+                                                                                              \
+        nm_assert(_p_param_spec_2);                                                           \
+                                                                                              \
+        _nm_properties_override((properties_override),                                        \
+                                NM_SETT_INFO_PROPERTY(.name          = _p_param_spec_2->name, \
+                                                      .param_spec    = _p_param_spec_2,       \
+                                                      .property_type = (p_property_type),     \
+                                                      __VA_ARGS__));                          \
+    }                                                                                         \
+    G_STMT_END
 
 #define _nm_properties_override_dbus(properties_override,                             \
                                      p_name,                                          \
@@ -1033,6 +1038,38 @@ _nm_properties_override(GArray *properties_override, const NMSettInfoProperty *p
                 NM_STRUCT_OFFSET_ENSURE_TYPE(char *, private_struct_type, private_struct_field),  \
             __VA_ARGS__);                                                                         \
     }                                                                                             \
+    G_STMT_END
+
+/* This should not be used for new strv properties. Use _nm_setting_property_define_direct_strv().
+ *
+ * FIXME: existing properties should migrate to _nm_setting_property_define_direct_strv(). */
+#define _nm_setting_property_define_gprop_strv_oldstyle(properties_override,                    \
+                                                        obj_properties,                         \
+                                                        prop_name,                              \
+                                                        prop_id,                                \
+                                                        param_flags)                            \
+    G_STMT_START                                                                                \
+    {                                                                                           \
+        GParamSpec *_param_spec;                                                                \
+                                                                                                \
+        G_STATIC_ASSERT(!NM_FLAGS_ANY((param_flags),                                            \
+                                      ~(NM_SETTING_PARAM_SECRET | NM_SETTING_PARAM_FUZZY_IGNORE \
+                                        | NM_SETTING_PARAM_INFERRABLE                           \
+                                        | NM_SETTING_PARAM_REAPPLY_IMMEDIATELY)));              \
+                                                                                                \
+        _param_spec =                                                                           \
+            g_param_spec_boxed("" prop_name "",                                                 \
+                               "",                                                              \
+                               "",                                                              \
+                               G_TYPE_STRV,                                                     \
+                               G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS | (param_flags));     \
+                                                                                                \
+        (obj_properties)[(prop_id)] = _param_spec;                                              \
+                                                                                                \
+        _nm_properties_override_gobj((properties_override),                                     \
+                                     _param_spec,                                               \
+                                     &nm_sett_info_propert_type_gprop_strv_oldstyle);           \
+    }                                                                                           \
     G_STMT_END
 
 /*****************************************************************************/

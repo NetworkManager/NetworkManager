@@ -1796,7 +1796,6 @@ finalize(GObject *object)
     NMSettingConnectionPrivate *priv = NM_SETTING_CONNECTION_GET_PRIVATE(object);
 
     nm_clear_pointer(&priv->permissions, g_array_unref);
-    nm_clear_pointer(&priv->secondaries.arr, g_array_unref);
 
     G_OBJECT_CLASS(nm_setting_connection_parent_class)->finalize(object);
 }
@@ -1806,7 +1805,7 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
 {
     GObjectClass   *object_class        = G_OBJECT_CLASS(klass);
     NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
-    GArray         *properties_override = _nm_sett_info_property_override_create_array();
+    GArray         *properties_override = _nm_sett_info_property_override_create_array_sized(35);
 
     object_class->get_property = get_property;
     object_class->set_property = set_property;
@@ -2034,12 +2033,11 @@ nm_setting_connection_class_init(NMSettingConnectionClass *klass)
      * example: USERS="joe bob"
      * ---end---
      */
-    obj_properties[PROP_PERMISSIONS] =
-        g_param_spec_boxed(NM_SETTING_CONNECTION_PERMISSIONS,
-                           "",
-                           "",
-                           G_TYPE_STRV,
-                           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_gprop_strv_oldstyle(properties_override,
+                                                    obj_properties,
+                                                    NM_SETTING_CONNECTION_PERMISSIONS,
+                                                    PROP_PERMISSIONS,
+                                                    NM_SETTING_PARAM_NONE);
 
     /**
      * NMSettingConnection:autoconnect:

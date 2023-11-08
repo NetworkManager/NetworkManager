@@ -1383,7 +1383,7 @@ nm_setting_wireless_security_class_init(NMSettingWirelessSecurityClass *klass)
 {
     GObjectClass   *object_class        = G_OBJECT_CLASS(klass);
     NMSettingClass *setting_class       = NM_SETTING_CLASS(klass);
-    GArray         *properties_override = _nm_sett_info_property_override_create_array();
+    GArray         *properties_override = _nm_sett_info_property_override_create_array_sized(25);
 
     object_class->get_property = get_property;
     object_class->set_property = set_property;
@@ -1490,11 +1490,11 @@ nm_setting_wireless_security_class_init(NMSettingWirelessSecurityClass *klass)
      * description: Allowed WPA protocols, WPA and WPA2 (RSN).
      * ---end---
      */
-    obj_properties[PROP_PROTO] = g_param_spec_boxed(NM_SETTING_WIRELESS_SECURITY_PROTO,
-                                                    "",
-                                                    "",
-                                                    G_TYPE_STRV,
-                                                    G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_gprop_strv_oldstyle(properties_override,
+                                                    obj_properties,
+                                                    NM_SETTING_WIRELESS_SECURITY_PROTO,
+                                                    PROP_PROTO,
+                                                    NM_SETTING_PARAM_NONE);
 
     /**
      * NMSettingWirelessSecurity:pairwise:
@@ -1512,11 +1512,11 @@ nm_setting_wireless_security_class_init(NMSettingWirelessSecurityClass *klass)
      *   separated list.
      * ---end---
      */
-    obj_properties[PROP_PAIRWISE] = g_param_spec_boxed(NM_SETTING_WIRELESS_SECURITY_PAIRWISE,
-                                                       "",
-                                                       "",
-                                                       G_TYPE_STRV,
-                                                       G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_gprop_strv_oldstyle(properties_override,
+                                                    obj_properties,
+                                                    NM_SETTING_WIRELESS_SECURITY_PAIRWISE,
+                                                    PROP_PAIRWISE,
+                                                    NM_SETTING_PARAM_NONE);
 
     /**
      * NMSettingWirelessSecurity:group:
@@ -1534,11 +1534,11 @@ nm_setting_wireless_security_class_init(NMSettingWirelessSecurityClass *klass)
      *   separated list.
      * ---end---
      */
-    obj_properties[PROP_GROUP] = g_param_spec_boxed(NM_SETTING_WIRELESS_SECURITY_GROUP,
-                                                    "",
-                                                    "",
-                                                    G_TYPE_STRV,
-                                                    G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_gprop_strv_oldstyle(properties_override,
+                                                    obj_properties,
+                                                    NM_SETTING_WIRELESS_SECURITY_GROUP,
+                                                    PROP_GROUP,
+                                                    NM_SETTING_PARAM_NONE);
 
     /**
      * NMSettingWirelessSecurity:pmf:

@@ -5963,7 +5963,7 @@ dns_data_from_dbus(_NM_SETT_INFO_PROP_FROM_DBUS_FCN_ARGS _nm_nil)
 GArray *
 _nm_sett_info_property_override_create_array_ip_config(int addr_family)
 {
-    GArray *properties_override = _nm_sett_info_property_override_create_array();
+    GArray *properties_override = _nm_sett_info_property_override_create_array_sized(45);
 
     nm_assert_addr_family(addr_family);
 
@@ -6129,6 +6129,18 @@ _nm_sett_info_property_override_create_array_ip_config(int addr_family)
         &nm_sett_info_propert_type_direct_enum,
         .direct_offset =
             NM_STRUCT_OFFSET_ENSURE_TYPE(int, NMSettingIPConfigPrivate, replace_local_rule));
+
+    _nm_properties_override_gobj(properties_override,
+                                 obj_properties[PROP_DNS_SEARCH],
+                                 &nm_sett_info_propert_type_gprop_strv_oldstyle);
+
+    _nm_properties_override_gobj(properties_override,
+                                 obj_properties[PROP_DNS_OPTIONS],
+                                 &nm_sett_info_propert_type_gprop_strv_oldstyle);
+
+    _nm_properties_override_gobj(properties_override,
+                                 obj_properties[PROP_DHCP_REJECT_SERVERS],
+                                 &nm_sett_info_propert_type_gprop_strv_oldstyle);
 
     return properties_override;
 }

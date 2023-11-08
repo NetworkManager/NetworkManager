@@ -979,12 +979,11 @@ nm_setting_vlan_class_init(NMSettingVlanClass *klass)
      * example: VLAN_INGRESS_PRIORITY_MAP=4:2,3:5
      * ---end---
      */
-    obj_properties[PROP_INGRESS_PRIORITY_MAP] = g_param_spec_boxed(
-        NM_SETTING_VLAN_INGRESS_PRIORITY_MAP,
-        "",
-        "",
-        G_TYPE_STRV,
-        G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_gprop_strv_oldstyle(properties_override,
+                                                    obj_properties,
+                                                    NM_SETTING_VLAN_INGRESS_PRIORITY_MAP,
+                                                    PROP_INGRESS_PRIORITY_MAP,
+                                                    NM_SETTING_PARAM_INFERRABLE);
 
     /**
      * NMSettingVlan:egress-priority-map:
@@ -1000,12 +999,11 @@ nm_setting_vlan_class_init(NMSettingVlanClass *klass)
      * example: VLAN_EGRESS_PRIORITY_MAP=5:4,4:1,3:7
      * ---end---
      */
-    obj_properties[PROP_EGRESS_PRIORITY_MAP] = g_param_spec_boxed(
-        NM_SETTING_VLAN_EGRESS_PRIORITY_MAP,
-        "",
-        "",
-        G_TYPE_STRV,
-        G_PARAM_READWRITE | NM_SETTING_PARAM_INFERRABLE | G_PARAM_STATIC_STRINGS);
+    _nm_setting_property_define_gprop_strv_oldstyle(properties_override,
+                                                    obj_properties,
+                                                    NM_SETTING_VLAN_EGRESS_PRIORITY_MAP,
+                                                    PROP_EGRESS_PRIORITY_MAP,
+                                                    NM_SETTING_PARAM_INFERRABLE);
 
     /* ---ifcfg-rh---
      * property: interface-name
