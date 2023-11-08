@@ -2604,7 +2604,7 @@ write_user_setting(NMConnection *connection, shvarFile *ifcfg, GError **error)
 
             g_string_set_size(str, 0);
             g_string_append(str, "NM_USER_");
-            nms_ifcfg_rh_utils_user_key_encode(key, str);
+            nm_utils_env_var_encode_name(key, str);
             svSetValue(ifcfg, str->str, nm_setting_user_get_data(s_user, key));
         }
     }

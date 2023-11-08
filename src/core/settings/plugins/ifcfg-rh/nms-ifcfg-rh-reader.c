@@ -1723,7 +1723,7 @@ make_user_setting(shvarFile *ifcfg)
         else
             g_string_set_size(str, 0);
 
-        if (!nms_ifcfg_rh_utils_user_key_decode(key + NM_STRLEN("NM_USER_"), str))
+        if (!nm_utils_env_var_decode_name(key + NM_STRLEN("NM_USER_"), str))
             continue;
 
         if (!s_user)
