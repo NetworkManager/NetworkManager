@@ -39,7 +39,8 @@ typedef void (*NMDispatcherFunc)(NMDispatcherCallId *call_id, gpointer user_data
 typedef void (*NMDispatcherFuncDH)(NMDispatcherCallId *call_id,
                                    gpointer            user_data,
                                    gboolean            success,
-                                   const char         *error_msg);
+                                   const char         *error_msg,
+                                   GHashTable         *dict);
 
 gboolean nm_dispatcher_call_hostname(NMDispatcherFunc     callback,
                                      gpointer             user_data,
