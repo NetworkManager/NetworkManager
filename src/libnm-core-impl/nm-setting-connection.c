@@ -808,21 +808,11 @@ nm_setting_connection_get_num_secondaries(NMSettingConnection *setting)
 const char *
 nm_setting_connection_get_secondary(NMSettingConnection *setting, guint32 idx)
 {
-    NMSettingConnectionPrivate *priv;
-    guint                       secondaries_len;
-
     g_return_val_if_fail(NM_IS_SETTING_CONNECTION(setting), NULL);
 
-    priv = NM_SETTING_CONNECTION_GET_PRIVATE(setting);
-
-    secondaries_len = nm_g_array_len(priv->secondaries.arr);
-    if (idx >= secondaries_len) {
-        /* access one past the length is OK. */
-        g_return_val_if_fail(idx == secondaries_len, NULL);
-        return NULL;
-    }
-
-    return nm_strvarray_get_idx(priv->secondaries.arr, idx);
+    return nm_strvarray_get_idxnull_or_greturn(
+        NM_SETTING_CONNECTION_GET_PRIVATE(setting)->secondaries.arr,
+        idx);
 }
 
 /**
