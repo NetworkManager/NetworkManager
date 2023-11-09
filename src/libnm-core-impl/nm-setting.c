@@ -164,7 +164,7 @@ _nm_setting_slave_type_is_valid(const char *slave_type, const char **out_port_ty
 
 /*****************************************************************************/
 
-static const NMSettInfoProperty *
+_nm_unused static const NMSettInfoProperty *
 _nm_sett_info_property_find_in_array(const NMSettInfoProperty *properties,
                                      guint                     len,
                                      const char               *name)
@@ -333,10 +333,10 @@ _nm_setting_class_commit(NMSettingClass             *setting_class,
 #if NM_MORE_ASSERTS > 10
     gs_free GParamSpec **property_specs = NULL;
     guint                n_property_specs;
+    guint                i;
 #endif
     NMSettInfoPropertLookupByParamSpec *lookup_by_iter;
     guint                               override_len;
-    guint                               i;
     guint16                             j;
 
     nm_assert(NM_IS_SETTING_CLASS(setting_class));
