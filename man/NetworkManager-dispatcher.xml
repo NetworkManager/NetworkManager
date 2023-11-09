@@ -186,7 +186,31 @@
             The script needs to perform any action needed to create the device
             for the generic connection. On successful termination, the script
             returns zero. Otherwise, it returns a non-zero value to indicate an
-            error.
+            error. The script can return values to NetworkManager by writing to
+            standard output; each line should contain a key name followed by the
+            equal sign '=' and a key value. The keys understood at the moment
+            are:
+            <variablelist>
+              <varlistentry>
+                <term><varname>IFINDEX</varname></term>
+                <listitem><para> Indicates the interface index of the interface
+                created by the script. This key is required when the script
+                succeeds; if it is not set, the activation will fail. The key is
+                ignored in case of script failure. </para></listitem>
+              </varlistentry>
+              <varlistentry>
+                <term><varname>ERROR</varname></term>
+                <listitem><para> Specifies an error message indicating the cause
+                of the script failure. It is ignored when the script succeeds.
+                </para></listitem>
+              </varlistentry>
+            </variablelist>
+            Since the dispatcher service captures stdout for parsing those keys,
+            anything written to stdout will not appear in the dispatcher service
+            journal log. Use stderr if you want to print messages to the journal
+            (for example, for debugging). Only the first 8KiB of stdout are
+            considered and among those, only the first 64 lines; the rest is
+            ignored.
           </para>
         </listitem>
       </varlistentry>
@@ -197,7 +221,11 @@
             This action is the counterpart of <literal>device-add</literal> and
             is called to delete the device for a generic connection. All the
             aspects described for <literal>device-add</literal> also apply to
-            this action.
+            this action, with the only exception that key
+            <varname>IFINDEX</varname> is ignored. It is not necessary to delete
+            the kernel link in the handler because NetworkManager already does
+            that; therefore the action is useful for any additional cleanup
+            needed.
           </para>
         </listitem>
       </varlistentry>

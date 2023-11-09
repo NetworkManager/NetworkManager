@@ -409,6 +409,8 @@ dispatch_result_to_string(DispatchResult result)
  * @out_success: (out): for device-handler actions, the result of the script
  * @out_error_msg: (out)(transfer full): for device-handler actions, the
  *   error message in case of failure
+ * @out_dict: (out)(transfer full): for device-handler actions, the output
+ *   dictionary in case of success
  * @v_results: the GVariant containing the results to parse
  * @is_action2: whether the D-Bus method is "Action2()" (or "Action()")
  *
@@ -424,6 +426,7 @@ dispatcher_results_process(NMDispatcherAction action,
                            const char        *log_con_uuid,
                            gboolean          *out_success,
                            char             **out_error_msg,
+                           GHashTable       **out_dict,
                            GVariant          *v_results,
                            gboolean           is_action2)
 {
@@ -454,6 +457,7 @@ dispatcher_results_process(NMDispatcherAction action,
         if (action_is_dh) {
             NM_SET_OUT(out_success, FALSE);
             NM_SET_OUT(out_error_msg, g_strdup("no result returned from dispatcher service"));
+            NM_SET_OUT(out_dict, NULL);
         }
         return;
     }
@@ -480,9 +484,53 @@ dispatcher_results_process(NMDispatcherAction action,
                    dispatch_result_to_string(result),
                    err);
         }
+
         if (action_is_dh) {
-            NM_SET_OUT(out_success, result == DISPATCH_RESULT_SUCCESS);
-            NM_SET_OUT(out_error_msg, g_strdup(err));
+            if (result == DISPATCH_RESULT_SUCCESS) {
+                gs_unref_variant GVariant     *output_dict = NULL;
+                gs_unref_hashtable GHashTable *hash        = NULL;
+                GVariantIter                   iter;
+                const char                    *value;
+                const char                    *key;
+
+                hash = g_hash_table_new_full(nm_str_hash, g_str_equal, g_free, g_free);
+                output_dict =
+                    g_variant_lookup_value(options, "output_dict", G_VARIANT_TYPE("a{ss}"));
+                if (output_dict) {
+                    g_variant_iter_init(&iter, output_dict);
+                    while (g_variant_iter_next(&iter, "{&s&s}", &key, &value)) {
+                        const char *unescaped;
+                        gpointer    to_free;
+                        gsize       len;
+
+                        unescaped = nm_utils_buf_utf8safe_unescape(value,
+                                                                   NM_UTILS_STR_UTF8_SAFE_FLAG_NONE,
+                                                                   &len,
+                                                                   &to_free);
+                        g_hash_table_insert(hash,
+                                            g_strdup(key),
+                                            ((char *) to_free) ?: g_strdup(unescaped));
+                    }
+                }
+
+                NM_SET_OUT(out_success, TRUE);
+                NM_SET_OUT(out_dict, g_steal_pointer(&hash));
+                NM_SET_OUT(out_error_msg, NULL);
+            } else {
+                gs_unref_variant GVariant *output_dict = NULL;
+                const char                *err2        = NULL;
+
+                output_dict =
+                    g_variant_lookup_value(options, "output_dict", G_VARIANT_TYPE("a{ss}"));
+                if (output_dict) {
+                    g_variant_lookup(output_dict, "ERROR", "&s", &err2);
+                }
+
+                NM_SET_OUT(out_success, FALSE);
+                NM_SET_OUT(out_dict, NULL);
+                NM_SET_OUT(out_error_msg,
+                           err2 ? g_strdup_printf("%s: Error: %s", err, err2) : g_strdup(err));
+            }
             break;
         }
     }
@@ -491,13 +539,14 @@ dispatcher_results_process(NMDispatcherAction action,
 static void
 dispatcher_done_cb(GObject *source, GAsyncResult *result, gpointer user_data)
 {
-    gs_unref_variant GVariant *ret     = NULL;
-    gs_free_error GError      *error   = NULL;
-    NMDispatcherCallId        *call_id = user_data;
-    gint64                     now_msec;
-    gboolean                   action_is_dh;
-    gboolean                   success   = TRUE;
-    gs_free char              *error_msg = NULL;
+    gs_unref_variant GVariant     *ret     = NULL;
+    gs_free_error GError          *error   = NULL;
+    NMDispatcherCallId            *call_id = user_data;
+    gint64                         now_msec;
+    gboolean                       action_is_dh;
+    gboolean                       success   = TRUE;
+    gs_free char                  *error_msg = NULL;
+    gs_unref_hashtable GHashTable *hash      = NULL;
 
     nm_assert((gpointer) source == gl.dbus_connection);
 
@@ -547,6 +596,7 @@ dispatcher_done_cb(GObject *source, GAsyncResult *result, gpointer user_data)
                                    call_id->log_con_uuid,
                                    &success,
                                    &error_msg,
+                                   &hash,
                                    ret,
                                    call_id->is_action2);
     }
@@ -558,7 +608,7 @@ dispatcher_done_cb(GObject *source, GAsyncResult *result, gpointer user_data)
         if (action_is_dh) {
             NMDispatcherFuncDH cb = (NMDispatcherFuncDH) call_id->callback;
 
-            cb(call_id, call_id->user_data, success, error_msg);
+            cb(call_id, call_id->user_data, success, error_msg, hash);
         } else {
             NMDispatcherFunc cb = (NMDispatcherFunc) call_id->callback;
 
@@ -852,6 +902,7 @@ _dispatcher_call(NMDispatcherAction    action,
                                    now_msec,
                                    log_ifname,
                                    log_con_uuid,
+                                   NULL,
                                    NULL,
                                    NULL,
                                    ret,

@@ -20,6 +20,7 @@
 #include "libnm-core-aux-extern/nm-dispatcher-api.h"
 #include "libnm-glib-aux/nm-dbus-aux.h"
 #include "libnm-glib-aux/nm-io-utils.h"
+#include "libnm-glib-aux/nm-str-buf.h"
 #include "libnm-glib-aux/nm-time-utils.h"
 #include "nm-dispatcher-utils.h"
 
@@ -75,6 +76,10 @@ typedef struct {
     gboolean       dispatched;
     GSource       *watch_source;
     GSource       *timeout_source;
+
+    int      stdout_fd;
+    GSource *stdout_source;
+    NMStrBuf stdout_buffer;
 } ScriptInfo;
 
 struct Request {
@@ -194,6 +199,12 @@ script_info_free(gpointer ptr)
 {
     ScriptInfo *info = ptr;
 
+    nm_assert(info->pid == -1);
+    nm_assert(info->stdout_fd == -1);
+    nm_assert(!info->stdout_source);
+    nm_assert(!info->timeout_source);
+    nm_assert(!info->watch_source);
+
     g_free(info->script);
     g_free(info->error);
     g_slice_free(ScriptInfo, info);
@@ -282,6 +293,64 @@ next_request(Request *request)
     return TRUE;
 }
 
+static GVariant *
+build_result_options(char *stdout)
+{
+    gs_unref_hashtable GHashTable *hash = NULL;
+    GHashTableIter                 iter;
+    gs_strfreev char             **lines = NULL;
+    GVariantBuilder                builder_opts;
+    GVariantBuilder                builder_out_dict;
+    guint                          i;
+    char                          *eq;
+    char                          *key;
+    char                          *value;
+
+    lines = g_strsplit(stdout, "\n", 65);
+
+    for (i = 0; lines[i] && i < 64; i++) {
+        eq = strchr(lines[i], '=');
+        if (!eq)
+            continue;
+        *eq = '\0';
+
+        if (!NM_STRCHAR_ALL(lines[i],
+                            ch,
+                            (ch >= 'A' && ch <= 'Z') || (ch >= '0' && ch <= '9') || ch == '_'))
+            continue;
+
+        if (!hash) {
+            hash = g_hash_table_new_full(nm_str_hash, g_str_equal, g_free, g_free);
+        }
+
+        g_hash_table_insert(hash, g_strdup(lines[i]), g_strdup(eq + 1));
+    }
+
+    g_variant_builder_init(&builder_out_dict, G_VARIANT_TYPE("a{ss}"));
+    if (hash) {
+        g_hash_table_iter_init(&iter, hash);
+        while (g_hash_table_iter_next(&iter, (gpointer *) &key, (gpointer *) &value)) {
+            gs_free char *to_free = NULL;
+
+            g_variant_builder_add(&builder_out_dict,
+                                  "{ss}",
+                                  key,
+                                  nm_utils_buf_utf8safe_escape(value,
+                                                               -1,
+                                                               NM_UTILS_STR_UTF8_SAFE_FLAG_NONE,
+                                                               &to_free));
+        }
+    }
+
+    g_variant_builder_init(&builder_opts, G_VARIANT_TYPE("a{sv}"));
+    g_variant_builder_add(&builder_opts,
+                          "{sv}",
+                          "output_dict",
+                          g_variant_builder_end(&builder_out_dict));
+
+    return g_variant_builder_end(&builder_opts);
+}
+
 static void
 request_dbus_method_return(Request *request)
 {
@@ -295,7 +364,14 @@ request_dbus_method_return(Request *request)
     }
 
     for (i = 0; i < request->scripts->len; i++) {
-        ScriptInfo *script = g_ptr_array_index(request->scripts, i);
+        ScriptInfo   *script  = g_ptr_array_index(request->scripts, i);
+        GVariant     *options = NULL;
+        gs_free char *stdout  = NULL;
+
+        if (request->is_device_handler) {
+            stdout  = nm_str_buf_finalize(&script->stdout_buffer, NULL);
+            options = build_result_options(stdout);
+        }
 
         if (request->is_action2) {
             g_variant_builder_add(&results,
@@ -303,7 +379,7 @@ request_dbus_method_return(Request *request)
                                   script->script,
                                   script->result,
                                   script->error ?: "",
-                                  nm_g_variant_singleton_aLsvI());
+                                  options ?: nm_g_variant_singleton_aLsvI());
         } else {
             g_variant_builder_add(&results,
                                   "(sus)",
@@ -356,10 +432,17 @@ complete_request(Request *request)
 static void
 complete_script(ScriptInfo *script)
 {
-    Request *request;
-    gboolean wait = script->wait;
+    Request *request = script->request;
+    gboolean wait    = script->wait;
 
-    request = script->request;
+    if (script->pid != -1 || script->stdout_fd != -1) {
+        /* Wait that process has terminated and stdout is closed */
+        return;
+    }
+
+    script->request->num_scripts_done++;
+    if (!script->wait)
+        script->request->num_scripts_nowait--;
 
     if (wait) {
         /* for "wait" scripts, try to schedule the next blocking script.
@@ -427,14 +510,12 @@ script_watch_cb(GPid pid, int status, gpointer user_data)
 
     nm_clear_g_source_inst(&script->watch_source);
     nm_clear_g_source_inst(&script->timeout_source);
-    script->request->num_scripts_done++;
-    if (!script->wait)
-        script->request->num_scripts_nowait--;
 
     if (WIFEXITED(status) && WEXITSTATUS(status) == 0) {
         script->result = DISPATCH_RESULT_SUCCESS;
     } else {
-        status_desc   = nm_utils_get_process_exit_status_desc(status);
+        status_desc = nm_utils_get_process_exit_status_desc(status);
+        nm_clear_g_free(&script->error);
         script->error = g_strdup_printf("Script '%s' %s", script->script, status_desc);
     }
 
@@ -445,8 +526,7 @@ script_watch_cb(GPid pid, int status, gpointer user_data)
         _LOG_S_W(script, "complete: process failed with %s", script->error);
     }
 
-    g_spawn_close_pid(script->pid);
-
+    script->pid = -1;
     complete_script(script);
 }
 
@@ -457,9 +537,8 @@ script_timeout_cb(gpointer user_data)
 
     nm_clear_g_source_inst(&script->timeout_source);
     nm_clear_g_source_inst(&script->watch_source);
-    script->request->num_scripts_done++;
-    if (!script->wait)
-        script->request->num_scripts_nowait--;
+    nm_clear_g_source_inst(&script->stdout_source);
+    nm_clear_fd(&script->stdout_fd);
 
     _LOG_S_W(script, "complete: timeout (kill script)");
 
@@ -473,8 +552,7 @@ again:
     script->error  = g_strdup_printf("Script '%s' timed out", script->script);
     script->result = DISPATCH_RESULT_TIMEOUT;
 
-    g_spawn_close_pid(script->pid);
-
+    script->pid = -1;
     complete_script(script);
 
     return G_SOURCE_CONTINUE;
@@ -538,11 +616,45 @@ check_filename(const char *file_name)
 #define SCRIPT_TIMEOUT 600 /* 10 minutes */
 
 static gboolean
+script_have_data(int fd, GIOCondition condition, gpointer user_data)
+{
+    ScriptInfo *script = user_data;
+    gssize      n_read;
+
+    n_read = nm_utils_fd_read(fd, &script->stdout_buffer);
+
+    if (n_read == -EAGAIN) {
+        return G_SOURCE_CONTINUE;
+    } else if (n_read > 0) {
+        if (script->stdout_buffer.len < 8 * 1024)
+            return G_SOURCE_CONTINUE;
+        /* Don't allow the buffer to grow indefinitely. */
+        _LOG_S_W(script, "complete: ignoring script stdout exceeding 8KiB");
+        nm_str_buf_set_size(&script->stdout_buffer, 8 * 1024, FALSE, FALSE);
+    } else if (n_read == 0) {
+        _LOG_S_T(script, "complete: stdout closed");
+    } else {
+        _LOG_S_T(script,
+                 "complete: reading stdout failed with %d (%s)",
+                 (int) n_read,
+                 nm_strerror_native((int) -n_read));
+    }
+
+    nm_clear_g_source_inst(&script->stdout_source);
+    nm_clear_fd(&script->stdout_fd);
+
+    complete_script(script);
+
+    return G_SOURCE_CONTINUE;
+}
+
+static gboolean
 script_dispatch(ScriptInfo *script)
 {
     gs_free_error GError *error = NULL;
     char                 *argv[4];
-    Request              *request = script->request;
+    Request              *request           = script->request;
+    gboolean              is_device_handler = script->request->is_device_handler;
 
     if (script->dispatched)
         return FALSE;
@@ -559,14 +671,17 @@ script_dispatch(ScriptInfo *script)
 
     _LOG_S_T(script, "run script%s", script->wait ? "" : " (no-wait)");
 
-    if (!g_spawn_async("/",
-                       argv,
-                       request->envp,
-                       G_SPAWN_DO_NOT_REAP_CHILD,
-                       NULL,
-                       NULL,
-                       &script->pid,
-                       &error)) {
+    if (!g_spawn_async_with_pipes("/",
+                                  argv,
+                                  request->envp,
+                                  G_SPAWN_CLOEXEC_PIPES | G_SPAWN_DO_NOT_REAP_CHILD,
+                                  NULL,
+                                  NULL,
+                                  &script->pid,
+                                  NULL,
+                                  is_device_handler ? &script->stdout_fd : NULL,
+                                  NULL,
+                                  &error)) {
         _LOG_S_W(script, "complete: failed to execute script: %s", error->message);
         script->result = DISPATCH_RESULT_EXEC_FAILED;
         script->error  = g_strdup(error->message);
@@ -579,6 +694,19 @@ script_dispatch(ScriptInfo *script)
         nm_g_timeout_add_seconds_source(SCRIPT_TIMEOUT, script_timeout_cb, script);
     if (!script->wait)
         request->num_scripts_nowait++;
+
+    if (is_device_handler) {
+        /* Watch process stdout */
+        nm_io_fcntl_setfl_update_nonblock(script->stdout_fd);
+        script->stdout_source = nm_g_unix_fd_source_new(script->stdout_fd,
+                                                        G_IO_IN | G_IO_ERR | G_IO_HUP,
+                                                        G_PRIORITY_DEFAULT,
+                                                        script_have_data,
+                                                        script,
+                                                        NULL);
+        g_source_attach(script->stdout_source, NULL);
+    }
+
     return TRUE;
 }
 
@@ -914,10 +1042,13 @@ _handle_action(GDBusMethodInvocation *invocation, GVariant *parameters, gboolean
         for (iter = sorted_scripts; iter; iter = g_slist_next(iter)) {
             ScriptInfo *s;
 
-            s          = g_slice_new0(ScriptInfo);
-            s->request = request;
-            s->script  = iter->data;
-            s->wait    = script_must_wait(s->script);
+            s                = g_slice_new0(ScriptInfo);
+            s->request       = request;
+            s->script        = iter->data;
+            s->wait          = script_must_wait(s->script);
+            s->stdout_fd     = -1;
+            s->pid           = -1;
+            s->stdout_buffer = NM_STR_BUF_INIT(0, FALSE);
             g_ptr_array_add(request->scripts, s);
         }
         g_slist_free(sorted_scripts);
