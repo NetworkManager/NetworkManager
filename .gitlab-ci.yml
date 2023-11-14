@@ -57,11 +57,11 @@ variables:
   #
   # This is done by running `ci-fairy generate-template` and possibly bumping
   # ".default_tag".
-  ALPINE_TAG:  'tag-15ad9771f66e'
-  CENTOS_TAG:  'tag-01eb3016c31d'
-  DEBIAN_TAG:  'tag-5b69abc7e7b7'
-  FEDORA_TAG:  'tag-01eb3016c31d'
-  UBUNTU_TAG:  'tag-5b69abc7e7b7'
+  ALPINE_TAG:  'tag-6cb82bbb4f5a'
+  CENTOS_TAG:  'tag-a17a9044f6af'
+  DEBIAN_TAG:  'tag-b6bc6acbb696'
+  FEDORA_TAG:  'tag-a17a9044f6af'
+  UBUNTU_TAG:  'tag-b6bc6acbb696'
 
   ALPINE_EXEC: 'bash .gitlab-ci/alpine-install.sh'
   CENTOS_EXEC: 'bash .gitlab-ci/fedora-install.sh'
@@ -327,28 +327,6 @@ tier3:debian:testing@prep:
     FDO_DISTRIBUTION_EXEC: $DEBIAN_EXEC
   when: manual
 
-tier2:centos:8.1.1911@prep:
-  extends:
-    - .fdo.container-build@centos
-  stage: prep
-  variables:
-    GIT_STRATEGY: none
-    FDO_DISTRIBUTION_VERSION: '8.1.1911'
-    FDO_DISTRIBUTION_TAG: $CENTOS_TAG
-    FDO_DISTRIBUTION_EXEC: $CENTOS_EXEC
-  when: manual
-
-tier2:centos:8.3.2011@prep:
-  extends:
-    - .fdo.container-build@centos
-  stage: prep
-  variables:
-    GIT_STRATEGY: none
-    FDO_DISTRIBUTION_VERSION: '8.3.2011'
-    FDO_DISTRIBUTION_TAG: $CENTOS_TAG
-    FDO_DISTRIBUTION_EXEC: $CENTOS_EXEC
-  when: manual
-
 tier2:centos:stream8@prep:
   extends:
     - .fdo.container-build@centos
@@ -367,17 +345,6 @@ tier2:centos:stream9@prep:
   variables:
     GIT_STRATEGY: none
     FDO_DISTRIBUTION_VERSION: 'stream9'
-    FDO_DISTRIBUTION_TAG: $CENTOS_TAG
-    FDO_DISTRIBUTION_EXEC: $CENTOS_EXEC
-  when: manual
-
-tier3:centos:8.2.2004@prep:
-  extends:
-    - .fdo.container-build@centos
-  stage: prep
-  variables:
-    GIT_STRATEGY: none
-    FDO_DISTRIBUTION_VERSION: '8.2.2004'
     FDO_DISTRIBUTION_TAG: $CENTOS_TAG
     FDO_DISTRIBUTION_EXEC: $CENTOS_EXEC
   when: manual
@@ -672,30 +639,6 @@ t_debian:testing:
   needs:
     - "tier3:debian:testing@prep"
 
-t_centos:8.1.1911:
-  extends:
-    - .build@template
-    - .fdo.distribution-image@centos
-    - .nm_artifacts_debug
-  stage: tier2
-  variables:
-    FDO_DISTRIBUTION_VERSION: '8.1.1911'
-    FDO_DISTRIBUTION_TAG: $CENTOS_TAG
-  needs:
-    - "tier2:centos:8.1.1911@prep"
-
-t_centos:8.3.2011:
-  extends:
-    - .build@template
-    - .fdo.distribution-image@centos
-    - .nm_artifacts_debug
-  stage: tier2
-  variables:
-    FDO_DISTRIBUTION_VERSION: '8.3.2011'
-    FDO_DISTRIBUTION_TAG: $CENTOS_TAG
-  needs:
-    - "tier2:centos:8.3.2011@prep"
-
 t_centos:stream8:
   extends:
     - .build@template
@@ -719,18 +662,6 @@ t_centos:stream9:
     FDO_DISTRIBUTION_TAG: $CENTOS_TAG
   needs:
     - "tier2:centos:stream9@prep"
-
-t_centos:8.2.2004:
-  extends:
-    - .build@template
-    - .fdo.distribution-image@centos
-    - .nm_artifacts_debug
-  stage: tier3
-  variables:
-    FDO_DISTRIBUTION_VERSION: '8.2.2004'
-    FDO_DISTRIBUTION_TAG: $CENTOS_TAG
-  needs:
-    - "tier3:centos:8.2.2004@prep"
 
 t_alpine:latest:
   extends:

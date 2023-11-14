@@ -8,9 +8,7 @@ CENTOS_VERSION=0
 grep -q '^NAME=.*\(CentOS\)' /etc/os-release && IS_CENTOS=1
 grep -q '^NAME=.*\(Fedora\)' /etc/os-release && IS_FEDORA=1
 if [ $IS_CENTOS = 1 ]; then
-    if grep -q '^VERSION_ID=.*\<7\>' /etc/os-release ; then
-        CENTOS_VERSION=7
-    elif grep -q '^VERSION_ID=.*\<8\>' /etc/os-release ; then
+    if grep -q '^VERSION_ID=.*\<8\>' /etc/os-release ; then
         CENTOS_VERSION=8
     elif grep -q '^VERSION_ID=.*\<9\>' /etc/os-release ; then
         CENTOS_VERSION=9
@@ -23,19 +21,7 @@ if [ $IS_CENTOS = 1 ]; then
 fi
 
  if [ "$IS_CENTOS" = 1 ]; then
-    if [ "$CENTOS_VERSION" = 7 ]; then
-        yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
-        yum install -y glibc-common
-        localedef -c -i pl_PL -f UTF-8 pl_PL.UTF-8
-        locale -a
-        yum install -y python36-dbus python36-gobject-base
-    elif [ "$CENTOS_VERSION" = 8 -o "$CENTOS_VERSION" = stream8 ]; then
-        if [ "$CENTOS_VERSION" = 8 ]; then
-            # CentOS Linux 8 is now EOF and plain `dnf upgrade` does not work. We need
-            # to patch the mirror list.
-            sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-*
-            sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-*
-        fi
+    if [ "$CENTOS_VERSION" = stream8 ]; then
         dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
         dnf install -y 'dnf-command(config-manager)'
         dnf config-manager --set-enabled powertools || \
