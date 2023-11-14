@@ -5771,38 +5771,79 @@ nm_utils_is_specific_hostname(const char *name)
 
 /*****************************************************************************/
 
-/* taken from systemd's uid_to_name(). */
-char *
-nm_utils_uid_to_name(uid_t uid)
-{
-    gs_free char *buf_heap = NULL;
-    char          buf_stack[4096];
-    gsize         bufsize;
-    char         *buf;
+typedef struct {
+    struct passwd pw;
+    _nm_alignas(max_align_t) char buf[];
+} GetPwuidData;
 
-    bufsize = sizeof(buf_stack);
-    buf     = buf_stack;
+/**
+ * nm_getpwuid:
+ * uid: the user Id to look up
+ *
+ * Calls getpwuid_r() to lookup the passwd entry. See the manual.
+ * Allocates and returns a suitable buffer.
+ *
+ * The returned buffer is likely much large than required. You don't want to
+ * keep this buffer around for longer than necessary.
+ *
+ * Returns: (transfer full): the passwd entry, if found or NULL on error
+ *   or if the entry was not found.
+ */
+struct passwd *
+nm_getpwuid(uid_t uid)
+{
+    gs_free GetPwuidData *data = NULL;
+    gsize                 bufsize;
+    const gsize           OFFSET = G_STRUCT_OFFSET(GetPwuidData, buf);
+    long int              size_max;
+
+    size_max = sysconf(_SC_GETPW_R_SIZE_MAX);
+    if (size_max > 0 && ((unsigned long int) size_max < G_MAXSIZE - OFFSET))
+        bufsize = size_max;
+    else
+        bufsize = 4096;
 
     for (;;) {
-        struct passwd  pwbuf;
         struct passwd *pw = NULL;
         int            r;
 
-        r = getpwuid_r(uid, &pwbuf, buf, bufsize, &pw);
-        if (r == 0 && pw)
-            return nm_strdup_not_empty(pw->pw_name);
+        if (bufsize >= G_MAXSIZE - OFFSET)
+            return NULL;
+
+        nm_clear_g_free(&data);
+        data = g_malloc(OFFSET + bufsize);
+
+        r = getpwuid_r(uid, &data->pw, data->buf, bufsize, &pw);
+        if (r == 0) {
+            if (!pw)
+                return NULL;
+            nm_assert(pw == (gpointer) data);
+            return (gpointer) g_steal_pointer(&data);
+        }
 
         if (r != ERANGE)
             return NULL;
 
         if (bufsize > G_MAXSIZE / 2u)
             return NULL;
-
         bufsize *= 2u;
-        g_free(buf_heap);
-        buf_heap = g_malloc(bufsize);
-        buf      = buf_heap;
     }
+}
+
+const char *
+nm_passwd_name(const struct passwd *pw)
+{
+    /* Normalize "pw->pw_name" and return it. */
+    return pw ? nm_str_not_empty(pw->pw_name) : NULL;
+}
+
+char *
+nm_utils_uid_to_name(uid_t uid)
+{
+    gs_free struct passwd *pw = NULL;
+
+    pw = nm_getpwuid(uid);
+    return g_strdup(nm_passwd_name(pw));
 }
 
 /* taken from systemd's nss_user_record_by_name() */
