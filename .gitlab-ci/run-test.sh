@@ -61,7 +61,6 @@ check_run_assert() {
         meson+gcc+docs+valgrind
         autotools+clang
         meson+clang
-        autotools+gcc+docs+el7+py2
         rpm+autotools
         rpm+meson
         tarball
@@ -117,8 +116,6 @@ fi
 check_run_clean meson+gcc+docs+valgrind && BUILD_TYPE=meson     CC=gcc   WITH_DOCS=1 WITH_VALGRIND=1 contrib/scripts/nm-ci-run.sh
 check_run_clean autotools+clang         && BUILD_TYPE=autotools CC=clang WITH_DOCS=0                 contrib/scripts/nm-ci-run.sh
 check_run_clean meson+clang             && BUILD_TYPE=meson     CC=clang WITH_DOCS=0                 contrib/scripts/nm-ci-run.sh
-
-check_run_clean autotools+gcc+docs+el7+py2 && test $IS_CENTOS_7 = 1 && PYTHON=python2 BUILD_TYPE=autotools CC=gcc WITH_DOCS=1 contrib/scripts/nm-ci-run.sh
 
 check_run_clean rpm+autotools && test $IS_FEDORA = 1 -o $IS_CENTOS = 1 && ./contrib/fedora/rpm/build_clean.sh -g -w crypto_gnutls -w debug -w iwd -w test -W meson
 check_run_clean rpm+meson     && test $IS_FEDORA = 1                   && ./contrib/fedora/rpm/build_clean.sh -g -w crypto_gnutls -w debug -w iwd -w test -w meson
