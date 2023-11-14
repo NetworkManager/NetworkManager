@@ -1276,7 +1276,7 @@
                   dbus-type="b"
                   is-setting-option="1"
                   />
-        <property name="eee"
+        <property name="eee-enabled"
                   dbus-type="b"
                   is-setting-option="1"
                   />
