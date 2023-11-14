@@ -2711,7 +2711,7 @@ _host_id_read_timestamp(gboolean      use_secret_key_file,
 
 #define EPOCH_TWO_YEARS (G_GINT64_CONSTANT(2 * 365 * 24 * 3600) * NM_UTILS_NSEC_PER_SEC)
 
-    v = nm_hash_siphash42(1156657133u, host_id, host_id_len);
+    v = c_siphash_hash(NM_HASH_SEED_16_U64(1156657133u), host_id, host_id_len);
 
     now = time(NULL);
     *out_timestamp_ns =
@@ -3819,23 +3819,23 @@ nm_utils_dhcp_client_id_mac(int arp_type, const guint8 *hwaddr, gsize hwaddr_len
     return g_bytes_new_take(client_id_buf, hwaddr_len + 1);
 }
 
-#define HASH_KEY              \
-    ((const guint8[16]){0x80, \
-                        0x11, \
-                        0x8c, \
-                        0xc2, \
-                        0xfe, \
-                        0x4a, \
-                        0x03, \
-                        0xee, \
-                        0x3e, \
-                        0xd6, \
-                        0x0c, \
-                        0x6f, \
-                        0x36, \
-                        0x39, \
-                        0x14, \
-                        0x09})
+#define HASH_KEY          \
+    NM_HASH_SEED_16(0x80, \
+                    0x11, \
+                    0x8c, \
+                    0xc2, \
+                    0xfe, \
+                    0x4a, \
+                    0x03, \
+                    0xee, \
+                    0x3e, \
+                    0xd6, \
+                    0x0c, \
+                    0x6f, \
+                    0x36, \
+                    0x39, \
+                    0x14, \
+                    0x09)
 
 /**
  * nm_utils_create_dhcp_iaid:
