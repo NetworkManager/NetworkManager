@@ -2191,6 +2191,18 @@ test_stable_id_parse(void)
     _parse_random("${RANDOM}");
     _parse_random(" ${RANDOM}");
     _parse_random("${BOOT}${RANDOM}");
+
+    {
+        gs_free char          *str        = NULL;
+        char                   ssid_bin[] = "foo\n";
+        gs_unref_bytes GBytes *ssid       = g_bytes_new_static(ssid_bin, sizeof(ssid_bin) - 1);
+        NMUtilsStableType      stable_type;
+
+        stable_type = nm_utils_stable_id_parse_network_ssid(ssid, "uuid", &str);
+
+        g_assert_cmpstr(str, ==, "${NETWORK_SSID}=9{s:foo\\012}");
+        g_assert_cmpint(stable_type, ==, NM_UTILS_STABLE_TYPE_GENERATED);
+    }
 }
 
 /*****************************************************************************/

@@ -17433,9 +17433,12 @@ _hw_addr_get_cloned(NMDevice     *self,
 
         addr_out = g_steal_pointer(&hw_addr_generated);
         type_out = HW_ADDR_TYPE_GENERATED;
-    } else if (NM_IN_STRSET(addr, NM_CLONED_MAC_STABLE)) {
+    } else if (nm_streq(addr, NM_CLONED_MAC_STABLE)
+               || (is_wifi && nm_streq(addr, NM_CLONED_MAC_STABLE_SSID))) {
+        gs_free char     *stable_id_free = NULL;
         NMUtilsStableType stable_type;
         const char       *stable_id;
+        GBytes           *ssid = NULL;
 
         if (priv->hw_addr_type == HW_ADDR_TYPE_GENERATED) {
             /* hm, we already use a generate MAC address. Most certainly, that is from the same
@@ -17443,7 +17446,27 @@ _hw_addr_get_cloned(NMDevice     *self,
             goto out_no_action;
         }
 
-        stable_id         = _prop_get_connection_stable_id(self, connection, &stable_type);
+        if (!nm_streq(addr, NM_CLONED_MAC_STABLE)) {
+            NMSettingWireless *s_wifi;
+
+            s_wifi = nm_connection_get_setting_wireless(connection);
+            if (s_wifi)
+                ssid = nm_setting_wireless_get_ssid(s_wifi);
+        }
+
+        if (G_UNLIKELY(ssid)) {
+            stable_type = nm_utils_stable_id_parse_network_ssid(ssid,
+                                                                nm_connection_get_uuid(connection),
+                                                                &stable_id_free);
+            stable_id   = stable_id_free;
+        } else {
+            /* If @addr is NM_CLONED_MAC_STABLE_SSID, and this is not a Wi-Fi
+             * profile, the behavior is the same as NM_CLONED_MAC_STABLE.  Note
+             * that this really shouldn't happen, because we have a Wi-Fi
+             * profile at hand, and an SSID should be set. */
+            stable_id = _prop_get_connection_stable_id(self, connection, &stable_type);
+        }
+
         hw_addr_generated = nm_utils_hw_addr_gen_stable_eth(
             stable_type,
             stable_id,

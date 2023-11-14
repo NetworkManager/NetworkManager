@@ -482,6 +482,8 @@ get_property_special_values(const NMMetaPropertyInfo *prop_info)
                             NM_CLONED_MAC_PERMANENT,
                             NM_CLONED_MAC_RANDOM,
                             NM_CLONED_MAC_STABLE);
+                if (prop_typ_data->subtype.mac.mode == NM_META_PROPERTY_TYPE_MAC_MODE_CLONED_WIFI)
+                    append_vals(special_values, NM_CLONED_MAC_STABLE_SSID);
                 break;
             default:
                 break;

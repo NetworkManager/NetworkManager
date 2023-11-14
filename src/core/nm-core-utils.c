@@ -3546,6 +3546,12 @@ nm_utils_stable_id_parse(const char *stable_id,
     return NM_UTILS_STABLE_TYPE_GENERATED;
 }
 
+NMUtilsStableType
+nm_utils_stable_id_parse_network_ssid(GBytes *ssid, const char *uuid, char **out_stable_id)
+{
+    return nm_utils_stable_id_parse("${NETWORK_SSID}", NULL, NULL, NULL, uuid, ssid, out_stable_id);
+}
+
 /*****************************************************************************/
 
 static gboolean
