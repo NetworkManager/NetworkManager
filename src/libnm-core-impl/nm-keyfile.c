@@ -1219,9 +1219,14 @@ mac_address_parser(KeyfileReaderInfo *info,
 
     tmp_string = nm_keyfile_plugin_kf_get_string(info->keyfile, setting_name, key, NULL);
 
-    if (cloned_mac_addr && NM_CLONED_MAC_IS_SPECIAL(tmp_string)) {
-        mac_str = tmp_string;
-        goto out;
+    if (cloned_mac_addr) {
+        gboolean is_wifi;
+
+        is_wifi = NM_IS_SETTING_WIRELESS(setting);
+        if (NM_CLONED_MAC_IS_SPECIAL(tmp_string, is_wifi)) {
+            mac_str = tmp_string;
+            goto out;
+        }
     }
 
     if (tmp_string && nm_utils_hwaddr_aton(tmp_string, addr_bin, addr_len))

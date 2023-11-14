@@ -11,7 +11,8 @@
 
 typedef enum {
     NMT_MAC_ENTRY_TYPE_MAC,
-    NMT_MAC_ENTRY_TYPE_CLONED,
+    NMT_MAC_ENTRY_TYPE_CLONED_ETHERNET,
+    NMT_MAC_ENTRY_TYPE_CLONED_WIFI,
 } NmtMacEntryType;
 
 #define NMT_TYPE_MAC_ENTRY (nmt_mac_entry_get_type())

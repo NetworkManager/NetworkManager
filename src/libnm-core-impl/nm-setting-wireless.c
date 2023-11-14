@@ -963,7 +963,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
         return FALSE;
     }
 
-    if (priv->cloned_mac_address && !NM_CLONED_MAC_IS_SPECIAL(priv->cloned_mac_address)
+    if (priv->cloned_mac_address && !NM_CLONED_MAC_IS_SPECIAL(priv->cloned_mac_address, TRUE)
         && !nm_utils_hwaddr_valid(priv->cloned_mac_address, ETH_ALEN)) {
         g_set_error_literal(error,
                             NM_CONNECTION_ERROR,

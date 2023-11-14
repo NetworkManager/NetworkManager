@@ -83,7 +83,7 @@ nmt_page_vlan_constructed(GObject *object)
 
     nmt_editor_grid_append(grid, NULL, nmt_newt_separator_new(), NULL);
 
-    widget = nmt_mac_entry_new(40, ETH_ALEN, NMT_MAC_ENTRY_TYPE_CLONED);
+    widget = nmt_mac_entry_new(40, ETH_ALEN, NMT_MAC_ENTRY_TYPE_CLONED_ETHERNET);
     g_object_bind_property(s_wired,
                            NM_SETTING_WIRED_CLONED_MAC_ADDRESS,
                            widget,

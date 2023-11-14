@@ -5,6 +5,7 @@
 #include "libnmc-setting/nm-meta-setting-desc.h"
 #include "libnmc-setting/nm-meta-setting-base.h"
 #include "libnm-glib-aux/nm-enum-utils.h"
+#include "libnm-core-aux-intern/nm-common-macros.h"
 #include "nm-core-enum-types.h"
 #include <stdarg.h>
 #include <stdlib.h>
@@ -87,7 +88,8 @@ get_mac_format(const NMMetaPropertyInfo *prop_info)
     if (prop_typ_data) {
         switch (prop_typ_data->subtype.mac.mode) {
         case NM_META_PROPERTY_TYPE_MAC_MODE_DEFAULT:
-        case NM_META_PROPERTY_TYPE_MAC_MODE_CLONED:
+        case NM_META_PROPERTY_TYPE_MAC_MODE_CLONED_ETHERNET:
+        case NM_META_PROPERTY_TYPE_MAC_MODE_CLONED_WIFI:
             break;
         case NM_META_PROPERTY_TYPE_MAC_MODE_INFINIBAND:
             return g_strdup("Infiniband MAC address");
@@ -471,9 +473,20 @@ get_property_special_values(const NMMetaPropertyInfo *prop_info)
         append_int_special_values(prop_info, special_values);
         break;
     case NM_META_PROPERTY_TYPE_FORMAT_MAC:
-        if (prop_typ_data
-            && prop_typ_data->subtype.mac.mode == NM_META_PROPERTY_TYPE_MAC_MODE_CLONED)
-            append_vals(special_values, "preserve", "permanent", "random", "stable");
+        if (prop_typ_data) {
+            switch (prop_typ_data->subtype.mac.mode) {
+            case NM_META_PROPERTY_TYPE_MAC_MODE_CLONED_ETHERNET:
+            case NM_META_PROPERTY_TYPE_MAC_MODE_CLONED_WIFI:
+                append_vals(special_values,
+                            NM_CLONED_MAC_PRESERVE,
+                            NM_CLONED_MAC_PERMANENT,
+                            NM_CLONED_MAC_RANDOM,
+                            NM_CLONED_MAC_STABLE);
+                break;
+            default:
+                break;
+            }
+        }
         break;
     case NM_META_PROPERTY_TYPE_FORMAT_MTU:
         g_ptr_array_add(special_values, g_strdup("auto"));

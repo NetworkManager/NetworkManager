@@ -40,13 +40,16 @@
 #define NM_CLONED_MAC_STABLE    "stable"
 
 static inline gboolean
-NM_CLONED_MAC_IS_SPECIAL(const char *str)
+NM_CLONED_MAC_IS_SPECIAL(const char *str, gboolean is_wifi)
 {
-    return NM_IN_STRSET(str,
-                        NM_CLONED_MAC_PRESERVE,
-                        NM_CLONED_MAC_PERMANENT,
-                        NM_CLONED_MAC_RANDOM,
-                        NM_CLONED_MAC_STABLE);
+    if (NM_IN_STRSET(str,
+                     NM_CLONED_MAC_PRESERVE,
+                     NM_CLONED_MAC_PERMANENT,
+                     NM_CLONED_MAC_RANDOM,
+                     NM_CLONED_MAC_STABLE))
+        return TRUE;
+
+    return FALSE;
 }
 
 #define NM_IAID_MAC      "mac"

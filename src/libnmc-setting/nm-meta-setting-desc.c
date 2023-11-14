@@ -1557,7 +1557,11 @@ _set_fcn_gobject_mac(ARGS_SET_FCN)
     } else {
         valid =
             nm_utils_hwaddr_valid(value, ETH_ALEN)
-            || (mode == NM_META_PROPERTY_TYPE_MAC_MODE_CLONED && NM_CLONED_MAC_IS_SPECIAL(value));
+            || (NM_IN_SET(mode,
+                          NM_META_PROPERTY_TYPE_MAC_MODE_CLONED_ETHERNET,
+                          NM_META_PROPERTY_TYPE_MAC_MODE_CLONED_WIFI)
+                && NM_CLONED_MAC_IS_SPECIAL(value,
+                                            mode == NM_META_PROPERTY_TYPE_MAC_MODE_CLONED_WIFI));
     }
 
     if (!valid) {
@@ -7937,7 +7941,7 @@ static const NMMetaPropertyInfo *const property_infos_WIRED[] = {
         .prompt =                       N_("Cloned MAC [none]"),
         .property_type =                &_pt_gobject_mac,
         .property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (mac,
-            .mode =                     NM_META_PROPERTY_TYPE_MAC_MODE_CLONED,
+            .mode =                     NM_META_PROPERTY_TYPE_MAC_MODE_CLONED_ETHERNET,
         ),
     ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRED_GENERATE_MAC_ADDRESS_MASK,
@@ -8118,7 +8122,7 @@ static const NMMetaPropertyInfo *const property_infos_WIRELESS[] = {
         .prompt =                       N_("Cloned MAC [none]"),
         .property_type =                &_pt_gobject_mac,
         .property_typ_data = DEFINE_PROPERTY_TYP_DATA_SUBTYPE (mac,
-            .mode =                     NM_META_PROPERTY_TYPE_MAC_MODE_CLONED,
+            .mode =                     NM_META_PROPERTY_TYPE_MAC_MODE_CLONED_WIFI,
         ),
     ),
     PROPERTY_INFO_WITH_DESC (NM_SETTING_WIRELESS_GENERATE_MAC_ADDRESS_MASK,

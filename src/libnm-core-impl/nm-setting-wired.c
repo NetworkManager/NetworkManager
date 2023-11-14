@@ -891,7 +891,7 @@ verify(NMSetting *setting, NMConnection *connection, GError **error)
         }
     }
 
-    if (priv->cloned_mac_address && !NM_CLONED_MAC_IS_SPECIAL(priv->cloned_mac_address)
+    if (priv->cloned_mac_address && !NM_CLONED_MAC_IS_SPECIAL(priv->cloned_mac_address, FALSE)
         && !nm_utils_hwaddr_valid(priv->cloned_mac_address, ETH_ALEN)) {
         g_set_error(error,
                     NM_CONNECTION_ERROR,
