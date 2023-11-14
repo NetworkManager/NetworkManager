@@ -31,7 +31,7 @@ static void G_GNUC_PRINTF(3, 4)
     msg_full = g_strdup_printf("gen-metadata-nm-settings-nmcli: %s.%s (type %d): %s\n",
                                prop_info->setting_info->general->setting_name,
                                prop_info->property_name,
-                               prop_info->property_type->doc_format,
+                               (int) prop_info->property_type->doc_format,
                                msg);
     if (fatal)
         g_error("%s", msg_full);
@@ -248,10 +248,15 @@ append_int_valid_range(const NMMetaPropertyInfo *prop_info, GPtrArray *valid_val
     NMMetaSignUnsignInt64 max;
 
     nm_meta_property_int_get_range(prop_info, &min, &max);
-    if (NM_IN_SET(_property_get_gtype(prop_info), G_TYPE_UINT, G_TYPE_UINT64))
-        g_ptr_array_add(valid_values, g_strdup_printf("%lu - %lu", min.u64, max.u64));
-    else
-        g_ptr_array_add(valid_values, g_strdup_printf("%ld - %ld", min.i64, max.i64));
+    if (NM_IN_SET(_property_get_gtype(prop_info), G_TYPE_UINT, G_TYPE_UINT64)) {
+        g_ptr_array_add(
+            valid_values,
+            g_strdup_printf("%" G_GUINT64_FORMAT " - %" G_GUINT64_FORMAT, min.u64, max.u64));
+    } else {
+        g_ptr_array_add(
+            valid_values,
+            g_strdup_printf("%" G_GINT64_FORMAT " - %" G_GINT64_FORMAT, min.i64, max.i64));
+    }
 }
 
 static void
@@ -442,11 +447,11 @@ append_int_special_values(const NMMetaPropertyInfo *prop_info, GPtrArray *specia
         for (; v->nick != NULL; v++) {
             char *v_str;
             if (base == 16)
-                v_str = g_strdup_printf("%s (0x%lx)", v->nick, v->value.u64);
+                v_str = g_strdup_printf("%s (0x%" G_GINT64_MODIFIER "x)", v->nick, v->value.u64);
             else if (is_uint)
-                v_str = g_strdup_printf("%s (%lu)", v->nick, v->value.u64);
+                v_str = g_strdup_printf("%s (%" G_GUINT64_FORMAT ")", v->nick, v->value.u64);
             else
-                v_str = g_strdup_printf("%s (%ld)", v->nick, v->value.i64);
+                v_str = g_strdup_printf("%s (%" G_GINT64_FORMAT ")", v->nick, v->value.i64);
 
             g_ptr_array_add(special_values, v_str);
         }
