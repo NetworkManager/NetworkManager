@@ -1293,10 +1293,8 @@ nm_ndisc_dad_failed(NMNDisc *ndisc, GArray *addresses, gboolean emit_changed_sig
             NMNDiscAddress *item = &nm_g_array_index(rdata->addresses, NMNDiscAddress, j);
 
             if (IN6_ARE_ADDR_EQUAL(&item->address, addr)) {
-                char sbuf[NM_INET_ADDRSTRLEN];
-
-                _LOGI("DAD failed for discovered address %s", nm_inet6_ntop(addr, sbuf));
                 changed = TRUE;
+
                 if (!complete_address(ndisc, item)) {
                     g_array_remove_index(rdata->addresses, j);
                     continue;
