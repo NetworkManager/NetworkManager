@@ -313,6 +313,7 @@ NMUtilsStableType nm_utils_stable_id_parse(const char *stable_id,
                                            const char *hwaddr,
                                            const char *bootid,
                                            const char *uuid,
+                                           GBytes     *ssid,
                                            char      **out_generated);
 
 char *nm_utils_stable_id_random(void);

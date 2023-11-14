@@ -2104,8 +2104,19 @@ do_test_stable_id_parse(const char       *stable_id,
                         NMUtilsStableType expected_stable_type,
                         const char       *expected_generated)
 {
-    gs_free char     *generated = NULL;
-    NMUtilsStableType stable_type;
+    gs_free char          *generated = NULL;
+    NMUtilsStableType      stable_type;
+    char                   ssid_bin[] = "SSID(\202)";
+    gs_unref_bytes GBytes *ssid       = g_bytes_new_static(ssid_bin, sizeof(ssid_bin) - 1);
+
+    while (TRUE) {
+        if (NM_STR_HAS_PREFIX(stable_id, "NO_SSID:")) {
+            stable_id += NM_STRLEN("NO_SSID:");
+            nm_clear_pointer(&ssid, g_bytes_unref);
+            continue;
+        }
+        break;
+    }
 
     if (expected_stable_type == NM_UTILS_STABLE_TYPE_GENERATED)
         g_assert(expected_generated);
@@ -2117,8 +2128,13 @@ do_test_stable_id_parse(const char       *stable_id,
     else
         g_assert(stable_id);
 
-    stable_type =
-        nm_utils_stable_id_parse(stable_id, "_DEVICE", "_MAC", "_BOOT", "_CONNECTION", &generated);
+    stable_type = nm_utils_stable_id_parse(stable_id,
+                                           "_DEVICE",
+                                           "_MAC",
+                                           "_BOOT",
+                                           "_CONNECTION",
+                                           ssid,
+                                           &generated);
 
     g_assert_cmpint(expected_stable_type, ==, stable_type);
 
@@ -2160,6 +2176,12 @@ test_stable_id_parse(void)
     _parse_generated("${${CONNECTION}", "${${CONNECTION}=11{_CONNECTION}");
     _parse_generated("${CONNECTION}x", "${CONNECTION}=11{_CONNECTION}x");
     _parse_generated("x${CONNECTION}", "x${CONNECTION}=11{_CONNECTION}");
+    _parse_generated("x${CONNECTION}${NETWORK_SSID}",
+                     "x${CONNECTION}=11{_CONNECTION}${NETWORK_SSID}=12{s:SSID(\\202)}");
+    _parse_generated("NO_SSID:x${CONNECTION}${NETWORK_SSID}",
+                     "x${CONNECTION}=11{_CONNECTION}${NETWORK_SSID}=13{c:_CONNECTION}");
+    _parse_generated("${NETWORK_SSID}", "${NETWORK_SSID}=12{s:SSID(\\202)}");
+    _parse_generated("NO_SSID:${NETWORK_SSID}", "${NETWORK_SSID}=13{c:_CONNECTION}");
     _parse_generated("${BOOT}x", "${BOOT}=5{_BOOT}x");
     _parse_generated("x${BOOT}", "x${BOOT}=5{_BOOT}");
     _parse_generated("x${BOOT}${CONNECTION}", "x${BOOT}=5{_BOOT}${CONNECTION}=11{_CONNECTION}");

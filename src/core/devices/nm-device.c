@@ -1033,12 +1033,14 @@ _prop_get_connection_stable_id(NMDevice          *self,
         gs_free char        *generated = NULL;
         NMUtilsStableType    stable_type;
         NMSettingConnection *s_con;
+        NMSettingWireless   *s_wifi;
         gboolean             hwaddr_is_fake;
         const char          *hwaddr;
         const char          *stable_id;
         const char          *uuid;
 
-        s_con = nm_connection_get_setting_connection(connection);
+        s_con  = nm_connection_get_setting_connection(connection);
+        s_wifi = nm_connection_get_setting_wireless(connection);
 
         stable_id = nm_setting_connection_get_stable_id(s_con);
 
@@ -1061,6 +1063,7 @@ _prop_get_connection_stable_id(NMDevice          *self,
                                                !hwaddr_is_fake ? hwaddr : NULL,
                                                nm_utils_boot_id_str(),
                                                uuid,
+                                               s_wifi ? nm_setting_wireless_get_ssid(s_wifi) : NULL,
                                                &generated);
 
         /* current_stable_id_type is a bitfield! */

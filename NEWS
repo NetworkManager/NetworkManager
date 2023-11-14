@@ -3,6 +3,8 @@ NetworkManager-1.46
 Overview of changes since NetworkManager-1.44
 =============================================
 
+* Support dynamic value "${NETWORK_SSID}" for connection.stable-id to generate
+  the stable ID based on the Wi-Fi's SSID.
 * Change internal ABI of NMSetting types and NMSimpleConnection. The layout of
   these structs was already hidden from public headers since 1.34 and this change
   should not be noticeable.
