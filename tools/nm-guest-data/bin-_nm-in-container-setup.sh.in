@@ -9,5 +9,5 @@ if [ ! -d /tmp/sys2 ]; then
     # Let's do this setup step once, and never clean it up.
     # https://github.com/containers/podman/issues/11887#issuecomment-938706628
     mkdir /tmp/sys2
-    mount -t sysfs --make-private /tmp/sys2
+    mount -t sysfs --make-private sysfs /tmp/sys2
 fi
