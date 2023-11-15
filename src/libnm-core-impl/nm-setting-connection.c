@@ -362,8 +362,7 @@ _permissions_user_allowed(NMSettingConnection *setting, const char *uname, gulon
     NMSettingConnectionPrivate *priv;
     guint                       i;
 
-    g_return_val_if_fail(NM_IS_SETTING_CONNECTION(setting), FALSE);
-    g_return_val_if_fail(uname != NULL, FALSE);
+    nm_assert(NM_IS_SETTING_CONNECTION(setting));
 
     priv = NM_SETTING_CONNECTION_GET_PRIVATE(setting);
 
