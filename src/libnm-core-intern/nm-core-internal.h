@@ -413,7 +413,8 @@ gboolean _nm_utils_dns_option_validate(const char                 *option,
                                        long                       *out_value,
                                        int                         addr_family,
                                        const NMUtilsDNSOptionDesc *option_descs);
-gssize   _nm_utils_dns_option_find_idx(GPtrArray *array, const char *option);
+
+gssize _nm_utils_dns_option_find_idx(const char *const *strv, gssize strv_len, const char *option);
 
 int nm_setting_ip_config_next_valid_dns_option(NMSettingIPConfig *setting, guint idx);
 

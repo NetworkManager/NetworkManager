@@ -4790,7 +4790,8 @@ _nm_utils_dns_option_validate(const char                 *option,
 
 /**
  * _nm_utils_dns_option_find_idx:
- * @array: an array of strings
+ * @strv: an array of strings of length @strv_len
+ * @strv_len: the length of @strv, or -1 for a NULL terminated strv array.
  * @option: a dns option string
  *
  * Searches for an option in an array of strings. The match is
@@ -4800,18 +4801,28 @@ _nm_utils_dns_option_validate(const char                 *option,
  * found.
  */
 gssize
-_nm_utils_dns_option_find_idx(GPtrArray *array, const char *option)
+_nm_utils_dns_option_find_idx(const char *const *strv, gssize strv_len, const char *option)
 {
     gs_free char *option_name = NULL;
-    guint         i;
+    gsize         l;
+    gsize         i;
+
+    if (strv_len >= 0)
+        l = strv_len;
+    else
+        l = NM_PTRARRAY_LEN(strv);
+
+    if (l == 0)
+        return -1;
 
     if (!_nm_utils_dns_option_validate(option, &option_name, NULL, AF_UNSPEC, NULL))
         return -1;
 
-    for (i = 0; i < array->len; i++) {
+    for (i = 0; i < l; i++) {
+        const char   *str      = strv[i];
         gs_free char *tmp_name = NULL;
 
-        if (_nm_utils_dns_option_validate(array->pdata[i], &tmp_name, NULL, AF_UNSPEC, NULL)) {
+        if (_nm_utils_dns_option_validate(str, &tmp_name, NULL, AF_UNSPEC, NULL)) {
             if (nm_streq(tmp_name, option_name))
                 return i;
         }
