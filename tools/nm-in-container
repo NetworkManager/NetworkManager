@@ -164,6 +164,7 @@ RUN dnf install -y \\
     --skip-broken \\
     \\
     /usr/bin/python \\
+    /usr/sbin/ausearch \\
     ModemManager-devel \\
     ModemManager-glib-devel \\
     NetworkManager \\
