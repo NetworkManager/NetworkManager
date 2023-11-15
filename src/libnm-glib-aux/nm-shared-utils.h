@@ -3002,15 +3002,18 @@ nm_strvarray_ensure(GArray **p)
 }
 
 static inline void
-nm_strvarray_add(GArray *array, const char *str)
+nm_strvarray_add_take(GArray *array, char *str)
 {
-    char *s;
-
     nm_assert(array);
     nm_assert(sizeof(char *) == g_array_get_element_size(array));
 
-    s = g_strdup(str);
-    g_array_append_val(array, s);
+    g_array_append_val(array, str);
+}
+
+static inline void
+nm_strvarray_add(GArray *array, const char *str)
+{
+    nm_strvarray_add_take(array, g_strdup(str));
 }
 
 static inline const char *
