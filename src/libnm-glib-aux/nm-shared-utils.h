@@ -3007,6 +3007,10 @@ nm_strvarray_add_take(GArray *array, char *str)
     nm_assert(array);
     nm_assert(sizeof(char *) == g_array_get_element_size(array));
 
+    /* The array is used as a NULL terminated strv array. Adding NULL is most
+     * likely a bug. Assert against it. */
+    nm_assert(str);
+
     g_array_append_val(array, str);
 }
 
