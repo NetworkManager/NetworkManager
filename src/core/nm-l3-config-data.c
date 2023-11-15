@@ -1642,7 +1642,7 @@ nm_l3_config_data_get_dns_priority(const NML3ConfigData *self, int addr_family, 
     case AF_UNSPEC:
         if (NM_FLAGS_ANY(self->flags, NM_L3_CONFIG_DAT_FLAGS_HAS_DNS_PRIORITY_4)) {
             if (NM_FLAGS_ANY(self->flags, NM_L3_CONFIG_DAT_FLAGS_HAS_DNS_PRIORITY_6)) {
-                NM_SET_OUT(out_prio, MIN(self->dns_priority_4, self->dns_priority_6));
+                NM_SET_OUT(out_prio, NM_MIN(self->dns_priority_4, self->dns_priority_6));
                 return TRUE;
             }
             NM_SET_OUT(out_prio, self->dns_priority_4);

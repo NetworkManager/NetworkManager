@@ -1295,7 +1295,7 @@ update_config(NMConnectivity *self, NMConfigData *config_data)
     priv->uri_valid = new_uri_valid;
 
     interval = nm_config_data_get_connectivity_interval(config_data);
-    interval = MIN(interval, (7 * 24 * 3600));
+    interval = NM_MIN(interval, (7u * 24 * 3600));
     if (priv->interval != interval) {
         priv->interval = interval;
         changed        = TRUE;

@@ -182,9 +182,9 @@ nmt_newt_form_build(NmtNewtForm *form)
     newtGetScreenSize(&screen_width, &screen_height);
 
     if (!priv->fixed_width)
-        priv->width = MIN(form_width + 2 * priv->padding, screen_width - 2);
+        priv->width = NM_MIN(form_width + 2 * ((gint64) priv->padding), screen_width - 2);
     if (!priv->fixed_height)
-        priv->height = MIN(form_height + 2 * priv->padding, screen_height - 2);
+        priv->height = NM_MIN(form_height + 2 * ((gint64) priv->padding), screen_height - 2);
 
     if (!priv->fixed_x)
         priv->x = (screen_width - form_width) / 2;

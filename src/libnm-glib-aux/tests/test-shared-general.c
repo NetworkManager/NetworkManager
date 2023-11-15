@@ -67,6 +67,20 @@ test_nm_static_assert(void)
 /*****************************************************************************/
 
 static void
+test_max(void)
+{
+    /* Check that NM_MAX() of constant expressions is itself a constant. We
+     * build with -Wvla, so this is a constant! */
+    char buf1[NM_MAX(55, 40)];
+    char buf2[NM_MAX(1, NM_MAX(40, 55))];
+
+    G_STATIC_ASSERT(sizeof(buf1) == 55);
+    G_STATIC_ASSERT(sizeof(buf2) == 55);
+}
+
+/*****************************************************************************/
+
+static void
 test_gpid(void)
 {
     const int *int_ptr;
@@ -2624,6 +2638,7 @@ main(int argc, char **argv)
     nmtst_init(&argc, &argv, TRUE);
 
     g_test_add_func("/general/test_nm_static_assert", test_nm_static_assert);
+    g_test_add_func("/general/test_max", test_max);
     g_test_add_func("/general/test_gpid", test_gpid);
     g_test_add_func("/general/test_monotonic_timestamp", test_monotonic_timestamp);
     g_test_add_func("/general/test_timespect_to", test_timespect_to);

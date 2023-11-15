@@ -1803,7 +1803,7 @@ nmtst_inet_from_string(int addr_family, const char *str)
 static inline const char *
 nmtst_inet_to_string(int addr_family, gconstpointer addr)
 {
-    static _nm_thread_local char buf[NM_CONST_MAX(INET6_ADDRSTRLEN, INET_ADDRSTRLEN)];
+    static _nm_thread_local char buf[NM_MAX(INET6_ADDRSTRLEN, INET_ADDRSTRLEN)];
 
     g_assert(NM_IN_SET(addr_family, AF_INET, AF_INET6));
     g_assert(addr);

@@ -738,19 +738,20 @@ nm_utils_kill_child_sync(pid_t       pid,
 
             if (!was_waiting) {
                 nm_log_dbg(log_domain,
-                           LOG_NAME_FMT ": waiting up to %ld milliseconds for process to terminate "
+                           LOG_NAME_FMT ": waiting up to %lu milliseconds for process to terminate "
                                         "normally after sending %s...",
                            LOG_NAME_ARGS,
-                           (long) MAX(wait_before_kill_msec, 0),
+                           (unsigned long) wait_before_kill_msec,
                            _kc_signal_to_string(sig));
                 was_waiting = TRUE;
             }
 
-            sleep_time = MIN(wait_until - now, sleep_duration_usec);
+            sleep_time = NM_MIN(wait_until - now, (gint64) sleep_duration_usec);
             if (loop_count < 20) {
                 /* At the beginning we expect the process to die fast.
                  * Limit the sleep time, the limit doubles with every iteration. */
-                sleep_time = MIN(sleep_time, (((guint64) 1) << loop_count) * G_USEC_PER_SEC / 2000);
+                sleep_time =
+                    NM_MIN(sleep_time, (((guint64) 1) << loop_count) * G_USEC_PER_SEC / 2000);
                 loop_count++;
             }
             g_usleep(sleep_time);
@@ -1031,17 +1032,17 @@ nm_utils_kill_process_sync(pid_t       pid,
                 loop_count =
                     0; /* reset the loop_count. Now we really expect the process to die quickly. */
             } else
-                sleep_time = MIN(wait_until_sigkill - now, sleep_duration_usec);
+                sleep_time = NM_MIN(wait_until_sigkill - now, (gint64) sleep_duration_usec);
         }
 
         if (!was_waiting) {
             if (wait_until_sigkill != 0) {
                 nm_log_dbg(log_domain,
                            LOG_NAME_PROCESS_FMT
-                           ": waiting up to %ld milliseconds for process to disappear before "
+                           ": waiting up to %lu milliseconds for process to disappear before "
                            "sending KILL signal after sending %s...",
                            LOG_NAME_ARGS,
-                           (long) wait_before_kill_msec,
+                           (unsigned long) wait_before_kill_msec,
                            _kc_signal_to_string(sig));
             } else if (max_wait_until != 0) {
                 nm_log_dbg(
@@ -1064,7 +1065,7 @@ nm_utils_kill_process_sync(pid_t       pid,
         if (loop_count < 20) {
             /* At the beginning we expect the process to die fast.
              * Limit the sleep time, the limit doubles with every iteration. */
-            sleep_time = MIN(sleep_time, (((guint64) 1) << loop_count) * G_USEC_PER_SEC / 2000);
+            sleep_time = NM_MIN(sleep_time, (((guint64) 1) << loop_count) * G_USEC_PER_SEC / 2000);
             loop_count++;
         }
         g_usleep(sleep_time);
@@ -3567,7 +3568,7 @@ nm_utils_ipv6_addr_set_stable_privacy_with_host_id(NMUtilsStableType stable_type
 
     sum = g_checksum_new(G_CHECKSUM_SHA256);
 
-    host_id_len = MIN(host_id_len, G_MAXUINT32);
+    host_id_len = NM_MIN(host_id_len, G_MAXUINT32);
 
     if (stable_type != NM_UTILS_STABLE_TYPE_UUID) {
         guint8 stable_type_uint8;
@@ -3742,7 +3743,7 @@ _hw_addr_gen_stable_eth(NMUtilsStableType stable_type,
 
     sum = g_checksum_new(G_CHECKSUM_SHA256);
 
-    host_id_len = MIN(host_id_len, G_MAXUINT32);
+    host_id_len = NM_MIN(host_id_len, G_MAXUINT32);
 
     nm_assert(stable_type < (NMUtilsStableType) 255);
     stable_type_uint8 = stable_type;
@@ -4255,8 +4256,8 @@ read_device_factory_paths_sort_fcn(gconstpointer a, gconstpointer b)
     const struct plugin_info *db = b;
     time_t                    ta, tb;
 
-    ta = MAX(da->st.st_mtime, da->st.st_ctime);
-    tb = MAX(db->st.st_mtime, db->st.st_ctime);
+    ta = NM_MAX(da->st.st_mtime, da->st.st_ctime);
+    tb = NM_MAX(db->st.st_mtime, db->st.st_ctime);
 
     if (ta < tb)
         return 1;
@@ -5418,7 +5419,7 @@ nm_utils_shorten_hostname(const char *hostname, char **shortened)
         l = (dot - hostname);
     else
         l = strlen(hostname);
-    l = MIN(l, (gsize) NM_HOST_NAME_MAX);
+    l = NM_MIN(l, (gsize) NM_HOST_NAME_MAX);
 
     s = g_strndup(hostname, l);
 

@@ -363,9 +363,9 @@ constructed(GObject *object)
     case NM_AUTH_SUBJECT_TYPE_UNIX_PROCESS:
         /* Ensure pid and uid to be representable as int32.
          * DBUS treats them as uint32, polkit library as int. */
-        if (priv->unix_process.pid > MIN(G_MAXINT, G_MAXINT32))
+        if (priv->unix_process.pid > NM_MIN(G_MAXINT, G_MAXINT32))
             break;
-        if (priv->unix_process.uid > MIN(G_MAXINT, G_MAXINT32)) {
+        if (priv->unix_process.uid > NM_MIN(G_MAXINT, G_MAXINT32)) {
             /* for uid==-1, libpolkit-gobject-1 detects the user based on the process id.
              * Don't bother and require the user id as parameter. */
             break;

@@ -824,7 +824,7 @@ int dhcp6_client_send_message(sd_dhcp6_client *client) {
         /* RFC 8415 Section 21.9.
          * A client MUST include an Elapsed Time option in messages to indicate how long the client has
          * been trying to complete a DHCP message exchange. */
-        elapsed_usec = MIN(usec_sub_unsigned(time_now, client->transaction_start) / USEC_PER_MSEC / 10, (usec_t) UINT16_MAX);
+        elapsed_usec = NM_MIN(usec_sub_unsigned(time_now, client->transaction_start) / USEC_PER_MSEC / 10, (usec_t) UINT16_MAX);
         elapsed_time = htobe16(elapsed_usec);
         r = dhcp6_option_append(&buf, &offset, SD_DHCP6_OPTION_ELAPSED_TIME, sizeof(elapsed_time), &elapsed_time);
         if (r < 0)
@@ -1052,7 +1052,7 @@ static int client_enter_bound_state(sd_dhcp6_client *client) {
                 goto error;
 
         lifetime_t2 = client_timeout_compute_random(lifetime_t2);
-        lifetime_t1 = client_timeout_compute_random(MIN(lifetime_t1, lifetime_t2));
+        lifetime_t1 = client_timeout_compute_random(NM_MIN(lifetime_t1, lifetime_t2));
 
         if (lifetime_t1 == USEC_INFINITY) {
                 log_dhcp6_client(client, "Infinite T1");

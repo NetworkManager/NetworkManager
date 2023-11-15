@@ -424,7 +424,7 @@ nm_platform_ip4_address_to_string(const NMPlatformIP4Address *address, char *buf
         (address->lifetime == address->preferred)
             ? str_lft_p
             : (_lifetime_to_string(address->timestamp,
-                                   address->lifetime ? MIN(address->preferred, address->lifetime)
+                                   address->lifetime ? NM_MIN(address->preferred, address->lifetime)
                                                      : NM_PLATFORM_LIFETIME_PERMANENT,
                                    now,
                                    str_pref,
@@ -522,7 +522,7 @@ nm_platform_ip6_address_to_string(const NMPlatformIP6Address *address, char *buf
         (address->lifetime == address->preferred)
             ? str_lft_p
             : (_lifetime_to_string(address->timestamp,
-                                   address->lifetime ? MIN(address->preferred, address->lifetime)
+                                   address->lifetime ? NM_MIN(address->preferred, address->lifetime)
                                                      : NM_PLATFORM_LIFETIME_PERMANENT,
                                    now,
                                    str_pref,

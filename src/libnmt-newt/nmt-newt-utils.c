@@ -65,7 +65,7 @@ nmt_newt_dialog_g_log_handler(const char    *log_domain,
      */
 
     newtGetScreenSize(&screen_width, &screen_height);
-    text = newtTextboxReflowed(-1, -1, full_message, MAX(70, screen_width - 10), 0, 0, 0);
+    text = newtTextboxReflowed(-1, -1, full_message, NM_MAX(70, screen_width - 10), 0, 0, 0);
     g_free(full_message);
 
     ok = newtButton(-1, -1, "OK");

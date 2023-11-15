@@ -163,7 +163,7 @@ typedef enum _nm_packed {
 G_STATIC_ASSERT(RTA_MAX == (__RTA_MAX - 1));
 #define RTA_PREF 20
 #undef RTA_MAX
-#define RTA_MAX (MAX((__RTA_MAX - 1), RTA_PREF))
+#define RTA_MAX (NM_MAX_CONST((__RTA_MAX - 1), RTA_PREF))
 
 #ifndef MACVLAN_FLAG_NOPROMISC
 #define MACVLAN_FLAG_NOPROMISC 1
@@ -1096,7 +1096,7 @@ _addrtime_extend_lifetime(guint32 lifetime, guint32 seconds)
         return lifetime;
 
     v = (guint64) lifetime + (guint64) seconds;
-    return MIN(v, NM_PLATFORM_LIFETIME_PERMANENT - 1);
+    return NM_MIN(v, NM_PLATFORM_LIFETIME_PERMANENT - 1);
 }
 
 /* The rtnl_addr object contains relative lifetimes @valid and @preferred
