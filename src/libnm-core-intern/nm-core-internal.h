@@ -411,7 +411,7 @@ extern const NMUtilsDNSOptionDesc _nm_utils_dns_option_descs[];
 gboolean _nm_utils_dns_option_validate(const char                 *option,
                                        char                      **out_name,
                                        long                       *out_value,
-                                       gboolean                    ipv6,
+                                       int                         addr_family,
                                        const NMUtilsDNSOptionDesc *option_descs);
 gssize   _nm_utils_dns_option_find_idx(GPtrArray *array, const char *option);
 

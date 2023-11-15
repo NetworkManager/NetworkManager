@@ -8803,23 +8803,35 @@ test_nm_ptrarray_len(void)
 
 static void
 test_nm_utils_dns_option_validate_do(char                       *option,
-                                     gboolean                    ipv6,
+                                     int                         addr_family,
                                      const NMUtilsDNSOptionDesc *descs,
                                      gboolean                    exp_result,
                                      char                       *exp_name,
                                      gboolean                    exp_value)
 {
-    char    *name;
-    long     value = 0;
-    gboolean result;
+    gs_free char *name  = NULL;
+    long          value = 0;
+    gboolean      result;
 
-    result = _nm_utils_dns_option_validate(option, &name, &value, ipv6, descs);
+    if (!descs) {
+        g_assert(addr_family == AF_UNSPEC);
+        addr_family = nmtst_rand_select(AF_UNSPEC, AF_INET, AF_INET6);
+    }
+
+    result = _nm_utils_dns_option_validate(option, &name, &value, addr_family, descs);
 
     g_assert(result == exp_result);
     g_assert_cmpstr(name, ==, exp_name);
     g_assert(value == exp_value);
 
-    g_free(name);
+    nm_clear_g_free(&name);
+
+    if (result && descs) {
+        result = _nm_utils_dns_option_validate(option, &name, &value, AF_UNSPEC, descs);
+        g_assert(result == exp_result);
+        g_assert_cmpstr(name, ==, exp_name);
+        g_assert(value == exp_value);
+    }
 }
 
 static const NMUtilsDNSOptionDesc opt_descs[] = {
@@ -8833,34 +8845,34 @@ static const NMUtilsDNSOptionDesc opt_descs[] = {
 static void
 test_nm_utils_dns_option_validate(void)
 {
-    /*                                    opt            ipv6    descs        result name       value */
-    test_nm_utils_dns_option_validate_do("", FALSE, NULL, FALSE, NULL, -1);
-    test_nm_utils_dns_option_validate_do(":", FALSE, NULL, FALSE, NULL, -1);
-    test_nm_utils_dns_option_validate_do(":1", FALSE, NULL, FALSE, NULL, -1);
-    test_nm_utils_dns_option_validate_do(":val", FALSE, NULL, FALSE, NULL, -1);
-    test_nm_utils_dns_option_validate_do("opt", FALSE, NULL, TRUE, "opt", -1);
-    test_nm_utils_dns_option_validate_do("opt:", FALSE, NULL, FALSE, NULL, -1);
-    test_nm_utils_dns_option_validate_do("opt:12", FALSE, NULL, TRUE, "opt", 12);
-    test_nm_utils_dns_option_validate_do("opt:12 ", FALSE, NULL, FALSE, NULL, -1);
-    test_nm_utils_dns_option_validate_do("opt:val", FALSE, NULL, FALSE, NULL, -1);
-    test_nm_utils_dns_option_validate_do("opt:2val", FALSE, NULL, FALSE, NULL, -1);
-    test_nm_utils_dns_option_validate_do("opt:2:3", FALSE, NULL, FALSE, NULL, -1);
-    test_nm_utils_dns_option_validate_do("opt-6", FALSE, NULL, TRUE, "opt-6", -1);
+    /*                                  (opt, addr_family, descs, result, name, value) */
+    test_nm_utils_dns_option_validate_do("", AF_UNSPEC, NULL, FALSE, NULL, -1);
+    test_nm_utils_dns_option_validate_do(":", AF_UNSPEC, NULL, FALSE, NULL, -1);
+    test_nm_utils_dns_option_validate_do(":1", AF_UNSPEC, NULL, FALSE, NULL, -1);
+    test_nm_utils_dns_option_validate_do(":val", AF_UNSPEC, NULL, FALSE, NULL, -1);
+    test_nm_utils_dns_option_validate_do("opt", AF_UNSPEC, NULL, TRUE, "opt", -1);
+    test_nm_utils_dns_option_validate_do("opt:", AF_UNSPEC, NULL, FALSE, NULL, -1);
+    test_nm_utils_dns_option_validate_do("opt:12", AF_UNSPEC, NULL, TRUE, "opt", 12);
+    test_nm_utils_dns_option_validate_do("opt:12 ", AF_UNSPEC, NULL, FALSE, NULL, -1);
+    test_nm_utils_dns_option_validate_do("opt:val", AF_UNSPEC, NULL, FALSE, NULL, -1);
+    test_nm_utils_dns_option_validate_do("opt:2val", AF_UNSPEC, NULL, FALSE, NULL, -1);
+    test_nm_utils_dns_option_validate_do("opt:2:3", AF_UNSPEC, NULL, FALSE, NULL, -1);
+    test_nm_utils_dns_option_validate_do("opt-6", AF_UNSPEC, NULL, TRUE, "opt-6", -1);
 
-    test_nm_utils_dns_option_validate_do("opt1", FALSE, opt_descs, TRUE, "opt1", -1);
-    test_nm_utils_dns_option_validate_do("opt1", TRUE, opt_descs, TRUE, "opt1", -1);
-    test_nm_utils_dns_option_validate_do("opt1:3", FALSE, opt_descs, FALSE, NULL, -1);
+    test_nm_utils_dns_option_validate_do("opt1", AF_INET, opt_descs, TRUE, "opt1", -1);
+    test_nm_utils_dns_option_validate_do("opt1", AF_INET6, opt_descs, TRUE, "opt1", -1);
+    test_nm_utils_dns_option_validate_do("opt1:3", AF_INET, opt_descs, FALSE, NULL, -1);
 
-    test_nm_utils_dns_option_validate_do("opt2", FALSE, opt_descs, FALSE, NULL, -1);
-    test_nm_utils_dns_option_validate_do("opt2:5", FALSE, opt_descs, TRUE, "opt2", 5);
+    test_nm_utils_dns_option_validate_do("opt2", AF_INET, opt_descs, FALSE, NULL, -1);
+    test_nm_utils_dns_option_validate_do("opt2:5", AF_INET, opt_descs, TRUE, "opt2", 5);
 
-    test_nm_utils_dns_option_validate_do("opt3", FALSE, opt_descs, FALSE, NULL, -1);
-    test_nm_utils_dns_option_validate_do("opt3", TRUE, opt_descs, TRUE, "opt3", -1);
+    test_nm_utils_dns_option_validate_do("opt3", AF_INET, opt_descs, FALSE, NULL, -1);
+    test_nm_utils_dns_option_validate_do("opt3", AF_INET6, opt_descs, TRUE, "opt3", -1);
 
-    test_nm_utils_dns_option_validate_do("opt4", FALSE, opt_descs, FALSE, NULL, -1);
-    test_nm_utils_dns_option_validate_do("opt4", TRUE, opt_descs, FALSE, NULL, -1);
-    test_nm_utils_dns_option_validate_do("opt4:40", FALSE, opt_descs, FALSE, NULL, -1);
-    test_nm_utils_dns_option_validate_do("opt4:40", TRUE, opt_descs, TRUE, "opt4", 40);
+    test_nm_utils_dns_option_validate_do("opt4", AF_INET, opt_descs, FALSE, NULL, -1);
+    test_nm_utils_dns_option_validate_do("opt4", AF_INET6, opt_descs, FALSE, NULL, -1);
+    test_nm_utils_dns_option_validate_do("opt4:40", AF_INET, opt_descs, FALSE, NULL, -1);
+    test_nm_utils_dns_option_validate_do("opt4:40", AF_INET6, opt_descs, TRUE, "opt4", 40);
 }
 
 static void

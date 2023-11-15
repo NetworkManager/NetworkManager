@@ -1219,7 +1219,7 @@ load_global_dns(GKeyFile *keyfile, gboolean internal)
     if (strv) {
         nm_strv_cleanup(strv, TRUE, TRUE, TRUE);
         for (i = 0, j = 0; strv[i]; i++) {
-            if (_nm_utils_dns_option_validate(strv[i], NULL, NULL, TRUE, NULL))
+            if (_nm_utils_dns_option_validate(strv[i], NULL, NULL, AF_UNSPEC, NULL))
                 strv[j++] = strv[i];
             else
                 g_free(strv[i]);
@@ -1453,7 +1453,7 @@ nm_global_dns_config_from_dbus(const GValue *value, GError **error)
             nm_strv_cleanup(strv, TRUE, TRUE, TRUE);
 
             for (i = 0, j = 0; strv && strv[i]; i++) {
-                if (_nm_utils_dns_option_validate(strv[i], NULL, NULL, TRUE, NULL))
+                if (_nm_utils_dns_option_validate(strv[i], NULL, NULL, AF_UNSPEC, NULL))
                     strv[j++] = strv[i];
                 else
                     g_free(strv[i]);

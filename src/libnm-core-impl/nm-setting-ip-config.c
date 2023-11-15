@@ -4434,7 +4434,7 @@ nm_setting_ip_config_next_valid_dns_option(NMSettingIPConfig *setting, guint idx
         if (_nm_utils_dns_option_validate(priv->dns_options->pdata[idx],
                                           NULL,
                                           NULL,
-                                          NM_IS_SETTING_IP6_CONFIG(setting),
+                                          NM_SETTING_IP_CONFIG_GET_ADDR_FAMILY(setting),
                                           _nm_utils_dns_option_descs))
             return idx;
     }
@@ -4462,7 +4462,7 @@ nm_setting_ip_config_add_dns_option(NMSettingIPConfig *setting, const char *dns_
     g_return_val_if_fail(dns_option != NULL, FALSE);
     g_return_val_if_fail(dns_option[0] != '\0', FALSE);
 
-    if (!_nm_utils_dns_option_validate(dns_option, NULL, NULL, FALSE, NULL))
+    if (!_nm_utils_dns_option_validate(dns_option, NULL, NULL, AF_UNSPEC, NULL))
         return FALSE;
 
     priv = NM_SETTING_IP_CONFIG_GET_PRIVATE(setting);
@@ -6208,7 +6208,7 @@ set_property(GObject *object, guint prop_id, const GValue *value, GParamSpec *ps
             else
                 priv->dns_options = g_ptr_array_new_with_free_func(g_free);
             for (i = 0; strv[i]; i++) {
-                if (_nm_utils_dns_option_validate(strv[i], NULL, NULL, FALSE, NULL)
+                if (_nm_utils_dns_option_validate(strv[i], NULL, NULL, AF_UNSPEC, NULL)
                     && _nm_utils_dns_option_find_idx(priv->dns_options, strv[i]) < 0)
                     g_ptr_array_add(priv->dns_options, g_strdup(strv[i]));
             }
