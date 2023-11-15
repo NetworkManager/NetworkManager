@@ -201,7 +201,6 @@ _UNSTABLE_OUTPUT = object()
 
 
 class Util:
-
     _signal_no_lookup = {
         1: "SIGHUP",
         2: "SIGINT",
@@ -658,7 +657,6 @@ class Util:
 
     @staticmethod
     def cmd_create_argv(cmd_path, args, with_valgrind=None):
-
         if with_valgrind is None:
             with_valgrind = conf.get(ENV_NM_TEST_VALGRIND)
 
@@ -1092,9 +1090,7 @@ class NMTestContext:
             srv.shutdown()
 
     def async_start(self, wait_all=False):
-
         while True:
-
             while True:
                 for async_job in list(self._async_jobs[0 : self.MAX_JOBS]):
                     async_job.start()
@@ -1134,7 +1130,6 @@ class NMTestContext:
         self._async_jobs.append(async_job)
 
     def run_post(self):
-
         self.async_wait()
 
         self.srv_shutdown()
@@ -1302,7 +1297,6 @@ class TestNmcli(unittest.TestCase):
         extra_env=None,
         sync_barrier=None,
     ):
-
         frame = sys._getframe(1)
 
         if langs is not None:
@@ -1350,7 +1344,6 @@ class TestNmcli(unittest.TestCase):
         sync_barrier,
         frame,
     ):
-
         if sync_barrier:
             self.ctx.async_wait()
 
@@ -1428,7 +1421,6 @@ class TestNmcli(unittest.TestCase):
         self.ctx.ctx_results.append(None)
 
         def complete_cb(async_job, returncode, stdout, stderr):
-
             if expected_stdout is _UNSTABLE_OUTPUT:
                 stdout = "<UNSTABLE OUTPUT>".encode("utf-8")
             else:
@@ -1559,7 +1551,6 @@ class TestNmcli(unittest.TestCase):
 
     @nm_test
     def test_001(self):
-
         self.call_nmcli_l([])
 
         self.call_nmcli_l(
@@ -1626,7 +1617,6 @@ class TestNmcli(unittest.TestCase):
         self.call_nmcli_l(["c", "s"], replace_stdout=replace_uuids)
 
         for con_name, apn in con_gsm_list:
-
             replace_uuids.append(
                 self.ctx.srv.ReplaceTextConUuid(
                     con_name, "UUID-" + con_name + "-REPLACED-REPLACED-REPL"
@@ -1752,6 +1742,8 @@ class TestNmcli(unittest.TestCase):
             "State",
             dbus.UInt32(NM.ActiveConnectionState.DEACTIVATING),
         )
+
+        self.call_nmcli_l(["-f", "all", "d"], replace_stdout=replace_uuids)
 
         self.call_nmcli_l([], replace_stdout=replace_uuids)
 
@@ -1886,8 +1878,17 @@ class TestNmcli(unittest.TestCase):
 
         self.call_nmcli_l([], replace_stdout=replace_uuids)
 
-        for mode in Util.iter_nmcli_output_modes():
+        self.call_nmcli(
+            ["-f", "all", "connection", "show", "--order", "na:-active"],
+            replace_stdout=replace_uuids,
+        )
 
+        self.call_nmcli(
+            ["-f", "all", "connection", "show", "--order", "active:-na"],
+            replace_stdout=replace_uuids,
+        )
+
+        for mode in Util.iter_nmcli_output_modes():
             self.call_nmcli_l(
                 mode + ["con", "s", "con-vpn-1"], replace_stdout=replace_uuids
             )
@@ -2051,9 +2052,34 @@ class TestNmcli(unittest.TestCase):
                 replace_cmd=replace_uuids,
             )
 
+        replace_uuids.append(
+            self.ctx.srv.ReplaceTextConUuid(
+                "con-xx2", "UUID-con-xx2-REPLACED-REPLACED-REPLA"
+            )
+        )
+
+        self.call_nmcli(
+            ["c", "add", "type", "ethernet", "con-name", "con-xx2", "ifname", "eth1"],
+            replace_stdout=replace_uuids,
+        )
+
+        self.ctx.srv.op_SetActiveConnectionStateChangedDelay(
+            "/org/freedesktop/NetworkManager/Devices/2", 50000
+        )
+        self.call_nmcli(["-wait", "0", "con", "up", "con-xx2"])
+        self.call_nmcli(["con", "up", "con-xx1"])
+
+        self.call_nmcli_l(
+            ["-f", "all", "device", "status"],
+            replace_stdout=replace_uuids,
+        )
+        self.call_nmcli_l(
+            ["-f", "all", "connection", "show"],
+            replace_stdout=replace_uuids,
+        )
+
     @nm_test_no_dbus
     def test_offline(self):
-
         # Make sure we're not using D-Bus
         no_dbus_env = {
             "DBUS_SYSTEM_BUS_ADDRESS": "very:invalid",
