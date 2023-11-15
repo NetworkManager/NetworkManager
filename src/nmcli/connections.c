@@ -291,65 +291,91 @@ connection_type_to_display(const char *type, NMMetaAccessorGetType get_type)
 static int
 active_connection_get_state_ord(NMActiveConnection *active)
 {
+    static const NMActiveConnectionState ordered_states[] = {
+        NM_ACTIVE_CONNECTION_STATE_UNKNOWN,
+        NM_ACTIVE_CONNECTION_STATE_DEACTIVATED,
+        NM_ACTIVE_CONNECTION_STATE_DEACTIVATING,
+        NM_ACTIVE_CONNECTION_STATE_ACTIVATING,
+        NM_ACTIVE_CONNECTION_STATE_ACTIVATED,
+    };
+    NMActiveConnectionState state;
+    int                     i;
+    gboolean                is_external;
+
     /* returns an integer related to @active's state, that can be used for sorting
      * active connections based on their activation state. */
-    if (!active)
-        return -2;
 
-    switch (nm_active_connection_get_state(active)) {
-    case NM_ACTIVE_CONNECTION_STATE_UNKNOWN:
-        return 0;
-    case NM_ACTIVE_CONNECTION_STATE_DEACTIVATED:
-        return 1;
-    case NM_ACTIVE_CONNECTION_STATE_DEACTIVATING:
-        return 2;
-    case NM_ACTIVE_CONNECTION_STATE_ACTIVATING:
-        return 3;
-    case NM_ACTIVE_CONNECTION_STATE_ACTIVATED:
-        return 4;
+    if (!active)
+        return -10;
+
+    state       = nm_active_connection_get_state(active);
+    is_external = NM_FLAGS_HAS(nm_active_connection_get_state_flags(active),
+                               NM_ACTIVATION_STATE_FLAG_EXTERNAL);
+
+    for (i = 0; i < (int) G_N_ELEMENTS(ordered_states); i++) {
+        if (state == ordered_states[i]) {
+            if (!is_external)
+                i += G_N_ELEMENTS(ordered_states);
+            return i;
+        }
     }
-    return -1;
+
+    return is_external ? -2 : -1;
 }
 
 int
 nmc_active_connection_cmp(NMActiveConnection *ac_a, NMActiveConnection *ac_b)
 {
-    NMSettingIPConfig  *s_ip;
-    NMRemoteConnection *conn;
+    NMSettingIPConfig  *s_ip4_a;
+    NMSettingIPConfig  *s_ip4_b;
+    NMSettingIPConfig  *s_ip6_a;
+    NMSettingIPConfig  *s_ip6_b;
+    NMRemoteConnection *conn_a;
+    NMRemoteConnection *conn_b;
     NMIPConfig         *da_ip;
     NMIPConfig         *db_ip;
-    int                 da_num_addrs;
-    int                 db_num_addrs;
-    int                 cmp = 0;
+    gint64              da_num_addrs;
+    gint64              db_num_addrs;
+    gboolean            bool_a;
+    gboolean            bool_b;
 
-    /* Non-active sort last. */
+    /* nmc_active_connection_cmp() sorts more-important ACs later. That means,
+     * - NULL comes first
+     * - then sorting by state (active_connection_get_state_ord()), with "activated" sorted last.
+     * - various properties of the AC.
+     *
+     * This is basically the inverse order of `nmcli connection`.
+     */
+
+    /* Non-active (and NULL) sort first! */
     NM_CMP_SELF(ac_a, ac_b);
-    NM_CMP_DIRECT(active_connection_get_state_ord(ac_b), active_connection_get_state_ord(ac_a));
+    NM_CMP_DIRECT(active_connection_get_state_ord(ac_a), active_connection_get_state_ord(ac_b));
+
+    conn_a = nm_active_connection_get_connection(ac_a);
+    conn_b = nm_active_connection_get_connection(ac_b);
+
+    s_ip6_a = conn_a ? nm_connection_get_setting_ip6_config(NM_CONNECTION(conn_a)) : NULL;
+    s_ip6_b = conn_b ? nm_connection_get_setting_ip6_config(NM_CONNECTION(conn_b)) : NULL;
 
     /* Shared connections (likely hotspots) go on the top if possible */
-    conn = nm_active_connection_get_connection(ac_a);
-    s_ip = conn ? nm_connection_get_setting_ip6_config(NM_CONNECTION(conn)) : NULL;
-    if (s_ip
-        && nm_streq(nm_setting_ip_config_get_method(s_ip), NM_SETTING_IP6_CONFIG_METHOD_SHARED))
-        cmp++;
-    conn = nm_active_connection_get_connection(ac_b);
-    s_ip = conn ? nm_connection_get_setting_ip6_config(NM_CONNECTION(conn)) : NULL;
-    if (s_ip
-        && nm_streq(nm_setting_ip_config_get_method(s_ip), NM_SETTING_IP6_CONFIG_METHOD_SHARED))
-        cmp--;
-    NM_CMP_RETURN(cmp);
+    bool_a = (s_ip6_a
+              && nm_streq(nm_setting_ip_config_get_method(s_ip6_a),
+                          NM_SETTING_IP6_CONFIG_METHOD_SHARED));
+    bool_b = (s_ip6_b
+              && nm_streq(nm_setting_ip_config_get_method(s_ip6_b),
+                          NM_SETTING_IP6_CONFIG_METHOD_SHARED));
+    NM_CMP_DIRECT(bool_a, bool_b);
 
-    conn = nm_active_connection_get_connection(ac_a);
-    s_ip = conn ? nm_connection_get_setting_ip4_config(NM_CONNECTION(conn)) : NULL;
-    if (s_ip
-        && nm_streq(nm_setting_ip_config_get_method(s_ip), NM_SETTING_IP4_CONFIG_METHOD_SHARED))
-        cmp++;
-    conn = nm_active_connection_get_connection(ac_b);
-    s_ip = conn ? nm_connection_get_setting_ip4_config(NM_CONNECTION(conn)) : NULL;
-    if (s_ip
-        && nm_streq(nm_setting_ip_config_get_method(s_ip), NM_SETTING_IP4_CONFIG_METHOD_SHARED))
-        cmp--;
-    NM_CMP_RETURN(cmp);
+    s_ip4_a = conn_a ? nm_connection_get_setting_ip4_config(NM_CONNECTION(conn_a)) : NULL;
+    s_ip4_b = conn_b ? nm_connection_get_setting_ip4_config(NM_CONNECTION(conn_b)) : NULL;
+
+    bool_a = (s_ip4_a
+              && nm_streq(nm_setting_ip_config_get_method(s_ip4_a),
+                          NM_SETTING_IP4_CONFIG_METHOD_SHARED));
+    bool_b = (s_ip4_b
+              && nm_streq(nm_setting_ip_config_get_method(s_ip4_b),
+                          NM_SETTING_IP4_CONFIG_METHOD_SHARED));
+    NM_CMP_DIRECT(bool_a, bool_b);
 
     /* VPNs go next */
     NM_CMP_DIRECT(!!nm_active_connection_get_vpn(ac_a), !!nm_active_connection_get_vpn(ac_b));
@@ -367,9 +393,9 @@ nmc_active_connection_cmp(NMActiveConnection *ac_a, NMActiveConnection *ac_b)
     db_num_addrs = db_ip ? nm_ip_config_get_addresses(db_ip)->len : 0;
 
     da_ip = nm_active_connection_get_ip6_config(ac_a);
-    da_num_addrs += da_ip ? nm_ip_config_get_addresses(da_ip)->len : 0;
+    da_num_addrs += (gint64) (da_ip ? nm_ip_config_get_addresses(da_ip)->len : 0u);
     db_ip = nm_active_connection_get_ip6_config(ac_b);
-    db_num_addrs += db_ip ? nm_ip_config_get_addresses(db_ip)->len : 0;
+    db_num_addrs += (gint64) (db_ip ? nm_ip_config_get_addresses(db_ip)->len : 0u);
 
     NM_CMP_DIRECT(da_num_addrs, db_num_addrs);
 
@@ -1447,7 +1473,7 @@ get_ac_for_connection_cmp(gconstpointer pa, gconstpointer pb)
     NMActiveConnection *ac_a = *((NMActiveConnection *const *) pa);
     NMActiveConnection *ac_b = *((NMActiveConnection *const *) pb);
 
-    NM_CMP_RETURN(nmc_active_connection_cmp(ac_a, ac_b));
+    NM_CMP_RETURN(nmc_active_connection_cmp(ac_b, ac_a));
     NM_CMP_DIRECT_STRCMP0(nm_active_connection_get_id(ac_a), nm_active_connection_get_id(ac_b));
     NM_CMP_DIRECT_STRCMP0(nm_active_connection_get_connection_type(ac_a),
                           nm_active_connection_get_connection_type(ac_b));
