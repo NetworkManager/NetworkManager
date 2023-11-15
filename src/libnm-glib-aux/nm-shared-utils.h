@@ -3128,6 +3128,20 @@ nm_strvarray_remove_first(GArray *strv, const char *needle)
     return TRUE;
 }
 
+#define nm_strvarray_remove_index(strv, idx)                          \
+    G_STMT_START                                                      \
+    {                                                                 \
+        GArray *const _strv = (strv);                                 \
+        typeof(idx)   _idx  = (idx);                                  \
+                                                                      \
+        nm_assert(_strv);                                             \
+        nm_assert((uintmax_t) _idx < _strv->len);                     \
+        nm_assert(sizeof(char *) == g_array_get_element_size(_strv)); \
+                                                                      \
+        g_array_remove_index(_strv, (guint) _idx);                    \
+    }                                                                 \
+    G_STMT_END
+
 static inline void
 nm_strvarray_ensure_and_add(GArray **p, const char *str)
 {
