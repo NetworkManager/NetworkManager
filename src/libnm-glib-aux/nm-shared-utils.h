@@ -2996,7 +2996,7 @@ nm_strvarray_ensure(GArray **p)
         *p = g_array_new(TRUE, FALSE, sizeof(char *));
         g_array_set_clear_func(*p, nm_indirect_g_free);
     } else
-        nm_assert(g_array_get_element_size(*p) == sizeof(char *));
+        nm_assert(sizeof(char *) == g_array_get_element_size(*p));
 
     return *p;
 }
@@ -3007,7 +3007,7 @@ nm_strvarray_add(GArray *array, const char *str)
     char *s;
 
     nm_assert(array);
-    nm_assert(g_array_get_element_size(array) == sizeof(char *));
+    nm_assert(sizeof(char *) == g_array_get_element_size(array));
 
     s = g_strdup(str);
     g_array_append_val(array, s);
@@ -3036,7 +3036,7 @@ nm_strvarray_get_idx(GArray *array, guint idx)
 static inline const char *const *
 nm_strvarray_get_strv_non_empty(GArray *arr, guint *length)
 {
-    nm_assert(!arr || g_array_get_element_size(arr) == sizeof(char *));
+    nm_assert(!arr || sizeof(char *) == g_array_get_element_size(arr));
 
     if (!arr || arr->len == 0) {
         NM_SET_OUT(length, 0);
@@ -3052,7 +3052,7 @@ nm_strvarray_get_strv_non_empty_dup(GArray *arr, guint *length)
 {
     const char *const *strv;
 
-    nm_assert(!arr || g_array_get_element_size(arr) == sizeof(char *));
+    nm_assert(!arr || sizeof(char *) == g_array_get_element_size(arr));
 
     if (!arr || arr->len == 0) {
         NM_SET_OUT(length, 0);
@@ -3072,7 +3072,7 @@ nm_strvarray_get_strv(GArray **arr, guint *length)
         return (const char *const *) arr;
     }
 
-    nm_assert(g_array_get_element_size(*arr) == sizeof(char *));
+    nm_assert(sizeof(char *) == g_array_get_element_size(*arr));
 
     NM_SET_OUT(length, (*arr)->len);
     return &g_array_index(*arr, const char *, 0);
@@ -3085,7 +3085,7 @@ nm_strvarray_set_strv(GArray **array, const char *const *strv)
 
     array_old = g_steal_pointer(array);
 
-    nm_assert(!array_old || g_array_get_element_size(array_old) == sizeof(char *));
+    nm_assert(!array_old || sizeof(char *) == g_array_get_element_size(array_old));
 
     if (!strv || !strv[0])
         return;
@@ -3103,7 +3103,7 @@ nm_strvarray_find_first(GArray *strv, const char *needle)
     nm_assert(needle);
 
     if (strv) {
-        nm_assert(g_array_get_element_size(strv) == sizeof(char *));
+        nm_assert(sizeof(char *) == g_array_get_element_size(strv));
         for (i = 0; i < strv->len; i++) {
             if (nm_streq(needle, g_array_index(strv, const char *, i)))
                 return i;
@@ -3129,8 +3129,8 @@ nm_strvarray_remove_first(GArray *strv, const char *needle)
 static inline int
 nm_strvarray_cmp(const GArray *a, const GArray *b)
 {
-    nm_assert(!a || sizeof(const char *const *) == g_array_get_element_size((GArray *) a));
-    nm_assert(!b || sizeof(const char *const *) == g_array_get_element_size((GArray *) b));
+    nm_assert(!a || sizeof(char *) == g_array_get_element_size((GArray *) a));
+    nm_assert(!b || sizeof(char *) == g_array_get_element_size((GArray *) b));
 
     NM_CMP_SELF(a, b);
 
@@ -3142,7 +3142,7 @@ nm_strvarray_cmp(const GArray *a, const GArray *b)
 static inline int
 _nm_strvarray_cmp_strv(const GArray *strv, const char *const *ss, gsize ss_len)
 {
-    nm_assert(!strv || sizeof(const char *const *) == g_array_get_element_size((GArray *) strv));
+    nm_assert(!strv || sizeof(char *) == g_array_get_element_size((GArray *) strv));
 
     return nm_strv_cmp_n(nm_g_array_data(strv), strv ? ((gssize) strv->len) : -1, ss, ss_len);
 }
