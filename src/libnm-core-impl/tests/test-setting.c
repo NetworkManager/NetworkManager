@@ -4736,6 +4736,8 @@ test_setting_metadata(void)
                 g_assert(sip->param_spec);
                 g_assert(!NM_FLAGS_HAS(sip->param_spec->flags, NM_SETTING_PARAM_SECRET));
             }
+            if (sip->direct_strv_preserve_empty)
+                g_assert(sip->property_type->direct_type == NM_VALUE_TYPE_STRV);
 
             if (sip->direct_set_string_mac_address_len != 0) {
                 g_assert(NM_IN_SET(sip->property_type,
