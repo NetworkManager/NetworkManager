@@ -8578,7 +8578,7 @@ nm_device_slave_notify_release(NMDevice           *self,
             master_status = "failed";
             break;
         case NM_DEVICE_STATE_REASON_USER_REQUESTED:
-            reason        = NM_DEVICE_STATE_REASON_DEPENDENCY_FAILED;
+            reason        = NM_DEVICE_STATE_REASON_USER_REQUESTED;
             master_status = "deactivated by user request";
             break;
         case NM_DEVICE_STATE_REASON_CONNECTION_REMOVED:
