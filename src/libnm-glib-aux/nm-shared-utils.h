@@ -3021,7 +3021,7 @@ nm_strvarray_add(GArray *array, const char *str)
 }
 
 static inline const char *
-nm_strvarray_get_idx(GArray *array, guint idx)
+nm_strvarray_get_idx(const GArray *array, guint idx)
 {
     return nm_g_array_index(array, const char *, idx);
 }
@@ -3103,14 +3103,14 @@ nm_strvarray_set_strv(GArray **array, const char *const *strv)
 }
 
 static inline gssize
-nm_strvarray_find_first(GArray *strv, const char *needle)
+nm_strvarray_find_first(const GArray *strv, const char *needle)
 {
     guint i;
 
     nm_assert(needle);
 
     if (strv) {
-        nm_assert(sizeof(char *) == g_array_get_element_size(strv));
+        nm_assert(sizeof(char *) == g_array_get_element_size((GArray *) strv));
         for (i = 0; i < strv->len; i++) {
             if (nm_streq(needle, g_array_index(strv, const char *, i)))
                 return i;
