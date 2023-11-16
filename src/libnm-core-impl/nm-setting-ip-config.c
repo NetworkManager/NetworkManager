@@ -5352,8 +5352,8 @@ nm_setting_ip_config_get_dhcp_reject_servers(NMSettingIPConfig *setting, guint *
 {
     g_return_val_if_fail(NM_IS_SETTING_IP_CONFIG(setting), NULL);
 
-    return nm_strvarray_get_strv(
-        &NM_SETTING_IP_CONFIG_GET_PRIVATE(setting)->dhcp_reject_servers.arr,
+    return nm_strvarray_get_strv_notnull(
+        NM_SETTING_IP_CONFIG_GET_PRIVATE(setting)->dhcp_reject_servers.arr,
         out_len);
 }
 

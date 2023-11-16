@@ -817,7 +817,7 @@ _nm_setting_property_get_property_direct(GObject    *object,
     {
         const NMValueStrv *p_val = _nm_setting_get_private_field(setting, sett_info, property_info);
 
-        g_value_take_boxed(value, nm_strvarray_get_strv_non_empty_dup(p_val->arr, NULL));
+        g_value_take_boxed(value, nm_strvarray_get_strv_notempty_dup(p_val->arr, NULL));
         return;
     }
     default:

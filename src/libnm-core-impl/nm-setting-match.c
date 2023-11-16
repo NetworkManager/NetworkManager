@@ -182,7 +182,7 @@ nm_setting_match_get_interface_names(NMSettingMatch *setting, guint *length)
 {
     g_return_val_if_fail(NM_IS_SETTING_MATCH(setting), NULL);
 
-    return nm_strvarray_get_strv(&setting->interface_name.arr, length);
+    return nm_strvarray_get_strv_notnull(setting->interface_name.arr, length);
 }
 
 /*****************************************************************************/
@@ -320,7 +320,7 @@ nm_setting_match_get_kernel_command_lines(NMSettingMatch *setting, guint *length
 {
     g_return_val_if_fail(NM_IS_SETTING_MATCH(setting), NULL);
 
-    return nm_strvarray_get_strv(&setting->kernel_command_line.arr, length);
+    return nm_strvarray_get_strv_notnull(setting->kernel_command_line.arr, length);
 }
 
 /*****************************************************************************/
@@ -456,7 +456,7 @@ nm_setting_match_get_drivers(NMSettingMatch *setting, guint *length)
 {
     g_return_val_if_fail(NM_IS_SETTING_MATCH(setting), NULL);
 
-    return nm_strvarray_get_strv(&setting->driver.arr, length);
+    return nm_strvarray_get_strv_notnull(setting->driver.arr, length);
 }
 
 /*****************************************************************************/
@@ -592,7 +592,7 @@ nm_setting_match_get_paths(NMSettingMatch *setting, guint *length)
 {
     g_return_val_if_fail(NM_IS_SETTING_MATCH(setting), NULL);
 
-    return nm_strvarray_get_strv(&setting->path.arr, length);
+    return nm_strvarray_get_strv_notnull(setting->path.arr, length);
 }
 
 /*****************************************************************************/
