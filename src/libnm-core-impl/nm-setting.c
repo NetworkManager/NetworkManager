@@ -1281,6 +1281,11 @@ _nm_setting_property_to_dbus_fcn_direct(_NM_SETT_INFO_PROP_TO_DBUS_FCN_ARGS _nm_
             (const NMValueStrv *) _nm_setting_get_private_field(setting, sett_info, property_info);
         if (!val->arr)
             return NULL;
+        if (val->arr->len == 0) {
+            /* This property does not treat empty strv arrays special. No need
+             * to export the value on D-Bus. */
+            return NULL;
+        }
         return g_variant_new_strv(nm_g_array_data(val->arr), val->arr->len);
     }
     default:
@@ -2579,8 +2584,19 @@ _nm_setting_property_compare_fcn_direct(_NM_SETT_INFO_PROP_COMPARE_FCN_ARGS _nm_
     case NM_VALUE_TYPE_BYTES:
         return nm_g_bytes_equal0(*((const GBytes *const *) p_a), *((const GBytes *const *) p_b));
     case NM_VALUE_TYPE_STRV:
-        return nm_strvarray_equal(((const NMValueStrv *) p_a)->arr,
-                                  ((const NMValueStrv *) p_b)->arr);
+    {
+        const NMValueStrv *v_a = p_a;
+        const NMValueStrv *v_b = p_b;
+        const GArray      *a   = v_a->arr;
+        const GArray      *b   = v_b->arr;
+
+        /* NULL and empty are treated identical. Coerce to NULL. */
+        if (a && a->len == 0)
+            a = NULL;
+        if (b && b->len == 0)
+            b = NULL;
+        return nm_strvarray_equal(a, b);
+    }
     default:
         return nm_assert_unreachable_val(TRUE);
     }
